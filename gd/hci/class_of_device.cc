@@ -26,7 +26,7 @@
 #include "os/log.h"
 
 namespace bluetooth {
-namespace common {
+namespace hci {
 
 static_assert(sizeof(ClassOfDevice) == ClassOfDevice::kLength, "ClassOfDevice must be 3 bytes long!");
 
@@ -36,11 +36,10 @@ ClassOfDevice::ClassOfDevice(const uint8_t (&class_of_device)[kLength]) {
 
 std::string ClassOfDevice::ToString() const {
   char buffer[] = "000-0-00";
-  std::snprintf(&buffer[0], sizeof(buffer),
-      "%03x-%01x-%02x", (static_cast<uint16_t>(cod[2]) << 4) | cod[1] >> 4, cod[1] & 0x0f, cod[0]);
+  std::snprintf(&buffer[0], sizeof(buffer), "%03x-%01x-%02x", (static_cast<uint16_t>(cod[2]) << 4) | cod[1] >> 4,
+                cod[1] & 0x0f, cod[0]);
   std::string str(buffer);
   return str;
-
 }
 
 bool ClassOfDevice::FromString(const std::string& from, ClassOfDevice& to) {
@@ -94,5 +93,5 @@ bool ClassOfDevice::IsValid(const std::string& cod) {
   ClassOfDevice tmp;
   return ClassOfDevice::FromString(cod, tmp);
 }
-}  // namespace common
+}  // namespace hci
 }  // namespace bluetooth

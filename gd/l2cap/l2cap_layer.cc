@@ -17,9 +17,9 @@
 
 #include <memory>
 
-#include "common/address.h"
 #include "common/bidi_queue.h"
 #include "hci/acl_manager.h"
+#include "hci/address.h"
 #include "hci/hci_packets.h"
 #include "l2cap/internal/classic_fixed_channel_service_manager_impl.h"
 #include "l2cap/internal/classic_link_manager.h"

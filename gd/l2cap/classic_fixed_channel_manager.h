@@ -17,8 +17,8 @@
 
 #include <string>
 
-#include "common/address.h"
 #include "hci/acl_manager.h"
+#include "hci/address.h"
 #include "l2cap/cid.h"
 #include "l2cap/classic_fixed_channel.h"
 #include "l2cap/classic_fixed_channel_service.h"
@@ -101,7 +101,7 @@ class ClassicFixedChannelManager {
    *
    * Returns: true if connection was able to be initiated, false otherwise.
    */
-  bool ConnectServices(common::Address device, OnConnectionFailureCallback on_fail_callback, os::Handler* handler);
+  bool ConnectServices(hci::Address device, OnConnectionFailureCallback on_fail_callback, os::Handler* handler);
 
   /**
    * Register a service to receive incoming connections bound to a specific channel.

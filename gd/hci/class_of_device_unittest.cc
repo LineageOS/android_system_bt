@@ -18,9 +18,9 @@
 
 #include <gtest/gtest.h>
 
-#include "common/class_of_device.h"
+#include "hci/class_of_device.h"
 
-using bluetooth::common::ClassOfDevice;
+using bluetooth::hci::ClassOfDevice;
 
 static const char* test_class = "efc-d-ab";
 static const uint8_t test_bytes[]{0xab, 0xcd, 0xef};

@@ -21,7 +21,7 @@
 #include <string>
 
 namespace bluetooth {
-namespace common {
+namespace hci {
 
 class ClassOfDevice final {
  public:
@@ -34,6 +34,10 @@ class ClassOfDevice final {
 
   bool operator==(const ClassOfDevice& rhs) const {
     return (std::memcmp(cod, rhs.cod, sizeof(cod)) == 0);
+  }
+
+  bool operator!=(const ClassOfDevice& rhs) const {
+    return std::memcmp(cod, rhs.cod, sizeof(cod)) != 0;
   }
 
   std::string ToString() const;
@@ -55,5 +59,5 @@ inline std::ostream& operator<<(std::ostream& os, const ClassOfDevice& c) {
   return os;
 }
 
-}  // namespace common
+}  // namespace hci
 }  // namespace bluetooth

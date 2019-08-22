@@ -23,9 +23,9 @@
 
 #include <gtest/gtest.h>
 
-#include "common/address.h"
 #include "common/bind.h"
 #include "common/callback.h"
+#include "hci/address.h"
 #include "hci/hci_layer.h"
 #include "os/thread.h"
 #include "packet/raw_builder.h"
@@ -34,7 +34,6 @@ namespace bluetooth {
 namespace hci {
 namespace {
 
-using common::Address;
 using common::BidiQueue;
 using common::BidiQueueEnd;
 using packet::kLittleEndian;
@@ -82,7 +81,7 @@ class TestHciLayer : public HciLayer {
             total_num_acl_data_packets, total_num_synchronous_data_packets);
       } break;
       case (OpCode::READ_BD_ADDR): {
-        event_builder = ReadBdAddrCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, common::Address::kAny);
+        event_builder = ReadBdAddrCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, Address::kAny);
       } break;
       default:
         LOG_INFO("Dropping unhandled packet");
@@ -163,7 +162,7 @@ TEST_F(ControllerTest, read_controller_info) {
   ASSERT_EQ(controller_->GetControllerNumAclPacketBuffers(), test_hci_layer_->total_num_acl_data_packets);
   ASSERT_EQ(controller_->GetControllerScoPacketLength(), test_hci_layer_->synchronous_data_packet_length);
   ASSERT_EQ(controller_->GetControllerNumScoPacketBuffers(), test_hci_layer_->total_num_synchronous_data_packets);
-  ASSERT_EQ(controller_->GetControllerMacAddress(), common::Address::kAny);
+  ASSERT_EQ(controller_->GetControllerMacAddress(), Address::kAny);
 }
 
 std::promise<void> credits1_set;

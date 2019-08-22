@@ -20,9 +20,9 @@
 
 #include <gtest/gtest.h>
 
-#include "common/address.h"
+#include "hci/address.h"
 
-using bluetooth::common::Address;
+using bluetooth::hci::Address;
 
 static const char* test_addr = "bc:9a:78:56:34:12";
 static const char* test_addr2 = "21:43:65:87:a9:cb";
@@ -204,7 +204,7 @@ TEST(AddressTest, BdAddrSameValueSameOrder) {
   Address addr1{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
   Address addr2{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
   // Test if two addresses with same byte value have the same hash
-  struct std::hash<bluetooth::common::Address> hasher;
+  struct std::hash<bluetooth::hci::Address> hasher;
   EXPECT_EQ(hasher(addr1), hasher(addr2));
   // Test if two addresses with the same hash and the same value, they will
   // still map to the same value

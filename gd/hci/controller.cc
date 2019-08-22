@@ -112,7 +112,7 @@ struct Controller::impl {
   uint16_t acl_buffers_ = 0;
   uint8_t sco_buffer_length_ = 0;
   uint16_t sco_buffers_ = 0;
-  common::Address mac_address_;
+  Address mac_address_;
 };  // namespace hci
 
 Controller::Controller() : impl_(std::make_unique<impl>(*this)) {}
@@ -140,7 +140,7 @@ uint16_t Controller::GetControllerNumScoPacketBuffers() {
   return impl_->sco_buffers_;
 }
 
-common::Address Controller::GetControllerMacAddress() {
+Address Controller::GetControllerMacAddress() {
   return impl_->mac_address_;
 }
 
