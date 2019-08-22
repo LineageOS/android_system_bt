@@ -16,7 +16,7 @@
  *
  ******************************************************************************/
 
-#include "address.h"
+#include "hci/address.h"
 
 #include <stdint.h>
 #include <algorithm>
@@ -24,7 +24,7 @@
 #include <vector>
 
 namespace bluetooth {
-namespace common {
+namespace hci {
 
 static_assert(sizeof(Address) == 6, "Address must be 6 bytes long!");
 
@@ -37,8 +37,8 @@ Address::Address(const uint8_t (&addr)[6]) {
 
 std::string Address::ToString() const {
   char buffer[] = "00:00:00:00:00:00";
-  std::snprintf(&buffer[0], sizeof(buffer),
-      "%02x:%02x:%02x:%02x:%02x:%02x", address[5], address[4], address[3], address[2], address[1], address[0]);
+  std::snprintf(&buffer[0], sizeof(buffer), "%02x:%02x:%02x:%02x:%02x:%02x", address[5], address[4], address[3],
+                address[2], address[1], address[0]);
   std::string str(buffer);
   return str;
 }
@@ -88,5 +88,5 @@ bool Address::IsValidAddress(const std::string& address) {
   return Address::FromString(address, tmp);
 }
 
-}  // namespace common
+}  // namespace hci
 }  // namespace bluetooth

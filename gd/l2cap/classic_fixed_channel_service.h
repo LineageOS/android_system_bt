@@ -16,8 +16,8 @@
  */
 #pragma once
 
-#include "common/address.h"
 #include "common/callback.h"
+#include "hci/address.h"
 #include "l2cap/cid.h"
 #include "os/handler.h"
 

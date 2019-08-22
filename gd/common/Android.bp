@@ -1,8 +1,6 @@
 filegroup {
     name: "BluetoothCommonSources",
     srcs: [
-        "address.cc",
-        "class_of_device.cc",
         "link_key.cc",
     ],
 }
@@ -10,9 +8,7 @@ filegroup {
 filegroup {
     name: "BluetoothCommonTestSources",
     srcs: [
-        "address_unittest.cc",
         "blocking_queue_unittest.cc",
-        "class_of_device_unittest.cc",
         "bidi_queue_unittest.cc",
         "observer_registry_test.cc",
         "link_key_unittest.cc",
