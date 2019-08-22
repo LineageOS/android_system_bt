@@ -107,6 +107,11 @@ class EventPacketBuilder : public HciPacketBuilder {
   static std::unique_ptr<EventPacketBuilder> CreateCommandCompleteReadLocalSupportedCommands(
       hci::Status status, const std::vector<uint8_t>& supported_commands);
 
+  // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.4.3
+  static std::unique_ptr<EventPacketBuilder>
+  CreateCommandCompleteReadLocalSupportedFeatures(hci::Status status,
+                                                  uint64_t supported_features);
+
   // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.4.4
   static std::unique_ptr<EventPacketBuilder> CreateCommandCompleteReadLocalExtendedFeatures(
       hci::Status status, uint8_t page_number, uint8_t maximum_page_number, uint64_t extended_lmp_features);
@@ -202,6 +207,10 @@ class EventPacketBuilder : public HciPacketBuilder {
   static std::unique_ptr<EventPacketBuilder> CreateExtendedInquiryResultEvent(
       const Address& bt_address, uint8_t page_scan_repetition_mode, ClassOfDevice class_of_device,
       uint16_t clock_offset, uint8_t rssi, const std::vector<uint8_t>& extended_inquiry_response);
+
+  // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.7.39
+  static std::unique_ptr<EventPacketBuilder>
+  CreateEncryptionKeyRefreshCompleteEvent(hci::Status status, uint16_t handle);
 
   // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.7.40
   static std::unique_ptr<EventPacketBuilder> CreateIoCapabilityRequestEvent(const Address& peer);

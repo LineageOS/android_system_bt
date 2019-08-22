@@ -16,30 +16,13 @@
 
 #pragma once
 
-#include "l2cap/cid.h"
-#include "l2cap/classic_fixed_channel.h"
-#include "os/handler.h"
-#include "os/log.h"
+#include <memory>
 
 namespace bluetooth {
 namespace l2cap {
 namespace internal {
 
-class ClassicFixedChannelImpl {
- public:
-  ClassicFixedChannelImpl(Cid cid, os::Handler* handler) : cid_(cid), handler_(handler) {
-    ASSERT_LOG(cid_ >= kFirstFixedChannel && cid_ <= kLastFixedChannel, "Invalid cid: %d", cid_);
-    ASSERT(handler_ != nullptr);
-  }
-
-  std::unique_ptr<ClassicFixedChannel> GetChannelInterface() {
-    return std::unique_ptr<ClassicFixedChannel>(new ClassicFixedChannel(handler_, this));
-  }
-
- private:
-  Cid cid_;
-  os::Handler* handler_;
-};
+class Scheduler {};
 
 }  // namespace internal
 }  // namespace l2cap

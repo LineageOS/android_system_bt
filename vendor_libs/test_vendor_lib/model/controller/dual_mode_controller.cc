@@ -150,6 +150,8 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   SET_HANDLER(OpCode::READ_LOCAL_VERSION_INFORMATION, HciReadLocalVersionInformation);
   SET_HANDLER(OpCode::READ_BD_ADDR, HciReadBdAddr);
   SET_HANDLER(OpCode::READ_LOCAL_SUPPORTED_COMMANDS, HciReadLocalSupportedCommands);
+  SET_HANDLER(OpCode::READ_LOCAL_SUPPORTED_FEATURES,
+              HciReadLocalSupportedFeatures);
   SET_HANDLER(OpCode::READ_LOCAL_SUPPORTED_CODECS, HciReadLocalSupportedCodecs);
   SET_HANDLER(OpCode::READ_LOCAL_EXTENDED_FEATURES, HciReadLocalExtendedFeatures);
   SET_HANDLER(OpCode::READ_REMOTE_EXTENDED_FEATURES, HciReadRemoteExtendedFeatures);
@@ -178,6 +180,7 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   SET_HANDLER(OpCode::WRITE_LOCAL_NAME, HciWriteLocalName);
   SET_HANDLER(OpCode::READ_LOCAL_NAME, HciReadLocalName);
   SET_HANDLER(OpCode::WRITE_EXTENDED_INQUIRY_RESPONSE, HciWriteExtendedInquiryResponse);
+  SET_HANDLER(OpCode::REFRESH_ENCRYPTION_KEY, HciRefreshEncryptionKey);
   SET_HANDLER(OpCode::WRITE_VOICE_SETTING, HciWriteVoiceSetting);
   SET_HANDLER(OpCode::WRITE_CURRENT_IAC_LAP, HciWriteCurrentIacLap);
   SET_HANDLER(OpCode::WRITE_INQUIRY_SCAN_ACTIVITY, HciWriteInquiryScanActivity);
@@ -363,6 +366,15 @@ void DualModeController::HciReadLocalSupportedCommands(packets::PacketView<true>
   std::shared_ptr<packets::EventPacketBuilder> command_complete =
       packets::EventPacketBuilder::CreateCommandCompleteReadLocalSupportedCommands(hci::Status::SUCCESS,
                                                                                    properties_.GetSupportedCommands());
+  send_event_(command_complete->ToVector());
+}
+
+void DualModeController::HciReadLocalSupportedFeatures(
+    packets::PacketView<true> args) {
+  CHECK(args.size() == 0) << __func__ << " size=" << args.size();
+  std::shared_ptr<packets::EventPacketBuilder> command_complete = packets::
+      EventPacketBuilder::CreateCommandCompleteReadLocalSupportedFeatures(
+          hci::Status::SUCCESS, properties_.GetSupportedFeatures());
   send_event_(command_complete->ToVector());
 }
 
@@ -651,6 +663,20 @@ void DualModeController::HciWriteExtendedInquiryResponse(packets::PacketView<tru
   LOG_WARN(LOG_TAG, "Write EIR Inquiry - Size = %d (%d)", static_cast<int>(properties_.GetExtendedInquiryData().size()),
            static_cast<int>(clipped.size()));
   SendCommandCompleteSuccess(OpCode::WRITE_EXTENDED_INQUIRY_RESPONSE);
+}
+
+void DualModeController::HciRefreshEncryptionKey(
+    packets::PacketView<true> args) {
+  CHECK(args.size() == 2) << __func__ << " size=" << args.size();
+  auto args_itr = args.begin();
+  uint16_t handle = args_itr.extract<uint16_t>();
+  SendCommandStatusSuccess(OpCode::REFRESH_ENCRYPTION_KEY);
+  // TODO: Support this in the link layer
+  hci::Status status = hci::Status::SUCCESS;
+  send_event_(
+      packets::EventPacketBuilder::CreateEncryptionKeyRefreshCompleteEvent(
+          status, handle)
+          ->ToVector());
 }
 
 void DualModeController::HciWriteVoiceSetting(packets::PacketView<true> args) {

@@ -18,6 +18,7 @@
 #include <string>
 
 #include "common/address.h"
+#include "hci/acl_manager.h"
 #include "l2cap/cid.h"
 #include "l2cap/classic_fixed_channel.h"
 #include "l2cap/classic_fixed_channel_service.h"
@@ -27,28 +28,47 @@
 namespace bluetooth {
 namespace l2cap {
 
+class L2capLayer;
+
 namespace internal {
+class ClassicLinkManager;
 class ClassicFixedChannelServiceManagerImpl;
-}
+}  // namespace internal
 
 class ClassicFixedChannelManager {
  public:
+  enum class ConnectionResultCode {
+    SUCCESS = 0,
+    FAIL_NO_SERVICE_REGISTERED = 1,      // No service is registered
+    FAIL_ALL_SERVICES_HAVE_CHANNEL = 2,  // All registered services already have a channel
+    FAIL_HCI_ERROR = 3,                  // See hci_error
+  };
+
+  struct ConnectionResult {
+    ConnectionResultCode connection_result_code = ConnectionResultCode::SUCCESS;
+    hci::ErrorCode hci_error = hci::ErrorCode::SUCCESS;
+  };
   /**
    * OnConnectionFailureCallback(std::string failure_reason);
    */
-  using OnConnectionFailureCallback = common::Callback<void(std::string)>;
+  using OnConnectionFailureCallback = common::OnceCallback<void(ConnectionResult result)>;
 
   /**
    * OnConnectionOpenCallback(ClassicFixedChannel channel);
    */
-  using OnConnectionOpenCallback = common::Callback<void(ClassicFixedChannel)>;
+  using OnConnectionOpenCallback = common::Callback<void(std::unique_ptr<ClassicFixedChannel>)>;
 
-  enum class RegistrationResult { SUCCESS, FAIL };
+  enum class RegistrationResult {
+    SUCCESS = 0,
+    FAIL_DUPLICATE_SERVICE = 1,  // Duplicate service registration for the same CID
+    FAIL_INVALID_SERVICE = 2,    // Invalid CID
+  };
 
   /**
    * OnRegistrationFailureCallback(RegistrationResult result, ClassicFixedChannelService service);
    */
-  using OnRegistrationCompleteCallback = common::OnceCallback<void(RegistrationResult, ClassicFixedChannelService)>;
+  using OnRegistrationCompleteCallback =
+      common::OnceCallback<void(RegistrationResult, std::unique_ptr<ClassicFixedChannelService>)>;
 
   /**
    * Connect to ALL fixed channels on a remote device
@@ -59,9 +79,12 @@ class ClassicFixedChannelManager {
    *   RegisterService() API.
    * - If an ACL connection does not exist, this method will create an ACL connection. As a result, on_open_callback
    *   supplied through RegisterService() will be triggered to provide the actual ClassicFixedChannel objects
+   * - If HCI connection failed, on_fail_callback will be triggered with FAIL_HCI_ERROR
    * - If fixed channel on a remote device is already reported as connected via on_open_callback and has been acquired
    *   via ClassicFixedChannel#Acquire() API, it won't be reported again
-   * - If no service is registered, this call is a no-op and on on_fail_callback will be triggered
+   * - If no service is registered, on_fail_callback will be triggered with FAIL_NO_SERVICE_REGISTERED
+   * - If there is an ACL connection and channels for each service is allocated, on_fail_callback will be triggered with
+   *   FAIL_ALL_SERVICES_HAVE_CHANNEL
    *
    * NOTE:
    * This call will initiate an effort to connect all fixed channel services on a remote device.
@@ -87,10 +110,11 @@ class ClassicFixedChannelManager {
    * - When false is returned, the registration fails immediately.
    * - When true is returned, method caller should wait for on_service_registered callback that contains a
    *   ClassicFixedChannelService object. The registered service can be managed from that object.
-   * - If a CID is already registered or some other error happens,
+   * - If a CID is already registered or some other error happens, on_registration_complete will be triggered with a
+   *   non-SUCCESS value
    * - After a service is registered, any classic ACL connection will create a ClassicFixedChannel object that is
    *   delivered through on_open_callback
-   * - on_open_callback, if any, must be triggered after on_service_registered callback
+   * - on_open_callback, will only be triggered after on_service_registered callback
    *
    * @param cid: Classic cid used to receive incoming connections
    * @param security_policy: The security policy used for the connection.
@@ -103,13 +127,17 @@ class ClassicFixedChannelManager {
                        OnRegistrationCompleteCallback on_registration_complete,
                        OnConnectionOpenCallback on_connection_open, os::Handler* handler);
 
-  // The constructor is not to be used by user code
-  ClassicFixedChannelManager(internal::ClassicFixedChannelServiceManagerImpl* manager, os::Handler* l2cap_layer_handler)
-      : manager_(manager), l2cap_layer_handler_(l2cap_layer_handler) {}
+  friend class L2capLayer;
 
  private:
-  internal::ClassicFixedChannelServiceManagerImpl* manager_ = nullptr;
+  // The constructor is not to be used by user code
+  ClassicFixedChannelManager(internal::ClassicFixedChannelServiceManagerImpl* service_manager,
+                             internal::ClassicLinkManager* link_manager, os::Handler* l2cap_layer_handler)
+      : service_manager_(service_manager), link_manager_(link_manager), l2cap_layer_handler_(l2cap_layer_handler) {}
+  internal::ClassicFixedChannelServiceManagerImpl* service_manager_ = nullptr;
+  internal::ClassicLinkManager* link_manager_ = nullptr;
   os::Handler* l2cap_layer_handler_ = nullptr;
+  DISALLOW_COPY_AND_ASSIGN(ClassicFixedChannelManager);
 };
 
 }  // namespace l2cap
