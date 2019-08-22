@@ -16,9 +16,9 @@
 #include <cstdint>
 #include <unordered_map>
 
-#include "common/address.h"
 #include "common/bind.h"
 #include "grpc/grpc_event_stream.h"
+#include "hci/address.h"
 #include "l2cap/facade.grpc.pb.h"
 #include "l2cap/facade.h"
 #include "l2cap/l2cap_layer.h"

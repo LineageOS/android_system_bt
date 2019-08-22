@@ -20,8 +20,8 @@
 
 #include "os/log.h"
 
+using bluetooth::hci::Address;
 using std::vector;
-using bluetooth::common::Address;
 
 namespace bluetooth {
 namespace packet {
