@@ -1936,7 +1936,11 @@ packet LeEncrypt : LeSecurityCommand (op_code = LE_ENCRYPT) {
 }
 
 packet LeRand : LeSecurityCommand (op_code = LE_RAND) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet LeRandComplete : CommandComplete (command_op_code = LE_RAND) {
+  status : ErrorCode,
+  random_number : 64,
 }
 
 packet LeStartEncryption : LeSecurityCommand (op_code = LE_START_ENCRYPTION) {
