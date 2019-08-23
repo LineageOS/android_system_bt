@@ -58,8 +58,8 @@ packet ScoPacket {
   handle : 12,
   packet_status_flag : PacketStatusFlag,
   _reserved_ : 2, // BroadcastFlag
-  _size_(_payload_) : 8,
-  _payload_,
+  _size_(data) : 8,
+  data : 8[],
 }
 
 // HCI Command Packets
@@ -1035,10 +1035,14 @@ packet ReadStoredLinkKeyComplete : CommandComplete (command_op_code = READ_STORE
   num_keys_read : 16,
 }
 
-packet WriteStoredLinkKey : SecurityCommand (op_code = WRITE_STORED_LINK_KEY) {
-  num_keys_to_write : 8,
-  bd_addr : Address,
+struct KeyAndAddress {
+  address : Address,
   link_key : 8[16],
+}
+
+packet WriteStoredLinkKey : SecurityCommand (op_code = WRITE_STORED_LINK_KEY) {
+  _count_(keys_to_write) : 8, // 0x01-0x0B
+  keys_to_write : KeyAndAddress[],
 }
 
 packet WriteStoredLinkKeyComplete : CommandComplete (command_op_code = WRITE_STORED_LINK_KEY) {
@@ -1062,7 +1066,7 @@ packet DeleteStoredLinkKeyComplete : CommandComplete (command_op_code = DELETE_S
 }
 
 packet WriteLocalName : CommandPacket (op_code = WRITE_LOCAL_NAME) {
-  _payload_,
+  local_name : 8[248], // Null-terminated UTF-8 encoded name
 }
 
 packet WriteLocalNameComplete : CommandComplete (command_op_code = WRITE_LOCAL_NAME) {
@@ -1074,7 +1078,7 @@ packet ReadLocalName : CommandPacket (op_code = READ_LOCAL_NAME) {
 
 packet ReadLocalNameComplete : CommandComplete (command_op_code = READ_LOCAL_NAME) {
   status : ErrorCode,
-  _payload_,
+  local_name : 8[248], // Null-terminated UTF-8 encoded name
 }
 
 packet ReadConnectionAcceptTimeout : ConnectionManagementCommand (op_code = READ_CONNECTION_ACCEPT_TIMEOUT) {
@@ -1238,8 +1242,15 @@ packet HostBufferSizeComplete : CommandComplete (command_op_code = HOST_BUFFER_S
   status : ErrorCode,
 }
 
+struct CompletedPackets {
+  connection_handle : 12,
+  _reserved_ : 4,
+  host_num_of_completed_packets : 16,
+}
+
 packet HostNumCompletedPackets : CommandPacket (op_code = HOST_NUM_COMPLETED_PACKETS) {
-  _payload_,
+  _count_(completed_packets) : 8,
+  completed_packets : CompletedPackets[],
 }
 
 packet HostNumCompletedPacketsError : CommandComplete (command_op_code = HOST_NUM_COMPLETED_PACKETS) {
@@ -1410,10 +1421,8 @@ packet ReadLocalOobData : SecurityCommand (op_code = READ_LOCAL_OOB_DATA) {
 
 packet ReadLocalOobDataComplete : CommandComplete (command_op_code = READ_LOCAL_OOB_DATA) {
   status : ErrorCode,
-  clo : 64,
-  chi : 64,
-  rlo : 64,
-  rhi : 64,
+  c : 8[16],
+  r : 8[16],
 }
 
 packet ReadInquiryResponseTransmitPowerLevel : DiscoveryCommand (op_code = READ_INQUIRY_RESPONSE_TRANSMIT_POWER_LEVEL) {
@@ -1493,14 +1502,10 @@ packet ReadLocalOobExtendedData : SecurityCommand (op_code = READ_LOCAL_OOB_EXTE
 
 packet ReadLocalOobExtendedDataComplete : CommandComplete (command_op_code = READ_LOCAL_OOB_EXTENDED_DATA) {
   status : ErrorCode,
-  c_192_lo : 64,
-  c_192_hi : 64,
-  r_192_lo : 64,
-  r_192_hi : 64,
-  c_256_lo : 64,
-  c_256_hi : 64,
-  r_256_lo : 64,
-  r_256_hi : 64,
+  c_192 : 8[16],
+  r_192 : 8[16],
+  c_256 : 8[16],
+  r_256 : 8[16],
 }
 
 
@@ -2248,7 +2253,7 @@ packet AuthenticationComplete : EventPacket (event_code = AUTHENTICATION_COMPLET
 packet RemoteNameRequestComplete : EventPacket (event_code = REMOTE_NAME_REQUEST_COMPLETE){
   status : ErrorCode,
   bd_addr : Address,
-  _payload_,
+  remote_name : 8[248], // UTF-8 encoded user-friendly descriptive name
 }
 
 enum EncryptionEnabled : 8 {
@@ -2334,8 +2339,8 @@ packet RoleChange : EventPacket (event_code = ROLE_CHANGE){
 }
 
 packet NumberOfCompletedPackets : EventPacket (event_code = NUMBER_OF_COMPLETED_PACKETS){
-  _count_(handles_and_completed_packets) : 8,
-  handles_and_completed_packets : 32[], // connection_handle[i] : 12, _reserved_[i] : 4, hc_num_of_completed_packets[i] : 16
+  _count_(completed_packets) : 8,
+  completed_packets : CompletedPackets[],
 }
 
 enum Mode : 8 {
@@ -2605,12 +2610,12 @@ packet LeDataLengthChange : LeMetaEvent (subevent_code = DATA_LENGTH_CHANGE) {
 
 packet ReadLocalP256PublicKeyComplete : LeMetaEvent (subevent_code = READ_LOCAL_P256_PUBLIC_KEY_COMPLETE) {
   status : ErrorCode,
-  _payload_,
+  local_p_256_public_key : 8[64],
 }
 
 packet GenerateDhKeyComplete : LeMetaEvent (subevent_code = GENERATE_DHKEY_COMPLETE) {
   status : ErrorCode,
-  _payload_,
+  dh_key : 8[32],
 }
 
 packet LeEnhancedConnectionComplete : LeMetaEvent (subevent_code = ENHANCED_CONNECTION_COMPLETE) {
@@ -2644,8 +2649,18 @@ enum DirectAddressType : 8 {
   RANDOM_DEVICE_ADDRESS = 0x01,
 }
 
+struct LeDirectedAdvertisingReport {
+  event_type : DirectAdvertisingEventType,
+  address_type : DirectAdvertisingAddressType,
+  address : Address,
+  direct_address_type : DirectAddressType,
+  direct_address : Address,
+  rssi : 8,
+}
+
 packet LeDirectedAdvertisingReport : LeMetaEvent (subevent_code = DIRECTED_ADVERTISING_REPORT) {
-  _payload_, // placeholder (unimplemented)
+  _count_(le_directed_advertising_reports) : 8,
+  le_directed_advertising_reports : LeDirectedAdvertisingReport[],
 }
 
 packet LePhyUpdateComplete : LeMetaEvent (subevent_code = PHY_UPDATE_COMPLETE) {

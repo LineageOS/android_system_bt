@@ -51,7 +51,7 @@ class ClassicSecurityManager : public Module {
   void RemoteOobDataRequestReply(Address address, std::array<uint8_t, 16> c, std::array<uint8_t, 16> r);
   void RemoteOobDataRequestNegativeReply(Address address);
   void ReadStoredLinkKey(Address address, ReadStoredLinkKeyReadAllFlag read_all_flag);
-  void WriteStoredLinkKey(uint8_t num_keys_to_write, Address address, common::LinkKey link_key);
+  void WriteStoredLinkKey(std::vector<KeyAndAddress> keys);
   void DeleteStoredLinkKey(Address address, DeleteStoredLinkKeyDeleteAllFlag delete_all_flag);
   void RefreshEncryptionKey(uint16_t connection_handle);
   void ReadSimplePairingMode();

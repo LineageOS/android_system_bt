@@ -160,13 +160,8 @@ struct ClassicSecurityManager::impl {
                                common::BindOnce(&impl::on_command_complete, common::Unretained(this)), handler_);
   }
 
-  void write_stored_link_key(uint8_t num_keys_to_write, Address address, common::LinkKey link_key) {
-    // TODO send multi link key
-    std::array<uint8_t, 16> link_key_array;
-    std::copy(std::begin(link_key.link_key), std::end(link_key.link_key), std::begin(link_key_array));
-
-    std::unique_ptr<WriteStoredLinkKeyBuilder> packet =
-        WriteStoredLinkKeyBuilder::Create(num_keys_to_write, address, link_key_array);
+  void write_stored_link_key(std::vector<KeyAndAddress> keys) {
+    std::unique_ptr<WriteStoredLinkKeyBuilder> packet = WriteStoredLinkKeyBuilder::Create(keys);
     hci_layer_->EnqueueCommand(std::move(packet),
                                common::BindOnce(&impl::on_command_complete, common::Unretained(this)), handler_);
   }
@@ -330,9 +325,8 @@ void ClassicSecurityManager::ReadStoredLinkKey(Address address, ReadStoredLinkKe
   GetHandler()->Post(BindOnce(&impl::read_stored_link_key, common::Unretained(pimpl_.get()), address, read_all_flag));
 }
 
-void ClassicSecurityManager::WriteStoredLinkKey(uint8_t num_keys_to_write, Address address, common::LinkKey link_key) {
-  GetHandler()->Post(
-      BindOnce(&impl::write_stored_link_key, common::Unretained(pimpl_.get()), num_keys_to_write, address, link_key));
+void ClassicSecurityManager::WriteStoredLinkKey(std::vector<KeyAndAddress> keys) {
+  GetHandler()->Post(BindOnce(&impl::write_stored_link_key, common::Unretained(pimpl_.get()), keys));
 }
 
 void ClassicSecurityManager::DeleteStoredLinkKey(Address address, DeleteStoredLinkKeyDeleteAllFlag delete_all_flag) {
