@@ -66,9 +66,9 @@ struct Controller::impl {
     ASSERT(acl_credits_handler_ != nullptr);
     auto complete_view = NumberOfCompletedPacketsView::Create(event);
     ASSERT(complete_view.IsValid());
-    for (auto completed_packets : complete_view.GetHandlesAndCompletedPackets()) {
-      uint16_t handle = completed_packets & 0x0fff;
-      uint16_t credits = (completed_packets & 0xffff0000) >> 16;
+    for (auto completed_packets : complete_view.GetCompletedPackets()) {
+      uint16_t handle = completed_packets.connection_handle_;
+      uint16_t credits = completed_packets.host_num_of_completed_packets_;
       acl_credits_handler_->Post(Bind(acl_credits_callback_, handle, credits));
     }
   }
