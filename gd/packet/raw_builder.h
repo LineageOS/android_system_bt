@@ -30,6 +30,7 @@ class RawBuilder : public PacketBuilder<true> {
  public:
   RawBuilder() = default;
   RawBuilder(size_t max_bytes);
+  RawBuilder(std::vector<uint8_t> vec);
   virtual ~RawBuilder() = default;
 
   virtual size_t size() const override;

@@ -1570,6 +1570,13 @@ packet ReadLocalExtendedFeatures : CommandPacket (op_code = READ_LOCAL_EXTENDED_
   page_number : 8,
 }
 
+packet ReadLocalExtendedFeaturesComplete : CommandComplete (command_op_code = READ_LOCAL_EXTENDED_FEATURES) {
+  status : ErrorCode,
+  page_number : 8,
+  maximum_page_number : 8,
+  extended_lmp_features : 64,
+}
+
 packet ReadBufferSize : CommandPacket (op_code = READ_BUFFER_SIZE) {
 }
 
