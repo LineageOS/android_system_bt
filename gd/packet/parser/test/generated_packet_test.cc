@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 
+#define PACKET_TESTING
 #include "packet/parser/test/test_packets.h"
 
 #include <gtest/gtest.h>
@@ -1136,6 +1137,30 @@ TEST(GeneratedPacketTest, testBitFieldArrayPacket) {
   }
 }
 
+TEST(GeneratedPacketTest, testNewBitFieldArrayPacket) {
+  PacketView<kLittleEndian> packet_bytes_view(std::make_shared<std::vector<uint8_t>>(bit_field_array_packet));
+  auto view = BitFieldArrayPacketView::Create(packet_bytes_view);
+  ASSERT_TRUE(view.IsValid());
+
+  auto packet = BitFieldArrayPacketBuilder::Create(view.GetArray());
+  ASSERT_EQ(bit_field_array_packet.size(), packet->size());
+
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  BitInserter it(*packet_bytes);
+  packet->Serialize(it);
+
+  ASSERT_EQ(*packet_bytes, bit_field_array_packet);
+}
+
+std::vector<uint8_t> child_two_two_two_ = {0x20, 0x02};
+std::vector<uint8_t> child_two_two_three_ = {0x20, 0x03};
+std::vector<uint8_t> child_two_two_four_ = {0x20, 0x04};
+
+DEFINE_AND_INSTANTIATE_ParentTwoReflectionTest(child_two_two_two_, child_two_two_three_, child_two_two_four_);
+
+DEFINE_AND_INSTANTIATE_ChildTwoTwoReflectionTest(child_two_two_two_, child_two_two_three_, child_two_two_four_);
+
+DEFINE_AND_INSTANTIATE_ChildTwoTwoThreeReflectionTest(child_two_two_three_);
 }  // namespace parser
 }  // namespace packet
 }  // namespace bluetooth

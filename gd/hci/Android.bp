@@ -25,6 +25,7 @@ filegroup {
         "device_database_test.cc",
         "dual_device_test.cc",
         "hci_layer_test.cc",
+        "hci_packets_test.cc",
     ],
 }
 
