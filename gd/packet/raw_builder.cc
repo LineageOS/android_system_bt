@@ -27,6 +27,7 @@ namespace bluetooth {
 namespace packet {
 
 RawBuilder::RawBuilder(size_t max_bytes) : max_bytes_(max_bytes) {}
+RawBuilder::RawBuilder(std::vector<uint8_t> vec) : max_bytes_(vec.size()), payload_(vec) {}
 
 bool RawBuilder::AddOctets(size_t octets, const vector<uint8_t>& bytes) {
   if (payload_.size() + octets > max_bytes_) return false;
