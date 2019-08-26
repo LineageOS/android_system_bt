@@ -83,10 +83,6 @@ cc_defaults {
             clang_cflags: [
                 "-fprofile-instr-generate",
                 "-fcoverage-mapping",
-
-                // New pass manager does not work with -fprofile-instr-generate yet.
-                // http://b/131132095
-                "-fno-experimental-new-pass-manager",
             ],
         },
     },
@@ -105,10 +101,6 @@ cc_defaults {
             ldflags: [
                 "-fprofile-instr-generate",
                 "-fcoverage-mapping",
-
-                // New pass manager does not work with -fprofile-instr-generate yet.
-                // http://b/131132095
-                "-fno-experimental-new-pass-manager",
             ],
         },
     },
