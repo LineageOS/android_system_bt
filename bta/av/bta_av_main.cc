@@ -243,9 +243,7 @@ static void bta_av_api_enable(tBTA_AV_DATA* p_data) {
   enable.features = bta_av_cb.features;
 
   /* Register for SCO change event */
-  if (!(bta_av_cb.features & BTA_AV_FEAT_NO_SCO_SSPD)) {
-    bta_sys_sco_register(bta_av_sco_chg_cback);
-  }
+  bta_sys_sco_register(bta_av_sco_chg_cback);
 
   /* call callback with enable event */
   tBTA_AV bta_av_data;
@@ -986,16 +984,20 @@ static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
   int i;
   tBTA_AV_API_STOP stop;
 
-  APPL_TRACE_DEBUG("%s: id:%d status:%d", __func__, id, status);
+  LOG(INFO) << __func__ << ": status=" << +status << ", num_links=" << +id;
   if (id) {
     bta_av_cb.sco_occupied = true;
+
+    if (bta_av_cb.features & BTA_AV_FEAT_NO_SCO_SSPD) {
+      return;
+    }
 
     /* either BTA_SYS_SCO_OPEN or BTA_SYS_SCO_CLOSE with remaining active SCO */
     for (i = 0; i < BTA_AV_NUM_STRS; i++) {
       p_scb = bta_av_cb.p_scb[i];
 
       if (p_scb && p_scb->co_started && (!p_scb->sco_suspend)) {
-        APPL_TRACE_DEBUG("%s: suspending scb:%d", __func__, i);
+        VLOG(1) << __func__ << ": suspending scb:" << i;
         /* scb is used and started, not suspended automatically */
         p_scb->sco_suspend = true;
         stop.flush = false;
@@ -1007,12 +1009,16 @@ static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
   } else {
     bta_av_cb.sco_occupied = false;
 
+    if (bta_av_cb.features & BTA_AV_FEAT_NO_SCO_SSPD) {
+      return;
+    }
+
     for (i = 0; i < BTA_AV_NUM_STRS; i++) {
       p_scb = bta_av_cb.p_scb[i];
 
       if (p_scb && p_scb->sco_suspend) /* scb is used and suspended for SCO */
       {
-        APPL_TRACE_DEBUG("%s: starting scb:%d", __func__, i);
+        VLOG(1) << __func__ << ": starting scb:" << i;
         bta_av_ssm_execute(p_scb, BTA_AV_AP_START_EVT, NULL);
       }
     }
