@@ -34,6 +34,18 @@ class Controller : public Module {
   virtual void RegisterCompletedAclPacketsCallback(
       common::Callback<void(uint16_t /* handle */, uint16_t /* num_packets */)> cb, os::Handler* handler);
 
+  virtual std::string GetControllerLocalName();
+
+  virtual LocalVersionInformation GetControllerLocalVersionInformation();
+
+  virtual std::array<uint8_t, 64> GetControllerLocalSupportedCommands();
+
+  virtual uint64_t GetControllerLocalSupportedFeatures();
+
+  virtual uint8_t GetControllerLocalExtendedFeaturesMaxPageNumber();
+
+  virtual uint64_t GetControllerLocalExtendedFeatures(uint8_t page_number);
+
   virtual uint16_t GetControllerAclPacketLength();
 
   virtual uint16_t GetControllerNumAclPacketBuffers();
@@ -43,6 +55,50 @@ class Controller : public Module {
   virtual uint16_t GetControllerNumScoPacketBuffers();
 
   virtual Address GetControllerMacAddress();
+
+  virtual void SetEventMask(uint64_t event_mask);
+
+  virtual void Reset();
+
+  virtual void SetEventFilterClearAll();
+
+  virtual void SetEventFilterInquiryResultAllDevices();
+
+  virtual void SetEventFilterInquiryResultClassOfDevice(ClassOfDevice class_of_device,
+                                                        ClassOfDevice class_of_device_mask);
+
+  virtual void SetEventFilterInquiryResultAddress(Address address);
+
+  virtual void SetEventFilterConnectionSetupAllDevices(AutoAcceptFlag auto_accept_flag);
+
+  virtual void SetEventFilterConnectionSetupClassOfDevice(ClassOfDevice class_of_device,
+                                                          ClassOfDevice class_of_device_mask,
+                                                          AutoAcceptFlag auto_accept_flag);
+
+  virtual void SetEventFilterConnectionSetupAddress(Address address, AutoAcceptFlag auto_accept_flag);
+
+  virtual void WriteLocalName(std::string local_name);
+
+  virtual void HostBufferSize(uint16_t host_acl_data_packet_length, uint8_t host_synchronous_data_packet_length,
+                              uint16_t host_total_num_acl_data_packets,
+                              uint16_t host_total_num_synchronous_data_packets);
+
+  // LE controller commands
+  virtual void LeSetEventMask(uint64_t le_event_mask);
+
+  LeBufferSize GetControllerLeBufferSize();
+
+  uint64_t GetControllerLeLocalSupportedFeatures();
+
+  uint64_t GetControllerLeSupportedStates();
+
+  LeMaximumDataLength GetControllerLeMaximumDataLength();
+
+  uint16_t GetControllerLeMaximumAdvertisingDataLength();
+
+  uint16_t GetControllerLeNumberOfSupportedAdverisingSets();
+
+  bool IsSupport(OpCode op_code);
 
   static const ModuleFactory Factory;
 
