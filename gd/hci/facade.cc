@@ -123,6 +123,58 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public ::bluet
     return acl_stream_.HandleRequest(context, request, writer);
   }
 
+  ::grpc::Status TestInternalHciCommands(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
+                                         ::google::protobuf::Empty* response) {
+    LocalVersionInformation local_version_information = controller_->GetControllerLocalVersionInformation();
+    LOG_DEBUG("local name : %s", controller_->GetControllerLocalName().c_str());
+    controller_->WriteLocalName("Device Under Test");
+    LOG_DEBUG("new local name : %s", controller_->GetControllerLocalName().c_str());
+    LOG_DEBUG("manufacturer name : %d", local_version_information.manufacturer_name_);
+    LOG_DEBUG("hci version : %x", (uint16_t)local_version_information.hci_version_);
+    LOG_DEBUG("lmp version : %x", (uint16_t)local_version_information.lmp_version_);
+    LOG_DEBUG("supported commands : %x", controller_->GetControllerLocalSupportedCommands()[0]);
+    LOG_DEBUG("supported features : %lx", controller_->GetControllerLocalSupportedFeatures());
+    LOG_DEBUG("local extended features :");
+    for (int i = 0; i <= controller_->GetControllerLocalExtendedFeaturesMaxPageNumber() + 1; i++) {
+      LOG_DEBUG("page %d, %lx", i, controller_->GetControllerLocalExtendedFeatures(i));
+    }
+
+    controller_->SetEventMask(0x00001FFFFFFFFFFF);
+    controller_->SetEventFilterInquiryResultAllDevices();
+    ClassOfDevice class_of_device({0xab, 0xcd, 0xef});
+    ClassOfDevice class_of_device_mask({0x12, 0x34, 0x56});
+    controller_->SetEventFilterInquiryResultClassOfDevice(class_of_device, class_of_device_mask);
+    Address bdaddr({0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc});
+    controller_->SetEventFilterInquiryResultAddress(bdaddr);
+    controller_->SetEventFilterConnectionSetupAllDevices(AutoAcceptFlag::AUTO_ACCEPT_OFF);
+    controller_->SetEventFilterConnectionSetupClassOfDevice(class_of_device, class_of_device_mask,
+                                                            AutoAcceptFlag::AUTO_ACCEPT_ON_ROLE_SWITCH_DISABLED);
+    controller_->SetEventFilterConnectionSetupAddress(bdaddr, AutoAcceptFlag::AUTO_ACCEPT_ON_ROLE_SWITCH_ENABLED);
+    controller_->SetEventFilterClearAll();
+    controller_->HostBufferSize(0xFF00, 0xF1, 0xFF02, 0xFF03);
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status TestInternalHciLeCommands(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
+                                           ::google::protobuf::Empty* response) {
+    LOG_DEBUG("le data packet length : %d", controller_->GetControllerLeBufferSize().le_data_packet_length_);
+    LOG_DEBUG("total num le packets : %d", controller_->GetControllerLeBufferSize().total_num_le_packets_);
+    LOG_DEBUG("le local supported features : %lx", controller_->GetControllerLeLocalSupportedFeatures());
+    LOG_DEBUG("le supported states : %lx", controller_->GetControllerLeSupportedStates());
+    LOG_DEBUG("le supported max tx octets : %d",
+              controller_->GetControllerLeMaximumDataLength().supported_max_tx_octets_);
+    LOG_DEBUG("le supported max tx times : %d", controller_->GetControllerLeMaximumDataLength().supported_max_tx_time_);
+    LOG_DEBUG("le supported max rx octets : %d",
+              controller_->GetControllerLeMaximumDataLength().supported_max_rx_octets_);
+    LOG_DEBUG("le supported max rx times : %d", controller_->GetControllerLeMaximumDataLength().supported_max_rx_time_);
+    LOG_DEBUG("le maximum advertising data length %d", controller_->GetControllerLeMaximumAdvertisingDataLength());
+    LOG_DEBUG("le number of supported advertising sets %d",
+              controller_->GetControllerLeNumberOfSupportedAdverisingSets());
+
+    controller_->LeSetEventMask(0x000000000000001F);
+    return ::grpc::Status::OK;
+  }
+
   void on_incoming_acl(std::string address) {
     auto connection = acl_connections_.find(address);
     if (connection == acl_connections_.end()) {

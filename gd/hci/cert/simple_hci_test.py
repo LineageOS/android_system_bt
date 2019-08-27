@@ -336,3 +336,9 @@ class SimpleHciTest(GdBaseTestClass):
 
         self.dut_command_complete_stream.unsubscribe()
         self._disconnect_from_dut()
+
+    def test_interal_hci_command(self):
+        self._connect_from_dut()
+        self.device_under_test.hci.TestInternalHciCommands(empty_pb2.Empty())
+        self.device_under_test.hci.TestInternalHciLeCommands(empty_pb2.Empty())
+        self._disconnect_from_dut()

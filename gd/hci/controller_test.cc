@@ -75,6 +75,45 @@ class TestHciLayer : public HciLayer {
     uint8_t num_packets = 1;
     std::unique_ptr<packet::BasePacketBuilder> event_builder;
     switch (command.GetOpCode()) {
+      case (OpCode::READ_LOCAL_NAME): {
+        std::array<uint8_t, 248> local_name = {'D', 'U', 'T', '\0'};
+        event_builder = ReadLocalNameCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, local_name);
+      } break;
+      case (OpCode::READ_LOCAL_VERSION_INFORMATION): {
+        LocalVersionInformation local_version_information;
+        local_version_information.hci_version_ = HciVersion::V_5_0;
+        local_version_information.hci_revision_ = 0x1234;
+        local_version_information.lmp_version_ = LmpVersion::V_4_2;
+        local_version_information.manufacturer_name_ = 0xBAD;
+        local_version_information.lmp_subversion_ = 0x5678;
+        event_builder = ReadLocalVersionInformationCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS,
+                                                                           local_version_information);
+      } break;
+      case (OpCode::READ_LOCAL_SUPPORTED_COMMANDS): {
+        std::array<uint8_t, 64> supported_commands;
+        for (int i = 0; i < 37; i++) {
+          supported_commands[i] = 0xff;
+        }
+        for (int i = 37; i < 64; i++) {
+          supported_commands[i] = 0x00;
+        }
+        event_builder =
+            ReadLocalSupportedCommandsCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, supported_commands);
+      } break;
+      case (OpCode::READ_LOCAL_SUPPORTED_FEATURES): {
+        uint64_t lmp_features = 0x012345678abcdef;
+        event_builder =
+            ReadLocalSupportedFeaturesCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, lmp_features);
+      } break;
+      case (OpCode::READ_LOCAL_EXTENDED_FEATURES): {
+        ReadLocalExtendedFeaturesView read_command = ReadLocalExtendedFeaturesView::Create(command);
+        ASSERT(read_command.IsValid());
+        uint8_t page_bumber = read_command.GetPageNumber();
+        uint64_t lmp_features = 0x012345678abcdef;
+        lmp_features += page_bumber;
+        event_builder = ReadLocalExtendedFeaturesCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, page_bumber,
+                                                                         0x02, lmp_features);
+      } break;
       case (OpCode::READ_BUFFER_SIZE): {
         event_builder = ReadBufferSizeCompleteBuilder::Create(
             num_packets, ErrorCode::SUCCESS, acl_data_packet_length, synchronous_data_packet_length,
@@ -83,6 +122,45 @@ class TestHciLayer : public HciLayer {
       case (OpCode::READ_BD_ADDR): {
         event_builder = ReadBdAddrCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, Address::kAny);
       } break;
+      case (OpCode::LE_READ_BUFFER_SIZE): {
+        LeBufferSize le_buffer_size;
+        le_buffer_size.le_data_packet_length_ = 0x16;
+        le_buffer_size.total_num_le_packets_ = 0x08;
+        event_builder = LeReadBufferSizeCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, le_buffer_size);
+      } break;
+      case (OpCode::LE_READ_LOCAL_SUPPORTED_FEATURES): {
+        event_builder =
+            LeReadLocalSupportedFeaturesCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, 0x001f123456789abc);
+      } break;
+      case (OpCode::LE_READ_SUPPORTED_STATES): {
+        event_builder =
+            LeReadSupportedStatesCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, 0x001f123456789abe);
+      } break;
+      case (OpCode::LE_READ_MAXIMUM_DATA_LENGTH): {
+        LeMaximumDataLength le_maximum_data_length;
+        le_maximum_data_length.supported_max_tx_octets_ = 0x12;
+        le_maximum_data_length.supported_max_tx_time_ = 0x34;
+        le_maximum_data_length.supported_max_rx_octets_ = 0x56;
+        le_maximum_data_length.supported_max_rx_time_ = 0x78;
+        event_builder =
+            LeReadMaximumDataLengthCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, le_maximum_data_length);
+      } break;
+      case (OpCode::LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH): {
+        event_builder =
+            LeReadMaximumAdvertisingDataLengthCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, 0x0672);
+      } break;
+      case (OpCode::LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS): {
+        event_builder =
+            LeReadNumberOfSupportedAdvertisingSetsCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, 0xF0);
+      } break;
+      case (OpCode::SET_EVENT_MASK):
+      case (OpCode::RESET):
+      case (OpCode::SET_EVENT_FILTER):
+      case (OpCode::HOST_BUFFER_SIZE):
+      case (OpCode::LE_SET_EVENT_MASK):
+        command_queue_.push(command);
+        not_empty_.notify_all();
+        return;
       default:
         LOG_INFO("Dropping unhandled packet");
         return;
@@ -124,6 +202,23 @@ class TestHciLayer : public HciLayer {
     client_handler_->Post(common::BindOnce(number_of_completed_packets_callback_, event));
   }
 
+  CommandPacketView GetCommand(OpCode op_code) {
+    std::unique_lock<std::mutex> lock(mutex_);
+    std::chrono::milliseconds time = std::chrono::milliseconds(3000);
+
+    // wait for command
+    while (command_queue_.size() == 0) {
+      if (not_empty_.wait_for(lock, time) == std::cv_status::timeout) {
+        break;
+      }
+    }
+    ASSERT(command_queue_.size() > 0);
+    CommandPacketView command = command_queue_.front();
+    EXPECT_EQ(command.GetOpCode(), op_code);
+    command_queue_.pop();
+    return command;
+  }
+
   void ListDependencies(ModuleList* list) override {}
   void Start() override {}
   void Stop() override {}
@@ -136,6 +231,9 @@ class TestHciLayer : public HciLayer {
  private:
   common::Callback<void(EventPacketView)> number_of_completed_packets_callback_;
   os::Handler* client_handler_;
+  std::queue<CommandPacketView> command_queue_;
+  mutable std::mutex mutex_;
+  std::condition_variable not_empty_;
 };
 
 class ControllerTest : public ::testing::Test {
@@ -168,6 +266,111 @@ TEST_F(ControllerTest, read_controller_info) {
   ASSERT_EQ(controller_->GetControllerScoPacketLength(), test_hci_layer_->synchronous_data_packet_length);
   ASSERT_EQ(controller_->GetControllerNumScoPacketBuffers(), test_hci_layer_->total_num_synchronous_data_packets);
   ASSERT_EQ(controller_->GetControllerMacAddress(), Address::kAny);
+  LocalVersionInformation local_version_information = controller_->GetControllerLocalVersionInformation();
+  ASSERT_EQ(local_version_information.hci_version_, HciVersion::V_5_0);
+  ASSERT_EQ(local_version_information.hci_revision_, 0x1234);
+  ASSERT_EQ(local_version_information.lmp_version_, LmpVersion::V_4_2);
+  ASSERT_EQ(local_version_information.manufacturer_name_, 0xBAD);
+  ASSERT_EQ(local_version_information.lmp_subversion_, 0x5678);
+  std::array<uint8_t, 64> supported_commands;
+  for (int i = 0; i < 37; i++) {
+    supported_commands[i] = 0xff;
+  }
+  for (int i = 37; i < 64; i++) {
+    supported_commands[i] = 0x00;
+  }
+  ASSERT_EQ(controller_->GetControllerLocalSupportedCommands(), supported_commands);
+  ASSERT_EQ(controller_->GetControllerLocalSupportedFeatures(), 0x012345678abcdef);
+  ASSERT_EQ(controller_->GetControllerLocalExtendedFeaturesMaxPageNumber(), 0x02);
+  ASSERT_EQ(controller_->GetControllerLocalExtendedFeatures(0), 0x012345678abcdef);
+  ASSERT_EQ(controller_->GetControllerLocalExtendedFeatures(1), 0x012345678abcdf0);
+  ASSERT_EQ(controller_->GetControllerLocalExtendedFeatures(2), 0x012345678abcdf1);
+  ASSERT_EQ(controller_->GetControllerLocalExtendedFeatures(100), 0x00);
+  ASSERT_EQ(controller_->GetControllerLeBufferSize().le_data_packet_length_, 0x16);
+  ASSERT_EQ(controller_->GetControllerLeBufferSize().total_num_le_packets_, 0x08);
+  ASSERT_EQ(controller_->GetControllerLeLocalSupportedFeatures(), 0x001f123456789abc);
+  ASSERT_EQ(controller_->GetControllerLeSupportedStates(), 0x001f123456789abe);
+  ASSERT_EQ(controller_->GetControllerLeMaximumDataLength().supported_max_tx_octets_, 0x12);
+  ASSERT_EQ(controller_->GetControllerLeMaximumDataLength().supported_max_rx_octets_, 0x56);
+  ASSERT_EQ(controller_->GetControllerLeMaximumAdvertisingDataLength(), 0x0672);
+  ASSERT_EQ(controller_->GetControllerLeNumberOfSupportedAdverisingSets(), 0xF0);
+}
+
+TEST_F(ControllerTest, read_write_local_name) {
+  ASSERT_EQ(controller_->GetControllerLocalName(), "DUT");
+  controller_->WriteLocalName("New name");
+  ASSERT_EQ(controller_->GetControllerLocalName(), "New name");
+}
+
+TEST_F(ControllerTest, send_set_event_mask_command) {
+  controller_->SetEventMask(0x00001FFFFFFFFFFF);
+  auto packet = test_hci_layer_->GetCommand(OpCode::SET_EVENT_MASK);
+  auto command = SetEventMaskView::Create(packet);
+  ASSERT(command.IsValid());
+  ASSERT_EQ(command.GetEventMask(), 0x00001FFFFFFFFFFF);
+}
+
+TEST_F(ControllerTest, send_reset_command) {
+  controller_->Reset();
+  auto packet = test_hci_layer_->GetCommand(OpCode::RESET);
+  auto command = ResetView::Create(packet);
+  ASSERT(command.IsValid());
+}
+
+TEST_F(ControllerTest, send_set_event_filter_command) {
+  controller_->SetEventFilterInquiryResultAllDevices();
+  auto packet = test_hci_layer_->GetCommand(OpCode::SET_EVENT_FILTER);
+  auto set_event_filter_view1 = SetEventFilterView::Create(packet);
+  auto set_event_filter_inquiry_result_view1 = SetEventFilterInquiryResultView::Create(set_event_filter_view1);
+  auto command1 = SetEventFilterInquiryResultAllDevicesView::Create(set_event_filter_inquiry_result_view1);
+  ASSERT(command1.IsValid());
+
+  ClassOfDevice class_of_device({0xab, 0xcd, 0xef});
+  ClassOfDevice class_of_device_mask({0x12, 0x34, 0x56});
+  controller_->SetEventFilterInquiryResultClassOfDevice(class_of_device, class_of_device_mask);
+  packet = test_hci_layer_->GetCommand(OpCode::SET_EVENT_FILTER);
+  auto set_event_filter_view2 = SetEventFilterView::Create(packet);
+  auto set_event_filter_inquiry_result_view2 = SetEventFilterInquiryResultView::Create(set_event_filter_view2);
+  auto command2 = SetEventFilterInquiryResultClassOfDeviceView::Create(set_event_filter_inquiry_result_view2);
+  ASSERT(command2.IsValid());
+  ASSERT_EQ(command2.GetClassOfDevice(), class_of_device);
+
+  Address bdaddr({0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc});
+  controller_->SetEventFilterConnectionSetupAddress(bdaddr, AutoAcceptFlag::AUTO_ACCEPT_ON_ROLE_SWITCH_ENABLED);
+  packet = test_hci_layer_->GetCommand(OpCode::SET_EVENT_FILTER);
+  auto set_event_filter_view3 = SetEventFilterView::Create(packet);
+  auto set_event_filter_connection_setup_view = SetEventFilterConnectionSetupView::Create(set_event_filter_view3);
+  auto command3 = SetEventFilterConnectionSetupAddressView::Create(set_event_filter_connection_setup_view);
+  ASSERT(command3.IsValid());
+  ASSERT_EQ(command3.GetAddress(), bdaddr);
+}
+
+TEST_F(ControllerTest, send_host_buffer_size_command) {
+  controller_->HostBufferSize(0xFF00, 0xF1, 0xFF02, 0xFF03);
+  auto packet = test_hci_layer_->GetCommand(OpCode::HOST_BUFFER_SIZE);
+  auto command = HostBufferSizeView::Create(packet);
+  ASSERT(command.IsValid());
+  ASSERT_EQ(command.GetHostAclDataPacketLength(), 0xFF00);
+  ASSERT_EQ(command.GetHostSynchronousDataPacketLength(), 0xF1);
+  ASSERT_EQ(command.GetHostTotalNumAclDataPackets(), 0xFF02);
+  ASSERT_EQ(command.GetHostTotalNumSynchronousDataPackets(), 0xFF03);
+}
+
+TEST_F(ControllerTest, send_le_set_event_mask_command) {
+  controller_->LeSetEventMask(0x000000000000001F);
+  auto packet = test_hci_layer_->GetCommand(OpCode::LE_SET_EVENT_MASK);
+  auto command = LeSetEventMaskView::Create(packet);
+  ASSERT(command.IsValid());
+  ASSERT_EQ(command.GetLeEventMask(), 0x000000000000001F);
+}
+
+TEST_F(ControllerTest, is_supported_test) {
+  ASSERT_TRUE(controller_->IsSupport(OpCode::INQUIRY));
+  ASSERT_TRUE(controller_->IsSupport(OpCode::REJECT_CONNECTION_REQUEST));
+  ASSERT_TRUE(controller_->IsSupport(OpCode::ACCEPT_CONNECTION_REQUEST));
+  ASSERT_FALSE(controller_->IsSupport(OpCode::LE_REMOVE_ADVERTISING_SET));
+  ASSERT_FALSE(controller_->IsSupport(OpCode::LE_CLEAR_ADVERTISING_SETS));
+  ASSERT_FALSE(controller_->IsSupport(OpCode::LE_SET_PERIODIC_ADVERTISING_PARAM));
 }
 
 std::promise<void> credits1_set;
