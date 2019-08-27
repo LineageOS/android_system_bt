@@ -19,12 +19,14 @@
 #include <chrono>
 #include <map>
 
-#include "common/address.h"
+#include "address.h"
+#include "class_of_device.h"
 #include "common/bidi_queue.h"
 #include "common/callback.h"
-#include "common/class_of_device.h"
 #include "hal/hci_hal.h"
 #include "hci/hci_packets.h"
+#include "hci/le_security_interface.h"
+#include "hci/security_interface.h"
 #include "module.h"
 #include "os/utils.h"
 
@@ -54,6 +56,12 @@ class HciLayer : public Module {
                                       os::Handler* handler);
 
   virtual void UnregisterLeEventHandler(SubeventCode subevent_code);
+
+  const SecurityInterface* GetSecurityInterface(common::Callback<void(EventPacketView)> event_handler,
+                                                os::Handler* handler);
+
+  const LeSecurityInterface* GetLeSecurityInterface(common::Callback<void(LeMetaEventView)> event_handler,
+                                                    os::Handler* handler);
 
   static const ModuleFactory Factory;
 

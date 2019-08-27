@@ -17,8 +17,9 @@
 #include <unordered_map>
 
 #include "hci/acl_manager.h"
+#include "hci/address.h"
 #include "l2cap/internal/classic_link.h"
-#include "l2cap/internal/scheduler.h"
+#include "l2cap/internal/scheduler_fifo.h"
 #include "l2cap/l2cap_layer.h"
 #include "os/handler.h"
 #include "os/log.h"
@@ -29,7 +30,7 @@ namespace bluetooth {
 namespace l2cap {
 namespace internal {
 
-void ClassicLinkManager::ConnectFixedChannelServices(common::Address device,
+void ClassicLinkManager::ConnectFixedChannelServices(hci::Address device,
                                                      PendingFixedChannelConnection pending_fixed_channel_connection) {
   // Check if there is any service registered
   auto fixed_channel_services = service_manager_->GetRegisteredServices();
@@ -82,7 +83,7 @@ void ClassicLinkManager::ConnectFixedChannelServices(common::Address device,
   acl_manager_->CreateConnection(device);
 }
 
-ClassicLink* ClassicLinkManager::GetLink(const common::Address device) {
+ClassicLink* ClassicLinkManager::GetLink(const hci::Address device) {
   if (links_.find(device) == links_.end()) {
     return nullptr;
   }
@@ -91,10 +92,11 @@ ClassicLink* ClassicLinkManager::GetLink(const common::Address device) {
 
 void ClassicLinkManager::OnConnectSuccess(std::unique_ptr<hci::AclConnection> acl_connection) {
   // Same link should not be connected twice
-  common::Address address = acl_connection->GetAddress();
+  hci::Address address = acl_connection->GetAddress();
   ASSERT_LOG(GetLink(address) == nullptr, "%s is connected twice without disconnection",
              acl_connection->GetAddress().ToString().c_str());
-  links_.try_emplace(address, handler_, std::move(acl_connection), std::make_unique<Scheduler>());
+  auto* link_queue_up_end = acl_connection->GetAclQueueEnd();
+  links_.try_emplace(address, handler_, std::move(acl_connection), std::make_unique<Fifo>(link_queue_up_end, handler_));
   auto* link = GetLink(address);
   // Allocate and distribute channels for all registered fixed channel services
   auto fixed_channel_services = service_manager_->GetRegisteredServices();
@@ -113,7 +115,7 @@ void ClassicLinkManager::OnConnectSuccess(std::unique_ptr<hci::AclConnection> ac
   pending_links_.erase(pending_link);
 }
 
-void ClassicLinkManager::OnConnectFail(common::Address device, hci::ErrorCode reason) {
+void ClassicLinkManager::OnConnectFail(hci::Address device, hci::ErrorCode reason) {
   // Notify all pending links for this device
   auto pending_link = pending_links_.find(device);
   if (pending_link == pending_links_.end()) {
@@ -129,6 +131,10 @@ void ClassicLinkManager::OnConnectFail(common::Address device, hci::ErrorCode re
   }
   // Remove entry in pending link list
   pending_links_.erase(pending_link);
+}
+
+void ClassicLinkManager::OnDisconnect(hci::Address device, hci::ErrorCode status) {
+  links_.erase(device);
 }
 
 }  // namespace internal

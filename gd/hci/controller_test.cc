@@ -23,9 +23,9 @@
 
 #include <gtest/gtest.h>
 
-#include "common/address.h"
 #include "common/bind.h"
 #include "common/callback.h"
+#include "hci/address.h"
 #include "hci/hci_layer.h"
 #include "os/thread.h"
 #include "packet/raw_builder.h"
@@ -34,7 +34,6 @@ namespace bluetooth {
 namespace hci {
 namespace {
 
-using common::Address;
 using common::BidiQueue;
 using common::BidiQueueEnd;
 using packet::kLittleEndian;
@@ -82,7 +81,7 @@ class TestHciLayer : public HciLayer {
             total_num_acl_data_packets, total_num_synchronous_data_packets);
       } break;
       case (OpCode::READ_BD_ADDR): {
-        event_builder = ReadBdAddrCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, common::Address::kAny);
+        event_builder = ReadBdAddrCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, Address::kAny);
       } break;
       default:
         LOG_INFO("Dropping unhandled packet");
@@ -110,10 +109,15 @@ class TestHciLayer : public HciLayer {
   }
 
   void IncomingCredit() {
-    std::vector<uint32_t> handles_and_completed_packets;
-    handles_and_completed_packets.push_back(kCredits1 << 16 | kHandle1);
-    handles_and_completed_packets.push_back(kCredits2 << 16 | kHandle2);
-    auto event_builder = NumberOfCompletedPacketsBuilder::Create(handles_and_completed_packets);
+    std::vector<CompletedPackets> completed_packets;
+    CompletedPackets cp;
+    cp.host_num_of_completed_packets_ = kCredits1;
+    cp.connection_handle_ = kHandle1;
+    completed_packets.push_back(cp);
+    cp.host_num_of_completed_packets_ = kCredits2;
+    cp.connection_handle_ = kHandle2;
+    completed_packets.push_back(cp);
+    auto event_builder = NumberOfCompletedPacketsBuilder::Create(completed_packets);
     auto packet = GetPacketView(std::move(event_builder));
     EventPacketView event = EventPacketView::Create(packet);
     ASSERT(event.IsValid());
@@ -163,7 +167,7 @@ TEST_F(ControllerTest, read_controller_info) {
   ASSERT_EQ(controller_->GetControllerNumAclPacketBuffers(), test_hci_layer_->total_num_acl_data_packets);
   ASSERT_EQ(controller_->GetControllerScoPacketLength(), test_hci_layer_->synchronous_data_packet_length);
   ASSERT_EQ(controller_->GetControllerNumScoPacketBuffers(), test_hci_layer_->total_num_synchronous_data_packets);
-  ASSERT_EQ(controller_->GetControllerMacAddress(), common::Address::kAny);
+  ASSERT_EQ(controller_->GetControllerMacAddress(), Address::kAny);
 }
 
 std::promise<void> credits1_set;

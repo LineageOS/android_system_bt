@@ -21,6 +21,7 @@
 #include "common/bind.h"
 #include "common/testing/bind_test_util.h"
 #include "hci/acl_manager_mock.h"
+#include "hci/address.h"
 #include "l2cap/cid.h"
 #include "l2cap/classic_fixed_channel_manager.h"
 #include "l2cap/internal/classic_fixed_channel_service_impl_mock.h"
@@ -75,7 +76,7 @@ class L2capClassicLinkManagerTest : public ::testing::Test {
 TEST_F(L2capClassicLinkManagerTest, connect_fixed_channel_service_without_acl) {
   MockClassicFixedChannelServiceManagerImpl mock_classic_fixed_channel_service_manager;
   MockAclManager mock_acl_manager;
-  common::Address device{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
+  hci::Address device{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
   auto user_handler = std::make_unique<os::Handler>(thread_);
 
   // Step 1: Verify callback registration with HCI
@@ -105,6 +106,8 @@ TEST_F(L2capClassicLinkManagerTest, connect_fixed_channel_service_without_acl) {
   // Step 3: ACL connection success event should trigger channel creation for all registered services
 
   std::unique_ptr<MockAclConnection> acl_connection = std::make_unique<MockAclConnection>();
+  hci::AclConnection::Queue link_queue{10};
+  EXPECT_CALL(*acl_connection, GetAclQueueEnd()).WillRepeatedly((Return(link_queue.GetUpEnd())));
   EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(device));
   std::unique_ptr<ClassicFixedChannel> channel_1, channel_2;
   EXPECT_CALL(mock_service_1, NotifyChannelCreation(_))
@@ -142,12 +145,14 @@ TEST_F(L2capClassicLinkManagerTest, connect_fixed_channel_service_without_acl) {
   EXPECT_NE(channel_3, nullptr);
 
   user_handler->Clear();
+
+  classic_link_manager.OnDisconnect(device, hci::ErrorCode::SUCCESS);
 }
 
 TEST_F(L2capClassicLinkManagerTest, connect_fixed_channel_service_without_acl_with_no_service) {
   MockClassicFixedChannelServiceManagerImpl mock_classic_fixed_channel_service_manager;
   MockAclManager mock_acl_manager;
-  common::Address device{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
+  hci::Address device{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
   auto user_handler = std::make_unique<os::Handler>(thread_);
 
   // Step 1: Verify callback registration with HCI
@@ -182,7 +187,7 @@ TEST_F(L2capClassicLinkManagerTest, connect_fixed_channel_service_without_acl_wi
 TEST_F(L2capClassicLinkManagerTest, connect_fixed_channel_service_without_acl_with_hci_failure) {
   MockClassicFixedChannelServiceManagerImpl mock_classic_fixed_channel_service_manager;
   MockAclManager mock_acl_manager;
-  common::Address device{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
+  hci::Address device{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
   auto user_handler = std::make_unique<os::Handler>(thread_);
 
   // Step 1: Verify callback registration with HCI

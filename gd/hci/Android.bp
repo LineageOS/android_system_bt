@@ -4,6 +4,10 @@ filegroup {
         "acl_manager.cc",
         "classic_security_manager.cc",
         "controller.cc",
+        "address.cc",
+        "class_of_device.cc",
+        "device.cc",
+        "device_database.cc",
         "hci_layer.cc",
     ],
 }
@@ -15,7 +19,13 @@ filegroup {
         "acl_manager_test.cc",
         "classic_security_manager_test.cc",
         "controller_test.cc",
+        "address_unittest.cc",
+        "class_of_device_unittest.cc",
+        "device_test.cc",
+        "device_database_test.cc",
+        "dual_device_test.cc",
         "hci_layer_test.cc",
+        "hci_packets_test.cc",
     ],
 }
 

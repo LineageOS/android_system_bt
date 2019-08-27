@@ -66,9 +66,9 @@ struct Controller::impl {
     ASSERT(acl_credits_handler_ != nullptr);
     auto complete_view = NumberOfCompletedPacketsView::Create(event);
     ASSERT(complete_view.IsValid());
-    for (auto completed_packets : complete_view.GetHandlesAndCompletedPackets()) {
-      uint16_t handle = completed_packets & 0x0fff;
-      uint16_t credits = (completed_packets & 0xffff0000) >> 16;
+    for (auto completed_packets : complete_view.GetCompletedPackets()) {
+      uint16_t handle = completed_packets.connection_handle_;
+      uint16_t credits = completed_packets.host_num_of_completed_packets_;
       acl_credits_handler_->Post(Bind(acl_credits_callback_, handle, credits));
     }
   }
@@ -112,7 +112,7 @@ struct Controller::impl {
   uint16_t acl_buffers_ = 0;
   uint8_t sco_buffer_length_ = 0;
   uint16_t sco_buffers_ = 0;
-  common::Address mac_address_;
+  Address mac_address_;
 };  // namespace hci
 
 Controller::Controller() : impl_(std::make_unique<impl>(*this)) {}
@@ -140,7 +140,7 @@ uint16_t Controller::GetControllerNumScoPacketBuffers() {
   return impl_->sco_buffers_;
 }
 
-common::Address Controller::GetControllerMacAddress() {
+Address Controller::GetControllerMacAddress() {
   return impl_->mac_address_;
 }
 

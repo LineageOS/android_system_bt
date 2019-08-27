@@ -22,7 +22,7 @@
 namespace bluetooth {
 namespace l2cap {
 
-bool ClassicFixedChannelManager::ConnectServices(common::Address device, OnConnectionFailureCallback on_fail_callback,
+bool ClassicFixedChannelManager::ConnectServices(hci::Address device, OnConnectionFailureCallback on_fail_callback,
                                                  os::Handler* handler) {
   internal::ClassicLinkManager::PendingFixedChannelConnection pending_fixed_channel_connection{
       .on_fail_callback_ = std::move(on_fail_callback), .handler_ = handler};

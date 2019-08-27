@@ -77,7 +77,6 @@ class CommandQueueEntry {
 namespace bluetooth {
 namespace hci {
 
-using common::Address;
 using common::BidiQueue;
 using common::BidiQueueEnd;
 using os::Alarm;
@@ -97,6 +96,42 @@ void on_hci_timeout(OpCode op_code) {
   ASSERT_LOG(false, "Timed out waiting for 0x%02hx (%s)", op_code, OpCodeText(op_code).c_str());
 }
 }  // namespace
+
+class SecurityInterfaceImpl : public SecurityInterface {
+ public:
+  SecurityInterfaceImpl(HciLayer& hci) : hci_(hci) {}
+  virtual ~SecurityInterfaceImpl() = default;
+
+  virtual void EnqueueCommand(std::unique_ptr<SecurityCommandBuilder> command,
+                              common::OnceCallback<void(CommandCompleteView)> on_complete,
+                              os::Handler* handler) override {
+    hci_.EnqueueCommand(std::move(command), std::move(on_complete), handler);
+  }
+
+  virtual void EnqueueCommand(std::unique_ptr<SecurityCommandBuilder> command,
+                              common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) override {
+    hci_.EnqueueCommand(std::move(command), std::move(on_status), handler);
+  }
+  HciLayer& hci_;
+};
+
+class LeSecurityInterfaceImpl : public LeSecurityInterface {
+ public:
+  LeSecurityInterfaceImpl(HciLayer& hci) : hci_(hci) {}
+  virtual ~LeSecurityInterfaceImpl() = default;
+
+  virtual void EnqueueCommand(std::unique_ptr<LeSecurityCommandBuilder> command,
+                              common::OnceCallback<void(CommandCompleteView)> on_complete,
+                              os::Handler* handler) override {
+    hci_.EnqueueCommand(std::move(command), std::move(on_complete), handler);
+  }
+
+  virtual void EnqueueCommand(std::unique_ptr<LeSecurityCommandBuilder> command,
+                              common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) override {
+    hci_.EnqueueCommand(std::move(command), std::move(on_status), handler);
+  }
+  HciLayer& hci_;
+};
 
 struct HciLayer::impl : public hal::HciHalCallbacks {
   impl(HciLayer& module) : hal_(nullptr), module_(module) {}
@@ -350,6 +385,10 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
   // A reference to the HciLayer module
   HciLayer& module_;
 
+  // Interfaces
+  SecurityInterfaceImpl security_interface{module_};
+  LeSecurityInterfaceImpl le_security_interface{module_};
+
   // Command Handling
   std::list<CommandQueueEntry> command_queue_;
 
@@ -400,6 +439,22 @@ void HciLayer::RegisterLeEventHandler(SubeventCode subevent_code, common::Callba
 
 void HciLayer::UnregisterLeEventHandler(SubeventCode subevent_code) {
   impl_->UnregisterLeEventHandler(subevent_code);
+}
+
+const SecurityInterface* HciLayer::GetSecurityInterface(common::Callback<void(EventPacketView)> event_handler,
+                                                        os::Handler* handler) {
+  for (const auto event : SecurityInterface::SecurityEvents) {
+    RegisterEventHandler(event, event_handler, handler);
+  }
+  return &impl_->security_interface;
+}
+
+const LeSecurityInterface* HciLayer::GetLeSecurityInterface(common::Callback<void(LeMetaEventView)> event_handler,
+                                                            os::Handler* handler) {
+  for (const auto subevent : LeSecurityInterface::LeSecurityEvents) {
+    RegisterLeEventHandler(subevent, event_handler, handler);
+  }
+  return &impl_->le_security_interface;
 }
 
 const ModuleFactory HciLayer::Factory = ModuleFactory([]() { return new HciLayer(); });
