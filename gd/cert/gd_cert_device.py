@@ -55,13 +55,12 @@ def get_instances_with_configs(configs):
             resolved_cmd.append(replace_vars(entry, config))
         devices.append(GdCertDevice(config["grpc_port"],
                                     config["grpc_root_server_port"],
-                                    config["signal_port"],
                                     resolved_cmd, config["label"]))
     return devices
 
 class GdCertDevice(GdDeviceBase):
-    def __init__(self, grpc_port, grpc_root_server_port, signal_port, cmd, label):
-        super().__init__(grpc_port, grpc_root_server_port, signal_port, cmd,
+    def __init__(self, grpc_port, grpc_root_server_port, cmd, label):
+        super().__init__(grpc_port, grpc_root_server_port, cmd,
                          label, ACTS_CONTROLLER_CONFIG_NAME)
 
         # Cert stubs
