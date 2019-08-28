@@ -26,7 +26,7 @@ import android.bluetooth.BluetoothDevice;
 interface IBluetoothPan {
     // Public API
     boolean isTetheringOn();
-    void setBluetoothTethering(boolean value);
+    void setBluetoothTethering(boolean value, String pkgName);
     boolean connect(in BluetoothDevice device);
     boolean disconnect(in BluetoothDevice device);
     List<BluetoothDevice> getConnectedDevices();
