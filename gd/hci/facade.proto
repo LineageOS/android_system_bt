@@ -19,6 +19,44 @@ service AclManagerFacade {
   rpc TestInternalHciLeCommands(google.protobuf.Empty) returns (google.protobuf.Empty) {}
 }
 
+message PageScanMode {
+  bool enabled = 1;
+}
+
+message ConnectionEvent {
+  facade.BluetoothAddress remote = 1;
+  uint32 connection_handle = 2;
+}
+
+message DisconnectionEvent {
+  facade.BluetoothAddress remote = 1;
+  uint32 reason = 2;
+}
+
+message ConnectionFailedEvent {
+  facade.BluetoothAddress remote = 1;
+  uint32 reason = 2;
+}
+
+message AclData {
+  facade.BluetoothAddress remote = 1;
+  bytes payload = 2;
+}
+
+service ClassicPairingFacade {
+  rpc SetPairingMode(PairingMode) returns (google.protobuf.Empty) {}
+  rpc DeletePairing(DeletePairingRequest) returns (google.protobuf.Empty) {}
+}
+
+message PairingMode {
+  bool enabled = 1;
+}
+
+message DeletePairingRequest {
+  bool deleteAll = 1;
+  facade.BluetoothAddress remote = 2;
+}
+
 service ClassicSecurityManagerFacade {
   rpc LinkKeyRequestReply(LinkKeyRequestReplyMessage) returns (google.protobuf.Empty) {}
   rpc LinkKeyRequestNegativeReply(facade.BluetoothAddress) returns (google.protobuf.Empty) {}
@@ -48,29 +86,6 @@ service ClassicSecurityManagerFacade {
   rpc AuthenticationRequested(AuthenticationRequestedMessage) returns (google.protobuf.Empty) {}
 }
 
-message PageScanMode {
-  bool enabled = 1;
-}
-
-message ConnectionEvent {
-  facade.BluetoothAddress remote = 1;
-  uint32 connection_handle = 2;
-}
-
-message DisconnectionEvent {
-  facade.BluetoothAddress remote = 1;
-  uint32 reason = 2;
-}
-
-message ConnectionFailedEvent {
-  facade.BluetoothAddress remote = 1;
-  uint32 reason = 2;
-}
-
-message AclData {
-  facade.BluetoothAddress remote = 1;
-  bytes payload = 2;
-}
 
 message CommandCompleteEvent {
   uint32 command_opcode = 1;
