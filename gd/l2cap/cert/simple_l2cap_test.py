@@ -28,6 +28,10 @@ class SimpleL2capTest(GdBaseTestClass):
     def setup_test(self):
         self.device_under_test = self.gd_devices[0]
         self.cert_device = self.gd_cert_devices[0]
+
+        self.device_under_test.wait_root_service_ready()
+        self.cert_device.wait_root_service_ready()
+
         self.device_under_test.rootservice.StartStack(
             facade_rootservice_pb2.StartStackRequest(
                 module_under_test=facade_rootservice_pb2.BluetoothModule.Value('L2CAP'),
@@ -38,6 +42,10 @@ class SimpleL2capTest(GdBaseTestClass):
                 module_to_test=cert_rootservice_pb2.BluetoothModule.Value('L2CAP'),
             )
         )
+
+        self.device_under_test.wait_channel_ready()
+        self.cert_device.wait_channel_ready()
+
     def teardown_test(self):
         self.device_under_test.rootservice.StopStack(
             facade_rootservice_pb2.StopStackRequest()
