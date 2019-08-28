@@ -16,9 +16,6 @@
 
 #include "stack_manager.h"
 
-#include <netinet/in.h>
-#include <sys/socket.h>
-#include <sys/types.h>
 #include <unistd.h>
 #include <csignal>
 #include <cstring>
@@ -49,12 +46,10 @@ void interrupt_handler(int) {
 int main(int argc, const char** argv) {
   int root_server_port = 8896;
   int grpc_port = 8898;
-  int signal_port = 8894;
 
   const std::string arg_grpc_root_server_port = "--root-server-port=";
   const std::string arg_grpc_server_port = "--grpc-port=";
   const std::string arg_rootcanal_port = "--rootcanal-port=";
-  const std::string arg_signal_port = "--signal-port=";
   const std::string arg_btsnoop_path = "--btsnoop=";
   std::string btsnoop_path;
   for (int i = 1; i < argc; i++) {
@@ -75,22 +70,10 @@ int main(int argc, const char** argv) {
       btsnoop_path = arg.substr(arg_btsnoop_path.size());
       ::bluetooth::hal::SnoopLogger::SetFilePath(btsnoop_path);
     }
-    if (arg.find(arg_signal_port) == 0) {
-      auto port_number = arg.substr(arg_signal_port.size());
-      signal_port = std::stoi(port_number);
-    }
   }
 
   signal(SIGINT, interrupt_handler);
   grpc_root_server.StartServer("0.0.0.0", root_server_port, grpc_port);
-  int tester_signal_socket = socket(AF_INET, SOCK_STREAM, 0);
-  struct sockaddr_in addr;
-  memset(&addr, 0, sizeof(addr));
-  addr.sin_family = AF_INET;
-  addr.sin_port = htons(signal_port);
-  addr.sin_addr.s_addr = htonl(INADDR_ANY);
-  connect(tester_signal_socket, (sockaddr*)&addr, sizeof(addr));
-  close(tester_signal_socket);
   auto wait_thread = std::thread([] { grpc_root_server.RunGrpcLoop(); });
   wait_thread.join();
 
