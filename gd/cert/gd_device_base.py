@@ -42,11 +42,10 @@ def replace_vars(string, config):
                  .replace("$(grpc_port)", config.get("grpc_port")) \
                  .replace("$(grpc_root_server_port)", config.get("grpc_root_server_port")) \
                  .replace("$(rootcanal_port)", rootcanal_port) \
-                 .replace("$(signal_port)", config.get("signal_port")) \
                  .replace("$(serial_number)", serial_number)
 
 class GdDeviceBase:
-    def __init__(self, grpc_port, grpc_root_server_port, signal_port, cmd,
+    def __init__(self, grpc_port, grpc_root_server_port, cmd,
                  label, type_identifier):
         self.label = label if label is not None else grpc_port
         # logging.log_path only exists when this is used in an ACTS test run.
@@ -64,21 +63,12 @@ class GdDeviceBase:
         btsnoop_path = os.path.join(log_path_base, '%s_btsnoop_hci.log' % label)
         cmd.append("--btsnoop=" + btsnoop_path)
 
-        tester_signal_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        tester_signal_socket.setsockopt(
-            socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
-        socket_address = ('localhost', int(signal_port))
-        tester_signal_socket.bind(socket_address)
-        tester_signal_socket.listen(1)
-
         self.backing_process = subprocess.Popen(
             cmd,
             cwd=ANDROID_BUILD_TOP,
             env=os.environ.copy(),
             stdout=self.backing_process_logs,
             stderr=self.backing_process_logs)
-        tester_signal_socket.accept()
-        tester_signal_socket.close()
 
         self.grpc_root_server_channel = grpc.insecure_channel("localhost:" + grpc_root_server_port)
         self.grpc_port = int(grpc_port)
@@ -98,9 +88,16 @@ class GdDeviceBase:
     def wait_channel_ready(self):
         future = grpc.channel_ready_future(self.grpc_channel)
         try:
-          future.result(timeout = WAIT_CHANNEL_READY_TIMEOUT)
+            future.result(timeout=WAIT_CHANNEL_READY_TIMEOUT)
         except grpc.FutureTimeoutError:
-          logging.error("wait channel ready timeout")
+            logging.error("wait channel ready timeout")
+
+    def wait_root_service_ready(self):
+        future = grpc.channel_ready_future(self.grpc_root_server_channel)
+        try:
+            future.result(timeout=WAIT_CHANNEL_READY_TIMEOUT)
+        except grpc.FutureTimeoutError:
+            logging.error("wait channel ready timeout")
 
 
 
