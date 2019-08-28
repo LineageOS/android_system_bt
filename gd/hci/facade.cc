@@ -133,11 +133,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public ::bluet
     LOG_DEBUG("hci version : %x", (uint16_t)local_version_information.hci_version_);
     LOG_DEBUG("lmp version : %x", (uint16_t)local_version_information.lmp_version_);
     LOG_DEBUG("supported commands : %x", controller_->GetControllerLocalSupportedCommands()[0]);
-    LOG_DEBUG("supported features : %lx", controller_->GetControllerLocalSupportedFeatures());
     LOG_DEBUG("local extended features :");
-    for (int i = 0; i <= controller_->GetControllerLocalExtendedFeaturesMaxPageNumber() + 1; i++) {
-      LOG_DEBUG("page %d, %lx", i, controller_->GetControllerLocalExtendedFeatures(i));
-    }
 
     controller_->SetEventMask(0x00001FFFFFFFFFFF);
     controller_->SetEventFilterInquiryResultAllDevices();
@@ -159,8 +155,6 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public ::bluet
                                            ::google::protobuf::Empty* response) {
     LOG_DEBUG("le data packet length : %d", controller_->GetControllerLeBufferSize().le_data_packet_length_);
     LOG_DEBUG("total num le packets : %d", controller_->GetControllerLeBufferSize().total_num_le_packets_);
-    LOG_DEBUG("le local supported features : %lx", controller_->GetControllerLeLocalSupportedFeatures());
-    LOG_DEBUG("le supported states : %lx", controller_->GetControllerLeSupportedStates());
     LOG_DEBUG("le supported max tx octets : %d",
               controller_->GetControllerLeMaximumDataLength().supported_max_tx_octets_);
     LOG_DEBUG("le supported max tx times : %d", controller_->GetControllerLeMaximumDataLength().supported_max_tx_time_);
