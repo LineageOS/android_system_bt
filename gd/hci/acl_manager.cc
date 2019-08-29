@@ -71,6 +71,11 @@ struct AclManager::impl {
                                      Bind(&impl::on_disconnection_complete, common::Unretained(this)), handler_);
     hci_layer_->RegisterEventHandler(EventCode::CONNECTION_REQUEST,
                                      Bind(&impl::on_incoming_connection, common::Unretained(this)), handler_);
+    hci_layer_->RegisterLeEventHandler(SubeventCode::CONNECTION_COMPLETE,
+                                       Bind(&impl::on_le_connection_complete, common::Unretained(this)), handler_);
+    hci_layer_->RegisterLeEventHandler(SubeventCode::ENHANCED_CONNECTION_COMPLETE,
+                                       Bind(&impl::on_le_enhanced_connection_complete, common::Unretained(this)),
+                                       handler_);
   }
 
   void Stop() {
@@ -220,35 +225,85 @@ struct AclManager::impl {
     }
   }
 
-  void on_connection_complete(EventPacketView packet) {
-    ConnectionCompleteView connection_complete = ConnectionCompleteView::Create(std::move(packet));
-    ASSERT(connection_complete.IsValid());
-    auto status = connection_complete.GetStatus();
-    auto address = connection_complete.GetBdAddr();
+  void on_any_connection_complete(Address address) {
     auto connecting_addr = connecting_.find(address);
     if (connecting_addr == connecting_.end()) {
       LOG_WARN("No prior connection request for %s", address.ToString().c_str());
     } else {
       connecting_.erase(connecting_addr);
     }
-    if (status == ErrorCode::SUCCESS) {
-      uint16_t handle = connection_complete.GetConnectionHandle();
-      ASSERT(acl_connections_.count(handle) == 0);
-      acl_connections_[handle] = {};
-      if (acl_connections_.size() == 1 && packet_to_send_ == nullptr) {
-        start_round_robin();
-      }
-      std::unique_ptr<AclConnection> connection_proxy(new AclConnection(&acl_manager_, handle, address));
-      client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectSuccess,
-                                             common::Unretained(client_callbacks_), std::move(connection_proxy)));
-    } else {
+  }
+
+  void on_le_connection_complete(LeMetaEventView packet) {
+    LeConnectionCompleteView connection_complete = LeConnectionCompleteView::Create(packet);
+    ASSERT(connection_complete.IsValid());
+    auto status = connection_complete.GetStatus();
+    auto address = connection_complete.GetPeerAddress();
+    on_any_connection_complete(address);
+    if (status != ErrorCode::SUCCESS) {
       client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectFail, common::Unretained(client_callbacks_),
                                              address, status));
+      return;
     }
+    // TODO: Check and save other connection parameters
+    uint16_t handle = connection_complete.GetConnectionHandle();
+    ASSERT(acl_connections_.count(handle) == 0);
+    acl_connections_[handle] = {};
+    if (acl_connections_.size() == 1 && packet_to_send_ == nullptr) {
+      start_round_robin();
+    }
+    std::unique_ptr<AclConnection> connection_proxy(new AclConnection(&acl_manager_, handle, address));
+    client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectSuccess,
+                                           common::Unretained(client_callbacks_), std::move(connection_proxy)));
+  }
+
+  void on_le_enhanced_connection_complete(LeMetaEventView packet) {
+    LeEnhancedConnectionCompleteView connection_complete = LeEnhancedConnectionCompleteView::Create(packet);
+    ASSERT(connection_complete.IsValid());
+    auto status = connection_complete.GetStatus();
+    auto address = connection_complete.GetPeerAddress();
+    on_any_connection_complete(address);
+    if (status != ErrorCode::SUCCESS) {
+      client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectFail, common::Unretained(client_callbacks_),
+                                             address, status));
+      return;
+    }
+    // TODO: Check and save other connection parameters
+    uint16_t handle = connection_complete.GetConnectionHandle();
+    ASSERT(acl_connections_.count(handle) == 0);
+    acl_connections_[handle] = {};
+    if (acl_connections_.size() == 1 && packet_to_send_ == nullptr) {
+      start_round_robin();
+    }
+    std::unique_ptr<AclConnection> connection_proxy(new AclConnection(&acl_manager_, handle, address));
+    client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectSuccess,
+                                           common::Unretained(client_callbacks_), std::move(connection_proxy)));
+  }
+
+  void on_connection_complete(EventPacketView packet) {
+    ConnectionCompleteView connection_complete = ConnectionCompleteView::Create(packet);
+    ASSERT(connection_complete.IsValid());
+    auto status = connection_complete.GetStatus();
+    auto address = connection_complete.GetBdAddr();
+    on_any_connection_complete(address);
+    if (status != ErrorCode::SUCCESS) {
+      client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectFail, common::Unretained(client_callbacks_),
+                                             address, status));
+      return;
+    }
+    uint16_t handle = connection_complete.GetConnectionHandle();
+    ASSERT(acl_connections_.count(handle) == 0);
+    acl_connections_[handle] = {};
+    if (acl_connections_.size() == 1 && packet_to_send_ == nullptr) {
+      start_round_robin();
+    }
+    std::unique_ptr<AclConnection> connection_proxy(new AclConnection(&acl_manager_, handle, address));
+    client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectSuccess,
+                                           common::Unretained(client_callbacks_), std::move(connection_proxy)));
   }
 
   void on_disconnection_complete(EventPacketView packet) {
-    DisconnectionCompleteView disconnection_complete = DisconnectionCompleteView::Create(std::move(packet));
+    DisconnectionCompleteView disconnection_complete = DisconnectionCompleteView::Create(packet);
     ASSERT(disconnection_complete.IsValid());
     uint16_t handle = disconnection_complete.GetConnectionHandle();
     auto status = disconnection_complete.GetStatus();
@@ -285,6 +340,34 @@ struct AclManager::impl {
                                  ASSERT(status.GetCommandOpCode() == OpCode::CREATE_CONNECTION);
                                }),
                                handler_);
+  }
+
+  void create_le_connection(Address address, AddressType address_type) {
+    // TODO: Add white list handling.
+    // TODO: Configure default LE connection parameters?
+    uint16_t le_scan_interval = 0x0020;
+    uint16_t le_scan_window = 0x0010;
+    InitiatorFilterPolicy initiator_filter_policy = InitiatorFilterPolicy::USE_PEER_ADDRESS;
+    OwnAddressType own_address_type = OwnAddressType::RANDOM_DEVICE_ADDRESS;
+    uint16_t conn_interval_min = 0x0006;
+    uint16_t conn_interval_max = 0x0C00;
+    uint16_t conn_latency = 0x0C0;
+    uint16_t supervision_timeout = 0x0C00;
+    uint16_t minimum_ce_length = 0x0002;
+    uint16_t maximum_ce_length = 0x0C00;
+    ASSERT(le_client_callbacks_ != nullptr);
+
+    connecting_.insert(address);
+
+    hci_layer_->EnqueueCommand(
+        LeCreateConnectionBuilder::Create(le_scan_interval, le_scan_window, initiator_filter_policy, address_type,
+                                          address, own_address_type, conn_interval_min, conn_interval_max, conn_latency,
+                                          supervision_timeout, minimum_ce_length, maximum_ce_length),
+        common::BindOnce([](CommandStatusView status) {
+          ASSERT(status.IsValid());
+          ASSERT(status.GetCommandOpCode() == OpCode::CREATE_CONNECTION);
+        }),
+        handler_);
   }
 
   void cancel_connect(Address address) {
@@ -343,6 +426,13 @@ struct AclManager::impl {
     client_handler_ = handler;
   }
 
+  void handle_register_le_callbacks(LeConnectionCallbacks* callbacks, os::Handler* handler) {
+    ASSERT(le_client_callbacks_ == nullptr);
+    ASSERT(le_client_handler_ == nullptr);
+    le_client_callbacks_ = callbacks;
+    le_client_handler_ = handler;
+  }
+
   acl_connection& check_and_get_connection(uint16_t handle) {
     auto connection = acl_connections_.find(handle);
     ASSERT(connection != acl_connections_.end());
@@ -396,6 +486,8 @@ struct AclManager::impl {
   os::Handler* handler_ = nullptr;
   ConnectionCallbacks* client_callbacks_ = nullptr;
   os::Handler* client_handler_ = nullptr;
+  LeConnectionCallbacks* le_client_callbacks_ = nullptr;
+  os::Handler* le_client_handler_ = nullptr;
   common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* hci_queue_end_ = nullptr;
   std::map<uint16_t, AclManager::acl_connection> acl_connections_;
   std::set<Address> connecting_;
@@ -421,15 +513,25 @@ void AclConnection::Finish() {
 
 AclManager::AclManager() : pimpl_(std::make_unique<impl>(*this)) {}
 
-bool AclManager::RegisterCallbacks(ConnectionCallbacks* callbacks, os::Handler* handler) {
+void AclManager::RegisterCallbacks(ConnectionCallbacks* callbacks, os::Handler* handler) {
   ASSERT(callbacks != nullptr && handler != nullptr);
   GetHandler()->Post(common::BindOnce(&impl::handle_register_callbacks, common::Unretained(pimpl_.get()),
                                       common::Unretained(callbacks), common::Unretained(handler)));
-  return true;
+}
+
+void AclManager::RegisterLeCallbacks(LeConnectionCallbacks* callbacks, os::Handler* handler) {
+  ASSERT(callbacks != nullptr && handler != nullptr);
+  GetHandler()->Post(common::BindOnce(&impl::handle_register_le_callbacks, common::Unretained(pimpl_.get()),
+                                      common::Unretained(callbacks), common::Unretained(handler)));
 }
 
 void AclManager::CreateConnection(Address address) {
   GetHandler()->Post(common::BindOnce(&impl::create_connection, common::Unretained(pimpl_.get()), address));
+}
+
+void AclManager::CreateLeConnection(Address address, AddressType address_type) {
+  GetHandler()->Post(
+      common::BindOnce(&impl::create_le_connection, common::Unretained(pimpl_.get()), address, address_type));
 }
 
 void AclManager::CancelConnect(Address address) {
