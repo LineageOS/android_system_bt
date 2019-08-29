@@ -74,6 +74,15 @@ class ConnectionCallbacks {
   virtual void OnConnectFail(Address, ErrorCode reason) = 0;
 };
 
+class LeConnectionCallbacks {
+ public:
+  virtual ~LeConnectionCallbacks() = default;
+  // Invoked when controller sends Connection Complete event with Success error code
+  virtual void OnLeConnectSuccess(std::unique_ptr<AclConnection> /* , initiated_by_local ? */) = 0;
+  // Invoked when controller sends Connection Complete event with non-Success error code
+  virtual void OnLeConnectFail(Address, AddressType, ErrorCode reason) = 0;
+};
+
 class AclManager : public Module {
  public:
   AclManager();
@@ -83,12 +92,18 @@ class AclManager : public Module {
   // compiling AclManager's destructor until it starts linking the .cc file.
   ~AclManager() override;
 
-  // Returns true if callbacks are successfully registered. Should register only once when user module starts.
+  // Should register only once when user module starts.
   // Generates OnConnectSuccess when an incoming connection is established.
-  virtual bool RegisterCallbacks(ConnectionCallbacks* callbacks, os::Handler* handler);
+  virtual void RegisterCallbacks(ConnectionCallbacks* callbacks, os::Handler* handler);
+
+  // Should register only once when user module starts.
+  virtual void RegisterLeCallbacks(LeConnectionCallbacks* callbacks, os::Handler* handler);
 
   // Generates OnConnectSuccess if connected, or OnConnectFail otherwise
   virtual void CreateConnection(Address address);
+
+  // Generates OnLeConnectSuccess if connected, or OnLeConnectFail otherwise
+  virtual void CreateLeConnection(Address address, AddressType address_type);
 
   // Generates OnConnectFail with error code "terminated by local host 0x16" if cancelled, or OnConnectSuccess if not
   // successfully cancelled and already connected

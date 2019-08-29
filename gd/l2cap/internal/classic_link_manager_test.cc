@@ -83,7 +83,7 @@ TEST_F(L2capClassicLinkManagerTest, connect_fixed_channel_service_without_acl) {
   hci::ConnectionCallbacks* hci_connection_callbacks = nullptr;
   os::Handler* hci_callback_handler = nullptr;
   EXPECT_CALL(mock_acl_manager, RegisterCallbacks(_, _))
-      .WillOnce(DoAll(SaveArg<0>(&hci_connection_callbacks), SaveArg<1>(&hci_callback_handler), Return(true)));
+      .WillOnce(DoAll(SaveArg<0>(&hci_connection_callbacks), SaveArg<1>(&hci_callback_handler)));
   ClassicLinkManager classic_link_manager(l2cap_handler_, &mock_acl_manager,
                                           &mock_classic_fixed_channel_service_manager);
   EXPECT_EQ(hci_connection_callbacks, &classic_link_manager);
@@ -159,7 +159,7 @@ TEST_F(L2capClassicLinkManagerTest, connect_fixed_channel_service_without_acl_wi
   hci::ConnectionCallbacks* hci_connection_callbacks = nullptr;
   os::Handler* hci_callback_handler = nullptr;
   EXPECT_CALL(mock_acl_manager, RegisterCallbacks(_, _))
-      .WillOnce(DoAll(SaveArg<0>(&hci_connection_callbacks), SaveArg<1>(&hci_callback_handler), Return(true)));
+      .WillOnce(DoAll(SaveArg<0>(&hci_connection_callbacks), SaveArg<1>(&hci_callback_handler)));
   ClassicLinkManager classic_link_manager(l2cap_handler_, &mock_acl_manager,
                                           &mock_classic_fixed_channel_service_manager);
   EXPECT_EQ(hci_connection_callbacks, &classic_link_manager);
@@ -194,7 +194,7 @@ TEST_F(L2capClassicLinkManagerTest, connect_fixed_channel_service_without_acl_wi
   hci::ConnectionCallbacks* hci_connection_callbacks = nullptr;
   os::Handler* hci_callback_handler = nullptr;
   EXPECT_CALL(mock_acl_manager, RegisterCallbacks(_, _))
-      .WillOnce(DoAll(SaveArg<0>(&hci_connection_callbacks), SaveArg<1>(&hci_callback_handler), Return(true)));
+      .WillOnce(DoAll(SaveArg<0>(&hci_connection_callbacks), SaveArg<1>(&hci_callback_handler)));
   ClassicLinkManager classic_link_manager(l2cap_handler_, &mock_acl_manager,
                                           &mock_classic_fixed_channel_service_manager);
   EXPECT_EQ(hci_connection_callbacks, &classic_link_manager);
