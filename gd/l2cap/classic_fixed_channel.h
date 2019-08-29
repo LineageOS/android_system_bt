@@ -77,7 +77,7 @@ class ClassicFixedChannel {
    *
    * @return The upper end of a bi-directional queue.
    */
-  common::BidiQueueEnd<packet::PacketView<packet::kLittleEndian>, packet::BasePacketBuilder>* GetQueueUpEnd() const;
+  common::BidiQueueEnd<packet::BasePacketBuilder, packet::PacketView<packet::kLittleEndian>>* GetQueueUpEnd() const;
 
  private:
   std::shared_ptr<internal::ClassicFixedChannelImpl> impl_;
