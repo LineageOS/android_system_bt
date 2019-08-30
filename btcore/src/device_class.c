@@ -84,7 +84,9 @@ void device_class_from_int(bt_device_class_t *dc, int data) {
 int device_class_to_int(const bt_device_class_t *dc) {
   assert(dc != NULL);
   // Careful with endianess.
-  return (int)(le32toh(*(int*)dc) & 0xffffff);
+  int val = 0;
+  memcpy(&val, dc, sizeof(*dc));
+  return (int)(le32toh(val) & 0xffffff);
 }
 
 bool device_class_equals(const bt_device_class_t *p1, const bt_device_class_t *p2) {
