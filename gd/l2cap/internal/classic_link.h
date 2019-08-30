@@ -36,9 +36,9 @@ class ClassicLink {
 
  private:
   os::Handler* handler_;
+  ClassicFixedChannelAllocator fixed_channel_allocator_{handler_};
   std::unique_ptr<hci::AclConnection> acl_connection_;
   std::unique_ptr<Scheduler> scheduler_;
-  ClassicFixedChannelAllocator fixed_channel_allocator_{handler_};
   DISALLOW_COPY_AND_ASSIGN(ClassicLink);
 };
 
