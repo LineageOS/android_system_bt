@@ -141,13 +141,6 @@ class AclManagerCertService : public AclManagerCert::Service {
 
   using EventStream = ::bluetooth::grpc::GrpcEventStream<AclData, AclPacketView>;
 
-  ::grpc::Status ReadLocalAddress(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
-                                  ::bluetooth::facade::BluetoothAddress* response) override {
-    auto address = controller_->GetControllerMacAddress().ToString();
-    response->set_address(address);
-    return ::grpc::Status::OK;
-  }
-
   ::grpc::Status SetPageScanMode(::grpc::ServerContext* context, const ::bluetooth::hci::cert::PageScanMode* request,
                                  ::google::protobuf::Empty* response) override {
     ScanEnable scan_enable = request->enabled() ? ScanEnable::PAGE_SCAN_ONLY : ScanEnable::NO_SCANS;

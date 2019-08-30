@@ -60,9 +60,9 @@ class SimpleHciTest(GdBaseTestClass):
             hci_cert_pb2.PageScanMode(enabled=True)
         )
 
-        dut_address = self.device_under_test.hci.ReadLocalAddress(empty_pb2.Empty()).address
+        dut_address = self.device_under_test.controller_read_only_property.ReadLocalAddress(empty_pb2.Empty()).address
         self.device_under_test.address = dut_address
-        cert_address = self.cert_device.hci.ReadLocalAddress(empty_pb2.Empty()).address
+        cert_address = self.cert_device.controller_read_only_property.ReadLocalAddress(empty_pb2.Empty()).address
         self.cert_device.address = cert_address
 
         self.dut_connection_complete_stream = self.device_under_test.hci.connection_complete_stream
