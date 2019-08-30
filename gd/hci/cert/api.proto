@@ -6,7 +6,6 @@ import "google/protobuf/empty.proto";
 import "facade/common.proto";
 
 service AclManagerCert {
-  rpc ReadLocalAddress(google.protobuf.Empty) returns (facade.BluetoothAddress) {}
   rpc SetPageScanMode(PageScanMode) returns (google.protobuf.Empty) {}
   rpc SetIncomingConnectionPolicy(IncomingConnectionPolicy) returns (google.protobuf.Empty) {}
   rpc Connect(facade.BluetoothAddress) returns (google.protobuf.Empty) {}
