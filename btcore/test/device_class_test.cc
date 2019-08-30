@@ -22,9 +22,6 @@
 
 #include "btcore/include/device_class.h"
 
-// Device Class is 3 bytes.
-static const int DC_MASK = 0xffffff;
-
 ::testing::AssertionResult check_bitfield(const char* m_expr,
                                           const char* n_expr, int m, int n) {
   if (m == n) return ::testing::AssertionSuccess();
@@ -84,8 +81,9 @@ TEST_F(DeviceClassTest, to_stream) {
     int rc = device_class_to_stream(&dc, dc_stream1, sizeof(dc_stream1));
     EXPECT_EQ(3, rc);
 
-    uint32_t* val = (uint32_t*)&dc;
-    EXPECT_PRED_FORMAT2(check_bitfield, 0x00000000, *val & 0xffffff);
+    uint32_t val = 0;
+    memcpy(&val, &dc, sizeof(dc));
+    EXPECT_PRED_FORMAT2(check_bitfield, 0x00000000, val);
 
     EXPECT_PRED_FORMAT2(check_bitfield, 0x00, dc_stream1[0]);
     EXPECT_PRED_FORMAT2(check_bitfield, 0x00, dc_stream1[1]);
@@ -101,8 +99,9 @@ TEST_F(DeviceClassTest, to_stream) {
 
     int rc = device_class_to_stream(&dc, dc_stream1, sizeof(dc_stream1));
     EXPECT_EQ(3, rc);
-    uint32_t* val = (uint32_t*)&dc;
-    EXPECT_PRED_FORMAT2(check_bitfield, 0x00aa55aa, *val & 0xffffff);
+    uint32_t val = 0;
+    memcpy(&val, &dc, sizeof(dc));
+    EXPECT_PRED_FORMAT2(check_bitfield, 0x00aa55aa, val);
 
     EXPECT_PRED_FORMAT2(check_bitfield, 0xaa, dc_stream1[0]);
     EXPECT_PRED_FORMAT2(check_bitfield, 0x55, dc_stream1[1]);
@@ -118,8 +117,9 @@ TEST_F(DeviceClassTest, to_stream) {
 
     int rc = device_class_to_stream(&dc, dc_stream1, sizeof(dc_stream1));
     EXPECT_EQ(3, rc);
-    uint32_t* val = (uint32_t*)&dc;
-    EXPECT_PRED_FORMAT2(check_bitfield, 0x452301, *val & 0xffffff);
+    uint32_t val = 0;
+    memcpy(&val, &dc, sizeof(dc));
+    EXPECT_PRED_FORMAT2(check_bitfield, 0x452301, val);
 
     EXPECT_PRED_FORMAT2(check_bitfield, 0x01, dc_stream1[0]);
     EXPECT_PRED_FORMAT2(check_bitfield, 0x23, dc_stream1[1]);
@@ -131,24 +131,33 @@ TEST_F(DeviceClassTest, limited_discoverable_mode) {
   uint8_t dc_stream[] = {0x00, 0x00, 0x00};
   bt_device_class_t dc;
   device_class_from_stream(&dc, dc_stream);
-  uint32_t* test = (uint32_t*)&dc;
+  uint32_t test = 0;
+  memcpy(&test, &dc, sizeof(dc));
 
   EXPECT_FALSE(device_class_get_limited(&dc));
-  EXPECT_EQ((unsigned)0x00000000, *test & DC_MASK);
+  EXPECT_EQ((unsigned)0x00000000, test);
 
   device_class_set_limited(&dc, true);
+  test = 0;
+  memcpy(&test, &dc, sizeof(dc));
   EXPECT_TRUE(device_class_get_limited(&dc));
-  EXPECT_EQ((unsigned)0x00002000, *test & DC_MASK);
+  EXPECT_EQ((unsigned)0x00002000, test);
 
   device_class_set_limited(&dc, false);
+  test = 0;
+  memcpy(&test, &dc, sizeof(dc));
   EXPECT_FALSE(device_class_get_limited(&dc));
-  EXPECT_EQ((unsigned)0x00000000, *test & DC_MASK);
+  EXPECT_EQ((unsigned)0x00000000, test);
 
   device_class_set_limited(&dc, true);
-  EXPECT_PRED_FORMAT2(check_bitfield, 0x00002000, *test & DC_MASK);
+  test = 0;
+  memcpy(&test, &dc, sizeof(dc));
+  EXPECT_PRED_FORMAT2(check_bitfield, 0x00002000, test);
 
   device_class_set_limited(&dc, false);
-  EXPECT_PRED_FORMAT2(check_bitfield, 0x00000000, *test & DC_MASK);
+  test = 0;
+  memcpy(&test, &dc, sizeof(dc));
+  EXPECT_PRED_FORMAT2(check_bitfield, 0x00000000, test);
 }
 
 TEST_F(DeviceClassTest, equals) {
