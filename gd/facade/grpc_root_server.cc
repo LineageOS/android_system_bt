@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include "facade/read_only_property_server.h"
 #include "facade/rootservice.grpc.pb.h"
 #include "grpc/grpc_module.h"
 #include "hal/facade.h"
@@ -53,10 +54,12 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
         modules.add<::bluetooth::hal::HciHalFacadeModule>();
         break;
       case BluetoothModule::HCI:
+        modules.add<::bluetooth::facade::ReadOnlyPropertyServerModule>();
         modules.add<::bluetooth::hci::AclManagerFacadeModule>();
         modules.add<::bluetooth::hci::ClassicSecurityManagerFacadeModule>();
         break;
       case BluetoothModule::L2CAP:
+        modules.add<::bluetooth::facade::ReadOnlyPropertyServerModule>();
         modules.add<::bluetooth::l2cap::L2capModuleFacadeModule>();
         break;
       default:
