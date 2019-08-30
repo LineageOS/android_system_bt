@@ -18,6 +18,7 @@
 
 #include <string>
 
+#include "cert/read_only_property_server.h"
 #include "cert/rootservice.grpc.pb.h"
 #include "grpc/grpc_module.h"
 #include "hal/cert/cert.h"
@@ -53,9 +54,11 @@ class RootCertService : public ::bluetooth::cert::RootCert::Service {
         modules.add<::bluetooth::hal::cert::HalCertModule>();
         break;
       case BluetoothModule::HCI:
+        modules.add<::bluetooth::cert::ReadOnlyPropertyServerModule>();
         modules.add<::bluetooth::hci::cert::AclManagerCertModule>();
         break;
       case BluetoothModule::L2CAP:
+        modules.add<::bluetooth::cert::ReadOnlyPropertyServerModule>();
         modules.add<::bluetooth::l2cap::cert::L2capModuleCertModule>();
         break;
       default:
