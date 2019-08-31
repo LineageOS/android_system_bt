@@ -675,6 +675,8 @@ void l2c_link_adjust_allocation(void) {
   uint16_t num_hipri_links = 0;
   uint16_t controller_xmit_quota = l2cb.num_lm_acl_bufs;
   uint16_t high_pri_link_quota = L2CAP_HIGH_PRI_MIN_XMIT_QUOTA_A;
+  bool is_share_buffer =
+      (l2cb.num_lm_ble_bufs == L2C_DEF_NUM_BLE_BUF_SHARED) ? true : false;
 
   /* If no links active, reset buffer quotas and controller buffers */
   if (l2cb.num_links_active == 0) {
@@ -685,7 +687,8 @@ void l2c_link_adjust_allocation(void) {
 
   /* First, count the links */
   for (yy = 0, p_lcb = &l2cb.lcb_pool[0]; yy < MAX_L2CAP_LINKS; yy++, p_lcb++) {
-    if (p_lcb->in_use) {
+    if (p_lcb->in_use &&
+        (is_share_buffer || p_lcb->transport != BT_TRANSPORT_LE)) {
       if (p_lcb->acl_priority == L2CAP_PRIORITY_HIGH)
         num_hipri_links++;
       else
@@ -732,7 +735,8 @@ void l2c_link_adjust_allocation(void) {
 
   /* Now, assign the quotas to each link */
   for (yy = 0, p_lcb = &l2cb.lcb_pool[0]; yy < MAX_L2CAP_LINKS; yy++, p_lcb++) {
-    if (p_lcb->in_use) {
+    if (p_lcb->in_use &&
+        (is_share_buffer || p_lcb->transport != BT_TRANSPORT_LE)) {
       if (p_lcb->acl_priority == L2CAP_PRIORITY_HIGH) {
         p_lcb->link_xmit_quota = high_pri_link_quota;
       } else {
