@@ -131,6 +131,7 @@ cc_binary {
     srcs: [
         "facade/facade_main.cc",
         "facade/grpc_root_server.cc",
+        "facade/read_only_property_server.cc",
         "grpc/grpc_module.cc",
         ":BluetoothFacade_hci_hal",
         ":BluetoothFacade_hci_layer",
@@ -176,6 +177,7 @@ cc_binary {
     srcs: [
         "cert/cert_main.cc",
         "cert/grpc_root_server.cc",
+        "cert/read_only_property_server.cc",
         "grpc/grpc_module.cc",
         ":BluetoothCertSource_hci_hal",
         ":BluetoothCertSource_hci_layer",

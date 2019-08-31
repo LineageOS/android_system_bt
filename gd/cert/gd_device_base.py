@@ -17,6 +17,7 @@
 import logging
 import os
 from builtins import open
+import json
 import signal
 import socket
 import subprocess
@@ -60,8 +61,10 @@ class GdDeviceBase:
             log_path_base, '%s_%s_backing_logs.txt' % (type_identifier, label))
         self.backing_process_logs = open(backing_process_logpath, 'w')
 
-        btsnoop_path = os.path.join(log_path_base, '%s_btsnoop_hci.log' % label)
-        cmd.append("--btsnoop=" + btsnoop_path)
+        cmd_str = json.dumps(cmd)
+        if "--btsnoop=" not in cmd_str:
+            btsnoop_path = os.path.join(log_path_base, '%s_btsnoop_hci.log' % label)
+            cmd.append("--btsnoop=" + btsnoop_path)
 
         self.backing_process = subprocess.Popen(
             cmd,

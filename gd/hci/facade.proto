@@ -6,7 +6,6 @@ import "google/protobuf/empty.proto";
 import "facade/common.proto";
 
 service AclManagerFacade {
-  rpc ReadLocalAddress(google.protobuf.Empty) returns (facade.BluetoothAddress) {}
   rpc SetPageScanMode(PageScanMode) returns (google.protobuf.Empty) {}
   rpc Connect(facade.BluetoothAddress) returns (google.protobuf.Empty) {}
   rpc Disconnect(facade.BluetoothAddress) returns (google.protobuf.Empty) {}
@@ -17,6 +16,44 @@ service AclManagerFacade {
   rpc FetchAclData(facade.EventStreamRequest) returns (stream AclData) {}
   rpc TestInternalHciCommands(google.protobuf.Empty) returns (google.protobuf.Empty) {}
   rpc TestInternalHciLeCommands(google.protobuf.Empty) returns (google.protobuf.Empty) {}
+}
+
+message PageScanMode {
+  bool enabled = 1;
+}
+
+message ConnectionEvent {
+  facade.BluetoothAddress remote = 1;
+  uint32 connection_handle = 2;
+}
+
+message DisconnectionEvent {
+  facade.BluetoothAddress remote = 1;
+  uint32 reason = 2;
+}
+
+message ConnectionFailedEvent {
+  facade.BluetoothAddress remote = 1;
+  uint32 reason = 2;
+}
+
+message AclData {
+  facade.BluetoothAddress remote = 1;
+  bytes payload = 2;
+}
+
+service ClassicPairingFacade {
+  rpc SetPairingMode(PairingMode) returns (google.protobuf.Empty) {}
+  rpc DeletePairing(DeletePairingRequest) returns (google.protobuf.Empty) {}
+}
+
+message PairingMode {
+  bool enabled = 1;
+}
+
+message DeletePairingRequest {
+  bool deleteAll = 1;
+  facade.BluetoothAddress remote = 2;
 }
 
 service ClassicSecurityManagerFacade {
@@ -48,29 +85,6 @@ service ClassicSecurityManagerFacade {
   rpc AuthenticationRequested(AuthenticationRequestedMessage) returns (google.protobuf.Empty) {}
 }
 
-message PageScanMode {
-  bool enabled = 1;
-}
-
-message ConnectionEvent {
-  facade.BluetoothAddress remote = 1;
-  uint32 connection_handle = 2;
-}
-
-message DisconnectionEvent {
-  facade.BluetoothAddress remote = 1;
-  uint32 reason = 2;
-}
-
-message ConnectionFailedEvent {
-  facade.BluetoothAddress remote = 1;
-  uint32 reason = 2;
-}
-
-message AclData {
-  facade.BluetoothAddress remote = 1;
-  bytes payload = 2;
-}
 
 message CommandCompleteEvent {
   uint32 command_opcode = 1;
