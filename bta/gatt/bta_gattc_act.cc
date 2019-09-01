@@ -911,6 +911,8 @@ void bta_gattc_exec_cmpl(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_OP_CMPL* p_data) {
 /** configure MTU operation complete */
 void bta_gattc_cfg_mtu_cmpl(tBTA_GATTC_CLCB* p_clcb,
                             tBTA_GATTC_OP_CMPL* p_data) {
+  GATT_CONFIGURE_MTU_OP_CB cb = p_clcb->p_q_cmd->api_mtu.mtu_cb;
+  void* my_cb_data = p_clcb->p_q_cmd->api_mtu.mtu_cb_data;
   tBTA_GATTC cb_data;
 
   osi_free_and_reset((void**)&p_clcb->p_q_cmd);
@@ -923,6 +925,10 @@ void bta_gattc_cfg_mtu_cmpl(tBTA_GATTC_CLCB* p_clcb,
   cb_data.cfg_mtu.conn_id = p_clcb->bta_conn_id;
   cb_data.cfg_mtu.status = p_data->status;
   cb_data.cfg_mtu.mtu = p_clcb->p_srcb->mtu;
+
+  if (cb) {
+    cb(p_clcb->bta_conn_id, p_data->status, my_cb_data);
+  }
 
   (*p_clcb->p_rcb->p_cback)(BTA_GATTC_CFG_MTU_EVT, &cb_data);
 }
