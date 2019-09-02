@@ -146,7 +146,7 @@ class RawPort(object):
 
   def receive_response(self):
     ready_to_read, ready_to_write, in_error = \
-               select.select(
+               select(
                   [ self._connection._socket ],
                   [ ],
                   [ self._connection._socket ],

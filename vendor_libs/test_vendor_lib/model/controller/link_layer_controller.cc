@@ -55,7 +55,7 @@ static uint8_t GetRssi() {
   return -(rssi);
 }
 
-void LinkLayerController::SendLELinkLayerPacket(std::shared_ptr<LinkLayerPacketBuilder> packet) {
+void LinkLayerController::SendLeLinkLayerPacket(std::shared_ptr<LinkLayerPacketBuilder> packet) {
   if (schedule_task_) {
     schedule_task_(milliseconds(50), [this, packet]() { send_to_remote_(packet, Phy::Type::LOW_ENERGY); });
   } else {
@@ -523,7 +523,7 @@ void LinkLayerController::IncomingLeAdvertisementPacket(LinkLayerPacketView inco
   if (le_scan_enable_ && le_scan_type_ == 1) {
     std::shared_ptr<LinkLayerPacketBuilder> to_send =
         LinkLayerPacketBuilder::WrapLeScan(properties_.GetLeAddress(), incoming.GetSourceAddress());
-    SendLELinkLayerPacket(to_send);
+    SendLeLinkLayerPacket(to_send);
   }
 }
 
@@ -535,7 +535,7 @@ void LinkLayerController::IncomingLeScanPacket(LinkLayerPacketView incoming) {
       properties_.GetLeScanResponse());
   std::shared_ptr<LinkLayerPacketBuilder> to_send = LinkLayerPacketBuilder::WrapLeScanResponse(
       std::move(response), properties_.GetLeAddress(), incoming.GetSourceAddress());
-  SendLELinkLayerPacket(to_send);
+  SendLeLinkLayerPacket(to_send);
 }
 
 void LinkLayerController::IncomingLeScanResponsePacket(LinkLayerPacketView incoming) {
@@ -649,7 +649,38 @@ void LinkLayerController::IncomingResponsePacket(LinkLayerPacketView incoming) {
 void LinkLayerController::TimerTick() {
   if (inquiry_state_ == Inquiry::InquiryState::INQUIRY) Inquiry();
   if (inquiry_state_ == Inquiry::InquiryState::INQUIRY) PageScan();
+  LeAdvertising();
   Connections();
+}
+
+void LinkLayerController::LeAdvertising() {
+  if (!le_advertising_enable_) {
+    return;
+  }
+  steady_clock::time_point now = steady_clock::now();
+  if (duration_cast<milliseconds>(now - last_le_advertisement_) < milliseconds(200)) {
+    return;
+  }
+
+  LeAdvertisement::AddressType own_address_type =
+      static_cast<LeAdvertisement::AddressType>(properties_.GetLeAdvertisingOwnAddressType());
+  std::shared_ptr<packets::LinkLayerPacketBuilder> to_send;
+  std::unique_ptr<packets::LeAdvertisementBuilder> ad;
+  if (own_address_type == LeAdvertisement::AddressType::PUBLIC) {
+    ad = packets::LeAdvertisementBuilder::Create(
+        LeAdvertisement::AddressType::PUBLIC,
+        static_cast<LeAdvertisement::AdvertisementType>(properties_.GetLeAdvertisementType()),
+        properties_.GetLeAdvertisement());
+    to_send = packets::LinkLayerPacketBuilder::WrapLeAdvertisement(std::move(ad), properties_.GetAddress());
+  } else if (own_address_type == LeAdvertisement::AddressType::RANDOM) {
+    ad = packets::LeAdvertisementBuilder::Create(
+        LeAdvertisement::AddressType::RANDOM,
+        static_cast<LeAdvertisement::AdvertisementType>(properties_.GetLeAdvertisementType()),
+        properties_.GetLeAdvertisement());
+    to_send = packets::LinkLayerPacketBuilder::WrapLeAdvertisement(std::move(ad), properties_.GetLeAddress());
+  }
+  CHECK(to_send != nullptr);
+  SendLeLinkLayerPacket(to_send);
 }
 
 void LinkLayerController::Connections() {

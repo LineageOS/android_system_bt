@@ -104,11 +104,19 @@ class LinkLayerController {
   void PageScan();
   void Connections();
 
+  void LeAdvertising();
+
   void LeWhiteListClear();
   void LeWhiteListAddDevice(Address addr, uint8_t addr_type);
   void LeWhiteListRemoveDevice(Address addr, uint8_t addr_type);
   bool LeWhiteListContainsDevice(Address addr, uint8_t addr_type);
   bool LeWhiteListFull();
+
+  hci::Status SetLeAdvertisingEnable(uint8_t le_advertising_enable) {
+    le_advertising_enable_ = le_advertising_enable;
+    // TODO: Check properties and return errors
+    return hci::Status::SUCCESS;
+  }
 
   void SetLeScanEnable(uint8_t le_scan_enable) {
     le_scan_enable_ = le_scan_enable;
@@ -180,7 +188,7 @@ class LinkLayerController {
   hci::Status WriteLinkSupervisionTimeout(uint16_t handle, uint16_t timeout);
 
  protected:
-  void SendLELinkLayerPacket(std::shared_ptr<packets::LinkLayerPacketBuilder> packet);
+  void SendLeLinkLayerPacket(std::shared_ptr<packets::LinkLayerPacketBuilder> packet);
   void SendLinkLayerPacket(std::shared_ptr<packets::LinkLayerPacketBuilder> packet);
   void IncomingAclPacket(packets::LinkLayerPacketView packet);
   void IncomingAclAckPacket(packets::LinkLayerPacketView packet);
@@ -232,7 +240,10 @@ class LinkLayerController {
 
   std::vector<std::tuple<Address, uint8_t>> le_white_list_;
 
-  uint8_t le_scan_enable_;
+  uint8_t le_advertising_enable_{false};
+  std::chrono::steady_clock::time_point last_le_advertisement_;
+
+  uint8_t le_scan_enable_{false};
   uint8_t le_scan_type_;
   uint16_t le_scan_interval_;
   uint16_t le_scan_window_;
