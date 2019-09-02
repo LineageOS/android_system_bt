@@ -28,8 +28,6 @@
 #include "packets/link_layer/link_layer_packet_view.h"
 #include "types/address.h"
 
-#include "stack/include/btm_ble_api.h"
-
 namespace test_vendor_lib {
 
 // Represent a Bluetooth Device

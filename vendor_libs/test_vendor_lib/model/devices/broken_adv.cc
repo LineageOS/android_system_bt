@@ -29,39 +29,24 @@ bool BrokenAdv::registered_ = DeviceBoutique::Register(LOG_TAG, &BrokenAdv::Crea
 
 BrokenAdv::BrokenAdv() {
   advertising_interval_ms_ = std::chrono::milliseconds(1280);
-  properties_.SetLeAdvertisementType(BTM_BLE_NON_CONNECT_EVT);
+  properties_.SetLeAdvertisementType(0x03 /* NON_CONNECT */);
   constant_adv_data_ = {
-      0x02,  // Length
-      BTM_BLE_AD_TYPE_FLAG,
-      BTM_BLE_BREDR_NOT_SPT | BTM_BLE_GEN_DISC_FLAG,
-      0x13,  // Length
-      BTM_BLE_AD_TYPE_NAME_CMPL,
-      'g',
-      'D',
-      'e',
-      'v',
-      'i',
-      'c',
-      'e',
-      '-',
-      'b',
-      'r',
-      'o',
-      'k',
-      'e',
-      'n',
-      '_',
-      'a',
-      'd',
-      'v',
+      0x02,       // Length
+      0x01,       // TYPE_FLAG
+      0x4 | 0x2,  // BREDR_NOT_SPT |  GEN_DISC_FLAG
+      0x13,       // Length
+      0x09,       // TYPE_NAME_CMPL
+      'g',       'D', 'e', 'v', 'i', 'c', 'e', '-', 'b', 'r', 'o', 'k', 'e', 'n', '_', 'a', 'd', 'v',
   };
   properties_.SetLeAdvertisement(constant_adv_data_);
 
   properties_.SetLeScanResponse({0x0b,  // Length
-                                 BTM_BLE_AD_TYPE_NAME_SHORT, 'b', 'r', 'o', 'k', 'e', 'n', 'n', 'e', 's', 's'});
+                                 0x08,  // TYPE_NAME_SHORT
+                                 'b', 'r', 'o', 'k', 'e', 'n', 'n', 'e', 's', 's'});
 
   properties_.SetExtendedInquiryData({0x07,  // Length
-                                      BT_EIR_COMPLETE_LOCAL_NAME_TYPE, 'B', 'R', '0', 'K', '3', 'N'});
+                                      0x09,  // TYPE_NAME_COMPLETE
+                                      'B', 'R', '0', 'K', '3', 'N'});
   properties_.SetPageScanRepetitionMode(0);
   page_scan_delay_ms_ = std::chrono::milliseconds(600);
 }
@@ -106,7 +91,7 @@ static size_t random_adv_type() {
 
   switch ((randomness & 0xf000000) >> 24) {
     case (0):
-      return BTM_EIR_MANUFACTURER_SPECIFIC_TYPE;
+      return 0xff;  // TYPE_MANUFACTURER_SPECIFIC
     case (1):
       return (randomness & 0xff);
     default:

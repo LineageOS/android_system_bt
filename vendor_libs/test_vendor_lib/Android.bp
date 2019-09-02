@@ -47,15 +47,8 @@ cc_library_static {
         "include",
         ".",
     ],
-    header_libs: [
-        "libbluetooth_headers",
-    ],
     include_dirs: [
         "system/bt",
-        "system/bt/utils/include",
-        "system/bt/hci/include",
-        "system/bt/internal_include",
-        "system/bt/stack/include",
     ],
     shared_libs: [
         "libbase",
@@ -90,9 +83,6 @@ cc_test_host {
     ],
     include_dirs: [
         "system/bt",
-        "system/bt/utils/include",
-        "system/bt/hci/include",
-        "system/bt/stack/include",
     ],
     shared_libs: [
         "liblog",
@@ -126,9 +116,6 @@ cc_test_host {
     ],
     include_dirs: [
         "system/bt",
-        "system/bt/utils/include",
-        "system/bt/hci/include",
-        "system/bt/stack/include",
     ],
     shared_libs: [
         "liblog",

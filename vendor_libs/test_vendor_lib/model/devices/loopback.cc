@@ -30,31 +30,19 @@ bool Loopback::registered_ = DeviceBoutique::Register(LOG_TAG, &Loopback::Create
 
 Loopback::Loopback() {
   advertising_interval_ms_ = std::chrono::milliseconds(1280);
-  properties_.SetLeAdvertisementType(BTM_BLE_NON_CONNECT_EVT);
-  properties_.SetLeAdvertisement({0x11,  // Length
-                                  BTM_BLE_AD_TYPE_NAME_CMPL,
-                                  'g',
-                                  'D',
-                                  'e',
-                                  'v',
-                                  'i',
-                                  'c',
-                                  'e',
-                                  '-',
-                                  'l',
-                                  'o',
-                                  'o',
-                                  'p',
-                                  'b',
-                                  'a',
-                                  'c',
-                                  'k',
-                                  0x02,  // Length
-                                  BTM_BLE_AD_TYPE_FLAG,
-                                  BTM_BLE_BREDR_NOT_SPT | BTM_BLE_GEN_DISC_FLAG});
+  properties_.SetLeAdvertisementType(0x03);  // NON_CONNECT
+  properties_.SetLeAdvertisement({
+      0x11,  // Length
+      0x09,  // NAME_CMPL
+      'g',         'D', 'e', 'v', 'i', 'c', 'e', '-', 'l', 'o', 'o', 'p', 'b', 'a', 'c', 'k',
+      0x02,         // Length
+      0x01,         // TYPE_FLAG
+      0x04 | 0x02,  // BREDR_NOT_SPT | GEN_DISC
+  });
 
   properties_.SetLeScanResponse({0x05,  // Length
-                                 BTM_BLE_AD_TYPE_NAME_SHORT, 'l', 'o', 'o', 'p'});
+                                 0x08,  // NAME_SHORT
+                                 'l', 'o', 'o', 'p'});
 }
 
 std::string Loopback::GetTypeString() const {
