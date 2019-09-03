@@ -59,5 +59,10 @@ enum class Version : uint8_t {
   V5_0 = 9,
 };
 
+enum class Role : uint8_t {
+  MASTER = 0x00,
+  SLAVE = 0x01,
+};
+
 }  // namespace hci
 }  // namespace test_vendor_lib

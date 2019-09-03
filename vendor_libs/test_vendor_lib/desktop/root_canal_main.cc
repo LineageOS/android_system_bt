@@ -22,8 +22,6 @@
 #include <utils/Log.h>
 #include <future>
 
-#include "hci_internals.h"
-
 using ::android::bluetooth::root_canal::TestEnvironment;
 
 constexpr uint16_t kTestPort = 6401;
