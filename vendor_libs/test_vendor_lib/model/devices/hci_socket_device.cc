@@ -31,7 +31,7 @@ using std::vector;
 namespace test_vendor_lib {
 
 HciSocketDevice::HciSocketDevice(int file_descriptor) : socket_file_descriptor_(file_descriptor) {
-  advertising_interval_ms_ = std::chrono::milliseconds(0);
+  advertising_interval_ms_ = std::chrono::milliseconds(1000);
 
   page_scan_delay_ms_ = std::chrono::milliseconds(600);
 
@@ -77,7 +77,6 @@ HciSocketDevice::HciSocketDevice(int file_descriptor) : socket_file_descriptor_(
   h4_ = hci::H4Packetizer(
       socket_file_descriptor_,
       [this](const std::vector<uint8_t>& raw_command) {
-        LOG_INFO(LOG_TAG, "Rx Command");
         std::shared_ptr<std::vector<uint8_t>> packet_copy = std::make_shared<std::vector<uint8_t>>(raw_command);
         HandleCommand(packet_copy);
       },
@@ -85,12 +84,10 @@ HciSocketDevice::HciSocketDevice(int file_descriptor) : socket_file_descriptor_(
         CHECK(false) << "Unexpected Event in HciSocketDevice!";
       },
       [this](const std::vector<uint8_t>& raw_acl) {
-        LOG_INFO(LOG_TAG, "Rx ACL");
         std::shared_ptr<std::vector<uint8_t>> packet_copy = std::make_shared<std::vector<uint8_t>>(raw_acl);
         HandleAcl(packet_copy);
       },
       [this](const std::vector<uint8_t>& raw_sco) {
-        LOG_INFO(LOG_TAG, "Rx SCO");
         std::shared_ptr<std::vector<uint8_t>> packet_copy = std::make_shared<std::vector<uint8_t>>(raw_sco);
         HandleSco(packet_copy);
       },
@@ -100,21 +97,17 @@ HciSocketDevice::HciSocketDevice(int file_descriptor) : socket_file_descriptor_(
       });
 
   RegisterEventChannel([this](std::shared_ptr<std::vector<uint8_t>> packet) {
-    LOG_INFO(LOG_TAG, "Tx Event");
     SendHci(hci::PacketType::EVENT, packet);
   });
   RegisterAclChannel([this](std::shared_ptr<std::vector<uint8_t>> packet) {
-    LOG_INFO(LOG_TAG, "Tx ACL");
     SendHci(hci::PacketType::ACL, packet);
   });
   RegisterScoChannel([this](std::shared_ptr<std::vector<uint8_t>> packet) {
-    LOG_INFO(LOG_TAG, "Tx SCO");
     SendHci(hci::PacketType::SCO, packet);
   });
 }
 
 void HciSocketDevice::TimerTick() {
-  LOG_INFO(LOG_TAG, "TimerTick fd = %d", socket_file_descriptor_);
   h4_.OnDataReady(socket_file_descriptor_);
   DualModeController::TimerTick();
 }
@@ -128,11 +121,11 @@ void HciSocketDevice::SendHci(hci::PacketType packet_type, const std::shared_ptr
   int bytes_written;
   bytes_written = write(socket_file_descriptor_, &type, sizeof(type));
   if (bytes_written != sizeof(type)) {
-    LOG_INFO(LOG_TAG, "bytes_written %d != sizeof(type)", bytes_written);
+    LOG_WARN(LOG_TAG, "bytes_written %d != sizeof(type)", bytes_written);
   }
   bytes_written = write(socket_file_descriptor_, packet->data(), packet->size());
   if (static_cast<size_t>(bytes_written) != packet->size()) {
-    LOG_INFO(LOG_TAG, "bytes_written %d != packet->size", bytes_written);
+    LOG_WARN(LOG_TAG, "bytes_written %d != packet->size", bytes_written);
   }
 }
 
