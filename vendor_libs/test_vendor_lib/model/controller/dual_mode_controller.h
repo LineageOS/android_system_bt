@@ -307,6 +307,12 @@ class DualModeController : public Device {
   // 7.8.7
   void HciLeSetAdvertisingData(packets::PacketView<true> args);
 
+  // 7.8.8
+  void HciLeSetScanResponseData(packets::PacketView<true> args);
+
+  // 7.8.9
+  void HciLeSetAdvertisingEnable(packets::PacketView<true> args);
+
   // 7.8.10
   void HciLeSetScanParameters(packets::PacketView<true> args);
 
