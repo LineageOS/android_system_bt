@@ -30,6 +30,8 @@
 #include <memory>
 
 #include <stdlib.h>
+#include <iomanip>
+#include <iostream>
 
 #include <base/logging.h>
 #include "base/files/file_util.h"
