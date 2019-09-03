@@ -26,9 +26,9 @@ namespace test_vendor_lib {
 bool Keyboard::registered_ = DeviceBoutique::Register(LOG_TAG, &Keyboard::Create);
 
 Keyboard::Keyboard() {
-  properties_.SetLeAdvertisementType(BTM_BLE_CONNECT_EVT);
+  properties_.SetLeAdvertisementType(0x00 /* CONNECTABLE */);
   properties_.SetLeAdvertisement({0x11,  // Length
-                                  BTM_BLE_AD_TYPE_NAME_CMPL,
+                                  0x09 /* TYPE_NAME_CMPL */,
                                   'g',
                                   'D',
                                   'e',
@@ -54,11 +54,11 @@ Keyboard::Keyboard() {
                                   0x12,
                                   0x18,
                                   0x02,  // Length
-                                  BTM_BLE_AD_TYPE_FLAG,
-                                  BTM_BLE_BREDR_NOT_SPT | BTM_BLE_GEN_DISC_FLAG});
+                                  0x01 /* TYPE_FLAGS */,
+                                  0x04 /* BREDR_NOT_SPT */ | 0x02 /* GEN_DISC_FLAG */});
 
   properties_.SetLeScanResponse({0x04,  // Length
-                                 BTM_BLE_AD_TYPE_NAME_SHORT, 'k', 'e', 'y'});
+                                 0x08 /* TYPE_NAME_SHORT */, 'k', 'e', 'y'});
 }
 
 std::string Keyboard::GetTypeString() const {
