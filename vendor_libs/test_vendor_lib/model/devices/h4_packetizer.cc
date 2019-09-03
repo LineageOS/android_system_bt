@@ -80,7 +80,6 @@ size_t H4Packetizer::Send(uint8_t type, const uint8_t* data, size_t length) {
 }
 
 void H4Packetizer::OnPacketReady() {
-  ALOGE("%s: before switch", __func__);
   switch (hci_packet_type_) {
     case hci::PacketType::COMMAND:
       command_cb_(packet_);
@@ -156,8 +155,6 @@ void H4Packetizer::OnDataReady(int fd) {
           size_t packet_length = HciGetPacketLengthForType(hci_packet_type_, preamble_);
           packet_.resize(preamble_bytes + packet_length);
           memcpy(packet_.data(), preamble_, preamble_bytes);
-          ALOGI("%s: Read a preamble of size %d length %d %0x %0x %0x", __func__, static_cast<int>(bytes_read_),
-                static_cast<int>(packet_length), preamble_[0], preamble_[1], preamble_[2]);
           bytes_remaining_ = packet_length;
           if (bytes_remaining_ == 0) {
             OnPacketReady();

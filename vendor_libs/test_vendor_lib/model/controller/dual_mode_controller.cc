@@ -198,8 +198,10 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   SET_HANDLER(OpCode::LE_READ_BUFFER_SIZE, HciLeReadBufferSize);
   SET_HANDLER(OpCode::LE_READ_LOCAL_SUPPORTED_FEATURES, HciLeReadLocalSupportedFeatures);
   SET_HANDLER(OpCode::LE_SET_RANDOM_ADDRESS, HciLeSetRandomAddress);
-  SET_HANDLER(OpCode::LE_SET_ADVERTISING_DATA, HciLeSetAdvertisingData);
   SET_HANDLER(OpCode::LE_SET_ADVERTISING_PARAMETERS, HciLeSetAdvertisingParameters);
+  SET_HANDLER(OpCode::LE_SET_ADVERTISING_DATA, HciLeSetAdvertisingData);
+  SET_HANDLER(OpCode::LE_SET_SCAN_RESPONSE_DATA, HciLeSetScanResponseData);
+  SET_HANDLER(OpCode::LE_SET_ADVERTISING_ENABLE, HciLeSetAdvertisingEnable);
   SET_HANDLER(OpCode::LE_SET_SCAN_PARAMETERS, HciLeSetScanParameters);
   SET_HANDLER(OpCode::LE_SET_SCAN_ENABLE, HciLeSetScanEnable);
   SET_HANDLER(OpCode::LE_CREATE_CONNECTION, HciLeCreateConnection);
@@ -287,7 +289,8 @@ void DualModeController::HandleCommand(std::shared_ptr<std::vector<uint8_t>> pac
     active_hci_commands_[opcode](command_packet.GetPayload());
   } else {
     SendCommandCompleteUnknownOpCodeEvent(opcode);
-    LOG_INFO(LOG_TAG, "Command opcode: 0x%04X, OGF: 0x%04X, OCF: 0x%04X", opcode, opcode & 0xFC00, opcode & 0x03FF);
+    LOG_INFO(LOG_TAG, "Command opcode: 0x%04X, OGF: 0x%04X, OCF: 0x%04X", opcode, (opcode & 0xFC00) >> 10,
+             opcode & 0x03FF);
   }
 }
 
@@ -817,13 +820,34 @@ void DualModeController::HciLeSetRandomAddress(packets::PacketView<true> args) {
 
 void DualModeController::HciLeSetAdvertisingParameters(packets::PacketView<true> args) {
   CHECK(args.size() == 15) << __func__ << " size=" << args.size();
+  auto args_itr = args.begin();
+  properties_.SetLeAdvertisingParameters(
+      args_itr.extract<uint16_t>() /* AdverisingIntervalMin */,
+      args_itr.extract<uint16_t>() /* AdverisingIntervalMax */, args_itr.extract<uint8_t>() /* AdverisingType */,
+      args_itr.extract<uint8_t>() /* OwnAddressType */, args_itr.extract<uint8_t>() /* PeerAddressType */,
+      args_itr.extract<Address>() /* PeerAddress */, args_itr.extract<uint8_t>() /* AdvertisingChannelMap */,
+      args_itr.extract<uint8_t>() /* AdvertisingFilterPolicy */
+  );
 
   SendCommandCompleteSuccess(OpCode::LE_SET_ADVERTISING_PARAMETERS);
 }
 
 void DualModeController::HciLeSetAdvertisingData(packets::PacketView<true> args) {
-  CHECK(args.size() > 0);
+  CHECK(args.size() == 32) << __func__ << " size=" << args.size();
+  properties_.SetLeAdvertisement(std::vector<uint8_t>(args.begin() + 1, args.end()));
   SendCommandCompleteSuccess(OpCode::LE_SET_ADVERTISING_DATA);
+}
+
+void DualModeController::HciLeSetScanResponseData(packets::PacketView<true> args) {
+  CHECK(args.size() == 32) << __func__ << " size=" << args.size();
+  properties_.SetLeScanResponse(std::vector<uint8_t>(args.begin() + 1, args.end()));
+  SendCommandCompleteSuccess(OpCode::LE_SET_SCAN_RESPONSE_DATA);
+}
+
+void DualModeController::HciLeSetAdvertisingEnable(packets::PacketView<true> args) {
+  CHECK(args.size() == 1) << __func__ << " size=" << args.size();
+  hci::Status status = link_layer_controller_.SetLeAdvertisingEnable(args.begin().extract<uint8_t>());
+  SendCommandCompleteOnlyStatus(OpCode::LE_SET_ADVERTISING_ENABLE, status);
 }
 
 void DualModeController::HciLeSetScanParameters(packets::PacketView<true> args) {
