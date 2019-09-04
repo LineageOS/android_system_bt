@@ -16,6 +16,7 @@
 
 #include "hal/hci_hal_host_rootcanal.h"
 #include "hal/hci_hal.h"
+#include "hal/serialize_packet.h"
 
 #include <fcntl.h>
 #include <netdb.h>
@@ -35,6 +36,7 @@
 #include "os/log.h"
 #include "os/thread.h"
 #include "os/utils.h"
+#include "packet/raw_builder.h"
 
 using ::bluetooth::os::Thread;
 
@@ -377,6 +379,11 @@ TEST_F(HciHalRootcanalTest, send_multiple_acl_sequential) {
   }
 }
 
+TEST(HciHalHidlTest, serialize) {
+  std::vector<uint8_t> bytes = {1, 2, 3, 4, 5, 6, 7, 8, 9};
+  auto packet_bytes = hal::SerializePacket(std::unique_ptr<packet::BasePacketBuilder>(new packet::RawBuilder(bytes)));
+  EXPECT_EQ(bytes, packet_bytes);
+}
 }  // namespace
 }  // namespace hal
 }  // namespace bluetooth
