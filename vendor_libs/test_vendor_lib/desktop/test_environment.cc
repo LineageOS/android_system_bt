@@ -24,8 +24,6 @@
 #include <string.h>
 #include <utils/Log.h>
 
-#include "hci_internals.h"
-
 namespace android {
 namespace bluetooth {
 namespace root_canal {
