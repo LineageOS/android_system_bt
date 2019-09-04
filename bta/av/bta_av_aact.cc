@@ -3107,7 +3107,7 @@ void bta_av_vendor_offload_start(tBTA_AV_SCB* p_scb,
   ARRAY_TO_STREAM(p_param, offload_start->codec_info,
                   (int8_t)sizeof(offload_start->codec_info));
   p_scb->offload_started = true;
-  BTM_VendorSpecificCommand(HCI_CONTROLLER_A2DP_OPCODE_OCF, p_param - param,
+  BTM_VendorSpecificCommand(HCI_CONTROLLER_A2DP, p_param - param,
                             param, offload_vendor_callback);
 }
 
@@ -3115,7 +3115,7 @@ void bta_av_vendor_offload_stop() {
   uint8_t param[sizeof(tBT_A2DP_OFFLOAD)];
   APPL_TRACE_DEBUG("%s", __func__);
   param[0] = VS_HCI_A2DP_OFFLOAD_STOP;
-  BTM_VendorSpecificCommand(HCI_CONTROLLER_A2DP_OPCODE_OCF, 1, param,
+  BTM_VendorSpecificCommand(HCI_CONTROLLER_A2DP, 1, param,
                             offload_vendor_callback);
 }
 /*******************************************************************************

@@ -294,7 +294,7 @@ void ConfigureBqr(const BqrConfiguration& bqr_config) {
   UINT32_TO_STREAM(p_param, bqr_config.quality_event_mask);
   UINT16_TO_STREAM(p_param, bqr_config.minimum_report_interval_ms);
 
-  BTM_VendorSpecificCommand(HCI_CONTROLLER_BQR_OPCODE_OCF, p_param - param,
+  BTM_VendorSpecificCommand(HCI_CONTROLLER_BQR, p_param - param,
                             param, BqrVscCompleteCallback);
 }
 
