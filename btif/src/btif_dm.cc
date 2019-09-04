@@ -508,6 +508,11 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
   auto tmp = bd_addr;
   HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, status, &tmp, state);
 
+  int dev_type;
+  if (!btif_get_device_type(bd_addr, &dev_type)) {
+    dev_type = BT_DEVICE_TYPE_BREDR;
+  }
+
   if (state == BT_BOND_STATE_BONDING ||
       (state == BT_BOND_STATE_BONDED && pairing_cb.sdp_attempts > 0)) {
     // Save state for the device is bonding or SDP.
@@ -1444,7 +1449,8 @@ static void btif_dm_search_services_evt(uint16_t event, char* p_param) {
                  bd_addr.ToString().c_str());
         pairing_cb.sdp_attempts = 0;
 
-        // Both SDP and bonding are done, clear pairing control block
+        // Both SDP and bonding are done, clear pairing control block in case
+        // it is not already cleared
         pairing_cb = {};
 
         // Send one empty UUID to Java to unblock pairing intent when SDP failed

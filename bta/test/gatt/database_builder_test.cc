@@ -19,6 +19,7 @@
 #include <gtest/gtest.h>
 
 #include <base/logging.h>
+#include <iterator>
 #include <utility>
 
 #include "gatt/database_builder.h"
@@ -59,10 +60,11 @@ TEST(DatabaseBuilderTest, EmptyServiceAddTest) {
   Database result = builder.Build();
 
   // verify that the returned database matches what was discovered
-  EXPECT_EQ(result.Services()[0].handle, 0x0001);
-  EXPECT_EQ(result.Services()[0].end_handle, 0x0001);
-  EXPECT_EQ(result.Services()[0].is_primary, true);
-  EXPECT_EQ(result.Services()[0].uuid, SERVICE_1_UUID);
+  auto service = result.Services().begin();
+  EXPECT_EQ(service->handle, 0x0001);
+  EXPECT_EQ(service->end_handle, 0x0001);
+  EXPECT_EQ(service->is_primary, true);
+  EXPECT_EQ(service->uuid, SERVICE_1_UUID);
 }
 
 /* Verify adding service, characteristic and descriptor work */
@@ -79,21 +81,20 @@ TEST(DatabaseBuilderTest, DescriptorAddTest) {
   Database result = builder.Build();
 
   // verify that the returned database matches what was discovered
-  EXPECT_EQ(result.Services()[0].handle, 0x0001);
-  EXPECT_EQ(result.Services()[0].end_handle, 0x000f);
-  EXPECT_EQ(result.Services()[0].is_primary, true);
-  EXPECT_EQ(result.Services()[0].uuid, SERVICE_1_UUID);
+  auto service = result.Services().begin();
+  EXPECT_EQ(service->handle, 0x0001);
+  EXPECT_EQ(service->end_handle, 0x000f);
+  EXPECT_EQ(service->is_primary, true);
+  EXPECT_EQ(service->uuid, SERVICE_1_UUID);
 
-  EXPECT_EQ(result.Services()[0].characteristics[0].uuid,
-            SERVICE_1_CHAR_1_UUID);
-  EXPECT_EQ(result.Services()[0].characteristics[0].declaration_handle, 0x0002);
-  EXPECT_EQ(result.Services()[0].characteristics[0].value_handle, 0x0003);
-  EXPECT_EQ(result.Services()[0].characteristics[0].properties, 0x02);
+  EXPECT_EQ(service->characteristics[0].uuid, SERVICE_1_CHAR_1_UUID);
+  EXPECT_EQ(service->characteristics[0].declaration_handle, 0x0002);
+  EXPECT_EQ(service->characteristics[0].value_handle, 0x0003);
+  EXPECT_EQ(service->characteristics[0].properties, 0x02);
 
-  EXPECT_EQ(result.Services()[0].characteristics[0].descriptors[0].uuid,
+  EXPECT_EQ(service->characteristics[0].descriptors[0].uuid,
             SERVICE_1_CHAR_1_DESC_1_UUID);
-  EXPECT_EQ(result.Services()[0].characteristics[0].descriptors[0].handle,
-            0x0004);
+  EXPECT_EQ(service->characteristics[0].descriptors[0].handle, 0x0004);
 }
 
 /* This test verifies that DatabaseBuilder properly handle discovery of
@@ -139,27 +140,35 @@ TEST(DatabaseBuilderTest, SecondaryServiceOutOfOrderTest) {
   Database result = builder.Build();
 
   // verify that the returned database matches what was discovered
-  EXPECT_EQ(result.Services()[0].handle, 0x0001);
-  EXPECT_EQ(result.Services()[0].is_primary, true);
-  EXPECT_EQ(result.Services()[0].uuid, SERVICE_1_UUID);
+  auto service = result.Services().begin();
+  EXPECT_EQ(service->handle, 0x0001);
+  EXPECT_EQ(service->is_primary, true);
+  EXPECT_EQ(service->uuid, SERVICE_1_UUID);
 
-  EXPECT_EQ(result.Services()[1].handle, 0x0020);
-  EXPECT_EQ(result.Services()[1].end_handle, 0x002f);
-  EXPECT_EQ(result.Services()[1].uuid, SERVICE_2_UUID);
-  EXPECT_EQ(result.Services()[1].is_primary, false);
+  service++;
+  EXPECT_EQ(service->handle, 0x0020);
+  EXPECT_EQ(service->end_handle, 0x002f);
+  EXPECT_EQ(service->uuid, SERVICE_2_UUID);
+  EXPECT_EQ(service->is_primary, false);
 
-  EXPECT_EQ(result.Services()[2].handle, 0x0030);
-  EXPECT_EQ(result.Services()[2].end_handle, 0x003f);
-  EXPECT_EQ(result.Services()[2].uuid, SERVICE_3_UUID);
-  EXPECT_EQ(result.Services()[2].is_primary, true);
+  service++;
+  EXPECT_EQ(service->handle, 0x0030);
+  EXPECT_EQ(service->end_handle, 0x003f);
+  EXPECT_EQ(service->uuid, SERVICE_3_UUID);
+  EXPECT_EQ(service->is_primary, true);
 
-  EXPECT_EQ(result.Services()[3].handle, 0x0040);
-  EXPECT_EQ(result.Services()[3].uuid, SERVICE_4_UUID);
-  EXPECT_EQ(result.Services()[3].is_primary, false);
+  service++;
+  EXPECT_EQ(service->handle, 0x0040);
+  EXPECT_EQ(service->uuid, SERVICE_4_UUID);
+  EXPECT_EQ(service->is_primary, false);
 
-  EXPECT_EQ(result.Services()[4].handle, 0x0050);
-  EXPECT_EQ(result.Services()[4].uuid, SERVICE_5_UUID);
-  EXPECT_EQ(result.Services()[4].is_primary, true);
+  service++;
+  EXPECT_EQ(service->handle, 0x0050);
+  EXPECT_EQ(service->uuid, SERVICE_5_UUID);
+  EXPECT_EQ(service->is_primary, true);
+
+  service++;
+  ASSERT_EQ(service, result.Services().end());
 }
 
 }  // namespace gatt

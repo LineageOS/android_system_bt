@@ -426,8 +426,7 @@ extern tGATT_STATUS bta_gattc_discover_pri_service(uint16_t conn_id,
                                                    uint8_t disc_type);
 extern void bta_gattc_search_service(tBTA_GATTC_CLCB* p_clcb,
                                      bluetooth::Uuid* p_uuid);
-extern const std::vector<gatt::Service>* bta_gattc_get_services(
-    uint16_t conn_id);
+extern const std::list<gatt::Service>* bta_gattc_get_services(uint16_t conn_id);
 extern const gatt::Service* bta_gattc_get_service_for_handle(uint16_t conn_id,
                                                              uint16_t handle);
 const gatt::Characteristic* bta_gattc_get_characteristic_srcb(

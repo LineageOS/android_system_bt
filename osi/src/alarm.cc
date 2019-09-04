@@ -246,7 +246,7 @@ void alarm_cancel(alarm_t* alarm) {
   CHECK(alarms != NULL);
   if (!alarm) return;
 
-  std::shared_ptr<std::recursive_mutex> local_mutex_ref = alarm->callback_mutex;
+  std::shared_ptr<std::recursive_mutex> local_mutex_ref;
   {
     std::lock_guard<std::mutex> lock(alarms_mutex);
     local_mutex_ref = alarm->callback_mutex;

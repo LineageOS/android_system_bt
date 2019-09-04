@@ -466,11 +466,16 @@ typedef struct {
   /**
    * Opens the interface and provides the callback routines
    * to the implemenation of this interface.
+   * The |start_restricted| flag inits the adapter in restricted mode. In
+   * restricted mode, bonds that are created are marked as restricted in the
+   * config file. These devices are deleted upon leaving restricted mode.
+   * The |is_single_user_mode| flag inits the adapter in NIAP mode.
    */
-  int (*init)(bt_callbacks_t* callbacks);
+  int (*init)(bt_callbacks_t* callbacks, bool guest_mode,
+              bool is_single_user_mode);
 
   /** Enable Bluetooth. */
-  int (*enable)(bool guest_mode);
+  int (*enable)();
 
   /** Disable Bluetooth. */
   int (*disable)(void);

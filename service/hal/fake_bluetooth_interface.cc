@@ -23,7 +23,7 @@ namespace {
 
 FakeBluetoothInterface::Manager g_hal_manager;
 
-int FakeHALEnable(bool start_restricted) {
+int FakeHALEnable() {
   return g_hal_manager.enable_succeed ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 

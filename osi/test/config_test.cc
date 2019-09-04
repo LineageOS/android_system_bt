@@ -1,3 +1,4 @@
+#include <base/files/file_util.h>
 #include <gtest/gtest.h>
 
 #include "AllocationTestHarness.h"
@@ -172,4 +173,25 @@ TEST_F(ConfigTest, config_remove_key_missing) {
 TEST_F(ConfigTest, config_save_basic) {
   std::unique_ptr<config_t> config = config_new(CONFIG_FILE);
   EXPECT_TRUE(config_save(*config, CONFIG_FILE));
+}
+
+TEST_F(ConfigTest, checksum_read) {
+  std::string filename = "/data/misc/bluedroid/test.checksum";
+  std::string checksum = "0x1234";
+  base::FilePath file_path(filename);
+
+  EXPECT_EQ(base::WriteFile(file_path, checksum.data(), checksum.size()),
+            (int)checksum.size());
+
+  EXPECT_EQ(checksum_read(filename.c_str()), checksum.c_str());
+}
+
+TEST_F(ConfigTest, checksum_save) {
+  std::string filename = "/data/misc/bluedroid/test.checksum";
+  std::string checksum = "0x1234";
+  base::FilePath file_path(filename);
+
+  EXPECT_TRUE(checksum_save(checksum, filename));
+
+  EXPECT_TRUE(base::PathExists(file_path));
 }

@@ -49,6 +49,9 @@ std::unique_ptr<config_t> config_new_empty(void);
 // file on the filesystem.
 std::unique_ptr<config_t> config_new(const char* filename);
 
+// Read the checksum from the |filename|
+std::string checksum_read(const char* filename);
+
 // Clones |src|, including all of it's sections, keys, and values.
 // Returns a new config which is a copy and separated from the original;
 // changes to the new config are not reflected in any way in the original.
@@ -133,3 +136,8 @@ bool config_remove_key(config_t* config, const std::string& section,
 // |config_save|, all comments and special formatting in the original file will
 // be lost. Neither |config| nor |filename| may be NULL.
 bool config_save(const config_t& config, const std::string& filename);
+
+// Saves the encrypted |checksum| of config file to a given |filename| Note
+// that this could be a destructive operation: if |filename| already exists,
+// it will be overwritten.
+bool checksum_save(const std::string& checksum, const std::string& filename);

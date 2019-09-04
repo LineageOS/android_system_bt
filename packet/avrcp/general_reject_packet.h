@@ -25,8 +25,7 @@ class GeneralRejectBuilder : public BrowsePacketBuilder {
  public:
   virtual ~GeneralRejectBuilder() = default;
 
-  static std::unique_ptr<GeneralRejectBuilder> MakeBuilder(BrowsePdu pdu,
-                                                           Status reason);
+  static std::unique_ptr<GeneralRejectBuilder> MakeBuilder(Status reason);
 
   virtual size_t size() const override;
   virtual bool Serialize(
@@ -35,8 +34,7 @@ class GeneralRejectBuilder : public BrowsePacketBuilder {
  protected:
   Status reason_;
 
-  GeneralRejectBuilder(BrowsePdu pdu, Status reason)
-      : BrowsePacketBuilder(pdu), reason_(reason){};
+  GeneralRejectBuilder(Status reason) : BrowsePacketBuilder(BrowsePdu::GENERAL_REJECT), reason_(reason){};
 };
 
 }  // namespace avrcp

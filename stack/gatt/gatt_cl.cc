@@ -627,6 +627,10 @@ void gatt_process_notification(tGATT_TCB& tcb, uint8_t op_code, uint16_t len,
   memset(&value, 0, sizeof(value));
   STREAM_TO_UINT16(value.handle, p);
   value.len = len - 2;
+  if (value.len > GATT_MAX_ATTR_LEN) {
+    LOG(ERROR) << "value.len larger than GATT_MAX_ATTR_LEN, discard";
+    return;
+  }
   memcpy(value.value, p, value.len);
 
   if (!GATT_HANDLE_IS_VALID(value.handle)) {

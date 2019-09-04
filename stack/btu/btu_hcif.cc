@@ -1129,8 +1129,16 @@ static void btu_hcif_rmt_name_request_comp_evt(uint8_t* p, uint16_t evt_len) {
 
 constexpr uint8_t MIN_KEY_SIZE = 7;
 
-static void read_encryption_key_size_complete_after_encryption_change(
-    uint8_t status, uint16_t handle, uint8_t key_size) {
+static void read_encryption_key_size_complete_after_encryption_change(uint8_t status, uint16_t handle,
+                                                                      uint8_t key_size) {
+  if (status == HCI_ERR_INSUFFCIENT_SECURITY) {
+    /* If remote device stop the encryption before we call "Read Encryption Key
+     * Size", we might receive Insufficient Security, which means that link is
+     * no longer encrypted. */
+    LOG(INFO) << __func__ << ": encryption stopped on link: " << loghex(handle);
+    return;
+  }
+
   if (status != HCI_SUCCESS) {
     LOG(INFO) << __func__ << ": disconnecting, status: " << loghex(status);
     btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
@@ -1139,9 +1147,8 @@ static void read_encryption_key_size_complete_after_encryption_change(
 
   if (key_size < MIN_KEY_SIZE) {
     android_errorWriteLog(0x534e4554, "124301137");
-    LOG(ERROR) << __func__
-               << " encryption key too short, disconnecting. handle: "
-               << loghex(handle) << " key_size: " << +key_size;
+    LOG(ERROR) << __func__ << " encryption key too short, disconnecting. handle: " << loghex(handle)
+               << " key_size: " << +key_size;
 
     btsnd_hcic_disconnect(handle, HCI_ERR_HOST_REJECT_SECURITY);
     return;
@@ -1169,14 +1176,16 @@ static void btu_hcif_encryption_change_evt(uint8_t* p) {
   STREAM_TO_UINT16(handle, p);
   STREAM_TO_UINT8(encr_enable, p);
 
-  if (status != HCI_SUCCESS || encr_enable == 0 ||
-      BTM_IsBleConnection(handle)) {
+  if (status != HCI_SUCCESS || encr_enable == 0 || BTM_IsBleConnection(handle)) {
+    if (status == HCI_ERR_CONNECTION_TOUT) {
+      smp_cancel_start_encryption_attempt();
+      return;
+    }
+
     btm_acl_encrypt_change(handle, status, encr_enable);
     btm_sec_encrypt_change(handle, status, encr_enable);
   } else {
-    btsnd_hcic_read_encryption_key_size(
-        handle,
-        base::Bind(&read_encryption_key_size_complete_after_encryption_change));
+    btsnd_hcic_read_encryption_key_size(handle, base::Bind(&read_encryption_key_size_complete_after_encryption_change));
   }
 }
 
@@ -2049,8 +2058,15 @@ static void btu_hcif_enhanced_flush_complete_evt(void) {
  * End of Simple Pairing Events
  **********************************************/
 
-static void read_encryption_key_size_complete_after_key_refresh(
-    uint8_t status, uint16_t handle, uint8_t key_size) {
+static void read_encryption_key_size_complete_after_key_refresh(uint8_t status, uint16_t handle, uint8_t key_size) {
+  if (status == HCI_ERR_INSUFFCIENT_SECURITY) {
+    /* If remote device stop the encryption before we call "Read Encryption Key
+     * Size", we might receive Insufficient Security, which means that link is
+     * no longer encrypted. */
+    LOG(INFO) << __func__ << ": encryption stopped on link: " << loghex(handle);
+    return;
+  }
+
   if (status != HCI_SUCCESS) {
     LOG(INFO) << __func__ << ": disconnecting, status: " << loghex(status);
     btsnd_hcic_disconnect(handle, HCI_ERR_PEER_USER);
@@ -2059,9 +2075,8 @@ static void read_encryption_key_size_complete_after_key_refresh(
 
   if (key_size < MIN_KEY_SIZE) {
     android_errorWriteLog(0x534e4554, "124301137");
-    LOG(ERROR) << __func__
-               << " encryption key too short, disconnecting. handle: "
-               << loghex(handle) << " key_size: " << +key_size;
+    LOG(ERROR) << __func__ << " encryption key too short, disconnecting. handle: " << loghex(handle)
+               << " key_size: " << +key_size;
 
     btsnd_hcic_disconnect(handle, HCI_ERR_HOST_REJECT_SECURITY);
     return;
@@ -2080,9 +2095,7 @@ static void btu_hcif_encryption_key_refresh_cmpl_evt(uint8_t* p) {
   if (status != HCI_SUCCESS || BTM_IsBleConnection(handle)) {
     btm_sec_encrypt_change(handle, status, (status == HCI_SUCCESS) ? 1 : 0);
   } else {
-    btsnd_hcic_read_encryption_key_size(
-        handle,
-        base::Bind(&read_encryption_key_size_complete_after_key_refresh));
+    btsnd_hcic_read_encryption_key_size(handle, base::Bind(&read_encryption_key_size_complete_after_key_refresh));
   }
 }
 

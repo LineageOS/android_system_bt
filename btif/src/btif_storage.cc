@@ -889,9 +889,8 @@ static void remove_devices_with_sample_ltk() {
     tBTA_LE_KEY_VALUE key;
     memset(&key, 0, sizeof(key));
 
-    if (btif_storage_get_ble_bonding_key(
-            &bd_addr, BTIF_DM_LE_KEY_PENC, (uint8_t*)&key,
-            sizeof(tBTM_LE_PENC_KEYS)) == BT_STATUS_SUCCESS) {
+    if (btif_storage_get_ble_bonding_key(&bd_addr, BTIF_DM_LE_KEY_PENC, (uint8_t*)&key, sizeof(tBTM_LE_PENC_KEYS)) ==
+        BT_STATUS_SUCCESS) {
       if (is_sample_ltk(key.penc_key.ltk)) {
         bad_ltk.push_back(bd_addr);
       }
@@ -900,8 +899,7 @@ static void remove_devices_with_sample_ltk() {
 
   for (RawAddress address : bad_ltk) {
     android_errorWriteLog(0x534e4554, "128437297");
-    LOG(ERROR) << __func__
-               << ": removing bond to device using test TLK: " << address;
+    LOG(ERROR) << __func__ << ": removing bond to device using test TLK: " << address;
 
     btif_storage_remove_bonded_device(&address);
   }

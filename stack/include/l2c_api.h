@@ -328,7 +328,7 @@ typedef struct {
 
 } tL2CAP_ERTM_INFO;
 
-#define L2CA_REGISTER(a, b, c) L2CA_Register(a, (tL2CAP_APPL_INFO*)(b))
+#define L2CA_REGISTER(a, b, c) L2CA_Register(a, (tL2CAP_APPL_INFO*)(b), c)
 #define L2CA_DEREGISTER(a) L2CA_Deregister(a)
 #define L2CA_CONNECT_REQ(a, b, c) L2CA_ErtmConnectReq(a, b, c)
 #define L2CA_CONNECT_RSP(a, b, c, d, e, f) L2CA_ErtmConnectRsp(a, b, c, d, e, f)
@@ -362,7 +362,8 @@ typedef struct {
  *                  BTM_SetSecurityLevel().
  *
  ******************************************************************************/
-extern uint16_t L2CA_Register(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info);
+extern uint16_t L2CA_Register(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
+                              bool enable_snoop);
 
 /*******************************************************************************
  *

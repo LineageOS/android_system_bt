@@ -32,7 +32,7 @@ import android.bluetooth.UUID;
 interface IBluetooth {
   boolean IsEnabled();
   int GetState();
-  boolean Enable(boolean startRestricted);
+  boolean Enable();
   boolean EnableNoAutoConnect();
   boolean Disable();
 

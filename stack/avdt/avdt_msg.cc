@@ -586,6 +586,10 @@ static uint8_t avdt_msg_prs_cfg(AvdtpSepConfig* p_cfg, uint8_t* p, uint16_t len,
     /* parse individual information elements with additional parameters */
     switch (elem) {
       case AVDT_CAT_RECOV:
+        if ((p_end - p) < 3) {
+          err = AVDT_ERR_PAYLOAD;
+          break;
+        }
         p_cfg->recov_type = *p++;
         p_cfg->recov_mrws = *p++;
         p_cfg->recov_mnmp = *p++;
@@ -617,6 +621,10 @@ static uint8_t avdt_msg_prs_cfg(AvdtpSepConfig* p_cfg, uint8_t* p, uint16_t len,
         break;
 
       case AVDT_CAT_HDRCMP:
+        if ((p_end - p) < 1) {
+          err = AVDT_ERR_PAYLOAD;
+          break;
+        }
         p_cfg->hdrcmp_mask = *p++;
         break;
 
@@ -1191,6 +1199,14 @@ BT_HDR* avdt_msg_asmbl(AvdtpCcb* p_ccb, BT_HDR* p_buf) {
 
   /* parse the message header */
   p = (uint8_t*)(p_buf + 1) + p_buf->offset;
+
+  /* Check if is valid length */
+  if (p_buf->len < 1) {
+    android_errorWriteLog(0x534e4554, "78287084");
+    osi_free(p_buf);
+    p_ret = NULL;
+    return p_ret;
+  }
   AVDT_MSG_PRS_PKT_TYPE(p, pkt_type);
 
   /* quick sanity check on length */
@@ -1499,8 +1515,8 @@ void avdt_msg_ind(AvdtpCcb* p_ccb, BT_HDR* p_buf) {
   uint8_t pkt_type;
   uint8_t msg_type;
   uint8_t sig = 0;
-  tAVDT_MSG msg;
-  AvdtpSepConfig cfg;
+  tAVDT_MSG msg{};
+  AvdtpSepConfig cfg{};
   uint8_t err;
   uint8_t evt = 0;
   uint8_t scb_hdl;

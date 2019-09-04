@@ -106,8 +106,8 @@ std::vector<uint8_t> register_volume_changed_notification = {
     0x00, 0x05, 0x0d, 0x00, 0x00, 0x00, 0x00};
 
 // AVRCP Register Notification without any parameter
-std::vector<uint8_t> register_notification_invalid = {
-    0x03, 0x48, 0x00, 0x00, 0x19, 0x58, 0x31, 0x00, 0x00, 0x05};
+std::vector<uint8_t> register_notification_invalid = {0x03, 0x48, 0x00, 0x00, 0x19, 0x58, 0x31,
+                                                      0x00, 0x00, 0x04, 0x00, 0x00, 0x00, 0x00};
 
 // AVRCP Interim Playback Status Notification
 std::vector<uint8_t> interim_play_status_notification = {
@@ -208,9 +208,8 @@ std::vector<uint8_t> get_folder_items_request_vfs = {
 //    start_item = 0x00
 //    end_item = 0x05
 //    attributes_requested: All Items
-std::vector<uint8_t> get_folder_items_request_now_playing = {
-    0x71, 0x00, 0x0e, 0x03, 0x00, 0x00, 0x00,
-    0x00, 0x00, 0x00, 0x00, 0x05, 0x00};
+std::vector<uint8_t> get_folder_items_request_now_playing = {0x71, 0x00, 0x0a, 0x03, 0x00, 0x00, 0x00,
+                                                             0x00, 0x00, 0x00, 0x00, 0x05, 0x00};
 
 // AVRCP Browse Get Folder Items Response packet with range out of bounds error
 std::vector<uint8_t> get_folder_items_error_response = {0x71, 0x00, 0x01, 0x0b};
@@ -355,5 +354,37 @@ std::vector<uint8_t> set_absolute_volume_request = {
 // AVRCP Set Absolute Volume Response with voume at 52% (0x43)
 std::vector<uint8_t> set_absolute_volume_response = {
     0x09, 0x48, 0x00, 0x00, 0x19, 0x58, 0x50, 0x00, 0x00, 0x01, 0x43};
+
+// Invalid Packets
+// Short Vendor Packet
+std::vector<uint8_t> short_vendor_packet = {0x01, 0x48, 0x00, 0x00, 0x19, 0x58, 0x10, 0x00, 0x00, 0x01};
+
+// Short Get Capabilities Request Packet
+std::vector<uint8_t> short_get_capabilities_request = {0x01, 0x48, 0x00, 0x00, 0x19, 0x58, 0x10, 0x00, 0x00, 0x00};
+
+// Short Get Element Attributes Request Packet
+std::vector<uint8_t> short_get_element_attributes_request = {0x01, 0x48, 0x00, 0x00, 0x19,
+                                                             0x58, 0x20, 0x00, 0x00, 0x00};
+
+// Short Play Item Request Packet
+std::vector<uint8_t> short_play_item_request = {0x00, 0x48, 0x00, 0x00, 0x19, 0x58, 0x74, 0x00, 0x00, 0x00};
+
+// Short Set Addressed Player Request Packet
+std::vector<uint8_t> short_set_addressed_player_request = {0x00, 0x48, 0x00, 0x00, 0x19, 0x58, 0x60, 0x00, 0x00, 0x00};
+
+// Short Browse Packet
+std::vector<uint8_t> short_browse_packet = {0x71, 0x00, 0x0a};
+
+// Short Get Folder Items Request Packet
+std::vector<uint8_t> short_get_folder_items_request = {0x71, 0x00, 0x00};
+
+// Short Get Total Number of Items Request Packet
+std::vector<uint8_t> short_get_total_number_of_items_request = {0x75, 0x00, 0x00};
+
+// Short Change Path Request Packet
+std::vector<uint8_t> short_change_path_request = {0x72, 0x00, 0x00};
+
+// Short Get Item Attributes Request Packet
+std::vector<uint8_t> short_get_item_attributes_request = {0x73, 0x00, 0x00};
 
 }  // namespace

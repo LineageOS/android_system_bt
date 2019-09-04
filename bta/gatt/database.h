@@ -18,6 +18,7 @@
 
 #pragma once
 
+#include <list>
 #include <set>
 #include <string>
 #include <utility>
@@ -101,10 +102,10 @@ class Database {
 
   /* Clear the GATT database. This method forces relocation to ensure no extra
    * space is used unnecesarly */
-  void Clear() { std::vector<Service>().swap(services); }
+  void Clear() { std::list<Service>().swap(services); }
 
   /* Return list of services available in this database */
-  const std::vector<Service>& Services() const { return services; }
+  const std::list<Service>& Services() const { return services; }
 
   std::string ToString() const;
 
@@ -116,11 +117,11 @@ class Database {
   friend class DatabaseBuilder;
 
  private:
-  std::vector<Service> services;
+  std::list<Service> services;
 };
 
 /* Find a service that should contain handle. Helper method for internal use
  * inside gatt namespace.*/
-Service* FindService(std::vector<Service>& services, uint16_t handle);
+Service* FindService(std::list<Service>& services, uint16_t handle);
 
 }  // namespace gatt

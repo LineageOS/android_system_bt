@@ -24,9 +24,11 @@ void bluetooth::l2cap::SetMockInterface(
   l2cap_interface = mock_l2cap_interface;
 }
 
-uint16_t L2CA_Register(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info) {
-  VLOG(1) << __func__ << ": psm=" << psm << ", p_cb_info=" << p_cb_info;
-  return l2cap_interface->Register(psm, p_cb_info);
+uint16_t L2CA_Register(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
+                       bool enable_snoop) {
+  VLOG(1) << __func__ << ": psm=" << psm << ", p_cb_info=" << p_cb_info
+          << ", enable_snoop=" << enable_snoop;
+  return l2cap_interface->Register(psm, p_cb_info, enable_snoop);
 }
 
 uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& bd_addr) {

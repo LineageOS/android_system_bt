@@ -33,7 +33,7 @@ void GattTest::SetUp() {
   status_ = 0;
 
   BluetoothTest::SetUp();
-  ASSERT_EQ(bt_interface()->enable(false), BT_STATUS_SUCCESS);
+  ASSERT_EQ(bt_interface()->enable(), BT_STATUS_SUCCESS);
   semaphore_wait(adapter_state_changed_callback_sem_);
   EXPECT_TRUE(GetState() == BT_STATE_ON);
 

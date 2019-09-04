@@ -21,6 +21,7 @@
 #include "stack/include/gattdefs.h"
 
 #include <base/logging.h>
+#include <list>
 #include <memory>
 #include <sstream>
 
@@ -39,7 +40,7 @@ bool HandleInRange(const Service& svc, uint16_t handle) {
 }
 }  // namespace
 
-Service* FindService(std::vector<Service>& services, uint16_t handle) {
+Service* FindService(std::list<Service>& services, uint16_t handle) {
   for (Service& service : services) {
     if (handle >= service.handle && handle <= service.end_handle)
       return &service;

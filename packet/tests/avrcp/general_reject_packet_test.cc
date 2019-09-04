@@ -26,8 +26,7 @@ namespace avrcp {
 using TestGeneralRejectPacket = TestPacketType<BrowsePacket>;
 
 TEST(GeneralRejectPacketBuilderTest, buildPacketTest) {
-  auto builder = GeneralRejectBuilder::MakeBuilder(BrowsePdu::GENERAL_REJECT,
-                                                   Status::INVALID_COMMAND);
+  auto builder = GeneralRejectBuilder::MakeBuilder(Status::INVALID_COMMAND);
 
   ASSERT_EQ(builder->size(), general_reject_invalid_command_packet.size());
 

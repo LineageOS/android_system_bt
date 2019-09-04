@@ -120,7 +120,7 @@ void bta_gattc_init_cache(tBTA_GATTC_SERV* p_srvc_cb) {
 }
 
 const Service* bta_gattc_find_matching_service(
-    const std::vector<Service>& services, uint16_t handle) {
+    const std::list<Service>& services, uint16_t handle) {
   for (const Service& service : services) {
     if (handle >= service.handle && handle <= service.end_handle)
       return &service;
@@ -419,14 +419,13 @@ void bta_gattc_search_service(tBTA_GATTC_CLCB* p_clcb, Uuid* p_uuid) {
   }
 }
 
-const std::vector<Service>* bta_gattc_get_services_srcb(
-    tBTA_GATTC_SERV* p_srcb) {
+const std::list<Service>* bta_gattc_get_services_srcb(tBTA_GATTC_SERV* p_srcb) {
   if (!p_srcb || p_srcb->gatt_database.IsEmpty()) return NULL;
 
   return &p_srcb->gatt_database.Services();
 }
 
-const std::vector<Service>* bta_gattc_get_services(uint16_t conn_id) {
+const std::list<Service>* bta_gattc_get_services(uint16_t conn_id) {
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
 
   if (p_clcb == NULL) return NULL;
@@ -438,14 +437,14 @@ const std::vector<Service>* bta_gattc_get_services(uint16_t conn_id) {
 
 const Service* bta_gattc_get_service_for_handle_srcb(tBTA_GATTC_SERV* p_srcb,
                                                      uint16_t handle) {
-  const std::vector<Service>* services = bta_gattc_get_services_srcb(p_srcb);
+  const std::list<Service>* services = bta_gattc_get_services_srcb(p_srcb);
   if (services == NULL) return NULL;
   return bta_gattc_find_matching_service(*services, handle);
 }
 
 const Service* bta_gattc_get_service_for_handle(uint16_t conn_id,
                                                 uint16_t handle) {
-  const std::vector<Service>* services = bta_gattc_get_services(conn_id);
+  const std::list<Service>* services = bta_gattc_get_services(conn_id);
   if (services == NULL) return NULL;
 
   return bta_gattc_find_matching_service(*services, handle);
@@ -556,7 +555,7 @@ void bta_gattc_fill_gatt_db_el(btgatt_db_element_t* p_attr,
 /*******************************************************************************
  * Returns          number of elements inside db from start_handle to end_handle
  ******************************************************************************/
-static size_t bta_gattc_get_db_size(const std::vector<Service>& services,
+static size_t bta_gattc_get_db_size(const std::list<Service>& services,
                                     uint16_t start_handle,
                                     uint16_t end_handle) {
   if (services.empty()) return 0;
