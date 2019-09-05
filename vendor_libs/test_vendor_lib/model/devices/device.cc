@@ -59,8 +59,7 @@ bool Device::IsAdvertisementAvailable(std::chrono::milliseconds scan_time) const
 }
 
 void Device::SendLinkLayerPacket(std::shared_ptr<packets::LinkLayerPacketBuilder> to_send, Phy::Type phy_type) {
-  auto phy_list = phy_layers_[phy_type];
-  for (auto phy : phy_list) {
+  for (auto phy : phy_layers_[phy_type]) {
     phy->Send(to_send);
   }
 }
