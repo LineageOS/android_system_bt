@@ -106,8 +106,9 @@ void TestModel::Del(size_t dev_index) {
   devices_.erase(dev_index);
 }
 
-size_t TestModel::AddPhy(std::shared_ptr<PhyLayerFactory> new_phy) {
+size_t TestModel::AddPhy(Phy::Type phy_type) {
   phys_counter_++;
+  std::shared_ptr<PhyLayerFactory> new_phy = std::make_shared<PhyLayerFactory>(phy_type, phys_counter_);
   phys_[phys_counter_] = new_phy;
   return phys_counter_;
 }
@@ -124,12 +125,12 @@ void TestModel::DelPhy(size_t phy_index) {
 void TestModel::AddDeviceToPhy(size_t dev_index, size_t phy_index) {
   auto device = devices_.find(dev_index);
   if (device == devices_.end()) {
-    LOG_WARN(LOG_TAG, "AddDeviceToPhy: can't find device!");
+    LOG_WARN(LOG_TAG, "%s: can't find device!", __func__);
     return;
   }
   auto phy = phys_.find(phy_index);
   if (phy == phys_.end()) {
-    LOG_WARN(LOG_TAG, "AddDeviceToPhy: can't find phy!");
+    LOG_WARN(LOG_TAG, "%s: can't find phy!", __func__);
     return;
   }
   auto dev = device->second;
@@ -142,14 +143,15 @@ void TestModel::AddDeviceToPhy(size_t dev_index, size_t phy_index) {
 void TestModel::DelDeviceFromPhy(size_t dev_index, size_t phy_index) {
   auto device = devices_.find(dev_index);
   if (device == devices_.end()) {
-    LOG_WARN(LOG_TAG, "AddDeviceToPhy: can't find device!");
+    LOG_WARN(LOG_TAG, "%s: can't find device!", __func__);
     return;
   }
   auto phy = phys_.find(phy_index);
   if (phy == phys_.end()) {
-    LOG_WARN(LOG_TAG, "AddDeviceToPhy: can't find phy!");
+    LOG_WARN(LOG_TAG, "%s: can't find phy!", __func__);
     return;
   }
+  device->second->UnregisterPhyLayer(phy->second->GetType(), phy->second->GetFactoryId());
 }
 
 void TestModel::AddLinkLayerConnection(int socket_fd, Phy::Type phy_type) {
@@ -179,9 +181,8 @@ void TestModel::IncomingHciConnection(int socket_fd) {
   auto dev = HciSocketDevice::Create(socket_fd);
   size_t index = Add(std::static_pointer_cast<Device>(dev));
   std::string addr = "da:4c:10:de:17:";  // Da HCI dev
-  CHECK(index < 256) << "Why do you need more than 256?";
   std::stringstream stream;
-  stream << std::setfill ('0') << std::setw(2) << std::hex << index;
+  stream << std::setfill('0') << std::setw(2) << std::hex << (index % 256);
   addr += stream.str();
 
   dev->Initialize({"IgnoredTypeName", addr});
@@ -203,6 +204,7 @@ void TestModel::OnHciConnectionClosed(int socket_fd, size_t index) {
   }
   int close_result = close(socket_fd);
   CHECK(close_result == 0) << "can't close: " << strerror(errno);
+  device->second->UnregisterPhyLayers();
   devices_.erase(index);
 }
 
