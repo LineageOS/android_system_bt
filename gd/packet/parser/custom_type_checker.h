@@ -33,10 +33,10 @@ class CustomTypeChecker {
   template <class C, size_t (C::*)() const>
   struct SizeChecker {};
 
-  template <class C, Iterator<true> (*)(std::vector<C>& vec, Iterator<true> it)>
+  template <class C, Iterator<true> (*)(C* vec, Iterator<true> it)>
   struct ParseChecker {};
 
-  template <class C, Iterator<false> (*)(std::vector<C>& vec, Iterator<false> it)>
+  template <class C, Iterator<false> (*)(C* vec, Iterator<false> it)>
   struct ParseCheckerBigEndian {};
 
   template <class C>
