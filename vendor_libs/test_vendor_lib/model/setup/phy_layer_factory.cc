@@ -24,10 +24,15 @@
 
 namespace test_vendor_lib {
 
-PhyLayerFactory::PhyLayerFactory(Phy::Type phy_type) : phy_type_(phy_type) {}
+PhyLayerFactory::PhyLayerFactory(Phy::Type phy_type, uint32_t factory_id)
+    : phy_type_(phy_type), factory_id_(factory_id) {}
 
 Phy::Type PhyLayerFactory::GetType() {
   return phy_type_;
+}
+
+uint32_t PhyLayerFactory::GetFactoryId() {
+  return factory_id_;
 }
 
 std::shared_ptr<PhyLayer> PhyLayerFactory::GetPhyLayer(
@@ -89,12 +94,19 @@ PhyLayerImpl::PhyLayerImpl(Phy::Type phy_type, uint32_t id,
     : PhyLayer(phy_type, id, device_receive), factory_(factory) {}
 
 PhyLayerImpl::~PhyLayerImpl() {
-  factory_->UnregisterPhyLayer(GetId());
-  PhyLayer::~PhyLayer();
+  Unregister();
 }
 
 void PhyLayerImpl::Send(const std::shared_ptr<packets::LinkLayerPacketBuilder> packet) {
   factory_->Send(packet, GetId());
+}
+
+void PhyLayerImpl::Unregister() {
+  factory_->UnregisterPhyLayer(GetId());
+}
+
+bool PhyLayerImpl::IsFactoryId(uint32_t id) {
+  return factory_->GetFactoryId() == id;
 }
 
 void PhyLayerImpl::Receive(packets::LinkLayerPacketView packet) {
