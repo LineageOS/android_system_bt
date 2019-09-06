@@ -24,6 +24,7 @@
 #include "grpc/grpc_event_stream.h"
 #include "hal/cert/api.grpc.pb.h"
 #include "hal/hci_hal.h"
+#include "hal/serialize_packet.h"
 #include "hci/hci_packets.h"
 
 namespace bluetooth {
@@ -46,11 +47,7 @@ class HciHalCertService : public HciHalCert::Service, public ::bluetooth::hal::H
                                      ::google::protobuf::Empty* response) override {
     std::unique_lock<std::mutex> lock(mutex_);
     can_send_hci_command_ = false;
-    auto packet = hci::ResetBuilder::Create();
-    std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
-    hci::BitInserter it(*packet_bytes);
-    packet->Serialize(it);
-    hal_->sendHciCommand(*packet_bytes);
+    hal_->sendHciCommand(SerializePacket(hci::ResetBuilder::Create()));
     std::this_thread::sleep_for(std::chrono::milliseconds(300));
     while (!can_send_hci_command_) {
       cv_.wait(lock);
@@ -79,12 +76,7 @@ class HciHalCertService : public HciHalCert::Service, public ::bluetooth::hal::H
         break;
     }
 
-    auto packet = hci::WriteScanEnableBuilder::Create(scan_enable);
-    std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
-    hci::BitInserter it(*packet_bytes);
-    packet->Serialize(it);
-    hal_->sendHciCommand(*packet_bytes);
-
+    hal_->sendHciCommand(SerializePacket(hci::WriteScanEnableBuilder::Create(scan_enable)));
     while (!can_send_hci_command_) {
       cv_.wait(lock);
     }

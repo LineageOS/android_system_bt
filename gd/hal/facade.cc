@@ -24,6 +24,7 @@
 #include "grpc/grpc_event_stream.h"
 #include "hal/facade.grpc.pb.h"
 #include "hal/hci_hal.h"
+#include "hal/serialize_packet.h"
 #include "hci/hci_packets.h"
 
 using ::grpc::ServerAsyncResponseWriter;
@@ -53,11 +54,7 @@ class HciHalFacadeService
                                      ::google::protobuf::Empty* response) override {
     std::unique_lock<std::mutex> lock(mutex_);
     can_send_hci_command_ = false;
-    auto packet = hci::ResetBuilder::Create();
-    std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
-    hci::BitInserter it(*packet_bytes);
-    packet->Serialize(it);
-    hal_->sendHciCommand(*packet_bytes);
+    hal_->sendHciCommand(SerializePacket(hci::ResetBuilder::Create()));
     while (!can_send_hci_command_) {
       cv_.wait(lock);
     }
@@ -70,12 +67,8 @@ class HciHalFacadeService
     std::unique_lock<std::mutex> lock(mutex_);
     can_send_hci_command_ = false;
     bool enable = request->enable();
-    auto packet = hci::WriteLoopbackModeBuilder::Create(enable ? hci::LoopbackMode::ENABLE_LOCAL
-                                                               : hci::LoopbackMode::NO_LOOPBACK);
-    std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
-    hci::BitInserter it(*packet_bytes);
-    packet->Serialize(it);
-    hal_->sendHciCommand(*packet_bytes);
+    hal_->sendHciCommand(SerializePacket(hci::WriteLoopbackModeBuilder::Create(
+        enable ? hci::LoopbackMode::ENABLE_LOCAL : hci::LoopbackMode::NO_LOOPBACK)));
     while (!can_send_hci_command_) {
       cv_.wait(lock);
     }
@@ -86,12 +79,9 @@ class HciHalFacadeService
                             ::google::protobuf::Empty* response) override {
     std::unique_lock<std::mutex> lock(mutex_);
     can_send_hci_command_ = false;
-    auto packet = hci::InquiryBuilder::Create(0x33 /* LAP=0x9e8b33 */, static_cast<uint8_t>(request->length()),
-                                              static_cast<uint8_t>(request->num_responses()));
-    std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
-    hci::BitInserter it(*packet_bytes);
-    packet->Serialize(it);
-    hal_->sendHciCommand(*packet_bytes);
+    hal_->sendHciCommand(
+        SerializePacket(hci::InquiryBuilder::Create(0x33 /* LAP=0x9e8b33 */, static_cast<uint8_t>(request->length()),
+                                                    static_cast<uint8_t>(request->num_responses()))));
     while (!can_send_hci_command_) {
       cv_.wait(lock);
     }
