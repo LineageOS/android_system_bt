@@ -210,8 +210,6 @@ cc_test {
         "libdl",
         "libfmq",
         "libhidlbase",
-        "libhidltransport",
-        "libhwbinder",
         "liblog",
         "libprocessgroup",
         "libprotobuf-cpp-lite",
