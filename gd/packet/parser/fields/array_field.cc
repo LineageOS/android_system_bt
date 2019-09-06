@@ -71,22 +71,18 @@ void ArrayField::GenExtractor(std::ostream& s, Size start_offset, Size end_offse
 
   s << "auto it = begin_it + field_begin;";
 
-  // Add the element size so that we will extract as many elements as we can.
   s << GetDataType() << " value;";
+  std::string type = (type_def_ != nullptr) ? type_def_->name_ : util::GetTypeForSize(element_size_);
+  s << GetDataType() << "::iterator ret_it = value.begin();";
   if (element_size_ != -1) {
-    std::string type = (type_def_ != nullptr) ? type_def_->name_ : util::GetTypeForSize(element_size_);
-    s << GetDataType() << "::iterator ret_it = value.begin();";
-    s << "while (it + sizeof(" << type << ") <= begin_it + field_end) {";
+    s << "while (it + sizeof(" << type << ") <= begin_it + field_end && ret_it < value.end()) {";
     s << "*ret_it = it.extract<" << type << ">();";
-    s << "ret_it++;";
-    s << "}";
   } else {
-    s << "std::size_t ret_idx = 0;";
-    s << "while (it < begin_it + field_end) {";
-    s << "it = " << type_def_->name_ << "::ParseArray(value, &ret_idx, it);";
-    s << "ret_idx++;";
-    s << "}";
+    s << "while (it < begin_it + field_end && ret_it < value.end()) {";
+    s << "it = " << type_def_->name_ << "::Parse(ret_it, it);";
   }
+  s << "ret_it++;";
+  s << "}";
 }
 
 void ArrayField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {

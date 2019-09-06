@@ -43,7 +43,7 @@ size_t Variable::size() const {
   return data.size() + 1;
 }
 
-Iterator<true> Variable::Parse(std::vector<Variable>& vec, Iterator<true> it) {
+Iterator<true> Variable::Parse(Variable* instance, Iterator<true> it) {
   if (it.NumBytesRemaining() < 1) {
     return it;
   }
@@ -58,7 +58,7 @@ Iterator<true> Variable::Parse(std::vector<Variable>& vec, Iterator<true> it) {
   for (size_t i = 0; i < data_length; i++) {
     ss << it.extract<char>();
   }
-  vec.emplace_back(ss.str());
+  *instance = ss.str();
   return it;
 }
 }  // namespace test
