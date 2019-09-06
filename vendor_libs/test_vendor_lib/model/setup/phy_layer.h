@@ -33,6 +33,10 @@ class PhyLayer {
 
   virtual void TimerTick() = 0;
 
+  virtual bool IsFactoryId(uint32_t factory_id) = 0;
+
+  virtual void Unregister() = 0;
+
   Phy::Type GetType() {
     return phy_type_;
   }
