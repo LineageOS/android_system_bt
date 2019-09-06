@@ -597,10 +597,9 @@ vector<uint8_t> one_variable{
 };
 
 TEST(GeneratedPacketTest, testOneVariableField) {
-  std::vector<Variable> sized_array;
-  sized_array.emplace_back("one");
+  Variable variable_one{"one"};
 
-  auto packet = OneVariableBuilder::Create(sized_array[0]);
+  auto packet = OneVariableBuilder::Create(variable_one);
   ASSERT_EQ(one_variable.size(), packet->size());
 
   std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
@@ -615,11 +614,8 @@ TEST(GeneratedPacketTest, testOneVariableField) {
   PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
   auto view = OneVariableView::Create(packet_bytes_view);
   ASSERT_TRUE(view.IsValid());
-  auto array = view.GetOne();
-  ASSERT_EQ(sized_array.size(), array.size());
-  for (size_t i = 0; i < sized_array.size(); i++) {
-    ASSERT_EQ(array[i].data, sized_array[i].data);
-  }
+  auto one = view.GetOne();
+  ASSERT_EQ(one->data, variable_one.data);
 }
 
 vector<uint8_t> sized_array_variable{

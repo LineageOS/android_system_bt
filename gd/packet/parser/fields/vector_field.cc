@@ -97,7 +97,6 @@ void VectorField::GenExtractor(std::ostream& s, Size start_offset, Size end_offs
   s << " auto subview = GetLittleEndianSubview(field_begin, field_end); ";
   s << "auto it = subview.begin();";
 
-  // Add the element size so that we will extract as many elements as we can.
   s << GetDataType() << " ret;";
   if (element_size_ != -1) {
     std::string type = (type_def_ != nullptr) ? type_def_->name_ : util::GetTypeForSize(element_size_);
@@ -106,7 +105,9 @@ void VectorField::GenExtractor(std::ostream& s, Size start_offset, Size end_offs
     s << "}";
   } else {
     s << "while (it < subview.end()) {";
-    s << "it = " << type_def_->name_ << "::Parse(ret, it);";
+    s << type_def_->name_ << " instance;";
+    s << "it = " << type_def_->name_ << "::Parse(&instance, it);";
+    s << "ret.push_back(instance);";
     s << "}";
   }
 }
