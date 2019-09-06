@@ -4,8 +4,6 @@ cc_defaults {
     shared_libs: [
         "android.hardware.bluetooth@1.0",
         "libhidlbase",
-        "libhidltransport",
-        "libhwbinder",
     ],
 }
 

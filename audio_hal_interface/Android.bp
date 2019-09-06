@@ -19,7 +19,6 @@ cc_library_static {
         "android.hardware.bluetooth.audio@2.0",
         "libfmq",
         "libhidlbase",
-        "libhidltransport",
     ],
     static_libs: [
         "libosi",
@@ -46,7 +45,6 @@ cc_test {
         "libcutils",
         "libfmq",
         "libhidlbase",
-        "libhidltransport",
         "liblog",
         "libutils",
     ],

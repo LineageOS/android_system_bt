@@ -47,8 +47,6 @@ cc_library_shared {
         "libdl",
         "libfmq",
         "libhidlbase",
-        "libhidltransport",
-        "libhwbinder",
         "liblog",
         "libprocessgroup",
         "libprotobuf-cpp-lite",
