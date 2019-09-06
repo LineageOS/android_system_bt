@@ -71,6 +71,9 @@ class GdCertDevice(GdDeviceBase):
         self.l2cap = l2cap_cert_pb2_grpc.L2capModuleCertStub(self.grpc_channel)
 
         # Event streams
+        self.hal.hci_event_stream = EventStream(self.hal.FetchHciEvent)
+        self.hal.hci_acl_stream = EventStream(self.hal.FetchHciAcl)
+        self.hal.hci_sco_stream = EventStream(self.hal.FetchHciSco)
         self.hci.connection_complete_stream = EventStream(self.hci.FetchConnectionComplete)
         self.hci.disconnection_stream = EventStream(self.hci.FetchDisconnection)
         self.hci.connection_failed_stream = EventStream(self.hci.FetchConnectionFailed)
