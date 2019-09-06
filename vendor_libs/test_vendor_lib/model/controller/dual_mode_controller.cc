@@ -79,28 +79,6 @@ void DualModeController::TimerTick() {
   link_layer_controller_.TimerTick();
 }
 
-void DualModeController::SendLinkLayerPacket(std::shared_ptr<packets::LinkLayerPacketBuilder> to_send,
-                                             Phy::Type phy_type) {
-  for (auto phy_pair : phy_layers_) {
-    auto phy_list = std::get<1>(phy_pair);
-    if (phy_type != std::get<0>(phy_pair)) {
-      continue;
-    }
-    for (auto phy : phy_list) {
-      phy->Send(to_send);
-    }
-  }
-}
-
-/*
-void DualModeController::AddConnectionAction(const TaskCallback& task,
-                                             uint16_t handle) {
-  for (size_t i = 0; i < connections_.size(); i++)
-    if (connections_[i]->GetHandle() == handle)
-connections_[i]->AddAction(task);
-}
-*/
-
 void DualModeController::SendCommandCompleteSuccess(OpCode command_opcode) const {
   send_event_(packets::EventPacketBuilder::CreateCommandCompleteOnlyStatusEvent(command_opcode, hci::Status::SUCCESS)
                   ->ToVector());
