@@ -44,6 +44,7 @@ constexpr uint16_t kHandle1 = 0x123;
 constexpr uint16_t kCredits1 = 0x78;
 constexpr uint16_t kHandle2 = 0x456;
 constexpr uint16_t kCredits2 = 0x9a;
+uint16_t feature_spec_version = 55;
 
 PacketView<kLittleEndian> GetPacketView(std::unique_ptr<packet::BasePacketBuilder> packet) {
   auto bytes = std::make_shared<std::vector<uint8_t>>();
@@ -152,6 +153,25 @@ class TestHciLayer : public HciLayer {
       case (OpCode::LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS): {
         event_builder =
             LeReadNumberOfSupportedAdvertisingSetsCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, 0xF0);
+      } break;
+      case (OpCode::LE_GET_VENDOR_CAPABILITIES): {
+        BaseVendorCapabilities base_vendor_capabilities;
+        base_vendor_capabilities.max_advt_instances_ = 0x10;
+        base_vendor_capabilities.offloaded_resolution_of_private_address_ = 0x01;
+        base_vendor_capabilities.total_scan_results_storage_ = 0x2800;
+        base_vendor_capabilities.max_irk_list_sz_ = 0x20;
+        base_vendor_capabilities.filtering_support_ = 0x01;
+        base_vendor_capabilities.max_filter_ = 0x10;
+        base_vendor_capabilities.activity_energy_info_support_ = 0x01;
+
+        auto payload = std::make_unique<RawBuilder>();
+        if (feature_spec_version > 55) {
+          std::vector<uint8_t> payload_bytes = {0x20, 0x00, 0x01, 0x00, 0x00, 0x1f, 0x00, 0x00, 0x00, 0x00};
+          payload->AddOctets2(feature_spec_version);
+          payload->AddOctets(payload_bytes);
+        }
+        event_builder = LeGetVendorCapabilitiesCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS,
+                                                                       base_vendor_capabilities, std::move(payload));
       } break;
       case (OpCode::SET_EVENT_MASK):
       case (OpCode::RESET):
@@ -365,12 +385,47 @@ TEST_F(ControllerTest, send_le_set_event_mask_command) {
 }
 
 TEST_F(ControllerTest, is_supported_test) {
-  ASSERT_TRUE(controller_->IsSupport(OpCode::INQUIRY));
-  ASSERT_TRUE(controller_->IsSupport(OpCode::REJECT_CONNECTION_REQUEST));
-  ASSERT_TRUE(controller_->IsSupport(OpCode::ACCEPT_CONNECTION_REQUEST));
-  ASSERT_FALSE(controller_->IsSupport(OpCode::LE_REMOVE_ADVERTISING_SET));
-  ASSERT_FALSE(controller_->IsSupport(OpCode::LE_CLEAR_ADVERTISING_SETS));
-  ASSERT_FALSE(controller_->IsSupport(OpCode::LE_SET_PERIODIC_ADVERTISING_PARAM));
+  ASSERT_TRUE(controller_->IsSupported(OpCode::INQUIRY));
+  ASSERT_TRUE(controller_->IsSupported(OpCode::REJECT_CONNECTION_REQUEST));
+  ASSERT_TRUE(controller_->IsSupported(OpCode::ACCEPT_CONNECTION_REQUEST));
+  ASSERT_FALSE(controller_->IsSupported(OpCode::LE_REMOVE_ADVERTISING_SET));
+  ASSERT_FALSE(controller_->IsSupported(OpCode::LE_CLEAR_ADVERTISING_SETS));
+  ASSERT_FALSE(controller_->IsSupported(OpCode::LE_SET_PERIODIC_ADVERTISING_PARAM));
+}
+
+TEST_F(ControllerTest, feature_spec_version_055_test) {
+  EXPECT_EQ(controller_->GetControllerVendorCapabilities().version_supported_, 55);
+  EXPECT_TRUE(controller_->IsSupported(OpCode::LE_MULTI_ADVT));
+  EXPECT_FALSE(controller_->IsSupported(OpCode::LE_TRACK_ADV));
+  EXPECT_FALSE(controller_->IsSupported(OpCode::CONTROLLER_DEBUG_INFO));
+  EXPECT_FALSE(controller_->IsSupported(OpCode::CONTROLLER_A2DP_OPCODE));
+  feature_spec_version = 95;
+}
+
+TEST_F(ControllerTest, feature_spec_version_095_test) {
+  EXPECT_EQ(controller_->GetControllerVendorCapabilities().version_supported_, 95);
+  EXPECT_TRUE(controller_->IsSupported(OpCode::LE_MULTI_ADVT));
+  EXPECT_TRUE(controller_->IsSupported(OpCode::LE_TRACK_ADV));
+  EXPECT_FALSE(controller_->IsSupported(OpCode::CONTROLLER_DEBUG_INFO));
+  EXPECT_FALSE(controller_->IsSupported(OpCode::CONTROLLER_A2DP_OPCODE));
+  feature_spec_version = 96;
+}
+
+TEST_F(ControllerTest, feature_spec_version_096_test) {
+  EXPECT_EQ(controller_->GetControllerVendorCapabilities().version_supported_, 96);
+  EXPECT_TRUE(controller_->IsSupported(OpCode::LE_MULTI_ADVT));
+  EXPECT_TRUE(controller_->IsSupported(OpCode::LE_TRACK_ADV));
+  EXPECT_FALSE(controller_->IsSupported(OpCode::CONTROLLER_DEBUG_INFO));
+  EXPECT_FALSE(controller_->IsSupported(OpCode::CONTROLLER_A2DP_OPCODE));
+  feature_spec_version = 98;
+}
+
+TEST_F(ControllerTest, feature_spec_version_098_test) {
+  EXPECT_EQ(controller_->GetControllerVendorCapabilities().version_supported_, 98);
+  EXPECT_TRUE(controller_->IsSupported(OpCode::LE_MULTI_ADVT));
+  EXPECT_TRUE(controller_->IsSupported(OpCode::LE_TRACK_ADV));
+  EXPECT_FALSE(controller_->IsSupported(OpCode::CONTROLLER_DEBUG_INFO));
+  EXPECT_TRUE(controller_->IsSupported(OpCode::CONTROLLER_A2DP_OPCODE));
 }
 
 std::promise<void> credits1_set;
