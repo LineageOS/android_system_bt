@@ -69,7 +69,9 @@ class Device {
 
   void RegisterPhyLayer(std::shared_ptr<PhyLayer> phy);
 
-  void UnregisterPhyLayer(std::shared_ptr<PhyLayer> phy);
+  void UnregisterPhyLayers();
+
+  void UnregisterPhyLayer(Phy::Type phy_type, uint32_t factory_id);
 
   virtual void IncomingPacket(packets::LinkLayerPacketView){};
 

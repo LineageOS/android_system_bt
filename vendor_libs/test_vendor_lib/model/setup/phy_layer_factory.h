@@ -30,11 +30,13 @@ class PhyLayerFactory {
   friend class PhyLayerImpl;
 
  public:
-  PhyLayerFactory(Phy::Type phy_type);
+  PhyLayerFactory(Phy::Type phy_type, uint32_t factory_id);
 
   virtual ~PhyLayerFactory() = default;
 
   Phy::Type GetType();
+
+  uint32_t GetFactoryId();
 
   std::shared_ptr<PhyLayer> GetPhyLayer(const std::function<void(packets::LinkLayerPacketView)>& device_receive);
 
@@ -51,6 +53,7 @@ class PhyLayerFactory {
   Phy::Type phy_type_;
   std::vector<std::shared_ptr<PhyLayer>> phy_layers_;
   uint32_t next_id_{1};
+  const uint32_t factory_id_;
 };
 
 class PhyLayerImpl : public PhyLayer {
@@ -61,6 +64,8 @@ class PhyLayerImpl : public PhyLayer {
 
   virtual void Send(const std::shared_ptr<packets::LinkLayerPacketBuilder> packet) override;
   virtual void Receive(packets::LinkLayerPacketView packet) override;
+  virtual void Unregister() override;
+  virtual bool IsFactoryId(uint32_t factory_id) override;
   virtual void TimerTick() override;
 
  private:
