@@ -55,5 +55,8 @@ DEFINE_AND_INSTANTIATE_StandardInformationFrameWithFcsReflectionTest(i_frame_wit
 
 std::vector<uint8_t> rr_frame_with_fcs = {0x04, 0x00, 0x40, 0x00, 0x01, 0x01, 0xD4, 0x14};
 DEFINE_AND_INSTANTIATE_StandardSupervisoryFrameWithFcsReflectionTest(rr_frame_with_fcs);
+
+std::vector<uint8_t> g_frame = {0x03, 0x00, 0x02, 0x00, 0x01, 0x02, 0x03};
+DEFINE_AND_INSTANTIATE_GroupFrameReflectionTest(g_frame);
 }  // namespace l2cap
 }  // namespace bluetooth
