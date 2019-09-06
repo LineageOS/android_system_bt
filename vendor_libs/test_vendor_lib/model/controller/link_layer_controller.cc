@@ -56,19 +56,11 @@ static uint8_t GetRssi() {
 }
 
 void LinkLayerController::SendLeLinkLayerPacket(std::shared_ptr<LinkLayerPacketBuilder> packet) {
-  if (schedule_task_) {
-    schedule_task_(milliseconds(50), [this, packet]() { send_to_remote_(packet, Phy::Type::LOW_ENERGY); });
-  } else {
-    send_to_remote_(packet, Phy::Type::LOW_ENERGY);
-  }
+  ScheduleTask(milliseconds(50), [this, packet]() { send_to_remote_(packet, Phy::Type::LOW_ENERGY); });
 }
 
 void LinkLayerController::SendLinkLayerPacket(std::shared_ptr<LinkLayerPacketBuilder> packet) {
-  if (schedule_task_) {
-    schedule_task_(milliseconds(50), [this, packet]() { send_to_remote_(packet, Phy::Type::BR_EDR); });
-  } else {
-    send_to_remote_(packet, Phy::Type::BR_EDR);
-  }
+  ScheduleTask(milliseconds(50), [this, packet]() { send_to_remote_(packet, Phy::Type::BR_EDR); });
 }
 
 hci::Status LinkLayerController::SendCommandToRemoteByAddress(hci::OpCode opcode, PacketView<true> args,
@@ -111,7 +103,7 @@ hci::Status LinkLayerController::SendAclToRemote(AclPacketView acl_packet) {
   LOG_INFO(LOG_TAG, "%s(%s): handle 0x%x size %d", __func__, properties_.GetAddress().ToString().c_str(), handle,
            static_cast<int>(acl_packet.size()));
 
-  schedule_task_(milliseconds(5), [this, handle]() {
+  ScheduleTask(milliseconds(5), [this, handle]() {
     send_event_(EventPacketBuilder::CreateNumberOfCompletedPacketsEvent(handle, 1)->ToVector());
   });
   SendLinkLayerPacket(acl);
@@ -289,7 +281,7 @@ void LinkLayerController::IncomingDisconnectPacket(LinkLayerPacketView incoming)
   CHECK(classic_connections_.Disconnect(handle)) << "GetHandle() returned invalid handle " << handle;
 
   uint8_t reason = disconnect.GetReason();
-  schedule_task_(milliseconds(20), [this, handle, reason]() { DisconnectCleanup(handle, reason); });
+  ScheduleTask(milliseconds(20), [this, handle, reason]() { DisconnectCleanup(handle, reason); });
 }
 
 void LinkLayerController::IncomingEncryptConnection(LinkLayerPacketView incoming) {
@@ -434,7 +426,7 @@ void LinkLayerController::IncomingIoCapabilityResponsePacket(LinkLayerPacketView
 
   PairingType pairing_type = security_manager_.GetSimplePairingType();
   if (pairing_type != PairingType::INVALID) {
-    schedule_task_(milliseconds(5), [this, peer, pairing_type]() { AuthenticateRemoteStage1(peer, pairing_type); });
+    ScheduleTask(milliseconds(5), [this, peer, pairing_type]() { AuthenticateRemoteStage1(peer, pairing_type); });
   } else {
     LOG_INFO(LOG_TAG, "%s: Security Manager returned INVALID", __func__);
   }
@@ -712,9 +704,24 @@ void LinkLayerController::RegisterTaskScheduler(
   schedule_task_ = event_scheduler;
 }
 
+AsyncTaskId LinkLayerController::ScheduleTask(milliseconds delay_ms, const TaskCallback& callback) {
+  if (schedule_task_) {
+    return schedule_task_(delay_ms, callback);
+  } else {
+    callback();
+    return 0;
+  }
+}
+
 void LinkLayerController::RegisterPeriodicTaskScheduler(
     std::function<AsyncTaskId(milliseconds, milliseconds, const TaskCallback&)> periodic_event_scheduler) {
   schedule_periodic_task_ = periodic_event_scheduler;
+}
+
+void LinkLayerController::CancelScheduledTask(AsyncTaskId task_id) {
+  if (schedule_task_ && cancel_task_) {
+    cancel_task_(task_id);
+  }
 }
 
 void LinkLayerController::RegisterTaskCancel(std::function<void(AsyncTaskId)> task_cancel) {
@@ -722,7 +729,7 @@ void LinkLayerController::RegisterTaskCancel(std::function<void(AsyncTaskId)> ta
 }
 
 void LinkLayerController::AddControllerEvent(milliseconds delay, const TaskCallback& task) {
-  controller_events_.push_back(schedule_task_(delay, task));
+  controller_events_.push_back(ScheduleTask(delay, task));
 }
 
 void LinkLayerController::WriteSimplePairingMode(bool enabled) {
@@ -779,7 +786,7 @@ hci::Status LinkLayerController::LinkKeyRequestReply(const Address& peer, Packet
   security_manager_.WriteKey(peer, key_vec);
   security_manager_.AuthenticationRequestFinished();
 
-  schedule_task_(milliseconds(5), [this, peer]() { AuthenticateRemoteStage2(peer); });
+  ScheduleTask(milliseconds(5), [this, peer]() { AuthenticateRemoteStage2(peer); });
 
   return hci::Status::SUCCESS;
 }
@@ -795,7 +802,7 @@ hci::Status LinkLayerController::LinkKeyRequestNegativeReply(const Address& addr
 
   security_manager_.AuthenticationRequest(address, handle);
 
-  schedule_task_(milliseconds(5), [this, address]() { StartSimplePairing(address); });
+  ScheduleTask(milliseconds(5), [this, address]() { StartSimplePairing(address); });
   return hci::Status::SUCCESS;
 }
 
@@ -806,7 +813,7 @@ hci::Status LinkLayerController::IoCapabilityRequestReply(const Address& peer, u
 
   PairingType pairing_type = security_manager_.GetSimplePairingType();
   if (pairing_type != PairingType::INVALID) {
-    schedule_task_(milliseconds(5), [this, peer, pairing_type]() { AuthenticateRemoteStage1(peer, pairing_type); });
+    ScheduleTask(milliseconds(5), [this, peer, pairing_type]() { AuthenticateRemoteStage1(peer, pairing_type); });
     SendLinkLayerPacket(LinkLayerPacketBuilder::WrapIoCapabilityResponse(
         IoCapabilityBuilder::Create(io_capability, oob_data_present_flag, authentication_requirements),
         properties_.GetAddress(), peer));
@@ -843,7 +850,7 @@ hci::Status LinkLayerController::UserConfirmationRequestReply(const Address& pee
 
   security_manager_.AuthenticationRequestFinished();
 
-  schedule_task_(milliseconds(5), [this, peer]() { AuthenticateRemoteStage2(peer); });
+  ScheduleTask(milliseconds(5), [this, peer]() { AuthenticateRemoteStage2(peer); });
   return hci::Status::SUCCESS;
 }
 
@@ -904,7 +911,7 @@ hci::Status LinkLayerController::AuthenticationRequested(uint16_t handle) {
 
   Address remote = classic_connections_.GetAddress(handle);
 
-  schedule_task_(milliseconds(5), [this, remote, handle]() { HandleAuthenticationRequest(remote, handle); });
+  ScheduleTask(milliseconds(5), [this, remote, handle]() { HandleAuthenticationRequest(remote, handle); });
 
   return hci::Status::SUCCESS;
 }
@@ -934,7 +941,7 @@ hci::Status LinkLayerController::SetConnectionEncryption(uint16_t handle, uint8_
   }
   Address remote = classic_connections_.GetAddress(handle);
 
-  schedule_task_(milliseconds(5), [this, remote, handle, encryption_enable]() {
+  ScheduleTask(milliseconds(5), [this, remote, handle, encryption_enable]() {
     HandleSetConnectionEncryption(remote, handle, encryption_enable);
   });
 
@@ -948,7 +955,7 @@ hci::Status LinkLayerController::AcceptConnectionRequest(const Address& addr, bo
   }
 
   LOG_INFO(LOG_TAG, "%s: Accept in 200ms", __func__);
-  schedule_task_(milliseconds(200), [this, addr, try_role_switch]() {
+  ScheduleTask(milliseconds(200), [this, addr, try_role_switch]() {
     LOG_INFO(LOG_TAG, "%s: Accepted", __func__);
     MakeSlaveConnection(addr, try_role_switch);
   });
@@ -980,7 +987,7 @@ hci::Status LinkLayerController::RejectConnectionRequest(const Address& addr, ui
   }
 
   LOG_INFO(LOG_TAG, "%s: Reject in 200ms", __func__);
-  schedule_task_(milliseconds(200), [this, addr, reason]() {
+  ScheduleTask(milliseconds(200), [this, addr, reason]() {
     LOG_INFO(LOG_TAG, "%s: Reject", __func__);
     RejectSlaveConnection(addr, reason);
   });
@@ -1031,7 +1038,7 @@ hci::Status LinkLayerController::Disconnect(uint16_t handle, uint8_t reason) {
   SendLinkLayerPacket(to_send);
   CHECK(classic_connections_.Disconnect(handle)) << "Disconnecting " << handle;
 
-  schedule_task_(milliseconds(20), [this, handle]() {
+  ScheduleTask(milliseconds(20), [this, handle]() {
     DisconnectCleanup(handle, static_cast<uint8_t>(hci::Status::CONNECTION_TERMINATED_BY_LOCAL_HOST));
   });
 
@@ -1050,11 +1057,7 @@ hci::Status LinkLayerController::ChangeConnectionPacketType(uint16_t handle, uin
   std::unique_ptr<EventPacketBuilder> packet =
       EventPacketBuilder::CreateConnectionPacketTypeChangedEvent(hci::Status::SUCCESS, handle, types);
   std::shared_ptr<std::vector<uint8_t>> raw_packet = packet->ToVector();
-  if (schedule_task_) {
-    schedule_task_(milliseconds(20), [this, raw_packet]() { send_event_(raw_packet); });
-  } else {
-    send_event_(raw_packet);
-  }
+  ScheduleTask(milliseconds(20), [this, raw_packet]() { send_event_(raw_packet); });
 
   return hci::Status::SUCCESS;
 }
@@ -1122,7 +1125,7 @@ void LinkLayerController::Reset() {
 void LinkLayerController::PageScan() {}
 
 void LinkLayerController::StartInquiry(milliseconds timeout) {
-  schedule_task_(milliseconds(timeout), [this]() { LinkLayerController::InquiryTimeout(); });
+  ScheduleTask(milliseconds(timeout), [this]() { LinkLayerController::InquiryTimeout(); });
   inquiry_state_ = Inquiry::InquiryState::INQUIRY;
   LOG_INFO(LOG_TAG, "InquiryState = %d ", static_cast<int>(inquiry_state_));
 }
