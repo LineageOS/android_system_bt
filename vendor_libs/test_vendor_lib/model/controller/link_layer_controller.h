@@ -79,6 +79,10 @@ class LinkLayerController {
 
   void TimerTick();
 
+  AsyncTaskId ScheduleTask(std::chrono::milliseconds delay_ms, const TaskCallback& task);
+
+  void CancelScheduledTask(AsyncTaskId task);
+
   // Set the callbacks for sending packets to the HCI.
   void RegisterEventChannel(const std::function<void(std::shared_ptr<std::vector<uint8_t>>)>& send_event);
 
