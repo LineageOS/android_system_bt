@@ -63,6 +63,7 @@ void StructField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
   }
   s << "ASSERT(was_validated_);";
   s << "size_t end_index = size();";
+  s << "ASSERT(end_index > 0);";
   GenExtractor(s, start_offset, end_offset);
 
   if (size_ != -1) {
