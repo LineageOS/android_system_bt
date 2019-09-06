@@ -160,11 +160,9 @@ void TestCommandHandler::Del(const vector<std::string>& args) {
 
 void TestCommandHandler::AddPhy(const vector<std::string>& args) {
   if (args[0] == "LOW_ENERGY") {
-    std::shared_ptr<PhyLayerFactory> new_phy = std::make_shared<PhyLayerFactory>(Phy::Type::LOW_ENERGY);
-    model_.AddPhy(new_phy);
+    model_.AddPhy(Phy::Type::LOW_ENERGY);
   } else if (args[0] == "BR_EDR") {
-    std::shared_ptr<PhyLayerFactory> new_phy = std::make_shared<PhyLayerFactory>(Phy::Type::BR_EDR);
-    model_.AddPhy(new_phy);
+    model_.AddPhy(Phy::Type::BR_EDR);
   } else {
     response_string_ = "TestCommandHandler 'add_phy' with unrecognized type " + args[0];
     send_response_(response_string_);
