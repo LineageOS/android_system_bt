@@ -104,6 +104,19 @@ std::shared_ptr<LinkLayerPacketBuilder> LinkLayerPacketBuilder::WrapLeAdvertisem
       new LinkLayerPacketBuilder(Link::PacketType::LE_ADVERTISEMENT, std::move(advertisement), source));
 }
 
+std::shared_ptr<LinkLayerPacketBuilder> LinkLayerPacketBuilder::WrapLeConnect(std::unique_ptr<LeConnectBuilder> connect,
+                                                                              const Address& source,
+                                                                              const Address& dest) {
+  return std::shared_ptr<LinkLayerPacketBuilder>(
+      new LinkLayerPacketBuilder(Link::PacketType::LE_CONNECT, std::move(connect), source, dest));
+}
+
+std::shared_ptr<LinkLayerPacketBuilder> LinkLayerPacketBuilder::WrapLeConnectComplete(
+    std::unique_ptr<LeConnectCompleteBuilder> connect_complete, const Address& source, const Address& dest) {
+  return std::shared_ptr<LinkLayerPacketBuilder>(
+      new LinkLayerPacketBuilder(Link::PacketType::LE_CONNECT_COMPLETE, std::move(connect_complete), source, dest));
+}
+
 std::shared_ptr<LinkLayerPacketBuilder> LinkLayerPacketBuilder::WrapLeScan(const Address& source, const Address& dest) {
   return std::shared_ptr<LinkLayerPacketBuilder>(new LinkLayerPacketBuilder(Link::PacketType::LE_SCAN, source, dest));
 }

@@ -110,6 +110,9 @@ class LinkLayerController {
 
   void LeAdvertising();
 
+  void HandleLeConnection(Address addr, uint8_t addr_type, uint8_t own_addr_type, uint8_t role,
+                          uint16_t connection_interval, uint16_t connection_latency, uint16_t supervision_timeout);
+
   void LeWhiteListClear();
   void LeWhiteListAddDevice(Address addr, uint8_t addr_type);
   void LeWhiteListRemoveDevice(Address addr, uint8_t addr_type);
@@ -207,6 +210,8 @@ class LinkLayerController {
   void IncomingIoCapabilityResponsePacket(packets::LinkLayerPacketView packet);
   void IncomingIoCapabilityNegativeResponsePacket(packets::LinkLayerPacketView packet);
   void IncomingLeAdvertisementPacket(packets::LinkLayerPacketView packet);
+  void IncomingLeConnectPacket(packets::LinkLayerPacketView packet);
+  void IncomingLeConnectCompletePacket(packets::LinkLayerPacketView packet);
   void IncomingLeScanPacket(packets::LinkLayerPacketView packet);
   void IncomingLeScanResponsePacket(packets::LinkLayerPacketView packet);
   void IncomingPagePacket(packets::LinkLayerPacketView packet);
@@ -216,7 +221,7 @@ class LinkLayerController {
 
  private:
   const DeviceProperties& properties_;
-  AclConnectionHandler classic_connections_;
+  AclConnectionHandler connections_;
   // Add timestamps?
   std::vector<std::shared_ptr<packets::LinkLayerPacketBuilder>> commands_awaiting_responses_;
 
