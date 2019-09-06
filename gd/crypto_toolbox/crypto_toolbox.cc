@@ -161,5 +161,43 @@ Octet16 link_key_to_ltk(const Octet16& link_key, bool use_h7) {
   return h6(iltk, keyID_brle);
 }
 
+Octet16 c1(const Octet16& k, const Octet16& r, const uint8_t* pres, const uint8_t* preq, const uint8_t iat,
+           const uint8_t* ia, const uint8_t rat, const uint8_t* ra) {
+  Octet16 p1;
+  auto it = p1.begin();
+  it = std::copy(pres, pres + 7, it);
+  it = std::copy(preq, preq + 7, it);
+  it = std::copy(&rat, &rat + 1, it);
+  it = std::copy(&iat, &iat + 1, it);
+
+  for (uint8_t i = 0; i < OCTET16_LEN; i++) {
+    p1[i] = r[i] ^ p1[i];
+  }
+
+  Octet16 p1bis = aes_128(k, p1);
+
+  std::array<uint8_t, 4> padding{0};
+  Octet16 p2;
+  it = p2.begin();
+  it = std::copy(padding.begin(), padding.end(), it);
+  it = std::copy(ia, ia + 6, it);
+  it = std::copy(ra, ra + 6, it);
+
+  for (uint8_t i = 0; i < OCTET16_LEN; i++) {
+    p2[i] = p1bis[i] ^ p2[i];
+  }
+
+  return aes_128(k, p2);
+}
+
+Octet16 s1(const Octet16& k, const Octet16& r1, const Octet16& r2) {
+  Octet16 text{0};
+  constexpr uint8_t BT_OCTET8_LEN = 8;
+  memcpy(text.data(), r1.data(), BT_OCTET8_LEN);
+  memcpy(text.data() + BT_OCTET8_LEN, r2.data(), BT_OCTET8_LEN);
+
+  return aes_128(k, text);
+}
+
 }  // namespace crypto_toolbox
 }  // namespace bluetooth
