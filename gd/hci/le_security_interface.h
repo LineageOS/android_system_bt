@@ -18,6 +18,7 @@
 
 #include "common/callback.h"
 #include "hci/hci_packets.h"
+#include "os/handler.h"
 #include "os/utils.h"
 
 namespace bluetooth {
