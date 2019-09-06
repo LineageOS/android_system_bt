@@ -2177,11 +2177,15 @@ packet LeRandComplete : CommandComplete (command_op_code = LE_RAND) {
 }
 
 packet LeStartEncryption : LeSecurityCommand (op_code = LE_START_ENCRYPTION) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle: 16,
+  rand: 8[8],
+  ediv: 16,
+  ltk: 8[16],
 }
 
 packet LeLongTermKeyRequestReply : LeSecurityCommand (op_code = LE_LONG_TERM_KEY_REQUEST_REPLY) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle: 16,
+  long_term_key: 8[16],
 }
 
 packet LeLongTermKeyRequestNegativeReply : LeSecurityCommand (op_code = LE_LONG_TERM_KEY_REQUEST_NEGATIVE_REPLY) {
