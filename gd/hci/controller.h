@@ -98,7 +98,9 @@ class Controller : public Module {
 
   uint16_t GetControllerLeNumberOfSupportedAdverisingSets();
 
-  bool IsSupport(OpCode op_code);
+  VendorCapabilities GetControllerVendorCapabilities();
+
+  bool IsSupported(OpCode op_code);
 
   static const ModuleFactory Factory;
 
