@@ -42,33 +42,14 @@ enum BondingFlags : 2 {
   BONDING = 1,
 }
 
-group AuthReq {
-  bonding_flags : BondingFlags,
-  mitm : 1, // Man-in-the-middle protection required
-  sc : 1, // Secure Connections
-  keypress : 1,  // Only used in Passkey Entry
-  ct2 : 1, // Support for the h7 function.
-  _reserved_ : 2,
-}
-
 group PairingInfo {
   io_capability : IoCapability,
   oob_data_flag : OobDataFlag,
-  AuthReq,
+  auth_req: 8,
   maximum_encryption_key_size : 5, // 7 - 16
   _reserved_ : 3,
-  // InitiatorKeyDistribution
-  initiator_enc_key : 1,
-  initiator_id_key : 1,
-  initiator_sign_key : 1,
-  initiator_link_key : 1,
-  _reserved_ : 4,
-  // ResponderKeyDistribution
-  responder_enc_key : 1,
-  responder_id_key : 1,
-  responder_sign_key : 1,
-  responder_link_key : 1,
-  _reserved_ : 4,
+  initiator_key_distribution : 8,
+  responder_key_distribution : 8,
 }
 
 packet PairingRequest : Command (code = PAIRING_REQUEST) {
@@ -114,7 +95,7 @@ packet EncryptionInformation : Command (code = ENCRYPTION_INFORMATION) {
 
 packet MasterIdentification : Command (code = MASTER_IDENTIFICATION) {
   ediv : 16,
-  rand : 64,
+  rand : 8[8],
 }
 
 packet IdentityInformation : Command (code = IDENTITY_INFORMATION) {
@@ -136,7 +117,7 @@ packet SigningInformation : Command (code = SIGNING_INFORMATION) {
 }
 
 packet SecurityRequest : Command (code = SECURITY_REQUEST) {
-  AuthReq,
+  auth_req: 8,
 }
 
 packet PairingPublicKey : Command (code = PAIRING_PUBLIC_KEY) {
