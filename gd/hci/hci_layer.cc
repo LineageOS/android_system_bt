@@ -441,16 +441,16 @@ void HciLayer::UnregisterLeEventHandler(SubeventCode subevent_code) {
   impl_->UnregisterLeEventHandler(subevent_code);
 }
 
-const SecurityInterface* HciLayer::GetSecurityInterface(common::Callback<void(EventPacketView)> event_handler,
-                                                        os::Handler* handler) {
+SecurityInterface* HciLayer::GetSecurityInterface(common::Callback<void(EventPacketView)> event_handler,
+                                                  os::Handler* handler) {
   for (const auto event : SecurityInterface::SecurityEvents) {
     RegisterEventHandler(event, event_handler, handler);
   }
   return &impl_->security_interface;
 }
 
-const LeSecurityInterface* HciLayer::GetLeSecurityInterface(common::Callback<void(LeMetaEventView)> event_handler,
-                                                            os::Handler* handler) {
+LeSecurityInterface* HciLayer::GetLeSecurityInterface(common::Callback<void(LeMetaEventView)> event_handler,
+                                                      os::Handler* handler) {
   for (const auto subevent : LeSecurityInterface::LeSecurityEvents) {
     RegisterLeEventHandler(subevent, event_handler, handler);
   }
