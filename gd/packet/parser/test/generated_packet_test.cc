@@ -1157,6 +1157,20 @@ DEFINE_AND_INSTANTIATE_ParentTwoReflectionTest(child_two_two_two_, child_two_two
 DEFINE_AND_INSTANTIATE_ChildTwoTwoReflectionTest(child_two_two_two_, child_two_two_three_, child_two_two_four_);
 
 DEFINE_AND_INSTANTIATE_ChildTwoTwoThreeReflectionTest(child_two_two_three_);
+
+std::vector<uint8_t> one_versionless_struct_packet = {0x01};
+std::vector<uint8_t> one_versioned_struct_packet = {0x02, 0x03 /* version */, 0x04, 0x05, 0x06};
+std::vector<uint8_t> one_version_one_struct_packet = {0x03, 0x01 /* version */, 0x02};
+std::vector<uint8_t> one_version_two_struct_packet = {0x03, 0x02 /* version */, 0x03, 0x04};
+DEFINE_AND_INSTANTIATE_OneVersionlessStructPacketReflectionTest(one_versionless_struct_packet,
+                                                                one_versioned_struct_packet,
+                                                                one_version_one_struct_packet,
+                                                                one_version_two_struct_packet);
+DEFINE_AND_INSTANTIATE_OneVersionedStructPacketReflectionTest(one_versioned_struct_packet,
+                                                              one_version_one_struct_packet,
+                                                              one_version_two_struct_packet);
+DEFINE_AND_INSTANTIATE_OneVersionOneStructPacketReflectionTest(one_version_one_struct_packet);
+DEFINE_AND_INSTANTIATE_OneVersionTwoStructPacketReflectionTest(one_version_two_struct_packet);
 }  // namespace parser
 }  // namespace packet
 }  // namespace bluetooth
