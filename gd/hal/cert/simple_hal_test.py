@@ -222,11 +222,11 @@ class SimpleHalTest(GdBaseTestClass):
         )
         # LeConnectionComplete TODO: Extract the handle
         self.cert_hci_event_stream.assert_event_occurs(
-            lambda packet: b'\x3e\x13\x01' in packet.payload
+            lambda packet: b'\x3e\x13\x01\x00' in packet.payload
         )
         # LeConnectionComplete TODO: Extract the handle
         self.hci_event_stream.assert_event_occurs(
-            lambda packet: b'\x3e\x13\x01' in packet.payload
+            lambda packet: b'\x3e\x13\x01\x00' in packet.payload
         )
         # Send ACL Data
         self.device_under_test.hal.SendHciAcl(
@@ -251,3 +251,62 @@ class SimpleHalTest(GdBaseTestClass):
         self.cert_hci_event_stream.unsubscribe()
         self.hci_acl_stream.unsubscribe()
         self.cert_hci_acl_stream.unsubscribe()
+
+    def test_le_white_list_connection_cert_advertises(self):
+        self.hci_event_stream.subscribe()
+        self.cert_hci_event_stream.subscribe()
+
+        # Set the LE Address to 0D:05:04:03:02:01
+        self.device_under_test.hal.SendHciCommand(
+            hal_facade_pb2.HciCommandPacket(
+                payload=b'\x05\x20\x06\x01\x02\x03\x04\x05\x0D'
+            )
+        )
+        # Add the cert device to the white list (Random 0C:05:04:03:02:01)
+        self.device_under_test.hal.SendHciCommand(
+            hal_facade_pb2.HciCommandPacket(
+                payload=b'\x11\x20\x07\x01\x01\x02\x03\x04\x05\x0C'
+            )
+        )
+        # Connect using the white list
+        self.device_under_test.hal.SendHciCommand(
+            hal_facade_pb2.HciCommandPacket(
+               payload=b'\x0D\x20\x19\x11\x01\x22\x02\x01\x00\xA1\xA2\xA3\xA4\xA5\xA6\x01\x06\x00\x70\x0C\x40\x00\x03\x07\x01\x00\x02\x00'
+            )
+        )
+
+        # Set the LE Address to 0C:05:04:03:02:01
+        self.cert_device.hal.SendHciCommand(
+            hal_facade_pb2.HciCommandPacket(
+                payload=b'\x05\x20\x06\x01\x02\x03\x04\x05\x0C'
+            )
+        )
+        # Set LE Advertising parameters
+        self.cert_device.hal.SendHciCommand(
+            hal_facade_pb2.HciCommandPacket(
+               payload=b'\x06\x20\x0F\x00\x02\x00\x03\x00\x01\x00\xA1\xA2\xA3\xA4\xA5\xA6\x07\x00'
+            )
+        )
+        # Set LE Advertising data
+        self.cert_device.hal.SendHciCommand(
+            hal_facade_pb2.HciCommandPacket(
+               payload=b'\x08\x20\x20\x0C\x0A\x09Im_A_Cert\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00'
+            )
+        )
+        # Enable Advertising
+        self.cert_device.hal.SendHciCommand(
+            hal_facade_pb2.HciCommandPacket(
+               payload=b'\x0A\x20\x01\x01'
+            )
+        )
+        # LeConnectionComplete
+        self.cert_hci_event_stream.assert_event_occurs(
+            lambda packet: b'\x3e\x13\x01\x00' in packet.payload
+        )
+        # LeConnectionComplete
+        self.hci_event_stream.assert_event_occurs(
+            lambda packet: b'\x3e\x13\x01\x00' in packet.payload
+        )
+
+        self.hci_event_stream.unsubscribe()
+        self.cert_hci_event_stream.unsubscribe()
