@@ -260,7 +260,7 @@ class LinkLayerController {
   uint8_t le_scan_filter_duplicates_;
   uint8_t le_address_type_;
 
-  bool le_connect_;
+  bool le_connect_{false};
   uint16_t le_connection_interval_min_;
   uint16_t le_connection_interval_max_;
   uint16_t le_connection_latency_;
