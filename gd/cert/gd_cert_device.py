@@ -55,12 +55,13 @@ def get_instances_with_configs(configs):
             resolved_cmd.append(replace_vars(entry, config))
         devices.append(GdCertDevice(config["grpc_port"],
                                     config["grpc_root_server_port"],
+                                    config["signal_port"],
                                     resolved_cmd, config["label"]))
     return devices
 
 class GdCertDevice(GdDeviceBase):
-    def __init__(self, grpc_port, grpc_root_server_port, cmd, label):
-        super().__init__(grpc_port, grpc_root_server_port, cmd,
+    def __init__(self, grpc_port, grpc_root_server_port, signal_port, cmd, label):
+        super().__init__(grpc_port, grpc_root_server_port, signal_port, cmd,
                          label, ACTS_CONTROLLER_CONFIG_NAME)
 
         # Cert stubs
@@ -71,6 +72,9 @@ class GdCertDevice(GdDeviceBase):
         self.l2cap = l2cap_cert_pb2_grpc.L2capModuleCertStub(self.grpc_channel)
 
         # Event streams
+        self.hal.hci_event_stream = EventStream(self.hal.FetchHciEvent)
+        self.hal.hci_acl_stream = EventStream(self.hal.FetchHciAcl)
+        self.hal.hci_sco_stream = EventStream(self.hal.FetchHciSco)
         self.hci.connection_complete_stream = EventStream(self.hci.FetchConnectionComplete)
         self.hci.disconnection_stream = EventStream(self.hci.FetchDisconnection)
         self.hci.connection_failed_stream = EventStream(self.hci.FetchConnectionFailed)

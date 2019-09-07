@@ -57,11 +57,10 @@ class HciLayer : public Module {
 
   virtual void UnregisterLeEventHandler(SubeventCode subevent_code);
 
-  const SecurityInterface* GetSecurityInterface(common::Callback<void(EventPacketView)> event_handler,
-                                                os::Handler* handler);
+  SecurityInterface* GetSecurityInterface(common::Callback<void(EventPacketView)> event_handler, os::Handler* handler);
 
-  const LeSecurityInterface* GetLeSecurityInterface(common::Callback<void(LeMetaEventView)> event_handler,
-                                                    os::Handler* handler);
+  LeSecurityInterface* GetLeSecurityInterface(common::Callback<void(LeMetaEventView)> event_handler,
+                                              os::Handler* handler);
 
   static const ModuleFactory Factory;
 

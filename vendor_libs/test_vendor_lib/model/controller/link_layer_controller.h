@@ -79,6 +79,10 @@ class LinkLayerController {
 
   void TimerTick();
 
+  AsyncTaskId ScheduleTask(std::chrono::milliseconds delay_ms, const TaskCallback& task);
+
+  void CancelScheduledTask(AsyncTaskId task);
+
   // Set the callbacks for sending packets to the HCI.
   void RegisterEventChannel(const std::function<void(std::shared_ptr<std::vector<uint8_t>>)>& send_event);
 
@@ -105,6 +109,9 @@ class LinkLayerController {
   void Connections();
 
   void LeAdvertising();
+
+  void HandleLeConnection(Address addr, uint8_t addr_type, uint8_t own_addr_type, uint8_t role,
+                          uint16_t connection_interval, uint16_t connection_latency, uint16_t supervision_timeout);
 
   void LeWhiteListClear();
   void LeWhiteListAddDevice(Address addr, uint8_t addr_type);
@@ -203,6 +210,8 @@ class LinkLayerController {
   void IncomingIoCapabilityResponsePacket(packets::LinkLayerPacketView packet);
   void IncomingIoCapabilityNegativeResponsePacket(packets::LinkLayerPacketView packet);
   void IncomingLeAdvertisementPacket(packets::LinkLayerPacketView packet);
+  void IncomingLeConnectPacket(packets::LinkLayerPacketView packet);
+  void IncomingLeConnectCompletePacket(packets::LinkLayerPacketView packet);
   void IncomingLeScanPacket(packets::LinkLayerPacketView packet);
   void IncomingLeScanResponsePacket(packets::LinkLayerPacketView packet);
   void IncomingPagePacket(packets::LinkLayerPacketView packet);
@@ -212,7 +221,7 @@ class LinkLayerController {
 
  private:
   const DeviceProperties& properties_;
-  AclConnectionHandler classic_connections_;
+  AclConnectionHandler connections_;
   // Add timestamps?
   std::vector<std::shared_ptr<packets::LinkLayerPacketBuilder>> commands_awaiting_responses_;
 
@@ -251,7 +260,7 @@ class LinkLayerController {
   uint8_t le_scan_filter_duplicates_;
   uint8_t le_address_type_;
 
-  bool le_connect_;
+  bool le_connect_{false};
   uint16_t le_connection_interval_min_;
   uint16_t le_connection_interval_max_;
   uint16_t le_connection_latency_;

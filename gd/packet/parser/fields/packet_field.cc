@@ -62,6 +62,7 @@ void PacketField::GenBounds(std::ostream& s, Size start_offset, Size end_offset,
     }
   } else {
     s << "size_t field_end = field_begin + (" << field_size << ") / 8;";
+    s << "if (field_end > end_index) { field_end = end_index; }";
   }
 }
 

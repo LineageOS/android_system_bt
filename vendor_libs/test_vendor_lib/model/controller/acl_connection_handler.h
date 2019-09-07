@@ -28,34 +28,48 @@ namespace test_vendor_lib {
 
 class AclConnectionHandler {
  public:
-  AclConnectionHandler(size_t max_pending_connections = 1) : max_pending_connections_(max_pending_connections) {}
+  AclConnectionHandler() = default;
 
   virtual ~AclConnectionHandler() = default;
 
-  bool CreatePendingConnection(const Address& addr);
-  bool HasPendingConnection(const Address& addr);
-  bool CancelPendingConnection(const Address& addr);
+  bool CreatePendingConnection(Address addr);
+  bool HasPendingConnection(Address addr);
+  bool CancelPendingConnection(Address addr);
 
-  uint16_t CreateConnection(const Address& addr);
+  bool CreatePendingLeConnection(Address addr, uint8_t addr_type);
+  bool HasPendingLeConnection(Address addr, uint8_t addr_type);
+  bool CancelPendingLeConnection(Address addr, uint8_t addr_type);
+
+  uint16_t CreateConnection(Address addr);
+  uint16_t CreateLeConnection(Address addr, uint8_t address_type, uint8_t own_address_type);
   bool Disconnect(uint16_t handle);
   bool HasHandle(uint16_t handle) const;
 
-  uint16_t GetHandle(const Address& addr) const;
-  const Address& GetAddress(uint16_t handle) const;
+  uint16_t GetHandle(Address addr) const;
+  Address GetAddress(uint16_t handle) const;
+  uint8_t GetAddressType(uint16_t handle) const;
+  uint8_t GetOwnAddressType(uint16_t handle) const;
 
   void SetConnected(uint16_t handle, bool connected);
   bool IsConnected(uint16_t handle) const;
 
+  bool IsDeviceConnected(Address addr, uint8_t address_type = 0) const;
+
   void Encrypt(uint16_t handle);
   bool IsEncrypted(uint16_t handle) const;
 
-  void SetAddress(uint16_t handle, const Address& address);
+  void SetAddress(uint16_t handle, Address address, uint8_t address_type = 0);  // default to public
 
  private:
   std::unordered_map<uint16_t, AclConnection> acl_connections_;
-  size_t max_pending_connections_;
-  std::set<Address> pending_connections_;
+  bool classic_connection_pending_{false};
+  Address pending_connection_address_;
+  bool le_connection_pending_{false};
+  Address pending_le_connection_address_;
+  uint8_t pending_le_connection_address_type_;
   uint16_t GetUnusedHandle();
+  uint16_t last_handle_{acl::kReservedHandle - 2};
+  void set_own_address_type(uint16_t handle, uint8_t own_address_type);
 };
 
 }  // namespace test_vendor_lib

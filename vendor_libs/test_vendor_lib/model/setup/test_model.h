@@ -47,7 +47,7 @@ class TestModel {
   void Del(size_t device_index);
 
   // Add phy, return its index
-  size_t AddPhy(std::shared_ptr<PhyLayerFactory> phy);
+  size_t AddPhy(Phy::Type phy_type);
 
   // Remove phy by index
   void DelPhy(size_t phy_index);

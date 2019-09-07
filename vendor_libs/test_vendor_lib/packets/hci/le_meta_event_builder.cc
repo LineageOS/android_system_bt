@@ -34,7 +34,7 @@ LeMetaEventBuilder::LeMetaEventBuilder(LeSubEventCode sub_event_code, std::uniqu
 // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.7.65.1
 std::unique_ptr<LeMetaEventBuilder> LeMetaEventBuilder::CreateLeConnectionCompleteEvent(
     Status status, uint16_t handle, uint8_t role, uint8_t peer_address_type, const Address& peer, uint16_t interval,
-    uint16_t latency, uint16_t supervision_timeout) {
+    uint16_t latency, uint16_t supervision_timeout, uint8_t master_clock_accuracy) {
   std::unique_ptr<LeMetaEventBuilder> evt_ptr =
       std::unique_ptr<LeMetaEventBuilder>(new LeMetaEventBuilder(LeSubEventCode::CONNECTION_COMPLETE));
 
@@ -46,7 +46,7 @@ std::unique_ptr<LeMetaEventBuilder> LeMetaEventBuilder::CreateLeConnectionComple
   CHECK(evt_ptr->AddOctets2(interval));
   CHECK(evt_ptr->AddOctets2(latency));
   CHECK(evt_ptr->AddOctets2(supervision_timeout));
-  CHECK(evt_ptr->AddOctets1(0x00));  // Master Clock Accuracy (unused for master)
+  CHECK(evt_ptr->AddOctets1(master_clock_accuracy));
 
   return evt_ptr;
 }
@@ -128,13 +128,14 @@ std::unique_ptr<LeMetaEventBuilder> LeMetaEventBuilder::CreateLeRemoteUsedFeatur
 }
 
 size_t LeMetaEventBuilder::size() const {
-  return 1 + payload_->size();  // Add the sub_event_code
+  return 1 + RawBuilder::size() + payload_->size();  // Add the sub_event_code
 }
 
 void LeMetaEventBuilder::Serialize(std::back_insert_iterator<std::vector<uint8_t>> it) const {
   insert(static_cast<uint8_t>(sub_event_code_), it);
   uint8_t payload_size = size() - sizeof(uint8_t);
   CHECK(size() - sizeof(uint8_t) == static_cast<size_t>(payload_size)) << "Payload too large for an event: " << size();
+  RawBuilder::Serialize(it);
   payload_->Serialize(it);
 }
 
