@@ -248,3 +248,26 @@ packet BitFieldArrayPacket {
   _size_(array): 8,
   array : BitField[],
 }
+
+struct VersionlessStruct {
+  one_number : 8,
+}
+
+packet OneVersionlessStructPacket {
+  versionless : VersionlessStruct,
+  _payload_,
+}
+
+packet OneVersionedStructPacket : OneVersionlessStructPacket {
+  version : 8,
+  _payload_,
+}
+
+packet OneVersionOneStructPacket : OneVersionedStructPacket(version = 0x01) {
+  just_one_number : 8,
+}
+
+packet OneVersionTwoStructPacket : OneVersionedStructPacket(version = 0x02) {
+  one_number : 8,
+  another_number : 8,
+}
