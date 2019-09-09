@@ -93,7 +93,7 @@ tBTM_STATUS BTM_BleGetEnergyInfo(tBTM_BLE_ENERGY_INFO_CBACK* p_ener_cback) {
   }
 
   ble_energy_info_cb.p_ener_cback = p_ener_cback;
-  BTM_VendorSpecificCommand(HCI_BLE_ENERGY_INFO_OCF, 0, NULL,
+  BTM_VendorSpecificCommand(HCI_BLE_ENERGY_INFO, 0, NULL,
                             btm_ble_cont_energy_cmpl_cback);
   return BTM_CMD_STARTED;
 }

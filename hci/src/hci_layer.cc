@@ -510,8 +510,7 @@ static void command_timed_out(void* original_wait_entry) {
 
   uint8_t* hci_packet = reinterpret_cast<uint8_t*>(bt_hdr + 1);
 
-  UINT16_TO_STREAM(hci_packet,
-                   HCI_GRP_VENDOR_SPECIFIC | HCI_CONTROLLER_DEBUG_INFO_OCF);
+  UINT16_TO_STREAM(hci_packet, HCI_CONTROLLER_DEBUG_INFO);
   UINT8_TO_STREAM(hci_packet, 0);  // No parameters
 
   hci_firmware_log_fd = hci_open_firmware_log_file();

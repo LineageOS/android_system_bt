@@ -396,35 +396,35 @@
 #define HCI_BLE_WRITE_RF_COMPENS_POWER (0x004D | HCI_GRP_BLE_CMDS)
 #define HCI_BLE_SET_PRIVACY_MODE (0x004E | HCI_GRP_BLE_CMDS)
 
-/* LE Get Vendor Capabilities Command OCF */
-#define HCI_BLE_VENDOR_CAP_OCF (0x0153 | HCI_GRP_VENDOR_SPECIFIC)
+/* LE Get Vendor Capabilities Command opcode */
+#define HCI_BLE_VENDOR_CAP (0x0153 | HCI_GRP_VENDOR_SPECIFIC)
 
-/* Multi adv OCF */
-#define HCI_BLE_MULTI_ADV_OCF (0x0154 | HCI_GRP_VENDOR_SPECIFIC)
+/* Multi adv opcode */
+#define HCI_BLE_MULTI_ADV (0x0154 | HCI_GRP_VENDOR_SPECIFIC)
 
-/* Batch scan OCF */
-#define HCI_BLE_BATCH_SCAN_OCF (0x0156 | HCI_GRP_VENDOR_SPECIFIC)
+/* Batch scan opcode */
+#define HCI_BLE_BATCH_SCAN (0x0156 | HCI_GRP_VENDOR_SPECIFIC)
 
-/* ADV filter OCF */
-#define HCI_BLE_ADV_FILTER_OCF (0x0157 | HCI_GRP_VENDOR_SPECIFIC)
+/* ADV filter opcode */
+#define HCI_BLE_ADV_FILTER (0x0157 | HCI_GRP_VENDOR_SPECIFIC)
 
-/* Tracking OCF */
-#define HCI_BLE_TRACK_ADV_OCF (0x0158 | HCI_GRP_VENDOR_SPECIFIC)
+/* Tracking opcode */
+#define HCI_BLE_TRACK_ADV (0x0158 | HCI_GRP_VENDOR_SPECIFIC)
 
-/* Energy info OCF */
-#define HCI_BLE_ENERGY_INFO_OCF (0x0159 | HCI_GRP_VENDOR_SPECIFIC)
+/* Energy info opcode */
+#define HCI_BLE_ENERGY_INFO (0x0159 | HCI_GRP_VENDOR_SPECIFIC)
 
-/* Extended BLE Scan parameters OCF */
-#define HCI_BLE_EXTENDED_SCAN_PARAMS_OCF (0x015A | HCI_GRP_VENDOR_SPECIFIC)
+/* Extended BLE Scan parameters opcode */
+#define HCI_BLE_EXTENDED_SCAN_PARAMS (0x015A | HCI_GRP_VENDOR_SPECIFIC)
 
-/* Controller debug info OCF */
-#define HCI_CONTROLLER_DEBUG_INFO_OCF (0x015B | HCI_GRP_VENDOR_SPECIFIC)
+/* Controller debug info opcode */
+#define HCI_CONTROLLER_DEBUG_INFO (0x015B | HCI_GRP_VENDOR_SPECIFIC)
 
-/* A2DP offload OCF */
-#define HCI_CONTROLLER_A2DP_OPCODE_OCF (0x015D | HCI_GRP_VENDOR_SPECIFIC)
+/* A2DP offload opcode */
+#define HCI_CONTROLLER_A2DP (0x015D | HCI_GRP_VENDOR_SPECIFIC)
 
-/* Bluetooth Quality Report OCF */
-#define HCI_CONTROLLER_BQR_OPCODE_OCF (0x015E | HCI_GRP_VENDOR_SPECIFIC)
+/* Bluetooth Quality Report opcode */
+#define HCI_CONTROLLER_BQR (0x015E | HCI_GRP_VENDOR_SPECIFIC)
 
 /* subcode for multi adv feature */
 #define BTM_BLE_MULTI_ADV_SET_PARAM 0x01
