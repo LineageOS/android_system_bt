@@ -57,7 +57,8 @@ void CustomFieldDef::GenUsing(std::ostream& s) const {
   s << GetTypeName() << ";";
 }
 
-void CustomFieldDef::GenCustomFieldCheck(std::ostream& s) const {
-  s << "static_assert(CustomTypeChecker<" << name_ << ">::value, \"";
+void CustomFieldDef::GenCustomFieldCheck(std::ostream& s, bool little_endian) const {
+  s << "static_assert(CustomTypeChecker<" << name_ << ", ";
+  s << (little_endian ? "" : "!") << "kLittleEndian>::value, \"";
   s << name_ << " is not a valid custom field type. Please see README for more details.\");";
 }
