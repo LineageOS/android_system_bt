@@ -97,7 +97,7 @@ void known_tx_pwr(BleAdvertiserHciInterface::parameters_cb cb, int8_t tx_power,
 class BleAdvertiserVscHciInterfaceImpl : public BleAdvertiserHciInterface {
   void SendAdvCmd(const base::Location& posted_from, uint8_t param_len,
                   uint8_t* param_buf, status_cb command_complete) {
-    btu_hcif_send_cmd_with_cb(posted_from, HCI_BLE_MULTI_ADV_OCF, param_buf,
+    btu_hcif_send_cmd_with_cb(posted_from, HCI_BLE_MULTI_ADV, param_buf,
                               param_len,
                               base::Bind(&btm_ble_multi_adv_vsc_cmpl_cback,
                                          param_buf[0], command_complete));
