@@ -110,6 +110,7 @@ cc_library {
         ":BluetoothHciSources",
         ":BluetoothL2capSources",
         ":BluetoothPacketSources",
+        ":BluetoothShimSources",
         ":BluetoothSmpSources",
     ],
     generated_headers: [
