@@ -22,9 +22,9 @@
 #include "os/handler.h"
 
 #include "l2cap/classic_fixed_channel_manager.h"
-#include "l2cap/internal/classic_fixed_channel_service_impl.h"
 #include "l2cap/internal/classic_fixed_channel_service_manager_impl.h"
 #include "l2cap/internal/classic_link.h"
+#include "l2cap/internal/parameter_provider.h"
 #include "l2cap/internal/scheduler.h"
 
 #include "hci/acl_manager.h"
@@ -36,10 +36,11 @@ namespace internal {
 
 class ClassicLinkManager : public hci::ConnectionCallbacks {
  public:
-  ClassicLinkManager(os::Handler* l2cap_layer_handler, hci::AclManager* acl_manager,
-                     ClassicFixedChannelServiceManagerImpl* service_manager)
-      : handler_(l2cap_layer_handler), acl_manager_(acl_manager), service_manager_(service_manager) {
-    acl_manager_->RegisterCallbacks(this, handler_);
+  ClassicLinkManager(os::Handler* l2cap_handler, hci::AclManager* acl_manager,
+                     ClassicFixedChannelServiceManagerImpl* service_manager, ParameterProvider* parameter_provider)
+      : l2cap_handler_(l2cap_handler), acl_manager_(acl_manager), service_manager_(service_manager),
+        parameter_provider_(parameter_provider) {
+    acl_manager_->RegisterCallbacks(this, l2cap_handler_);
   }
 
   struct PendingFixedChannelConnection {
@@ -51,18 +52,23 @@ class ClassicLinkManager : public hci::ConnectionCallbacks {
     std::vector<PendingFixedChannelConnection> pending_fixed_channel_connections_;
   };
 
-  void ConnectFixedChannelServices(hci::Address device, PendingFixedChannelConnection pending_fixed_channel_connection);
+  // ACL methods
 
   ClassicLink* GetLink(hci::Address device);
   void OnConnectSuccess(std::unique_ptr<hci::AclConnection> acl_connection) override;
   void OnConnectFail(hci::Address device, hci::ErrorCode reason) override;
   void OnDisconnect(hci::Address device, hci::ErrorCode status);
 
+  // ClassicFixedChannelManager methods
+
+  void ConnectFixedChannelServices(hci::Address device, PendingFixedChannelConnection pending_fixed_channel_connection);
+
  private:
   // Dependencies
-  os::Handler* handler_;
+  os::Handler* l2cap_handler_;
   hci::AclManager* acl_manager_;
   ClassicFixedChannelServiceManagerImpl* service_manager_;
+  ParameterProvider* parameter_provider_;
 
   // Internal states
   std::unordered_map<hci::Address, PendingLink> pending_links_;
