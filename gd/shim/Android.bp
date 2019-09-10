@@ -1,0 +1,6 @@
+filegroup {
+    name: "BluetoothShimSources",
+    srcs: [
+            "stack.cc",
+    ],
+}
