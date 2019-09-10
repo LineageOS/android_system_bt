@@ -76,7 +76,7 @@ class ClassicLink {
   virtual void RefreshRefCount() {
     int ref_count = 0;
     ref_count += fixed_channel_allocator_.GetRefCount();
-    ASSERT_LOG(ref_count > 0, "ref_count %d is less than 0", ref_count);
+    ASSERT_LOG(ref_count >= 0, "ref_count %d is less than 0", ref_count);
     if (ref_count > 0) {
       link_idle_disconnect_alarm_.Cancel();
     } else {
