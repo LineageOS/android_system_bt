@@ -29,3 +29,7 @@ future_t* bluetooth::shim::StopGabeldorscheStack() {
   GetGabeldorscheStack()->Stop();
   return (future_t*)nullptr;
 }
+
+bluetooth::shim::IController* bluetooth::shim::GetController() {
+  return GetGabeldorscheStack()->GetController();
+}
