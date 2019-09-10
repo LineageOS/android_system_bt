@@ -74,12 +74,13 @@ class L2capModuleFacadeService : public L2capModuleFacade::Service {
   }
 
   ::grpc::Status SendL2capPacket(::grpc::ServerContext* context, const ::bluetooth::l2cap::L2capPacket* request,
-                                 ::google::protobuf::Empty* response) override {
+                                 SendL2capPacketResult* response) override {
     if (connection_less_channel_helper_map_.find(request->channel()) == connection_less_channel_helper_map_.end()) {
       return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION, "Channel not registered");
     }
     std::vector<uint8_t> packet(request->payload().begin(), request->payload().end());
     connection_less_channel_helper_map_[request->channel()]->SendPacket(packet);
+    response->set_result_type(SendL2capPacketResultType::OK);
     return ::grpc::Status::OK;
   }
 

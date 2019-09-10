@@ -16,12 +16,18 @@
 
 #include "l2cap/classic_dynamic_channel_service.h"
 #include "common/bind.h"
+#include "l2cap/internal/classic_dynamic_channel_service_manager_impl.h"
 
 namespace bluetooth {
 namespace l2cap {
 
 void ClassicDynamicChannelService::Unregister(OnUnregisteredCallback on_unregistered,
-                                              os::Handler* on_unregistered_handler) {}
+                                              os::Handler* on_unregistered_handler) {
+  ASSERT_LOG(manager_ != nullptr, "this service is invalid");
+  l2cap_layer_handler_->Post(common::BindOnce(&internal::ClassicDynamicChannelServiceManagerImpl::Unregister,
+                                              common::Unretained(manager_), psm_, std::move(on_unregistered),
+                                              on_unregistered_handler));
+}
 
 }  // namespace l2cap
 }  // namespace bluetooth
