@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <hci/hci_packets.h>
 #include <unordered_map>
 
 #include "l2cap/cid.h"
@@ -28,30 +29,39 @@ namespace bluetooth {
 namespace l2cap {
 namespace internal {
 
+class ClassicLink;
+
 // Helper class for keeping channels in a Link. It allocates and frees Channel object, and supports querying whether a
 // channel is in use
 class ClassicFixedChannelAllocator {
  public:
-  explicit ClassicFixedChannelAllocator(os::Handler* handler) : handler_(handler) {
-    ASSERT(handler_ != nullptr);
+  ClassicFixedChannelAllocator(ClassicLink* link, os::Handler* l2cap_handler)
+      : link_(link), l2cap_handler_(l2cap_handler) {
+    ASSERT(link_ != nullptr);
+    ASSERT(l2cap_handler_ != nullptr);
   }
 
   // Allocates a channel. If cid is used, return nullptr. NOTE: The returned ClassicFixedChannelImpl object is still
-  // owned by the channel cllocator, NOT the client.
-  ClassicFixedChannelImpl* AllocateChannel(Cid cid, SecurityPolicy security_policy);
+  // owned by the channel allocator, NOT the client.
+  std::shared_ptr<ClassicFixedChannelImpl> AllocateChannel(Cid cid, SecurityPolicy security_policy);
 
-  // Frees a channel. If cid doesn't exist, return false
-  bool FreeChannel(Cid cid);
+  // Frees a channel. If cid doesn't exist, it will crash
+  void FreeChannel(Cid cid);
 
-  bool IsChannelInUse(Cid cid) const;
+  bool IsChannelAllocated(Cid cid) const;
 
-  ClassicFixedChannelImpl* FindChannel(Cid cid);
+  std::shared_ptr<ClassicFixedChannelImpl> FindChannel(Cid cid);
 
   size_t NumberOfChannels() const;
 
+  void OnAclDisconnected(hci::ErrorCode hci_status);
+
+  int GetRefCount();
+
  private:
-  os::Handler* handler_ = nullptr;
-  std::unordered_map<Cid, ClassicFixedChannelImpl> channels_;
+  ClassicLink* link_;
+  os::Handler* l2cap_handler_;
+  std::unordered_map<Cid, std::shared_ptr<ClassicFixedChannelImpl>> channels_;
 };
 
 }  // namespace internal
