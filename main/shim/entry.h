@@ -38,5 +38,7 @@ namespace shim {
 future_t* StartGabeldorscheStack();
 future_t* StopGabeldorscheStack();
 
+bluetooth::shim::IController* GetController();
+
 }  // namespace shim
 }  // namespace bluetooth

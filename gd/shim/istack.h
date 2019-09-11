@@ -22,9 +22,13 @@
 namespace bluetooth {
 namespace shim {
 
+struct IController;
+
 struct IStack {
   virtual void Start() = 0;
   virtual void Stop() = 0;
+
+  virtual IController* GetController() = 0;
 
   virtual ~IStack() {}
 };
