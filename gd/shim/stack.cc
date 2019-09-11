@@ -23,6 +23,7 @@
 #include "l2cap/l2cap_layer.h"
 #include "os/log.h"
 #include "os/thread.h"
+#include "shim/controller.h"
 #include "stack_manager.h"
 
 using ::bluetooth::os::Thread;
@@ -40,6 +41,7 @@ struct bluetooth::shim::Stack::impl {
     modules.add<::bluetooth::hci::AclManager>();
     modules.add<::bluetooth::hci::ClassicSecurityManager>();
     modules.add<::bluetooth::l2cap::L2capLayer>();
+    modules.add<::bluetooth::shim::Controller>();
 
     stack_thread_ = new Thread("gd_stack_thread", Thread::Priority::NORMAL);
     stack_manager_.StartUp(&modules, stack_thread_);
@@ -61,6 +63,10 @@ struct bluetooth::shim::Stack::impl {
     LOG_INFO("%s Successfully shut down Gd stack", __func__);
   }
 
+  IController* GetController() {
+    return stack_manager_.GetInstance<bluetooth::shim::Controller>();
+  }
+
  private:
   os::Thread* stack_thread_ = nullptr;
   bool is_running_ = false;
@@ -78,6 +84,10 @@ void bluetooth::shim::Stack::Start() {
 
 void bluetooth::shim::Stack::Stop() {
   pimpl_->Stop();
+}
+
+bluetooth::shim::IController* bluetooth::shim::Stack::GetController() {
+  return pimpl_->GetController();
 }
 
 bluetooth::shim::IStack* bluetooth::shim::GetGabeldorscheStack() {
