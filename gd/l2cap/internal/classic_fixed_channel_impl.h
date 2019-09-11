@@ -18,6 +18,7 @@
 
 #include "l2cap/cid.h"
 #include "l2cap/classic_fixed_channel.h"
+#include "l2cap/internal/classic_fixed_channel_allocator.h"
 #include "os/handler.h"
 #include "os/log.h"
 
@@ -25,20 +26,57 @@ namespace bluetooth {
 namespace l2cap {
 namespace internal {
 
+class ClassicLink;
+
 class ClassicFixedChannelImpl {
  public:
-  ClassicFixedChannelImpl(Cid cid, os::Handler* handler) : cid_(cid), handler_(handler) {
-    ASSERT_LOG(cid_ >= kFirstFixedChannel && cid_ <= kLastFixedChannel, "Invalid cid: %d", cid_);
-    ASSERT(handler_ != nullptr);
+  ClassicFixedChannelImpl(Cid cid, ClassicLink* link, os::Handler* l2cap_handler);
+
+  virtual ~ClassicFixedChannelImpl() = default;
+
+  hci::Address GetDevice() const {
+    return device_;
   }
 
-  std::unique_ptr<ClassicFixedChannel> GetChannelInterface() {
-    return std::unique_ptr<ClassicFixedChannel>(new ClassicFixedChannel(handler_, this));
+  virtual void RegisterOnCloseCallback(os::Handler* user_handler,
+                                       ClassicFixedChannel::OnCloseCallback on_close_callback);
+
+  virtual void Acquire();
+
+  virtual void Release();
+
+  virtual bool IsAcquired() const {
+    return acquired_;
+  }
+
+  virtual void OnClosed(hci::ErrorCode status);
+
+  virtual std::string ToString() {
+    std::ostringstream ss;
+    ss << "Device " << device_ << " Cid 0x" << std::hex << cid_;
+    return ss.str();
   }
 
  private:
-  Cid cid_;
-  os::Handler* handler_;
+  // Constructor states
+  // For logging purpose only
+  const Cid cid_;
+  // For logging purpose only
+  const hci::Address device_;
+  // Needed to handle Acquire() and Release()
+  ClassicLink* link_;
+  os::Handler* l2cap_handler_;
+
+  // User supported states
+  os::Handler* user_handler_ = nullptr;
+  ClassicFixedChannel::OnCloseCallback on_close_callback_{};
+
+  // Internal states
+  bool acquired_ = false;
+  bool closed_ = false;
+  hci::ErrorCode close_reason_ = hci::ErrorCode::SUCCESS;
+
+  DISALLOW_COPY_AND_ASSIGN(ClassicFixedChannelImpl);
 };
 
 }  // namespace internal

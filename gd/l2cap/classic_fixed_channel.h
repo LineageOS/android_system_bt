@@ -17,6 +17,8 @@
 
 #include "common/bidi_queue.h"
 #include "common/callback.h"
+#include "hci/acl_manager.h"
+#include "l2cap/cid.h"
 #include "os/handler.h"
 #include "packet/base_packet_builder.h"
 #include "packet/packet_view.h"
@@ -31,33 +33,40 @@ class ClassicFixedChannelImpl;
 /**
  * L2CAP fixed channel object. When a new object is created, it must be
  * acquired through calling {@link FixedChannel#Acquire()} within X seconds.
- * Otherwise, {@link FixeChannel#Release()} will be called automatically.
+ * Otherwise, {@link FixedChannel#Release()} will be called automatically.
  *
  */
 class ClassicFixedChannel {
  public:
-  using OnCloseCallback = common::Callback<void()>;
+  // Should only be constructed by modules that have access to ClassicLinkManager
+  ClassicFixedChannel(std::shared_ptr<internal::ClassicFixedChannelImpl> impl, os::Handler* l2cap_handler)
+      : impl_(std::move(impl)), l2cap_handler_(l2cap_handler) {
+    ASSERT(impl_ != nullptr);
+    ASSERT(l2cap_handler_ != nullptr);
+  }
+
+  hci::Address GetDevice() const;
 
   /**
    * Register close callback. If close callback is registered, when a channel is closed, the channel's resource will
    * only be freed after on_close callback is invoked. Otherwise, if no on_close callback is registered, the channel's
    * resource will be freed immediately after closing.
    *
-   * @param on_close The callback invoked upon channel closing.
+   * @param user_handler The handler used to invoke the callback on
+   * @param on_close_callback The callback invoked upon channel closing.
    */
-  void RegisterOnCloseCallback(os::Handler* handler, OnCloseCallback on_close);
+  using OnCloseCallback = common::OnceCallback<void(hci::ErrorCode)>;
+  void RegisterOnCloseCallback(os::Handler* user_handler, OnCloseCallback on_close_callback);
 
   /**
-   * Indicate that this Fixed Channel is being used. This will prevent ACL
-   * connection from being disconnected.
+   * Indicate that this Fixed Channel is being used. This will prevent ACL connection from being disconnected.
    */
   void Acquire();
 
   /**
-   * Indicate that this Fixed Channel is no longer being used. ACL connection
-   * will be disconnected after X seconds if no other DynamicChannel is connected
-   * or no other Fixed Channel is using this ACL connection. However a module can
-   * still receive data on this channel as long as it remains open.
+   * Indicate that this Fixed Channel is no longer being used. ACL connection will be disconnected after
+   * kClassicLinkIdleDisconnectTimeout if no other DynamicChannel is connected or no other Fixed Channel is  using this
+   * ACL connection. However a module can still receive data on this channel as long as it remains open.
    */
   void Release();
 
@@ -70,14 +79,9 @@ class ClassicFixedChannel {
    */
   common::BidiQueueEnd<packet::PacketView<packet::kLittleEndian>, packet::BasePacketBuilder>* GetQueueUpEnd() const;
 
-  friend class internal::ClassicFixedChannelImpl;
-
  private:
-  ClassicFixedChannel(os::Handler* l2cap_handler, internal::ClassicFixedChannelImpl* classic_fixed_channel_impl)
-      : l2cap_handler_(l2cap_handler), classic_fixed_channel_impl_(classic_fixed_channel_impl) {}
+  std::shared_ptr<internal::ClassicFixedChannelImpl> impl_;
   os::Handler* l2cap_handler_;
-  internal::ClassicFixedChannelImpl* classic_fixed_channel_impl_;
-  DISALLOW_COPY_AND_ASSIGN(ClassicFixedChannel);
 };
 
 }  // namespace l2cap
