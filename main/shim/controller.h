@@ -16,13 +16,14 @@
 
 #pragma once
 
-/**
- * This common file provides the only visibility from the legacy stack into GD stack.
- *
- * Only interfaces or APIs should be exported.
- *
- * Only common data structures should be used to pass data between the stacks.
- *
- */
-#include "gd/shim/icontroller.h"
-#include "gd/shim/istack.h"
+#include "device/include/controller.h"
+
+static const char GD_CONTROLLER_MODULE[] = "gd_controller_module";
+
+namespace bluetooth {
+namespace shim {
+
+const controller_t* controller_get_interface();
+
+}  // namespace shim
+}  // namespace bluetooth

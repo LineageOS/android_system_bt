@@ -158,6 +158,7 @@ void bte_main_enable() {
 
   if (bluetooth::shim::is_gd_shim_enabled()) {
     LOG_INFO(LOG_TAG, "%s Gd shim module enabled", __func__);
+    module_start_up(get_module(GD_SHIM_MODULE));
   } else {
     module_start_up(get_module(BTSNOOP_MODULE));
     module_start_up(get_module(HCI_MODULE));
