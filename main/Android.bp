@@ -8,6 +8,7 @@ filegroup {
         "bte_init_cpp_logging.cc",
         "bte_logmsg.cc",
         "bte_main.cc",
+        "shim/controller.cc",
         "shim/entry.cc",
         "shim/shim.cc",
         "stack_config.cc",
