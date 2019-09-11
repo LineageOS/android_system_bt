@@ -13,11 +13,13 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
 
 #include <memory>
 
 #include "shim/icontroller.h"
+#include "shim/ihci_layer.h"
 #include "shim/istack.h"
 
 /**
@@ -35,6 +37,7 @@ class Stack : public IStack {
   void Stop() override;   // IStack
 
   IController* GetController() override;  // IStack
+  IHciLayer* GetHciLayer() override;      // IStack
 
  private:
   struct impl;
