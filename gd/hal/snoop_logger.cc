@@ -119,6 +119,7 @@ void SnoopLogger::capture(const HciPacket& packet, Direction direction, PacketTy
                                     .type = static_cast<uint8_t>(type)};
   btsnoop_ostream_.write(reinterpret_cast<const char*>(&header), sizeof(btsnoop_packet_header_t));
   btsnoop_ostream_.write(reinterpret_cast<const char*>(packet.data()), packet.size());
+  if (AlwaysFlush) btsnoop_ostream_.flush();
 }
 
 void SnoopLogger::ListDependencies(ModuleList* list) {
