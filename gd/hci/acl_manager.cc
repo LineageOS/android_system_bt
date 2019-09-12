@@ -441,7 +441,6 @@ struct AclManager::impl {
 
   AclConnection::QueueUpEnd* get_acl_queue_end(uint16_t handle) {
     auto& connection = check_and_get_connection(handle);
-    ASSERT_LOG(connection.disconnect_handler_ != nullptr, "No disconnect handler registered.");
     return connection.queue_->GetUpEnd();
   }
 
