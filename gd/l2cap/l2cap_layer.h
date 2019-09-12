@@ -28,6 +28,11 @@ class L2capLayer : public bluetooth::Module {
   L2capLayer() = default;
   ~L2capLayer() = default;
 
+  /**
+   * Get the api to the classic channel l2cap module
+   */
+  std::unique_ptr<ClassicFixedChannelManager> GetClassicFixedChannelManager();
+
   static const ModuleFactory Factory;
 
  protected:
@@ -36,11 +41,6 @@ class L2capLayer : public bluetooth::Module {
   void Start() override;
 
   void Stop() override;
-
-  /**
-   * Get the api to the classic channel l2cap module
-   */
-  std::unique_ptr<ClassicFixedChannelManager> GetClassicFixedChannelManager();
 
  private:
   struct impl;
