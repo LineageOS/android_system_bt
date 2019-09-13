@@ -83,6 +83,11 @@ typedef struct hci_t {
   void (*transmit_downward)(uint16_t type, void* data);
 } hci_t;
 
+namespace bluetooth {
+namespace legacy {
+const hci_t* hci_layer_get_interface();
+}  // namespace legacy
+}  // namespace bluetooth
 const hci_t* hci_layer_get_interface();
 
 const hci_t* hci_layer_get_test_interface(
