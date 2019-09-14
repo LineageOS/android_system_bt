@@ -24,7 +24,7 @@
 namespace bluetooth {
 namespace packet {
 // Checks a custom type has all the necessary functions with the correct signatures.
-template <typename T>
+template <typename T, bool packet_little_endian>
 class CustomTypeChecker {
  public:
   template <class C, void (C::*)(BitInserter&) const>
@@ -33,22 +33,17 @@ class CustomTypeChecker {
   template <class C, size_t (C::*)() const>
   struct SizeChecker {};
 
-  template <class C, Iterator<true> (*)(C* vec, Iterator<true> it)>
+  template <class C, bool little_endian, Iterator<little_endian> (*)(C* vec, Iterator<little_endian> it)>
   struct ParseChecker {};
 
-  template <class C, Iterator<false> (*)(C* vec, Iterator<false> it)>
-  struct ParseCheckerBigEndian {};
+  template <class C, bool little_endian>
+  static int Test(SerializeChecker<C, &C::Serialize>*, SizeChecker<C, &C::size>*,
+                  ParseChecker<C, little_endian, &C::Parse>*);
 
-  template <class C>
-  static int Test(SerializeChecker<C, &C::Serialize>*, SizeChecker<C, &C::size>*, ParseChecker<C, &C::Parse>*);
-
-  template <class C>
-  static int Test(SerializeChecker<C, &C::Serialize>*, SizeChecker<C, &C::size>*, ParseCheckerBigEndian<C, &C::Parse>*);
-
-  template <class C>
+  template <class C, bool little_endian>
   static char Test(...);
 
-  static constexpr bool value = (sizeof(Test<T>(0, 0, 0)) == sizeof(int));
+  static constexpr bool value = (sizeof(Test<T, packet_little_endian>(0, 0, 0)) == sizeof(int));
 };
 }  // namespace packet
 }  // namespace bluetooth
