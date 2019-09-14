@@ -35,6 +35,8 @@ class SnoopLogger : public ::bluetooth::Module {
   static const std::string DefaultFilePath;
   // Set File Path before module is started to ensure all packets are written to the right file
   static void SetFilePath(const std::string& filename);
+  // Flag to allow flush into persistent memory on every packet captured. This is enabled on host for debugging.
+  static const bool AlwaysFlush;
 
   enum class PacketType {
     CMD = 1,

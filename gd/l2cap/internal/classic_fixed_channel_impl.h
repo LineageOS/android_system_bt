@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include "common/bidi_queue.h"
 #include "l2cap/cid.h"
 #include "l2cap/classic_fixed_channel.h"
 #include "l2cap/internal/classic_fixed_channel_allocator.h"
@@ -57,6 +58,14 @@ class ClassicFixedChannelImpl {
     return ss.str();
   }
 
+  common::BidiQueueEnd<packet::BasePacketBuilder, packet::PacketView<packet::kLittleEndian>>* GetQueueUpEnd() {
+    return channel_queue_.GetUpEnd();
+  }
+
+  common::BidiQueueEnd<packet::PacketView<packet::kLittleEndian>, packet::BasePacketBuilder>* GetQueueDownEnd() {
+    return channel_queue_.GetDownEnd();
+  }
+
  private:
   // Constructor states
   // For logging purpose only
@@ -75,6 +84,9 @@ class ClassicFixedChannelImpl {
   bool acquired_ = false;
   bool closed_ = false;
   hci::ErrorCode close_reason_ = hci::ErrorCode::SUCCESS;
+  static constexpr size_t kChannelQueueSize = 10;
+  common::BidiQueue<packet::PacketView<packet::kLittleEndian>, packet::BasePacketBuilder> channel_queue_{
+      kChannelQueueSize};
 
   DISALLOW_COPY_AND_ASSIGN(ClassicFixedChannelImpl);
 };

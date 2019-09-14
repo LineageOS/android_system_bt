@@ -39,9 +39,9 @@ void ClassicFixedChannel::Release() {
   l2cap_handler_->Post(common::BindOnce(&internal::ClassicFixedChannelImpl::Release, impl_));
 }
 
-common::BidiQueueEnd<packet::PacketView<packet::kLittleEndian>, packet::BasePacketBuilder>*
+common::BidiQueueEnd<packet::BasePacketBuilder, packet::PacketView<packet::kLittleEndian>>*
 ClassicFixedChannel::GetQueueUpEnd() const {
-  return nullptr;
+  return impl_->GetQueueUpEnd();
 }
 }  // namespace l2cap
 }  // namespace bluetooth

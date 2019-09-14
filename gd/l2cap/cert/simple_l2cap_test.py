@@ -21,8 +21,10 @@ sys.path.append(os.environ['ANDROID_BUILD_TOP'] + '/system/bt/gd')
 
 from cert.gd_base_test import GdBaseTestClass
 from cert import rootservice_pb2 as cert_rootservice_pb2
+from facade import common_pb2
 from facade import rootservice_pb2 as facade_rootservice_pb2
 from google.protobuf import empty_pb2
+from l2cap import facade_pb2 as l2cap_facade_pb2
 
 class SimpleL2capTest(GdBaseTestClass):
     def setup_test(self):
@@ -42,6 +44,16 @@ class SimpleL2capTest(GdBaseTestClass):
         self.device_under_test.wait_channel_ready()
         self.cert_device.wait_channel_ready()
 
+        dut_address = self.device_under_test.controller_read_only_property.ReadLocalAddress(empty_pb2.Empty()).address
+        self.device_under_test.address = dut_address
+        cert_address = self.cert_device.controller_read_only_property.ReadLocalAddress(empty_pb2.Empty()).address
+        self.cert_device.address = cert_address
+
+        self.dut_address = common_pb2.BluetoothAddress(
+            address=self.device_under_test.address)
+        self.cert_address = common_pb2.BluetoothAddress(
+            address=self.cert_device.address)
+
     def teardown_test(self):
         self.device_under_test.rootservice.StopStack(
             facade_rootservice_pb2.StopStackRequest()
@@ -50,8 +62,32 @@ class SimpleL2capTest(GdBaseTestClass):
             cert_rootservice_pb2.StopStackRequest()
         )
 
-    def test_no_op(self):
-        if self.device_under_test.l2cap is None:
-            return False
-        self.device_under_test.l2cap.NoOp(empty_pb2.Empty())
-        pass
+    def test_connect_and_send_data(self):
+        self.device_under_test.l2cap.RegisterChannel(l2cap_facade_pb2.RegisterChannelRequest(channel=2))
+        dut_packet_stream = self.device_under_test.l2cap.packet_stream
+        cert_packet_stream = self.cert_device.l2cap.packet_stream
+        cert_connection_stream = self.cert_device.l2cap.connection_complete_stream
+        dut_connection_stream = self.device_under_test.l2cap.connection_complete_stream
+        cert_connection_stream.subscribe()
+        dut_connection_stream.subscribe()
+        self.device_under_test.l2cap.Connect(self.cert_address)
+        cert_connection_stream.assert_event_occurs(
+            lambda device: device.remote == self.dut_address
+        )
+        cert_connection_stream.unsubscribe()
+        dut_connection_stream.assert_event_occurs(
+            lambda device: device.remote == self.cert_address
+        )
+        dut_connection_stream.unsubscribe()
+        dut_packet_stream.subscribe()
+        cert_packet_stream.subscribe()
+        self.cert_device.l2cap.SendL2capPacket(l2cap_facade_pb2.L2capPacket(channel=2, payload=b"abc"))
+        dut_packet_stream.assert_event_occurs(
+            lambda packet: b"abc" in packet.payload
+        )
+        self.device_under_test.l2cap.SendL2capPacket(l2cap_facade_pb2.L2capPacket(channel=2, payload=b"123"))
+        cert_packet_stream.assert_event_occurs(
+            lambda packet: b"123" in packet.payload
+        )
+        dut_packet_stream.unsubscribe()
+        cert_packet_stream.unsubscribe()

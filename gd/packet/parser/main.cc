@@ -173,7 +173,7 @@ bool parse_one_file(std::filesystem::path input_file, std::filesystem::path incl
 
   for (const auto& c : decls.type_defs_queue_) {
     if (c.second->GetDefinitionType() == TypeDef::Type::CUSTOM && c.second->size_ == -1 /* Variable Size */) {
-      ((CustomFieldDef*)c.second)->GenCustomFieldCheck(out_file);
+      ((CustomFieldDef*)c.second)->GenCustomFieldCheck(out_file, decls.is_little_endian);
     }
   }
   out_file << "\n";
