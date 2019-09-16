@@ -49,8 +49,7 @@ void StructField::GenExtractor(std::ostream& s, Size start_offset, Size end_offs
   } else {
     GenBounds(s, start_offset, end_offset, Size());
   }
-  s << " auto subview = GetLittleEndianSubview(field_begin, field_end); ";
-  s << "auto it = subview.begin();";
+  s << "auto it = begin_it.Subrange(field_begin, field_end - field_begin); ";
   s << "std::unique_ptr<" << GetDataType() << "> one = std::make_unique<" << GetDataType() << ">();";
   s << GetDataType() << "::Parse(one.get(), it);";
 }
@@ -63,6 +62,7 @@ void StructField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
   }
   s << "ASSERT(was_validated_);";
   s << "size_t end_index = size();";
+  s << "auto begin_it = begin();";
   GenExtractor(s, start_offset, end_offset);
 
   if (size_ != -1) {
