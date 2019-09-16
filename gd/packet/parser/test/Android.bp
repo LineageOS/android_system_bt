@@ -6,9 +6,11 @@ genrule {
     cmd: "$(location bluetooth_packetgen) --include=system/bt/gd --out=$(genDir) $(in)",
     srcs: [
         "test_packets.pdl",
+        "big_endian_test_packets.pdl",
     ],
     out: [
         "packet/parser/test/test_packets.h",
+        "packet/parser/test/big_endian_test_packets.h",
     ],
 }
 
