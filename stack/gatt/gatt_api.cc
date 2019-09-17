@@ -708,6 +708,7 @@ tGATT_STATUS GATTC_Read(uint16_t conn_id, tGATT_READ_TYPE type,
   p_clcb->op_subtype = type;
   p_clcb->auth_req = p_read->by_handle.auth_req;
   p_clcb->counter = 0;
+  p_clcb->read_req_current_mtu = p_tcb->payload_size;
 
   switch (type) {
     case GATT_READ_BY_TYPE:
