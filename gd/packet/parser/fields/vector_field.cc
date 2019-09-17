@@ -94,17 +94,16 @@ std::string VectorField::GetDataType() const {
 void VectorField::GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const {
   GenBounds(s, start_offset, end_offset, GetSize());
 
-  s << " auto subview = GetLittleEndianSubview(field_begin, field_end); ";
-  s << "auto it = subview.begin();";
+  s << "auto it = begin_it.Subrange(field_begin, field_end - field_begin);";
 
   s << GetDataType() << " ret;";
   if (element_size_ != -1) {
     std::string type = (type_def_ != nullptr) ? type_def_->name_ : util::GetTypeForSize(element_size_);
-    s << "while (it + sizeof(" << type << ") <= subview.end()) {";
+    s << "while (it.NumBytesRemaining() >= sizeof(" << type << ")) {";
     s << "ret.push_back(it.extract<" << type << ">());";
     s << "}";
   } else {
-    s << "while (it < subview.end()) {";
+    s << "while (it.NumBytesRemaining() > 0) {";
     s << type_def_->name_ << " instance;";
     s << "it = " << type_def_->name_ << "::Parse(&instance, it);";
     s << "ret.push_back(instance);";
@@ -117,6 +116,7 @@ void VectorField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
   s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() {";
   s << "ASSERT(was_validated_);";
   s << "size_t end_index = size();";
+  s << "auto begin_it = begin();";
 
   GenExtractor(s, start_offset, end_offset);
 
