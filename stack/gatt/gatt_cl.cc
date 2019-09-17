@@ -913,11 +913,18 @@ void gatt_process_read_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
 
         memcpy(p_clcb->p_attr_buf + offset, p, len);
 
-        /* send next request if needed  */
+        /* full packet for read or read blob rsp */
+        bool packet_is_full;
+        if (tcb.payload_size == p_clcb->read_req_current_mtu) {
+          packet_is_full = (len == (tcb.payload_size - 1));
+        } else {
+          packet_is_full = (len == (p_clcb->read_req_current_mtu - 1) ||
+                            len == (tcb.payload_size - 1));
+          p_clcb->read_req_current_mtu = tcb.payload_size;
+        }
 
-        if (len == (tcb.payload_size -
-                    1) && /* full packet for read or read blob rsp */
-            len + offset < GATT_MAX_ATTR_LEN) {
+        /* send next request if needed  */
+        if (packet_is_full && (len + offset < GATT_MAX_ATTR_LEN)) {
           VLOG(1) << StringPrintf(
               "full pkt issue read blob for remianing bytes old offset=%d "
               "len=%d new offset=%d",
