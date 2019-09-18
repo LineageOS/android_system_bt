@@ -22,8 +22,8 @@
 #include "fields/all_fields.h"
 #include "util.h"
 
-PacketDef::PacketDef(std::string name, FieldList fields) : ParentDef(name, fields, nullptr){};
-PacketDef::PacketDef(std::string name, FieldList fields, PacketDef* parent) : ParentDef(name, fields, parent){};
+PacketDef::PacketDef(std::string name, FieldList fields) : ParentDef(name, fields, nullptr) {}
+PacketDef::PacketDef(std::string name, FieldList fields, PacketDef* parent) : ParentDef(name, fields, parent) {}
 
 PacketField* PacketDef::GetNewField(const std::string&, ParseLocation) const {
   return nullptr;  // Packets can't be fields
