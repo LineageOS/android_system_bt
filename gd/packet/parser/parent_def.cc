@@ -98,8 +98,7 @@ void ParentDef::AssignSizeFields() {
 
     // If we've reached this point then the field wasn't a variable length field.
     // Check to see if the field is a variable length field
-    std::cerr << "Can not use size/count in reference to a fixed size field.\n";
-    abort();
+    ERROR(field, size_field) << "Can not use size/count in reference to a fixed size field.\n";
   }
 }
 
