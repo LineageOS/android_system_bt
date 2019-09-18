@@ -39,4 +39,7 @@ class StructDef : public ParentDef {
   void GenDefinition(std::ostream& s) const;
 
   void GenConstructor(std::ostream& s) const;
+
+ private:
+  Size total_size_;
 };
