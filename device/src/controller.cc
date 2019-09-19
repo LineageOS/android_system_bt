@@ -27,6 +27,8 @@
 #include "btcore/include/module.h"
 #include "btcore/include/version.h"
 #include "hcimsgs.h"
+#include "main/shim/controller.h"
+#include "main/shim/shim.h"
 #include "osi/include/future.h"
 #include "stack/include/btm_ble_api.h"
 
@@ -582,7 +584,7 @@ static const controller_t interface = {
     get_local_supported_codecs,
     get_le_all_initiating_phys};
 
-const controller_t* controller_get_interface() {
+const controller_t* bluetooth::legacy::controller_get_interface() {
   static bool loaded = false;
   if (!loaded) {
     loaded = true;
@@ -593,6 +595,14 @@ const controller_t* controller_get_interface() {
   }
 
   return &interface;
+}
+
+const controller_t* controller_get_interface() {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::controller_get_interface();
+  } else {
+    return bluetooth::legacy::controller_get_interface();
+  }
 }
 
 const controller_t* controller_get_test_interface(
