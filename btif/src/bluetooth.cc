@@ -65,6 +65,7 @@
 #include "common/address_obfuscator.h"
 #include "common/metrics.h"
 #include "device/include/interop.h"
+#include "main/shim/shim.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocation_tracker.h"
 #include "osi/include/log.h"
@@ -137,6 +138,12 @@ static int init(bt_callbacks_t* callbacks, bool start_restricted,
                 bool is_single_user_mode) {
   LOG_INFO(LOG_TAG, "%s: start restricted = %d ; single user = %d", __func__,
            start_restricted, is_single_user_mode);
+
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    LOG_INFO(LOG_TAG, "%s Enable Gd bluetooth functionality", __func__);
+  } else {
+    LOG_INFO(LOG_TAG, "%s Preserving legacy bluetooth functionality", __func__);
+  }
 
   if (interface_ready()) return BT_STATUS_DONE;
 
