@@ -53,6 +53,7 @@
 #include "osi/include/future.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
+#include "shim/hci_layer.h"
 #include "shim/shim.h"
 #include "stack_config.h"
 
@@ -159,6 +160,7 @@ void bte_main_enable() {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     LOG_INFO(LOG_TAG, "%s Gd shim module enabled", __func__);
     module_start_up(get_module(GD_SHIM_MODULE));
+    module_start_up(get_module(GD_HCI_MODULE));
   } else {
     module_start_up(get_module(BTSNOOP_MODULE));
     module_start_up(get_module(HCI_MODULE));
@@ -182,6 +184,7 @@ void bte_main_disable(void) {
 
   if (bluetooth::shim::is_gd_shim_enabled()) {
     LOG_INFO(LOG_TAG, "%s Gd shim module enabled", __func__);
+    module_shut_down(get_module(GD_HCI_MODULE));
     module_shut_down(get_module(GD_SHIM_MODULE));
   } else {
     module_shut_down(get_module(HCI_MODULE));
