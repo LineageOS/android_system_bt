@@ -44,16 +44,16 @@ class Variable final {
   size_t size() const;
 
   template <bool little_endian>
-  static Iterator<little_endian> Parse(Variable* instance, Iterator<little_endian> it) {
+  static std::optional<Iterator<little_endian>> Parse(Variable* instance, Iterator<little_endian> it) {
     if (it.NumBytesRemaining() < 1) {
-      return it;
+      return {};
     }
     size_t data_length = it.template extract<uint8_t>();
     if (data_length > 255) {
-      return it + it.NumBytesRemaining();
+      return {};
     }
     if (it.NumBytesRemaining() < data_length) {
-      return it + it.NumBytesRemaining();
+      return {};
     }
     std::stringstream ss;
     for (size_t i = 0; i < data_length; i++) {

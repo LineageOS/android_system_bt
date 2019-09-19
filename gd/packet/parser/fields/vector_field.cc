@@ -82,16 +82,26 @@ std::string VectorField::GetDataType() const {
 
 void VectorField::GenExtractor(std::ostream& s, int num_leading_bits) const {
   s << "auto " << element_field_->GetName() << "_it = " << GetName() << "_it;";
+  if (size_field_ != nullptr && size_field_->GetFieldType() == CountField::kFieldType) {
+    s << "size_t " << element_field_->GetName() << "_count = ";
+    s << "Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "();";
+  }
+  s << "while (";
+  if (size_field_ != nullptr && size_field_->GetFieldType() == CountField::kFieldType) {
+    s << "(" << element_field_->GetName() << "_count-- > 0) && ";
+  }
   if (!element_size_.empty() && !element_size_.has_dynamic()) {
-    s << "while (" << element_field_->GetName() << "_it.NumBytesRemaining() >= " << element_size_.bytes() << ") {";
+    s << element_field_->GetName() << "_it.NumBytesRemaining() >= " << element_size_.bytes() << ") {";
   } else {
-    s << "while (" << element_field_->GetName() << "_it.NumBytesRemaining() > 0) {";
+    s << element_field_->GetName() << "_it.NumBytesRemaining() > 0) {";
   }
   s << element_field_->GetDataType() << " " << element_field_->GetName() << "_value;";
   s << element_field_->GetDataType() << "* " << element_field_->GetName() << "_ptr = &" << element_field_->GetName()
     << "_value;";
   element_field_->GenExtractor(s, num_leading_bits);
+  s << "if (" << element_field_->GetName() << "_ptr != nullptr) { ";
   s << GetName() << "_ptr->push_back(" << element_field_->GetName() << "_value);";
+  s << "}";
   s << "}";
 }
 

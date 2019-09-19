@@ -40,8 +40,14 @@ std::string CustomField::GetDataType() const {
 }
 
 void CustomField::GenExtractor(std::ostream& s, int) const {
-  s << GetName() << "_it = ";
+  s << "auto optional_it = ";
   s << GetDataType() << "::Parse( " << GetName() << "_ptr, " << GetName() << "_it);";
+  s << "if (optional_it) {";
+  s << GetName() << "_it = *optional_it;";
+  s << "} else {";
+  s << GetName() << "_it = " << GetName() << "_it + " << GetName() << "_it.NumBytesRemaining();";
+  s << GetName() << "_ptr = nullptr;";
+  s << "}";
 }
 
 void CustomField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
@@ -55,6 +61,7 @@ void CustomField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
   s << " = std::make_unique<" << GetDataType() << ">();";
   s << GetDataType() << "* " << GetName() << "_ptr = " << GetName() << "_value.get();";
   GenExtractor(s, num_leading_bits);
+  s << "if (" << GetName() << "_ptr == nullptr) {" << GetName() << "_value.reset(); }";
   s << "return " << GetName() << "_value;";
   s << "}\n";
 }
