@@ -543,7 +543,8 @@ uint8_t* sdpu_extract_attr_seq(uint8_t* p, uint16_t param_len,
  * Returns          void
  *
  ******************************************************************************/
-uint8_t* sdpu_get_len_from_type(uint8_t* p, uint8_t type, uint32_t* p_len) {
+uint8_t* sdpu_get_len_from_type(uint8_t* p, uint8_t* p_end, uint8_t type,
+                                uint32_t* p_len) {
   uint8_t u8;
   uint16_t u16;
   uint32_t u32;
@@ -565,14 +566,26 @@ uint8_t* sdpu_get_len_from_type(uint8_t* p, uint8_t type, uint32_t* p_len) {
       *p_len = 16;
       break;
     case SIZE_IN_NEXT_BYTE:
+      if (p + 1 > p_end) {
+        *p_len = 0;
+        return NULL;
+      }
       BE_STREAM_TO_UINT8(u8, p);
       *p_len = u8;
       break;
     case SIZE_IN_NEXT_WORD:
+      if (p + 2 > p_end) {
+        *p_len = 0;
+        return NULL;
+      }
       BE_STREAM_TO_UINT16(u16, p);
       *p_len = u16;
       break;
     case SIZE_IN_NEXT_LONG:
+      if (p + 4 > p_end) {
+        *p_len = 0;
+        return NULL;
+      }
       BE_STREAM_TO_UINT32(u32, p);
       *p_len = (uint16_t)u32;
       break;

@@ -349,6 +349,7 @@ static void sdp_copy_raw_data(tCONN_CB* p_ccb, bool offset) {
   unsigned int cpy_len, rem_len;
   uint32_t list_len;
   uint8_t* p;
+  uint8_t* p_end;
   uint8_t type;
 
 #if (SDP_DEBUG_RAW == TRUE)
@@ -366,12 +367,17 @@ static void sdp_copy_raw_data(tCONN_CB* p_ccb, bool offset) {
     cpy_len = p_ccb->p_db->raw_size - p_ccb->p_db->raw_used;
     list_len = p_ccb->list_len;
     p = &p_ccb->rsp_list[0];
+    p_end = &p_ccb->rsp_list[0] + list_len;
 
     if (offset) {
       cpy_len -= 1;
       type = *p++;
       uint8_t* old_p = p;
-      p = sdpu_get_len_from_type(p, type, &list_len);
+      p = sdpu_get_len_from_type(p, p_end, type, &list_len);
+      if (p == NULL || (p + list_len) > p_end) {
+        SDP_TRACE_WARNING("%s: bad length", __func__);
+        return;
+      }
       if ((int)cpy_len < (p - old_p)) {
         SDP_TRACE_WARNING("%s: no bytes left for data", __func__);
         return;
@@ -699,8 +705,11 @@ static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
     SDP_TRACE_WARNING("SDP - Wrong type: 0x%02x in attr_rsp", type);
     return;
   }
-  p = sdpu_get_len_from_type(p, type, &seq_len);
-
+  p = sdpu_get_len_from_type(p, p + p_ccb->list_len, type, &seq_len);
+  if (p == NULL || (p + seq_len) > (p + p_ccb->list_len)) {
+    SDP_TRACE_WARNING("%s: bad length", __func__);
+    return;
+  }
   p_end = &p_ccb->rsp_list[p_ccb->list_len];
 
   if ((p + seq_len) != p_end) {
@@ -742,9 +751,8 @@ static uint8_t* save_attr_seq(tCONN_CB* p_ccb, uint8_t* p, uint8_t* p_msg_end) {
     SDP_TRACE_WARNING("SDP - Wrong type: 0x%02x in attr_rsp", type);
     return (NULL);
   }
-
-  p = sdpu_get_len_from_type(p, type, &seq_len);
-  if ((p + seq_len) > p_msg_end) {
+  p = sdpu_get_len_from_type(p, p_msg_end, type, &seq_len);
+  if (p == NULL || (p + seq_len) > p_msg_end) {
     SDP_TRACE_WARNING("SDP - Bad len in attr_rsp %d", seq_len);
     return (NULL);
   }
@@ -761,7 +769,11 @@ static uint8_t* save_attr_seq(tCONN_CB* p_ccb, uint8_t* p, uint8_t* p_msg_end) {
   while (p < p_seq_end) {
     /* First get the attribute ID */
     type = *p++;
-    p = sdpu_get_len_from_type(p, type, &attr_len);
+    p = sdpu_get_len_from_type(p, p_msg_end, type, &attr_len);
+    if (p == NULL || (p + attr_len) > p_seq_end) {
+      SDP_TRACE_WARNING("%s: Bad len in attr_rsp %d", __func__, attr_len);
+      return (NULL);
+    }
     if (((type >> 3) != UINT_DESC_TYPE) || (attr_len != 2)) {
       SDP_TRACE_WARNING("SDP - Bad type: 0x%02x or len: %d in attr_rsp", type,
                         attr_len);
@@ -845,8 +857,11 @@ static uint8_t* add_attr(uint8_t* p, uint8_t* p_end, tSDP_DISCOVERY_DB* p_db,
   nest_level &= ~(SDP_ADDITIONAL_LIST_MASK);
 
   type = *p++;
-  p = sdpu_get_len_from_type(p, type, &attr_len);
-
+  p = sdpu_get_len_from_type(p, p_end, type, &attr_len);
+  if (p == NULL || (p + attr_len) > p_end) {
+    SDP_TRACE_WARNING("%s: bad length in attr_rsp", __func__);
+    return NULL;
+  }
   attr_len &= SDP_DISC_ATTR_LEN_MASK;
   attr_type = (type >> 3) & 0x0f;
 
