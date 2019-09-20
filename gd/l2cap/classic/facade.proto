@@ -17,6 +17,9 @@ service L2capModuleFacade {
   rpc ConfigureChannel(ConfigureChannelRequest) returns (google.protobuf.Empty) {}
   rpc SendL2capPacket(L2capPacket) returns (SendL2capPacketResult) {}
   rpc FetchL2capData(facade.EventStreamRequest) returns (stream L2capPacket) {}
+  rpc RegisterDynamicChannel(RegisterDynamicChannelRequest) returns (google.protobuf.Empty) {}
+  rpc SetDynamicChannel(SetEnableDynamicChannelRequest) returns (google.protobuf.Empty) {}
+  rpc SendDynamicChannelPacket(DynamicChannelPacket) returns (google.protobuf.Empty) {}
 }
 
 message RegisterChannelRequest {
@@ -65,5 +68,20 @@ message SendL2capPacketResult {
 message L2capPacket {
   facade.BluetoothAddress remote = 1;
   uint32 channel = 2;
+  bytes payload = 3;
+}
+
+message RegisterDynamicChannelRequest {
+  uint32 psm = 1;
+}
+
+message SetEnableDynamicChannelRequest {
+  uint32 psm = 1;
+  bool enable = 2;
+}
+
+message DynamicChannelPacket {
+  facade.BluetoothAddress remote = 1;
+  uint32 psm = 2;
   bytes payload = 3;
 }

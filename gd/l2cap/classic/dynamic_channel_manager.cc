@@ -25,8 +25,15 @@ namespace classic {
 
 bool DynamicChannelManager::ConnectChannel(hci::Address device, Psm psm, OnConnectionOpenCallback on_connection_open,
                                            OnConnectionFailureCallback on_fail_callback, os::Handler* handler) {
-  // TODO impl me when there is no link, and when there is link
-  return false;
+  internal::LinkManager::PendingDynamicChannelConnection pending_dynamic_channel_connection{
+      .on_open_callback_ = std::move(on_connection_open),
+      .on_fail_callback_ = std::move(on_fail_callback),
+      .handler_ = handler};
+  l2cap_layer_handler_->Post(common::BindOnce(&internal::LinkManager::ConnectDynamicChannelServices,
+                                              common::Unretained(link_manager_), device,
+                                              std::move(pending_dynamic_channel_connection), psm));
+
+  return true;
 }
 
 bool DynamicChannelManager::RegisterService(Psm psm, const SecurityPolicy& security_policy,

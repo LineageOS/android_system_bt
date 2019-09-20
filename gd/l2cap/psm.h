@@ -25,6 +25,7 @@ using Psm = uint16_t;
 constexpr Psm kDefaultPsm = 0;  // Invalid Psm as a default value
 
 constexpr bool IsPsmValid(Psm psm) {
+  // See Core spec 5.1 Vol 3 Part A 4.2 for definition
   return (psm & 0x0101u) == 0x0001u;
 }
 
