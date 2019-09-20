@@ -21,20 +21,12 @@
 namespace bluetooth {
 namespace l2cap {
 
-using Cid = uint16_t;
+using Psm = uint16_t;
+constexpr Psm kDefaultPsm = 0;  // Invalid Psm as a default value
 
-constexpr Cid kInvalidCid = 0;
-constexpr Cid kFirstFixedChannel = 1;
-constexpr Cid kLastFixedChannel = 63;
-constexpr Cid kFirstDynamicChannel = kLastFixedChannel + 1;
-constexpr Cid kLastDynamicChannel = (uint16_t)(0xffff);
-
-constexpr Cid kClassicSignallingCid = 1;
-constexpr Cid kConnectionlessCid = 2;
-constexpr Cid kLeAttributeCid = 4;
-constexpr Cid kLeSignallingCid = 5;
-constexpr Cid kSmpCid = 6;
-constexpr Cid kSmpBrCid = 7;
+constexpr bool IsPsmValid(Psm psm) {
+  return (psm & 0x0101u) == 0x0001u;
+}
 
 }  // namespace l2cap
 }  // namespace bluetooth
