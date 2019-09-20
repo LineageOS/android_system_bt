@@ -100,7 +100,7 @@ void btif_dm_load_ble_local_keys(void);
 void btif_dm_get_ble_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK* p_key_mask,
                                 Octet16* p_er,
                                 tBTA_BLE_LOCAL_ID_KEYS* p_id_keys);
-void btif_dm_save_ble_bonding_keys(void);
+void btif_dm_save_ble_bonding_keys(RawAddress& bd_addr);
 void btif_dm_remove_ble_bonding_keys(void);
 void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req);
 
