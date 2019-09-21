@@ -13,6 +13,7 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
 
 /**
@@ -23,12 +24,14 @@ namespace bluetooth {
 namespace shim {
 
 struct IController;
+struct IHciLayer;
 
 struct IStack {
   virtual void Start() = 0;
   virtual void Stop() = 0;
 
   virtual IController* GetController() = 0;
+  virtual IHciLayer* GetHciLayer() = 0;
 
   virtual ~IStack() {}
 };

@@ -14,16 +14,19 @@
  * limitations under the License.
  */
 
+/**
+ * Gd shim layer to legacy hci layer stack
+ */
 #pragma once
 
-/**
- * This common file provides the only visibility from the legacy stack into GD stack.
- *
- * Only interfaces or APIs should be exported.
- *
- * Only common data structures should be used to pass data between the stacks.
- *
- */
-#include "gd/shim/icontroller.h"
-#include "gd/shim/ihci_layer.h"
-#include "gd/shim/istack.h"
+#include "hci/include/hci_layer.h"
+
+static const char GD_HCI_MODULE[] = "gd_hci_module";
+
+namespace bluetooth {
+namespace shim {
+
+const hci_t* hci_layer_get_interface();
+
+}  // namespace shim
+}  // namespace bluetooth

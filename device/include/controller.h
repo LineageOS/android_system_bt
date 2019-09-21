@@ -89,6 +89,12 @@ typedef struct controller_t {
 
 } controller_t;
 
+namespace bluetooth {
+namespace legacy {
+const controller_t* controller_get_interface();
+}  // namespace legacy
+}  // namespace bluetooth
+
 const controller_t* controller_get_interface();
 
 const controller_t* controller_get_test_interface(

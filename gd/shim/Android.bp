@@ -2,6 +2,7 @@ filegroup {
     name: "BluetoothShimSources",
     srcs: [
             "controller.cc",
+            "hci_layer.cc",
             "stack.cc",
     ],
 }
