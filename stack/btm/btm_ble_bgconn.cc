@@ -314,6 +314,14 @@ void btm_ble_white_list_init(uint8_t white_list_size) {
   BTM_TRACE_DEBUG("%s white_list_size = %d", __func__, white_list_size);
 }
 
+uint8_t BTM_GetWhiteListSize() {
+  const controller_t* controller = controller_get_interface();
+  if (!controller->supports_ble()) {
+    return 0;
+  }
+  return controller->get_ble_white_list_size();
+}
+
 bool BTM_SetLeConnectionModeToFast() {
   VLOG(2) << __func__;
   tBTM_BLE_CB* p_cb = &btm_cb.ble_ctr_cb;
