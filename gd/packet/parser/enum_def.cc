@@ -22,7 +22,7 @@
 #include "fields/enum_field.h"
 #include "util.h"
 
-EnumDef::EnumDef(std::string name, int size) : TypeDef(name, size){};
+EnumDef::EnumDef(std::string name, int size) : TypeDef(name, size) {}
 
 void EnumDef::AddEntry(std::string name, uint32_t value) {
   if (value > util::GetMaxValueForBits(size_)) {
