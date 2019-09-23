@@ -20,7 +20,7 @@
 
 #include "util.h"
 
-EnumGen::EnumGen(EnumDef e) : e_(e){};
+EnumGen::EnumGen(EnumDef e) : e_(e) {}
 
 void EnumGen::GenDefinition(std::ostream& stream) {
   stream << "enum class ";
