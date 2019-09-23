@@ -178,8 +178,7 @@ bool BTM_BackgroundConnectAddressKnown(const RawAddress& address) {
     return true;
 
   // bonded device with identity address known
-  if (p_dev_rec->ble.identity_addr != address &&
-      !p_dev_rec->ble.identity_addr.IsEmpty()) {
+  if (!p_dev_rec->ble.identity_addr.IsEmpty()) {
     return true;
   }
 
@@ -205,8 +204,7 @@ bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
 
   if (p_dev_rec != NULL && p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) {
     if (to_add) {
-      if (p_dev_rec->ble.identity_addr != bd_addr &&
-          !p_dev_rec->ble.identity_addr.IsEmpty()) {
+      if (!p_dev_rec->ble.identity_addr.IsEmpty()) {
         background_connection_add(p_dev_rec->ble.identity_addr_type,
                                   p_dev_rec->ble.identity_addr);
       } else {
@@ -220,8 +218,7 @@ bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
 
       p_dev_rec->ble.in_controller_list |= BTM_WHITE_LIST_BIT;
     } else {
-      if (!p_dev_rec->ble.identity_addr.IsEmpty() &&
-          p_dev_rec->ble.identity_addr != bd_addr) {
+      if (!p_dev_rec->ble.identity_addr.IsEmpty()) {
         background_connection_remove(p_dev_rec->ble.identity_addr);
       } else {
         background_connection_remove(bd_addr);
