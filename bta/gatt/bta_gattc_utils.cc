@@ -224,7 +224,7 @@ tBTA_GATTC_SERV* bta_gattc_find_srcb(const RawAddress& bda) {
   tBTA_GATTC_SERV* p_srcb = &bta_gattc_cb.known_server[0];
   uint8_t i;
 
-  for (i = 0; i < BTA_GATTC_KNOWN_SR_MAX; i++, p_srcb++) {
+  for (i = 0; i < BTM_GetWhiteListSize(); i++, p_srcb++) {
     if (p_srcb->in_use && p_srcb->server_bda == bda) return p_srcb;
   }
   return NULL;
@@ -243,7 +243,7 @@ tBTA_GATTC_SERV* bta_gattc_find_srvr_cache(const RawAddress& bda) {
   tBTA_GATTC_SERV* p_srcb = &bta_gattc_cb.known_server[0];
   uint8_t i;
 
-  for (i = 0; i < BTA_GATTC_KNOWN_SR_MAX; i++, p_srcb++) {
+  for (i = 0; i < BTM_GetWhiteListSize(); i++, p_srcb++) {
     if (p_srcb->server_bda == bda) return p_srcb;
   }
   return NULL;
@@ -279,7 +279,7 @@ tBTA_GATTC_SERV* bta_gattc_srcb_alloc(const RawAddress& bda) {
   bool found = false;
   uint8_t i;
 
-  for (i = 0; i < BTA_GATTC_KNOWN_SR_MAX; i++, p_tcb++) {
+  for (i = 0; i < BTM_GetWhiteListSize(); i++, p_tcb++) {
     if (!p_tcb->in_use) {
       found = true;
       break;
@@ -409,7 +409,7 @@ bool bta_gattc_mark_bg_conn(tGATT_IF client_if,
   uint8_t i = 0;
   tBTA_GATTC_CIF_MASK* p_cif_mask;
 
-  for (i = 0; i < BTA_GATTC_KNOWN_SR_MAX; i++, p_bg_tck++) {
+  for (i = 0; i < BTM_GetWhiteListSize(); i++, p_bg_tck++) {
     if (p_bg_tck->in_use && ((p_bg_tck->remote_bda == remote_bda_ptr) ||
                              (p_bg_tck->remote_bda.IsEmpty()))) {
       p_cif_mask = &p_bg_tck->cif_mask;
@@ -437,7 +437,7 @@ bool bta_gattc_mark_bg_conn(tGATT_IF client_if,
   } else /* adding a new device mask */
   {
     for (i = 0, p_bg_tck = &bta_gattc_cb.bg_track[0];
-         i < BTA_GATTC_KNOWN_SR_MAX; i++, p_bg_tck++) {
+         i < BTM_GetWhiteListSize(); i++, p_bg_tck++) {
       if (!p_bg_tck->in_use) {
         p_bg_tck->in_use = true;
         p_bg_tck->remote_bda = remote_bda_ptr;
@@ -468,7 +468,7 @@ bool bta_gattc_check_bg_conn(tGATT_IF client_if, const RawAddress& remote_bda,
   uint8_t i = 0;
   bool is_bg_conn = false;
 
-  for (i = 0; i < BTA_GATTC_KNOWN_SR_MAX && !is_bg_conn; i++, p_bg_tck++) {
+  for (i = 0; i < BTM_GetWhiteListSize() && !is_bg_conn; i++, p_bg_tck++) {
     if (p_bg_tck->in_use && (p_bg_tck->remote_bda == remote_bda ||
                              p_bg_tck->remote_bda.IsEmpty())) {
       if (((p_bg_tck->cif_mask & (1 << (client_if - 1))) != 0) &&
