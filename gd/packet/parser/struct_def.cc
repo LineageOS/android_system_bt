@@ -19,8 +19,8 @@
 #include "fields/all_fields.h"
 #include "util.h"
 
-StructDef::StructDef(std::string name, FieldList fields) : ParentDef(name, fields, nullptr){};
-StructDef::StructDef(std::string name, FieldList fields, StructDef* parent) : ParentDef(name, fields, parent){};
+StructDef::StructDef(std::string name, FieldList fields) : StructDef(name, fields, nullptr) {}
+StructDef::StructDef(std::string name, FieldList fields, StructDef* parent) : ParentDef(name, fields, parent) {}
 
 PacketField* StructDef::GetNewField(const std::string& name, ParseLocation loc) const {
   Size total_size = GetSize(false);
@@ -80,11 +80,6 @@ void StructDef::GenDefinition(std::ostream& s) const {
   s << " public:";
 
   GenConstructor(s);
-
-  std::set<std::string> fixed_types = {
-      FixedScalarField::kFieldType,
-      FixedEnumField::kFieldType,
-  };
 
   s << " public:\n";
   s << "  virtual ~" << name_ << "() override = default;\n";
