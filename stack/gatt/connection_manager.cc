@@ -267,12 +267,11 @@ bool direct_connect_remove(uint8_t app_id, const RawAddress& address) {
 void dump(int fd) {
   dprintf(fd, "\nconnection_manager state:\n");
   if (bgconn_dev.empty()) {
-    dprintf(fd, "\n\tno Low Energy connection attempts\n");
+    dprintf(fd, "\tno Low Energy connection attempts\n");
     return;
   }
 
-  dprintf(fd, "\n\tdevices attempting connection: %d\n",
-          (int)bgconn_dev.size());
+  dprintf(fd, "\tdevices attempting connection: %d", (int)bgconn_dev.size());
   for (const auto& entry : bgconn_dev) {
     dprintf(fd, "\n\t * %s: ", entry.first.ToString().c_str());
 
@@ -283,13 +282,14 @@ void dump(int fd) {
       }
     }
 
-    if (entry.second.doing_bg_conn.empty()) {
+    if (!entry.second.doing_bg_conn.empty()) {
       dprintf(fd, "\n\t\tapps doing background connect: ");
       for (const auto& id : entry.second.doing_bg_conn) {
         dprintf(fd, "%d, ", id);
       }
     }
   }
+  dprintf(fd, "\n");
 }
 
 }  // namespace connection_manager
