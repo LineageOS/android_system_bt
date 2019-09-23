@@ -25,6 +25,9 @@ extern bool BTM_WhiteListAdd(const RawAddress& address);
 /** Removes the device from white list */
 extern void BTM_WhiteListRemove(const RawAddress& address);
 
+/** Get max white list size supports of the Bluetooth controller */
+extern uint8_t BTM_GetWhiteListSize();
+
 /** Clear the whitelist, end any pending whitelist connections */
 extern void BTM_WhiteListClear();
 
