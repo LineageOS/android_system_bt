@@ -19,9 +19,9 @@
 #include "fields/all_fields.h"
 #include "util.h"
 
-ParentDef::ParentDef(std::string name, FieldList fields) : TypeDef(name), fields_(fields), parent_(nullptr){};
+ParentDef::ParentDef(std::string name, FieldList fields) : ParentDef(name, fields, nullptr) {}
 ParentDef::ParentDef(std::string name, FieldList fields, ParentDef* parent)
-    : TypeDef(name), fields_(fields), parent_(parent){};
+    : TypeDef(name), fields_(fields), parent_(parent) {}
 
 void ParentDef::AddParentConstraint(std::string field_name, std::variant<int64_t, std::string> value) {
   // NOTE: This could end up being very slow if there are a lot of constraints.
@@ -98,8 +98,7 @@ void ParentDef::AssignSizeFields() {
 
     // If we've reached this point then the field wasn't a variable length field.
     // Check to see if the field is a variable length field
-    std::cerr << "Can not use size/count in reference to a fixed size field.\n";
-    abort();
+    ERROR(field, size_field) << "Can not use size/count in reference to a fixed size field.\n";
   }
 }
 

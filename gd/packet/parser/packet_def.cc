@@ -22,8 +22,8 @@
 #include "fields/all_fields.h"
 #include "util.h"
 
-PacketDef::PacketDef(std::string name, FieldList fields) : ParentDef(name, fields, nullptr){};
-PacketDef::PacketDef(std::string name, FieldList fields, PacketDef* parent) : ParentDef(name, fields, parent){};
+PacketDef::PacketDef(std::string name, FieldList fields) : ParentDef(name, fields, nullptr) {}
+PacketDef::PacketDef(std::string name, FieldList fields, PacketDef* parent) : ParentDef(name, fields, parent) {}
 
 PacketField* PacketDef::GetNewField(const std::string&, ParseLocation) const {
   return nullptr;  // Packets can't be fields
@@ -90,9 +90,8 @@ void PacketDef::GenParserFieldGetter(std::ostream& s, const PacketField* field) 
   auto end_field_offset = GetOffsetForField(field->GetName(), true);
 
   if (start_field_offset.empty() && end_field_offset.empty()) {
-    std::cerr << "Field location for " << field->GetName() << " is ambiguous, "
-              << "no method exists to determine field location from begin() or end().\n";
-    abort();
+    ERROR(field) << "Field location for " << field->GetName() << " is ambiguous, "
+                 << "no method exists to determine field location from begin() or end().\n";
   }
 
   field->GenGetter(s, start_field_offset, end_field_offset);
