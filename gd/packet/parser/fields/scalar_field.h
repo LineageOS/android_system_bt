@@ -31,7 +31,9 @@ class ScalarField : public PacketField {
 
   virtual std::string GetDataType() const override;
 
-  virtual void GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const override;
+  virtual int GenBounds(std::ostream& s, Size start_offset, Size end_offset) const override;
+
+  virtual void GenExtractor(std::ostream& s, int num_leading_bits) const override;
 
   virtual void GenGetter(std::ostream& s, Size start_offset, Size end_offset) const override;
 
@@ -46,5 +48,5 @@ class ScalarField : public PacketField {
   virtual void GenValidator(std::ostream&) const override;
 
  private:
-  int size_;
+  const int size_;
 };

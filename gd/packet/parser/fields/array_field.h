@@ -16,12 +16,9 @@
 
 #pragma once
 
-#include "custom_field_def.h"
-#include "enum_def.h"
-#include "fields/count_field.h"
-#include "fields/packet_field.h"
-#include "fields/size_field.h"
+#include "fields/all_fields.h"
 #include "parse_location.h"
+#include "type_def.h"
 
 class ArrayField : public PacketField {
  public:
@@ -39,7 +36,7 @@ class ArrayField : public PacketField {
 
   virtual std::string GetDataType() const override;
 
-  virtual void GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const override;
+  virtual void GenExtractor(std::ostream& s, int num_leading_bits) const override;
 
   virtual void GenGetter(std::ostream& s, Size start_offset, Size end_offset) const override;
 
@@ -55,17 +52,11 @@ class ArrayField : public PacketField {
 
   virtual void GenValidator(std::ostream&) const override;
 
-  bool IsEnumArray() const;
-
-  bool IsCustomFieldArray() const;
-
-  bool IsStructArray() const;
-
   const std::string name_;
 
-  const int element_size_{-1};  // in bits
-  const TypeDef* type_def_{nullptr};
+  const PacketField* element_field_{nullptr};
 
-  // Fixed size array or dynamic size, size is always in bytes, unless it is count.
-  const int fixed_size_{-1};
+  const Size element_size_{};
+
+  const int array_size_{-1};
 };
