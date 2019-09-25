@@ -58,6 +58,13 @@ class AclManagerCertService : public AclManagerCert::Service {
     hci_layer_->RegisterEventHandler(EventCode::CONNECTION_REQUEST,
                                      Bind(&AclManagerCertService::on_incoming_connection, common::Unretained(this)),
                                      handler_);
+    hci_layer_->RegisterEventHandler(
+        EventCode::CONNECTION_PACKET_TYPE_CHANGED,
+        Bind(&AclManagerCertService::on_connection_packet_type_changed, common::Unretained(this)), handler_);
+    hci_layer_->RegisterEventHandler(EventCode::QOS_SETUP_COMPLETE,
+                                     Bind(&AclManagerCertService::on_qos_setup_complete, common::Unretained(this)),
+                                     handler_);
+
     controller_->RegisterCompletedAclPacketsCallback(common::Bind([](uint16_t, uint16_t) { /* TODO check */ }),
                                                      handler_);
     acl_queue_end_->RegisterDequeue(handler_,
@@ -137,6 +144,12 @@ class AclManagerCertService : public AclManagerCert::Service {
       hci_layer_->EnqueueCommand(std::move(builder), BindOnce([](CommandStatusView status) { /* TODO: check? */ }),
                                  handler_);
     }
+  }
+
+  void on_connection_packet_type_changed(EventPacketView packet) { /*TODO*/
+  }
+
+  void on_qos_setup_complete(EventPacketView packet) { /*TODO*/
   }
 
   using EventStream = ::bluetooth::grpc::GrpcEventStream<AclData, AclPacketView>;
