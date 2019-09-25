@@ -577,7 +577,7 @@ enum EventCode : 8 {
   DATA_BUFFER_OVERFLOW = 0x1A,
   MAX_SLOTS_CHANGE = 0x1B,
   READ_CLOCK_OFFSET_COMPLETE = 0x1C,
-  CONNECTION_PACKET_TYPE_CHANGE = 0x1D,
+  CONNECTION_PACKET_TYPE_CHANGED = 0x1D,
   QOS_VIOLATION = 0x1E,
   PAGE_SCAN_REPETITION_MODE_CHANGE = 0x20,
   FLOW_SPECIFICATION_COMPLETE = 0x21,
@@ -1090,23 +1090,72 @@ packet EnhancedAcceptSynchronousConnection : ScoConnectionCommand (op_code = ENH
 
   // LINK_POLICY
 packet HoldMode : ConnectionManagementCommand (op_code = HOLD_MODE) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
+  hold_mode_max_interval: 16, // 0x0002-0xFFFE (1.25ms-40.9s)
+  hold_mode_min_interval: 16, // 0x0002-0xFFFE (1.25ms-40.9s)
 }
+
+packet HoldModeStatus : CommandStatus (command_op_code = HOLD_MODE) {
+}
+
 
 packet SniffMode : ConnectionManagementCommand (op_code = SNIFF_MODE) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
+  sniff_max_interval: 16, // 0x0002-0xFFFE (1.25ms-40.9s)
+  sniff_min_interval: 16, // 0x0002-0xFFFE (1.25ms-40.9s)
+  sniff_attempt: 16, // 0x0001-0x7FFF (1.25ms-40.9s)
+  sniff_timeout: 16, // 0x0000-0x7FFF (0ms-40.9s)
 }
 
+packet SniffModeStatus : CommandStatus (command_op_code = SNIFF_MODE) {
+}
+
+
 packet ExitSniffMode : ConnectionManagementCommand (op_code = EXIT_SNIFF_MODE) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+packet ExitSniffModeStatus : CommandStatus (command_op_code = EXIT_SNIFF_MODE) {
+}
+
+enum ServiceType : 8 {
+  NO_TRAFFIC = 0x00,
+  BEST_EFFORT = 0x01,
+  GUARANTEED = 0x02,
 }
 
 packet QosSetup : ConnectionManagementCommand (op_code = QOS_SETUP) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
+  _reserved_ : 8,
+  service_type : ServiceType,
+  token_rate : 32, // Octets/s
+  peak_bandwidth : 32, // Octets/s
+  latency : 32, // Octets/s
+  delay_variation : 32, // microseconds
+}
+
+packet QosSetupStatus : CommandStatus (command_op_code = QOS_SETUP) {
 }
 
 packet RoleDiscovery : ConnectionManagementCommand (op_code = ROLE_DISCOVERY) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+enum Role : 8 {
+  MASTER = 0x00,
+  SLAVE = 0x01,
+}
+
+packet RoleDiscoveryComplete : CommandComplete (command_op_code = ROLE_DISCOVERY) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+  current_role : Role,
 }
 
 packet SwitchRole : ConnectionManagementCommand (op_code = SWITCH_ROLE) {
@@ -1114,11 +1163,33 @@ packet SwitchRole : ConnectionManagementCommand (op_code = SWITCH_ROLE) {
 }
 
 packet ReadLinkPolicySettings : ConnectionManagementCommand (op_code = READ_LINK_POLICY_SETTINGS) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+enum LinkPolicy : 16 {
+  ENABLE_ROLE_SWITCH = 0x01,
+  ENABLE_HOLD_MODE = 0x02,
+  ENABLE_SNIFF_MODE = 0x04,
+}
+
+packet ReadLinkPolicySettingsComplete : CommandComplete (command_op_code = READ_LINK_POLICY_SETTINGS) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+  link_policy_settings : 16,
 }
 
 packet WriteLinkPolicySettings : ConnectionManagementCommand (op_code = WRITE_LINK_POLICY_SETTINGS) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
+  link_policy_settings : 16,
+}
+
+packet WriteLinkPolicySettingsComplete : CommandComplete (command_op_code = WRITE_LINK_POLICY_SETTINGS) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
 packet ReadDefaultLinkPolicySettings : ConnectionManagementCommand (op_code = READ_DEFAULT_LINK_POLICY_SETTINGS) {
@@ -1129,14 +1200,39 @@ packet WriteDefaultLinkPolicySettings : ConnectionManagementCommand (op_code = W
   _payload_,  // placeholder (unimplemented)
 }
 
+enum FlowDirection : 8 {
+  OUTGOING_FLOW = 0x00,
+  INCOMING_FLOW = 0x01,
+}
+
 packet FlowSpecification : ConnectionManagementCommand (op_code = FLOW_SPECIFICATION) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
+  _reserved_ : 8,
+  flow_direction : FlowDirection,
+  service_type : ServiceType,
+  token_rate : 32, // Octets/s
+  token_bucket_size : 32,
+  peak_bandwidth : 32, // Octets/s
+  access_latency : 32, // Octets/s
+}
+
+packet FlowSpecificationStatus : CommandStatus (command_op_code = FLOW_SPECIFICATION) {
 }
 
 packet SniffSubrating : ConnectionManagementCommand (op_code = SNIFF_SUBRATING) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
+  maximum_latency : 16,  // 0x0002-0xFFFE (1.25ms-40.9s)
+  minimum_remote_timeout : 16, // 0x0000-0xFFFE (0-40.9s)
+  minimum_local_timeout: 16, // 0x0000-0xFFFE (0-40.9s)
 }
 
+packet SniffSubratingComplete : CommandComplete (command_op_code = SNIFF_SUBRATING) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+}
 
   // CONTROLLER_AND_BASEBAND
 packet SetEventMask : CommandPacket (op_code = SET_EVENT_MASK) {
@@ -1222,7 +1318,14 @@ packet SetEventFilterConnectionSetupAddress : SetEventFilterConnectionSetup (fil
 }
 
 packet Flush : ConnectionManagementCommand (op_code = FLUSH) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+packet FlushComplete : CommandComplete (command_op_code = FLUSH) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
 packet ReadPinType : CommandPacket (op_code = READ_PIN_TYPE) {
@@ -1410,11 +1513,27 @@ packet WriteVoiceSetting : CommandPacket (op_code = WRITE_VOICE_SETTING) {
 }
 
 packet ReadAutomaticFlushTimeout : ConnectionManagementCommand (op_code = READ_AUTOMATIC_FLUSH_TIMEOUT) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+packet ReadAutomaticFlushTimeoutComplete : CommandComplete (command_op_code = READ_AUTOMATIC_FLUSH_TIMEOUT) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+  flush_timeout : 16,
 }
 
 packet WriteAutomaticFlushTimeout : ConnectionManagementCommand (op_code = WRITE_AUTOMATIC_FLUSH_TIMEOUT) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
+  flush_timeout : 16, // 0x0000-0x07FF Default 0x0000 (No Automatic Flush)
+}
+
+packet WriteAutomaticFlushTimeoutComplete : CommandComplete (command_op_code = WRITE_AUTOMATIC_FLUSH_TIMEOUT) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
 packet ReadNumBroadcastRetransmits : CommandPacket (op_code = READ_NUM_BROADCAST_RETRANSMITS) {
@@ -1433,8 +1552,24 @@ packet WriteHoldModeActivity : CommandPacket (op_code = WRITE_HOLD_MODE_ACTIVITY
   _payload_,  // placeholder (unimplemented)
 }
 
+
+enum TransmitPowerLevelType : 8 {
+  CURRENT = 0x00,
+  MAXIMUM = 0x01,
+}
+
 packet ReadTransmitPowerLevel : ConnectionManagementCommand (op_code = READ_TRANSMIT_POWER_LEVEL) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
+  type : TransmitPowerLevelType,
+
+}
+
+packet ReadTransmitPowerLevelComplete : CommandComplete (command_op_code = READ_TRANSMIT_POWER_LEVEL) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+  transmit_power_level : 8,
 }
 
 packet ReadSynchronousFlowControlEnable : CommandPacket (op_code = READ_SYNCHRONOUS_FLOW_CONTROL_ENABLE) {
@@ -1482,7 +1617,7 @@ packet ReadLinkSupervisionTimeout : ConnectionManagementCommand (op_code = READ_
 
 packet ReadLinkSupervisionTimeoutComplete : CommandComplete (command_op_code = READ_LINK_SUPERVISION_TIMEOUT) {
   status : ErrorCode,
-  handle : 12,
+  connection_handle : 12,
   _reserved_ : 4,
   link_supervision_timeout : 16, // 0x001-0xFFFF (0.625ms-40.9s)
 }
@@ -1495,7 +1630,7 @@ packet WriteLinkSupervisionTimeout : ConnectionManagementCommand (op_code = WRIT
 
 packet WriteLinkSupervisionTimeoutComplete : CommandComplete (command_op_code = WRITE_LINK_SUPERVISION_TIMEOUT) {
   status : ErrorCode,
-  handle : 12,
+  connection_handle : 12,
   _reserved_ : 4,
 }
 
@@ -1827,23 +1962,50 @@ packet ReadLocalSupportedCodecs : CommandPacket (op_code = READ_LOCAL_SUPPORTED_
 
   // STATUS_PARAMETERS
 packet ReadFailedContactCounter : ConnectionManagementCommand (op_code = READ_FAILED_CONTACT_COUNTER) {
-  handle : 12,
+  connection_handle : 12,
   _reserved_ : 4,
 }
 
+packet ReadFailedContactCounterComplete : CommandComplete (command_op_code = READ_FAILED_CONTACT_COUNTER) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+  failed_contact_counter : 16,
+}
+
 packet ResetFailedContactCounter : ConnectionManagementCommand (op_code = RESET_FAILED_CONTACT_COUNTER) {
-  handle : 12,
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+packet ResetFailedContactCounterComplete : CommandComplete (command_op_code = RESET_FAILED_CONTACT_COUNTER) {
+  status : ErrorCode,
+  connection_handle : 12,
   _reserved_ : 4,
 }
 
 packet ReadLinkQuality : ConnectionManagementCommand (op_code = READ_LINK_QUALITY) {
-  handle : 12,
+  connection_handle : 12,
   _reserved_ : 4,
 }
 
-packet ReadRssi : ConnectionManagementCommand (op_code = READ_RSSI) {
-  handle : 12,
+packet ReadLinkQualityComplete : CommandComplete (command_op_code = READ_LINK_QUALITY) {
+  status : ErrorCode,
+  connection_handle : 12,
   _reserved_ : 4,
+  link_quality : 8,
+}
+
+packet ReadRssi : ConnectionManagementCommand (op_code = READ_RSSI) {
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+packet ReadRssiComplete : CommandComplete (command_op_code = READ_RSSI) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+  rssi : 8,
 }
 
 packet ReadAfhChannelMap : ConnectionManagementCommand (op_code = READ_AFH_CHANNEL_MAP) {
@@ -1860,6 +2022,15 @@ packet ReadClock : ConnectionManagementCommand (op_code = READ_CLOCK) {
   connection_handle : 12,
   _reserved_ : 4,
   which_clock : WhichClock,
+}
+
+packet ReadClockComplete : CommandComplete (command_op_code = READ_CLOCK) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+  clock : 28,
+  _reserved_ : 4,
+  accuracy : 16,
 }
 
 packet ReadEncryptionKeySize : SecurityCommand (op_code = READ_ENCRYPTION_KEY_SIZE) {
@@ -2612,12 +2783,6 @@ packet ReadRemoteVersionInformationComplete : EventPacket (event_code = READ_REM
   sub_version : 8,
 }
 
-enum ServiceType : 8 {
-  NO_TRAFFIC = 0x00,
-  BEST_EFFORT = 0x01,
-  GUARANTEED = 0x02,
-}
-
 packet QosSetupComplete : EventPacket (event_code = QOS_SETUP_COMPLETE){
   status : ErrorCode,
   connection_handle : 12,
@@ -2639,11 +2804,6 @@ packet HardwareError : EventPacket (event_code = HARDWARE_ERROR){
 packet FlushOccurred : EventPacket (event_code = FLUSH_OCCURRED){
   connection_handle : 12,
   _reserved_ : 4,
-}
-
-enum Role : 8 {
-  MASTER = 0x00,
-  SLAVE = 0x01,
 }
 
 packet RoleChange : EventPacket (event_code = ROLE_CHANGE){
@@ -2709,7 +2869,7 @@ packet ReadClockOffsetComplete : EventPacket (event_code = READ_CLOCK_OFFSET_COM
   _reserved_ : 1,
 }
 
-packet ConnectionPacketTypeChange : EventPacket (event_code = CONNECTION_PACKET_TYPE_CHANGE){
+packet ConnectionPacketTypeChanged : EventPacket (event_code = CONNECTION_PACKET_TYPE_CHANGED){
   status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
@@ -2725,7 +2885,16 @@ packet PageScanRepetitionModeChange : EventPacket (event_code = PAGE_SCAN_REPETI
 }
 
 packet FlowSpecificationComplete : EventPacket (event_code = FLOW_SPECIFICATION_COMPLETE){
-  _payload_, // placeholder (unimplemented)
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+  _reserved_ : 8,
+  flow_direction : FlowDirection,
+  service_type : ServiceType,
+  token_rate : 32, // Octets/s
+  token_bucket_size : 32,
+  peak_bandwidth : 32, // Octets/s
+  access_latency : 32, // Octets/s
 }
 
 packet InquiryResultWithRssi : EventPacket (event_code = INQUIRY_RESULT_WITH_RSSI){
