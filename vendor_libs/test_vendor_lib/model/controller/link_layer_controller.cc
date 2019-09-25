@@ -960,7 +960,8 @@ void LinkLayerController::HandleSetConnectionEncryption(const Address& peer, uin
 
 hci::Status LinkLayerController::SetConnectionEncryption(uint16_t handle, uint8_t encryption_enable) {
   if (!connections_.HasHandle(handle)) {
-    LOG_INFO(LOG_TAG, "Authentication Requested for unknown handle %04x", handle);
+    LOG_INFO(LOG_TAG, "Set Connection Encryption for unknown handle %04x",
+             handle);
     return hci::Status::UNKNOWN_CONNECTION;
   }
 
@@ -969,10 +970,13 @@ hci::Status LinkLayerController::SetConnectionEncryption(uint16_t handle, uint8_
   }
   Address remote = connections_.GetAddress(handle);
 
+  if (security_manager_.ReadKey(remote) == 0) {
+    return hci::Status::PIN_OR_KEY_MISSING;
+  }
+
   ScheduleTask(milliseconds(5), [this, remote, handle, encryption_enable]() {
     HandleSetConnectionEncryption(remote, handle, encryption_enable);
   });
-
   return hci::Status::SUCCESS;
 }
 
@@ -1090,11 +1094,95 @@ hci::Status LinkLayerController::ChangeConnectionPacketType(uint16_t handle, uin
   return hci::Status::SUCCESS;
 }
 
+hci::Status LinkLayerController::ChangeConnectionLinkKey(uint16_t handle) {
+  if (!connections_.HasHandle(handle)) {
+    return hci::Status::UNKNOWN_CONNECTION;
+  }
+
+  // TODO: implement real logic
+  return hci::Status::COMMAND_DISALLOWED;
+}
+
+hci::Status LinkLayerController::HoldMode(uint16_t handle,
+                                          uint16_t hold_mode_max_interval,
+                                          uint16_t hold_mode_min_interval) {
+  if (!connections_.HasHandle(handle)) {
+    return hci::Status::UNKNOWN_CONNECTION;
+  }
+
+  if (hold_mode_max_interval < hold_mode_min_interval) {
+    return hci::Status::INVALID_HCI_COMMAND_PARAMETERS;
+  }
+
+  // TODO: implement real logic
+  return hci::Status::COMMAND_DISALLOWED;
+}
+
+hci::Status LinkLayerController::SniffMode(uint16_t handle,
+                                           uint16_t sniff_max_interval,
+                                           uint16_t sniff_min_interval,
+                                           uint16_t sniff_attempt,
+                                           uint16_t sniff_timeout) {
+  if (!connections_.HasHandle(handle)) {
+    return hci::Status::UNKNOWN_CONNECTION;
+  }
+
+  if (sniff_max_interval < sniff_min_interval || sniff_attempt < 0x0001 ||
+      sniff_attempt > 0x7FFF || sniff_timeout > 0x7FFF) {
+    return hci::Status::INVALID_HCI_COMMAND_PARAMETERS;
+  }
+
+  // TODO: implement real logic
+  return hci::Status::COMMAND_DISALLOWED;
+}
+
+hci::Status LinkLayerController::ExitSniffMode(uint16_t handle) {
+  if (!connections_.HasHandle(handle)) {
+    return hci::Status::UNKNOWN_CONNECTION;
+  }
+
+  // TODO: implement real logic
+  return hci::Status::COMMAND_DISALLOWED;
+}
+
+hci::Status LinkLayerController::QosSetup(uint16_t handle, uint8_t service_type,
+                                          uint32_t /* token_rate */,
+                                          uint32_t /* peak_bandwidth */,
+                                          uint32_t /* latency */,
+                                          uint32_t /* delay_variation */) {
+  if (!connections_.HasHandle(handle)) {
+    return hci::Status::UNKNOWN_CONNECTION;
+  }
+
+  if (service_type > 0x02) {
+    return hci::Status::INVALID_HCI_COMMAND_PARAMETERS;
+  }
+
+  // TODO: implement real logic
+  return hci::Status::COMMAND_DISALLOWED;
+}
+
 hci::Status LinkLayerController::WriteLinkPolicySettings(uint16_t handle, uint16_t) {
   if (!connections_.HasHandle(handle)) {
     return hci::Status::UNKNOWN_CONNECTION;
   }
   return hci::Status::SUCCESS;
+}
+
+hci::Status LinkLayerController::FlowSpecification(
+    uint16_t handle, uint8_t flow_direction, uint8_t service_type,
+    uint32_t /* token_rate */, uint32_t /* token_bucket_size */,
+    uint32_t /* peak_bandwidth */, uint32_t /* access_latency */) {
+  if (!connections_.HasHandle(handle)) {
+    return hci::Status::UNKNOWN_CONNECTION;
+  }
+
+  if (flow_direction > 0x01 || service_type > 0x02) {
+    return hci::Status::INVALID_HCI_COMMAND_PARAMETERS;
+  }
+
+  // TODO: implement real logic
+  return hci::Status::COMMAND_DISALLOWED;
 }
 
 hci::Status LinkLayerController::WriteLinkSupervisionTimeout(uint16_t handle, uint16_t) {
