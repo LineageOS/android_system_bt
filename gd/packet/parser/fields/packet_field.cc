@@ -36,11 +36,11 @@ Size PacketField::GetBuilderSize() const {
   return GetSize();
 }
 
-void PacketField::GenBounds(std::ostream& s, Size start_offset, Size end_offset, Size field_size) const {
+int PacketField::GenBounds(std::ostream& s, Size start_offset, Size end_offset) const {
   // In order to find field_begin and field_end, we must have two of the three Sizes.
-  if ((start_offset.empty() && field_size.empty()) || (start_offset.empty() && end_offset.empty()) ||
-      (end_offset.empty() && field_size.empty())) {
-    ERROR(this) << "GenBounds called without enough information. " << start_offset << end_offset << field_size;
+  if ((start_offset.empty() && GetSize().empty()) || (start_offset.empty() && end_offset.empty()) ||
+      (end_offset.empty() && GetSize().empty())) {
+    ERROR(this) << "GenBounds called without enough information. " << start_offset << end_offset << GetSize();
   }
 
   if (start_offset.bits() % 8 != 0 || end_offset.bits() % 8 != 0) {
@@ -50,20 +50,22 @@ void PacketField::GenBounds(std::ostream& s, Size start_offset, Size end_offset,
   if (!start_offset.empty()) {
     s << "size_t field_begin = (" << start_offset << ") / 8;";
   } else {
-    s << "size_t field_begin = end_index - (" << end_offset << " + " << field_size << ") / 8;";
+    s << "size_t field_begin = end_index - (" << end_offset << " + " << GetSize() << ") / 8;";
   }
 
   if (!end_offset.empty()) {
     s << "size_t field_end = end_index - (" << end_offset << ") / 8;";
     // If the field has a known size, use the minimum for the end
-    if (!field_size.empty()) {
-      s << "size_t field_sized_end = field_begin + (" << field_size << ") / 8;";
+    if (!GetSize().empty()) {
+      s << "size_t field_sized_end = field_begin + (" << GetSize() << ") / 8;";
       s << "if (field_sized_end < field_end) { field_end = field_sized_end; }";
     }
   } else {
-    s << "size_t field_end = field_begin + (" << field_size << ") / 8;";
+    s << "size_t field_end = field_begin + (" << GetSize() << ") / 8;";
     s << "if (field_end > end_index) { field_end = end_index; }";
   }
+  s << "auto " << name_ << "_it = to_bound.Subrange(field_begin, field_end - field_begin); ";
+  return 0;  // num_leading_bits
 }
 
 bool PacketField::GenBuilderMember(std::ostream& s) const {

@@ -15,25 +15,26 @@
  */
 
 #include "fields/array_field.h"
+
 #include "util.h"
 
 const std::string ArrayField::kFieldType = "ArrayField";
 
-ArrayField::ArrayField(std::string name, int element_size, int fixed_size, ParseLocation loc)
-    : PacketField(name, loc), element_size_(element_size), fixed_size_(fixed_size) {
-  if (element_size_ > 64 || element_size_ < 0)
-    ERROR(this) << __func__ << ": Not implemented for element size = " << element_size_;
-  // Make sure the element_size is a multiple of 8.
+ArrayField::ArrayField(std::string name, int element_size, int array_size, ParseLocation loc)
+    : PacketField(name, loc), element_field_(new ScalarField("val", element_size, loc)), element_size_(element_size),
+      array_size_(array_size) {
+  if (element_size > 64 || element_size < 0)
+    ERROR(this) << __func__ << ": Not implemented for element size = " << element_size;
   if (element_size % 8 != 0) {
     ERROR(this) << "Can only have arrays with elements that are byte aligned (" << element_size << ")";
   }
 }
 
-ArrayField::ArrayField(std::string name, TypeDef* type_def, int fixed_size, ParseLocation loc)
-    : PacketField(name, loc), element_size_(type_def->size_), type_def_(type_def), fixed_size_(fixed_size) {
-  // If the element type is not variable sized, make sure that it is byte aligned.
-  if (type_def_->size_ != -1 && type_def_->size_ % 8 != 0) {
-    ERROR(this) << "Can only have arrays with elements that are byte aligned (" << type_def_->size_ << ")";
+ArrayField::ArrayField(std::string name, TypeDef* type_def, int array_size, ParseLocation loc)
+    : PacketField(name, loc), element_field_(type_def->GetNewField("val", loc)),
+      element_size_(element_field_->GetSize()), array_size_(array_size) {
+  if (!element_size_.empty() && element_size_.bits() % 8 != 0) {
+    ERROR(this) << "Can only have arrays with elements that are byte aligned (" << element_size_ << ")";
   }
 }
 
@@ -42,16 +43,15 @@ const std::string& ArrayField::GetFieldType() const {
 }
 
 Size ArrayField::GetSize() const {
-  if (element_size_ != -1) {
-    return Size(fixed_size_ * element_size_);
+  if (!element_size_.empty() && !element_size_.has_dynamic()) {
+    return Size(array_size_ * element_size_.bits());
   }
   return Size();
 }
 
 Size ArrayField::GetBuilderSize() const {
-  if (element_size_ != -1) {
-    std::string ret = "(" + std::to_string(fixed_size_) + " * " + std::to_string(element_size_) + ")";
-    return ret;
+  if (!element_size_.empty() && !element_size_.has_dynamic()) {
+    return GetSize();
   } else {
     std::string ret = "[this](){ size_t length = 0; for (const auto& elem : " + GetName() +
                       "_) { length += elem.size() * 8; } return length; }()";
@@ -60,27 +60,21 @@ Size ArrayField::GetBuilderSize() const {
 }
 
 std::string ArrayField::GetDataType() const {
-  if (type_def_ != nullptr) {
-    return "std::array<" + type_def_->name_ + "," + std::to_string(fixed_size_) + ">";
-  }
-  return "std::array<" + util::GetTypeForSize(element_size_) + "," + std::to_string(fixed_size_) + ">";
+  return "std::array<" + element_field_->GetDataType() + "," + std::to_string(array_size_) + ">";
 }
 
-void ArrayField::GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const {
-  GenBounds(s, start_offset, end_offset, GetSize());
-
-  s << "auto it = begin_it + field_begin;";
-
-  s << GetDataType() << " value;";
-  std::string type = (type_def_ != nullptr) ? type_def_->name_ : util::GetTypeForSize(element_size_);
-  s << GetDataType() << "::iterator ret_it = value.begin();";
-  if (element_size_ != -1) {
-    s << "while (it + sizeof(" << type << ") <= begin_it + field_end && ret_it < value.end()) {";
-    s << "*ret_it = it.extract<" << type << ">();";
+void ArrayField::GenExtractor(std::ostream& s, int num_leading_bits) const {
+  s << GetDataType() << "::iterator ret_it = " << GetName() << "_ptr->begin();";
+  s << "auto " << element_field_->GetName() << "_it = " << GetName() << "_it;";
+  if (!element_size_.empty() && !element_size_.has_dynamic()) {
+    s << "while (" << element_field_->GetName() << "_it.NumBytesRemaining() >= " << element_size_.bytes();
+    s << " && ret_it < " << GetName() << "_ptr->end()) {";
   } else {
-    s << "while (it < begin_it + field_end && ret_it < value.end()) {";
-    s << "it = " << type_def_->name_ << "::Parse(ret_it, it);";
+    s << "while (" << element_field_->GetName() << "_it.NumBytesRemaining() > 0 ";
+    s << " && ret_it < " << GetName() << "_ptr->end()) {";
   }
+  s << element_field_->GetDataType() << "* " << element_field_->GetName() << "_ptr = ret_it;";
+  element_field_->GenExtractor(s, num_leading_bits);
   s << "ret_it++;";
   s << "}";
 }
@@ -90,29 +84,24 @@ void ArrayField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) 
   s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() {";
   s << "ASSERT(was_validated_);";
   s << "size_t end_index = size();";
-  s << "auto begin_it = begin();";
+  s << "auto to_bound = begin();";
 
-  GenExtractor(s, start_offset, end_offset);
+  int num_leading_bits = GenBounds(s, start_offset, end_offset);
+  s << GetDataType() << " " << GetName() << "_value;";
+  s << GetDataType() << "* " << GetName() << "_ptr = &" << GetName() << "_value;";
+  GenExtractor(s, num_leading_bits);
 
-  s << "return value;";
+  s << "return " << GetName() << "_value;";
   s << "}\n";
 }
 
 bool ArrayField::GenBuilderParameter(std::ostream& s) const {
-  if (type_def_ != nullptr) {
-    s << "const std::array<" << type_def_->GetTypeName() << "," << fixed_size_ << ">& " << GetName();
-  } else {
-    s << "const std::array<" << util::GetTypeForSize(element_size_) << "," << fixed_size_ << ">& " << GetName();
-  }
+  s << "const std::array<" << element_field_->GetDataType() << "," << array_size_ << ">& " << GetName();
   return true;
 }
 
 bool ArrayField::GenBuilderMember(std::ostream& s) const {
-  if (type_def_ != nullptr) {
-    s << "std::array<" << type_def_->GetTypeName() << "," << fixed_size_ << "> " << GetName();
-  } else {
-    s << "std::array<" << util::GetTypeForSize(element_size_) << "," << fixed_size_ << "> " << GetName();
-  }
+  s << "std::array<" << element_field_->GetDataType() << "," << array_size_ << "> " << GetName();
   return true;
 }
 
@@ -125,20 +114,8 @@ void ArrayField::GenParameterValidator(std::ostream&) const {
 }
 
 void ArrayField::GenInserter(std::ostream& s) const {
-  s << "for (const auto& val : " << GetName() << "_) {";
-  if (IsEnumArray()) {
-    s << "insert(static_cast<" << util::GetTypeForSize(type_def_->size_) << ">(val), i, " << type_def_->size_ << ");";
-  } else if (IsCustomFieldArray()) {
-    if (type_def_->size_ == -1) {
-      s << "val.Serialize(i);";
-    } else {
-      s << "insert(val, i);";
-    }
-  } else if (IsStructArray()) {
-    s << "val.Serialize(i);";
-  } else {
-    s << "insert(val, i, " << element_size_ << ");";
-  }
+  s << "for (const auto& val_ : " << GetName() << "_) {";
+  element_field_->GenInserter(s);
   s << "}\n";
 }
 
@@ -148,16 +125,4 @@ void ArrayField::GenValidator(std::ostream&) const {
   //
   // Other than that there is nothing that arrays need to be validated on other than length so nothing needs to
   // be done here.
-}
-
-bool ArrayField::IsEnumArray() const {
-  return type_def_ != nullptr && type_def_->GetDefinitionType() == TypeDef::Type::ENUM;
-}
-
-bool ArrayField::IsCustomFieldArray() const {
-  return type_def_ != nullptr && type_def_->GetDefinitionType() == TypeDef::Type::CUSTOM;
-}
-
-bool ArrayField::IsStructArray() const {
-  return type_def_ != nullptr && type_def_->GetDefinitionType() == TypeDef::Type::STRUCT;
 }
