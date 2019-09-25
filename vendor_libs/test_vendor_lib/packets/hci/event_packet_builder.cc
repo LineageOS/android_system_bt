@@ -447,7 +447,8 @@ std::unique_ptr<EventPacketBuilder> EventPacketBuilder::CreateConnectionPacketTy
                                                                                                uint16_t handle,
                                                                                                uint16_t packet_type) {
   std::unique_ptr<EventPacketBuilder> evt_ptr =
-      std::unique_ptr<EventPacketBuilder>(new EventPacketBuilder(EventCode::CONNECTION_PACKET_TYPE_CHANGE));
+      std::unique_ptr<EventPacketBuilder>(
+          new EventPacketBuilder(EventCode::CONNECTION_PACKET_TYPE_CHANGED));
   CHECK(evt_ptr->AddPayloadOctets1(static_cast<uint8_t>(status)));
   CHECK(evt_ptr->AddPayloadOctets2(handle));
   CHECK(evt_ptr->AddPayloadOctets2(packet_type));
