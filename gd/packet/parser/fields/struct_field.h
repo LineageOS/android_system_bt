@@ -29,11 +29,9 @@ class StructField : public PacketField {
 
   virtual Size GetSize() const override;
 
-  virtual Size GetBuilderSize() const override;
-
   virtual std::string GetDataType() const override;
 
-  virtual void GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const override;
+  virtual void GenExtractor(std::ostream& s, int num_leading_bits) const override;
 
   virtual void GenGetter(std::ostream& s, Size start_offset, Size end_offset) const override;
 
@@ -51,5 +49,5 @@ class StructField : public PacketField {
   std::string type_name_;
 
  public:
-  const int size_{-1};
+  const Size size_{};
 };

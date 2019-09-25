@@ -44,11 +44,11 @@ class PacketField : public Loggable {
   // variables.
   virtual std::string GetDataType() const = 0;
 
-  // Given an iterator it, extract the type.
-  virtual void GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const = 0;
+  // Given an iterator {name}_it, extract the type.
+  virtual void GenExtractor(std::ostream& s, int num_leading_bits) const = 0;
 
-  // Calculate field_begin and field_end using the given offsets and size.
-  virtual void GenBounds(std::ostream& s, Size start_offset, Size end_offset, Size field_size) const;
+  // Calculate field_begin and field_end using the given offsets and size, return the number of leading bits
+  virtual int GenBounds(std::ostream& s, Size start_offset, Size end_offset) const;
 
   // Get parser getter definition. Start_offset points to the first bit of the
   // field. end_offset is the first bit after the field. If an offset is empty
