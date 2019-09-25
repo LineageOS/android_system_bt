@@ -337,12 +337,12 @@ void ParentDef::GenSerialize(std::ostream& s) const {
         const auto& vector_name = field_name + "_";
         const VectorField* vector = (VectorField*)sized_field;
         s << "size_t " << vector_name + "bytes =  0;";
-        if (vector->element_size_ == -1) {
+        if (vector->element_size_.empty()) {
           s << "for (auto elem : " << vector_name << ") {";
           s << vector_name + "bytes += elem.size(); }";
         } else {
           s << vector_name + "bytes = ";
-          s << vector_name << ".size() * (" << vector->element_size_ << " / 8);";
+          s << vector_name << ".size() * ((" << vector->element_size_ << ") / 8);";
         }
         s << "ASSERT(" << vector_name + "bytes < (1 << " << field->GetSize().bits() << "));";
         s << "insert(" << vector_name << "bytes";
