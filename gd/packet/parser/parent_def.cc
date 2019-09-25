@@ -34,16 +34,16 @@ void ParentDef::AddParentConstraint(std::string field_name, std::variant<int64_t
 
   if (constrained_field->GetFieldType() == ScalarField::kFieldType) {
     if (!std::holds_alternative<int64_t>(value)) {
-      ERROR(constrained_field) << "Attemting to constrain a scalar field to an enum value in " << parent_->name_;
+      ERROR(constrained_field) << "Attempting to constrain a scalar field to an enum value in " << parent_->name_;
     }
   } else if (constrained_field->GetFieldType() == EnumField::kFieldType) {
     if (!std::holds_alternative<std::string>(value)) {
-      ERROR(constrained_field) << "Attemting to constrain an enum field to a scalar value in " << parent_->name_;
+      ERROR(constrained_field) << "Attempting to constrain an enum field to a scalar value in " << parent_->name_;
     }
     const auto& enum_def = static_cast<EnumField*>(constrained_field)->GetEnumDef();
     if (!enum_def.HasEntry(std::get<std::string>(value))) {
       ERROR(constrained_field) << "No matching enumeration \"" << std::get<std::string>(value)
-                               << "for constraint on enum in parent " << parent_->name_ << ".";
+                               << "\" for constraint on enum in parent " << parent_->name_ << ".";
     }
 
     // For enums, we have to qualify the value using the enum type name.
@@ -212,8 +212,14 @@ FieldList ParentDef::GetParamList() const {
   FieldList params;
 
   std::set<std::string> param_types = {
-      ScalarField::kFieldType, EnumField::kFieldType,   ArrayField::kFieldType,   VectorField::kFieldType,
-      CustomField::kFieldType, StructField::kFieldType, PayloadField::kFieldType,
+      ScalarField::kFieldType,
+      EnumField::kFieldType,
+      ArrayField::kFieldType,
+      VectorField::kFieldType,
+      CustomField::kFieldType,
+      StructField::kFieldType,
+      VariableLengthStructField::kFieldType,
+      PayloadField::kFieldType,
   };
 
   if (parent_ != nullptr) {
@@ -337,7 +343,7 @@ void ParentDef::GenSerialize(std::ostream& s) const {
         const auto& vector_name = field_name + "_";
         const VectorField* vector = (VectorField*)sized_field;
         s << "size_t " << vector_name + "bytes =  0;";
-        if (vector->element_size_.empty()) {
+        if (vector->element_size_.empty() || vector->element_size_.has_dynamic()) {
           s << "for (auto elem : " << vector_name << ") {";
           s << vector_name + "bytes += elem.size(); }";
         } else {
@@ -397,4 +403,34 @@ void ParentDef::GenSerialize(std::ostream& s) const {
   s << "SerializeFooter(i);";
 
   s << "}\n";
+}
+
+void ParentDef::GenInstanceOf(std::ostream& s) const {
+  if (parent_ != nullptr && parent_constraints_.size() > 0) {
+    s << "static bool IsInstance(const " << parent_->name_ << "& parent) {";
+    // Get the list of parent params.
+    FieldList parent_params = parent_->GetParamList().GetFieldsWithoutTypes({
+        PayloadField::kFieldType,
+        BodyField::kFieldType,
+    });
+
+    // Check if constrained parent fields are set to their correct values.
+    for (int i = 0; i < parent_params.size(); i++) {
+      const auto& field = parent_params[i];
+      const auto& constraint = parent_constraints_.find(field->GetName());
+      if (constraint != parent_constraints_.end()) {
+        s << "if (parent." << field->GetName() << "_ != ";
+        if (field->GetFieldType() == ScalarField::kFieldType) {
+          s << std::get<int64_t>(constraint->second) << ")";
+          s << "{ return false;}";
+        } else if (field->GetFieldType() == EnumField::kFieldType) {
+          s << std::get<std::string>(constraint->second) << ")";
+          s << "{ return false;}";
+        } else {
+          ERROR(field) << "Constraints on non enum/scalar fields should be impossible.";
+        }
+      }
+    }
+    s << "return true;}";
+  }
 }
