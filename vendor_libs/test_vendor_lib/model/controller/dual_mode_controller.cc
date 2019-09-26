@@ -147,12 +147,18 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   SET_HANDLER(OpCode::WRITE_INQUIRY_SCAN_TYPE, HciWriteInquiryScanType);
   SET_HANDLER(OpCode::AUTHENTICATION_REQUESTED, HciAuthenticationRequested);
   SET_HANDLER(OpCode::SET_CONNECTION_ENCRYPTION, HciSetConnectionEncryption);
+  SET_HANDLER(OpCode::CHANGE_CONNECTION_LINK_KEY, HciChangeConnectionLinkKey);
   SET_HANDLER(OpCode::WRITE_AUTHENTICATION_ENABLE, HciWriteAuthenticationEnable);
   SET_HANDLER(OpCode::READ_AUTHENTICATION_ENABLE, HciReadAuthenticationEnable);
   SET_HANDLER(OpCode::WRITE_CLASS_OF_DEVICE, HciWriteClassOfDevice);
   SET_HANDLER(OpCode::WRITE_PAGE_TIMEOUT, HciWritePageTimeout);
   SET_HANDLER(OpCode::WRITE_LINK_SUPERVISION_TIMEOUT, HciWriteLinkSupervisionTimeout);
+  SET_HANDLER(OpCode::HOLD_MODE, HciHoldMode);
+  SET_HANDLER(OpCode::SNIFF_MODE, HciSniffMode);
+  SET_HANDLER(OpCode::EXIT_SNIFF_MODE, HciExitSniffMode);
+  SET_HANDLER(OpCode::QOS_SETUP, HciQosSetup);
   SET_HANDLER(OpCode::WRITE_DEFAULT_LINK_POLICY_SETTINGS, HciWriteDefaultLinkPolicySettings);
+  SET_HANDLER(OpCode::FLOW_SPECIFICATION, HciFlowSpecification);
   SET_HANDLER(OpCode::WRITE_LINK_POLICY_SETTINGS, HciWriteLinkPolicySettings);
   SET_HANDLER(OpCode::CHANGE_CONNECTION_PACKET_TYPE, HciChangeConnectionPacketType);
   SET_HANDLER(OpCode::WRITE_LOCAL_NAME, HciWriteLocalName);
@@ -567,6 +573,17 @@ void DualModeController::HciSetConnectionEncryption(packets::PacketView<true> ar
   SendCommandStatus(status, OpCode::SET_CONNECTION_ENCRYPTION);
 }
 
+void DualModeController::HciChangeConnectionLinkKey(
+    packets::PacketView<true> args) {
+  CHECK(args.size() == 2) << __func__ << " size=" << args.size();
+  auto args_itr = args.begin();
+  uint16_t handle = args_itr.extract<uint16_t>();
+
+  hci::Status status = link_layer_controller_.ChangeConnectionLinkKey(handle);
+
+  SendCommandStatus(status, OpCode::CHANGE_CONNECTION_LINK_KEY);
+}
+
 void DualModeController::HciWriteAuthenticationEnable(packets::PacketView<true> args) {
   CHECK(args.size() == 1) << __func__ << " size=" << args.size();
   properties_.SetAuthenticationEnable(args[0]);
@@ -592,9 +609,85 @@ void DualModeController::HciWritePageTimeout(packets::PacketView<true> args) {
   SendCommandCompleteSuccess(OpCode::WRITE_PAGE_TIMEOUT);
 }
 
+void DualModeController::HciHoldMode(packets::PacketView<true> args) {
+  CHECK(args.size() == 6) << __func__ << " size=" << args.size();
+  auto args_itr = args.begin();
+  uint16_t handle = args_itr.extract<uint16_t>();
+  uint16_t hold_mode_max_interval = args_itr.extract<uint16_t>();
+  uint16_t hold_mode_min_interval = args_itr.extract<uint16_t>();
+
+  hci::Status status = link_layer_controller_.HoldMode(
+      handle, hold_mode_max_interval, hold_mode_min_interval);
+
+  SendCommandStatus(status, OpCode::HOLD_MODE);
+}
+
+void DualModeController::HciSniffMode(packets::PacketView<true> args) {
+  CHECK(args.size() == 10) << __func__ << " size=" << args.size();
+  auto args_itr = args.begin();
+  uint16_t handle = args_itr.extract<uint16_t>();
+  uint16_t sniff_max_interval = args_itr.extract<uint16_t>();
+  uint16_t sniff_min_interval = args_itr.extract<uint16_t>();
+  uint16_t sniff_attempt = args_itr.extract<uint16_t>();
+  uint16_t sniff_timeout = args_itr.extract<uint16_t>();
+
+  hci::Status status = link_layer_controller_.SniffMode(
+      handle, sniff_max_interval, sniff_min_interval, sniff_attempt,
+      sniff_timeout);
+
+  SendCommandStatus(status, OpCode::SNIFF_MODE);
+}
+
+void DualModeController::HciExitSniffMode(packets::PacketView<true> args) {
+  CHECK(args.size() == 2) << __func__ << " size=" << args.size();
+  auto args_itr = args.begin();
+  uint16_t handle = args_itr.extract<uint16_t>();
+
+  hci::Status status = link_layer_controller_.ExitSniffMode(handle);
+
+  SendCommandStatus(status, OpCode::EXIT_SNIFF_MODE);
+}
+
+void DualModeController::HciQosSetup(packets::PacketView<true> args) {
+  CHECK(args.size() == 20) << __func__ << " size=" << args.size();
+  auto args_itr = args.begin();
+  uint16_t handle = args_itr.extract<uint16_t>();
+  args_itr.extract<uint8_t>();  // unused
+  uint8_t service_type = args_itr.extract<uint8_t>();
+  uint32_t token_rate = args_itr.extract<uint32_t>();
+  uint32_t peak_bandwidth = args_itr.extract<uint32_t>();
+  uint32_t latency = args_itr.extract<uint32_t>();
+  uint32_t delay_variation = args_itr.extract<uint32_t>();
+
+  hci::Status status =
+      link_layer_controller_.QosSetup(handle, service_type, token_rate,
+                                      peak_bandwidth, latency, delay_variation);
+
+  SendCommandStatus(status, OpCode::QOS_SETUP);
+}
+
 void DualModeController::HciWriteDefaultLinkPolicySettings(packets::PacketView<true> args) {
   CHECK(args.size() == 2) << __func__ << " size=" << args.size();
   SendCommandCompleteSuccess(OpCode::WRITE_DEFAULT_LINK_POLICY_SETTINGS);
+}
+
+void DualModeController::HciFlowSpecification(packets::PacketView<true> args) {
+  CHECK(args.size() == 21) << __func__ << " size=" << args.size();
+  auto args_itr = args.begin();
+  uint16_t handle = args_itr.extract<uint16_t>();
+  args_itr.extract<uint8_t>();  // unused
+  uint8_t flow_direction = args_itr.extract<uint8_t>();
+  uint8_t service_type = args_itr.extract<uint8_t>();
+  uint32_t token_rate = args_itr.extract<uint32_t>();
+  uint32_t token_bucket_size = args_itr.extract<uint32_t>();
+  uint32_t peak_bandwidth = args_itr.extract<uint32_t>();
+  uint32_t access_latency = args_itr.extract<uint32_t>();
+
+  hci::Status status = link_layer_controller_.FlowSpecification(
+      handle, flow_direction, service_type, token_rate, token_bucket_size,
+      peak_bandwidth, access_latency);
+
+  SendCommandStatus(status, OpCode::FLOW_SPECIFICATION);
 }
 
 void DualModeController::HciWriteLinkPolicySettings(packets::PacketView<true> args) {
