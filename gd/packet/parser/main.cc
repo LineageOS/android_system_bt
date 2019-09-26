@@ -207,6 +207,11 @@ bool parse_one_file(std::filesystem::path input_file, std::filesystem::path incl
 
 }  // namespace
 
+// TODO(b/141583809): stop leaks
+extern "C" const char* __asan_default_options() {
+  return "detect_leaks=0";
+}
+
 int main(int argc, const char** argv) {
   std::filesystem::path out_dir;
   std::filesystem::path include_dir;
