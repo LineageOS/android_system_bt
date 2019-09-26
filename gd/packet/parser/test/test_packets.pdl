@@ -180,9 +180,14 @@ packet TwoStructs {
   two : TwoRelatedNumbers,
 }
 
-packet ArrayOfStruct {
+packet VectorOfStruct {
   _count_(array) : 8,
   array : TwoRelatedNumbers[],
+}
+
+packet ArrayOfStruct {
+  the_count : 8,
+  array : TwoRelatedNumbers[4],
 }
 
 struct StructWithFixedTypes {
