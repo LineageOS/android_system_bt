@@ -15,25 +15,27 @@
  */
 
 #include "fields/vector_field.h"
+
+#include "fields/count_field.h"
 #include "util.h"
 
 const std::string VectorField::kFieldType = "VectorField";
 
 VectorField::VectorField(std::string name, int element_size, std::string size_modifier, ParseLocation loc)
-    : PacketField(name, loc), element_size_(element_size), size_modifier_(size_modifier) {
-  if (element_size_ > 64 || element_size_ < 0)
-    ERROR(this) << __func__ << ": Not implemented for element size = " << element_size_;
-  // Make sure the element_size is a multiple of 8.
+    : PacketField(name, loc), element_field_(new ScalarField("val", element_size, loc)), element_size_(element_size),
+      size_modifier_(size_modifier) {
+  if (element_size > 64 || element_size < 0)
+    ERROR(this) << __func__ << ": Not implemented for element size = " << element_size;
   if (element_size % 8 != 0) {
     ERROR(this) << "Can only have arrays with elements that are byte aligned (" << element_size << ")";
   }
 }
 
 VectorField::VectorField(std::string name, TypeDef* type_def, std::string size_modifier, ParseLocation loc)
-    : PacketField(name, loc), element_size_(type_def->size_), type_def_(type_def), size_modifier_(size_modifier) {
-  // If the element type is not variable sized, make sure that it is byte aligned.
-  if (type_def_->size_ != -1 && type_def_->size_ % 8 != 0) {
-    ERROR(this) << "Can only have arrays with elements that are byte aligned (" << type_def_->size_ << ")";
+    : PacketField(name, loc), element_field_(type_def->GetNewField("val", loc)),
+      element_size_(element_field_->GetSize()), size_modifier_(size_modifier) {
+  if (!element_size_.empty() && element_size_.bits() % 8 != 0) {
+    ERROR(this) << "Can only have arrays with elements that are byte aligned (" << element_size_ << ")";
   }
 }
 
@@ -54,28 +56,18 @@ Size VectorField::GetSize() const {
     return ret;
   }
 
-  // size_field_ is of type COUNT and it is a scalar array
-  if (type_def_ == nullptr) {
-    return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " + std::to_string(element_size_) + ")";
+  // size_field_ is of type COUNT and elements have a fixed size
+  if (!element_size_.empty() && !element_size_.has_dynamic()) {
+    return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " +
+           std::to_string(element_size_.bits()) + ")";
   }
 
-  if (IsCustomFieldArray() || IsStructArray()) {
-    if (type_def_->size_ != -1) {
-      return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " + std::to_string(type_def_->size_) +
-             ")";
-    } else {
-      return Size();
-    }
-  }
-
-  // size_field_ is of type COUNT and it is an enum array
-  return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " + std::to_string(type_def_->size_) +
-         ")";
+  return Size();
 }
 
 Size VectorField::GetBuilderSize() const {
-  if (element_size_ != -1) {
-    std::string ret = "(" + GetName() + "_.size() * " + std::to_string(element_size_) + ")";
+  if (!element_size_.empty() && !element_size_.has_dynamic()) {
+    std::string ret = "(" + GetName() + "_.size() * " + std::to_string(element_size_.bits()) + ")";
     return ret;
   } else {
     std::string ret = "[this](){ size_t length = 0; for (const auto& elem : " + GetName() +
@@ -85,30 +77,22 @@ Size VectorField::GetBuilderSize() const {
 }
 
 std::string VectorField::GetDataType() const {
-  if (type_def_ != nullptr) {
-    return "std::vector<" + type_def_->name_ + ">";
-  }
-  return "std::vector<" + util::GetTypeForSize(element_size_) + ">";
+  return "std::vector<" + element_field_->GetDataType() + ">";
 }
 
-void VectorField::GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const {
-  GenBounds(s, start_offset, end_offset, GetSize());
-
-  s << "auto it = begin_it.Subrange(field_begin, field_end - field_begin);";
-
-  s << GetDataType() << " ret;";
-  if (element_size_ != -1) {
-    std::string type = (type_def_ != nullptr) ? type_def_->name_ : util::GetTypeForSize(element_size_);
-    s << "while (it.NumBytesRemaining() >= sizeof(" << type << ")) {";
-    s << "ret.push_back(it.extract<" << type << ">());";
-    s << "}";
+void VectorField::GenExtractor(std::ostream& s, int num_leading_bits) const {
+  s << "auto " << element_field_->GetName() << "_it = " << GetName() << "_it;";
+  if (!element_size_.empty() && !element_size_.has_dynamic()) {
+    s << "while (" << element_field_->GetName() << "_it.NumBytesRemaining() >= " << element_size_.bytes() << ") {";
   } else {
-    s << "while (it.NumBytesRemaining() > 0) {";
-    s << type_def_->name_ << " instance;";
-    s << "it = " << type_def_->name_ << "::Parse(&instance, it);";
-    s << "ret.push_back(instance);";
-    s << "}";
+    s << "while (" << element_field_->GetName() << "_it.NumBytesRemaining() > 0) {";
   }
+  s << element_field_->GetDataType() << " " << element_field_->GetName() << "_value;";
+  s << element_field_->GetDataType() << "* " << element_field_->GetName() << "_ptr = &" << element_field_->GetName()
+    << "_value;";
+  element_field_->GenExtractor(s, num_leading_bits);
+  s << GetName() << "_ptr->push_back(" << element_field_->GetName() << "_value);";
+  s << "}";
 }
 
 void VectorField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
@@ -116,29 +100,24 @@ void VectorField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
   s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() {";
   s << "ASSERT(was_validated_);";
   s << "size_t end_index = size();";
-  s << "auto begin_it = begin();";
+  s << "auto to_bound = begin();";
 
-  GenExtractor(s, start_offset, end_offset);
+  int num_leading_bits = GenBounds(s, start_offset, end_offset);
+  s << GetDataType() << " " << GetName() << "_value;";
+  s << GetDataType() << "* " << GetName() << "_ptr = &" << GetName() << "_value;";
+  GenExtractor(s, num_leading_bits);
 
-  s << "return ret;";
+  s << "return " << GetName() << "_value;";
   s << "}\n";
 }
 
 bool VectorField::GenBuilderParameter(std::ostream& s) const {
-  if (type_def_ != nullptr) {
-    s << "const std::vector<" << type_def_->GetTypeName() << ">& " << GetName();
-  } else {
-    s << "const std::vector<" << util::GetTypeForSize(element_size_) << ">& " << GetName();
-  }
+  s << "const std::vector<" << element_field_->GetDataType() << ">& " << GetName();
   return true;
 }
 
 bool VectorField::GenBuilderMember(std::ostream& s) const {
-  if (type_def_ != nullptr) {
-    s << "const std::vector<" << type_def_->GetTypeName() << "> " << GetName();
-  } else {
-    s << "const std::vector<" << util::GetTypeForSize(element_size_) << "> " << GetName();
-  }
+  s << "const std::vector<" << element_field_->GetDataType() << "> " << GetName();
   return true;
 }
 
@@ -155,20 +134,8 @@ void VectorField::GenParameterValidator(std::ostream&) const {
 }
 
 void VectorField::GenInserter(std::ostream& s) const {
-  s << "for (const auto& val : " << GetName() << "_) {";
-  if (IsEnumArray()) {
-    s << "insert(static_cast<" << util::GetTypeForSize(type_def_->size_) << ">(val), i, " << type_def_->size_ << ");";
-  } else if (IsCustomFieldArray()) {
-    if (type_def_->size_ == -1) {
-      s << "val.Serialize(i);";
-    } else {
-      s << "insert(val, i);";
-    }
-  } else if (IsStructArray()) {
-    s << "val.Serialize(i);";
-  } else {
-    s << "insert(val, i, " << element_size_ << ");";
-  }
+  s << "for (const auto& val_ : " << GetName() << "_) {";
+  element_field_->GenInserter(s);
   s << "}\n";
 }
 
@@ -178,18 +145,6 @@ void VectorField::GenValidator(std::ostream&) const {
   //
   // Other than that there is nothing that arrays need to be validated on other than length so nothing needs to
   // be done here.
-}
-
-bool VectorField::IsEnumArray() const {
-  return type_def_ != nullptr && type_def_->GetDefinitionType() == TypeDef::Type::ENUM;
-}
-
-bool VectorField::IsCustomFieldArray() const {
-  return type_def_ != nullptr && type_def_->GetDefinitionType() == TypeDef::Type::CUSTOM;
-}
-
-bool VectorField::IsStructArray() const {
-  return type_def_ != nullptr && type_def_->GetDefinitionType() == TypeDef::Type::STRUCT;
 }
 
 void VectorField::SetSizeField(const SizeField* size_field) {

@@ -159,6 +159,7 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
         if (!btm_ble_init_pseudo_addr(match_rec, bda)) {
           /* assign the original address to be the current report address */
           bda = match_rec->ble.pseudo_addr;
+          bda_type = match_rec->ble.ble_addr_type;
         } else {
           bda = match_rec->bd_addr;
         }

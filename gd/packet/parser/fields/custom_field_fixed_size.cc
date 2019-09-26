@@ -30,20 +30,21 @@ std::string CustomFieldFixedSize::GetDataType() const {
   return type_name_;
 }
 
-void CustomFieldFixedSize::GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const {
-  int field_size = GetSize().bits();
-
+int CustomFieldFixedSize::GenBounds(std::ostream& s, Size start_offset, Size end_offset) const {
   if (!start_offset.empty()) {
     // Default to start if available.
-    s << "auto it = begin_it + (" << start_offset << ") / 8;";
+    s << "auto " << GetName() << "_it = to_bound + (" << start_offset << ") / 8;";
   } else if (!end_offset.empty()) {
-    Size byte_offset = Size(field_size) + end_offset;
-    s << "auto it = end_it - (" << byte_offset << ") / 8;";
+    Size byte_offset = GetSize() + end_offset;
+    s << "auto " << GetName() << "_it = to_bound (+ to_bound.NumBytesRemaining() - (" << byte_offset << ") / 8);";
   } else {
     ERROR(this) << "Ambiguous offset for field.";
   }
+  return 0;  // num_leading_bits
+}
 
-  s << GetDataType() << " value = it.extract<" << GetDataType() << ">();";
+void CustomFieldFixedSize::GenExtractor(std::ostream& s, int) const {
+  s << "*" << GetName() << "_ptr = " << GetName() << "_it.extract<" << GetDataType() << ">();";
 }
 
 bool CustomFieldFixedSize::HasParameterValidator() const {

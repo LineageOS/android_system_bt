@@ -39,21 +39,23 @@ std::string CustomField::GetDataType() const {
   return type_name_;
 }
 
-void CustomField::GenExtractor(std::ostream& s, Size start_offset, Size end_offset) const {
-  GenBounds(s, start_offset, end_offset, Size());
-  s << "auto it = begin_it.Subrange(field_begin, field_end - field_begin);";
-  s << "std::unique_ptr<" << GetDataType() << "> ptr = std::make_unique<" << GetDataType() << ">();";
-  s << GetDataType() << "::Parse(ptr.get(), it);";
+void CustomField::GenExtractor(std::ostream& s, int) const {
+  s << GetName() << "_it = ";
+  s << GetDataType() << "::Parse( " << GetName() << "_ptr, " << GetName() << "_it);";
 }
 
 void CustomField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
   s << "std::unique_ptr<" << GetDataType() << "> Get" << util::UnderscoreToCamelCase(GetName()) << "() const {";
   s << "ASSERT(was_validated_);";
   s << "size_t end_index = size();";
-  s << "auto begin_it = begin();";
+  s << "auto to_bound = begin();";
 
-  GenExtractor(s, start_offset, end_offset);
-  s << "return ptr;";
+  int num_leading_bits = GenBounds(s, start_offset, end_offset);
+  s << "std::unique_ptr<" << GetDataType() << "> " << GetName() << "_value";
+  s << " = std::make_unique<" << GetDataType() << ">();";
+  s << GetDataType() << "* " << GetName() << "_ptr = " << GetName() << "_value.get();";
+  GenExtractor(s, num_leading_bits);
+  s << "return " << GetName() << "_value;";
   s << "}\n";
 }
 

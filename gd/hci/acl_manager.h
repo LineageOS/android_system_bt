@@ -31,6 +31,53 @@ namespace hci {
 
 class AclManager;
 
+class ConnectionManagementCallbacks {
+ public:
+  virtual ~ConnectionManagementCallbacks() = default;
+  // Invoked when controller sends Connection Packet Type Changed event with Success error code
+  virtual void OnConnectionPacketTypeChanged(uint16_t packet_type) = 0;
+  // Invoked when controller sends Authentication Complete event with Success error code
+  virtual void OnAuthenticationComplete() = 0;
+  // Invoked when controller sends Encryption Change event with Success error code
+  virtual void OnEncryptionChange(EncryptionEnabled enabled) = 0;
+  // Invoked when controller sends Change Connection Link Key Complete event with Success error code
+  virtual void OnChangeConnectionLinkKeyComplete() = 0;
+  // Invoked when controller sends Read Clock Offset Complete event with Success error code
+  virtual void OnReadClockOffsetComplete() = 0;
+  // Invoked when controller sends Mode Change event with Success error code
+  virtual void OnModeChange(Mode current_mode, uint16_t interval) = 0;
+  // Invoked when controller sends QoS Setup Complete event with Success error code
+  virtual void OnQosSetupComplete(ServiceType service_type, uint32_t token_rate, uint32_t peak_bandwidth,
+                                  uint32_t latency, uint32_t delay_variation) = 0;
+  // Invoked when controller sends Flow Specification Complete event with Success error code
+  virtual void OnFlowSpecificationComplete(FlowDirection flow_direction, ServiceType service_type, uint32_t token_rate,
+                                           uint32_t token_bucket_size, uint32_t peak_bandwidth,
+                                           uint32_t access_latency) = 0;
+  // Invoked when controller sends Flush Occurred event
+  virtual void OnFlushOccurred() = 0;
+  // Invoked when controller sends Command Complete event for Role Discovery command with Success error code
+  virtual void OnRoleDiscoveryComplete(Role current_role) = 0;
+  // Invoked when controller sends Command Complete event for Read Link Policy Settings command with Success error code
+  virtual void OnReadLinkPolicySettingsComplete(uint16_t link_policy_settings) = 0;
+  // Invoked when controller sends Command Complete event for Read Automatic Flush Timeout command with Success error
+  // code
+  virtual void OnReadAutomaticFlushTimeoutComplete(uint16_t flush_timeout) = 0;
+  // Invoked when controller sends Command Complete event for Read Transmit Power Level command with Success error code
+  virtual void OnReadTransmitPowerLevelComplete(uint8_t transmit_power_level) = 0;
+  // Invoked when controller sends Command Complete event for Read Link Supervision Time out command with Success error
+  // code
+  virtual void OnReadLinkSupervisionTimeoutComplete(uint16_t link_supervision_timeout) = 0;
+  // Invoked when controller sends Command Complete event for Read Failed Contact Counter command with Success error
+  // code
+  virtual void OnReadFailedContactCounterComplete(uint16_t failed_contact_counter) = 0;
+  // Invoked when controller sends Command Complete event for Read Link Quality command with Success error code
+  virtual void OnReadLinkQualityComplete(uint8_t link_quality) = 0;
+  // Invoked when controller sends Command Complete event for Read RSSI command with Success error code
+  virtual void OnReadRssiComplete(uint8_t rssi) = 0;
+  // Invoked when controller sends Command Complete event for Read Clock command with Success error code
+  virtual void OnReadClockComplete(uint32_t clock, uint16_t accuracy) = 0;
+};
+
 class AclConnection {
  public:
   AclConnection() : manager_(nullptr), handle_(0), address_(Address::kEmpty){};
@@ -48,8 +95,38 @@ class AclConnection {
   using QueueUpEnd = common::BidiQueueEnd<BasePacketBuilder, PacketView<kLittleEndian>>;
   using QueueDownEnd = common::BidiQueueEnd<PacketView<kLittleEndian>, BasePacketBuilder>;
   virtual QueueUpEnd* GetAclQueueEnd() const;
+  virtual void RegisterCallbacks(ConnectionManagementCallbacks* callbacks, os::Handler* handler);
   virtual void RegisterDisconnectCallback(common::OnceCallback<void(ErrorCode)> on_disconnect, os::Handler* handler);
   virtual bool Disconnect(DisconnectReason reason);
+  virtual bool ChangeConnectionPacketType(uint16_t packet_type);
+  virtual bool AuthenticationRequested();
+  virtual bool SetConnectionEncryption(Enable enable);
+  virtual bool ChangeConnectionLinkKey();
+  virtual bool ReadClockOffset();
+  virtual bool HoldMode(uint16_t max_interval, uint16_t min_interval);
+  virtual bool SniffMode(uint16_t max_interval, uint16_t min_interval, uint16_t attempt, uint16_t timeout);
+  virtual bool ExitSniffMode();
+  virtual bool QosSetup(ServiceType service_type, uint32_t token_rate, uint32_t peak_bandwidth, uint32_t latency,
+                        uint32_t delay_variation);
+  virtual bool RoleDiscovery();
+  virtual bool ReadLinkPolicySettings();
+  virtual bool WriteLinkPolicySettings(uint16_t link_policy_settings);
+  virtual bool FlowSpecification(FlowDirection flow_direction, ServiceType service_type, uint32_t token_rate,
+                                 uint32_t token_bucket_size, uint32_t peak_bandwidth, uint32_t access_latency);
+  virtual bool SniffSubrating(uint16_t maximum_latency, uint16_t minimum_remote_timeout,
+                              uint16_t minimum_local_timeout);
+  virtual bool Flush();
+  virtual bool ReadAutomaticFlushTimeout();
+  virtual bool WriteAutomaticFlushTimeout(uint16_t flush_timeout);
+  virtual bool ReadTransmitPowerLevel(TransmitPowerLevelType type);
+  virtual bool ReadLinkSupervisionTimeout();
+  virtual bool WriteLinkSupervisionTimeout(uint16_t link_supervision_timeout);
+  virtual bool ReadFailedContactCounter();
+  virtual bool ResetFailedContactCounter();
+  virtual bool ReadLinkQuality();
+  virtual bool ReadRssi();
+  virtual bool ReadClock(WhichClock which_clock);
+
   // Ask AclManager to clean me up. Must invoke after on_disconnect is called
   virtual void Finish();
 
