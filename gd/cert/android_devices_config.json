@@ -18,7 +18,7 @@
                         "-s",
                         "$(serial_number)",
                         "shell",
-                        "/system/bin/stack_with_facade",
+                        "/system/bin/bluetooth_stack_with_facade",
                         "--grpc-port=$(grpc_port)",
                         "--root-server-port=$(grpc_root_server_port)",
                         "--btsnoop=data/misc/bluetooth/logs/btsnoop_hci.log",
