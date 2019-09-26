@@ -33,7 +33,7 @@ class CustomTypeChecker {
   template <class C, size_t (C::*)() const>
   struct SizeChecker {};
 
-  template <class C, bool little_endian, Iterator<little_endian> (*)(C* vec, Iterator<little_endian> it)>
+  template <class C, bool little_endian, std::optional<Iterator<little_endian>> (*)(C* vec, Iterator<little_endian> it)>
   struct ParseChecker {};
 
   template <class C, bool little_endian>
