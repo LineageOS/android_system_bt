@@ -15,7 +15,7 @@
  */
 #pragma once
 
-#include "l2cap/internal/parameter_provider.h"
+#include "l2cap/internal/le_fixed_channel_impl.h"
 
 #include <gmock/gmock.h>
 
@@ -25,10 +25,14 @@ namespace l2cap {
 namespace internal {
 namespace testing {
 
-class MockParameterProvider : public ParameterProvider {
+class MockLeFixedChannelImpl : public LeFixedChannelImpl {
  public:
-  MOCK_METHOD(std::chrono::milliseconds, GetClassicLinkIdleDisconnectTimeout, (), (override));
-  MOCK_METHOD(std::chrono::milliseconds, GetLeLinkIdleDisconnectTimeout, (), (override));
+  MOCK_METHOD(void, RegisterOnCloseCallback,
+              (os::Handler * user_handler, LeFixedChannel::OnCloseCallback on_close_callback), (override));
+  MOCK_METHOD(void, Acquire, (), (override));
+  MOCK_METHOD(void, Release, (), (override));
+  MOCK_METHOD(bool, IsAcquired, (), (override, const));
+  MOCK_METHOD(void, OnClosed, (hci::ErrorCode status), (override));
 };
 
 }  // namespace testing
