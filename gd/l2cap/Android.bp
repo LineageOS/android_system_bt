@@ -3,6 +3,9 @@ filegroup {
     srcs: [
         "fcs.cc",
         "l2cap_layer.cc",
+        "classic_dynamic_channel.cc",
+        "classic_dynamic_channel_manager.cc",
+        "classic_dynamic_channel_service.cc",
         "classic_fixed_channel.cc",
         "classic_fixed_channel_manager.cc",
         "classic_fixed_channel_service.cc",
