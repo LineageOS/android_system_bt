@@ -14,27 +14,14 @@
  * limitations under the License.
  */
 
-#pragma once
-
-#include <cstdint>
+#include "l2cap/classic_dynamic_channel_service.h"
+#include "common/bind.h"
 
 namespace bluetooth {
 namespace l2cap {
 
-using Cid = uint16_t;
-
-constexpr Cid kInvalidCid = 0;
-constexpr Cid kFirstFixedChannel = 1;
-constexpr Cid kLastFixedChannel = 63;
-constexpr Cid kFirstDynamicChannel = kLastFixedChannel + 1;
-constexpr Cid kLastDynamicChannel = (uint16_t)(0xffff);
-
-constexpr Cid kClassicSignallingCid = 1;
-constexpr Cid kConnectionlessCid = 2;
-constexpr Cid kLeAttributeCid = 4;
-constexpr Cid kLeSignallingCid = 5;
-constexpr Cid kSmpCid = 6;
-constexpr Cid kSmpBrCid = 7;
+void ClassicDynamicChannelService::Unregister(OnUnregisteredCallback on_unregistered,
+                                              os::Handler* on_unregistered_handler) {}
 
 }  // namespace l2cap
 }  // namespace bluetooth
