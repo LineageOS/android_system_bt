@@ -713,6 +713,7 @@ static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
   p = sdpu_get_len_from_type(p, p + p_ccb->list_len, type, &seq_len);
   if (p == NULL || (p + seq_len) > (p + p_ccb->list_len)) {
     SDP_TRACE_WARNING("%s: bad length", __func__);
+    sdp_disconnect(p_ccb, SDP_ILLEGAL_PARAMETER);
     return;
   }
   p_end = &p_ccb->rsp_list[p_ccb->list_len];
