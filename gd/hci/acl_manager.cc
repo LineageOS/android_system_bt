@@ -360,7 +360,6 @@ struct AclManager::impl {
     auto& acl_connection = acl_connections_.find(handle)->second;
     if (acl_connection.command_complete_handler_ != nullptr) {
       uint16_t packet_type = packet_type_changed.GetPacketType();
-      ;
       acl_connection.command_complete_handler_->Post(
           common::BindOnce(&ConnectionManagementCallbacks::OnConnectionPacketTypeChanged,
                            common::Unretained(acl_connection.command_complete_callbacks_), packet_type));
@@ -442,9 +441,10 @@ struct AclManager::impl {
     uint16_t handle = complete_view.GetConnectionHandle();
     auto& acl_connection = acl_connections_.find(handle)->second;
     if (acl_connection.command_complete_handler_ != nullptr) {
+      uint16_t clock_offset = complete_view.GetClockOffset();
       acl_connection.command_complete_handler_->Post(
           common::BindOnce(&ConnectionManagementCallbacks::OnReadClockOffsetComplete,
-                           common::Unretained(acl_connection.command_complete_callbacks_)));
+                           common::Unretained(acl_connection.command_complete_callbacks_), clock_offset));
     }
   }
 
@@ -1470,7 +1470,7 @@ bool AclConnection::FlowSpecification(FlowDirection flow_direction, ServiceType 
 
 bool AclConnection::SniffSubrating(uint16_t maximum_latency, uint16_t minimum_remote_timeout,
                                    uint16_t minimum_local_timeout) {
-  return manager_->pimpl_->SniffSubrating(handle_, maximum_latency, maximum_latency, minimum_local_timeout);
+  return manager_->pimpl_->SniffSubrating(handle_, maximum_latency, minimum_remote_timeout, minimum_local_timeout);
 }
 
 bool AclConnection::Flush() {
