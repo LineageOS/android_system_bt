@@ -3774,6 +3774,7 @@ void btm_sec_auth_complete(uint16_t handle, uint8_t status) {
   tBTM_PAIRING_STATE old_state = btm_cb.pairing_state;
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
   bool are_bonding = false;
+  bool was_authenticating = false;
 
   if (p_dev_rec) {
     VLOG(2) << __func__ << ": Security Manager: in state: "
@@ -3814,16 +3815,35 @@ void btm_sec_auth_complete(uint16_t handle, uint8_t status) {
 
   if (!p_dev_rec) return;
 
-  if ((btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
-      (btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) &&
-      (p_dev_rec->bd_addr == btm_cb.pairing_bda))
-    are_bonding = true;
+  if (p_dev_rec->sec_state == BTM_SEC_STATE_AUTHENTICATING) {
+    p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
+    was_authenticating = true;
+    /* There can be a race condition, when we are starting authentication
+     * and the peer device is doing encryption.
+     * If first we receive encryption change up, then initiated
+     * authentication can not be performed.
+     * According to the spec we can not do authentication on the
+     * encrypted link, so device is correct.
+     */
+    if ((status == HCI_ERR_COMMAND_DISALLOWED) &&
+        ((p_dev_rec->sec_flags & (BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED)) ==
+         (BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED))) {
+      status = HCI_SUCCESS;
+    }
+    if (status == HCI_SUCCESS) {
+      p_dev_rec->sec_flags |= BTM_SEC_AUTHENTICATED;
+    }
+  }
 
   if ((btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
-      (p_dev_rec->bd_addr == btm_cb.pairing_bda))
+      (p_dev_rec->bd_addr == btm_cb.pairing_bda)) {
+    if (btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) {
+      are_bonding = true;
+    }
     btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
+  }
 
-  if (p_dev_rec->sec_state != BTM_SEC_STATE_AUTHENTICATING) {
+  if (was_authenticating == false) {
     if ((btm_cb.api.p_auth_complete_callback && status != HCI_SUCCESS) &&
         (old_state != BTM_PAIR_STATE_IDLE)) {
       (*btm_cb.api.p_auth_complete_callback)(p_dev_rec->bd_addr,
@@ -3833,17 +3853,6 @@ void btm_sec_auth_complete(uint16_t handle, uint8_t status) {
     return;
   }
 
-  /* There can be a race condition, when we are starting authentication and
-  ** the peer device is doing encryption.
-  ** If first we receive encryption change up, then initiated authentication
-  ** can not be performed.  According to the spec we can not do authentication
-  ** on the encrypted link, so device is correct.
-  */
-  if ((status == HCI_ERR_COMMAND_DISALLOWED) &&
-      ((p_dev_rec->sec_flags & (BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED)) ==
-       (BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED))) {
-    status = HCI_SUCCESS;
-  }
   /* Currently we do not notify user if it is a keyboard which connects */
   /* User probably Disabled the keyboard while it was asleap.  Let her try */
   if (btm_cb.api.p_auth_complete_callback) {
@@ -3853,8 +3862,6 @@ void btm_sec_auth_complete(uint16_t handle, uint8_t status) {
                                              p_dev_rec->dev_class,
                                              p_dev_rec->sec_bd_name, status);
   }
-
-  p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
 
   /* If this is a bonding procedure can disconnect the link now */
   if (are_bonding) {
@@ -3900,8 +3907,6 @@ void btm_sec_auth_complete(uint16_t handle, uint8_t status) {
     }
     return;
   }
-
-  p_dev_rec->sec_flags |= BTM_SEC_AUTHENTICATED;
 
   if (p_dev_rec->pin_code_length >= 16 ||
       p_dev_rec->link_key_type == BTM_LKEY_TYPE_AUTH_COMB ||
