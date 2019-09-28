@@ -286,8 +286,8 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
     LOG_DEBUG("OnChangeConnectionLinkKeyComplete");
   };
 
-  void OnReadClockOffsetComplete() override {
-    LOG_DEBUG("OnReadClockOffsetComplete");
+  void OnReadClockOffsetComplete(uint16_t clock_offset) override {
+    LOG_DEBUG("OnReadClockOffsetComplete clock_offset:%d", clock_offset);
   };
 
   void OnModeChange(Mode current_mode, uint16_t interval) override {

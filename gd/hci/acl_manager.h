@@ -43,7 +43,7 @@ class ConnectionManagementCallbacks {
   // Invoked when controller sends Change Connection Link Key Complete event with Success error code
   virtual void OnChangeConnectionLinkKeyComplete() = 0;
   // Invoked when controller sends Read Clock Offset Complete event with Success error code
-  virtual void OnReadClockOffsetComplete() = 0;
+  virtual void OnReadClockOffsetComplete(uint16_t clock_offset) = 0;
   // Invoked when controller sends Mode Change event with Success error code
   virtual void OnModeChange(Mode current_mode, uint16_t interval) = 0;
   // Invoked when controller sends QoS Setup Complete event with Success error code
