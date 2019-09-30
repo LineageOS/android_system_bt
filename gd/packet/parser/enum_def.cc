@@ -25,6 +25,9 @@
 EnumDef::EnumDef(std::string name, int size) : TypeDef(name, size) {}
 
 void EnumDef::AddEntry(std::string name, uint32_t value) {
+  if (!util::IsEnumCase(name)) {
+    ERROR() << __func__ << ": Enum " << name << "(" << value << ") should be all uppercase with underscores";
+  }
   if (value > util::GetMaxValueForBits(size_)) {
     ERROR() << __func__ << ": Value of " << name << "(" << value << ") is greater than the max possible value for enum "
             << name_ << "(" << util::GetMaxValueForBits(size_) << ")\n";
