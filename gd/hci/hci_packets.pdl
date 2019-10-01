@@ -1867,7 +1867,7 @@ packet ReadLocalVersionInformation : CommandPacket (op_code = READ_LOCAL_VERSION
 }
 
 enum HciVersion : 8 {
-  V_1_0b = 0x00,
+  V_1_0B = 0x00,
   V_1_1 = 0x01,
   V_1_2 = 0x02,
   V_2_0 = 0x03, //  + EDR
@@ -1881,7 +1881,7 @@ enum HciVersion : 8 {
 }
 
 enum LmpVersion : 8 {
-  V_1_0b = 0x00, // withdrawn
+  V_1_0B = 0x00, // withdrawn
   V_1_1 = 0x01, // withdrawn
   V_1_2 = 0x02, // withdrawn
   V_2_0 = 0x03, //  + EDR
