@@ -24,11 +24,8 @@ StructDef::StructDef(std::string name, FieldList fields, StructDef* parent)
     : ParentDef(name, fields, parent), total_size_(GetSize(true)) {}
 
 PacketField* StructDef::GetNewField(const std::string& name, ParseLocation loc) const {
-  if (fields_.HasBody() || total_size_.has_dynamic()) {
-    ERROR(new StructField(name, name_, -1, loc)) << "Variable size structs are not supported";
-    fprintf(stderr, "total_size_ of %s(%s) = %s\n", name_.c_str(), name.c_str(), total_size_.ToString().c_str());
-    abort();
-    return new StructField(name, name_, -1, loc);
+  if (fields_.HasBody()) {
+    return new VariableLengthStructField(name, name_, loc);
   } else {
     return new StructField(name, name_, total_size_.bits(), loc);
   }
@@ -38,32 +35,91 @@ TypeDef::Type StructDef::GetDefinitionType() const {
   return TypeDef::Type::STRUCT;
 }
 
-void StructDef::GenParse(std::ostream& s) const {
-  std::string iterator = "Iterator<kLittleEndian>";
-  if (!is_little_endian_) {
-    iterator = "Iterator<!kLittleEndian>";
+void StructDef::GenSpecialize(std::ostream& s) const {
+  if (parent_ == nullptr) {
+    return;
   }
-  s << "static " << iterator << " Parse(" << name_ << "* to_return, " << iterator << " struct_it) {";
-  s << "auto to_bound = struct_it;";
-  s << "size_t end_index = struct_it.NumBytesRemaining();";
-  s << "if (end_index < " << GetSize().bytes() << ") { return struct_it.Subrange(0,0);}";
-  Size field_offset = Size(0);
+  s << "static " << name_ << "* Specialize(" << parent_->name_ << "* parent) {";
+  s << "ASSERT(" << name_ << "::IsInstance(*parent));";
+  s << "return static_cast<" << name_ << "*>(parent);";
+  s << "}";
+}
+
+void StructDef::GenParse(std::ostream& s) const {
+  std::string iterator = (is_little_endian_ ? "Iterator<kLittleEndian>" : "Iterator<!kLittleEndian>");
+
+  if (fields_.HasBody()) {
+    s << "static std::optional<" << iterator << ">";
+  } else {
+    s << "static " << iterator;
+  }
+
+  s << " Parse(" << name_ << "* to_fill, " << iterator << " struct_begin_it ";
+
+  if (parent_ != nullptr) {
+    s << ", bool fill_parent = true) {";
+  } else {
+    s << ") {";
+  }
+  s << "auto to_bound = struct_begin_it;";
+
+  if (parent_ != nullptr) {
+    s << "if (fill_parent) {";
+    std::string parent_param = (parent_->parent_ == nullptr ? "" : ", true");
+    if (parent_->fields_.HasBody()) {
+      s << "auto parent_optional_it = " << parent_->name_ << "::Parse(to_fill, to_bound" << parent_param << ");";
+      if (fields_.HasBody()) {
+        s << "if (!parent_optional_it) { return {}; }";
+      } else {
+        s << "ASSERT(parent_optional_it);";
+      }
+    } else {
+      s << parent_->name_ << "::Parse(to_fill, to_bound" << parent_param << ");";
+    }
+    s << "}";
+  }
+
+  if (!fields_.HasBody()) {
+    s << "size_t end_index = struct_begin_it.NumBytesRemaining();";
+    if (parent_ != nullptr) {
+      s << "if (end_index < " << GetSize().bytes() << " - to_fill->" << parent_->name_ << "::size())";
+    } else {
+      s << "if (end_index < " << GetSize().bytes() << ")";
+    }
+    s << "{ return struct_begin_it.Subrange(0,0);}";
+  }
+
   for (const auto& field : fields_) {
-    Size next_field_offset = field->GetSize() + field_offset.bits();
     if (field->GetFieldType() != ReservedField::kFieldType && field->GetFieldType() != BodyField::kFieldType &&
         field->GetFieldType() != FixedScalarField::kFieldType && field->GetFieldType() != SizeField::kFieldType &&
         field->GetFieldType() != ChecksumStartField::kFieldType && field->GetFieldType() != ChecksumField::kFieldType &&
         field->GetFieldType() != CountField::kFieldType) {
       s << "{";
-      int num_leading_bits = field->GenBounds(s, field_offset, next_field_offset);
-      s << "auto " << field->GetName() << "_ptr = &to_return->" << field->GetName() << "_;";
+      s << "if (to_bound.NumBytesRemaining() < " << field->GetSize().bytes() << ")";
+      if (!fields_.HasBody()) {
+        s << "{ return to_bound.Subrange(to_bound.NumBytesRemaining(),0);}";
+      } else {
+        s << "{ return {};}";
+      }
+      int num_leading_bits =
+          field->GenBounds(s, GetOffsetForField(field->GetName(), false), GetOffsetForField(field->GetName(), true));
+      s << "auto " << field->GetName() << "_ptr = &to_fill->" << field->GetName() << "_;";
       field->GenExtractor(s, num_leading_bits);
       s << "}";
     }
-    field_offset = next_field_offset;
   }
-  s << "return struct_it + " << field_offset.bytes() << ";";
+  s << "return struct_begin_it + to_fill->" << name_ << "::size();";
   s << "}";
+}
+
+void StructDef::GenParseFunctionPrototype(std::ostream& s) const {
+  s << "std::unique_ptr<" << name_ << "> Parse" << name_ << "(";
+  if (is_little_endian_) {
+    s << "Iterator<kLittleEndian>";
+  } else {
+    s << "Iterator<!kLittleEndian>";
+  }
+  s << "it);";
 }
 
 void StructDef::GenDefinition(std::ostream& s) const {
@@ -94,12 +150,24 @@ void StructDef::GenDefinition(std::ostream& s) const {
   GenSize(s);
   s << "\n";
 
+  GenInstanceOf(s);
+  s << "\n";
+
+  GenSpecialize(s);
+  s << "\n";
+
   GenMembers(s);
   s << "};\n";
+
+  if (fields_.HasBody()) {
+    GenParseFunctionPrototype(s);
+  }
+  s << "\n";
 }
 
 void StructDef::GenConstructor(std::ostream& s) const {
   if (parent_ != nullptr) {
+    s << name_ << "(const " << parent_->name_ << "& parent) : " << parent_->name_ << "(parent) {}";
     s << name_ << "() : " << parent_->name_ << "() {";
   } else {
     s << name_ << "() {";

@@ -17,15 +17,11 @@
 #pragma once
 
 #include "fields/packet_field.h"
-#include "fields/size_field.h"
 #include "parse_location.h"
-#include "type_def.h"
 
-class VectorField : public PacketField {
+class VariableLengthStructField : public PacketField {
  public:
-  VectorField(std::string name, int element_size, std::string size_modifier, ParseLocation loc);
-
-  VectorField(std::string name, TypeDef* type_def, std::string size_modifier, ParseLocation loc);
+  VariableLengthStructField(std::string name, std::string type_name, ParseLocation loc);
 
   static const std::string kFieldType;
 
@@ -45,29 +41,14 @@ class VectorField : public PacketField {
 
   virtual bool BuilderParameterMustBeMoved() const override;
 
-  virtual bool GenBuilderMember(std::ostream& s) const override;
-
   virtual bool HasParameterValidator() const override;
 
-  virtual void GenParameterValidator(std::ostream& s) const override;
+  virtual void GenParameterValidator(std::ostream&) const override;
 
   virtual void GenInserter(std::ostream& s) const override;
 
   virtual void GenValidator(std::ostream&) const override;
 
-  void SetSizeField(const SizeField* size_field);
-
-  const std::string& GetSizeModifier() const;
-
-  const std::string name_;
-
-  const PacketField* element_field_{nullptr};
-
-  const Size element_size_{};
-
-  // Size is always in bytes, unless it is a count.
-  const SizeField* size_field_{nullptr};
-
-  // Size modifier is only used when size_field_ is of type SIZE and is not used with COUNT.
-  std::string size_modifier_{""};
+ private:
+  std::string type_name_;
 };
