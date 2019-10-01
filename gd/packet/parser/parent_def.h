@@ -59,6 +59,8 @@ class ParentDef : public TypeDef {
 
   void GenSerialize(std::ostream& s) const;
 
+  void GenInstanceOf(std::ostream& s) const;
+
   FieldList fields_;
 
   ParentDef* parent_{nullptr};
