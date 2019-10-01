@@ -26,6 +26,7 @@
 #include <vector>
 
 #include "declarations.h"
+#include "struct_parser_generator.h"
 
 #include "language_y.h"
 
@@ -184,6 +185,12 @@ bool parse_one_file(std::filesystem::path input_file, std::filesystem::path incl
       ((StructDef*)s.second)->GenDefinition(out_file);
       out_file << "\n";
     }
+  }
+
+  {
+    StructParserGenerator spg(decls);
+    spg.Generate(out_file);
+    out_file << "\n\n";
   }
 
   for (size_t i = 0; i < decls.packet_defs_queue_.size(); i++) {
