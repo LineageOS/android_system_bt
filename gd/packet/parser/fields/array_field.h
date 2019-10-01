@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "fields/all_fields.h"
+#include "fields/packet_field.h"
 #include "parse_location.h"
 #include "type_def.h"
 
@@ -41,6 +41,8 @@ class ArrayField : public PacketField {
   virtual void GenGetter(std::ostream& s, Size start_offset, Size end_offset) const override;
 
   virtual bool GenBuilderParameter(std::ostream& s) const override;
+
+  virtual bool BuilderParameterMustBeMoved() const override;
 
   virtual bool GenBuilderMember(std::ostream& s) const override;
 

@@ -1458,6 +1458,245 @@ TEST(GeneratedPacketTest, testArrayOfStructBe) {
     ASSERT_EQ(array[i].count_, count_array[i].count_);
   }
 }
+
+vector<uint8_t> one_four_byte_struct{
+    0x04,                    // struct_type_ = FourByte
+    0xd1, 0xd2, 0xd3, 0xd4,  // four_bytes_
+};
+
+TEST(GeneratedPacketTest, testOneFourByteStruct) {
+  FourByteStruct four_byte_struct;
+  four_byte_struct.four_bytes_ = 0xd4d3d2d1;
+
+  auto packet = OneFourByteStructBuilder::Create(four_byte_struct);
+  ASSERT_EQ(one_four_byte_struct.size(), packet->size());
+
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  BitInserter it(*packet_bytes);
+  packet->Serialize(it);
+
+  ASSERT_EQ(one_four_byte_struct.size(), packet_bytes->size());
+  for (size_t i = 0; i < one_four_byte_struct.size(); i++) {
+    ASSERT_EQ(one_four_byte_struct[i], packet_bytes->at(i));
+  }
+
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = OneFourByteStructView::Create(packet_bytes_view);
+  ASSERT_TRUE(view.IsValid());
+  ASSERT_EQ(StructType::FourByte, view.GetOneStruct().struct_type_);
+  ASSERT_EQ(four_byte_struct.four_bytes_, view.GetOneStruct().four_bytes_);
+}
+
+vector<uint8_t> generic_struct_two{
+    0x02,        // struct_type_ = TwoByte
+    0x01, 0x02,  // two_bytes_
+};
+
+TEST(GeneratedPacketTest, testOneGenericStructTwo) {
+  TwoByteStruct two_byte_struct;
+  two_byte_struct.two_bytes_ = 0x0201;
+  std::unique_ptr<TwoByteStruct> two_byte_struct_ptr = std::make_unique<TwoByteStruct>(two_byte_struct);
+
+  auto packet = OneGenericStructBuilder::Create(std::move(two_byte_struct_ptr));
+  ASSERT_EQ(generic_struct_two.size(), packet->size());
+
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  BitInserter it(*packet_bytes);
+  packet->Serialize(it);
+
+  ASSERT_EQ(generic_struct_two.size(), packet_bytes->size());
+  for (size_t i = 0; i < generic_struct_two.size(); i++) {
+    ASSERT_EQ(generic_struct_two[i], packet_bytes->at(i));
+  }
+
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = OneGenericStructView::Create(packet_bytes_view);
+  ASSERT_TRUE(view.IsValid());
+  auto base_struct = view.GetBaseStruct();
+  ASSERT_NE(nullptr, base_struct);
+  ASSERT_TRUE(TwoByteStruct::IsInstance(*base_struct));
+  TwoByteStruct* two_byte = static_cast<TwoByteStruct*>(base_struct.get());
+  ASSERT_NE(nullptr, two_byte);
+  ASSERT_TRUE(TwoByteStruct::IsInstance(*two_byte));
+  ASSERT_EQ(two_byte_struct.two_bytes_, 0x0201);
+  uint16_t val = two_byte->two_bytes_;
+  ASSERT_EQ(val, 0x0201);
+  ASSERT_EQ(two_byte_struct.two_bytes_, ((TwoByteStruct*)base_struct.get())->two_bytes_);
+}
+
+vector<uint8_t> generic_struct_four{
+    0x04,                    // struct_type_ = FourByte
+    0x01, 0x02, 0x03, 0x04,  // four_bytes_
+};
+
+TEST(GeneratedPacketTest, testOneGenericStructFour) {
+  FourByteStruct four_byte_struct;
+  four_byte_struct.four_bytes_ = 0x04030201;
+  std::unique_ptr<FourByteStruct> four_byte_struct_p = std::make_unique<FourByteStruct>(four_byte_struct);
+  ASSERT_EQ(four_byte_struct.four_bytes_, four_byte_struct_p->four_bytes_);
+
+  auto packet = OneGenericStructBuilder::Create(std::move(four_byte_struct_p));
+  ASSERT_EQ(generic_struct_four.size(), packet->size());
+
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  BitInserter it(*packet_bytes);
+  packet->Serialize(it);
+
+  ASSERT_EQ(generic_struct_four.size(), packet_bytes->size());
+  for (size_t i = 0; i < generic_struct_four.size(); i++) {
+    ASSERT_EQ(generic_struct_four[i], packet_bytes->at(i));
+  }
+
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = OneGenericStructView::Create(packet_bytes_view);
+  ASSERT_TRUE(view.IsValid());
+  auto base_struct = view.GetBaseStruct();
+  ASSERT_NE(nullptr, base_struct);
+  ASSERT_EQ(StructType::FourByte, base_struct->struct_type_);
+  ASSERT_EQ(four_byte_struct.four_bytes_, ((FourByteStruct*)base_struct.get())->four_bytes_);
+}
+
+vector<uint8_t> one_struct_array{
+    0x04,                    // struct_type_ = FourByte
+    0xa1, 0xa2, 0xa3, 0xa4,  // four_bytes_
+    0x04,                    // struct_type_ = FourByte
+    0xb2, 0xb2, 0xb3, 0xb4,  // four_bytes_
+    0x02,                    // struct_type_ = TwoByte
+    0xc3, 0xc2,              // two_bytes_
+    0x04,                    // struct_type_ = TwoByte
+    0xd4, 0xd2, 0xd3, 0xd4,  // four_bytes_
+};
+
+TEST(GeneratedPacketTest, testOneGenericStructArray) {
+  std::vector<std::unique_ptr<UnusedParentStruct>> parent_vector;
+  std::unique_ptr<FourByteStruct> fbs;
+  std::unique_ptr<TwoByteStruct> tbs;
+  fbs = std::make_unique<FourByteStruct>();
+  fbs->four_bytes_ = 0xa4a3a2a1;
+  parent_vector.push_back(std::move(fbs));
+  fbs = std::make_unique<FourByteStruct>();
+  fbs->four_bytes_ = 0xb4b3b2b2;
+  parent_vector.push_back(std::move(fbs));
+  tbs = std::make_unique<TwoByteStruct>();
+  tbs->two_bytes_ = 0xc2c3;
+  parent_vector.push_back(std::move(tbs));
+  fbs = std::make_unique<FourByteStruct>();
+  fbs->four_bytes_ = 0xd4d3d2d4;
+  parent_vector.push_back(std::move(fbs));
+
+  std::vector<std::unique_ptr<UnusedParentStruct>> vector_copy;
+  for (auto& s : parent_vector) {
+    if (s->struct_type_ == StructType::TwoByte) {
+      vector_copy.push_back(std::make_unique<TwoByteStruct>(*(TwoByteStruct*)s.get()));
+    }
+    if (s->struct_type_ == StructType::FourByte) {
+      vector_copy.push_back(std::make_unique<FourByteStruct>(*(FourByteStruct*)s.get()));
+    }
+  }
+
+  auto packet = OneGenericStructArrayBuilder::Create(std::move(parent_vector));
+  ASSERT_EQ(one_struct_array.size(), packet->size());
+
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  BitInserter it(*packet_bytes);
+  packet->Serialize(it);
+
+  ASSERT_EQ(one_struct_array.size(), packet_bytes->size());
+  for (size_t i = 0; i < one_struct_array.size(); i++) {
+    ASSERT_EQ(one_struct_array[i], packet_bytes->at(i));
+  }
+
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = OneGenericStructArrayView::Create(packet_bytes_view);
+  ASSERT_TRUE(view.IsValid());
+  auto an_array = view.GetAnArray();
+  ASSERT_EQ(vector_copy.size(), an_array.size());
+  for (size_t i = 0; i < vector_copy.size(); i++) {
+    ASSERT_NE(nullptr, an_array[i]);
+    ASSERT_EQ(vector_copy[i]->struct_type_, an_array[i]->struct_type_);
+    if (vector_copy[i]->struct_type_ == StructType::FourByte) {
+      ASSERT_EQ(FourByteStruct::Specialize(vector_copy[i].get())->four_bytes_,
+                FourByteStruct::Specialize(an_array[i].get())->four_bytes_);
+    } else {
+      ASSERT_EQ(TwoByteStruct::Specialize(vector_copy[i].get())->two_bytes_,
+                TwoByteStruct::Specialize(an_array[i].get())->two_bytes_);
+    }
+  }
+}
+
+TEST(GeneratedPacketTest, testOneGenericStructFourArray) {
+  std::array<std::unique_ptr<UnusedParentStruct>, 4> parent_vector;
+  std::unique_ptr<FourByteStruct> fbs;
+  std::unique_ptr<TwoByteStruct> tbs;
+  fbs = std::make_unique<FourByteStruct>();
+  fbs->four_bytes_ = 0xa4a3a2a1;
+  parent_vector[0] = std::move(fbs);
+  fbs = std::make_unique<FourByteStruct>();
+  fbs->four_bytes_ = 0xb4b3b2b2;
+  parent_vector[1] = std::move(fbs);
+  tbs = std::make_unique<TwoByteStruct>();
+  tbs->two_bytes_ = 0xc2c3;
+  parent_vector[2] = std::move(tbs);
+  fbs = std::make_unique<FourByteStruct>();
+  fbs->four_bytes_ = 0xd4d3d2d4;
+  parent_vector[3] = std::move(fbs);
+
+  std::array<std::unique_ptr<UnusedParentStruct>, 4> vector_copy;
+  size_t i = 0;
+  for (auto& s : parent_vector) {
+    if (s->struct_type_ == StructType::TwoByte) {
+      vector_copy[i] = std::make_unique<TwoByteStruct>(*(TwoByteStruct*)s.get());
+    }
+    if (s->struct_type_ == StructType::FourByte) {
+      vector_copy[i] = std::make_unique<FourByteStruct>(*(FourByteStruct*)s.get());
+    }
+    i++;
+  }
+
+  auto packet = OneGenericStructFourArrayBuilder::Create(std::move(parent_vector));
+  ASSERT_EQ(one_struct_array.size(), packet->size());
+
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  BitInserter it(*packet_bytes);
+  packet->Serialize(it);
+
+  ASSERT_EQ(one_struct_array.size(), packet_bytes->size());
+  for (size_t i = 0; i < one_struct_array.size(); i++) {
+    ASSERT_EQ(one_struct_array[i], packet_bytes->at(i));
+  }
+
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = OneGenericStructFourArrayView::Create(packet_bytes_view);
+  ASSERT_TRUE(view.IsValid());
+  auto an_array = view.GetAnArray();
+  ASSERT_EQ(vector_copy.size(), an_array.size());
+  for (size_t i = 0; i < vector_copy.size(); i++) {
+    ASSERT_NE(nullptr, an_array[i]);
+    ASSERT_EQ(vector_copy[i]->struct_type_, an_array[i]->struct_type_);
+    if (vector_copy[i]->struct_type_ == StructType::FourByte) {
+      ASSERT_EQ(FourByteStruct::Specialize(vector_copy[i].get())->four_bytes_,
+                FourByteStruct::Specialize(an_array[i].get())->four_bytes_);
+    } else {
+      ASSERT_EQ(TwoByteStruct::Specialize(vector_copy[i].get())->two_bytes_,
+                TwoByteStruct::Specialize(an_array[i].get())->two_bytes_);
+    }
+  }
+}
+
+vector<uint8_t> one_struct_array_after_fixed{
+    0x01, 0x02,              // two_bytes = 0x0201
+    0x04,                    // struct_type_ = FourByte
+    0xa1, 0xa2, 0xa3, 0xa4,  // four_bytes_
+    0x04,                    // struct_type_ = FourByte
+    0xb2, 0xb2, 0xb3, 0xb4,  // four_bytes_
+    0x02,                    // struct_type_ = TwoByte
+    0xc3, 0xc2,              // two_bytes_
+    0x04,                    // struct_type_ = TwoByte
+    0xd4, 0xd2, 0xd3, 0xd4,  // four_bytes_
+};
+
+DEFINE_AND_INSTANTIATE_OneGenericStructArrayAfterFixedReflectionTest(one_struct_array_after_fixed);
+
 }  // namespace parser
 }  // namespace packet
 }  // namespace bluetooth

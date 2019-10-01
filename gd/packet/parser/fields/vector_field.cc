@@ -17,6 +17,7 @@
 #include "fields/vector_field.h"
 
 #include "fields/count_field.h"
+#include "fields/custom_field.h"
 #include "util.h"
 
 const std::string VectorField::kFieldType = "VectorField";
@@ -69,6 +70,10 @@ Size VectorField::GetBuilderSize() const {
   if (!element_size_.empty() && !element_size_.has_dynamic()) {
     std::string ret = "(" + GetName() + "_.size() * " + std::to_string(element_size_.bits()) + ")";
     return ret;
+  } else if (element_field_->BuilderParameterMustBeMoved()) {
+    std::string ret = "[this](){ size_t length = 0; for (const auto& elem : " + GetName() +
+                      "_) { length += elem->size() * 8; } return length; }()";
+    return ret;
   } else {
     std::string ret = "[this](){ size_t length = 0; for (const auto& elem : " + GetName() +
                       "_) { length += elem.size() * 8; } return length; }()";
@@ -95,12 +100,20 @@ void VectorField::GenExtractor(std::ostream& s, int num_leading_bits) const {
   } else {
     s << element_field_->GetName() << "_it.NumBytesRemaining() > 0) {";
   }
-  s << element_field_->GetDataType() << " " << element_field_->GetName() << "_value;";
-  s << element_field_->GetDataType() << "* " << element_field_->GetName() << "_ptr = &" << element_field_->GetName()
-    << "_value;";
+  if (element_field_->BuilderParameterMustBeMoved()) {
+    s << element_field_->GetDataType() << " " << element_field_->GetName() << "_ptr;";
+  } else {
+    s << element_field_->GetDataType() << " " << element_field_->GetName() << "_value;";
+    s << element_field_->GetDataType() << "* " << element_field_->GetName() << "_ptr = &" << element_field_->GetName()
+      << "_value;";
+  }
   element_field_->GenExtractor(s, num_leading_bits);
   s << "if (" << element_field_->GetName() << "_ptr != nullptr) { ";
-  s << GetName() << "_ptr->push_back(" << element_field_->GetName() << "_value);";
+  if (element_field_->BuilderParameterMustBeMoved()) {
+    s << GetName() << "_ptr->push_back(std::move(" << element_field_->GetName() << "_ptr));";
+  } else {
+    s << GetName() << "_ptr->push_back(" << element_field_->GetName() << "_value);";
+  }
   s << "}";
   s << "}";
 }
@@ -122,12 +135,20 @@ void VectorField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
 }
 
 bool VectorField::GenBuilderParameter(std::ostream& s) const {
-  s << "const std::vector<" << element_field_->GetDataType() << ">& " << GetName();
+  if (element_field_->BuilderParameterMustBeMoved()) {
+    s << "std::vector<" << element_field_->GetDataType() << "> " << GetName();
+  } else {
+    s << "const std::vector<" << element_field_->GetDataType() << ">& " << GetName();
+  }
   return true;
 }
 
+bool VectorField::BuilderParameterMustBeMoved() const {
+  return element_field_->BuilderParameterMustBeMoved();
+}
+
 bool VectorField::GenBuilderMember(std::ostream& s) const {
-  s << "const std::vector<" << element_field_->GetDataType() << "> " << GetName();
+  s << "std::vector<" << element_field_->GetDataType() << "> " << GetName();
   return true;
 }
 

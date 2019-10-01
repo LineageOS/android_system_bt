@@ -16,34 +16,29 @@
 
 #pragma once
 
-#include <map>
-#include <variant>
+#include <iostream>
 
-#include "field_list.h"
+#include "declarations.h"
 #include "fields/packet_field.h"
-#include "parent_def.h"
 #include "parse_location.h"
-#include "type_def.h"
 
-class StructDef : public ParentDef {
+class StructParserGenerator {
  public:
-  StructDef(std::string name, FieldList fields);
-  StructDef(std::string name, FieldList fields, StructDef* parent);
+  StructParserGenerator(Declarations& declarations);
 
-  PacketField* GetNewField(const std::string& name, ParseLocation loc) const;
-
-  TypeDef::Type GetDefinitionType() const;
-
-  void GenSpecialize(std::ostream& s) const;
-
-  void GenParse(std::ostream& s) const;
-
-  void GenParseFunctionPrototype(std::ostream& s) const;
-
-  void GenDefinition(std::ostream& s) const;
-
-  void GenConstructor(std::ostream& s) const;
+  void Generate(std::ostream& s) const;
 
  private:
-  Size total_size_;
+  class TreeNode {
+   public:
+    TreeNode(const StructDef* s)
+        : struct_def_(s), packet_field_(s->GetNewField(s->name_ + "_parse", ParseLocation())) {}
+    const StructDef* struct_def_;
+    const PacketField* packet_field_;
+    std::list<const TreeNode*> children_;
+  };
+  std::list<TreeNode> variable_struct_fields_;
+  bool is_little_endian;
+
+  void explore_children(const TreeNode& node, std::ostream& s) const;
 };
