@@ -1483,7 +1483,7 @@ TEST(GeneratedPacketTest, testOneFourByteStruct) {
   PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
   auto view = OneFourByteStructView::Create(packet_bytes_view);
   ASSERT_TRUE(view.IsValid());
-  ASSERT_EQ(StructType::FourByte, view.GetOneStruct().struct_type_);
+  ASSERT_EQ(StructType::FOUR_BYTE, view.GetOneStruct().struct_type_);
   ASSERT_EQ(four_byte_struct.four_bytes_, view.GetOneStruct().four_bytes_);
 }
 
@@ -1552,7 +1552,7 @@ TEST(GeneratedPacketTest, testOneGenericStructFour) {
   ASSERT_TRUE(view.IsValid());
   auto base_struct = view.GetBaseStruct();
   ASSERT_NE(nullptr, base_struct);
-  ASSERT_EQ(StructType::FourByte, base_struct->struct_type_);
+  ASSERT_EQ(StructType::FOUR_BYTE, base_struct->struct_type_);
   ASSERT_EQ(four_byte_struct.four_bytes_, ((FourByteStruct*)base_struct.get())->four_bytes_);
 }
 
@@ -1586,10 +1586,10 @@ TEST(GeneratedPacketTest, testOneGenericStructArray) {
 
   std::vector<std::unique_ptr<UnusedParentStruct>> vector_copy;
   for (auto& s : parent_vector) {
-    if (s->struct_type_ == StructType::TwoByte) {
+    if (s->struct_type_ == StructType::TWO_BYTE) {
       vector_copy.push_back(std::make_unique<TwoByteStruct>(*(TwoByteStruct*)s.get()));
     }
-    if (s->struct_type_ == StructType::FourByte) {
+    if (s->struct_type_ == StructType::FOUR_BYTE) {
       vector_copy.push_back(std::make_unique<FourByteStruct>(*(FourByteStruct*)s.get()));
     }
   }
@@ -1614,7 +1614,7 @@ TEST(GeneratedPacketTest, testOneGenericStructArray) {
   for (size_t i = 0; i < vector_copy.size(); i++) {
     ASSERT_NE(nullptr, an_array[i]);
     ASSERT_EQ(vector_copy[i]->struct_type_, an_array[i]->struct_type_);
-    if (vector_copy[i]->struct_type_ == StructType::FourByte) {
+    if (vector_copy[i]->struct_type_ == StructType::FOUR_BYTE) {
       ASSERT_EQ(FourByteStruct::Specialize(vector_copy[i].get())->four_bytes_,
                 FourByteStruct::Specialize(an_array[i].get())->four_bytes_);
     } else {
@@ -1644,10 +1644,10 @@ TEST(GeneratedPacketTest, testOneGenericStructFourArray) {
   std::array<std::unique_ptr<UnusedParentStruct>, 4> vector_copy;
   size_t i = 0;
   for (auto& s : parent_vector) {
-    if (s->struct_type_ == StructType::TwoByte) {
+    if (s->struct_type_ == StructType::TWO_BYTE) {
       vector_copy[i] = std::make_unique<TwoByteStruct>(*(TwoByteStruct*)s.get());
     }
-    if (s->struct_type_ == StructType::FourByte) {
+    if (s->struct_type_ == StructType::FOUR_BYTE) {
       vector_copy[i] = std::make_unique<FourByteStruct>(*(FourByteStruct*)s.get());
     }
     i++;
@@ -1673,7 +1673,7 @@ TEST(GeneratedPacketTest, testOneGenericStructFourArray) {
   for (size_t i = 0; i < vector_copy.size(); i++) {
     ASSERT_NE(nullptr, an_array[i]);
     ASSERT_EQ(vector_copy[i]->struct_type_, an_array[i]->struct_type_);
-    if (vector_copy[i]->struct_type_ == StructType::FourByte) {
+    if (vector_copy[i]->struct_type_ == StructType::FOUR_BYTE) {
       ASSERT_EQ(FourByteStruct::Specialize(vector_copy[i].get())->four_bytes_,
                 FourByteStruct::Specialize(an_array[i].get())->four_bytes_);
     } else {
