@@ -278,10 +278,11 @@ packet OneVersionTwoStructPacket : OneVersionedStructPacket(version = 0x02) {
 }
 
 enum StructType : 8 {
-  ZeroByte = 0x00,
-  TwoByte = 0x02,
-  FourByte = 0x04,
-  AtLeastFourByte = 0x05,
+  ZERO_BYTE = 0x00,
+  TWO_BYTE = 0x02,
+  FOUR_BYTE = 0x04,
+  AT_LEAST_FOUR_BYTE = 0x05,
+  VARIABLE = 0x06,
 }
 
 struct UnusedParentStruct {
@@ -289,28 +290,28 @@ struct UnusedParentStruct {
   _body_,
 }
 
-struct TwoByteStruct : UnusedParentStruct (struct_type = TwoByte) {
+struct TwoByteStruct : UnusedParentStruct (struct_type = TWO_BYTE) {
   two_bytes : 16,
 }
 
-struct FourByteStruct : UnusedParentStruct (struct_type = FourByte) {
+struct FourByteStruct : UnusedParentStruct (struct_type = FOUR_BYTE) {
   four_bytes : 32,
 }
 
-struct AtLeastFourByteStruct : UnusedParentStruct (struct_type = AtLeastFourByte) {
+struct AtLeastFourByteStruct : UnusedParentStruct (struct_type = AT_LEAST_FOUR_BYTE) {
   four_bytes : 32,
   struct_type : StructType,
   _body_,
 }
 
-struct OnlyFourByteStruct : AtLeastFourByteStruct (struct_type = ZeroByte) {
+struct OnlyFourByteStruct : AtLeastFourByteStruct (struct_type = ZERO_BYTE) {
 }
 
-struct SixByteStruct : AtLeastFourByteStruct (struct_type = TwoByte) {
+struct SixByteStruct : AtLeastFourByteStruct (struct_type = TWO_BYTE) {
   two_bytes : 16,
 }
 
-struct EightByteStruct : AtLeastFourByteStruct (struct_type = FourByte) {
+struct EightByteStruct : AtLeastFourByteStruct (struct_type = FOUR_BYTE) {
   four_bytes : 32,
 }
 
