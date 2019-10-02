@@ -67,7 +67,7 @@ void StructParserGenerator::Generate(std::ostream& s) const {
   for (const auto& node : variable_struct_fields_) {
     if (node.children_.size() > 0) {
       auto field = node.packet_field_;
-      s << "std::unique_ptr<" << node.struct_def_->name_ << "> Parse" << node.struct_def_->name_;
+      s << "inline std::unique_ptr<" << node.struct_def_->name_ << "> Parse" << node.struct_def_->name_;
       if (is_little_endian) {
         s << "(Iterator<kLittleEndian> to_bound) {";
       } else {
