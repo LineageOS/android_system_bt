@@ -9,6 +9,8 @@ filegroup {
         "classic_fixed_channel.cc",
         "classic_fixed_channel_manager.cc",
         "classic_fixed_channel_service.cc",
+        "internal/classic_dynamic_channel_allocator.cc",
+        "internal/classic_dynamic_channel_impl.cc",
         "internal/classic_fixed_channel_allocator.cc",
         "internal/classic_fixed_channel_impl.cc",
         "internal/classic_fixed_channel_service_manager_impl.cc",
@@ -21,6 +23,8 @@ filegroup {
     name: "BluetoothL2capTestSources",
     srcs: [
         "l2cap_packet_test.cc",
+        "internal/classic_dynamic_channel_allocator_test.cc",
+        "internal/classic_dynamic_channel_impl_test.cc",
         "internal/classic_fixed_channel_allocator_test.cc",
         "internal/classic_fixed_channel_impl_test.cc",
         "internal/classic_fixed_channel_service_manager_test.cc",
