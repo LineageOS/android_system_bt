@@ -20,8 +20,8 @@
 #include <memory>
 
 #include "hci/acl_manager.h"
-#include "l2cap/internal/classic_fixed_channel_allocator.h"
 #include "l2cap/internal/classic_fixed_channel_impl.h"
+#include "l2cap/internal/fixed_channel_allocator.h"
 #include "l2cap/internal/parameter_provider.h"
 #include "l2cap/internal/scheduler.h"
 #include "os/alarm.h"
@@ -89,7 +89,7 @@ class ClassicLink {
 
  private:
   os::Handler* l2cap_handler_;
-  ClassicFixedChannelAllocator fixed_channel_allocator_{this, l2cap_handler_};
+  FixedChannelAllocator<ClassicFixedChannelImpl, ClassicLink> fixed_channel_allocator_{this, l2cap_handler_};
   std::unique_ptr<hci::AclConnection> acl_connection_;
   std::unique_ptr<Scheduler> scheduler_;
   ParameterProvider* parameter_provider_;
