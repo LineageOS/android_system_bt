@@ -15,7 +15,10 @@
  */
 #pragma once
 
-#include "l2cap/internal/parameter_provider.h"
+#include "hci/acl_manager_mock.h"
+#include "hci/address.h"
+#include "l2cap/internal/le_link.h"
+#include "l2cap/internal/scheduler_mock.h"
 
 #include <gmock/gmock.h>
 
@@ -25,10 +28,19 @@ namespace l2cap {
 namespace internal {
 namespace testing {
 
-class MockParameterProvider : public ParameterProvider {
+using hci::testing::MockAclConnection;
+
+class MockLeLink : public LeLink {
  public:
-  MOCK_METHOD(std::chrono::milliseconds, GetClassicLinkIdleDisconnectTimeout, (), (override));
-  MOCK_METHOD(std::chrono::milliseconds, GetLeLinkIdleDisconnectTimeout, (), (override));
+  explicit MockLeLink(os::Handler* handler, ParameterProvider* parameter_provider)
+      : LeLink(handler, std::make_unique<MockAclConnection>(), std::make_unique<MockScheduler>(), parameter_provider){};
+  MOCK_METHOD(hci::Address, GetDevice, (), (override));
+  MOCK_METHOD(void, OnAclDisconnected, (hci::ErrorCode status), (override));
+  MOCK_METHOD(void, Disconnect, (), (override));
+  MOCK_METHOD(std::shared_ptr<LeFixedChannelImpl>, AllocateFixedChannel, (Cid cid, SecurityPolicy security_policy),
+              (override));
+  MOCK_METHOD(bool, IsFixedChannelAllocated, (Cid cid), (override));
+  MOCK_METHOD(void, RefreshRefCount, (), (override));
 };
 
 }  // namespace testing
