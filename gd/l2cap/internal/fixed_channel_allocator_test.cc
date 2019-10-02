@@ -14,8 +14,9 @@
  * limitations under the License.
  */
 
-#include "l2cap/internal/le_fixed_channel_allocator.h"
-#include "l2cap/internal/le_link_mock.h"
+#include "l2cap/internal/fixed_channel_allocator.h"
+#include "l2cap/internal/classic_fixed_channel_impl_mock.h"
+#include "l2cap/internal/classic_link_mock.h"
 #include "l2cap/internal/parameter_provider_mock.h"
 
 #include <gmock/gmock.h>
@@ -25,26 +26,29 @@ namespace bluetooth {
 namespace l2cap {
 namespace internal {
 
-using testing::MockLeLink;
+using testing::MockClassicFixedChannelImpl;
+using testing::MockClassicLink;
 using testing::MockParameterProvider;
 using ::testing::Return;
 
 const hci::Address device{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
 
-class L2capLeFixedChannelAllocatorTest : public ::testing::Test {
+class L2capFixedChannelAllocatorTest : public ::testing::Test {
  protected:
   void SetUp() override {
     thread_ = new os::Thread("test_thread", os::Thread::Priority::NORMAL);
     handler_ = new os::Handler(thread_);
     mock_parameter_provider_ = new MockParameterProvider();
-    mock_le_link_ = new MockLeLink(handler_, mock_parameter_provider_);
-    EXPECT_CALL(*mock_le_link_, GetDevice()).WillRepeatedly(Return(device));
-    channel_allocator_ = std::make_unique<LeFixedChannelAllocator>(mock_le_link_, handler_);
+    mock_classic_link_ = new MockClassicLink(handler_, mock_parameter_provider_);
+    EXPECT_CALL(*mock_classic_link_, GetDevice()).WillRepeatedly(Return(device));
+    // Use classic as a place holder
+    channel_allocator_ = std::make_unique<FixedChannelAllocator<MockClassicFixedChannelImpl, MockClassicLink>>(
+        mock_classic_link_, handler_);
   }
 
   void TearDown() override {
     channel_allocator_.reset();
-    delete mock_le_link_;
+    delete mock_classic_link_;
     delete mock_parameter_provider_;
     handler_->Clear();
     delete handler_;
@@ -54,16 +58,16 @@ class L2capLeFixedChannelAllocatorTest : public ::testing::Test {
   os::Thread* thread_{nullptr};
   os::Handler* handler_{nullptr};
   MockParameterProvider* mock_parameter_provider_{nullptr};
-  MockLeLink* mock_le_link_{nullptr};
-  std::unique_ptr<LeFixedChannelAllocator> channel_allocator_;
+  MockClassicLink* mock_classic_link_{nullptr};
+  std::unique_ptr<FixedChannelAllocator<MockClassicFixedChannelImpl, MockClassicLink>> channel_allocator_;
 };
 
-TEST_F(L2capLeFixedChannelAllocatorTest, precondition) {
+TEST_F(L2capFixedChannelAllocatorTest, precondition) {
   Cid cid = kFirstFixedChannel;
   EXPECT_FALSE(channel_allocator_->IsChannelAllocated(cid));
 }
 
-TEST_F(L2capLeFixedChannelAllocatorTest, allocate_and_free_channel) {
+TEST_F(L2capFixedChannelAllocatorTest, allocate_and_free_channel) {
   Cid cid = kFirstFixedChannel;
   auto channel = channel_allocator_->AllocateChannel(cid, {});
   EXPECT_TRUE(channel_allocator_->IsChannelAllocated(cid));
