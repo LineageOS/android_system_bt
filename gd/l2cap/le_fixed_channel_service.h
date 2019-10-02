@@ -25,12 +25,12 @@ namespace bluetooth {
 namespace l2cap {
 
 namespace internal {
-class ClassicFixedChannelServiceManagerImpl;
-}  // namespace internal
+class LeFixedChannelServiceManagerImpl;
+}
 
-class ClassicFixedChannelService {
+class LeFixedChannelService {
  public:
-  ClassicFixedChannelService() = default;
+  LeFixedChannelService() = default;
 
   using OnUnregisteredCallback = common::OnceCallback<void()>;
 
@@ -42,15 +42,15 @@ class ClassicFixedChannelService {
    */
   void Unregister(OnUnregisteredCallback on_unregistered, os::Handler* on_unregistered_handler);
 
-  friend internal::ClassicFixedChannelServiceManagerImpl;
+  friend internal::LeFixedChannelServiceManagerImpl;
 
  private:
-  ClassicFixedChannelService(Cid cid, internal::ClassicFixedChannelServiceManagerImpl* manager, os::Handler* handler)
+  LeFixedChannelService(Cid cid, internal::LeFixedChannelServiceManagerImpl* manager, os::Handler* handler)
       : cid_(cid), manager_(manager), l2cap_layer_handler_(handler) {}
   Cid cid_ = kInvalidCid;
-  internal::ClassicFixedChannelServiceManagerImpl* manager_ = nullptr;
+  internal::LeFixedChannelServiceManagerImpl* manager_ = nullptr;
   os::Handler* l2cap_layer_handler_;
-  DISALLOW_COPY_AND_ASSIGN(ClassicFixedChannelService);
+  DISALLOW_COPY_AND_ASSIGN(LeFixedChannelService);
 };
 
 }  // namespace l2cap

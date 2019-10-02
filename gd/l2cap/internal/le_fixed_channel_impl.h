@@ -18,7 +18,7 @@
 
 #include "common/bidi_queue.h"
 #include "l2cap/cid.h"
-#include "l2cap/classic_fixed_channel.h"
+#include "l2cap/le_fixed_channel.h"
 #include "os/handler.h"
 #include "os/log.h"
 
@@ -26,20 +26,19 @@ namespace bluetooth {
 namespace l2cap {
 namespace internal {
 
-class ClassicLink;
+class LeLink;
 
-class ClassicFixedChannelImpl {
+class LeFixedChannelImpl {
  public:
-  ClassicFixedChannelImpl(Cid cid, ClassicLink* link, os::Handler* l2cap_handler);
+  LeFixedChannelImpl(Cid cid, LeLink* link, os::Handler* l2cap_handler);
 
-  virtual ~ClassicFixedChannelImpl() = default;
+  virtual ~LeFixedChannelImpl() = default;
 
   hci::Address GetDevice() const {
     return device_;
   }
 
-  virtual void RegisterOnCloseCallback(os::Handler* user_handler,
-                                       ClassicFixedChannel::OnCloseCallback on_close_callback);
+  virtual void RegisterOnCloseCallback(os::Handler* user_handler, LeFixedChannel::OnCloseCallback on_close_callback);
 
   virtual void Acquire();
 
@@ -72,12 +71,12 @@ class ClassicFixedChannelImpl {
   // For logging purpose only
   const hci::Address device_;
   // Needed to handle Acquire() and Release()
-  ClassicLink* link_;
+  LeLink* link_;
   os::Handler* l2cap_handler_;
 
   // User supported states
   os::Handler* user_handler_ = nullptr;
-  ClassicFixedChannel::OnCloseCallback on_close_callback_{};
+  LeFixedChannel::OnCloseCallback on_close_callback_{};
 
   // Internal states
   bool acquired_ = false;
@@ -87,7 +86,7 @@ class ClassicFixedChannelImpl {
   common::BidiQueue<packet::PacketView<packet::kLittleEndian>, packet::BasePacketBuilder> channel_queue_{
       kChannelQueueSize};
 
-  DISALLOW_COPY_AND_ASSIGN(ClassicFixedChannelImpl);
+  DISALLOW_COPY_AND_ASSIGN(LeFixedChannelImpl);
 };
 
 }  // namespace internal
