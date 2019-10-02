@@ -17,8 +17,8 @@
 #include <unordered_map>
 
 #include "l2cap/cid.h"
-#include "l2cap/internal/classic_fixed_channel_impl.h"
-#include "l2cap/internal/classic_link.h"
+#include "l2cap/internal/le_fixed_channel_impl.h"
+#include "l2cap/internal/le_link.h"
 #include "l2cap/security_policy.h"
 #include "os/handler.h"
 #include "os/log.h"
@@ -27,7 +27,7 @@ namespace bluetooth {
 namespace l2cap {
 namespace internal {
 
-ClassicFixedChannelImpl::ClassicFixedChannelImpl(Cid cid, ClassicLink* link, os::Handler* l2cap_handler)
+LeFixedChannelImpl::LeFixedChannelImpl(Cid cid, LeLink* link, os::Handler* l2cap_handler)
     : cid_(cid), device_(link->GetDevice()), link_(link), l2cap_handler_(l2cap_handler) {
   ASSERT_LOG(cid_ >= kFirstFixedChannel && cid_ <= kLastFixedChannel, "Invalid cid: %d", cid_);
   ASSERT(!device_.IsEmpty());
@@ -35,8 +35,8 @@ ClassicFixedChannelImpl::ClassicFixedChannelImpl(Cid cid, ClassicLink* link, os:
   ASSERT(l2cap_handler_ != nullptr);
 }
 
-void ClassicFixedChannelImpl::RegisterOnCloseCallback(os::Handler* user_handler,
-                                                      ClassicFixedChannel::OnCloseCallback on_close_callback) {
+void LeFixedChannelImpl::RegisterOnCloseCallback(os::Handler* user_handler,
+                                                 LeFixedChannel::OnCloseCallback on_close_callback) {
   ASSERT_LOG(user_handler_ == nullptr, "OnCloseCallback can only be registered once");
   // If channel is already closed, call the callback immediately without saving it
   if (closed_) {
@@ -47,7 +47,7 @@ void ClassicFixedChannelImpl::RegisterOnCloseCallback(os::Handler* user_handler,
   on_close_callback_ = std::move(on_close_callback);
 }
 
-void ClassicFixedChannelImpl::OnClosed(hci::ErrorCode status) {
+void LeFixedChannelImpl::OnClosed(hci::ErrorCode status) {
   ASSERT_LOG(!closed_, "Device %s Cid 0x%x closed twice, old status 0x%x, new status 0x%x", device_.ToString().c_str(),
              cid_, static_cast<int>(close_reason_), static_cast<int>(status));
   closed_ = true;
@@ -64,7 +64,7 @@ void ClassicFixedChannelImpl::OnClosed(hci::ErrorCode status) {
   on_close_callback_.Reset();
 }
 
-void ClassicFixedChannelImpl::Acquire() {
+void LeFixedChannelImpl::Acquire() {
   ASSERT_LOG(user_handler_ != nullptr, "Must register OnCloseCallback before calling any methods");
   if (closed_) {
     LOG_WARN("%s is already closed", ToString().c_str());
@@ -79,7 +79,7 @@ void ClassicFixedChannelImpl::Acquire() {
   link_->RefreshRefCount();
 }
 
-void ClassicFixedChannelImpl::Release() {
+void LeFixedChannelImpl::Release() {
   ASSERT_LOG(user_handler_ != nullptr, "Must register OnCloseCallback before calling any methods");
   if (closed_) {
     LOG_WARN("%s is already closed", ToString().c_str());
