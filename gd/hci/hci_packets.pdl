@@ -1639,7 +1639,11 @@ packet WriteLinkSupervisionTimeoutComplete : CommandComplete (command_op_code = 
 }
 
 packet ReadNumberOfSupportedIac : DiscoveryCommand (op_code = READ_NUMBER_OF_SUPPORTED_IAC) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet ReadNumberOfSupportedIacComplete : CommandComplete (command_op_code = READ_NUMBER_OF_SUPPORTED_IAC) {
+  status : ErrorCode,
+  num_support_iac : 8,
 }
 
 packet ReadCurrentIacLap : DiscoveryCommand (op_code = READ_CURRENT_IAC_LAP) {
