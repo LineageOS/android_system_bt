@@ -125,8 +125,7 @@ class TestHciLayer : public HciLayer {
     std::chrono::milliseconds time = std::chrono::milliseconds(3000);
 
     ASSERT(not_empty_.wait_for(lock, time) != std::cv_status::timeout);
-    auto packet = GetLastCommand();
-    auto packet_view = GetPacketView(std::move(packet));
+    auto packet_view = GetPacketView(GetLastCommand());
     CommandPacketView command_packet_view = CommandPacketView::Create(packet_view);
     ConnectionManagementCommandView command = ConnectionManagementCommandView::Create(command_packet_view);
     ASSERT(command.IsValid());
@@ -280,6 +279,13 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
     std::list<std::shared_ptr<AclConnection>> connections_;
     std::unique_ptr<std::promise<void>> connection_promise_;
   } mock_connection_callback_;
+
+  class MockAclManagerCallbacks : public AclManagerCallbacks {
+   public:
+    MOCK_METHOD2(OnMasterLinkKeyComplete, void(uint16_t connection_handle, KeyFlag key_flag));
+    MOCK_METHOD2(OnRoleChange, void(Address bd_addr, Role new_role));
+    MOCK_METHOD1(OnReadDefaultLinkPolicySettingsComplete, void(uint16_t default_link_policy_settings));
+  } mock_acl_manager_callbacks_;
 };
 
 class AclManagerTest : public AclManagerNoCallbacksTest {
@@ -287,6 +293,7 @@ class AclManagerTest : public AclManagerNoCallbacksTest {
   void SetUp() override {
     AclManagerNoCallbacksTest::SetUp();
     acl_manager_->RegisterCallbacks(&mock_connection_callback_, client_handler_);
+    acl_manager_->RegisterAclManagerCallbacks(&mock_acl_manager_callbacks_, client_handler_);
   }
 };
 
@@ -342,6 +349,7 @@ class AclManagerWithConnectionTest : public AclManagerTest {
     MOCK_METHOD1(OnReadLinkSupervisionTimeoutComplete, void(uint16_t link_supervision_timeout));
     MOCK_METHOD1(OnReadFailedContactCounterComplete, void(uint16_t failed_contact_counter));
     MOCK_METHOD1(OnReadLinkQualityComplete, void(uint8_t link_quality));
+    MOCK_METHOD2(OnReadAfhChannelMapComplete, void(AfhMode afh_mode, std::array<uint8_t, 10> afh_channel_map));
     MOCK_METHOD1(OnReadRssiComplete, void(uint8_t rssi));
     MOCK_METHOD2(OnReadClockComplete, void(uint32_t clock, uint16_t accuracy));
   } mock_connection_management_callbacks_;
@@ -577,6 +585,53 @@ TEST_F(AclManagerTest, acl_send_data_credits) {
   auto after_credits_sent_packet = test_hci_layer_->OutgoingAclData();
 
   connection->Disconnect(DisconnectReason::AUTHENTICATION_FAILURE);
+}
+
+TEST_F(AclManagerWithConnectionTest, send_master_link_key) {
+  acl_manager_->MasterLinkKey(KeyFlag::TEMPORARY);
+  auto packet = test_hci_layer_->GetCommandPacket(OpCode::MASTER_LINK_KEY);
+  auto command_view = MasterLinkKeyView::Create(packet);
+  ASSERT(command_view.IsValid());
+  EXPECT_EQ(command_view.GetKeyFlag(), KeyFlag::TEMPORARY);
+
+  EXPECT_CALL(mock_acl_manager_callbacks_, OnMasterLinkKeyComplete(0x123, KeyFlag::TEMPORARY));
+  test_hci_layer_->IncomingEvent(MasterLinkKeyCompleteBuilder::Create(ErrorCode::SUCCESS, 0x123, KeyFlag::TEMPORARY));
+}
+
+TEST_F(AclManagerWithConnectionTest, send_switch_role) {
+  acl_manager_->SwitchRole(connection_->GetAddress(), Role::SLAVE);
+  auto packet = test_hci_layer_->GetCommandPacket(OpCode::SWITCH_ROLE);
+  auto command_view = SwitchRoleView::Create(packet);
+  ASSERT(command_view.IsValid());
+  EXPECT_EQ(command_view.GetBdAddr(), connection_->GetAddress());
+  EXPECT_EQ(command_view.GetRole(), Role::SLAVE);
+
+  EXPECT_CALL(mock_acl_manager_callbacks_, OnRoleChange(connection_->GetAddress(), Role::SLAVE));
+  test_hci_layer_->IncomingEvent(RoleChangeBuilder::Create(ErrorCode::SUCCESS, connection_->GetAddress(), Role::SLAVE));
+}
+
+TEST_F(AclManagerWithConnectionTest, send_read_default_link_policy_settings) {
+  acl_manager_->ReadDefaultLinkPolicySettings();
+  auto packet = test_hci_layer_->GetCommandPacket(OpCode::READ_DEFAULT_LINK_POLICY_SETTINGS);
+  auto command_view = ReadDefaultLinkPolicySettingsView::Create(packet);
+  ASSERT(command_view.IsValid());
+
+  EXPECT_CALL(mock_acl_manager_callbacks_, OnReadDefaultLinkPolicySettingsComplete(0x07));
+  uint8_t num_packets = 1;
+  test_hci_layer_->IncomingEvent(
+      ReadDefaultLinkPolicySettingsCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, 0x07));
+}
+
+TEST_F(AclManagerWithConnectionTest, send_write_default_link_policy_settings) {
+  acl_manager_->WriteDefaultLinkPolicySettings(0x05);
+  auto packet = test_hci_layer_->GetCommandPacket(OpCode::WRITE_DEFAULT_LINK_POLICY_SETTINGS);
+  auto command_view = WriteDefaultLinkPolicySettingsView::Create(packet);
+  ASSERT(command_view.IsValid());
+  EXPECT_EQ(command_view.GetDefaultLinkPolicySettings(), 0x05);
+
+  uint8_t num_packets = 1;
+  test_hci_layer_->IncomingEvent(
+      WriteDefaultLinkPolicySettingsCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS));
 }
 
 TEST_F(AclManagerWithConnectionTest, send_change_connection_packet_type) {
@@ -859,6 +914,20 @@ TEST_F(AclManagerWithConnectionTest, send_read_link_quality) {
   uint8_t num_packets = 1;
   test_hci_layer_->IncomingEvent(
       ReadLinkQualityCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, handle_, 0xa9));
+}
+
+TEST_F(AclManagerWithConnectionTest, send_read_afh_channel_map) {
+  connection_->ReadAfhChannelMap();
+  auto packet = test_hci_layer_->GetCommandPacket(OpCode::READ_AFH_CHANNEL_MAP);
+  auto command_view = ReadAfhChannelMapView::Create(packet);
+  ASSERT(command_view.IsValid());
+  std::array<uint8_t, 10> afh_channel_map = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09};
+
+  EXPECT_CALL(mock_connection_management_callbacks_,
+              OnReadAfhChannelMapComplete(AfhMode::AFH_ENABLED, afh_channel_map));
+  uint8_t num_packets = 1;
+  test_hci_layer_->IncomingEvent(ReadAfhChannelMapCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, handle_,
+                                                                          AfhMode::AFH_ENABLED, afh_channel_map));
 }
 
 TEST_F(AclManagerWithConnectionTest, send_read_rssi) {

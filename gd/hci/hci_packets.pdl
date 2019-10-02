@@ -1159,8 +1159,13 @@ packet RoleDiscoveryComplete : CommandComplete (command_op_code = ROLE_DISCOVERY
 }
 
 packet SwitchRole : ConnectionManagementCommand (op_code = SWITCH_ROLE) {
-  _payload_,  // placeholder (unimplemented)
+  bd_addr : Address,
+  role : Role,
 }
+
+packet SwitchRoleStatus : CommandStatus (command_op_code = SWITCH_ROLE) {
+}
+
 
 packet ReadLinkPolicySettings : ConnectionManagementCommand (op_code = READ_LINK_POLICY_SETTINGS) {
   connection_handle : 12,
@@ -1171,6 +1176,7 @@ enum LinkPolicy : 16 {
   ENABLE_ROLE_SWITCH = 0x01,
   ENABLE_HOLD_MODE = 0x02,
   ENABLE_SNIFF_MODE = 0x04,
+  ENABLE_PARK_MODE = 0x08, // deprecated after 5.0
 }
 
 packet ReadLinkPolicySettingsComplete : CommandComplete (command_op_code = READ_LINK_POLICY_SETTINGS) {
@@ -1193,11 +1199,19 @@ packet WriteLinkPolicySettingsComplete : CommandComplete (command_op_code = WRIT
 }
 
 packet ReadDefaultLinkPolicySettings : ConnectionManagementCommand (op_code = READ_DEFAULT_LINK_POLICY_SETTINGS) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet ReadDefaultLinkPolicySettingsComplete : CommandComplete (command_op_code = READ_DEFAULT_LINK_POLICY_SETTINGS) {
+  status : ErrorCode,
+  default_link_policy_settings : 16,
 }
 
 packet WriteDefaultLinkPolicySettings : ConnectionManagementCommand (op_code = WRITE_DEFAULT_LINK_POLICY_SETTINGS) {
-  _payload_,  // placeholder (unimplemented)
+  default_link_policy_settings : 16,
+}
+
+packet WriteDefaultLinkPolicySettingsComplete : CommandComplete (command_op_code = WRITE_DEFAULT_LINK_POLICY_SETTINGS) {
+  status : ErrorCode,
 }
 
 enum FlowDirection : 8 {
@@ -2012,6 +2026,20 @@ packet ReadAfhChannelMap : ConnectionManagementCommand (op_code = READ_AFH_CHANN
   connection_handle : 12,
   _reserved_ : 4,
 }
+
+enum AfhMode : 8 {
+  AFH_DISABLED = 0x00,
+  AFH_ENABLED = 0x01,
+}
+
+packet ReadAfhChannelMapComplete : CommandComplete (command_op_code = READ_AFH_CHANNEL_MAP) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+  afh_mode : AfhMode,
+  afh_channel_map : 8[10],
+}
+
 
 enum WhichClock : 8 {
   LOCAL = 0x00,
