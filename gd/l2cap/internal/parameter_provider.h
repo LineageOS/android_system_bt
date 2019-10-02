@@ -33,6 +33,9 @@ class ParameterProvider {
   virtual std::chrono::milliseconds GetClassicLinkIdleDisconnectTimeout() {
     return std::chrono::seconds(20);
   }
+  virtual std::chrono::milliseconds GetLeLinkIdleDisconnectTimeout() {
+    return std::chrono::seconds(20);
+  }
 };
 
 }  // namespace internal
