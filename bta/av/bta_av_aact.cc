@@ -3056,14 +3056,14 @@ void bta_av_open_at_inc(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 }
 
 void offload_vendor_callback(tBTM_VSC_CMPL* param) {
-  uint8_t status = 0;
+  tBTA_AV value{0};
   uint8_t sub_opcode = 0;
   if (param->param_len) {
     APPL_TRACE_DEBUG("%s: param_len = %d status = %d", __func__,
                      param->param_len, param->p_param_buf[0]);
-    status = param->p_param_buf[0];
+    value.status = param->p_param_buf[0];
   }
-  if (status == 0) {
+  if (value.status == 0) {
     sub_opcode = param->p_param_buf[1];
     APPL_TRACE_DEBUG("%s: subopcode = %d", __func__, sub_opcode);
     switch (sub_opcode) {
@@ -3071,7 +3071,7 @@ void offload_vendor_callback(tBTM_VSC_CMPL* param) {
         APPL_TRACE_DEBUG("%s: VS_HCI_STOP_A2DP_MEDIA successful", __func__);
         break;
       case VS_HCI_A2DP_OFFLOAD_START:
-        (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, (tBTA_AV*)&status);
+        (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, &value);
         break;
       default:
         break;
@@ -3080,7 +3080,7 @@ void offload_vendor_callback(tBTM_VSC_CMPL* param) {
     APPL_TRACE_DEBUG("%s: Offload failed for subopcode= %d", __func__,
                      sub_opcode);
     if (param->opcode != VS_HCI_A2DP_OFFLOAD_STOP)
-      (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, (tBTA_AV*)&status);
+      (*bta_av_cb.p_cback)(BTA_AV_OFFLOAD_START_RSP_EVT, &value);
   }
 }
 
