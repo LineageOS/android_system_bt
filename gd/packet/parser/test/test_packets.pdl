@@ -276,3 +276,66 @@ packet OneVersionTwoStructPacket : OneVersionedStructPacket(version = 0x02) {
   one_number : 8,
   another_number : 8,
 }
+
+enum StructType : 8 {
+  ZERO_BYTE = 0x00,
+  TWO_BYTE = 0x02,
+  FOUR_BYTE = 0x04,
+  AT_LEAST_FOUR_BYTE = 0x05,
+  VARIABLE = 0x06,
+}
+
+struct UnusedParentStruct {
+  struct_type : StructType,
+  _body_,
+}
+
+struct TwoByteStruct : UnusedParentStruct (struct_type = TWO_BYTE) {
+  two_bytes : 16,
+}
+
+struct FourByteStruct : UnusedParentStruct (struct_type = FOUR_BYTE) {
+  four_bytes : 32,
+}
+
+struct AtLeastFourByteStruct : UnusedParentStruct (struct_type = AT_LEAST_FOUR_BYTE) {
+  four_bytes : 32,
+  struct_type : StructType,
+  _body_,
+}
+
+struct OnlyFourByteStruct : AtLeastFourByteStruct (struct_type = ZERO_BYTE) {
+}
+
+struct SixByteStruct : AtLeastFourByteStruct (struct_type = TWO_BYTE) {
+  two_bytes : 16,
+}
+
+struct EightByteStruct : AtLeastFourByteStruct (struct_type = FOUR_BYTE) {
+  four_bytes : 32,
+}
+
+packet OneFourByteStruct {
+  one_struct : FourByteStruct,
+}
+
+packet OneGenericStruct {
+  base_struct : UnusedParentStruct,
+}
+
+packet OneGenericStructArray {
+  an_array : UnusedParentStruct[],
+}
+
+packet OneGenericStructFourArray {
+  an_array : UnusedParentStruct[4],
+}
+
+packet ParentWithOnlyFixed {
+  two_bytes : 16,
+  _body_,
+}
+
+packet OneGenericStructArrayAfterFixed : ParentWithOnlyFixed {
+  an_array : UnusedParentStruct[],
+}

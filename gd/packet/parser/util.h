@@ -103,4 +103,15 @@ inline std::string UnderscoreToCamelCase(std::string value) {
   return camel_case.str();
 }
 
+inline bool IsEnumCase(std::string value) {
+  if (value[0] < 'A' || value[0] > 'Z') {
+    return false;
+  }
+
+  // Use static to avoid compiling the regex more than once.
+  static const std::regex enum_regex("[A-Z][A-Z0-9_]*");
+
+  return std::regex_match(value, enum_regex);
+}
+
 }  // namespace util

@@ -68,6 +68,10 @@ int PacketField::GenBounds(std::ostream& s, Size start_offset, Size end_offset) 
   return 0;  // num_leading_bits
 }
 
+bool PacketField::BuilderParameterMustBeMoved() const {
+  return false;
+}
+
 bool PacketField::GenBuilderMember(std::ostream& s) const {
   return GenBuilderParameter(s);
 }

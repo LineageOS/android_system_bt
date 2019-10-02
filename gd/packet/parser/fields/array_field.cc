@@ -16,6 +16,8 @@
 
 #include "fields/array_field.h"
 
+#include "fields/custom_field.h"
+#include "fields/scalar_field.h"
 #include "util.h"
 
 const std::string ArrayField::kFieldType = "ArrayField";
@@ -52,6 +54,10 @@ Size ArrayField::GetSize() const {
 Size ArrayField::GetBuilderSize() const {
   if (!element_size_.empty() && !element_size_.has_dynamic()) {
     return GetSize();
+  } else if (element_field_->BuilderParameterMustBeMoved()) {
+    std::string ret = "[this](){ size_t length = 0; for (const auto& elem : " + GetName() +
+                      "_) { length += elem->size() * 8; } return length; }()";
+    return ret;
   } else {
     std::string ret = "[this](){ size_t length = 0; for (const auto& elem : " + GetName() +
                       "_) { length += elem.size() * 8; } return length; }()";
@@ -73,8 +79,15 @@ void ArrayField::GenExtractor(std::ostream& s, int num_leading_bits) const {
     s << "while (" << element_field_->GetName() << "_it.NumBytesRemaining() > 0 ";
     s << " && ret_it < " << GetName() << "_ptr->end()) {";
   }
-  s << element_field_->GetDataType() << "* " << element_field_->GetName() << "_ptr = ret_it;";
+  if (element_field_->BuilderParameterMustBeMoved()) {
+    s << element_field_->GetDataType() << " " << element_field_->GetName() << "_ptr;";
+  } else {
+    s << element_field_->GetDataType() << "* " << element_field_->GetName() << "_ptr = ret_it;";
+  }
   element_field_->GenExtractor(s, num_leading_bits);
+  if (element_field_->BuilderParameterMustBeMoved()) {
+    s << "*ret_it = std::move(" << element_field_->GetName() << "_ptr);";
+  }
   s << "ret_it++;";
   s << "}";
 }
@@ -96,8 +109,16 @@ void ArrayField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) 
 }
 
 bool ArrayField::GenBuilderParameter(std::ostream& s) const {
-  s << "const std::array<" << element_field_->GetDataType() << "," << array_size_ << ">& " << GetName();
+  if (element_field_->BuilderParameterMustBeMoved()) {
+    s << "std::array<" << element_field_->GetDataType() << "," << array_size_ << "> " << GetName();
+  } else {
+    s << "const std::array<" << element_field_->GetDataType() << "," << array_size_ << ">& " << GetName();
+  }
   return true;
+}
+
+bool ArrayField::BuilderParameterMustBeMoved() const {
+  return element_field_->BuilderParameterMustBeMoved();
 }
 
 bool ArrayField::GenBuilderMember(std::ostream& s) const {
