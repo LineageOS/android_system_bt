@@ -18,6 +18,7 @@
 #include <memory>
 
 #include "l2cap/classic_fixed_channel_manager.h"
+#include "l2cap/le_fixed_channel_manager.h"
 #include "module.h"
 
 namespace bluetooth {
@@ -29,9 +30,14 @@ class L2capLayer : public bluetooth::Module {
   ~L2capLayer() = default;
 
   /**
-   * Get the api to the classic channel l2cap module
+   * Get the api to the classic fixed channel l2cap module
    */
   std::unique_ptr<ClassicFixedChannelManager> GetClassicFixedChannelManager();
+
+  /**
+   * Get the api to the LE fixed channel l2cap module
+   */
+  std::unique_ptr<LeFixedChannelManager> GetLeFixedChannelManager();
 
   static const ModuleFactory Factory;
 

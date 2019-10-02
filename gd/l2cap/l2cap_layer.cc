@@ -24,6 +24,8 @@
 #include "hci/hci_packets.h"
 #include "l2cap/internal/classic_fixed_channel_service_manager_impl.h"
 #include "l2cap/internal/classic_link_manager.h"
+#include "l2cap/internal/le_fixed_channel_service_manager_impl.h"
+#include "l2cap/internal/le_link_manager.h"
 #include "l2cap/internal/parameter_provider.h"
 #include "module.h"
 #include "os/handler.h"
@@ -45,6 +47,9 @@ struct L2capLayer::impl {
   internal::ClassicFixedChannelServiceManagerImpl classic_fixed_channel_service_manager_impl_{l2cap_handler_};
   internal::ClassicLinkManager classic_link_manager_{
       l2cap_handler_, acl_manager_, &classic_fixed_channel_service_manager_impl_, &parameter_provider_};
+  internal::LeFixedChannelServiceManagerImpl le_fixed_channel_service_manager_impl_{l2cap_handler_};
+  internal::LeLinkManager le_link_manager_{l2cap_handler_, acl_manager_, &le_fixed_channel_service_manager_impl_,
+                                           &parameter_provider_};
 };
 
 void L2capLayer::ListDependencies(ModuleList* list) {
@@ -62,6 +67,11 @@ void L2capLayer::Stop() {
 std::unique_ptr<ClassicFixedChannelManager> L2capLayer::GetClassicFixedChannelManager() {
   return std::unique_ptr<ClassicFixedChannelManager>(new ClassicFixedChannelManager(
       &pimpl_->classic_fixed_channel_service_manager_impl_, &pimpl_->classic_link_manager_, pimpl_->l2cap_handler_));
+}
+
+std::unique_ptr<LeFixedChannelManager> L2capLayer::GetLeFixedChannelManager() {
+  return std::unique_ptr<LeFixedChannelManager>(new LeFixedChannelManager(
+      &pimpl_->le_fixed_channel_service_manager_impl_, &pimpl_->le_link_manager_, pimpl_->l2cap_handler_));
 }
 
 }  // namespace l2cap
