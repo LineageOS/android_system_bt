@@ -85,11 +85,15 @@ std::string VectorField::GetDataType() const {
   return "std::vector<" + element_field_->GetDataType() + ">";
 }
 
-void VectorField::GenExtractor(std::ostream& s, int num_leading_bits) const {
+void VectorField::GenExtractor(std::ostream& s, int num_leading_bits, bool for_struct) const {
   s << "auto " << element_field_->GetName() << "_it = " << GetName() << "_it;";
   if (size_field_ != nullptr && size_field_->GetFieldType() == CountField::kFieldType) {
     s << "size_t " << element_field_->GetName() << "_count = ";
-    s << "Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "();";
+    if (for_struct) {
+      s << size_field_->GetName() << "_extracted;";
+    } else {
+      s << "Get" << util::UnderscoreToCamelCase(size_field_->GetName()) << "();";
+    }
   }
   s << "while (";
   if (size_field_ != nullptr && size_field_->GetFieldType() == CountField::kFieldType) {
@@ -107,7 +111,7 @@ void VectorField::GenExtractor(std::ostream& s, int num_leading_bits) const {
     s << element_field_->GetDataType() << "* " << element_field_->GetName() << "_ptr = &" << element_field_->GetName()
       << "_value;";
   }
-  element_field_->GenExtractor(s, num_leading_bits);
+  element_field_->GenExtractor(s, num_leading_bits, for_struct);
   s << "if (" << element_field_->GetName() << "_ptr != nullptr) { ";
   if (element_field_->BuilderParameterMustBeMoved()) {
     s << GetName() << "_ptr->push_back(std::move(" << element_field_->GetName() << "_ptr));";
@@ -128,7 +132,7 @@ void VectorField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
   int num_leading_bits = GenBounds(s, start_offset, end_offset);
   s << GetDataType() << " " << GetName() << "_value;";
   s << GetDataType() << "* " << GetName() << "_ptr = &" << GetName() << "_value;";
-  GenExtractor(s, num_leading_bits);
+  GenExtractor(s, num_leading_bits, false);
 
   s << "return " << GetName() << "_value;";
   s << "}\n";

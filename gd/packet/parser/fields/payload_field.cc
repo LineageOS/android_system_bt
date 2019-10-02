@@ -54,7 +54,7 @@ std::string PayloadField::GetDataType() const {
   return "PacketView";
 }
 
-void PayloadField::GenExtractor(std::ostream&, int) const {
+void PayloadField::GenExtractor(std::ostream&, int, bool) const {
   ERROR(this) << __func__ << " should never be called. ";
 }
 
