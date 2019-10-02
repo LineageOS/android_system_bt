@@ -27,6 +27,8 @@ namespace testing {
 
 class MockClassicFixedChannelImpl : public ClassicFixedChannelImpl {
  public:
+  MockClassicFixedChannelImpl(Cid cid, ClassicLink* link, os::Handler* l2cap_handler)
+      : ClassicFixedChannelImpl(cid, link, l2cap_handler) {}
   MOCK_METHOD(void, RegisterOnCloseCallback,
               (os::Handler * user_handler, ClassicFixedChannel::OnCloseCallback on_close_callback), (override));
   MOCK_METHOD(void, Acquire, (), (override));
