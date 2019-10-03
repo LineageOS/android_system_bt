@@ -39,6 +39,8 @@
 #include "hcimsgs.h"
 #include "l2c_int.h"
 #include "l2cdefs.h"
+#include "main/shim/l2c_api.h"
+#include "main/shim/shim.h"
 #include "osi/include/allocator.h"
 #include "osi/include/log.h"
 
@@ -60,6 +62,10 @@ using base::StringPrintf;
  ******************************************************************************/
 uint16_t L2CA_Register(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
                        bool enable_snoop) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_Register(psm, p_cb_info, enable_snoop);
+  }
+
   tL2C_RCB* p_rcb;
   uint16_t vpsm = psm;
 
@@ -123,6 +129,10 @@ uint16_t L2CA_Register(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
  *
  ******************************************************************************/
 void L2CA_Deregister(uint16_t psm) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_Deregister(psm);
+  }
+
   tL2C_RCB* p_rcb;
   tL2C_CCB* p_ccb;
   tL2C_LCB* p_lcb;
@@ -169,6 +179,10 @@ void L2CA_Deregister(uint16_t psm) {
  *
  ******************************************************************************/
 uint16_t L2CA_AllocatePSM(void) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_AllocatePSM();
+  }
+
   bool done = false;
   uint16_t psm = l2cb.dyn_psm;
 
@@ -204,6 +218,10 @@ uint16_t L2CA_AllocatePSM(void) {
  *
  ******************************************************************************/
 uint16_t L2CA_AllocateLePSM(void) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_AllocateLePSM();
+  }
+
   bool done = false;
   uint16_t psm = l2cb.le_dyn_psm;
   uint16_t count = 0;
@@ -250,6 +268,10 @@ uint16_t L2CA_AllocateLePSM(void) {
  *
  ******************************************************************************/
 void L2CA_FreeLePSM(uint16_t psm) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_FreeLePSM(psm);
+  }
+
   L2CAP_TRACE_API("%s: to free psm=%d", __func__, psm);
 
   if ((psm < LE_DYNAMIC_PSM_START) || (psm > LE_DYNAMIC_PSM_END)) {
@@ -277,6 +299,10 @@ void L2CA_FreeLePSM(uint16_t psm) {
  *
  ******************************************************************************/
 uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_ConnectReq(psm, p_bd_addr);
+  }
+
   return L2CA_ErtmConnectReq(psm, p_bd_addr, nullptr);
 }
 
@@ -299,6 +325,10 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
  ******************************************************************************/
 uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
                              tL2CAP_ERTM_INFO* p_ertm_info) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_ErtmConnectReq(psm, p_bd_addr, p_ertm_info);
+  }
+
   VLOG(1) << __func__ << "BDA " << p_bd_addr
           << StringPrintf(" PSM: 0x%04x allowed:0x%x preferred:%d", psm,
                           (p_ertm_info) ? p_ertm_info->allowed_modes : 0,
@@ -400,6 +430,10 @@ uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
  *
  ******************************************************************************/
 uint16_t L2CA_RegisterLECoc(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_RegisterLECoc(psm, p_cb_info);
+  }
+
   L2CAP_TRACE_API("%s called for LE PSM: 0x%04x", __func__, psm);
 
   /* Verify that the required callback info has been filled in
@@ -464,6 +498,10 @@ uint16_t L2CA_RegisterLECoc(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info) {
  *
  ******************************************************************************/
 void L2CA_DeregisterLECoc(uint16_t psm) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_DeregisterLECoc(psm);
+  }
+
   L2CAP_TRACE_API("%s called for PSM: 0x%04x", __func__, psm);
 
   tL2C_RCB* p_rcb = l2cu_find_ble_rcb_by_psm(psm);
@@ -510,6 +548,10 @@ void L2CA_DeregisterLECoc(uint16_t psm) {
  ******************************************************************************/
 uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
                               tL2CAP_LE_CFG_INFO* p_cfg) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_ConnectLECocReq(psm, p_bd_addr, p_cfg);
+  }
+
   VLOG(1) << __func__ << " BDA: " << p_bd_addr
           << StringPrintf(" PSM: 0x%04x", psm);
 
@@ -598,6 +640,11 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
 bool L2CA_ConnectLECocRsp(const RawAddress& p_bd_addr, uint8_t id,
                           uint16_t lcid, uint16_t result, uint16_t status,
                           tL2CAP_LE_CFG_INFO* p_cfg) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_ConnectLECocRsp(p_bd_addr, id, lcid, result,
+                                                 status, p_cfg);
+  }
+
   VLOG(1) << __func__ << " BDA: " << p_bd_addr
           << StringPrintf(" CID: 0x%04x Result: %d Status: %d", lcid, result,
                           status);
@@ -656,6 +703,10 @@ bool L2CA_ConnectLECocRsp(const RawAddress& p_bd_addr, uint8_t id,
  *
  ******************************************************************************/
 bool L2CA_GetPeerLECocConfig(uint16_t lcid, tL2CAP_LE_CFG_INFO* peer_cfg) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_GetPeerLECocConfig(lcid, peer_cfg);
+  }
+
   L2CAP_TRACE_API("%s CID: 0x%04x", __func__, lcid);
 
   tL2C_CCB* p_ccb = l2cu_find_ccb_by_cid(NULL, lcid);
@@ -672,6 +723,10 @@ bool L2CA_GetPeerLECocConfig(uint16_t lcid, tL2CAP_LE_CFG_INFO* peer_cfg) {
 
 bool L2CA_SetConnectionCallbacks(uint16_t local_cid,
                                  const tL2CAP_APPL_INFO* callbacks) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_SetConnectionCallbacks(local_cid, callbacks);
+  }
+
   CHECK(callbacks != NULL);
   CHECK(callbacks->pL2CA_ConnectInd_Cb == NULL);
   CHECK(callbacks->pL2CA_ConnectCfm_Cb != NULL);
@@ -721,6 +776,11 @@ bool L2CA_SetConnectionCallbacks(uint16_t local_cid,
  ******************************************************************************/
 bool L2CA_ConnectRsp(const RawAddress& p_bd_addr, uint8_t id, uint16_t lcid,
                      uint16_t result, uint16_t status) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_ConnectRsp(p_bd_addr, id, lcid, result,
+                                            status);
+  }
+
   return L2CA_ErtmConnectRsp(p_bd_addr, id, lcid, result, status, NULL);
 }
 
@@ -738,6 +798,11 @@ bool L2CA_ConnectRsp(const RawAddress& p_bd_addr, uint8_t id, uint16_t lcid,
 bool L2CA_ErtmConnectRsp(const RawAddress& p_bd_addr, uint8_t id, uint16_t lcid,
                          uint16_t result, uint16_t status,
                          tL2CAP_ERTM_INFO* p_ertm_info) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_ErtmConnectRsp(p_bd_addr, id, lcid, result,
+                                                status, p_ertm_info);
+  }
+
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
 
@@ -817,6 +882,10 @@ bool L2CA_ErtmConnectRsp(const RawAddress& p_bd_addr, uint8_t id, uint16_t lcid,
  *
  ******************************************************************************/
 bool L2CA_ConfigReq(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_ConfigReq(cid, p_cfg);
+  }
+
   tL2C_CCB* p_ccb;
 
   L2CAP_TRACE_API(
@@ -866,6 +935,10 @@ bool L2CA_ConfigReq(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
  *
  ******************************************************************************/
 bool L2CA_ConfigRsp(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_ConfigRsp(cid, p_cfg);
+  }
+
   tL2C_CCB* p_ccb;
 
   L2CAP_TRACE_API(
@@ -909,6 +982,10 @@ bool L2CA_ConfigRsp(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
  *
  ******************************************************************************/
 bool L2CA_DisconnectReq(uint16_t cid) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_DisconnectReq(cid);
+  }
+
   tL2C_CCB* p_ccb;
 
   L2CAP_TRACE_API("L2CA_DisconnectReq()  CID: 0x%04x", cid);
@@ -936,6 +1013,10 @@ bool L2CA_DisconnectReq(uint16_t cid) {
  *
  ******************************************************************************/
 bool L2CA_DisconnectRsp(uint16_t cid) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_DisconnectRsp(cid);
+  }
+
   tL2C_CCB* p_ccb;
 
   L2CAP_TRACE_API("L2CA_DisconnectRsp()  CID: 0x%04x", cid);
@@ -962,6 +1043,10 @@ bool L2CA_DisconnectRsp(uint16_t cid) {
  *
  ******************************************************************************/
 bool L2CA_Ping(const RawAddress& p_bd_addr, tL2CA_ECHO_RSP_CB* p_callback) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_Ping(p_bd_addr, p_callback);
+  }
+
   tL2C_LCB* p_lcb;
 
   VLOG(1) << __func__ << " BDA: " << p_bd_addr;
@@ -1025,6 +1110,10 @@ bool L2CA_Ping(const RawAddress& p_bd_addr, tL2CA_ECHO_RSP_CB* p_callback) {
  ******************************************************************************/
 bool L2CA_Echo(const RawAddress& p_bd_addr, BT_HDR* p_data,
                tL2CA_ECHO_DATA_CB* p_callback) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_Echo(p_bd_addr, p_data, p_callback);
+  }
+
   tL2C_LCB* p_lcb;
   uint8_t* pp;
 
@@ -1065,6 +1154,10 @@ bool L2CA_Echo(const RawAddress& p_bd_addr, BT_HDR* p_data,
 }
 
 bool L2CA_GetIdentifiers(uint16_t lcid, uint16_t* rcid, uint16_t* handle) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_GetIdentifiers(lcid, rcid, handle);
+  }
+
   tL2C_CCB* control_block = l2cu_find_ccb_by_cid(NULL, lcid);
   if (!control_block) return false;
 
@@ -1094,6 +1187,10 @@ bool L2CA_GetIdentifiers(uint16_t lcid, uint16_t* rcid, uint16_t* handle) {
  *                  set up.
  ******************************************************************************/
 bool L2CA_SetIdleTimeout(uint16_t cid, uint16_t timeout, bool is_global) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_SetIdleTimeout(cid, timeout, is_global);
+  }
+
   tL2C_CCB* p_ccb;
   tL2C_LCB* p_lcb;
 
@@ -1140,6 +1237,11 @@ bool L2CA_SetIdleTimeout(uint16_t cid, uint16_t timeout, bool is_global) {
  ******************************************************************************/
 bool L2CA_SetIdleTimeoutByBdAddr(const RawAddress& bd_addr, uint16_t timeout,
                                  tBT_TRANSPORT transport) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_SetIdleTimeoutByBdAddr(bd_addr, timeout,
+                                                        transport);
+  }
+
   tL2C_LCB* p_lcb;
 
   if (RawAddress::kAny != bd_addr) {
@@ -1200,6 +1302,10 @@ uint8_t L2CA_SetTraceLevel(uint8_t new_level) {
  *
  ******************************************************************************/
 uint8_t L2CA_SetDesireRole(uint8_t new_role) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_SetDesireRole(new_role);
+  }
+
   L2CAP_TRACE_API("L2CA_SetDesireRole() new:x%x, disallow_switch:%d", new_role,
                   l2cb.disallow_switch);
 
@@ -1230,6 +1336,10 @@ uint8_t L2CA_SetDesireRole(uint8_t new_role) {
  ******************************************************************************/
 uint16_t L2CA_LocalLoopbackReq(uint16_t psm, uint16_t handle,
                                const RawAddress& p_bd_addr) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_LocalLoopbackReq(psm, handle, p_bd_addr);
+  }
+
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
   tL2C_RCB* p_rcb;
@@ -1288,6 +1398,10 @@ uint16_t L2CA_LocalLoopbackReq(uint16_t psm, uint16_t handle,
  *
  ******************************************************************************/
 bool L2CA_SetAclPriority(const RawAddress& bd_addr, uint8_t priority) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_SetAclPriority(bd_addr, priority);
+  }
+
   VLOG(1) << __func__ << " BDA: " << bd_addr
           << ", priority: " << std::to_string(priority);
   return (l2cu_set_acl_priority(bd_addr, priority, false));
@@ -1305,6 +1419,10 @@ bool L2CA_SetAclPriority(const RawAddress& bd_addr, uint8_t priority) {
  *
  ******************************************************************************/
 bool L2CA_FlowControl(uint16_t cid, bool data_enabled) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_FlowControl(cid, data_enabled);
+  }
+
   tL2C_CCB* p_ccb;
   bool on_off = !data_enabled;
 
@@ -1348,6 +1466,10 @@ bool L2CA_FlowControl(uint16_t cid, bool data_enabled) {
  *
  ******************************************************************************/
 bool L2CA_SendTestSFrame(uint16_t cid, uint8_t sup_type, uint8_t back_track) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_SendTestSFrame(cid, sup_type, back_track);
+  }
+
   tL2C_CCB* p_ccb;
 
   L2CAP_TRACE_API(
@@ -1384,6 +1506,10 @@ bool L2CA_SendTestSFrame(uint16_t cid, uint8_t sup_type, uint8_t back_track) {
  *
  ******************************************************************************/
 bool L2CA_SetTxPriority(uint16_t cid, tL2CAP_CHNL_PRIORITY priority) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_SetTxPriority(cid, priority);
+  }
+
   tL2C_CCB* p_ccb;
 
   L2CAP_TRACE_API("L2CA_SetTxPriority()  CID: 0x%04x, priority:%d", cid,
@@ -1414,6 +1540,10 @@ bool L2CA_SetTxPriority(uint16_t cid, tL2CAP_CHNL_PRIORITY priority) {
  ******************************************************************************/
 bool L2CA_SetChnlDataRate(uint16_t cid, tL2CAP_CHNL_DATA_RATE tx,
                           tL2CAP_CHNL_DATA_RATE rx) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_SetChnlDataRate(cid, tx, rx);
+  }
+
   tL2C_CCB* p_ccb;
 
   L2CAP_TRACE_API("L2CA_SetChnlDataRate()  CID: 0x%04x, tx:%d, rx:%d", cid, tx,
@@ -1461,6 +1591,10 @@ bool L2CA_SetChnlDataRate(uint16_t cid, tL2CAP_CHNL_DATA_RATE tx,
  *                  the ACL link.
  ******************************************************************************/
 bool L2CA_SetFlushTimeout(const RawAddress& bd_addr, uint16_t flush_tout) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_SetFlushTimeout(bd_addr, flush_tout);
+  }
+
   tL2C_LCB* p_lcb;
   uint16_t hci_flush_to;
   uint32_t temp;
@@ -1545,6 +1679,11 @@ bool L2CA_SetFlushTimeout(const RawAddress& bd_addr, uint16_t flush_tout) {
  ******************************************************************************/
 bool L2CA_GetPeerFeatures(const RawAddress& bd_addr, uint32_t* p_ext_feat,
                           uint8_t* p_chnl_mask) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_GetPeerFeatures(bd_addr, p_ext_feat,
+                                                 p_chnl_mask);
+  }
+
   tL2C_LCB* p_lcb;
 
   /* We must already have a link to the remote */
@@ -1578,6 +1717,10 @@ bool L2CA_GetPeerFeatures(const RawAddress& bd_addr, uint32_t* p_ext_feat,
  *
  ******************************************************************************/
 bool L2CA_GetBDAddrbyHandle(uint16_t handle, RawAddress& bd_addr) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_GetBDAddrbyHandle(handle, bd_addr);
+  }
+
   tL2C_LCB* p_lcb = NULL;
   bool found_dev = false;
 
@@ -1602,6 +1745,10 @@ bool L2CA_GetBDAddrbyHandle(uint16_t handle, RawAddress& bd_addr) {
  *
  ******************************************************************************/
 uint8_t L2CA_GetChnlFcrMode(uint16_t lcid) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_GetChnlFcrMode(lcid);
+  }
+
   tL2C_CCB* p_ccb = l2cu_find_ccb_by_cid(NULL, lcid);
 
   if (p_ccb) {
@@ -1629,6 +1776,10 @@ uint8_t L2CA_GetChnlFcrMode(uint16_t lcid) {
  ******************************************************************************/
 bool L2CA_RegisterFixedChannel(uint16_t fixed_cid,
                                tL2CAP_FIXED_CHNL_REG* p_freg) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_RegisterFixedChannel(fixed_cid, p_freg);
+  }
+
   if ((fixed_cid < L2CAP_FIRST_FIXED_CHNL) ||
       (fixed_cid > L2CAP_LAST_FIXED_CHNL)) {
     L2CAP_TRACE_ERROR("L2CA_RegisterFixedChannel()  Invalid CID: 0x%04x",
@@ -1654,12 +1805,21 @@ bool L2CA_RegisterFixedChannel(uint16_t fixed_cid,
  *
  ******************************************************************************/
 bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_ConnectFixedChnl(fixed_cid, rem_bda);
+  }
+
   uint8_t phy = controller_get_interface()->get_le_all_initiating_phys();
   return L2CA_ConnectFixedChnl(fixed_cid, rem_bda, phy);
 }
 
 bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda,
                            uint8_t initiating_phys) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_ConnectFixedChnl(fixed_cid, rem_bda,
+                                                  initiating_phys);
+  }
+
   tL2C_LCB* p_lcb;
   tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
 
@@ -1772,6 +1932,10 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda,
  ******************************************************************************/
 uint16_t L2CA_SendFixedChnlData(uint16_t fixed_cid, const RawAddress& rem_bda,
                                 BT_HDR* p_buf) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_SendFixedChnlData(fixed_cid, rem_bda, p_buf);
+  }
+
   tL2C_LCB* p_lcb;
   tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
 
@@ -1885,6 +2049,10 @@ uint16_t L2CA_SendFixedChnlData(uint16_t fixed_cid, const RawAddress& rem_bda,
  *
  ******************************************************************************/
 bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_RemoveFixedChnl(fixed_cid, rem_bda);
+  }
+
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
   tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
@@ -1952,6 +2120,11 @@ bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
  ******************************************************************************/
 bool L2CA_SetFixedChannelTout(const RawAddress& rem_bda, uint16_t fixed_cid,
                               uint16_t idle_tout) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_SetFixedChannelTout(rem_bda, fixed_cid,
+                                                     idle_tout);
+  }
+
   tL2C_LCB* p_lcb;
   tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
 
@@ -1999,6 +2172,11 @@ bool L2CA_GetCurrentConfig(uint16_t lcid, tL2CAP_CFG_INFO** pp_our_cfg,
                            tL2CAP_CH_CFG_BITS* p_our_cfg_bits,
                            tL2CAP_CFG_INFO** pp_peer_cfg,
                            tL2CAP_CH_CFG_BITS* p_peer_cfg_bits) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_GetCurrentConfig(
+        lcid, pp_our_cfg, p_our_cfg_bits, pp_peer_cfg, p_peer_cfg_bits);
+  }
+
   tL2C_CCB* p_ccb;
 
   L2CAP_TRACE_API("L2CA_GetCurrentConfig()  CID: 0x%04x", lcid);
@@ -2041,6 +2219,10 @@ bool L2CA_GetCurrentConfig(uint16_t lcid, tL2CAP_CFG_INFO** pp_our_cfg,
  ******************************************************************************/
 bool L2CA_GetConnectionConfig(uint16_t lcid, uint16_t* mtu, uint16_t* rcid,
                               uint16_t* handle) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_GetConnectionConfig(lcid, mtu, rcid, handle);
+  }
+
   tL2C_CCB* p_ccb = l2cu_find_ccb_by_cid(NULL, lcid);
   ;
 
@@ -2072,6 +2254,10 @@ bool L2CA_GetConnectionConfig(uint16_t lcid, uint16_t* mtu, uint16_t* rcid,
  *
  ******************************************************************************/
 bool L2CA_RegForNoCPEvt(tL2CA_NOCP_CB* p_cb, const RawAddress& p_bda) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_RegForNoCPEvt(p_cb, p_bda);
+  }
+
   tL2C_LCB* p_lcb;
 
   /* Find the link that is associated with this remote bdaddr */
@@ -2098,6 +2284,10 @@ bool L2CA_RegForNoCPEvt(tL2CA_NOCP_CB* p_cb, const RawAddress& p_bda) {
  *
  ******************************************************************************/
 uint8_t L2CA_DataWrite(uint16_t cid, BT_HDR* p_data) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_DataWrite(cid, p_data);
+  }
+
   L2CAP_TRACE_API("L2CA_DataWrite()  CID: 0x%04x  Len: %d", cid, p_data->len);
   return l2c_data_write(cid, p_data, L2CAP_FLUSHABLE_CH_BASED);
 }
@@ -2113,8 +2303,11 @@ uint8_t L2CA_DataWrite(uint16_t cid, BT_HDR* p_data) {
  *
  ******************************************************************************/
 bool L2CA_SetChnlFlushability(uint16_t cid, bool is_flushable) {
-#if (L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE)
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_SetChnlFlushability(cid, is_flushable);
+  }
 
+#if (L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE)
   tL2C_CCB* p_ccb;
 
   /* Find the channel control block. We don't know the link it is on. */
@@ -2152,6 +2345,10 @@ bool L2CA_SetChnlFlushability(uint16_t cid, bool is_flushable) {
  *
  ******************************************************************************/
 uint8_t L2CA_DataWriteEx(uint16_t cid, BT_HDR* p_data, uint16_t flags) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_DataWriteEx(cid, p_data, flags);
+  }
+
   L2CAP_TRACE_API("L2CA_DataWriteEx()  CID: 0x%04x  Len: %d Flags:0x%04X", cid,
                   p_data->len, flags);
   return l2c_data_write(cid, p_data, flags);
@@ -2172,6 +2369,10 @@ uint8_t L2CA_DataWriteEx(uint16_t cid, BT_HDR* p_data, uint16_t flags) {
  *
  ******************************************************************************/
 uint16_t L2CA_FlushChannel(uint16_t lcid, uint16_t num_to_flush) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::L2CA_FlushChannel(lcid, num_to_flush);
+  }
+
   tL2C_CCB* p_ccb;
   tL2C_LCB* p_lcb;
   uint16_t num_left = 0, num_flushed1 = 0, num_flushed2 = 0;
