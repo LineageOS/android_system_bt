@@ -27,7 +27,7 @@ PacketField* StructDef::GetNewField(const std::string& name, ParseLocation loc) 
   if (fields_.HasBody()) {
     return new VariableLengthStructField(name, name_, loc);
   } else {
-    return new StructField(name, name_, total_size_.bits(), loc);
+    return new StructField(name, name_, total_size_, loc);
   }
 }
 
@@ -101,7 +101,7 @@ void StructDef::GenParse(std::ostream& s) const {
       } else {
         s << "{ return {};}";
       }
-      int num_leading_bits = field->GenBounds(s, GetOffsetForField(field->GetName(), false), Size());
+      int num_leading_bits = field->GenBounds(s, GetOffsetForField(field->GetName()), Size(), field->GetSize());
       s << "auto " << field->GetName() << "_ptr = &to_fill->" << field->GetName() << "_;";
       field->GenExtractor(s, num_leading_bits, true);
       s << "}";

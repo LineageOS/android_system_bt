@@ -56,7 +56,7 @@ void CustomField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
   s << "size_t end_index = size();";
   s << "auto to_bound = begin();";
 
-  int num_leading_bits = GenBounds(s, start_offset, end_offset);
+  int num_leading_bits = GenBounds(s, start_offset, end_offset, GetSize());
   s << "std::unique_ptr<" << GetDataType() << "> " << GetName() << "_value";
   s << " = std::make_unique<" << GetDataType() << ">();";
   s << GetDataType() << "* " << GetName() << "_ptr = " << GetName() << "_value.get();";
