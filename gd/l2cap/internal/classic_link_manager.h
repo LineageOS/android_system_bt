@@ -19,13 +19,13 @@
 #include <memory>
 #include <unordered_map>
 
-#include "os/handler.h"
-
+#include "l2cap/classic_dynamic_channel_manager.h"
 #include "l2cap/classic_fixed_channel_manager.h"
 #include "l2cap/internal/classic_fixed_channel_service_manager_impl.h"
 #include "l2cap/internal/classic_link.h"
 #include "l2cap/internal/parameter_provider.h"
 #include "l2cap/internal/scheduler.h"
+#include "os/handler.h"
 
 #include "hci/acl_manager.h"
 #include "hci/address.h"
@@ -46,6 +46,12 @@ class ClassicLinkManager : public hci::ConnectionCallbacks {
   struct PendingFixedChannelConnection {
     os::Handler* handler_;
     ClassicFixedChannelManager::OnConnectionFailureCallback on_fail_callback_;
+  };
+
+  struct PendingDynamicChannelConnection {
+    os::Handler* handler_;
+    ClassicDynamicChannelManager::OnConnectionOpenCallback on_open_callback_;
+    ClassicDynamicChannelManager::OnConnectionFailureCallback on_fail_callback_;
   };
 
   struct PendingLink {

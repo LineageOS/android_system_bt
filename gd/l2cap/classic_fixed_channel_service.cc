@@ -15,6 +15,7 @@
  */
 
 #include "l2cap/classic_fixed_channel_service.h"
+#include "common/bind.h"
 #include "l2cap/internal/classic_fixed_channel_service_manager_impl.h"
 
 namespace bluetooth {

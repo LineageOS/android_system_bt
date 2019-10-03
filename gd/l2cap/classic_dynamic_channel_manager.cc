@@ -15,6 +15,8 @@
  */
 
 #include "l2cap/classic_dynamic_channel_manager.h"
+#include "l2cap/internal/classic_dynamic_channel_service_impl.h"
+#include "l2cap/internal/classic_dynamic_channel_service_manager_impl.h"
 #include "l2cap/internal/classic_link_manager.h"
 
 namespace bluetooth {
@@ -30,7 +32,15 @@ bool ClassicDynamicChannelManager::ConnectChannel(hci::Address device, Psm psm,
 bool ClassicDynamicChannelManager::RegisterService(Psm psm, const SecurityPolicy& security_policy,
                                                    OnRegistrationCompleteCallback on_registration_complete,
                                                    OnConnectionOpenCallback on_connection_open, os::Handler* handler) {
-  return false;
+  internal::ClassicDynamicChannelServiceImpl::PendingRegistration pending_registration{
+      .user_handler_ = handler,
+      .on_registration_complete_callback_ = std::move(on_registration_complete),
+      .on_connection_open_callback_ = std::move(on_connection_open)};
+  l2cap_layer_handler_->Post(common::BindOnce(&internal::ClassicDynamicChannelServiceManagerImpl::Register,
+                                              common::Unretained(service_manager_), psm,
+                                              std::move(pending_registration)));
+
+  return true;
 }
 
 }  // namespace l2cap

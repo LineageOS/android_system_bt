@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include "l2cap/internal/classic_fixed_channel_service_manager_impl.h"
+#include "l2cap/internal/classic_dynamic_channel_service_manager_impl.h"
 
 #include <future>
 
 #include "common/bind.h"
 #include "l2cap/cid.h"
-#include "l2cap/classic_fixed_channel_manager.h"
-#include "l2cap/classic_fixed_channel_service.h"
+#include "l2cap/classic_dynamic_channel_manager.h"
+#include "l2cap/classic_dynamic_channel_service.h"
 #include "os/handler.h"
 #include "os/thread.h"
 
@@ -31,28 +31,31 @@ namespace bluetooth {
 namespace l2cap {
 namespace internal {
 
-class L2capFixedServiceManagerTest : public ::testing::Test {
+class L2capDynamicServiceManagerTest : public ::testing::Test {
  public:
-  ~L2capFixedServiceManagerTest() override = default;
+  ~L2capDynamicServiceManagerTest() override = default;
 
-  void OnServiceRegistered(bool expect_success, ClassicFixedChannelManager::RegistrationResult result,
-                           std::unique_ptr<ClassicFixedChannelService> user_service) {
-    EXPECT_EQ(result == ClassicFixedChannelManager::RegistrationResult::SUCCESS, expect_success);
+  void OnServiceRegistered(bool expect_success, ClassicDynamicChannelManager::RegistrationResult result,
+                           std::unique_ptr<ClassicDynamicChannelService> user_service) {
+    EXPECT_EQ(result == ClassicDynamicChannelManager::RegistrationResult::SUCCESS, expect_success);
     service_registered_ = expect_success;
   }
 
  protected:
   void SetUp() override {
-    manager_ = new ClassicFixedChannelServiceManagerImpl{nullptr};
     thread_ = new os::Thread("test_thread", os::Thread::Priority::NORMAL);
     user_handler_ = new os::Handler(thread_);
+    l2cap_handler_ = new os::Handler(thread_);
+    manager_ = new ClassicDynamicChannelServiceManagerImpl{l2cap_handler_};
   }
 
   void TearDown() override {
+    delete manager_;
+    l2cap_handler_->Clear();
+    delete l2cap_handler_;
     user_handler_->Clear();
     delete user_handler_;
     delete thread_;
-    delete manager_;
   }
 
   void sync_user_handler() {
@@ -62,18 +65,19 @@ class L2capFixedServiceManagerTest : public ::testing::Test {
     future.wait_for(std::chrono::milliseconds(3));
   }
 
-  ClassicFixedChannelServiceManagerImpl* manager_ = nullptr;
+  ClassicDynamicChannelServiceManagerImpl* manager_ = nullptr;
   os::Thread* thread_ = nullptr;
   os::Handler* user_handler_ = nullptr;
+  os::Handler* l2cap_handler_ = nullptr;
 
   bool service_registered_ = false;
 };
 
-TEST_F(L2capFixedServiceManagerTest, register_and_unregister_classic_fixed_channel) {
-  ClassicFixedChannelServiceImpl::PendingRegistration pending_registration{
+TEST_F(L2capDynamicServiceManagerTest, register_and_unregister_classic_dynamic_channel) {
+  ClassicDynamicChannelServiceImpl::PendingRegistration pending_registration{
       .user_handler_ = user_handler_,
       .on_registration_complete_callback_ =
-          common::BindOnce(&L2capFixedServiceManagerTest::OnServiceRegistered, common::Unretained(this), true)};
+          common::BindOnce(&L2capDynamicServiceManagerTest::OnServiceRegistered, common::Unretained(this), true)};
   Cid cid = kSmpBrCid;
   EXPECT_FALSE(manager_->IsServiceRegistered(cid));
   manager_->Register(cid, std::move(pending_registration));
@@ -84,11 +88,11 @@ TEST_F(L2capFixedServiceManagerTest, register_and_unregister_classic_fixed_chann
   EXPECT_FALSE(manager_->IsServiceRegistered(cid));
 }
 
-TEST_F(L2capFixedServiceManagerTest, register_classic_fixed_channel_bad_cid) {
-  ClassicFixedChannelServiceImpl::PendingRegistration pending_registration{
+TEST_F(L2capDynamicServiceManagerTest, register_classic_dynamic_channel_bad_cid) {
+  ClassicDynamicChannelServiceImpl::PendingRegistration pending_registration{
       .user_handler_ = user_handler_,
       .on_registration_complete_callback_ =
-          common::BindOnce(&L2capFixedServiceManagerTest::OnServiceRegistered, common::Unretained(this), false)};
+          common::BindOnce(&L2capDynamicServiceManagerTest::OnServiceRegistered, common::Unretained(this), false)};
   Cid cid = 0x1000;
   EXPECT_FALSE(manager_->IsServiceRegistered(cid));
   manager_->Register(cid, std::move(pending_registration));
