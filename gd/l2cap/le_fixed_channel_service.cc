@@ -13,25 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
 
-#include "l2cap/internal/parameter_provider.h"
+#include "l2cap/le_fixed_channel_service.h"
+#include "l2cap/internal/le_fixed_channel_service_manager_impl.h"
 
-#include <gmock/gmock.h>
-
-// Unit test interfaces
 namespace bluetooth {
 namespace l2cap {
-namespace internal {
-namespace testing {
 
-class MockParameterProvider : public ParameterProvider {
- public:
-  MOCK_METHOD(std::chrono::milliseconds, GetClassicLinkIdleDisconnectTimeout, (), (override));
-  MOCK_METHOD(std::chrono::milliseconds, GetLeLinkIdleDisconnectTimeout, (), (override));
-};
+void LeFixedChannelService::Unregister(OnUnregisteredCallback on_unregistered, os::Handler* on_unregistered_handler) {
+  ASSERT_LOG(manager_ != nullptr, "this service is invalid");
+  l2cap_layer_handler_->Post(common::BindOnce(&internal::LeFixedChannelServiceManagerImpl::Unregister,
+                                              common::Unretained(manager_), cid_, std::move(on_unregistered),
+                                              on_unregistered_handler));
+}
 
-}  // namespace testing
-}  // namespace internal
 }  // namespace l2cap
 }  // namespace bluetooth

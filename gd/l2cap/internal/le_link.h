@@ -20,8 +20,8 @@
 #include <memory>
 
 #include "hci/acl_manager.h"
-#include "l2cap/internal/classic_fixed_channel_impl.h"
 #include "l2cap/internal/fixed_channel_allocator.h"
+#include "l2cap/internal/le_fixed_channel_impl.h"
 #include "l2cap/internal/parameter_provider.h"
 #include "l2cap/internal/scheduler.h"
 #include "os/alarm.h"
@@ -30,23 +30,23 @@ namespace bluetooth {
 namespace l2cap {
 namespace internal {
 
-class ClassicLink {
+class LeLink {
  public:
-  ClassicLink(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_connection,
-              std::unique_ptr<Scheduler> scheduler, ParameterProvider* parameter_provider)
+  LeLink(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_connection,
+         std::unique_ptr<Scheduler> scheduler, ParameterProvider* parameter_provider)
       : l2cap_handler_(l2cap_handler), acl_connection_(std::move(acl_connection)), scheduler_(std::move(scheduler)),
         parameter_provider_(parameter_provider) {
     ASSERT(l2cap_handler_ != nullptr);
     ASSERT(acl_connection_ != nullptr);
     ASSERT(scheduler_ != nullptr);
     ASSERT(parameter_provider_ != nullptr);
-    acl_connection_->RegisterDisconnectCallback(
-        common::BindOnce(&ClassicLink::OnAclDisconnected, common::Unretained(this)), l2cap_handler_);
-    link_idle_disconnect_alarm_.Schedule(common::BindOnce(&ClassicLink::Disconnect, common::Unretained(this)),
-                                         parameter_provider_->GetClassicLinkIdleDisconnectTimeout());
+    acl_connection_->RegisterDisconnectCallback(common::BindOnce(&LeLink::OnAclDisconnected, common::Unretained(this)),
+                                                l2cap_handler_);
+    link_idle_disconnect_alarm_.Schedule(common::BindOnce(&LeLink::Disconnect, common::Unretained(this)),
+                                         parameter_provider_->GetLeLinkIdleDisconnectTimeout());
   }
 
-  virtual ~ClassicLink() = default;
+  virtual ~LeLink() = default;
 
   inline virtual hci::Address GetDevice() {
     return acl_connection_->GetAddress();
@@ -62,9 +62,9 @@ class ClassicLink {
     acl_connection_->Disconnect(hci::DisconnectReason::REMOTE_USER_TERMINATED_CONNECTION);
   }
 
-  // ClassicFixedChannel methods
+  // LeFixedChannel methods
 
-  virtual std::shared_ptr<ClassicFixedChannelImpl> AllocateFixedChannel(Cid cid, SecurityPolicy security_policy) {
+  virtual std::shared_ptr<LeFixedChannelImpl> AllocateFixedChannel(Cid cid, SecurityPolicy security_policy) {
     auto channel = fixed_channel_allocator_.AllocateChannel(cid, security_policy);
     scheduler_->AttachChannel(cid, channel->GetQueueDownEnd());
     return channel;
@@ -82,19 +82,19 @@ class ClassicLink {
     if (ref_count > 0) {
       link_idle_disconnect_alarm_.Cancel();
     } else {
-      link_idle_disconnect_alarm_.Schedule(common::BindOnce(&ClassicLink::Disconnect, common::Unretained(this)),
-                                           parameter_provider_->GetClassicLinkIdleDisconnectTimeout());
+      link_idle_disconnect_alarm_.Schedule(common::BindOnce(&LeLink::Disconnect, common::Unretained(this)),
+                                           parameter_provider_->GetLeLinkIdleDisconnectTimeout());
     }
   }
 
  private:
   os::Handler* l2cap_handler_;
-  FixedChannelAllocator<ClassicFixedChannelImpl, ClassicLink> fixed_channel_allocator_{this, l2cap_handler_};
+  FixedChannelAllocator<LeFixedChannelImpl, LeLink> fixed_channel_allocator_{this, l2cap_handler_};
   std::unique_ptr<hci::AclConnection> acl_connection_;
   std::unique_ptr<Scheduler> scheduler_;
   ParameterProvider* parameter_provider_;
   os::Alarm link_idle_disconnect_alarm_{l2cap_handler_};
-  DISALLOW_COPY_AND_ASSIGN(ClassicLink);
+  DISALLOW_COPY_AND_ASSIGN(LeLink);
 };
 
 }  // namespace internal

@@ -16,11 +16,12 @@
 
 #pragma once
 
-#include <hci/hci_packets.h>
+#include <set>
 #include <unordered_map>
 
 #include "l2cap/cid.h"
-#include "l2cap/internal/classic_fixed_channel_impl.h"
+#include "l2cap/internal/classic_dynamic_channel_impl.h"
+#include "l2cap/psm.h"
 #include "l2cap/security_policy.h"
 #include "os/handler.h"
 #include "os/log.h"
@@ -33,35 +34,35 @@ class ClassicLink;
 
 // Helper class for keeping channels in a Link. It allocates and frees Channel object, and supports querying whether a
 // channel is in use
-class ClassicFixedChannelAllocator {
+class ClassicDynamicChannelAllocator {
  public:
-  ClassicFixedChannelAllocator(ClassicLink* link, os::Handler* l2cap_handler)
+  ClassicDynamicChannelAllocator(ClassicLink* link, os::Handler* l2cap_handler)
       : link_(link), l2cap_handler_(l2cap_handler) {
     ASSERT(link_ != nullptr);
     ASSERT(l2cap_handler_ != nullptr);
   }
 
-  // Allocates a channel. If cid is used, return nullptr. NOTE: The returned ClassicFixedChannelImpl object is still
-  // owned by the channel allocator, NOT the client.
-  std::shared_ptr<ClassicFixedChannelImpl> AllocateChannel(Cid cid, SecurityPolicy security_policy);
+  // Allocates a channel. If psm is used, OR the remote cid already exists, return nullptr.
+  // NOTE: The returned ClassicDynamicChannelImpl object is still owned by the channel allocator, NOT the client.
+  std::shared_ptr<ClassicDynamicChannelImpl> AllocateChannel(Psm psm, Cid remote_cid, SecurityPolicy security_policy);
 
-  // Frees a channel. If cid doesn't exist, it will crash
-  void FreeChannel(Cid cid);
+  // Frees a channel. If psm doesn't exist, it will crash
+  void FreeChannel(Psm psm);
 
-  bool IsChannelAllocated(Cid cid) const;
+  bool IsChannelAllocated(Psm psm) const;
 
-  std::shared_ptr<ClassicFixedChannelImpl> FindChannel(Cid cid);
+  std::shared_ptr<ClassicDynamicChannelImpl> FindChannel(Psm psm);
 
   size_t NumberOfChannels() const;
 
   void OnAclDisconnected(hci::ErrorCode hci_status);
 
-  int GetRefCount();
-
  private:
   ClassicLink* link_;
   os::Handler* l2cap_handler_;
-  std::unordered_map<Cid, std::shared_ptr<ClassicFixedChannelImpl>> channels_;
+  std::unordered_map<Psm, std::shared_ptr<ClassicDynamicChannelImpl>> channels_;
+  std::set<Cid> used_cid_;
+  std::set<Cid> used_remote_cid_;
 };
 
 }  // namespace internal

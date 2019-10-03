@@ -17,8 +17,10 @@
 #pragma once
 
 #include "common/bidi_queue.h"
+#include "hci/address.h"
 #include "l2cap/cid.h"
-#include "l2cap/classic_fixed_channel.h"
+#include "l2cap/classic_dynamic_channel.h"
+#include "l2cap/psm.h"
 #include "os/handler.h"
 #include "os/log.h"
 
@@ -28,34 +30,20 @@ namespace internal {
 
 class ClassicLink;
 
-class ClassicFixedChannelImpl {
+class ClassicDynamicChannelImpl {
  public:
-  ClassicFixedChannelImpl(Cid cid, ClassicLink* link, os::Handler* l2cap_handler);
+  ClassicDynamicChannelImpl(Psm psm, Cid cid, Cid remote_cid, ClassicLink* link, os::Handler* l2cap_handler);
 
-  virtual ~ClassicFixedChannelImpl() = default;
+  virtual ~ClassicDynamicChannelImpl() = default;
 
-  hci::Address GetDevice() const {
-    return device_;
-  }
+  hci::Address GetDevice() const;
 
   virtual void RegisterOnCloseCallback(os::Handler* user_handler,
-                                       ClassicFixedChannel::OnCloseCallback on_close_callback);
+                                       ClassicDynamicChannel::OnCloseCallback on_close_callback);
 
-  virtual void Acquire();
-
-  virtual void Release();
-
-  virtual bool IsAcquired() const {
-    return acquired_;
-  }
-
+  virtual void Close();
   virtual void OnClosed(hci::ErrorCode status);
-
-  virtual std::string ToString() {
-    std::ostringstream ss;
-    ss << "Device " << device_ << " Cid 0x" << std::hex << cid_;
-    return ss.str();
-  }
+  virtual std::string ToString();
 
   common::BidiQueueEnd<packet::BasePacketBuilder, packet::PacketView<packet::kLittleEndian>>* GetQueueUpEnd() {
     return channel_queue_.GetUpEnd();
@@ -65,29 +53,30 @@ class ClassicFixedChannelImpl {
     return channel_queue_.GetDownEnd();
   }
 
+  virtual Cid GetCid() const {
+    return cid_;
+  }
+
  private:
-  // Constructor states
-  // For logging purpose only
+  const Psm psm_;
   const Cid cid_;
-  // For logging purpose only
-  const hci::Address device_;
-  // Needed to handle Acquire() and Release()
+  const Cid remote_cid_;
   ClassicLink* link_;
   os::Handler* l2cap_handler_;
+  const hci::Address device_;
 
   // User supported states
   os::Handler* user_handler_ = nullptr;
-  ClassicFixedChannel::OnCloseCallback on_close_callback_{};
+  ClassicDynamicChannel::OnCloseCallback on_close_callback_{};
 
   // Internal states
-  bool acquired_ = false;
   bool closed_ = false;
   hci::ErrorCode close_reason_ = hci::ErrorCode::SUCCESS;
   static constexpr size_t kChannelQueueSize = 10;
   common::BidiQueue<packet::PacketView<packet::kLittleEndian>, packet::BasePacketBuilder> channel_queue_{
       kChannelQueueSize};
 
-  DISALLOW_COPY_AND_ASSIGN(ClassicFixedChannelImpl);
+  DISALLOW_COPY_AND_ASSIGN(ClassicDynamicChannelImpl);
 };
 
 }  // namespace internal

@@ -17,8 +17,9 @@
 #include <unordered_map>
 
 #include "l2cap/cid.h"
-#include "l2cap/internal/classic_fixed_channel_impl.h"
+#include "l2cap/internal/classic_dynamic_channel_impl.h"
 #include "l2cap/internal/classic_link.h"
+#include "l2cap/psm.h"
 #include "l2cap/security_policy.h"
 #include "os/handler.h"
 #include "os/log.h"
@@ -27,16 +28,23 @@ namespace bluetooth {
 namespace l2cap {
 namespace internal {
 
-ClassicFixedChannelImpl::ClassicFixedChannelImpl(Cid cid, ClassicLink* link, os::Handler* l2cap_handler)
-    : cid_(cid), device_(link->GetDevice()), link_(link), l2cap_handler_(l2cap_handler) {
-  ASSERT_LOG(cid_ >= kFirstFixedChannel && cid_ <= kLastFixedChannel, "Invalid cid: %d", cid_);
-  ASSERT(!device_.IsEmpty());
+ClassicDynamicChannelImpl::ClassicDynamicChannelImpl(Psm psm, Cid cid, Cid remote_cid, ClassicLink* link,
+                                                     os::Handler* l2cap_handler)
+    : psm_(psm), cid_(cid), remote_cid_(remote_cid), link_(link), l2cap_handler_(l2cap_handler),
+      device_(link->GetDevice()) {
+  ASSERT(IsPsmValid(psm_));
+  ASSERT(cid_ > 0);
+  ASSERT(remote_cid_ > 0);
   ASSERT(link_ != nullptr);
   ASSERT(l2cap_handler_ != nullptr);
 }
 
-void ClassicFixedChannelImpl::RegisterOnCloseCallback(os::Handler* user_handler,
-                                                      ClassicFixedChannel::OnCloseCallback on_close_callback) {
+hci::Address ClassicDynamicChannelImpl::GetDevice() const {
+  return device_;
+}
+
+void ClassicDynamicChannelImpl::RegisterOnCloseCallback(os::Handler* user_handler,
+                                                        ClassicDynamicChannel::OnCloseCallback on_close_callback) {
   ASSERT_LOG(user_handler_ == nullptr, "OnCloseCallback can only be registered once");
   // If channel is already closed, call the callback immediately without saving it
   if (closed_) {
@@ -47,12 +55,15 @@ void ClassicFixedChannelImpl::RegisterOnCloseCallback(os::Handler* user_handler,
   on_close_callback_ = std::move(on_close_callback);
 }
 
-void ClassicFixedChannelImpl::OnClosed(hci::ErrorCode status) {
+void ClassicDynamicChannelImpl::Close() {
+  // TODO: Implement it by sending signalling packet
+}
+
+void ClassicDynamicChannelImpl::OnClosed(hci::ErrorCode status) {
   ASSERT_LOG(!closed_, "Device %s Cid 0x%x closed twice, old status 0x%x, new status 0x%x", device_.ToString().c_str(),
              cid_, static_cast<int>(close_reason_), static_cast<int>(status));
   closed_ = true;
   close_reason_ = status;
-  acquired_ = false;
   link_ = nullptr;
   l2cap_handler_ = nullptr;
   if (user_handler_ == nullptr) {
@@ -64,34 +75,10 @@ void ClassicFixedChannelImpl::OnClosed(hci::ErrorCode status) {
   on_close_callback_.Reset();
 }
 
-void ClassicFixedChannelImpl::Acquire() {
-  ASSERT_LOG(user_handler_ != nullptr, "Must register OnCloseCallback before calling any methods");
-  if (closed_) {
-    LOG_WARN("%s is already closed", ToString().c_str());
-    ASSERT(!acquired_);
-    return;
-  }
-  if (acquired_) {
-    LOG_DEBUG("%s was already acquired", ToString().c_str());
-    return;
-  }
-  acquired_ = true;
-  link_->RefreshRefCount();
-}
-
-void ClassicFixedChannelImpl::Release() {
-  ASSERT_LOG(user_handler_ != nullptr, "Must register OnCloseCallback before calling any methods");
-  if (closed_) {
-    LOG_WARN("%s is already closed", ToString().c_str());
-    ASSERT(!acquired_);
-    return;
-  }
-  if (!acquired_) {
-    LOG_DEBUG("%s was already released", ToString().c_str());
-    return;
-  }
-  acquired_ = false;
-  link_->RefreshRefCount();
+std::string ClassicDynamicChannelImpl::ToString() {
+  std::ostringstream ss;
+  ss << "Device " << device_.ToString() << "Psm 0x" << std::hex << psm_ << " Cid 0x" << std::hex << cid_;
+  return ss.str();
 }
 
 }  // namespace internal
