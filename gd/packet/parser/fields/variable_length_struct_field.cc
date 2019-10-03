@@ -40,7 +40,7 @@ std::string VariableLengthStructField::GetDataType() const {
   return ret;
 }
 
-void VariableLengthStructField::GenExtractor(std::ostream& s, int /* num_leading_bits */) const {
+void VariableLengthStructField::GenExtractor(std::ostream& s, int, bool) const {
   s << GetName() << "_ptr = Parse" << type_name_ << "(" << GetName() << "_it);";
   s << "if (" << GetName() << "_ptr != nullptr) {";
   s << GetName() << "_it = " << GetName() << "_it + " << GetName() << "_ptr->size();";
@@ -56,7 +56,7 @@ void VariableLengthStructField::GenGetter(std::ostream& s, Size start_offset, Si
   s << "auto to_bound = begin();";
   int num_leading_bits = GenBounds(s, start_offset, end_offset);
   s << "std::unique_ptr<" << type_name_ << "> " << GetName() << "_ptr;";
-  GenExtractor(s, num_leading_bits);
+  GenExtractor(s, num_leading_bits, false);
   s << "return " << GetName() << "_ptr;";
   s << "}\n";
 }

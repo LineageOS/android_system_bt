@@ -64,7 +64,7 @@ int ScalarField::GenBounds(std::ostream& s, Size start_offset, Size end_offset) 
   return num_leading_bits;
 }
 
-void ScalarField::GenExtractor(std::ostream& s, int num_leading_bits) const {
+void ScalarField::GenExtractor(std::ostream& s, int num_leading_bits, bool) const {
   // Extract the correct number of bytes. The return type could be different
   // from the extract type if an earlier field causes the beginning of the
   // current field to start in the middle of a byte.
@@ -95,7 +95,7 @@ void ScalarField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
   int num_leading_bits = GenBounds(s, start_offset, end_offset);
   s << GetDataType() << " " << GetName() << "_value;";
   s << GetDataType() << "* " << GetName() << "_ptr = &" << GetName() << "_value;";
-  GenExtractor(s, num_leading_bits);
+  GenExtractor(s, num_leading_bits, false);
   s << "return " << GetName() << "_value;";
   s << "}";
 }
