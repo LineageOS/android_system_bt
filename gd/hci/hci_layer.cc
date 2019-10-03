@@ -152,7 +152,6 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
     RegisterEventHandler(EventCode::LE_META_EVENT, Bind(&impl::le_meta_event_callback, common::Unretained(this)),
                          handler);
     // TODO find the right place
-    RegisterEventHandler(EventCode::ROLE_CHANGE, Bind(&impl::drop, common::Unretained(this)), handler);
     RegisterEventHandler(EventCode::PAGE_SCAN_REPETITION_MODE_CHANGE, Bind(&impl::drop, common::Unretained(this)),
                          handler);
     RegisterEventHandler(EventCode::MAX_SLOTS_CHANGE, Bind(&impl::drop, common::Unretained(this)), handler);

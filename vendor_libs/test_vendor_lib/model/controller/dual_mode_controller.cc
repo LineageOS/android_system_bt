@@ -133,6 +133,7 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   SET_HANDLER(OpCode::READ_LOCAL_SUPPORTED_CODECS, HciReadLocalSupportedCodecs);
   SET_HANDLER(OpCode::READ_LOCAL_EXTENDED_FEATURES, HciReadLocalExtendedFeatures);
   SET_HANDLER(OpCode::READ_REMOTE_EXTENDED_FEATURES, HciReadRemoteExtendedFeatures);
+  SET_HANDLER(OpCode::SWITCH_ROLE, HciSwitchRole);
   SET_HANDLER(OpCode::READ_REMOTE_SUPPORTED_FEATURES, HciReadRemoteSupportedFeatures);
   SET_HANDLER(OpCode::READ_CLOCK_OFFSET, HciReadClockOffset);
   SET_HANDLER(OpCode::IO_CAPABILITY_REQUEST_REPLY, HciIoCapabilityRequestReply);
@@ -148,6 +149,7 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   SET_HANDLER(OpCode::AUTHENTICATION_REQUESTED, HciAuthenticationRequested);
   SET_HANDLER(OpCode::SET_CONNECTION_ENCRYPTION, HciSetConnectionEncryption);
   SET_HANDLER(OpCode::CHANGE_CONNECTION_LINK_KEY, HciChangeConnectionLinkKey);
+  SET_HANDLER(OpCode::MASTER_LINK_KEY, HciMasterLinkKey);
   SET_HANDLER(OpCode::WRITE_AUTHENTICATION_ENABLE, HciWriteAuthenticationEnable);
   SET_HANDLER(OpCode::READ_AUTHENTICATION_ENABLE, HciReadAuthenticationEnable);
   SET_HANDLER(OpCode::WRITE_CLASS_OF_DEVICE, HciWriteClassOfDevice);
@@ -393,6 +395,17 @@ void DualModeController::HciReadRemoteExtendedFeatures(packets::PacketView<true>
   SendCommandStatus(status, OpCode::READ_REMOTE_EXTENDED_FEATURES);
 }
 
+void DualModeController::HciSwitchRole(packets::PacketView<true> args) {
+  CHECK(args.size() == 7) << __func__ << " size=" << args.size();
+
+  Address address = args.begin().extract<Address>();
+  uint8_t role = args.begin().extract<uint8_t>();
+
+  hci::Status status = link_layer_controller_.SwitchRole(address, role);
+
+  SendCommandStatus(status, OpCode::SWITCH_ROLE);
+}
+
 void DualModeController::HciReadRemoteSupportedFeatures(packets::PacketView<true> args) {
   CHECK(args.size() == 2) << __func__ << " size=" << args.size();
 
@@ -582,6 +595,16 @@ void DualModeController::HciChangeConnectionLinkKey(
   hci::Status status = link_layer_controller_.ChangeConnectionLinkKey(handle);
 
   SendCommandStatus(status, OpCode::CHANGE_CONNECTION_LINK_KEY);
+}
+
+void DualModeController::HciMasterLinkKey(packets::PacketView<true> args) {
+  CHECK(args.size() == 1) << __func__ << " size=" << args.size();
+  auto args_itr = args.begin();
+  uint8_t key_flag = args_itr.extract<uint8_t>();
+
+  hci::Status status = link_layer_controller_.MasterLinkKey(key_flag);
+
+  SendCommandStatus(status, OpCode::MASTER_LINK_KEY);
 }
 
 void DualModeController::HciWriteAuthenticationEnable(packets::PacketView<true> args) {
