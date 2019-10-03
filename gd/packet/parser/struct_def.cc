@@ -103,7 +103,7 @@ void StructDef::GenParse(std::ostream& s) const {
       }
       int num_leading_bits = field->GenBounds(s, GetOffsetForField(field->GetName(), false), Size());
       s << "auto " << field->GetName() << "_ptr = &to_fill->" << field->GetName() << "_;";
-      field->GenExtractor(s, num_leading_bits);
+      field->GenExtractor(s, num_leading_bits, true);
       s << "}";
     }
   }
