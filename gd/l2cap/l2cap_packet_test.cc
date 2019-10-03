@@ -58,5 +58,8 @@ DEFINE_AND_INSTANTIATE_StandardSupervisoryFrameWithFcsReflectionTest(rr_frame_wi
 
 std::vector<uint8_t> g_frame = {0x03, 0x00, 0x02, 0x00, 0x01, 0x02, 0x03};
 DEFINE_AND_INSTANTIATE_GroupFrameReflectionTest(g_frame);
+
+std::vector<uint8_t> config_mtu_request = {0x04, 0x05, 0x08, 0x00, 0x41, 0x00, 0x00, 0x00, 0x01, 0x02, 0xa0, 0x02};
+DEFINE_AND_INSTANTIATE_ConfigurationRequestReflectionTest(config_mtu_request);
 }  // namespace l2cap
 }  // namespace bluetooth
