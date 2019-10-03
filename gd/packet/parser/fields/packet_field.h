@@ -45,7 +45,7 @@ class PacketField : public Loggable {
   virtual std::string GetDataType() const = 0;
 
   // Given an iterator {name}_it, extract the type.
-  virtual void GenExtractor(std::ostream& s, int num_leading_bits) const = 0;
+  virtual void GenExtractor(std::ostream& s, int num_leading_bits, bool for_struct) const = 0;
 
   // Calculate field_begin and field_end using the given offsets and size, return the number of leading bits
   virtual int GenBounds(std::ostream& s, Size start_offset, Size end_offset) const;

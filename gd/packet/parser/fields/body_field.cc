@@ -33,7 +33,7 @@ std::string BodyField::GetDataType() const {
   return "BodyType";
 }
 
-void BodyField::GenExtractor(std::ostream&, int) const {}
+void BodyField::GenExtractor(std::ostream&, int, bool) const {}
 
 void BodyField::GenGetter(std::ostream&, Size, Size) const {}
 
