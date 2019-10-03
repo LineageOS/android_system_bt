@@ -43,12 +43,14 @@ namespace hci {
 
 class AclManagerFacadeService : public AclManagerFacade::Service,
                                 public ::bluetooth::hci::ConnectionCallbacks,
-                                public ::bluetooth::hci::ConnectionManagementCallbacks {
+                                public ::bluetooth::hci::ConnectionManagementCallbacks,
+                                public ::bluetooth::hci::AclManagerCallbacks {
  public:
   AclManagerFacadeService(AclManager* acl_manager, Controller* controller, HciLayer* hci_layer,
                           ::bluetooth::os::Handler* facade_handler)
       : acl_manager_(acl_manager), controller_(controller), hci_layer_(hci_layer), facade_handler_(facade_handler) {
     acl_manager_->RegisterCallbacks(this, facade_handler_);
+    acl_manager_->RegisterAclManagerCallbacks(this, facade_handler_);
   }
 
   using EventStream = ::bluetooth::grpc::GrpcEventStream<AclData, AclPacketView>;
@@ -202,6 +204,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
       connection->second->ReadFailedContactCounter();
       connection->second->ResetFailedContactCounter();
       connection->second->ReadLinkQuality();
+      connection->second->ReadAfhChannelMap();
       connection->second->ReadRssi();
       connection->second->ReadClock(WhichClock::LOCAL);
       connection->second->ReadClock(WhichClock::PICONET);
@@ -217,6 +220,11 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
       connection->second->FlowSpecification(FlowDirection::OUTGOING_FLOW, ServiceType::BEST_EFFORT, 0x1234, 0x1233,
                                             0x1232, 0x1231);
       connection->second->Flush();
+
+      acl_manager_->MasterLinkKey(KeyFlag::TEMPORARY);
+      acl_manager_->SwitchRole(peer, Role::MASTER);
+      acl_manager_->WriteDefaultLinkPolicySettings(0x07);
+      acl_manager_->ReadDefaultLinkPolicySettings();
       return ::grpc::Status::OK;
     }
   }
@@ -247,6 +255,18 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
         facade_handler_);
     shared_connection->RegisterCallbacks(this, facade_handler_);
     connection_complete_stream_.OnIncomingEvent(shared_connection);
+  }
+
+  void OnMasterLinkKeyComplete(uint16_t connection_handle, KeyFlag key_flag) override {
+    LOG_DEBUG("OnMasterLinkKeyComplete connection_handle:%d", connection_handle);
+  }
+
+  void OnRoleChange(Address bd_addr, Role new_role) override {
+    LOG_DEBUG("OnRoleChange bd_addr:%s, new_role:%d", bd_addr.ToString().c_str(), (uint8_t)new_role);
+  }
+
+  void OnReadDefaultLinkPolicySettingsComplete(uint16_t default_link_policy_settings) override {
+    LOG_DEBUG("OnReadDefaultLinkPolicySettingsComplete default_link_policy_settings:%d", default_link_policy_settings);
   }
 
   void on_disconnect(std::string address, ErrorCode code) {
@@ -339,6 +359,10 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
 
   void OnReadLinkQualityComplete(uint8_t link_quality) override {
     LOG_DEBUG("OnReadLinkQualityComplete link_quality:%d", link_quality);
+  }
+
+  void OnReadAfhChannelMapComplete(AfhMode afh_mode, std::array<uint8_t, 10> afh_channel_map) {
+    LOG_DEBUG("OnReadAfhChannelMapComplete afh_mode:%d", (uint8_t)afh_mode);
   }
 
   void OnReadRssiComplete(uint8_t rssi) override {

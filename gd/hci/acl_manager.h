@@ -72,6 +72,8 @@ class ConnectionManagementCallbacks {
   virtual void OnReadFailedContactCounterComplete(uint16_t failed_contact_counter) = 0;
   // Invoked when controller sends Command Complete event for Read Link Quality command with Success error code
   virtual void OnReadLinkQualityComplete(uint8_t link_quality) = 0;
+  // Invoked when controller sends Command Complete event for Read AFH Channel Map command with Success error code
+  virtual void OnReadAfhChannelMapComplete(AfhMode afh_mode, std::array<uint8_t, 10> afh_channel_map) = 0;
   // Invoked when controller sends Command Complete event for Read RSSI command with Success error code
   virtual void OnReadRssiComplete(uint8_t rssi) = 0;
   // Invoked when controller sends Command Complete event for Read Clock command with Success error code
@@ -124,6 +126,7 @@ class AclConnection {
   virtual bool ReadFailedContactCounter();
   virtual bool ResetFailedContactCounter();
   virtual bool ReadLinkQuality();
+  virtual bool ReadAfhChannelMap();
   virtual bool ReadRssi();
   virtual bool ReadClock(WhichClock which_clock);
 
@@ -160,6 +163,18 @@ class LeConnectionCallbacks {
   virtual void OnLeConnectFail(Address, AddressType, ErrorCode reason) = 0;
 };
 
+class AclManagerCallbacks {
+ public:
+  virtual ~AclManagerCallbacks() = default;
+  // Invoked when controller sends Master Link Key Complete event with Success error code
+  virtual void OnMasterLinkKeyComplete(uint16_t connection_handle, KeyFlag key_flag) = 0;
+  // Invoked when controller sends Role Change event with Success error code
+  virtual void OnRoleChange(Address bd_addr, Role new_role) = 0;
+  // Invoked when controller sends Command Complete event for Read Default Link Policy Settings command with Success
+  // error code
+  virtual void OnReadDefaultLinkPolicySettingsComplete(uint16_t default_link_policy_settings) = 0;
+};
+
 class AclManager : public Module {
  public:
   AclManager();
@@ -176,6 +191,9 @@ class AclManager : public Module {
   // Should register only once when user module starts.
   virtual void RegisterLeCallbacks(LeConnectionCallbacks* callbacks, os::Handler* handler);
 
+  // Should register only once when user module starts.
+  virtual void RegisterAclManagerCallbacks(AclManagerCallbacks* callbacks, os::Handler* handler);
+
   // Generates OnConnectSuccess if connected, or OnConnectFail otherwise
   virtual void CreateConnection(Address address);
 
@@ -185,6 +203,11 @@ class AclManager : public Module {
   // Generates OnConnectFail with error code "terminated by local host 0x16" if cancelled, or OnConnectSuccess if not
   // successfully cancelled and already connected
   virtual void CancelConnect(Address address);
+
+  virtual void MasterLinkKey(KeyFlag key_flag);
+  virtual void SwitchRole(Address address, Role role);
+  virtual void ReadDefaultLinkPolicySettings();
+  virtual void WriteDefaultLinkPolicySettings(uint16_t default_link_policy_settings);
 
   static const ModuleFactory Factory;
 
