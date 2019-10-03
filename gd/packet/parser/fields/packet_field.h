@@ -48,7 +48,7 @@ class PacketField : public Loggable {
   virtual void GenExtractor(std::ostream& s, int num_leading_bits, bool for_struct) const = 0;
 
   // Calculate field_begin and field_end using the given offsets and size, return the number of leading bits
-  virtual int GenBounds(std::ostream& s, Size start_offset, Size end_offset) const;
+  virtual int GenBounds(std::ostream& s, Size start_offset, Size end_offset, Size size) const;
 
   // Get parser getter definition. Start_offset points to the first bit of the
   // field. end_offset is the first bit after the field. If an offset is empty
