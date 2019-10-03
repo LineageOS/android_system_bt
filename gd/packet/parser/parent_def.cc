@@ -341,7 +341,7 @@ void ParentDef::GenSerialize(std::ostream& s) const {
         }
         const auto& vector_name = field_name + "_";
         const VectorField* vector = (VectorField*)sized_field;
-        s << "size_t " << vector_name + "bytes =  0;";
+        s << "size_t " << vector_name + "bytes = 0;";
         if (vector->element_size_.empty() || vector->element_size_.has_dynamic()) {
           s << "for (auto elem : " << vector_name << ") {";
           s << vector_name + "bytes += elem.size(); }";
@@ -349,9 +349,14 @@ void ParentDef::GenSerialize(std::ostream& s) const {
           s << vector_name + "bytes = ";
           s << vector_name << ".size() * ((" << vector->element_size_ << ") / 8);";
         }
+        std::string modifier = vector->GetSizeModifier();
+        if (modifier != "") {
+          s << "static_assert((" << modifier << ")%8 == 0, \"Modifiers must be byte-aligned\");";
+          s << vector_name << "bytes = ";
+          s << vector_name << "bytes + (" << modifier << ") / 8;";
+        }
         s << "ASSERT(" << vector_name + "bytes < (1 << " << field->GetSize().bits() << "));";
-        s << "insert(" << vector_name << "bytes";
-        s << vector->GetSizeModifier() << ", i, ";
+        s << "insert(" << vector_name << "bytes, i, ";
         s << field->GetSize().bits() << ");";
       }
     } else if (field->GetFieldType() == ChecksumStartField::kFieldType) {
