@@ -170,8 +170,7 @@ Size ParentDef::GetOffsetForField(std::string field_name, bool from_end) const {
       // We've reached the field, end the loop.
       if ((*it)->GetName() == field_name) break;
       const auto& field = *it;
-      // If there was a field that wasn't the payload with an unknown size,
-      // return an empty Size.
+      // If there is a field with an unknown size before the field, return an empty Size.
       if (field->GetSize().empty()) {
         return Size();
       }
@@ -186,7 +185,7 @@ Size ParentDef::GetOffsetForField(std::string field_name, bool from_end) const {
     size = size_lambda(fields_.rbegin(), fields_.rend());
   else
     size = size_lambda(fields_.begin(), fields_.end());
-  if (size.empty()) return Size();
+  if (size.empty()) return size;
 
   // We need the offset until a payload or body field.
   if (parent_ != nullptr) {

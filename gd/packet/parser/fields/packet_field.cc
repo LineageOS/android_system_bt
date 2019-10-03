@@ -36,6 +36,10 @@ Size PacketField::GetBuilderSize() const {
   return GetSize();
 }
 
+Size PacketField::GetStructSize() const {
+  return GetSize();
+}
+
 int PacketField::GenBounds(std::ostream& s, Size start_offset, Size end_offset, Size size) const {
   // In order to find field_begin and field_end, we must have two of the three Sizes.
   if ((start_offset.empty() && size.empty()) || (start_offset.empty() && end_offset.empty()) ||

@@ -65,6 +65,20 @@ Size ArrayField::GetBuilderSize() const {
   }
 }
 
+Size ArrayField::GetStructSize() const {
+  if (!element_size_.empty() && !element_size_.has_dynamic()) {
+    return GetSize();
+  } else if (element_field_->BuilderParameterMustBeMoved()) {
+    std::string ret = "[this](){ size_t length = 0; for (const auto& elem : to_fill->" + GetName() +
+                      "_) { length += elem->size() * 8; } return length; }()";
+    return ret;
+  } else {
+    std::string ret = "[this](){ size_t length = 0; for (const auto& elem : to_fill->" + GetName() +
+                      "_) { length += elem.size() * 8; } return length; }()";
+    return ret;
+  }
+}
+
 std::string ArrayField::GetDataType() const {
   return "std::array<" + element_field_->GetDataType() + "," + std::to_string(array_size_) + ">";
 }

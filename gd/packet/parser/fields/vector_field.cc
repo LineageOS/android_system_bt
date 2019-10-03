@@ -52,14 +52,14 @@ Size VectorField::GetSize() const {
 
   // size_field_ is of type SIZE
   if (size_field_->GetFieldType() == SizeField::kFieldType) {
-    std::string ret = "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * 8)";
+    std::string ret = "(static_cast<size_t>(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "()) * 8)";
     if (!size_modifier_.empty()) ret += size_modifier_;
     return ret;
   }
 
   // size_field_ is of type COUNT and elements have a fixed size
   if (!element_size_.empty() && !element_size_.has_dynamic()) {
-    return "(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "() * " +
+    return "(static_cast<size_t>(Get" + util::UnderscoreToCamelCase(size_field_->GetName()) + "()) * " +
            std::to_string(element_size_.bits()) + ")";
   }
 
@@ -68,7 +68,7 @@ Size VectorField::GetSize() const {
 
 Size VectorField::GetBuilderSize() const {
   if (!element_size_.empty() && !element_size_.has_dynamic()) {
-    std::string ret = "(" + GetName() + "_.size() * " + std::to_string(element_size_.bits()) + ")";
+    std::string ret = "(static_cast<size_t>(" + GetName() + "_.size()) * " + std::to_string(element_size_.bits()) + ")";
     return ret;
   } else if (element_field_->BuilderParameterMustBeMoved()) {
     std::string ret = "[this](){ size_t length = 0; for (const auto& elem : " + GetName() +
@@ -79,6 +79,28 @@ Size VectorField::GetBuilderSize() const {
                       "_) { length += elem.size() * 8; } return length; }()";
     return ret;
   }
+}
+
+Size VectorField::GetStructSize() const {
+  // If there is no size field, then it is of unknown size.
+  if (size_field_ == nullptr) {
+    return Size();
+  }
+
+  // size_field_ is of type SIZE
+  if (size_field_->GetFieldType() == SizeField::kFieldType) {
+    std::string ret = "(static_cast<size_t>(" + size_field_->GetName() + "_extracted) * 8)";
+    if (!size_modifier_.empty()) ret += size_modifier_;
+    return ret;
+  }
+
+  // size_field_ is of type COUNT and elements have a fixed size
+  if (!element_size_.empty() && !element_size_.has_dynamic()) {
+    return "(static_cast<size_t>(" + size_field_->GetName() + "_extracted) * " + std::to_string(element_size_.bits()) +
+           ")";
+  }
+
+  return Size();
 }
 
 std::string VectorField::GetDataType() const {
