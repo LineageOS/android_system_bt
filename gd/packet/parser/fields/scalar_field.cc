@@ -47,7 +47,7 @@ int GetShiftBits(int i) {
   }
 }
 
-int ScalarField::GenBounds(std::ostream& s, Size start_offset, Size end_offset) const {
+int ScalarField::GenBounds(std::ostream& s, Size start_offset, Size end_offset, Size size) const {
   int num_leading_bits = 0;
 
   if (!start_offset.empty()) {
@@ -55,8 +55,8 @@ int ScalarField::GenBounds(std::ostream& s, Size start_offset, Size end_offset) 
     num_leading_bits = start_offset.bits() % 8;
     s << "auto " << GetName() << "_it = to_bound + (" << start_offset << ") / 8;";
   } else if (!end_offset.empty()) {
-    num_leading_bits = GetShiftBits(end_offset.bits() + GetSize().bits());
-    Size byte_offset = Size(num_leading_bits + GetSize().bits()) + end_offset;
+    num_leading_bits = GetShiftBits(end_offset.bits() + size.bits());
+    Size byte_offset = Size(num_leading_bits + size.bits()) + end_offset;
     s << "auto " << GetName() << "_it = to_bound + (to_bound.NumBytesRemaining() - (" << byte_offset << ") / 8);";
   } else {
     ERROR(this) << "Ambiguous offset for field.";
@@ -65,10 +65,11 @@ int ScalarField::GenBounds(std::ostream& s, Size start_offset, Size end_offset) 
 }
 
 void ScalarField::GenExtractor(std::ostream& s, int num_leading_bits, bool) const {
+  Size size = GetSize();
   // Extract the correct number of bytes. The return type could be different
   // from the extract type if an earlier field causes the beginning of the
   // current field to start in the middle of a byte.
-  std::string extract_type = util::GetTypeForSize(GetSize().bits() + num_leading_bits);
+  std::string extract_type = util::GetTypeForSize(size.bits() + num_leading_bits);
   s << "auto extracted_value = " << GetName() << "_it.extract<" << extract_type << ">();";
 
   // Right shift the result to remove leading bits.
@@ -76,9 +77,9 @@ void ScalarField::GenExtractor(std::ostream& s, int num_leading_bits, bool) cons
     s << "extracted_value >>= " << num_leading_bits << ";";
   }
   // Mask the result if necessary.
-  if (util::RoundSizeUp(GetSize().bits()) != GetSize().bits()) {
+  if (util::RoundSizeUp(size.bits()) != size.bits()) {
     uint64_t mask = 0;
-    for (int i = 0; i < GetSize().bits(); i++) {
+    for (int i = 0; i < size.bits(); i++) {
       mask <<= 1;
       mask |= 1;
     }
@@ -92,7 +93,7 @@ void ScalarField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
   s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() const {";
   s << "ASSERT(was_validated_);";
   s << "auto to_bound = begin();";
-  int num_leading_bits = GenBounds(s, start_offset, end_offset);
+  int num_leading_bits = GenBounds(s, start_offset, end_offset, GetSize());
   s << GetDataType() << " " << GetName() << "_value;";
   s << GetDataType() << "* " << GetName() << "_ptr = &" << GetName() << "_value;";
   GenExtractor(s, num_leading_bits, false);

@@ -21,13 +21,15 @@
 
 class StructField : public PacketField {
  public:
-  StructField(std::string name, std::string type_name, int size, ParseLocation loc);
+  StructField(std::string name, std::string type_name, Size size, ParseLocation loc);
 
   static const std::string kFieldType;
 
   virtual const std::string& GetFieldType() const override;
 
   virtual Size GetSize() const override;
+
+  virtual Size GetBuilderSize() const override;
 
   virtual std::string GetDataType() const override;
 
