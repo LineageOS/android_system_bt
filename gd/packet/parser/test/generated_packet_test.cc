@@ -1105,6 +1105,31 @@ TEST(GeneratedPacketTest, testArrayOfStructAndAnother) {
   ASSERT_EQ(nother.count_, another.count_);
 }
 
+DEFINE_AND_INSTANTIATE_OneArrayOfStructAndAnotherStructReflectionTest(array_of_struct_and_another);
+
+TEST(GeneratedPacketTest, testOneArrayOfStructAndAnotherStruct) {
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes =
+      std::make_shared<std::vector<uint8_t>>(array_of_struct_and_another);
+
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = OneArrayOfStructAndAnotherStructView::Create(packet_bytes_view);
+  ASSERT_TRUE(view.IsValid());
+  auto one = view.GetOne();
+  ASSERT_EQ(one.array_.size(), 3);
+  ASSERT_EQ(one.another_.id_, 4);
+  ASSERT_EQ(one.another_.count_, 0x0804);
+}
+
+vector<uint8_t> sized_array_of_struct_and_another{
+    0x09,              // _size_
+    0x01, 0x01, 0x02,  // id, id * 0x0201
+    0x02, 0x02, 0x04,  // 2
+    0x03, 0x03, 0x06,  // 3
+    0x04, 0x04, 0x08,  // Another
+};
+
+DEFINE_AND_INSTANTIATE_OneSizedArrayOfStructAndAnotherStructReflectionTest(sized_array_of_struct_and_another);
+
 vector<uint8_t> bit_field_group_packet{
     // seven_bits_ = 0x77, straddle_ = 0x5, five_bits_ = 0x15
     0xf7,  // 0x77 | (0x5 & 0x1) << 7

@@ -44,6 +44,8 @@ class StructDef : public ParentDef {
 
   void GenConstructor(std::ostream& s) const;
 
+  Size GetStructOffsetForField(std::string field_name) const;
+
  private:
   Size total_size_;
 };
