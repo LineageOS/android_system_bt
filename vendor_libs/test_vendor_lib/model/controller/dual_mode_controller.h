@@ -127,8 +127,14 @@ class DualModeController : public Device {
   // 7.1.17
   void HciChangeConnectionLinkKey(packets::PacketView<true> args);
 
+  // 7.1.18
+  void HciMasterLinkKey(packets::PacketView<true> args);
+
   // 7.1.19
   void HciRemoteNameRequest(packets::PacketView<true> args);
+
+  // 7.2.8
+  void HciSwitchRole(packets::PacketView<true> args);
 
   // 7.1.21
   void HciReadRemoteSupportedFeatures(packets::PacketView<true> args);

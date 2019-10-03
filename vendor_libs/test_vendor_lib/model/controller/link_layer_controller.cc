@@ -1103,6 +1103,11 @@ hci::Status LinkLayerController::ChangeConnectionLinkKey(uint16_t handle) {
   return hci::Status::COMMAND_DISALLOWED;
 }
 
+hci::Status LinkLayerController::MasterLinkKey(uint8_t /* key_flag */) {
+  // TODO: implement real logic
+  return hci::Status::COMMAND_DISALLOWED;
+}
+
 hci::Status LinkLayerController::HoldMode(uint16_t handle,
                                           uint16_t hold_mode_max_interval,
                                           uint16_t hold_mode_min_interval) {
@@ -1158,6 +1163,12 @@ hci::Status LinkLayerController::QosSetup(uint16_t handle, uint8_t service_type,
     return hci::Status::INVALID_HCI_COMMAND_PARAMETERS;
   }
 
+  // TODO: implement real logic
+  return hci::Status::COMMAND_DISALLOWED;
+}
+
+hci::Status LinkLayerController::SwitchRole(Address /* bd_addr */,
+                                            uint8_t /* role */) {
   // TODO: implement real logic
   return hci::Status::COMMAND_DISALLOWED;
 }
