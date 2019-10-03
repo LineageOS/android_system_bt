@@ -16,22 +16,28 @@
 
 #include "l2cap/classic_dynamic_channel.h"
 #include "common/bind.h"
+#include "l2cap/internal/classic_dynamic_channel_impl.h"
 
 namespace bluetooth {
 namespace l2cap {
 
 hci::Address ClassicDynamicChannel::GetDevice() const {
-  return {};
+  return impl_->GetDevice();
 }
 
 void ClassicDynamicChannel::RegisterOnCloseCallback(os::Handler* user_handler,
-                                                    ClassicDynamicChannel::OnCloseCallback on_close_callback) {}
+                                                    ClassicDynamicChannel::OnCloseCallback on_close_callback) {
+  l2cap_handler_->Post(common::BindOnce(&internal::ClassicDynamicChannelImpl::RegisterOnCloseCallback, impl_,
+                                        user_handler, std::move(on_close_callback)));
+}
 
-void ClassicDynamicChannel::Close() {}
+void ClassicDynamicChannel::Close() {
+  l2cap_handler_->Post(common::BindOnce(&internal::ClassicDynamicChannelImpl::Close, impl_));
+}
 
 common::BidiQueueEnd<packet::BasePacketBuilder, packet::PacketView<packet::kLittleEndian>>*
 ClassicDynamicChannel::GetQueueUpEnd() const {
-  return nullptr;
+  return impl_->GetQueueUpEnd();
 }
 }  // namespace l2cap
 }  // namespace bluetooth
