@@ -34,6 +34,8 @@ class ArrayField : public PacketField {
 
   virtual Size GetBuilderSize() const override;
 
+  virtual Size GetStructSize() const override;
+
   virtual std::string GetDataType() const override;
 
   virtual void GenExtractor(std::ostream& s, int num_leading_bits, bool for_struct) const override;

@@ -211,6 +211,32 @@ packet ArrayOfStructAndAnother {
   another : TwoRelatedNumbers,
 }
 
+packet SizedArrayOfStructAndAnother {
+  _size_(array) : 8,
+  array : TwoRelatedNumbers[],
+  another : TwoRelatedNumbers,
+}
+
+struct ArrayOfStructAndAnotherStruct {
+  _count_(array) : 8,
+  array : TwoRelatedNumbers[],
+  another : TwoRelatedNumbers,
+}
+
+struct SizedArrayOfStructAndAnotherStruct {
+  _size_(array) : 8,
+  array : TwoRelatedNumbers[],
+  another : TwoRelatedNumbers,
+}
+
+packet OneArrayOfStructAndAnotherStruct {
+  one : ArrayOfStructAndAnotherStruct,
+}
+
+packet OneSizedArrayOfStructAndAnotherStruct {
+  one : SizedArrayOfStructAndAnotherStruct,
+}
+
 group BitFieldGroup {
   seven_bits : 7,
   straddle : 4,

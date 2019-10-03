@@ -40,6 +40,10 @@ class PacketField : public Loggable {
   // For most field types, this will be the same as GetSize();
   virtual Size GetBuilderSize() const;
 
+  // Returns the size of the field in bits given the information in the parsed struct.
+  // For most field types, this will be the same as GetSize();
+  virtual Size GetStructSize() const;
+
   // Get the type of the field to be used in the builders constructor and
   // variables.
   virtual std::string GetDataType() const = 0;
