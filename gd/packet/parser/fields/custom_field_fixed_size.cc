@@ -43,7 +43,7 @@ int CustomFieldFixedSize::GenBounds(std::ostream& s, Size start_offset, Size end
   return 0;  // num_leading_bits
 }
 
-void CustomFieldFixedSize::GenExtractor(std::ostream& s, int) const {
+void CustomFieldFixedSize::GenExtractor(std::ostream& s, int, bool) const {
   s << "*" << GetName() << "_ptr = " << GetName() << "_it.extract<" << GetDataType() << ">();";
 }
 
