@@ -19,7 +19,7 @@
 
 const std::string StructField::kFieldType = "StructField";
 
-StructField::StructField(std::string name, std::string type_name, int size, ParseLocation loc)
+StructField::StructField(std::string name, std::string type_name, Size size, ParseLocation loc)
     : PacketField(name, loc), type_name_(type_name), size_(size) {}
 
 const std::string& StructField::GetFieldType() const {
@@ -28,6 +28,11 @@ const std::string& StructField::GetFieldType() const {
 
 Size StructField::GetSize() const {
   return size_;
+}
+
+Size StructField::GetBuilderSize() const {
+  std::string ret = "(" + GetName() + "_.size() * 8)";
+  return ret;
 }
 
 std::string StructField::GetDataType() const {

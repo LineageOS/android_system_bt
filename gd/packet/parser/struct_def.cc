@@ -27,7 +27,7 @@ PacketField* StructDef::GetNewField(const std::string& name, ParseLocation loc) 
   if (fields_.HasBody()) {
     return new VariableLengthStructField(name, name_, loc);
   } else {
-    return new StructField(name, name_, total_size_.bits(), loc);
+    return new StructField(name, name_, total_size_, loc);
   }
 }
 
