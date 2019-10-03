@@ -16,6 +16,11 @@ packet BasicFrameWithFcs {
   fcs : Fcs,
 }
 
+enum Continuation : 1 {
+  END = 0,
+  CONTINUE = 1,
+}
+
 // ChannelId 2 is connectionless
 packet GroupFrame : BasicFrame (channel_id = 0x02) {
   psm : 16,
@@ -286,19 +291,7 @@ packet ConnectionResponse : Control (code = CONNECTION_RESPONSE) {
   status : ConnectionResponseStatus,
 }
 
-enum ConfigurationContinuation : 1 {
-  END = 0,
-  CONTINUES = 1,
-}
-
-packet ConfigurationRequestBase : Control (code = CONFIGURATION_REQUEST) {
-  destination_cid : 16,
-  continuation : ConfigurationContinuation,
-  _reserved_ : 15,
-  _payload_,
-}
-
-enum ConfigurationOptionsType : 7 {
+enum ConfigurationOptionType : 7 {
   MTU = 0x01,
   FLUSH_TIMEOUT = 0x02,
   QUALITY_OF_SERVICE = 0x03,
@@ -313,18 +306,18 @@ enum ConfigurationOptionIsHint : 1 {
   OPTION_IS_A_HINT = 1,
 }
 
-packet ConfigurationOptions {
-  type : ConfigurationOptionsType,
+struct ConfigurationOption {
+  type : ConfigurationOptionType,
   is_hint : ConfigurationOptionIsHint,
-  _size_(_payload_) : 8,
-  _payload_,
+  length : 8,
+  _body_,
 }
 
-packet MtuConfigurationOption : ConfigurationOptions (type = MTU) {
+struct MtuConfigurationOption : ConfigurationOption (type = MTU, length = 2) {
   mtu : 16,
 }
 
-packet FlushTimeoutConfigurationOption : ConfigurationOptions (type = FLUSH_TIMEOUT) {
+struct FlushTimeoutConfigurationOption : ConfigurationOption (type = FLUSH_TIMEOUT, length = 2) {
   flush_timeout : 16,
 }
 
@@ -334,14 +327,14 @@ enum QosServiceType : 8 {
   GUARANTEED = 0x02,
 }
 
-packet QualityOfServiceConfigurationOption : ConfigurationOptions (type = QUALITY_OF_SERVICE) {
+struct QualityOfServiceConfigurationOption : ConfigurationOption (type = QUALITY_OF_SERVICE, length = 22) {
   _reserved_ : 8, // Flags
   service_type : QosServiceType,
-  token_rate : 32,        // 0 = ignore, 0xffffffff = max available
+  token_rate : 32,         // 0 = ignore, 0xffffffff = max available
   token_bucket_size : 32,  // 0 = ignore, 0xffffffff = max available
-  peak_bandwidth : 32,    // Octets/second 0 = ignore
-  latency : 32,          // microseconds 0xffffffff = ignore
-  delay_variation : 32,   // microseconds 0xffffffff = ignore
+  peak_bandwidth : 32,     // Octets/second 0 = ignore
+  latency : 32,            // microseconds 0xffffffff = ignore
+  delay_variation : 32,    // microseconds 0xffffffff = ignore
 }
 
 enum RetransmissionAndFlowControlModeOption : 8 {
@@ -353,7 +346,7 @@ enum RetransmissionAndFlowControlModeOption : 8 {
 }
 
 
-packet RetransmissionAndFlowControlConfigurationOption : ConfigurationOptions (type = RETRANSMISSION_AND_FLOW_CONTROL) {
+struct RetransmissionAndFlowControlConfigurationOption : ConfigurationOption (type = RETRANSMISSION_AND_FLOW_CONTROL, length = 8) {
   mode : RetransmissionAndFlowControlModeOption,
   tx_window_size : 8, // 1-32 for Flow Control and Retransmission, 1-63 for Enhanced
   max_transmit : 8,
@@ -367,12 +360,12 @@ enum FcsType : 8 {
   DEFAULT = 1,  // 16-bit FCS
 }
 
-packet FrameCheckSequenceOption : ConfigurationOptions (type = FRAME_CHECK_SEQUENCE) {
+struct FrameCheckSequenceOption : ConfigurationOption (type = FRAME_CHECK_SEQUENCE, length = 1) {
   fcs_type : FcsType,
 }
 
 
-packet ExtendedFlowSpecificationOption : ConfigurationOptions (type = EXTENDED_FLOW_SPECIFICATION) {
+struct ExtendedFlowSpecificationOption : ConfigurationOption (type = EXTENDED_FLOW_SPECIFICATION, length = 16) {
   identifier : 8, // Default 0x01, must be 0x01 for Extended Flow-Best-Effort
   service_type : QosServiceType,
   maximum_sdu_size : 16, // Octets
@@ -381,12 +374,15 @@ packet ExtendedFlowSpecificationOption : ConfigurationOptions (type = EXTENDED_F
   flush_timeout : 32, // in microseconds 0x0 = no retransmissions 0xFFFFFFFF = never flushed
 }
 
-packet ExtendedWindowSizeOption : ConfigurationOptions (type = EXTENDED_WINDOW_SIZE) {
+struct ExtendedWindowSizeOption : ConfigurationOption (type = EXTENDED_WINDOW_SIZE, length = 2) {
   max_window_size : 16, // 0x0000 = Valid for streaming, 0x0001-0x3FFF Valid for Enhanced Retransmission
 }
 
-packet ConfigurationRequest : ConfigurationRequestBase {
-  _payload_,
+packet ConfigurationRequest : Control (code = CONFIGURATION_REQUEST) {
+  destination_cid : 16,
+  continuation : Continuation,
+  _reserved_ : 15,
+  config : ConfigurationOption[],
 }
 
 enum ConfigurationResponseResult : 16 {
@@ -398,16 +394,12 @@ enum ConfigurationResponseResult : 16 {
   FLOW_SPEC_REJECTED = 0x0005,
 }
 
-packet ConfigurationResponseBase : Control (code = CONFIGURATION_RESPONSE) {
+packet ConfigurationResponse : Control (code = CONFIGURATION_RESPONSE) {
   source_cid : 16,
-  continuation : ConfigurationContinuation,
+  continuation : Continuation,
   _reserved_ : 15,
   result : ConfigurationResponseResult,
-  _payload_,
-}
-
-packet ConfigurationResponse : ConfigurationResponseBase {
-  _payload_,
+  config : ConfigurationOption[],
 }
 
 packet DisconnectionRequest : Control (code = DISCONNECTION_REQUEST) {
