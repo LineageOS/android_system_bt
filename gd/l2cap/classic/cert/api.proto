@@ -1,0 +1,34 @@
+syntax = "proto3";
+
+package bluetooth.l2cap.classic.cert;
+
+import "google/protobuf/empty.proto";
+import "facade/common.proto";
+
+service L2capModuleCert {
+  rpc SendL2capPacket(L2capPacket) returns (google.protobuf.Empty) {}
+  rpc FetchL2capData(facade.EventStreamRequest) returns (stream L2capPacket) {}
+  rpc FetchConnectionComplete(facade.EventStreamRequest) returns (stream ConnectionCompleteEvent) {}
+  rpc DisconnectLink(DisconnectLinkRequest) returns (google.protobuf.Empty) {}
+  rpc SendConnectionRequest(ConnectionRequest) returns (google.protobuf.Empty) {}
+}
+
+message L2capPacket {
+  facade.BluetoothAddress remote = 1;
+  uint32 channel = 2;
+  bytes payload = 3;
+}
+
+message ConnectionCompleteEvent {
+  facade.BluetoothAddress remote = 1;
+}
+
+message DisconnectLinkRequest {
+  facade.BluetoothAddress remote = 1;
+}
+
+message ConnectionRequest {
+  facade.BluetoothAddress remote = 1;
+  uint32 dcid = 2;
+  uint32 scid = 3;
+}
