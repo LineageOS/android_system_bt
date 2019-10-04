@@ -64,9 +64,10 @@ extern void smp_cancel_start_encryption_attempt();
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
 static void btu_hcif_inquiry_comp_evt(uint8_t* p);
-static void btu_hcif_inquiry_result_evt(uint8_t* p);
-static void btu_hcif_inquiry_rssi_result_evt(uint8_t* p);
-static void btu_hcif_extended_inquiry_result_evt(uint8_t* p);
+static void btu_hcif_inquiry_result_evt(uint8_t* p, uint8_t hci_evt_len);
+static void btu_hcif_inquiry_rssi_result_evt(uint8_t* p, uint8_t hci_evt_len);
+static void btu_hcif_extended_inquiry_result_evt(uint8_t* p,
+                                                 uint8_t hci_evt_len);
 
 static void btu_hcif_connection_comp_evt(uint8_t* p);
 static void btu_hcif_connection_request_evt(uint8_t* p);
@@ -263,13 +264,13 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
       btu_hcif_inquiry_comp_evt(p);
       break;
     case HCI_INQUIRY_RESULT_EVT:
-      btu_hcif_inquiry_result_evt(p);
+      btu_hcif_inquiry_result_evt(p, hci_evt_len);
       break;
     case HCI_INQUIRY_RSSI_RESULT_EVT:
-      btu_hcif_inquiry_rssi_result_evt(p);
+      btu_hcif_inquiry_rssi_result_evt(p, hci_evt_len);
       break;
     case HCI_EXTENDED_INQUIRY_RESULT_EVT:
-      btu_hcif_extended_inquiry_result_evt(p);
+      btu_hcif_extended_inquiry_result_evt(p, hci_evt_len);
       break;
     case HCI_CONNECTION_COMP_EVT:
       btu_hcif_connection_comp_evt(p);
@@ -948,9 +949,9 @@ static void btu_hcif_inquiry_comp_evt(uint8_t* p) {
  * Returns          void
  *
  ******************************************************************************/
-static void btu_hcif_inquiry_result_evt(uint8_t* p) {
+static void btu_hcif_inquiry_result_evt(uint8_t* p, uint8_t hci_evt_len) {
   /* Store results in the cache */
-  btm_process_inq_results(p, BTM_INQ_RESULT_STANDARD);
+  btm_process_inq_results(p, hci_evt_len, BTM_INQ_RESULT_STANDARD);
 }
 
 /*******************************************************************************
@@ -962,9 +963,9 @@ static void btu_hcif_inquiry_result_evt(uint8_t* p) {
  * Returns          void
  *
  ******************************************************************************/
-static void btu_hcif_inquiry_rssi_result_evt(uint8_t* p) {
+static void btu_hcif_inquiry_rssi_result_evt(uint8_t* p, uint8_t hci_evt_len) {
   /* Store results in the cache */
-  btm_process_inq_results(p, BTM_INQ_RESULT_WITH_RSSI);
+  btm_process_inq_results(p, hci_evt_len, BTM_INQ_RESULT_WITH_RSSI);
 }
 
 /*******************************************************************************
@@ -976,9 +977,10 @@ static void btu_hcif_inquiry_rssi_result_evt(uint8_t* p) {
  * Returns          void
  *
  ******************************************************************************/
-static void btu_hcif_extended_inquiry_result_evt(uint8_t* p) {
+static void btu_hcif_extended_inquiry_result_evt(uint8_t* p,
+                                                 uint8_t hci_evt_len) {
   /* Store results in the cache */
-  btm_process_inq_results(p, BTM_INQ_RESULT_EXTENDED);
+  btm_process_inq_results(p, hci_evt_len, BTM_INQ_RESULT_EXTENDED);
 }
 
 /*******************************************************************************
