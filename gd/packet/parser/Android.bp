@@ -15,6 +15,7 @@ cc_binary_host {
         "fields/fixed_scalar_field.cc",
         "fields/group_field.cc",
         "fields/packet_field.cc",
+        "fields/padding_field.cc",
         "fields/payload_field.cc",
         "fields/reserved_field.cc",
         "fields/scalar_field.cc",

@@ -69,6 +69,7 @@
 %token CUSTOM_FIELD "custom_field"
 %token CHECKSUM "checksum"
 %token CHECKSUM_START "checksum_start"
+%token PADDING "padding"
 
 %type<enum_definition> enum_definition
 %type<enumeration_values> enumeration_list
@@ -81,6 +82,7 @@
 %type<packet_field_type> type_def_field_definition;
 %type<packet_field_type> scalar_field_definition;
 %type<packet_field_type> checksum_start_field_definition;
+%type<packet_field_type> padding_field_definition;
 %type<packet_field_type> size_field_definition;
 %type<packet_field_type> payload_field_definition;
 %type<packet_field_type> body_field_definition;
@@ -421,6 +423,11 @@ field_definition
       DEBUG() << "Checksum start field\n";
       $$ = $1;
     }
+  | padding_field_definition
+    {
+      DEBUG() << "Padding field\n";
+      $$ = $1;
+    }
   | size_field_definition
     {
       DEBUG() << "Size field\n";
@@ -590,6 +597,13 @@ checksum_start_field_definition
       DEBUG() << "ChecksumStart field defined\n";
       $$ = new ChecksumStartField(*$3, LOC);
       delete $3;
+    }
+
+padding_field_definition
+  : PADDING '[' INTEGER ']'
+    {
+      DEBUG() << "Padding field defined\n";
+      $$ = new PaddingField($3, LOC);
     }
 
 size_field_definition
