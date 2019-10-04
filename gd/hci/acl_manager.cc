@@ -266,10 +266,12 @@ struct AclManager::impl {
     ASSERT(connection_complete.IsValid());
     auto status = connection_complete.GetStatus();
     auto address = connection_complete.GetPeerAddress();
+    auto peer_address_type = connection_complete.GetPeerAddressType();
     on_any_connection_complete(address);
     if (status != ErrorCode::SUCCESS) {
-      client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectFail, common::Unretained(client_callbacks_),
-                                             address, status));
+      le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectFail,
+                                                common::Unretained(le_client_callbacks_), address, peer_address_type,
+                                                status));
       return;
     }
     // TODO: Check and save other connection parameters
@@ -280,8 +282,8 @@ struct AclManager::impl {
       start_round_robin();
     }
     std::unique_ptr<AclConnection> connection_proxy(new AclConnection(&acl_manager_, handle, address));
-    client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectSuccess,
-                                           common::Unretained(client_callbacks_), std::move(connection_proxy)));
+    le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectSuccess,
+                                              common::Unretained(le_client_callbacks_), std::move(connection_proxy)));
   }
 
   void on_le_enhanced_connection_complete(LeMetaEventView packet) {
@@ -289,10 +291,12 @@ struct AclManager::impl {
     ASSERT(connection_complete.IsValid());
     auto status = connection_complete.GetStatus();
     auto address = connection_complete.GetPeerAddress();
+    auto peer_address_type = connection_complete.GetPeerAddressType();
     on_any_connection_complete(address);
     if (status != ErrorCode::SUCCESS) {
-      client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectFail, common::Unretained(client_callbacks_),
-                                             address, status));
+      le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectFail,
+                                                common::Unretained(le_client_callbacks_), address, peer_address_type,
+                                                status));
       return;
     }
     // TODO: Check and save other connection parameters
@@ -303,8 +307,8 @@ struct AclManager::impl {
       start_round_robin();
     }
     std::unique_ptr<AclConnection> connection_proxy(new AclConnection(&acl_manager_, handle, address));
-    client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectSuccess,
-                                           common::Unretained(client_callbacks_), std::move(connection_proxy)));
+    le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectSuccess,
+                                              common::Unretained(le_client_callbacks_), std::move(connection_proxy)));
   }
 
   void on_connection_complete(EventPacketView packet) {

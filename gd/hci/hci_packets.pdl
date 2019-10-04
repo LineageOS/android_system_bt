@@ -3089,7 +3089,7 @@ packet LeConnectionComplete : LeMetaEvent (subevent_code = CONNECTION_COMPLETE) 
   connection_handle : 12,
   _reserved_ : 4,
   role : Role,
-  peer_address_type : PeerAddressType,
+  peer_address_type : AddressType,
   peer_address : Address,
   conn_interval : 16, // 0x006 - 0x0C80 (7.5ms - 4000ms)
   conn_latency : 16,  // Number of connection events
@@ -3158,7 +3158,7 @@ packet LeEnhancedConnectionComplete : LeMetaEvent (subevent_code = ENHANCED_CONN
   connection_handle : 12,
   _reserved_ : 4,
   role : Role,
-  peer_address_type : PeerAddressType,
+  peer_address_type : AddressType,
   peer_address : Address,
   local_resolvable_private_address : Address,
   peer_resolvable_private_address : Address,

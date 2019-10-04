@@ -143,6 +143,15 @@ class TestHciLayer : public HciLayer {
     registered_events_.erase(event_code);
   }
 
+  void RegisterLeEventHandler(SubeventCode subevent_code, common::Callback<void(LeMetaEventView)> event_handler,
+                              os::Handler* handler) override {
+    registered_le_events_[subevent_code] = event_handler;
+  }
+
+  void UnregisterLeEventHandler(SubeventCode subevent_code) {
+    registered_le_events_.erase(subevent_code);
+  }
+
   void IncomingEvent(std::unique_ptr<EventPacketBuilder> event_builder) {
     auto packet = GetPacketView(std::move(event_builder));
     EventPacketView event = EventPacketView::Create(packet);
@@ -150,6 +159,16 @@ class TestHciLayer : public HciLayer {
     EventCode event_code = event.GetEventCode();
     EXPECT_TRUE(registered_events_.find(event_code) != registered_events_.end());
     registered_events_[event_code].Run(event);
+  }
+
+  void IncomingLeMetaEvent(std::unique_ptr<LeMetaEventBuilder> event_builder) {
+    auto packet = GetPacketView(std::move(event_builder));
+    EventPacketView event = EventPacketView::Create(packet);
+    LeMetaEventView meta_event_view = LeMetaEventView::Create(event);
+    EXPECT_TRUE(meta_event_view.IsValid());
+    SubeventCode subevent_code = meta_event_view.GetSubeventCode();
+    EXPECT_TRUE(registered_le_events_.find(subevent_code) != registered_le_events_.end());
+    registered_le_events_[subevent_code].Run(meta_event_view);
   }
 
   void IncomingAclData(uint16_t handle) {
@@ -203,6 +222,7 @@ class TestHciLayer : public HciLayer {
 
  private:
   std::map<EventCode, common::Callback<void(EventPacketView)>> registered_events_;
+  std::map<SubeventCode, common::Callback<void(LeMetaEventView)>> registered_le_events_;
   std::list<base::OnceCallback<void(CommandCompleteView)>> command_complete_callbacks;
   BidiQueue<AclPacketView, AclPacketBuilder> acl_queue_{3 /* TODO: Set queue depth */};
 
@@ -244,8 +264,19 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
     return mock_connection_callback_.connection_promise_->get_future();
   }
 
+  std::future<void> GetLeConnectionFuture() {
+    ASSERT_LOG(mock_le_connection_callbacks_.le_connection_promise_ == nullptr,
+               "Promises promises ... Only one at a time");
+    mock_le_connection_callbacks_.le_connection_promise_ = std::make_unique<std::promise<void>>();
+    return mock_le_connection_callbacks_.le_connection_promise_->get_future();
+  }
+
   std::shared_ptr<AclConnection> GetLastConnection() {
     return mock_connection_callback_.connections_.back();
+  }
+
+  std::shared_ptr<AclConnection> GetLastLeConnection() {
+    return mock_le_connection_callbacks_.le_connections_.back();
   }
 
   void SendAclData(uint16_t handle, std::shared_ptr<AclConnection> connection) {
@@ -280,6 +311,21 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
     std::unique_ptr<std::promise<void>> connection_promise_;
   } mock_connection_callback_;
 
+  class MockLeConnectionCallbacks : public LeConnectionCallbacks {
+   public:
+    void OnLeConnectSuccess(std::unique_ptr<AclConnection> connection) override {
+      le_connections_.push_back(std::move(connection));
+      if (le_connection_promise_ != nullptr) {
+        le_connection_promise_->set_value();
+        le_connection_promise_.reset();
+      }
+    }
+    MOCK_METHOD3(OnLeConnectFail, void(Address, AddressType, ErrorCode reason));
+
+    std::list<std::shared_ptr<AclConnection>> le_connections_;
+    std::unique_ptr<std::promise<void>> le_connection_promise_;
+  } mock_le_connection_callbacks_;
+
   class MockAclManagerCallbacks : public AclManagerCallbacks {
    public:
     MOCK_METHOD2(OnMasterLinkKeyComplete, void(uint16_t connection_handle, KeyFlag key_flag));
@@ -293,6 +339,7 @@ class AclManagerTest : public AclManagerNoCallbacksTest {
   void SetUp() override {
     AclManagerNoCallbacksTest::SetUp();
     acl_manager_->RegisterCallbacks(&mock_connection_callback_, client_handler_);
+    acl_manager_->RegisterLeCallbacks(&mock_le_connection_callbacks_, client_handler_);
     acl_manager_->RegisterAclManagerCallbacks(&mock_acl_manager_callbacks_, client_handler_);
   }
 };
@@ -413,6 +460,46 @@ TEST_F(AclManagerTest, invoke_registered_callback_connection_complete_fail) {
   fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
   fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
   fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
+}
+
+TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_success) {
+  acl_manager_->CreateLeConnection(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
+
+  auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
+  auto le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
+  auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);
+  ASSERT(command_view.IsValid());
+  EXPECT_EQ(command_view.GetPeerAddress(), remote);
+  EXPECT_EQ(command_view.GetPeerAddressType(), AddressType::PUBLIC_DEVICE_ADDRESS);
+
+  auto first_connection = GetLeConnectionFuture();
+
+  test_hci_layer_->IncomingLeMetaEvent(
+      LeConnectionCompleteBuilder::Create(ErrorCode::SUCCESS, 0x123, Role::SLAVE, AddressType::PUBLIC_DEVICE_ADDRESS,
+                                          remote, 0x0100, 0x0010, 0x0011, MasterClockAccuracy::PPM_30));
+
+  auto first_connection_status = first_connection.wait_for(kTimeout);
+  ASSERT_EQ(first_connection_status, std::future_status::ready);
+
+  std::shared_ptr<AclConnection> connection = GetLastLeConnection();
+  ASSERT_EQ(connection->GetAddress(), remote);
+}
+
+TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_fail) {
+  acl_manager_->CreateLeConnection(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
+
+  auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
+  auto le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
+  auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);
+  ASSERT(command_view.IsValid());
+  EXPECT_EQ(command_view.GetPeerAddress(), remote);
+  EXPECT_EQ(command_view.GetPeerAddressType(), AddressType::PUBLIC_DEVICE_ADDRESS);
+
+  EXPECT_CALL(mock_le_connection_callbacks_, OnLeConnectFail(remote, AddressType::PUBLIC_DEVICE_ADDRESS,
+                                                             ErrorCode::CONNECTION_REJECTED_LIMITED_RESOURCES));
+  test_hci_layer_->IncomingLeMetaEvent(LeConnectionCompleteBuilder::Create(
+      ErrorCode::CONNECTION_REJECTED_LIMITED_RESOURCES, 0x123, Role::SLAVE, AddressType::PUBLIC_DEVICE_ADDRESS, remote,
+      0x0100, 0x0010, 0x0011, MasterClockAccuracy::PPM_30));
 }
 
 TEST_F(AclManagerTest, invoke_registered_callback_disconnection_complete) {
