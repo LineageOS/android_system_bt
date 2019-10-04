@@ -340,7 +340,7 @@ TEST_F(HciTest, leMetaEvent) {
   ErrorCode status = ErrorCode::SUCCESS;
   uint16_t handle = 0x123;
   Role role = Role::MASTER;
-  PeerAddressType peer_address_type = PeerAddressType::RANDOM_DEVICE_OR_IDENTITY_ADDRESS;
+  AddressType peer_address_type = AddressType::PUBLIC_DEVICE_ADDRESS;
   Address peer_address = Address::kAny;
   uint16_t conn_interval = 0x0ABC;
   uint16_t conn_latency = 0x0123;
