@@ -23,7 +23,7 @@
 #include "grpc/grpc_module.h"
 #include "hal/facade.h"
 #include "hci/facade.h"
-#include "l2cap/facade.h"
+#include "l2cap/classic/facade.h"
 #include "os/log.h"
 #include "os/thread.h"
 #include "stack_manager.h"
@@ -60,7 +60,7 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
         break;
       case BluetoothModule::L2CAP:
         modules.add<::bluetooth::facade::ReadOnlyPropertyServerModule>();
-        modules.add<::bluetooth::l2cap::L2capModuleFacadeModule>();
+        modules.add<::bluetooth::l2cap::classic::L2capModuleFacadeModule>();
         break;
       default:
         return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "invalid module under test");

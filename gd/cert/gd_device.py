@@ -21,7 +21,7 @@ from cert.event_stream import EventStream
 from facade import rootservice_pb2_grpc as facade_rootservice_pb2_grpc
 from hal import facade_pb2_grpc as hal_facade_pb2_grpc
 from hci import facade_pb2_grpc as hci_facade_pb2_grpc
-from l2cap import facade_pb2_grpc as l2cap_facade_pb2_grpc
+from l2cap.classic import facade_pb2_grpc as l2cap_facade_pb2_grpc
 
 ACTS_CONTROLLER_CONFIG_NAME = "GdDevice"
 ACTS_CONTROLLER_REFERENCE_NAME = "gd_devices"

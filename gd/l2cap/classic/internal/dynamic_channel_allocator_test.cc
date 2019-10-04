@@ -14,8 +14,7 @@
  * limitations under the License.
  */
 
-#include "l2cap/internal/fixed_channel_allocator.h"
-#include "l2cap/classic/internal/fixed_channel_impl_mock.h"
+#include "l2cap/classic/internal/dynamic_channel_allocator.h"
 #include "l2cap/classic/internal/link_mock.h"
 #include "l2cap/internal/parameter_provider_mock.h"
 
@@ -24,16 +23,16 @@
 
 namespace bluetooth {
 namespace l2cap {
+namespace classic {
 namespace internal {
 
-using l2cap::classic::internal::testing::MockFixedChannelImpl;
-using l2cap::classic::internal::testing::MockLink;
-using testing::MockParameterProvider;
+using l2cap::internal::testing::MockParameterProvider;
+using testing::MockLink;
 using ::testing::Return;
 
 const hci::Address device{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
 
-class L2capFixedChannelAllocatorTest : public ::testing::Test {
+class L2capClassicDynamicChannelAllocatorTest : public ::testing::Test {
  protected:
   void SetUp() override {
     thread_ = new os::Thread("test_thread", os::Thread::Priority::NORMAL);
@@ -41,9 +40,7 @@ class L2capFixedChannelAllocatorTest : public ::testing::Test {
     mock_parameter_provider_ = new MockParameterProvider();
     mock_classic_link_ = new MockLink(handler_, mock_parameter_provider_);
     EXPECT_CALL(*mock_classic_link_, GetDevice()).WillRepeatedly(Return(device));
-    // Use classic as a place holder
-    channel_allocator_ =
-        std::make_unique<FixedChannelAllocator<MockFixedChannelImpl, MockLink>>(mock_classic_link_, handler_);
+    channel_allocator_ = std::make_unique<DynamicChannelAllocator>(mock_classic_link_, handler_);
   }
 
   void TearDown() override {
@@ -59,23 +56,25 @@ class L2capFixedChannelAllocatorTest : public ::testing::Test {
   os::Handler* handler_{nullptr};
   MockParameterProvider* mock_parameter_provider_{nullptr};
   MockLink* mock_classic_link_{nullptr};
-  std::unique_ptr<FixedChannelAllocator<MockFixedChannelImpl, MockLink>> channel_allocator_;
+  std::unique_ptr<DynamicChannelAllocator> channel_allocator_;
 };
 
-TEST_F(L2capFixedChannelAllocatorTest, precondition) {
-  Cid cid = kFirstFixedChannel;
-  EXPECT_FALSE(channel_allocator_->IsChannelAllocated(cid));
+TEST_F(L2capClassicDynamicChannelAllocatorTest, precondition) {
+  Psm psm = 0x03;
+  EXPECT_FALSE(channel_allocator_->IsChannelAllocated(psm));
 }
 
-TEST_F(L2capFixedChannelAllocatorTest, allocate_and_free_channel) {
-  Cid cid = kFirstFixedChannel;
-  auto channel = channel_allocator_->AllocateChannel(cid, {});
-  EXPECT_TRUE(channel_allocator_->IsChannelAllocated(cid));
-  EXPECT_EQ(channel, channel_allocator_->FindChannel(cid));
-  ASSERT_NO_FATAL_FAILURE(channel_allocator_->FreeChannel(cid));
-  EXPECT_FALSE(channel_allocator_->IsChannelAllocated(cid));
+TEST_F(L2capClassicDynamicChannelAllocatorTest, allocate_and_free_channel) {
+  Psm psm = 0x03;
+  Cid remote_cid = kFirstDynamicChannel;
+  auto channel = channel_allocator_->AllocateChannel(psm, remote_cid, {});
+  EXPECT_TRUE(channel_allocator_->IsChannelAllocated(psm));
+  EXPECT_EQ(channel, channel_allocator_->FindChannel(psm));
+  ASSERT_NO_FATAL_FAILURE(channel_allocator_->FreeChannel(psm));
+  EXPECT_FALSE(channel_allocator_->IsChannelAllocated(psm));
 }
 
 }  // namespace internal
+}  // namespace classic
 }  // namespace l2cap
 }  // namespace bluetooth
