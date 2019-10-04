@@ -20,7 +20,8 @@
 #include "hal/hci_hal.h"
 #include "hci/acl_manager.h"
 #include "hci/classic_security_manager.h"
-#include "l2cap/l2cap_layer.h"
+#include "l2cap/classic/l2cap_classic_module.h"
+#include "l2cap/le/l2cap_le_module.h"
 #include "os/log.h"
 #include "os/thread.h"
 #include "shim/controller.h"
@@ -41,7 +42,8 @@ struct bluetooth::shim::Stack::impl {
     modules.add<::bluetooth::hal::HciHal>();
     modules.add<::bluetooth::hci::AclManager>();
     modules.add<::bluetooth::hci::ClassicSecurityManager>();
-    modules.add<::bluetooth::l2cap::L2capLayer>();
+    modules.add<::bluetooth::l2cap::classic::L2capClassicModule>();
+    modules.add<::bluetooth::l2cap::le::L2capLeModule>();
     modules.add<::bluetooth::shim::Controller>();
     modules.add<::bluetooth::shim::HciLayer>();
 

@@ -326,7 +326,7 @@ filegroup {
         "facade/rootservice.proto",
         "hal/facade.proto",
         "hci/facade.proto",
-        "l2cap/facade.proto",
+        "l2cap/classic/facade.proto",
     ],
 }
 
@@ -349,8 +349,8 @@ genrule {
         "hal/facade.pb.h",
         "hci/facade.grpc.pb.h",
         "hci/facade.pb.h",
-        "l2cap/facade.grpc.pb.h",
-        "l2cap/facade.pb.h",
+        "l2cap/classic/facade.grpc.pb.h",
+        "l2cap/classic/facade.pb.h",
     ],
 }
 
@@ -373,8 +373,8 @@ genrule {
         "hal/facade.pb.cc",
         "hci/facade.grpc.pb.cc",
         "hci/facade.pb.cc",
-        "l2cap/facade.grpc.pb.cc",
-        "l2cap/facade.pb.cc",
+        "l2cap/classic/facade.grpc.pb.cc",
+        "l2cap/classic/facade.pb.cc",
     ],
 }
 
@@ -390,8 +390,8 @@ genrule {
         "touch $(genDir)/hal/cert/__init__.py; " +
         "touch $(genDir)/hci/__init__.py; " +
         "touch $(genDir)/hci/cert/__init__.py; " +
-        "touch $(genDir)/l2cap/__init__.py; " +
-        "touch $(genDir)/l2cap/cert/__init__.py; ",
+        "touch $(genDir)/l2cap/classic/__init__.py; " +
+        "touch $(genDir)/l2cap/classic/cert/__init__.py; ",
     srcs: [
         ":BluetoothFacadeProto",
         ":BluetoothCertStackProto",
@@ -410,18 +410,18 @@ genrule {
         "hci/__init__.py",
         "hci/facade_pb2_grpc.py",
         "hci/facade_pb2.py",
-        "l2cap/__init__.py",
-        "l2cap/facade_pb2_grpc.py",
-        "l2cap/facade_pb2.py",
+        "l2cap/classic/__init__.py",
+        "l2cap/classic/facade_pb2_grpc.py",
+        "l2cap/classic/facade_pb2.py",
         "hal/cert/__init__.py",
         "hal/cert/api_pb2_grpc.py",
         "hal/cert/api_pb2.py",
         "hci/cert/__init__.py",
         "hci/cert/api_pb2_grpc.py",
         "hci/cert/api_pb2.py",
-        "l2cap/cert/__init__.py",
-        "l2cap/cert/api_pb2_grpc.py",
-        "l2cap/cert/api_pb2.py",
+        "l2cap/classic/cert/__init__.py",
+        "l2cap/classic/cert/api_pb2_grpc.py",
+        "l2cap/classic/cert/api_pb2.py",
     ],
 }
 
@@ -431,7 +431,7 @@ filegroup {
         "cert/rootservice.proto",
         "hal/cert/api.proto",
         "hci/cert/api.proto",
-        "l2cap/cert/api.proto",
+        "l2cap/classic/cert/api.proto",
     ],
 }
 
@@ -455,8 +455,8 @@ genrule {
         "hal/cert/api.pb.h",
         "hci/cert/api.grpc.pb.h",
         "hci/cert/api.pb.h",
-        "l2cap/cert/api.grpc.pb.h",
-        "l2cap/cert/api.pb.h",
+        "l2cap/classic/cert/api.grpc.pb.h",
+        "l2cap/classic/cert/api.pb.h",
     ],
 }
 
@@ -480,7 +480,7 @@ genrule {
         "hal/cert/api.pb.cc",
         "hci/cert/api.grpc.pb.cc",
         "hci/cert/api.pb.cc",
-        "l2cap/cert/api.grpc.pb.cc",
-        "l2cap/cert/api.pb.cc",
+        "l2cap/classic/cert/api.grpc.pb.cc",
+        "l2cap/classic/cert/api.pb.cc",
     ],
 }
