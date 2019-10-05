@@ -15,8 +15,8 @@
  */
 
 #include "l2cap/internal/fixed_channel_allocator.h"
-#include "l2cap/internal/classic_fixed_channel_impl_mock.h"
-#include "l2cap/internal/classic_link_mock.h"
+#include "l2cap/classic/internal/fixed_channel_impl_mock.h"
+#include "l2cap/classic/internal/link_mock.h"
 #include "l2cap/internal/parameter_provider_mock.h"
 
 #include <gmock/gmock.h>
@@ -26,8 +26,8 @@ namespace bluetooth {
 namespace l2cap {
 namespace internal {
 
-using testing::MockClassicFixedChannelImpl;
-using testing::MockClassicLink;
+using l2cap::classic::internal::testing::MockFixedChannelImpl;
+using l2cap::classic::internal::testing::MockLink;
 using testing::MockParameterProvider;
 using ::testing::Return;
 
@@ -39,11 +39,11 @@ class L2capFixedChannelAllocatorTest : public ::testing::Test {
     thread_ = new os::Thread("test_thread", os::Thread::Priority::NORMAL);
     handler_ = new os::Handler(thread_);
     mock_parameter_provider_ = new MockParameterProvider();
-    mock_classic_link_ = new MockClassicLink(handler_, mock_parameter_provider_);
+    mock_classic_link_ = new MockLink(handler_, mock_parameter_provider_);
     EXPECT_CALL(*mock_classic_link_, GetDevice()).WillRepeatedly(Return(device));
     // Use classic as a place holder
-    channel_allocator_ = std::make_unique<FixedChannelAllocator<MockClassicFixedChannelImpl, MockClassicLink>>(
-        mock_classic_link_, handler_);
+    channel_allocator_ =
+        std::make_unique<FixedChannelAllocator<MockFixedChannelImpl, MockLink>>(mock_classic_link_, handler_);
   }
 
   void TearDown() override {
@@ -58,8 +58,8 @@ class L2capFixedChannelAllocatorTest : public ::testing::Test {
   os::Thread* thread_{nullptr};
   os::Handler* handler_{nullptr};
   MockParameterProvider* mock_parameter_provider_{nullptr};
-  MockClassicLink* mock_classic_link_{nullptr};
-  std::unique_ptr<FixedChannelAllocator<MockClassicFixedChannelImpl, MockClassicLink>> channel_allocator_;
+  MockLink* mock_classic_link_{nullptr};
+  std::unique_ptr<FixedChannelAllocator<MockFixedChannelImpl, MockLink>> channel_allocator_;
 };
 
 TEST_F(L2capFixedChannelAllocatorTest, precondition) {

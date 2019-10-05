@@ -21,7 +21,7 @@ from cert.event_stream import EventStream
 from cert import rootservice_pb2_grpc as cert_rootservice_pb2_grpc
 from hal.cert import api_pb2_grpc as hal_cert_pb2_grpc
 from hci.cert import api_pb2_grpc as hci_cert_pb2_grpc
-from l2cap.cert import api_pb2_grpc as l2cap_cert_pb2_grpc
+from l2cap.classic.cert import api_pb2_grpc as l2cap_cert_pb2_grpc
 
 ACTS_CONTROLLER_CONFIG_NAME = "GdCertDevice"
 ACTS_CONTROLLER_REFERENCE_NAME = "gd_cert_devices"

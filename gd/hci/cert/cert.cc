@@ -64,6 +64,8 @@ class AclManagerCertService : public AclManagerCert::Service {
     hci_layer_->RegisterEventHandler(EventCode::QOS_SETUP_COMPLETE,
                                      Bind(&AclManagerCertService::on_qos_setup_complete, common::Unretained(this)),
                                      handler_);
+    hci_layer_->RegisterEventHandler(EventCode::ROLE_CHANGE,
+                                     Bind(&AclManagerCertService::on_role_change, common::Unretained(this)), handler_);
 
     controller_->RegisterCompletedAclPacketsCallback(common::Bind([](uint16_t, uint16_t) { /* TODO check */ }),
                                                      handler_);
@@ -150,6 +152,9 @@ class AclManagerCertService : public AclManagerCert::Service {
   }
 
   void on_qos_setup_complete(EventPacketView packet) { /*TODO*/
+  }
+
+  void on_role_change(EventPacketView packet) { /*TODO*/
   }
 
   using EventStream = ::bluetooth::grpc::GrpcEventStream<AclData, AclPacketView>;

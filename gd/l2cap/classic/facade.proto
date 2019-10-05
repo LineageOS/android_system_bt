@@ -1,0 +1,69 @@
+syntax = "proto3";
+
+package bluetooth.l2cap.classic;
+
+import "google/protobuf/empty.proto";
+import "facade/common.proto";
+
+service L2capModuleFacade {
+  rpc RegisterChannel(RegisterChannelRequest) returns (google.protobuf.Empty) {
+    // Testing Android Bluetooth stack only. Optional for other stack.
+  }
+  rpc FetchConnectionComplete(facade.EventStreamRequest) returns (stream ConnectionCompleteEvent) {
+    // Testing Android Bluetooth stack only. Optional for other stack.
+  }
+  rpc Connect(facade.BluetoothAddress) returns (google.protobuf.Empty) {}
+  rpc OpenChannel(OpenChannelRequest) returns (google.protobuf.Empty) {}
+  rpc ConfigureChannel(ConfigureChannelRequest) returns (google.protobuf.Empty) {}
+  rpc SendL2capPacket(L2capPacket) returns (SendL2capPacketResult) {}
+  rpc FetchL2capData(facade.EventStreamRequest) returns (stream L2capPacket) {}
+}
+
+message RegisterChannelRequest {
+  uint32 channel = 1;
+}
+
+message ConnectionCompleteEvent {
+  facade.BluetoothAddress remote = 1;
+}
+
+message OpenChannelRequest {
+  facade.BluetoothAddress remote = 1;
+  uint32 psm = 2;
+}
+
+message ConfigureChannelRequest {
+  facade.BluetoothAddress remote = 1;
+  // Config
+}
+
+message CloseChannelRequest {
+  facade.BluetoothAddress remote = 1;
+  uint32 cid = 2;
+}
+
+enum ChannelSignalEventType {
+  OPEN = 0;
+  CLOSE = 1;
+  CONFIGURE = 2;
+}
+
+message ChannelSignalEvent {
+  uint32 cid = 1;
+  ChannelSignalEventType type = 2;
+}
+
+enum SendL2capPacketResultType {
+  OK = 0;
+  BAD_CID = 1;
+}
+
+message SendL2capPacketResult {
+  SendL2capPacketResultType result_type = 1;
+}
+
+message L2capPacket {
+  facade.BluetoothAddress remote = 1;
+  uint32 channel = 2;
+  bytes payload = 3;
+}

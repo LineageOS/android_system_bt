@@ -1159,8 +1159,13 @@ packet RoleDiscoveryComplete : CommandComplete (command_op_code = ROLE_DISCOVERY
 }
 
 packet SwitchRole : ConnectionManagementCommand (op_code = SWITCH_ROLE) {
-  _payload_,  // placeholder (unimplemented)
+  bd_addr : Address,
+  role : Role,
 }
+
+packet SwitchRoleStatus : CommandStatus (command_op_code = SWITCH_ROLE) {
+}
+
 
 packet ReadLinkPolicySettings : ConnectionManagementCommand (op_code = READ_LINK_POLICY_SETTINGS) {
   connection_handle : 12,
@@ -1171,6 +1176,7 @@ enum LinkPolicy : 16 {
   ENABLE_ROLE_SWITCH = 0x01,
   ENABLE_HOLD_MODE = 0x02,
   ENABLE_SNIFF_MODE = 0x04,
+  ENABLE_PARK_MODE = 0x08, // deprecated after 5.0
 }
 
 packet ReadLinkPolicySettingsComplete : CommandComplete (command_op_code = READ_LINK_POLICY_SETTINGS) {
@@ -1193,11 +1199,19 @@ packet WriteLinkPolicySettingsComplete : CommandComplete (command_op_code = WRIT
 }
 
 packet ReadDefaultLinkPolicySettings : ConnectionManagementCommand (op_code = READ_DEFAULT_LINK_POLICY_SETTINGS) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet ReadDefaultLinkPolicySettingsComplete : CommandComplete (command_op_code = READ_DEFAULT_LINK_POLICY_SETTINGS) {
+  status : ErrorCode,
+  default_link_policy_settings : 16,
 }
 
 packet WriteDefaultLinkPolicySettings : ConnectionManagementCommand (op_code = WRITE_DEFAULT_LINK_POLICY_SETTINGS) {
-  _payload_,  // placeholder (unimplemented)
+  default_link_policy_settings : 16,
+}
+
+packet WriteDefaultLinkPolicySettingsComplete : CommandComplete (command_op_code = WRITE_DEFAULT_LINK_POLICY_SETTINGS) {
+  status : ErrorCode,
 }
 
 enum FlowDirection : 8 {
@@ -1411,7 +1425,11 @@ packet WriteConnectionAcceptTimeout : ConnectionManagementCommand (op_code = WRI
 }
 
 packet ReadPageTimeout : DiscoveryCommand (op_code = READ_PAGE_TIMEOUT) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet ReadPageTimeoutComplete : CommandComplete (command_op_code = READ_PAGE_TIMEOUT) {
+  status : ErrorCode,
+  page_timeout : 16,
 }
 
 packet WritePageTimeout : DiscoveryCommand (op_code = WRITE_PAGE_TIMEOUT) {
@@ -1464,7 +1482,12 @@ packet ReadInquiryScanActivity : DiscoveryCommand (op_code = READ_INQUIRY_SCAN_A
 }
 
 packet WriteInquiryScanActivity : DiscoveryCommand (op_code = WRITE_INQUIRY_SCAN_ACTIVITY) {
-  _payload_,  // placeholder (unimplemented)
+  inquiry_scan_interval : 16, // Range: 0x0012 to 0x1000; only even values are valid * 0x625 ms
+  inquiry_scan_window : 16, // Range: 0x0011 to 0x1000
+}
+
+packet WriteInquiryScanActivityComplete : CommandComplete (command_op_code = WRITE_INQUIRY_SCAN_ACTIVITY) {
+  status : ErrorCode,
 }
 
 enum AuthenticationEnable : 8 {
@@ -1635,7 +1658,17 @@ packet WriteLinkSupervisionTimeoutComplete : CommandComplete (command_op_code = 
 }
 
 packet ReadNumberOfSupportedIac : DiscoveryCommand (op_code = READ_NUMBER_OF_SUPPORTED_IAC) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet ReadNumberOfSupportedIacComplete : CommandComplete (command_op_code = READ_NUMBER_OF_SUPPORTED_IAC) {
+  status : ErrorCode,
+  num_support_iac : 8,
+}
+
+struct Lap { // Lower Address Part
+  lap : 6,
+  _reserved_ : 2,
+  _fixed_ = 0x9e8b : 16,
 }
 
 packet ReadCurrentIacLap : DiscoveryCommand (op_code = READ_CURRENT_IAC_LAP) {
@@ -1643,7 +1676,12 @@ packet ReadCurrentIacLap : DiscoveryCommand (op_code = READ_CURRENT_IAC_LAP) {
 }
 
 packet WriteCurrentIacLap : DiscoveryCommand (op_code = WRITE_CURRENT_IAC_LAP) {
-  _payload_,  // placeholder (unimplemented)
+  _count_(laps_to_write) : 8,
+  laps_to_write : Lap[],
+}
+
+packet WriteCurrentIacLapComplete : CommandComplete (command_op_code = WRITE_CURRENT_IAC_LAP) {
+  status : ErrorCode,
 }
 
 packet SetAfhHostChannelClassification : CommandPacket (op_code = SET_AFH_HOST_CHANNEL_CLASSIFICATION) {
@@ -2012,6 +2050,20 @@ packet ReadAfhChannelMap : ConnectionManagementCommand (op_code = READ_AFH_CHANN
   connection_handle : 12,
   _reserved_ : 4,
 }
+
+enum AfhMode : 8 {
+  AFH_DISABLED = 0x00,
+  AFH_ENABLED = 0x01,
+}
+
+packet ReadAfhChannelMapComplete : CommandComplete (command_op_code = READ_AFH_CHANNEL_MAP) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+  afh_mode : AfhMode,
+  afh_channel_map : 8[10],
+}
+
 
 enum WhichClock : 8 {
   LOCAL = 0x00,
@@ -3037,7 +3089,7 @@ packet LeConnectionComplete : LeMetaEvent (subevent_code = CONNECTION_COMPLETE) 
   connection_handle : 12,
   _reserved_ : 4,
   role : Role,
-  peer_address_type : PeerAddressType,
+  peer_address_type : AddressType,
   peer_address : Address,
   conn_interval : 16, // 0x006 - 0x0C80 (7.5ms - 4000ms)
   conn_latency : 16,  // Number of connection events
@@ -3106,7 +3158,7 @@ packet LeEnhancedConnectionComplete : LeMetaEvent (subevent_code = ENHANCED_CONN
   connection_handle : 12,
   _reserved_ : 4,
   role : Role,
-  peer_address_type : PeerAddressType,
+  peer_address_type : AddressType,
   peer_address : Address,
   local_resolvable_private_address : Address,
   peer_resolvable_private_address : Address,

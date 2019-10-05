@@ -27,7 +27,7 @@ PacketField* StructDef::GetNewField(const std::string& name, ParseLocation loc) 
   if (fields_.HasBody()) {
     return new VariableLengthStructField(name, name_, loc);
   } else {
-    return new StructField(name, name_, total_size_.bits(), loc);
+    return new StructField(name, name_, total_size_, loc);
   }
 }
 
@@ -101,9 +101,25 @@ void StructDef::GenParse(std::ostream& s) const {
       } else {
         s << "{ return {};}";
       }
-      int num_leading_bits = field->GenBounds(s, GetOffsetForField(field->GetName(), false), Size());
+      int num_leading_bits =
+          field->GenBounds(s, GetStructOffsetForField(field->GetName()), Size(), field->GetStructSize());
       s << "auto " << field->GetName() << "_ptr = &to_fill->" << field->GetName() << "_;";
-      field->GenExtractor(s, num_leading_bits);
+      field->GenExtractor(s, num_leading_bits, true);
+      s << "}";
+    }
+    if (field->GetFieldType() == CountField::kFieldType || field->GetFieldType() == SizeField::kFieldType) {
+      s << field->GetDataType() << " " << field->GetName() << "_extracted;";
+      s << "{";
+      s << "if (to_bound.NumBytesRemaining() < " << field->GetSize().bytes() << ")";
+      if (!fields_.HasBody()) {
+        s << "{ return to_bound.Subrange(to_bound.NumBytesRemaining(),0);}";
+      } else {
+        s << "{ return {};}";
+      }
+      int num_leading_bits =
+          field->GenBounds(s, GetStructOffsetForField(field->GetName()), Size(), field->GetStructSize());
+      s << "auto " << field->GetName() << "_ptr = &" << field->GetName() << "_extracted;";
+      field->GenExtractor(s, num_leading_bits, true);
       s << "}";
     }
   }
@@ -198,4 +214,29 @@ void StructDef::GenConstructor(std::ostream& s) const {
   }
 
   s << "}\n";
+}
+
+Size StructDef::GetStructOffsetForField(std::string field_name) const {
+  auto size = Size(0);
+  for (auto it = fields_.begin(); it != fields_.end(); it++) {
+    // We've reached the field, end the loop.
+    if ((*it)->GetName() == field_name) break;
+    const auto& field = *it;
+    // When we need to parse this field, all previous fields should already be parsed.
+    if (field->GetStructSize().empty()) {
+      ERROR() << "Empty size for field " << (*it)->GetName() << " finding the offset for field: " << field_name;
+    }
+    size += field->GetStructSize();
+  }
+
+  // We need the offset until a body field.
+  if (parent_ != nullptr) {
+    auto parent_body_offset = static_cast<StructDef*>(parent_)->GetStructOffsetForField("body");
+    if (parent_body_offset.empty()) {
+      ERROR() << "Empty offset for body in " << parent_->name_ << " finding the offset for field: " << field_name;
+    }
+    size += parent_body_offset;
+  }
+
+  return size;
 }

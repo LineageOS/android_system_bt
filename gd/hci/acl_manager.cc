@@ -81,6 +81,8 @@ struct AclManager::impl {
     hci_layer_->RegisterEventHandler(EventCode::CONNECTION_PACKET_TYPE_CHANGED,
                                      Bind(&impl::on_connection_packet_type_changed, common::Unretained(this)),
                                      handler_);
+    hci_layer_->RegisterEventHandler(EventCode::MASTER_LINK_KEY_COMPLETE,
+                                     Bind(&impl::on_master_link_key_complete, common::Unretained(this)), handler_);
     hci_layer_->RegisterEventHandler(EventCode::AUTHENTICATION_COMPLETE,
                                      Bind(&impl::on_authentication_complete, common::Unretained(this)), handler_);
     hci_layer_->RegisterEventHandler(EventCode::ENCRYPTION_CHANGE,
@@ -94,6 +96,8 @@ struct AclManager::impl {
                                      handler_);
     hci_layer_->RegisterEventHandler(EventCode::QOS_SETUP_COMPLETE,
                                      Bind(&impl::on_qos_setup_complete, common::Unretained(this)), handler_);
+    hci_layer_->RegisterEventHandler(EventCode::ROLE_CHANGE, Bind(&impl::on_role_change, common::Unretained(this)),
+                                     handler_);
     hci_layer_->RegisterEventHandler(EventCode::FLOW_SPECIFICATION_COMPLETE,
                                      Bind(&impl::on_flow_specification_complete, common::Unretained(this)), handler_);
     hci_layer_->RegisterEventHandler(EventCode::FLUSH_OCCURRED,
@@ -262,10 +266,12 @@ struct AclManager::impl {
     ASSERT(connection_complete.IsValid());
     auto status = connection_complete.GetStatus();
     auto address = connection_complete.GetPeerAddress();
+    auto peer_address_type = connection_complete.GetPeerAddressType();
     on_any_connection_complete(address);
     if (status != ErrorCode::SUCCESS) {
-      client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectFail, common::Unretained(client_callbacks_),
-                                             address, status));
+      le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectFail,
+                                                common::Unretained(le_client_callbacks_), address, peer_address_type,
+                                                status));
       return;
     }
     // TODO: Check and save other connection parameters
@@ -276,8 +282,8 @@ struct AclManager::impl {
       start_round_robin();
     }
     std::unique_ptr<AclConnection> connection_proxy(new AclConnection(&acl_manager_, handle, address));
-    client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectSuccess,
-                                           common::Unretained(client_callbacks_), std::move(connection_proxy)));
+    le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectSuccess,
+                                              common::Unretained(le_client_callbacks_), std::move(connection_proxy)));
   }
 
   void on_le_enhanced_connection_complete(LeMetaEventView packet) {
@@ -285,10 +291,12 @@ struct AclManager::impl {
     ASSERT(connection_complete.IsValid());
     auto status = connection_complete.GetStatus();
     auto address = connection_complete.GetPeerAddress();
+    auto peer_address_type = connection_complete.GetPeerAddressType();
     on_any_connection_complete(address);
     if (status != ErrorCode::SUCCESS) {
-      client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectFail, common::Unretained(client_callbacks_),
-                                             address, status));
+      le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectFail,
+                                                common::Unretained(le_client_callbacks_), address, peer_address_type,
+                                                status));
       return;
     }
     // TODO: Check and save other connection parameters
@@ -299,8 +307,8 @@ struct AclManager::impl {
       start_round_robin();
     }
     std::unique_ptr<AclConnection> connection_proxy(new AclConnection(&acl_manager_, handle, address));
-    client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectSuccess,
-                                           common::Unretained(client_callbacks_), std::move(connection_proxy)));
+    le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectSuccess,
+                                              common::Unretained(le_client_callbacks_), std::move(connection_proxy)));
   }
 
   void on_connection_complete(EventPacketView packet) {
@@ -363,6 +371,26 @@ struct AclManager::impl {
       acl_connection.command_complete_handler_->Post(
           common::BindOnce(&ConnectionManagementCallbacks::OnConnectionPacketTypeChanged,
                            common::Unretained(acl_connection.command_complete_callbacks_), packet_type));
+    }
+  }
+
+  void on_master_link_key_complete(EventPacketView packet) {
+    MasterLinkKeyCompleteView complete_view = MasterLinkKeyCompleteView::Create(packet);
+    if (!complete_view.IsValid()) {
+      LOG_ERROR("Received on_master_link_key_complete with invalid packet");
+      return;
+    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
+      auto status = complete_view.GetStatus();
+      std::string error_code = ErrorCodeText(status);
+      LOG_ERROR("Received on_master_link_key_complete with error code %s", error_code.c_str());
+      return;
+    }
+    if (acl_manager_client_callbacks_ != nullptr) {
+      uint16_t connection_handle = complete_view.GetConnectionHandle();
+      KeyFlag key_flag = complete_view.GetKeyFlag();
+      acl_manager_client_handler_->Post(common::BindOnce(&AclManagerCallbacks::OnMasterLinkKeyComplete,
+                                                         common::Unretained(acl_manager_client_callbacks_),
+                                                         connection_handle, key_flag));
     }
   }
 
@@ -496,6 +524,25 @@ struct AclManager::impl {
     }
   }
 
+  void on_role_change(EventPacketView packet) {
+    RoleChangeView role_change_view = RoleChangeView::Create(packet);
+    if (!role_change_view.IsValid()) {
+      LOG_ERROR("Received on_role_change with invalid packet");
+      return;
+    } else if (role_change_view.GetStatus() != ErrorCode::SUCCESS) {
+      auto status = role_change_view.GetStatus();
+      std::string error_code = ErrorCodeText(status);
+      LOG_ERROR("Received on_role_change with error code %s", error_code.c_str());
+      return;
+    }
+    if (acl_manager_client_callbacks_ != nullptr) {
+      Address bd_addr = role_change_view.GetBdAddr();
+      Role new_role = role_change_view.GetNewRole();
+      acl_manager_client_handler_->Post(common::BindOnce(
+          &AclManagerCallbacks::OnRoleChange, common::Unretained(acl_manager_client_callbacks_), bd_addr, new_role));
+    }
+  }
+
   void on_flow_specification_complete(EventPacketView packet) {
     FlowSpecificationCompleteView complete_view = FlowSpecificationCompleteView::Create(packet);
     if (!complete_view.IsValid()) {
@@ -577,6 +624,25 @@ struct AclManager::impl {
       acl_connection.command_complete_handler_->Post(
           common::BindOnce(&ConnectionManagementCallbacks::OnReadLinkPolicySettingsComplete,
                            common::Unretained(acl_connection.command_complete_callbacks_), link_policy_settings));
+    }
+  }
+
+  void on_read_default_link_policy_settings_complete(CommandCompleteView view) {
+    auto complete_view = ReadDefaultLinkPolicySettingsCompleteView::Create(view);
+    if (!complete_view.IsValid()) {
+      LOG_ERROR("Received on_read_link_policy_settings_complete with invalid packet");
+      return;
+    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
+      auto status = complete_view.GetStatus();
+      std::string error_code = ErrorCodeText(status);
+      LOG_ERROR("Received on_read_link_policy_settings_complete with error code %s", error_code.c_str());
+      return;
+    }
+    if (acl_manager_client_callbacks_ != nullptr) {
+      uint16_t default_link_policy_settings = complete_view.GetDefaultLinkPolicySettings();
+      acl_manager_client_handler_->Post(common::BindOnce(&AclManagerCallbacks::OnReadDefaultLinkPolicySettingsComplete,
+                                                         common::Unretained(acl_manager_client_callbacks_),
+                                                         default_link_policy_settings));
     }
   }
 
@@ -685,6 +751,28 @@ struct AclManager::impl {
     }
   }
 
+  void on_read_afh_channel_map_complete(CommandCompleteView view) {
+    auto complete_view = ReadAfhChannelMapCompleteView::Create(view);
+    if (!complete_view.IsValid()) {
+      LOG_ERROR("Received on_read_afh_channel_map_complete with invalid packet");
+      return;
+    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
+      auto status = complete_view.GetStatus();
+      std::string error_code = ErrorCodeText(status);
+      LOG_ERROR("Received on_read_afh_channel_map_complete with error code %s", error_code.c_str());
+      return;
+    }
+    uint16_t handle = complete_view.GetConnectionHandle();
+    auto& acl_connection = acl_connections_.find(handle)->second;
+    if (acl_connection.command_complete_handler_ != nullptr) {
+      AfhMode afh_mode = complete_view.GetAfhMode();
+      std::array<uint8_t, 10> afh_channel_map = complete_view.GetAfhChannelMap();
+      acl_connection.command_complete_handler_->Post(
+          common::BindOnce(&ConnectionManagementCallbacks::OnReadAfhChannelMapComplete,
+                           common::Unretained(acl_connection.command_complete_callbacks_), afh_mode, afh_channel_map));
+    }
+  }
+
   void on_read_rssi_complete(CommandCompleteView view) {
     auto complete_view = ReadRssiCompleteView::Create(view);
     if (!complete_view.IsValid()) {
@@ -786,6 +874,37 @@ struct AclManager::impl {
     std::unique_ptr<CreateConnectionCancelBuilder> packet = CreateConnectionCancelBuilder::Create(address);
     hci_layer_->EnqueueCommand(std::move(packet), common::BindOnce([](CommandCompleteView complete) { /* TODO */ }),
                                handler_);
+  }
+
+  void master_link_key(KeyFlag key_flag) {
+    std::unique_ptr<MasterLinkKeyBuilder> packet = MasterLinkKeyBuilder::Create(key_flag);
+    hci_layer_->EnqueueCommand(
+        std::move(packet),
+        common::BindOnce(&impl::check_command_status<MasterLinkKeyStatusView>, common::Unretained(this)), handler_);
+  }
+
+  void switch_role(Address address, Role role) {
+    std::unique_ptr<SwitchRoleBuilder> packet = SwitchRoleBuilder::Create(address, role);
+    hci_layer_->EnqueueCommand(
+        std::move(packet),
+        common::BindOnce(&impl::check_command_status<SwitchRoleStatusView>, common::Unretained(this)), handler_);
+  }
+
+  void read_default_link_policy_settings() {
+    std::unique_ptr<ReadDefaultLinkPolicySettingsBuilder> packet = ReadDefaultLinkPolicySettingsBuilder::Create();
+    hci_layer_->EnqueueCommand(
+        std::move(packet),
+        common::BindOnce(&impl::on_read_default_link_policy_settings_complete, common::Unretained(this)), handler_);
+  }
+
+  void write_default_link_policy_settings(uint16_t default_link_policy_settings) {
+    std::unique_ptr<WriteDefaultLinkPolicySettingsBuilder> packet =
+        WriteDefaultLinkPolicySettingsBuilder::Create(default_link_policy_settings);
+    hci_layer_->EnqueueCommand(
+        std::move(packet),
+        BindOnce(&AclManager::impl::check_command_complete<WriteDefaultLinkPolicySettingsCompleteView>,
+                 common::Unretained(this)),
+        handler_);
   }
 
   void accept_connection(Address address) {
@@ -986,6 +1105,13 @@ struct AclManager::impl {
         std::move(packet), common::BindOnce(&impl::on_read_link_quality_complete, common::Unretained(this)), handler_);
   }
 
+  void handle_afh_channel_map(uint16_t handle) {
+    std::unique_ptr<ReadAfhChannelMapBuilder> packet = ReadAfhChannelMapBuilder::Create(handle);
+    hci_layer_->EnqueueCommand(std::move(packet),
+                               common::BindOnce(&impl::on_read_afh_channel_map_complete, common::Unretained(this)),
+                               handler_);
+  }
+
   void handle_read_rssi(uint16_t handle) {
     std::unique_ptr<ReadRssiBuilder> packet = ReadRssiBuilder::Create(handle);
     hci_layer_->EnqueueCommand(std::move(packet),
@@ -1067,6 +1193,13 @@ struct AclManager::impl {
     ASSERT(le_client_handler_ == nullptr);
     le_client_callbacks_ = callbacks;
     le_client_handler_ = handler;
+  }
+
+  void handle_register_acl_manager_callbacks(AclManagerCallbacks* callbacks, os::Handler* handler) {
+    ASSERT(acl_manager_client_callbacks_ == nullptr);
+    ASSERT(acl_manager_client_handler_ == nullptr);
+    acl_manager_client_callbacks_ = callbacks;
+    acl_manager_client_handler_ = handler;
   }
 
   acl_connection& check_and_get_connection(uint16_t handle) {
@@ -1347,6 +1480,16 @@ struct AclManager::impl {
     return true;
   }
 
+  bool ReadAfhChannelMap(uint16_t handle) {
+    auto& connection = check_and_get_connection(handle);
+    if (connection.is_disconnected_) {
+      LOG_INFO("Already disconnected");
+      return false;
+    }
+    handler_->Post(BindOnce(&impl::handle_afh_channel_map, common::Unretained(this), handle));
+    return true;
+  }
+
   bool ReadRssi(uint16_t handle) {
     auto& connection = check_and_get_connection(handle);
     if (connection.is_disconnected_) {
@@ -1390,6 +1533,8 @@ struct AclManager::impl {
   os::Handler* client_handler_ = nullptr;
   LeConnectionCallbacks* le_client_callbacks_ = nullptr;
   os::Handler* le_client_handler_ = nullptr;
+  AclManagerCallbacks* acl_manager_client_callbacks_ = nullptr;
+  os::Handler* acl_manager_client_handler_ = nullptr;
   common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* hci_queue_end_ = nullptr;
   std::map<uint16_t, AclManager::acl_connection> acl_connections_;
   std::set<Address> connecting_;
@@ -1509,6 +1654,10 @@ bool AclConnection::ReadLinkQuality() {
   return manager_->pimpl_->ReadLinkQuality(handle_);
 }
 
+bool AclConnection::ReadAfhChannelMap() {
+  return manager_->pimpl_->ReadAfhChannelMap(handle_);
+}
+
 bool AclConnection::ReadRssi() {
   return manager_->pimpl_->ReadRssi(handle_);
 }
@@ -1535,6 +1684,12 @@ void AclManager::RegisterLeCallbacks(LeConnectionCallbacks* callbacks, os::Handl
                                       common::Unretained(callbacks), common::Unretained(handler)));
 }
 
+void AclManager::RegisterAclManagerCallbacks(AclManagerCallbacks* callbacks, os::Handler* handler) {
+  ASSERT(callbacks != nullptr && handler != nullptr);
+  GetHandler()->Post(common::BindOnce(&impl::handle_register_acl_manager_callbacks, common::Unretained(pimpl_.get()),
+                                      common::Unretained(callbacks), common::Unretained(handler)));
+}
+
 void AclManager::CreateConnection(Address address) {
   GetHandler()->Post(common::BindOnce(&impl::create_connection, common::Unretained(pimpl_.get()), address));
 }
@@ -1546,6 +1701,23 @@ void AclManager::CreateLeConnection(Address address, AddressType address_type) {
 
 void AclManager::CancelConnect(Address address) {
   GetHandler()->Post(BindOnce(&impl::cancel_connect, common::Unretained(pimpl_.get()), address));
+}
+
+void AclManager::MasterLinkKey(KeyFlag key_flag) {
+  GetHandler()->Post(BindOnce(&impl::master_link_key, common::Unretained(pimpl_.get()), key_flag));
+}
+
+void AclManager::SwitchRole(Address address, Role role) {
+  GetHandler()->Post(BindOnce(&impl::switch_role, common::Unretained(pimpl_.get()), address, role));
+}
+
+void AclManager::ReadDefaultLinkPolicySettings() {
+  GetHandler()->Post(BindOnce(&impl::read_default_link_policy_settings, common::Unretained(pimpl_.get())));
+}
+
+void AclManager::WriteDefaultLinkPolicySettings(uint16_t default_link_policy_settings) {
+  GetHandler()->Post(BindOnce(&impl::write_default_link_policy_settings, common::Unretained(pimpl_.get()),
+                              default_link_policy_settings));
 }
 
 void AclManager::ListDependencies(ModuleList* list) {

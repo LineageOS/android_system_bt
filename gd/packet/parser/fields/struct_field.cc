@@ -19,7 +19,7 @@
 
 const std::string StructField::kFieldType = "StructField";
 
-StructField::StructField(std::string name, std::string type_name, int size, ParseLocation loc)
+StructField::StructField(std::string name, std::string type_name, Size size, ParseLocation loc)
     : PacketField(name, loc), type_name_(type_name), size_(size) {}
 
 const std::string& StructField::GetFieldType() const {
@@ -30,11 +30,16 @@ Size StructField::GetSize() const {
   return size_;
 }
 
+Size StructField::GetBuilderSize() const {
+  std::string ret = "(" + GetName() + "_.size() * 8)";
+  return ret;
+}
+
 std::string StructField::GetDataType() const {
   return type_name_;
 }
 
-void StructField::GenExtractor(std::ostream& s, int) const {
+void StructField::GenExtractor(std::ostream& s, int, bool) const {
   s << GetName() << "_it = ";
   s << GetDataType() << "::Parse(" << GetName() << "_ptr, " << GetName() << "_it);";
 }
@@ -44,10 +49,10 @@ void StructField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
   s << "ASSERT(was_validated_);";
   s << "size_t end_index = size();";
   s << "auto to_bound = begin();";
-  int num_leading_bits = GenBounds(s, start_offset, end_offset);
+  int num_leading_bits = GenBounds(s, start_offset, end_offset, GetSize());
   s << GetDataType() << " " << GetName() << "_value;";
   s << GetDataType() << "* " << GetName() << "_ptr = &" << GetName() << "_value;";
-  GenExtractor(s, num_leading_bits);
+  GenExtractor(s, num_leading_bits, false);
 
   s << "return " << GetName() << "_value;";
   s << "}\n";
