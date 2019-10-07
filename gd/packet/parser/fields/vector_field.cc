@@ -90,7 +90,7 @@ Size VectorField::GetStructSize() const {
   // size_field_ is of type SIZE
   if (size_field_->GetFieldType() == SizeField::kFieldType) {
     std::string ret = "(static_cast<size_t>(" + size_field_->GetName() + "_extracted) * 8)";
-    if (!size_modifier_.empty()) ret += size_modifier_;
+    if (!size_modifier_.empty()) ret += "-" + size_modifier_;
     return ret;
   }
 
