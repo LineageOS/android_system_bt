@@ -121,7 +121,7 @@ void VectorField::GenExtractor(std::ostream& s, int num_leading_bits, bool for_s
   if (size_field_ != nullptr && size_field_->GetFieldType() == CountField::kFieldType) {
     s << "(" << element_field_->GetName() << "_count-- > 0) && ";
   }
-  if (!element_size_.empty() && !element_size_.has_dynamic()) {
+  if (!element_size_.empty()) {
     s << element_field_->GetName() << "_it.NumBytesRemaining() >= " << element_size_.bytes() << ") {";
   } else {
     s << element_field_->GetName() << "_it.NumBytesRemaining() > 0) {";
