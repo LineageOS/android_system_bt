@@ -30,6 +30,10 @@
 class Declarations {
  public:
   void AddTypeDef(std::string name, TypeDef* def) {
+    auto it = type_defs_.find(name);
+    if (it != type_defs_.end()) {
+      ERROR() << "Redefinition of Type " << name;
+    }
     type_defs_.insert(std::pair(name, def));
     type_defs_queue_.push_back(std::pair(name, def));
   }
@@ -44,6 +48,10 @@ class Declarations {
   }
 
   void AddPacketDef(std::string name, PacketDef def) {
+    auto it = packet_defs_.find(name);
+    if (it != packet_defs_.end()) {
+      ERROR() << "Redefinition of Packet " << name;
+    }
     packet_defs_.insert(std::pair(name, def));
     packet_defs_queue_.push_back(std::pair(name, def));
   }
@@ -58,6 +66,10 @@ class Declarations {
   }
 
   void AddGroupDef(std::string name, FieldList* group_def) {
+    auto it = group_defs_.find(name);
+    if (it != group_defs_.end()) {
+      ERROR() << "Redefinition of group " << name;
+    }
     group_defs_.insert(std::pair(name, group_def));
   }
 
