@@ -1722,6 +1722,43 @@ vector<uint8_t> one_struct_array_after_fixed{
 
 DEFINE_AND_INSTANTIATE_OneGenericStructArrayAfterFixedReflectionTest(one_struct_array_after_fixed);
 
+vector<uint8_t> one_length_type_value_struct{
+    // _size_(value):16 type value
+    0x04, 0x00, 0x01, 'o', 'n', 'e',            // ONE
+    0x04, 0x00, 0x02, 't', 'w', 'o',            // TWO
+    0x06, 0x00, 0x03, 't', 'h', 'r', 'e', 'e',  // THREE
+};
+
+DEFINE_AND_INSTANTIATE_OneLengthTypeValueStructReflectionTest(one_length_type_value_struct);
+
+TEST(GeneratedPacketTest, testOneLengthTypeValueStruct) {
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes =
+      std::make_shared<std::vector<uint8_t>>(one_length_type_value_struct);
+
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = OneLengthTypeValueStructView::Create(packet_bytes_view);
+  ASSERT_TRUE(view.IsValid());
+  auto one = view.GetOneArray();
+  size_t entry_id = 0;
+  for (const auto& entry : one) {
+    switch (entry_id++) {
+      case 0:
+        ASSERT_EQ(entry.type_, DataType::ONE);
+        ASSERT_EQ(entry.value_, std::vector<uint8_t>({'o', 'n', 'e'}));
+        break;
+      case 1:
+        ASSERT_EQ(entry.type_, DataType::TWO);
+        ASSERT_EQ(entry.value_, std::vector<uint8_t>({'t', 'w', 'o'}));
+        break;
+      case 2:
+        ASSERT_EQ(entry.type_, DataType::THREE);
+        ASSERT_EQ(entry.value_, std::vector<uint8_t>({'t', 'h', 'r', 'e', 'e'}));
+        break;
+      default:
+        ASSERT_EQ(entry.type_, DataType::UNUSED);
+    }
+  }
+}
 }  // namespace parser
 }  // namespace packet
 }  // namespace bluetooth
