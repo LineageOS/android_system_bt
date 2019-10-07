@@ -384,3 +384,13 @@ struct LengthTypeValueStruct {
 packet OneLengthTypeValueStruct {
   one_array : LengthTypeValueStruct[],
 }
+
+packet SizedParent {
+  _size_(payload) : 8,
+  _payload_,
+}
+
+packet OneLengthTypeValueStructPadded : SizedParent {
+  one_array : LengthTypeValueStruct[],
+  _padding_[40],
+}
