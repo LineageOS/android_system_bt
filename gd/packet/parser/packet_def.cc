@@ -105,7 +105,9 @@ void PacketDef::GenValidator(std::ostream& s) const {
   // Get the static offset for all of our fields.
   int bits_size = 0;
   for (const auto& field : fields_) {
-    bits_size += field->GetSize().bits();
+    if (field->GetFieldType() != PaddingField::kFieldType) {
+      bits_size += field->GetSize().bits();
+    }
   }
 
   // Write the function declaration.

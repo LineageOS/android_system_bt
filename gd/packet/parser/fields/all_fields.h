@@ -27,6 +27,7 @@
 #include "fields/fixed_enum_field.h"
 #include "fields/fixed_scalar_field.h"
 #include "fields/group_field.h"
+#include "fields/padding_field.h"
 #include "fields/payload_field.h"
 #include "fields/reserved_field.h"
 #include "fields/scalar_field.h"

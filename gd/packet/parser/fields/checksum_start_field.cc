@@ -39,7 +39,6 @@ void ChecksumStartField::GenExtractor(std::ostream&, int, bool) const {}
 void ChecksumStartField::GenGetter(std::ostream&, Size, Size) const {}
 
 bool ChecksumStartField::GenBuilderParameter(std::ostream&) const {
-  // There is no builder parameter for a size field
   return false;
 }
 
