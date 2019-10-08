@@ -1722,6 +1722,109 @@ vector<uint8_t> one_struct_array_after_fixed{
 
 DEFINE_AND_INSTANTIATE_OneGenericStructArrayAfterFixedReflectionTest(one_struct_array_after_fixed);
 
+vector<uint8_t> one_length_type_value_struct{
+    // _size_(value):16 type value
+    0x04, 0x00, 0x01, 'o', 'n', 'e',            // ONE
+    0x04, 0x00, 0x02, 't', 'w', 'o',            // TWO
+    0x06, 0x00, 0x03, 't', 'h', 'r', 'e', 'e',  // THREE
+};
+
+DEFINE_AND_INSTANTIATE_OneLengthTypeValueStructReflectionTest(one_length_type_value_struct);
+
+TEST(GeneratedPacketTest, testOneLengthTypeValueStruct) {
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes =
+      std::make_shared<std::vector<uint8_t>>(one_length_type_value_struct);
+
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = OneLengthTypeValueStructView::Create(packet_bytes_view);
+  ASSERT_TRUE(view.IsValid());
+  auto one = view.GetOneArray();
+  size_t entry_id = 0;
+  for (const auto& entry : one) {
+    switch (entry_id++) {
+      case 0:
+        ASSERT_EQ(entry.type_, DataType::ONE);
+        ASSERT_EQ(entry.value_, std::vector<uint8_t>({'o', 'n', 'e'}));
+        break;
+      case 1:
+        ASSERT_EQ(entry.type_, DataType::TWO);
+        ASSERT_EQ(entry.value_, std::vector<uint8_t>({'t', 'w', 'o'}));
+        break;
+      case 2:
+        ASSERT_EQ(entry.type_, DataType::THREE);
+        ASSERT_EQ(entry.value_, std::vector<uint8_t>({'t', 'h', 'r', 'e', 'e'}));
+        break;
+      default:
+        ASSERT_EQ(entry.type_, DataType::UNUSED);
+    }
+  }
+}
+
+vector<uint8_t> one_length_type_value_struct_padded_20{
+    0x27,  // _size_(payload),
+    // _size_(value):16 type value
+    0x04, 0x00, 0x01, 'o', 'n', 'e',                             // ONE
+    0x04, 0x00, 0x02, 't', 'w', 'o',                             // TWO
+    0x06, 0x00, 0x03, 't', 'h', 'r', 'e', 'e',                   // THREE
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,        // padding to 30
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // padding to 40
+};
+
+vector<uint8_t> one_length_type_value_struct_padded_28{
+    0x27,  // _size_(payload),
+    // _size_(value):16 type value
+    0x04, 0x00, 0x01, 'o', 'n', 'e',                             // ONE
+    0x04, 0x00, 0x02, 't', 'w', 'o',                             // TWO
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,                    // padding to 20
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // padding to 30
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,  // padding to 40
+};
+
+// TODO: Revisit LTV parsing.  Right now, the padding bytes are parsed
+// DEFINE_AND_INSTANTIATE_OneLengthTypeValueStructPaddedReflectionTest(one_length_type_value_struct_padded_20,
+// one_length_type_value_struct_padded_28);
+
+TEST(GeneratedPacketTest, testOneLengthTypeValueStructPaddedGeneration) {
+  std::vector<LengthTypeValueStruct> ltv_vector;
+  LengthTypeValueStruct ltv;
+  ltv.type_ = DataType::ONE;
+  ltv.value_ = {
+      'o',
+      'n',
+      'e',
+  };
+  ltv_vector.push_back(ltv);
+  ltv.type_ = DataType::TWO;
+  ltv.value_ = {
+      't',
+      'w',
+      'o',
+  };
+  ltv_vector.push_back(ltv);
+
+  auto packet = OneLengthTypeValueStructPaddedBuilder::Create(ltv_vector);
+  ASSERT_EQ(one_length_type_value_struct_padded_28.size(), packet->size());
+
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  BitInserter it(*packet_bytes);
+  packet->Serialize(it);
+
+  ASSERT_EQ(one_length_type_value_struct_padded_28.size(), packet_bytes->size());
+  for (size_t i = 0; i < one_length_type_value_struct_padded_28.size(); i++) {
+    ASSERT_EQ(one_length_type_value_struct_padded_28[i], packet_bytes->at(i));
+  }
+
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = OneLengthTypeValueStructPaddedView::Create(SizedParentView::Create(packet_bytes_view));
+  ASSERT_TRUE(view.IsValid());
+  auto an_array = view.GetOneArray();
+  // TODO: Revisit LTV parsing.  Right now, the padding bytes are parsed
+  // ASSERT_EQ(ltv_vector.size(), an_array.size());
+  for (size_t i = 0; i < ltv_vector.size(); i++) {
+    ASSERT_EQ(ltv_vector[i].type_, an_array[i].type_);
+    ASSERT_EQ(ltv_vector[i].value_, an_array[i].value_);
+  }
+}
 }  // namespace parser
 }  // namespace packet
 }  // namespace bluetooth

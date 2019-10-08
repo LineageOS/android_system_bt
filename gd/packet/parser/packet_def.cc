@@ -105,7 +105,9 @@ void PacketDef::GenValidator(std::ostream& s) const {
   // Get the static offset for all of our fields.
   int bits_size = 0;
   for (const auto& field : fields_) {
-    bits_size += field->GetSize().bits();
+    if (field->GetFieldType() != PaddingField::kFieldType) {
+      bits_size += field->GetSize().bits();
+    }
   }
 
   // Write the function declaration.
@@ -422,7 +424,11 @@ void PacketDef::GenBuilderConstructor(std::ostream& s) const {
       s << ", ";
     }
   }
-  s << ") :";
+  if (params.size() > 0 || parent_constraints_.size() > 0) {
+    s << ") :";
+  } else {
+    s << ")";
+  }
 
   // Get the list of parent params to call the parent constructor with.
   FieldList parent_params;

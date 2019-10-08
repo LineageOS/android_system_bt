@@ -86,7 +86,7 @@ std::string ArrayField::GetDataType() const {
 void ArrayField::GenExtractor(std::ostream& s, int num_leading_bits, bool for_struct) const {
   s << GetDataType() << "::iterator ret_it = " << GetName() << "_ptr->begin();";
   s << "auto " << element_field_->GetName() << "_it = " << GetName() << "_it;";
-  if (!element_size_.empty() && !element_size_.has_dynamic()) {
+  if (!element_size_.empty()) {
     s << "while (" << element_field_->GetName() << "_it.NumBytesRemaining() >= " << element_size_.bytes();
     s << " && ret_it < " << GetName() << "_ptr->end()) {";
   } else {

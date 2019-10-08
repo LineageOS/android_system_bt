@@ -365,3 +365,32 @@ packet ParentWithOnlyFixed {
 packet OneGenericStructArrayAfterFixed : ParentWithOnlyFixed {
   an_array : UnusedParentStruct[],
 }
+
+enum DataType : 8 {
+  ONE = 0x01,
+  TWO = 0x02,
+  THREE = 0x03,
+  FOUR = 0x04,
+  FIVE = 0x05,
+  UNUSED = 0x06,
+}
+
+struct LengthTypeValueStruct {
+  _size_(value) : 16,
+  type : DataType,
+  value : 8[+1*8],
+}
+
+packet OneLengthTypeValueStruct {
+  one_array : LengthTypeValueStruct[],
+}
+
+packet SizedParent {
+  _size_(payload) : 8,
+  _payload_,
+}
+
+packet OneLengthTypeValueStructPadded : SizedParent {
+  one_array : LengthTypeValueStruct[],
+  _padding_[40],
+}

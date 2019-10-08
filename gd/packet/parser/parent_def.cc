@@ -290,8 +290,22 @@ void ParentDef::GenSize(std::ostream& s) const {
     s << ";}\n\n";
   }
 
+  Size padded_size;
+  for (const auto& field : header_fields) {
+    if (field->GetFieldType() == PaddingField::kFieldType) {
+      if (!padded_size.empty()) {
+        ERROR() << "Only one padding field is allowed.  Second field: " << field->GetName();
+      }
+      padded_size = field->GetSize();
+    }
+  }
+
   s << "public:";
   s << "virtual size_t size() const override {";
+  if (!padded_size.empty()) {
+    s << "return " << padded_size.bytes() << ";}";
+    s << "size_t unpadded_size() const {";
+  }
   s << "return (BitsOfHeader() / 8)";
   if (fields_.HasPayload()) {
     s << "+ payload_->size()";
@@ -341,7 +355,7 @@ void ParentDef::GenSerialize(std::ostream& s) const {
         }
         const auto& vector_name = field_name + "_";
         const VectorField* vector = (VectorField*)sized_field;
-        s << "size_t " << vector_name + "bytes =  0;";
+        s << "size_t " << vector_name + "bytes = 0;";
         if (vector->element_size_.empty() || vector->element_size_.has_dynamic()) {
           s << "for (auto elem : " << vector_name << ") {";
           s << vector_name + "bytes += elem.size(); }";
@@ -349,9 +363,14 @@ void ParentDef::GenSerialize(std::ostream& s) const {
           s << vector_name + "bytes = ";
           s << vector_name << ".size() * ((" << vector->element_size_ << ") / 8);";
         }
+        std::string modifier = vector->GetSizeModifier();
+        if (modifier != "") {
+          s << "static_assert((" << modifier << ")%8 == 0, \"Modifiers must be byte-aligned\");";
+          s << vector_name << "bytes = ";
+          s << vector_name << "bytes + (" << modifier << ") / 8;";
+        }
         s << "ASSERT(" << vector_name + "bytes < (1 << " << field->GetSize().bits() << "));";
-        s << "insert(" << vector_name << "bytes";
-        s << vector->GetSizeModifier() << ", i, ";
+        s << "insert(" << vector_name << "bytes, i, ";
         s << field->GetSize().bits() << ");";
       }
     } else if (field->GetFieldType() == ChecksumStartField::kFieldType) {
@@ -366,6 +385,11 @@ void ParentDef::GenSerialize(std::ostream& s) const {
       s << "i.RegisterObserver(packet::ByteObserver(";
       s << "[shared_checksum_ptr](uint8_t byte){ shared_checksum_ptr->AddByte(byte);},";
       s << "[shared_checksum_ptr](){ return static_cast<uint64_t>(shared_checksum_ptr->GetChecksum());}));";
+    } else if (field->GetFieldType() == PaddingField::kFieldType) {
+      s << "ASSERT(unpadded_size() <= " << field->GetSize().bytes() << ");";
+      s << "size_t padding_bytes = ";
+      s << field->GetSize().bytes() << " - unpadded_size();";
+      s << "for (size_t padding = 0; padding < padding_bytes; padding++) {i.insert_byte(0);}";
     } else if (field->GetFieldType() == CountField::kFieldType) {
       const auto& vector_name = ((SizeField*)field)->GetSizedFieldName() + "_";
       s << "insert(" << vector_name << ".size(), i, " << field->GetSize().bits() << ");";
