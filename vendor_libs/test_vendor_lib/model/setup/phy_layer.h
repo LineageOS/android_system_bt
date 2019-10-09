@@ -17,19 +17,22 @@
 #pragma once
 
 #include "include/phy.h"
-#include "packets/link_layer/link_layer_packet_builder.h"
-#include "packets/link_layer/link_layer_packet_view.h"
 
+#include "packets/link_layer_packets.h"
 namespace test_vendor_lib {
 
 class PhyLayer {
  public:
-  PhyLayer(Phy::Type phy_type, uint32_t id, const std::function<void(packets::LinkLayerPacketView)>& device_receive)
+  PhyLayer(Phy::Type phy_type, uint32_t id,
+           const std::function<void(model::packets::LinkLayerPacketView)>&
+               device_receive)
       : phy_type_(phy_type), id_(id), transmit_to_device_(device_receive) {}
 
-  virtual void Send(const std::shared_ptr<packets::LinkLayerPacketBuilder> packet) = 0;
+  virtual void Send(
+      const std::shared_ptr<model::packets::LinkLayerPacketBuilder> packet) = 0;
+  virtual void Send(model::packets::LinkLayerPacketView packet) = 0;
 
-  virtual void Receive(packets::LinkLayerPacketView packet) = 0;
+  virtual void Receive(model::packets::LinkLayerPacketView packet) = 0;
 
   virtual void TimerTick() = 0;
 
@@ -52,7 +55,8 @@ class PhyLayer {
   uint32_t id_;
 
  protected:
-  const std::function<void(packets::LinkLayerPacketView)> transmit_to_device_;
+  const std::function<void(model::packets::LinkLayerPacketView)>
+      transmit_to_device_;
 };
 
 }  // namespace test_vendor_lib
