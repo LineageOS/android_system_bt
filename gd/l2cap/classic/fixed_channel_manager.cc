@@ -26,7 +26,9 @@ namespace classic {
 bool FixedChannelManager::ConnectServices(hci::Address device, OnConnectionFailureCallback on_fail_callback,
                                           os::Handler* handler) {
   internal::LinkManager::PendingFixedChannelConnection pending_fixed_channel_connection{
-      .on_fail_callback_ = std::move(on_fail_callback), .handler_ = handler};
+      .handler_ = handler,
+      .on_fail_callback_ = std::move(on_fail_callback),
+  };
   l2cap_layer_handler_->Post(common::BindOnce(&internal::LinkManager::ConnectFixedChannelServices,
                                               common::Unretained(link_manager_), device,
                                               std::move(pending_fixed_channel_connection)));
