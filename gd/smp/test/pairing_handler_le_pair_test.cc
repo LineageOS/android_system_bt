@@ -174,15 +174,14 @@ class PairingHandlerPairTest : public testing::Test {
                                   .initiator_key_distribution = KeyMaskId | KeyMaskSign,
                                   .responder_key_distribution = KeyMaskId | KeyMaskSign},
 
+        .remotely_initiated = false,
+        .connection_handle = CONN_HANDLE_MASTER,
+        .remote_connection_address = ADDRESS_SLAVE,
+        .remote_connection_address_type = ADDRESS_TYPE_SLAVE,
         .ui_handler = &master_ui_handler,
         .le_security_interface = &master_le_security_mock,
         .proper_l2cap_interface = up_buffer_a_.get(),
         .l2cap_handler = handler_,
-
-        .connection_handle = CONN_HANDLE_MASTER,
-        .remotely_initiated = false,
-        .remote_connection_address = ADDRESS_SLAVE,
-        .remote_connection_address_type = ADDRESS_TYPE_SLAVE,
         .OnPairingFinished = OnPairingFinishedMaster,
     };
 
@@ -197,16 +196,14 @@ class PairingHandlerPairTest : public testing::Test {
                                   .maximum_encryption_key_size = 16,
                                   .initiator_key_distribution = KeyMaskId | KeyMaskSign,
                                   .responder_key_distribution = KeyMaskId | KeyMaskSign},
-
+        .remotely_initiated = true,
+        .connection_handle = CONN_HANDLE_SLAVE,
+        .remote_connection_address = ADDRESS_MASTER,
+        .remote_connection_address_type = ADDRESS_TYPE_MASTER,
         .ui_handler = &slave_ui_handler,
         .le_security_interface = &slave_le_security_mock,
         .proper_l2cap_interface = up_buffer_b_.get(),
         .l2cap_handler = handler_,
-
-        .connection_handle = CONN_HANDLE_SLAVE,
-        .remotely_initiated = true,
-        .remote_connection_address = ADDRESS_MASTER,
-        .remote_connection_address_type = ADDRESS_TYPE_MASTER,
         .OnPairingFinished = OnPairingFinishedSlave,
     };
 
@@ -342,29 +339,25 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_just_works_slave_initiate
       .my_role = hci::Role::MASTER,
       .my_connection_address = ADDRESS_MASTER,
       .my_connection_address_type = ADDRESS_TYPE_MASTER,
-
       .myPairingCapabilities = {.io_capability = IoCapability::NO_INPUT_NO_OUTPUT,
                                 .oob_data_flag = OobDataFlag::NOT_PRESENT,
                                 .auth_req = AuthReqMaskBondingFlag | AuthReqMaskMitm | AuthReqMaskSc,
                                 .maximum_encryption_key_size = 16,
                                 .initiator_key_distribution = KeyMaskId | KeyMaskSign,
                                 .responder_key_distribution = KeyMaskId | KeyMaskSign},
-
+      .remotely_initiated = true,
+      .connection_handle = CONN_HANDLE_MASTER,
+      .remote_connection_address = ADDRESS_SLAVE,
+      .remote_connection_address_type = ADDRESS_TYPE_SLAVE,
       .ui_handler = &master_ui_handler,
       .le_security_interface = &master_le_security_mock,
       .proper_l2cap_interface = up_buffer_a_.get(),
       .l2cap_handler = handler_,
-
-      .connection_handle = CONN_HANDLE_MASTER,
-      .remotely_initiated = true,
-      .remote_connection_address = ADDRESS_SLAVE,
-      .remote_connection_address_type = ADDRESS_TYPE_SLAVE,
       .OnPairingFinished = OnPairingFinishedMaster,
   };
 
   slave_setup = {
       .my_role = hci::Role::SLAVE,
-
       .my_connection_address = ADDRESS_SLAVE,
       .my_connection_address_type = ADDRESS_TYPE_SLAVE,
       .myPairingCapabilities = {.io_capability = IoCapability::NO_INPUT_NO_OUTPUT,
@@ -373,16 +366,14 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_just_works_slave_initiate
                                 .maximum_encryption_key_size = 16,
                                 .initiator_key_distribution = KeyMaskId | KeyMaskSign,
                                 .responder_key_distribution = KeyMaskId | KeyMaskSign},
-
+      .remotely_initiated = false,
+      .connection_handle = CONN_HANDLE_SLAVE,
+      .remote_connection_address = ADDRESS_MASTER,
+      .remote_connection_address_type = ADDRESS_TYPE_MASTER,
       .ui_handler = &slave_ui_handler,
       .le_security_interface = &slave_le_security_mock,
       .proper_l2cap_interface = up_buffer_b_.get(),
       .l2cap_handler = handler_,
-
-      .connection_handle = CONN_HANDLE_SLAVE,
-      .remotely_initiated = false,
-      .remote_connection_address = ADDRESS_MASTER,
-      .remote_connection_address_type = ADDRESS_TYPE_MASTER,
       .OnPairingFinished = OnPairingFinishedSlave,
   };
 
