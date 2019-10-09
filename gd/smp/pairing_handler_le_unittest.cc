@@ -130,12 +130,11 @@ InitialInformations initial_informations{
                               .initiator_key_distribution = 0x03,
                               .responder_key_distribution = 0x03},
 
-    .le_security_interface = &leSecurityMock,
-    .ui_handler = &uiMock,
-
     .remotely_initiated = false,
     .remote_connection_address = {},
     .remote_connection_address_type = 0x01,
+    .ui_handler = &uiMock,
+    .le_security_interface = &leSecurityMock,
     .OnPairingFinished = OnPairingFinished,
 };
 
@@ -263,10 +262,9 @@ InitialInformations initial_informations_trsi{
                               .initiator_key_distribution = 0x03,
                               .responder_key_distribution = 0x03},
 
-    .le_security_interface = &leSecurityMock,
-    .ui_handler = &uiMock,
-
     .remotely_initiated = true,
+    .ui_handler = &uiMock,
+    .le_security_interface = &leSecurityMock,
     .OnPairingFinished = OnPairingFinished,
 };
 
@@ -299,13 +297,12 @@ InitialInformations initial_informations_trmi{
                               .initiator_key_distribution = 0x03,
                               .responder_key_distribution = 0x03},
 
-    .le_security_interface = &leSecurityMock,
-    .ui_handler = &uiMock,
-
     .remotely_initiated = true,
     .pairing_request = PairingRequestView::Create(BuilderToView(
         PairingRequestBuilder::Create(IoCapability::NO_INPUT_NO_OUTPUT, OobDataFlag::NOT_PRESENT,
                                       AuthReqMaskBondingFlag | AuthReqMaskMitm | AuthReqMaskSc, 16, 0x03, 0x03))),
+    .ui_handler = &uiMock,
+    .le_security_interface = &leSecurityMock,
 
     .OnPairingFinished = OnPairingFinished,
 };
