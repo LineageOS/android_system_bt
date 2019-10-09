@@ -79,9 +79,11 @@ class HciHalFacadeService
                             ::google::protobuf::Empty* response) override {
     std::unique_lock<std::mutex> lock(mutex_);
     can_send_hci_command_ = false;
-    hal_->sendHciCommand(
-        SerializePacket(hci::InquiryBuilder::Create(0x33 /* LAP=0x9e8b33 */, static_cast<uint8_t>(request->length()),
-                                                    static_cast<uint8_t>(request->num_responses()))));
+    hci::Lap lap;
+    lap.lap_ = 0x33;
+
+    hal_->sendHciCommand(SerializePacket(hci::InquiryBuilder::Create(lap, static_cast<uint8_t>(request->length()),
+                                                                     static_cast<uint8_t>(request->num_responses()))));
     while (!can_send_hci_command_) {
       cv_.wait(lock);
     }
