@@ -32,10 +32,12 @@ void DatabaseBuilder::AddService(uint16_t handle, uint16_t end_handle,
   // general case optimization - we add services in order
   if (database.services.empty() ||
       database.services.back().end_handle < handle) {
-    database.services.emplace_back(Service{.handle = handle,
-                                           .end_handle = end_handle,
-                                           .is_primary = is_primary,
-                                           .uuid = uuid});
+    database.services.emplace_back(Service{
+        .handle = handle,
+        .uuid = uuid,
+        .is_primary = is_primary,
+        .end_handle = end_handle,
+    });
   } else {
     auto& vec = database.services;
 
@@ -45,10 +47,12 @@ void DatabaseBuilder::AddService(uint16_t handle, uint16_t end_handle,
         [](Service s, uint16_t handle) { return s.end_handle < handle; });
 
     // Insert new service just before it
-    vec.emplace(it, Service{.handle = handle,
-                            .end_handle = end_handle,
-                            .is_primary = is_primary,
-                            .uuid = uuid});
+    vec.emplace(it, Service{
+                        .handle = handle,
+                        .uuid = uuid,
+                        .is_primary = is_primary,
+                        .end_handle = end_handle,
+                    });
   }
 
   services_to_discover.insert({handle, end_handle});
@@ -90,11 +94,12 @@ void DatabaseBuilder::AddCharacteristic(uint16_t handle, uint16_t value_handle,
                  << loghex(value_handle) << " is after service end_handle="
                  << loghex(service->end_handle);
 
-  service->characteristics.emplace_back(
-      Characteristic{.declaration_handle = handle,
-                     .value_handle = value_handle,
-                     .properties = properties,
-                     .uuid = uuid});
+  service->characteristics.emplace_back(Characteristic{
+      .declaration_handle = handle,
+      .uuid = uuid,
+      .value_handle = value_handle,
+      .properties = properties,
+  });
   return;
 }
 
