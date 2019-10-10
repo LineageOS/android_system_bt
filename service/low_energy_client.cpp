@@ -643,9 +643,9 @@ void LowEnergyClient::MtuChangedCallback(
   if (!bda)
     return;
 
-  const char *addr = BtAddrString(bda).c_str();
+  std::string addr = BtAddrString(bda);
   if (delegate_)
-    delegate_->OnMtuChanged(this, status, addr, mtu);
+    delegate_->OnMtuChanged(this, status, addr.c_str(), mtu);
 }
 
 void LowEnergyClient::MultiAdvEnableCallback(
