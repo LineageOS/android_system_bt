@@ -84,7 +84,7 @@ static void btu_hcif_command_status_evt(uint8_t status, BT_HDR* command,
 static void btu_hcif_hardware_error_evt(uint8_t* p);
 static void btu_hcif_flush_occured_evt(void);
 static void btu_hcif_role_change_evt(uint8_t* p);
-static void btu_hcif_num_compl_data_pkts_evt(uint8_t* p);
+static void btu_hcif_num_compl_data_pkts_evt(uint8_t* p, uint8_t evt_len);
 static void btu_hcif_mode_change_evt(uint8_t* p);
 static void btu_hcif_pin_code_request_evt(uint8_t* p);
 static void btu_hcif_link_key_request_evt(uint8_t* p);
@@ -325,7 +325,7 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
       btu_hcif_role_change_evt(p);
       break;
     case HCI_NUM_COMPL_DATA_PKTS_EVT:
-      btu_hcif_num_compl_data_pkts_evt(p);
+      btu_hcif_num_compl_data_pkts_evt(p, hci_evt_len);
       break;
     case HCI_MODE_CHANGE_EVT:
       btu_hcif_mode_change_evt(p);
@@ -1697,9 +1697,9 @@ static void btu_hcif_role_change_evt(uint8_t* p) {
  * Returns          void
  *
  ******************************************************************************/
-static void btu_hcif_num_compl_data_pkts_evt(uint8_t* p) {
+static void btu_hcif_num_compl_data_pkts_evt(uint8_t* p, uint8_t evt_len) {
   /* Process for L2CAP and SCO */
-  l2c_link_process_num_completed_pkts(p);
+  l2c_link_process_num_completed_pkts(p, evt_len);
 
   /* Send on to SCO */
   /*?? No SCO for now */
