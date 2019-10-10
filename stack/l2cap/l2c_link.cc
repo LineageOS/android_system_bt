@@ -40,6 +40,7 @@
 #include "l2c_api.h"
 #include "l2c_int.h"
 #include "l2cdefs.h"
+#include "log/log.h"
 #include "osi/include/osi.h"
 
 static bool l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
@@ -1214,13 +1215,22 @@ static bool l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
  * Returns          void
  *
  ******************************************************************************/
-void l2c_link_process_num_completed_pkts(uint8_t* p) {
+void l2c_link_process_num_completed_pkts(uint8_t* p, uint8_t evt_len) {
   uint8_t num_handles, xx;
   uint16_t handle;
   uint16_t num_sent;
   tL2C_LCB* p_lcb;
 
-  STREAM_TO_UINT8(num_handles, p);
+  if (evt_len > 0) {
+    STREAM_TO_UINT8(num_handles, p);
+  } else {
+    num_handles = 0;
+  }
+
+  if (num_handles > evt_len / (2 * sizeof(uint16_t))) {
+    android_errorWriteLog(0x534e4554, "141617601");
+    num_handles = evt_len / (2 * sizeof(uint16_t));
+  }
 
   for (xx = 0; xx < num_handles; xx++) {
     STREAM_TO_UINT16(handle, p);
