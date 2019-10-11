@@ -16,8 +16,8 @@
 
 #pragma once
 
-#include <set>
 #include <unordered_map>
+#include <unordered_set>
 
 #include "l2cap/cid.h"
 #include "l2cap/classic/internal/dynamic_channel_impl.h"
@@ -47,11 +47,11 @@ class DynamicChannelAllocator {
   std::shared_ptr<DynamicChannelImpl> AllocateChannel(Psm psm, Cid remote_cid, SecurityPolicy security_policy);
 
   // Frees a channel. If psm doesn't exist, it will crash
-  void FreeChannel(Psm psm);
+  void FreeChannel(Cid cid);
 
-  bool IsChannelAllocated(Psm psm) const;
+  bool IsPsmUsed(Psm psm) const;
 
-  std::shared_ptr<DynamicChannelImpl> FindChannel(Psm psm);
+  std::shared_ptr<DynamicChannelImpl> FindChannelByCid(Cid cid);
 
   size_t NumberOfChannels() const;
 
@@ -60,9 +60,8 @@ class DynamicChannelAllocator {
  private:
   Link* link_;
   os::Handler* l2cap_handler_;
-  std::unordered_map<Psm, std::shared_ptr<DynamicChannelImpl>> channels_;
-  std::set<Cid> used_cid_;
-  std::set<Cid> used_remote_cid_;
+  std::unordered_map<Cid, std::shared_ptr<DynamicChannelImpl>> channels_;
+  std::unordered_set<Cid> used_remote_cid_;
 };
 
 }  // namespace internal

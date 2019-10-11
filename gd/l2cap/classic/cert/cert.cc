@@ -88,6 +88,32 @@ class L2capModuleCertService : public L2capModuleCert::Service {
     return ::grpc::Status::OK;
   }
 
+  ::grpc::Status SendConnectionRequest(::grpc::ServerContext* context, const cert::ConnectionRequest* request,
+                                       ::google::protobuf::Empty* response) override {
+    auto builder = ConnectionRequestBuilder::Create(1, 1, 101);
+    auto l2cap_builder = BasicFrameBuilder::Create(1, std::move(builder));
+    outgoing_packet_queue_.push(std::move(l2cap_builder));
+    if (outgoing_packet_queue_.size() == 1) {
+      acl_connection_->GetAclQueueEnd()->RegisterEnqueue(
+          handler_, common::Bind(&L2capModuleCertService::enqueue_packet_to_acl, common::Unretained(this)));
+    }
+
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status SendDisconnectionRequest(::grpc::ServerContext* context, const cert::DisconnectionRequest* request,
+                                          ::google::protobuf::Empty* response) override {
+    auto builder = DisconnectionRequestBuilder::Create(3, 0x40, 101);
+    auto l2cap_builder = BasicFrameBuilder::Create(1, std::move(builder));
+    outgoing_packet_queue_.push(std::move(l2cap_builder));
+    if (outgoing_packet_queue_.size() == 1) {
+      acl_connection_->GetAclQueueEnd()->RegisterEnqueue(
+          handler_, common::Bind(&L2capModuleCertService::enqueue_packet_to_acl, common::Unretained(this)));
+    }
+
+    return ::grpc::Status::OK;
+  }
+
   std::unique_ptr<packet::BasePacketBuilder> enqueue_packet_to_acl() {
     auto basic_frame_builder = std::move(outgoing_packet_queue_.front());
     outgoing_packet_queue_.pop();
@@ -122,7 +148,7 @@ class L2capModuleCertService : public L2capModuleCert::Service {
     l2cap_stream_.OnIncomingEvent(l2cap_packet);
   }
 
-  std::queue<std::unique_ptr<BasicFrameBuilder>> outgoing_packet_queue_;
+  std::queue<std::unique_ptr<BasePacketBuilder>> outgoing_packet_queue_;
   ::bluetooth::os::Handler* handler_;
   hci::AclManager* acl_manager_;
   std::unique_ptr<hci::AclConnection> acl_connection_;

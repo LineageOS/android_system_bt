@@ -11,6 +11,7 @@ service L2capModuleCert {
   rpc FetchConnectionComplete(facade.EventStreamRequest) returns (stream ConnectionCompleteEvent) {}
   rpc DisconnectLink(DisconnectLinkRequest) returns (google.protobuf.Empty) {}
   rpc SendConnectionRequest(ConnectionRequest) returns (google.protobuf.Empty) {}
+  rpc SendDisconnectionRequest(DisconnectionRequest) returns (google.protobuf.Empty) {}
 }
 
 message L2capPacket {
@@ -28,6 +29,12 @@ message DisconnectLinkRequest {
 }
 
 message ConnectionRequest {
+  facade.BluetoothAddress remote = 1;
+  uint32 dcid = 2;
+  uint32 scid = 3;
+}
+
+message DisconnectionRequest {
   facade.BluetoothAddress remote = 1;
   uint32 dcid = 2;
   uint32 scid = 3;

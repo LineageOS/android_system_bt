@@ -44,7 +44,6 @@ class DynamicChannelServiceManagerImpl {
   virtual DynamicChannelServiceImpl* GetService(Psm psm);
 
   virtual std::vector<std::pair<Psm, DynamicChannelServiceImpl*>> GetRegisteredServices();
-  //
  private:
   os::Handler* l2cap_layer_handler_ = nullptr;
   std::unordered_map<Psm, DynamicChannelServiceImpl> service_map_;

@@ -23,6 +23,7 @@
 #include "hci/address.h"
 #include "l2cap/classic/dynamic_channel_manager.h"
 #include "l2cap/classic/fixed_channel_manager.h"
+#include "l2cap/classic/internal/dynamic_channel_service_manager_impl.h"
 #include "l2cap/classic/internal/fixed_channel_service_manager_impl.h"
 #include "l2cap/classic/internal/link.h"
 #include "l2cap/internal/parameter_provider.h"
@@ -36,10 +37,13 @@ namespace internal {
 
 class LinkManager : public hci::ConnectionCallbacks {
  public:
-  LinkManager(os::Handler* l2cap_handler, hci::AclManager* acl_manager, FixedChannelServiceManagerImpl* service_manager,
+  LinkManager(os::Handler* l2cap_handler, hci::AclManager* acl_manager,
+              FixedChannelServiceManagerImpl* fixed_channel_service_manager,
+              DynamicChannelServiceManagerImpl* dynamic_channel_service_manager,
               l2cap::internal::ParameterProvider* parameter_provider)
-      : l2cap_handler_(l2cap_handler), acl_manager_(acl_manager), service_manager_(service_manager),
-        parameter_provider_(parameter_provider) {
+      : l2cap_handler_(l2cap_handler), acl_manager_(acl_manager),
+        fixed_channel_service_manager_(fixed_channel_service_manager),
+        dynamic_channel_service_manager_(dynamic_channel_service_manager), parameter_provider_(parameter_provider) {
     acl_manager_->RegisterCallbacks(this, l2cap_handler_);
   }
 
@@ -69,11 +73,17 @@ class LinkManager : public hci::ConnectionCallbacks {
 
   void ConnectFixedChannelServices(hci::Address device, PendingFixedChannelConnection pending_fixed_channel_connection);
 
+  // DynamicChannelManager methods
+
+  void ConnectDynamicChannelServices(hci::Address device,
+                                     PendingDynamicChannelConnection pending_dynamic_channel_connection, Psm psm);
+
  private:
   // Dependencies
   os::Handler* l2cap_handler_;
   hci::AclManager* acl_manager_;
-  FixedChannelServiceManagerImpl* service_manager_;
+  FixedChannelServiceManagerImpl* fixed_channel_service_manager_;
+  DynamicChannelServiceManagerImpl* dynamic_channel_service_manager_;
   l2cap::internal::ParameterProvider* parameter_provider_;
 
   // Internal states
