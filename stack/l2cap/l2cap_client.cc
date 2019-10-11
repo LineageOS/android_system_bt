@@ -70,8 +70,8 @@ static const tL2CAP_APPL_INFO l2cap_callbacks = {
     .pL2CA_ConfigCfm_Cb = config_completed_cb,
     .pL2CA_DisconnectInd_Cb = disconnect_request_cb,
     .pL2CA_DisconnectCfm_Cb = disconnect_completed_cb,
-    .pL2CA_CongestionStatus_Cb = congestion_cb,
     .pL2CA_DataInd_Cb = read_ready_cb,
+    .pL2CA_CongestionStatus_Cb = congestion_cb,
     .pL2CA_TxComplete_Cb = write_completed_cb,
 };
 
