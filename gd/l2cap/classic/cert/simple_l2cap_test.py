@@ -25,6 +25,9 @@ from facade import common_pb2
 from facade import rootservice_pb2 as facade_rootservice_pb2
 from google.protobuf import empty_pb2
 from l2cap.classic import facade_pb2 as l2cap_facade_pb2
+from l2cap.classic.cert import api_pb2 as l2cap_cert_pb2
+
+import time
 
 class SimpleL2capTest(GdBaseTestClass):
     def setup_test(self):
@@ -64,6 +67,7 @@ class SimpleL2capTest(GdBaseTestClass):
 
     def test_connect_and_send_data(self):
         self.device_under_test.l2cap.RegisterChannel(l2cap_facade_pb2.RegisterChannelRequest(channel=2))
+        self.device_under_test.l2cap.SetDynamicChannel(l2cap_facade_pb2.SetEnableDynamicChannelRequest(psm=0x01))
         dut_packet_stream = self.device_under_test.l2cap.packet_stream
         cert_packet_stream = self.cert_device.l2cap.packet_stream
         cert_connection_stream = self.cert_device.l2cap.connection_complete_stream
@@ -79,6 +83,10 @@ class SimpleL2capTest(GdBaseTestClass):
             lambda device: device.remote == self.cert_address
         )
         dut_connection_stream.unsubscribe()
+
+        self.cert_device.l2cap.SendConnectionRequest(l2cap_cert_pb2.ConnectionRequest())
+        time.sleep(1)
+
         dut_packet_stream.subscribe()
         cert_packet_stream.subscribe()
         self.cert_device.l2cap.SendL2capPacket(l2cap_facade_pb2.L2capPacket(channel=2, payload=b"abc"))
@@ -89,5 +97,18 @@ class SimpleL2capTest(GdBaseTestClass):
         cert_packet_stream.assert_event_occurs(
             lambda packet: b"123" in packet.payload
         )
+
+        self.cert_device.l2cap.SendL2capPacket(l2cap_facade_pb2.L2capPacket(channel=64, payload=b"123"))
+        dut_packet_stream.assert_event_occurs(
+            lambda packet: b"123" in packet.payload
+        )
+
+        self.device_under_test.l2cap.SendDynamicChannelPacket(l2cap_facade_pb2.DynamicChannelPacket(psm=1, payload=b'abc'))
+        cert_packet_stream.assert_event_occurs(
+            lambda packet: b"abc" in packet.payload
+        )
+
+        self.cert_device.l2cap.SendDisconnectionRequest(l2cap_cert_pb2.DisconnectionRequest())
+        time.sleep(1)
         dut_packet_stream.unsubscribe()
         cert_packet_stream.unsubscribe()

@@ -33,7 +33,7 @@ namespace internal {
 void LinkManager::ConnectFixedChannelServices(hci::Address device,
                                               PendingFixedChannelConnection pending_fixed_channel_connection) {
   // Check if there is any service registered
-  auto fixed_channel_services = service_manager_->GetRegisteredServices();
+  auto fixed_channel_services = fixed_channel_service_manager_->GetRegisteredServices();
   if (fixed_channel_services.empty()) {
     // If so, return error
     pending_fixed_channel_connection.handler_->Post(common::BindOnce(
@@ -82,6 +82,16 @@ void LinkManager::ConnectFixedChannelServices(hci::Address device,
   acl_manager_->CreateConnection(device);
 }
 
+void LinkManager::ConnectDynamicChannelServices(hci::Address device,
+                                                PendingDynamicChannelConnection pending_dynamic_channel_connection,
+                                                Psm psm) {
+  // TODO: if there is no link, establish link. Otherwise send command.
+  auto* link = GetLink(device);
+  if (link != nullptr) {
+    return;
+  }
+}
+
 Link* LinkManager::GetLink(const hci::Address device) {
   if (links_.find(device) == links_.end()) {
     return nullptr;
@@ -96,10 +106,11 @@ void LinkManager::OnConnectSuccess(std::unique_ptr<hci::AclConnection> acl_conne
              acl_connection->GetAddress().ToString().c_str());
   auto* link_queue_up_end = acl_connection->GetAclQueueEnd();
   links_.try_emplace(device, l2cap_handler_, std::move(acl_connection),
-                     std::make_unique<l2cap::internal::Fifo>(link_queue_up_end, l2cap_handler_), parameter_provider_);
+                     std::make_unique<l2cap::internal::Fifo>(link_queue_up_end, l2cap_handler_), parameter_provider_,
+                     dynamic_channel_service_manager_, fixed_channel_service_manager_);
   auto* link = GetLink(device);
   // Allocate and distribute channels for all registered fixed channel services
-  auto fixed_channel_services = service_manager_->GetRegisteredServices();
+  auto fixed_channel_services = fixed_channel_service_manager_->GetRegisteredServices();
   for (auto& fixed_channel_service : fixed_channel_services) {
     auto fixed_channel_impl = link->AllocateFixedChannel(fixed_channel_service.first, SecurityPolicy());
     fixed_channel_service.second->NotifyChannelCreation(
