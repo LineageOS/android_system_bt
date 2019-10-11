@@ -56,7 +56,7 @@ void DynamicChannelImpl::RegisterOnCloseCallback(os::Handler* user_handler,
 }
 
 void DynamicChannelImpl::Close() {
-  // TODO: Implement it by sending signalling packet
+  link_->SendDisconnectionRequest(cid_, remote_cid_);
 }
 
 void DynamicChannelImpl::OnClosed(hci::ErrorCode status) {
@@ -77,7 +77,7 @@ void DynamicChannelImpl::OnClosed(hci::ErrorCode status) {
 
 std::string DynamicChannelImpl::ToString() {
   std::ostringstream ss;
-  ss << "Device " << device_.ToString() << "Psm 0x" << std::hex << psm_ << " Cid 0x" << std::hex << cid_;
+  ss << "Device " << device_ << "Psm 0x" << std::hex << psm_ << " Cid 0x" << std::hex << cid_;
   return ss.str();
 }
 
