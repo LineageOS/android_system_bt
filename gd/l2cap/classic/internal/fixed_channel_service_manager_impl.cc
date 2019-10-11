@@ -76,6 +76,31 @@ std::vector<std::pair<Cid, FixedChannelServiceImpl*>> FixedChannelServiceManager
   return results;
 }
 
+namespace {
+constexpr uint64_t kSignallingChannelMask = 0x02;
+constexpr uint64_t kConnectionlessReceptionMask = 0x04;
+constexpr uint64_t kBrEdrSecurityManager = 0x80;
+}  // namespace
+
+uint64_t FixedChannelServiceManagerImpl::GetSupportedFixedChannelMask() {
+  uint64_t result = 0;
+  result |= kSignallingChannelMask;  // Signalling channel is mandatory
+  for (const auto& elem : service_map_) {
+    Cid cid = elem.first;
+    switch (cid) {
+      case kConnectionlessCid:
+        result |= kConnectionlessReceptionMask;
+        continue;
+      case kSmpBrCid:
+        result |= kBrEdrSecurityManager;
+        continue;
+      default:
+        LOG_WARN("Unknown fixed channel is registered: 0x%x", cid);
+        continue;
+    }
+  }
+  return result;
+}
 }  // namespace internal
 }  // namespace classic
 }  // namespace l2cap

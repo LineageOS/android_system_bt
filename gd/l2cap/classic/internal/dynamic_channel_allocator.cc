@@ -30,51 +30,55 @@ namespace internal {
 
 std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::AllocateChannel(Psm psm, Cid remote_cid,
                                                                              SecurityPolicy security_policy) {
-  if (IsChannelAllocated((psm))) {
-    LOG_INFO("Psm 0x%x for device %s is already in use", psm, link_->GetDevice().ToString().c_str());
-    return nullptr;
-  }
-  if (!IsPsmValid(psm)) {
-    LOG_INFO("Psm 0x%x is invalid", psm);
-    return nullptr;
-  }
+  ASSERT_LOG(!IsPsmUsed((psm)), "Psm 0x%x for device %s is already in use", psm, link_->GetDevice().ToString().c_str());
+  ASSERT_LOG(IsPsmValid(psm), "Psm 0x%x is invalid", psm);
+
   if (used_remote_cid_.find(remote_cid) != used_remote_cid_.end()) {
     LOG_INFO("Remote cid 0x%x is used", remote_cid);
     return nullptr;
   }
   Cid cid = kFirstDynamicChannel;
   for (; cid <= kLastDynamicChannel; cid++) {
-    LOG_INFO();
-    if (used_cid_.count(cid) == 0) break;
+    if (channels_.find(cid) == channels_.end()) break;
   }
   if (cid > kLastDynamicChannel) {
     LOG_WARN("All cid are used");
     return nullptr;
   }
   auto elem =
-      channels_.try_emplace(psm, std::make_shared<DynamicChannelImpl>(psm, cid, remote_cid, link_, l2cap_handler_));
+      channels_.try_emplace(cid, std::make_shared<DynamicChannelImpl>(psm, cid, remote_cid, link_, l2cap_handler_));
   ASSERT_LOG(elem.second, "Failed to create channel for psm 0x%x device %s", psm,
              link_->GetDevice().ToString().c_str());
   ASSERT(elem.first->second != nullptr);
-  used_cid_.insert(cid);
   used_remote_cid_.insert(remote_cid);
   return elem.first->second;
 }
 
-void DynamicChannelAllocator::FreeChannel(Psm psm) {
-  ASSERT_LOG(IsChannelAllocated(psm), "Channel is not in use: psm %d, device %s", psm,
-             link_->GetDevice().ToString().c_str());
-  channels_.erase(psm);
+void DynamicChannelAllocator::FreeChannel(Cid cid) {
+  auto channel = FindChannelByCid(cid);
+  if (channel == nullptr) {
+    LOG_INFO("Channel is not in use: psm %d, device %s", cid, link_->GetDevice().ToString().c_str());
+    return;
+  }
+  used_remote_cid_.erase(channel->GetRemoteCid());
+  channels_.erase(cid);
 }
 
-bool DynamicChannelAllocator::IsChannelAllocated(Psm psm) const {
-  return channels_.find(psm) != channels_.end();
+bool DynamicChannelAllocator::IsPsmUsed(Psm psm) const {
+  for (const auto& channel : channels_) {
+    if (channel.second->GetPsm() == psm) {
+      return true;
+    }
+  }
+  return false;
 }
 
-std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::FindChannel(Psm psm) {
-  ASSERT_LOG(IsChannelAllocated(psm), "Channel is not in use: psm %d, device %s", psm,
-             link_->GetDevice().ToString().c_str());
-  return channels_.find(psm)->second;
+std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::FindChannelByCid(Cid cid) {
+  if (channels_.find(cid) == channels_.end()) {
+    LOG_WARN("Can't find cid %d", cid);
+    return nullptr;
+  }
+  return channels_.find(cid)->second;
 }
 
 size_t DynamicChannelAllocator::NumberOfChannels() const {
