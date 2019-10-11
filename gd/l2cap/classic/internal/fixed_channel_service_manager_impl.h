@@ -41,6 +41,7 @@ class FixedChannelServiceManagerImpl {
   virtual bool IsServiceRegistered(Cid cid) const;
   virtual FixedChannelServiceImpl* GetService(Cid cid);
   virtual std::vector<std::pair<Cid, FixedChannelServiceImpl*>> GetRegisteredServices();
+  virtual uint64_t GetSupportedFixedChannelMask();
 
  private:
   os::Handler* l2cap_layer_handler_ = nullptr;

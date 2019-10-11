@@ -22,6 +22,7 @@
 #include "hci/address.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
+#include "l2cap/classic/internal/dynamic_channel_service_manager_impl.h"
 #include "l2cap/classic/internal/fixed_channel_service_manager_impl.h"
 #include "l2cap/classic/internal/link_manager.h"
 #include "l2cap/internal/parameter_provider.h"
@@ -44,8 +45,9 @@ struct L2capClassicModule::impl {
   hci::AclManager* acl_manager_;
   l2cap::internal::ParameterProvider parameter_provider_;
   internal::FixedChannelServiceManagerImpl fixed_channel_service_manager_impl_{l2cap_handler_};
+  internal::DynamicChannelServiceManagerImpl dynamic_channel_service_manager_impl_{l2cap_handler_};
   internal::LinkManager link_manager_{l2cap_handler_, acl_manager_, &fixed_channel_service_manager_impl_,
-                                      &parameter_provider_};
+                                      &dynamic_channel_service_manager_impl_, &parameter_provider_};
 };
 
 void L2capClassicModule::ListDependencies(ModuleList* list) {
@@ -63,6 +65,11 @@ void L2capClassicModule::Stop() {
 std::unique_ptr<FixedChannelManager> L2capClassicModule::GetFixedChannelManager() {
   return std::unique_ptr<FixedChannelManager>(new FixedChannelManager(&pimpl_->fixed_channel_service_manager_impl_,
                                                                       &pimpl_->link_manager_, pimpl_->l2cap_handler_));
+}
+
+std::unique_ptr<DynamicChannelManager> L2capClassicModule::GetDynamicChannelManager() {
+  return std::unique_ptr<DynamicChannelManager>(new DynamicChannelManager(
+      &pimpl_->dynamic_channel_service_manager_impl_, &pimpl_->link_manager_, pimpl_->l2cap_handler_));
 }
 
 }  // namespace classic

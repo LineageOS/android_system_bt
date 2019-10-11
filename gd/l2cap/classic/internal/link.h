@@ -21,11 +21,15 @@
 #include "hci/acl_manager.h"
 #include "l2cap/classic/internal/dynamic_channel_allocator.h"
 #include "l2cap/classic/internal/dynamic_channel_impl.h"
+#include "l2cap/classic/internal/dynamic_channel_service_manager_impl.h"
 #include "l2cap/classic/internal/fixed_channel_impl.h"
+#include "l2cap/classic/internal/fixed_channel_service_manager_impl.h"
 #include "l2cap/internal/fixed_channel_allocator.h"
 #include "l2cap/internal/parameter_provider.h"
 #include "l2cap/internal/scheduler.h"
 #include "os/alarm.h"
+#include "os/handler.h"
+#include "signalling_manager.h"
 
 namespace bluetooth {
 namespace l2cap {
@@ -35,7 +39,9 @@ namespace internal {
 class Link {
  public:
   Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_connection,
-       std::unique_ptr<l2cap::internal::Scheduler> scheduler, l2cap::internal::ParameterProvider* parameter_provider);
+       std::unique_ptr<l2cap::internal::Scheduler> scheduler, l2cap::internal::ParameterProvider* parameter_provider,
+       DynamicChannelServiceManagerImpl* dynamic_service_manager,
+       FixedChannelServiceManagerImpl* fixed_service_manager);
 
   virtual ~Link() = default;
 
@@ -55,7 +61,11 @@ class Link {
 
   virtual bool IsFixedChannelAllocated(Cid cid);
 
-  // ClassicDynamicChannel methods
+  // DynamicChannel methods
+
+  virtual void SendConnectionRequest(Psm psm, Cid local_cid);
+
+  virtual void SendDisconnectionRequest(Cid local_cid, Cid remote_cid);
 
   virtual std::shared_ptr<DynamicChannelImpl> AllocateDynamicChannel(Psm psm, Cid remote_cid,
                                                                      SecurityPolicy security_policy);
@@ -72,6 +82,9 @@ class Link {
   std::unique_ptr<hci::AclConnection> acl_connection_;
   std::unique_ptr<l2cap::internal::Scheduler> scheduler_;
   l2cap::internal::ParameterProvider* parameter_provider_;
+  DynamicChannelServiceManagerImpl* dynamic_service_manager_;
+  FixedChannelServiceManagerImpl* fixed_service_manager_;
+  ClassicSignallingManager signalling_manager_;
   os::Alarm link_idle_disconnect_alarm_{l2cap_handler_};
   DISALLOW_COPY_AND_ASSIGN(Link);
 };

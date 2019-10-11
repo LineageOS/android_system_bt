@@ -31,9 +31,14 @@ namespace internal {
 
 Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_connection,
            std::unique_ptr<l2cap::internal::Scheduler> scheduler,
-           l2cap::internal::ParameterProvider* parameter_provider)
+           l2cap::internal::ParameterProvider* parameter_provider,
+           DynamicChannelServiceManagerImpl* dynamic_service_manager,
+           FixedChannelServiceManagerImpl* fixed_service_manager)
     : l2cap_handler_(l2cap_handler), acl_connection_(std::move(acl_connection)), scheduler_(std::move(scheduler)),
-      parameter_provider_(parameter_provider) {
+      parameter_provider_(parameter_provider), dynamic_service_manager_(dynamic_service_manager),
+      fixed_service_manager_(fixed_service_manager),
+      signalling_manager_(l2cap_handler_, this, dynamic_service_manager_, &dynamic_channel_allocator_,
+                          fixed_service_manager_) {
   ASSERT(l2cap_handler_ != nullptr);
   ASSERT(acl_connection_ != nullptr);
   ASSERT(scheduler_ != nullptr);
@@ -46,7 +51,7 @@ Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_c
 
 void Link::OnAclDisconnected(hci::ErrorCode status) {
   fixed_channel_allocator_.OnAclDisconnected(status);
-  // TODO hsz: add dynamic channel part
+  dynamic_channel_allocator_.OnAclDisconnected(status);
 }
 
 void Link::Disconnect() {
@@ -63,14 +68,30 @@ bool Link::IsFixedChannelAllocated(Cid cid) {
   return fixed_channel_allocator_.IsChannelAllocated(cid);
 }
 
+void Link::SendConnectionRequest(Psm psm, Cid local_cid) {
+  signalling_manager_.SendConnectionRequest(psm, local_cid);
+}
+
+void Link::SendDisconnectionRequest(Cid local_cid, Cid remote_cid) {
+  signalling_manager_.SendDisconnectionRequest(local_cid, remote_cid);
+}
+
 std::shared_ptr<DynamicChannelImpl> Link::AllocateDynamicChannel(Psm psm, Cid remote_cid,
                                                                  SecurityPolicy security_policy) {
   auto channel = dynamic_channel_allocator_.AllocateChannel(psm, remote_cid, security_policy);
-  scheduler_->AttachChannel(channel->GetCid(), channel->GetQueueDownEnd());
+  if (channel != nullptr) {
+    scheduler_->AttachChannel(channel->GetCid(), channel->GetQueueDownEnd());
+  }
   return channel;
 }
 
-void Link::FreeDynamicChannel(Cid cid) {}
+void Link::FreeDynamicChannel(Cid cid) {
+  if (dynamic_channel_allocator_.FindChannelByCid(cid) == nullptr) {
+    return;
+  }
+  scheduler_->DetachChannel(cid);
+  dynamic_channel_allocator_.FreeChannel(cid);
+}
 
 void Link::RefreshRefCount() {
   int ref_count = 0;
