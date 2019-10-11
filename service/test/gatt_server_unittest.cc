@@ -267,14 +267,14 @@ class GattServerPostRegisterTest : public GattServerTest {
     desc_handle_ = 0x0004;
 
     std::vector<btgatt_db_element_t> service_with_handles = {
-        {.type = BTGATT_DB_PRIMARY_SERVICE,
-         .uuid = uuid0,
+        {.uuid = uuid0,
+         .type = BTGATT_DB_PRIMARY_SERVICE,
          .attribute_handle = srvc_handle_},
-        {.type = BTGATT_DB_CHARACTERISTIC,
-         .uuid = uuid1,
+        {.uuid = uuid1,
+         .type = BTGATT_DB_CHARACTERISTIC,
          .attribute_handle = char_handle_},
-        {.type = BTGATT_DB_DESCRIPTOR,
-         .uuid = uuid2,
+        {.uuid = uuid2,
+         .type = BTGATT_DB_DESCRIPTOR,
          .attribute_handle = desc_handle_},
     };
 

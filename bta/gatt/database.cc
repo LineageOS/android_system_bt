@@ -127,11 +127,12 @@ Database Database::Deserialize(const std::vector<StoredAttribute>& nv_attr,
   for (; it != nv_attr.cend(); ++it) {
     const auto& attr = *it;
     if (attr.type != PRIMARY_SERVICE && attr.type != SECONDARY_SERVICE) break;
-    result.services.emplace_back(
-        Service{.handle = attr.handle,
-                .end_handle = attr.value.service.end_handle,
-                .is_primary = (attr.type == PRIMARY_SERVICE),
-                .uuid = attr.value.service.uuid});
+    result.services.emplace_back(Service{
+        .handle = attr.handle,
+        .uuid = attr.value.service.uuid,
+        .is_primary = (attr.type == PRIMARY_SERVICE),
+        .end_handle = attr.value.service.end_handle,
+    });
   }
 
   auto current_service_it = result.services.begin();
@@ -168,11 +169,12 @@ Database Database::Deserialize(const std::vector<StoredAttribute>& nv_attr,
           .end_handle = attr.value.included_service.end_handle,
       });
     } else if (attr.type == CHARACTERISTIC) {
-      current_service_it->characteristics.emplace_back(
-          Characteristic{.declaration_handle = attr.handle,
-                         .value_handle = attr.value.characteristic.value_handle,
-                         .properties = attr.value.characteristic.properties,
-                         .uuid = attr.value.characteristic.uuid});
+      current_service_it->characteristics.emplace_back(Characteristic{
+          .declaration_handle = attr.handle,
+          .uuid = attr.value.characteristic.uuid,
+          .value_handle = attr.value.characteristic.value_handle,
+          .properties = attr.value.characteristic.properties,
+      });
 
     } else {
       current_service_it->characteristics.back().descriptors.emplace_back(
