@@ -171,9 +171,9 @@ void BtaGattQueue::WriteCharacteristic(uint16_t conn_id, uint16_t handle,
                                        GATT_WRITE_OP_CB cb, void* cb_data) {
   gatt_op_queue[conn_id].push_back({.type = GATT_WRITE_CHAR,
                                     .handle = handle,
-                                    .write_type = write_type,
                                     .write_cb = cb,
                                     .write_cb_data = cb_data,
+                                    .write_type = write_type,
                                     .value = std::move(value)});
   gatt_execute_next_op(conn_id);
 }
@@ -184,9 +184,9 @@ void BtaGattQueue::WriteDescriptor(uint16_t conn_id, uint16_t handle,
                                    GATT_WRITE_OP_CB cb, void* cb_data) {
   gatt_op_queue[conn_id].push_back({.type = GATT_WRITE_DESC,
                                     .handle = handle,
-                                    .write_type = write_type,
                                     .write_cb = cb,
                                     .write_cb_data = cb_data,
+                                    .write_type = write_type,
                                     .value = std::move(value)});
   gatt_execute_next_op(conn_id);
 }
