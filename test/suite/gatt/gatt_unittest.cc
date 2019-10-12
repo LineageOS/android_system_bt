@@ -69,12 +69,21 @@ TEST_F(GattTest, GattServerBuild) {
   int server_if = server_interface_id();
 
   std::vector<btgatt_db_element_t> service = {
-      {.type = BTGATT_DB_PRIMARY_SERVICE, .uuid = srvc_uuid},
-      {.type = BTGATT_DB_CHARACTERISTIC,
-       .uuid = char_uuid,
-       .properties = 0x10 /* notification */,
-       .permissions = 0x01 /* read only */},
-      {.type = BTGATT_DB_DESCRIPTOR, .uuid = desc_uuid, .permissions = 0x01}};
+      {
+          .uuid = srvc_uuid,
+          .type = BTGATT_DB_PRIMARY_SERVICE,
+      },
+      {
+          .uuid = char_uuid,
+          .type = BTGATT_DB_CHARACTERISTIC,
+          .properties = 0x10,  /* notification */
+          .permissions = 0x01, /* read only */
+      },
+      {
+          .uuid = desc_uuid,
+          .type = BTGATT_DB_DESCRIPTOR,
+          .permissions = 0x01,
+      }};
 
   gatt_server_interface()->add_service(server_if, service);
   semaphore_wait(service_added_callback_sem_);

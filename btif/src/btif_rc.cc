@@ -2535,9 +2535,9 @@ static bt_status_t set_volume(uint8_t volume) {
     BTIF_TRACE_DEBUG("%s: Peer supports absolute volume. newVolume: %d",
                      __func__, volume);
 
-    tAVRC_COMMAND avrc_cmd = {.volume = {.opcode = AVRC_OP_VENDOR,
-                                         .pdu = AVRC_PDU_SET_ABSOLUTE_VOLUME,
+    tAVRC_COMMAND avrc_cmd = {.volume = {.pdu = AVRC_PDU_SET_ABSOLUTE_VOLUME,
                                          .status = AVRC_STS_NO_ERROR,
+                                         .opcode = AVRC_OP_VENDOR,
                                          .volume = volume}};
 
     BT_HDR* p_msg = NULL;
