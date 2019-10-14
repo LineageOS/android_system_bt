@@ -25,10 +25,10 @@
 
 #pragma once
 
-#include "smp/ecc/multprecision.h"
+#include "security/ecc/multprecision.h"
 
 namespace bluetooth {
-namespace smp {
+namespace security {
 namespace ecc {
 
 struct Point {
@@ -71,5 +71,5 @@ void ECC_PointMult_Bin_NAF(Point* q, const Point* p, uint32_t* n);
 #define ECC_PointMult(q, p, n) ECC_PointMult_Bin_NAF(q, p, n)
 
 }  // namespace ecc
-}  // namespace smp
+}  // namespace security
 }  // namespace bluetooth

@@ -22,10 +22,10 @@
 
 #include "hci/address.h"
 #include "hci/le_security_interface.h"
-#include "smp/ui.h"
+#include "security/ui.h"
 
 namespace bluetooth {
-namespace smp {
+namespace security {
 
 class UIMock : public UI {
  public:
@@ -52,5 +52,5 @@ class LeSecurityInterfaceMock : public hci::LeSecurityInterface {
                     common::OnceCallback<void(hci::CommandStatusView)> on_status, os::Handler* handler));
 };
 
-}  // namespace smp
+}  // namespace security
 }  // namespace bluetooth

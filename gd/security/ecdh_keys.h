@@ -20,7 +20,7 @@
 #include <array>
 
 namespace bluetooth {
-namespace smp {
+namespace security {
 
 struct EcdhPublicKey {
   std::array<uint8_t, 32> x;
@@ -36,5 +36,5 @@ bool ValidateECDHPoint(EcdhPublicKey pk);
 
 std::array<uint8_t, 32> ComputeDHKey(std::array<uint8_t, 32> my_private_key, EcdhPublicKey remote_public_key);
 
-}  // namespace smp
+}  // namespace security
 }  // namespace bluetooth

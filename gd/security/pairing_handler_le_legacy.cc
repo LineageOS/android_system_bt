@@ -16,10 +16,10 @@
  *
  ******************************************************************************/
 
-#include "smp/pairing_handler_le.h"
+#include "security/pairing_handler_le.h"
 
 namespace bluetooth {
-namespace smp {
+namespace security {
 
 LegacyStage1ResultOrFailure PairingHandlerLe::DoLegacyStage1(const InitialInformations& i,
                                                              const PairingRequestView& pairing_request,
@@ -226,5 +226,5 @@ StkOrFailure PairingHandlerLe::DoLegacyStage2(const InitialInformations& i, cons
   /* STK */
   return crypto_toolbox::s1(tk, srand, mrand);
 }
-}  // namespace smp
+}  // namespace security
 }  // namespace bluetooth
