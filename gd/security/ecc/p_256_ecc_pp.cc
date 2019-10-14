@@ -22,14 +22,14 @@
  *  Cryptography for private public key
  *
  ******************************************************************************/
-#include "smp/ecc/p_256_ecc_pp.h"
+#include "security/ecc/p_256_ecc_pp.h"
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include "smp/ecc/multprecision.h"
+#include "security/ecc/multprecision.h"
 
 namespace bluetooth {
-namespace smp {
+namespace security {
 namespace ecc {
 
 const uint32_t* modp = curve_p256.p;
@@ -260,5 +260,5 @@ bool ECC_ValidatePoint(const Point& pt) {
 }
 
 }  // namespace ecc
-}  // namespace smp
+}  // namespace security
 }  // namespace bluetooth

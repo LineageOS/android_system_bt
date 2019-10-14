@@ -23,8 +23,8 @@
 
 #include "hci/le_security_interface.h"
 #include "packet/raw_builder.h"
-#include "smp/pairing_handler_le.h"
-#include "smp/test/mocks.h"
+#include "security/pairing_handler_le.h"
+#include "security/test/mocks.h"
 
 #include "os/handler.h"
 #include "os/queue.h"
@@ -47,7 +47,7 @@ using bluetooth::hci::EventPacketView;
 using bluetooth::hci::LeSecurityCommandBuilder;
 
 namespace bluetooth {
-namespace smp {
+namespace security {
 
 namespace {
 
@@ -124,5 +124,5 @@ TEST_F(FakeL2capTest, test_bidi_queue_example) {
   bidi_queue.GetDownEnd()->UnregisterDequeue();
 }
 
-}  // namespace smp
+}  // namespace security
 }  // namespace bluetooth
