@@ -27,12 +27,12 @@
 #include "os/handler.h"
 #include "packet/base_packet_builder.h"
 #include "packet/packet_view.h"
-#include "smp/pairing_failure.h"
-#include "smp/smp_packets.h"
-#include "smp/ui.h"
+#include "security/pairing_failure.h"
+#include "security/smp_packets.h"
+#include "security/ui.h"
 
 namespace bluetooth {
-namespace smp {
+namespace security {
 
 using DistributedKeys =
     std::tuple<std::optional<crypto_toolbox::Octet16> /* ltk */, std::optional<uint16_t> /*ediv*/,
@@ -109,5 +109,5 @@ struct InitialInformations {
   std::function<void(PairingResultOrFailure)> OnPairingFinished;
 };
 
-}  // namespace smp
+}  // namespace security
 }  // namespace bluetooth

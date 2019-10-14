@@ -16,7 +16,7 @@
  *
  ******************************************************************************/
 
-#include "smp/ecdh_keys.h"
+#include "security/ecdh_keys.h"
 
 /**********************************************************************************************************************
  TODO: We should have random number management in separate file, and we
@@ -25,7 +25,7 @@
 #include <chrono>
 #include <cstdlib>
 
-#include "smp/ecc/p_256_ecc_pp.h"
+#include "security/ecc/p_256_ecc_pp.h"
 
 namespace {
 template <size_t SIZE>
@@ -41,7 +41,7 @@ static std::array<uint8_t, SIZE> GenerateRandom() {
 /*********************************************************************************************************************/
 
 namespace bluetooth {
-namespace smp {
+namespace security {
 
 std::pair<std::array<uint8_t, 32>, EcdhPublicKey> GenerateECDHKeyPair() {
   std::array<uint8_t, 32> private_key = GenerateRandom<32>();
@@ -78,5 +78,5 @@ std::array<uint8_t, 32> ComputeDHKey(std::array<uint8_t, 32> my_private_key, Ecd
   return dhkey;
 }
 
-}  // namespace smp
+}  // namespace security
 }  // namespace bluetooth

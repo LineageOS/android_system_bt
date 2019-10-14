@@ -26,7 +26,7 @@
 #include <cstdint>
 
 namespace bluetooth {
-namespace smp {
+namespace security {
 namespace ecc {
 
 #define KEY_LENGTH_DWORDS_P256 8
@@ -52,5 +52,5 @@ void multiprecision_mersenns_squa_mod(uint32_t* c, const uint32_t* a, const uint
 void multiprecision_fast_mod_P256(uint32_t* c, const uint32_t* a, const uint32_t* modp);
 
 }  // namespace ecc
-}  // namespace smp
+}  // namespace security
 }  // namespace bluetooth

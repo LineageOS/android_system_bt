@@ -16,10 +16,10 @@
  *
  ******************************************************************************/
 
-#include "smp/pairing_handler_le.h"
+#include "security/pairing_handler_le.h"
 
 namespace bluetooth {
-namespace smp {
+namespace security {
 
 void PairingHandlerLe::PairingMain(InitialInformations i) {
   LOG_INFO("Pairing Started");
@@ -387,5 +387,5 @@ void PairingHandlerLe::SendKeys(const InitialInformations& i, const uint8_t& key
   }
 }
 
-}  // namespace smp
+}  // namespace security
 }  // namespace bluetooth
