@@ -20,10 +20,10 @@
 
 #include <string>
 
-#include "smp/smp_packets.h"
+#include "security/smp_packets.h"
 
 namespace bluetooth {
-namespace smp {
+namespace security {
 
 /* This structure holds the information about the failure in case of airing failure */
 struct PairingFailure {
@@ -53,5 +53,5 @@ struct PairingFailure {
       : /*location(location),*/ message(message), reason(reason) {}
 };
 
-}  // namespace smp
+}  // namespace security
 }  // namespace bluetooth
