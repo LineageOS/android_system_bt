@@ -18,10 +18,10 @@
 
 #include <gtest/gtest.h>
 
-#include "smp/ecc/p_256_ecc_pp.h"
+#include "security/ecc/p_256_ecc_pp.h"
 
 namespace bluetooth {
-namespace smp {
+namespace security {
 namespace ecc {
 
 // Test ECC point validation
@@ -108,5 +108,5 @@ TEST(SmpEccValidationTest, test_invalid_points) {
 }
 
 }  // namespace ecc
-}  // namespace smp
+}  // namespace security
 }  // namespace bluetooth
