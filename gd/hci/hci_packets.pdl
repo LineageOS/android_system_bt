@@ -1449,7 +1449,11 @@ packet ReadPageTimeoutComplete : CommandComplete (command_op_code = READ_PAGE_TI
 }
 
 packet WritePageTimeout : DiscoveryCommand (op_code = WRITE_PAGE_TIMEOUT) {
-  _payload_,  // placeholder (unimplemented)
+  page_timeout : 16,
+}
+
+packet WritePageTimeoutComplete : CommandComplete (command_op_code = WRITE_PAGE_TIMEOUT) {
+  status : ErrorCode,
 }
 
 enum ScanEnable : 8 {

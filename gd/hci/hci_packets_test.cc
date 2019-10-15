@@ -164,6 +164,12 @@ DEFINE_AND_INSTANTIATE_ReadPageTimeoutReflectionTest(read_page_timeout);
 std::vector<uint8_t> read_page_timeout_complete = {0x0e, 0x06, 0x01, 0x17, 0x0c, 0x00, 0x11, 0x22};
 DEFINE_AND_INSTANTIATE_ReadPageTimeoutCompleteReflectionTest(read_page_timeout_complete);
 
+std::vector<uint8_t> write_page_timeout = {0x18, 0x0c, 0x02, 0x00, 0x20};
+DEFINE_AND_INSTANTIATE_WritePageTimeoutReflectionTest(write_page_timeout);
+
+std::vector<uint8_t> write_page_timeout_complete = {0x0e, 0x04, 0x01, 0x18, 0x0c, 0x00};
+DEFINE_AND_INSTANTIATE_WritePageTimeoutCompleteReflectionTest(write_page_timeout_complete);
+
 std::vector<uint8_t> inquiry = {0x01, 0x04, 0x05, 0x33, 0x8b, 0x9e, 0xaa, 0xbb};
 DEFINE_AND_INSTANTIATE_InquiryReflectionTest(inquiry);
 
