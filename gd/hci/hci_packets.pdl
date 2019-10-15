@@ -549,6 +549,7 @@ packet ConnectionManagementCommand : CommandPacket { _payload_, }
 packet SecurityCommand : CommandPacket { _payload_, }
 packet ScoConnectionCommand : CommandPacket { _payload_, }
 packet LeAdvertisingCommand : CommandPacket { _payload_, }
+packet LeScanningCommand : CommandPacket { _payload_, }
 packet LeConnectionManagementCommand : CommandPacket { _payload_, }
 packet LeSecurityCommand : CommandPacket { _payload_, }
 packet VendorCommand : CommandPacket { _payload_, }
@@ -2286,7 +2287,7 @@ enum LeSetScanningFilterPolicy : 8 {
   WHITE_LIST_AND_INITIATORS_IDENTITY = 0x03,
 }
 
-packet LeSetScanParameters : LeAdvertisingCommand (op_code = LE_SET_SCAN_PARAMETERS) {
+packet LeSetScanParameters : LeScanningCommand (op_code = LE_SET_SCAN_PARAMETERS) {
   le_scan_type : LeScanType,
   le_scan_interval : 16, // 0x0004-0x4000 Default 0x10 (10ms)
   le_scan_window : 16, // Default 0x10 (10ms)
@@ -2298,7 +2299,7 @@ packet LeSetScanParametersComplete : CommandComplete (command_op_code = LE_SET_S
   status : ErrorCode,
 }
 
-packet LeSetScanEnable : LeAdvertisingCommand (op_code = LE_SET_SCAN_ENABLE) {
+packet LeSetScanEnable : LeScanningCommand (op_code = LE_SET_SCAN_ENABLE) {
   le_scan_enable : Enable,
   filter_duplicates : Enable,
 }

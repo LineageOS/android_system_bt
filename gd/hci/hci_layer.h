@@ -25,6 +25,8 @@
 #include "common/callback.h"
 #include "hal/hci_hal.h"
 #include "hci/hci_packets.h"
+#include "hci/le_advertising_interface.h"
+#include "hci/le_scanning_interface.h"
 #include "hci/le_security_interface.h"
 #include "hci/security_interface.h"
 #include "module.h"
@@ -60,6 +62,12 @@ class HciLayer : public Module {
   SecurityInterface* GetSecurityInterface(common::Callback<void(EventPacketView)> event_handler, os::Handler* handler);
 
   LeSecurityInterface* GetLeSecurityInterface(common::Callback<void(LeMetaEventView)> event_handler,
+                                              os::Handler* handler);
+
+  LeAdvertisingInterface* GetLeAdvertisingInterface(common::Callback<void(LeMetaEventView)> event_handler,
+                                                    os::Handler* handler);
+
+  LeScanningInterface* GetLeScanningInterface(common::Callback<void(LeMetaEventView)> event_handler,
                                               os::Handler* handler);
 
   static const ModuleFactory Factory;
