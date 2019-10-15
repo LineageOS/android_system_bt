@@ -14,22 +14,29 @@
  * limitations under the License.
  */
 
-#include "main/shim/shim.h"
-#include "main/shim/entry.h"
+#include <cstdint>
 
-// TODO(cmanton) Connect this flag to an external input
-#if 1
+#include "main/shim/entry.h"
+#include "main/shim/shim.h"
+#include "osi/include/properties.h"
+
+static const char* kPropertyKey = "bluetooth.gd.enabled";
+
 static bool gd_shim_enabled_ = false;
-#else
-static bool gd_shim_enabled_ = true;
-#endif
+static bool gd_shim_property_checked_ = false;
 
 EXPORT_SYMBOL extern const module_t gd_shim_module = {
     .name = GD_SHIM_MODULE,
-    .init = NULL,
+    .init = nullptr,
     .start_up = bluetooth::shim::StartGabeldorscheStack,
     .shut_down = bluetooth::shim::StopGabeldorscheStack,
     .clean_up = NULL,
     .dependencies = {NULL}};
 
-bool bluetooth::shim::is_gd_shim_enabled() { return gd_shim_enabled_; }
+bool bluetooth::shim::is_gd_shim_enabled() {
+  if (!gd_shim_property_checked_) {
+    gd_shim_property_checked_ = true;
+    gd_shim_enabled_ = (osi_property_get_int32(kPropertyKey, 0) == 1);
+  }
+  return gd_shim_enabled_;
+}
