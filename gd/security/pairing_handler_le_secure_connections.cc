@@ -16,10 +16,10 @@
  *
  ******************************************************************************/
 
-#include "smp/pairing_handler_le.h"
+#include "security/pairing_handler_le.h"
 
 namespace bluetooth {
-namespace smp {
+namespace security {
 
 std::variant<PairingFailure, KeyExchangeResult> PairingHandlerLe::ExchangePublicKeys(const InitialInformations& i,
                                                                                      OobDataFlag remote_have_oob_data) {
@@ -464,5 +464,5 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsJustWorks(const Initial
   return Stage1Result{Na, Nb, ra, rb};
 }
 
-}  // namespace smp
+}  // namespace security
 }  // namespace bluetooth

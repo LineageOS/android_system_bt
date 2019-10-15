@@ -24,8 +24,8 @@
 #include "common/testing/wired_pair_of_bidi_queues.h"
 #include "hci/le_security_interface.h"
 #include "packet/raw_builder.h"
-#include "smp/pairing_handler_le.h"
-#include "smp/test/mocks.h"
+#include "security/pairing_handler_le.h"
+#include "security/test/mocks.h"
 
 using namespace std::chrono_literals;
 using testing::_;
@@ -49,7 +49,7 @@ using bluetooth::hci::LeSecurityCommandBuilder;
 // --gtest_repeat=10 --gtest_shuffle
 
 namespace bluetooth {
-namespace smp {
+namespace security {
 CommandView CommandBuilderToView(std::unique_ptr<BasePacketBuilder> builder) {
   std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
   BitInserter it(*packet_bytes);
@@ -67,18 +67,18 @@ EventPacketView EventBuilderToView(std::unique_ptr<EventPacketBuilder> builder) 
   auto temp_evt_view = EventPacketView::Create(packet_bytes_view);
   return EventPacketView::Create(temp_evt_view);
 }
-}  // namespace smp
+}  // namespace security
 }  // namespace bluetooth
 
 namespace {
 
 constexpr uint16_t CONN_HANDLE_MASTER = 0x31, CONN_HANDLE_SLAVE = 0x32;
-std::unique_ptr<bluetooth::smp::PairingHandlerLe> pairing_handler_a, pairing_handler_b;
+std::unique_ptr<bluetooth::security::PairingHandlerLe> pairing_handler_a, pairing_handler_b;
 
 }  // namespace
 
 namespace bluetooth {
-namespace smp {
+namespace security {
 
 namespace {
 Address ADDRESS_MASTER{{0x26, 0x64, 0x76, 0x86, 0xab, 0xba}};
@@ -267,7 +267,7 @@ class PairingHandlerPairTest : public testing::Test {
   }
 
  public:
-  std::unique_ptr<bluetooth::smp::CommandView> WaitFirstL2capCommand() {
+  std::unique_ptr<bluetooth::security::CommandView> WaitFirstL2capCommand() {
     while (!first_command_sent) {
       std::this_thread::sleep_for(1ms);
       LOG_INFO("waiting for first command...");
@@ -284,7 +284,7 @@ class PairingHandlerPairTest : public testing::Test {
   LeSecurityInterfaceMock slave_le_security_mock;
 
   uint16_t first_command_sent = false;
-  std::unique_ptr<bluetooth::smp::CommandView> first_command;
+  std::unique_ptr<bluetooth::security::CommandView> first_command;
 
   os::Thread* thread_;
   os::Handler* handler_;
@@ -377,7 +377,7 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_just_works_slave_initiate
       .OnPairingFinished = OnPairingFinishedSlave,
   };
 
-  std::unique_ptr<bluetooth::smp::CommandView> first_pkt;
+  std::unique_ptr<bluetooth::security::CommandView> first_pkt;
   {
     std::unique_lock<std::mutex> lock(handlers_initialization_guard);
     pairing_handler_b = std::make_unique<PairingHandlerLe>(PairingHandlerLe::PHASE1, slave_setup);
@@ -640,5 +640,5 @@ TEST_F(PairingHandlerPairTest, test_legacy_passkey_entry) {
   EXPECT_TRUE(std::holds_alternative<PairingResult>(pairing_result_slave.value()));
 }
 
-}  // namespace smp
+}  // namespace security
 }  // namespace bluetooth

@@ -310,12 +310,12 @@ genrule {
     srcs: [
         "hci/hci_packets.pdl",
         "l2cap/l2cap_packets.pdl",
-        "smp/smp_packets.pdl",
+        "security/smp_packets.pdl",
     ],
     out: [
         "hci/hci_packets.h",
         "l2cap/l2cap_packets.h",
-        "smp/smp_packets.h",
+        "security/smp_packets.h",
     ],
 }
 

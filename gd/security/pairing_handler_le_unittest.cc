@@ -21,18 +21,18 @@
 #include <memory>
 
 #include "os/log.h"
-#include "smp/pairing_handler_le.h"
-#include "smp/test/mocks.h"
+#include "security/pairing_handler_le.h"
+#include "security/test/mocks.h"
 
 using ::testing::_;
 using ::testing::Eq;
 using ::testing::Field;
 using ::testing::VariantWith;
 
-using bluetooth::smp::CommandView;
+using bluetooth::security::CommandView;
 
 namespace bluetooth {
-namespace smp {
+namespace security {
 
 namespace {
 
@@ -46,7 +46,7 @@ CommandView BuilderToView(std::unique_ptr<BasePacketBuilder> builder) {
 }
 
 std::condition_variable outgoing_l2cap_blocker_;
-std::optional<bluetooth::smp::CommandView> outgoing_l2cap_packet_;
+std::optional<bluetooth::security::CommandView> outgoing_l2cap_packet_;
 
 bool WaitForOutgoingL2capPacket() {
   std::mutex mutex;
@@ -327,5 +327,5 @@ TEST_F(PairingHandlerUnitTest, test_remote_master_initiating) {
   pairing_handler.reset();
 }
 
-}  // namespace smp
+}  // namespace security
 }  // namespace bluetooth

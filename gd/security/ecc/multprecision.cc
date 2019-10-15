@@ -22,11 +22,11 @@
  *
  ******************************************************************************/
 
-#include "smp/ecc/multprecision.h"
+#include "security/ecc/multprecision.h"
 #include <string.h>
 
 namespace bluetooth {
-namespace smp {
+namespace security {
 namespace ecc {
 
 #define DWORD_BITS 32
@@ -500,5 +500,5 @@ void multiprecision_inv_mod(uint32_t* aminus, uint32_t* u, const uint32_t* modp)
 }
 
 }  // namespace ecc
-}  // namespace smp
+}  // namespace security
 }  // namespace bluetooth
