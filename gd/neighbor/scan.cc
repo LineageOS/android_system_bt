@@ -59,24 +59,24 @@ neighbor::ScanModule::impl::impl(neighbor::ScanModule& module)
     : module_(module), inquiry_scan_enabled_(false), page_scan_enabled_(false) {}
 
 void neighbor::ScanModule::impl::OnCommandComplete(hci::CommandCompleteView view) {
-  switch veiwstatus.GetCommandOpCode()) {
-      case hci::OpCode::READ_SCAN_ENABLE: {
-        auto packet = hci::ReadScanEnableCompleteView::Create(view);
-        ASSERT(packet.IsValid());
-        ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
-        ReadScanEnable(packet.GetScanEnable());
-      } break;
+  switch (view.GetCommandOpCode()) {
+    case hci::OpCode::READ_SCAN_ENABLE: {
+      auto packet = hci::ReadScanEnableCompleteView::Create(view);
+      ASSERT(packet.IsValid());
+      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+      ReadScanEnable(packet.GetScanEnable());
+    } break;
 
-      case hci::OpCode::WRITE_SCAN_ENABLE: {
-        auto packet = hci::WriteScanEnableCompleteView::Create(view);
-        ASSERT(packet.IsValid());
-        ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
-      } break;
+    case hci::OpCode::WRITE_SCAN_ENABLE: {
+      auto packet = hci::WriteScanEnableCompleteView::Create(view);
+      ASSERT(packet.IsValid());
+      ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
+    } break;
 
-      default:
-        LOG_ERROR("Unhandled command %s", hci::OpCodeText(view.GetCommandOpCode()).c_str());
-        break;
-    }
+    default:
+      LOG_ERROR("Unhandled command %s", hci::OpCodeText(view.GetCommandOpCode()).c_str());
+      break;
+  }
 }
 
 void neighbor::ScanModule::impl::WriteScanEnable() {
