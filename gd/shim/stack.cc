@@ -24,6 +24,7 @@
 #include "l2cap/le/l2cap_le_module.h"
 #include "os/log.h"
 #include "os/thread.h"
+#include "security/security_module.h"
 #include "shim/controller.h"
 #include "shim/hci_layer.h"
 #include "stack_manager.h"
@@ -46,6 +47,7 @@ struct bluetooth::shim::Stack::impl {
     modules.add<::bluetooth::l2cap::le::L2capLeModule>();
     modules.add<::bluetooth::shim::Controller>();
     modules.add<::bluetooth::shim::HciLayer>();
+    modules.add<::bluetooth::security::SecurityModule>();
 
     stack_thread_ = new Thread("gd_stack_thread", Thread::Priority::NORMAL);
     stack_manager_.StartUp(&modules, stack_thread_);
