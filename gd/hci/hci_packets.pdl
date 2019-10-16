@@ -729,7 +729,11 @@ packet InquiryCancelComplete : CommandComplete (command_op_code = INQUIRY_CANCEL
 }
 
 packet PeriodicInquiryMode : DiscoveryCommand (op_code = PERIODIC_INQUIRY_MODE) {
-  _payload_,  // placeholder (unimplemented)
+  max_period_length : 16, // Range 0x0003 to 0xffff (times 1.28s)
+  min_period_length : 16, // Range 0x0002 to 0xfffe (times 1.28s)
+  lap : Lap,
+  inquiry_length : 8, // 0x1 - 0x30 (times 1.28s)
+  num_responses : 8, // 0x00 unlimited
 }
 
 packet PeriodicInquiryModeComplete : CommandComplete (command_op_code = PERIODIC_INQUIRY_MODE) {
