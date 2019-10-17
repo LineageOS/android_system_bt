@@ -188,8 +188,8 @@ void LowEnergyClient::MtuChangedCallback(
 
   if (!bda) return;
 
-  const char* addr = BtAddrString(bda).c_str();
-  if (delegate_) delegate_->OnMtuChanged(this, status, addr, mtu);
+  std::string addr = BtAddrString(bda);
+  if (delegate_) delegate_->OnMtuChanged(this, status, addr.c_str(), mtu);
 }
 
 // LowEnergyClientFactory implementation
