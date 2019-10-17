@@ -52,7 +52,9 @@ class IteratorTest : public ::testing::Test {
     packet = TestPacket::make_new_packet(complete_l2cap_packet);
   }
 
-  void TearDown() override { packet.reset(); }
+  void TearDown() override {
+    packet.reset();
+  }
 
   std::shared_ptr<TestPacket> packet;
 };

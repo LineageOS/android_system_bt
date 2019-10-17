@@ -19,8 +19,6 @@
 #include <cstdint>
 #include <memory>
 
-#include "base/logging.h"
-
 #include "packets/packet_builder.h"
 
 namespace test_vendor_lib {

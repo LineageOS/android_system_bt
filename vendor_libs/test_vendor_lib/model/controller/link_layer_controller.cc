@@ -14,14 +14,10 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "link_layer_controller"
-
 #include "link_layer_controller.h"
 
-#include <base/logging.h>
-
 #include "hci.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 #include "packets/hci/acl_packet_builder.h"
 #include "packets/hci/command_packet_view.h"
 #include "packets/hci/event_packet_builder.h"
@@ -106,7 +102,7 @@ hci::Status LinkLayerController::SendAclToRemote(AclPacketView acl_packet) {
   std::shared_ptr<LinkLayerPacketBuilder> acl =
       LinkLayerPacketBuilder::WrapAcl(std::move(acl_builder), my_address, destination);
 
-  LOG_INFO(LOG_TAG, "%s(%s): handle 0x%x size %d", __func__, properties_.GetAddress().ToString().c_str(), handle,
+  LOG_INFO("%s(%s): handle 0x%x size %d", __func__, properties_.GetAddress().ToString().c_str(), handle,
            static_cast<int>(acl_packet.size()));
 
   ScheduleTask(milliseconds(5), [this, handle]() {
@@ -193,18 +189,17 @@ void LinkLayerController::IncomingPacket(LinkLayerPacketView incoming) {
       IncomingResponsePacket(incoming);
       break;
     default:
-      LOG_WARN(LOG_TAG, "Dropping unhandled packet of type %d", static_cast<int32_t>(incoming.GetType()));
+      LOG_WARN("Dropping unhandled packet of type %d", static_cast<int32_t>(incoming.GetType()));
   }
 }
 
 void LinkLayerController::IncomingAclPacket(LinkLayerPacketView incoming) {
-  LOG_INFO(LOG_TAG, "Acl Packet %s -> %s", incoming.GetSourceAddress().ToString().c_str(),
+  LOG_INFO("Acl Packet %s -> %s", incoming.GetSourceAddress().ToString().c_str(),
            incoming.GetDestinationAddress().ToString().c_str());
   AclPacketView acl_view = AclPacketView::Create(incoming.GetPayload());
-  LOG_INFO(LOG_TAG, "%s: remote handle 0x%x size %d", __func__, acl_view.GetHandle(),
-           static_cast<int>(acl_view.size()));
+  LOG_INFO("%s: remote handle 0x%x size %d", __func__, acl_view.GetHandle(), static_cast<int>(acl_view.size()));
   uint16_t local_handle = connections_.GetHandle(incoming.GetSourceAddress());
-  LOG_INFO(LOG_TAG, "%s: local handle 0x%x", __func__, local_handle);
+  LOG_INFO("%s: local handle 0x%x", __func__, local_handle);
 
   acl::PacketBoundaryFlagsType boundary_flags = acl_view.GetPacketBoundaryFlags();
   acl::BroadcastFlagsType broadcast_flags = acl_view.GetBroadcastFlags();
@@ -222,7 +217,7 @@ void LinkLayerController::IncomingCommandPacket(LinkLayerPacketView incoming) {
   switch (opcode) {
     case (hci::OpCode::REMOTE_NAME_REQUEST): {
       std::vector<uint8_t> name = properties_.GetName();
-      LOG_INFO(LOG_TAG, "Remote Name (Local Name) %d", static_cast<int>(name.size()));
+      LOG_INFO("Remote Name (Local Name) %d", static_cast<int>(name.size()));
       response_data.push_back(static_cast<uint8_t>(hci::Status::SUCCESS));
       response_data.push_back(name.size());
       uint64_t word = 0;
@@ -236,7 +231,7 @@ void LinkLayerController::IncomingCommandPacket(LinkLayerPacketView incoming) {
       response_data.push_back(word);
     } break;
     case (hci::OpCode::READ_REMOTE_SUPPORTED_FEATURES):
-      LOG_INFO(LOG_TAG, "(%s) Remote Supported Features Requested by: %s %x",
+      LOG_INFO("(%s) Remote Supported Features Requested by: %s %x",
                incoming.GetDestinationAddress().ToString().c_str(), incoming.GetSourceAddress().ToString().c_str(),
                static_cast<int>(properties_.GetSupportedFeatures()));
       response_data.push_back(static_cast<uint8_t>(hci::Status::SUCCESS));
@@ -244,9 +239,8 @@ void LinkLayerController::IncomingCommandPacket(LinkLayerPacketView incoming) {
       break;
     case (hci::OpCode::READ_REMOTE_EXTENDED_FEATURES): {
       uint8_t page_number = (args + 2).extract<uint8_t>();  // skip the handle
-      LOG_INFO(LOG_TAG, "(%s) Remote Extended Features %d Requested by: %s",
-               incoming.GetDestinationAddress().ToString().c_str(), page_number,
-               incoming.GetSourceAddress().ToString().c_str());
+      LOG_INFO("(%s) Remote Extended Features %d Requested by: %s", incoming.GetDestinationAddress().ToString().c_str(),
+               page_number, incoming.GetSourceAddress().ToString().c_str());
       uint8_t max_page_number = properties_.GetExtendedFeaturesMaximumPageNumber();
       if (page_number > max_page_number) {
         response_data.push_back(static_cast<uint8_t>(hci::Status::INVALID_HCI_COMMAND_PARAMETERS));
@@ -271,7 +265,7 @@ void LinkLayerController::IncomingCommandPacket(LinkLayerPacketView incoming) {
       response_data.push_back(properties_.GetClockOffset());
       break;
     default:
-      LOG_INFO(LOG_TAG, "Dropping unhandled command 0x%04x", static_cast<uint16_t>(opcode));
+      LOG_INFO("Dropping unhandled command 0x%04x", static_cast<uint16_t>(opcode));
       return;
   }
   SendLinkLayerPacket(
@@ -280,27 +274,27 @@ void LinkLayerController::IncomingCommandPacket(LinkLayerPacketView incoming) {
 }
 
 void LinkLayerController::IncomingDisconnectPacket(LinkLayerPacketView incoming) {
-  LOG_INFO(LOG_TAG, "Disconnect Packet");
+  LOG_INFO("Disconnect Packet");
   DisconnectView disconnect = DisconnectView::GetDisconnect(incoming);
   Address peer = incoming.GetSourceAddress();
   uint16_t handle = connections_.GetHandle(peer);
   if (handle == acl::kReservedHandle) {
-    LOG_INFO(LOG_TAG, "%s: Unknown connection @%s", __func__, peer.ToString().c_str());
+    LOG_INFO("%s: Unknown connection @%s", __func__, peer.ToString().c_str());
     return;
   }
-  CHECK(connections_.Disconnect(handle)) << "GetHandle() returned invalid handle " << handle;
+  ASSERT_LOG(connections_.Disconnect(handle), "GetHandle() returned invalid handle %hx", handle);
 
   uint8_t reason = disconnect.GetReason();
   ScheduleTask(milliseconds(20), [this, handle, reason]() { DisconnectCleanup(handle, reason); });
 }
 
 void LinkLayerController::IncomingEncryptConnection(LinkLayerPacketView incoming) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
   // TODO: Check keys
   Address peer = incoming.GetSourceAddress();
   uint16_t handle = connections_.GetHandle(peer);
   if (handle == acl::kReservedHandle) {
-    LOG_INFO(LOG_TAG, "%s: Unknown connection @%s", __func__, peer.ToString().c_str());
+    LOG_INFO("%s: Unknown connection @%s", __func__, peer.ToString().c_str());
     return;
   }
   send_event_(EventPacketBuilder::CreateEncryptionChange(hci::Status::SUCCESS, handle, 1)->ToVector());
@@ -309,11 +303,11 @@ void LinkLayerController::IncomingEncryptConnection(LinkLayerPacketView incoming
 }
 
 void LinkLayerController::IncomingEncryptConnectionResponse(LinkLayerPacketView incoming) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
   // TODO: Check keys
   uint16_t handle = connections_.GetHandle(incoming.GetSourceAddress());
   if (handle == acl::kReservedHandle) {
-    LOG_INFO(LOG_TAG, "%s: Unknown connection @%s", __func__, incoming.GetSourceAddress().ToString().c_str());
+    LOG_INFO("%s: Unknown connection @%s", __func__, incoming.GetSourceAddress().ToString().c_str());
     return;
   }
   send_event_(EventPacketBuilder::CreateEncryptionChange(hci::Status::SUCCESS, handle, 1)->ToVector());
@@ -340,7 +334,7 @@ void LinkLayerController::IncomingInquiryPacket(LinkLayerPacketView incoming) {
           GetRssi(), properties_.GetExtendedInquiryData());
       break;
     default:
-      LOG_WARN(LOG_TAG, "Unhandled Incoming Inquiry of type %d", static_cast<int>(inquiry.GetType()));
+      LOG_WARN("Unhandled Incoming Inquiry of type %d", static_cast<int>(inquiry.GetType()));
       return;
   }
   SendLinkLayerPacket(LinkLayerPacketBuilder::WrapInquiryResponse(std::move(inquiry_response), properties_.GetAddress(),
@@ -354,18 +348,18 @@ void LinkLayerController::IncomingInquiryResponsePacket(LinkLayerPacketView inco
 
   switch (inquiry_response.GetType()) {
     case (Inquiry::InquiryType::STANDARD): {
-      LOG_WARN(LOG_TAG, "Incoming Standard Inquiry Response");
+      LOG_WARN("Incoming Standard Inquiry Response");
       // TODO: Support multiple inquiries in the same packet.
       std::unique_ptr<EventPacketBuilder> inquiry_result = EventPacketBuilder::CreateInquiryResultEvent();
       bool result_added =
           inquiry_result->AddInquiryResult(incoming.GetSourceAddress(), inquiry_response.GetPageScanRepetitionMode(),
                                            inquiry_response.GetClassOfDevice(), inquiry_response.GetClockOffset());
-      CHECK(result_added);
+      ASSERT(result_added);
       send_event_(inquiry_result->ToVector());
     } break;
 
     case (Inquiry::InquiryType::RSSI):
-      LOG_WARN(LOG_TAG, "Incoming RSSI Inquiry Response");
+      LOG_WARN("Incoming RSSI Inquiry Response");
       send_event_(EventPacketBuilder::CreateExtendedInquiryResultEvent(
                       incoming.GetSourceAddress(), inquiry_response.GetPageScanRepetitionMode(),
                       inquiry_response.GetClassOfDevice(), inquiry_response.GetClockOffset(), GetRssi(), eir)
@@ -373,10 +367,10 @@ void LinkLayerController::IncomingInquiryResponsePacket(LinkLayerPacketView inco
       break;
 
     case (Inquiry::InquiryType::EXTENDED): {
-      LOG_WARN(LOG_TAG, "Incoming Extended Inquiry Response");
+      LOG_WARN("Incoming Extended Inquiry Response");
       auto eir_itr = inquiry_response.GetExtendedData();
       size_t eir_bytes = eir_itr.NumBytesRemaining();
-      LOG_WARN(LOG_TAG, "Payload size = %d", static_cast<int>(eir_bytes));
+      LOG_WARN("Payload size = %d", static_cast<int>(eir_bytes));
       for (size_t i = 0; i < eir_bytes; i++) {
         eir.push_back(eir_itr.extract<uint8_t>());
       }
@@ -386,14 +380,14 @@ void LinkLayerController::IncomingInquiryResponsePacket(LinkLayerPacketView inco
                       ->ToVector());
     } break;
     default:
-      LOG_WARN(LOG_TAG, "Unhandled Incoming Inquiry Response of type %d", static_cast<int>(inquiry_response.GetType()));
+      LOG_WARN("Unhandled Incoming Inquiry Response of type %d", static_cast<int>(inquiry_response.GetType()));
   }
 }
 
 void LinkLayerController::IncomingIoCapabilityRequestPacket(LinkLayerPacketView incoming) {
-  LOG_DEBUG(LOG_TAG, "%s", __func__);
+  LOG_DEBUG("%s", __func__);
   if (!simple_pairing_mode_enabled_) {
-    LOG_WARN(LOG_TAG, "%s: Only simple pairing mode is implemented", __func__);
+    LOG_WARN("%s: Only simple pairing mode is implemented", __func__);
     return;
   }
   auto request = IoCapabilityView::GetIoCapability(incoming);
@@ -405,7 +399,7 @@ void LinkLayerController::IncomingIoCapabilityRequestPacket(LinkLayerPacketView 
 
   uint16_t handle = connections_.GetHandle(peer);
   if (handle == acl::kReservedHandle) {
-    LOG_INFO(LOG_TAG, "%s: Device not connected %s", __func__, peer.ToString().c_str());
+    LOG_INFO("%s: Device not connected %s", __func__, peer.ToString().c_str());
     return;
   }
 
@@ -421,7 +415,7 @@ void LinkLayerController::IncomingIoCapabilityRequestPacket(LinkLayerPacketView 
 }
 
 void LinkLayerController::IncomingIoCapabilityResponsePacket(LinkLayerPacketView incoming) {
-  LOG_DEBUG(LOG_TAG, "%s", __func__);
+  LOG_DEBUG("%s", __func__);
   auto response = IoCapabilityView::GetIoCapability(incoming);
   Address peer = incoming.GetSourceAddress();
   uint8_t io_capability = response.GetIoCapability();
@@ -438,15 +432,15 @@ void LinkLayerController::IncomingIoCapabilityResponsePacket(LinkLayerPacketView
   if (pairing_type != PairingType::INVALID) {
     ScheduleTask(milliseconds(5), [this, peer, pairing_type]() { AuthenticateRemoteStage1(peer, pairing_type); });
   } else {
-    LOG_INFO(LOG_TAG, "%s: Security Manager returned INVALID", __func__);
+    LOG_INFO("%s: Security Manager returned INVALID", __func__);
   }
 }
 
 void LinkLayerController::IncomingIoCapabilityNegativeResponsePacket(LinkLayerPacketView incoming) {
-  LOG_DEBUG(LOG_TAG, "%s", __func__);
+  LOG_DEBUG("%s", __func__);
   Address peer = incoming.GetSourceAddress();
 
-  CHECK(security_manager_.GetAuthenticationAddress() == peer);
+  ASSERT(security_manager_.GetAuthenticationAddress() == peer);
 
   security_manager_.InvalidateIoCapabilities();
 }
@@ -469,7 +463,7 @@ void LinkLayerController::IncomingLeAdvertisementPacket(LinkLayerPacketView inco
     std::unique_ptr<EventPacketBuilder> le_adverts = EventPacketBuilder::CreateLeAdvertisingReportEvent();
 
     if (!le_adverts->AddLeAdvertisingReport(adv_type, address_type, address, ad, GetRssi())) {
-      LOG_INFO(LOG_TAG, "Couldn't add the advertising report.");
+      LOG_INFO("Couldn't add the advertising report.");
     } else {
       send_event_(le_adverts->ToVector());
     }
@@ -488,10 +482,10 @@ void LinkLayerController::IncomingLeAdvertisementPacket(LinkLayerPacketView inco
         adv_type == LeAdvertisement::AdvertisementType::ADV_DIRECT_IND)) ||
       (LeWhiteListContainsDevice(address, static_cast<uint8_t>(address_type)))) {
     if (!connections_.CreatePendingLeConnection(incoming.GetSourceAddress(), static_cast<uint8_t>(address_type))) {
-      LOG_WARN(LOG_TAG, "%s: CreatePendingLeConnection failed for connection to %s (type %hhx)", __func__,
+      LOG_WARN("%s: CreatePendingLeConnection failed for connection to %s (type %hhx)", __func__,
                incoming.GetSourceAddress().ToString().c_str(), address_type);
     }
-    LOG_INFO(LOG_TAG, "%s: connecting to %s (type %hhx)", __func__, incoming.GetSourceAddress().ToString().c_str(),
+    LOG_INFO("%s: connecting to %s (type %hhx)", __func__, incoming.GetSourceAddress().ToString().c_str(),
              address_type);
     le_connect_ = false;
     le_scan_enable_ = false;
@@ -510,8 +504,8 @@ void LinkLayerController::HandleLeConnection(Address address, uint8_t address_ty
   // TODO: Choose between LeConnectionComplete and LeEnhancedConnectionComplete
   uint16_t handle = connections_.CreateLeConnection(address, address_type, own_address_type);
   if (handle == acl::kReservedHandle) {
-    LOG_WARN(LOG_TAG, "%s: No pending connection for connection from %s (type %hhx)", __func__,
-             address.ToString().c_str(), address_type);
+    LOG_WARN("%s: No pending connection for connection from %s (type %hhx)", __func__, address.ToString().c_str(),
+             address_type);
     return;
   }
   send_event_(EventPacketBuilder::CreateLeConnectionCompleteEvent(
@@ -525,7 +519,7 @@ void LinkLayerController::IncomingLeConnectPacket(LinkLayerPacketView incoming) 
   uint16_t connection_interval = (connect.GetLeConnectionIntervalMax() + connect.GetLeConnectionIntervalMin()) / 2;
   if (!connections_.CreatePendingLeConnection(incoming.GetSourceAddress(),
                                               static_cast<uint8_t>(connect.GetAddressType()))) {
-    LOG_WARN(LOG_TAG, "%s: CreatePendingLeConnection failed for connection from %s (type %hhx)", __func__,
+    LOG_WARN("%s: CreatePendingLeConnection failed for connection from %s (type %hhx)", __func__,
              incoming.GetSourceAddress().ToString().c_str(), connect.GetAddressType());
     return;
   }
@@ -550,7 +544,7 @@ void LinkLayerController::IncomingLeConnectCompletePacket(LinkLayerPacketView in
 }
 
 void LinkLayerController::IncomingLeScanPacket(LinkLayerPacketView incoming) {
-  LOG_INFO(LOG_TAG, "LE Scan Packet");
+  LOG_INFO("LE Scan Packet");
   std::unique_ptr<LeAdvertisementBuilder> response = LeAdvertisementBuilder::Create(
       static_cast<LeAdvertisement::AddressType>(properties_.GetLeAddressType()),
       static_cast<LeAdvertisement::AdvertisementType>(properties_.GetLeAdvertisementType()),
@@ -573,7 +567,7 @@ void LinkLayerController::IncomingLeScanResponsePacket(LinkLayerPacketView incom
 
   if (!le_adverts->AddLeAdvertisingReport(scan_response.GetAdvertisementType(), scan_response.GetAddressType(),
                                           incoming.GetSourceAddress(), ad, GetRssi())) {
-    LOG_INFO(LOG_TAG, "Couldn't add the scan response.");
+    LOG_INFO("Couldn't add the scan response.");
   } else {
     send_event_(le_adverts->ToVector());
   }
@@ -581,11 +575,11 @@ void LinkLayerController::IncomingLeScanResponsePacket(LinkLayerPacketView incom
 
 void LinkLayerController::IncomingPagePacket(LinkLayerPacketView incoming) {
   PageView page = PageView::GetPage(incoming);
-  LOG_INFO(LOG_TAG, "%s from %s", __func__, incoming.GetSourceAddress().ToString().c_str());
+  LOG_INFO("%s from %s", __func__, incoming.GetSourceAddress().ToString().c_str());
 
   if (!connections_.CreatePendingConnection(incoming.GetSourceAddress())) {
     // Send a response to indicate that we're busy, or drop the packet?
-    LOG_WARN(LOG_TAG, "%s: Failed to create a pending connection for %s", __func__,
+    LOG_WARN("%s: Failed to create a pending connection for %s", __func__,
              incoming.GetSourceAddress().ToString().c_str());
   }
 
@@ -595,19 +589,19 @@ void LinkLayerController::IncomingPagePacket(LinkLayerPacketView incoming) {
 }
 
 void LinkLayerController::IncomingPageRejectPacket(LinkLayerPacketView incoming) {
-  LOG_INFO(LOG_TAG, "%s: %s", __func__, incoming.GetSourceAddress().ToString().c_str());
+  LOG_INFO("%s: %s", __func__, incoming.GetSourceAddress().ToString().c_str());
   PageRejectView reject = PageRejectView::GetPageReject(incoming);
-  LOG_INFO(LOG_TAG, "%s: Sending CreateConnectionComplete", __func__);
+  LOG_INFO("%s: Sending CreateConnectionComplete", __func__);
   send_event_(EventPacketBuilder::CreateConnectionCompleteEvent(static_cast<hci::Status>(reject.GetReason()), 0x0eff,
                                                                 incoming.GetSourceAddress(), hci::LinkType::ACL, false)
                   ->ToVector());
 }
 
 void LinkLayerController::IncomingPageResponsePacket(LinkLayerPacketView incoming) {
-  LOG_INFO(LOG_TAG, "%s: %s", __func__, incoming.GetSourceAddress().ToString().c_str());
+  LOG_INFO("%s: %s", __func__, incoming.GetSourceAddress().ToString().c_str());
   uint16_t handle = connections_.CreateConnection(incoming.GetSourceAddress());
   if (handle == acl::kReservedHandle) {
-    LOG_WARN(LOG_TAG, "%s: No free handles", __func__);
+    LOG_WARN("%s: No free handles", __func__);
     return;
   }
   send_event_(EventPacketBuilder::CreateConnectionCompleteEvent(hci::Status::SUCCESS, handle,
@@ -659,13 +653,13 @@ void LinkLayerController::IncomingResponsePacket(LinkLayerPacketView incoming) {
       send_event_(EventPacketBuilder::CreateReadRemoteVersionInformationEvent(
                       status, handle, args.extract<uint64_t>(), args.extract<uint64_t>(), args.extract<uint64_t>())
                       ->ToVector());
-      LOG_INFO(LOG_TAG, "Read remote version handle 0x%04x", handle);
+      LOG_INFO("Read remote version handle 0x%04x", handle);
     } break;
     case (hci::OpCode::READ_CLOCK_OFFSET): {
       send_event_(EventPacketBuilder::CreateReadClockOffsetEvent(status, handle, args.extract<uint64_t>())->ToVector());
     } break;
     default:
-      LOG_INFO(LOG_TAG, "Unhandled response to command 0x%04x", static_cast<uint16_t>(opcode));
+      LOG_INFO("Unhandled response to command 0x%04x", static_cast<uint16_t>(opcode));
   }
 }
 
@@ -695,7 +689,7 @@ void LinkLayerController::LeAdvertising() {
   } else if (own_address_type == LeAdvertisement::AddressType::RANDOM) {
     advertising_address = properties_.GetLeAddress();
   }
-  CHECK(advertising_address != Address::kEmpty);
+  ASSERT(advertising_address != Address::kEmpty);
   ad = packets::LeAdvertisementBuilder::Create(own_address_type,
                                                static_cast<LeAdvertisement::AdvertisementType>(own_address_type),
                                                properties_.GetLeAdvertisement());
@@ -761,7 +755,7 @@ void LinkLayerController::AddControllerEvent(milliseconds delay, const TaskCallb
 }
 
 void LinkLayerController::WriteSimplePairingMode(bool enabled) {
-  CHECK(enabled) << "The spec says don't disable this!";
+  ASSERT_LOG(enabled, "The spec says don't disable this!");
   simple_pairing_mode_enabled_ = enabled;
 }
 
@@ -776,35 +770,35 @@ void LinkLayerController::StartSimplePairing(const Address& address) {
 }
 
 void LinkLayerController::AuthenticateRemoteStage1(const Address& peer, PairingType pairing_type) {
-  CHECK(security_manager_.GetAuthenticationAddress() == peer);
+  ASSERT(security_manager_.GetAuthenticationAddress() == peer);
   // TODO: Public key exchange first?
   switch (pairing_type) {
     case PairingType::AUTO_CONFIRMATION:
       send_event_(EventPacketBuilder::CreateUserConfirmationRequestEvent(peer, 123456)->ToVector());
       break;
     case PairingType::CONFIRM_Y_N:
-      CHECK(false) << __func__ << "Unimplemented PairingType" << static_cast<int>(pairing_type);
+      LOG_ALWAYS_FATAL("Unimplemented PairingType %d", static_cast<int>(pairing_type));
       break;
     case PairingType::DISPLAY_PIN:
-      CHECK(false) << __func__ << "Unimplemented PairingType" << static_cast<int>(pairing_type);
+      LOG_ALWAYS_FATAL("Unimplemented PairingType %d", static_cast<int>(pairing_type));
       break;
     case PairingType::DISPLAY_AND_CONFIRM:
-      CHECK(false) << __func__ << "Unimplemented PairingType" << static_cast<int>(pairing_type);
+      LOG_ALWAYS_FATAL("Unimplemented PairingType %d", static_cast<int>(pairing_type));
       break;
     case PairingType::INPUT_PIN:
-      CHECK(false) << __func__ << "Unimplemented PairingType" << static_cast<int>(pairing_type);
+      LOG_ALWAYS_FATAL("Unimplemented PairingType %d", static_cast<int>(pairing_type));
       break;
     case PairingType::INVALID:
-      CHECK(false) << __func__ << "Unimplemented PairingType" << static_cast<int>(pairing_type);
+      LOG_ALWAYS_FATAL("Unimplemented PairingType %d", static_cast<int>(pairing_type));
       break;
     default:
-      CHECK(false) << __func__ << ": Invalid PairingType " << static_cast<int>(pairing_type);
+      LOG_ALWAYS_FATAL("Invalid PairingType %d", static_cast<int>(pairing_type));
   }
 }
 
 void LinkLayerController::AuthenticateRemoteStage2(const Address& peer) {
   uint16_t handle = security_manager_.GetAuthenticationHandle();
-  CHECK(security_manager_.GetAuthenticationAddress() == peer);
+  ASSERT(security_manager_.GetAuthenticationAddress() == peer);
   // Check key in security_manager_ ?
   send_event_(EventPacketBuilder::CreateAuthenticationCompleteEvent(hci::Status::SUCCESS, handle)->ToVector());
 }
@@ -824,7 +818,7 @@ hci::Status LinkLayerController::LinkKeyRequestNegativeReply(const Address& addr
   // Simple pairing to get a key
   uint16_t handle = connections_.GetHandle(address);
   if (handle == acl::kReservedHandle) {
-    LOG_INFO(LOG_TAG, "%s: Device not connected %s", __func__, address.ToString().c_str());
+    LOG_INFO("%s: Device not connected %s", __func__, address.ToString().c_str());
     return hci::Status::UNKNOWN_CONNECTION;
   }
 
@@ -846,7 +840,7 @@ hci::Status LinkLayerController::IoCapabilityRequestReply(const Address& peer, u
         IoCapabilityBuilder::Create(io_capability, oob_data_present_flag, authentication_requirements),
         properties_.GetAddress(), peer));
   } else {
-    LOG_INFO(LOG_TAG, "%s: Requesting remote capability", __func__);
+    LOG_INFO("%s: Requesting remote capability", __func__);
     SendLinkLayerPacket(LinkLayerPacketBuilder::WrapIoCapabilityRequest(
         IoCapabilityBuilder::Create(io_capability, oob_data_present_flag, authentication_requirements),
         properties_.GetAddress(), peer));
@@ -893,7 +887,7 @@ hci::Status LinkLayerController::UserPasskeyRequestReply(const Address& peer, ui
   if (security_manager_.GetAuthenticationAddress() != peer) {
     return hci::Status::AUTHENTICATION_FAILURE;
   }
-  LOG_INFO(LOG_TAG, "TODO:Do something with the passkey %06d", numeric_value);
+  LOG_INFO("TODO:Do something with the passkey %06d", numeric_value);
   return hci::Status::SUCCESS;
 }
 
@@ -909,7 +903,7 @@ hci::Status LinkLayerController::RemoteOobDataRequestReply(const Address& peer, 
   if (security_manager_.GetAuthenticationAddress() != peer) {
     return hci::Status::AUTHENTICATION_FAILURE;
   }
-  LOG_INFO(LOG_TAG, "TODO:Do something with the OOB data c=%d r=%d", c[0], r[0]);
+  LOG_INFO("TODO:Do something with the OOB data c=%d r=%d", c[0], r[0]);
   return hci::Status::SUCCESS;
 }
 
@@ -933,7 +927,7 @@ void LinkLayerController::HandleAuthenticationRequest(const Address& address, ui
 
 hci::Status LinkLayerController::AuthenticationRequested(uint16_t handle) {
   if (!connections_.HasHandle(handle)) {
-    LOG_INFO(LOG_TAG, "Authentication Requested for unknown handle %04x", handle);
+    LOG_INFO("Authentication Requested for unknown handle %04x", handle);
     return hci::Status::UNKNOWN_CONNECTION;
   }
 
@@ -960,8 +954,7 @@ void LinkLayerController::HandleSetConnectionEncryption(const Address& peer, uin
 
 hci::Status LinkLayerController::SetConnectionEncryption(uint16_t handle, uint8_t encryption_enable) {
   if (!connections_.HasHandle(handle)) {
-    LOG_INFO(LOG_TAG, "Set Connection Encryption for unknown handle %04x",
-             handle);
+    LOG_INFO("Set Connection Encryption for unknown handle %04x", handle);
     return hci::Status::UNKNOWN_CONNECTION;
   }
 
@@ -982,13 +975,13 @@ hci::Status LinkLayerController::SetConnectionEncryption(uint16_t handle, uint8_
 
 hci::Status LinkLayerController::AcceptConnectionRequest(const Address& addr, bool try_role_switch) {
   if (!connections_.HasPendingConnection(addr)) {
-    LOG_INFO(LOG_TAG, "%s: No pending connection for %s", __func__, addr.ToString().c_str());
+    LOG_INFO("%s: No pending connection for %s", __func__, addr.ToString().c_str());
     return hci::Status::UNKNOWN_CONNECTION;
   }
 
-  LOG_INFO(LOG_TAG, "%s: Accept in 200ms", __func__);
+  LOG_INFO("%s: Accept in 200ms", __func__);
   ScheduleTask(milliseconds(200), [this, addr, try_role_switch]() {
-    LOG_INFO(LOG_TAG, "%s: Accepted", __func__);
+    LOG_INFO("%s: Accepted", __func__);
     MakeSlaveConnection(addr, try_role_switch);
   });
 
@@ -998,15 +991,15 @@ hci::Status LinkLayerController::AcceptConnectionRequest(const Address& addr, bo
 void LinkLayerController::MakeSlaveConnection(const Address& addr, bool try_role_switch) {
   std::shared_ptr<LinkLayerPacketBuilder> to_send = LinkLayerPacketBuilder::WrapPageResponse(
       PageResponseBuilder::Create(try_role_switch), properties_.GetAddress(), addr);
-  LOG_INFO(LOG_TAG, "%s sending page response to %s", __func__, addr.ToString().c_str());
+  LOG_INFO("%s sending page response to %s", __func__, addr.ToString().c_str());
   SendLinkLayerPacket(to_send);
 
   uint16_t handle = connections_.CreateConnection(addr);
   if (handle == acl::kReservedHandle) {
-    LOG_INFO(LOG_TAG, "%s CreateConnection failed", __func__);
+    LOG_INFO("%s CreateConnection failed", __func__);
     return;
   }
-  LOG_INFO(LOG_TAG, "%s CreateConnection returned handle 0x%x", __func__, handle);
+  LOG_INFO("%s CreateConnection returned handle 0x%x", __func__, handle);
   send_event_(
       EventPacketBuilder::CreateConnectionCompleteEvent(hci::Status::SUCCESS, handle, addr, hci::LinkType::ACL, false)
           ->ToVector());
@@ -1014,13 +1007,13 @@ void LinkLayerController::MakeSlaveConnection(const Address& addr, bool try_role
 
 hci::Status LinkLayerController::RejectConnectionRequest(const Address& addr, uint8_t reason) {
   if (!connections_.HasPendingConnection(addr)) {
-    LOG_INFO(LOG_TAG, "%s: No pending connection for %s", __func__, addr.ToString().c_str());
+    LOG_INFO("%s: No pending connection for %s", __func__, addr.ToString().c_str());
     return hci::Status::UNKNOWN_CONNECTION;
   }
 
-  LOG_INFO(LOG_TAG, "%s: Reject in 200ms", __func__);
+  LOG_INFO("%s: Reject in 200ms", __func__);
   ScheduleTask(milliseconds(200), [this, addr, reason]() {
-    LOG_INFO(LOG_TAG, "%s: Reject", __func__);
+    LOG_INFO("%s: Reject", __func__);
     RejectSlaveConnection(addr, reason);
   });
 
@@ -1028,12 +1021,12 @@ hci::Status LinkLayerController::RejectConnectionRequest(const Address& addr, ui
 }
 
 void LinkLayerController::RejectSlaveConnection(const Address& addr, uint8_t reason) {
-  std::shared_ptr<LinkLayerPacketBuilder> to_send = LinkLayerPacketBuilder::WrapPageReject(
-      PageRejectBuilder::Create(reason), properties_.GetAddress(), addr);
-  LOG_INFO(LOG_TAG, "%s sending page reject to %s", __func__, addr.ToString().c_str());
+  std::shared_ptr<LinkLayerPacketBuilder> to_send =
+      LinkLayerPacketBuilder::WrapPageReject(PageRejectBuilder::Create(reason), properties_.GetAddress(), addr);
+  LOG_INFO("%s sending page reject to %s", __func__, addr.ToString().c_str());
   SendLinkLayerPacket(to_send);
 
-  CHECK(reason >= 0x0d && reason <= 0x0f);
+  ASSERT(reason >= 0x0d && reason <= 0x0f);
   send_event_(EventPacketBuilder::CreateConnectionCompleteEvent(static_cast<hci::Status>(reason), 0xeff, addr,
                                                                 hci::LinkType::ACL, false)
                   ->ToVector());
@@ -1068,7 +1061,7 @@ hci::Status LinkLayerController::Disconnect(uint16_t handle, uint8_t reason) {
   std::shared_ptr<LinkLayerPacketBuilder> to_send =
       LinkLayerPacketBuilder::WrapDisconnect(DisconnectBuilder::Create(reason), properties_.GetAddress(), remote);
   SendLinkLayerPacket(to_send);
-  CHECK(connections_.Disconnect(handle)) << "Disconnecting " << handle;
+  ASSERT_LOG(connections_.Disconnect(handle), "Disconnecting %hx", handle);
 
   ScheduleTask(milliseconds(20), [this, handle]() {
     DisconnectCleanup(handle, static_cast<uint8_t>(hci::Status::CONNECTION_TERMINATED_BY_LOCAL_HOST));
@@ -1108,8 +1101,7 @@ hci::Status LinkLayerController::MasterLinkKey(uint8_t /* key_flag */) {
   return hci::Status::COMMAND_DISALLOWED;
 }
 
-hci::Status LinkLayerController::HoldMode(uint16_t handle,
-                                          uint16_t hold_mode_max_interval,
+hci::Status LinkLayerController::HoldMode(uint16_t handle, uint16_t hold_mode_max_interval,
                                           uint16_t hold_mode_min_interval) {
   if (!connections_.HasHandle(handle)) {
     return hci::Status::UNKNOWN_CONNECTION;
@@ -1123,17 +1115,14 @@ hci::Status LinkLayerController::HoldMode(uint16_t handle,
   return hci::Status::COMMAND_DISALLOWED;
 }
 
-hci::Status LinkLayerController::SniffMode(uint16_t handle,
-                                           uint16_t sniff_max_interval,
-                                           uint16_t sniff_min_interval,
-                                           uint16_t sniff_attempt,
-                                           uint16_t sniff_timeout) {
+hci::Status LinkLayerController::SniffMode(uint16_t handle, uint16_t sniff_max_interval, uint16_t sniff_min_interval,
+                                           uint16_t sniff_attempt, uint16_t sniff_timeout) {
   if (!connections_.HasHandle(handle)) {
     return hci::Status::UNKNOWN_CONNECTION;
   }
 
-  if (sniff_max_interval < sniff_min_interval || sniff_attempt < 0x0001 ||
-      sniff_attempt > 0x7FFF || sniff_timeout > 0x7FFF) {
+  if (sniff_max_interval < sniff_min_interval || sniff_attempt < 0x0001 || sniff_attempt > 0x7FFF ||
+      sniff_timeout > 0x7FFF) {
     return hci::Status::INVALID_HCI_COMMAND_PARAMETERS;
   }
 
@@ -1150,10 +1139,8 @@ hci::Status LinkLayerController::ExitSniffMode(uint16_t handle) {
   return hci::Status::COMMAND_DISALLOWED;
 }
 
-hci::Status LinkLayerController::QosSetup(uint16_t handle, uint8_t service_type,
-                                          uint32_t /* token_rate */,
-                                          uint32_t /* peak_bandwidth */,
-                                          uint32_t /* latency */,
+hci::Status LinkLayerController::QosSetup(uint16_t handle, uint8_t service_type, uint32_t /* token_rate */,
+                                          uint32_t /* peak_bandwidth */, uint32_t /* latency */,
                                           uint32_t /* delay_variation */) {
   if (!connections_.HasHandle(handle)) {
     return hci::Status::UNKNOWN_CONNECTION;
@@ -1167,8 +1154,7 @@ hci::Status LinkLayerController::QosSetup(uint16_t handle, uint8_t service_type,
   return hci::Status::COMMAND_DISALLOWED;
 }
 
-hci::Status LinkLayerController::SwitchRole(Address /* bd_addr */,
-                                            uint8_t /* role */) {
+hci::Status LinkLayerController::SwitchRole(Address /* bd_addr */, uint8_t /* role */) {
   // TODO: implement real logic
   return hci::Status::COMMAND_DISALLOWED;
 }
@@ -1180,10 +1166,9 @@ hci::Status LinkLayerController::WriteLinkPolicySettings(uint16_t handle, uint16
   return hci::Status::SUCCESS;
 }
 
-hci::Status LinkLayerController::FlowSpecification(
-    uint16_t handle, uint8_t flow_direction, uint8_t service_type,
-    uint32_t /* token_rate */, uint32_t /* token_bucket_size */,
-    uint32_t /* peak_bandwidth */, uint32_t /* access_latency */) {
+hci::Status LinkLayerController::FlowSpecification(uint16_t handle, uint8_t flow_direction, uint8_t service_type,
+                                                   uint32_t /* token_rate */, uint32_t /* token_bucket_size */,
+                                                   uint32_t /* peak_bandwidth */, uint32_t /* access_latency */) {
   if (!connections_.HasHandle(handle)) {
     return hci::Status::UNKNOWN_CONNECTION;
   }
@@ -1255,11 +1240,11 @@ void LinkLayerController::PageScan() {}
 void LinkLayerController::StartInquiry(milliseconds timeout) {
   ScheduleTask(milliseconds(timeout), [this]() { LinkLayerController::InquiryTimeout(); });
   inquiry_state_ = Inquiry::InquiryState::INQUIRY;
-  LOG_INFO(LOG_TAG, "InquiryState = %d ", static_cast<int>(inquiry_state_));
+  LOG_INFO("InquiryState = %d ", static_cast<int>(inquiry_state_));
 }
 
 void LinkLayerController::InquiryCancel() {
-  CHECK(inquiry_state_ == Inquiry::InquiryState::INQUIRY);
+  ASSERT(inquiry_state_ == Inquiry::InquiryState::INQUIRY);
   inquiry_state_ = Inquiry::InquiryState::STANDBY;
 }
 
@@ -1287,7 +1272,7 @@ void LinkLayerController::Inquiry() {
   if (duration_cast<milliseconds>(now - last_inquiry_) < milliseconds(2000)) {
     return;
   }
-  LOG_INFO(LOG_TAG, "Inquiry ");
+  LOG_INFO("Inquiry ");
   std::unique_ptr<InquiryBuilder> inquiry = InquiryBuilder::Create(inquiry_mode_);
   std::shared_ptr<LinkLayerPacketBuilder> to_send =
       LinkLayerPacketBuilder::WrapInquiry(std::move(inquiry), properties_.GetAddress());

@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "beacon"
-
 #include "beacon.h"
 
 #include "model/setup/device_boutique.h"
-#include "osi/include/log.h"
 
 using std::vector;
 
 namespace test_vendor_lib {
 
-bool Beacon::registered_ = DeviceBoutique::Register(LOG_TAG, &Beacon::Create);
+bool Beacon::registered_ = DeviceBoutique::Register("beacon", &Beacon::Create);
 
 Beacon::Beacon() {
   advertising_interval_ms_ = std::chrono::milliseconds(1280);

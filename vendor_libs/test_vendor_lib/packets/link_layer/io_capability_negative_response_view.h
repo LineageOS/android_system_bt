@@ -30,7 +30,7 @@ class IoCapabilityNegativeResponseView : public PacketView<true> {
   virtual ~IoCapabilityNegativeResponseView() = default;
 
   static IoCapabilityNegativeResponseView GetIoCapabilityNegativeResponse(const LinkLayerPacketView& view) {
-    CHECK(view.GetType() == Link::PacketType::IO_CAPABILITY_NEGATIVE_RESPONSE);
+    ASSERT(view.GetType() == Link::PacketType::IO_CAPABILITY_NEGATIVE_RESPONSE);
     return IoCapabilityNegativeResponseView(view.GetPayload());
   }
 

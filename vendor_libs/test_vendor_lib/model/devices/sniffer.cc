@@ -14,19 +14,16 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "sniffer"
-
 #include "sniffer.h"
 
-#include "osi/include/log.h"
-
 #include "model/setup/device_boutique.h"
+#include "os/log.h"
 
 using std::vector;
 
 namespace test_vendor_lib {
 
-bool Sniffer::registered_ = DeviceBoutique::Register(LOG_TAG, &Sniffer::Create);
+bool Sniffer::registered_ = DeviceBoutique::Register("sniffer", &Sniffer::Create);
 
 Sniffer::Sniffer() {}
 
@@ -50,8 +47,8 @@ void Sniffer::IncomingPacket(packets::LinkLayerPacketView packet) {
   if (!match_source && !match_dest) {
     return;
   }
-  LOG_INFO(LOG_TAG, "%s %s -> %s (Type %d)", (match_source ? (match_dest ? "<->" : "<--") : "-->"),
-           source.ToString().c_str(), dest.ToString().c_str(), static_cast<int>(packet.GetType()));
+  LOG_INFO("%s %s -> %s (Type %d)", (match_source ? (match_dest ? "<->" : "<--") : "-->"), source.ToString().c_str(),
+           dest.ToString().c_str(), static_cast<int>(packet.GetType()));
 }
 
 }  // namespace test_vendor_lib
