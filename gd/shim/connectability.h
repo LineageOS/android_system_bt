@@ -13,38 +13,37 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #pragma once
 
-/**
- * Legacy stack manipulation methods to allow the legacy stack to start
- * and stop the stack, and to provide Gd shim stack module API access.
- */
+#include <memory>
+
+#include "module.h"
+#include "shim/iconnectability.h"
+
 namespace bluetooth {
 namespace shim {
 
-struct IController;
-struct IConnectability;
-struct IDiscoverability;
-struct IHciLayer;
-struct IInquiry;
-struct IPage;
+class Connectability : public bluetooth::Module, public bluetooth::shim::IConnectability {
+ public:
+  void StartConnectability() override;
+  void StopConnectability() override;
+  bool IsConnectable() const override;
 
-struct IStack {
-  virtual void Start() = 0;
-  virtual void Stop() = 0;
+  Connectability() = default;
+  ~Connectability() = default;
 
-  virtual IController* GetController() = 0;
-  virtual IConnectability* GetConnectability() = 0;
-  virtual IDiscoverability* GetDiscoverability() = 0;
-  virtual IHciLayer* GetHciLayer() = 0;
-  virtual IInquiry* GetInquiry() = 0;
-  virtual IPage* GetPage() = 0;
+  static const ModuleFactory Factory;
 
-  virtual ~IStack() {}
+ protected:
+  void ListDependencies(ModuleList* list) override;  // Module
+  void Start() override;                             // Module
+  void Stop() override;                              // Module
+
+ private:
+  struct impl;
+  std::unique_ptr<impl> pimpl_;
+  DISALLOW_COPY_AND_ASSIGN(Connectability);
 };
-
-IStack* GetGabeldorscheStack();
 
 }  // namespace shim
 }  // namespace bluetooth
