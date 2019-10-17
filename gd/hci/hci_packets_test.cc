@@ -127,6 +127,73 @@ DEFINE_AND_INSTANTIATE_LeReadBufferSizeReflectionTest(le_read_buffer_size);
 std::vector<uint8_t> le_read_buffer_size_complete = {0x0e, 0x07, 0x01, 0x02, 0x20, 0x00, 0xfb, 0x00, 0x10};
 DEFINE_AND_INSTANTIATE_LeReadBufferSizeCompleteReflectionTest(le_read_buffer_size_complete);
 
+std::vector<uint8_t> write_current_iac_laps = {0x3a, 0x0c, 0x07, 0x02, 0x11, 0x8b, 0x9e, 0x22, 0x8b, 0x9e};
+DEFINE_AND_INSTANTIATE_WriteCurrentIacLapReflectionTest(write_current_iac_laps);
+
+std::vector<uint8_t> write_current_iac_laps_complete = {0x0e, 0x04, 0x01, 0x3a, 0x0c, 0x00};
+DEFINE_AND_INSTANTIATE_WriteCurrentIacLapCompleteReflectionTest(write_current_iac_laps_complete);
+
+std::vector<uint8_t> write_inquiry_scan_activity = {0x1e, 0x0c, 0x04, 0x00, 0x08, 0x12, 0x00};
+DEFINE_AND_INSTANTIATE_WriteInquiryScanActivityReflectionTest(write_inquiry_scan_activity);
+
+std::vector<uint8_t> write_inquiry_scan_activity_complete = {0x0e, 0x04, 0x01, 0x1e, 0x0c, 0x00};
+DEFINE_AND_INSTANTIATE_WriteInquiryScanActivityCompleteReflectionTest(write_inquiry_scan_activity_complete);
+
+std::vector<uint8_t> read_inquiry_scan_activity = {0x1d, 0x0c, 0x00};
+DEFINE_AND_INSTANTIATE_ReadInquiryScanActivityReflectionTest(read_inquiry_scan_activity);
+
+std::vector<uint8_t> read_inquiry_scan_activity_complete = {0x0e, 0x08, 0x01, 0x1d, 0x0c, 0x00, 0xaa, 0xbb, 0xcc, 0xdd};
+DEFINE_AND_INSTANTIATE_ReadInquiryScanActivityCompleteReflectionTest(read_inquiry_scan_activity_complete);
+
+std::vector<uint8_t> read_current_iac_lap = {0x39, 0x0c, 0x00};
+DEFINE_AND_INSTANTIATE_ReadCurrentIacLapReflectionTest(read_current_iac_lap);
+
+std::vector<uint8_t> read_current_iac_lap_complete = {0x0e, 0x0b, 0x01, 0x39, 0x0c, 0x00, 0x02,
+                                                      0x11, 0x8b, 0x9e, 0x22, 0x8b, 0x9e};
+DEFINE_AND_INSTANTIATE_ReadCurrentIacLapCompleteReflectionTest(read_current_iac_lap_complete);
+
+std::vector<uint8_t> read_number_of_supported_iac = {0x38, 0x0c, 0x00};
+DEFINE_AND_INSTANTIATE_ReadNumberOfSupportedIacReflectionTest(read_number_of_supported_iac);
+
+std::vector<uint8_t> read_number_of_supported_iac_complete = {0x0e, 0x05, 0x01, 0x38, 0x0c, 0x00, 0x99};
+DEFINE_AND_INSTANTIATE_ReadNumberOfSupportedIacCompleteReflectionTest(read_number_of_supported_iac_complete);
+
+std::vector<uint8_t> read_page_timeout = {0x17, 0x0c, 0x00};
+DEFINE_AND_INSTANTIATE_ReadPageTimeoutReflectionTest(read_page_timeout);
+
+std::vector<uint8_t> read_page_timeout_complete = {0x0e, 0x06, 0x01, 0x17, 0x0c, 0x00, 0x11, 0x22};
+DEFINE_AND_INSTANTIATE_ReadPageTimeoutCompleteReflectionTest(read_page_timeout_complete);
+
+std::vector<uint8_t> write_page_timeout = {0x18, 0x0c, 0x02, 0x00, 0x20};
+DEFINE_AND_INSTANTIATE_WritePageTimeoutReflectionTest(write_page_timeout);
+
+std::vector<uint8_t> write_page_timeout_complete = {0x0e, 0x04, 0x01, 0x18, 0x0c, 0x00};
+DEFINE_AND_INSTANTIATE_WritePageTimeoutCompleteReflectionTest(write_page_timeout_complete);
+
+std::vector<uint8_t> inquiry = {0x01, 0x04, 0x05, 0x33, 0x8b, 0x9e, 0xaa, 0xbb};
+DEFINE_AND_INSTANTIATE_InquiryReflectionTest(inquiry);
+
+std::vector<uint8_t> inquiry_status = {0x0f, 0x04, 0x00, 0x01, 0x01, 0x04};
+DEFINE_AND_INSTANTIATE_InquiryStatusReflectionTest(inquiry_status);
+
+std::vector<uint8_t> inquiry_cancel = {0x02, 0x04, 0x00};
+DEFINE_AND_INSTANTIATE_InquiryCancelReflectionTest(inquiry_cancel);
+
+std::vector<uint8_t> inquiry_cancel_complete = {0x0e, 0x04, 0x01, 0x02, 0x04, 0x00};
+DEFINE_AND_INSTANTIATE_InquiryCancelCompleteReflectionTest(inquiry_cancel_complete);
+
+std::vector<uint8_t> periodic_inquiry_mode = {0x03, 0x04, 0x09, 0x12, 0x34, 0x56, 0x78, 0x11, 0x8b, 0x9e, 0x9a, 0xbc};
+DEFINE_AND_INSTANTIATE_PeriodicInquiryModeReflectionTest(periodic_inquiry_mode);
+
+std::vector<uint8_t> periodic_inquiry_mode_complete = {0x0e, 0x04, 0x01, 0x03, 0x04, 0x00};
+DEFINE_AND_INSTANTIATE_PeriodicInquiryModeCompleteReflectionTest(periodic_inquiry_mode_complete);
+
+std::vector<uint8_t> exit_periodic_inquiry_mode = {0x04, 0x04, 0x00};
+DEFINE_AND_INSTANTIATE_ExitPeriodicInquiryModeReflectionTest(exit_periodic_inquiry_mode);
+
+std::vector<uint8_t> exit_periodic_inquiry_mode_complete = {0x0e, 0x04, 0x01, 0x04, 0x04, 0x00};
+DEFINE_AND_INSTANTIATE_ExitPeriodicInquiryModeCompleteReflectionTest(exit_periodic_inquiry_mode_complete);
+
 std::vector<uint8_t> pixel_3_xl_write_extended_inquiry_response{
     0x52, 0x0c, 0xf1, 0x01, 0x0b, 0x09, 0x50, 0x69, 0x78, 0x65, 0x6c, 0x20, 0x33, 0x20, 0x58, 0x4c, 0x19, 0x03, 0x05,
     0x11, 0x0a, 0x11, 0x0c, 0x11, 0x0e, 0x11, 0x12, 0x11, 0x15, 0x11, 0x16, 0x11, 0x1f, 0x11, 0x2d, 0x11, 0x2f, 0x11,
