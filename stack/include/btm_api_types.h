@@ -611,7 +611,7 @@ constexpr uint8_t BLE_EVT_LEGACY_BIT = 4;
 constexpr uint8_t PHY_LE_NO_PACKET = 0x00;
 constexpr uint8_t PHY_LE_1M = 0x01;
 constexpr uint8_t PHY_LE_2M = 0x02;
-constexpr uint8_t PHY_LE_CODED = 0x03;
+constexpr uint8_t PHY_LE_CODED = 0x04;
 
 constexpr uint8_t NO_ADI_PRESENT = 0xFF;
 constexpr uint8_t TX_POWER_NOT_PRESENT = 0x7F;
