@@ -39,7 +39,11 @@ future_t* StartGabeldorscheStack();
 future_t* StopGabeldorscheStack();
 
 bluetooth::shim::IController* GetController();
+bluetooth::shim::IDiscoverability* GetDiscoverability();
+bluetooth::shim::IConnectability* GetConnectability();
+bluetooth::shim::IInquiry* GetInquiry();
 bluetooth::shim::IHciLayer* GetHciLayer();
+bluetooth::shim::IPage* GetPage();
 
 }  // namespace shim
 }  // namespace bluetooth

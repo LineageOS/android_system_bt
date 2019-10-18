@@ -43,6 +43,7 @@
 #include "stack/gatt/connection_manager.h"
 
 #include "gatt_int.h"
+#include "main/shim/btm_api.h"
 #include "main/shim/controller.h"
 #include "main/shim/shim.h"
 
