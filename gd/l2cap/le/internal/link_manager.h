@@ -18,6 +18,7 @@
 
 #include <memory>
 #include <unordered_map>
+#include <utility>
 
 #include "os/handler.h"
 
@@ -53,12 +54,30 @@ class LinkManager : public hci::LeConnectionCallbacks {
     std::vector<PendingFixedChannelConnection> pending_fixed_channel_connections_;
   };
 
+  struct LinkIdentifier {
+    hci::Address address;
+    hci::AddressType address_type;
+    LinkIdentifier(hci::Address address, hci::AddressType address_type)
+        : address(address), address_type(address_type){};
+
+    bool operator==(const LinkIdentifier& li) const {
+      return address == li.address && address_type == li.address_type;
+    }
+
+    struct Hasher {
+      std::size_t operator()(const LinkIdentifier& li) const {
+        std::hash<bluetooth::hci::Address> h;
+        return h(li.address);
+      }
+    };
+  };
+
   // ACL methods
 
-  Link* GetLink(hci::Address device);
+  Link* GetLink(hci::Address device, hci::AddressType address_type);
   void OnLeConnectSuccess(std::unique_ptr<hci::AclConnection> acl_connection) override;
   void OnLeConnectFail(hci::Address device, hci::AddressType address_type, hci::ErrorCode reason) override;
-  void OnDisconnect(hci::Address device, hci::ErrorCode status);
+  void OnDisconnect(hci::Address device, hci::AddressType address_type, hci::ErrorCode status);
 
   // FixedChannelManager methods
 
@@ -73,8 +92,8 @@ class LinkManager : public hci::LeConnectionCallbacks {
   l2cap::internal::ParameterProvider* parameter_provider_;
 
   // Internal states
-  std::unordered_map<hci::Address, PendingLink> pending_links_;
-  std::unordered_map<hci::Address, Link> links_;
+  std::unordered_map<LinkIdentifier, PendingLink, LinkIdentifier::Hasher> pending_links_;
+  std::unordered_map<LinkIdentifier, Link, LinkIdentifier::Hasher> links_;
   DISALLOW_COPY_AND_ASSIGN(LinkManager);
 };
 
