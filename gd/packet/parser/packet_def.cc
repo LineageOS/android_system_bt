@@ -285,6 +285,9 @@ void PacketDef::GenBuilderDefinition(std::ostream& s) const {
 
   GenTestDefine(s);
   s << "\n";
+
+  GenFuzzTestDefine(s);
+  s << "\n";
 }
 
 void PacketDef::GenTestDefine(std::ostream& s) const {
@@ -333,6 +336,44 @@ void PacketDef::GenTestDefine(std::ostream& s) const {
   s << "}";
   s << "INSTANTIATE_TEST_SUITE_P(" << name_ << "_reflection, ";
   s << name_ << "ReflectionTest, testing::Values(__VA_ARGS__))";
+  s << "\n#endif";
+}
+
+void PacketDef::GenFuzzTestDefine(std::ostream& s) const {
+  s << "#ifdef PACKET_FUZZ_TESTING\n";
+  s << "#define DEFINE_" << name_ << "ReflectionFuzzTest ";
+  s << "void Run" << name_ << "ReflectionFuzzTest(const uint8_t* data, size_t size) {";
+  s << "auto vec = std::make_shared<std::vector<uint8_t>>(data, data + size);";
+  s << name_ << "View view = " << name_ << "View::Create(";
+  auto ancestor_ptr = parent_;
+  size_t parent_parens = 0;
+  while (ancestor_ptr != nullptr) {
+    s << ancestor_ptr->name_ << "View::Create(";
+    parent_parens++;
+    ancestor_ptr = ancestor_ptr->parent_;
+  }
+  s << "vec";
+  for (size_t i = 0; i < parent_parens; i++) {
+    s << ")";
+  }
+  s << ");";
+  s << "if (!view.IsValid()) { return; }";
+  s << "auto packet = " << name_ << "Builder::Create(";
+  FieldList params = GetParamList().GetFieldsWithoutTypes({
+      BodyField::kFieldType,
+  });
+  for (int i = 0; i < params.size(); i++) {
+    params[i]->GenBuilderParameterFromView(s);
+    if (i != params.size() - 1) {
+      s << ", ";
+    }
+  }
+  s << ");";
+  s << "std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();";
+  s << "packet_bytes->reserve(packet->size());";
+  s << "BitInserter it(*packet_bytes);";
+  s << "packet->Serialize(it);";
+  s << "}";
   s << "\n#endif";
 }
 
