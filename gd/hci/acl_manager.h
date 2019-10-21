@@ -89,6 +89,10 @@ class AclConnection {
     return address_;
   }
 
+  virtual AddressType GetAddressType() const {
+    return address_type_;
+  }
+
   uint16_t GetHandle() const {
     return handle_;
   }
@@ -139,9 +143,12 @@ class AclConnection {
   friend AclManager;
   AclConnection(AclManager* manager, uint16_t handle, Address address)
       : manager_(manager), handle_(handle), address_(address) {}
+  AclConnection(AclManager* manager, uint16_t handle, Address address, AddressType address_type)
+      : manager_(manager), handle_(handle), address_(address), address_type_(address_type) {}
   AclManager* manager_;
   uint16_t handle_;
   Address address_;
+  AddressType address_type_;
   DISALLOW_COPY_AND_ASSIGN(AclConnection);
 };
 

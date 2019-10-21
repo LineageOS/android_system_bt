@@ -1,5 +1,5 @@
 filegroup {
-    name: "BluetoothSmpSources",
+    name: "BluetoothSecuritySources",
     srcs: [
         "ecc/multprecision.cc",
         "ecc/p_256_ecc_pp.cc",
@@ -12,7 +12,7 @@ filegroup {
 }
 
 filegroup {
-    name: "BluetoothSmpTestSources",
+    name: "BluetoothSecurityTestSources",
     srcs: [
         "ecc/multipoint_test.cc",
         "pairing_handler_le_unittest.cc",
