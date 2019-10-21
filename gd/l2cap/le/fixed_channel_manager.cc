@@ -23,14 +23,14 @@ namespace bluetooth {
 namespace l2cap {
 namespace le {
 
-bool FixedChannelManager::ConnectServices(hci::Address device, hci::AddressType address_type,
+bool FixedChannelManager::ConnectServices(hci::AddressWithType address_with_type,
                                           OnConnectionFailureCallback on_fail_callback, os::Handler* handler) {
   internal::LinkManager::PendingFixedChannelConnection pending_fixed_channel_connection{
       .handler_ = handler,
       .on_fail_callback_ = std::move(on_fail_callback),
   };
   l2cap_layer_handler_->Post(common::BindOnce(&internal::LinkManager::ConnectFixedChannelServices,
-                                              common::Unretained(link_manager_), device, address_type,
+                                              common::Unretained(link_manager_), address_with_type,
                                               std::move(pending_fixed_channel_connection)));
   return true;
 }
