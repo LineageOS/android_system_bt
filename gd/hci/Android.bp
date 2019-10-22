@@ -17,10 +17,11 @@ filegroup {
     srcs: [
         "acl_builder_test.cc",
         "acl_manager_test.cc",
+        "address_unittest.cc",
+        "address_with_type_test.cc",
+        "class_of_device_unittest.cc",
         "classic_security_manager_test.cc",
         "controller_test.cc",
-        "address_unittest.cc",
-        "class_of_device_unittest.cc",
         "device_test.cc",
         "device_database_test.cc",
         "dual_device_test.cc",
