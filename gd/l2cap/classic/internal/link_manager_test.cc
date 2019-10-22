@@ -121,6 +121,7 @@ TEST_F(L2capClassicLinkManagerTest, connect_fixed_channel_service_without_acl) {
   std::unique_ptr<MockAclConnection> acl_connection = std::make_unique<MockAclConnection>();
   hci::AclConnection::Queue link_queue{10};
   EXPECT_CALL(*acl_connection, GetAclQueueEnd()).WillRepeatedly((Return(link_queue.GetUpEnd())));
+  EXPECT_CALL(*acl_connection, RegisterDisconnectCallback(_, l2cap_handler_)).Times(1);
   EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(device));
   std::unique_ptr<FixedChannel> channel_1, channel_2;
   EXPECT_CALL(mock_service_1, NotifyChannelCreation(_)).WillOnce([&channel_1](std::unique_ptr<FixedChannel> channel) {
