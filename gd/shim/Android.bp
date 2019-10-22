@@ -2,7 +2,19 @@ filegroup {
     name: "BluetoothShimSources",
     srcs: [
             "controller.cc",
+            "connectability.cc",
+            "discoverability.cc",
             "hci_layer.cc",
+            "inquiry.cc",
+            "page.cc",
             "stack.cc",
     ],
 }
+
+filegroup {
+    name: "BluetoothShimTestSources",
+    srcs: [
+    ],
+}
+
+
