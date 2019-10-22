@@ -229,13 +229,14 @@ std::vector<uint8_t> pixel_3_xl_write_extended_inquiry_response_no_uuids_just_ei
     pixel_3_xl_write_extended_inquiry_response_no_uuids.end()};
 
 TEST(HciPacketsTest, testWriteExtendedInquiryResponse) {
-  std::shared_ptr<std::vector<uint8_t>> packet_bytes =
+  std::shared_ptr<std::vector<uint8_t>> view_bytes =
       std::make_shared<std::vector<uint8_t>>(pixel_3_xl_write_extended_inquiry_response);
 
-  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  PacketView<kLittleEndian> packet_bytes_view(view_bytes);
   auto view = WriteExtendedInquiryResponseView::Create(CommandPacketView::Create(packet_bytes_view));
   ASSERT_TRUE(view.IsValid());
   auto gap_data = view.GetExtendedInquiryResponse();
+  ASSERT_GE(gap_data.size(), 4);
   ASSERT_EQ(gap_data[0].data_type_, GapDataType::COMPLETE_LOCAL_NAME);
   ASSERT_EQ(gap_data[0].data_.size(), 10);
   ASSERT_EQ(gap_data[1].data_type_, GapDataType::COMPLETE_LIST_16_BIT_UUIDS);
@@ -244,6 +245,18 @@ TEST(HciPacketsTest, testWriteExtendedInquiryResponse) {
   ASSERT_EQ(gap_data[2].data_.size(), 0);
   ASSERT_EQ(gap_data[3].data_type_, GapDataType::COMPLETE_LIST_128_BIT_UUIDS);
   ASSERT_EQ(gap_data[3].data_.size(), 128);
+
+  std::vector<GapData> no_padding{gap_data.begin(), gap_data.begin() + 4};
+  auto builder = WriteExtendedInquiryResponseBuilder::Create(view.GetFecRequired(), no_padding);
+
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  BitInserter it(*packet_bytes);
+  builder->Serialize(it);
+
+  EXPECT_EQ(packet_bytes->size(), view_bytes->size());
+  for (size_t i = 0; i < view_bytes->size(); i++) {
+    ASSERT_EQ(packet_bytes->at(i), view_bytes->at(i));
+  }
 }
 
 //  TODO: Revisit reflection tests for EIR
