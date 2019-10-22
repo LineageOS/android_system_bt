@@ -39,7 +39,7 @@ std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::AllocateChannel(Psm
   }
   Cid cid = kFirstDynamicChannel;
   for (; cid <= kLastDynamicChannel; cid++) {
-    if (channels_.find(cid) == channels_.end()) break;
+    if (used_cid_.find(cid) == used_cid_.end()) break;
   }
   if (cid > kLastDynamicChannel) {
     LOG_WARN("All cid are used");
@@ -51,7 +51,40 @@ std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::AllocateChannel(Psm
              link_->GetDevice().ToString().c_str());
   ASSERT(elem.first->second != nullptr);
   used_remote_cid_.insert(remote_cid);
+  used_cid_.insert(cid);
   return elem.first->second;
+}
+
+std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::AllocateReservedChannel(Cid reserved_cid, Psm psm,
+                                                                                     Cid remote_cid,
+                                                                                     SecurityPolicy security_policy) {
+  ASSERT_LOG(!IsPsmUsed((psm)), "Psm 0x%x for device %s is already in use", psm, link_->GetDevice().ToString().c_str());
+  ASSERT_LOG(IsPsmValid(psm), "Psm 0x%x is invalid", psm);
+
+  if (used_remote_cid_.find(remote_cid) != used_remote_cid_.end()) {
+    LOG_INFO("Remote cid 0x%x is used", remote_cid);
+    return nullptr;
+  }
+  auto elem = channels_.try_emplace(
+      reserved_cid, std::make_shared<DynamicChannelImpl>(psm, reserved_cid, remote_cid, link_, l2cap_handler_));
+  ASSERT_LOG(elem.second, "Failed to create channel for psm 0x%x device %s", psm,
+             link_->GetDevice().ToString().c_str());
+  ASSERT(elem.first->second != nullptr);
+  used_remote_cid_.insert(remote_cid);
+  return elem.first->second;
+}
+
+Cid DynamicChannelAllocator::ReserveChannel() {
+  Cid cid = kFirstDynamicChannel;
+  for (; cid <= kLastDynamicChannel; cid++) {
+    if (used_cid_.find(cid) == used_cid_.end()) break;
+  }
+  if (cid > kLastDynamicChannel) {
+    LOG_WARN("All cid are used");
+    return kInvalidCid;
+  }
+  used_cid_.insert(cid);
+  return cid;
 }
 
 void DynamicChannelAllocator::FreeChannel(Cid cid) {
@@ -62,6 +95,7 @@ void DynamicChannelAllocator::FreeChannel(Cid cid) {
   }
   used_remote_cid_.erase(channel->GetRemoteCid());
   channels_.erase(cid);
+  used_cid_.erase(cid);
 }
 
 bool DynamicChannelAllocator::IsPsmUsed(Psm psm) const {
