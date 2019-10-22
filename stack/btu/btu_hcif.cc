@@ -57,6 +57,7 @@
 using base::Location;
 
 extern void btm_process_cancel_complete(uint8_t status, uint8_t mode);
+extern void btm_process_inq_results2(uint8_t* p, uint8_t inq_res_mode);
 extern void btm_ble_test_command_complete(uint8_t* p);
 extern void smp_cancel_start_encryption_attempt();
 
