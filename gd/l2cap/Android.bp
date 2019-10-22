@@ -66,5 +66,6 @@ filegroup {
     name: "BluetoothL2capFuzzTestSources",
     srcs: [
         "classic/internal/dynamic_channel_allocator_fuzz_test.cc",
+        "l2cap_packet_fuzz_test.cc",
     ],
 }

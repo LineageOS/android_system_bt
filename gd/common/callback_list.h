@@ -14,14 +14,14 @@
  * limitations under the License.
  */
 
-#include <stddef.h>
-#include <stdint.h>
+#pragma once
 
-extern void RunL2capClassicDynamicChannelAllocatorFuzzTest(const uint8_t* data, size_t size);
-extern void RunL2capPacketFuzzTest(const uint8_t* data, size_t size);
+#include "base/callback_list.h"
 
-extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
-  RunL2capClassicDynamicChannelAllocatorFuzzTest(data, size);
-  RunL2capPacketFuzzTest(data, size);
-  return 0;
-}
+namespace bluetooth {
+namespace common {
+
+using base::CallbackList;
+
+}  // namespace common
+}  // namespace bluetooth
