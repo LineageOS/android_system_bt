@@ -250,6 +250,7 @@ cc_test {
         ":BluetoothNeighborTestSources",
         ":BluetoothPacketTestSources",
         ":BluetoothSecurityTestSources",
+        ":BluetoothShimTestSources",
     ],
     generated_headers: [
         "BluetoothGeneratedPackets_h",

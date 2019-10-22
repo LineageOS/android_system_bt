@@ -13,46 +13,38 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #pragma once
 
 #include <memory>
 
-#include "shim/iconnectability.h"
-#include "shim/icontroller.h"
-#include "shim/idiscoverability.h"
-#include "shim/ihci_layer.h"
-#include "shim/iinquiry.h"
+#include "module.h"
 #include "shim/ipage.h"
-#include "shim/istack.h"
 
-/**
- * The shim layer implementation on the Gd stack side.
- */
 namespace bluetooth {
 namespace shim {
 
-class Stack : public IStack {
+class Page : public bluetooth::Module, public bluetooth::shim::IPage {
  public:
-  Stack();
-  ~Stack() = default;
+  void SetScanActivity(uint16_t interval, uint16_t window) override;
+  void GetScanActivity(uint16_t& interval, uint16_t& window) const override;
 
-  void Start() override;  // IStack
-  void Stop() override;   // IStack
+  void SetInterlacedScan() override;
+  void SetStandardScan() override;
 
-  IController* GetController() override;  // IStack
-  IConnectability* GetConnectability() override;  // IStack
-  IHciLayer* GetHciLayer() override;      // IStack
-  IDiscoverability* GetDiscoverability() override;  // IStack
-  IInquiry* GetInquiry() override;                  // IStack
-  IPage* GetPage() override;                        // IStack
+  Page() = default;
+  ~Page() = default;
+
+  static const ModuleFactory Factory;
+
+ protected:
+  void ListDependencies(ModuleList* list) override;  // Module
+  void Start() override;                             // Module
+  void Stop() override;                              // Module
 
  private:
   struct impl;
   std::unique_ptr<impl> pimpl_;
-
-  Stack(const Stack&) = delete;
-  void operator=(const Stack&) = delete;
+  DISALLOW_COPY_AND_ASSIGN(Page);
 };
 
 }  // namespace shim
