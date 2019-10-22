@@ -16,7 +16,7 @@
 
 #include "packets/hci/command_packet_view.h"
 
-#include <base/logging.h>
+#include "os/log.h"
 
 using std::vector;
 
@@ -35,8 +35,9 @@ uint16_t CommandPacketView::GetOpcode() const {
 
 PacketView<true> CommandPacketView::GetPayload() const {
   uint8_t payload_size = (begin() + sizeof(uint16_t)).extract<uint8_t>();
-  CHECK(static_cast<uint8_t>(size() - sizeof(uint16_t) - sizeof(uint8_t)) == payload_size)
-      << "Malformed Command packet payload_size " << payload_size << " + 2 != " << size();
+  ASSERT_LOG(static_cast<uint8_t>(size() - sizeof(uint16_t) - sizeof(uint8_t)) == payload_size,
+             "Malformed Command packet payload_size %d + 2 != %d", static_cast<int>(payload_size),
+             static_cast<int>(size()));
   return SubViewLittleEndian(sizeof(uint16_t) + sizeof(uint8_t), size());
 }
 

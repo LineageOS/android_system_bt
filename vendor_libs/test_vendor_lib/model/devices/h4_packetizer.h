@@ -30,10 +30,8 @@ using ClientDisconnectCallback = std::function<void()>;
 
 class H4Packetizer : public HciProtocol {
  public:
-  H4Packetizer(int fd, PacketReadCallback command_cb,
-               PacketReadCallback event_cb, PacketReadCallback acl_cb,
-               PacketReadCallback sco_cb,
-               ClientDisconnectCallback disconnect_cb);
+  H4Packetizer(int fd, PacketReadCallback command_cb, PacketReadCallback event_cb, PacketReadCallback acl_cb,
+               PacketReadCallback sco_cb, ClientDisconnectCallback disconnect_cb);
 
   size_t Send(uint8_t type, const uint8_t* data, size_t length);
 

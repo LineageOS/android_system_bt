@@ -17,8 +17,6 @@
 #include "link_layer_packet_builder.h"
 #include "link_layer_packet_view.h"
 
-#include "base/logging.h"
-
 using std::vector;
 
 namespace test_vendor_lib {

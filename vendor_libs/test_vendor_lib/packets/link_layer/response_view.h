@@ -18,8 +18,6 @@
 
 #include <cstdint>
 
-#include <log/log.h>
-
 #include "packets/link_layer/link_layer_packet_view.h"
 #include "packets/packet_view.h"
 
@@ -32,7 +30,7 @@ class ResponseView : public PacketView<true> {
   virtual ~ResponseView() = default;
 
   static ResponseView GetResponse(const LinkLayerPacketView& view) {
-    CHECK(view.GetType() == Link::PacketType::RESPONSE);
+    ASSERT(view.GetType() == Link::PacketType::RESPONSE);
     return ResponseView(view.GetPayload());
   }
 

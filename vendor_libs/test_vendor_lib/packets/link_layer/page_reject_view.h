@@ -30,7 +30,7 @@ class PageRejectView : public PacketView<true> {
   virtual ~PageRejectView() = default;
 
   static PageRejectView GetPageReject(const LinkLayerPacketView& view) {
-    CHECK(view.GetType() == Link::PacketType::PAGE_REJECT);
+    ASSERT(view.GetType() == Link::PacketType::PAGE_REJECT);
     return PageRejectView(view.GetPayload());
   }
 

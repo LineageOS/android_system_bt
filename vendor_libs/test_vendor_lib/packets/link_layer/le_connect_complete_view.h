@@ -30,7 +30,7 @@ class LeConnectCompleteView : public PacketView<true> {
   virtual ~LeConnectCompleteView() = default;
 
   static LeConnectCompleteView GetLeConnectComplete(const LinkLayerPacketView& view) {
-    CHECK(view.GetType() == Link::PacketType::LE_CONNECT_COMPLETE);
+    ASSERT(view.GetType() == Link::PacketType::LE_CONNECT_COMPLETE);
     return LeConnectCompleteView(view.GetPayload());
   }
 

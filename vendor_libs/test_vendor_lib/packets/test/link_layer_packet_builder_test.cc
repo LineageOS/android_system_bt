@@ -33,8 +33,6 @@
 #include "packets/link_layer/page_view.h"
 #include "packets/link_layer/response_view.h"
 
-#include "base/logging.h"
-
 using std::vector;
 
 namespace {

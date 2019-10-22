@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "link_layer_socket_device"
-
 #include "link_layer_socket_device.h"
 
 #include <unistd.h>
 
-#include "osi/include/log.h"
 #include "packets/link_layer/link_layer_packet_builder.h"
 #include "packets/link_layer/link_layer_packet_view.h"
 #include "packets/packet_view.h"
@@ -40,7 +37,7 @@ void LinkLayerSocketDevice::TimerTick() {
     if (bytes_received == 0) {
       return;
     }
-    CHECK(bytes_received == Link::kSizeBytes) << "bytes_received == " << bytes_received;
+    ASSERT_LOG(bytes_received == Link::kSizeBytes, "bytes_received == %d", static_cast<int>(bytes_received));
     packets::PacketView<true> size({packets::View(received_, 0, Link::kSizeBytes)});
     bytes_left_ = size.begin().extract<uint32_t>();
     received_->resize(Link::kSizeBytes + bytes_left_);
