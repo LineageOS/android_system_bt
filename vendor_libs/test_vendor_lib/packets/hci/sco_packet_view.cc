@@ -16,7 +16,7 @@
 
 #include "packets/hci/sco_packet_view.h"
 
-#include <base/logging.h>
+#include "os/log.h"
 
 using test_vendor_lib::sco::PacketStatusFlagsType;
 
@@ -39,8 +39,9 @@ PacketStatusFlagsType ScoPacketView::GetPacketStatusFlags() const {
 
 PacketView<true> ScoPacketView::GetPayload() const {
   uint8_t payload_size = (begin() + sizeof(uint16_t)).extract<uint8_t>();
-  CHECK(static_cast<uint8_t>(size() - sizeof(uint16_t) - sizeof(uint8_t)) == payload_size)
-      << "Malformed SCO packet payload_size " << payload_size << " + 4 != " << size();
+  ASSERT_LOG(static_cast<uint8_t>(size() - sizeof(uint16_t) - sizeof(uint8_t)) == payload_size,
+             "Malformed SCO packet payload_size %d + 4 != %d", static_cast<int>(payload_size),
+             static_cast<int>(size()));
   return SubViewLittleEndian(sizeof(uint16_t) + sizeof(uint8_t), size());
 }
 

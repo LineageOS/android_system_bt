@@ -30,8 +30,8 @@ class IoCapabilityView : public PacketView<true> {
   virtual ~IoCapabilityView() = default;
 
   static IoCapabilityView GetIoCapability(const LinkLayerPacketView& view) {
-    CHECK(view.GetType() == Link::PacketType::IO_CAPABILITY_RESPONSE ||
-          view.GetType() == Link::PacketType::IO_CAPABILITY_REQUEST);
+    ASSERT(view.GetType() == Link::PacketType::IO_CAPABILITY_RESPONSE ||
+           view.GetType() == Link::PacketType::IO_CAPABILITY_REQUEST);
     return IoCapabilityView(view.GetPayload());
   }
 

@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "hci_socket_device"
-
 #include "hci_socket_device.h"
 
 #include <fcntl.h>
 #include <netinet/in.h>
 #include <sys/socket.h>
 
-#include "osi/include/log.h"
-
 #include "model/setup/device_boutique.h"
+#include "os/log.h"
 
 using std::vector;
 
@@ -80,9 +77,7 @@ HciSocketDevice::HciSocketDevice(int file_descriptor) : socket_file_descriptor_(
         std::shared_ptr<std::vector<uint8_t>> packet_copy = std::make_shared<std::vector<uint8_t>>(raw_command);
         HandleCommand(packet_copy);
       },
-      [](const std::vector<uint8_t>&) {
-        CHECK(false) << "Unexpected Event in HciSocketDevice!";
-      },
+      [](const std::vector<uint8_t>&) { LOG_ALWAYS_FATAL("Unexpected Event in HciSocketDevice!"); },
       [this](const std::vector<uint8_t>& raw_acl) {
         std::shared_ptr<std::vector<uint8_t>> packet_copy = std::make_shared<std::vector<uint8_t>>(raw_acl);
         HandleAcl(packet_copy);
@@ -92,19 +87,14 @@ HciSocketDevice::HciSocketDevice(int file_descriptor) : socket_file_descriptor_(
         HandleSco(packet_copy);
       },
       [this]() {
-        LOG_INFO(LOG_TAG, "HCI socket device disconnected");
+        LOG_INFO("HCI socket device disconnected");
         close_callback_();
       });
 
-  RegisterEventChannel([this](std::shared_ptr<std::vector<uint8_t>> packet) {
-    SendHci(hci::PacketType::EVENT, packet);
-  });
-  RegisterAclChannel([this](std::shared_ptr<std::vector<uint8_t>> packet) {
-    SendHci(hci::PacketType::ACL, packet);
-  });
-  RegisterScoChannel([this](std::shared_ptr<std::vector<uint8_t>> packet) {
-    SendHci(hci::PacketType::SCO, packet);
-  });
+  RegisterEventChannel(
+      [this](std::shared_ptr<std::vector<uint8_t>> packet) { SendHci(hci::PacketType::EVENT, packet); });
+  RegisterAclChannel([this](std::shared_ptr<std::vector<uint8_t>> packet) { SendHci(hci::PacketType::ACL, packet); });
+  RegisterScoChannel([this](std::shared_ptr<std::vector<uint8_t>> packet) { SendHci(hci::PacketType::SCO, packet); });
 }
 
 void HciSocketDevice::TimerTick() {
@@ -114,23 +104,22 @@ void HciSocketDevice::TimerTick() {
 
 void HciSocketDevice::SendHci(hci::PacketType packet_type, const std::shared_ptr<std::vector<uint8_t>> packet) {
   if (socket_file_descriptor_ == -1) {
-    LOG_INFO(LOG_TAG, "socket_file_descriptor == -1");
+    LOG_INFO("socket_file_descriptor == -1");
     return;
   }
   uint8_t type = static_cast<uint8_t>(packet_type);
   int bytes_written;
   bytes_written = write(socket_file_descriptor_, &type, sizeof(type));
   if (bytes_written != sizeof(type)) {
-    LOG_WARN(LOG_TAG, "bytes_written %d != sizeof(type)", bytes_written);
+    LOG_WARN("bytes_written %d != sizeof(type)", bytes_written);
   }
   bytes_written = write(socket_file_descriptor_, packet->data(), packet->size());
   if (static_cast<size_t>(bytes_written) != packet->size()) {
-    LOG_WARN(LOG_TAG, "bytes_written %d != packet->size", bytes_written);
+    LOG_WARN("bytes_written %d != packet->size", bytes_written);
   }
 }
 
-void HciSocketDevice::RegisterCloseCallback(
-    std::function<void()> close_callback) {
+void HciSocketDevice::RegisterCloseCallback(std::function<void()> close_callback) {
   close_callback_ = close_callback;
 }
 

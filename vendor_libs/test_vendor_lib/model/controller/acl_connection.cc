@@ -14,13 +14,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "acl_connection"
-
 #include "acl_connection.h"
-
-#include "base/logging.h"
-
-#include "osi/include/log.h"
 
 using std::shared_ptr;
 

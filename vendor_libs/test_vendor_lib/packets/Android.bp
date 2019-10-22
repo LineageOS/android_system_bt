@@ -38,6 +38,7 @@ cc_library_static {
         "system/bt/vendor_libs/test_vendor_lib/include",
         "system/bt/vendor_libs/test_vendor_lib/",
         "system/bt/",
+        "system/bt/gd",
     ],
     shared_libs: [
         "libbase",
@@ -69,6 +70,7 @@ cc_test_host {
     ],
     include_dirs: [
         "system/bt",
+        "system/bt/gd",
         "system/bt/hci/include",
         "system/bt/vendor_libs/test_vendor_lib",
         "system/bt/vendor_libs/test_vendor_lib/include",

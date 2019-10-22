@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "acl_connection_handler"
-
 #include "acl_connection_handler.h"
 
-#include "base/logging.h"
+#include "os/log.h"
 
-#include "osi/include/log.h"
 #include "types/address.h"
 
 using std::shared_ptr;
@@ -67,11 +64,11 @@ bool AclConnectionHandler::CancelPendingConnection(Address addr) {
 
 bool AclConnectionHandler::CreatePendingLeConnection(Address addr, uint8_t address_type) {
   if (IsDeviceConnected(addr, address_type)) {
-    LOG_INFO(LOG_TAG, "%s: %s (type %hhx) is already connected", __func__, addr.ToString().c_str(), address_type);
+    LOG_INFO("%s: %s (type %hhx) is already connected", __func__, addr.ToString().c_str(), address_type);
     return false;
   }
   if (le_connection_pending_) {
-    LOG_INFO(LOG_TAG, "%s: connection already pending", __func__);
+    LOG_INFO("%s: connection already pending", __func__);
     return false;
   }
   le_connection_pending_ = true;
@@ -130,22 +127,22 @@ uint16_t AclConnectionHandler::GetHandle(Address addr) const {
 }
 
 Address AclConnectionHandler::GetAddress(uint16_t handle) const {
-  CHECK(HasHandle(handle)) << "Handle unknown " << handle;
+  ASSERT_LOG(HasHandle(handle), "Handle unknown %hd", handle);
   return acl_connections_.at(handle).GetAddress();
 }
 
 uint8_t AclConnectionHandler::GetAddressType(uint16_t handle) const {
-  CHECK(HasHandle(handle)) << "Handle unknown " << handle;
+  ASSERT_LOG(HasHandle(handle), "Handle unknown %hd", handle);
   return acl_connections_.at(handle).GetAddressType();
 }
 
 void AclConnectionHandler::set_own_address_type(uint16_t handle, uint8_t address_type) {
-  CHECK(HasHandle(handle)) << "Handle unknown " << handle;
+  ASSERT_LOG(HasHandle(handle), "Handle unknown %hd", handle);
   acl_connections_.at(handle).SetOwnAddressType(address_type);
 }
 
 uint8_t AclConnectionHandler::GetOwnAddressType(uint16_t handle) const {
-  CHECK(HasHandle(handle)) << "Handle unknown " << handle;
+  ASSERT_LOG(HasHandle(handle), "Handle unknown %hd", handle);
   return acl_connections_.at(handle).GetOwnAddressType();
 }
 

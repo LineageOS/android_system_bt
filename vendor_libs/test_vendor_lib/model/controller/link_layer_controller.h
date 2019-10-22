@@ -193,22 +193,16 @@ class LinkLayerController {
   hci::Status ChangeConnectionPacketType(uint16_t handle, uint16_t types);
   hci::Status ChangeConnectionLinkKey(uint16_t handle);
   hci::Status MasterLinkKey(uint8_t key_flag);
-  hci::Status HoldMode(uint16_t handle, uint16_t hold_mode_max_interval,
-                       uint16_t hold_mode_min_interval);
-  hci::Status SniffMode(uint16_t handle, uint16_t sniff_max_interval,
-                        uint16_t sniff_min_interval, uint16_t sniff_attempt,
-                        uint16_t sniff_timeout);
+  hci::Status HoldMode(uint16_t handle, uint16_t hold_mode_max_interval, uint16_t hold_mode_min_interval);
+  hci::Status SniffMode(uint16_t handle, uint16_t sniff_max_interval, uint16_t sniff_min_interval,
+                        uint16_t sniff_attempt, uint16_t sniff_timeout);
   hci::Status ExitSniffMode(uint16_t handle);
-  hci::Status QosSetup(uint16_t handle, uint8_t service_type,
-                       uint32_t token_rate, uint32_t peak_bandwidth,
+  hci::Status QosSetup(uint16_t handle, uint8_t service_type, uint32_t token_rate, uint32_t peak_bandwidth,
                        uint32_t latency, uint32_t delay_variation);
   hci::Status SwitchRole(Address bd_addr, uint8_t role);
   hci::Status WriteLinkPolicySettings(uint16_t handle, uint16_t settings);
-  hci::Status FlowSpecification(uint16_t handle, uint8_t flow_direction,
-                                uint8_t service_type, uint32_t token_rate,
-                                uint32_t token_bucket_size,
-                                uint32_t peak_bandwidth,
-                                uint32_t access_latency);
+  hci::Status FlowSpecification(uint16_t handle, uint8_t flow_direction, uint8_t service_type, uint32_t token_rate,
+                                uint32_t token_bucket_size, uint32_t peak_bandwidth, uint32_t access_latency);
   hci::Status WriteLinkSupervisionTimeout(uint16_t handle, uint16_t timeout);
 
  protected:
