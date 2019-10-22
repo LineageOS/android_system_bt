@@ -14,11 +14,8 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "polled_socket"
-
 #include "polled_socket.h"
 
-#include <base/logging.h>
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
@@ -26,7 +23,7 @@
 #include <sys/types.h>
 #include <sys/uio.h>
 
-#include "osi/include/log.h"
+#include "os/log.h"
 
 namespace test_vendor_lib {
 namespace net {
@@ -60,7 +57,7 @@ size_t PolledSocket::TrySend(packets::PacketView<true> packet) {
   }
   int ret = write(file_descriptor_, copy.data(), copy.size());
   if (ret == -1) {
-    ALOGW("%s error %s", __func__, strerror(errno));
+    LOG_WARN("%s error %s", __func__, strerror(errno));
     return 0;
   } else {
     return static_cast<size_t>(ret);
@@ -100,7 +97,7 @@ size_t PolledSocket::TryReceive(size_t num_bytes, uint8_t* data) {
     if (errno == EAGAIN) {
       return 0;
     } else {
-      ALOGW("%s error %s", __func__, strerror(errno));
+      LOG_WARN("%s error %s", __func__, strerror(errno));
       CleanUp();
       return 0;
     }

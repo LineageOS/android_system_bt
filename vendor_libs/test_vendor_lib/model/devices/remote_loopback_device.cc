@@ -14,13 +14,10 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "remote_loopback_device"
-
 #include "remote_loopback_device.h"
 
 #include "model/setup/device_boutique.h"
-
-#include "osi/include/log.h"
+#include "os/log.h"
 #include "packets/link_layer/link_layer_packet_builder.h"
 #include "packets/link_layer/link_layer_packet_view.h"
 
@@ -32,7 +29,7 @@ using packets::LinkLayerPacketBuilder;
 using packets::LinkLayerPacketView;
 using packets::PageResponseBuilder;
 
-bool RemoteLoopbackDevice::registered_ = DeviceBoutique::Register(LOG_TAG, &RemoteLoopbackDevice::Create);
+bool RemoteLoopbackDevice::registered_ = DeviceBoutique::Register("remote_loopback", &RemoteLoopbackDevice::Create);
 
 RemoteLoopbackDevice::RemoteLoopbackDevice() {}
 
@@ -60,7 +57,7 @@ void RemoteLoopbackDevice::IncomingPacket(LinkLayerPacketView packet) {
                           Phy::Type::BR_EDR);
       break;
     default: {
-      ALOGW("Resend = %d", static_cast<int>(packet.size()));
+      LOG_WARN("Resend = %d", static_cast<int>(packet.size()));
       std::shared_ptr<std::vector<uint8_t>> extracted_packet = std::make_shared<std::vector<uint8_t>>();
       extracted_packet->reserve(packet.size());
       for (const auto byte : packet) {

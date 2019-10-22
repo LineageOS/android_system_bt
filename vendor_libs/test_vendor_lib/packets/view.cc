@@ -16,7 +16,7 @@
 
 #include "view.h"
 
-#include <base/logging.h>
+#include "os/log.h"
 
 namespace test_vendor_lib {
 namespace packets {
@@ -33,7 +33,7 @@ View::View(const View& view, size_t begin, size_t end) : data_(view.data_) {
 }
 
 uint8_t View::operator[](size_t i) const {
-  CHECK(i + begin_ < end_) << "Out of bounds access at " << i;
+  ASSERT_LOG(i + begin_ < end_, "Out of bounds access at %d", static_cast<int>(i));
   return data_->operator[](i + begin_);
 }
 

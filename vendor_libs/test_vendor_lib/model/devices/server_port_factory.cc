@@ -14,13 +14,9 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "server_port_factory"
-
 #include "server_port_factory.h"
 
-#include <base/logging.h>
-
-#include "osi/include/log.h"
+#include "os/log.h"
 #include "osi/include/osi.h"
 
 #include <netinet/in.h>
@@ -43,23 +39,23 @@ int ServerPortFactory::SetUp(int port) {
 
   OSI_NO_INTR(listen_fd_ = socket(AF_INET, SOCK_STREAM, 0));
   if (listen_fd_ < 0) {
-    LOG_INFO(LOG_TAG, "Error creating socket for test channel.");
+    LOG_INFO("Error creating socket for test channel.");
     return -1;
   }
 
-  LOG_INFO(LOG_TAG, "port: %d", port);
+  LOG_INFO("port: %d", port);
   listen_address.sin_family = AF_INET;
   listen_address.sin_port = htons(port);
   listen_address.sin_addr.s_addr = htonl(INADDR_ANY);
 
   if (bind(listen_fd_, reinterpret_cast<sockaddr*>(&listen_address), sockaddr_in_size) < 0) {
-    LOG_INFO(LOG_TAG, "Error binding test channel listener socket to address.");
+    LOG_INFO("Error binding test channel listener socket to address.");
     close(listen_fd_);
     return -1;
   }
 
   if (listen(listen_fd_, 1) < 0) {
-    LOG_INFO(LOG_TAG, "Error listening for test channel.");
+    LOG_INFO("Error listening for test channel.");
     close(listen_fd_);
     return -1;
   }
@@ -71,7 +67,7 @@ void ServerPortFactory::CleanUp() {
     return;
   }
   if (close(listen_fd_)) {
-    LOG_ERROR(LOG_TAG, "Error closing listen_fd_.");
+    LOG_ERROR("Error closing listen_fd_.");
   }
   listen_fd_ = -1;
 }
@@ -84,16 +80,16 @@ int ServerPortFactory::Accept(int listen_fd_) {
 
   OSI_NO_INTR(accept_fd = accept(listen_fd_, reinterpret_cast<sockaddr*>(&test_channel_address), &sockaddr_in_size));
   if (accept_fd < 0) {
-    LOG_INFO(LOG_TAG, "Error accepting test channel connection errno=%d (%s).", errno, strerror(errno));
+    LOG_INFO("Error accepting test channel connection errno=%d (%s).", errno, strerror(errno));
 
     if (errno != EAGAIN && errno != EWOULDBLOCK) {
-      LOG_ERROR(LOG_TAG, "Closing listen_fd_ (won't try again).");
+      LOG_ERROR("Closing listen_fd_ (won't try again).");
       close(listen_fd_);
       return -1;
     }
   }
 
-  LOG_INFO(LOG_TAG, "accept_fd = %d.", accept_fd);
+  LOG_INFO("accept_fd = %d.", accept_fd);
 
   return accept_fd;
 }
@@ -107,7 +103,7 @@ void ServerPortFactory::OnCommandReady(int fd, std::function<void(void)> unwatch
   std::string command_name(command_name_raw.begin(), command_name_raw.end());
 
   if (command_name == "CLOSE_TEST_CHANNEL" || command_name == "") {
-    LOG_INFO(LOG_TAG, "Test channel closed");
+    LOG_INFO("Test channel closed");
     unwatch();
     close(fd);
     return;
@@ -137,9 +133,9 @@ void ServerPortFactory::SendResponse(int fd, const std::string& response) const 
   char size_buf[4] = {static_cast<uint8_t>(size & 0xff), static_cast<uint8_t>((size >> 8) & 0xff),
                       static_cast<uint8_t>((size >> 16) & 0xff), static_cast<uint8_t>((size >> 24) & 0xff)};
   int written = write(fd, size_buf, 4);
-  CHECK(written == 4) << "What happened? written = " << written << "errno =" << errno;
+  ASSERT_LOG(written == 4, "What happened? written = %d errno = %d", written, errno);
   written = write(fd, response.c_str(), size);
-  CHECK(written == static_cast<int>(size)) << "What happened? written = " << written << "errno =" << errno;
+  ASSERT_LOG(written == static_cast<int>(size), "What happened? written = %d errno = %d", written, errno);
 }
 
 void ServerPortFactory::RegisterCommandHandler(

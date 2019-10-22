@@ -18,7 +18,7 @@
 
 #include <algorithm>
 
-#include <base/logging.h>
+#include "os/log.h"
 
 namespace test_vendor_lib {
 namespace packets {
@@ -52,14 +52,14 @@ uint8_t PacketView<little_endian>::operator[](size_t index) const {
 
 template <bool little_endian>
 uint8_t PacketView<little_endian>::at(size_t index) const {
-  CHECK(index < length_) << "Index " << index << " out of bounds";
+  ASSERT_LOG(index < length_, "Index %d out of bounds", static_cast<int>(index));
   for (const auto& fragment : fragments_) {
     if (index < fragment.size()) {
       return fragment[index];
     }
     index -= fragment.size();
   }
-  CHECK(false) << "Out of fragments searching for Index " << index;
+  LOG_ALWAYS_FATAL("Out of fragments searching for Index %d", static_cast<int>(index));
   return 0;
 }
 
@@ -70,8 +70,8 @@ size_t PacketView<little_endian>::size() const {
 
 template <bool little_endian>
 std::forward_list<View> PacketView<little_endian>::SubViewList(size_t begin, size_t end) const {
-  CHECK(begin <= end) << "Begin " << begin << " is past end";
-  CHECK(end <= length_) << "End " << end << " is too large";
+  ASSERT_LOG(begin <= end, "Begin %d is past end %d", static_cast<int>(begin), static_cast<int>(end));
+  ASSERT_LOG(end <= length_, "End %d is too large", static_cast<int>(end));
   std::forward_list<View> view_list;
   std::forward_list<View>::iterator it = view_list.before_begin();
   size_t length = end - begin;

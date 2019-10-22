@@ -14,13 +14,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "phy_layer_factory"
-
 #include "phy_layer_factory.h"
-
-#include "base/logging.h"
-
-#include "osi/include/log.h"
 
 namespace test_vendor_lib {
 
