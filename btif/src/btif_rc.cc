@@ -3811,6 +3811,10 @@ static void handle_get_playstatus_response(tBTA_AV_META_MSG* pmeta_msg,
   if (p_rsp->status == AVRC_STS_NO_ERROR) {
     do_in_jni_thread(
         FROM_HERE,
+        base::Bind(bt_rc_ctrl_callbacks->play_status_changed_cb, p_dev->rc_addr,
+                   (btrc_play_status_t)p_rsp->play_status));
+    do_in_jni_thread(
+        FROM_HERE,
         base::Bind(bt_rc_ctrl_callbacks->play_position_changed_cb,
                    p_dev->rc_addr, p_rsp->song_len, p_rsp->song_pos));
   } else {
