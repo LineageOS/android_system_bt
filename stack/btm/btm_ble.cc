@@ -624,10 +624,6 @@ void BTM_BleSetPrefConnParams(const RawAddress& bd_addr, uint16_t min_conn_int,
  ******************************************************************************/
 void BTM_ReadDevInfo(const RawAddress& remote_bda, tBT_DEVICE_TYPE* p_dev_type,
                      tBLE_ADDR_TYPE* p_addr_type) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_ReadDevInfo(remote_bda, p_dev_type,
-                                            p_addr_type);
-  }
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(remote_bda);
   tBTM_INQ_INFO* p_inq_info = BTM_InqDbRead(remote_bda);
 
