@@ -79,7 +79,7 @@ void LinkManager::ConnectFixedChannelServices(hci::AddressWithType address_with_
   }
   pending_link->second.pending_fixed_channel_connections_.push_back(std::move(pending_fixed_channel_connection));
   // Then create new ACL connection
-  acl_manager_->CreateLeConnection(address_with_type.GetAddress(), address_with_type.GetAddressType());
+  acl_manager_->CreateLeConnection(address_with_type);
 }
 
 Link* LinkManager::GetLink(hci::AddressWithType address_with_type) {
@@ -89,15 +89,16 @@ Link* LinkManager::GetLink(hci::AddressWithType address_with_type) {
   return &links_.find(address_with_type)->second;
 }
 
-void LinkManager::OnLeConnectSuccess(std::unique_ptr<hci::AclConnection> acl_connection) {
+void LinkManager::OnLeConnectSuccess(hci::AddressWithType connecting_address_with_type,
+                                     std::unique_ptr<hci::AclConnection> acl_connection) {
   // Same link should not be connected twice
-  hci::AddressWithType address_with_type(acl_connection->GetAddress(), acl_connection->GetAddressType());
-  ASSERT_LOG(GetLink(address_with_type) == nullptr, "%s is connected twice without disconnection",
+  hci::AddressWithType connected_address_with_type(acl_connection->GetAddress(), acl_connection->GetAddressType());
+  ASSERT_LOG(GetLink(connected_address_with_type) == nullptr, "%s is connected twice without disconnection",
              acl_connection->GetAddress().ToString().c_str());
   auto* link_queue_up_end = acl_connection->GetAclQueueEnd();
-  links_.try_emplace(address_with_type, l2cap_handler_, std::move(acl_connection),
+  links_.try_emplace(connected_address_with_type, l2cap_handler_, std::move(acl_connection),
                      std::make_unique<l2cap::internal::Fifo>(link_queue_up_end, l2cap_handler_), parameter_provider_);
-  auto* link = GetLink(address_with_type);
+  auto* link = GetLink(connected_address_with_type);
   // Allocate and distribute channels for all registered fixed channel services
   auto fixed_channel_services = service_manager_->GetRegisteredServices();
   for (auto& fixed_channel_service : fixed_channel_services) {
@@ -106,7 +107,7 @@ void LinkManager::OnLeConnectSuccess(std::unique_ptr<hci::AclConnection> acl_con
         std::make_unique<FixedChannel>(fixed_channel_impl, l2cap_handler_));
   }
   // Remove device from pending links list, if any
-  auto pending_link = pending_links_.find(address_with_type);
+  auto pending_link = pending_links_.find(connecting_address_with_type);
   if (pending_link == pending_links_.end()) {
     // This an incoming connection, exit
     return;
@@ -115,9 +116,8 @@ void LinkManager::OnLeConnectSuccess(std::unique_ptr<hci::AclConnection> acl_con
   pending_links_.erase(pending_link);
 }
 
-void LinkManager::OnLeConnectFail(hci::Address device, hci::AddressType address_type, hci::ErrorCode reason) {
+void LinkManager::OnLeConnectFail(hci::AddressWithType address_with_type, hci::ErrorCode reason) {
   // Notify all pending links for this device
-  hci::AddressWithType address_with_type(device, address_type);
   auto pending_link = pending_links_.find(address_with_type);
   if (pending_link == pending_links_.end()) {
     // There is no pending link, exit
