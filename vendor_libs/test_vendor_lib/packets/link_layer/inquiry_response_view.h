@@ -31,7 +31,7 @@ class InquiryResponseView : public PacketView<true> {
   virtual ~InquiryResponseView() = default;
 
   static InquiryResponseView GetInquiryResponse(const LinkLayerPacketView& view) {
-    CHECK(view.GetType() == Link::PacketType::INQUIRY_RESPONSE);
+    ASSERT(view.GetType() == Link::PacketType::INQUIRY_RESPONSE);
     return InquiryResponseView(view.GetPayload());
   }
 

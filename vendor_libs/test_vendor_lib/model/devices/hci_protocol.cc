@@ -16,12 +16,12 @@
 
 #include "hci_protocol.h"
 
-#define LOG_TAG "hci-hci_protocol"
 #include <assert.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <log/log.h>
 #include <unistd.h>
+
+#include "os/log.h"
 
 namespace test_vendor_lib {
 namespace hci {
@@ -33,12 +33,12 @@ size_t HciProtocol::WriteSafely(int fd, const uint8_t* data, size_t length) {
 
     if (ret == -1) {
       if (errno == EAGAIN) continue;
-      ALOGE("%s error writing to UART (%s)", __func__, strerror(errno));
+      LOG_ERROR("%s error writing to UART (%s)", __func__, strerror(errno));
       break;
 
     } else if (ret == 0) {
       // Nothing written :(
-      ALOGE("%s zero bytes written - something went wrong...", __func__);
+      LOG_ERROR("%s zero bytes written - something went wrong...", __func__);
       break;
     }
 

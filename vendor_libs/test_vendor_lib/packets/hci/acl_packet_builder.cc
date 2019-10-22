@@ -16,7 +16,7 @@
 
 #include "packets/hci/acl_packet_builder.h"
 
-#include <base/logging.h>
+#include "os/log.h"
 
 using std::vector;
 using test_vendor_lib::acl::BroadcastFlagsType;
@@ -48,8 +48,8 @@ void AclPacketBuilder::Serialize(std::back_insert_iterator<std::vector<uint8_t>>
          it);
   uint16_t payload_size = payload_->size();
 
-  CHECK(static_cast<size_t>(payload_size) == payload_->size())
-      << "Payload too large for an ACL packet: " << payload_->size();
+  ASSERT_LOG(static_cast<size_t>(payload_size) == payload_->size(), "Payload too large for an ACL packet: %d",
+             static_cast<int>(payload_->size()));
   insert(payload_size, it);
   payload_->Serialize(it);
 }

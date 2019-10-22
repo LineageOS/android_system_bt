@@ -65,8 +65,7 @@ class EndianBuilder : public PacketBuilder<little_endian> {
     return packet;
   }
 
-  void Serialize(
-      std::back_insert_iterator<std::vector<uint8_t>> it) const override {
+  void Serialize(std::back_insert_iterator<std::vector<uint8_t>> it) const override {
     PacketBuilder<little_endian>::insert(signature_, it);
     PacketBuilder<little_endian>::insert(byte_, it);
     PacketBuilder<little_endian>::insert(two_bytes_, it);
@@ -104,7 +103,9 @@ class VectorBuilder : public PacketBuilder<true> {
   }
   ~VectorBuilder() override = default;
 
-  size_t size() const override { return vect_.size() * sizeof(T); }
+  size_t size() const override {
+    return vect_.size() * sizeof(T);
+  }
 
   virtual const std::unique_ptr<std::vector<uint8_t>> FinalPacket() {
     std::unique_ptr<std::vector<uint8_t>> packet = std::make_unique<std::vector<uint8_t>>();
@@ -114,8 +115,7 @@ class VectorBuilder : public PacketBuilder<true> {
     return packet;
   }
 
-  void Serialize(
-      std::back_insert_iterator<std::vector<uint8_t>> it) const override {
+  void Serialize(std::back_insert_iterator<std::vector<uint8_t>> it) const override {
     PacketBuilder<true>::insert_vector(vect_, it);
   }
 
@@ -133,7 +133,9 @@ class InsertElementsBuilder : public PacketBuilder<true> {
   }
   ~InsertElementsBuilder() override = default;
 
-  size_t size() const override { return vect_.size() * sizeof(T); }
+  size_t size() const override {
+    return vect_.size() * sizeof(T);
+  }
 
   virtual const std::unique_ptr<std::vector<uint8_t>> FinalPacket() {
     std::unique_ptr<std::vector<uint8_t>> packet = std::make_unique<std::vector<uint8_t>>();
@@ -143,8 +145,7 @@ class InsertElementsBuilder : public PacketBuilder<true> {
     return packet;
   }
 
-  void Serialize(
-      std::back_insert_iterator<std::vector<uint8_t>> it) const override {
+  void Serialize(std::back_insert_iterator<std::vector<uint8_t>> it) const override {
     for (T elem : vect_) {
       PacketBuilder<true>::insert(elem, it);
     }
@@ -211,8 +212,7 @@ class NestedBuilder : public PacketBuilder<true> {
     return packet;
   }
 
-  void Serialize(
-      std::back_insert_iterator<std::vector<uint8_t>> it) const override {
+  void Serialize(std::back_insert_iterator<std::vector<uint8_t>> it) const override {
     PacketBuilder<true>::insert(level_, it);
     if (payload_) {
       payload_->Serialize(it);

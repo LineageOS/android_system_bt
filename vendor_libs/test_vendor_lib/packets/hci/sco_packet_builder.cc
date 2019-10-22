@@ -16,7 +16,7 @@
 
 #include "packets/hci/sco_packet_builder.h"
 
-#include <base/logging.h>
+#include "os/log.h"
 
 using std::vector;
 using test_vendor_lib::sco::PacketStatusFlagsType;
@@ -36,8 +36,8 @@ void ScoPacketBuilder::Serialize(std::back_insert_iterator<std::vector<uint8_t>>
   insert(static_cast<uint16_t>((handle_ & 0xfff) | (static_cast<uint16_t>(packet_status_flags_) << 12)), it);
   uint8_t payload_size = payload_->size();
 
-  CHECK(static_cast<size_t>(payload_size) == payload_->size())
-      << "Payload too large for a SCO packet: " << payload_->size();
+  ASSERT_LOG(static_cast<size_t>(payload_size) == payload_->size(), "Payload too large for a SCO packet: %d",
+             static_cast<int>(payload_->size()));
   insert(payload_size, it);
   payload_->Serialize(it);
 }

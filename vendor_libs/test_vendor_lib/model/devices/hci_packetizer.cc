@@ -16,13 +16,12 @@
 
 #include "hci_packetizer.h"
 
-#define LOG_TAG "hci_packetizer"
-
 #include <dlfcn.h>
 #include <errno.h>
 #include <fcntl.h>
-#include <log/log.h>
 #include <unistd.h>
+
+#include "os/log.h"
 
 namespace test_vendor_lib {
 namespace hci {
@@ -69,7 +68,7 @@ void HciPacketizer::OnDataReady(int fd, hci::PacketType packet_type) {
       ssize_t bytes_read = TEMP_FAILURE_RETRY(
           read(fd, preamble_ + bytes_read_, preamble_size[static_cast<uint8_t>(packet_type)] - bytes_read_));
       if (bytes_read == 0) {
-        ALOGE("%s: Will try again to read the header!", __func__);
+        LOG_ERROR("%s: Will try again to read the header!", __func__);
         return;
       }
       if (bytes_read < 0) {
@@ -77,15 +76,15 @@ void HciPacketizer::OnDataReady(int fd, hci::PacketType packet_type) {
         if (errno == EAGAIN) {
           return;
         }
-        LOG_ALWAYS_FATAL("%s: Read header error: %s", __func__, strerror(errno));
+        LOG_ALWAYS_FATAL("Read header error: %s", strerror(errno));
       }
       bytes_read_ += bytes_read;
       if (bytes_read_ == preamble_size[static_cast<uint8_t>(packet_type)]) {
         size_t packet_length = HciGetPacketLengthForType(packet_type, preamble_);
         packet_.resize(preamble_size[static_cast<uint8_t>(packet_type)] + packet_length);
         memcpy(packet_.data(), preamble_, preamble_size[static_cast<uint8_t>(packet_type)]);
-        ALOGI("%s: Read a preamble of size %d length %d %0x %0x %0x", __func__, static_cast<int>(bytes_read_),
-              static_cast<int>(packet_length), preamble_[0], preamble_[1], preamble_[2]);
+        LOG_INFO("%s: Read a preamble of size %d length %d %0x %0x %0x", __func__, static_cast<int>(bytes_read_),
+                 static_cast<int>(packet_length), preamble_[0], preamble_[1], preamble_[2]);
         bytes_remaining_ = packet_length;
         if (bytes_remaining_ == 0) {
           packet_ready_cb_();
@@ -103,7 +102,7 @@ void HciPacketizer::OnDataReady(int fd, hci::PacketType packet_type) {
       ssize_t bytes_read = TEMP_FAILURE_RETRY(
           read(fd, packet_.data() + preamble_size[static_cast<uint8_t>(packet_type)] + bytes_read_, bytes_remaining_));
       if (bytes_read == 0) {
-        ALOGI("%s: Will try again to read the payload!", __func__);
+        LOG_INFO("Will try again to read the payload!");
         return;
       }
       if (bytes_read < 0) {
@@ -111,7 +110,7 @@ void HciPacketizer::OnDataReady(int fd, hci::PacketType packet_type) {
         if (errno == EAGAIN) {
           return;
         }
-        LOG_ALWAYS_FATAL("%s: Read payload error: %s", __func__, strerror(errno));
+        LOG_ALWAYS_FATAL("Read payload error: %s", strerror(errno));
       }
       bytes_remaining_ -= bytes_read;
       bytes_read_ += bytes_read;

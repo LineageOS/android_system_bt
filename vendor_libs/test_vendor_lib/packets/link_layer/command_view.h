@@ -18,8 +18,7 @@
 
 #include <cstdint>
 
-#include <log/log.h>
-
+#include "os/log.h"
 #include "packets/link_layer/link_layer_packet_view.h"
 #include "packets/packet_view.h"
 
@@ -32,7 +31,7 @@ class CommandView : public PacketView<true> {
   virtual ~CommandView() = default;
 
   static CommandView GetCommand(const LinkLayerPacketView& view) {
-    CHECK(view.GetType() == Link::PacketType::COMMAND);
+    ASSERT(view.GetType() == Link::PacketType::COMMAND);
     return CommandView(view.GetPayload());
   }
 

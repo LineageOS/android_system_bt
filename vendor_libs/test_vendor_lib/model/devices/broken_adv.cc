@@ -14,18 +14,15 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "broken_adv"
-
 #include "broken_adv.h"
 
 #include "model/setup/device_boutique.h"
-#include "osi/include/log.h"
 
 using std::vector;
 
 namespace test_vendor_lib {
 
-bool BrokenAdv::registered_ = DeviceBoutique::Register(LOG_TAG, &BrokenAdv::Create);
+bool BrokenAdv::registered_ = DeviceBoutique::Register("broken_adv", &BrokenAdv::Create);
 
 BrokenAdv::BrokenAdv() {
   advertising_interval_ms_ = std::chrono::milliseconds(1280);
