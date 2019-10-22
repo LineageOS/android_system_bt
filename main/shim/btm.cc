@@ -30,8 +30,13 @@ static uint8_t inquiry_result_buf[kMaxInquiryResultSize];
 
 static int inquiry_type_ = 0;
 
+static constexpr uint8_t kInquiryResultMode = 0;
+static constexpr uint8_t kInquiryResultWithRssiMode = 1;
+static constexpr uint8_t kExtendedInquiryResultMode = 2;
+
 extern void btm_process_cancel_complete(uint8_t status, uint8_t mode);
 extern void btm_process_inq_complete(uint8_t status, uint8_t result_type);
+extern void btm_process_inq_results(uint8_t* p, uint8_t result_mode);
 
 /**
  * Inquiry
@@ -40,7 +45,7 @@ void bluetooth::shim::Btm::OnInquiryResult(std::vector<const uint8_t> result) {
   CHECK(result.size() < kMaxInquiryResultSize);
 
   std::copy(result.begin(), result.end(), inquiry_result_buf);
-  // TODO(cmanton) Process result packets
+  btm_process_inq_results(inquiry_result_buf, kInquiryResultMode);
 }
 
 void bluetooth::shim::Btm::OnInquiryResultWithRssi(
@@ -48,7 +53,7 @@ void bluetooth::shim::Btm::OnInquiryResultWithRssi(
   CHECK(result.size() < kMaxInquiryResultSize);
 
   std::copy(result.begin(), result.end(), inquiry_result_buf);
-  // TODO(cmanton) Process result packets
+  btm_process_inq_results(inquiry_result_buf, kInquiryResultWithRssiMode);
 }
 
 void bluetooth::shim::Btm::OnExtendedInquiryResult(
@@ -56,7 +61,7 @@ void bluetooth::shim::Btm::OnExtendedInquiryResult(
   CHECK(result.size() < kMaxInquiryResultSize);
 
   std::copy(result.begin(), result.end(), inquiry_result_buf);
-  // TODO(cmanton) Process result packets
+  btm_process_inq_results(inquiry_result_buf, kExtendedInquiryResultMode);
 }
 
 void bluetooth::shim::Btm::OnInquiryComplete(uint16_t status) {
