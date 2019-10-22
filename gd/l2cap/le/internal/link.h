@@ -41,8 +41,6 @@ class Link {
     ASSERT(acl_connection_ != nullptr);
     ASSERT(scheduler_ != nullptr);
     ASSERT(parameter_provider_ != nullptr);
-    acl_connection_->RegisterDisconnectCallback(common::BindOnce(&Link::OnAclDisconnected, common::Unretained(this)),
-                                                l2cap_handler_);
     link_idle_disconnect_alarm_.Schedule(common::BindOnce(&Link::Disconnect, common::Unretained(this)),
                                          parameter_provider_->GetLeLinkIdleDisconnectTimeout());
   }

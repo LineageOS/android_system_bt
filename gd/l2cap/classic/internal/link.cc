@@ -43,8 +43,6 @@ Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_c
   ASSERT(acl_connection_ != nullptr);
   ASSERT(scheduler_ != nullptr);
   ASSERT(parameter_provider_ != nullptr);
-  acl_connection_->RegisterDisconnectCallback(common::BindOnce(&Link::OnAclDisconnected, common::Unretained(this)),
-                                              l2cap_handler_);
   link_idle_disconnect_alarm_.Schedule(common::BindOnce(&Link::Disconnect, common::Unretained(this)),
                                        parameter_provider_->GetClassicLinkIdleDisconnectTimeout());
 }
