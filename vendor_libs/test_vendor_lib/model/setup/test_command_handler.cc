@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "test_command_handler"
-
 #include "test_command_handler.h"
 #include "device_boutique.h"
 #include "phy.h"
@@ -24,12 +22,11 @@
 
 #include <stdlib.h>
 
-#include <base/logging.h>
 #include "base/files/file_util.h"
 #include "base/json/json_reader.h"
 #include "base/values.h"
 
-#include "osi/include/log.h"
+#include "os/log.h"
 #include "osi/include/osi.h"
 
 using std::vector;
@@ -113,11 +110,11 @@ void TestCommandHandler::Add(const vector<std::string>& args) {
   if (new_dev == NULL) {
     response_string_ = "TestCommandHandler 'add' " + args[0] + " failed!";
     send_response_(response_string_);
-    LOG_WARN(LOG_TAG, "%s", response_string_.c_str());
+    LOG_WARN("%s", response_string_.c_str());
     return;
   }
 
-  LOG_INFO(LOG_TAG, "Add %s", new_dev->ToString().c_str());
+  LOG_INFO("Add %s", new_dev->ToString().c_str());
   size_t dev_index = model_.Add(new_dev);
   response_string_ = std::to_string(dev_index) + std::string(":") + new_dev->ToString();
   send_response_(response_string_);
@@ -209,7 +206,7 @@ void TestCommandHandler::DelDeviceFromPhy(const vector<std::string>& args) {
 
 void TestCommandHandler::List(const vector<std::string>& args) {
   if (args.size() > 0) {
-    LOG_INFO(LOG_TAG, "Unused args: arg[0] = %s", args[0].c_str());
+    LOG_INFO("Unused args: arg[0] = %s", args[0].c_str());
     return;
   }
   send_response_(model_.List());
@@ -217,7 +214,7 @@ void TestCommandHandler::List(const vector<std::string>& args) {
 
 void TestCommandHandler::SetTimerPeriod(const vector<std::string>& args) {
   if (args.size() != 1) {
-    LOG_INFO(LOG_TAG, "SetTimerPeriod takes 1 argument");
+    LOG_INFO("SetTimerPeriod takes 1 argument");
   }
   size_t period = std::stoi(args[0]);
   model_.SetTimerPeriod(std::chrono::milliseconds(period));
@@ -225,14 +222,14 @@ void TestCommandHandler::SetTimerPeriod(const vector<std::string>& args) {
 
 void TestCommandHandler::StartTimer(const vector<std::string>& args) {
   if (args.size() > 0) {
-    LOG_INFO(LOG_TAG, "Unused args: arg[0] = %s", args[0].c_str());
+    LOG_INFO("Unused args: arg[0] = %s", args[0].c_str());
   }
   model_.StartTimer();
 }
 
 void TestCommandHandler::StopTimer(const vector<std::string>& args) {
   if (args.size() > 0) {
-    LOG_INFO(LOG_TAG, "Unused args: arg[0] = %s", args[0].c_str());
+    LOG_INFO("Unused args: arg[0] = %s", args[0].c_str());
   }
   model_.StopTimer();
 }

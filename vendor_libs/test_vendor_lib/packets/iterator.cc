@@ -16,7 +16,7 @@
 
 #include "iterator.h"
 
-#include <base/logging.h>
+#include "os/log.h"
 
 namespace test_vendor_lib {
 namespace packets {
@@ -131,7 +131,7 @@ bool Iterator<little_endian>::operator>=(const Iterator<little_endian>& itr) con
 
 template <bool little_endian>
 uint8_t Iterator<little_endian>::operator*() const {
-  CHECK(index_ < length_) << "Index " << index_ << " out of bounds: " << length_;
+  ASSERT_LOG(index_ < length_, "Index %d out of bounds: %d", static_cast<int>(index_), static_cast<int>(length_));
   size_t index = index_;
 
   for (auto view : data_) {
@@ -140,7 +140,7 @@ uint8_t Iterator<little_endian>::operator*() const {
     }
     index -= view.size();
   }
-  CHECK(false) << "Out of fragments searching for Index " << index_;
+  LOG_ALWAYS_FATAL("Out of fragments searching for Index %d", static_cast<int>(index_));
   return 0;
 }
 

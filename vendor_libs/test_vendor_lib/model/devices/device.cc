@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "device"
-
 #include <vector>
 
 #include "device.h"
