@@ -101,6 +101,19 @@ class L2capModuleCertService : public L2capModuleCert::Service {
     return ::grpc::Status::OK;
   }
 
+  ::grpc::Status SendConfigurationRequest(
+      ::grpc::ServerContext* context, const ::bluetooth::l2cap::classic::cert::ConfigurationRequest* request,
+      ::bluetooth::l2cap::classic::cert::SendConfigurationRequestResult* response) override {
+    auto builder = ConfigurationRequestBuilder::Create(1, 0x40, Continuation::END, {});
+    auto l2cap_builder = BasicFrameBuilder::Create(1, std::move(builder));
+    outgoing_packet_queue_.push(std::move(l2cap_builder));
+    if (outgoing_packet_queue_.size() == 1) {
+      acl_connection_->GetAclQueueEnd()->RegisterEnqueue(
+          handler_, common::Bind(&L2capModuleCertService::enqueue_packet_to_acl, common::Unretained(this)));
+    }
+    return ::grpc::Status::OK;
+  }
+
   ::grpc::Status SendDisconnectionRequest(::grpc::ServerContext* context, const cert::DisconnectionRequest* request,
                                           ::google::protobuf::Empty* response) override {
     auto builder = DisconnectionRequestBuilder::Create(3, 0x40, 101);
