@@ -24,12 +24,12 @@ namespace bluetooth {
 ModuleFactory::ModuleFactory(std::function<Module*()> ctor) : ctor_(ctor) {
 }
 
-Handler* Module::GetHandler() {
+Handler* Module::GetHandler() const {
   ASSERT_LOG(handler_ != nullptr, "Can't get handler when it's not started");
   return handler_;
 }
 
-const ModuleRegistry* Module::GetModuleRegistry() {
+const ModuleRegistry* Module::GetModuleRegistry() const {
   return registry_;
 }
 
