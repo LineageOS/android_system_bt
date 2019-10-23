@@ -77,9 +77,9 @@ class Module {
   // Release all resources, you're about to be deleted
   virtual void Stop() = 0;
 
-  ::bluetooth::os::Handler* GetHandler();
+  ::bluetooth::os::Handler* GetHandler() const;
 
-  const ModuleRegistry* GetModuleRegistry();
+  const ModuleRegistry* GetModuleRegistry() const;
 
   template <class T>
   T* GetDependency() const {
