@@ -22,14 +22,14 @@
 
 #include "os/handler.h"
 
+#include "hci/acl_manager.h"
+#include "hci/address.h"
+#include "hci/address_with_type.h"
 #include "l2cap/internal/parameter_provider.h"
 #include "l2cap/internal/scheduler.h"
 #include "l2cap/le/fixed_channel_manager.h"
 #include "l2cap/le/internal/fixed_channel_service_manager_impl.h"
 #include "l2cap/le/internal/link.h"
-
-#include "hci/acl_manager.h"
-#include "hci/address.h"
 
 namespace bluetooth {
 namespace l2cap {
@@ -54,34 +54,17 @@ class LinkManager : public hci::LeConnectionCallbacks {
     std::vector<PendingFixedChannelConnection> pending_fixed_channel_connections_;
   };
 
-  struct LinkIdentifier {
-    hci::Address address;
-    hci::AddressType address_type;
-    LinkIdentifier(hci::Address address, hci::AddressType address_type)
-        : address(address), address_type(address_type){};
-
-    bool operator==(const LinkIdentifier& li) const {
-      return address == li.address && address_type == li.address_type;
-    }
-
-    struct Hasher {
-      std::size_t operator()(const LinkIdentifier& li) const {
-        std::hash<bluetooth::hci::Address> h;
-        return h(li.address);
-      }
-    };
-  };
-
   // ACL methods
 
-  Link* GetLink(hci::Address device, hci::AddressType address_type);
-  void OnLeConnectSuccess(std::unique_ptr<hci::AclConnection> acl_connection) override;
-  void OnLeConnectFail(hci::Address device, hci::AddressType address_type, hci::ErrorCode reason) override;
-  void OnDisconnect(hci::Address device, hci::AddressType address_type, hci::ErrorCode status);
+  Link* GetLink(hci::AddressWithType address_with_type);
+  void OnLeConnectSuccess(hci::AddressWithType connecting_address_with_type,
+                          std::unique_ptr<hci::AclConnection> acl_connection) override;
+  void OnLeConnectFail(hci::AddressWithType address_with_type, hci::ErrorCode reason) override;
+  void OnDisconnect(hci::AddressWithType address_with_type, hci::ErrorCode status);
 
   // FixedChannelManager methods
 
-  void ConnectFixedChannelServices(hci::Address device, hci::AddressType address_type,
+  void ConnectFixedChannelServices(hci::AddressWithType address_with_type,
                                    PendingFixedChannelConnection pending_fixed_channel_connection);
 
  private:
@@ -92,8 +75,8 @@ class LinkManager : public hci::LeConnectionCallbacks {
   l2cap::internal::ParameterProvider* parameter_provider_;
 
   // Internal states
-  std::unordered_map<LinkIdentifier, PendingLink, LinkIdentifier::Hasher> pending_links_;
-  std::unordered_map<LinkIdentifier, Link, LinkIdentifier::Hasher> links_;
+  std::unordered_map<hci::AddressWithType, PendingLink> pending_links_;
+  std::unordered_map<hci::AddressWithType, Link> links_;
   DISALLOW_COPY_AND_ASSIGN(LinkManager);
 };
 

@@ -16,7 +16,6 @@
 
 #include "raw_builder.h"
 
-#include <base/logging.h>
 #include <algorithm>
 
 using std::vector;

@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "test_model"
-
 #include "test_model.h"
 
 // TODO: Remove when registration works
@@ -33,12 +31,11 @@
 #include <iomanip>
 #include <iostream>
 
-#include <base/logging.h>
 #include "base/files/file_util.h"
 #include "base/json/json_reader.h"
 #include "base/values.h"
 
-#include "osi/include/log.h"
+#include "os/log.h"
 #include "osi/include/osi.h"
 
 #include "device_boutique.h"
@@ -80,13 +77,13 @@ void TestModel::SetTimerPeriod(std::chrono::milliseconds new_period) {
 }
 
 void TestModel::StartTimer() {
-  LOG_INFO(LOG_TAG, "StartTimer()");
+  LOG_INFO("StartTimer()");
   timer_tick_task_ =
       schedule_periodic_task_(std::chrono::milliseconds(0), timer_period_, [this]() { TestModel::TimerTick(); });
 }
 
 void TestModel::StopTimer() {
-  LOG_INFO(LOG_TAG, "StopTimer()");
+  LOG_INFO("StopTimer()");
   cancel_task_(timer_tick_task_);
   timer_tick_task_ = kInvalidTaskId;
 }
@@ -100,7 +97,7 @@ size_t TestModel::Add(std::shared_ptr<Device> new_dev) {
 void TestModel::Del(size_t dev_index) {
   auto device = devices_.find(dev_index);
   if (device == devices_.end()) {
-    LOG_WARN(LOG_TAG, "Del: can't find device!");
+    LOG_WARN("Del: can't find device!");
     return;
   }
   devices_.erase(dev_index);
@@ -116,7 +113,7 @@ size_t TestModel::AddPhy(Phy::Type phy_type) {
 void TestModel::DelPhy(size_t phy_index) {
   auto phy = phys_.find(phy_index);
   if (phy == phys_.end()) {
-    LOG_WARN(LOG_TAG, "DelPhy: can't find device!");
+    LOG_WARN("DelPhy: can't find device!");
     return;
   }
   phys_.erase(phy_index);
@@ -125,30 +122,28 @@ void TestModel::DelPhy(size_t phy_index) {
 void TestModel::AddDeviceToPhy(size_t dev_index, size_t phy_index) {
   auto device = devices_.find(dev_index);
   if (device == devices_.end()) {
-    LOG_WARN(LOG_TAG, "%s: can't find device!", __func__);
+    LOG_WARN("%s: can't find device!", __func__);
     return;
   }
   auto phy = phys_.find(phy_index);
   if (phy == phys_.end()) {
-    LOG_WARN(LOG_TAG, "%s: can't find phy!", __func__);
+    LOG_WARN("%s: can't find phy!", __func__);
     return;
   }
   auto dev = device->second;
   dev->RegisterPhyLayer(
-      phy->second->GetPhyLayer([dev](packets::LinkLayerPacketView packet) {
-        dev->IncomingPacket(packet);
-      }));
+      phy->second->GetPhyLayer([dev](packets::LinkLayerPacketView packet) { dev->IncomingPacket(packet); }));
 }
 
 void TestModel::DelDeviceFromPhy(size_t dev_index, size_t phy_index) {
   auto device = devices_.find(dev_index);
   if (device == devices_.end()) {
-    LOG_WARN(LOG_TAG, "%s: can't find device!", __func__);
+    LOG_WARN("%s: can't find device!", __func__);
     return;
   }
   auto phy = phys_.find(phy_index);
   if (phy == phys_.end()) {
-    LOG_WARN(LOG_TAG, "%s: can't find phy!", __func__);
+    LOG_WARN("%s: can't find phy!", __func__);
     return;
   }
   device->second->UnregisterPhyLayer(phy->second->GetType(), phy->second->GetFactoryId());
@@ -186,24 +181,23 @@ void TestModel::IncomingHciConnection(int socket_fd) {
   addr += stream.str();
 
   dev->Initialize({"IgnoredTypeName", addr});
-  LOG_INFO(LOG_TAG, "initialized %s", addr.c_str());
+  LOG_INFO("initialized %s", addr.c_str());
   for (auto& phy : phys_) {
     AddDeviceToPhy(index, phy.first);
   }
   dev->RegisterTaskScheduler(schedule_task_);
   dev->RegisterTaskCancel(cancel_task_);
-  dev->RegisterCloseCallback(
-      [this, socket_fd, index] { OnHciConnectionClosed(socket_fd, index); });
+  dev->RegisterCloseCallback([this, socket_fd, index] { OnHciConnectionClosed(socket_fd, index); });
 }
 
 void TestModel::OnHciConnectionClosed(int socket_fd, size_t index) {
   auto device = devices_.find(index);
   if (device == devices_.end()) {
-    LOG_WARN(LOG_TAG, "OnHciConnectionClosed: can't find device!");
+    LOG_WARN("OnHciConnectionClosed: can't find device!");
     return;
   }
   int close_result = close(socket_fd);
-  CHECK(close_result == 0) << "can't close: " << strerror(errno);
+  ASSERT_LOG(close_result == 0, "can't close: %s", strerror(errno));
   device->second->UnregisterPhyLayers();
   devices_.erase(index);
 }

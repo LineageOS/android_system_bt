@@ -27,6 +27,147 @@ static bluetooth::shim::Btm shim_btm;
 
 /*******************************************************************************
  *
+ * Function         BTM_StartInquiry
+ *
+ * Description      This function is called to start an inquiry.
+ *
+ * Parameters:      p_inqparms - pointer to the inquiry information
+ *                      mode - GENERAL or LIMITED inquiry, BR/LE bit mask
+ *                             seperately
+ *                      duration - length in 1.28 sec intervals (If '0', the
+ *                                 inquiry is CANCELLED)
+ *                      max_resps - maximum amount of devices to search for
+ *                                  before ending the inquiry
+ *                      filter_cond_type - BTM_CLR_INQUIRY_FILTER,
+ *                                         BTM_FILTER_COND_DEVICE_CLASS, or
+ *                                         BTM_FILTER_COND_BD_ADDR
+ *                      filter_cond - value for the filter (based on
+ *                                                          filter_cond_type)
+ *
+ *                  p_results_cb   - Pointer to the callback routine which gets
+ *                                called upon receipt of an inquiry result. If
+ *                                this field is NULL, the application is not
+ *                                notified.
+ *
+ *                  p_cmpl_cb   - Pointer to the callback routine which gets
+ *                                called upon completion.  If this field is
+ *                                NULL, the application is not notified when
+ *                                completed.
+ * Returns          tBTM_STATUS
+ *                  BTM_CMD_STARTED if successfully initiated
+ *                  BTM_BUSY if already in progress
+ *                  BTM_ILLEGAL_VALUE if parameter(s) are out of range
+ *                  BTM_NO_RESOURCES if could not allocate resources to start
+ *                                   the command
+ *                  BTM_WRONG_MODE if the device is not up.
+ *
+ ******************************************************************************/
+tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
+                                              tBTM_INQ_RESULTS_CB* p_results_cb,
+                                              tBTM_CMPL_CB* p_cmpl_cb) {
+  CHECK(p_inqparms != nullptr);
+  CHECK(p_results_cb != nullptr);
+  CHECK(p_cmpl_cb != nullptr);
+
+  uint8_t classic_mode = p_inqparms->mode & 0x0f;
+  // TODO(cmanton) Setup the LE portion too
+  uint8_t le_mode = p_inqparms->mode >> 4;
+
+  LOG_INFO(LOG_TAG, "%s Start inquiry mode classic:%hhd le:%hhd", __func__,
+           classic_mode, le_mode);
+
+  if (!shim_btm.SetInquiryFilter(classic_mode, p_inqparms->filter_cond_type,
+                                 p_inqparms->filter_cond)) {
+    LOG_WARN(LOG_TAG, "%s Unable to set inquiry filter", __func__);
+    return BTM_ERR_PROCESSING;
+  }
+
+  if (!shim_btm.StartInquiry(classic_mode, p_inqparms->duration,
+                             p_inqparms->max_resps)) {
+    LOG_WARN(LOG_TAG, "%s Unable to start inquiry", __func__);
+    return BTM_ERR_PROCESSING;
+  }
+  return BTM_CMD_STARTED;
+}
+
+/*******************************************************************************
+ *
+ * Function         BTM_SetPeriodicInquiryMode
+ *
+ * Description      This function is called to set the device periodic inquiry
+ *                  mode. If the duration is zero, the periodic inquiry mode is
+ *                  cancelled.
+ *
+ *                  Note: We currently do not allow concurrent inquiry and
+ *                  periodic inquiry.
+ *
+ * Parameters:      p_inqparms - pointer to the inquiry information
+ *                      mode - GENERAL or LIMITED inquiry
+ *                      duration - length in 1.28 sec intervals (If '0', the
+ *                                 inquiry is CANCELLED)
+ *                      max_resps - maximum amount of devices to search for
+ *                                  before ending the inquiry
+ *                      filter_cond_type - BTM_CLR_INQUIRY_FILTER,
+ *                                         BTM_FILTER_COND_DEVICE_CLASS, or
+ *                                         BTM_FILTER_COND_BD_ADDR
+ *                      filter_cond - value for the filter (based on
+ *                                                          filter_cond_type)
+ *
+ *                  max_delay - maximum amount of time between successive
+ *                              inquiries
+ *                  min_delay - minimum amount of time between successive
+ *                              inquiries
+ *                  p_results_cb - callback returning pointer to results
+ *                              (tBTM_INQ_RESULTS)
+ *
+ * Returns          BTM_CMD_STARTED if successfully started
+ *                  BTM_ILLEGAL_VALUE if a bad parameter is detected
+ *                  BTM_NO_RESOURCES if could not allocate a message buffer
+ *                  BTM_SUCCESS - if cancelling the periodic inquiry
+ *                  BTM_BUSY - if an inquiry is already active
+ *                  BTM_WRONG_MODE if the device is not up.
+ *
+ ******************************************************************************/
+tBTM_STATUS bluetooth::shim::BTM_SetPeriodicInquiryMode(
+    tBTM_INQ_PARMS* p_inqparms, uint16_t max_delay, uint16_t min_delay,
+    tBTM_INQ_RESULTS_CB* p_results_cb) {
+  CHECK(p_inqparms != nullptr);
+  CHECK(p_results_cb != nullptr);
+
+  if (p_inqparms->duration < BTM_MIN_INQUIRY_LEN ||
+      p_inqparms->duration > BTM_MAX_INQUIRY_LENGTH ||
+      min_delay <= p_inqparms->duration ||
+      min_delay < BTM_PER_INQ_MIN_MIN_PERIOD ||
+      min_delay > BTM_PER_INQ_MAX_MIN_PERIOD || max_delay <= min_delay ||
+      max_delay < BTM_PER_INQ_MIN_MAX_PERIOD) {
+    return (BTM_ILLEGAL_VALUE);
+  }
+
+  if (shim_btm.IsInquiryActive()) {
+    return BTM_BUSY;
+  }
+
+  switch (p_inqparms->filter_cond_type) {
+    case kClearInquiryFilter:
+      shim_btm.ClearInquiryFilter();
+      return BTM_SUCCESS;
+      break;
+    case kFilterOnDeviceClass:
+      shim_btm.SetFilterInquiryOnDevice();
+      return BTM_SUCCESS;
+      break;
+    case kFilterOnAddress:
+      shim_btm.SetFilterInquiryOnAddress();
+      return BTM_SUCCESS;
+      break;
+    default:
+      return BTM_ILLEGAL_VALUE;
+  }
+  return BTM_MODE_UNSUPPORTED;
+}
+
+/*******************************************************************************
+ *
  * Function         BTM_SetDiscoverability
  *
  * Description      This function is called to set the device into or out of
@@ -92,17 +233,12 @@ tBTM_STATUS bluetooth::shim::BTM_SetDiscoverability(uint16_t discoverable_mode,
 tBTM_STATUS bluetooth::shim::BTM_SetInquiryScanType(uint16_t scan_type) {
   switch (scan_type) {
     case kInterlacedScanType:
-      if (!shim_btm.IsInterlacedScanSupported()) {
-        return BTM_MODE_UNSUPPORTED;
-      }
-      if (shim_btm.SetInterlacedInquiryScan()) {
-        return BTM_SUCCESS;
-      }
+      shim_btm.SetInterlacedInquiryScan();
+      return BTM_SUCCESS;
       break;
     case kStandardScanType:
-      if (shim_btm.SetStandardInquiryScan()) {
-        return BTM_SUCCESS;
-      }
+      shim_btm.SetStandardInquiryScan();
+      return BTM_SUCCESS;
       break;
     default:
       return BTM_ILLEGAL_VALUE;
@@ -128,14 +264,12 @@ tBTM_STATUS bluetooth::shim::BTM_SetPageScanType(uint16_t scan_type) {
       if (!shim_btm.IsInterlacedScanSupported()) {
         return BTM_MODE_UNSUPPORTED;
       }
-      if (shim_btm.SetInterlacedPageScan()) {
-        return BTM_SUCCESS;
-      }
+      shim_btm.SetInterlacedPageScan();
+      return BTM_SUCCESS;
       break;
     case kStandardScanType:
-      if (shim_btm.SetStandardPageScan()) {
-        return BTM_SUCCESS;
-      }
+      shim_btm.SetStandardPageScan();
+      return BTM_SUCCESS;
       break;
     default:
       return BTM_ILLEGAL_VALUE;
@@ -161,17 +295,17 @@ tBTM_STATUS bluetooth::shim::BTM_SetPageScanType(uint16_t scan_type) {
 tBTM_STATUS bluetooth::shim::BTM_SetInquiryMode(uint8_t inquiry_mode) {
   switch (inquiry_mode) {
     case kStandardInquiryResult:
-      if (shim_btm.SetStandardInquiryMode()) {
+      if (shim_btm.SetStandardInquiryResultMode()) {
         return BTM_SUCCESS;
       }
       break;
     case kInquiryResultWithRssi:
-      if (shim_btm.SetInquiryModeWithRssi()) {
+      if (shim_btm.SetInquiryWithRssiResultMode()) {
         return BTM_SUCCESS;
       }
       break;
     case kExtendedInquiryResult:
-      if (shim_btm.SetExtendedInquiryMode()) {
+      if (shim_btm.SetExtendedInquiryResultMode()) {
         return BTM_SUCCESS;
       }
       break;
@@ -199,89 +333,10 @@ uint16_t bluetooth::shim::BTM_ReadDiscoverability(uint16_t* p_window,
                                                   uint16_t* p_interval) {
   DiscoverabilityState state = shim_btm.GetClassicDiscoverabilityState();
 
-  if (p_window) *p_window = state.window;
   if (p_interval) *p_interval = state.interval;
+  if (p_window) *p_window = state.window;
 
   return state.mode;
-}
-
-/*******************************************************************************
- *
- * Function         BTM_SetPeriodicInquiryMode
- *
- * Description      This function is called to set the device periodic inquiry
- *                  mode. If the duration is zero, the periodic inquiry mode is
- *                  cancelled.
- *
- *                  Note: We currently do not allow concurrent inquiry and
- *                  periodic inquiry.
- *
- * Parameters:      p_inqparms - pointer to the inquiry information
- *                      mode - GENERAL or LIMITED inquiry
- *                      duration - length in 1.28 sec intervals (If '0', the
- *                                 inquiry is CANCELLED)
- *                      max_resps - maximum amount of devices to search for
- *                                  before ending the inquiry
- *                      filter_cond_type - BTM_CLR_INQUIRY_FILTER,
- *                                         BTM_FILTER_COND_DEVICE_CLASS, or
- *                                         BTM_FILTER_COND_BD_ADDR
- *                      filter_cond - value for the filter (based on
- *                                                          filter_cond_type)
- *
- *                  max_delay - maximum amount of time between successive
- *                              inquiries
- *                  min_delay - minimum amount of time between successive
- *                              inquiries
- *                  p_results_cb - callback returning pointer to results
- *                              (tBTM_INQ_RESULTS)
- *
- * Returns          BTM_CMD_STARTED if successfully started
- *                  BTM_ILLEGAL_VALUE if a bad parameter is detected
- *                  BTM_NO_RESOURCES if could not allocate a message buffer
- *                  BTM_SUCCESS - if cancelling the periodic inquiry
- *                  BTM_BUSY - if an inquiry is already active
- *                  BTM_WRONG_MODE if the device is not up.
- *
- ******************************************************************************/
-tBTM_STATUS bluetooth::shim::BTM_SetPeriodicInquiryMode(
-    tBTM_INQ_PARMS* p_inqparms, uint16_t max_delay, uint16_t min_delay,
-    tBTM_INQ_RESULTS_CB* p_results_cb) {
-  CHECK(p_inqparms != nullptr);
-  CHECK(p_results_cb != nullptr);
-
-  if (p_inqparms->duration < BTM_MIN_INQUIRY_LEN ||
-      p_inqparms->duration > BTM_MAX_INQUIRY_LENGTH ||
-      min_delay <= p_inqparms->duration ||
-      min_delay < BTM_PER_INQ_MIN_MIN_PERIOD ||
-      min_delay > BTM_PER_INQ_MAX_MIN_PERIOD || max_delay <= min_delay ||
-      max_delay < BTM_PER_INQ_MIN_MAX_PERIOD) {
-    return (BTM_ILLEGAL_VALUE);
-  }
-
-  if (shim_btm.IsInquiryActive()) {
-    return BTM_BUSY;
-  }
-
-  switch (p_inqparms->filter_cond_type) {
-    case kClearInquiryFilter:
-      if (shim_btm.ClearInquiryFilter()) {
-        return BTM_SUCCESS;
-      }
-      break;
-    case kFilterOnDeviceClass:
-      if (shim_btm.SetFilterInquiryOnDevice()) {
-        return BTM_SUCCESS;
-      }
-      break;
-    case kFilterOnAddress:
-      if (shim_btm.SetFilterInquiryOnAddress()) {
-        return BTM_SUCCESS;
-      }
-      break;
-    default:
-      return BTM_ILLEGAL_VALUE;
-  }
-  return BTM_MODE_UNSUPPORTED;
 }
 
 /*******************************************************************************
@@ -364,7 +419,7 @@ tBTM_STATUS bluetooth::shim::BTM_SetConnectability(uint16_t page_mode,
  ******************************************************************************/
 uint16_t bluetooth::shim::BTM_ReadConnectability(uint16_t* p_window,
                                                  uint16_t* p_interval) {
-  ConnectibilityState state = shim_btm.GetClassicConnectibilityState();
+  ConnectabilityState state = shim_btm.GetClassicConnectabilityState();
 
   if (p_window) *p_window = state.window;
   if (p_interval) *p_interval = state.interval;
@@ -406,60 +461,8 @@ uint16_t bluetooth::shim::BTM_IsInquiryActive(void) {
  *
  ******************************************************************************/
 tBTM_STATUS bluetooth::shim::BTM_CancelInquiry(void) {
-  if (shim_btm.CancelPeriodicInquiry()) {
-    return BTM_SUCCESS;
-  }
-  return BTM_WRONG_MODE;
-}
-
-/*******************************************************************************
- *
- * Function         BTM_StartInquiry
- *
- * Description      This function is called to start an inquiry.
- *
- * Parameters:      p_inqparms - pointer to the inquiry information
- *                      mode - GENERAL or LIMITED inquiry, BR/LE bit mask
- *                             seperately
- *                      duration - length in 1.28 sec intervals (If '0', the
- *                                 inquiry is CANCELLED)
- *                      max_resps - maximum amount of devices to search for
- *                                  before ending the inquiry
- *                      filter_cond_type - BTM_CLR_INQUIRY_FILTER,
- *                                         BTM_FILTER_COND_DEVICE_CLASS, or
- *                                         BTM_FILTER_COND_BD_ADDR
- *                      filter_cond - value for the filter (based on
- *                                                          filter_cond_type)
- *
- *                  p_results_cb   - Pointer to the callback routine which gets
- *                                called upon receipt of an inquiry result. If
- *                                this field is NULL, the application is not
- *                                notified.
- *
- *                  p_cmpl_cb   - Pointer to the callback routine which gets
- *                                called upon completion.  If this field is
- *                                NULL, the application is not notified when
- *                                completed.
- * Returns          tBTM_STATUS
- *                  BTM_CMD_STARTED if successfully initiated
- *                  BTM_BUSY if already in progress
- *                  BTM_ILLEGAL_VALUE if parameter(s) are out of range
- *                  BTM_NO_RESOURCES if could not allocate resources to start
- *                                   the command
- *                  BTM_WRONG_MODE if the device is not up.
- *
- ******************************************************************************/
-tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
-                                              tBTM_INQ_RESULTS_CB* p_results_cb,
-                                              tBTM_CMPL_CB* p_cmpl_cb) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
-  CHECK(p_inqparms != nullptr);
-  CHECK(p_results_cb != nullptr);
-  CHECK(p_cmpl_cb != nullptr);
-  if (shim_btm.StartInquiry()) {
-    return BTM_SUCCESS;
-  }
-  return BTM_WRONG_MODE;
+  shim_btm.CancelInquiry();
+  return BTM_SUCCESS;
 }
 
 /*******************************************************************************
@@ -488,9 +491,14 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
  ******************************************************************************/
 tBTM_STATUS bluetooth::shim::BTM_ReadRemoteDeviceName(
     const RawAddress& remote_bda, tBTM_CMPL_CB* p_cb, tBT_TRANSPORT transport) {
+  if (transport == BT_TRANSPORT_LE) {
+    LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+    return BTM_NO_RESOURCES;
+  }
+
   LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
-  CHECK(p_cb != nullptr);
   return BTM_NO_RESOURCES;
+  CHECK(p_cb != nullptr);
 }
 
 /*******************************************************************************
@@ -584,7 +592,11 @@ tBTM_INQ_INFO* bluetooth::shim::BTM_InqDbNext(tBTM_INQ_INFO* p_cur) {
  ******************************************************************************/
 tBTM_STATUS bluetooth::shim::BTM_ClearInqDb(const RawAddress* p_bda) {
   LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
-  CHECK(p_bda != nullptr);
+  if (p_bda == nullptr) {
+    // clear all entries
+  } else {
+    // clear specific entry
+  }
   return BTM_NO_RESOURCES;
 }
 
@@ -1317,4 +1329,74 @@ bool bluetooth::shim::BTM_BleSecurityProcedureIsRunning(
 uint8_t bluetooth::shim::BTM_BleGetSupportedKeySize(const RawAddress& bd_addr) {
   LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
   return 0;
+}
+
+/**
+ * This function update(add,delete or clear) the adv local name filtering
+ * condition.
+ */
+void bluetooth::shim::BTM_LE_PF_local_name(tBTM_BLE_SCAN_COND_OP action,
+                                           tBTM_BLE_PF_FILT_INDEX filt_index,
+                                           std::vector<uint8_t> name,
+                                           tBTM_BLE_PF_CFG_CBACK cb) {
+  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+}
+
+void bluetooth::shim::BTM_LE_PF_srvc_data(tBTM_BLE_SCAN_COND_OP action,
+                                          tBTM_BLE_PF_FILT_INDEX filt_index) {
+  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+}
+
+void bluetooth::shim::BTM_LE_PF_manu_data(
+    tBTM_BLE_SCAN_COND_OP action, tBTM_BLE_PF_FILT_INDEX filt_index,
+    uint16_t company_id, uint16_t company_id_mask, std::vector<uint8_t> data,
+    std::vector<uint8_t> data_mask, tBTM_BLE_PF_CFG_CBACK cb) {
+  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+}
+
+void bluetooth::shim::BTM_LE_PF_srvc_data_pattern(
+    tBTM_BLE_SCAN_COND_OP action, tBTM_BLE_PF_FILT_INDEX filt_index,
+    std::vector<uint8_t> data, std::vector<uint8_t> data_mask,
+    tBTM_BLE_PF_CFG_CBACK cb) {
+  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+}
+
+void bluetooth::shim::BTM_LE_PF_addr_filter(tBTM_BLE_SCAN_COND_OP action,
+                                            tBTM_BLE_PF_FILT_INDEX filt_index,
+                                            tBLE_BD_ADDR addr,
+                                            tBTM_BLE_PF_CFG_CBACK cb) {
+  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+}
+
+void bluetooth::shim::BTM_LE_PF_uuid_filter(tBTM_BLE_SCAN_COND_OP action,
+                                            tBTM_BLE_PF_FILT_INDEX filt_index,
+                                            tBTM_BLE_PF_COND_TYPE filter_type,
+                                            const bluetooth::Uuid& uuid,
+                                            tBTM_BLE_PF_LOGIC_TYPE cond_logic,
+                                            const bluetooth::Uuid& uuid_mask,
+                                            tBTM_BLE_PF_CFG_CBACK cb) {
+  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+}
+
+void bluetooth::shim::BTM_LE_PF_set(tBTM_BLE_PF_FILT_INDEX filt_index,
+                                    std::vector<ApcfCommand> commands,
+                                    tBTM_BLE_PF_CFG_CBACK cb) {
+  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+}
+
+void bluetooth::shim::BTM_LE_PF_clear(tBTM_BLE_PF_FILT_INDEX filt_index,
+                                      tBTM_BLE_PF_CFG_CBACK cb) {
+  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+}
+
+void bluetooth::shim::BTM_BleAdvFilterParamSetup(
+    int action, tBTM_BLE_PF_FILT_INDEX filt_index,
+    std::unique_ptr<btgatt_filt_param_setup_t> p_filt_params,
+    tBTM_BLE_PF_PARAM_CB cb) {
+  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+}
+
+void bluetooth::shim::BTM_BleEnableDisableFilterFeature(
+    uint8_t enable, tBTM_BLE_PF_STATUS_CBACK p_stat_cback) {
+  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
 }

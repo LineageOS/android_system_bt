@@ -14,17 +14,14 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "classic"
-
 #include "classic.h"
 #include "model/setup/device_boutique.h"
-#include "osi/include/log.h"
 
 using std::vector;
 
 namespace test_vendor_lib {
 
-bool Classic::registered_ = DeviceBoutique::Register(LOG_TAG, &Classic::Create);
+bool Classic::registered_ = DeviceBoutique::Register("classic", &Classic::Create);
 
 Classic::Classic() {
   advertising_interval_ms_ = std::chrono::milliseconds(0);

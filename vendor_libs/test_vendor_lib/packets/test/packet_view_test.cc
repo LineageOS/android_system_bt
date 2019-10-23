@@ -58,7 +58,9 @@ class IteratorTest : public ::testing::Test {
     packet = std::shared_ptr<T>(new T({View(std::make_shared<const vector<uint8_t>>(count_all), 0, count_all.size())}));
   }
 
-  void TearDown() override { packet.reset(); }
+  void TearDown() override {
+    packet.reset();
+  }
 
   std::shared_ptr<T> packet;
 };

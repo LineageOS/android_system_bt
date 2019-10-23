@@ -24,14 +24,22 @@ namespace bluetooth {
 namespace shim {
 
 struct IController;
+struct IConnectability;
+struct IDiscoverability;
 struct IHciLayer;
+struct IInquiry;
+struct IPage;
 
 struct IStack {
   virtual void Start() = 0;
   virtual void Stop() = 0;
 
   virtual IController* GetController() = 0;
+  virtual IConnectability* GetConnectability() = 0;
+  virtual IDiscoverability* GetDiscoverability() = 0;
   virtual IHciLayer* GetHciLayer() = 0;
+  virtual IInquiry* GetInquiry() = 0;
+  virtual IPage* GetPage() = 0;
 
   virtual ~IStack() {}
 };

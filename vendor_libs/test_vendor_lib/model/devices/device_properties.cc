@@ -14,19 +14,16 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "device_properties"
-
 #include "device_properties.h"
 
 #include <memory>
 
-#include <base/logging.h>
 #include "base/files/file_util.h"
 #include "base/json/json_reader.h"
 #include "base/values.h"
 
 #include "hci.h"
-#include "osi/include/log.h"
+#include "os/log.h"
 #include "osi/include/osi.h"
 
 using std::vector;
@@ -54,8 +51,8 @@ DeviceProperties::DeviceProperties(const std::string& file_name)
       le_data_packet_length_(27), num_le_data_packets_(15), le_white_list_size_(15) {
   std::string properties_raw;
 
-  CHECK(Address::FromString("BB:BB:BB:BB:BB:AD", address_));
-  CHECK(Address::FromString("BB:BB:BB:BB:AD:1E", le_address_));
+  ASSERT(Address::FromString("BB:BB:BB:BB:BB:AD", address_));
+  ASSERT(Address::FromString("BB:BB:BB:BB:AD:1E", le_address_));
   name_ = {'D', 'e', 'f', 'a', 'u', 'l', 't'};
 
   supported_codecs_ = {0};  // Only SBC is supported.
@@ -73,15 +70,14 @@ DeviceProperties::DeviceProperties(const std::string& file_name)
   if (file_name.size() == 0) {
     return;
   }
-  LOG_INFO(LOG_TAG, "Reading controller properties from %s.", file_name.c_str());
+  LOG_INFO("Reading controller properties from %s.", file_name.c_str());
   if (!base::ReadFileToString(base::FilePath(file_name), &properties_raw)) {
-    LOG_ERROR(LOG_TAG, "Error reading controller properties from file.");
+    LOG_ERROR("Error reading controller properties from file.");
     return;
   }
 
   std::unique_ptr<base::Value> properties_value_ptr = base::JSONReader::Read(properties_raw);
-  if (properties_value_ptr.get() == nullptr)
-    LOG_INFO(LOG_TAG, "Error controller properties may consist of ill-formed JSON.");
+  if (properties_value_ptr.get() == nullptr) LOG_INFO("Error controller properties may consist of ill-formed JSON.");
 
   // Get the underlying base::Value object, which is of type
   // base::Value::TYPE_DICTIONARY, and read it into member variables.
@@ -89,7 +85,7 @@ DeviceProperties::DeviceProperties(const std::string& file_name)
   base::JSONValueConverter<DeviceProperties> converter;
 
   if (!converter.Convert(properties_dictionary, this))
-    LOG_INFO(LOG_TAG, "Error converting JSON properties into Properties object.");
+    LOG_INFO("Error converting JSON properties into Properties object.");
 }
 
 // static
