@@ -37,10 +37,9 @@ void yyset_in(FILE*, void*);
 
 namespace {
 
-const std::string kBluetoothTopNamespace = "bluetooth";
-
-void parse_namespace(std::filesystem::path input_file_relative_path, std::vector<std::string>& token) {
-  std::filesystem::path gen_namespace = kBluetoothTopNamespace / input_file_relative_path;
+void parse_namespace(std::string root_namespace, std::filesystem::path input_file_relative_path,
+                     std::vector<std::string>& token) {
+  std::filesystem::path gen_namespace = root_namespace / input_file_relative_path;
   std::string gen_namespace_str = gen_namespace;
   std::regex path_tokenizer("/");
   auto it = std::sregex_token_iterator(gen_namespace_str.cbegin(), gen_namespace_str.cend(), path_tokenizer, -1);
@@ -62,8 +61,8 @@ void generate_namespace_close(const std::vector<std::string>& token, std::ostrea
   }
 }
 
-bool parse_one_file(std::filesystem::path input_file, std::filesystem::path include_dir,
-                    std::filesystem::path out_dir) {
+bool parse_one_file(std::filesystem::path input_file, std::filesystem::path include_dir, std::filesystem::path out_dir,
+                    std::string root_namespace) {
   auto gen_relative_path = input_file.lexically_relative(include_dir).parent_path();
 
   auto input_filename = input_file.filename().string().substr(0, input_file.filename().string().find(".pdl"));
@@ -128,7 +127,7 @@ bool parse_one_file(std::filesystem::path input_file, std::filesystem::path incl
   out_file << "\n\n";
 
   std::vector<std::string> namespace_list;
-  parse_namespace(gen_relative_path, namespace_list);
+  parse_namespace(root_namespace, gen_relative_path, namespace_list);
   generate_namespace_open(namespace_list, out_file);
   out_file << "\n\n";
 
@@ -222,29 +221,31 @@ extern "C" const char* __asan_default_options() {
 int main(int argc, const char** argv) {
   std::filesystem::path out_dir;
   std::filesystem::path include_dir;
+  std::string root_namespace = "bluetooth";
   std::queue<std::filesystem::path> input_files;
   const std::string arg_out = "--out=";
   const std::string arg_include = "--include=";
+  const std::string arg_namespace = "--root_namespace=";
 
   for (int i = 1; i < argc; i++) {
     std::string arg = argv[i];
     if (arg.find(arg_out) == 0) {
-      auto out_path = std::filesystem::path(arg.substr(arg_out.size()));
       out_dir = std::filesystem::current_path() / std::filesystem::path(arg.substr(arg_out.size()));
     } else if (arg.find(arg_include) == 0) {
-      auto include_path = std::filesystem::path(arg.substr(arg_out.size()));
       include_dir = std::filesystem::current_path() / std::filesystem::path(arg.substr(arg_include.size()));
+    } else if (arg.find(arg_namespace) == 0) {
+      root_namespace = arg.substr(arg_namespace.size());
     } else {
       input_files.emplace(std::filesystem::current_path() / std::filesystem::path(arg));
     }
   }
   if (out_dir == std::filesystem::path() || include_dir == std::filesystem::path()) {
-    std::cerr << "Usage: bt-packetgen --out=OUT --include=INCLUDE input_files..." << std::endl;
+    std::cerr << "Usage: bt-packetgen --out=OUT --include=INCLUDE --root=NAMESPACE input_files..." << std::endl;
     return 1;
   }
 
   while (!input_files.empty()) {
-    if (!parse_one_file(input_files.front(), include_dir, out_dir)) {
+    if (!parse_one_file(input_files.front(), include_dir, out_dir, root_namespace)) {
       std::cerr << "Didn't parse " << input_files.front() << " correctly" << std::endl;
       return 2;
     }
