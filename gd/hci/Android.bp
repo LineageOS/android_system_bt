@@ -43,3 +43,10 @@ filegroup {
         "cert/cert.cc",
     ],
 }
+
+filegroup {
+    name: "BluetoothHciFuzzTestSources",
+    srcs: [
+        "hci_packets_fuzz_test.cc",
+    ],
+}

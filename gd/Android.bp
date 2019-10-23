@@ -293,6 +293,7 @@ cc_fuzz {
   defaults: ["gd_defaults"],
   srcs: [
     "fuzz_test.cc",
+    ":BluetoothHciFuzzTestSources",
     ":BluetoothL2capFuzzTestSources",
   ],
   static_libs: [
