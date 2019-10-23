@@ -341,7 +341,7 @@ void PacketDef::GenTestDefine(std::ostream& s) const {
 
 void PacketDef::GenFuzzTestDefine(std::ostream& s) const {
   s << "#ifdef PACKET_FUZZ_TESTING\n";
-  s << "#define DEFINE_" << name_ << "ReflectionFuzzTest ";
+  s << "#define DEFINE_AND_REGISTER_" << name_ << "ReflectionFuzzTest(REGISTRY) ";
   s << "void Run" << name_ << "ReflectionFuzzTest(const uint8_t* data, size_t size) {";
   s << "auto vec = std::make_shared<std::vector<uint8_t>>(data, data + size);";
   s << name_ << "View view = " << name_ << "View::Create(";
@@ -374,6 +374,13 @@ void PacketDef::GenFuzzTestDefine(std::ostream& s) const {
   s << "BitInserter it(*packet_bytes);";
   s << "packet->Serialize(it);";
   s << "}";
+  s << " class " << name_ << "ReflectionFuzzTestRegistrant {";
+  s << "public: ";
+  s << "explicit " << name_
+    << "ReflectionFuzzTestRegistrant(std::vector<void(*)(const uint8_t*, size_t)>& fuzz_test_registry) {";
+  s << "fuzz_test_registry.push_back(Run" << name_ << "ReflectionFuzzTest);";
+  s << "}}; ";
+  s << name_ << "ReflectionFuzzTestRegistrant " << name_ << "_reflection_fuzz_test_registrant(REGISTRY);";
   s << "\n#endif";
 }
 
