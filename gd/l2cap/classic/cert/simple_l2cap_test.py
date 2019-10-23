@@ -89,6 +89,8 @@ class SimpleL2capTest(GdBaseTestClass):
 
         dut_packet_stream.subscribe()
         cert_packet_stream.subscribe()
+        self.cert_device.l2cap.SendConfigurationRequest(l2cap_cert_pb2.ConfigurationRequest())
+
         self.cert_device.l2cap.SendL2capPacket(l2cap_facade_pb2.L2capPacket(channel=2, payload=b"abc"))
         dut_packet_stream.assert_event_occurs(
             lambda packet: b"abc" in packet.payload
