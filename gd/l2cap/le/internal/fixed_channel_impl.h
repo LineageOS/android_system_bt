@@ -35,7 +35,7 @@ class FixedChannelImpl {
 
   virtual ~FixedChannelImpl() = default;
 
-  hci::Address GetDevice() const {
+  hci::AddressWithType GetDevice() const {
     return device_;
   }
 
@@ -70,7 +70,7 @@ class FixedChannelImpl {
   // For logging purpose only
   const Cid cid_;
   // For logging purpose only
-  const hci::Address device_;
+  const hci::AddressWithType device_;
   // Needed to handle Acquire() and Release()
   Link* link_;
   os::Handler* l2cap_handler_;
