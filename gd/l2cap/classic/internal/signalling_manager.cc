@@ -152,7 +152,7 @@ void ClassicSignallingManager::OnConnectionResponse(SignalId signal_id, Cid cid,
     return;
   }
   if (pending_command_.source_cid_ != cid) {
-    LOG_WARN("SCID doesn't match");
+    LOG_WARN("SCID doesn't match: expected %d, received %d", pending_command_.source_cid_, cid);
     return;
   }
   if (result != ConnectionResponseResult::SUCCESS) {
@@ -160,13 +160,11 @@ void ClassicSignallingManager::OnConnectionResponse(SignalId signal_id, Cid cid,
   }
   Psm pending_psm = pending_command_.psm_;
   pending_command_ = {};
-  auto new_channel = link_->AllocateDynamicChannel(pending_psm, remote_cid, {});
+  auto new_channel = link_->AllocateReservedDynamicChannel(cid, pending_psm, remote_cid, {});
   if (new_channel == nullptr) {
     LOG_WARN("Can't allocate dynamic channel");
     return;
   }
-  send_connection_response(signal_id, remote_cid, new_channel->GetCid(), ConnectionResponseResult::SUCCESS,
-                           ConnectionResponseStatus::NO_FURTHER_INFORMATION_AVAILABLE);
   std::unique_ptr<DynamicChannel> channel = std::make_unique<DynamicChannel>(new_channel, handler_);
   dynamic_service_manager_->GetService(pending_psm)->NotifyChannelCreation(std::move(channel));
   SendConfigurationRequest(remote_cid, {});

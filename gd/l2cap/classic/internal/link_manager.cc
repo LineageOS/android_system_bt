@@ -85,11 +85,13 @@ void LinkManager::ConnectFixedChannelServices(hci::Address device,
 void LinkManager::ConnectDynamicChannelServices(hci::Address device,
                                                 PendingDynamicChannelConnection pending_dynamic_channel_connection,
                                                 Psm psm) {
-  // TODO: if there is no link, establish link. Otherwise send command.
   auto* link = GetLink(device);
-  if (link != nullptr) {
+  if (link == nullptr) {
+    acl_manager_->CreateConnection(device);
+    // TODO: Resume the channel connection after link is established
     return;
   }
+  link->SendConnectionRequest(psm, link->ReserveDynamicChannel());
 }
 
 Link* LinkManager::GetLink(const hci::Address device) {

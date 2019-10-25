@@ -26,6 +26,7 @@
 #include "grpc/grpc_event_stream.h"
 #include "hci/acl_manager.h"
 #include "hci/cert/cert.h"
+#include "hci/hci_packets.h"
 #include "l2cap/classic/cert/api.grpc.pb.h"
 #include "l2cap/classic/l2cap_classic_module.h"
 #include "l2cap/l2cap_packets.h"
@@ -74,6 +75,16 @@ class L2capModuleCertService : public L2capModuleCert::Service {
     return connection_complete_stream_.HandleRequest(context, request, writer);
   }
 
+  ::grpc::Status SetOnIncomingConnectionRequest(
+      ::grpc::ServerContext* context,
+      const ::bluetooth::l2cap::classic::cert::SetOnIncomingConnectionRequestRequest* request,
+      ::bluetooth::l2cap::classic::cert::SetOnIncomingConnectionRequestResponse* response) override {
+    accept_incoming_connection_ = request->accept();
+    return ::grpc::Status::OK;
+  }
+
+  bool accept_incoming_connection_ = true;
+
   ::grpc::Status SendL2capPacket(::grpc::ServerContext* context, const L2capPacket* request,
                                  ::google::protobuf::Empty* response) override {
     std::unique_ptr<RawBuilder> packet = std::make_unique<RawBuilder>();
@@ -90,7 +101,7 @@ class L2capModuleCertService : public L2capModuleCert::Service {
 
   ::grpc::Status SendConnectionRequest(::grpc::ServerContext* context, const cert::ConnectionRequest* request,
                                        ::google::protobuf::Empty* response) override {
-    auto builder = ConnectionRequestBuilder::Create(1, 1, 101);
+    auto builder = ConnectionRequestBuilder::Create(1, 1, request->scid());
     auto l2cap_builder = BasicFrameBuilder::Create(1, std::move(builder));
     outgoing_packet_queue_.push(std::move(l2cap_builder));
     if (outgoing_packet_queue_.size() == 1) {
@@ -104,7 +115,7 @@ class L2capModuleCertService : public L2capModuleCert::Service {
   ::grpc::Status SendConfigurationRequest(
       ::grpc::ServerContext* context, const ::bluetooth::l2cap::classic::cert::ConfigurationRequest* request,
       ::bluetooth::l2cap::classic::cert::SendConfigurationRequestResult* response) override {
-    auto builder = ConfigurationRequestBuilder::Create(1, 0x40, Continuation::END, {});
+    auto builder = ConfigurationRequestBuilder::Create(1, request->scid(), Continuation::END, {});
     auto l2cap_builder = BasicFrameBuilder::Create(1, std::move(builder));
     outgoing_packet_queue_.push(std::move(l2cap_builder));
     if (outgoing_packet_queue_.size() == 1) {
@@ -126,6 +137,14 @@ class L2capModuleCertService : public L2capModuleCert::Service {
 
     return ::grpc::Status::OK;
   }
+
+  ::grpc::Status FetchOpenedChannels(
+      ::grpc::ServerContext* context, const ::bluetooth::l2cap::classic::cert::FetchOpenedChannelsRequest* request,
+      ::bluetooth::l2cap::classic::cert::FetchOpenedChannelsResponse* response) override {
+    response->mutable_cid()->Add(open_channels_.begin(), open_channels_.end());
+    return ::grpc::Status::OK;
+  }
+  std::vector<uint16_t> open_channels_;
 
   std::unique_ptr<packet::BasePacketBuilder> enqueue_packet_to_acl() {
     auto basic_frame_builder = std::move(outgoing_packet_queue_.front());
@@ -159,6 +178,58 @@ class L2capModuleCertService : public L2capModuleCert::Service {
     l2cap_packet.set_payload(data);
     l2cap_packet.set_channel(basic_frame_view.GetChannelId());
     l2cap_stream_.OnIncomingEvent(l2cap_packet);
+
+    if (basic_frame_view.GetChannelId() == kClassicSignallingCid) {
+      ControlView control_view = ControlView::Create(basic_frame_view.GetPayload());
+      ASSERT(control_view.IsValid());
+      handle_signalling_packet(control_view);
+    }
+  }
+
+  void handle_signalling_packet(ControlView control_view) {
+    auto code = control_view.GetCode();
+    switch (code) {
+      case CommandCode::CONNECTION_REQUEST: {
+        ConnectionRequestView view = ConnectionRequestView::Create(control_view);
+        ASSERT(view.IsValid());
+        open_channels_.push_back(view.GetSourceCid());
+        auto builder = ConnectionResponseBuilder::Create(
+            view.GetIdentifier(), view.GetSourceCid(), view.GetSourceCid(),
+            accept_incoming_connection_ ? ConnectionResponseResult::SUCCESS : ConnectionResponseResult::INVALID_CID,
+            ConnectionResponseStatus::NO_FURTHER_INFORMATION_AVAILABLE);
+        auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
+        outgoing_packet_queue_.push(std::move(l2cap_builder));
+        if (outgoing_packet_queue_.size() == 1) {
+          acl_connection_->GetAclQueueEnd()->RegisterEnqueue(
+              handler_, common::Bind(&L2capModuleCertService::enqueue_packet_to_acl, common::Unretained(this)));
+        }
+
+        break;
+      }
+      case CommandCode::CONNECTION_RESPONSE: {
+        ConnectionResponseView view = ConnectionResponseView::Create(control_view);
+        ASSERT(view.IsValid());
+        open_channels_.push_back(view.GetSourceCid());
+        break;
+      }
+
+      case CommandCode::CONFIGURATION_REQUEST: {
+        ConfigurationRequestView view = ConfigurationRequestView::Create(control_view);
+        ASSERT(view.IsValid());
+        auto builder =
+            ConfigurationResponseBuilder::Create(view.GetIdentifier(), view.GetDestinationCid(), Continuation::END,
+                                                 ConfigurationResponseResult::SUCCESS, {});
+        auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
+        outgoing_packet_queue_.push(std::move(l2cap_builder));
+        if (outgoing_packet_queue_.size() == 1) {
+          acl_connection_->GetAclQueueEnd()->RegisterEnqueue(
+              handler_, common::Bind(&L2capModuleCertService::enqueue_packet_to_acl, common::Unretained(this)));
+        }
+        break;
+      }
+      default:
+        return;
+    }
   }
 
   std::queue<std::unique_ptr<BasePacketBuilder>> outgoing_packet_queue_;
@@ -177,12 +248,17 @@ class L2capModuleCertService : public L2capModuleCert::Service {
       module_->acl_connection_->RegisterDisconnectCallback(common::BindOnce([](hci::ErrorCode) {}), module_->handler_);
       module_->acl_connection_->GetAclQueueEnd()->RegisterDequeue(
           module_->handler_, common::Bind(&L2capModuleCertService::on_incoming_packet, common::Unretained(module_)));
+      dequeue_registered_ = true;
     }
     void OnConnectFail(hci::Address address, hci::ErrorCode reason) override {}
 
     ~AclCallbacks() {
-      module_->acl_connection_->GetAclQueueEnd()->UnregisterDequeue();
+      if (dequeue_registered_) {
+        module_->acl_connection_->GetAclQueueEnd()->UnregisterDequeue();
+      }
     }
+
+    bool dequeue_registered_ = false;
 
     L2capModuleCertService* module_;
   } acl_callbacks{this};
