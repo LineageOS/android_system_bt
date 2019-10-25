@@ -92,6 +92,9 @@ cc_library_static {
         "src/btif_util.cc",
         "src/stack_manager.cc",
     ],
+    header_libs: [
+        "libmedia_headers",
+    ],
     shared_libs: [
         "libaudioclient",
         "libcutils",
