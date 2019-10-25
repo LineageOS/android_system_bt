@@ -37,10 +37,7 @@ namespace bluetooth::hci {
  */
 class DeviceDatabase {
  public:
-  DeviceDatabase()
-      : classic_device_map_(*new std::map<std::string, std::shared_ptr<ClassicDevice>>),
-        le_device_map_(*new std::map<std::string, std::shared_ptr<LeDevice>>),
-        dual_device_map_(*new std::map<std::string, std::shared_ptr<DualDevice>>) {
+  DeviceDatabase() : classic_device_map_(), le_device_map_(), dual_device_map_() {
     if (!ReadFromDisk()) {
       LOG_WARN("First boot or missing data!");
     }
