@@ -220,7 +220,7 @@ void ClassicSignallingManager::OnEchoRequest(SignalId signal_id, const PacketVie
   std::vector<uint8_t> packet_vector{packet.begin(), packet.end()};
   auto raw_builder = std::make_unique<packet::RawBuilder>();
   raw_builder->AddOctets(packet_vector);
-  auto builder = EchoRequestBuilder::Create(signal_id.Value(), std::move(raw_builder));
+  auto builder = EchoResponseBuilder::Create(signal_id.Value(), std::move(raw_builder));
   enqueue_buffer_->Enqueue(std::move(builder), handler_);
 }
 
