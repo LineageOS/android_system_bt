@@ -26,6 +26,10 @@ hci::AddressWithType FixedChannel::GetDevice() const {
   return impl_->GetDevice();
 }
 
+hci::Role FixedChannel::GetRole() const {
+  return impl_->GetRole();
+}
+
 void FixedChannel::RegisterOnCloseCallback(os::Handler* user_handler, FixedChannel::OnCloseCallback on_close_callback) {
   l2cap_handler_->Post(common::BindOnce(&internal::FixedChannelImpl::RegisterOnCloseCallback, impl_, user_handler,
                                         std::move(on_close_callback)));
