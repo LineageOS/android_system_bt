@@ -89,6 +89,7 @@ class LinkManager : public hci::ConnectionCallbacks {
   // Internal states
   std::unordered_map<hci::Address, PendingLink> pending_links_;
   std::unordered_map<hci::Address, Link> links_;
+  std::unordered_map<hci::Address, std::list<Psm>> pending_dynamic_channels_;
   DISALLOW_COPY_AND_ASSIGN(LinkManager);
 };
 
