@@ -99,6 +99,13 @@ class AclConnection {
     return handle_;
   }
 
+  /* This return role for LE devices only, for Classic, please see |RoleDiscovery| method.
+   * TODO: split AclConnection for LE and Classic
+   */
+  Role GetRole() const {
+    return role_;
+  }
+
   using Queue = common::BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder>;
   using QueueUpEnd = common::BidiQueueEnd<BasePacketBuilder, PacketView<kLittleEndian>>;
   using QueueDownEnd = common::BidiQueueEnd<PacketView<kLittleEndian>, BasePacketBuilder>;
@@ -145,12 +152,13 @@ class AclConnection {
   friend AclManager;
   AclConnection(AclManager* manager, uint16_t handle, Address address)
       : manager_(manager), handle_(handle), address_(address) {}
-  AclConnection(AclManager* manager, uint16_t handle, Address address, AddressType address_type)
-      : manager_(manager), handle_(handle), address_(address), address_type_(address_type) {}
+  AclConnection(AclManager* manager, uint16_t handle, Address address, AddressType address_type, Role role)
+      : manager_(manager), handle_(handle), address_(address), address_type_(address_type), role_(role) {}
   AclManager* manager_;
   uint16_t handle_;
   Address address_;
   AddressType address_type_;
+  Role role_;
   DISALLOW_COPY_AND_ASSIGN(AclConnection);
 };
 

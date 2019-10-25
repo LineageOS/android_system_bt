@@ -39,6 +39,9 @@ class FixedChannelImpl {
     return device_;
   }
 
+  /* Return the role we have in the associated link */
+  virtual hci::Role GetRole() const;
+
   virtual void RegisterOnCloseCallback(os::Handler* user_handler, FixedChannel::OnCloseCallback on_close_callback);
 
   virtual void Acquire();
