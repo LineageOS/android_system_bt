@@ -134,11 +134,15 @@ Stage2ResultOrFailure PairingHandlerLe::DoSecureConnectionsStage2(const InitialI
   uint8_t b[7];
 
   if (IAmMaster(i)) {
-    memcpy(a, i.my_connection_address.address, 7);
-    memcpy(b, i.remote_connection_address.address, 7);
+    memcpy(a, i.my_connection_address.GetAddress().address, 6);
+    a[6] = (uint8_t)i.my_connection_address.GetAddressType();
+    memcpy(b, i.remote_connection_address.GetAddress().address, 6);
+    b[6] = (uint8_t)i.remote_connection_address.GetAddressType();
   } else {
-    memcpy(a, i.remote_connection_address.address, 7);
-    memcpy(b, i.my_connection_address.address, 7);
+    memcpy(a, i.remote_connection_address.GetAddress().address, 6);
+    a[6] = (uint8_t)i.remote_connection_address.GetAddressType();
+    memcpy(b, i.my_connection_address.GetAddress().address, 6);
+    b[6] = (uint8_t)i.my_connection_address.GetAddressType();
   }
 
   Octet16 ltk, mac_key;
