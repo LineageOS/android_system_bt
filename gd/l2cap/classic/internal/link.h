@@ -63,12 +63,17 @@ class Link {
 
   // DynamicChannel methods
 
+  virtual Cid ReserveDynamicChannel();
+
   virtual void SendConnectionRequest(Psm psm, Cid local_cid);
 
   virtual void SendDisconnectionRequest(Cid local_cid, Cid remote_cid);
 
   virtual std::shared_ptr<DynamicChannelImpl> AllocateDynamicChannel(Psm psm, Cid remote_cid,
                                                                      SecurityPolicy security_policy);
+
+  virtual std::shared_ptr<DynamicChannelImpl> AllocateReservedDynamicChannel(Cid reserved_cid, Psm psm, Cid remote_cid,
+                                                                             SecurityPolicy security_policy);
 
   virtual void FreeDynamicChannel(Cid cid);
 

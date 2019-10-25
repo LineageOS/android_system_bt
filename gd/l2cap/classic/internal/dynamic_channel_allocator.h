@@ -46,6 +46,13 @@ class DynamicChannelAllocator {
   // NOTE: The returned DynamicChannelImpl object is still owned by the channel allocator, NOT the client.
   std::shared_ptr<DynamicChannelImpl> AllocateChannel(Psm psm, Cid remote_cid, SecurityPolicy security_policy);
 
+  std::shared_ptr<DynamicChannelImpl> AllocateReservedChannel(Cid reserved_cid, Psm psm, Cid remote_cid,
+                                                              SecurityPolicy security_policy);
+
+  // Gives an unused Cid to be used for opening a channel. If a channel is used, call AllocateReservedChannel. If no
+  // longer needed, use FreeChannel.
+  Cid ReserveChannel();
+
   // Frees a channel. If psm doesn't exist, it will crash
   void FreeChannel(Cid cid);
 
@@ -53,6 +60,7 @@ class DynamicChannelAllocator {
 
   std::shared_ptr<DynamicChannelImpl> FindChannelByCid(Cid cid);
 
+  // Returns number of open, but not reserved channels
   size_t NumberOfChannels() const;
 
   void OnAclDisconnected(hci::ErrorCode hci_status);
@@ -60,6 +68,7 @@ class DynamicChannelAllocator {
  private:
   Link* link_;
   os::Handler* l2cap_handler_;
+  std::unordered_set<Cid> used_cid_;
   std::unordered_map<Cid, std::shared_ptr<DynamicChannelImpl>> channels_;
   std::unordered_set<Cid> used_remote_cid_;
 };
