@@ -37,6 +37,7 @@ class MockLink : public Link {
       : Link(handler, std::make_unique<MockAclConnection>(),
              std::make_unique<l2cap::internal::testing::MockScheduler>(), parameter_provider){};
   MOCK_METHOD(hci::AddressWithType, GetDevice, (), (override));
+  MOCK_METHOD(hci::Role, GetRole, (), (override));
   MOCK_METHOD(void, OnAclDisconnected, (hci::ErrorCode status), (override));
   MOCK_METHOD(void, Disconnect, (), (override));
   MOCK_METHOD(std::shared_ptr<FixedChannelImpl>, AllocateFixedChannel, (Cid cid, SecurityPolicy security_policy),

@@ -51,6 +51,10 @@ class Link {
     return {acl_connection_->GetAddress(), acl_connection_->GetAddressType()};
   }
 
+  inline virtual hci::Role GetRole() {
+    return acl_connection_->GetRole();
+  }
+
   // ACL methods
 
   virtual void OnAclDisconnected(hci::ErrorCode status) {

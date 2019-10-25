@@ -49,6 +49,11 @@ class FixedChannel {
   hci::AddressWithType GetDevice() const;
 
   /**
+   * Return the role we have in the associated link
+   */
+  hci::Role GetRole() const;
+
+  /**
    * Register close callback. If close callback is registered, when a channel is closed, the channel's resource will
    * only be freed after on_close callback is invoked. Otherwise, if no on_close callback is registered, the channel's
    * resource will be freed immediately after closing.
