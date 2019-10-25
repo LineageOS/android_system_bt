@@ -66,6 +66,10 @@ bool Link::IsFixedChannelAllocated(Cid cid) {
   return fixed_channel_allocator_.IsChannelAllocated(cid);
 }
 
+Cid Link::ReserveDynamicChannel() {
+  return dynamic_channel_allocator_.ReserveChannel();
+}
+
 void Link::SendConnectionRequest(Psm psm, Cid local_cid) {
   signalling_manager_.SendConnectionRequest(psm, local_cid);
 }
@@ -77,6 +81,15 @@ void Link::SendDisconnectionRequest(Cid local_cid, Cid remote_cid) {
 std::shared_ptr<DynamicChannelImpl> Link::AllocateDynamicChannel(Psm psm, Cid remote_cid,
                                                                  SecurityPolicy security_policy) {
   auto channel = dynamic_channel_allocator_.AllocateChannel(psm, remote_cid, security_policy);
+  if (channel != nullptr) {
+    scheduler_->AttachChannel(channel->GetCid(), channel->GetQueueDownEnd());
+  }
+  return channel;
+}
+
+std::shared_ptr<DynamicChannelImpl> Link::AllocateReservedDynamicChannel(Cid reserved_cid, Psm psm, Cid remote_cid,
+                                                                         SecurityPolicy security_policy) {
+  auto channel = dynamic_channel_allocator_.AllocateReservedChannel(reserved_cid, psm, remote_cid, security_policy);
   if (channel != nullptr) {
     scheduler_->AttachChannel(channel->GetCid(), channel->GetQueueDownEnd());
   }

@@ -9,10 +9,13 @@ service L2capModuleCert {
   rpc SendL2capPacket(L2capPacket) returns (google.protobuf.Empty) {}
   rpc FetchL2capData(facade.EventStreamRequest) returns (stream L2capPacket) {}
   rpc FetchConnectionComplete(facade.EventStreamRequest) returns (stream ConnectionCompleteEvent) {}
+  rpc SetOnIncomingConnectionRequest(SetOnIncomingConnectionRequestRequest)
+      returns (SetOnIncomingConnectionRequestResponse) {}
   rpc DisconnectLink(DisconnectLinkRequest) returns (google.protobuf.Empty) {}
   rpc SendConnectionRequest(ConnectionRequest) returns (google.protobuf.Empty) {}
   rpc SendConfigurationRequest(ConfigurationRequest) returns (SendConfigurationRequestResult) {}
   rpc SendDisconnectionRequest(DisconnectionRequest) returns (google.protobuf.Empty) {}
+  rpc FetchOpenedChannels(FetchOpenedChannelsRequest) returns (FetchOpenedChannelsResponse) {}
 }
 
 message L2capPacket {
@@ -25,17 +28,25 @@ message ConnectionCompleteEvent {
   facade.BluetoothAddress remote = 1;
 }
 
+message SetOnIncomingConnectionRequestRequest {
+  bool accept = 1;
+}
+
+message SetOnIncomingConnectionRequestResponse {}
+
 message DisconnectLinkRequest {
   facade.BluetoothAddress remote = 1;
 }
 
 message ConnectionRequest {
   facade.BluetoothAddress remote = 1;
-  uint32 dcid = 2;
+  uint32 psm = 2;
   uint32 scid = 3;
 }
 
-message ConfigurationRequest {}
+message ConfigurationRequest {
+  uint32 scid = 1;
+}
 
 message SendConfigurationRequestResult {}
 
@@ -43,4 +54,10 @@ message DisconnectionRequest {
   facade.BluetoothAddress remote = 1;
   uint32 dcid = 2;
   uint32 scid = 3;
+}
+
+message FetchOpenedChannelsRequest {}
+
+message FetchOpenedChannelsResponse {
+  repeated uint32 cid = 1;
 }
