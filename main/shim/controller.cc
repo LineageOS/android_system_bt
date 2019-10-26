@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "bt_gd_controller"
+#define LOG_TAG "bt_shim_controller"
 
 #include "main/shim/controller.h"
 #include "btcore/include/module.h"
