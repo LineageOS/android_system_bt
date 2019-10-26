@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "bt_gd_hci"
+#define LOG_TAG "bt_shim_hci"
 
 #include <base/bind.h>
 #include <frameworks/base/core/proto/android/bluetooth/hci/enums.pb.h>
