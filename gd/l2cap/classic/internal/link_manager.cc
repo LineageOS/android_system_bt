@@ -85,11 +85,17 @@ void LinkManager::ConnectFixedChannelServices(hci::Address device,
 void LinkManager::ConnectDynamicChannelServices(hci::Address device,
                                                 PendingDynamicChannelConnection pending_dynamic_channel_connection,
                                                 Psm psm) {
-  // TODO: if there is no link, establish link. Otherwise send command.
   auto* link = GetLink(device);
-  if (link != nullptr) {
+  if (link == nullptr) {
+    acl_manager_->CreateConnection(device);
+    if (pending_dynamic_channels_.find(device) != pending_dynamic_channels_.end()) {
+      pending_dynamic_channels_[device].push_back(psm);
+    } else {
+      pending_dynamic_channels_[device] = {psm};
+    }
     return;
   }
+  link->SendConnectionRequest(psm, link->ReserveDynamicChannel());
 }
 
 Link* LinkManager::GetLink(const hci::Address device) {
@@ -118,6 +124,12 @@ void LinkManager::OnConnectSuccess(std::unique_ptr<hci::AclConnection> acl_conne
     auto fixed_channel_impl = link->AllocateFixedChannel(fixed_channel_service.first, SecurityPolicy());
     fixed_channel_service.second->NotifyChannelCreation(
         std::make_unique<FixedChannel>(fixed_channel_impl, l2cap_handler_));
+  }
+  if (pending_dynamic_channels_.find(device) != pending_dynamic_channels_.end()) {
+    for (Psm psm : pending_dynamic_channels_[device]) {
+      link->SendConnectionRequest(psm, link->ReserveDynamicChannel());
+    }
+    pending_dynamic_channels_.erase(device);
   }
   // Remove device from pending links list, if any
   auto pending_link = pending_links_.find(device);

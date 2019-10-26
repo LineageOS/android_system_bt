@@ -95,6 +95,18 @@ class L2capModuleFacadeService : public L2capModuleFacade::Service {
     return ::grpc::Status::OK;
   }
 
+  ::grpc::Status OpenChannel(::grpc::ServerContext* context,
+                             const ::bluetooth::l2cap::classic::OpenChannelRequest* request,
+                             ::google::protobuf::Empty* response) override {
+    auto psm = request->psm();
+    dynamic_channel_helper_map_.emplace(
+        psm, std::make_unique<L2capDynamicChannelHelper>(this, l2cap_layer_, facade_handler_, psm));
+    hci::Address peer;
+    ASSERT(hci::Address::FromString(request->remote().address(), peer));
+    dynamic_channel_helper_map_[psm]->Connect(peer);
+    return ::grpc::Status::OK;
+  }
+
   ::grpc::Status FetchL2capData(::grpc::ServerContext* context, const ::bluetooth::facade::EventStreamRequest* request,
                                 ::grpc::ServerWriter<classic::L2capPacket>* writer) override {
     return l2cap_stream_.HandleRequest(context, request, writer);
@@ -189,6 +201,12 @@ class L2capModuleFacadeService : public L2capModuleFacade::Service {
           common::Bind(&L2capDynamicChannelHelper::on_connection_open, common::Unretained(this)), handler_);
     }
 
+    void Connect(hci::Address address) {
+      dynamic_channel_manager_->ConnectChannel(
+          address, psm_, common::Bind(&L2capDynamicChannelHelper::on_connection_open, common::Unretained(this)),
+          common::Bind(&L2capDynamicChannelHelper::on_connect_fail, common::Unretained(this)), handler_);
+    }
+
     void on_l2cap_service_registration_complete(DynamicChannelManager::RegistrationResult registration_result,
                                                 std::unique_ptr<DynamicChannelService> service) {}
 
@@ -198,6 +216,8 @@ class L2capModuleFacadeService : public L2capModuleFacade::Service {
       facade_service_->connection_complete_stream_.OnIncomingEvent(event);
       channel_ = std::move(channel);
     }
+
+    void on_connect_fail(DynamicChannelManager::ConnectionResult result) {}
 
     void on_incoming_packet() {
       auto packet = channel_->GetQueueUpEnd()->TryDequeue();

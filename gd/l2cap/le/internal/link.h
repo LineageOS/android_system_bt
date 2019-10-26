@@ -47,8 +47,12 @@ class Link {
 
   virtual ~Link() = default;
 
-  inline virtual hci::Address GetDevice() {
-    return acl_connection_->GetAddress();
+  inline virtual hci::AddressWithType GetDevice() {
+    return {acl_connection_->GetAddress(), acl_connection_->GetAddressType()};
+  }
+
+  inline virtual hci::Role GetRole() {
+    return acl_connection_->GetRole();
   }
 
   // ACL methods

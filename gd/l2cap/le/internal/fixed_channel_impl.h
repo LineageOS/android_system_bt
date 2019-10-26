@@ -35,9 +35,12 @@ class FixedChannelImpl {
 
   virtual ~FixedChannelImpl() = default;
 
-  hci::Address GetDevice() const {
+  hci::AddressWithType GetDevice() const {
     return device_;
   }
+
+  /* Return the role we have in the associated link */
+  virtual hci::Role GetRole() const;
 
   virtual void RegisterOnCloseCallback(os::Handler* user_handler, FixedChannel::OnCloseCallback on_close_callback);
 
@@ -70,7 +73,7 @@ class FixedChannelImpl {
   // For logging purpose only
   const Cid cid_;
   // For logging purpose only
-  const hci::Address device_;
+  const hci::AddressWithType device_;
   // Needed to handle Acquire() and Release()
   Link* link_;
   os::Handler* l2cap_handler_;

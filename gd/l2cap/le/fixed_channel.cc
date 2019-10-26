@@ -22,8 +22,12 @@ namespace bluetooth {
 namespace l2cap {
 namespace le {
 
-hci::Address FixedChannel::GetDevice() const {
+hci::AddressWithType FixedChannel::GetDevice() const {
   return impl_->GetDevice();
+}
+
+hci::Role FixedChannel::GetRole() const {
+  return impl_->GetRole();
 }
 
 void FixedChannel::RegisterOnCloseCallback(os::Handler* user_handler, FixedChannel::OnCloseCallback on_close_callback) {
