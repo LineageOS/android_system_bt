@@ -113,10 +113,24 @@ class SimpleL2capTest(GdBaseTestClass):
             lambda packet: b"abc" in packet.payload
         )
 
-        self.cert_device.l2cap.SendDisconnectionRequest(l2cap_cert_pb2.DisconnectionRequest())
+        self.cert_device.l2cap.SendDisconnectionRequest(l2cap_cert_pb2.DisconnectionRequest(dcid=0x40, scid=101))
         time.sleep(1)
         dut_packet_stream.unsubscribe()
         cert_packet_stream.unsubscribe()
+
+    def test_open_two_channels(self):
+        cert_connection_stream = self.cert_device.l2cap.connection_complete_stream
+        cert_connection_stream.subscribe()
+        self.device_under_test.l2cap.OpenChannel(l2cap_facade_pb2.OpenChannelRequest(remote=self.cert_address, psm=0x01))
+        self.device_under_test.l2cap.OpenChannel(l2cap_facade_pb2.OpenChannelRequest(remote=self.cert_address, psm=0x03))
+        cert_connection_stream.assert_event_occurs(
+            lambda device: device.remote == self.dut_address
+        )
+        cert_connection_stream.unsubscribe()
+        time.sleep(1)
+        open_channels = self.cert_device.l2cap.FetchOpenedChannels(l2cap_cert_pb2.FetchOpenedChannelsRequest())
+        print (len(open_channels.cid))
+        assert len(open_channels.cid) == 2
 
     def test_basic_operation_request_connection(self):
         """
@@ -124,17 +138,13 @@ class SimpleL2capTest(GdBaseTestClass):
         Verify that the IUT is able to request the connection establishment for an L2CAP data channel and
         initiate the configuration procedure.
         """
-        self.device_under_test.l2cap.RegisterChannel(l2cap_facade_pb2.RegisterChannelRequest(channel=2))
         cert_connection_stream = self.cert_device.l2cap.connection_complete_stream
         cert_connection_stream.subscribe()
-        self.device_under_test.l2cap.Connect(self.cert_address)
+        self.device_under_test.l2cap.OpenChannel(l2cap_facade_pb2.OpenChannelRequest(remote=self.cert_address, psm=0x01))
         cert_connection_stream.assert_event_occurs(
             lambda device: device.remote == self.dut_address
         )
         cert_connection_stream.unsubscribe()
-        self.device_under_test.l2cap.OpenChannel(l2cap_facade_pb2.OpenChannelRequest(remote=self.cert_address, psm=0x01))
-        time.sleep(1)
-
 
     def test_respond_to_echo_request(self):
         """

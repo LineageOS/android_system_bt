@@ -116,7 +116,7 @@ class L2capModuleCertService : public L2capModuleCert::Service {
       ::grpc::ServerContext* context, const ::bluetooth::l2cap::classic::cert::ConfigurationRequest* request,
       ::bluetooth::l2cap::classic::cert::SendConfigurationRequestResult* response) override {
     auto builder = ConfigurationRequestBuilder::Create(1, request->scid(), Continuation::END, {});
-    auto l2cap_builder = BasicFrameBuilder::Create(1, std::move(builder));
+    auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
     outgoing_packet_queue_.push(std::move(l2cap_builder));
     if (outgoing_packet_queue_.size() == 1) {
       acl_connection_->GetAclQueueEnd()->RegisterEnqueue(
@@ -127,8 +127,8 @@ class L2capModuleCertService : public L2capModuleCert::Service {
 
   ::grpc::Status SendDisconnectionRequest(::grpc::ServerContext* context, const cert::DisconnectionRequest* request,
                                           ::google::protobuf::Empty* response) override {
-    auto builder = DisconnectionRequestBuilder::Create(3, 0x40, 101);
-    auto l2cap_builder = BasicFrameBuilder::Create(1, std::move(builder));
+    auto builder = DisconnectionRequestBuilder::Create(3, request->dcid(), request->scid());
+    auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
     outgoing_packet_queue_.push(std::move(l2cap_builder));
     if (outgoing_packet_queue_.size() == 1) {
       acl_connection_->GetAclQueueEnd()->RegisterEnqueue(
