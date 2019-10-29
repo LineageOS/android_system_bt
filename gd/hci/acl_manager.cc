@@ -21,6 +21,7 @@
 #include <set>
 #include <utility>
 
+#include "acl_fragmenter.h"
 #include "acl_manager.h"
 #include "common/bidi_queue.h"
 #include "hci/controller.h"
@@ -105,6 +106,7 @@ struct AclManager::impl {
                                      Bind(&impl::on_flow_specification_complete, common::Unretained(this)), handler_);
     hci_layer_->RegisterEventHandler(EventCode::FLUSH_OCCURRED,
                                      Bind(&impl::on_flush_occurred, common::Unretained(this)), handler_);
+    hci_mtu_ = controller_->GetControllerAclPacketLength();
   }
 
   void Stop() {
@@ -173,20 +175,27 @@ struct AclManager::impl {
 
   void buffer_packet() {
     unregister_all_connections();
-    PacketBoundaryFlag packet_boundary_flag = PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE;
     BroadcastFlag broadcast_flag = BroadcastFlag::POINT_TO_POINT;
     //   Wrap packet and enqueue it
     uint16_t handle = current_connection_pair_->first;
-    packet_to_send_ = AclPacketBuilder::Create(handle, packet_boundary_flag, broadcast_flag,
-                                               current_connection_pair_->second.queue_->GetDownEnd()->TryDequeue());
-    ASSERT(packet_to_send_ != nullptr);
-    fragment_and_send();
-  }
 
-  void fragment_and_send() {
-    // TODO: Fragment the packet into a list of packets
-    fragments_to_send_.push_back(std::move(packet_to_send_));
-    packet_to_send_ = nullptr;
+    auto packet = current_connection_pair_->second.queue_->GetDownEnd()->TryDequeue();
+    ASSERT(packet != nullptr);
+
+    if (packet->size() <= hci_mtu_) {
+      fragments_to_send_.push_front(AclPacketBuilder::Create(handle, PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE,
+                                                             broadcast_flag, std::move(packet)));
+    } else {
+      auto fragments = AclFragmenter(hci_mtu_, std::move(packet)).GetFragments();
+      PacketBoundaryFlag packet_boundary_flag = PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE;
+      for (size_t i = 0; i < fragments.size(); i++) {
+        fragments_to_send_.push_back(
+            AclPacketBuilder::Create(handle, packet_boundary_flag, broadcast_flag, std::move(fragments[i])));
+        packet_boundary_flag = PacketBoundaryFlag::CONTINUING_FRAGMENT;
+      }
+    }
+    ASSERT(fragments_to_send_.size() > 0);
+
     current_connection_pair_->second.number_of_sent_packets_ += fragments_to_send_.size();
     send_next_fragment();
   }
@@ -294,7 +303,7 @@ struct AclManager::impl {
     uint16_t handle = connection_complete.GetConnectionHandle();
     ASSERT(acl_connections_.count(handle) == 0);
     acl_connections_.emplace(handle, address_with_type);
-    if (acl_connections_.size() == 1 && packet_to_send_ == nullptr) {
+    if (acl_connections_.size() == 1 && fragments_to_send_.size() == 0) {
       start_round_robin();
     }
     auto role = connection_complete.GetRole();
@@ -327,7 +336,7 @@ struct AclManager::impl {
     uint16_t handle = connection_complete.GetConnectionHandle();
     ASSERT(acl_connections_.count(handle) == 0);
     acl_connections_.emplace(handle, reporting_address_with_type);
-    if (acl_connections_.size() == 1 && packet_to_send_ == nullptr) {
+    if (acl_connections_.size() == 1 && fragments_to_send_.size() == 0) {
       start_round_robin();
     }
     auto role = connection_complete.GetRole();
@@ -352,7 +361,7 @@ struct AclManager::impl {
     uint16_t handle = connection_complete.GetConnectionHandle();
     ASSERT(acl_connections_.count(handle) == 0);
     acl_connections_.emplace(handle, AddressWithType{address, AddressType::PUBLIC_DEVICE_ADDRESS});
-    if (acl_connections_.size() == 1 && packet_to_send_ == nullptr) {
+    if (acl_connections_.size() == 1 && fragments_to_send_.size() == 0) {
       start_round_robin();
     }
     std::unique_ptr<AclConnection> connection_proxy(new AclConnection(&acl_manager_, handle, address));
@@ -1580,7 +1589,6 @@ struct AclManager::impl {
   uint16_t acl_packet_credits_ = 0;
   uint16_t acl_buffer_length_ = 0;
 
-  std::unique_ptr<AclPacketBuilder> packet_to_send_;
   std::list<std::unique_ptr<AclPacketBuilder>> fragments_to_send_;
   std::map<uint16_t, acl_connection>::iterator current_connection_pair_;
 
@@ -1598,6 +1606,7 @@ struct AclManager::impl {
   std::set<AddressWithType> connecting_le_;
   common::Callback<bool(Address, ClassOfDevice)> should_accept_connection_;
   std::queue<std::pair<Address, std::unique_ptr<CreateConnectionBuilder>>> pending_outgoing_connections_;
+  size_t hci_mtu_{0};
 };
 
 AclConnection::QueueUpEnd* AclConnection::GetAclQueueEnd() const {
