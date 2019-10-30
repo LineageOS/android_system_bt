@@ -84,11 +84,11 @@ class SimpleL2capTest(GdBaseTestClass):
         )
         dut_connection_stream.unsubscribe()
 
-        self.cert_device.l2cap.SendConnectionRequest(l2cap_cert_pb2.ConnectionRequest(scid=0x101))
+        self.cert_device.l2cap.SendConnectionRequest(l2cap_cert_pb2.ConnectionRequest(scid=0x101, psm=1))
         time.sleep(1)
 
         open_channels = self.cert_device.l2cap.FetchOpenedChannels(l2cap_cert_pb2.FetchOpenedChannelsRequest())
-        cid = open_channels.cid[0]
+        cid = open_channels.dcid[0]
 
         dut_packet_stream.subscribe()
         cert_packet_stream.subscribe()
@@ -129,8 +129,7 @@ class SimpleL2capTest(GdBaseTestClass):
         cert_connection_stream.unsubscribe()
         time.sleep(1)
         open_channels = self.cert_device.l2cap.FetchOpenedChannels(l2cap_cert_pb2.FetchOpenedChannelsRequest())
-        print (len(open_channels.cid))
-        assert len(open_channels.cid) == 2
+        assert len(open_channels.dcid) == 2
 
     def test_basic_operation_request_connection(self):
         """
