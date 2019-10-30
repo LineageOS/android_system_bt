@@ -60,12 +60,15 @@ void Beacon::Initialize(const vector<std::string>& args) {
 
 void Beacon::TimerTick() {
   if (IsAdvertisementAvailable(std::chrono::milliseconds(5000))) {
-    std::unique_ptr<packets::LeAdvertisementBuilder> ad = packets::LeAdvertisementBuilder::Create(
-        LeAdvertisement::AddressType::PUBLIC,
-        static_cast<LeAdvertisement::AdvertisementType>(properties_.GetLeAdvertisementType()),
+    auto ad = model::packets::LeAdvertisementBuilder::Create(
+        properties_.GetLeAddress(), Address::kEmpty,
+        model::packets::AddressType::PUBLIC,
+        static_cast<model::packets::AdvertisementType>(
+            properties_.GetLeAdvertisementType()),
         properties_.GetLeAdvertisement());
-    std::shared_ptr<packets::LinkLayerPacketBuilder> to_send =
-        packets::LinkLayerPacketBuilder::WrapLeAdvertisement(std::move(ad), properties_.GetLeAddress());
+    std::shared_ptr<model::packets::LinkLayerPacketBuilder> to_send =
+        std::move(ad);
+
     std::vector<std::shared_ptr<PhyLayer>> le_phys = phy_layers_[Phy::Type::LOW_ENERGY];
     for (std::shared_ptr<PhyLayer> phy : le_phys) {
       phy->Send(to_send);
@@ -73,13 +76,17 @@ void Beacon::TimerTick() {
   }
 }
 
-void Beacon::IncomingPacket(packets::LinkLayerPacketView packet) {
-  if (packet.GetDestinationAddress() == properties_.GetLeAddress() && packet.GetType() == Link::PacketType::LE_SCAN) {
-    std::unique_ptr<packets::LeAdvertisementBuilder> scan_response = packets::LeAdvertisementBuilder::Create(
-        LeAdvertisement::AddressType::PUBLIC, LeAdvertisement::AdvertisementType::SCAN_RESPONSE,
+void Beacon::IncomingPacket(model::packets::LinkLayerPacketView packet) {
+  if (packet.GetDestinationAddress() == properties_.GetLeAddress() &&
+      packet.GetType() == model::packets::PacketType::LE_SCAN) {
+    auto scan_response = model::packets::LeAdvertisementBuilder::Create(
+        properties_.GetLeAddress(), packet.GetSourceAddress(),
+        model::packets::AddressType::PUBLIC,
+        model::packets::AdvertisementType::SCAN_RESPONSE,
         properties_.GetLeScanResponse());
-    std::shared_ptr<packets::LinkLayerPacketBuilder> to_send = packets::LinkLayerPacketBuilder::WrapLeScanResponse(
-        std::move(scan_response), properties_.GetLeAddress(), packet.GetSourceAddress());
+    std::shared_ptr<model::packets::LinkLayerPacketBuilder> to_send =
+        std::move(scan_response);
+
     std::vector<std::shared_ptr<PhyLayer>> le_phys = phy_layers_[Phy::Type::LOW_ENERGY];
     for (auto phy : le_phys) {
       phy->Send(to_send);

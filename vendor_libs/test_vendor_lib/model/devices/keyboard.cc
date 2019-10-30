@@ -80,7 +80,7 @@ void Keyboard::TimerTick() {
   }
 }
 
-void Keyboard::IncomingPacket(packets::LinkLayerPacketView packet) {
+void Keyboard::IncomingPacket(model::packets::LinkLayerPacketView packet) {
   if (!connected_) {
     Beacon::IncomingPacket(packet);
   }
