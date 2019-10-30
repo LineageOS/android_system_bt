@@ -177,7 +177,8 @@ static const interop_name_entry_t interop_name_database[] = {
     // Kenwood KMM-BT518HD - no audio when A2DP codec sample rate is changed
     {"KMM-BT51*HD", 11, INTEROP_DISABLE_AVDTP_RECONFIGURE},
 
-    // Nintendo Switch Pro Controller - does not set sniff interval dynamically.
-    // Requires custom HID report command to change mode.
+    // Nintendo Switch Pro Controller and Joy Con - do not set sniff interval
+    // dynamically. They require custom HID report command to change mode.
     {"Pro Controller", 14, INTEROP_HID_HOST_LIMIT_SNIFF_INTERVAL},
+    {"Joy-Con", 7, INTEROP_HID_HOST_LIMIT_SNIFF_INTERVAL},
 };
