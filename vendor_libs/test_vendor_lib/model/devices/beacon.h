@@ -42,8 +42,7 @@ class Beacon : public Device {
   // Set the address and advertising interval from string args.
   virtual void Initialize(const std::vector<std::string>& args) override;
 
-  virtual void IncomingPacket(
-      model::packets::LinkLayerPacketView packet) override;
+  virtual void IncomingPacket(packets::LinkLayerPacketView packet) override;
 
   virtual void TimerTick() override;
 
