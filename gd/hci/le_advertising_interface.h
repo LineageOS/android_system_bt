@@ -37,13 +37,8 @@ class LeAdvertisingInterface {
                               common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) = 0;
 
   static constexpr hci::SubeventCode LeAdvertisingEvents[] = {
-      hci::SubeventCode::ADVERTISING_REPORT,
-      hci::SubeventCode::DIRECTED_ADVERTISING_REPORT,
-      hci::SubeventCode::EXTENDED_ADVERTISING_REPORT,
-      hci::SubeventCode::PERIODIC_ADVERTISING_REPORT,
-      hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_ESTABLISHED,
-      hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_LOST,
       hci::SubeventCode::SCAN_REQUEST_RECEIVED,
+      hci::SubeventCode::ADVERTISING_SET_TERMINATED,
   };
 };
 }  // namespace hci
