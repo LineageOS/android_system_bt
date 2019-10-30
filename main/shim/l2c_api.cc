@@ -30,7 +30,7 @@ uint16_t bluetooth::shim::L2CA_Register(uint16_t client_psm,
                                         tL2CAP_APPL_INFO* callbacks,
                                         bool enable_snoop) {
   if (L2C_INVALID_PSM(client_psm)) {
-    LOG_ERROR(LOG_TAG, "%s Invalid classic psm:0x%04x", __func__, client_psm);
+    LOG_ERROR(LOG_TAG, "%s Invalid classic psm:%hd", __func__, client_psm);
     return 0;
   }
 
@@ -38,7 +38,7 @@ uint16_t bluetooth::shim::L2CA_Register(uint16_t client_psm,
       (callbacks->pL2CA_ConfigInd_Cb == nullptr) ||
       (callbacks->pL2CA_DataInd_Cb == nullptr) ||
       (callbacks->pL2CA_DisconnectInd_Cb == nullptr)) {
-    LOG_ERROR(LOG_TAG, "%s Invalid classic callbacks psm:0x%04x", __func__,
+    LOG_ERROR(LOG_TAG, "%s Invalid classic callbacks psm:%hd", __func__,
               client_psm);
     return 0;
   }
@@ -51,37 +51,36 @@ uint16_t bluetooth::shim::L2CA_Register(uint16_t client_psm,
                                                    is_outgoing_connection_only);
 
   if (shim_l2cap.Classic().IsPsmRegistered(psm)) {
-    LOG_ERROR(LOG_TAG,
-              "%s Already registered classic client_psm:0x%04x psm:0x%04x",
+    LOG_ERROR(LOG_TAG, "%s Already registered classic client_psm:%hd psm:%hd",
               __func__, client_psm, psm);
     return 0;
   }
   shim_l2cap.Classic().RegisterPsm(psm, callbacks);
 
-  LOG_INFO(LOG_TAG, "%s classic client_psm:0x%04x psm:0x%04x", __func__,
-           client_psm, psm);
+  LOG_INFO(LOG_TAG, "%s classic client_psm:%hd psm:%hd", __func__, client_psm,
+           psm);
 
   shim_l2cap.Register(psm, callbacks, enable_snoop);
 
-  return psm;
+  return client_psm;
 }
 
 void bluetooth::shim::L2CA_Deregister(uint16_t client_psm) {
   if (L2C_INVALID_PSM(client_psm)) {
-    LOG_ERROR(LOG_TAG, "%s Invalid classic psm:0x%04x", __func__, client_psm);
+    LOG_ERROR(LOG_TAG, "%s Invalid classic client_psm:%hd", __func__,
+              client_psm);
     return;
   }
   uint16_t psm = shim_l2cap.ConvertClientToRealPsm(client_psm);
 
   if (!shim_l2cap.Classic().IsPsmRegistered(psm)) {
-    LOG_ERROR(
-        LOG_TAG,
-        "%s Not previously registered classic client_psm:0x%04x psm:0x%04x",
-        __func__, client_psm, psm);
+    LOG_ERROR(LOG_TAG,
+              "%s Not previously registered classic client_psm:%hd psm:%hd",
+              __func__, client_psm, psm);
     return;
   }
   shim_l2cap.Classic().UnregisterPsm(psm);
-  shim_l2cap.RemoveClientPsm(client_psm);
+  shim_l2cap.RemoveClientPsm(psm);
 }
 
 uint16_t bluetooth::shim::L2CA_AllocatePSM(void) {
@@ -98,12 +97,11 @@ uint16_t bluetooth::shim::L2CA_AllocateLePSM(void) {
 
 void bluetooth::shim::L2CA_FreeLePSM(uint16_t psm) {
   if (!shim_l2cap.Le().IsPsmAllocated(psm)) {
-    LOG_ERROR(LOG_TAG, "%s Not previously allocated le psm:0x%04x", __func__,
-              psm);
+    LOG_ERROR(LOG_TAG, "%s Not previously allocated le psm:%hd", __func__, psm);
     return;
   }
   if (!shim_l2cap.Le().IsPsmRegistered(psm)) {
-    LOG_ERROR(LOG_TAG, "%s Must deregister psm before deallocation psm:0x%04x",
+    LOG_ERROR(LOG_TAG, "%s Must deregister psm before deallocation psm:%hd",
               __func__, psm);
     return;
   }
