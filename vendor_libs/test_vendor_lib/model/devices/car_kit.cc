@@ -35,8 +35,7 @@ CarKit::CarKit() : Device(kCarKitPropertiesFile) {
   link_layer_controller_.RegisterEventChannel([](std::shared_ptr<std::vector<uint8_t>>) {});
   link_layer_controller_.RegisterScoChannel([](std::shared_ptr<std::vector<uint8_t>>) {});
   link_layer_controller_.RegisterRemoteChannel(
-      [this](std::shared_ptr<model::packets::LinkLayerPacketBuilder> packet,
-             Phy::Type phy_type) {
+      [this](std::shared_ptr<packets::LinkLayerPacketBuilder> packet, Phy::Type phy_type) {
         CarKit::SendLinkLayerPacket(packet, phy_type);
       });
 
@@ -91,7 +90,7 @@ void CarKit::TimerTick() {
   link_layer_controller_.TimerTick();
 }
 
-void CarKit::IncomingPacket(model::packets::LinkLayerPacketView packet) {
+void CarKit::IncomingPacket(packets::LinkLayerPacketView packet) {
   LOG_WARN("Incoming Packet");
   link_layer_controller_.IncomingPacket(packet);
 }

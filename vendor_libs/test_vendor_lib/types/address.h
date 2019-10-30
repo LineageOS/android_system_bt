@@ -20,9 +20,6 @@
 
 #include <string>
 
-namespace bluetooth {
-namespace types {
-
 /** Bluetooth Address */
 class Address final {
  public:
@@ -77,8 +74,3 @@ inline std::ostream& operator<<(std::ostream& os, const Address& a) {
   os << a.ToString();
   return os;
 }
-
-}  // namespace types
-}  // namespace bluetooth
-
-using ::bluetooth::types::Address;  // TODO, remove
