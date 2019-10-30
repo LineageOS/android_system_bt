@@ -28,6 +28,7 @@ struct IConnectability;
 struct IDiscoverability;
 struct IHciLayer;
 struct IInquiry;
+struct IL2cap;
 struct IPage;
 
 struct IStack {
@@ -39,6 +40,7 @@ struct IStack {
   virtual IDiscoverability* GetDiscoverability() = 0;
   virtual IHciLayer* GetHciLayer() = 0;
   virtual IInquiry* GetInquiry() = 0;
+  virtual IL2cap* GetL2cap() = 0;
   virtual IPage* GetPage() = 0;
 
   virtual ~IStack() {}

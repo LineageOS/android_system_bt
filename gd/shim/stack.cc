@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#define LOG_TAG "bt_gd"
+#define LOG_TAG "bt_gd_shim"
 
 #include "shim/stack.h"
 #include "hal/hci_hal.h"
@@ -35,6 +35,7 @@
 #include "shim/discoverability.h"
 #include "shim/hci_layer.h"
 #include "shim/inquiry.h"
+#include "shim/l2cap.h"
 #include "shim/page.h"
 #include "stack_manager.h"
 
@@ -65,6 +66,7 @@ struct bluetooth::shim::Stack::impl {
     modules.add<::bluetooth::shim::Connectability>();
     modules.add<::bluetooth::shim::Discoverability>();
     modules.add<::bluetooth::shim::Inquiry>();
+    modules.add<::bluetooth::shim::L2cap>();
     modules.add<::bluetooth::shim::Page>();
 
     stack_thread_ = new Thread("gd_stack_thread", Thread::Priority::NORMAL);
@@ -105,6 +107,10 @@ struct bluetooth::shim::Stack::impl {
 
   IInquiry* GetInquiry() {
     return stack_manager_.GetInstance<bluetooth::shim::Inquiry>();
+  }
+
+  IL2cap* GetL2cap() {
+    return stack_manager_.GetInstance<bluetooth::shim::L2cap>();
   }
 
   IPage* GetPage() {
@@ -148,6 +154,10 @@ bluetooth::shim::IHciLayer* bluetooth::shim::Stack::GetHciLayer() {
 
 bluetooth::shim::IInquiry* bluetooth::shim::Stack::GetInquiry() {
   return pimpl_->GetInquiry();
+}
+
+bluetooth::shim::IL2cap* bluetooth::shim::Stack::GetL2cap() {
+  return pimpl_->GetL2cap();
 }
 
 bluetooth::shim::IPage* bluetooth::shim::Stack::GetPage() {
