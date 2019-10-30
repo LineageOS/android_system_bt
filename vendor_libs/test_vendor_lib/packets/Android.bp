@@ -24,6 +24,8 @@ cc_library_static {
         "hci/le_meta_event_builder.cc",
         "hci/sco_packet_builder.cc",
         "hci/sco_packet_view.cc",
+        "link_layer/link_layer_packet_builder.cc",
+        "link_layer/link_layer_packet_view.cc",
     ],
     cflags: [
         "-fvisibility=hidden",
@@ -54,6 +56,7 @@ cc_test_host {
         "clang_coverage_bin",
     ],
     srcs: [
+        "test/link_layer_packet_builder_test.cc",
         "test/packet_builder_test.cc",
         "test/packet_view_test.cc",
         "hci/test/acl_builder_test.cc",
