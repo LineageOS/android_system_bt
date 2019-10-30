@@ -170,7 +170,12 @@ bool l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
     p_lcb->link_state = LST_CONNECTING;
   }
 
-  if (p_lcb->link_state != LST_CONNECTING) {
+  if ((p_lcb->link_state == LST_CONNECTED) &&
+      (status == HCI_ERR_CONNECTION_EXISTS)) {
+    L2CAP_TRACE_WARNING("%s: An ACL connection already exists. Handle:%d",
+                        __func__, handle);
+    return (true);
+  } else if (p_lcb->link_state != LST_CONNECTING) {
     L2CAP_TRACE_ERROR("L2CAP got conn_comp in bad state: %d  status: 0x%d",
                       p_lcb->link_state, status);
 
