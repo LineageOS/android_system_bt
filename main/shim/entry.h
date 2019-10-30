@@ -43,6 +43,7 @@ bluetooth::shim::IDiscoverability* GetDiscoverability();
 bluetooth::shim::IConnectability* GetConnectability();
 bluetooth::shim::IInquiry* GetInquiry();
 bluetooth::shim::IHciLayer* GetHciLayer();
+bluetooth::shim::IL2cap* GetL2cap();
 bluetooth::shim::IPage* GetPage();
 
 }  // namespace shim
