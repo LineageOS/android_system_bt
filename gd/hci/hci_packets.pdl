@@ -1802,8 +1802,7 @@ packet ReadExtendedInquiryResponseComplete : CommandComplete (command_op_code = 
 packet WriteExtendedInquiryResponse : CommandPacket (op_code = WRITE_EXTENDED_INQUIRY_RESPONSE) {
   fec_required : FecRequired,
   extended_inquiry_response : GapData[],
-  //_payload_, // Zero padding to be 240 octets
-  // Should it be GapData[240] ?
+  _padding_[244], // Zero padding to be 240 octets (GapData[]) + 2 (opcode) + 1 (size) + 1 (FecRequired)
 }
 
 packet WriteExtendedInquiryResponseComplete : CommandComplete (command_op_code = WRITE_EXTENDED_INQUIRY_RESPONSE) {
@@ -2197,7 +2196,7 @@ packet LeReadLocalSupportedFeaturesComplete : CommandComplete (command_op_code =
   le_features : 64,
 }
 
-packet LeSetRandomAddress : CommandPacket (op_code = LE_SET_RANDOM_ADDRESS) {
+packet LeSetRandomAddress : LeAdvertisingCommand (op_code = LE_SET_RANDOM_ADDRESS) {
   random_address : Address,
 }
 
@@ -2220,7 +2219,7 @@ enum AdvertisingEventType : 8 {
   ADV_DIRECT_IND = 0x01,
   ADV_SCAN_IND = 0x02,
   ADV_NONCONN_IND = 0x03,
-  SCAN_RSP = 0x04,
+  ADV_DIRECT_IND_LOW = 0x04,
 }
 
 enum AddressType : 8 {
@@ -2231,15 +2230,14 @@ enum AddressType : 8 {
 }
 
 packet LeSetAdvertisingParameters : LeAdvertisingCommand (op_code = LE_SET_ADVERTISING_PARAMETERS) {
-  advertising_interval_min : 16,
-  advertising_interval_max : 16,
-  advertising_type : AdvertisingEventType,
+  interval_min : 16,
+  interval_max : 16,
+  type : AdvertisingEventType,
   own_address_type : AddressType,
   peer_address_type : PeerAddressType,
   peer_address : Address,
-  advertising_channel_map : 8,
-  connection_filter_policy : AdvertisingFilterPolicy,
-  scan_filter_policy : AdvertisingFilterPolicy,
+  channel_map : 8,
+  filter_policy : AdvertisingFilterPolicy,
   _reserved_ : 6,
 }
 
@@ -2258,7 +2256,7 @@ packet LeReadAdvertisingChannelTxPowerComplete : CommandComplete (command_op_cod
 packet LeSetAdvertisingData : LeAdvertisingCommand (op_code = LE_SET_ADVERTISING_DATA) {
   _size_(advertising_data) : 8,
   advertising_data : GapData[],
-  _payload_, // Zero padding to 31 bytes of advertising_data
+  _padding_[31], // Zero padding to 31 bytes of advertising_data
 }
 
 packet LeSetAdvertisingDataComplete : CommandComplete (command_op_code = LE_SET_ADVERTISING_DATA) {
@@ -2268,7 +2266,7 @@ packet LeSetAdvertisingDataComplete : CommandComplete (command_op_code = LE_SET_
 packet LeSetScanResponseData : LeAdvertisingCommand (op_code = LE_SET_SCAN_RESPONSE_DATA) {
   _size_(advertising_data) : 8,
   advertising_data : GapData[],
-  _payload_, // Zero padding to 31 bytes of advertising_data
+  _padding_[31], // Zero padding to 31 bytes of advertising_data
 }
 
 packet LeSetScanResponseDataComplete : CommandComplete (command_op_code = LE_SET_SCAN_RESPONSE_DATA) {
@@ -2730,16 +2728,85 @@ packet LeGetVendorCapabilitiesComplete098 : LeGetVendorCapabilitiesComplete096 {
   bluetooth_quality_report_support: 8
 }
 
-packet LeMultiAdvt : VendorCommand (op_code = LE_MULTI_ADVT) {
-  _payload_,  // placeholder (unimplemented)
+enum SubOcf : 8 {
+  SET_ADVT_PARAM = 0x01,
+  SET_ADVT_DATA = 0x02,
+  SET_ADVT_SCAN_RESP = 0x03,
+  SET_ADVT_RANDOM_ADDR = 0x04,
+  SET_ADVT_ENABLE = 0x05,
+}
+
+packet LeMultiAdvt : LeAdvertisingCommand (op_code = LE_MULTI_ADVT) {
+  sub_cmd : SubOcf,
+  _body_,
+}
+
+packet LeMultiAdvtParamComplete : CommandComplete (command_op_code = LE_MULTI_ADVT) {
+  status : ErrorCode,
+  sub_cmd : SubOcf,
+}
+
+packet LeMultiAdvtParam : LeMultiAdvt (sub_cmd = SET_ADVT_PARAM) {
+  interval_min : 16,
+  interval_max : 16,
+  type : AdvertisingEventType,
+  own_address_type : AddressType,
+  peer_address_type : PeerAddressType,
+  peer_address : Address,
+  channel_map : 8,
+  filter_policy : AdvertisingFilterPolicy,
+  _reserved_ : 6,
+  instance : 8,
+  tx_power : 8,
+}
+
+packet LeMultiAdvtParamSetData : LeMultiAdvt (sub_cmd = SET_ADVT_DATA) {
+  _size_(advertising_data) : 8,
+  advertising_data : GapData[],
+  _padding_[31], // Zero padding to 31 bytes of advertising_data
+  advertising_instance : 8,
+}
+
+packet LeMultiAdvtParamSetScanResp : LeMultiAdvt (sub_cmd = SET_ADVT_SCAN_RESP) {
+  _size_(advertising_data) : 8,
+  advertising_data : GapData[],
+  _padding_[31], // Zero padding to 31 bytes of advertising_data
+  advertising_instance : 8,
+}
+
+packet LeMultiAdvtParamSetRandomAddr : LeMultiAdvt (sub_cmd = SET_ADVT_RANDOM_ADDR) {
+  random_address : Address,
+  advertising_instance : 8,
+}
+
+packet LeMultiAdvtParamSetEnable : LeMultiAdvt (sub_cmd = SET_ADVT_ENABLE) {
+  advertising_enable : Enable, // Default DISABLED
+  advertising_instance : 8,
 }
 
 packet LeBatchScan : VendorCommand (op_code = LE_BATCH_SCAN) {
   _payload_,  // placeholder (unimplemented)
 }
 
+enum ApcfOpcode : 8 {
+  ENABLE = 0x00,
+  SET_FILTERING_PARAMETERS = 0x01,
+  BROADCASTER_ADDRESS = 0x02,
+  SERVICE_UUID = 0x03,
+  SERVICE_SOLICITATION_UUID = 0x04,
+  LOCAL_NAME = 0x05,
+  MANUFACTURER_DATA = 0x06,
+  SERVICE_DATA = 0x07,
+}
+
 packet LeAdvFilter : VendorCommand (op_code = LE_ADV_FILTER) {
-  _payload_,  // placeholder (unimplemented)
+  apcf_opcode : ApcfOpcode,
+  _body_,
+}
+
+packet LeAdvFilterComplete : CommandComplete (command_op_code = LE_ADV_FILTER) {
+  status : ErrorCode,
+  apcf_opcode : ApcfOpcode,
 }
 
 packet LeTrackAdv : VendorCommand (op_code = LE_TRACK_ADV) {
@@ -3138,8 +3205,8 @@ struct LeAdvertisingReport {
 }
 
 packet LeAdvertisingReport : LeMetaEvent (subevent_code = ADVERTISING_REPORT) {
-  _count_(le_advertising_reports) : 8,
-  le_advertising_reports : LeAdvertisingReport[],
+  _count_(advertising_reports) : 8,
+  advertising_reports : LeAdvertisingReport[],
 }
 
 packet LeConnectionUpdateComplete : LeMetaEvent (subevent_code = CONNECTION_UPDATE_COMPLETE) {
@@ -3214,6 +3281,7 @@ enum DirectAdvertisingAddressType : 8 {
   RANDOM_DEVICE_ADDRESS = 0x01,
   PUBLIC_IDENTITY_ADDRESS = 0x02,
   RANDOM_IDENTITY_ADDRESS = 0x03,
+  CONTROLLER_UNABLE_TO_RESOLVE = 0xFE,
   NO_ADDRESS = 0xFF,
 }
 
@@ -3235,16 +3303,59 @@ struct LeDirectedAdvertisingReport {
 }
 
 packet LeDirectedAdvertisingReport : LeMetaEvent (subevent_code = DIRECTED_ADVERTISING_REPORT) {
-  _count_(le_directed_advertising_reports) : 8,
-  le_directed_advertising_reports : LeDirectedAdvertisingReport[],
+  _count_(advertising_reports) : 8,
+  advertising_reports : LeDirectedAdvertisingReport[],
 }
 
 packet LePhyUpdateComplete : LeMetaEvent (subevent_code = PHY_UPDATE_COMPLETE) {
   _payload_, // placeholder (unimplemented)
 }
 
+enum DataStatus : 2 {
+  COMPLETE = 0x0,
+  CONTINUING = 0x1,
+  TRUNCATED = 0x2,
+  RESERVED = 0x3,
+}
+
+enum PrimaryPhyType : 8 {
+  LE_1M = 0x01,
+  LE_CODED = 0x03,
+}
+
+enum SecondaryPhyType : 8 {
+  NO_PACKETS = 0x00,
+  LE_1M = 0x01,
+  LE_2M = 0x02,
+  LE_CODED = 0x03,
+}
+
+
+struct LeExtendedAdvertisingReport {
+  connectable : 1,
+  scannable : 1,
+  directed : 1,
+  scan_response : 1,
+  data_status : DataStatus,
+  _reserved_ : 10,
+  address_type : DirectAdvertisingAddressType,
+  address : Address,
+  primary_phy : PrimaryPhyType,
+  secondary_phy : SecondaryPhyType,
+  advertising_sid : 4, // SID subfield in the ADI field
+  _reserved_ : 4,
+  tx_power : 8,
+  rssi : 8, // -127 to +20 (0x7F means not available)
+  periodic_advertising_interval : 16, // 0x006 to 0xFFFF (7.5 ms to 82s)
+  direct_address_type : DirectAdvertisingAddressType,
+  direct_address : Address,
+  _size_(advertising_data) : 8,
+  advertising_data : GapData[],
+}
+
 packet LeExtendedAdvertisingReport : LeMetaEvent (subevent_code = EXTENDED_ADVERTISING_REPORT) {
-  _payload_, // placeholder (unimplemented)
+  _count_(advertising_reports) : 8,
+  advertising_reports : LeExtendedAdvertisingReport[],
 }
 
 packet LePeriodicAdvertisingSyncEstablished : LeMetaEvent (subevent_code = PERIODIC_ADVERTISING_SYNC_ESTABLISHED) {
@@ -3263,9 +3374,15 @@ packet LeScanTimeout : LeMetaEvent (subevent_code = SCAN_TIMEOUT) {
 }
 
 packet LeAdvertisingSetTerminated : LeMetaEvent (subevent_code = ADVERTISING_SET_TERMINATED) {
-  _payload_, // placeholder (unimplemented)
+  status : ErrorCode,
+  advertising_handle : 8,
+  connection_handle : 12,
+  _reserved_ : 4,
+  num_completed_extended_advertising_events : 8,
 }
 
 packet LeScanRequestReceived : LeMetaEvent (subevent_code = SCAN_REQUEST_RECEIVED) {
-  _payload_, // placeholder (unimplemented)
+  advertising_handle : 8,
+  scanner_address_type : AddressType,
+  scanner_address : Address,
 }
