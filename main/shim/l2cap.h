@@ -60,6 +60,17 @@ class L2cap {
   uint16_t ConvertClientToRealPsm(uint16_t psm);
   void RemoveClientPsm(uint16_t client_psm);
 
+  void Register(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info, bool enable_snoop);
+  uint16_t Connect(uint16_t psm, const RawAddress& raw_address);
+
+  bool Write(uint16_t cid, BT_HDR* bt_hdr);
+  bool WriteFlushable(uint16_t cid, BT_HDR* bt_hdr);
+  bool WriteNonFlushable(uint16_t cid, BT_HDR* bt_hdr);
+  bool IsCongested(uint16_t cid) const;
+
+  bool SetCallbacks(uint16_t cid, const tL2CAP_APPL_INFO* client_callbacks);
+  void ClearCallbacks(uint16_t cid);
+
  private:
   uint16_t GetNextVirtualPsm(uint16_t real_psm);
 
@@ -71,6 +82,7 @@ class L2cap {
   uint16_t classic_virtual_psm_;
 
   std::unordered_map<uint16_t, uint16_t> client_psm_to_real_psm_map_;
+  std::unordered_map<uint16_t, const tL2CAP_APPL_INFO*> cid_to_callback_map_;
 };
 
 }  // namespace shim

@@ -6,6 +6,7 @@ filegroup {
             "discoverability.cc",
             "hci_layer.cc",
             "inquiry.cc",
+            "l2cap.cc",
             "page.cc",
             "stack.cc",
     ],

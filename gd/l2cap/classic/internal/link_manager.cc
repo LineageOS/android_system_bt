@@ -90,8 +90,10 @@ void LinkManager::ConnectDynamicChannelServices(hci::Address device,
     acl_manager_->CreateConnection(device);
     if (pending_dynamic_channels_.find(device) != pending_dynamic_channels_.end()) {
       pending_dynamic_channels_[device].push_back(psm);
+      pending_dynamic_channels_callbacks_[device].push_back(std::move(pending_dynamic_channel_connection));
     } else {
       pending_dynamic_channels_[device] = {psm};
+      pending_dynamic_channels_callbacks_[device].push_back(std::move(pending_dynamic_channel_connection));
     }
     return;
   }
@@ -130,6 +132,7 @@ void LinkManager::OnConnectSuccess(std::unique_ptr<hci::AclConnection> acl_conne
       link->SendConnectionRequest(psm, link->ReserveDynamicChannel());
     }
     pending_dynamic_channels_.erase(device);
+    pending_dynamic_channels_callbacks_.erase(device);
   }
   // Remove device from pending links list, if any
   auto pending_link = pending_links_.find(device);
@@ -147,6 +150,16 @@ void LinkManager::OnConnectFail(hci::Address device, hci::ErrorCode reason) {
   if (pending_link == pending_links_.end()) {
     // There is no pending link, exit
     LOG_DEBUG("Connection to %s failed without a pending link", device.ToString().c_str());
+    if (pending_dynamic_channels_callbacks_.find(device) != pending_dynamic_channels_callbacks_.end()) {
+      for (PendingDynamicChannelConnection& callbacks : pending_dynamic_channels_callbacks_[device]) {
+        callbacks.handler_->Post(common::BindOnce(std::move(callbacks.on_fail_callback_),
+                                                  DynamicChannelManager::ConnectionResult{
+                                                      .hci_error = hci::ErrorCode::CONNECTION_TIMEOUT,
+                                                  }));
+      }
+      pending_dynamic_channels_.erase(device);
+      pending_dynamic_channels_callbacks_.erase(device);
+    }
     return;
   }
   for (auto& pending_fixed_channel_connection : pending_link->second.pending_fixed_channel_connections_) {
