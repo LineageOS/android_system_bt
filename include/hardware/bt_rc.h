@@ -86,6 +86,7 @@ typedef enum {
   BTRC_FEAT_METADATA = 0x01,        /* AVRCP 1.3 */
   BTRC_FEAT_ABSOLUTE_VOLUME = 0x02, /* Supports TG role and volume sync */
   BTRC_FEAT_BROWSE = 0x04, /* AVRCP 1.4 and up, with Browsing support */
+  BTRC_FEAT_COVER_ARTWORK = 0x8,    /* AVRCP 1.6 and up, Cover Art */
 } btrc_remote_features_t;
 
 typedef enum {

@@ -1720,25 +1720,31 @@ tBTA_AV_FEAT bta_avk_check_peer_features(uint16_t service_uuid) {
       if (peer_rc_version >= AVRC_REV_1_3)
         peer_features |= (BTA_AV_FEAT_VENDOR | BTA_AV_FEAT_METADATA);
 
-      /*
-       * Though Absolute Volume came after in 1.4 and above, but there are few
-       * devices
-       * in market which supports absolute Volume and they are still 1.3
-       * TO avoid IOT issuses with those devices, we check for 1.3 as minimum
-       * version
-       */
-      if (peer_rc_version >= AVRC_REV_1_3) {
-        /* get supported features */
-        tSDP_DISC_ATTR* p_attr =
-            SDP_FindAttributeInRec(p_rec, ATTR_ID_SUPPORTED_FEATURES);
-        if (p_attr != NULL) {
-          uint16_t categories = p_attr->attr_value.v.u16;
-          if (categories & AVRC_SUPF_CT_CAT2)
+      /* Get supported features */
+      tSDP_DISC_ATTR* p_attr =
+          SDP_FindAttributeInRec(p_rec, ATTR_ID_SUPPORTED_FEATURES);
+      if (p_attr != NULL) {
+        uint16_t categories = p_attr->attr_value.v.u16;
+        /*
+         * Though Absolute Volume came after in 1.4 and above, but there are
+         * few devices in market which supports absolute Volume and they are
+         * still 1.3. To avoid IOP issuses with those devices, we check for
+         * 1.3 as minimum version
+         */
+        if (peer_rc_version >= AVRC_REV_1_3) {
+          if (categories & AVRC_SUPF_TG_CAT2)
             peer_features |= (BTA_AV_FEAT_ADV_CTRL);
-          if (categories & AVRC_SUPF_CT_APP_SETTINGS)
+          if (categories & AVRC_SUPF_TG_APP_SETTINGS)
             peer_features |= (BTA_AV_FEAT_APP_SETTING);
-          if (categories & AVRC_SUPF_CT_BROWSE)
+          if (categories & AVRC_SUPF_TG_BROWSE)
             peer_features |= (BTA_AV_FEAT_BROWSE);
+        }
+
+        /* AVRCP Cover Artwork over BIP */
+        if (peer_rc_version >= AVRC_REV_1_6) {
+          if (service_uuid == UUID_SERVCLASS_AV_REM_CTRL_TARGET &&
+              categories & AVRC_SUPF_TG_PLAYER_COVER_ART)
+            peer_features |= (BTA_AV_FEAT_COVER_ARTWORK);
         }
       }
     }

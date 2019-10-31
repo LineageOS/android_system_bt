@@ -72,6 +72,7 @@ typedef uint8_t tBTA_AV_STATUS;
 #define BTA_AV_FEAT_DELAY_RPT 0x0400 /* allow delay reporting */
 #define BTA_AV_FEAT_ACP_START \
   0x0800 /* start stream when 2nd SNK was accepted   */
+#define BTA_AV_FEAT_COVER_ARTWORK 0x1000 /* use cover art feature */
 #define BTA_AV_FEAT_APP_SETTING 0x2000 /* Player app setting support */
 
 /* Internal features */

@@ -3070,7 +3070,7 @@ bt_status_t btif_av_sink_execute_service(bool enable) {
     tBTA_AV_FEAT features = BTA_AV_FEAT_NO_SCO_SSPD | BTA_AV_FEAT_RCCT |
                             BTA_AV_FEAT_METADATA | BTA_AV_FEAT_VENDOR |
                             BTA_AV_FEAT_ADV_CTRL | BTA_AV_FEAT_RCTG |
-                            BTA_AV_FEAT_BROWSE;
+                            BTA_AV_FEAT_BROWSE | BTA_AV_FEAT_COVER_ARTWORK;
     BTA_AvEnable(BTA_SEC_AUTHENTICATE, features, bta_av_sink_callback);
     btif_av_sink.RegisterAllBtaHandles();
     return BT_STATUS_SUCCESS;
