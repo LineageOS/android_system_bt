@@ -59,5 +59,6 @@ message DisconnectionRequest {
 message FetchOpenedChannelsRequest {}
 
 message FetchOpenedChannelsResponse {
-  repeated uint32 cid = 1;
+  repeated uint32 scid = 1;
+  repeated uint32 dcid = 2;
 }
