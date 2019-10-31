@@ -85,6 +85,7 @@ class RootCertService : public ::bluetooth::cert::RootCert::Service {
 
     stack_manager_.GetInstance<GrpcModule>()->StopServer();
     grpc_loop_thread_->join();
+    delete grpc_loop_thread_;
 
     stack_manager_.ShutDown();
     delete stack_thread_;
