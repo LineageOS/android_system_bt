@@ -52,6 +52,9 @@ class PacketView {
 
   PacketView<false> GetBigEndianSubview(size_t begin, size_t end) const;
 
+ protected:
+  void Append(PacketView to_add);
+
  private:
   std::forward_list<View> fragments_;
   size_t length_;
