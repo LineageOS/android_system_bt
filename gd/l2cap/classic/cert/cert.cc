@@ -92,48 +92,52 @@ class L2capModuleCertService : public L2capModuleCert::Service {
     packet->AddOctets(std::vector<uint8_t>(req_string.begin(), req_string.end()));
     std::unique_ptr<BasicFrameBuilder> l2cap_builder = BasicFrameBuilder::Create(request->channel(), std::move(packet));
     outgoing_packet_queue_.push(std::move(l2cap_builder));
-    if (outgoing_packet_queue_.size() == 1) {
-      acl_connection_->GetAclQueueEnd()->RegisterEnqueue(
-          handler_, common::Bind(&L2capModuleCertService::enqueue_packet_to_acl, common::Unretained(this)));
-    }
+    send_packet_from_queue();
     return ::grpc::Status::OK;
   }
+
+  static constexpr Cid kFirstDynamicChannelForIncomingRequest = kFirstDynamicChannel + 0x100;
 
   ::grpc::Status SendConnectionRequest(::grpc::ServerContext* context, const cert::ConnectionRequest* request,
                                        ::google::protobuf::Empty* response) override {
-    auto builder = ConnectionRequestBuilder::Create(1, 1, request->scid());
+    auto scid = request->scid();
+    if (last_connection_request_scid_ != kInvalidCid) {
+      return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Another connection request is pending");
+    }
+    if (scid >= kFirstDynamicChannelForIncomingRequest) {
+      return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Use scid < kFirstDynamicChannelForIncomingRequest");
+    }
+    for (const auto& cid_pair : open_channels_scid_dcid_) {
+      if (cid_pair.first == scid) {
+        return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "SCID already taken");
+      }
+    }
+    auto builder = ConnectionRequestBuilder::Create(1, request->psm(), scid);
     auto l2cap_builder = BasicFrameBuilder::Create(1, std::move(builder));
     outgoing_packet_queue_.push(std::move(l2cap_builder));
-    if (outgoing_packet_queue_.size() == 1) {
-      acl_connection_->GetAclQueueEnd()->RegisterEnqueue(
-          handler_, common::Bind(&L2capModuleCertService::enqueue_packet_to_acl, common::Unretained(this)));
-    }
-
+    send_packet_from_queue();
+    last_connection_request_scid_ = scid;
     return ::grpc::Status::OK;
   }
+  Cid last_connection_request_scid_ = kInvalidCid;
+  Cid next_incoming_request_cid_ = kFirstDynamicChannelForIncomingRequest;
 
   ::grpc::Status SendConfigurationRequest(
       ::grpc::ServerContext* context, const ::bluetooth::l2cap::classic::cert::ConfigurationRequest* request,
       ::bluetooth::l2cap::classic::cert::SendConfigurationRequestResult* response) override {
     auto builder = ConfigurationRequestBuilder::Create(1, request->scid(), Continuation::END, {});
-    auto l2cap_builder = BasicFrameBuilder::Create(1, std::move(builder));
+    auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
     outgoing_packet_queue_.push(std::move(l2cap_builder));
-    if (outgoing_packet_queue_.size() == 1) {
-      acl_connection_->GetAclQueueEnd()->RegisterEnqueue(
-          handler_, common::Bind(&L2capModuleCertService::enqueue_packet_to_acl, common::Unretained(this)));
-    }
+    send_packet_from_queue();
     return ::grpc::Status::OK;
   }
 
   ::grpc::Status SendDisconnectionRequest(::grpc::ServerContext* context, const cert::DisconnectionRequest* request,
                                           ::google::protobuf::Empty* response) override {
-    auto builder = DisconnectionRequestBuilder::Create(3, 0x40, 101);
-    auto l2cap_builder = BasicFrameBuilder::Create(1, std::move(builder));
+    auto builder = DisconnectionRequestBuilder::Create(3, request->dcid(), request->scid());
+    auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
     outgoing_packet_queue_.push(std::move(l2cap_builder));
-    if (outgoing_packet_queue_.size() == 1) {
-      acl_connection_->GetAclQueueEnd()->RegisterEnqueue(
-          handler_, common::Bind(&L2capModuleCertService::enqueue_packet_to_acl, common::Unretained(this)));
-    }
+    send_packet_from_queue();
 
     return ::grpc::Status::OK;
   }
@@ -141,10 +145,13 @@ class L2capModuleCertService : public L2capModuleCert::Service {
   ::grpc::Status FetchOpenedChannels(
       ::grpc::ServerContext* context, const ::bluetooth::l2cap::classic::cert::FetchOpenedChannelsRequest* request,
       ::bluetooth::l2cap::classic::cert::FetchOpenedChannelsResponse* response) override {
-    response->mutable_cid()->Add(open_channels_.begin(), open_channels_.end());
+    for (const auto& cid_pair : open_channels_scid_dcid_) {
+      response->mutable_scid()->Add(cid_pair.first);
+      response->mutable_dcid()->Add(cid_pair.second);
+    }
     return ::grpc::Status::OK;
   }
-  std::vector<uint16_t> open_channels_;
+  std::vector<std::pair<uint16_t, uint16_t>> open_channels_scid_dcid_;
 
   std::unique_ptr<packet::BasePacketBuilder> enqueue_packet_to_acl() {
     auto basic_frame_builder = std::move(outgoing_packet_queue_.front());
@@ -186,30 +193,35 @@ class L2capModuleCertService : public L2capModuleCert::Service {
     }
   }
 
+  void send_packet_from_queue() {
+    if (outgoing_packet_queue_.size() == 1) {
+      acl_connection_->GetAclQueueEnd()->RegisterEnqueue(
+          handler_, common::Bind(&L2capModuleCertService::enqueue_packet_to_acl, common::Unretained(this)));
+    }
+  }
+
   void handle_signalling_packet(ControlView control_view) {
     auto code = control_view.GetCode();
     switch (code) {
       case CommandCode::CONNECTION_REQUEST: {
         ConnectionRequestView view = ConnectionRequestView::Create(control_view);
         ASSERT(view.IsValid());
-        open_channels_.push_back(view.GetSourceCid());
         auto builder = ConnectionResponseBuilder::Create(
-            view.GetIdentifier(), view.GetSourceCid(), view.GetSourceCid(),
+            view.GetIdentifier(), view.GetSourceCid(), next_incoming_request_cid_,
             accept_incoming_connection_ ? ConnectionResponseResult::SUCCESS : ConnectionResponseResult::INVALID_CID,
             ConnectionResponseStatus::NO_FURTHER_INFORMATION_AVAILABLE);
         auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
         outgoing_packet_queue_.push(std::move(l2cap_builder));
-        if (outgoing_packet_queue_.size() == 1) {
-          acl_connection_->GetAclQueueEnd()->RegisterEnqueue(
-              handler_, common::Bind(&L2capModuleCertService::enqueue_packet_to_acl, common::Unretained(this)));
-        }
-
+        send_packet_from_queue();
+        open_channels_scid_dcid_.emplace_back(next_incoming_request_cid_, view.GetSourceCid());
+        next_incoming_request_cid_++;
         break;
       }
       case CommandCode::CONNECTION_RESPONSE: {
         ConnectionResponseView view = ConnectionResponseView::Create(control_view);
         ASSERT(view.IsValid());
-        open_channels_.push_back(view.GetSourceCid());
+        open_channels_scid_dcid_.emplace_back(last_connection_request_scid_, view.GetSourceCid());
+        last_connection_request_scid_ = kInvalidCid;
         break;
       }
 
@@ -221,10 +233,7 @@ class L2capModuleCertService : public L2capModuleCert::Service {
                                                  ConfigurationResponseResult::SUCCESS, {});
         auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
         outgoing_packet_queue_.push(std::move(l2cap_builder));
-        if (outgoing_packet_queue_.size() == 1) {
-          acl_connection_->GetAclQueueEnd()->RegisterEnqueue(
-              handler_, common::Bind(&L2capModuleCertService::enqueue_packet_to_acl, common::Unretained(this)));
-        }
+        send_packet_from_queue();
         break;
       }
       default:
