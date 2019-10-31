@@ -39,6 +39,9 @@ cc_binary {
         "-Werror",
         "-DHAS_NO_BDROID_BUILDCFG",
     ],
+    generated_headers: [
+        "RootCanalGeneratedPackets_h",
+    ],
     static_libs: [
         "android.hardware.bluetooth-async",
         "android.hardware.bluetooth-hci",
@@ -78,6 +81,9 @@ cc_library_shared {
         "-Wextra",
         "-Werror",
         "-DHAS_NO_BDROID_BUILDCFG",
+    ],
+    generated_headers: [
+        "RootCanalGeneratedPackets_h",
     ],
     static_libs: [
         "android.hardware.bluetooth-async",
