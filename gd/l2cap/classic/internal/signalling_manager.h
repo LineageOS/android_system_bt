@@ -111,7 +111,7 @@ class ClassicSignallingManager {
   PendingCommand last_sent_command_;
   std::queue<PendingCommand> pending_commands_;
   os::Alarm alarm_;
-  SignalId next_signal_id_ = kInvalidSignalId;
+  SignalId next_signal_id_ = kInitialSignalId;
 };
 
 }  // namespace internal
