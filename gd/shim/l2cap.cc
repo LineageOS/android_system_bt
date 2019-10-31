@@ -211,7 +211,8 @@ struct L2cap::impl {
 
   void RegistrationComplete(l2cap::classic::DynamicChannelManager::RegistrationResult result,
                             std::unique_ptr<l2cap::classic::DynamicChannelService> service);
-  void ConnectionOpen(std::unique_ptr<l2cap::classic::DynamicChannel> channel);
+  void LocalConnectionOpen(std::unique_ptr<l2cap::classic::DynamicChannel> channel);
+  void RemoteConnectionOpen(std::unique_ptr<l2cap::classic::DynamicChannel> channel);
   void ConnectionFailure(l2cap::classic::DynamicChannelManager::ConnectionResult result);
 
   bool Write(ChannelInterfaceId cid, std::unique_ptr<packet::RawBuilder> packet);
@@ -246,8 +247,9 @@ void L2cap::impl::RegistrationComplete(l2cap::classic::DynamicChannelManager::Re
   completed.set_value();
 }
 
-void L2cap::impl::ConnectionOpen(std::unique_ptr<l2cap::classic::DynamicChannel> channel) {
-  LOG_DEBUG("Connection is open");
+void L2cap::impl::LocalConnectionOpen(std::unique_ptr<l2cap::classic::DynamicChannel> channel) {
+  LOG_DEBUG("Local initiated connection is open to connect_queue_size:%zd device:%s", connect_completed_queue_.size(),
+            channel->GetDevice().ToString().c_str());
   auto completed = std::move(connect_completed_queue_.front());
   connect_completed_queue_.pop();
   if (!channel_interface_manager_.HasResources()) {
@@ -256,11 +258,31 @@ void L2cap::impl::ConnectionOpen(std::unique_ptr<l2cap::classic::DynamicChannel>
   completed.set_value(channel_interface_manager_.AddChannel(std::move(channel)));
 }
 
+void L2cap::impl::RemoteConnectionOpen(std::unique_ptr<l2cap::classic::DynamicChannel> channel) {
+  LOG_DEBUG("Remote initiated connection is open to connect_queue_size:%zd device:%s", connect_completed_queue_.size(),
+            channel->GetDevice().ToString().c_str());
+  // TODO(cmanton) plumb back to legacy somehow
+}
+
 void L2cap::impl::ConnectionFailure(l2cap::classic::DynamicChannelManager::ConnectionResult result) {
-  LOG_DEBUG("Connection failed");
-  auto& completed = connect_completed_queue_.front();
+  switch (result.connection_result_code) {
+    case l2cap::classic::DynamicChannelManager::ConnectionResultCode::SUCCESS:
+      LOG_WARN("Connection failed result:success hci:%s", hci::ErrorCodeText(result.hci_error).c_str());
+      break;
+    case l2cap::classic::DynamicChannelManager::ConnectionResultCode::FAIL_NO_SERVICE_REGISTERED:
+      LOG_DEBUG("Connection failed result:no service registered hci:%s", hci::ErrorCodeText(result.hci_error).c_str());
+      break;
+    case l2cap::classic::DynamicChannelManager::ConnectionResultCode::FAIL_HCI_ERROR:
+      LOG_DEBUG("Connection failed result:hci error hci:%s", hci::ErrorCodeText(result.hci_error).c_str());
+      break;
+    case l2cap::classic::DynamicChannelManager::ConnectionResultCode::FAIL_L2CAP_ERROR:
+      LOG_DEBUG("Connection failed result:l2cap error hci:%s l2cap:%s", hci::ErrorCodeText(result.hci_error).c_str(),
+                l2cap::ConnectionResponseResultText(result.l2cap_connection_response_result).c_str());
+      break;
+  }
+  auto completed = std::move(connect_completed_queue_.front());
   connect_completed_queue_.pop();
-  completed.set_value(0);
+  completed.set_value(kInvalidChannelInterfaceId);
 }
 
 void L2cap::impl::RegisterService(l2cap::Psm psm, std::promise<void> register_completed) {
@@ -268,14 +290,14 @@ void L2cap::impl::RegisterService(l2cap::Psm psm, std::promise<void> register_co
   register_completed_queue_.push(std::move(register_completed));
   bool rc = dynamic_channel_manager_->RegisterService(
       psm, security_policy, common::BindOnce(&L2cap::impl::RegistrationComplete, common::Unretained(this)),
-      common::Bind(&L2cap::impl::ConnectionOpen, common::Unretained(this)), handler_);
+      common::Bind(&L2cap::impl::RemoteConnectionOpen, common::Unretained(this)), handler_);
   ASSERT_LOG(rc == true, "Failed to request register classic service");
 }
 
 void L2cap::impl::Connect(l2cap::Psm psm, hci::Address address, std::promise<uint16_t> connect_completed) {
   connect_completed_queue_.push(std::move(connect_completed));
   bool rc = dynamic_channel_manager_->ConnectChannel(
-      address, psm, common::Bind(&L2cap::impl::ConnectionOpen, common::Unretained(this)),
+      address, psm, common::Bind(&L2cap::impl::LocalConnectionOpen, common::Unretained(this)),
       common::Bind(&L2cap::impl::ConnectionFailure, common::Unretained(this)), handler_);
   ASSERT_LOG(rc == true, "Failed to request connect classic channel");
 }

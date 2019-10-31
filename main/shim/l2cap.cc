@@ -125,19 +125,14 @@ uint16_t bluetooth::shim::L2cap::GetNextDynamicClassicPsm() {
 
 void bluetooth::shim::L2cap::Register(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
                                       bool enable_snoop) {
-  LOG_DEBUG(LOG_TAG, "Registering service psm:%hd", psm);
-
-  std::chrono::system_clock::time_point two_seconds =
-      std::chrono::system_clock::now() + std::chrono::seconds(2);
+  LOG_DEBUG(LOG_TAG, "Registering service on psm:%hd", psm);
 
   std::promise<void> register_completed;
   auto completed = register_completed.get_future();
   bluetooth::shim::GetL2cap()->RegisterService(psm, enable_snoop,
                                                std::move(register_completed));
   completed.wait();
-  if (std::future_status::ready != completed.wait_until(two_seconds)) {
-    LOG_WARN(LOG_TAG, "Timed out registering service to psm:%hd", psm);
-  }
+  LOG_DEBUG(LOG_TAG, "Successfully registered service on psm:%hd", psm);
 }
 
 uint16_t bluetooth::shim::L2cap::Connect(uint16_t psm,
@@ -145,19 +140,16 @@ uint16_t bluetooth::shim::L2cap::Connect(uint16_t psm,
   LOG_DEBUG(LOG_TAG, "Requesting connection to psm:%hd address:%s", psm,
             raw_address.ToString().c_str());
 
-  std::chrono::system_clock::time_point two_seconds =
-      std::chrono::system_clock::now() + std::chrono::seconds(2);
-
   std::promise<uint16_t> connect_completed;
   auto completed = connect_completed.get_future();
   bluetooth::shim::GetL2cap()->Connect(psm, raw_address.ToString(),
                                        std::move(connect_completed));
-  if (std::future_status::ready == completed.wait_until(two_seconds)) {
-    return completed.get();
-  }
-  LOG_WARN(LOG_TAG, "Timed out connecting to psm:%hd address:%s", psm,
-           raw_address.ToString().c_str());
-  return 0;
+  uint16_t cid = completed.get();
+  LOG_INFO(LOG_TAG,
+           "Successfully connected using connection_interface_descriptor:%hd "
+           "psm:%hd address:%s",
+           cid, psm, raw_address.ToString().c_str());
+  return cid;
 }
 
 bool bluetooth::shim::L2cap::IsCongested(uint16_t cid) const {
@@ -186,11 +178,15 @@ bool bluetooth::shim::L2cap::WriteNonFlushable(uint16_t cid, BT_HDR* bt_hdr) {
 bool bluetooth::shim::L2cap::SetCallbacks(uint16_t cid,
                                           const tL2CAP_APPL_INFO* callbacks) {
   LOG_ASSERT(cid_to_callback_map_.find(cid) != cid_to_callback_map_.end())
-      << "Registering multiple channel callbacks cid:" << cid;
+      << "Registering multiple channel callbacks "
+         "connection_interface_descriptor:"
+      << cid;
   cid_to_callback_map_[cid] = callbacks;
   bluetooth::shim::GetL2cap()->SetOnReadDataReady(
       cid, [this](uint16_t cid, std::vector<const uint8_t> data) {
-        LOG_INFO(LOG_TAG, "Got data on cid:%hd len:%zd", cid, data.size());
+        LOG_INFO(LOG_TAG,
+                 "Got data on connection_interface_descriptor:%hd len:%zd", cid,
+                 data.size());
 
         BT_HDR* bt_hdr =
             static_cast<BT_HDR*>(osi_calloc(data.size() + kBtHdrSize));
@@ -200,7 +196,8 @@ bool bluetooth::shim::L2cap::SetCallbacks(uint16_t cid,
         cid_to_callback_map_[cid]->pL2CA_DataInd_Cb(cid, bt_hdr);
       });
   bluetooth::shim::GetL2cap()->SetOnClose(cid, [this, &cid](int error_code) {
-    LOG_DEBUG(LOG_TAG, "Channel closed cid:%hd", cid);
+    LOG_DEBUG(LOG_TAG, "Channel closed connection_interface_descriptor:%hd",
+              cid);
     cid_to_callback_map_[cid]->pL2CA_DisconnectInd_Cb(cid, true);
   });
   return true;
@@ -208,6 +205,7 @@ bool bluetooth::shim::L2cap::SetCallbacks(uint16_t cid,
 
 void bluetooth::shim::L2cap::ClearCallbacks(uint16_t cid) {
   LOG_ASSERT(cid_to_callback_map_.find(cid) == cid_to_callback_map_.end())
-      << "Clearing callbacks that do not exist cid:" << cid;
+      << "Clearing callbacks that do not exist connection_interface_descriptor:"
+      << cid;
   cid_to_callback_map_.erase(cid);
 }
