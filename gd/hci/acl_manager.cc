@@ -170,7 +170,7 @@ struct AclManager::impl {
 
   void buffer_packet() {
     unregister_all_connections();
-    PacketBoundaryFlag packet_boundary_flag = PacketBoundaryFlag::COMPLETE_PDU;
+    PacketBoundaryFlag packet_boundary_flag = PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE;
     BroadcastFlag broadcast_flag = BroadcastFlag::POINT_TO_POINT;
     //   Wrap packet and enqueue it
     uint16_t handle = current_connection_pair_->first;
