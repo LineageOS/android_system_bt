@@ -14,24 +14,30 @@
  * limitations under the License.
  */
 
-#include "packet/bit_inserter.h"
+#include "packet/fragmenting_inserter.h"
 
 #include "os/log.h"
 
 namespace bluetooth {
 namespace packet {
 
-BitInserter::BitInserter(std::vector<uint8_t>& vector) : ByteInserter(vector) {}
+FragmentingInserter::FragmentingInserter(size_t mtu,
+                                         std::back_insert_iterator<std::vector<std::unique_ptr<RawBuilder>>> iterator)
+    : BitInserter(to_construct_bit_inserter_), mtu_(mtu), curr_packet_(std::make_unique<RawBuilder>()),
+      iterator_(iterator) {}
 
-BitInserter::~BitInserter() {
-  ASSERT(num_saved_bits_ == 0);
-}
-
-void BitInserter::insert_bits(uint8_t byte, size_t num_bits) {
+void FragmentingInserter::insert_bits(uint8_t byte, size_t num_bits) {
+  ASSERT(curr_packet_ != nullptr);
   size_t total_bits = num_bits + num_saved_bits_;
   uint16_t new_value = static_cast<uint8_t>(saved_bits_) | (static_cast<uint16_t>(byte) << num_saved_bits_);
   if (total_bits >= 8) {
-    ByteInserter::insert_byte(static_cast<uint8_t>(new_value));
+    uint8_t new_byte = static_cast<uint8_t>(new_value);
+    on_byte(new_byte);
+    curr_packet_->AddOctets1(new_byte);
+    if (curr_packet_->size() >= mtu_) {
+      iterator_ = std::move(curr_packet_);
+      curr_packet_ = std::make_unique<RawBuilder>();
+    }
     total_bits -= 8;
     new_value = new_value >> 8;
   }
@@ -40,8 +46,11 @@ void BitInserter::insert_bits(uint8_t byte, size_t num_bits) {
   saved_bits_ = static_cast<uint8_t>(new_value) & mask;
 }
 
-void BitInserter::insert_byte(uint8_t byte) {
-  insert_bits(byte, 8);
+void FragmentingInserter::finalize() {
+  if (curr_packet_->size() != 0) {
+    iterator_ = std::move(curr_packet_);
+  }
+  curr_packet_.reset();
 }
 
 }  // namespace packet

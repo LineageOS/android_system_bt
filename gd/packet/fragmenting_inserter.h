@@ -21,23 +21,25 @@
 #include <memory>
 #include <vector>
 
-#include "packet/byte_inserter.h"
+#include "packet/bit_inserter.h"
+#include "packet/raw_builder.h"
 
 namespace bluetooth {
 namespace packet {
 
-class BitInserter : public ByteInserter {
+class FragmentingInserter : public BitInserter {
  public:
-  BitInserter(std::vector<uint8_t>& vector);
-  ~BitInserter() override;
+  FragmentingInserter(size_t mtu, std::back_insert_iterator<std::vector<std::unique_ptr<RawBuilder>>> iterator);
 
-  virtual void insert_bits(uint8_t byte, size_t num_bits);
+  void insert_bits(uint8_t byte, size_t num_bits) override;
 
-  void insert_byte(uint8_t byte) override;
+  void finalize();
 
  protected:
-  size_t num_saved_bits_{0};
-  uint8_t saved_bits_{0};
+  std::vector<uint8_t> to_construct_bit_inserter_;
+  size_t mtu_;
+  std::unique_ptr<RawBuilder> curr_packet_;
+  std::back_insert_iterator<std::vector<std::unique_ptr<RawBuilder>>> iterator_;
 };
 
 }  // namespace packet
