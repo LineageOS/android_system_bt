@@ -121,6 +121,7 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   SET_HANDLER(OpCode::READ_BUFFER_SIZE, HciReadBufferSize);
   SET_HANDLER(OpCode::HOST_BUFFER_SIZE, HciHostBufferSize);
   SET_HANDLER(OpCode::SNIFF_SUBRATING, HciSniffSubrating);
+  SET_HANDLER(OpCode::READ_ENCRYPTION_KEY_SIZE, HciReadEncryptionKeySize);
   SET_HANDLER(OpCode::READ_LOCAL_VERSION_INFORMATION, HciReadLocalVersionInformation);
   SET_HANDLER(OpCode::READ_BD_ADDR, HciReadBdAddr);
   SET_HANDLER(OpCode::READ_LOCAL_SUPPORTED_COMMANDS, HciReadLocalSupportedCommands);
@@ -137,6 +138,8 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   SET_HANDLER(OpCode::IO_CAPABILITY_REQUEST_NEGATIVE_REPLY, HciIoCapabilityRequestNegativeReply);
   SET_HANDLER(OpCode::WRITE_SIMPLE_PAIRING_MODE, HciWriteSimplePairingMode);
   SET_HANDLER(OpCode::WRITE_LE_HOST_SUPPORT, HciWriteLeHostSupport);
+  SET_HANDLER(OpCode::WRITE_SECURE_CONNECTIONS_HOST_SUPPORT,
+              HciWriteSecureConnectionHostSupport);
   SET_HANDLER(OpCode::SET_EVENT_MASK, HciSetEventMask);
   SET_HANDLER(OpCode::WRITE_INQUIRY_MODE, HciWriteInquiryMode);
   SET_HANDLER(OpCode::WRITE_PAGE_SCAN_TYPE, HciWritePageScanType);
@@ -308,6 +311,19 @@ void DualModeController::HciReadBufferSize(packets::PacketView<true> args) {
       packets::EventPacketBuilder::CreateCommandCompleteReadBufferSize(
           hci::Status::SUCCESS, properties_.GetAclDataPacketSize(), properties_.GetSynchronousDataPacketSize(),
           properties_.GetTotalNumAclDataPackets(), properties_.GetTotalNumSynchronousDataPackets());
+
+  send_event_(command_complete->ToVector());
+}
+
+void DualModeController::HciReadEncryptionKeySize(
+    packets::PacketView<true> args) {
+  ASSERT_LOG(args.size() == 2, "%s  size=%zu", __func__, args.size());
+
+  uint16_t handle = args.begin().extract<uint16_t>();
+
+  std::shared_ptr<packets::EventPacketBuilder> command_complete =
+      packets::EventPacketBuilder::CreateCommandCompleteReadEncryptionKeySize(
+          hci::Status::SUCCESS, handle, properties_.GetEncryptionKeySize());
 
   send_event_(command_complete->ToVector());
 }
@@ -538,6 +554,12 @@ void DualModeController::HciChangeConnectionPacketType(packets::PacketView<true>
 void DualModeController::HciWriteLeHostSupport(packets::PacketView<true> args) {
   ASSERT_LOG(args.size() == 2, "%s  size=%zu", __func__, args.size());
   SendCommandCompleteSuccess(OpCode::WRITE_LE_HOST_SUPPORT);
+}
+
+void DualModeController::HciWriteSecureConnectionHostSupport(
+    packets::PacketView<true> args) {
+  ASSERT_LOG(args.size() == 1, "%s  size=%zu", __func__, args.size());
+  SendCommandCompleteSuccess(OpCode::WRITE_SECURE_CONNECTIONS_HOST_SUPPORT);
 }
 
 void DualModeController::HciSetEventMask(packets::PacketView<true> args) {
