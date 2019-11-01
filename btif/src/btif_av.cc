@@ -655,6 +655,7 @@ static BtifAvSink btif_av_sink;
   case BTA_AV_VENDOR_CMD_EVT:      \
   case BTA_AV_META_MSG_EVT:        \
   case BTA_AV_RC_FEAT_EVT:         \
+  case BTA_AV_RC_PSM_EVT:          \
   case BTA_AV_REMOTE_RSP_EVT: {    \
     btif_rc_handler(e, d);         \
   } break;
@@ -727,6 +728,7 @@ const char* dump_av_sm_event_name(btif_av_sm_event_t event) {
     CASE_RETURN_STR(BTA_AV_META_MSG_EVT)
     CASE_RETURN_STR(BTA_AV_REJECT_EVT)
     CASE_RETURN_STR(BTA_AV_RC_FEAT_EVT)
+    CASE_RETURN_STR(BTA_AV_RC_PSM_EVT)
     CASE_RETURN_STR(BTA_AV_OFFLOAD_START_RSP_EVT)
     CASE_RETURN_STR(BTIF_AV_CONNECT_REQ_EVT)
     CASE_RETURN_STR(BTIF_AV_DISCONNECT_REQ_EVT)
@@ -1541,6 +1543,7 @@ bool BtifAvStateMachine::StateIdle::ProcessEvent(uint32_t event, void* p_data) {
     case BTA_AV_VENDOR_CMD_EVT:
     case BTA_AV_META_MSG_EVT:
     case BTA_AV_RC_FEAT_EVT:
+    case BTA_AV_RC_PSM_EVT:
     case BTA_AV_REMOTE_RSP_EVT:
       btif_rc_handler(event, (tBTA_AV*)p_data);
       break;
@@ -2565,6 +2568,11 @@ static void btif_av_handle_bta_av_event(uint8_t peer_sep,
     case BTA_AV_RC_FEAT_EVT: {
       const tBTA_AV_RC_FEAT& rc_feat = p_data->rc_feat;
       peer_address = rc_feat.peer_addr;
+      break;
+    }
+    case BTA_AV_RC_PSM_EVT: {
+      const tBTA_AV_RC_PSM& rc_psm = p_data->rc_cover_art_psm;
+      peer_address = rc_psm.peer_addr;
       break;
     }
   }

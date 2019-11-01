@@ -174,6 +174,7 @@ typedef struct {
   bool br_connected;  // Browsing channel.
   uint8_t rc_handle;
   tBTA_AV_FEAT rc_features;
+  uint16_t rc_cover_art_psm;  // AVRCP-BIP psm
   btrc_connection_state_t rc_state;
   RawAddress rc_addr;
   uint16_t rc_pending_play;
@@ -527,6 +528,15 @@ void handle_rc_ctrl_features(btif_rc_device_cb_t* p_dev) {
                                          p_dev->rc_addr, rc_features));
 }
 
+void handle_rc_ctrl_psm(btif_rc_device_cb_t* p_dev) {
+  uint16_t cover_art_psm = p_dev->rc_cover_art_psm;
+  BTIF_TRACE_DEBUG("%s: Update rc cover art psm to CTRL: %d", __func__,
+      cover_art_psm);
+  do_in_jni_thread(FROM_HERE, base::Bind(
+      bt_rc_ctrl_callbacks->get_cover_art_psm_cb,
+      p_dev->rc_addr, cover_art_psm));
+}
+
 void handle_rc_features(btif_rc_device_cb_t* p_dev) {
 
   CHECK(bt_rc_callbacks);
@@ -668,6 +678,9 @@ void handle_rc_connect(tBTA_AV_RC_OPEN* p_rc_open) {
   p_dev->rc_features = p_rc_open->peer_features;
   BTIF_TRACE_DEBUG("%s: handle_rc_connect in features: 0x%x out features 0x%x",
                    __func__, p_rc_open->peer_features, p_dev->rc_features);
+  p_dev->rc_cover_art_psm = p_rc_open->cover_art_psm;
+  BTIF_TRACE_DEBUG("%s: cover art psm: 0x%x",
+                   __func__, p_dev->rc_cover_art_psm);
   p_dev->rc_vol_label = MAX_LABEL;
   p_dev->rc_volume = MAX_VOLUME;
 
@@ -688,6 +701,9 @@ void handle_rc_connect(tBTA_AV_RC_OPEN* p_rc_open) {
   }
   /* report connection state if remote device is AVRCP target */
   handle_rc_ctrl_features(p_dev);
+
+  /* report psm if remote device is AVRCP target */
+  handle_rc_ctrl_psm(p_dev);
 }
 
 /***************************************************************************
@@ -738,6 +754,7 @@ void handle_rc_disconnect(tBTA_AV_RC_CLOSE* p_rc_close) {
     memset(p_dev->rc_notif, 0, sizeof(p_dev->rc_notif));
 
     p_dev->rc_features = 0;
+    p_dev->rc_cover_art_psm = 0;
     p_dev->rc_vol_label = MAX_LABEL;
     p_dev->rc_volume = MAX_VOLUME;
 
@@ -1011,8 +1028,9 @@ void btif_rc_handler(tBTA_AV_EVT event, tBTA_AV* p_data) {
   btif_rc_device_cb_t* p_dev = NULL;
   switch (event) {
     case BTA_AV_RC_OPEN_EVT: {
-      BTIF_TRACE_DEBUG("%s: Peer_features: %x", __func__,
-                       p_data->rc_open.peer_features);
+      BTIF_TRACE_DEBUG("%s: Peer_features: 0x%x Cover Art PSM: 0x%x", __func__,
+                       p_data->rc_open.peer_features,
+                       p_data->rc_open.cover_art_psm);
       handle_rc_connect(&(p_data->rc_open));
     } break;
 
@@ -1070,6 +1088,22 @@ void btif_rc_handler(tBTA_AV_EVT event, tBTA_AV* p_data) {
 
       if ((p_dev->rc_connected) && (bt_rc_ctrl_callbacks != NULL)) {
         handle_rc_ctrl_features(p_dev);
+      }
+    } break;
+
+    case BTA_AV_RC_PSM_EVT: {
+      BTIF_TRACE_DEBUG("%s: Peer cover art PSM: %x", __func__,
+                       p_data->rc_cover_art_psm.cover_art_psm);
+      p_dev = btif_rc_get_device_by_handle(p_data->rc_cover_art_psm.rc_handle);
+      if (p_dev == NULL) {
+        BTIF_TRACE_ERROR("%s: RC PSM event for Invalid rc handle",
+                         __func__);
+        break;
+      }
+
+      p_dev->rc_cover_art_psm = p_data->rc_cover_art_psm.cover_art_psm;
+      if ((p_dev->rc_connected) && (bt_rc_ctrl_callbacks != NULL)) {
+        handle_rc_ctrl_psm(p_dev);
       }
     } break;
 

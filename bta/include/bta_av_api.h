@@ -145,8 +145,9 @@ typedef uint8_t tBTA_AV_ERR;
 #define BTA_AV_OFFLOAD_START_RSP_EVT 22 /* a2dp offload start response */
 #define BTA_AV_RC_BROWSE_OPEN_EVT 23    /* remote control channel open */
 #define BTA_AV_RC_BROWSE_CLOSE_EVT 24   /* remote control channel closed */
+#define BTA_AV_RC_PSM_EVT 25            /* cover art psm update */
 /* Max BTA event */
-#define BTA_AV_MAX_EVT 25
+#define BTA_AV_MAX_EVT 26
 
 typedef uint8_t tBTA_AV_EVT;
 
@@ -235,6 +236,7 @@ typedef struct {
 /* data associated with BTA_AV_RC_OPEN_EVT */
 typedef struct {
   uint8_t rc_handle;
+  uint16_t cover_art_psm;
   tBTA_AV_FEAT peer_features;
   RawAddress peer_addr;
   tBTA_AV_STATUS status;
@@ -265,6 +267,13 @@ typedef struct {
   tBTA_AV_FEAT peer_features;
   RawAddress peer_addr;
 } tBTA_AV_RC_FEAT;
+
+/* data associated with BTA_AV_RC_PSM_EVT */
+typedef struct {
+  uint8_t rc_handle;
+  uint16_t cover_art_psm;
+  RawAddress peer_addr;
+} tBTA_AV_RC_PSM;
 
 /* data associated with BTA_AV_REMOTE_CMD_EVT */
 typedef struct {
@@ -343,6 +352,7 @@ typedef union {
   tBTA_AV_META_MSG meta_msg;
   tBTA_AV_REJECT reject;
   tBTA_AV_RC_FEAT rc_feat;
+  tBTA_AV_RC_PSM rc_cover_art_psm;
   tBTA_AV_STATUS status;
 } tBTA_AV;
 

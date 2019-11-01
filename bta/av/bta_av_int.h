@@ -571,6 +571,7 @@ typedef struct {
   uint8_t shdl;               /* stream handle (hdi + 1) */
   uint8_t lidx;               /* (index+1) to LCB */
   tBTA_AV_FEAT peer_features; /* peer features mask */
+  uint16_t cover_art_psm;     /* BIP PSM for cover art feature */
 } tBTA_AV_RCB;
 #define BTA_AV_NUM_RCB (BTA_AV_NUM_STRS + 2)
 
