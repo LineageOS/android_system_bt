@@ -67,6 +67,8 @@ class Link {
 
   virtual void SendConnectionRequest(Psm psm, Cid local_cid);
 
+  virtual void SendInformationRequest(InformationRequestInfoType type);
+
   virtual void SendDisconnectionRequest(Cid local_cid, Cid remote_cid);
 
   virtual std::shared_ptr<DynamicChannelImpl> AllocateDynamicChannel(Psm psm, Cid remote_cid,

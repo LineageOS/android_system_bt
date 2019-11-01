@@ -120,6 +120,10 @@ void LinkManager::OnConnectSuccess(std::unique_ptr<hci::AclConnection> acl_conne
                      std::make_unique<l2cap::internal::Fifo>(link_queue_up_end, l2cap_handler_), parameter_provider_,
                      dynamic_channel_service_manager_, fixed_channel_service_manager_);
   auto* link = GetLink(device);
+  ASSERT(link != nullptr);
+  link->SendInformationRequest(InformationRequestInfoType::EXTENDED_FEATURES_SUPPORTED);
+  link->SendInformationRequest(InformationRequestInfoType::FIXED_CHANNELS_SUPPORTED);
+
   // Allocate and distribute channels for all registered fixed channel services
   auto fixed_channel_services = fixed_channel_service_manager_->GetRegisteredServices();
   for (auto& fixed_channel_service : fixed_channel_services) {
