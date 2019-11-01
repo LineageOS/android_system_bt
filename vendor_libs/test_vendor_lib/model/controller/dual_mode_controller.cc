@@ -209,6 +209,12 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   SET_HANDLER(OpCode::READ_REMOTE_VERSION_INFORMATION, HciReadRemoteVersionInformation);
   SET_HANDLER(OpCode::LE_CONNECTION_UPDATE, HciLeConnectionUpdate);
   SET_HANDLER(OpCode::LE_START_ENCRYPTION, HciLeStartEncryption);
+  SET_HANDLER(OpCode::LE_ADD_DEVICE_TO_RESOLVING_LIST,
+              HciLeAddDeviceToResolvingList);
+  SET_HANDLER(OpCode::LE_REMOVE_DEVICE_FROM_RESOLVING_LIST,
+              HciLeRemoveDeviceFromResolvingList);
+  SET_HANDLER(OpCode::LE_CLEAR_RESOLVING_LIST, HciLeClearResolvingList);
+  SET_HANDLER(OpCode::LE_SET_PRIVACY_MODE, HciLeSetPrivacyMode);
   // Testing Commands
   SET_HANDLER(OpCode::READ_LOOPBACK_MODE, HciReadLoopbackMode);
   SET_HANDLER(OpCode::WRITE_LOOPBACK_MODE, HciWriteLoopbackMode);
@@ -1083,6 +1089,70 @@ void DualModeController::HciLeRemoveDeviceFromWhiteList(packets::PacketView<true
   Address address = args_itr.extract<Address>();
   link_layer_controller_.LeWhiteListRemoveDevice(address, addr_type);
   SendCommandCompleteSuccess(OpCode::LE_REMOVE_DEVICE_FROM_WHITE_LIST);
+}
+
+void DualModeController::HciLeClearResolvingList(
+    packets::PacketView<true> args) {
+  ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
+  link_layer_controller_.LeResolvingListClear();
+  SendCommandCompleteSuccess(OpCode::LE_CLEAR_RESOLVING_LIST);
+}
+
+void DualModeController::HciLeAddDeviceToResolvingList(
+    packets::PacketView<true> args) {
+  ASSERT_LOG(args.size() == 39, "%s  size=%zu", __func__, args.size());
+
+  if (link_layer_controller_.LeResolvingListFull()) {
+    SendCommandCompleteOnlyStatus(OpCode::LE_ADD_DEVICE_TO_RESOLVING_LIST,
+                                  hci::Status::MEMORY_CAPACITY_EXCEEDED);
+    return;
+  }
+  auto args_itr = args.begin();
+  uint8_t addr_type = args_itr.extract<uint8_t>();
+  Address address = args_itr.extract<Address>();
+  std::array<uint8_t, LinkLayerController::kIrk_size> peerIrk;
+  std::array<uint8_t, LinkLayerController::kIrk_size> localIrk;
+  for (size_t irk_ind = 0; irk_ind < LinkLayerController::kIrk_size;
+       irk_ind++) {
+    peerIrk[irk_ind] = args_itr.extract<uint8_t>();
+  }
+
+  for (size_t irk_ind = 0; irk_ind < LinkLayerController::kIrk_size;
+       irk_ind++) {
+    localIrk[irk_ind] = args_itr.extract<uint8_t>();
+  }
+
+  link_layer_controller_.LeResolvingListAddDevice(address, addr_type, peerIrk,
+                                                  localIrk);
+  SendCommandCompleteSuccess(OpCode::LE_ADD_DEVICE_TO_RESOLVING_LIST);
+}
+
+void DualModeController::HciLeRemoveDeviceFromResolvingList(
+    packets::PacketView<true> args) {
+  ASSERT_LOG(args.size() == 7, "%s  size=%zu", __func__, args.size());
+
+  auto args_itr = args.begin();
+  uint8_t addr_type = args_itr.extract<uint8_t>();
+  Address address = args_itr.extract<Address>();
+  link_layer_controller_.LeResolvingListRemoveDevice(address, addr_type);
+  SendCommandCompleteSuccess(OpCode::LE_REMOVE_DEVICE_FROM_RESOLVING_LIST);
+}
+
+void DualModeController::HciLeSetPrivacyMode(packets::PacketView<true> args) {
+  ASSERT_LOG(args.size() == 8, "%s  size=%zu", __func__, args.size());
+
+  auto args_itr = args.begin();
+  uint8_t peer_identity_address_type = args_itr.extract<uint8_t>();
+  Address peer_identity_address = args_itr.extract<Address>();
+  uint8_t privacy_mode = args_itr.extract<uint8_t>();
+
+  if (link_layer_controller_.LeResolvingListContainsDevice(
+          peer_identity_address, peer_identity_address_type)) {
+    link_layer_controller_.LeSetPrivacyMode(
+        peer_identity_address_type, peer_identity_address, privacy_mode);
+  }
+
+  SendCommandCompleteSuccess(OpCode::LE_SET_PRIVACY_MODE);
 }
 
 /*

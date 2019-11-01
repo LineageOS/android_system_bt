@@ -32,6 +32,8 @@ namespace test_vendor_lib {
 
 class LinkLayerController {
  public:
+  static constexpr size_t kIrk_size = 16;
+
   LinkLayerController(const DeviceProperties& properties) : properties_(properties) {}
   hci::Status SendCommandToRemoteByAddress(hci::OpCode opcode, packets::PacketView<true> args, const Address& remote,
                                            bool use_public_address);
@@ -118,6 +120,14 @@ class LinkLayerController {
   void LeWhiteListRemoveDevice(Address addr, uint8_t addr_type);
   bool LeWhiteListContainsDevice(Address addr, uint8_t addr_type);
   bool LeWhiteListFull();
+  void LeResolvingListClear();
+  void LeResolvingListAddDevice(Address addr, uint8_t addr_type,
+                                std::array<uint8_t, kIrk_size> peerIrk,
+                                std::array<uint8_t, kIrk_size> localIrk);
+  void LeResolvingListRemoveDevice(Address addr, uint8_t addr_type);
+  bool LeResolvingListContainsDevice(Address addr, uint8_t addr_type);
+  bool LeResolvingListFull();
+  void LeSetPrivacyMode(uint8_t address_type, Address addr, uint8_t mode);
 
   hci::Status SetLeAdvertisingEnable(uint8_t le_advertising_enable) {
     le_advertising_enable_ = le_advertising_enable;
@@ -272,6 +282,9 @@ class LinkLayerController {
   std::vector<uint8_t> le_event_mask_;
 
   std::vector<std::tuple<Address, uint8_t>> le_white_list_;
+  std::vector<std::tuple<Address, uint8_t, std::array<uint8_t, kIrk_size>,
+                         std::array<uint8_t, kIrk_size>>>
+      le_resolving_list_;
 
   uint8_t le_advertising_enable_{false};
   std::chrono::steady_clock::time_point last_le_advertisement_;
