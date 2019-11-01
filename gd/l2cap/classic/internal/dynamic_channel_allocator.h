@@ -59,6 +59,7 @@ class DynamicChannelAllocator {
   bool IsPsmUsed(Psm psm) const;
 
   std::shared_ptr<DynamicChannelImpl> FindChannelByCid(Cid cid);
+  std::shared_ptr<DynamicChannelImpl> FindChannelByRemoteCid(Cid cid);
 
   // Returns number of open, but not reserved channels
   size_t NumberOfChannels() const;
