@@ -45,6 +45,8 @@ class DynamicChannelService {
 
   friend internal::DynamicChannelServiceManagerImpl;
 
+  Psm GetPsm() const;
+
  private:
   DynamicChannelService(Psm psm, internal::DynamicChannelServiceManagerImpl* manager, os::Handler* handler)
       : psm_(psm), manager_(manager), l2cap_layer_handler_(handler) {
