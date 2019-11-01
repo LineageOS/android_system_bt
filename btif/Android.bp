@@ -122,7 +122,6 @@ cc_library_static {
     ],
     cflags: [
         "-DBUILDCFG",
-        "-Wno-implicit-fallthrough",
     ],
 
 }

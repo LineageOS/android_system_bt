@@ -28,7 +28,6 @@ cc_defaults {
         "-DLOG_NDEBUG=1",
         "-DGOOGLE_PROTOBUF_NO_RTTI",
         "-Wno-unused-parameter",
-        "-Wno-implicit-fallthrough",
         "-Wno-unused-result",
     ],
     conlyflags: [
