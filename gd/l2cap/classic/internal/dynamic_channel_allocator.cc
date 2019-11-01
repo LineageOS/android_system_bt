@@ -115,6 +115,15 @@ std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::FindChannelByCid(Ci
   return channels_.find(cid)->second;
 }
 
+std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::FindChannelByRemoteCid(Cid remote_cid) {
+  for (auto& channel : channels_) {
+    if (channel.second->GetRemoteCid() == remote_cid) {
+      return channel.second;
+    }
+  }
+  return nullptr;
+}
+
 size_t DynamicChannelAllocator::NumberOfChannels() const {
   return channels_.size();
 }
