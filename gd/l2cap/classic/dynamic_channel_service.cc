@@ -29,6 +29,10 @@ void DynamicChannelService::Unregister(OnUnregisteredCallback on_unregistered, o
                                               on_unregistered_handler));
 }
 
+Psm DynamicChannelService::GetPsm() const {
+  return psm_;
+}
+
 }  // namespace classic
 }  // namespace l2cap
 }  // namespace bluetooth
