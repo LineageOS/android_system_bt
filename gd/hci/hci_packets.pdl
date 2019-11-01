@@ -36,7 +36,6 @@ enum PacketBoundaryFlag : 2 {
   FIRST_NON_AUTOMATICALLY_FLUSHABLE = 0,
   CONTINUING_FRAGMENT = 1,
   FIRST_AUTOMATICALLY_FLUSHABLE = 2,
-  COMPLETE_PDU = 3,
 }
 
 enum BroadcastFlag : 2 {
