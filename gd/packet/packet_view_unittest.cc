@@ -91,6 +91,36 @@ class PacketViewMultiViewTest : public ::testing::Test {
  public:
   PacketViewMultiViewTest() = default;
   ~PacketViewMultiViewTest() = default;
+
+  const PacketView<true> single_view =
+      PacketView<true>({View(std::make_shared<const vector<uint8_t>>(count_all), 0, count_all.size())});
+  const PacketView<true> multi_view = PacketView<true>({
+      View(std::make_shared<const vector<uint8_t>>(count_1), 0, count_1.size()),
+      View(std::make_shared<const vector<uint8_t>>(count_2), 0, count_2.size()),
+      View(std::make_shared<const vector<uint8_t>>(count_3), 0, count_3.size()),
+  });
+};
+
+class PacketViewMultiViewAppendTest : public ::testing::Test {
+ public:
+  PacketViewMultiViewAppendTest() = default;
+  ~PacketViewMultiViewAppendTest() = default;
+
+  class AppendedPacketView : public PacketView<true> {
+   public:
+    AppendedPacketView(PacketView<true> first, std::forward_list<PacketView<true>> to_append)
+        : PacketView<true>(first) {
+      for (const auto& packet_view : to_append) {
+        Append(packet_view);
+      }
+    }
+  };
+  const PacketView<true> single_view =
+      PacketView<true>({View(std::make_shared<const vector<uint8_t>>(count_all), 0, count_all.size())});
+  const PacketView<true> multi_view = AppendedPacketView(
+      PacketView<true>({View(std::make_shared<const vector<uint8_t>>(count_1), 0, count_1.size())}),
+      {PacketView<true>({View(std::make_shared<const vector<uint8_t>>(count_2), 0, count_2.size())}),
+       PacketView<true>({View(std::make_shared<const vector<uint8_t>>(count_3), 0, count_3.size())})});
 };
 
 class ViewTest : public ::testing::Test {
@@ -483,23 +513,11 @@ TEST(SubviewTest, subSubviewTest) {
   }
 }
 
-TEST(PacketViewMultiViewTest, sizeTest) {
-  PacketView<true> single_view({View(std::make_shared<const vector<uint8_t>>(count_all), 0, count_all.size())});
-  PacketView<true> multi_view({
-      View(std::make_shared<const vector<uint8_t>>(count_1), 0, count_1.size()),
-      View(std::make_shared<const vector<uint8_t>>(count_2), 0, count_2.size()),
-      View(std::make_shared<const vector<uint8_t>>(count_3), 0, count_3.size()),
-  });
+TEST_F(PacketViewMultiViewTest, sizeTest) {
   ASSERT_EQ(single_view.size(), multi_view.size());
 }
 
-TEST(PacketViewMultiViewTest, dereferenceTestLittleEndian) {
-  PacketView<true> single_view({View(std::make_shared<const vector<uint8_t>>(count_all), 0, count_all.size())});
-  PacketView<true> multi_view({
-      View(std::make_shared<const vector<uint8_t>>(count_1), 0, count_1.size()),
-      View(std::make_shared<const vector<uint8_t>>(count_2), 0, count_2.size()),
-      View(std::make_shared<const vector<uint8_t>>(count_3), 0, count_3.size()),
-  });
+TEST_F(PacketViewMultiViewTest, dereferenceTestLittleEndian) {
   auto single_itr = single_view.begin();
   auto multi_itr = multi_view.begin();
   for (size_t i = 0; i < single_view.size(); i++) {
@@ -508,13 +526,7 @@ TEST(PacketViewMultiViewTest, dereferenceTestLittleEndian) {
   ASSERT_DEATH(*multi_itr, "");
 }
 
-TEST(PacketViewMultiViewTest, dereferenceTestBigEndian) {
-  PacketView<false> single_view({View(std::make_shared<const vector<uint8_t>>(count_all), 0, count_all.size())});
-  PacketView<false> multi_view({
-      View(std::make_shared<const vector<uint8_t>>(count_1), 0, count_1.size()),
-      View(std::make_shared<const vector<uint8_t>>(count_2), 0, count_2.size()),
-      View(std::make_shared<const vector<uint8_t>>(count_3), 0, count_3.size()),
-  });
+TEST_F(PacketViewMultiViewTest, dereferenceTestBigEndian) {
   auto single_itr = single_view.begin();
   auto multi_itr = multi_view.begin();
   for (size_t i = 0; i < single_view.size(); i++) {
@@ -523,13 +535,36 @@ TEST(PacketViewMultiViewTest, dereferenceTestBigEndian) {
   ASSERT_DEATH(*multi_itr, "");
 }
 
-TEST(PacketViewMultiViewTest, arrayOperatorTest) {
-  PacketView<true> single_view({View(std::make_shared<const vector<uint8_t>>(count_all), 0, count_all.size())});
-  PacketView<true> multi_view({
-      View(std::make_shared<const vector<uint8_t>>(count_1), 0, count_1.size()),
-      View(std::make_shared<const vector<uint8_t>>(count_2), 0, count_2.size()),
-      View(std::make_shared<const vector<uint8_t>>(count_3), 0, count_3.size()),
-  });
+TEST_F(PacketViewMultiViewTest, arrayOperatorTest) {
+  for (size_t i = 0; i < single_view.size(); i++) {
+    ASSERT_EQ(single_view[i], multi_view[i]);
+  }
+  ASSERT_DEATH(multi_view[single_view.size()], "");
+}
+
+TEST_F(PacketViewMultiViewAppendTest, sizeTestAppend) {
+  ASSERT_EQ(single_view.size(), multi_view.size());
+}
+
+TEST_F(PacketViewMultiViewAppendTest, dereferenceTestLittleEndianAppend) {
+  auto single_itr = single_view.begin();
+  auto multi_itr = multi_view.begin();
+  for (size_t i = 0; i < single_view.size(); i++) {
+    ASSERT_EQ(*(single_itr++), *(multi_itr++));
+  }
+  ASSERT_DEATH(*multi_itr, "");
+}
+
+TEST_F(PacketViewMultiViewAppendTest, dereferenceTestBigEndianAppend) {
+  auto single_itr = single_view.begin();
+  auto multi_itr = multi_view.begin();
+  for (size_t i = 0; i < single_view.size(); i++) {
+    ASSERT_EQ(*(single_itr++), *(multi_itr++));
+  }
+  ASSERT_DEATH(*multi_itr, "");
+}
+
+TEST_F(PacketViewMultiViewAppendTest, arrayOperatorTestAppend) {
   for (size_t i = 0; i < single_view.size(); i++) {
     ASSERT_EQ(single_view[i], multi_view[i]);
   }
