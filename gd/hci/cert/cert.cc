@@ -237,7 +237,7 @@ class AclManagerCertService : public AclManagerCert::Service {
       return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Invalid address");
     }
 
-    constexpr PacketBoundaryFlag packet_boundary_flag = PacketBoundaryFlag::COMPLETE_PDU;
+    constexpr PacketBoundaryFlag packet_boundary_flag = PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE;
     constexpr BroadcastFlag broadcast_flag = BroadcastFlag::POINT_TO_POINT;
     std::unique_ptr<RawBuilder> packet = std::make_unique<RawBuilder>();
     auto req_string = request->payload();

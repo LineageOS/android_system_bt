@@ -78,6 +78,10 @@ void Link::SendDisconnectionRequest(Cid local_cid, Cid remote_cid) {
   signalling_manager_.SendDisconnectionRequest(local_cid, remote_cid);
 }
 
+void Link::SendInformationRequest(InformationRequestInfoType type) {
+  signalling_manager_.SendInformationRequest(type);
+}
+
 std::shared_ptr<DynamicChannelImpl> Link::AllocateDynamicChannel(Psm psm, Cid remote_cid,
                                                                  SecurityPolicy security_policy) {
   auto channel = dynamic_channel_allocator_.AllocateChannel(psm, remote_cid, security_policy);

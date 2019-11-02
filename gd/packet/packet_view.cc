@@ -99,6 +99,24 @@ PacketView<false> PacketView<little_endian>::GetBigEndianSubview(size_t begin, s
   return PacketView<false>(GetSubviewList(begin, end));
 }
 
+template <bool little_endian>
+void PacketView<little_endian>::Append(PacketView to_add) {
+  auto insertion_point = fragments_.begin();
+  size_t remaining_length = length_;
+  while (remaining_length > 0) {
+    remaining_length -= insertion_point->size();
+    if (remaining_length > 0) {
+      insertion_point++;
+    }
+  }
+  ASSERT(insertion_point != fragments_.end());
+  for (const auto& fragment : to_add.fragments_) {
+    fragments_.insert_after(insertion_point, fragment);
+    insertion_point++;
+  }
+  length_ += to_add.length_;
+}
+
 // Explicit instantiations for both types of PacketViews.
 template class PacketView<true>;
 template class PacketView<false>;

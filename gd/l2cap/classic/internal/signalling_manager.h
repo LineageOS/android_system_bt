@@ -73,7 +73,7 @@ class ClassicSignallingManager {
 
   void OnConnectionRequest(SignalId signal_id, Psm psm, Cid remote_cid);
 
-  void OnConnectionResponse(SignalId signal_id, Cid cid, Cid remote_cid, ConnectionResponseResult result,
+  void OnConnectionResponse(SignalId signal_id, Cid remote_cid, Cid cid, ConnectionResponseResult result,
                             ConnectionResponseStatus status);
 
   void OnDisconnectionRequest(SignalId signal_id, Cid cid, Cid remote_cid);
@@ -111,7 +111,7 @@ class ClassicSignallingManager {
   PendingCommand last_sent_command_;
   std::queue<PendingCommand> pending_commands_;
   os::Alarm alarm_;
-  SignalId next_signal_id_ = kInvalidSignalId;
+  SignalId next_signal_id_ = kInitialSignalId;
 };
 
 }  // namespace internal

@@ -625,7 +625,7 @@ TEST_F(HciTest, createConnectionTest) {
   ASSERT_EQ(encryption_enabled, connection_complete_view.GetEncryptionEnabled());
 
   // Send an ACL packet from the remote
-  PacketBoundaryFlag packet_boundary_flag = PacketBoundaryFlag::COMPLETE_PDU;
+  PacketBoundaryFlag packet_boundary_flag = PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE;
   BroadcastFlag broadcast_flag = BroadcastFlag::POINT_TO_POINT;
   auto acl_payload = std::make_unique<RawBuilder>();
   acl_payload->AddAddress(bd_addr);
@@ -645,7 +645,7 @@ TEST_F(HciTest, createConnectionTest) {
   ASSERT_EQ(handle, itr.extract<uint16_t>());
 
   // Send an ACL packet from DependsOnHci
-  PacketBoundaryFlag packet_boundary_flag2 = PacketBoundaryFlag::COMPLETE_PDU;
+  PacketBoundaryFlag packet_boundary_flag2 = PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE;
   BroadcastFlag broadcast_flag2 = BroadcastFlag::POINT_TO_POINT;
   auto acl_payload2 = std::make_unique<RawBuilder>();
   acl_payload2->AddOctets2(handle);
@@ -671,7 +671,7 @@ TEST_F(HciTest, receiveMultipleAclPackets) {
   ASSERT_TRUE(Address::FromString("A1:A2:A3:A4:A5:A6", bd_addr));
   uint16_t handle = 0x0001;
   uint16_t num_packets = 100;
-  PacketBoundaryFlag packet_boundary_flag = PacketBoundaryFlag::COMPLETE_PDU;
+  PacketBoundaryFlag packet_boundary_flag = PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE;
   BroadcastFlag broadcast_flag = BroadcastFlag::POINT_TO_POINT;
   for (uint16_t i = 0; i < num_packets; i++) {
     auto acl_payload = std::make_unique<RawBuilder>();
