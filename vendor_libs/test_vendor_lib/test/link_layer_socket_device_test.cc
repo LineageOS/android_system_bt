@@ -27,11 +27,8 @@
 #include <sys/types.h>
 #include <unistd.h>
 
-#include "include/link.h"
 #include "model/setup/async_manager.h"
 #include "packets/link_layer/command_view.h"
-#include "packets/link_layer/link_layer_packet_builder.h"
-#include "packets/link_layer/link_layer_packet_view.h"
 
 std::vector<uint8_t> count = {
     0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
@@ -185,14 +182,7 @@ class LinkLayerSocketDeviceTest : public ::testing::Test {
 
   LinkLayerPacketView NextPacket() {
     std::shared_ptr<std::vector<uint8_t>> count_shared = std::make_shared<std::vector<uint8_t>>(count);
-    View count_view(count_shared, 0, count_shared->size());
-    PacketView<true> args({count_view});
-    auto builder = CommandBuilder::Create(packet_id_++, args);
-    auto wrapped_command = LinkLayerPacketBuilder::WrapCommand(std::move(builder), source_, dest_);
-    std::shared_ptr<std::vector<uint8_t>> packet_ptr = std::make_shared<std::vector<uint8_t>>();
-    std::back_insert_iterator<std::vector<uint8_t>> it(*packet_ptr);
-    wrapped_command->Serialize(it);
-    LinkLayerPacketView view = LinkLayerPacketView::Create(packet_ptr);
+    LinkLayerPacketView view = LinkLayerPacketView::Create(count_shared);
     return view;
   }
 

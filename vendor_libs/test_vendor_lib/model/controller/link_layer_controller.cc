@@ -22,20 +22,9 @@
 #include "packets/hci/command_packet_view.h"
 #include "packets/hci/event_packet_builder.h"
 #include "packets/hci/sco_packet_builder.h"
-#include "packets/link_layer/command_builder.h"
-#include "packets/link_layer/command_view.h"
-#include "packets/link_layer/disconnect_view.h"
-#include "packets/link_layer/encrypt_connection_view.h"
-#include "packets/link_layer/inquiry_response_view.h"
-#include "packets/link_layer/inquiry_view.h"
-#include "packets/link_layer/io_capability_view.h"
-#include "packets/link_layer/le_advertisement_view.h"
-#include "packets/link_layer/le_connect_complete_view.h"
-#include "packets/link_layer/le_connect_view.h"
-#include "packets/link_layer/page_reject_view.h"
-#include "packets/link_layer/page_response_view.h"
-#include "packets/link_layer/page_view.h"
-#include "packets/link_layer/response_view.h"
+
+#include "packet/raw_builder.h"
+#include "packets/link_layer_packets.h"
 
 using std::vector;
 using namespace std::chrono;
@@ -53,25 +42,42 @@ static uint8_t GetRssi() {
   return -(rssi);
 }
 
-void LinkLayerController::SendLeLinkLayerPacket(std::shared_ptr<LinkLayerPacketBuilder> packet) {
-  ScheduleTask(milliseconds(50), [this, packet]() { send_to_remote_(packet, Phy::Type::LOW_ENERGY); });
+void LinkLayerController::SendLeLinkLayerPacket(
+    std::unique_ptr<model::packets::LinkLayerPacketBuilder> packet) {
+  std::shared_ptr<model::packets::LinkLayerPacketBuilder> shared_packet =
+      std::move(packet);
+  ScheduleTask(milliseconds(50), [this, shared_packet]() {
+    send_to_remote_(std::move(shared_packet), Phy::Type::LOW_ENERGY);
+  });
 }
 
-void LinkLayerController::SendLinkLayerPacket(std::shared_ptr<LinkLayerPacketBuilder> packet) {
-  ScheduleTask(milliseconds(50), [this, packet]() { send_to_remote_(packet, Phy::Type::BR_EDR); });
+void LinkLayerController::SendLinkLayerPacket(
+    std::unique_ptr<model::packets::LinkLayerPacketBuilder> packet) {
+  std::shared_ptr<model::packets::LinkLayerPacketBuilder> shared_packet =
+      std::move(packet);
+  ScheduleTask(milliseconds(50), [this, shared_packet]() {
+    send_to_remote_(std::move(shared_packet), Phy::Type::BR_EDR);
+  });
 }
 
 hci::Status LinkLayerController::SendCommandToRemoteByAddress(hci::OpCode opcode, PacketView<true> args,
                                                               const Address& remote, bool use_public_address) {
-  std::shared_ptr<LinkLayerPacketBuilder> command;
   Address local_address;
   if (use_public_address) {
     local_address = properties_.GetAddress();
   } else {
     local_address = properties_.GetLeAddress();
   }
-  command = LinkLayerPacketBuilder::WrapCommand(CommandBuilder::Create(static_cast<uint16_t>(opcode), args),
-                                                local_address, remote);
+
+  std::unique_ptr<bluetooth::packet::RawBuilder> raw_builder_ptr =
+      std::make_unique<bluetooth::packet::RawBuilder>();
+  std::vector<uint8_t> payload_bytes(args.begin(), args.end());
+  raw_builder_ptr->AddOctets2(static_cast<uint16_t>(opcode));
+  raw_builder_ptr->AddOctets(payload_bytes);
+
+  auto command = model::packets::CommandBuilder::Create(
+      local_address, remote, std::move(raw_builder_ptr));
+
   SendLinkLayerPacket(std::move(command));
   return hci::Status::SUCCESS;
 }
@@ -92,15 +98,11 @@ hci::Status LinkLayerController::SendAclToRemote(AclPacketView acl_packet) {
     return hci::Status::UNKNOWN_CONNECTION;
   }
 
-  std::unique_ptr<ViewForwarderBuilder> acl_builder = ViewForwarderBuilder::Create(acl_packet);
-
   Address my_address = properties_.GetAddress();
   Address destination = connections_.GetAddress(handle);
   if (connections_.GetOwnAddressType(handle) != 0) {  // If it's not public, it must be LE
     my_address = properties_.GetLeAddress();
   }
-  std::shared_ptr<LinkLayerPacketBuilder> acl =
-      LinkLayerPacketBuilder::WrapAcl(std::move(acl_builder), my_address, destination);
 
   LOG_INFO("%s(%s): handle 0x%x size %d", __func__, properties_.GetAddress().ToString().c_str(), handle,
            static_cast<int>(acl_packet.size()));
@@ -108,11 +110,32 @@ hci::Status LinkLayerController::SendAclToRemote(AclPacketView acl_packet) {
   ScheduleTask(milliseconds(5), [this, handle]() {
     send_event_(EventPacketBuilder::CreateNumberOfCompletedPacketsEvent(handle, 1)->ToVector());
   });
-  SendLinkLayerPacket(acl);
+
+  auto acl_payload = acl_packet.GetPayload();
+
+  std::unique_ptr<bluetooth::packet::RawBuilder> raw_builder_ptr =
+      std::make_unique<bluetooth::packet::RawBuilder>();
+  std::vector<uint8_t> payload_bytes(acl_payload.begin(), acl_payload.end());
+
+  uint16_t first_two_bytes =
+      static_cast<uint16_t>(acl_packet.GetHandle()) +
+      (static_cast<uint16_t>(acl_packet.GetPacketBoundaryFlags()) << 12) +
+      (static_cast<uint16_t>(acl_packet.GetBroadcastFlags()) << 14);
+  raw_builder_ptr->AddOctets2(first_two_bytes);
+  raw_builder_ptr->AddOctets2(static_cast<uint16_t>(payload_bytes.size()));
+  raw_builder_ptr->AddOctets(payload_bytes);
+
+  auto acl = model::packets::AclPacketBuilder::Create(
+      my_address, destination, std::move(raw_builder_ptr));
+
+  SendLinkLayerPacket(std::move(acl));
   return hci::Status::SUCCESS;
 }
 
-void LinkLayerController::IncomingPacket(LinkLayerPacketView incoming) {
+void LinkLayerController::IncomingPacket(
+    model::packets::LinkLayerPacketView incoming) {
+  ASSERT(incoming.IsValid());
+
   // TODO: Resolvable private addresses?
   if (incoming.GetDestinationAddress() != properties_.GetAddress() &&
       incoming.GetDestinationAddress() != properties_.GetLeAddress() &&
@@ -122,70 +145,67 @@ void LinkLayerController::IncomingPacket(LinkLayerPacketView incoming) {
   }
 
   switch (incoming.GetType()) {
-    case Link::PacketType::ACL:
+    case model::packets::PacketType::ACL:
       IncomingAclPacket(incoming);
       break;
-    case Link::PacketType::COMMAND:
+    case model::packets::PacketType::COMMAND:
       IncomingCommandPacket(incoming);
       break;
-    case Link::PacketType::DISCONNECT:
+    case model::packets::PacketType::DISCONNECT:
       IncomingDisconnectPacket(incoming);
       break;
-    case Link::PacketType::ENCRYPT_CONNECTION:
+    case model::packets::PacketType::ENCRYPT_CONNECTION:
       IncomingEncryptConnection(incoming);
       break;
-    case Link::PacketType::ENCRYPT_CONNECTION_RESPONSE:
+    case model::packets::PacketType::ENCRYPT_CONNECTION_RESPONSE:
       IncomingEncryptConnectionResponse(incoming);
       break;
-    case Link::PacketType::INQUIRY:
+    case model::packets::PacketType::INQUIRY:
       if (inquiry_scans_enabled_) {
         IncomingInquiryPacket(incoming);
       }
       break;
-    case Link::PacketType::INQUIRY_RESPONSE:
+    case model::packets::PacketType::INQUIRY_RESPONSE:
       IncomingInquiryResponsePacket(incoming);
       break;
-    case Link::PacketType::IO_CAPABILITY_REQUEST:
+    case model::packets::PacketType::IO_CAPABILITY_REQUEST:
       IncomingIoCapabilityRequestPacket(incoming);
       break;
-    case Link::PacketType::IO_CAPABILITY_RESPONSE:
-      IncomingIoCapabilityResponsePacket(incoming);
-      break;
-    case Link::PacketType::IO_CAPABILITY_NEGATIVE_RESPONSE:
+    case model::packets::PacketType::IO_CAPABILITY_NEGATIVE_RESPONSE:
       IncomingIoCapabilityNegativeResponsePacket(incoming);
       break;
-    case Link::PacketType::LE_ADVERTISEMENT:
+    case model::packets::PacketType::LE_ADVERTISEMENT:
       if (le_scan_enable_ || le_connect_) {
         IncomingLeAdvertisementPacket(incoming);
       }
       break;
-    case Link::PacketType::LE_CONNECT:
+    case model::packets::PacketType::LE_CONNECT:
       IncomingLeConnectPacket(incoming);
       break;
-    case Link::PacketType::LE_CONNECT_COMPLETE:
+    case model::packets::PacketType::LE_CONNECT_COMPLETE:
       IncomingLeConnectCompletePacket(incoming);
       break;
-    case Link::PacketType::LE_SCAN:
+    case model::packets::PacketType::LE_SCAN:
       // TODO: Check Advertising flags and see if we are scannable.
       IncomingLeScanPacket(incoming);
       break;
-    case Link::PacketType::LE_SCAN_RESPONSE:
+    case model::packets::PacketType::LE_SCAN_RESPONSE:
       if (le_scan_enable_ && le_scan_type_ == 1) {
         IncomingLeScanResponsePacket(incoming);
       }
       break;
-    case Link::PacketType::PAGE:
+    case model::packets::PacketType::PAGE:
       if (page_scans_enabled_) {
         IncomingPagePacket(incoming);
       }
       break;
-    case Link::PacketType::PAGE_REJECT:
-      IncomingPageRejectPacket(incoming);
-      break;
-    case Link::PacketType::PAGE_RESPONSE:
+    case model::packets::PacketType::PAGE_RESPONSE:
       IncomingPageResponsePacket(incoming);
       break;
-    case Link::PacketType::RESPONSE:
+    case model::packets::PacketType::PAGE_REJECT:
+      IncomingPageRejectPacket(incoming);
+      break;
+    case model::packets::PacketType::RESPONSE:
       IncomingResponsePacket(incoming);
       break;
     default:
@@ -193,26 +213,40 @@ void LinkLayerController::IncomingPacket(LinkLayerPacketView incoming) {
   }
 }
 
-void LinkLayerController::IncomingAclPacket(LinkLayerPacketView incoming) {
+void LinkLayerController::IncomingAclPacket(
+    model::packets::LinkLayerPacketView incoming) {
   LOG_INFO("Acl Packet %s -> %s", incoming.GetSourceAddress().ToString().c_str(),
            incoming.GetDestinationAddress().ToString().c_str());
-  AclPacketView acl_view = AclPacketView::Create(incoming.GetPayload());
+
+  auto acl = model::packets::AclPacketView::Create(incoming);
+  ASSERT(acl.IsValid());
+  auto payload = acl.GetPayload();
+  std::shared_ptr<std::vector<uint8_t>> payload_bytes =
+      std::make_shared<std::vector<uint8_t>>(payload.begin(), payload.end());
+
+  AclPacketView acl_view = AclPacketView::Create(payload_bytes);
   LOG_INFO("%s: remote handle 0x%x size %d", __func__, acl_view.GetHandle(), static_cast<int>(acl_view.size()));
   uint16_t local_handle = connections_.GetHandle(incoming.GetSourceAddress());
   LOG_INFO("%s: local handle 0x%x", __func__, local_handle);
 
   acl::PacketBoundaryFlagsType boundary_flags = acl_view.GetPacketBoundaryFlags();
   acl::BroadcastFlagsType broadcast_flags = acl_view.GetBroadcastFlags();
-  std::unique_ptr<ViewForwarderBuilder> builder = ViewForwarderBuilder::Create(acl_view.GetPayload());
+  std::unique_ptr<RawBuilder> builder = std::make_unique<RawBuilder>();
+  std::vector<uint8_t> raw_data(acl_view.GetPayload().begin(),
+                                acl_view.GetPayload().end());
+  builder->AddOctets(raw_data);
   send_acl_(AclPacketBuilder::Create(local_handle, boundary_flags, broadcast_flags, std::move(builder))->ToVector());
 }
 
-void LinkLayerController::IncomingCommandPacket(LinkLayerPacketView incoming) {
+void LinkLayerController::IncomingCommandPacket(
+    model::packets::LinkLayerPacketView incoming) {
   // TODO: Check the destination address to see if this packet is for me.
-  CommandView command = CommandView::GetCommand(incoming);
-  hci::OpCode opcode = static_cast<hci::OpCode>(command.GetOpcode());
-  auto args = command.GetData();
+  auto command = model::packets::CommandView::Create(incoming);
+  ASSERT(command.IsValid());
+
+  auto args = command.GetPayload().begin();
   std::vector<uint64_t> response_data;
+  hci::OpCode opcode = static_cast<hci::OpCode>(args.extract<uint16_t>());
 
   switch (opcode) {
     case (hci::OpCode::REMOTE_NAME_REQUEST): {
@@ -268,14 +302,26 @@ void LinkLayerController::IncomingCommandPacket(LinkLayerPacketView incoming) {
       LOG_INFO("Dropping unhandled command 0x%04x", static_cast<uint16_t>(opcode));
       return;
   }
-  SendLinkLayerPacket(
-      LinkLayerPacketBuilder::WrapResponse(ResponseBuilder::Create(static_cast<uint16_t>(opcode), response_data),
-                                           properties_.GetAddress(), incoming.GetSourceAddress()));
+
+  std::unique_ptr<bluetooth::packet::RawBuilder> raw_builder_ptr =
+      std::make_unique<bluetooth::packet::RawBuilder>();
+  for (uint64_t data : response_data) {
+    raw_builder_ptr->AddOctets8(data);
+  }
+
+  auto response = model::packets::ResponseBuilder::Create(
+      properties_.GetAddress(), incoming.GetSourceAddress(),
+      static_cast<uint16_t>(opcode), std::move(raw_builder_ptr));
+
+  SendLinkLayerPacket(std::move(response));
 }
 
-void LinkLayerController::IncomingDisconnectPacket(LinkLayerPacketView incoming) {
+void LinkLayerController::IncomingDisconnectPacket(
+    model::packets::LinkLayerPacketView incoming) {
   LOG_INFO("Disconnect Packet");
-  DisconnectView disconnect = DisconnectView::GetDisconnect(incoming);
+  auto disconnect = model::packets::DisconnectView::Create(incoming);
+  ASSERT(disconnect.IsValid());
+
   Address peer = incoming.GetSourceAddress();
   uint16_t handle = connections_.GetHandle(peer);
   if (handle == acl::kReservedHandle) {
@@ -288,8 +334,10 @@ void LinkLayerController::IncomingDisconnectPacket(LinkLayerPacketView incoming)
   ScheduleTask(milliseconds(20), [this, handle, reason]() { DisconnectCleanup(handle, reason); });
 }
 
-void LinkLayerController::IncomingEncryptConnection(LinkLayerPacketView incoming) {
+void LinkLayerController::IncomingEncryptConnection(
+    model::packets::LinkLayerPacketView incoming) {
   LOG_INFO("%s", __func__);
+
   // TODO: Check keys
   Address peer = incoming.GetSourceAddress();
   uint16_t handle = connections_.GetHandle(peer);
@@ -298,11 +346,13 @@ void LinkLayerController::IncomingEncryptConnection(LinkLayerPacketView incoming
     return;
   }
   send_event_(EventPacketBuilder::CreateEncryptionChange(hci::Status::SUCCESS, handle, 1)->ToVector());
-  SendLinkLayerPacket(LinkLayerPacketBuilder::WrapEncryptConnectionResponse(
-      EncryptConnectionBuilder::Create(security_manager_.GetKey(peer)), properties_.GetAddress(), peer));
+  auto response = model::packets::EncryptConnectionResponseBuilder::Create(
+      properties_.GetAddress(), peer, security_manager_.GetKey(peer));
+  SendLinkLayerPacket(std::move(response));
 }
 
-void LinkLayerController::IncomingEncryptConnectionResponse(LinkLayerPacketView incoming) {
+void LinkLayerController::IncomingEncryptConnectionResponse(
+    model::packets::LinkLayerPacketView incoming) {
   LOG_INFO("%s", __func__);
   // TODO: Check keys
   uint16_t handle = connections_.GetHandle(incoming.GetSourceAddress());
@@ -313,86 +363,119 @@ void LinkLayerController::IncomingEncryptConnectionResponse(LinkLayerPacketView 
   send_event_(EventPacketBuilder::CreateEncryptionChange(hci::Status::SUCCESS, handle, 1)->ToVector());
 }
 
-void LinkLayerController::IncomingInquiryPacket(LinkLayerPacketView incoming) {
-  InquiryView inquiry = InquiryView::GetInquiry(incoming);
-  std::unique_ptr<InquiryResponseBuilder> inquiry_response;
-  switch (inquiry.GetType()) {
-    case (Inquiry::InquiryType::STANDARD):
-      inquiry_response = InquiryResponseBuilder::CreateStandard(
-          properties_.GetPageScanRepetitionMode(), properties_.GetClassOfDevice(), properties_.GetClockOffset());
-      break;
+void LinkLayerController::IncomingInquiryPacket(
+    model::packets::LinkLayerPacketView incoming) {
+  auto inquiry = model::packets::InquiryView::Create(incoming);
+  ASSERT(inquiry.IsValid());
 
-    case (Inquiry::InquiryType::RSSI):
-      inquiry_response =
-          InquiryResponseBuilder::CreateRssi(properties_.GetPageScanRepetitionMode(), properties_.GetClassOfDevice(),
-                                             properties_.GetClockOffset(), GetRssi());
-      break;
+  Address peer = incoming.GetSourceAddress();
 
-    case (Inquiry::InquiryType::EXTENDED):
-      inquiry_response = InquiryResponseBuilder::CreateExtended(
-          properties_.GetPageScanRepetitionMode(), properties_.GetClassOfDevice(), properties_.GetClockOffset(),
-          GetRssi(), properties_.GetExtendedInquiryData());
-      break;
+  switch (inquiry.GetInquiryType()) {
+    case (model::packets::InquiryType::STANDARD): {
+      auto inquiry_response = model::packets::InquiryResponseBuilder::Create(
+          properties_.GetAddress(), peer,
+          properties_.GetPageScanRepetitionMode(),
+          properties_.GetClassOfDevice(), properties_.GetClockOffset());
+      SendLinkLayerPacket(std::move(inquiry_response));
+    } break;
+    case (model::packets::InquiryType::RSSI): {
+      auto inquiry_response =
+          model::packets::InquiryResponseWithRssiBuilder::Create(
+              properties_.GetAddress(), peer,
+              properties_.GetPageScanRepetitionMode(),
+              properties_.GetClassOfDevice(), properties_.GetClockOffset(),
+              GetRssi());
+      SendLinkLayerPacket(std::move(inquiry_response));
+    } break;
+    case (model::packets::InquiryType::EXTENDED): {
+      auto inquiry_response =
+          model::packets::ExtendedInquiryResponseBuilder::Create(
+              properties_.GetAddress(), peer,
+              properties_.GetPageScanRepetitionMode(),
+              properties_.GetClassOfDevice(), properties_.GetClockOffset(),
+              GetRssi(), properties_.GetExtendedInquiryData());
+      SendLinkLayerPacket(std::move(inquiry_response));
+
+    } break;
     default:
       LOG_WARN("Unhandled Incoming Inquiry of type %d", static_cast<int>(inquiry.GetType()));
       return;
   }
-  SendLinkLayerPacket(LinkLayerPacketBuilder::WrapInquiryResponse(std::move(inquiry_response), properties_.GetAddress(),
-                                                                  incoming.GetSourceAddress()));
-  // TODO: Send an Inquriy Response Notification Event 7.7.74
+  // TODO: Send an Inquiry Response Notification Event 7.7.74
 }
 
-void LinkLayerController::IncomingInquiryResponsePacket(LinkLayerPacketView incoming) {
-  InquiryResponseView inquiry_response = InquiryResponseView::GetInquiryResponse(incoming);
+void LinkLayerController::IncomingInquiryResponsePacket(
+    model::packets::LinkLayerPacketView incoming) {
+  auto basic_inquiry_response =
+      model::packets::BasicInquiryResponseView::Create(incoming);
+  ASSERT(basic_inquiry_response.IsValid());
   std::vector<uint8_t> eir;
 
-  switch (inquiry_response.GetType()) {
-    case (Inquiry::InquiryType::STANDARD): {
+  switch (basic_inquiry_response.GetInquiryType()) {
+    case (model::packets::InquiryType::STANDARD): {
       LOG_WARN("Incoming Standard Inquiry Response");
       // TODO: Support multiple inquiries in the same packet.
-      std::unique_ptr<EventPacketBuilder> inquiry_result = EventPacketBuilder::CreateInquiryResultEvent();
-      bool result_added =
-          inquiry_result->AddInquiryResult(incoming.GetSourceAddress(), inquiry_response.GetPageScanRepetitionMode(),
-                                           inquiry_response.GetClassOfDevice(), inquiry_response.GetClockOffset());
-      ASSERT(result_added);
+      auto inquiry_response =
+          model::packets::InquiryResponseView::Create(basic_inquiry_response);
+      ASSERT(inquiry_response.IsValid());
+      std::unique_ptr<EventPacketBuilder> inquiry_result =
+          EventPacketBuilder::CreateInquiryResultEvent();
+      bool result_added = inquiry_result->AddInquiryResult(
+          inquiry_response.GetSourceAddress(),
+          inquiry_response.GetPageScanRepetitionMode(),
+          inquiry_response.GetClassOfDevice(),
+          inquiry_response.GetClockOffset());
+      CHECK(result_added);
       send_event_(inquiry_result->ToVector());
     } break;
 
-    case (Inquiry::InquiryType::RSSI):
+    case (model::packets::InquiryType::RSSI): {
       LOG_WARN("Incoming RSSI Inquiry Response");
+      auto inquiry_response =
+          model::packets::InquiryResponseWithRssiView::Create(
+              basic_inquiry_response);
+      ASSERT(inquiry_response.IsValid());
       send_event_(EventPacketBuilder::CreateExtendedInquiryResultEvent(
-                      incoming.GetSourceAddress(), inquiry_response.GetPageScanRepetitionMode(),
-                      inquiry_response.GetClassOfDevice(), inquiry_response.GetClockOffset(), GetRssi(), eir)
+                      incoming.GetSourceAddress(),
+                      inquiry_response.GetPageScanRepetitionMode(),
+                      inquiry_response.GetClassOfDevice(),
+                      inquiry_response.GetClockOffset(),
+                      inquiry_response.GetRssi(), eir)
                       ->ToVector());
-      break;
+    } break;
 
-    case (Inquiry::InquiryType::EXTENDED): {
+    case (model::packets::InquiryType::EXTENDED): {
       LOG_WARN("Incoming Extended Inquiry Response");
-      auto eir_itr = inquiry_response.GetExtendedData();
-      size_t eir_bytes = eir_itr.NumBytesRemaining();
-      LOG_WARN("Payload size = %d", static_cast<int>(eir_bytes));
-      for (size_t i = 0; i < eir_bytes; i++) {
-        eir.push_back(eir_itr.extract<uint8_t>());
-      }
+      auto inquiry_response =
+          model::packets::ExtendedInquiryResponseView::Create(
+              basic_inquiry_response);
+      ASSERT(inquiry_response.IsValid());
+      eir = inquiry_response.GetExtendedData();
       send_event_(EventPacketBuilder::CreateExtendedInquiryResultEvent(
-                      incoming.GetSourceAddress(), inquiry_response.GetPageScanRepetitionMode(),
-                      inquiry_response.GetClassOfDevice(), inquiry_response.GetClockOffset(), GetRssi(), eir)
+                      incoming.GetSourceAddress(),
+                      inquiry_response.GetPageScanRepetitionMode(),
+                      inquiry_response.GetClassOfDevice(),
+                      inquiry_response.GetClockOffset(), GetRssi(), eir)
                       ->ToVector());
     } break;
     default:
-      LOG_WARN("Unhandled Incoming Inquiry Response of type %d", static_cast<int>(inquiry_response.GetType()));
+      LOG_WARN("Unhandled Incoming Inquiry Response of type %d",
+               static_cast<int>(basic_inquiry_response.GetInquiryType()));
   }
 }
 
-void LinkLayerController::IncomingIoCapabilityRequestPacket(LinkLayerPacketView incoming) {
+void LinkLayerController::IncomingIoCapabilityRequestPacket(
+    model::packets::LinkLayerPacketView incoming) {
   LOG_DEBUG("%s", __func__);
   if (!simple_pairing_mode_enabled_) {
     LOG_WARN("%s: Only simple pairing mode is implemented", __func__);
     return;
   }
-  auto request = IoCapabilityView::GetIoCapability(incoming);
-  Address peer = incoming.GetSourceAddress();
 
+  auto request = model::packets::IoCapabilityRequestView::Create(incoming);
+  ASSERT(request.IsValid());
+
+  Address peer = incoming.GetSourceAddress();
   uint8_t io_capability = request.GetIoCapability();
   uint8_t oob_data_present = request.GetOobDataPresent();
   uint8_t authentication_requirements = request.GetAuthenticationRequirements();
@@ -414,29 +497,38 @@ void LinkLayerController::IncomingIoCapabilityRequestPacket(LinkLayerPacketView 
   StartSimplePairing(peer);
 }
 
-void LinkLayerController::IncomingIoCapabilityResponsePacket(LinkLayerPacketView incoming) {
+void LinkLayerController::IncomingIoCapabilityResponsePacket(
+    model::packets::LinkLayerPacketView incoming) {
   LOG_DEBUG("%s", __func__);
-  auto response = IoCapabilityView::GetIoCapability(incoming);
+
+  auto response = model::packets::IoCapabilityResponseView::Create(incoming);
+  ASSERT(response.IsValid());
+
   Address peer = incoming.GetSourceAddress();
   uint8_t io_capability = response.GetIoCapability();
   uint8_t oob_data_present = response.GetOobDataPresent();
   uint8_t authentication_requirements = response.GetAuthenticationRequirements();
 
-  security_manager_.SetPeerIoCapability(peer, io_capability, oob_data_present, authentication_requirements);
+  security_manager_.SetPeerIoCapability(peer, io_capability, oob_data_present,
+                                        authentication_requirements);
 
-  send_event_(EventPacketBuilder::CreateIoCapabilityResponseEvent(peer, io_capability, oob_data_present,
-                                                                  authentication_requirements)
-                  ->ToVector());
+  send_event_(
+      EventPacketBuilder::CreateIoCapabilityResponseEvent(
+          peer, io_capability, oob_data_present, authentication_requirements)
+          ->ToVector());
 
   PairingType pairing_type = security_manager_.GetSimplePairingType();
   if (pairing_type != PairingType::INVALID) {
-    ScheduleTask(milliseconds(5), [this, peer, pairing_type]() { AuthenticateRemoteStage1(peer, pairing_type); });
+    ScheduleTask(milliseconds(5), [this, peer, pairing_type]() {
+      AuthenticateRemoteStage1(peer, pairing_type);
+    });
   } else {
     LOG_INFO("%s: Security Manager returned INVALID", __func__);
   }
 }
 
-void LinkLayerController::IncomingIoCapabilityNegativeResponsePacket(LinkLayerPacketView incoming) {
+void LinkLayerController::IncomingIoCapabilityNegativeResponsePacket(
+    model::packets::LinkLayerPacketView incoming) {
   LOG_DEBUG("%s", __func__);
   Address peer = incoming.GetSourceAddress();
 
@@ -445,21 +537,21 @@ void LinkLayerController::IncomingIoCapabilityNegativeResponsePacket(LinkLayerPa
   security_manager_.InvalidateIoCapabilities();
 }
 
-void LinkLayerController::IncomingLeAdvertisementPacket(LinkLayerPacketView incoming) {
+void LinkLayerController::IncomingLeAdvertisementPacket(
+    model::packets::LinkLayerPacketView incoming) {
   // TODO: Handle multiple advertisements per packet.
 
   Address address = incoming.GetSourceAddress();
-  LeAdvertisementView advertisement = LeAdvertisementView::GetLeAdvertisementView(incoming);
-  LeAdvertisement::AdvertisementType adv_type = advertisement.GetAdvertisementType();
-  LeAdvertisement::AddressType address_type = advertisement.GetAddressType();
+  auto advertisement = model::packets::LeAdvertisementView::Create(incoming);
+  ASSERT(advertisement.IsValid());
+  auto adv_type = static_cast<LeAdvertisement::AdvertisementType>(
+      advertisement.GetAdvertisementType());
+  auto address_type =
+      static_cast<LeAdvertisement::AddressType>(advertisement.GetAddressType());
 
   if (le_scan_enable_) {
-    vector<uint8_t> ad;
-    auto itr = advertisement.GetData();
-    size_t ad_size = itr.NumBytesRemaining();
-    for (size_t i = 0; i < ad_size; i++) {
-      ad.push_back(itr.extract<uint8_t>());
-    }
+    vector<uint8_t> ad = advertisement.GetData();
+
     std::unique_ptr<EventPacketBuilder> le_adverts = EventPacketBuilder::CreateLeAdvertisingReportEvent();
 
     if (!le_adverts->AddLeAdvertisingReport(adv_type, address_type, address, ad, GetRssi())) {
@@ -471,9 +563,9 @@ void LinkLayerController::IncomingLeAdvertisementPacket(LinkLayerPacketView inco
 
   // Active scanning
   if (le_scan_enable_ && le_scan_type_ == 1) {
-    std::shared_ptr<LinkLayerPacketBuilder> to_send =
-        LinkLayerPacketBuilder::WrapLeScan(properties_.GetLeAddress(), address);
-    SendLeLinkLayerPacket(to_send);
+    auto to_send = model::packets::LeScanBuilder::Create(
+        properties_.GetLeAddress(), address);
+    SendLeLinkLayerPacket(std::move(to_send));
   }
 
   // Connect
@@ -490,11 +582,13 @@ void LinkLayerController::IncomingLeAdvertisementPacket(LinkLayerPacketView inco
     le_connect_ = false;
     le_scan_enable_ = false;
 
-    std::shared_ptr<LinkLayerPacketBuilder> to_send = LinkLayerPacketBuilder::WrapLeConnect(
-        LeConnectBuilder::Create(le_connection_interval_min_, le_connection_interval_max_, le_connection_latency_,
-                                 le_connection_supervision_timeout_, static_cast<uint8_t>(le_address_type_)),
-        properties_.GetLeAddress(), incoming.GetSourceAddress());
-    SendLeLinkLayerPacket(to_send);
+    auto to_send = model::packets::LeConnectBuilder::Create(
+        properties_.GetLeAddress(), incoming.GetSourceAddress(),
+        le_connection_interval_min_, le_connection_interval_max_,
+        le_connection_latency_, le_connection_supervision_timeout_,
+        static_cast<uint8_t>(le_address_type_));
+
+    SendLeLinkLayerPacket(std::move(to_send));
   }
 }
 
@@ -514,8 +608,10 @@ void LinkLayerController::HandleLeConnection(Address address, uint8_t address_ty
                   ->ToVector());
 }
 
-void LinkLayerController::IncomingLeConnectPacket(LinkLayerPacketView incoming) {
-  auto connect = LeConnectView::GetLeConnect(incoming);
+void LinkLayerController::IncomingLeConnectPacket(
+    model::packets::LinkLayerPacketView incoming) {
+  auto connect = model::packets::LeConnectView::Create(incoming);
+  ASSERT(connect.IsValid());
   uint16_t connection_interval = (connect.GetLeConnectionIntervalMax() + connect.GetLeConnectionIntervalMin()) / 2;
   if (!connections_.CreatePendingLeConnection(incoming.GetSourceAddress(),
                                               static_cast<uint8_t>(connect.GetAddressType()))) {
@@ -527,54 +623,63 @@ void LinkLayerController::IncomingLeConnectPacket(LinkLayerPacketView incoming) 
                      static_cast<uint8_t>(properties_.GetLeAdvertisingOwnAddressType()),
                      static_cast<uint8_t>(hci::Role::SLAVE), connection_interval, connect.GetLeConnectionLatency(),
                      connect.GetLeConnectionSupervisionTimeout());
-  std::shared_ptr<LinkLayerPacketBuilder> to_send = LinkLayerPacketBuilder::WrapLeConnectComplete(
-      LeConnectCompleteBuilder::Create(connection_interval, connect.GetLeConnectionLatency(),
-                                       connect.GetLeConnectionSupervisionTimeout(),
-                                       properties_.GetLeAdvertisingOwnAddressType()),
-      incoming.GetDestinationAddress(), incoming.GetSourceAddress());
-  SendLeLinkLayerPacket(to_send);
+
+  auto to_send = model::packets::LeConnectCompleteBuilder::Create(
+      incoming.GetDestinationAddress(), incoming.GetSourceAddress(),
+      connection_interval, connect.GetLeConnectionLatency(),
+      connect.GetLeConnectionSupervisionTimeout(),
+      properties_.GetLeAdvertisingOwnAddressType());
+  SendLeLinkLayerPacket(std::move(to_send));
 }
 
-void LinkLayerController::IncomingLeConnectCompletePacket(LinkLayerPacketView incoming) {
-  auto complete = LeConnectCompleteView::GetLeConnectComplete(incoming);
+void LinkLayerController::IncomingLeConnectCompletePacket(
+    model::packets::LinkLayerPacketView incoming) {
+  auto complete = model::packets::LeConnectCompleteView::Create(incoming);
+  ASSERT(complete.IsValid());
   HandleLeConnection(incoming.GetSourceAddress(), static_cast<uint8_t>(complete.GetAddressType()),
                      static_cast<uint8_t>(le_address_type_), static_cast<uint8_t>(hci::Role::MASTER),
                      complete.GetLeConnectionInterval(), complete.GetLeConnectionLatency(),
                      complete.GetLeConnectionSupervisionTimeout());
 }
 
-void LinkLayerController::IncomingLeScanPacket(LinkLayerPacketView incoming) {
+void LinkLayerController::IncomingLeScanPacket(
+    model::packets::LinkLayerPacketView incoming) {
   LOG_INFO("LE Scan Packet");
-  std::unique_ptr<LeAdvertisementBuilder> response = LeAdvertisementBuilder::Create(
-      static_cast<LeAdvertisement::AddressType>(properties_.GetLeAddressType()),
-      static_cast<LeAdvertisement::AdvertisementType>(properties_.GetLeAdvertisementType()),
+
+  auto to_send = model::packets::LeScanResponseBuilder::Create(
+      properties_.GetLeAddress(), incoming.GetSourceAddress(),
+      static_cast<model::packets::AddressType>(properties_.GetLeAddressType()),
+      static_cast<model::packets::AdvertisementType>(
+          properties_.GetLeAdvertisementType()),
       properties_.GetLeScanResponse());
-  std::shared_ptr<LinkLayerPacketBuilder> to_send = LinkLayerPacketBuilder::WrapLeScanResponse(
-      std::move(response), properties_.GetLeAddress(), incoming.GetSourceAddress());
-  SendLeLinkLayerPacket(to_send);
+
+  SendLeLinkLayerPacket(std::move(to_send));
 }
 
-void LinkLayerController::IncomingLeScanResponsePacket(LinkLayerPacketView incoming) {
-  LeAdvertisementView scan_response = LeAdvertisementView::GetLeAdvertisementView(incoming);
-  vector<uint8_t> ad;
-  auto itr = scan_response.GetData();
-  size_t scan_size = itr.NumBytesRemaining();
-  for (size_t i = 0; i < scan_size; i++) {
-    ad.push_back(itr.extract<uint8_t>());
-  }
+void LinkLayerController::IncomingLeScanResponsePacket(
+    model::packets::LinkLayerPacketView incoming) {
+  auto scan_response = model::packets::LeScanResponseView::Create(incoming);
+  ASSERT(scan_response.IsValid());
+  vector<uint8_t> ad = scan_response.GetData();
+  auto adv_type = static_cast<LeAdvertisement::AdvertisementType>(
+      scan_response.GetAdvertisementType());
+  auto address_type =
+      static_cast<LeAdvertisement::AddressType>(scan_response.GetAddressType());
 
   std::unique_ptr<EventPacketBuilder> le_adverts = EventPacketBuilder::CreateLeAdvertisingReportEvent();
 
-  if (!le_adverts->AddLeAdvertisingReport(scan_response.GetAdvertisementType(), scan_response.GetAddressType(),
-                                          incoming.GetSourceAddress(), ad, GetRssi())) {
+  if (!le_adverts->AddLeAdvertisingReport(
+          adv_type, address_type, incoming.GetSourceAddress(), ad, GetRssi())) {
     LOG_INFO("Couldn't add the scan response.");
   } else {
     send_event_(le_adverts->ToVector());
   }
 }
 
-void LinkLayerController::IncomingPagePacket(LinkLayerPacketView incoming) {
-  PageView page = PageView::GetPage(incoming);
+void LinkLayerController::IncomingPagePacket(
+    model::packets::LinkLayerPacketView incoming) {
+  auto page = model::packets::PageView::Create(incoming);
+  ASSERT(page.IsValid());
   LOG_INFO("%s from %s", __func__, incoming.GetSourceAddress().ToString().c_str());
 
   if (!connections_.CreatePendingConnection(incoming.GetSourceAddress())) {
@@ -588,16 +693,19 @@ void LinkLayerController::IncomingPagePacket(LinkLayerPacketView incoming) {
                   ->ToVector());
 }
 
-void LinkLayerController::IncomingPageRejectPacket(LinkLayerPacketView incoming) {
+void LinkLayerController::IncomingPageRejectPacket(
+    model::packets::LinkLayerPacketView incoming) {
   LOG_INFO("%s: %s", __func__, incoming.GetSourceAddress().ToString().c_str());
-  PageRejectView reject = PageRejectView::GetPageReject(incoming);
+  auto reject = model::packets::PageRejectView::Create(incoming);
+  ASSERT(reject.IsValid());
   LOG_INFO("%s: Sending CreateConnectionComplete", __func__);
   send_event_(EventPacketBuilder::CreateConnectionCompleteEvent(static_cast<hci::Status>(reject.GetReason()), 0x0eff,
                                                                 incoming.GetSourceAddress(), hci::LinkType::ACL, false)
                   ->ToVector());
 }
 
-void LinkLayerController::IncomingPageResponsePacket(LinkLayerPacketView incoming) {
+void LinkLayerController::IncomingPageResponsePacket(
+    model::packets::LinkLayerPacketView incoming) {
   LOG_INFO("%s: %s", __func__, incoming.GetSourceAddress().ToString().c_str());
   uint16_t handle = connections_.CreateConnection(incoming.GetSourceAddress());
   if (handle == acl::kReservedHandle) {
@@ -609,13 +717,15 @@ void LinkLayerController::IncomingPageResponsePacket(LinkLayerPacketView incomin
                   ->ToVector());
 }
 
-void LinkLayerController::IncomingResponsePacket(LinkLayerPacketView incoming) {
-  ResponseView response = ResponseView::GetResponse(incoming);
+void LinkLayerController::IncomingResponsePacket(
+    model::packets::LinkLayerPacketView incoming) {
+  auto response = model::packets::ResponseView::Create(incoming);
+  ASSERT(response.IsValid());
 
   // TODO: Check to see if I'm expecting this response.
 
   hci::OpCode opcode = static_cast<hci::OpCode>(response.GetOpcode());
-  auto args = response.GetResponseData();
+  auto args = response.GetPayload().begin();
   hci::Status status = static_cast<hci::Status>(args.extract<uint64_t>());
 
   uint16_t handle = connections_.GetHandle(incoming.GetSourceAddress());
@@ -679,22 +789,20 @@ void LinkLayerController::LeAdvertising() {
     return;
   }
 
-  LeAdvertisement::AddressType own_address_type =
-      static_cast<LeAdvertisement::AddressType>(properties_.GetLeAdvertisingOwnAddressType());
-  std::shared_ptr<packets::LinkLayerPacketBuilder> to_send;
-  std::unique_ptr<packets::LeAdvertisementBuilder> ad;
+  auto own_address_type = static_cast<model::packets::AddressType>(
+      properties_.GetLeAdvertisingOwnAddressType());
   Address advertising_address = Address::kEmpty;
-  if (own_address_type == LeAdvertisement::AddressType::PUBLIC) {
+  if (own_address_type == model::packets::AddressType::PUBLIC) {
     advertising_address = properties_.GetAddress();
-  } else if (own_address_type == LeAdvertisement::AddressType::RANDOM) {
+  } else if (own_address_type == model::packets::AddressType::RANDOM) {
     advertising_address = properties_.GetLeAddress();
   }
   ASSERT(advertising_address != Address::kEmpty);
-  ad = packets::LeAdvertisementBuilder::Create(own_address_type,
-                                               static_cast<LeAdvertisement::AdvertisementType>(own_address_type),
-                                               properties_.GetLeAdvertisement());
-  to_send = packets::LinkLayerPacketBuilder::WrapLeAdvertisement(std::move(ad), advertising_address);
-  SendLeLinkLayerPacket(to_send);
+  auto to_send = model::packets::LeAdvertisementBuilder::Create(
+      advertising_address, Address::kEmpty, own_address_type,
+      static_cast<model::packets::AdvertisementType>(own_address_type),
+      properties_.GetLeAdvertisement());
+  SendLeLinkLayerPacket(std::move(to_send));
 }
 
 void LinkLayerController::Connections() {
@@ -717,7 +825,9 @@ void LinkLayerController::RegisterScoChannel(
 }
 
 void LinkLayerController::RegisterRemoteChannel(
-    const std::function<void(std::shared_ptr<LinkLayerPacketBuilder>, Phy::Type)>& callback) {
+    const std::function<void(
+        std::shared_ptr<model::packets::LinkLayerPacketBuilder>, Phy::Type)>&
+        callback) {
   send_to_remote_ = callback;
 }
 
@@ -834,16 +944,21 @@ hci::Status LinkLayerController::IoCapabilityRequestReply(const Address& peer, u
   security_manager_.SetLocalIoCapability(peer, io_capability, oob_data_present_flag, authentication_requirements);
 
   PairingType pairing_type = security_manager_.GetSimplePairingType();
+
   if (pairing_type != PairingType::INVALID) {
     ScheduleTask(milliseconds(5), [this, peer, pairing_type]() { AuthenticateRemoteStage1(peer, pairing_type); });
-    SendLinkLayerPacket(LinkLayerPacketBuilder::WrapIoCapabilityResponse(
-        IoCapabilityBuilder::Create(io_capability, oob_data_present_flag, authentication_requirements),
-        properties_.GetAddress(), peer));
+    auto packet = model::packets::IoCapabilityResponseBuilder::Create(
+        properties_.GetAddress(), peer, io_capability, oob_data_present_flag,
+        authentication_requirements);
+    SendLinkLayerPacket(std::move(packet));
+
   } else {
     LOG_INFO("%s: Requesting remote capability", __func__);
-    SendLinkLayerPacket(LinkLayerPacketBuilder::WrapIoCapabilityRequest(
-        IoCapabilityBuilder::Create(io_capability, oob_data_present_flag, authentication_requirements),
-        properties_.GetAddress(), peer));
+
+    auto packet = model::packets::IoCapabilityRequestBuilder::Create(
+        properties_.GetAddress(), peer, io_capability, oob_data_present_flag,
+        authentication_requirements);
+    SendLinkLayerPacket(std::move(packet));
   }
 
   return hci::Status::SUCCESS;
@@ -856,8 +971,9 @@ hci::Status LinkLayerController::IoCapabilityRequestNegativeReply(const Address&
 
   security_manager_.InvalidateIoCapabilities();
 
-  SendLinkLayerPacket(LinkLayerPacketBuilder::WrapIoCapabilityNegativeResponse(
-      IoCapabilityNegativeResponseBuilder::Create(static_cast<uint8_t>(reason)), properties_.GetAddress(), peer));
+  auto packet = model::packets::IoCapabilityNegativeResponseBuilder::Create(
+      properties_.GetAddress(), peer, static_cast<uint8_t>(reason));
+  SendLinkLayerPacket(std::move(packet));
 
   return hci::Status::SUCCESS;
 }
@@ -948,8 +1064,9 @@ void LinkLayerController::HandleSetConnectionEncryption(const Address& peer, uin
     return;
   }
 
-  SendLinkLayerPacket(LinkLayerPacketBuilder::WrapEncryptConnection(
-      EncryptConnectionBuilder::Create(security_manager_.GetKey(peer)), properties_.GetAddress(), peer));
+  auto packet = model::packets::EncryptConnectionBuilder::Create(
+      properties_.GetAddress(), peer, security_manager_.GetKey(peer));
+  SendLinkLayerPacket(std::move(packet));
 }
 
 hci::Status LinkLayerController::SetConnectionEncryption(uint16_t handle, uint8_t encryption_enable) {
@@ -989,10 +1106,10 @@ hci::Status LinkLayerController::AcceptConnectionRequest(const Address& addr, bo
 }
 
 void LinkLayerController::MakeSlaveConnection(const Address& addr, bool try_role_switch) {
-  std::shared_ptr<LinkLayerPacketBuilder> to_send = LinkLayerPacketBuilder::WrapPageResponse(
-      PageResponseBuilder::Create(try_role_switch), properties_.GetAddress(), addr);
   LOG_INFO("%s sending page response to %s", __func__, addr.ToString().c_str());
-  SendLinkLayerPacket(to_send);
+  auto to_send = model::packets::PageResponseBuilder::Create(
+      properties_.GetAddress(), addr, try_role_switch);
+  SendLinkLayerPacket(std::move(to_send));
 
   uint16_t handle = connections_.CreateConnection(addr);
   if (handle == acl::kReservedHandle) {
@@ -1021,10 +1138,10 @@ hci::Status LinkLayerController::RejectConnectionRequest(const Address& addr, ui
 }
 
 void LinkLayerController::RejectSlaveConnection(const Address& addr, uint8_t reason) {
-  std::shared_ptr<LinkLayerPacketBuilder> to_send =
-      LinkLayerPacketBuilder::WrapPageReject(PageRejectBuilder::Create(reason), properties_.GetAddress(), addr);
+  auto to_send = model::packets::PageRejectBuilder::Create(
+      properties_.GetAddress(), addr, reason);
   LOG_INFO("%s sending page reject to %s", __func__, addr.ToString().c_str());
-  SendLinkLayerPacket(to_send);
+  SendLinkLayerPacket(std::move(to_send));
 
   ASSERT(reason >= 0x0d && reason <= 0x0f);
   send_event_(EventPacketBuilder::CreateConnectionCompleteEvent(static_cast<hci::Status>(reason), 0xeff, addr,
@@ -1038,8 +1155,10 @@ hci::Status LinkLayerController::CreateConnection(const Address& addr, uint16_t,
     return hci::Status::CONTROLLER_BUSY;
   }
 
-  std::unique_ptr<PageBuilder> page = PageBuilder::Create(properties_.GetClassOfDevice(), allow_role_switch);
-  SendLinkLayerPacket(LinkLayerPacketBuilder::WrapPage(std::move(page), properties_.GetAddress(), addr));
+  auto page = model::packets::PageBuilder::Create(
+      properties_.GetAddress(), addr, properties_.GetClassOfDevice(),
+      allow_role_switch);
+  SendLinkLayerPacket(std::move(page));
 
   return hci::Status::SUCCESS;
 }
@@ -1058,9 +1177,9 @@ hci::Status LinkLayerController::Disconnect(uint16_t handle, uint8_t reason) {
   }
 
   const Address& remote = connections_.GetAddress(handle);
-  std::shared_ptr<LinkLayerPacketBuilder> to_send =
-      LinkLayerPacketBuilder::WrapDisconnect(DisconnectBuilder::Create(reason), properties_.GetAddress(), remote);
-  SendLinkLayerPacket(to_send);
+  auto packet = model::packets::DisconnectBuilder::Create(
+      properties_.GetAddress(), remote, reason);
+  SendLinkLayerPacket(std::move(packet));
   ASSERT_LOG(connections_.Disconnect(handle), "Disconnecting %hx", handle);
 
   ScheduleTask(milliseconds(20), [this, handle]() {
@@ -1256,7 +1375,7 @@ void LinkLayerController::InquiryTimeout() {
 }
 
 void LinkLayerController::SetInquiryMode(uint8_t mode) {
-  inquiry_mode_ = static_cast<Inquiry::InquiryType>(mode);
+  inquiry_mode_ = static_cast<model::packets::InquiryType>(mode);
 }
 
 void LinkLayerController::SetInquiryLAP(uint64_t lap) {
@@ -1273,10 +1392,10 @@ void LinkLayerController::Inquiry() {
     return;
   }
   LOG_INFO("Inquiry ");
-  std::unique_ptr<InquiryBuilder> inquiry = InquiryBuilder::Create(inquiry_mode_);
-  std::shared_ptr<LinkLayerPacketBuilder> to_send =
-      LinkLayerPacketBuilder::WrapInquiry(std::move(inquiry), properties_.GetAddress());
-  SendLinkLayerPacket(to_send);
+
+  auto packet = model::packets::InquiryBuilder::Create(
+      properties_.GetAddress(), Address::kEmpty, inquiry_mode_);
+  SendLinkLayerPacket(std::move(packet));
   last_inquiry_ = now;
 }
 
