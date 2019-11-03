@@ -20,6 +20,9 @@
 
 #include <string>
 
+namespace bluetooth {
+namespace types {
+
 /** Bluetooth Class of Device */
 class ClassOfDevice final {
  public:
@@ -52,3 +55,8 @@ inline std::ostream& operator<<(std::ostream& os, const ClassOfDevice& c) {
   os << c.ToString();
   return os;
 }
+
+}  // namespace types
+}  // namespace bluetooth
+
+using ::bluetooth::types::ClassOfDevice;  // TODO, remove

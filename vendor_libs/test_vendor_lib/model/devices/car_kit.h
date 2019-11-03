@@ -45,7 +45,8 @@ class CarKit : public Device {
     return "car_kit";
   }
 
-  virtual void IncomingPacket(packets::LinkLayerPacketView packet) override;
+  virtual void IncomingPacket(
+      model::packets::LinkLayerPacketView packet) override;
 
   virtual void TimerTick() override;
 
