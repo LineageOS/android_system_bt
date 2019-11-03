@@ -67,7 +67,8 @@ std::string DualModeController::GetTypeString() const {
   return "Simulated Bluetooth Controller";
 }
 
-void DualModeController::IncomingPacket(packets::LinkLayerPacketView incoming) {
+void DualModeController::IncomingPacket(
+    model::packets::LinkLayerPacketView incoming) {
   link_layer_controller_.IncomingPacket(incoming);
 }
 
@@ -111,7 +112,8 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   properties_.SetAddress(public_address);
 
   link_layer_controller_.RegisterRemoteChannel(
-      [this](std::shared_ptr<packets::LinkLayerPacketBuilder> packet, Phy::Type phy_type) {
+      [this](std::shared_ptr<model::packets::LinkLayerPacketBuilder> packet,
+             Phy::Type phy_type) {
         DualModeController::SendLinkLayerPacket(packet, phy_type);
       });
 
