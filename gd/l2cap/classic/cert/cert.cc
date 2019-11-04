@@ -207,7 +207,7 @@ class L2capModuleCertService : public L2capModuleCert::Service {
         ConnectionRequestView view = ConnectionRequestView::Create(control_view);
         ASSERT(view.IsValid());
         auto builder = ConnectionResponseBuilder::Create(
-            view.GetIdentifier(), view.GetSourceCid(), next_incoming_request_cid_,
+            view.GetIdentifier(), next_incoming_request_cid_, view.GetSourceCid(),
             accept_incoming_connection_ ? ConnectionResponseResult::SUCCESS : ConnectionResponseResult::INVALID_CID,
             ConnectionResponseStatus::NO_FURTHER_INFORMATION_AVAILABLE);
         auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
@@ -235,6 +235,42 @@ class L2capModuleCertService : public L2capModuleCert::Service {
         outgoing_packet_queue_.push(std::move(l2cap_builder));
         send_packet_from_queue();
         break;
+      }
+      case CommandCode::INFORMATION_REQUEST: {
+        InformationRequestView information_request_view = InformationRequestView::Create(control_view);
+        if (!information_request_view.IsValid()) {
+          return;
+        }
+        auto type = information_request_view.GetInfoType();
+        switch (type) {
+          case InformationRequestInfoType::CONNECTIONLESS_MTU: {
+            auto response = InformationResponseConnectionlessMtuBuilder::Create(
+                information_request_view.GetIdentifier(), InformationRequestResult::NOT_SUPPORTED, 0);
+            auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(response));
+            outgoing_packet_queue_.push(std::move(l2cap_builder));
+            send_packet_from_queue();
+            break;
+          }
+          case InformationRequestInfoType::EXTENDED_FEATURES_SUPPORTED: {
+            // TODO: implement this response
+            auto response = InformationResponseExtendedFeaturesBuilder::Create(information_request_view.GetIdentifier(),
+                                                                               InformationRequestResult::NOT_SUPPORTED,
+                                                                               0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(response));
+            outgoing_packet_queue_.push(std::move(l2cap_builder));
+            send_packet_from_queue();
+            break;
+          }
+          case InformationRequestInfoType::FIXED_CHANNELS_SUPPORTED: {
+            constexpr uint64_t kSignallingChannelMask = 0x02;
+            auto response = InformationResponseFixedChannelsBuilder::Create(
+                information_request_view.GetIdentifier(), InformationRequestResult::SUCCESS, kSignallingChannelMask);
+            auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(response));
+            outgoing_packet_queue_.push(std::move(l2cap_builder));
+            send_packet_from_queue();
+            break;
+          }
+        }
       }
       default:
         return;
