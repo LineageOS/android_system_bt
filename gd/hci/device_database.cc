@@ -30,19 +30,15 @@ using namespace bluetooth::hci;
 std::shared_ptr<ClassicDevice> DeviceDatabase::CreateClassicDevice(Address address) {
   ClassicDevice device(address);
   const std::string uuid = device.GetUuid();
-  if (AddDeviceToMap(std::move(device))) {
-    return GetClassicDevice(uuid);
-  }
-  return std::shared_ptr<ClassicDevice>();
+  AddDeviceToMap(std::move(device));
+  return GetClassicDevice(uuid);
 }
 
 std::shared_ptr<LeDevice> DeviceDatabase::CreateLeDevice(Address address) {
   LeDevice device(address);
   const std::string uuid = device.GetUuid();
-  if (AddDeviceToMap(std::move(device))) {
-    return GetLeDevice(uuid);
-  }
-  return std::shared_ptr<LeDevice>();
+  AddDeviceToMap(std::move(device));
+  return GetLeDevice(uuid);
 }
 
 std::shared_ptr<DualDevice> DeviceDatabase::CreateDualDevice(Address address) {
@@ -51,9 +47,8 @@ std::shared_ptr<DualDevice> DeviceDatabase::CreateDualDevice(Address address) {
   if (classic && le) {
     DualDevice device(address, classic, le);
     std::string uuid = device.GetUuid();
-    if (AddDeviceToMap(std::move(device))) {
-      return GetDualDevice(uuid);
-    }
+    AddDeviceToMap(std::move(device));
+    return GetDualDevice(uuid);
   }
   LOG_WARN("Attempting to instert a DUAL device that already exists!");
   return std::shared_ptr<DualDevice>();
@@ -189,7 +184,6 @@ bool DeviceDatabase::AddDeviceToMap(ClassicDevice&& device) {
     auto it = classic_device_map_.find(device.GetUuid());
     // If we have a record with the same key
     if (it != classic_device_map_.end()) {
-      LOG_ERROR("Attempt to re-insert classic device '%s' object with same UUID", uuid.c_str());
       // We don't want to insert and overwrite
       return false;
     }
@@ -217,7 +211,6 @@ bool DeviceDatabase::AddDeviceToMap(LeDevice&& device) {
     auto it = le_device_map_.find(device.GetUuid());
     // If we have a record with the same key
     if (it != le_device_map_.end()) {
-      LOG_ERROR("Attempt to re-insert LE device '%s' object with same UUID", uuid.c_str());
       // We don't want to insert and overwrite
       return false;
     }
@@ -244,7 +237,6 @@ bool DeviceDatabase::AddDeviceToMap(DualDevice&& device) {
     auto it = dual_device_map_.find(device.GetUuid());
     // If we have a record with the same key
     if (it != dual_device_map_.end()) {
-      LOG_ERROR("Attempt to re-insert dual device '%s' object with same UUID", uuid.c_str());
       // We don't want to insert and overwrite
       return false;
     }
