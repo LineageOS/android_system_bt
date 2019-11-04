@@ -564,8 +564,8 @@ void bta_ag_resume_open(tBTA_AG_SCB* p_scb) {
   if (p_scb->state == BTA_AG_INIT_ST) {
     LOG(INFO) << __func__ << ": Resume connection to " << p_scb->peer_addr
               << ", handle" << bta_ag_scb_to_idx(p_scb);
-    tBTA_AG_DATA open_data = {.api_open.bd_addr = p_scb->peer_addr,
-                              .api_open.sec_mask = p_scb->cli_sec_mask};
+    tBTA_AG_DATA open_data = {.api_open = {.bd_addr = p_scb->peer_addr,
+                                           .sec_mask = p_scb->cli_sec_mask}};
     bta_ag_sm_execute(p_scb, BTA_AG_API_OPEN_EVT, open_data);
   } else {
     VLOG(1) << __func__ << ": device " << p_scb->peer_addr
