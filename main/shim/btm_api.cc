@@ -441,12 +441,15 @@ uint16_t bluetooth::shim::BTM_ReadConnectability(uint16_t* p_window,
  *
  ******************************************************************************/
 uint16_t bluetooth::shim::BTM_IsInquiryActive(void) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
-  if (!shim_btm.IsInquiryActive()) {
-    return BTM_INQUIRY_INACTIVE;
+  if (shim_btm.IsLimitedInquiryActive()) {
+    return BTM_LIMITED_INQUIRY_ACTIVE;
+  } else if (shim_btm.IsGeneralInquiryActive()) {
+    return BTM_GENERAL_INQUIRY_ACTIVE;
+  } else if (shim_btm.IsGeneralPeriodicInquiryActive() ||
+             shim_btm.IsLimitedPeriodicInquiryActive()) {
+    return BTM_PERIODIC_INQUIRY_ACTIVE;
   }
-
-  return BTM_LIMITED_INQUIRY_ACTIVE;
+  return BTM_INQUIRY_INACTIVE;
 }
 
 /*******************************************************************************
