@@ -35,12 +35,14 @@ import android.os.ResultReceiver;
  */
 interface IBluetooth
 {
+    @UnsupportedAppUsage
     boolean isEnabled();
     int getState();
     boolean enable();
     boolean enableNoAutoConnect();
     boolean disable();
 
+    @UnsupportedAppUsage
     String getAddress();
     ParcelUuid[] getUuids();
     boolean setName(in String name);
@@ -79,10 +81,12 @@ interface IBluetooth
 
     String getRemoteName(in BluetoothDevice device);
     int getRemoteType(in BluetoothDevice device);
+    @UnsupportedAppUsage
     String getRemoteAlias(in BluetoothDevice device);
     boolean setRemoteAlias(in BluetoothDevice device, in String name);
     int getRemoteClass(in BluetoothDevice device);
     ParcelUuid[] getRemoteUuids(in BluetoothDevice device);
+    @UnsupportedAppUsage
     boolean fetchRemoteUuids(in BluetoothDevice device);
     boolean sdpSearch(in BluetoothDevice device, in ParcelUuid uuid);
     int getBatteryLevel(in BluetoothDevice device);
@@ -102,6 +106,7 @@ interface IBluetooth
     int getSimAccessPermission(in BluetoothDevice device);
     boolean setSimAccessPermission(in BluetoothDevice device, int value);
 
+    @UnsupportedAppUsage
     void sendConnectionStateChange(in BluetoothDevice device, int profile, int state, int prevState);
 
     void registerCallback(in IBluetoothCallback callback);
