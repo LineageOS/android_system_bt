@@ -97,6 +97,7 @@ void DeviceProperties::RegisterJSONConverter(base::JSONValueConverter<DeviceProp
   converter->RegisterCustomField<uint16_t>(field_name, &DeviceProperties::field, &ParseUint16t);
   REGISTER_UINT16_T("AclDataPacketSize", acl_data_packet_size_);
   REGISTER_UINT8_T("ScoDataPacketSize", sco_data_packet_size_);
+  REGISTER_UINT8_T("EncryptionKeySize", encryption_key_size_);
   REGISTER_UINT16_T("NumAclDataPackets", num_acl_data_packets_);
   REGISTER_UINT16_T("NumScoDataPackets", num_sco_data_packets_);
   REGISTER_UINT8_T("Version", version_);

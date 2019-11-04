@@ -285,6 +285,20 @@ std::unique_ptr<EventPacketBuilder> EventPacketBuilder::CreateCommandCompleteRea
   return evt_ptr;
 }
 
+// Bluetooth Core Specification Version 5.1, Volume 2, Part E, Section 7.5.7
+std::unique_ptr<EventPacketBuilder>
+EventPacketBuilder::CreateCommandCompleteReadEncryptionKeySize(
+    hci::Status status, uint16_t handle, uint8_t key_size) {
+  std::unique_ptr<EventPacketBuilder> evt_ptr =
+      EventPacketBuilder::CreateCommandCompleteOnlyStatusEvent(
+          OpCode::READ_ENCRYPTION_KEY_SIZE, status);
+
+  ASSERT(evt_ptr->AddPayloadOctets2(handle));
+  ASSERT(evt_ptr->AddPayloadOctets1(key_size));
+
+  return evt_ptr;
+}
+
 // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.6.1
 std::unique_ptr<EventPacketBuilder> EventPacketBuilder::CreateCommandCompleteReadLoopbackMode(hci::Status status,
                                                                                               hci::LoopbackMode mode) {
