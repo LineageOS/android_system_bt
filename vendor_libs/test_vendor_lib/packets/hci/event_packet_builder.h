@@ -128,6 +128,11 @@ class EventPacketBuilder : public HciPacketBuilder {
       hci::Status status, const std::vector<uint8_t>& supported_codecs,
       const std::vector<uint32_t>& vendor_specific_codecs);
 
+  // Bluetooth Core Specification Version 5.1, Volume 2, Part E, Section 7.5.7
+  static std::unique_ptr<EventPacketBuilder>
+  CreateCommandCompleteReadEncryptionKeySize(hci::Status status,
+                                             uint16_t handle, uint8_t key_size);
+
   // Bluetooth Core Specification Version 4.2, Volume 2, Part E, Section 7.6.1
   static std::unique_ptr<EventPacketBuilder> CreateCommandCompleteReadLoopbackMode(hci::Status status,
                                                                                    hci::LoopbackMode mode);
