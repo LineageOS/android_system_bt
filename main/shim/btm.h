@@ -97,6 +97,8 @@ class Btm {
                             uint16_t min_delay,
                             tBTM_INQ_RESULTS_CB* p_results_cb);
   void CancelPeriodicInquiry();
+  bool IsGeneralPeriodicInquiryActive() const;
+  bool IsLimitedPeriodicInquiryActive() const;
 
   void SetClassicGeneralDiscoverability(uint16_t window, uint16_t interval);
   void SetClassicLimitedDiscoverability(uint16_t window, uint16_t interval);
