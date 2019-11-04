@@ -61,12 +61,13 @@ TEST_F(DeviceDatabaseTest, create_dual_device) {
   ASSERT_EQ(address_str, dual_device->GetUuid());
 }
 
+// Shouldn't fail when creating twice.  Should just get back a s_ptr the same device
 TEST_F(DeviceDatabaseTest, create_classic_device_twice) {
   auto classic_device = device_database_.CreateClassicDevice(address);
   ASSERT_TRUE(classic_device);
   ASSERT_EQ(CLASSIC, classic_device->GetDeviceType());
   ASSERT_EQ(address_str, classic_device->GetUuid());
-  ASSERT_FALSE(device_database_.CreateClassicDevice(address));
+  ASSERT_TRUE(device_database_.CreateClassicDevice(address));
 }
 
 TEST_F(DeviceDatabaseTest, create_le_device_twice) {
@@ -74,7 +75,7 @@ TEST_F(DeviceDatabaseTest, create_le_device_twice) {
   ASSERT_TRUE(le_device);
   ASSERT_EQ(LE, le_device->GetDeviceType());
   ASSERT_EQ(address_str, le_device->GetUuid());
-  ASSERT_FALSE(device_database_.CreateLeDevice(address));
+  ASSERT_TRUE(device_database_.CreateLeDevice(address));
 }
 
 TEST_F(DeviceDatabaseTest, create_dual_device_twice) {
@@ -93,7 +94,7 @@ TEST_F(DeviceDatabaseTest, create_dual_device_twice) {
   ASSERT_EQ(DUAL, dual_device->GetLeDevice()->GetDeviceType());
   ASSERT_EQ(address_str, dual_device->GetLeDevice()->GetUuid());
 
-  ASSERT_FALSE(device_database_.CreateDualDevice(address));
+  ASSERT_TRUE(device_database_.CreateDualDevice(address));
 }
 
 TEST_F(DeviceDatabaseTest, remove_device) {
