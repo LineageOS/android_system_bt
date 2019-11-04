@@ -24,7 +24,7 @@ namespace bluetooth::hci {
 /**
  * TODO(optedoblivion): Build out AddressType getter/setter
  */
-enum AddressType {};
+// enum AddressType {};
 
 /**
  * A device representing a LE device.
