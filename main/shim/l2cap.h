@@ -22,6 +22,7 @@
 #include "stack/include/l2c_api.h"
 
 namespace bluetooth {
+namespace legacy {
 namespace shim {
 
 static constexpr uint16_t kInitialClassicDynamicPsm = 0x1001;
@@ -41,16 +42,28 @@ using PsmData = struct {
   void UnregisterPsm(uint16_t psm);
   void DeallocatePsm(uint16_t psm);
 
+  const tL2CAP_APPL_INFO* Callbacks(uint16_t psm);
+
  private:
-  std::unordered_map<uint16_t, const tL2CAP_APPL_INFO*> psm_to_callback_map;
+  std::unordered_map<uint16_t, const tL2CAP_APPL_INFO*> psm_to_callback_map_;
 };
 
 class L2cap {
  public:
-  L2cap();
+  void RegisterService(uint16_t psm, const tL2CAP_APPL_INFO* callbacks,
+                       bool enable_snoop);
+  uint16_t CreateConnection(uint16_t psm, const RawAddress& raw_address);
+  void OnConnectionReady(
+      uint16_t psm, uint16_t cid,
+      std::function<void(std::function<void(uint16_t cid)>)> func);
 
-  PsmData& Classic();
-  PsmData& Le();
+  bool Write(uint16_t cid, BT_HDR* bt_hdr);
+  bool WriteFlushable(uint16_t cid, BT_HDR* bt_hdr);
+  bool WriteNonFlushable(uint16_t cid, BT_HDR* bt_hdr);
+  bool IsCongested(uint16_t cid) const;
+
+  bool SetCallbacks(uint16_t cid, const tL2CAP_APPL_INFO* callbacks);
+  void ClearCallbacks(uint16_t cid);
 
   uint16_t GetNextDynamicClassicPsm();
   uint16_t GetNextDynamicLePsm();
@@ -60,16 +73,22 @@ class L2cap {
   uint16_t ConvertClientToRealPsm(uint16_t psm);
   void RemoveClientPsm(uint16_t client_psm);
 
-  void Register(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info, bool enable_snoop);
-  uint16_t Connect(uint16_t psm, const RawAddress& raw_address);
+  // Legacy API entry points
+  bool ConnectResponse(const RawAddress& raw_address, uint8_t signal_id,
+                       uint16_t cid, uint16_t result, uint16_t status,
+                       tL2CAP_ERTM_INFO* ertm_info);
+  bool ConfigRequest(uint16_t cid, const tL2CAP_CFG_INFO* config_info);
+  bool ConfigResponse(uint16_t cid, const tL2CAP_CFG_INFO* config_info);
+  bool DisconnectRequest(uint16_t cid);
+  bool DisconnectResponse(uint16_t cid);
 
-  bool Write(uint16_t cid, BT_HDR* bt_hdr);
-  bool WriteFlushable(uint16_t cid, BT_HDR* bt_hdr);
-  bool WriteNonFlushable(uint16_t cid, BT_HDR* bt_hdr);
-  bool IsCongested(uint16_t cid) const;
+  void Test(void* context);
+  void Test2();
 
-  bool SetCallbacks(uint16_t cid, const tL2CAP_APPL_INFO* client_callbacks);
-  void ClearCallbacks(uint16_t cid);
+  L2cap();
+
+  PsmData& Classic();
+  PsmData& Le();
 
  private:
   uint16_t GetNextVirtualPsm(uint16_t real_psm);
@@ -81,9 +100,14 @@ class L2cap {
   uint16_t le_dynamic_psm_;
   uint16_t classic_virtual_psm_;
 
+  std::unordered_map<uint16_t,
+                     std::function<void(std::function<void(uint16_t c)>)>>
+      cid_to_postable_map_;
+  std::unordered_map<uint16_t, uint16_t> cid_to_psm_map_;
   std::unordered_map<uint16_t, uint16_t> client_psm_to_real_psm_map_;
   std::unordered_map<uint16_t, const tL2CAP_APPL_INFO*> cid_to_callback_map_;
 };
 
 }  // namespace shim
+}  // namespace legacy
 }  // namespace bluetooth
