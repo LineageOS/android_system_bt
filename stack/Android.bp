@@ -46,7 +46,6 @@ cc_library_static {
         "system/bt/bta/sys",
         "system/bt/utils/include",
     ],
-    cflags: ["-Wno-implicit-fallthrough"],
     srcs: crypto_toolbox_srcs + [
         "a2dp/a2dp_aac.cc",
         "a2dp/a2dp_aac_decoder.cc",

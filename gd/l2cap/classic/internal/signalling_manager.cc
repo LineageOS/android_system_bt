@@ -378,6 +378,7 @@ void ClassicSignallingManager::on_incoming_packet() {
       OnConfigurationResponse(configuration_response_view.GetIdentifier(), configuration_response_view.GetSourceCid(),
                               configuration_response_view.GetContinuation(), configuration_response_view.GetResult(),
                               configuration_response_view.GetConfig());
+      return;
     }
     case CommandCode::DISCONNECTION_REQUEST: {
       DisconnectionRequestView disconnection_request_view = DisconnectionRequestView::Create(control_packet_view);

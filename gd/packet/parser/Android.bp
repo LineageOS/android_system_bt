@@ -38,7 +38,6 @@ cc_binary_host {
         "libc++fs",
     ],
     cppflags: [
-        "-Wno-implicit-fallthrough",
         "-fno-exceptions",
         "-O0",
     ],
