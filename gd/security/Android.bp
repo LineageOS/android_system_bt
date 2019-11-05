@@ -7,8 +7,11 @@ filegroup {
         "pairing_handler_le.cc",
         "pairing_handler_le_legacy.cc",
         "pairing_handler_le_secure_connections.cc",
+        "security_manager.cc",
+        "internal/security_manager_impl.cc",
         "security_module.cc",
-    ]
+        ":BluetoothSecurityChannelSources",
+    ],
 }
 
 filegroup {
@@ -18,5 +21,6 @@ filegroup {
         "pairing_handler_le_unittest.cc",
         "test/fake_l2cap_test.cc",
         "test/pairing_handler_le_pair_test.cc",
-    ]
+        ":BluetoothSecurityChannelTestSources",
+    ],
 }
