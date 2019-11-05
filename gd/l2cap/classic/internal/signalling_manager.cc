@@ -166,15 +166,18 @@ void ClassicSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remo
   }
   if (last_sent_command.source_cid_ != cid) {
     LOG_WARN("SCID doesn't match: expected %d, received %d", last_sent_command.source_cid_, cid);
+    handle_send_next_command();
     return;
   }
   if (result != ConnectionResponseResult::SUCCESS) {
+    handle_send_next_command();
     return;
   }
   Psm pending_psm = last_sent_command.psm_;
   auto new_channel = link_->AllocateReservedDynamicChannel(cid, pending_psm, remote_cid, {});
   if (new_channel == nullptr) {
     LOG_WARN("Can't allocate dynamic channel");
+    handle_send_next_command();
     return;
   }
   std::unique_ptr<DynamicChannel> channel = std::make_unique<DynamicChannel>(new_channel, handler_);
@@ -211,6 +214,7 @@ void ClassicSignallingManager::OnConfigurationResponse(SignalId signal_id, Cid c
   auto channel = channel_allocator_->FindChannelByRemoteCid(cid);
   if (channel == nullptr) {
     LOG_WARN("Configuration request for an unknown channel");
+    handle_send_next_command();
     return;
   }
   // TODO(cmanton) verify configuration parameters are satisfied
@@ -248,6 +252,7 @@ void ClassicSignallingManager::OnDisconnectionResponse(SignalId signal_id, Cid c
   auto channel = channel_allocator_->FindChannelByCid(cid);
   if (channel == nullptr) {
     LOG_WARN("Disconnect response for an unknown channel");
+    handle_send_next_command();
     return;
   }
 
@@ -286,23 +291,22 @@ void ClassicSignallingManager::OnInformationRequest(SignalId signal_id, Informat
       auto response = InformationResponseConnectionlessMtuBuilder::Create(signal_id.Value(),
                                                                           InformationRequestResult::NOT_SUPPORTED, 0);
       enqueue_buffer_->Enqueue(std::move(response), handler_);
-      return;
+      break;
     }
     case InformationRequestInfoType::EXTENDED_FEATURES_SUPPORTED: {
       // TODO: implement this response
       auto response = InformationResponseExtendedFeaturesBuilder::Create(
           signal_id.Value(), InformationRequestResult::NOT_SUPPORTED, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
       enqueue_buffer_->Enqueue(std::move(response), handler_);
-      return;
+      break;
     }
     case InformationRequestInfoType::FIXED_CHANNELS_SUPPORTED: {
       auto response = InformationResponseFixedChannelsBuilder::Create(
           signal_id.Value(), InformationRequestResult::SUCCESS, fixed_service_manager_->GetSupportedFixedChannelMask());
       enqueue_buffer_->Enqueue(std::move(response), handler_);
-      return;
+      break;
     }
   }
-  handle_send_next_command();
 }
 
 void ClassicSignallingManager::OnInformationResponse(SignalId signal_id, const InformationResponseView& view) {
@@ -317,9 +321,7 @@ void ClassicSignallingManager::OnInformationResponse(SignalId signal_id, const I
       last_sent_command.command_code_ != CommandCode::INFORMATION_REQUEST) {
     return;
   }
-  if (view.GetResult() != InformationRequestResult::SUCCESS) {
-    return;
-  }
+  // TODO (hsz): Store the information response
   handle_send_next_command();
 }
 

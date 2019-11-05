@@ -234,6 +234,14 @@ void bluetooth::shim::Btm::CancelPeriodicInquiry() {
   bluetooth::shim::GetInquiry()->StopPeriodicInquiry();
 }
 
+bool bluetooth::shim::Btm::IsGeneralPeriodicInquiryActive() const {
+  return bluetooth::shim::GetInquiry()->IsGeneralPeriodicInquiryActive();
+}
+
+bool bluetooth::shim::Btm::IsLimitedPeriodicInquiryActive() const {
+  return bluetooth::shim::GetInquiry()->IsLimitedPeriodicInquiryActive();
+}
+
 /**
  * Discoverability
  */

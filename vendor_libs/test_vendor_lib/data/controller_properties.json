@@ -1,5 +1,6 @@
 {
   "AclDataPacketSize": "1024",
+  "EncryptionKeySize": "10",
   "ScoDataPacketSize": "255",
   "NumAclDataPackets": "10",
   "NumScoDataPackets": "10",

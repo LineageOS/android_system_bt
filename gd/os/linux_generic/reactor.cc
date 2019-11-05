@@ -152,7 +152,7 @@ Reactor::Reactable* Reactor::Register(int fd, Closure on_read_ready, Closure on_
   auto* reactable = new Reactable(fd, on_read_ready, on_write_ready);
   epoll_event event = {
       .events = poll_event_type,
-      {.ptr = reactable}
+      .data = {.ptr = reactable},
   };
   int register_fd;
   RUN_NO_INTR(register_fd = epoll_ctl(epoll_fd_, EPOLL_CTL_ADD, fd, &event));
@@ -217,7 +217,7 @@ void Reactor::ModifyRegistration(Reactor::Reactable* reactable, Closure on_read_
   }
   epoll_event event = {
       .events = poll_event_type,
-      {.ptr = reactable}
+      .data = {.ptr = reactable},
   };
   int modify_fd;
   RUN_NO_INTR(modify_fd = epoll_ctl(epoll_fd_, EPOLL_CTL_MOD, reactable->fd_, &event));
