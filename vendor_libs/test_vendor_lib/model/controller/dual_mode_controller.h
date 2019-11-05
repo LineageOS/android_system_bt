@@ -380,6 +380,18 @@ class DualModeController : public Device {
   // 7.8.27
   void HciLeReadSupportedStates(packets::PacketView<true> args);
 
+  // 7.8.38
+  void HciLeAddDeviceToResolvingList(packets::PacketView<true> args);
+
+  // 7.8.39
+  void HciLeRemoveDeviceFromResolvingList(packets::PacketView<true> args);
+
+  // 7.8.40
+  void HciLeClearResolvingList(packets::PacketView<true> args);
+
+  // 7.8.77
+  void HciLeSetPrivacyMode(packets::PacketView<true> args);
+
   // Vendor-specific Commands
 
   void HciLeVendorSleepMode(packets::PacketView<true> args);
