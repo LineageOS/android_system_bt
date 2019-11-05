@@ -1338,8 +1338,7 @@ static BT_HDR* avrc_bld_init_rsp_buffer(tAVRC_RESPONSE* p_rsp) {
     case AVRC_OP_VENDOR:
       /* reserved 0, packet_type 0 */
       UINT8_TO_BE_STREAM(p_data, 0);
-    /* continue to the next "case to add length */
-
+      [[fallthrough]];
     case AVRC_OP_BROWSE:
       /* add fixed lenth - 0 */
       UINT16_TO_BE_STREAM(p_data, 0);
