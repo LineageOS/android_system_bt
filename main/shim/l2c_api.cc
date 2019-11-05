@@ -21,7 +21,7 @@
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 
-static bluetooth::shim::L2cap shim_l2cap;
+static bluetooth::legacy::shim::L2cap shim_l2cap;
 
 /**
  * Classic Service Registration APIs
@@ -60,7 +60,7 @@ uint16_t bluetooth::shim::L2CA_Register(uint16_t client_psm,
   LOG_INFO(LOG_TAG, "%s classic client_psm:%hd psm:%hd", __func__, client_psm,
            psm);
 
-  shim_l2cap.Register(psm, callbacks, enable_snoop);
+  shim_l2cap.RegisterService(psm, callbacks, enable_snoop);
 
   return client_psm;
 }
@@ -116,7 +116,7 @@ uint16_t bluetooth::shim::L2CA_ErtmConnectReq(uint16_t psm,
                                               tL2CAP_ERTM_INFO* p_ertm_info) {
   CHECK(p_ertm_info == nullptr)
       << "UNIMPLEMENTED set enhanced retransmission mode config";
-  return shim_l2cap.Connect(psm, raw_address);
+  return shim_l2cap.CreateConnection(psm, raw_address);
 }
 
 uint16_t bluetooth::shim::L2CA_ConnectReq(uint16_t psm,
