@@ -33,6 +33,12 @@
 
 #define SPECIALIZE_READ_SAMPLES_JOINT
 
+#if __has_attribute(fallthrough)
+#define __fallthrough __attribute__((__fallthrough__))
+#else
+#define __fallthrough
+#endif
+
 /**
  * Scans through a buffer looking for a codec syncword. If the decoder has been
  * set for enhanced operation using OI_CODEC_SBC_DecoderReset(), it will search
@@ -413,7 +419,7 @@ uint8_t OI_CODEC_SBC_FrameCount(OI_BYTE* frameData, uint32_t frameBytes) {
 
       case SBC_DUAL_CHANNEL:
         frameLen *= 2;
-      /* fall through */
+        __fallthrough;
 
       default:
         if (mode == SBC_MONO) {
