@@ -16,6 +16,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <future>
 #include <memory>
 #include <string>
@@ -28,15 +29,15 @@ namespace shim {
 
 class L2cap : public bluetooth::Module, public bluetooth::shim::IL2cap {
  public:
-  void RegisterService(uint16_t psm, bool snoop_enabled, std::promise<void> register_completed) override;
-  void Connect(uint16_t psm, const std::string address, std::promise<uint16_t> connect_completed) override;
+  void RegisterService(uint16_t psm, ConnectionOpenCallback on_open, std::promise<void> completed) override;
+  void CreateConnection(uint16_t psm, const std::string address, std::promise<uint16_t> completed) override;
 
-  void SetOnReadDataReady(uint16_t cid, OnReadDataReady on_data_ready) override;
+  void SetReadDataReadyCallback(uint16_t cid, ReadDataReadyCallback on_data_ready) override;
+  void SetConnectionClosedCallback(uint16_t cid, ConnectionClosedCallback on_closed) override;
+
   bool Write(uint16_t cid, const uint8_t* data, size_t len) override;
   bool WriteFlushable(uint16_t cid, const uint8_t* data, size_t len) override;
   bool WriteNonFlushable(uint16_t cid, const uint8_t* data, size_t len) override;
-
-  virtual void SetOnClose(uint16_t cid, OnClose on_close) override;
 
   bool IsCongested(uint16_t cid) override;
 

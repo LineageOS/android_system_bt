@@ -16,6 +16,7 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
 #include <future>
 #include <string>
 #include <vector>
@@ -26,19 +27,21 @@
 namespace bluetooth {
 namespace shim {
 
-using OnReadDataReady = std::function<void(uint16_t cid, std::vector<const uint8_t> data)>;
-using OnClose = std::function<void(int error_code)>;
+using ConnectionClosedCallback = std::function<void(uint16_t cid, int error_code)>;
+using Postable = std::function<void(std::function<void(uint16_t cid)>)>;
+using ConnectionOpenCallback = std::function<void(uint16_t psm, uint16_t cid, Postable postable)>;
+using ReadDataReadyCallback = std::function<void(uint16_t cid, std::vector<const uint8_t> data)>;
 
 struct IL2cap {
-  virtual void RegisterService(uint16_t psm, bool snoop_enabled, std::promise<void> completed) = 0;
-  virtual void Connect(uint16_t psm, const std::string address, std::promise<uint16_t> completed) = 0;
+  virtual void RegisterService(uint16_t psm, ConnectionOpenCallback on_open, std::promise<void> completed) = 0;
+  virtual void CreateConnection(uint16_t psm, const std::string address, std::promise<uint16_t> completed) = 0;
 
-  virtual void SetOnReadDataReady(uint16_t cid, OnReadDataReady on_data_ready) = 0;
+  virtual void SetReadDataReadyCallback(uint16_t cid, ReadDataReadyCallback on_data_ready) = 0;
+  virtual void SetConnectionClosedCallback(uint16_t cid, ConnectionClosedCallback on_closed) = 0;
+
   virtual bool Write(uint16_t cid, const uint8_t* data, size_t len) = 0;
   virtual bool WriteFlushable(uint16_t cid, const uint8_t* data, size_t len) = 0;
   virtual bool WriteNonFlushable(uint16_t cid, const uint8_t* data, size_t len) = 0;
-
-  virtual void SetOnClose(uint16_t cid, OnClose on_close) = 0;
 
   virtual bool IsCongested(uint16_t cid) = 0;
   virtual ~IL2cap() {}
