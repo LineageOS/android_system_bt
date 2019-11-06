@@ -50,6 +50,7 @@
 #include "device/include/interop.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
+#include "log/log.h"
 #include "l2c_int.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
@@ -1084,13 +1085,21 @@ void btm_read_remote_features_complete(uint8_t* p) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_read_remote_ext_features_complete(uint8_t* p) {
+void btm_read_remote_ext_features_complete(uint8_t* p, uint8_t evt_len) {
   tACL_CONN* p_acl_cb;
   uint8_t page_num, max_page;
   uint16_t handle;
   uint8_t acl_idx;
 
   BTM_TRACE_DEBUG("btm_read_remote_ext_features_complete");
+
+  if (evt_len < HCI_EXT_FEATURES_SUCCESS_EVT_LEN) {
+    android_errorWriteLog(0x534e4554, "141552859");
+    BTM_TRACE_ERROR(
+        "btm_read_remote_ext_features_complete evt length too short. length=%d",
+        evt_len);
+    return;
+  }
 
   ++p;
   STREAM_TO_UINT16(handle, p);
@@ -1108,6 +1117,13 @@ void btm_read_remote_ext_features_complete(uint8_t* p) {
   if (max_page > HCI_EXT_FEATURES_PAGE_MAX) {
     BTM_TRACE_ERROR("btm_read_remote_ext_features_complete page=%d unknown",
                     max_page);
+    return;
+  }
+
+  if (page_num > max_page) {
+    android_errorWriteLog(0x534e4554, "141552859");
+    BTM_TRACE_ERROR("btm_read_remote_ext_features_complete num_page=%d invalid",
+                    page_num);
     return;
   }
 
