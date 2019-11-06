@@ -246,13 +246,9 @@ bool bluetooth::legacy::shim::L2cap::WriteNonFlushable(uint16_t cid,
 
 bool bluetooth::legacy::shim::L2cap::SetCallbacks(
     uint16_t cid, const tL2CAP_APPL_INFO* callbacks) {
-  LOG_DEBUG(LOG_TAG, "Mapping cid:%hd to callbacks", cid);
   CHECK(callbacks != nullptr);
-  if (cid_to_callback_map_.find(cid) != cid_to_callback_map_.end()) {
-    LOG_WARN(LOG_TAG, "Already have mapped cid:%hd to callbacks", cid);
-  }
-  LOG_ASSERT(cid_to_callback_map_.find(cid) != cid_to_callback_map_.end())
-      << "Registering multiple channel callbacks "
+  LOG_ASSERT(cid_to_callback_map_.find(cid) == cid_to_callback_map_.end())
+      << "Already have callbacks registered for "
          "connection_interface_descriptor:"
       << cid;
   cid_to_callback_map_[cid] = callbacks;
@@ -295,7 +291,6 @@ bool bluetooth::legacy::shim::L2cap::ConfigRequest(
 
   auto func = cid_to_postable_map_[cid];
   func([&cid, &callbacks](uint16_t cid2) {
-    LOG_WARN(LOG_TAG, "Hello world %hd %hd", cid, cid2);
     callbacks->pL2CA_ConfigCfm_Cb(cid, nullptr);
   });
   return true;
