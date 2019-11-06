@@ -271,6 +271,7 @@ class L2capModuleCertService : public L2capModuleCert::Service {
             break;
           }
         }
+        break;
       }
       default:
         return;
