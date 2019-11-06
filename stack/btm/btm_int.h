@@ -110,7 +110,7 @@ extern void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
 extern uint16_t btm_get_acl_disc_reason_code(void);
 extern tBTM_STATUS btm_remove_acl(BD_ADDR bd_addr, tBT_TRANSPORT transport);
 extern void btm_read_remote_features_complete(uint8_t* p);
-extern void btm_read_remote_ext_features_complete(uint8_t* p);
+extern void btm_read_remote_ext_features_complete(uint8_t* p, uint8_t evt_len);
 extern void btm_read_remote_ext_features_failed(uint8_t status,
                                                 uint16_t handle);
 extern void btm_read_remote_version_complete(uint8_t* p);
