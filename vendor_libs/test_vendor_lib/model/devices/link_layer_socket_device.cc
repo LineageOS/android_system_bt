@@ -18,6 +18,8 @@
 
 #include <unistd.h>
 
+#include "packets/link_layer/link_layer_packet_builder.h"
+#include "packets/link_layer/link_layer_packet_view.h"
 #include "packets/packet_view.h"
 #include "packets/view.h"
 
@@ -30,18 +32,16 @@ LinkLayerSocketDevice::LinkLayerSocketDevice(int socket_fd, Phy::Type phy_type)
 
 void LinkLayerSocketDevice::TimerTick() {
   if (bytes_left_ == 0) {
-    size_t size_bytes = sizeof(uint32_t);
-    received_ = std::make_shared<std::vector<uint8_t>>(size_bytes);
-    size_t bytes_received = socket_.TryReceive(size_bytes, received_->data());
+    received_ = std::make_shared<std::vector<uint8_t>>(Link::kSizeBytes);
+    size_t bytes_received = socket_.TryReceive(Link::kSizeBytes, received_->data());
     if (bytes_received == 0) {
       return;
     }
-    ASSERT_LOG(bytes_received == size_bytes, "bytes_received == %d",
-               static_cast<int>(bytes_received));
-    packets::PacketView<true> size({packets::View(received_, 0, size_bytes)});
+    ASSERT_LOG(bytes_received == Link::kSizeBytes, "bytes_received == %d", static_cast<int>(bytes_received));
+    packets::PacketView<true> size({packets::View(received_, 0, Link::kSizeBytes)});
     bytes_left_ = size.begin().extract<uint32_t>();
-    received_->resize(size_bytes + bytes_left_);
-    offset_ = size_bytes;
+    received_->resize(Link::kSizeBytes + bytes_left_);
+    offset_ = Link::kSizeBytes;
   }
   size_t bytes_received = socket_.TryReceive(bytes_left_, received_->data() + offset_);
   if (bytes_received == 0) {
@@ -50,23 +50,14 @@ void LinkLayerSocketDevice::TimerTick() {
   bytes_left_ -= bytes_received;
   offset_ += bytes_received;
   if (bytes_left_ == 0) {
-    bluetooth::packet::PacketView<bluetooth::packet::kLittleEndian> packet_view(
-        received_);
-    auto packet = model::packets::LinkLayerPacketView::Create(packet_view);
-    ASSERT(packet.IsValid());
-    SendLinkLayerPacket(packet, phy_type_);
+    SendLinkLayerPacket(packets::LinkLayerPacketBuilder::ReWrap(received_), phy_type_);
     offset_ = 0;
     received_.reset();
   }
 }
 
-void LinkLayerSocketDevice::IncomingPacket(
-    model::packets::LinkLayerPacketView packet) {
-  std::shared_ptr<std::vector<uint8_t>> payload_bytes =
-      std::make_shared<std::vector<uint8_t>>(packet.begin(), packet.end());
-  packets::PacketView<true> packet_view(payload_bytes);
-
-  socket_.TrySend(packet_view);
+void LinkLayerSocketDevice::IncomingPacket(packets::LinkLayerPacketView packet) {
+  socket_.TrySend(packet);
 }
 
 }  // namespace test_vendor_lib

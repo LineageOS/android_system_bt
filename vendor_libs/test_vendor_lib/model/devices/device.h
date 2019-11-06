@@ -24,9 +24,9 @@
 
 #include "model/devices/device_properties.h"
 #include "model/setup/phy_layer.h"
+#include "packets/link_layer/link_layer_packet_builder.h"
+#include "packets/link_layer/link_layer_packet_view.h"
 #include "types/address.h"
-
-#include "packets/link_layer_packets.h"
 
 namespace test_vendor_lib {
 
@@ -73,13 +73,9 @@ class Device {
 
   void UnregisterPhyLayer(Phy::Type phy_type, uint32_t factory_id);
 
-  virtual void IncomingPacket(model::packets::LinkLayerPacketView){};
+  virtual void IncomingPacket(packets::LinkLayerPacketView){};
 
-  virtual void SendLinkLayerPacket(
-      std::shared_ptr<model::packets::LinkLayerPacketBuilder> packet,
-      Phy::Type phy_type);
-  virtual void SendLinkLayerPacket(model::packets::LinkLayerPacketView packet,
-                                   Phy::Type phy_type);
+  virtual void SendLinkLayerPacket(std::shared_ptr<packets::LinkLayerPacketBuilder> packet, Phy::Type phy_type);
 
  protected:
   std::map<Phy::Type, std::vector<std::shared_ptr<PhyLayer>>> phy_layers_;
