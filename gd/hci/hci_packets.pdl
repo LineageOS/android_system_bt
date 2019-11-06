@@ -2616,12 +2616,33 @@ packet LeSetPeriodicAdvertisingEnable : LeAdvertisingCommand (op_code = LE_SET_P
   _payload_,  // placeholder (unimplemented)
 }
 
-packet LeSetExtendedScanParameters : LeAdvertisingCommand (op_code = LE_SET_EXTENDED_SCAN_PARAMETERS) {
-  _payload_,  // placeholder (unimplemented)
+packet LeSetExtendedScanParameters : LeScanningCommand (op_code = LE_SET_EXTENDED_SCAN_PARAMETERS) {
+  le_scan_type : LeScanType,
+  le_scan_interval : 32, // 0x0004-0x00FFFFFF Default 0x10 (10ms)
+  le_scan_window : 32, // 0x004-0xFFFF Default 0x10 (10ms)
+  own_address_type : AddressType,
+  scanning_filter_policy : LeSetScanningFilterPolicy,
 }
 
-packet LeSetExtendedScanEnable : LeAdvertisingCommand (op_code = LE_SET_EXTENDED_SCAN_ENABLE) {
-  _payload_,  // placeholder (unimplemented)
+packet LeSetExtendedScanParametersComplete : CommandComplete (command_op_code = LE_SET_EXTENDED_SCAN_PARAMETERS) {
+  status : ErrorCode,
+}
+
+enum FilterDuplicates : 8 {
+  DISABLED = 0,
+  ENABLED = 1,
+  RESET_EACH_PERIOD = 2,
+}
+
+packet LeSetExtendedScanEnable : LeScanningCommand (op_code = LE_SET_EXTENDED_SCAN_ENABLE) {
+  enable : Enable,
+  filter_duplicates : FilterDuplicates,
+  duration : 16, // 0 - Scan continuously,  N * 10 ms
+  period : 16, // 0 - Scan continuously,  N * 1.28 sec
+}
+
+packet LeSetExtendedScanEnableComplete : CommandComplete (command_op_code = LE_SET_EXTENDED_SCAN_ENABLE) {
+  status : ErrorCode,
 }
 
 packet LeExtendedCreateConnection : LeConnectionManagementCommand (op_code = LE_EXTENDED_CREATE_CONNECTION) {
@@ -2816,8 +2837,16 @@ packet LeEnergyInfo : VendorCommand (op_code = LE_ENERGY_INFO) {
   _payload_,  // placeholder (unimplemented)
 }
 
-packet LeExtendedScanParams : VendorCommand (op_code = LE_EXTENDED_SCAN_PARAMS) {
-  _payload_,  // placeholder (unimplemented)
+packet LeExtendedScanParams : LeScanningCommand (op_code = LE_EXTENDED_SCAN_PARAMS) {
+  le_scan_type : LeScanType,
+  le_scan_interval : 32, // 0x0004-0x4000 Default 0x10 (10ms)
+  le_scan_window : 32, // Default 0x10 (10ms)
+  own_address_type : AddressType,
+  scanning_filter_policy : LeSetScanningFilterPolicy,
+}
+
+packet LeExtendedScanParamsComplete : CommandComplete (command_op_code = LE_EXTENDED_SCAN_PARAMS) {
+  status : ErrorCode,
 }
 
 packet ControllerDebugInfo : VendorCommand (op_code = CONTROLLER_DEBUG_INFO) {
