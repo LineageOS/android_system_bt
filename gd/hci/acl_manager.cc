@@ -85,15 +85,8 @@ struct AclManager::impl {
     hci_layer_->RegisterEventHandler(EventCode::CONNECTION_PACKET_TYPE_CHANGED,
                                      Bind(&impl::on_connection_packet_type_changed, common::Unretained(this)),
                                      handler_);
-    hci_layer_->RegisterEventHandler(EventCode::MASTER_LINK_KEY_COMPLETE,
-                                     Bind(&impl::on_master_link_key_complete, common::Unretained(this)), handler_);
     hci_layer_->RegisterEventHandler(EventCode::AUTHENTICATION_COMPLETE,
                                      Bind(&impl::on_authentication_complete, common::Unretained(this)), handler_);
-    hci_layer_->RegisterEventHandler(EventCode::ENCRYPTION_CHANGE,
-                                     Bind(&impl::on_encryption_change, common::Unretained(this)), handler_);
-    hci_layer_->RegisterEventHandler(EventCode::CHANGE_CONNECTION_LINK_KEY_COMPLETE,
-                                     Bind(&impl::on_change_connection_link_key_complete, common::Unretained(this)),
-                                     handler_);
     hci_layer_->RegisterEventHandler(EventCode::READ_CLOCK_OFFSET_COMPLETE,
                                      Bind(&impl::on_read_clock_offset_complete, common::Unretained(this)), handler_);
     hci_layer_->RegisterEventHandler(EventCode::MODE_CHANGE, Bind(&impl::on_mode_change, common::Unretained(this)),
