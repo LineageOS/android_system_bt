@@ -18,14 +18,16 @@
 
 #include "model/setup/device_boutique.h"
 #include "os/log.h"
+#include "packets/link_layer/link_layer_packet_builder.h"
+#include "packets/link_layer/link_layer_packet_view.h"
 
 using std::vector;
 
 namespace test_vendor_lib {
 
-using model::packets::LinkLayerPacketBuilder;
-using model::packets::LinkLayerPacketView;
-using model::packets::PageResponseBuilder;
+using packets::LinkLayerPacketBuilder;
+using packets::LinkLayerPacketView;
+using packets::PageResponseBuilder;
 
 bool RemoteLoopbackDevice::registered_ = DeviceBoutique::Register("remote_loopback", &RemoteLoopbackDevice::Create);
 
@@ -42,23 +44,27 @@ void RemoteLoopbackDevice::Initialize(const std::vector<std::string>& args) {
   if (Address::FromString(args[1], addr)) properties_.SetAddress(addr);
 }
 
-void RemoteLoopbackDevice::IncomingPacket(
-    model::packets::LinkLayerPacketView packet) {
+void RemoteLoopbackDevice::IncomingPacket(LinkLayerPacketView packet) {
   // TODO: Check sender?
   // TODO: Handle other packet types
   Phy::Type phy_type = Phy::Type::BR_EDR;
 
-  model::packets::PacketType type = packet.GetType();
+  Link::PacketType type = packet.GetType();
   switch (type) {
-    case model::packets::PacketType::PAGE:
-      SendLinkLayerPacket(
-          PageResponseBuilder::Create(packet.GetSourceAddress(),
-                                      packet.GetSourceAddress(), true),
-          Phy::Type::BR_EDR);
+    case Link::PacketType::PAGE:
+      SendLinkLayerPacket(LinkLayerPacketBuilder::WrapPageResponse(
+                              PageResponseBuilder::Create(true), packet.GetSourceAddress(), packet.GetSourceAddress()),
+                          Phy::Type::BR_EDR);
       break;
     default: {
       LOG_WARN("Resend = %d", static_cast<int>(packet.size()));
-      SendLinkLayerPacket(packet, phy_type);
+      std::shared_ptr<std::vector<uint8_t>> extracted_packet = std::make_shared<std::vector<uint8_t>>();
+      extracted_packet->reserve(packet.size());
+      for (const auto byte : packet) {
+        extracted_packet->push_back(byte);
+      }
+
+      SendLinkLayerPacket(LinkLayerPacketBuilder::ReWrap(extracted_packet), phy_type);
     }
   }
 }

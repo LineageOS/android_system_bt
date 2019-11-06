@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "device.h"
+#include "packets/link_layer/link_layer_packet_view.h"
 
 namespace test_vendor_lib {
 
@@ -40,8 +41,7 @@ class RemoteLoopbackDevice : public Device {
 
   virtual void Initialize(const std::vector<std::string>& args) override;
 
-  virtual void IncomingPacket(
-      model::packets::LinkLayerPacketView packet) override;
+  virtual void IncomingPacket(packets::LinkLayerPacketView packet) override;
 
  private:
   static bool registered_;
