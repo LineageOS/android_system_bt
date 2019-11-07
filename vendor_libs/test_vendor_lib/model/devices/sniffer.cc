@@ -39,7 +39,7 @@ void Sniffer::Initialize(const vector<std::string>& args) {
 
 void Sniffer::TimerTick() {}
 
-void Sniffer::IncomingPacket(model::packets::LinkLayerPacketView packet) {
+void Sniffer::IncomingPacket(packets::LinkLayerPacketView packet) {
   Address source = packet.GetSourceAddress();
   Address dest = packet.GetDestinationAddress();
   bool match_source = device_to_sniff_ == source;

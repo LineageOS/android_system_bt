@@ -123,6 +123,7 @@ cc_library_static {
         ":LibBluetoothSources",
         "shim/entry_for_test.cc",
     ],
+    host_supported: true,
     include_dirs: [
         "system/bt",
         "system/bt/bta/include",
@@ -137,3 +138,33 @@ cc_library_static {
         "-DBUILDCFG",
     ],
 }
+
+filegroup {
+    name: "BluetoothLegacyShimTestSources",
+    srcs: [
+        "shim/l2cap_test.cc",
+        "shim/test_stack.cc",
+    ]
+}
+
+cc_test {
+    name: "bluetooth_test_legacy",
+    defaults: ["fluoride_defaults",
+               "fluoride_osi_defaults",
+    ],
+    test_suites: ["device-tests"],
+    host_supported: true,
+    srcs: [
+        ":BluetoothLegacyShimTestSources",
+    ],
+    static_libs: [
+        "libgmock",
+        "libbluetooth-for-tests",
+        "libosi",
+    ],
+    shared_libs: [
+        "libchrome",
+        "liblog",
+    ],
+}
+
