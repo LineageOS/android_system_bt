@@ -55,6 +55,9 @@ class ISecurityManagerChannelListener {
   virtual void OnEncryptionKeyRefreshComplete(std::shared_ptr<hci::Device> device,
                                               hci::EncryptionKeyRefreshCompleteView packet) = 0;
   virtual void OnRemoteOobDataRequest(std::shared_ptr<hci::Device> device, hci::RemoteOobDataRequestView packet) = 0;
+  virtual void OnUserPasskeyNotification(std::shared_ptr<hci::Device> device,
+                                         hci::UserPasskeyNotificationView packet) = 0;
+  virtual void OnKeypressNotification(std::shared_ptr<hci::Device> device, hci::KeypressNotificationView packet) = 0;
 };
 
 /**
