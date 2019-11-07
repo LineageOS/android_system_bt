@@ -696,50 +696,50 @@ void Controller::RegisterCompletedAclPacketsCallback(Callback<void(uint16_t /* h
   impl_->RegisterCompletedAclPacketsCallback(cb, handler);  // TODO hsz: why here?
 }
 
-std::string Controller::GetControllerLocalName() {
+std::string Controller::GetControllerLocalName() const {
   return impl_->local_name_;
 }
 
-LocalVersionInformation Controller::GetControllerLocalVersionInformation() {
+LocalVersionInformation Controller::GetControllerLocalVersionInformation() const {
   return impl_->local_version_information_;
 }
 
-std::array<uint8_t, 64> Controller::GetControllerLocalSupportedCommands() {
+std::array<uint8_t, 64> Controller::GetControllerLocalSupportedCommands() const {
   return impl_->local_supported_commands_;
 }
 
-uint8_t Controller::GetControllerLocalExtendedFeaturesMaxPageNumber() {
+uint8_t Controller::GetControllerLocalExtendedFeaturesMaxPageNumber() const {
   return impl_->maximum_page_number_;
 }
 
-uint64_t Controller::GetControllerLocalSupportedFeatures() {
+uint64_t Controller::GetControllerLocalSupportedFeatures() const {
   return impl_->local_supported_features_;
 }
 
-uint64_t Controller::GetControllerLocalExtendedFeatures(uint8_t page_number) {
+uint64_t Controller::GetControllerLocalExtendedFeatures(uint8_t page_number) const {
   if (page_number <= impl_->maximum_page_number_) {
     return impl_->extended_lmp_features_array_[page_number];
   }
   return 0x00;
 }
 
-uint16_t Controller::GetControllerAclPacketLength() {
+uint16_t Controller::GetControllerAclPacketLength() const {
   return impl_->acl_buffer_length_;
 }
 
-uint16_t Controller::GetControllerNumAclPacketBuffers() {
+uint16_t Controller::GetControllerNumAclPacketBuffers() const {
   return impl_->acl_buffers_;
 }
 
-uint8_t Controller::GetControllerScoPacketLength() {
+uint8_t Controller::GetControllerScoPacketLength() const {
   return impl_->sco_buffer_length_;
 }
 
-uint16_t Controller::GetControllerNumScoPacketBuffers() {
+uint16_t Controller::GetControllerNumScoPacketBuffers() const {
   return impl_->sco_buffers_;
 }
 
-Address Controller::GetControllerMacAddress() {
+Address Controller::GetControllerMacAddress() const {
   return impl_->mac_address_;
 }
 
@@ -813,35 +813,35 @@ void Controller::LeSetEventMask(uint64_t le_event_mask) {
   GetHandler()->Post(common::BindOnce(&impl::le_set_event_mask, common::Unretained(impl_.get()), le_event_mask));
 }
 
-LeBufferSize Controller::GetControllerLeBufferSize() {
+LeBufferSize Controller::GetControllerLeBufferSize() const {
   return impl_->le_buffer_size_;
 }
 
-uint64_t Controller::GetControllerLeLocalSupportedFeatures() {
+uint64_t Controller::GetControllerLeLocalSupportedFeatures() const {
   return impl_->le_local_supported_features_;
 }
 
-uint64_t Controller::GetControllerLeSupportedStates() {
+uint64_t Controller::GetControllerLeSupportedStates() const {
   return impl_->le_supported_states_;
 }
 
-LeMaximumDataLength Controller::GetControllerLeMaximumDataLength() {
+LeMaximumDataLength Controller::GetControllerLeMaximumDataLength() const {
   return impl_->le_maximum_data_length_;
 }
 
-uint16_t Controller::GetControllerLeMaximumAdvertisingDataLength() {
+uint16_t Controller::GetControllerLeMaximumAdvertisingDataLength() const {
   return impl_->le_maximum_advertising_data_length_;
 }
 
-uint16_t Controller::GetControllerLeNumberOfSupportedAdverisingSets() {
+uint16_t Controller::GetControllerLeNumberOfSupportedAdverisingSets() const {
   return impl_->le_number_supported_advertising_sets_;
 }
 
-VendorCapabilities Controller::GetControllerVendorCapabilities() {
+VendorCapabilities Controller::GetControllerVendorCapabilities() const {
   return impl_->vendor_capabilities_;
 }
 
-bool Controller::IsSupported(bluetooth::hci::OpCode op_code) {
+bool Controller::IsSupported(bluetooth::hci::OpCode op_code) const {
   return impl_->is_supported(op_code);
 }
 
