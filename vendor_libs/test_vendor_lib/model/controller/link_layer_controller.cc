@@ -678,6 +678,7 @@ void LinkLayerController::LeAdvertising() {
   if (duration_cast<milliseconds>(now - last_le_advertisement_) < milliseconds(200)) {
     return;
   }
+  last_le_advertisement_ = now;
 
   LeAdvertisement::AddressType own_address_type =
       static_cast<LeAdvertisement::AddressType>(properties_.GetLeAdvertisingOwnAddressType());
