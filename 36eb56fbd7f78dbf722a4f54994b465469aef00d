@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "05063e4c_eb525c41",
+        "filename": "device/include/interop_database.h",
+        "patchSetId": 1
+      },
+      "lineNbr": 145,
+      "author": {
+        "id": 13648
+      },
+      "writtenOn": "2019-11-07T23:36:43Z",
+      "side": 1,
+      "message": "Doesn\u0027t belong to this change.",
+      "range": {
+        "startLine": 140,
+        "startChar": 0,
+        "endLine": 145,
+        "endChar": 72
+      },
+      "revId": "36eb56fbd7f78dbf722a4f54994b465469aef00d",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    }
+  ]
+}
