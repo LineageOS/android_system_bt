@@ -34,27 +34,27 @@ class Controller : public Module {
   virtual void RegisterCompletedAclPacketsCallback(
       common::Callback<void(uint16_t /* handle */, uint16_t /* num_packets */)> cb, os::Handler* handler);
 
-  virtual std::string GetControllerLocalName();
+  virtual std::string GetControllerLocalName() const;
 
-  virtual LocalVersionInformation GetControllerLocalVersionInformation();
+  virtual LocalVersionInformation GetControllerLocalVersionInformation() const;
 
-  virtual std::array<uint8_t, 64> GetControllerLocalSupportedCommands();
+  virtual std::array<uint8_t, 64> GetControllerLocalSupportedCommands() const;
 
-  virtual uint64_t GetControllerLocalSupportedFeatures();
+  virtual uint64_t GetControllerLocalSupportedFeatures() const;
 
-  virtual uint8_t GetControllerLocalExtendedFeaturesMaxPageNumber();
+  virtual uint8_t GetControllerLocalExtendedFeaturesMaxPageNumber() const;
 
-  virtual uint64_t GetControllerLocalExtendedFeatures(uint8_t page_number);
+  virtual uint64_t GetControllerLocalExtendedFeatures(uint8_t page_number) const;
 
-  virtual uint16_t GetControllerAclPacketLength();
+  virtual uint16_t GetControllerAclPacketLength() const;
 
-  virtual uint16_t GetControllerNumAclPacketBuffers();
+  virtual uint16_t GetControllerNumAclPacketBuffers() const;
 
-  virtual uint8_t GetControllerScoPacketLength();
+  virtual uint8_t GetControllerScoPacketLength() const;
 
-  virtual uint16_t GetControllerNumScoPacketBuffers();
+  virtual uint16_t GetControllerNumScoPacketBuffers() const;
 
-  virtual Address GetControllerMacAddress();
+  virtual Address GetControllerMacAddress() const;
 
   virtual void SetEventMask(uint64_t event_mask);
 
@@ -86,21 +86,21 @@ class Controller : public Module {
   // LE controller commands
   virtual void LeSetEventMask(uint64_t le_event_mask);
 
-  LeBufferSize GetControllerLeBufferSize();
+  virtual LeBufferSize GetControllerLeBufferSize() const;
 
-  uint64_t GetControllerLeLocalSupportedFeatures();
+  virtual uint64_t GetControllerLeLocalSupportedFeatures() const;
 
-  uint64_t GetControllerLeSupportedStates();
+  virtual uint64_t GetControllerLeSupportedStates() const;
 
-  LeMaximumDataLength GetControllerLeMaximumDataLength();
+  virtual LeMaximumDataLength GetControllerLeMaximumDataLength() const;
 
-  uint16_t GetControllerLeMaximumAdvertisingDataLength();
+  virtual uint16_t GetControllerLeMaximumAdvertisingDataLength() const;
 
-  uint16_t GetControllerLeNumberOfSupportedAdverisingSets();
+  virtual uint16_t GetControllerLeNumberOfSupportedAdverisingSets() const;
 
-  VendorCapabilities GetControllerVendorCapabilities();
+  virtual VendorCapabilities GetControllerVendorCapabilities() const;
 
-  bool IsSupported(OpCode op_code);
+  virtual bool IsSupported(OpCode op_code) const;
 
   static const ModuleFactory Factory;
 
