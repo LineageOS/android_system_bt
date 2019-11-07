@@ -38,6 +38,12 @@ class LeScanningInterface {
 
   static constexpr hci::SubeventCode LeScanningEvents[] = {
       hci::SubeventCode::SCAN_TIMEOUT,
+      hci::SubeventCode::ADVERTISING_REPORT,
+      hci::SubeventCode::DIRECTED_ADVERTISING_REPORT,
+      hci::SubeventCode::EXTENDED_ADVERTISING_REPORT,
+      hci::SubeventCode::PERIODIC_ADVERTISING_REPORT,
+      hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_ESTABLISHED,
+      hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_LOST,
   };
 };
 }  // namespace hci
