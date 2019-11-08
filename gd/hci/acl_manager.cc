@@ -30,6 +30,8 @@
 namespace bluetooth {
 namespace hci {
 
+constexpr uint16_t kQualcommDebugHandle = 0xedc;
+
 using common::Bind;
 using common::BindOnce;
 
@@ -221,6 +223,9 @@ struct AclManager::impl {
       return;
     }
     uint16_t handle = packet->GetHandle();
+    if (handle == kQualcommDebugHandle) {
+      return;
+    }
     auto connection_pair = acl_connections_.find(handle);
     if (connection_pair == acl_connections_.end()) {
       LOG_INFO("Dropping packet of size %zu to unknown connection 0x%0hx", packet->size(), handle);
