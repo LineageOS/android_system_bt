@@ -237,7 +237,7 @@ void ClassicSignallingManager::OnDisconnectionRequest(SignalId signal_id, Cid ci
     LOG_WARN("Disconnect request for an unknown channel");
     return;
   }
-  auto builder = DisconnectionResponseBuilder::Create(signal_id.Value(), remote_cid, cid);
+  auto builder = DisconnectionResponseBuilder::Create(signal_id.Value(), cid, remote_cid);
   enqueue_buffer_->Enqueue(std::move(builder), handler_);
   channel->OnClosed(hci::ErrorCode::SUCCESS);
   link_->FreeDynamicChannel(cid);
