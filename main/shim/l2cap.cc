@@ -73,6 +73,10 @@ bluetooth::legacy::shim::PsmData& bluetooth::legacy::shim::L2cap::Classic() {
   return classic_;
 }
 
+bool bluetooth::legacy::shim::L2cap::ConnectionExists(uint16_t cid) const {
+  return cid_to_psm_map_.find(cid) != cid_to_psm_map_.end();
+}
+
 uint16_t bluetooth::legacy::shim::L2cap::ConvertClientToRealPsm(
     uint16_t client_psm, bool is_outgoing_only_connection) {
   if (!is_outgoing_only_connection) {
@@ -209,27 +213,33 @@ void bluetooth::legacy::shim::L2cap::OnConnectionReady(
   }
   LOG_DEBUG(LOG_TAG, "%s Setting postable map for cid:%d", __func__, cid);
   cid_to_postable_map_[cid] = func;
-
   func([&cid, &callbacks](uint16_t cid2) {
-    LOG_WARN(LOG_TAG, "Cid:%hd Cid2:%hd", cid, cid2);
+    LOG_WARN(LOG_TAG,
+             "Queuing up the connection confirm to the upper stack but really "
+             "a connection has already been done Cid:%hd Cid2:%hd",
+             cid, cid2);
     callbacks->pL2CA_ConnectCfm_Cb(cid2, 0);
   });
 }
 
 bool bluetooth::legacy::shim::L2cap::IsCongested(uint16_t cid) const {
-  LOG_WARN(LOG_TAG, "UNIMPLEMENTED checking congestion on a channel");
+  CHECK(ConnectionExists(cid));
+  LOG_WARN(LOG_TAG, "Ignoring checks for congestion on cid:%hd", cid);
   return false;
 }
 
 bool bluetooth::legacy::shim::L2cap::Write(uint16_t cid, BT_HDR* bt_hdr) {
+  CHECK(ConnectionExists(cid));
   CHECK(bt_hdr != nullptr);
   const uint8_t* data = bt_hdr->data + bt_hdr->offset;
   size_t len = bt_hdr->len;
+  LOG_DEBUG(LOG_TAG, "Writing data cid:%hd len:%zd", cid, len);
   return bluetooth::shim::GetL2cap()->Write(cid, data, len);
 }
 
 bool bluetooth::legacy::shim::L2cap::WriteFlushable(uint16_t cid,
                                                     BT_HDR* bt_hdr) {
+  CHECK(ConnectionExists(cid));
   CHECK(bt_hdr != nullptr);
   const uint8_t* data = bt_hdr->data + bt_hdr->offset;
   size_t len = bt_hdr->len;
@@ -238,6 +248,7 @@ bool bluetooth::legacy::shim::L2cap::WriteFlushable(uint16_t cid,
 
 bool bluetooth::legacy::shim::L2cap::WriteNonFlushable(uint16_t cid,
                                                        BT_HDR* bt_hdr) {
+  CHECK(ConnectionExists(cid));
   CHECK(bt_hdr != nullptr);
   const uint8_t* data = bt_hdr->data + bt_hdr->offset;
   size_t len = bt_hdr->len;
@@ -247,6 +258,7 @@ bool bluetooth::legacy::shim::L2cap::WriteNonFlushable(uint16_t cid,
 bool bluetooth::legacy::shim::L2cap::SetCallbacks(
     uint16_t cid, const tL2CAP_APPL_INFO* callbacks) {
   CHECK(callbacks != nullptr);
+  CHECK(ConnectionExists(cid));
   LOG_ASSERT(cid_to_callback_map_.find(cid) == cid_to_callback_map_.end())
       << "Already have callbacks registered for "
          "connection_interface_descriptor:"
@@ -255,10 +267,7 @@ bool bluetooth::legacy::shim::L2cap::SetCallbacks(
 
   bluetooth::shim::GetL2cap()->SetReadDataReadyCallback(
       cid, [this](uint16_t cid, std::vector<const uint8_t> data) {
-        LOG_DEBUG(LOG_TAG,
-                  "Got data on connection_interface_descriptor:%hd len:%zd",
-                  cid, data.size());
-
+        LOG_DEBUG(LOG_TAG, "OnDataReady cid:%hd len:%zd", cid, data.size());
         BT_HDR* bt_hdr =
             static_cast<BT_HDR*>(osi_calloc(data.size() + kBtHdrSize));
         std::copy(data.begin(), data.end(), bt_hdr->data);
@@ -268,22 +277,32 @@ bool bluetooth::legacy::shim::L2cap::SetCallbacks(
 
   bluetooth::shim::GetL2cap()->SetConnectionClosedCallback(
       cid, [this](uint16_t cid, int error_code) {
-        LOG_DEBUG(LOG_TAG, "Channel closed connection_interface_descriptor:%hd",
-                  cid);
+        LOG_DEBUG(LOG_TAG, "OnChannel closed callback cid:%hd", cid);
         cid_to_callback_map_[cid]->pL2CA_DisconnectInd_Cb(cid, true);
       });
   return true;
 }
 
 void bluetooth::legacy::shim::L2cap::ClearCallbacks(uint16_t cid) {
-  LOG_ASSERT(cid_to_callback_map_.find(cid) == cid_to_callback_map_.end())
-      << "Clearing callbacks that do not exist connection_interface_descriptor:"
-      << cid;
+  CHECK(ConnectionExists(cid));
   cid_to_callback_map_.erase(cid);
+}
+
+bool bluetooth::legacy::shim::L2cap::ConnectResponse(
+    const RawAddress& raw_address, uint8_t signal_id, uint16_t cid,
+    uint16_t result, uint16_t status, tL2CAP_ERTM_INFO* ertm_info) {
+  CHECK(ConnectionExists(cid));
+  LOG_DEBUG(LOG_TAG,
+            "%s Silently dropping client connect response as channel is "
+            "already connected",
+            __func__);
+  return true;
 }
 
 bool bluetooth::legacy::shim::L2cap::ConfigRequest(
     uint16_t cid, const tL2CAP_CFG_INFO* config_info) {
+  CHECK(ConnectionExists(cid));
+  LOG_INFO(LOG_TAG, "Received config request from upper layer");
   CHECK(cid_to_psm_map_.find(cid) != cid_to_psm_map_.end());
   const tL2CAP_APPL_INFO* callbacks = Classic().Callbacks(cid_to_psm_map_[cid]);
   CHECK(callbacks != nullptr);
@@ -291,30 +310,44 @@ bool bluetooth::legacy::shim::L2cap::ConfigRequest(
 
   auto func = cid_to_postable_map_[cid];
   func([&cid, &callbacks](uint16_t cid2) {
-    callbacks->pL2CA_ConfigCfm_Cb(cid, nullptr);
+    tL2CAP_CFG_INFO cfg_info{
+        .result = L2CAP_CFG_OK,
+        .mtu_present = false,
+        .qos_present = false,
+        .flush_to_present = false,
+        .fcr_present = false,
+        .fcs_present = false,
+        .ext_flow_spec_present = false,
+        .flags = 0,
+    };
+    LOG_INFO(LOG_TAG, "Config request lambda");
+    callbacks->pL2CA_ConfigCfm_Cb(cid, &cfg_info);
+    callbacks->pL2CA_ConfigInd_Cb(cid, &cfg_info);
   });
   return true;
 }
 
-bool bluetooth::legacy::shim::L2cap::ConnectResponse(
-    const RawAddress& raw_address, uint8_t signal_id, uint16_t cid,
-    uint16_t result, uint16_t status, tL2CAP_ERTM_INFO* ertm_info) {
-  LOG_INFO(LOG_TAG, "%s UNIMPLEMENTED", __func__);
-  return false;
-}
-
 bool bluetooth::legacy::shim::L2cap::ConfigResponse(
     uint16_t cid, const tL2CAP_CFG_INFO* config_info) {
-  LOG_INFO(LOG_TAG, "%s UNIMPLEMENTED", __func__);
-  return false;
+  CHECK(ConnectionExists(cid));
+  LOG_DEBUG(
+      LOG_TAG,
+      "%s Silently dropping client config response as channel is already open",
+      __func__);
+  return true;
 }
 
 bool bluetooth::legacy::shim::L2cap::DisconnectRequest(uint16_t cid) {
-  LOG_INFO(LOG_TAG, "%s UNIMPLEMENTED", __func__);
-  return false;
+  CHECK(ConnectionExists(cid));
+  bluetooth::shim::GetL2cap()->CloseConnection(cid);
+  return true;
 }
 
 bool bluetooth::legacy::shim::L2cap::DisconnectResponse(uint16_t cid) {
-  LOG_INFO(LOG_TAG, "%s UNIMPLEMENTED", __func__);
-  return false;
+  CHECK(ConnectionExists(cid));
+  LOG_DEBUG(LOG_TAG,
+            "%s Silently dropping client disconnect response as channel is "
+            "already disconnected",
+            __func__);
+  return true;
 }

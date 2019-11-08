@@ -143,24 +143,20 @@ bool bluetooth::shim::L2CA_ConnectRsp(const RawAddress& p_bd_addr, uint8_t id,
                                               status, NULL);
 }
 
-bool bluetooth::shim::L2CA_ConfigReq(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s cid:%hd p_cfg:%p", __func__, cid, p_cfg);
-  return false;
+bool bluetooth::shim::L2CA_ConfigReq(uint16_t cid, tL2CAP_CFG_INFO* cfg_info) {
+  return shim_l2cap.ConfigRequest(cid, cfg_info);
 }
 
-bool bluetooth::shim::L2CA_ConfigRsp(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s cid:%hd p_cfg:%p", __func__, cid, p_cfg);
-  return false;
+bool bluetooth::shim::L2CA_ConfigRsp(uint16_t cid, tL2CAP_CFG_INFO* cfg_info) {
+  return shim_l2cap.ConfigResponse(cid, cfg_info);
 }
 
 bool bluetooth::shim::L2CA_DisconnectReq(uint16_t cid) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s cid:%hd ", __func__, cid);
-  return false;
+  return shim_l2cap.DisconnectRequest(cid);
 }
 
 bool bluetooth::shim::L2CA_DisconnectRsp(uint16_t cid) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s cid:%hd ", __func__, cid);
-  return false;
+  return shim_l2cap.DisconnectResponse(cid);
 }
 
 /**
