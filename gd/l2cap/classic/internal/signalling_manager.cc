@@ -444,6 +444,8 @@ void ClassicSignallingManager::on_incoming_packet() {
     }
     default:
       LOG_WARN("Unhandled event 0x%x", static_cast<int>(code));
+      auto builder = CommandRejectNotUnderstoodBuilder::Create(control_packet_view.GetIdentifier());
+      enqueue_buffer_->Enqueue(std::move(builder), handler_);
       return;
   }
 }
