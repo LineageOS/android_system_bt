@@ -81,6 +81,14 @@ std::string DynamicChannelImpl::ToString() {
   return ss.str();
 }
 
+void DynamicChannelImpl::SetOutgoingConfigurationStatus(ConfigurationStatus status) {
+  outgoing_configuration_status_ = status;
+}
+
+void DynamicChannelImpl::SetIncomingConfigurationStatus(ConfigurationStatus status) {
+  incoming_configuration_status_ = status;
+}
+
 }  // namespace internal
 }  // namespace classic
 }  // namespace l2cap

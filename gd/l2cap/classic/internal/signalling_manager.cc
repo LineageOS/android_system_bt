@@ -147,9 +147,7 @@ void ClassicSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, 
   }
   send_connection_response(signal_id, remote_cid, new_channel->GetCid(), ConnectionResponseResult::SUCCESS,
                            ConnectionResponseStatus::NO_FURTHER_INFORMATION_AVAILABLE);
-  std::unique_ptr<DynamicChannel> channel = std::make_unique<DynamicChannel>(new_channel, handler_);
   SendConfigurationRequest(remote_cid, {});
-  dynamic_service_manager_->GetService(psm)->NotifyChannelCreation(std::move(channel));
 }
 
 void ClassicSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remote_cid, Cid cid,
@@ -180,8 +178,6 @@ void ClassicSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remo
     handle_send_next_command();
     return;
   }
-  std::unique_ptr<DynamicChannel> channel = std::make_unique<DynamicChannel>(new_channel, handler_);
-  dynamic_service_manager_->GetService(pending_psm)->NotifyChannelCreation(std::move(channel));
   SendConfigurationRequest(remote_cid, {});
   alarm_.Cancel();
   handle_send_next_command();
@@ -198,6 +194,12 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
                                                        ConfigurationResponseResult::SUCCESS, {});
   enqueue_buffer_->Enqueue(std::move(response), handler_);
   handle_send_next_command();
+  channel->SetIncomingConfigurationStatus(DynamicChannelImpl::ConfigurationStatus::CONFIGURED);
+  if (channel->GetOutgoingConfigurationStatus() == DynamicChannelImpl::ConfigurationStatus::CONFIGURED) {
+    LOG_INFO();
+    std::unique_ptr<DynamicChannel> user_channel = std::make_unique<DynamicChannel>(channel, handler_);
+    dynamic_service_manager_->GetService(channel->GetPsm())->NotifyChannelCreation(std::move(user_channel));
+  }
 }
 
 void ClassicSignallingManager::OnConfigurationResponse(SignalId signal_id, Cid cid, Continuation is_continuation,
@@ -220,6 +222,12 @@ void ClassicSignallingManager::OnConfigurationResponse(SignalId signal_id, Cid c
   // TODO(cmanton) verify configuration parameters are satisfied
   // TODO(cmanton) Indicate channel is open if config params are agreed upon
   handle_send_next_command();
+  channel->SetOutgoingConfigurationStatus(DynamicChannelImpl::ConfigurationStatus::CONFIGURED);
+  if (channel->GetIncomingConfigurationStatus() == DynamicChannelImpl::ConfigurationStatus::CONFIGURED) {
+    std::unique_ptr<DynamicChannel> user_channel = std::make_unique<DynamicChannel>(channel, handler_);
+    dynamic_service_manager_->GetService(channel->GetPsm())->NotifyChannelCreation(std::move(user_channel));
+  }
+  alarm_.Cancel();
 }
 
 void ClassicSignallingManager::OnDisconnectionRequest(SignalId signal_id, Cid cid, Cid remote_cid) {
@@ -259,6 +267,7 @@ void ClassicSignallingManager::OnDisconnectionResponse(SignalId signal_id, Cid c
   channel->OnClosed(hci::ErrorCode::SUCCESS);
   link_->FreeDynamicChannel(cid);
   handle_send_next_command();
+  alarm_.Cancel();
 }
 
 void ClassicSignallingManager::OnEchoRequest(SignalId signal_id, const PacketView<kLittleEndian>& packet) {
@@ -283,6 +292,7 @@ void ClassicSignallingManager::OnEchoResponse(SignalId signal_id, const PacketVi
   }
   LOG_INFO("Echo response received");
   handle_send_next_command();
+  alarm_.Cancel();
 }
 
 void ClassicSignallingManager::OnInformationRequest(SignalId signal_id, InformationRequestInfoType type) {
@@ -323,6 +333,7 @@ void ClassicSignallingManager::OnInformationResponse(SignalId signal_id, const I
   }
   // TODO (hsz): Store the information response
   handle_send_next_command();
+  alarm_.Cancel();
 }
 
 void ClassicSignallingManager::on_incoming_packet() {

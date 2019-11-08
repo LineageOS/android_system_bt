@@ -65,6 +65,19 @@ class DynamicChannelImpl {
     return psm_;
   }
 
+  enum class ConfigurationStatus { NOT_CONFIGURED, CONFIGURED };
+
+  virtual void SetOutgoingConfigurationStatus(ConfigurationStatus status);
+  virtual void SetIncomingConfigurationStatus(ConfigurationStatus status);
+
+  virtual ConfigurationStatus GetOutgoingConfigurationStatus() const {
+    return outgoing_configuration_status_;
+  }
+
+  virtual ConfigurationStatus GetIncomingConfigurationStatus() const {
+    return incoming_configuration_status_;
+  }
+
  private:
   const Psm psm_;
   const Cid cid_;
@@ -83,6 +96,8 @@ class DynamicChannelImpl {
   static constexpr size_t kChannelQueueSize = 10;
   common::BidiQueue<packet::PacketView<packet::kLittleEndian>, packet::BasePacketBuilder> channel_queue_{
       kChannelQueueSize};
+  ConfigurationStatus outgoing_configuration_status_ = ConfigurationStatus::NOT_CONFIGURED;
+  ConfigurationStatus incoming_configuration_status_ = ConfigurationStatus::NOT_CONFIGURED;
 
   DISALLOW_COPY_AND_ASSIGN(DynamicChannelImpl);
 };
