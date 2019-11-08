@@ -42,7 +42,7 @@ class Fifo : public Scheduler {
   }
 
   ~Fifo() override;
-  void AttachChannel(Cid cid, UpperQueueDownEnd* channel_down_end) override;
+  void AttachChannel(Cid cid, UpperQueueDownEnd* channel_down_end, Cid remote_cid) override;
   void DetachChannel(Cid cid) override;
   LowerQueueUpEnd* GetLowerQueueUpEnd() const override {
     return link_queue_up_end_;
@@ -53,9 +53,10 @@ class Fifo : public Scheduler {
   os::Handler* handler_;
 
   struct ChannelQueueEndAndBuffer {
-    ChannelQueueEndAndBuffer(os::Handler* handler, UpperQueueDownEnd* queue_end, Fifo* scheduler, Cid channel_id)
+    ChannelQueueEndAndBuffer(os::Handler* handler, UpperQueueDownEnd* queue_end, Fifo* scheduler, Cid channel_id,
+                             Cid remote_channel_id)
         : handler_(handler), queue_end_(queue_end), enqueue_buffer_(queue_end), scheduler_(scheduler),
-          channel_id_(channel_id) {
+          channel_id_(channel_id), remote_channel_id_(remote_channel_id) {
       try_register_dequeue();
     }
     os::Handler* handler_;
@@ -65,6 +66,7 @@ class Fifo : public Scheduler {
     std::queue<std::unique_ptr<UpperDequeue>> dequeue_buffer_;
     Fifo* scheduler_;
     Cid channel_id_;
+    Cid remote_channel_id_;
     bool is_dequeue_registered_ = false;
 
     void try_register_dequeue();

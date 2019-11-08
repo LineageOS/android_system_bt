@@ -78,8 +78,8 @@ class L2capSchedulerFifoTest : public ::testing::Test {
 TEST_F(L2capSchedulerFifoTest, receive_packet) {
   common::BidiQueue<Scheduler::UpperEnqueue, Scheduler::UpperDequeue> channel_one_queue_{10};
   common::BidiQueue<Scheduler::UpperEnqueue, Scheduler::UpperDequeue> channel_two_queue_{10};
-  fifo_->AttachChannel(1, channel_one_queue_.GetDownEnd());
-  fifo_->AttachChannel(2, channel_two_queue_.GetDownEnd());
+  fifo_->AttachChannel(1, channel_one_queue_.GetDownEnd(), 1);
+  fifo_->AttachChannel(2, channel_two_queue_.GetDownEnd(), 2);
   os::EnqueueBuffer<Scheduler::UpperEnqueue> link_queue_enqueue_buffer{link_queue_.GetDownEnd()};
   auto packet_one = CreateSampleL2capPacket(1, {1, 2, 3});
   auto packet_two = CreateSampleL2capPacket(2, {4, 5, 6, 7});
@@ -103,8 +103,8 @@ TEST_F(L2capSchedulerFifoTest, receive_packet) {
 TEST_F(L2capSchedulerFifoTest, send_packet) {
   common::BidiQueue<Scheduler::UpperEnqueue, Scheduler::UpperDequeue> channel_one_queue_{10};
   common::BidiQueue<Scheduler::UpperEnqueue, Scheduler::UpperDequeue> channel_two_queue_{10};
-  fifo_->AttachChannel(1, channel_one_queue_.GetDownEnd());
-  fifo_->AttachChannel(2, channel_two_queue_.GetDownEnd());
+  fifo_->AttachChannel(1, channel_one_queue_.GetDownEnd(), 1);
+  fifo_->AttachChannel(2, channel_two_queue_.GetDownEnd(), 2);
   os::EnqueueBuffer<Scheduler::UpperDequeue> channel_one_enqueue_buffer{channel_one_queue_.GetUpEnd()};
   os::EnqueueBuffer<Scheduler::UpperDequeue> channel_two_enqueue_buffer{channel_two_queue_.GetUpEnd()};
   auto packet_one = std::make_unique<packet::RawBuilder>();

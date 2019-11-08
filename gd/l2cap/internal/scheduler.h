@@ -48,8 +48,9 @@ class Scheduler {
    *
    * @param cid The channel to attach to the scheduler.
    * @param channel_down_end The ChannelQueueDownEnd associated with the channel to attach to the scheduler.
+   * @param remote_cid The destination endpoint of the packet.
    */
-  virtual void AttachChannel(Cid cid, UpperQueueDownEnd* channel_down_end) {}
+  virtual void AttachChannel(Cid cid, UpperQueueDownEnd* channel_down_end, Cid remote_cid) {}
 
   /**
    * Detach the channel from the scheduler.
