@@ -29,6 +29,8 @@ from l2cap.classic.cert import api_pb2 as l2cap_cert_pb2
 
 import time
 
+ASYNC_OP_TIME_SECONDS = 1  # TODO: Use events to synchronize events instead
+
 class SimpleL2capTest(GdBaseTestClass):
     def setup_test(self):
         self.device_under_test = self.gd_devices[0]
@@ -85,14 +87,14 @@ class SimpleL2capTest(GdBaseTestClass):
         dut_connection_stream.unsubscribe()
 
         self.cert_device.l2cap.SendConnectionRequest(l2cap_cert_pb2.ConnectionRequest(scid=0x101, psm=1))
-        time.sleep(1)
-
+        time.sleep(ASYNC_OP_TIME_SECONDS)
         open_channels = self.cert_device.l2cap.FetchOpenedChannels(l2cap_cert_pb2.FetchOpenedChannelsRequest())
         cid = open_channels.dcid[0]
+        self.cert_device.l2cap.SendConfigurationRequest(l2cap_cert_pb2.ConfigurationRequest(scid=cid))
+        time.sleep(ASYNC_OP_TIME_SECONDS)
 
         dut_packet_stream.subscribe()
         cert_packet_stream.subscribe()
-        self.cert_device.l2cap.SendConfigurationRequest(l2cap_cert_pb2.ConfigurationRequest(scid=cid))
 
         self.cert_device.l2cap.SendL2capPacket(l2cap_facade_pb2.L2capPacket(channel=2, payload=b"abc"))
         dut_packet_stream.assert_event_occurs(
@@ -114,7 +116,7 @@ class SimpleL2capTest(GdBaseTestClass):
         )
 
         self.cert_device.l2cap.SendDisconnectionRequest(l2cap_cert_pb2.DisconnectionRequest(dcid=0x40, scid=101))
-        time.sleep(1)
+        time.sleep(ASYNC_OP_TIME_SECONDS)
         dut_packet_stream.unsubscribe()
         cert_packet_stream.unsubscribe()
 
@@ -127,7 +129,7 @@ class SimpleL2capTest(GdBaseTestClass):
             lambda device: device.remote == self.dut_address
         )
         cert_connection_stream.unsubscribe()
-        time.sleep(1)
+        time.sleep(ASYNC_OP_TIME_SECONDS)
         open_channels = self.cert_device.l2cap.FetchOpenedChannels(l2cap_cert_pb2.FetchOpenedChannelsRequest())
         assert len(open_channels.dcid) == 2
 
