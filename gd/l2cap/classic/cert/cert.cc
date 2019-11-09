@@ -16,6 +16,7 @@
 
 #include "l2cap/classic/cert/cert.h"
 
+#include <condition_variable>
 #include <cstdint>
 #include <memory>
 #include <mutex>
@@ -40,7 +41,6 @@ using ::grpc::ServerContext;
 using ::bluetooth::facade::EventStreamRequest;
 using ::bluetooth::packet::RawBuilder;
 
-using ::bluetooth::l2cap::classic::cert::ConnectionCompleteEvent;
 using ::bluetooth::l2cap::classic::cert::L2capPacket;
 
 namespace bluetooth {
@@ -50,6 +50,8 @@ namespace cert {
 
 using namespace facade;
 
+constexpr auto kEventTimeout = std::chrono::seconds(1);
+
 class L2capModuleCertService : public L2capModuleCert::Service {
  public:
   L2capModuleCertService(hci::AclManager* acl_manager, os::Handler* facade_handler)
@@ -58,32 +60,15 @@ class L2capModuleCertService : public L2capModuleCert::Service {
     acl_manager_->RegisterCallbacks(&acl_callbacks, handler_);
   }
 
-  class ConnectionCompleteCallback
-      : public grpc::GrpcEventStreamCallback<ConnectionCompleteEvent, ConnectionCompleteEvent> {
-   public:
-    void OnWriteResponse(ConnectionCompleteEvent* response, const ConnectionCompleteEvent& event) override {
-      response->CopyFrom(event);
-    }
-
-  } connection_complete_callback_;
-  ::bluetooth::grpc::GrpcEventStream<ConnectionCompleteEvent, ConnectionCompleteEvent> connection_complete_stream_{
-      &connection_complete_callback_};
-
-  ::grpc::Status FetchConnectionComplete(::grpc::ServerContext* context,
-                                         const ::bluetooth::facade::EventStreamRequest* request,
-                                         ::grpc::ServerWriter<ConnectionCompleteEvent>* writer) override {
-    return connection_complete_stream_.HandleRequest(context, request, writer);
-  }
-
-  ::grpc::Status SetOnIncomingConnectionRequest(
-      ::grpc::ServerContext* context,
-      const ::bluetooth::l2cap::classic::cert::SetOnIncomingConnectionRequestRequest* request,
-      ::bluetooth::l2cap::classic::cert::SetOnIncomingConnectionRequestResponse* response) override {
-    accept_incoming_connection_ = request->accept();
+  ::grpc::Status SetupLink(::grpc::ServerContext* context,
+                           const ::bluetooth::l2cap::classic::cert::SetupLinkRequest* request,
+                           ::bluetooth::l2cap::classic::cert::SetupLinkResponse* response) override {
+    hci::Address address;
+    hci::Address::FromString(request->remote().address(), address);
+    LOG_INFO("%s", address.ToString().c_str());
+    acl_manager_->CreateConnection(address);
     return ::grpc::Status::OK;
   }
-
-  bool accept_incoming_connection_ = true;
 
   ::grpc::Status SendL2capPacket(::grpc::ServerContext* context, const L2capPacket* request,
                                  ::google::protobuf::Empty* response) override {
@@ -96,36 +81,42 @@ class L2capModuleCertService : public L2capModuleCert::Service {
     return ::grpc::Status::OK;
   }
 
-  static constexpr Cid kFirstDynamicChannelForIncomingRequest = kFirstDynamicChannel + 0x100;
-
   ::grpc::Status SendConnectionRequest(::grpc::ServerContext* context, const cert::ConnectionRequest* request,
                                        ::google::protobuf::Empty* response) override {
-    auto scid = request->scid();
-    if (last_connection_request_scid_ != kInvalidCid) {
-      return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Another connection request is pending");
-    }
-    if (scid >= kFirstDynamicChannelForIncomingRequest) {
-      return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Use scid < kFirstDynamicChannelForIncomingRequest");
-    }
-    for (const auto& cid_pair : open_channels_scid_dcid_) {
-      if (cid_pair.first == scid) {
-        return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "SCID already taken");
-      }
-    }
-    auto builder = ConnectionRequestBuilder::Create(1, request->psm(), scid);
-    auto l2cap_builder = BasicFrameBuilder::Create(1, std::move(builder));
+    auto builder = ConnectionRequestBuilder::Create(request->signal_id(), request->psm(), request->scid());
+    auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
     outgoing_packet_queue_.push(std::move(l2cap_builder));
     send_packet_from_queue();
-    last_connection_request_scid_ = scid;
     return ::grpc::Status::OK;
   }
-  Cid last_connection_request_scid_ = kInvalidCid;
-  Cid next_incoming_request_cid_ = kFirstDynamicChannelForIncomingRequest;
+
+  ::grpc::Status SendConnectionResponse(
+      ::grpc::ServerContext* context, const ::bluetooth::l2cap::classic::cert::ConnectionResponse* request,
+      ::bluetooth::l2cap::classic::cert::SendConnectionResponseResult* response) override {
+    auto builder = ConnectionResponseBuilder::Create(request->signal_id(), request->dcid(), request->scid(),
+                                                     ConnectionResponseResult::SUCCESS,
+                                                     ConnectionResponseStatus::NO_FURTHER_INFORMATION_AVAILABLE);
+    auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
+    outgoing_packet_queue_.push(std::move(l2cap_builder));
+    send_packet_from_queue();
+    return ::grpc::Status::OK;
+  }
 
   ::grpc::Status SendConfigurationRequest(
       ::grpc::ServerContext* context, const ::bluetooth::l2cap::classic::cert::ConfigurationRequest* request,
       ::bluetooth::l2cap::classic::cert::SendConfigurationRequestResult* response) override {
-    auto builder = ConfigurationRequestBuilder::Create(1, request->scid(), Continuation::END, {});
+    auto builder = ConfigurationRequestBuilder::Create(request->signal_id(), request->dcid(), Continuation::END, {});
+    auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
+    outgoing_packet_queue_.push(std::move(l2cap_builder));
+    send_packet_from_queue();
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status SendConfigurationResponse(
+      ::grpc::ServerContext* context, const ::bluetooth::l2cap::classic::cert::ConfigurationResponse* request,
+      ::bluetooth::l2cap::classic::cert::SendConfigurationResponseResult* response) override {
+    auto builder = ConfigurationResponseBuilder::Create(request->signal_id(), request->scid(), Continuation::END,
+                                                        ConfigurationResponseResult::SUCCESS, {});
     auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
     outgoing_packet_queue_.push(std::move(l2cap_builder));
     send_packet_from_queue();
@@ -134,7 +125,7 @@ class L2capModuleCertService : public L2capModuleCert::Service {
 
   ::grpc::Status SendDisconnectionRequest(::grpc::ServerContext* context, const cert::DisconnectionRequest* request,
                                           ::google::protobuf::Empty* response) override {
-    auto builder = DisconnectionRequestBuilder::Create(3, request->dcid(), request->scid());
+    auto builder = DisconnectionRequestBuilder::Create(request->signal_id(), request->dcid(), request->scid());
     auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
     outgoing_packet_queue_.push(std::move(l2cap_builder));
     send_packet_from_queue();
@@ -142,16 +133,85 @@ class L2capModuleCertService : public L2capModuleCert::Service {
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status FetchOpenedChannels(
-      ::grpc::ServerContext* context, const ::bluetooth::l2cap::classic::cert::FetchOpenedChannelsRequest* request,
-      ::bluetooth::l2cap::classic::cert::FetchOpenedChannelsResponse* response) override {
-    for (const auto& cid_pair : open_channels_scid_dcid_) {
-      response->mutable_scid()->Add(cid_pair.first);
-      response->mutable_dcid()->Add(cid_pair.second);
+  ::grpc::Status SendDisconnectionResponse(
+      ::grpc::ServerContext* context, const ::bluetooth::l2cap::classic::cert::DisconnectionResponse* request,
+      ::bluetooth::l2cap::classic::cert::SendDisconnectionResponseResult* response) override {
+    auto builder = DisconnectionResponseBuilder::Create(request->signal_id(), request->dcid(), request->scid());
+    auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
+    outgoing_packet_queue_.push(std::move(l2cap_builder));
+    send_packet_from_queue();
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status SendInformationRequest(
+      ::grpc::ServerContext* context, const ::bluetooth::l2cap::classic::cert::InformationRequest* request,
+      ::bluetooth::l2cap::classic::cert::SendInformationRequestResult* response) override {
+    switch (request->type()) {
+      case InformationRequestType::CONNECTIONLESS_MTU: {
+        auto builder =
+            InformationRequestBuilder::Create(request->signal_id(), InformationRequestInfoType::CONNECTIONLESS_MTU);
+        auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
+        outgoing_packet_queue_.push(std::move(l2cap_builder));
+        send_packet_from_queue();
+        break;
+      }
+      case InformationRequestType::EXTENDED_FEATURES: {
+        auto builder = InformationRequestBuilder::Create(request->signal_id(),
+                                                         InformationRequestInfoType::EXTENDED_FEATURES_SUPPORTED);
+        auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
+        outgoing_packet_queue_.push(std::move(l2cap_builder));
+        send_packet_from_queue();
+        break;
+      }
+      case InformationRequestType::FIXED_CHANNELS: {
+        auto builder = InformationRequestBuilder::Create(request->signal_id(),
+                                                         InformationRequestInfoType::FIXED_CHANNELS_SUPPORTED);
+        auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
+        outgoing_packet_queue_.push(std::move(l2cap_builder));
+        send_packet_from_queue();
+        break;
+      }
+      default:
+        break;
     }
     return ::grpc::Status::OK;
   }
-  std::vector<std::pair<uint16_t, uint16_t>> open_channels_scid_dcid_;
+
+  ::grpc::Status SendInformationResponse(
+      ::grpc::ServerContext* context, const ::bluetooth::l2cap::classic::cert::InformationResponse* request,
+      ::bluetooth::l2cap::classic::cert::SendInformationResponseResult* response) override {
+    switch (request->type()) {
+      case InformationRequestType::CONNECTIONLESS_MTU: {
+        auto builder = InformationResponseConnectionlessMtuBuilder::Create(request->signal_id(),
+                                                                           InformationRequestResult::NOT_SUPPORTED, 0);
+        auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
+        outgoing_packet_queue_.push(std::move(l2cap_builder));
+        send_packet_from_queue();
+        break;
+      }
+      case InformationRequestType::EXTENDED_FEATURES: {
+        auto builder = InformationResponseExtendedFeaturesBuilder::Create(
+            request->signal_id(), InformationRequestResult::NOT_SUPPORTED, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+        auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
+        outgoing_packet_queue_.push(std::move(l2cap_builder));
+        send_packet_from_queue();
+        break;
+      }
+      case InformationRequestType::FIXED_CHANNELS: {
+        constexpr uint64_t kSignallingChannelMask = 0x02;
+        auto builder = InformationResponseFixedChannelsBuilder::Create(
+            request->signal_id(), InformationRequestResult::SUCCESS, kSignallingChannelMask);
+        auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
+        outgoing_packet_queue_.push(std::move(l2cap_builder));
+        send_packet_from_queue();
+        break;
+      }
+      default:
+        break;
+    }
+
+    return ::grpc::Status::OK;
+  }
 
   std::unique_ptr<packet::BasePacketBuilder> enqueue_packet_to_acl() {
     auto basic_frame_builder = std::move(outgoing_packet_queue_.front());
@@ -162,10 +222,28 @@ class L2capModuleCertService : public L2capModuleCert::Service {
     return basic_frame_builder;
   }
 
-  ::grpc::Status FetchL2capData(::grpc::ServerContext* context, const ::bluetooth::facade::EventStreamRequest* request,
-                                ::grpc::ServerWriter<L2capPacket>* writer) override {
-    return l2cap_stream_.HandleRequest(context, request, writer);
+  ::grpc::Status FetchL2capLog(::grpc::ServerContext* context, const FetchL2capLogRequest* request,
+                               ::grpc::ServerWriter<FetchL2capLogResponse>* writer) override {
+    while (!context->IsCancelled()) {
+      if (!l2cap_log_.empty()) {
+        auto& response = l2cap_log_.front();
+        writer->Write(response);
+        l2cap_log_.pop();
+      } else {
+        std::unique_lock<std::mutex> lock(l2cap_log_mutex_);
+        // TODO(hsz): Rather than hardcode 1 second wait time, we can add another RPC to allow client to inform the
+        // server to return the RPC early
+        auto status = l2cap_log_cv_.wait_for(lock, kEventTimeout);
+        if (status == std::cv_status::timeout) {
+          break;
+        }
+      }
+    }
+    return ::grpc::Status::OK;
   }
+  std::mutex l2cap_log_mutex_;
+  std::queue<FetchL2capLogResponse> l2cap_log_;
+  std::condition_variable l2cap_log_cv_;
 
   class L2capStreamCallback : public ::bluetooth::grpc::GrpcEventStreamCallback<L2capPacket, L2capPacket> {
    public:
@@ -176,20 +254,32 @@ class L2capModuleCertService : public L2capModuleCert::Service {
   } l2cap_stream_callback_;
   ::bluetooth::grpc::GrpcEventStream<L2capPacket, L2capPacket> l2cap_stream_{&l2cap_stream_callback_};
 
+  void LogEvent(const FetchL2capLogResponse& response) {
+    l2cap_log_.push(response);
+    if (l2cap_log_.size() == 1) {
+      l2cap_log_cv_.notify_one();
+    }
+  }
+
   void on_incoming_packet() {
     auto packet = acl_connection_->GetAclQueueEnd()->TryDequeue();
     BasicFrameView basic_frame_view = BasicFrameView::Create(*packet);
     ASSERT(basic_frame_view.IsValid());
     L2capPacket l2cap_packet;
-    std::string data = std::string(packet->begin(), packet->end());
+    auto payload = basic_frame_view.GetPayload();
+    std::string data = std::string(payload.begin(), payload.end());
     l2cap_packet.set_payload(data);
     l2cap_packet.set_channel(basic_frame_view.GetChannelId());
     l2cap_stream_.OnIncomingEvent(l2cap_packet);
-
     if (basic_frame_view.GetChannelId() == kClassicSignallingCid) {
       ControlView control_view = ControlView::Create(basic_frame_view.GetPayload());
       ASSERT(control_view.IsValid());
       handle_signalling_packet(control_view);
+    } else {
+      FetchL2capLogResponse response;
+      response.mutable_data_packet()->set_channel(basic_frame_view.GetChannelId());
+      response.mutable_data_packet()->set_payload(data);
+      LogEvent(response);
     }
   }
 
@@ -203,37 +293,69 @@ class L2capModuleCertService : public L2capModuleCert::Service {
   void handle_signalling_packet(ControlView control_view) {
     auto code = control_view.GetCode();
     switch (code) {
+      case CommandCode::COMMAND_REJECT: {
+        CommandRejectView view = CommandRejectView::Create(control_view);
+        ASSERT(view.IsValid());
+        FetchL2capLogResponse response;
+        response.mutable_command_reject()->set_signal_id(control_view.GetIdentifier());
+        LogEvent(response);
+        break;
+      }
       case CommandCode::CONNECTION_REQUEST: {
         ConnectionRequestView view = ConnectionRequestView::Create(control_view);
         ASSERT(view.IsValid());
-        auto builder = ConnectionResponseBuilder::Create(
-            view.GetIdentifier(), next_incoming_request_cid_, view.GetSourceCid(),
-            accept_incoming_connection_ ? ConnectionResponseResult::SUCCESS : ConnectionResponseResult::INVALID_CID,
-            ConnectionResponseStatus::NO_FURTHER_INFORMATION_AVAILABLE);
-        auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
-        outgoing_packet_queue_.push(std::move(l2cap_builder));
-        send_packet_from_queue();
-        open_channels_scid_dcid_.emplace_back(next_incoming_request_cid_, view.GetSourceCid());
-        next_incoming_request_cid_++;
+        FetchL2capLogResponse response;
+        response.mutable_connection_request()->set_signal_id(control_view.GetIdentifier());
+        response.mutable_connection_request()->set_scid(view.GetSourceCid());
+        response.mutable_connection_request()->set_psm(view.GetPsm());
+        LogEvent(response);
         break;
       }
       case CommandCode::CONNECTION_RESPONSE: {
         ConnectionResponseView view = ConnectionResponseView::Create(control_view);
         ASSERT(view.IsValid());
-        open_channels_scid_dcid_.emplace_back(last_connection_request_scid_, view.GetSourceCid());
-        last_connection_request_scid_ = kInvalidCid;
+        FetchL2capLogResponse response;
+        response.mutable_connection_response()->set_signal_id(control_view.GetIdentifier());
+        response.mutable_connection_response()->set_scid(view.GetSourceCid());
+        response.mutable_connection_response()->set_dcid(view.GetDestinationCid());
+        LogEvent(response);
         break;
       }
 
       case CommandCode::CONFIGURATION_REQUEST: {
         ConfigurationRequestView view = ConfigurationRequestView::Create(control_view);
         ASSERT(view.IsValid());
-        auto builder =
-            ConfigurationResponseBuilder::Create(view.GetIdentifier(), view.GetDestinationCid(), Continuation::END,
-                                                 ConfigurationResponseResult::SUCCESS, {});
-        auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
-        outgoing_packet_queue_.push(std::move(l2cap_builder));
-        send_packet_from_queue();
+        FetchL2capLogResponse response;
+        response.mutable_configuration_request()->set_signal_id(control_view.GetIdentifier());
+        response.mutable_configuration_request()->set_dcid(view.GetDestinationCid());
+        LogEvent(response);
+        break;
+      }
+      case CommandCode::CONFIGURATION_RESPONSE: {
+        ConfigurationResponseView view = ConfigurationResponseView::Create(control_view);
+        ASSERT(view.IsValid());
+        FetchL2capLogResponse response;
+        response.mutable_configuration_response()->set_signal_id(control_view.GetIdentifier());
+        response.mutable_configuration_response()->set_scid(view.GetSourceCid());
+        LogEvent(response);
+        break;
+      }
+      case CommandCode::DISCONNECTION_RESPONSE: {
+        DisconnectionResponseView view = DisconnectionResponseView::Create(control_view);
+        ASSERT(view.IsValid());
+        FetchL2capLogResponse response;
+        response.mutable_disconnection_response()->set_signal_id(control_view.GetIdentifier());
+        response.mutable_disconnection_response()->set_dcid(view.GetDestinationCid());
+        response.mutable_disconnection_response()->set_scid(view.GetSourceCid());
+        LogEvent(response);
+        break;
+      }
+      case CommandCode::ECHO_RESPONSE: {
+        EchoResponseView view = EchoResponseView::Create(control_view);
+        ASSERT(view.IsValid());
+        FetchL2capLogResponse response;
+        response.mutable_echo_response()->set_signal_id(control_view.GetIdentifier());
+        LogEvent(response);
         break;
       }
       case CommandCode::INFORMATION_REQUEST: {
@@ -241,36 +363,49 @@ class L2capModuleCertService : public L2capModuleCert::Service {
         if (!information_request_view.IsValid()) {
           return;
         }
+        FetchL2capLogResponse log_response;
+        log_response.mutable_information_request()->set_signal_id(control_view.GetIdentifier());
         auto type = information_request_view.GetInfoType();
         switch (type) {
           case InformationRequestInfoType::CONNECTIONLESS_MTU: {
-            auto response = InformationResponseConnectionlessMtuBuilder::Create(
-                information_request_view.GetIdentifier(), InformationRequestResult::NOT_SUPPORTED, 0);
-            auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(response));
-            outgoing_packet_queue_.push(std::move(l2cap_builder));
-            send_packet_from_queue();
+            log_response.mutable_information_request()->set_type(InformationRequestType::CONNECTIONLESS_MTU);
             break;
           }
           case InformationRequestInfoType::EXTENDED_FEATURES_SUPPORTED: {
-            // TODO: implement this response
-            auto response = InformationResponseExtendedFeaturesBuilder::Create(information_request_view.GetIdentifier(),
-                                                                               InformationRequestResult::NOT_SUPPORTED,
-                                                                               0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
-            auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(response));
-            outgoing_packet_queue_.push(std::move(l2cap_builder));
-            send_packet_from_queue();
+            log_response.mutable_information_request()->set_type(InformationRequestType::EXTENDED_FEATURES);
             break;
           }
           case InformationRequestInfoType::FIXED_CHANNELS_SUPPORTED: {
-            constexpr uint64_t kSignallingChannelMask = 0x02;
-            auto response = InformationResponseFixedChannelsBuilder::Create(
-                information_request_view.GetIdentifier(), InformationRequestResult::SUCCESS, kSignallingChannelMask);
-            auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(response));
-            outgoing_packet_queue_.push(std::move(l2cap_builder));
-            send_packet_from_queue();
+            log_response.mutable_information_request()->set_type(InformationRequestType::FIXED_CHANNELS);
             break;
           }
         }
+        LogEvent(log_response);
+        break;
+      }
+      case CommandCode::INFORMATION_RESPONSE: {
+        InformationResponseView information_response_view = InformationResponseView::Create(control_view);
+        if (!information_response_view.IsValid()) {
+          return;
+        }
+        FetchL2capLogResponse log_response;
+        log_response.mutable_information_response()->set_signal_id(control_view.GetIdentifier());
+        auto type = information_response_view.GetInfoType();
+        switch (type) {
+          case InformationRequestInfoType::CONNECTIONLESS_MTU: {
+            log_response.mutable_information_response()->set_type(InformationRequestType::CONNECTIONLESS_MTU);
+            break;
+          }
+          case InformationRequestInfoType::EXTENDED_FEATURES_SUPPORTED: {
+            log_response.mutable_information_response()->set_type(InformationRequestType::EXTENDED_FEATURES);
+            break;
+          }
+          case InformationRequestInfoType::FIXED_CHANNELS_SUPPORTED: {
+            log_response.mutable_information_response()->set_type(InformationRequestType::FIXED_CHANNELS);
+            break;
+          }
+        }
+        LogEvent(log_response);
         break;
       }
       default:
@@ -287,14 +422,14 @@ class L2capModuleCertService : public L2capModuleCert::Service {
    public:
     AclCallbacks(L2capModuleCertService* module) : module_(module) {}
     void OnConnectSuccess(std::unique_ptr<hci::AclConnection> connection) override {
-      ConnectionCompleteEvent event;
-      event.mutable_remote()->set_address(connection->GetAddress().ToString());
-      module_->connection_complete_stream_.OnIncomingEvent(event);
       module_->acl_connection_ = std::move(connection);
       module_->acl_connection_->RegisterDisconnectCallback(common::BindOnce([](hci::ErrorCode) {}), module_->handler_);
       module_->acl_connection_->GetAclQueueEnd()->RegisterDequeue(
           module_->handler_, common::Bind(&L2capModuleCertService::on_incoming_packet, common::Unretained(module_)));
       dequeue_registered_ = true;
+      FetchL2capLogResponse response;
+      response.mutable_link_up()->mutable_remote()->set_address(module_->acl_connection_->GetAddress().ToString());
+      module_->LogEvent(response);
     }
     void OnConnectFail(hci::Address address, hci::ErrorCode reason) override {}
 
