@@ -30,10 +30,10 @@ Fifo::~Fifo() {
   }
 }
 
-void Fifo::AttachChannel(Cid cid, UpperQueueDownEnd* channel_down_end) {
+void Fifo::AttachChannel(Cid cid, UpperQueueDownEnd* channel_down_end, Cid remote_cid) {
   ASSERT(channel_queue_end_map_.find(cid) == channel_queue_end_map_.end());
   channel_queue_end_map_.emplace(std::piecewise_construct, std::forward_as_tuple(cid),
-                                 std::forward_as_tuple(handler_, channel_down_end, this, cid));
+                                 std::forward_as_tuple(handler_, channel_down_end, this, cid, remote_cid));
 }
 
 void Fifo::DetachChannel(Cid cid) {
@@ -55,7 +55,8 @@ std::unique_ptr<Fifo::UpperDequeue> Fifo::link_queue_enqueue_callback() {
     link_queue_up_end_->UnregisterEnqueue();
     link_queue_enqueue_registered_ = false;
   }
-  return BasicFrameBuilder::Create(channel_id, std::move(packet));
+  Cid remote_channel_id = channel_queue_end_map_.find(channel_id)->second.remote_channel_id_;
+  return BasicFrameBuilder::Create(remote_channel_id, std::move(packet));
 }
 
 void Fifo::try_register_link_queue_enqueue() {
