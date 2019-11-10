@@ -1,4 +1,5 @@
 subdirs = [
+    "apex",
     "binder",
     "build",
     "btif",
