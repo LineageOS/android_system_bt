@@ -30,8 +30,10 @@ class TestGdShimL2cap : public bluetooth::shim::IL2cap {
   void RegisterService(uint16_t psm,
                        bluetooth::shim::ConnectionOpenCallback on_open,
                        std::promise<void> completed) override;
+  void UnregisterService(uint16_t psm);
   void CreateConnection(uint16_t psm, const std::string address,
                         std::promise<uint16_t> completed) override;
+  void CloseConnection(uint16_t cid);
   void SetReadDataReadyCallback(
       uint16_t cid,
       bluetooth::shim::ReadDataReadyCallback on_data_ready) override;
