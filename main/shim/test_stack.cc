@@ -34,10 +34,14 @@ void TestGdShimL2cap::RegisterService(
   completed.set_value();
 }
 
+void TestGdShimL2cap::UnregisterService(uint16_t psm) {}
+
 void TestGdShimL2cap::CreateConnection(uint16_t psm, const std::string address,
                                        std::promise<uint16_t> completed) {
   completed.set_value(cid_);
 }
+
+void TestGdShimL2cap::CloseConnection(uint16_t cid) {}
 
 void TestGdShimL2cap::SetReadDataReadyCallback(
     uint16_t cid, bluetooth::shim::ReadDataReadyCallback on_data_ready) {}
