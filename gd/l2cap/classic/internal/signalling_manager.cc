@@ -450,7 +450,7 @@ void ClassicSignallingManager::on_incoming_packet() {
 void ClassicSignallingManager::send_connection_response(SignalId signal_id, Cid remote_cid, Cid local_cid,
                                                         ConnectionResponseResult result,
                                                         ConnectionResponseStatus status) {
-  auto builder = ConnectionResponseBuilder::Create(signal_id.Value(), remote_cid, local_cid, result, status);
+  auto builder = ConnectionResponseBuilder::Create(signal_id.Value(), local_cid, remote_cid, result, status);
   enqueue_buffer_->Enqueue(std::move(builder), handler_);
 }
 
