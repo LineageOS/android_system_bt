@@ -358,7 +358,11 @@ void L2cap::impl::RegisterService(l2cap::Psm psm, ConnectionOpenCallback on_open
   ASSERT(psm_to_register_complete_map_.find(psm) == psm_to_register_complete_map_.end());
   ASSERT(psm_to_on_open_map_.find(psm) == psm_to_on_open_map_.end());
 
-  psm_to_on_open_map_[psm] = on_open;
+  {
+    std::unique_lock<std::mutex> lock(mutex_);
+    psm_to_on_open_map_[psm] = on_open;
+    psm_to_register_complete_map_[psm] = std::move(completed);
+  }
 
   psm_to_service_interface_map_.emplace(
       psm, std::make_shared<ServiceInterface>(
@@ -434,7 +438,8 @@ bool L2cap::impl::Write(ConnectionInterfaceDescriptor cid, std::unique_ptr<packe
 
 void L2cap::RegisterService(uint16_t raw_psm, ConnectionOpenCallback on_open, std::promise<void> completed) {
   l2cap::Psm psm{raw_psm};
-  pimpl_->RegisterService(psm, on_open, std::move(completed));
+  GetHandler()->Post(common::BindOnce(&L2cap::impl::RegisterService, common::Unretained(pimpl_.get()), psm, on_open,
+                                      std::move(completed)));
 }
 
 void L2cap::UnregisterService(uint16_t raw_psm) {
@@ -447,7 +452,8 @@ void L2cap::CreateConnection(uint16_t raw_psm, const std::string address_string,
   hci::Address address;
   hci::Address::FromString(address_string, address);
 
-  return pimpl_->CreateConnection(psm, address, std::move(completed));
+  GetHandler()->Post(common::BindOnce(&L2cap::impl::CreateConnection, common::Unretained(pimpl_.get()), psm, address,
+                                      std::move(completed)));
 }
 
 void L2cap::CloseConnection(uint16_t raw_cid) {
