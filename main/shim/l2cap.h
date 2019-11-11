@@ -96,6 +96,8 @@ class L2cap {
   PsmData classic_;
   PsmData le_;
 
+  bool ConnectionExists(uint16_t cid) const;
+
   uint16_t classic_dynamic_psm_;
   uint16_t le_dynamic_psm_;
   uint16_t classic_virtual_psm_;
