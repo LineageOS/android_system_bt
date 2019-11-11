@@ -34,7 +34,10 @@ using ReadDataReadyCallback = std::function<void(uint16_t cid, std::vector<const
 
 struct IL2cap {
   virtual void RegisterService(uint16_t psm, ConnectionOpenCallback on_open, std::promise<void> completed) = 0;
+  virtual void UnregisterService(uint16_t psm) = 0;
+
   virtual void CreateConnection(uint16_t psm, const std::string address, std::promise<uint16_t> completed) = 0;
+  virtual void CloseConnection(uint16_t cid) = 0;
 
   virtual void SetReadDataReadyCallback(uint16_t cid, ReadDataReadyCallback on_data_ready) = 0;
   virtual void SetConnectionClosedCallback(uint16_t cid, ConnectionClosedCallback on_closed) = 0;
