@@ -534,6 +534,11 @@ void ConnectionHandler::SendMessage(
   // doesn't need to be processed. In the future, this is the only place sending
   // the packet so none of these layer specific fields will be used.
   pkt->event = 0xFFFF;
+  /* Handle for AVRCP fragment */
+  uint16_t op_code = (uint16_t)(::bluetooth::Packet::Specialize<Packet>(packet)->GetOpcode());
+  if (!browse && (op_code == (uint16_t)(Opcode::VENDOR))) {
+    pkt->event = op_code;
+  }
 
   // TODO (apanicke): This layer specific stuff can go away once we move over
   // to the new service.
