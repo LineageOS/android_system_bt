@@ -72,6 +72,7 @@ class DualModeController : public Device {
   void HandleAcl(std::shared_ptr<std::vector<uint8_t>> acl_packet);
   void HandleCommand(std::shared_ptr<std::vector<uint8_t>> command_packet);
   void HandleSco(std::shared_ptr<std::vector<uint8_t>> sco_packet);
+  void HandleIso(std::shared_ptr<std::vector<uint8_t>> iso_packet);
 
   // Set the callbacks for scheduling tasks.
   void RegisterTaskScheduler(std::function<AsyncTaskId(std::chrono::milliseconds, const TaskCallback&)> evtScheduler);
@@ -90,6 +91,10 @@ class DualModeController : public Device {
   void RegisterAclChannel(const std::function<void(std::shared_ptr<std::vector<uint8_t>>)>& send_acl);
 
   void RegisterScoChannel(const std::function<void(std::shared_ptr<std::vector<uint8_t>>)>& send_sco);
+
+  void RegisterIsoChannel(
+      const std::function<void(std::shared_ptr<std::vector<uint8_t>>)>&
+          send_iso);
 
   // Set the device's address.
   void SetAddress(Address address) override;
@@ -448,6 +453,7 @@ class DualModeController : public Device {
   std::function<void(std::shared_ptr<bluetooth::hci::EventPacketBuilder>)>
       send_event_;
   std::function<void(std::shared_ptr<std::vector<uint8_t>>)> send_sco_;
+  std::function<void(std::shared_ptr<std::vector<uint8_t>>)> send_iso_;
 
   // Maintains the commands to be registered and used in the HciHandler object.
   // Keys are command opcodes and values are the callbacks to handle each

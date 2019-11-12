@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#define LOG_TAG "android.hardware.bluetooth@1.0-btlinux"
+#define LOG_TAG "android.hardware.bluetooth@1.1-btlinux"
 #include <errno.h>
 #include <fcntl.h>
 #include <poll.h>
@@ -66,7 +66,7 @@ struct mgmt_event_read_index {
 namespace android {
 namespace hardware {
 namespace bluetooth {
-namespace V1_0 {
+namespace V1_1 {
 namespace btlinux {
 
 int BluetoothHci::openBtHci() {
@@ -264,7 +264,18 @@ BluetoothHci::BluetoothHci()
     : death_recipient_(new BluetoothDeathRecipient(this)) {}
 
 Return<void> BluetoothHci::initialize(
-    const ::android::sp<IBluetoothHciCallbacks>& cb) {
+    const ::android::sp<V1_0::IBluetoothHciCallbacks>& cb) {
+  return initialize_impl(cb, nullptr);
+}
+
+Return<void> BluetoothHci::initialize_1_1(
+    const ::android::sp<V1_1::IBluetoothHciCallbacks>& cb) {
+  return initialize_impl(cb, cb);
+}
+
+Return<void> BluetoothHci::initialize_impl(
+    const ::android::sp<V1_0::IBluetoothHciCallbacks>& cb,
+    const ::android::sp<V1_1::IBluetoothHciCallbacks>& cb_1_1) {
   ALOGI("BluetoothHci::initialize()");
   if (cb == nullptr) {
     ALOGE("cb == nullptr! -> Unable to call initializationComplete(ERR)");
@@ -275,7 +286,7 @@ Return<void> BluetoothHci::initialize(
   cb->linkToDeath(death_recipient_, 0);
   int hci_fd = openBtHci();
   auto hidl_status = cb->initializationComplete(
-          hci_fd > 0 ? Status::SUCCESS : Status::INITIALIZATION_ERROR);
+      hci_fd > 0 ? V1_0::Status::SUCCESS : V1_0::Status::INITIALIZATION_ERROR);
   if (!hidl_status.isOk()) {
       ALOGE("VendorInterface -> Unable to call initializationComplete(ERR)");
   }
@@ -283,7 +294,10 @@ Return<void> BluetoothHci::initialize(
       hci_fd,
       [cb](const hidl_vec<uint8_t>& packet) { cb->hciEventReceived(packet); },
       [cb](const hidl_vec<uint8_t>& packet) { cb->aclDataReceived(packet); },
-      [cb](const hidl_vec<uint8_t>& packet) { cb->scoDataReceived(packet); });
+      [cb](const hidl_vec<uint8_t>& packet) { cb->scoDataReceived(packet); },
+      [cb_1_1](const hidl_vec<uint8_t>& packet) {
+        cb_1_1->isoDataReceived(packet);
+      });
 
   fd_watcher_.WatchFdForNonBlockingReads(
           hci_fd, [h4_hci](int fd) { h4_hci->OnDataReady(fd); });
@@ -327,6 +341,11 @@ Return<void> BluetoothHci::sendScoData(const hidl_vec<uint8_t>& data) {
   return Void();
 }
 
+Return<void> BluetoothHci::sendIsoData(const hidl_vec<uint8_t>& data) {
+  sendDataToController(HCI_DATA_TYPE_ISO, data);
+  return Void();
+}
+
 void BluetoothHci::sendDataToController(const uint8_t type,
                                         const hidl_vec<uint8_t>& data) {
   hci_handle_->Send(type, data.data(), data.size());
@@ -337,7 +356,7 @@ IBluetoothHci* HIDL_FETCH_IBluetoothHci(const char* /* name */) {
 }
 
 }  // namespace btlinux
-}  // namespace V1_0
+}  // namespace V1_1
 }  // namespace bluetooth
 }  // namespace hardware
 }  // namespace android

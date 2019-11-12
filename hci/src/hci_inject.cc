@@ -39,6 +39,7 @@ typedef enum {
   HCI_PACKET_ACL_DATA = 2,
   HCI_PACKET_SCO_DATA = 3,
   HCI_PACKET_EVENT = 4,
+  HCI_PACKET_ISO_DATA = 5,
 } hci_packet_t;
 
 typedef struct {
@@ -118,6 +119,8 @@ static int hci_packet_to_event(hci_packet_t packet) {
       return MSG_STACK_TO_HC_HCI_ACL;
     case HCI_PACKET_SCO_DATA:
       return MSG_STACK_TO_HC_HCI_SCO;
+    case HCI_PACKET_ISO_DATA:
+      return MSG_STACK_TO_HC_HCI_ISO;
     default:
       LOG_ERROR(LOG_TAG, "%s unsupported packet type: %d", __func__, packet);
       return -1;
