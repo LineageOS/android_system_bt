@@ -11,6 +11,7 @@ filegroup {
         "internal/security_manager_impl.cc",
         "security_module.cc",
         ":BluetoothSecurityChannelSources",
+        ":BluetoothSecurityPairingSources",
     ],
 }
 
@@ -22,5 +23,6 @@ filegroup {
         "test/fake_l2cap_test.cc",
         "test/pairing_handler_le_pair_test.cc",
         ":BluetoothSecurityChannelTestSources",
+        ":BluetoothSecurityPairingTestSources",
     ],
 }
