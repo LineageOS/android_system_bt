@@ -208,6 +208,12 @@ class TestChannelShell(cmd.Cmd):
     """
     self._test_channel.send_command('set', args.split())
 
+  def do_set_device_address(self, args):
+    """Arguments: dev_num addr Set the address of device dev_num equal to addr.
+
+    """
+    self._test_channel.send_command('set_device_address', args.split())
+
   def do_list(self, args):
     """Arguments: [dev_num [attr]] List the devices from the controller, optionally filtered by device and attr.
 

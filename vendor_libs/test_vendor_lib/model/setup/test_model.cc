@@ -204,6 +204,15 @@ void TestModel::OnHciConnectionClosed(int socket_fd, size_t index) {
   devices_.erase(index);
 }
 
+void TestModel::SetDeviceAddress(size_t index, Address address) {
+  auto device = devices_.find(index);
+  if (device == devices_.end()) {
+    LOG_WARN("SetDeviceAddress can't find device!");
+    return;
+  }
+  device->second->SetAddress(address);
+}
+
 const std::string& TestModel::List() {
   list_string_ = "";
   list_string_ += " Devices: \r\n";
