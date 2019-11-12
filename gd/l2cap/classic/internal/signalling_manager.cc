@@ -180,7 +180,6 @@ void ClassicSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remo
   }
   alarm_.Cancel();
   SendConfigurationRequest(remote_cid, {});
-  handle_send_next_command();
 }
 
 void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid cid, Continuation is_continuation,
@@ -193,7 +192,6 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
   auto response = ConfigurationResponseBuilder::Create(signal_id.Value(), channel->GetRemoteCid(), is_continuation,
                                                        ConfigurationResponseResult::SUCCESS, {});
   enqueue_buffer_->Enqueue(std::move(response), handler_);
-  handle_send_next_command();
   channel->SetIncomingConfigurationStatus(DynamicChannelImpl::ConfigurationStatus::CONFIGURED);
   if (channel->GetOutgoingConfigurationStatus() == DynamicChannelImpl::ConfigurationStatus::CONFIGURED) {
     std::unique_ptr<DynamicChannel> user_channel = std::make_unique<DynamicChannel>(channel, handler_);
