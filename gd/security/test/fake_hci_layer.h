@@ -96,7 +96,7 @@ class FakeHciLayer : public HciLayer {
   void IncomingEvent(std::unique_ptr<EventPacketBuilder> event_builder) {
     auto packet = GetPacketView(std::move(event_builder));
     EventPacketView event = EventPacketView::Create(packet);
-    EXPECT_TRUE(event.IsValid());
+    ASSERT_TRUE(event.IsValid());
     EventCode event_code = event.GetEventCode();
     EXPECT_TRUE(registered_events_.find(event_code) != registered_events_.end());
     registered_events_[event_code].Run(event);

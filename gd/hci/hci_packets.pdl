@@ -3026,8 +3026,15 @@ packet ModeChange : EventPacket (event_code = MODE_CHANGE){
   interval : 16, // 0x002 - 0xFFFE (1.25ms - 40.9s)
 }
 
+struct ZeroKeyAndAddress {
+  address : Address,
+  _fixed_ = 0 : 64,
+  _fixed_ = 0 : 64,
+}
+
 packet ReturnLinkKeys : EventPacket (event_code = RETURN_LINK_KEYS){
-  _payload_, // placeholder (unimplemented)
+  _count_(keys) : 8,
+  keys : ZeroKeyAndAddress[],
 }
 
 packet PinCodeRequest : EventPacket (event_code = PIN_CODE_REQUEST){
@@ -3038,8 +3045,20 @@ packet LinkKeyRequest : EventPacket (event_code = LINK_KEY_REQUEST){
   bd_addr : Address,
 }
 
+enum KeyType : 8 {
+  COMBINATION = 0x00,
+  DEBUG_COMBINATION = 0x03,
+  UNAUTHENTICATED_P192 = 0x04,
+  AUTHENTICATED_P192 = 0x05,
+  CHANGED = 0x06,
+  UNAUTHENTICATED_P256 = 0x07,
+  AUTHENTICATED_P256 = 0x08,
+}
+
 packet LinkKeyNotification : EventPacket (event_code = LINK_KEY_NOTIFICATION){
-  _payload_, // placeholder (unimplemented)
+  bd_addr : Address,
+  link_key : 8[16],
+  key_type : KeyType,
 }
 
 packet LoopbackCommand : EventPacket (event_code = LOOPBACK_COMMAND){
