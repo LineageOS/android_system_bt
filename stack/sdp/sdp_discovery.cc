@@ -436,6 +436,7 @@ static void process_service_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
       if (!sdp_copy_raw_data(p_ccb, false)) {
         SDP_TRACE_ERROR("sdp_copy_raw_data failed");
         sdp_disconnect(p_ccb, SDP_ILLEGAL_PARAMETER);
+        return;
       }
 
 #endif
@@ -642,6 +643,7 @@ static void process_service_search_attr_rsp(tCONN_CB* p_ccb, uint8_t* p_reply,
   if (!sdp_copy_raw_data(p_ccb, true)) {
     SDP_TRACE_ERROR("sdp_copy_raw_data failed");
     sdp_disconnect(p_ccb, SDP_ILLEGAL_PARAMETER);
+    return;
   }
 #endif
 
