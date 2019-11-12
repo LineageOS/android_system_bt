@@ -166,6 +166,19 @@ void bluetooth::legacy::shim::L2cap::RegisterService(
   LOG_DEBUG(LOG_TAG, "Successfully registered service on psm:%hd", psm);
 }
 
+void bluetooth::legacy::shim::L2cap::UnregisterService(uint16_t psm) {
+  if (!Classic().IsPsmRegistered(psm)) {
+    LOG_WARN(LOG_TAG,
+             "Service must be registered in order to unregister psm:%hd", psm);
+    return;
+  }
+  LOG_DEBUG(LOG_TAG, "Unregistering service on psm:%hd", psm);
+  // TODO(cmanton) Check for open channels before unregistering
+  bluetooth::shim::GetL2cap()->UnregisterService(psm);
+  Classic().UnregisterPsm(psm);
+  Classic().DeallocatePsm(psm);
+}
+
 uint16_t bluetooth::legacy::shim::L2cap::CreateConnection(
     uint16_t psm, const RawAddress& raw_address) {
   LOG_DEBUG(LOG_TAG, "Requesting connection to psm:%hd address:%s", psm,
@@ -220,12 +233,6 @@ void bluetooth::legacy::shim::L2cap::OnConnectionReady(
              cid, cid2);
     callbacks->pL2CA_ConnectCfm_Cb(cid2, 0);
   });
-}
-
-bool bluetooth::legacy::shim::L2cap::IsCongested(uint16_t cid) const {
-  CHECK(ConnectionExists(cid));
-  LOG_WARN(LOG_TAG, "Ignoring checks for congestion on cid:%hd", cid);
-  return false;
 }
 
 bool bluetooth::legacy::shim::L2cap::Write(uint16_t cid, BT_HDR* bt_hdr) {
@@ -283,11 +290,6 @@ bool bluetooth::legacy::shim::L2cap::SetCallbacks(
   return true;
 }
 
-void bluetooth::legacy::shim::L2cap::ClearCallbacks(uint16_t cid) {
-  CHECK(ConnectionExists(cid));
-  cid_to_callback_map_.erase(cid);
-}
-
 bool bluetooth::legacy::shim::L2cap::ConnectResponse(
     const RawAddress& raw_address, uint8_t signal_id, uint16_t cid,
     uint16_t result, uint16_t status, tL2CAP_ERTM_INFO* ertm_info) {
@@ -340,6 +342,7 @@ bool bluetooth::legacy::shim::L2cap::ConfigResponse(
 bool bluetooth::legacy::shim::L2cap::DisconnectRequest(uint16_t cid) {
   CHECK(ConnectionExists(cid));
   bluetooth::shim::GetL2cap()->CloseConnection(cid);
+  cid_to_callback_map_.erase(cid);
   return true;
 }
 
