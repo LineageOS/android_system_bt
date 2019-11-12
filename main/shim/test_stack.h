@@ -15,6 +15,7 @@
  */
 #include <cstdint>
 #include <future>
+#include <set>
 
 #include "gd/shim/only_include_this_file_into_legacy_stack___ever.h"
 #include "main/shim/entry.h"
@@ -26,6 +27,7 @@ class TestGdShimL2cap : public bluetooth::shim::IL2cap {
   bool is_congested_{false};
   uint8_t* data_buffer_{nullptr};
   size_t data_buffer_size_{0};
+  std::set<uint16_t /* psm */> registered_service_;
 
   void RegisterService(uint16_t psm,
                        bluetooth::shim::ConnectionOpenCallback on_open,
