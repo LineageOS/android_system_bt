@@ -131,8 +131,10 @@ void TestModel::AddDeviceToPhy(size_t dev_index, size_t phy_index) {
     return;
   }
   auto dev = device->second;
-  dev->RegisterPhyLayer(
-      phy->second->GetPhyLayer([dev](packets::LinkLayerPacketView packet) { dev->IncomingPacket(packet); }));
+  dev->RegisterPhyLayer(phy->second->GetPhyLayer(
+      [dev](model::packets::LinkLayerPacketView packet) {
+        dev->IncomingPacket(packet);
+      }));
 }
 
 void TestModel::DelDeviceFromPhy(size_t dev_index, size_t phy_index) {
