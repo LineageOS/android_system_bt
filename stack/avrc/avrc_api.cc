@@ -32,6 +32,7 @@
 #include "btu.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/osi.h"
+#include "osi/include/properties.h"
 
 /*****************************************************************************
  *  Global data
@@ -1113,27 +1114,32 @@ uint16_t AVRC_MsgReq(uint8_t handle, uint8_t label, uint8_t ctype,
 
   AVRC_TRACE_DEBUG("%s handle = %u label = %u ctype = %u len = %d", __func__,
                    handle, label, ctype, p_pkt->len);
-
+  /* Handle for AVRCP fragment */
+  bool is_new_avrcp = osi_property_get_bool("persist.bluetooth.enablenewavrcp", true);
   if (ctype >= AVRC_RSP_NOT_IMPL) cr = AVCT_RSP;
 
   if (p_pkt->event == AVRC_OP_VENDOR) {
-    /* add AVRCP Vendor Dependent headers */
-    p_start = ((uint8_t*)(p_pkt + 1) + p_pkt->offset);
-    p_pkt->offset -= AVRC_VENDOR_HDR_SIZE;
-    p_pkt->len += AVRC_VENDOR_HDR_SIZE;
-    p_data = (uint8_t*)(p_pkt + 1) + p_pkt->offset;
-    *p_data++ = (ctype & AVRC_CTYPE_MASK);
-    *p_data++ = (AVRC_SUB_PANEL << AVRC_SUBTYPE_SHIFT);
-    *p_data++ = AVRC_OP_VENDOR;
-    AVRC_CO_ID_TO_BE_STREAM(p_data, AVRC_CO_METADATA);
+    if (is_new_avrcp) {
+      p_start = (uint8_t*)(p_pkt + 1) + p_pkt->offset + AVRC_VENDOR_HDR_SIZE;
+    } else {
+      /* add AVRCP Vendor Dependent headers */
+      p_start = ((uint8_t*)(p_pkt + 1) + p_pkt->offset);
+      p_pkt->offset -= AVRC_VENDOR_HDR_SIZE;
+      p_pkt->len += AVRC_VENDOR_HDR_SIZE;
+      p_data = (uint8_t*)(p_pkt + 1) + p_pkt->offset;
+      *p_data++ = (ctype & AVRC_CTYPE_MASK);
+      *p_data++ = (AVRC_SUB_PANEL << AVRC_SUBTYPE_SHIFT);
+      *p_data++ = AVRC_OP_VENDOR;
+      AVRC_CO_ID_TO_BE_STREAM(p_data, AVRC_CO_METADATA);
 
-    /* Check if this is a AVRC_PDU_REQUEST_CONTINUATION_RSP */
-    if (cr == AVCT_CMD) {
-      msg_mask |= AVRC_MSG_MASK_IS_VENDOR_CMD;
+      /* Check if this is a AVRC_PDU_REQUEST_CONTINUATION_RSP */
+      if (cr == AVCT_CMD) {
+        msg_mask |= AVRC_MSG_MASK_IS_VENDOR_CMD;
 
-      if ((*p_start == AVRC_PDU_REQUEST_CONTINUATION_RSP) ||
-          (*p_start == AVRC_PDU_ABORT_CONTINUATION_RSP)) {
-        msg_mask |= AVRC_MSG_MASK_IS_CONTINUATION_RSP;
+        if ((*p_start == AVRC_PDU_REQUEST_CONTINUATION_RSP) ||
+            (*p_start == AVRC_PDU_ABORT_CONTINUATION_RSP)) {
+          msg_mask |= AVRC_MSG_MASK_IS_CONTINUATION_RSP;
+        }
       }
     }
   } else if (p_pkt->event == AVRC_OP_PASS_THRU) {

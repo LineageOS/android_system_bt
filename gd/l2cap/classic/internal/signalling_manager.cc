@@ -180,7 +180,6 @@ void ClassicSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remo
   }
   alarm_.Cancel();
   SendConfigurationRequest(remote_cid, {});
-  handle_send_next_command();
 }
 
 void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid cid, Continuation is_continuation,
@@ -193,7 +192,6 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
   auto response = ConfigurationResponseBuilder::Create(signal_id.Value(), channel->GetRemoteCid(), is_continuation,
                                                        ConfigurationResponseResult::SUCCESS, {});
   enqueue_buffer_->Enqueue(std::move(response), handler_);
-  handle_send_next_command();
   channel->SetIncomingConfigurationStatus(DynamicChannelImpl::ConfigurationStatus::CONFIGURED);
   if (channel->GetOutgoingConfigurationStatus() == DynamicChannelImpl::ConfigurationStatus::CONFIGURED) {
     std::unique_ptr<DynamicChannel> user_channel = std::make_unique<DynamicChannel>(channel, handler_);
@@ -234,7 +232,7 @@ void ClassicSignallingManager::OnDisconnectionRequest(SignalId signal_id, Cid ci
     LOG_WARN("Disconnect request for an unknown channel");
     return;
   }
-  auto builder = DisconnectionResponseBuilder::Create(signal_id.Value(), remote_cid, cid);
+  auto builder = DisconnectionResponseBuilder::Create(signal_id.Value(), cid, remote_cid);
   enqueue_buffer_->Enqueue(std::move(builder), handler_);
   channel->OnClosed(hci::ErrorCode::SUCCESS);
   link_->FreeDynamicChannel(cid);
@@ -450,7 +448,7 @@ void ClassicSignallingManager::on_incoming_packet() {
 void ClassicSignallingManager::send_connection_response(SignalId signal_id, Cid remote_cid, Cid local_cid,
                                                         ConnectionResponseResult result,
                                                         ConnectionResponseStatus status) {
-  auto builder = ConnectionResponseBuilder::Create(signal_id.Value(), remote_cid, local_cid, result, status);
+  auto builder = ConnectionResponseBuilder::Create(signal_id.Value(), local_cid, remote_cid, result, status);
   enqueue_buffer_->Enqueue(std::move(builder), handler_);
 }
 
