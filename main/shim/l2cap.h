@@ -52,6 +52,7 @@ class L2cap {
  public:
   void RegisterService(uint16_t psm, const tL2CAP_APPL_INFO* callbacks,
                        bool enable_snoop);
+  void UnregisterService(uint16_t psm);
   uint16_t CreateConnection(uint16_t psm, const RawAddress& raw_address);
   void OnConnectionReady(
       uint16_t psm, uint16_t cid,
@@ -60,10 +61,6 @@ class L2cap {
   bool Write(uint16_t cid, BT_HDR* bt_hdr);
   bool WriteFlushable(uint16_t cid, BT_HDR* bt_hdr);
   bool WriteNonFlushable(uint16_t cid, BT_HDR* bt_hdr);
-  bool IsCongested(uint16_t cid) const;
-
-  bool SetCallbacks(uint16_t cid, const tL2CAP_APPL_INFO* callbacks);
-  void ClearCallbacks(uint16_t cid);
 
   uint16_t GetNextDynamicClassicPsm();
   uint16_t GetNextDynamicLePsm();
@@ -92,6 +89,7 @@ class L2cap {
 
  private:
   uint16_t GetNextVirtualPsm(uint16_t real_psm);
+  bool SetCallbacks(uint16_t cid, const tL2CAP_APPL_INFO* callbacks);
 
   PsmData classic_;
   PsmData le_;
