@@ -55,7 +55,16 @@ bool Device::IsAdvertisementAvailable() const {
          (std::chrono::steady_clock::now() >= last_advertisement_ + advertising_interval_ms_);
 }
 
-void Device::SendLinkLayerPacket(std::shared_ptr<packets::LinkLayerPacketBuilder> to_send, Phy::Type phy_type) {
+void Device::SendLinkLayerPacket(
+    std::shared_ptr<model::packets::LinkLayerPacketBuilder> to_send,
+    Phy::Type phy_type) {
+  for (auto phy : phy_layers_[phy_type]) {
+    phy->Send(to_send);
+  }
+}
+
+void Device::SendLinkLayerPacket(model::packets::LinkLayerPacketView to_send,
+                                 Phy::Type phy_type) {
   for (auto phy : phy_layers_[phy_type]) {
     phy->Send(to_send);
   }
