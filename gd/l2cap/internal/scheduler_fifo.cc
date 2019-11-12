@@ -24,7 +24,6 @@ namespace internal {
 
 Fifo::~Fifo() {
   channel_queue_end_map_.clear();
-  link_queue_up_end_->UnregisterDequeue();
   if (link_queue_enqueue_registered_) {
     link_queue_up_end_->UnregisterEnqueue();
   }
@@ -66,23 +65,6 @@ void Fifo::try_register_link_queue_enqueue() {
   link_queue_up_end_->RegisterEnqueue(handler_,
                                       common::Bind(&Fifo::link_queue_enqueue_callback, common::Unretained(this)));
   link_queue_enqueue_registered_ = true;
-}
-
-void Fifo::link_queue_dequeue_callback() {
-  auto packet = link_queue_up_end_->TryDequeue();
-  auto base_frame_view = BasicFrameView::Create(*packet);
-  if (!base_frame_view.IsValid()) {
-    return;
-  }
-  Cid cid = static_cast<Cid>(base_frame_view.GetChannelId());
-  auto channel = channel_queue_end_map_.find(cid);
-  if (channel == channel_queue_end_map_.end()) {
-    return;  // Channel is not attached to scheduler
-  }
-  auto& queue_end_and_buffer = channel->second;
-
-  queue_end_and_buffer.enqueue_buffer_.Enqueue(
-      std::make_unique<PacketView<kLittleEndian>>(base_frame_view.GetPayload()), handler_);
 }
 
 void Fifo::ChannelQueueEndAndBuffer::try_register_dequeue() {
