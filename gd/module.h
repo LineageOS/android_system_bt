@@ -28,8 +28,6 @@
 
 namespace bluetooth {
 
-const std::chrono::milliseconds kModuleStopTimeout = std::chrono::milliseconds(20);
-
 class Module;
 class ModuleRegistry;
 
