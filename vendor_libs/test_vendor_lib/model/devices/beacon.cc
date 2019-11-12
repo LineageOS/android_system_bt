@@ -59,7 +59,8 @@ void Beacon::Initialize(const vector<std::string>& args) {
 }
 
 void Beacon::TimerTick() {
-  if (IsAdvertisementAvailable(std::chrono::milliseconds(5000))) {
+  if (IsAdvertisementAvailable()) {
+    last_advertisement_ = std::chrono::steady_clock::now();
     std::unique_ptr<packets::LeAdvertisementBuilder> ad = packets::LeAdvertisementBuilder::Create(
         LeAdvertisement::AddressType::PUBLIC,
         static_cast<LeAdvertisement::AdvertisementType>(properties_.GetLeAdvertisementType()),
