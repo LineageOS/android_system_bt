@@ -32,9 +32,12 @@ void TestGdShimL2cap::RegisterService(
     uint16_t psm, bluetooth::shim::ConnectionOpenCallback on_open,
     std::promise<void> completed) {
   completed.set_value();
+  registered_service_.insert(psm);
 }
 
-void TestGdShimL2cap::UnregisterService(uint16_t psm) {}
+void TestGdShimL2cap::UnregisterService(uint16_t psm) {
+  registered_service_.erase(psm);
+}
 
 void TestGdShimL2cap::CreateConnection(uint16_t psm, const std::string address,
                                        std::promise<uint16_t> completed) {
