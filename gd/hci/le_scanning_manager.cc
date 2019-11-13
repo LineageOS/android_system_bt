@@ -235,6 +235,10 @@ void LeScanningManager::Stop() {
   pimpl_.reset();
 }
 
+std::string LeScanningManager::ToString() const {
+  return "Le Scanning Manager";
+}
+
 void LeScanningManager::StartScan(LeScanningManagerCallbacks* callbacks) {
   GetHandler()->Post(common::Bind(&impl::start_scan, common::Unretained(pimpl_.get()), callbacks));
 }

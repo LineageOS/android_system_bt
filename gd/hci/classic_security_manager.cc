@@ -358,6 +358,10 @@ void ClassicSecurityManager::Stop() {
   pimpl_->Stop();
 }
 
+std::string ClassicSecurityManager::ToString() const {
+  return "Classic Security Manager";
+}
+
 const ModuleFactory ClassicSecurityManager::Factory = ModuleFactory([]() { return new ClassicSecurityManager(); });
 
 }  // namespace hci

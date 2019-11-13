@@ -49,6 +49,8 @@ class GrpcModule : public ::bluetooth::Module {
 
   void Stop() override;
 
+  std::string ToString() const override;
+
  private:
   bool started_;
   std::unique_ptr<::grpc::Server> server_ = nullptr;
@@ -70,6 +72,8 @@ class GrpcFacadeModule : public ::bluetooth::Module {
   virtual void OnServerStarted(::grpc::ServerCompletionQueue* cq) {}
 
   virtual void OnServerStopped() {}
+
+  std::string ToString() const override;
 };
 
 }  // namespace grpc
