@@ -25,6 +25,7 @@
 
 constexpr size_t kBtHdrSize = sizeof(BT_HDR);
 constexpr uint16_t kInvalidConnectionInterfaceDescriptor = 0;
+constexpr bool kDisconnectResponseRequired = false;
 
 bool bluetooth::legacy::shim::PsmData::IsPsmAllocated(uint16_t psm) const {
   return psm_to_callback_map_.find(psm) != psm_to_callback_map_.end();
@@ -285,7 +286,11 @@ bool bluetooth::legacy::shim::L2cap::SetCallbacks(
   bluetooth::shim::GetL2cap()->SetConnectionClosedCallback(
       cid, [this](uint16_t cid, int error_code) {
         LOG_DEBUG(LOG_TAG, "OnChannel closed callback cid:%hd", cid);
-        cid_to_callback_map_[cid]->pL2CA_DisconnectInd_Cb(cid, true);
+        CHECK(cid_to_callback_map_.find(cid) != cid_to_callback_map_.end());
+        cid_to_callback_map_[cid]->pL2CA_DisconnectInd_Cb(
+            cid, kDisconnectResponseRequired);
+        cid_to_callback_map_.erase(cid);
+        cid_to_psm_map_.erase(cid);
       });
   return true;
 }
@@ -347,7 +352,6 @@ bool bluetooth::legacy::shim::L2cap::DisconnectRequest(uint16_t cid) {
 }
 
 bool bluetooth::legacy::shim::L2cap::DisconnectResponse(uint16_t cid) {
-  CHECK(ConnectionExists(cid));
   LOG_DEBUG(LOG_TAG,
             "%s Silently dropping client disconnect response as channel is "
             "already disconnected",
