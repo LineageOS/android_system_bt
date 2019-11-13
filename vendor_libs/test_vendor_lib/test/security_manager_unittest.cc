@@ -16,22 +16,20 @@
  *
  ******************************************************************************/
 
-#include <gtest/gtest.h>
-#include <string>
-#include <vector>
-using std::vector;
-
 #include "model/controller/security_manager.h"
+
+#include <gtest/gtest.h>
+#include <array>
+#include <string>
 
 namespace {
 const std::string kTestAddr1 = "12:34:56:78:9a:bc";
 const std::string kTestAddr2 = "cb:a9:87:65:43:21";
 const std::string kTestAddr3 = "cb:a9:56:78:9a:bc";
 const std::string kTestAddr4 = "12:34:56:78:9a:bc";
-const vector<uint8_t> kZeros_octets = {0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
-const vector<uint8_t> kTestAddr1_octets = {0xbc, 0x9a, 0x78, 0x56, 0x34, 0x12};
-const vector<uint8_t> kTestKey = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07, 0x08,
-                                  0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f, 0x10};
+const std::array<uint8_t, 16> kTestKey = {0x01, 0x02, 0x03, 0x04, 0x05, 0x06,
+                                          0x07, 0x08, 0x09, 0x0a, 0x0b, 0x0c,
+                                          0x0d, 0x0e, 0x0f, 0x10};
 }  // namespace
 
 namespace test_vendor_lib {

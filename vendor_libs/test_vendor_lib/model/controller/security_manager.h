@@ -16,10 +16,10 @@
 
 #pragma once
 
+#include <array>
 #include <cstdint>
 #include <string>
 #include <unordered_map>
-#include <vector>
 
 #include "hci/address.h"
 
@@ -64,12 +64,10 @@ class SecurityManager {
   uint16_t DeleteKey(const Address& addr);
   uint16_t ReadAllKeys() const;
   uint16_t ReadKey(const Address& addr) const;
-  uint16_t WriteKey(const Address& addr, const std::vector<uint8_t>& key);
-  uint16_t ReadCapacity() const {
-    return max_keys_;
-  };
+  uint16_t WriteKey(const Address& addr, const std::array<uint8_t, 16>& key);
+  uint16_t ReadCapacity() const { return max_keys_; };
 
-  const std::vector<uint8_t>& GetKey(const Address& addr) const;
+  const std::array<uint8_t, 16>& GetKey(const Address& addr) const;
 
   void AuthenticationRequest(const Address& addr, uint16_t handle);
   void AuthenticationRequestFinished();
@@ -89,16 +87,16 @@ class SecurityManager {
 
  private:
   uint16_t max_keys_;
-  std::unordered_map<std::string, std::vector<uint8_t>> key_store_;
+  std::unordered_map<std::string, std::array<uint8_t, 16>> key_store_;
 
   bool peer_capabilities_valid_{false};
   IoCapabilityType peer_io_capability_;
-  bool peer_oob_present_flag_;
+  bool peer_oob_present_flag_{false};
   AuthenticationType peer_authentication_requirements_;
 
   bool host_capabilities_valid_{false};
   IoCapabilityType host_io_capability_;
-  bool host_oob_present_flag_;
+  bool host_oob_present_flag_{false};
   AuthenticationType host_authentication_requirements_;
 
   bool authenticating_{false};
