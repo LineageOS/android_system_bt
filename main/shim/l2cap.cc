@@ -25,6 +25,7 @@
 
 constexpr size_t kBtHdrSize = sizeof(BT_HDR);
 constexpr uint16_t kInvalidConnectionInterfaceDescriptor = 0;
+constexpr bool kDisconnectResponseRequired = false;
 
 bool bluetooth::legacy::shim::PsmData::IsPsmAllocated(uint16_t psm) const {
   return psm_to_callback_map_.find(psm) != psm_to_callback_map_.end();
@@ -166,6 +167,19 @@ void bluetooth::legacy::shim::L2cap::RegisterService(
   LOG_DEBUG(LOG_TAG, "Successfully registered service on psm:%hd", psm);
 }
 
+void bluetooth::legacy::shim::L2cap::UnregisterService(uint16_t psm) {
+  if (!Classic().IsPsmRegistered(psm)) {
+    LOG_WARN(LOG_TAG,
+             "Service must be registered in order to unregister psm:%hd", psm);
+    return;
+  }
+  LOG_DEBUG(LOG_TAG, "Unregistering service on psm:%hd", psm);
+  // TODO(cmanton) Check for open channels before unregistering
+  bluetooth::shim::GetL2cap()->UnregisterService(psm);
+  Classic().UnregisterPsm(psm);
+  Classic().DeallocatePsm(psm);
+}
+
 uint16_t bluetooth::legacy::shim::L2cap::CreateConnection(
     uint16_t psm, const RawAddress& raw_address) {
   LOG_DEBUG(LOG_TAG, "Requesting connection to psm:%hd address:%s", psm,
@@ -222,12 +236,6 @@ void bluetooth::legacy::shim::L2cap::OnConnectionReady(
   });
 }
 
-bool bluetooth::legacy::shim::L2cap::IsCongested(uint16_t cid) const {
-  CHECK(ConnectionExists(cid));
-  LOG_WARN(LOG_TAG, "Ignoring checks for congestion on cid:%hd", cid);
-  return false;
-}
-
 bool bluetooth::legacy::shim::L2cap::Write(uint16_t cid, BT_HDR* bt_hdr) {
   CHECK(ConnectionExists(cid));
   CHECK(bt_hdr != nullptr);
@@ -278,14 +286,13 @@ bool bluetooth::legacy::shim::L2cap::SetCallbacks(
   bluetooth::shim::GetL2cap()->SetConnectionClosedCallback(
       cid, [this](uint16_t cid, int error_code) {
         LOG_DEBUG(LOG_TAG, "OnChannel closed callback cid:%hd", cid);
-        cid_to_callback_map_[cid]->pL2CA_DisconnectInd_Cb(cid, true);
+        CHECK(cid_to_callback_map_.find(cid) != cid_to_callback_map_.end());
+        cid_to_callback_map_[cid]->pL2CA_DisconnectInd_Cb(
+            cid, kDisconnectResponseRequired);
+        cid_to_callback_map_.erase(cid);
+        cid_to_psm_map_.erase(cid);
       });
   return true;
-}
-
-void bluetooth::legacy::shim::L2cap::ClearCallbacks(uint16_t cid) {
-  CHECK(ConnectionExists(cid));
-  cid_to_callback_map_.erase(cid);
 }
 
 bool bluetooth::legacy::shim::L2cap::ConnectResponse(
@@ -340,11 +347,11 @@ bool bluetooth::legacy::shim::L2cap::ConfigResponse(
 bool bluetooth::legacy::shim::L2cap::DisconnectRequest(uint16_t cid) {
   CHECK(ConnectionExists(cid));
   bluetooth::shim::GetL2cap()->CloseConnection(cid);
+  cid_to_callback_map_.erase(cid);
   return true;
 }
 
 bool bluetooth::legacy::shim::L2cap::DisconnectResponse(uint16_t cid) {
-  CHECK(ConnectionExists(cid));
   LOG_DEBUG(LOG_TAG,
             "%s Silently dropping client disconnect response as channel is "
             "already disconnected",

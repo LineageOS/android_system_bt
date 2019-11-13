@@ -24,9 +24,9 @@
 
 #include "model/devices/device_properties.h"
 #include "model/setup/phy_layer.h"
-#include "packets/link_layer/link_layer_packet_builder.h"
-#include "packets/link_layer/link_layer_packet_view.h"
 #include "types/address.h"
+
+#include "packets/link_layer_packets.h"
 
 namespace test_vendor_lib {
 
@@ -35,7 +35,7 @@ namespace test_vendor_lib {
 class Device {
  public:
   Device(const std::string properties_filename = "")
-      : time_stamp_(std::chrono::steady_clock::now()), properties_(properties_filename) {}
+      : last_advertisement_(std::chrono::steady_clock::now()), properties_(properties_filename) {}
   virtual ~Device() = default;
 
   // Initialize the device based on the values of |args|.
@@ -60,9 +60,8 @@ class Device {
     advertising_interval_ms_ = ms;
   }
 
-  // Returns true if the host could see an advertisement in the next
-  // |scan_time| milliseconds.
-  virtual bool IsAdvertisementAvailable(std::chrono::milliseconds scan_time) const;
+  // Returns true if the host could see an advertisement about now.
+  virtual bool IsAdvertisementAvailable() const;
 
   // Let the device know that time has passed.
   virtual void TimerTick() {}
@@ -73,14 +72,18 @@ class Device {
 
   void UnregisterPhyLayer(Phy::Type phy_type, uint32_t factory_id);
 
-  virtual void IncomingPacket(packets::LinkLayerPacketView){};
+  virtual void IncomingPacket(model::packets::LinkLayerPacketView){};
 
-  virtual void SendLinkLayerPacket(std::shared_ptr<packets::LinkLayerPacketBuilder> packet, Phy::Type phy_type);
+  virtual void SendLinkLayerPacket(
+      std::shared_ptr<model::packets::LinkLayerPacketBuilder> packet,
+      Phy::Type phy_type);
+  virtual void SendLinkLayerPacket(model::packets::LinkLayerPacketView packet,
+                                   Phy::Type phy_type);
 
  protected:
   std::map<Phy::Type, std::vector<std::shared_ptr<PhyLayer>>> phy_layers_;
 
-  std::chrono::steady_clock::time_point time_stamp_;
+  std::chrono::steady_clock::time_point last_advertisement_;
 
   // The time between page scans.
   std::chrono::milliseconds page_scan_delay_ms_;

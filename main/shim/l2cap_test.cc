@@ -178,34 +178,132 @@ tL2CAP_APPL_INFO test_callbacks{
     .pL2CA_CreditsReceived_Cb = L2caCreditsReceivedCb,
 };
 
-TEST_F(L2capTest, Base) { LOG_INFO(LOG_TAG, "Got test %p", &test_callbacks); }
-
-TEST_F(L2capTest, Callbacks) {
-  bool rc = l2cap_->SetCallbacks(kPsm, &test_callbacks);
-  CHECK(rc == true);
+TEST_F(L2capTest, RegisterService) {
+  l2cap_->RegisterService(kPsm, &test_callbacks, false);
+  CHECK(test_stack_.test_l2cap_.registered_service_.count(kPsm) == 1);
 }
 
-TEST_F(L2capTest, RegisterService) {
-  l2cap_->RegisterService(123, &test_callbacks, false);
+TEST_F(L2capTest, UnregisterService) {
+  l2cap_->RegisterService(kPsm, &test_callbacks, false);
+  CHECK(test_stack_.test_l2cap_.registered_service_.count(kPsm) == 1);
+  l2cap_->UnregisterService(kPsm);
+  CHECK(test_stack_.test_l2cap_.registered_service_.count(kPsm) == 0);
 }
 
 TEST_F(L2capTest, CreateConnection_NotRegistered) {
   RawAddress raw_address;
   std::string string_address("11:22:33:44:55:66");
   RawAddress::FromString(string_address, raw_address);
-  uint16_t cid = l2cap_->CreateConnection(123, raw_address);
+  uint16_t cid = l2cap_->CreateConnection(kPsm, raw_address);
   CHECK(cid == 0);
 }
 
 TEST_F(L2capTest, CreateConnection_Registered) {
   test_stack_.test_l2cap_.cid_ = kCid;
-  l2cap_->RegisterService(123, &test_callbacks, false);
+  l2cap_->RegisterService(kPsm, &test_callbacks, false);
 
   RawAddress raw_address;
   std::string string_address("11:22:33:44:55:66");
   RawAddress::FromString(string_address, raw_address);
-  uint16_t cid = l2cap_->CreateConnection(123, raw_address);
+  uint16_t cid = l2cap_->CreateConnection(kPsm, raw_address);
   CHECK(cid != 0);
+}
+
+TEST_F(L2capTest, CreateConnection_ConnectResponse) {
+  test_stack_.test_l2cap_.cid_ = kCid;
+  l2cap_->RegisterService(kPsm, &test_callbacks, false);
+
+  RawAddress raw_address;
+  std::string string_address("11:22:33:44:55:66");
+  RawAddress::FromString(string_address, raw_address);
+  uint16_t cid = l2cap_->CreateConnection(kPsm, raw_address);
+  CHECK(cid != 0);
+
+  CHECK(l2cap_->ConnectResponse(raw_address, 0, cid, 0, 0, nullptr));
+}
+
+TEST_F(L2capTest, CreateConnection_ConfigRequest) {
+  test_stack_.test_l2cap_.cid_ = kCid;
+  l2cap_->RegisterService(kPsm, &test_callbacks, false);
+
+  RawAddress raw_address;
+  std::string string_address("11:22:33:44:55:66");
+  RawAddress::FromString(string_address, raw_address);
+  uint16_t cid = l2cap_->CreateConnection(kPsm, raw_address);
+  CHECK(cid != 0);
+
+  {
+    // Simulate a successful connection response
+    l2cap_->OnConnectionReady(kPsm, kCid,
+                              [&cid](std::function<void(uint16_t)> func) {
+                                LOG_INFO(LOG_TAG, "In closure cid:%d", cid);
+                                func(cid);
+                              });
+  }
+  CHECK(l2cap_->ConfigRequest(cid, nullptr));
+}
+
+TEST_F(L2capTest, CreateConnection_ConfigResponse) {
+  test_stack_.test_l2cap_.cid_ = kCid;
+  l2cap_->RegisterService(kPsm, &test_callbacks, false);
+
+  RawAddress raw_address;
+  std::string string_address("11:22:33:44:55:66");
+  RawAddress::FromString(string_address, raw_address);
+  uint16_t cid = l2cap_->CreateConnection(kPsm, raw_address);
+  CHECK(cid != 0);
+
+  {
+    // Simulate a successful connection response
+    l2cap_->OnConnectionReady(kPsm, kCid,
+                              [&cid](std::function<void(uint16_t)> func) {
+                                LOG_INFO(LOG_TAG, "In closure cid:%d", cid);
+                                func(cid);
+                              });
+  }
+  CHECK(l2cap_->ConfigResponse(cid, nullptr));
+}
+
+TEST_F(L2capTest, CreateConnection_DisconnectRequest) {
+  test_stack_.test_l2cap_.cid_ = kCid;
+  l2cap_->RegisterService(kPsm, &test_callbacks, false);
+
+  RawAddress raw_address;
+  std::string string_address("11:22:33:44:55:66");
+  RawAddress::FromString(string_address, raw_address);
+  uint16_t cid = l2cap_->CreateConnection(kPsm, raw_address);
+  CHECK(cid != 0);
+
+  {
+    // Simulate a successful connection response
+    l2cap_->OnConnectionReady(kPsm, kCid,
+                              [&cid](std::function<void(uint16_t)> func) {
+                                LOG_INFO(LOG_TAG, "In closure cid:%d", cid);
+                                func(cid);
+                              });
+  }
+  CHECK(l2cap_->DisconnectRequest(cid));
+}
+
+TEST_F(L2capTest, CreateConnection_DisconnectResponse) {
+  test_stack_.test_l2cap_.cid_ = kCid;
+  l2cap_->RegisterService(kPsm, &test_callbacks, false);
+
+  RawAddress raw_address;
+  std::string string_address("11:22:33:44:55:66");
+  RawAddress::FromString(string_address, raw_address);
+  uint16_t cid = l2cap_->CreateConnection(kPsm, raw_address);
+  CHECK(cid != 0);
+
+  {
+    // Simulate a successful connection response
+    l2cap_->OnConnectionReady(kPsm, kCid,
+                              [&cid](std::function<void(uint16_t)> func) {
+                                LOG_INFO(LOG_TAG, "In closure cid:%d", cid);
+                                func(cid);
+                              });
+  }
+  CHECK(l2cap_->DisconnectResponse(cid));
 }
 
 TEST_F(L2capTest, CreateConnection_WithHandshake) {

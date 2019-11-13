@@ -50,20 +50,21 @@ void Device::UnregisterPhyLayer(Phy::Type phy_type, uint32_t factory_id) {
   }
 }
 
-bool Device::IsAdvertisementAvailable(std::chrono::milliseconds scan_time) const {
-  if (advertising_interval_ms_ == std::chrono::milliseconds(0)) return false;
-
-  std::chrono::steady_clock::time_point now = std::chrono::steady_clock::now();
-
-  std::chrono::steady_clock::time_point last_interval =
-      ((now - time_stamp_) / advertising_interval_ms_) * advertising_interval_ms_ + time_stamp_;
-
-  std::chrono::steady_clock::time_point next_interval = last_interval + advertising_interval_ms_;
-
-  return ((now + scan_time) >= next_interval);
+bool Device::IsAdvertisementAvailable() const {
+  return (advertising_interval_ms_ > std::chrono::milliseconds(0)) &&
+         (std::chrono::steady_clock::now() >= last_advertisement_ + advertising_interval_ms_);
 }
 
-void Device::SendLinkLayerPacket(std::shared_ptr<packets::LinkLayerPacketBuilder> to_send, Phy::Type phy_type) {
+void Device::SendLinkLayerPacket(
+    std::shared_ptr<model::packets::LinkLayerPacketBuilder> to_send,
+    Phy::Type phy_type) {
+  for (auto phy : phy_layers_[phy_type]) {
+    phy->Send(to_send);
+  }
+}
+
+void Device::SendLinkLayerPacket(model::packets::LinkLayerPacketView to_send,
+                                 Phy::Type phy_type) {
   for (auto phy : phy_layers_[phy_type]) {
     phy->Send(to_send);
   }

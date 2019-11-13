@@ -205,15 +205,12 @@ bool bluetooth::shim::L2CA_GetPeerLECocConfig(uint16_t lcid,
  */
 bool bluetooth::shim::L2CA_SetConnectionCallbacks(
     uint16_t cid, const tL2CAP_APPL_INFO* callbacks) {
-  return shim_l2cap.SetCallbacks(cid, callbacks);
+  LOG_INFO(LOG_TAG, "Unsupported API %s", __func__);
+  return false;
 }
 
 uint8_t bluetooth::shim::L2CA_DataWriteEx(uint16_t cid, BT_HDR* bt_hdr,
                                           uint16_t flags) {
-  if (shim_l2cap.IsCongested(cid)) {
-    return L2CAP_DW_CONGESTED;
-  }
-
   bool write_success = false;
   switch (flags) {
     case L2CAP_FLUSHABLE_CH_BASED:
