@@ -42,6 +42,8 @@ class SecurityModule : public bluetooth::Module {
 
   void Stop() override;
 
+  std::string ToString() const override;
+
  private:
   struct impl;
   std::unique_ptr<impl> pimpl_;

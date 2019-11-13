@@ -77,6 +77,8 @@ class HciLayer : public Module {
   void Start() override;
 
   void Stop() override;
+
+  std::string ToString() const override;
   static constexpr std::chrono::milliseconds kHciTimeoutMs = std::chrono::milliseconds(2000);
 
  private:

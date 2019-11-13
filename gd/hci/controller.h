@@ -111,6 +111,8 @@ class Controller : public Module {
 
   void Stop() override;
 
+  std::string ToString() const override;
+
  private:
   struct impl;
   std::unique_ptr<impl> impl_;
