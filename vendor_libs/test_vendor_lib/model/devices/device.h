@@ -55,6 +55,9 @@ class Device {
     return false;
   }
 
+  // Set the device's Bluetooth address.
+  virtual void SetAddress(Address address);
+
   // Set the advertisement interval in milliseconds.
   void SetAdvertisementInterval(std::chrono::milliseconds ms) {
     advertising_interval_ms_ = ms;

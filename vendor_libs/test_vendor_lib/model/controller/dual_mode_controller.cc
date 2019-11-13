@@ -1319,4 +1319,8 @@ void DualModeController::HciWriteLoopbackMode(packets::PacketView<true> args) {
   SendCommandCompleteSuccess(OpCode::WRITE_LOOPBACK_MODE);
 }
 
+void DualModeController::SetAddress(Address address) {
+  properties_.SetAddress(address);
+}
+
 }  // namespace test_vendor_lib
