@@ -236,6 +236,8 @@ class AclManager : public Module {
 
   void Stop() override;
 
+  std::string ToString() const override;
+
  private:
   friend AclConnection;
 

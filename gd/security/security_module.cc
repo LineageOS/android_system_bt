@@ -62,6 +62,10 @@ void SecurityModule::Stop() {
   pimpl_.reset();
 }
 
+std::string SecurityModule::ToString() const {
+  return "Security Module";
+}
+
 std::unique_ptr<SecurityManager> SecurityModule::GetSecurityManager() {
   return std::unique_ptr<SecurityManager>(
       new SecurityManager(pimpl_->security_handler_, &pimpl_->security_manager_impl));

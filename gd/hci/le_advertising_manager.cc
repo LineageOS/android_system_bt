@@ -254,6 +254,10 @@ void LeAdvertisingManager::Stop() {
   pimpl_.reset();
 }
 
+std::string LeAdvertisingManager::ToString() const {
+  return "Le Advertising Manager";
+}
+
 size_t LeAdvertisingManager::GetNumberOfAdvertisingInstances() const {
   return pimpl_->GetNumberOfAdvertisingInstances();
 }

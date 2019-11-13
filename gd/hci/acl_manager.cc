@@ -1799,6 +1799,10 @@ void AclManager::Stop() {
   pimpl_->Stop();
 }
 
+std::string AclManager::ToString() const {
+  return "Acl Manager";
+}
+
 const ModuleFactory AclManager::Factory = ModuleFactory([]() { return new AclManager(); });
 
 AclManager::~AclManager() = default;
