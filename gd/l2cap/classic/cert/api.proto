@@ -7,15 +7,23 @@ import "facade/common.proto";
 
 service L2capModuleCert {
   rpc SendL2capPacket(L2capPacket) returns (google.protobuf.Empty) {}
-  rpc FetchL2capData(facade.EventStreamRequest) returns (stream L2capPacket) {}
-  rpc FetchConnectionComplete(facade.EventStreamRequest) returns (stream ConnectionCompleteEvent) {}
-  rpc SetOnIncomingConnectionRequest(SetOnIncomingConnectionRequestRequest)
-      returns (SetOnIncomingConnectionRequestResponse) {}
+
+  rpc SetupLink(SetupLinkRequest) returns (SetupLinkResponse) {}
   rpc DisconnectLink(DisconnectLinkRequest) returns (google.protobuf.Empty) {}
+
   rpc SendConnectionRequest(ConnectionRequest) returns (google.protobuf.Empty) {}
+  rpc SendConnectionResponse(ConnectionResponse) returns (SendConnectionResponseResult) {}
+
   rpc SendConfigurationRequest(ConfigurationRequest) returns (SendConfigurationRequestResult) {}
+  rpc SendConfigurationResponse(ConfigurationResponse) returns (SendConfigurationResponseResult) {}
+
   rpc SendDisconnectionRequest(DisconnectionRequest) returns (google.protobuf.Empty) {}
-  rpc FetchOpenedChannels(FetchOpenedChannelsRequest) returns (FetchOpenedChannelsResponse) {}
+  rpc SendDisconnectionResponse(DisconnectionResponse) returns (SendDisconnectionResponseResult) {}
+
+  rpc SendInformationRequest(InformationRequest) returns (SendInformationRequestResult) {}
+  rpc SendInformationResponse(InformationResponse) returns (SendInformationResponseResult) {}
+
+  rpc FetchL2capLog(FetchL2capLogRequest) returns (stream FetchL2capLogResponse) {}
 }
 
 message L2capPacket {
@@ -24,41 +32,124 @@ message L2capPacket {
   bytes payload = 3;
 }
 
-message ConnectionCompleteEvent {
-  facade.BluetoothAddress remote = 1;
-}
-
-message SetOnIncomingConnectionRequestRequest {
-  bool accept = 1;
-}
-
-message SetOnIncomingConnectionRequestResponse {}
-
 message DisconnectLinkRequest {
   facade.BluetoothAddress remote = 1;
 }
+
+message SetupLinkRequest {
+  facade.BluetoothAddress remote = 1;
+}
+
+message SetupLinkResponse {}
 
 message ConnectionRequest {
   facade.BluetoothAddress remote = 1;
   uint32 psm = 2;
   uint32 scid = 3;
+  uint32 signal_id = 4;
 }
 
+message ConnectionResponse {
+  facade.BluetoothAddress remote = 1;
+  uint32 dcid = 2;
+  uint32 scid = 3;
+  uint32 signal_id = 4;
+}
+
+message SendConnectionResponseResult {}
+
 message ConfigurationRequest {
-  uint32 scid = 1;
+  uint32 dcid = 1;
+  uint32 signal_id = 2;
+  repeated string configuration = 3;
 }
 
 message SendConfigurationRequestResult {}
+
+message ConfigurationResponse {
+  uint32 scid = 1;
+  uint32 signal_id = 2;
+  repeated string configuration = 3;
+}
+
+message SendConfigurationResponseResult {}
 
 message DisconnectionRequest {
   facade.BluetoothAddress remote = 1;
   uint32 dcid = 2;
   uint32 scid = 3;
+  uint32 signal_id = 4;
 }
 
-message FetchOpenedChannelsRequest {}
+message DisconnectionResponse {
+  facade.BluetoothAddress remote = 1;
+  uint32 dcid = 2;
+  uint32 scid = 3;
+  uint32 signal_id = 4;
+}
 
-message FetchOpenedChannelsResponse {
-  repeated uint32 scid = 1;
-  repeated uint32 dcid = 2;
+message SendDisconnectionResponseResult {}
+
+enum InformationRequestType {
+  CONNECTIONLESS_MTU = 0;
+  EXTENDED_FEATURES = 1;
+  FIXED_CHANNELS = 2;
+}
+
+message InformationRequest {
+  InformationRequestType type = 1;
+  uint32 signal_id = 4;
+}
+
+message SendInformationRequestResult {}
+
+message InformationResponse {
+  InformationRequestType type = 1;
+  uint32 data = 2;
+  uint32 signal_id = 3;
+}
+
+message SendInformationResponseResult {}
+
+message FetchL2capLogRequest {}
+
+message CommandReject {
+  uint32 signal_id = 1;
+  uint32 reason = 2;
+}
+
+message EchoRequest {
+  uint32 signal_id = 1;
+  string data = 2;
+}
+message EchoResponse {
+  uint32 signal_id = 1;
+  string data = 2;
+}
+
+message LinkUp {
+  facade.BluetoothAddress remote = 1;
+}
+
+message LinkDown {
+  facade.BluetoothAddress remote = 1;
+}
+
+message FetchL2capLogResponse {
+  oneof response {
+    L2capPacket data_packet = 1;
+    CommandReject command_reject = 2;
+    ConnectionRequest connection_request = 3;
+    ConnectionResponse connection_response = 4;
+    ConfigurationRequest configuration_request = 5;
+    ConfigurationResponse configuration_response = 6;
+    DisconnectionRequest disconnection_request = 7;
+    DisconnectionResponse disconnection_response = 8;
+    EchoRequest echo_request = 9;
+    EchoResponse echo_response = 10;
+    InformationRequest information_request = 11;
+    InformationResponse information_response = 12;
+    LinkUp link_up = 20;
+    LinkDown link_down = 21;
+  }
 }
