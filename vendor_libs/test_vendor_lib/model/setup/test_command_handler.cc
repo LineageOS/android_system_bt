@@ -44,6 +44,7 @@ TestCommandHandler::TestCommandHandler(TestModel& test_model) : model_(test_mode
   SET_HANDLER("add_device_to_phy", AddDeviceToPhy);
   SET_HANDLER("del_device_from_phy", DelDeviceFromPhy);
   SET_HANDLER("list", List);
+  SET_HANDLER("set_device_address", SetDeviceAddress);
   SET_HANDLER("set_timer_period", SetTimerPeriod);
   SET_HANDLER("start_timer", StartTimer);
   SET_HANDLER("stop_timer", StopTimer);
@@ -210,6 +211,22 @@ void TestCommandHandler::List(const vector<std::string>& args) {
     return;
   }
   send_response_(model_.List());
+}
+
+void TestCommandHandler::SetDeviceAddress(const vector<std::string>& args) {
+  if (args.size() != 2) {
+    response_string_ = "TestCommandHandler 'set_device_address' takes two arguments";
+    send_response_(response_string_);
+    return;
+  }
+  size_t device_id = std::stoi(args[0]);
+  Address device_address;
+  Address::FromString(args[1], device_address);
+  model_.SetDeviceAddress(device_id, device_address);
+  response_string_ = "set_device_address " + args[0];
+  response_string_ += " ";
+  response_string_ += args[1];
+  send_response_(response_string_);
 }
 
 void TestCommandHandler::SetTimerPeriod(const vector<std::string>& args) {

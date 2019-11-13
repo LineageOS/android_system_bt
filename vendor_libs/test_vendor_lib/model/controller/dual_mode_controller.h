@@ -86,6 +86,9 @@ class DualModeController : public Device {
 
   void RegisterScoChannel(const std::function<void(std::shared_ptr<std::vector<uint8_t>>)>& send_sco);
 
+  // Set the device's address.
+  void SetAddress(Address address) override;
+
   // Controller commands. For error codes, see the Bluetooth Core Specification,
   // Version 4.2, Volume 2, Part D (page 370).
 
