@@ -454,7 +454,22 @@ void ClassicSignallingManager::send_connection_response(SignalId signal_id, Cid 
 
 void ClassicSignallingManager::on_command_timeout() {
   LOG_WARN("Response time out");
-  link_->OnAclDisconnected(hci::ErrorCode::SUCCESS);
+  if (pending_commands_.empty()) {
+    LOG_ERROR("No pending command");
+    return;
+  }
+
+  auto last_sent_command = std::move(pending_commands_.front());
+  pending_commands_.pop();
+  switch (last_sent_command.command_code_) {
+    case CommandCode::CONFIGURATION_REQUEST: {
+      SendDisconnectionRequest(last_sent_command.source_cid_, last_sent_command.destination_cid_);
+      break;
+    }
+    default:
+      break;
+  }
+  handle_send_next_command();
 }
 
 void ClassicSignallingManager::handle_send_next_command() {
