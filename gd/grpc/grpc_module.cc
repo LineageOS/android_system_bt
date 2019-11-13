@@ -102,6 +102,10 @@ void GrpcModule::RunGrpcLoop() {
   }
 }
 
+std::string GrpcModule::ToString() const {
+  return "Grpc Module";
+}
+
 const ::bluetooth::ModuleFactory GrpcModule::Factory = ::bluetooth::ModuleFactory([]() {
   return new GrpcModule();
 });
@@ -117,6 +121,10 @@ void GrpcFacadeModule::Start() {
 
 void GrpcFacadeModule::Stop() {
   GetDependency<GrpcModule>()->Unregister(this);
+}
+
+std::string GrpcFacadeModule::ToString() const {
+  return "Grpc Facade Module";
 }
 
 }  // namespace grpc

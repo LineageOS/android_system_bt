@@ -60,6 +60,10 @@ void L2capLeModule::Stop() {
   pimpl_.reset();
 }
 
+std::string L2capLeModule::ToString() const {
+  return "L2cap Le Module";
+}
+
 std::unique_ptr<FixedChannelManager> L2capLeModule::GetFixedChannelManager() {
   return std::unique_ptr<FixedChannelManager>(new FixedChannelManager(&pimpl_->fixed_channel_service_manager_impl_,
                                                                       &pimpl_->link_manager_, pimpl_->l2cap_handler_));
