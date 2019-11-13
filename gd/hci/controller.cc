@@ -858,5 +858,9 @@ void Controller::Start() {
 void Controller::Stop() {
   impl_->Stop();
 }
+
+std::string Controller::ToString() const {
+  return "Controller";
+}
 }  // namespace hci
 }  // namespace bluetooth
