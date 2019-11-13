@@ -79,5 +79,3 @@ class GdCertDevice(GdDeviceBase):
         self.hci.disconnection_stream = EventStream(self.hci.FetchDisconnection)
         self.hci.connection_failed_stream = EventStream(self.hci.FetchConnectionFailed)
         self.hci.acl_stream = EventStream(self.hci.FetchAclData)
-        self.l2cap.packet_stream = EventStream(self.l2cap.FetchL2capData)
-        self.l2cap.connection_complete_stream = EventStream(self.l2cap.FetchConnectionComplete)
