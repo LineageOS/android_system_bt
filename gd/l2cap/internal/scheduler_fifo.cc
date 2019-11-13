@@ -22,6 +22,11 @@ namespace bluetooth {
 namespace l2cap {
 namespace internal {
 
+Fifo::Fifo(LowerQueueUpEnd* link_queue_up_end, os::Handler* handler)
+    : link_queue_up_end_(link_queue_up_end), handler_(handler) {
+  ASSERT(link_queue_up_end_ != nullptr && handler_ != nullptr);
+}
+
 Fifo::~Fifo() {
   channel_queue_end_map_.clear();
   if (link_queue_enqueue_registered_) {
@@ -44,18 +49,17 @@ std::unique_ptr<Fifo::UpperDequeue> Fifo::link_queue_enqueue_callback() {
   ASSERT(!next_to_dequeue_.empty());
   auto channel_id = next_to_dequeue_.front();
   next_to_dequeue_.pop();
-  auto& dequeue_buffer = channel_queue_end_map_.find(channel_id)->second.dequeue_buffer_;
-  auto packet = std::move(dequeue_buffer.front());
-  dequeue_buffer.pop();
-  if (dequeue_buffer.size() < ChannelQueueEndAndBuffer::kBufferSize) {
+  auto& pdu_buffer = channel_queue_end_map_.find(channel_id)->second.pdu_buffer_;
+  auto packet = std::move(pdu_buffer.front());
+  pdu_buffer.pop();
+  if (pdu_buffer.empty()) {
     channel_queue_end_map_.find(channel_id)->second.try_register_dequeue();
   }
   if (next_to_dequeue_.empty()) {
     link_queue_up_end_->UnregisterEnqueue();
     link_queue_enqueue_registered_ = false;
   }
-  Cid remote_channel_id = channel_queue_end_map_.find(channel_id)->second.remote_channel_id_;
-  return BasicFrameBuilder::Create(remote_channel_id, std::move(packet));
+  return packet;
 }
 
 void Fifo::try_register_link_queue_enqueue() {
@@ -79,11 +83,11 @@ void Fifo::ChannelQueueEndAndBuffer::try_register_dequeue() {
 void Fifo::ChannelQueueEndAndBuffer::dequeue_callback() {
   auto packet = queue_end_->TryDequeue();
   ASSERT(packet != nullptr);
-  dequeue_buffer_.emplace(std::move(packet));
-  if (dequeue_buffer_.size() >= kBufferSize) {
-    queue_end_->UnregisterDequeue();
-    is_dequeue_registered_ = false;
-  }
+  // TODO(hsz): Construct PDU(s) according to channel mode.
+  auto pdu = BasicFrameBuilder::Create(remote_channel_id_, std::move(packet));
+  pdu_buffer_.emplace(std::move(pdu));
+  queue_end_->UnregisterDequeue();
+  is_dequeue_registered_ = false;
   scheduler_->next_to_dequeue_.push(channel_id_);
   scheduler_->try_register_link_queue_enqueue();
 }

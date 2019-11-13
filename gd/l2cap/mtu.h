@@ -22,11 +22,9 @@ namespace l2cap {
 
 using Mtu = uint16_t;
 
-constexpr Mtu kDefaultMinimumClassicMtu = 48;
-constexpr Mtu kDefaultMinimumLeMtu = 23;
 constexpr Mtu kMinimumClassicMtu = 48;
-constexpr Mtu kDefaultClassicMtu = 672;
 constexpr Mtu kMinimumLeMtu = 23;
+constexpr Mtu kDefaultClassicMtu = 672;
 
 }  // namespace l2cap
 }  // namespace bluetooth

@@ -34,17 +34,10 @@ namespace internal {
 
 class Fifo : public Scheduler {
  public:
-  Fifo(LowerQueueUpEnd* link_queue_up_end, os::Handler* handler)
-      : link_queue_up_end_(link_queue_up_end), handler_(handler) {
-    ASSERT(link_queue_up_end_ != nullptr && handler_ != nullptr);
-  }
-
+  Fifo(LowerQueueUpEnd* link_queue_up_end, os::Handler* handler);
   ~Fifo() override;
   void AttachChannel(Cid cid, UpperQueueDownEnd* channel_down_end, Cid remote_cid) override;
   void DetachChannel(Cid cid) override;
-  LowerQueueUpEnd* GetLowerQueueUpEnd() const override {
-    return link_queue_up_end_;
-  }
 
  private:
   LowerQueueUpEnd* link_queue_up_end_;
@@ -59,11 +52,10 @@ class Fifo : public Scheduler {
     }
     os::Handler* handler_;
     UpperQueueDownEnd* queue_end_;
-    constexpr static int kBufferSize = 1;
-    std::queue<std::unique_ptr<UpperDequeue>> dequeue_buffer_;
+    std::queue<std::unique_ptr<UpperDequeue>> pdu_buffer_;
     Fifo* scheduler_;
-    Cid channel_id_;
-    Cid remote_channel_id_;
+    const Cid channel_id_;
+    const Cid remote_channel_id_;
     bool is_dequeue_registered_ = false;
 
     void try_register_dequeue();
