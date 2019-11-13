@@ -32,7 +32,7 @@ Classic::Classic() {
                                       'g', 'D', 'e', 'v', 'i', 'c', 'e', '-', 'c', 'l', 'a', 's', 's', 'i', 'c',
                                       '\0'});  // End of data
   properties_.SetPageScanRepetitionMode(0);
-  properties_.SetSupportedFeatures(0x87593F9bFE8FFEFF);
+  properties_.SetExtendedFeatures(0x87593F9bFE8FFEFF, 0);
 
   page_scan_delay_ms_ = std::chrono::milliseconds(600);
 }
