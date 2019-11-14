@@ -32,7 +32,10 @@ class MockAclConnection : public AclConnection {
               (common::OnceCallback<void(ErrorCode)> on_disconnect, os::Handler* handler), (override));
   MOCK_METHOD(bool, Disconnect, (DisconnectReason reason), (override));
   MOCK_METHOD(void, Finish, (), (override));
-  MOCK_METHOD(QueueUpEnd*, GetAclQueueEnd, (), (const, override));
+  QueueUpEnd* GetAclQueueEnd() const override {
+    return acl_queue_.GetUpEnd();
+  }
+  mutable common::BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder> acl_queue_{10};
 };
 
 class MockAclManager : public AclManager {

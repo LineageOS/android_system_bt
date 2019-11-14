@@ -521,5 +521,9 @@ void HciLayer::Start() {
 void HciLayer::Stop() {
   impl_->Stop();
 }
+
+std::string HciLayer::ToString() const {
+  return "Hci Layer";
+}
 }  // namespace hci
 }  // namespace bluetooth

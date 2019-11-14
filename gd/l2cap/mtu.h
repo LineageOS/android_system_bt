@@ -20,13 +20,13 @@
 namespace bluetooth {
 namespace l2cap {
 
-using mtu_t = uint16_t;
+using Mtu = uint16_t;
 
-constexpr mtu_t kDefaultMinimumClassicMtu = 48;
-constexpr mtu_t kDefaultMinimumLeMtu = 23;
-constexpr mtu_t kMinimumClassicMtu = 48;
-constexpr mtu_t kDefaultClassicMtu = 672;
-constexpr mtu_t kMinimumLeMtu = 23;
+constexpr Mtu kDefaultMinimumClassicMtu = 48;
+constexpr Mtu kDefaultMinimumLeMtu = 23;
+constexpr Mtu kMinimumClassicMtu = 48;
+constexpr Mtu kDefaultClassicMtu = 672;
+constexpr Mtu kMinimumLeMtu = 23;
 
 }  // namespace l2cap
 }  // namespace bluetooth

@@ -62,6 +62,10 @@ void L2capClassicModule::Stop() {
   pimpl_.reset();
 }
 
+std::string L2capClassicModule::ToString() const {
+  return "L2cap Classic Module";
+}
+
 std::unique_ptr<FixedChannelManager> L2capClassicModule::GetFixedChannelManager() {
   return std::unique_ptr<FixedChannelManager>(new FixedChannelManager(&pimpl_->fixed_channel_service_manager_impl_,
                                                                       &pimpl_->link_manager_, pimpl_->l2cap_handler_));

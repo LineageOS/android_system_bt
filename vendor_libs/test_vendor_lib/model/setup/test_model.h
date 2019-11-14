@@ -69,6 +69,9 @@ class TestModel {
   // Connect to a remote device
   void AddRemote(const std::string& server, int port, Phy::Type phy_type);
 
+  // Set the device's Bluetooth address
+  void SetDeviceAddress(size_t device_index, Address device_address);
+
   // Let devices know about the passage of time
   void TimerTick();
   void StartTimer();
