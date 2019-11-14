@@ -108,7 +108,7 @@ class DynamicChannelImpl {
   Mtu incoming_mtu_ = kDefaultClassicMtu;
   RetransmissionAndFlowControlModeOption mode_ = RetransmissionAndFlowControlModeOption::L2CAP_BASIC;
   // TODO: Add all RetransmissionAndFlowControlConfigurationOptions
-  FcsType fcs_type_ = FcsType::NO_FCS;
+  FcsType fcs_type_ = FcsType::DEFAULT;
 
   DISALLOW_COPY_AND_ASSIGN(DynamicChannelImpl);
 };
