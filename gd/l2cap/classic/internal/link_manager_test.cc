@@ -119,8 +119,6 @@ TEST_F(L2capClassicLinkManagerTest, connect_fixed_channel_service_without_acl) {
   // Step 3: ACL connection success event should trigger channel creation for all registered services
 
   std::unique_ptr<MockAclConnection> acl_connection = std::make_unique<MockAclConnection>();
-  hci::AclConnection::Queue link_queue{10};
-  EXPECT_CALL(*acl_connection, GetAclQueueEnd()).WillRepeatedly((Return(link_queue.GetUpEnd())));
   EXPECT_CALL(*acl_connection, RegisterDisconnectCallback(_, l2cap_handler_)).Times(1);
   EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(device));
   std::unique_ptr<FixedChannel> channel_1, channel_2;
@@ -279,8 +277,6 @@ TEST_F(L2capClassicLinkManagerTest, not_acquiring_channels_should_disconnect_acl
   // Step 3: ACL connection success event should trigger channel creation for all registered services
   auto* raw_acl_connection = new MockAclConnection();
   std::unique_ptr<MockAclConnection> acl_connection(raw_acl_connection);
-  hci::AclConnection::Queue link_queue{10};
-  EXPECT_CALL(*acl_connection, GetAclQueueEnd()).WillRepeatedly((Return(link_queue.GetUpEnd())));
   EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(device));
   std::unique_ptr<FixedChannel> channel_1, channel_2;
   EXPECT_CALL(mock_service_1, NotifyChannelCreation(_)).WillOnce([&channel_1](std::unique_ptr<FixedChannel> channel) {
@@ -349,8 +345,6 @@ TEST_F(L2capClassicLinkManagerTest, acquiring_channels_should_not_disconnect_acl
   // Step 3: ACL connection success event should trigger channel creation for all registered services
   auto* raw_acl_connection = new MockAclConnection();
   std::unique_ptr<MockAclConnection> acl_connection(raw_acl_connection);
-  hci::AclConnection::Queue link_queue{10};
-  EXPECT_CALL(*acl_connection, GetAclQueueEnd()).WillRepeatedly((Return(link_queue.GetUpEnd())));
   EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(device));
   std::unique_ptr<FixedChannel> channel_1, channel_2;
   EXPECT_CALL(mock_service_1, NotifyChannelCreation(_)).WillOnce([&channel_1](std::unique_ptr<FixedChannel> channel) {
@@ -421,8 +415,6 @@ TEST_F(L2capClassicLinkManagerTest, acquiring_and_releasing_channels_should_even
   // Step 3: ACL connection success event should trigger channel creation for all registered services
   auto* raw_acl_connection = new MockAclConnection();
   std::unique_ptr<MockAclConnection> acl_connection(raw_acl_connection);
-  hci::AclConnection::Queue link_queue{10};
-  EXPECT_CALL(*acl_connection, GetAclQueueEnd()).WillRepeatedly((Return(link_queue.GetUpEnd())));
   EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(device));
   std::unique_ptr<FixedChannel> channel_1, channel_2;
   EXPECT_CALL(mock_service_1, NotifyChannelCreation(_)).WillOnce([&channel_1](std::unique_ptr<FixedChannel> channel) {
