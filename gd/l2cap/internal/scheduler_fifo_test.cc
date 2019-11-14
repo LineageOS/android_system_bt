@@ -16,9 +16,11 @@
 
 #include "l2cap/internal/scheduler_fifo.h"
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <future>
 
+#include "l2cap/internal/channel_impl_mock.h"
 #include "os/handler.h"
 #include "os/queue.h"
 #include "os/thread.h"
@@ -29,11 +31,13 @@ namespace l2cap {
 namespace internal {
 namespace {
 
+using ::testing::Return;
+
 void sync_handler(os::Handler* handler) {
   std::promise<void> promise;
   auto future = promise.get_future();
   handler->Post(common::BindOnce(&std::promise<void>::set_value, common::Unretained(&promise)));
-  auto status = future.wait_for(std::chrono::milliseconds(3));
+  auto status = future.wait_for(std::chrono::milliseconds(300));
   EXPECT_EQ(status, std::future_status::ready);
 }
 
@@ -65,8 +69,21 @@ class L2capSchedulerFifoTest : public ::testing::Test {
 TEST_F(L2capSchedulerFifoTest, send_packet) {
   common::BidiQueue<Scheduler::UpperEnqueue, Scheduler::UpperDequeue> channel_one_queue_{10};
   common::BidiQueue<Scheduler::UpperEnqueue, Scheduler::UpperDequeue> channel_two_queue_{10};
-  fifo_->AttachChannel(1, channel_one_queue_.GetDownEnd(), 1, nullptr);
-  fifo_->AttachChannel(2, channel_two_queue_.GetDownEnd(), 2, nullptr);
+
+  auto mock_channel_1 = std::make_shared<testing::MockChannelImpl>();
+  EXPECT_CALL(*mock_channel_1, GetQueueDownEnd()).WillRepeatedly(Return(channel_one_queue_.GetDownEnd()));
+  EXPECT_CALL(*mock_channel_1, GetChannelMode())
+      .WillRepeatedly(Return(RetransmissionAndFlowControlModeOption::L2CAP_BASIC));
+  EXPECT_CALL(*mock_channel_1, GetCid()).WillRepeatedly(Return(1));
+  EXPECT_CALL(*mock_channel_1, GetRemoteCid()).WillRepeatedly(Return(1));
+  auto mock_channel_2 = std::make_shared<testing::MockChannelImpl>();
+  EXPECT_CALL(*mock_channel_2, GetQueueDownEnd()).WillRepeatedly(Return(channel_two_queue_.GetDownEnd()));
+  EXPECT_CALL(*mock_channel_2, GetChannelMode())
+      .WillRepeatedly(Return(RetransmissionAndFlowControlModeOption::L2CAP_BASIC));
+  EXPECT_CALL(*mock_channel_2, GetCid()).WillRepeatedly(Return(2));
+  EXPECT_CALL(*mock_channel_2, GetRemoteCid()).WillRepeatedly(Return(2));
+  fifo_->AttachChannel(1, mock_channel_1);
+  fifo_->AttachChannel(2, mock_channel_2);
   os::EnqueueBuffer<Scheduler::UpperDequeue> channel_one_enqueue_buffer{channel_one_queue_.GetUpEnd()};
   os::EnqueueBuffer<Scheduler::UpperDequeue> channel_two_enqueue_buffer{channel_two_queue_.GetUpEnd()};
   auto packet_one = std::make_unique<packet::RawBuilder>();

@@ -16,9 +16,11 @@
 
 #include "l2cap/internal/segmenter.h"
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <future>
 
+#include "l2cap/internal/channel_impl_mock.h"
 #include "l2cap/internal/scheduler.h"
 #include "os/handler.h"
 #include "os/queue.h"
@@ -29,6 +31,9 @@ namespace bluetooth {
 namespace l2cap {
 namespace internal {
 namespace {
+
+using ::testing::Return;
+
 std::unique_ptr<packet::BasePacketBuilder> CreateSdu(std::vector<uint8_t> payload) {
   auto raw_builder = std::make_unique<packet::RawBuilder>();
   raw_builder->AddOctets(payload);
@@ -60,7 +65,13 @@ class L2capSegmenterTest : public ::testing::Test {
     thread_ = new os::Thread("test_thread", os::Thread::Priority::NORMAL);
     user_handler_ = new os::Handler(thread_);
     queue_handler_ = new os::Handler(thread_);
-    segmenter_ = new Segmenter(queue_handler_, channel_queue_.GetDownEnd(), &scheduler_, 0x41, 0x41, nullptr);
+    mock_channel_ = std::make_shared<testing::MockChannelImpl>();
+    EXPECT_CALL(*mock_channel_, GetQueueDownEnd()).WillRepeatedly(Return(channel_queue_.GetDownEnd()));
+    EXPECT_CALL(*mock_channel_, GetChannelMode())
+        .WillRepeatedly(Return(RetransmissionAndFlowControlModeOption::L2CAP_BASIC));
+    EXPECT_CALL(*mock_channel_, GetCid()).WillRepeatedly(Return(0x41));
+    EXPECT_CALL(*mock_channel_, GetRemoteCid()).WillRepeatedly(Return(0x41));
+    segmenter_ = new Segmenter(queue_handler_, &scheduler_, mock_channel_);
   }
 
   void TearDown() override {
@@ -76,6 +87,7 @@ class L2capSegmenterTest : public ::testing::Test {
   os::Handler* user_handler_ = nullptr;
   os::Handler* queue_handler_ = nullptr;
   common::BidiQueue<Segmenter::UpperEnqueue, Segmenter::UpperDequeue> channel_queue_{10};
+  std::shared_ptr<testing::MockChannelImpl> mock_channel_;
   Segmenter* segmenter_ = nullptr;
   FakeScheduler scheduler_;
 };

@@ -43,8 +43,7 @@ class Segmenter {
   using UpperDequeue = packet::BasePacketBuilder;
   using UpperQueueDownEnd = common::BidiQueueEnd<UpperEnqueue, UpperDequeue>;
 
-  Segmenter(os::Handler* handler, UpperQueueDownEnd* queue_end, Scheduler* scheduler, Cid cid, Cid remote_cid,
-            std::shared_ptr<ChannelImpl> channel);
+  Segmenter(os::Handler* handler, Scheduler* scheduler, std::shared_ptr<ChannelImpl> channel);
   ~Segmenter();
 
   /**

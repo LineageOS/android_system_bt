@@ -31,10 +31,9 @@ namespace bluetooth {
 namespace l2cap {
 namespace internal {
 
-Segmenter::Segmenter(os::Handler* handler, UpperQueueDownEnd* queue_end, Scheduler* scheduler, Cid channel_id,
-                     Cid remote_channel_id, std::shared_ptr<ChannelImpl> channel)
-    : handler_(handler), queue_end_(queue_end), scheduler_(scheduler), channel_id_(channel_id),
-      remote_channel_id_(remote_channel_id), channel_(channel) {
+Segmenter::Segmenter(os::Handler* handler, Scheduler* scheduler, std::shared_ptr<ChannelImpl> channel)
+    : handler_(handler), queue_end_(channel->GetQueueDownEnd()), scheduler_(scheduler), channel_id_(channel->GetCid()),
+      remote_channel_id_(channel->GetRemoteCid()), channel_(channel) {
   try_register_dequeue();
 }
 

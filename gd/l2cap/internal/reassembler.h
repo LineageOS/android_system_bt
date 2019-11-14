@@ -59,7 +59,7 @@ class Reassembler {
    * config. If the channel is a fixed channel, use nullptr.
    * TODO (b/144503952): Rethink about channel abstraction
    */
-  void AttachChannel(Cid cid, UpperQueueDownEnd* channel_down_end, std::shared_ptr<ChannelImpl> channel);
+  void AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> channel);
 
   /**
    * Detach a channel for packet reassembly. Incoming packets won't be delivered to the specified cid.

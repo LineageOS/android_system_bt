@@ -37,8 +37,7 @@ class Fifo : public Scheduler {
  public:
   Fifo(LowerQueueUpEnd* link_queue_up_end, os::Handler* handler);
   ~Fifo() override;
-  void AttachChannel(Cid cid, UpperQueueDownEnd* channel_down_end, Cid remote_cid,
-                     std::shared_ptr<ChannelImpl>) override;
+  void AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> channel) override;
   void DetachChannel(Cid cid) override;
   void NotifyPacketsReady(Cid cid, int number_packets) override;
 

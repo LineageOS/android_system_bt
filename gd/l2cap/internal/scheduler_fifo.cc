@@ -36,11 +36,10 @@ Fifo::~Fifo() {
   }
 }
 
-void Fifo::AttachChannel(Cid cid, UpperQueueDownEnd* channel_down_end, Cid remote_cid,
-                         std::shared_ptr<ChannelImpl> channel) {
+void Fifo::AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> channel) {
   ASSERT(segmenter_map_.find(cid) == segmenter_map_.end());
   segmenter_map_.emplace(std::piecewise_construct, std::forward_as_tuple(cid),
-                         std::forward_as_tuple(handler_, channel_down_end, this, cid, remote_cid, channel));
+                         std::forward_as_tuple(handler_, this, channel));
 }
 
 void Fifo::DetachChannel(Cid cid) {

@@ -35,11 +35,10 @@ Reassembler::~Reassembler() {
   link_queue_up_end_->UnregisterDequeue();
 }
 
-void Reassembler::AttachChannel(Cid cid, Reassembler::UpperQueueDownEnd* channel_down_end,
-                                std::shared_ptr<ChannelImpl> channel) {
+void Reassembler::AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> channel) {
   ASSERT_LOG(channel_map_.find(cid) == channel_map_.end(), "Channel is already attached");
   channel_map_.emplace(std::piecewise_construct, std::forward_as_tuple(cid),
-                       std::forward_as_tuple(channel_down_end, channel));
+                       std::forward_as_tuple(channel->GetQueueDownEnd(), channel));
 }
 
 void Reassembler::DetachChannel(Cid cid) {
