@@ -27,7 +27,10 @@ namespace testing {
 
 class MockScheduler : public Scheduler {
  public:
-  MOCK_METHOD(void, AttachChannel, (Cid cid, UpperQueueDownEnd* channel_down_end, Cid remote_cid), (override));
+  MOCK_METHOD(void, AttachChannel,
+              (Cid cid, UpperQueueDownEnd* channel_down_end, Cid remote_cid,
+               std::shared_ptr<classic::internal::DynamicChannelImpl> channel),
+              (override));
   MOCK_METHOD(void, DetachChannel, (Cid cid), (override));
   MOCK_METHOD(void, NotifyPacketsReady, (Cid cid, int number_packet), (override));
 };

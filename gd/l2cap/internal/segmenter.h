@@ -29,6 +29,13 @@
 
 namespace bluetooth {
 namespace l2cap {
+
+namespace classic {
+namespace internal {
+class DynamicChannelImpl;
+}  // namespace internal
+}  // namespace classic
+
 namespace internal {
 
 class Scheduler;
@@ -43,7 +50,8 @@ class Segmenter {
   using UpperDequeue = packet::BasePacketBuilder;
   using UpperQueueDownEnd = common::BidiQueueEnd<UpperEnqueue, UpperDequeue>;
 
-  Segmenter(os::Handler* handler, UpperQueueDownEnd* queue_end, Scheduler* scheduler, Cid cid, Cid remote_cid);
+  Segmenter(os::Handler* handler, UpperQueueDownEnd* queue_end, Scheduler* scheduler, Cid cid, Cid remote_cid,
+            std::shared_ptr<classic::internal::DynamicChannelImpl> channel);
   ~Segmenter();
 
   /**
@@ -64,10 +72,13 @@ class Segmenter {
   Scheduler* scheduler_;
   const Cid channel_id_;
   const Cid remote_channel_id_;
+  std::shared_ptr<classic::internal::DynamicChannelImpl> channel_;
   bool is_dequeue_registered_ = false;
 
   void try_register_dequeue();
   void dequeue_callback();
+  void handle_basic_mode_sdu(std::unique_ptr<UpperDequeue> packet);
+  void handle_enhanced_retransmission_mode_sdu(std::unique_ptr<UpperDequeue> packet);
 };
 }  // namespace internal
 }  // namespace l2cap

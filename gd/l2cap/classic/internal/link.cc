@@ -60,7 +60,7 @@ void Link::Disconnect() {
 
 std::shared_ptr<FixedChannelImpl> Link::AllocateFixedChannel(Cid cid, SecurityPolicy security_policy) {
   auto channel = fixed_channel_allocator_.AllocateChannel(cid, security_policy);
-  scheduler_->AttachChannel(cid, channel->GetQueueDownEnd(), cid);
+  scheduler_->AttachChannel(cid, channel->GetQueueDownEnd(), cid, nullptr);
   reassembler_.AttachChannel(cid, channel->GetQueueDownEnd(), nullptr);
   return channel;
 }
@@ -95,7 +95,7 @@ std::shared_ptr<DynamicChannelImpl> Link::AllocateDynamicChannel(Psm psm, Cid re
                                                                  SecurityPolicy security_policy) {
   auto channel = dynamic_channel_allocator_.AllocateChannel(psm, remote_cid, security_policy);
   if (channel != nullptr) {
-    scheduler_->AttachChannel(channel->GetCid(), channel->GetQueueDownEnd(), channel->GetRemoteCid());
+    scheduler_->AttachChannel(channel->GetCid(), channel->GetQueueDownEnd(), channel->GetRemoteCid(), channel);
     reassembler_.AttachChannel(channel->GetCid(), channel->GetQueueDownEnd(), channel);
   }
   channel->local_initiated_ = false;
@@ -106,7 +106,7 @@ std::shared_ptr<DynamicChannelImpl> Link::AllocateReservedDynamicChannel(Cid res
                                                                          SecurityPolicy security_policy) {
   auto channel = dynamic_channel_allocator_.AllocateReservedChannel(reserved_cid, psm, remote_cid, security_policy);
   if (channel != nullptr) {
-    scheduler_->AttachChannel(channel->GetCid(), channel->GetQueueDownEnd(), channel->GetRemoteCid());
+    scheduler_->AttachChannel(channel->GetCid(), channel->GetQueueDownEnd(), channel->GetRemoteCid(), channel);
     reassembler_.AttachChannel(channel->GetCid(), channel->GetQueueDownEnd(), channel);
   }
   channel->local_initiated_ = true;

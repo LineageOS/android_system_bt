@@ -34,7 +34,7 @@ namespace l2cap {
 namespace classic {
 namespace internal {
 class DynamicChannelImpl;
-}
+}  // namespace internal
 }  // namespace classic
 
 namespace internal {

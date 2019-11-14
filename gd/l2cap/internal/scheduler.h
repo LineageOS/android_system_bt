@@ -24,6 +24,13 @@
 
 namespace bluetooth {
 namespace l2cap {
+
+namespace classic {
+namespace internal {
+class DynamicChannelImpl;
+}  // namespace internal
+}  // namespace classic
+
 namespace internal {
 
 /**
@@ -49,8 +56,11 @@ class Scheduler {
    * @param cid The channel to attach to the scheduler.
    * @param channel_down_end The ChannelQueueDownEnd associated with the channel to attach to the scheduler.
    * @param remote_cid The destination endpoint of the packet.
+   * @param channel The reference to a DynamicChannelImpl object. Use nullptr for fixed channel.
+   * TODO (b/144503952): Rethink about channel abstraction. Currently channel contains duplicated info as remote_cid
    */
-  virtual void AttachChannel(Cid cid, UpperQueueDownEnd* channel_down_end, Cid remote_cid) {}
+  virtual void AttachChannel(Cid cid, UpperQueueDownEnd* channel_down_end, Cid remote_cid,
+                             std::shared_ptr<classic::internal::DynamicChannelImpl> channel) {}
 
   /**
    * Detach the channel from the scheduler.

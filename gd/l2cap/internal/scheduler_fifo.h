@@ -29,13 +29,21 @@
 
 namespace bluetooth {
 namespace l2cap {
+
+namespace classic {
+namespace internal {
+class DynamicChannelImpl;
+}  // namespace internal
+}  // namespace classic
+
 namespace internal {
 
 class Fifo : public Scheduler {
  public:
   Fifo(LowerQueueUpEnd* link_queue_up_end, os::Handler* handler);
   ~Fifo() override;
-  void AttachChannel(Cid cid, UpperQueueDownEnd* channel_down_end, Cid remote_cid) override;
+  void AttachChannel(Cid cid, UpperQueueDownEnd* channel_down_end, Cid remote_cid,
+                     std::shared_ptr<classic::internal::DynamicChannelImpl> channel) override;
   void DetachChannel(Cid cid) override;
   void NotifyPacketsReady(Cid cid, int number_packets) override;
 

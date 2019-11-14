@@ -65,8 +65,8 @@ class L2capSchedulerFifoTest : public ::testing::Test {
 TEST_F(L2capSchedulerFifoTest, send_packet) {
   common::BidiQueue<Scheduler::UpperEnqueue, Scheduler::UpperDequeue> channel_one_queue_{10};
   common::BidiQueue<Scheduler::UpperEnqueue, Scheduler::UpperDequeue> channel_two_queue_{10};
-  fifo_->AttachChannel(1, channel_one_queue_.GetDownEnd(), 1);
-  fifo_->AttachChannel(2, channel_two_queue_.GetDownEnd(), 2);
+  fifo_->AttachChannel(1, channel_one_queue_.GetDownEnd(), 1, nullptr);
+  fifo_->AttachChannel(2, channel_two_queue_.GetDownEnd(), 2, nullptr);
   os::EnqueueBuffer<Scheduler::UpperDequeue> channel_one_enqueue_buffer{channel_one_queue_.GetUpEnd()};
   os::EnqueueBuffer<Scheduler::UpperDequeue> channel_two_enqueue_buffer{channel_two_queue_.GetUpEnd()};
   auto packet_one = std::make_unique<packet::RawBuilder>();

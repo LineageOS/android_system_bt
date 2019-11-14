@@ -60,7 +60,7 @@ class L2capSegmenterTest : public ::testing::Test {
     thread_ = new os::Thread("test_thread", os::Thread::Priority::NORMAL);
     user_handler_ = new os::Handler(thread_);
     queue_handler_ = new os::Handler(thread_);
-    segmenter_ = new Segmenter(queue_handler_, channel_queue_.GetDownEnd(), &scheduler_, 0x41, 0x41);
+    segmenter_ = new Segmenter(queue_handler_, channel_queue_.GetDownEnd(), &scheduler_, 0x41, 0x41, nullptr);
   }
 
   void TearDown() override {
