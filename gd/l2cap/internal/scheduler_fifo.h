@@ -23,10 +23,9 @@
 #include "common/bind.h"
 #include "l2cap/cid.h"
 #include "l2cap/internal/scheduler.h"
+#include "l2cap/internal/segmenter.h"
 #include "os/handler.h"
 #include "os/queue.h"
-#include "packet/base_packet_builder.h"
-#include "packet/packet_view.h"
 
 namespace bluetooth {
 namespace l2cap {
@@ -38,33 +37,13 @@ class Fifo : public Scheduler {
   ~Fifo() override;
   void AttachChannel(Cid cid, UpperQueueDownEnd* channel_down_end, Cid remote_cid) override;
   void DetachChannel(Cid cid) override;
+  void NotifyPacketsReady(Cid cid, int number_packets) override;
 
  private:
   LowerQueueUpEnd* link_queue_up_end_;
   os::Handler* handler_;
-
-  struct ChannelQueueEndAndBuffer {
-    ChannelQueueEndAndBuffer(os::Handler* handler, UpperQueueDownEnd* queue_end, Fifo* scheduler, Cid channel_id,
-                             Cid remote_channel_id)
-        : handler_(handler), queue_end_(queue_end), scheduler_(scheduler), channel_id_(channel_id),
-          remote_channel_id_(remote_channel_id) {
-      try_register_dequeue();
-    }
-    os::Handler* handler_;
-    UpperQueueDownEnd* queue_end_;
-    std::queue<std::unique_ptr<UpperDequeue>> pdu_buffer_;
-    Fifo* scheduler_;
-    const Cid channel_id_;
-    const Cid remote_channel_id_;
-    bool is_dequeue_registered_ = false;
-
-    void try_register_dequeue();
-    void dequeue_callback();
-    ~ChannelQueueEndAndBuffer();
-  };
-
-  std::unordered_map<Cid, ChannelQueueEndAndBuffer> channel_queue_end_map_;
-  std::queue<Cid> next_to_dequeue_;
+  std::unordered_map<Cid, Segmenter> segmenter_map_;
+  std::queue<std::pair<Cid, int>> next_to_dequeue_and_num_packets;
 
   bool link_queue_enqueue_registered_ = false;
   void try_register_link_queue_enqueue();

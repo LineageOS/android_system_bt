@@ -28,34 +28,40 @@ Fifo::Fifo(LowerQueueUpEnd* link_queue_up_end, os::Handler* handler)
 }
 
 Fifo::~Fifo() {
-  channel_queue_end_map_.clear();
+  segmenter_map_.clear();
   if (link_queue_enqueue_registered_) {
     link_queue_up_end_->UnregisterEnqueue();
   }
 }
 
 void Fifo::AttachChannel(Cid cid, UpperQueueDownEnd* channel_down_end, Cid remote_cid) {
-  ASSERT(channel_queue_end_map_.find(cid) == channel_queue_end_map_.end());
-  channel_queue_end_map_.emplace(std::piecewise_construct, std::forward_as_tuple(cid),
-                                 std::forward_as_tuple(handler_, channel_down_end, this, cid, remote_cid));
+  ASSERT(segmenter_map_.find(cid) == segmenter_map_.end());
+  segmenter_map_.emplace(std::piecewise_construct, std::forward_as_tuple(cid),
+                         std::forward_as_tuple(handler_, channel_down_end, this, cid, remote_cid));
 }
 
 void Fifo::DetachChannel(Cid cid) {
-  ASSERT(channel_queue_end_map_.find(cid) != channel_queue_end_map_.end());
-  channel_queue_end_map_.erase(cid);
+  ASSERT(segmenter_map_.find(cid) != segmenter_map_.end());
+  segmenter_map_.erase(cid);
+}
+
+void Fifo::NotifyPacketsReady(Cid cid, int number_packets) {
+  next_to_dequeue_and_num_packets.push(std::make_pair(cid, number_packets));
+  try_register_link_queue_enqueue();
 }
 
 std::unique_ptr<Fifo::UpperDequeue> Fifo::link_queue_enqueue_callback() {
-  ASSERT(!next_to_dequeue_.empty());
-  auto channel_id = next_to_dequeue_.front();
-  next_to_dequeue_.pop();
-  auto& pdu_buffer = channel_queue_end_map_.find(channel_id)->second.pdu_buffer_;
-  auto packet = std::move(pdu_buffer.front());
-  pdu_buffer.pop();
-  if (pdu_buffer.empty()) {
-    channel_queue_end_map_.find(channel_id)->second.try_register_dequeue();
+  ASSERT(!next_to_dequeue_and_num_packets.empty());
+  auto& channel_id_and_number_packets = next_to_dequeue_and_num_packets.front();
+  auto channel_id = channel_id_and_number_packets.first;
+  channel_id_and_number_packets.second--;
+  if (channel_id_and_number_packets.second == 0) {
+    next_to_dequeue_and_num_packets.pop();
   }
-  if (next_to_dequeue_.empty()) {
+  auto packet = segmenter_map_.find(channel_id)->second.GetNextPacket();
+
+  segmenter_map_.find(channel_id)->second.NotifyPacketSent();
+  if (next_to_dequeue_and_num_packets.empty()) {
     link_queue_up_end_->UnregisterEnqueue();
     link_queue_enqueue_registered_ = false;
   }
@@ -69,33 +75,6 @@ void Fifo::try_register_link_queue_enqueue() {
   link_queue_up_end_->RegisterEnqueue(handler_,
                                       common::Bind(&Fifo::link_queue_enqueue_callback, common::Unretained(this)));
   link_queue_enqueue_registered_ = true;
-}
-
-void Fifo::ChannelQueueEndAndBuffer::try_register_dequeue() {
-  if (is_dequeue_registered_) {
-    return;
-  }
-  queue_end_->RegisterDequeue(
-      handler_, common::Bind(&Fifo::ChannelQueueEndAndBuffer::dequeue_callback, common::Unretained(this)));
-  is_dequeue_registered_ = true;
-}
-
-void Fifo::ChannelQueueEndAndBuffer::dequeue_callback() {
-  auto packet = queue_end_->TryDequeue();
-  ASSERT(packet != nullptr);
-  // TODO(hsz): Construct PDU(s) according to channel mode.
-  auto pdu = BasicFrameBuilder::Create(remote_channel_id_, std::move(packet));
-  pdu_buffer_.emplace(std::move(pdu));
-  queue_end_->UnregisterDequeue();
-  is_dequeue_registered_ = false;
-  scheduler_->next_to_dequeue_.push(channel_id_);
-  scheduler_->try_register_link_queue_enqueue();
-}
-
-Fifo::ChannelQueueEndAndBuffer::~ChannelQueueEndAndBuffer() {
-  if (is_dequeue_registered_) {
-    queue_end_->UnregisterDequeue();
-  }
 }
 
 }  // namespace internal
