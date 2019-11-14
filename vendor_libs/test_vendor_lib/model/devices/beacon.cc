@@ -80,7 +80,7 @@ void Beacon::TimerTick() {
 void Beacon::IncomingPacket(model::packets::LinkLayerPacketView packet) {
   if (packet.GetDestinationAddress() == properties_.GetLeAddress() &&
       packet.GetType() == model::packets::PacketType::LE_SCAN) {
-    auto scan_response = model::packets::LeAdvertisementBuilder::Create(
+    auto scan_response = model::packets::LeScanResponseBuilder::Create(
         properties_.GetLeAddress(), packet.GetSourceAddress(),
         model::packets::AddressType::PUBLIC,
         model::packets::AdvertisementType::SCAN_RESPONSE,
