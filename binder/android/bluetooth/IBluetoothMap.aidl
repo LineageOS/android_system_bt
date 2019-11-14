@@ -26,7 +26,6 @@ import android.bluetooth.BluetoothDevice;
 interface IBluetoothMap {
     int getState();
     BluetoothDevice getClient();
-    boolean connect(in BluetoothDevice device);
     boolean disconnect(in BluetoothDevice device);
     boolean isConnected(in BluetoothDevice device);
     List<BluetoothDevice> getConnectedDevices();
