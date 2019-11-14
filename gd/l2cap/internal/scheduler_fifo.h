@@ -37,8 +37,6 @@ class Fifo : public Scheduler {
   Fifo(LowerQueueUpEnd* link_queue_up_end, os::Handler* handler)
       : link_queue_up_end_(link_queue_up_end), handler_(handler) {
     ASSERT(link_queue_up_end_ != nullptr && handler_ != nullptr);
-    link_queue_up_end_->RegisterDequeue(handler_,
-                                        common::Bind(&Fifo::link_queue_dequeue_callback, common::Unretained(this)));
   }
 
   ~Fifo() override;
@@ -55,13 +53,12 @@ class Fifo : public Scheduler {
   struct ChannelQueueEndAndBuffer {
     ChannelQueueEndAndBuffer(os::Handler* handler, UpperQueueDownEnd* queue_end, Fifo* scheduler, Cid channel_id,
                              Cid remote_channel_id)
-        : handler_(handler), queue_end_(queue_end), enqueue_buffer_(queue_end), scheduler_(scheduler),
-          channel_id_(channel_id), remote_channel_id_(remote_channel_id) {
+        : handler_(handler), queue_end_(queue_end), scheduler_(scheduler), channel_id_(channel_id),
+          remote_channel_id_(remote_channel_id) {
       try_register_dequeue();
     }
     os::Handler* handler_;
     UpperQueueDownEnd* queue_end_;
-    os::EnqueueBuffer<UpperEnqueue> enqueue_buffer_;
     constexpr static int kBufferSize = 1;
     std::queue<std::unique_ptr<UpperDequeue>> dequeue_buffer_;
     Fifo* scheduler_;
@@ -76,7 +73,6 @@ class Fifo : public Scheduler {
 
   std::unordered_map<Cid, ChannelQueueEndAndBuffer> channel_queue_end_map_;
   std::queue<Cid> next_to_dequeue_;
-  void link_queue_dequeue_callback();
 
   bool link_queue_enqueue_registered_ = false;
   void try_register_link_queue_enqueue();
