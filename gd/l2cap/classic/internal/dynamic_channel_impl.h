@@ -20,6 +20,7 @@
 #include "hci/address.h"
 #include "l2cap/cid.h"
 #include "l2cap/classic/dynamic_channel.h"
+#include "l2cap/internal/channel_impl.h"
 #include "l2cap/l2cap_packets.h"
 #include "l2cap/mtu.h"
 #include "l2cap/psm.h"
@@ -33,7 +34,7 @@ namespace internal {
 
 class Link;
 
-class DynamicChannelImpl {
+class DynamicChannelImpl : public l2cap::internal::ChannelImpl {
  public:
   DynamicChannelImpl(Psm psm, Cid cid, Cid remote_cid, Link* link, os::Handler* l2cap_handler);
 
@@ -78,8 +79,8 @@ class DynamicChannelImpl {
   virtual Mtu GetIncomingMtu() const;
   virtual void SetIncomingMtu(Mtu mtu);
 
-  virtual RetransmissionAndFlowControlModeOption GetMode() const;
-  virtual void SetMode(RetransmissionAndFlowControlModeOption mode);
+  virtual RetransmissionAndFlowControlModeOption GetChannelMode() const;
+  virtual void SetChannelMode(RetransmissionAndFlowControlModeOption mode);
 
   virtual FcsType GetFcsType() const;
   virtual void SetFcsType(FcsType fcs_type);

@@ -15,6 +15,7 @@
  */
 #pragma once
 
+#include "l2cap/internal/channel_impl.h"
 #include "l2cap/internal/scheduler.h"
 
 #include <gmock/gmock.h>
@@ -29,7 +30,7 @@ class MockScheduler : public Scheduler {
  public:
   MOCK_METHOD(void, AttachChannel,
               (Cid cid, UpperQueueDownEnd* channel_down_end, Cid remote_cid,
-               std::shared_ptr<classic::internal::DynamicChannelImpl> channel),
+               std::shared_ptr<l2cap::internal::ChannelImpl> channel),
               (override));
   MOCK_METHOD(void, DetachChannel, (Cid cid), (override));
   MOCK_METHOD(void, NotifyPacketsReady, (Cid cid, int number_packet), (override));

@@ -105,11 +105,11 @@ void DynamicChannelImpl::SetIncomingMtu(Mtu mtu) {
   incoming_mtu_ = mtu;
 }
 
-RetransmissionAndFlowControlModeOption DynamicChannelImpl::GetMode() const {
+RetransmissionAndFlowControlModeOption DynamicChannelImpl::GetChannelMode() const {
   return mode_;
 }
 
-void DynamicChannelImpl::SetMode(RetransmissionAndFlowControlModeOption mode) {
+void DynamicChannelImpl::SetChannelMode(RetransmissionAndFlowControlModeOption mode) {
   mode_ = mode;
 }
 

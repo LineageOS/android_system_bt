@@ -18,7 +18,6 @@
 
 #include "common/bidi_queue.h"
 #include "l2cap/cid.h"
-#include "l2cap/classic/internal/dynamic_channel_impl.h"
 #include "l2cap/l2cap_packets.h"
 #include "packet/packet_view.h"
 
@@ -37,7 +36,7 @@ Reassembler::~Reassembler() {
 }
 
 void Reassembler::AttachChannel(Cid cid, Reassembler::UpperQueueDownEnd* channel_down_end,
-                                std::shared_ptr<classic::internal::DynamicChannelImpl> channel) {
+                                std::shared_ptr<ChannelImpl> channel) {
   ASSERT_LOG(channel_map_.find(cid) == channel_map_.end(), "Channel is already attached");
   channel_map_.emplace(std::piecewise_construct, std::forward_as_tuple(cid),
                        std::forward_as_tuple(channel_down_end, channel));
@@ -63,7 +62,7 @@ void Reassembler::link_queue_dequeue_callback() {
   }
 
   auto channel_mode = cid < kFirstDynamicChannel ? RetransmissionAndFlowControlModeOption::L2CAP_BASIC
-                                                 : channel->second.channel_->GetMode();
+                                                 : channel->second.channel_->GetChannelMode();
   switch (channel_mode) {
     case RetransmissionAndFlowControlModeOption::L2CAP_BASIC:
       handle_basic_mode_packet(cid, basic_frame_view);

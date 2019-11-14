@@ -22,6 +22,7 @@
 #include "common/bidi_queue.h"
 #include "common/bind.h"
 #include "l2cap/cid.h"
+#include "l2cap/internal/channel_impl.h"
 #include "l2cap/internal/scheduler.h"
 #include "l2cap/internal/segmenter.h"
 #include "os/handler.h"
@@ -30,12 +31,6 @@
 namespace bluetooth {
 namespace l2cap {
 
-namespace classic {
-namespace internal {
-class DynamicChannelImpl;
-}  // namespace internal
-}  // namespace classic
-
 namespace internal {
 
 class Fifo : public Scheduler {
@@ -43,7 +38,7 @@ class Fifo : public Scheduler {
   Fifo(LowerQueueUpEnd* link_queue_up_end, os::Handler* handler);
   ~Fifo() override;
   void AttachChannel(Cid cid, UpperQueueDownEnd* channel_down_end, Cid remote_cid,
-                     std::shared_ptr<classic::internal::DynamicChannelImpl> channel) override;
+                     std::shared_ptr<ChannelImpl>) override;
   void DetachChannel(Cid cid) override;
   void NotifyPacketsReady(Cid cid, int number_packets) override;
 

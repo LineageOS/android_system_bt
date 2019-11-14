@@ -18,19 +18,13 @@
 
 #include "common/bidi_queue.h"
 #include "l2cap/cid.h"
+#include "l2cap/internal/channel_impl.h"
 #include "l2cap/l2cap_packets.h"
 #include "packet/base_packet_builder.h"
 #include "packet/packet_view.h"
 
 namespace bluetooth {
 namespace l2cap {
-
-namespace classic {
-namespace internal {
-class DynamicChannelImpl;
-}  // namespace internal
-}  // namespace classic
-
 namespace internal {
 
 /**
@@ -60,7 +54,7 @@ class Scheduler {
    * TODO (b/144503952): Rethink about channel abstraction. Currently channel contains duplicated info as remote_cid
    */
   virtual void AttachChannel(Cid cid, UpperQueueDownEnd* channel_down_end, Cid remote_cid,
-                             std::shared_ptr<classic::internal::DynamicChannelImpl> channel) {}
+                             std::shared_ptr<ChannelImpl> channel) {}
 
   /**
    * Detach the channel from the scheduler.

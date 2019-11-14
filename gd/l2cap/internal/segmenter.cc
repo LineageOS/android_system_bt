@@ -32,7 +32,7 @@ namespace l2cap {
 namespace internal {
 
 Segmenter::Segmenter(os::Handler* handler, UpperQueueDownEnd* queue_end, Scheduler* scheduler, Cid channel_id,
-                     Cid remote_channel_id, std::shared_ptr<classic::internal::DynamicChannelImpl> channel)
+                     Cid remote_channel_id, std::shared_ptr<ChannelImpl> channel)
     : handler_(handler), queue_end_(queue_end), scheduler_(scheduler), channel_id_(channel_id),
       remote_channel_id_(remote_channel_id), channel_(channel) {
   try_register_dequeue();
@@ -67,10 +67,11 @@ void Segmenter::dequeue_callback() {
   auto packet = queue_end_->TryDequeue();
   ASSERT(packet != nullptr);
   // TODO(hsz): Construct PDU(s) according to channel mode.
-  if (channel_ == nullptr || channel_->GetMode() == RetransmissionAndFlowControlModeOption::L2CAP_BASIC) {
+  if (channel_ == nullptr || channel_->GetChannelMode() == RetransmissionAndFlowControlModeOption::L2CAP_BASIC) {
     handle_basic_mode_sdu(std::move(packet));
   }
-  if (channel_ != nullptr && channel_->GetMode() == RetransmissionAndFlowControlModeOption::ENHANCED_RETRANSMISSION) {
+  if (channel_ != nullptr &&
+      channel_->GetChannelMode() == RetransmissionAndFlowControlModeOption::ENHANCED_RETRANSMISSION) {
     handle_enhanced_retransmission_mode_sdu(std::move(packet));
   }
 }
