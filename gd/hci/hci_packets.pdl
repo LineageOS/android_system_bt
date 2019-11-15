@@ -683,6 +683,8 @@ enum ErrorCode: 8 {
   UNSPECIFIED_ERROR = 0x1F,
   UNSUPPORTED_LMP_OR_LL_PARAMETER = 0x20,
   ROLE_CHANGE_NOT_ALLOWED = 0x21,
+  ENCRYPTION_MODE_NOT_ACCEPTABLE = 0x25,
+  CONTROLLER_BUSY = 0x3A,
 }
 
 // Events that are defined with their respective commands
@@ -1051,7 +1053,7 @@ packet UserPasskeyRequestReply : SecurityCommand (op_code = USER_PASSKEY_REQUEST
   numeric_value : 32, // 000000-999999 decimal or 0x0-0xF423F
 }
 
-packet UserPasskeyReplyComplete : CommandComplete (command_op_code = USER_PASSKEY_REQUEST_REPLY) {
+packet UserPasskeyRequestReplyComplete : CommandComplete (command_op_code = USER_PASSKEY_REQUEST_REPLY) {
   status : ErrorCode,
   bd_addr : Address,
 }
@@ -1413,7 +1415,7 @@ packet DeleteStoredLinkKey : SecurityCommand (op_code = DELETE_STORED_LINK_KEY) 
 
 packet DeleteStoredLinkKeyComplete : CommandComplete (command_op_code = DELETE_STORED_LINK_KEY) {
   status : ErrorCode,
-  num_keys_deleted : 8,
+  num_keys_deleted : 16,
 }
 
 packet WriteLocalName : CommandPacket (op_code = WRITE_LOCAL_NAME) {
@@ -2022,6 +2024,13 @@ packet ReadDataBlockSize : CommandPacket (op_code = READ_DATA_BLOCK_SIZE) {
 packet ReadLocalSupportedCodecs : CommandPacket (op_code = READ_LOCAL_SUPPORTED_CODECS) {
 }
 
+packet ReadLocalSupportedCodecsComplete : CommandComplete (command_op_code = READ_LOCAL_SUPPORTED_CODECS) {
+  status : ErrorCode,
+  _size_(supported_codecs) : 8,
+  supported_codecs : 8[],
+  _size_(vendor_specific_codecs) : 8,
+  vendor_specific_codecs : 32[],
+}
 
   // STATUS_PARAMETERS
 packet ReadFailedContactCounter : ConnectionManagementCommand (op_code = READ_FAILED_CONTACT_COUNTER) {
@@ -2115,6 +2124,12 @@ packet ReadEncryptionKeySize : SecurityCommand (op_code = READ_ENCRYPTION_KEY_SI
   _reserved_ : 4,
 }
 
+packet ReadEncryptionKeySizeComplete : CommandComplete (command_op_code = READ_ENCRYPTION_KEY_SIZE) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+  key_size : 8,
+}
 
   // TESTING
 enum LoopbackMode : 8 {
@@ -2974,8 +2989,8 @@ packet ReadRemoteVersionInformationComplete : EventPacket (event_code = READ_REM
   connection_handle : 12,
   _reserved_ : 4,
   version : 8,
-  manufacturer_name : 8,
-  sub_version : 8,
+  manufacturer_name : 16,
+  sub_version : 16,
 }
 
 packet QosSetupComplete : EventPacket (event_code = QOS_SETUP_COMPLETE){
