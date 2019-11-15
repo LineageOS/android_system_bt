@@ -35,8 +35,8 @@ Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_c
            l2cap::internal::ParameterProvider* parameter_provider,
            DynamicChannelServiceManagerImpl* dynamic_service_manager,
            FixedChannelServiceManagerImpl* fixed_service_manager)
-    : l2cap_handler_(l2cap_handler), acl_connection_(std::move(acl_connection)),
-      reassembler_(acl_connection_->GetAclQueueEnd(), l2cap_handler_), scheduler_(std::move(scheduler)),
+    : l2cap_handler_(l2cap_handler), acl_connection_(std::move(acl_connection)), scheduler_(std::move(scheduler)),
+      receiver_(acl_connection_->GetAclQueueEnd(), l2cap_handler_, scheduler_.get()),
       parameter_provider_(parameter_provider), dynamic_service_manager_(dynamic_service_manager),
       fixed_service_manager_(fixed_service_manager),
       signalling_manager_(l2cap_handler_, this, dynamic_service_manager_, &dynamic_channel_allocator_,
@@ -61,7 +61,6 @@ void Link::Disconnect() {
 std::shared_ptr<FixedChannelImpl> Link::AllocateFixedChannel(Cid cid, SecurityPolicy security_policy) {
   auto channel = fixed_channel_allocator_.AllocateChannel(cid, security_policy);
   scheduler_->AttachChannel(cid, channel);
-  reassembler_.AttachChannel(cid, channel);
   return channel;
 }
 
@@ -96,7 +95,6 @@ std::shared_ptr<DynamicChannelImpl> Link::AllocateDynamicChannel(Psm psm, Cid re
   auto channel = dynamic_channel_allocator_.AllocateChannel(psm, remote_cid, security_policy);
   if (channel != nullptr) {
     scheduler_->AttachChannel(channel->GetCid(), channel);
-    reassembler_.AttachChannel(channel->GetCid(), channel);
   }
   channel->local_initiated_ = false;
   return channel;
@@ -107,10 +105,17 @@ std::shared_ptr<DynamicChannelImpl> Link::AllocateReservedDynamicChannel(Cid res
   auto channel = dynamic_channel_allocator_.AllocateReservedChannel(reserved_cid, psm, remote_cid, security_policy);
   if (channel != nullptr) {
     scheduler_->AttachChannel(channel->GetCid(), channel);
-    reassembler_.AttachChannel(channel->GetCid(), channel);
   }
   channel->local_initiated_ = true;
   return channel;
+}
+
+void Link::SetChannelRetransmissionFlowControlMode(Cid cid, RetransmissionAndFlowControlModeOption mode) {
+  if (dynamic_channel_allocator_.FindChannelByCid(cid) == nullptr) {
+    LOG_ERROR("Channel doesn't exist: %d", cid);
+    return;
+  }
+  scheduler_->SetChannelRetransmissionFlowControlMode(cid, mode);
 }
 
 void Link::FreeDynamicChannel(Cid cid) {
