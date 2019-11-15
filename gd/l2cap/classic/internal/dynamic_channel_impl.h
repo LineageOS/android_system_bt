@@ -78,6 +78,9 @@ class DynamicChannelImpl {
     return incoming_configuration_status_;
   }
 
+  // TODO(cmanton) Do something a little bit better than this
+  bool local_initiated_{false};
+
  private:
   const Psm psm_;
   const Cid cid_;

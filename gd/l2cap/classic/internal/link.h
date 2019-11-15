@@ -17,6 +17,7 @@
 #pragma once
 
 #include <memory>
+#include <unordered_map>
 
 #include "hci/acl_manager.h"
 #include "l2cap/classic/internal/dynamic_channel_allocator.h"
@@ -50,6 +51,12 @@ class Link {
     return acl_connection_->GetAddress();
   }
 
+  struct PendingDynamicChannelConnection {
+    os::Handler* handler_;
+    DynamicChannelManager::OnConnectionOpenCallback on_open_callback_;
+    DynamicChannelManager::OnConnectionFailureCallback on_fail_callback_;
+  };
+
   // ACL methods
 
   virtual void OnAclDisconnected(hci::ErrorCode status);
@@ -67,6 +74,8 @@ class Link {
   virtual Cid ReserveDynamicChannel();
 
   virtual void SendConnectionRequest(Psm psm, Cid local_cid);
+  virtual void SendConnectionRequest(Psm psm, Cid local_cid,
+                                     PendingDynamicChannelConnection pending_dynamic_channel_connection);
 
   virtual void SendInformationRequest(InformationRequestInfoType type);
 
@@ -83,6 +92,9 @@ class Link {
   // Check how many channels are acquired or in use, if zero, start tear down timer, if non-zero, cancel tear down timer
   virtual void RefreshRefCount();
 
+  virtual void NotifyChannelCreation(Cid cid, std::unique_ptr<DynamicChannel> channel);
+  virtual void NotifyChannelFail(Cid cid);
+
  private:
   os::Handler* l2cap_handler_;
   l2cap::internal::FixedChannelAllocator<FixedChannelImpl, Link> fixed_channel_allocator_{this, l2cap_handler_};
@@ -94,6 +106,7 @@ class Link {
   DynamicChannelServiceManagerImpl* dynamic_service_manager_;
   FixedChannelServiceManagerImpl* fixed_service_manager_;
   ClassicSignallingManager signalling_manager_;
+  std::unordered_map<Cid, PendingDynamicChannelConnection> local_cid_to_pending_dynamic_channel_connection_map_;
   os::Alarm link_idle_disconnect_alarm_{l2cap_handler_};
   DISALLOW_COPY_AND_ASSIGN(Link);
 };
