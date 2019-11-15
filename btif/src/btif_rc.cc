@@ -3152,11 +3152,10 @@ static void handle_notification_response(tBTA_AV_META_MSG* pmeta_msg,
           break;
         } else {
           uint8_t* p_data = p_rsp->param.track;
-          /* Update the UID for current track
-           * Attributes will be fetched after the AVRCP procedure
-           */
           BE_STREAM_TO_UINT64(p_dev->rc_playing_uid, p_data);
           get_play_status_cmd(p_dev);
+          get_element_attribute_cmd(AVRC_MAX_NUM_MEDIA_ATTR_ID, attr_list,
+                                    p_dev);
         }
         break;
 
