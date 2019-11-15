@@ -34,6 +34,7 @@ class TestGdShimL2cap : public bluetooth::shim::IL2cap {
                        std::promise<void> completed) override;
   void UnregisterService(uint16_t psm);
   void CreateConnection(uint16_t psm, const std::string address,
+                        bluetooth::shim::ConnectionOpenCallback on_open,
                         std::promise<uint16_t> completed) override;
   void CloseConnection(uint16_t cid);
   void SetReadDataReadyCallback(
@@ -42,11 +43,11 @@ class TestGdShimL2cap : public bluetooth::shim::IL2cap {
   void SetConnectionClosedCallback(
       uint16_t cid,
       bluetooth::shim::ConnectionClosedCallback on_closed) override;
-  bool Write(uint16_t cid, const uint8_t* data, size_t len) override;
-  bool WriteFlushable(uint16_t cid, const uint8_t* data, size_t len) override;
-  bool WriteNonFlushable(uint16_t cid, const uint8_t* data,
+  void Write(uint16_t cid, const uint8_t* data, size_t len) override;
+  void WriteFlushable(uint16_t cid, const uint8_t* data, size_t len) override;
+  void WriteNonFlushable(uint16_t cid, const uint8_t* data,
                          size_t len) override;
-  bool IsCongested(uint16_t cid) override;
+  void SendLoopbackResponse(std::function<void()>) override;
 };
 
 class TestStack : public bluetooth::shim::IStack {

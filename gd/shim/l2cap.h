@@ -32,17 +32,18 @@ class L2cap : public bluetooth::Module, public bluetooth::shim::IL2cap {
   void RegisterService(uint16_t psm, ConnectionOpenCallback on_open, std::promise<void> completed) override;
   void UnregisterService(uint16_t psm) override;
 
-  void CreateConnection(uint16_t psm, const std::string address, std::promise<uint16_t> completed) override;
+  void CreateConnection(uint16_t psm, const std::string address_string, ConnectionOpenCallback on_open,
+                        std::promise<uint16_t> completed) override;
   void CloseConnection(uint16_t cid) override;
 
   void SetReadDataReadyCallback(uint16_t cid, ReadDataReadyCallback on_data_ready) override;
   void SetConnectionClosedCallback(uint16_t cid, ConnectionClosedCallback on_closed) override;
 
-  bool Write(uint16_t cid, const uint8_t* data, size_t len) override;
-  bool WriteFlushable(uint16_t cid, const uint8_t* data, size_t len) override;
-  bool WriteNonFlushable(uint16_t cid, const uint8_t* data, size_t len) override;
+  void Write(uint16_t cid, const uint8_t* data, size_t len) override;
+  void WriteFlushable(uint16_t cid, const uint8_t* data, size_t len) override;
+  void WriteNonFlushable(uint16_t cid, const uint8_t* data, size_t len) override;
 
-  bool IsCongested(uint16_t cid) override;
+  void SendLoopbackResponse(std::function<void()>) override;
 
   L2cap() = default;
   ~L2cap() = default;
