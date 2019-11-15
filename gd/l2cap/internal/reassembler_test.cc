@@ -76,11 +76,11 @@ class L2capClassicReassemblerTest : public ::testing::Test {
   Reassembler* reassembler_ = nullptr;
 };
 
-TEST_F(L2capClassicReassemblerTest, receive_basic_mode_packet) {
+TEST_F(L2capClassicReassemblerTest, receive_basic_mode_packet_for_fixed_channel) {
   common::BidiQueue<Reassembler::UpperEnqueue, Reassembler::UpperDequeue> channel_one_queue_{10};
   common::BidiQueue<Reassembler::UpperEnqueue, Reassembler::UpperDequeue> channel_two_queue_{10};
-  reassembler_->AttachChannel(1, channel_one_queue_.GetDownEnd(), {});
-  reassembler_->AttachChannel(2, channel_two_queue_.GetDownEnd(), {});
+  reassembler_->AttachChannel(1, channel_one_queue_.GetDownEnd(), nullptr);
+  reassembler_->AttachChannel(2, channel_two_queue_.GetDownEnd(), nullptr);
   os::EnqueueBuffer<Reassembler::UpperEnqueue> link_queue_enqueue_buffer{link_queue_.GetDownEnd()};
   auto packet_one = CreateSampleL2capPacket(1, {1, 2, 3});
   auto packet_two = CreateSampleL2capPacket(2, {4, 5, 6, 7});
