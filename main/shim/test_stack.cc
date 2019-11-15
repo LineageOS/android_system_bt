@@ -66,7 +66,9 @@ void TestGdShimL2cap::WriteFlushable(uint16_t cid, const uint8_t* data,
 void TestGdShimL2cap::WriteNonFlushable(uint16_t cid, const uint8_t* data,
                                         size_t len) {}
 
-void TestGdShimL2cap::SendLoopbackResponse(std::function<void()>) {}
+void TestGdShimL2cap::SendLoopbackResponse(std::function<void()> function) {
+  function();
+}
 
 void TestStack::Start() {}
 
