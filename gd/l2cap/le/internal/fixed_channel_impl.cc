@@ -99,6 +99,20 @@ void FixedChannelImpl::Release() {
   link_->RefreshRefCount();
 }
 
+Cid FixedChannelImpl::GetCid() const {
+  return cid_;
+}
+
+Cid FixedChannelImpl::GetRemoteCid() const {
+  return cid_;
+}
+
+RetransmissionAndFlowControlModeOption FixedChannelImpl::GetChannelMode() const {
+  return RetransmissionAndFlowControlModeOption::L2CAP_BASIC;
+}
+
+void FixedChannelImpl::SetChannelMode(RetransmissionAndFlowControlModeOption option) {}
+
 }  // namespace internal
 }  // namespace le
 }  // namespace l2cap

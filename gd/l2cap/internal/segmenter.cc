@@ -19,6 +19,7 @@
 
 #include "common/bind.h"
 #include "l2cap/cid.h"
+#include "l2cap/classic/internal/dynamic_channel_impl.h"
 #include "l2cap/internal/scheduler.h"
 #include "l2cap/internal/segmenter.h"
 #include "os/handler.h"
@@ -30,10 +31,9 @@ namespace bluetooth {
 namespace l2cap {
 namespace internal {
 
-Segmenter::Segmenter(os::Handler* handler, UpperQueueDownEnd* queue_end, Scheduler* scheduler, Cid channel_id,
-                     Cid remote_channel_id)
-    : handler_(handler), queue_end_(queue_end), scheduler_(scheduler), channel_id_(channel_id),
-      remote_channel_id_(remote_channel_id) {
+Segmenter::Segmenter(os::Handler* handler, Scheduler* scheduler, std::shared_ptr<ChannelImpl> channel)
+    : handler_(handler), queue_end_(channel->GetQueueDownEnd()), scheduler_(scheduler), channel_id_(channel->GetCid()),
+      remote_channel_id_(channel->GetRemoteCid()), channel_(channel) {
   try_register_dequeue();
 }
 
@@ -66,11 +66,25 @@ void Segmenter::dequeue_callback() {
   auto packet = queue_end_->TryDequeue();
   ASSERT(packet != nullptr);
   // TODO(hsz): Construct PDU(s) according to channel mode.
+  if (channel_ == nullptr || channel_->GetChannelMode() == RetransmissionAndFlowControlModeOption::L2CAP_BASIC) {
+    handle_basic_mode_sdu(std::move(packet));
+  }
+  if (channel_ != nullptr &&
+      channel_->GetChannelMode() == RetransmissionAndFlowControlModeOption::ENHANCED_RETRANSMISSION) {
+    handle_enhanced_retransmission_mode_sdu(std::move(packet));
+  }
+}
+
+void Segmenter::handle_basic_mode_sdu(std::unique_ptr<UpperDequeue> packet) {
   auto pdu = BasicFrameBuilder::Create(remote_channel_id_, std::move(packet));
   pdu_buffer_.emplace(std::move(pdu));
   queue_end_->UnregisterDequeue();
   is_dequeue_registered_ = false;
   scheduler_->NotifyPacketsReady(channel_id_, 1);
+}
+
+void Segmenter::handle_enhanced_retransmission_mode_sdu(std::unique_ptr<UpperDequeue> packet) {
+  LOG_ERROR("Not implemented");
 }
 
 }  // namespace internal

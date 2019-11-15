@@ -65,7 +65,7 @@ class Link {
 
   // FixedChannel methods
 
-  virtual std::shared_ptr<FixedChannelImpl> AllocateFixedChannel(Cid cid, SecurityPolicy security_policy);
+  std::shared_ptr<FixedChannelImpl> AllocateFixedChannel(Cid cid, SecurityPolicy security_policy);
 
   virtual bool IsFixedChannelAllocated(Cid cid);
 
