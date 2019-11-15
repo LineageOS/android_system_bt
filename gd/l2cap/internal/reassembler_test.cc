@@ -16,9 +16,11 @@
 
 #include "l2cap/internal/reassembler.h"
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 #include <future>
 
+#include "l2cap/internal/channel_impl_mock.h"
 #include "l2cap/l2cap_packets.h"
 #include "os/handler.h"
 #include "os/queue.h"
@@ -29,6 +31,9 @@ namespace bluetooth {
 namespace l2cap {
 namespace internal {
 namespace {
+
+using ::testing::Return;
+
 std::unique_ptr<BasicFrameBuilder> CreateSampleL2capPacket(Cid cid, std::vector<uint8_t> payload) {
   auto raw_builder = std::make_unique<packet::RawBuilder>();
   raw_builder->AddOctets(payload);
@@ -79,8 +84,13 @@ class L2capClassicReassemblerTest : public ::testing::Test {
 TEST_F(L2capClassicReassemblerTest, receive_basic_mode_packet_for_fixed_channel) {
   common::BidiQueue<Reassembler::UpperEnqueue, Reassembler::UpperDequeue> channel_one_queue_{10};
   common::BidiQueue<Reassembler::UpperEnqueue, Reassembler::UpperDequeue> channel_two_queue_{10};
-  reassembler_->AttachChannel(1, channel_one_queue_.GetDownEnd(), nullptr);
-  reassembler_->AttachChannel(2, channel_two_queue_.GetDownEnd(), nullptr);
+
+  auto mock_channel_1 = std::make_shared<testing::MockChannelImpl>();
+  ON_CALL(*mock_channel_1, GetQueueDownEnd()).WillByDefault(Return(channel_one_queue_.GetDownEnd()));
+  auto mock_channel_2 = std::make_shared<testing::MockChannelImpl>();
+  ON_CALL(*mock_channel_2, GetQueueDownEnd()).WillByDefault(Return(channel_two_queue_.GetDownEnd()));
+  reassembler_->AttachChannel(1, mock_channel_1);
+  reassembler_->AttachChannel(2, mock_channel_2);
   os::EnqueueBuffer<Reassembler::UpperEnqueue> link_queue_enqueue_buffer{link_queue_.GetDownEnd()};
   auto packet_one = CreateSampleL2capPacket(1, {1, 2, 3});
   auto packet_two = CreateSampleL2capPacket(2, {4, 5, 6, 7});

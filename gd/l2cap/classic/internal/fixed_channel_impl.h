@@ -19,6 +19,8 @@
 #include "common/bidi_queue.h"
 #include "l2cap/cid.h"
 #include "l2cap/classic/fixed_channel.h"
+#include "l2cap/internal/channel_impl.h"
+#include "l2cap/l2cap_packets.h"
 #include "os/handler.h"
 #include "os/log.h"
 
@@ -29,7 +31,7 @@ namespace internal {
 
 class Link;
 
-class FixedChannelImpl {
+class FixedChannelImpl : public l2cap::internal::ChannelImpl {
  public:
   FixedChannelImpl(Cid cid, Link* link, os::Handler* l2cap_handler);
 
@@ -63,6 +65,22 @@ class FixedChannelImpl {
 
   common::BidiQueueEnd<packet::PacketView<packet::kLittleEndian>, packet::BasePacketBuilder>* GetQueueDownEnd() {
     return channel_queue_.GetDownEnd();
+  }
+
+  Cid GetCid() const {
+    return cid_;
+  }
+
+  Cid GetRemoteCid() const {
+    return cid_;
+  }
+
+  RetransmissionAndFlowControlModeOption GetChannelMode() const {
+    return RetransmissionAndFlowControlModeOption::L2CAP_BASIC;
+  }
+
+  void SetChannelMode(RetransmissionAndFlowControlModeOption) {
+    LOG_ERROR("Setting channel mode on a fixed channel cid 0x%02hx", cid_);
   }
 
  private:

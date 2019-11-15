@@ -15,6 +15,8 @@
  */
 
 #include "l2cap/internal/scheduler_fifo.h"
+
+#include "l2cap/classic/internal/dynamic_channel_impl.h"
 #include "l2cap/l2cap_packets.h"
 #include "os/log.h"
 
@@ -34,10 +36,10 @@ Fifo::~Fifo() {
   }
 }
 
-void Fifo::AttachChannel(Cid cid, UpperQueueDownEnd* channel_down_end, Cid remote_cid) {
+void Fifo::AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> channel) {
   ASSERT(segmenter_map_.find(cid) == segmenter_map_.end());
   segmenter_map_.emplace(std::piecewise_construct, std::forward_as_tuple(cid),
-                         std::forward_as_tuple(handler_, channel_down_end, this, cid, remote_cid));
+                         std::forward_as_tuple(handler_, this, channel));
 }
 
 void Fifo::DetachChannel(Cid cid) {
