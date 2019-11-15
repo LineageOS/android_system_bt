@@ -193,8 +193,12 @@ uint16_t bluetooth::legacy::shim::L2cap::CreateConnection(
 
   std::promise<uint16_t> connect_completed;
   auto completed = connect_completed.get_future();
-  bluetooth::shim::GetL2cap()->CreateConnection(psm, raw_address.ToString(),
-                                                std::move(connect_completed));
+  bluetooth::shim::GetL2cap()->CreateConnection(
+      psm, raw_address.ToString(),
+      std::bind(&bluetooth::legacy::shim::L2cap::OnConnectionReady, this,
+                std::placeholders::_1, std::placeholders::_2,
+                std::placeholders::_3),
+      std::move(connect_completed));
   uint16_t cid = completed.get();
   if (cid == kInvalidConnectionInterfaceDescriptor) {
     LOG_WARN(LOG_TAG,
@@ -215,8 +219,7 @@ uint16_t bluetooth::legacy::shim::L2cap::CreateConnection(
 }
 
 void bluetooth::legacy::shim::L2cap::OnConnectionReady(
-    uint16_t psm, uint16_t cid,
-    std::function<void(std::function<void(uint16_t c)>)> func) {
+    std::string address_string, uint16_t psm, uint16_t cid) {
   LOG_DEBUG(
       LOG_TAG,
       "l2cap got new connection psm:%hd connection_interface_descriptor:%hd",
@@ -226,14 +229,6 @@ void bluetooth::legacy::shim::L2cap::OnConnectionReady(
     return;
   }
   LOG_DEBUG(LOG_TAG, "%s Setting postable map for cid:%d", __func__, cid);
-  cid_to_postable_map_[cid] = func;
-  func([&cid, &callbacks](uint16_t cid2) {
-    LOG_WARN(LOG_TAG,
-             "Queuing up the connection confirm to the upper stack but really "
-             "a connection has already been done Cid:%hd Cid2:%hd",
-             cid, cid2);
-    callbacks->pL2CA_ConnectCfm_Cb(cid2, 0);
-  });
 }
 
 bool bluetooth::legacy::shim::L2cap::Write(uint16_t cid, BT_HDR* bt_hdr) {
@@ -242,7 +237,8 @@ bool bluetooth::legacy::shim::L2cap::Write(uint16_t cid, BT_HDR* bt_hdr) {
   const uint8_t* data = bt_hdr->data + bt_hdr->offset;
   size_t len = bt_hdr->len;
   LOG_DEBUG(LOG_TAG, "Writing data cid:%hd len:%zd", cid, len);
-  return bluetooth::shim::GetL2cap()->Write(cid, data, len);
+  bluetooth::shim::GetL2cap()->Write(cid, data, len);
+  return true;
 }
 
 bool bluetooth::legacy::shim::L2cap::WriteFlushable(uint16_t cid,
@@ -251,7 +247,8 @@ bool bluetooth::legacy::shim::L2cap::WriteFlushable(uint16_t cid,
   CHECK(bt_hdr != nullptr);
   const uint8_t* data = bt_hdr->data + bt_hdr->offset;
   size_t len = bt_hdr->len;
-  return bluetooth::shim::GetL2cap()->WriteFlushable(cid, data, len);
+  bluetooth::shim::GetL2cap()->WriteFlushable(cid, data, len);
+  return true;
 }
 
 bool bluetooth::legacy::shim::L2cap::WriteNonFlushable(uint16_t cid,
@@ -260,7 +257,8 @@ bool bluetooth::legacy::shim::L2cap::WriteNonFlushable(uint16_t cid,
   CHECK(bt_hdr != nullptr);
   const uint8_t* data = bt_hdr->data + bt_hdr->offset;
   size_t len = bt_hdr->len;
-  return bluetooth::shim::GetL2cap()->WriteNonFlushable(cid, data, len);
+  bluetooth::shim::GetL2cap()->WriteNonFlushable(cid, data, len);
+  return true;
 }
 
 bool bluetooth::legacy::shim::L2cap::SetCallbacks(

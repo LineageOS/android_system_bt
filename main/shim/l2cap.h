@@ -54,9 +54,8 @@ class L2cap {
                        bool enable_snoop);
   void UnregisterService(uint16_t psm);
   uint16_t CreateConnection(uint16_t psm, const RawAddress& raw_address);
-  void OnConnectionReady(
-      uint16_t psm, uint16_t cid,
-      std::function<void(std::function<void(uint16_t cid)>)> func);
+  void OnConnectionReady(std::string address_string, uint16_t psm,
+                         uint16_t cid);
 
   bool Write(uint16_t cid, BT_HDR* bt_hdr);
   bool WriteFlushable(uint16_t cid, BT_HDR* bt_hdr);
