@@ -1357,8 +1357,10 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
     do {
       p_sdp_rec = NULL;
       if (bta_dm_search_cb.service_index == (BTA_USER_SERVICE_ID + 1)) {
-        p_sdp_rec = SDP_FindServiceUUIDInDb(bta_dm_search_cb.p_sdp_db,
-                                            bta_dm_search_cb.uuid, p_sdp_rec);
+        if (!bta_dm_search_cb.uuid.IsEmpty()) {
+          p_sdp_rec = SDP_FindServiceUUIDInDb(bta_dm_search_cb.p_sdp_db,
+                                              bta_dm_search_cb.uuid, p_sdp_rec);
+        }
 
         if (p_sdp_rec && SDP_FindProtocolListElemInRec(
                              p_sdp_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
