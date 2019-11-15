@@ -150,11 +150,11 @@ class AclConnection {
 
  private:
   friend AclManager;
-  AclConnection(AclManager* manager, uint16_t handle, Address address)
+  AclConnection(const AclManager* manager, uint16_t handle, Address address)
       : manager_(manager), handle_(handle), address_(address) {}
-  AclConnection(AclManager* manager, uint16_t handle, Address address, AddressType address_type, Role role)
+  AclConnection(const AclManager* manager, uint16_t handle, Address address, AddressType address_type, Role role)
       : manager_(manager), handle_(handle), address_(address), address_type_(address_type), role_(role) {}
-  AclManager* manager_;
+  const AclManager* manager_;
   uint16_t handle_;
   Address address_;
   AddressType address_type_;
