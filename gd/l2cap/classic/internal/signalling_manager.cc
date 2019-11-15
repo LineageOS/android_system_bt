@@ -202,7 +202,7 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
       }
       case ConfigurationOptionType::RETRANSMISSION_AND_FLOW_CONTROL: {
         auto config = RetransmissionAndFlowControlConfigurationOption::Specialize(option.get());
-        channel->SetMode(config->mode_);
+        channel->SetChannelMode(config->mode_);
         break;
       }
       case ConfigurationOptionType::FRAME_CHECK_SEQUENCE: {

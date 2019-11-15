@@ -22,6 +22,7 @@
 #include "common/bidi_queue.h"
 #include "common/bind.h"
 #include "l2cap/cid.h"
+#include "l2cap/internal/channel_impl.h"
 #include "os/handler.h"
 #include "os/queue.h"
 #include "packet/base_packet_builder.h"
@@ -30,7 +31,6 @@
 namespace bluetooth {
 namespace l2cap {
 namespace internal {
-
 class Scheduler;
 
 /**
@@ -43,7 +43,7 @@ class Segmenter {
   using UpperDequeue = packet::BasePacketBuilder;
   using UpperQueueDownEnd = common::BidiQueueEnd<UpperEnqueue, UpperDequeue>;
 
-  Segmenter(os::Handler* handler, UpperQueueDownEnd* queue_end, Scheduler* scheduler, Cid cid, Cid remote_cid);
+  Segmenter(os::Handler* handler, Scheduler* scheduler, std::shared_ptr<ChannelImpl> channel);
   ~Segmenter();
 
   /**
@@ -64,10 +64,13 @@ class Segmenter {
   Scheduler* scheduler_;
   const Cid channel_id_;
   const Cid remote_channel_id_;
+  std::shared_ptr<ChannelImpl> channel_;
   bool is_dequeue_registered_ = false;
 
   void try_register_dequeue();
   void dequeue_callback();
+  void handle_basic_mode_sdu(std::unique_ptr<UpperDequeue> packet);
+  void handle_enhanced_retransmission_mode_sdu(std::unique_ptr<UpperDequeue> packet);
 };
 }  // namespace internal
 }  // namespace l2cap

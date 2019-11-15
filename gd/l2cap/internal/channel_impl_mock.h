@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
 
 #include "l2cap/internal/channel_impl.h"
-#include "l2cap/internal/scheduler.h"
 
 #include <gmock/gmock.h>
 
@@ -26,11 +26,16 @@ namespace l2cap {
 namespace internal {
 namespace testing {
 
-class MockScheduler : public Scheduler {
+class MockChannelImpl : public ChannelImpl {
  public:
-  MOCK_METHOD(void, AttachChannel, (Cid cid, std::shared_ptr<l2cap::internal::ChannelImpl> channel), (override));
-  MOCK_METHOD(void, DetachChannel, (Cid cid), (override));
-  MOCK_METHOD(void, NotifyPacketsReady, (Cid cid, int number_packet), (override));
+  MOCK_METHOD((common::BidiQueueEnd<packet::BasePacketBuilder, packet::PacketView<packet::kLittleEndian>>*),
+              GetQueueUpEnd, (), (override));
+  MOCK_METHOD((common::BidiQueueEnd<packet::PacketView<packet::kLittleEndian>, packet::BasePacketBuilder>*),
+              GetQueueDownEnd, (), (override));
+  MOCK_METHOD(Cid, GetCid, (), (const, override));
+  MOCK_METHOD(Cid, GetRemoteCid, (), (const, override));
+  MOCK_METHOD(RetransmissionAndFlowControlModeOption, GetChannelMode, (), (const, override));
+  MOCK_METHOD(void, SetChannelMode, (RetransmissionAndFlowControlModeOption), (override));
 };
 
 }  // namespace testing
