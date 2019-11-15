@@ -29,9 +29,10 @@ namespace internal {
 /**
  * Handle the scheduling of packets through the l2cap stack.
  * For each attached channel, dequeue its outgoing packets and enqueue it to the given LinkQueueUpEnd, according to some
- * policy (cid). Dequeue incoming packets from LinkQueueUpEnd, and enqueue it to ChannelQueueDownEnd. Note: If a channel
- * cannot dequeue from ChannelQueueDownEnd so that the buffer for incoming packet is full, further incoming packets will
- * be dropped.
+ * policy (cid).
+ *
+ * Note: If a channel cannot dequeue from ChannelQueueDownEnd so that the buffer for incoming packet is full, further
+ * incoming packets will be dropped.
  */
 class Scheduler {
  public:
@@ -41,7 +42,6 @@ class Scheduler {
   using LowerEnqueue = UpperDequeue;
   using LowerDequeue = UpperEnqueue;
   using LowerQueueUpEnd = common::BidiQueueEnd<LowerEnqueue, LowerDequeue>;
-  using DemuxPolicy = common::Callback<Cid(const UpperEnqueue&)>;
 
   /**
    * Attach the channel with the specified ChannelQueueDownEnd into the scheduler.
@@ -60,9 +60,9 @@ class Scheduler {
   virtual void DetachChannel(Cid cid) {}
 
   /**
-   * Return the lower queue up end, which can be used to enqueue or dequeue.
+   * Callback from the segmenter to indicate that the scheduler could dequeue number_packets from it
    */
-  virtual LowerQueueUpEnd* GetLowerQueueUpEnd() const = 0;
+  virtual void NotifyPacketsReady(Cid cid, int number_packets) {}
 
   virtual ~Scheduler() = default;
 };
