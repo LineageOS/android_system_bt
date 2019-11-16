@@ -17,6 +17,7 @@
 #define LOG_TAG "bt_shim_btm"
 
 #include <algorithm>
+#include <cstring>
 
 #include "main/shim/btm.h"
 #include "main/shim/entry.h"
@@ -34,12 +35,16 @@ static constexpr uint8_t kInquiryResultMode = 0;
 static constexpr uint8_t kInquiryResultWithRssiMode = 1;
 static constexpr uint8_t kExtendedInquiryResultMode = 2;
 
+static constexpr size_t kRemoteDeviceNameLength = 248;
+
 extern void btm_process_cancel_complete(uint8_t status, uint8_t mode);
 extern void btm_process_inq_complete(uint8_t status, uint8_t result_type);
 extern void btm_process_inq_results(uint8_t* p, uint8_t result_mode);
 
+using BtmRemoteDeviceName = tBTM_REMOTE_DEV_NAME;
+
 /**
- * Inquiry
+ *
  */
 void bluetooth::shim::Btm::OnInquiryResult(std::vector<const uint8_t> result) {
   CHECK(result.size() < kMaxInquiryResultSize);
@@ -194,7 +199,7 @@ bool bluetooth::shim::Btm::IsLimitedInquiryActive() const {
 }
 
 /**
- * Periodic Inquiry
+ * Periodic
  */
 bool bluetooth::shim::Btm::StartPeriodicInquiry(
     uint8_t mode, uint8_t duration, uint8_t max_responses, uint16_t max_delay,
@@ -342,4 +347,86 @@ ConnectabilityState bluetooth::shim::Btm::GetLeConnectabilityState() const {
   };
   LOG_WARN(LOG_TAG, "UNIMPLEMENTED %s", __func__);
   return state;
+}
+
+bool bluetooth::shim::Btm::IsLeAclConnected(
+    const RawAddress& raw_address) const {
+  // TODO(cmanton) Check current acl's for this address and indicate if there is
+  // an LE option.  For now ignore and default to classic.
+  LOG_INFO(LOG_TAG, "%s Le acl connection check is temporarily unsupported",
+           __func__);
+  return false;
+}
+
+bluetooth::shim::BtmStatus bluetooth::shim::Btm::ReadClassicRemoteDeviceName(
+    const RawAddress& raw_address, tBTM_CMPL_CB* callback) {
+  if (!CheckClassicAclLink(raw_address)) {
+    return bluetooth::shim::BTM_UNKNOWN_ADDR;
+  }
+
+  if (!classic_read_remote_name_.Start(raw_address)) {
+    LOG_INFO(LOG_TAG, "%s Read remote name is currently busy address:%s",
+             __func__, raw_address.ToString().c_str());
+    return bluetooth::shim::BTM_BUSY;
+  }
+
+  LOG_DEBUG(LOG_TAG, "%s Start read name from address:%s", __func__,
+            raw_address.ToString().c_str());
+  bluetooth::shim::GetName()->ReadRemoteNameRequest(
+      classic_read_remote_name_.AddressString(),
+      [this, callback](
+          std::string address_string, uint8_t hci_status,
+          std::array<uint8_t, kRemoteDeviceNameLength> remote_name) {
+        RawAddress raw_address;
+        RawAddress::FromString(address_string, raw_address);
+
+        BtmRemoteDeviceName name{
+            .status = (hci_status == 0) ? (BTM_SUCCESS) : (BTM_BAD_VALUE_RET),
+            .bd_addr = raw_address,
+            .length = kRemoteDeviceNameLength,
+        };
+        std::copy(remote_name.begin(), remote_name.end(), name.remote_bd_name);
+        LOG_DEBUG(LOG_TAG, "%s Finish read name from address:%s name:%s",
+                  __func__, address_string.c_str(), name.remote_bd_name);
+        callback(&name);
+        classic_read_remote_name_.Stop();
+      });
+  return bluetooth::shim::BTM_CMD_STARTED;
+}
+
+bluetooth::shim::BtmStatus bluetooth::shim::Btm::ReadLeRemoteDeviceName(
+    const RawAddress& raw_address, tBTM_CMPL_CB* callback) {
+  if (!CheckLeAclLink(raw_address)) {
+    return bluetooth::shim::BTM_UNKNOWN_ADDR;
+  }
+
+  if (!le_read_remote_name_.Start(raw_address)) {
+    return bluetooth::shim::BTM_BUSY;
+  }
+
+  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s need access to GATT module", __func__);
+  return bluetooth::shim::BTM_UNKNOWN_ADDR;
+}
+
+bluetooth::shim::BtmStatus
+bluetooth::shim::Btm::CancelAllReadRemoteDeviceName() {
+  if (classic_read_remote_name_.IsInProgress() ||
+      le_read_remote_name_.IsInProgress()) {
+    if (classic_read_remote_name_.IsInProgress()) {
+      bluetooth::shim::GetName()->CancelRemoteNameRequest(
+          classic_read_remote_name_.AddressString(),
+          [this](std::string address_string, uint8_t status) {
+            classic_read_remote_name_.Stop();
+          });
+    }
+    if (le_read_remote_name_.IsInProgress()) {
+      LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s need access to GATT module",
+               __func__);
+    }
+    return bluetooth::shim::BTM_UNKNOWN_ADDR;
+  }
+  LOG_INFO(LOG_TAG,
+           "%s Cancelling classic remote device name without one in progress",
+           __func__);
+  return bluetooth::shim::BTM_WRONG_MODE;
 }
