@@ -74,6 +74,8 @@ void TestStack::Start() {}
 
 void TestStack::Stop() {}
 
+bluetooth::shim::IAdvertising* TestStack::GetAdvertising() { return nullptr; }
+
 bluetooth::shim::IController* TestStack::GetController() { return nullptr; }
 
 bluetooth::shim::IConnectability* TestStack::GetConnectability() {

@@ -18,6 +18,7 @@
 
 #include <memory>
 
+#include "shim/iadvertising.h"
 #include "shim/iconnectability.h"
 #include "shim/icontroller.h"
 #include "shim/idiscoverability.h"
@@ -41,6 +42,7 @@ class Stack : public IStack {
   void Start() override;  // IStack
   void Stop() override;   // IStack
 
+  IAdvertising* GetAdvertising() override;  // IStack
   IController* GetController() override;  // IStack
   IConnectability* GetConnectability() override;  // IStack
   IHciLayer* GetHciLayer() override;      // IStack
