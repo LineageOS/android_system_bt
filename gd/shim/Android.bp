@@ -9,6 +9,7 @@ filegroup {
             "inquiry.cc",
             "l2cap.cc",
             "page.cc",
+            "scanning.cc",
             "stack.cc",
     ],
 }

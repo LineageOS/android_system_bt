@@ -31,6 +31,7 @@ struct IHciLayer;
 struct IInquiry;
 struct IL2cap;
 struct IPage;
+struct IScanning;
 
 struct IStack {
   virtual void Start() = 0;
@@ -44,6 +45,7 @@ struct IStack {
   virtual IInquiry* GetInquiry() = 0;
   virtual IL2cap* GetL2cap() = 0;
   virtual IPage* GetPage() = 0;
+  virtual IScanning* GetScanning() = 0;
 
   virtual ~IStack() {}
 };
