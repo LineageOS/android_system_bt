@@ -23,6 +23,7 @@
 namespace bluetooth {
 namespace shim {
 
+struct IAdvertising;
 struct IController;
 struct IConnectability;
 struct IDiscoverability;
@@ -35,6 +36,7 @@ struct IStack {
   virtual void Start() = 0;
   virtual void Stop() = 0;
 
+  virtual IAdvertising* GetAdvertising() = 0;
   virtual IController* GetController() = 0;
   virtual IConnectability* GetConnectability() = 0;
   virtual IDiscoverability* GetDiscoverability() = 0;
