@@ -20,6 +20,7 @@
 #include "hal/hci_hal.h"
 #include "hci/acl_manager.h"
 #include "hci/classic_security_manager.h"
+#include "hci/le_advertising_manager.h"
 #include "l2cap/classic/l2cap_classic_module.h"
 #include "l2cap/le/l2cap_le_module.h"
 #include "neighbor/connectability.h"
@@ -30,6 +31,7 @@
 #include "os/log.h"
 #include "os/thread.h"
 #include "security/security_module.h"
+#include "shim/advertising.h"
 #include "shim/connectability.h"
 #include "shim/controller.h"
 #include "shim/discoverability.h"
@@ -52,6 +54,7 @@ struct bluetooth::shim::Stack::impl {
     ModuleList modules;
     modules.add<::bluetooth::hal::HciHal>();
     modules.add<::bluetooth::hci::AclManager>();
+    modules.add<::bluetooth::hci::LeAdvertisingManager>();
     modules.add<::bluetooth::l2cap::classic::L2capClassicModule>();
     modules.add<::bluetooth::l2cap::le::L2capLeModule>();
     modules.add<::bluetooth::neighbor::ConnectabilityModule>();
@@ -62,6 +65,7 @@ struct bluetooth::shim::Stack::impl {
     modules.add<::bluetooth::shim::Controller>();
     modules.add<::bluetooth::shim::HciLayer>();
     modules.add<::bluetooth::security::SecurityModule>();
+    modules.add<::bluetooth::shim::Advertising>();
     modules.add<::bluetooth::shim::Connectability>();
     modules.add<::bluetooth::shim::Discoverability>();
     modules.add<::bluetooth::shim::Inquiry>();
@@ -86,6 +90,10 @@ struct bluetooth::shim::Stack::impl {
     delete stack_thread_;
     is_running_ = false;
     LOG_INFO("%s Successfully shut down Gd stack", __func__);
+  }
+
+  IAdvertising* GetAdvertising() {
+    return stack_manager_.GetInstance<bluetooth::shim::Advertising>();
   }
 
   IController* GetController() {
@@ -133,6 +141,10 @@ void bluetooth::shim::Stack::Start() {
 
 void bluetooth::shim::Stack::Stop() {
   pimpl_->Stop();
+}
+
+bluetooth::shim::IAdvertising* bluetooth::shim::Stack::GetAdvertising() {
+  return pimpl_->GetAdvertising();
 }
 
 bluetooth::shim::IConnectability* bluetooth::shim::Stack::GetConnectability() {
