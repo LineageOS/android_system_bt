@@ -4,6 +4,7 @@ filegroup {
             "connectability.cc",
             "discoverability.cc",
             "inquiry.cc",
+            "name.cc",
             "page.cc",
             "scan.cc",
     ],
