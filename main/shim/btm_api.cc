@@ -493,15 +493,23 @@ tBTM_STATUS bluetooth::shim::BTM_CancelInquiry(void) {
  *
  ******************************************************************************/
 tBTM_STATUS bluetooth::shim::BTM_ReadRemoteDeviceName(
-    const RawAddress& remote_bda, tBTM_CMPL_CB* p_cb, tBT_TRANSPORT transport) {
-  if (transport == BT_TRANSPORT_LE) {
-    LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
-    return BTM_NO_RESOURCES;
-  }
+    const RawAddress& raw_address, tBTM_CMPL_CB* callback,
+    tBT_TRANSPORT transport) {
+  CHECK(callback != nullptr);
+  tBTM_STATUS status = BTM_NO_RESOURCES;
 
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
-  return BTM_NO_RESOURCES;
-  CHECK(p_cb != nullptr);
+  switch (transport) {
+    case BT_TRANSPORT_LE:
+      status = shim_btm.ReadLeRemoteDeviceName(raw_address, callback);
+      break;
+    case BT_TRANSPORT_BR_EDR:
+      status = shim_btm.ReadClassicRemoteDeviceName(raw_address, callback);
+      break;
+    default:
+      LOG_WARN(LOG_TAG, "%s Unspecified transport:%d", __func__, transport);
+      break;
+  }
+  return status;
 }
 
 /*******************************************************************************
@@ -523,8 +531,7 @@ tBTM_STATUS bluetooth::shim::BTM_ReadRemoteDeviceName(
  *
  ******************************************************************************/
 tBTM_STATUS bluetooth::shim::BTM_CancelRemoteDeviceName(void) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
-  return BTM_NO_RESOURCES;
+  return shim_btm.CancelAllReadRemoteDeviceName();
 }
 
 /*******************************************************************************
@@ -1155,9 +1162,8 @@ void bluetooth::shim::BTM_BleTestEnd(tBTM_CMPL_CB* p_cmd_cmpl_cback) {
  * Returns          true to use LE, false use BR/EDR.
  *
  ******************************************************************************/
-bool bluetooth::shim::BTM_UseLeLink(const RawAddress& bd_addr) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
-  return false;
+bool bluetooth::shim::BTM_UseLeLink(const RawAddress& raw_address) {
+  return shim_btm.IsLeAclConnected(raw_address);
 }
 
 /*******************************************************************************
