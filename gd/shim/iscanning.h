@@ -13,24 +13,17 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #pragma once
 
 /**
- * This common file provides the only visibility from the legacy stack into GD stack.
- *
- * Only interfaces or APIs should be exported.
- *
- * Only common data structures should be used to pass data between the stacks.
- *
+ * The gd API exported to the legacy api
  */
-#include "gd/shim/iadvertising.h"
-#include "gd/shim/iconnectability.h"
-#include "gd/shim/icontroller.h"
-#include "gd/shim/idiscoverability.h"
-#include "gd/shim/ihci_layer.h"
-#include "gd/shim/iinquiry.h"
-#include "gd/shim/il2cap.h"
-#include "gd/shim/ipage.h"
-#include "gd/shim/iscanning.h"
-#include "gd/shim/istack.h"
+namespace bluetooth {
+namespace shim {
+
+struct IScanning {
+  virtual ~IScanning() {}
+};
+
+}  // namespace shim
+}  // namespace bluetooth
