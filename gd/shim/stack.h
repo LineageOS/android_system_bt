@@ -26,6 +26,7 @@
 #include "shim/iinquiry.h"
 #include "shim/il2cap.h"
 #include "shim/ipage.h"
+#include "shim/iscanning.h"
 #include "shim/istack.h"
 
 /**
@@ -50,6 +51,7 @@ class Stack : public IStack {
   IInquiry* GetInquiry() override;                  // IStack
   IL2cap* GetL2cap() override;                      // IStack
   IPage* GetPage() override;                        // IStack
+  IScanning* GetScanning() override;                // IStack
 
  private:
   struct impl;

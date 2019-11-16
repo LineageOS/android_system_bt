@@ -21,6 +21,7 @@
 #include "hci/acl_manager.h"
 #include "hci/classic_security_manager.h"
 #include "hci/le_advertising_manager.h"
+#include "hci/le_scanning_manager.h"
 #include "l2cap/classic/l2cap_classic_module.h"
 #include "l2cap/le/l2cap_le_module.h"
 #include "neighbor/connectability.h"
@@ -39,6 +40,7 @@
 #include "shim/inquiry.h"
 #include "shim/l2cap.h"
 #include "shim/page.h"
+#include "shim/scanning.h"
 #include "stack_manager.h"
 
 using ::bluetooth::os::Thread;
@@ -55,6 +57,7 @@ struct bluetooth::shim::Stack::impl {
     modules.add<::bluetooth::hal::HciHal>();
     modules.add<::bluetooth::hci::AclManager>();
     modules.add<::bluetooth::hci::LeAdvertisingManager>();
+    modules.add<::bluetooth::hci::LeScanningManager>();
     modules.add<::bluetooth::l2cap::classic::L2capClassicModule>();
     modules.add<::bluetooth::l2cap::le::L2capLeModule>();
     modules.add<::bluetooth::neighbor::ConnectabilityModule>();
@@ -71,6 +74,7 @@ struct bluetooth::shim::Stack::impl {
     modules.add<::bluetooth::shim::Inquiry>();
     modules.add<::bluetooth::shim::L2cap>();
     modules.add<::bluetooth::shim::Page>();
+    modules.add<::bluetooth::shim::Scanning>();
 
     stack_thread_ = new Thread("gd_stack_thread", Thread::Priority::NORMAL);
     stack_manager_.StartUp(&modules, stack_thread_);
@@ -124,6 +128,10 @@ struct bluetooth::shim::Stack::impl {
     return stack_manager_.GetInstance<bluetooth::shim::Page>();
   }
 
+  IScanning* GetScanning() {
+    return stack_manager_.GetInstance<bluetooth::shim::Scanning>();
+  }
+
  private:
   os::Thread* stack_thread_ = nullptr;
   bool is_running_ = false;
@@ -173,6 +181,10 @@ bluetooth::shim::IL2cap* bluetooth::shim::Stack::GetL2cap() {
 
 bluetooth::shim::IPage* bluetooth::shim::Stack::GetPage() {
   return pimpl_->GetPage();
+}
+
+bluetooth::shim::IScanning* bluetooth::shim::Stack::GetScanning() {
+  return pimpl_->GetScanning();
 }
 
 bluetooth::shim::IStack* bluetooth::shim::GetGabeldorscheStack() {

@@ -62,6 +62,7 @@ class TestStack : public bluetooth::shim::IStack {
   bluetooth::shim::IInquiry* GetInquiry();
   bluetooth::shim::IL2cap* GetL2cap();
   bluetooth::shim::IPage* GetPage();
+  bluetooth::shim::IScanning* GetScanning();
 
   TestGdShimL2cap test_l2cap_;
 

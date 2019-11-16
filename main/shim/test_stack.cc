@@ -93,3 +93,5 @@ bluetooth::shim::IInquiry* TestStack::GetInquiry() { return nullptr; }
 bluetooth::shim::IL2cap* TestStack::GetL2cap() { return &test_l2cap_; }
 
 bluetooth::shim::IPage* TestStack::GetPage() { return nullptr; }
+
+bluetooth::shim::IScanning* TestStack::GetScanning() { return nullptr; }
