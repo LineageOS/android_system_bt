@@ -54,6 +54,7 @@ class TestStack : public bluetooth::shim::IStack {
  public:
   TestStack() = default;
 
+  bluetooth::shim::IAdvertising* GetAdvertising();
   bluetooth::shim::IController* GetController();
   bluetooth::shim::IConnectability* GetConnectability();
   bluetooth::shim::IDiscoverability* GetDiscoverability();
