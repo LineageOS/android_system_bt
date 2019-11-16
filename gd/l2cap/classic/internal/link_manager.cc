@@ -133,8 +133,8 @@ void LinkManager::OnConnectSuccess(std::unique_ptr<hci::AclConnection> acl_conne
   if (pending_dynamic_channels_.find(device) != pending_dynamic_channels_.end()) {
     for (Psm psm : pending_dynamic_channels_[device]) {
       auto& callbacks = pending_dynamic_channels_callbacks_[device].front();
-      pending_dynamic_channels_callbacks_[device].pop_front();
       link->SendConnectionRequest(psm, link->ReserveDynamicChannel(), std::move(callbacks));
+      pending_dynamic_channels_callbacks_[device].pop_front();
     }
     pending_dynamic_channels_.erase(device);
     pending_dynamic_channels_callbacks_.erase(device);
