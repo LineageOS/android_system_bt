@@ -26,6 +26,7 @@
 constexpr size_t kBtHdrSize = sizeof(BT_HDR);
 constexpr uint16_t kInvalidConnectionInterfaceDescriptor = 0;
 constexpr bool kDisconnectResponseRequired = false;
+constexpr uint16_t kConnectionSuccess = 0;
 
 bool bluetooth::legacy::shim::PsmData::IsPsmAllocated(uint16_t psm) const {
   return psm_to_callback_map_.find(psm) != psm_to_callback_map_.end();
@@ -159,12 +160,32 @@ void bluetooth::legacy::shim::L2cap::RegisterService(
   auto completed = register_completed.get_future();
   bluetooth::shim::GetL2cap()->RegisterService(
       psm,
-      std::bind(&bluetooth::legacy::shim::L2cap::OnConnectionReady, this,
-                std::placeholders::_1, std::placeholders::_2,
-                std::placeholders::_3),
+      std::bind(
+          &bluetooth::legacy::shim::L2cap::OnRemoteInitiatedConnectionCreated,
+          this, std::placeholders::_1, std::placeholders::_2,
+          std::placeholders::_3),
       std::move(register_completed));
   completed.wait();
   LOG_DEBUG(LOG_TAG, "Successfully registered service on psm:%hd", psm);
+}
+
+void bluetooth::legacy::shim::L2cap::OnRemoteInitiatedConnectionCreated(
+    std::string string_address, uint16_t psm, uint16_t cid) {
+  RawAddress raw_address;
+  RawAddress::FromString(string_address, raw_address);
+
+  LOG_DEBUG(LOG_TAG,
+            "Sending connection indicator to upper stack from device:%s "
+            "psm:%hd cid:%hd",
+            string_address.c_str(), psm, cid);
+
+  CHECK(!ConnectionExists(cid));
+  cid_to_psm_map_[cid] = psm;
+  SetCallbacks(cid, Classic().Callbacks(psm));
+  const tL2CAP_APPL_INFO* callbacks = Classic().Callbacks(psm);
+  CHECK(callbacks != nullptr);
+  callbacks->pL2CA_ConnectInd_Cb(raw_address, cid, psm /* UNUSED */,
+                                 0 /* UNUSED */);
 }
 
 void bluetooth::legacy::shim::L2cap::UnregisterService(uint16_t psm) {
@@ -182,9 +203,6 @@ void bluetooth::legacy::shim::L2cap::UnregisterService(uint16_t psm) {
 
 uint16_t bluetooth::legacy::shim::L2cap::CreateConnection(
     uint16_t psm, const RawAddress& raw_address) {
-  LOG_DEBUG(LOG_TAG, "Requesting connection to psm:%hd address:%s", psm,
-            raw_address.ToString().c_str());
-
   if (!Classic().IsPsmRegistered(psm)) {
     LOG_WARN(LOG_TAG, "Service must be registered in order to connect psm:%hd",
              psm);
@@ -193,12 +211,18 @@ uint16_t bluetooth::legacy::shim::L2cap::CreateConnection(
 
   std::promise<uint16_t> connect_completed;
   auto completed = connect_completed.get_future();
+  LOG_DEBUG(LOG_TAG,
+            "Starting local initiated connection to psm:%hd address:%s", psm,
+            raw_address.ToString().c_str());
+
   bluetooth::shim::GetL2cap()->CreateConnection(
       psm, raw_address.ToString(),
-      std::bind(&bluetooth::legacy::shim::L2cap::OnConnectionReady, this,
-                std::placeholders::_1, std::placeholders::_2,
-                std::placeholders::_3),
+      std::bind(
+          &bluetooth::legacy::shim::L2cap::OnLocalInitiatedConnectionCreated,
+          this, std::placeholders::_1, std::placeholders::_2,
+          std::placeholders::_3),
       std::move(connect_completed));
+
   uint16_t cid = completed.get();
   if (cid == kInvalidConnectionInterfaceDescriptor) {
     LOG_WARN(LOG_TAG,
@@ -209,33 +233,32 @@ uint16_t bluetooth::legacy::shim::L2cap::CreateConnection(
               "Successfully started connection to psm:%hd address:%s"
               " connection_interface_descriptor:%hd",
               psm, raw_address.ToString().c_str(), cid);
-    CHECK(cid_to_psm_map_.find(cid) == cid_to_psm_map_.end());
+    CHECK(!ConnectionExists(cid));
     cid_to_psm_map_[cid] = psm;
     SetCallbacks(cid, Classic().Callbacks(psm));
-    const tL2CAP_APPL_INFO* callbacks = Classic().Callbacks(psm);
-    CHECK(callbacks != nullptr);
   }
   return cid;
 }
 
-void bluetooth::legacy::shim::L2cap::OnConnectionReady(
-    std::string address_string, uint16_t psm, uint16_t cid) {
-  LOG_DEBUG(
-      LOG_TAG,
-      "l2cap got new connection psm:%hd connection_interface_descriptor:%hd",
-      psm, cid);
+void bluetooth::legacy::shim::L2cap::OnLocalInitiatedConnectionCreated(
+    std::string string_address, uint16_t psm, uint16_t cid) {
+  LOG_DEBUG(LOG_TAG,
+            "Sending connection confirm to the upper stack but really "
+            "a connection to %s has already been done cid:%hd",
+            string_address.c_str(), cid);
+  // TODO(cmanton) Make sure the device is correct for locally initiated
   const tL2CAP_APPL_INFO* callbacks = Classic().Callbacks(psm);
-  if (callbacks == nullptr) {
-    return;
-  }
-  LOG_DEBUG(LOG_TAG, "%s Setting postable map for cid:%d", __func__, cid);
-}
+  CHECK(callbacks != nullptr);
+  callbacks->pL2CA_ConnectCfm_Cb(cid, kConnectionSuccess);
+};
 
 bool bluetooth::legacy::shim::L2cap::Write(uint16_t cid, BT_HDR* bt_hdr) {
-  CHECK(ConnectionExists(cid));
   CHECK(bt_hdr != nullptr);
   const uint8_t* data = bt_hdr->data + bt_hdr->offset;
   size_t len = bt_hdr->len;
+  if (!ConnectionExists(cid) || len == 0) {
+    return false;
+  }
   LOG_DEBUG(LOG_TAG, "Writing data cid:%hd len:%zd", cid, len);
   bluetooth::shim::GetL2cap()->Write(cid, data, len);
   return true;
@@ -243,20 +266,24 @@ bool bluetooth::legacy::shim::L2cap::Write(uint16_t cid, BT_HDR* bt_hdr) {
 
 bool bluetooth::legacy::shim::L2cap::WriteFlushable(uint16_t cid,
                                                     BT_HDR* bt_hdr) {
-  CHECK(ConnectionExists(cid));
   CHECK(bt_hdr != nullptr);
   const uint8_t* data = bt_hdr->data + bt_hdr->offset;
   size_t len = bt_hdr->len;
+  if (!ConnectionExists(cid) || len == 0) {
+    return false;
+  }
   bluetooth::shim::GetL2cap()->WriteFlushable(cid, data, len);
   return true;
 }
 
 bool bluetooth::legacy::shim::L2cap::WriteNonFlushable(uint16_t cid,
                                                        BT_HDR* bt_hdr) {
-  CHECK(ConnectionExists(cid));
   CHECK(bt_hdr != nullptr);
   const uint8_t* data = bt_hdr->data + bt_hdr->offset;
   size_t len = bt_hdr->len;
+  if (!ConnectionExists(cid) || len == 0) {
+    return false;
+  }
   bluetooth::shim::GetL2cap()->WriteNonFlushable(cid, data, len);
   return true;
 }
@@ -278,6 +305,7 @@ bool bluetooth::legacy::shim::L2cap::SetCallbacks(
             static_cast<BT_HDR*>(osi_calloc(data.size() + kBtHdrSize));
         std::copy(data.begin(), data.end(), bt_hdr->data);
         bt_hdr->len = data.size();
+        CHECK(cid_to_callback_map_.find(cid) != cid_to_callback_map_.end());
         cid_to_callback_map_[cid]->pL2CA_DataInd_Cb(cid, bt_hdr);
       });
 
@@ -307,14 +335,12 @@ bool bluetooth::legacy::shim::L2cap::ConnectResponse(
 bool bluetooth::legacy::shim::L2cap::ConfigRequest(
     uint16_t cid, const tL2CAP_CFG_INFO* config_info) {
   CHECK(ConnectionExists(cid));
-  LOG_INFO(LOG_TAG, "Received config request from upper layer");
-  CHECK(cid_to_psm_map_.find(cid) != cid_to_psm_map_.end());
-  const tL2CAP_APPL_INFO* callbacks = Classic().Callbacks(cid_to_psm_map_[cid]);
-  CHECK(callbacks != nullptr);
-  CHECK(cid_to_postable_map_.count(cid) == 1);
+  LOG_INFO(LOG_TAG, "Received config request from upper layer cid:%hd", cid);
 
-  auto func = cid_to_postable_map_[cid];
-  func([&cid, &callbacks](uint16_t cid2) {
+  bluetooth::shim::GetL2cap()->SendLoopbackResponse([this, cid]() {
+    CHECK(ConnectionExists(cid));
+    const tL2CAP_APPL_INFO* callbacks = cid_to_callback_map_[cid];
+    CHECK(callbacks != nullptr);
     tL2CAP_CFG_INFO cfg_info{
         .result = L2CAP_CFG_OK,
         .mtu_present = false,
@@ -325,7 +351,6 @@ bool bluetooth::legacy::shim::L2cap::ConfigRequest(
         .ext_flow_spec_present = false,
         .flags = 0,
     };
-    LOG_INFO(LOG_TAG, "Config request lambda");
     callbacks->pL2CA_ConfigCfm_Cb(cid, &cfg_info);
     callbacks->pL2CA_ConfigInd_Cb(cid, &cfg_info);
   });
@@ -344,8 +369,8 @@ bool bluetooth::legacy::shim::L2cap::ConfigResponse(
 
 bool bluetooth::legacy::shim::L2cap::DisconnectRequest(uint16_t cid) {
   CHECK(ConnectionExists(cid));
-  bluetooth::shim::GetL2cap()->CloseConnection(cid);
   cid_to_callback_map_.erase(cid);
+  bluetooth::shim::GetL2cap()->CloseConnection(cid);
   return true;
 }
 

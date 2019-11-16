@@ -53,13 +53,17 @@ class L2cap {
   void RegisterService(uint16_t psm, const tL2CAP_APPL_INFO* callbacks,
                        bool enable_snoop);
   void UnregisterService(uint16_t psm);
+
   uint16_t CreateConnection(uint16_t psm, const RawAddress& raw_address);
-  void OnConnectionReady(std::string address_string, uint16_t psm,
-                         uint16_t cid);
 
   bool Write(uint16_t cid, BT_HDR* bt_hdr);
   bool WriteFlushable(uint16_t cid, BT_HDR* bt_hdr);
   bool WriteNonFlushable(uint16_t cid, BT_HDR* bt_hdr);
+
+  void OnLocalInitiatedConnectionCreated(std::string string_address,
+                                         uint16_t psm, uint16_t cid);
+  void OnRemoteInitiatedConnectionCreated(std::string string_addresss,
+                                          uint16_t psm, uint16_t cid);
 
   uint16_t GetNextDynamicClassicPsm();
   uint16_t GetNextDynamicLePsm();
@@ -77,9 +81,6 @@ class L2cap {
   bool ConfigResponse(uint16_t cid, const tL2CAP_CFG_INFO* config_info);
   bool DisconnectRequest(uint16_t cid);
   bool DisconnectResponse(uint16_t cid);
-
-  void Test(void* context);
-  void Test2();
 
   L2cap();
 
