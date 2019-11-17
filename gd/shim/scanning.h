@@ -15,25 +15,32 @@
  */
 #pragma once
 
-#include "l2cap/internal/channel_impl.h"
-#include "l2cap/internal/scheduler.h"
+#include <memory>
+#include <string>
 
-#include <gmock/gmock.h>
+#include "module.h"
+#include "shim/iscanning.h"
 
-// Unit test interfaces
 namespace bluetooth {
-namespace l2cap {
-namespace internal {
-namespace testing {
+namespace shim {
 
-class MockScheduler : public Scheduler {
+class Scanning : public bluetooth::Module, public bluetooth::shim::IScanning {
  public:
-  MOCK_METHOD(void, AttachChannel, (Cid cid, std::shared_ptr<l2cap::internal::ChannelImpl> channel), (override));
-  MOCK_METHOD(void, DetachChannel, (Cid cid), (override));
-  MOCK_METHOD(void, NotifyPacketsReady, (Cid cid, int number_packet), (override));
+  Scanning() = default;
+  ~Scanning() = default;
+
+  static const ModuleFactory Factory;
+
+ protected:
+  void ListDependencies(ModuleList* list) override;  // Module
+  void Start() override;                             // Module
+  void Stop() override;                              // Module
+
+ private:
+  struct impl;
+  std::unique_ptr<impl> pimpl_;
+  DISALLOW_COPY_AND_ASSIGN(Scanning);
 };
 
-}  // namespace testing
-}  // namespace internal
-}  // namespace l2cap
+}  // namespace shim
 }  // namespace bluetooth

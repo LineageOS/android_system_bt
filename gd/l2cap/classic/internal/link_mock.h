@@ -43,8 +43,6 @@ class MockLink : public Link {
   MOCK_METHOD(hci::Address, GetDevice, (), (override));
   MOCK_METHOD(void, OnAclDisconnected, (hci::ErrorCode status), (override));
   MOCK_METHOD(void, Disconnect, (), (override));
-  MOCK_METHOD(std::shared_ptr<FixedChannelImpl>, AllocateFixedChannel, (Cid cid, SecurityPolicy security_policy),
-              (override));
   MOCK_METHOD(std::shared_ptr<DynamicChannelImpl>, AllocateDynamicChannel,
               (Psm psm, Cid cid, SecurityPolicy security_policy), (override));
   MOCK_METHOD(bool, IsFixedChannelAllocated, (Cid cid), (override));

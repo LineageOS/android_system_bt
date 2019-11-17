@@ -42,6 +42,7 @@
 #include "btm_api.h"
 #include "btm_int.h"
 #include "btu.h"
+#include "device/include/interop.h"
 #include "gap_api.h" /* For GAP_BleReadPeerPrefConnParams */
 #include "l2c_api.h"
 #include "osi/include/log.h"
@@ -50,7 +51,6 @@
 #include "stack/gatt/connection_manager.h"
 #include "stack/include/gatt_api.h"
 #include "utl.h"
-#include "device/include/interop.h"
 
 #if (GAP_INCLUDED == TRUE)
 #include "gap_api.h"
@@ -1357,8 +1357,10 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
     do {
       p_sdp_rec = NULL;
       if (bta_dm_search_cb.service_index == (BTA_USER_SERVICE_ID + 1)) {
-        p_sdp_rec = SDP_FindServiceUUIDInDb(bta_dm_search_cb.p_sdp_db,
-                                            bta_dm_search_cb.uuid, p_sdp_rec);
+        if (!bta_dm_search_cb.uuid.IsEmpty()) {
+          p_sdp_rec = SDP_FindServiceUUIDInDb(bta_dm_search_cb.p_sdp_db,
+                                              bta_dm_search_cb.uuid, p_sdp_rec);
+        }
 
         if (p_sdp_rec && SDP_FindProtocolListElemInRec(
                              p_sdp_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
@@ -1772,7 +1774,6 @@ void bta_dm_search_cancel_notify(UNUSED_ATTR tBTA_DM_MSG* p_data) {
  *
  ******************************************************************************/
 static void bta_dm_find_services(const RawAddress& bd_addr) {
-
   while (bta_dm_search_cb.service_index < BTA_MAX_SERVICE_ID) {
     Uuid uuid = Uuid::kEmpty;
     if (bta_dm_search_cb.services_to_search &
@@ -1951,7 +1952,8 @@ static void bta_dm_discover_device(const RawAddress& remote_bd_addr) {
         BT_DEVICE_TYPE_BLE) &&
        (bta_dm_search_cb.state == BTA_DM_SEARCH_ACTIVE)) ||
       (transport == BT_TRANSPORT_LE &&
-       interop_match_addr(INTEROP_DISABLE_NAME_REQUEST, &bta_dm_search_cb.peer_bdaddr))) {
+       interop_match_addr(INTEROP_DISABLE_NAME_REQUEST,
+                          &bta_dm_search_cb.peer_bdaddr))) {
     /* Do not perform RNR for LE devices at inquiry complete*/
     bta_dm_search_cb.name_discover_done = true;
   }

@@ -82,9 +82,8 @@ void LinkManager::ConnectFixedChannelServices(hci::Address device,
   acl_manager_->CreateConnection(device);
 }
 
-void LinkManager::ConnectDynamicChannelServices(hci::Address device,
-                                                PendingDynamicChannelConnection pending_dynamic_channel_connection,
-                                                Psm psm) {
+void LinkManager::ConnectDynamicChannelServices(
+    hci::Address device, Link::PendingDynamicChannelConnection pending_dynamic_channel_connection, Psm psm) {
   auto* link = GetLink(device);
   if (link == nullptr) {
     acl_manager_->CreateConnection(device);
@@ -97,7 +96,7 @@ void LinkManager::ConnectDynamicChannelServices(hci::Address device,
     }
     return;
   }
-  link->SendConnectionRequest(psm, link->ReserveDynamicChannel());
+  link->SendConnectionRequest(psm, link->ReserveDynamicChannel(), std::move(pending_dynamic_channel_connection));
 }
 
 Link* LinkManager::GetLink(const hci::Address device) {
@@ -133,7 +132,9 @@ void LinkManager::OnConnectSuccess(std::unique_ptr<hci::AclConnection> acl_conne
   }
   if (pending_dynamic_channels_.find(device) != pending_dynamic_channels_.end()) {
     for (Psm psm : pending_dynamic_channels_[device]) {
-      link->SendConnectionRequest(psm, link->ReserveDynamicChannel());
+      auto& callbacks = pending_dynamic_channels_callbacks_[device].front();
+      link->SendConnectionRequest(psm, link->ReserveDynamicChannel(), std::move(callbacks));
+      pending_dynamic_channels_callbacks_[device].pop_front();
     }
     pending_dynamic_channels_.erase(device);
     pending_dynamic_channels_callbacks_.erase(device);
@@ -155,7 +156,7 @@ void LinkManager::OnConnectFail(hci::Address device, hci::ErrorCode reason) {
     // There is no pending link, exit
     LOG_DEBUG("Connection to %s failed without a pending link", device.ToString().c_str());
     if (pending_dynamic_channels_callbacks_.find(device) != pending_dynamic_channels_callbacks_.end()) {
-      for (PendingDynamicChannelConnection& callbacks : pending_dynamic_channels_callbacks_[device]) {
+      for (Link::PendingDynamicChannelConnection& callbacks : pending_dynamic_channels_callbacks_[device]) {
         callbacks.handler_->Post(common::BindOnce(std::move(callbacks.on_fail_callback_),
                                                   DynamicChannelManager::ConnectionResult{
                                                       .hci_error = hci::ErrorCode::CONNECTION_TIMEOUT,

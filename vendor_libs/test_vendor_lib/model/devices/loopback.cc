@@ -72,7 +72,7 @@ void Loopback::IncomingPacket(model::packets::LinkLayerPacketView packet) {
       packet.GetType() == model::packets::PacketType::LE_SCAN) {
     LOG_INFO("Got a scan");
 
-    auto scan_response = model::packets::LeAdvertisementBuilder::Create(
+    auto scan_response = model::packets::LeScanResponseBuilder::Create(
         properties_.GetLeAddress(), packet.GetSourceAddress(),
         model::packets::AddressType::PUBLIC,
         model::packets::AdvertisementType::SCAN_RESPONSE,

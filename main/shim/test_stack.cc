@@ -39,8 +39,10 @@ void TestGdShimL2cap::UnregisterService(uint16_t psm) {
   registered_service_.erase(psm);
 }
 
-void TestGdShimL2cap::CreateConnection(uint16_t psm, const std::string address,
-                                       std::promise<uint16_t> completed) {
+void TestGdShimL2cap::CreateConnection(
+    uint16_t psm, const std::string address,
+    bluetooth::shim::ConnectionOpenCallback on_open,
+    std::promise<uint16_t> completed) {
   completed.set_value(cid_);
 }
 
@@ -52,28 +54,27 @@ void TestGdShimL2cap::SetReadDataReadyCallback(
 void TestGdShimL2cap::SetConnectionClosedCallback(
     uint16_t cid, bluetooth::shim::ConnectionClosedCallback on_closed) {}
 
-bool TestGdShimL2cap::Write(uint16_t cid, const uint8_t* data, size_t len) {
+void TestGdShimL2cap::Write(uint16_t cid, const uint8_t* data, size_t len) {
   ASSERT(data_buffer_ != nullptr);
   ASSERT(data_buffer_size_ > len);
   memcpy(data_buffer_, data, len);
-  return write_success_;
 }
 
-bool TestGdShimL2cap::WriteFlushable(uint16_t cid, const uint8_t* data,
-                                     size_t len) {
-  return write_success_;
-}
+void TestGdShimL2cap::WriteFlushable(uint16_t cid, const uint8_t* data,
+                                     size_t len) {}
 
-bool TestGdShimL2cap::WriteNonFlushable(uint16_t cid, const uint8_t* data,
-                                        size_t len) {
-  return write_success_;
-}
+void TestGdShimL2cap::WriteNonFlushable(uint16_t cid, const uint8_t* data,
+                                        size_t len) {}
 
-bool TestGdShimL2cap::IsCongested(uint16_t cid) { return is_congested_; }
+void TestGdShimL2cap::SendLoopbackResponse(std::function<void()> function) {
+  function();
+}
 
 void TestStack::Start() {}
 
 void TestStack::Stop() {}
+
+bluetooth::shim::IAdvertising* TestStack::GetAdvertising() { return nullptr; }
 
 bluetooth::shim::IController* TestStack::GetController() { return nullptr; }
 
@@ -92,3 +93,5 @@ bluetooth::shim::IInquiry* TestStack::GetInquiry() { return nullptr; }
 bluetooth::shim::IL2cap* TestStack::GetL2cap() { return &test_l2cap_; }
 
 bluetooth::shim::IPage* TestStack::GetPage() { return nullptr; }
+
+bluetooth::shim::IScanning* TestStack::GetScanning() { return nullptr; }

@@ -16,6 +16,7 @@
 
 #include "reactive_semaphore.h"
 
+#include <error.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
 #include <functional>
@@ -33,19 +34,19 @@ ReactiveSemaphore::ReactiveSemaphore(unsigned int value) : fd_(eventfd(value, EF
 ReactiveSemaphore::~ReactiveSemaphore() {
   int close_status;
   RUN_NO_INTR(close_status = close(fd_));
-  ASSERT(close_status != -1);
+  ASSERT_LOG(close_status != -1, "close failed: %s", strerror(errno));
 }
 
 void ReactiveSemaphore::Decrease() {
   uint64_t val = 0;
   auto read_result = eventfd_read(fd_, &val);
-  ASSERT(read_result != -1);
+  ASSERT_LOG(read_result != -1, "decrease failed: %s", strerror(errno));
 }
 
 void ReactiveSemaphore::Increase() {
   uint64_t val = 1;
   auto write_result = eventfd_write(fd_, val);
-  ASSERT(write_result != -1);
+  ASSERT_LOG(write_result != -1, "increase failed: %s", strerror(errno));
 }
 
 int ReactiveSemaphore::GetFd() {

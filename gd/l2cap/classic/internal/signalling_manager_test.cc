@@ -58,36 +58,7 @@ class L2capClassicSignallingManagerTest : public ::testing::Test {
   os::Handler* l2cap_handler_ = nullptr;
 };
 
-PacketView<kLittleEndian> GetPacketView(std::unique_ptr<packet::BasePacketBuilder> packet) {
-  auto bytes = std::make_shared<std::vector<uint8_t>>();
-  BitInserter i(*bytes);
-  bytes->reserve(packet->size());
-  packet->Serialize(i);
-  return packet::PacketView<packet::kLittleEndian>(bytes);
-}
-
-TEST_F(L2capClassicSignallingManagerTest, handle_connection_request) {
-  l2cap::internal::testing::MockParameterProvider parameter_provider;
-  testing::MockDynamicChannelServiceManagerImpl dynamic_service_manager_;
-  testing::MockFixedChannelServiceManagerImpl fixed_service_manager_;
-  testing::MockLink link{l2cap_handler_, &parameter_provider};
-  std::shared_ptr<FixedChannelImpl> signalling_channel = std::make_shared<FixedChannelImpl>(1, &link, l2cap_handler_);
-  EXPECT_CALL(link, AllocateFixedChannel(_, _)).WillRepeatedly(Return(signalling_channel));
-  auto service_psm = 0x1;
-  EXPECT_CALL(dynamic_service_manager_, IsServiceRegistered(service_psm)).WillRepeatedly(Return(true));
-  DynamicChannelAllocator channel_allocator{&link, l2cap_handler_};
-  ClassicSignallingManager signalling_manager{l2cap_handler_, &link, &dynamic_service_manager_, &channel_allocator,
-                                              &fixed_service_manager_};
-  auto* down_end = signalling_channel->GetQueueDownEnd();
-  os::EnqueueBuffer<packet::PacketView<kLittleEndian>> enqueue_buffer{down_end};
-  auto dcid = 0x101;
-  auto builder = ConnectionRequestBuilder::Create(1, service_psm, dcid);
-  enqueue_buffer.Enqueue(std::make_unique<PacketView<kLittleEndian>>(GetPacketView(std::move(builder))),
-                         l2cap_handler_);
-  SyncHandler(l2cap_handler_);
-  EXPECT_CALL(link, AllocateDynamicChannel(_, dcid, _));
-  SyncHandler(l2cap_handler_);
-}
+TEST_F(L2capClassicSignallingManagerTest, precondition) {}
 
 }  // namespace
 }  // namespace internal

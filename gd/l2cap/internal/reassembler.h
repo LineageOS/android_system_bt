@@ -16,11 +16,13 @@
 
 #pragma once
 
+#include <memory>
 #include <unordered_map>
 #include <utility>
 
 #include "common/bidi_queue.h"
 #include "l2cap/cid.h"
+#include "l2cap/internal/channel_impl.h"
 #include "l2cap/l2cap_packets.h"
 #include "l2cap/mtu.h"
 #include "os/queue.h"
@@ -29,6 +31,7 @@
 
 namespace bluetooth {
 namespace l2cap {
+
 namespace internal {
 
 /**
@@ -50,18 +53,13 @@ class Reassembler {
   Reassembler(LowerQueueUpEnd* link_queue_up_end, os::Handler* handler);
   ~Reassembler();
 
-  struct ChannelConfigurationOptions {
-    Mtu incoming_mtu_ = kDefaultClassicMtu;
-    RetransmissionAndFlowControlModeOption mode_ = RetransmissionAndFlowControlModeOption::L2CAP_BASIC;
-    // TODO: Add all RetransmissionAndFlowControlConfigurationOptions
-    FcsType fcs_type_ = FcsType::NO_FCS;
-  };
-
   /**
    * Attach a channel for packet reassembly.
-   * If the channel is reconfigured, signalling manager should detach channel and attach channel again.
+   * If the channel is a dynamic channel, a shared_ptr reference to DynamicChannelImpl is needed to read necessary
+   * config. If the channel is a fixed channel, use nullptr.
+   * TODO (b/144503952): Rethink about channel abstraction
    */
-  void AttachChannel(Cid cid, UpperQueueDownEnd* channel_down_end, ChannelConfigurationOptions options);
+  void AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> channel);
 
   /**
    * Detach a channel for packet reassembly. Incoming packets won't be delivered to the specified cid.
@@ -69,16 +67,16 @@ class Reassembler {
   void DetachChannel(Cid cid);
 
  private:
-  struct ChannelBufferAndOptions {
-    ChannelBufferAndOptions(UpperQueueDownEnd* queue_end, ChannelConfigurationOptions options)
-        : enqueue_buffer_(queue_end), options_(std::move(options)) {}
+  struct ChannelBuffer {
+    ChannelBuffer(UpperQueueDownEnd* queue_end, std::shared_ptr<ChannelImpl> channel)
+        : enqueue_buffer_(queue_end), channel_(std::move(channel)) {}
     os::EnqueueBuffer<UpperEnqueue> enqueue_buffer_;
-    ChannelConfigurationOptions options_;
+    std::shared_ptr<ChannelImpl> channel_;
   };
 
   LowerQueueUpEnd* link_queue_up_end_;
   os::Handler* handler_;
-  std::unordered_map<Cid, ChannelBufferAndOptions> channel_map_;
+  std::unordered_map<Cid, ChannelBuffer> channel_map_;
 
   void link_queue_dequeue_callback();
   void handle_basic_mode_packet(Cid cid, const BasicFrameView& view);

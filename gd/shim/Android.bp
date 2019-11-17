@@ -1,6 +1,7 @@
 filegroup {
     name: "BluetoothShimSources",
     srcs: [
+            "advertising.cc",
             "controller.cc",
             "connectability.cc",
             "discoverability.cc",
@@ -8,6 +9,7 @@ filegroup {
             "inquiry.cc",
             "l2cap.cc",
             "page.cc",
+            "scanning.cc",
             "stack.cc",
     ],
 }

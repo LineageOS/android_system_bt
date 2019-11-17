@@ -17,6 +17,7 @@
 #include "l2cap/classic/dynamic_channel_manager.h"
 #include "l2cap/classic/internal/dynamic_channel_service_impl.h"
 #include "l2cap/classic/internal/dynamic_channel_service_manager_impl.h"
+#include "l2cap/classic/internal/link.h"
 #include "l2cap/classic/internal/link_manager.h"
 
 namespace bluetooth {
@@ -25,7 +26,7 @@ namespace classic {
 
 bool DynamicChannelManager::ConnectChannel(hci::Address device, Psm psm, OnConnectionOpenCallback on_connection_open,
                                            OnConnectionFailureCallback on_fail_callback, os::Handler* handler) {
-  internal::LinkManager::PendingDynamicChannelConnection pending_dynamic_channel_connection{
+  internal::Link::PendingDynamicChannelConnection pending_dynamic_channel_connection{
       .handler_ = handler,
       .on_open_callback_ = std::move(on_connection_open),
       .on_fail_callback_ = std::move(on_fail_callback),

@@ -183,19 +183,53 @@ void ClassicSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remo
 }
 
 void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid cid, Continuation is_continuation,
-                                                      std::vector<std::unique_ptr<ConfigurationOption>> option) {
+                                                      std::vector<std::unique_ptr<ConfigurationOption>> options) {
   auto channel = channel_allocator_->FindChannelByCid(cid);
   if (channel == nullptr) {
     LOG_WARN("Configuration request for an unknown channel");
     return;
   }
+
+  for (auto& option : options) {
+    switch (option->type_) {
+      case ConfigurationOptionType::MTU: {
+        channel->SetIncomingMtu(MtuConfigurationOption::Specialize(option.get())->mtu_);
+        break;
+      }
+      case ConfigurationOptionType::FLUSH_TIMEOUT: {
+        // TODO: Handle this configuration option
+        break;
+      }
+      case ConfigurationOptionType::RETRANSMISSION_AND_FLOW_CONTROL: {
+        auto config = RetransmissionAndFlowControlConfigurationOption::Specialize(option.get());
+        channel->SetChannelMode(config->mode_);
+        break;
+      }
+      case ConfigurationOptionType::FRAME_CHECK_SEQUENCE: {
+        channel->SetFcsType(FrameCheckSequenceOption::Specialize(option.get())->fcs_type_);
+        break;
+      }
+      default:
+        LOG_WARN("Received some unsupported configuration option: %d", static_cast<int>(option->type_));
+        auto response =
+            ConfigurationResponseBuilder::Create(signal_id.Value(), channel->GetRemoteCid(), is_continuation,
+                                                 ConfigurationResponseResult::UNKNOWN_OPTIONS, {});
+        enqueue_buffer_->Enqueue(std::move(response), handler_);
+        return;
+    }
+  }
+
   auto response = ConfigurationResponseBuilder::Create(signal_id.Value(), channel->GetRemoteCid(), is_continuation,
                                                        ConfigurationResponseResult::SUCCESS, {});
   enqueue_buffer_->Enqueue(std::move(response), handler_);
   channel->SetIncomingConfigurationStatus(DynamicChannelImpl::ConfigurationStatus::CONFIGURED);
   if (channel->GetOutgoingConfigurationStatus() == DynamicChannelImpl::ConfigurationStatus::CONFIGURED) {
     std::unique_ptr<DynamicChannel> user_channel = std::make_unique<DynamicChannel>(channel, handler_);
-    dynamic_service_manager_->GetService(channel->GetPsm())->NotifyChannelCreation(std::move(user_channel));
+    if (channel->local_initiated_) {
+      link_->NotifyChannelCreation(cid, std::move(user_channel));
+    } else {
+      dynamic_service_manager_->GetService(channel->GetPsm())->NotifyChannelCreation(std::move(user_channel));
+    }
   }
 }
 
@@ -219,7 +253,11 @@ void ClassicSignallingManager::OnConfigurationResponse(SignalId signal_id, Cid c
   channel->SetOutgoingConfigurationStatus(DynamicChannelImpl::ConfigurationStatus::CONFIGURED);
   if (channel->GetIncomingConfigurationStatus() == DynamicChannelImpl::ConfigurationStatus::CONFIGURED) {
     std::unique_ptr<DynamicChannel> user_channel = std::make_unique<DynamicChannel>(channel, handler_);
-    dynamic_service_manager_->GetService(channel->GetPsm())->NotifyChannelCreation(std::move(user_channel));
+    if (channel->local_initiated_) {
+      link_->NotifyChannelCreation(cid, std::move(user_channel));
+    } else {
+      dynamic_service_manager_->GetService(channel->GetPsm())->NotifyChannelCreation(std::move(user_channel));
+    }
   }
   alarm_.Cancel();
   handle_send_next_command();

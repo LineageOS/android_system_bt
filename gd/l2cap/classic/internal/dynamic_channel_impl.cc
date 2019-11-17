@@ -81,12 +81,44 @@ std::string DynamicChannelImpl::ToString() {
   return ss.str();
 }
 
+DynamicChannelImpl::ConfigurationStatus DynamicChannelImpl::GetOutgoingConfigurationStatus() const {
+  return outgoing_configuration_status_;
+}
+
 void DynamicChannelImpl::SetOutgoingConfigurationStatus(ConfigurationStatus status) {
   outgoing_configuration_status_ = status;
 }
 
+DynamicChannelImpl::ConfigurationStatus DynamicChannelImpl::GetIncomingConfigurationStatus() const {
+  return incoming_configuration_status_;
+}
+
 void DynamicChannelImpl::SetIncomingConfigurationStatus(ConfigurationStatus status) {
   incoming_configuration_status_ = status;
+}
+
+Mtu DynamicChannelImpl::GetIncomingMtu() const {
+  return incoming_mtu_;
+}
+
+void DynamicChannelImpl::SetIncomingMtu(Mtu mtu) {
+  incoming_mtu_ = mtu;
+}
+
+RetransmissionAndFlowControlModeOption DynamicChannelImpl::GetChannelMode() const {
+  return mode_;
+}
+
+void DynamicChannelImpl::SetChannelMode(RetransmissionAndFlowControlModeOption mode) {
+  mode_ = mode;
+}
+
+FcsType DynamicChannelImpl::GetFcsType() const {
+  return fcs_type_;
+}
+
+void DynamicChannelImpl::SetFcsType(FcsType fcs_type) {
+  fcs_type_ = fcs_type;
 }
 
 }  // namespace internal
