@@ -61,6 +61,7 @@ class TestStack : public bluetooth::shim::IStack {
   bluetooth::shim::IHciLayer* GetHciLayer();
   bluetooth::shim::IInquiry* GetInquiry();
   bluetooth::shim::IL2cap* GetL2cap();
+  bluetooth::shim::IName* GetName();
   bluetooth::shim::IPage* GetPage();
   bluetooth::shim::IScanning* GetScanning();
 

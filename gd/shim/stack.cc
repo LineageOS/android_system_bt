@@ -27,6 +27,7 @@
 #include "neighbor/connectability.h"
 #include "neighbor/discoverability.h"
 #include "neighbor/inquiry.h"
+#include "neighbor/name.h"
 #include "neighbor/page.h"
 #include "neighbor/scan.h"
 #include "os/log.h"
@@ -39,6 +40,7 @@
 #include "shim/hci_layer.h"
 #include "shim/inquiry.h"
 #include "shim/l2cap.h"
+#include "shim/name.h"
 #include "shim/page.h"
 #include "shim/scanning.h"
 #include "stack_manager.h"
@@ -63,6 +65,7 @@ struct bluetooth::shim::Stack::impl {
     modules.add<::bluetooth::neighbor::ConnectabilityModule>();
     modules.add<::bluetooth::neighbor::DiscoverabilityModule>();
     modules.add<::bluetooth::neighbor::InquiryModule>();
+    modules.add<::bluetooth::neighbor::NameModule>();
     modules.add<::bluetooth::neighbor::PageModule>();
     modules.add<::bluetooth::neighbor::ScanModule>();
     modules.add<::bluetooth::shim::Controller>();
@@ -72,6 +75,7 @@ struct bluetooth::shim::Stack::impl {
     modules.add<::bluetooth::shim::Connectability>();
     modules.add<::bluetooth::shim::Discoverability>();
     modules.add<::bluetooth::shim::Inquiry>();
+    modules.add<::bluetooth::shim::Name>();
     modules.add<::bluetooth::shim::L2cap>();
     modules.add<::bluetooth::shim::Page>();
     modules.add<::bluetooth::shim::Scanning>();
@@ -122,6 +126,10 @@ struct bluetooth::shim::Stack::impl {
 
   IL2cap* GetL2cap() {
     return stack_manager_.GetInstance<bluetooth::shim::L2cap>();
+  }
+
+  IName* GetName() {
+    return stack_manager_.GetInstance<bluetooth::shim::Name>();
   }
 
   IPage* GetPage() {
@@ -177,6 +185,10 @@ bluetooth::shim::IInquiry* bluetooth::shim::Stack::GetInquiry() {
 
 bluetooth::shim::IL2cap* bluetooth::shim::Stack::GetL2cap() {
   return pimpl_->GetL2cap();
+}
+
+bluetooth::shim::IName* bluetooth::shim::Stack::GetName() {
+  return pimpl_->GetName();
 }
 
 bluetooth::shim::IPage* bluetooth::shim::Stack::GetPage() {
