@@ -101,38 +101,24 @@ void SecurityManagerImpl::RemoveBond(std::shared_ptr<hci::ClassicDevice> device)
 }
 
 void SecurityManagerImpl::RegisterCallbackListener(ISecurityManagerListener* listener, os::Handler* handler) {
-  if (listeners_.size() < 1) {
-    listeners_.push_back({listener, handler});
-  } else {
-    bool found = false;
-    for (auto it = listeners_.begin(); it != listeners_.end(); ++it) {
-      found = it->first == listener;
-      if (found) break;
-    }
-
-    if (found) {
-      LOG_ERROR("Listener has already been registered!");
-    } else {
-      listeners_.push_back({listener, handler});
+  for (auto it = listeners_.begin(); it != listeners_.end(); ++it) {
+    if (it->first == listener) {
+      LOG_ALWAYS_FATAL("Listener has already been registered!");
     }
   }
+
+  listeners_.push_back({listener, handler});
 }
 
 void SecurityManagerImpl::UnregisterCallbackListener(ISecurityManagerListener* listener) {
-  if (listeners_.size() < 1) {
-    LOG_ERROR("Listener has not been registered!");
-  } else {
-    bool found = false;
-    auto it = listeners_.begin();
-    while (it != listeners_.end()) {
-      found = it->first == listener;
-      if (found) break;
-      ++it;
-    }
-    if (found) {
+  for (auto it = listeners_.begin(); it != listeners_.end(); ++it) {
+    if (it->first == listener) {
       listeners_.erase(it);
+      return;
     }
   }
+
+  LOG_ALWAYS_FATAL("Listener has not been registered!");
 }
 
 void SecurityManagerImpl::FireDeviceBondedCallbacks(std::shared_ptr<Device> device) {
