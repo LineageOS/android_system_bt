@@ -20,8 +20,9 @@
 #include <forward_list>
 #include <memory>
 
-#include "types/address.h"
+#include "hci/address.h"
 
+using ::bluetooth::hci::Address;
 using std::vector;
 
 namespace {

@@ -332,6 +332,14 @@ cc_benchmark {
     ],
 }
 
+filegroup {
+    name: "BluetoothHciClassSources",
+    srcs: [
+        "hci/address.cc",
+        "hci/class_of_device.cc",
+        ],
+}
+
 genrule {
     name: "BluetoothGeneratedPackets_h",
     tools: [

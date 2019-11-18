@@ -21,11 +21,14 @@
 #include <vector>
 
 #include "base/json/json_value_converter.h"
+#include "hci/address.h"
+#include "hci/hci_packets.h"
 #include "os/log.h"
-#include "types/address.h"
-#include "types/class_of_device.h"
 
 namespace test_vendor_lib {
+
+using ::bluetooth::hci::Address;
+using ::bluetooth::hci::ClassOfDevice;
 
 class DeviceProperties {
  public:

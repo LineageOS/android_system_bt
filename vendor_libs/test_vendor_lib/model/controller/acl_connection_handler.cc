@@ -18,11 +18,13 @@
 
 #include "os/log.h"
 
-#include "types/address.h"
+#include "hci/address.h"
 
 using std::shared_ptr;
 
 namespace test_vendor_lib {
+
+using ::bluetooth::hci::Address;
 
 bool AclConnectionHandler::HasHandle(uint16_t handle) const {
   if (acl_connections_.count(handle) == 0) {
