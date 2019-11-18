@@ -24,43 +24,10 @@
 
 namespace bluetooth {
 namespace security {
+
+class ISecurityManagerListener;
+
 namespace internal {
-
-/**
- * Interface for listening to the channel for SMP commands.
- */
-class ISecurityManagerListener {
- public:
-  ISecurityManagerListener(os::Handler* handler) : handler_(handler) {}
-  virtual ~ISecurityManagerListener() = default;
-
-  /**
-   * Called when a device is successfully bonded.
-   *
-   * @param device pointer to the bonded device
-   */
-  virtual void OnDeviceBonded(std::shared_ptr<bluetooth::hci::Device> device);
-
-  /**
-   * Called when a device is successfully un-bonded.
-   *
-   * @param device pointer to the device that is no longer bonded
-   */
-  virtual void OnDeviceUnbonded(std::shared_ptr<bluetooth::hci::Device> device);
-
-  /**
-   * Called as a result of a failure during the bonding process.
-   *
-   * @param device pointer to the device that is no longer bonded
-   */
-  virtual void OnDeviceBondFailed(std::shared_ptr<bluetooth::hci::Device> device);
-
-  bool operator==(const ISecurityManagerListener& rhs) const {
-    return &*this == &rhs;
-  }
-
-  os::Handler* handler_ = nullptr;
-};
 
 class SecurityManagerImpl /*: public channel::ISecurityManagerChannelListener*/ {
  public:
