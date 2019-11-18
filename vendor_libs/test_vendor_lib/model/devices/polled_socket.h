@@ -26,8 +26,6 @@
 #include <sys/socket.h>
 #include <unistd.h>
 
-#include "packets/packet_view.h"
-
 namespace test_vendor_lib {
 namespace net {
 
@@ -41,7 +39,7 @@ class PolledSocket {
   PolledSocket(PolledSocket&& p);
   virtual ~PolledSocket();
 
-  size_t TrySend(packets::PacketView<true> packet);
+  size_t TrySend(const std::vector<uint8_t>& packet);
   // size_t TrySendVector(const std::vector<const std::vector<uint8_t>&>& data);
   size_t TryReceive(size_t num_bytes, uint8_t* data);
 
