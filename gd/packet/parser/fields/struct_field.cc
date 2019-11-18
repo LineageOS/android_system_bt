@@ -44,8 +44,14 @@ void StructField::GenExtractor(std::ostream& s, int, bool) const {
   s << GetDataType() << "::Parse(" << GetName() << "_ptr, " << GetName() << "_it);";
 }
 
+std::string StructField::GetGetterFunctionName() const {
+  std::stringstream ss;
+  ss << "Get" << util::UnderscoreToCamelCase(GetName());
+  return ss.str();
+}
+
 void StructField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
-  s << GetDataType() << " Get" << util::UnderscoreToCamelCase(GetName()) << "() const {";
+  s << GetDataType() << " " << GetGetterFunctionName() << "() const {";
   s << "ASSERT(was_validated_);";
   s << "size_t end_index = size();";
   s << "auto to_bound = begin();";
@@ -58,9 +64,8 @@ void StructField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
   s << "}\n";
 }
 
-bool StructField::GenBuilderParameter(std::ostream& s) const {
-  s << GetDataType() << " " << GetName();
-  return true;
+std::string StructField::GetBuilderParameterType() const {
+  return GetDataType();
 }
 
 bool StructField::HasParameterValidator() const {

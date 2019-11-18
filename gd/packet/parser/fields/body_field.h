@@ -34,9 +34,11 @@ class BodyField : public PacketField {
 
   virtual void GenExtractor(std::ostream& s, int num_leading_bits, bool for_struct) const override;
 
+  virtual std::string GetGetterFunctionName() const override;
+
   virtual void GenGetter(std::ostream&, Size, Size) const override;
 
-  virtual bool GenBuilderParameter(std::ostream&) const override;
+  virtual std::string GetBuilderParameterType() const override;
 
   virtual bool HasParameterValidator() const override;
 

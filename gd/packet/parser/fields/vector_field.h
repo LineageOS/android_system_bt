@@ -41,9 +41,11 @@ class VectorField : public PacketField {
 
   virtual void GenExtractor(std::ostream& s, int num_leading_bits, bool for_struct) const override;
 
+  virtual std::string GetGetterFunctionName() const override;
+
   virtual void GenGetter(std::ostream& s, Size start_offset, Size end_offset) const override;
 
-  virtual bool GenBuilderParameter(std::ostream& s) const override;
+  virtual std::string GetBuilderParameterType() const override;
 
   virtual bool BuilderParameterMustBeMoved() const override;
 
@@ -60,6 +62,10 @@ class VectorField : public PacketField {
   void SetSizeField(const SizeField* size_field);
 
   const std::string& GetSizeModifier() const;
+
+  virtual bool IsContainerField() const override;
+
+  virtual const PacketField* GetElementField() const override;
 
   const std::string name_;
 
