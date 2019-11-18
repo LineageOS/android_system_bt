@@ -667,7 +667,6 @@ static void btif_a2dp_sink_set_focus_state_event(
   LOG_INFO(LOG_TAG, "%s: state=%d", __func__, state);
   LockGuard lock(g_mutex);
 
-  if (!btif_av_is_connected()) return;
   APPL_TRACE_DEBUG("%s: setting focus state to %d", __func__, state);
   btif_a2dp_sink_cb.rx_focus_state = state;
   if (btif_a2dp_sink_cb.rx_focus_state == BTIF_A2DP_SINK_FOCUS_NOT_GRANTED) {
