@@ -21,6 +21,9 @@
 
 using namespace bluetooth::security;
 
+// Definition of Pure Virtual Destructor
+ISecurityManagerListener::~ISecurityManagerListener() {}
+
 void SecurityManager::Init() {
   security_handler_->Post(
       common::BindOnce(&internal::SecurityManagerImpl::Init, common::Unretained(security_manager_impl_)));
