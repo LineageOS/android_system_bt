@@ -21,9 +21,11 @@
 #include <unordered_map>
 #include <vector>
 
-#include "types/address.h"
+#include "hci/address.h"
 
 namespace test_vendor_lib {
+
+using ::bluetooth::hci::Address;
 
 enum class PairingType : uint8_t {
   AUTO_CONFIRMATION,

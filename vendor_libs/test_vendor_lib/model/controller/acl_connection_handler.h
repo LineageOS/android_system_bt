@@ -21,10 +21,12 @@
 #include <unordered_map>
 
 #include "acl_connection.h"
+#include "hci/address.h"
 #include "include/acl.h"
-#include "types/address.h"
 
 namespace test_vendor_lib {
+
+using ::bluetooth::hci::Address;
 
 class AclConnectionHandler {
  public:

@@ -22,8 +22,9 @@
 #include <forward_list>
 #include <memory>
 
-#include "types/address.h"
+#include "hci/address.h"
 
+using ::bluetooth::hci::Address;
 using std::vector;
 using test_vendor_lib::acl::BroadcastFlagsType;
 using test_vendor_lib::acl::PacketBoundaryFlagsType;
