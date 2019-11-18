@@ -45,17 +45,11 @@ void PolledSocket::CleanUp() {
   file_descriptor_ = -1;
 }
 
-size_t PolledSocket::TrySend(packets::PacketView<true> packet) {
+size_t PolledSocket::TrySend(const std::vector<uint8_t>& packet) {
   if (file_descriptor_ == -1) {
     return 0;
   }
-  // Could skip this copy if the packet is guaranteed to be contiguous.
-  std::vector<uint8_t> copy;
-  copy.reserve(packet.size());
-  for (const auto&& c : packet) {
-    copy.push_back(c);
-  }
-  int ret = write(file_descriptor_, copy.data(), copy.size());
+  int ret = write(file_descriptor_, packet.data(), packet.size());
   if (ret == -1) {
     LOG_WARN("%s error %s", __func__, strerror(errno));
     return 0;
