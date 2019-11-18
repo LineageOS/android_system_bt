@@ -44,14 +44,14 @@ void SecurityManager::RemoveBond(std::shared_ptr<hci::ClassicDevice> device) {
                                            std::forward<std::shared_ptr<hci::ClassicDevice>>(device)));
 }
 
-void SecurityManager::RegisterCallbackListener(internal::ISecurityManagerListener* listener) {
+void SecurityManager::RegisterCallbackListener(ISecurityManagerListener* listener) {
   security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::RegisterCallbackListener,
                                            common::Unretained(security_manager_impl_),
-                                           std::forward<internal::ISecurityManagerListener*>(listener)));
+                                           std::forward<ISecurityManagerListener*>(listener)));
 }
 
-void SecurityManager::UnregisterCallbackListener(internal::ISecurityManagerListener* listener) {
+void SecurityManager::UnregisterCallbackListener(ISecurityManagerListener* listener) {
   security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::UnregisterCallbackListener,
                                            common::Unretained(security_manager_impl_),
-                                           std::forward<internal::ISecurityManagerListener*>(listener)));
+                                           std::forward<ISecurityManagerListener*>(listener)));
 }

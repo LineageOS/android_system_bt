@@ -22,10 +22,12 @@
 
 #include "os/log.h"
 #include "security/pairing/classic_pairing_handler.h"
+#include "security/security_manager.h"
 
 using namespace bluetooth::security::internal;
 using bluetooth::hci::Device;
 using bluetooth::hci::DeviceType;
+using bluetooth::security::ISecurityManagerListener;
 using bluetooth::security::pairing::PairingHandler;
 
 namespace {
