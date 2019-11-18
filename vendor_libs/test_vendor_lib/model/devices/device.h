@@ -22,13 +22,15 @@
 #include <string>
 #include <vector>
 
+#include "hci/address.h"
 #include "model/devices/device_properties.h"
 #include "model/setup/phy_layer.h"
-#include "types/address.h"
 
 #include "packets/link_layer_packets.h"
 
 namespace test_vendor_lib {
+
+using ::bluetooth::hci::Address;
 
 // Represent a Bluetooth Device
 //  - Provide Get*() and Set*() functions for device attributes.

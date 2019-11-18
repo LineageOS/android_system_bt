@@ -20,10 +20,12 @@
 #include <vector>
 
 #include "device.h"
+#include "hci/address.h"
 #include "packets/link_layer_packets.h"
-#include "types/address.h"
 
 namespace test_vendor_lib {
+
+using ::bluetooth::hci::Address;
 
 class Sniffer : public Device {
  public:

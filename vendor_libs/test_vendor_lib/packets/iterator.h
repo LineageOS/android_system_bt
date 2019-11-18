@@ -19,11 +19,13 @@
 #include <cstdint>
 #include <forward_list>
 
-#include "types/address.h"
+#include "hci/address.h"
 #include "view.h"
 
 namespace test_vendor_lib {
 namespace packets {
+
+using ::bluetooth::hci::Address;
 
 // Templated Iterator for endianness
 template <bool little_endian>

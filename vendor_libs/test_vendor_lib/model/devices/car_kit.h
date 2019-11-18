@@ -20,6 +20,7 @@
 #include <vector>
 
 #include "device.h"
+#include "hci/hci_packets.h"
 #include "model/controller/link_layer_controller.h"
 
 namespace {

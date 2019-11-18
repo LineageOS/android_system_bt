@@ -36,6 +36,7 @@ cc_library_static {
         "model/setup/test_command_handler.cc",
         "model/setup/test_model.cc",
         ":BluetoothPacketSources",
+        ":BluetoothHciClassSources",
     ],
     cflags: [
         "-fvisibility=hidden",
@@ -50,6 +51,7 @@ cc_library_static {
     ],
     generated_headers: [
         "RootCanalGeneratedPackets_h",
+        "BluetoothGeneratedPackets_h",
     ],
     include_dirs: [
         "system/bt",
@@ -126,6 +128,7 @@ cc_test_host {
     ],
     generated_headers: [
         "RootCanalGeneratedPackets_h",
+        "BluetoothGeneratedPackets_h",
     ],
     shared_libs: [
         "liblog",
