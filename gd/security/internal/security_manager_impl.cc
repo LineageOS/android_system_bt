@@ -100,20 +100,20 @@ void SecurityManagerImpl::RemoveBond(std::shared_ptr<hci::ClassicDevice> device)
   // Signal Remove from database
 }
 
-void SecurityManagerImpl::RegisterCallbackListener(ISecurityManagerListener* listener) {
+void SecurityManagerImpl::RegisterCallbackListener(ISecurityManagerListener* listener, os::Handler* handler) {
   if (listeners_.size() < 1) {
-    listeners_.push_back(listener);
+    listeners_.push_back({listener, handler});
   } else {
     bool found = false;
     for (auto it = listeners_.begin(); it != listeners_.end(); ++it) {
-      found = *it == listener;
+      found = it->first == listener;
       if (found) break;
     }
 
     if (found) {
       LOG_ERROR("Listener has already been registered!");
     } else {
-      listeners_.push_back(listener);
+      listeners_.push_back({listener, handler});
     }
   }
 }
@@ -125,7 +125,7 @@ void SecurityManagerImpl::UnregisterCallbackListener(ISecurityManagerListener* l
     bool found = false;
     auto it = listeners_.begin();
     while (it != listeners_.end()) {
-      found = *it == listener;
+      found = it->first == listener;
       if (found) break;
       ++it;
     }
@@ -137,18 +137,20 @@ void SecurityManagerImpl::UnregisterCallbackListener(ISecurityManagerListener* l
 
 void SecurityManagerImpl::FireDeviceBondedCallbacks(std::shared_ptr<Device> device) {
   for (auto& iter : listeners_) {
-    iter->handler_->Post(common::Bind(&ISecurityManagerListener::OnDeviceBonded, common::Unretained(iter), device));
+    iter.second->Post(common::Bind(&ISecurityManagerListener::OnDeviceBonded, common::Unretained(iter.first), device));
   }
 }
 
 void SecurityManagerImpl::FireBondFailedCallbacks(std::shared_ptr<Device> device) {
   for (auto& iter : listeners_) {
-    iter->handler_->Post(common::Bind(&ISecurityManagerListener::OnDeviceBondFailed, common::Unretained(iter), device));
+    iter.second->Post(
+        common::Bind(&ISecurityManagerListener::OnDeviceBondFailed, common::Unretained(iter.first), device));
   }
 }
 
 void SecurityManagerImpl::FireUnbondCallbacks(std::shared_ptr<Device> device) {
   for (auto& iter : listeners_) {
-    iter->handler_->Post(common::Bind(&ISecurityManagerListener::OnDeviceUnbonded, common::Unretained(iter), device));
+    iter.second->Post(
+        common::Bind(&ISecurityManagerListener::OnDeviceUnbonded, common::Unretained(iter.first), device));
   }
 }
