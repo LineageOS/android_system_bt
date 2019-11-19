@@ -59,7 +59,7 @@ void Sender::SetChannelRetransmissionFlowControlMode(RetransmissionAndFlowContro
   if (mode_ == mode) {
     return;
   }
-  if (mode_ == RetransmissionAndFlowControlModeOption::L2CAP_BASIC) {
+  if (mode == RetransmissionAndFlowControlModeOption::L2CAP_BASIC) {
     data_controller_ =
         std::make_unique<BasicModeDataController>(channel_id_, remote_channel_id_, queue_end_, handler_, scheduler_);
     return;
@@ -69,6 +69,10 @@ void Sender::SetChannelRetransmissionFlowControlMode(RetransmissionAndFlowContro
         std::make_unique<ErtmController>(channel_id_, remote_channel_id_, queue_end_, handler_, scheduler_);
     return;
   }
+}
+
+void Sender::SetIncomingMtu(Mtu mtu) {
+  // TODO: Enforce MTU
 }
 
 DataController* Sender::GetDataController() {

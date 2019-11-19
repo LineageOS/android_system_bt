@@ -76,8 +76,10 @@ struct ErtmController::impl {
   bool local_busy_ = false;
   int unacked_frames_ = 0;
   // TODO: Instead of having a map, we may consider about a better data structure
-  std::map<uint8_t, std::pair<SegmentationAndReassembly, CopyablePacketBuilder>> unacked_list_;
-  std::queue<std::pair<SegmentationAndReassembly, std::unique_ptr<packet::BasePacketBuilder>>> pending_frames_;
+  // Map from TxSeq to (SAR, SDU size for START packet, information payload)
+  std::map<uint8_t, std::tuple<SegmentationAndReassembly, uint16_t, std::shared_ptr<packet::RawBuilder>>> unacked_list_;
+  // Stores (SAR, SDU size for START packet, information payload)
+  std::queue<std::tuple<SegmentationAndReassembly, uint16_t, std::unique_ptr<packet::RawBuilder>>> pending_frames_;
   int retry_count_ = 0;
   std::map<uint8_t /* tx_seq, */, int /* count */> retry_i_frames_;
   bool rnr_sent_ = false;
@@ -92,13 +94,14 @@ struct ErtmController::impl {
 
   // Events (@see 8.6.5.4)
 
-  void data_request(SegmentationAndReassembly sar, std::unique_ptr<packet::BasePacketBuilder> pdu) {
+  void data_request(SegmentationAndReassembly sar, std::unique_ptr<packet::RawBuilder> pdu, uint16_t sdu_size = 0) {
+    // Note: sdu_size only applies to START packet
     if (tx_state_ == TxState::XMIT && !remote_busy() && rem_window_not_full()) {
-      send_data(sar, std::move(pdu));
+      send_data(sar, sdu_size, std::move(pdu));
     } else if (tx_state_ == TxState::XMIT && (remote_busy() || rem_window_full())) {
-      pend_data(sar, std::move(pdu));
+      pend_data(sar, sdu_size, std::move(pdu));
     } else if (tx_state_ == TxState::WAIT_F) {
-      pend_data(sar, std::move(pdu));
+      pend_data(sar, sdu_size, std::move(pdu));
     }
   }
 
@@ -550,18 +553,28 @@ struct ErtmController::impl {
 
   // Actions (@see 8.6.5.6)
 
-  void _send_i_frame(SegmentationAndReassembly sar, std::unique_ptr<packet::BasePacketBuilder> segment, uint8_t req_seq,
-                     uint8_t tx_seq, Final f = Final::NOT_SET) {
-    auto builder =
-        ExtendedInformationFrameBuilder::Create(controller_->remote_cid_, f, req_seq, sar, tx_seq, std::move(segment));
+  void _send_i_frame(SegmentationAndReassembly sar, std::unique_ptr<CopyablePacketBuilder> segment, uint8_t req_seq,
+                     uint8_t tx_seq, uint16_t sdu_size = 0, Final f = Final::NOT_SET) {
+    std::unique_ptr<EnhancedInformationFrameBuilder> builder;
+    if (sar == SegmentationAndReassembly::START) {
+      builder = EnhancedInformationStartFrameBuilder::Create(controller_->remote_cid_, tx_seq, f, req_seq, sdu_size,
+                                                             std::move(segment));
+    } else {
+      builder = EnhancedInformationFrameBuilder::Create(controller_->remote_cid_, tx_seq, f, req_seq, sar,
+                                                        std::move(segment));
+    }
     controller_->send_pdu(std::move(builder));
   }
 
-  void send_data(SegmentationAndReassembly sar, std::unique_ptr<packet::BasePacketBuilder> segment,
+  void send_data(SegmentationAndReassembly sar, uint16_t sdu_size, std::unique_ptr<packet::RawBuilder> segment,
                  Final f = Final::NOT_SET) {
+    std::shared_ptr<packet::RawBuilder> shared_segment(segment.release());
     unacked_list_.emplace(std::piecewise_construct, std::forward_as_tuple(next_tx_seq_),
-                          std::forward_as_tuple(sar, std::move(segment)));
-    _send_i_frame(sar, unacked_list_.find(next_tx_seq_)->second.second.Create(), buffer_seq_, next_tx_seq_, f);
+                          std::forward_as_tuple(sar, sdu_size, shared_segment));
+
+    std::unique_ptr<CopyablePacketBuilder> copyable_packet_builder =
+        std::make_unique<CopyablePacketBuilder>(std::get<2>(unacked_list_.find(next_tx_seq_)->second));
+    _send_i_frame(sar, std::move(copyable_packet_builder), buffer_seq_, next_tx_seq_, sdu_size, f);
     // TODO hsz fix me
     unacked_frames_++;
     frames_sent_++;
@@ -570,8 +583,8 @@ struct ErtmController::impl {
     start_retrans_timer();
   }
 
-  void pend_data(SegmentationAndReassembly sar, std::unique_ptr<packet::BasePacketBuilder> data) {
-    pending_frames_.emplace(std::make_pair(sar, std::move(data)));
+  void pend_data(SegmentationAndReassembly sar, uint16_t sdu_size, std::unique_ptr<packet::RawBuilder> data) {
+    pending_frames_.emplace(std::make_tuple(sar, sdu_size, std::move(data)));
   }
 
   void process_req_seq(uint8_t req_seq) {
@@ -702,8 +715,10 @@ struct ErtmController::impl {
     uint8_t i = req_seq;
     Final f = (p == Poll::NOT_SET ? Final::NOT_SET : Final::POLL_RESPONSE);
     while (unacked_list_.find(i) == unacked_list_.end()) {
-      _send_i_frame(unacked_list_.find(i)->second.first, unacked_list_.find(i)->second.second.Create(), buffer_seq_, i,
-                    f);
+      std::unique_ptr<CopyablePacketBuilder> copyable_packet_builder =
+          std::make_unique<CopyablePacketBuilder>(std::get<2>(unacked_list_.find(i)->second));
+      _send_i_frame(std::get<0>(unacked_list_.find(i)->second), std::move(copyable_packet_builder), buffer_seq_, i,
+                    std::get<1>(unacked_list_.find(i)->second), f);
       retry_i_frames_[i]++;
       if (retry_i_frames_[i] == controller_->local_max_transmit_) {
         CloseChannel();
@@ -720,8 +735,10 @@ struct ErtmController::impl {
       LOG_ERROR("Received invalid SREJ");
       return;
     }
-    _send_i_frame(unacked_list_.find(req_seq)->second.first, unacked_list_.find(req_seq)->second.second.Create(),
-                  buffer_seq_, req_seq, f);
+    std::unique_ptr<CopyablePacketBuilder> copyable_packet_builder =
+        std::make_unique<CopyablePacketBuilder>(std::get<2>(unacked_list_.find(req_seq)->second));
+    _send_i_frame(std::get<0>(unacked_list_.find(req_seq)->second), std::move(copyable_packet_builder), buffer_seq_,
+                  req_seq, std::get<1>(unacked_list_.find(req_seq)->second), f);
     retry_i_frames_[req_seq]++;
     start_retrans_timer();
   }
@@ -732,7 +749,7 @@ struct ErtmController::impl {
     }
     while (rem_window_not_full() && !pending_frames_.empty()) {
       auto& frame = pending_frames_.front();
-      send_data(frame.first, std::move(frame.second), f);
+      send_data(std::get<0>(frame), std::get<1>(frame), std::move(std::get<2>(frame)), f);
       pending_frames_.pop();
       f = Final::NOT_SET;
     }
@@ -753,25 +770,24 @@ struct ErtmController::impl {
 
 // Segmentation is handled here
 void ErtmController::OnSdu(std::unique_ptr<packet::BasePacketBuilder> sdu) {
-  LOG_ERROR("Not implemented");
   // TODO: Optimize the calculation. We don't need to count for SDU length in CONTINUATION or END packets. We don't need
   // to FCS when disabled.
-  auto size_each_packet =
+  size_t size_each_packet =
       (remote_mps_ - 4 /* basic L2CAP header */ - 2 /* SDU length */ - 2 /* Extended control */ - 2 /* FCS */);
+  auto sdu_size = sdu->size();
   std::vector<std::unique_ptr<packet::RawBuilder>> segments;
   packet::FragmentingInserter fragmenting_inserter(size_each_packet, std::back_insert_iterator(segments));
   sdu->Serialize(fragmenting_inserter);
+  fragmenting_inserter.finalize();
   if (segments.size() == 1) {
-    pimpl_->data_request(SegmentationAndReassembly::UNSEGMENTED, std::move(sdu));
+    pimpl_->data_request(SegmentationAndReassembly::UNSEGMENTED, std::move(segments[0]));
     return;
   }
-  auto sar = SegmentationAndReassembly::START;
-  for (auto i = 0; i < segments.size() - 1; i++) {
-    pimpl_->data_request(sar, std::move(segments[i]));
-    sar = SegmentationAndReassembly::CONTINUATION;
+  pimpl_->data_request(SegmentationAndReassembly::START, std::move(segments[0]), sdu_size);
+  for (auto i = 1; i < segments.size() - 1; i++) {
+    pimpl_->data_request(SegmentationAndReassembly::CONTINUATION, std::move(segments[i]));
   }
-  sar = SegmentationAndReassembly::END;
-  pimpl_->data_request(sar, std::move(segments.back()));
+  pimpl_->data_request(SegmentationAndReassembly::END, std::move(segments.back()));
 }
 
 void ErtmController::OnPdu(BasicFrameView pdu) {
@@ -874,10 +890,6 @@ size_t ErtmController::CopyablePacketBuilder::size() const {
 
 void ErtmController::CopyablePacketBuilder::Serialize(BitInserter& it) const {
   builder_->Serialize(it);
-}
-
-std::unique_ptr<BasePacketBuilder> ErtmController::CopyablePacketBuilder::Create() {
-  return std::unique_ptr<packet::BasePacketBuilder>(builder_.get());
 }
 
 }  // namespace internal

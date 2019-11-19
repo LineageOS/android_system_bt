@@ -20,6 +20,7 @@
 
 #include "common/bidi_queue.h"
 #include "l2cap/cid.h"
+#include "l2cap/classic/dynamic_channel_configuration_option.h"
 #include "l2cap/internal/channel_impl.h"
 #include "l2cap/internal/data_controller.h"
 #include "l2cap/internal/sender.h"
@@ -50,6 +51,7 @@ class Scheduler {
 
   /**
    * Attach the channel with the specified ChannelQueueDownEnd into the scheduler.
+   * Scheduler needs to notify the channel its Sender through SetSender().
    *
    * @param cid The channel to attach to the scheduler.
    * @param channel The reference to a DynamicChannelImpl object. Use nullptr for fixed channel.
@@ -68,11 +70,6 @@ class Scheduler {
    * Callback from the sender to indicate that the scheduler could dequeue number_packets from it
    */
   virtual void OnPacketsReady(Cid cid, int number_packets) {}
-
-  /**
-   * Set the channel mode for a cid
-   */
-  virtual void SetChannelRetransmissionFlowControlMode(Cid cid, RetransmissionAndFlowControlModeOption mode) {}
 
   /**
    * Get the data controller for Reassembler

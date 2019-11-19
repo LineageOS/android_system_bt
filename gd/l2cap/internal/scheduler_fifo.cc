@@ -40,6 +40,9 @@ void Fifo::AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> channel) {
   ASSERT(sender_map_.find(cid) == sender_map_.end());
   sender_map_.emplace(std::piecewise_construct, std::forward_as_tuple(cid),
                       std::forward_as_tuple(handler_, this, channel));
+  if (channel->GetCid() >= kFirstDynamicChannel) {
+    channel->SetSender(&sender_map_.find(cid)->second);
+  }
 }
 
 void Fifo::DetachChannel(Cid cid) {
@@ -77,11 +80,6 @@ void Fifo::try_register_link_queue_enqueue() {
   link_queue_up_end_->RegisterEnqueue(handler_,
                                       common::Bind(&Fifo::link_queue_enqueue_callback, common::Unretained(this)));
   link_queue_enqueue_registered_ = true;
-}
-
-void Fifo::SetChannelRetransmissionFlowControlMode(Cid cid, RetransmissionAndFlowControlModeOption mode) {
-  ASSERT(sender_map_.find(cid) != sender_map_.end());
-  sender_map_.find(cid)->second.SetChannelRetransmissionFlowControlMode(mode);
 }
 
 DataController* Fifo::GetDataController(Cid cid) {
