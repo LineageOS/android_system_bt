@@ -47,7 +47,7 @@ void Fifo::DetachChannel(Cid cid) {
   segmenter_map_.erase(cid);
 }
 
-void Fifo::NotifyPacketsReady(Cid cid, int number_packets) {
+void Fifo::OnPacketsReady(Cid cid, int number_packets) {
   next_to_dequeue_and_num_packets.push(std::make_pair(cid, number_packets));
   try_register_link_queue_enqueue();
 }
@@ -62,7 +62,7 @@ std::unique_ptr<Fifo::UpperDequeue> Fifo::link_queue_enqueue_callback() {
   }
   auto packet = segmenter_map_.find(channel_id)->second.GetNextPacket();
 
-  segmenter_map_.find(channel_id)->second.NotifyPacketSent();
+  segmenter_map_.find(channel_id)->second.OnPacketSent();
   if (next_to_dequeue_and_num_packets.empty()) {
     link_queue_up_end_->UnregisterEnqueue();
     link_queue_enqueue_registered_ = false;
@@ -77,6 +77,18 @@ void Fifo::try_register_link_queue_enqueue() {
   link_queue_up_end_->RegisterEnqueue(handler_,
                                       common::Bind(&Fifo::link_queue_enqueue_callback, common::Unretained(this)));
   link_queue_enqueue_registered_ = true;
+}
+
+void Fifo::SetChannelRetransmissionFlowControlMode(Cid cid, RetransmissionAndFlowControlModeOption mode) {
+  ASSERT(segmenter_map_.find(cid) != segmenter_map_.end());
+  segmenter_map_.find(cid)->second.SetChannelRetransmissionFlowControlMode(mode);
+}
+
+DataController* Fifo::GetDataController(Cid cid) {
+  if (segmenter_map_.find(cid) == segmenter_map_.end()) {
+    return nullptr;
+  }
+  return segmenter_map_.find(cid)->second.GetDataController();
 }
 
 }  // namespace internal
