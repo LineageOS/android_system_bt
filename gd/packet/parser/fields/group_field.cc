@@ -48,13 +48,18 @@ void GroupField::GenExtractor(std::ostream&, int, bool) const {
   ERROR(this) << "GenExtractor should never be called.";
 }
 
+std::string GroupField::GetGetterFunctionName() const {
+  ERROR(this) << "GetGetterFunctionName should never be called.";
+  return "";
+}
+
 void GroupField::GenGetter(std::ostream&, Size, Size) const {
   ERROR(this) << "GenGetter should never be called.";
 }
 
-bool GroupField::GenBuilderParameter(std::ostream&) const {
-  ERROR(this) << "GenBuilderParameter should never be called";
-  return false;
+std::string GroupField::GetBuilderParameterType() const {
+  ERROR(this) << "GetBuilderParameterType should never be called";
+  return "";
 }
 
 bool GroupField::HasParameterValidator() const {

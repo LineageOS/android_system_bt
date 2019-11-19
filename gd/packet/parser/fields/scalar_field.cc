@@ -88,9 +88,14 @@ void ScalarField::GenExtractor(std::ostream& s, int num_leading_bits, bool) cons
   s << "*" << GetName() << "_ptr = static_cast<" << GetDataType() << ">(extracted_value);";
 }
 
+std::string ScalarField::GetGetterFunctionName() const {
+  std::stringstream ss;
+  ss << "Get" << util::UnderscoreToCamelCase(GetName());
+  return ss.str();
+}
+
 void ScalarField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
-  s << GetDataType();
-  s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() const {";
+  s << GetDataType() << " " << GetGetterFunctionName() << "() const {";
   s << "ASSERT(was_validated_);";
   s << "auto to_bound = begin();";
   int num_leading_bits = GenBounds(s, start_offset, end_offset, GetSize());
@@ -101,9 +106,8 @@ void ScalarField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
   s << "}";
 }
 
-bool ScalarField::GenBuilderParameter(std::ostream& s) const {
-  s << GetDataType() << " " << GetName();
-  return true;
+std::string ScalarField::GetBuilderParameterType() const {
+  return GetDataType();
 }
 
 bool ScalarField::HasParameterValidator() const {

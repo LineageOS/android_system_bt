@@ -36,10 +36,14 @@ std::string ChecksumStartField::GetDataType() const {
 
 void ChecksumStartField::GenExtractor(std::ostream&, int, bool) const {}
 
+std::string ChecksumStartField::GetGetterFunctionName() const {
+  return "";
+}
+
 void ChecksumStartField::GenGetter(std::ostream&, Size, Size) const {}
 
-bool ChecksumStartField::GenBuilderParameter(std::ostream&) const {
-  return false;
+std::string ChecksumStartField::GetBuilderParameterType() const {
+  return "";
 }
 
 bool ChecksumStartField::HasParameterValidator() const {
