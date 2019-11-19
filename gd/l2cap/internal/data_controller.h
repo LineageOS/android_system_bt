@@ -13,27 +13,33 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
 
-#include "l2cap/internal/channel_impl.h"
-#include "l2cap/internal/scheduler.h"
+#include <memory>
 
-#include <gmock/gmock.h>
+#include "l2cap/l2cap_packets.h"
+#include "packet/base_packet_builder.h"
+#include "packet/packet_view.h"
 
-// Unit test interfaces
 namespace bluetooth {
 namespace l2cap {
 namespace internal {
-namespace testing {
 
-class MockScheduler : public Scheduler {
+class DataController {
  public:
-  MOCK_METHOD(void, AttachChannel, (Cid cid, std::shared_ptr<l2cap::internal::ChannelImpl> channel), (override));
-  MOCK_METHOD(void, DetachChannel, (Cid cid), (override));
-  MOCK_METHOD(void, OnPacketsReady, (Cid cid, int number_packet), (override));
+  virtual ~DataController() = default;
+
+  // SDU -> PDUs and notify Scheduler
+  virtual void OnSdu(std::unique_ptr<packet::BasePacketBuilder> sdu) = 0;
+
+  // PDUs -> SDU and enqueue to channel queue end
+  virtual void OnPdu(BasicFrameView pdu) = 0;
+
+  // Used by Scheduler to get next PDU
+  virtual std::unique_ptr<BasicFrameBuilder> GetNextPacket() = 0;
 };
 
-}  // namespace testing
 }  // namespace internal
 }  // namespace l2cap
 }  // namespace bluetooth

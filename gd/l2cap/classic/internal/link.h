@@ -27,7 +27,7 @@
 #include "l2cap/classic/internal/fixed_channel_service_manager_impl.h"
 #include "l2cap/internal/fixed_channel_allocator.h"
 #include "l2cap/internal/parameter_provider.h"
-#include "l2cap/internal/reassembler.h"
+#include "l2cap/internal/receiver.h"
 #include "l2cap/internal/scheduler.h"
 #include "os/alarm.h"
 #include "os/handler.h"
@@ -87,6 +87,8 @@ class Link {
   virtual std::shared_ptr<DynamicChannelImpl> AllocateReservedDynamicChannel(Cid reserved_cid, Psm psm, Cid remote_cid,
                                                                              SecurityPolicy security_policy);
 
+  virtual void SetChannelRetransmissionFlowControlMode(Cid cid, RetransmissionAndFlowControlModeOption mode);
+
   virtual void FreeDynamicChannel(Cid cid);
 
   // Check how many channels are acquired or in use, if zero, start tear down timer, if non-zero, cancel tear down timer
@@ -100,8 +102,8 @@ class Link {
   l2cap::internal::FixedChannelAllocator<FixedChannelImpl, Link> fixed_channel_allocator_{this, l2cap_handler_};
   DynamicChannelAllocator dynamic_channel_allocator_{this, l2cap_handler_};
   std::unique_ptr<hci::AclConnection> acl_connection_;
-  l2cap::internal::Reassembler reassembler_;
   std::unique_ptr<l2cap::internal::Scheduler> scheduler_;
+  l2cap::internal::Receiver receiver_;
   l2cap::internal::ParameterProvider* parameter_provider_;
   DynamicChannelServiceManagerImpl* dynamic_service_manager_;
   FixedChannelServiceManagerImpl* fixed_service_manager_;
