@@ -23,11 +23,13 @@
 #include <vector>
 
 #include "base_packet_builder.h"
-#include "types/address.h"
+#include "hci/address.h"
 #include "types/class_of_device.h"
 
 namespace test_vendor_lib {
 namespace packets {
+
+using ::bluetooth::hci::Address;
 
 // Abstract base class that is subclassed to build specifc packets.
 // The template parameter little_endian controls the generation of insert().

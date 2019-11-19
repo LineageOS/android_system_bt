@@ -47,6 +47,8 @@ class LinkLayerSocketDevice : public Device {
 
   virtual void TimerTick() override;
 
+  static constexpr size_t kSizeBytes = sizeof(uint32_t);
+
  private:
   net::PolledSocket socket_;
   Phy::Type phy_type_;

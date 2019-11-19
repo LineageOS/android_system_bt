@@ -1,7 +1,7 @@
 little_endian_packets
 
-custom_field Address : 48 "types/"
-custom_field ClassOfDevice : 24 "types/"
+custom_field Address : 48 "hci/"
+custom_field ClassOfDevice : 24 "hci/"
 
 enum PacketType : 8 {
     UNKNOWN = 0x00,

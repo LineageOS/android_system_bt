@@ -21,6 +21,9 @@
 
 using namespace bluetooth::security;
 
+// Definition of Pure Virtual Destructor
+ISecurityManagerListener::~ISecurityManagerListener() {}
+
 void SecurityManager::Init() {
   security_handler_->Post(
       common::BindOnce(&internal::SecurityManagerImpl::Init, common::Unretained(security_manager_impl_)));
@@ -44,14 +47,12 @@ void SecurityManager::RemoveBond(std::shared_ptr<hci::ClassicDevice> device) {
                                            std::forward<std::shared_ptr<hci::ClassicDevice>>(device)));
 }
 
-void SecurityManager::RegisterCallbackListener(internal::ISecurityManagerListener* listener) {
+void SecurityManager::RegisterCallbackListener(ISecurityManagerListener* listener, os::Handler* handler) {
   security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::RegisterCallbackListener,
-                                           common::Unretained(security_manager_impl_),
-                                           std::forward<internal::ISecurityManagerListener*>(listener)));
+                                           common::Unretained(security_manager_impl_), listener, handler));
 }
 
-void SecurityManager::UnregisterCallbackListener(internal::ISecurityManagerListener* listener) {
+void SecurityManager::UnregisterCallbackListener(ISecurityManagerListener* listener) {
   security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::UnregisterCallbackListener,
-                                           common::Unretained(security_manager_impl_),
-                                           std::forward<internal::ISecurityManagerListener*>(listener)));
+                                           common::Unretained(security_manager_impl_), listener));
 }
