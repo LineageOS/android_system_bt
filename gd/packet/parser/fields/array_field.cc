@@ -106,9 +106,14 @@ void ArrayField::GenExtractor(std::ostream& s, int num_leading_bits, bool for_st
   s << "}";
 }
 
+std::string ArrayField::GetGetterFunctionName() const {
+  std::stringstream ss;
+  ss << "Get" << util::UnderscoreToCamelCase(GetName());
+  return ss.str();
+}
+
 void ArrayField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
-  s << GetDataType();
-  s << " Get" << util::UnderscoreToCamelCase(GetName()) << "() {";
+  s << GetDataType() << " " << GetGetterFunctionName() << "() {";
   s << "ASSERT(was_validated_);";
   s << "size_t end_index = size();";
   s << "auto to_bound = begin();";
@@ -122,13 +127,14 @@ void ArrayField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) 
   s << "}\n";
 }
 
-bool ArrayField::GenBuilderParameter(std::ostream& s) const {
+std::string ArrayField::GetBuilderParameterType() const {
+  std::stringstream ss;
   if (element_field_->BuilderParameterMustBeMoved()) {
-    s << "std::array<" << element_field_->GetDataType() << "," << array_size_ << "> " << GetName();
+    ss << "std::array<" << element_field_->GetDataType() << "," << array_size_ << ">";
   } else {
-    s << "const std::array<" << element_field_->GetDataType() << "," << array_size_ << ">& " << GetName();
+    ss << "const std::array<" << element_field_->GetDataType() << "," << array_size_ << ">&";
   }
-  return true;
+  return ss.str();
 }
 
 bool ArrayField::BuilderParameterMustBeMoved() const {
@@ -160,4 +166,12 @@ void ArrayField::GenValidator(std::ostream&) const {
   //
   // Other than that there is nothing that arrays need to be validated on other than length so nothing needs to
   // be done here.
+}
+
+bool ArrayField::IsContainerField() const {
+  return true;
+}
+
+const PacketField* ArrayField::GetElementField() const {
+  return element_field_;
 }

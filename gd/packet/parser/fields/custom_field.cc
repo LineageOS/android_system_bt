@@ -50,8 +50,14 @@ void CustomField::GenExtractor(std::ostream& s, int, bool) const {
   s << "}";
 }
 
+std::string CustomField::GetGetterFunctionName() const {
+  std::stringstream ss;
+  ss << "Get" << util::UnderscoreToCamelCase(GetName());
+  return ss.str();
+}
+
 void CustomField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) const {
-  s << "std::unique_ptr<" << GetDataType() << "> Get" << util::UnderscoreToCamelCase(GetName()) << "() const {";
+  s << "std::unique_ptr<" << GetDataType() << "> " << GetGetterFunctionName() << "() const {";
   s << "ASSERT(was_validated_);";
   s << "size_t end_index = size();";
   s << "auto to_bound = begin();";
@@ -66,9 +72,8 @@ void CustomField::GenGetter(std::ostream& s, Size start_offset, Size end_offset)
   s << "}\n";
 }
 
-bool CustomField::GenBuilderParameter(std::ostream& s) const {
-  s << GetDataType() << " " << GetName();
-  return true;
+std::string CustomField::GetBuilderParameterType() const {
+  return GetDataType();
 }
 
 bool CustomField::HasParameterValidator() const {
