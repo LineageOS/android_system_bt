@@ -230,6 +230,100 @@ bool generate_cpp_headers_one_file(const Declarations& decls, const std::filesys
   return true;
 }
 
+bool generate_pybind11_sources_one_file(const Declarations& decls, const std::filesystem::path& input_file,
+                                        const std::filesystem::path& include_dir, const std::filesystem::path& out_dir,
+                                        const std::string& root_namespace) {
+  auto gen_relative_path = input_file.lexically_relative(include_dir).parent_path();
+
+  auto input_filename = input_file.filename().string().substr(0, input_file.filename().string().find(".pdl"));
+  auto gen_path = out_dir / gen_relative_path;
+
+  std::filesystem::create_directories(gen_path);
+
+  auto gen_relative_header = gen_relative_path / (input_filename + ".h");
+  auto gen_file = gen_path / (input_filename + "_python3.cc");
+
+  std::ofstream out_file;
+  out_file.open(gen_file);
+  if (!out_file.is_open()) {
+    std::cerr << "can't open " << gen_file << std::endl;
+    return false;
+  }
+
+  out_file << "#include <pybind11/pybind11.h>\n";
+  out_file << "#include <pybind11/stl.h>\n";
+  out_file << "\n\n";
+  out_file << "#include " << gen_relative_header << "\n";
+  out_file << "\n\n";
+
+  std::vector<std::string> namespace_list;
+  parse_namespace(root_namespace, gen_relative_path, &namespace_list);
+  generate_namespace_open(namespace_list, out_file);
+  out_file << "\n\n";
+
+  for (const auto& c : decls.type_defs_queue_) {
+    if (c.second->GetDefinitionType() == TypeDef::Type::CUSTOM ||
+        c.second->GetDefinitionType() == TypeDef::Type::CHECKSUM) {
+      const auto* custom_def = dynamic_cast<const CustomFieldDef*>(c.second);
+      custom_def->GenUsing(out_file);
+    }
+  }
+  out_file << "\n\n";
+
+  out_file << "using ::bluetooth::packet::BasePacketBuilder;";
+  out_file << "using ::bluetooth::packet::BitInserter;";
+  out_file << "using ::bluetooth::packet::CustomTypeChecker;";
+  out_file << "using ::bluetooth::packet::Iterator;";
+  out_file << "using ::bluetooth::packet::kLittleEndian;";
+  out_file << "using ::bluetooth::packet::PacketBuilder;";
+  out_file << "using ::bluetooth::packet::BaseStruct;";
+  out_file << "using ::bluetooth::packet::PacketStruct;";
+  out_file << "using ::bluetooth::packet::PacketView;";
+  out_file << "using ::bluetooth::packet::parser::ChecksumTypeChecker;";
+  out_file << "\n\n";
+
+  out_file << "namespace py = pybind11;\n\n";
+
+  out_file << "void define_" << input_filename << "_submodule(py::module& parent) {\n\n";
+  out_file << "py::module m = parent.def_submodule(\"" << input_filename << "\", \"A submodule of " << input_filename
+           << "\");\n\n";
+
+  for (const auto& e : decls.type_defs_queue_) {
+    if (e.second->GetDefinitionType() == TypeDef::Type::ENUM) {
+      const auto* enum_def = dynamic_cast<const EnumDef*>(e.second);
+      EnumGen gen(*enum_def);
+      gen.GenDefinitionPybind11(out_file);
+      out_file << "\n\n";
+    }
+  }
+
+  for (const auto& s : decls.type_defs_queue_) {
+    if (s.second->GetDefinitionType() == TypeDef::Type::STRUCT) {
+      const auto* struct_def = dynamic_cast<const StructDef*>(s.second);
+      struct_def->GenDefinitionPybind11(out_file);
+      out_file << "\n";
+    }
+  }
+
+  for (const auto& packet_def : decls.packet_defs_queue_) {
+    packet_def.second.GenParserDefinitionPybind11(out_file);
+    out_file << "\n\n";
+  }
+
+  for (const auto& p : decls.packet_defs_queue_) {
+    p.second.GenBuilderDefinitionPybind11(out_file);
+    out_file << "\n\n";
+  }
+
+  out_file << "}\n\n";
+
+  generate_namespace_close(namespace_list, out_file);
+
+  out_file.close();
+
+  return true;
+}
+
 }  // namespace
 
 // TODO(b/141583809): stop leaks
@@ -272,6 +366,10 @@ int main(int argc, const char** argv) {
     if (!generate_cpp_headers_one_file(declarations, input_files.front(), include_dir, out_dir, root_namespace)) {
       std::cerr << "Didn't generate cpp headers for " << input_files.front() << std::endl;
       return 3;
+    }
+    if (!generate_pybind11_sources_one_file(declarations, input_files.front(), include_dir, out_dir, root_namespace)) {
+      std::cerr << "Didn't generate pybind11 sources for " << input_files.front() << std::endl;
+      return 4;
     }
     input_files.pop();
   }

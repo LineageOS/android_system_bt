@@ -114,4 +114,24 @@ inline bool IsEnumCase(std::string value) {
   return std::regex_match(value, enum_regex);
 }
 
+inline std::string StringJoin(const std::string& delimiter, const std::vector<std::string>& vec) {
+  std::stringstream ss;
+  for (size_t i = 0; i < vec.size(); i++) {
+    ss << vec[i];
+    if (i != (vec.size() - 1)) {
+      ss << delimiter;
+    }
+  }
+  return ss.str();
+}
+
+inline std::string StringFindAndReplaceAll(std::string text, const std::string& old, const std::string& replacement) {
+  auto pos = text.find(old);
+  while (pos != std::string::npos) {
+    text.replace(pos, old.size(), replacement);
+    pos = text.find(old, pos + replacement.size());
+  }
+  return text;
+}
+
 }  // namespace util
