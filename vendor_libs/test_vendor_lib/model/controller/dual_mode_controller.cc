@@ -674,6 +674,7 @@ void DualModeController::HciWriteLeHostSupport(packets::PacketView<true> args) {
 void DualModeController::HciWriteSecureConnectionHostSupport(
     packets::PacketView<true> args) {
   ASSERT_LOG(args.size() == 1, "%s  size=%zu", __func__, args.size());
+  properties_.SetExtendedFeatures(properties_.GetExtendedFeatures(1) | 0x8, 1);
   SendCommandCompleteSuccess(
       bluetooth::hci::OpCode::WRITE_SECURE_CONNECTIONS_HOST_SUPPORT);
 }
