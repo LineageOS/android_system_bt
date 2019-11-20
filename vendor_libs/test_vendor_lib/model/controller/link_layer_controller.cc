@@ -32,6 +32,8 @@ using namespace test_vendor_lib::packets;
 
 namespace test_vendor_lib {
 
+constexpr uint16_t kNumCommandPackets = 0x01;
+
 // TODO: Model Rssi?
 static uint8_t GetRssi() {
   static uint8_t rssi = 0;
@@ -109,15 +111,13 @@ hci::Status LinkLayerController::SendAclToRemote(AclPacketView acl_packet) {
            static_cast<int>(acl_packet.size()));
 
   ScheduleTask(milliseconds(5), [this, handle]() {
-    std::unique_ptr<bluetooth::packet::RawBuilder> raw_builder_ptr =
-        std::make_unique<bluetooth::packet::RawBuilder>();
-    raw_builder_ptr->AddOctets1(0x01);
-    raw_builder_ptr->AddOctets2(handle);
-    raw_builder_ptr->AddOctets2(0x01);
-
-    auto packet = bluetooth::hci::EventPacketBuilder::Create(
-        bluetooth::hci::EventCode::NUMBER_OF_COMPLETED_PACKETS,
-        std::move(raw_builder_ptr));
+    std::vector<bluetooth::hci::CompletedPackets> completed_packets;
+    bluetooth::hci::CompletedPackets cp;
+    cp.connection_handle_ = handle;
+    cp.host_num_of_completed_packets_ = kNumCommandPackets;
+    completed_packets.push_back(cp);
+    auto packet = bluetooth::hci::NumberOfCompletedPacketsBuilder::Create(
+        completed_packets);
     send_event_(std::move(packet));
   });
 
@@ -473,7 +473,7 @@ void LinkLayerController::IncomingInquiryResponsePacket(
 
       std::unique_ptr<bluetooth::packet::RawBuilder> raw_builder_ptr =
           std::make_unique<bluetooth::packet::RawBuilder>();
-      raw_builder_ptr->AddOctets1(0x01);  // num_responses
+      raw_builder_ptr->AddOctets1(kNumCommandPackets);
       raw_builder_ptr->AddAddress(inquiry_response.GetSourceAddress());
       raw_builder_ptr->AddOctets1(inquiry_response.GetPageScanRepetitionMode());
       raw_builder_ptr->AddOctets1(0x00);  // _reserved_
