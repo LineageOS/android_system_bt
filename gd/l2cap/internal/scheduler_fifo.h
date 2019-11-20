@@ -45,7 +45,7 @@ class Fifo : public Scheduler {
  private:
   LowerQueueUpEnd* link_queue_up_end_;
   os::Handler* handler_;
-  std::unordered_map<Cid, Sender> segmenter_map_;
+  std::unordered_map<Cid, Sender> sender_map_;
   std::queue<std::pair<Cid, int>> next_to_dequeue_and_num_packets;
 
   bool link_queue_enqueue_registered_ = false;
