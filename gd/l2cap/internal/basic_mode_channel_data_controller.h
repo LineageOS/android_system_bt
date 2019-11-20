@@ -16,41 +16,47 @@
 
 #pragma once
 
-#include <string>
+#include <memory>
 #include <unordered_map>
+#include <utility>
 
 #include "common/bidi_queue.h"
-#include "common/bind.h"
 #include "l2cap/cid.h"
 #include "l2cap/internal/channel_impl.h"
+#include "l2cap/internal/data_controller.h"
 #include "l2cap/internal/scheduler.h"
-#include "l2cap/internal/sender.h"
+#include "l2cap/l2cap_packets.h"
+#include "l2cap/mtu.h"
 #include "os/handler.h"
 #include "os/queue.h"
+#include "packet/base_packet_builder.h"
+#include "packet/packet_view.h"
 
 namespace bluetooth {
 namespace l2cap {
 namespace internal {
 
-class Fifo : public Scheduler {
+class BasicModeDataController : public DataController {
  public:
-  Fifo(LowerQueueUpEnd* link_queue_up_end, os::Handler* handler);
-  ~Fifo() override;
-  void AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> channel) override;
-  void DetachChannel(Cid cid) override;
-  void OnPacketsReady(Cid cid, int number_packets) override;
-  void SetChannelRetransmissionFlowControlMode(Cid cid, RetransmissionAndFlowControlModeOption mode) override;
-  DataController* GetDataController(Cid cid) override;
+  using UpperEnqueue = packet::PacketView<packet::kLittleEndian>;
+  using UpperDequeue = packet::BasePacketBuilder;
+  using UpperQueueDownEnd = common::BidiQueueEnd<UpperEnqueue, UpperDequeue>;
+  BasicModeDataController(Cid cid, Cid remote_cid, UpperQueueDownEnd* channel_queue_end, os::Handler* handler,
+                          Scheduler* scheduler);
+
+  void OnSdu(std::unique_ptr<packet::BasePacketBuilder> sdu) override;
+
+  void OnPdu(BasicFrameView pdu) override;
+
+  std::unique_ptr<BasicFrameBuilder> GetNextPacket() override;
 
  private:
-  LowerQueueUpEnd* link_queue_up_end_;
+  Cid cid_;
+  Cid remote_cid_;
+  os::EnqueueBuffer<UpperEnqueue> enqueue_buffer_;
   os::Handler* handler_;
-  std::unordered_map<Cid, Sender> segmenter_map_;
-  std::queue<std::pair<Cid, int>> next_to_dequeue_and_num_packets;
-
-  bool link_queue_enqueue_registered_ = false;
-  void try_register_link_queue_enqueue();
-  std::unique_ptr<LowerEnqueue> link_queue_enqueue_callback();
+  std::queue<std::unique_ptr<BasicFrameBuilder>> pdu_queue_;
+  Scheduler* scheduler_;
 };
 
 }  // namespace internal

@@ -13,27 +13,24 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
 
-#include "l2cap/internal/channel_impl.h"
-#include "l2cap/internal/scheduler.h"
+#include "l2cap/internal/receiver.h"
 
 #include <gmock/gmock.h>
+#include <gtest/gtest.h>
+#include <future>
 
-// Unit test interfaces
+#include "l2cap/internal/channel_impl_mock.h"
+#include "l2cap/l2cap_packets.h"
+#include "os/handler.h"
+#include "os/queue.h"
+#include "os/thread.h"
+#include "packet/raw_builder.h"
+
 namespace bluetooth {
 namespace l2cap {
 namespace internal {
-namespace testing {
-
-class MockScheduler : public Scheduler {
- public:
-  MOCK_METHOD(void, AttachChannel, (Cid cid, std::shared_ptr<l2cap::internal::ChannelImpl> channel), (override));
-  MOCK_METHOD(void, DetachChannel, (Cid cid), (override));
-  MOCK_METHOD(void, OnPacketsReady, (Cid cid, int number_packet), (override));
-};
-
-}  // namespace testing
+namespace {}  // namespace
 }  // namespace internal
 }  // namespace l2cap
 }  // namespace bluetooth
