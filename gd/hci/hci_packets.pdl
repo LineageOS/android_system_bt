@@ -1562,6 +1562,10 @@ packet WriteVoiceSetting : CommandPacket (op_code = WRITE_VOICE_SETTING) {
   _payload_,  // placeholder (unimplemented)
 }
 
+packet WriteVoiceSettingComplete : CommandComplete (command_op_code = WRITE_VOICE_SETTING) {
+  status : ErrorCode,
+}
+
 packet ReadAutomaticFlushTimeout : ConnectionManagementCommand (op_code = READ_AUTOMATIC_FLUSH_TIMEOUT) {
   connection_handle : 12,
   _reserved_ : 4,
@@ -2363,6 +2367,9 @@ packet LeCreateConnectionStatus : CommandStatus (command_op_code = LE_CREATE_CON
 packet LeCreateConnectionCancel : LeConnectionManagementCommand (op_code = LE_CREATE_CONNECTION_CANCEL) {
 }
 
+packet LeCreateConnectionCancelStatus : CommandStatus (command_op_code = LE_CREATE_CONNECTION_CANCEL) {
+}
+
 packet LeCreateConnectionCancelComplete : CommandComplete (command_op_code = LE_CREATE_CONNECTION_CANCEL) {
   status : ErrorCode,
 }
@@ -2451,6 +2458,9 @@ packet LeStartEncryption : LeSecurityCommand (op_code = LE_START_ENCRYPTION) {
   ltk: 8[16],
 }
 
+packet LeStartEncryptionStatus : CommandStatus (command_op_code = LE_START_ENCRYPTION) {
+}
+
 packet LeLongTermKeyRequestReply : LeSecurityCommand (op_code = LE_LONG_TERM_KEY_REQUEST_REPLY) {
   connection_handle: 16,
   long_term_key: 8[16],
@@ -2513,12 +2523,24 @@ packet LeAddDeviceToResolvingList : LeSecurityCommand (op_code = LE_ADD_DEVICE_T
   _payload_,  // placeholder (unimplemented)
 }
 
+packet LeAddDeviceToResolvingListComplete : CommandComplete (command_op_code = LE_ADD_DEVICE_TO_RESOLVING_LIST) {
+  status : ErrorCode,
+}
+
 packet LeRemoveDeviceFromResolvingList : LeSecurityCommand (op_code = LE_REMOVE_DEVICE_FROM_RESOLVING_LIST) {
   _payload_,  // placeholder (unimplemented)
 }
 
+packet LeRemoveDeviceFromResolvingListComplete : CommandComplete (command_op_code = LE_REMOVE_DEVICE_FROM_RESOLVING_LIST) {
+  status : ErrorCode,
+}
+
 packet LeClearResolvingList : LeSecurityCommand (op_code = LE_CLEAR_RESOLVING_LIST) {
   _payload_,  // placeholder (unimplemented)
+}
+
+packet LeClearResolvingListComplete : CommandComplete (command_op_code = LE_CLEAR_RESOLVING_LIST) {
+  status : ErrorCode,
 }
 
 packet LeReadResolvingListSize : LeSecurityCommand (op_code = LE_READ_RESOLVING_LIST_SIZE) {
@@ -2710,6 +2732,9 @@ packet LeSetPrivacyMode : LeSecurityCommand (op_code = LE_SET_PRIVACY_MODE) {
   _payload_,  // placeholder (unimplemented)
 }
 
+packet LeSetPrivacyModeComplete : CommandComplete (command_op_code = LE_SET_PRIVACY_MODE) {
+  status : ErrorCode,
+}
 
   // VENDOR_SPECIFIC
 packet LeGetVendorCapabilities : VendorCommand (op_code = LE_GET_VENDOR_CAPABILITIES) {
