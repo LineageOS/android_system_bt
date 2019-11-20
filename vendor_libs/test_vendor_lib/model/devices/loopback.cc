@@ -80,8 +80,7 @@ void Loopback::IncomingPacket(model::packets::LinkLayerPacketView packet) {
     std::shared_ptr<model::packets::LinkLayerPacketBuilder> to_send =
         std::move(scan_response);
 
-    std::vector<std::shared_ptr<PhyLayer>> le_phys = phy_layers_[Phy::Type::LOW_ENERGY];
-    for (auto phy : le_phys) {
+    for (auto phy : phy_layers_[Phy::Type::LOW_ENERGY]) {
       LOG_INFO("Sending a Scan Response on a Phy");
       phy->Send(to_send);
     }
