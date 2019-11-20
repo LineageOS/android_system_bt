@@ -13,27 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
 
-#include "l2cap/internal/channel_impl.h"
-#include "l2cap/internal/scheduler.h"
+#include "l2cap/internal/enhanced_retransmission_mode_channel_data_controller.h"
 
-#include <gmock/gmock.h>
-
-// Unit test interfaces
 namespace bluetooth {
 namespace l2cap {
 namespace internal {
-namespace testing {
+ErtmController::ErtmController(Cid cid, Cid remote_cid, UpperQueueDownEnd* channel_queue_end, os::Handler* handler,
+                               Scheduler* scheduler)
+    : cid_(cid), enqueue_buffer_(channel_queue_end), handler_(handler), scheduler_(scheduler) {}
 
-class MockScheduler : public Scheduler {
- public:
-  MOCK_METHOD(void, AttachChannel, (Cid cid, std::shared_ptr<l2cap::internal::ChannelImpl> channel), (override));
-  MOCK_METHOD(void, DetachChannel, (Cid cid), (override));
-  MOCK_METHOD(void, OnPacketsReady, (Cid cid, int number_packet), (override));
-};
+void ErtmController::OnSdu(std::unique_ptr<packet::BasePacketBuilder> sdu) {
+  LOG_ERROR("Not implemented");
+}
 
-}  // namespace testing
+void ErtmController::OnPdu(BasicFrameView pdu) {
+  LOG_ERROR("Not implemented");
+}
+
+std::unique_ptr<BasicFrameBuilder> ErtmController::GetNextPacket() {
+  auto next = std::move(pdu_queue_.front());
+  pdu_queue_.pop();
+  return next;
+}
+
 }  // namespace internal
 }  // namespace l2cap
 }  // namespace bluetooth

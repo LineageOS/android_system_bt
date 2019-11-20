@@ -16,13 +16,17 @@
 
 #pragma once
 
-#include <string>
+#include <memory>
 #include <unordered_map>
+#include <utility>
 
 #include "common/bidi_queue.h"
-#include "common/bind.h"
 #include "l2cap/cid.h"
 #include "l2cap/internal/channel_impl.h"
+#include "l2cap/internal/data_controller.h"
+#include "l2cap/internal/scheduler.h"
+#include "l2cap/l2cap_packets.h"
+#include "l2cap/mtu.h"
 #include "os/handler.h"
 #include "os/queue.h"
 #include "packet/base_packet_builder.h"
@@ -31,47 +35,26 @@
 namespace bluetooth {
 namespace l2cap {
 namespace internal {
-class Scheduler;
 
-/**
- * A middle layer between L2CAP channel and outgoing packet scheduler.
- * Fetches data (SDU) from an L2CAP channel queue end, handles L2CAP segmentation, and gives data to L2CAP scheduler.
- */
-class Segmenter {
+class ErtmController : public DataController {
  public:
   using UpperEnqueue = packet::PacketView<packet::kLittleEndian>;
   using UpperDequeue = packet::BasePacketBuilder;
   using UpperQueueDownEnd = common::BidiQueueEnd<UpperEnqueue, UpperDequeue>;
-
-  Segmenter(os::Handler* handler, Scheduler* scheduler, std::shared_ptr<ChannelImpl> channel);
-  ~Segmenter();
-
-  /**
-   * Callback from scheduler to indicate that scheduler already dequeued a packet from segmenter's queue.
-   * Segmenter can continue dequeuing from channel queue end.
-   */
-  void NotifyPacketSent();
-
-  /**
-   * Called by the scheduler to return the next PDU to be sent
-   */
-  std::unique_ptr<UpperDequeue> GetNextPacket();
+  ErtmController(Cid cid, Cid remote_cid, UpperQueueDownEnd* channel_queue_end, os::Handler* handler,
+                 Scheduler* scheduler);
+  void OnSdu(std::unique_ptr<packet::BasePacketBuilder> sdu) override;
+  void OnPdu(BasicFrameView pdu) override;
+  std::unique_ptr<BasicFrameBuilder> GetNextPacket() override;
 
  private:
-  os::Handler* handler_;
-  UpperQueueDownEnd* queue_end_;
-  std::queue<std::unique_ptr<UpperDequeue>> pdu_buffer_;
-  Scheduler* scheduler_;
-  const Cid channel_id_;
-  const Cid remote_channel_id_;
-  std::shared_ptr<ChannelImpl> channel_;
-  bool is_dequeue_registered_ = false;
-
-  void try_register_dequeue();
-  void dequeue_callback();
-  void handle_basic_mode_sdu(std::unique_ptr<UpperDequeue> packet);
-  void handle_enhanced_retransmission_mode_sdu(std::unique_ptr<UpperDequeue> packet);
+  [[maybe_unused]] Cid cid_;
+  [[maybe_unused]] os::EnqueueBuffer<UpperEnqueue> enqueue_buffer_;
+  [[maybe_unused]] os::Handler* handler_;
+  std::queue<std::unique_ptr<BasicFrameBuilder>> pdu_queue_;
+  [[maybe_unused]] Scheduler* scheduler_;
 };
+
 }  // namespace internal
 }  // namespace l2cap
 }  // namespace bluetooth
