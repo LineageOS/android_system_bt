@@ -49,7 +49,7 @@ class Sender {
   ~Sender();
 
   /**
-   * Callback from scheduler to indicate that scheduler already dequeued a packet from segmenter's queue.
+   * Callback from scheduler to indicate that scheduler already dequeued a packet from sender's queue.
    * Segmenter can continue dequeuing from channel queue end.
    */
   void OnPacketSent();
