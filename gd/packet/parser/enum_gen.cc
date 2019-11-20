@@ -20,7 +20,7 @@
 
 #include "util.h"
 
-EnumGen::EnumGen(EnumDef e) : e_(e) {}
+EnumGen::EnumGen(EnumDef e) : e_(std::move(e)) {}
 
 void EnumGen::GenDefinition(std::ostream& stream) {
   stream << "enum class ";
@@ -31,6 +31,14 @@ void EnumGen::GenDefinition(std::ostream& stream) {
     stream << pair.second << " = 0x" << std::hex << pair.first << std::dec << ",";
   }
   stream << "};\n";
+}
+
+void EnumGen::GenDefinitionPybind11(std::ostream& stream) {
+  stream << "py::enum_<" << e_.name_ << ">(m, \"" << e_.name_ << "\")";
+  for (const auto& pair : e_.constants_) {
+    stream << ".value(\"" << pair.second << "\", " << e_.name_ << "::" << pair.second << ")";
+  }
+  stream << ";\n";
 }
 
 void EnumGen::GenLogging(std::ostream& stream) {
