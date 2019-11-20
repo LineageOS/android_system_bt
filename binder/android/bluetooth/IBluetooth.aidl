@@ -146,4 +146,7 @@ interface IBluetooth
 
     void onLeServiceUp();
     void onBrEdrDown();
+
+    boolean connectAllEnabledProfiles(in BluetoothDevice device);
+    boolean disconnectAllEnabledProfiles(in BluetoothDevice device);
 }
