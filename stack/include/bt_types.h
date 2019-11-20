@@ -80,6 +80,9 @@
 /* HCI command from upper layer     */
 #define BT_EVT_TO_BTU_HCI_CMD 0x1600
 
+/* ISO Data from HCI                */
+#define BT_EVT_TO_BTU_HCI_ISO 0x1700
+
 /* L2CAP segment(s) transmitted     */
 #define BT_EVT_TO_BTU_L2C_SEG_XMIT 0x1900
 
@@ -119,6 +122,8 @@
 #define BT_EVT_TO_LM_HCI_ACL_ACK 0x2b00
 /* LM Diagnostics commands          */
 #define BT_EVT_TO_LM_DIAG 0x2c00
+/* HCI ISO Data                     */
+#define BT_EVT_TO_LM_HCI_ISO 0x2d00
 
 #define BT_EVT_TO_BTM_CMDS 0x2f00
 #define BT_EVT_TO_BTM_PM_MDCHG_EVT (0x0001 | BT_EVT_TO_BTM_CMDS)
