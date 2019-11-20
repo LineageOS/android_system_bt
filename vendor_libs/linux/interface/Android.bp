@@ -14,7 +14,7 @@
 // limitations under the License.
 
 cc_binary {
-    name: "android.hardware.bluetooth@1.0-service.btlinux",
+    name: "android.hardware.bluetooth@1.1-service.btlinux",
     proprietary: true,
     relative_install_path: "hw",
     srcs: [
@@ -30,7 +30,7 @@ cc_binary {
     ],
     header_libs: ["libbluetooth_headers"],
     shared_libs: [
-        "android.hardware.bluetooth@1.0",
+        "android.hardware.bluetooth@1.1",
         "libbase",
         "libcutils",
         "libhidlbase",
@@ -40,5 +40,5 @@ cc_binary {
     conlyflags: [
         "-std=c99",
     ],
-    init_rc: ["android.hardware.bluetooth@1.0-service.btlinux.rc"],
+    init_rc: ["android.hardware.bluetooth@1.1-service.btlinux.rc"],
 }

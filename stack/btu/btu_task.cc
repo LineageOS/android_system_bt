@@ -71,6 +71,11 @@ void btu_hci_msg_process(BT_HDR* p_msg) {
       btu_hcif_send_cmd((uint8_t)(p_msg->event & BT_SUB_EVT_MASK), p_msg);
       break;
 
+    case BT_EVT_TO_BTU_HCI_ISO:
+      // TODO: implement handler
+      osi_free(p_msg);
+      break;
+
     default:
       osi_free(p_msg);
       break;

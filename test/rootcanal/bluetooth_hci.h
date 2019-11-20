@@ -18,7 +18,7 @@
 
 #include "os/log.h"
 
-#include <android/hardware/bluetooth/1.0/IBluetoothHci.h>
+#include <android/hardware/bluetooth/1.1/IBluetoothHci.h>
 
 #include <hidl/MQDescriptor.h>
 
@@ -33,7 +33,7 @@
 namespace android {
 namespace hardware {
 namespace bluetooth {
-namespace V1_0 {
+namespace V1_1 {
 namespace sim {
 
 class BluetoothDeathRecipient;
@@ -42,13 +42,19 @@ class BluetoothHci : public IBluetoothHci {
  public:
   BluetoothHci();
 
-  ::android::hardware::Return<void> initialize(const sp<IBluetoothHciCallbacks>& cb) override;
+  ::android::hardware::Return<void> initialize(
+      const sp<V1_0::IBluetoothHciCallbacks>& cb) override;
+  ::android::hardware::Return<void> initialize_1_1(
+      const sp<V1_1::IBluetoothHciCallbacks>& cb) override;
 
   ::android::hardware::Return<void> sendHciCommand(const ::android::hardware::hidl_vec<uint8_t>& packet) override;
 
   ::android::hardware::Return<void> sendAclData(const ::android::hardware::hidl_vec<uint8_t>& packet) override;
 
   ::android::hardware::Return<void> sendScoData(const ::android::hardware::hidl_vec<uint8_t>& packet) override;
+
+  ::android::hardware::Return<void> sendIsoData(
+      const ::android::hardware::hidl_vec<uint8_t>& packet) override;
 
   ::android::hardware::Return<void> close() override;
 
@@ -57,6 +63,10 @@ class BluetoothHci : public IBluetoothHci {
   static BluetoothHci* get();
 
  private:
+  ::android::hardware::Return<void> initialize_impl(
+      const sp<V1_0::IBluetoothHciCallbacks>& cb,
+      const sp<V1_1::IBluetoothHciCallbacks>& cb_1_1);
+
   sp<BluetoothDeathRecipient> death_recipient_;
 
   std::function<void(sp<BluetoothDeathRecipient>&)> unlink_cb_;
@@ -96,7 +106,7 @@ class BluetoothHci : public IBluetoothHci {
 extern "C" IBluetoothHci* HIDL_FETCH_IBluetoothHci(const char* name);
 
 }  // namespace sim
-}  // namespace V1_0
+}  // namespace V1_1
 }  // namespace bluetooth
 }  // namespace hardware
 }  // namespace android
