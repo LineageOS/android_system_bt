@@ -65,7 +65,7 @@ class Scheduler {
   virtual void DetachChannel(Cid cid) {}
 
   /**
-   * Callback from the segmenter to indicate that the scheduler could dequeue number_packets from it
+   * Callback from the sender to indicate that the scheduler could dequeue number_packets from it
    */
   virtual void OnPacketsReady(Cid cid, int number_packets) {}
 
