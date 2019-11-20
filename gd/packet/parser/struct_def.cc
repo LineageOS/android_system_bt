@@ -180,6 +180,24 @@ void StructDef::GenDefinition(std::ostream& s) const {
   s << "\n";
 }
 
+void StructDef::GenDefinitionPybind11(std::ostream& s) const {
+  s << "py::class_<" << name_;
+  if (parent_ != nullptr) {
+    s << ", " << parent_->name_;
+  } else {
+    if (is_little_endian_) {
+      s << ", PacketStruct<kLittleEndian>";
+    } else {
+      s << ", PacketStruct<!kLittleEndian>";
+    }
+  }
+  s << ">(m, \"" << name_ << "\")";
+  s << ".def(py::init<>())";
+  s << ".def(\"Serialize\", &" << GetTypeName() << "::Serialize)";
+  s << ".def(\"Parse\", &" << name_ << "::Parse)";
+  s << ";\n";
+}
+
 void StructDef::GenConstructor(std::ostream& s) const {
   if (parent_ != nullptr) {
     s << name_ << "(const " << parent_->name_ << "& parent) : " << parent_->name_ << "(parent) {}";

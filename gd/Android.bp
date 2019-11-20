@@ -358,6 +358,24 @@ genrule {
     ],
 }
 
+genrule {
+    name: "BluetoothGeneratedPackets_python3_cc",
+    tools: [
+        "bluetooth_packetgen",
+    ],
+    cmd: "$(location bluetooth_packetgen) --include=system/bt/gd --out=$(genDir) $(in)",
+    srcs: [
+        "hci/hci_packets.pdl",
+        "l2cap/l2cap_packets.pdl",
+        "security/smp_packets.pdl",
+    ],
+    out: [
+        "hci/hci_packets_python3.cc",
+        "l2cap/l2cap_packets_python3.cc",
+        "security/smp_packets_python3.cc",
+    ],
+}
+
 filegroup {
     name: "BluetoothFacadeProto",
     srcs: [
@@ -522,4 +540,88 @@ genrule {
         "l2cap/classic/cert/api.grpc.pb.cc",
         "l2cap/classic/cert/api.pb.cc",
     ],
+}
+
+cc_defaults {
+  name: "bluetooth_py3_native_extension_defaults",
+  include_dirs: [
+    "external/python/cpython3/Include",
+  ],
+  target: {
+      android: {
+          include_dirs: ["external/python/cpython3/android/bionic/pyconfig"],
+      },
+      android_arm: {
+          cflags: ["-DSOABI=\"cpython-38android-arm-android-bionic\""],
+          suffix: ".cpython-38android-arm-android-bionic",
+      },
+      android_arm64: {
+          cflags: ["-DSOABI=\"cpython-38android-arm64-android-bionic\""],
+          suffix: ".cpython-38android-arm64-android-bionic",
+      },
+      android_x86: {
+          cflags: ["-DSOABI=\"cpython-38android-x86-android-bionic\""],
+          suffix: ".cpython-38android-x86-android-bionic",
+      },
+      android_x86_64: {
+          cflags: ["-DSOABI=\"cpython-38android-x86_64-android-bionic\""],
+          suffix: ".cpython-38android-x86_64-android-bionic",
+      },
+      // Regenerate include dirs with android_regen.sh
+      darwin_x86_64: {
+          include_dirs: ["external/python/cpython3/android/darwin_x86_64/pyconfig"],
+          cflags: [
+              "-Wno-deprecated-declarations",
+              "-Wno-pointer-arith",
+              "-DSOABI=\"cpython-38android-x86_64-darwin\"",
+          ],
+          suffix: ".cpython-38android-x86_64-darwin",
+      },
+      linux_bionic: {
+          // NB linux_bionic is a 'host' architecture but it uses the bionic libc like 'android'
+          // targets so use the android pyconfig.
+          include_dirs: ["external/python/cpython3/android/bionic/pyconfig"],
+          cflags: ["-DSOABI=\"cpython-38android-x86_64-linux-bionic\""],
+          suffix: ".cpython-38android-x86_64-linux-bionic",
+      },
+      linux_glibc_x86: {
+          enabled: false,
+      },
+      linux_glibc_x86_64: {
+          include_dirs: ["external/python/cpython3/android/linux_x86_64/pyconfig"],
+          cflags: ["-DSOABI=\"cpython-38android-x86_64-linux-gnu\""],
+          suffix: ".cpython-38android-x86_64-linux-gnu",
+      },
+      windows: {
+          enabled: false,
+      },
+  },
+  allow_undefined_symbols: true,
+}
+
+cc_library{
+  name: "bluetooth_packets_python3",
+  defaults: [
+    "gd_defaults",
+    "bluetooth_py3_native_extension_defaults"
+  ],
+  host_supported: true,
+  srcs: [
+    "packet/python3_module.cc",
+    "l2cap/fcs.cc",
+    ":BluetoothPacketSources",
+  ],
+  generated_headers: [
+    "BluetoothGeneratedPackets_h",
+  ],
+  generated_sources: [
+    "BluetoothGeneratedPackets_python3_cc",
+  ],
+  header_libs: [
+    "pybind11_headers",
+  ],
+  cflags: [
+    "-fexceptions",
+  ],
+  rtti: true,
 }
