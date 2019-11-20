@@ -42,10 +42,10 @@ void Device::UnregisterPhyLayers() {
 }
 
 void Device::UnregisterPhyLayer(Phy::Type phy_type, uint32_t factory_id) {
-  for (size_t i = 0; i < phy_layers_[phy_type].size(); i++) {
-    if (phy_layers_[phy_type][i]->IsFactoryId(factory_id)) {
-      phy_layers_[phy_type][i]->Unregister();
-      phy_layers_[phy_type].erase(phy_layers_[phy_type].begin() + i);
+  for (const auto phy_layer : phy_layers_[phy_type]) {
+    if (phy_layer->IsFactoryId(factory_id)) {
+      phy_layer->Unregister();
+      phy_layers_[phy_type].remove(phy_layer);
     }
   }
 }
