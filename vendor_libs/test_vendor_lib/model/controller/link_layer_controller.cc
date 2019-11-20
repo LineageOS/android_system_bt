@@ -898,6 +898,12 @@ void LinkLayerController::RegisterScoChannel(
   send_sco_ = callback;
 }
 
+void LinkLayerController::RegisterIsoChannel(
+    const std::function<void(std::shared_ptr<std::vector<uint8_t>>)>&
+        callback) {
+  send_iso_ = callback;
+}
+
 void LinkLayerController::RegisterRemoteChannel(
     const std::function<void(
         std::shared_ptr<model::packets::LinkLayerPacketBuilder>, Phy::Type)>&

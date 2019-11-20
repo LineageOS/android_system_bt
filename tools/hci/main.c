@@ -15,6 +15,7 @@ typedef enum {
   HCI_PACKET_ACL_DATA = 2,
   HCI_PACKET_SCO_DATA = 3,
   HCI_PACKET_EVENT = 4,
+  HCI_PACKET_ISO = 5,
 } hci_packet_t;
 
 typedef struct {

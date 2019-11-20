@@ -67,6 +67,9 @@ void H4Protocol::OnPacketReady() {
     case HCI_PACKET_TYPE_SCO_DATA:
       sco_cb_(hci_packetizer_.GetPacket());
       break;
+    case HCI_PACKET_TYPE_ISO_DATA:
+      iso_cb_(hci_packetizer_.GetPacket());
+      break;
     default: {
       bool bad_packet_type = true;
       CHECK(!bad_packet_type);
