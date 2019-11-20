@@ -25,8 +25,12 @@ class PhyLayer {
  public:
   PhyLayer(Phy::Type phy_type, uint32_t id,
            const std::function<void(model::packets::LinkLayerPacketView)>&
-               device_receive)
-      : phy_type_(phy_type), id_(id), transmit_to_device_(device_receive) {}
+               device_receive,
+           uint32_t device_id)
+      : phy_type_(phy_type),
+        id_(id),
+        device_id_(device_id),
+        transmit_to_device_(device_receive) {}
 
   virtual void Send(
       const std::shared_ptr<model::packets::LinkLayerPacketBuilder> packet) = 0;
@@ -48,11 +52,14 @@ class PhyLayer {
     return id_;
   }
 
+  uint32_t GetDeviceId() { return device_id_; }
+
   virtual ~PhyLayer() = default;
 
  private:
   Phy::Type phy_type_;
   uint32_t id_;
+  uint32_t device_id_;
 
  protected:
   const std::function<void(model::packets::LinkLayerPacketView)>
