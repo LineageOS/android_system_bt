@@ -304,6 +304,11 @@ void DualModeController::HandleSco(std::shared_ptr<std::vector<uint8_t>> packet)
   }
 }
 
+void DualModeController::HandleIso(
+    std::shared_ptr<std::vector<uint8_t>> /* packet */) {
+  // TODO: implement handling similar to HandleSco
+}
+
 void DualModeController::HandleCommand(std::shared_ptr<std::vector<uint8_t>> packet) {
   auto command_packet = packets::CommandPacketView::Create(packet);
   uint16_t opcode = command_packet.GetOpcode();
@@ -352,6 +357,13 @@ void DualModeController::RegisterScoChannel(
     const std::function<void(std::shared_ptr<std::vector<uint8_t>>)>& callback) {
   link_layer_controller_.RegisterScoChannel(callback);
   send_sco_ = callback;
+}
+
+void DualModeController::RegisterIsoChannel(
+    const std::function<void(std::shared_ptr<std::vector<uint8_t>>)>&
+        callback) {
+  link_layer_controller_.RegisterIsoChannel(callback);
+  send_iso_ = callback;
 }
 
 void DualModeController::HciReset(packets::PacketView<true> args) {
