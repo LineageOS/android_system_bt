@@ -43,7 +43,7 @@ CarKit::CarKit() : Device(kCarKitPropertiesFile) {
 
   properties_.SetPageScanRepetitionMode(0);
   properties_.SetClassOfDevice(0x600420);
-  properties_.SetSupportedFeatures(0x8779ff9bfe8defff);
+  properties_.SetExtendedFeatures(0x8779ff9bfe8defff, 0);
   properties_.SetExtendedInquiryData({
       16,  // length
       9,   // Type: Device Name
