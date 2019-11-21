@@ -40,7 +40,7 @@ class LinkLayerController {
   LinkLayerController(const DeviceProperties& properties) : properties_(properties) {}
   bluetooth::hci::ErrorCode SendCommandToRemoteByAddress(
       bluetooth::hci::OpCode opcode, packets::PacketView<true> args,
-      const Address& remote, bool use_public_address);
+      const Address& remote);
   bluetooth::hci::ErrorCode SendCommandToRemoteByHandle(
       bluetooth::hci::OpCode opcode, packets::PacketView<true> args,
       uint16_t handle);
@@ -51,8 +51,8 @@ class LinkLayerController {
   void StartSimplePairing(const Address& address);
   void AuthenticateRemoteStage1(const Address& address, PairingType pairing_type);
   void AuthenticateRemoteStage2(const Address& address);
-  bluetooth::hci::ErrorCode LinkKeyRequestReply(const Address& address,
-                                                packets::PacketView<true> key);
+  bluetooth::hci::ErrorCode LinkKeyRequestReply(
+      const Address& address, const std::array<uint8_t, 16>& key);
   bluetooth::hci::ErrorCode LinkKeyRequestNegativeReply(const Address& address);
   bluetooth::hci::ErrorCode IoCapabilityRequestReply(
       const Address& peer, uint8_t io_capability, uint8_t oob_data_present_flag,
@@ -106,7 +106,7 @@ class LinkLayerController {
   // Set the callbacks for sending packets to the HCI.
   void RegisterEventChannel(
       const std::function<void(
-          std::shared_ptr<bluetooth::hci::EventPacketBuilder>)>& send_event_);
+          std::shared_ptr<bluetooth::hci::EventPacketBuilder>)>& send_event);
 
   void RegisterAclChannel(const std::function<void(std::shared_ptr<std::vector<uint8_t>>)>& send_acl);
 
@@ -261,7 +261,6 @@ class LinkLayerController {
       std::unique_ptr<model::packets::LinkLayerPacketBuilder> packet);
   void IncomingAclPacket(model::packets::LinkLayerPacketView packet);
   void IncomingAclAckPacket(model::packets::LinkLayerPacketView packet);
-  void IncomingCommandPacket(model::packets::LinkLayerPacketView packet);
   void IncomingCreateConnectionPacket(
       model::packets::LinkLayerPacketView packet);
   void IncomingDisconnectPacket(model::packets::LinkLayerPacketView packet);
@@ -287,7 +286,27 @@ class LinkLayerController {
   void IncomingPagePacket(model::packets::LinkLayerPacketView packet);
   void IncomingPageRejectPacket(model::packets::LinkLayerPacketView packet);
   void IncomingPageResponsePacket(model::packets::LinkLayerPacketView packet);
-  void IncomingResponsePacket(model::packets::LinkLayerPacketView packet);
+  void IncomingReadRemoteLmpFeatures(
+      model::packets::LinkLayerPacketView packet);
+  void IncomingReadRemoteLmpFeaturesResponse(
+      model::packets::LinkLayerPacketView packet);
+  void IncomingReadRemoteSupportedFeatures(
+      model::packets::LinkLayerPacketView packet);
+  void IncomingReadRemoteSupportedFeaturesResponse(
+      model::packets::LinkLayerPacketView packet);
+  void IncomingReadRemoteExtendedFeatures(
+      model::packets::LinkLayerPacketView packet);
+  void IncomingReadRemoteExtendedFeaturesResponse(
+      model::packets::LinkLayerPacketView packet);
+  void IncomingReadRemoteVersion(model::packets::LinkLayerPacketView packet);
+  void IncomingReadRemoteVersionResponse(
+      model::packets::LinkLayerPacketView packet);
+  void IncomingReadClockOffset(model::packets::LinkLayerPacketView packet);
+  void IncomingReadClockOffsetResponse(
+      model::packets::LinkLayerPacketView packet);
+  void IncomingRemoteNameRequest(model::packets::LinkLayerPacketView packet);
+  void IncomingRemoteNameRequestResponse(
+      model::packets::LinkLayerPacketView packet);
 
  private:
   const DeviceProperties& properties_;
