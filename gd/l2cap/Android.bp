@@ -42,6 +42,8 @@ filegroup {
         "classic/internal/fixed_channel_service_manager_test.cc",
         "classic/internal/link_manager_test.cc",
         "classic/internal/signalling_manager_test.cc",
+        "internal/basic_mode_channel_data_controller_test.cc",
+        "internal/enhanced_retransmission_mode_channel_data_controller_test.cc",
         "internal/fixed_channel_allocator_test.cc",
         "internal/receiver_test.cc",
         "internal/scheduler_fifo_test.cc",
