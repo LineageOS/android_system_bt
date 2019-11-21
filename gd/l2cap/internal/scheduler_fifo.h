@@ -39,7 +39,6 @@ class Fifo : public Scheduler {
   void AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> channel) override;
   void DetachChannel(Cid cid) override;
   void OnPacketsReady(Cid cid, int number_packets) override;
-  void SetChannelRetransmissionFlowControlMode(Cid cid, RetransmissionAndFlowControlModeOption mode) override;
   DataController* GetDataController(Cid cid) override;
 
  private:

@@ -23,6 +23,7 @@
 namespace bluetooth {
 namespace l2cap {
 namespace internal {
+class Sender;
 
 /**
  * Common interface for internal channel implementation
@@ -48,15 +49,11 @@ class ChannelImpl {
   virtual Cid GetRemoteCid() const = 0;
 
   /**
-   * Return one of the supported channel mode as defined above
+   * Callback from the Scheduler to notify the Sender for this channel. On config update, channel might notify the
+   * configuration change to Sender.
+   * Fixed channel doesn't need to implement it, as it doesn't need to send config update to Sender.
    */
-  virtual RetransmissionAndFlowControlModeOption GetChannelMode() const = 0;
-
-  /**
-   * Invoked by the command signalling manager to update the channel mode. Does NOT apply to fixed channel, OR LE
-   * credit-based flow control channel
-   */
-  virtual void SetChannelMode(RetransmissionAndFlowControlModeOption) = 0;
+  virtual void SetSender(l2cap::internal::Sender* sender) = 0;
 };
 
 }  // namespace internal

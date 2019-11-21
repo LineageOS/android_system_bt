@@ -74,6 +74,9 @@ def is_information_response(log):
 def is_command_reject(log):
     return log.HasField("command_reject")
 
+def basic_frame_to_enhanced_information_frame(information_payload):
+    return information_payload[2:]
+
 class SimpleL2capTest(GdBaseTestClass):
     def setup_test(self):
         self.device_under_test = self.gd_devices[0]
@@ -105,21 +108,30 @@ class SimpleL2capTest(GdBaseTestClass):
         log_event_handler = EventHandler()
         self.next_scid = 0x40
         self.scid_dcid_map = {}
+        self.retransmission_mode = l2cap_cert_pb2.ChannelRetransmissionFlowControlMode.BASIC
         def handle_connection_request(log):
             log = log.connection_request
             self.cert_device.l2cap.SendConnectionResponse(l2cap_cert_pb2.ConnectionResponse(dcid=self.next_scid,scid=log.scid,
                                                                                             signal_id=log.signal_id))
             self.scid_dcid_map[self.next_scid] = log.scid
             self.next_scid += 1
-            self.cert_device.l2cap.SendConfigurationRequest(l2cap_cert_pb2.ConfigurationRequest(dcid=log.scid,
-                                                                                            signal_id=log.signal_id+1))
+            self.cert_device.l2cap.SendConfigurationRequest(l2cap_cert_pb2.ConfigurationRequest(
+                dcid=log.scid,
+                signal_id=log.signal_id+1,
+                retransmission_config=l2cap_cert_pb2.ChannelRetransmissionFlowControlConfig(
+                    mode=self.retransmission_mode
+                )))
         log_event_handler.on(is_connection_request, handle_connection_request)
 
         def handle_connection_response(log):
             log = log.connection_response
             self.scid_dcid_map[log.scid] = log.dcid
-            self.cert_device.l2cap.SendConfigurationRequest(l2cap_cert_pb2.ConfigurationRequest(dcid=log.dcid,
-                                                                                              signal_id=log.signal_id+1))
+            self.cert_device.l2cap.SendConfigurationRequest(l2cap_cert_pb2.ConfigurationRequest(
+                dcid=log.dcid,
+                signal_id=log.signal_id+1,
+                retransmission_config=l2cap_cert_pb2.ChannelRetransmissionFlowControlConfig(
+                    mode=self.retransmission_mode
+                )))
         log_event_handler.on(is_connection_response, handle_connection_response)
 
         def handle_configuration_request(log):
@@ -127,8 +139,10 @@ class SimpleL2capTest(GdBaseTestClass):
             if log.dcid not in self.scid_dcid_map:
                 return
             dcid = self.scid_dcid_map[log.dcid]
-            self.cert_device.l2cap.SendConfigurationResponse(l2cap_cert_pb2.ConfigurationResponse(scid=dcid,
-                                                                                            signal_id=log.signal_id))
+            self.cert_device.l2cap.SendConfigurationResponse(l2cap_cert_pb2.ConfigurationResponse(
+                scid=dcid,
+                signal_id=log.signal_id,
+                ))
         log_event_handler.on(is_configuration_request, handle_configuration_request)
 
         def handle_disconnection_request(log):
@@ -168,7 +182,7 @@ class SimpleL2capTest(GdBaseTestClass):
         self.event_handler.execute(logs)
         assert self.dut_address in link_up_handled
 
-    def _open_channel(self, scid=0x0101, psm=0x01):
+    def _open_channel(self, scid=0x0101, psm=0x33):
         self.device_under_test.l2cap.SetDynamicChannel(l2cap_facade_pb2.SetEnableDynamicChannelRequest(psm=psm))
 
         configuration_response_handled = []
@@ -184,10 +198,38 @@ class SimpleL2capTest(GdBaseTestClass):
     def test_connect(self):
         self._setup_link()
         self._open_channel(scid=0x0101)
+        self.cert_device.l2cap.StopFetchingL2capLog(l2cap_cert_pb2.StopFetchingL2capLogRequest())
+
+    def test_connect_and_send_data_ertm_no_segmentation(self):
+        self.retransmission_mode = l2cap_cert_pb2.ChannelRetransmissionFlowControlMode.ERTM
+        self.device_under_test.l2cap.RegisterChannel(l2cap_facade_pb2.RegisterChannelRequest(channel=2))
+        self.device_under_test.l2cap.SetDynamicChannel(l2cap_facade_pb2.SetEnableDynamicChannelRequest(psm=0x33, retransmission_mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM))
+        self._setup_link()
+        scid = 0x0101
+        self._open_channel(scid=scid)
+        self.device_under_test.l2cap.SendL2capPacket(l2cap_facade_pb2.L2capPacket(channel=2, payload=b"123"))
+
+        data_received = []
+        event_handler = EventHandler()
+        def on_data_received(log):
+            log = log.data_packet
+            if (log.channel == scid):
+                log.payload = basic_frame_to_enhanced_information_frame(log.payload)
+            data_received.append((log.channel, log.payload))
+        event_handler.on(lambda log : log.HasField("data_packet"), on_data_received)
+        logs = self.cert_device.l2cap.FetchL2capLog(l2cap_cert_pb2.FetchL2capLogRequest())
+        event_handler.execute(logs)
+        assert (2, b"123") in data_received
+
+        self.device_under_test.l2cap.SendDynamicChannelPacket(l2cap_facade_pb2.DynamicChannelPacket(psm=0x33, payload=b'abc'*34))
+        logs = self.cert_device.l2cap.FetchL2capLog(l2cap_cert_pb2.FetchL2capLogRequest())
+        event_handler.execute(logs)
+        assert (scid, b"abc"*34) in data_received
+        self.cert_device.l2cap.StopFetchingL2capLog(l2cap_cert_pb2.StopFetchingL2capLogRequest())
 
     def test_connect_and_send_data(self):
         self.device_under_test.l2cap.RegisterChannel(l2cap_facade_pb2.RegisterChannelRequest(channel=2))
-        self.device_under_test.l2cap.SetDynamicChannel(l2cap_facade_pb2.SetEnableDynamicChannelRequest(psm=0x01))
+        self.device_under_test.l2cap.SetDynamicChannel(l2cap_facade_pb2.SetEnableDynamicChannelRequest(psm=0x33))
         self._setup_link()
         scid = 0x0101
         self._open_channel(scid=scid)
@@ -203,15 +245,17 @@ class SimpleL2capTest(GdBaseTestClass):
         event_handler.execute(logs)
         assert (2, b"123") in data_received
 
-        self.device_under_test.l2cap.SendDynamicChannelPacket(l2cap_facade_pb2.DynamicChannelPacket(psm=1, payload=b'abc'))
+        self.device_under_test.l2cap.SendDynamicChannelPacket(l2cap_facade_pb2.DynamicChannelPacket(psm=0x33, payload=b'abc'))
         logs = self.cert_device.l2cap.FetchL2capLog(l2cap_cert_pb2.FetchL2capLogRequest())
         event_handler.execute(logs)
         assert (scid, b"abc") in data_received
+        self.cert_device.l2cap.StopFetchingL2capLog(l2cap_cert_pb2.StopFetchingL2capLogRequest())
 
     def test_open_two_channels(self):
         self._setup_link()
         self._open_channel(scid=0x0101, psm=0x1)
         self._open_channel(scid=0x0102, psm=0x3)
+        self.cert_device.l2cap.StopFetchingL2capLog(l2cap_cert_pb2.StopFetchingL2capLogRequest())
 
     def test_accept_disconnect(self):
         """
@@ -225,6 +269,7 @@ class SimpleL2capTest(GdBaseTestClass):
         def handle_disconnection_response(log):
             log = log.disconnection_response
             disconnection_response_handled.append((log.scid, log.dcid))
+            self.cert_device.l2cap.StopFetchingL2capLog(l2cap_cert_pb2.StopFetchingL2capLogRequest())
         self.event_handler.on(is_disconnection_response, handle_disconnection_response)
         self.cert_device.l2cap.SendDisconnectionRequest(l2cap_cert_pb2.DisconnectionRequest(scid=scid, dcid=dcid, signal_id=2))
         logs = self.cert_device.l2cap.FetchL2capLog(l2cap_cert_pb2.FetchL2capLogRequest())
@@ -262,11 +307,13 @@ class SimpleL2capTest(GdBaseTestClass):
         initiate the configuration procedure.
         """
         psm = 1
+        # TODO: Use another test case
         self.device_under_test.l2cap.OpenChannel(l2cap_facade_pb2.OpenChannelRequest(remote=self.cert_address, psm=psm))
         connection_request = []
         def handle_connection_request(log):
             log = log.connection_request
             connection_request.append(log.psm)
+            self.cert_device.l2cap.StopFetchingL2capLog(l2cap_cert_pb2.StopFetchingL2capLogRequest())
         self.event_handler.on(is_connection_request, handle_connection_request)
         logs = self.cert_device.l2cap.FetchL2capLog(l2cap_cert_pb2.FetchL2capLogRequest())
         self.event_handler.execute(logs)
@@ -285,6 +332,7 @@ class SimpleL2capTest(GdBaseTestClass):
         def handle_echo_response(log):
             log = log.echo_response
             echo_response.append(log.signal_id)
+            self.cert_device.l2cap.StopFetchingL2capLog(l2cap_cert_pb2.StopFetchingL2capLogRequest())
         self.event_handler.on(is_echo_response, handle_echo_response)
         logs = self.cert_device.l2cap.FetchL2capLog(l2cap_cert_pb2.FetchL2capLogRequest())
         self.event_handler.execute(logs)
@@ -303,6 +351,7 @@ class SimpleL2capTest(GdBaseTestClass):
         def handle_command_reject(log):
             log = log.command_reject
             command_reject.append(log.signal_id)
+            self.cert_device.l2cap.StopFetchingL2capLog(l2cap_cert_pb2.StopFetchingL2capLogRequest())
         self.event_handler.on(is_command_reject, handle_command_reject)
         logs = self.cert_device.l2cap.FetchL2capLog(l2cap_cert_pb2.FetchL2capLogRequest())
         self.event_handler.execute(logs)
@@ -321,7 +370,34 @@ class SimpleL2capTest(GdBaseTestClass):
         def handle_info_response(log):
             log = log.information_response
             info_response.append((log.signal_id, log.type))
+            self.cert_device.l2cap.StopFetchingL2capLog(l2cap_cert_pb2.StopFetchingL2capLogRequest())
         self.event_handler.on(is_information_response, handle_info_response)
         logs = self.cert_device.l2cap.FetchL2capLog(l2cap_cert_pb2.FetchL2capLogRequest())
         self.event_handler.execute(logs)
         assert (signal_id, l2cap_cert_pb2.InformationRequestType.FIXED_CHANNELS) in info_response
+
+
+    def test_extended_feature_info_response_ertm(self):
+        """
+        L2CAP/EXF/BV-01-C [Extended Features Information Response for Enhanced
+        Retransmission Mode]
+        """
+        self._setup_link()
+        signal_id = 3
+        self.cert_device.l2cap.SendInformationRequest(
+            l2cap_cert_pb2.InformationRequest(
+                type=l2cap_cert_pb2.InformationRequestType.EXTENDED_FEATURES, signal_id=signal_id))
+        info_response = []
+        def handle_info_response(log):
+            log = log.information_response
+            info_response.append((log.signal_id, log.type, log.information_value))
+            self.cert_device.l2cap.StopFetchingL2capLog(l2cap_cert_pb2.StopFetchingL2capLogRequest())
+        self.event_handler.on(is_information_response, handle_info_response)
+        logs = self.cert_device.l2cap.FetchL2capLog(l2cap_cert_pb2.FetchL2capLogRequest())
+        self.event_handler.execute(logs)
+        expected_log_type = l2cap_cert_pb2.InformationRequestType.EXTENDED_FEATURES
+        expected_mask = 1 << 3
+        assert len(info_response) == 1
+        assert info_response[0][0] == signal_id
+        assert info_response[0][1] == expected_log_type
+        assert info_response[0][2] | expected_mask == expected_mask

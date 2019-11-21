@@ -105,7 +105,22 @@ class L2capModuleCertService : public L2capModuleCert::Service {
   ::grpc::Status SendConfigurationRequest(
       ::grpc::ServerContext* context, const ::bluetooth::l2cap::classic::cert::ConfigurationRequest* request,
       ::bluetooth::l2cap::classic::cert::SendConfigurationRequestResult* response) override {
-    auto builder = ConfigurationRequestBuilder::Create(request->signal_id(), request->dcid(), Continuation::END, {});
+    std::vector<std::unique_ptr<ConfigurationOption>> config;
+    if (request->retransmission_config().mode() == ChannelRetransmissionFlowControlMode::ERTM) {
+      auto option = std::make_unique<RetransmissionAndFlowControlConfigurationOption>();
+      option->mode_ = RetransmissionAndFlowControlModeOption::ENHANCED_RETRANSMISSION;
+      option->tx_window_size_ = 10;
+      option->max_transmit_ = 20;
+      option->retransmission_time_out_ = 2000;
+      option->monitor_time_out_ = 12000;
+      option->maximum_pdu_size_ = 1010;
+      config.push_back(std::move(option));
+      auto no_fcs = std::make_unique<FrameCheckSequenceOption>();
+      no_fcs->fcs_type_ = FcsType::NO_FCS;
+      config.push_back(std::move(no_fcs));
+    }
+    auto builder = ConfigurationRequestBuilder::Create(request->signal_id(), request->dcid(), Continuation::END,
+                                                       std::move(config));
     auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
     outgoing_packet_queue_.push(std::move(l2cap_builder));
     send_packet_from_queue();
@@ -115,8 +130,19 @@ class L2capModuleCertService : public L2capModuleCert::Service {
   ::grpc::Status SendConfigurationResponse(
       ::grpc::ServerContext* context, const ::bluetooth::l2cap::classic::cert::ConfigurationResponse* request,
       ::bluetooth::l2cap::classic::cert::SendConfigurationResponseResult* response) override {
+    std::vector<std::unique_ptr<ConfigurationOption>> config;
+    if (request->retransmission_config().mode() == ChannelRetransmissionFlowControlMode::ERTM) {
+      auto option = std::make_unique<RetransmissionAndFlowControlConfigurationOption>();
+      option->mode_ = RetransmissionAndFlowControlModeOption::ENHANCED_RETRANSMISSION;
+      option->tx_window_size_ = 10;
+      option->max_transmit_ = 20;
+      option->retransmission_time_out_ = 2000;
+      option->monitor_time_out_ = 12000;
+      option->maximum_pdu_size_ = 1010;
+      config.push_back(std::move(option));
+    }
     auto builder = ConfigurationResponseBuilder::Create(request->signal_id(), request->scid(), Continuation::END,
-                                                        ConfigurationResponseResult::SUCCESS, {});
+                                                        ConfigurationResponseResult::SUCCESS, std::move(config));
     auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
     outgoing_packet_queue_.push(std::move(l2cap_builder));
     send_packet_from_queue();
@@ -224,7 +250,8 @@ class L2capModuleCertService : public L2capModuleCert::Service {
 
   ::grpc::Status FetchL2capLog(::grpc::ServerContext* context, const FetchL2capLogRequest* request,
                                ::grpc::ServerWriter<FetchL2capLogResponse>* writer) override {
-    while (!context->IsCancelled()) {
+    fetching_l2cap_log_ = true;
+    while (!context->IsCancelled() && fetching_l2cap_log_) {
       if (!l2cap_log_.empty()) {
         auto& response = l2cap_log_.front();
         writer->Write(response);
@@ -241,6 +268,16 @@ class L2capModuleCertService : public L2capModuleCert::Service {
     }
     return ::grpc::Status::OK;
   }
+
+  ::grpc::Status StopFetchingL2capLog(
+      ::grpc::ServerContext* context, const ::bluetooth::l2cap::classic::cert::StopFetchingL2capLogRequest* request,
+      ::bluetooth::l2cap::classic::cert::StopFetchingL2capLogResponse* response) override {
+    fetching_l2cap_log_ = false;
+    l2cap_log_cv_.notify_one();
+    return ::grpc::Status::OK;
+  }
+
+  bool fetching_l2cap_log_ = false;
   std::mutex l2cap_log_mutex_;
   std::queue<FetchL2capLogResponse> l2cap_log_;
   std::condition_variable l2cap_log_cv_;
@@ -393,15 +430,31 @@ class L2capModuleCertService : public L2capModuleCert::Service {
         auto type = information_response_view.GetInfoType();
         switch (type) {
           case InformationRequestInfoType::CONNECTIONLESS_MTU: {
+            auto view = InformationResponseConnectionlessMtuView::Create(information_response_view);
+            if (!view.IsValid()) {
+              return;
+            }
             log_response.mutable_information_response()->set_type(InformationRequestType::CONNECTIONLESS_MTU);
+            log_response.mutable_information_response()->set_information_value(view.GetConnectionlessMtu());
             break;
           }
           case InformationRequestInfoType::EXTENDED_FEATURES_SUPPORTED: {
+            auto view = InformationResponseExtendedFeaturesView::Create(information_response_view);
+            if (!view.IsValid()) {
+              return;
+            }
             log_response.mutable_information_response()->set_type(InformationRequestType::EXTENDED_FEATURES);
+            int mask = view.GetEnhancedRetransmissionMode() << 3 | view.GetFcsOption() << 5;
+            log_response.mutable_information_response()->set_information_value(mask);
             break;
           }
           case InformationRequestInfoType::FIXED_CHANNELS_SUPPORTED: {
+            auto view = InformationResponseFixedChannelsView::Create(information_response_view);
+            if (!view.IsValid()) {
+              return;
+            }
             log_response.mutable_information_response()->set_type(InformationRequestType::FIXED_CHANNELS);
+            log_response.mutable_information_response()->set_information_value(view.GetFixedChannels());
             break;
           }
         }
