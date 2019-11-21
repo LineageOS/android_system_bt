@@ -20,6 +20,7 @@
 #include <unordered_map>
 
 #include "hci/acl_manager.h"
+#include "l2cap/classic/dynamic_channel_configuration_option.h"
 #include "l2cap/classic/internal/dynamic_channel_allocator.h"
 #include "l2cap/classic/internal/dynamic_channel_impl.h"
 #include "l2cap/classic/internal/dynamic_channel_service_manager_impl.h"
@@ -55,6 +56,7 @@ class Link {
     os::Handler* handler_;
     DynamicChannelManager::OnConnectionOpenCallback on_open_callback_;
     DynamicChannelManager::OnConnectionFailureCallback on_fail_callback_;
+    classic::DynamicChannelConfigurationOption configuration_;
   };
 
   // ACL methods
@@ -87,7 +89,7 @@ class Link {
   virtual std::shared_ptr<DynamicChannelImpl> AllocateReservedDynamicChannel(Cid reserved_cid, Psm psm, Cid remote_cid,
                                                                              SecurityPolicy security_policy);
 
-  virtual void SetChannelRetransmissionFlowControlMode(Cid cid, RetransmissionAndFlowControlModeOption mode);
+  virtual classic::DynamicChannelConfigurationOption GetConfigurationForInitialConfiguration(Cid cid);
 
   virtual void FreeDynamicChannel(Cid cid);
 

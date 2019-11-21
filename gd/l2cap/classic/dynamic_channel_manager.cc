@@ -24,12 +24,14 @@ namespace bluetooth {
 namespace l2cap {
 namespace classic {
 
-bool DynamicChannelManager::ConnectChannel(hci::Address device, Psm psm, OnConnectionOpenCallback on_connection_open,
+bool DynamicChannelManager::ConnectChannel(hci::Address device, DynamicChannelConfigurationOption configuration_option,
+                                           Psm psm, OnConnectionOpenCallback on_connection_open,
                                            OnConnectionFailureCallback on_fail_callback, os::Handler* handler) {
   internal::Link::PendingDynamicChannelConnection pending_dynamic_channel_connection{
       .handler_ = handler,
       .on_open_callback_ = std::move(on_connection_open),
       .on_fail_callback_ = std::move(on_fail_callback),
+      .configuration_ = configuration_option,
   };
   l2cap_layer_handler_->Post(common::BindOnce(&internal::LinkManager::ConnectDynamicChannelServices,
                                               common::Unretained(link_manager_), device,
@@ -38,13 +40,16 @@ bool DynamicChannelManager::ConnectChannel(hci::Address device, Psm psm, OnConne
   return true;
 }
 
-bool DynamicChannelManager::RegisterService(Psm psm, const SecurityPolicy& security_policy,
+bool DynamicChannelManager::RegisterService(Psm psm, DynamicChannelConfigurationOption configuration_option,
+                                            const SecurityPolicy& security_policy,
                                             OnRegistrationCompleteCallback on_registration_complete,
                                             OnConnectionOpenCallback on_connection_open, os::Handler* handler) {
   internal::DynamicChannelServiceImpl::PendingRegistration pending_registration{
       .user_handler_ = handler,
       .on_registration_complete_callback_ = std::move(on_registration_complete),
-      .on_connection_open_callback_ = std::move(on_connection_open)};
+      .on_connection_open_callback_ = std::move(on_connection_open),
+      .configuration_ = configuration_option,
+  };
   l2cap_layer_handler_->Post(common::BindOnce(&internal::DynamicChannelServiceManagerImpl::Register,
                                               common::Unretained(service_manager_), psm,
                                               std::move(pending_registration)));

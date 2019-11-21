@@ -29,6 +29,7 @@ std::vector<std::unique_ptr<packet::RawBuilder>> AclFragmenter::GetFragments() {
   std::vector<std::unique_ptr<packet::RawBuilder>> to_return;
   packet::FragmentingInserter fragmenting_inserter(mtu_, std::back_insert_iterator(to_return));
   packet_->Serialize(fragmenting_inserter);
+  fragmenting_inserter.finalize();
   return to_return;
 }
 

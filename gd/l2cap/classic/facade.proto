@@ -30,9 +30,15 @@ message ConnectionCompleteEvent {
   facade.BluetoothAddress remote = 1;
 }
 
+enum RetransmissionFlowControlMode {
+  BASIC = 0;
+  ERTM = 3;
+}
+
 message OpenChannelRequest {
   facade.BluetoothAddress remote = 1;
   uint32 psm = 2;
+  RetransmissionFlowControlMode mode = 3;
 }
 
 message ConfigureChannelRequest {
@@ -78,6 +84,7 @@ message RegisterDynamicChannelRequest {
 message SetEnableDynamicChannelRequest {
   uint32 psm = 1;
   bool enable = 2;
+  RetransmissionFlowControlMode retransmission_mode = 3;
 }
 
 message DynamicChannelPacket {

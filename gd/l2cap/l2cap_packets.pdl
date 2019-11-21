@@ -346,11 +346,11 @@ enum RetransmissionAndFlowControlModeOption : 8 {
 }
 
 
-struct RetransmissionAndFlowControlConfigurationOption : ConfigurationOption (type = RETRANSMISSION_AND_FLOW_CONTROL, length = 8) {
+struct RetransmissionAndFlowControlConfigurationOption : ConfigurationOption (type = RETRANSMISSION_AND_FLOW_CONTROL, length = 9) {
   mode : RetransmissionAndFlowControlModeOption,
   tx_window_size : 8, // 1-32 for Flow Control and Retransmission, 1-63 for Enhanced
   max_transmit : 8,
-  retransmission_time_out : 8,
+  retransmission_time_out : 16,
   monitor_time_out : 16,
   maximum_pdu_size : 16,
 }
