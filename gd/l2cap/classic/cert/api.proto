@@ -24,6 +24,7 @@ service L2capModuleCert {
   rpc SendInformationResponse(InformationResponse) returns (SendInformationResponseResult) {}
 
   rpc FetchL2capLog(FetchL2capLogRequest) returns (stream FetchL2capLogResponse) {}
+  rpc StopFetchingL2capLog(StopFetchingL2capLogRequest) returns (StopFetchingL2capLogResponse) {}
 }
 
 message L2capPacket {
@@ -58,10 +59,27 @@ message ConnectionResponse {
 
 message SendConnectionResponseResult {}
 
+enum ChannelRetransmissionFlowControlMode {
+  BASIC = 0;
+  ERTM = 3;
+  STREAM = 4;
+}
+
+message ChannelRetransmissionFlowControlConfig {
+  ChannelRetransmissionFlowControlMode mode = 1;
+  uint32 tx_window = 2;
+  uint32 max_transmit = 3;
+  uint32 retransmit_timeout = 4;
+  uint32 monitor_timeout = 5;
+  uint32 mps = 6;
+}
+
 message ConfigurationRequest {
   uint32 dcid = 1;
   uint32 signal_id = 2;
-  repeated string configuration = 3;
+  uint32 mtu = 3;
+  ChannelRetransmissionFlowControlConfig retransmission_config = 4;
+  bool fcs = 5;
 }
 
 message SendConfigurationRequestResult {}
@@ -69,7 +87,9 @@ message SendConfigurationRequestResult {}
 message ConfigurationResponse {
   uint32 scid = 1;
   uint32 signal_id = 2;
-  repeated string configuration = 3;
+  uint32 mtu = 3;
+  ChannelRetransmissionFlowControlConfig retransmission_config = 4;
+  bool fcs = 5;
 }
 
 message SendConfigurationResponseResult {}
@@ -107,6 +127,7 @@ message InformationResponse {
   InformationRequestType type = 1;
   uint32 data = 2;
   uint32 signal_id = 3;
+  uint32 information_value = 4;
 }
 
 message SendInformationResponseResult {}
@@ -153,3 +174,7 @@ message FetchL2capLogResponse {
     LinkDown link_down = 21;
   }
 }
+
+message StopFetchingL2capLogRequest {}
+
+message StopFetchingL2capLogResponse {}

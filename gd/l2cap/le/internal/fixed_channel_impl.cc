@@ -107,11 +107,9 @@ Cid FixedChannelImpl::GetRemoteCid() const {
   return cid_;
 }
 
-RetransmissionAndFlowControlModeOption FixedChannelImpl::GetChannelMode() const {
-  return RetransmissionAndFlowControlModeOption::L2CAP_BASIC;
+void FixedChannelImpl::SetSender(l2cap::internal::Sender* sender) {
+  ASSERT_LOG(false, "Should not set sender for fixed channel");
 }
-
-void FixedChannelImpl::SetChannelMode(RetransmissionAndFlowControlModeOption option) {}
 
 }  // namespace internal
 }  // namespace le

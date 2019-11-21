@@ -72,14 +72,10 @@ TEST_F(L2capSchedulerFifoTest, send_packet) {
 
   auto mock_channel_1 = std::make_shared<testing::MockChannelImpl>();
   EXPECT_CALL(*mock_channel_1, GetQueueDownEnd()).WillRepeatedly(Return(channel_one_queue_.GetDownEnd()));
-  EXPECT_CALL(*mock_channel_1, GetChannelMode())
-      .WillRepeatedly(Return(RetransmissionAndFlowControlModeOption::L2CAP_BASIC));
   EXPECT_CALL(*mock_channel_1, GetCid()).WillRepeatedly(Return(1));
   EXPECT_CALL(*mock_channel_1, GetRemoteCid()).WillRepeatedly(Return(1));
   auto mock_channel_2 = std::make_shared<testing::MockChannelImpl>();
   EXPECT_CALL(*mock_channel_2, GetQueueDownEnd()).WillRepeatedly(Return(channel_two_queue_.GetDownEnd()));
-  EXPECT_CALL(*mock_channel_2, GetChannelMode())
-      .WillRepeatedly(Return(RetransmissionAndFlowControlModeOption::L2CAP_BASIC));
   EXPECT_CALL(*mock_channel_2, GetCid()).WillRepeatedly(Return(2));
   EXPECT_CALL(*mock_channel_2, GetRemoteCid()).WillRepeatedly(Return(2));
   fifo_->AttachChannel(1, mock_channel_1);

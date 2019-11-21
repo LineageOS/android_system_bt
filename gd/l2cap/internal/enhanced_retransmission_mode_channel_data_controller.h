@@ -31,6 +31,7 @@
 #include "os/queue.h"
 #include "packet/base_packet_builder.h"
 #include "packet/packet_view.h"
+#include "packet/raw_builder.h"
 
 namespace bluetooth {
 namespace l2cap {
@@ -62,7 +63,6 @@ class ErtmController : public DataController {
   class PacketViewForReassembly : public packet::PacketView<kLittleEndian> {
    public:
     PacketViewForReassembly(const PacketView& packetView) : PacketView(packetView) {}
-    PacketViewForReassembly(nullptr_t) : PacketView(nullptr) {}
     void AppendPacketView(packet::PacketView<kLittleEndian> to_append) {
       Append(to_append);
     }
@@ -70,19 +70,17 @@ class ErtmController : public DataController {
 
   class CopyablePacketBuilder : public packet::BasePacketBuilder {
    public:
-    CopyablePacketBuilder(std::unique_ptr<packet::BasePacketBuilder> builder) : builder_(builder.release()) {}
+    CopyablePacketBuilder(std::shared_ptr<packet::RawBuilder> builder) : builder_(std::move(builder)) {}
 
     void Serialize(BitInserter& it) const override;
 
     size_t size() const override;
 
-    std::unique_ptr<packet::BasePacketBuilder> Create();
-
    private:
-    std::shared_ptr<packet::BasePacketBuilder> builder_;
+    std::shared_ptr<packet::RawBuilder> builder_;
   };
 
-  PacketViewForReassembly reassembly_stage_{nullptr};
+  PacketViewForReassembly reassembly_stage_{std::make_shared<std::vector<uint8_t>>()};
   SegmentationAndReassembly sar_state_ = SegmentationAndReassembly::END;
 
   void stage_for_reassembly(SegmentationAndReassembly sar, const packet::PacketView<kLittleEndian>& payload);
@@ -92,17 +90,13 @@ class ErtmController : public DataController {
 
   // Configuration options
   // TODO: Configure these number
-  [[maybe_unused]] uint16_t local_tx_window_ = 10;
-  [[maybe_unused]] uint16_t local_max_transmit_ = 20;
-  [[maybe_unused]] uint16_t local_retransmit_timeout_ms_ = 2000;
-  [[maybe_unused]] uint16_t local_monitor_timeout_ms_ = 12000;
-  [[maybe_unused]] uint16_t local_mps_ = 1010;
+  uint16_t local_tx_window_ = 10;
+  uint16_t local_max_transmit_ = 20;
+  uint16_t local_retransmit_timeout_ms_ = 2000;
+  uint16_t local_monitor_timeout_ms_ = 12000;
 
-  [[maybe_unused]] uint16_t remote_tx_window_ = 10;
-  [[maybe_unused]] uint16_t remote_max_transmit_ = 20;
-  [[maybe_unused]] uint16_t remote_retransmit_timeout_ms_ = 2000;
-  [[maybe_unused]] uint16_t remote_monitor_timeout_ms_ = 12000;
-  [[maybe_unused]] uint16_t remote_mps_ = 1010;
+  uint16_t remote_tx_window_ = 10;
+  uint16_t remote_mps_ = 1010;
 
   struct impl;
   std::unique_ptr<impl> pimpl_;

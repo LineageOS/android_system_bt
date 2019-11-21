@@ -147,7 +147,36 @@ void ClassicSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, 
   }
   send_connection_response(signal_id, remote_cid, new_channel->GetCid(), ConnectionResponseResult::SUCCESS,
                            ConnectionResponseStatus::NO_FURTHER_INFORMATION_AVAILABLE);
-  SendConfigurationRequest(remote_cid, {});
+  auto* service = dynamic_service_manager_->GetService(psm);
+  auto initial_config = service->GetConfigOption();
+  auto mtu_configuration = std::make_unique<MtuConfigurationOption>();
+  mtu_configuration->mtu_ = initial_config.incoming_mtu;
+  auto fcs_option = std::make_unique<FrameCheckSequenceOption>();
+  fcs_option->fcs_type_ = FcsType::NO_FCS;
+  auto retransmission_flow_control_configuration = std::make_unique<RetransmissionAndFlowControlConfigurationOption>();
+  switch (initial_config.channel_mode) {
+    case DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::L2CAP_BASIC:
+      retransmission_flow_control_configuration->mode_ = RetransmissionAndFlowControlModeOption::L2CAP_BASIC;
+      break;
+    case DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::ENHANCED_RETRANSMISSION:
+      retransmission_flow_control_configuration->mode_ =
+          RetransmissionAndFlowControlModeOption::ENHANCED_RETRANSMISSION;
+      // TODO: Decide where to put initial values
+      retransmission_flow_control_configuration->tx_window_size_ = 10;
+      retransmission_flow_control_configuration->max_transmit_ = 20;
+      retransmission_flow_control_configuration->retransmission_time_out_ = 2000;
+      retransmission_flow_control_configuration->monitor_time_out_ = 12000;
+      retransmission_flow_control_configuration->maximum_pdu_size_ = 1010;
+      break;
+  }
+
+  new_channel->SetRetransmissionFlowControlConfig(*retransmission_flow_control_configuration);
+  new_channel->SetIncomingMtu(initial_config.incoming_mtu);
+  std::vector<std::unique_ptr<ConfigurationOption>> config;
+  config.emplace_back(std::move(mtu_configuration));
+  config.emplace_back(std::move(retransmission_flow_control_configuration));
+  config.emplace_back(std::move(fcs_option));
+  SendConfigurationRequest(remote_cid, std::move(config));
 }
 
 void ClassicSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remote_cid, Cid cid,
@@ -179,6 +208,30 @@ void ClassicSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remo
     return;
   }
   alarm_.Cancel();
+  auto initial_config = link_->GetConfigurationForInitialConfiguration(new_channel->GetCid());
+  auto mtu_configuration = std::make_unique<MtuConfigurationOption>();
+  mtu_configuration->mtu_ = initial_config.incoming_mtu;
+  auto retransmission_flow_control_configuration = std::make_unique<RetransmissionAndFlowControlConfigurationOption>();
+  switch (initial_config.channel_mode) {
+    case DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::L2CAP_BASIC:
+      retransmission_flow_control_configuration->mode_ = RetransmissionAndFlowControlModeOption::L2CAP_BASIC;
+      break;
+    case DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::ENHANCED_RETRANSMISSION:
+      retransmission_flow_control_configuration->mode_ =
+          RetransmissionAndFlowControlModeOption::ENHANCED_RETRANSMISSION;
+      // TODO: Decide where to put initial values
+      retransmission_flow_control_configuration->tx_window_size_ = 10;
+      retransmission_flow_control_configuration->max_transmit_ = 20;
+      retransmission_flow_control_configuration->retransmission_time_out_ = 2000;
+      retransmission_flow_control_configuration->monitor_time_out_ = 12000;
+      retransmission_flow_control_configuration->maximum_pdu_size_ = 1010;
+      break;
+  }
+  std::vector<std::unique_ptr<ConfigurationOption>> config;
+  config.emplace_back(std::move(mtu_configuration));
+  if (initial_config.channel_mode != DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::L2CAP_BASIC) {
+    config.emplace_back(std::move(retransmission_flow_control_configuration));
+  }
   SendConfigurationRequest(remote_cid, {});
 }
 
@@ -202,7 +255,7 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
       }
       case ConfigurationOptionType::RETRANSMISSION_AND_FLOW_CONTROL: {
         auto config = RetransmissionAndFlowControlConfigurationOption::Specialize(option.get());
-        channel->SetChannelMode(config->mode_);
+        channel->SetRetransmissionFlowControlConfig(*config);
         break;
       }
       case ConfigurationOptionType::FRAME_CHECK_SEQUENCE: {
@@ -235,7 +288,7 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
 
 void ClassicSignallingManager::OnConfigurationResponse(SignalId signal_id, Cid cid, Continuation is_continuation,
                                                        ConfigurationResponseResult result,
-                                                       std::vector<std::unique_ptr<ConfigurationOption>> option) {
+                                                       std::vector<std::unique_ptr<ConfigurationOption>> options) {
   if (pending_commands_.empty()) {
     LOG_WARN("Unexpected response: no pending request");
     return;
@@ -250,6 +303,8 @@ void ClassicSignallingManager::OnConfigurationResponse(SignalId signal_id, Cid c
     handle_send_next_command();
     return;
   }
+
+  RetransmissionAndFlowControlConfigurationOption rfc_option;
   channel->SetOutgoingConfigurationStatus(DynamicChannelImpl::ConfigurationStatus::CONFIGURED);
   if (channel->GetIncomingConfigurationStatus() == DynamicChannelImpl::ConfigurationStatus::CONFIGURED) {
     std::unique_ptr<DynamicChannel> user_channel = std::make_unique<DynamicChannel>(channel, handler_);
@@ -331,15 +386,15 @@ void ClassicSignallingManager::OnEchoResponse(SignalId signal_id, const PacketVi
 void ClassicSignallingManager::OnInformationRequest(SignalId signal_id, InformationRequestInfoType type) {
   switch (type) {
     case InformationRequestInfoType::CONNECTIONLESS_MTU: {
-      auto response = InformationResponseConnectionlessMtuBuilder::Create(signal_id.Value(),
-                                                                          InformationRequestResult::NOT_SUPPORTED, 0);
+      auto response = InformationResponseConnectionlessMtuBuilder::Create(
+          signal_id.Value(), InformationRequestResult::SUCCESS, kDefaultClassicMtu);
       enqueue_buffer_->Enqueue(std::move(response), handler_);
       break;
     }
     case InformationRequestInfoType::EXTENDED_FEATURES_SUPPORTED: {
       // TODO: implement this response
       auto response = InformationResponseExtendedFeaturesBuilder::Create(
-          signal_id.Value(), InformationRequestResult::NOT_SUPPORTED, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+          signal_id.Value(), InformationRequestResult::SUCCESS, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0);
       enqueue_buffer_->Enqueue(std::move(response), handler_);
       break;
     }

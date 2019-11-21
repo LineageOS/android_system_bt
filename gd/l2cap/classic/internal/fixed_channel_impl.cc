@@ -94,6 +94,8 @@ void FixedChannelImpl::Release() {
   link_->RefreshRefCount();
 }
 
+void FixedChannelImpl::SetSender(l2cap::internal::Sender* sender) {}
+
 }  // namespace internal
 }  // namespace classic
 }  // namespace l2cap

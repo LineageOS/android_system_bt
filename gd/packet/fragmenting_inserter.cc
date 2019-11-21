@@ -23,7 +23,7 @@ namespace packet {
 
 FragmentingInserter::FragmentingInserter(size_t mtu,
                                          std::back_insert_iterator<std::vector<std::unique_ptr<RawBuilder>>> iterator)
-    : BitInserter(to_construct_bit_inserter_), mtu_(mtu), curr_packet_(std::make_unique<RawBuilder>()),
+    : BitInserter(to_construct_bit_inserter_), mtu_(mtu), curr_packet_(std::make_unique<RawBuilder>(mtu)),
       iterator_(iterator) {}
 
 void FragmentingInserter::insert_bits(uint8_t byte, size_t num_bits) {
@@ -36,7 +36,7 @@ void FragmentingInserter::insert_bits(uint8_t byte, size_t num_bits) {
     curr_packet_->AddOctets1(new_byte);
     if (curr_packet_->size() >= mtu_) {
       iterator_ = std::move(curr_packet_);
-      curr_packet_ = std::make_unique<RawBuilder>();
+      curr_packet_ = std::make_unique<RawBuilder>(mtu_);
     }
     total_bits -= 8;
     new_value = new_value >> 8;

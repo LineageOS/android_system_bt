@@ -40,7 +40,8 @@ void DynamicChannelServiceManagerImpl::Register(Psm psm,
   } else {
     service_map_.try_emplace(psm,
                              DynamicChannelServiceImpl(pending_registration.user_handler_,
-                                                       std::move(pending_registration.on_connection_open_callback_)));
+                                                       std::move(pending_registration.on_connection_open_callback_),
+                                                       pending_registration.configuration_));
     std::unique_ptr<DynamicChannelService> user_service(new DynamicChannelService(psm, this, l2cap_layer_handler_));
     pending_registration.user_handler_->Post(
         common::BindOnce(std::move(pending_registration.on_registration_complete_callback_),
