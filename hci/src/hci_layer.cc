@@ -161,6 +161,11 @@ void sco_data_received(BT_HDR* packet) {
   packet_fragmenter->reassemble_and_dispatch(packet);
 }
 
+void iso_data_received(BT_HDR* packet) {
+  btsnoop->capture(packet, true);
+  packet_fragmenter->reassemble_and_dispatch(packet);
+}
+
 // Module lifecycle functions
 
 static future_t* hci_module_shut_down();

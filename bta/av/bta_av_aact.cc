@@ -2102,6 +2102,8 @@ void bta_av_data_path(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   uint8_t m_pt = 0x60;
   tAVDT_DATA_OPT_MASK opt;
 
+  if (!p_scb->started) return;
+
   if (p_scb->cong) return;
 
   if (p_scb->use_rtp_header_marker_bit) {

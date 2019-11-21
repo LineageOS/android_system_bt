@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "l2cap/internal/segmenter.h"
+#include "l2cap/internal/sender.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
@@ -42,7 +42,7 @@ std::unique_ptr<packet::BasePacketBuilder> CreateSdu(std::vector<uint8_t> payloa
 
 class FakeScheduler : public Scheduler {
  public:
-  void NotifyPacketsReady(Cid cid, int number_packets) override {
+  void OnPacketsReady(Cid cid, int number_packets) override {
     on_packets_ready_(cid, number_packets);
   }
 
@@ -54,7 +54,7 @@ class FakeScheduler : public Scheduler {
 
 class L2capSegmenterTest : public ::testing::Test {
  public:
-  std::unique_ptr<Segmenter::UpperDequeue> enqueue_callback() {
+  std::unique_ptr<Sender::UpperDequeue> enqueue_callback() {
     auto packet_one = CreateSdu({1, 2, 3});
     channel_queue_.GetUpEnd()->UnregisterEnqueue();
     return packet_one;
@@ -71,11 +71,11 @@ class L2capSegmenterTest : public ::testing::Test {
         .WillRepeatedly(Return(RetransmissionAndFlowControlModeOption::L2CAP_BASIC));
     EXPECT_CALL(*mock_channel_, GetCid()).WillRepeatedly(Return(0x41));
     EXPECT_CALL(*mock_channel_, GetRemoteCid()).WillRepeatedly(Return(0x41));
-    segmenter_ = new Segmenter(queue_handler_, &scheduler_, mock_channel_);
+    sender_ = new Sender(queue_handler_, &scheduler_, mock_channel_);
   }
 
   void TearDown() override {
-    delete segmenter_;
+    delete sender_;
     queue_handler_->Clear();
     user_handler_->Clear();
     delete queue_handler_;
@@ -86,9 +86,9 @@ class L2capSegmenterTest : public ::testing::Test {
   os::Thread* thread_ = nullptr;
   os::Handler* user_handler_ = nullptr;
   os::Handler* queue_handler_ = nullptr;
-  common::BidiQueue<Segmenter::UpperEnqueue, Segmenter::UpperDequeue> channel_queue_{10};
+  common::BidiQueue<Sender::UpperEnqueue, Sender::UpperDequeue> channel_queue_{10};
   std::shared_ptr<testing::MockChannelImpl> mock_channel_;
-  Segmenter* segmenter_ = nullptr;
+  Sender* sender_ = nullptr;
   FakeScheduler scheduler_;
 };
 
@@ -101,7 +101,7 @@ TEST_F(L2capSegmenterTest, send_packet) {
       queue_handler_, common::Bind(&L2capSegmenterTest::enqueue_callback, common::Unretained(this)));
   auto status = future.wait_for(std::chrono::milliseconds(3));
   EXPECT_EQ(status, std::future_status::ready);
-  auto packet = segmenter_->GetNextPacket();
+  auto packet = sender_->GetNextPacket();
   EXPECT_NE(packet, nullptr);
 }
 

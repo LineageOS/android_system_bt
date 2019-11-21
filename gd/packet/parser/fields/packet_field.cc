@@ -72,6 +72,15 @@ int PacketField::GenBounds(std::ostream& s, Size start_offset, Size end_offset, 
   return 0;  // num_leading_bits
 }
 
+bool PacketField::GenBuilderParameter(std::ostream& s) const {
+  auto param_type = GetBuilderParameterType();
+  if (param_type.empty()) {
+    return false;
+  }
+  s << param_type << " " << GetName();
+  return true;
+}
+
 bool PacketField::BuilderParameterMustBeMoved() const {
   return false;
 }
@@ -82,4 +91,12 @@ bool PacketField::GenBuilderMember(std::ostream& s) const {
 
 void PacketField::GenBuilderParameterFromView(std::ostream& s) const {
   s << "view.Get" << util::UnderscoreToCamelCase(GetName()) << "()";
+}
+
+bool PacketField::IsContainerField() const {
+  return false;
+}
+
+const PacketField* PacketField::GetElementField() const {
+  return nullptr;
 }

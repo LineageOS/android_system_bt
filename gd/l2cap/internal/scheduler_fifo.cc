@@ -30,24 +30,24 @@ Fifo::Fifo(LowerQueueUpEnd* link_queue_up_end, os::Handler* handler)
 }
 
 Fifo::~Fifo() {
-  segmenter_map_.clear();
+  sender_map_.clear();
   if (link_queue_enqueue_registered_) {
     link_queue_up_end_->UnregisterEnqueue();
   }
 }
 
 void Fifo::AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> channel) {
-  ASSERT(segmenter_map_.find(cid) == segmenter_map_.end());
-  segmenter_map_.emplace(std::piecewise_construct, std::forward_as_tuple(cid),
-                         std::forward_as_tuple(handler_, this, channel));
+  ASSERT(sender_map_.find(cid) == sender_map_.end());
+  sender_map_.emplace(std::piecewise_construct, std::forward_as_tuple(cid),
+                      std::forward_as_tuple(handler_, this, channel));
 }
 
 void Fifo::DetachChannel(Cid cid) {
-  ASSERT(segmenter_map_.find(cid) != segmenter_map_.end());
-  segmenter_map_.erase(cid);
+  ASSERT(sender_map_.find(cid) != sender_map_.end());
+  sender_map_.erase(cid);
 }
 
-void Fifo::NotifyPacketsReady(Cid cid, int number_packets) {
+void Fifo::OnPacketsReady(Cid cid, int number_packets) {
   next_to_dequeue_and_num_packets.push(std::make_pair(cid, number_packets));
   try_register_link_queue_enqueue();
 }
@@ -60,9 +60,9 @@ std::unique_ptr<Fifo::UpperDequeue> Fifo::link_queue_enqueue_callback() {
   if (channel_id_and_number_packets.second == 0) {
     next_to_dequeue_and_num_packets.pop();
   }
-  auto packet = segmenter_map_.find(channel_id)->second.GetNextPacket();
+  auto packet = sender_map_.find(channel_id)->second.GetNextPacket();
 
-  segmenter_map_.find(channel_id)->second.NotifyPacketSent();
+  sender_map_.find(channel_id)->second.OnPacketSent();
   if (next_to_dequeue_and_num_packets.empty()) {
     link_queue_up_end_->UnregisterEnqueue();
     link_queue_enqueue_registered_ = false;
@@ -77,6 +77,18 @@ void Fifo::try_register_link_queue_enqueue() {
   link_queue_up_end_->RegisterEnqueue(handler_,
                                       common::Bind(&Fifo::link_queue_enqueue_callback, common::Unretained(this)));
   link_queue_enqueue_registered_ = true;
+}
+
+void Fifo::SetChannelRetransmissionFlowControlMode(Cid cid, RetransmissionAndFlowControlModeOption mode) {
+  ASSERT(sender_map_.find(cid) != sender_map_.end());
+  sender_map_.find(cid)->second.SetChannelRetransmissionFlowControlMode(mode);
+}
+
+DataController* Fifo::GetDataController(Cid cid) {
+  if (sender_map_.find(cid) == sender_map_.end()) {
+    return nullptr;
+  }
+  return sender_map_.find(cid)->second.GetDataController();
 }
 
 }  // namespace internal

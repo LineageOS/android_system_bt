@@ -6,26 +6,38 @@ custom_field ClassOfDevice : 24 "hci/"
 enum PacketType : 8 {
     UNKNOWN = 0x00,
     ACL = 0x01,
-    COMMAND = 0x02,
-    DISCONNECT = 0x03,
-    ENCRYPT_CONNECTION = 0x04,
-    ENCRYPT_CONNECTION_RESPONSE = 0x05,
-    EVENT = 0x06,
-    INQUIRY = 0x07,
-    INQUIRY_RESPONSE = 0x08,
-    IO_CAPABILITY_REQUEST = 0x09,
-    IO_CAPABILITY_RESPONSE = 0x0A,
-    IO_CAPABILITY_NEGATIVE_RESPONSE = 0x0B,
-    LE_ADVERTISEMENT = 0x0C,
-    LE_CONNECT = 0x0D,
-    LE_CONNECT_COMPLETE = 0x0E,
-    LE_SCAN = 0x0F,
-    LE_SCAN_RESPONSE = 0x10,
-    PAGE = 0x11,
-    PAGE_RESPONSE = 0x12,
-    PAGE_REJECT = 0x13,
-    RESPONSE = 0x14,
-    SCO = 0x15,
+    DISCONNECT = 0x02,
+    ENCRYPT_CONNECTION = 0x03,
+    ENCRYPT_CONNECTION_RESPONSE = 0x04,
+    EVENT = 0x05,
+    INQUIRY = 0x06,
+    INQUIRY_RESPONSE = 0x07,
+    IO_CAPABILITY_REQUEST = 0x08,
+    IO_CAPABILITY_RESPONSE = 0x09,
+    IO_CAPABILITY_NEGATIVE_RESPONSE = 0x0A,
+    LE_ADVERTISEMENT = 0x0B,
+    LE_CONNECT = 0x0C,
+    LE_CONNECT_COMPLETE = 0x0D,
+    LE_SCAN = 0x0E,
+    LE_SCAN_RESPONSE = 0x0F,
+    PAGE = 0x10,
+    PAGE_RESPONSE = 0x11,
+    PAGE_REJECT = 0x12,
+    READ_CLOCK_OFFSET = 0x13,
+    READ_CLOCK_OFFSET_RESPONSE = 0x14,
+    READ_REMOTE_SUPPORTED_FEATURES = 0x15,
+    READ_REMOTE_SUPPORTED_FEATURES_RESPONSE = 0x16,
+    READ_REMOTE_LMP_FEATURES = 0x17,
+    READ_REMOTE_LMP_FEATURES_RESPONSE = 0x18,
+    READ_REMOTE_EXTENDED_FEATURES = 0x19,
+    READ_REMOTE_EXTENDED_FEATURES_RESPONSE = 0x1A,
+    READ_REMOTE_VERSION_INFORMATION = 0x1B,
+    READ_REMOTE_VERSION_INFORMATION_RESPONSE = 0x1C,
+    REMOTE_NAME_REQUEST = 0x1D,
+    REMOTE_NAME_REQUEST_RESPONSE = 0x1E,
+    SCO = 0x1F,
+    COMMAND = 0x23, // Remove
+    RESPONSE = 0x24, // Remove
 }
 
 packet LinkLayerPacket {
@@ -35,11 +47,16 @@ packet LinkLayerPacket {
   _body_,
 }
 
-packet AclPacket : LinkLayerPacket (type = ACL) {
+packet Command : LinkLayerPacket (type = COMMAND) {
   _payload_,
 }
 
-packet Command : LinkLayerPacket (type = COMMAND) {
+packet Response : LinkLayerPacket (type = RESPONSE) {
+  opcode : 16,
+  _payload_,
+}
+
+packet AclPacket : LinkLayerPacket (type = ACL) {
   _payload_,
 }
 
@@ -165,7 +182,56 @@ packet PageReject : LinkLayerPacket (type = PAGE_REJECT) {
   reason : 8,
 }
 
-packet Response : LinkLayerPacket (type = RESPONSE) {
-  opcode : 16,
+packet ReadClockOffset : LinkLayerPacket (type = READ_CLOCK_OFFSET) {
+}
+
+packet ReadClockOffsetResponse : LinkLayerPacket (type = READ_CLOCK_OFFSET_RESPONSE) {
+  offset : 16,
+}
+
+packet ReadRemoteSupportedFeatures : LinkLayerPacket (type = READ_REMOTE_SUPPORTED_FEATURES) {
+}
+
+packet ReadRemoteSupportedFeaturesResponse : LinkLayerPacket (type = READ_REMOTE_SUPPORTED_FEATURES_RESPONSE) {
+  features : 64,
+}
+
+packet ReadRemoteLmpFeatures : LinkLayerPacket (type = READ_REMOTE_LMP_FEATURES) {
+}
+
+packet ReadRemoteLmpFeaturesResponse : LinkLayerPacket (type = READ_REMOTE_LMP_FEATURES_RESPONSE) {
+  features : 64,
+}
+
+packet ReadRemoteExtendedFeatures : LinkLayerPacket (type = READ_REMOTE_EXTENDED_FEATURES) {
+  page_number : 8,
+}
+
+packet ReadRemoteExtendedFeaturesResponse : LinkLayerPacket (type = READ_REMOTE_EXTENDED_FEATURES_RESPONSE) {
+  status : 8,
+  page_number : 8,
+  max_page_number : 8,
+  features : 64,
+}
+
+packet ReadRemoteVersionInformation : LinkLayerPacket (type = READ_REMOTE_VERSION_INFORMATION) {
+}
+
+packet ReadRemoteVersionInformationResponse : LinkLayerPacket (type = READ_REMOTE_VERSION_INFORMATION_RESPONSE) {
+  lmp_version : 8,
+  lmp_subversion : 8,
+  manufacturer_name : 16,
+}
+
+packet RemoteNameRequest : LinkLayerPacket (type = REMOTE_NAME_REQUEST) {
+}
+
+packet RemoteNameRequestResponse : LinkLayerPacket (type = REMOTE_NAME_REQUEST_RESPONSE) {
+  _size_(name) : 8,
+  name : 8[],
+}
+
+packet ScoPacket : LinkLayerPacket (type = SCO) {
   _payload_,
 }
+

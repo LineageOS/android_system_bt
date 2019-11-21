@@ -26,3 +26,5 @@
 #define HCI_SCO_PREAMBLE_SIZE 3
 // 1 byte for event code, 1 byte for parameter length (Volume 2, Part E, 5.4.4)
 #define HCI_EVENT_PREAMBLE_SIZE 2
+// 2 bytes for handle, 2 bytes for data length (Volume 2, Part E, 5.4.5)
+#define HCI_ISO_PREAMBLE_SIZE 4

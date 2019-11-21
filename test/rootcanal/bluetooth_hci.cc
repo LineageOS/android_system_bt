@@ -14,7 +14,7 @@
 // limitations under the License.
 //
 
-#define LOG_TAG "android.hardware.bluetooth@1.0.sim"
+#define LOG_TAG "android.hardware.bluetooth@1.1.sim"
 
 #include "bluetooth_hci.h"
 
@@ -29,7 +29,7 @@
 namespace android {
 namespace hardware {
 namespace bluetooth {
-namespace V1_0 {
+namespace V1_1 {
 namespace sim {
 
 using android::hardware::hidl_vec;
@@ -71,7 +71,19 @@ class BluetoothDeathRecipient : public hidl_death_recipient {
 
 BluetoothHci::BluetoothHci() : death_recipient_(new BluetoothDeathRecipient(this)) {}
 
-Return<void> BluetoothHci::initialize(const sp<IBluetoothHciCallbacks>& cb) {
+Return<void> BluetoothHci::initialize(
+    const sp<V1_0::IBluetoothHciCallbacks>& cb) {
+  return initialize_impl(cb, nullptr);
+}
+
+Return<void> BluetoothHci::initialize_1_1(
+    const sp<V1_1::IBluetoothHciCallbacks>& cb) {
+  return initialize_impl(cb, cb);
+}
+
+Return<void> BluetoothHci::initialize_impl(
+    const sp<V1_0::IBluetoothHciCallbacks>& cb,
+    const sp<V1_1::IBluetoothHciCallbacks>& cb_1_1) {
   LOG_INFO("%s", __func__);
 
   if (cb == nullptr) {
@@ -123,6 +135,18 @@ Return<void> BluetoothHci::initialize(const sp<IBluetoothHciCallbacks>& cb) {
               << "Error sending sco callback, but no death notification.";
         }
       });
+
+  if (cb_1_1 != nullptr) {
+    controller_->RegisterIsoChannel(
+        [this, cb_1_1](std::shared_ptr<std::vector<uint8_t>> packet) {
+          hidl_vec<uint8_t> iso_packet(packet->begin(), packet->end());
+          auto ret = cb_1_1->isoDataReceived(iso_packet);
+          if (!ret.isOk()) {
+            CHECK(death_recipient_->getHasDied())
+                << "Error sending iso callback, but no death notification.";
+          }
+        });
+  }
 
   controller_->RegisterTaskScheduler(
       [this](std::chrono::milliseconds delay, const TaskCallback& task) {
@@ -177,7 +201,7 @@ Return<void> BluetoothHci::initialize(const sp<IBluetoothHciCallbacks>& cb) {
     }
   };
 
-  auto init_ret = cb->initializationComplete(Status::SUCCESS);
+  auto init_ret = cb->initializationComplete(V1_0::Status::SUCCESS);
   if (!init_ret.isOk()) {
     CHECK(death_recipient_->getHasDied())
         << "Error sending init callback, but no death notification.";
@@ -213,6 +237,15 @@ Return<void> BluetoothHci::sendScoData(const hidl_vec<uint8_t>& packet) {
     std::shared_ptr<std::vector<uint8_t>> packet_copy =
         std::shared_ptr<std::vector<uint8_t>>(new std::vector<uint8_t>(packet));
     controller_->HandleSco(packet_copy);
+  });
+  return Void();
+}
+
+Return<void> BluetoothHci::sendIsoData(const hidl_vec<uint8_t>& packet) {
+  async_manager_.ExecAsync(std::chrono::milliseconds(0), [this, packet]() {
+    std::shared_ptr<std::vector<uint8_t>> packet_copy =
+        std::shared_ptr<std::vector<uint8_t>>(new std::vector<uint8_t>(packet));
+    controller_->HandleIso(packet_copy);
   });
   return Void();
 }
@@ -341,7 +374,7 @@ IBluetoothHci* HIDL_FETCH_IBluetoothHci(const char* /* name */) {
 }
 
 }  // namespace sim
-}  // namespace V1_0
+}  // namespace V1_1
 }  // namespace bluetooth
 }  // namespace hardware
 }  // namespace android

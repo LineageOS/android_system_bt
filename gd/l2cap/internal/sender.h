@@ -21,8 +21,10 @@
 
 #include "common/bidi_queue.h"
 #include "common/bind.h"
+#include "data_controller.h"
 #include "l2cap/cid.h"
 #include "l2cap/internal/channel_impl.h"
+#include "l2cap/internal/data_controller.h"
 #include "os/handler.h"
 #include "os/queue.h"
 #include "packet/base_packet_builder.h"
@@ -37,40 +39,42 @@ class Scheduler;
  * A middle layer between L2CAP channel and outgoing packet scheduler.
  * Fetches data (SDU) from an L2CAP channel queue end, handles L2CAP segmentation, and gives data to L2CAP scheduler.
  */
-class Segmenter {
+class Sender {
  public:
   using UpperEnqueue = packet::PacketView<packet::kLittleEndian>;
   using UpperDequeue = packet::BasePacketBuilder;
   using UpperQueueDownEnd = common::BidiQueueEnd<UpperEnqueue, UpperDequeue>;
 
-  Segmenter(os::Handler* handler, Scheduler* scheduler, std::shared_ptr<ChannelImpl> channel);
-  ~Segmenter();
+  Sender(os::Handler* handler, Scheduler* scheduler, std::shared_ptr<ChannelImpl> channel);
+  ~Sender();
 
   /**
-   * Callback from scheduler to indicate that scheduler already dequeued a packet from segmenter's queue.
+   * Callback from scheduler to indicate that scheduler already dequeued a packet from sender's queue.
    * Segmenter can continue dequeuing from channel queue end.
    */
-  void NotifyPacketSent();
+  void OnPacketSent();
 
   /**
    * Called by the scheduler to return the next PDU to be sent
    */
   std::unique_ptr<UpperDequeue> GetNextPacket();
 
+  void SetChannelRetransmissionFlowControlMode(RetransmissionAndFlowControlModeOption mode);
+
+  DataController* GetDataController();
+
  private:
   os::Handler* handler_;
   UpperQueueDownEnd* queue_end_;
-  std::queue<std::unique_ptr<UpperDequeue>> pdu_buffer_;
   Scheduler* scheduler_;
   const Cid channel_id_;
   const Cid remote_channel_id_;
-  std::shared_ptr<ChannelImpl> channel_;
   bool is_dequeue_registered_ = false;
+  RetransmissionAndFlowControlModeOption mode_ = RetransmissionAndFlowControlModeOption::L2CAP_BASIC;
+  std::unique_ptr<DataController> data_controller_;
 
   void try_register_dequeue();
   void dequeue_callback();
-  void handle_basic_mode_sdu(std::unique_ptr<UpperDequeue> packet);
-  void handle_enhanced_retransmission_mode_sdu(std::unique_ptr<UpperDequeue> packet);
 };
 }  // namespace internal
 }  // namespace l2cap

@@ -16,9 +16,13 @@
 
 #pragma once
 
+#include <cstdint>
+
 #include "common/bidi_queue.h"
 #include "l2cap/cid.h"
 #include "l2cap/internal/channel_impl.h"
+#include "l2cap/internal/data_controller.h"
+#include "l2cap/internal/sender.h"
 #include "l2cap/l2cap_packets.h"
 #include "packet/base_packet_builder.h"
 #include "packet/packet_view.h"
@@ -61,9 +65,21 @@ class Scheduler {
   virtual void DetachChannel(Cid cid) {}
 
   /**
-   * Callback from the segmenter to indicate that the scheduler could dequeue number_packets from it
+   * Callback from the sender to indicate that the scheduler could dequeue number_packets from it
    */
-  virtual void NotifyPacketsReady(Cid cid, int number_packets) {}
+  virtual void OnPacketsReady(Cid cid, int number_packets) {}
+
+  /**
+   * Set the channel mode for a cid
+   */
+  virtual void SetChannelRetransmissionFlowControlMode(Cid cid, RetransmissionAndFlowControlModeOption mode) {}
+
+  /**
+   * Get the data controller for Reassembler
+   */
+  virtual DataController* GetDataController(Cid cid) {
+    return nullptr;
+  }
 
   virtual ~Scheduler() = default;
 };

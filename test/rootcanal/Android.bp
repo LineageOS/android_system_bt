@@ -14,7 +14,7 @@
 // limitations under the License.
 
 cc_binary {
-    name: "android.hardware.bluetooth@1.0-service.sim",
+    name: "android.hardware.bluetooth@1.1-service.sim",
     proprietary: true,
     relative_install_path: "hw",
     srcs: [
@@ -25,6 +25,7 @@ cc_binary {
     header_libs: ["libbluetooth_headers"],
     shared_libs: [
         "android.hardware.bluetooth@1.0",
+        "android.hardware.bluetooth@1.1",
         "libbase",
         "libchrome",
         "libcutils",
@@ -56,11 +57,11 @@ cc_binary {
         "system/bt/internal_include",
         "system/bt/stack/include",
     ],
-    init_rc: ["android.hardware.bluetooth@1.0-service.sim.rc"],
+    init_rc: ["android.hardware.bluetooth@1.1-service.sim.rc"],
 }
 
 cc_library_shared {
-    name: "android.hardware.bluetooth@1.0-impl-sim",
+    name: "android.hardware.bluetooth@1.1-impl-sim",
     proprietary: true,
     relative_install_path: "hw",
     srcs: [
@@ -70,6 +71,7 @@ cc_library_shared {
     header_libs: ["libbluetooth_headers"],
     shared_libs: [
         "android.hardware.bluetooth@1.0",
+        "android.hardware.bluetooth@1.1",
         "libbase",
         "libchrome",
         "libcutils",
