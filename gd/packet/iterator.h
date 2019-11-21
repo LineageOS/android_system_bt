@@ -18,6 +18,7 @@
 
 #include <cstdint>
 #include <forward_list>
+#include <memory>
 
 #include "packet/view.h"
 
