@@ -92,7 +92,7 @@ class ClassicSignallingManager {
 
   void OnInformationRequest(SignalId signal_id, InformationRequestInfoType type);
 
-  void OnInformationResponse(SignalId signal_id, const InformationResponseView& view);
+  void OnInformationResponse(SignalId signal_id, const InformationResponseView& response);
 
  private:
   void on_incoming_packet();
