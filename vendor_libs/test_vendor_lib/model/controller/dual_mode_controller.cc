@@ -338,9 +338,8 @@ void DualModeController::HciReset(packets::PacketView<true> args) {
     loopback_mode_ = hci::LoopbackMode::NO;
   }
 
-  auto packet = bluetooth::hci::ResetCompleteBuilder::Create(
-      kNumCommandPackets, bluetooth::hci::ErrorCode::SUCCESS);
-  send_event_(std::move(packet));
+  send_event_(bluetooth::hci::ResetCompleteBuilder::Create(
+      kNumCommandPackets, bluetooth::hci::ErrorCode::SUCCESS));
 }
 
 void DualModeController::HciReadBufferSize(packets::PacketView<true> args) {
@@ -941,8 +940,6 @@ void DualModeController::HciWriteExtendedInquiryResponse(packets::PacketView<tru
   // Strip FEC byte and trailing zeros
   std::vector<uint8_t> clipped(args.begin() + 1, args.begin() + LastNonZero(args) + 1);
   properties_.SetExtendedInquiryData(clipped);
-  LOG_WARN("Write EIR Inquiry - Size = %d (%d)", static_cast<int>(properties_.GetExtendedInquiryData().size()),
-           static_cast<int>(clipped.size()));
   auto packet =
       bluetooth::hci::WriteExtendedInquiryResponseCompleteBuilder::Create(
           kNumCommandPackets, bluetooth::hci::ErrorCode::SUCCESS);
@@ -1045,8 +1042,9 @@ void DualModeController::HciRejectConnectionRequest(packets::PacketView<true> ar
 
 void DualModeController::HciLinkKeyRequestReply(packets::PacketView<true> args) {
   ASSERT_LOG(args.size() == 22, "%s  size=%zu", __func__, args.size());
-  Address addr = args.begin().extract<Address>();
-  packets::PacketView<true> key = args.SubViewLittleEndian(6, 22);
+  auto args_it = args.begin();
+  Address addr = args_it.extract<Address>();
+  auto key = args.begin().extract<std::array<uint8_t, 16>>();
   auto status = link_layer_controller_.LinkKeyRequestReply(addr, key);
   auto packet = bluetooth::hci::LinkKeyRequestReplyCompleteBuilder::Create(
       kNumCommandPackets, status);
@@ -1089,7 +1087,7 @@ void DualModeController::HciRemoteNameRequest(packets::PacketView<true> args) {
   Address remote_addr = args.begin().extract<Address>();
 
   auto status = link_layer_controller_.SendCommandToRemoteByAddress(
-      bluetooth::hci::OpCode::REMOTE_NAME_REQUEST, args, remote_addr, false);
+      bluetooth::hci::OpCode::REMOTE_NAME_REQUEST, args, remote_addr);
 
   auto packet = bluetooth::hci::RemoteNameRequestStatusBuilder::Create(
       status, kNumCommandPackets);
@@ -1192,7 +1190,6 @@ void DualModeController::HciLeSetScanParameters(packets::PacketView<true> args) 
 
 void DualModeController::HciLeSetScanEnable(packets::PacketView<true> args) {
   ASSERT_LOG(args.size() == 2, "%s  size=%zu", __func__, args.size());
-  LOG_INFO("SetScanEnable: %d %d", args[0], args[1]);
   link_layer_controller_.SetLeScanEnable(args[0]);
   link_layer_controller_.SetLeFilterDuplicates(args[1]);
   auto packet = bluetooth::hci::LeSetScanEnableCompleteBuilder::Create(
