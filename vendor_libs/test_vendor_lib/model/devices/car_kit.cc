@@ -31,7 +31,8 @@ CarKit::CarKit() : Device(kCarKitPropertiesFile) {
   page_scan_delay_ms_ = std::chrono::milliseconds(600);
 
   // Stub in packet handling for now
-  link_layer_controller_.RegisterAclChannel([](std::shared_ptr<std::vector<uint8_t>>) {});
+  link_layer_controller_.RegisterAclChannel(
+      [](std::shared_ptr<bluetooth::hci::AclPacketBuilder>) {});
   link_layer_controller_.RegisterEventChannel(
       [](std::shared_ptr<bluetooth::hci::EventPacketBuilder>) {});
   link_layer_controller_.RegisterScoChannel([](std::shared_ptr<std::vector<uint8_t>>) {});

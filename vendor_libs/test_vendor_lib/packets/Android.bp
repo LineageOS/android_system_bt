@@ -14,13 +14,9 @@ cc_library_static {
         "packet_view.cc",
         "raw_builder.cc",
         "view.cc",
-        "hci/acl_packet_builder.cc",
-        "hci/acl_packet_view.cc",
         "hci/command_packet_builder.cc",
         "hci/command_packet_view.cc",
         "hci/hci_packet_builder.cc",
-        "hci/sco_packet_builder.cc",
-        "hci/sco_packet_view.cc",
     ],
     cflags: [
         "-fvisibility=hidden",
@@ -53,7 +49,6 @@ cc_test_host {
     srcs: [
         "test/packet_builder_test.cc",
         "test/packet_view_test.cc",
-        "hci/test/acl_builder_test.cc",
         ":BluetoothHciClassSources",
     ],
     header_libs: [
