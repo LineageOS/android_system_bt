@@ -605,7 +605,11 @@ cc_defaults {
       linux_glibc_x86_64: {
           include_dirs: ["external/python/cpython3/android/linux_x86_64/pyconfig"],
           cflags: ["-DSOABI=\"cpython-38android-x86_64-linux-gnu\""],
-          suffix: ".cpython-38android-x86_64-linux-gnu",
+          // Commenting out the Linux suffix so that cpython-38-x86_64-linux-gnu
+          // Python 3.8 can also import the untagged .so library per PEP 3149
+          // Keep this change until Android py3-cmd can run ACTS, gRPC and can
+          // Export Python native symbols such as PyType_Type
+          // suffix: ".cpython-38android-x86_64-linux-gnu",
       },
       windows: {
           enabled: false,
