@@ -26,9 +26,8 @@
 #include "packet/raw_builder.h"
 
 #include "hci.h"
-#include "packets/hci/acl_packet_view.h"
 #include "packets/hci/command_packet_view.h"
-#include "packets/hci/sco_packet_view.h"
+#include "packets/packet_view.h"
 
 using std::vector;
 using test_vendor_lib::hci::EventCode;
@@ -234,7 +233,9 @@ void DualModeController::RegisterTaskCancel(std::function<void(AsyncTaskId)> tas
 }
 
 void DualModeController::HandleAcl(std::shared_ptr<std::vector<uint8_t>> packet) {
-  auto acl_packet = packets::AclPacketView::Create(packet);
+  bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian> raw_packet(packet);
+  auto acl_packet = bluetooth::hci::AclPacketView::Create(raw_packet);
+  ASSERT(acl_packet.IsValid());
   if (loopback_mode_ == hci::LoopbackMode::LOCAL) {
     uint16_t handle = acl_packet.GetHandle();
 
@@ -253,7 +254,8 @@ void DualModeController::HandleAcl(std::shared_ptr<std::vector<uint8_t>> packet)
 }
 
 void DualModeController::HandleSco(std::shared_ptr<std::vector<uint8_t>> packet) {
-  auto sco_packet = packets::ScoPacketView::Create(packet);
+  bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian> raw_packet(packet);
+  auto sco_packet = bluetooth::hci::ScoPacketView::Create(raw_packet);
   if (loopback_mode_ == hci::LoopbackMode::LOCAL) {
     uint16_t handle = sco_packet.GetHandle();
     send_sco_(packet);
@@ -314,8 +316,15 @@ void DualModeController::RegisterEventChannel(
 
 void DualModeController::RegisterAclChannel(
     const std::function<void(std::shared_ptr<std::vector<uint8_t>>)>& callback) {
-  link_layer_controller_.RegisterAclChannel(callback);
-  send_acl_ = callback;
+  send_acl_ =
+      [callback](std::shared_ptr<bluetooth::hci::AclPacketBuilder> acl_data) {
+        auto bytes = std::make_shared<std::vector<uint8_t>>();
+        bluetooth::packet::BitInserter bit_inserter(*bytes);
+        bytes->reserve(acl_data->size());
+        acl_data->Serialize(bit_inserter);
+        callback(std::move(bytes));
+      };
+  link_layer_controller_.RegisterAclChannel(send_acl_);
 }
 
 void DualModeController::RegisterScoChannel(

@@ -435,7 +435,8 @@ class DualModeController : public Device {
   void SendCommandCompleteUnknownOpCodeEvent(uint16_t command_opcode) const;
 
   // Callbacks to send packets back to the HCI.
-  std::function<void(std::shared_ptr<std::vector<uint8_t>>)> send_acl_;
+  std::function<void(std::shared_ptr<bluetooth::hci::AclPacketBuilder>)>
+      send_acl_;
   std::function<void(std::shared_ptr<bluetooth::hci::EventPacketBuilder>)>
       send_event_;
   std::function<void(std::shared_ptr<std::vector<uint8_t>>)> send_sco_;
