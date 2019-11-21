@@ -875,9 +875,21 @@ void ErtmController::stage_for_reassembly(SegmentationAndReassembly sar,
   }
 }
 
+void ErtmController::EnableFcs(bool enabled) {
+  fcs_enabled_ = enabled;
+}
+
 void ErtmController::send_pdu(std::unique_ptr<BasicFrameBuilder> pdu) {
   pdu_queue_.emplace(std::move(pdu));
   scheduler_->OnPacketsReady(cid_, 1);
+}
+
+void ErtmController::SetRetransmissionAndFlowControlOptions(
+    const RetransmissionAndFlowControlConfigurationOption& option) {
+  local_tx_window_ = option.tx_window_size_;
+  local_max_transmit_ = option.max_transmit_;
+  local_retransmit_timeout_ms_ = option.retransmission_time_out_;
+  local_monitor_timeout_ms_ = option.monitor_time_out_;
 }
 
 void ErtmController::close_channel() {

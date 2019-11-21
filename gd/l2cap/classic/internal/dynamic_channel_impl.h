@@ -82,7 +82,6 @@ class DynamicChannelImpl : public l2cap::internal::ChannelImpl {
    */
   void SetSender(l2cap::internal::Sender* sender) override;
 
-  virtual Mtu GetIncomingMtu() const;
   virtual void SetIncomingMtu(Mtu mtu);
 
   virtual void SetRetransmissionFlowControlConfig(const RetransmissionAndFlowControlConfigurationOption& mode);
@@ -114,9 +113,6 @@ class DynamicChannelImpl : public l2cap::internal::ChannelImpl {
   ConfigurationStatus incoming_configuration_status_ = ConfigurationStatus::NOT_CONFIGURED;
 
   l2cap::internal::Sender* sender_ = nullptr;
-  Mtu incoming_mtu_ = kDefaultClassicMtu;
-  // TODO: Add all RetransmissionAndFlowControlConfigurationOptions
-  FcsType fcs_type_ = FcsType::DEFAULT;
 
   DISALLOW_COPY_AND_ASSIGN(DynamicChannelImpl);
 };
