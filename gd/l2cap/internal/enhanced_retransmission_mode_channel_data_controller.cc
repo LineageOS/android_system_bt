@@ -490,11 +490,11 @@ struct ErtmController::impl {
   }
 
   bool with_valid_req_seq(uint8_t req_seq) {
-    return expected_ack_seq_ <= req_seq && req_seq < next_tx_seq_;
+    return expected_ack_seq_ <= req_seq && req_seq <= next_tx_seq_;
   }
 
   bool with_valid_req_seq_retrans(uint8_t req_seq) {
-    return expected_ack_seq_ <= req_seq && req_seq < next_tx_seq_;
+    return expected_ack_seq_ <= req_seq && req_seq <= next_tx_seq_;
   }
 
   bool with_valid_f_bit(Final f) {
