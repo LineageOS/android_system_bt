@@ -16,7 +16,7 @@
 #pragma once
 
 #include "hci/acl_manager_mock.h"
-#include "hci/address.h"
+#include "hci/address_with_type.h"
 #include "l2cap/internal/scheduler_mock.h"
 #include "l2cap/le/internal/link.h"
 

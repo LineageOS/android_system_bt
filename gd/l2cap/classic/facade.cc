@@ -39,9 +39,9 @@ namespace bluetooth {
 namespace l2cap {
 namespace classic {
 
-class L2capModuleFacadeService : public L2capModuleFacade::Service {
+class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service {
  public:
-  L2capModuleFacadeService(L2capClassicModule* l2cap_layer, os::Handler* facade_handler)
+  L2capClassicModuleFacadeService(L2capClassicModule* l2cap_layer, os::Handler* facade_handler)
       : l2cap_layer_(l2cap_layer), facade_handler_(facade_handler) {
     ASSERT(l2cap_layer_ != nullptr);
     ASSERT(facade_handler_ != nullptr);
@@ -126,8 +126,8 @@ class L2capModuleFacadeService : public L2capModuleFacade::Service {
 
   class L2capFixedChannelHelper {
    public:
-    L2capFixedChannelHelper(L2capModuleFacadeService* service, L2capClassicModule* l2cap_layer, os::Handler* handler,
-                            Cid cid)
+    L2capFixedChannelHelper(L2capClassicModuleFacadeService* service, L2capClassicModule* l2cap_layer,
+                            os::Handler* handler, Cid cid)
         : facade_service_(service), l2cap_layer_(l2cap_layer), handler_(handler), cid_(cid) {
       fixed_channel_manager_ = l2cap_layer_->GetFixedChannelManager();
       fixed_channel_manager_->RegisterService(
@@ -173,7 +173,7 @@ class L2capModuleFacadeService : public L2capModuleFacade::Service {
       return packet_one;
     };
 
-    L2capModuleFacadeService* facade_service_;
+    L2capClassicModuleFacadeService* facade_service_;
     L2capClassicModule* l2cap_layer_;
     os::Handler* handler_;
     std::unique_ptr<FixedChannelManager> fixed_channel_manager_;
@@ -192,8 +192,8 @@ class L2capModuleFacadeService : public L2capModuleFacade::Service {
 
   class L2capDynamicChannelHelper {
    public:
-    L2capDynamicChannelHelper(L2capModuleFacadeService* service, L2capClassicModule* l2cap_layer, os::Handler* handler,
-                              Psm psm, RetransmissionFlowControlMode mode)
+    L2capDynamicChannelHelper(L2capClassicModuleFacadeService* service, L2capClassicModule* l2cap_layer,
+                              os::Handler* handler, Psm psm, RetransmissionFlowControlMode mode)
         : facade_service_(service), l2cap_layer_(l2cap_layer), handler_(handler), psm_(psm) {
       dynamic_channel_manager_ = l2cap_layer_->GetDynamicChannelManager();
       DynamicChannelConfigurationOption configuration_option;
@@ -255,7 +255,7 @@ class L2capModuleFacadeService : public L2capModuleFacade::Service {
       return packet_one;
     };
 
-    L2capModuleFacadeService* facade_service_;
+    L2capClassicModuleFacadeService* facade_service_;
     L2capClassicModule* l2cap_layer_;
     os::Handler* handler_;
     std::unique_ptr<DynamicChannelManager> dynamic_channel_manager_;
@@ -271,7 +271,7 @@ class L2capModuleFacadeService : public L2capModuleFacade::Service {
 
   class L2capStreamCallback : public ::bluetooth::grpc::GrpcEventStreamCallback<L2capPacket, L2capPacket> {
    public:
-    L2capStreamCallback(L2capModuleFacadeService* service) : service_(service) {}
+    L2capStreamCallback(L2capClassicModuleFacadeService* service) : service_(service) {}
 
     ~L2capStreamCallback() {
       for (const auto& connection : service_->fixed_channel_helper_map_) {
@@ -329,7 +329,7 @@ class L2capModuleFacadeService : public L2capModuleFacade::Service {
       response->CopyFrom(event);
     }
 
-    L2capModuleFacadeService* service_;
+    L2capClassicModuleFacadeService* service_;
     std::map<Cid, bool> subscribed_fixed_channel_;
     std::map<Psm, bool> subscribed_dynamic_channel_;
 
@@ -339,30 +339,30 @@ class L2capModuleFacadeService : public L2capModuleFacade::Service {
   std::mutex mutex_;
 };
 
-void L2capModuleFacadeModule::ListDependencies(ModuleList* list) {
+void L2capClassicModuleFacadeModule::ListDependencies(ModuleList* list) {
   ::bluetooth::grpc::GrpcFacadeModule::ListDependencies(list);
   list->add<l2cap::classic::L2capClassicModule>();
   list->add<hci::HciLayer>();
 }
 
-void L2capModuleFacadeModule::Start() {
+void L2capClassicModuleFacadeModule::Start() {
   ::bluetooth::grpc::GrpcFacadeModule::Start();
   GetDependency<hci::HciLayer>()->EnqueueCommand(hci::WriteScanEnableBuilder::Create(hci::ScanEnable::PAGE_SCAN_ONLY),
                                                  common::BindOnce([](hci::CommandCompleteView) {}), GetHandler());
-  service_ = new L2capModuleFacadeService(GetDependency<l2cap::classic::L2capClassicModule>(), GetHandler());
+  service_ = new L2capClassicModuleFacadeService(GetDependency<l2cap::classic::L2capClassicModule>(), GetHandler());
 }
 
-void L2capModuleFacadeModule::Stop() {
+void L2capClassicModuleFacadeModule::Stop() {
   delete service_;
   ::bluetooth::grpc::GrpcFacadeModule::Stop();
 }
 
-::grpc::Service* L2capModuleFacadeModule::GetService() const {
+::grpc::Service* L2capClassicModuleFacadeModule::GetService() const {
   return service_;
 }
 
-const ModuleFactory L2capModuleFacadeModule::Factory =
-    ::bluetooth::ModuleFactory([]() { return new L2capModuleFacadeModule(); });
+const ModuleFactory L2capClassicModuleFacadeModule::Factory =
+    ::bluetooth::ModuleFactory([]() { return new L2capClassicModuleFacadeModule(); });
 
 }  // namespace classic
 }  // namespace l2cap

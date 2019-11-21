@@ -5,7 +5,7 @@ package bluetooth.l2cap.classic.cert;
 import "google/protobuf/empty.proto";
 import "facade/common.proto";
 
-service L2capModuleCert {
+service L2capClassicModuleCert {
   rpc SendL2capPacket(L2capPacket) returns (google.protobuf.Empty) {}
 
   rpc SetupLink(SetupLinkRequest) returns (SetupLinkResponse) {}

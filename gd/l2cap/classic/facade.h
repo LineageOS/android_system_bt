@@ -16,15 +16,16 @@
 #pragma once
 
 #include <grpc++/grpc++.h>
+
 #include "grpc/grpc_module.h"
 
 namespace bluetooth {
 namespace l2cap {
 namespace classic {
 
-class L2capModuleFacadeService;
+class L2capClassicModuleFacadeService;
 
-class L2capModuleFacadeModule : public ::bluetooth::grpc::GrpcFacadeModule {
+class L2capClassicModuleFacadeModule : public ::bluetooth::grpc::GrpcFacadeModule {
  public:
   static const ModuleFactory Factory;
 
@@ -35,7 +36,7 @@ class L2capModuleFacadeModule : public ::bluetooth::grpc::GrpcFacadeModule {
   ::grpc::Service* GetService() const override;
 
  private:
-  L2capModuleFacadeService* service_;
+  L2capClassicModuleFacadeService* service_;
 };
 
 }  // namespace classic
