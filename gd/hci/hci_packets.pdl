@@ -1530,7 +1530,7 @@ packet ReadAuthenticationEnableComplete : CommandComplete (command_op_code = REA
   authentication_enable : AuthenticationEnable,
 }
 
-packet WriteAuthenticationEnable : CommandPacket (op_code = WRITE_AUTHENTICATION_ENABLE) {
+packet WriteAuthenticationEnable : SecurityCommand (op_code = WRITE_AUTHENTICATION_ENABLE) {
   authentication_enable : AuthenticationEnable,
 }
 
@@ -1911,7 +1911,7 @@ packet ReadSecureConnectionsHostSupportComplete : CommandComplete (command_op_co
   secure_connections_host_support : Enable,
 }
 
-packet WriteSecureConnectionsHostSupport : CommandPacket (op_code = WRITE_SECURE_CONNECTIONS_HOST_SUPPORT) {
+packet WriteSecureConnectionsHostSupport : SecurityCommand (op_code = WRITE_SECURE_CONNECTIONS_HOST_SUPPORT) {
   secure_connections_host_support : Enable,
 }
 

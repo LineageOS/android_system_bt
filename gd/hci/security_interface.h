@@ -43,6 +43,7 @@ class SecurityInterface {
       hci::EventCode::IO_CAPABILITY_REQUEST,     hci::EventCode::IO_CAPABILITY_RESPONSE,
       hci::EventCode::REMOTE_OOB_DATA_REQUEST,   hci::EventCode::SIMPLE_PAIRING_COMPLETE,
       hci::EventCode::USER_PASSKEY_NOTIFICATION, hci::EventCode::KEYPRESS_NOTIFICATION,
+      hci::EventCode::USER_CONFIRMATION_REQUEST, hci::EventCode::USER_PASSKEY_REQUEST,
   };
 };
 }  // namespace hci
