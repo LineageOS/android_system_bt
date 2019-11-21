@@ -209,7 +209,7 @@ class L2capModuleCertService : public L2capModuleCert::Service {
     switch (request->type()) {
       case InformationRequestType::CONNECTIONLESS_MTU: {
         auto builder = InformationResponseConnectionlessMtuBuilder::Create(request->signal_id(),
-                                                                           InformationRequestResult::NOT_SUPPORTED, 0);
+                                                                           InformationRequestResult::SUCCESS, 100);
         auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
         outgoing_packet_queue_.push(std::move(l2cap_builder));
         send_packet_from_queue();
@@ -217,7 +217,7 @@ class L2capModuleCertService : public L2capModuleCert::Service {
       }
       case InformationRequestType::EXTENDED_FEATURES: {
         auto builder = InformationResponseExtendedFeaturesBuilder::Create(
-            request->signal_id(), InformationRequestResult::NOT_SUPPORTED, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0);
+            request->signal_id(), InformationRequestResult::SUCCESS, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0);
         auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
         outgoing_packet_queue_.push(std::move(l2cap_builder));
         send_packet_from_queue();
