@@ -215,6 +215,7 @@ class SimpleL2capTest(GdBaseTestClass):
             log = log.data_packet
             if (log.channel == scid):
                 log.payload = basic_frame_to_enhanced_information_frame(log.payload)
+                self.cert_device.l2cap.SendSFrame(l2cap_cert_pb2.SFrame(channel=self.scid_dcid_map[scid], req_seq=1, s=0))
             data_received.append((log.channel, log.payload))
         event_handler.on(lambda log : log.HasField("data_packet"), on_data_received)
         logs = self.cert_device.l2cap.FetchL2capLog(l2cap_cert_pb2.FetchL2capLogRequest())
@@ -222,10 +223,12 @@ class SimpleL2capTest(GdBaseTestClass):
         assert (2, b"123") in data_received
 
         self.device_under_test.l2cap.SendDynamicChannelPacket(l2cap_facade_pb2.DynamicChannelPacket(psm=0x33, payload=b'abc'*34))
+
+        self.cert_device.l2cap.SendIFrame(l2cap_cert_pb2.IFrame(channel=self.scid_dcid_map[scid], req_seq=1, tx_seq=0, sar=0, information=b"abcd"))
+
         logs = self.cert_device.l2cap.FetchL2capLog(l2cap_cert_pb2.FetchL2capLogRequest())
         event_handler.execute(logs)
         assert (scid, b"abc"*34) in data_received
-        self.cert_device.l2cap.StopFetchingL2capLog(l2cap_cert_pb2.StopFetchingL2capLogRequest())
 
     def test_connect_and_send_data(self):
         self.device_under_test.l2cap.RegisterChannel(l2cap_facade_pb2.RegisterChannelRequest(channel=2))
