@@ -42,17 +42,23 @@ uint16_t AclConnectionHandler::GetUnusedHandle() {
   return unused_handle;
 }
 
-bool AclConnectionHandler::CreatePendingConnection(Address addr) {
+bool AclConnectionHandler::CreatePendingConnection(
+    Address addr, bool authenticate_on_connect) {
   if (classic_connection_pending_) {
     return false;
   }
   classic_connection_pending_ = true;
   pending_connection_address_ = addr;
+  authenticate_pending_classic_connection_ = authenticate_on_connect;
   return true;
 }
 
-bool AclConnectionHandler::HasPendingConnection(Address addr) {
+bool AclConnectionHandler::HasPendingConnection(Address addr) const {
   return classic_connection_pending_ && pending_connection_address_ == addr;
+}
+
+bool AclConnectionHandler::AuthenticatePendingConnection() const {
+  return authenticate_pending_classic_connection_;
 }
 
 bool AclConnectionHandler::CancelPendingConnection(Address addr) {
@@ -79,7 +85,8 @@ bool AclConnectionHandler::CreatePendingLeConnection(Address addr, uint8_t addre
   return true;
 }
 
-bool AclConnectionHandler::HasPendingLeConnection(Address addr, uint8_t address_type) {
+bool AclConnectionHandler::HasPendingLeConnection(Address addr,
+                                                  uint8_t address_type) const {
   return le_connection_pending_ && pending_le_connection_address_ == addr &&
          pending_le_connection_address_type_ == address_type;
 }
