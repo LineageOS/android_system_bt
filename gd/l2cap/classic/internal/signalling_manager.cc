@@ -149,6 +149,9 @@ void ClassicSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, 
                            ConnectionResponseStatus::NO_FURTHER_INFORMATION_AVAILABLE);
   auto* service = dynamic_service_manager_->GetService(psm);
   auto initial_config = service->GetConfigOption();
+  if (!link_->GetRemoteSupportsErtm()) {
+    initial_config.channel_mode = DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::L2CAP_BASIC;
+  }
   auto mtu_configuration = std::make_unique<MtuConfigurationOption>();
   mtu_configuration->mtu_ = initial_config.incoming_mtu;
   auto fcs_option = std::make_unique<FrameCheckSequenceOption>();
@@ -209,6 +212,9 @@ void ClassicSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remo
   }
   alarm_.Cancel();
   auto initial_config = link_->GetConfigurationForInitialConfiguration(new_channel->GetCid());
+  if (!link_->GetRemoteSupportsErtm()) {
+    initial_config.channel_mode = DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::L2CAP_BASIC;
+  }
   auto mtu_configuration = std::make_unique<MtuConfigurationOption>();
   mtu_configuration->mtu_ = initial_config.incoming_mtu;
   auto retransmission_flow_control_configuration = std::make_unique<RetransmissionAndFlowControlConfigurationOption>();
@@ -407,7 +413,7 @@ void ClassicSignallingManager::OnInformationRequest(SignalId signal_id, Informat
   }
 }
 
-void ClassicSignallingManager::OnInformationResponse(SignalId signal_id, const InformationResponseView& view) {
+void ClassicSignallingManager::OnInformationResponse(SignalId signal_id, const InformationResponseView& response) {
   if (pending_commands_.empty()) {
     LOG_WARN("Unexpected response: no pending request");
     return;
@@ -419,7 +425,40 @@ void ClassicSignallingManager::OnInformationResponse(SignalId signal_id, const I
       last_sent_command.command_code_ != CommandCode::INFORMATION_REQUEST) {
     return;
   }
-  // TODO (hsz): Store the information response
+
+  auto type = response.GetInfoType();
+  switch (type) {
+    case InformationRequestInfoType::CONNECTIONLESS_MTU: {
+      auto view = InformationResponseConnectionlessMtuView::Create(response);
+      if (!view.IsValid()) {
+        LOG_WARN("Invalid InformationResponseConnectionlessMtu received");
+        return;
+      }
+      link_->SetRemoteConnectionlessMtu(view.GetConnectionlessMtu());
+      break;
+    }
+    case InformationRequestInfoType::EXTENDED_FEATURES_SUPPORTED: {
+      auto view = InformationResponseExtendedFeaturesView::Create(response);
+      if (!view.IsValid()) {
+        LOG_WARN("Invalid InformationResponseExtendedFeatures received");
+        return;
+      }
+      link_->SetRemoteSupportsErtm((view.GetEnhancedRetransmissionMode()));
+      link_->SetRemoteSupportsFcs(view.GetFcsOption());
+      // We don't care about other parameters
+      break;
+    }
+    case InformationRequestInfoType::FIXED_CHANNELS_SUPPORTED: {
+      auto view = InformationResponseFixedChannelsView::Create(response);
+      if (!view.IsValid()) {
+        LOG_WARN("Invalid InformationResponseFixedChannel received");
+        return;
+      }
+      // We don't use fixed channels (connectionless or BR/EDR security) for now so we don't care
+      break;
+    }
+  }
+
   alarm_.Cancel();
   handle_send_next_command();
 }

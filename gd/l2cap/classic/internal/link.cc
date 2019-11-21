@@ -157,6 +157,30 @@ void Link::NotifyChannelFail(Cid cid) {
   local_cid_to_pending_dynamic_channel_connection_map_.erase(cid);
 }
 
+void Link::SetRemoteConnectionlessMtu(Mtu mtu) {
+  remote_mtu_ = mtu;
+}
+
+Mtu Link::GetRemoteConnectionlessMtu() const {
+  return remote_mtu_;
+}
+
+void Link::SetRemoteSupportsErtm(bool supported) {
+  remote_supports_ertm_ = supported;
+}
+
+bool Link::GetRemoteSupportsErtm() const {
+  return remote_supports_ertm_;
+}
+
+void Link::SetRemoteSupportsFcs(bool supported) {
+  remote_supports_fcs_ = supported;
+}
+
+bool Link::GetRemoteSupportsFcs() const {
+  return remote_supports_fcs_;
+}
+
 }  // namespace internal
 }  // namespace classic
 }  // namespace l2cap
