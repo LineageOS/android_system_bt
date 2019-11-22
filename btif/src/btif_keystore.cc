@@ -98,4 +98,8 @@ KeyStoreNativeReturnCode BtifKeystore::GenerateKey(const std::string& name,
                                        &software_enforced_characteristics);
 }
 
+bool BtifKeystore::DoesKeyExist() {
+  return keystore_client_->doesKeyExist(kKeyStore);
+}
+
 }  // namespace bluetooth

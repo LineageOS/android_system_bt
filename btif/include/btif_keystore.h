@@ -59,6 +59,14 @@ class BtifKeystore {
    */
   std::string Decrypt(const std::string& input_filename);
 
+  /**
+   * Check for existence of keystore key.
+   *
+   * This key can be cleared if a user manually wipes bluetooth storage data
+   * b/133214365
+   */
+  bool DoesKeyExist();
+
  private:
   std::unique_ptr<keystore::KeystoreClient> keystore_client_;
   std::mutex api_mutex_;
