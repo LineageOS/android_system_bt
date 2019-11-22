@@ -44,20 +44,17 @@ class FixedChannelAllocator {
   // Allocates a channel. If cid is used, return nullptr. NOTE: The returned BaseFixedChannelImpl object is still
   // owned by the channel allocator, NOT the client.
   virtual std::shared_ptr<FixedChannelImplType> AllocateChannel(Cid cid, SecurityPolicy security_policy) {
-    ASSERT_LOG(!IsChannelAllocated((cid)), "Cid 0x%x for device %s is already in use", cid,
-               link_->GetDevice().ToString().c_str());
+    ASSERT_LOG(!IsChannelAllocated((cid)), "Cid 0x%x for link %s is already in use", cid, link_->ToString().c_str());
     ASSERT_LOG(cid >= kFirstFixedChannel && cid <= kLastFixedChannel, "Cid %d out of bound", cid);
     auto elem = channels_.try_emplace(cid, std::make_shared<FixedChannelImplType>(cid, link_, l2cap_handler_));
-    ASSERT_LOG(elem.second, "Failed to create channel for cid 0x%x device %s", cid,
-               link_->GetDevice().ToString().c_str());
+    ASSERT_LOG(elem.second, "Failed to create channel for cid 0x%x link %s", cid, link_->ToString().c_str());
     ASSERT(elem.first->second != nullptr);
     return elem.first->second;
   }
 
   // Frees a channel. If cid doesn't exist, it will crash
   virtual void FreeChannel(Cid cid) {
-    ASSERT_LOG(IsChannelAllocated(cid), "Channel is not in use: cid %d, device %s", cid,
-               link_->GetDevice().ToString().c_str());
+    ASSERT_LOG(IsChannelAllocated(cid), "Channel is not in use: cid %d, link %s", cid, link_->ToString().c_str());
     channels_.erase(cid);
   }
 
@@ -66,8 +63,7 @@ class FixedChannelAllocator {
   }
 
   virtual std::shared_ptr<FixedChannelImplType> FindChannel(Cid cid) {
-    ASSERT_LOG(IsChannelAllocated(cid), "Channel is not in use: cid %d, device %s", cid,
-               link_->GetDevice().ToString().c_str());
+    ASSERT_LOG(IsChannelAllocated(cid), "Channel is not in use: cid %d, link %s", cid, link_->ToString().c_str());
     return channels_.find(cid)->second;
   }
 

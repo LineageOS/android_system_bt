@@ -15,48 +15,28 @@
  */
 #pragma once
 
-#include <memory>
-
-#include "l2cap/classic/dynamic_channel_manager.h"
 #include "l2cap/classic/fixed_channel_manager.h"
-#include "module.h"
 
+#include <gmock/gmock.h>
+
+// Unit test interfaces
 namespace bluetooth {
 namespace l2cap {
 namespace classic {
+namespace testing {
 
-class L2capClassicModule : public bluetooth::Module {
+class MockFixedChannelManager : public FixedChannelManager {
  public:
-  L2capClassicModule();
-  virtual ~L2capClassicModule();
-
-  /**
-   * Get the api to the classic fixed channel l2cap module
-   */
-  virtual std::unique_ptr<FixedChannelManager> GetFixedChannelManager();
-
-  /**
-   * Get the api to the classic dynamic channel l2cap module
-   */
-  virtual std::unique_ptr<DynamicChannelManager> GetDynamicChannelManager();
-
-  static const ModuleFactory Factory;
-
- protected:
-  void ListDependencies(ModuleList* list) override;
-
-  void Start() override;
-
-  void Stop() override;
-
-  std::string ToString() const override;
-
- private:
-  struct impl;
-  std::unique_ptr<impl> pimpl_;
-  DISALLOW_COPY_AND_ASSIGN(L2capClassicModule);
+  MockFixedChannelManager() : FixedChannelManager(nullptr, nullptr, nullptr){};
+  MOCK_METHOD(bool, ConnectServices,
+              (hci::Address device, OnConnectionFailureCallback on_fail_callback, os::Handler* handler), (override));
+  MOCK_METHOD(bool, RegisterService,
+              (Cid cid, const SecurityPolicy& security_policy, OnRegistrationCompleteCallback on_registration_complete,
+               OnConnectionOpenCallback on_connection_open, os::Handler* handler),
+              (override));
 };
 
+}  // namespace testing
 }  // namespace classic
 }  // namespace l2cap
 }  // namespace bluetooth

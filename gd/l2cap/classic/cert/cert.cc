@@ -14,8 +14,6 @@
  * limitations under the License.
  */
 
-#include "l2cap/classic/cert/cert.h"
-
 #include <condition_variable>
 #include <cstdint>
 #include <memory>
@@ -29,6 +27,7 @@
 #include "hci/cert/cert.h"
 #include "hci/hci_packets.h"
 #include "l2cap/classic/cert/api.grpc.pb.h"
+#include "l2cap/classic/cert/cert.h"
 #include "l2cap/classic/l2cap_classic_module.h"
 #include "l2cap/l2cap_packets.h"
 #include "os/log.h"
@@ -52,9 +51,9 @@ using namespace facade;
 
 constexpr auto kEventTimeout = std::chrono::seconds(1);
 
-class L2capModuleCertService : public L2capModuleCert::Service {
+class L2capClassicModuleCertService : public L2capClassicModuleCert::Service {
  public:
-  L2capModuleCertService(hci::AclManager* acl_manager, os::Handler* facade_handler)
+  L2capClassicModuleCertService(hci::AclManager* acl_manager, os::Handler* facade_handler)
       : handler_(facade_handler), acl_manager_(acl_manager) {
     ASSERT(handler_ != nullptr);
     acl_manager_->RegisterCallbacks(&acl_callbacks, handler_);
@@ -323,7 +322,7 @@ class L2capModuleCertService : public L2capModuleCert::Service {
   void send_packet_from_queue() {
     if (outgoing_packet_queue_.size() == 1) {
       acl_connection_->GetAclQueueEnd()->RegisterEnqueue(
-          handler_, common::Bind(&L2capModuleCertService::enqueue_packet_to_acl, common::Unretained(this)));
+          handler_, common::Bind(&L2capClassicModuleCertService::enqueue_packet_to_acl, common::Unretained(this)));
     }
   }
 
@@ -473,12 +472,13 @@ class L2capModuleCertService : public L2capModuleCert::Service {
 
   class AclCallbacks : public hci::ConnectionCallbacks {
    public:
-    AclCallbacks(L2capModuleCertService* module) : module_(module) {}
+    AclCallbacks(L2capClassicModuleCertService* module) : module_(module) {}
     void OnConnectSuccess(std::unique_ptr<hci::AclConnection> connection) override {
       module_->acl_connection_ = std::move(connection);
       module_->acl_connection_->RegisterDisconnectCallback(common::BindOnce([](hci::ErrorCode) {}), module_->handler_);
       module_->acl_connection_->GetAclQueueEnd()->RegisterDequeue(
-          module_->handler_, common::Bind(&L2capModuleCertService::on_incoming_packet, common::Unretained(module_)));
+          module_->handler_,
+          common::Bind(&L2capClassicModuleCertService::on_incoming_packet, common::Unretained(module_)));
       dequeue_registered_ = true;
       FetchL2capLogResponse response;
       response.mutable_link_up()->mutable_remote()->set_address(module_->acl_connection_->GetAddress().ToString());
@@ -494,36 +494,36 @@ class L2capModuleCertService : public L2capModuleCert::Service {
 
     bool dequeue_registered_ = false;
 
-    L2capModuleCertService* module_;
+    L2capClassicModuleCertService* module_;
   } acl_callbacks{this};
 
   std::mutex mutex_;
 };
 
-void L2capModuleCertModule::ListDependencies(ModuleList* list) {
+void L2capClassicModuleCertModule::ListDependencies(ModuleList* list) {
   ::bluetooth::grpc::GrpcFacadeModule::ListDependencies(list);
   list->add<hci::AclManager>();
   list->add<hci::HciLayer>();
 }
 
-void L2capModuleCertModule::Start() {
+void L2capClassicModuleCertModule::Start() {
   ::bluetooth::grpc::GrpcFacadeModule::Start();
   GetDependency<hci::HciLayer>()->EnqueueCommand(hci::WriteScanEnableBuilder::Create(hci::ScanEnable::PAGE_SCAN_ONLY),
                                                  common::BindOnce([](hci::CommandCompleteView) {}), GetHandler());
-  service_ = new L2capModuleCertService(GetDependency<hci::AclManager>(), GetHandler());
+  service_ = new L2capClassicModuleCertService(GetDependency<hci::AclManager>(), GetHandler());
 }
 
-void L2capModuleCertModule::Stop() {
+void L2capClassicModuleCertModule::Stop() {
   delete service_;
   ::bluetooth::grpc::GrpcFacadeModule::Stop();
 }
 
-::grpc::Service* L2capModuleCertModule::GetService() const {
+::grpc::Service* L2capClassicModuleCertModule::GetService() const {
   return service_;
 }
 
-const ModuleFactory L2capModuleCertModule::Factory =
-    ::bluetooth::ModuleFactory([]() { return new L2capModuleCertModule(); });
+const ModuleFactory L2capClassicModuleCertModule::Factory =
+    ::bluetooth::ModuleFactory([]() { return new L2capClassicModuleCertModule(); });
 
 }  // namespace cert
 }  // namespace classic

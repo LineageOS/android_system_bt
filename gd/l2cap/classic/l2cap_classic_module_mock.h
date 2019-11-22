@@ -15,30 +15,23 @@
  */
 #pragma once
 
-#include <grpc++/grpc++.h>
+#include "l2cap/classic/l2cap_classic_module.h"
 
-#include "grpc/grpc_module.h"
+#include <gmock/gmock.h>
 
+// Unit test interfaces
 namespace bluetooth {
 namespace l2cap {
 namespace classic {
+namespace testing {
 
-class L2capClassicModuleFacadeService;
-
-class L2capClassicModuleFacadeModule : public ::bluetooth::grpc::GrpcFacadeModule {
+class MockL2capClassicModule : public L2capClassicModule {
  public:
-  static const ModuleFactory Factory;
-
-  void ListDependencies(ModuleList* list) override;
-  void Start() override;
-  void Stop() override;
-
-  ::grpc::Service* GetService() const override;
-
- private:
-  L2capClassicModuleFacadeService* service_;
+  MOCK_METHOD(std::unique_ptr<FixedChannelManager>, GetFixedChannelManager, (), (override));
+  MOCK_METHOD(std::unique_ptr<DynamicChannelManager>, GetDynamicChannelManager, (), (override));
 };
 
+}  // namespace testing
 }  // namespace classic
 }  // namespace l2cap
 }  // namespace bluetooth
