@@ -262,5 +262,161 @@ TEST(HciPacketsTest, testWriteExtendedInquiryResponse) {
 //  TODO: Revisit reflection tests for EIR
 // DEFINE_AND_INSTANTIATE_WriteExtendedInquiryResponseReflectionTest(pixel_3_xl_write_extended_inquiry_response,
 // pixel_3_xl_write_extended_inquiry_response_no_uuids);
+
+std::vector<uint8_t> le_set_scan_parameters{
+    0x0b, 0x20, 0x07, 0x01, 0x12, 0x00, 0x12, 0x00, 0x01, 0x00,
+};
+TEST(HciPacketsTest, testLeSetScanParameters) {
+  PacketView<kLittleEndian> packet_bytes_view(std::make_shared<std::vector<uint8_t>>(le_set_scan_parameters));
+  auto view =
+      LeSetScanParametersView::Create(LeScanningCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+
+  ASSERT(view.IsValid());
+  ASSERT_EQ(LeScanType::ACTIVE, view.GetLeScanType());
+  ASSERT_EQ(0x12, view.GetLeScanInterval());
+  ASSERT_EQ(0x12, view.GetLeScanWindow());
+  ASSERT_EQ(AddressType::RANDOM_DEVICE_ADDRESS, view.GetOwnAddressType());
+  ASSERT_EQ(LeSetScanningFilterPolicy::ACCEPT_ALL, view.GetScanningFilterPolicy());
+}
+
+DEFINE_AND_INSTANTIATE_LeSetScanParametersReflectionTest(le_set_scan_parameters);
+
+std::vector<uint8_t> le_set_scan_enable{
+    0x0c, 0x20, 0x02, 0x01, 0x00,
+};
+TEST(HciPacketsTest, testLeSetScanEnable) {
+  PacketView<kLittleEndian> packet_bytes_view(std::make_shared<std::vector<uint8_t>>(le_set_scan_enable));
+  auto view = LeSetScanEnableView::Create(LeScanningCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+
+  ASSERT(view.IsValid());
+  ASSERT_EQ(Enable::ENABLED, view.GetLeScanEnable());
+  ASSERT_EQ(Enable::DISABLED, view.GetFilterDuplicates());
+}
+
+DEFINE_AND_INSTANTIATE_LeSetScanEnableReflectionTest(le_set_scan_enable);
+
+std::vector<uint8_t> le_get_vendor_capabilities{
+    0x53,
+    0xfd,
+    0x00,
+};
+TEST(HciPacketsTest, testLeGetVendorCapabilities) {
+  PacketView<kLittleEndian> packet_bytes_view(std::make_shared<std::vector<uint8_t>>(le_get_vendor_capabilities));
+  auto view =
+      LeGetVendorCapabilitiesView::Create(VendorCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+
+  ASSERT(view.IsValid());
+}
+
+DEFINE_AND_INSTANTIATE_LeGetVendorCapabilitiesReflectionTest(le_get_vendor_capabilities);
+
+std::vector<uint8_t> le_get_vendor_capabilities_complete{
+    0x0e, 0x0c, 0x01, 0x53, 0xfd, 0x00, 0x05, 0x01, 0x00, 0x04, 0x80, 0x01, 0x10, 0x01,
+};
+TEST(HciPacketsTest, testLeGetVendorCapabilitiesComplete) {
+  PacketView<kLittleEndian> packet_bytes_view(
+      std::make_shared<std::vector<uint8_t>>(le_get_vendor_capabilities_complete));
+  auto view = LeGetVendorCapabilitiesCompleteView::Create(
+      CommandCompleteView::Create(EventPacketView::Create(packet_bytes_view)));
+
+  ASSERT(view.IsValid());
+  auto base_capabilities = view.GetBaseVendorCapabilities();
+  ASSERT_EQ(5, base_capabilities.max_advt_instances_);
+  ASSERT_EQ(1, base_capabilities.offloaded_resolution_of_private_address_);
+  ASSERT_EQ(1024, base_capabilities.total_scan_results_storage_);
+  ASSERT_EQ(128, base_capabilities.max_irk_list_sz_);
+  ASSERT_EQ(1, base_capabilities.filtering_support_);
+  ASSERT_EQ(16, base_capabilities.max_filter_);
+  ASSERT_EQ(1, base_capabilities.activity_energy_info_support_);
+}
+
+DEFINE_AND_INSTANTIATE_LeGetVendorCapabilitiesCompleteReflectionTest(le_get_vendor_capabilities_complete);
+
+std::vector<uint8_t> le_set_extended_scan_parameters{
+    0x41, 0x20, 0x08, 0x01, 0x00, 0x01, 0x01, 0x12, 0x00, 0x12, 0x00,
+};
+
+TEST(HciPacketsTest, testLeSetExtendedScanParameters) {
+  PacketView<kLittleEndian> packet_bytes_view(std::make_shared<std::vector<uint8_t>>(le_set_extended_scan_parameters));
+  auto view = LeSetExtendedScanParametersView::Create(
+      LeScanningCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+
+  ASSERT(view.IsValid());
+  ASSERT_EQ(1, view.GetScanningPhys());
+  auto params = view.GetParameters();
+  ASSERT_EQ(1, params.size());
+  ASSERT_EQ(LeScanType::ACTIVE, params[0].le_scan_type_);
+  ASSERT_EQ(18, params[0].le_scan_interval_);
+  ASSERT_EQ(18, params[0].le_scan_window_);
+}
+
+std::vector<uint8_t> le_set_extended_scan_parameters_6553{
+    0x41, 0x20, 0x08, 0x01, 0x00, 0x01, 0x01, 0x99, 0x19, 0x99, 0x19,
+};
+
+TEST(HciPacketsTest, testLeSetExtendedScanParameters_6553) {
+  PacketView<kLittleEndian> packet_bytes_view(
+      std::make_shared<std::vector<uint8_t>>(le_set_extended_scan_parameters_6553));
+  auto view = LeSetExtendedScanParametersView::Create(
+      LeScanningCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+
+  ASSERT(view.IsValid());
+  ASSERT_EQ(1, view.GetScanningPhys());
+  auto params = view.GetParameters();
+  ASSERT_EQ(1, params.size());
+  ASSERT_EQ(LeScanType::ACTIVE, params[0].le_scan_type_);
+  ASSERT_EQ(6553, params[0].le_scan_interval_);
+  ASSERT_EQ(6553, params[0].le_scan_window_);
+}
+
+DEFINE_AND_INSTANTIATE_LeSetExtendedScanParametersReflectionTest(le_set_extended_scan_parameters,
+                                                                 le_set_extended_scan_parameters_6553);
+
+std::vector<uint8_t> le_set_extended_scan_parameters_complete{
+    0x0e, 0x04, 0x01, 0x41, 0x20, 0x00,
+};
+DEFINE_AND_INSTANTIATE_LeSetExtendedScanParametersCompleteReflectionTest(le_set_extended_scan_parameters_complete);
+
+std::vector<uint8_t> le_set_extended_scan_enable{
+    0x42, 0x20, 0x06, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+};
+
+TEST(HciPacketsTest, testLeSetExtendedScanEnable) {
+  PacketView<kLittleEndian> packet_bytes_view(std::make_shared<std::vector<uint8_t>>(le_set_extended_scan_enable));
+  auto view =
+      LeSetExtendedScanEnableView::Create(LeScanningCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+
+  ASSERT(view.IsValid());
+  ASSERT_EQ(FilterDuplicates::DISABLED, view.GetFilterDuplicates());
+  ASSERT_EQ(Enable::ENABLED, view.GetEnable());
+  ASSERT_EQ(0, view.GetDuration());
+  ASSERT_EQ(0, view.GetPeriod());
+}
+
+std::vector<uint8_t> le_set_extended_scan_enable_disable{
+    0x42, 0x20, 0x06, 0x00, 0x01, 0x00, 0x00, 0x00, 0x00,
+};
+
+TEST(HciPacketsTest, testLeSetExtendedScanEnableDisable) {
+  PacketView<kLittleEndian> packet_bytes_view(
+      std::make_shared<std::vector<uint8_t>>(le_set_extended_scan_enable_disable));
+  auto view =
+      LeSetExtendedScanEnableView::Create(LeScanningCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+
+  ASSERT(view.IsValid());
+  ASSERT_EQ(FilterDuplicates::ENABLED, view.GetFilterDuplicates());
+  ASSERT_EQ(Enable::DISABLED, view.GetEnable());
+  ASSERT_EQ(0, view.GetDuration());
+  ASSERT_EQ(0, view.GetPeriod());
+}
+
+DEFINE_AND_INSTANTIATE_LeSetExtendedScanEnableReflectionTest(le_set_extended_scan_enable,
+                                                             le_set_extended_scan_enable_disable);
+
+std::vector<uint8_t> le_set_extended_scan_enable_complete{
+    0x0e, 0x04, 0x01, 0x42, 0x20, 0x00,
+};
+DEFINE_AND_INSTANTIATE_LeSetExtendedScanEnableCompleteReflectionTest(le_set_extended_scan_enable_complete);
+
 }  // namespace hci
 }  // namespace bluetooth
