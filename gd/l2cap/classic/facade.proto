@@ -5,7 +5,7 @@ package bluetooth.l2cap.classic;
 import "google/protobuf/empty.proto";
 import "facade/common.proto";
 
-service L2capModuleFacade {
+service L2capClassicModuleFacade {
   rpc RegisterChannel(RegisterChannelRequest) returns (google.protobuf.Empty) {
     // Testing Android Bluetooth stack only. Optional for other stack.
   }

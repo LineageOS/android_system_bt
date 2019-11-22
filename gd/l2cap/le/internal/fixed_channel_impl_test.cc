@@ -14,8 +14,8 @@
  * limitations under the License.
  */
 #include "l2cap/le/internal/fixed_channel_impl.h"
-
 #include "common/testing/bind_test_util.h"
+#include "hci/address_with_type.h"
 #include "l2cap/cid.h"
 #include "l2cap/internal/parameter_provider_mock.h"
 #include "l2cap/le/internal/link_mock.h"

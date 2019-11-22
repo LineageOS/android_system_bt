@@ -50,6 +50,10 @@ struct L2capClassicModule::impl {
                                       &dynamic_channel_service_manager_impl_, &parameter_provider_};
 };
 
+L2capClassicModule::L2capClassicModule() {}
+
+L2capClassicModule::~L2capClassicModule() {}
+
 void L2capClassicModule::ListDependencies(ModuleList* list) {
   list->add<hci::AclManager>();
 }
