@@ -46,9 +46,9 @@ class BasicModeDataController : public DataController {
 
   void OnSdu(std::unique_ptr<packet::BasePacketBuilder> sdu) override;
 
-  void OnPdu(BasicFrameView pdu) override;
+  void OnPdu(packet::PacketView<true> pdu) override;
 
-  std::unique_ptr<BasicFrameBuilder> GetNextPacket() override;
+  std::unique_ptr<packet::BasePacketBuilder> GetNextPacket() override;
 
   void EnableFcs(bool enabled) override {}
   void SetRetransmissionAndFlowControlOptions(const RetransmissionAndFlowControlConfigurationOption& option) override {}
@@ -58,7 +58,7 @@ class BasicModeDataController : public DataController {
   Cid remote_cid_;
   os::EnqueueBuffer<UpperEnqueue> enqueue_buffer_;
   os::Handler* handler_;
-  std::queue<std::unique_ptr<BasicFrameBuilder>> pdu_queue_;
+  std::queue<std::unique_ptr<packet::BasePacketBuilder>> pdu_queue_;
   Scheduler* scheduler_;
 };
 

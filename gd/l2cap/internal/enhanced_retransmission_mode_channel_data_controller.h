@@ -47,8 +47,8 @@ class ErtmController : public DataController {
   ~ErtmController();
   // Segmentation is handled here
   void OnSdu(std::unique_ptr<packet::BasePacketBuilder> sdu) override;
-  void OnPdu(BasicFrameView pdu) override;
-  std::unique_ptr<BasicFrameBuilder> GetNextPacket() override;
+  void OnPdu(packet::PacketView<true> pdu) override;
+  std::unique_ptr<packet::BasePacketBuilder> GetNextPacket() override;
   void EnableFcs(bool enabled) override;
   void SetRetransmissionAndFlowControlOptions(const RetransmissionAndFlowControlConfigurationOption& option) override;
 
@@ -57,7 +57,7 @@ class ErtmController : public DataController {
   Cid remote_cid_;
   os::EnqueueBuffer<UpperEnqueue> enqueue_buffer_;
   os::Handler* handler_;
-  std::queue<std::unique_ptr<BasicFrameBuilder>> pdu_queue_;
+  std::queue<std::unique_ptr<packet::BasePacketBuilder>> pdu_queue_;
   Scheduler* scheduler_;
   bool fcs_enabled_ = false;
 
@@ -85,9 +85,12 @@ class ErtmController : public DataController {
   SegmentationAndReassembly sar_state_ = SegmentationAndReassembly::END;
 
   void stage_for_reassembly(SegmentationAndReassembly sar, const packet::PacketView<kLittleEndian>& payload);
-  void send_pdu(std::unique_ptr<BasicFrameBuilder> pdu);
+  void send_pdu(std::unique_ptr<packet::BasePacketBuilder> pdu);
 
   void close_channel();
+
+  void on_pdu_no_fcs(const packet::PacketView<true>& pdu);
+  void on_pdu_fcs(const packet::PacketView<true>& pdu);
 
   // Configuration options
   uint16_t local_tx_window_ = 10;
@@ -97,6 +100,9 @@ class ErtmController : public DataController {
 
   uint16_t remote_tx_window_ = 10;
   uint16_t remote_mps_ = 1010;
+
+  uint16_t size_each_packet_ =
+      (remote_mps_ - 4 /* basic L2CAP header */ - 2 /* SDU length */ - 2 /* Extended control */ - 2 /* FCS */);
 
   struct impl;
   std::unique_ptr<impl> pimpl_;
