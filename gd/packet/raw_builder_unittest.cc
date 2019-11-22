@@ -65,5 +65,48 @@ TEST(RawBuilderTest, buildCountTest) {
   ASSERT_EQ(count, packet);
 }
 
+TEST(RawBuilderTest, buildStartingWithVector) {
+  std::vector<uint8_t> count_first(count.begin(), count.begin() + 0x8);
+  std::unique_ptr<RawBuilder> count_builder = std::make_unique<RawBuilder>(count_first);
+  count_builder->AddOctets4(0x0b0a0908);
+  count_builder->AddOctets2(0x0d0c);
+  count_builder->AddOctets1(0x0e);
+  count_builder->AddOctets1(0x0f);
+  count_builder->AddOctets8(0x1716151413121110);
+  std::vector<uint8_t> count_last(count.begin() + 0x18, count.end());
+  count_builder->AddOctets(count_last);
+
+  ASSERT_EQ(count.size(), count_builder->size());
+
+  std::vector<uint8_t> packet;
+  BitInserter it(packet);
+
+  count_builder->Serialize(it);
+
+  ASSERT_EQ(count, packet);
+}
+
+TEST(RawBuilderTest, testMaxBytes) {
+  const size_t kMaxBytes = count.size();
+  std::unique_ptr<RawBuilder> count_builder = std::make_unique<RawBuilder>(kMaxBytes);
+  ASSERT_TRUE(count_builder->AddOctets(count));
+  ASSERT_FALSE(count_builder->AddOctets4(0x0b0a0908));
+  ASSERT_FALSE(count_builder->AddOctets2(0x0d0c));
+  ASSERT_FALSE(count_builder->AddOctets1(0x0e));
+  ASSERT_FALSE(count_builder->AddOctets1(0x0f));
+  ASSERT_FALSE(count_builder->AddOctets8(0x1716151413121110));
+  std::vector<uint8_t> count_last(count.begin() + 0x18, count.end());
+  ASSERT_FALSE(count_builder->AddOctets(count_last));
+
+  ASSERT_EQ(count.size(), count_builder->size());
+
+  std::vector<uint8_t> packet;
+  BitInserter it(packet);
+
+  count_builder->Serialize(it);
+
+  ASSERT_EQ(count, packet);
+}
+
 }  // namespace packet
 }  // namespace bluetooth
