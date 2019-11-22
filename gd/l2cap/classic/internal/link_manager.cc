@@ -114,9 +114,7 @@ void LinkManager::OnConnectSuccess(std::unique_ptr<hci::AclConnection> acl_conne
   // Register ACL disconnection callback in LinkManager so that we can clean up link resource properly
   acl_connection->RegisterDisconnectCallback(
       common::BindOnce(&LinkManager::OnDisconnect, common::Unretained(this), device), l2cap_handler_);
-  auto* link_queue_up_end = acl_connection->GetAclQueueEnd();
-  links_.try_emplace(device, l2cap_handler_, std::move(acl_connection),
-                     std::make_unique<l2cap::internal::Fifo>(link_queue_up_end, l2cap_handler_), parameter_provider_,
+  links_.try_emplace(device, l2cap_handler_, std::move(acl_connection), parameter_provider_,
                      dynamic_channel_service_manager_, fixed_channel_service_manager_);
   auto* link = GetLink(device);
   ASSERT(link != nullptr);

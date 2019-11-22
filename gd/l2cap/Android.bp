@@ -18,6 +18,7 @@ filegroup {
         "classic/internal/signalling_manager.cc",
         "classic/l2cap_classic_module.cc",
         "internal/basic_mode_channel_data_controller.cc",
+        "internal/data_pipeline_manager.cc",
         "internal/enhanced_retransmission_mode_channel_data_controller.cc",
         "internal/le_credit_based_channel_data_controller.cc",
         "internal/receiver.cc",
