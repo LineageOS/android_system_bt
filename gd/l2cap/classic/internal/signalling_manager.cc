@@ -310,7 +310,6 @@ void ClassicSignallingManager::OnConfigurationResponse(SignalId signal_id, Cid c
     return;
   }
 
-  RetransmissionAndFlowControlConfigurationOption rfc_option;
   channel->SetOutgoingConfigurationStatus(DynamicChannelImpl::ConfigurationStatus::CONFIGURED);
   if (channel->GetIncomingConfigurationStatus() == DynamicChannelImpl::ConfigurationStatus::CONFIGURED) {
     std::unique_ptr<DynamicChannel> user_channel = std::make_unique<DynamicChannel>(channel, handler_);

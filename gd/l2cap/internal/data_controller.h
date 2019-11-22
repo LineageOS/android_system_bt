@@ -38,6 +38,14 @@ class DataController {
 
   // Used by Scheduler to get next PDU
   virtual std::unique_ptr<BasicFrameBuilder> GetNextPacket() = 0;
+
+  // Set FCS mode. This only applies to some modes (ERTM).
+  virtual void EnableFcs(bool enabled) = 0;
+
+  // Set retransmission and flow control. Ignore the mode option because each DataController only handles one mode.
+  // This only applies to some modes (ERTM).
+  virtual void SetRetransmissionAndFlowControlOptions(
+      const RetransmissionAndFlowControlConfigurationOption& option) = 0;
 };
 
 }  // namespace internal
