@@ -16,6 +16,8 @@
 
 #include "l2cap/internal/basic_mode_channel_data_controller.h"
 
+#include "l2cap/l2cap_packets.h"
+
 namespace bluetooth {
 namespace l2cap {
 namespace internal {
@@ -31,11 +33,15 @@ void BasicModeDataController::OnSdu(std::unique_ptr<packet::BasePacketBuilder> s
   scheduler_->OnPacketsReady(cid_, 1);
 }
 
-void BasicModeDataController::OnPdu(BasicFrameView pdu) {
-  enqueue_buffer_.Enqueue(std::make_unique<PacketView<kLittleEndian>>(pdu.GetPayload()), handler_);
+void BasicModeDataController::OnPdu(packet::PacketView<true> pdu) {
+  auto basic_frame_view = BasicFrameView::Create(pdu);
+  if (!basic_frame_view.IsValid()) {
+    return;
+  }
+  enqueue_buffer_.Enqueue(std::make_unique<PacketView<kLittleEndian>>(basic_frame_view.GetPayload()), handler_);
 }
 
-std::unique_ptr<BasicFrameBuilder> BasicModeDataController::GetNextPacket() {
+std::unique_ptr<packet::BasePacketBuilder> BasicModeDataController::GetNextPacket() {
   auto next = std::move(pdu_queue_.front());
   pdu_queue_.pop();
   return next;

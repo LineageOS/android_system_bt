@@ -74,22 +74,28 @@ TEST_F(BasicModeDataControllerTest, transmit) {
   testing::MockScheduler scheduler;
   BasicModeDataController controller{1, 1, channel_queue.GetDownEnd(), queue_handler_, &scheduler};
   EXPECT_CALL(scheduler, OnPacketsReady(1, 1));
-  controller.OnSdu(CreateSdu({1, 2, 3}));
+  controller.OnSdu(CreateSdu({'a', 'b', 'c', 'd'}));
   auto next_packet = controller.GetNextPacket();
   EXPECT_NE(next_packet, nullptr);
+  auto view = GetPacketView(std::move(next_packet));
+  auto pdu_view = BasicFrameView::Create(view);
+  EXPECT_TRUE(pdu_view.IsValid());
+  auto payload = pdu_view.GetPayload();
+  std::string data = std::string(payload.begin(), payload.end());
+  EXPECT_EQ(data, "abcd");
 }
 
 TEST_F(BasicModeDataControllerTest, receive) {
   common::BidiQueue<Scheduler::UpperEnqueue, Scheduler::UpperDequeue> channel_queue{10};
   testing::MockScheduler scheduler;
   BasicModeDataController controller{1, 1, channel_queue.GetDownEnd(), queue_handler_, &scheduler};
-  auto base_view = GetPacketView(CreateSdu({0, 0, 1, 0}));
-  auto basic_frame_view = BasicFrameView::Create(base_view);
-  EXPECT_TRUE(basic_frame_view.IsValid());
-  controller.OnPdu(basic_frame_view);
+  auto base_view = GetPacketView(BasicFrameBuilder::Create(1, CreateSdu({'a', 'b', 'c', 'd'})));
+  controller.OnPdu(base_view);
   sync_handler(queue_handler_);
   auto packet_view = channel_queue.GetUpEnd()->TryDequeue();
   EXPECT_NE(packet_view, nullptr);
+  std::string data = std::string(packet_view->begin(), packet_view->end());
+  EXPECT_EQ(data, "abcd");
 }
 
 }  // namespace
