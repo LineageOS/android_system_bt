@@ -102,21 +102,17 @@ void DynamicChannelImpl::SetSender(l2cap::internal::Sender* sender) {
   sender_ = sender;
 }
 
-Mtu DynamicChannelImpl::GetIncomingMtu() const {
-  return incoming_mtu_;
-}
-
 void DynamicChannelImpl::SetIncomingMtu(Mtu mtu) {
-  incoming_mtu_ = mtu;
+  sender_->SetIncomingMtu(mtu);
 }
 
 void DynamicChannelImpl::SetRetransmissionFlowControlConfig(
     const RetransmissionAndFlowControlConfigurationOption& option) {
-  sender_->SetChannelRetransmissionFlowControlMode(option.mode_);
+  sender_->SetChannelRetransmissionFlowControlMode(option);
 }
 
 void DynamicChannelImpl::SetFcsType(FcsType fcs_type) {
-  fcs_type_ = fcs_type;
+  sender_->SetFcsType(fcs_type);
 }
 
 }  // namespace internal
