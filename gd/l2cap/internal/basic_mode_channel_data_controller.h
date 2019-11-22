@@ -50,6 +50,9 @@ class BasicModeDataController : public DataController {
 
   std::unique_ptr<BasicFrameBuilder> GetNextPacket() override;
 
+  void EnableFcs(bool enabled) override {}
+  void SetRetransmissionAndFlowControlOptions(const RetransmissionAndFlowControlConfigurationOption& option) override {}
+
  private:
   Cid cid_;
   Cid remote_cid_;
