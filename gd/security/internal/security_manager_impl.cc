@@ -121,20 +121,20 @@ void SecurityManagerImpl::UnregisterCallbackListener(ISecurityManagerListener* l
   LOG_ALWAYS_FATAL("Listener has not been registered!");
 }
 
-void SecurityManagerImpl::NotifyDeviceBonded(std::shared_ptr<Device> device) {
+void SecurityManagerImpl::NotifyDeviceBonded(hci::AddressWithType device) {
   for (auto& iter : listeners_) {
     iter.second->Post(common::Bind(&ISecurityManagerListener::OnDeviceBonded, common::Unretained(iter.first), device));
   }
 }
 
-void SecurityManagerImpl::NotifyDeviceBondFailed(std::shared_ptr<Device> device) {
+void SecurityManagerImpl::NotifyDeviceBondFailed(hci::AddressWithType device) {
   for (auto& iter : listeners_) {
     iter.second->Post(
         common::Bind(&ISecurityManagerListener::OnDeviceBondFailed, common::Unretained(iter.first), device));
   }
 }
 
-void SecurityManagerImpl::NotifyDeviceUnbonded(std::shared_ptr<Device> device) {
+void SecurityManagerImpl::NotifyDeviceUnbonded(hci::AddressWithType device) {
   for (auto& iter : listeners_) {
     iter.second->Post(
         common::Bind(&ISecurityManagerListener::OnDeviceUnbonded, common::Unretained(iter.first), device));
