@@ -1825,6 +1825,58 @@ TEST(GeneratedPacketTest, testOneLengthTypeValueStructPaddedGeneration) {
     ASSERT_EQ(ltv_vector[i].value_, an_array[i].value_);
   }
 }
+
+vector<uint8_t> byte_sized{
+    0x11,                                            // 1
+    0x21, 0x22,                                      // 2
+    0x31, 0x32, 0x33,                                // 3
+    0x41, 0x42, 0x43, 0x44,                          // 4
+    0x51, 0x52, 0x53, 0x54, 0x55,                    // 5
+    0x61, 0x62, 0x63, 0x64, 0x65, 0x66,              // 6
+    0x71, 0x72, 0x73, 0x74, 0x75, 0x76, 0x77,        // 7
+    0x81, 0x82, 0x83, 0x84, 0x85, 0x86, 0x87, 0x88,  // 8
+};
+
+TEST(GeneratedPacketTest, testByteSizedFields) {
+  uint64_t array[9]{
+      0xbadbadbad,
+      0x11,                // 1
+      0x2221,              // 2
+      0x333231,            // 3
+      0x44434241,          // 4
+      0x5554535251,        // 5
+      0x666564636261,      // 6
+      0x77767574737271,    // 7
+      0x8887868584838281,  // 8
+  };
+  auto packet =
+      ByteSizedFieldsBuilder::Create(array[1], array[2], array[3], array[4], array[5], array[6], array[7], array[8]);
+  ASSERT_EQ(byte_sized.size(), packet->size());
+
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  BitInserter it(*packet_bytes);
+  packet->Serialize(it);
+
+  ASSERT_EQ(byte_sized.size(), packet_bytes->size());
+  for (size_t i = 0; i < byte_sized.size(); i++) {
+    ASSERT_EQ(byte_sized[i], packet_bytes->at(i));
+  }
+
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = ByteSizedFieldsView::Create(packet_bytes_view);
+  ASSERT_TRUE(view.IsValid());
+  ASSERT_EQ(array[1], view.GetOne());
+  ASSERT_EQ(array[2], view.GetTwo());
+  ASSERT_EQ(array[3], view.GetThree());
+  ASSERT_EQ(array[4], view.GetFour());
+  ASSERT_EQ(array[5], view.GetFive());
+  ASSERT_EQ(array[6], view.GetSix());
+  ASSERT_EQ(array[7], view.GetSeven());
+  ASSERT_EQ(array[8], view.GetEight());
+}
+
+DEFINE_AND_INSTANTIATE_ByteSizedFieldsReflectionTest(byte_sized);
+
 }  // namespace parser
 }  // namespace packet
 }  // namespace bluetooth
