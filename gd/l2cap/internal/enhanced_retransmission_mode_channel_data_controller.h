@@ -49,16 +49,17 @@ class ErtmController : public DataController {
   void OnSdu(std::unique_ptr<packet::BasePacketBuilder> sdu) override;
   void OnPdu(BasicFrameView pdu) override;
   std::unique_ptr<BasicFrameBuilder> GetNextPacket() override;
+  void EnableFcs(bool enabled) override;
+  void SetRetransmissionAndFlowControlOptions(const RetransmissionAndFlowControlConfigurationOption& option) override;
 
  private:
-  [[maybe_unused]] Cid cid_;
-  [[maybe_unused]] Cid remote_cid_;
-  [[maybe_unused]] os::EnqueueBuffer<UpperEnqueue> enqueue_buffer_;
-  [[maybe_unused]] os::Handler* handler_;
+  Cid cid_;
+  Cid remote_cid_;
+  os::EnqueueBuffer<UpperEnqueue> enqueue_buffer_;
+  os::Handler* handler_;
   std::queue<std::unique_ptr<BasicFrameBuilder>> pdu_queue_;
-  [[maybe_unused]] Scheduler* scheduler_;
-  // TODO: Support FCS
-  [[maybe_unused]] FcsType fcs_type_ = FcsType::NO_FCS;
+  Scheduler* scheduler_;
+  bool fcs_enabled_ = false;
 
   class PacketViewForReassembly : public packet::PacketView<kLittleEndian> {
    public:
@@ -89,7 +90,6 @@ class ErtmController : public DataController {
   void close_channel();
 
   // Configuration options
-  // TODO: Configure these number
   uint16_t local_tx_window_ = 10;
   uint16_t local_max_transmit_ = 20;
   uint16_t local_retransmit_timeout_ms_ = 2000;
