@@ -99,13 +99,17 @@ class Link {
   virtual void NotifyChannelCreation(Cid cid, std::unique_ptr<DynamicChannel> channel);
   virtual void NotifyChannelFail(Cid cid);
 
-  // Information received from signalling channel
+  // Information received from signaling channel
   virtual void SetRemoteConnectionlessMtu(Mtu mtu);
   virtual Mtu GetRemoteConnectionlessMtu() const;
   virtual void SetRemoteSupportsErtm(bool supported);
   virtual bool GetRemoteSupportsErtm() const;
   virtual void SetRemoteSupportsFcs(bool supported);
   virtual bool GetRemoteSupportsFcs() const;
+
+  virtual std::string ToString() {
+    return GetDevice().ToString();
+  }
 
  private:
   os::Handler* l2cap_handler_;
