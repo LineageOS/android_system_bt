@@ -91,6 +91,36 @@ TEST(FragmentingInserterTest, observerTest) {
   ASSERT_EQ(checksum, observer.GetValue());
 }
 
+TEST(FragmentingInserterTest, testMtuBoundaries) {
+  constexpr size_t kPacketSize = 1024;
+  auto counts = RawBuilder();
+  for (size_t i = 0; i < kPacketSize; i++) {
+    counts.AddOctets1(static_cast<uint8_t>(i));
+  }
+
+  std::vector<std::unique_ptr<RawBuilder>> fragments_mtu_is_kPacketSize;
+  FragmentingInserter it(kPacketSize, std::back_insert_iterator(fragments_mtu_is_kPacketSize));
+  counts.Serialize(it);
+  it.finalize();
+  ASSERT_EQ(1, fragments_mtu_is_kPacketSize.size());
+  ASSERT_EQ(kPacketSize, fragments_mtu_is_kPacketSize[0]->size());
+
+  std::vector<std::unique_ptr<RawBuilder>> fragments_mtu_is_less;
+  FragmentingInserter it_less(kPacketSize - 1, std::back_insert_iterator(fragments_mtu_is_less));
+  counts.Serialize(it_less);
+  it_less.finalize();
+  ASSERT_EQ(2, fragments_mtu_is_less.size());
+  ASSERT_EQ(kPacketSize - 1, fragments_mtu_is_less[0]->size());
+  ASSERT_EQ(1, fragments_mtu_is_less[1]->size());
+
+  std::vector<std::unique_ptr<RawBuilder>> fragments_mtu_is_more;
+  FragmentingInserter it_more(kPacketSize + 1, std::back_insert_iterator(fragments_mtu_is_more));
+  counts.Serialize(it_more);
+  it_more.finalize();
+  ASSERT_EQ(1, fragments_mtu_is_more.size());
+  ASSERT_EQ(kPacketSize, fragments_mtu_is_more[0]->size());
+}
+
 constexpr size_t kPacketSize = 128;
 class FragmentingTest : public ::testing::TestWithParam<size_t> {
  public:
