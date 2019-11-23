@@ -59,7 +59,19 @@ class ErtmController : public DataController {
   os::Handler* handler_;
   std::queue<std::unique_ptr<packet::BasePacketBuilder>> pdu_queue_;
   Scheduler* scheduler_;
+
+  // Configuration options
   bool fcs_enabled_ = false;
+  uint16_t local_tx_window_ = 10;
+  uint16_t local_max_transmit_ = 20;
+  uint16_t local_retransmit_timeout_ms_ = 2000;
+  uint16_t local_monitor_timeout_ms_ = 12000;
+
+  uint16_t remote_tx_window_ = 10;
+  uint16_t remote_mps_ = 1010;
+
+  uint16_t size_each_packet_ =
+      (remote_mps_ - 4 /* basic L2CAP header */ - 2 /* SDU length */ - 2 /* Extended control */ - 2 /* FCS */);
 
   class PacketViewForReassembly : public packet::PacketView<kLittleEndian> {
    public:
@@ -83,26 +95,16 @@ class ErtmController : public DataController {
 
   PacketViewForReassembly reassembly_stage_{std::make_shared<std::vector<uint8_t>>()};
   SegmentationAndReassembly sar_state_ = SegmentationAndReassembly::END;
+  uint16_t remaining_sdu_continuation_packet_size_ = 0;
 
-  void stage_for_reassembly(SegmentationAndReassembly sar, const packet::PacketView<kLittleEndian>& payload);
+  void stage_for_reassembly(SegmentationAndReassembly sar, uint16_t sdu_size,
+                            const packet::PacketView<kLittleEndian>& payload);
   void send_pdu(std::unique_ptr<packet::BasePacketBuilder> pdu);
 
   void close_channel();
 
   void on_pdu_no_fcs(const packet::PacketView<true>& pdu);
   void on_pdu_fcs(const packet::PacketView<true>& pdu);
-
-  // Configuration options
-  uint16_t local_tx_window_ = 10;
-  uint16_t local_max_transmit_ = 20;
-  uint16_t local_retransmit_timeout_ms_ = 2000;
-  uint16_t local_monitor_timeout_ms_ = 12000;
-
-  uint16_t remote_tx_window_ = 10;
-  uint16_t remote_mps_ = 1010;
-
-  uint16_t size_each_packet_ =
-      (remote_mps_ - 4 /* basic L2CAP header */ - 2 /* SDU length */ - 2 /* Extended control */ - 2 /* FCS */);
 
   struct impl;
   std::unique_ptr<impl> pimpl_;
