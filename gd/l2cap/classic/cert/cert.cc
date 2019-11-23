@@ -80,6 +80,37 @@ class L2capClassicModuleCertService : public L2capClassicModuleCert::Service {
     return ::grpc::Status::OK;
   }
 
+  ::grpc::Status SendIFrame(::grpc::ServerContext* context, const ::bluetooth::l2cap::classic::cert::IFrame* request,
+                            ::bluetooth::l2cap::classic::cert::SendIFrameResult* response) override {
+    std::unique_ptr<RawBuilder> packet = std::make_unique<RawBuilder>();
+    auto req_string = request->information();
+    packet->AddOctets(std::vector<uint8_t>(req_string.begin(), req_string.end()));
+    std::unique_ptr<BasePacketBuilder> l2cap_builder;
+    auto f = static_cast<Final>(request->f());
+    if (request->sar() == static_cast<int>(SegmentationAndReassembly::START)) {
+      l2cap_builder = EnhancedInformationStartFrameBuilder::Create(
+          request->channel(), request->tx_seq(), f, request->req_seq(), request->sdu_size(), std::move(packet));
+    } else {
+      l2cap_builder = EnhancedInformationFrameBuilder::Create(
+          request->channel(), request->tx_seq(), f, request->req_seq(),
+          static_cast<SegmentationAndReassembly>(request->sar()), std::move(packet));
+    }
+    outgoing_packet_queue_.push(std::move(l2cap_builder));
+    send_packet_from_queue();
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status SendSFrame(::grpc::ServerContext* context, const ::bluetooth::l2cap::classic::cert::SFrame* request,
+                            ::bluetooth::l2cap::classic::cert::SendSFrameResult* response) override {
+    auto f = static_cast<Final>(request->f());
+    auto p = static_cast<Poll>(request->p());
+    auto s = static_cast<SupervisoryFunction>(request->s());
+    auto builder = EnhancedSupervisoryFrameBuilder::Create(request->channel(), s, p, f, request->req_seq());
+    outgoing_packet_queue_.push(std::move(builder));
+    send_packet_from_queue();
+    return ::grpc::Status::OK;
+  }
+
   ::grpc::Status SendConnectionRequest(::grpc::ServerContext* context, const cert::ConnectionRequest* request,
                                        ::google::protobuf::Empty* response) override {
     auto builder = ConnectionRequestBuilder::Create(request->signal_id(), request->psm(), request->scid());
