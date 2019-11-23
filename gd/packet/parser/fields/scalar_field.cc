@@ -121,8 +121,6 @@ void ScalarField::GenParameterValidator(std::ostream& s) const {
 void ScalarField::GenInserter(std::ostream& s) const {
   if (GetSize().bits() == 8) {
     s << "i.insert_byte(" << GetName() << "_);";
-  } else if (GetSize().bits() % 8 == 0) {
-    s << "insert(" << GetName() << "_, i);";
   } else {
     s << "insert(" << GetName() << "_, i," << GetSize().bits() << ");";
   }
