@@ -55,6 +55,10 @@ void CustomFieldFixedSize::GenParameterValidator(std::ostream&) const {
   // Do nothing.
 }
 
+void CustomFieldFixedSize::GenInserter(std::ostream& s) const {
+  s << "insert(" << GetName() << "_, i);";
+}
+
 void CustomFieldFixedSize::GenValidator(std::ostream&) const {
   // Do nothing.
 }
