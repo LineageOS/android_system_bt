@@ -7,6 +7,8 @@ import "facade/common.proto";
 
 service L2capClassicModuleCert {
   rpc SendL2capPacket(L2capPacket) returns (google.protobuf.Empty) {}
+  rpc SendIFrame(IFrame) returns (SendIFrameResult) {}
+  rpc SendSFrame(SFrame) returns (SendSFrameResult) {}
 
   rpc SetupLink(SetupLinkRequest) returns (SetupLinkResponse) {}
   rpc DisconnectLink(DisconnectLinkRequest) returns (google.protobuf.Empty) {}
@@ -32,6 +34,30 @@ message L2capPacket {
   uint32 channel = 2;
   bytes payload = 3;
 }
+
+message IFrame {
+  facade.BluetoothAddress remote = 1;
+  uint32 channel = 2;
+  uint32 sar = 3;
+  uint32 tx_seq = 4;
+  uint32 req_seq = 5;
+  uint32 f = 6;
+  uint32 sdu_size = 7;
+  bytes information = 8;
+}
+
+message SendIFrameResult {}
+
+message SFrame {
+  facade.BluetoothAddress remote = 1;
+  uint32 channel = 2;
+  uint32 req_seq = 3;
+  uint32 f = 4;
+  uint32 p = 5;
+  uint32 s = 6;
+}
+
+message SendSFrameResult {}
 
 message DisconnectLinkRequest {
   facade.BluetoothAddress remote = 1;
