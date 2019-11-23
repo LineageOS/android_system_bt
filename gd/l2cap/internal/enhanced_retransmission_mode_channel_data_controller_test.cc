@@ -108,6 +108,54 @@ TEST_F(ErtmDataControllerTest, receive_no_fcs) {
   EXPECT_EQ(data, "abcd");
 }
 
+TEST_F(ErtmDataControllerTest, reassemble_valid_sdu) {
+  common::BidiQueue<Scheduler::UpperEnqueue, Scheduler::UpperDequeue> channel_queue{10};
+  testing::MockScheduler scheduler;
+  ErtmController controller{1, 1, channel_queue.GetDownEnd(), queue_handler_, &scheduler};
+  auto segment1 = CreateSdu({'a'});
+  auto segment2 = CreateSdu({'b', 'c'});
+  auto segment3 = CreateSdu({'d', 'e', 'f'});
+  auto builder1 = EnhancedInformationStartFrameBuilder::Create(1, 0, Final::NOT_SET, 0, 6, std::move(segment1));
+  auto base_view = GetPacketView(std::move(builder1));
+  controller.OnPdu(base_view);
+  auto builder2 = EnhancedInformationFrameBuilder::Create(1, 1, Final::NOT_SET, 0,
+                                                          SegmentationAndReassembly::CONTINUATION, std::move(segment2));
+  base_view = GetPacketView(std::move(builder2));
+  controller.OnPdu(base_view);
+  auto builder3 = EnhancedInformationFrameBuilder::Create(1, 2, Final::NOT_SET, 0, SegmentationAndReassembly::END,
+                                                          std::move(segment3));
+  base_view = GetPacketView(std::move(builder3));
+  controller.OnPdu(base_view);
+  sync_handler(queue_handler_);
+  auto payload = channel_queue.GetUpEnd()->TryDequeue();
+  EXPECT_NE(payload, nullptr);
+  std::string data = std::string(payload->begin(), payload->end());
+  EXPECT_EQ(data, "abcdef");
+}
+
+TEST_F(ErtmDataControllerTest, reassemble_invalid_sdu_size_in_start_frame) {
+  common::BidiQueue<Scheduler::UpperEnqueue, Scheduler::UpperDequeue> channel_queue{10};
+  testing::MockScheduler scheduler;
+  ErtmController controller{1, 1, channel_queue.GetDownEnd(), queue_handler_, &scheduler};
+  auto segment1 = CreateSdu({'a'});
+  auto segment2 = CreateSdu({'b', 'c'});
+  auto segment3 = CreateSdu({'d', 'e', 'f'});
+  auto builder1 = EnhancedInformationStartFrameBuilder::Create(1, 0, Final::NOT_SET, 0, 10, std::move(segment1));
+  auto base_view = GetPacketView(std::move(builder1));
+  controller.OnPdu(base_view);
+  auto builder2 = EnhancedInformationFrameBuilder::Create(1, 1, Final::NOT_SET, 0,
+                                                          SegmentationAndReassembly::CONTINUATION, std::move(segment2));
+  base_view = GetPacketView(std::move(builder2));
+  controller.OnPdu(base_view);
+  auto builder3 = EnhancedInformationFrameBuilder::Create(1, 2, Final::NOT_SET, 0, SegmentationAndReassembly::END,
+                                                          std::move(segment3));
+  base_view = GetPacketView(std::move(builder3));
+  controller.OnPdu(base_view);
+  sync_handler(queue_handler_);
+  auto payload = channel_queue.GetUpEnd()->TryDequeue();
+  EXPECT_EQ(payload, nullptr);
+}
+
 TEST_F(ErtmDataControllerTest, transmit_with_fcs) {
   common::BidiQueue<Scheduler::UpperEnqueue, Scheduler::UpperDequeue> channel_queue{10};
   testing::MockScheduler scheduler;
