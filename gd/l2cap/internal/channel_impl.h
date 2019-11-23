@@ -47,13 +47,6 @@ class ChannelImpl {
   virtual Cid GetCid() const = 0;
 
   virtual Cid GetRemoteCid() const = 0;
-
-  /**
-   * Callback from the Scheduler to notify the Sender for this channel. On config update, channel might notify the
-   * configuration change to Sender.
-   * Fixed channel doesn't need to implement it, as it doesn't need to send config update to Sender.
-   */
-  virtual void SetSender(l2cap::internal::Sender* sender) = 0;
 };
 
 }  // namespace internal

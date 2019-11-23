@@ -21,10 +21,12 @@
 #include <vector>
 
 #include "l2cap/cid.h"
+#include "l2cap/classic/internal/channel_configuration_state.h"
 #include "l2cap/classic/internal/dynamic_channel_allocator.h"
 #include "l2cap/classic/internal/dynamic_channel_service_manager_impl.h"
 #include "l2cap/classic/internal/fixed_channel_impl.h"
 #include "l2cap/classic/internal/fixed_channel_service_manager_impl.h"
+#include "l2cap/internal/data_pipeline_manager.h"
 #include "l2cap/l2cap_packets.h"
 #include "l2cap/psm.h"
 #include "l2cap/signal_id.h"
@@ -53,6 +55,7 @@ class Link;
 class ClassicSignallingManager {
  public:
   ClassicSignallingManager(os::Handler* handler, Link* link,
+                           l2cap::internal::DataPipelineManager* data_pipeline_manager,
                            classic::internal::DynamicChannelServiceManagerImpl* dynamic_service_manager,
                            classic::internal::DynamicChannelAllocator* channel_allocator,
                            classic::internal::FixedChannelServiceManagerImpl* fixed_service_manager);
@@ -103,6 +106,7 @@ class ClassicSignallingManager {
 
   os::Handler* handler_;
   Link* link_;
+  [[maybe_unused]] l2cap::internal::DataPipelineManager* data_pipeline_manager_;
   std::shared_ptr<classic::internal::FixedChannelImpl> signalling_channel_;
   DynamicChannelServiceManagerImpl* dynamic_service_manager_;
   DynamicChannelAllocator* channel_allocator_;
@@ -112,6 +116,7 @@ class ClassicSignallingManager {
   std::queue<PendingCommand> pending_commands_;
   os::Alarm alarm_;
   SignalId next_signal_id_ = kInitialSignalId;
+  std::unordered_map<Cid, ChannelConfigurationState> channel_configuration_;
 };
 
 }  // namespace internal

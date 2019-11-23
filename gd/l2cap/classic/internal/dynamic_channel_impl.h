@@ -68,26 +68,6 @@ class DynamicChannelImpl : public l2cap::internal::ChannelImpl {
     return psm_;
   }
 
-  enum class ConfigurationStatus { NOT_CONFIGURED, CONFIGURED };
-
-  virtual ConfigurationStatus GetOutgoingConfigurationStatus() const;
-  virtual void SetOutgoingConfigurationStatus(ConfigurationStatus status);
-
-  virtual ConfigurationStatus GetIncomingConfigurationStatus() const;
-  virtual void SetIncomingConfigurationStatus(ConfigurationStatus status);
-
-  /**
-   * Callback from the Scheduler to notify the Sender for this channel. On config update, channel might notify the
-   * configuration to Sender
-   */
-  void SetSender(l2cap::internal::Sender* sender) override;
-
-  virtual void SetIncomingMtu(Mtu mtu);
-
-  virtual void SetRetransmissionFlowControlConfig(const RetransmissionAndFlowControlConfigurationOption& mode);
-
-  virtual void SetFcsType(FcsType fcs_type);
-
   // TODO(cmanton) Do something a little bit better than this
   bool local_initiated_{false};
 
@@ -109,10 +89,6 @@ class DynamicChannelImpl : public l2cap::internal::ChannelImpl {
   static constexpr size_t kChannelQueueSize = 10;
   common::BidiQueue<packet::PacketView<packet::kLittleEndian>, packet::BasePacketBuilder> channel_queue_{
       kChannelQueueSize};
-  ConfigurationStatus outgoing_configuration_status_ = ConfigurationStatus::NOT_CONFIGURED;
-  ConfigurationStatus incoming_configuration_status_ = ConfigurationStatus::NOT_CONFIGURED;
-
-  l2cap::internal::Sender* sender_ = nullptr;
 
   DISALLOW_COPY_AND_ASSIGN(DynamicChannelImpl);
 };

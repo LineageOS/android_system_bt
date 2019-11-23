@@ -82,39 +82,6 @@ std::string DynamicChannelImpl::ToString() {
   return ss.str();
 }
 
-DynamicChannelImpl::ConfigurationStatus DynamicChannelImpl::GetOutgoingConfigurationStatus() const {
-  return outgoing_configuration_status_;
-}
-
-void DynamicChannelImpl::SetOutgoingConfigurationStatus(ConfigurationStatus status) {
-  outgoing_configuration_status_ = status;
-}
-
-DynamicChannelImpl::ConfigurationStatus DynamicChannelImpl::GetIncomingConfigurationStatus() const {
-  return incoming_configuration_status_;
-}
-
-void DynamicChannelImpl::SetIncomingConfigurationStatus(ConfigurationStatus status) {
-  incoming_configuration_status_ = status;
-}
-
-void DynamicChannelImpl::SetSender(l2cap::internal::Sender* sender) {
-  sender_ = sender;
-}
-
-void DynamicChannelImpl::SetIncomingMtu(Mtu mtu) {
-  sender_->SetIncomingMtu(mtu);
-}
-
-void DynamicChannelImpl::SetRetransmissionFlowControlConfig(
-    const RetransmissionAndFlowControlConfigurationOption& option) {
-  sender_->SetChannelRetransmissionFlowControlMode(option);
-}
-
-void DynamicChannelImpl::SetFcsType(FcsType fcs_type) {
-  sender_->SetFcsType(fcs_type);
-}
-
 }  // namespace internal
 }  // namespace classic
 }  // namespace l2cap
