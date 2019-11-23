@@ -69,7 +69,7 @@ class GdCertDevice(GdDeviceBase):
         self.hal = hal_cert_pb2_grpc.HciHalCertStub(self.grpc_channel)
         self.controller_read_only_property = cert_rootservice_pb2_grpc.ReadOnlyPropertyStub(self.grpc_channel)
         self.hci = hci_cert_pb2_grpc.AclManagerCertStub(self.grpc_channel)
-        self.l2cap = l2cap_cert_pb2_grpc.L2capModuleCertStub(self.grpc_channel)
+        self.l2cap = l2cap_cert_pb2_grpc.L2capClassicModuleCertStub(self.grpc_channel)
 
         # Event streams
         self.hal.hci_event_stream = EventStream(self.hal.FetchHciEvent)
