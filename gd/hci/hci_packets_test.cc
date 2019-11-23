@@ -418,5 +418,181 @@ std::vector<uint8_t> le_set_extended_scan_enable_complete{
 };
 DEFINE_AND_INSTANTIATE_LeSetExtendedScanEnableCompleteReflectionTest(le_set_extended_scan_enable_complete);
 
+std::vector<uint8_t> le_extended_create_connection = {
+    0x43, 0x20, 0x2a, 0x01, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x03, 0x00, 0x08,
+    0x30, 0x00, 0x18, 0x00, 0x28, 0x00, 0x00, 0x00, 0xf4, 0x01, 0x00, 0x00, 0x00, 0x00, 0x00,
+    0x08, 0x30, 0x00, 0x18, 0x00, 0x28, 0x00, 0x00, 0x00, 0xf4, 0x01, 0x00, 0x00, 0x00, 0x00};
+DEFINE_AND_INSTANTIATE_LeExtendedCreateConnectionReflectionTest(le_extended_create_connection);
+
+TEST(HciPacketsTest, testLeExtendedCreateConnection) {
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes =
+      std::make_shared<std::vector<uint8_t>>(le_extended_create_connection);
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = LeExtendedCreateConnectionView::Create(
+      LeConnectionManagementCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+  ASSERT_TRUE(view.IsValid());
+}
+
+std::vector<uint8_t> le_set_extended_advertising_random_address = {
+    0x35, 0x20, 0x07, 0x00, 0x77, 0x58, 0xeb, 0xd3, 0x1c, 0x6e,
+};
+
+TEST(HciPacketsTest, testLeSetExtendedAdvertisingRandomAddress) {
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes =
+      std::make_shared<std::vector<uint8_t>>(le_set_extended_advertising_random_address);
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = LeSetExtendedAdvertisingRandomAddressView::Create(
+      LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+  ASSERT_TRUE(view.IsValid());
+  uint8_t random_address_bytes[] = {0x77, 0x58, 0xeb, 0xd3, 0x1c, 0x6e};
+  ASSERT_EQ(0, view.GetAdvertisingHandle());
+  ASSERT_EQ(Address(random_address_bytes), view.GetAdvertisingRandomAddress());
+}
+DEFINE_AND_INSTANTIATE_LeSetExtendedAdvertisingRandomAddressReflectionTest(le_set_extended_advertising_random_address);
+
+std::vector<uint8_t> le_set_extended_advertising_random_address_complete{
+    0x0e, 0x04, 0x01, 0x35, 0x20, 0x00,
+};
+DEFINE_AND_INSTANTIATE_LeSetExtendedAdvertisingRandomAddressCompleteReflectionTest(
+    le_set_extended_advertising_random_address_complete);
+
+std::vector<uint8_t> le_set_extended_advertising_data{
+    0x37, 0x20, 0x12, 0x00, 0x03, 0x01, 0x0e, 0x02, 0x01, 0x02, 0x0a,
+    0x09, 0x50, 0x69, 0x78, 0x65, 0x6c, 0x20, 0x33, 0x20, 0x58,
+};
+TEST(HciPacketsTest, testLeSetExtendedAdvertisingData) {
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes =
+      std::make_shared<std::vector<uint8_t>>(le_set_extended_advertising_data);
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = LeSetExtendedAdvertisingDataRawView::Create(
+      LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+  ASSERT_TRUE(view.IsValid());
+  ASSERT_EQ(0, view.GetAdvertisingHandle());
+  ASSERT_EQ(Operation::COMPLETE_ADVERTISMENT, view.GetOperation());
+  ASSERT_EQ(FragmentPreference::CONTROLLER_SHOULD_NOT, view.GetFragmentPreference());
+  std::vector<uint8_t> advertising_data{
+      0x02, 0x01, 0x02, 0x0a, 0x09, 0x50, 0x69, 0x78, 0x65, 0x6c, 0x20, 0x33, 0x20, 0x58,
+  };
+  ASSERT_EQ(advertising_data, view.GetAdvertisingData());
+}
+
+DEFINE_AND_INSTANTIATE_LeSetExtendedAdvertisingDataRawReflectionTest(le_set_extended_advertising_data);
+
+std::vector<uint8_t> le_set_extended_advertising_data_complete{
+    0x0e, 0x04, 0x01, 0x37, 0x20, 0x00,
+};
+DEFINE_AND_INSTANTIATE_LeSetExtendedAdvertisingDataCompleteReflectionTest(le_set_extended_advertising_data_complete);
+
+std::vector<uint8_t> le_set_extended_advertising_parameters_set_0{
+    0x36, 0x20, 0x19, 0x00, 0x13, 0x00, 0x90, 0x01, 0x00, 0xc2, 0x01, 0x00,          0x07, 0x01,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf9, 0x01, 0x00, 0x00 /*0x01*/, 0x01, 0x00,
+};
+TEST(HciPacketsTest, testLeSetExtendedAdvertisingParametersLegacySet0) {
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes =
+      std::make_shared<std::vector<uint8_t>>(le_set_extended_advertising_parameters_set_0);
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = LeSetExtendedAdvertisingLegacyParametersView::Create(
+      LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+  ASSERT_TRUE(view.IsValid());
+  ASSERT_EQ(0, view.GetAdvertisingHandle());
+  ASSERT_EQ(400, view.GetPrimaryAdvertisingIntervalMin());
+  ASSERT_EQ(450, view.GetPrimaryAdvertisingIntervalMax());
+  ASSERT_EQ(0x7, view.GetPrimaryAdvertisingChannelMap());
+  ASSERT_EQ(OwnAddressType::RANDOM_DEVICE_ADDRESS, view.GetOwnAddressType());
+  ASSERT_EQ(PeerAddressType::PUBLIC_DEVICE_OR_IDENTITY_ADDRESS, view.GetPeerAddressType());
+  ASSERT_EQ(Address::kEmpty, view.GetPeerAddress());
+  ASSERT_EQ(AdvertisingFilterPolicy::ALL_DEVICES, view.GetAdvertisingFilterPolicy());
+  ASSERT_EQ(PrimaryPhyType::LE_1M, view.GetPrimaryAdvertisingPhy());
+  ASSERT_EQ(1, view.GetAdvertisingSid());
+  ASSERT_EQ(Enable::DISABLED, view.GetScanRequestNotificationEnable());
+}
+
+std::vector<uint8_t> le_set_extended_advertising_parameters_set_1{
+    0x36, 0x20, 0x19, 0x01, 0x13, 0x00, 0x90, 0x01, 0x00, 0xc2, 0x01, 0x00,          0x07, 0x01,
+    0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0xf9, 0x01, 0x00, 0x00 /*0x01*/, 0x01, 0x00,
+};
+TEST(HciPacketsTest, testLeSetExtendedAdvertisingParametersSet1) {
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes =
+      std::make_shared<std::vector<uint8_t>>(le_set_extended_advertising_parameters_set_1);
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = LeSetExtendedAdvertisingLegacyParametersView::Create(
+      LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+  ASSERT_TRUE(view.IsValid());
+  ASSERT_EQ(1, view.GetAdvertisingHandle());
+  ASSERT_EQ(400, view.GetPrimaryAdvertisingIntervalMin());
+  ASSERT_EQ(450, view.GetPrimaryAdvertisingIntervalMax());
+  ASSERT_EQ(0x7, view.GetPrimaryAdvertisingChannelMap());
+  ASSERT_EQ(OwnAddressType::RANDOM_DEVICE_ADDRESS, view.GetOwnAddressType());
+  ASSERT_EQ(PeerAddressType::PUBLIC_DEVICE_OR_IDENTITY_ADDRESS, view.GetPeerAddressType());
+  ASSERT_EQ(Address::kEmpty, view.GetPeerAddress());
+  ASSERT_EQ(AdvertisingFilterPolicy::ALL_DEVICES, view.GetAdvertisingFilterPolicy());
+  ASSERT_EQ(PrimaryPhyType::LE_1M, view.GetPrimaryAdvertisingPhy());
+  ASSERT_EQ(1, view.GetAdvertisingSid());
+  ASSERT_EQ(Enable::DISABLED, view.GetScanRequestNotificationEnable());
+}
+
+DEFINE_AND_INSTANTIATE_LeSetExtendedAdvertisingLegacyParametersReflectionTest(
+    le_set_extended_advertising_parameters_set_0, le_set_extended_advertising_parameters_set_1);
+
+std::vector<uint8_t> le_set_extended_advertising_parameters_complete{0x0e, 0x05, 0x01, 0x36, 0x20, 0x00, 0xf5};
+TEST(HciPacketsTest, testLeSetExtendedAdvertisingParametersComplete) {
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes =
+      std::make_shared<std::vector<uint8_t>>(le_set_extended_advertising_parameters_complete);
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = LeSetExtendedAdvertisingParametersCompleteView::Create(
+      CommandCompleteView::Create(EventPacketView::Create(packet_bytes_view)));
+  ASSERT_TRUE(view.IsValid());
+  ASSERT_EQ(static_cast<uint8_t>(-11), view.GetSelectedTxPower());
+}
+
+DEFINE_AND_INSTANTIATE_LeSetExtendedAdvertisingParametersCompleteReflectionTest(
+    le_set_extended_advertising_parameters_complete);
+
+std::vector<uint8_t> le_remove_advertising_set_1{
+    0x3c,
+    0x20,
+    0x01,
+    0x01,
+};
+TEST(HciPacketsTest, testLeRemoveAdvertisingSet1) {
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes =
+      std::make_shared<std::vector<uint8_t>>(le_remove_advertising_set_1);
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = LeRemoveAdvertisingSetView::Create(
+      LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+  ASSERT_TRUE(view.IsValid());
+  ASSERT_EQ(1, view.GetAdvertisingHandle());
+}
+
+DEFINE_AND_INSTANTIATE_LeRemoveAdvertisingSetReflectionTest(le_remove_advertising_set_1);
+
+std::vector<uint8_t> le_remove_advertising_set_complete{
+    0x0e, 0x04, 0x01, 0x3c, 0x20, 0x00,
+};
+DEFINE_AND_INSTANTIATE_LeRemoveAdvertisingSetCompleteReflectionTest(le_remove_advertising_set_complete);
+
+std::vector<uint8_t> le_set_extended_advertising_disable_1{
+    0x39, 0x20, 0x06, 0x00, 0x01, 0x01, 0x00, 0x00, 0x00,
+};
+TEST(HciPacketsTest, testLeSetExtendedAdvertisingDisable1) {
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes =
+      std::make_shared<std::vector<uint8_t>>(le_set_extended_advertising_disable_1);
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = LeSetExtendedAdvertisingDisableView::Create(
+      LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
+  ASSERT_TRUE(view.IsValid());
+  auto disabled_set = view.GetDisabledSets();
+  ASSERT_EQ(1, disabled_set.size());
+  ASSERT_EQ(1, disabled_set[0].advertising_handle_);
+}
+
+DEFINE_AND_INSTANTIATE_LeSetExtendedAdvertisingDisableReflectionTest(le_set_extended_advertising_disable_1);
+
+std::vector<uint8_t> le_set_extended_advertising_enable_complete{
+    0x0e, 0x04, 0x01, 0x39, 0x20, 0x00,
+};
+DEFINE_AND_INSTANTIATE_LeSetExtendedAdvertisingEnableCompleteReflectionTest(
+    le_set_extended_advertising_enable_complete);
+
 }  // namespace hci
 }  // namespace bluetooth
