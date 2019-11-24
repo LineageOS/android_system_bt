@@ -44,7 +44,8 @@ uint16_t SecurityManager::ReadKey(const Address& addr) const {
   return key_store_.count(addr.ToString());
 }
 
-uint16_t SecurityManager::WriteKey(const Address& addr, const std::vector<uint8_t>& key) {
+uint16_t SecurityManager::WriteKey(const Address& addr,
+                                   const std::array<uint8_t, 16>& key) {
   if (key_store_.size() >= max_keys_) {
     return 0;
   }
@@ -52,7 +53,8 @@ uint16_t SecurityManager::WriteKey(const Address& addr, const std::vector<uint8_
   return 1;
 }
 
-const std::vector<uint8_t>& SecurityManager::GetKey(const Address& addr) const {
+const std::array<uint8_t, 16>& SecurityManager::GetKey(
+    const Address& addr) const {
   ASSERT_LOG(ReadKey(addr), "No such key");
   return key_store_.at(addr.ToString());
 }
@@ -130,7 +132,53 @@ PairingType SecurityManager::GetSimplePairingType() {
   if (!(peer_requires_mitm || host_requires_mitm)) {
     return PairingType::AUTO_CONFIRMATION;
   }
-  return PairingType::INVALID;
+  LOG_INFO("%s: host does%s require peer does%s require MITM",
+           peer_address_.ToString().c_str(), host_requires_mitm ? "" : "n't",
+           peer_requires_mitm ? "" : "n't");
+  switch (peer_io_capability_) {
+    case IoCapabilityType::DISPLAY_ONLY:
+      switch (host_io_capability_) {
+        case IoCapabilityType::DISPLAY_ONLY:
+        case IoCapabilityType::DISPLAY_YES_NO:
+          return PairingType::AUTO_CONFIRMATION;
+        case IoCapabilityType::KEYBOARD_ONLY:
+          return PairingType::INPUT_PIN;
+        case IoCapabilityType::NO_INPUT_NO_OUTPUT:
+          return PairingType::AUTO_CONFIRMATION;
+        default:
+          return PairingType::INVALID;
+      }
+    case IoCapabilityType::DISPLAY_YES_NO:
+      switch (host_io_capability_) {
+        case IoCapabilityType::DISPLAY_ONLY:
+          return PairingType::AUTO_CONFIRMATION;
+        case IoCapabilityType::DISPLAY_YES_NO:
+          return PairingType::DISPLAY_AND_CONFIRM;
+        case IoCapabilityType::KEYBOARD_ONLY:
+          return PairingType::DISPLAY_PIN;
+        case IoCapabilityType::NO_INPUT_NO_OUTPUT:
+          return PairingType::AUTO_CONFIRMATION;
+        default:
+          return PairingType::INVALID;
+      }
+    case IoCapabilityType::KEYBOARD_ONLY:
+      switch (host_io_capability_) {
+        case IoCapabilityType::DISPLAY_ONLY:
+          return PairingType::DISPLAY_PIN;
+        case IoCapabilityType::DISPLAY_YES_NO:
+          return PairingType::DISPLAY_PIN;
+        case IoCapabilityType::KEYBOARD_ONLY:
+          return PairingType::INPUT_PIN;
+        case IoCapabilityType::NO_INPUT_NO_OUTPUT:
+          return PairingType::AUTO_CONFIRMATION;
+        default:
+          return PairingType::INVALID;
+      }
+    case IoCapabilityType::NO_INPUT_NO_OUTPUT:
+      return PairingType::AUTO_CONFIRMATION;
+    default:
+      return PairingType::INVALID;
+  }
 }
 
 }  // namespace test_vendor_lib

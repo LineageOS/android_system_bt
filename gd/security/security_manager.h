@@ -21,8 +21,8 @@
 #include <memory>
 #include <vector>
 
+#include "hci/address_with_type.h"
 #include "hci/device.h"
-#include "hci/device_database.h"
 #include "security/internal/security_manager_impl.h"
 
 namespace bluetooth {
@@ -38,23 +38,23 @@ class ISecurityManagerListener {
   /**
    * Called when a device is successfully bonded.
    *
-   * @param device pointer to the bonded device
+   * @param address of the newly bonded device
    */
-  virtual void OnDeviceBonded(std::shared_ptr<bluetooth::hci::Device> device) = 0;
+  virtual void OnDeviceBonded(bluetooth::hci::AddressWithType device) = 0;
 
   /**
    * Called when a device is successfully un-bonded.
    *
-   * @param device pointer to the device that is no longer bonded
+   * @param address of device that is no longer bonded
    */
-  virtual void OnDeviceUnbonded(std::shared_ptr<bluetooth::hci::Device> device) = 0;
+  virtual void OnDeviceUnbonded(bluetooth::hci::AddressWithType device) = 0;
 
   /**
    * Called as a result of a failure during the bonding process.
    *
-   * @param device pointer to the device that is no longer bonded
+   * @param address of the device that failed to bond
    */
-  virtual void OnDeviceBondFailed(std::shared_ptr<bluetooth::hci::Device> device) = 0;
+  virtual void OnDeviceBondFailed(bluetooth::hci::AddressWithType device) = 0;
 };
 
 /**

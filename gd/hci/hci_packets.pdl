@@ -1530,7 +1530,7 @@ packet ReadAuthenticationEnableComplete : CommandComplete (command_op_code = REA
   authentication_enable : AuthenticationEnable,
 }
 
-packet WriteAuthenticationEnable : CommandPacket (op_code = WRITE_AUTHENTICATION_ENABLE) {
+packet WriteAuthenticationEnable : SecurityCommand (op_code = WRITE_AUTHENTICATION_ENABLE) {
   authentication_enable : AuthenticationEnable,
 }
 
@@ -1911,7 +1911,7 @@ packet ReadSecureConnectionsHostSupportComplete : CommandComplete (command_op_co
   secure_connections_host_support : Enable,
 }
 
-packet WriteSecureConnectionsHostSupport : CommandPacket (op_code = WRITE_SECURE_CONNECTIONS_HOST_SUPPORT) {
+packet WriteSecureConnectionsHostSupport : SecurityCommand (op_code = WRITE_SECURE_CONNECTIONS_HOST_SUPPORT) {
   secure_connections_host_support : Enable,
 }
 
@@ -2655,12 +2655,17 @@ packet LeSetPeriodicAdvertisingEnable : LeAdvertisingCommand (op_code = LE_SET_P
   _payload_,  // placeholder (unimplemented)
 }
 
-packet LeSetExtendedScanParameters : LeScanningCommand (op_code = LE_SET_EXTENDED_SCAN_PARAMETERS) {
+struct PhyScanParameters {
   le_scan_type : LeScanType,
-  le_scan_interval : 32, // 0x0004-0x00FFFFFF Default 0x10 (10ms)
-  le_scan_window : 32, // 0x004-0xFFFF Default 0x10 (10ms)
+  le_scan_interval : 16, // 0x0004-0xFFFF Default 0x10 (10ms)
+  le_scan_window : 16, // 0x004-0xFFFF Default 0x10 (10ms)
+}
+
+packet LeSetExtendedScanParameters : LeScanningCommand (op_code = LE_SET_EXTENDED_SCAN_PARAMETERS) {
   own_address_type : AddressType,
   scanning_filter_policy : LeSetScanningFilterPolicy,
+  scanning_phys : 8,
+  parameters : PhyScanParameters[],
 }
 
 packet LeSetExtendedScanParametersComplete : CommandComplete (command_op_code = LE_SET_EXTENDED_SCAN_PARAMETERS) {

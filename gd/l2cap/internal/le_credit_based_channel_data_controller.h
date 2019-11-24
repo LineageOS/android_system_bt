@@ -36,22 +36,26 @@ namespace bluetooth {
 namespace l2cap {
 namespace internal {
 
-class BasicModeDataController : public DataController {
+class LeCreditBasedDataController : public DataController {
  public:
   using UpperEnqueue = packet::PacketView<packet::kLittleEndian>;
   using UpperDequeue = packet::BasePacketBuilder;
   using UpperQueueDownEnd = common::BidiQueueEnd<UpperEnqueue, UpperDequeue>;
-  BasicModeDataController(Cid cid, Cid remote_cid, UpperQueueDownEnd* channel_queue_end, os::Handler* handler,
-                          Scheduler* scheduler);
+  LeCreditBasedDataController(Cid cid, Cid remote_cid, UpperQueueDownEnd* channel_queue_end, os::Handler* handler,
+                              Scheduler* scheduler);
 
   void OnSdu(std::unique_ptr<packet::BasePacketBuilder> sdu) override;
-
   void OnPdu(packet::PacketView<true> pdu) override;
-
   std::unique_ptr<packet::BasePacketBuilder> GetNextPacket() override;
 
   void EnableFcs(bool enabled) override {}
   void SetRetransmissionAndFlowControlOptions(const RetransmissionAndFlowControlConfigurationOption& option) override {}
+
+  // TODO: Set MTU and MPS from signalling channel
+  void SetMtu(Mtu mtu);
+  void SetMps(uint16_t mps);
+  // TODO: Handle credits
+  void OnCredit(uint16_t credits);
 
  private:
   Cid cid_;
@@ -60,6 +64,19 @@ class BasicModeDataController : public DataController {
   os::Handler* handler_;
   std::queue<std::unique_ptr<packet::BasePacketBuilder>> pdu_queue_;
   Scheduler* scheduler_;
+  Mtu mtu_ = 512;
+  uint16_t mps_ = 251;
+  uint16_t credits_ = 0;
+
+  class PacketViewForReassembly : public packet::PacketView<kLittleEndian> {
+   public:
+    PacketViewForReassembly(const PacketView& packetView) : PacketView(packetView) {}
+    void AppendPacketView(packet::PacketView<kLittleEndian> to_append) {
+      Append(to_append);
+    }
+  };
+  PacketViewForReassembly reassembly_stage_{std::make_shared<std::vector<uint8_t>>()};
+  uint16_t remaining_sdu_continuation_packet_size_ = 0;
 };
 
 }  // namespace internal

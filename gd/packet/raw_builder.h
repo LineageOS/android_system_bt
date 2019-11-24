@@ -64,7 +64,7 @@ class RawBuilder : public PacketBuilder<true> {
   // - the new size of the payload is still <= |max_bytes_|
   bool AddOctets(size_t octets, uint64_t value);
 
-  size_t max_bytes_{255};
+  size_t max_bytes_{0xffff};
 
   // Underlying containers for storing the actual packet
   std::vector<uint8_t> payload_;

@@ -227,8 +227,7 @@ packet RemoteNameRequest : LinkLayerPacket (type = REMOTE_NAME_REQUEST) {
 }
 
 packet RemoteNameRequestResponse : LinkLayerPacket (type = REMOTE_NAME_REQUEST_RESPONSE) {
-  _size_(name) : 8,
-  name : 8[],
+  name : 8[248],
 }
 
 packet ScoPacket : LinkLayerPacket (type = SCO) {

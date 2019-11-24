@@ -34,10 +34,18 @@ class DataController {
   virtual void OnSdu(std::unique_ptr<packet::BasePacketBuilder> sdu) = 0;
 
   // PDUs -> SDU and enqueue to channel queue end
-  virtual void OnPdu(BasicFrameView pdu) = 0;
+  virtual void OnPdu(packet::PacketView<true> pdu) = 0;
 
   // Used by Scheduler to get next PDU
-  virtual std::unique_ptr<BasicFrameBuilder> GetNextPacket() = 0;
+  virtual std::unique_ptr<packet::BasePacketBuilder> GetNextPacket() = 0;
+
+  // Set FCS mode. This only applies to some modes (ERTM).
+  virtual void EnableFcs(bool enabled) = 0;
+
+  // Set retransmission and flow control. Ignore the mode option because each DataController only handles one mode.
+  // This only applies to some modes (ERTM).
+  virtual void SetRetransmissionAndFlowControlOptions(
+      const RetransmissionAndFlowControlConfigurationOption& option) = 0;
 };
 
 }  // namespace internal

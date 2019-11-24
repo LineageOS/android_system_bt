@@ -70,7 +70,7 @@ class GdDevice(GdDeviceBase):
         self.controller_read_only_property = facade_rootservice_pb2_grpc.ReadOnlyPropertyStub(self.grpc_channel)
         self.hci = hci_facade_pb2_grpc.AclManagerFacadeStub(self.grpc_channel)
         self.hci_classic_security = hci_facade_pb2_grpc.ClassicSecurityManagerFacadeStub(self.grpc_channel)
-        self.l2cap = l2cap_facade_pb2_grpc.L2capModuleFacadeStub(self.grpc_channel)
+        self.l2cap = l2cap_facade_pb2_grpc.L2capClassicModuleFacadeStub(self.grpc_channel)
 
         # Event streams
         self.hal.hci_event_stream = EventStream(self.hal.FetchHciEvent)

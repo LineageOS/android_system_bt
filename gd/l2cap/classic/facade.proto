@@ -5,7 +5,7 @@ package bluetooth.l2cap.classic;
 import "google/protobuf/empty.proto";
 import "facade/common.proto";
 
-service L2capModuleFacade {
+service L2capClassicModuleFacade {
   rpc RegisterChannel(RegisterChannelRequest) returns (google.protobuf.Empty) {
     // Testing Android Bluetooth stack only. Optional for other stack.
   }
@@ -30,9 +30,15 @@ message ConnectionCompleteEvent {
   facade.BluetoothAddress remote = 1;
 }
 
+enum RetransmissionFlowControlMode {
+  BASIC = 0;
+  ERTM = 3;
+}
+
 message OpenChannelRequest {
   facade.BluetoothAddress remote = 1;
   uint32 psm = 2;
+  RetransmissionFlowControlMode mode = 3;
 }
 
 message ConfigureChannelRequest {
@@ -78,6 +84,7 @@ message RegisterDynamicChannelRequest {
 message SetEnableDynamicChannelRequest {
   uint32 psm = 1;
   bool enable = 2;
+  RetransmissionFlowControlMode retransmission_mode = 3;
 }
 
 message DynamicChannelPacket {

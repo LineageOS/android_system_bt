@@ -13,33 +13,25 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #pragma once
 
-#include <cstdint>
-#include <memory>
-#include <vector>
+#include "l2cap/classic/l2cap_classic_module.h"
 
+#include <gmock/gmock.h>
+
+// Unit test interfaces
 namespace bluetooth {
-namespace packet {
+namespace l2cap {
+namespace classic {
+namespace testing {
 
-// Base class that holds a shared pointer to data with bounds.
-class View {
+class MockL2capClassicModule : public L2capClassicModule {
  public:
-  View(std::shared_ptr<const std::vector<uint8_t>> data, size_t begin, size_t end);
-  View(const View& view, size_t begin, size_t end);
-  View(const View& view) = default;
-  virtual ~View() = default;
-
-  uint8_t operator[](size_t i) const;
-
-  size_t size() const;
-
- private:
-  std::shared_ptr<const std::vector<uint8_t>> data_;
-  size_t begin_;
-  size_t end_;
+  MOCK_METHOD(std::unique_ptr<FixedChannelManager>, GetFixedChannelManager, (), (override));
+  MOCK_METHOD(std::unique_ptr<DynamicChannelManager>, GetDynamicChannelManager, (), (override));
 };
 
-}  // namespace packet
+}  // namespace testing
+}  // namespace classic
+}  // namespace l2cap
 }  // namespace bluetooth

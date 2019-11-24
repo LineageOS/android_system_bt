@@ -76,13 +76,16 @@ class DynamicChannelImpl : public l2cap::internal::ChannelImpl {
   virtual ConfigurationStatus GetIncomingConfigurationStatus() const;
   virtual void SetIncomingConfigurationStatus(ConfigurationStatus status);
 
-  virtual Mtu GetIncomingMtu() const;
+  /**
+   * Callback from the Scheduler to notify the Sender for this channel. On config update, channel might notify the
+   * configuration to Sender
+   */
+  void SetSender(l2cap::internal::Sender* sender) override;
+
   virtual void SetIncomingMtu(Mtu mtu);
 
-  virtual RetransmissionAndFlowControlModeOption GetChannelMode() const;
-  virtual void SetChannelMode(RetransmissionAndFlowControlModeOption mode);
+  virtual void SetRetransmissionFlowControlConfig(const RetransmissionAndFlowControlConfigurationOption& mode);
 
-  virtual FcsType GetFcsType() const;
   virtual void SetFcsType(FcsType fcs_type);
 
   // TODO(cmanton) Do something a little bit better than this
@@ -109,10 +112,7 @@ class DynamicChannelImpl : public l2cap::internal::ChannelImpl {
   ConfigurationStatus outgoing_configuration_status_ = ConfigurationStatus::NOT_CONFIGURED;
   ConfigurationStatus incoming_configuration_status_ = ConfigurationStatus::NOT_CONFIGURED;
 
-  Mtu incoming_mtu_ = kDefaultClassicMtu;
-  RetransmissionAndFlowControlModeOption mode_ = RetransmissionAndFlowControlModeOption::L2CAP_BASIC;
-  // TODO: Add all RetransmissionAndFlowControlConfigurationOptions
-  FcsType fcs_type_ = FcsType::DEFAULT;
+  l2cap::internal::Sender* sender_ = nullptr;
 
   DISALLOW_COPY_AND_ASSIGN(DynamicChannelImpl);
 };

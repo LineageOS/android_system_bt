@@ -20,6 +20,7 @@
 #include "hci/acl_manager.h"
 #include "hci/address.h"
 #include "l2cap/classic/dynamic_channel.h"
+#include "l2cap/classic/dynamic_channel_configuration_option.h"
 #include "l2cap/classic/dynamic_channel_service.h"
 #include "l2cap/l2cap_packets.h"
 #include "l2cap/psm.h"
@@ -89,11 +90,13 @@ class DynamicChannelManager {
    * @param on_open_callback: A callback to indicate success of a connection initiated from a remote device.
    * @param on_fail_callback: A callback to indicate connection failure along with a status code.
    * @param handler: The handler context in which to execute the @callback parameters.
+   * @param configuration_option: The configuration options for this channel
    *
    * Returns: true if connection was able to be initiated, false otherwise.
    */
-  bool ConnectChannel(hci::Address device, Psm psm, OnConnectionOpenCallback on_connection_open,
-                      OnConnectionFailureCallback on_fail_callback, os::Handler* handler);
+  bool ConnectChannel(hci::Address device, DynamicChannelConfigurationOption configuration_option, Psm psm,
+                      OnConnectionOpenCallback on_connection_open, OnConnectionFailureCallback on_fail_callback,
+                      os::Handler* handler);
 
   /**
    * Register a service to receive incoming connections bound to a specific channel.
@@ -114,9 +117,10 @@ class DynamicChannelManager {
    *        not SUCCESS, it means service is not registered due to reasons like PSM already take
    * @param on_open_callback: A callback to indicate success of a connection initiated from a remote device.
    * @param handler: The handler context in which to execute the @callback parameter.
+   * @param configuration_option: The configuration options for this channel
    */
-  bool RegisterService(Psm psm, const SecurityPolicy& security_policy,
-                       OnRegistrationCompleteCallback on_registration_complete,
+  bool RegisterService(Psm psm, DynamicChannelConfigurationOption configuration_option,
+                       const SecurityPolicy& security_policy, OnRegistrationCompleteCallback on_registration_complete,
                        OnConnectionOpenCallback on_connection_open, os::Handler* handler);
 
   friend class L2capClassicModule;

@@ -25,6 +25,8 @@
 #include "l2cap/cid.h"
 #include "l2cap/internal/channel_impl.h"
 #include "l2cap/internal/data_controller.h"
+#include "l2cap/l2cap_packets.h"
+#include "l2cap/mtu.h"
 #include "os/handler.h"
 #include "os/queue.h"
 #include "packet/base_packet_builder.h"
@@ -59,7 +61,9 @@ class Sender {
    */
   std::unique_ptr<UpperDequeue> GetNextPacket();
 
-  void SetChannelRetransmissionFlowControlMode(RetransmissionAndFlowControlModeOption mode);
+  void SetChannelRetransmissionFlowControlMode(const RetransmissionAndFlowControlConfigurationOption& option);
+  void SetFcsType(FcsType fcs_type);
+  void SetIncomingMtu(Mtu mtu);
 
   DataController* GetDataController();
 

@@ -20,6 +20,7 @@
 #include <unordered_map>
 
 #include "hci/acl_manager.h"
+#include "l2cap/classic/dynamic_channel_configuration_option.h"
 #include "l2cap/classic/internal/dynamic_channel_allocator.h"
 #include "l2cap/classic/internal/dynamic_channel_impl.h"
 #include "l2cap/classic/internal/dynamic_channel_service_manager_impl.h"
@@ -55,6 +56,7 @@ class Link {
     os::Handler* handler_;
     DynamicChannelManager::OnConnectionOpenCallback on_open_callback_;
     DynamicChannelManager::OnConnectionFailureCallback on_fail_callback_;
+    classic::DynamicChannelConfigurationOption configuration_;
   };
 
   // ACL methods
@@ -87,7 +89,7 @@ class Link {
   virtual std::shared_ptr<DynamicChannelImpl> AllocateReservedDynamicChannel(Cid reserved_cid, Psm psm, Cid remote_cid,
                                                                              SecurityPolicy security_policy);
 
-  virtual void SetChannelRetransmissionFlowControlMode(Cid cid, RetransmissionAndFlowControlModeOption mode);
+  virtual classic::DynamicChannelConfigurationOption GetConfigurationForInitialConfiguration(Cid cid);
 
   virtual void FreeDynamicChannel(Cid cid);
 
@@ -96,6 +98,18 @@ class Link {
 
   virtual void NotifyChannelCreation(Cid cid, std::unique_ptr<DynamicChannel> channel);
   virtual void NotifyChannelFail(Cid cid);
+
+  // Information received from signaling channel
+  virtual void SetRemoteConnectionlessMtu(Mtu mtu);
+  virtual Mtu GetRemoteConnectionlessMtu() const;
+  virtual void SetRemoteSupportsErtm(bool supported);
+  virtual bool GetRemoteSupportsErtm() const;
+  virtual void SetRemoteSupportsFcs(bool supported);
+  virtual bool GetRemoteSupportsFcs() const;
+
+  virtual std::string ToString() {
+    return GetDevice().ToString();
+  }
 
  private:
   os::Handler* l2cap_handler_;
@@ -110,6 +124,9 @@ class Link {
   ClassicSignallingManager signalling_manager_;
   std::unordered_map<Cid, PendingDynamicChannelConnection> local_cid_to_pending_dynamic_channel_connection_map_;
   os::Alarm link_idle_disconnect_alarm_{l2cap_handler_};
+  Mtu remote_mtu_ = kMinimumClassicMtu;
+  bool remote_supports_ertm_ = false;
+  bool remote_supports_fcs_ = false;
   DISALLOW_COPY_AND_ASSIGN(Link);
 };
 

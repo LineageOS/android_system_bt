@@ -48,7 +48,7 @@ void Receiver::link_queue_dequeue_callback() {
     LOG_WARN("Received a packet with invalid cid: %d", cid);
     return;
   }
-  data_controller->OnPdu(basic_frame_view);
+  data_controller->OnPdu(*packet);
 }
 
 }  // namespace internal

@@ -5,8 +5,10 @@ package bluetooth.l2cap.classic.cert;
 import "google/protobuf/empty.proto";
 import "facade/common.proto";
 
-service L2capModuleCert {
+service L2capClassicModuleCert {
   rpc SendL2capPacket(L2capPacket) returns (google.protobuf.Empty) {}
+  rpc SendIFrame(IFrame) returns (SendIFrameResult) {}
+  rpc SendSFrame(SFrame) returns (SendSFrameResult) {}
 
   rpc SetupLink(SetupLinkRequest) returns (SetupLinkResponse) {}
   rpc DisconnectLink(DisconnectLinkRequest) returns (google.protobuf.Empty) {}
@@ -24,6 +26,7 @@ service L2capModuleCert {
   rpc SendInformationResponse(InformationResponse) returns (SendInformationResponseResult) {}
 
   rpc FetchL2capLog(FetchL2capLogRequest) returns (stream FetchL2capLogResponse) {}
+  rpc StopFetchingL2capLog(StopFetchingL2capLogRequest) returns (StopFetchingL2capLogResponse) {}
 }
 
 message L2capPacket {
@@ -31,6 +34,30 @@ message L2capPacket {
   uint32 channel = 2;
   bytes payload = 3;
 }
+
+message IFrame {
+  facade.BluetoothAddress remote = 1;
+  uint32 channel = 2;
+  uint32 sar = 3;
+  uint32 tx_seq = 4;
+  uint32 req_seq = 5;
+  uint32 f = 6;
+  uint32 sdu_size = 7;
+  bytes information = 8;
+}
+
+message SendIFrameResult {}
+
+message SFrame {
+  facade.BluetoothAddress remote = 1;
+  uint32 channel = 2;
+  uint32 req_seq = 3;
+  uint32 f = 4;
+  uint32 p = 5;
+  uint32 s = 6;
+}
+
+message SendSFrameResult {}
 
 message DisconnectLinkRequest {
   facade.BluetoothAddress remote = 1;
@@ -58,10 +85,27 @@ message ConnectionResponse {
 
 message SendConnectionResponseResult {}
 
+enum ChannelRetransmissionFlowControlMode {
+  BASIC = 0;
+  ERTM = 3;
+  STREAM = 4;
+}
+
+message ChannelRetransmissionFlowControlConfig {
+  ChannelRetransmissionFlowControlMode mode = 1;
+  uint32 tx_window = 2;
+  uint32 max_transmit = 3;
+  uint32 retransmit_timeout = 4;
+  uint32 monitor_timeout = 5;
+  uint32 mps = 6;
+}
+
 message ConfigurationRequest {
   uint32 dcid = 1;
   uint32 signal_id = 2;
-  repeated string configuration = 3;
+  uint32 mtu = 3;
+  ChannelRetransmissionFlowControlConfig retransmission_config = 4;
+  bool fcs = 5;
 }
 
 message SendConfigurationRequestResult {}
@@ -69,7 +113,9 @@ message SendConfigurationRequestResult {}
 message ConfigurationResponse {
   uint32 scid = 1;
   uint32 signal_id = 2;
-  repeated string configuration = 3;
+  uint32 mtu = 3;
+  ChannelRetransmissionFlowControlConfig retransmission_config = 4;
+  bool fcs = 5;
 }
 
 message SendConfigurationResponseResult {}
@@ -107,6 +153,7 @@ message InformationResponse {
   InformationRequestType type = 1;
   uint32 data = 2;
   uint32 signal_id = 3;
+  uint32 information_value = 4;
 }
 
 message SendInformationResponseResult {}
@@ -153,3 +200,7 @@ message FetchL2capLogResponse {
     LinkDown link_down = 21;
   }
 }
+
+message StopFetchingL2capLogRequest {}
+
+message StopFetchingL2capLogResponse {}

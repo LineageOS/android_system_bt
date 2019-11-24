@@ -67,8 +67,6 @@ class L2capSegmenterTest : public ::testing::Test {
     queue_handler_ = new os::Handler(thread_);
     mock_channel_ = std::make_shared<testing::MockChannelImpl>();
     EXPECT_CALL(*mock_channel_, GetQueueDownEnd()).WillRepeatedly(Return(channel_queue_.GetDownEnd()));
-    EXPECT_CALL(*mock_channel_, GetChannelMode())
-        .WillRepeatedly(Return(RetransmissionAndFlowControlModeOption::L2CAP_BASIC));
     EXPECT_CALL(*mock_channel_, GetCid()).WillRepeatedly(Return(0x41));
     EXPECT_CALL(*mock_channel_, GetRemoteCid()).WillRepeatedly(Return(0x41));
     sender_ = new Sender(queue_handler_, &scheduler_, mock_channel_);

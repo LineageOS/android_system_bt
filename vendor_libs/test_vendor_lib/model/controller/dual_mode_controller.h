@@ -286,7 +286,7 @@ class DualModeController : public Device {
   void HciWriteLeHostSupport(packets::PacketView<true> args);
 
   // 7.3.92
-  void HciWriteSecureConnectionHostSupport(packets::PacketView<true> args);
+  void HciWriteSecureConnectionsHostSupport(packets::PacketView<true> args);
 
   // Informational Parameters Commands
   // Bluetooth Core Specification Version 4.2 Volume 2 Part E 7.4
@@ -432,24 +432,11 @@ class DualModeController : public Device {
   // Creates a command complete event and sends it back to the HCI.
   void SendCommandComplete(hci::OpCode command_opcode, const std::vector<uint8_t>& return_parameters) const;
 
-  // Sends a command complete event with no return parameters.
-  void SendCommandCompleteSuccess(bluetooth::hci::OpCode command_opcode) const;
-
   void SendCommandCompleteUnknownOpCodeEvent(uint16_t command_opcode) const;
 
-  // Sends a command complete event with no return parameters.
-  void SendCommandCompleteOnlyStatus(bluetooth::hci::OpCode command_opcode,
-                                     bluetooth::hci::ErrorCode status) const;
-
-  // Creates a command status event and sends it back to the HCI.
-  void SendCommandStatus(bluetooth::hci::ErrorCode status,
-                         bluetooth::hci::OpCode command_opcode) const;
-
-  // Sends a command status event with default event parameters.
-  void SendCommandStatusSuccess(bluetooth::hci::OpCode command_opcode) const;
-
   // Callbacks to send packets back to the HCI.
-  std::function<void(std::shared_ptr<std::vector<uint8_t>>)> send_acl_;
+  std::function<void(std::shared_ptr<bluetooth::hci::AclPacketBuilder>)>
+      send_acl_;
   std::function<void(std::shared_ptr<bluetooth::hci::EventPacketBuilder>)>
       send_event_;
   std::function<void(std::shared_ptr<std::vector<uint8_t>>)> send_sco_;
