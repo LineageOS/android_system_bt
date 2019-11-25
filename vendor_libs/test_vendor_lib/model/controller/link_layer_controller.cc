@@ -16,14 +16,12 @@
 
 #include "link_layer_controller.h"
 
-#include "hci.h"
 #include "include/le_advertisement.h"
 #include "os/log.h"
 #include "packet/raw_builder.h"
 
 using std::vector;
 using namespace std::chrono;
-using namespace test_vendor_lib::packets;
 
 namespace test_vendor_lib {
 
@@ -111,11 +109,11 @@ bluetooth::hci::ErrorCode LinkLayerController::SendCommandToRemoteByHandle(
                                       connections_.GetAddress(handle));
 }
 
-hci::Status LinkLayerController::SendAclToRemote(
+bluetooth::hci::ErrorCode LinkLayerController::SendAclToRemote(
     bluetooth::hci::AclPacketView acl_packet) {
   uint16_t handle = acl_packet.GetHandle();
   if (!connections_.HasHandle(handle)) {
-    return hci::Status::UNKNOWN_CONNECTION;
+    return bluetooth::hci::ErrorCode::UNKNOWN_CONNECTION;
   }
 
   Address my_address = properties_.GetAddress();
@@ -156,7 +154,7 @@ hci::Status LinkLayerController::SendAclToRemote(
       my_address, destination, std::move(raw_builder_ptr));
 
   SendLinkLayerPacket(std::move(acl));
-  return hci::Status::SUCCESS;
+  return bluetooth::hci::ErrorCode::SUCCESS;
 }
 
 void LinkLayerController::IncomingPacket(
@@ -797,10 +795,13 @@ void LinkLayerController::IncomingLeConnectPacket(
              incoming.GetSourceAddress().ToString().c_str(), connect.GetAddressType());
     return;
   }
-  HandleLeConnection(incoming.GetSourceAddress(), static_cast<uint8_t>(connect.GetAddressType()),
-                     static_cast<uint8_t>(properties_.GetLeAdvertisingOwnAddressType()),
-                     static_cast<uint8_t>(hci::Role::SLAVE), connection_interval, connect.GetLeConnectionLatency(),
-                     connect.GetLeConnectionSupervisionTimeout());
+  HandleLeConnection(
+      incoming.GetSourceAddress(),
+      static_cast<uint8_t>(connect.GetAddressType()),
+      static_cast<uint8_t>(properties_.GetLeAdvertisingOwnAddressType()),
+      static_cast<uint8_t>(bluetooth::hci::Role::SLAVE), connection_interval,
+      connect.GetLeConnectionLatency(),
+      connect.GetLeConnectionSupervisionTimeout());
 
   auto to_send = model::packets::LeConnectCompleteBuilder::Create(
       incoming.GetDestinationAddress(), incoming.GetSourceAddress(),
@@ -814,9 +815,12 @@ void LinkLayerController::IncomingLeConnectCompletePacket(
     model::packets::LinkLayerPacketView incoming) {
   auto complete = model::packets::LeConnectCompleteView::Create(incoming);
   ASSERT(complete.IsValid());
-  HandleLeConnection(incoming.GetSourceAddress(), static_cast<uint8_t>(complete.GetAddressType()),
-                     static_cast<uint8_t>(le_address_type_), static_cast<uint8_t>(hci::Role::MASTER),
-                     complete.GetLeConnectionInterval(), complete.GetLeConnectionLatency(),
+  HandleLeConnection(incoming.GetSourceAddress(),
+                     static_cast<uint8_t>(complete.GetAddressType()),
+                     static_cast<uint8_t>(le_address_type_),
+                     static_cast<uint8_t>(bluetooth::hci::Role::MASTER),
+                     complete.GetLeConnectionInterval(),
+                     complete.GetLeConnectionLatency(),
                      complete.GetLeConnectionSupervisionTimeout());
 }
 
@@ -1124,7 +1128,7 @@ bluetooth::hci::ErrorCode LinkLayerController::IoCapabilityRequestReply(
 }
 
 bluetooth::hci::ErrorCode LinkLayerController::IoCapabilityRequestNegativeReply(
-    const Address& peer, hci::Status reason) {
+    const Address& peer, bluetooth::hci::ErrorCode reason) {
   if (security_manager_.GetAuthenticationAddress() != peer) {
     return bluetooth::hci::ErrorCode::AUTHENTICATION_FAILURE;
   }
@@ -1373,7 +1377,10 @@ bluetooth::hci::ErrorCode LinkLayerController::Disconnect(uint16_t handle,
   ASSERT_LOG(connections_.Disconnect(handle), "Disconnecting %hx", handle);
 
   ScheduleTask(milliseconds(20), [this, handle]() {
-    DisconnectCleanup(handle, static_cast<uint8_t>(hci::Status::CONNECTION_TERMINATED_BY_LOCAL_HOST));
+    DisconnectCleanup(
+        handle,
+        static_cast<uint8_t>(
+            bluetooth::hci::ErrorCode::CONNECTION_TERMINATED_BY_LOCAL_HOST));
   });
 
   return bluetooth::hci::ErrorCode::SUCCESS;

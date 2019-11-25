@@ -25,11 +25,8 @@
 #include "os/log.h"
 #include "packet/raw_builder.h"
 
-#include "hci.h"
-
+using bluetooth::hci::OpCode;
 using std::vector;
-using test_vendor_lib::hci::EventCode;
-using test_vendor_lib::hci::OpCode;
 
 namespace {
 
@@ -89,7 +86,7 @@ void DualModeController::SendCommandCompleteUnknownOpCodeEvent(uint16_t command_
 
 DualModeController::DualModeController(const std::string& properties_filename, uint16_t num_keys)
     : Device(properties_filename), security_manager_(num_keys) {
-  loopback_mode_ = hci::LoopbackMode::NO;
+  loopback_mode_ = bluetooth::hci::LoopbackMode::NO_LOOPBACK;
 
   Address public_address;
   ASSERT(Address::FromString("3C:5A:B4:04:05:06", public_address));
@@ -236,7 +233,7 @@ void DualModeController::HandleAcl(std::shared_ptr<std::vector<uint8_t>> packet)
   bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian> raw_packet(packet);
   auto acl_packet = bluetooth::hci::AclPacketView::Create(raw_packet);
   ASSERT(acl_packet.IsValid());
-  if (loopback_mode_ == hci::LoopbackMode::LOCAL) {
+  if (loopback_mode_ == bluetooth::hci::LoopbackMode::ENABLE_LOCAL) {
     uint16_t handle = acl_packet.GetHandle();
 
     std::vector<bluetooth::hci::CompletedPackets> completed_packets;
@@ -256,7 +253,7 @@ void DualModeController::HandleAcl(std::shared_ptr<std::vector<uint8_t>> packet)
 void DualModeController::HandleSco(std::shared_ptr<std::vector<uint8_t>> packet) {
   bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian> raw_packet(packet);
   auto sco_packet = bluetooth::hci::ScoPacketView::Create(raw_packet);
-  if (loopback_mode_ == hci::LoopbackMode::LOCAL) {
+  if (loopback_mode_ == bluetooth::hci::LoopbackMode::ENABLE_LOCAL) {
     uint16_t handle = sco_packet.GetHandle();
     send_sco_(packet);
     std::vector<bluetooth::hci::CompletedPackets> completed_packets;
@@ -283,7 +280,7 @@ void DualModeController::HandleCommand(std::shared_ptr<std::vector<uint8_t>> pac
   auto op = command_packet.GetOpCode();
   uint16_t opcode = static_cast<uint16_t>(op);
 
-  if (loopback_mode_ == hci::LoopbackMode::LOCAL &&
+  if (loopback_mode_ == bluetooth::hci::LoopbackMode::ENABLE_LOCAL &&
       // Loopback exceptions.
       op != bluetooth::hci::OpCode::RESET &&
       op != bluetooth::hci::OpCode::SET_CONTROLLER_TO_HOST_FLOW_CONTROL &&
@@ -349,8 +346,8 @@ void DualModeController::RegisterIsoChannel(
 void DualModeController::HciReset(bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
   link_layer_controller_.Reset();
-  if (loopback_mode_ == hci::LoopbackMode::LOCAL) {
-    loopback_mode_ = hci::LoopbackMode::NO;
+  if (loopback_mode_ == bluetooth::hci::LoopbackMode::ENABLE_LOCAL) {
+    loopback_mode_ = bluetooth::hci::LoopbackMode::NO_LOOPBACK;
   }
 
   send_event_(bluetooth::hci::ResetCompleteBuilder::Create(
@@ -662,7 +659,8 @@ void DualModeController::HciIoCapabilityRequestNegativeReply(
 
   auto args_itr = args.begin();
   Address peer = args_itr.extract<Address>();
-  hci::Status reason = args_itr.extract<hci::Status>();
+  bluetooth::hci::ErrorCode reason =
+      args_itr.extract<bluetooth::hci::ErrorCode>();
 
   auto status =
       link_layer_controller_.IoCapabilityRequestNegativeReply(peer, reason);
@@ -1675,7 +1673,7 @@ void DualModeController::HciReadLoopbackMode(
 void DualModeController::HciWriteLoopbackMode(
     bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 1, "%s size=%zu", __func__, args.size());
-  loopback_mode_ = static_cast<hci::LoopbackMode>(args[0]);
+  loopback_mode_ = static_cast<bluetooth::hci::LoopbackMode>(args[0]);
   // ACL channel
   uint16_t acl_handle = 0x123;
   auto packet_acl = bluetooth::hci::ConnectionCompleteBuilder::Create(
