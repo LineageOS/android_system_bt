@@ -21,6 +21,7 @@
 #include "l2cap/cid.h"
 #include "l2cap/classic/dynamic_channel.h"
 #include "l2cap/internal/channel_impl.h"
+#include "l2cap/internal/ilink.h"
 #include "l2cap/l2cap_packets.h"
 #include "l2cap/mtu.h"
 #include "l2cap/psm.h"
@@ -29,20 +30,18 @@
 
 namespace bluetooth {
 namespace l2cap {
-namespace classic {
 namespace internal {
-
-class Link;
 
 class DynamicChannelImpl : public l2cap::internal::ChannelImpl {
  public:
-  DynamicChannelImpl(Psm psm, Cid cid, Cid remote_cid, Link* link, os::Handler* l2cap_handler);
+  DynamicChannelImpl(Psm psm, Cid cid, Cid remote_cid, l2cap::internal::ILink* link, os::Handler* l2cap_handler);
 
   virtual ~DynamicChannelImpl() = default;
 
   hci::Address GetDevice() const;
 
-  virtual void RegisterOnCloseCallback(os::Handler* user_handler, DynamicChannel::OnCloseCallback on_close_callback);
+  virtual void RegisterOnCloseCallback(os::Handler* user_handler,
+                                       classic::DynamicChannel::OnCloseCallback on_close_callback);
 
   virtual void Close();
   virtual void OnClosed(hci::ErrorCode status);
@@ -75,13 +74,13 @@ class DynamicChannelImpl : public l2cap::internal::ChannelImpl {
   const Psm psm_;
   const Cid cid_;
   const Cid remote_cid_;
-  Link* link_;
+  l2cap::internal::ILink* link_;
   os::Handler* l2cap_handler_;
-  const hci::Address device_;
+  const hci::AddressWithType device_;
 
   // User supported states
   os::Handler* user_handler_ = nullptr;
-  DynamicChannel::OnCloseCallback on_close_callback_{};
+  classic::DynamicChannel::OnCloseCallback on_close_callback_{};
 
   // Internal states
   bool closed_ = false;
@@ -94,6 +93,5 @@ class DynamicChannelImpl : public l2cap::internal::ChannelImpl {
 };
 
 }  // namespace internal
-}  // namespace classic
 }  // namespace l2cap
 }  // namespace bluetooth

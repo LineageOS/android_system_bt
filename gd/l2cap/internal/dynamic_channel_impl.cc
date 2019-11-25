@@ -17,8 +17,8 @@
 #include <unordered_map>
 
 #include "l2cap/cid.h"
-#include "l2cap/classic/internal/dynamic_channel_impl.h"
 #include "l2cap/classic/internal/link.h"
+#include "l2cap/internal/dynamic_channel_impl.h"
 #include "l2cap/internal/sender.h"
 #include "l2cap/psm.h"
 #include "l2cap/security_policy.h"
@@ -27,10 +27,10 @@
 
 namespace bluetooth {
 namespace l2cap {
-namespace classic {
 namespace internal {
 
-DynamicChannelImpl::DynamicChannelImpl(Psm psm, Cid cid, Cid remote_cid, Link* link, os::Handler* l2cap_handler)
+DynamicChannelImpl::DynamicChannelImpl(Psm psm, Cid cid, Cid remote_cid, l2cap::internal::ILink* link,
+                                       os::Handler* l2cap_handler)
     : psm_(psm), cid_(cid), remote_cid_(remote_cid), link_(link), l2cap_handler_(l2cap_handler),
       device_(link->GetDevice()) {
   ASSERT(IsPsmValid(psm_));
@@ -41,11 +41,11 @@ DynamicChannelImpl::DynamicChannelImpl(Psm psm, Cid cid, Cid remote_cid, Link* l
 }
 
 hci::Address DynamicChannelImpl::GetDevice() const {
-  return device_;
+  return device_.GetAddress();
 }
 
 void DynamicChannelImpl::RegisterOnCloseCallback(os::Handler* user_handler,
-                                                 DynamicChannel::OnCloseCallback on_close_callback) {
+                                                 classic::DynamicChannel::OnCloseCallback on_close_callback) {
   ASSERT_LOG(user_handler_ == nullptr, "OnCloseCallback can only be registered once");
   // If channel is already closed, call the callback immediately without saving it
   if (closed_) {
@@ -83,6 +83,5 @@ std::string DynamicChannelImpl::ToString() {
 }
 
 }  // namespace internal
-}  // namespace classic
 }  // namespace l2cap
 }  // namespace bluetooth

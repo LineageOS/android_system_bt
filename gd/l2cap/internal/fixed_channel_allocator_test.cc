@@ -31,7 +31,7 @@ using l2cap::classic::internal::testing::MockLink;
 using testing::MockParameterProvider;
 using ::testing::Return;
 
-const hci::Address device{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
+const hci::AddressWithType device{{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}, hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
 
 class L2capFixedChannelAllocatorTest : public ::testing::Test {
  protected:

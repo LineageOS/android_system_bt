@@ -24,11 +24,12 @@
 
 namespace bluetooth {
 namespace l2cap {
-namespace classic {
 
 namespace internal {
 class DynamicChannelImpl;
 }  // namespace internal
+
+namespace classic {
 
 /**
  * L2CAP Dynamic channel object. User needs to call Close() when user no longer wants to use it. Otherwise the link
@@ -37,7 +38,7 @@ class DynamicChannelImpl;
 class DynamicChannel {
  public:
   // Should only be constructed by modules that have access to LinkManager
-  DynamicChannel(std::shared_ptr<internal::DynamicChannelImpl> impl, os::Handler* l2cap_handler)
+  DynamicChannel(std::shared_ptr<l2cap::internal::DynamicChannelImpl> impl, os::Handler* l2cap_handler)
       : impl_(std::move(impl)), l2cap_handler_(l2cap_handler) {
     ASSERT(impl_ != nullptr);
     ASSERT(l2cap_handler_ != nullptr);
@@ -72,7 +73,7 @@ class DynamicChannel {
   common::BidiQueueEnd<packet::BasePacketBuilder, packet::PacketView<packet::kLittleEndian>>* GetQueueUpEnd() const;
 
  private:
-  std::shared_ptr<internal::DynamicChannelImpl> impl_;
+  std::shared_ptr<l2cap::internal::DynamicChannelImpl> impl_;
   os::Handler* l2cap_handler_;
 };
 
