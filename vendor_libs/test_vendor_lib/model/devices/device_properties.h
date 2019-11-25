@@ -321,7 +321,7 @@ class DeviceProperties {
   Address address_;
   uint8_t page_scan_repetition_mode_;
   uint16_t clock_offset_;
-  uint8_t encryption_key_size_;
+  uint8_t encryption_key_size_{10};
 
   // Low Energy
   uint16_t le_data_packet_length_;
