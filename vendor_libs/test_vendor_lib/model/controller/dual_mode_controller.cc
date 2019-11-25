@@ -26,8 +26,6 @@
 #include "packet/raw_builder.h"
 
 #include "hci.h"
-#include "packets/hci/command_packet_view.h"
-#include "packets/packet_view.h"
 
 using std::vector;
 using test_vendor_lib::hci::EventCode;
@@ -35,7 +33,7 @@ using test_vendor_lib::hci::OpCode;
 
 namespace {
 
-size_t LastNonZero(test_vendor_lib::packets::PacketView<true> view) {
+size_t LastNonZero(bluetooth::packet::PacketView<true> view) {
   for (size_t i = view.size() - 1; i > 0; i--) {
     if (view[i] != 0) {
       return i;
@@ -103,8 +101,9 @@ DualModeController::DualModeController(const std::string& properties_filename, u
         DualModeController::SendLinkLayerPacket(packet, phy_type);
       });
 
-#define SET_HANDLER(opcode, method) \
-  active_hci_commands_[static_cast<uint16_t>(opcode)] = [this](packets::PacketView<true> param) { method(param); };
+#define SET_HANDLER(opcode, method)                     \
+  active_hci_commands_[static_cast<uint16_t>(opcode)] = \
+      [this](bluetooth::packet::PacketView<true> param) { method(param); };
   SET_HANDLER(OpCode::RESET, HciReset);
   SET_HANDLER(OpCode::READ_BUFFER_SIZE, HciReadBufferSize);
   SET_HANDLER(OpCode::HOST_BUFFER_SIZE, HciHostBufferSize);
@@ -207,7 +206,8 @@ DualModeController::DualModeController(const std::string& properties_filename, u
 #undef SET_HANDLER
 }
 
-void DualModeController::HciSniffSubrating(packets::PacketView<true> args) {
+void DualModeController::HciSniffSubrating(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 8, "%s size=%zu", __func__, args.size());
 
   uint16_t handle = args.begin().extract<uint16_t>();
@@ -277,15 +277,21 @@ void DualModeController::HandleIso(
 }
 
 void DualModeController::HandleCommand(std::shared_ptr<std::vector<uint8_t>> packet) {
-  auto command_packet = packets::CommandPacketView::Create(packet);
-  uint16_t opcode = command_packet.GetOpcode();
-  hci::OpCode op = static_cast<hci::OpCode>(opcode);
+  bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian> raw_packet(packet);
+  auto command_packet = bluetooth::hci::CommandPacketView::Create(raw_packet);
+  ASSERT(command_packet.IsValid());
+  auto op = command_packet.GetOpCode();
+  uint16_t opcode = static_cast<uint16_t>(op);
 
   if (loopback_mode_ == hci::LoopbackMode::LOCAL &&
       // Loopback exceptions.
-      op != OpCode::RESET && op != OpCode::SET_CONTROLLER_TO_HOST_FLOW_CONTROL && op != OpCode::HOST_BUFFER_SIZE &&
-      op != OpCode::HOST_NUM_COMPLETED_PACKETS && op != OpCode::READ_BUFFER_SIZE && op != OpCode::READ_LOOPBACK_MODE &&
-      op != OpCode::WRITE_LOOPBACK_MODE) {
+      op != bluetooth::hci::OpCode::RESET &&
+      op != bluetooth::hci::OpCode::SET_CONTROLLER_TO_HOST_FLOW_CONTROL &&
+      op != bluetooth::hci::OpCode::HOST_BUFFER_SIZE &&
+      op != bluetooth::hci::OpCode::HOST_NUM_COMPLETED_PACKETS &&
+      op != bluetooth::hci::OpCode::READ_BUFFER_SIZE &&
+      op != bluetooth::hci::OpCode::READ_LOOPBACK_MODE &&
+      op != bluetooth::hci::OpCode::WRITE_LOOPBACK_MODE) {
     std::unique_ptr<bluetooth::packet::RawBuilder> raw_builder_ptr =
         std::make_unique<bluetooth::packet::RawBuilder>();
     raw_builder_ptr->AddOctets(*packet);
@@ -340,7 +346,7 @@ void DualModeController::RegisterIsoChannel(
   send_iso_ = callback;
 }
 
-void DualModeController::HciReset(packets::PacketView<true> args) {
+void DualModeController::HciReset(bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
   link_layer_controller_.Reset();
   if (loopback_mode_ == hci::LoopbackMode::LOCAL) {
@@ -351,7 +357,8 @@ void DualModeController::HciReset(packets::PacketView<true> args) {
       kNumCommandPackets, bluetooth::hci::ErrorCode::SUCCESS));
 }
 
-void DualModeController::HciReadBufferSize(packets::PacketView<true> args) {
+void DualModeController::HciReadBufferSize(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
 
   auto packet = bluetooth::hci::ReadBufferSizeCompleteBuilder::Create(
@@ -364,7 +371,7 @@ void DualModeController::HciReadBufferSize(packets::PacketView<true> args) {
 }
 
 void DualModeController::HciReadEncryptionKeySize(
-    packets::PacketView<true> args) {
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 2, "%s  size=%zu", __func__, args.size());
 
   uint16_t handle = args.begin().extract<uint16_t>();
@@ -375,14 +382,16 @@ void DualModeController::HciReadEncryptionKeySize(
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciHostBufferSize(packets::PacketView<true> args) {
+void DualModeController::HciHostBufferSize(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 7, "%s  size=%zu", __func__, args.size());
   auto packet = bluetooth::hci::HostBufferSizeCompleteBuilder::Create(
       kNumCommandPackets, bluetooth::hci::ErrorCode::SUCCESS);
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciReadLocalVersionInformation(packets::PacketView<true> args) {
+void DualModeController::HciReadLocalVersionInformation(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
 
   bluetooth::hci::LocalVersionInformation local_version_information;
@@ -401,7 +410,8 @@ void DualModeController::HciReadLocalVersionInformation(packets::PacketView<true
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciReadRemoteVersionInformation(packets::PacketView<true> args) {
+void DualModeController::HciReadRemoteVersionInformation(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 2, "%s  size=%zu", __func__, args.size());
 
   uint16_t handle = args.begin().extract<uint16_t>();
@@ -415,7 +425,8 @@ void DualModeController::HciReadRemoteVersionInformation(packets::PacketView<tru
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciReadBdAddr(packets::PacketView<true> args) {
+void DualModeController::HciReadBdAddr(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
   auto packet = bluetooth::hci::ReadBdAddrCompleteBuilder::Create(
       kNumCommandPackets, bluetooth::hci::ErrorCode::SUCCESS,
@@ -423,7 +434,8 @@ void DualModeController::HciReadBdAddr(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciReadLocalSupportedCommands(packets::PacketView<true> args) {
+void DualModeController::HciReadLocalSupportedCommands(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
 
   std::array<uint8_t, 64> supported_commands;
@@ -442,7 +454,8 @@ void DualModeController::HciReadLocalSupportedCommands(packets::PacketView<true>
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciReadLocalSupportedFeatures(packets::PacketView<true> args) {
+void DualModeController::HciReadLocalSupportedFeatures(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
   auto packet =
       bluetooth::hci::ReadLocalSupportedFeaturesCompleteBuilder::Create(
@@ -451,7 +464,8 @@ void DualModeController::HciReadLocalSupportedFeatures(packets::PacketView<true>
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciReadLocalSupportedCodecs(packets::PacketView<true> args) {
+void DualModeController::HciReadLocalSupportedCodecs(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
   auto packet = bluetooth::hci::ReadLocalSupportedCodecsCompleteBuilder::Create(
       kNumCommandPackets, bluetooth::hci::ErrorCode::SUCCESS,
@@ -459,7 +473,8 @@ void DualModeController::HciReadLocalSupportedCodecs(packets::PacketView<true> a
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciReadLocalExtendedFeatures(packets::PacketView<true> args) {
+void DualModeController::HciReadLocalExtendedFeatures(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 1, "%s  size=%zu", __func__, args.size());
   uint8_t page_number = args.begin().extract<uint8_t>();
 
@@ -471,7 +486,8 @@ void DualModeController::HciReadLocalExtendedFeatures(packets::PacketView<true> 
   send_event_(std::move(pakcet));
 }
 
-void DualModeController::HciReadRemoteExtendedFeatures(packets::PacketView<true> args) {
+void DualModeController::HciReadRemoteExtendedFeatures(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 3, "%s  size=%zu", __func__, args.size());
 
   uint16_t handle = args.begin().extract<uint16_t>();
@@ -484,7 +500,8 @@ void DualModeController::HciReadRemoteExtendedFeatures(packets::PacketView<true>
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciSwitchRole(packets::PacketView<true> args) {
+void DualModeController::HciSwitchRole(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 7, "%s  size=%zu", __func__, args.size());
 
   Address address = args.begin().extract<Address>();
@@ -497,7 +514,8 @@ void DualModeController::HciSwitchRole(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciReadRemoteSupportedFeatures(packets::PacketView<true> args) {
+void DualModeController::HciReadRemoteSupportedFeatures(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 2, "%s  size=%zu", __func__, args.size());
 
   uint16_t handle = args.begin().extract<uint16_t>();
@@ -511,7 +529,8 @@ void DualModeController::HciReadRemoteSupportedFeatures(packets::PacketView<true
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciReadClockOffset(packets::PacketView<true> args) {
+void DualModeController::HciReadClockOffset(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 2, "%s  size=%zu", __func__, args.size());
 
   uint16_t handle = args.begin().extract<uint16_t>();
@@ -524,7 +543,8 @@ void DualModeController::HciReadClockOffset(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciIoCapabilityRequestReply(packets::PacketView<true> args) {
+void DualModeController::HciIoCapabilityRequestReply(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 9, "%s  size=%zu", __func__, args.size());
 
   auto args_itr = args.begin();
@@ -541,7 +561,8 @@ void DualModeController::HciIoCapabilityRequestReply(packets::PacketView<true> a
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciUserConfirmationRequestReply(packets::PacketView<true> args) {
+void DualModeController::HciUserConfirmationRequestReply(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 6, "%s  size=%zu", __func__, args.size());
 
   Address peer = args.begin().extract<Address>();
@@ -554,7 +575,8 @@ void DualModeController::HciUserConfirmationRequestReply(packets::PacketView<tru
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciUserConfirmationRequestNegativeReply(packets::PacketView<true> args) {
+void DualModeController::HciUserConfirmationRequestNegativeReply(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 6, "%s  size=%zu", __func__, args.size());
 
   Address peer = args.begin().extract<Address>();
@@ -568,7 +590,8 @@ void DualModeController::HciUserConfirmationRequestNegativeReply(packets::Packet
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciUserPasskeyRequestReply(packets::PacketView<true> args) {
+void DualModeController::HciUserPasskeyRequestReply(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 10, "%s  size=%zu", __func__, args.size());
 
   auto args_itr = args.begin();
@@ -583,7 +606,8 @@ void DualModeController::HciUserPasskeyRequestReply(packets::PacketView<true> ar
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciUserPasskeyRequestNegativeReply(packets::PacketView<true> args) {
+void DualModeController::HciUserPasskeyRequestNegativeReply(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 6, "%s  size=%zu", __func__, args.size());
 
   Address peer = args.begin().extract<Address>();
@@ -596,7 +620,8 @@ void DualModeController::HciUserPasskeyRequestNegativeReply(packets::PacketView<
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciRemoteOobDataRequestReply(packets::PacketView<true> args) {
+void DualModeController::HciRemoteOobDataRequestReply(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 38, "%s  size=%zu", __func__, args.size());
 
   auto args_itr = args.begin();
@@ -617,7 +642,8 @@ void DualModeController::HciRemoteOobDataRequestReply(packets::PacketView<true> 
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciRemoteOobDataRequestNegativeReply(packets::PacketView<true> args) {
+void DualModeController::HciRemoteOobDataRequestNegativeReply(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 6, "%s  size=%zu", __func__, args.size());
 
   Address peer = args.begin().extract<Address>();
@@ -630,7 +656,8 @@ void DualModeController::HciRemoteOobDataRequestNegativeReply(packets::PacketVie
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciIoCapabilityRequestNegativeReply(packets::PacketView<true> args) {
+void DualModeController::HciIoCapabilityRequestNegativeReply(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 7, "%s  size=%zu", __func__, args.size());
 
   auto args_itr = args.begin();
@@ -646,7 +673,8 @@ void DualModeController::HciIoCapabilityRequestNegativeReply(packets::PacketView
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciWriteSimplePairingMode(packets::PacketView<true> args) {
+void DualModeController::HciWriteSimplePairingMode(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 1, "%s  size=%zu", __func__, args.size());
   ASSERT(args[0] == 1 || args[0] == 0);
   link_layer_controller_.WriteSimplePairingMode(args[0] == 1);
@@ -655,7 +683,8 @@ void DualModeController::HciWriteSimplePairingMode(packets::PacketView<true> arg
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciChangeConnectionPacketType(packets::PacketView<true> args) {
+void DualModeController::HciChangeConnectionPacketType(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 4, "%s  size=%zu", __func__, args.size());
   auto args_itr = args.begin();
   uint16_t handle = args_itr.extract<uint16_t>();
@@ -669,7 +698,8 @@ void DualModeController::HciChangeConnectionPacketType(packets::PacketView<true>
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciWriteLeHostSupport(packets::PacketView<true> args) {
+void DualModeController::HciWriteLeHostSupport(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 2, "%s  size=%zu", __func__, args.size());
   auto packet = bluetooth::hci::WriteLeHostSupportCompleteBuilder::Create(
       kNumCommandPackets, bluetooth::hci::ErrorCode::SUCCESS);
@@ -677,7 +707,7 @@ void DualModeController::HciWriteLeHostSupport(packets::PacketView<true> args) {
 }
 
 void DualModeController::HciWriteSecureConnectionsHostSupport(
-    packets::PacketView<true> args) {
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 1, "%s  size=%zu", __func__, args.size());
   properties_.SetExtendedFeatures(properties_.GetExtendedFeatures(1) | 0x8, 1);
   auto packet =
@@ -686,14 +716,16 @@ void DualModeController::HciWriteSecureConnectionsHostSupport(
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciSetEventMask(packets::PacketView<true> args) {
+void DualModeController::HciSetEventMask(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 8, "%s  size=%zu", __func__, args.size());
   auto packet = bluetooth::hci::SetEventMaskCompleteBuilder::Create(
       kNumCommandPackets, bluetooth::hci::ErrorCode::SUCCESS);
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciWriteInquiryMode(packets::PacketView<true> args) {
+void DualModeController::HciWriteInquiryMode(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 1, "%s  size=%zu", __func__, args.size());
   link_layer_controller_.SetInquiryMode(args[0]);
   auto packet = bluetooth::hci::WriteInquiryModeCompleteBuilder::Create(
@@ -701,21 +733,24 @@ void DualModeController::HciWriteInquiryMode(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciWritePageScanType(packets::PacketView<true> args) {
+void DualModeController::HciWritePageScanType(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 1, "%s  size=%zu", __func__, args.size());
   auto packet = bluetooth::hci::WritePageScanTypeCompleteBuilder::Create(
       kNumCommandPackets, bluetooth::hci::ErrorCode::SUCCESS);
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciWriteInquiryScanType(packets::PacketView<true> args) {
+void DualModeController::HciWriteInquiryScanType(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 1, "%s  size=%zu", __func__, args.size());
   auto packet = bluetooth::hci::WriteInquiryScanTypeCompleteBuilder::Create(
       kNumCommandPackets, bluetooth::hci::ErrorCode::SUCCESS);
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciAuthenticationRequested(packets::PacketView<true> args) {
+void DualModeController::HciAuthenticationRequested(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 2, "%s  size=%zu", __func__, args.size());
   uint16_t handle = args.begin().extract<uint16_t>();
   auto status = link_layer_controller_.AuthenticationRequested(handle);
@@ -725,7 +760,8 @@ void DualModeController::HciAuthenticationRequested(packets::PacketView<true> ar
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciSetConnectionEncryption(packets::PacketView<true> args) {
+void DualModeController::HciSetConnectionEncryption(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 3, "%s  size=%zu", __func__, args.size());
   auto args_itr = args.begin();
   uint16_t handle = args_itr.extract<uint16_t>();
@@ -738,7 +774,8 @@ void DualModeController::HciSetConnectionEncryption(packets::PacketView<true> ar
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciChangeConnectionLinkKey(packets::PacketView<true> args) {
+void DualModeController::HciChangeConnectionLinkKey(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 2, "%s  size=%zu", __func__, args.size());
   auto args_itr = args.begin();
   uint16_t handle = args_itr.extract<uint16_t>();
@@ -750,7 +787,8 @@ void DualModeController::HciChangeConnectionLinkKey(packets::PacketView<true> ar
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciMasterLinkKey(packets::PacketView<true> args) {
+void DualModeController::HciMasterLinkKey(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 1, "%s  size=%zu", __func__, args.size());
   auto args_itr = args.begin();
   uint8_t key_flag = args_itr.extract<uint8_t>();
@@ -762,7 +800,8 @@ void DualModeController::HciMasterLinkKey(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciWriteAuthenticationEnable(packets::PacketView<true> args) {
+void DualModeController::HciWriteAuthenticationEnable(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 1, "%s  size=%zu", __func__, args.size());
   properties_.SetAuthenticationEnable(args[0]);
   auto packet =
@@ -771,7 +810,8 @@ void DualModeController::HciWriteAuthenticationEnable(packets::PacketView<true> 
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciReadAuthenticationEnable(packets::PacketView<true> args) {
+void DualModeController::HciReadAuthenticationEnable(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
   auto packet = bluetooth::hci::ReadAuthenticationEnableCompleteBuilder::Create(
       kNumCommandPackets, bluetooth::hci::ErrorCode::SUCCESS,
@@ -780,7 +820,8 @@ void DualModeController::HciReadAuthenticationEnable(packets::PacketView<true> a
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciWriteClassOfDevice(packets::PacketView<true> args) {
+void DualModeController::HciWriteClassOfDevice(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 3, "%s  size=%zu", __func__, args.size());
   properties_.SetClassOfDevice(args[0], args[1], args[2]);
   auto packet = bluetooth::hci::WriteClassOfDeviceCompleteBuilder::Create(
@@ -788,14 +829,15 @@ void DualModeController::HciWriteClassOfDevice(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciWritePageTimeout(packets::PacketView<true> args) {
+void DualModeController::HciWritePageTimeout(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 2, "%s  size=%zu", __func__, args.size());
   auto packet = bluetooth::hci::WritePageTimeoutCompleteBuilder::Create(
       kNumCommandPackets, bluetooth::hci::ErrorCode::SUCCESS);
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciHoldMode(packets::PacketView<true> args) {
+void DualModeController::HciHoldMode(bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 6, "%s  size=%zu", __func__, args.size());
   auto args_itr = args.begin();
   uint16_t handle = args_itr.extract<uint16_t>();
@@ -810,7 +852,8 @@ void DualModeController::HciHoldMode(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciSniffMode(packets::PacketView<true> args) {
+void DualModeController::HciSniffMode(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 10, "%s  size=%zu", __func__, args.size());
   auto args_itr = args.begin();
   uint16_t handle = args_itr.extract<uint16_t>();
@@ -828,7 +871,8 @@ void DualModeController::HciSniffMode(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciExitSniffMode(packets::PacketView<true> args) {
+void DualModeController::HciExitSniffMode(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 2, "%s  size=%zu", __func__, args.size());
   auto args_itr = args.begin();
   uint16_t handle = args_itr.extract<uint16_t>();
@@ -840,7 +884,7 @@ void DualModeController::HciExitSniffMode(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciQosSetup(packets::PacketView<true> args) {
+void DualModeController::HciQosSetup(bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 20, "%s  size=%zu", __func__, args.size());
   auto args_itr = args.begin();
   uint16_t handle = args_itr.extract<uint16_t>();
@@ -860,7 +904,8 @@ void DualModeController::HciQosSetup(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciWriteDefaultLinkPolicySettings(packets::PacketView<true> args) {
+void DualModeController::HciWriteDefaultLinkPolicySettings(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 2, "%s  size=%zu", __func__, args.size());
   auto packet =
       bluetooth::hci::WriteDefaultLinkPolicySettingsCompleteBuilder::Create(
@@ -868,7 +913,8 @@ void DualModeController::HciWriteDefaultLinkPolicySettings(packets::PacketView<t
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciFlowSpecification(packets::PacketView<true> args) {
+void DualModeController::HciFlowSpecification(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 21, "%s  size=%zu", __func__, args.size());
   auto args_itr = args.begin();
   uint16_t handle = args_itr.extract<uint16_t>();
@@ -889,7 +935,8 @@ void DualModeController::HciFlowSpecification(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciWriteLinkPolicySettings(packets::PacketView<true> args) {
+void DualModeController::HciWriteLinkPolicySettings(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 4, "%s  size=%zu", __func__, args.size());
 
   auto args_itr = args.begin();
@@ -904,7 +951,8 @@ void DualModeController::HciWriteLinkPolicySettings(packets::PacketView<true> ar
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciWriteLinkSupervisionTimeout(packets::PacketView<true> args) {
+void DualModeController::HciWriteLinkSupervisionTimeout(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 4, "%s  size=%zu", __func__, args.size());
 
   auto args_itr = args.begin();
@@ -919,7 +967,8 @@ void DualModeController::HciWriteLinkSupervisionTimeout(packets::PacketView<true
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciReadLocalName(packets::PacketView<true> args) {
+void DualModeController::HciReadLocalName(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
 
   std::array<uint8_t, 248> local_name;
@@ -935,7 +984,8 @@ void DualModeController::HciReadLocalName(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciWriteLocalName(packets::PacketView<true> args) {
+void DualModeController::HciWriteLocalName(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 248, "%s  size=%zu", __func__, args.size());
   std::vector<uint8_t> clipped(args.begin(), args.begin() + LastNonZero(args) + 1);
   properties_.SetName(clipped);
@@ -944,7 +994,8 @@ void DualModeController::HciWriteLocalName(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciWriteExtendedInquiryResponse(packets::PacketView<true> args) {
+void DualModeController::HciWriteExtendedInquiryResponse(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 241, "%s  size=%zu", __func__, args.size());
   // Strip FEC byte and trailing zeros
   std::vector<uint8_t> clipped(args.begin() + 1, args.begin() + LastNonZero(args) + 1);
@@ -955,7 +1006,8 @@ void DualModeController::HciWriteExtendedInquiryResponse(packets::PacketView<tru
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciRefreshEncryptionKey(packets::PacketView<true> args) {
+void DualModeController::HciRefreshEncryptionKey(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 2, "%s  size=%zu", __func__, args.size());
   auto args_itr = args.begin();
   uint16_t handle = args_itr.extract<uint16_t>();
@@ -970,14 +1022,16 @@ void DualModeController::HciRefreshEncryptionKey(packets::PacketView<true> args)
   send_event_(std::move(complete_packet));
 }
 
-void DualModeController::HciWriteVoiceSetting(packets::PacketView<true> args) {
+void DualModeController::HciWriteVoiceSetting(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 2, "%s  size=%zu", __func__, args.size());
   auto packet = bluetooth::hci::WriteVoiceSettingCompleteBuilder::Create(
       kNumCommandPackets, bluetooth::hci::ErrorCode::SUCCESS);
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciWriteCurrentIacLap(packets::PacketView<true> args) {
+void DualModeController::HciWriteCurrentIacLap(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT(args.size() > 0);
   ASSERT(args.size() == 1 + (3 * args[0]));  // count + 3-byte IACs
   auto packet = bluetooth::hci::WriteCurrentIacLapCompleteBuilder::Create(
@@ -985,14 +1039,16 @@ void DualModeController::HciWriteCurrentIacLap(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciWriteInquiryScanActivity(packets::PacketView<true> args) {
+void DualModeController::HciWriteInquiryScanActivity(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 4, "%s  size=%zu", __func__, args.size());
   auto packet = bluetooth::hci::WriteInquiryScanActivityCompleteBuilder::Create(
       kNumCommandPackets, bluetooth::hci::ErrorCode::SUCCESS);
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciWriteScanEnable(packets::PacketView<true> args) {
+void DualModeController::HciWriteScanEnable(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 1, "%s  size=%zu", __func__, args.size());
   link_layer_controller_.SetInquiryScanEnable(args[0] & 0x1);
   link_layer_controller_.SetPageScanEnable(args[0] & 0x2);
@@ -1001,14 +1057,15 @@ void DualModeController::HciWriteScanEnable(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciSetEventFilter(packets::PacketView<true> args) {
+void DualModeController::HciSetEventFilter(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT(args.size() > 0);
   auto packet = bluetooth::hci::SetEventFilterCompleteBuilder::Create(
       kNumCommandPackets, bluetooth::hci::ErrorCode::SUCCESS);
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciInquiry(packets::PacketView<true> args) {
+void DualModeController::HciInquiry(bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 5, "%s  size=%zu", __func__, args.size());
   link_layer_controller_.SetInquiryLAP(args[0] | (args[1], 8) | (args[2], 16));
   link_layer_controller_.SetInquiryMaxResponses(args[4]);
@@ -1019,7 +1076,8 @@ void DualModeController::HciInquiry(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciInquiryCancel(packets::PacketView<true> args) {
+void DualModeController::HciInquiryCancel(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
   link_layer_controller_.InquiryCancel();
   auto packet = bluetooth::hci::InquiryCancelCompleteBuilder::Create(
@@ -1027,7 +1085,8 @@ void DualModeController::HciInquiryCancel(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciAcceptConnectionRequest(packets::PacketView<true> args) {
+void DualModeController::HciAcceptConnectionRequest(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 7, "%s  size=%zu", __func__, args.size());
   Address addr = args.begin().extract<Address>();
   bool try_role_switch = args[6] == 0;
@@ -1038,7 +1097,8 @@ void DualModeController::HciAcceptConnectionRequest(packets::PacketView<true> ar
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciRejectConnectionRequest(packets::PacketView<true> args) {
+void DualModeController::HciRejectConnectionRequest(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 7, "%s  size=%zu", __func__, args.size());
   auto args_itr = args.begin();
   Address addr = args_itr.extract<Address>();
@@ -1049,7 +1109,8 @@ void DualModeController::HciRejectConnectionRequest(packets::PacketView<true> ar
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLinkKeyRequestReply(packets::PacketView<true> args) {
+void DualModeController::HciLinkKeyRequestReply(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 22, "%s  size=%zu", __func__, args.size());
   auto args_it = args.begin();
   Address addr = args_it.extract<Address>();
@@ -1060,7 +1121,8 @@ void DualModeController::HciLinkKeyRequestReply(packets::PacketView<true> args) 
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLinkKeyRequestNegativeReply(packets::PacketView<true> args) {
+void DualModeController::HciLinkKeyRequestNegativeReply(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 6, "%s  size=%zu", __func__, args.size());
   Address addr = args.begin().extract<Address>();
   auto status = link_layer_controller_.LinkKeyRequestNegativeReply(addr);
@@ -1070,7 +1132,8 @@ void DualModeController::HciLinkKeyRequestNegativeReply(packets::PacketView<true
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciDeleteStoredLinkKey(packets::PacketView<true> args) {
+void DualModeController::HciDeleteStoredLinkKey(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 7, "%s  size=%zu", __func__, args.size());
 
   uint16_t deleted_keys = 0;
@@ -1090,7 +1153,8 @@ void DualModeController::HciDeleteStoredLinkKey(packets::PacketView<true> args) 
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciRemoteNameRequest(packets::PacketView<true> args) {
+void DualModeController::HciRemoteNameRequest(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 10, "%s  size=%zu", __func__, args.size());
 
   Address remote_addr = args.begin().extract<Address>();
@@ -1103,7 +1167,8 @@ void DualModeController::HciRemoteNameRequest(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeSetEventMask(packets::PacketView<true> args) {
+void DualModeController::HciLeSetEventMask(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 8, "%s  size=%zu", __func__, args.size());
   /*
     uint64_t mask = args.begin().extract<uint64_t>();
@@ -1114,7 +1179,8 @@ void DualModeController::HciLeSetEventMask(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeReadBufferSize(packets::PacketView<true> args) {
+void DualModeController::HciLeReadBufferSize(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
 
   bluetooth::hci::LeBufferSize le_buffer_size;
@@ -1126,7 +1192,8 @@ void DualModeController::HciLeReadBufferSize(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeReadLocalSupportedFeatures(packets::PacketView<true> args) {
+void DualModeController::HciLeReadLocalSupportedFeatures(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
   auto packet =
       bluetooth::hci::LeReadLocalSupportedFeaturesCompleteBuilder::Create(
@@ -1135,7 +1202,8 @@ void DualModeController::HciLeReadLocalSupportedFeatures(packets::PacketView<tru
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeSetRandomAddress(packets::PacketView<true> args) {
+void DualModeController::HciLeSetRandomAddress(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 6, "%s  size=%zu", __func__, args.size());
   properties_.SetLeAddress(args.begin().extract<Address>());
   auto packet = bluetooth::hci::LeSetRandomAddressCompleteBuilder::Create(
@@ -1143,7 +1211,8 @@ void DualModeController::HciLeSetRandomAddress(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeSetAdvertisingParameters(packets::PacketView<true> args) {
+void DualModeController::HciLeSetAdvertisingParameters(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 15, "%s  size=%zu", __func__, args.size());
   auto args_itr = args.begin();
   properties_.SetLeAdvertisingParameters(
@@ -1160,7 +1229,8 @@ void DualModeController::HciLeSetAdvertisingParameters(packets::PacketView<true>
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeSetAdvertisingData(packets::PacketView<true> args) {
+void DualModeController::HciLeSetAdvertisingData(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 32, "%s  size=%zu", __func__, args.size());
   properties_.SetLeAdvertisement(std::vector<uint8_t>(args.begin() + 1, args.end()));
   auto packet = bluetooth::hci::LeSetAdvertisingDataCompleteBuilder::Create(
@@ -1168,7 +1238,8 @@ void DualModeController::HciLeSetAdvertisingData(packets::PacketView<true> args)
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeSetScanResponseData(packets::PacketView<true> args) {
+void DualModeController::HciLeSetScanResponseData(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 32, "%s  size=%zu", __func__, args.size());
   properties_.SetLeScanResponse(std::vector<uint8_t>(args.begin() + 1, args.end()));
   auto packet = bluetooth::hci::LeSetScanResponseDataCompleteBuilder::Create(
@@ -1176,7 +1247,8 @@ void DualModeController::HciLeSetScanResponseData(packets::PacketView<true> args
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeSetAdvertisingEnable(packets::PacketView<true> args) {
+void DualModeController::HciLeSetAdvertisingEnable(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 1, "%s  size=%zu", __func__, args.size());
   auto status = link_layer_controller_.SetLeAdvertisingEnable(
       args.begin().extract<uint8_t>());
@@ -1185,7 +1257,8 @@ void DualModeController::HciLeSetAdvertisingEnable(packets::PacketView<true> arg
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeSetScanParameters(packets::PacketView<true> args) {
+void DualModeController::HciLeSetScanParameters(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 7, "%s  size=%zu", __func__, args.size());
   link_layer_controller_.SetLeScanType(args[0]);
   link_layer_controller_.SetLeScanInterval(args[1] | (args[2], 8));
@@ -1197,7 +1270,8 @@ void DualModeController::HciLeSetScanParameters(packets::PacketView<true> args) 
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeSetScanEnable(packets::PacketView<true> args) {
+void DualModeController::HciLeSetScanEnable(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 2, "%s  size=%zu", __func__, args.size());
   link_layer_controller_.SetLeScanEnable(args[0]);
   link_layer_controller_.SetLeFilterDuplicates(args[1]);
@@ -1206,7 +1280,8 @@ void DualModeController::HciLeSetScanEnable(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeCreateConnection(packets::PacketView<true> args) {
+void DualModeController::HciLeCreateConnection(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 25, "%s  size=%zu", __func__, args.size());
   auto args_itr = args.begin();
   link_layer_controller_.SetLeScanInterval(args_itr.extract<uint16_t>());
@@ -1235,7 +1310,8 @@ void DualModeController::HciLeCreateConnection(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeConnectionUpdate(packets::PacketView<true> args) {
+void DualModeController::HciLeConnectionUpdate(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 14, "%s  size=%zu", __func__, args.size());
 
   auto status_packet = bluetooth::hci::LeConnectionUpdateStatusBuilder::Create(
@@ -1249,7 +1325,8 @@ void DualModeController::HciLeConnectionUpdate(packets::PacketView<true> args) {
   send_event_(std::move(complete_packet));
 }
 
-void DualModeController::HciCreateConnection(packets::PacketView<true> args) {
+void DualModeController::HciCreateConnection(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 13, "%s  size=%zu", __func__, args.size());
 
   auto args_itr = args.begin();
@@ -1267,7 +1344,8 @@ void DualModeController::HciCreateConnection(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciDisconnect(packets::PacketView<true> args) {
+void DualModeController::HciDisconnect(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 3, "%s  size=%zu", __func__, args.size());
 
   auto args_itr = args.begin();
@@ -1281,7 +1359,8 @@ void DualModeController::HciDisconnect(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeConnectionCancel(packets::PacketView<true> args) {
+void DualModeController::HciLeConnectionCancel(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
   link_layer_controller_.SetLeConnect(false);
   auto packet = bluetooth::hci::LeCreateConnectionCancelStatusBuilder::Create(
@@ -1295,7 +1374,8 @@ void DualModeController::HciLeConnectionCancel(packets::PacketView<true> args) {
   */
 }
 
-void DualModeController::HciLeReadWhiteListSize(packets::PacketView<true> args) {
+void DualModeController::HciLeReadWhiteListSize(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
   auto packet = bluetooth::hci::LeReadWhiteListSizeCompleteBuilder::Create(
       kNumCommandPackets, bluetooth::hci::ErrorCode::SUCCESS,
@@ -1303,7 +1383,8 @@ void DualModeController::HciLeReadWhiteListSize(packets::PacketView<true> args) 
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeClearWhiteList(packets::PacketView<true> args) {
+void DualModeController::HciLeClearWhiteList(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
   link_layer_controller_.LeWhiteListClear();
   auto packet = bluetooth::hci::LeClearWhiteListCompleteBuilder::Create(
@@ -1311,7 +1392,8 @@ void DualModeController::HciLeClearWhiteList(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeAddDeviceToWhiteList(packets::PacketView<true> args) {
+void DualModeController::HciLeAddDeviceToWhiteList(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 7, "%s  size=%zu", __func__, args.size());
 
   if (link_layer_controller_.LeWhiteListFull()) {
@@ -1330,7 +1412,8 @@ void DualModeController::HciLeAddDeviceToWhiteList(packets::PacketView<true> arg
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeRemoveDeviceFromWhiteList(packets::PacketView<true> args) {
+void DualModeController::HciLeRemoveDeviceFromWhiteList(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 7, "%s  size=%zu", __func__, args.size());
 
   auto args_itr = args.begin();
@@ -1344,7 +1427,7 @@ void DualModeController::HciLeRemoveDeviceFromWhiteList(packets::PacketView<true
 }
 
 void DualModeController::HciLeClearResolvingList(
-    packets::PacketView<true> args) {
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
   link_layer_controller_.LeResolvingListClear();
   auto packet = bluetooth::hci::LeClearResolvingListCompleteBuilder::Create(
@@ -1353,7 +1436,7 @@ void DualModeController::HciLeClearResolvingList(
 }
 
 void DualModeController::HciLeAddDeviceToResolvingList(
-    packets::PacketView<true> args) {
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 39, "%s  size=%zu", __func__, args.size());
 
   if (link_layer_controller_.LeResolvingListFull()) {
@@ -1388,7 +1471,7 @@ void DualModeController::HciLeAddDeviceToResolvingList(
 }
 
 void DualModeController::HciLeRemoveDeviceFromResolvingList(
-    packets::PacketView<true> args) {
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 7, "%s  size=%zu", __func__, args.size());
 
   auto args_itr = args.begin();
@@ -1401,7 +1484,8 @@ void DualModeController::HciLeRemoveDeviceFromResolvingList(
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeSetPrivacyMode(packets::PacketView<true> args) {
+void DualModeController::HciLeSetPrivacyMode(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 8, "%s  size=%zu", __func__, args.size());
 
   auto args_itr = args.begin();
@@ -1420,7 +1504,8 @@ void DualModeController::HciLeSetPrivacyMode(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeReadRemoteFeatures(packets::PacketView<true> args) {
+void DualModeController::HciLeReadRemoteFeatures(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 2, "%s  size=%zu", __func__, args.size());
 
   uint16_t handle = args.begin().extract<uint16_t>();
@@ -1433,7 +1518,7 @@ void DualModeController::HciLeReadRemoteFeatures(packets::PacketView<true> args)
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeRand(packets::PacketView<true> args) {
+void DualModeController::HciLeRand(bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
   uint64_t random_val = 0;
   for (size_t rand_bytes = 0; rand_bytes < sizeof(uint64_t); rand_bytes += sizeof(RAND_MAX)) {
@@ -1445,7 +1530,8 @@ void DualModeController::HciLeRand(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeReadSupportedStates(packets::PacketView<true> args) {
+void DualModeController::HciLeReadSupportedStates(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
   auto packet = bluetooth::hci::LeReadSupportedStatesCompleteBuilder::Create(
       kNumCommandPackets, bluetooth::hci::ErrorCode::SUCCESS,
@@ -1453,7 +1539,8 @@ void DualModeController::HciLeReadSupportedStates(packets::PacketView<true> args
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeVendorCap(packets::PacketView<true> args) {
+void DualModeController::HciLeVendorCap(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s  size=%zu", __func__, args.size());
   vector<uint8_t> caps = properties_.GetLeVendorCap();
   if (caps.size() == 0) {
@@ -1474,31 +1561,36 @@ void DualModeController::HciLeVendorCap(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciLeVendorMultiAdv(packets::PacketView<true> args) {
+void DualModeController::HciLeVendorMultiAdv(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT(args.size() > 0);
   SendCommandCompleteUnknownOpCodeEvent(
       static_cast<uint16_t>(bluetooth::hci::OpCode::LE_MULTI_ADVT));
 }
 
-void DualModeController::HciLeAdvertisingFilter(packets::PacketView<true> args) {
+void DualModeController::HciLeAdvertisingFilter(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT(args.size() > 0);
   SendCommandCompleteUnknownOpCodeEvent(
       static_cast<uint16_t>(bluetooth::hci::OpCode::LE_ADV_FILTER));
 }
 
-void DualModeController::HciLeEnergyInfo(packets::PacketView<true> args) {
+void DualModeController::HciLeEnergyInfo(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT(args.size() > 0);
   SendCommandCompleteUnknownOpCodeEvent(
       static_cast<uint16_t>(bluetooth::hci::OpCode::LE_ENERGY_INFO));
 }
 
-void DualModeController::HciLeExtendedScanParams(packets::PacketView<true> args) {
+void DualModeController::HciLeExtendedScanParams(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT(args.size() > 0);
   SendCommandCompleteUnknownOpCodeEvent(
       static_cast<uint16_t>(bluetooth::hci::OpCode::LE_EXTENDED_SCAN_PARAMS));
 }
 
-void DualModeController::HciLeStartEncryption(packets::PacketView<true> args) {
+void DualModeController::HciLeStartEncryption(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 28, "%s  size=%zu", __func__, args.size());
 
   auto args_itr = args.begin();
@@ -1571,7 +1663,8 @@ void DualModeController::HciLeStartEncryption(packets::PacketView<true> args) {
 #endif
 }
 
-void DualModeController::HciReadLoopbackMode(packets::PacketView<true> args) {
+void DualModeController::HciReadLoopbackMode(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 0, "%s size=%zu", __func__, args.size());
   auto packet = bluetooth::hci::ReadLoopbackModeCompleteBuilder::Create(
       kNumCommandPackets, bluetooth::hci::ErrorCode::SUCCESS,
@@ -1579,7 +1672,8 @@ void DualModeController::HciReadLoopbackMode(packets::PacketView<true> args) {
   send_event_(std::move(packet));
 }
 
-void DualModeController::HciWriteLoopbackMode(packets::PacketView<true> args) {
+void DualModeController::HciWriteLoopbackMode(
+    bluetooth::packet::PacketView<true> args) {
   ASSERT_LOG(args.size() == 1, "%s size=%zu", __func__, args.size());
   loopback_mode_ = static_cast<hci::LoopbackMode>(args[0]);
   // ACL channel

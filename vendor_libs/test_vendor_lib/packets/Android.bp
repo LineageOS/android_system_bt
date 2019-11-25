@@ -14,9 +14,6 @@ cc_library_static {
         "packet_view.cc",
         "raw_builder.cc",
         "view.cc",
-        "hci/command_packet_builder.cc",
-        "hci/command_packet_view.cc",
-        "hci/hci_packet_builder.cc",
     ],
     cflags: [
         "-fvisibility=hidden",
