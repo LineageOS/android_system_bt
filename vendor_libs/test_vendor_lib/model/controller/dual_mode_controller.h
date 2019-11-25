@@ -440,9 +440,6 @@ class DualModeController : public Device {
 
   void AddConnectionAction(const TaskCallback& callback, uint16_t handle);
 
-  // Creates a command complete event and sends it back to the HCI.
-  void SendCommandComplete(hci::OpCode command_opcode, const std::vector<uint8_t>& return_parameters) const;
-
   void SendCommandCompleteUnknownOpCodeEvent(uint16_t command_opcode) const;
 
   // Callbacks to send packets back to the HCI.
@@ -460,7 +457,7 @@ class DualModeController : public Device {
                      std::function<void(bluetooth::packet::PacketView<true>)>>
       active_hci_commands_;
 
-  hci::LoopbackMode loopback_mode_;
+  bluetooth::hci::LoopbackMode loopback_mode_;
 
   SecurityManager security_manager_;
 
