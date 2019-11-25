@@ -2600,23 +2600,177 @@ packet LeEnhancedTransmitterTest : CommandPacket (op_code = LE_ENHANCED_TRANSMIT
 }
 
 packet LeSetExtendedAdvertisingRandomAddress : LeAdvertisingCommand (op_code = LE_SET_EXTENDED_ADVERTISING_RANDOM_ADDRESS) {
-  _payload_,  // placeholder (unimplemented)
+  advertising_handle : 8,
+  advertising_random_address : Address,
+}
+
+packet LeSetExtendedAdvertisingRandomAddressComplete : CommandComplete (command_op_code = LE_SET_EXTENDED_ADVERTISING_RANDOM_ADDRESS) {
+  status : ErrorCode,
+}
+
+// The lower 4 bits of the advertising event properties
+enum LegacyAdvertisingProperties : 4 {
+  ADV_IND = 0x3,
+  ADV_DIRECT_IND_LOW = 0x5,
+  ADV_DIRECT_IND_HIGH = 0xD,
+  ADV_SCAN_IND = 0x2,
+  ADV_NONCONN_IND = 0,
+}
+
+enum PrimaryPhyType : 8 {
+  LE_1M = 0x01,
+  LE_CODED = 0x03,
+}
+
+enum SecondaryPhyType : 8 {
+  NO_PACKETS = 0x00,
+  LE_1M = 0x01,
+  LE_2M = 0x02,
+  LE_CODED = 0x03,
+}
+
+packet LeSetExtendedAdvertisingLegacyParameters : LeAdvertisingCommand (op_code = LE_SET_EXTENDED_ADVERTISING_PARAMETERS) {
+  advertising_handle : 8,
+  advertising_event_legacy_properties : LegacyAdvertisingProperties,
+  _fixed_ = 0x1 : 1, // legacy bit set
+  _reserved_ : 11, // advertising_event_properties
+  primary_advertising_interval_min : 24, // 0x20 - 0xFFFFFF N * 0.625 ms
+  primary_advertising_interval_max : 24, // 0x20 - 0xFFFFFF N * 0.625 ms
+  primary_advertising_channel_map : 3,  // bit 0 - Channel 37, bit 1 - 38, bit 2 - 39
+  _reserved_ : 5,
+  own_address_type : OwnAddressType,
+  peer_address_type : PeerAddressType,
+  peer_address : Address,
+  advertising_filter_policy : AdvertisingFilterPolicy,
+  _reserved_ : 6,
+  advertising_tx_power : 8, // -127 to +20, 0x7F - no preference
+  primary_advertising_phy : PrimaryPhyType,
+  _reserved_ : 8, // secondary_advertising_max_skip
+  _reserved_ : 8, // secondary_advertising_phy
+  advertising_sid : 8, // SID subfield from the ADI field of the PDU
+  scan_request_notification_enable : Enable,
 }
 
 packet LeSetExtendedAdvertisingParameters : LeAdvertisingCommand (op_code = LE_SET_EXTENDED_ADVERTISING_PARAMETERS) {
-  _payload_,  // placeholder (unimplemented)
+  advertising_handle : 8,
+  advertising_event_legacy_properties : 4,
+  _fixed_ = 0 : 1, // legacy bit cleared
+  advertising_event_properties : 3,
+  _reserved_ : 8,
+  primary_advertising_interval_min : 24, // 0x20 - 0xFFFFFF N * 0.625 ms
+  primary_advertising_interval_max : 24, // 0x20 - 0xFFFFFF N * 0.625 ms
+  primary_advertising_channel_map : 3,  // bit 0 - Channel 37, bit 1 - 38, bit 2 - 39
+  _reserved_ : 5,
+  own_address_type : OwnAddressType,
+  peer_address_type : PeerAddressType,
+  peer_address : Address,
+  advertising_filter_policy : AdvertisingFilterPolicy,
+  _reserved_ : 6,
+  advertising_tx_power : 8, // -127 to +20, 0x7F - no preference
+  primary_advertising_phy : PrimaryPhyType,
+  secondary_advertising_max_skip : 8, // 1 to 255, 0x00 - AUX_ADV_IND sent before next advertising event
+  secondary_advertising_phy : SecondaryPhyType,
+  advertising_sid : 8, // SID subfield from the ADI field of the PDU
+  scan_request_notification_enable : Enable,
+}
+
+packet LeSetExtendedAdvertisingParametersComplete : CommandComplete (command_op_code = LE_SET_EXTENDED_ADVERTISING_PARAMETERS) {
+  status : ErrorCode,
+  selected_tx_power : 8, // -127 to +20
+}
+
+enum Operation : 3 {
+  INTERMEDIATE_FRAGMENT = 0,
+  FIRST_FRAGMENT = 1,
+  LAST_FRAGMENT = 2,
+  COMPLETE_ADVERTISMENT = 3,
+  UNCHANGED_DATA = 4,
+}
+
+enum FragmentPreference : 1 {
+  CONTROLLER_MAY_FRAGMENT = 0,
+  CONTROLLER_SHOULD_NOT = 1,
 }
 
 packet LeSetExtendedAdvertisingData : LeAdvertisingCommand (op_code = LE_SET_EXTENDED_ADVERTISING_DATA) {
-  _payload_,  // placeholder (unimplemented)
+  advertising_handle : 8,
+  operation : Operation,
+  _reserved_ : 5,
+  fragment_preference : FragmentPreference,
+  _reserved_ : 7,
+  _size_(advertising_data) : 8,
+  advertising_data : GapData[],
+}
+
+packet LeSetExtendedAdvertisingDataRaw : LeAdvertisingCommand (op_code = LE_SET_EXTENDED_ADVERTISING_DATA) {
+  advertising_handle : 8,
+  operation : Operation,
+  _reserved_ : 5,
+  fragment_preference : FragmentPreference,
+  _reserved_ : 7,
+  _size_(advertising_data) : 8,
+  advertising_data : 8[],
+}
+
+packet LeSetExtendedAdvertisingDataComplete : CommandComplete (command_op_code = LE_SET_EXTENDED_ADVERTISING_DATA) {
+  status : ErrorCode,
 }
 
 packet LeSetExtendedAdvertisingScanResponse : LeAdvertisingCommand (op_code = LE_SET_EXTENDED_ADVERTISING_SCAN_RESPONSE) {
-  _payload_,  // placeholder (unimplemented)
+  advertising_handle : 8,
+  operation : Operation,
+  _reserved_ : 5,
+  fragment_preference : FragmentPreference,
+  _reserved_ : 7,
+  _size_(scan_response_data) : 8,
+  scan_response_data : GapData[],
+}
+
+packet LeSetExtendedAdvertisingScanResponseRaw : LeAdvertisingCommand (op_code = LE_SET_EXTENDED_ADVERTISING_SCAN_RESPONSE) {
+  advertising_handle : 8,
+  operation : Operation,
+  _reserved_ : 5,
+  fragment_preference : FragmentPreference,
+  _reserved_ : 7,
+  _size_(scan_response_data) : 8,
+  scan_response_data : 8[],
+}
+
+packet LeSetExtendedAdvertisingScanResponseComplete : CommandComplete (command_op_code = LE_SET_EXTENDED_ADVERTISING_SCAN_RESPONSE) {
+  status : ErrorCode,
+}
+
+packet LeSetExtendedAdvertisingEnableDisableAll : LeAdvertisingCommand (op_code = LE_SET_EXTENDED_ADVERTISING_ENABLE) {
+  _fixed_ = 0x00 : 8, // Enable::DISABLED
+  _fixed_ = 0x00 : 8, // Disable all sets
+}
+
+struct EnabledSet {
+  advertising_handle : 8,
+  duration : 16,
+  max_extended_advertising_events : 8,
+}
+
+struct DisabledSet {
+  advertising_handle : 8,
+  _fixed_ = 0x00 : 16, // duration
+  _fixed_ = 0x00 : 8, // max_extended_advertising_events
+}
+
+packet LeSetExtendedAdvertisingDisable : LeAdvertisingCommand (op_code = LE_SET_EXTENDED_ADVERTISING_ENABLE) {
+  _fixed_ = 0x00 : 8, // Enable::DISABLED
+  _count_(disabled_sets) : 8,
+  disabled_sets : DisabledSet[],
 }
 
 packet LeSetExtendedAdvertisingEnable : LeAdvertisingCommand (op_code = LE_SET_EXTENDED_ADVERTISING_ENABLE) {
-  _payload_,  // placeholder (unimplemented)
+  enable : Enable,
+  _count_(enabled_sets) : 8,
+  enabled_sets : EnabledSet[],
+}
+
+packet LeSetExtendedAdvertisingEnableComplete : CommandComplete (command_op_code = LE_SET_EXTENDED_ADVERTISING_ENABLE) {
+  status : ErrorCode,
 }
 
 packet LeReadMaximumAdvertisingDataLength : CommandPacket (op_code = LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH) {
@@ -2636,23 +2790,52 @@ packet LeReadNumberOfSupportedAdvertisingSetsComplete : CommandComplete (command
 }
 
 packet LeRemoveAdvertisingSet : LeAdvertisingCommand (op_code = LE_REMOVE_ADVERTISING_SET) {
-  _payload_,  // placeholder (unimplemented)
+  advertising_handle : 8,
+}
+
+packet LeRemoveAdvertisingSetComplete : CommandComplete (command_op_code = LE_REMOVE_ADVERTISING_SET) {
+  status : ErrorCode,
 }
 
 packet LeClearAdvertisingSets : LeAdvertisingCommand (op_code = LE_CLEAR_ADVERTISING_SETS) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet LeClearAdvertisingSetsComplete : CommandComplete (command_op_code = LE_CLEAR_ADVERTISING_SETS) {
+  status : ErrorCode,
 }
 
 packet LeSetPeriodicAdvertisingParam : LeAdvertisingCommand (op_code = LE_SET_PERIODIC_ADVERTISING_PARAM) {
-  _payload_,  // placeholder (unimplemented)
+  advertising_handle : 8,
+  periodic_advertising_interval_min : 16, // 0x006 to 0xFFFF (7.5 ms to 82s)
+  periodic_advertising_interval_max : 16, // 0x006 to 0xFFFF (7.5 ms to 82s)
+  _reserved_ : 6,
+  include_tx_power : 1,
+  _reserved_ : 9,
+}
+
+packet LeSetPeriodicAdvertisingParamComplete : CommandComplete (command_op_code = LE_SET_PERIODIC_ADVERTISING_PARAM) {
+  status : ErrorCode,
 }
 
 packet LeSetPeriodicAdvertisingData : LeAdvertisingCommand (op_code = LE_SET_PERIODIC_ADVERTISING_DATA) {
-  _payload_,  // placeholder (unimplemented)
+  advertising_handle : 8,
+  operation : Operation,
+  _reserved_ : 5,
+  _size_(scan_response_data) : 8,
+  scan_response_data : 8[],
+}
+
+packet LeSetPeriodicAdvertisingDataComplete : CommandComplete (command_op_code = LE_SET_PERIODIC_ADVERTISING_DATA) {
+  status : ErrorCode,
 }
 
 packet LeSetPeriodicAdvertisingEnable : LeAdvertisingCommand (op_code = LE_SET_PERIODIC_ADVERTISING_ENABLE) {
-  _payload_,  // placeholder (unimplemented)
+  advertising_handle : 8,
+  enable : Enable,
+}
+
+packet LeSetPeriodicAdvertisingEnableComplete : CommandComplete (command_op_code = LE_SET_PERIODIC_ADVERTISING_ENABLE) {
+  status : ErrorCode,
 }
 
 struct PhyScanParameters {
@@ -3426,19 +3609,6 @@ enum DataStatus : 2 {
   TRUNCATED = 0x2,
   RESERVED = 0x3,
 }
-
-enum PrimaryPhyType : 8 {
-  LE_1M = 0x01,
-  LE_CODED = 0x03,
-}
-
-enum SecondaryPhyType : 8 {
-  NO_PACKETS = 0x00,
-  LE_1M = 0x01,
-  LE_2M = 0x02,
-  LE_CODED = 0x03,
-}
-
 
 struct LeExtendedAdvertisingReport {
   connectable : 1,
