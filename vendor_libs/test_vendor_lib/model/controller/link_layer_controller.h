@@ -38,10 +38,10 @@ class LinkLayerController {
 
   LinkLayerController(const DeviceProperties& properties) : properties_(properties) {}
   bluetooth::hci::ErrorCode SendCommandToRemoteByAddress(
-      bluetooth::hci::OpCode opcode, packets::PacketView<true> args,
+      bluetooth::hci::OpCode opcode, bluetooth::packet::PacketView<true> args,
       const Address& remote);
   bluetooth::hci::ErrorCode SendCommandToRemoteByHandle(
-      bluetooth::hci::OpCode opcode, packets::PacketView<true> args,
+      bluetooth::hci::OpCode opcode, bluetooth::packet::PacketView<true> args,
       uint16_t handle);
   hci::Status SendScoToRemote(bluetooth::hci::ScoPacketView sco_packet);
   hci::Status SendAclToRemote(bluetooth::hci::AclPacketView acl_packet);

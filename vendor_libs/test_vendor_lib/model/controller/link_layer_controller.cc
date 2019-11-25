@@ -19,9 +19,6 @@
 #include "hci.h"
 #include "include/le_advertisement.h"
 #include "os/log.h"
-#include "packets/hci/command_packet_view.h"
-#include "packets/raw_builder.h"
-
 #include "packet/raw_builder.h"
 
 using std::vector;
@@ -61,7 +58,7 @@ void LinkLayerController::SendLinkLayerPacket(
 }
 
 bluetooth::hci::ErrorCode LinkLayerController::SendCommandToRemoteByAddress(
-    bluetooth::hci::OpCode opcode, PacketView<true> args,
+    bluetooth::hci::OpCode opcode, bluetooth::packet::PacketView<true> args,
     const Address& remote) {
   Address local_address = properties_.GetAddress();
 
@@ -104,7 +101,8 @@ bluetooth::hci::ErrorCode LinkLayerController::SendCommandToRemoteByAddress(
 }
 
 bluetooth::hci::ErrorCode LinkLayerController::SendCommandToRemoteByHandle(
-    bluetooth::hci::OpCode opcode, PacketView<true> args, uint16_t handle) {
+    bluetooth::hci::OpCode opcode, bluetooth::packet::PacketView<true> args,
+    uint16_t handle) {
   // TODO: Handle LE connections
   if (!connections_.HasHandle(handle)) {
     return bluetooth::hci::ErrorCode::UNKNOWN_CONNECTION;
