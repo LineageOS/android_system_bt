@@ -2861,6 +2861,27 @@ void btif_av_stream_start(void) {
                                    BTIF_AV_START_STREAM_REQ_EVT);
 }
 
+void src_do_suspend_in_main_thread(btif_av_sm_event_t event) {
+  if (event != BTIF_AV_SUSPEND_STREAM_REQ_EVT &&
+      event != BTIF_AV_STOP_STREAM_REQ_EVT)
+    return;
+  auto src_do_stream_suspend = [](btif_av_sm_event_t event) {
+    bool is_idle = true;
+    for (auto it : btif_av_source.Peers()) {
+      const BtifAvPeer* peer = it.second;
+      if (peer->StateMachine().StateId() == BtifAvStateMachine::kStateStarted) {
+        btif_av_source_dispatch_sm_event(peer->PeerAddress(), event);
+        is_idle = false;
+      }
+    }
+    if (is_idle) {
+      btif_a2dp_on_stopped(nullptr);
+    }
+  };
+  // switch to main thread to prevent a race condition of accessing peers
+  do_in_main_thread(FROM_HERE, base::Bind(src_do_stream_suspend, event));
+}
+
 void btif_av_stream_stop(const RawAddress& peer_address) {
   LOG_INFO(LOG_TAG, "%s peer %s", __func__, peer_address.ToString().c_str());
 
@@ -2870,23 +2891,15 @@ void btif_av_stream_stop(const RawAddress& peer_address) {
   }
 
   // The active peer might have changed and we might be in the process
-  // of reconfiguring the stream. We need to stop the appopriate peer(s).
-  for (auto it : btif_av_source.Peers()) {
-    const BtifAvPeer* peer = it.second;
-    btif_av_source_dispatch_sm_event(peer->PeerAddress(),
-                                     BTIF_AV_STOP_STREAM_REQ_EVT);
-  }
+  // of reconfiguring the stream. We need to stop the appropriate peer(s).
+  src_do_suspend_in_main_thread(BTIF_AV_STOP_STREAM_REQ_EVT);
 }
 
 void btif_av_stream_suspend(void) {
   LOG_INFO(LOG_TAG, "%s", __func__);
   // The active peer might have changed and we might be in the process
   // of reconfiguring the stream. We need to suspend the appropriate peer(s).
-  for (auto it : btif_av_source.Peers()) {
-    const BtifAvPeer* peer = it.second;
-    btif_av_source_dispatch_sm_event(peer->PeerAddress(),
-                                     BTIF_AV_SUSPEND_STREAM_REQ_EVT);
-  }
+  src_do_suspend_in_main_thread(BTIF_AV_SUSPEND_STREAM_REQ_EVT);
 }
 
 void btif_av_stream_start_offload(void) {
