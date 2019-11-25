@@ -14,13 +14,12 @@
  * limitations under the License.
  */
 
-#include "l2cap/classic/dynamic_channel.h"
+#include "l2cap/dynamic_channel.h"
 #include "common/bind.h"
 #include "l2cap/internal/dynamic_channel_impl.h"
 
 namespace bluetooth {
 namespace l2cap {
-namespace classic {
 
 hci::Address DynamicChannel::GetDevice() const {
   return impl_->GetDevice();
@@ -40,6 +39,5 @@ common::BidiQueueEnd<packet::BasePacketBuilder, packet::PacketView<packet::kLitt
 DynamicChannel::GetQueueUpEnd() const {
   return impl_->GetQueueUpEnd();
 }
-}  // namespace classic
 }  // namespace l2cap
 }  // namespace bluetooth

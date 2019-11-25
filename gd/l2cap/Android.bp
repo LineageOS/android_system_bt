@@ -2,7 +2,6 @@ filegroup {
     name: "BluetoothL2capSources",
     srcs: [
         "fcs.cc",
-        "classic/dynamic_channel.cc",
         "classic/dynamic_channel_manager.cc",
         "classic/dynamic_channel_service.cc",
         "classic/fixed_channel.cc",
@@ -15,6 +14,7 @@ filegroup {
         "classic/internal/link_manager.cc",
         "classic/internal/signalling_manager.cc",
         "classic/l2cap_classic_module.cc",
+        "dynamic_channel.cc",
         "internal/basic_mode_channel_data_controller.cc",
         "internal/data_pipeline_manager.cc",
         "internal/dynamic_channel_allocator.cc",

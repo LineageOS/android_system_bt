@@ -19,7 +19,7 @@
 #include "common/bidi_queue.h"
 #include "hci/address.h"
 #include "l2cap/cid.h"
-#include "l2cap/classic/dynamic_channel.h"
+#include "l2cap/dynamic_channel.h"
 #include "l2cap/internal/channel_impl.h"
 #include "l2cap/internal/ilink.h"
 #include "l2cap/l2cap_packets.h"
@@ -40,8 +40,7 @@ class DynamicChannelImpl : public l2cap::internal::ChannelImpl {
 
   hci::Address GetDevice() const;
 
-  virtual void RegisterOnCloseCallback(os::Handler* user_handler,
-                                       classic::DynamicChannel::OnCloseCallback on_close_callback);
+  virtual void RegisterOnCloseCallback(os::Handler* user_handler, DynamicChannel::OnCloseCallback on_close_callback);
 
   virtual void Close();
   virtual void OnClosed(hci::ErrorCode status);
@@ -80,7 +79,7 @@ class DynamicChannelImpl : public l2cap::internal::ChannelImpl {
 
   // User supported states
   os::Handler* user_handler_ = nullptr;
-  classic::DynamicChannel::OnCloseCallback on_close_callback_{};
+  DynamicChannel::OnCloseCallback on_close_callback_{};
 
   // Internal states
   bool closed_ = false;

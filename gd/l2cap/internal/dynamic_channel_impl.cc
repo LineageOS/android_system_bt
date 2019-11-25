@@ -45,7 +45,7 @@ hci::Address DynamicChannelImpl::GetDevice() const {
 }
 
 void DynamicChannelImpl::RegisterOnCloseCallback(os::Handler* user_handler,
-                                                 classic::DynamicChannel::OnCloseCallback on_close_callback) {
+                                                 DynamicChannel::OnCloseCallback on_close_callback) {
   ASSERT_LOG(user_handler_ == nullptr, "OnCloseCallback can only be registered once");
   // If channel is already closed, call the callback immediately without saving it
   if (closed_) {

@@ -29,8 +29,6 @@ namespace internal {
 class DynamicChannelImpl;
 }  // namespace internal
 
-namespace classic {
-
 /**
  * L2CAP Dynamic channel object. User needs to call Close() when user no longer wants to use it. Otherwise the link
  * won't be disconnected.
@@ -77,6 +75,5 @@ class DynamicChannel {
   os::Handler* l2cap_handler_;
 };
 
-}  // namespace classic
 }  // namespace l2cap
 }  // namespace bluetooth
