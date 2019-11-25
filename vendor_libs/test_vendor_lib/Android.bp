@@ -61,9 +61,6 @@ cc_library_static {
         "libbase",
         "liblog",
     ],
-    whole_static_libs: [
-        "libbt-rootcanal-packets",
-    ],
     static_libs: [
         "libbt-rootcanal-types",
     ],
