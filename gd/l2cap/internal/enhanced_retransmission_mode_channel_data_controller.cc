@@ -154,7 +154,7 @@ struct ErtmController::impl {
       send_rr_or_rnr(Poll::POLL);
       // send rr or rnr(p=1)
       retry_count_ = 1;
-      start_retrans_timer();
+      start_monitor_timer();
       tx_state_ = TxState::WAIT_F;
     }
   }
