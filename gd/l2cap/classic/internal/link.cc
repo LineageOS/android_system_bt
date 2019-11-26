@@ -34,8 +34,9 @@ Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_c
            DynamicChannelServiceManagerImpl* dynamic_service_manager,
            FixedChannelServiceManagerImpl* fixed_service_manager)
     : l2cap_handler_(l2cap_handler), acl_connection_(std::move(acl_connection)),
-      data_pipeline_manager_(l2cap_handler, acl_connection_->GetAclQueueEnd()), parameter_provider_(parameter_provider),
-      dynamic_service_manager_(dynamic_service_manager), fixed_service_manager_(fixed_service_manager),
+      data_pipeline_manager_(l2cap_handler, this, acl_connection_->GetAclQueueEnd()),
+      parameter_provider_(parameter_provider), dynamic_service_manager_(dynamic_service_manager),
+      fixed_service_manager_(fixed_service_manager),
       signalling_manager_(l2cap_handler_, this, &data_pipeline_manager_, dynamic_service_manager_,
                           &dynamic_channel_allocator_, fixed_service_manager_) {
   ASSERT(l2cap_handler_ != nullptr);

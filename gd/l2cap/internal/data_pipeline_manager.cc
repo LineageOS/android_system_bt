@@ -29,7 +29,7 @@ namespace internal {
 void DataPipelineManager::AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> channel) {
   ASSERT(sender_map_.find(cid) == sender_map_.end());
   sender_map_.emplace(std::piecewise_construct, std::forward_as_tuple(cid),
-                      std::forward_as_tuple(handler_, scheduler_.get(), channel));
+                      std::forward_as_tuple(handler_, link_, scheduler_.get(), channel));
 }
 
 void DataPipelineManager::DetachChannel(Cid cid) {

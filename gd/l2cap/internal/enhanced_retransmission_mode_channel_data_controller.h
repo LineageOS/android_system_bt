@@ -36,13 +36,14 @@
 namespace bluetooth {
 namespace l2cap {
 namespace internal {
+class ILink;
 
 class ErtmController : public DataController {
  public:
   using UpperEnqueue = packet::PacketView<packet::kLittleEndian>;
   using UpperDequeue = packet::BasePacketBuilder;
   using UpperQueueDownEnd = common::BidiQueueEnd<UpperEnqueue, UpperDequeue>;
-  ErtmController(Cid cid, Cid remote_cid, UpperQueueDownEnd* channel_queue_end, os::Handler* handler,
+  ErtmController(ILink* link, Cid cid, Cid remote_cid, UpperQueueDownEnd* channel_queue_end, os::Handler* handler,
                  Scheduler* scheduler);
   ~ErtmController();
   // Segmentation is handled here
@@ -53,6 +54,7 @@ class ErtmController : public DataController {
   void SetRetransmissionAndFlowControlOptions(const RetransmissionAndFlowControlConfigurationOption& option) override;
 
  private:
+  ILink* link_;
   Cid cid_;
   Cid remote_cid_;
   os::EnqueueBuffer<UpperEnqueue> enqueue_buffer_;
