@@ -20,7 +20,6 @@
 #include "hci/address.h"
 #include "l2cap/classic/internal/link.h"
 #include "l2cap/internal/scheduler_fifo.h"
-#include "os/handler.h"
 #include "os/log.h"
 
 #include "l2cap/classic/internal/link_manager.h"
