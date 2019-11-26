@@ -95,13 +95,11 @@ void LinkManager::OnLeConnectSuccess(hci::AddressWithType connecting_address_wit
   hci::AddressWithType connected_address_with_type(acl_connection->GetAddress(), acl_connection->GetAddressType());
   ASSERT_LOG(GetLink(connected_address_with_type) == nullptr, "%s is connected twice without disconnection",
              acl_connection->GetAddress().ToString().c_str());
-  auto* link_queue_up_end = acl_connection->GetAclQueueEnd();
   // Register ACL disconnection callback in LinkManager so that we can clean up link resource properly
   acl_connection->RegisterDisconnectCallback(
       common::BindOnce(&LinkManager::OnDisconnect, common::Unretained(this), connected_address_with_type),
       l2cap_handler_);
-  links_.try_emplace(connected_address_with_type, l2cap_handler_, std::move(acl_connection),
-                     std::make_unique<l2cap::internal::Fifo>(link_queue_up_end, l2cap_handler_), parameter_provider_);
+  links_.try_emplace(connected_address_with_type, l2cap_handler_, std::move(acl_connection), parameter_provider_);
   auto* link = GetLink(connected_address_with_type);
   // Allocate and distribute channels for all registered fixed channel services
   auto fixed_channel_services = service_manager_->GetRegisteredServices();

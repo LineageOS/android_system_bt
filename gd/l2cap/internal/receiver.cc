@@ -18,14 +18,16 @@
 
 #include "common/bidi_queue.h"
 #include "l2cap/cid.h"
+#include "l2cap/internal/data_pipeline_manager.h"
 #include "l2cap/l2cap_packets.h"
 #include "packet/packet_view.h"
 
 namespace bluetooth {
 namespace l2cap {
 namespace internal {
-Receiver::Receiver(LowerQueueUpEnd* link_queue_up_end, os::Handler* handler, Scheduler* scheduler)
-    : link_queue_up_end_(link_queue_up_end), handler_(handler), scheduler_(scheduler) {
+Receiver::Receiver(LowerQueueUpEnd* link_queue_up_end, os::Handler* handler,
+                   DataPipelineManager* data_pipeline_manager_)
+    : link_queue_up_end_(link_queue_up_end), handler_(handler), data_pipeline_manager_(data_pipeline_manager_) {
   ASSERT(link_queue_up_end_ != nullptr && handler_ != nullptr);
   link_queue_up_end_->RegisterDequeue(handler_,
                                       common::Bind(&Receiver::link_queue_dequeue_callback, common::Unretained(this)));
@@ -43,7 +45,7 @@ void Receiver::link_queue_dequeue_callback() {
     return;
   }
   Cid cid = static_cast<Cid>(basic_frame_view.GetChannelId());
-  auto* data_controller = scheduler_->GetDataController(cid);
+  auto* data_controller = data_pipeline_manager_->GetDataController(cid);
   if (data_controller == nullptr) {
     LOG_WARN("Received a packet with invalid cid: %d", cid);
     return;

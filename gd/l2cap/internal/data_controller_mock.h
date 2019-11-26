@@ -13,10 +13,10 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
 
-#include "l2cap/internal/channel_impl.h"
-#include "l2cap/internal/scheduler.h"
+#include "l2cap/internal/data_controller.h"
 
 #include <gmock/gmock.h>
 
@@ -26,9 +26,14 @@ namespace l2cap {
 namespace internal {
 namespace testing {
 
-class MockScheduler : public Scheduler {
+class MockDataController : public DataController {
  public:
-  MOCK_METHOD(void, OnPacketsReady, (Cid cid, int number_packet), (override));
+  MOCK_METHOD(void, OnSdu, (std::unique_ptr<packet::BasePacketBuilder>), (override));
+  MOCK_METHOD(void, OnPdu, (packet::PacketView<true>), (override));
+  MOCK_METHOD(std::unique_ptr<packet::BasePacketBuilder>, GetNextPacket, (), (override));
+  MOCK_METHOD(void, EnableFcs, (bool), (override));
+  MOCK_METHOD(void, SetRetransmissionAndFlowControlOptions, (const RetransmissionAndFlowControlConfigurationOption&),
+              (override));
 };
 
 }  // namespace testing
