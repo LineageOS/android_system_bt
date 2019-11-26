@@ -101,6 +101,7 @@ class TestHciLayer : public HciLayer {
   void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
                       common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) override {
     command_queue_.push(std::move(command));
+    command_status_callbacks.push_front(std::move(on_status));
     not_empty_.notify_all();
   }
 
@@ -155,9 +156,9 @@ class TestHciLayer : public HciLayer {
   void IncomingEvent(std::unique_ptr<EventPacketBuilder> event_builder) {
     auto packet = GetPacketView(std::move(event_builder));
     EventPacketView event = EventPacketView::Create(packet);
-    EXPECT_TRUE(event.IsValid());
+    ASSERT_TRUE(event.IsValid());
     EventCode event_code = event.GetEventCode();
-    EXPECT_TRUE(registered_events_.find(event_code) != registered_events_.end());
+    ASSERT_TRUE(registered_events_.find(event_code) != registered_events_.end()) << EventCodeText(event_code);
     registered_events_[event_code].Run(event);
   }
 
@@ -202,6 +203,13 @@ class TestHciLayer : public HciLayer {
     command_complete_callbacks.pop_front();
   }
 
+  void CommandStatusCallback(EventPacketView event) {
+    CommandStatusView status_view = CommandStatusView::Create(event);
+    ASSERT(status_view.IsValid());
+    std::move(command_status_callbacks.front()).Run(status_view);
+    command_status_callbacks.pop_front();
+  }
+
   PacketView<kLittleEndian> OutgoingAclData() {
     auto queue_end = acl_queue_.GetDownEnd();
     std::unique_ptr<AclPacketBuilder> received;
@@ -217,13 +225,19 @@ class TestHciLayer : public HciLayer {
   }
 
   void ListDependencies(ModuleList* list) override {}
-  void Start() override {}
+  void Start() override {
+    RegisterEventHandler(EventCode::COMMAND_COMPLETE,
+                         base::Bind(&TestHciLayer::CommandCompleteCallback, common::Unretained(this)), nullptr);
+    RegisterEventHandler(EventCode::COMMAND_STATUS,
+                         base::Bind(&TestHciLayer::CommandStatusCallback, common::Unretained(this)), nullptr);
+  }
   void Stop() override {}
 
  private:
   std::map<EventCode, common::Callback<void(EventPacketView)>> registered_events_;
   std::map<SubeventCode, common::Callback<void(LeMetaEventView)>> registered_le_events_;
   std::list<base::OnceCallback<void(CommandCompleteView)>> command_complete_callbacks;
+  std::list<base::OnceCallback<void(CommandStatusView)>> command_status_callbacks;
   BidiQueue<AclPacketView, AclPacketBuilder> acl_queue_{3 /* TODO: Set queue depth */};
 
   std::queue<std::unique_ptr<CommandPacketBuilder>> command_queue_;
@@ -235,6 +249,7 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
  protected:
   void SetUp() override {
     test_hci_layer_ = new TestHciLayer;  // Ownership is transferred to registry
+    test_hci_layer_->Start();
     test_controller_ = new TestController;
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
     fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
@@ -348,9 +363,6 @@ class AclManagerWithConnectionTest : public AclManagerTest {
  protected:
   void SetUp() override {
     AclManagerTest::SetUp();
-    test_hci_layer_->RegisterEventHandler(
-        EventCode::COMMAND_COMPLETE,
-        base::Bind(&TestHciLayer::CommandCompleteCallback, common::Unretained(test_hci_layer_)), nullptr);
 
     handle_ = 0x123;
     acl_manager_->CreateConnection(remote);
@@ -473,6 +485,8 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_success
   EXPECT_EQ(command_view.GetPeerAddress(), remote);
   EXPECT_EQ(command_view.GetPeerAddressType(), AddressType::PUBLIC_DEVICE_ADDRESS);
 
+  test_hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
+
   auto first_connection = GetLeConnectionFuture();
 
   test_hci_layer_->IncomingLeMetaEvent(
@@ -496,6 +510,8 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_fail) {
   ASSERT(command_view.IsValid());
   EXPECT_EQ(command_view.GetPeerAddress(), remote);
   EXPECT_EQ(command_view.GetPeerAddressType(), AddressType::PUBLIC_DEVICE_ADDRESS);
+
+  test_hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
 
   EXPECT_CALL(mock_le_connection_callbacks_,
               OnLeConnectFail(remote_with_type, ErrorCode::CONNECTION_REJECTED_LIMITED_RESOURCES));
