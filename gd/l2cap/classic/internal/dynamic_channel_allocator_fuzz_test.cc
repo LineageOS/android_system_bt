@@ -48,8 +48,7 @@ class L2capClassicDynamicChannelAllocatorFuzzTest {
     handler_ = new os::Handler(thread_);
     mock_parameter_provider_ = new NiceMock<MockParameterProvider>();
     mock_classic_link_ =
-        new NiceMock<MockLink>(handler_, mock_parameter_provider_, std::make_unique<NiceMock<MockAclConnection>>(),
-                               std::make_unique<NiceMock<MockScheduler>>());
+        new NiceMock<MockLink>(handler_, mock_parameter_provider_, std::make_unique<NiceMock<MockAclConnection>>());
     EXPECT_CALL(*mock_classic_link_, GetDevice()).WillRepeatedly(Return(device));
     channel_allocator_ = std::make_unique<DynamicChannelAllocator>(mock_classic_link_, handler_);
   }

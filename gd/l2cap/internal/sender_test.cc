@@ -40,6 +40,14 @@ std::unique_ptr<packet::BasePacketBuilder> CreateSdu(std::vector<uint8_t> payloa
   return raw_builder;
 }
 
+PacketView<kLittleEndian> GetPacketView(std::unique_ptr<packet::BasePacketBuilder> packet) {
+  auto bytes = std::make_shared<std::vector<uint8_t>>();
+  BitInserter i(*bytes);
+  bytes->reserve(packet->size());
+  packet->Serialize(i);
+  return packet::PacketView<packet::kLittleEndian>(bytes);
+}
+
 class FakeScheduler : public Scheduler {
  public:
   void OnPacketsReady(Cid cid, int number_packets) override {
@@ -52,10 +60,10 @@ class FakeScheduler : public Scheduler {
   std::function<void(Cid cid, int number_packets)> on_packets_ready_;
 };
 
-class L2capSegmenterTest : public ::testing::Test {
+class L2capSenderTest : public ::testing::Test {
  public:
   std::unique_ptr<Sender::UpperDequeue> enqueue_callback() {
-    auto packet_one = CreateSdu({1, 2, 3});
+    auto packet_one = CreateSdu({'a', 'b', 'c'});
     channel_queue_.GetUpEnd()->UnregisterEnqueue();
     return packet_one;
   }
@@ -67,15 +75,15 @@ class L2capSegmenterTest : public ::testing::Test {
     queue_handler_ = new os::Handler(thread_);
     mock_channel_ = std::make_shared<testing::MockChannelImpl>();
     EXPECT_CALL(*mock_channel_, GetQueueDownEnd()).WillRepeatedly(Return(channel_queue_.GetDownEnd()));
-    EXPECT_CALL(*mock_channel_, GetCid()).WillRepeatedly(Return(0x41));
-    EXPECT_CALL(*mock_channel_, GetRemoteCid()).WillRepeatedly(Return(0x41));
+    EXPECT_CALL(*mock_channel_, GetCid()).WillRepeatedly(Return(cid_));
+    EXPECT_CALL(*mock_channel_, GetRemoteCid()).WillRepeatedly(Return(cid_));
     sender_ = new Sender(queue_handler_, &scheduler_, mock_channel_);
   }
 
   void TearDown() override {
-    delete sender_;
     queue_handler_->Clear();
     user_handler_->Clear();
+    delete sender_;
     delete queue_handler_;
     delete user_handler_;
     delete thread_;
@@ -87,20 +95,27 @@ class L2capSegmenterTest : public ::testing::Test {
   common::BidiQueue<Sender::UpperEnqueue, Sender::UpperDequeue> channel_queue_{10};
   std::shared_ptr<testing::MockChannelImpl> mock_channel_;
   Sender* sender_ = nullptr;
+  Cid cid_ = 0x41;
   FakeScheduler scheduler_;
 };
 
-TEST_F(L2capSegmenterTest, send_packet) {
-  auto packet_one = CreateSdu({1, 2, 3});
+TEST_F(L2capSenderTest, send_packet) {
   std::promise<void> promise;
   auto future = promise.get_future();
   scheduler_.SetOnPacketsReady([&promise](Cid cid, int number_packets) { promise.set_value(); });
   channel_queue_.GetUpEnd()->RegisterEnqueue(
-      queue_handler_, common::Bind(&L2capSegmenterTest::enqueue_callback, common::Unretained(this)));
+      queue_handler_, common::Bind(&L2capSenderTest::enqueue_callback, common::Unretained(this)));
   auto status = future.wait_for(std::chrono::milliseconds(3));
   EXPECT_EQ(status, std::future_status::ready);
   auto packet = sender_->GetNextPacket();
   EXPECT_NE(packet, nullptr);
+  auto packet_view = GetPacketView(std::move(packet));
+  auto basic_frame_view = BasicFrameView::Create(packet_view);
+  EXPECT_TRUE(basic_frame_view.IsValid());
+  EXPECT_EQ(basic_frame_view.GetChannelId(), cid_);
+  auto payload = basic_frame_view.GetPayload();
+  std::string payload_string(payload.begin(), payload.end());
+  EXPECT_EQ(payload_string, "abc");
 }
 
 }  // namespace
