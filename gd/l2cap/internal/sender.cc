@@ -19,6 +19,7 @@
 #include "common/bind.h"
 #include "l2cap/internal/basic_mode_channel_data_controller.h"
 #include "l2cap/internal/enhanced_retransmission_mode_channel_data_controller.h"
+#include "l2cap/internal/le_credit_based_channel_data_controller.h"
 #include "l2cap/internal/scheduler.h"
 #include "l2cap/internal/sender.h"
 #include "os/handler.h"
@@ -33,6 +34,23 @@ Sender::Sender(os::Handler* handler, ILink* link, Scheduler* scheduler, std::sha
       channel_id_(channel->GetCid()), remote_channel_id_(channel->GetRemoteCid()),
       data_controller_(std::make_unique<BasicModeDataController>(channel_id_, remote_channel_id_, queue_end_, handler_,
                                                                  scheduler_)) {
+  try_register_dequeue();
+}
+
+Sender::Sender(os::Handler* handler, ILink* link, Scheduler* scheduler, std::shared_ptr<ChannelImpl> channel,
+               ChannelMode mode)
+    : handler_(handler), link_(link), queue_end_(channel->GetQueueDownEnd()), scheduler_(scheduler),
+      channel_id_(channel->GetCid()), remote_channel_id_(channel->GetRemoteCid()) {
+  if (mode == ChannelMode::BASIC) {
+    data_controller_ =
+        std::make_unique<BasicModeDataController>(channel_id_, remote_channel_id_, queue_end_, handler_, scheduler_);
+  } else if (mode == ChannelMode::ERTM) {
+    data_controller_ =
+        std::make_unique<ErtmController>(link_, channel_id_, remote_channel_id_, queue_end_, handler_, scheduler_);
+  } else if (mode == ChannelMode::LE_CREDIT_BASED) {
+    data_controller_ = std::make_unique<LeCreditBasedDataController>(link_, channel_id_, remote_channel_id_, queue_end_,
+                                                                     handler_, scheduler_);
+  }
   try_register_dequeue();
 }
 

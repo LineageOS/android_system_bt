@@ -36,6 +36,9 @@ class ParameterProvider {
   virtual std::chrono::milliseconds GetLeLinkIdleDisconnectTimeout() {
     return std::chrono::seconds(20);
   }
+  virtual uint16_t GetLeMps() {
+    return 251;
+  }
 };
 
 }  // namespace internal

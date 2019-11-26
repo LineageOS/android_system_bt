@@ -34,6 +34,7 @@ filegroup {
         "le/internal/fixed_channel_service_manager_impl.cc",
         "le/internal/link.cc",
         "le/internal/link_manager.cc",
+        "le/internal/signalling_manager.cc",
         "le/l2cap_le_module.cc",
     ],
 }

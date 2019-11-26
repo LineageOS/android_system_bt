@@ -73,7 +73,7 @@ class LeCreditBasedDataControllerTest : public ::testing::Test {
 TEST_F(LeCreditBasedDataControllerTest, transmit_unsegmented) {
   common::BidiQueue<Scheduler::UpperEnqueue, Scheduler::UpperDequeue> channel_queue{10};
   testing::MockScheduler scheduler;
-  LeCreditBasedDataController controller{0x41, 0x41, channel_queue.GetDownEnd(), queue_handler_, &scheduler};
+  LeCreditBasedDataController controller{nullptr, 0x41, 0x41, channel_queue.GetDownEnd(), queue_handler_, &scheduler};
   EXPECT_CALL(scheduler, OnPacketsReady(0x41, 1));
   controller.OnSdu(CreateSdu({'a', 'b', 'c', 'd'}));
   auto next_packet = controller.GetNextPacket();
@@ -91,7 +91,7 @@ TEST_F(LeCreditBasedDataControllerTest, transmit_unsegmented) {
 TEST_F(LeCreditBasedDataControllerTest, transmit_segmented) {
   common::BidiQueue<Scheduler::UpperEnqueue, Scheduler::UpperDequeue> channel_queue{10};
   testing::MockScheduler scheduler;
-  LeCreditBasedDataController controller{0x41, 0x41, channel_queue.GetDownEnd(), queue_handler_, &scheduler};
+  LeCreditBasedDataController controller{nullptr, 0x41, 0x41, channel_queue.GetDownEnd(), queue_handler_, &scheduler};
   controller.SetMps(4);
   EXPECT_CALL(scheduler, OnPacketsReady(0x41, 2));
   // Should be divided into 'ab', and 'cd'
@@ -121,7 +121,7 @@ TEST_F(LeCreditBasedDataControllerTest, transmit_segmented) {
 TEST_F(LeCreditBasedDataControllerTest, receive_unsegmented) {
   common::BidiQueue<Scheduler::UpperEnqueue, Scheduler::UpperDequeue> channel_queue{10};
   testing::MockScheduler scheduler;
-  LeCreditBasedDataController controller{0x41, 0x41, channel_queue.GetDownEnd(), queue_handler_, &scheduler};
+  LeCreditBasedDataController controller{nullptr, 0x41, 0x41, channel_queue.GetDownEnd(), queue_handler_, &scheduler};
   auto segment = CreateSdu({'a', 'b', 'c', 'd'});
   auto builder = FirstLeInformationFrameBuilder::Create(0x41, 4, std::move(segment));
   auto base_view = GetPacketView(std::move(builder));
@@ -136,7 +136,7 @@ TEST_F(LeCreditBasedDataControllerTest, receive_unsegmented) {
 TEST_F(LeCreditBasedDataControllerTest, receive_segmented) {
   common::BidiQueue<Scheduler::UpperEnqueue, Scheduler::UpperDequeue> channel_queue{10};
   testing::MockScheduler scheduler;
-  LeCreditBasedDataController controller{0x41, 0x41, channel_queue.GetDownEnd(), queue_handler_, &scheduler};
+  LeCreditBasedDataController controller{nullptr, 0x41, 0x41, channel_queue.GetDownEnd(), queue_handler_, &scheduler};
   auto segment1 = CreateSdu({'a', 'b', 'c', 'd'});
   auto builder1 = FirstLeInformationFrameBuilder::Create(0x41, 7, std::move(segment1));
   auto base_view = GetPacketView(std::move(builder1));
@@ -155,7 +155,7 @@ TEST_F(LeCreditBasedDataControllerTest, receive_segmented) {
 TEST_F(LeCreditBasedDataControllerTest, receive_segmented_with_wrong_sdu_length) {
   common::BidiQueue<Scheduler::UpperEnqueue, Scheduler::UpperDequeue> channel_queue{10};
   testing::MockScheduler scheduler;
-  LeCreditBasedDataController controller{0x41, 0x41, channel_queue.GetDownEnd(), queue_handler_, &scheduler};
+  LeCreditBasedDataController controller{nullptr, 0x41, 0x41, channel_queue.GetDownEnd(), queue_handler_, &scheduler};
   auto segment1 = CreateSdu({'a', 'b', 'c', 'd'});
   auto builder1 = FirstLeInformationFrameBuilder::Create(0x41, 5, std::move(segment1));
   auto base_view = GetPacketView(std::move(builder1));
