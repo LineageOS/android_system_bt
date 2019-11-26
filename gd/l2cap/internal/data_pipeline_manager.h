@@ -16,15 +16,22 @@
 
 #pragma once
 
-#include <cstdint>
+#include <string>
+#include <unordered_map>
 
 #include "common/bidi_queue.h"
+#include "common/bind.h"
+#include "data_controller.h"
 #include "l2cap/cid.h"
-#include "l2cap/classic/dynamic_channel_configuration_option.h"
 #include "l2cap/internal/channel_impl.h"
-#include "l2cap/internal/data_controller.h"
-#include "l2cap/internal/sender.h"
+#include "l2cap/internal/receiver.h"
+#include "l2cap/internal/scheduler.h"
+#include "l2cap/internal/scheduler_fifo.h"
 #include "l2cap/l2cap_packets.h"
+#include "l2cap/mtu.h"
+#include "os/handler.h"
+#include "os/log.h"
+#include "os/queue.h"
 #include "packet/base_packet_builder.h"
 #include "packet/packet_view.h"
 
@@ -33,14 +40,11 @@ namespace l2cap {
 namespace internal {
 
 /**
- * Handle the scheduling of packets through the l2cap stack.
- * For each attached channel, dequeue its outgoing packets and enqueue it to the given LinkQueueUpEnd, according to some
- * policy (cid).
- *
- * Note: If a channel cannot dequeue from ChannelQueueDownEnd so that the buffer for incoming packet is full, further
- * incoming packets will be dropped.
+ * Manages data pipeline from channel queue end to link queue end, per link.
+ * Contains a Scheduler and Receiver per link.
+ * Contains a Sender and its corrsponding DataController per attached channel.
  */
-class Scheduler {
+class DataPipelineManager {
  public:
   using UpperEnqueue = packet::PacketView<packet::kLittleEndian>;
   using UpperDequeue = packet::BasePacketBuilder;
@@ -49,14 +53,22 @@ class Scheduler {
   using LowerDequeue = UpperEnqueue;
   using LowerQueueUpEnd = common::BidiQueueEnd<LowerEnqueue, LowerDequeue>;
 
-  /**
-   * Callback from the sender to indicate that the scheduler could dequeue number_packets from it
-   */
-  virtual void OnPacketsReady(Cid cid, int number_packets) {}
+  DataPipelineManager(os::Handler* handler, LowerQueueUpEnd* link_queue_up_end)
+      : handler_(handler), scheduler_(std::make_unique<Fifo>(this, link_queue_up_end, handler)),
+        receiver_(link_queue_up_end, handler, this) {}
 
-  virtual ~Scheduler() = default;
+  virtual void AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> channel);
+  virtual void DetachChannel(Cid cid);
+  virtual DataController* GetDataController(Cid cid);
+  virtual void OnPacketSent(Cid cid);
+  virtual ~DataPipelineManager() = default;
+
+ private:
+  os::Handler* handler_;
+  std::unique_ptr<Scheduler> scheduler_;
+  Receiver receiver_;
+  std::unordered_map<Cid, Sender> sender_map_;
 };
-
 }  // namespace internal
 }  // namespace l2cap
 }  // namespace bluetooth
