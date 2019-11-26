@@ -30,66 +30,57 @@
 namespace test_vendor_lib {
 
 using ::bluetooth::hci::Address;
+using ::bluetooth::hci::ErrorCode;
+using ::bluetooth::hci::OpCode;
 
 class LinkLayerController {
  public:
   static constexpr size_t kIrk_size = 16;
 
   LinkLayerController(const DeviceProperties& properties) : properties_(properties) {}
-  bluetooth::hci::ErrorCode SendCommandToRemoteByAddress(
-      bluetooth::hci::OpCode opcode, bluetooth::packet::PacketView<true> args,
+  ErrorCode SendCommandToRemoteByAddress(
+      OpCode opcode, bluetooth::packet::PacketView<true> args,
       const Address& remote);
-  bluetooth::hci::ErrorCode SendCommandToRemoteByHandle(
-      bluetooth::hci::OpCode opcode, bluetooth::packet::PacketView<true> args,
-      uint16_t handle);
-  bluetooth::hci::ErrorCode SendScoToRemote(
-      bluetooth::hci::ScoPacketView sco_packet);
-  bluetooth::hci::ErrorCode SendAclToRemote(
-      bluetooth::hci::AclPacketView acl_packet);
+  ErrorCode SendCommandToRemoteByHandle(
+      OpCode opcode, bluetooth::packet::PacketView<true> args, uint16_t handle);
+  ErrorCode SendScoToRemote(bluetooth::hci::ScoPacketView sco_packet);
+  ErrorCode SendAclToRemote(bluetooth::hci::AclPacketView acl_packet);
 
   void WriteSimplePairingMode(bool enabled);
   void StartSimplePairing(const Address& address);
   void AuthenticateRemoteStage1(const Address& address, PairingType pairing_type);
   void AuthenticateRemoteStage2(const Address& address);
-  bluetooth::hci::ErrorCode LinkKeyRequestReply(
-      const Address& address, const std::array<uint8_t, 16>& key);
-  bluetooth::hci::ErrorCode LinkKeyRequestNegativeReply(const Address& address);
-  bluetooth::hci::ErrorCode IoCapabilityRequestReply(
-      const Address& peer, uint8_t io_capability, uint8_t oob_data_present_flag,
-      uint8_t authentication_requirements);
-  bluetooth::hci::ErrorCode IoCapabilityRequestNegativeReply(
-      const Address& peer, bluetooth::hci::ErrorCode reason);
-  bluetooth::hci::ErrorCode UserConfirmationRequestReply(const Address& peer);
-  bluetooth::hci::ErrorCode UserConfirmationRequestNegativeReply(
-      const Address& peer);
-  bluetooth::hci::ErrorCode UserPasskeyRequestReply(const Address& peer,
-                                                    uint32_t numeric_value);
-  bluetooth::hci::ErrorCode UserPasskeyRequestNegativeReply(
-      const Address& peer);
-  bluetooth::hci::ErrorCode RemoteOobDataRequestReply(
-      const Address& peer, const std::vector<uint8_t>& c,
-      const std::vector<uint8_t>& r);
-  bluetooth::hci::ErrorCode RemoteOobDataRequestNegativeReply(
-      const Address& peer);
+  ErrorCode LinkKeyRequestReply(const Address& address,
+                                const std::array<uint8_t, 16>& key);
+  ErrorCode LinkKeyRequestNegativeReply(const Address& address);
+  ErrorCode IoCapabilityRequestReply(const Address& peer, uint8_t io_capability,
+                                     uint8_t oob_data_present_flag,
+                                     uint8_t authentication_requirements);
+  ErrorCode IoCapabilityRequestNegativeReply(const Address& peer,
+                                             ErrorCode reason);
+  ErrorCode UserConfirmationRequestReply(const Address& peer);
+  ErrorCode UserConfirmationRequestNegativeReply(const Address& peer);
+  ErrorCode UserPasskeyRequestReply(const Address& peer,
+                                    uint32_t numeric_value);
+  ErrorCode UserPasskeyRequestNegativeReply(const Address& peer);
+  ErrorCode RemoteOobDataRequestReply(const Address& peer,
+                                      const std::vector<uint8_t>& c,
+                                      const std::vector<uint8_t>& r);
+  ErrorCode RemoteOobDataRequestNegativeReply(const Address& peer);
   void HandleSetConnectionEncryption(const Address& address, uint16_t handle, uint8_t encryption_enable);
-  bluetooth::hci::ErrorCode SetConnectionEncryption(uint16_t handle,
-                                                    uint8_t encryption_enable);
+  ErrorCode SetConnectionEncryption(uint16_t handle, uint8_t encryption_enable);
   void HandleAuthenticationRequest(const Address& address, uint16_t handle);
-  bluetooth::hci::ErrorCode AuthenticationRequested(uint16_t handle);
+  ErrorCode AuthenticationRequested(uint16_t handle);
 
-  bluetooth::hci::ErrorCode AcceptConnectionRequest(const Address& addr,
-                                                    bool try_role_switch);
+  ErrorCode AcceptConnectionRequest(const Address& addr, bool try_role_switch);
   void MakeSlaveConnection(const Address& addr, bool try_role_switch);
-  bluetooth::hci::ErrorCode RejectConnectionRequest(const Address& addr,
-                                                    uint8_t reason);
+  ErrorCode RejectConnectionRequest(const Address& addr, uint8_t reason);
   void RejectSlaveConnection(const Address& addr, uint8_t reason);
-  bluetooth::hci::ErrorCode CreateConnection(const Address& addr,
-                                             uint16_t packet_type,
-                                             uint8_t page_scan_mode,
-                                             uint16_t clock_offset,
-                                             uint8_t allow_role_switch);
-  bluetooth::hci::ErrorCode CreateConnectionCancel(const Address& addr);
-  bluetooth::hci::ErrorCode Disconnect(uint16_t handle, uint8_t reason);
+  ErrorCode CreateConnection(const Address& addr, uint16_t packet_type,
+                             uint8_t page_scan_mode, uint16_t clock_offset,
+                             uint8_t allow_role_switch);
+  ErrorCode CreateConnectionCancel(const Address& addr);
+  ErrorCode Disconnect(uint16_t handle, uint8_t reason);
 
  private:
   void DisconnectCleanup(uint16_t handle, uint8_t reason);
@@ -157,11 +148,10 @@ class LinkLayerController {
   bool LeResolvingListFull();
   void LeSetPrivacyMode(uint8_t address_type, Address addr, uint8_t mode);
 
-  bluetooth::hci::ErrorCode SetLeAdvertisingEnable(
-      uint8_t le_advertising_enable) {
+  ErrorCode SetLeAdvertisingEnable(uint8_t le_advertising_enable) {
     le_advertising_enable_ = le_advertising_enable;
     // TODO: Check properties and return errors
-    return bluetooth::hci::ErrorCode::SUCCESS;
+    return ErrorCode::SUCCESS;
   }
 
   void SetLeScanEnable(uint8_t le_scan_enable) {
@@ -185,9 +175,9 @@ class LinkLayerController {
   void SetLeAddressType(uint8_t le_address_type) {
     le_address_type_ = le_address_type;
   }
-  bluetooth::hci::ErrorCode SetLeConnect(bool le_connect) {
+  ErrorCode SetLeConnect(bool le_connect) {
     le_connect_ = le_connect;
-    return bluetooth::hci::ErrorCode::SUCCESS;
+    return ErrorCode::SUCCESS;
   }
   void SetLeConnectionIntervalMin(uint16_t min) {
     le_connection_interval_min_ = min;
@@ -229,32 +219,25 @@ class LinkLayerController {
   void SetInquiryScanEnable(bool enable);
   void SetPageScanEnable(bool enable);
 
-  bluetooth::hci::ErrorCode ChangeConnectionPacketType(uint16_t handle,
-                                                       uint16_t types);
-  bluetooth::hci::ErrorCode ChangeConnectionLinkKey(uint16_t handle);
-  bluetooth::hci::ErrorCode MasterLinkKey(uint8_t key_flag);
-  bluetooth::hci::ErrorCode HoldMode(uint16_t handle,
-                                     uint16_t hold_mode_max_interval,
-                                     uint16_t hold_mode_min_interval);
-  bluetooth::hci::ErrorCode SniffMode(uint16_t handle,
-                                      uint16_t sniff_max_interval,
-                                      uint16_t sniff_min_interval,
-                                      uint16_t sniff_attempt,
-                                      uint16_t sniff_timeout);
-  bluetooth::hci::ErrorCode ExitSniffMode(uint16_t handle);
-  bluetooth::hci::ErrorCode QosSetup(uint16_t handle, uint8_t service_type,
-                                     uint32_t token_rate,
-                                     uint32_t peak_bandwidth, uint32_t latency,
-                                     uint32_t delay_variation);
-  bluetooth::hci::ErrorCode SwitchRole(Address bd_addr, uint8_t role);
-  bluetooth::hci::ErrorCode WriteLinkPolicySettings(uint16_t handle,
-                                                    uint16_t settings);
-  bluetooth::hci::ErrorCode FlowSpecification(
-      uint16_t handle, uint8_t flow_direction, uint8_t service_type,
-      uint32_t token_rate, uint32_t token_bucket_size, uint32_t peak_bandwidth,
-      uint32_t access_latency);
-  bluetooth::hci::ErrorCode WriteLinkSupervisionTimeout(uint16_t handle,
-                                                        uint16_t timeout);
+  ErrorCode ChangeConnectionPacketType(uint16_t handle, uint16_t types);
+  ErrorCode ChangeConnectionLinkKey(uint16_t handle);
+  ErrorCode MasterLinkKey(uint8_t key_flag);
+  ErrorCode HoldMode(uint16_t handle, uint16_t hold_mode_max_interval,
+                     uint16_t hold_mode_min_interval);
+  ErrorCode SniffMode(uint16_t handle, uint16_t sniff_max_interval,
+                      uint16_t sniff_min_interval, uint16_t sniff_attempt,
+                      uint16_t sniff_timeout);
+  ErrorCode ExitSniffMode(uint16_t handle);
+  ErrorCode QosSetup(uint16_t handle, uint8_t service_type, uint32_t token_rate,
+                     uint32_t peak_bandwidth, uint32_t latency,
+                     uint32_t delay_variation);
+  ErrorCode SwitchRole(Address bd_addr, uint8_t role);
+  ErrorCode WriteLinkPolicySettings(uint16_t handle, uint16_t settings);
+  ErrorCode FlowSpecification(uint16_t handle, uint8_t flow_direction,
+                              uint8_t service_type, uint32_t token_rate,
+                              uint32_t token_bucket_size,
+                              uint32_t peak_bandwidth, uint32_t access_latency);
+  ErrorCode WriteLinkSupervisionTimeout(uint16_t handle, uint16_t timeout);
 
  protected:
   void SendLeLinkLayerPacket(
