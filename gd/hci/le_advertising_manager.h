@@ -69,10 +69,9 @@ class LeAdvertisingManager : public bluetooth::Module {
                                 const common::Callback<void(Address, AddressType)>& scan_callback,
                                 const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback,
                                 os::Handler* handler);
-  AdvertiserId CreateAdvertiser(const ExtendedAdvertisingConfig& config,
-                                const common::Callback<void(Address, AddressType)>& scan_callback,
-                                const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback,
-                                os::Handler* handler);
+  AdvertiserId ExtendedCreateAdvertiser(
+      const ExtendedAdvertisingConfig& config, const common::Callback<void(Address, AddressType)>& scan_callback,
+      const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback, os::Handler* handler);
 
   void RemoveAdvertiser(AdvertiserId id);
 
