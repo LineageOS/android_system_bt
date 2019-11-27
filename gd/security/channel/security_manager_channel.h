@@ -1,4 +1,4 @@
-/******************************************************************************
+/*
  *
  *  Copyright 2019 The Android Open Source Project
  *
@@ -14,25 +14,20 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
- ******************************************************************************/
+ */
 #pragma once
 
 #include <memory>
 #include <vector>
 
-#include "hci/classic_device.h"
+#include "hci/address_with_type.h"
 #include "hci/hci_layer.h"
+#include "hci/hci_packets.h"
 #include "hci/security_interface.h"
-#include "security/smp_packets.h"
 
 namespace bluetooth {
 namespace security {
 namespace channel {
-
-using hci::CommandCompleteView;
-using hci::EventPacketView;
-using hci::SecurityCommandBuilder;
-using hci::SecurityCommandView;
 
 /**
  * Interface for listening to the channel for SMP commands.
@@ -40,24 +35,7 @@ using hci::SecurityCommandView;
 class ISecurityManagerChannelListener {
  public:
   virtual ~ISecurityManagerChannelListener() = default;
-
-  virtual void OnChangeConnectionLinkKeyComplete(std::shared_ptr<hci::Device> device,
-                                                 hci::ChangeConnectionLinkKeyCompleteView packet) = 0;
-  virtual void OnMasterLinkKeyComplete(std::shared_ptr<hci::Device> device, hci::MasterLinkKeyCompleteView packet) = 0;
-  virtual void OnPinCodeRequest(std::shared_ptr<hci::Device> device, hci::PinCodeRequestView packet) = 0;
-  virtual void OnLinkKeyRequest(std::shared_ptr<hci::Device> device, hci::LinkKeyRequestView packet) = 0;
-  virtual void OnLinkKeyNotification(std::shared_ptr<hci::Device> device, hci::LinkKeyNotificationView packet) = 0;
-  virtual void OnIoCapabilityRequest(std::shared_ptr<hci::Device> device, hci::IoCapabilityRequestView packet) = 0;
-  virtual void OnIoCapabilityResponse(std::shared_ptr<hci::Device> device, hci::IoCapabilityResponseView packet) = 0;
-  virtual void OnSimplePairingComplete(std::shared_ptr<hci::Device> device, hci::SimplePairingCompleteView packet) = 0;
-  virtual void OnReturnLinkKeys(std::shared_ptr<hci::Device> device, hci::ReturnLinkKeysView packet) = 0;
-  virtual void OnEncryptionChange(std::shared_ptr<hci::Device> device, hci::EncryptionChangeView packet) = 0;
-  virtual void OnEncryptionKeyRefreshComplete(std::shared_ptr<hci::Device> device,
-                                              hci::EncryptionKeyRefreshCompleteView packet) = 0;
-  virtual void OnRemoteOobDataRequest(std::shared_ptr<hci::Device> device, hci::RemoteOobDataRequestView packet) = 0;
-  virtual void OnUserPasskeyNotification(std::shared_ptr<hci::Device> device,
-                                         hci::UserPasskeyNotificationView packet) = 0;
-  virtual void OnKeypressNotification(std::shared_ptr<hci::Device> device, hci::KeypressNotificationView packet) = 0;
+  virtual void OnHciEventReceived(hci::EventPacketView packet) = 0;
 };
 
 /**
@@ -77,10 +55,9 @@ class SecurityManagerChannel {
   /**
    * Send a given SMP command over the SecurityManagerChannel
    *
-   * @param device target where command will be sent
    * @param command smp command to send
    */
-  void SendCommand(std::shared_ptr<hci::Device> device, std::unique_ptr<SecurityCommandBuilder> command);
+  void SendCommand(std::unique_ptr<hci::SecurityCommandBuilder> command);
 
   /**
    * Sets the listener to listen for channel events
@@ -96,14 +73,14 @@ class SecurityManagerChannel {
    *
    * @param event_packet
    */
-  void OnHciEventReceived(EventPacketView packet);
+  void OnHciEventReceived(hci::EventPacketView packet);
 
   /**
    * Called when an HCI command is completed
    *
    * @param on_complete
    */
-  void OnCommandComplete(CommandCompleteView packet);
+  void OnCommandComplete(hci::CommandCompleteView packet);
 
  private:
   ISecurityManagerChannelListener* listener_;

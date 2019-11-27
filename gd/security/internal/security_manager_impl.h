@@ -16,13 +16,16 @@
 
 #pragma once
 
+#include <unordered_map>
+#include <utility>
+
 #include "hci/classic_device.h"
 #include "l2cap/classic/l2cap_classic_module.h"
 #include "l2cap/le/l2cap_le_module.h"
 #include "os/handler.h"
 #include "security/channel/security_manager_channel.h"
-
-#include <utility>
+#include "security/pairing/classic_pairing_handler.h"
+#include "security/record/security_record.h"
 
 namespace bluetooth {
 namespace security {
@@ -31,7 +34,7 @@ class ISecurityManagerListener;
 
 namespace internal {
 
-class SecurityManagerImpl /*: public channel::ISecurityManagerChannelListener*/ {
+class SecurityManagerImpl : public channel::ISecurityManagerChannelListener {
  public:
   explicit SecurityManagerImpl(os::Handler* security_handler, l2cap::le::L2capLeModule* l2cap_le_module,
                                l2cap::classic::L2capClassicModule* l2cap_classic_module,
@@ -53,7 +56,7 @@ class SecurityManagerImpl /*: public channel::ISecurityManagerChannelListener*/ 
    * @param device pointer to device we want to bond with
    * @return true if bonded or pairing started successfully, false if currently pairing
    */
-  void CreateBond(std::shared_ptr<hci::ClassicDevice> device);
+  void CreateBond(hci::AddressWithType device);
 
   /* void CreateBond(std::shared_ptr<hci::LeDevice> device); */
 
@@ -63,7 +66,7 @@ class SecurityManagerImpl /*: public channel::ISecurityManagerChannelListener*/ 
    * @param device pointer to device with which we want to cancel our bond
    * @return <code>true</code> if successfully stopped
    */
-  void CancelBond(std::shared_ptr<bluetooth::hci::ClassicDevice> device);
+  void CancelBond(hci::AddressWithType device);
 
   /* void CancelBond(std::shared_ptr<hci::LeDevice> device); */
 
@@ -73,7 +76,7 @@ class SecurityManagerImpl /*: public channel::ISecurityManagerChannelListener*/ 
    * @param device pointer to device we want to forget
    * @return true if removed
    */
-  void RemoveBond(std::shared_ptr<bluetooth::hci::ClassicDevice> device);
+  void RemoveBond(hci::AddressWithType device);
 
   /* void RemoveBond(std::shared_ptr<hci::LeDevice> device); */
 
@@ -91,33 +94,30 @@ class SecurityManagerImpl /*: public channel::ISecurityManagerChannelListener*/ 
    */
   void UnregisterCallbackListener(ISecurityManagerListener* listener);
 
+  // ISecurityManagerChannel
+  void OnHciEventReceived(hci::EventPacketView packet) override;
+
+  void OnPairingHandlerComplete(hci::Address address);
+
  protected:
   std::vector<std::pair<ISecurityManagerListener*, os::Handler*>> listeners_;
   void NotifyDeviceBonded(hci::AddressWithType device);
   void NotifyDeviceBondFailed(hci::AddressWithType device);
   void NotifyDeviceUnbonded(hci::AddressWithType device);
 
-  // ISecurityManagerChannel
-  void OnChangeConnectionLinkKeyComplete(std::shared_ptr<hci::Device> device,
-                                         hci::ChangeConnectionLinkKeyCompleteView packet);
-  void OnMasterLinkKeyComplete(std::shared_ptr<hci::Device> device, hci::MasterLinkKeyCompleteView packet);
-  void OnPinCodeRequest(std::shared_ptr<hci::Device> device, hci::PinCodeRequestView packet);
-  void OnLinkKeyRequest(std::shared_ptr<hci::Device> device, hci::LinkKeyRequestView packet);
-  void OnLinkKeyNotification(std::shared_ptr<hci::Device> device, hci::LinkKeyNotificationView packet);
-  void OnIoCapabilityRequest(std::shared_ptr<hci::Device> device, hci::IoCapabilityRequestView packet);
-  void OnIoCapabilityResponse(std::shared_ptr<hci::Device> device, hci::IoCapabilityResponseView packet);
-  void OnSimplePairingComplete(std::shared_ptr<hci::Device> device, hci::SimplePairingCompleteView packet);
-  void OnReturnLinkKeys(std::shared_ptr<hci::Device> device, hci::ReturnLinkKeysView packet);
-  void OnEncryptionChange(std::shared_ptr<hci::Device> device, hci::EncryptionChangeView packet);
-  void OnEncryptionKeyRefreshComplete(std::shared_ptr<hci::Device> device,
-                                      hci::EncryptionKeyRefreshCompleteView packet);
-  void OnRemoteOobDataRequest(std::shared_ptr<hci::Device> device, hci::RemoteOobDataRequestView packet);
-
  private:
+  template <class T>
+  void HandleEvent(T packet);
+
+  std::shared_ptr<record::SecurityRecord> CreateSecurityRecord(hci::Address address);
+  void DispatchPairingHandler(std::shared_ptr<record::SecurityRecord> record, bool locally_initiated);
+
   os::Handler* security_handler_ __attribute__((unused));
   l2cap::le::L2capLeModule* l2cap_le_module_ __attribute__((unused));
   l2cap::classic::L2capClassicModule* l2cap_classic_module_ __attribute__((unused));
   channel::SecurityManagerChannel* security_manager_channel_ __attribute__((unused));
+  std::unordered_map<hci::Address, std::shared_ptr<record::SecurityRecord>> security_record_map_;
+  std::unordered_map<hci::Address, std::shared_ptr<pairing::PairingHandler>> pairing_handler_map_;
 };
 }  // namespace internal
 }  // namespace security
