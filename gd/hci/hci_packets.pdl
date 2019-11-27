@@ -2276,7 +2276,7 @@ packet LeReadAdvertisingChannelTxPowerComplete : CommandComplete (command_op_cod
 packet LeSetAdvertisingData : LeAdvertisingCommand (op_code = LE_SET_ADVERTISING_DATA) {
   _size_(advertising_data) : 8,
   advertising_data : GapData[],
-  _padding_[31], // Zero padding to 31 bytes of advertising_data
+  _padding_[35], // Zero padding to 31 bytes of advertising_data + 1 size + 2 opcode + 1 total_size
 }
 
 packet LeSetAdvertisingDataComplete : CommandComplete (command_op_code = LE_SET_ADVERTISING_DATA) {
@@ -2286,7 +2286,7 @@ packet LeSetAdvertisingDataComplete : CommandComplete (command_op_code = LE_SET_
 packet LeSetScanResponseData : LeAdvertisingCommand (op_code = LE_SET_SCAN_RESPONSE_DATA) {
   _size_(advertising_data) : 8,
   advertising_data : GapData[],
-  _padding_[31], // Zero padding to 31 bytes of advertising_data
+  _padding_[35], // Zero padding to 31 bytes of advertising_data + 1 size + 2 opcode + 1 total_size
 }
 
 packet LeSetScanResponseDataComplete : CommandComplete (command_op_code = LE_SET_SCAN_RESPONSE_DATA) {
@@ -3016,7 +3016,7 @@ packet LeMultiAdvtParamComplete : LeMultiAdvtComplete (sub_cmd = SET_PARAM) {
 packet LeMultiAdvtSetData : LeMultiAdvt (sub_cmd = SET_DATA) {
   _size_(advertising_data) : 8,
   advertising_data : GapData[],
-  _padding_[31], // Zero padding to 31 bytes of advertising_data
+  _padding_[36], // Zero padding to 31 bytes of advertising_data + 1 size + 2 opcode + 1 total_size + 1 set
   advertising_instance : 8,
 }
 
@@ -3026,7 +3026,7 @@ packet LeMultiAdvtSetDataComplete : LeMultiAdvtComplete (sub_cmd = SET_DATA) {
 packet LeMultiAdvtSetScanResp : LeMultiAdvt (sub_cmd = SET_SCAN_RESP) {
   _size_(advertising_data) : 8,
   advertising_data : GapData[],
-  _padding_[31], // Zero padding to 31 bytes of advertising_data
+  _padding_[36], // Zero padding to 31 bytes of advertising_data + 1 size + 2 opcode + 1 total_size + 1 set
   advertising_instance : 8,
 }
 
