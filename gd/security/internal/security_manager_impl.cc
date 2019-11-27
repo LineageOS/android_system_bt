@@ -157,17 +157,19 @@ void SecurityManagerImpl::HandleEvent(T packet) {
   if (entry != pairing_handler_map_.end()) {
     entry->second->OnReceive(packet);
   } else {
+    auto bd_addr = packet.GetBdAddr();
+    auto event_code = packet.GetEventCode();
     auto event = hci::EventPacketView::Create(std::move(packet));
     ASSERT_LOG(event.IsValid(), "Received invalid packet");
     const hci::EventCode code = event.GetEventCode();
-    auto record = CreateSecurityRecord(packet.GetBdAddr());
+    auto record = CreateSecurityRecord(bd_addr);
     switch (code) {
       case hci::EventCode::LINK_KEY_REQUEST:
         DispatchPairingHandler(record, true);
         break;
       default:
-        LOG_ERROR("No classic pairing handler for device '%s' ready for command '%hhx' ",
-                  packet.GetBdAddr().ToString().c_str(), packet.GetEventCode());
+        LOG_ERROR("No classic pairing handler for device '%s' ready for command '%hhx' ", bd_addr.ToString().c_str(),
+                  event_code);
         break;
     }
   }
