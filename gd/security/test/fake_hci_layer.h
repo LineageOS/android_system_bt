@@ -1,4 +1,4 @@
-/******************************************************************************
+/*
  *
  *  Copyright 2019 The Android Open Source Project
  *
@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
- ******************************************************************************/
+ */
 
 #include "common/bind.h"
 #include "hci/hci_layer.h"
@@ -98,7 +98,7 @@ class FakeHciLayer : public HciLayer {
     EventPacketView event = EventPacketView::Create(packet);
     ASSERT_TRUE(event.IsValid());
     EventCode event_code = event.GetEventCode();
-    EXPECT_TRUE(registered_events_.find(event_code) != registered_events_.end());
+    ASSERT_TRUE(registered_events_.find(event_code) != registered_events_.end());
     registered_events_[event_code].Run(event);
   }
 
