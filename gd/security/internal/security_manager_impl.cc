@@ -92,8 +92,9 @@ void SecurityManagerImpl::CreateBond(hci::AddressWithType device) {
 void SecurityManagerImpl::CancelBond(hci::AddressWithType device) {
   auto entry = pairing_handler_map_.find(device.GetAddress());
   if (entry != pairing_handler_map_.end()) {
+    auto cancel_me = entry->second;
     pairing_handler_map_.erase(entry);
-    entry->second->Cancel();
+    cancel_me->Cancel();
   }
 }
 
