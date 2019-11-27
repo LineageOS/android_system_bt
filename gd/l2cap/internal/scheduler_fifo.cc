@@ -17,6 +17,7 @@
 #include "l2cap/internal/scheduler_fifo.h"
 
 #include "l2cap/classic/internal/dynamic_channel_impl.h"
+#include "l2cap/internal/data_pipeline_manager.h"
 #include "l2cap/l2cap_packets.h"
 #include "os/log.h"
 
@@ -24,30 +25,15 @@ namespace bluetooth {
 namespace l2cap {
 namespace internal {
 
-Fifo::Fifo(LowerQueueUpEnd* link_queue_up_end, os::Handler* handler)
-    : link_queue_up_end_(link_queue_up_end), handler_(handler) {
+Fifo::Fifo(DataPipelineManager* data_pipeline_manager, LowerQueueUpEnd* link_queue_up_end, os::Handler* handler)
+    : data_pipeline_manager_(data_pipeline_manager), link_queue_up_end_(link_queue_up_end), handler_(handler) {
   ASSERT(link_queue_up_end_ != nullptr && handler_ != nullptr);
 }
 
 Fifo::~Fifo() {
-  sender_map_.clear();
   if (link_queue_enqueue_registered_) {
     link_queue_up_end_->UnregisterEnqueue();
   }
-}
-
-void Fifo::AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> channel) {
-  ASSERT(sender_map_.find(cid) == sender_map_.end());
-  sender_map_.emplace(std::piecewise_construct, std::forward_as_tuple(cid),
-                      std::forward_as_tuple(handler_, this, channel));
-  if (channel->GetCid() >= kFirstDynamicChannel) {
-    channel->SetSender(&sender_map_.find(cid)->second);
-  }
-}
-
-void Fifo::DetachChannel(Cid cid) {
-  ASSERT(sender_map_.find(cid) != sender_map_.end());
-  sender_map_.erase(cid);
 }
 
 void Fifo::OnPacketsReady(Cid cid, int number_packets) {
@@ -63,9 +49,9 @@ std::unique_ptr<Fifo::UpperDequeue> Fifo::link_queue_enqueue_callback() {
   if (channel_id_and_number_packets.second == 0) {
     next_to_dequeue_and_num_packets.pop();
   }
-  auto packet = sender_map_.find(channel_id)->second.GetNextPacket();
+  auto packet = data_pipeline_manager_->GetDataController(channel_id)->GetNextPacket();
 
-  sender_map_.find(channel_id)->second.OnPacketSent();
+  data_pipeline_manager_->OnPacketSent(channel_id);
   if (next_to_dequeue_and_num_packets.empty()) {
     link_queue_up_end_->UnregisterEnqueue();
     link_queue_enqueue_registered_ = false;
@@ -80,13 +66,6 @@ void Fifo::try_register_link_queue_enqueue() {
   link_queue_up_end_->RegisterEnqueue(handler_,
                                       common::Bind(&Fifo::link_queue_enqueue_callback, common::Unretained(this)));
   link_queue_enqueue_registered_ = true;
-}
-
-DataController* Fifo::GetDataController(Cid cid) {
-  if (sender_map_.find(cid) == sender_map_.end()) {
-    return nullptr;
-  }
-  return sender_map_.find(cid)->second.GetDataController();
 }
 
 }  // namespace internal

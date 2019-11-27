@@ -1120,11 +1120,17 @@ void btm_read_remote_ext_features_complete(uint8_t* p, uint8_t evt_len) {
     return;
   }
 
-  if (page_num > max_page) {
+  if (page_num > HCI_EXT_FEATURES_PAGE_MAX) {
     android_errorWriteLog(0x534e4554, "141552859");
     BTM_TRACE_ERROR("btm_read_remote_ext_features_complete num_page=%d invalid",
                     page_num);
     return;
+  }
+
+  if (page_num > max_page) {
+    BTM_TRACE_WARNING(
+        "btm_read_remote_ext_features_complete num_page=%d, max_page=%d "
+        "invalid", page_num, max_page);
   }
 
   p_acl_cb = &btm_cb.acl_db[acl_idx];

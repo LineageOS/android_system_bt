@@ -34,8 +34,7 @@ using hci::testing::MockAclConnection;
 class MockLink : public Link {
  public:
   explicit MockLink(os::Handler* handler, l2cap::internal::ParameterProvider* parameter_provider)
-      : Link(handler, std::make_unique<MockAclConnection>(),
-             std::make_unique<l2cap::internal::testing::MockScheduler>(), parameter_provider){};
+      : Link(handler, std::make_unique<MockAclConnection>(), parameter_provider){};
   MOCK_METHOD(hci::AddressWithType, GetDevice, (), (override));
   MOCK_METHOD(hci::Role, GetRole, (), (override));
   MOCK_METHOD(void, OnAclDisconnected, (hci::ErrorCode status), (override));

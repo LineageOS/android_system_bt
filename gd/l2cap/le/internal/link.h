@@ -20,9 +20,9 @@
 #include <memory>
 
 #include "hci/acl_manager.h"
+#include "l2cap/internal/data_pipeline_manager.h"
 #include "l2cap/internal/fixed_channel_allocator.h"
 #include "l2cap/internal/parameter_provider.h"
-#include "l2cap/internal/scheduler.h"
 #include "l2cap/le/internal/fixed_channel_impl.h"
 #include "os/alarm.h"
 
@@ -34,12 +34,12 @@ namespace internal {
 class Link {
  public:
   Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_connection,
-       std::unique_ptr<l2cap::internal::Scheduler> scheduler, l2cap::internal::ParameterProvider* parameter_provider)
-      : l2cap_handler_(l2cap_handler), acl_connection_(std::move(acl_connection)), scheduler_(std::move(scheduler)),
+       l2cap::internal::ParameterProvider* parameter_provider)
+      : l2cap_handler_(l2cap_handler), acl_connection_(std::move(acl_connection)),
+        data_pipeline_manager_(l2cap_handler, acl_connection_->GetAclQueueEnd()),
         parameter_provider_(parameter_provider) {
     ASSERT(l2cap_handler_ != nullptr);
     ASSERT(acl_connection_ != nullptr);
-    ASSERT(scheduler_ != nullptr);
     ASSERT(parameter_provider_ != nullptr);
     link_idle_disconnect_alarm_.Schedule(common::BindOnce(&Link::Disconnect, common::Unretained(this)),
                                          parameter_provider_->GetLeLinkIdleDisconnectTimeout());
@@ -69,7 +69,7 @@ class Link {
 
   virtual std::shared_ptr<FixedChannelImpl> AllocateFixedChannel(Cid cid, SecurityPolicy security_policy) {
     auto channel = fixed_channel_allocator_.AllocateChannel(cid, security_policy);
-    scheduler_->AttachChannel(cid, channel);
+    data_pipeline_manager_.AttachChannel(cid, channel);
     return channel;
   }
 
@@ -98,7 +98,7 @@ class Link {
   os::Handler* l2cap_handler_;
   l2cap::internal::FixedChannelAllocator<FixedChannelImpl, Link> fixed_channel_allocator_{this, l2cap_handler_};
   std::unique_ptr<hci::AclConnection> acl_connection_;
-  std::unique_ptr<l2cap::internal::Scheduler> scheduler_;
+  l2cap::internal::DataPipelineManager data_pipeline_manager_;
   l2cap::internal::ParameterProvider* parameter_provider_;
   os::Alarm link_idle_disconnect_alarm_{l2cap_handler_};
   DISALLOW_COPY_AND_ASSIGN(Link);
