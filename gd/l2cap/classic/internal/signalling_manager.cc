@@ -35,7 +35,7 @@ static constexpr auto kTimeout = std::chrono::seconds(3);
 ClassicSignallingManager::ClassicSignallingManager(os::Handler* handler, Link* link,
                                                    l2cap::internal::DataPipelineManager* data_pipeline_manager,
                                                    DynamicChannelServiceManagerImpl* dynamic_service_manager,
-                                                   DynamicChannelAllocator* channel_allocator,
+                                                   l2cap::internal::DynamicChannelAllocator* channel_allocator,
                                                    FixedChannelServiceManagerImpl* fixed_service_manager)
     : handler_(handler), link_(link), data_pipeline_manager_(data_pipeline_manager),
       dynamic_service_manager_(dynamic_service_manager), channel_allocator_(channel_allocator),

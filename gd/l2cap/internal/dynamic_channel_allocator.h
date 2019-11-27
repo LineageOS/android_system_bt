@@ -19,8 +19,9 @@
 #include <unordered_map>
 #include <unordered_set>
 
+#include "hci/acl_manager.h"
 #include "l2cap/cid.h"
-#include "l2cap/classic/internal/dynamic_channel_impl.h"
+#include "l2cap/internal/ilink.h"
 #include "l2cap/psm.h"
 #include "l2cap/security_policy.h"
 #include "os/handler.h"
@@ -28,16 +29,16 @@
 
 namespace bluetooth {
 namespace l2cap {
-namespace classic {
 namespace internal {
 
-class Link;
+class DynamicChannelImpl;
 
 // Helper class for keeping channels in a Link. It allocates and frees Channel object, and supports querying whether a
 // channel is in use
 class DynamicChannelAllocator {
  public:
-  DynamicChannelAllocator(Link* link, os::Handler* l2cap_handler) : link_(link), l2cap_handler_(l2cap_handler) {
+  DynamicChannelAllocator(l2cap::internal::ILink* link, os::Handler* l2cap_handler)
+      : link_(link), l2cap_handler_(l2cap_handler) {
     ASSERT(link_ != nullptr);
     ASSERT(l2cap_handler_ != nullptr);
   }
@@ -67,7 +68,7 @@ class DynamicChannelAllocator {
   void OnAclDisconnected(hci::ErrorCode hci_status);
 
  private:
-  Link* link_;
+  l2cap::internal::ILink* link_;
   os::Handler* l2cap_handler_;
   std::unordered_set<Cid> used_cid_;
   std::unordered_map<Cid, std::shared_ptr<DynamicChannelImpl>> channels_;
@@ -75,6 +76,5 @@ class DynamicChannelAllocator {
 };
 
 }  // namespace internal
-}  // namespace classic
 }  // namespace l2cap
 }  // namespace bluetooth
