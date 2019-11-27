@@ -1,4 +1,4 @@
-/******************************************************************************
+/*
  *
  *  Copyright 2019 The Android Open Source Project
  *
@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
- ******************************************************************************/
+ */
 #include "security_manager.h"
 
 #include "os/log.h"
@@ -29,22 +29,22 @@ void SecurityManager::Init() {
       common::BindOnce(&internal::SecurityManagerImpl::Init, common::Unretained(security_manager_impl_)));
 }
 
-void SecurityManager::CreateBond(std::shared_ptr<hci::ClassicDevice> device) {
+void SecurityManager::CreateBond(hci::AddressWithType device) {
   security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::CreateBond,
                                            common::Unretained(security_manager_impl_),
-                                           std::forward<std::shared_ptr<hci::ClassicDevice>>(device)));
+                                           std::forward<hci::AddressWithType>(device)));
 }
 
-void SecurityManager::CancelBond(std::shared_ptr<hci::ClassicDevice> device) {
+void SecurityManager::CancelBond(hci::AddressWithType device) {
   security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::CancelBond,
                                            common::Unretained(security_manager_impl_),
-                                           std::forward<std::shared_ptr<hci::ClassicDevice>>(device)));
+                                           std::forward<hci::AddressWithType>(device)));
 }
 
-void SecurityManager::RemoveBond(std::shared_ptr<hci::ClassicDevice> device) {
+void SecurityManager::RemoveBond(hci::AddressWithType device) {
   security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::RemoveBond,
                                            common::Unretained(security_manager_impl_),
-                                           std::forward<std::shared_ptr<hci::ClassicDevice>>(device)));
+                                           std::forward<hci::AddressWithType>(device)));
 }
 
 void SecurityManager::RegisterCallbackListener(ISecurityManagerListener* listener, os::Handler* handler) {
