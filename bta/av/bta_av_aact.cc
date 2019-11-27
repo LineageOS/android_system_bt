@@ -544,11 +544,21 @@ static void bta_av_a2dp_sdp_cback(bool found, tA2DP_Service* p_service,
   APPL_TRACE_DEBUG("%s: peer %s : found=%s", __func__,
                    peer_address.ToString().c_str(), (found) ? "true" : "false");
 
-  tBTA_AV_SCB* p_scb = bta_av_hndl_to_scb(bta_av_cb.handle);
+  tBTA_AV_SCB* p_scb = NULL;
+  if (peer_address != RawAddress::kEmpty) {
+    p_scb = bta_av_addr_to_scb(peer_address);
+  }
+  if (p_scb == NULL) {
+    p_scb = bta_av_hndl_to_scb(bta_av_cb.handle);
+  }
   if (p_scb == NULL) {
     APPL_TRACE_ERROR("%s: no scb found for SDP handle(0x%x)", __func__,
                      bta_av_cb.handle);
     return;
+  }
+  if (bta_av_cb.handle != p_scb->hndl) {
+    APPL_TRACE_WARNING("%s: SDP bta_handle expected=0x%x processing=0x%x",
+                       __func__, bta_av_cb.handle, p_scb->hndl);
   }
 
   if (!found) {
@@ -584,7 +594,7 @@ static void bta_av_a2dp_sdp_cback(bool found, tA2DP_Service* p_service,
   } else {
     p_scb->SetAvdtpVersion(0);
   }
-  p_msg->hdr.layer_specific = bta_av_cb.handle;
+  p_msg->hdr.layer_specific = p_scb->hndl;
 
   bta_sys_sendmsg(p_msg);
 }
@@ -848,9 +858,6 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   bta_sys_app_open(BTA_ID_AV, p_scb->app_id, p_scb->PeerAddress());
 
-  /* only one A2DP find service is active at a time */
-  bta_av_cb.handle = p_scb->hndl;
-
   /* set up parameters */
   db_params.db_len = BTA_AV_DISC_BUF_SIZE;
   db_params.num_attr = 3;
@@ -875,7 +882,10 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
         "sdp_uuid=0x%x : status=%d",
         __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->uuid_int,
         sdp_uuid, find_service_status);
-    bta_av_a2dp_sdp_cback(false, nullptr, RawAddress::kEmpty);
+    bta_av_a2dp_sdp_cback(false, nullptr, p_scb->PeerAddress());
+  } else {
+    /* only one A2DP find service is active at a time */
+    bta_av_cb.handle = p_scb->hndl;
   }
 }
 
