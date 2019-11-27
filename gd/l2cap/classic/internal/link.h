@@ -21,13 +21,14 @@
 
 #include "hci/acl_manager.h"
 #include "l2cap/classic/dynamic_channel_configuration_option.h"
-#include "l2cap/classic/internal/dynamic_channel_allocator.h"
-#include "l2cap/classic/internal/dynamic_channel_impl.h"
 #include "l2cap/classic/internal/dynamic_channel_service_manager_impl.h"
 #include "l2cap/classic/internal/fixed_channel_impl.h"
 #include "l2cap/classic/internal/fixed_channel_service_manager_impl.h"
 #include "l2cap/internal/data_pipeline_manager.h"
+#include "l2cap/internal/dynamic_channel_allocator.h"
+#include "l2cap/internal/dynamic_channel_impl.h"
 #include "l2cap/internal/fixed_channel_allocator.h"
+#include "l2cap/internal/ilink.h"
 #include "l2cap/internal/parameter_provider.h"
 #include "os/alarm.h"
 #include "os/handler.h"
@@ -38,7 +39,7 @@ namespace l2cap {
 namespace classic {
 namespace internal {
 
-class Link {
+class Link : public l2cap::internal::ILink {
  public:
   Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_connection,
        l2cap::internal::ParameterProvider* parameter_provider,
@@ -47,8 +48,8 @@ class Link {
 
   virtual ~Link() = default;
 
-  virtual hci::Address GetDevice() {
-    return acl_connection_->GetAddress();
+  virtual hci::AddressWithType GetDevice() {
+    return {acl_connection_->GetAddress(), acl_connection_->GetAddressType()};
   }
 
   struct PendingDynamicChannelConnection {
@@ -80,13 +81,13 @@ class Link {
 
   virtual void SendInformationRequest(InformationRequestInfoType type);
 
-  virtual void SendDisconnectionRequest(Cid local_cid, Cid remote_cid);
+  virtual void SendDisconnectionRequest(Cid local_cid, Cid remote_cid) override;
 
-  virtual std::shared_ptr<DynamicChannelImpl> AllocateDynamicChannel(Psm psm, Cid remote_cid,
-                                                                     SecurityPolicy security_policy);
+  virtual std::shared_ptr<l2cap::internal::DynamicChannelImpl> AllocateDynamicChannel(Psm psm, Cid remote_cid,
+                                                                                      SecurityPolicy security_policy);
 
-  virtual std::shared_ptr<DynamicChannelImpl> AllocateReservedDynamicChannel(Cid reserved_cid, Psm psm, Cid remote_cid,
-                                                                             SecurityPolicy security_policy);
+  virtual std::shared_ptr<l2cap::internal::DynamicChannelImpl> AllocateReservedDynamicChannel(
+      Cid reserved_cid, Psm psm, Cid remote_cid, SecurityPolicy security_policy);
 
   virtual classic::DynamicChannelConfigurationOption GetConfigurationForInitialConfiguration(Cid cid);
 
@@ -113,7 +114,7 @@ class Link {
  private:
   os::Handler* l2cap_handler_;
   l2cap::internal::FixedChannelAllocator<FixedChannelImpl, Link> fixed_channel_allocator_{this, l2cap_handler_};
-  DynamicChannelAllocator dynamic_channel_allocator_{this, l2cap_handler_};
+  l2cap::internal::DynamicChannelAllocator dynamic_channel_allocator_{this, l2cap_handler_};
   std::unique_ptr<hci::AclConnection> acl_connection_;
   l2cap::internal::DataPipelineManager data_pipeline_manager_;
   l2cap::internal::ParameterProvider* parameter_provider_;

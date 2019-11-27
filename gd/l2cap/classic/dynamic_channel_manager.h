@@ -19,9 +19,9 @@
 
 #include "hci/acl_manager.h"
 #include "hci/address.h"
-#include "l2cap/classic/dynamic_channel.h"
 #include "l2cap/classic/dynamic_channel_configuration_option.h"
 #include "l2cap/classic/dynamic_channel_service.h"
+#include "l2cap/dynamic_channel.h"
 #include "l2cap/l2cap_packets.h"
 #include "l2cap/psm.h"
 #include "l2cap/security_policy.h"

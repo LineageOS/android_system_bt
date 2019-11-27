@@ -13,7 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#include "l2cap/classic/internal/dynamic_channel_impl.h"
+
+#include "l2cap/internal/dynamic_channel_impl.h"
 
 #include "common/testing/bind_test_util.h"
 #include "l2cap/cid.h"
@@ -26,11 +27,10 @@
 
 namespace bluetooth {
 namespace l2cap {
-namespace classic {
 namespace internal {
 
+using classic::internal::testing::MockLink;
 using l2cap::internal::testing::MockParameterProvider;
-using testing::MockLink;
 using ::testing::Return;
 
 class L2capClassicDynamicChannelImplTest : public ::testing::Test {
@@ -61,17 +61,17 @@ class L2capClassicDynamicChannelImplTest : public ::testing::Test {
 TEST_F(L2capClassicDynamicChannelImplTest, get_device) {
   MockParameterProvider mock_parameter_provider;
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
-  hci::Address device{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
+  const hci::AddressWithType device{{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}, hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
   DynamicChannelImpl dynamic_channel_impl(0x01, kFirstDynamicChannel, kFirstDynamicChannel, &mock_classic_link,
                                           l2cap_handler_);
-  EXPECT_EQ(device, dynamic_channel_impl.GetDevice());
+  EXPECT_EQ(device.GetAddress(), dynamic_channel_impl.GetDevice());
 }
 
 TEST_F(L2capClassicDynamicChannelImplTest, close_triggers_callback) {
   MockParameterProvider mock_parameter_provider;
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
-  hci::Address device{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
+  const hci::AddressWithType device{{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}, hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
   DynamicChannelImpl dynamic_channel_impl(0x01, kFirstDynamicChannel, kFirstDynamicChannel, &mock_classic_link,
                                           l2cap_handler_);
@@ -93,7 +93,7 @@ TEST_F(L2capClassicDynamicChannelImplTest, close_triggers_callback) {
 TEST_F(L2capClassicDynamicChannelImplTest, register_callback_after_close_should_call_immediately) {
   MockParameterProvider mock_parameter_provider;
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
-  hci::Address device{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
+  const hci::AddressWithType device{{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}, hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
   DynamicChannelImpl dynamic_channel_impl(0x01, kFirstDynamicChannel, kFirstDynamicChannel, &mock_classic_link,
                                           l2cap_handler_);
@@ -115,7 +115,7 @@ TEST_F(L2capClassicDynamicChannelImplTest, register_callback_after_close_should_
 TEST_F(L2capClassicDynamicChannelImplTest, close_twice_should_fail) {
   MockParameterProvider mock_parameter_provider;
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
-  hci::Address device{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
+  const hci::AddressWithType device{{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}, hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
   DynamicChannelImpl dynamic_channel_impl(0x01, kFirstDynamicChannel, kFirstDynamicChannel, &mock_classic_link,
                                           l2cap_handler_);
@@ -140,7 +140,7 @@ TEST_F(L2capClassicDynamicChannelImplTest, close_twice_should_fail) {
 TEST_F(L2capClassicDynamicChannelImplTest, multiple_registeration_should_fail) {
   MockParameterProvider mock_parameter_provider;
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
-  hci::Address device{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
+  const hci::AddressWithType device{{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}, hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
   DynamicChannelImpl dynamic_channel_impl(0x01, kFirstDynamicChannel, kFirstDynamicChannel, &mock_classic_link,
                                           l2cap_handler_);
@@ -159,6 +159,5 @@ TEST_F(L2capClassicDynamicChannelImplTest, multiple_registeration_should_fail) {
 }
 
 }  // namespace internal
-}  // namespace classic
 }  // namespace l2cap
 }  // namespace bluetooth
