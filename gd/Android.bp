@@ -618,13 +618,12 @@ cc_defaults {
   allow_undefined_symbols: true,
 }
 
-cc_library{
+cc_library_host_shared{
   name: "bluetooth_packets_python3",
   defaults: [
     "gd_defaults",
     "bluetooth_py3_native_extension_defaults"
   ],
-  host_supported: true,
   srcs: [
     "packet/python3_module.cc",
     "l2cap/fcs.cc",
