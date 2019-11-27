@@ -28,6 +28,10 @@ void FixedField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) 
   s << "public:\n";
 }
 
+std::string FixedField::GetBuilderParameterType() const {
+  return "";
+}
+
 bool FixedField::GenBuilderParameter(std::ostream&) const {
   // No parameter needed for a fixed field.
   return false;

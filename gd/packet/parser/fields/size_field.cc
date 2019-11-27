@@ -32,6 +32,10 @@ void SizeField::GenGetter(std::ostream& s, Size start_offset, Size end_offset) c
   s << "public:\n";
 }
 
+std::string SizeField::GetBuilderParameterType() const {
+  return "";
+}
+
 bool SizeField::GenBuilderParameter(std::ostream&) const {
   // There is no builder parameter for a size field
   return false;
