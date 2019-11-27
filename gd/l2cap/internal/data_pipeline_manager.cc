@@ -30,9 +30,6 @@ void DataPipelineManager::AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> ch
   ASSERT(sender_map_.find(cid) == sender_map_.end());
   sender_map_.emplace(std::piecewise_construct, std::forward_as_tuple(cid),
                       std::forward_as_tuple(handler_, scheduler_.get(), channel));
-  if (channel->GetCid() >= kFirstDynamicChannel) {
-    channel->SetSender(&sender_map_.find(cid)->second);
-  }
 }
 
 void DataPipelineManager::DetachChannel(Cid cid) {
@@ -48,6 +45,11 @@ DataController* DataPipelineManager::GetDataController(Cid cid) {
 void DataPipelineManager::OnPacketSent(Cid cid) {
   ASSERT(sender_map_.find(cid) != sender_map_.end());
   sender_map_.find(cid)->second.OnPacketSent();
+}
+
+void DataPipelineManager::UpdateClassicConfiguration(Cid cid, classic::internal::ChannelConfigurationState config) {
+  ASSERT(sender_map_.find(cid) != sender_map_.end());
+  sender_map_.find(cid)->second.UpdateClassicConfiguration(config);
 }
 
 }  // namespace internal
