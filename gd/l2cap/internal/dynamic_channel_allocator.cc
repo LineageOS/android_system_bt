@@ -17,15 +17,14 @@
 #include <unordered_map>
 
 #include "l2cap/cid.h"
-#include "l2cap/classic/internal/dynamic_channel_allocator.h"
 #include "l2cap/classic/internal/link.h"
+#include "l2cap/internal/dynamic_channel_allocator.h"
+#include "l2cap/internal/dynamic_channel_impl.h"
 #include "l2cap/security_policy.h"
-#include "os/handler.h"
 #include "os/log.h"
 
 namespace bluetooth {
 namespace l2cap {
-namespace classic {
 namespace internal {
 
 std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::AllocateChannel(Psm psm, Cid remote_cid,
@@ -135,6 +134,5 @@ void DynamicChannelAllocator::OnAclDisconnected(hci::ErrorCode reason) {
 }
 
 }  // namespace internal
-}  // namespace classic
 }  // namespace l2cap
 }  // namespace bluetooth

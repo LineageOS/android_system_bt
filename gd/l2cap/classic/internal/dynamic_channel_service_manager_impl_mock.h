@@ -15,8 +15,8 @@
  */
 #pragma once
 
-#include "l2cap/classic/internal/dynamic_channel_impl.h"
 #include "l2cap/classic/internal/dynamic_channel_service_manager_impl.h"
+#include "l2cap/internal/dynamic_channel_impl.h"
 
 #include <gmock/gmock.h>
 

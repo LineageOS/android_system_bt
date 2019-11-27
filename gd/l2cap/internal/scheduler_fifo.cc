@@ -16,7 +16,7 @@
 
 #include "l2cap/internal/scheduler_fifo.h"
 
-#include "l2cap/classic/internal/dynamic_channel_impl.h"
+#include "dynamic_channel_impl.h"
 #include "l2cap/internal/data_pipeline_manager.h"
 #include "l2cap/l2cap_packets.h"
 #include "os/log.h"

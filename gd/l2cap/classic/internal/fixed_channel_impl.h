@@ -38,7 +38,7 @@ class FixedChannelImpl : public l2cap::internal::ChannelImpl {
   virtual ~FixedChannelImpl() = default;
 
   hci::Address GetDevice() const {
-    return device_;
+    return device_.GetAddress();
   }
 
   virtual void RegisterOnCloseCallback(os::Handler* user_handler, FixedChannel::OnCloseCallback on_close_callback);
@@ -80,7 +80,7 @@ class FixedChannelImpl : public l2cap::internal::ChannelImpl {
   // For logging purpose only
   const Cid cid_;
   // For logging purpose only
-  const hci::Address device_;
+  const hci::AddressWithType device_;
   // Needed to handle Acquire() and Release()
   Link* link_;
   os::Handler* l2cap_handler_;
