@@ -18,7 +18,7 @@
 
 #pragma once
 
-#include <stdlib.h>
+#include <cstdlib>
 
 #ifndef LOG_TAG
 #define LOG_TAG "bt"
@@ -37,10 +37,21 @@
 #else
 
 /* syslog didn't work well here since we would be redefining LOG_DEBUG. */
-#include <stdio.h>
+#include <chrono>
+#include <cstdio>
+#include <ctime>
 
-#define LOGWRAPPER(fmt, args...) \
-  fprintf(stderr, "%s - %s:%d - %s: " fmt "\n", LOG_TAG, __FILE__, __LINE__, __func__, ##args)
+#define LOGWRAPPER(fmt, args...)                                                                                      \
+  do {                                                                                                                \
+    auto now = std::chrono::system_clock::now();                                                                      \
+    auto now_ms = std::chrono::time_point_cast<std::chrono::milliseconds>(now);                                       \
+    auto now_t = std::chrono::system_clock::to_time_t(now);                                                           \
+    /* YYYY-MM-DD_HH:MM:SS.sss is 23 byte long, plus 1 for null terminator */                                         \
+    char buf[24];                                                                                                     \
+    auto l = std::strftime(buf, sizeof(buf), "%Y-%m-%d %H:%M:%S", std::localtime(&now_t));                            \
+    snprintf(buf + l, sizeof(buf) - l, ".%03u", static_cast<unsigned int>(now_ms.time_since_epoch().count() % 1000)); \
+    fprintf(stderr, "%s %s - %s:%d - %s: " fmt "\n", buf, LOG_TAG, __FILE__, __LINE__, __func__, ##args);             \
+  } while (false)
 
 #define LOG_VERBOSE(...) LOGWRAPPER(__VA_ARGS__)
 #define LOG_DEBUG(...) LOGWRAPPER(__VA_ARGS__)
