@@ -106,9 +106,6 @@ interface IBluetooth
     int getSimAccessPermission(in BluetoothDevice device);
     boolean setSimAccessPermission(in BluetoothDevice device, int value);
 
-    @UnsupportedAppUsage
-    void sendConnectionStateChange(in BluetoothDevice device, int profile, int state, int prevState);
-
     void registerCallback(in IBluetoothCallback callback);
     void unregisterCallback(in IBluetoothCallback callback);
 
