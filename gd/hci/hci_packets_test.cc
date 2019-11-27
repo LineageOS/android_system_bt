@@ -594,5 +594,81 @@ std::vector<uint8_t> le_set_extended_advertising_enable_complete{
 DEFINE_AND_INSTANTIATE_LeSetExtendedAdvertisingEnableCompleteReflectionTest(
     le_set_extended_advertising_enable_complete);
 
+TEST(HciPacketsTest, testLeSetAdvertisingDataBuilderLength) {
+  GapData gap_data;
+  gap_data.data_type_ = GapDataType::COMPLETE_LOCAL_NAME;
+  gap_data.data_ = std::vector<uint8_t>({'A', ' ', 'g', 'o', 'o', 'd', ' ', 'n', 'a', 'm', 'e'});
+  auto builder = LeSetAdvertisingDataBuilder::Create({gap_data});
+  ASSERT_EQ(2 /*opcode*/ + 1 /* parameter size */ + 1 /* data_length */ + 31 /* data */, builder->size());
+
+  auto packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  packet_bytes->reserve(builder->size());
+  BitInserter bit_inserter(*packet_bytes);
+  builder->Serialize(bit_inserter);
+  auto command_view = LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes));
+  ASSERT(command_view.IsValid());
+  ASSERT_EQ(1 /* data_length */ + 31 /* data */, command_view.GetPayload().size());
+  auto view = LeSetAdvertisingDataView::Create(command_view);
+  ASSERT(view.IsValid());
+}
+
+TEST(HciPacketsTest, testLeSetScanResponseDataBuilderLength) {
+  GapData gap_data;
+  gap_data.data_type_ = GapDataType::COMPLETE_LOCAL_NAME;
+  gap_data.data_ = std::vector<uint8_t>({'A', ' ', 'g', 'o', 'o', 'd', ' ', 'n', 'a', 'm', 'e'});
+  auto builder = LeSetScanResponseDataBuilder::Create({gap_data});
+  ASSERT_EQ(2 /*opcode*/ + 1 /* parameter size */ + 1 /*data_length */ + 31 /* data */, builder->size());
+
+  auto packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  packet_bytes->reserve(builder->size());
+  BitInserter bit_inserter(*packet_bytes);
+  builder->Serialize(bit_inserter);
+  auto command_view = LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes));
+  ASSERT(command_view.IsValid());
+  ASSERT_EQ(1 /* data_length */ + 31 /* data */, command_view.GetPayload().size());
+  auto view = LeSetScanResponseDataView::Create(command_view);
+  ASSERT(view.IsValid());
+}
+
+TEST(HciPacketsTest, testLeMultiAdvSetAdvertisingDataBuilderLength) {
+  GapData gap_data;
+  gap_data.data_type_ = GapDataType::COMPLETE_LOCAL_NAME;
+  gap_data.data_ = std::vector<uint8_t>({'A', ' ', 'g', 'o', 'o', 'd', ' ', 'n', 'a', 'm', 'e'});
+  uint8_t set = 3;
+  auto builder = LeMultiAdvtSetDataBuilder::Create({gap_data}, set);
+  ASSERT_EQ(2 /*opcode*/ + 1 /* parameter size */ + 1 /* data_length */ + 31 /* data */ + 1 /* set */, builder->size());
+
+  auto packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  packet_bytes->reserve(builder->size());
+  BitInserter bit_inserter(*packet_bytes);
+  builder->Serialize(bit_inserter);
+  auto command_view =
+      LeMultiAdvtView::Create(LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes)));
+  ASSERT(command_view.IsValid());
+  EXPECT_EQ(1 /* data_length */ + 31 /* data */ + 1 /* set */, command_view.GetPayload().size());
+  auto view = LeMultiAdvtSetDataView::Create(command_view);
+  ASSERT(view.IsValid());
+}
+
+TEST(HciPacketsTest, testLeMultiAdvSetScanResponseDataBuilderLength) {
+  GapData gap_data;
+  gap_data.data_type_ = GapDataType::COMPLETE_LOCAL_NAME;
+  gap_data.data_ = std::vector<uint8_t>({'A', ' ', 'g', 'o', 'o', 'd', ' ', 'n', 'a', 'm', 'e'});
+  uint8_t set = 3;
+  auto builder = LeMultiAdvtSetScanRespBuilder::Create({gap_data}, set);
+  EXPECT_EQ(2 /*opcode*/ + 1 /* parameter size */ + 1 /*data_length */ + 31 /* data */ + 1 /* set */, builder->size());
+
+  auto packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  packet_bytes->reserve(builder->size());
+  BitInserter bit_inserter(*packet_bytes);
+  builder->Serialize(bit_inserter);
+  auto command_view =
+      LeMultiAdvtView::Create(LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes)));
+  ASSERT(command_view.IsValid());
+  ASSERT_EQ(1 /* data_length */ + 31 /* data */ + 1 /* set */, command_view.GetPayload().size());
+  auto view = LeMultiAdvtSetScanRespView::Create(command_view);
+  ASSERT(view.IsValid());
+}
+
 }  // namespace hci
 }  // namespace bluetooth
