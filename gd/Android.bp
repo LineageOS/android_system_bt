@@ -398,6 +398,7 @@ filegroup {
         "facade/rootservice.proto",
         "hal/facade.proto",
         "hci/facade.proto",
+        "hci/facade/le_advertising_manager_facade.proto",
         "l2cap/classic/facade.proto",
     ],
 }
@@ -421,6 +422,8 @@ genrule {
         "hal/facade.pb.h",
         "hci/facade.grpc.pb.h",
         "hci/facade.pb.h",
+        "hci/facade/le_advertising_manager_facade.grpc.pb.h",
+        "hci/facade/le_advertising_manager_facade.pb.h",
         "l2cap/classic/facade.grpc.pb.h",
         "l2cap/classic/facade.pb.h",
     ],
@@ -445,6 +448,8 @@ genrule {
         "hal/facade.pb.cc",
         "hci/facade.grpc.pb.cc",
         "hci/facade.pb.cc",
+        "hci/facade/le_advertising_manager_facade.grpc.pb.cc",
+        "hci/facade/le_advertising_manager_facade.pb.cc",
         "l2cap/classic/facade.grpc.pb.cc",
         "l2cap/classic/facade.pb.cc",
     ],
@@ -461,6 +466,7 @@ genrule {
         "touch $(genDir)/hal/__init__.py; " +
         "touch $(genDir)/hal/cert/__init__.py; " +
         "touch $(genDir)/hci/__init__.py; " +
+        "touch $(genDir)/hci/facade/__init__.py; " +
         "touch $(genDir)/hci/cert/__init__.py; " +
         "touch $(genDir)/l2cap/classic/__init__.py; " +
         "touch $(genDir)/l2cap/classic/cert/__init__.py; ",
@@ -482,6 +488,9 @@ genrule {
         "hci/__init__.py",
         "hci/facade_pb2_grpc.py",
         "hci/facade_pb2.py",
+        "hci/facade/__init__.py",
+        "hci/facade/le_advertising_manager_facade_pb2_grpc.py",
+        "hci/facade/le_advertising_manager_facade_pb2.py",
         "l2cap/classic/__init__.py",
         "l2cap/classic/facade_pb2_grpc.py",
         "l2cap/classic/facade_pb2.py",
@@ -618,13 +627,12 @@ cc_defaults {
   allow_undefined_symbols: true,
 }
 
-cc_library{
+cc_library_host_shared{
   name: "bluetooth_packets_python3",
   defaults: [
     "gd_defaults",
     "bluetooth_py3_native_extension_defaults"
   ],
-  host_supported: true,
   srcs: [
     "packet/python3_module.cc",
     "l2cap/fcs.cc",

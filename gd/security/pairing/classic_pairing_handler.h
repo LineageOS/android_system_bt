@@ -1,4 +1,4 @@
-/******************************************************************************
+/*
  *
  *  Copyright 2019 The Android Open Source Project
  *
@@ -14,27 +14,79 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
- ******************************************************************************/
+ */
 #pragma once
 
-#include "pairing_handler.h"
+#include "security/pairing/pairing_handler.h"
 
-#include "security/smp_packets.h"
+#include <utility>
 
-using namespace bluetooth::security::pairing;
+#include "l2cap/classic/l2cap_classic_module.h"
 
 namespace bluetooth {
 namespace security {
 namespace pairing {
 
+static constexpr hci::IoCapability kDefaultIoCapability = hci::IoCapability::DISPLAY_YES_NO;
+static constexpr hci::OobDataPresent kDefaultOobDataPresent = hci::OobDataPresent::NOT_PRESENT;
+static constexpr hci::AuthenticationRequirements kDefaultAuthenticationRequirements =
+    hci::AuthenticationRequirements::DEDICATED_BONDING_MITM_PROTECTION;
+
 class ClassicPairingHandler : public PairingHandler {
  public:
-  explicit ClassicPairingHandler(std::shared_ptr<record::SecurityRecord> record) : PairingHandler(record) {}
+  ClassicPairingHandler(std::shared_ptr<l2cap::classic::FixedChannelManager> fixed_channel_manager,
+                        channel::SecurityManagerChannel* security_manager_channel,
+                        std::shared_ptr<record::SecurityRecord> record, os::Handler* security_handler,
+                        common::OnceCallback<void(hci::Address)> complete_callback)
+      : PairingHandler(security_manager_channel, std::move(record)),
+        fixed_channel_manager_(std::move(fixed_channel_manager)), security_policy_(),
+        security_handler_(security_handler), remote_io_capability_(kDefaultIoCapability),
+        local_io_capability_(kDefaultIoCapability), local_oob_present_(kDefaultOobDataPresent),
+        local_authentication_requirements_(kDefaultAuthenticationRequirements),
+        complete_callback_(std::move(complete_callback)) {}
 
-  void Init() {
-    // Set auth required
-    // Connect to device
-  }
+  ~ClassicPairingHandler() override = default;
+
+  void Initiate(bool locally_initiated, hci::IoCapability io_capability, hci::OobDataPresent oob_present,
+                hci::AuthenticationRequirements auth_requirements) override;
+  void Cancel() override;
+
+  void OnReceive(hci::ChangeConnectionLinkKeyCompleteView packet) override;
+  void OnReceive(hci::MasterLinkKeyCompleteView packet) override;
+  void OnReceive(hci::PinCodeRequestView packet) override;
+  void OnReceive(hci::LinkKeyRequestView packet) override;
+  void OnReceive(hci::LinkKeyNotificationView packet) override;
+  void OnReceive(hci::IoCapabilityRequestView packet) override;
+  void OnReceive(hci::IoCapabilityResponseView packet) override;
+  void OnReceive(hci::SimplePairingCompleteView packet) override;
+  void OnReceive(hci::ReturnLinkKeysView packet) override;
+  void OnReceive(hci::EncryptionChangeView packet) override;
+  void OnReceive(hci::EncryptionKeyRefreshCompleteView packet) override;
+  void OnReceive(hci::RemoteOobDataRequestView packet) override;
+  void OnReceive(hci::UserPasskeyNotificationView packet) override;
+  void OnReceive(hci::KeypressNotificationView packet) override;
+  void OnReceive(hci::UserConfirmationRequestView packet) override;
+  void OnReceive(hci::UserPasskeyRequestView packet) override;
+
+ private:
+  void OnRegistrationComplete(l2cap::classic::FixedChannelManager::RegistrationResult result,
+                              std::unique_ptr<l2cap::classic::FixedChannelService> fixed_channel_service);
+  void OnUnregistered();
+  void OnConnectionOpen(std::unique_ptr<l2cap::classic::FixedChannel> fixed_channel);
+  void OnConnectionFail(l2cap::classic::FixedChannelManager::ConnectionResult result);
+  void OnConnectionClose(hci::ErrorCode error_code);
+
+  std::shared_ptr<l2cap::classic::FixedChannelManager> fixed_channel_manager_;
+  std::unique_ptr<l2cap::classic::FixedChannelService> fixed_channel_service_{nullptr};
+  l2cap::SecurityPolicy security_policy_ __attribute__((unused));
+  os::Handler* security_handler_ __attribute__((unused));
+  hci::IoCapability remote_io_capability_ __attribute__((unused));
+  hci::IoCapability local_io_capability_ __attribute__((unused));
+  hci::OobDataPresent local_oob_present_ __attribute__((unused));
+  hci::AuthenticationRequirements local_authentication_requirements_ __attribute__((unused));
+  std::unique_ptr<l2cap::classic::FixedChannel> fixed_channel_{nullptr};
+  common::OnceCallback<void(hci::Address)> complete_callback_;
+  bool locally_initiated_ = false;
 };
 
 }  // namespace pairing

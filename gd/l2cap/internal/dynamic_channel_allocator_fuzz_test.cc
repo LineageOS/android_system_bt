@@ -14,25 +14,24 @@
  * limitations under the License.
  */
 
-#include "l2cap/classic/internal/dynamic_channel_allocator.h"
 #include "l2cap/classic/internal/link_mock.h"
+#include "l2cap/internal/dynamic_channel_allocator.h"
 #include "l2cap/internal/parameter_provider_mock.h"
 
 #include <gmock/gmock.h>
 
 namespace bluetooth {
 namespace l2cap {
-namespace classic {
 namespace internal {
 
+using classic::internal::testing::MockLink;
 using hci::testing::MockAclConnection;
 using l2cap::internal::testing::MockParameterProvider;
 using l2cap::internal::testing::MockScheduler;
-using testing::MockLink;
 using ::testing::NiceMock;
 using ::testing::Return;
 
-const hci::Address device{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
+const hci::AddressWithType device{{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}, hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
 
 class L2capClassicDynamicChannelAllocatorFuzzTest {
  public:
@@ -78,11 +77,10 @@ class L2capClassicDynamicChannelAllocatorFuzzTest {
 };
 
 }  // namespace internal
-}  // namespace classic
 }  // namespace l2cap
 }  // namespace bluetooth
 
 void RunL2capClassicDynamicChannelAllocatorFuzzTest(const uint8_t* data, size_t size) {
-  bluetooth::l2cap::classic::internal::L2capClassicDynamicChannelAllocatorFuzzTest test;
+  bluetooth::l2cap::internal::L2capClassicDynamicChannelAllocatorFuzzTest test;
   test.RunTests(data, size);
 }

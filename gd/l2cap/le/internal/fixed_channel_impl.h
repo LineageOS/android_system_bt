@@ -55,7 +55,6 @@ class FixedChannelImpl : public l2cap::internal::ChannelImpl {
 
   Cid GetCid() const override;
   Cid GetRemoteCid() const override;
-  void SetSender(l2cap::internal::Sender* sender) override;
   virtual void OnClosed(hci::ErrorCode status);
 
   virtual std::string ToString() {

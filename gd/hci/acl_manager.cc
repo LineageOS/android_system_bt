@@ -924,7 +924,7 @@ struct AclManager::impl {
                                           supervision_timeout, minimum_ce_length, maximum_ce_length),
         common::BindOnce([](CommandStatusView status) {
           ASSERT(status.IsValid());
-          ASSERT(status.GetCommandOpCode() == OpCode::CREATE_CONNECTION);
+          ASSERT(status.GetCommandOpCode() == OpCode::LE_CREATE_CONNECTION);
         }),
         handler_);
   }

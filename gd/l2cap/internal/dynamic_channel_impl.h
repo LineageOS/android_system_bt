@@ -19,8 +19,9 @@
 #include "common/bidi_queue.h"
 #include "hci/address.h"
 #include "l2cap/cid.h"
-#include "l2cap/classic/dynamic_channel.h"
+#include "l2cap/dynamic_channel.h"
 #include "l2cap/internal/channel_impl.h"
+#include "l2cap/internal/ilink.h"
 #include "l2cap/l2cap_packets.h"
 #include "l2cap/mtu.h"
 #include "l2cap/psm.h"
@@ -29,14 +30,11 @@
 
 namespace bluetooth {
 namespace l2cap {
-namespace classic {
 namespace internal {
-
-class Link;
 
 class DynamicChannelImpl : public l2cap::internal::ChannelImpl {
  public:
-  DynamicChannelImpl(Psm psm, Cid cid, Cid remote_cid, Link* link, os::Handler* l2cap_handler);
+  DynamicChannelImpl(Psm psm, Cid cid, Cid remote_cid, l2cap::internal::ILink* link, os::Handler* l2cap_handler);
 
   virtual ~DynamicChannelImpl() = default;
 
@@ -68,26 +66,6 @@ class DynamicChannelImpl : public l2cap::internal::ChannelImpl {
     return psm_;
   }
 
-  enum class ConfigurationStatus { NOT_CONFIGURED, CONFIGURED };
-
-  virtual ConfigurationStatus GetOutgoingConfigurationStatus() const;
-  virtual void SetOutgoingConfigurationStatus(ConfigurationStatus status);
-
-  virtual ConfigurationStatus GetIncomingConfigurationStatus() const;
-  virtual void SetIncomingConfigurationStatus(ConfigurationStatus status);
-
-  /**
-   * Callback from the Scheduler to notify the Sender for this channel. On config update, channel might notify the
-   * configuration to Sender
-   */
-  void SetSender(l2cap::internal::Sender* sender) override;
-
-  virtual void SetIncomingMtu(Mtu mtu);
-
-  virtual void SetRetransmissionFlowControlConfig(const RetransmissionAndFlowControlConfigurationOption& mode);
-
-  virtual void SetFcsType(FcsType fcs_type);
-
   // TODO(cmanton) Do something a little bit better than this
   bool local_initiated_{false};
 
@@ -95,9 +73,9 @@ class DynamicChannelImpl : public l2cap::internal::ChannelImpl {
   const Psm psm_;
   const Cid cid_;
   const Cid remote_cid_;
-  Link* link_;
+  l2cap::internal::ILink* link_;
   os::Handler* l2cap_handler_;
-  const hci::Address device_;
+  const hci::AddressWithType device_;
 
   // User supported states
   os::Handler* user_handler_ = nullptr;
@@ -109,15 +87,10 @@ class DynamicChannelImpl : public l2cap::internal::ChannelImpl {
   static constexpr size_t kChannelQueueSize = 10;
   common::BidiQueue<packet::PacketView<packet::kLittleEndian>, packet::BasePacketBuilder> channel_queue_{
       kChannelQueueSize};
-  ConfigurationStatus outgoing_configuration_status_ = ConfigurationStatus::NOT_CONFIGURED;
-  ConfigurationStatus incoming_configuration_status_ = ConfigurationStatus::NOT_CONFIGURED;
-
-  l2cap::internal::Sender* sender_ = nullptr;
 
   DISALLOW_COPY_AND_ASSIGN(DynamicChannelImpl);
 };
 
 }  // namespace internal
-}  // namespace classic
 }  // namespace l2cap
 }  // namespace bluetooth

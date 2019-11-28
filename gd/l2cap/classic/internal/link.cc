@@ -36,8 +36,8 @@ Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_c
     : l2cap_handler_(l2cap_handler), acl_connection_(std::move(acl_connection)),
       data_pipeline_manager_(l2cap_handler, acl_connection_->GetAclQueueEnd()), parameter_provider_(parameter_provider),
       dynamic_service_manager_(dynamic_service_manager), fixed_service_manager_(fixed_service_manager),
-      signalling_manager_(l2cap_handler_, this, dynamic_service_manager_, &dynamic_channel_allocator_,
-                          fixed_service_manager_) {
+      signalling_manager_(l2cap_handler_, this, &data_pipeline_manager_, dynamic_service_manager_,
+                          &dynamic_channel_allocator_, fixed_service_manager_) {
   ASSERT(l2cap_handler_ != nullptr);
   ASSERT(acl_connection_ != nullptr);
   ASSERT(parameter_provider_ != nullptr);
@@ -86,8 +86,8 @@ void Link::SendInformationRequest(InformationRequestInfoType type) {
   signalling_manager_.SendInformationRequest(type);
 }
 
-std::shared_ptr<DynamicChannelImpl> Link::AllocateDynamicChannel(Psm psm, Cid remote_cid,
-                                                                 SecurityPolicy security_policy) {
+std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateDynamicChannel(Psm psm, Cid remote_cid,
+                                                                                  SecurityPolicy security_policy) {
   auto channel = dynamic_channel_allocator_.AllocateChannel(psm, remote_cid, security_policy);
   if (channel != nullptr) {
     data_pipeline_manager_.AttachChannel(channel->GetCid(), channel);
@@ -96,8 +96,8 @@ std::shared_ptr<DynamicChannelImpl> Link::AllocateDynamicChannel(Psm psm, Cid re
   return channel;
 }
 
-std::shared_ptr<DynamicChannelImpl> Link::AllocateReservedDynamicChannel(Cid reserved_cid, Psm psm, Cid remote_cid,
-                                                                         SecurityPolicy security_policy) {
+std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateReservedDynamicChannel(
+    Cid reserved_cid, Psm psm, Cid remote_cid, SecurityPolicy security_policy) {
   auto channel = dynamic_channel_allocator_.AllocateReservedChannel(reserved_cid, psm, remote_cid, security_policy);
   if (channel != nullptr) {
     data_pipeline_manager_.AttachChannel(channel->GetCid(), channel);

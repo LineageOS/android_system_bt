@@ -45,6 +45,9 @@ struct SecurityModule::impl {
   channel::SecurityManagerChannel* security_manager_channel_;
   internal::SecurityManagerImpl security_manager_impl{security_handler_, l2cap_le_module_, l2cap_classic_module_,
                                                       security_manager_channel_};
+  ~impl() {
+    delete security_manager_channel_;
+  }
 };
 
 void SecurityModule::ListDependencies(ModuleList* list) {

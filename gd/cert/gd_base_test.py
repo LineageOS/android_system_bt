@@ -34,16 +34,16 @@ class GdBaseTestClass(BaseTestClass):
     def __init__(self, configs):
         BaseTestClass.__init__(self, configs)
 
-        log_path_base = configs.get('log_path', '/tmp/logs')
-        rootcanal_logpath = os.path.join(log_path_base, 'rootcanal_logs.txt')
-        self.rootcanal_logs = open(rootcanal_logpath, 'w')
-        gd_devices = self.testbed_configs.get("GdDevice")
-        gd_cert_devices = self.testbed_configs.get("GdCertDevice")
+        log_path_base = configs.log_path
+        gd_devices = self.controller_configs.get("GdDevice")
+        gd_cert_devices = self.controller_configs.get("GdCertDevice")
 
         self.rootcanal_running = False
-        if 'rootcanal' in configs["testbed_configs"]:
+        if 'rootcanal' in self.controller_configs:
             self.rootcanal_running = True
-            rootcanal_config = configs["testbed_configs"]['rootcanal']
+            rootcanal_logpath = os.path.join(log_path_base, 'rootcanal_logs.txt')
+            self.rootcanal_logs = open(rootcanal_logpath, 'w')
+            rootcanal_config = self.controller_configs['rootcanal']
             rootcanal_hci_port = str(rootcanal_config.get("hci_port", "6402"))
             self.rootcanal_process = subprocess.Popen(
                 [

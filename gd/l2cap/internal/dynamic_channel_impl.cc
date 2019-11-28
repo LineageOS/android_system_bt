@@ -17,8 +17,8 @@
 #include <unordered_map>
 
 #include "l2cap/cid.h"
-#include "l2cap/classic/internal/dynamic_channel_impl.h"
 #include "l2cap/classic/internal/link.h"
+#include "l2cap/internal/dynamic_channel_impl.h"
 #include "l2cap/internal/sender.h"
 #include "l2cap/psm.h"
 #include "l2cap/security_policy.h"
@@ -27,10 +27,10 @@
 
 namespace bluetooth {
 namespace l2cap {
-namespace classic {
 namespace internal {
 
-DynamicChannelImpl::DynamicChannelImpl(Psm psm, Cid cid, Cid remote_cid, Link* link, os::Handler* l2cap_handler)
+DynamicChannelImpl::DynamicChannelImpl(Psm psm, Cid cid, Cid remote_cid, l2cap::internal::ILink* link,
+                                       os::Handler* l2cap_handler)
     : psm_(psm), cid_(cid), remote_cid_(remote_cid), link_(link), l2cap_handler_(l2cap_handler),
       device_(link->GetDevice()) {
   ASSERT(IsPsmValid(psm_));
@@ -41,7 +41,7 @@ DynamicChannelImpl::DynamicChannelImpl(Psm psm, Cid cid, Cid remote_cid, Link* l
 }
 
 hci::Address DynamicChannelImpl::GetDevice() const {
-  return device_;
+  return device_.GetAddress();
 }
 
 void DynamicChannelImpl::RegisterOnCloseCallback(os::Handler* user_handler,
@@ -82,40 +82,6 @@ std::string DynamicChannelImpl::ToString() {
   return ss.str();
 }
 
-DynamicChannelImpl::ConfigurationStatus DynamicChannelImpl::GetOutgoingConfigurationStatus() const {
-  return outgoing_configuration_status_;
-}
-
-void DynamicChannelImpl::SetOutgoingConfigurationStatus(ConfigurationStatus status) {
-  outgoing_configuration_status_ = status;
-}
-
-DynamicChannelImpl::ConfigurationStatus DynamicChannelImpl::GetIncomingConfigurationStatus() const {
-  return incoming_configuration_status_;
-}
-
-void DynamicChannelImpl::SetIncomingConfigurationStatus(ConfigurationStatus status) {
-  incoming_configuration_status_ = status;
-}
-
-void DynamicChannelImpl::SetSender(l2cap::internal::Sender* sender) {
-  sender_ = sender;
-}
-
-void DynamicChannelImpl::SetIncomingMtu(Mtu mtu) {
-  sender_->SetIncomingMtu(mtu);
-}
-
-void DynamicChannelImpl::SetRetransmissionFlowControlConfig(
-    const RetransmissionAndFlowControlConfigurationOption& option) {
-  sender_->SetChannelRetransmissionFlowControlMode(option);
-}
-
-void DynamicChannelImpl::SetFcsType(FcsType fcs_type) {
-  sender_->SetFcsType(fcs_type);
-}
-
 }  // namespace internal
-}  // namespace classic
 }  // namespace l2cap
 }  // namespace bluetooth

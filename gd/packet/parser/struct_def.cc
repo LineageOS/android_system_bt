@@ -193,8 +193,19 @@ void StructDef::GenDefinitionPybind11(std::ostream& s) const {
   }
   s << ">(m, \"" << name_ << "\")";
   s << ".def(py::init<>())";
-  s << ".def(\"Serialize\", &" << GetTypeName() << "::Serialize)";
+  s << ".def(\"Serialize\", [](" << GetTypeName() << "& obj){";
+  s << "std::vector<uint8_t> bytes;";
+  s << "BitInserter bi(bytes);";
+  s << "obj.Serialize(bi);";
+  s << "return bytes;})";
   s << ".def(\"Parse\", &" << name_ << "::Parse)";
+  s << ".def(\"size\", &" << name_ << "::size)";
+  for (const auto& field : fields_) {
+    if (field->GetBuilderParameterType().empty()) {
+      continue;
+    }
+    s << ".def_readwrite(\"" << field->GetName() << "\", &" << name_ << "::" << field->GetName() << "_)";
+  }
   s << ";\n";
 }
 

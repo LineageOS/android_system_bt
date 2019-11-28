@@ -1,4 +1,4 @@
-/******************************************************************************
+/*
  *
  *  Copyright 2019 The Android Open Source Project
  *
@@ -14,7 +14,7 @@
  *  See the License for the specific language governing permissions and
  *  limitations under the License.
  *
- ******************************************************************************/
+ */
 
 #pragma once
 
@@ -22,7 +22,6 @@
 #include <vector>
 
 #include "hci/address_with_type.h"
-#include "hci/device.h"
 #include "security/internal/security_manager_impl.h"
 
 namespace bluetooth {
@@ -75,21 +74,21 @@ class SecurityManager {
    *
    * @param device pointer to device we want to bond with
    */
-  void CreateBond(std::shared_ptr<hci::ClassicDevice> device);
+  void CreateBond(hci::AddressWithType device);
 
   /**
    * Cancels the pairing process for this device.
    *
    * @param device pointer to device with which we want to cancel our bond
    */
-  void CancelBond(std::shared_ptr<bluetooth::hci::ClassicDevice> device);
+  void CancelBond(hci::AddressWithType device);
 
   /**
    * Disassociates the device and removes the persistent LTK
    *
    * @param device pointer to device we want to forget
    */
-  void RemoveBond(std::shared_ptr<bluetooth::hci::ClassicDevice> device);
+  void RemoveBond(hci::AddressWithType device);
 
   /**
    * Register to listen for callback events from SecurityManager

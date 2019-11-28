@@ -16,39 +16,22 @@
 
 #pragma once
 
-#include "common/bidi_queue.h"
+#include "hci/address_with_type.h"
 #include "l2cap/cid.h"
-#include "l2cap/l2cap_packets.h"
 
 namespace bluetooth {
 namespace l2cap {
 namespace internal {
-class Sender;
 
 /**
- * Common interface for internal channel implementation
+ * Common interface for link (Classic ACL and LE)
  */
-class ChannelImpl {
+class ILink {
  public:
-  virtual ~ChannelImpl() = default;
-
-  /**
-   * Return the queue end for upper layer (L2CAP user)
-   */
-  virtual common::BidiQueueEnd<packet::BasePacketBuilder, packet::PacketView<packet::kLittleEndian>>*
-  GetQueueUpEnd() = 0;
-
-  /**
-   * Return the queue end for lower layer (sender and receiver)
-   */
-  virtual common::BidiQueueEnd<packet::PacketView<packet::kLittleEndian>, packet::BasePacketBuilder>*
-  GetQueueDownEnd() = 0;
-
-  virtual Cid GetCid() const = 0;
-
-  virtual Cid GetRemoteCid() const = 0;
+  virtual void SendDisconnectionRequest(Cid local_cid, Cid remote_cid) = 0;
+  virtual ~ILink() = default;
+  virtual hci::AddressWithType GetDevice() = 0;
 };
-
 }  // namespace internal
 }  // namespace l2cap
 }  // namespace bluetooth

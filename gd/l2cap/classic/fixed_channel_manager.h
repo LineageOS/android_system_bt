@@ -142,6 +142,7 @@ class FixedChannelManager {
   FixedChannelManager(internal::FixedChannelServiceManagerImpl* service_manager, internal::LinkManager* link_manager,
                       os::Handler* l2cap_layer_handler)
       : service_manager_(service_manager), link_manager_(link_manager), l2cap_layer_handler_(l2cap_layer_handler) {}
+
   internal::FixedChannelServiceManagerImpl* service_manager_ = nullptr;
   internal::LinkManager* link_manager_ = nullptr;
   os::Handler* l2cap_layer_handler_ = nullptr;
