@@ -156,7 +156,8 @@ void BTA_AvDeregister(tBTA_AV_HNDL hndl) {
  ******************************************************************************/
 void BTA_AvOpen(const RawAddress& bd_addr, tBTA_AV_HNDL handle, bool use_rc,
                 tBTA_SEC sec_mask, uint16_t uuid) {
-  LOG_INFO(LOG_TAG, "%s: peer %s handle:0x%x use_rc=%s sec_mask=0x%x uuid=0x%x",
+  LOG_INFO(LOG_TAG,
+           "%s: peer %s bta_handle:0x%x use_rc=%s sec_mask=0x%x uuid=0x%x",
            __func__, bd_addr.ToString().c_str(), handle,
            (use_rc) ? "true" : "false", sec_mask, uuid);
 
@@ -184,7 +185,7 @@ void BTA_AvOpen(const RawAddress& bd_addr, tBTA_AV_HNDL handle, bool use_rc,
  *
  ******************************************************************************/
 void BTA_AvClose(tBTA_AV_HNDL handle) {
-  LOG_INFO(LOG_TAG, "%s: handle:0x%x", __func__, handle);
+  LOG_INFO(LOG_TAG, "%s: bta_handle:0x%x", __func__, handle);
 
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
 
@@ -225,7 +226,7 @@ void BTA_AvDisconnect(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 void BTA_AvStart(tBTA_AV_HNDL handle) {
-  LOG_INFO(LOG_TAG, "%s: handle=%d", __func__, handle);
+  LOG_INFO(LOG_TAG, "%s: bta_handle=0x%x", __func__, handle);
 
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
 
@@ -245,7 +246,7 @@ void BTA_AvStart(tBTA_AV_HNDL handle) {
  *
  ******************************************************************************/
 void BTA_AvOffloadStart(tBTA_AV_HNDL hndl) {
-  LOG_INFO(LOG_TAG, "%s: handle=%d", __func__, hndl);
+  LOG_INFO(LOG_TAG, "%s: bta_handle=0x%x", __func__, hndl);
 
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
 
@@ -287,7 +288,7 @@ void BTA_AvOffloadStartRsp(tBTA_AV_HNDL hndl, tBTA_AV_STATUS status) {
  *
  ******************************************************************************/
 void BTA_AvStop(tBTA_AV_HNDL handle, bool suspend) {
-  LOG_INFO(LOG_TAG, "%s: handle=%d suspend=%s", __func__, handle,
+  LOG_INFO(LOG_TAG, "%s: bta_handle=0x%x suspend=%s", __func__, handle,
            logbool(suspend).c_str());
 
   tBTA_AV_API_STOP* p_buf =
@@ -318,8 +319,8 @@ void BTA_AvStop(tBTA_AV_HNDL handle, bool suspend) {
 void BTA_AvReconfig(tBTA_AV_HNDL hndl, bool suspend, uint8_t sep_info_idx,
                     uint8_t* p_codec_info, uint8_t num_protect,
                     const uint8_t* p_protect_info) {
-  LOG_INFO(LOG_TAG, "%s: handle=%d suspend=%s sep_info_idx=%d", __func__, hndl,
-           logbool(suspend).c_str(), sep_info_idx);
+  LOG_INFO(LOG_TAG, "%s: bta_handle=0x%x suspend=%s sep_info_idx=%d", __func__,
+           hndl, logbool(suspend).c_str(), sep_info_idx);
 
   tBTA_AV_API_RCFG* p_buf =
       (tBTA_AV_API_RCFG*)osi_malloc(sizeof(tBTA_AV_API_RCFG) + num_protect);

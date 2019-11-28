@@ -71,7 +71,7 @@ void bta_av_ci_setconfig(tBTA_AV_HNDL bta_av_handle, uint8_t err_code,
                          uint8_t category, uint8_t num_seid, uint8_t* p_seid,
                          bool recfg_needed, uint8_t avdt_handle) {
   LOG_DEBUG(LOG_TAG,
-            "%s: bta_av_handle=%d err_code=%d category=%d "
+            "%s: bta_av_handle=0x%x err_code=%d category=%d "
             "num_seid=%d recfg_needed=%s avdt_handle=%d",
             __func__, bta_av_handle, err_code, category, num_seid,
             recfg_needed ? "true" : "false", avdt_handle);
