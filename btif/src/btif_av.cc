@@ -2379,10 +2379,11 @@ static void btif_av_handle_event(uint8_t peer_sep,
                                  tBTA_AV_HNDL bta_handle,
                                  const BtifAvEvent& btif_av_event) {
   BtifAvPeer* peer = nullptr;
-  BTIF_TRACE_EVENT("%s: peer_sep=%s (%d) peer_address=%s handle=0x%x event=%s",
-                   __func__, (peer_sep == AVDT_TSEP_SRC) ? "Source" : "Sink",
-                   peer_sep, peer_address.ToString().c_str(), bta_handle,
-                   btif_av_event.ToString().c_str());
+  BTIF_TRACE_EVENT(
+      "%s: peer_sep=%s (%d) peer_address=%s bta_handle=0x%x event=%s", __func__,
+      (peer_sep == AVDT_TSEP_SRC) ? "Source" : "Sink", peer_sep,
+      peer_address.ToString().c_str(), bta_handle,
+      btif_av_event.ToString().c_str());
 
   // Find the peer
   if (peer_address != RawAddress::kEmpty) {
@@ -2400,8 +2401,8 @@ static void btif_av_handle_event(uint8_t peer_sep,
   }
   if (peer == nullptr) {
     BTIF_TRACE_ERROR(
-        "%s: Cannot find or create %s peer for peer_address=%s handle=0x%x : "
-        "event dropped: %s",
+        "%s: Cannot find or create %s peer for peer_address=%s bta_handle=0x%x "
+        ": event dropped: %s",
         __func__, (peer_sep == AVDT_TSEP_SRC) ? "Source" : "Sink",
         peer_address.ToString().c_str(), bta_handle,
         btif_av_event.ToString().c_str());
@@ -2441,7 +2442,7 @@ static void btif_av_handle_bta_av_event(uint8_t peer_sep,
       const tBTA_AV_REGISTER& registr = p_data->registr;
       bta_handle = registr.hndl;
       uint8_t peer_id = registr.app_id;  // The PeerId is used as AppId
-      BTIF_TRACE_DEBUG("%s: handle=0x%x app_id=%d", __func__, bta_handle,
+      BTIF_TRACE_DEBUG("%s: bta_handle=0x%x app_id=%d", __func__, bta_handle,
                        registr.app_id);
       if (peer_sep == AVDT_TSEP_SNK) {
         btif_av_source.BtaHandleRegistered(peer_id, bta_handle);
@@ -2539,7 +2540,7 @@ static void btif_av_handle_bta_av_event(uint8_t peer_sep,
       break;
     }
   }
-  BTIF_TRACE_DEBUG("%s: peer_address=%s handle=0x%x", __func__,
+  BTIF_TRACE_DEBUG("%s: peer_address=%s bta_handle=0x%x", __func__,
                    peer_address.ToString().c_str(), bta_handle);
 
   btif_av_handle_event(peer_sep, peer_address, bta_handle, btif_av_event);
