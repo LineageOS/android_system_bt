@@ -664,6 +664,7 @@ extern void bta_av_sink_data_cback(uint8_t handle, BT_HDR* p_pkt,
  ****************************************************************************/
 /* utility functions */
 extern tBTA_AV_SCB* bta_av_hndl_to_scb(uint16_t handle);
+tBTA_AV_SCB* bta_av_addr_to_scb(const RawAddress& bd_addr);
 extern bool bta_av_chk_start(tBTA_AV_SCB* p_scb);
 extern void bta_av_restore_switch(void);
 extern void bta_av_conn_cback(uint8_t handle, const RawAddress& bd_addr,
