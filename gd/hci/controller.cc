@@ -650,6 +650,8 @@ struct Controller::impl {
         return vendor_capabilities_.debug_logging_supported_ == 0x01;
       case OpCode::CONTROLLER_A2DP_OPCODE:
         return vendor_capabilities_.a2dp_source_offload_capability_mask_ != 0x00;
+      case OpCode::CONTROLLER_BQR:
+        return vendor_capabilities_.bluetooth_quality_report_support_ == 0x01;
       // undefined in local_supported_commands_
       case OpCode::CREATE_NEW_UNIT_KEY:
       case OpCode::READ_LOCAL_SUPPORTED_COMMANDS:
