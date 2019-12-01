@@ -315,6 +315,7 @@ enum OpCode : 16 {
   LE_EXTENDED_SCAN_PARAMS = 0xFD5A,
   CONTROLLER_DEBUG_INFO = 0xFD5B,
   CONTROLLER_A2DP_OPCODE = 0xFD5D,
+  CONTROLLER_BQR = 0xFD5E,
 }
 
 // For mapping Local Supported Commands command
@@ -639,6 +640,14 @@ enum SubeventCode : 8 {
   SCAN_TIMEOUT = 0x11,
   ADVERTISING_SET_TERMINATED = 0x12,
   SCAN_REQUEST_RECEIVED = 0x13,
+}
+
+// Vendor specific events
+enum VseSubeventCode : 8 {
+  BLE_THRESHOLD = 0x54,
+  BLE_TRACKING = 0x56,
+  DEBUG_INFO = 0x57,
+  BQR_EVENT = 0x58,
 }
 
 // Common definitions for commands and events
@@ -3102,6 +3111,23 @@ packet ControllerA2DPOpcode : VendorCommand (op_code = CONTROLLER_A2DP_OPCODE) {
   _payload_,  // placeholder (unimplemented)
 }
 
+enum BqrReportAction : 8 {
+  ADD = 0x00,
+  DELETE = 0x01,
+  CLEAR = 0x02,
+}
+
+packet ControllerBqr : VendorCommand(op_code = CONTROLLER_BQR) {
+  bqr_report_action : BqrReportAction,
+  bqr_quality_event_mask : 32,
+  bqr_minimum_report_interval : 16,
+}
+
+packet ControllerBqrComplete : CommandComplete (command_op_code = CONTROLLER_BQR) {
+  status : ErrorCode,
+  current_quality_event_mask : 32
+}
+
 // HCI Event Packets
 
 packet InquiryComplete : EventPacket (event_code = INQUIRY_COMPLETE){
@@ -3664,4 +3690,121 @@ packet LeScanRequestReceived : LeMetaEvent (subevent_code = SCAN_REQUEST_RECEIVE
   advertising_handle : 8,
   scanner_address_type : AddressType,
   scanner_address : Address,
+}
+
+// Vendor specific events
+
+packet VendorSpecificEvent : EventPacket (event_code = VENDOR_SPECIFIC) {
+  subevent_code : VseSubeventCode,
+  _payload_,
+}
+
+enum qualityReportId : 8 {
+  MONITOR_MODE = 0x01,
+  APPROACH_LSTO = 0x02,
+  A2DP_AUDIO_CHOPPY = 0x03,
+  SCO_VOICE_CHOPPY = 0x04,
+  ROOT_INFLAMMATION = 0x05,
+  LMP_LL_MESSAGE_TRACE = 0x11,
+  BT_SCHEDULING_TRACE = 0x12,
+  CONTROLLER_DBG_INFO = 0x13,
+}
+
+packet BqrEvent : VendorSpecificEvent (subevent_code = BQR_EVENT) {
+  quality_report_id : qualityReportId,
+  _payload_,
+}
+
+enum BqrPacketType : 8 {
+  TYPE_ID = 0x01,
+  TYPE_NULL = 0x02,
+  TYPE_POLL = 0x03,
+  TYPE_FHS = 0x04,
+  TYPE_HV1 = 0x05,
+  TYPE_HV2 = 0x06,
+  TYPE_HV3 = 0x07,
+  TYPE_DV = 0x08,
+  TYPE_EV3 = 0x09,
+  TYPE_EV4 = 0x0A,
+  TYPE_EV5 = 0x0B,
+  TYPE_2EV3 = 0x0C,
+  TYPE_2EV5 = 0x0D,
+  TYPE_3EV3 = 0x0E,
+  TYPE_3EV5 = 0x0F,
+  TYPE_DM1 = 0x10,
+  TYPE_DH1 = 0x11,
+  TYPE_DM3 = 0x12,
+  TYPE_DH3 = 0x13,
+  TYPE_DM5 = 0x14,
+  TYPE_DH5 = 0x15,
+  TYPE_AUX1 = 0x16,
+  TYPE_2DH1 = 0x17,
+  TYPE_2DH3 = 0x18,
+  TYPE_2DH5 = 0x19,
+  TYPE_3DH1 = 0x1A,
+  TYPE_3DH3 = 0x1B,
+  TYPE_3DH5 = 0x1C,
+}
+
+packet BqrLinkQualityEvent : BqrEvent {
+  packet_type : BqrPacketType,
+  connection_handle : 12,
+  _reserved_ : 4,
+  connection_role : Role,
+  tx_power_level : 8,
+  rssi : 8,
+  snr : 8,
+  unused_afh_channel_count : 8,
+  afh_select_unideal_channel_count : 8,
+  lsto : 16,
+  connection_piconet_clock : 32,
+  retransmission_count : 32,
+  no_rx_count : 32,
+  nak_count : 32,
+  last_tx_ack_timestamp : 32,
+  flow_off_count : 32,
+  last_flow_on_timestamp : 32,
+  buffer_overflow_bytes : 32,
+  buffer_underflow_bytes : 32,
+  _payload_,
+}
+
+packet BqrMonitorModeEvent : BqrLinkQualityEvent (quality_report_id = MONITOR_MODE) {
+ _payload_, // vendor specific parameter
+}
+
+packet BqrApproachLstoEvent : BqrLinkQualityEvent (quality_report_id = APPROACH_LSTO) {
+ _payload_, // vendor specific parameter
+}
+
+packet BqrA2dpAudioChoppyEvent : BqrLinkQualityEvent (quality_report_id = A2DP_AUDIO_CHOPPY) {
+  _payload_, // vendor specific parameter
+}
+
+packet BqrScoVoiceChoppyEvent : BqrLinkQualityEvent (quality_report_id = SCO_VOICE_CHOPPY) {
+ _payload_, // vendor specific parameter
+}
+
+packet BqrRootInflammationEvent : BqrEvent (quality_report_id = ROOT_INFLAMMATION) {
+  error_code : 8,
+  vendor_specific_error_code : 8,
+  _payload_, // vendor specific parameter
+}
+
+packet BqrLogDumpEvent : BqrEvent {
+  connection_handle : 12,
+  _reserved_ : 4,
+  _payload_,
+}
+
+packet BqrLmpLlMessageTraceEvent : BqrLogDumpEvent (quality_report_id = LMP_LL_MESSAGE_TRACE) {
+  _payload_, // vendor specific parameter
+}
+
+packet BqrBtSchedulingTraceEvent : BqrLogDumpEvent (quality_report_id = BT_SCHEDULING_TRACE) {
+ _payload_, // vendor specific parameter
+}
+
+packet BqrControllerDbgInfoEvent : BqrLogDumpEvent (quality_report_id = CONTROLLER_DBG_INFO) {
+ _payload_, // vendor specific parameter
 }

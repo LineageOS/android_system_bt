@@ -260,7 +260,7 @@ static void bta_av_api_enable(tBTA_AV_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-static tBTA_AV_SCB* bta_av_addr_to_scb(const RawAddress& bd_addr) {
+tBTA_AV_SCB* bta_av_addr_to_scb(const RawAddress& bd_addr) {
   tBTA_AV_SCB* p_scb = NULL;
   int xx;
 
@@ -427,7 +427,7 @@ void bta_av_conn_cback(UNUSED_ATTR uint8_t handle, const RawAddress& bd_addr,
     p_msg->bd_addr = bd_addr;
     p_msg->scb_index = scb_index;
     if (p_scb) {
-      APPL_TRACE_DEBUG("%s: scb hndl x%x, role x%x", __func__, p_scb->hndl,
+      APPL_TRACE_DEBUG("%s: bta_handle x%x, role x%x", __func__, p_scb->hndl,
                        p_scb->role);
     }
     LOG_INFO(LOG_TAG, "%s: conn_cback bd_addr: %s", __func__,
@@ -910,8 +910,8 @@ static void bta_av_sys_rs_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status,
       tBTA_AV_ROLE_RES* p_buf =
           (tBTA_AV_ROLE_RES*)osi_malloc(sizeof(tBTA_AV_ROLE_RES));
       APPL_TRACE_DEBUG(
-          "%s: peer %s found: new_role:%d, hci_status:0x%x hndl:0x%x", __func__,
-          peer_addr.ToString().c_str(), id, app_id, p_scb->hndl);
+          "%s: peer %s found: new_role:%d, hci_status:0x%x bta_handle:0x%x",
+          __func__, peer_addr.ToString().c_str(), id, app_id, p_scb->hndl);
       /*
       if ((id != BTM_ROLE_MASTER) && (app_id != HCI_SUCCESS))
       {
@@ -943,8 +943,8 @@ static void bta_av_sys_rs_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status,
       p_scb = bta_av_cb.p_scb[bta_av_cb.rs_idx - 1];
     }
     if (p_scb && p_scb->q_tag == BTA_AV_Q_TAG_OPEN) {
-      APPL_TRACE_DEBUG("%s: peer %s rs_idx:%d, hndl:0x%x q_tag:%d", __func__,
-                       p_scb->PeerAddress().ToString().c_str(),
+      APPL_TRACE_DEBUG("%s: peer %s rs_idx:%d, bta_handle:0x%x q_tag:%d",
+                       __func__, p_scb->PeerAddress().ToString().c_str(),
                        bta_av_cb.rs_idx, p_scb->hndl, p_scb->q_tag);
 
       if (HCI_SUCCESS == app_id || HCI_ERR_NO_CONNECTION == app_id) {
@@ -1094,11 +1094,11 @@ bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits) {
   bool is_ok = true;
 
   if (BTM_GetRole(p_scb->PeerAddress(), &role) == BTM_SUCCESS) {
-    LOG_INFO(
-        LOG_TAG,
-        "%s: peer %s hndl:0x%x role:%d conn_audio:0x%x bits:%d features:0x%x",
-        __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->hndl, role,
-        bta_av_cb.conn_audio, bits, bta_av_cb.features);
+    LOG_INFO(LOG_TAG,
+             "%s: peer %s bta_handle:0x%x role:%d conn_audio:0x%x bits:%d "
+             "features:0x%x",
+             __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->hndl,
+             role, bta_av_cb.conn_audio, bits, bta_av_cb.features);
     if (BTM_ROLE_MASTER != role &&
         (A2DP_BitsSet(bta_av_cb.conn_audio) > bits ||
          (bta_av_cb.features & BTA_AV_FEAT_MASTER))) {
@@ -1226,7 +1226,7 @@ bool bta_av_hdl_event(BT_HDR* p_msg) {
     /* state machine events */
     bta_av_sm_execute(&bta_av_cb, p_msg->event, (tBTA_AV_DATA*)p_msg);
   } else {
-    APPL_TRACE_VERBOSE("%s: handle=0x%x", __func__, p_msg->layer_specific);
+    APPL_TRACE_VERBOSE("%s: bta_handle=0x%x", __func__, p_msg->layer_specific);
     /* stream state machine events */
     bta_av_ssm_execute(bta_av_hndl_to_scb(p_msg->layer_specific), p_msg->event,
                        (tBTA_AV_DATA*)p_msg);
@@ -1354,6 +1354,10 @@ const char* bta_av_evt_code(uint16_t evt_code) {
       return "AVDT_DELAY_RPT";
     case BTA_AV_ACP_CONNECT_EVT:
       return "ACP_CONNECT";
+    case BTA_AV_API_OFFLOAD_START_EVT:
+      return "OFFLOAD_START";
+    case BTA_AV_API_OFFLOAD_START_RSP_EVT:
+      return "OFFLOAD_START_RSP";
 
     case BTA_AV_API_ENABLE_EVT:
       return "API_ENABLE";
