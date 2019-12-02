@@ -77,7 +77,7 @@ class L2capSenderTest : public ::testing::Test {
     EXPECT_CALL(*mock_channel_, GetQueueDownEnd()).WillRepeatedly(Return(channel_queue_.GetDownEnd()));
     EXPECT_CALL(*mock_channel_, GetCid()).WillRepeatedly(Return(cid_));
     EXPECT_CALL(*mock_channel_, GetRemoteCid()).WillRepeatedly(Return(cid_));
-    sender_ = new Sender(queue_handler_, &scheduler_, mock_channel_);
+    sender_ = new Sender(queue_handler_, nullptr, &scheduler_, mock_channel_);
   }
 
   void TearDown() override {

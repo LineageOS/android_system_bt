@@ -39,11 +39,12 @@
 namespace bluetooth {
 namespace l2cap {
 namespace internal {
+class ILink;
 
 /**
  * Manages data pipeline from channel queue end to link queue end, per link.
  * Contains a Scheduler and Receiver per link.
- * Contains a Sender and its corrsponding DataController per attached channel.
+ * Contains a Sender and its corresponding DataController per attached channel.
  */
 class DataPipelineManager {
  public:
@@ -54,8 +55,8 @@ class DataPipelineManager {
   using LowerDequeue = UpperEnqueue;
   using LowerQueueUpEnd = common::BidiQueueEnd<LowerEnqueue, LowerDequeue>;
 
-  DataPipelineManager(os::Handler* handler, LowerQueueUpEnd* link_queue_up_end)
-      : handler_(handler), scheduler_(std::make_unique<Fifo>(this, link_queue_up_end, handler)),
+  DataPipelineManager(os::Handler* handler, ILink* link, LowerQueueUpEnd* link_queue_up_end)
+      : handler_(handler), link_(link), scheduler_(std::make_unique<Fifo>(this, link_queue_up_end, handler)),
         receiver_(link_queue_up_end, handler, this) {}
 
   virtual void AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> channel);
@@ -67,6 +68,7 @@ class DataPipelineManager {
 
  private:
   os::Handler* handler_;
+  ILink* link_;
   std::unique_ptr<Scheduler> scheduler_;
   Receiver receiver_;
   std::unordered_map<Cid, Sender> sender_map_;

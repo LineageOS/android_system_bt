@@ -164,10 +164,10 @@ class L2capClassicModuleCertService : public L2capClassicModuleCert::Service {
     if (request->retransmission_config().mode() == ChannelRetransmissionFlowControlMode::ERTM) {
       auto option = std::make_unique<RetransmissionAndFlowControlConfigurationOption>();
       option->mode_ = RetransmissionAndFlowControlModeOption::ENHANCED_RETRANSMISSION;
-      option->tx_window_size_ = 10;
-      option->max_transmit_ = 20;
-      option->retransmission_time_out_ = 2000;
-      option->monitor_time_out_ = 12000;
+      option->tx_window_size_ = 5;
+      option->max_transmit_ = 1;
+      option->retransmission_time_out_ = 1000;
+      option->monitor_time_out_ = 2000;
       option->maximum_pdu_size_ = 1010;
       config.push_back(std::move(option));
     }
@@ -404,6 +404,16 @@ class L2capClassicModuleCertService : public L2capClassicModuleCert::Service {
         FetchL2capLogResponse response;
         response.mutable_configuration_response()->set_signal_id(control_view.GetIdentifier());
         response.mutable_configuration_response()->set_scid(view.GetSourceCid());
+        LogEvent(response);
+        break;
+      }
+      case CommandCode::DISCONNECTION_REQUEST: {
+        DisconnectionRequestView view = DisconnectionRequestView::Create(control_view);
+        ASSERT(view.IsValid());
+        FetchL2capLogResponse response;
+        response.mutable_disconnection_request()->set_signal_id(control_view.GetIdentifier());
+        response.mutable_disconnection_request()->set_dcid(view.GetDestinationCid());
+        response.mutable_disconnection_request()->set_scid(view.GetSourceCid());
         LogEvent(response);
         break;
       }
