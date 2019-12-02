@@ -22,11 +22,11 @@
 
 #include "acl_connection.h"
 #include "hci/address.h"
+#include "hci/address_with_type.h"
 #include "include/acl.h"
+#include "phy.h"
 
 namespace test_vendor_lib {
-
-using ::bluetooth::hci::Address;
 
 class AclConnectionHandler {
  public:
@@ -34,47 +34,48 @@ class AclConnectionHandler {
 
   virtual ~AclConnectionHandler() = default;
 
-  bool CreatePendingConnection(Address addr, bool authenticate_on_connect);
-  bool HasPendingConnection(Address addr) const;
-  bool CancelPendingConnection(Address addr);
+  bool CreatePendingConnection(bluetooth::hci::Address addr,
+                               bool authenticate_on_connect);
+  bool HasPendingConnection(bluetooth::hci::Address addr) const;
+  bool CancelPendingConnection(bluetooth::hci::Address addr);
   bool AuthenticatePendingConnection() const;
 
-  bool CreatePendingLeConnection(Address addr, uint8_t addr_type);
-  bool HasPendingLeConnection(Address addr, uint8_t addr_type) const;
-  bool CancelPendingLeConnection(Address addr, uint8_t addr_type);
+  bool CreatePendingLeConnection(bluetooth::hci::AddressWithType addr);
+  bool HasPendingLeConnection(bluetooth::hci::AddressWithType addr) const;
+  bool CancelPendingLeConnection(bluetooth::hci::AddressWithType addr);
 
-  uint16_t CreateConnection(Address addr);
-  uint16_t CreateLeConnection(Address addr, uint8_t address_type, uint8_t own_address_type);
+  uint16_t CreateConnection(bluetooth::hci::Address addr,
+                            bluetooth::hci::Address own_addr);
+  uint16_t CreateLeConnection(bluetooth::hci::AddressWithType addr,
+                              bluetooth::hci::AddressWithType own_addr);
   bool Disconnect(uint16_t handle);
   bool HasHandle(uint16_t handle) const;
 
-  uint16_t GetHandle(Address addr) const;
-  Address GetAddress(uint16_t handle) const;
-  uint8_t GetAddressType(uint16_t handle) const;
-  uint8_t GetOwnAddressType(uint16_t handle) const;
-
-  void SetConnected(uint16_t handle, bool connected);
-  bool IsConnected(uint16_t handle) const;
-
-  bool IsDeviceConnected(Address addr, uint8_t address_type = 0) const;
+  uint16_t GetHandle(bluetooth::hci::AddressWithType addr) const;
+  uint16_t GetHandleOnlyAddress(bluetooth::hci::Address addr) const;
+  bluetooth::hci::AddressWithType GetAddress(uint16_t handle) const;
+  bluetooth::hci::AddressWithType GetOwnAddress(uint16_t handle) const;
 
   void Encrypt(uint16_t handle);
   bool IsEncrypted(uint16_t handle) const;
 
-  void SetAddress(uint16_t handle, Address address, uint8_t address_type = 0);  // default to public
+  void SetAddress(uint16_t handle, bluetooth::hci::AddressWithType address);
+
+  Phy::Type GetPhyType(uint16_t handle) const;
 
  private:
   std::unordered_map<uint16_t, AclConnection> acl_connections_;
   bool classic_connection_pending_{false};
-  Address pending_connection_address_{Address::kEmpty};
+  bluetooth::hci::Address pending_connection_address_{
+      bluetooth::hci::Address::kEmpty};
   bool authenticate_pending_classic_connection_{false};
   bool le_connection_pending_{false};
-  Address pending_le_connection_address_{Address::kEmpty};
-  uint8_t pending_le_connection_address_type_{false};
+  bluetooth::hci::AddressWithType pending_le_connection_address_{
+      bluetooth::hci::Address::kEmpty,
+      bluetooth::hci::AddressType::PUBLIC_DEVICE_ADDRESS};
 
   uint16_t GetUnusedHandle();
   uint16_t last_handle_{acl::kReservedHandle - 2};
-  void set_own_address_type(uint16_t handle, uint8_t own_address_type);
 };
 
 }  // namespace test_vendor_lib
