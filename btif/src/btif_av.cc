@@ -953,6 +953,13 @@ bt_status_t BtifAvSource::Init(
   BTIF_TRACE_DEBUG("a2dp_offload.enable = %d", a2dp_offload_enabled_);
 
   callbacks_ = callbacks;
+  if (a2dp_offload_enabled_) {
+    // TODO: offloading_preference is for framework preference and should be
+    // input from upper-layer
+    std::vector<btav_a2dp_codec_config_t> offloading_preference(0);
+    bluetooth::audio::a2dp::update_codec_offloading_capabilities(
+        offloading_preference);
+  }
   bta_av_co_init(codec_priorities);
 
   if (!btif_a2dp_source_init()) {
