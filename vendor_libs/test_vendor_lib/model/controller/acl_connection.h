@@ -18,50 +18,39 @@
 
 #include <cstdint>
 
-#include "hci/address.h"
+#include "hci/address_with_type.h"
+#include "phy.h"
 
 namespace test_vendor_lib {
 
-using ::bluetooth::hci::Address;
+using ::bluetooth::hci::AddressWithType;
 
 // Model the connection of a device to the controller.
 class AclConnection {
  public:
-  AclConnection(Address addr) : address_(addr), address_type_(0), own_address_type_(0) {}
+  AclConnection(AddressWithType addr, AddressWithType own_addr,
+                Phy::Type phy_type);
 
   virtual ~AclConnection() = default;
 
-  void Encrypt() {
-    encrypted_ = true;
-  };
-  bool IsEncrypted() const {
-    return encrypted_;
-  };
+  void Encrypt();
 
-  Address GetAddress() const {
-    return address_;
-  }
-  void SetAddress(Address address) {
-    address_ = address;
-  }
+  bool IsEncrypted() const;
 
-  uint8_t GetAddressType() const {
-    return address_type_;
-  }
-  void SetAddressType(uint8_t address_type) {
-    address_type_ = address_type;
-  }
-  uint8_t GetOwnAddressType() const {
-    return own_address_type_;
-  }
-  void SetOwnAddressType(uint8_t address_type) {
-    own_address_type_ = address_type;
-  }
+  AddressWithType GetAddress() const;
+
+  void SetAddress(AddressWithType address);
+
+  AddressWithType GetOwnAddress() const;
+
+  void SetOwnAddress(AddressWithType own_addr);
+
+  Phy::Type GetPhyType() const;
 
  private:
-  Address address_;
-  uint8_t address_type_;
-  uint8_t own_address_type_;
+  AddressWithType address_;
+  AddressWithType own_address_;
+  Phy::Type type_{Phy::Type::BR_EDR};
 
   // State variables
   bool encrypted_{false};
