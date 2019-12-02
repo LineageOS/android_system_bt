@@ -50,7 +50,8 @@ static const ConnectionInterfaceDescriptor kMaxConnections = UINT16_MAX - kStart
 
 using ServiceInterfaceCallback =
     std::function<void(l2cap::Psm psm, l2cap::classic::DynamicChannelManager::RegistrationResult result)>;
-using ConnectionInterfaceCallback = std::function<void(l2cap::Psm psm, std::unique_ptr<l2cap::DynamicChannel>)>;
+using ConnectionInterfaceCallback =
+    std::function<void(l2cap::Psm psm, std::unique_ptr<l2cap::classic::DynamicChannel>)>;
 
 std::unique_ptr<packet::RawBuilder> MakeUniquePacket(const uint8_t* data, size_t len) {
   packet::RawBuilder builder;
@@ -62,7 +63,7 @@ std::unique_ptr<packet::RawBuilder> MakeUniquePacket(const uint8_t* data, size_t
 
 class ConnectionInterface {
  public:
-  ConnectionInterface(ConnectionInterfaceDescriptor cid, std::unique_ptr<l2cap::DynamicChannel> channel,
+  ConnectionInterface(ConnectionInterfaceDescriptor cid, std::unique_ptr<l2cap::classic::DynamicChannel> channel,
                       os::Handler* handler)
       : cid_(cid), channel_(std::move(channel)), handler_(handler), on_data_ready_callback_(nullptr),
         on_connection_closed_callback_(nullptr), address_(channel_->GetDevice()) {
@@ -138,7 +139,7 @@ class ConnectionInterface {
 
  private:
   const ConnectionInterfaceDescriptor cid_;
-  const std::unique_ptr<l2cap::DynamicChannel> channel_;
+  const std::unique_ptr<l2cap::classic::DynamicChannel> channel_;
   os::Handler* handler_;
 
   ReadDataReadyCallback on_data_ready_callback_;
@@ -154,7 +155,7 @@ class ConnectionInterface {
 
 struct ConnectionInterfaceManager {
  public:
-  ConnectionInterfaceDescriptor AddChannel(std::unique_ptr<l2cap::DynamicChannel> channel);
+  ConnectionInterfaceDescriptor AddChannel(std::unique_ptr<l2cap::classic::DynamicChannel> channel);
   void RemoveConnection(ConnectionInterfaceDescriptor cid);
 
   void SetReadDataReadyCallback(ConnectionInterfaceDescriptor cid, ReadDataReadyCallback on_data_ready);
@@ -217,7 +218,8 @@ ConnectionInterfaceDescriptor ConnectionInterfaceManager::AllocateConnectionInte
   return current_connection_interface_descriptor_++;
 }
 
-ConnectionInterfaceDescriptor ConnectionInterfaceManager::AddChannel(std::unique_ptr<l2cap::DynamicChannel> channel) {
+ConnectionInterfaceDescriptor ConnectionInterfaceManager::AddChannel(
+    std::unique_ptr<l2cap::classic::DynamicChannel> channel) {
   if (!HasResources()) {
     return kInvalidConnectionInterfaceDescriptor;
   }
@@ -265,7 +267,7 @@ class PendingConnection {
       : connection_interface_manager_(connection_interface_manager), psm_(psm), address_(address),
         on_open_(std::move(on_open)), completed_(std::move(completed)) {}
 
-  void OnConnectionOpen(std::unique_ptr<l2cap::DynamicChannel> channel) {
+  void OnConnectionOpen(std::unique_ptr<l2cap::classic::DynamicChannel> channel) {
     LOG_DEBUG("Local initiated connection is open to device:%s for psm:%hd", address_.ToString().c_str(), psm_);
     ConnectionInterfaceDescriptor cid = connection_interface_manager_->AddChannel(std::move(channel));
     completed_.set_value(cid);
@@ -320,7 +322,7 @@ class ServiceInterface {
     completed_.set_value();
   }
 
-  void OnConnectionOpen(std::unique_ptr<l2cap::DynamicChannel> channel) {
+  void OnConnectionOpen(std::unique_ptr<l2cap::classic::DynamicChannel> channel) {
     LOG_DEBUG("Remote initiated connection is open from device:%s for psm:%hd", channel->GetDevice().ToString().c_str(),
               psm_);
     hci::Address address = channel->GetDevice();

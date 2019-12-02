@@ -28,9 +28,9 @@ namespace bluetooth {
 namespace l2cap {
 namespace internal {
 
-Sender::Sender(os::Handler* handler, Scheduler* scheduler, std::shared_ptr<ChannelImpl> channel)
-    : handler_(handler), queue_end_(channel->GetQueueDownEnd()), scheduler_(scheduler), channel_id_(channel->GetCid()),
-      remote_channel_id_(channel->GetRemoteCid()),
+Sender::Sender(os::Handler* handler, ILink* link, Scheduler* scheduler, std::shared_ptr<ChannelImpl> channel)
+    : handler_(handler), link_(link), queue_end_(channel->GetQueueDownEnd()), scheduler_(scheduler),
+      channel_id_(channel->GetCid()), remote_channel_id_(channel->GetRemoteCid()),
       data_controller_(std::make_unique<BasicModeDataController>(channel_id_, remote_channel_id_, queue_end_, handler_,
                                                                  scheduler_)) {
   try_register_dequeue();
@@ -82,7 +82,7 @@ void Sender::UpdateClassicConfiguration(classic::internal::ChannelConfigurationS
   }
   if (mode == RetransmissionAndFlowControlModeOption::ENHANCED_RETRANSMISSION) {
     data_controller_ =
-        std::make_unique<ErtmController>(channel_id_, remote_channel_id_, queue_end_, handler_, scheduler_);
+        std::make_unique<ErtmController>(link_, channel_id_, remote_channel_id_, queue_end_, handler_, scheduler_);
     data_controller_->SetRetransmissionAndFlowControlOptions(config.local_retransmission_and_flow_control_);
     data_controller_->EnableFcs(config.fcs_type_ == FcsType::DEFAULT);
     return;
