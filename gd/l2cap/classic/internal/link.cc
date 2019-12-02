@@ -34,8 +34,9 @@ Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_c
            DynamicChannelServiceManagerImpl* dynamic_service_manager,
            FixedChannelServiceManagerImpl* fixed_service_manager)
     : l2cap_handler_(l2cap_handler), acl_connection_(std::move(acl_connection)),
-      data_pipeline_manager_(l2cap_handler, acl_connection_->GetAclQueueEnd()), parameter_provider_(parameter_provider),
-      dynamic_service_manager_(dynamic_service_manager), fixed_service_manager_(fixed_service_manager),
+      data_pipeline_manager_(l2cap_handler, this, acl_connection_->GetAclQueueEnd()),
+      parameter_provider_(parameter_provider), dynamic_service_manager_(dynamic_service_manager),
+      fixed_service_manager_(fixed_service_manager),
       signalling_manager_(l2cap_handler_, this, &data_pipeline_manager_, dynamic_service_manager_,
                           &dynamic_channel_allocator_, fixed_service_manager_) {
   ASSERT(l2cap_handler_ != nullptr);
@@ -91,6 +92,7 @@ std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateDynamicChanne
   auto channel = dynamic_channel_allocator_.AllocateChannel(psm, remote_cid, security_policy);
   if (channel != nullptr) {
     data_pipeline_manager_.AttachChannel(channel->GetCid(), channel);
+    RefreshRefCount();
   }
   channel->local_initiated_ = false;
   return channel;
@@ -101,6 +103,7 @@ std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateReservedDynam
   auto channel = dynamic_channel_allocator_.AllocateReservedChannel(reserved_cid, psm, remote_cid, security_policy);
   if (channel != nullptr) {
     data_pipeline_manager_.AttachChannel(channel->GetCid(), channel);
+    RefreshRefCount();
   }
   channel->local_initiated_ = true;
   return channel;
@@ -118,6 +121,7 @@ void Link::FreeDynamicChannel(Cid cid) {
   }
   data_pipeline_manager_.DetachChannel(cid);
   dynamic_channel_allocator_.FreeChannel(cid);
+  RefreshRefCount();
 }
 
 void Link::RefreshRefCount() {

@@ -16,10 +16,7 @@
 
 #pragma once
 
-#include "l2cap/internal/data_pipeline_manager.h"
-
-#include "l2cap/internal/channel_impl.h"
-#include "l2cap/internal/data_controller.h"
+#include "l2cap/internal/ilink.h"
 
 #include <gmock/gmock.h>
 
@@ -29,14 +26,10 @@ namespace l2cap {
 namespace internal {
 namespace testing {
 
-class MockDataPipelineManager : public DataPipelineManager {
+class MockILink : public ILink {
  public:
-  MockDataPipelineManager(os::Handler* handler, LowerQueueUpEnd* link_queue_up_end)
-      : DataPipelineManager(handler, nullptr, link_queue_up_end) {}
-  MOCK_METHOD(void, AttachChannel, (Cid, std::shared_ptr<ChannelImpl>), (override));
-  MOCK_METHOD(void, DetachChannel, (Cid), (override));
-  MOCK_METHOD(DataController*, GetDataController, (Cid), (override));
-  MOCK_METHOD(void, OnPacketSent, (Cid), (override));
+  MOCK_METHOD(hci::AddressWithType, GetDevice, (), (override));
+  MOCK_METHOD(void, SendDisconnectionRequest, (Cid, Cid), (override));
 };
 
 }  // namespace testing
