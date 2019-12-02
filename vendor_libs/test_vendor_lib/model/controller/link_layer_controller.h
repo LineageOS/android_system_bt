@@ -131,8 +131,10 @@ class LinkLayerController {
 
   void LeAdvertising();
 
-  void HandleLeConnection(Address addr, uint8_t addr_type, uint8_t own_addr_type, uint8_t role,
-                          uint16_t connection_interval, uint16_t connection_latency, uint16_t supervision_timeout);
+  void HandleLeConnection(AddressWithType addr, AddressWithType own_addr,
+                          uint8_t role, uint16_t connection_interval,
+                          uint16_t connection_latency,
+                          uint16_t supervision_timeout);
 
   void LeWhiteListClear();
   void LeWhiteListAddDevice(Address addr, uint8_t addr_type);
