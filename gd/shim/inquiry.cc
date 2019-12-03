@@ -59,6 +59,15 @@ struct Inquiry::impl {
 
   impl(neighbor::InquiryModule* module);
   ~impl();
+
+  neighbor::ScanParameters params_{
+      .interval = static_cast<neighbor::ScanInterval>(0),
+      .window = static_cast<neighbor::ScanWindow>(0),
+  };
+  bool general_inquiry_active_{false};
+  bool limited_inquiry_active_{false};
+  bool general_periodic_inquiry_active_{false};
+  bool limited_periodic_inquiry_active_{false};
 };
 
 const ModuleFactory Inquiry::Factory = ModuleFactory([]() { return new Inquiry(); });
@@ -174,45 +183,53 @@ Inquiry::impl::~impl() {
 }
 
 void Inquiry::StartGeneralInquiry(uint8_t inquiry_length, uint8_t num_responses) {
+  pimpl_->general_inquiry_active_ = true;
   return pimpl_->module_->StartGeneralInquiry(inquiry_length, num_responses);
 }
 
 void Inquiry::StartLimitedInquiry(uint8_t inquiry_length, uint8_t num_responses) {
+  pimpl_->limited_inquiry_active_ = true;
   return pimpl_->module_->StartLimitedInquiry(inquiry_length, num_responses);
 }
 
 void Inquiry::StopInquiry() {
+  pimpl_->limited_inquiry_active_ = false;
+  pimpl_->general_inquiry_active_ = false;
   return pimpl_->module_->StopInquiry();
 }
 
 bool Inquiry::IsGeneralInquiryActive() const {
-  return pimpl_->module_->IsGeneralInquiryActive();
+  return pimpl_->general_inquiry_active_;
 }
 
 bool Inquiry::IsLimitedInquiryActive() const {
-  return pimpl_->module_->IsLimitedInquiryActive();
+  return pimpl_->limited_inquiry_active_;
 }
 
 void Inquiry::StartGeneralPeriodicInquiry(uint8_t inquiry_length, uint8_t num_responses, uint16_t max_delay,
                                           uint16_t min_delay) {
+  pimpl_->general_periodic_inquiry_active_ = true;
   return pimpl_->module_->StartGeneralPeriodicInquiry(inquiry_length, num_responses, max_delay, min_delay);
 }
 
 void Inquiry::StartLimitedPeriodicInquiry(uint8_t inquiry_length, uint8_t num_responses, uint16_t max_delay,
                                           uint16_t min_delay) {
+  pimpl_->limited_periodic_inquiry_active_ = true;
   return pimpl_->module_->StartLimitedPeriodicInquiry(inquiry_length, num_responses, max_delay, min_delay);
 }
 
 void Inquiry::StopPeriodicInquiry() {
+  pimpl_->limited_periodic_inquiry_active_ = false;
+  pimpl_->general_periodic_inquiry_active_ = false;
   return pimpl_->module_->StopPeriodicInquiry();
 }
 
 bool Inquiry::IsGeneralPeriodicInquiryActive() const {
-  return pimpl_->module_->IsGeneralPeriodicInquiryActive();
+  return pimpl_->general_periodic_inquiry_active_;
 }
 
 bool Inquiry::IsLimitedPeriodicInquiryActive() const {
-  return pimpl_->module_->IsLimitedPeriodicInquiryActive();
+  return pimpl_->limited_periodic_inquiry_active_;
 }
 
 void Inquiry::SetInterlacedScan() {
@@ -224,18 +241,14 @@ void Inquiry::SetStandardScan() {
 }
 
 void Inquiry::SetScanActivity(uint16_t interval, uint16_t window) {
-  neighbor::ScanParameters params{
-      .interval = static_cast<neighbor::ScanInterval>(interval),
-      .window = static_cast<neighbor::ScanWindow>(window),
-  };
-  pimpl_->module_->SetScanActivity(params);
+  pimpl_->params_.interval = interval;
+  pimpl_->params_.window = window;
+  pimpl_->module_->SetScanActivity(pimpl_->params_);
 }
 
 void Inquiry::GetScanActivity(uint16_t& interval, uint16_t& window) const {
-  neighbor::ScanParameters params = pimpl_->module_->GetScanActivity();
-
-  interval = static_cast<uint16_t>(params.interval);
-  window = static_cast<uint16_t>(params.window);
+  interval = static_cast<uint16_t>(pimpl_->params_.interval);
+  window = static_cast<uint16_t>(pimpl_->params_.window);
 }
 
 void Inquiry::SetStandardInquiryResultMode() {

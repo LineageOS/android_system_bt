@@ -48,19 +48,14 @@ class InquiryModule : public bluetooth::Module {
   void StartGeneralInquiry(InquiryLength inquiry_length, NumResponses num_responses);
   void StartLimitedInquiry(InquiryLength inquiry_length, NumResponses num_responses);
   void StopInquiry();
-  bool IsGeneralInquiryActive() const;
-  bool IsLimitedInquiryActive() const;
 
   void StartGeneralPeriodicInquiry(InquiryLength inquiry_length, NumResponses num_responses, PeriodLength max_delay,
                                    PeriodLength min_delay);
   void StartLimitedPeriodicInquiry(InquiryLength inquiry_length, NumResponses num_responses, PeriodLength max_delay,
                                    PeriodLength min_delay);
   void StopPeriodicInquiry();
-  bool IsGeneralPeriodicInquiryActive() const;
-  bool IsLimitedPeriodicInquiryActive() const;
 
   void SetScanActivity(ScanParameters parms);
-  ScanParameters GetScanActivity() const;
 
   void SetInterlacedScan();
   void SetStandardScan();
