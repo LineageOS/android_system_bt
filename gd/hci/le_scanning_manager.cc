@@ -29,6 +29,9 @@
 namespace bluetooth {
 namespace hci {
 
+constexpr uint16_t kDefaultLeScanWindow = 4800;
+constexpr uint16_t kDefaultLeScanInterval = 4800;
+
 const ModuleFactory LeScanningManager::Factory = ModuleFactory([]() { return new LeScanningManager(); });
 
 enum class ScanApiType {
@@ -109,8 +112,8 @@ struct LeScanningManager::impl {
   void configure_scan() {
     std::vector<PhyScanParameters> parameter_vector;
     PhyScanParameters phy_scan_parameters;
-    phy_scan_parameters.le_scan_window_ = 0;
-    phy_scan_parameters.le_scan_interval_ = 0;
+    phy_scan_parameters.le_scan_window_ = kDefaultLeScanWindow;
+    phy_scan_parameters.le_scan_interval_ = kDefaultLeScanInterval;
     phy_scan_parameters.le_scan_type_ = LeScanType::ACTIVE;
     parameter_vector.push_back(phy_scan_parameters);
     uint8_t phys_in_use = 1;
