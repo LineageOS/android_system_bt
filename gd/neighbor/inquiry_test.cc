@@ -57,6 +57,10 @@ struct HciRegister {
   uint16_t inquiry_scan_window;
   hci::InquiryScanType inquiry_scan_type;
   hci::InquiryMode inquiry_mode;
+  uint8_t inquiry_length;
+  uint8_t num_responses;
+  uint16_t min_period_length;
+  uint16_t max_period_length;
 } hci_register_{
     .one_shot_inquiry_active = false,
     .periodic_inquiry_active = false,
@@ -65,6 +69,10 @@ struct HciRegister {
     .inquiry_scan_window = kInitialInquiryScanWindow,
     .inquiry_scan_type = hci::InquiryScanType::STANDARD,
     .inquiry_mode = hci::InquiryMode::STANDARD,
+    .inquiry_length = 0,
+    .num_responses = 0,
+    .min_period_length = 0,
+    .max_period_length = 0,
 };
 
 hci::PacketView<hci::kLittleEndian> GetPacketView(std::unique_ptr<packet::BasePacketBuilder> packet) {
@@ -102,11 +110,17 @@ class TestHciLayer : public hci::HciLayer {
         hci_register_.one_shot_inquiry_active = false;
         break;
 
-      case hci::OpCode::PERIODIC_INQUIRY_MODE:
+      case hci::OpCode::PERIODIC_INQUIRY_MODE: {
+        auto inquiry = hci::PeriodicInquiryModeView::Create(hci::DiscoveryCommandView::Create(command));
+        ASSERT(inquiry.IsValid());
         event_builder =
             hci::PeriodicInquiryModeCompleteBuilder::Create(kNumberPacketsReadyToReceive, hci::ErrorCode::SUCCESS);
         hci_register_.periodic_inquiry_active = true;
-        break;
+        hci_register_.inquiry_length = inquiry.GetInquiryLength();
+        hci_register_.num_responses = inquiry.GetNumResponses();
+        hci_register_.max_period_length = inquiry.GetMaxPeriodLength();
+        hci_register_.min_period_length = inquiry.GetMinPeriodLength();
+      } break;
 
       case hci::OpCode::EXIT_PERIODIC_INQUIRY_MODE:
         event_builder =
@@ -177,7 +191,7 @@ class TestHciLayer : public hci::HciLayer {
     handler->Post(common::BindOnce(std::move(on_complete), std::move(command_complete)));
 
     if (promise_sync_complete_ != nullptr) {
-      promise_sync_complete_->set_value(true);
+      promise_sync_complete_->set_value(command.GetOpCode());
     }
   }
 
@@ -188,10 +202,14 @@ class TestHciLayer : public hci::HciLayer {
 
     std::unique_ptr<packet::BasePacketBuilder> event_builder;
     switch (command.GetOpCode()) {
-      case hci::OpCode::INQUIRY:
+      case hci::OpCode::INQUIRY: {
+        auto inquiry = hci::InquiryView::Create(hci::DiscoveryCommandView::Create(command));
+        ASSERT(inquiry.IsValid());
         event_builder = hci::InquiryStatusBuilder::Create(hci::ErrorCode::SUCCESS, kNumberPacketsReadyToReceive);
         hci_register_.one_shot_inquiry_active = true;
-        break;
+        hci_register_.num_responses = inquiry.GetNumResponses();
+        hci_register_.inquiry_length = inquiry.GetInquiryLength();
+      } break;
       default:
         LOG_INFO("Dropping unhandled status expecting command:%s", hci::OpCodeText(command.GetOpCode()).c_str());
         return;
@@ -203,7 +221,7 @@ class TestHciLayer : public hci::HciLayer {
     handler->Post(common::BindOnce(std::move(on_status), std::move(command_status)));
 
     if (promise_sync_complete_ != nullptr) {
-      promise_sync_complete_->set_value(true);
+      promise_sync_complete_->set_value(command.GetOpCode());
     }
   }
 
@@ -261,12 +279,14 @@ class TestHciLayer : public hci::HciLayer {
     }
   }
 
-  void Synchronize(std::function<void()> func) {
+  void Synchronize(std::function<void()> func, hci::OpCode op_code) {
     ASSERT(promise_sync_complete_ == nullptr);
-    promise_sync_complete_ = new std::promise<bool>();
+    promise_sync_complete_ = new std::promise<hci::OpCode>();
     auto future = promise_sync_complete_->get_future();
     func();
-    future.wait();
+    auto result = future.wait_for(std::chrono::milliseconds(100));
+    ASSERT_EQ(std::future_status::ready, result);
+    ASSERT_EQ(op_code, future.get());
     delete promise_sync_complete_;
     promise_sync_complete_ = nullptr;
   }
@@ -284,7 +304,7 @@ class TestHciLayer : public hci::HciLayer {
   void Stop() override {}
 
  private:
-  std::promise<bool>* promise_sync_complete_{nullptr};
+  std::promise<hci::OpCode>* promise_sync_complete_{nullptr};
 
   os::Handler* inquiry_result_handler_{nullptr};
   common::Callback<void(hci::EventPacketView)> inquiry_result_callback_;
@@ -354,33 +374,27 @@ class InquiryTest : public ::testing::Test {
   std::promise<bool>* promise_result_complete_{nullptr};
 };
 
-TEST_F(InquiryTest, Module) {
-  ScanParameters params{
-      .interval = 0,
-      .window = 0,
-  };
-  params = inquiry_module_->GetScanActivity();
-
-  ASSERT_EQ(kInitialInquiryScanInterval, params.interval);
-  ASSERT_EQ(kInitialInquiryScanWindow, params.window);
-}
+TEST_F(InquiryTest, Module) {}
 
 TEST_F(InquiryTest, SetInquiryModes) {
-  test_hci_layer_->Synchronize([this] { inquiry_module_->SetInquiryWithRssiResultMode(); });
+  test_hci_layer_->Synchronize([this] { inquiry_module_->SetInquiryWithRssiResultMode(); },
+                               hci::OpCode::WRITE_INQUIRY_MODE);
   ASSERT_EQ(hci_register_.inquiry_mode, hci::InquiryMode::RSSI);
 
-  test_hci_layer_->Synchronize([this] { inquiry_module_->SetExtendedInquiryResultMode(); });
+  test_hci_layer_->Synchronize([this] { inquiry_module_->SetExtendedInquiryResultMode(); },
+                               hci::OpCode::WRITE_INQUIRY_MODE);
   ASSERT_EQ(hci_register_.inquiry_mode, hci::InquiryMode::RSSI_OR_EXTENDED);
 
-  test_hci_layer_->Synchronize([this] { inquiry_module_->SetStandardInquiryResultMode(); });
+  test_hci_layer_->Synchronize([this] { inquiry_module_->SetStandardInquiryResultMode(); },
+                               hci::OpCode::WRITE_INQUIRY_MODE);
   ASSERT_EQ(hci_register_.inquiry_mode, hci::InquiryMode::STANDARD);
 }
 
 TEST_F(InquiryTest, SetScanType) {
-  test_hci_layer_->Synchronize([this] { inquiry_module_->SetInterlacedScan(); });
+  test_hci_layer_->Synchronize([this] { inquiry_module_->SetInterlacedScan(); }, hci::OpCode::WRITE_INQUIRY_SCAN_TYPE);
   ASSERT_EQ(hci_register_.inquiry_scan_type, hci::InquiryScanType::INTERLACED);
 
-  test_hci_layer_->Synchronize([this] { inquiry_module_->SetStandardScan(); });
+  test_hci_layer_->Synchronize([this] { inquiry_module_->SetStandardScan(); }, hci::OpCode::WRITE_INQUIRY_SCAN_TYPE);
   ASSERT_EQ(hci_register_.inquiry_scan_type, hci::InquiryScanType::STANDARD);
 }
 
@@ -390,85 +404,59 @@ TEST_F(InquiryTest, ScanActivity) {
       .window = 0x5678,
   };
 
-  test_hci_layer_->Synchronize([this, params] { inquiry_module_->SetScanActivity(params); });
-
-  ASSERT_EQ(0x1234, hci_register_.inquiry_scan_interval);
-  ASSERT_EQ(0x5678, hci_register_.inquiry_scan_window);
-
-  params = inquiry_module_->GetScanActivity();
-
-  EXPECT_EQ(0x1234, params.interval);
-  EXPECT_EQ(0x5678, params.window);
+  test_hci_layer_->Synchronize([this, params] { inquiry_module_->SetScanActivity(params); },
+                               hci::OpCode::WRITE_INQUIRY_SCAN_ACTIVITY);
+  ASSERT_EQ(params.interval, hci_register_.inquiry_scan_interval);
+  ASSERT_EQ(params.window, hci_register_.inquiry_scan_window);
 }
 
 TEST_F(InquiryTest, OneShotGeneralInquiry) {
-  ASSERT(!inquiry_module_->IsGeneralInquiryActive());
-  ASSERT(!inquiry_module_->IsLimitedInquiryActive());
+  uint8_t inquiry_length = 128;
+  uint8_t num_responses = 100;
+  test_hci_layer_->Synchronize(
+      [this, inquiry_length, num_responses] { inquiry_module_->StartGeneralInquiry(inquiry_length, num_responses); },
+      hci::OpCode::INQUIRY);
+  ASSERT_EQ(inquiry_length, hci_register_.inquiry_length);
+  ASSERT_EQ(num_responses, hci_register_.num_responses);
 
-  test_hci_layer_->Synchronize([this] { inquiry_module_->StartGeneralInquiry(128, 100); });
-
-  ASSERT(inquiry_module_->IsGeneralInquiryActive());
-  ASSERT(!inquiry_module_->IsLimitedInquiryActive());
-
-  test_hci_layer_->Synchronize([this] { inquiry_module_->StopInquiry(); });
-
-  ASSERT(!inquiry_module_->IsGeneralInquiryActive());
-  ASSERT(!inquiry_module_->IsLimitedInquiryActive());
+  test_hci_layer_->Synchronize([this] { inquiry_module_->StopInquiry(); }, hci::OpCode::INQUIRY_CANCEL);
 }
 
 TEST_F(InquiryTest, OneShotLimitedInquiry) {
-  ASSERT(!inquiry_module_->IsGeneralInquiryActive());
-  ASSERT(!inquiry_module_->IsLimitedInquiryActive());
+  test_hci_layer_->Synchronize([this] { inquiry_module_->StartLimitedInquiry(128, 100); }, hci::OpCode::INQUIRY);
 
-  test_hci_layer_->Synchronize([this] { inquiry_module_->StartLimitedInquiry(128, 100); });
-
-  ASSERT(!inquiry_module_->IsGeneralInquiryActive());
-  ASSERT(inquiry_module_->IsLimitedInquiryActive());
-
-  test_hci_layer_->Synchronize([this] { inquiry_module_->StopInquiry(); });
-
-  ASSERT(!inquiry_module_->IsGeneralInquiryActive());
-  ASSERT(!inquiry_module_->IsLimitedInquiryActive());
+  test_hci_layer_->Synchronize([this] { inquiry_module_->StopInquiry(); }, hci::OpCode::INQUIRY_CANCEL);
 }
 
 TEST_F(InquiryTest, GeneralPeriodicInquiry) {
-  ASSERT(!inquiry_module_->IsGeneralPeriodicInquiryActive());
-  ASSERT(!inquiry_module_->IsLimitedPeriodicInquiryActive());
+  uint8_t inquiry_length = 128;
+  uint8_t num_responses = 100;
+  uint16_t max_delay = 1100;
+  uint16_t min_delay = 200;
+  test_hci_layer_->Synchronize(
+      [this, inquiry_length, num_responses, max_delay, min_delay] {
+        inquiry_module_->StartGeneralPeriodicInquiry(inquiry_length, num_responses, max_delay, min_delay);
+      },
+      hci::OpCode::PERIODIC_INQUIRY_MODE);
+  ASSERT_EQ(inquiry_length, hci_register_.inquiry_length);
+  ASSERT_EQ(num_responses, hci_register_.num_responses);
+  ASSERT_EQ(max_delay, hci_register_.max_period_length);
+  ASSERT_EQ(min_delay, hci_register_.min_period_length);
 
-  test_hci_layer_->Synchronize([this] { inquiry_module_->StartGeneralPeriodicInquiry(128, 100, 1100, 200); });
-
-  ASSERT(inquiry_module_->IsGeneralPeriodicInquiryActive());
-  ASSERT(!inquiry_module_->IsLimitedPeriodicInquiryActive());
-
-  test_hci_layer_->Synchronize([this] { inquiry_module_->StopPeriodicInquiry(); });
-
-  ASSERT(!inquiry_module_->IsGeneralPeriodicInquiryActive());
-  ASSERT(!inquiry_module_->IsLimitedPeriodicInquiryActive());
+  test_hci_layer_->Synchronize([this] { inquiry_module_->StopPeriodicInquiry(); },
+                               hci::OpCode::EXIT_PERIODIC_INQUIRY_MODE);
 }
 
 TEST_F(InquiryTest, LimitedPeriodicInquiry) {
-  ASSERT(!inquiry_module_->IsGeneralPeriodicInquiryActive());
-  ASSERT(!inquiry_module_->IsLimitedPeriodicInquiryActive());
+  test_hci_layer_->Synchronize([this] { inquiry_module_->StartLimitedPeriodicInquiry(128, 100, 1100, 200); },
+                               hci::OpCode::PERIODIC_INQUIRY_MODE);
 
-  test_hci_layer_->Synchronize([this] { inquiry_module_->StartLimitedPeriodicInquiry(128, 100, 1100, 200); });
-
-  ASSERT(!inquiry_module_->IsGeneralPeriodicInquiryActive());
-  ASSERT(inquiry_module_->IsLimitedPeriodicInquiryActive());
-
-  test_hci_layer_->Synchronize([this] { inquiry_module_->StopPeriodicInquiry(); });
-
-  ASSERT(!inquiry_module_->IsGeneralPeriodicInquiryActive());
-  ASSERT(!inquiry_module_->IsLimitedPeriodicInquiryActive());
+  test_hci_layer_->Synchronize([this] { inquiry_module_->StopPeriodicInquiry(); },
+                               hci::OpCode::EXIT_PERIODIC_INQUIRY_MODE);
 }
 
 TEST_F(InquiryTest, InjectInquiryResult) {
-  ASSERT(!inquiry_module_->IsGeneralInquiryActive());
-  ASSERT(!inquiry_module_->IsLimitedInquiryActive());
-
-  test_hci_layer_->Synchronize([this] { inquiry_module_->StartGeneralInquiry(128, 100); });
-
-  ASSERT(inquiry_module_->IsGeneralInquiryActive());
-  ASSERT(!inquiry_module_->IsLimitedInquiryActive());
+  test_hci_layer_->Synchronize([this] { inquiry_module_->StartGeneralInquiry(128, 100); }, hci::OpCode::INQUIRY);
 
   WaitForInquiryResult([this] {
     uint8_t num_responses = 1;
@@ -482,7 +470,7 @@ TEST_F(InquiryTest, InjectInquiryResult) {
                                                     clock_offset);
     test_hci_layer_->InjectInquiryResult(std::move(packet));
   });
-  test_hci_layer_->Synchronize([this] { inquiry_module_->StopInquiry(); });
+  test_hci_layer_->Synchronize([this] { inquiry_module_->StopInquiry(); }, hci::OpCode::INQUIRY_CANCEL);
 }
 
 }  // namespace
