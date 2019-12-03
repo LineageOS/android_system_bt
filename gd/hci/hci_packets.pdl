@@ -263,7 +263,7 @@ enum OpCode : 16 {
   LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH = 0x2023,
   LE_WRITE_SUGGESTED_DEFAULT_DATA_LENGTH = 0x2024,
   LE_READ_LOCAL_P_256_PUBLIC_KEY_COMMAND = 0x2025,
-  LE_GENERATE_DHKEY_COMMAND = 0x2026,
+  LE_GENERATE_DHKEY_COMMAND_V1 = 0x2026,
   LE_ADD_DEVICE_TO_RESOLVING_LIST = 0x2027,
   LE_REMOVE_DEVICE_FROM_RESOLVING_LIST = 0x2028,
   LE_CLEAR_RESOLVING_LIST = 0x2029,
@@ -304,6 +304,7 @@ enum OpCode : 16 {
   LE_READ_RF_PATH_COMPENSATION_POWER = 0x204C,
   LE_WRITE_RF_PATH_COMPENSATION_POWER = 0x204D,
   LE_SET_PRIVACY_MODE = 0x204E,
+  LE_GENERATE_DHKEY_COMMAND = 0x205E,
 
   // VENDOR_SPECIFIC
   LE_GET_VENDOR_CAPABILITIES = 0xFD53,
@@ -493,7 +494,7 @@ enum OpCodeIndex : 16 {
   LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH = 337,
   LE_WRITE_SUGGESTED_DEFAULT_DATA_LENGTH = 340,
   LE_READ_LOCAL_P_256_PUBLIC_KEY_COMMAND = 341,
-  LE_GENERATE_DHKEY_COMMAND = 342,
+  LE_GENERATE_DHKEY_COMMAND_V1 = 342,
   LE_ADD_DEVICE_TO_RESOLVING_LIST = 343,
   LE_REMOVE_DEVICE_FROM_RESOLVING_LIST = 344,
   LE_CLEAR_RESOLVING_LIST = 345,
@@ -534,6 +535,7 @@ enum OpCodeIndex : 16 {
   LE_READ_RF_PATH_COMPENSATION_POWER = 390,
   LE_WRITE_RF_PATH_COMPENSATION_POWER = 391,
   LE_SET_PRIVACY_MODE = 392,
+  LE_GENERATE_DHKEY_COMMAND = 412,
 }
 
 packet CommandPacket {
@@ -1369,12 +1371,25 @@ packet FlushComplete : CommandComplete (command_op_code = FLUSH) {
   _reserved_ : 4,
 }
 
+enum PinType : 8 {
+  VARIABLE = 0,
+  FIXED = 1,
+}
+
 packet ReadPinType : CommandPacket (op_code = READ_PIN_TYPE) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet ReadPinTypeComplete : CommandComplete (command_op_code = READ_PIN_TYPE) {
+  status : ErrorCode,
+  pin_type : PinType,
 }
 
 packet WritePinType : CommandPacket (op_code = WRITE_PIN_TYPE) {
-  _payload_,  // placeholder (unimplemented)
+  pin_type : PinType,
+}
+
+packet WritePinTypeComplete : CommandComplete (command_op_code = WRITE_PIN_TYPE) {
+  status : ErrorCode,
 }
 
 packet CreateNewUnitKey : CommandPacket (op_code = CREATE_NEW_UNIT_KEY) {
@@ -1444,11 +1459,19 @@ packet ReadLocalNameComplete : CommandComplete (command_op_code = READ_LOCAL_NAM
 }
 
 packet ReadConnectionAcceptTimeout : ConnectionManagementCommand (op_code = READ_CONNECTION_ACCEPT_TIMEOUT) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet ReadConnectionAcceptTimeoutComplete : CommandComplete (command_op_code = READ_CONNECTION_ACCEPT_TIMEOUT) {
+  status : ErrorCode,
+  conn_accept_timeout : 16, // 0x0001 to 0xB540 (N * 0.625 ms) 0.625 ms to 29 s
 }
 
 packet WriteConnectionAcceptTimeout : ConnectionManagementCommand (op_code = WRITE_CONNECTION_ACCEPT_TIMEOUT) {
-  _payload_,  // placeholder (unimplemented)
+  conn_accept_timeout : 16, // 0x0001 to 0xB540 (N * 0.625 ms) 0.625 ms to 29 s, Default 0x1FA0, 5.06s
+}
+
+packet WriteConnectionAcceptTimeoutComplete : CommandComplete (command_op_code = WRITE_CONNECTION_ACCEPT_TIMEOUT) {
+  status : ErrorCode,
 }
 
 packet ReadPageTimeout : DiscoveryCommand (op_code = READ_PAGE_TIMEOUT) {
@@ -1724,7 +1747,11 @@ packet WriteCurrentIacLapComplete : CommandComplete (command_op_code = WRITE_CUR
 }
 
 packet SetAfhHostChannelClassification : CommandPacket (op_code = SET_AFH_HOST_CHANNEL_CLASSIFICATION) {
-  _payload_,  // placeholder (unimplemented)
+  afh_host_channel_classification : 8[10],
+}
+
+packet SetAfhHostChannelClassificationComplete : CommandComplete (command_op_code = SET_AFH_HOST_CHANNEL_CLASSIFICATION) {
+  status : ErrorCode,
 }
 
 enum InquiryScanType : 8 {
@@ -2437,19 +2464,36 @@ packet LeConnectionUpdateStatus : CommandStatus (command_op_code = LE_CONNECTION
 }
 
 packet LeSetHostChannelClassification : LeConnectionManagementCommand (op_code = LE_SET_HOST_CHANNEL_CLASSIFICATION) {
-  _payload_,  // placeholder (unimplemented)
+  channel_map : 8[5],
+}
+
+packet LeSetHostChannelClassificationComplete : CommandComplete (command_op_code = LE_SET_HOST_CHANNEL_CLASSIFICATION) {
+  status : ErrorCode,
 }
 
 packet LeReadChannelMap : LeConnectionManagementCommand (op_code = LE_READ_CHANNEL_MAP) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet LeReadChannelMapComplete : CommandComplete (command_op_code = LE_SET_HOST_CHANNEL_CLASSIFICATION) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+  channel_map : 8[5],
 }
 
 packet LeReadRemoteFeatures : LeConnectionManagementCommand (op_code = LE_READ_REMOTE_FEATURES) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
 packet LeEncrypt : LeSecurityCommand (op_code = LE_ENCRYPT) {
-  _payload_,  // placeholder (unimplemented)
+  key : 8[16],
+  plaintext_data : 8[16],
+}
+
+packet LeEncryptComplete : CommandComplete (command_op_code = LE_ENCRYPT) {
+  status : ErrorCode,
+  encrypted_data : 8[16],
 }
 
 packet LeRand : LeSecurityCommand (op_code = LE_RAND) {
@@ -2475,8 +2519,21 @@ packet LeLongTermKeyRequestReply : LeSecurityCommand (op_code = LE_LONG_TERM_KEY
   long_term_key: 8[16],
 }
 
+packet LeLongTermKeyRequestReplyComplete : CommandComplete (command_op_code = LE_LONG_TERM_KEY_REQUEST_REPLY) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
 packet LeLongTermKeyRequestNegativeReply : LeSecurityCommand (op_code = LE_LONG_TERM_KEY_REQUEST_NEGATIVE_REPLY) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+packet LeLongTermKeyRequestNegativeReplyComplete : CommandComplete (command_op_code = LE_LONG_TERM_KEY_REQUEST_NEGATIVE_REPLY) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
 packet LeReadSupportedStates : CommandPacket (op_code = LE_READ_SUPPORTED_STATES) {
@@ -2500,36 +2557,80 @@ packet LeTestEnd : CommandPacket (op_code = LE_TEST_END) {
 }
 
 packet LeRemoteConnectionParameterRequestReply : LeConnectionManagementCommand (op_code = LE_REMOTE_CONNECTION_PARAMETER_REQUEST_REPLY) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
+  interval_min : 16, // 0x0006-0x0C80 (7.5ms to 4s)
+  interval_max : 16, // 0x0006-0x0C80 (7.5ms to 4s)
+  latency : 16, // 0x0006-0x01F3
+  timeout : 16, // 0x00A to 0x0C80 (100ms to 32s)
+  minimum_ce_length : 16, // 0.625ms
+  maximum_ce_length : 16, // 0.625ms
+}
+
+packet LeRemoteConnectionParameterRequestReplyComplete : CommandComplete (command_op_code = LE_REMOTE_CONNECTION_PARAMETER_REQUEST_REPLY) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
 packet LeRemoteConnectionParameterRequestNegativeReply : LeConnectionManagementCommand (op_code = LE_REMOTE_CONNECTION_PARAMETER_REQUEST_NEGATIVE_REPLY) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
+  reason : ErrorCode,
 }
 
+packet LeRemoteConnectionParameterRequestNegativeReplyComplete : CommandComplete (command_op_code = LE_REMOTE_CONNECTION_PARAMETER_REQUEST_NEGATIVE_REPLY) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+}
 
 packet LeSetDataLength : LeConnectionManagementCommand (op_code = LE_SET_DATA_LENGTH) {
-  _payload_,  // placeholder (unimplemented)
+  connection_handle : 12,
+  _reserved_ : 4,
+  tx_octets : 16, // payload octets per single PDU 0x1B to 0x00FB
+  tx_time : 16, // microseconds used to transmit a single PDU 0x0148 to 0x4290
+}
+
+packet LeSetDataLengthComplete : CommandComplete (command_op_code = LE_SET_DATA_LENGTH) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
 packet LeReadSuggestedDefaultDataLength : LeConnectionManagementCommand (op_code = LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet LeReadSuggestedDefaultDataLengthComplete : CommandComplete (command_op_code = LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH) {
+  status : ErrorCode,
+  tx_octets : 16, // payload octets per single PDU 0x1B to 0x00FB
+  tx_time : 16, // microseconds used to transmit a single PDU 0x0148 to 0x4290
 }
 
 packet LeWriteSuggestedDefaultDataLength : LeConnectionManagementCommand (op_code = LE_WRITE_SUGGESTED_DEFAULT_DATA_LENGTH) {
-  _payload_,  // placeholder (unimplemented)
+  tx_octets : 16, // payload octets per single PDU 0x1B to 0x00FB
+  tx_time : 16, // microseconds used to transmit a single PDU 0x0148 to 0x4290
+}
+
+packet LeWriteSuggestedDefaultDataLengthComplete : CommandComplete (command_op_code = LE_WRITE_SUGGESTED_DEFAULT_DATA_LENGTH) {
+  status : ErrorCode,
 }
 
 packet LeReadLocalP256PublicKeyCommand : LeSecurityCommand (op_code = LE_READ_LOCAL_P_256_PUBLIC_KEY_COMMAND) {
-  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeGenerateDhkeyCommand : LeSecurityCommand (op_code = LE_GENERATE_DHKEY_COMMAND) {
-  _payload_,  // placeholder (unimplemented)
+packet LeGenerateDhkeyV1Command : LeSecurityCommand (op_code = LE_GENERATE_DHKEY_COMMAND_V1) {
+  remote_p_256_public_key : 8[64],
+}
+
+packet LeGenerateDhkeyV1CommandStatus : CommandStatus (command_op_code = LE_GENERATE_DHKEY_COMMAND_V1) {
 }
 
 packet LeAddDeviceToResolvingList : LeSecurityCommand (op_code = LE_ADD_DEVICE_TO_RESOLVING_LIST) {
-  _payload_,  // placeholder (unimplemented)
+  peer_identity_address_type : PeerAddressType,
+  peer_identity_address : Address,
+  peer_irk : 8[16],
+  local_irk : 8[16],
 }
 
 packet LeAddDeviceToResolvingListComplete : CommandComplete (command_op_code = LE_ADD_DEVICE_TO_RESOLVING_LIST) {
@@ -2537,7 +2638,8 @@ packet LeAddDeviceToResolvingListComplete : CommandComplete (command_op_code = L
 }
 
 packet LeRemoveDeviceFromResolvingList : LeSecurityCommand (op_code = LE_REMOVE_DEVICE_FROM_RESOLVING_LIST) {
-  _payload_,  // placeholder (unimplemented)
+  peer_identity_address_type : PeerAddressType,
+  peer_identity_address : Address,
 }
 
 packet LeRemoveDeviceFromResolvingListComplete : CommandComplete (command_op_code = LE_REMOVE_DEVICE_FROM_RESOLVING_LIST) {
@@ -2545,7 +2647,6 @@ packet LeRemoveDeviceFromResolvingListComplete : CommandComplete (command_op_cod
 }
 
 packet LeClearResolvingList : LeSecurityCommand (op_code = LE_CLEAR_RESOLVING_LIST) {
-  _payload_,  // placeholder (unimplemented)
 }
 
 packet LeClearResolvingListComplete : CommandComplete (command_op_code = LE_CLEAR_RESOLVING_LIST) {
@@ -2553,23 +2654,46 @@ packet LeClearResolvingListComplete : CommandComplete (command_op_code = LE_CLEA
 }
 
 packet LeReadResolvingListSize : LeSecurityCommand (op_code = LE_READ_RESOLVING_LIST_SIZE) {
-  _payload_,  // placeholder (unimplemented)
+}
+
+packet LeReadResolvingListSizeComplete : CommandComplete (command_op_code = LE_READ_RESOLVING_LIST_SIZE) {
+  status : ErrorCode,
 }
 
 packet LeReadPeerResolvableAddress : LeSecurityCommand (op_code = LE_READ_PEER_RESOLVABLE_ADDRESS) {
-  _payload_,  // placeholder (unimplemented)
+  peer_identity_address_type : PeerAddressType,
+  peer_identity_address : Address,
+}
+
+packet LeReadPeerResolvableAddressComplete : CommandComplete (command_op_code = LE_READ_PEER_RESOLVABLE_ADDRESS) {
+  status : ErrorCode,
+  peer_resolvable_address : Address,
 }
 
 packet LeReadLocalResolvableAddress : LeSecurityCommand (op_code = LE_READ_LOCAL_RESOLVABLE_ADDRESS) {
-  _payload_,  // placeholder (unimplemented)
+  peer_identity_address_type : PeerAddressType,
+  peer_identity_address : Address,
+}
+
+packet LeReadLocalResolvableAddressComplete : CommandComplete (command_op_code = LE_READ_LOCAL_RESOLVABLE_ADDRESS) {
+  status : ErrorCode,
+  local_resolvable_address : Address,
 }
 
 packet LeSetAddressResolutionEnable : LeSecurityCommand (op_code = LE_SET_ADDRESS_RESOLUTION_ENABLE) {
-  _payload_,  // placeholder (unimplemented)
+  address_resolution_enable : Enable,
+}
+
+packet LeSetAddressResolutionEnableComplete : CommandComplete (command_op_code = LE_SET_ADDRESS_RESOLUTION_ENABLE) {
+  status : ErrorCode,
 }
 
 packet LeSetResolvablePrivateAddressTimeout : LeSecurityCommand (op_code = LE_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT) {
-  _payload_,  // placeholder (unimplemented)
+  rpa_timeout : 16, // RPA_Timeout measured in seconds 0x0001 to 0xA1B8 1s to 11.5 hours
+}
+
+packet LeSetResolvablePrivateAddressTimeoutComplete : CommandComplete (command_op_code = LE_SET_RESOLVABLE_PRIVATE_ADDRESS_TIMEOUT) {
+  status : ErrorCode,
 }
 
 packet LeReadMaximumDataLength : CommandPacket (op_code = LE_READ_MAXIMUM_DATA_LENGTH) {
@@ -2581,7 +2705,6 @@ struct LeMaximumDataLength {
   supported_max_rx_octets : 16,
   supported_max_rx_time: 16,
 }
-
 
 packet LeReadMaximumDataLengthComplete : CommandComplete (command_op_code = LE_READ_MAXIMUM_DATA_LENGTH) {
   status : ErrorCode,
@@ -2925,12 +3048,32 @@ packet LeWriteRfPathCompensationPower : LeAdvertisingCommand (op_code = LE_WRITE
   _payload_,  // placeholder (unimplemented)
 }
 
+enum PrivacyMode : 8 {
+  NETWORK = 0,
+  DEVICE = 1,
+}
+
 packet LeSetPrivacyMode : LeSecurityCommand (op_code = LE_SET_PRIVACY_MODE) {
-  _payload_,  // placeholder (unimplemented)
+  peer_identity_address_type : PeerAddressType,
+  peer_identity_address : Address,
+  privacy_mode : PrivacyMode,
 }
 
 packet LeSetPrivacyModeComplete : CommandComplete (command_op_code = LE_SET_PRIVACY_MODE) {
   status : ErrorCode,
+}
+
+enum UseDebugKey : 8 {
+  USE_GENERATED_KEY = 0,
+  USE_DEBUG_KEY = 1,
+}
+
+packet LeGenerateDhkeyCommand : LeSecurityCommand (op_code = LE_GENERATE_DHKEY_COMMAND) {
+  remote_p_256_public_key : 8[64],
+  key_type : UseDebugKey,
+}
+
+packet LeGenerateDhkeyCommandStatus : CommandStatus (command_op_code = LE_GENERATE_DHKEY_COMMAND) {
 }
 
   // VENDOR_SPECIFIC
@@ -3073,7 +3216,7 @@ enum ApcfOpcode : 8 {
   SERVICE_DATA = 0x07,
 }
 
-packet LeAdvFilter : VendorCommand (op_code = LE_ADV_FILTER) {
+packet LeAdvFilter : LeScanningCommand (op_code = LE_ADV_FILTER) {
   apcf_opcode : ApcfOpcode,
   _body_,
 }
@@ -3316,7 +3459,7 @@ packet LinkKeyNotification : EventPacket (event_code = LINK_KEY_NOTIFICATION){
 }
 
 packet LoopbackCommand : EventPacket (event_code = LOOPBACK_COMMAND){
-  _payload_, // placeholder (unimplemented)
+  _payload_, // Command packet, truncated if it was longer than 252 bytes
 }
 
 packet DataBufferOverflow : EventPacket (event_code = DATA_BUFFER_OVERFLOW){

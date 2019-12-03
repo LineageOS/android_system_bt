@@ -25,6 +25,8 @@ using std::shared_ptr;
 namespace test_vendor_lib {
 
 using ::bluetooth::hci::Address;
+using ::bluetooth::hci::AddressType;
+using ::bluetooth::hci::AddressWithType;
 
 bool AclConnectionHandler::HasHandle(uint16_t handle) const {
   if (acl_connections_.count(handle) == 0) {
@@ -70,9 +72,16 @@ bool AclConnectionHandler::CancelPendingConnection(Address addr) {
   return true;
 }
 
-bool AclConnectionHandler::CreatePendingLeConnection(Address addr, uint8_t address_type) {
-  if (IsDeviceConnected(addr, address_type)) {
-    LOG_INFO("%s: %s (type %hhx) is already connected", __func__, addr.ToString().c_str(), address_type);
+bool AclConnectionHandler::CreatePendingLeConnection(AddressWithType addr) {
+  bool device_connected = false;
+  for (auto pair : acl_connections_) {
+    auto connection = std::get<AclConnection>(pair);
+    if (connection.GetAddress() == addr) {
+      device_connected = true;
+    }
+  }
+  if (device_connected) {
+    LOG_INFO("%s: %s is already connected", __func__, addr.ToString().c_str());
     return false;
   }
   if (le_connection_pending_) {
@@ -81,42 +90,44 @@ bool AclConnectionHandler::CreatePendingLeConnection(Address addr, uint8_t addre
   }
   le_connection_pending_ = true;
   pending_le_connection_address_ = addr;
-  pending_le_connection_address_type_ = address_type;
   return true;
 }
 
-bool AclConnectionHandler::HasPendingLeConnection(Address addr,
-                                                  uint8_t address_type) const {
-  return le_connection_pending_ && pending_le_connection_address_ == addr &&
-         pending_le_connection_address_type_ == address_type;
+bool AclConnectionHandler::HasPendingLeConnection(AddressWithType addr) const {
+  return le_connection_pending_ && pending_le_connection_address_ == addr;
 }
 
-bool AclConnectionHandler::CancelPendingLeConnection(Address addr, uint8_t address_type) {
-  if (!le_connection_pending_ || pending_le_connection_address_ != addr ||
-      pending_le_connection_address_type_ != address_type) {
+bool AclConnectionHandler::CancelPendingLeConnection(AddressWithType addr) {
+  if (!le_connection_pending_ || pending_le_connection_address_ != addr) {
     return false;
   }
   le_connection_pending_ = false;
-  pending_le_connection_address_ = Address::kEmpty;
-  pending_le_connection_address_type_ = 0xba;
+  pending_le_connection_address_ =
+      AddressWithType{Address::kEmpty, AddressType::PUBLIC_DEVICE_ADDRESS};
   return true;
 }
 
-uint16_t AclConnectionHandler::CreateConnection(Address addr) {
+uint16_t AclConnectionHandler::CreateConnection(Address addr,
+                                                Address own_addr) {
   if (CancelPendingConnection(addr)) {
     uint16_t handle = GetUnusedHandle();
-    acl_connections_.emplace(handle, addr);
+    acl_connections_.emplace(
+        handle,
+        AclConnection{
+            AddressWithType{addr, AddressType::PUBLIC_DEVICE_ADDRESS},
+            AddressWithType{own_addr, AddressType::PUBLIC_DEVICE_ADDRESS},
+            Phy::Type::BR_EDR});
     return handle;
   }
   return acl::kReservedHandle;
 }
 
-uint16_t AclConnectionHandler::CreateLeConnection(Address addr, uint8_t address_type, uint8_t own_address_type) {
-  if (CancelPendingLeConnection(addr, address_type)) {
+uint16_t AclConnectionHandler::CreateLeConnection(AddressWithType addr,
+                                                  AddressWithType own_addr) {
+  if (CancelPendingLeConnection(addr)) {
     uint16_t handle = GetUnusedHandle();
-    acl_connections_.emplace(handle, addr);
-    set_own_address_type(handle, own_address_type);
-    SetAddress(handle, addr, address_type);
+    acl_connections_.emplace(
+        handle, AclConnection{addr, own_addr, Phy::Type::LOW_ENERGY});
     return handle;
   }
   return acl::kReservedHandle;
@@ -126,7 +137,7 @@ bool AclConnectionHandler::Disconnect(uint16_t handle) {
   return acl_connections_.erase(handle) > 0;
 }
 
-uint16_t AclConnectionHandler::GetHandle(Address addr) const {
+uint16_t AclConnectionHandler::GetHandle(AddressWithType addr) const {
   for (auto pair : acl_connections_) {
     if (std::get<AclConnection>(pair).GetAddress() == addr) {
       return std::get<0>(pair);
@@ -135,41 +146,24 @@ uint16_t AclConnectionHandler::GetHandle(Address addr) const {
   return acl::kReservedHandle;
 }
 
-Address AclConnectionHandler::GetAddress(uint16_t handle) const {
+uint16_t AclConnectionHandler::GetHandleOnlyAddress(
+    bluetooth::hci::Address addr) const {
+  for (auto pair : acl_connections_) {
+    if (std::get<AclConnection>(pair).GetAddress().GetAddress() == addr) {
+      return std::get<0>(pair);
+    }
+  }
+  return acl::kReservedHandle;
+}
+
+AddressWithType AclConnectionHandler::GetAddress(uint16_t handle) const {
   ASSERT_LOG(HasHandle(handle), "Handle unknown %hd", handle);
   return acl_connections_.at(handle).GetAddress();
 }
 
-uint8_t AclConnectionHandler::GetAddressType(uint16_t handle) const {
+AddressWithType AclConnectionHandler::GetOwnAddress(uint16_t handle) const {
   ASSERT_LOG(HasHandle(handle), "Handle unknown %hd", handle);
-  return acl_connections_.at(handle).GetAddressType();
-}
-
-void AclConnectionHandler::set_own_address_type(uint16_t handle, uint8_t address_type) {
-  ASSERT_LOG(HasHandle(handle), "Handle unknown %hd", handle);
-  acl_connections_.at(handle).SetOwnAddressType(address_type);
-}
-
-uint8_t AclConnectionHandler::GetOwnAddressType(uint16_t handle) const {
-  ASSERT_LOG(HasHandle(handle), "Handle unknown %hd", handle);
-  return acl_connections_.at(handle).GetOwnAddressType();
-}
-
-bool AclConnectionHandler::IsConnected(uint16_t handle) const {
-  if (!HasHandle(handle)) {
-    return false;
-  }
-  return true;
-}
-
-bool AclConnectionHandler::IsDeviceConnected(Address addr, uint8_t address_type) const {
-  for (auto pair : acl_connections_) {
-    auto connection = std::get<AclConnection>(pair);
-    if (connection.GetAddress() == addr && connection.GetAddressType() == address_type) {
-      return true;
-    }
-  }
-  return false;
+  return acl_connections_.at(handle).GetOwnAddress();
 }
 
 void AclConnectionHandler::Encrypt(uint16_t handle) {
@@ -186,13 +180,20 @@ bool AclConnectionHandler::IsEncrypted(uint16_t handle) const {
   return acl_connections_.at(handle).IsEncrypted();
 }
 
-void AclConnectionHandler::SetAddress(uint16_t handle, Address address, uint8_t address_type) {
+void AclConnectionHandler::SetAddress(uint16_t handle,
+                                      AddressWithType address) {
   if (!HasHandle(handle)) {
     return;
   }
   auto connection = acl_connections_.at(handle);
   connection.SetAddress(address);
-  connection.SetAddressType(address_type);
+}
+
+Phy::Type AclConnectionHandler::GetPhyType(uint16_t handle) const {
+  if (!HasHandle(handle)) {
+    return Phy::Type::BR_EDR;
+  }
+  return acl_connections_.at(handle).GetPhyType();
 }
 
 }  // namespace test_vendor_lib

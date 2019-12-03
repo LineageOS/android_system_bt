@@ -37,7 +37,7 @@ class Link : public l2cap::internal::ILink {
   Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_connection,
        l2cap::internal::ParameterProvider* parameter_provider)
       : l2cap_handler_(l2cap_handler), acl_connection_(std::move(acl_connection)),
-        data_pipeline_manager_(l2cap_handler, acl_connection_->GetAclQueueEnd()),
+        data_pipeline_manager_(l2cap_handler, this, acl_connection_->GetAclQueueEnd()),
         parameter_provider_(parameter_provider) {
     ASSERT(l2cap_handler_ != nullptr);
     ASSERT(acl_connection_ != nullptr);

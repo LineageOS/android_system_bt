@@ -18,10 +18,10 @@
 
 #include "common/bind.h"
 
+#include "l2cap/classic/dynamic_channel.h"
 #include "l2cap/classic/dynamic_channel_configuration_option.h"
 #include "l2cap/classic/dynamic_channel_manager.h"
 #include "l2cap/classic/dynamic_channel_service.h"
-#include "l2cap/dynamic_channel.h"
 
 namespace bluetooth {
 namespace l2cap {

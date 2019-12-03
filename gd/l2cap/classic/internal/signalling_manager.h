@@ -112,7 +112,6 @@ class ClassicSignallingManager {
   l2cap::internal::DynamicChannelAllocator* channel_allocator_;
   FixedChannelServiceManagerImpl* fixed_service_manager_;
   std::unique_ptr<os::EnqueueBuffer<packet::BasePacketBuilder>> enqueue_buffer_;
-  PendingCommand last_sent_command_;
   std::queue<PendingCommand> pending_commands_;
   os::Alarm alarm_;
   SignalId next_signal_id_ = kInitialSignalId;
