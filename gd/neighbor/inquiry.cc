@@ -32,37 +32,18 @@ namespace neighbor {
 static constexpr uint8_t kGeneralInquiryAccessCode = 0x33;
 static constexpr uint8_t kLimitedInquiryAccessCode = 0x00;
 
-static inline std::string LapText(uint8_t lap) {
-  switch (lap) {
-    case kGeneralInquiryAccessCode:
-      return "General Lap";
-    case kLimitedInquiryAccessCode:
-      return "Limited Lap";
-    default:
-      return "Unknown Lap";
-  }
-}
-
-static hci::Lap general_lap_;
-static hci::Lap limited_lap_;
-
 struct InquiryModule::impl {
   void RegisterCallbacks(InquiryCallbacks inquiry_callbacks);
   void UnregisterCallbacks();
 
-  void StartOneShotInquiry(hci::Lap& lap, InquiryLength inquiry_length, NumResponses num_responses);
+  void StartOneShotInquiry(bool limited, InquiryLength inquiry_length, NumResponses num_responses);
   void StopOneShotInquiry();
 
-  void StartPeriodicInquiry(hci::Lap& lap, InquiryLength inquiry_length, NumResponses num_responses,
+  void StartPeriodicInquiry(bool limited, InquiryLength inquiry_length, NumResponses num_responses,
                             PeriodLength max_delay, PeriodLength min_delay);
   void StopPeriodicInquiry();
 
-  bool IsInquiryActive() const;
-  bool IsOneShotInquiryActive(hci::Lap& lap) const;
-  bool IsPeriodicInquiryActive(hci::Lap& lap) const;
-
   void SetScanActivity(ScanParameters params);
-  ScanParameters GetScanActivity() const;
 
   void SetScanType(hci::InquiryScanType scan_type);
 
@@ -80,13 +61,17 @@ struct InquiryModule::impl {
 
   InquiryModule& module_;
 
-  hci::Lap* active_one_shot_{nullptr};
-  hci::Lap* active_periodic_{nullptr};
+  bool active_general_one_shot_{false};
+  bool active_limited_one_shot_{false};
+  bool active_general_periodic_{false};
+  bool active_limited_periodic_{false};
 
   ScanParameters inquiry_scan_;
   hci::InquiryMode inquiry_mode_;
   hci::InquiryScanType inquiry_scan_type_;
   int8_t inquiry_response_tx_power_;
+
+  bool IsInquiryActive() const;
 
   void EnqueueCommandComplete(std::unique_ptr<hci::CommandPacketBuilder> command);
   void EnqueueCommandStatus(std::unique_ptr<hci::CommandPacketBuilder> command);
@@ -106,10 +91,7 @@ struct InquiryModule::impl {
 
 const ModuleFactory neighbor::InquiryModule::Factory = ModuleFactory([]() { return new neighbor::InquiryModule(); });
 
-neighbor::InquiryModule::impl::impl(neighbor::InquiryModule& module) : module_(module) {
-  general_lap_.lap_ = kGeneralInquiryAccessCode;
-  limited_lap_.lap_ = kLimitedInquiryAccessCode;
-}
+neighbor::InquiryModule::impl::impl(neighbor::InquiryModule& module) : module_(module) {}
 
 void neighbor::InquiryModule::impl::OnCommandCompleteSync(hci::CommandCompleteView view) {
   OnCommandComplete(view);
@@ -129,9 +111,6 @@ void neighbor::InquiryModule::impl::OnCommandComplete(hci::CommandCompleteView v
       auto packet = hci::PeriodicInquiryModeCompleteView::Create(view);
       ASSERT(packet.IsValid());
       ASSERT(packet.GetStatus() == hci::ErrorCode::SUCCESS);
-      if (active_periodic_ != nullptr) {
-        LOG_DEBUG("Periodic inquiry started lap:%s", LapText(active_periodic_->lap_).c_str());
-      }
     } break;
 
     case hci::OpCode::EXIT_PERIODIC_INQUIRY_MODE: {
@@ -200,8 +179,8 @@ void neighbor::InquiryModule::impl::OnCommandStatus(hci::CommandStatusView statu
     case hci::OpCode::INQUIRY: {
       auto packet = hci::InquiryStatusView::Create(status);
       ASSERT(packet.IsValid());
-      if (active_one_shot_ != nullptr) {
-        LOG_DEBUG("Inquiry started lap:%s", LapText(active_one_shot_->lap_).c_str());
+      if (active_limited_one_shot_ || active_general_one_shot_) {
+        LOG_DEBUG("Inquiry started lap: %s", active_limited_one_shot_ ? "Limited" : "General");
       }
     } break;
 
@@ -217,7 +196,8 @@ void neighbor::InquiryModule::impl::OnEvent(hci::EventPacketView view) {
       auto packet = hci::InquiryCompleteView::Create(view);
       ASSERT(packet.IsValid());
       LOG_DEBUG("inquiry complete");
-      active_one_shot_ = nullptr;
+      active_limited_one_shot_ = false;
+      active_general_one_shot_ = false;
       inquiry_callbacks_.complete(packet.GetStatus());
     } break;
 
@@ -303,46 +283,54 @@ void neighbor::InquiryModule::impl::EnqueueCommandCompleteSync(std::unique_ptr<h
   command_sync_ = nullptr;
 }
 
-void neighbor::InquiryModule::impl::StartOneShotInquiry(hci::Lap& lap, InquiryLength inquiry_length,
+void neighbor::InquiryModule::impl::StartOneShotInquiry(bool limited, InquiryLength inquiry_length,
                                                         NumResponses num_responses) {
   ASSERT(HasCallbacks());
-  ASSERT(active_one_shot_ == nullptr);
-  active_one_shot_ = &lap;
+  ASSERT(!IsInquiryActive());
+  hci::Lap lap;
+  if (limited) {
+    active_limited_one_shot_ = true;
+    lap.lap_ = kLimitedInquiryAccessCode;
+  } else {
+    active_general_one_shot_ = true;
+    lap.lap_ = kGeneralInquiryAccessCode;
+  }
   EnqueueCommandStatus(hci::InquiryBuilder::Create(lap, inquiry_length, num_responses));
 }
 
 void neighbor::InquiryModule::impl::StopOneShotInquiry() {
-  ASSERT(active_one_shot_ != nullptr);
-  active_one_shot_ = nullptr;
+  ASSERT(active_general_one_shot_ || active_limited_one_shot_);
+  active_general_one_shot_ = false;
+  active_limited_one_shot_ = false;
   EnqueueCommandComplete(hci::InquiryCancelBuilder::Create());
 }
 
-bool neighbor::InquiryModule::impl::IsOneShotInquiryActive(hci::Lap& lap) const {
-  return active_one_shot_ == &lap;
-}
-
-void neighbor::InquiryModule::impl::StartPeriodicInquiry(hci::Lap& lap, InquiryLength inquiry_length,
+void neighbor::InquiryModule::impl::StartPeriodicInquiry(bool limited, InquiryLength inquiry_length,
                                                          NumResponses num_responses, PeriodLength max_delay,
                                                          PeriodLength min_delay) {
   ASSERT(HasCallbacks());
-  ASSERT(active_periodic_ == nullptr);
-  active_periodic_ = &lap;
+  ASSERT(!IsInquiryActive());
+  hci::Lap lap;
+  if (limited) {
+    active_limited_periodic_ = true;
+    lap.lap_ = kLimitedInquiryAccessCode;
+  } else {
+    active_general_periodic_ = true;
+    lap.lap_ = kGeneralInquiryAccessCode;
+  }
   EnqueueCommandComplete(
-      hci::PeriodicInquiryModeBuilder::Create(inquiry_length, num_responses, lap, max_delay, min_delay));
+      hci::PeriodicInquiryModeBuilder::Create(max_delay, min_delay, lap, inquiry_length, num_responses));
 }
 
 void neighbor::InquiryModule::impl::StopPeriodicInquiry() {
-  ASSERT(active_periodic_ != nullptr);
-  active_periodic_ = nullptr;
+  ASSERT(active_general_periodic_ || active_limited_periodic_);
+  active_general_periodic_ = false;
+  active_limited_periodic_ = false;
   EnqueueCommandComplete(hci::ExitPeriodicInquiryModeBuilder::Create());
 }
 
-bool neighbor::InquiryModule::impl::IsPeriodicInquiryActive(hci::Lap& lap) const {
-  return active_periodic_ == &lap;
-}
-
 bool neighbor::InquiryModule::impl::IsInquiryActive() const {
-  return active_one_shot_ != nullptr || active_periodic_ != nullptr;
+  return active_general_one_shot_ || active_limited_one_shot_ || active_limited_periodic_ || active_general_periodic_;
 }
 
 void neighbor::InquiryModule::impl::Start() {
@@ -378,10 +366,6 @@ void neighbor::InquiryModule::impl::SetScanActivity(ScanParameters params) {
             ScanIntervalTimeMs(params.interval), params.window, ScanWindowTimeMs(params.window));
 }
 
-ScanParameters neighbor::InquiryModule::impl::GetScanActivity() const {
-  return inquiry_scan_;
-}
-
 void neighbor::InquiryModule::impl::SetScanType(hci::InquiryScanType scan_type) {
   EnqueueCommandComplete(hci::WriteInquiryScanTypeBuilder::Create(scan_type));
   LOG_DEBUG("Set scan type:%s", hci::InquiryScanTypeText(scan_type).c_str());
@@ -410,103 +394,67 @@ void neighbor::InquiryModule::UnregisterCallbacks() {
 }
 
 void neighbor::InquiryModule::StartGeneralInquiry(InquiryLength inquiry_length, NumResponses num_responses) {
-  if (pimpl_->IsInquiryActive()) {
-    LOG_WARN("Ignoring start general one shot inquiry as an inquiry is already active");
-    return;
-  }
-  pimpl_->StartOneShotInquiry(general_lap_, inquiry_length, num_responses);
-  LOG_DEBUG("Started general one shot inquiry");
+  GetHandler()->Post(common::BindOnce(&neighbor::InquiryModule::impl::StartOneShotInquiry,
+                                      common::Unretained(pimpl_.get()), false, inquiry_length, num_responses));
 }
 
 void neighbor::InquiryModule::StartLimitedInquiry(InquiryLength inquiry_length, NumResponses num_responses) {
-  if (pimpl_->IsInquiryActive()) {
-    LOG_WARN("Ignoring start limited one shot inquiry as an inquiry is already active");
-    return;
-  }
-  pimpl_->StartOneShotInquiry(limited_lap_, inquiry_length, num_responses);
-  LOG_DEBUG("Started limited one shot inquiry");
+  GetHandler()->Post(common::BindOnce(&neighbor::InquiryModule::impl::StartOneShotInquiry,
+                                      common::Unretained(pimpl_.get()), true, inquiry_length, num_responses));
 }
 
 void neighbor::InquiryModule::StopInquiry() {
-  if (!pimpl_->IsInquiryActive()) {
-    LOG_WARN("Ignoring stop one shot inquiry as an inquiry is not active");
-    return;
-  }
-  pimpl_->StopOneShotInquiry();
-  LOG_DEBUG("Stopped one shot inquiry");
-}
-
-bool neighbor::InquiryModule::IsGeneralInquiryActive() const {
-  return pimpl_->IsOneShotInquiryActive(general_lap_);
-}
-
-bool neighbor::InquiryModule::IsLimitedInquiryActive() const {
-  return pimpl_->IsOneShotInquiryActive(limited_lap_);
+  GetHandler()->Post(
+      common::BindOnce(&neighbor::InquiryModule::impl::StopOneShotInquiry, common::Unretained(pimpl_.get())));
 }
 
 void neighbor::InquiryModule::StartGeneralPeriodicInquiry(InquiryLength inquiry_length, NumResponses num_responses,
                                                           PeriodLength max_delay, PeriodLength min_delay) {
-  if (pimpl_->IsInquiryActive()) {
-    LOG_WARN("Ignoring start general periodic inquiry as an inquiry is already active");
-    return;
-  }
-  pimpl_->StartPeriodicInquiry(general_lap_, inquiry_length, num_responses, max_delay, min_delay);
-  LOG_DEBUG("Started general periodic inquiry");
+  GetHandler()->Post(common::BindOnce(&neighbor::InquiryModule::impl::StartPeriodicInquiry,
+                                      common::Unretained(pimpl_.get()), false, inquiry_length, num_responses, max_delay,
+                                      min_delay));
 }
 
 void neighbor::InquiryModule::StartLimitedPeriodicInquiry(InquiryLength inquiry_length, NumResponses num_responses,
                                                           PeriodLength max_delay, PeriodLength min_delay) {
-  if (pimpl_->IsInquiryActive()) {
-    LOG_WARN("Ignoring start limited periodic inquiry as an inquiry is already active");
-    return;
-  }
-  pimpl_->StartPeriodicInquiry(limited_lap_, inquiry_length, num_responses, max_delay, min_delay);
-  LOG_DEBUG("Started limited periodic inquiry");
+  GetHandler()->Post(common::BindOnce(&neighbor::InquiryModule::impl::StartPeriodicInquiry,
+                                      common::Unretained(pimpl_.get()), true, inquiry_length, num_responses, max_delay,
+                                      min_delay));
 }
 
 void neighbor::InquiryModule::StopPeriodicInquiry() {
-  if (!pimpl_->IsInquiryActive()) {
-    LOG_WARN("Ignoring stop periodic inquiry as an inquiry is not active");
-    return;
-  }
-  pimpl_->StopPeriodicInquiry();
-  LOG_DEBUG("Stopped periodic inquiry");
-}
-
-bool neighbor::InquiryModule::IsGeneralPeriodicInquiryActive() const {
-  return pimpl_->IsPeriodicInquiryActive(general_lap_);
-}
-
-bool neighbor::InquiryModule::IsLimitedPeriodicInquiryActive() const {
-  return pimpl_->IsPeriodicInquiryActive(limited_lap_);
+  GetHandler()->Post(
+      common::BindOnce(&neighbor::InquiryModule::impl::StopPeriodicInquiry, common::Unretained(pimpl_.get())));
 }
 
 void neighbor::InquiryModule::SetScanActivity(ScanParameters params) {
-  pimpl_->SetScanActivity(params);
-}
-
-ScanParameters neighbor::InquiryModule::GetScanActivity() const {
-  return pimpl_->GetScanActivity();
+  GetHandler()->Post(
+      common::BindOnce(&neighbor::InquiryModule::impl::SetScanActivity, common::Unretained(pimpl_.get()), params));
 }
 
 void neighbor::InquiryModule::SetInterlacedScan() {
-  pimpl_->SetScanType(hci::InquiryScanType::INTERLACED);
+  GetHandler()->Post(common::BindOnce(&neighbor::InquiryModule::impl::SetScanType, common::Unretained(pimpl_.get()),
+                                      hci::InquiryScanType::INTERLACED));
 }
 
 void neighbor::InquiryModule::SetStandardScan() {
-  pimpl_->SetScanType(hci::InquiryScanType::STANDARD);
+  GetHandler()->Post(common::BindOnce(&neighbor::InquiryModule::impl::SetScanType, common::Unretained(pimpl_.get()),
+                                      hci::InquiryScanType::STANDARD));
 }
 
 void neighbor::InquiryModule::SetStandardInquiryResultMode() {
-  pimpl_->SetInquiryMode(hci::InquiryMode::STANDARD);
+  GetHandler()->Post(common::BindOnce(&neighbor::InquiryModule::impl::SetInquiryMode, common::Unretained(pimpl_.get()),
+                                      hci::InquiryMode::STANDARD));
 }
 
 void neighbor::InquiryModule::SetInquiryWithRssiResultMode() {
-  pimpl_->SetInquiryMode(hci::InquiryMode::RSSI);
+  GetHandler()->Post(common::BindOnce(&neighbor::InquiryModule::impl::SetInquiryMode, common::Unretained(pimpl_.get()),
+                                      hci::InquiryMode::RSSI));
 }
 
 void neighbor::InquiryModule::SetExtendedInquiryResultMode() {
-  pimpl_->SetInquiryMode(hci::InquiryMode::RSSI_OR_EXTENDED);
+  GetHandler()->Post(common::BindOnce(&neighbor::InquiryModule::impl::SetInquiryMode, common::Unretained(pimpl_.get()),
+                                      hci::InquiryMode::RSSI_OR_EXTENDED));
 }
 
 /**
