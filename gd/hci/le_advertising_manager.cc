@@ -52,6 +52,7 @@ struct LeAdvertisingManager::impl {
     le_advertising_interface_ = hci_layer_->GetLeAdvertisingInterface(
         common::Bind(&LeAdvertisingManager::impl::handle_event, common::Unretained(this)), module_handler_);
     num_instances_ = controller_->GetControllerLeNumberOfSupportedAdverisingSets();
+    enabled_sets_ = std::vector<EnabledSet>(num_instances_);
     if (controller_->IsSupported(hci::OpCode::LE_SET_EXTENDED_ADVERTISING_PARAMETERS)) {
       advertising_api_type_ = AdvertisingApiType::LE_5_0;
     } else if (controller_->IsSupported(hci::OpCode::LE_MULTI_ADVT)) {
@@ -112,6 +113,7 @@ struct LeAdvertisingManager::impl {
   }
 
   void remove_advertiser(AdvertiserId id) {
+    stop_advertising(id);
     std::unique_lock lock(id_mutex_);
     if (advertising_sets_.count(id) == 0) {
       return;
@@ -173,6 +175,7 @@ struct LeAdvertisingManager::impl {
         ExtendedAdvertisingConfig new_config;
         AdvertisingConfig* base_config_ptr = &new_config;
         *(base_config_ptr) = config;
+        new_config.legacy_pdus = true;
         create_extended_advertiser(id, new_config, scan_callback, set_terminated_callback, handler);
       } break;
     }
@@ -186,14 +189,70 @@ struct LeAdvertisingManager::impl {
       create_advertiser(id, config, scan_callback, set_terminated_callback, handler);
       return;
     }
-    LOG_ALWAYS_FATAL("LE_SET_EXTENDED_ADVERTISING_PARAMETERS isn't implemented.");
 
-    /*
-    le_advertising_interface_->EnqueueCommand(hci::LeSetExtendedAdvertisingParametersBuilder::Create(config.interval_min,
-    config.interval_max, config.event_type, config.address_type, config.peer_address_type, config.peer_address,
-    config.channel_map, config.filter_policy, id, config.tx_power), common::BindOnce(impl::check_status),
-    module_handler_);
-     */
+    if (config.legacy_pdus) {
+      LegacyAdvertisingProperties legacy_properties = LegacyAdvertisingProperties::ADV_IND;
+      if (config.connectable && config.directed) {
+        if (config.high_duty_directed_connectable) {
+          legacy_properties = LegacyAdvertisingProperties::ADV_DIRECT_IND_HIGH;
+        } else {
+          legacy_properties = LegacyAdvertisingProperties::ADV_DIRECT_IND_LOW;
+        }
+      }
+      if (config.scannable && !config.connectable) {
+        legacy_properties = LegacyAdvertisingProperties::ADV_SCAN_IND;
+      }
+      if (!config.scannable && !config.connectable) {
+        legacy_properties = LegacyAdvertisingProperties::ADV_NONCONN_IND;
+      }
+
+      le_advertising_interface_->EnqueueCommand(
+          LeSetExtendedAdvertisingLegacyParametersBuilder::Create(
+              id, legacy_properties, config.interval_min, config.interval_max, config.channel_map,
+              config.own_address_type, config.peer_address_type, config.peer_address, config.filter_policy,
+              config.tx_power, (config.use_le_coded_phy ? PrimaryPhyType::LE_CODED : PrimaryPhyType::LE_1M), config.sid,
+              config.enable_scan_request_notifications),
+          common::BindOnce(impl::check_status<LeSetExtendedAdvertisingParametersCompleteView>), module_handler_);
+    } else {
+      uint8_t legacy_properties = (config.connectable ? 0x1 : 0x00) | (config.scannable ? 0x2 : 0x00) |
+                                  (config.directed ? 0x4 : 0x00) | (config.high_duty_directed_connectable ? 0x8 : 0x00);
+      uint8_t extended_properties = (config.anonymous ? 0x20 : 0x00) | (config.include_tx_power ? 0x40 : 0x00);
+
+      le_advertising_interface_->EnqueueCommand(
+          hci::LeSetExtendedAdvertisingParametersBuilder::Create(
+              id, legacy_properties, extended_properties, config.interval_min, config.interval_max, config.channel_map,
+              config.own_address_type, config.peer_address_type, config.peer_address, config.filter_policy,
+              config.tx_power, (config.use_le_coded_phy ? PrimaryPhyType::LE_CODED : PrimaryPhyType::LE_1M),
+              config.secondary_max_skip, config.secondary_advertising_phy, config.sid,
+              config.enable_scan_request_notifications),
+          common::BindOnce(impl::check_status<LeSetExtendedAdvertisingParametersCompleteView>), module_handler_);
+    }
+
+    le_advertising_interface_->EnqueueCommand(
+        hci::LeSetExtendedAdvertisingRandomAddressBuilder::Create(id, config.random_address),
+        common::BindOnce(impl::check_status<LeSetExtendedAdvertisingRandomAddressCompleteView>), module_handler_);
+    if (!config.scan_response.empty()) {
+      le_advertising_interface_->EnqueueCommand(
+          hci::LeSetExtendedAdvertisingScanResponseBuilder::Create(id, config.operation, config.fragment_preference,
+                                                                   config.scan_response),
+          common::BindOnce(impl::check_status<LeSetExtendedAdvertisingScanResponseCompleteView>), module_handler_);
+    }
+    le_advertising_interface_->EnqueueCommand(
+        hci::LeSetExtendedAdvertisingDataBuilder::Create(id, config.operation, config.fragment_preference,
+                                                         config.advertisement),
+        common::BindOnce(impl::check_status<LeSetExtendedAdvertisingDataCompleteView>), module_handler_);
+
+    EnabledSet curr_set;
+    curr_set.advertising_handle_ = id;
+    curr_set.duration_ = 0;                         // TODO: 0 means until the host disables it
+    curr_set.max_extended_advertising_events_ = 0;  // TODO: 0 is no maximum
+    std::vector<EnabledSet> enabled_sets = {curr_set};
+
+    enabled_sets_[id] = curr_set;
+    le_advertising_interface_->EnqueueCommand(
+        hci::LeSetExtendedAdvertisingEnableBuilder::Create(Enable::ENABLED, enabled_sets),
+        common::BindOnce(impl::check_status<LeSetExtendedAdvertisingEnableCompleteView>), module_handler_);
+
     advertising_sets_[id].scan_callback = scan_callback;
     advertising_sets_[id].set_terminated_callback = set_terminated_callback;
     advertising_sets_[id].handler = handler;
@@ -204,10 +263,29 @@ struct LeAdvertisingManager::impl {
       LOG_INFO("Unknown advertising set %u", advertising_set);
       return;
     }
-    le_advertising_interface_->EnqueueCommand(hci::LeSetAdvertisingEnableBuilder::Create(Enable::DISABLED),
-                                              common::BindOnce(impl::check_status<LeSetAdvertisingEnableCompleteView>),
-                                              module_handler_);
+    switch (advertising_api_type_) {
+      case (AdvertisingApiType::LE_4_0):
+        le_advertising_interface_->EnqueueCommand(
+            hci::LeSetAdvertisingEnableBuilder::Create(Enable::DISABLED),
+            common::BindOnce(impl::check_status<LeSetAdvertisingEnableCompleteView>), module_handler_);
+        break;
+      case (AdvertisingApiType::ANDROID_HCI):
+        le_advertising_interface_->EnqueueCommand(
+            hci::LeMultiAdvtSetEnableBuilder::Create(Enable::DISABLED, advertising_set),
+            common::BindOnce(impl::check_status<LeMultiAdvtCompleteView>), module_handler_);
+        break;
+      case (AdvertisingApiType::LE_5_0): {
+        EnabledSet curr_set;
+        curr_set.advertising_handle_ = advertising_set;
+        std::vector<EnabledSet> enabled_vector{curr_set};
+        le_advertising_interface_->EnqueueCommand(
+            hci::LeSetExtendedAdvertisingEnableBuilder::Create(Enable::DISABLED, enabled_vector),
+            common::BindOnce(impl::check_status<LeSetExtendedAdvertisingEnableCompleteView>), module_handler_);
+      } break;
+    }
+
     std::unique_lock lock(id_mutex_);
+    enabled_sets_[advertising_set].advertising_handle_ = -1;
     advertising_sets_.erase(advertising_set);
   }
 
@@ -223,6 +301,7 @@ struct LeAdvertisingManager::impl {
 
   std::mutex id_mutex_;
   size_t num_instances_;
+  std::vector<hci::EnabledSet> enabled_sets_;
 
   AdvertisingApiType advertising_api_type_{0};
 
@@ -323,7 +402,7 @@ AdvertiserId LeAdvertisingManager::ExtendedCreateAdvertiser(
 }
 
 void LeAdvertisingManager::RemoveAdvertiser(AdvertiserId id) {
-  pimpl_->remove_advertiser(id);
+  GetHandler()->Post(common::BindOnce(&impl::remove_advertiser, common::Unretained(pimpl_.get()), id));
 }
 
 }  // namespace hci

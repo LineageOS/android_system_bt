@@ -191,7 +191,8 @@ class LeScanningManagerTest : public ::testing::Test {
     fake_registry_.Start<LeScanningManager>(&thread_);
     le_scanning_manager =
         static_cast<LeScanningManager*>(fake_registry_.GetModuleUnderTest(&LeScanningManager::Factory));
-    config_future.wait_for(std::chrono::duration(std::chrono::milliseconds(1000)));
+    auto result = config_future.wait_for(std::chrono::duration(std::chrono::milliseconds(1000)));
+    ASSERT_EQ(std::future_status::ready, result);
     HandleConfiguration();
   }
 
@@ -257,7 +258,8 @@ TEST_F(LeScanningManagerTest, start_scan_test) {
   auto next_command_future = test_hci_layer_->GetCommandFuture();
   le_scanning_manager->StartScan(&mock_callbacks_);
 
-  next_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
+  auto result = next_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
+  ASSERT_EQ(std::future_status::ready, result);
   test_hci_layer_->IncomingEvent(LeSetScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
 
   LeAdvertisingReport report{};
@@ -283,7 +285,8 @@ TEST_F(LeAndroidHciScanningManagerTest, start_scan_test) {
   auto next_command_future = test_hci_layer_->GetCommandFuture();
   le_scanning_manager->StartScan(&mock_callbacks_);
 
-  next_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
+  auto result = next_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
+  ASSERT_EQ(std::future_status::ready, result);
   test_hci_layer_->IncomingEvent(LeSetScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
 
   LeAdvertisingReport report{};
@@ -309,7 +312,8 @@ TEST_F(LeExtendedScanningManagerTest, start_scan_test) {
   auto next_command_future = test_hci_layer_->GetCommandFuture();
   le_scanning_manager->StartScan(&mock_callbacks_);
 
-  next_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
+  auto result = next_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
+  ASSERT_EQ(std::future_status::ready, result);
   auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_SET_EXTENDED_SCAN_ENABLE);
 
   test_hci_layer_->IncomingEvent(LeSetScanEnableCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS));
