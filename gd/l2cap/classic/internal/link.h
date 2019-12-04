@@ -111,6 +111,8 @@ class Link : public l2cap::internal::ILink {
     return GetDevice().ToString();
   }
 
+  void SendLeCredit(Cid local_cid, uint16_t credit) override {}
+
  private:
   os::Handler* l2cap_handler_;
   l2cap::internal::FixedChannelAllocator<FixedChannelImpl, Link> fixed_channel_allocator_{this, l2cap_handler_};

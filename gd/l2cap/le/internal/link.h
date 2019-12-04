@@ -103,6 +103,10 @@ class Link : public l2cap::internal::ILink {
 
   virtual uint16_t GetMps() const;
 
+  virtual uint16_t GetInitialCredit() const;
+
+  void SendLeCredit(Cid local_cid, uint16_t credit) override;
+
  private:
   os::Handler* l2cap_handler_;
   l2cap::internal::FixedChannelAllocator<FixedChannelImpl, Link> fixed_channel_allocator_{this, l2cap_handler_};

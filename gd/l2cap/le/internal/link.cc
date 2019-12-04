@@ -163,6 +163,15 @@ uint16_t Link::GetMps() const {
   return parameter_provider_->GetLeMps();
 }
 
+uint16_t Link::GetInitialCredit() const {
+  return parameter_provider_->GetLeInitialCredit();
+}
+
+
+void Link::SendLeCredit(Cid local_cid, uint16_t credit) {
+  signalling_manager_.SendCredit(local_cid, credit);
+}
+
 }  // namespace internal
 }  // namespace le
 }  // namespace l2cap
