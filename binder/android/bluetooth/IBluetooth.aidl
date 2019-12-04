@@ -146,4 +146,6 @@ interface IBluetooth
 
     boolean connectAllEnabledProfiles(in BluetoothDevice device);
     boolean disconnectAllEnabledProfiles(in BluetoothDevice device);
+
+    boolean setActiveDevice(in BluetoothDevice device, in int profiles);
 }
