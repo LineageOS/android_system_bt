@@ -703,7 +703,7 @@ struct ErtmController::impl {
   void send_ack(Final f = Final::NOT_SET) {
     if (local_busy()) {
       send_rnr(f);
-    } else if (!remote_busy() && /* pending i frames exist */ rem_window_not_full()) {
+    } else if (!remote_busy() && !pending_frames_.empty() && rem_window_not_full()) {
       send_pending_i_frames(f);
     } else {
       send_rr(f);
