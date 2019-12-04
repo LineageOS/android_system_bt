@@ -6,7 +6,7 @@ import "google/protobuf/empty.proto";
 import "facade/common.proto";
 
 service SecurityModuleFacade {
-  rpc CreateBond(facade.BluetoothAddress) returns (google.protobuf.Empty) {}
-  rpc CancelBond(facade.BluetoothAddress) returns (google.protobuf.Empty) {}
-  rpc RemoveBond(facade.BluetoothAddress) returns (google.protobuf.Empty) {}
+  rpc CreateBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
+  rpc CancelBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
+  rpc RemoveBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
 }

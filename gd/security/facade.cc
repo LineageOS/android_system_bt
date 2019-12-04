@@ -24,15 +24,48 @@
 namespace bluetooth {
 namespace security {
 
-class SecurityModuleFacadeService : public SecurityModuleFacade::Service {
+class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public ISecurityManagerListener {
  public:
   SecurityModuleFacadeService(SecurityModule* security_module, l2cap::le::L2capLeModule* l2cap_le_module,
                               l2cap::classic::L2capClassicModule* l2cap_classic_module, hci::HciLayer* hci_layer,
                               ::bluetooth::os::Handler* security_handler)
       : security_module_(security_module), l2cap_le_module_(l2cap_le_module),
         l2cap_classic_module_(l2cap_classic_module), security_handler_(security_handler) {
-    // TODO(optedoblivion): Register callback listener
+    security_module_->GetSecurityManager()->RegisterCallbackListener(this, security_handler_);
   }
+
+  ::grpc::Status CreateBond(::grpc::ServerContext* context, const facade::BluetoothAddressWithType* request,
+                            ::google::protobuf::Empty* response) override {
+    hci::Address peer;
+    ASSERT(hci::Address::FromString(request->address().address(), peer));
+    hci::AddressType peer_type = hci::AddressType::PUBLIC_DEVICE_ADDRESS;
+    security_module_->GetSecurityManager()->CreateBond(hci::AddressWithType(peer, peer_type));
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status CancelBond(::grpc::ServerContext* context, const facade::BluetoothAddressWithType* request,
+                            ::google::protobuf::Empty* response) override {
+    hci::Address peer;
+    ASSERT(hci::Address::FromString(request->address().address(), peer));
+    hci::AddressType peer_type = hci::AddressType::PUBLIC_DEVICE_ADDRESS;
+    security_module_->GetSecurityManager()->CancelBond(hci::AddressWithType(peer, peer_type));
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status RemoveBond(::grpc::ServerContext* context, const facade::BluetoothAddressWithType* request,
+                            ::google::protobuf::Empty* response) override {
+    hci::Address peer;
+    ASSERT(hci::Address::FromString(request->address().address(), peer));
+    hci::AddressType peer_type = hci::AddressType::PUBLIC_DEVICE_ADDRESS;
+    security_module_->GetSecurityManager()->RemoveBond(hci::AddressWithType(peer, peer_type));
+    return ::grpc::Status::OK;
+  }
+
+  void OnDeviceBonded(hci::AddressWithType device) {}
+
+  void OnDeviceUnbonded(hci::AddressWithType device) {}
+
+  void OnDeviceBondFailed(hci::AddressWithType device) {}
 
  private:
   SecurityModule* security_module_ __attribute__((unused));
