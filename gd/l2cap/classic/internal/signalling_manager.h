@@ -106,7 +106,7 @@ class ClassicSignallingManager {
 
   os::Handler* handler_;
   Link* link_;
-  [[maybe_unused]] l2cap::internal::DataPipelineManager* data_pipeline_manager_;
+  l2cap::internal::DataPipelineManager* data_pipeline_manager_;
   std::shared_ptr<classic::internal::FixedChannelImpl> signalling_channel_;
   DynamicChannelServiceManagerImpl* dynamic_service_manager_;
   l2cap::internal::DynamicChannelAllocator* channel_allocator_;
