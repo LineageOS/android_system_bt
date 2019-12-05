@@ -87,6 +87,7 @@ Cid DynamicChannelAllocator::ReserveChannel() {
 }
 
 void DynamicChannelAllocator::FreeChannel(Cid cid) {
+  used_cid_.erase(cid);
   auto channel = FindChannelByCid(cid);
   if (channel == nullptr) {
     LOG_INFO("Channel is not in use: psm %d, device %s", cid, link_->GetDevice().ToString().c_str());
@@ -94,7 +95,6 @@ void DynamicChannelAllocator::FreeChannel(Cid cid) {
   }
   used_remote_cid_.erase(channel->GetRemoteCid());
   channels_.erase(cid);
-  used_cid_.erase(cid);
 }
 
 bool DynamicChannelAllocator::IsPsmUsed(Psm psm) const {
