@@ -81,6 +81,9 @@ class Link : public l2cap::internal::ILink {
 
   void SendDisconnectionRequest(Cid local_cid, Cid remote_cid) override;
 
+  // Invoked by signalling manager to indicate an outgoing connection request failed and link shall free resources
+  virtual void OnOutgoingConnectionRequestFail(Cid local_cid);
+
   virtual std::shared_ptr<l2cap::internal::DynamicChannelImpl> AllocateDynamicChannel(Psm psm, Cid remote_cid,
                                                                                       SecurityPolicy security_policy);
 

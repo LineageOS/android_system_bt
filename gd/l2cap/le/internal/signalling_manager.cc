@@ -181,6 +181,7 @@ void LeSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remote_ci
   command_just_sent_.signal_id_ = kInitialSignalId;
   if (result != LeCreditBasedConnectionResponseResult::SUCCESS) {
     LOG_WARN("Connection failed: %s", LeCreditBasedConnectionResponseResultText(result).data());
+    link_->OnOutgoingConnectionRequestFail(command_just_sent_.source_cid_);
     handle_send_next_command();
     return;
   }
@@ -188,6 +189,7 @@ void LeSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remote_ci
       link_->AllocateReservedDynamicChannel(command_just_sent_.source_cid_, command_just_sent_.psm_, remote_cid, {});
   if (new_channel == nullptr) {
     LOG_WARN("Can't allocate dynamic channel");
+    link_->OnOutgoingConnectionRequestFail(command_just_sent_.source_cid_);
     handle_send_next_command();
     return;
   }
@@ -359,9 +361,18 @@ void LeSignallingManager::send_connection_response(SignalId signal_id, Cid local
 
 void LeSignallingManager::on_command_timeout() {
   LOG_WARN("Response time out");
-  if (command_just_sent_.signal_id_ == kInitialSignalId) {
+  if (command_just_sent_.signal_id_ == kInvalidSignalId) {
     LOG_ERROR("No pending command");
     return;
+  }
+  command_just_sent_.signal_id_ = kInvalidSignalId;
+  switch (command_just_sent_.command_code_) {
+    case LeCommandCode::CONNECTION_PARAMETER_UPDATE_REQUEST: {
+      link_->OnOutgoingConnectionRequestFail(command_just_sent_.source_cid_);
+      break;
+    }
+    default:
+      break;
   }
   handle_send_next_command();
 }

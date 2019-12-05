@@ -217,6 +217,7 @@ void ClassicSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remo
   }
   alarm_.Cancel();
   if (result != ConnectionResponseResult::SUCCESS) {
+    link_->OnOutgoingConnectionRequestFail(cid);
     handle_send_next_command();
     return;
   }
@@ -224,6 +225,7 @@ void ClassicSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remo
   auto new_channel = link_->AllocateReservedDynamicChannel(cid, pending_psm, remote_cid, {});
   if (new_channel == nullptr) {
     LOG_WARN("Can't allocate dynamic channel");
+    link_->OnOutgoingConnectionRequestFail(cid);
     handle_send_next_command();
     return;
   }
@@ -665,6 +667,10 @@ void ClassicSignallingManager::on_command_timeout() {
   auto last_sent_command = std::move(pending_commands_.front());
   pending_commands_.pop();
   switch (last_sent_command.command_code_) {
+    case CommandCode::CONNECTION_REQUEST: {
+      link_->OnOutgoingConnectionRequestFail(last_sent_command.source_cid_);
+      break;
+    }
     case CommandCode::CONFIGURATION_REQUEST: {
       SendDisconnectionRequest(last_sent_command.source_cid_, last_sent_command.destination_cid_);
       break;

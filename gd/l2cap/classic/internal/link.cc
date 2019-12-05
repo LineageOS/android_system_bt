@@ -79,6 +79,11 @@ void Link::SendConnectionRequest(Psm psm, Cid local_cid,
   signalling_manager_.SendConnectionRequest(psm, local_cid);
 }
 
+void Link::OnOutgoingConnectionRequestFail(Cid local_cid) {
+  local_cid_to_pending_dynamic_channel_connection_map_.erase(local_cid);
+  dynamic_channel_allocator_.FreeChannel(local_cid);
+}
+
 void Link::SendDisconnectionRequest(Cid local_cid, Cid remote_cid) {
   signalling_manager_.SendDisconnectionRequest(local_cid, remote_cid);
 }
