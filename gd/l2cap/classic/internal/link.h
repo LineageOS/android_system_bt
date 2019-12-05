@@ -46,9 +46,9 @@ class Link : public l2cap::internal::ILink {
        DynamicChannelServiceManagerImpl* dynamic_service_manager,
        FixedChannelServiceManagerImpl* fixed_service_manager);
 
-  virtual ~Link() = default;
+  ~Link() override = default;
 
-  virtual hci::AddressWithType GetDevice() {
+  hci::AddressWithType GetDevice() override {
     return {acl_connection_->GetAddress(), acl_connection_->GetAddressType()};
   }
 
@@ -123,7 +123,7 @@ class Link : public l2cap::internal::ILink {
   ClassicSignallingManager signalling_manager_;
   std::unordered_map<Cid, PendingDynamicChannelConnection> local_cid_to_pending_dynamic_channel_connection_map_;
   os::Alarm link_idle_disconnect_alarm_{l2cap_handler_};
-  Mtu remote_mtu_ = kMinimumClassicMtu;
+  Mtu remote_connectionless_mtu_ = kMinimumClassicMtu;
   bool remote_supports_ertm_ = false;
   bool remote_supports_fcs_ = false;
   DISALLOW_COPY_AND_ASSIGN(Link);
