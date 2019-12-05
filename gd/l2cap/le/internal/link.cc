@@ -18,15 +18,16 @@
 #include <memory>
 
 #include "hci/acl_manager.h"
-#include "l2cap/classic/dynamic_channel_manager.h"
-#include "l2cap/classic/internal/fixed_channel_impl.h"
-#include "l2cap/classic/internal/link.h"
+#include "l2cap/internal/dynamic_channel_impl.h"
 #include "l2cap/internal/parameter_provider.h"
+#include "l2cap/le/dynamic_channel_manager.h"
+#include "l2cap/le/internal/fixed_channel_impl.h"
+#include "l2cap/le/internal/link.h"
 #include "os/alarm.h"
 
 namespace bluetooth {
 namespace l2cap {
-namespace classic {
+namespace le {
 namespace internal {
 
 Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_connection,
@@ -36,14 +37,12 @@ Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_c
     : l2cap_handler_(l2cap_handler), acl_connection_(std::move(acl_connection)),
       data_pipeline_manager_(l2cap_handler, this, acl_connection_->GetAclQueueEnd()),
       parameter_provider_(parameter_provider), dynamic_service_manager_(dynamic_service_manager),
-      fixed_service_manager_(fixed_service_manager),
-      signalling_manager_(l2cap_handler_, this, &data_pipeline_manager_, dynamic_service_manager_,
-                          &dynamic_channel_allocator_, fixed_service_manager_) {
+      fixed_service_manager_(fixed_service_manager) {
   ASSERT(l2cap_handler_ != nullptr);
   ASSERT(acl_connection_ != nullptr);
   ASSERT(parameter_provider_ != nullptr);
   link_idle_disconnect_alarm_.Schedule(common::BindOnce(&Link::Disconnect, common::Unretained(this)),
-                                       parameter_provider_->GetClassicLinkIdleDisconnectTimeout());
+                                       parameter_provider_->GetLeLinkIdleDisconnectTimeout());
 }
 
 void Link::OnAclDisconnected(hci::ErrorCode status) {
@@ -69,22 +68,16 @@ Cid Link::ReserveDynamicChannel() {
   return dynamic_channel_allocator_.ReserveChannel();
 }
 
-void Link::SendConnectionRequest(Psm psm, Cid local_cid) {
-  signalling_manager_.SendConnectionRequest(psm, local_cid);
-}
-
-void Link::SendConnectionRequest(Psm psm, Cid local_cid,
-                                 PendingDynamicChannelConnection pending_dynamic_channel_connection) {
-  local_cid_to_pending_dynamic_channel_connection_map_[local_cid] = std::move(pending_dynamic_channel_connection);
-  signalling_manager_.SendConnectionRequest(psm, local_cid);
+void Link::SendConnectionRequest(Psm psm, PendingDynamicChannelConnection pending_dynamic_channel_connection) {
+  if (dynamic_channel_allocator_.IsPsmUsed(psm)) {
+    LOG_INFO("Psm %d is already connected", psm);
+    return;
+  }
+  LOG_ERROR("Not implemented");
 }
 
 void Link::SendDisconnectionRequest(Cid local_cid, Cid remote_cid) {
-  signalling_manager_.SendDisconnectionRequest(local_cid, remote_cid);
-}
-
-void Link::SendInformationRequest(InformationRequestInfoType type) {
-  signalling_manager_.SendInformationRequest(type);
+  LOG_ERROR("Not implemented");
 }
 
 std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateDynamicChannel(Psm psm, Cid remote_cid,
@@ -109,7 +102,7 @@ std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateReservedDynam
   return channel;
 }
 
-classic::DynamicChannelConfigurationOption Link::GetConfigurationForInitialConfiguration(Cid cid) {
+DynamicChannelConfigurationOption Link::GetConfigurationForInitialConfiguration(Cid cid) {
   ASSERT(local_cid_to_pending_dynamic_channel_connection_map_.find(cid) !=
          local_cid_to_pending_dynamic_channel_connection_map_.end());
   return local_cid_to_pending_dynamic_channel_connection_map_[cid].configuration_;
@@ -133,7 +126,7 @@ void Link::RefreshRefCount() {
     link_idle_disconnect_alarm_.Cancel();
   } else {
     link_idle_disconnect_alarm_.Schedule(common::BindOnce(&Link::Disconnect, common::Unretained(this)),
-                                         parameter_provider_->GetClassicLinkIdleDisconnectTimeout());
+                                         parameter_provider_->GetLeLinkIdleDisconnectTimeout());
   }
 }
 
@@ -157,31 +150,7 @@ void Link::NotifyChannelFail(Cid cid) {
   local_cid_to_pending_dynamic_channel_connection_map_.erase(cid);
 }
 
-void Link::SetRemoteConnectionlessMtu(Mtu mtu) {
-  remote_connectionless_mtu_ = mtu;
-}
-
-Mtu Link::GetRemoteConnectionlessMtu() const {
-  return remote_connectionless_mtu_;
-}
-
-void Link::SetRemoteSupportsErtm(bool supported) {
-  remote_supports_ertm_ = supported;
-}
-
-bool Link::GetRemoteSupportsErtm() const {
-  return remote_supports_ertm_;
-}
-
-void Link::SetRemoteSupportsFcs(bool supported) {
-  remote_supports_fcs_ = supported;
-}
-
-bool Link::GetRemoteSupportsFcs() const {
-  return remote_supports_fcs_;
-}
-
 }  // namespace internal
-}  // namespace classic
+}  // namespace le
 }  // namespace l2cap
 }  // namespace bluetooth
