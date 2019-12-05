@@ -14,20 +14,19 @@
  * limitations under the License.
  */
 
-#include "hci/le_scanning_manager.h"
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
 
 #include <algorithm>
 #include <chrono>
 #include <future>
 #include <map>
 
-#include <gmock/gmock.h>
-#include <gtest/gtest.h>
-
 #include "common/bind.h"
 #include "hci/address.h"
 #include "hci/controller.h"
 #include "hci/hci_layer.h"
+#include "hci/le_scanning_manager.h"
 #include "os/thread.h"
 #include "packet/raw_builder.h"
 
@@ -187,7 +186,7 @@ class LeScanningManagerTest : public ::testing::Test {
     fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
-    mock_callbacks_.handler = client_handler_;
+    mock_callbacks_.handler_ = client_handler_;
     std::future<void> config_future = test_hci_layer_->GetCommandFuture();
     fake_registry_.Start<LeScanningManager>(&thread_);
     le_scanning_manager =
@@ -217,6 +216,10 @@ class LeScanningManagerTest : public ::testing::Test {
    public:
     MOCK_METHOD(void, on_advertisements, (std::vector<std::shared_ptr<LeReport>>), (override));
     MOCK_METHOD(void, on_timeout, (), (override));
+    os::Handler* Handler() {
+      return handler_;
+    }
+    os::Handler* handler_{nullptr};
   } mock_callbacks_;
 
   OpCode param_opcode_{OpCode::LE_SET_ADVERTISING_PARAMETERS};

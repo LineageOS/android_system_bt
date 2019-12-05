@@ -21,10 +21,15 @@
 
 #include "hci/acl_manager.h"
 #include "l2cap/internal/data_pipeline_manager.h"
+#include "l2cap/internal/dynamic_channel_allocator.h"
 #include "l2cap/internal/fixed_channel_allocator.h"
 #include "l2cap/internal/ilink.h"
 #include "l2cap/internal/parameter_provider.h"
+#include "l2cap/le/dynamic_channel_manager.h"
+#include "l2cap/le/internal/dynamic_channel_service_manager_impl.h"
 #include "l2cap/le/internal/fixed_channel_impl.h"
+#include "l2cap/le/internal/fixed_channel_service_manager_impl.h"
+#include "l2cap/le/internal/signalling_manager.h"
 #include "os/alarm.h"
 
 namespace bluetooth {
@@ -35,22 +40,22 @@ namespace internal {
 class Link : public l2cap::internal::ILink {
  public:
   Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_connection,
-       l2cap::internal::ParameterProvider* parameter_provider)
-      : l2cap_handler_(l2cap_handler), acl_connection_(std::move(acl_connection)),
-        data_pipeline_manager_(l2cap_handler, this, acl_connection_->GetAclQueueEnd()),
-        parameter_provider_(parameter_provider) {
-    ASSERT(l2cap_handler_ != nullptr);
-    ASSERT(acl_connection_ != nullptr);
-    ASSERT(parameter_provider_ != nullptr);
-    link_idle_disconnect_alarm_.Schedule(common::BindOnce(&Link::Disconnect, common::Unretained(this)),
-                                         parameter_provider_->GetLeLinkIdleDisconnectTimeout());
-  }
+       l2cap::internal::ParameterProvider* parameter_provider,
+       DynamicChannelServiceManagerImpl* dynamic_service_manager,
+       FixedChannelServiceManagerImpl* fixed_service_manager);
 
-  virtual ~Link() = default;
+  ~Link() override = default;
 
-  inline virtual hci::AddressWithType GetDevice() {
+  inline hci::AddressWithType GetDevice() override {
     return {acl_connection_->GetAddress(), acl_connection_->GetAddressType()};
   }
+
+  struct PendingDynamicChannelConnection {
+    os::Handler* handler_;
+    DynamicChannelManager::OnConnectionOpenCallback on_open_callback_;
+    DynamicChannelManager::OnConnectionFailureCallback on_fail_callback_;
+    le::DynamicChannelConfigurationOption configuration_;
+  };
 
   inline virtual hci::Role GetRole() {
     return acl_connection_->GetRole();
@@ -58,51 +63,56 @@ class Link : public l2cap::internal::ILink {
 
   // ACL methods
 
-  virtual void OnAclDisconnected(hci::ErrorCode status) {
-    fixed_channel_allocator_.OnAclDisconnected(status);
-  }
+  virtual void OnAclDisconnected(hci::ErrorCode status);
 
-  virtual void Disconnect() {
-    acl_connection_->Disconnect(hci::DisconnectReason::REMOTE_USER_TERMINATED_CONNECTION);
-  }
+  virtual void Disconnect();
 
   // FixedChannel methods
 
-  virtual std::shared_ptr<FixedChannelImpl> AllocateFixedChannel(Cid cid, SecurityPolicy security_policy) {
-    auto channel = fixed_channel_allocator_.AllocateChannel(cid, security_policy);
-    data_pipeline_manager_.AttachChannel(cid, channel);
-    return channel;
-  }
+  virtual std::shared_ptr<FixedChannelImpl> AllocateFixedChannel(Cid cid, SecurityPolicy security_policy);
 
-  virtual bool IsFixedChannelAllocated(Cid cid) {
-    return fixed_channel_allocator_.IsChannelAllocated(cid);
-  }
+  virtual bool IsFixedChannelAllocated(Cid cid);
+
+  // DynamicChannel methods
+
+  virtual Cid ReserveDynamicChannel();
+
+  virtual void SendConnectionRequest(Psm psm, PendingDynamicChannelConnection pending_dynamic_channel_connection);
+
+  void SendDisconnectionRequest(Cid local_cid, Cid remote_cid) override;
+
+  virtual std::shared_ptr<l2cap::internal::DynamicChannelImpl> AllocateDynamicChannel(Psm psm, Cid remote_cid,
+                                                                                      SecurityPolicy security_policy);
+
+  virtual std::shared_ptr<l2cap::internal::DynamicChannelImpl> AllocateReservedDynamicChannel(
+      Cid reserved_cid, Psm psm, Cid remote_cid, SecurityPolicy security_policy);
+
+  virtual DynamicChannelConfigurationOption GetConfigurationForInitialConfiguration(Cid cid);
+
+  virtual void FreeDynamicChannel(Cid cid);
 
   // Check how many channels are acquired or in use, if zero, start tear down timer, if non-zero, cancel tear down timer
-  virtual void RefreshRefCount() {
-    int ref_count = 0;
-    ref_count += fixed_channel_allocator_.GetRefCount();
-    ASSERT_LOG(ref_count >= 0, "ref_count %d is less than 0", ref_count);
-    if (ref_count > 0) {
-      link_idle_disconnect_alarm_.Cancel();
-    } else {
-      link_idle_disconnect_alarm_.Schedule(common::BindOnce(&Link::Disconnect, common::Unretained(this)),
-                                           parameter_provider_->GetLeLinkIdleDisconnectTimeout());
-    }
-  }
+  virtual void RefreshRefCount();
+
+  void NotifyChannelCreation(Cid cid, std::unique_ptr<DynamicChannel> user_channel);
+  void NotifyChannelFail(Cid cid);
 
   virtual std::string ToString() {
     return GetDevice().ToString();
   }
 
-  void SendDisconnectionRequest(Cid local_cid, Cid remote_cid) override {}
+  virtual uint16_t GetMps() const;
 
  private:
   os::Handler* l2cap_handler_;
   l2cap::internal::FixedChannelAllocator<FixedChannelImpl, Link> fixed_channel_allocator_{this, l2cap_handler_};
+  l2cap::internal::DynamicChannelAllocator dynamic_channel_allocator_{this, l2cap_handler_};
   std::unique_ptr<hci::AclConnection> acl_connection_;
   l2cap::internal::DataPipelineManager data_pipeline_manager_;
   l2cap::internal::ParameterProvider* parameter_provider_;
+  DynamicChannelServiceManagerImpl* dynamic_service_manager_;
+  LeSignallingManager signalling_manager_;
+  std::unordered_map<Cid, PendingDynamicChannelConnection> local_cid_to_pending_dynamic_channel_connection_map_;
   os::Alarm link_idle_disconnect_alarm_{l2cap_handler_};
   DISALLOW_COPY_AND_ASSIGN(Link);
 };

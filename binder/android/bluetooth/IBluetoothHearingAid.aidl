@@ -32,8 +32,8 @@ interface IBluetoothHearingAid {
     int getConnectionState(in BluetoothDevice device);
     boolean setActiveDevice(in BluetoothDevice device);
     List<BluetoothDevice> getActiveDevices();
-    boolean setPriority(in BluetoothDevice device, int priority);
-    int getPriority(in BluetoothDevice device);
+    boolean setConnectionPolicy(in BluetoothDevice device, int connectionPolicy);
+    int getConnectionPolicy(in BluetoothDevice device);
     void adjustVolume(int direction);
     void setVolume(int volume);
     int getVolume();

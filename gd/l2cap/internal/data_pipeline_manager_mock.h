@@ -33,7 +33,7 @@ class MockDataPipelineManager : public DataPipelineManager {
  public:
   MockDataPipelineManager(os::Handler* handler, LowerQueueUpEnd* link_queue_up_end)
       : DataPipelineManager(handler, nullptr, link_queue_up_end) {}
-  MOCK_METHOD(void, AttachChannel, (Cid, std::shared_ptr<ChannelImpl>), (override));
+  MOCK_METHOD(void, AttachChannel, (Cid, std::shared_ptr<ChannelImpl>, ChannelMode), (override));
   MOCK_METHOD(void, DetachChannel, (Cid), (override));
   MOCK_METHOD(DataController*, GetDataController, (Cid), (override));
   MOCK_METHOD(void, OnPacketSent, (Cid), (override));

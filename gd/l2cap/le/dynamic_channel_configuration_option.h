@@ -16,31 +16,24 @@
 
 #pragma once
 
-#include <chrono>
+#include "l2cap/mtu.h"
 
 namespace bluetooth {
 namespace l2cap {
-namespace internal {
+namespace le {
 
 /**
- * A class that provide constant parameters to the L2CAP stack
- *
- * All methods are virtual so that they can be override in unit tests
+ * Configuration Option specified by L2CAP Channel user on a dynamic channel. L2CAP module will configure the channel
+ * based on user provided option.
  */
-class ParameterProvider {
- public:
-  virtual ~ParameterProvider() = default;
-  virtual std::chrono::milliseconds GetClassicLinkIdleDisconnectTimeout() {
-    return std::chrono::seconds(20);
-  }
-  virtual std::chrono::milliseconds GetLeLinkIdleDisconnectTimeout() {
-    return std::chrono::seconds(20);
-  }
-  virtual uint16_t GetLeMps() {
-    return 251;
-  }
+struct DynamicChannelConfigurationOption {
+  /**
+   * Maximum SDU size that the L2CAP Channel user is able to receive or send. When the channel is created, the actual
+   * MTU is the minimum of the suggested MTU between two devices.
+   */
+  Mtu mtu = kDefaultClassicMtu;
 };
 
-}  // namespace internal
+}  // namespace le
 }  // namespace l2cap
 }  // namespace bluetooth
