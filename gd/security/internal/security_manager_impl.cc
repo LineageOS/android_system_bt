@@ -202,7 +202,7 @@ void SecurityManagerImpl::OnHciEventReceived(hci::EventPacketView packet) {
       HandleEvent(hci::RemoteOobDataRequestView::Create(event));
       break;
     case hci::EventCode::USER_PASSKEY_NOTIFICATION:
-      HandleEvent<hci::UserPasskeyNotificationView>(hci::UserPasskeyNotificationView::Create(event));
+      HandleEvent(hci::UserPasskeyNotificationView::Create(event));
       break;
     case hci::EventCode::KEYPRESS_NOTIFICATION:
       HandleEvent(hci::KeypressNotificationView::Create(event));
