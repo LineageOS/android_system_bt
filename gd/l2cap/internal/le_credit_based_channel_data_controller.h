@@ -65,9 +65,11 @@ class LeCreditBasedDataController : public DataController {
   os::Handler* handler_;
   std::queue<std::unique_ptr<packet::BasePacketBuilder>> pdu_queue_;
   Scheduler* scheduler_;
+  ILink* link_;
   Mtu mtu_ = 512;
   uint16_t mps_ = 251;
   uint16_t credits_ = 0;
+  uint16_t pending_frames_count_ = 0;
 
   class PacketViewForReassembly : public packet::PacketView<kLittleEndian> {
    public:

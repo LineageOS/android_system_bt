@@ -32,7 +32,6 @@ namespace l2cap {
 namespace le {
 namespace internal {
 
-static constexpr uint16_t kLocalInitialCredits = 6;
 static constexpr auto kTimeout = std::chrono::seconds(3);
 
 LeSignallingManager::LeSignallingManager(os::Handler* handler, Link* link,
@@ -58,8 +57,8 @@ LeSignallingManager::~LeSignallingManager() {
 
 void LeSignallingManager::SendConnectionRequest(Psm psm, Cid local_cid, Mtu mtu) {
   PendingCommand pending_command = {
-      next_signal_id_,     LeCommandCode::LE_CREDIT_BASED_CONNECTION_REQUEST, psm, local_cid, {}, mtu, link_->GetMps(),
-      kLocalInitialCredits};
+      next_signal_id_, LeCommandCode::LE_CREDIT_BASED_CONNECTION_REQUEST, psm, local_cid, {}, mtu, link_->GetMps(),
+      link_->GetInitialCredit()};
   next_signal_id_++;
   pending_commands_.push(pending_command);
   if (pending_commands_.size() == 1) {
@@ -157,14 +156,14 @@ void LeSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, Cid r
 
     return;
   }
-  send_connection_response(signal_id, remote_cid, local_mtu, local_mps, kLocalInitialCredits,
+  send_connection_response(signal_id, remote_cid, local_mtu, local_mps, link_->GetInitialCredit(),
                            LeCreditBasedConnectionResponseResult::SUCCESS);
   auto* data_controller = reinterpret_cast<l2cap::internal::LeCreditBasedDataController*>(
       data_pipeline_manager_->GetDataController(new_channel->GetCid()));
   data_controller->SetMtu(std::min(mtu, local_mtu));
   data_controller->SetMps(std::min(mps, local_mps));
   data_controller->OnCredit(initial_credits);
-  std::unique_ptr<DynamicChannel> user_channel = std::make_unique<DynamicChannel>(new_channel, handler_);
+  auto user_channel = std::make_unique<DynamicChannel>(new_channel, handler_);
   dynamic_service_manager_->GetService(psm)->NotifyChannelCreation(std::move(user_channel));
 }
 
