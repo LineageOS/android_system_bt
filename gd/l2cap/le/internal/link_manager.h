@@ -40,7 +40,7 @@ class LinkManager : public hci::LeConnectionCallbacks {
  public:
   LinkManager(os::Handler* l2cap_handler, hci::AclManager* acl_manager, FixedChannelServiceManagerImpl* service_manager,
               l2cap::internal::ParameterProvider* parameter_provider)
-      : l2cap_handler_(l2cap_handler), acl_manager_(acl_manager), service_manager_(service_manager),
+      : l2cap_handler_(l2cap_handler), acl_manager_(acl_manager), fixed_channel_service_manager_(service_manager),
         parameter_provider_(parameter_provider) {
     acl_manager_->RegisterLeCallbacks(this, l2cap_handler_);
   }
@@ -67,16 +67,24 @@ class LinkManager : public hci::LeConnectionCallbacks {
   void ConnectFixedChannelServices(hci::AddressWithType address_with_type,
                                    PendingFixedChannelConnection pending_fixed_channel_connection);
 
+  // DynamicChannelManager methods
+
+  void ConnectDynamicChannelServices(hci::AddressWithType device,
+                                     Link::PendingDynamicChannelConnection pending_dynamic_channel_connection, Psm psm);
+
  private:
   // Dependencies
   os::Handler* l2cap_handler_;
   hci::AclManager* acl_manager_;
-  FixedChannelServiceManagerImpl* service_manager_;
+  FixedChannelServiceManagerImpl* fixed_channel_service_manager_;
+  DynamicChannelServiceManagerImpl* dynamic_channel_service_manager_;
   l2cap::internal::ParameterProvider* parameter_provider_;
 
   // Internal states
   std::unordered_map<hci::AddressWithType, PendingLink> pending_links_;
   std::unordered_map<hci::AddressWithType, Link> links_;
+  std::unordered_map<hci::AddressWithType, std::list<std::pair<Psm, Link::PendingDynamicChannelConnection>>>
+      pending_dynamic_channels_;
   DISALLOW_COPY_AND_ASSIGN(LinkManager);
 };
 

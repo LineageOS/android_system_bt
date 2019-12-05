@@ -33,7 +33,7 @@ namespace internal {
 void LinkManager::ConnectFixedChannelServices(hci::AddressWithType address_with_type,
                                               PendingFixedChannelConnection pending_fixed_channel_connection) {
   // Check if there is any service registered
-  auto fixed_channel_services = service_manager_->GetRegisteredServices();
+  auto fixed_channel_services = fixed_channel_service_manager_->GetRegisteredServices();
   if (fixed_channel_services.empty()) {
     // If so, return error
     pending_fixed_channel_connection.handler_->Post(common::BindOnce(
@@ -82,6 +82,17 @@ void LinkManager::ConnectFixedChannelServices(hci::AddressWithType address_with_
   acl_manager_->CreateLeConnection(address_with_type);
 }
 
+void LinkManager::ConnectDynamicChannelServices(
+    hci::AddressWithType device, Link::PendingDynamicChannelConnection pending_dynamic_channel_connection, Psm psm) {
+  auto* link = GetLink(device);
+  if (link == nullptr) {
+    acl_manager_->CreateLeConnection(device);
+    pending_dynamic_channels_[device].push_back(std::make_pair(psm, std::move(pending_dynamic_channel_connection)));
+    return;
+  }
+  link->SendConnectionRequest(psm, std::move(pending_dynamic_channel_connection));
+}
+
 Link* LinkManager::GetLink(hci::AddressWithType address_with_type) {
   if (links_.find(address_with_type) == links_.end()) {
     return nullptr;
@@ -99,15 +110,23 @@ void LinkManager::OnLeConnectSuccess(hci::AddressWithType connecting_address_wit
   acl_connection->RegisterDisconnectCallback(
       common::BindOnce(&LinkManager::OnDisconnect, common::Unretained(this), connected_address_with_type),
       l2cap_handler_);
-  links_.try_emplace(connected_address_with_type, l2cap_handler_, std::move(acl_connection), parameter_provider_);
+  links_.try_emplace(connected_address_with_type, l2cap_handler_, std::move(acl_connection), parameter_provider_,
+                     dynamic_channel_service_manager_, fixed_channel_service_manager_);
   auto* link = GetLink(connected_address_with_type);
   // Allocate and distribute channels for all registered fixed channel services
-  auto fixed_channel_services = service_manager_->GetRegisteredServices();
+  auto fixed_channel_services = fixed_channel_service_manager_->GetRegisteredServices();
   for (auto& fixed_channel_service : fixed_channel_services) {
     auto fixed_channel_impl = link->AllocateFixedChannel(fixed_channel_service.first, SecurityPolicy());
     fixed_channel_service.second->NotifyChannelCreation(
         std::make_unique<FixedChannel>(fixed_channel_impl, l2cap_handler_));
   }
+  if (pending_dynamic_channels_.find(connected_address_with_type) != pending_dynamic_channels_.end()) {
+    for (auto& psm_callback : pending_dynamic_channels_[connected_address_with_type]) {
+      link->SendConnectionRequest(psm_callback.first, std::move(psm_callback.second));
+    }
+    pending_dynamic_channels_.erase(connected_address_with_type);
+  }
+
   // Remove device from pending links list, if any
   auto pending_link = pending_links_.find(connecting_address_with_type);
   if (pending_link == pending_links_.end()) {
