@@ -59,7 +59,9 @@ class DataPipelineManager {
       : handler_(handler), link_(link), scheduler_(std::make_unique<Fifo>(this, link_queue_up_end, handler)),
         receiver_(link_queue_up_end, handler, this) {}
 
-  virtual void AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> channel);
+  using ChannelMode = Sender::ChannelMode;
+
+  virtual void AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> channel, ChannelMode mode);
   virtual void DetachChannel(Cid cid);
   virtual DataController* GetDataController(Cid cid);
   virtual void OnPacketSent(Cid cid);

@@ -37,7 +37,8 @@ Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_c
     : l2cap_handler_(l2cap_handler), acl_connection_(std::move(acl_connection)),
       data_pipeline_manager_(l2cap_handler, this, acl_connection_->GetAclQueueEnd()),
       parameter_provider_(parameter_provider), dynamic_service_manager_(dynamic_service_manager),
-      fixed_service_manager_(fixed_service_manager) {
+      signalling_manager_(l2cap_handler_, this, &data_pipeline_manager_, dynamic_service_manager_,
+                          &dynamic_channel_allocator_) {
   ASSERT(l2cap_handler_ != nullptr);
   ASSERT(acl_connection_ != nullptr);
   ASSERT(parameter_provider_ != nullptr);
@@ -56,7 +57,8 @@ void Link::Disconnect() {
 
 std::shared_ptr<FixedChannelImpl> Link::AllocateFixedChannel(Cid cid, SecurityPolicy security_policy) {
   auto channel = fixed_channel_allocator_.AllocateChannel(cid, security_policy);
-  data_pipeline_manager_.AttachChannel(cid, channel);
+  data_pipeline_manager_.AttachChannel(cid, channel,
+                                       l2cap::internal::DataPipelineManager::ChannelMode::LE_CREDIT_BASED);
   return channel;
 }
 
@@ -73,21 +75,27 @@ void Link::SendConnectionRequest(Psm psm, PendingDynamicChannelConnection pendin
     LOG_INFO("Psm %d is already connected", psm);
     return;
   }
-  LOG_ERROR("Not implemented");
+  auto reserved_cid = ReserveDynamicChannel();
+  signalling_manager_.SendConnectionRequest(psm, reserved_cid, pending_dynamic_channel_connection.configuration_.mtu);
 }
 
 void Link::SendDisconnectionRequest(Cid local_cid, Cid remote_cid) {
-  LOG_ERROR("Not implemented");
+  auto channel = dynamic_channel_allocator_.FindChannelByCid(local_cid);
+  if (channel == nullptr || channel->GetRemoteCid() != remote_cid) {
+    LOG_ERROR("Invalid cid");
+  }
+  signalling_manager_.SendDisconnectRequest(local_cid, remote_cid);
 }
 
 std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateDynamicChannel(Psm psm, Cid remote_cid,
                                                                                   SecurityPolicy security_policy) {
   auto channel = dynamic_channel_allocator_.AllocateChannel(psm, remote_cid, security_policy);
   if (channel != nullptr) {
-    data_pipeline_manager_.AttachChannel(channel->GetCid(), channel);
+    data_pipeline_manager_.AttachChannel(channel->GetCid(), channel,
+                                         l2cap::internal::DataPipelineManager::ChannelMode::LE_CREDIT_BASED);
     RefreshRefCount();
+    channel->local_initiated_ = false;
   }
-  channel->local_initiated_ = false;
   return channel;
 }
 
@@ -95,10 +103,11 @@ std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateReservedDynam
     Cid reserved_cid, Psm psm, Cid remote_cid, SecurityPolicy security_policy) {
   auto channel = dynamic_channel_allocator_.AllocateReservedChannel(reserved_cid, psm, remote_cid, security_policy);
   if (channel != nullptr) {
-    data_pipeline_manager_.AttachChannel(channel->GetCid(), channel);
+    data_pipeline_manager_.AttachChannel(channel->GetCid(), channel,
+                                         l2cap::internal::DataPipelineManager::ChannelMode::LE_CREDIT_BASED);
     RefreshRefCount();
+    channel->local_initiated_ = true;
   }
-  channel->local_initiated_ = true;
   return channel;
 }
 
@@ -148,6 +157,10 @@ void Link::NotifyChannelFail(Cid cid) {
   pending_dynamic_channel_connection.handler_->Post(
       common::BindOnce(std::move(pending_dynamic_channel_connection.on_fail_callback_), result));
   local_cid_to_pending_dynamic_channel_connection_map_.erase(cid);
+}
+
+uint16_t Link::GetMps() const {
+  return parameter_provider_->GetLeMps();
 }
 
 }  // namespace internal
