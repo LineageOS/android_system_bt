@@ -511,7 +511,6 @@ class SimpleL2capTest(GdBaseTestClass):
             log = log.data_packet
             if (log.channel == scid):
                 data_received.append(log.payload)
-            self.cert_device.l2cap.StopFetchingL2capLog(l2cap_cert_pb2.StopFetchingL2capLogRequest())
         self.event_handler.on(lambda log : log.HasField("data_packet"), on_data_received)
         logs = self.cert_device.l2cap.FetchL2capLog(l2cap_cert_pb2.FetchL2capLogRequest())
         self.event_handler.execute(logs)
