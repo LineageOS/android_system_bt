@@ -65,6 +65,7 @@ TEST_F(L2capLeFixedChannelImplTest, get_device) {
   MockLink mock_le_link(l2cap_handler_, &mock_parameter_provider);
   AddressWithType device{{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}, hci::AddressType::PUBLIC_DEVICE_ADDRESS};
   EXPECT_CALL(mock_le_link, GetDevice()).WillRepeatedly(Return(device));
+  LOG_INFO("------------------");
   FixedChannelImpl fixed_channel_impl(kSmpBrCid, &mock_le_link, l2cap_handler_);
   EXPECT_EQ(device, fixed_channel_impl.GetDevice());
 }
