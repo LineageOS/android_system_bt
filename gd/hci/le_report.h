@@ -50,7 +50,7 @@ class LeReport {
   const AdvertisingEventType advertising_event_type_{};
   const Address address_{};
   const AddressType address_type_{};
-  const uint8_t rssi_;
+  const int8_t rssi_;
   const std::vector<GapData> gap_data_{};
 };
 
