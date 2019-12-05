@@ -135,6 +135,7 @@ cc_binary {
         ":BluetoothFacade_hci_hal",
         ":BluetoothFacade_hci_layer",
         ":BluetoothFacade_l2cap_layer",
+        ":BluetoothFacade_security_layer",
     ],
     generated_headers: [
         "BluetoothGeneratedPackets_h",
@@ -400,6 +401,7 @@ filegroup {
         "hci/facade.proto",
         "hci/facade/le_advertising_manager_facade.proto",
         "l2cap/classic/facade.proto",
+        "security/facade.proto",
     ],
 }
 
@@ -426,6 +428,8 @@ genrule {
         "hci/facade/le_advertising_manager_facade.pb.h",
         "l2cap/classic/facade.grpc.pb.h",
         "l2cap/classic/facade.pb.h",
+        "security/facade.grpc.pb.h",
+        "security/facade.pb.h",
     ],
 }
 
@@ -452,6 +456,8 @@ genrule {
         "hci/facade/le_advertising_manager_facade.pb.cc",
         "l2cap/classic/facade.grpc.pb.cc",
         "l2cap/classic/facade.pb.cc",
+        "security/facade.grpc.pb.cc",
+        "security/facade.pb.cc",
     ],
 }
 
