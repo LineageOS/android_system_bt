@@ -395,6 +395,24 @@ class L2capClassicModuleCertService : public L2capClassicModuleCert::Service {
         FetchL2capLogResponse response;
         response.mutable_configuration_request()->set_signal_id(control_view.GetIdentifier());
         response.mutable_configuration_request()->set_dcid(view.GetDestinationCid());
+
+        for (auto& option : view.GetConfig()) {
+          if (option->type_ == ConfigurationOptionType::RETRANSMISSION_AND_FLOW_CONTROL) {
+            auto config = RetransmissionAndFlowControlConfigurationOption::Specialize(option.get());
+            response.mutable_configuration_request()->mutable_retransmission_config()->set_mode(
+                ChannelRetransmissionFlowControlMode::ERTM);
+            response.mutable_configuration_request()->mutable_retransmission_config()->set_tx_window(
+                config->tx_window_size_);
+            response.mutable_configuration_request()->mutable_retransmission_config()->set_max_transmit(
+                config->max_transmit_);
+            response.mutable_configuration_request()->mutable_retransmission_config()->set_retransmit_timeout(
+                config->retransmission_time_out_);
+            response.mutable_configuration_request()->mutable_retransmission_config()->set_monitor_timeout(
+                config->monitor_time_out_);
+            response.mutable_configuration_request()->mutable_retransmission_config()->set_mps(
+                config->maximum_pdu_size_);
+          }
+        }
         LogEvent(response);
         break;
       }
