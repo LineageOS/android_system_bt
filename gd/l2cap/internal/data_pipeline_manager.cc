@@ -20,16 +20,17 @@
 #include "l2cap/internal/channel_impl.h"
 #include "l2cap/internal/data_controller.h"
 #include "l2cap/internal/data_pipeline_manager.h"
+#include "l2cap/internal/sender.h"
 #include "os/log.h"
 
 namespace bluetooth {
 namespace l2cap {
 namespace internal {
 
-void DataPipelineManager::AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> channel) {
+void DataPipelineManager::AttachChannel(Cid cid, std::shared_ptr<ChannelImpl> channel, ChannelMode mode) {
   ASSERT(sender_map_.find(cid) == sender_map_.end());
   sender_map_.emplace(std::piecewise_construct, std::forward_as_tuple(cid),
-                      std::forward_as_tuple(handler_, link_, scheduler_.get(), channel));
+                      std::forward_as_tuple(handler_, link_, scheduler_.get(), channel, mode));
 }
 
 void DataPipelineManager::DetachChannel(Cid cid) {

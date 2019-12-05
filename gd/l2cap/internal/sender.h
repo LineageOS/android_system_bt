@@ -49,7 +49,15 @@ class Sender {
   using UpperDequeue = packet::BasePacketBuilder;
   using UpperQueueDownEnd = common::BidiQueueEnd<UpperEnqueue, UpperDequeue>;
 
+  enum class ChannelMode {
+    BASIC = 0,
+    ERTM = 3,
+    LE_CREDIT_BASED = 10,
+  };
+
   Sender(os::Handler* handler, ILink* link, Scheduler* scheduler, std::shared_ptr<ChannelImpl> channel);
+  Sender(os::Handler* handler, ILink* link, Scheduler* scheduler, std::shared_ptr<ChannelImpl> channel,
+         ChannelMode mode);
   ~Sender();
 
   /**
