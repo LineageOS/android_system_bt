@@ -98,7 +98,6 @@ void LeSignallingManager::OnCommandReject(LeCommandRejectView command_reject_vie
     return;
   }
   alarm_.Cancel();
-  command_just_sent_.signal_id_ = kInitialSignalId;
   handle_send_next_command();
 
   LOG_WARN("Command rejected");
@@ -365,7 +364,6 @@ void LeSignallingManager::on_command_timeout() {
     LOG_ERROR("No pending command");
     return;
   }
-  command_just_sent_.signal_id_ = kInvalidSignalId;
   switch (command_just_sent_.command_code_) {
     case LeCommandCode::CONNECTION_PARAMETER_UPDATE_REQUEST: {
       link_->OnOutgoingConnectionRequestFail(command_just_sent_.source_cid_);
@@ -378,6 +376,7 @@ void LeSignallingManager::on_command_timeout() {
 }
 
 void LeSignallingManager::handle_send_next_command() {
+  command_just_sent_.signal_id_ = kInvalidSignalId;
   if (pending_commands_.empty()) {
     return;
   }

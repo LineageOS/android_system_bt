@@ -41,7 +41,7 @@ namespace le {
 namespace internal {
 
 struct PendingCommand {
-  SignalId signal_id_ = kInitialSignalId;
+  SignalId signal_id_ = kInvalidSignalId;
   LeCommandCode command_code_;
   Psm psm_;
   Cid source_cid_;
@@ -99,7 +99,7 @@ class LeSignallingManager {
 
   os::Handler* handler_;
   Link* link_;
-  [[maybe_unused]] l2cap::internal::DataPipelineManager* data_pipeline_manager_;
+  l2cap::internal::DataPipelineManager* data_pipeline_manager_;
   std::shared_ptr<le::internal::FixedChannelImpl> signalling_channel_;
   DynamicChannelServiceManagerImpl* dynamic_service_manager_;
   l2cap::internal::DynamicChannelAllocator* channel_allocator_;
