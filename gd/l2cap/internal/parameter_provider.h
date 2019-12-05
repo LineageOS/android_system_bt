@@ -39,6 +39,9 @@ class ParameterProvider {
   virtual uint16_t GetLeMps() {
     return 251;
   }
+  virtual uint16_t GetLeInitialCredit() {
+    return 100;
+  }
 };
 
 }  // namespace internal

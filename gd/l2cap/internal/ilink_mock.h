@@ -30,6 +30,7 @@ class MockILink : public ILink {
  public:
   MOCK_METHOD(hci::AddressWithType, GetDevice, (), (override));
   MOCK_METHOD(void, SendDisconnectionRequest, (Cid, Cid), (override));
+  MOCK_METHOD(void, SendLeCredit, (Cid, uint16_t), (override));
 };
 
 }  // namespace testing

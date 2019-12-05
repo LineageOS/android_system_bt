@@ -28,9 +28,12 @@ namespace internal {
  */
 class ILink {
  public:
-  virtual void SendDisconnectionRequest(Cid local_cid, Cid remote_cid) = 0;
   virtual ~ILink() = default;
+  virtual void SendDisconnectionRequest(Cid local_cid, Cid remote_cid) = 0;
   virtual hci::AddressWithType GetDevice() = 0;
+
+  // To be used by LE credit based channel data controller over LE link
+  virtual void SendLeCredit(Cid local_cid, uint16_t credit) = 0;
 };
 }  // namespace internal
 }  // namespace l2cap

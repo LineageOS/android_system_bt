@@ -17,6 +17,7 @@
 #include "l2cap/internal/le_credit_based_channel_data_controller.h"
 
 #include "l2cap/l2cap_packets.h"
+#include "l2cap/le/internal/link.h"
 #include "packet/fragmenting_inserter.h"
 #include "packet/raw_builder.h"
 
@@ -27,8 +28,8 @@ namespace internal {
 LeCreditBasedDataController::LeCreditBasedDataController(ILink* link, Cid cid, Cid remote_cid,
                                                          UpperQueueDownEnd* channel_queue_end, os::Handler* handler,
                                                          Scheduler* scheduler)
-    : cid_(cid), remote_cid_(remote_cid), enqueue_buffer_(channel_queue_end), handler_(handler), scheduler_(scheduler) {
-}
+    : cid_(cid), remote_cid_(remote_cid), enqueue_buffer_(channel_queue_end), handler_(handler), scheduler_(scheduler),
+      link_(link) {}
 
 void LeCreditBasedDataController::OnSdu(std::unique_ptr<packet::BasePacketBuilder> sdu) {
   auto sdu_size = sdu->size();
@@ -51,7 +52,16 @@ void LeCreditBasedDataController::OnSdu(std::unique_ptr<packet::BasePacketBuilde
     builder = BasicFrameBuilder::Create(remote_cid_, std::move(segments[i]));
     pdu_queue_.emplace(std::move(builder));
   }
-  scheduler_->OnPacketsReady(cid_, segments.size());
+  if (credits_ >= segments.size()) {
+    scheduler_->OnPacketsReady(cid_, segments.size());
+    credits_ -= segments.size();
+  } else if (credits_ > 0) {
+    scheduler_->OnPacketsReady(cid_, credits_);
+    pending_frames_count_ += (segments.size() - credits_);
+    credits_ = 0;
+  } else {
+    pending_frames_count_ += segments.size();
+  }
 }
 
 void LeCreditBasedDataController::OnPdu(packet::PacketView<true> pdu) {
@@ -85,8 +95,10 @@ void LeCreditBasedDataController::OnPdu(packet::PacketView<true> pdu) {
     LOG_WARN("Received larger SDU size than expected");
     reassembly_stage_ = PacketViewForReassembly(std::make_shared<std::vector<uint8_t>>());
     remaining_sdu_continuation_packet_size_ = 0;
-    // TODO: Close channel
+    link_->SendDisconnectionRequest(cid_, remote_cid_);
   }
+  // TODO: Improve the logic by sending credit only after user dequeued the SDU
+  link_->SendLeCredit(cid_, 1);
 }
 
 std::unique_ptr<packet::BasePacketBuilder> LeCreditBasedDataController::GetNextPacket() {
@@ -105,7 +117,18 @@ void LeCreditBasedDataController::SetMps(uint16_t mps) {
 
 void LeCreditBasedDataController::OnCredit(uint16_t credits) {
   int total_credits = credits_ + credits;
-  credits_ = total_credits > 0xffff ? 0xffff : total_credits;
+  if (total_credits > 0xffff) {
+    link_->SendDisconnectionRequest(cid_, remote_cid_);
+  }
+  credits_ = total_credits;
+  if (pending_frames_count_ > 0 && credits_ >= pending_frames_count_) {
+    scheduler_->OnPacketsReady(cid_, pending_frames_count_);
+    credits_ -= pending_frames_count_;
+  } else if (pending_frames_count_ > 0) {
+    scheduler_->OnPacketsReady(cid_, credits_);
+    pending_frames_count_ -= credits_;
+    credits_ = 0;
+  }
 }
 
 }  // namespace internal
