@@ -19,6 +19,7 @@
 #include <fcntl.h>
 #include <netdb.h>
 #include <netinet/in.h>
+#include <signal.h>
 #include <string.h>
 #include <unistd.h>
 
@@ -47,6 +48,11 @@ void TestEnvironment::initialize(std::promise<void> barrier) {
   SetUpTestChannel();
   SetUpHciServer([this](int fd) { test_model_.IncomingHciConnection(fd); });
   SetUpLinkLayerServer([this](int fd) { test_model_.IncomingLinkLayerConnection(fd); });
+
+  // In case the client socket is closed, and rootcanal doesn't detect it due to
+  // TimerTick not fired, writing to the socket causes a SIGPIPE and we need to
+  // catch it to prevent rootcanal from crash
+  signal(SIGPIPE, SIG_IGN);
 
   LOG_INFO("%s: Finished", __func__);
 }
