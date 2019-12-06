@@ -79,6 +79,9 @@ class Link : public l2cap::internal::ILink {
   virtual void SendConnectionRequest(Psm psm, Cid local_cid,
                                      PendingDynamicChannelConnection pending_dynamic_channel_connection);
 
+  // Invoked by signalling manager to indicate an outgoing connection request failed and link shall free resources
+  virtual void OnOutgoingConnectionRequestFail(Cid local_cid);
+
   virtual void SendInformationRequest(InformationRequestInfoType type);
 
   virtual void SendDisconnectionRequest(Cid local_cid, Cid remote_cid) override;
@@ -110,6 +113,8 @@ class Link : public l2cap::internal::ILink {
   virtual std::string ToString() {
     return GetDevice().ToString();
   }
+
+  void SendLeCredit(Cid local_cid, uint16_t credit) override {}
 
  private:
   os::Handler* l2cap_handler_;

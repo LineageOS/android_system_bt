@@ -87,6 +87,11 @@ void Link::SendDisconnectionRequest(Cid local_cid, Cid remote_cid) {
   signalling_manager_.SendDisconnectRequest(local_cid, remote_cid);
 }
 
+void Link::OnOutgoingConnectionRequestFail(Cid local_cid) {
+  local_cid_to_pending_dynamic_channel_connection_map_.erase(local_cid);
+  dynamic_channel_allocator_.FreeChannel(local_cid);
+}
+
 std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateDynamicChannel(Psm psm, Cid remote_cid,
                                                                                   SecurityPolicy security_policy) {
   auto channel = dynamic_channel_allocator_.AllocateChannel(psm, remote_cid, security_policy);
@@ -161,6 +166,15 @@ void Link::NotifyChannelFail(Cid cid) {
 
 uint16_t Link::GetMps() const {
   return parameter_provider_->GetLeMps();
+}
+
+uint16_t Link::GetInitialCredit() const {
+  return parameter_provider_->GetLeInitialCredit();
+}
+
+
+void Link::SendLeCredit(Cid local_cid, uint16_t credit) {
+  signalling_manager_.SendCredit(local_cid, credit);
 }
 
 }  // namespace internal

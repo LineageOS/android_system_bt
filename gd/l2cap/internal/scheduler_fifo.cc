@@ -37,6 +37,9 @@ Fifo::~Fifo() {
 }
 
 void Fifo::OnPacketsReady(Cid cid, int number_packets) {
+  if (number_packets == 0) {
+    return;
+  }
   next_to_dequeue_and_num_packets.push(std::make_pair(cid, number_packets));
   try_register_link_queue_enqueue();
 }

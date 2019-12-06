@@ -32,7 +32,6 @@ namespace l2cap {
 namespace le {
 namespace internal {
 
-static constexpr uint16_t kLocalInitialCredits = 6;
 static constexpr auto kTimeout = std::chrono::seconds(3);
 
 LeSignallingManager::LeSignallingManager(os::Handler* handler, Link* link,
@@ -58,8 +57,8 @@ LeSignallingManager::~LeSignallingManager() {
 
 void LeSignallingManager::SendConnectionRequest(Psm psm, Cid local_cid, Mtu mtu) {
   PendingCommand pending_command = {
-      next_signal_id_,     LeCommandCode::LE_CREDIT_BASED_CONNECTION_REQUEST, psm, local_cid, {}, mtu, link_->GetMps(),
-      kLocalInitialCredits};
+      next_signal_id_, LeCommandCode::LE_CREDIT_BASED_CONNECTION_REQUEST, psm, local_cid, {}, mtu, link_->GetMps(),
+      link_->GetInitialCredit()};
   next_signal_id_++;
   pending_commands_.push(pending_command);
   if (pending_commands_.size() == 1) {
@@ -99,7 +98,6 @@ void LeSignallingManager::OnCommandReject(LeCommandRejectView command_reject_vie
     return;
   }
   alarm_.Cancel();
-  command_just_sent_.signal_id_ = kInitialSignalId;
   handle_send_next_command();
 
   LOG_WARN("Command rejected");
@@ -157,14 +155,14 @@ void LeSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, Cid r
 
     return;
   }
-  send_connection_response(signal_id, remote_cid, local_mtu, local_mps, kLocalInitialCredits,
+  send_connection_response(signal_id, remote_cid, local_mtu, local_mps, link_->GetInitialCredit(),
                            LeCreditBasedConnectionResponseResult::SUCCESS);
   auto* data_controller = reinterpret_cast<l2cap::internal::LeCreditBasedDataController*>(
       data_pipeline_manager_->GetDataController(new_channel->GetCid()));
   data_controller->SetMtu(std::min(mtu, local_mtu));
   data_controller->SetMps(std::min(mps, local_mps));
   data_controller->OnCredit(initial_credits);
-  std::unique_ptr<DynamicChannel> user_channel = std::make_unique<DynamicChannel>(new_channel, handler_);
+  auto user_channel = std::make_unique<DynamicChannel>(new_channel, handler_);
   dynamic_service_manager_->GetService(psm)->NotifyChannelCreation(std::move(user_channel));
 }
 
@@ -182,6 +180,7 @@ void LeSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remote_ci
   command_just_sent_.signal_id_ = kInitialSignalId;
   if (result != LeCreditBasedConnectionResponseResult::SUCCESS) {
     LOG_WARN("Connection failed: %s", LeCreditBasedConnectionResponseResultText(result).data());
+    link_->OnOutgoingConnectionRequestFail(command_just_sent_.source_cid_);
     handle_send_next_command();
     return;
   }
@@ -189,6 +188,7 @@ void LeSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remote_ci
       link_->AllocateReservedDynamicChannel(command_just_sent_.source_cid_, command_just_sent_.psm_, remote_cid, {});
   if (new_channel == nullptr) {
     LOG_WARN("Can't allocate dynamic channel");
+    link_->OnOutgoingConnectionRequestFail(command_just_sent_.source_cid_);
     handle_send_next_command();
     return;
   }
@@ -360,14 +360,23 @@ void LeSignallingManager::send_connection_response(SignalId signal_id, Cid local
 
 void LeSignallingManager::on_command_timeout() {
   LOG_WARN("Response time out");
-  if (command_just_sent_.signal_id_ == kInitialSignalId) {
+  if (command_just_sent_.signal_id_ == kInvalidSignalId) {
     LOG_ERROR("No pending command");
     return;
+  }
+  switch (command_just_sent_.command_code_) {
+    case LeCommandCode::CONNECTION_PARAMETER_UPDATE_REQUEST: {
+      link_->OnOutgoingConnectionRequestFail(command_just_sent_.source_cid_);
+      break;
+    }
+    default:
+      break;
   }
   handle_send_next_command();
 }
 
 void LeSignallingManager::handle_send_next_command() {
+  command_just_sent_.signal_id_ = kInvalidSignalId;
   if (pending_commands_.empty()) {
     return;
   }

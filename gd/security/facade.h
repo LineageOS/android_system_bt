@@ -13,27 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #pragma once
 
-#include "l2cap/internal/ilink.h"
+#include <grpc++/grpc++.h>
 
-#include <gmock/gmock.h>
+#include "grpc/grpc_module.h"
+#include "hci/address_with_type.h"
 
-// Unit test interfaces
 namespace bluetooth {
-namespace l2cap {
-namespace internal {
-namespace testing {
+namespace security {
 
-class MockILink : public ILink {
+class SecurityModuleFacadeService;
+
+class SecurityModuleFacadeModule : public ::bluetooth::grpc::GrpcFacadeModule {
  public:
-  MOCK_METHOD(hci::AddressWithType, GetDevice, (), (override));
-  MOCK_METHOD(void, SendDisconnectionRequest, (Cid, Cid), (override));
-  MOCK_METHOD(void, SendLeCredit, (Cid, uint16_t), (override));
+  static const ModuleFactory Factory;
+
+  void ListDependencies(ModuleList* list) override;
+  void Start() override;
+  void Stop() override;
+  ::grpc::Service* GetService() const override;
+
+ private:
+  SecurityModuleFacadeService* service_;
 };
 
-}  // namespace testing
-}  // namespace internal
-}  // namespace l2cap
+}  // namespace security
 }  // namespace bluetooth
