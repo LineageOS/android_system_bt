@@ -67,6 +67,10 @@ class Link : public l2cap::internal::ILink {
 
   virtual void Disconnect();
 
+  // Handles connection parameter update request from remote
+  virtual void UpdateConnectionParameter(SignalId signal_id, uint16_t conn_interval_min, uint16_t conn_interval_max,
+                                         uint16_t conn_latency, uint16_t supervision_timeout);
+
   // FixedChannel methods
 
   virtual std::shared_ptr<FixedChannelImpl> AllocateFixedChannel(Cid cid, SecurityPolicy security_policy);
@@ -122,6 +126,8 @@ class Link : public l2cap::internal::ILink {
   std::unordered_map<Cid, PendingDynamicChannelConnection> local_cid_to_pending_dynamic_channel_connection_map_;
   os::Alarm link_idle_disconnect_alarm_{l2cap_handler_};
   DISALLOW_COPY_AND_ASSIGN(Link);
+
+  void on_connection_update_complete(SignalId signal_id, hci::ErrorCode error_code);
 };
 
 }  // namespace internal

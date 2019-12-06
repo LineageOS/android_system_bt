@@ -68,7 +68,7 @@ class LeSignallingManager {
   void SendConnectionParameterUpdateRequest(uint16_t interval_min, uint16_t interval_max, uint16_t slave_latency,
                                             uint16_t timeout_multiplier);
 
-  void SendConnectionParameterUpdateResponse(ConnectionParameterUpdateResponseResult result);
+  void SendConnectionParameterUpdateResponse(SignalId signal_id, ConnectionParameterUpdateResponseResult result);
 
   void SendCredit(Cid local_cid, uint16_t credits);
 

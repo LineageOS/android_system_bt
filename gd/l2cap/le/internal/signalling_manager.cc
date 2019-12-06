@@ -81,8 +81,10 @@ void LeSignallingManager::SendConnectionParameterUpdateRequest(uint16_t interval
   LOG_ERROR("Not implemented");
 }
 
-void LeSignallingManager::SendConnectionParameterUpdateResponse(ConnectionParameterUpdateResponseResult result) {
-  LOG_ERROR("Not implemented");
+void LeSignallingManager::SendConnectionParameterUpdateResponse(SignalId signal_id,
+                                                                ConnectionParameterUpdateResponseResult result) {
+  auto builder = ConnectionParameterUpdateResponseBuilder::Create(signal_id.Value(), result);
+  enqueue_buffer_->Enqueue(std::move(builder), handler_);
 }
 
 void LeSignallingManager::SendCredit(Cid local_cid, uint16_t credits) {
