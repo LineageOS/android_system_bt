@@ -48,6 +48,9 @@ struct L2capLeModule::impl {
                                       &parameter_provider_};
 };
 
+L2capLeModule::L2capLeModule() {}
+L2capLeModule::~L2capLeModule() {}
+
 void L2capLeModule::ListDependencies(ModuleList* list) {
   list->add<hci::AclManager>();
 }
