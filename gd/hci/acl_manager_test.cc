@@ -537,6 +537,45 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_fail) {
       0x0100, 0x0010, 0x0011, MasterClockAccuracy::PPM_30));
 }
 
+TEST_F(AclManagerTest, invoke_registered_callback_le_connection_update_success) {
+  AddressWithType remote_with_type(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
+  test_hci_layer_->SetCommandFuture();
+  acl_manager_->CreateLeConnection(remote_with_type);
+
+  auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
+  auto le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
+  auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);
+  ASSERT(command_view.IsValid());
+  EXPECT_EQ(command_view.GetPeerAddress(), remote);
+  EXPECT_EQ(command_view.GetPeerAddressType(), AddressType::PUBLIC_DEVICE_ADDRESS);
+
+  test_hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
+
+  auto first_connection = GetLeConnectionFuture();
+
+  test_hci_layer_->IncomingLeMetaEvent(
+      LeConnectionCompleteBuilder::Create(ErrorCode::SUCCESS, 0x123, Role::SLAVE, AddressType::PUBLIC_DEVICE_ADDRESS,
+                                          remote, 0x0100, 0x0010, 0x0011, MasterClockAccuracy::PPM_30));
+
+  auto first_connection_status = first_connection.wait_for(kTimeout);
+  ASSERT_EQ(first_connection_status, std::future_status::ready);
+
+  std::shared_ptr<AclConnection> connection = GetLastLeConnection();
+  ASSERT_EQ(connection->GetAddress(), remote);
+
+  std::promise<ErrorCode> promise;
+  auto future = promise.get_future();
+  connection->LeConnectionUpdate(
+      0x0006, 0x0C80, 0x0000, 0x000A,
+      common::BindOnce([](std::promise<ErrorCode> promise, ErrorCode code) { promise.set_value(code); },
+                       std::move(promise)),
+      client_handler_);
+  test_hci_layer_->IncomingLeMetaEvent(
+      LeConnectionUpdateCompleteBuilder::Create(ErrorCode::SUCCESS, 0x123, 0x0006, 0x0000, 0x000A));
+  EXPECT_EQ(future.wait_for(std::chrono::milliseconds(3)), std::future_status::ready);
+  EXPECT_EQ(future.get(), ErrorCode::SUCCESS);
+}
+
 TEST_F(AclManagerTest, invoke_registered_callback_disconnection_complete) {
   uint16_t handle = 0x123;
 
