@@ -205,7 +205,7 @@ cc_test {
         "android.hardware.bluetooth@1.1",
         "android.hardware.bluetooth.a2dp@1.0",
         "android.hardware.bluetooth.audio@2.0",
-        "libaudioclient",
+        "libaaudio",
         "libcutils",
         "libdl",
         "libfmq",
