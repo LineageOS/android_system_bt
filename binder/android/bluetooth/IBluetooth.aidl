@@ -36,8 +36,7 @@ import android.os.ResultReceiver;
 interface IBluetooth
 {
     int getState();
-    boolean enable();
-    boolean enableNoAutoConnect();
+    boolean enable(boolean quietMode);
     boolean disable();
 
     @UnsupportedAppUsage
