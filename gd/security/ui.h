@@ -20,6 +20,9 @@
 
 #include "hci/address_with_type.h"
 
+namespace bluetooth {
+namespace security {
+
 // Through this interface we talk to the user, asking for confirmations/acceptance.
 class UI {
  public:
@@ -56,3 +59,6 @@ class UICallbacks {
   /* User typed the value displayed on the other device. This is either Passkey or the Confirm value */
   virtual void OnPasskeyEntry(const bluetooth::hci::Address& address, uint32_t passkey) = 0;
 };
+
+}  // namespace security
+}  // namespace bluetooth
