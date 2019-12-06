@@ -595,7 +595,7 @@ static void btif_a2dp_sink_decoder_update_event(
   APPL_TRACE_DEBUG("%s: create audio track", __func__);
   btif_a2dp_sink_cb.audio_track =
 #ifndef OS_GENERIC
-      BtifAvrcpAudioTrackCreate(sample_rate, bits_per_sample, channel_type);
+      BtifAvrcpAudioTrackCreate(sample_rate, bits_per_sample, channel_count);
 #else
       NULL;
 #endif
