@@ -107,6 +107,11 @@ message ConfigurationRequest {
   bool fcs = 5;
 }
 
+enum ConfigurationResult {
+  SUCCESS = 0;
+  NOT_SUCCESS = 1;
+}
+
 message SendConfigurationRequestResult {}
 
 message ConfigurationResponse {
@@ -115,6 +120,7 @@ message ConfigurationResponse {
   uint32 mtu = 3;
   ChannelRetransmissionFlowControlConfig retransmission_config = 4;
   bool fcs = 5;
+  ConfigurationResult result = 6;
 }
 
 message SendConfigurationResponseResult {}
