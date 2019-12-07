@@ -85,3 +85,4 @@ class GdDevice(GdDeviceBase):
         self.hci_classic_security.command_complete_stream = EventStream(self.hci_classic_security.FetchCommandCompleteEvent)
         self.l2cap.packet_stream = EventStream(self.l2cap.FetchL2capData)
         self.l2cap.connection_complete_stream = EventStream(self.l2cap.FetchConnectionComplete)
+        self.l2cap.connection_close_stream = EventStream(self.l2cap.FetchConnectionClose)

@@ -64,6 +64,22 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
     return connection_complete_stream_.HandleRequest(context, request, writer);
   }
 
+  class ConnectionCloseCallback : public grpc::GrpcEventStreamCallback<ConnectionCloseEvent, ConnectionCloseEvent> {
+   public:
+    void OnWriteResponse(ConnectionCloseEvent* response, const ConnectionCloseEvent& event) override {
+      response->CopyFrom(event);
+    }
+
+  } connection_close_callback_;
+  ::bluetooth::grpc::GrpcEventStream<ConnectionCloseEvent, ConnectionCloseEvent> connection_close_stream_{
+      &connection_close_callback_};
+
+  ::grpc::Status FetchConnectionClose(::grpc::ServerContext* context,
+                                      const ::bluetooth::facade::EventStreamRequest* request,
+                                      ::grpc::ServerWriter<classic::ConnectionCloseEvent>* writer) override {
+    return connection_close_stream_.HandleRequest(context, request, writer);
+  }
+
   ::grpc::Status Connect(::grpc::ServerContext* context, const facade::BluetoothAddress* request,
                          ::google::protobuf::Empty* response) override {
     auto fixed_channel_manager = l2cap_layer_->GetFixedChannelManager();
@@ -105,6 +121,17 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
     hci::Address peer;
     ASSERT(hci::Address::FromString(request->remote().address(), peer));
     dynamic_channel_helper_map_[psm]->Connect(peer);
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status CloseChannel(::grpc::ServerContext* context,
+                              const ::bluetooth::l2cap::classic::CloseChannelRequest* request,
+                              ::google::protobuf::Empty* response) override {
+    auto psm = request->psm();
+    if (dynamic_channel_helper_map_.find(request->psm()) == dynamic_channel_helper_map_.end()) {
+      return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION, "Psm not registered");
+    }
+    dynamic_channel_helper_map_[psm]->disconnect();
     return ::grpc::Status::OK;
   }
 
@@ -218,6 +245,10 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
           common::Bind(&L2capDynamicChannelHelper::on_connect_fail, common::Unretained(this)), handler_);
     }
 
+    void disconnect() {
+      channel_->Close();
+    }
+
     void on_l2cap_service_registration_complete(DynamicChannelManager::RegistrationResult registration_result,
                                                 std::unique_ptr<DynamicChannelService> service) {}
 
@@ -226,6 +257,15 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       event.mutable_remote()->set_address(channel->GetDevice().ToString());
       facade_service_->connection_complete_stream_.OnIncomingEvent(event);
       channel_ = std::move(channel);
+      channel_->RegisterOnCloseCallback(
+          handler_, common::Bind(&L2capDynamicChannelHelper::on_close_callback, common::Unretained(this)));
+    }
+
+    void on_close_callback(hci::ErrorCode errorCode) {
+      ConnectionCloseEvent event;
+      event.mutable_remote()->set_address(channel_->GetDevice().ToString());
+      event.set_reason(static_cast<uint32_t>(errorCode));
+      facade_service_->connection_close_stream_.OnIncomingEvent(event);
     }
 
     void on_connect_fail(DynamicChannelManager::ConnectionResult result) {}
