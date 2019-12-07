@@ -55,6 +55,13 @@ void Link::Disconnect() {
   acl_connection_->Disconnect(hci::DisconnectReason::REMOTE_USER_TERMINATED_CONNECTION);
 }
 
+void Link::UpdateConnectionParameter(SignalId signal_id, uint16_t conn_interval_min, uint16_t conn_interval_max,
+                                     uint16_t conn_latency, uint16_t supervision_timeout) {
+  acl_connection_->LeConnectionUpdate(
+      conn_interval_min, conn_interval_max, conn_latency, supervision_timeout,
+      common::BindOnce(&Link::on_connection_update_complete, common::Unretained(this), signal_id), l2cap_handler_);
+}
+
 std::shared_ptr<FixedChannelImpl> Link::AllocateFixedChannel(Cid cid, SecurityPolicy security_policy) {
   auto channel = fixed_channel_allocator_.AllocateChannel(cid, security_policy);
   data_pipeline_manager_.AttachChannel(cid, channel,
@@ -172,9 +179,15 @@ uint16_t Link::GetInitialCredit() const {
   return parameter_provider_->GetLeInitialCredit();
 }
 
-
 void Link::SendLeCredit(Cid local_cid, uint16_t credit) {
   signalling_manager_.SendCredit(local_cid, credit);
+}
+
+void Link::on_connection_update_complete(SignalId signal_id, hci::ErrorCode error_code) {
+  ConnectionParameterUpdateResponseResult result = (error_code == hci::ErrorCode::SUCCESS)
+                                                       ? ConnectionParameterUpdateResponseResult::ACCEPTED
+                                                       : ConnectionParameterUpdateResponseResult::REJECTED;
+  signalling_manager_.SendConnectionParameterUpdateResponse(SignalId(), result);
 }
 
 }  // namespace internal
