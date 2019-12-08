@@ -12,12 +12,15 @@ service L2capClassicModuleFacade {
   rpc FetchConnectionComplete(facade.EventStreamRequest) returns (stream ConnectionCompleteEvent) {
     // Testing Android Bluetooth stack only. Optional for other stack.
   }
+  rpc FetchConnectionClose(facade.EventStreamRequest) returns (stream ConnectionCloseEvent) {
+    // Testing Android Bluetooth stack only. Optional for other stack.
+  }
   rpc Connect(facade.BluetoothAddress) returns (google.protobuf.Empty) {}
   rpc OpenChannel(OpenChannelRequest) returns (google.protobuf.Empty) {}
+  rpc CloseChannel(CloseChannelRequest) returns (google.protobuf.Empty) {}
   rpc ConfigureChannel(ConfigureChannelRequest) returns (google.protobuf.Empty) {}
   rpc SendL2capPacket(L2capPacket) returns (SendL2capPacketResult) {}
   rpc FetchL2capData(facade.EventStreamRequest) returns (stream L2capPacket) {}
-  rpc RegisterDynamicChannel(RegisterDynamicChannelRequest) returns (google.protobuf.Empty) {}
   rpc SetDynamicChannel(SetEnableDynamicChannelRequest) returns (google.protobuf.Empty) {}
   rpc SendDynamicChannelPacket(DynamicChannelPacket) returns (google.protobuf.Empty) {}
 }
@@ -28,6 +31,11 @@ message RegisterChannelRequest {
 
 message ConnectionCompleteEvent {
   facade.BluetoothAddress remote = 1;
+}
+
+message ConnectionCloseEvent {
+  facade.BluetoothAddress remote = 1;
+  uint32 reason = 2;
 }
 
 enum RetransmissionFlowControlMode {
@@ -47,8 +55,7 @@ message ConfigureChannelRequest {
 }
 
 message CloseChannelRequest {
-  facade.BluetoothAddress remote = 1;
-  uint32 cid = 2;
+  uint32 psm = 1;
 }
 
 enum ChannelSignalEventType {
@@ -75,10 +82,6 @@ message L2capPacket {
   facade.BluetoothAddress remote = 1;
   uint32 channel = 2;
   bytes payload = 3;
-}
-
-message RegisterDynamicChannelRequest {
-  uint32 psm = 1;
 }
 
 message SetEnableDynamicChannelRequest {
