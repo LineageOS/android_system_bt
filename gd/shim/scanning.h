@@ -29,6 +29,12 @@ class Scanning : public bluetooth::Module, public bluetooth::shim::IScanning {
   Scanning() = default;
   ~Scanning() = default;
 
+  void StartScanning(bool set_active, AdvertisingReportCallback advertising_callback,
+                     DirectedAdvertisingReportCallback directed_advertisting_callback,
+                     ExtendedAdvertisingReportCallback extended_advertising_callback,
+                     ScanningTimeoutCallback timeout_callback) override;
+  void StopScanning() override;
+
   static const ModuleFactory Factory;
 
  protected:
