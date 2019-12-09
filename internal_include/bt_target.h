@@ -773,11 +773,6 @@
 #define SDP_SERVICE_NAME "Service Discovery"
 #endif
 
-/* The security level for BTM. */
-#ifndef SDP_SECURITY_LEVEL
-#define SDP_SECURITY_LEVEL BTM_SEC_NONE
-#endif
-
 /******************************************************************************
  *
  * RFCOMM
