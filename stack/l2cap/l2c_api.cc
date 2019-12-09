@@ -1411,43 +1411,6 @@ bool L2CA_SetTxPriority(uint16_t cid, tL2CAP_CHNL_PRIORITY priority) {
 
 /*******************************************************************************
  *
- * Function         L2CA_SetChnlDataRate
- *
- * Description      Sets the tx/rx data rate for a channel.
- *
- * Returns          true if a valid channel, else false
- *
- ******************************************************************************/
-bool L2CA_SetChnlDataRate(uint16_t cid, tL2CAP_CHNL_DATA_RATE tx,
-                          tL2CAP_CHNL_DATA_RATE rx) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_SetChnlDataRate(cid, tx, rx);
-  }
-
-  tL2C_CCB* p_ccb;
-
-  L2CAP_TRACE_API("L2CA_SetChnlDataRate()  CID: 0x%04x, tx:%d, rx:%d", cid, tx,
-                  rx);
-
-  /* Find the channel control block. We don't know the link it is on. */
-  p_ccb = l2cu_find_ccb_by_cid(NULL, cid);
-  if (p_ccb == NULL) {
-    L2CAP_TRACE_WARNING("L2CAP - no CCB for L2CA_SetChnlDataRate, CID: %d",
-                        cid);
-    return (false);
-  }
-
-  p_ccb->tx_data_rate = tx;
-  p_ccb->rx_data_rate = rx;
-
-  /* Adjust channel buffer allocation */
-  l2c_link_adjust_chnl_allocation();
-
-  return (true);
-}
-
-/*******************************************************************************
- *
  * Function         L2CA_SetFlushTimeout
  *
  * Description      This function set the automatic flush time out in Baseband
@@ -2123,36 +2086,6 @@ bool L2CA_GetConnectionConfig(uint16_t lcid, uint16_t* mtu, uint16_t* rcid,
 
 /*******************************************************************************
  *
- * Function         L2CA_RegForNoCPEvt
- *
- * Description      Register callback for Number of Completed Packets event.
- *
- * Input Param      p_cb - callback for Number of completed packets event
- *                  p_bda - BT address of remote device
- *
- * Returns          true if registered OK, else false
- *
- ******************************************************************************/
-bool L2CA_RegForNoCPEvt(tL2CA_NOCP_CB* p_cb, const RawAddress& p_bda) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_RegForNoCPEvt(p_cb, p_bda);
-  }
-
-  tL2C_LCB* p_lcb;
-
-  /* Find the link that is associated with this remote bdaddr */
-  p_lcb = l2cu_find_lcb_by_bd_addr(p_bda, BT_TRANSPORT_BR_EDR);
-
-  /* If no link for this handle, nothing to do. */
-  if (!p_lcb) return false;
-
-  p_lcb->p_nocp_cb = p_cb;
-
-  return true;
-}
-
-/*******************************************************************************
- *
  * Function         L2CA_DataWrite
  *
  * Description      Higher layers call this function to write data.
@@ -2206,32 +2139,6 @@ bool L2CA_SetChnlFlushability(uint16_t cid, bool is_flushable) {
 #endif
 
   return (true);
-}
-
-/*******************************************************************************
- *
- * Function         L2CA_DataWriteEx
- *
- * Description      Higher layers call this function to write data with extended
- *                  flags.
- *                  flags : L2CAP_FLUSHABLE_CH_BASED
- *                          L2CAP_FLUSHABLE_PKT
- *                          L2CAP_NON_FLUSHABLE_PKT
- *
- * Returns          L2CAP_DW_SUCCESS, if data accepted, else false
- *                  L2CAP_DW_CONGESTED, if data accepted and the channel is
- *                                      congested
- *                  L2CAP_DW_FAILED, if error
- *
- ******************************************************************************/
-uint8_t L2CA_DataWriteEx(uint16_t cid, BT_HDR* p_data, uint16_t flags) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_DataWriteEx(cid, p_data, flags);
-  }
-
-  L2CAP_TRACE_API("L2CA_DataWriteEx()  CID: 0x%04x  Len: %d Flags:0x%04X", cid,
-                  p_data->len, flags);
-  return l2c_data_write(cid, p_data, flags);
 }
 
 /*******************************************************************************
