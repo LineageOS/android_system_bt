@@ -15,42 +15,22 @@
  */
 #pragma once
 
-#include <memory>
+#include "l2cap/le/l2cap_le_module.h"
 
-#include "l2cap/le/fixed_channel_manager.h"
-#include "module.h"
+#include <gmock/gmock.h>
 
+// Unit test interfaces
 namespace bluetooth {
 namespace l2cap {
 namespace le {
+namespace testing {
 
-class L2capLeModule : public bluetooth::Module {
+class MockL2capLeModule : public L2capLeModule {
  public:
-  L2capLeModule();
-  virtual ~L2capLeModule();
-
-  /**
-   * Get the api to the LE fixed channel l2cap module
-   */
-  virtual std::unique_ptr<FixedChannelManager> GetFixedChannelManager();
-
-  static const ModuleFactory Factory;
-
- protected:
-  void ListDependencies(ModuleList* list) override;
-
-  void Start() override;
-
-  void Stop() override;
-
-  std::string ToString() const override;
-
- private:
-  struct impl;
-  std::unique_ptr<impl> pimpl_;
-  DISALLOW_COPY_AND_ASSIGN(L2capLeModule);
+  MOCK_METHOD(std::unique_ptr<FixedChannelManager>, GetFixedChannelManager, (), (override));
 };
 
+}  // namespace testing
 }  // namespace le
 }  // namespace l2cap
 }  // namespace bluetooth
