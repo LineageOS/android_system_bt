@@ -19,6 +19,7 @@
 #pragma once
 
 #include <optional>
+#include <variant>
 
 #include "common/bidi_queue.h"
 #include "common/callback.h"
@@ -28,6 +29,7 @@
 #include "os/handler.h"
 #include "packet/base_packet_builder.h"
 #include "packet/packet_view.h"
+#include "security/ecdh_keys.h"
 #include "security/pairing_failure.h"
 #include "security/smp_packets.h"
 #include "security/ui.h"
