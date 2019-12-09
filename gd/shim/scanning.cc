@@ -110,7 +110,7 @@ void Scanning::impl::on_advertisements(std::vector<std::shared_ptr<hci::LeReport
       bzero(advertising_data_buffer, kAdvertisingReportBufferSize);
       uint8_t* p = advertising_data_buffer;
       for (auto gap_data : le_report->gap_data_) {
-        *p++ = gap_data.size() + sizeof(gap_data.data_type_);
+        *p++ = gap_data.data_.size() + sizeof(gap_data.data_type_);
         *p++ = static_cast<uint8_t>(gap_data.data_type_);
         p = (uint8_t*)memcpy(p, &gap_data.data_[0], gap_data.data_.size()) + gap_data.data_.size();
       }
@@ -145,7 +145,11 @@ void Scanning::impl::on_advertisements(std::vector<std::shared_ptr<hci::LeReport
                      AdvertisingEventTypeText(le_report->advertising_event_type_).c_str());
             return;
         }
-        advertising_callback_(report);
+        if (!advertising_callback_) {
+          LOG_INFO("Discarding advertising packet after scan stopped");
+        } else {
+          advertising_callback_(report);
+        }
         break;
 
       case hci::LeReport::ReportType::DIRECTED_ADVERTISING_EVENT: {
@@ -153,7 +157,11 @@ void Scanning::impl::on_advertisements(std::vector<std::shared_ptr<hci::LeReport
         std::shared_ptr<hci::DirectedLeReport> directed_le_report =
             std::static_pointer_cast<hci::DirectedLeReport>(le_report);
         directed_report.directed_advertising_type = static_cast<uint8_t>(directed_le_report->direct_address_type_);
-        directed_advertising_callback_(directed_report);
+        if (!directed_advertising_callback_) {
+          LOG_INFO("Discarding directed advertising packet after scan stopped");
+        } else {
+          directed_advertising_callback_(directed_report);
+        }
       } break;
 
       case hci::LeReport::ReportType::EXTENDED_ADVERTISING_EVENT: {
@@ -167,7 +175,11 @@ void Scanning::impl::on_advertisements(std::vector<std::shared_ptr<hci::LeReport
                                                                    .legacy = false,
                                                                    .continuing = !extended_le_report->complete_,
                                                                    .truncated = extended_le_report->truncated_});
-        extended_advertising_callback_(extended_report);
+        if (!extended_advertising_callback_) {
+          LOG_INFO("Discarding extended advertising packet after scan stopped");
+        } else {
+          extended_advertising_callback_(extended_report);
+        }
       } break;
     }
   }
