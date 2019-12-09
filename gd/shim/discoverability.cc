@@ -36,26 +36,44 @@ struct Discoverability::impl {
   impl(neighbor::DiscoverabilityModule* module) : module_(module) {}
 
   neighbor::DiscoverabilityModule* module_{nullptr};
+
+  bool general_discoverability_enabled_{false};
+  bool limited_discoverability_enabled_{false};
 };
 
 void Discoverability::StopDiscoverability() {
-  return pimpl_->module_->StopDiscoverability();
+  if (pimpl_->general_discoverability_enabled_ || pimpl_->limited_discoverability_enabled_) {
+    pimpl_->module_->StopDiscoverability();
+    LOG_DEBUG("%s Stopped discoverability", __func__);
+  } else {
+    LOG_WARN("%s Discoverability not enabled", __func__);
+  }
 }
 
 void Discoverability::StartLimitedDiscoverability() {
-  return pimpl_->module_->StartLimitedDiscoverability();
+  if (pimpl_->general_discoverability_enabled_ || pimpl_->limited_discoverability_enabled_) {
+    LOG_WARN("%s Please stop discoverability before re-enabling", __func__);
+    return;
+  }
+  pimpl_->module_->StartLimitedDiscoverability();
+  LOG_DEBUG("%s Started limited discoverability", __func__);
 }
 
 void Discoverability::StartGeneralDiscoverability() {
-  return pimpl_->module_->StartGeneralDiscoverability();
+  if (pimpl_->general_discoverability_enabled_ || pimpl_->limited_discoverability_enabled_) {
+    LOG_WARN("%s Please stop discoverability before re-enabling", __func__);
+    return;
+  }
+  pimpl_->module_->StartGeneralDiscoverability();
+  LOG_DEBUG("%s Started general discoverability", __func__);
 }
 
 bool Discoverability::IsGeneralDiscoverabilityEnabled() const {
-  return pimpl_->module_->IsGeneralDiscoverabilityEnabled();
+  return pimpl_->general_discoverability_enabled_;
 }
 
 bool Discoverability::IsLimitedDiscoverabilityEnabled() const {
-  return pimpl_->module_->IsLimitedDiscoverabilityEnabled();
+  return pimpl_->limited_discoverability_enabled_;
 }
 
 /**
