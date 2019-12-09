@@ -287,30 +287,6 @@ bool L2CA_DisconnectRsp(uint16_t cid);
  ******************************************************************************/
 uint8_t L2CA_DataWrite(uint16_t cid, BT_HDR* p_data);
 
-/*******************************************************************************
- *
- * Function         L2CA_Ping
- *
- * Description      Higher layers call this function to send an echo request.
- *
- * Returns          true if echo request sent, else false.
- *
- ******************************************************************************/
-bool L2CA_Ping(const RawAddress& p_bd_addr, tL2CA_ECHO_RSP_CB* p_cb);
-
-/*******************************************************************************
- *
- * Function         L2CA_Echo
- *
- * Description      Higher layers call this function to send an echo request
- *                  with application-specific data.
- *
- * Returns          true if echo request sent, else false.
- *
- ******************************************************************************/
-bool L2CA_Echo(const RawAddress& p_bd_addr, BT_HDR* p_data,
-               tL2CA_ECHO_DATA_CB* p_callback);
-
 // Given a local channel identifier, |lcid|, this function returns the bound
 // remote channel identifier, |rcid|, and the ACL link handle, |handle|. If
 // |lcid| is not known or is invalid, this function returns false and does not
