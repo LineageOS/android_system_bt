@@ -53,6 +53,11 @@ static constexpr int kClearInquiryFilter = 0;
 static constexpr int kFilterOnDeviceClass = 1;
 static constexpr int kFilterOnAddress = 2;
 
+static constexpr uint8_t kPhyConnectionNone = 0x00;
+static constexpr uint8_t kPhyConnectionLe1M = 0x01;
+static constexpr uint8_t kPhyConnectionLe2M = 0x02;
+static constexpr uint8_t kPhyConnectionLeCoded = 0x03;
+
 using DiscoverabilityState = struct {
   int mode;
   uint16_t interval;
@@ -122,6 +127,7 @@ class ReadRemoteName {
 class Btm {
  public:
   Btm();
+  ~Btm();
 
   // Callbacks
   void OnInquiryResult(std::vector<const uint8_t> result);
@@ -186,12 +192,26 @@ class Btm {
                                    tBTM_CMPL_CB* callback);
   BtmStatus CancelAllReadRemoteDeviceName();
 
+  void StartAdvertising();
+  void StopAdvertising();
+  void StartConnectability();
+  void StopConnectability();
+
+  bool StartActiveScanning();
+  bool StopActiveScanning();
+
+  bool StartObserving();
+  bool StopObserving();
+
+  size_t GetNumberOfAdvertisingInstances() const;
+
  private:
   ReadRemoteName le_read_remote_name_;
   ReadRemoteName classic_read_remote_name_;
   // TODO(cmanton) abort if there is no classic acl link up
   bool CheckClassicAclLink(const RawAddress& raw_address) { return true; }
   bool CheckLeAclLink(const RawAddress& raw_address) { return true; }
+  void StartScanning(bool use_active_scanning);
 };
 
 }  // namespace shim
