@@ -24,3 +24,18 @@ cc_library_static {
         "srce",
     ],
 }
+
+cc_fuzz {
+    name: "sbcdecoder_fuzzer",
+    srcs: [
+        "sbcdecoder_fuzzer.c",
+    ],
+    static_libs: [
+        "libbt-sbc-decoder",
+    ],
+    local_include_dirs: [
+        "include",
+    ],
+    host_supported: false,
+}
+
