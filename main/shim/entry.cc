@@ -30,6 +30,10 @@ future_t* bluetooth::shim::StopGabeldorscheStack() {
   return (future_t*)nullptr;
 }
 
+bluetooth::shim::IAdvertising* bluetooth::shim::GetAdvertising() {
+  return GetGabeldorscheStack()->GetAdvertising();
+}
+
 bluetooth::shim::IController* bluetooth::shim::GetController() {
   return GetGabeldorscheStack()->GetController();
 }
@@ -60,4 +64,8 @@ bluetooth::shim::IName* bluetooth::shim::GetName() {
 
 bluetooth::shim::IPage* bluetooth::shim::GetPage() {
   return GetGabeldorscheStack()->GetPage();
+}
+
+bluetooth::shim::IScanning* bluetooth::shim::GetScanning() {
+  return GetGabeldorscheStack()->GetScanning();
 }
