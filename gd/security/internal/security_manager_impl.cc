@@ -232,6 +232,30 @@ void SecurityManagerImpl::OnPairingHandlerComplete(hci::Address address, Pairing
   }
 }
 
+void SecurityManagerImpl::OnL2capRegistrationCompleteLe(
+    l2cap::le::FixedChannelManager::RegistrationResult result,
+    std::unique_ptr<l2cap::le::FixedChannelService> le_smp_service) {
+  ASSERT_LOG(result == bluetooth::l2cap::le::FixedChannelManager::RegistrationResult::SUCCESS,
+             "Failed to register to LE SMP Fixed Channel Service");
+}
+void SecurityManagerImpl::OnConnectionOpenLe(std::unique_ptr<l2cap::le::FixedChannel> channel) {}
+void SecurityManagerImpl::OnConnectionClosedLe(hci::AddressWithType address, hci::ErrorCode error_code) {}
+void SecurityManagerImpl::OnConnectionFailureLe(bluetooth::l2cap::le::FixedChannelManager::ConnectionResult result) {}
+void SecurityManagerImpl::OnHciLeEvent(hci::LeMetaEventView event) {}
+SecurityManagerImpl::SecurityManagerImpl(os::Handler* security_handler, l2cap::le::L2capLeModule* l2cap_le_module,
+                                         l2cap::classic::L2capClassicModule* l2cap_classic_module,
+                                         channel::SecurityManagerChannel* security_manager_channel,
+                                         hci::HciLayer* hci_layer)
+    : security_handler_(security_handler), l2cap_le_module_(l2cap_le_module),
+      l2cap_classic_module_(l2cap_classic_module), l2cap_manager_le_(l2cap_le_module_->GetFixedChannelManager()),
+      hci_security_interface_le_(hci_layer->GetLeSecurityInterface(
+          common::Bind(&SecurityManagerImpl::OnHciLeEvent, common::Unretained(this)), security_handler)),
+      security_manager_channel_(security_manager_channel) {
+  l2cap_manager_le_->RegisterService(
+      bluetooth::l2cap::kSmpCid, {},
+      common::BindOnce(&SecurityManagerImpl::OnL2capRegistrationCompleteLe, common::Unretained(this)),
+      common::Bind(&SecurityManagerImpl::OnConnectionOpenLe, common::Unretained(this)), security_handler_);
+}
 }  // namespace internal
 }  // namespace security
 }  // namespace bluetooth
