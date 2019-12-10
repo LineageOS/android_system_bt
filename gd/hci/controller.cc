@@ -686,7 +686,7 @@ struct Controller::impl {
   uint64_t le_supported_states_;
   LeMaximumDataLength le_maximum_data_length_;
   uint16_t le_maximum_advertising_data_length_;
-  uint16_t le_number_supported_advertising_sets_;
+  uint8_t le_number_supported_advertising_sets_;
   VendorCapabilities vendor_capabilities_;
 };  // namespace hci
 
@@ -836,7 +836,7 @@ uint16_t Controller::GetControllerLeMaximumAdvertisingDataLength() const {
   return impl_->le_maximum_advertising_data_length_;
 }
 
-uint16_t Controller::GetControllerLeNumberOfSupportedAdverisingSets() const {
+uint8_t Controller::GetControllerLeNumberOfSupportedAdverisingSets() const {
   return impl_->le_number_supported_advertising_sets_;
 }
 
