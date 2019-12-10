@@ -17,7 +17,6 @@
 from gd_device_base import GdDeviceBase
 from gd_device_base import replace_vars
 
-from cert.event_stream import EventStream
 from cert import rootservice_pb2_grpc as cert_rootservice_pb2_grpc
 from hal.cert import api_pb2_grpc as hal_cert_pb2_grpc
 from hci.cert import api_pb2_grpc as hci_cert_pb2_grpc
@@ -70,12 +69,3 @@ class GdCertDevice(GdDeviceBase):
         self.controller_read_only_property = cert_rootservice_pb2_grpc.ReadOnlyPropertyStub(self.grpc_channel)
         self.hci = hci_cert_pb2_grpc.AclManagerCertStub(self.grpc_channel)
         self.l2cap = l2cap_cert_pb2_grpc.L2capClassicModuleCertStub(self.grpc_channel)
-
-        # Event streams
-        self.hal.hci_event_stream = EventStream(self.hal.FetchHciEvent)
-        self.hal.hci_acl_stream = EventStream(self.hal.FetchHciAcl)
-        self.hal.hci_sco_stream = EventStream(self.hal.FetchHciSco)
-        self.hci.connection_complete_stream = EventStream(self.hci.FetchConnectionComplete)
-        self.hci.disconnection_stream = EventStream(self.hci.FetchDisconnection)
-        self.hci.connection_failed_stream = EventStream(self.hci.FetchConnectionFailed)
-        self.hci.acl_stream = EventStream(self.hci.FetchAclData)
