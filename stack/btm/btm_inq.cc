@@ -117,7 +117,7 @@ const uint16_t BTM_EIR_UUID_LKUP_TBL[BTM_EIR_MAX_SERVICES] = {
 static void btm_initiate_inquiry(tBTM_INQUIRY_VAR_ST* p_inq);
 static tBTM_STATUS btm_set_inq_event_filter(uint8_t filter_cond_type,
                                             tBTM_INQ_FILT_COND* p_filt_cond);
-static void btm_clr_inq_result_flt(void);
+void btm_clr_inq_result_flt(void);
 
 static uint8_t btm_convert_uuid_to_eir_service(uint16_t uuid16);
 static void btm_set_eir_uuid(uint8_t* p_eir, tBTM_INQ_RESULTS* p_results);
@@ -781,14 +781,6 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
 
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    p_inq->state = BTM_INQ_ACTIVE_STATE;
-    p_inq->p_inq_cmpl_cb = p_cmpl_cb;
-    p_inq->p_inq_results_cb = p_results_cb;
-    p_inq->inq_cmpl_info.num_resp = 0; /* Clear the results counter */
-    p_inq->inq_active = p_inqparms->mode;
-
-    btm_acl_update_busy_level(BTM_BLI_INQ_EVT);
-
     return bluetooth::shim::BTM_StartInquiry(p_inqparms, p_results_cb,
                                              p_cmpl_cb);
   }
@@ -1313,7 +1305,7 @@ void btm_clr_inq_db(const RawAddress* p_bda) {
  * Returns          true if found, else false (new entry)
  *
  ******************************************************************************/
-static void btm_clr_inq_result_flt(void) {
+void btm_clr_inq_result_flt(void) {
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
 
   osi_free_and_reset((void**)&p_inq->p_bd_db);

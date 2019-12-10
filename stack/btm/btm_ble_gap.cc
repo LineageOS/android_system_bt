@@ -50,6 +50,9 @@
 #include "l2c_int.h"
 #include "osi/include/log.h"
 
+#include "main/shim/btm_api.h"
+#include "main/shim/shim.h"
+
 #define BTM_BLE_NAME_SHORT 0x01
 #define BTM_BLE_NAME_CMPL 0x02
 
@@ -147,11 +150,12 @@ static tBTM_BLE_CTRL_FEATURES_CBACK* p_ctrl_le_feature_rd_cmpl_cback = NULL;
  *  Local functions
  ******************************************************************************/
 static void btm_ble_update_adv_flag(uint8_t flag);
-static void btm_ble_process_adv_pkt_cont(
-    uint16_t evt_type, uint8_t addr_type, const RawAddress& bda,
-    uint8_t primary_phy, uint8_t secondary_phy, uint8_t advertising_sid,
-    int8_t tx_power, int8_t rssi, uint16_t periodic_adv_int, uint8_t data_len,
-    uint8_t* data);
+void btm_ble_process_adv_pkt_cont(uint16_t evt_type, uint8_t addr_type,
+                                  const RawAddress& bda, uint8_t primary_phy,
+                                  uint8_t secondary_phy,
+                                  uint8_t advertising_sid, int8_t tx_power,
+                                  int8_t rssi, uint16_t periodic_adv_int,
+                                  uint8_t data_len, uint8_t* data);
 static uint8_t btm_set_conn_mode_adv_init_addr(tBTM_BLE_INQ_CB* p_cb,
                                                RawAddress& p_peer_addr_ptr,
                                                tBLE_ADDR_TYPE* p_peer_addr_type,
@@ -359,6 +363,10 @@ inline bool BTM_LE_STATES_SUPPORTED(const uint8_t* x, uint8_t bit_num) {
  * Return           void
  ******************************************************************************/
 void BTM_BleUpdateAdvFilterPolicy(tBTM_BLE_AFP adv_policy) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::BTM_BleUpdateAdvFilterPolicy(adv_policy);
+  }
+
   tBTM_BLE_INQ_CB* p_cb = &btm_cb.ble_ctr_cb.inq_var;
   tBLE_ADDR_TYPE init_addr_type = BLE_ADDR_PUBLIC;
   RawAddress adv_address = RawAddress::kEmpty;
@@ -406,6 +414,11 @@ void BTM_BleUpdateAdvFilterPolicy(tBTM_BLE_AFP adv_policy) {
 tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
                            tBTM_INQ_RESULTS_CB* p_results_cb,
                            tBTM_CMPL_CB* p_cmpl_cb) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::BTM_BleObserve(start, duration, p_results_cb,
+                                           p_cmpl_cb);
+  }
+
   tBTM_BLE_INQ_CB* p_inq = &btm_cb.ble_ctr_cb.inq_var;
   tBTM_STATUS status = BTM_WRONG_MODE;
 
@@ -679,6 +692,9 @@ bool BTM_BleConfigPrivacy(bool privacy_mode) {
  *
  ******************************************************************************/
 extern uint8_t BTM_BleMaxMultiAdvInstanceCount(void) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::BTM_BleMaxMultiAdvInstanceCount();
+  }
   return btm_cb.cmn_ble_vsc_cb.adv_inst_max < BTM_BLE_MULTI_ADV_MAX
              ? btm_cb.cmn_ble_vsc_cb.adv_inst_max
              : BTM_BLE_MULTI_ADV_MAX;
@@ -1904,11 +1920,12 @@ void btm_ble_process_adv_pkt(uint8_t data_len, uint8_t* data) {
  * This function is called after random address resolution is done, and proceed
  * to process adv packet.
  */
-static void btm_ble_process_adv_pkt_cont(
-    uint16_t evt_type, uint8_t addr_type, const RawAddress& bda,
-    uint8_t primary_phy, uint8_t secondary_phy, uint8_t advertising_sid,
-    int8_t tx_power, int8_t rssi, uint16_t periodic_adv_int, uint8_t data_len,
-    uint8_t* data) {
+void btm_ble_process_adv_pkt_cont(uint16_t evt_type, uint8_t addr_type,
+                                  const RawAddress& bda, uint8_t primary_phy,
+                                  uint8_t secondary_phy,
+                                  uint8_t advertising_sid, int8_t tx_power,
+                                  int8_t rssi, uint16_t periodic_adv_int,
+                                  uint8_t data_len, uint8_t* data) {
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
   bool update = true;
 
