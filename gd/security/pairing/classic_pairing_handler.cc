@@ -31,7 +31,7 @@ void ClassicPairingHandler::OnRegistrationComplete(
 }
 
 void ClassicPairingHandler::OnUnregistered() {
-  std::move(complete_callback_).Run(GetRecord()->GetDevice().GetAddress());
+  std::move(complete_callback_).Run(GetRecord()->GetDevice().GetAddress(), last_status_);
 }
 
 void ClassicPairingHandler::OnConnectionOpen(std::unique_ptr<l2cap::classic::FixedChannel> fixed_channel) {

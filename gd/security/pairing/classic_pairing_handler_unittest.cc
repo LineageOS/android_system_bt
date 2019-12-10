@@ -24,6 +24,7 @@
 #include "l2cap/classic/fixed_channel_manager_mock.h"
 #include "packet/raw_builder.h"
 #include "security/channel/security_manager_channel.h"
+#include "security/initial_informations.h"
 #include "security/smp_packets.h"
 #include "security/test/fake_hci_layer.h"
 
@@ -99,7 +100,14 @@ class SecurityManagerChannelCallback : public ISecurityManagerChannelListener {
   pairing::ClassicPairingHandler* pairing_handler_ = nullptr;
 };
 
-static void pairing_complete_callback(bluetooth::hci::Address address) {}
+static void pairing_complete_callback(bluetooth::hci::Address address, PairingResultOrFailure status) {
+  //  if (std::holds_alternative<PairingResult>(status)) {
+  //    auto result = status::get<PairingResult>(status);
+  //  }
+  //  if (std::holds_alternative<PairingFailure>(status)) {
+  //    auto failure = status::get<PairingFailure>(status);
+  //  }
+}
 
 class ClassicPairingHandlerTest : public ::testing::Test {
  protected:
