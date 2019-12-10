@@ -48,6 +48,7 @@ class Controller : public bluetooth::Module, public bluetooth::shim::IController
   uint64_t GetControllerLeLocalSupportedFeatures() const override;
   uint64_t GetControllerLeSupportedStates() const override;
   uint64_t GetControllerLocalExtendedFeatures(uint8_t page_number) const override;
+  uint8_t GetControllerLeNumberOfSupportedAdverisingSets() const override;
   uint8_t GetControllerLocalExtendedFeaturesMaxPageNumber() const override;
 
  protected:

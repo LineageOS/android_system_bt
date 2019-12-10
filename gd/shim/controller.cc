@@ -85,6 +85,10 @@ uint64_t Controller::GetControllerLeSupportedStates() const {
   return pimpl_->hci_controller_->GetControllerLeSupportedStates();
 }
 
+uint8_t Controller::GetControllerLeNumberOfSupportedAdverisingSets() const {
+  return pimpl_->hci_controller_->GetControllerLeNumberOfSupportedAdverisingSets();
+}
+
 uint8_t Controller::GetControllerLocalExtendedFeaturesMaxPageNumber() const {
   return pimpl_->hci_controller_->GetControllerLocalExtendedFeaturesMaxPageNumber();
 }
