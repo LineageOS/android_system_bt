@@ -20,8 +20,7 @@
 #include <memory>
 #include <mutex>
 
-#include "common/blocking_queue.h"
-#include "grpc/grpc_event_stream.h"
+#include "grpc/grpc_event_queue.h"
 #include "hal/facade.grpc.pb.h"
 #include "hal/hci_hal.h"
 #include "hal/serialize_packet.h"
@@ -31,22 +30,16 @@ using ::grpc::ServerAsyncResponseWriter;
 using ::grpc::ServerAsyncWriter;
 using ::grpc::ServerContext;
 
-using ::bluetooth::facade::EventStreamRequest;
-
 namespace bluetooth {
 namespace hal {
 
-class HciHalFacadeService
-    : public HciHalFacade::Service,
-      public ::bluetooth::hal::HciHalCallbacks {
+class HciHalFacadeService : public HciHalFacade::Service, public ::bluetooth::hal::HciHalCallbacks {
  public:
-  HciHalFacadeService(HciHal* hal)
-      : hal_(hal), hci_event_stream_(&hci_event_stream_callback_), hci_acl_stream_(&hci_acl_stream_callback_),
-        hci_sco_stream_(&hci_sco_stream_callback_) {
+  explicit HciHalFacadeService(HciHal* hal) : hal_(hal) {
     hal->registerIncomingPacketCallback(this);
   }
 
-  ~HciHalFacadeService() {
+  ~HciHalFacadeService() override {
     hal_->unregisterIncomingPacketCallback();
   }
 
@@ -61,8 +54,7 @@ class HciHalFacadeService
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status SetLoopbackMode(::grpc::ServerContext* context,
-                                 const ::bluetooth::hal::LoopbackModeSettings* request,
+  ::grpc::Status SetLoopbackMode(::grpc::ServerContext* context, const ::bluetooth::hal::LoopbackModeSettings* request,
                                  ::google::protobuf::Empty* response) override {
     std::unique_lock<std::mutex> lock(mutex_);
     can_send_hci_command_ = false;
@@ -116,34 +108,41 @@ class HciHalFacadeService
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status FetchHciEvent(::grpc::ServerContext* context, const EventStreamRequest* request,
+  ::grpc::Status FetchHciEvent(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
                                ::grpc::ServerWriter<HciEventPacket>* writer) override {
-    return hci_event_stream_.HandleRequest(context, request, writer);
+    return pending_hci_events_.RunLoop(context, writer);
   };
 
-  ::grpc::Status FetchHciAcl(::grpc::ServerContext* context, const EventStreamRequest* request,
+  ::grpc::Status FetchHciAcl(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
                              ::grpc::ServerWriter<HciAclPacket>* writer) override {
-    return hci_acl_stream_.HandleRequest(context, request, writer);
+    return pending_acl_events_.RunLoop(context, writer);
   };
 
-  ::grpc::Status FetchHciSco(::grpc::ServerContext* context, const EventStreamRequest* request,
+  ::grpc::Status FetchHciSco(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
                              ::grpc::ServerWriter<HciScoPacket>* writer) override {
-    return hci_sco_stream_.HandleRequest(context, request, writer);
+    return pending_sco_events_.RunLoop(context, writer);
   };
 
   void hciEventReceived(bluetooth::hal::HciPacket event) override {
-    std::string response_str = std::string(event.begin(), event.end());
-    hci_event_stream_.OnIncomingEvent(event);
+    {
+      HciEventPacket response;
+      response.set_payload(std::string(event.begin(), event.end()));
+      pending_hci_events_.OnIncomingEvent(std::move(response));
+    }
     can_send_hci_command_ = true;
     cv_.notify_one();
   }
 
   void aclDataReceived(bluetooth::hal::HciPacket data) override {
-    hci_acl_stream_.OnIncomingEvent(data);
+    HciAclPacket response;
+    response.set_payload(std::string(data.begin(), data.end()));
+    pending_acl_events_.OnIncomingEvent(std::move(response));
   }
 
   void scoDataReceived(bluetooth::hal::HciPacket data) override {
-    hci_sco_stream_.OnIncomingEvent(data);
+    HciScoPacket response;
+    response.set_payload(std::string(data.begin(), data.end()));
+    pending_sco_events_.OnIncomingEvent(std::move(response));
   }
 
  private:
@@ -151,31 +150,9 @@ class HciHalFacadeService
   bool can_send_hci_command_ = true;
   mutable std::mutex mutex_;
   std::condition_variable cv_;
-
-  class HciEventStreamCallback : public ::bluetooth::grpc::GrpcEventStreamCallback<HciEventPacket, HciPacket> {
-   public:
-    void OnWriteResponse(HciEventPacket* response, const HciPacket& event) override {
-      std::string response_str = std::string(event.begin(), event.end());
-      response->set_payload(std::string(event.begin(), event.end()));
-    }
-  } hci_event_stream_callback_;
-  ::bluetooth::grpc::GrpcEventStream<HciEventPacket, HciPacket> hci_event_stream_;
-
-  class HciAclStreamCallback : public ::bluetooth::grpc::GrpcEventStreamCallback<HciAclPacket, HciPacket> {
-   public:
-    void OnWriteResponse(HciAclPacket* response, const HciPacket& event) override {
-      response->set_payload(std::string(event.begin(), event.end()));
-    }
-  } hci_acl_stream_callback_;
-  ::bluetooth::grpc::GrpcEventStream<HciAclPacket, HciPacket> hci_acl_stream_;
-
-  class HciScoStreamCallback : public ::bluetooth::grpc::GrpcEventStreamCallback<HciScoPacket, HciPacket> {
-   public:
-    void OnWriteResponse(HciScoPacket* response, const HciPacket& event) override {
-      response->set_payload(std::string(event.begin(), event.end()));
-    }
-  } hci_sco_stream_callback_;
-  ::bluetooth::grpc::GrpcEventStream<HciScoPacket, HciPacket> hci_sco_stream_;
+  ::bluetooth::grpc::GrpcEventQueue<HciEventPacket> pending_hci_events_{"FetchHciEvent"};
+  ::bluetooth::grpc::GrpcEventQueue<HciAclPacket> pending_acl_events_{"FetchHciAcl"};
+  ::bluetooth::grpc::GrpcEventQueue<HciScoPacket> pending_sco_events_{"FetchHciSco"};
 };
 
 void HciHalFacadeModule::ListDependencies(ModuleList* list) {
@@ -197,9 +174,7 @@ void HciHalFacadeModule::Stop() {
   return service_;
 }
 
-const ModuleFactory HciHalFacadeModule::Factory = ::bluetooth::ModuleFactory([]() {
-  return new HciHalFacadeModule();
-});
+const ModuleFactory HciHalFacadeModule::Factory = ::bluetooth::ModuleFactory([]() { return new HciHalFacadeModule(); });
 
 }  // namespace hal
 }  // namespace bluetooth
