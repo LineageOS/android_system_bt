@@ -1033,126 +1033,6 @@ bool L2CA_DisconnectRsp(uint16_t cid) {
   return (true);
 }
 
-/*******************************************************************************
- *
- * Function         L2CA_Ping
- *
- * Description      Higher layers call this function to send an echo request.
- *
- * Returns          true if echo request sent, else false.
- *
- ******************************************************************************/
-bool L2CA_Ping(const RawAddress& p_bd_addr, tL2CA_ECHO_RSP_CB* p_callback) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_Ping(p_bd_addr, p_callback);
-  }
-
-  tL2C_LCB* p_lcb;
-
-  VLOG(1) << __func__ << " BDA: " << p_bd_addr;
-
-  /* Fail if we have not established communications with the controller */
-  if (!BTM_IsDeviceUp()) return (false);
-
-  /* First, see if we already have a link to the remote */
-  p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_BR_EDR);
-  if (p_lcb == NULL) {
-    /* No link. Get an LCB and start link establishment */
-    p_lcb = l2cu_allocate_lcb(p_bd_addr, false, BT_TRANSPORT_BR_EDR);
-    if (p_lcb == NULL) {
-      L2CAP_TRACE_WARNING("L2CAP - no LCB for L2CA_ping");
-      return (false);
-    }
-    if (!l2cu_create_conn_br_edr(p_lcb)) {
-      return (false);
-    }
-
-    p_lcb->p_echo_rsp_cb = p_callback;
-
-    return (true);
-  }
-
-  /* We only allow 1 ping outstanding at a time */
-  if (p_lcb->p_echo_rsp_cb != NULL) {
-    L2CAP_TRACE_WARNING("L2CAP - rejected second L2CA_ping");
-    return (false);
-  }
-
-  /* Have a link control block. If link is disconnecting, tell user to retry
-   * later */
-  if (p_lcb->link_state == LST_DISCONNECTING) {
-    L2CAP_TRACE_WARNING("L2CAP - L2CA_ping rejected - link disconnecting");
-    return (false);
-  }
-
-  /* Save address of callback */
-  p_lcb->p_echo_rsp_cb = p_callback;
-
-  if (p_lcb->link_state == LST_CONNECTED) {
-    l2cu_adj_id(p_lcb, L2CAP_ADJ_BRCM_ID); /* Make sure not using Broadcom ID */
-    l2cu_send_peer_echo_req(p_lcb, NULL, 0);
-    alarm_set_on_mloop(p_lcb->l2c_lcb_timer, L2CAP_ECHO_RSP_TIMEOUT_MS,
-                       l2c_lcb_timer_timeout, p_lcb);
-  }
-
-  return (true);
-}
-
-/*******************************************************************************
- *
- * Function         L2CA_Echo
- *
- * Description      Higher layers call this function to send an echo request
- *                  with application-specific data.
- *
- * Returns          true if echo request sent, else false.
- *
- ******************************************************************************/
-bool L2CA_Echo(const RawAddress& p_bd_addr, BT_HDR* p_data,
-               tL2CA_ECHO_DATA_CB* p_callback) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_Echo(p_bd_addr, p_data, p_callback);
-  }
-
-  tL2C_LCB* p_lcb;
-  uint8_t* pp;
-
-  VLOG(1) << __func__ << " BDA: " << p_bd_addr;
-  ;
-
-  /* Fail if we have not established communications with the controller */
-  if (!BTM_IsDeviceUp()) return (false);
-
-  if (RawAddress::kAny == p_bd_addr && (p_data == NULL)) {
-    /* Only register callback without sending message. */
-    l2cb.p_echo_data_cb = p_callback;
-    return true;
-  }
-
-  /* We assume the upper layer will call this function only when the link is
-   * established. */
-  p_lcb = l2cu_find_lcb_by_bd_addr(p_bd_addr, BT_TRANSPORT_BR_EDR);
-  if (p_lcb == NULL) {
-    L2CAP_TRACE_ERROR("L2CA_Echo ERROR : link not established");
-    return false;
-  }
-
-  if (p_lcb->link_state != LST_CONNECTED) {
-    L2CAP_TRACE_ERROR("L2CA_Echo ERROR : link is not connected");
-    return false;
-  }
-
-  /* Save address of callback */
-  l2cb.p_echo_data_cb = p_callback;
-
-  /* Set the pointer to the beginning of the data */
-  pp = (uint8_t*)(p_data + 1) + p_data->offset;
-  l2cu_adj_id(p_lcb, L2CAP_ADJ_BRCM_ID); /* Make sure not using Broadcom ID */
-  l2cu_send_peer_echo_req(p_lcb, pp, p_data->len);
-
-  return (true);
-}
-
 bool L2CA_GetIdentifiers(uint16_t lcid, uint16_t* rcid, uint16_t* handle) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::L2CA_GetIdentifiers(lcid, rcid, handle);
@@ -1525,43 +1405,6 @@ bool L2CA_SetTxPriority(uint16_t cid, tL2CAP_CHNL_PRIORITY priority) {
   /* it will update the order of CCB in LCB by priority and update round robin
    * service variables */
   l2cu_change_pri_ccb(p_ccb, priority);
-
-  return (true);
-}
-
-/*******************************************************************************
- *
- * Function         L2CA_SetChnlDataRate
- *
- * Description      Sets the tx/rx data rate for a channel.
- *
- * Returns          true if a valid channel, else false
- *
- ******************************************************************************/
-bool L2CA_SetChnlDataRate(uint16_t cid, tL2CAP_CHNL_DATA_RATE tx,
-                          tL2CAP_CHNL_DATA_RATE rx) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_SetChnlDataRate(cid, tx, rx);
-  }
-
-  tL2C_CCB* p_ccb;
-
-  L2CAP_TRACE_API("L2CA_SetChnlDataRate()  CID: 0x%04x, tx:%d, rx:%d", cid, tx,
-                  rx);
-
-  /* Find the channel control block. We don't know the link it is on. */
-  p_ccb = l2cu_find_ccb_by_cid(NULL, cid);
-  if (p_ccb == NULL) {
-    L2CAP_TRACE_WARNING("L2CAP - no CCB for L2CA_SetChnlDataRate, CID: %d",
-                        cid);
-    return (false);
-  }
-
-  p_ccb->tx_data_rate = tx;
-  p_ccb->rx_data_rate = rx;
-
-  /* Adjust channel buffer allocation */
-  l2c_link_adjust_chnl_allocation();
 
   return (true);
 }
@@ -2243,36 +2086,6 @@ bool L2CA_GetConnectionConfig(uint16_t lcid, uint16_t* mtu, uint16_t* rcid,
 
 /*******************************************************************************
  *
- * Function         L2CA_RegForNoCPEvt
- *
- * Description      Register callback for Number of Completed Packets event.
- *
- * Input Param      p_cb - callback for Number of completed packets event
- *                  p_bda - BT address of remote device
- *
- * Returns          true if registered OK, else false
- *
- ******************************************************************************/
-bool L2CA_RegForNoCPEvt(tL2CA_NOCP_CB* p_cb, const RawAddress& p_bda) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_RegForNoCPEvt(p_cb, p_bda);
-  }
-
-  tL2C_LCB* p_lcb;
-
-  /* Find the link that is associated with this remote bdaddr */
-  p_lcb = l2cu_find_lcb_by_bd_addr(p_bda, BT_TRANSPORT_BR_EDR);
-
-  /* If no link for this handle, nothing to do. */
-  if (!p_lcb) return false;
-
-  p_lcb->p_nocp_cb = p_cb;
-
-  return true;
-}
-
-/*******************************************************************************
- *
  * Function         L2CA_DataWrite
  *
  * Description      Higher layers call this function to write data.
@@ -2326,32 +2139,6 @@ bool L2CA_SetChnlFlushability(uint16_t cid, bool is_flushable) {
 #endif
 
   return (true);
-}
-
-/*******************************************************************************
- *
- * Function         L2CA_DataWriteEx
- *
- * Description      Higher layers call this function to write data with extended
- *                  flags.
- *                  flags : L2CAP_FLUSHABLE_CH_BASED
- *                          L2CAP_FLUSHABLE_PKT
- *                          L2CAP_NON_FLUSHABLE_PKT
- *
- * Returns          L2CAP_DW_SUCCESS, if data accepted, else false
- *                  L2CAP_DW_CONGESTED, if data accepted and the channel is
- *                                      congested
- *                  L2CAP_DW_FAILED, if error
- *
- ******************************************************************************/
-uint8_t L2CA_DataWriteEx(uint16_t cid, BT_HDR* p_data, uint16_t flags) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_DataWriteEx(cid, p_data, flags);
-  }
-
-  L2CAP_TRACE_API("L2CA_DataWriteEx()  CID: 0x%04x  Len: %d Flags:0x%04X", cid,
-                  p_data->len, flags);
-  return l2c_data_write(cid, p_data, flags);
 }
 
 /*******************************************************************************

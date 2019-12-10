@@ -15,22 +15,22 @@
  */
 #pragma once
 
-#include <cstddef>
+#include "l2cap/le/l2cap_le_module.h"
 
-/**
- * The gd API exported to the legacy api
- */
+#include <gmock/gmock.h>
+
+// Unit test interfaces
 namespace bluetooth {
-namespace shim {
+namespace l2cap {
+namespace le {
+namespace testing {
 
-struct IAdvertising {
-  virtual void StartAdvertising() = 0;
-  virtual void StopAdvertising() = 0;
-
-  virtual size_t GetNumberOfAdvertisingInstances() const = 0;
-
-  virtual ~IAdvertising() {}
+class MockL2capLeModule : public L2capLeModule {
+ public:
+  MOCK_METHOD(std::unique_ptr<FixedChannelManager>, GetFixedChannelManager, (), (override));
 };
 
-}  // namespace shim
+}  // namespace testing
+}  // namespace le
+}  // namespace l2cap
 }  // namespace bluetooth

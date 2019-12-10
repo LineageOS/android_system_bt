@@ -89,7 +89,7 @@ void sdp_init(void) {
 #if (SDP_SERVER_ENABLED == TRUE)
   /* Register with Security Manager for the specific security level */
   if (!BTM_SetSecurityLevel(false, SDP_SERVICE_NAME, BTM_SEC_SERVICE_SDP_SERVER,
-                            SDP_SECURITY_LEVEL, SDP_PSM, 0, 0)) {
+                            BTM_SEC_NONE, SDP_PSM, 0, 0)) {
     SDP_TRACE_ERROR("Security Registration Server failed");
     return;
   }
@@ -97,7 +97,7 @@ void sdp_init(void) {
 
   /* Register with Security Manager for the specific security level */
   if (!BTM_SetSecurityLevel(true, SDP_SERVICE_NAME, BTM_SEC_SERVICE_SDP_SERVER,
-                            SDP_SECURITY_LEVEL, SDP_PSM, 0, 0)) {
+                            BTM_SEC_NONE, SDP_PSM, 0, 0)) {
     SDP_TRACE_ERROR("Security Registration for Client failed");
     return;
   }
