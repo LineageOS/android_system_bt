@@ -38,6 +38,7 @@ namespace shim {
 future_t* StartGabeldorscheStack();
 future_t* StopGabeldorscheStack();
 
+bluetooth::shim::IAdvertising* GetAdvertising();
 bluetooth::shim::IController* GetController();
 bluetooth::shim::IDiscoverability* GetDiscoverability();
 bluetooth::shim::IConnectability* GetConnectability();
@@ -46,6 +47,7 @@ bluetooth::shim::IHciLayer* GetHciLayer();
 bluetooth::shim::IL2cap* GetL2cap();
 bluetooth::shim::IName* GetName();
 bluetooth::shim::IPage* GetPage();
+bluetooth::shim::IScanning* GetScanning();
 
 }  // namespace shim
 }  // namespace bluetooth
