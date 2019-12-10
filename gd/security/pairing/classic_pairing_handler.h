@@ -22,6 +22,7 @@
 #include <utility>
 
 #include "l2cap/classic/l2cap_classic_module.h"
+#include "security/initial_informations.h"
 
 namespace bluetooth {
 namespace security {
@@ -37,7 +38,7 @@ class ClassicPairingHandler : public PairingHandler {
   ClassicPairingHandler(std::shared_ptr<l2cap::classic::FixedChannelManager> fixed_channel_manager,
                         channel::SecurityManagerChannel* security_manager_channel,
                         std::shared_ptr<record::SecurityRecord> record, os::Handler* security_handler,
-                        common::OnceCallback<void(hci::Address)> complete_callback)
+                        common::OnceCallback<void(hci::Address, PairingResultOrFailure)> complete_callback)
       : PairingHandler(security_manager_channel, std::move(record)),
         fixed_channel_manager_(std::move(fixed_channel_manager)), security_policy_(),
         security_handler_(security_handler), remote_io_capability_(kDefaultIoCapability),
@@ -85,7 +86,8 @@ class ClassicPairingHandler : public PairingHandler {
   hci::OobDataPresent local_oob_present_ __attribute__((unused));
   hci::AuthenticationRequirements local_authentication_requirements_ __attribute__((unused));
   std::unique_ptr<l2cap::classic::FixedChannel> fixed_channel_{nullptr};
-  common::OnceCallback<void(hci::Address)> complete_callback_;
+  common::OnceCallback<void(hci::Address, PairingResultOrFailure)> complete_callback_;
+  PairingResultOrFailure last_status_;
   bool locally_initiated_ = false;
 };
 
