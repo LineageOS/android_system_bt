@@ -22,7 +22,7 @@
 #include <unordered_map>
 
 #include "common/blocking_queue.h"
-#include "grpc/grpc_event_stream.h"
+#include "grpc/grpc_event_queue.h"
 #include "hci/acl_manager.h"
 #include "hci/cert/cert.h"
 #include "hci/hci_packets.h"
@@ -37,9 +37,7 @@ using ::grpc::ServerAsyncResponseWriter;
 using ::grpc::ServerAsyncWriter;
 using ::grpc::ServerContext;
 
-using ::bluetooth::facade::EventStreamRequest;
 using ::bluetooth::packet::RawBuilder;
-
 using ::bluetooth::l2cap::classic::cert::L2capPacket;
 
 namespace bluetooth {
@@ -48,8 +46,6 @@ namespace classic {
 namespace cert {
 
 using namespace facade;
-
-constexpr auto kEventTimeout = std::chrono::seconds(1);
 
 class L2capClassicModuleCertService : public L2capClassicModuleCert::Service {
  public:
@@ -272,60 +268,19 @@ class L2capClassicModuleCertService : public L2capClassicModuleCert::Service {
   std::unique_ptr<packet::BasePacketBuilder> enqueue_packet_to_acl() {
     auto basic_frame_builder = std::move(outgoing_packet_queue_.front());
     outgoing_packet_queue_.pop();
-    if (outgoing_packet_queue_.size() == 0) {
+    if (outgoing_packet_queue_.empty()) {
       acl_connection_->GetAclQueueEnd()->UnregisterEnqueue();
     }
     return basic_frame_builder;
   }
 
-  ::grpc::Status FetchL2capLog(::grpc::ServerContext* context, const FetchL2capLogRequest* request,
+  ::grpc::Status FetchL2capLog(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
                                ::grpc::ServerWriter<FetchL2capLogResponse>* writer) override {
-    fetching_l2cap_log_ = true;
-    while (!context->IsCancelled() && fetching_l2cap_log_) {
-      if (!l2cap_log_.empty()) {
-        auto& response = l2cap_log_.front();
-        writer->Write(response);
-        l2cap_log_.pop();
-      } else {
-        std::unique_lock<std::mutex> lock(l2cap_log_mutex_);
-        // TODO(hsz): Rather than hardcode 1 second wait time, we can add another RPC to allow client to inform the
-        // server to return the RPC early
-        auto status = l2cap_log_cv_.wait_for(lock, kEventTimeout);
-        if (status == std::cv_status::timeout) {
-          break;
-        }
-      }
-    }
-    return ::grpc::Status::OK;
+    return pending_l2cap_log_.RunLoop(context, writer);
   }
-
-  ::grpc::Status StopFetchingL2capLog(
-      ::grpc::ServerContext* context, const ::bluetooth::l2cap::classic::cert::StopFetchingL2capLogRequest* request,
-      ::bluetooth::l2cap::classic::cert::StopFetchingL2capLogResponse* response) override {
-    fetching_l2cap_log_ = false;
-    l2cap_log_cv_.notify_one();
-    return ::grpc::Status::OK;
-  }
-
-  bool fetching_l2cap_log_ = false;
-  std::mutex l2cap_log_mutex_;
-  std::queue<FetchL2capLogResponse> l2cap_log_;
-  std::condition_variable l2cap_log_cv_;
-
-  class L2capStreamCallback : public ::bluetooth::grpc::GrpcEventStreamCallback<L2capPacket, L2capPacket> {
-   public:
-    void OnWriteResponse(L2capPacket* response, const L2capPacket& event) override {
-      response->CopyFrom(event);
-    }
-
-  } l2cap_stream_callback_;
-  ::bluetooth::grpc::GrpcEventStream<L2capPacket, L2capPacket> l2cap_stream_{&l2cap_stream_callback_};
 
   void LogEvent(const FetchL2capLogResponse& response) {
-    l2cap_log_.push(response);
-    if (l2cap_log_.size() == 1) {
-      l2cap_log_cv_.notify_one();
-    }
+    pending_l2cap_log_.OnIncomingEvent(response);
   }
 
   void on_incoming_packet() {
@@ -337,7 +292,6 @@ class L2capClassicModuleCertService : public L2capClassicModuleCert::Service {
     std::string data = std::string(payload.begin(), payload.end());
     l2cap_packet.set_payload(data);
     l2cap_packet.set_channel(basic_frame_view.GetChannelId());
-    l2cap_stream_.OnIncomingEvent(l2cap_packet);
     if (basic_frame_view.GetChannelId() == kClassicSignallingCid) {
       ControlView control_view = ControlView::Create(basic_frame_view.GetPayload());
       ASSERT(control_view.IsValid());
@@ -528,6 +482,7 @@ class L2capClassicModuleCertService : public L2capClassicModuleCert::Service {
   ::bluetooth::os::Handler* handler_;
   hci::AclManager* acl_manager_;
   std::unique_ptr<hci::AclConnection> acl_connection_;
+  ::bluetooth::grpc::GrpcEventQueue<FetchL2capLogResponse> pending_l2cap_log_{"FetchL2capLog"};
 
   class AclCallbacks : public hci::ConnectionCallbacks {
    public:
