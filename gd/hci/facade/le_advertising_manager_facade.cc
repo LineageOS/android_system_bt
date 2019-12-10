@@ -20,7 +20,6 @@
 
 #include "common/bidi_queue.h"
 #include "common/bind.h"
-#include "grpc/grpc_event_stream.h"
 #include "hci/address.h"
 #include "hci/address_with_type.h"
 #include "hci/facade/le_advertising_manager_facade.grpc.pb.h"
@@ -42,9 +41,6 @@ using ::grpc::Status;
 
 using ::bluetooth::facade::BluetoothAddress;
 using ::bluetooth::facade::BluetoothAddressTypeEnum;
-using ::bluetooth::facade::EventStreamRequest;
-using ::bluetooth::grpc::GrpcEventStream;
-using ::bluetooth::grpc::GrpcEventStreamCallback;
 
 hci::GapData GapDataFromProto(const GapData& gap_data_proto) {
   hci::GapData gap_data;

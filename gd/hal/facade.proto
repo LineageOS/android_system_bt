@@ -13,9 +13,9 @@ service HciHalFacade {
   rpc SendHciAcl(HciAclPacket) returns (google.protobuf.Empty) {}
   rpc SendHciSco(HciScoPacket) returns (google.protobuf.Empty) {}
 
-  rpc FetchHciEvent(bluetooth.facade.EventStreamRequest) returns (stream HciEventPacket) {}
-  rpc FetchHciAcl(bluetooth.facade.EventStreamRequest) returns (stream HciAclPacket) {}
-  rpc FetchHciSco(bluetooth.facade.EventStreamRequest) returns (stream HciScoPacket) {}
+  rpc FetchHciEvent(google.protobuf.Empty) returns (stream HciEventPacket) {}
+  rpc FetchHciAcl(google.protobuf.Empty) returns (stream HciAclPacket) {}
+  rpc FetchHciSco(google.protobuf.Empty) returns (stream HciScoPacket) {}
 }
 
 message LoopbackModeSettings {

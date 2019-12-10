@@ -22,7 +22,7 @@
 
 #include "common/bind.h"
 #include "common/blocking_queue.h"
-#include "grpc/grpc_event_stream.h"
+#include "grpc/grpc_event_queue.h"
 #include "hci/acl_manager.h"
 #include "hci/classic_security_manager.h"
 #include "hci/controller.h"
@@ -35,7 +35,6 @@ using ::grpc::ServerAsyncResponseWriter;
 using ::grpc::ServerAsyncWriter;
 using ::grpc::ServerContext;
 
-using ::bluetooth::facade::EventStreamRequest;
 using ::bluetooth::packet::RawBuilder;
 
 namespace bluetooth {
@@ -53,8 +52,6 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
     acl_manager_->RegisterAclManagerCallbacks(this, facade_handler_);
   }
 
-  using EventStream = ::bluetooth::grpc::GrpcEventStream<AclData, AclPacketView>;
-
   ::grpc::Status SetPageScanMode(::grpc::ServerContext* context, const ::bluetooth::hci::PageScanMode* request,
                                  ::google::protobuf::Empty* response) override {
     ScanEnable scan_enable = request->enabled() ? ScanEnable::PAGE_SCAN_ONLY : ScanEnable::NO_SCANS;
@@ -69,18 +66,17 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status Connect(::grpc::ServerContext* context, const facade::BluetoothAddress* remote,
+  ::grpc::Status Connect(::grpc::ServerContext* context, const facade::BluetoothAddress* request,
                          ::google::protobuf::Empty* response) override {
-    std::unique_lock<std::mutex> lock(mutex_);
     Address peer;
-    ASSERT(Address::FromString(remote->address(), peer));
+    ASSERT(Address::FromString(request->address(), peer));
     acl_manager_->CreateConnection(peer);
     return ::grpc::Status::OK;
   }
 
   ::grpc::Status Disconnect(::grpc::ServerContext* context, const facade::BluetoothAddress* request,
                             ::google::protobuf::Empty* response) override {
-    std::unique_lock<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(acl_connections_mutex_);
     Address peer;
     Address::FromString(request->address(), peer);
     auto connection = acl_connections_.find(request->address());
@@ -95,6 +91,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
 
   ::grpc::Status AuthenticationRequested(::grpc::ServerContext* context, const facade::BluetoothAddress* request,
                                          ::google::protobuf::Empty* response) override {
+    std::unique_lock<std::mutex> lock(acl_connections_mutex_);
     Address peer;
     Address::FromString(request->address(), peer);
     auto connection = acl_connections_.find(request->address());
@@ -109,18 +106,23 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
 
   ::grpc::Status SendAclData(::grpc::ServerContext* context, const AclData* request,
                              ::google::protobuf::Empty* response) override {
-    std::unique_lock<std::mutex> lock(mutex_);
     std::promise<void> promise;
     auto future = promise.get_future();
-    acl_connections_[request->remote().address()]->GetAclQueueEnd()->RegisterEnqueue(
-        facade_handler_, common::Bind(&AclManagerFacadeService::enqueue_packet, common::Unretained(this),
-                                      common::Unretained(request), common::Passed(std::move(promise))));
+    {
+      std::unique_lock<std::mutex> lock(acl_connections_mutex_);
+      acl_connections_[request->remote().address()]->GetAclQueueEnd()->RegisterEnqueue(
+          facade_handler_, common::Bind(&AclManagerFacadeService::enqueue_packet, common::Unretained(this),
+                                        common::Unretained(request), common::Passed(std::move(promise))));
+    }
     future.wait();
     return ::grpc::Status::OK;
   }
 
   std::unique_ptr<BasePacketBuilder> enqueue_packet(const AclData* request, std::promise<void> promise) {
-    acl_connections_[request->remote().address()]->GetAclQueueEnd()->UnregisterEnqueue();
+    {
+      std::unique_lock<std::mutex> lock(acl_connections_mutex_);
+      acl_connections_[request->remote().address()]->GetAclQueueEnd()->UnregisterEnqueue();
+    }
     std::string req_string = request->payload();
     std::unique_ptr<RawBuilder> packet = std::make_unique<RawBuilder>();
     packet->AddOctets(std::vector<uint8_t>(req_string.begin(), req_string.end()));
@@ -128,10 +130,28 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
     return packet;
   }
 
-  ::grpc::Status FetchAclData(::grpc::ServerContext* context, const facade::EventStreamRequest* request,
+  ::grpc::Status FetchAclData(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
                               ::grpc::ServerWriter<AclData>* writer) override {
-    std::unique_lock<std::mutex> lock(mutex_);
-    return acl_stream_.HandleRequest(context, request, writer);
+    {
+      std::unique_lock<std::mutex> lock(acl_connections_mutex_);
+      for (const auto& connection : acl_connections_) {
+        auto remote_address = connection.second->GetAddress().ToString();
+        connection.second->GetAclQueueEnd()->RegisterDequeue(
+            facade_handler_,
+            common::Bind(&AclManagerFacadeService::on_incoming_acl, common::Unretained(this), remote_address));
+      }
+      fetching_acl_data_ = true;
+    }
+    auto status = pending_acl_data_.RunLoop(context, writer);
+    {
+      std::unique_lock<std::mutex> lock(acl_connections_mutex_);
+      fetching_acl_data_ = false;
+      for (const auto& connection : acl_connections_) {
+        connection.second->GetAclQueueEnd()->UnregisterDequeue();
+      }
+    }
+
+    return status;
   }
 
   ::grpc::Status TestInternalHciCommands(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
@@ -183,6 +203,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
   ::grpc::Status TestClassicConnectionManagementCommands(::grpc::ServerContext* context,
                                                          const facade::BluetoothAddress* request,
                                                          ::google::protobuf::Empty* response) {
+    std::unique_lock<std::mutex> lock(acl_connections_mutex_);
     Address peer;
     Address::FromString(request->address(), peer);
     auto connection = acl_connections_.find(request->address());
@@ -230,6 +251,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
   }
 
   void on_incoming_acl(std::string address) {
+    std::unique_lock<std::mutex> lock(acl_connections_mutex_);
     auto connection = acl_connections_.find(address);
     if (connection == acl_connections_.end()) {
       LOG_ERROR("Invalid address");
@@ -240,21 +262,32 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
     auto acl_packet = AclPacketView::Create(*packet);
     AclData acl_data;
     acl_data.mutable_remote()->set_address(address);
-    std::string data = std::string(acl_packet.begin(), acl_packet.end());
+    std::string data(acl_packet.begin(), acl_packet.end());
     acl_data.set_payload(data);
-    acl_stream_.OnIncomingEvent(acl_data);
+    pending_acl_data_.OnIncomingEvent(acl_data);
   }
 
   void OnConnectSuccess(std::unique_ptr<::bluetooth::hci::AclConnection> connection) override {
-    std::unique_lock<std::mutex> lock(mutex_);
+    std::unique_lock<std::mutex> lock(acl_connections_mutex_);
     auto addr = connection->GetAddress();
     std::shared_ptr<::bluetooth::hci::AclConnection> shared_connection = std::move(connection);
     acl_connections_.emplace(addr.ToString(), shared_connection);
+    if (fetching_acl_data_) {
+      auto remote_address = shared_connection->GetAddress().ToString();
+      shared_connection->GetAclQueueEnd()->RegisterDequeue(
+          facade_handler_,
+          common::Bind(&AclManagerFacadeService::on_incoming_acl, common::Unretained(this), remote_address));
+    }
     shared_connection->RegisterDisconnectCallback(
         common::BindOnce(&AclManagerFacadeService::on_disconnect, common::Unretained(this), addr.ToString()),
         facade_handler_);
     shared_connection->RegisterCallbacks(this, facade_handler_);
-    connection_complete_stream_.OnIncomingEvent(shared_connection);
+    {
+      ConnectionEvent response;
+      response.mutable_remote()->set_address(shared_connection->GetAddress().ToString());
+      response.set_connection_handle(shared_connection->GetHandle());
+      pending_connection_complete_.OnIncomingEvent(response);
+    }
   }
 
   void OnMasterLinkKeyComplete(uint16_t connection_handle, KeyFlag key_flag) override {
@@ -269,25 +302,32 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
     LOG_DEBUG("OnReadDefaultLinkPolicySettingsComplete default_link_policy_settings:%d", default_link_policy_settings);
   }
 
-  void on_disconnect(std::string address, ErrorCode code) {
+  void on_disconnect(const std::string& address, ErrorCode code) {
+    std::unique_lock<std::mutex> lock(acl_connections_mutex_);
+    auto connection = acl_connections_.find(address);
+    if (connection != acl_connections_.end()) {
+      if (fetching_acl_data_) {
+        connection->second->GetAclQueueEnd()->UnregisterDequeue();
+      }
+      connection->second->Finish();
+    }
     acl_connections_.erase(address);
     DisconnectionEvent event;
     event.mutable_remote()->set_address(address);
     event.set_reason(static_cast<uint32_t>(code));
-    disconnection_stream_.OnIncomingEvent(event);
+    pending_disconnection_.OnIncomingEvent(event);
   }
 
-  ::grpc::Status FetchConnectionComplete(::grpc::ServerContext* context, const EventStreamRequest* request,
+  ::grpc::Status FetchConnectionComplete(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
                                          ::grpc::ServerWriter<ConnectionEvent>* writer) override {
-    return connection_complete_stream_.HandleRequest(context, request, writer);
+    return pending_connection_complete_.RunLoop(context, writer);
   };
 
   void OnConnectFail(Address address, ::bluetooth::hci::ErrorCode reason) override {
-    std::unique_lock<std::mutex> lock(mutex_);
     ConnectionFailedEvent event;
     event.mutable_remote()->set_address(address.ToString());
     event.set_reason(static_cast<uint32_t>(reason));
-    connection_failed_stream_.OnIncomingEvent(event);
+    pending_connection_failed_.OnIncomingEvent(event);
   }
 
   void OnConnectionPacketTypeChanged(uint16_t packet_type) override {
@@ -373,104 +413,28 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
     LOG_DEBUG("OnReadClockComplete clock:%d, accuracy:%d", clock, accuracy);
   }
 
-  ::grpc::Status FetchConnectionFailed(::grpc::ServerContext* context, const EventStreamRequest* request,
+  ::grpc::Status FetchConnectionFailed(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
                                        ::grpc::ServerWriter<ConnectionFailedEvent>* writer) override {
-    return connection_failed_stream_.HandleRequest(context, request, writer);
+    return pending_connection_failed_.RunLoop(context, writer);
   };
 
-  ::grpc::Status FetchDisconnection(::grpc::ServerContext* context,
-                                    const ::bluetooth::facade::EventStreamRequest* request,
+  ::grpc::Status FetchDisconnection(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
                                     ::grpc::ServerWriter<DisconnectionEvent>* writer) override {
-    return disconnection_stream_.HandleRequest(context, request, writer);
+    return pending_disconnection_.RunLoop(context, writer);
   }
 
  private:
   AclManager* acl_manager_;
   Controller* controller_;
   HciLayer* hci_layer_;
-  mutable std::mutex mutex_;
   ::bluetooth::os::Handler* facade_handler_;
-
-  class ConnectionCompleteStreamCallback
-      : public ::bluetooth::grpc::GrpcEventStreamCallback<ConnectionEvent, std::shared_ptr<AclConnection>> {
-   public:
-    void OnWriteResponse(ConnectionEvent* response, const std::shared_ptr<AclConnection>& connection) override {
-      response->mutable_remote()->set_address(connection->GetAddress().ToString());
-      response->set_connection_handle(connection->GetHandle());
-    }
-  } connection_complete_stream_callback_;
-  ::bluetooth::grpc::GrpcEventStream<ConnectionEvent, std::shared_ptr<AclConnection>> connection_complete_stream_{
-      &connection_complete_stream_callback_};
-
-  class ConnectionFailedStreamCallback
-      : public ::bluetooth::grpc::GrpcEventStreamCallback<ConnectionFailedEvent, ConnectionFailedEvent> {
-   public:
-    void OnWriteResponse(ConnectionFailedEvent* response, const ConnectionFailedEvent& event) override {
-      response->CopyFrom(event);
-    }
-  } connection_failed_stream_callback_;
-  ::bluetooth::grpc::GrpcEventStream<ConnectionFailedEvent, ConnectionFailedEvent> connection_failed_stream_{
-      &connection_failed_stream_callback_};
-
-  class DisconnectionStreamCallback
-      : public ::bluetooth::grpc::GrpcEventStreamCallback<DisconnectionEvent, DisconnectionEvent> {
-   public:
-    void OnWriteResponse(DisconnectionEvent* response, const DisconnectionEvent& event) override {
-      response->CopyFrom(event);
-    }
-  } disconnection_stream_callback_;
-  ::bluetooth::grpc::GrpcEventStream<DisconnectionEvent, DisconnectionEvent> disconnection_stream_{
-      &disconnection_stream_callback_};
-
-  class AclStreamCallback : public ::bluetooth::grpc::GrpcEventStreamCallback<AclData, AclData> {
-   public:
-    AclStreamCallback(AclManagerFacadeService* service) : service_(service) {}
-
-    ~AclStreamCallback() {
-      if (subscribed_) {
-        for (const auto& connection : service_->acl_connections_) {
-          connection.second->GetAclQueueEnd()->UnregisterDequeue();
-        }
-        subscribed_ = false;
-      }
-    }
-
-    void OnSubscribe() override {
-      if (subscribed_) {
-        LOG_WARN("Already subscribed");
-        return;
-      }
-      for (const auto& connection : service_->acl_connections_) {
-        auto remote_address = connection.second->GetAddress().ToString();
-        connection.second->GetAclQueueEnd()->RegisterDequeue(
-            service_->facade_handler_,
-            common::Bind(&AclManagerFacadeService::on_incoming_acl, common::Unretained(service_), remote_address));
-      }
-      subscribed_ = true;
-    }
-
-    void OnUnsubscribe() override {
-      if (!subscribed_) {
-        LOG_WARN("Not subscribed");
-        return;
-      }
-      for (const auto& connection : service_->acl_connections_) {
-        connection.second->GetAclQueueEnd()->UnregisterDequeue();
-      }
-      subscribed_ = false;
-    }
-
-    void OnWriteResponse(AclData* response, const AclData& event) override {
-      response->CopyFrom(event);
-    }
-
-   private:
-    AclManagerFacadeService* service_;
-    bool subscribed_ = false;
-  } acl_stream_callback_{this};
-  ::bluetooth::grpc::GrpcEventStream<AclData, AclData> acl_stream_{&acl_stream_callback_};
-
+  mutable std::mutex acl_connections_mutex_;
   std::map<std::string, std::shared_ptr<AclConnection>> acl_connections_;
+  bool fetching_acl_data_ = false;
+  ::bluetooth::grpc::GrpcEventQueue<AclData> pending_acl_data_{"FetchAclData"};
+  ::bluetooth::grpc::GrpcEventQueue<ConnectionEvent> pending_connection_complete_{"FetchConnectionComplete"};
+  ::bluetooth::grpc::GrpcEventQueue<ConnectionFailedEvent> pending_connection_failed_{"FetchConnectionFailed"};
+  ::bluetooth::grpc::GrpcEventQueue<DisconnectionEvent> pending_disconnection_{"FetchDisconnection"};
 };
 
 void AclManagerFacadeModule::ListDependencies(ModuleList* list) {
@@ -741,30 +705,22 @@ class ClassicSecurityManagerFacadeService : public ClassicSecurityManagerFacade:
     return ::grpc::Status::OK;
   };
 
-  ::grpc::Status FetchCommandCompleteEvent(::grpc::ServerContext* context, const EventStreamRequest* request,
+  ::grpc::Status FetchCommandCompleteEvent(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
                                            ::grpc::ServerWriter<CommandCompleteEvent>* writer) override {
-    return command_complete_stream_.HandleRequest(context, request, writer);
+    return pending_connection_complete_.RunLoop(context, writer);
   };
 
   void OnCommandComplete(CommandCompleteView status) override {
-    std::unique_lock<std::mutex> lock(mutex_);
-    command_complete_stream_.OnIncomingEvent(status);
+    CommandCompleteEvent response;
+    response.set_command_opcode(static_cast<uint32_t>(status.GetCommandOpCode()));
+    pending_connection_complete_.OnIncomingEvent(response);
   }
 
  private:
   ClassicSecurityManager* classic_security_manager_;
   mutable std::mutex mutex_;
   ::bluetooth::os::Handler* facade_handler_;
-
-  class CommandCompleteStreamCallback
-      : public ::bluetooth::grpc::GrpcEventStreamCallback<CommandCompleteEvent, CommandCompleteView> {
-   public:
-    void OnWriteResponse(CommandCompleteEvent* response, CommandCompleteView const& status) override {
-      response->set_command_opcode((uint32_t)status.GetCommandOpCode());
-    }
-  } command_complete_stream_callback_;
-  ::bluetooth::grpc::GrpcEventStream<CommandCompleteEvent, CommandCompleteView> command_complete_stream_{
-      &command_complete_stream_callback_};
+  ::bluetooth::grpc::GrpcEventQueue<CommandCompleteEvent> pending_connection_complete_{"FetchCommandCompleteEvent"};
 };
 
 void ClassicSecurityManagerFacadeModule::ListDependencies(ModuleList* list) {
