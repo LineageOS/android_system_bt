@@ -57,11 +57,11 @@ class TestController : public Controller {
     supported_opcodes_.insert(op_code);
   }
 
-  uint16_t GetControllerLeNumberOfSupportedAdverisingSets() const override {
+  uint8_t GetControllerLeNumberOfSupportedAdverisingSets() const override {
     return num_advertisers;
   }
 
-  uint16_t num_advertisers{0};
+  uint8_t num_advertisers{0};
 
  protected:
   void Start() override {}
