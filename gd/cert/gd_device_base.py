@@ -32,6 +32,7 @@ ANDROID_BUILD_TOP = os.environ.get('ANDROID_BUILD_TOP')
 ANDROID_HOST_OUT = os.environ.get('ANDROID_HOST_OUT')
 WAIT_CHANNEL_READY_TIMEOUT = 10
 
+
 def replace_vars(string, config):
     serial_number = config.get("serial_number")
     if serial_number is None:
@@ -46,7 +47,9 @@ def replace_vars(string, config):
                  .replace("$(signal_port)", config.get("signal_port")) \
                  .replace("$(serial_number)", serial_number)
 
+
 class GdDeviceBase:
+
     def __init__(self, grpc_port, grpc_root_server_port, signal_port, cmd,
                  label, type_identifier):
         self.label = label if label is not None else grpc_port
@@ -55,7 +58,7 @@ class GdDeviceBase:
         self.log = tracelogger.TraceLogger(
             GdDeviceBaseLoggerAdapter(logging.getLogger(), {
                 'device': label,
-                'type_identifier' : type_identifier
+                'type_identifier': type_identifier
             }))
 
         backing_process_logpath = os.path.join(
@@ -64,12 +67,13 @@ class GdDeviceBase:
 
         cmd_str = json.dumps(cmd)
         if "--btsnoop=" not in cmd_str:
-            btsnoop_path = os.path.join(log_path_base, '%s_btsnoop_hci.log' % label)
+            btsnoop_path = os.path.join(log_path_base,
+                                        '%s_btsnoop_hci.log' % label)
             cmd.append("--btsnoop=" + btsnoop_path)
 
         tester_signal_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-        tester_signal_socket.setsockopt(
-            socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
+        tester_signal_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
+                                        1)
         socket_address = ('localhost', int(signal_port))
         tester_signal_socket.bind(socket_address)
         tester_signal_socket.listen(1)
@@ -83,7 +87,8 @@ class GdDeviceBase:
         tester_signal_socket.accept()
         tester_signal_socket.close()
 
-        self.grpc_root_server_channel = grpc.insecure_channel("localhost:" + grpc_root_server_port)
+        self.grpc_root_server_channel = grpc.insecure_channel(
+            "localhost:" + grpc_root_server_port)
         self.grpc_port = int(grpc_port)
         self.grpc_channel = grpc.insecure_channel("localhost:" + grpc_port)
 
@@ -101,16 +106,18 @@ class GdDeviceBase:
     def wait_channel_ready(self):
         future = grpc.channel_ready_future(self.grpc_channel)
         try:
-          future.result(timeout = WAIT_CHANNEL_READY_TIMEOUT)
+            future.result(timeout=WAIT_CHANNEL_READY_TIMEOUT)
         except grpc.FutureTimeoutError:
-          logging.error("wait channel ready timeout")
-
+            logging.error("wait channel ready timeout")
 
 
 class GdDeviceBaseLoggerAdapter(logging.LoggerAdapter):
+
     def process(self, msg, kwargs):
-        msg = "[%s|%s] %s" % (self.extra["type_identifier"], self.extra["device"], msg)
+        msg = "[%s|%s] %s" % (self.extra["type_identifier"],
+                              self.extra["device"], msg)
         return (msg, kwargs)
+
 
 class GdDeviceConfigError(Exception):
     """Raised when GdDevice configs are malformatted."""
@@ -118,4 +125,3 @@ class GdDeviceConfigError(Exception):
 
 class GdDeviceError(error.ActsError):
     """Raised when there is an error in GdDevice."""
-
