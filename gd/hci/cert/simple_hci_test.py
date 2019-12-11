@@ -16,12 +16,14 @@
 
 from __future__ import print_function
 
+import logging
 import os
 import sys
 sys.path.append(os.environ['ANDROID_BUILD_TOP'] + '/system/bt/gd')
 
 from cert.gd_base_test import GdBaseTestClass
-from cert.event_stream import EventStream
+from cert.event_callback_stream import EventCallbackStream
+from cert.event_asserts import EventAsserts
 from cert import rootservice_pb2 as cert_rootservice_pb2
 from facade import common_pb2
 from facade import rootservice_pb2 as facade_rootservice_pb2
@@ -62,11 +64,6 @@ class SimpleHciTest(GdBaseTestClass):
         cert_address = self.cert_device.controller_read_only_property.ReadLocalAddress(empty_pb2.Empty()).address
         self.cert_device.address = cert_address
 
-        self.dut_connection_complete_stream = self.device_under_test.hci.connection_complete_stream
-        self.dut_disconnection_stream = self.device_under_test.hci.disconnection_stream
-        self.dut_connection_failed_stream = self.device_under_test.hci.connection_failed_stream
-        self.dut_command_complete_stream = self.device_under_test.hci_classic_security.command_complete_stream
-
         self.dut_address = common_pb2.BluetoothAddress(
             address=self.device_under_test.address)
         self.cert_address = common_pb2.BluetoothAddress(
@@ -81,31 +78,32 @@ class SimpleHciTest(GdBaseTestClass):
         )
 
     def test_none_event(self):
-        self.dut_connection_complete_stream.clear_event_buffer()
-        self.dut_connection_complete_stream.subscribe()
-        self.dut_connection_complete_stream.assert_none()
-        self.dut_connection_complete_stream.unsubscribe()
+        with EventCallbackStream(self.device_under_test.hci.FetchConnectionComplete(empty_pb2.Empty())) as connection_complete_stream:
+            connection_complete_asserts = EventAsserts(connection_complete_stream)
+            connection_complete_asserts.assert_none()
 
     def _connect_from_dut(self):
+        logging.debug("_connect_from_dut")
         policy = hci_cert_pb2.IncomingConnectionPolicy(
             remote=self.dut_address,
             accepted=True
         )
         self.cert_device.hci.SetIncomingConnectionPolicy(policy)
 
-        self.dut_connection_complete_stream.subscribe()
-        self.device_under_test.hci.Connect(self.cert_address)
-        self.dut_connection_complete_stream.assert_event_occurs(
-            lambda event: self._get_handle(event)
-        )
-        self.dut_connection_complete_stream.unsubscribe()
+        with EventCallbackStream(self.device_under_test.hci.FetchConnectionComplete(empty_pb2.Empty())) as dut_connection_complete_stream:
+            dut_connection_complete_asserts = EventAsserts(dut_connection_complete_stream)
+            self.device_under_test.hci.Connect(self.cert_address)
+            dut_connection_complete_asserts.assert_event_occurs(
+                lambda event: self._get_handle(event)
+            )
 
     def _disconnect_from_dut(self):
-        self.dut_disconnection_stream.subscribe()
-        self.device_under_test.hci.Disconnect(self.cert_address)
-        self.dut_disconnection_stream.assert_event_occurs(
-            lambda event: event.remote.address == self.cert_device.address
-        )
+        logging.debug("_disconnect_from_dut")
+        with EventCallbackStream(self.device_under_test.hci.FetchDisconnection(empty_pb2.Empty())) as dut_disconnection_stream:
+            dut_disconnection_asserts = EventAsserts(dut_disconnection_stream)
+            self.device_under_test.hci.Disconnect(self.cert_address)
+            dut_disconnection_asserts.assert_event_occurs(
+                lambda event: event.remote.address == self.cert_device.address)
 
     def _get_handle(self, event):
         if event.remote.address == self.cert_device.address:
@@ -116,225 +114,225 @@ class SimpleHciTest(GdBaseTestClass):
     def test_connect_disconnect_send_acl(self):
         self._connect_from_dut()
 
-        cert_acl_stream = self.cert_device.hci.acl_stream
-        cert_acl_stream.subscribe()
-        acl_data = hci_facade_pb2.AclData(remote=self.cert_address, payload=b'123')
-        self.device_under_test.hci.SendAclData(acl_data)
-        self.device_under_test.hci.SendAclData(acl_data)
-        self.device_under_test.hci.SendAclData(acl_data)
-        cert_acl_stream.assert_event_occurs(
-            lambda packet : b'123' in packet.payload
-            and packet.remote == self.dut_address
-        )
-        cert_acl_stream.unsubscribe()
+        with EventCallbackStream(self.cert_device.hci.FetchAclData(empty_pb2.Empty())) as cert_acl_stream:
+            cert_acl_asserts = EventAsserts(cert_acl_stream)
+            acl_data = hci_facade_pb2.AclData(remote=self.cert_address, payload=b'123')
+            self.device_under_test.hci.SendAclData(acl_data)
+            self.device_under_test.hci.SendAclData(acl_data)
+            self.device_under_test.hci.SendAclData(acl_data)
+            cert_acl_asserts.assert_event_occurs(
+                lambda packet : b'123' in packet.payload
+                and packet.remote == self.dut_address
+            )
 
         self._disconnect_from_dut()
 
     def test_connect_disconnect_receive_acl(self):
         self._connect_from_dut()
 
-        self.device_under_test.hci.acl_stream.subscribe()
-        acl_data = hci_cert_pb2.AclData(remote=self.dut_address, payload=b'123')
-        self.cert_device.hci.SendAclData(acl_data)
-        self.cert_device.hci.SendAclData(acl_data)
-        self.cert_device.hci.SendAclData(acl_data)
-        self.device_under_test.hci.acl_stream.assert_event_occurs(
-            lambda packet : b'123' in packet.payload
-            and packet.remote == self.cert_address
-        )
-        self.device_under_test.hci.acl_stream.unsubscribe()
+        with EventCallbackStream(self.device_under_test.hci.FetchAclData(empty_pb2.Empty())) as dut_acl_stream:
+            dut_acl_asserts = EventAsserts(dut_acl_stream)
+            acl_data = hci_cert_pb2.AclData(remote=self.dut_address, payload=b'123')
+            self.cert_device.hci.SendAclData(acl_data)
+            self.cert_device.hci.SendAclData(acl_data)
+            self.cert_device.hci.SendAclData(acl_data)
+            dut_acl_asserts.assert_event_occurs(
+                lambda packet : b'123' in packet.payload
+                and packet.remote == self.cert_address
+            )
 
         self._disconnect_from_dut()
 
     def test_reject_connection_request(self):
-        self.dut_connection_failed_stream.subscribe()
-        self.device_under_test.hci.Connect(self.cert_address)
-        self.dut_connection_failed_stream.assert_event_occurs(
-            lambda event : event.remote == self.cert_address
-        )
-        self.dut_connection_failed_stream.unsubscribe()
+        with EventCallbackStream(self.device_under_test.hci.FetchConnectionFailed(empty_pb2.Empty())) as dut_connection_failed_stream:
+            dut_connection_failed_asserts = EventAsserts(dut_connection_failed_stream)
+            self.device_under_test.hci.Connect(self.cert_address)
+            dut_connection_failed_asserts.assert_event_occurs(
+                lambda event : event.remote == self.cert_address
+            )
 
     def test_send_classic_security_command(self):
         self._connect_from_dut()
-        self.dut_command_complete_stream.subscribe()
 
-        self.device_under_test.hci.AuthenticationRequested(self.cert_address)
+        with EventCallbackStream(self.device_under_test.hci_classic_security.FetchCommandCompleteEvent(empty_pb2.Empty())) as dut_command_complete_stream:
+            dut_command_complete_asserts = EventAsserts(dut_command_complete_stream)
 
-        # Link request
-        self.device_under_test.hci_classic_security.LinkKeyRequestNegativeReply(self.cert_address)
-        self.dut_command_complete_stream.assert_event_occurs(
-            lambda event: event.command_opcode == 0x040c
-        )
+            self.device_under_test.hci.AuthenticationRequested(self.cert_address)
 
-        # Pin code request
-        message = hci_facade_pb2.PinCodeRequestReplyMessage(
-            remote=self.cert_address,
-            len=4,
-            pin_code=bytes("1234", encoding = "ASCII")
-        )
-        self.device_under_test.hci_classic_security.PinCodeRequestReply(message)
-        self.dut_command_complete_stream.assert_event_occurs(
-            lambda event: event.command_opcode == 0x040d
-        )
-        self.device_under_test.hci_classic_security.PinCodeRequestNegativeReply(self.cert_address)
-        self.dut_command_complete_stream.assert_event_occurs(
-            lambda event: event.command_opcode == 0x040e
-        )
+            # Link request
+            self.device_under_test.hci_classic_security.LinkKeyRequestNegativeReply(self.cert_address)
+            dut_command_complete_asserts.assert_event_occurs(
+                lambda event: event.command_opcode == 0x040c
+            )
 
-        # IO capability request
-        message = hci_facade_pb2.IoCapabilityRequestReplyMessage(
-            remote=self.cert_address,
-            io_capability=0,
-            oob_present=0,
-            authentication_requirements=0
-        )
-        self.device_under_test.hci_classic_security.IoCapabilityRequestReply(message)
-        self.dut_command_complete_stream.assert_event_occurs(
-            lambda event: event.command_opcode == 0x042b
-        )
+            # Pin code request
+            message = hci_facade_pb2.PinCodeRequestReplyMessage(
+                remote=self.cert_address,
+                len=4,
+                pin_code=bytes("1234", encoding = "ASCII")
+            )
+            self.device_under_test.hci_classic_security.PinCodeRequestReply(message)
+            dut_command_complete_asserts.assert_event_occurs(
+                lambda event: event.command_opcode == 0x040d
+            )
+            self.device_under_test.hci_classic_security.PinCodeRequestNegativeReply(self.cert_address)
+            dut_command_complete_asserts.assert_event_occurs(
+                lambda event: event.command_opcode == 0x040e
+            )
 
-        # message = hci_facade_pb2.IoCapabilityRequestNegativeReplyMessage(
-        #     remote=self.cert_address,
-        #     reason=1
-        # )
-        # # link_layer_controller.cc(447)] Check failed: security_manager_.GetAuthenticationAddress() == peer
-        # self.device_under_test.hci_classic_security.IoCapabilityRequestNegativeReply(message)
+            # IO capability request
+            message = hci_facade_pb2.IoCapabilityRequestReplyMessage(
+                remote=self.cert_address,
+                io_capability=0,
+                oob_present=0,
+                authentication_requirements=0
+            )
+            self.device_under_test.hci_classic_security.IoCapabilityRequestReply(message)
+            dut_command_complete_asserts.assert_event_occurs(
+                lambda event: event.command_opcode == 0x042b
+            )
 
-        # User confirm request
-        self.device_under_test.hci_classic_security.UserConfirmationRequestReply(self.cert_address)
-        self.dut_command_complete_stream.assert_event_occurs(
-            lambda event: event.command_opcode == 0x042c
-        )
+            # message = hci_facade_pb2.IoCapabilityRequestNegativeReplyMessage(
+            #     remote=self.cert_address,
+            #     reason=1
+            # )
+            # # link_layer_controller.cc(447)] Check failed: security_manager_.GetAuthenticationAddress() == peer
+            # self.device_under_test.hci_classic_security.IoCapabilityRequestNegativeReply(message)
 
-        message = hci_facade_pb2.LinkKeyRequestReplyMessage(
-            remote=self.cert_address,
-            link_key=bytes("4C68384139F574D836BCF34E9DFB01BF", encoding = "ASCII")
-        )
-        self.device_under_test.hci_classic_security.LinkKeyRequestReply(message)
-        self.dut_command_complete_stream.assert_event_occurs(
-            lambda event: event.command_opcode == 0x040b
-        )
+            # User confirm request
+            self.device_under_test.hci_classic_security.UserConfirmationRequestReply(self.cert_address)
+            dut_command_complete_asserts.assert_event_occurs(
+                lambda event: event.command_opcode == 0x042c
+            )
 
-        self.device_under_test.hci_classic_security.UserConfirmationRequestNegativeReply(self.cert_address)
-        self.dut_command_complete_stream.assert_event_occurs(
-            lambda event: event.command_opcode == 0x042d
-        )
+            message = hci_facade_pb2.LinkKeyRequestReplyMessage(
+                remote=self.cert_address,
+                link_key=bytes("4C68384139F574D836BCF34E9DFB01BF", encoding = "ASCII")
+            )
+            self.device_under_test.hci_classic_security.LinkKeyRequestReply(message)
+            dut_command_complete_asserts.assert_event_occurs(
+                lambda event: event.command_opcode == 0x040b
+            )
 
-        # User passkey request
-        message = hci_facade_pb2.UserPasskeyRequestReplyMessage(
-            remote=self.cert_address,
-            passkey=999999,
-        )
-        self.device_under_test.hci_classic_security.UserPasskeyRequestReply(message)
-        self.dut_command_complete_stream.assert_event_occurs(
-            lambda event: event.command_opcode == 0x042e
-        )
+            self.device_under_test.hci_classic_security.UserConfirmationRequestNegativeReply(self.cert_address)
+            dut_command_complete_asserts.assert_event_occurs(
+                lambda event: event.command_opcode == 0x042d
+            )
 
-        self.device_under_test.hci_classic_security.UserPasskeyRequestNegativeReply(self.cert_address)
-        self.dut_command_complete_stream.assert_event_occurs(
-            lambda event: event.command_opcode == 0x042f
-        )
+            # User passkey request
+            message = hci_facade_pb2.UserPasskeyRequestReplyMessage(
+                remote=self.cert_address,
+                passkey=999999,
+            )
+            self.device_under_test.hci_classic_security.UserPasskeyRequestReply(message)
+            dut_command_complete_asserts.assert_event_occurs(
+                lambda event: event.command_opcode == 0x042e
+            )
 
-        # Remote OOB data request
-        message = hci_facade_pb2.RemoteOobDataRequestReplyMessage(
-            remote=self.cert_address,
-            c=b'\x19\x20\x21\x22\x23\x24\x25\x26\x19\x20\x21\x22\x23\x24\x25\x26',
-            r=b'\x30\x31\x32\x33\x34\x35\x36\x37\x30\x31\x32\x33\x34\x35\x36\x37',
-        )
-        self.device_under_test.hci_classic_security.RemoteOobDataRequestReply(message)
-        self.dut_command_complete_stream.assert_event_occurs(
-            lambda event: event.command_opcode == 0x0430
-        )
-        self.device_under_test.hci_classic_security.RemoteOobDataRequestNegativeReply(self.cert_address)
-        self.dut_command_complete_stream.assert_event_occurs(
-            lambda event: event.command_opcode == 0x0433
-        )
+            self.device_under_test.hci_classic_security.UserPasskeyRequestNegativeReply(self.cert_address)
+            dut_command_complete_asserts.assert_event_occurs(
+                lambda event: event.command_opcode == 0x042f
+            )
 
-        # Read/Write/Delete link key
-        message = hci_facade_pb2.ReadStoredLinkKeyMessage(
-            remote=self.cert_address,
-            read_all_flag = 0,
-        )
-        self.device_under_test.hci_classic_security.ReadStoredLinkKey(message)
-        self.dut_command_complete_stream.assert_event_occurs(
-            lambda event: event.command_opcode == 0x0c0d
-        )
+            # Remote OOB data request
+            message = hci_facade_pb2.RemoteOobDataRequestReplyMessage(
+                remote=self.cert_address,
+                c=b'\x19\x20\x21\x22\x23\x24\x25\x26\x19\x20\x21\x22\x23\x24\x25\x26',
+                r=b'\x30\x31\x32\x33\x34\x35\x36\x37\x30\x31\x32\x33\x34\x35\x36\x37',
+            )
+            self.device_under_test.hci_classic_security.RemoteOobDataRequestReply(message)
+            dut_command_complete_asserts.assert_event_occurs(
+                lambda event: event.command_opcode == 0x0430
+            )
+            self.device_under_test.hci_classic_security.RemoteOobDataRequestNegativeReply(self.cert_address)
+            dut_command_complete_asserts.assert_event_occurs(
+                lambda event: event.command_opcode == 0x0433
+            )
 
-        message = hci_facade_pb2.WriteStoredLinkKeyMessage(
-            num_keys_to_write=1,
-            remote=self.cert_address,
-            link_keys=bytes("4C68384139F574D836BCF34E9DFB01BF", encoding = "ASCII"),
-        )
-        self.device_under_test.hci_classic_security.WriteStoredLinkKey(message)
+            # Read/Write/Delete link key
+            message = hci_facade_pb2.ReadStoredLinkKeyMessage(
+                remote=self.cert_address,
+                read_all_flag = 0,
+            )
+            self.device_under_test.hci_classic_security.ReadStoredLinkKey(message)
+            dut_command_complete_asserts.assert_event_occurs(
+                lambda event: event.command_opcode == 0x0c0d
+            )
 
-        self.dut_command_complete_stream.assert_event_occurs(
-            lambda event: event.command_opcode == 0x0c11
-        )
+            message = hci_facade_pb2.WriteStoredLinkKeyMessage(
+                num_keys_to_write=1,
+                remote=self.cert_address,
+                link_keys=bytes("4C68384139F574D836BCF34E9DFB01BF", encoding = "ASCII"),
+            )
+            self.device_under_test.hci_classic_security.WriteStoredLinkKey(message)
 
-        message = hci_facade_pb2.DeleteStoredLinkKeyMessage(
-            remote=self.cert_address,
-            delete_all_flag = 0,
-        )
-        self.device_under_test.hci_classic_security.DeleteStoredLinkKey(message)
-        self.dut_command_complete_stream.assert_event_occurs(
-            lambda event: event.command_opcode == 0x0c12
-        )
+            dut_command_complete_asserts.assert_event_occurs(
+                lambda event: event.command_opcode == 0x0c11
+            )
 
-        # Refresh Encryption Key
-        message = hci_facade_pb2.RefreshEncryptionKeyMessage(
-            connection_handle=self.connection_handle,
-        )
-        self.device_under_test.hci_classic_security.RefreshEncryptionKey(message)
+            message = hci_facade_pb2.DeleteStoredLinkKeyMessage(
+                remote=self.cert_address,
+                delete_all_flag = 0,
+            )
+            self.device_under_test.hci_classic_security.DeleteStoredLinkKey(message)
+            dut_command_complete_asserts.assert_event_occurs(
+                lambda event: event.command_opcode == 0x0c12
+            )
 
-        # Read/Write Simple Pairing Mode
-        self.device_under_test.hci_classic_security.ReadSimplePairingMode(empty_pb2.Empty())
-        self.dut_command_complete_stream.assert_event_occurs(
-            lambda event: event.command_opcode == 0x0c55
-        )
+            # Refresh Encryption Key
+            message = hci_facade_pb2.RefreshEncryptionKeyMessage(
+                connection_handle=self.connection_handle,
+            )
+            self.device_under_test.hci_classic_security.RefreshEncryptionKey(message)
 
-        message = hci_facade_pb2.WriteSimplePairingModeMessage(
-            simple_pairing_mode=1,
-        )
-        self.device_under_test.hci_classic_security.WriteSimplePairingMode(message)
-        self.dut_command_complete_stream.assert_event_occurs(
-            lambda event: event.command_opcode == 0x0c56
-        )
+            # Read/Write Simple Pairing Mode
+            self.device_under_test.hci_classic_security.ReadSimplePairingMode(empty_pb2.Empty())
+            dut_command_complete_asserts.assert_event_occurs(
+                lambda event: event.command_opcode == 0x0c55
+            )
 
-        # Read local oob data
-        self.device_under_test.hci_classic_security.ReadLocalOobData(empty_pb2.Empty())
-        self.dut_command_complete_stream.assert_event_occurs(
-            lambda event: event.command_opcode == 0x0c57
-        )
+            message = hci_facade_pb2.WriteSimplePairingModeMessage(
+                simple_pairing_mode=1,
+            )
+            self.device_under_test.hci_classic_security.WriteSimplePairingMode(message)
+            dut_command_complete_asserts.assert_event_occurs(
+                lambda event: event.command_opcode == 0x0c56
+            )
 
-        # Send keypress notification
-        message = hci_facade_pb2.SendKeypressNotificationMessage(
-            remote=self.cert_address,
-            notification_type=1,
-        )
-        self.device_under_test.hci_classic_security.SendKeypressNotification(message)
-        self.dut_command_complete_stream.assert_event_occurs(
-            lambda event: event.command_opcode == 0x0c60
-        )
+            # Read local oob data
+            self.device_under_test.hci_classic_security.ReadLocalOobData(empty_pb2.Empty())
+            dut_command_complete_asserts.assert_event_occurs(
+                lambda event: event.command_opcode == 0x0c57
+            )
 
-        # Read local oob extended data
-        self.device_under_test.hci_classic_security.ReadLocalOobExtendedData(empty_pb2.Empty())
-        self.dut_command_complete_stream.assert_event_occurs(
-            lambda event: event.command_opcode == 0x0c7d
-        )
+            # Send keypress notification
+            message = hci_facade_pb2.SendKeypressNotificationMessage(
+                remote=self.cert_address,
+                notification_type=1,
+            )
+            self.device_under_test.hci_classic_security.SendKeypressNotification(message)
+            dut_command_complete_asserts.assert_event_occurs(
+                lambda event: event.command_opcode == 0x0c60
+            )
 
-        # Read Encryption key size
-        message = hci_facade_pb2.ReadEncryptionKeySizeMessage(
-            connection_handle=self.connection_handle,
-        )
-        self.device_under_test.hci_classic_security.ReadEncryptionKeySize(message)
-        self.dut_command_complete_stream.assert_event_occurs(
-            lambda event: event.command_opcode == 0x1408
-        )
+            # Read local oob extended data
+            self.device_under_test.hci_classic_security.ReadLocalOobExtendedData(empty_pb2.Empty())
+            dut_command_complete_asserts.assert_event_occurs(
+                lambda event: event.command_opcode == 0x0c7d
+            )
 
-        self.dut_command_complete_stream.unsubscribe()
+            # Read Encryption key size
+            message = hci_facade_pb2.ReadEncryptionKeySizeMessage(
+                connection_handle=self.connection_handle,
+            )
+            self.device_under_test.hci_classic_security.ReadEncryptionKeySize(message)
+            dut_command_complete_asserts.assert_event_occurs(
+                lambda event: event.command_opcode == 0x1408
+            )
+
         self._disconnect_from_dut()
 
-    def test_interal_hci_command(self):
+    def test_internal_hci_command(self):
         self._connect_from_dut()
         self.device_under_test.hci.TestInternalHciCommands(empty_pb2.Empty())
         self.device_under_test.hci.TestInternalHciLeCommands(empty_pb2.Empty())

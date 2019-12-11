@@ -21,6 +21,7 @@
 
 #include "hci/address_with_type.h"
 #include "os/log.h"
+#include "security/initial_informations.h"
 #include "security/security_manager.h"
 
 namespace bluetooth {
@@ -48,7 +49,7 @@ std::shared_ptr<bluetooth::security::record::SecurityRecord> SecurityManagerImpl
 
 void SecurityManagerImpl::DispatchPairingHandler(std::shared_ptr<security::record::SecurityRecord> record,
                                                  bool locally_initiated) {
-  common::OnceCallback<void(hci::Address)> callback =
+  common::OnceCallback<void(hci::Address, PairingResultOrFailure)> callback =
       common::BindOnce(&SecurityManagerImpl::OnPairingHandlerComplete, common::Unretained(this));
   auto entry = pairing_handler_map_.find(record->GetDevice().GetAddress());
   if (entry != pairing_handler_map_.end()) {
@@ -136,10 +137,10 @@ void SecurityManagerImpl::NotifyDeviceBonded(hci::AddressWithType device) {
   }
 }
 
-void SecurityManagerImpl::NotifyDeviceBondFailed(hci::AddressWithType device) {
+void SecurityManagerImpl::NotifyDeviceBondFailed(hci::AddressWithType device, PairingResultOrFailure status) {
   for (auto& iter : listeners_) {
-    iter.second->Post(
-        common::Bind(&ISecurityManagerListener::OnDeviceBondFailed, common::Unretained(iter.first), device));
+    iter.second->Post(common::Bind(&ISecurityManagerListener::OnDeviceBondFailed, common::Unretained(iter.first),
+                                   device /*, status */));
   }
 }
 
@@ -219,14 +220,42 @@ void SecurityManagerImpl::OnHciEventReceived(hci::EventPacketView packet) {
   }
 }
 
-void SecurityManagerImpl::OnPairingHandlerComplete(hci::Address address) {
+void SecurityManagerImpl::OnPairingHandlerComplete(hci::Address address, PairingResultOrFailure status) {
   auto entry = pairing_handler_map_.find(address);
   if (entry != pairing_handler_map_.end()) {
     pairing_handler_map_.erase(entry);
   }
-  NotifyDeviceBonded(hci::AddressWithType(address, hci::AddressType::PUBLIC_DEVICE_ADDRESS));
+  if (!std::holds_alternative<PairingFailure>(status)) {
+    NotifyDeviceBonded(hci::AddressWithType(address, hci::AddressType::PUBLIC_DEVICE_ADDRESS));
+  } else {
+    NotifyDeviceBondFailed(hci::AddressWithType(address, hci::AddressType::PUBLIC_DEVICE_ADDRESS), status);
+  }
 }
 
+void SecurityManagerImpl::OnL2capRegistrationCompleteLe(
+    l2cap::le::FixedChannelManager::RegistrationResult result,
+    std::unique_ptr<l2cap::le::FixedChannelService> le_smp_service) {
+  ASSERT_LOG(result == bluetooth::l2cap::le::FixedChannelManager::RegistrationResult::SUCCESS,
+             "Failed to register to LE SMP Fixed Channel Service");
+}
+void SecurityManagerImpl::OnConnectionOpenLe(std::unique_ptr<l2cap::le::FixedChannel> channel) {}
+void SecurityManagerImpl::OnConnectionClosedLe(hci::AddressWithType address, hci::ErrorCode error_code) {}
+void SecurityManagerImpl::OnConnectionFailureLe(bluetooth::l2cap::le::FixedChannelManager::ConnectionResult result) {}
+void SecurityManagerImpl::OnHciLeEvent(hci::LeMetaEventView event) {}
+SecurityManagerImpl::SecurityManagerImpl(os::Handler* security_handler, l2cap::le::L2capLeModule* l2cap_le_module,
+                                         l2cap::classic::L2capClassicModule* l2cap_classic_module,
+                                         channel::SecurityManagerChannel* security_manager_channel,
+                                         hci::HciLayer* hci_layer)
+    : security_handler_(security_handler), l2cap_le_module_(l2cap_le_module),
+      l2cap_classic_module_(l2cap_classic_module), l2cap_manager_le_(l2cap_le_module_->GetFixedChannelManager()),
+      hci_security_interface_le_(hci_layer->GetLeSecurityInterface(
+          common::Bind(&SecurityManagerImpl::OnHciLeEvent, common::Unretained(this)), security_handler)),
+      security_manager_channel_(security_manager_channel) {
+  l2cap_manager_le_->RegisterService(
+      bluetooth::l2cap::kSmpCid, {},
+      common::BindOnce(&SecurityManagerImpl::OnL2capRegistrationCompleteLe, common::Unretained(this)),
+      common::Bind(&SecurityManagerImpl::OnConnectionOpenLe, common::Unretained(this)), security_handler_);
+}
 }  // namespace internal
 }  // namespace security
 }  // namespace bluetooth

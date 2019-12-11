@@ -46,8 +46,8 @@ struct IController {
   virtual uint64_t GetControllerLeLocalSupportedFeatures() const = 0;
   virtual uint64_t GetControllerLeSupportedStates() const = 0;
   virtual uint64_t GetControllerLocalExtendedFeatures(uint8_t page_number) const = 0;
+  virtual uint8_t GetControllerLeNumberOfSupportedAdverisingSets() const = 0;
   virtual uint8_t GetControllerLocalExtendedFeaturesMaxPageNumber() const = 0;
-
   virtual ~IController() {}
 };
 

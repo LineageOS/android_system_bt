@@ -38,9 +38,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener {
  public:
   explicit SecurityManagerImpl(os::Handler* security_handler, l2cap::le::L2capLeModule* l2cap_le_module,
                                l2cap::classic::L2capClassicModule* l2cap_classic_module,
-                               channel::SecurityManagerChannel* security_manager_channel)
-      : security_handler_(security_handler), l2cap_le_module_(l2cap_le_module),
-        l2cap_classic_module_(l2cap_classic_module), security_manager_channel_(security_manager_channel) {}
+                               channel::SecurityManagerChannel* security_manager_channel, hci::HciLayer* hci_layer);
   virtual ~SecurityManagerImpl() = default;
 
   // All APIs must be invoked in SM layer handler
@@ -94,15 +92,25 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener {
    */
   void UnregisterCallbackListener(ISecurityManagerListener* listener);
 
-  // ISecurityManagerChannel
+  /**
+   * Handle the events sent back from HCI that we care about
+   *
+   * @param packet data received from HCI
+   */
   void OnHciEventReceived(hci::EventPacketView packet) override;
 
-  void OnPairingHandlerComplete(hci::Address address);
+  /**
+   * Pairing handler has finished or cancelled
+   *
+   * @param address address for pairing handler
+   * @param status status from SimplePairingComplete or other error code
+   */
+  void OnPairingHandlerComplete(hci::Address address, PairingResultOrFailure status);
 
  protected:
   std::vector<std::pair<ISecurityManagerListener*, os::Handler*>> listeners_;
   void NotifyDeviceBonded(hci::AddressWithType device);
-  void NotifyDeviceBondFailed(hci::AddressWithType device);
+  void NotifyDeviceBondFailed(hci::AddressWithType device, PairingResultOrFailure status);
   void NotifyDeviceUnbonded(hci::AddressWithType device);
 
  private:
@@ -111,10 +119,18 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener {
 
   std::shared_ptr<record::SecurityRecord> CreateSecurityRecord(hci::Address address);
   void DispatchPairingHandler(std::shared_ptr<record::SecurityRecord> record, bool locally_initiated);
+  void OnL2capRegistrationCompleteLe(l2cap::le::FixedChannelManager::RegistrationResult result,
+                                     std::unique_ptr<l2cap::le::FixedChannelService> le_smp_service);
+  void OnConnectionOpenLe(std::unique_ptr<l2cap::le::FixedChannel> channel);
+  void OnConnectionClosedLe(hci::AddressWithType address, hci::ErrorCode error_code);
+  void OnConnectionFailureLe(bluetooth::l2cap::le::FixedChannelManager::ConnectionResult result);
+  void OnHciLeEvent(hci::LeMetaEventView event);
 
   os::Handler* security_handler_ __attribute__((unused));
   l2cap::le::L2capLeModule* l2cap_le_module_ __attribute__((unused));
   l2cap::classic::L2capClassicModule* l2cap_classic_module_ __attribute__((unused));
+  std::unique_ptr<l2cap::le::FixedChannelManager> l2cap_manager_le_;
+  hci::LeSecurityInterface* hci_security_interface_le_ __attribute__((unused));
   channel::SecurityManagerChannel* security_manager_channel_ __attribute__((unused));
   std::unordered_map<hci::Address, std::shared_ptr<record::SecurityRecord>> security_record_map_;
   std::unordered_map<hci::Address, std::shared_ptr<pairing::PairingHandler>> pairing_handler_map_;

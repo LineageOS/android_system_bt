@@ -17,7 +17,6 @@
 from gd_device_base import GdDeviceBase
 from gd_device_base import replace_vars
 
-from cert.event_stream import EventStream
 from facade import rootservice_pb2_grpc as facade_rootservice_pb2_grpc
 from hal import facade_pb2_grpc as hal_facade_pb2_grpc
 from hci import facade_pb2_grpc as hci_facade_pb2_grpc
@@ -74,15 +73,3 @@ class GdDevice(GdDeviceBase):
         self.l2cap = l2cap_facade_pb2_grpc.L2capClassicModuleFacadeStub(self.grpc_channel)
         self.hci_le_advertising_manager = le_advertising_manager_facade_pb2_grpc.LeAdvertisingManagerFacadeStub(self.grpc_channel)
 
-        # Event streams
-        self.hal.hci_event_stream = EventStream(self.hal.FetchHciEvent)
-        self.hal.hci_acl_stream = EventStream(self.hal.FetchHciAcl)
-        self.hal.hci_sco_stream = EventStream(self.hal.FetchHciSco)
-        self.hci.connection_complete_stream = EventStream(self.hci.FetchConnectionComplete)
-        self.hci.disconnection_stream = EventStream(self.hci.FetchDisconnection)
-        self.hci.connection_failed_stream = EventStream(self.hci.FetchConnectionFailed)
-        self.hci.acl_stream = EventStream(self.hci.FetchAclData)
-        self.hci_classic_security.command_complete_stream = EventStream(self.hci_classic_security.FetchCommandCompleteEvent)
-        self.l2cap.packet_stream = EventStream(self.l2cap.FetchL2capData)
-        self.l2cap.connection_complete_stream = EventStream(self.l2cap.FetchConnectionComplete)
-        self.l2cap.connection_close_stream = EventStream(self.l2cap.FetchConnectionClose)

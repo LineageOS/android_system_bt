@@ -31,6 +31,9 @@ static bluetooth::shim::Btm shim_btm;
 extern tBTM_CB btm_cb;
 
 extern void btm_acl_update_busy_level(tBTM_BLI_EVENT event);
+extern void btm_clear_all_pending_le_entry(void);
+extern void btm_clr_inq_result_flt(void);
+extern void btm_sort_inq_result(void);
 
 tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
                                               tBTM_INQ_RESULTS_CB* p_results_cb,
@@ -39,13 +42,15 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
   CHECK(p_results_cb != nullptr);
   CHECK(p_cmpl_cb != nullptr);
 
+  btm_cb.btm_inq_vars.inq_cmpl_info.num_resp =
+      0; /* Clear the results counter */
+
   uint8_t classic_mode = p_inqparms->mode & 0x0f;
-  // TODO(cmanton) Setup the LE portion too
-  uint8_t le_mode = p_inqparms->mode >> 4;
 
-  LOG_INFO(LOG_TAG, "%s Start inquiry mode classic:%hhd le:%hhd", __func__,
-           classic_mode, le_mode);
-
+  if (!shim_btm.StartActiveScanning()) {
+    LOG_WARN(LOG_TAG, "%s Unable to start le active scanning", __func__);
+    return BTM_ERR_PROCESSING;
+  }
   if (!shim_btm.SetInquiryFilter(classic_mode, p_inqparms->filter_cond_type,
                                  p_inqparms->filter_cond)) {
     LOG_WARN(LOG_TAG, "%s Unable to set inquiry filter", __func__);
@@ -57,6 +62,14 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
     LOG_WARN(LOG_TAG, "%s Unable to start inquiry", __func__);
     return BTM_ERR_PROCESSING;
   }
+
+  btm_cb.btm_inq_vars.state = BTM_INQ_ACTIVE_STATE;
+  btm_cb.btm_inq_vars.p_inq_cmpl_cb = p_cmpl_cb;
+  btm_cb.btm_inq_vars.p_inq_results_cb = p_results_cb;
+  btm_cb.btm_inq_vars.inq_active = p_inqparms->mode;
+
+  btm_acl_update_busy_level(BTM_BLI_INQ_EVT);
+
   return BTM_CMD_STARTED;
 }
 
@@ -109,14 +122,15 @@ tBTM_STATUS bluetooth::shim::BTM_SetDiscoverability(uint16_t discoverable_mode,
 
   switch (le_discoverable_mode) {
     case kDiscoverableModeOff:
-      shim_btm.SetLeDiscoverabilityOff();
+      shim_btm.StopAdvertising();
       break;
     case kLimitedDiscoverableMode:
-      shim_btm.SetLeLimitedDiscoverability();
-      break;
     case kGeneralDiscoverableMode:
-      shim_btm.SetLeGeneralDiscoverability();
+      shim_btm.StartAdvertising();
       break;
+    default:
+      LOG_WARN(LOG_TAG, "%s Unexpected le discoverability mode:%d", __func__,
+               le_discoverable_mode);
   }
 
   switch (classic_discoverable_mode) {
@@ -129,6 +143,9 @@ tBTM_STATUS bluetooth::shim::BTM_SetDiscoverability(uint16_t discoverable_mode,
     case kGeneralDiscoverableMode:
       shim_btm.SetClassicGeneralDiscoverability(window, interval);
       break;
+    default:
+      LOG_WARN(LOG_TAG, "%s Unexpected classic discoverability mode:%d",
+               __func__, classic_discoverable_mode);
   }
   return BTM_SUCCESS;
 }
@@ -147,6 +164,43 @@ tBTM_STATUS bluetooth::shim::BTM_SetInquiryScanType(uint16_t scan_type) {
       return BTM_ILLEGAL_VALUE;
   }
   return BTM_WRONG_MODE;
+}
+
+tBTM_STATUS bluetooth::shim::BTM_BleObserve(bool start, uint8_t duration_sec,
+                                            tBTM_INQ_RESULTS_CB* p_results_cb,
+                                            tBTM_CMPL_CB* p_cmpl_cb) {
+  if (start) {
+    CHECK(p_results_cb != nullptr);
+    CHECK(p_cmpl_cb != nullptr);
+
+    if (btm_cb.ble_ctr_cb.scan_activity & BTM_LE_OBSERVE_ACTIVE) {
+      LOG_WARN(LOG_TAG, "%s Observing already active", __func__);
+      return BTM_WRONG_MODE;
+    }
+
+    btm_cb.ble_ctr_cb.p_obs_results_cb = p_results_cb;
+    btm_cb.ble_ctr_cb.p_obs_cmpl_cb = p_cmpl_cb;
+    if (!shim_btm.StartObserving()) {
+      LOG_WARN(LOG_TAG, "%s Unable to start le observing", __func__);
+      return BTM_ERR_PROCESSING;
+    }
+    btm_cb.ble_ctr_cb.scan_activity |= BTM_LE_OBSERVE_ACTIVE;
+  } else {
+    if (!(btm_cb.ble_ctr_cb.scan_activity & BTM_LE_OBSERVE_ACTIVE)) {
+      LOG_WARN(LOG_TAG, "%s Observing already inactive", __func__);
+    }
+    btm_cb.ble_ctr_cb.scan_activity &= ~BTM_LE_OBSERVE_ACTIVE;
+    if (!shim_btm.StopObserving()) {
+      LOG_WARN(LOG_TAG, "%s Unable to stop le observing", __func__);
+      return BTM_ERR_PROCESSING;
+    }
+    if (btm_cb.ble_ctr_cb.p_obs_cmpl_cb) {
+      (btm_cb.ble_ctr_cb.p_obs_cmpl_cb)(&btm_cb.btm_inq_vars.inq_cmpl_info);
+    }
+    btm_cb.ble_ctr_cb.p_obs_results_cb = nullptr;
+    btm_cb.ble_ctr_cb.p_obs_cmpl_cb = nullptr;
+  }
+  return BTM_CMD_STARTED;
 }
 
 tBTM_STATUS bluetooth::shim::BTM_SetPageScanType(uint16_t scan_type) {
@@ -217,10 +271,10 @@ tBTM_STATUS bluetooth::shim::BTM_SetConnectability(uint16_t page_mode,
 
   switch (le_connectible_mode) {
     case kConnectibleModeOff:
-      shim_btm.SetLeConnectibleOff();
+      shim_btm.StopConnectability();
       break;
     case kConnectibleModeOn:
-      shim_btm.SetLeConnectibleOn();
+      shim_btm.StartConnectability();
       break;
     default:
       return BTM_ILLEGAL_VALUE;
@@ -658,6 +712,5 @@ void bluetooth::shim::BTM_BleEnableDisableFilterFeature(
 }
 
 uint8_t bluetooth::shim::BTM_BleMaxMultiAdvInstanceCount() {
-  // TODO(cmanton) Connect this to the gd side
-  return 5;
+  return shim_btm.GetNumberOfAdvertisingInstances();
 }
