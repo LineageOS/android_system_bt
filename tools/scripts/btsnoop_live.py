@@ -67,11 +67,9 @@ from ctypes import byref, c_bool, c_longlong, CDLL
 from _ctypes import FreeLibrary
 from datetime import datetime
 
-
 # Update below to right path corresponding to your machine, FTS version and OS used.
 FTS_INI_PATH = 'C:\\Program Files (x86)\\Frontline Test System II\\Frontline 15.12\\'
 FTS_DLL_PATH = 'C:\\Program Files (x86)\\Frontline Test System II\\Frontline 15.12\\Executables\\Core\\'
-
 
 iniName = 'liveimport.ini'
 if (platform.architecture()[0] == '32bit'):
@@ -79,7 +77,7 @@ if (platform.architecture()[0] == '32bit'):
 else:
     dllName = 'LiveImportAPI_x64.dll'
 
-launchFtsCmd = '\"'+FTS_DLL_PATH + 'fts.exe\"' + ' \"/ComProbe Protocol Analysis System=Generic\"' + ' \"/oemkey=Virtual\"'
+launchFtsCmd = '\"' + FTS_DLL_PATH + 'fts.exe\"' + ' \"/ComProbe Protocol Analysis System=Generic\"' + ' \"/oemkey=Virtual\"'
 
 # Unix Epoch delta since 01/01/1970
 FILETIME_EPOCH_DELTA = 116444736000000000
@@ -96,7 +94,8 @@ def get_file_time():
     Obtain current time in file time format for display
     """
     date_time = datetime.now()
-    file_time = FILETIME_EPOCH_DELTA + (timegm(date_time.timetuple()) * HUNDREDS_OF_NANOSECONDS)
+    file_time = FILETIME_EPOCH_DELTA + (
+        timegm(date_time.timetuple()) * HUNDREDS_OF_NANOSECONDS)
     file_time = file_time + (date_time.microsecond * 10)
     return file_time
 
@@ -135,6 +134,7 @@ def get_configuration_string():
     else:
         return None
 
+
 def check_live_import_connection(live_import):
     """
     Launch FTS app in Virtual Sniffing Mode
@@ -146,7 +146,7 @@ def check_live_import_connection(live_import):
 
     status = live_import.IsAppReady(byref(is_connection_running))
     if (is_connection_running.value == True):
-        print ("FTS is already launched, Start capture if not already started")
+        print("FTS is already launched, Start capture if not already started")
         return True
 
     print("Launching FTS Virtual Sniffing")
@@ -159,14 +159,14 @@ def check_live_import_connection(live_import):
     while (is_connection_running.value == False and count < 12):
         status = live_import.IsAppReady(byref(is_connection_running))
         if (status < 0):
-            print("Live Import Internal Error %d" %(status))
+            print("Live Import Internal Error %d" % (status))
             return False
         if (is_connection_running.value == False):
             print("Waiting for 5 sec.. Open FTS Virtual Sniffing")
             time.sleep(5)
             count += 1
     if (is_connection_running.value == True):
-        print ("FTS is ready to receive the data, Start capture now")
+        print("FTS is ready to receive the data, Start capture now")
         return True
     else:
         print("FTS Virtual Sniffing didn't start until 1 min.. exiting")
@@ -184,13 +184,13 @@ def init_live_import(conn_str, config_str):
         return None
 
     if live_import is None:
-        print("Error: Path to LiveImportAPI.dll is incorrect.. exiting");
+        print("Error: Path to LiveImportAPI.dll is incorrect.. exiting")
         return None
 
     print(dllName + " loaded successfully")
-    result = live_import.InitializeLiveImport(conn_str.encode('ascii', 'ignore'),
-                                              config_str.encode('ascii', 'ignore'),
-                                              byref(success))
+    result = live_import.InitializeLiveImport(
+        conn_str.encode('ascii', 'ignore'), config_str.encode(
+            'ascii', 'ignore'), byref(success))
     if (result < 0):
         print("Live Import Init failed")
         return None
@@ -244,7 +244,7 @@ def main():
 
     while True:
         try:
-            snoop_hdr  = btsnoop_sock.recv(SNOOP_HDR)
+            snoop_hdr = btsnoop_sock.recv(SNOOP_HDR)
             if snoop_hdr is not None:
                 try:
                     olen, ilen, flags = struct.unpack(">LLL", snoop_hdr[0:12])
@@ -261,7 +261,8 @@ def main():
                     if data_frag is not None:
                         snoop_data += data_frag
 
-                print ("Bytes received %d Olen %d ilen %d flags %d" % (len(snoop_data), olen, ilen, flags))
+                print("Bytes received %d Olen %d ilen %d flags %d" %
+                      (len(snoop_data), olen, ilen, flags))
                 packet_type = struct.unpack(">B", snoop_data[0:1])[0]
                 if packet_type == 1:
                     drf = 1
@@ -282,7 +283,9 @@ def main():
                     drf = 8
                     isend = 1
 
-                result = live_import.SendFrame(olen-1, olen-1, snoop_data[1:olen], drf, isend, timestamp)
+                result = live_import.SendFrame(olen - 1, olen - 1,
+                                               snoop_data[1:olen], drf, isend,
+                                               timestamp)
                 if (result < 0):
                     print("Send frame failed")
         except KeyboardInterrupt:
@@ -294,4 +297,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-

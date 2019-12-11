@@ -72,167 +72,167 @@ from scapy.all import *
 
 
 class HCI_Cmd_Connect(Packet):
-  name = "Connect"
-  fields_desc = [
-      ByteEnumField("filter", 0, {0: "address"}),
-      LEShortField("packet_type", 8),
-      ByteEnumField("page_scan_repetition_mode", 0, {
-          0: "R0",
-          1: "R1",
-          2: "R2"
-      }),
-      ByteEnumField("page_scan_repetition_mode", 0, {0: "Reserved"}),
-      LEShortField("clock_offset", 0),
-      ByteEnumField("allow_role_switch", 0, {
-          0: "false",
-          1: "true"
-      }),
-  ]
+    name = "Connect"
+    fields_desc = [
+        ByteEnumField("filter", 0, {0: "address"}),
+        LEShortField("packet_type", 8),
+        ByteEnumField("page_scan_repetition_mode", 0, {
+            0: "R0",
+            1: "R1",
+            2: "R2"
+        }),
+        ByteEnumField("page_scan_repetition_mode", 0, {0: "Reserved"}),
+        LEShortField("clock_offset", 0),
+        ByteEnumField("allow_role_switch", 0, {
+            0: "false",
+            1: "true"
+        }),
+    ]
 
 
 class HCI_Cmd_Inquiry(Packet):
-  name = "Inquiry"
-  fields_desc = [
-      XByteField("LAP0", 0),
-      XByteField("LAP1", 0x8B),
-      XByteField("LAP2", 0x9E),
-      ByteField("length", 1),
-      ByteField("max_responses", 0),
-  ]
+    name = "Inquiry"
+    fields_desc = [
+        XByteField("LAP0", 0),
+        XByteField("LAP1", 0x8B),
+        XByteField("LAP2", 0x9E),
+        ByteField("length", 1),
+        ByteField("max_responses", 0),
+    ]
 
 
 """ END SCAPY stuff"""
 
 
 class Connection(object):
-  """Simple wrapper class for a socket object.
+    """Simple wrapper class for a socket object.
 
   Attributes:
     socket: The underlying socket created for the specified address and port.
   """
 
-  def __init__(self, port):
-    self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    self._socket.connect(("localhost", port))
+    def __init__(self, port):
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket.connect(("localhost", port))
 
-  def close(self):
-    self._socket.close()
+    def close(self):
+        self._socket.close()
 
-  def send(self, data):
-    self._socket.sendall(data)
+    def send(self, data):
+        self._socket.sendall(data)
 
-  def receive(self, size):
-    return self._socket.recv(size)
+    def receive(self, size):
+        return self._socket.recv(size)
 
 
 class RawPort(object):
-  """Converts outgoing packets to binary and sends them.
+    """Converts outgoing packets to binary and sends them.
 
   Attributes:
     connection: The connection to the HCI port.
   """
 
-  def __init__(self, port):
-    self._connection = Connection(port)
+    def __init__(self, port):
+        self._connection = Connection(port)
 
-  def close(self):
-    self._connection.close()
+    def close(self):
+        self._connection.close()
 
-  def send_binary(self, args):
-    joined_args = "".join(arg for arg in args)
-    print(joined_args)
-    packet = binascii.a2b_hex(joined_args)
-    self._connection.send(packet)
+    def send_binary(self, args):
+        joined_args = "".join(arg for arg in args)
+        print(joined_args)
+        packet = binascii.a2b_hex(joined_args)
+        self._connection.send(packet)
 
-  def receive_response(self):
-    ready_to_read, ready_to_write, in_error = \
-               select(
-                  [ self._connection._socket ],
-                  [ ],
-                  [ self._connection._socket ],
-                  1.5)
-    if len(in_error) > 0:
-      print("Error")
-      return False
-    if len(ready_to_read) > 0:
-      print("Ready to Read")
-      type_str = self._connection.receive(512)
-      print(len(type_str))
-      print(type_str)
-      return type_str
-    print("Returning false at the end")
-    return False
+    def receive_response(self):
+        ready_to_read, ready_to_write, in_error = \
+                   select(
+                      [ self._connection._socket ],
+                      [ ],
+                      [ self._connection._socket ],
+                      1.5)
+        if len(in_error) > 0:
+            print("Error")
+            return False
+        if len(ready_to_read) > 0:
+            print("Ready to Read")
+            type_str = self._connection.receive(512)
+            print(len(type_str))
+            print(type_str)
+            return type_str
+        print("Returning false at the end")
+        return False
 
 
 class RawPortShell(cmd.Cmd):
-  """Shell for sending binary data to a port.
+    """Shell for sending binary data to a port.
 
   """
 
-  def __init__(self, raw_port):
-    cmd.Cmd.__init__(self)
-    self._raw_port = raw_port
+    def __init__(self, raw_port):
+        cmd.Cmd.__init__(self)
+        self._raw_port = raw_port
 
-  def do_send(self, args):
-    """Arguments: dev_type_str Add a new device of type dev_type_str.
-
-    """
-    self._raw_port.send_binary(args.split())
-
-  def do_scan(self, args):
-    """Arguments: timeout (seconds) Print the scan responses from reachable devices
+    def do_send(self, args):
+        """Arguments: dev_type_str Add a new device of type dev_type_str.
 
     """
-    self._raw_port.send_binary(args.split())
+        self._raw_port.send_binary(args.split())
 
-  def do_quit(self, args):
-    """Arguments: None.
+    def do_scan(self, args):
+        """Arguments: timeout (seconds) Print the scan responses from reachable devices
+
+    """
+        self._raw_port.send_binary(args.split())
+
+    def do_quit(self, args):
+        """Arguments: None.
 
     Exits.
     """
-    self._raw_port.close()
-    print("Goodbye.")
-    return True
+        self._raw_port.close()
+        print("Goodbye.")
+        return True
 
-  def do_help(self, args):
-    """Arguments: [dev_num [attr]] List the commands available, optionally filtered by device and attr.
-
-    """
-    if (len(args) == 0):
-      cmd.Cmd.do_help(self, args)
-
-  def postcmd(self, stop, line):
-    """Called after each command stop : whether we will stop after this command line : the previous input line Return True to stop, False to continue
+    def do_help(self, args):
+        """Arguments: [dev_num [attr]] List the commands available, optionally filtered by device and attr.
 
     """
-    if stop:
-      return True
-    response = self._raw_port.receive_response()
-    print(response)
-    return False
+        if (len(args) == 0):
+            cmd.Cmd.do_help(self, args)
+
+    def postcmd(self, stop, line):
+        """Called after each command stop : whether we will stop after this command line : the previous input line Return True to stop, False to continue
+
+    """
+        if stop:
+            return True
+        response = self._raw_port.receive_response()
+        print(response)
+        return False
 
 
 def main(argv):
-  if len(argv) != 2:
-    print("Usage: python raw_port.py [port]")
-    return
-  try:
-    port = int(argv[1])
-  except ValueError:
-    print("Error parsing port.")
-  else:
+    if len(argv) != 2:
+        print("Usage: python raw_port.py [port]")
+        return
     try:
-      raw_port = RawPort(port)
-    except (socket.error, e):
-      print("Error connecting to socket: %s" % e)
-    except:
-      print("Error creating (check arguments).")
+        port = int(argv[1])
+    except ValueError:
+        print("Error parsing port.")
     else:
-      raw_port_shell = RawPortShell(raw_port)
-      raw_port_shell.prompt = "$ "
-      raw_port_shell.cmdloop("Welcome to the RootCanal Console \n" +
-                             'Type \'help\' for more information.')
+        try:
+            raw_port = RawPort(port)
+        except (socket.error, e):
+            print("Error connecting to socket: %s" % e)
+        except:
+            print("Error creating (check arguments).")
+        else:
+            raw_port_shell = RawPortShell(raw_port)
+            raw_port_shell.prompt = "$ "
+            raw_port_shell.cmdloop("Welcome to the RootCanal Console \n" +
+                                   'Type \'help\' for more information.')
 
 
 if __name__ == "__main__":
-  main(sys.argv)
+    main(sys.argv)
