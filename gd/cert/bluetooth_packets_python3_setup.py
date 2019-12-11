@@ -14,7 +14,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-
 # Usage:
 # 1. Run envsetup and lunch first in an Android checkout
 # 2. Make target bluetooth_packets_python3 that will generate C++ sources for the
@@ -25,7 +24,6 @@
 # 4. Install:
 #       python3 bluetooth_packets_python3_setup.py install --user
 
-
 import os
 import glob
 from setuptools import setup, Extension
@@ -34,10 +32,13 @@ ANDROID_BUILD_TOP = os.getenv("ANDROID_BUILD_TOP")
 PYBIND11_INCLUDE_DIR = os.path.join(ANDROID_BUILD_TOP,
                                     "external/python/pybind11/include")
 GD_DIR = os.path.join(ANDROID_BUILD_TOP, "system/bt/gd")
-BT_PACKETS_GEN_DIR = os.path.join(ANDROID_BUILD_TOP,
-                                  "out/soong/.intermediates/system/bt/gd/BluetoothGeneratedPackets_h/gen")
-BT_PACKETS_PY3_GEN_DIR = os.path.join(ANDROID_BUILD_TOP,
-                                      "out/soong/.intermediates/system/bt/gd/BluetoothGeneratedPackets_python3_cc/gen")
+BT_PACKETS_GEN_DIR = os.path.join(
+    ANDROID_BUILD_TOP,
+    "out/soong/.intermediates/system/bt/gd/BluetoothGeneratedPackets_h/gen")
+BT_PACKETS_PY3_GEN_DIR = os.path.join(
+    ANDROID_BUILD_TOP,
+    "out/soong/.intermediates/system/bt/gd/BluetoothGeneratedPackets_python3_cc/gen"
+)
 
 BT_PACKETS_BASE_SRCS = [
     os.path.join(GD_DIR, "l2cap/fcs.cc"),
@@ -57,19 +58,19 @@ BT_PACKETS_PY3_SRCs = \
   + glob.glob(os.path.join(BT_PACKETS_PY3_GEN_DIR, "l2cap", "*.cc")) \
   + glob.glob(os.path.join(BT_PACKETS_PY3_GEN_DIR, "security", "*.cc"))
 
-bluetooth_packets_python3_module = Extension('bluetooth_packets_python3',
-                                             sources=BT_PACKETS_BASE_SRCS + BT_PACKETS_PY3_SRCs,
-                                             include_dirs=[GD_DIR,
-                                                           BT_PACKETS_GEN_DIR,
-                                                           BT_PACKETS_PY3_GEN_DIR,
-                                                           PYBIND11_INCLUDE_DIR],
-                                             extra_compile_args=['-std=c++17']
-                                             )
+bluetooth_packets_python3_module = Extension(
+    'bluetooth_packets_python3',
+    sources=BT_PACKETS_BASE_SRCS + BT_PACKETS_PY3_SRCs,
+    include_dirs=[
+        GD_DIR, BT_PACKETS_GEN_DIR, BT_PACKETS_PY3_GEN_DIR, PYBIND11_INCLUDE_DIR
+    ],
+    extra_compile_args=['-std=c++17'])
 
-setup(name='bluetooth_packets_python3',
-      version='1.0',
-      author="Android Open Source Project",
-      description="""Bluetooth Packet Library""",
-      ext_modules=[bluetooth_packets_python3_module],
-      py_modules=["bluetooth_packets_python3"],
-      )
+setup(
+    name='bluetooth_packets_python3',
+    version='1.0',
+    author="Android Open Source Project",
+    description="""Bluetooth Packet Library""",
+    ext_modules=[bluetooth_packets_python3_module],
+    py_modules=["bluetooth_packets_python3"],
+)

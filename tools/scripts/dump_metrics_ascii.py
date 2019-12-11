@@ -23,6 +23,7 @@ from distutils.spawn import find_executable
 import google.protobuf.text_format as text_format
 from importlib import import_module
 
+
 def compile_proto(proto_path, output_dir):
     """Invoke Protocol Compiler to generate python from given source .proto."""
     # Find compiler path
@@ -48,15 +49,15 @@ def compile_proto(proto_path, output_dir):
     if not os.path.exists(output_dir):
         os.mkdirs(output_dir)
     elif not os.path.isdir(output_dir):
-        logging.error("Output path is not a valid directory: %s" %
-                      (output_dir))
+        logging.error("Output path is not a valid directory: %s" % (output_dir))
         return None
     input_dir = os.path.dirname(proto_path)
     output_filename = os.path.basename(proto_path).replace('.proto', '_pb2.py')
     output_path = os.path.join(output_dir, output_filename)
     protoc_command = [
-        protoc, '-I=%s' % (input_dir), '--python_out=%s' % (output_dir),
-        proto_path
+        protoc,
+        '-I=%s' % (input_dir),
+        '--python_out=%s' % (output_dir), proto_path
     ]
     if subprocess.call(protoc_command, stderr=subprocess.STDOUT) != 0:
         logging.error("Fail to compile proto")
@@ -81,8 +82,8 @@ def compile_import_proto(output_dir, proto_path):
     try:
         output_module = import_module(output_module_name)
     except ImportError:
-        logging.error("Cannot import generated py-proto %s" %
-                      (output_module_name))
+        logging.error(
+            "Cannot import generated py-proto %s" % (output_module_name))
     return output_module
 
 
@@ -94,12 +95,17 @@ def parse_proto_to_ascii(binary_proto_msg):
     """
     return text_format.MessageToString(binary_proto_msg)
 
+
 def dump_metrics():
     os.system('adb wait-for-device')
-    p = subprocess.Popen("adb shell dumpsys bluetooth_manager --proto-bin",
-        shell=True, stdout=subprocess.PIPE, stderr=subprocess.PIPE,
+    p = subprocess.Popen(
+        "adb shell dumpsys bluetooth_manager --proto-bin",
+        shell=True,
+        stdout=subprocess.PIPE,
+        stderr=subprocess.PIPE,
         stdin=subprocess.PIPE)
     return p.communicate()
+
 
 def get_bluetooth_metrics(proto_native_str_64, bluetooth_proto_module):
     bluetooth_log = bluetooth_proto_module.BluetoothLog()
@@ -107,13 +113,13 @@ def get_bluetooth_metrics(proto_native_str_64, bluetooth_proto_module):
     bluetooth_log.MergeFromString(proto_native_str)
     return bluetooth_log
 
+
 def main():
     root = logging.getLogger()
     root.setLevel(logging.DEBUG)
     log_handler = logging.StreamHandler(sys.stderr)
     log_handler.setLevel(logging.DEBUG)
-    formatter = logging.Formatter(
-        "%(asctime)s %(levelname)s %(message)s")
+    formatter = logging.Formatter("%(asctime)s %(levelname)s %(message)s")
     log_handler.setFormatter(formatter)
     root.addHandler(log_handler)
     if len(sys.argv) < 2:
@@ -125,7 +131,7 @@ def main():
         logging.info("Requires Protobuf compiler, protoc, version >=3.0.0")
         sys.exit(0)
     bluetooth_proto_module = compile_import_proto(tempfile.gettempdir(),
-        sys.argv[1])
+                                                  sys.argv[1])
     if not bluetooth_proto_module:
         logging.error("Cannot compile " + sys.argv[1])
         sys.exit(1)
@@ -135,6 +141,7 @@ def main():
     bluetooth_log = get_bluetooth_metrics(stdout, bluetooth_proto_module)
     bluetooth_log_ascii = parse_proto_to_ascii(bluetooth_log)
     print(bluetooth_log_ascii)
+
 
 if __name__ == "__main__":
     main()

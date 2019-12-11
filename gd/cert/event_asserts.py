@@ -24,6 +24,7 @@ from google.protobuf import text_format
 
 from cert.event_callback_stream import EventCallbackStream
 
+
 class EventAsserts(object):
     """
     A class that handles various asserts with respect to a gRPC unary stream
@@ -46,7 +47,7 @@ class EventAsserts(object):
             raise ValueError("event_callback_stream cannot be None")
         self.event_callback_stream = event_callback_stream
         self.event_queue = SimpleQueue()
-        self.callback = lambda event : self.event_queue.put(event)
+        self.callback = lambda event: self.event_queue.put(event)
         self.event_callback_stream.register_callback(self.callback)
 
     def __del__(self):
@@ -62,15 +63,16 @@ class EventAsserts(object):
         logging.debug("assert_none")
         try:
             event = self.event_queue.get(timeout=timeout.seconds)
-            asserts.assert_equal(event, None,
-                                 msg=(
-                                     "Expected None, but got %s" % text_format.MessageToString(
-                                     event, as_one_line=True)))
+            asserts.assert_equal(
+                event,
+                None,
+                msg=("Expected None, but got %s" % text_format.MessageToString(
+                    event, as_one_line=True)))
         except Empty:
             return
 
-    def assert_none_matching(self, match_fn,
-                             timeout=timedelta(seconds=DEFAULT_TIMEOUT_SECONDS)):
+    def assert_none_matching(
+            self, match_fn, timeout=timedelta(seconds=DEFAULT_TIMEOUT_SECONDS)):
         """
         Assert no events where match_fn(event) is True happen within timeout
         period
@@ -88,23 +90,24 @@ class EventAsserts(object):
             logging.debug("Waiting for event iteration %d" % iter_count)
             try:
                 time_before = datetime.now()
-                current_event = self.event_queue.get(
-                    timeout=timeout_seconds)
+                current_event = self.event_queue.get(timeout=timeout_seconds)
                 time_elapsed = datetime.now() - time_before
                 timeout_seconds -= time_elapsed.seconds
                 if match_fn(current_event):
                     event = current_event
             except Empty:
                 continue
-        logging.debug(
-            "Done waiting for event, got %s" % text_format.MessageToString(
-                event, as_one_line=True))
-        asserts.assert_equal(event, None,
-                             msg=(
-                                 "Expected None matching, but got %s" % text_format.MessageToString(
-                                 event, as_one_line=True)))
+        logging.debug("Done waiting for event, got %s" %
+                      text_format.MessageToString(event, as_one_line=True))
+        asserts.assert_equal(
+            event,
+            None,
+            msg=("Expected None matching, but got %s" %
+                 text_format.MessageToString(event, as_one_line=True)))
 
-    def assert_event_occurs(self, match_fn, at_least_times=1,
+    def assert_event_occurs(self,
+                            match_fn,
+                            at_least_times=1,
                             timeout=timedelta(seconds=DEFAULT_TIMEOUT_SECONDS)):
         """
         Assert at least |at_least_times| instances of events happen where
@@ -125,22 +128,25 @@ class EventAsserts(object):
             logging.debug("Waiting for event iteration %d" % iter_count)
             try:
                 time_before = datetime.now()
-                current_event = self.event_queue.get(
-                    timeout=timeout_seconds)
+                current_event = self.event_queue.get(timeout=timeout_seconds)
                 time_elapsed = datetime.now() - time_before
                 timeout_seconds -= time_elapsed.seconds
                 if match_fn(current_event):
                     event.append(current_event)
             except Empty:
                 continue
-        logging.debug(
-            "Done waiting for event, got %s" % text_format.MessageToString(
-                event, as_one_line=True))
-        asserts.assert_true(len(event) == at_least_times,
-                            msg=("Expected at least %d events, but got %d" % at_least_times, len(event)))
+        logging.debug("Done waiting for event, got %s" %
+                      text_format.MessageToString(event, as_one_line=True))
+        asserts.assert_true(
+            len(event) == at_least_times,
+            msg=("Expected at least %d events, but got %d" % at_least_times,
+                 len(event)))
 
-    def assert_event_occurs_at_most(self, match_fn, at_most_times,
-                                    timeout=timedelta(seconds=DEFAULT_TIMEOUT_SECONDS)):
+    def assert_event_occurs_at_most(
+            self,
+            match_fn,
+            at_most_times,
+            timeout=timedelta(seconds=DEFAULT_TIMEOUT_SECONDS)):
         """
         Assert at most |at_most_times| instances of events happen where
         match_fn(event) returns True within timeout period
@@ -160,16 +166,16 @@ class EventAsserts(object):
             logging.debug("Waiting for event iteration %d" % iter_count)
             try:
                 time_before = datetime.now()
-                current_event = self.event_queue.get(
-                    timeout=timeout_seconds)
+                current_event = self.event_queue.get(timeout=timeout_seconds)
                 time_elapsed = datetime.now() - time_before
                 timeout_seconds -= time_elapsed.seconds
                 if match_fn(current_event):
                     event.append(current_event)
             except Empty:
                 continue
-        logging.debug(
-            "Done waiting for event, got %s" % text_format.MessageToString(
-                event, as_one_line=True))
-        asserts.assert_true(len(event) <= at_most_times,
-                            msg=("Expected at most %d events, but got %d" % at_most_times, len(event)))
+        logging.debug("Done waiting for event, got %s" %
+                      text_format.MessageToString(event, as_one_line=True))
+        asserts.assert_true(
+            len(event) <= at_most_times,
+            msg=("Expected at most %d events, but got %d" % at_most_times,
+                 len(event)))
