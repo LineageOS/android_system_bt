@@ -61,137 +61,137 @@ DEVICE_ADDRESS_LENGTH = 6
 
 # Used to generate fake device names and addresses during discovery.
 def generate_random_name():
-  return ''.join(random.SystemRandom().choice(string.ascii_uppercase + \
-    string.digits) for _ in range(DEVICE_NAME_LENGTH))
+    return ''.join(random.SystemRandom().choice(string.ascii_uppercase + \
+      string.digits) for _ in range(DEVICE_NAME_LENGTH))
 
 
 def generate_random_address():
-  return ''.join(random.SystemRandom().choice(string.digits) for _ in \
-    range(DEVICE_ADDRESS_LENGTH))
+    return ''.join(random.SystemRandom().choice(string.digits) for _ in \
+      range(DEVICE_ADDRESS_LENGTH))
 
 
 class Connection(object):
-  """Simple wrapper class for a socket object.
+    """Simple wrapper class for a socket object.
 
   Attributes:
     socket: The underlying socket created for the specified address and port.
   """
 
-  def __init__(self, port):
-    self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    self._socket.connect(('localhost', port))
-    self._socket.setblocking(0)
+    def __init__(self, port):
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket.connect(('localhost', port))
+        self._socket.setblocking(0)
 
-  def close(self):
-    self._socket.close()
+    def close(self):
+        self._socket.close()
 
-  def send(self, data):
-    self._socket.sendall(data)
+    def send(self, data):
+        self._socket.sendall(data)
 
-  def receive(self, size):
-    return self._socket.recv(size)
+    def receive(self, size):
+        return self._socket.recv(size)
 
 
 class RawPort(object):
-  """Checks outgoing commands and sends them once verified.
+    """Checks outgoing commands and sends them once verified.
 
   Attributes:
     connection: The connection to the HCI port.
   """
 
-  def __init__(self, port):
-    self._connection = Connection(port)
-    self._closed = False
+    def __init__(self, port):
+        self._connection = Connection(port)
+        self._closed = False
 
-  def close(self):
-    self._connection.close()
-    self._closed = True
+    def close(self):
+        self._connection.close()
+        self._closed = True
 
-  def send_binary(self, args):
-    joined_args = ''.join(arg for arg in args)
-    print(joined_args)
-    packet = binascii.a2b_hex(joined_args)
-    if self._closed:
-      return
-    self._connection.send(packet)
+    def send_binary(self, args):
+        joined_args = ''.join(arg for arg in args)
+        print(joined_args)
+        packet = binascii.a2b_hex(joined_args)
+        if self._closed:
+            return
+        self._connection.send(packet)
 
-  def receive_response(self):
-    if self._closed:
-      return
-    size_chars = self._connection.receive(4)
-    if not size_chars:
-      print('Debug: No response')
-      return False
-    size_bytes = bytearray(size_chars)
-    response_size = 0
-    for i in range(0, len(size_chars) - 1):
-      response_size |= ord(size_chars[i]) << (8 * i)
-    response = self._connection.receive(response_size)
-    return response
+    def receive_response(self):
+        if self._closed:
+            return
+        size_chars = self._connection.receive(4)
+        if not size_chars:
+            print('Debug: No response')
+            return False
+        size_bytes = bytearray(size_chars)
+        response_size = 0
+        for i in range(0, len(size_chars) - 1):
+            response_size |= ord(size_chars[i]) << (8 * i)
+        response = self._connection.receive(response_size)
+        return response
 
-  def lint_command(self, name, args, name_size, args_size):
-    assert name_size == len(name) and args_size == len(args)
-    try:
-      name.encode('utf-8')
-      for arg in args:
-        arg.encode('utf-8')
-    except UnicodeError:
-      print('Unrecognized characters.')
-      raise
-    if name_size > 255 or args_size > 255:
-      raise ValueError  # Size must be encodable in one octet.
-    for arg in args:
-      if len(arg) > 255:
-        raise ValueError  # Size must be encodable in one octet.
+    def lint_command(self, name, args, name_size, args_size):
+        assert name_size == len(name) and args_size == len(args)
+        try:
+            name.encode('utf-8')
+            for arg in args:
+                arg.encode('utf-8')
+        except UnicodeError:
+            print('Unrecognized characters.')
+            raise
+        if name_size > 255 or args_size > 255:
+            raise ValueError  # Size must be encodable in one octet.
+        for arg in args:
+            if len(arg) > 255:
+                raise ValueError  # Size must be encodable in one octet.
 
 
 class RawPortShell(cmd.Cmd):
-  """Shell for sending binary data to a port."""
+    """Shell for sending binary data to a port."""
 
-  def __init__(self, raw_port):
-    cmd.Cmd.__init__(self)
-    self._raw_port = raw_port
+    def __init__(self, raw_port):
+        cmd.Cmd.__init__(self)
+        self._raw_port = raw_port
 
-  def do_send(self, args):
-    """Arguments: dev_type_str Add a new device of type dev_type_str."""
-    self._raw_port.send_binary(args.split())
+    def do_send(self, args):
+        """Arguments: dev_type_str Add a new device of type dev_type_str."""
+        self._raw_port.send_binary(args.split())
 
-  def do_quit(self, args):
-    """Arguments: None.
+    def do_quit(self, args):
+        """Arguments: None.
 
     Exits.
     """
-    self._raw_port.close()
-    print('Goodbye.')
-    return True
+        self._raw_port.close()
+        print('Goodbye.')
+        return True
 
-  def do_help(self, args):
-    """Arguments: [dev_num [attr]] List the commands available, optionally filtered by device and attr."""
-    if (len(args) == 0):
-      cmd.Cmd.do_help(self, args)
+    def do_help(self, args):
+        """Arguments: [dev_num [attr]] List the commands available, optionally filtered by device and attr."""
+        if (len(args) == 0):
+            cmd.Cmd.do_help(self, args)
 
 
 def main(argv):
-  if len(argv) != 2:
-    print('Usage: python raw_port.py [port]')
-    return
-  try:
-    port = int(argv[1])
-  except ValueError:
-    print('Error parsing port.')
-  else:
+    if len(argv) != 2:
+        print('Usage: python raw_port.py [port]')
+        return
     try:
-      raw_port = RawPort(port)
-    except (socket.error, e):
-      print('Error connecting to socket: %s' % e)
-    except:
-      print('Error creating (check arguments).')
+        port = int(argv[1])
+    except ValueError:
+        print('Error parsing port.')
     else:
-      raw_port_shell = RawPortShell(raw_port)
-      raw_port_shell.prompt = '$ '
-      raw_port_shell.cmdloop('Welcome to the RootCanal Console \n' +
-                             'Type \'help\' for more information.')
+        try:
+            raw_port = RawPort(port)
+        except (socket.error, e):
+            print('Error connecting to socket: %s' % e)
+        except:
+            print('Error creating (check arguments).')
+        else:
+            raw_port_shell = RawPortShell(raw_port)
+            raw_port_shell.prompt = '$ '
+            raw_port_shell.cmdloop('Welcome to the RootCanal Console \n' +
+                                   'Type \'help\' for more information.')
 
 
 if __name__ == '__main__':
-  main(sys.argv)
+    main(sys.argv)

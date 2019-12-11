@@ -69,124 +69,132 @@ import string
 import struct
 import sys
 
+
 class LinkLayerSocket(object):
-  """Simple wrapper class for a socket object.
+    """Simple wrapper class for a socket object.
 
   Attributes:
     socket: The underlying socket created for the specified address and port.
   """
 
-  def __init__(self, port):
-    print('port = ' + port)
-    self.done_ = False
-    self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    self._socket.connect(('localhost', port))
-    # Should it be a non-blocking socket?
-    # self._socket.setblocking(0)
-    self.packets_ = queue.Queue()
-    self.rx_thread_ = threading.Thread(target=self.rx_thread_body)
-    self.rx_thread_.start()
+    def __init__(self, port):
+        print('port = ' + port)
+        self.done_ = False
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket.connect(('localhost', port))
+        # Should it be a non-blocking socket?
+        # self._socket.setblocking(0)
+        self.packets_ = queue.Queue()
+        self.rx_thread_ = threading.Thread(target=self.rx_thread_body)
+        self.rx_thread_.start()
 
-  def rx_bytes(self, size):
-    while not self.done_:
-      raw_bytes = b''
-      while len(raw_bytes) < size and not self.done_:
-        more_raw_bytes = self._socket.recv(min(size - len(raw_bytes), 2048))
-        if more_raw_bytes:
-          raw_bytes += more_raw_bytes
-      return raw_bytes
+    def rx_bytes(self, size):
+        while not self.done_:
+            raw_bytes = b''
+            while len(raw_bytes) < size and not self.done_:
+                more_raw_bytes = self._socket.recv(
+                    min(size - len(raw_bytes), 2048))
+                if more_raw_bytes:
+                    raw_bytes += more_raw_bytes
+            return raw_bytes
 
-  def rx_thread_body(self):
-    while not self.done_:
-      payload_length = 0
-      # Read the size (4B), the type (1B), and the addresses (2*6B)
-      header = self.rx_bytes(17)
-      if not header:
-        continue
-      payload_length = header[0]
-      payload_length |= header[1] << 8
-      payload_length |= header[2] << 16
-      payload_length |= header[3] << 24
-      print('Rx: type_byte ' + hex(header[4]))
-      print('Rx: from ' + hex(header[5]) + ':' + hex(header[6]) + ':' + hex(header[7]) + ':' + hex(header[8]) + ':' + hex(header[9]) + ':' + hex(header[10]))
-      print('Rx: to ' + hex(header[11]) + ':' + hex(header[12]) + ':' + hex(header[13]) + ':' + hex(header[14]) + ':' + hex(header[15]) + ':' + hex(header[16]))
-      # Read the Payload
-      payload = self.rx_bytes(payload_length) if payload_length != 0 else b''
-      packet_bytes = header + payload
-      self.packets_.put(packet_bytes)
+    def rx_thread_body(self):
+        while not self.done_:
+            payload_length = 0
+            # Read the size (4B), the type (1B), and the addresses (2*6B)
+            header = self.rx_bytes(17)
+            if not header:
+                continue
+            payload_length = header[0]
+            payload_length |= header[1] << 8
+            payload_length |= header[2] << 16
+            payload_length |= header[3] << 24
+            print('Rx: type_byte ' + hex(header[4]))
+            print('Rx: from ' + hex(header[5]) + ':' + hex(header[6]) + ':' +
+                  hex(header[7]) + ':' + hex(header[8]) + ':' + hex(header[9]) +
+                  ':' + hex(header[10]))
+            print('Rx: to ' + hex(header[11]) + ':' + hex(header[12]) + ':' +
+                  hex(header[13]) + ':' + hex(header[14]) + ':' +
+                  hex(header[15]) + ':' + hex(header[16]))
+            # Read the Payload
+            payload = self.rx_bytes(
+                payload_length) if payload_length != 0 else b''
+            packet_bytes = header + payload
+            self.packets_.put(packet_bytes)
 
-  def get_packet(self):
-    if self.packets_.empty():
-      return False
-    return self.packets_.get()
+    def get_packet(self):
+        if self.packets_.empty():
+            return False
+        return self.packets_.get()
 
-  def send_binary(self, args):
-    joined_args = ''.join(arg for arg in args)
-    print(joined_args)
-    packet = binascii.a2b_hex(joined_args)
-    if self._done:
-      return
-    self._connection.send(packet)
+    def send_binary(self, args):
+        joined_args = ''.join(arg for arg in args)
+        print(joined_args)
+        packet = binascii.a2b_hex(joined_args)
+        if self._done:
+            return
+        self._connection.send(packet)
 
-  def tell_rx_thread_to_quit(self):
-    self.done_ = True
-    self.rx_thread_.join()
+    def tell_rx_thread_to_quit(self):
+        self.done_ = True
+        self.rx_thread_.join()
 
 
 class LinkLayerShell(cmd.Cmd):
-  """Shell for sending binary data to a port.
+    """Shell for sending binary data to a port.
 
   """
 
-  def __init__(self, link_layer):
-    cmd.Cmd.__init__(self)
-    self._link_layer = link_layer
+    def __init__(self, link_layer):
+        cmd.Cmd.__init__(self)
+        self._link_layer = link_layer
 
-  def do_send(self, args):
-    """Arguments: binary representation of a packet.
+    def do_send(self, args):
+        """Arguments: binary representation of a packet.
 
     """
-    self._link_layer.send_binary(args.split())
+        self._link_layer.send_binary(args.split())
 
-  def do_quit(self, args):
-    """Arguments: None.
+    def do_quit(self, args):
+        """Arguments: None.
 
     Exits.
     """
-    self._link_layer.tell_rx_thread_to_quit()
-    self._link_layer.close()
-    print('Goodbye.')
-    return True
+        self._link_layer.tell_rx_thread_to_quit()
+        self._link_layer.close()
+        print('Goodbye.')
+        return True
 
-  def do_help(self, args):
-    """Arguments: [dev_num [attr]] List the commands available, optionally filtered by device and attr.
+    def do_help(self, args):
+        """Arguments: [dev_num [attr]] List the commands available, optionally filtered by device and attr.
 
     """
-    if (len(args) == 0):
-      cmd.Cmd.do_help(self, args)
+        if (len(args) == 0):
+            cmd.Cmd.do_help(self, args)
 
 
 def main(argv):
-  if len(argv) != 2:
-    print('Usage: python link_layer_socket.py [port]')
-    return
-  try:
-    port = int(argv[1])
-  except ValueError:
-    print('Error parsing port.')
-  else:
+    if len(argv) != 2:
+        print('Usage: python link_layer_socket.py [port]')
+        return
     try:
-      link_layer = LinkLayerSocket(port)
-    except socket.error as e:
-      print('Error connecting to socket: %s' % e)
-    except:
-      print('Error creating (check arguments).')
+        port = int(argv[1])
+    except ValueError:
+        print('Error parsing port.')
     else:
-      link_layer_shell = LinkLayerShell(link_layer)
-      link_layer_shell.prompt = '$ '
-      link_layer_shell.cmdloop('Welcome to the RootCanal LinkLayer Console \n' +
-                        'Type \'help\' for more information.')
+        try:
+            link_layer = LinkLayerSocket(port)
+        except socket.error as e:
+            print('Error connecting to socket: %s' % e)
+        except:
+            print('Error creating (check arguments).')
+        else:
+            link_layer_shell = LinkLayerShell(link_layer)
+            link_layer_shell.prompt = '$ '
+            link_layer_shell.cmdloop(
+                'Welcome to the RootCanal LinkLayer Console \n' +
+                'Type \'help\' for more information.')
 
 
 if __name__ == '__main__':
-  main(sys.argv)
+    main(sys.argv)

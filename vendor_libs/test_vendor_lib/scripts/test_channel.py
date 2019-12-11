@@ -49,97 +49,98 @@ DEVICE_ADDRESS_LENGTH = 6
 
 # Used to generate fake device names and addresses during discovery.
 def generate_random_name():
-  return ''.join(random.SystemRandom().choice(string.ascii_uppercase + \
-    string.digits) for _ in range(DEVICE_NAME_LENGTH))
+    return ''.join(random.SystemRandom().choice(string.ascii_uppercase + \
+      string.digits) for _ in range(DEVICE_NAME_LENGTH))
 
 
 def generate_random_address():
-  return ''.join(random.SystemRandom().choice(string.digits) for _ in \
-    range(DEVICE_ADDRESS_LENGTH))
+    return ''.join(random.SystemRandom().choice(string.digits) for _ in \
+      range(DEVICE_ADDRESS_LENGTH))
 
 
 class Connection(object):
-  """Simple wrapper class for a socket object.
+    """Simple wrapper class for a socket object.
 
   Attributes:
     socket: The underlying socket created for the specified address and port.
   """
 
-  def __init__(self, port):
-    self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
-    self._socket.connect(('localhost', port))
+    def __init__(self, port):
+        self._socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
+        self._socket.connect(('localhost', port))
 
-  def close(self):
-    self._socket.close()
+    def close(self):
+        self._socket.close()
 
-  def send(self, data):
-    self._socket.sendall(data)
+    def send(self, data):
+        self._socket.sendall(data)
 
-  def receive(self, size):
-    return self._socket.recv(size)
+    def receive(self, size):
+        return self._socket.recv(size)
 
 
 class TestChannel(object):
-  """Checks outgoing commands and sends them once verified.
+    """Checks outgoing commands and sends them once verified.
 
   Attributes:
     connection: The connection to the test vendor library that commands are sent
       on.
   """
 
-  def __init__(self, port):
-    self._connection = Connection(port)
-    self._closed = False
+    def __init__(self, port):
+        self._connection = Connection(port)
+        self._closed = False
 
-  def close(self):
-    self._connection.close()
-    self._closed = True
+    def close(self):
+        self._connection.close()
+        self._closed = True
 
-  def send_command(self, name, args):
-    name_size = len(name)
-    args_size = len(args)
-    self.lint_command(name, args, name_size, args_size)
-    encoded_name = chr(name_size) + name
-    encoded_args = chr(args_size) + ''.join(chr(len(arg)) + arg for arg in args)
-    command = encoded_name + encoded_args
-    if self._closed:
-      return
-    self._connection.send(command)
-    if name != 'CLOSE_TEST_CHANNEL':
-      print self.receive_response()
+    def send_command(self, name, args):
+        name_size = len(name)
+        args_size = len(args)
+        self.lint_command(name, args, name_size, args_size)
+        encoded_name = chr(name_size) + name
+        encoded_args = chr(args_size) + ''.join(
+            chr(len(arg)) + arg for arg in args)
+        command = encoded_name + encoded_args
+        if self._closed:
+            return
+        self._connection.send(command)
+        if name != 'CLOSE_TEST_CHANNEL':
+            print self.receive_response()
 
-  def receive_response(self):
-    if self._closed:
-      return
-    size_chars = self._connection.receive(4)
-    size_bytes = bytearray(size_chars)
-    if not size_chars:
-      print 'No response, assuming that the connection is broken'
-      return False
-    response_size = 0
-    for i in range(0, len(size_chars) - 1):
-      response_size |= ord(size_chars[i]) << (8 * i)
-    response = self._connection.receive(response_size)
-    return response
+    def receive_response(self):
+        if self._closed:
+            return
+        size_chars = self._connection.receive(4)
+        size_bytes = bytearray(size_chars)
+        if not size_chars:
+            print 'No response, assuming that the connection is broken'
+            return False
+        response_size = 0
+        for i in range(0, len(size_chars) - 1):
+            response_size |= ord(size_chars[i]) << (8 * i)
+        response = self._connection.receive(response_size)
+        return response
 
-  def lint_command(self, name, args, name_size, args_size):
-    assert name_size == len(name) and args_size == len(args)
-    try:
-      name.encode('utf-8')
-      for arg in args:
-        arg.encode('utf-8')
-    except UnicodeError:
-      print 'Unrecognized characters.'
-      raise
-    if name_size > 255 or args_size > 255:
-      raise ValueError  # Size must be encodable in one octet.
-    for arg in args:
-      if len(arg) > 255:
-        raise ValueError  # Size must be encodable in one octet.
+    def lint_command(self, name, args, name_size, args_size):
+        assert name_size == len(name) and args_size == len(args)
+        try:
+            name.encode('utf-8')
+            for arg in args:
+                arg.encode('utf-8')
+        except UnicodeError:
+            print 'Unrecognized characters.'
+            raise
+        if name_size > 255 or args_size > 255:
+            raise ValueError  # Size must be encodable in one octet.
+        for arg in args:
+            if len(arg) > 255:
+                raise ValueError  # Size must be encodable in one octet.
 
 
 class TestChannelShell(cmd.Cmd):
-  """Shell for sending test channel data to controller.
+    """Shell for sending test channel data to controller.
 
   Manages the test channel to the controller and defines a set of commands the
   user can send to the controller as well. These commands are processed parallel
@@ -150,138 +151,138 @@ class TestChannelShell(cmd.Cmd):
     test_channel: The communication channel to send data to the controller.
   """
 
-  def __init__(self, test_channel):
-    cmd.Cmd.__init__(self)
-    self._test_channel = test_channel
+    def __init__(self, test_channel):
+        cmd.Cmd.__init__(self)
+        self._test_channel = test_channel
 
-  def do_add(self, args):
-    """Arguments: dev_type_str Add a new device of type dev_type_str.
-
-    """
-    self._test_channel.send_command('add', args.split())
-
-  def do_del(self, args):
-    """Arguments: device index Delete the device with the specified index.
+    def do_add(self, args):
+        """Arguments: dev_type_str Add a new device of type dev_type_str.
 
     """
-    self._test_channel.send_command('del', args.split())
+        self._test_channel.send_command('add', args.split())
 
-  def do_add_phy(self, args):
-    """Arguments: dev_type_str Add a new device of type dev_type_str.
-
-    """
-    self._test_channel.send_command('add_phy', args.split())
-
-  def do_del_phy(self, args):
-    """Arguments: phy index Delete the phy with the specified index.
+    def do_del(self, args):
+        """Arguments: device index Delete the device with the specified index.
 
     """
-    self._test_channel.send_command('del_phy', args.split())
+        self._test_channel.send_command('del', args.split())
 
-  def do_add_device_to_phy(self, args):
-    """Arguments: device index phy index Add a new device of type dev_type_str.
-
-    """
-    self._test_channel.send_command('add_device_to_phy', args.split())
-
-  def do_del_device_from_phy(self, args):
-    """Arguments: phy index Delete the phy with the specified index.
+    def do_add_phy(self, args):
+        """Arguments: dev_type_str Add a new device of type dev_type_str.
 
     """
-    self._test_channel.send_command('del_device_from_phy', args.split())
+        self._test_channel.send_command('add_phy', args.split())
 
-  def do_add_remote(self, args):
-    """Arguments: dev_type_str Connect to a remote device at arg1@arg2.
-
-    """
-    self._test_channel.send_command('add_remote', args.split())
-
-  def do_get(self, args):
-    """Arguments: dev_num attr_str Get the value of the attribute attr_str from device dev_num.
+    def do_del_phy(self, args):
+        """Arguments: phy index Delete the phy with the specified index.
 
     """
-    self._test_channel.send_command('get', args.split())
+        self._test_channel.send_command('del_phy', args.split())
 
-  def do_set(self, args):
-    """Arguments: dev_num attr_str val Set the value of the attribute attr_str from device dev_num equal to val.
-
-    """
-    self._test_channel.send_command('set', args.split())
-
-  def do_set_device_address(self, args):
-    """Arguments: dev_num addr Set the address of device dev_num equal to addr.
+    def do_add_device_to_phy(self, args):
+        """Arguments: device index phy index Add a new device of type dev_type_str.
 
     """
-    self._test_channel.send_command('set_device_address', args.split())
+        self._test_channel.send_command('add_device_to_phy', args.split())
 
-  def do_list(self, args):
-    """Arguments: [dev_num [attr]] List the devices from the controller, optionally filtered by device and attr.
+    def do_del_device_from_phy(self, args):
+        """Arguments: phy index Delete the phy with the specified index.
 
     """
-    self._test_channel.send_command('list', args.split())
+        self._test_channel.send_command('del_device_from_phy', args.split())
 
-  def do_quit(self, args):
-    """Arguments: None.
+    def do_add_remote(self, args):
+        """Arguments: dev_type_str Connect to a remote device at arg1@arg2.
+
+    """
+        self._test_channel.send_command('add_remote', args.split())
+
+    def do_get(self, args):
+        """Arguments: dev_num attr_str Get the value of the attribute attr_str from device dev_num.
+
+    """
+        self._test_channel.send_command('get', args.split())
+
+    def do_set(self, args):
+        """Arguments: dev_num attr_str val Set the value of the attribute attr_str from device dev_num equal to val.
+
+    """
+        self._test_channel.send_command('set', args.split())
+
+    def do_set_device_address(self, args):
+        """Arguments: dev_num addr Set the address of device dev_num equal to addr.
+
+    """
+        self._test_channel.send_command('set_device_address', args.split())
+
+    def do_list(self, args):
+        """Arguments: [dev_num [attr]] List the devices from the controller, optionally filtered by device and attr.
+
+    """
+        self._test_channel.send_command('list', args.split())
+
+    def do_quit(self, args):
+        """Arguments: None.
 
     Exits the test channel.
     """
-    self._test_channel.send_command('CLOSE_TEST_CHANNEL', [])
-    self._test_channel.close()
-    print 'Goodbye.'
-    return True
+        self._test_channel.send_command('CLOSE_TEST_CHANNEL', [])
+        self._test_channel.close()
+        print 'Goodbye.'
+        return True
 
-  def do_help(self, args):
-    """Arguments: [dev_num [attr]] List the commands available, optionally filtered by device and attr.
-
-    """
-    if (len(args) == 0):
-      cmd.Cmd.do_help(self, args)
-    else:
-      self._test_channel.send_command('help', args.split())
-
-  def preloop(self):
-    """Clear out the buffer
+    def do_help(self, args):
+        """Arguments: [dev_num [attr]] List the commands available, optionally filtered by device and attr.
 
     """
-    response = self._test_channel.receive_response()
+        if (len(args) == 0):
+            cmd.Cmd.do_help(self, args)
+        else:
+            self._test_channel.send_command('help', args.split())
 
-  #def postcmd(self, stop, line):
-  #"""
-  #Called after each command
-  #stop : whether we will stop after this command
-  #line : the previous input line
-  #Return True to stop, False to continue
-  #"""
-  #if stop:
-  #return True
-  #response = self._test_channel.receive_response()
-  #if not response:
-  #return True
-  #print response
-  #return False
+    def preloop(self):
+        """Clear out the buffer
+
+    """
+        response = self._test_channel.receive_response()
+
+    #def postcmd(self, stop, line):
+    #"""
+    #Called after each command
+    #stop : whether we will stop after this command
+    #line : the previous input line
+    #Return True to stop, False to continue
+    #"""
+    #if stop:
+    #return True
+    #response = self._test_channel.receive_response()
+    #if not response:
+    #return True
+    #print response
+    #return False
 
 
 def main(argv):
-  if len(argv) != 2:
-    print 'Usage: python test_channel.py [port]'
-    return
-  try:
-    port = int(argv[1])
-  except ValueError:
-    print 'Error parsing port.'
-  else:
+    if len(argv) != 2:
+        print 'Usage: python test_channel.py [port]'
+        return
     try:
-      test_channel = TestChannel(port)
-    except socket.error, e:
-      print 'Error connecting to socket: %s' % e
-    except:
-      print 'Error creating test channel (check argument).'
+        port = int(argv[1])
+    except ValueError:
+        print 'Error parsing port.'
     else:
-      test_channel_shell = TestChannelShell(test_channel)
-      test_channel_shell.prompt = '$ '
-      test_channel_shell.cmdloop('Welcome to the RootCanal Console \n' +
-                                 'Type \'help\' for more information.')
+        try:
+            test_channel = TestChannel(port)
+        except socket.error, e:
+            print 'Error connecting to socket: %s' % e
+        except:
+            print 'Error creating test channel (check argument).'
+        else:
+            test_channel_shell = TestChannelShell(test_channel)
+            test_channel_shell.prompt = '$ '
+            test_channel_shell.cmdloop('Welcome to the RootCanal Console \n' +
+                                       'Type \'help\' for more information.')
 
 
 if __name__ == '__main__':
-  main(sys.argv)
+    main(sys.argv)

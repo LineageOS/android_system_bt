@@ -25,6 +25,7 @@ from l2cap.classic.cert import api_pb2_grpc as l2cap_cert_pb2_grpc
 ACTS_CONTROLLER_CONFIG_NAME = "GdCertDevice"
 ACTS_CONTROLLER_REFERENCE_NAME = "gd_cert_devices"
 
+
 def create(configs):
     if not configs:
         raise GdDeviceConfigError("Configuration is empty")
@@ -52,20 +53,25 @@ def get_instances_with_configs(configs):
         resolved_cmd = []
         for entry in config["cmd"]:
             resolved_cmd.append(replace_vars(entry, config))
-        devices.append(GdCertDevice(config["grpc_port"],
-                                    config["grpc_root_server_port"],
-                                    config["signal_port"],
-                                    resolved_cmd, config["label"]))
+        devices.append(
+            GdCertDevice(config["grpc_port"], config["grpc_root_server_port"],
+                         config["signal_port"], resolved_cmd, config["label"]))
     return devices
 
+
 class GdCertDevice(GdDeviceBase):
-    def __init__(self, grpc_port, grpc_root_server_port, signal_port, cmd, label):
+
+    def __init__(self, grpc_port, grpc_root_server_port, signal_port, cmd,
+                 label):
         super().__init__(grpc_port, grpc_root_server_port, signal_port, cmd,
                          label, ACTS_CONTROLLER_CONFIG_NAME)
 
         # Cert stubs
-        self.rootservice = cert_rootservice_pb2_grpc.RootCertStub(self.grpc_root_server_channel)
+        self.rootservice = cert_rootservice_pb2_grpc.RootCertStub(
+            self.grpc_root_server_channel)
         self.hal = hal_cert_pb2_grpc.HciHalCertStub(self.grpc_channel)
-        self.controller_read_only_property = cert_rootservice_pb2_grpc.ReadOnlyPropertyStub(self.grpc_channel)
+        self.controller_read_only_property = cert_rootservice_pb2_grpc.ReadOnlyPropertyStub(
+            self.grpc_channel)
         self.hci = hci_cert_pb2_grpc.AclManagerCertStub(self.grpc_channel)
-        self.l2cap = l2cap_cert_pb2_grpc.L2capClassicModuleCertStub(self.grpc_channel)
+        self.l2cap = l2cap_cert_pb2_grpc.L2capClassicModuleCertStub(
+            self.grpc_channel)
