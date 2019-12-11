@@ -61,5 +61,23 @@ DEFINE_AND_INSTANTIATE_GroupFrameReflectionTest(g_frame);
 
 std::vector<uint8_t> config_mtu_request = {0x04, 0x05, 0x08, 0x00, 0x41, 0x00, 0x00, 0x00, 0x01, 0x02, 0xa0, 0x02};
 DEFINE_AND_INSTANTIATE_ConfigurationRequestReflectionTest(config_mtu_request);
+
+DEFINE_ConfigurationRequestReflectionFuzzTest();
+
+TEST(L2capFuzzRegressions, ConfigurationRequestFuzz_5691566077247488) {
+  uint8_t bluetooth_gd_fuzz_test_5691566077247488[] = {
+      0x04, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+  };
+  RunConfigurationRequestReflectionFuzzTest(bluetooth_gd_fuzz_test_5691566077247488,
+                                            sizeof(bluetooth_gd_fuzz_test_5691566077247488));
+}
+
+TEST(L2capFuzzRegressions, ConfigurationRequestFuzz_5747922062802944) {
+  uint8_t bluetooth_gd_fuzz_test_5747922062802944[] = {
+      0x04, 0x02, 0x02, 0x7f, 0x3f, 0x7f, 0x3f, 0x7e, 0x7f,
+  };
+  RunConfigurationRequestReflectionFuzzTest(bluetooth_gd_fuzz_test_5747922062802944,
+                                            sizeof(bluetooth_gd_fuzz_test_5747922062802944));
+}
 }  // namespace l2cap
 }  // namespace bluetooth

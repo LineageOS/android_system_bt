@@ -79,7 +79,8 @@ class Size {
   }
 
   int bytes() const {
-    return bits_ / 8;
+    // Round up to the nearest byte
+    return (bits_ + 7) / 8;
   }
 
   Size operator+(int rhs) {
