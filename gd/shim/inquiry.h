@@ -26,16 +26,16 @@ namespace shim {
 
 class Inquiry : public bluetooth::Module, public bluetooth::shim::IInquiry {
  public:
-  void StartGeneralInquiry(uint8_t duration, uint8_t max_responses) override;
-  void StartLimitedInquiry(uint8_t duration, uint8_t max_responses) override;
+  void StartGeneralInquiry(uint8_t duration, uint8_t max_responses, LegacyInquiryCallbacks callbacks) override;
+  void StartLimitedInquiry(uint8_t duration, uint8_t max_responses, LegacyInquiryCallbacks callbacks) override;
   void StopInquiry() override;
   bool IsGeneralInquiryActive() const override;
   bool IsLimitedInquiryActive() const override;
 
-  void StartGeneralPeriodicInquiry(uint8_t duration, uint8_t max_responses, uint16_t max_delay,
-                                   uint16_t min_delay) override;
-  void StartLimitedPeriodicInquiry(uint8_t duration, uint8_t max_responses, uint16_t max_delay,
-                                   uint16_t min_delay) override;
+  void StartGeneralPeriodicInquiry(uint8_t duration, uint8_t max_responses, uint16_t max_delay, uint16_t min_delay,
+                                   LegacyInquiryCallbacks callbacks) override;
+  void StartLimitedPeriodicInquiry(uint8_t duration, uint8_t max_responses, uint16_t max_delay, uint16_t min_delay,
+                                   LegacyInquiryCallbacks callbacks) override;
   void StopPeriodicInquiry() override;
   bool IsGeneralPeriodicInquiryActive() const override;
   bool IsLimitedPeriodicInquiryActive() const override;
@@ -49,17 +49,6 @@ class Inquiry : public bluetooth::Module, public bluetooth::shim::IInquiry {
   void SetStandardInquiryResultMode() override;
   void SetInquiryWithRssiResultMode() override;
   void SetExtendedInquiryResultMode() override;
-
-  void RegisterInquiryResult(InquiryResultCallback callback) override;
-  void UnregisterInquiryResult() override;
-  void RegisterInquiryResultWithRssi(InquiryResultWithRssiCallback callback) override;
-  void UnregisterInquiryResultWithRssi() override;
-  void RegisterExtendedInquiryResult(ExtendedInquiryResultCallback callback) override;
-  void UnregisterExtendedInquiryResult() override;
-  void RegisterInquiryComplete(InquiryCompleteCallback callback) override;
-  void UnregisterInquiryComplete() override;
-  void RegisterInquiryCancelComplete(InquiryCancelCompleteCallback callback) override;
-  void UnregisterInquiryCancelComplete() override;
 
   Inquiry() = default;
   ~Inquiry() = default;

@@ -38,22 +38,10 @@ struct Inquiry::impl {
   void ExtendedResult(hci::ExtendedInquiryResultView view);
   void Complete(hci::ErrorCode status);
 
-  void RegisterInquiryResult(InquiryResultCallback callback);
-  void UnregisterInquiryResult();
-  void RegisterInquiryResultWithRssi(InquiryResultWithRssiCallback callback);
-  void UnregisterInquiryResultWithRssi();
-  void RegisterExtendedInquiryResult(ExtendedInquiryResultCallback callback);
-  void UnregisterExtendedInquiryResult();
-  void RegisterInquiryComplete(InquiryCompleteCallback callback);
-  void UnregisterInquiryComplete();
-  void RegisterInquiryCancelComplete(InquiryCancelCompleteCallback callback);
-  void UnregisterInquiryCancelComplete();
+  void RegisterInquiryCallbacks(LegacyInquiryCallbacks callbacks);
+  void UnregisterInquiryCallbacks();
 
-  InquiryResultCallback shim_result_callback_;
-  InquiryResultWithRssiCallback shim_result_with_rssi_callback_;
-  ExtendedInquiryResultCallback shim_extended_result_callback_;
-  InquiryCompleteCallback shim_complete_callback_;
-  InquiryCancelCompleteCallback shim_cancel_complete_callback_;
+  LegacyInquiryCallbacks callbacks_;
 
   neighbor::InquiryModule* module_{nullptr};
 
@@ -74,98 +62,36 @@ const ModuleFactory Inquiry::Factory = ModuleFactory([]() { return new Inquiry()
 
 void Inquiry::impl::Result(hci::InquiryResultView view) {
   ASSERT(view.size() >= sizeof(uint16_t));
-  ASSERT(shim_result_callback_ != nullptr);
+  ASSERT(callbacks_.result_callback != nullptr);
   std::vector<const uint8_t> v(view.begin() + sizeof(uint16_t), view.end());
-  shim_result_callback_(v);
+  callbacks_.result_callback(v);
 }
 
 void Inquiry::impl::ResultWithRssi(hci::InquiryResultWithRssiView view) {
   ASSERT(view.size() >= sizeof(uint16_t));
-  ASSERT(shim_result_with_rssi_callback_ != nullptr);
+  ASSERT(callbacks_.result_with_rssi_callback != nullptr);
   std::vector<const uint8_t> v(view.begin() + sizeof(uint16_t), view.end());
-  shim_result_with_rssi_callback_(v);
+  callbacks_.result_with_rssi_callback(v);
 }
 
 void Inquiry::impl::ExtendedResult(hci::ExtendedInquiryResultView view) {
   ASSERT(view.size() >= sizeof(uint16_t));
-  ASSERT(shim_extended_result_callback_ != nullptr);
+  ASSERT(callbacks_.extended_result_callback != nullptr);
   std::vector<const uint8_t> v(view.begin() + sizeof(uint16_t), view.end());
-  shim_extended_result_callback_(v);
+  callbacks_.extended_result_callback(v);
 }
 
 void Inquiry::impl::Complete(hci::ErrorCode status) {
-  ASSERT(shim_complete_callback_ != nullptr);
-  shim_complete_callback_(static_cast<uint16_t>(status));
+  ASSERT(callbacks_.complete_callback != nullptr);
+  callbacks_.complete_callback(static_cast<uint16_t>(status));
 }
 
-void Inquiry::impl::RegisterInquiryResult(shim::InquiryResultCallback callback) {
-  if (shim_result_callback_ != nullptr) {
-    LOG_WARN("Registering inquiry result without unregistering");
-  }
-  shim_result_callback_ = callback;
+void Inquiry::impl::RegisterInquiryCallbacks(LegacyInquiryCallbacks callbacks) {
+  callbacks_ = callbacks;
 }
 
-void Inquiry::impl::UnregisterInquiryResult() {
-  if (shim_result_callback_ == nullptr) {
-    LOG_WARN("Unregistering inquiry result without registering");
-  }
-  shim_result_callback_ = nullptr;
-}
-
-void Inquiry::impl::RegisterInquiryResultWithRssi(shim::InquiryResultWithRssiCallback callback) {
-  if (shim_result_with_rssi_callback_ != nullptr) {
-    LOG_WARN("Registering inquiry result with rssi without unregistering");
-  }
-  shim_result_with_rssi_callback_ = callback;
-}
-
-void Inquiry::impl::UnregisterInquiryResultWithRssi() {
-  if (shim_result_with_rssi_callback_ == nullptr) {
-    LOG_WARN("Unregistering inquiry result with rssi without registering");
-  }
-  shim_result_with_rssi_callback_ = nullptr;
-}
-
-void Inquiry::impl::RegisterExtendedInquiryResult(shim::ExtendedInquiryResultCallback callback) {
-  if (shim_result_with_rssi_callback_ != nullptr) {
-    LOG_WARN("Registering extended inquiry result without unregistering");
-  }
-  shim_extended_result_callback_ = callback;
-}
-
-void Inquiry::impl::UnregisterExtendedInquiryResult() {
-  if (shim_extended_result_callback_ == nullptr) {
-    LOG_WARN("Unregistering extended inquiry result without registering");
-  }
-  shim_extended_result_callback_ = nullptr;
-}
-
-void Inquiry::impl::RegisterInquiryComplete(shim::InquiryCompleteCallback callback) {
-  if (shim_result_with_rssi_callback_ != nullptr) {
-    LOG_WARN("Registering inquiry complete without unregistering");
-  }
-  shim_complete_callback_ = callback;
-}
-
-void Inquiry::impl::UnregisterInquiryComplete() {
-  if (shim_result_with_rssi_callback_ == nullptr) {
-    LOG_WARN("Unregistering inquiry complete without registering");
-  }
-  shim_complete_callback_ = nullptr;
-}
-
-void Inquiry::impl::RegisterInquiryCancelComplete(shim::InquiryCancelCompleteCallback callback) {
-  if (shim_cancel_complete_callback_ != nullptr) {
-    LOG_WARN("Registering inquiry cancel complete without unregistering");
-  }
-  shim_cancel_complete_callback_ = callback;
-}
-
-void Inquiry::impl::UnregisterInquiryCancelComplete() {
-  if (shim_cancel_complete_callback_ == nullptr) {
-    LOG_WARN("Unregistering inquiry cancel complete without registering");
-  }
-  shim_cancel_complete_callback_ = nullptr;
+void Inquiry::impl::UnregisterInquiryCallbacks() {
+  callbacks_ = {{}, {}, {}, {}};
 }
 
 Inquiry::impl::impl(neighbor::InquiryModule* inquiry_module) : module_(inquiry_module) {
@@ -182,12 +108,14 @@ Inquiry::impl::~impl() {
   module_->UnregisterCallbacks();
 }
 
-void Inquiry::StartGeneralInquiry(uint8_t inquiry_length, uint8_t num_responses) {
+void Inquiry::StartGeneralInquiry(uint8_t inquiry_length, uint8_t num_responses, LegacyInquiryCallbacks callbacks) {
+  pimpl_->RegisterInquiryCallbacks(callbacks);
   pimpl_->general_inquiry_active_ = true;
-  return pimpl_->module_->StartGeneralInquiry(inquiry_length, num_responses);
+  pimpl_->module_->StartGeneralInquiry(inquiry_length, num_responses);
 }
 
-void Inquiry::StartLimitedInquiry(uint8_t inquiry_length, uint8_t num_responses) {
+void Inquiry::StartLimitedInquiry(uint8_t inquiry_length, uint8_t num_responses, LegacyInquiryCallbacks callbacks) {
+  pimpl_->RegisterInquiryCallbacks(callbacks);
   pimpl_->limited_inquiry_active_ = true;
   return pimpl_->module_->StartLimitedInquiry(inquiry_length, num_responses);
 }
@@ -199,7 +127,8 @@ void Inquiry::StopInquiry() {
   }
   pimpl_->limited_inquiry_active_ = false;
   pimpl_->general_inquiry_active_ = false;
-  return pimpl_->module_->StopInquiry();
+  pimpl_->module_->StopInquiry();
+  pimpl_->UnregisterInquiryCallbacks();
 }
 
 bool Inquiry::IsGeneralInquiryActive() const {
@@ -211,13 +140,15 @@ bool Inquiry::IsLimitedInquiryActive() const {
 }
 
 void Inquiry::StartGeneralPeriodicInquiry(uint8_t inquiry_length, uint8_t num_responses, uint16_t max_delay,
-                                          uint16_t min_delay) {
+                                          uint16_t min_delay, LegacyInquiryCallbacks callbacks) {
+  pimpl_->RegisterInquiryCallbacks(callbacks);
   pimpl_->general_periodic_inquiry_active_ = true;
-  return pimpl_->module_->StartGeneralPeriodicInquiry(inquiry_length, num_responses, max_delay, min_delay);
+  pimpl_->module_->StartGeneralPeriodicInquiry(inquiry_length, num_responses, max_delay, min_delay);
 }
 
 void Inquiry::StartLimitedPeriodicInquiry(uint8_t inquiry_length, uint8_t num_responses, uint16_t max_delay,
-                                          uint16_t min_delay) {
+                                          uint16_t min_delay, LegacyInquiryCallbacks callbacks) {
+  pimpl_->RegisterInquiryCallbacks(callbacks);
   pimpl_->limited_periodic_inquiry_active_ = true;
   return pimpl_->module_->StartLimitedPeriodicInquiry(inquiry_length, num_responses, max_delay, min_delay);
 }
@@ -225,7 +156,8 @@ void Inquiry::StartLimitedPeriodicInquiry(uint8_t inquiry_length, uint8_t num_re
 void Inquiry::StopPeriodicInquiry() {
   pimpl_->limited_periodic_inquiry_active_ = false;
   pimpl_->general_periodic_inquiry_active_ = false;
-  return pimpl_->module_->StopPeriodicInquiry();
+  pimpl_->module_->StopPeriodicInquiry();
+  pimpl_->UnregisterInquiryCallbacks();
 }
 
 bool Inquiry::IsGeneralPeriodicInquiryActive() const {
@@ -265,46 +197,6 @@ void Inquiry::SetInquiryWithRssiResultMode() {
 
 void Inquiry::SetExtendedInquiryResultMode() {
   pimpl_->module_->SetExtendedInquiryResultMode();
-}
-
-void Inquiry::RegisterInquiryResult(shim::InquiryResultCallback callback) {
-  pimpl_->RegisterInquiryResult(callback);
-}
-
-void Inquiry::UnregisterInquiryResult() {
-  pimpl_->UnregisterInquiryResult();
-}
-
-void Inquiry::RegisterInquiryResultWithRssi(shim::InquiryResultWithRssiCallback callback) {
-  pimpl_->RegisterInquiryResultWithRssi(callback);
-}
-
-void Inquiry::UnregisterInquiryResultWithRssi() {
-  pimpl_->UnregisterInquiryResultWithRssi();
-}
-
-void Inquiry::RegisterExtendedInquiryResult(shim::ExtendedInquiryResultCallback callback) {
-  pimpl_->RegisterExtendedInquiryResult(callback);
-}
-
-void Inquiry::UnregisterExtendedInquiryResult() {
-  pimpl_->UnregisterExtendedInquiryResult();
-}
-
-void Inquiry::RegisterInquiryComplete(InquiryCompleteCallback callback) {
-  pimpl_->RegisterInquiryComplete(callback);
-}
-
-void Inquiry::UnregisterInquiryComplete() {
-  pimpl_->UnregisterInquiryComplete();
-}
-
-void Inquiry::RegisterInquiryCancelComplete(InquiryCancelCompleteCallback callback) {
-  pimpl_->RegisterInquiryCancelComplete(callback);
-}
-
-void Inquiry::UnregisterInquiryCancelComplete() {
-  pimpl_->UnregisterInquiryCancelComplete();
 }
 
 /**
