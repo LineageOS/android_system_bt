@@ -23,21 +23,23 @@
 
 #include "stack/include/btm_api_types.h"
 
+//
+// NOTE: limited and general constants for inquiry and discoverable are swapped
+//
+
 /* Discoverable modes */
-static constexpr int kDiscoverableModeOff = 0;
-static constexpr int kLimitedDiscoverableMode = 1;
-static constexpr int kGeneralDiscoverableMode = 2;
+static constexpr int kDiscoverableModeOff = 0;      // BTM_NON_DISCOVERABLE
+static constexpr int kLimitedDiscoverableMode = 1;  // BTM_LIMITED_DISCOVERABLE
+static constexpr int kGeneralDiscoverableMode = 2;  // BTM_GENERAL_DISCOVERABLE
 
 /* Inquiry modes */
-// NOTE: The inquiry general/limited are reversed from the discoverability
-// constants
-static constexpr int kInquiryModeOff = 0;
-static constexpr int kGeneralInquiryMode = 1;
-static constexpr int kLimitedInquiryMode = 2;
+static constexpr int kInquiryModeOff = 0;      // BTM_INQUIRY_NONE
+static constexpr int kGeneralInquiryMode = 1;  // BTM_GENERAL_INQUIRY
+static constexpr int kLimitedInquiryMode = 2;  // BTM_LIMITED_INQUIRY
 
 /* Connectable modes */
-static constexpr int kConnectibleModeOff = 0;
-static constexpr int kConnectibleModeOn = 1;
+static constexpr int kConnectibleModeOff = 0;  // BTM_NON_CONNECTABLE
+static constexpr int kConnectibleModeOn = 1;   // BTM_CONNECTABLE
 
 /* Inquiry and page scan modes */
 static constexpr int kStandardScanType = 0;
@@ -69,29 +71,29 @@ namespace bluetooth {
 namespace shim {
 
 using BtmStatus = enum : uint16_t {
-  BTM_SUCCESS = 0,         /* 0  Command succeeded                 */
-  BTM_CMD_STARTED,         /* 1  Command started OK.               */
-  BTM_BUSY,                /* 2  Device busy with another command  */
-  BTM_NO_RESOURCES,        /* 3  No resources to issue command     */
-  BTM_MODE_UNSUPPORTED,    /* 4  Request for 1 or more unsupported modes */
-  BTM_ILLEGAL_VALUE,       /* 5  Illegal parameter value           */
-  BTM_WRONG_MODE,          /* 6  Device in wrong mode for request  */
-  BTM_UNKNOWN_ADDR,        /* 7  Unknown remote BD address         */
-  BTM_DEVICE_TIMEOUT,      /* 8  Device timeout                    */
-  BTM_BAD_VALUE_RET,       /* 9  A bad value was received from HCI */
-  BTM_ERR_PROCESSING,      /* 10 Generic error                     */
-  BTM_NOT_AUTHORIZED,      /* 11 Authorization failed              */
-  BTM_DEV_RESET,           /* 12 Device has been reset             */
-  BTM_CMD_STORED,          /* 13 request is stored in control block */
-  BTM_ILLEGAL_ACTION,      /* 14 state machine gets illegal command */
-  BTM_DELAY_CHECK,         /* 15 delay the check on encryption */
-  BTM_SCO_BAD_LENGTH,      /* 16 Bad SCO over HCI data length */
-  BTM_SUCCESS_NO_SECURITY, /* 17 security passed, no security set  */
-  BTM_FAILED_ON_SECURITY,  /* 18 security failed                   */
-  BTM_REPEATED_ATTEMPTS,   /* 19 repeated attempts for LE security requests */
-  BTM_MODE4_LEVEL4_NOT_SUPPORTED, /* 20 Secure Connections Only Mode can't be
+  BTM_SUCCESS = 0,              /* Command succeeded                 */
+  BTM_CMD_STARTED = 1,          /* Command started OK.               */
+  BTM_BUSY = 2,                 /* Device busy with another command  */
+  BTM_NO_RESOURCES = 3,         /* No resources to issue command     */
+  BTM_MODE_UNSUPPORTED = 4,     /* Request for 1 or more unsupported modes */
+  BTM_ILLEGAL_VALUE = 5,        /* Illegal parameter value           */
+  BTM_WRONG_MODE = 6,           /* Device in wrong mode for request  */
+  BTM_UNKNOWN_ADDR = 7,         /* Unknown remote BD address         */
+  BTM_DEVICE_TIMEOUT = 8,       /* Device timeout                    */
+  BTM_BAD_VALUE_RET = 9,        /* A bad value was received from HCI */
+  BTM_ERR_PROCESSING = 10,      /* Generic error                     */
+  BTM_NOT_AUTHORIZED = 11,      /* Authorization failed              */
+  BTM_DEV_RESET = 12,           /* Device has been reset             */
+  BTM_CMD_STORED = 13,          /* request is stored in control block */
+  BTM_ILLEGAL_ACTION = 14,      /* state machine gets illegal command */
+  BTM_DELAY_CHECK = 15,         /* delay the check on encryption */
+  BTM_SCO_BAD_LENGTH = 16,      /* Bad SCO over HCI data length */
+  BTM_SUCCESS_NO_SECURITY = 17, /* security passed, no security set  */
+  BTM_FAILED_ON_SECURITY = 18,  /* security failed                   */
+  BTM_REPEATED_ATTEMPTS = 19,   /* repeated attempts for LE security requests */
+  BTM_MODE4_LEVEL4_NOT_SUPPORTED = 20, /* Secure Connections Only Mode can't be
                                      supported */
-  BTM_DEV_BLACKLISTED             /* 21 The device is Blacklisted */
+  BTM_DEV_BLACKLISTED = 21,            /* The device is Blacklisted */
 };
 
 class ReadRemoteName {
@@ -126,10 +128,10 @@ class ReadRemoteName {
 
 class Btm {
  public:
-  Btm();
-  ~Btm();
+  Btm() = default;
+  ~Btm() = default;
 
-  // Callbacks
+  // Inquiry result callbacks
   void OnInquiryResult(std::vector<const uint8_t> result);
   void OnInquiryResultWithRssi(std::vector<const uint8_t> result);
   void OnExtendedInquiryResult(std::vector<const uint8_t> result);
@@ -141,9 +143,9 @@ class Btm {
   void SetFilterInquiryOnDevice();
   void ClearInquiryFilter();
 
-  bool SetStandardInquiryResultMode();
-  bool SetInquiryWithRssiResultMode();
-  bool SetExtendedInquiryResultMode();
+  void SetStandardInquiryResultMode();
+  void SetInquiryWithRssiResultMode();
+  void SetExtendedInquiryResultMode();
 
   void SetInterlacedInquiryScan();
   void SetStandardInquiryScan();
@@ -163,6 +165,7 @@ class Btm {
   bool IsGeneralPeriodicInquiryActive() const;
   bool IsLimitedPeriodicInquiryActive() const;
 
+  // Discoverability API
   void SetClassicGeneralDiscoverability(uint16_t window, uint16_t interval);
   void SetClassicLimitedDiscoverability(uint16_t window, uint16_t interval);
   void SetClassicDiscoverabilityOff();
@@ -185,23 +188,24 @@ class Btm {
 
   bool IsLeAclConnected(const RawAddress& raw_address) const;
 
-  // Remote device name
+  // Remote device name API
   BtmStatus ReadClassicRemoteDeviceName(const RawAddress& raw_address,
                                         tBTM_CMPL_CB* callback);
   BtmStatus ReadLeRemoteDeviceName(const RawAddress& raw_address,
                                    tBTM_CMPL_CB* callback);
   BtmStatus CancelAllReadRemoteDeviceName();
 
+  // Le neighbor interaction API
   void StartAdvertising();
   void StopAdvertising();
   void StartConnectability();
   void StopConnectability();
 
-  bool StartActiveScanning();
-  bool StopActiveScanning();
+  void StartActiveScanning();
+  void StopActiveScanning();
 
-  bool StartObserving();
-  bool StopObserving();
+  void StartObserving();
+  void StopObserving();
 
   size_t GetNumberOfAdvertisingInstances() const;
 
@@ -212,6 +216,8 @@ class Btm {
   bool CheckClassicAclLink(const RawAddress& raw_address) { return true; }
   bool CheckLeAclLink(const RawAddress& raw_address) { return true; }
   void StartScanning(bool use_active_scanning);
+
+  int inquiry_mode_ = 0;
 };
 
 }  // namespace shim
