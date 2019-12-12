@@ -85,6 +85,7 @@ void bluetooth::shim::Btm::OnExtendedInquiryResult(
 }
 
 void bluetooth::shim::Btm::OnInquiryComplete(uint16_t status) {
+  LOG_DEBUG(LOG_TAG, "%s status:%hu mode:%d", __func__, status, inquiry_mode_);
   btm_process_inq_complete((status == 0) ? (BTM_SUCCESS) : (BTM_ERR_PROCESSING),
                            static_cast<uint8_t>(inquiry_mode_));
 }
@@ -152,39 +153,37 @@ bool bluetooth::shim::Btm::StartInquiry(uint8_t mode, uint8_t duration,
     case kInquiryModeOff:
       LOG_DEBUG(LOG_TAG, "%s Stopping inquiry mode", __func__);
       bluetooth::shim::GetInquiry()->StopInquiry();
-      bluetooth::shim::GetInquiry()->UnregisterInquiryResult();
-      bluetooth::shim::GetInquiry()->UnregisterInquiryResultWithRssi();
-      bluetooth::shim::GetInquiry()->UnregisterExtendedInquiryResult();
-      bluetooth::shim::GetInquiry()->UnregisterInquiryComplete();
       break;
 
     case kLimitedInquiryMode:
-    case kGeneralInquiryMode:
-      bluetooth::shim::GetInquiry()->RegisterInquiryResult(
-          std::bind(&Btm::OnInquiryResult, this, std::placeholders::_1));
-      bluetooth::shim::GetInquiry()->RegisterInquiryResultWithRssi(std::bind(
-          &Btm::OnInquiryResultWithRssi, this, std::placeholders::_1));
-      bluetooth::shim::GetInquiry()->RegisterExtendedInquiryResult(std::bind(
-          &Btm::OnExtendedInquiryResult, this, std::placeholders::_1));
-      bluetooth::shim::GetInquiry()->RegisterInquiryComplete(
-          std::bind(&Btm::OnInquiryComplete, this, std::placeholders::_1));
+    case kGeneralInquiryMode: {
+      LegacyInquiryCallbacks legacy_inquiry_callbacks{
+          .result_callback =
+              std::bind(&Btm::OnInquiryResult, this, std::placeholders::_1),
+          .result_with_rssi_callback = std::bind(&Btm::OnInquiryResultWithRssi,
+                                                 this, std::placeholders::_1),
+          .extended_result_callback = std::bind(&Btm::OnExtendedInquiryResult,
+                                                this, std::placeholders::_1),
+          .complete_callback =
+              std::bind(&Btm::OnInquiryComplete, this, std::placeholders::_1),
+      };
 
       if (mode == kLimitedInquiryMode) {
         LOG_DEBUG(
             LOG_TAG,
             "%s Starting limited inquiry mode duration:%hhd max responses:%hhd",
             __func__, duration, max_responses);
-        bluetooth::shim::GetInquiry()->StartLimitedInquiry(duration,
-                                                           max_responses);
+        bluetooth::shim::GetInquiry()->StartLimitedInquiry(
+            duration, max_responses, legacy_inquiry_callbacks);
       } else {
         LOG_DEBUG(
             LOG_TAG,
             "%s Starting general inquiry mode duration:%hhd max responses:%hhd",
             __func__, duration, max_responses);
-        bluetooth::shim::GetInquiry()->StartGeneralInquiry(duration,
-                                                           max_responses);
+        bluetooth::shim::GetInquiry()->StartGeneralInquiry(
+            duration, max_responses, legacy_inquiry_callbacks);
       }
-      break;
+    } break;
 
     default:
       LOG_WARN(LOG_TAG, "%s Unknown inquiry mode:%d", __func__, mode);
@@ -222,19 +221,31 @@ bool bluetooth::shim::Btm::StartPeriodicInquiry(
       break;
 
     case kLimitedInquiryMode:
-    case kGeneralInquiryMode:
+    case kGeneralInquiryMode: {
+      LegacyInquiryCallbacks legacy_inquiry_callbacks{
+          .result_callback =
+              std::bind(&Btm::OnInquiryResult, this, std::placeholders::_1),
+          .result_with_rssi_callback = std::bind(&Btm::OnInquiryResultWithRssi,
+                                                 this, std::placeholders::_1),
+          .extended_result_callback = std::bind(&Btm::OnExtendedInquiryResult,
+                                                this, std::placeholders::_1),
+          .complete_callback =
+              std::bind(&Btm::OnInquiryComplete, this, std::placeholders::_1),
+      };
       if (mode == kLimitedInquiryMode) {
         LOG_DEBUG(LOG_TAG, "%s Starting limited periodic inquiry mode",
                   __func__);
         bluetooth::shim::GetInquiry()->StartLimitedPeriodicInquiry(
-            duration, max_responses, max_delay, min_delay);
+            duration, max_responses, max_delay, min_delay,
+            legacy_inquiry_callbacks);
       } else {
         LOG_DEBUG(LOG_TAG, "%s Starting general periodic inquiry mode",
                   __func__);
         bluetooth::shim::GetInquiry()->StartGeneralPeriodicInquiry(
-            duration, max_responses, max_delay, min_delay);
+            duration, max_responses, max_delay, min_delay,
+            legacy_inquiry_callbacks);
       }
-      break;
+    } break;
 
     default:
       LOG_WARN(LOG_TAG, "%s Unknown inquiry mode:%d", __func__, mode);
