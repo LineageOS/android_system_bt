@@ -26,12 +26,12 @@ void ClassicPairingHandler::OnRegistrationComplete(
     std::unique_ptr<l2cap::classic::FixedChannelService> fixed_channel_service) {
   fixed_channel_service_ = std::move(fixed_channel_service);
   fixed_channel_manager_->ConnectServices(
-      GetRecord()->GetDevice().GetAddress(),
+      GetRecord()->GetPseudoAddress().GetAddress(),
       common::Bind(&ClassicPairingHandler::OnConnectionFail, common::Unretained(this)), security_handler_);
 }
 
 void ClassicPairingHandler::OnUnregistered() {
-  std::move(complete_callback_).Run(GetRecord()->GetDevice().GetAddress(), last_status_);
+  std::move(complete_callback_).Run(GetRecord()->GetPseudoAddress().GetAddress(), last_status_);
 }
 
 void ClassicPairingHandler::OnConnectionOpen(std::unique_ptr<l2cap::classic::FixedChannel> fixed_channel) {
@@ -92,20 +92,20 @@ void ClassicPairingHandler::OnReceive(hci::MasterLinkKeyCompleteView packet) {
 void ClassicPairingHandler::OnReceive(hci::PinCodeRequestView packet) {
   ASSERT(packet.IsValid());
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
-  ASSERT_LOG(GetRecord()->GetDevice().GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  ASSERT_LOG(GetRecord()->GetPseudoAddress().GetAddress() == packet.GetBdAddr(), "Address mismatch");
 }
 
 void ClassicPairingHandler::OnReceive(hci::LinkKeyRequestView packet) {
   ASSERT(packet.IsValid());
   // TODO(optedoblivion): Add collision detection here
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
-  ASSERT_LOG(GetRecord()->GetDevice().GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  ASSERT_LOG(GetRecord()->GetPseudoAddress().GetAddress() == packet.GetBdAddr(), "Address mismatch");
   if (GetRecord()->IsBonded() || GetRecord()->IsPaired()) {
-    auto packet =
-        hci::LinkKeyRequestReplyBuilder::Create(GetRecord()->GetDevice().GetAddress(), GetRecord()->GetLinkKey());
+    auto packet = hci::LinkKeyRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress(),
+                                                          GetRecord()->GetLinkKey());
     this->GetChannel()->SendCommand(std::move(packet));
   } else {
-    auto packet = hci::LinkKeyRequestNegativeReplyBuilder::Create(GetRecord()->GetDevice().GetAddress());
+    auto packet = hci::LinkKeyRequestNegativeReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress());
     this->GetChannel()->SendCommand(std::move(packet));
   }
 }
@@ -113,26 +113,26 @@ void ClassicPairingHandler::OnReceive(hci::LinkKeyRequestView packet) {
 void ClassicPairingHandler::OnReceive(hci::LinkKeyNotificationView packet) {
   ASSERT(packet.IsValid());
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
-  ASSERT_LOG(GetRecord()->GetDevice().GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  ASSERT_LOG(GetRecord()->GetPseudoAddress().GetAddress() == packet.GetBdAddr(), "Address mismatch");
   GetRecord()->SetLinkKey(packet.GetLinkKey(), packet.GetKeyType());
 }
 
 void ClassicPairingHandler::OnReceive(hci::IoCapabilityRequestView packet) {
   ASSERT(packet.IsValid());
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
-  ASSERT_LOG(GetRecord()->GetDevice().GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  ASSERT_LOG(GetRecord()->GetPseudoAddress().GetAddress() == packet.GetBdAddr(), "Address mismatch");
   hci::IoCapability io_capability = local_io_capability_;
   hci::OobDataPresent oob_present = hci::OobDataPresent::NOT_PRESENT;
   hci::AuthenticationRequirements authentication_requirements = local_authentication_requirements_;
-  auto reply_packet = hci::IoCapabilityRequestReplyBuilder::Create(GetRecord()->GetDevice().GetAddress(), io_capability,
-                                                                   oob_present, authentication_requirements);
+  auto reply_packet = hci::IoCapabilityRequestReplyBuilder::Create(
+      GetRecord()->GetPseudoAddress().GetAddress(), io_capability, oob_present, authentication_requirements);
   this->GetChannel()->SendCommand(std::move(reply_packet));
 }
 
 void ClassicPairingHandler::OnReceive(hci::IoCapabilityResponseView packet) {
   ASSERT(packet.IsValid());
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
-  ASSERT_LOG(GetRecord()->GetDevice().GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  ASSERT_LOG(GetRecord()->GetPseudoAddress().GetAddress() == packet.GetBdAddr(), "Address mismatch");
 
   // Using local variable until device database pointer is ready
   remote_io_capability_ = packet.GetIoCapability();
@@ -142,7 +142,7 @@ void ClassicPairingHandler::OnReceive(hci::IoCapabilityResponseView packet) {
 void ClassicPairingHandler::OnReceive(hci::SimplePairingCompleteView packet) {
   ASSERT(packet.IsValid());
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
-  ASSERT_LOG(GetRecord()->GetDevice().GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  ASSERT_LOG(GetRecord()->GetPseudoAddress().GetAddress() == packet.GetBdAddr(), "Address mismatch");
   Cancel();
 }
 
@@ -164,13 +164,13 @@ void ClassicPairingHandler::OnReceive(hci::EncryptionKeyRefreshCompleteView pack
 void ClassicPairingHandler::OnReceive(hci::RemoteOobDataRequestView packet) {
   ASSERT(packet.IsValid());
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
-  ASSERT_LOG(GetRecord()->GetDevice().GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  ASSERT_LOG(GetRecord()->GetPseudoAddress().GetAddress() == packet.GetBdAddr(), "Address mismatch");
 }
 
 void ClassicPairingHandler::OnReceive(hci::UserPasskeyNotificationView packet) {
   ASSERT(packet.IsValid());
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
-  ASSERT_LOG(GetRecord()->GetDevice().GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  ASSERT_LOG(GetRecord()->GetPseudoAddress().GetAddress() == packet.GetBdAddr(), "Address mismatch");
 }
 
 void ClassicPairingHandler::OnReceive(hci::KeypressNotificationView packet) {
@@ -204,7 +204,7 @@ void ClassicPairingHandler::OnReceive(hci::KeypressNotificationView packet) {
 void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
   ASSERT(packet.IsValid());
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
-  ASSERT_LOG(GetRecord()->GetDevice().GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  ASSERT_LOG(GetRecord()->GetPseudoAddress().GetAddress() == packet.GetBdAddr(), "Address mismatch");
   // if locally_initialized, use default, otherwise us remote io caps
   hci::IoCapability initiator_io_capability = (locally_initiated_) ? local_io_capability_ : remote_io_capability_;
   hci::IoCapability responder_io_capability = (!locally_initiated_) ? local_io_capability_ : remote_io_capability_;
@@ -216,13 +216,13 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
           // NumericComparison, Both auto confirm
           LOG_INFO("Numeric Comparison: A and B auto confirm");
           GetChannel()->SendCommand(
-              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetDevice().GetAddress()));
+              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress()));
           // Unauthenticated
           break;
         case hci::IoCapability::DISPLAY_YES_NO:
           // NumericComparison, Initiator auto confirm, Responder display
           GetChannel()->SendCommand(
-              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetDevice().GetAddress()));
+              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress()));
           LOG_INFO("Numeric Comparison: A auto confirm");
           // Unauthenticated
           break;
@@ -236,7 +236,7 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
           // NumericComparison, Both auto confirm
           LOG_INFO("Numeric Comparison: A and B auto confirm");
           GetChannel()->SendCommand(
-              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetDevice().GetAddress()));
+              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress()));
           // Unauthenticated
           break;
       }
@@ -293,7 +293,7 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
           // NumericComparison, both auto confirm
           LOG_INFO("Numeric Comparison: A and B auto confirm");
           GetChannel()->SendCommand(
-              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetDevice().GetAddress()));
+              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress()));
           // Unauthenticated
           break;
       }
@@ -304,28 +304,28 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
           // NumericComparison, both auto confirm
           LOG_INFO("Numeric Comparison: A and B auto confirm");
           GetChannel()->SendCommand(
-              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetDevice().GetAddress()));
+              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress()));
           // Unauthenticated
           break;
         case hci::IoCapability::DISPLAY_YES_NO:
           // NumericComparison, Initiator auto confirm, Responder Yes/No confirm, no show conf val
           LOG_INFO("Numeric Comparison: A auto confirm");
           GetChannel()->SendCommand(
-              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetDevice().GetAddress()));
+              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress()));
           // Unauthenticated
           break;
         case hci::IoCapability::KEYBOARD_ONLY:
           // NumericComparison, both auto confirm
           LOG_INFO("Numeric Comparison: A and B auto confirm");
           GetChannel()->SendCommand(
-              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetDevice().GetAddress()));
+              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress()));
           // Unauthenticated
           break;
         case hci::IoCapability::NO_INPUT_NO_OUTPUT:
           // NumericComparison, both auto confirm
           LOG_INFO("Numeric Comparison: A and B auto confirm");
           GetChannel()->SendCommand(
-              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetDevice().GetAddress()));
+              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress()));
           // Unauthenticated
           break;
       }
@@ -335,7 +335,7 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
 
 void ClassicPairingHandler::OnReceive(hci::UserPasskeyRequestView packet) {
   ASSERT(packet.IsValid());
-  ASSERT_LOG(GetRecord()->GetDevice().GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  ASSERT_LOG(GetRecord()->GetPseudoAddress().GetAddress() == packet.GetBdAddr(), "Address mismatch");
 }
 
 }  // namespace pairing
