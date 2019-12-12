@@ -312,10 +312,17 @@ bool bluetooth::legacy::shim::L2cap::SetCallbacks(
   bluetooth::shim::GetL2cap()->SetConnectionClosedCallback(
       cid, [this](uint16_t cid, int error_code) {
         LOG_DEBUG(LOG_TAG, "OnChannel closed callback cid:%hd", cid);
-        CHECK(cid_to_callback_map_.find(cid) != cid_to_callback_map_.end());
-        cid_to_callback_map_[cid]->pL2CA_DisconnectInd_Cb(
-            cid, kDisconnectResponseRequired);
-        cid_to_callback_map_.erase(cid);
+        if (cid_to_callback_map_.find(cid) != cid_to_callback_map_.end()) {
+          cid_to_callback_map_[cid]->pL2CA_DisconnectInd_Cb(
+              cid, kDisconnectResponseRequired);
+          cid_to_callback_map_.erase(cid);
+        } else if (cid_closing_set_.count(cid) == 1) {
+          cid_closing_set_.erase(cid);
+        } else {
+          LOG_WARN(LOG_TAG, "%s Unexpected channel closure cid:%hd", __func__,
+                   cid);
+        }
+        CHECK(cid_to_psm_map_.find(cid) != cid_to_psm_map_.end());
         cid_to_psm_map_.erase(cid);
       });
   return true;
@@ -369,8 +376,10 @@ bool bluetooth::legacy::shim::L2cap::ConfigResponse(
 
 bool bluetooth::legacy::shim::L2cap::DisconnectRequest(uint16_t cid) {
   CHECK(ConnectionExists(cid));
-  cid_to_callback_map_.erase(cid);
+  LOG_DEBUG(LOG_TAG, "%s cid:%hu", __func__, cid);
   bluetooth::shim::GetL2cap()->CloseConnection(cid);
+  cid_to_callback_map_.erase(cid);
+  cid_closing_set_.insert(cid);
   return true;
 }
 
