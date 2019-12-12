@@ -405,3 +405,38 @@ packet ByteSizedFields {
   seven : 56,
   eight : 64,
 }
+
+enum StructTypeNoZero : 4 {
+  TWO_BYTE = 0x02,
+  FOUR_BYTE = 0x04,
+  AT_LEAST_FOUR_BYTE = 0x05,
+}
+
+struct UnusedParentStructNoZero {
+  struct_type : StructTypeNoZero,
+  _reserved_ : 4,
+  length : 8,
+  _body_,
+}
+
+struct TwoByteStructNoZero : UnusedParentStructNoZero (struct_type = TWO_BYTE, length = 2) {
+  two_bytes : 16,
+}
+
+struct FourByteStructNoZero : UnusedParentStructNoZero (struct_type = FOUR_BYTE, length = 4) {
+  four_bytes : 32,
+}
+
+struct AtLeastFourByteStructNoZero : UnusedParentStructNoZero (struct_type = AT_LEAST_FOUR_BYTE) {
+  four_bytes : 32,
+  struct_type : StructTypeNoZero,
+  _body_,
+}
+
+struct EightByteStructNoZero : AtLeastFourByteStructNoZero (struct_type = FOUR_BYTE, length = 9) {
+  four_bytes : 32,
+}
+
+packet OneGenericStructArrayNoZero {
+  an_array : UnusedParentStructNoZero[],
+}
