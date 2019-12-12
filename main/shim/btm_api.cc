@@ -48,10 +48,8 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
 
   uint8_t classic_mode = p_inqparms->mode & 0x0f;
 
-  if (!shim_btm.StartActiveScanning()) {
-    LOG_WARN(LOG_TAG, "%s Unable to start le active scanning", __func__);
-    return BTM_ERR_PROCESSING;
-  }
+  shim_btm.StartActiveScanning();
+
   if (!shim_btm.SetInquiryFilter(classic_mode, p_inqparms->filter_cond_type,
                                  p_inqparms->filter_cond)) {
     LOG_WARN(LOG_TAG, "%s Unable to set inquiry filter", __func__);
@@ -181,20 +179,14 @@ tBTM_STATUS bluetooth::shim::BTM_BleObserve(bool start, uint8_t duration_sec,
 
     btm_cb.ble_ctr_cb.p_obs_results_cb = p_results_cb;
     btm_cb.ble_ctr_cb.p_obs_cmpl_cb = p_cmpl_cb;
-    if (!shim_btm.StartObserving()) {
-      LOG_WARN(LOG_TAG, "%s Unable to start le observing", __func__);
-      return BTM_ERR_PROCESSING;
-    }
+    shim_btm.StartObserving();
     btm_cb.ble_ctr_cb.scan_activity |= BTM_LE_OBSERVE_ACTIVE;
   } else {
     if (!(btm_cb.ble_ctr_cb.scan_activity & BTM_LE_OBSERVE_ACTIVE)) {
       LOG_WARN(LOG_TAG, "%s Observing already inactive", __func__);
     }
     btm_cb.ble_ctr_cb.scan_activity &= ~BTM_LE_OBSERVE_ACTIVE;
-    if (!shim_btm.StopObserving()) {
-      LOG_WARN(LOG_TAG, "%s Unable to stop le observing", __func__);
-      return BTM_ERR_PROCESSING;
-    }
+    shim_btm.StopObserving();
     if (btm_cb.ble_ctr_cb.p_obs_cmpl_cb) {
       (btm_cb.ble_ctr_cb.p_obs_cmpl_cb)(&btm_cb.btm_inq_vars.inq_cmpl_info);
     }
@@ -226,24 +218,18 @@ tBTM_STATUS bluetooth::shim::BTM_SetPageScanType(uint16_t scan_type) {
 tBTM_STATUS bluetooth::shim::BTM_SetInquiryMode(uint8_t inquiry_mode) {
   switch (inquiry_mode) {
     case kStandardInquiryResult:
-      if (shim_btm.SetStandardInquiryResultMode()) {
-        return BTM_SUCCESS;
-      }
+      shim_btm.SetStandardInquiryResultMode();
       break;
     case kInquiryResultWithRssi:
-      if (shim_btm.SetInquiryWithRssiResultMode()) {
-        return BTM_SUCCESS;
-      }
+      shim_btm.SetInquiryWithRssiResultMode();
       break;
     case kExtendedInquiryResult:
-      if (shim_btm.SetExtendedInquiryResultMode()) {
-        return BTM_SUCCESS;
-      }
+      shim_btm.SetExtendedInquiryResultMode();
       break;
     default:
       return BTM_ILLEGAL_VALUE;
   }
-  return BTM_MODE_UNSUPPORTED;
+  return BTM_SUCCESS;
 }
 
 uint16_t bluetooth::shim::BTM_ReadDiscoverability(uint16_t* p_window,
