@@ -137,6 +137,10 @@ static void bta_hf_client_mgmt_cback(uint32_t code, uint16_t port_handle) {
 
     RFCOMM_RemoveServer(port_handle);
     p_buf->hdr.event = BTA_HF_CLIENT_RFC_CLOSE_EVT;
+  } else if (client_cb == NULL) {
+    // client_cb is already cleaned due to hfp client disabled.
+    // Assigned a valid event value to header and send this message anyway.
+    p_buf->hdr.event = BTA_HF_CLIENT_RFC_CLOSE_EVT;
   }
 
   p_buf->hdr.layer_specific = client_cb != NULL ? client_cb->handle : 0;
