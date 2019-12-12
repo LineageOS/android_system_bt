@@ -26,16 +26,12 @@
 #include <thread>
 
 #include "cert/grpc_root_server.h"
-#include "grpc/grpc_module.h"
-#include "hal/cert/cert.h"
-#include "hal/hci_hal.h"
 #include "hal/hci_hal_host_rootcanal.h"
 #include "hal/snoop_logger.h"
 
 using ::bluetooth::Module;
 using ::bluetooth::ModuleList;
 using ::bluetooth::StackManager;
-using ::bluetooth::grpc::GrpcModule;
 using ::bluetooth::os::Thread;
 
 namespace {
