@@ -25,15 +25,18 @@ import subprocess
 
 ANDROID_BUILD_TOP = os.environ.get('ANDROID_BUILD_TOP')
 
-sys.path.append(ANDROID_BUILD_TOP + '/out/soong/.intermediates/system/bt/gd/BluetoothFacadeAndCertGeneratedStub_py/gen')
+sys.path.append(
+    ANDROID_BUILD_TOP +
+    '/out/soong/.intermediates/system/bt/gd/BluetoothFacadeAndCertGeneratedStub_py/gen'
+)
 
 
 class PTSBaseTestClass(BaseTestClass):
+
     def __init__(self, configs):
         BaseTestClass.__init__(self, configs)
 
         gd_devices = self.controller_configs.get("GdDevice")
 
         self.register_controller(
-            importlib.import_module('cert.gd_device'),
-            builtin=True)
+            importlib.import_module('cert.gd_device'), builtin=True)
