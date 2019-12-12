@@ -18,6 +18,7 @@
 
 #include <base/callback.h>
 
+#include "device/include/controller.h"
 #include "main/shim/btm.h"
 #include "main/shim/btm_api.h"
 #include "osi/include/log.h"
@@ -713,4 +714,8 @@ void bluetooth::shim::BTM_BleEnableDisableFilterFeature(
 
 uint8_t bluetooth::shim::BTM_BleMaxMultiAdvInstanceCount() {
   return shim_btm.GetNumberOfAdvertisingInstances();
+}
+
+bool bluetooth::shim::BTM_BleLocalPrivacyEnabled(void) {
+  return controller_get_interface()->supports_ble_privacy();
 }
