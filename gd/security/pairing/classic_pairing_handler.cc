@@ -24,6 +24,10 @@ namespace pairing {
 void ClassicPairingHandler::OnRegistrationComplete(
     l2cap::classic::FixedChannelManager::RegistrationResult result,
     std::unique_ptr<l2cap::classic::FixedChannelService> fixed_channel_service) {
+  if (result != l2cap::classic::FixedChannelManager::RegistrationResult::SUCCESS) {
+    LOG_ERROR("Failed service registration!");
+    return;
+  }
   fixed_channel_service_ = std::move(fixed_channel_service);
   fixed_channel_manager_->ConnectServices(
       GetRecord()->GetPseudoAddress().GetAddress(),
@@ -31,12 +35,17 @@ void ClassicPairingHandler::OnRegistrationComplete(
 }
 
 void ClassicPairingHandler::OnUnregistered() {
-  std::move(complete_callback_).Run(GetRecord()->GetPseudoAddress().GetAddress(), last_status_);
+  PairingResultOrFailure result = PairingResult();
+  if (last_status_ != hci::ErrorCode::SUCCESS) {
+    result = PairingFailure(hci::ErrorCodeText(last_status_));
+  }
+  std::move(complete_callback_).Run(GetRecord()->GetPseudoAddress().GetAddress(), result);
 }
 
 void ClassicPairingHandler::OnConnectionOpen(std::unique_ptr<l2cap::classic::FixedChannel> fixed_channel) {
   ASSERT(fixed_channel_ == nullptr);
   fixed_channel_ = std::move(fixed_channel);
+  ASSERT(fixed_channel_->GetDevice() == GetRecord()->GetPseudoAddress().GetAddress());
   fixed_channel_->Acquire();
   fixed_channel_->RegisterOnCloseCallback(
       security_handler_, common::BindOnce(&ClassicPairingHandler::OnConnectionClose, common::Unretained(this)));
@@ -143,6 +152,7 @@ void ClassicPairingHandler::OnReceive(hci::SimplePairingCompleteView packet) {
   ASSERT(packet.IsValid());
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
   ASSERT_LOG(GetRecord()->GetPseudoAddress().GetAddress() == packet.GetBdAddr(), "Address mismatch");
+  last_status_ = packet.GetStatus();
   Cancel();
 }
 
