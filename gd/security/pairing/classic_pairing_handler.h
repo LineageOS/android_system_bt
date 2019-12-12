@@ -87,7 +87,7 @@ class ClassicPairingHandler : public PairingHandler {
   hci::AuthenticationRequirements local_authentication_requirements_ __attribute__((unused));
   std::unique_ptr<l2cap::classic::FixedChannel> fixed_channel_{nullptr};
   common::OnceCallback<void(hci::Address, PairingResultOrFailure)> complete_callback_;
-  PairingResultOrFailure last_status_;
+  hci::ErrorCode last_status_;
   bool locally_initiated_ = false;
 };
 
