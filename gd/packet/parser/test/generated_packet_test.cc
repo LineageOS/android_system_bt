@@ -1667,15 +1667,15 @@ TEST(GeneratedPacketTest, testOneGenericStructFourArray) {
   parent_vector[3] = std::move(fbs);
 
   std::array<std::unique_ptr<UnusedParentStruct>, 4> vector_copy;
-  size_t i = 0;
+  size_t index = 0;
   for (auto& s : parent_vector) {
     if (s->struct_type_ == StructType::TWO_BYTE) {
-      vector_copy[i] = std::make_unique<TwoByteStruct>(*(TwoByteStruct*)s.get());
+      vector_copy[index] = std::make_unique<TwoByteStruct>(*(TwoByteStruct*)s.get());
     }
     if (s->struct_type_ == StructType::FOUR_BYTE) {
-      vector_copy[i] = std::make_unique<FourByteStruct>(*(FourByteStruct*)s.get());
+      vector_copy[index] = std::make_unique<FourByteStruct>(*(FourByteStruct*)s.get());
     }
-    i++;
+    index++;
   }
 
   auto packet = OneGenericStructFourArrayBuilder::Create(std::move(parent_vector));
@@ -1876,6 +1876,28 @@ TEST(GeneratedPacketTest, testByteSizedFields) {
 }
 
 DEFINE_AND_INSTANTIATE_ByteSizedFieldsReflectionTest(byte_sized);
+
+TEST(GeneratedPacketTest, testOneGenericStructArrayNoZeroEmpty) {
+  auto too_few_bytes = std::make_shared<std::vector<uint8_t>>(0);
+  auto view = OneGenericStructArrayNoZeroView::Create(too_few_bytes);
+  for (size_t i = 0; i < 10; i++) {
+    if (view.IsValid()) {
+      view.GetAnArray().size();
+    }
+    too_few_bytes->push_back(0);
+    view = OneGenericStructArrayNoZeroView::Create(too_few_bytes);
+  }
+
+  std::vector<uint8_t> a_two_byte_struct = {
+      static_cast<uint8_t>(StructTypeNoZero::TWO_BYTE),
+      0x01,
+      0x02,
+  };
+  too_few_bytes = std::make_shared<std::vector<uint8_t>>(a_two_byte_struct);
+  view = OneGenericStructArrayNoZeroView::Create(too_few_bytes);
+  ASSERT(view.IsValid());
+  ASSERT_EQ(1, view.GetAnArray().size());
+}
 
 }  // namespace parser
 }  // namespace packet
