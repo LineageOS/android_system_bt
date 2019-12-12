@@ -711,6 +711,9 @@ extern uint8_t BTM_BleMaxMultiAdvInstanceCount(void) {
  ******************************************************************************/
 bool BTM_BleLocalPrivacyEnabled(void) {
 #if (BLE_PRIVACY_SPT == TRUE)
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::BTM_BleLocalPrivacyEnabled();
+  }
   return (btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE);
 #else
   return false;
