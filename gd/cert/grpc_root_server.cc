@@ -21,7 +21,6 @@
 #include "cert/read_only_property_server.h"
 #include "cert/rootservice.grpc.pb.h"
 #include "grpc/grpc_module.h"
-#include "hal/cert/cert.h"
 #include "hci/cert/cert.h"
 #include "l2cap/classic/cert/cert.h"
 #include "os/log.h"
@@ -50,9 +49,6 @@ class RootCertService : public ::bluetooth::cert::RootCert::Service {
 
     BluetoothModule module_to_test = request->module_to_test();
     switch (module_to_test) {
-      case BluetoothModule::HAL:
-        modules.add<::bluetooth::hal::cert::HalCertModule>();
-        break;
       case BluetoothModule::HCI:
         modules.add<::bluetooth::cert::ReadOnlyPropertyServerModule>();
         modules.add<::bluetooth::hci::cert::AclManagerCertModule>();

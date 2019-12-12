@@ -14,10 +14,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from gd_device_base import GdDeviceBase
-from gd_device_base import replace_vars
-
 from facade import rootservice_pb2_grpc as facade_rootservice_pb2_grpc
+from gd_device_base import GdDeviceBase, GdDeviceConfigError, replace_vars
 from hal import facade_pb2_grpc as hal_facade_pb2_grpc
 from hci import facade_pb2_grpc as hci_facade_pb2_grpc
 from hci.facade import le_advertising_manager_facade_pb2_grpc
