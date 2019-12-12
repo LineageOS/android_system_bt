@@ -174,7 +174,7 @@ struct ConnectionInterfaceManager {
 
   void ConnectionOpened(ConnectionOpenCallback on_open, hci::Address address, l2cap::Psm psm,
                         ConnectionInterfaceDescriptor cid) {
-    LOG_DEBUG("%s address:%s psm:%hd cid:%hd", __func__, address.ToString().c_str(), psm, cid);
+    LOG_DEBUG("address:%s psm:%hd cid:%hd", address.ToString().c_str(), psm, cid);
     handler_->Post(common::BindOnce(&ConnectionInterfaceManager::GeneralCallback, common::Unretained(this), on_open,
                                     address, psm, cid));
     // TODO(cmanton) queue this pending connection address/psm tuple up for deletion
@@ -182,7 +182,7 @@ struct ConnectionInterfaceManager {
   }
 
   void ConnectionFailed(hci::Address address, l2cap::Psm psm) {
-    LOG_DEBUG("%s Connection Failed", __func__);
+    LOG_DEBUG("Connection Failed");
     // TODO(cmanton) queue this pending connection address/psm tuple up for deletion
     // There may be multiple, so only remove one
   }
