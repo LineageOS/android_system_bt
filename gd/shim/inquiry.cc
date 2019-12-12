@@ -193,6 +193,10 @@ void Inquiry::StartLimitedInquiry(uint8_t inquiry_length, uint8_t num_responses)
 }
 
 void Inquiry::StopInquiry() {
+  if (!pimpl_->limited_inquiry_active_ && !pimpl_->general_inquiry_active_) {
+    LOG_WARN("Ignoring attempt to stop an inactive inquiry");
+    return;
+  }
   pimpl_->limited_inquiry_active_ = false;
   pimpl_->general_inquiry_active_ = false;
   return pimpl_->module_->StopInquiry();
