@@ -29,19 +29,25 @@ using InquiryResultCallback = std::function<void(std::vector<const uint8_t> data
 using InquiryResultWithRssiCallback = std::function<void(std::vector<const uint8_t> data)>;
 using ExtendedInquiryResultCallback = std::function<void(std::vector<const uint8_t> data)>;
 using InquiryCompleteCallback = std::function<void(uint16_t status)>;
-using InquiryCancelCompleteCallback = std::function<void(uint8_t mode)>;
+
+struct LegacyInquiryCallbacks {
+  InquiryResultCallback result_callback;
+  InquiryResultWithRssiCallback result_with_rssi_callback;
+  ExtendedInquiryResultCallback extended_result_callback;
+  InquiryCompleteCallback complete_callback;
+};
 
 struct IInquiry {
-  virtual void StartGeneralInquiry(uint8_t duration, uint8_t max_responses) = 0;
-  virtual void StartLimitedInquiry(uint8_t duration, uint8_t max_responses) = 0;
+  virtual void StartGeneralInquiry(uint8_t duration, uint8_t max_responses, LegacyInquiryCallbacks callbacks) = 0;
+  virtual void StartLimitedInquiry(uint8_t duration, uint8_t max_responses, LegacyInquiryCallbacks callbacks) = 0;
   virtual void StopInquiry() = 0;
   virtual bool IsGeneralInquiryActive() const = 0;
   virtual bool IsLimitedInquiryActive() const = 0;
 
   virtual void StartGeneralPeriodicInquiry(uint8_t duration, uint8_t max_responses, uint16_t max_delay,
-                                           uint16_t min_delay) = 0;
+                                           uint16_t min_delay, LegacyInquiryCallbacks callbacks) = 0;
   virtual void StartLimitedPeriodicInquiry(uint8_t duration, uint8_t max_responses, uint16_t max_delay,
-                                           uint16_t min_delay) = 0;
+                                           uint16_t min_delay, LegacyInquiryCallbacks callbacks) = 0;
   virtual void StopPeriodicInquiry() = 0;
   virtual bool IsGeneralPeriodicInquiryActive() const = 0;
   virtual bool IsLimitedPeriodicInquiryActive() const = 0;
@@ -55,17 +61,6 @@ struct IInquiry {
   virtual void SetStandardInquiryResultMode() = 0;
   virtual void SetInquiryWithRssiResultMode() = 0;
   virtual void SetExtendedInquiryResultMode() = 0;
-
-  virtual void RegisterInquiryResult(InquiryResultCallback callback) = 0;
-  virtual void UnregisterInquiryResult() = 0;
-  virtual void RegisterInquiryResultWithRssi(InquiryResultWithRssiCallback callback) = 0;
-  virtual void UnregisterInquiryResultWithRssi() = 0;
-  virtual void RegisterExtendedInquiryResult(ExtendedInquiryResultCallback callback) = 0;
-  virtual void UnregisterExtendedInquiryResult() = 0;
-  virtual void RegisterInquiryComplete(InquiryCompleteCallback callback) = 0;
-  virtual void UnregisterInquiryComplete() = 0;
-  virtual void RegisterInquiryCancelComplete(InquiryCancelCompleteCallback callback) = 0;
-  virtual void UnregisterInquiryCancelComplete() = 0;
 
   virtual ~IInquiry() {}
 };
