@@ -16,39 +16,34 @@
 
 from __future__ import print_function
 
-from datetime import datetime, timedelta
-import logging
+from datetime import timedelta
 import os
 import sys
-import time
-from queue import SimpleQueue, Empty
 
 sys.path.append(os.environ['ANDROID_BUILD_TOP'] + '/system/bt/gd')
 
-from cert.gd_base_test import GdBaseTestClass
+from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
 from cert.event_callback_stream import EventCallbackStream
 from cert.event_asserts import EventAsserts
-from cert import rootservice_pb2 as cert_rootservice_pb2
-from facade import common_pb2
 from google.protobuf import empty_pb2
 from facade import rootservice_pb2 as facade_rootservice_pb2
-from hal.cert import api_pb2 as hal_cert_pb2
 from hal import facade_pb2 as hal_facade_pb2
+from bluetooth_packets_python3 import hci_packets
 
 
-class SimpleHalTest(GdBaseTestClass):
+class SimpleHalTest(GdFacadeOnlyBaseTestClass):
 
     def setup_test(self):
-        self.device_under_test = self.gd_devices[0]
-        self.cert_device = self.gd_cert_devices[0]
+        self.cert_device = self.gd_devices[0]
+        self.device_under_test = self.gd_devices[1]
 
         self.device_under_test.rootservice.StartStack(
             facade_rootservice_pb2.StartStackRequest(
                 module_under_test=facade_rootservice_pb2.BluetoothModule.Value(
                     'HAL'),))
         self.cert_device.rootservice.StartStack(
-            cert_rootservice_pb2.StartStackRequest(
-                module_to_test=cert_rootservice_pb2.BluetoothModule.Value(
+            facade_rootservice_pb2.StartStackRequest(
+                module_under_test=facade_rootservice_pb2.BluetoothModule.Value(
                     'HAL'),))
 
         self.device_under_test.wait_channel_ready()
@@ -61,7 +56,7 @@ class SimpleHalTest(GdBaseTestClass):
         self.device_under_test.rootservice.StopStack(
             facade_rootservice_pb2.StopStackRequest())
         self.cert_device.rootservice.StopStack(
-            cert_rootservice_pb2.StopStackRequest())
+            facade_rootservice_pb2.StopStackRequest())
 
     def test_none_event(self):
         with EventCallbackStream(
@@ -94,8 +89,12 @@ class SimpleHalTest(GdBaseTestClass):
                 self.device_under_test.hal.FetchHciEvent(
                     empty_pb2.Empty())) as hci_event_stream:
             hci_event_asserts = EventAsserts(hci_event_stream)
-            self.cert_device.hal.SetScanMode(
-                hal_cert_pb2.ScanModeSettings(mode=3))
+            self.cert_device.hal.SendHciCommand(
+                hal_facade_pb2.HciCommandPacket(
+                    payload=bytes(
+                        hci_packets.WriteScanEnableBuilder(
+                            hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN)
+                        .Serialize())))
             self.device_under_test.hal.SetInquiry(
                 hal_facade_pb2.InquirySettings(length=0x30, num_responses=0xff))
             hci_event_asserts.assert_event_occurs(
@@ -166,12 +165,12 @@ class SimpleHalTest(GdBaseTestClass):
 
             # Set the CERT LE Address to 0C:05:04:03:02:01
             self.cert_device.hal.SendHciCommand(
-                hal_cert_pb2.HciCommandPacket(
+                hal_facade_pb2.HciCommandPacket(
                     payload=b'\x05\x20\x06\x01\x02\x03\x04\x05\x0C'))
 
             # Direct connect to 0D:05:04:03:02:01
             self.cert_device.hal.SendHciCommand(
-                hal_cert_pb2.HciCommandPacket(
+                hal_facade_pb2.HciCommandPacket(
                     payload=
                     b'\x0D\x20\x19\x11\x01\x22\x02\x00\x01\x01\x02\x03\x04\x05\x0D\x01\x06\x00\x70\x0C\x40\x00\x03\x07\x01\x00\x02\x00'
                 ))

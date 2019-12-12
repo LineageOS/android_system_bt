@@ -18,7 +18,6 @@ from gd_device_base import GdDeviceBase
 from gd_device_base import replace_vars
 
 from cert import rootservice_pb2_grpc as cert_rootservice_pb2_grpc
-from hal.cert import api_pb2_grpc as hal_cert_pb2_grpc
 from hci.cert import api_pb2_grpc as hci_cert_pb2_grpc
 from l2cap.classic.cert import api_pb2_grpc as l2cap_cert_pb2_grpc
 
@@ -69,7 +68,6 @@ class GdCertDevice(GdDeviceBase):
         # Cert stubs
         self.rootservice = cert_rootservice_pb2_grpc.RootCertStub(
             self.grpc_root_server_channel)
-        self.hal = hal_cert_pb2_grpc.HciHalCertStub(self.grpc_channel)
         self.controller_read_only_property = cert_rootservice_pb2_grpc.ReadOnlyPropertyStub(
             self.grpc_channel)
         self.hci = hci_cert_pb2_grpc.AclManagerCertStub(self.grpc_channel)
