@@ -23,9 +23,13 @@
 
 #include "l2cap/classic/l2cap_classic_module.h"
 #include "security/initial_informations.h"
+#include "security/security_manager_listener.h"
 
 namespace bluetooth {
 namespace security {
+
+class ISecurityManagerListener;
+
 namespace pairing {
 
 static constexpr hci::IoCapability kDefaultIoCapability = hci::IoCapability::DISPLAY_YES_NO;
@@ -38,13 +42,14 @@ class ClassicPairingHandler : public PairingHandler {
   ClassicPairingHandler(std::shared_ptr<l2cap::classic::FixedChannelManager> fixed_channel_manager,
                         channel::SecurityManagerChannel* security_manager_channel,
                         std::shared_ptr<record::SecurityRecord> record, os::Handler* security_handler,
-                        common::OnceCallback<void(hci::Address, PairingResultOrFailure)> complete_callback)
+                        common::OnceCallback<void(hci::Address, PairingResultOrFailure)> complete_callback,
+                        std::vector<std::pair<ISecurityManagerListener*, os::Handler*>>& client_listeners)
       : PairingHandler(security_manager_channel, std::move(record)),
         fixed_channel_manager_(std::move(fixed_channel_manager)), security_policy_(),
         security_handler_(security_handler), remote_io_capability_(kDefaultIoCapability),
         local_io_capability_(kDefaultIoCapability), local_oob_present_(kDefaultOobDataPresent),
         local_authentication_requirements_(kDefaultAuthenticationRequirements),
-        complete_callback_(std::move(complete_callback)) {}
+        complete_callback_(std::move(complete_callback)), client_listeners_(client_listeners) {}
 
   ~ClassicPairingHandler() override = default;
 
@@ -76,6 +81,11 @@ class ClassicPairingHandler : public PairingHandler {
   void OnConnectionOpen(std::unique_ptr<l2cap::classic::FixedChannel> fixed_channel);
   void OnConnectionFail(l2cap::classic::FixedChannelManager::ConnectionResult result);
   void OnConnectionClose(hci::ErrorCode error_code);
+  void NotifyUiDisplayYesNo(uint32_t numeric_value);
+  void NotifyUiDisplayYesNo();
+  void NotifyUiDisplayPasskey(uint32_t passkey);
+  void NotifyUiDisplayPasskeyInput();
+  void NotifyUiDisplayCancel();
 
   std::shared_ptr<l2cap::classic::FixedChannelManager> fixed_channel_manager_;
   std::unique_ptr<l2cap::classic::FixedChannelService> fixed_channel_service_{nullptr};
@@ -87,6 +97,7 @@ class ClassicPairingHandler : public PairingHandler {
   hci::AuthenticationRequirements local_authentication_requirements_ __attribute__((unused));
   std::unique_ptr<l2cap::classic::FixedChannel> fixed_channel_{nullptr};
   common::OnceCallback<void(hci::Address, PairingResultOrFailure)> complete_callback_;
+  std::vector<std::pair<ISecurityManagerListener*, os::Handler*>>& client_listeners_;
   hci::ErrorCode last_status_;
   bool locally_initiated_ = false;
 };
