@@ -39,7 +39,7 @@ std::shared_ptr<bluetooth::security::record::SecurityRecord> SecurityManagerImpl
     std::shared_ptr<security::record::SecurityRecord> record =
         std::make_shared<security::record::SecurityRecord>(device);
     auto new_entry = std::pair<hci::Address, std::shared_ptr<security::record::SecurityRecord>>(
-        record->GetDevice().GetAddress(), record);
+        record->GetPseudoAddress().GetAddress(), record);
     // Keep track of it
     security_record_map_.insert(new_entry);
     return record;
@@ -51,23 +51,23 @@ void SecurityManagerImpl::DispatchPairingHandler(std::shared_ptr<security::recor
                                                  bool locally_initiated) {
   common::OnceCallback<void(hci::Address, PairingResultOrFailure)> callback =
       common::BindOnce(&SecurityManagerImpl::OnPairingHandlerComplete, common::Unretained(this));
-  auto entry = pairing_handler_map_.find(record->GetDevice().GetAddress());
+  auto entry = pairing_handler_map_.find(record->GetPseudoAddress().GetAddress());
   if (entry != pairing_handler_map_.end()) {
     LOG_WARN("Device already has a pairing handler, and is in the middle of pairing!");
     return;
   }
   std::shared_ptr<pairing::PairingHandler> pairing_handler = nullptr;
-  switch (record->GetDevice().GetAddressType()) {
+  switch (record->GetPseudoAddress().GetAddressType()) {
     case hci::AddressType::PUBLIC_DEVICE_ADDRESS:
       pairing_handler = std::make_shared<security::pairing::ClassicPairingHandler>(
           l2cap_classic_module_->GetFixedChannelManager(), security_manager_channel_, record, security_handler_,
           std::move(callback));
       break;
     default:
-      ASSERT_LOG(false, "Pairing type %hhu not implemented!", record->GetDevice().GetAddressType());
+      ASSERT_LOG(false, "Pairing type %hhu not implemented!", record->GetPseudoAddress().GetAddressType());
   }
-  auto new_entry = std::pair<hci::Address, std::shared_ptr<pairing::PairingHandler>>(record->GetDevice().GetAddress(),
-                                                                                     pairing_handler);
+  auto new_entry = std::pair<hci::Address, std::shared_ptr<pairing::PairingHandler>>(
+      record->GetPseudoAddress().GetAddress(), pairing_handler);
   pairing_handler_map_.insert(std::move(new_entry));
   pairing_handler->Initiate(locally_initiated, pairing::kDefaultIoCapability, pairing::kDefaultOobDataPresent,
                             pairing::kDefaultAuthenticationRequirements);
