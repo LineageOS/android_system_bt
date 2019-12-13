@@ -204,20 +204,14 @@ void neighbor::InquiryModule::impl::OnEvent(hci::EventPacketView view) {
     case hci::EventCode::INQUIRY_RESULT: {
       auto packet = hci::InquiryResultView::Create(view);
       ASSERT(packet.IsValid());
-      LOG_DEBUG("Inquiry result size:%zd num_responses:%d addr:%s repetition_mode:%s cod:%s clock_offset:%d",
-                packet.size(), packet.GetNumResponses(), packet.GetBdAddr().ToString().c_str(),
-                hci::PageScanRepetitionModeText(packet.GetPageScanRepetitionMode()).c_str(),
-                packet.GetClassOfDevice().ToString().c_str(), packet.GetClockOffset());
+      LOG_DEBUG("Inquiry result size:%zd num_responses:%zu", packet.size(), packet.GetInquiryResults().size());
       inquiry_callbacks_.result(packet);
     } break;
 
     case hci::EventCode::INQUIRY_RESULT_WITH_RSSI: {
       auto packet = hci::InquiryResultWithRssiView::Create(view);
       ASSERT(packet.IsValid());
-      LOG_DEBUG("Inquiry result with rssi num_responses:%d addr:%s repetition_mode:%s cod:%s clock_offset:%d",
-                packet.GetNumResponses(), packet.GetAddress().ToString().c_str(),
-                hci::PageScanRepetitionModeText(packet.GetPageScanRepetitionMode()).c_str(),
-                packet.GetClassOfDevice().ToString().c_str(), packet.GetClockOffset());
+      LOG_DEBUG("Inquiry result with rssi num_responses:%zu", packet.GetInquiryResults().size());
       inquiry_callbacks_.result_with_rssi(packet);
     } break;
 

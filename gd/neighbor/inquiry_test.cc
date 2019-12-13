@@ -459,15 +459,8 @@ TEST_F(InquiryTest, InjectInquiryResult) {
   test_hci_layer_->Synchronize([this] { inquiry_module_->StartGeneralInquiry(128, 100); }, hci::OpCode::INQUIRY);
 
   WaitForInquiryResult([this] {
-    uint8_t num_responses = 1;
-    hci::Address bd_addr;
-    hci::Address::FromString("11:22:33:44:55:66", bd_addr);
-    hci::PageScanRepetitionMode page_scan_repetition_mode = hci::PageScanRepetitionMode::R1;
-    hci::ClassOfDevice class_of_device;
-    hci::ClassOfDevice::FromString("00:00:00", class_of_device);
-    uint16_t clock_offset = 0x1234;
-    auto packet = hci::InquiryResultBuilder::Create(num_responses, bd_addr, page_scan_repetition_mode, class_of_device,
-                                                    clock_offset);
+    const std::vector<hci::InquiryResult> inquiry_results;
+    auto packet = hci::InquiryResultBuilder::Create(inquiry_results);
     test_hci_layer_->InjectInquiryResult(std::move(packet));
   });
   test_hci_layer_->Synchronize([this] { inquiry_module_->StopInquiry(); }, hci::OpCode::INQUIRY_CANCEL);
