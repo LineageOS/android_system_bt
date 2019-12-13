@@ -101,6 +101,8 @@ class SecurityManagerChannelCallback : public ISecurityManagerChannelListener {
 };
 
 static void pairing_complete_callback(bluetooth::hci::Address address, PairingResultOrFailure status) {
+  ASSERT(std::holds_alternative<PairingResult>(status));
+  // auto result = std::get<PairingResult>(status);
   //  if (std::holds_alternative<PairingResult>(status)) {
   //    auto result = status::get<PairingResult>(status);
   //  }
@@ -124,7 +126,7 @@ class ClassicPairingHandlerTest : public ::testing::Test {
     EXPECT_CALL(*sptr, RegisterService(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
         .Times(::testing::AnyNumber());
     pairing_handler_ = new pairing::ClassicPairingHandler(sptr, channel_, security_record_, handler_,
-                                                          common::Bind(&pairing_complete_callback));
+                                                          common::Bind(&pairing_complete_callback), client_listeners_);
     channel_callback_ = new SecurityManagerChannelCallback(pairing_handler_);
     channel_->SetChannelListener(channel_callback_);
   }
@@ -149,6 +151,7 @@ class ClassicPairingHandlerTest : public ::testing::Test {
   channel::SecurityManagerChannel* channel_ = nullptr;
   pairing::ClassicPairingHandler* pairing_handler_ = nullptr;
   std::shared_ptr<record::SecurityRecord> security_record_ = nullptr;
+  std::vector<std::pair<ISecurityManagerListener*, os::Handler*>> client_listeners_;
 };
 
 // Security Manager Boot Sequence (Required for SSP, these are already set at boot time)
@@ -159,8 +162,8 @@ class ClassicPairingHandlerTest : public ::testing::Test {
 /*** Locally initiated ***/
 // Security Pairing Sequence (JustWorks)
 //  -> *Establish L2CAP connection*
-//  -> AuthenticationRequested (should L2CAP request secure service which causes this?)
-//  <- LinkKeyRequest
+//  -> AuthenticationRequested (L2CAP handles this)
+//  <- LinkKeyRequest   // This is entry point for remote initiated
 //  -> LinkKeyRequestNegativeReply
 //  <- IoCapabilityRequest
 //  -> IoCapabilityRequestReply
@@ -213,6 +216,7 @@ hci::SecurityCommandView GetLastCommand(FakeHciLayer* hci_layer) {
 
 TEST_F(ClassicPairingHandlerTest, setup_teardown) {}
 
+/*** JustWorks (Numeric Comparison w/ no UI) ***/
 // display_only + display_only is JustWorks no confirmation
 // Needs dialog as per security a bug unless pairing is temporary
 TEST_F(ClassicPairingHandlerTest, locally_initiatied_display_only_display_only_temp) {
@@ -500,6 +504,18 @@ TEST_F(ClassicPairingHandlerTest, locally_initiatied_no_input_no_output_no_input
   ASSERT_EQ(link_key, security_record_->GetLinkKey());
   ASSERT_EQ(key_type, security_record_->GetKeyType());
 }
+
+/*** Numeric Comparison ***/
+// display_yes_no + display_only
+
+// display_yes_no + display_yes_no
+// display_yes_no + keyboard_only
+// display_yes_no + no_input_no_output
+
+// keyboard_only + display_only
+// keyboard_only + display_yes_no
+
+// keyboard_only + keyboard_only  (a just works I missed)
 
 // Remotely initiated
 
