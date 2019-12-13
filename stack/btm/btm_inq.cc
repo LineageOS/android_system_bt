@@ -120,7 +120,7 @@ static tBTM_STATUS btm_set_inq_event_filter(uint8_t filter_cond_type,
 void btm_clr_inq_result_flt(void);
 
 static uint8_t btm_convert_uuid_to_eir_service(uint16_t uuid16);
-static void btm_set_eir_uuid(uint8_t* p_eir, tBTM_INQ_RESULTS* p_results);
+void btm_set_eir_uuid(uint8_t* p_eir, tBTM_INQ_RESULTS* p_results);
 static const uint8_t* btm_eir_get_uuid_list(uint8_t* p_eir, size_t eir_len,
                                             uint8_t uuid_size,
                                             uint8_t* p_num_uuid,
