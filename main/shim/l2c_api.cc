@@ -257,12 +257,6 @@ bool bluetooth::shim::L2CA_GetPeerFeatures(const RawAddress& bd_addr,
   return false;
 }
 
-bool bluetooth::shim::L2CA_GetBDAddrbyHandle(uint16_t handle,
-                                             RawAddress& bd_addr) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
-  return false;
-}
-
 /**
  * Fixed Channel APIs
  */
@@ -299,24 +293,6 @@ bool bluetooth::shim::L2CA_RemoveFixedChnl(uint16_t fixed_cid,
 }
 
 /**
- * Channel Configuration API
- */
-bool bluetooth::shim::L2CA_GetCurrentConfig(
-    uint16_t lcid, tL2CAP_CFG_INFO** pp_our_cfg,
-    tL2CAP_CH_CFG_BITS* p_our_cfg_bits, tL2CAP_CFG_INFO** pp_peer_cfg,
-    tL2CAP_CH_CFG_BITS* p_peer_cfg_bits) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
-  return false;
-}
-
-bool bluetooth::shim::L2CA_GetConnectionConfig(uint16_t lcid, uint16_t* mtu,
-                                               uint16_t* rcid,
-                                               uint16_t* handle) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
-  return false;
-}
-
-/**
  * Channel hygiene APIs
  */
 bool bluetooth::shim::L2CA_GetIdentifiers(uint16_t lcid, uint16_t* rcid,
@@ -331,26 +307,10 @@ bool bluetooth::shim::L2CA_SetIdleTimeout(uint16_t cid, uint16_t timeout,
   return false;
 }
 
-bool bluetooth::shim::L2CA_FlowControl(uint16_t cid, bool data_enabled) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
-  return false;
-}
-
-bool bluetooth::shim::L2CA_SendTestSFrame(uint16_t cid, uint8_t sup_type,
-                                          uint8_t back_track) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
-  return false;
-}
-
 bool bluetooth::shim::L2CA_SetTxPriority(uint16_t cid,
                                          tL2CAP_CHNL_PRIORITY priority) {
   LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
   return false;
-}
-
-uint8_t bluetooth::shim::L2CA_GetChnlFcrMode(uint16_t lcid) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
-  return 0;
 }
 
 bool bluetooth::shim::L2CA_SetFixedChannelTout(const RawAddress& rem_bda,
