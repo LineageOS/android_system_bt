@@ -26,6 +26,7 @@
 #include "l2cap/classic/facade.h"
 #include "os/log.h"
 #include "os/thread.h"
+#include "security/facade.h"
 #include "stack_manager.h"
 
 namespace bluetooth {
@@ -61,6 +62,10 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
       case BluetoothModule::L2CAP:
         modules.add<::bluetooth::facade::ReadOnlyPropertyServerModule>();
         modules.add<::bluetooth::l2cap::classic::L2capClassicModuleFacadeModule>();
+        break;
+      case BluetoothModule::SECURITY:
+        modules.add<::bluetooth::facade::ReadOnlyPropertyServerModule>();
+        modules.add<::bluetooth::security::SecurityModuleFacadeModule>();
         break;
       default:
         return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "invalid module under test");
