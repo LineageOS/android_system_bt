@@ -61,7 +61,7 @@ void SecurityManagerImpl::DispatchPairingHandler(std::shared_ptr<security::recor
     case hci::AddressType::PUBLIC_DEVICE_ADDRESS:
       pairing_handler = std::make_shared<security::pairing::ClassicPairingHandler>(
           l2cap_classic_module_->GetFixedChannelManager(), security_manager_channel_, record, security_handler_,
-          std::move(callback));
+          std::move(callback), listeners_);
       break;
     default:
       ASSERT_LOG(false, "Pairing type %hhu not implemented!", record->GetPseudoAddress().GetAddressType());
