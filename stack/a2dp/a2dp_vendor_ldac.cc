@@ -31,7 +31,6 @@
 
 #include <base/logging.h>
 #include "a2dp_vendor.h"
-#include "a2dp_vendor_ldac_decoder.h"
 #include "a2dp_vendor_ldac_encoder.h"
 #include "bt_utils.h"
 #include "btif_av_co.h"
@@ -91,12 +90,6 @@ static const tA2DP_ENCODER_INTERFACE a2dp_encoder_interface_ldac = {
     a2dp_vendor_ldac_get_encoder_interval_ms,
     a2dp_vendor_ldac_send_frames,
     a2dp_vendor_ldac_set_transmit_queue_length};
-
-static const tA2DP_DECODER_INTERFACE a2dp_decoder_interface_ldac = {
-    a2dp_vendor_ldac_decoder_init,
-    a2dp_vendor_ldac_decoder_cleanup,
-    a2dp_vendor_ldac_decoder_decode_packet,
-};
 
 UNUSED_ATTR static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityLdac(
     const tA2DP_LDAC_CIE* p_cap, const uint8_t* p_codec_info,
@@ -587,13 +580,6 @@ const tA2DP_ENCODER_INTERFACE* A2DP_VendorGetEncoderInterfaceLdac(
   if (!A2DP_IsVendorSourceCodecValidLdac(p_codec_info)) return NULL;
 
   return &a2dp_encoder_interface_ldac;
-}
-
-const tA2DP_DECODER_INTERFACE* A2DP_VendorGetDecoderInterfaceLdac(
-    const uint8_t* p_codec_info) {
-  if (!A2DP_IsVendorSinkCodecValidLdac(p_codec_info)) return NULL;
-
-  return &a2dp_decoder_interface_ldac;
 }
 
 bool A2DP_VendorAdjustCodecLdac(uint8_t* p_codec_info) {
@@ -1421,12 +1407,6 @@ A2dpCodecConfigLdacSink::~A2dpCodecConfigLdacSink() {}
 
 bool A2dpCodecConfigLdacSink::init() {
   if (!isValid()) return false;
-
-  // Load the decoder
-  if (!A2DP_VendorLoadDecoderLdac()) {
-    LOG_ERROR(LOG_TAG, "%s: cannot load the decoder", __func__);
-    return false;
-  }
 
   return true;
 }

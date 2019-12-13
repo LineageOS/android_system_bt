@@ -509,7 +509,6 @@ const tA2DP_DECODER_INTERFACE* A2DP_VendorGetDecoderInterface(
 
   // Check for LDAC
   if (vendor_id == A2DP_LDAC_VENDOR_ID && codec_id == A2DP_LDAC_CODEC_ID) {
-    return A2DP_VendorGetDecoderInterfaceLdac(p_codec_info);
   }
 
   return NULL;
