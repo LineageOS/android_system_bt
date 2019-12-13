@@ -120,7 +120,7 @@ class ClassicPairingHandlerTest : public ::testing::Test {
     security_record_ = std::make_shared<record::SecurityRecord>(device_);
     std::shared_ptr<l2cap::classic::testing::MockFixedChannelManager> sptr =
         std::shared_ptr<l2cap::classic::testing::MockFixedChannelManager>(
-            new l2cap::classic::testing::MockFixedChannelManager);
+            new l2cap::classic::testing::MockFixedChannelManager());
     EXPECT_CALL(*sptr, RegisterService(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
         .Times(::testing::AnyNumber());
     pairing_handler_ = new pairing::ClassicPairingHandler(sptr, channel_, security_record_, handler_,

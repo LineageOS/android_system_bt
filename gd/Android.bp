@@ -177,7 +177,6 @@ cc_binary {
         "cert/grpc_root_server.cc",
         "cert/read_only_property_server.cc",
         "grpc/grpc_module.cc",
-        ":BluetoothCertSource_hci_hal",
         ":BluetoothCertSource_hci_layer",
         ":BluetoothCertSource_l2cap_layer",
     ],
@@ -470,7 +469,6 @@ genrule {
     cmd: "$(location aprotoc) -Isystem/bt/gd -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-python-plugin) $(in) --grpc_out=$(genDir) --python_out=$(genDir); " +
         "touch $(genDir)/facade/__init__.py; " +
         "touch $(genDir)/hal/__init__.py; " +
-        "touch $(genDir)/hal/cert/__init__.py; " +
         "touch $(genDir)/hci/__init__.py; " +
         "touch $(genDir)/hci/facade/__init__.py; " +
         "touch $(genDir)/hci/cert/__init__.py; " +
@@ -500,9 +498,6 @@ genrule {
         "l2cap/classic/__init__.py",
         "l2cap/classic/facade_pb2_grpc.py",
         "l2cap/classic/facade_pb2.py",
-        "hal/cert/__init__.py",
-        "hal/cert/api_pb2_grpc.py",
-        "hal/cert/api_pb2.py",
         "hci/cert/__init__.py",
         "hci/cert/api_pb2_grpc.py",
         "hci/cert/api_pb2.py",
@@ -516,7 +511,6 @@ filegroup {
     name: "BluetoothCertStackProto",
     srcs: [
         "cert/rootservice.proto",
-        "hal/cert/api.proto",
         "hci/cert/api.proto",
         "l2cap/classic/cert/api.proto",
     ],
@@ -538,8 +532,6 @@ genrule {
         "cert/rootservice.pb.h",
         "facade/common.grpc.pb.h",
         "facade/common.pb.h",
-        "hal/cert/api.grpc.pb.h",
-        "hal/cert/api.pb.h",
         "hci/cert/api.grpc.pb.h",
         "hci/cert/api.pb.h",
         "l2cap/classic/cert/api.grpc.pb.h",
@@ -563,8 +555,6 @@ genrule {
         "cert/rootservice.pb.cc",
         "facade/common.grpc.pb.cc",
         "facade/common.pb.cc",
-        "hal/cert/api.grpc.pb.cc",
-        "hal/cert/api.pb.cc",
         "hci/cert/api.grpc.pb.cc",
         "hci/cert/api.pb.cc",
         "l2cap/classic/cert/api.grpc.pb.cc",
