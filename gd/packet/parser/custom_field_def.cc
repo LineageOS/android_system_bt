@@ -43,6 +43,10 @@ void CustomFieldDef::GenInclude(std::ostream& s) const {
   s << "#include \"" << include_ << util::CamelCaseToUnderScore(GetTypeName()) << ".h\"\n";
 }
 
+void CustomFieldDef::GenPyBind11Include(std::ostream& s) const {
+  s << "#include \"" << include_ << util::CamelCaseToUnderScore(GetTypeName()) << "_pybind11_type_caster.h\"\n";
+}
+
 void CustomFieldDef::GenUsing(std::ostream& s) const {
   s << "using ::bluetooth::";
   for (const auto& c : include_) {
