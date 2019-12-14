@@ -89,7 +89,8 @@ void btif_a2dp_source_stop_audio_req(void);
 // |codec_user_config| contains the preferred codec user configuration.
 void btif_a2dp_source_encoder_user_config_update_req(
     const RawAddress& peer_addr,
-    const btav_a2dp_codec_config_t& codec_user_config);
+    const std::vector<btav_a2dp_codec_config_t>& codec_user_preferences,
+    std::promise<void> peer_ready_promise);
 
 // Process a request to update the A2DP audio encoding with new audio
 // configuration feeding parameters stored in |codec_audio_config|.

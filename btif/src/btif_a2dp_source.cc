@@ -246,7 +246,8 @@ static void btif_a2dp_source_setup_codec_delayed(
     const RawAddress& peer_address);
 static void btif_a2dp_source_encoder_user_config_update_event(
     const RawAddress& peer_address,
-    const btav_a2dp_codec_config_t& codec_user_config);
+    const std::vector<btav_a2dp_codec_config_t>& codec_user_preferences,
+    std::promise<void> peer_ready_promise);
 static void btif_a2dp_source_audio_feeding_update_event(
     const btav_a2dp_codec_config_t& codec_audio_config);
 static bool btif_a2dp_source_audio_tx_flush_req(void);
@@ -618,23 +619,57 @@ void btif_a2dp_source_stop_audio_req(void) {
 
 void btif_a2dp_source_encoder_user_config_update_req(
     const RawAddress& peer_address,
-    const btav_a2dp_codec_config_t& codec_user_config) {
-  LOG_INFO(LOG_TAG, "%s: peer_address=%s state=%s", __func__,
-           peer_address.ToString().c_str(),
-           btif_a2dp_source_cb.StateStr().c_str());
-  btif_a2dp_source_thread.DoInThread(
-      FROM_HERE, base::Bind(&btif_a2dp_source_encoder_user_config_update_event,
-                            peer_address, codec_user_config));
+    const std::vector<btav_a2dp_codec_config_t>& codec_user_preferences,
+    std::promise<void> peer_ready_promise) {
+  LOG(INFO) << __func__ << ": peer_address=" << peer_address
+            << " state=" << btif_a2dp_source_cb.StateStr() << " "
+            << codec_user_preferences.size() << " codec_preference(s)";
+  if (!btif_a2dp_source_thread.DoInThread(
+          FROM_HERE,
+          base::BindOnce(&btif_a2dp_source_encoder_user_config_update_event,
+                         peer_address, codec_user_preferences,
+                         std::move(peer_ready_promise)))) {
+    // cannot set promise but triggers crash
+    LOG(FATAL) << __func__ << ": peer_address=" << peer_address
+               << " state=" << btif_a2dp_source_cb.StateStr()
+               << " fails to context switch";
+  }
 }
 
 static void btif_a2dp_source_encoder_user_config_update_event(
     const RawAddress& peer_address,
-    const btav_a2dp_codec_config_t& codec_user_config) {
-  LOG_INFO(LOG_TAG, "%s: peer_address=%s state=%s", __func__,
-           peer_address.ToString().c_str(),
-           btif_a2dp_source_cb.StateStr().c_str());
-  if (!bta_av_co_set_codec_user_config(peer_address, codec_user_config)) {
-    LOG_ERROR(LOG_TAG, "%s: cannot update codec user configuration", __func__);
+    const std::vector<btav_a2dp_codec_config_t>& codec_user_preferences,
+    std::promise<void> peer_ready_promise) {
+  bool restart_output = false;
+  bool success = false;
+  for (auto codec_user_config : codec_user_preferences) {
+    success = bta_av_co_set_codec_user_config(peer_address, codec_user_config,
+                                              &restart_output);
+    if (success) {
+      LOG(INFO) << __func__ << ": peer_address=" << peer_address
+                << " state=" << btif_a2dp_source_cb.StateStr()
+                << " codec_preference={" << codec_user_config.ToString()
+                << "} restart_output=" << (restart_output ? "true" : "false");
+      break;
+    }
+  }
+  if (success && restart_output) {
+    // Codec reconfiguration is in progress, and it is safe to unlock since
+    // remaining tasks like starting audio session and reporting new codec
+    // will be handled by BTA_AV_RECONFIG_EVT later.
+    peer_ready_promise.set_value();
+    return;
+  }
+  if (!success) {
+    LOG(ERROR) << __func__ << ": cannot update codec user configuration(s)";
+  }
+  if (!peer_address.IsEmpty() && peer_address == btif_av_source_active_peer()) {
+    // No more actions needed with remote, and if succeed, user had changed the
+    // config like the bits per sample only. Let's resume the session now.
+    btif_a2dp_source_start_session(peer_address, std::move(peer_ready_promise));
+  } else {
+    // Unlock for non-active peer
+    peer_ready_promise.set_value();
   }
 }
 

@@ -494,23 +494,12 @@ class BtifAvSource {
       const std::vector<btav_a2dp_codec_config_t>& codec_preferences,
       std::promise<void> peer_ready_promise) {
     // Restart the session if the codec for the active peer is updated
-    bool restart_session =
-        ((active_peer_ == peer_address) && !active_peer_.IsEmpty());
-    if (restart_session) {
+    if (!peer_address.IsEmpty() && active_peer_ == peer_address) {
       btif_a2dp_source_end_session(active_peer_);
     }
 
-    for (auto cp : codec_preferences) {
-      BTIF_TRACE_DEBUG("%s: codec_preference=%s", __func__,
-                       cp.ToString().c_str());
-      btif_a2dp_source_encoder_user_config_update_req(peer_address, cp);
-    }
-    if (restart_session) {
-      btif_a2dp_source_start_session(active_peer_,
-                                     std::move(peer_ready_promise));
-    } else {
-      peer_ready_promise.set_value();
-    }
+    btif_a2dp_source_encoder_user_config_update_req(
+        peer_address, codec_preferences, std::move(peer_ready_promise));
   }
 
   const std::map<RawAddress, BtifAvPeer*>& Peers() const { return peers_; }
@@ -1906,18 +1895,36 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
       break;
 
     case BTA_AV_RECONFIG_EVT:
-      if (peer_.CheckFlags(BtifAvPeer::kFlagPendingStart) &&
-          (p_av->reconfig.status == BTA_AV_SUCCESS)) {
-        LOG_INFO(LOG_TAG,
-                 "%s : Peer %s : Reconfig done - calling BTA_AvStart()",
-                 __PRETTY_FUNCTION__, peer_.PeerAddress().ToString().c_str());
+      if (p_av->reconfig.status != BTA_AV_SUCCESS) {
+        LOG(WARNING) << __PRETTY_FUNCTION__ << ": Peer " << peer_.PeerAddress()
+                     << " : failed reconfiguration";
+        if (peer_.CheckFlags(BtifAvPeer::kFlagPendingStart)) {
+          LOG(ERROR) << __PRETTY_FUNCTION__ << ": Peer " << peer_.PeerAddress()
+                     << " : cannot proceed to do AvStart";
+          peer_.ClearFlags(BtifAvPeer::kFlagPendingStart);
+          btif_a2dp_command_ack(A2DP_CTRL_ACK_FAILURE);
+        }
+        if (peer_.IsSink()) {
+          src_disconnect_sink(peer_.PeerAddress());
+        } else if (peer_.IsSource()) {
+          sink_disconnect_src(peer_.PeerAddress());
+        }
+        break;
+      }
+
+      if (peer_.IsActivePeer()) {
+        LOG(INFO) << __PRETTY_FUNCTION__ << " : Peer " << peer_.PeerAddress()
+                  << " : Reconfig done - calling startSession() to audio HAL";
+        std::promise<void> peer_ready_promise;
+        std::future<void> peer_ready_future = peer_ready_promise.get_future();
+        btif_a2dp_source_start_session(peer_.PeerAddress(),
+                                       std::move(peer_ready_promise));
+      }
+      if (peer_.CheckFlags(BtifAvPeer::kFlagPendingStart)) {
+        LOG(INFO) << __PRETTY_FUNCTION__ << " : Peer " << peer_.PeerAddress()
+                  << " : Reconfig done - calling BTA_AvStart("
+                  << loghex(peer_.BtaHandle()) << ")";
         BTA_AvStart(peer_.BtaHandle());
-      } else if (peer_.CheckFlags(BtifAvPeer::kFlagPendingStart)) {
-        BTIF_TRACE_WARNING("%s: Peer %s : failed reconfiguration",
-                           __PRETTY_FUNCTION__,
-                           peer_.PeerAddress().ToString().c_str());
-        peer_.ClearFlags(BtifAvPeer::kFlagPendingStart);
-        btif_a2dp_command_ack(A2DP_CTRL_ACK_FAILURE);
       }
       break;
 
@@ -2803,6 +2810,11 @@ static bt_status_t codec_config_src(
   if (!btif_av_source.Enabled()) {
     LOG(WARNING) << __func__ << ": BTIF AV Source is not enabled";
     return BT_STATUS_NOT_READY;
+  }
+
+  if (peer_address.IsEmpty()) {
+    LOG(WARNING) << __func__ << ": BTIF AV Source needs peer to config";
+    return BT_STATUS_PARM_INVALID;
   }
 
   std::promise<void> peer_ready_promise;

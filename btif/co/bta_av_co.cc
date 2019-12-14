@@ -417,10 +417,14 @@ class BtaAvCo {
    *
    * @param peer_address the peer address
    * @param codec_user_config the codec user configuration to set
+   * @param p_restart_output if there is a change in the encoder configuration
+   * that requires restarting of the A2DP connection, flag |p_restart_output|
+   * will be set to true.
    * @return true on success, otherwise false
    */
   bool SetCodecUserConfig(const RawAddress& peer_address,
-                          const btav_a2dp_codec_config_t& codec_user_config);
+                          const btav_a2dp_codec_config_t& codec_user_config,
+                          bool* p_restart_output);
 
   /**
    * Set the codec audio configuration.
@@ -1379,31 +1383,17 @@ void BtaAvCo::ProcessAudioDelay(tBTA_AV_HNDL bta_av_handle,
 
 void BtaAvCo::UpdateMtu(tBTA_AV_HNDL bta_av_handle,
                         const RawAddress& peer_address, uint16_t mtu) {
-  APPL_TRACE_DEBUG("%s: peer %s bta_av_handle: 0x%x mtu: %d", __func__,
-                   peer_address.ToString().c_str(), bta_av_handle, mtu);
+  LOG(INFO) << __func__ << ": peer " << peer_address
+            << " bta_av_handle: " << loghex(bta_av_handle) << " mtu: " << mtu;
 
   // Find the peer
   BtaAvCoPeer* p_peer = FindPeerAndUpdate(bta_av_handle, peer_address);
   if (p_peer == nullptr) {
-    APPL_TRACE_ERROR(
-        "%s: could not find peer entry for bta_av_handle 0x%x peer %s",
-        __func__, bta_av_handle, peer_address.ToString().c_str());
+    LOG(ERROR) << __func__ << ": could not find peer entry for bta_av_handle "
+               << loghex(bta_av_handle) << " peer " << peer_address;
     return;
   }
-
-  if (p_peer->mtu == mtu) return;
-
   p_peer->mtu = mtu;
-  if (active_peer_ == p_peer) {
-    LOG(INFO) << __func__ << ": update the codec encoder with peer "
-              << peer_address << " bta_av_handle: " << loghex(bta_av_handle)
-              << ", new MTU: " << mtu;
-    // Send a request with NONE config values to update only the MTU.
-    SetCodecAudioConfig(
-        {.sample_rate = BTAV_A2DP_CODEC_SAMPLE_RATE_NONE,
-         .bits_per_sample = BTAV_A2DP_CODEC_BITS_PER_SAMPLE_NONE,
-         .channel_mode = BTAV_A2DP_CODEC_CHANNEL_MODE_NONE});
-  }
 }
 
 bool BtaAvCo::SetActivePeer(const RawAddress& peer_address) {
@@ -1472,7 +1462,7 @@ const tA2DP_DECODER_INTERFACE* BtaAvCo::GetSinkDecoderInterface() {
 
 bool BtaAvCo::SetCodecUserConfig(
     const RawAddress& peer_address,
-    const btav_a2dp_codec_config_t& codec_user_config) {
+    const btav_a2dp_codec_config_t& codec_user_config, bool* p_restart_output) {
   uint8_t result_codec_config[AVDT_CODEC_SIZE];
   const BtaAvCoSep* p_sink = nullptr;
   bool restart_input = false;
@@ -1482,6 +1472,8 @@ bool BtaAvCo::SetCodecUserConfig(
 
   VLOG(1) << __func__ << ": peer_address=" << peer_address
           << " codec_user_config={" << codec_user_config.ToString() << "}";
+
+  *p_restart_output = false;
 
   BtaAvCoPeer* p_peer = FindPeer(peer_address);
   if (p_peer == nullptr) {
@@ -1544,6 +1536,7 @@ bool BtaAvCo::SetCodecUserConfig(
             << loghex(p_peer->BtaAvHandle()) << ")";
     BTA_AvReconfig(p_peer->BtaAvHandle(), true, p_sink->sep_info_idx,
                    p_peer->codec_config, num_protect, bta_av_co_cp_scmst);
+    *p_restart_output = true;
   }
 
 done:
@@ -2177,8 +2170,9 @@ const tA2DP_DECODER_INTERFACE* bta_av_co_get_decoder_interface(void) {
 
 bool bta_av_co_set_codec_user_config(
     const RawAddress& peer_address,
-    const btav_a2dp_codec_config_t& codec_user_config) {
-  return bta_av_co_cb.SetCodecUserConfig(peer_address, codec_user_config);
+    const btav_a2dp_codec_config_t& codec_user_config, bool* p_restart_output) {
+  return bta_av_co_cb.SetCodecUserConfig(peer_address, codec_user_config,
+                                         p_restart_output);
 }
 
 bool bta_av_co_set_codec_audio_config(
