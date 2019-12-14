@@ -58,7 +58,7 @@ interface IBluetooth
     int getDiscoverableTimeout();
     boolean setDiscoverableTimeout(int timeout);
 
-    boolean startDiscovery(String callingPackage);
+    boolean startDiscovery(String callingPackage, String callingFeatureId);
     boolean cancelDiscovery();
     boolean isDiscovering();
     long getDiscoveryEndMillis();
