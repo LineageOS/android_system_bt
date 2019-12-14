@@ -23,38 +23,10 @@
 
 #include "hci/address_with_type.h"
 #include "security/internal/security_manager_impl.h"
+#include "security/security_manager_listener.h"
 
 namespace bluetooth {
 namespace security {
-
-/**
- * Callback interface from SecurityManager.
- */
-class ISecurityManagerListener {
- public:
-  virtual ~ISecurityManagerListener() = 0;
-
-  /**
-   * Called when a device is successfully bonded.
-   *
-   * @param address of the newly bonded device
-   */
-  virtual void OnDeviceBonded(bluetooth::hci::AddressWithType device) = 0;
-
-  /**
-   * Called when a device is successfully un-bonded.
-   *
-   * @param address of device that is no longer bonded
-   */
-  virtual void OnDeviceUnbonded(bluetooth::hci::AddressWithType device) = 0;
-
-  /**
-   * Called as a result of a failure during the bonding process.
-   *
-   * @param address of the device that failed to bond
-   */
-  virtual void OnDeviceBondFailed(bluetooth::hci::AddressWithType device) = 0;
-};
 
 /**
  * Manages the security attributes, pairing, bonding of devices, and the

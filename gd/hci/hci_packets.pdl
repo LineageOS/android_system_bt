@@ -3282,8 +3282,7 @@ packet InquiryComplete : EventPacket (event_code = INQUIRY_COMPLETE){
   status : ErrorCode,
 }
 
-packet InquiryResult : EventPacket (event_code = INQUIRY_RESULT){
-  num_responses : 8,
+struct InquiryResult {
   bd_addr : Address,
   page_scan_repetition_mode : PageScanRepetitionMode,
   _reserved_ : 8,
@@ -3291,6 +3290,11 @@ packet InquiryResult : EventPacket (event_code = INQUIRY_RESULT){
   class_of_device : ClassOfDevice,
   clock_offset : 15,
   _reserved_ : 1,
+}
+
+packet InquiryResult : EventPacket (event_code = INQUIRY_RESULT){
+  _count_(inquiry_results) : 8,
+  inquiry_results : InquiryResult[],
 }
 
 enum LinkType : 8 {
@@ -3513,8 +3517,7 @@ packet FlowSpecificationComplete : EventPacket (event_code = FLOW_SPECIFICATION_
   access_latency : 32, // Octets/s
 }
 
-packet InquiryResultWithRssi : EventPacket (event_code = INQUIRY_RESULT_WITH_RSSI){
-  num_responses : 8,
+struct InquiryResultWithRssi {
   address : Address,
   page_scan_repetition_mode : PageScanRepetitionMode,
   _reserved_ : 8,
@@ -3522,6 +3525,11 @@ packet InquiryResultWithRssi : EventPacket (event_code = INQUIRY_RESULT_WITH_RSS
   clock_offset : 15,
   _reserved_ : 1,
   rssi : 8,
+}
+
+packet InquiryResultWithRssi : EventPacket (event_code = INQUIRY_RESULT_WITH_RSSI){
+  _count_(inquiry_results) : 8,
+  inquiry_results : InquiryResultWithRssi[],
 }
 
 packet ReadRemoteExtendedFeaturesComplete : EventPacket (event_code = READ_REMOTE_EXTENDED_FEATURES_COMPLETE){
