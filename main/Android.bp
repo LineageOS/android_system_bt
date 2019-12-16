@@ -8,14 +8,6 @@ filegroup {
         "bte_init_cpp_logging.cc",
         "bte_logmsg.cc",
         "bte_main.cc",
-        "shim/btm.cc",
-        "shim/btm_api.cc",
-        "shim/controller.cc",
-        "shim/entry.cc",
-        "shim/hci_layer.cc",
-        "shim/l2c_api.cc",
-        "shim/l2cap.cc",
-        "shim/shim.cc",
         "stack_config.cc",
     ]
 }
@@ -27,6 +19,7 @@ cc_library_shared {
     export_header_lib_headers: ["libbluetooth_headers"],
     srcs: [
         ":LibBluetoothSources",
+        ":LibBluetoothShimSources",
     ],
     include_dirs: [
         "system/bt",
@@ -119,7 +112,8 @@ cc_library_static {
 
     srcs: [
         ":LibBluetoothSources",
-        "shim/entry_for_test.cc",
+        ":LibBluetoothShimSources",
+        ":LibBluetoothShimTestEntrySources",
     ],
     host_supported: true,
     include_dirs: [
@@ -137,14 +131,6 @@ cc_library_static {
     ],
 }
 
-filegroup {
-    name: "BluetoothLegacyShimTestSources",
-    srcs: [
-        "shim/l2cap_test.cc",
-        "shim/test_stack.cc",
-    ]
-}
-
 cc_test {
     name: "bluetooth_test_legacy",
     defaults: ["fluoride_defaults",
@@ -153,7 +139,7 @@ cc_test {
     test_suites: ["device-tests"],
     host_supported: true,
     srcs: [
-        ":BluetoothLegacyShimTestSources",
+        ":LibBluetoothShimTestSources",
     ],
     static_libs: [
         "libgmock",
