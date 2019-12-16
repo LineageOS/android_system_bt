@@ -473,7 +473,8 @@ genrule {
         "touch $(genDir)/hci/facade/__init__.py; " +
         "touch $(genDir)/hci/cert/__init__.py; " +
         "touch $(genDir)/l2cap/classic/__init__.py; " +
-        "touch $(genDir)/l2cap/classic/cert/__init__.py; ",
+        "touch $(genDir)/l2cap/classic/cert/__init__.py; " +
+        "touch $(genDir)/security/__init__.py; ",
     srcs: [
         ":BluetoothFacadeProto",
         ":BluetoothCertStackProto",
@@ -504,6 +505,9 @@ genrule {
         "l2cap/classic/cert/__init__.py",
         "l2cap/classic/cert/api_pb2_grpc.py",
         "l2cap/classic/cert/api_pb2.py",
+        "security/__init__.py",
+        "security/facade_pb2_grpc.py",
+        "security/facade_pb2.py",
     ],
 }
 
