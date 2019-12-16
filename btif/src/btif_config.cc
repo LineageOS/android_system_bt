@@ -435,6 +435,7 @@ bool btif_config_get_bin(const std::string& section, const std::string& key,
       btif_is_key_encrypted(value_str_from_config->size(), key);
 
   if (in_encrypt_key_name_list && is_key_encrypted) {
+    VLOG(2) << __func__ << " decrypt section: " << section << " key:" << key;
     std::string tmp_value_str =
         btif_convert_to_unencrypt_key(*value_str_from_config);
     value_str = &tmp_value_str;
@@ -461,6 +462,7 @@ bool btif_config_get_bin(const std::string& section, const std::string& key,
 
   if (btif_is_niap_mode()) {
     if (in_encrypt_key_name_list && !is_key_encrypted) {
+      VLOG(2) << __func__ << " encrypt section: " << section << " key:" << key;
       std::string encrypt_str =
           btif_convert_to_encrypt_key(*value_str_from_config);
       config_set_string(config.get(), section, key, encrypt_str);
@@ -555,6 +557,7 @@ bool btif_config_set_bin(const std::string& section, const std::string& key,
 
   std::string value_str;
   if (btif_is_niap_mode() && btif_in_encrypt_key_name_list(key)) {
+    VLOG(2) << __func__ << " encrypt section: " << section << " key:" << key;
     value_str = btif_convert_to_encrypt_key(str);
   } else {
     value_str = str;
