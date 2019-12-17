@@ -22,8 +22,14 @@
 #include "base/bind.h"
 #include "btcore/include/module.h"
 #include "main/shim/entry.h"
+#include "osi/include/future.h"
 
 static const char GD_SHIM_MODULE[] = "gd_shim_module";
+static const char GD_SHIM_BTM_MODULE[] = "gd_shim_btm_module";
+
+constexpr future_t* kReturnImmediate = nullptr;
+constexpr module_lifecycle_fn kUnusedModuleApi = nullptr;
+constexpr char* kUnusedModuleDependencies = nullptr;
 
 namespace bluetooth {
 namespace shim {
