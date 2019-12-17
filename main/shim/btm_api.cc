@@ -18,11 +18,14 @@
 
 #include <base/callback.h>
 
+#include "common/time_util.h"
 #include "device/include/controller.h"
 #include "main/shim/btm.h"
 #include "main/shim/btm_api.h"
 #include "osi/include/log.h"
 #include "stack/btm/btm_int_types.h"
+#include "types/class_of_device.h"
+#include "types/raw_address.h"
 
 static bluetooth::shim::Btm shim_btm;
 
@@ -31,10 +34,235 @@ static bluetooth::shim::Btm shim_btm;
  */
 extern tBTM_CB btm_cb;
 
+extern bool btm_inq_find_bdaddr(const RawAddress& p_bda);
+extern tINQ_DB_ENT* btm_inq_db_find(const RawAddress& raw_address);
+extern tINQ_DB_ENT* btm_inq_db_new(const RawAddress& p_bda);
 extern void btm_acl_update_busy_level(tBTM_BLI_EVENT event);
 extern void btm_clear_all_pending_le_entry(void);
 extern void btm_clr_inq_result_flt(void);
+extern void btm_set_eir_uuid(uint8_t* p_eir, tBTM_INQ_RESULTS* p_results);
 extern void btm_sort_inq_result(void);
+
+static bool max_responses_reached() {
+  return (btm_cb.btm_inq_vars.inqparms.max_resps &&
+          btm_cb.btm_inq_vars.inq_cmpl_info.num_resp >=
+              btm_cb.btm_inq_vars.inqparms.max_resps);
+}
+
+static bool is_periodic_inquiry_active() {
+  return btm_cb.btm_inq_vars.inq_active & BTM_PERIODIC_INQUIRY_ACTIVE;
+}
+
+static bool has_le_device(tBT_DEVICE_TYPE device_type) {
+  return device_type & BT_DEVICE_TYPE_BLE;
+}
+
+static bool is_classic_device(tBT_DEVICE_TYPE device_type) {
+  return device_type == BT_DEVICE_TYPE_BREDR;
+}
+
+static bool has_classic_device(tBT_DEVICE_TYPE device_type) {
+  return device_type & BT_DEVICE_TYPE_BREDR;
+}
+
+static bool is_dual_mode_device(tBT_DEVICE_TYPE device_type) {
+  return device_type == BT_DEVICE_TYPE_DUMO;
+}
+
+static bool is_observing_or_active_scanning() {
+  return btm_cb.btm_inq_vars.inqparms.mode & BTM_BLE_INQUIRY_MASK;
+}
+
+static void check_exceeded_responses(tBT_DEVICE_TYPE device_type,
+                                     bool scan_rsp) {
+  if (!is_periodic_inquiry_active() && max_responses_reached() &&
+      ((is_observing_or_active_scanning() && is_dual_mode_device(device_type) &&
+        scan_rsp) ||
+       (is_observing_or_active_scanning()))) {
+    LOG_INFO(LOG_TAG,
+             "UNIMPLEMENTED %s Device max responses found...cancelling inquiry",
+             __func__);
+  }
+}
+
+void btm_api_process_inquiry_result(const RawAddress& raw_address,
+                                    uint8_t page_scan_rep_mode,
+                                    DEV_CLASS device_class,
+                                    uint16_t clock_offset) {
+  tINQ_DB_ENT* p_i = btm_inq_db_find(raw_address);
+  if (max_responses_reached()) {
+    if (p_i == nullptr || !has_le_device(p_i->inq_info.results.device_type)) {
+      return;
+    }
+  }
+
+  if (p_i == nullptr) {
+    p_i = btm_inq_db_new(raw_address);
+    CHECK(p_i != nullptr);
+  } else if (p_i->inq_count == btm_cb.btm_inq_vars.inq_counter &&
+             is_classic_device(p_i->inq_info.results.device_type)) {
+    return;
+  }
+
+  p_i->inq_info.results.page_scan_rep_mode = page_scan_rep_mode;
+  p_i->inq_info.results.page_scan_per_mode = 0;  // RESERVED
+  p_i->inq_info.results.page_scan_mode = 0;      // RESERVED
+  p_i->inq_info.results.dev_class[0] = device_class[0];
+  p_i->inq_info.results.dev_class[1] = device_class[1];
+  p_i->inq_info.results.dev_class[2] = device_class[2];
+  p_i->inq_info.results.clock_offset = clock_offset | BTM_CLOCK_OFFSET_VALID;
+  p_i->inq_info.results.inq_result_type = BTM_INQ_RESULT_BR;
+  p_i->inq_info.results.rssi = BTM_INQ_RES_IGNORE_RSSI;
+
+  p_i->time_of_resp = bluetooth::common::time_get_os_boottime_ms();
+  p_i->inq_count = btm_cb.btm_inq_vars.inq_counter;
+  p_i->inq_info.appl_knows_rem_name = false;
+
+  if (p_i->inq_count != btm_cb.btm_inq_vars.inq_counter) {
+    p_i->inq_info.results.device_type = BT_DEVICE_TYPE_BREDR;
+    btm_cb.btm_inq_vars.inq_cmpl_info.num_resp++;
+    p_i->scan_rsp = false;
+  } else {
+    p_i->inq_info.results.device_type |= BT_DEVICE_TYPE_BREDR;
+  }
+
+  check_exceeded_responses(p_i->inq_info.results.device_type, p_i->scan_rsp);
+  if (btm_cb.btm_inq_vars.p_inq_results_cb == nullptr) {
+    return;
+  }
+
+  (btm_cb.btm_inq_vars.p_inq_results_cb)(&p_i->inq_info.results, nullptr, 0);
+}
+
+void btm_api_process_inquiry_result_with_rssi(RawAddress raw_address,
+                                              uint8_t page_scan_rep_mode,
+                                              DEV_CLASS device_class,
+                                              uint16_t clock_offset,
+                                              int8_t rssi) {
+  tINQ_DB_ENT* p_i = btm_inq_db_find(raw_address);
+  if (max_responses_reached()) {
+    if (p_i == nullptr || !has_le_device(p_i->inq_info.results.device_type)) {
+      return;
+    }
+  }
+
+  bool update = false;
+  if (btm_inq_find_bdaddr(raw_address)) {
+    if (btm_cb.btm_inq_vars.inqparms.report_dup && p_i != nullptr &&
+        (rssi > p_i->inq_info.results.rssi || p_i->inq_info.results.rssi == 0 ||
+         has_classic_device(p_i->inq_info.results.device_type))) {
+      update = true;
+    }
+  }
+
+  bool is_new = true;
+  if (p_i == nullptr) {
+    p_i = btm_inq_db_new(raw_address);
+    CHECK(p_i != nullptr);
+  } else if (p_i->inq_count == btm_cb.btm_inq_vars.inq_counter &&
+             is_classic_device(p_i->inq_info.results.device_type)) {
+    is_new = false;
+  }
+
+  p_i->inq_info.results.rssi = rssi;
+
+  if (is_new) {
+    p_i->inq_info.results.page_scan_rep_mode = page_scan_rep_mode;
+    p_i->inq_info.results.page_scan_per_mode = 0;  // RESERVED
+    p_i->inq_info.results.page_scan_mode = 0;      // RESERVED
+    p_i->inq_info.results.dev_class[0] = device_class[0];
+    p_i->inq_info.results.dev_class[1] = device_class[1];
+    p_i->inq_info.results.dev_class[2] = device_class[2];
+    p_i->inq_info.results.clock_offset = clock_offset | BTM_CLOCK_OFFSET_VALID;
+    p_i->inq_info.results.inq_result_type = BTM_INQ_RESULT_BR;
+
+    p_i->time_of_resp = bluetooth::common::time_get_os_boottime_ms();
+    p_i->inq_count = btm_cb.btm_inq_vars.inq_counter;
+    p_i->inq_info.appl_knows_rem_name = false;
+
+    if (p_i->inq_count != btm_cb.btm_inq_vars.inq_counter) {
+      p_i->inq_info.results.device_type = BT_DEVICE_TYPE_BREDR;
+      btm_cb.btm_inq_vars.inq_cmpl_info.num_resp++;
+      p_i->scan_rsp = false;
+    } else {
+      p_i->inq_info.results.device_type |= BT_DEVICE_TYPE_BREDR;
+    }
+  }
+
+  check_exceeded_responses(p_i->inq_info.results.device_type, p_i->scan_rsp);
+  if (btm_cb.btm_inq_vars.p_inq_results_cb == nullptr) {
+    return;
+  }
+
+  if (is_new || update) {
+    (btm_cb.btm_inq_vars.p_inq_results_cb)(&p_i->inq_info.results, nullptr, 0);
+  }
+}
+void btm_api_process_extended_inquiry_result(RawAddress raw_address,
+                                             uint8_t page_scan_rep_mode,
+                                             DEV_CLASS device_class,
+                                             uint16_t clock_offset, int8_t rssi,
+                                             const uint8_t* eir_data,
+                                             size_t eir_len) {
+  tINQ_DB_ENT* p_i = btm_inq_db_find(raw_address);
+  if (max_responses_reached()) {
+    if (p_i == nullptr || !has_le_device(p_i->inq_info.results.device_type)) {
+      return;
+    }
+  }
+
+  bool update = false;
+  if (btm_inq_find_bdaddr(raw_address) && p_i != nullptr) {
+    update = true;
+  }
+
+  bool is_new = true;
+  if (p_i == nullptr) {
+    p_i = btm_inq_db_new(raw_address);
+  } else if (p_i->inq_count == btm_cb.btm_inq_vars.inq_counter &&
+             (p_i->inq_info.results.device_type == BT_DEVICE_TYPE_BREDR)) {
+    is_new = false;
+  }
+
+  p_i->inq_info.results.rssi = rssi;
+
+  if (is_new) {
+    p_i->inq_info.results.page_scan_rep_mode = page_scan_rep_mode;
+    p_i->inq_info.results.page_scan_per_mode = 0;  // RESERVED
+    p_i->inq_info.results.page_scan_mode = 0;      // RESERVED
+    p_i->inq_info.results.dev_class[0] = device_class[0];
+    p_i->inq_info.results.dev_class[1] = device_class[1];
+    p_i->inq_info.results.dev_class[2] = device_class[2];
+    p_i->inq_info.results.clock_offset = clock_offset | BTM_CLOCK_OFFSET_VALID;
+    p_i->inq_info.results.inq_result_type = BTM_INQ_RESULT_BR;
+
+    p_i->time_of_resp = bluetooth::common::time_get_os_boottime_ms();
+    p_i->inq_count = btm_cb.btm_inq_vars.inq_counter;
+    p_i->inq_info.appl_knows_rem_name = false;
+
+    if (p_i->inq_count != btm_cb.btm_inq_vars.inq_counter) {
+      p_i->inq_info.results.device_type = BT_DEVICE_TYPE_BREDR;
+      btm_cb.btm_inq_vars.inq_cmpl_info.num_resp++;
+      p_i->scan_rsp = false;
+    } else {
+      p_i->inq_info.results.device_type |= BT_DEVICE_TYPE_BREDR;
+    }
+  }
+
+  check_exceeded_responses(p_i->inq_info.results.device_type, p_i->scan_rsp);
+  if (btm_cb.btm_inq_vars.p_inq_results_cb == nullptr) {
+    return;
+  }
+
+  if (is_new || update) {
+    memset(p_i->inq_info.results.eir_uuid, 0,
+           BTM_EIR_SERVICE_ARRAY_SIZE * (BTM_EIR_ARRAY_BITS / 8));
+    btm_set_eir_uuid(const_cast<uint8_t*>(eir_data), &p_i->inq_info.results);
+    uint8_t* p_eir_data = const_cast<uint8_t*>(eir_data);
+    (btm_cb.btm_inq_vars.p_inq_results_cb)(&p_i->inq_info.results, p_eir_data,
+                                           eir_len);
+  }
+}
 
 tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
                                               tBTM_INQ_RESULTS_CB* p_results_cb,
@@ -43,13 +271,11 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
   CHECK(p_results_cb != nullptr);
   CHECK(p_cmpl_cb != nullptr);
 
-  btm_cb.btm_inq_vars.inq_cmpl_info.num_resp =
-      0; /* Clear the results counter */
-
-  uint8_t classic_mode = p_inqparms->mode & 0x0f;
+  btm_cb.btm_inq_vars.inq_cmpl_info.num_resp = 0;
 
   shim_btm.StartActiveScanning();
 
+  uint8_t classic_mode = p_inqparms->mode & 0x0f;
   if (!shim_btm.SetInquiryFilter(classic_mode, p_inqparms->filter_cond_type,
                                  p_inqparms->filter_cond)) {
     LOG_WARN(LOG_TAG, "%s Unable to set inquiry filter", __func__);
