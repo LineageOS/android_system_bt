@@ -434,12 +434,10 @@ bool btif_a2dp_source_restart_session(const RawAddress& old_peer_address,
   }
 
   // Start the session.
-  // If audio was streaming before, start audio streaming as well.
   btif_a2dp_source_start_session(new_peer_address,
                                  std::move(peer_ready_promise));
-  if (is_streaming) {
-    btif_a2dp_source_start_audio_req();
-  }
+  // If audio was streaming before, DON'T start audio streaming, but leave the
+  // control to the audio HAL.
   return true;
 }
 
@@ -707,35 +705,33 @@ void btif_a2dp_source_on_stopped(tBTA_AV_SUSPEND* p_av_suspend) {
 
   if (btif_a2dp_source_cb.State() == BtifA2dpSource::kStateOff) return;
 
-  /* allow using this api for other than suspend */
-  if (p_av_suspend != nullptr) {
-    if (p_av_suspend->status != BTA_AV_SUCCESS) {
-      LOG_ERROR(LOG_TAG, "%s: A2DP stop request failed: status=%d", __func__,
-                p_av_suspend->status);
-      if (p_av_suspend->initiator) {
-        LOG_WARN(LOG_TAG, "%s: A2DP stop request failed: status=%d", __func__,
-                 p_av_suspend->status);
-        if (bluetooth::audio::a2dp::is_hal_2_0_enabled()) {
-          bluetooth::audio::a2dp::ack_stream_suspended(A2DP_CTRL_ACK_FAILURE);
-        } else {
-          btif_a2dp_command_ack(A2DP_CTRL_ACK_FAILURE);
-        }
+  // allow using this API for other (acknowledgement and stopping media task)
+  // than suspend
+  if (p_av_suspend != nullptr && p_av_suspend->status != BTA_AV_SUCCESS) {
+    LOG_ERROR(LOG_TAG, "%s: A2DP stop failed: status=%d, initiator=%s",
+              __func__, p_av_suspend->status,
+              (p_av_suspend->initiator ? "true" : "false"));
+    if (p_av_suspend->initiator) {
+      if (bluetooth::audio::a2dp::is_hal_2_0_enabled()) {
+        bluetooth::audio::a2dp::ack_stream_suspended(A2DP_CTRL_ACK_FAILURE);
+      } else {
+        btif_a2dp_command_ack(A2DP_CTRL_ACK_FAILURE);
       }
-      return;
     }
-  }
-  if (btif_av_is_a2dp_offload_enabled()) {
+  } else if (btif_av_is_a2dp_offload_enabled()) {
     bluetooth::audio::a2dp::ack_stream_suspended(A2DP_CTRL_ACK_SUCCESS);
     return;
   }
-  /* ensure tx frames are immediately suspended */
-  btif_a2dp_source_cb.tx_flush = true;
 
-  /* request to stop media task */
+  // ensure tx frames are immediately suspended
+  btif_a2dp_source_cb.tx_flush = true;
+  // ensure tx frames are immediately flushed
   btif_a2dp_source_audio_tx_flush_req();
+
+  // request to stop media task
   btif_a2dp_source_stop_audio_req();
 
-  /* once stream is fully stopped we will ack back */
+  // once software stream is fully stopped we will ack back
 }
 
 void btif_a2dp_source_on_suspended(tBTA_AV_SUSPEND* p_av_suspend) {
@@ -744,29 +740,32 @@ void btif_a2dp_source_on_suspended(tBTA_AV_SUSPEND* p_av_suspend) {
 
   if (btif_a2dp_source_cb.State() == BtifA2dpSource::kStateOff) return;
 
-  /* check for status failures */
+  CHECK(p_av_suspend != nullptr) << "Suspend result could not be nullptr";
+
+  // check for status failures
   if (p_av_suspend->status != BTA_AV_SUCCESS) {
+    LOG_WARN(LOG_TAG, "%s: A2DP suspend failed: status=%d, initiator=%s",
+             __func__, p_av_suspend->status,
+             (p_av_suspend->initiator ? "true" : "false"));
     if (p_av_suspend->initiator) {
-      LOG_WARN(LOG_TAG, "%s: A2DP suspend request failed: status=%d", __func__,
-               p_av_suspend->status);
       if (bluetooth::audio::a2dp::is_hal_2_0_enabled()) {
         bluetooth::audio::a2dp::ack_stream_suspended(A2DP_CTRL_ACK_FAILURE);
       } else {
         btif_a2dp_command_ack(A2DP_CTRL_ACK_FAILURE);
       }
     }
-  }
-  if (btif_av_is_a2dp_offload_enabled()) {
+  } else if (btif_av_is_a2dp_offload_enabled()) {
     bluetooth::audio::a2dp::ack_stream_suspended(A2DP_CTRL_ACK_SUCCESS);
     return;
   }
-  /* once stream is fully stopped we will ack back */
 
-  /* ensure tx frames are immediately flushed */
+  // ensure tx frames are immediately suspended
   btif_a2dp_source_cb.tx_flush = true;
 
-  /* stop timer tick */
+  // stop timer tick
   btif_a2dp_source_stop_audio_req();
+
+  // once software stream is fully stopped we will ack back
 }
 
 /* when true media task discards any tx frames */
@@ -853,7 +852,7 @@ static void btif_a2dp_source_audio_tx_stop_event(void) {
     UIPC_Close(*a2dp_uipc, UIPC_CH_ID_AV_AUDIO);
 
     /*
-     * Try to send acknowldegment once the media stream is
+     * Try to send acknowledgement once the media stream is
      * stopped. This will make sure that the A2DP HAL layer is
      * un-blocked on wait for acknowledgment for the sent command.
      * This resolves a corner cases AVDTP SUSPEND collision
