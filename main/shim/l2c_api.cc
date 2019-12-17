@@ -28,7 +28,8 @@ static bluetooth::legacy::shim::L2cap shim_l2cap;
  */
 uint16_t bluetooth::shim::L2CA_Register(uint16_t client_psm,
                                         tL2CAP_APPL_INFO* callbacks,
-                                        bool enable_snoop) {
+                                        bool enable_snoop,
+                                        tL2CAP_ERTM_INFO* p_ertm_info) {
   if (L2C_INVALID_PSM(client_psm)) {
     LOG_ERROR(LOG_TAG, "%s Invalid classic psm:%hd", __func__, client_psm);
     return 0;
@@ -60,7 +61,7 @@ uint16_t bluetooth::shim::L2CA_Register(uint16_t client_psm,
   LOG_INFO(LOG_TAG, "%s classic client_psm:%hd psm:%hd", __func__, client_psm,
            psm);
 
-  shim_l2cap.RegisterService(psm, callbacks, enable_snoop);
+  shim_l2cap.RegisterService(psm, callbacks, enable_snoop, p_ertm_info);
 
   return client_psm;
 }
@@ -114,14 +115,12 @@ void bluetooth::shim::L2CA_FreeLePSM(uint16_t psm) {
 uint16_t bluetooth::shim::L2CA_ErtmConnectReq(uint16_t psm,
                                               const RawAddress& raw_address,
                                               tL2CAP_ERTM_INFO* p_ertm_info) {
-  CHECK(p_ertm_info == nullptr)
-      << "UNIMPLEMENTED set enhanced retransmission mode config";
   return shim_l2cap.CreateConnection(psm, raw_address);
 }
 
 uint16_t bluetooth::shim::L2CA_ConnectReq(uint16_t psm,
                                           const RawAddress& raw_address) {
-  return bluetooth::shim::L2CA_ErtmConnectReq(psm, raw_address, nullptr);
+  return shim_l2cap.CreateConnection(psm, raw_address);
 }
 
 bool bluetooth::shim::L2CA_ErtmConnectRsp(const RawAddress& p_bd_addr,
@@ -252,7 +251,8 @@ bool bluetooth::shim::L2CA_GetPeerFeatures(const RawAddress& bd_addr,
 }
 
 /**
- * Fixed Channel APIs
+ * Fixed Channel APIs. Note: Classic fixed channel (connectionless and BR SMP)
+ * is not supported
  */
 bool bluetooth::shim::L2CA_RegisterFixedChannel(uint16_t fixed_cid,
                                                 tL2CAP_FIXED_CHNL_REG* p_freg) {

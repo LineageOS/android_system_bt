@@ -233,9 +233,23 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
   else
     conn.reg_info.pL2CA_ConnectInd_Cb = gap_connect_ind;
 
+  /* Fill in eL2CAP parameter data */
+  if (p_ccb->cfg.fcr_present) {
+    if (ertm_info == NULL) {
+      p_ccb->ertm_info.preferred_mode = p_ccb->cfg.fcr.mode;
+      p_ccb->ertm_info.user_rx_buf_size = GAP_DATA_BUF_SIZE;
+      p_ccb->ertm_info.user_tx_buf_size = GAP_DATA_BUF_SIZE;
+      p_ccb->ertm_info.fcr_rx_buf_size = L2CAP_INVALID_ERM_BUF_SIZE;
+      p_ccb->ertm_info.fcr_tx_buf_size = L2CAP_INVALID_ERM_BUF_SIZE;
+    } else {
+      p_ccb->ertm_info = *ertm_info;
+    }
+  }
+
   /* Register the PSM with L2CAP */
   if (transport == BT_TRANSPORT_BR_EDR) {
-    p_ccb->psm = L2CA_Register(psm, &conn.reg_info, false /* enable_snoop */);
+    p_ccb->psm = L2CA_Register(psm, &conn.reg_info, false /* enable_snoop */,
+                               &p_ccb->ertm_info);
     if (p_ccb->psm == 0) {
       LOG(ERROR) << StringPrintf("%s: Failure registering PSM 0x%04x", __func__,
                                  psm);
@@ -260,19 +274,6 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
     LOG(ERROR) << "GAP_CONN - Security Error";
     gap_release_ccb(p_ccb);
     return (GAP_INVALID_HANDLE);
-  }
-
-  /* Fill in eL2CAP parameter data */
-  if (p_ccb->cfg.fcr_present) {
-    if (ertm_info == NULL) {
-      p_ccb->ertm_info.preferred_mode = p_ccb->cfg.fcr.mode;
-      p_ccb->ertm_info.user_rx_buf_size = GAP_DATA_BUF_SIZE;
-      p_ccb->ertm_info.user_tx_buf_size = GAP_DATA_BUF_SIZE;
-      p_ccb->ertm_info.fcr_rx_buf_size = L2CAP_INVALID_ERM_BUF_SIZE;
-      p_ccb->ertm_info.fcr_tx_buf_size = L2CAP_INVALID_ERM_BUF_SIZE;
-    } else {
-      p_ccb->ertm_info = *ertm_info;
-    }
   }
 
   /* optional FCR channel modes */

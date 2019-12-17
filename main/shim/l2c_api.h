@@ -40,7 +40,7 @@ namespace shim {
  *
  ******************************************************************************/
 uint16_t L2CA_Register(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
-                       bool enable_snoop);
+                       bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info);
 
 /*******************************************************************************
  *

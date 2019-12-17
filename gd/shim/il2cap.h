@@ -32,7 +32,8 @@ using ConnectionOpenCallback = std::function<void(std::string string_address, ui
 using ReadDataReadyCallback = std::function<void(uint16_t cid, std::vector<const uint8_t> data)>;
 
 struct IL2cap {
-  virtual void RegisterService(uint16_t psm, ConnectionOpenCallback on_open, std::promise<void> completed) = 0;
+  virtual void RegisterService(uint16_t psm, bool use_ertm, uint16_t mtu, ConnectionOpenCallback on_open,
+                               std::promise<void> completed) = 0;
   virtual void UnregisterService(uint16_t psm) = 0;
 
   virtual void CreateConnection(uint16_t psm, const std::string address, ConnectionOpenCallback on_open,
