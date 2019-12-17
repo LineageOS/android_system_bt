@@ -60,7 +60,7 @@ void bluetooth::shim::Post(base::OnceClosure task) {
 bool bluetooth::shim::is_gd_shim_enabled() {
   if (!gd_shim_property_checked_) {
     gd_shim_property_checked_ = true;
-    gd_shim_enabled_ = (osi_property_get_int32(kPropertyKey, 0) == 1);
+    gd_shim_enabled_ = osi_property_get_bool(kPropertyKey, false);
   }
   return gd_shim_enabled_;
 }
