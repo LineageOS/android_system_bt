@@ -1165,67 +1165,6 @@ uint8_t L2CA_SetDesireRole(uint8_t new_role) {
 
 /*******************************************************************************
  *
- * Function     L2CA_LocalLoopbackReq
- *
- * Description  This function sets up a CID for local loopback
- *
- * Returns      CID of 0 if none.
- *
- ******************************************************************************/
-uint16_t L2CA_LocalLoopbackReq(uint16_t psm, uint16_t handle,
-                               const RawAddress& p_bd_addr) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_LocalLoopbackReq(psm, handle, p_bd_addr);
-  }
-
-  tL2C_LCB* p_lcb;
-  tL2C_CCB* p_ccb;
-  tL2C_RCB* p_rcb;
-
-  L2CAP_TRACE_API("L2CA_LocalLoopbackReq()  PSM: %d  Handle: 0x%04x", psm,
-                  handle);
-
-  /* Fail if we have not established communications with the controller */
-  if (!BTM_IsDeviceUp()) {
-    L2CAP_TRACE_WARNING("L2CAP loop req - BTU not ready");
-    return (0);
-  }
-
-  /* Fail if the PSM is not registered */
-  p_rcb = l2cu_find_rcb_by_psm(psm);
-  if (p_rcb == NULL) {
-    L2CAP_TRACE_WARNING("L2CAP - no RCB for L2CA_conn_req, PSM: %d", psm);
-    return (0);
-  }
-
-  p_lcb = l2cu_allocate_lcb(p_bd_addr, false, BT_TRANSPORT_BR_EDR);
-  if (p_lcb == NULL) {
-    L2CAP_TRACE_WARNING("L2CAP - no LCB for L2CA_conn_req");
-    return (0);
-  }
-
-  p_lcb->link_state = LST_CONNECTED;
-  p_lcb->handle = handle;
-
-  /* Allocate a channel control block */
-  p_ccb = l2cu_allocate_ccb(p_lcb, 0);
-  if (p_ccb == NULL) {
-    L2CAP_TRACE_WARNING("L2CAP - no CCB for L2CA_conn_req");
-    return (0);
-  }
-
-  /* Save registration info */
-  p_ccb->p_rcb = p_rcb;
-  p_ccb->chnl_state = CST_OPEN;
-  p_ccb->remote_cid = p_ccb->local_cid;
-  p_ccb->config_done = CFG_DONE_MASK;
-
-  /* Return the local CID as our handle */
-  return (p_ccb->local_cid);
-}
-
-/*******************************************************************************
- *
  * Function         L2CA_SetAclPriority
  *
  * Description      Sets the transmission priority for a channel.
