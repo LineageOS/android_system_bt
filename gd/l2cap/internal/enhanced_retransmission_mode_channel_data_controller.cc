@@ -729,7 +729,7 @@ struct ErtmController::impl {
   void retransmit_i_frames(uint8_t req_seq, Poll p = Poll::NOT_SET) {
     uint8_t i = req_seq;
     Final f = (p == Poll::NOT_SET ? Final::NOT_SET : Final::POLL_RESPONSE);
-    while (unacked_list_.find(i) == unacked_list_.end()) {
+    while (unacked_list_.find(i) != unacked_list_.end()) {
       std::unique_ptr<CopyablePacketBuilder> copyable_packet_builder =
           std::make_unique<CopyablePacketBuilder>(std::get<2>(unacked_list_.find(i)->second));
       _send_i_frame(std::get<0>(unacked_list_.find(i)->second), std::move(copyable_packet_builder), buffer_seq_, i,
@@ -740,8 +740,11 @@ struct ErtmController::impl {
       }
       frames_sent_++;
       f = Final::NOT_SET;
+      i++;
     }
-    start_retrans_timer();
+    if (i != req_seq) {
+      start_retrans_timer();
+    }
   }
 
   void retransmit_requested_i_frame(uint8_t req_seq, Poll p) {
