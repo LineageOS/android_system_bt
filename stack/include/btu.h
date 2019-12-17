@@ -62,6 +62,8 @@ bluetooth::common::MessageLoopThread* get_main_thread();
 base::MessageLoop* get_main_message_loop();
 bt_status_t do_in_main_thread(const base::Location& from_here,
                               base::OnceClosure task);
+void main_thread_hwbinder_timer_start(const base::Location& from_here);
+void main_thread_hwbinder_timer_stop();
 
 void BTU_StartUp(void);
 void BTU_ShutDown(void);
