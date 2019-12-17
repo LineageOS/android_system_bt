@@ -51,6 +51,7 @@ cc_test {
     static_libs: [
         "libbt-audio-hal-interface",
         "libbt-common",
+        "libbt-stack",
     ],
     cflags: [
         "-DBUILDCFG",

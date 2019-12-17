@@ -28,6 +28,7 @@
 #include "bte.h"
 #include "btif/include/btif_common.h"
 #include "common/message_loop_thread.h"
+#include "common/once_timer.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_int.h"
 #include "stack/include/btu.h"
@@ -38,12 +39,18 @@
 #include <base/run_loop.h>
 #include <base/threading/thread.h>
 
+#ifndef HWBINDER_TIMEOUT_MS
+#define HWBINDER_TIMEOUT_MS 500
+#endif
+
 using bluetooth::common::MessageLoopThread;
+using bluetooth::common::OnceTimer;
 
 /* Define BTU storage area */
 uint8_t btu_trace_level = HCI_INITIAL_TRACE_LEVEL;
 
 static MessageLoopThread main_thread("bt_main_thread");
+static OnceTimer hwbinder_timer;
 
 void btu_hci_msg_process(BT_HDR* p_msg) {
   /* Determine the input message type. */
@@ -95,6 +102,29 @@ bt_status_t do_in_main_thread(const base::Location& from_here,
     return BT_STATUS_FAIL;
   }
   return BT_STATUS_SUCCESS;
+}
+
+void hwbinder_timeout(const base::Location& from_here) {
+  LOG(FATAL) << "HwBinder thread timeout at " << from_here.ToString();
+}
+
+void main_thread_hwbinder_timer_start(const base::Location& from_here) {
+  if (hwbinder_timer.IsScheduled()) {
+    LOG(FATAL) << __func__ << ": hwbinder_timer is already scheduled!";
+  }
+  if (!hwbinder_timer.Schedule(
+          main_thread.GetWeakPtr(), from_here,
+          base::Bind(&hwbinder_timeout, from_here),
+          base::TimeDelta::FromMilliseconds(HWBINDER_TIMEOUT_MS))) {
+    LOG(FATAL) << __func__ << ": failed from " << from_here.ToString();
+  }
+}
+
+void main_thread_hwbinder_timer_stop() {
+  if (!hwbinder_timer.IsScheduled()) {
+    LOG(FATAL) << __func__ << ": hwbinder_timer is not scheduled!";
+  }
+  hwbinder_timer.CancelAndWait();
 }
 
 void btu_task_start_up(UNUSED_ATTR void* context) {
