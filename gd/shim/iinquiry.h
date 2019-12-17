@@ -15,8 +15,10 @@
  */
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <functional>
+#include <string>
 #include <vector>
 
 /**
@@ -25,9 +27,14 @@
 namespace bluetooth {
 namespace shim {
 
-using InquiryResultCallback = std::function<void(std::vector<const uint8_t> data)>;
-using InquiryResultWithRssiCallback = std::function<void(std::vector<const uint8_t> data)>;
-using ExtendedInquiryResultCallback = std::function<void(std::vector<const uint8_t> data)>;
+using InquiryResultCallback = std::function<void(std::string string_address, uint8_t page_scan_rep_mode,
+                                                 std::string string_class_of_device, uint16_t clock_offset)>;
+using InquiryResultWithRssiCallback =
+    std::function<void(std::string string_address, uint8_t page_scan_rep_mode, std::string string_class_of_device,
+                       uint16_t clock_offset, int8_t rssi)>;
+using ExtendedInquiryResultCallback =
+    std::function<void(std::string string_address, uint8_t page_scan_rep_mode, std::string string_class_of_device,
+                       uint16_t clock_offset, int8_t rssi, const uint8_t* gap_data, size_t gap_data_len)>;
 using InquiryCompleteCallback = std::function<void(uint16_t status)>;
 
 struct LegacyInquiryCallbacks {

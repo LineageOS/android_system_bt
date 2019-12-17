@@ -32,6 +32,8 @@
 namespace bluetooth {
 namespace shim {
 
+constexpr size_t kMaxExtendedInquiryResponse = 240;
+
 struct Inquiry::impl {
   void Result(hci::InquiryResultView view);
   void ResultWithRssi(hci::InquiryResultWithRssiView view);
@@ -61,33 +63,61 @@ struct Inquiry::impl {
 const ModuleFactory Inquiry::Factory = ModuleFactory([]() { return new Inquiry(); });
 
 void Inquiry::impl::Result(hci::InquiryResultView view) {
-  ASSERT(view.size() >= sizeof(uint16_t));
   ASSERT(callbacks_.result_callback != nullptr);
-  std::vector<const uint8_t> v(view.begin() + sizeof(uint16_t), view.end());
-  callbacks_.result_callback(v);
+
+  for (auto& response : view.GetInquiryResults()) {
+    callbacks_.result_callback(response.bd_addr_.ToString(), static_cast<uint8_t>(response.page_scan_repetition_mode_),
+                               response.class_of_device_.ToString(), response.clock_offset_);
+  }
 }
 
 void Inquiry::impl::ResultWithRssi(hci::InquiryResultWithRssiView view) {
-  ASSERT(view.size() >= sizeof(uint16_t));
   ASSERT(callbacks_.result_with_rssi_callback != nullptr);
-  std::vector<const uint8_t> v(view.begin() + sizeof(uint16_t), view.end());
-  callbacks_.result_with_rssi_callback(v);
+
+  for (auto& response : view.GetInquiryResults()) {
+    callbacks_.result_with_rssi_callback(response.address_.ToString(),
+                                         static_cast<uint8_t>(response.page_scan_repetition_mode_),
+                                         response.class_of_device_.ToString(), response.clock_offset_, response.rssi_);
+  }
 }
 
 void Inquiry::impl::ExtendedResult(hci::ExtendedInquiryResultView view) {
-  ASSERT(view.size() >= sizeof(uint16_t));
   ASSERT(callbacks_.extended_result_callback != nullptr);
-  std::vector<const uint8_t> v(view.begin() + sizeof(uint16_t), view.end());
-  callbacks_.extended_result_callback(v);
+
+  uint8_t gap_data_buffer[kMaxExtendedInquiryResponse];
+  uint8_t* data = nullptr;
+  size_t data_len = 0;
+
+  if (!view.GetExtendedInquiryResponse().empty()) {
+    bzero(gap_data_buffer, sizeof(gap_data_buffer));
+    uint8_t* p = gap_data_buffer;
+    for (auto gap_data : view.GetExtendedInquiryResponse()) {
+      *p++ = gap_data.data_.size() + sizeof(gap_data.data_type_);
+      *p++ = static_cast<uint8_t>(gap_data.data_type_);
+      p = (uint8_t*)memcpy(p, &gap_data.data_[0], gap_data.data_.size()) + gap_data.data_.size();
+    }
+    data = gap_data_buffer;
+    data_len = p - data;
+  }
+  callbacks_.extended_result_callback(view.GetAddress().ToString(),
+                                      static_cast<uint8_t>(view.GetPageScanRepetitionMode()),
+                                      view.GetClassOfDevice().ToString(), static_cast<uint16_t>(view.GetClockOffset()),
+                                      static_cast<int8_t>(view.GetRssi()), data, data_len);
 }
 
 void Inquiry::impl::Complete(hci::ErrorCode status) {
   ASSERT(callbacks_.complete_callback != nullptr);
+  limited_inquiry_active_ = false;
+  general_inquiry_active_ = false;
   callbacks_.complete_callback(static_cast<uint16_t>(status));
 }
 
 void Inquiry::impl::RegisterInquiryCallbacks(LegacyInquiryCallbacks callbacks) {
   callbacks_ = callbacks;
+  ASSERT(callbacks_.result_callback);
+  ASSERT(callbacks_.result_with_rssi_callback);
+  ASSERT(callbacks_.extended_result_callback);
+  ASSERT(callbacks_.complete_callback);
 }
 
 void Inquiry::impl::UnregisterInquiryCallbacks() {
