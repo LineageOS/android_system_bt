@@ -22,11 +22,11 @@
 #include "main/shim/stub/osi.h"
 #include "osi/include/alarm.h"
 
-bool osi_property_get_int32(char const* n, int a) { return true; }
-
-const module_t* get_module(const char*) { return nullptr; };
-bool module_init(module_t const*) { return true; };
-void module_clean_up(module_t const*){};
+bool module_init(module_t const*) { return true; }
+bool module_start_up(module_t const*) { return true; }
+const module_t* get_module(const char*) { return nullptr; }
+void module_clean_up(module_t const*) {}
+void module_shut_down(module_t const*) {}
 
 void* osi_alloc(size_t size) { return malloc(size); }
 void* osi_calloc(size_t size) { return calloc(1, size); }

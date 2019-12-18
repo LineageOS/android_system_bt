@@ -18,10 +18,15 @@
 
 #include <base/callback.h>
 
+#include <mutex>
+
 #include "common/time_util.h"
 #include "device/include/controller.h"
 #include "main/shim/btm.h"
 #include "main/shim/btm_api.h"
+#include "main/shim/controller.h"
+#include "main/shim/shim.h"
+#include "main/shim/timer.h"
 #include "osi/include/log.h"
 #include "stack/btm/btm_int_types.h"
 #include "types/class_of_device.h"
@@ -31,17 +36,46 @@ static bluetooth::shim::Btm shim_btm;
 
 /**
  * Legacy bluetooth module global control block state
+ *
+ * Mutex is used to synchronize access from the shim
+ * layer into the global control block.  This is used
+ * by the shim despite potentially arbitrary
+ * unsynchronized access by the legacy stack.
  */
 extern tBTM_CB btm_cb;
+std::mutex btm_cb_mutex_;
 
 extern bool btm_inq_find_bdaddr(const RawAddress& p_bda);
 extern tINQ_DB_ENT* btm_inq_db_find(const RawAddress& raw_address);
 extern tINQ_DB_ENT* btm_inq_db_new(const RawAddress& p_bda);
+
+/**
+ * Legacy bluetooth btm stack entry points
+ */
 extern void btm_acl_update_busy_level(tBTM_BLI_EVENT event);
 extern void btm_clear_all_pending_le_entry(void);
 extern void btm_clr_inq_result_flt(void);
 extern void btm_set_eir_uuid(uint8_t* p_eir, tBTM_INQ_RESULTS* p_results);
 extern void btm_sort_inq_result(void);
+extern void btm_process_inq_complete(uint8_t status, uint8_t result_type);
+
+static future_t* btm_module_start_up(void) {
+  bluetooth::shim::Btm::StartUp(&shim_btm);
+  return kReturnImmediate;
+}
+
+static future_t* btm_module_shut_down(void) {
+  bluetooth::shim::Btm::ShutDown(&shim_btm);
+  return kReturnImmediate;
+}
+
+EXPORT_SYMBOL extern const module_t gd_shim_btm_module = {
+    .name = GD_SHIM_BTM_MODULE,
+    .init = kUnusedModuleApi,
+    .start_up = btm_module_start_up,
+    .shut_down = btm_module_shut_down,
+    .clean_up = kUnusedModuleApi,
+    .dependencies = {kUnusedModuleDependencies}};
 
 static bool max_responses_reached() {
   return (btm_cb.btm_inq_vars.inqparms.max_resps &&
@@ -271,7 +305,19 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
   CHECK(p_results_cb != nullptr);
   CHECK(p_cmpl_cb != nullptr);
 
+  std::lock_guard<std::mutex> lock(btm_cb_mutex_);
+
   btm_cb.btm_inq_vars.inq_cmpl_info.num_resp = 0;
+  btm_cb.btm_inq_vars.scan_type = INQ_GENERAL;
+
+  shim_btm.StartActiveScanning();
+  if (p_inqparms->duration != 0) {
+    shim_btm.SetScanningTimer(p_inqparms->duration * 1000, []() {
+      LOG_INFO(LOG_TAG, "%s scanning timeout popped", __func__);
+      std::lock_guard<std::mutex> lock(btm_cb_mutex_);
+      shim_btm.StopActiveScanning();
+    });
+  }
 
   shim_btm.StartActiveScanning();
 
@@ -282,8 +328,49 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
     return BTM_ERR_PROCESSING;
   }
 
-  if (!shim_btm.StartInquiry(classic_mode, p_inqparms->duration,
-                             p_inqparms->max_resps)) {
+  if (!shim_btm.StartInquiry(
+          classic_mode, p_inqparms->duration, p_inqparms->max_resps,
+          [](uint16_t status, uint8_t inquiry_mode) {
+            LOG_DEBUG(LOG_TAG,
+                      "%s Inquiry is complete status:%hd inquiry_mode:%hhd",
+                      __func__, status, inquiry_mode);
+            btm_cb.btm_inq_vars.inqparms.mode &= ~(inquiry_mode);
+
+            btm_acl_update_busy_level(BTM_BLI_INQ_DONE_EVT);
+            if (btm_cb.btm_inq_vars.inq_active) {
+              btm_cb.btm_inq_vars.inq_cmpl_info.status = status;
+              btm_clear_all_pending_le_entry();
+              btm_cb.btm_inq_vars.state = BTM_INQ_INACTIVE_STATE;
+
+              /* Increment so the start of a next inquiry has a new count */
+              btm_cb.btm_inq_vars.inq_counter++;
+
+              btm_clr_inq_result_flt();
+
+              if ((status == BTM_SUCCESS) &&
+                  controller_get_interface()
+                      ->supports_rssi_with_inquiry_results()) {
+                btm_sort_inq_result();
+              }
+
+              btm_cb.btm_inq_vars.inq_active = BTM_INQUIRY_INACTIVE;
+              btm_cb.btm_inq_vars.p_inq_results_cb = nullptr;
+              btm_cb.btm_inq_vars.p_inq_cmpl_cb = nullptr;
+
+              if (btm_cb.btm_inq_vars.p_inq_cmpl_cb != nullptr) {
+                LOG_DEBUG(LOG_TAG,
+                          "%s Sending inquiry completion to upper layer",
+                          __func__);
+                (btm_cb.btm_inq_vars.p_inq_cmpl_cb)(
+                    (tBTM_INQUIRY_CMPL*)&btm_cb.btm_inq_vars.inq_cmpl_info);
+                btm_cb.btm_inq_vars.p_inq_cmpl_cb = nullptr;
+              }
+            }
+            if (btm_cb.btm_inq_vars.inqparms.mode == BTM_INQUIRY_NONE &&
+                btm_cb.btm_inq_vars.scan_type == INQ_GENERAL) {
+              btm_cb.btm_inq_vars.scan_type = INQ_NONE;
+            }
+          })) {
     LOG_WARN(LOG_TAG, "%s Unable to start inquiry", __func__);
     return BTM_ERR_PROCESSING;
   }
@@ -398,6 +485,8 @@ tBTM_STATUS bluetooth::shim::BTM_BleObserve(bool start, uint8_t duration_sec,
     CHECK(p_results_cb != nullptr);
     CHECK(p_cmpl_cb != nullptr);
 
+    std::lock_guard<std::mutex> lock(btm_cb_mutex_);
+
     if (btm_cb.ble_ctr_cb.scan_activity & BTM_LE_OBSERVE_ACTIVE) {
       LOG_WARN(LOG_TAG, "%s Observing already active", __func__);
       return BTM_WRONG_MODE;
@@ -407,10 +496,54 @@ tBTM_STATUS bluetooth::shim::BTM_BleObserve(bool start, uint8_t duration_sec,
     btm_cb.ble_ctr_cb.p_obs_cmpl_cb = p_cmpl_cb;
     shim_btm.StartObserving();
     btm_cb.ble_ctr_cb.scan_activity |= BTM_LE_OBSERVE_ACTIVE;
+
+    if (duration_sec != 0) {
+      shim_btm.SetObservingTimer(duration_sec * 1000, []() {
+        LOG_DEBUG(LOG_TAG, "%s observing timeout popped", __func__);
+
+        shim_btm.CancelObservingTimer();
+        shim_btm.StopObserving();
+
+        std::lock_guard<std::mutex> lock(btm_cb_mutex_);
+        btm_cb.ble_ctr_cb.scan_activity &= ~BTM_LE_OBSERVE_ACTIVE;
+
+        if (btm_cb.ble_ctr_cb.p_obs_cmpl_cb) {
+          (btm_cb.ble_ctr_cb.p_obs_cmpl_cb)(&btm_cb.btm_inq_vars.inq_cmpl_info);
+        }
+        btm_cb.ble_ctr_cb.p_obs_results_cb = nullptr;
+        btm_cb.ble_ctr_cb.p_obs_cmpl_cb = nullptr;
+
+        btm_cb.btm_inq_vars.inqparms.mode &= ~(BTM_BLE_INQUIRY_MASK);
+        btm_cb.btm_inq_vars.scan_type = INQ_NONE;
+
+        btm_acl_update_busy_level(BTM_BLI_INQ_DONE_EVT);
+
+        btm_clear_all_pending_le_entry();
+        btm_cb.btm_inq_vars.state = BTM_INQ_INACTIVE_STATE;
+
+        btm_cb.btm_inq_vars.inq_counter++;
+        btm_clr_inq_result_flt();
+        btm_sort_inq_result();
+
+        btm_cb.btm_inq_vars.inq_active = BTM_INQUIRY_INACTIVE;
+        btm_cb.btm_inq_vars.p_inq_results_cb = NULL;
+        btm_cb.btm_inq_vars.p_inq_cmpl_cb = NULL;
+
+        if (btm_cb.btm_inq_vars.p_inq_cmpl_cb) {
+          (btm_cb.btm_inq_vars.p_inq_cmpl_cb)(
+              (tBTM_INQUIRY_CMPL*)&btm_cb.btm_inq_vars.inq_cmpl_info);
+          btm_cb.btm_inq_vars.p_inq_cmpl_cb = nullptr;
+        }
+      });
+    }
   } else {
+    std::lock_guard<std::mutex> lock(btm_cb_mutex_);
+
     if (!(btm_cb.ble_ctr_cb.scan_activity & BTM_LE_OBSERVE_ACTIVE)) {
       LOG_WARN(LOG_TAG, "%s Observing already inactive", __func__);
     }
+    shim_btm.CancelObservingTimer();
+    shim_btm.StopObserving();
     btm_cb.ble_ctr_cb.scan_activity &= ~BTM_LE_OBSERVE_ACTIVE;
     shim_btm.StopObserving();
     if (btm_cb.ble_ctr_cb.p_obs_cmpl_cb) {
@@ -531,7 +664,47 @@ uint16_t bluetooth::shim::BTM_IsInquiryActive(void) {
 }
 
 tBTM_STATUS bluetooth::shim::BTM_CancelInquiry(void) {
+  LOG_DEBUG(LOG_TAG, "%s Cancel inquiry", __func__);
   shim_btm.CancelInquiry();
+
+  btm_cb.btm_inq_vars.state = BTM_INQ_INACTIVE_STATE;
+  btm_clr_inq_result_flt();
+
+  shim_btm.CancelScanningTimer();
+  shim_btm.StopActiveScanning();
+
+  btm_cb.ble_ctr_cb.scan_activity &= ~BTM_BLE_INQUIRY_MASK;
+
+  btm_cb.btm_inq_vars.inqparms.mode &=
+      ~(btm_cb.btm_inq_vars.inqparms.mode & BTM_BLE_INQUIRY_MASK);
+
+  btm_acl_update_busy_level(BTM_BLI_INQ_DONE_EVT);
+  /* Ignore any stray or late complete messages if the inquiry is not active */
+  if (btm_cb.btm_inq_vars.inq_active) {
+    btm_cb.btm_inq_vars.inq_cmpl_info.status = BTM_SUCCESS;
+    btm_clear_all_pending_le_entry();
+
+    if (controller_get_interface()->supports_rssi_with_inquiry_results()) {
+      btm_sort_inq_result();
+    }
+
+    btm_cb.btm_inq_vars.inq_active = BTM_INQUIRY_INACTIVE;
+    btm_cb.btm_inq_vars.p_inq_results_cb = nullptr;
+    btm_cb.btm_inq_vars.p_inq_cmpl_cb = nullptr;
+    btm_cb.btm_inq_vars.inq_counter++;
+
+    if (btm_cb.btm_inq_vars.p_inq_cmpl_cb != nullptr) {
+      LOG_DEBUG(LOG_TAG, "%s Sending cancel inquiry completion to upper layer",
+                __func__);
+      (btm_cb.btm_inq_vars.p_inq_cmpl_cb)(
+          (tBTM_INQUIRY_CMPL*)&btm_cb.btm_inq_vars.inq_cmpl_info);
+      btm_cb.btm_inq_vars.p_inq_cmpl_cb = nullptr;
+    }
+  }
+  if (btm_cb.btm_inq_vars.inqparms.mode == BTM_INQUIRY_NONE &&
+      btm_cb.btm_inq_vars.scan_type == INQ_GENERAL) {
+    btm_cb.btm_inq_vars.scan_type = INQ_NONE;
+  }
   return BTM_SUCCESS;
 }
 
