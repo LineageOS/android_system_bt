@@ -122,7 +122,6 @@ static_library("stack") {
     "l2cap/l2c_link.cc",
     "l2cap/l2c_main.cc",
     "l2cap/l2c_utils.cc",
-    "l2cap/l2cap_client.cc",
     "pan/pan_api.cc",
     "pan/pan_main.cc",
     "pan/pan_utils.cc",
