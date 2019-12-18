@@ -35,23 +35,25 @@ future_t* ShimModuleStartUp() {
   bt_shim_thread.StartUp();
   CHECK(bt_shim_thread.IsRunning())
       << "Unable to start bt shim message loop thread.";
+  module_start_up(get_module(GD_SHIM_BTM_MODULE));
   bluetooth::shim::StartGabeldorscheStack();
-  return nullptr;
+  return kReturnImmediate;
 }
 
 future_t* ShimModuleShutDown() {
   bluetooth::shim::StopGabeldorscheStack();
+  module_shut_down(get_module(GD_SHIM_BTM_MODULE));
   bt_shim_thread.ShutDown();
-  return nullptr;
+  return kReturnImmediate;
 }
 
 EXPORT_SYMBOL extern const module_t gd_shim_module = {
     .name = GD_SHIM_MODULE,
-    .init = nullptr,
+    .init = kUnusedModuleApi,
     .start_up = ShimModuleStartUp,
     .shut_down = ShimModuleShutDown,
-    .clean_up = NULL,
-    .dependencies = {NULL}};
+    .clean_up = kUnusedModuleApi,
+    .dependencies = {kUnusedModuleDependencies}};
 
 void bluetooth::shim::Post(base::OnceClosure task) {
   bt_shim_thread.DoInThread(FROM_HERE, std::move(task));
