@@ -18,7 +18,7 @@
 
 #include "gd/shim/only_include_this_file_into_legacy_stack___ever.h"
 #include "main/shim/entry.h"
-#include "main/shim/test_stack.h"
+#include "main/shim/stub/stack.h"
 #include "osi/include/log.h"
 
 #define ASSERT(condition)                                    \
@@ -27,6 +27,12 @@
       LOG_ALWAYS_FATAL("assertion '" #condition "' failed"); \
     }                                                        \
   } while (false)
+
+TestStack test_stack_;
+
+bluetooth::shim::IStack* bluetooth::shim::GetGabeldorscheStack() {
+  return (bluetooth::shim::IStack*)&test_stack_;
+}
 
 void TestGdShimL2cap::RegisterService(
     uint16_t psm, bluetooth::shim::ConnectionOpenCallback on_open,
