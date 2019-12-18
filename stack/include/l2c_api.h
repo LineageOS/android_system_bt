@@ -645,18 +645,6 @@ extern uint8_t L2CA_SetDesireRole(uint8_t new_role);
 
 /*******************************************************************************
  *
- * Function     L2CA_LocalLoopbackReq
- *
- * Description  This function sets up a CID for local loopback
- *
- * Returns      CID of 0 if none.
- *
- ******************************************************************************/
-extern uint16_t L2CA_LocalLoopbackReq(uint16_t psm, uint16_t handle,
-                                      const RawAddress& p_bd_addr);
-
-/*******************************************************************************
- *
  * Function     L2CA_FlushChannel
  *
  * Description  This function flushes none, some or all buffers queued up
