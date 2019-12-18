@@ -13,6 +13,7 @@ cc_library_static {
     srcs: [
         "a2dp_encoding.cc",
         "client_interface.cc",
+        "codec_status.cc",
         "hearing_aid_software_encoding.cc",
     ],
     shared_libs: [
@@ -36,6 +37,7 @@ cc_test {
     defaults: ["fluoride_defaults"],
     include_dirs: [
         "system/bt",
+        "system/bt/stack/include",
     ],
     srcs: [
         "client_interface_unittest.cc",
