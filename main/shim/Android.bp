@@ -9,6 +9,7 @@ filegroup {
         "l2c_api.cc",
         "l2cap.cc",
         "shim.cc",
+        "timer.cc",
     ]
 }
 
@@ -16,6 +17,7 @@ filegroup {
     name: "LibBluetoothShimTestSources",
     srcs: [
         "l2cap_test.cc",
+        "timer_test.cc",
     ]
 }
 
