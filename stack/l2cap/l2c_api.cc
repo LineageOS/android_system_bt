@@ -721,48 +721,6 @@ bool L2CA_GetPeerLECocConfig(uint16_t lcid, tL2CAP_LE_CFG_INFO* peer_cfg) {
   return true;
 }
 
-bool L2CA_SetConnectionCallbacks(uint16_t local_cid,
-                                 const tL2CAP_APPL_INFO* callbacks) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_SetConnectionCallbacks(local_cid, callbacks);
-  }
-
-  CHECK(callbacks != NULL);
-  CHECK(callbacks->pL2CA_ConnectInd_Cb == NULL);
-  CHECK(callbacks->pL2CA_ConnectCfm_Cb != NULL);
-  CHECK(callbacks->pL2CA_ConfigInd_Cb != NULL);
-  CHECK(callbacks->pL2CA_ConfigCfm_Cb != NULL);
-  CHECK(callbacks->pL2CA_DisconnectInd_Cb != NULL);
-  CHECK(callbacks->pL2CA_DisconnectCfm_Cb != NULL);
-  CHECK(callbacks->pL2CA_CongestionStatus_Cb != NULL);
-  CHECK(callbacks->pL2CA_DataInd_Cb != NULL);
-  CHECK(callbacks->pL2CA_TxComplete_Cb != NULL);
-
-  tL2C_CCB* channel_control_block = l2cu_find_ccb_by_cid(NULL, local_cid);
-  if (!channel_control_block) {
-    LOG_ERROR(LOG_TAG,
-              "%s no channel control block found for L2CAP LCID=0x%04x.",
-              __func__, local_cid);
-    return false;
-  }
-
-  // We're making a connection-specific registration control block so we check
-  // if we already have a private one allocated to us on the heap. If not, we
-  // make a new allocation, mark it as heap-allocated, and inherit the fields
-  // from the old control block.
-  tL2C_RCB* registration_control_block = channel_control_block->p_rcb;
-  if (!channel_control_block->should_free_rcb) {
-    registration_control_block = (tL2C_RCB*)osi_calloc(sizeof(tL2C_RCB));
-
-    *registration_control_block = *channel_control_block->p_rcb;
-    channel_control_block->p_rcb = registration_control_block;
-    channel_control_block->should_free_rcb = true;
-  }
-
-  registration_control_block->api = *callbacks;
-  return true;
-}
-
 /*******************************************************************************
  *
  * Function         L2CA_ConnectRsp
