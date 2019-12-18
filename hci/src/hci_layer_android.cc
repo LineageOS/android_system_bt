@@ -55,6 +55,7 @@ extern void hci_event_received(const base::Location& from_here, BT_HDR* packet);
 extern void acl_event_received(BT_HDR* packet);
 extern void sco_data_received(BT_HDR* packet);
 extern void iso_data_received(BT_HDR* packet);
+extern void hal_service_died();
 
 android::sp<V1_0::IBluetoothHci> btHci;
 android::sp<V1_1::IBluetoothHci> btHci_1_1;
@@ -63,7 +64,7 @@ class BluetoothHciDeathRecipient : public hidl_death_recipient {
  public:
   virtual void serviceDied(uint64_t /*cookie*/, const android::wp<::android::hidl::base::V1_0::IBase>& /*who*/) {
     LOG_ERROR(LOG_TAG, "Bluetooth HAL service died!");
-    abort();
+    hal_service_died();
   }
 };
 android::sp<BluetoothHciDeathRecipient> bluetoothHciDeathRecipient = new BluetoothHciDeathRecipient();
