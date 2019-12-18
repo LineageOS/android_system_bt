@@ -19,6 +19,8 @@
 #include <pybind11/pybind11.h>
 #include <pybind11/stl.h>
 
+#include "hci/address.h"
+#include "hci/class_of_device.h"
 #include "packet/base_packet_builder.h"
 #include "packet/bit_inserter.h"
 #include "packet/iterator.h"
@@ -44,6 +46,8 @@ void define_smp_packets_submodule(py::module&);
 
 namespace packet {
 
+using ::bluetooth::hci::Address;
+using ::bluetooth::hci::ClassOfDevice;
 using ::bluetooth::packet::BasePacketBuilder;
 using ::bluetooth::packet::BaseStruct;
 using ::bluetooth::packet::BitInserter;
@@ -75,9 +79,23 @@ PYBIND11_MODULE(bluetooth_packets_python3, m) {
     return std::make_unique<PacketView<!kLittleEndian>>(bytes_shared);
   }));
 
-  bluetooth::hci::define_hci_packets_submodule(m);
-  bluetooth::l2cap::define_l2cap_packets_submodule(m);
-  bluetooth::security::define_smp_packets_submodule(m);
+  py::module hci_m = m.def_submodule("hci_packets", "A submodule of hci_packets");
+  bluetooth::hci::define_hci_packets_submodule(hci_m);
+
+  py::class_<Address>(hci_m, "Address")
+      .def(py::init<>())
+      .def("__repr__", [](const Address& a) { return a.ToString(); })
+      .def("__str__", [](const Address& a) { return a.ToString(); });
+
+  py::class_<ClassOfDevice>(hci_m, "ClassOfDevice")
+      .def(py::init<>())
+      .def("__repr__", [](const ClassOfDevice& c) { return c.ToString(); })
+      .def("__str__", [](const ClassOfDevice& c) { return c.ToString(); });
+
+  py::module l2cap_m = m.def_submodule("l2cap_packets", "A submodule of l2cap_packets");
+  bluetooth::l2cap::define_l2cap_packets_submodule(l2cap_m);
+  py::module security_m = m.def_submodule("security_packets", "A submodule of security_packets");
+  bluetooth::security::define_smp_packets_submodule(security_m);
 }
 
 }  // namespace packet
