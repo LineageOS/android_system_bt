@@ -21,14 +21,8 @@
 
 #include "osi/include/log.h"
 #include "shim/l2cap.h"
-#include "shim/test_stack.h"
+#include "shim/stub/stack.h"
 #include "types/raw_address.h"
-
-TestStack test_stack_;
-
-bluetooth::shim::IStack* bluetooth::shim::GetGabeldorscheStack() {
-  return (bluetooth::shim::IStack*)&test_stack_;
-}
 
 namespace bluetooth {
 namespace legacy {

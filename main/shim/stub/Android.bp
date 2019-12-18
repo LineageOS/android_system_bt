@@ -1,0 +1,25 @@
+filegroup {
+    name: "LibBluetoothShimStubSources",
+    srcs: [
+        "common.cc",
+        "osi.cc",
+        "stack.cc",
+    ]
+}
+
+cc_library_static {
+    name: "libbluetooth-gd-stub",
+    defaults: ["fluoride_defaults"],
+
+    srcs: [
+        "null_stack.cc",
+    ],
+    host_supported: true,
+    include_dirs: [
+        "system/bt",
+    ],
+    cflags: [
+        "-dbuildcfg",
+    ],
+}
+
