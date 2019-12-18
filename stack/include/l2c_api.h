@@ -489,14 +489,6 @@ extern bool L2CA_ConnectLECocRsp(const RawAddress& p_bd_addr, uint8_t id,
 extern bool L2CA_GetPeerLECocConfig(uint16_t lcid,
                                     tL2CAP_LE_CFG_INFO* peer_cfg);
 
-// This function sets the callback routines for the L2CAP connection referred to
-// by |local_cid|. The callback routines can only be modified for outgoing
-// connections established by |L2CA_ConnectReq| or accepted incoming
-// connections. |callbacks| must not be NULL. This function returns true if the
-// callbacks could be updated, false if not (e.g. |local_cid| was not found).
-bool L2CA_SetConnectionCallbacks(uint16_t local_cid,
-                                 const tL2CAP_APPL_INFO* callbacks);
-
 /*******************************************************************************
  *
  * Function         L2CA_ErtmConnectRsp
@@ -650,18 +642,6 @@ extern uint8_t L2CA_SetTraceLevel(uint8_t trace_level);
  *
  ******************************************************************************/
 extern uint8_t L2CA_SetDesireRole(uint8_t new_role);
-
-/*******************************************************************************
- *
- * Function     L2CA_LocalLoopbackReq
- *
- * Description  This function sets up a CID for local loopback
- *
- * Returns      CID of 0 if none.
- *
- ******************************************************************************/
-extern uint16_t L2CA_LocalLoopbackReq(uint16_t psm, uint16_t handle,
-                                      const RawAddress& p_bd_addr);
 
 /*******************************************************************************
  *

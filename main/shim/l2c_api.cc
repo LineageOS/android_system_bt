@@ -232,12 +232,6 @@ bool bluetooth::shim::L2CA_SetIdleTimeoutByBdAddr(const RawAddress& bd_addr,
   return false;
 }
 
-uint16_t bluetooth::shim::L2CA_LocalLoopbackReq(uint16_t psm, uint16_t handle,
-                                                const RawAddress& p_bd_addr) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
-  return 0;
-}
-
 bool bluetooth::shim::L2CA_SetAclPriority(const RawAddress& bd_addr,
                                           uint8_t priority) {
   LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
