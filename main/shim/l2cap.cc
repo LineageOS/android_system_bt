@@ -147,7 +147,8 @@ uint16_t bluetooth::legacy::shim::L2cap::GetNextDynamicClassicPsm() {
 }
 
 void bluetooth::legacy::shim::L2cap::RegisterService(
-    uint16_t psm, const tL2CAP_APPL_INFO* callbacks, bool enable_snoop) {
+    uint16_t psm, const tL2CAP_APPL_INFO* callbacks, bool enable_snoop,
+    tL2CAP_ERTM_INFO* p_ertm_info) {
   LOG_DEBUG(LOG_TAG, "Registering service on psm:%hd", psm);
 
   if (!enable_snoop) {
@@ -158,8 +159,14 @@ void bluetooth::legacy::shim::L2cap::RegisterService(
 
   std::promise<void> register_completed;
   auto completed = register_completed.get_future();
+  bool use_ertm = false;
+  if (p_ertm_info != nullptr &&
+      p_ertm_info->preferred_mode == L2CAP_FCR_ERTM_MODE) {
+    use_ertm = true;
+  }
+  constexpr auto mtu = 1000;  // TODO: Let client decide
   bluetooth::shim::GetL2cap()->RegisterService(
-      psm,
+      psm, use_ertm, mtu,
       std::bind(
           &bluetooth::legacy::shim::L2cap::OnRemoteInitiatedConnectionCreated,
           this, std::placeholders::_1, std::placeholders::_2,
