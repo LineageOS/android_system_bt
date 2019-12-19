@@ -56,8 +56,6 @@ uint16_t bluetooth::shim::L2CA_Register(uint16_t client_psm,
               __func__, client_psm, psm);
     return 0;
   }
-  shim_l2cap.Classic().RegisterPsm(psm, callbacks);
-
   LOG_INFO(LOG_TAG, "%s classic client_psm:%hd psm:%hd", __func__, client_psm,
            psm);
 
@@ -74,39 +72,25 @@ void bluetooth::shim::L2CA_Deregister(uint16_t client_psm) {
   }
   uint16_t psm = shim_l2cap.ConvertClientToRealPsm(client_psm);
 
-  if (!shim_l2cap.Classic().IsPsmRegistered(psm)) {
-    LOG_ERROR(LOG_TAG,
-              "%s Not previously registered classic client_psm:%hd psm:%hd",
-              __func__, client_psm, psm);
-    return;
-  }
-  shim_l2cap.Classic().UnregisterPsm(psm);
+  shim_l2cap.UnregisterService(psm);
   shim_l2cap.RemoveClientPsm(psm);
 }
 
 uint16_t bluetooth::shim::L2CA_AllocatePSM(void) {
-  uint16_t psm = shim_l2cap.GetNextDynamicClassicPsm();
-  shim_l2cap.Classic().AllocatePsm(psm);
-  return psm;
+  return shim_l2cap.GetNextDynamicClassicPsm();
 }
 
 uint16_t bluetooth::shim::L2CA_AllocateLePSM(void) {
-  uint16_t psm = shim_l2cap.GetNextDynamicLePsm();
-  shim_l2cap.Le().AllocatePsm(psm);
-  return psm;
+  return shim_l2cap.GetNextDynamicLePsm();
 }
 
 void bluetooth::shim::L2CA_FreeLePSM(uint16_t psm) {
-  if (!shim_l2cap.Le().IsPsmAllocated(psm)) {
-    LOG_ERROR(LOG_TAG, "%s Not previously allocated le psm:%hd", __func__, psm);
-    return;
-  }
   if (!shim_l2cap.Le().IsPsmRegistered(psm)) {
-    LOG_ERROR(LOG_TAG, "%s Must deregister psm before deallocation psm:%hd",
-              __func__, psm);
+    LOG_ERROR(LOG_TAG, "%s Not previously registered le psm:%hd", __func__,
+              psm);
     return;
   }
-  shim_l2cap.Le().DeallocatePsm(psm);
+  shim_l2cap.Le().UnregisterPsm(psm);
 }
 
 /**
