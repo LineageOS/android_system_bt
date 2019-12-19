@@ -29,7 +29,8 @@ namespace shim {
 
 class L2cap : public bluetooth::Module, public bluetooth::shim::IL2cap {
  public:
-  void RegisterService(uint16_t psm, ConnectionOpenCallback on_open, std::promise<void> completed) override;
+  void RegisterService(uint16_t psm, bool use_ertm, uint16_t mtu, ConnectionOpenCallback on_open,
+                       std::promise<void> completed) override;
   void UnregisterService(uint16_t psm) override;
 
   void CreateConnection(uint16_t psm, const std::string address_string, ConnectionOpenCallback on_open,
