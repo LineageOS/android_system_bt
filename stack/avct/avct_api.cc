@@ -57,7 +57,7 @@ void AVCT_Register(uint16_t mtu, UNUSED_ATTR uint16_t mtu_br,
 
   /* register PSM with L2CAP */
   L2CA_Register(AVCT_PSM, (tL2CAP_APPL_INFO*)&avct_l2c_appl,
-                true /* enable_snoop */);
+                true /* enable_snoop */, nullptr);
 
   /* set security level */
   BTM_SetSecurityLevel(true, "", BTM_SEC_SERVICE_AVCTP, sec_mask, AVCT_PSM, 0,
@@ -69,8 +69,15 @@ void AVCT_Register(uint16_t mtu, UNUSED_ATTR uint16_t mtu_br,
   memset(&avct_cb, 0, sizeof(tAVCT_CB));
 
   /* Include the browsing channel which uses eFCR */
+  tL2CAP_ERTM_INFO ertm_info;
+  ertm_info.preferred_mode = avct_l2c_br_fcr_opts_def.mode;
+  ertm_info.allowed_modes = L2CAP_FCR_CHAN_OPT_ERTM;
+  ertm_info.user_rx_buf_size = BT_DEFAULT_BUFFER_SIZE;
+  ertm_info.user_tx_buf_size = BT_DEFAULT_BUFFER_SIZE;
+  ertm_info.fcr_rx_buf_size = BT_DEFAULT_BUFFER_SIZE;
+  ertm_info.fcr_tx_buf_size = BT_DEFAULT_BUFFER_SIZE;
   L2CA_Register(AVCT_BR_PSM, (tL2CAP_APPL_INFO*)&avct_l2c_br_appl,
-                true /*enable_snoop*/);
+                true /*enable_snoop*/, &ertm_info);
 
   /* AVCTP browsing channel uses the same security service as AVCTP control
    * channel */
