@@ -267,6 +267,15 @@ bool generate_pybind11_sources_one_file(const Declarations& decls, const std::fi
     out_file << "#include " << gen_relative_header << "\n";
     out_file << "\n\n";
 
+    for (const auto& c : decls.type_defs_queue_) {
+      if (c.second->GetDefinitionType() == TypeDef::Type::CUSTOM) {
+        const auto* custom_def = dynamic_cast<const CustomFieldDef*>(c.second);
+        custom_def->GenPyBind11Include(out_file);
+      }
+    }
+
+    out_file << "\n\n";
+
     generate_namespace_open(namespace_list, out_file);
     out_file << "\n\n";
 
@@ -365,9 +374,7 @@ bool generate_pybind11_sources_one_file(const Declarations& decls, const std::fi
                   << "(py::module& m);\n";
   }
 
-  out_file_main << "void define_" << input_filename << "_submodule(py::module& parent) {\n\n";
-  out_file_main << "py::module m = parent.def_submodule(\"" << input_filename << "\", \"A submodule of "
-                << input_filename << "\");\n\n";
+  out_file_main << "void define_" << input_filename << "_submodule(py::module& m) {\n\n";
   for (size_t i = 0; i < out_file_shards.size(); i++) {
     out_file_main << "define_" << input_filename << "_submodule_shard_" << std::to_string(i) << "(m);\n";
   }

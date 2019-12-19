@@ -16,12 +16,17 @@
 
 #pragma once
 
+#include <vector>
+
 #include "audio_a2dp_hw/include/audio_a2dp_hw.h"
 #include "common/message_loop_thread.h"
 
 namespace bluetooth {
 namespace audio {
 namespace a2dp {
+
+bool update_codec_offloading_capabilities(
+    const std::vector<btav_a2dp_codec_config_t>& framework_preference);
 
 // Check if new bluetooth_audio is enabled
 bool is_hal_2_0_enabled();

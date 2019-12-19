@@ -9,6 +9,7 @@ filegroup {
         "l2c_api.cc",
         "l2cap.cc",
         "shim.cc",
+        "timer.cc",
     ]
 }
 
@@ -16,15 +17,7 @@ filegroup {
     name: "LibBluetoothShimTestSources",
     srcs: [
         "l2cap_test.cc",
-        "test_stack.cc",
-    ]
-}
-
-// Stubbed out fake entry point for the gd stack
-filegroup {
-    name: "LibBluetoothShimTestEntrySources",
-    srcs: [
-        "entry_for_test.cc",
+        "timer_test.cc",
     ]
 }
 

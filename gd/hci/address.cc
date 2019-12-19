@@ -23,6 +23,8 @@
 #include <sstream>
 #include <vector>
 
+#include "os/log.h"
+
 namespace bluetooth {
 namespace hci {
 

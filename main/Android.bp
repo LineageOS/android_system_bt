@@ -113,7 +113,6 @@ cc_library_static {
     srcs: [
         ":LibBluetoothSources",
         ":LibBluetoothShimSources",
-        ":LibBluetoothShimTestEntrySources",
     ],
     host_supported: true,
     include_dirs: [
@@ -140,6 +139,7 @@ cc_test {
     host_supported: true,
     srcs: [
         ":LibBluetoothShimTestSources",
+        ":LibBluetoothShimStubSources",
     ],
     static_libs: [
         "libgmock",

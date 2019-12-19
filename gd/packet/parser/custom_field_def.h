@@ -35,6 +35,8 @@ class CustomFieldDef : public TypeDef {
 
   void GenInclude(std::ostream& s) const;
 
+  void GenPyBind11Include(std::ostream& s) const;
+
   void GenUsing(std::ostream& s) const;
 
   void GenCustomFieldCheck(std::ostream& s, bool little_endian) const;
