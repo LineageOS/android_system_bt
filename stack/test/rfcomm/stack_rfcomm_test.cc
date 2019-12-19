@@ -453,7 +453,7 @@ class StackRfcommTest : public Test {
         &btm_security_internal_interface_);
     bluetooth::l2cap::SetMockInterface(&l2cap_interface_);
     rfcomm_callback = &rfcomm_callback_;
-    EXPECT_CALL(l2cap_interface_, Register(BT_PSM_RFCOMM, _, _))
+    EXPECT_CALL(l2cap_interface_, Register(BT_PSM_RFCOMM, _, _, _))
         .WillOnce(
             DoAll(SaveArgPointee<1>(&l2cap_appl_info_), Return(BT_PSM_RFCOMM)));
     RFCOMM_Init();
