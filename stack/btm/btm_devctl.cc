@@ -901,9 +901,6 @@ static void BTM_BT_Quality_Report_VSE_CBack(uint8_t length, uint8_t* p_stream) {
   length--;
 
   if (sub_event == HCI_VSE_SUBCODE_BQR_SUB_EVT) {
-    LOG(INFO) << __func__
-              << ": BQR sub event, report length: " << std::to_string(length);
-
     if (btm_cb.p_bqr_report_receiver == nullptr) {
       LOG(WARNING) << __func__ << ": No registered report receiver.";
       return;
