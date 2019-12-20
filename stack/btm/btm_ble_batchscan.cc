@@ -63,6 +63,7 @@ void btm_ble_batchscan_filter_track_adv_vse_cback(uint8_t len, uint8_t* p) {
 
   uint8_t sub_event = 0;
   tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
+  if (len == 0) return;
   STREAM_TO_UINT8(sub_event, p);
 
   BTM_TRACE_EVENT(
@@ -90,6 +91,7 @@ void btm_ble_batchscan_filter_track_adv_vse_cback(uint8_t len, uint8_t* p) {
 
       /* Extract the adv info details */
       if (ADV_INFO_PRESENT == adv_data.advertiser_info_present) {
+        if (len < 15) return;
         STREAM_TO_UINT8(adv_data.tx_power, p);
         STREAM_TO_UINT8(adv_data.rssi_value, p);
         STREAM_TO_UINT16(adv_data.time_stamp, p);
