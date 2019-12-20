@@ -20,6 +20,7 @@
 #include <cstddef>
 #include <cstdint>
 #include <cstring>
+#include <mutex>
 
 #include "main/shim/btm.h"
 #include "main/shim/controller.h"
@@ -71,6 +72,7 @@ extern void btm_api_process_extended_inquiry_result(
 
 void bluetooth::shim::Btm::StartUp(bluetooth::shim::Btm* btm) {
   CHECK(btm != nullptr);
+  std::unique_lock<std::mutex> lock(btm->sync_mutex_);
   CHECK(btm->observing_timer_ == nullptr);
   CHECK(btm->scanning_timer_ == nullptr);
   btm->observing_timer_ = new bluetooth::shim::Timer("observing_timer");
@@ -79,10 +81,13 @@ void bluetooth::shim::Btm::StartUp(bluetooth::shim::Btm* btm) {
 
 void bluetooth::shim::Btm::ShutDown(bluetooth::shim::Btm* btm) {
   CHECK(btm != nullptr);
+  std::unique_lock<std::mutex> lock(btm->sync_mutex_);
   CHECK(btm->observing_timer_ != nullptr);
   CHECK(btm->scanning_timer_ != nullptr);
   delete btm->scanning_timer_;
   delete btm->observing_timer_;
+  btm->scanning_timer_ = nullptr;
+  btm->observing_timer_ = nullptr;
 }
 
 void bluetooth::shim::Btm::OnInquiryResult(std::string string_address,
