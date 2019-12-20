@@ -83,9 +83,6 @@ typedef union {
   tSDP_DR_DATA data;
 } tSDP_DATA;
 
-/* Define a callback function for when discovery result is received. */
-typedef void(tSDP_DISC_RES_CB)(uint16_t event, tSDP_DATA* p_data);
-
 /* Define a structure to hold the discovered service information. */
 typedef struct {
   union {
@@ -240,21 +237,6 @@ bool SDP_ServiceSearchAttributeRequest2(const RawAddress& p_bd_addr,
 
 /*******************************************************************************
  *
- * Function         SDP_FindAttributeInDb
- *
- * Description      This function queries an SDP database for a specific
- *                  attribute. If the p_start_rec pointer is NULL, it looks from
- *                  the beginning of the database, else it continues from the
- *                  next record after p_start_rec.
- *
- * Returns          Pointer to matching record, or NULL
- *
- ******************************************************************************/
-tSDP_DISC_REC* SDP_FindAttributeInDb(tSDP_DISCOVERY_DB* p_db, uint16_t attr_id,
-                                     tSDP_DISC_REC* p_start_rec);
-
-/*******************************************************************************
- *
  * Function         SDP_FindAttributeInRec
  *
  * Description      This function searches an SDP discovery record for a
@@ -348,20 +330,6 @@ bool SDP_FindProtocolListElemInRec(tSDP_DISC_REC* p_rec, uint16_t layer_uuid,
 
 /*******************************************************************************
  *
- * Function         SDP_FindAddProtoListsElemInRec
- *
- * Description      This function looks at a specific discovery record for a
- *                  protocol list element.
- *
- * Returns          true if found, false if not
- *                  If found, the passed protocol list element is filled in.
- *
- ******************************************************************************/
-bool SDP_FindAddProtoListsElemInRec(tSDP_DISC_REC* p_rec, uint16_t layer_uuid,
-                                    tSDP_PROTOCOL_ELEM* p_elem);
-
-/*******************************************************************************
- *
  * Function         SDP_FindProfileVersionInRec
  *
  * Description      This function looks at a specific discovery record for the
@@ -407,21 +375,6 @@ uint32_t SDP_CreateRecord(void);
  *
  ******************************************************************************/
 bool SDP_DeleteRecord(uint32_t handle);
-
-/*******************************************************************************
- *
- * Function         SDP_ReadRecord
- *
- * Description      This function is called to get the raw data of the record
- *                  with the given handle from the database.
- *
- * Returns          -1, if the record is not found.
- *                  Otherwise, the offset (0 or 1) to start of data in p_data.
- *
- *                  The size of data copied into p_data is in *p_data_len.
- *
- ******************************************************************************/
-int32_t SDP_ReadRecord(uint32_t handle, uint8_t* p_data, int32_t* p_data_len);
 
 /*******************************************************************************
  *

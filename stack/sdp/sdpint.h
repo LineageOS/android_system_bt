@@ -38,33 +38,6 @@
 /* Timeout definitions. */
 #define SDP_INACT_TIMEOUT_MS (30 * 1000) /* Inactivity timeout (in ms) */
 
-/* Define the Out-Flow default values. */
-#define SDP_OFLOW_QOS_FLAG 0
-#define SDP_OFLOW_SERV_TYPE 0
-#define SDP_OFLOW_TOKEN_RATE 0
-#define SDP_OFLOW_TOKEN_BUCKET_SIZE 0
-#define SDP_OFLOW_PEAK_BANDWIDTH 0
-#define SDP_OFLOW_LATENCY 0
-#define SDP_OFLOW_DELAY_VARIATION 0
-
-/* Define the In-Flow default values. */
-#define SDP_IFLOW_QOS_FLAG 0
-#define SDP_IFLOW_SERV_TYPE 0
-#define SDP_IFLOW_TOKEN_RATE 0
-#define SDP_IFLOW_TOKEN_BUCKET_SIZE 0
-#define SDP_IFLOW_PEAK_BANDWIDTH 0
-#define SDP_IFLOW_LATENCY 0
-#define SDP_IFLOW_DELAY_VARIATION 0
-
-#define SDP_LINK_TO 0
-
-/* Define the type of device notification. */
-/* (Inquiry Scan and Page Scan)            */
-#define SDP_DEVICE_NOTI_LEN \
-  (sizeof(BT_HDR) + HCIC_PREAMBLE_SIZE + HCIC_PARAM_SIZE_WRITE_PARAM1)
-
-#define SDP_DEVICE_NOTI_FLAG 0x03
-
 /* Define the Protocol Data Unit (PDU) types.
  */
 #define SDP_PDU_ERROR_RESPONSE 0x01
@@ -132,11 +105,6 @@ typedef struct {
   uint16_t num_records;
   tSDP_RECORD record[SDP_MAX_RECORDS];
 } tSDP_DB;
-
-enum {
-  SDP_IS_SEARCH,
-  SDP_IS_ATTR_SEARCH,
-};
 
 #if (SDP_SERVER_ENABLED == TRUE)
 /* Continuation information for the SDP server response */
@@ -226,21 +194,6 @@ extern void sdp_init(void);
 extern void sdp_free(void);
 extern void sdp_disconnect(tCONN_CB* p_ccb, uint16_t reason);
 
-#if (SDP_DEBUG == TRUE)
-extern uint16_t sdp_set_max_attr_list_size(uint16_t max_size);
-#endif
-
-/* Functions provided by sdp_conn.cc
- */
-extern void sdp_conn_rcv_l2e_conn_ind(BT_HDR* p_msg);
-extern void sdp_conn_rcv_l2e_conn_cfm(BT_HDR* p_msg);
-extern void sdp_conn_rcv_l2e_disc(BT_HDR* p_msg);
-extern void sdp_conn_rcv_l2e_config_ind(BT_HDR* p_msg);
-extern void sdp_conn_rcv_l2e_config_cfm(BT_HDR* p_msg);
-extern void sdp_conn_rcv_l2e_conn_failed(BT_HDR* p_msg);
-extern void sdp_conn_rcv_l2e_connected(BT_HDR* p_msg);
-extern void sdp_conn_rcv_l2e_conn_failed(BT_HDR* p_msg);
-extern void sdp_conn_rcv_l2e_data(BT_HDR* p_msg);
 extern void sdp_conn_timer_timeout(void* data);
 
 extern tCONN_CB* sdp_conn_originate(const RawAddress& p_bd_addr);
