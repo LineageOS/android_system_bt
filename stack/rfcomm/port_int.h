@@ -32,17 +32,6 @@
 #include "port_api.h"
 #include "rfcdefs.h"
 
-/* Local events passed when application event is sent from the api to PORT */
-/* ???*/
-#define PORT_EVENT_OPEN (1 | BT_EVT_TO_BTU_SP_EVT)
-#define PORT_EVENT_CONTROL (2 | BT_EVT_TO_BTU_SP_EVT)
-#define PORT_EVENT_SET_STATE (3 | BT_EVT_TO_BTU_SP_EVT)
-#define PORT_EVENT_SET_CALLBACK (5 | BT_EVT_TO_BTU_SP_EVT)
-#define PORT_EVENT_WRITE (6 | BT_EVT_TO_BTU_SP_EVT)
-#define PORT_EVENT_PURGE (7 | BT_EVT_TO_BTU_SP_EVT)
-#define PORT_EVENT_SEND_ERROR (8 | BT_EVT_TO_BTU_SP_EVT)
-#define PORT_EVENT_FLOW_CONTROL (9 | BT_EVT_TO_BTU_SP_EVT)
-
 /*
  * Flow control configuration values for the mux
 */
@@ -114,12 +103,6 @@ typedef struct {
  * RFCOMM Port Connection Control Block
 */
 typedef struct {
-#define RFC_PORT_STATE_IDLE 0
-#define RFC_PORT_STATE_WAIT_START 1
-#define RFC_PORT_STATE_OPENING 2
-#define RFC_PORT_STATE_OPENED 3
-#define RFC_PORT_STATE_CLOSING 4
-
   uint8_t state; /* Current state of the connection */
 
 #define RFC_RSP_PN 0x01
