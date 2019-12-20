@@ -97,6 +97,11 @@ void l2c_rcv_acl_data(BT_HDR* p_msg) {
     /* There is a slight possibility (specifically with USB) that we get an */
     /* L2CAP connection request before we get the HCI connection complete.  */
     /* So for these types of messages, hold them for up to 2 seconds.       */
+    if (l2cap_len == 0) {
+      L2CAP_TRACE_WARNING("received empty L2CAP packet");
+      osi_free(p_msg);
+      return;
+    }
     uint8_t cmd_code;
     STREAM_TO_UINT8(cmd_code, p);
 
