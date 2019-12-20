@@ -91,7 +91,7 @@ void avdt_scb_transport_channel_timer_timeout(void* data) {
 void AVDT_Register(AvdtpRcb* p_reg, tAVDT_CTRL_CBACK* p_cback) {
   /* register PSM with L2CAP */
   L2CA_Register(AVDT_PSM, (tL2CAP_APPL_INFO*)&avdt_l2c_appl,
-                true /* enable_snoop */);
+                true /* enable_snoop */, nullptr);
 
   /* set security level */
   BTM_SetSecurityLevel(true, "", BTM_SEC_SERVICE_AVDTP, p_reg->sec_mask,

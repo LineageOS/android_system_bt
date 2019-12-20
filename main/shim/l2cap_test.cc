@@ -173,12 +173,12 @@ tL2CAP_APPL_INFO test_callbacks{
 };
 
 TEST_F(L2capTest, RegisterService) {
-  l2cap_->RegisterService(kPsm, &test_callbacks, false);
+  l2cap_->RegisterService(kPsm, &test_callbacks, false, nullptr);
   CHECK(test_stack_.test_l2cap_.registered_service_.count(kPsm) == 1);
 }
 
 TEST_F(L2capTest, UnregisterService) {
-  l2cap_->RegisterService(kPsm, &test_callbacks, false);
+  l2cap_->RegisterService(kPsm, &test_callbacks, false, nullptr);
   CHECK(test_stack_.test_l2cap_.registered_service_.count(kPsm) == 1);
   l2cap_->UnregisterService(kPsm);
   CHECK(test_stack_.test_l2cap_.registered_service_.count(kPsm) == 0);
@@ -194,7 +194,7 @@ TEST_F(L2capTest, CreateConnection_NotRegistered) {
 
 TEST_F(L2capTest, CreateConnection_Registered) {
   test_stack_.test_l2cap_.cid_ = kCid;
-  l2cap_->RegisterService(kPsm, &test_callbacks, false);
+  l2cap_->RegisterService(kPsm, &test_callbacks, false, nullptr);
 
   RawAddress raw_address;
   std::string string_address("11:22:33:44:55:66");
@@ -205,7 +205,7 @@ TEST_F(L2capTest, CreateConnection_Registered) {
 
 TEST_F(L2capTest, CreateConnection_ConnectResponse) {
   test_stack_.test_l2cap_.cid_ = kCid;
-  l2cap_->RegisterService(kPsm, &test_callbacks, false);
+  l2cap_->RegisterService(kPsm, &test_callbacks, false, nullptr);
 
   RawAddress raw_address;
   std::string string_address("11:22:33:44:55:66");
@@ -218,7 +218,7 @@ TEST_F(L2capTest, CreateConnection_ConnectResponse) {
 
 TEST_F(L2capTest, CreateConnection_ConfigRequest) {
   test_stack_.test_l2cap_.cid_ = kCid;
-  l2cap_->RegisterService(kPsm, &test_callbacks, false);
+  l2cap_->RegisterService(kPsm, &test_callbacks, false, nullptr);
 
   RawAddress raw_address;
   std::string string_address("11:22:33:44:55:66");
@@ -235,7 +235,7 @@ TEST_F(L2capTest, CreateConnection_ConfigRequest) {
 
 TEST_F(L2capTest, CreateConnection_ConfigResponse) {
   test_stack_.test_l2cap_.cid_ = kCid;
-  l2cap_->RegisterService(kPsm, &test_callbacks, false);
+  l2cap_->RegisterService(kPsm, &test_callbacks, false, nullptr);
 
   RawAddress raw_address;
   std::string string_address("11:22:33:44:55:66");
@@ -252,7 +252,7 @@ TEST_F(L2capTest, CreateConnection_ConfigResponse) {
 
 TEST_F(L2capTest, CreateConnection_DisconnectRequest) {
   test_stack_.test_l2cap_.cid_ = kCid;
-  l2cap_->RegisterService(kPsm, &test_callbacks, false);
+  l2cap_->RegisterService(kPsm, &test_callbacks, false, nullptr);
 
   RawAddress raw_address;
   std::string string_address("11:22:33:44:55:66");
@@ -269,7 +269,7 @@ TEST_F(L2capTest, CreateConnection_DisconnectRequest) {
 
 TEST_F(L2capTest, CreateConnection_DisconnectResponse) {
   test_stack_.test_l2cap_.cid_ = kCid;
-  l2cap_->RegisterService(kPsm, &test_callbacks, false);
+  l2cap_->RegisterService(kPsm, &test_callbacks, false, nullptr);
 
   RawAddress raw_address;
   std::string string_address("11:22:33:44:55:66");
@@ -286,7 +286,7 @@ TEST_F(L2capTest, CreateConnection_DisconnectResponse) {
 
 TEST_F(L2capTest, CreateConnection_WithHandshake) {
   test_stack_.test_l2cap_.cid_ = kCid;
-  l2cap_->RegisterService(kPsm, &test_callbacks, false);
+  l2cap_->RegisterService(kPsm, &test_callbacks, false, nullptr);
 
   RawAddress raw_address;
   std::string string_address("11:22:33:44:55:66");

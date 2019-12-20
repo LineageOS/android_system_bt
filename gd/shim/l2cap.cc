@@ -355,7 +355,8 @@ class ServiceInterface {
 };
 
 struct L2cap::impl {
-  void RegisterService(l2cap::Psm psm, ConnectionOpenCallback on_open, std::promise<void> completed);
+  void RegisterService(l2cap::Psm psm, l2cap::classic::DynamicChannelConfigurationOption option,
+                       ConnectionOpenCallback on_open, std::promise<void> completed);
   void UnregisterService(l2cap::Psm psm);
 
   void CreateConnection(l2cap::Psm psm, hci::Address address, ConnectionOpenCallback on_open,
@@ -389,21 +390,20 @@ L2cap::impl::impl(L2cap& module, l2cap::classic::L2capClassicModule* l2cap_modul
   dynamic_channel_manager_ = l2cap_module_->GetDynamicChannelManager();
 }
 
-void L2cap::impl::RegisterService(l2cap::Psm psm, ConnectionOpenCallback on_open, std::promise<void> completed) {
+void L2cap::impl::RegisterService(l2cap::Psm psm, l2cap::classic::DynamicChannelConfigurationOption option,
+                                  ConnectionOpenCallback on_open, std::promise<void> completed) {
   ASSERT(psm_to_service_interface_map_.find(psm) == psm_to_service_interface_map_.end());
 
   auto service_interface =
       std::make_shared<ServiceInterface>(&connection_interface_manager_, psm, on_open, std::move(completed));
   psm_to_service_interface_map_.emplace(psm, service_interface);
 
-  // TODO(cmanton): Use the configuration option from user
   service_interface->RegisterService(
-      [this](l2cap::Psm psm, l2cap::SecurityPolicy security_policy,
-             l2cap::classic::DynamicChannelManager::OnRegistrationCompleteCallback on_registration_complete,
-             l2cap::classic::DynamicChannelManager::OnConnectionOpenCallback on_connection_open) {
-        bool rc = dynamic_channel_manager_->RegisterService(psm, l2cap::classic::DynamicChannelConfigurationOption(),
-                                                            security_policy, std::move(on_registration_complete),
-                                                            on_connection_open, handler_);
+      [this, option](l2cap::Psm psm, l2cap::SecurityPolicy security_policy,
+                     l2cap::classic::DynamicChannelManager::OnRegistrationCompleteCallback on_registration_complete,
+                     l2cap::classic::DynamicChannelManager::OnConnectionOpenCallback on_connection_open) {
+        bool rc = dynamic_channel_manager_->RegisterService(
+            psm, option, security_policy, std::move(on_registration_complete), on_connection_open, handler_);
         ASSERT_LOG(rc == true, "Failed to register classic service");
       });
 }
@@ -449,10 +449,17 @@ void L2cap::impl::SendLoopbackResponse(std::function<void()> function) {
   function();
 }
 
-void L2cap::RegisterService(uint16_t raw_psm, ConnectionOpenCallback on_open, std::promise<void> completed) {
+void L2cap::RegisterService(uint16_t raw_psm, bool use_ertm, uint16_t mtu, ConnectionOpenCallback on_open,
+                            std::promise<void> completed) {
   l2cap::Psm psm{raw_psm};
-  GetHandler()->Post(common::BindOnce(&L2cap::impl::RegisterService, common::Unretained(pimpl_.get()), psm, on_open,
-                                      std::move(completed)));
+  l2cap::classic::DynamicChannelConfigurationOption option;
+  if (use_ertm) {
+    option.channel_mode =
+        l2cap::classic::DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::ENHANCED_RETRANSMISSION;
+  }
+  option.incoming_mtu = mtu;
+  GetHandler()->Post(common::BindOnce(&L2cap::impl::RegisterService, common::Unretained(pimpl_.get()), psm, option,
+                                      on_open, std::move(completed)));
 }
 
 void L2cap::UnregisterService(uint16_t raw_psm) {
