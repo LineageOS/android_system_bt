@@ -23,16 +23,11 @@
  ******************************************************************************/
 
 #include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "bt_target.h"
 
 #include "bt_common.h"
-
-#include "hcidefs.h"
-#include "hcimsgs.h"
-#include "l2cdefs.h"
 
 #include "sdp_api.h"
 #include "sdpint.h"
@@ -844,67 +839,3 @@ bool SDP_DeleteAttribute(uint32_t handle, uint16_t attr_id) {
   /* If here, not found */
   return (false);
 }
-
-/*******************************************************************************
- *
- * Function         SDP_ReadRecord
- *
- * Description      This function is called to get the raw data of the record
- *                  with the given handle from the database.
- *
- * Returns          -1, if the record is not found.
- *                  Otherwise, the offset (0 or 1) to start of data in p_data.
- *
- *                  The size of data copied into p_data is in *p_data_len.
- *
- ******************************************************************************/
-#if (SDP_RAW_DATA_INCLUDED == TRUE)
-int32_t SDP_ReadRecord(uint32_t handle, uint8_t* p_data, int32_t* p_data_len) {
-  int32_t len = 0;     /* Number of bytes in the entry */
-  int32_t offset = -1; /* default to not found */
-#if (SDP_SERVER_ENABLED == TRUE)
-  tSDP_RECORD* p_rec;
-  uint16_t start = 0;
-  uint16_t end = 0xffff;
-  tSDP_ATTRIBUTE* p_attr;
-  uint16_t rem_len;
-  uint8_t* p_rsp;
-
-  /* Find the record in the database */
-  p_rec = sdp_db_find_record(handle);
-  if (p_rec && p_data && p_data_len) {
-    p_rsp = &p_data[3];
-    while ((p_attr = sdp_db_find_attr_in_rec(p_rec, start, end)) != NULL) {
-      /* Check if attribute fits. Assume 3-byte value type/length */
-      rem_len = *p_data_len - (uint16_t)(p_rsp - p_data);
-
-      if (p_attr->len > (uint32_t)(rem_len - 6)) break;
-
-      p_rsp = sdpu_build_attrib_entry(p_rsp, p_attr);
-
-      /* next attr id */
-      start = p_attr->id + 1;
-    }
-    len = (int32_t)(p_rsp - p_data);
-
-    /* Put in the sequence header (2 or 3 bytes) */
-    if (len > 255) {
-      offset = 0;
-      p_data[0] = (uint8_t)((DATA_ELE_SEQ_DESC_TYPE << 3) | SIZE_IN_NEXT_WORD);
-      p_data[1] = (uint8_t)((len - 3) >> 8);
-      p_data[2] = (uint8_t)(len - 3);
-    } else {
-      offset = 1;
-
-      p_data[1] = (uint8_t)((DATA_ELE_SEQ_DESC_TYPE << 3) | SIZE_IN_NEXT_BYTE);
-      p_data[2] = (uint8_t)(len - 3);
-
-      len--;
-    }
-    *p_data_len = len;
-  }
-#endif
-  /* If here, not found */
-  return (offset);
-}
-#endif
