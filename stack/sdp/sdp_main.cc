@@ -22,22 +22,17 @@
  *
  ******************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "bt_common.h"
 #include "bt_target.h"
-#include "bt_utils.h"
 #include "hcidefs.h"
-#include "hcimsgs.h"
 
 #include "l2c_api.h"
 #include "l2cdefs.h"
 #include "osi/include/osi.h"
 
 #include "btm_api.h"
-#include "btu.h"
 
 #include "sdp_api.h"
 #include "sdpint.h"
@@ -133,26 +128,6 @@ void sdp_free(void) {
     sdp_cb.ccb[i].sdp_conn_timer = NULL;
   }
 }
-
-#if (SDP_DEBUG == TRUE)
-/*******************************************************************************
- *
- * Function         sdp_set_max_attr_list_size
- *
- * Description      This function sets the max attribute list size to use
- *
- * Returns          void
- *
- ******************************************************************************/
-uint16_t sdp_set_max_attr_list_size(uint16_t max_size) {
-  if (max_size > (sdp_cb.l2cap_my_cfg.mtu - 16))
-    max_size = sdp_cb.l2cap_my_cfg.mtu - 16;
-
-  sdp_cb.max_attr_list_size = max_size;
-
-  return sdp_cb.max_attr_list_size;
-}
-#endif
 
 /*******************************************************************************
  *
