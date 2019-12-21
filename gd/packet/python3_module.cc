@@ -60,9 +60,11 @@ using ::bluetooth::packet::PacketView;
 using ::bluetooth::packet::parser::ChecksumTypeChecker;
 
 PYBIND11_MODULE(bluetooth_packets_python3, m) {
-  py::class_<BasePacketBuilder>(m, "BasePacketBuilder");
-  py::class_<PacketBuilder<kLittleEndian>, BasePacketBuilder>(m, "PacketBuilderLittleEndian");
-  py::class_<PacketBuilder<!kLittleEndian>, BasePacketBuilder>(m, "PacketBuilderBigEndian");
+  py::class_<BasePacketBuilder, std::shared_ptr<BasePacketBuilder>>(m, "BasePacketBuilder");
+  py::class_<PacketBuilder<kLittleEndian>, BasePacketBuilder, std::shared_ptr<PacketBuilder<kLittleEndian>>>(
+      m, "PacketBuilderLittleEndian");
+  py::class_<PacketBuilder<!kLittleEndian>, BasePacketBuilder, std::shared_ptr<PacketBuilder<!kLittleEndian>>>(
+      m, "PacketBuilderBigEndian");
   py::class_<BaseStruct>(m, "BaseStruct");
   py::class_<PacketStruct<kLittleEndian>, BaseStruct>(m, "PacketStructLittleEndian");
   py::class_<PacketStruct<!kLittleEndian>, BaseStruct>(m, "PacketStructBigEndian");

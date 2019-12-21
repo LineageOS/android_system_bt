@@ -337,6 +337,7 @@ void PacketDef::GenBuilderDefinitionPybind11(std::ostream& s) const {
       s << ", PacketBuilder<!kLittleEndian>";
     }
   }
+  s << ", std::shared_ptr<" << name_ << "Builder>";
   s << ">(m, \"" << name_ << "Builder\")";
   if (!fields_.HasBody()) {
     GenBuilderCreatePybind11(s);
