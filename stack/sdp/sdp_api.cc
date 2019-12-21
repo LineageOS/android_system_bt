@@ -22,18 +22,10 @@
  *
  ******************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
-#include "bt_common.h"
 #include "bt_target.h"
-#include "bt_utils.h"
-#include "hcidefs.h"
-#include "hcimsgs.h"
-#include "l2cdefs.h"
 
-#include "btu.h"
 #include "sdp_api.h"
 #include "sdpint.h"
 
@@ -213,45 +205,6 @@ bool SDP_ServiceSearchAttributeRequest2(const RawAddress& p_bd_addr,
   p_ccb->user_data = user_data;
 
   return (true);
-}
-
-/*******************************************************************************
- *
- * Function         SDP_FindAttributeInDb
- *
- * Description      This function queries an SDP database for a specific
- *                  attribute. If the p_start_rec pointer is NULL, it looks from
- *                  the beginning of the database, else it continues from the
- *                  next record after p_start_rec.
- *
- * Returns          Pointer to matching record, or NULL
- *
- ******************************************************************************/
-tSDP_DISC_REC* SDP_FindAttributeInDb(tSDP_DISCOVERY_DB* p_db, uint16_t attr_id,
-                                     tSDP_DISC_REC* p_start_rec) {
-  tSDP_DISC_REC* p_rec;
-  tSDP_DISC_ATTR* p_attr;
-
-  /* Must have a valid database */
-  if (p_db == NULL) return (NULL);
-
-  if (!p_start_rec)
-    p_rec = p_db->p_first_rec;
-  else
-    p_rec = p_start_rec->p_next_rec;
-
-  while (p_rec) {
-    p_attr = p_rec->p_first_attr;
-    while (p_attr) {
-      if (p_attr->attr_id == attr_id) return (p_rec);
-
-      p_attr = p_attr->p_next_attr;
-    }
-
-    p_rec = p_rec->p_next_rec;
-  }
-  /* If here, no matching attribute found */
-  return (NULL);
 }
 
 /*******************************************************************************
@@ -686,44 +639,6 @@ bool SDP_FindProtocolListElemInRec(tSDP_DISC_REC* p_rec, uint16_t layer_uuid,
     if ((p_attr->attr_id == ATTR_ID_PROTOCOL_DESC_LIST) &&
         (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == DATA_ELE_SEQ_DESC_TYPE)) {
       return sdp_fill_proto_elem(p_attr, layer_uuid, p_elem);
-    }
-    p_attr = p_attr->p_next_attr;
-  }
-  /* If here, no match found */
-  return (false);
-}
-
-/*******************************************************************************
- *
- * Function         SDP_FindAddProtoListsElemInRec
- *
- * Description      This function looks at a specific discovery record for a
- *                  protocol list element.
- *
- * Returns          true if found, false if not
- *                  If found, the passed protocol list element is filled in.
- *
- ******************************************************************************/
-bool SDP_FindAddProtoListsElemInRec(tSDP_DISC_REC* p_rec, uint16_t layer_uuid,
-                                    tSDP_PROTOCOL_ELEM* p_elem) {
-  tSDP_DISC_ATTR *p_attr, *p_sattr;
-  bool ret = false;
-
-  p_attr = p_rec->p_first_attr;
-  while (p_attr) {
-    /* Find the additional protocol descriptor list attribute */
-    if ((p_attr->attr_id == ATTR_ID_ADDITION_PROTO_DESC_LISTS) &&
-        (SDP_DISC_ATTR_TYPE(p_attr->attr_len_type) == DATA_ELE_SEQ_DESC_TYPE)) {
-      for (p_sattr = p_attr->attr_value.v.p_sub_attr; p_sattr;
-           p_sattr = p_sattr->p_next_attr) {
-        /* Safety check - each entry should itself be a sequence */
-        if (SDP_DISC_ATTR_TYPE(p_sattr->attr_len_type) ==
-            DATA_ELE_SEQ_DESC_TYPE) {
-          ret = sdp_fill_proto_elem(p_sattr, layer_uuid, p_elem);
-          if (ret) break;
-        }
-      }
-      return ret;
     }
     p_attr = p_attr->p_next_attr;
   }
