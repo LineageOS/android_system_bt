@@ -97,8 +97,7 @@ class EventAsserts(object):
                     event = current_event
             except Empty:
                 continue
-        logging.debug("Done waiting for event, got %s" %
-                      text_format.MessageToString(event, as_one_line=True))
+        logging.debug("Done waiting for an event")
         asserts.assert_equal(
             event,
             None,
@@ -120,10 +119,10 @@ class EventAsserts(object):
         :return:
         """
         logging.debug("assert_event_occurs")
-        event = []
+        event_list = []
         iter_count = 0
         timeout_seconds = timeout.seconds
-        while len(event) < at_least_times and timeout_seconds > 0:
+        while len(event_list) < at_least_times and timeout_seconds > 0:
             iter_count += 1
             logging.debug("Waiting for event iteration %d" % iter_count)
             try:
@@ -132,15 +131,18 @@ class EventAsserts(object):
                 time_elapsed = datetime.now() - time_before
                 timeout_seconds -= time_elapsed.seconds
                 if match_fn(current_event):
-                    event.append(current_event)
+                    event_list.append(current_event)
             except Empty:
                 continue
-        logging.debug("Done waiting for event, got %s" %
-                      text_format.MessageToString(event, as_one_line=True))
+        logging.debug("Done waiting for event")
+        if len(event_list) >= 1:
+            logging.debug(
+                "Done waiting for event, got %s" % text_format.MessageToString(
+                    event_list[-1], as_one_line=True))
         asserts.assert_true(
-            len(event) == at_least_times,
-            msg=("Expected at least %d events, but got %d" % at_least_times,
-                 len(event)))
+            len(event_list) >= at_least_times,
+            msg=("Expected at least %d events, but got %d" % (at_least_times,
+                                                              len(event_list))))
 
     def assert_event_occurs_at_most(
             self,
@@ -158,7 +160,7 @@ class EventAsserts(object):
         :return:
         """
         logging.debug("assert_event_occurs_at_most")
-        event = []
+        event_list = []
         iter_count = 0
         timeout_seconds = timeout.seconds
         while timeout_seconds > 0:
@@ -170,12 +172,14 @@ class EventAsserts(object):
                 time_elapsed = datetime.now() - time_before
                 timeout_seconds -= time_elapsed.seconds
                 if match_fn(current_event):
-                    event.append(current_event)
+                    event_list.append(current_event)
             except Empty:
                 continue
-        logging.debug("Done waiting for event, got %s" %
-                      text_format.MessageToString(event, as_one_line=True))
+        if len(event_list) >= 1:
+            logging.debug(
+                "Done waiting for event, got %s" % text_format.MessageToString(
+                    event_list[-1], as_one_line=True))
         asserts.assert_true(
-            len(event) <= at_most_times,
-            msg=("Expected at most %d events, but got %d" % at_most_times,
-                 len(event)))
+            len(event_list) <= at_most_times,
+            msg=("Expected at most %d events, but got %d" % (at_most_times,
+                                                             len(event_list))))
