@@ -922,6 +922,7 @@ void bta_av_cleanup(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   p_scb->cur_psc_mask = 0;
   p_scb->wait = 0;
   p_scb->num_disc_snks = 0;
+  p_scb->coll_mask = 0;
   alarm_cancel(p_scb->avrc_ct_timer);
 
   /* TODO(eisenbach): RE-IMPLEMENT USING VSC OR HAL EXTENSION
@@ -1398,15 +1399,16 @@ void bta_av_do_close(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_connect_req(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
-  APPL_TRACE_DEBUG("%s: peer %s coll_mask:0x%x", __func__,
+  APPL_TRACE_DEBUG("%s: peer %s coll_mask=0x%02x", __func__,
                    p_scb->PeerAddress().ToString().c_str(), p_scb->coll_mask);
   p_scb->sdp_discovery_started = false;
   if (p_scb->coll_mask & BTA_AV_COLL_INC_TMR) {
     /* SNK initiated L2C connection while SRC was doing SDP.    */
     /* Wait until timeout to check if SNK starts signalling.    */
-    APPL_TRACE_EVENT("%s: coll_mask = 0x%2X", __func__, p_scb->coll_mask);
+    APPL_TRACE_WARNING("%s: coll_mask=0x%02x incoming timer is up", __func__,
+                       p_scb->coll_mask);
     p_scb->coll_mask |= BTA_AV_COLL_API_CALLED;
-    APPL_TRACE_EVENT("%s: updated coll_mask = 0x%2X", __func__,
+    APPL_TRACE_EVENT("%s: updated coll_mask=0x%02x", __func__,
                      p_scb->coll_mask);
     return;
   }
@@ -3057,7 +3059,7 @@ void bta_av_open_rc(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 void bta_av_open_at_inc(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   memcpy(&(p_scb->open_api), &(p_data->api_open), sizeof(tBTA_AV_API_OPEN));
 
-  APPL_TRACE_DEBUG("%s: peer %s coll_mask:0x%x", __func__,
+  APPL_TRACE_DEBUG("%s: peer %s coll_mask=0x%02x", __func__,
                    p_scb->PeerAddress().ToString().c_str(), p_scb->coll_mask);
 
   if (p_scb->coll_mask & BTA_AV_COLL_INC_TMR) {

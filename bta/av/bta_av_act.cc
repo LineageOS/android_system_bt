@@ -1567,7 +1567,7 @@ static void bta_av_accept_signalling_timer_cback(void* data) {
     p_scb = p_cb->p_scb[inx];
   }
   if (p_scb) {
-    APPL_TRACE_DEBUG("%s: coll_mask = 0x%02X", __func__, p_scb->coll_mask);
+    APPL_TRACE_DEBUG("%s: coll_mask=0x%02x", __func__, p_scb->coll_mask);
 
     if (p_scb->coll_mask & BTA_AV_COLL_INC_TMR) {
       p_scb->coll_mask &= ~BTA_AV_COLL_INC_TMR;
