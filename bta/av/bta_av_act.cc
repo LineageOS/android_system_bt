@@ -1474,7 +1474,7 @@ void bta_av_sig_chg(tBTA_AV_DATA* p_data) {
 #endif
   else {
     /* disconnected. */
-    APPL_TRACE_DEBUG("%s: bta_av_cb.conn_lcb is %d", __func__,
+    APPL_TRACE_DEBUG("%s: bta_av_cb.conn_lcb=0x%x", __func__,
                      bta_av_cb.conn_lcb);
 
     p_lcb = bta_av_find_lcb(p_data->str_msg.bd_addr, BTA_AV_LCB_FREE);
@@ -1500,7 +1500,8 @@ void bta_av_sig_chg(tBTA_AV_DATA* p_data) {
       }
     }
   }
-  APPL_TRACE_DEBUG("%s: sig_chg conn_lcb: 0x%x", __func__, p_cb->conn_lcb);
+  APPL_TRACE_DEBUG("%s: bta_av_cb.conn_lcb=0x%x after sig_chg", __func__,
+                   p_cb->conn_lcb);
 }
 
 /*******************************************************************************

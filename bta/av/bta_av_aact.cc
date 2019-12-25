@@ -1062,18 +1062,21 @@ void bta_av_disconnect_req(tBTA_AV_SCB* p_scb,
                            UNUSED_ATTR tBTA_AV_DATA* p_data) {
   tBTA_AV_RCB* p_rcb;
 
-  APPL_TRACE_WARNING("%s: conn_lcb: 0x%x peer_addr: %s", __func__,
-                     bta_av_cb.conn_lcb,
-                     p_scb->PeerAddress().ToString().c_str());
+  APPL_TRACE_API("%s: conn_lcb: 0x%x peer_addr: %s", __func__,
+                 bta_av_cb.conn_lcb, p_scb->PeerAddress().ToString().c_str());
 
   alarm_cancel(bta_av_cb.link_signalling_timer);
   alarm_cancel(p_scb->avrc_ct_timer);
 
-  if (bta_av_cb.conn_lcb) {
+  // conn_lcb is the index bitmask of all used LCBs, and since LCB and SCB use
+  // the same index, it should be safe to use SCB index here.
+  if ((bta_av_cb.conn_lcb & (1 << p_scb->hdi)) != 0) {
     p_rcb = bta_av_get_rcb_by_shdl((uint8_t)(p_scb->hdi + 1));
     if (p_rcb) bta_av_del_rc(p_rcb);
     AVDT_DisconnectReq(p_scb->PeerAddress(), &bta_av_proc_stream_evt);
   } else {
+    APPL_TRACE_WARNING("%s: conn_lcb=0x%x bta_handle=0x%x (hdi=%u) no link",
+                       __func__, bta_av_cb.conn_lcb, p_scb->hndl, p_scb->hdi);
     bta_av_ssm_execute(p_scb, BTA_AV_AVDT_DISCONNECT_EVT, NULL);
   }
 }
@@ -2692,9 +2695,13 @@ void bta_av_rcfg_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   } else {
     /* open failed. try again */
     p_scb->num_recfg++;
-    if (bta_av_cb.conn_lcb) {
+    // conn_lcb is the index bitmask of all used LCBs, and since LCB and SCB use
+    // the same index, it should be safe to use SCB index here.
+    if ((bta_av_cb.conn_lcb & (1 << p_scb->hdi)) != 0) {
       AVDT_DisconnectReq(p_scb->PeerAddress(), &bta_av_proc_stream_evt);
     } else {
+      APPL_TRACE_WARNING("%s: conn_lcb=0x%x bta_handle=0x%x (hdi=%u) no link",
+                         __func__, bta_av_cb.conn_lcb, p_scb->hndl, p_scb->hdi);
       bta_av_connect_req(p_scb, NULL);
     }
   }
