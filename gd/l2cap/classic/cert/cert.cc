@@ -376,6 +376,17 @@ class L2capClassicModuleCertService : public L2capClassicModuleCert::Service {
         FetchL2capLogResponse response;
         response.mutable_configuration_response()->set_signal_id(control_view.GetIdentifier());
         response.mutable_configuration_response()->set_scid(view.GetSourceCid());
+        if (view.GetResult() == ConfigurationResponseResult::SUCCESS) {
+          response.mutable_configuration_response()->set_result(ConfigurationResult::SUCCESS);
+        } else {
+          response.mutable_configuration_response()->set_result(ConfigurationResult::NOT_SUCCESS);
+        }
+        for (auto& option : view.GetConfig()) {
+          if (option->type_ == ConfigurationOptionType::RETRANSMISSION_AND_FLOW_CONTROL) {
+            response.mutable_configuration_response()->mutable_retransmission_config()->set_mode(
+                ChannelRetransmissionFlowControlMode::ERTM);
+          }
+        }
         LogEvent(response);
         break;
       }
