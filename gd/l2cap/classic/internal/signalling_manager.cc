@@ -275,6 +275,7 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
   }
 
   auto& configuration_state = channel_configuration_[cid];
+  std::vector<std::unique_ptr<ConfigurationOption>> rsp_options;
 
   for (auto& option : options) {
     switch (option->type_) {
@@ -289,7 +290,14 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
       }
       case ConfigurationOptionType::RETRANSMISSION_AND_FLOW_CONTROL: {
         auto config = RetransmissionAndFlowControlConfigurationOption::Specialize(option.get());
+        if (config->retransmission_time_out_ == 0) {
+          config->retransmission_time_out_ = 2000;
+        }
+        if (config->monitor_time_out_ == 0) {
+          config->monitor_time_out_ = 12000;
+        }
         configuration_state.remote_retransmission_and_flow_control_ = *config;
+        rsp_options.emplace_back(std::move(config));
         break;
       }
       case ConfigurationOptionType::FRAME_CHECK_SEQUENCE: {
@@ -320,7 +328,7 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
   }
 
   auto response = ConfigurationResponseBuilder::Create(signal_id.Value(), channel->GetRemoteCid(), is_continuation,
-                                                       ConfigurationResponseResult::SUCCESS, {});
+                                                       ConfigurationResponseResult::SUCCESS, std::move(rsp_options));
   enqueue_buffer_->Enqueue(std::move(response), handler_);
 }
 
