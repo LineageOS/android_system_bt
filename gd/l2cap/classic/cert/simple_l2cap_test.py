@@ -651,3 +651,32 @@ class SimpleL2capTest(GdBaseTestClass):
             l2cap_event_asserts.assert_event_occurs(
                 lambda log: log.HasField("data_packet") and log.data_packet.channel == scid and log.data_packet.payload == b'\x01\x0a'
             )
+
+    def test_respond_configuration_request_ertm(self):
+        """
+        L2CAP/CMC/BV-02-C [Lower Tester Initiated Configuration of Enhanced
+        Retransmission Mode]
+        """
+        with EventCallbackStream(
+                self.cert_device.l2cap.FetchL2capLog(
+                    empty_pb2.Empty())) as l2cap_log_stream:
+            l2cap_event_asserts = EventAsserts(l2cap_log_stream)
+            self._register_callbacks(l2cap_log_stream)
+            self._setup_link(l2cap_event_asserts)
+
+            psm = 1
+            scid = 0x0101
+            self.retransmission_mode = l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM
+            self.device_under_test.l2cap.SetDynamicChannel(
+                l2cap_facade_pb2.SetEnableDynamicChannelRequest(
+                    psm=psm, retransmission_mode=self.retransmission_mode))
+            self.cert_device.l2cap.SendConnectionRequest(
+                l2cap_cert_pb2.ConnectionRequest(scid=scid, psm=psm))
+
+            l2cap_event_asserts.assert_event_occurs(
+                lambda log: is_configuration_request(log) and \
+                    log.configuration_response.scid == scid and\
+                    log.configuration_response.result == log.l2cap_cert_pb2.ConfigurationResult.SUCCESS and \
+                    log.HasField("retransmission_config") and \
+                    log.configuration_response.retransmission_config.mode
+                        == l2cap_cert_pb2.ChannelRetransmissionFlowControlMode.ERTM)
