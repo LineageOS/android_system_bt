@@ -1474,7 +1474,7 @@ void bta_av_sig_chg(tBTA_AV_DATA* p_data) {
 #endif
   else {
     /* disconnected. */
-    APPL_TRACE_DEBUG("%s: bta_av_cb.conn_lcb is %d", __func__,
+    APPL_TRACE_DEBUG("%s: bta_av_cb.conn_lcb=0x%x", __func__,
                      bta_av_cb.conn_lcb);
 
     p_lcb = bta_av_find_lcb(p_data->str_msg.bd_addr, BTA_AV_LCB_FREE);
@@ -1500,7 +1500,8 @@ void bta_av_sig_chg(tBTA_AV_DATA* p_data) {
       }
     }
   }
-  APPL_TRACE_DEBUG("%s: sig_chg conn_lcb: 0x%x", __func__, p_cb->conn_lcb);
+  APPL_TRACE_DEBUG("%s: bta_av_cb.conn_lcb=0x%x after sig_chg", __func__,
+                   p_cb->conn_lcb);
 }
 
 /*******************************************************************************
@@ -1567,7 +1568,7 @@ static void bta_av_accept_signalling_timer_cback(void* data) {
     p_scb = p_cb->p_scb[inx];
   }
   if (p_scb) {
-    APPL_TRACE_DEBUG("%s: coll_mask = 0x%02X", __func__, p_scb->coll_mask);
+    APPL_TRACE_DEBUG("%s: coll_mask=0x%02x", __func__, p_scb->coll_mask);
 
     if (p_scb->coll_mask & BTA_AV_COLL_INC_TMR) {
       p_scb->coll_mask &= ~BTA_AV_COLL_INC_TMR;
