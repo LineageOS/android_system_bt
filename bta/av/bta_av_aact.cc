@@ -922,6 +922,7 @@ void bta_av_cleanup(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   p_scb->cur_psc_mask = 0;
   p_scb->wait = 0;
   p_scb->num_disc_snks = 0;
+  p_scb->coll_mask = 0;
   alarm_cancel(p_scb->avrc_ct_timer);
 
   /* TODO(eisenbach): RE-IMPLEMENT USING VSC OR HAL EXTENSION
@@ -1061,18 +1062,21 @@ void bta_av_disconnect_req(tBTA_AV_SCB* p_scb,
                            UNUSED_ATTR tBTA_AV_DATA* p_data) {
   tBTA_AV_RCB* p_rcb;
 
-  APPL_TRACE_WARNING("%s: conn_lcb: 0x%x peer_addr: %s", __func__,
-                     bta_av_cb.conn_lcb,
-                     p_scb->PeerAddress().ToString().c_str());
+  APPL_TRACE_API("%s: conn_lcb: 0x%x peer_addr: %s", __func__,
+                 bta_av_cb.conn_lcb, p_scb->PeerAddress().ToString().c_str());
 
   alarm_cancel(bta_av_cb.link_signalling_timer);
   alarm_cancel(p_scb->avrc_ct_timer);
 
-  if (bta_av_cb.conn_lcb) {
+  // conn_lcb is the index bitmask of all used LCBs, and since LCB and SCB use
+  // the same index, it should be safe to use SCB index here.
+  if ((bta_av_cb.conn_lcb & (1 << p_scb->hdi)) != 0) {
     p_rcb = bta_av_get_rcb_by_shdl((uint8_t)(p_scb->hdi + 1));
     if (p_rcb) bta_av_del_rc(p_rcb);
     AVDT_DisconnectReq(p_scb->PeerAddress(), &bta_av_proc_stream_evt);
   } else {
+    APPL_TRACE_WARNING("%s: conn_lcb=0x%x bta_handle=0x%x (hdi=%u) no link",
+                       __func__, bta_av_cb.conn_lcb, p_scb->hndl, p_scb->hdi);
     bta_av_ssm_execute(p_scb, BTA_AV_AVDT_DISCONNECT_EVT, NULL);
   }
 }
@@ -1398,15 +1402,16 @@ void bta_av_do_close(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_connect_req(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
-  APPL_TRACE_DEBUG("%s: peer %s coll_mask:0x%x", __func__,
+  APPL_TRACE_DEBUG("%s: peer %s coll_mask=0x%02x", __func__,
                    p_scb->PeerAddress().ToString().c_str(), p_scb->coll_mask);
   p_scb->sdp_discovery_started = false;
   if (p_scb->coll_mask & BTA_AV_COLL_INC_TMR) {
     /* SNK initiated L2C connection while SRC was doing SDP.    */
     /* Wait until timeout to check if SNK starts signalling.    */
-    APPL_TRACE_EVENT("%s: coll_mask = 0x%2X", __func__, p_scb->coll_mask);
+    APPL_TRACE_WARNING("%s: coll_mask=0x%02x incoming timer is up", __func__,
+                       p_scb->coll_mask);
     p_scb->coll_mask |= BTA_AV_COLL_API_CALLED;
-    APPL_TRACE_EVENT("%s: updated coll_mask = 0x%2X", __func__,
+    APPL_TRACE_EVENT("%s: updated coll_mask=0x%02x", __func__,
                      p_scb->coll_mask);
     return;
   }
@@ -2690,9 +2695,13 @@ void bta_av_rcfg_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   } else {
     /* open failed. try again */
     p_scb->num_recfg++;
-    if (bta_av_cb.conn_lcb) {
+    // conn_lcb is the index bitmask of all used LCBs, and since LCB and SCB use
+    // the same index, it should be safe to use SCB index here.
+    if ((bta_av_cb.conn_lcb & (1 << p_scb->hdi)) != 0) {
       AVDT_DisconnectReq(p_scb->PeerAddress(), &bta_av_proc_stream_evt);
     } else {
+      APPL_TRACE_WARNING("%s: conn_lcb=0x%x bta_handle=0x%x (hdi=%u) no link",
+                         __func__, bta_av_cb.conn_lcb, p_scb->hndl, p_scb->hdi);
       bta_av_connect_req(p_scb, NULL);
     }
   }
@@ -3057,7 +3066,7 @@ void bta_av_open_rc(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 void bta_av_open_at_inc(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   memcpy(&(p_scb->open_api), &(p_data->api_open), sizeof(tBTA_AV_API_OPEN));
 
-  APPL_TRACE_DEBUG("%s: peer %s coll_mask:0x%x", __func__,
+  APPL_TRACE_DEBUG("%s: peer %s coll_mask=0x%02x", __func__,
                    p_scb->PeerAddress().ToString().c_str(), p_scb->coll_mask);
 
   if (p_scb->coll_mask & BTA_AV_COLL_INC_TMR) {
