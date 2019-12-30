@@ -35,6 +35,7 @@ using ::bluetooth::audio::PcmParameters;
 using ::bluetooth::audio::SampleRate;
 using ::bluetooth::audio::SessionType;
 
+using ::bluetooth::audio::BluetoothAudioClientInterface;
 using ::bluetooth::audio::codec::A2dpAacToHalConfig;
 using ::bluetooth::audio::codec::A2dpAptxToHalConfig;
 using ::bluetooth::audio::codec::A2dpCodecToHalBitsPerSample;
@@ -51,8 +52,6 @@ class A2dpTransport : public ::bluetooth::audio::IBluetoothTransportInstance {
  public:
   A2dpTransport(SessionType sessionType)
       : IBluetoothTransportInstance(sessionType, {}),
-        a2dp_pending_cmd_(A2DP_CTRL_CMD_NONE),
-        remote_delay_report_(0),
         total_bytes_read_(0),
         data_position_({}){};
 
@@ -178,19 +177,21 @@ class A2dpTransport : public ::bluetooth::audio::IBluetoothTransportInstance {
   }
 
  private:
-  tA2DP_CTRL_CMD a2dp_pending_cmd_;
-  uint16_t remote_delay_report_;
+  static tA2DP_CTRL_CMD a2dp_pending_cmd_;
+  static uint16_t remote_delay_report_;
   uint64_t total_bytes_read_;
   timespec data_position_;
 };
 
-A2dpTransport* a2dp_sink = nullptr;
+tA2DP_CTRL_CMD A2dpTransport::a2dp_pending_cmd_ = A2DP_CTRL_CMD_NONE;
+uint16_t A2dpTransport::remote_delay_report_ = 0;
 
 // Common interface to call-out into Bluetooth Audio HAL
-bluetooth::audio::BluetoothAudioClientInterface* a2dp_hal_clientif = nullptr;
-auto session_type = SessionType::UNKNOWN;
+BluetoothAudioClientInterface* software_hal_interface = nullptr;
+BluetoothAudioClientInterface* offloading_hal_interface = nullptr;
+BluetoothAudioClientInterface* active_hal_interface = nullptr;
 
-// Save the value if the remote reports its delay before a2dp_sink is
+// Save the value if the remote reports its delay before this interface is
 // initialized
 uint16_t remote_delay = 0;
 
@@ -318,7 +319,16 @@ bool update_codec_offloading_capabilities(
 }
 
 // Checking if new bluetooth_audio is enabled
-bool is_hal_2_0_enabled() { return a2dp_hal_clientif != nullptr; }
+bool is_hal_2_0_enabled() { return active_hal_interface != nullptr; }
+
+// Check if new bluetooth_audio is running with offloading encoders
+bool is_hal_2_0_offloading() {
+  if (!is_hal_2_0_enabled()) {
+    return false;
+  }
+  return active_hal_interface->GetTransportInstance()->GetSessionType() ==
+         SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH;
+}
 
 // Initialize BluetoothAudio HAL: openProvider
 bool init(bluetooth::common::MessageLoopThread* message_loop) {
@@ -329,27 +339,47 @@ bool init(bluetooth::common::MessageLoopThread* message_loop) {
     return false;
   }
 
-  if (btif_av_is_a2dp_offload_enabled()) {
-    session_type = SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH;
-  } else {
-    session_type = SessionType::A2DP_SOFTWARE_ENCODING_DATAPATH;
-  }
-  a2dp_sink = new A2dpTransport(session_type);
-  a2dp_hal_clientif = new bluetooth::audio::BluetoothAudioClientInterface(
+  auto a2dp_sink =
+      new A2dpTransport(SessionType::A2DP_SOFTWARE_ENCODING_DATAPATH);
+  software_hal_interface = new bluetooth::audio::BluetoothAudioClientInterface(
       a2dp_sink, message_loop);
-  if (!a2dp_hal_clientif->IsValid()) {
-    LOG(WARNING) << __func__ << ": BluetoothAudio HAL for A2DP session=" << toString(session_type) << " is invalid?!";
-    delete a2dp_hal_clientif;
-    a2dp_hal_clientif = nullptr;
+  if (!software_hal_interface->IsValid()) {
+    LOG(WARNING) << __func__ << ": BluetoothAudio HAL for A2DP is invalid?!";
+    delete software_hal_interface;
+    software_hal_interface = nullptr;
     delete a2dp_sink;
-    a2dp_sink = nullptr;
     return false;
   }
+
+  if (btif_av_is_a2dp_offload_enabled()) {
+    a2dp_sink = new A2dpTransport(SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH);
+    offloading_hal_interface =
+        new bluetooth::audio::BluetoothAudioClientInterface(a2dp_sink,
+                                                            message_loop);
+    if (!offloading_hal_interface->IsValid()) {
+      LOG(FATAL) << __func__
+                 << ": BluetoothAudio HAL for A2DP offloading is invalid?!";
+      delete offloading_hal_interface;
+      offloading_hal_interface = nullptr;
+      delete a2dp_sink;
+      a2dp_sink = static_cast<A2dpTransport*>(
+          software_hal_interface->GetTransportInstance());
+      delete software_hal_interface;
+      software_hal_interface = nullptr;
+      delete a2dp_sink;
+      return false;
+    }
+  }
+
+  active_hal_interface =
+      (offloading_hal_interface != nullptr ? offloading_hal_interface
+                                           : software_hal_interface);
 
   if (remote_delay != 0) {
     LOG(INFO) << __func__ << ": restore DELAY "
               << static_cast<float>(remote_delay / 10.0) << " ms";
-    a2dp_sink->SetRemoteDelay(remote_delay);
+    static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance())
+        ->SetRemoteDelay(remote_delay);
     remote_delay = 0;
   }
   return true;
@@ -359,11 +389,19 @@ bool init(bluetooth::common::MessageLoopThread* message_loop) {
 void cleanup() {
   if (!is_hal_2_0_enabled()) return;
   end_session();
-  delete a2dp_hal_clientif;
-  a2dp_hal_clientif = nullptr;
+
+  active_hal_interface = nullptr;
+  auto a2dp_sink = software_hal_interface->GetTransportInstance();
+  delete software_hal_interface;
+  software_hal_interface = nullptr;
   delete a2dp_sink;
-  a2dp_sink = nullptr;
-  session_type = SessionType::UNKNOWN;
+  if (offloading_hal_interface != nullptr) {
+    a2dp_sink = offloading_hal_interface->GetTransportInstance();
+    delete offloading_hal_interface;
+    offloading_hal_interface = nullptr;
+    delete a2dp_sink;
+  }
+
   remote_delay = 0;
 }
 
@@ -373,15 +411,28 @@ bool setup_codec() {
     LOG(ERROR) << __func__ << ": BluetoothAudio HAL is not enabled";
     return false;
   }
+  CodecConfiguration codec_config{};
+  if (!a2dp_get_selected_hal_codec_config(&codec_config)) {
+    LOG(ERROR) << __func__ << ": Failed to get CodecConfiguration";
+    return false;
+  }
+  bool should_codec_offloading =
+      bluetooth::audio::codec::IsCodecOffloadingEnabled(codec_config);
+  if (should_codec_offloading && !is_hal_2_0_offloading()) {
+    LOG(WARNING) << __func__ << ": Switching BluetoothAudio HAL to Hardware";
+    end_session();
+    active_hal_interface = offloading_hal_interface;
+  } else if (!should_codec_offloading && is_hal_2_0_offloading()) {
+    LOG(WARNING) << __func__ << ": Switching BluetoothAudio HAL to Software";
+    end_session();
+    active_hal_interface = software_hal_interface;
+  }
+
   AudioConfiguration audio_config{};
-  if (session_type == SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH) {
-    CodecConfiguration codec_config{};
-    if (!a2dp_get_selected_hal_codec_config(&codec_config)) {
-      LOG(ERROR) << __func__ << ": Failed to get CodecConfiguration";
-      return false;
-    }
+  if (active_hal_interface->GetTransportInstance()->GetSessionType() ==
+      SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH) {
     audio_config.codecConfig(codec_config);
-  } else if (session_type == SessionType::A2DP_SOFTWARE_ENCODING_DATAPATH) {
+  } else {
     PcmParameters pcm_config{};
     if (!a2dp_get_selected_hal_pcm_config(&pcm_config)) {
       LOG(ERROR) << __func__ << ": Failed to get PcmConfiguration";
@@ -389,7 +440,7 @@ bool setup_codec() {
     }
     audio_config.pcmConfig(pcm_config);
   }
-  return a2dp_hal_clientif->UpdateAudioConfig(audio_config);
+  return active_hal_interface->UpdateAudioConfig(audio_config);
 }
 
 void start_session() {
@@ -397,7 +448,7 @@ void start_session() {
     LOG(ERROR) << __func__ << ": BluetoothAudio HAL is not enabled";
     return;
   }
-  a2dp_hal_clientif->StartSession();
+  active_hal_interface->StartSession();
 }
 
 void end_session() {
@@ -405,15 +456,17 @@ void end_session() {
     LOG(ERROR) << __func__ << ": BluetoothAudio HAL is not enabled";
     return;
   }
-  a2dp_hal_clientif->EndSession();
+  active_hal_interface->EndSession();
 }
 
 void ack_stream_started(const tA2DP_CTRL_ACK& ack) {
   auto ctrl_ack = a2dp_ack_to_bt_audio_ctrl_ack(ack);
   LOG(INFO) << __func__ << ": result=" << ctrl_ack;
+  auto a2dp_sink =
+      static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance());
   auto pending_cmd = a2dp_sink->GetPendingCmd();
   if (pending_cmd == A2DP_CTRL_CMD_START) {
-    a2dp_hal_clientif->StreamStarted(ctrl_ack);
+    active_hal_interface->StreamStarted(ctrl_ack);
   } else {
     LOG(WARNING) << __func__ << ": pending=" << pending_cmd
                  << " ignore result=" << ctrl_ack;
@@ -427,9 +480,11 @@ void ack_stream_started(const tA2DP_CTRL_ACK& ack) {
 void ack_stream_suspended(const tA2DP_CTRL_ACK& ack) {
   auto ctrl_ack = a2dp_ack_to_bt_audio_ctrl_ack(ack);
   LOG(INFO) << __func__ << ": result=" << ctrl_ack;
+  auto a2dp_sink =
+      static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance());
   auto pending_cmd = a2dp_sink->GetPendingCmd();
   if (pending_cmd == A2DP_CTRL_CMD_SUSPEND) {
-    a2dp_hal_clientif->StreamSuspended(ctrl_ack);
+    active_hal_interface->StreamSuspended(ctrl_ack);
   } else if (pending_cmd == A2DP_CTRL_CMD_STOP) {
     LOG(INFO) << __func__ << ": A2DP_CTRL_CMD_STOP result=" << ctrl_ack;
   } else {
@@ -447,12 +502,14 @@ size_t read(uint8_t* p_buf, uint32_t len) {
   if (!is_hal_2_0_enabled()) {
     LOG(ERROR) << __func__ << ": BluetoothAudio HAL is not enabled";
     return 0;
-  } else if (session_type != SessionType::A2DP_SOFTWARE_ENCODING_DATAPATH) {
-    LOG(ERROR) << __func__ << ": session_type=" << toString(session_type)
+  } else if (is_hal_2_0_offloading()) {
+    LOG(ERROR) << __func__ << ": session_type="
+               << toString(active_hal_interface->GetTransportInstance()
+                               ->GetSessionType())
                << " is not A2DP_SOFTWARE_ENCODING_DATAPATH";
     return 0;
   }
-  return a2dp_hal_clientif->ReadAudioData(p_buf, len);
+  return active_hal_interface->ReadAudioData(p_buf, len);
 }
 
 // Update A2DP delay report to BluetoothAudio HAL
@@ -463,9 +520,10 @@ void set_remote_delay(uint16_t delay_report) {
     remote_delay = delay_report;
     return;
   }
-  LOG(INFO) << __func__ << ": DELAY " << static_cast<float>(delay_report / 10.0)
-            << " ms";
-  a2dp_sink->SetRemoteDelay(delay_report);
+  VLOG(1) << __func__ << ": DELAY " << static_cast<float>(delay_report / 10.0)
+          << " ms";
+  static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance())
+      ->SetRemoteDelay(delay_report);
 }
 
 }  // namespace a2dp
