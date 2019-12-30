@@ -134,6 +134,8 @@ class BluetoothAudioClientInterface {
     return provider_ != nullptr;
   }
 
+  IBluetoothTransportInstance* GetTransportInstance() const { return sink_; }
+
   std::vector<AudioCapabilities> GetAudioCapabilities() const;
   static std::vector<AudioCapabilities> GetAudioCapabilities(
       SessionType session_type);
