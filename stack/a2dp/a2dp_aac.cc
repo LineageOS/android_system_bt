@@ -35,6 +35,7 @@
 #include "bt_utils.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
+#include "osi/include/properties.h"
 
 #define A2DP_AAC_DEFAULT_BITRATE 320000  // 320 kbps
 #define A2DP_AAC_MIN_BITRATE 64000       // 64 kbps
@@ -50,8 +51,11 @@ typedef struct {
   btav_a2dp_codec_bits_per_sample_t bits_per_sample;
 } tA2DP_AAC_CIE;
 
+static bool aac_source_caps_configured = false;
+static tA2DP_AAC_CIE a2dp_aac_source_caps = {};
+
 /* AAC Source codec capabilities */
-static const tA2DP_AAC_CIE a2dp_aac_source_caps = {
+static const tA2DP_AAC_CIE a2dp_aac_cbr_source_caps = {
     // objectType
     A2DP_AAC_OBJECT_TYPE_MPEG2_LC,
     // sampleRate
@@ -61,6 +65,22 @@ static const tA2DP_AAC_CIE a2dp_aac_source_caps = {
     A2DP_AAC_CHANNEL_MODE_STEREO,
     // variableBitRateSupport
     A2DP_AAC_VARIABLE_BIT_RATE_DISABLED,
+    // bitRate
+    A2DP_AAC_DEFAULT_BITRATE,
+    // bits_per_sample
+    BTAV_A2DP_CODEC_BITS_PER_SAMPLE_16};
+
+/* AAC Source codec capabilities */
+static const tA2DP_AAC_CIE a2dp_aac_vbr_source_caps = {
+    // objectType
+    A2DP_AAC_OBJECT_TYPE_MPEG2_LC,
+    // sampleRate
+    // TODO: AAC 48.0kHz sampling rate should be added back - see b/62301376
+    A2DP_AAC_SAMPLING_FREQ_44100,
+    // channelMode
+    A2DP_AAC_CHANNEL_MODE_STEREO,
+    // variableBitRateSupport
+    A2DP_AAC_VARIABLE_BIT_RATE_ENABLED,
     // bitRate
     A2DP_AAC_DEFAULT_BITRATE,
     // bits_per_sample
@@ -708,7 +728,19 @@ const char* A2DP_CodecIndexStrAac(void) { return "AAC"; }
 
 const char* A2DP_CodecIndexStrAacSink(void) { return "AAC SINK"; }
 
+void aac_source_caps_initialize() {
+  if (aac_source_caps_configured) {
+    return;
+  }
+  a2dp_aac_source_caps =
+      osi_property_get_bool("persist.bluetooth.a2dp_aac.vbr_supported", false)
+          ? a2dp_aac_vbr_source_caps
+          : a2dp_aac_cbr_source_caps;
+  aac_source_caps_configured = true;
+}
+
 bool A2DP_InitCodecConfigAac(AvdtpSepConfig* p_cfg) {
+  aac_source_caps_initialize();
   if (A2DP_BuildInfoAac(AVDT_MEDIA_TYPE_AUDIO, &a2dp_aac_source_caps,
                         p_cfg->codec_info) != A2DP_SUCCESS) {
     return false;
@@ -754,6 +786,7 @@ A2dpCodecConfigAacSource::A2dpCodecConfigAacSource(
     btav_a2dp_codec_priority_t codec_priority)
     : A2dpCodecConfigAacBase(BTAV_A2DP_CODEC_INDEX_SOURCE_AAC,
                              A2DP_CodecIndexStrAac(), codec_priority, true) {
+  aac_source_caps_initialize();
   // Compute the local capability
   if (a2dp_aac_source_caps.sampleRate & A2DP_AAC_SAMPLING_FREQ_44100) {
     codec_local_capability_.sample_rate |= BTAV_A2DP_CODEC_SAMPLE_RATE_44100;
