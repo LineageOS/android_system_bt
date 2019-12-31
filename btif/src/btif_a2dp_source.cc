@@ -359,6 +359,7 @@ static void btif_a2dp_source_startup_delayed() {
   }
   if (!bluetooth::audio::a2dp::init(&btif_a2dp_source_thread)) {
     if (btif_av_is_a2dp_offload_enabled()) {
+      // TODO: BluetoothA2dp@1.0 is deprecated
       LOG(WARNING) << __func__ << ": Using BluetoothA2dp HAL";
     } else {
       LOG(WARNING) << __func__ << ": Using legacy HAL";
@@ -401,6 +402,7 @@ static void btif_a2dp_source_start_session_delayed(
     BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionStart(
         bluetooth::common::CONNECTION_TECHNOLOGY_TYPE_BREDR, 0);
   } else if (btif_av_is_a2dp_offload_enabled()) {
+    // TODO: BluetoothA2dp@1.0 is deprecated
     btif_a2dp_audio_interface_start_session();
   } else {
     BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionStart(
@@ -467,6 +469,7 @@ static void btif_a2dp_source_end_session_delayed(
     BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionEnd(
         bluetooth::common::DISCONNECT_REASON_UNKNOWN, 0);
   } else if (btif_av_is_a2dp_offload_enabled()) {
+    // TODO: BluetoothA2dp@1.0 is deprecated
     btif_a2dp_audio_interface_end_session();
   } else {
     BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionEnd(
@@ -501,6 +504,7 @@ static void btif_a2dp_source_shutdown_delayed(void) {
   if (bluetooth::audio::a2dp::is_hal_2_0_enabled()) {
     bluetooth::audio::a2dp::cleanup();
   } else if (btif_av_is_a2dp_offload_enabled()) {
+    // TODO: BluetoothA2dp@1.0 is deprecated
     btif_a2dp_audio_interface_end_session();
   } else {
     btif_a2dp_control_cleanup();
@@ -718,7 +722,7 @@ void btif_a2dp_source_on_stopped(tBTA_AV_SUSPEND* p_av_suspend) {
         btif_a2dp_command_ack(A2DP_CTRL_ACK_FAILURE);
       }
     }
-  } else if (btif_av_is_a2dp_offload_enabled()) {
+  } else if (btif_av_is_a2dp_offload_running()) {
     bluetooth::audio::a2dp::ack_stream_suspended(A2DP_CTRL_ACK_SUCCESS);
     return;
   }
@@ -754,7 +758,7 @@ void btif_a2dp_source_on_suspended(tBTA_AV_SUSPEND* p_av_suspend) {
         btif_a2dp_command_ack(A2DP_CTRL_ACK_FAILURE);
       }
     }
-  } else if (btif_av_is_a2dp_offload_enabled()) {
+  } else if (btif_av_is_a2dp_offload_running()) {
     bluetooth::audio::a2dp::ack_stream_suspended(A2DP_CTRL_ACK_SUCCESS);
     return;
   }
@@ -776,13 +780,13 @@ void btif_a2dp_source_set_tx_flush(bool enable) {
 }
 
 static void btif_a2dp_source_audio_tx_start_event(void) {
-  LOG_INFO(LOG_TAG, "%s: media_alarm is %srunning, streaming %s state=%s",
-           __func__,
-           btif_a2dp_source_cb.media_alarm.IsScheduled() ? "" : "not ",
-           btif_a2dp_source_is_streaming() ? "true" : "false",
-           btif_a2dp_source_cb.StateStr().c_str());
+  LOG_INFO(
+      LOG_TAG, "%s: media_alarm is %s, streaming %s state=%s", __func__,
+      btif_a2dp_source_cb.media_alarm.IsScheduled() ? "running" : "stopped",
+      btif_a2dp_source_is_streaming() ? "true" : "false",
+      btif_a2dp_source_cb.StateStr().c_str());
 
-  if (btif_av_is_a2dp_offload_enabled()) return;
+  if (btif_av_is_a2dp_offload_running()) return;
 
   /* Reset the media feeding state */
   CHECK(btif_a2dp_source_cb.encoder_interface != nullptr);
@@ -791,6 +795,9 @@ static void btif_a2dp_source_audio_tx_start_event(void) {
   APPL_TRACE_EVENT(
       "%s: starting timer %" PRIu64 " ms", __func__,
       btif_a2dp_source_cb.encoder_interface->get_encoder_interval_ms());
+
+  /* audio engine starting, reset tx suspended flag */
+  btif_a2dp_source_cb.tx_flush = false;
 
   wakelock_acquire();
   btif_a2dp_source_cb.media_alarm.SchedulePeriodic(
@@ -816,13 +823,13 @@ static void btif_a2dp_source_audio_tx_start_event(void) {
 }
 
 static void btif_a2dp_source_audio_tx_stop_event(void) {
-  LOG_INFO(LOG_TAG, "%s: media_alarm is %srunning, streaming %s state=%s",
-           __func__,
-           btif_a2dp_source_cb.media_alarm.IsScheduled() ? "" : "not ",
-           btif_a2dp_source_is_streaming() ? "true" : "false",
-           btif_a2dp_source_cb.StateStr().c_str());
+  LOG_INFO(
+      LOG_TAG, "%s: media_alarm is %s, streaming %s state=%s", __func__,
+      btif_a2dp_source_cb.media_alarm.IsScheduled() ? "running" : "stopped",
+      btif_a2dp_source_is_streaming() ? "true" : "false",
+      btif_a2dp_source_cb.StateStr().c_str());
 
-  if (btif_av_is_a2dp_offload_enabled()) return;
+  if (btif_av_is_a2dp_offload_running()) return;
 
   btif_a2dp_source_cb.stats.session_end_us =
       bluetooth::common::time_get_os_boottime_us();
@@ -876,7 +883,7 @@ static void btif_a2dp_source_audio_tx_stop_event(void) {
 }
 
 static void btif_a2dp_source_audio_handle_timer(void) {
-  if (btif_av_is_a2dp_offload_enabled()) return;
+  if (btif_av_is_a2dp_offload_running()) return;
 
   uint64_t timestamp_us = bluetooth::common::time_get_os_boottime_us();
   log_tstamps_us("A2DP Source tx timer", timestamp_us);
@@ -1029,7 +1036,7 @@ static void btif_a2dp_source_audio_tx_flush_event(void) {
   /* Flush all enqueued audio buffers (encoded) */
   LOG_INFO(LOG_TAG, "%s: state=%s", __func__,
            btif_a2dp_source_cb.StateStr().c_str());
-  if (btif_av_is_a2dp_offload_enabled()) return;
+  if (btif_av_is_a2dp_offload_running()) return;
 
   if (btif_a2dp_source_cb.encoder_interface != nullptr)
     btif_a2dp_source_cb.encoder_interface->feeding_flush();
@@ -1289,7 +1296,7 @@ static void btif_a2dp_source_update_metrics(void) {
   SchedulingStats enqueue_stats = stats.tx_queue_enqueue_stats;
   A2dpSessionMetrics metrics;
   metrics.codec_index = stats.codec_index;
-  metrics.is_a2dp_offload = btif_av_is_a2dp_offload_enabled();
+  metrics.is_a2dp_offload = btif_av_is_a2dp_offload_running();
   // session_start_us is 0 when btif_a2dp_source_start_audio_req() is not called
   // mark the metric duration as invalid (-1) in this case
   if (stats.session_start_us != 0) {
