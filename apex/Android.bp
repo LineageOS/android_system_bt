@@ -4,10 +4,10 @@ apex {
     manifest: "apex_manifest.json",
 
     native_shared_libs: [
-      "libbluetooth_jni",
+      "//packages/apps/Bluetooth:libbluetooth_jni",
       "libbluetooth"
     ],
-    apps: ["Bluetooth"],
+    apps: ["//packages/apps/Bluetooth:Bluetooth"],
 
     compile_multilib: "both",
 
