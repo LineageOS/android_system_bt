@@ -34,6 +34,8 @@
 #include "common/metrics.h"
 #include "common/time_util.h"
 #include "device/include/controller.h"
+#include "main/shim/btm_api.h"
+#include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 
@@ -1052,6 +1054,11 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
 tBTM_STATUS BTM_SecBondByTransport(const RawAddress& bd_addr,
                                    tBT_TRANSPORT transport, uint8_t pin_len,
                                    uint8_t* p_pin, uint32_t trusted_mask[]) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::BTM_SecBondByTransport(bd_addr, transport, pin_len,
+                                                   p_pin, trusted_mask);
+  }
+
   tBT_DEVICE_TYPE dev_type;
   tBLE_ADDR_TYPE addr_type;
 
@@ -1084,6 +1091,10 @@ tBTM_STATUS BTM_SecBondByTransport(const RawAddress& bd_addr,
  ******************************************************************************/
 tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, uint8_t pin_len,
                         uint8_t* p_pin, uint32_t trusted_mask[]) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::BTM_SecBond(bd_addr, pin_len, p_pin, trusted_mask);
+  }
+
   tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
   if (BTM_UseLeLink(bd_addr)) transport = BT_TRANSPORT_LE;
   return btm_sec_bond_by_transport(bd_addr, transport, pin_len, p_pin,

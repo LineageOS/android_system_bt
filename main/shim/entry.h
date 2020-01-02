@@ -48,6 +48,7 @@ bluetooth::shim::IL2cap* GetL2cap();
 bluetooth::shim::IName* GetName();
 bluetooth::shim::IPage* GetPage();
 bluetooth::shim::IScanning* GetScanning();
+bluetooth::shim::ISecurity* GetSecurity();
 
 }  // namespace shim
 }  // namespace bluetooth
