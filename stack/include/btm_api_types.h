@@ -573,9 +573,8 @@ typedef uint8_t tBTM_BLE_SEC_ACT;
 /***************************
  *  Device Discovery Types
  ***************************/
-/* Definitions of the parameters passed to BTM_StartInquiry and
- * BTM_SetPeriodicInquiryMode.
-*/
+/* Definitions of the parameters passed to BTM_StartInquiry.
+ */
 typedef struct /* contains the two device class condition fields */
 {
   DEV_CLASS dev_class;
@@ -1118,15 +1117,10 @@ typedef void(tBTM_ESCO_CBACK)(tBTM_ESCO_EVT event, tBTM_ESCO_EVT_DATA* p_data);
 typedef uint8_t tBTM_LINK_KEY_TYPE;
 
 /* Protocol level security (BTM_SetSecurityLevel) */
-#define BTM_SEC_PROTO_L2CAP 0
-#define BTM_SEC_PROTO_SDP 1
-#define BTM_SEC_PROTO_TCS 2
 #define BTM_SEC_PROTO_RFCOMM 3
-#define BTM_SEC_PROTO_OBEX 4
 #define BTM_SEC_PROTO_BNEP 5
 #define BTM_SEC_PROTO_HID 6 /* HID      */
 #define BTM_SEC_PROTO_AVDT 7
-#define BTM_SEC_PROTO_MCA 8
 
 /* Determine the number of uint32_t's necessary for security services */
 #define BTM_SEC_ARRAY_BITS 32 /* Number of bits in each array element */
