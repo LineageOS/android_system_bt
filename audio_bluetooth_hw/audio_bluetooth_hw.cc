@@ -18,7 +18,6 @@
 
 #include <android-base/logging.h>
 #include <errno.h>
-#include <hardware/audio.h>
 #include <hardware/hardware.h>
 #include <log/log.h>
 #include <malloc.h>
@@ -28,10 +27,31 @@
 #include "stream_apis.h"
 #include "utils.h"
 
+using ::android::bluetooth::audio::utils::GetAudioParamString;
+using ::android::bluetooth::audio::utils::ParseAudioParams;
+
 static int adev_set_parameters(struct audio_hw_device* dev,
                                const char* kvpairs) {
   LOG(VERBOSE) << __func__ << ": kevpairs=[" << kvpairs << "]";
-  return -ENOSYS;
+  std::unordered_map<std::string, std::string> params =
+      ParseAudioParams(kvpairs);
+  if (params.empty()) return 0;
+
+  LOG(VERBOSE) << __func__ << ": ParamsMap=[" << GetAudioParamString(params)
+               << "]";
+  if (params.find("A2dpSuspended") == params.end()) {
+    return -ENOSYS;
+  }
+
+  auto* bluetooth_device = reinterpret_cast<BluetoothAudioDevice*>(dev);
+  std::lock_guard<std::mutex> guard(bluetooth_device->mutex_);
+  for (auto sout : bluetooth_device->opened_stream_outs_) {
+    if (sout->stream_out_.common.set_parameters != nullptr) {
+      sout->stream_out_.common.set_parameters(&sout->stream_out_.common,
+                                              kvpairs);
+    }
+  }
+  return 0;
 }
 
 static char* adev_get_parameters(const struct audio_hw_device* dev,
@@ -91,8 +111,8 @@ static int adev_open(const hw_module_t* module, const char* name,
   LOG(VERBOSE) << __func__ << ": name=[" << name << "]";
   if (strcmp(name, AUDIO_HARDWARE_INTERFACE) != 0) return -EINVAL;
 
-  struct audio_hw_device* adev =
-      (struct audio_hw_device*)calloc(1, sizeof(struct audio_hw_device));
+  auto bluetooth_audio_device = new BluetoothAudioDevice;
+  struct audio_hw_device* adev = &bluetooth_audio_device->audio_device_;
   if (!adev) return -ENOMEM;
 
   adev->common.tag = HARDWARE_DEVICE_TAG;

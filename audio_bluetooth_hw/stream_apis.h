@@ -18,6 +18,7 @@
 
 #include <hardware/audio.h>
 #include <system/audio.h>
+#include <list>
 
 #include "device_port_proxy.h"
 
@@ -60,6 +61,16 @@ struct BluetoothStreamOut {
   // total frames written after opened, never reset
   uint64_t frames_presented_;
   mutable std::mutex mutex_;
+};
+
+struct BluetoothAudioDevice {
+  // Important: device must be first as an audio_hw_device* may be cast to
+  // BluetoothAudioDevice* when the type is implicitly known.
+  audio_hw_device audio_device_;
+  // protect against device->output and stream_out from being inconsistent
+  std::mutex mutex_;
+  std::list<BluetoothStreamOut*> opened_stream_outs_ =
+      std::list<BluetoothStreamOut*>(0);
 };
 
 int adev_open_output_stream(struct audio_hw_device* dev,
