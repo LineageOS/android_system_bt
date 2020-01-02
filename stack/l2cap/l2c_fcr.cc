@@ -31,8 +31,6 @@
 
 #include "bt_common.h"
 #include "bt_types.h"
-#include "btm_api.h"
-#include "btm_int.h"
 #include "btu.h"
 #include "common/time_util.h"
 #include "hcimsgs.h"
