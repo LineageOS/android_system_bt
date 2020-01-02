@@ -28,6 +28,8 @@ namespace android {
 namespace bluetooth {
 namespace audio {
 
+using ::android::hardware::bluetooth::audio::V2_0::SessionType;
+
 // Proxy for Bluetooth Audio HW Module to communicate with Bluetooth Audio
 // Session Control. All methods are not thread safe, so users must acquire a
 // lock. Note: currently, in stream_apis.cc, if GetState() is only used for
@@ -84,9 +86,14 @@ class BluetoothAudioPortOut {
   // Set the current BluetoothStreamState
   void SetState(BluetoothStreamState state);
 
+  bool IsA2dp() const {
+    return session_type_ == SessionType::A2DP_SOFTWARE_ENCODING_DATAPATH ||
+           session_type_ == SessionType::A2DP_HARDWARE_OFFLOAD_DATAPATH;
+  }
+
  private:
   BluetoothStreamState state_;
-  ::android::hardware::bluetooth::audio::V2_0::SessionType session_type_;
+  SessionType session_type_;
   uint16_t cookie_;
   mutable std::mutex cv_mutex_;
   std::condition_variable internal_cv_;
