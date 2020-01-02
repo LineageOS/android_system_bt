@@ -64,45 +64,6 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
 
 /*******************************************************************************
  *
- * Function         BTM_SetPeriodicInquiryMode
- *
- * Description      This function is called to set the device periodic inquiry
- *                  mode. If the duration is zero, the periodic inquiry mode is
- *                  cancelled.
- *
- * Parameters:      p_inqparms - pointer to the inquiry information
- *                      mode - GENERAL or LIMITED inquiry
- *                      duration - length in 1.28 sec intervals (If '0', the
- *                                 inquiry is CANCELLED)
- *                      max_resps - maximum amount of devices to search for
- *                                  before ending the inquiry
- *                      filter_cond_type - BTM_CLR_INQUIRY_FILTER,
- *                                         BTM_FILTER_COND_DEVICE_CLASS, or
- *                                         BTM_FILTER_COND_BD_ADDR
- *                      filter_cond - value for the filter (based on
- *                                                          filter_cond_type)
- *
- *                  max_delay - maximum amount of time between successive
- *                              inquiries
- *                  min_delay - minimum amount of time between successive
- *                              inquiries
- *                  p_results_cb - callback returning pointer to results
- *                              (tBTM_INQ_RESULTS)
- *
- * Returns          BTM_CMD_STARTED if successfully started
- *                  BTM_ILLEGAL_VALUE if a bad parameter is detected
- *                  BTM_NO_RESOURCES if could not allocate a message buffer
- *                  BTM_SUCCESS - if cancelling the periodic inquiry
- *                  BTM_BUSY - if an inquiry is already active
- *                  BTM_WRONG_MODE if the device is not up.
- *
- ******************************************************************************/
-tBTM_STATUS BTM_SetPeriodicInquiryMode(tBTM_INQ_PARMS* p_inqparms,
-                                       uint16_t max_delay, uint16_t min_delay,
-                                       tBTM_INQ_RESULTS_CB* p_results_cb);
-
-/*******************************************************************************
- *
  * Function         BTM_SetDiscoverability
  *
  * Description      This function is called to set the device into or out of
@@ -377,20 +338,6 @@ tBTM_INQ_INFO* BTM_InqDbNext(tBTM_INQ_INFO* p_cur);
  *
  ******************************************************************************/
 tBTM_STATUS BTM_ClearInqDb(const RawAddress* p_bda);
-
-/*******************************************************************************
- *
- * Function         BTM_ReadInquiryRspTxPower
- *
- * Description      This command will read the inquiry Transmit Power level used
- *                  to transmit the FHS and EIR data packets.
- *                  This can be used directly in the Tx Power Level EIR data
- *                  type.
- *
- * Returns          BTM_SUCCESS if successful
- *
- ******************************************************************************/
-tBTM_STATUS BTM_ReadInquiryRspTxPower(tBTM_CMPL_CB* p_cb);
 
 /*******************************************************************************
  *
@@ -1278,53 +1225,6 @@ tBTM_STATUS BTM_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
  ******************************************************************************/
 uint8_t* BTM_ReadRemoteFeatures(const RawAddress& addr);
 
-/*******************************************************************************
- *
- * Function         BTM_ReadRemoteExtendedFeatures
- *
- * Description      This function is called to read a specific extended features
- *                  page of the remote device
- *
- *                  Note1: The size of device features mask page is
- *                  BTM_FEATURE_BYTES_PER_PAGE bytes.
- *                  Note2: The valid device features mask page number depends on
- *                  the remote device capabilities. It is expected to be in the
- *                  range [0 - BTM_EXT_FEATURES_PAGE_MAX].
-
- * Returns          pointer to the remote extended features mask
- *                  or NULL if page_number is not valid
- *
- ******************************************************************************/
-uint8_t* BTM_ReadRemoteExtendedFeatures(const RawAddress& addr,
-                                        uint8_t page_number);
-
-/*******************************************************************************
- *
- * Function         BTM_ReadNumberRemoteFeaturesPages
- *
- * Description      This function is called to retrieve the number of feature
- *                  pages read from the remote device
- *
- * Returns          number of features pages read from the remote device
- *
- ******************************************************************************/
-uint8_t BTM_ReadNumberRemoteFeaturesPages(const RawAddress& addr);
-
-/*******************************************************************************
- *
- * Function         BTM_ReadAllRemoteFeatures
- *
- * Description      Read all the features of the remote device
- *
- * Returns          pointer to the byte[0] of the page[0] of the remote device
- *                  feature mask.
- *
- * Note:            the function returns the pointer to the array of the size
- *                  BTM_FEATURE_BYTES_PER_PAGE * (BTM_EXT_FEATURES_PAGE_MAX + 1)
- *
- ******************************************************************************/
-uint8_t* BTM_ReadAllRemoteFeatures(const RawAddress& addr);
-
 /*****************************************************************************
  *  ACL CHANNEL MANAGEMENT FUNCTIONS
  ****************************************************************************/
@@ -1507,24 +1407,6 @@ tBTM_STATUS BTM_ReadTxPower(const RawAddress& remote_bda,
 
 /*******************************************************************************
  *
- * Function         BTM_ReadLinkQuality
- *
- * Description      This function is called to read the link quality.
- *                  The value of the link quality is returned in the callback.
- *                  (tBTM_LINK_QUALITY_RESULT)
- *
- * Returns          BTM_CMD_STARTED if command issued to controller.
- *                  BTM_NO_RESOURCES if memory couldn't be allocated to issue
- *                                   the command
- *                  BTM_UNKNOWN_ADDR if no active link with bd addr specified
- *                  BTM_BUSY if command is already in progress
- *
- ******************************************************************************/
-tBTM_STATUS BTM_ReadLinkQuality(const RawAddress& remote_bda,
-                                tBTM_CMPL_CB* p_cb);
-
-/*******************************************************************************
- *
  * Function         BTM_RegBusyLevelNotif
  *
  * Description      This function is called to register a callback to receive
@@ -1538,18 +1420,6 @@ tBTM_STATUS BTM_RegBusyLevelNotif(tBTM_BL_CHANGE_CB* p_cb, uint8_t* p_level,
 
 /*******************************************************************************
  *
- * Function         BTM_AclRegisterForChanges
- *
- * Description      This function is called to register a callback to receive
- *                  ACL database change events, i.e. new connection or removed.
- *
- * Returns          BTM_SUCCESS if successfully initiated, otherwise error
- *
- ******************************************************************************/
-tBTM_STATUS BTM_AclRegisterForChanges(tBTM_ACL_DB_CHANGE_CB* p_cb);
-
-/*******************************************************************************
- *
  * Function         BTM_GetNumAclLinks
  *
  * Description      This function is called to count the number of
@@ -1559,18 +1429,6 @@ tBTM_STATUS BTM_AclRegisterForChanges(tBTM_ACL_DB_CHANGE_CB* p_cb);
  *
  ******************************************************************************/
 uint16_t BTM_GetNumAclLinks(void);
-
-/*******************************************************************************
- *
- * Function         BTM_SetQoS
- *
- * Description      This function is called to setup QoS
- *
- * Returns          BTM_CMD_STARTED if successfully initiated, otherwise error
- *
- ******************************************************************************/
-tBTM_STATUS BTM_SetQoS(const RawAddress& bd, FLOW_SPEC* p_flow,
-                       tBTM_CMPL_CB* p_cb);
 
 /*****************************************************************************
  *  (e)SCO CHANNEL MANAGEMENT FUNCTIONS
@@ -1609,71 +1467,6 @@ tBTM_STATUS BTM_RemoveSco(uint16_t sco_inx);
 
 /*******************************************************************************
  *
- * Function         BTM_SetScoPacketTypes
- *
- * Description      This function is called to set the packet types used for
- *                  a specific SCO connection,
- *
- * Parameters       pkt_types - One or more of the following
- *                  BTM_SCO_PKT_TYPES_MASK_HV1
- *                  BTM_SCO_PKT_TYPES_MASK_HV2
- *                  BTM_SCO_PKT_TYPES_MASK_HV3
- *                  BTM_SCO_PKT_TYPES_MASK_EV3
- *                  BTM_SCO_PKT_TYPES_MASK_EV4
- *                  BTM_SCO_PKT_TYPES_MASK_EV5
- *
- *                  BTM_SCO_LINK_ALL_MASK   - enables all supported types
- *
- * Returns          BTM_CMD_STARTED if successfully initiated, otherwise error
- *
- ******************************************************************************/
-tBTM_STATUS BTM_SetScoPacketTypes(uint16_t sco_inx, uint16_t pkt_types);
-
-/*******************************************************************************
- *
- * Function         BTM_ReadScoPacketTypes
- *
- * Description      This function is read the packet types used for a specific
- *                  SCO connection.
- *
- * Returns       One or more of the following (bitmask)
- *                  BTM_SCO_PKT_TYPES_MASK_HV1
- *                  BTM_SCO_PKT_TYPES_MASK_HV2
- *                  BTM_SCO_PKT_TYPES_MASK_HV3
- *                  BTM_SCO_PKT_TYPES_MASK_EV3
- *                  BTM_SCO_PKT_TYPES_MASK_EV4
- *                  BTM_SCO_PKT_TYPES_MASK_EV5
- *
- * Returns          packet types supported for the connection
- *
- ******************************************************************************/
-uint16_t BTM_ReadScoPacketTypes(uint16_t sco_inx);
-
-/*******************************************************************************
- *
- * Function         BTM_ReadDeviceScoPacketTypes
- *
- * Description      This function is read the SCO packet types that
- *                  the device supports.
- *
- * Returns          packet types supported by the device.
- *
- ******************************************************************************/
-uint16_t BTM_ReadDeviceScoPacketTypes(void);
-
-/*******************************************************************************
- *
- * Function         BTM_ReadScoHandle
- *
- * Description      Reead the HCI handle used for a specific SCO connection,
- *
- * Returns          handle for the connection, or 0xFFFF if invalid SCO index.
- *
- ******************************************************************************/
-uint16_t BTM_ReadScoHandle(uint16_t sco_inx);
-
-/*******************************************************************************
- *
  * Function         BTM_ReadScoBdAddr
  *
  * Description      This function is read the remote BD Address for a specific
@@ -1683,19 +1476,6 @@ uint16_t BTM_ReadScoHandle(uint16_t sco_inx);
  *
  ******************************************************************************/
 const RawAddress* BTM_ReadScoBdAddr(uint16_t sco_inx);
-
-/*******************************************************************************
- *
- * Function         BTM_ReadScoDiscReason
- *
- * Description      This function is returns the reason why an (e)SCO connection
- *                  has been removed. It contains the value until read, or until
- *                  another (e)SCO connection has disconnected.
- *
- * Returns          HCI reason or BTM_INVALID_SCO_DISC_REASON if not set.
- *
- ******************************************************************************/
-uint16_t BTM_ReadScoDiscReason(void);
 
 /*******************************************************************************
  *
@@ -1714,19 +1494,6 @@ tBTM_STATUS BTM_SetEScoMode(enh_esco_params_t* p_parms);
 
 /*******************************************************************************
  *
- * Function         BTM_SetWBSCodec
- *
- * Description      This function sends command to the controller to setup
- *                  WBS codec for the upcoming eSCO connection.
- *
- * Returns          BTM_SUCCESS.
- *
- *
- ******************************************************************************/
-tBTM_STATUS BTM_SetWBSCodec(tBTM_SCO_CODEC_TYPE codec_type);
-
-/*******************************************************************************
- *
  * Function         BTM_RegForEScoEvts
  *
  * Description      This function registers a SCO event callback with the
@@ -1739,29 +1506,6 @@ tBTM_STATUS BTM_SetWBSCodec(tBTM_SCO_CODEC_TYPE codec_type);
  *
  ******************************************************************************/
 tBTM_STATUS BTM_RegForEScoEvts(uint16_t sco_inx, tBTM_ESCO_CBACK* p_esco_cback);
-
-/*******************************************************************************
- *
- * Function         BTM_ReadEScoLinkParms
- *
- * Description      This function returns the current eSCO link parameters for
- *                  the specified handle.  This can be called anytime a
- *                  connection is active, but is typically called after
- *                  receiving the SCO opened callback.
- *
- *                  Note: If called over a 1.1 controller, only the packet types
- *                        field has meaning.
- *                  Note: If the upper layer doesn't know the current sco index,
- *                  BTM_FIRST_ACTIVE_SCO_INDEX can be used as the first
- *                  parameter to find the first active SCO index
- *
- * Returns          BTM_SUCCESS if returned data is valid connection.
- *                  BTM_ILLEGAL_VALUE if no connection for specified sco_inx.
- *                  BTM_MODE_UNSUPPORTED if local controller does not support
- *                      1.2 specification.
- *
- ******************************************************************************/
-tBTM_STATUS BTM_ReadEScoLinkParms(uint16_t sco_inx, tBTM_ESCO_DATA* p_parms);
 
 /*******************************************************************************
  *
@@ -1833,19 +1577,6 @@ uint8_t BTM_GetNumScoLinks(void);
  *
  ******************************************************************************/
 bool BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info);
-
-/*******************************************************************************
- *
- * Function         BTM_SecRegisterLinkKeyNotificationCallback
- *
- * Description      Profiles can register to be notified when a new Link Key
- *                  is generated per connection.
- *
- * Returns          true if registered OK, else false
- *
- ******************************************************************************/
-bool BTM_SecRegisterLinkKeyNotificationCallback(
-    tBTM_LINK_KEY_CALLBACK* p_callback);
 
 /*******************************************************************************
  *
@@ -1943,24 +1674,6 @@ void BTM_SetPairableMode(bool allow_pairing, bool connect_only_paired);
 
 /*******************************************************************************
  *
- * Function         BTM_SetSecureConnectionsOnly
- *
- * Description      Enable or disable default treatment for Mode 4 Level 0
- *                  services
- *
- * Parameter        secure_connections_only_mode - (true or false)
- *                  true means that the device should treat Mode 4 Level 0
- *                  services as services of other levels.
- *                  false means that the device should provide default
- *                  treatment for Mode 4 Level 0 services.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_SetSecureConnectionsOnly(bool secure_connections_only_mode);
-
-/*******************************************************************************
- *
  * Function         BTM_SetSecurityLevel
  *
  * Description      Register service security level with Security Manager.  Each
@@ -2041,21 +1754,6 @@ bool BTM_SecDeleteDevice(const RawAddress& bd_addr);
  *
  ******************************************************************************/
 void BTM_SecClearSecurityFlags(const RawAddress& bd_addr);
-
-/*******************************************************************************
- *
- * Function         BTM_SecGetDeviceLinkKey
- *
- * Description      This function is called to obtain link key for the device
- *                  it returns BTM_SUCCESS if link key is available, or
- *                  BTM_UNKNOWN_ADDR if Security Manager does not know about
- *                  the device or device record does not contain link key info
- *
- * Returns          BTM_SUCCESS if successful, otherwise error code
- *
- ******************************************************************************/
-tBTM_STATUS BTM_SecGetDeviceLinkKey(const RawAddress& bd_addr,
-                                    LinkKey* link_key);
 
 /*******************************************************************************
  *
@@ -2270,27 +1968,6 @@ void BTM_RemoteOobDataReply(tBTM_STATUS res, const RawAddress& bd_addr,
 
 /*******************************************************************************
  *
- * Function         BTM_BuildOobData
- *
- * Description      This function is called to build the OOB data payload to
- *                  be sent over OOB (non-Bluetooth) link
- *
- * Parameters:      p_data  - the location for OOB data
- *                  max_len - p_data size.
- *                  c       - simple pairing Hash C.
- *                  r       - simple pairing Randomizer  C.
- *                  name_len- 0, local device name would not be included.
- *                            otherwise, the local device name is included for
- *                            up to this specified length
- *
- * Returns          Number of bytes in p_data.
- *
- ******************************************************************************/
-uint16_t BTM_BuildOobData(uint8_t* p_data, uint16_t max_len, const Octet16& c,
-                          const Octet16& r, uint8_t name_len);
-
-/*******************************************************************************
- *
  * Function         BTM_BothEndsSupportSecureConnections
  *
  * Description      This function is called to check if both the local device
@@ -2320,23 +1997,6 @@ bool BTM_BothEndsSupportSecureConnections(const RawAddress& bd_addr);
  *
  ******************************************************************************/
 bool BTM_PeerSupportsSecureConnections(const RawAddress& bd_addr);
-
-/*******************************************************************************
- *
- * Function         BTM_ReadOobData
- *
- * Description      This function is called to parse the OOB data payload
- *                  received over OOB (non-Bluetooth) link
- *
- * Parameters:      p_data  - the location for OOB data
- *                  eir_tag - The associated EIR tag to read the data.
- *                  *p_len(output) - the length of the data with the given tag.
- *
- * Returns          the beginning of the data with the given tag.
- *                  NULL, if the tag is not found.
- *
- ******************************************************************************/
-uint8_t* BTM_ReadOobData(uint8_t* p_data, uint8_t eir_tag, uint8_t* p_len);
 
 /*******************************************************************************
  *
@@ -2454,95 +2114,6 @@ uint16_t BTM_GetHCIConnHandle(const RawAddress& remote_bda,
 tBTM_STATUS BTM_DeleteStoredLinkKey(const RawAddress* bd_addr,
                                     tBTM_CMPL_CB* p_cb);
 
-/*****************************************************************************
- *  SCO OVER HCI
- ****************************************************************************/
-/*******************************************************************************
- *
- * Function         BTM_ConfigScoPath
- *
- * Description      This function enable/disable SCO over HCI and registers SCO
- *                  data callback if SCO over HCI is enabled.
- *
- * Parameter        path: SCO or HCI
- *                  p_sco_data_cb: callback function or SCO data if path is set
- *                                 to transport.
- *                  p_pcm_param: pointer to the PCM interface parameter. If a
- *                               NULL pointer is used, the PCM parameter
- *                               maintained in the control block will be used;
- *                               otherwise update the control block value.
- *                  err_data_rpt: Lisbon feature to enable the erronous data
- *                                report or not.
- *
- * Returns          BTM_SUCCESS if the successful.
- *                  BTM_NO_RESOURCES: no rsource to start the command.
- *                  BTM_ILLEGAL_VALUE: invalid callback function pointer.
- *                  BTM_CMD_STARTED : Command sent. Waiting for command
- *                                    complete event.
- *
- *
- ******************************************************************************/
-tBTM_STATUS BTM_ConfigScoPath(esco_data_path_t path,
-                              tBTM_SCO_DATA_CB* p_sco_data_cb,
-                              tBTM_SCO_PCM_PARAM* p_pcm_param,
-                              bool err_data_rpt);
-
-/*******************************************************************************
- *
- * Function         BTM_WriteScoData
- *
- * Description      This function write SCO data to a specified instance. The
- *                  data to be written p_buf needs to carry an offset of
- *                  HCI_SCO_PREAMBLE_SIZE bytes, and the data length can not
- *                  exceed BTM_SCO_DATA_SIZE_MAX bytes, whose default value is
- *                  set to 60 and is configurable. Data longer than the maximum
- *                  bytes will be truncated.
- *
- * Returns          BTM_SUCCESS: data write is successful
- *                  BTM_ILLEGAL_VALUE: SCO data contains illegal offset value.
- *                  BTM_SCO_BAD_LENGTH: SCO data length exceeds the max SCO
- *                                      packet size.
- *                  BTM_NO_RESOURCES: no resources.
- *                  BTM_UNKNOWN_ADDR: unknown SCO connection handle, or SCO is
- *                                    not routed via HCI.
- *
- *
- ******************************************************************************/
-tBTM_STATUS BTM_WriteScoData(uint16_t sco_inx, BT_HDR* p_buf);
-
-/*******************************************************************************
- *
- * Function         BTM_SetARCMode
- *
- * Description      Send Audio Routing Control command.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_SetARCMode(uint8_t iface, uint8_t arc_mode,
-                    tBTM_VSC_CMPL_CB* p_arc_cb);
-
-/*******************************************************************************
- *
- * Function         BTM_PCM2Setup_Write
- *
- * Description      Send PCM2_Setup write command.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_PCM2Setup_Write(bool clk_master, tBTM_VSC_CMPL_CB* p_arc_cb);
-
-/*******************************************************************************
- *
- * Function         BTM_PM_ReadControllerState
- *
- * Description      This function is called to obtain the controller state
- *
- * Returns          Controller state (BTM_CONTRL_ACTIVE, BTM_CONTRL_SCAN, and
- *                                    BTM_CONTRL_IDLE)
- *
- ******************************************************************************/
 tBTM_CONTRL_STATE BTM_PM_ReadControllerState(void);
 
 /**

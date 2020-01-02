@@ -385,44 +385,6 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
   return BTM_CMD_STARTED;
 }
 
-tBTM_STATUS bluetooth::shim::BTM_SetPeriodicInquiryMode(
-    tBTM_INQ_PARMS* p_inqparms, uint16_t max_delay, uint16_t min_delay,
-    tBTM_INQ_RESULTS_CB* p_results_cb) {
-  CHECK(p_inqparms != nullptr);
-  CHECK(p_results_cb != nullptr);
-
-  if (p_inqparms->duration < BTM_MIN_INQUIRY_LEN ||
-      p_inqparms->duration > BTM_MAX_INQUIRY_LENGTH ||
-      min_delay <= p_inqparms->duration ||
-      min_delay < BTM_PER_INQ_MIN_MIN_PERIOD ||
-      min_delay > BTM_PER_INQ_MAX_MIN_PERIOD || max_delay <= min_delay ||
-      max_delay < BTM_PER_INQ_MIN_MAX_PERIOD) {
-    return (BTM_ILLEGAL_VALUE);
-  }
-
-  if (shim_btm.IsInquiryActive()) {
-    return BTM_BUSY;
-  }
-
-  switch (p_inqparms->filter_cond_type) {
-    case kClearInquiryFilter:
-      shim_btm.ClearInquiryFilter();
-      return BTM_SUCCESS;
-      break;
-    case kFilterOnDeviceClass:
-      shim_btm.SetFilterInquiryOnDevice();
-      return BTM_SUCCESS;
-      break;
-    case kFilterOnAddress:
-      shim_btm.SetFilterInquiryOnAddress();
-      return BTM_SUCCESS;
-      break;
-    default:
-      return BTM_ILLEGAL_VALUE;
-  }
-  return BTM_MODE_UNSUPPORTED;
-}
-
 tBTM_STATUS bluetooth::shim::BTM_SetDiscoverability(uint16_t discoverable_mode,
                                                     uint16_t window,
                                                     uint16_t interval) {
@@ -755,12 +717,6 @@ tBTM_STATUS bluetooth::shim::BTM_ClearInqDb(const RawAddress* p_bda) {
   } else {
     // clear specific entry
   }
-  return BTM_NO_RESOURCES;
-}
-
-tBTM_STATUS bluetooth::shim::BTM_ReadInquiryRspTxPower(tBTM_CMPL_CB* p_cb) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
-  CHECK(p_cb != nullptr);
   return BTM_NO_RESOURCES;
 }
 

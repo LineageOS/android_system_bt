@@ -1770,65 +1770,6 @@ uint8_t* BTM_ReadRemoteFeatures(const RawAddress& addr) {
 
 /*******************************************************************************
  *
- * Function         BTM_ReadRemoteExtendedFeatures
- *
- * Returns          pointer to the remote extended features mask (8 bytes)
- *                  or NULL if bad page
- *
- ******************************************************************************/
-uint8_t* BTM_ReadRemoteExtendedFeatures(const RawAddress& addr,
-                                        uint8_t page_number) {
-  tACL_CONN* p = btm_bda_to_acl(addr, BT_TRANSPORT_BR_EDR);
-  BTM_TRACE_DEBUG("BTM_ReadRemoteExtendedFeatures");
-  if (p == NULL) {
-    return (NULL);
-  }
-
-  if (page_number > HCI_EXT_FEATURES_PAGE_MAX) {
-    BTM_TRACE_ERROR("Warning: BTM_ReadRemoteExtendedFeatures page %d unknown",
-                    page_number);
-    return NULL;
-  }
-
-  return (p->peer_lmp_feature_pages[page_number]);
-}
-
-/*******************************************************************************
- *
- * Function         BTM_ReadNumberRemoteFeaturesPages
- *
- * Returns          number of features pages read from the remote device.
- *
- ******************************************************************************/
-uint8_t BTM_ReadNumberRemoteFeaturesPages(const RawAddress& addr) {
-  tACL_CONN* p = btm_bda_to_acl(addr, BT_TRANSPORT_BR_EDR);
-  BTM_TRACE_DEBUG("BTM_ReadNumberRemoteFeaturesPages");
-  if (p == NULL) {
-    return (0);
-  }
-
-  return (p->num_read_pages);
-}
-
-/*******************************************************************************
- *
- * Function         BTM_ReadAllRemoteFeatures
- *
- * Returns          pointer to all features of the remote (24 bytes).
- *
- ******************************************************************************/
-uint8_t* BTM_ReadAllRemoteFeatures(const RawAddress& addr) {
-  tACL_CONN* p = btm_bda_to_acl(addr, BT_TRANSPORT_BR_EDR);
-  BTM_TRACE_DEBUG("BTM_ReadAllRemoteFeatures");
-  if (p == NULL) {
-    return (NULL);
-  }
-
-  return (p->peer_lmp_feature_pages[0]);
-}
-
-/*******************************************************************************
- *
  * Function         BTM_RegBusyLevelNotif
  *
  * Description      This function is called to register a callback to receive
@@ -1852,40 +1793,6 @@ tBTM_STATUS BTM_RegBusyLevelNotif(tBTM_BL_CHANGE_CB* p_cb, uint8_t* p_level,
     btm_cb.p_bl_changed_cb = p_cb;
 
   return (BTM_SUCCESS);
-}
-
-/*******************************************************************************
- *
- * Function         BTM_SetQoS
- *
- * Description      This function is called to setup QoS
- *
- * Returns          status of the operation
- *
- ******************************************************************************/
-tBTM_STATUS BTM_SetQoS(const RawAddress& bd, FLOW_SPEC* p_flow,
-                       tBTM_CMPL_CB* p_cb) {
-  tACL_CONN* p = &btm_cb.acl_db[0];
-
-  VLOG(2) << __func__ << " BdAddr: " << bd;
-
-  /* If someone already waiting on the version, do not allow another */
-  if (btm_cb.devcb.p_qos_setup_cmpl_cb) return (BTM_BUSY);
-
-  p = btm_bda_to_acl(bd, BT_TRANSPORT_BR_EDR);
-  if (p != NULL) {
-    btm_cb.devcb.p_qos_setup_cmpl_cb = p_cb;
-    alarm_set_on_mloop(btm_cb.devcb.qos_setup_timer, BTM_DEV_REPLY_TIMEOUT_MS,
-                       btm_qos_setup_timeout, NULL);
-
-    btsnd_hcic_qos_setup(p->hci_handle, p_flow->qos_flags, p_flow->service_type,
-                         p_flow->token_rate, p_flow->peak_bandwidth,
-                         p_flow->latency, p_flow->delay_variation);
-    return (BTM_CMD_STARTED);
-  }
-
-  /* If here, no BD Addr found */
-  return (BTM_UNKNOWN_ADDR);
 }
 
 /*******************************************************************************
@@ -2057,39 +1964,6 @@ tBTM_STATUS BTM_ReadAutomaticFlushTimeout(const RawAddress& remote_bda,
 
   btsnd_hcic_read_automatic_flush_timeout(p->hci_handle);
   return BTM_CMD_STARTED;
-}
-
-/*******************************************************************************
- *
- * Function         BTM_ReadLinkQuality
- *
- * Description      This function is called to read the link qulaity.
- *                  The value of the link quality is returned in the callback.
- *                  (tBTM_LINK_QUALITY_RESULT)
- *
- * Returns          BTM_CMD_STARTED if successfully initiated or error code
- *
- ******************************************************************************/
-tBTM_STATUS BTM_ReadLinkQuality(const RawAddress& remote_bda,
-                                tBTM_CMPL_CB* p_cb) {
-  VLOG(2) << __func__ << ": RemBdAddr: " << remote_bda;
-
-  /* If someone already waiting on the version, do not allow another */
-  if (btm_cb.devcb.p_link_qual_cmpl_cb) return (BTM_BUSY);
-
-  tACL_CONN* p = btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
-  if (p != (tACL_CONN*)NULL) {
-    btm_cb.devcb.p_link_qual_cmpl_cb = p_cb;
-    alarm_set_on_mloop(btm_cb.devcb.read_link_quality_timer,
-                       BTM_DEV_REPLY_TIMEOUT_MS, btm_read_link_quality_timeout,
-                       NULL);
-
-    btsnd_hcic_get_link_quality(p->hci_handle);
-    return (BTM_CMD_STARTED);
-  }
-
-  /* If here, no BD Addr found */
-  return (BTM_UNKNOWN_ADDR);
 }
 
 /*******************************************************************************
