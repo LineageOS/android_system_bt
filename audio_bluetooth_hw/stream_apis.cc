@@ -289,7 +289,8 @@ static int out_set_parameters(struct audio_stream* stream,
               << routing_param->second.c_str() << "'";
   }
 
-  if (params.find("A2dpSuspended") != params.end()) {
+  if (params.find("A2dpSuspended") != params.end() &&
+      out->bluetooth_output_.IsA2dp()) {
     if (params["A2dpSuspended"] == "true") {
       LOG(INFO) << __func__ << ": state=" << out->bluetooth_output_.GetState()
                 << " stream param stopped";
@@ -683,6 +684,11 @@ int adev_open_output_stream(struct audio_hw_device* dev,
   out->frames_rendered_ = 0;
   out->frames_presented_ = 0;
 
+  {
+    auto* bluetooth_device = reinterpret_cast<BluetoothAudioDevice*>(dev);
+    std::lock_guard<std::mutex> guard(bluetooth_device->mutex_);
+    bluetooth_device->opened_stream_outs_.push_back(out);
+  }
   *stream_out = &out->stream_out_;
   LOG(INFO) << __func__ << ": state=" << out->bluetooth_output_.GetState() << ", sample_rate=" << out->sample_rate_
             << ", channels=" << StringPrintf("%#x", out->channel_mask_) << ", format=" << out->format_
@@ -695,6 +701,11 @@ void adev_close_output_stream(struct audio_hw_device* dev,
   auto* out = reinterpret_cast<BluetoothStreamOut*>(stream);
   LOG(VERBOSE) << __func__ << ": state=" << out->bluetooth_output_.GetState()
                << ", stopping";
+  {
+    auto* bluetooth_device = reinterpret_cast<BluetoothAudioDevice*>(dev);
+    std::lock_guard<std::mutex> guard(bluetooth_device->mutex_);
+    bluetooth_device->opened_stream_outs_.remove(out);
+  }
   if (out->bluetooth_output_.GetState() != BluetoothStreamState::DISABLED) {
     out->frames_rendered_ = 0;
     out->frames_presented_ = 0;

@@ -38,7 +38,6 @@ using ::android::hardware::bluetooth::audio::V2_0::BitsPerSample;
 using ::android::hardware::bluetooth::audio::V2_0::ChannelMode;
 using ::android::hardware::bluetooth::audio::V2_0::PcmParameters;
 using ::android::hardware::bluetooth::audio::V2_0::SampleRate;
-using ::android::hardware::bluetooth::audio::V2_0::SessionType;
 using BluetoothAudioStatus =
     ::android::hardware::bluetooth::audio::V2_0::Status;
 using ControlResultCallback = std::function<void(
