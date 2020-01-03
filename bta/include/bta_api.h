@@ -154,13 +154,6 @@ typedef struct {
    BTM_SEC_OUT_AUTHENTICATE) /* Authentication required. */
 #define BTA_SEC_ENCRYPT \
   (BTM_SEC_IN_ENCRYPT | BTM_SEC_OUT_ENCRYPT) /* Encryption required. */
-#define BTA_SEC_MODE4_LEVEL4                                               \
-  (BTM_SEC_MODE4_LEVEL4) /* Mode 4 level 4 service, i.e. incoming/outgoing \
-                            MITM and P-256 encryption */
-#define BTA_SEC_MITM \
-  (BTM_SEC_IN_MITM | BTM_SEC_OUT_MITM) /* Man-In-The_Middle protection */
-#define BTA_SEC_IN_16_DIGITS \
-  (BTM_SEC_IN_MIN_16_DIGIT_PIN) /* Min 16 digit for pin code */
 
 typedef uint16_t tBTA_SEC;
 

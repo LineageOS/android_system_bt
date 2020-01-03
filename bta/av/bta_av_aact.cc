@@ -1916,6 +1916,7 @@ void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   if (result != AVDT_SUCCESS) {
     LOG_ERROR(LOG_TAG, "%s: AVDT_StartReq failed for peer %s result:%d",
               __func__, p_scb->PeerAddress().ToString().c_str(), result);
+    bta_av_start_failed(p_scb, p_data);
   }
   LOG_INFO(LOG_TAG,
            "%s: peer %s start requested: sco_occupied:%s role:0x%x "

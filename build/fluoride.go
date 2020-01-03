@@ -43,7 +43,7 @@ func fluorideDefaults(ctx android.LoadHookContext) {
 	ctx.AppendProperties(p)
 }
 
-func globalDefaults(ctx android.BaseContext) ([]string, []string) {
+func globalDefaults(ctx android.LoadHookContext) ([]string, []string) {
 	var cflags []string
 	var includeDirs []string
 
