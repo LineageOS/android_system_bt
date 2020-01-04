@@ -235,11 +235,26 @@ class DualModeController : public Device {
   // 7.3.12
   void ReadLocalName(CommandPacketView args);
 
+  // 7.3.15
+  void ReadPageTimeout(CommandPacketView args);
+
   // 7.3.16
   void WritePageTimeout(CommandPacketView args);
 
+  // 7.3.17
+  void ReadScanEnable(CommandPacketView args);
+
   // 7.3.18
   void WriteScanEnable(CommandPacketView args);
+
+  // 7.3.19
+  void ReadPageScanActivity(CommandPacketView args);
+
+  // 7.3.20
+  void WritePageScanActivity(CommandPacketView args);
+
+  // 7.3.21
+  void ReadInquiryScanActivity(CommandPacketView args);
 
   // 7.3.22
   void WriteInquiryScanActivity(CommandPacketView args);
@@ -262,14 +277,29 @@ class DualModeController : public Device {
   // 7.3.42
   void WriteLinkSupervisionTimeout(CommandPacketView args);
 
+  // 7.3.43
+  void ReadNumberOfSupportedIac(CommandPacketView args);
+
+  // 7.3.44
+  void ReadCurrentIacLap(CommandPacketView args);
+
   // 7.3.45
   void WriteCurrentIacLap(CommandPacketView args);
+
+  // 7.3.47
+  void ReadInquiryScanType(CommandPacketView args);
 
   // 7.3.48
   void WriteInquiryScanType(CommandPacketView args);
 
+  // 7.3.49
+  void ReadInquiryMode(CommandPacketView args);
+
   // 7.3.50
   void WriteInquiryMode(CommandPacketView args);
+
+  // 7.3.52
+  void ReadPageScanType(CommandPacketView args);
 
   // 7.3.52
   void WritePageScanType(CommandPacketView args);
@@ -282,6 +312,9 @@ class DualModeController : public Device {
 
   // 7.3.59
   void WriteSimplePairingMode(CommandPacketView args);
+
+  // 7.3.61
+  void ReadInquiryResponseTransmitPowerLevel(CommandPacketView args);
 
   // 7.3.79
   void WriteLeHostSupport(CommandPacketView args);
