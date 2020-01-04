@@ -119,14 +119,19 @@ DualModeController::DualModeController(const std::string& properties_filename, u
               UserConfirmationRequestNegativeReply);
   SET_HANDLER(OpCode::IO_CAPABILITY_REQUEST_NEGATIVE_REPLY,
               IoCapabilityRequestNegativeReply);
+  SET_HANDLER(OpCode::READ_INQUIRY_RESPONSE_TRANSMIT_POWER_LEVEL,
+              ReadInquiryResponseTransmitPowerLevel);
   SET_HANDLER(OpCode::WRITE_SIMPLE_PAIRING_MODE, WriteSimplePairingMode);
   SET_HANDLER(OpCode::WRITE_LE_HOST_SUPPORT, WriteLeHostSupport);
   SET_HANDLER(OpCode::WRITE_SECURE_CONNECTIONS_HOST_SUPPORT,
               WriteSecureConnectionsHostSupport);
   SET_HANDLER(OpCode::SET_EVENT_MASK, SetEventMask);
+  SET_HANDLER(OpCode::READ_INQUIRY_MODE, ReadInquiryMode);
   SET_HANDLER(OpCode::WRITE_INQUIRY_MODE, WriteInquiryMode);
+  SET_HANDLER(OpCode::READ_PAGE_SCAN_TYPE, ReadPageScanType);
   SET_HANDLER(OpCode::WRITE_PAGE_SCAN_TYPE, WritePageScanType);
   SET_HANDLER(OpCode::WRITE_INQUIRY_SCAN_TYPE, WriteInquiryScanType);
+  SET_HANDLER(OpCode::READ_INQUIRY_SCAN_TYPE, ReadInquiryScanType);
   SET_HANDLER(OpCode::AUTHENTICATION_REQUESTED, AuthenticationRequested);
   SET_HANDLER(OpCode::SET_CONNECTION_ENCRYPTION, SetConnectionEncryption);
   SET_HANDLER(OpCode::CHANGE_CONNECTION_LINK_KEY, ChangeConnectionLinkKey);
@@ -134,6 +139,7 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   SET_HANDLER(OpCode::WRITE_AUTHENTICATION_ENABLE, WriteAuthenticationEnable);
   SET_HANDLER(OpCode::READ_AUTHENTICATION_ENABLE, ReadAuthenticationEnable);
   SET_HANDLER(OpCode::WRITE_CLASS_OF_DEVICE, WriteClassOfDevice);
+  SET_HANDLER(OpCode::READ_PAGE_TIMEOUT, ReadPageTimeout);
   SET_HANDLER(OpCode::WRITE_PAGE_TIMEOUT, WritePageTimeout);
   SET_HANDLER(OpCode::WRITE_LINK_SUPERVISION_TIMEOUT,
               WriteLinkSupervisionTimeout);
@@ -153,8 +159,14 @@ DualModeController::DualModeController(const std::string& properties_filename, u
               WriteExtendedInquiryResponse);
   SET_HANDLER(OpCode::REFRESH_ENCRYPTION_KEY, RefreshEncryptionKey);
   SET_HANDLER(OpCode::WRITE_VOICE_SETTING, WriteVoiceSetting);
+  SET_HANDLER(OpCode::READ_NUMBER_OF_SUPPORTED_IAC, ReadNumberOfSupportedIac);
+  SET_HANDLER(OpCode::READ_CURRENT_IAC_LAP, ReadCurrentIacLap);
   SET_HANDLER(OpCode::WRITE_CURRENT_IAC_LAP, WriteCurrentIacLap);
+  SET_HANDLER(OpCode::READ_PAGE_SCAN_ACTIVITY, ReadPageScanActivity);
+  SET_HANDLER(OpCode::WRITE_PAGE_SCAN_ACTIVITY, WritePageScanActivity);
+  SET_HANDLER(OpCode::READ_INQUIRY_SCAN_ACTIVITY, ReadInquiryScanActivity);
   SET_HANDLER(OpCode::WRITE_INQUIRY_SCAN_ACTIVITY, WriteInquiryScanActivity);
+  SET_HANDLER(OpCode::READ_SCAN_ENABLE, ReadScanEnable);
   SET_HANDLER(OpCode::WRITE_SCAN_ENABLE, WriteScanEnable);
   SET_HANDLER(OpCode::SET_EVENT_FILTER, SetEventFilter);
   SET_HANDLER(OpCode::INQUIRY, Inquiry);
@@ -681,6 +693,19 @@ void DualModeController::IoCapabilityRequestNegativeReply(
   send_event_(std::move(packet));
 }
 
+void DualModeController::ReadInquiryResponseTransmitPowerLevel(
+    CommandPacketView command) {
+  auto command_view = gd_hci::ReadInquiryResponseTransmitPowerLevelView::Create(
+      gd_hci::DiscoveryCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+
+  uint8_t tx_power = 20;  // maximum
+  auto packet =
+      bluetooth::hci::ReadInquiryResponseTransmitPowerLevelCompleteBuilder::
+          Create(kNumCommandPackets, ErrorCode::SUCCESS, tx_power);
+  send_event_(std::move(packet));
+}
+
 void DualModeController::WriteSimplePairingMode(CommandPacketView command) {
   auto command_view = gd_hci::WriteSimplePairingModeView::Create(
       gd_hci::SecurityCommandView::Create(command));
@@ -736,6 +761,16 @@ void DualModeController::SetEventMask(CommandPacketView command) {
   send_event_(std::move(packet));
 }
 
+void DualModeController::ReadInquiryMode(CommandPacketView command) {
+  auto command_view = gd_hci::ReadInquiryModeView::Create(
+      gd_hci::DiscoveryCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+  gd_hci::InquiryMode inquiry_mode = gd_hci::InquiryMode::STANDARD;
+  auto packet = bluetooth::hci::ReadInquiryModeCompleteBuilder::Create(
+      kNumCommandPackets, ErrorCode::SUCCESS, inquiry_mode);
+  send_event_(std::move(packet));
+}
+
 void DualModeController::WriteInquiryMode(CommandPacketView command) {
   auto command_view = gd_hci::WriteInquiryModeView::Create(
       gd_hci::DiscoveryCommandView::Create(command));
@@ -747,12 +782,32 @@ void DualModeController::WriteInquiryMode(CommandPacketView command) {
   send_event_(std::move(packet));
 }
 
+void DualModeController::ReadPageScanType(CommandPacketView command) {
+  auto command_view = gd_hci::ReadPageScanTypeView::Create(
+      gd_hci::DiscoveryCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+  gd_hci::PageScanType page_scan_type = gd_hci::PageScanType::STANDARD;
+  auto packet = bluetooth::hci::ReadPageScanTypeCompleteBuilder::Create(
+      kNumCommandPackets, ErrorCode::SUCCESS, page_scan_type);
+  send_event_(std::move(packet));
+}
+
 void DualModeController::WritePageScanType(CommandPacketView command) {
   auto command_view = gd_hci::WritePageScanTypeView::Create(
       gd_hci::DiscoveryCommandView::Create(command));
   ASSERT(command_view.IsValid());
   auto packet = bluetooth::hci::WritePageScanTypeCompleteBuilder::Create(
       kNumCommandPackets, ErrorCode::SUCCESS);
+  send_event_(std::move(packet));
+}
+
+void DualModeController::ReadInquiryScanType(CommandPacketView command) {
+  auto command_view = gd_hci::ReadInquiryScanTypeView::Create(
+      gd_hci::DiscoveryCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+  gd_hci::InquiryScanType inquiry_scan_type = gd_hci::InquiryScanType::STANDARD;
+  auto packet = bluetooth::hci::ReadInquiryScanTypeCompleteBuilder::Create(
+      kNumCommandPackets, ErrorCode::SUCCESS, inquiry_scan_type);
   send_event_(std::move(packet));
 }
 
@@ -849,6 +904,16 @@ void DualModeController::WriteClassOfDevice(CommandPacketView command) {
                                class_of_device.cod[2]);
   auto packet = bluetooth::hci::WriteClassOfDeviceCompleteBuilder::Create(
       kNumCommandPackets, ErrorCode::SUCCESS);
+  send_event_(std::move(packet));
+}
+
+void DualModeController::ReadPageTimeout(CommandPacketView command) {
+  auto command_view = gd_hci::ReadPageTimeoutView::Create(
+      gd_hci::DiscoveryCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+  uint16_t page_timeout = 0x2000;
+  auto packet = bluetooth::hci::ReadPageTimeoutCompleteBuilder::Create(
+      kNumCommandPackets, ErrorCode::SUCCESS, page_timeout);
   send_event_(std::move(packet));
 }
 
@@ -1058,6 +1123,27 @@ void DualModeController::WriteVoiceSetting(CommandPacketView command) {
   send_event_(std::move(packet));
 }
 
+void DualModeController::ReadNumberOfSupportedIac(CommandPacketView command) {
+  auto command_view = gd_hci::ReadNumberOfSupportedIacView::Create(
+      gd_hci::DiscoveryCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+  uint8_t num_support_iac = 0x1;
+  auto packet = bluetooth::hci::ReadNumberOfSupportedIacCompleteBuilder::Create(
+      kNumCommandPackets, ErrorCode::SUCCESS, num_support_iac);
+  send_event_(std::move(packet));
+}
+
+void DualModeController::ReadCurrentIacLap(CommandPacketView command) {
+  auto command_view = gd_hci::ReadCurrentIacLapView::Create(
+      gd_hci::DiscoveryCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+  gd_hci::Lap lap;
+  lap.lap_ = 0x30;
+  auto packet = bluetooth::hci::ReadCurrentIacLapCompleteBuilder::Create(
+      kNumCommandPackets, ErrorCode::SUCCESS, {lap});
+  send_event_(std::move(packet));
+}
+
 void DualModeController::WriteCurrentIacLap(CommandPacketView command) {
   auto command_view = gd_hci::WriteCurrentIacLapView::Create(
       gd_hci::DiscoveryCommandView::Create(command));
@@ -1067,12 +1153,52 @@ void DualModeController::WriteCurrentIacLap(CommandPacketView command) {
   send_event_(std::move(packet));
 }
 
+void DualModeController::ReadPageScanActivity(CommandPacketView command) {
+  auto command_view = gd_hci::ReadPageScanActivityView::Create(
+      gd_hci::DiscoveryCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+  uint16_t interval = 0x1000;
+  uint16_t window = 0x0012;
+  auto packet = bluetooth::hci::ReadPageScanActivityCompleteBuilder::Create(
+      kNumCommandPackets, ErrorCode::SUCCESS, interval, window);
+  send_event_(std::move(packet));
+}
+
+void DualModeController::WritePageScanActivity(CommandPacketView command) {
+  auto command_view = gd_hci::WritePageScanActivityView::Create(
+      gd_hci::DiscoveryCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+  auto packet = bluetooth::hci::WritePageScanActivityCompleteBuilder::Create(
+      kNumCommandPackets, ErrorCode::SUCCESS);
+  send_event_(std::move(packet));
+}
+
+void DualModeController::ReadInquiryScanActivity(CommandPacketView command) {
+  auto command_view = gd_hci::ReadInquiryScanActivityView::Create(
+      gd_hci::DiscoveryCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+  uint16_t interval = 0x1000;
+  uint16_t window = 0x0012;
+  auto packet = bluetooth::hci::ReadInquiryScanActivityCompleteBuilder::Create(
+      kNumCommandPackets, ErrorCode::SUCCESS, interval, window);
+  send_event_(std::move(packet));
+}
+
 void DualModeController::WriteInquiryScanActivity(CommandPacketView command) {
   auto command_view = gd_hci::WriteInquiryScanActivityView::Create(
       gd_hci::DiscoveryCommandView::Create(command));
   ASSERT(command_view.IsValid());
   auto packet = bluetooth::hci::WriteInquiryScanActivityCompleteBuilder::Create(
       kNumCommandPackets, ErrorCode::SUCCESS);
+  send_event_(std::move(packet));
+}
+
+void DualModeController::ReadScanEnable(CommandPacketView command) {
+  auto command_view = gd_hci::ReadScanEnableView::Create(
+      gd_hci::DiscoveryCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+  auto packet = bluetooth::hci::ReadScanEnableCompleteBuilder::Create(
+      kNumCommandPackets, ErrorCode::SUCCESS, gd_hci::ScanEnable::NO_SCANS);
   send_event_(std::move(packet));
 }
 
