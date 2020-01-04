@@ -266,6 +266,8 @@ bool generate_pybind11_sources_one_file(const Declarations& decls, const std::fi
     out_file << "\n\n";
     out_file << "#include " << gen_relative_header << "\n";
     out_file << "\n\n";
+    out_file << "#include \"packet/raw_builder.h\"\n";
+    out_file << "\n\n";
 
     for (const auto& c : decls.type_defs_queue_) {
       if (c.second->GetDefinitionType() == TypeDef::Type::CUSTOM) {
@@ -297,6 +299,7 @@ bool generate_pybind11_sources_one_file(const Declarations& decls, const std::fi
     out_file << "using ::bluetooth::packet::BaseStruct;";
     out_file << "using ::bluetooth::packet::PacketStruct;";
     out_file << "using ::bluetooth::packet::PacketView;";
+    out_file << "using ::bluetooth::packet::RawBuilder;";
     out_file << "using ::bluetooth::packet::parser::ChecksumTypeChecker;";
     out_file << "\n\n";
 
