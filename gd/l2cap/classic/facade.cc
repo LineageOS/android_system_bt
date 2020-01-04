@@ -20,7 +20,7 @@
 #include "common/bind.h"
 #include "grpc/grpc_event_queue.h"
 #include "hci/address.h"
-#include "hci/facade.h"
+#include "hci/hci_layer.h"
 #include "l2cap/classic/facade.grpc.pb.h"
 #include "l2cap/classic/facade.h"
 #include "l2cap/classic/l2cap_classic_module.h"
