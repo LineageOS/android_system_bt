@@ -151,7 +151,7 @@ class CertSelfTest(GdFacadeOnlyBaseTestClass):
             event_asserts = EventAsserts(event_stream)
             event_asserts.assert_event_occurs(
                 lambda data: data.value_ == 1,
-                timeout=timedelta(milliseconds=150),
+                timeout=timedelta(milliseconds=300),
                 at_least_times=2)
 
     def test_assert_occurs_passes(self):
