@@ -57,11 +57,14 @@ class LeReport {
 class DirectedLeReport : public LeReport {
  public:
   explicit DirectedLeReport(const LeDirectedAdvertisingReport& advertisement)
-      : LeReport(advertisement), direct_address_type_(advertisement.address_type_) {}
+      : LeReport(advertisement), direct_address_type_(advertisement.address_type_),
+        direct_address_(advertisement.direct_address_) {}
   explicit DirectedLeReport(const LeExtendedAdvertisingReport& advertisement)
-      : LeReport(advertisement), direct_address_type_(advertisement.address_type_) {}
+      : LeReport(advertisement), direct_address_type_(advertisement.address_type_),
+        direct_address_(advertisement.direct_address_) {}
 
   const DirectAdvertisingAddressType direct_address_type_{};
+  const Address direct_address_{};
 };
 
 class ExtendedLeReport : public DirectedLeReport {
