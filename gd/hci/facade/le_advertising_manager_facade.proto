@@ -12,7 +12,7 @@ service LeAdvertisingManagerFacade {
   rpc RemoveAdvertiser(RemoveAdvertiserRequest) returns (google.protobuf.Empty) {}
 }
 
-message GapData {
+message GapDataMsg {
   bytes data = 1;
 }
 
@@ -32,8 +32,8 @@ enum AdvertisingFilterPolicy {
 };
 
 message AdvertisingConfig {
-  repeated GapData advertisement = 1;
-  repeated GapData scan_response = 2;
+  repeated GapDataMsg advertisement = 1;
+  repeated GapDataMsg scan_response = 2;
   bluetooth.facade.BluetoothAddress random_address = 3;
   // Unit: number of Bluetooth slots in 0.125 ms increment
   int32 interval_min = 4;
