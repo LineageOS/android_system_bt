@@ -3,3 +3,4 @@ SimpleHalTest
 DirectHciTest
 LeAdvertisingManagerTest
 SimpleSecurityTest
+NeighborTest
