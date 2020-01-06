@@ -33,6 +33,7 @@ struct IName;
 struct IL2cap;
 struct IPage;
 struct IScanning;
+struct ISecurity;
 
 struct IStack {
   virtual void Start() = 0;
@@ -48,6 +49,7 @@ struct IStack {
   virtual IL2cap* GetL2cap() = 0;
   virtual IPage* GetPage() = 0;
   virtual IScanning* GetScanning() = 0;
+  virtual ISecurity* GetSecurity() = 0;
 
   virtual ~IStack() {}
 };

@@ -11,6 +11,7 @@ filegroup {
             "name.cc",
             "page.cc",
             "scanning.cc",
+            "security.cc",
             "stack.cc",
     ],
 }

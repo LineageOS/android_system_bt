@@ -104,3 +104,5 @@ bluetooth::shim::IName* TestStack::GetName() { return nullptr; }
 bluetooth::shim::IPage* TestStack::GetPage() { return nullptr; }
 
 bluetooth::shim::IScanning* TestStack::GetScanning() { return nullptr; }
+
+bluetooth::shim::ISecurity* TestStack::GetSecurity() { return nullptr; }
