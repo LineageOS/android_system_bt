@@ -33,19 +33,25 @@ static constexpr uint16_t kFinalClassicVirtualPsm = 0x8000;
 static constexpr uint16_t kInitialLeDynamicPsm = 0x0080;
 static constexpr uint16_t kFinalLeDynamicPsm = 0x00ff;
 
-using PsmData = struct {
-  bool IsPsmAllocated(uint16_t psm) const;
+struct PsmData {
   bool IsPsmRegistered(uint16_t psm) const;
-
-  void AllocatePsm(uint16_t psm);
+  bool HasClient(uint16_t psm) const;
   void RegisterPsm(uint16_t psm, const tL2CAP_APPL_INFO* callbacks);
-
+  void RegisterPsm(uint16_t psm);
   void UnregisterPsm(uint16_t psm);
-  void DeallocatePsm(uint16_t psm);
-
   const tL2CAP_APPL_INFO* Callbacks(uint16_t psm);
 
  private:
+  /**
+   * Mapping of psm to client callback.
+   *
+   * The current API allows a client may reserve a psm but not
+   * provide a callback which is reflected in a mapping of a
+   * valid psm key entry but a nullptr value.
+   *
+   * A valid client is indicated with a valid psm key entry and a
+   * non-nullptr value.
+   */
   std::unordered_map<uint16_t, const tL2CAP_APPL_INFO*> psm_to_callback_map_;
 };
 
@@ -58,8 +64,6 @@ class L2cap {
   uint16_t CreateConnection(uint16_t psm, const RawAddress& raw_address);
 
   bool Write(uint16_t cid, BT_HDR* bt_hdr);
-  bool WriteFlushable(uint16_t cid, BT_HDR* bt_hdr);
-  bool WriteNonFlushable(uint16_t cid, BT_HDR* bt_hdr);
 
   void OnLocalInitiatedConnectionCreated(std::string string_address,
                                          uint16_t psm, uint16_t cid);
@@ -90,7 +94,7 @@ class L2cap {
 
  private:
   uint16_t GetNextVirtualPsm(uint16_t real_psm);
-  bool SetCallbacks(uint16_t cid, const tL2CAP_APPL_INFO* callbacks);
+  void SetDownstreamCallbacks(uint16_t cid);
 
   PsmData classic_;
   PsmData le_;
