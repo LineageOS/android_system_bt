@@ -1,3 +1,5 @@
 CertSelfTest
 SimpleHalTest
+DirectHciTest
+LeAdvertisingManagerTest
 SimpleSecurityTest
