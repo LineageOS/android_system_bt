@@ -23,42 +23,40 @@
 #include "osi/include/allocator.h"
 #include "osi/include/log.h"
 
-constexpr size_t kBtHdrSize = sizeof(BT_HDR);
-constexpr uint16_t kInvalidConnectionInterfaceDescriptor = 0;
 constexpr bool kDisconnectResponseRequired = false;
+constexpr size_t kBtHdrSize = sizeof(BT_HDR);
+constexpr uint16_t kConnectionFail = 1;
 constexpr uint16_t kConnectionSuccess = 0;
+constexpr uint16_t kInvalidConnectionInterfaceDescriptor = 0;
+constexpr uint8_t kUnusedId = 0;
+constexpr uint16_t kUnusedResult = 0;
 
-bool bluetooth::legacy::shim::PsmData::IsPsmAllocated(uint16_t psm) const {
+bool bluetooth::legacy::shim::PsmData::IsPsmRegistered(uint16_t psm) const {
   return psm_to_callback_map_.find(psm) != psm_to_callback_map_.end();
 }
 
-bool bluetooth::legacy::shim::PsmData::IsPsmRegistered(uint16_t psm) const {
-  return IsPsmAllocated(psm) && psm_to_callback_map_.at(psm) != nullptr;
-}
-
-void bluetooth::legacy::shim::PsmData::AllocatePsm(uint16_t psm) {
-  RegisterPsm(psm, nullptr);
+bool bluetooth::legacy::shim::PsmData::HasClient(uint16_t psm) const {
+  return IsPsmRegistered(psm) && psm_to_callback_map_.at(psm) != nullptr;
 }
 
 void bluetooth::legacy::shim::PsmData::RegisterPsm(
     uint16_t psm, const tL2CAP_APPL_INFO* callbacks) {
+  CHECK(!HasClient(psm));
   psm_to_callback_map_[psm] = callbacks;
 }
 
-void bluetooth::legacy::shim::PsmData::UnregisterPsm(uint16_t psm) {
-  psm_to_callback_map_[psm] = nullptr;
+void bluetooth::legacy::shim::PsmData::RegisterPsm(uint16_t psm) {
+  RegisterPsm(psm, nullptr);
 }
 
-void bluetooth::legacy::shim::PsmData::DeallocatePsm(uint16_t psm) {
+void bluetooth::legacy::shim::PsmData::UnregisterPsm(uint16_t psm) {
+  CHECK(IsPsmRegistered(psm));
   psm_to_callback_map_.erase(psm);
 }
 
 const tL2CAP_APPL_INFO* bluetooth::legacy::shim::PsmData::Callbacks(
     uint16_t psm) {
-  if (psm_to_callback_map_.find(psm) == psm_to_callback_map_.end()) {
-    LOG_WARN(LOG_TAG, "Accessing unknown psm:%hd:", psm);
-    return nullptr;
-  }
+  CHECK(HasClient(psm));
   return psm_to_callback_map_[psm];
 }
 
@@ -108,7 +106,7 @@ uint16_t bluetooth::legacy::shim::L2cap::GetNextVirtualPsm(uint16_t real_psm) {
     return real_psm;
   }
 
-  while (Classic().IsPsmAllocated(classic_virtual_psm_)) {
+  while (Classic().IsPsmRegistered(classic_virtual_psm_)) {
     classic_virtual_psm_ += 2;
     if (classic_virtual_psm_ >= kFinalClassicVirtualPsm) {
       classic_virtual_psm_ = kInitialClassicVirtualPsm;
@@ -118,7 +116,7 @@ uint16_t bluetooth::legacy::shim::L2cap::GetNextVirtualPsm(uint16_t real_psm) {
 }
 
 uint16_t bluetooth::legacy::shim::L2cap::GetNextDynamicLePsm() {
-  while (Le().IsPsmAllocated(le_dynamic_psm_)) {
+  while (Le().IsPsmRegistered(le_dynamic_psm_)) {
     le_dynamic_psm_++;
     if (le_dynamic_psm_ > kFinalLeDynamicPsm) {
       le_dynamic_psm_ = kInitialLeDynamicPsm;
@@ -128,7 +126,7 @@ uint16_t bluetooth::legacy::shim::L2cap::GetNextDynamicLePsm() {
 }
 
 uint16_t bluetooth::legacy::shim::L2cap::GetNextDynamicClassicPsm() {
-  while (Classic().IsPsmAllocated(classic_dynamic_psm_)) {
+  while (Classic().IsPsmRegistered(classic_dynamic_psm_)) {
     classic_dynamic_psm_ += 2;
     if (classic_dynamic_psm_ > kFinalClassicDynamicPsm) {
       classic_dynamic_psm_ = kInitialClassicDynamicPsm;
@@ -154,7 +152,6 @@ void bluetooth::legacy::shim::L2cap::RegisterService(
   if (!enable_snoop) {
     LOG_WARN(LOG_TAG, "UNIMPLEMENTED Cannot disable snooping on psm:%d", psm);
   }
-
   Classic().RegisterPsm(psm, callbacks);
 
   std::promise<void> register_completed;
@@ -188,11 +185,9 @@ void bluetooth::legacy::shim::L2cap::OnRemoteInitiatedConnectionCreated(
 
   CHECK(!ConnectionExists(cid));
   cid_to_psm_map_[cid] = psm;
-  SetCallbacks(cid, Classic().Callbacks(psm));
-  const tL2CAP_APPL_INFO* callbacks = Classic().Callbacks(psm);
-  CHECK(callbacks != nullptr);
-  callbacks->pL2CA_ConnectInd_Cb(raw_address, cid, psm /* UNUSED */,
-                                 0 /* UNUSED */);
+  SetDownstreamCallbacks(cid);
+  Classic().Callbacks(psm)->pL2CA_ConnectInd_Cb(raw_address, cid, psm,
+                                                kUnusedId);
 }
 
 void bluetooth::legacy::shim::L2cap::UnregisterService(uint16_t psm) {
@@ -205,7 +200,6 @@ void bluetooth::legacy::shim::L2cap::UnregisterService(uint16_t psm) {
   // TODO(cmanton) Check for open channels before unregistering
   bluetooth::shim::GetL2cap()->UnregisterService(psm);
   Classic().UnregisterPsm(psm);
-  Classic().DeallocatePsm(psm);
 }
 
 uint16_t bluetooth::legacy::shim::L2cap::CreateConnection(
@@ -241,8 +235,8 @@ uint16_t bluetooth::legacy::shim::L2cap::CreateConnection(
               " connection_interface_descriptor:%hd",
               psm, raw_address.ToString().c_str(), cid);
     CHECK(!ConnectionExists(cid));
+    cid_to_callback_map_[cid] = Classic().Callbacks(psm);
     cid_to_psm_map_[cid] = psm;
-    SetCallbacks(cid, Classic().Callbacks(psm));
   }
   return cid;
 }
@@ -253,11 +247,13 @@ void bluetooth::legacy::shim::L2cap::OnLocalInitiatedConnectionCreated(
             "Sending connection confirm to the upper stack but really "
             "a connection to %s has already been done cid:%hd",
             string_address.c_str(), cid);
-  // TODO(cmanton) Make sure the device is correct for locally initiated
-  const tL2CAP_APPL_INFO* callbacks = Classic().Callbacks(psm);
-  CHECK(callbacks != nullptr);
-  callbacks->pL2CA_ConnectCfm_Cb(cid, kConnectionSuccess);
-};
+  uint16_t status = kConnectionFail;
+  if (cid != kInvalidConnectionInterfaceDescriptor) {
+    SetDownstreamCallbacks(cid);
+    status = kConnectionSuccess;
+  }
+  Classic().Callbacks(psm)->pL2CA_ConnectCfm_Cb(cid, status);
+}
 
 bool bluetooth::legacy::shim::L2cap::Write(uint16_t cid, BT_HDR* bt_hdr) {
   CHECK(bt_hdr != nullptr);
@@ -271,40 +267,7 @@ bool bluetooth::legacy::shim::L2cap::Write(uint16_t cid, BT_HDR* bt_hdr) {
   return true;
 }
 
-bool bluetooth::legacy::shim::L2cap::WriteFlushable(uint16_t cid,
-                                                    BT_HDR* bt_hdr) {
-  CHECK(bt_hdr != nullptr);
-  const uint8_t* data = bt_hdr->data + bt_hdr->offset;
-  size_t len = bt_hdr->len;
-  if (!ConnectionExists(cid) || len == 0) {
-    return false;
-  }
-  bluetooth::shim::GetL2cap()->WriteFlushable(cid, data, len);
-  return true;
-}
-
-bool bluetooth::legacy::shim::L2cap::WriteNonFlushable(uint16_t cid,
-                                                       BT_HDR* bt_hdr) {
-  CHECK(bt_hdr != nullptr);
-  const uint8_t* data = bt_hdr->data + bt_hdr->offset;
-  size_t len = bt_hdr->len;
-  if (!ConnectionExists(cid) || len == 0) {
-    return false;
-  }
-  bluetooth::shim::GetL2cap()->WriteNonFlushable(cid, data, len);
-  return true;
-}
-
-bool bluetooth::legacy::shim::L2cap::SetCallbacks(
-    uint16_t cid, const tL2CAP_APPL_INFO* callbacks) {
-  CHECK(callbacks != nullptr);
-  CHECK(ConnectionExists(cid));
-  LOG_ASSERT(cid_to_callback_map_.find(cid) == cid_to_callback_map_.end())
-      << "Already have callbacks registered for "
-         "connection_interface_descriptor:"
-      << cid;
-  cid_to_callback_map_[cid] = callbacks;
-
+void bluetooth::legacy::shim::L2cap::SetDownstreamCallbacks(uint16_t cid) {
   bluetooth::shim::GetL2cap()->SetReadDataReadyCallback(
       cid, [this](uint16_t cid, std::vector<const uint8_t> data) {
         LOG_DEBUG(LOG_TAG, "OnDataReady cid:%hd len:%zd", cid, data.size());
@@ -319,20 +282,23 @@ bool bluetooth::legacy::shim::L2cap::SetCallbacks(
   bluetooth::shim::GetL2cap()->SetConnectionClosedCallback(
       cid, [this](uint16_t cid, int error_code) {
         LOG_DEBUG(LOG_TAG, "OnChannel closed callback cid:%hd", cid);
-        if (cid_to_callback_map_.find(cid) != cid_to_callback_map_.end()) {
-          cid_to_callback_map_[cid]->pL2CA_DisconnectInd_Cb(
-              cid, kDisconnectResponseRequired);
-          cid_to_callback_map_.erase(cid);
-        } else if (cid_closing_set_.count(cid) == 1) {
-          cid_closing_set_.erase(cid);
-        } else {
+        if (cid_to_callback_map_.find(cid) == cid_to_callback_map_.end()) {
           LOG_WARN(LOG_TAG, "%s Unexpected channel closure cid:%hd", __func__,
                    cid);
+          return;
         }
         CHECK(cid_to_psm_map_.find(cid) != cid_to_psm_map_.end());
         cid_to_psm_map_.erase(cid);
+
+        if (cid_closing_set_.count(cid) == 1) {
+          cid_closing_set_.erase(cid);
+          cid_to_callback_map_[cid]->pL2CA_DisconnectCfm_Cb(cid, kUnusedResult);
+        } else {
+          cid_to_callback_map_[cid]->pL2CA_DisconnectInd_Cb(
+              cid, kDisconnectResponseRequired);
+        }
+        cid_to_callback_map_.erase(cid);
       });
-  return true;
 }
 
 bool bluetooth::legacy::shim::L2cap::ConnectResponse(
@@ -353,8 +319,6 @@ bool bluetooth::legacy::shim::L2cap::ConfigRequest(
 
   bluetooth::shim::GetL2cap()->SendLoopbackResponse([this, cid]() {
     CHECK(ConnectionExists(cid));
-    const tL2CAP_APPL_INFO* callbacks = cid_to_callback_map_[cid];
-    CHECK(callbacks != nullptr);
     tL2CAP_CFG_INFO cfg_info{
         .result = L2CAP_CFG_OK,
         .mtu_present = false,
@@ -365,8 +329,8 @@ bool bluetooth::legacy::shim::L2cap::ConfigRequest(
         .ext_flow_spec_present = false,
         .flags = 0,
     };
-    callbacks->pL2CA_ConfigCfm_Cb(cid, &cfg_info);
-    callbacks->pL2CA_ConfigInd_Cb(cid, &cfg_info);
+    cid_to_callback_map_[cid]->pL2CA_ConfigCfm_Cb(cid, &cfg_info);
+    cid_to_callback_map_[cid]->pL2CA_ConfigInd_Cb(cid, &cfg_info);
   });
   return true;
 }
@@ -384,9 +348,8 @@ bool bluetooth::legacy::shim::L2cap::ConfigResponse(
 bool bluetooth::legacy::shim::L2cap::DisconnectRequest(uint16_t cid) {
   CHECK(ConnectionExists(cid));
   LOG_DEBUG(LOG_TAG, "%s cid:%hu", __func__, cid);
-  bluetooth::shim::GetL2cap()->CloseConnection(cid);
-  cid_to_callback_map_.erase(cid);
   cid_closing_set_.insert(cid);
+  bluetooth::shim::GetL2cap()->CloseConnection(cid);
   return true;
 }
 
