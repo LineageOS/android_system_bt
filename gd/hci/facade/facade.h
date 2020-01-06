@@ -19,14 +19,15 @@
 #include <grpc++/grpc++.h>
 
 #include "grpc/grpc_module.h"
-#include "hci/acl_manager.h"
+#include "hci/hci_layer.h"
 
 namespace bluetooth {
 namespace hci {
+namespace facade {
 
-class AclManagerFacadeService;
+class HciLayerFacadeService;
 
-class AclManagerFacadeModule : public ::bluetooth::grpc::GrpcFacadeModule {
+class HciLayerFacadeModule : public ::bluetooth::grpc::GrpcFacadeModule {
  public:
   static const ModuleFactory Factory;
 
@@ -36,23 +37,9 @@ class AclManagerFacadeModule : public ::bluetooth::grpc::GrpcFacadeModule {
   ::grpc::Service* GetService() const override;
 
  private:
-  AclManagerFacadeService* service_;
+  HciLayerFacadeService* service_;
 };
 
-class ClassicSecurityManagerFacadeService;
-
-class ClassicSecurityManagerFacadeModule : public ::bluetooth::grpc::GrpcFacadeModule {
- public:
-  static const ModuleFactory Factory;
-
-  void ListDependencies(ModuleList* list) override;
-  void Start() override;
-  void Stop() override;
-  ::grpc::Service* GetService() const override;
-
- private:
-  ClassicSecurityManagerFacadeService* service_;
-};
-
+}  // namespace facade
 }  // namespace hci
 }  // namespace bluetooth

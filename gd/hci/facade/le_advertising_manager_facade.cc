@@ -42,7 +42,7 @@ using ::grpc::Status;
 using ::bluetooth::facade::BluetoothAddress;
 using ::bluetooth::facade::BluetoothAddressTypeEnum;
 
-hci::GapData GapDataFromProto(const GapData& gap_data_proto) {
+hci::GapData GapDataFromProto(const GapDataMsg& gap_data_proto) {
   hci::GapData gap_data;
   auto data_copy = std::make_shared<std::vector<uint8_t>>(gap_data_proto.data().begin(), gap_data_proto.data().end());
   packet::PacketView<packet::kLittleEndian> packet(data_copy);
@@ -128,9 +128,8 @@ class LeAdvertisingManagerFacadeService : public LeAdvertisingManagerFacade::Ser
     ASSERT(facade_handler_ != nullptr);
   }
 
-  ::grpc::Status CreateAdvertiser(::grpc::ServerContext* context,
-                                  const ::bluetooth::hci::facade::CreateAdvertiserRequest* request,
-                                  ::bluetooth::hci::facade::CreateAdvertiserResponse* response) override {
+  ::grpc::Status CreateAdvertiser(::grpc::ServerContext* context, const CreateAdvertiserRequest* request,
+                                  CreateAdvertiserResponse* response) override {
     hci::AdvertisingConfig config = {};
     if (!AdvertisingConfigFromProto(request->config(), &config)) {
       LOG_WARN("Error parsing advertising config %s", request->SerializeAsString().c_str());
@@ -151,23 +150,22 @@ class LeAdvertisingManagerFacadeService : public LeAdvertisingManagerFacade::Ser
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status ExtendedCreateAdvertiser(
-      ::grpc::ServerContext* context, const ::bluetooth::hci::facade::ExtendedCreateAdvertiserRequest* request,
-      ::bluetooth::hci::facade::ExtendedCreateAdvertiserResponse* response) override {
+  ::grpc::Status ExtendedCreateAdvertiser(::grpc::ServerContext* context,
+                                          const ExtendedCreateAdvertiserRequest* request,
+                                          ExtendedCreateAdvertiserResponse* response) override {
     LOG_WARN("ExtendedCreateAdvertiser is not implemented");
     response->set_advertiser_id(LeAdvertisingManager::kInvalidId);
     return ::grpc::Status(::grpc::StatusCode::UNIMPLEMENTED, "ExtendedCreateAdvertiser is not implemented");
   }
 
-  ::grpc::Status GetNumberOfAdvertisingInstances(
-      ::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
-      ::bluetooth::hci::facade::GetNumberOfAdvertisingInstancesResponse* response) override {
+  ::grpc::Status GetNumberOfAdvertisingInstances(::grpc::ServerContext* context,
+                                                 const ::google::protobuf::Empty* request,
+                                                 GetNumberOfAdvertisingInstancesResponse* response) override {
     response->set_num_advertising_instances(le_advertising_manager_->GetNumberOfAdvertisingInstances());
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status RemoveAdvertiser(::grpc::ServerContext* context,
-                                  const ::bluetooth::hci::facade::RemoveAdvertiserRequest* request,
+  ::grpc::Status RemoveAdvertiser(::grpc::ServerContext* context, const RemoveAdvertiserRequest* request,
                                   ::google::protobuf::Empty* response) override {
     if (request->advertiser_id() == LeAdvertisingManager::kInvalidId) {
       LOG_WARN("Invalid advertiser ID %d", request->advertiser_id());
