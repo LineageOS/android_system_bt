@@ -13,8 +13,9 @@ service RootFacade {
 enum BluetoothModule {
   HAL = 0;
   HCI = 1;
-  L2CAP = 2;
-  SECURITY = 3;
+  HCI_INTERFACES = 2;
+  L2CAP = 3;
+  SECURITY = 4;
 }
 
 message StartStackRequest {
