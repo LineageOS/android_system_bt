@@ -210,14 +210,7 @@ void BTA_DmDiscoverUUID(const RawAddress& bd_addr, const Uuid& uuid,
 }
 
 /** This function initiates a bonding procedure with a peer device */
-void BTA_DmBond(const RawAddress& bd_addr) {
-  do_in_main_thread(FROM_HERE,
-                    base::Bind(bta_dm_bond, bd_addr, BTA_TRANSPORT_UNKNOWN));
-}
-
-/** This function initiates a bonding procedure with a peer device */
-void BTA_DmBondByTransport(const RawAddress& bd_addr,
-                           tBTA_TRANSPORT transport) {
+void BTA_DmBond(const RawAddress& bd_addr, tBTA_TRANSPORT transport) {
   do_in_main_thread(FROM_HERE, base::Bind(bta_dm_bond, bd_addr, transport));
 }
 
