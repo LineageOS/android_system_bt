@@ -3,7 +3,6 @@ syntax = "proto3";
 package bluetooth.hal;
 
 import "google/protobuf/empty.proto";
-import "facade/common.proto";
 
 service HciHalFacade {
   rpc SendHciResetCommand(google.protobuf.Empty) returns (google.protobuf.Empty) {}
