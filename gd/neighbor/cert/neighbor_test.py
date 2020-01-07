@@ -42,7 +42,7 @@ class NeighborTest(GdFacadeOnlyBaseTestClass):
         self.device_under_test.rootservice.StartStack(
             facade_rootservice.StartStackRequest(
                 module_under_test=facade_rootservice.BluetoothModule.Value(
-                    'HCI'),))
+                    'HCI_INTERFACES'),))
         self.cert_device.rootservice.StartStack(
             facade_rootservice.StartStackRequest(
                 module_under_test=facade_rootservice.BluetoothModule.Value(

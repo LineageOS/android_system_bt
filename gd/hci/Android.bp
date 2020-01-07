@@ -39,7 +39,8 @@ filegroup {
     name: "BluetoothFacade_hci_layer",
     srcs: [
         "facade/facade.cc",
-        "facade/le_advertising_manager_facade.cc"
+        "facade/le_advertising_manager_facade.cc",
+        "facade/le_scanning_manager_facade.cc",
     ],
 }
 

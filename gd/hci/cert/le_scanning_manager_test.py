@@ -28,13 +28,13 @@ from cert.event_asserts import EventAsserts
 from google.protobuf import empty_pb2 as empty_proto
 from facade import rootservice_pb2 as facade_rootservice
 from hci.facade import facade_pb2 as hci_facade
-from hci.facade import \
-  le_advertising_manager_facade_pb2 as le_advertising_facade
+from hci.facade import le_scanning_manager_facade_pb2 as le_scanning_facade
+from hci.facade import le_advertising_manager_facade_pb2 as le_advertising_facade
 from bluetooth_packets_python3 import hci_packets
 from facade import common_pb2 as common
 
 
-class LeAdvertisingManagerTest(GdFacadeOnlyBaseTestClass):
+class LeScanningManagerTest(GdFacadeOnlyBaseTestClass):
 
     def setup_test(self):
         self.cert_device = self.gd_devices[0]
@@ -47,7 +47,7 @@ class LeAdvertisingManagerTest(GdFacadeOnlyBaseTestClass):
         self.cert_device.rootservice.StartStack(
             facade_rootservice.StartStackRequest(
                 module_under_test=facade_rootservice.BluetoothModule.Value(
-                    'HCI'),))
+                    'HCI_INTERFACES'),))
 
         self.device_under_test.wait_channel_ready()
         self.cert_device.wait_channel_ready()
@@ -74,30 +74,16 @@ class LeAdvertisingManagerTest(GdFacadeOnlyBaseTestClass):
         else:
             self.cert_device.hci.EnqueueCommandWithStatus(cmd)
 
-    def test_le_ad_scan_dut_advertises(self):
-        self.register_for_le_event(hci_packets.SubeventCode.ADVERTISING_REPORT)
+    def test_le_ad_scan_dut_scans(self):
         with EventCallbackStream(
-                self.cert_device.hci.FetchLeSubevents(
-                    empty_proto.Empty())) as hci_le_event_stream:
-            # CERT Scans
-            self.enqueue_hci_command(
-                hci_packets.LeSetRandomAddressBuilder('0C:05:04:03:02:01'),
-                True)
-            self.enqueue_hci_command(
-                hci_packets.LeSetScanParametersBuilder(
-                    hci_packets.LeScanType.ACTIVE, 40, 20,
-                    hci_packets.AddressType.RANDOM_DEVICE_ADDRESS,
-                    hci_packets.LeSetScanningFilterPolicy.ACCEPT_ALL), True)
-            self.enqueue_hci_command(
-                hci_packets.LeSetScanEnableBuilder(
-                    hci_packets.Enable.ENABLED,
-                    hci_packets.Enable.DISABLED),  # duplicate filtering
-                True)
+                # DUT Scans
+                self.device_under_test.hci_le_scanning_manager.StartScan(
+                    empty_proto.Empty())) as advertising_event_stream:
 
-            # DUT Advertises
+            # CERT Advertises
             gap_name = hci_packets.GapData()
             gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
-            gap_name.data = list(bytes(b'Im_The_DUT!'))
+            gap_name.data = list(bytes(b'Im_The_CERT!'))
             gap_data = le_advertising_facade.GapDataMsg(
                 data=bytes(gap_name.Serialize()))
             config = le_advertising_facade.AdvertisingConfig(
@@ -110,25 +96,21 @@ class LeAdvertisingManagerTest(GdFacadeOnlyBaseTestClass):
                 address_type=common.RANDOM_DEVICE_ADDRESS,
                 peer_address_type=common.PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
                 peer_address=common.BluetoothAddress(
-                    address=bytes(b'0D:05:04:03:02:01')),
+                    address=bytes(b'0C:05:04:03:02:01')),
                 channel_map=7,
                 filter_policy=le_advertising_facade.AdvertisingFilterPolicy.
                 ALL_DEVICES)
             request = le_advertising_facade.CreateAdvertiserRequest(
                 config=config)
 
-            create_response = self.device_under_test.hci_le_advertising_manager.CreateAdvertiser(
+            create_response = self.cert_device.hci_le_advertising_manager.CreateAdvertiser(
                 request)
 
-            hci_event_asserts = EventAsserts(hci_le_event_stream)
+            hci_event_asserts = EventAsserts(advertising_event_stream)
             hci_event_asserts.assert_event_occurs(
-                lambda packet: b'Im_The_DUT' in packet.event)
+                lambda packet: b'Im_The_CERT' in packet.event)
 
             remove_request = le_advertising_facade.RemoveAdvertiserRequest(
                 advertiser_id=create_response.advertiser_id)
-            self.device_under_test.hci_le_advertising_manager.RemoveAdvertiser(
+            self.cert_device.hci_le_advertising_manager.RemoveAdvertiser(
                 remove_request)
-            self.enqueue_hci_command(
-                hci_packets.LeSetScanEnableBuilder(hci_packets.Enable.DISABLED,
-                                                   hci_packets.Enable.DISABLED),
-                True)
