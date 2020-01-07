@@ -103,46 +103,57 @@ struct bluetooth::shim::Stack::impl {
   }
 
   IAdvertising* GetAdvertising() {
+    ASSERT(is_running_);
     return stack_manager_.GetInstance<bluetooth::shim::Advertising>();
   }
 
   IController* GetController() {
+    ASSERT(is_running_);
     return stack_manager_.GetInstance<bluetooth::shim::Controller>();
   }
 
   IConnectability* GetConnectability() {
+    ASSERT(is_running_);
     return stack_manager_.GetInstance<bluetooth::shim::Connectability>();
   }
 
   IDiscoverability* GetDiscoverability() {
+    ASSERT(is_running_);
     return stack_manager_.GetInstance<bluetooth::shim::Discoverability>();
   }
 
   IHciLayer* GetHciLayer() {
+    ASSERT(is_running_);
     return stack_manager_.GetInstance<bluetooth::shim::HciLayer>();
   }
 
   IInquiry* GetInquiry() {
+    ASSERT(is_running_);
     return stack_manager_.GetInstance<bluetooth::shim::Inquiry>();
   }
 
   IL2cap* GetL2cap() {
+    ASSERT(is_running_);
     return stack_manager_.GetInstance<bluetooth::shim::L2cap>();
   }
 
   IName* GetName() {
+    ASSERT(is_running_);
     return stack_manager_.GetInstance<bluetooth::shim::Name>();
   }
 
   IPage* GetPage() {
+    ASSERT(is_running_);
     return stack_manager_.GetInstance<bluetooth::shim::Page>();
   }
 
   IScanning* GetScanning() {
+    ASSERT(is_running_);
     return stack_manager_.GetInstance<bluetooth::shim::Scanning>();
   }
 
   ISecurity* GetSecurity() {
+    ASSERT(is_running_);
     return stack_manager_.GetInstance<bluetooth::shim::Security>();
   }
 

@@ -30,6 +30,8 @@ uint16_t bluetooth::shim::L2CA_Register(uint16_t client_psm,
                                         tL2CAP_APPL_INFO* callbacks,
                                         bool enable_snoop,
                                         tL2CAP_ERTM_INFO* p_ertm_info) {
+  CHECK(callbacks != nullptr);
+
   if (L2C_INVALID_PSM(client_psm)) {
     LOG_ERROR(LOG_TAG, "%s Invalid classic psm:%hd", __func__, client_psm);
     return 0;
