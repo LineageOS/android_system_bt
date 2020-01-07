@@ -66,10 +66,9 @@ static const uint16_t bta_hh_uuid_to_rtp_type[BTA_LE_HID_RTP_UUID_MAX][2] = {
 
 static void bta_hh_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data);
 static void bta_hh_le_add_dev_bg_conn(tBTA_HH_DEV_CB* p_cb, bool check_bond);
-// TODO(jpawlowski): uncomment when fixed
-// static void bta_hh_process_cache_rpt (tBTA_HH_DEV_CB *p_cb,
-//                                       tBTA_HH_RPT_CACHE_ENTRY *p_rpt_cache,
-//                                       uint8_t num_rpt);
+static void bta_hh_process_cache_rpt(tBTA_HH_DEV_CB* p_cb,
+                                     tBTA_HH_RPT_CACHE_ENTRY* p_rpt_cache,
+                                     uint8_t num_rpt);
 
 #if (BTA_HH_DEBUG == TRUE)
 static const char* bta_hh_le_rpt_name[4] = {"UNKNOWN", "INPUT", "OUTPUT",
@@ -1001,14 +1000,12 @@ void bta_hh_security_cmpl(tBTA_HH_DEV_CB* p_cb,
       APPL_TRACE_DEBUG("bta_hh_security_cmpl no reports loaded, try to load");
 
       /* start loading the cache if not in stack */
-      // TODO(jpawlowski): cache storage is broken, fix it
-      // tBTA_HH_RPT_CACHE_ENTRY     *p_rpt_cache;
-      // uint8_t                       num_rpt = 0;
-      // if ((p_rpt_cache = bta_hh_le_co_cache_load(p_cb->addr, &num_rpt,
-      // p_cb->app_id)) != NULL)
-      // {
-      //     bta_hh_process_cache_rpt(p_cb, p_rpt_cache, num_rpt);
-      // }
+      tBTA_HH_RPT_CACHE_ENTRY* p_rpt_cache;
+      uint8_t num_rpt = 0;
+      if ((p_rpt_cache = bta_hh_le_co_cache_load(p_cb->addr, &num_rpt,
+                                                 p_cb->app_id)) != NULL) {
+        bta_hh_process_cache_rpt(p_cb, p_rpt_cache, num_rpt);
+      }
     }
     /*  discovery has been done for HID service */
     if (p_cb->app_id != 0 && p_cb->hid_srvc.in_use) {
@@ -1576,9 +1573,11 @@ void bta_hh_le_input_rpt_notify(tBTA_GATTC_NOTIFY* p_data) {
 
   app_id = p_dev_cb->app_id;
 
-  p_rpt =
-      bta_hh_le_find_report_entry(p_dev_cb, p_dev_cb->hid_srvc.srvc_inst_id,
-                                  p_char->uuid.As16Bit(), p_char->value_handle);
+  const gatt::Service* p_svc =
+      BTA_GATTC_GetOwningService(p_dev_cb->conn_id, p_char->value_handle);
+
+  p_rpt = bta_hh_le_find_report_entry(
+      p_dev_cb, p_svc->handle, p_char->uuid.As16Bit(), p_char->value_handle);
   if (p_rpt == NULL) {
     APPL_TRACE_ERROR(
         "%s: notification received for Unknown Report, uuid: %s, handle: "
@@ -2165,52 +2164,40 @@ void bta_hh_le_hid_read_rpt_clt_cfg(const RawAddress& bd_addr, uint8_t rpt_id) {
  * Parameters:
  *
  ******************************************************************************/
-// TODO(jpawlowski): uncomment when fixed
-// static void bta_hh_process_cache_rpt (tBTA_HH_DEV_CB *p_cb,
-//                                       tBTA_HH_RPT_CACHE_ENTRY *p_rpt_cache,
-//                                       uint8_t num_rpt)
-// {
-//     uint8_t                       i = 0;
-//     tBTA_HH_LE_RPT              *p_rpt;
+static void bta_hh_process_cache_rpt(tBTA_HH_DEV_CB* p_cb,
+                                     tBTA_HH_RPT_CACHE_ENTRY* p_rpt_cache,
+                                     uint8_t num_rpt) {
+  uint8_t i = 0;
+  tBTA_HH_LE_RPT* p_rpt;
 
-//     if (num_rpt != 0)  /* no cache is found */
-//     {
-//         p_cb->hid_srvc.in_use = true;
+  if (num_rpt != 0) /* no cache is found */
+  {
+    p_cb->hid_srvc.in_use = true;
 
-//         /* set the descriptor info */
-//         p_cb->hid_srvc.descriptor.dl_len =
-//                 p_cb->dscp_info.descriptor.dl_len;
-//         p_cb->hid_srvc.descriptor.dsc_list =
-//                     p_cb->dscp_info.descriptor.dsc_list;
+    /* set the descriptor info */
+    p_cb->hid_srvc.descriptor.dl_len = p_cb->dscp_info.descriptor.dl_len;
+    p_cb->hid_srvc.descriptor.dsc_list = p_cb->dscp_info.descriptor.dsc_list;
 
-//         for (; i <num_rpt; i ++, p_rpt_cache ++)
-//         {
-//             if ((p_rpt = bta_hh_le_find_alloc_report_entry (p_cb,
-//                                                p_rpt_cache->srvc_inst_id,
-//                                                p_rpt_cache->rpt_uuid,
-//                                                p_rpt_cache->char_inst_id,
-//                                                p_rpt_cache->prop))  == NULL)
-//             {
-//                 APPL_TRACE_ERROR("bta_hh_process_cache_rpt: allocation report
-//                 entry failure");
-//                 break;
-//             }
-//             else
-//             {
-//                 p_rpt->rpt_type =  p_rpt_cache->rpt_type;
-//                 p_rpt->rpt_id   =  p_rpt_cache->rpt_id;
+    for (; i < num_rpt; i++, p_rpt_cache++) {
+      if ((p_rpt = bta_hh_le_find_alloc_report_entry(
+               p_cb, p_rpt_cache->srvc_inst_id, p_rpt_cache->rpt_uuid,
+               p_rpt_cache->char_inst_id)) == NULL) {
+        APPL_TRACE_ERROR(
+            "bta_hh_process_cache_rpt: allocation report entry failure");
+        break;
+      } else {
+        p_rpt->rpt_type = p_rpt_cache->rpt_type;
+        p_rpt->rpt_id = p_rpt_cache->rpt_id;
 
-//                 if (p_rpt->uuid == GATT_UUID_HID_BT_KB_INPUT ||
-//                     p_rpt->uuid == GATT_UUID_HID_BT_MOUSE_INPUT ||
-//                     (p_rpt->uuid == GATT_UUID_HID_REPORT && p_rpt->rpt_type
-//                     == BTA_HH_RPTT_INPUT))
-//                 {
-//                     p_rpt->client_cfg_value =
-//                     GATT_CLT_CONFIG_NOTIFICATION;
-//                 }
-//             }
-//         }
-//     }
-// }
+        if (p_rpt->uuid == GATT_UUID_HID_BT_KB_INPUT ||
+            p_rpt->uuid == GATT_UUID_HID_BT_MOUSE_INPUT ||
+            (p_rpt->uuid == GATT_UUID_HID_REPORT &&
+             p_rpt->rpt_type == BTA_HH_RPTT_INPUT)) {
+          p_rpt->client_cfg_value = GATT_CLT_CONFIG_NOTIFICATION;
+        }
+      }
+    }
+  }
+}
 
 #endif

@@ -16,23 +16,30 @@
 
 #pragma once
 
-/**
- * This common file provides the only visibility from the legacy stack into GD stack.
- *
- * Only interfaces or APIs should be exported.
- *
- * Only common data structures should be used to pass data between the stacks.
- *
- */
-#include "gd/shim/iadvertising.h"
-#include "gd/shim/iconnectability.h"
-#include "gd/shim/icontroller.h"
-#include "gd/shim/idiscoverability.h"
-#include "gd/shim/ihci_layer.h"
-#include "gd/shim/iinquiry.h"
-#include "gd/shim/il2cap.h"
-#include "gd/shim/iname.h"
-#include "gd/shim/ipage.h"
-#include "gd/shim/iscanning.h"
-#include "gd/shim/isecurity.h"
-#include "gd/shim/istack.h"
+#include <grpc++/grpc++.h>
+
+#include "grpc/grpc_module.h"
+#include "hci/hci_layer.h"
+
+namespace bluetooth {
+namespace hci {
+namespace facade {
+
+class HciLayerFacadeService;
+
+class HciLayerFacadeModule : public ::bluetooth::grpc::GrpcFacadeModule {
+ public:
+  static const ModuleFactory Factory;
+
+  void ListDependencies(ModuleList* list) override;
+  void Start() override;
+  void Stop() override;
+  ::grpc::Service* GetService() const override;
+
+ private:
+  HciLayerFacadeService* service_;
+};
+
+}  // namespace facade
+}  // namespace hci
+}  // namespace bluetooth

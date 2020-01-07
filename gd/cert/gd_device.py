@@ -14,11 +14,14 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import logging
+
 from facade import rootservice_pb2_grpc as facade_rootservice_pb2_grpc
 from gd_device_base import GdDeviceBase, GdDeviceConfigError, replace_vars
 from hal import facade_pb2_grpc as hal_facade_pb2_grpc
-from hci import facade_pb2_grpc as hci_facade_pb2_grpc
+from hci.facade import facade_pb2_grpc as hci_facade_pb2_grpc
 from hci.facade import le_advertising_manager_facade_pb2_grpc
+from neighbor.facade import facade_pb2_grpc as neighbor_facade_pb2_grpc
 from l2cap.classic import facade_pb2_grpc as l2cap_facade_pb2_grpc
 from security import facade_pb2_grpc as security_facade_pb2_grpc
 
@@ -52,6 +55,7 @@ def get_instances_with_configs(configs):
     for config in configs:
         resolved_cmd = []
         for entry in config["cmd"]:
+            logging.debug(entry)
             resolved_cmd.append(replace_vars(entry, config))
         devices.append(
             GdDevice(config["grpc_port"], config["grpc_root_server_port"],
@@ -72,12 +76,12 @@ class GdDevice(GdDeviceBase):
         self.hal = hal_facade_pb2_grpc.HciHalFacadeStub(self.grpc_channel)
         self.controller_read_only_property = facade_rootservice_pb2_grpc.ReadOnlyPropertyStub(
             self.grpc_channel)
-        self.hci = hci_facade_pb2_grpc.AclManagerFacadeStub(self.grpc_channel)
-        self.hci_classic_security = hci_facade_pb2_grpc.ClassicSecurityManagerFacadeStub(
-            self.grpc_channel)
+        self.hci = hci_facade_pb2_grpc.HciLayerFacadeStub(self.grpc_channel)
         self.l2cap = l2cap_facade_pb2_grpc.L2capClassicModuleFacadeStub(
             self.grpc_channel)
         self.hci_le_advertising_manager = le_advertising_manager_facade_pb2_grpc.LeAdvertisingManagerFacadeStub(
+            self.grpc_channel)
+        self.neighbor = neighbor_facade_pb2_grpc.NeighborFacadeStub(
             self.grpc_channel)
         self.security = security_facade_pb2_grpc.SecurityModuleFacadeStub(
             self.grpc_channel)
