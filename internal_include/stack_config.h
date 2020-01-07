@@ -20,7 +20,7 @@
 
 #include <stdbool.h>
 
-#include "module.h"
+#include "btcore/include/module.h"
 #include "osi/include/config.h"
 
 static const char STACK_CONFIG_MODULE[] = "stack_config_module";
