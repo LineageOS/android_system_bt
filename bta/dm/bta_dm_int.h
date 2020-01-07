@@ -480,7 +480,7 @@ extern void bta_dm_set_dev_name(const std::vector<uint8_t>&);
 extern void bta_dm_set_visibility(tBTA_DM_DISC, tBTA_DM_CONN, uint8_t, uint8_t);
 extern void bta_dm_set_scan_config(tBTA_DM_MSG* p_data);
 extern void bta_dm_vendor_spec_command(tBTA_DM_MSG* p_data);
-extern void bta_dm_bond(const RawAddress&, tBTA_TRANSPORT);
+extern void bta_dm_bond(const RawAddress&, tBLE_ADDR_TYPE, tBTA_TRANSPORT);
 extern void bta_dm_bond_cancel(const RawAddress&);
 extern void bta_dm_pin_reply(std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg);
 extern void bta_dm_add_device(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg);

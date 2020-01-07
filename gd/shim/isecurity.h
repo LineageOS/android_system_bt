@@ -26,7 +26,7 @@ namespace bluetooth {
 namespace shim {
 
 struct ISecurity {
-  virtual void CreateBond(std::string address) = 0;
+  virtual void CreateBond(std::string address, uint8_t address_type, uint8_t transport) = 0;
 
   virtual ~ISecurity() {}
 };
