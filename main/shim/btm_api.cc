@@ -1061,18 +1061,9 @@ bool bluetooth::shim::BTM_BleLocalPrivacyEnabled(void) {
   return controller_get_interface()->supports_ble_privacy();
 }
 
-tBTM_STATUS bluetooth::shim::BTM_SecBondByTransport(const RawAddress& bd_addr,
-                                                    tBT_TRANSPORT transport,
-                                                    uint8_t pin_len,
-                                                    uint8_t* p_pin,
-                                                    uint32_t trusted_mask[]) {
-  return shim_btm.CreateBond(bd_addr, transport, pin_len, p_pin, trusted_mask);
-}
-
 tBTM_STATUS bluetooth::shim::BTM_SecBond(const RawAddress& bd_addr,
+                                         tBT_TRANSPORT transport,
                                          uint8_t pin_len, uint8_t* p_pin,
                                          uint32_t trusted_mask[]) {
-  tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
-  // TODO: do proper transport guessing
   return shim_btm.CreateBond(bd_addr, transport, pin_len, p_pin, trusted_mask);
 }
