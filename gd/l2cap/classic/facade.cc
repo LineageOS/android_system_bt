@@ -328,9 +328,9 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
           channel_->GetQueueUpEnd()->UnregisterDequeue();
         }
       }
-      channel_ = nullptr;
       classic::ConnectionCloseEvent event;
       event.mutable_remote()->set_address(channel_->GetDevice().ToString());
+      channel_ = nullptr;
       event.set_reason(static_cast<uint32_t>(error_code));
       facade_service_->pending_connection_close_.OnIncomingEvent(event);
     }
