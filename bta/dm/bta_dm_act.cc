@@ -814,14 +814,10 @@ void bta_dm_remove_all_acl(const tBTA_DM_LINK_TYPE link_type) {
 
 /** Bonds with peer device */
 void bta_dm_bond(const RawAddress& bd_addr, tBTA_TRANSPORT transport) {
-  tBTM_STATUS status;
   tBTA_DM_SEC sec_event;
   char* p_name;
 
-  if (transport == BTA_TRANSPORT_UNKNOWN)
-    status = BTM_SecBond(bd_addr, 0, NULL, 0);
-  else
-    status = BTM_SecBondByTransport(bd_addr, transport, 0, NULL, 0);
+  tBTM_STATUS status = BTM_SecBond(bd_addr, transport, 0, NULL, 0);
 
   if (bta_dm_cb.p_sec_cback && (status != BTM_CMD_STARTED)) {
     memset(&sec_event, 0, sizeof(tBTA_DM_SEC));

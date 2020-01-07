@@ -1188,20 +1188,6 @@ tBTA_STATUS BTA_DmGetCachedRemoteName(const RawAddress& remote_device,
  * Function         BTA_DmBond
  *
  * Description      This function initiates a bonding procedure with a peer
- *                  device.  The bonding procedure enables authentication
- *                  and optionally encryption on the Bluetooth link.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-extern void BTA_DmBond(const RawAddress& bd_addr);
-
-/*******************************************************************************
- *
- * Function         BTA_DmBondByTransport
- *
- * Description      This function initiates a bonding procedure with a peer
  *                  device by designated transport.  The bonding procedure
  *                  enables authentication and optionally encryption on the
  *                  Bluetooth link.
@@ -1210,8 +1196,7 @@ extern void BTA_DmBond(const RawAddress& bd_addr);
  * Returns          void
  *
  ******************************************************************************/
-extern void BTA_DmBondByTransport(const RawAddress& bd_addr,
-                                  tBTA_TRANSPORT transport);
+extern void BTA_DmBond(const RawAddress& bd_addr, tBTA_TRANSPORT transport);
 
 /*******************************************************************************
  *
