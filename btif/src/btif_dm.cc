@@ -697,7 +697,7 @@ static void btif_dm_cb_create_bond(const RawAddress& bd_addr,
     if (status != BT_STATUS_SUCCESS)
       bond_state_changed(status, bd_addr, BT_BOND_STATE_NONE);
   } else {
-    BTA_DmBondByTransport(bd_addr, transport);
+    BTA_DmBond(bd_addr, transport);
   }
   /*  Track  originator of bond creation  */
   pairing_cb.is_local_initiated = true;
