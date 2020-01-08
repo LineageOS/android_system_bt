@@ -207,7 +207,7 @@ class HciHalHostRootcanal : public HciHal {
     RUN_NO_INTR(received_size = recv(sock_fd_, buf, kH4HeaderSize, 0));
     ASSERT_LOG(received_size != -1, "Can't receive from socket: %s", strerror(errno));
     if (received_size == 0) {
-      LOG_WARN("Can't read H4 header.");
+      LOG_WARN("Can't read H4 header. EOF received");
       raise(SIGINT);
       return;
     }
