@@ -79,10 +79,6 @@ static int btif_hh_keylockstates = 0;  // The current key state of each key
 #define BTUI_HH_SECURITY (BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)
 #endif
 
-#ifndef BTUI_HH_MOUSE_SECURITY
-#define BTUI_HH_MOUSE_SECURITY (BTA_SEC_NONE)
-#endif
-
 /* HH request events */
 typedef enum {
   BTIF_HH_CONNECT_REQ_EVT = 0,
@@ -613,10 +609,9 @@ bt_status_t btif_hh_connect(const RawAddress* bd_addr) {
    request from host, for subsequent user initiated connection. If the remote is
    not in
    pagescan mode, we will do 2 retries to connect before giving up */
-  tBTA_SEC sec_mask = BTUI_HH_SECURITY;
   btif_hh_cb.status = BTIF_HH_DEV_CONNECTING;
   btif_hh_cb.pending_conn_address = *bd_addr;
-  BTA_HhOpen(*bd_addr, BTA_HH_PROTO_RPT_MODE, sec_mask);
+  BTA_HhOpen(*bd_addr, BTA_HH_PROTO_RPT_MODE, BTUI_HH_SECURITY);
 
   // TODO(jpawlowski); make cback accept const and remove tmp!
   auto tmp = *bd_addr;
