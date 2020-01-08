@@ -22,6 +22,7 @@
 #include "facade/rootservice.grpc.pb.h"
 #include "grpc/grpc_module.h"
 #include "hal/facade.h"
+#include "hci/facade/acl_manager_facade.h"
 #include "hci/facade/controller_facade.h"
 #include "hci/facade/facade.h"
 #include "hci/facade/le_advertising_manager_facade.h"
@@ -65,6 +66,7 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
       case BluetoothModule::HCI_INTERFACES:
         modules.add<::bluetooth::facade::ReadOnlyPropertyServerModule>();
         modules.add<::bluetooth::hci::facade::HciLayerFacadeModule>();
+        modules.add<::bluetooth::hci::facade::AclManagerFacadeModule>();
         modules.add<::bluetooth::hci::facade::ControllerFacadeModule>();
         modules.add<::bluetooth::hci::facade::LeAdvertisingManagerFacadeModule>();
         modules.add<::bluetooth::hci::facade::LeScanningManagerFacadeModule>();

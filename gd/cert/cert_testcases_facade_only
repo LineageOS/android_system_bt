@@ -6,3 +6,4 @@ LeScanningManagerTest
 SimpleSecurityTest
 NeighborTest
 ControllerTest
+AclManagerTest
