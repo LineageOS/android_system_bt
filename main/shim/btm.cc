@@ -601,9 +601,11 @@ size_t bluetooth::shim::Btm::GetNumberOfAdvertisingInstances() const {
 }
 
 tBTM_STATUS bluetooth::shim::Btm::CreateBond(const RawAddress& bd_addr,
+                                             tBLE_ADDR_TYPE addr_type,
                                              tBT_TRANSPORT transport,
                                              uint8_t pin_len, uint8_t* p_pin,
                                              uint32_t trusted_mask[]) {
-  bluetooth::shim::GetSecurity()->CreateBond(bd_addr.ToString());
+  bluetooth::shim::GetSecurity()->CreateBond(bd_addr.ToString(), addr_type,
+                                             transport);
   return bluetooth::shim::BTM_SUCCESS;
 }
