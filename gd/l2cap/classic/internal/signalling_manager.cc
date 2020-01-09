@@ -92,6 +92,7 @@ void ClassicSignallingManager::SendDisconnectionRequest(Cid local_cid, Cid remot
       next_signal_id_, CommandCode::DISCONNECTION_REQUEST, {}, local_cid, remote_cid, {}, {}};
   next_signal_id_++;
   pending_commands_.push(std::move(pending_command));
+  channel_configuration_[local_cid] = ChannelConfigurationState();
   if (command_just_sent_.signal_id_ == kInvalidSignalId) {
     handle_send_next_command();
   }
@@ -403,6 +404,7 @@ void ClassicSignallingManager::OnDisconnectionRequest(SignalId signal_id, Cid ci
     LOG_WARN("Disconnect request for an unknown channel");
     return;
   }
+  channel_configuration_[cid] = ChannelConfigurationState();
   auto builder = DisconnectionResponseBuilder::Create(signal_id.Value(), cid, remote_cid);
   enqueue_buffer_->Enqueue(std::move(builder), handler_);
   channel->OnClosed(hci::ErrorCode::SUCCESS);
