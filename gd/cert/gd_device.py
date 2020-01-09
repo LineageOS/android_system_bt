@@ -20,6 +20,7 @@ from facade import rootservice_pb2_grpc as facade_rootservice_pb2_grpc
 from gd_device_base import GdDeviceBase, GdDeviceConfigError, replace_vars
 from hal import facade_pb2_grpc as hal_facade_pb2_grpc
 from hci.facade import facade_pb2_grpc as hci_facade_pb2_grpc
+from hci.facade import controller_facade_pb2_grpc
 from hci.facade import le_advertising_manager_facade_pb2_grpc
 from hci.facade import le_scanning_manager_facade_pb2_grpc
 from neighbor.facade import facade_pb2_grpc as neighbor_facade_pb2_grpc
@@ -80,6 +81,7 @@ class GdDevice(GdDeviceBase):
         self.hci = hci_facade_pb2_grpc.HciLayerFacadeStub(self.grpc_channel)
         self.l2cap = l2cap_facade_pb2_grpc.L2capClassicModuleFacadeStub(
             self.grpc_channel)
+        self.hci_controller = controller_facade_pb2_grpc.ControllerFacadeStub(self.grpc_channel)
         self.hci_le_advertising_manager = le_advertising_manager_facade_pb2_grpc.LeAdvertisingManagerFacadeStub(
             self.grpc_channel)
         self.hci_le_scanning_manager = le_scanning_manager_facade_pb2_grpc.LeScanningManagerFacadeStub(
