@@ -289,14 +289,15 @@ class PendingConnection {
  public:
   PendingConnection(ConnectionInterfaceManager* connection_interface_manager, ConnectionInterfaceDescriptor cid,
                     l2cap::Psm psm, hci::Address address, ConnectionOpenCallback on_open,
-                    std::promise<uint16_t> completed)
+                    std::promise<uint16_t> completed, std::function<void()> deleter)
       : connection_interface_manager_(connection_interface_manager), cid_(cid), psm_(psm), address_(address),
-        on_open_(std::move(on_open)), completed_(std::move(completed)) {}
+        on_open_(std::move(on_open)), completed_(std::move(completed)), deleter_(deleter) {}
 
   void OnConnectionOpen(std::unique_ptr<l2cap::classic::DynamicChannel> channel) {
     LOG_DEBUG("Local initiated connection is open to device:%s for psm:%hd", address_.ToString().c_str(), psm_);
     connection_interface_manager_->AddChannel(cid_, std::move(channel));
     connection_interface_manager_->ConnectionOpened(std::move(on_open_), address_, psm_, cid_);
+    deleter_();
   }
 
   void OnConnectionFailure(l2cap::classic::DynamicChannelManager::ConnectionResult result) {
@@ -320,6 +321,7 @@ class PendingConnection {
     completed_.set_value(kInvalidConnectionInterfaceDescriptor);
     connection_interface_manager_->ConnectionFailed(std::move(on_open_), address_, psm_);
     connection_interface_manager_->FreeConnectionInterfaceDescriptor(cid_);
+    deleter_();
   }
 
  private:
@@ -329,6 +331,7 @@ class PendingConnection {
   const hci::Address address_;
   ConnectionOpenCallback on_open_;
   std::promise<uint16_t> completed_;
+  std::function<void()> deleter_;
 };
 
 class ServiceInterface {
@@ -407,7 +410,11 @@ struct L2cap::impl {
   std::unique_ptr<l2cap::classic::DynamicChannelManager> dynamic_channel_manager_;
 
   std::unordered_map<l2cap::Psm, std::shared_ptr<ServiceInterface>> psm_to_service_interface_map_;
-  std::unordered_map<l2cap::Psm, std::shared_ptr<PendingConnection>> psm_to_pending_connection_map_;
+  std::unordered_map<std::string, std::list<std::shared_ptr<PendingConnection>>> endpoint_to_pending_connection_map_;
+
+  std::string HashEndpoint(const hci::Address& address, const l2cap::Psm& psm) const {
+    return address.ToString() + "." + std::to_string(psm);
+  }
 };
 
 L2cap::impl::impl(L2cap& module, l2cap::classic::L2capClassicModule* l2cap_module)
@@ -443,14 +450,18 @@ void L2cap::impl::CreateConnection(l2cap::Psm psm, hci::Address address, Connect
   ConnectionInterfaceDescriptor cid = connection_interface_manager_.AllocateConnectionInterfaceDescriptor();
   completed.set_value(cid);
 
-  auto pending_connection = std::make_shared<PendingConnection>(&connection_interface_manager_, cid, psm, address,
-                                                                std::move(on_open), std::move(completed));
-  // TODO(cmanton) hash psm/address pair into unordered map for pending_connection
-  // This is ok for now
-  psm_to_pending_connection_map_[psm] = pending_connection;
-  // TODO(cmanton): Add ERTM mode support by changing configuratio_option in ConnectChannel()
-  //
-  LOG_DEBUG("Initiating classic connection to psm:%hd device:%s cifd:%hu", psm, address.ToString().c_str(), cid);
+  auto pending_connection = std::make_shared<PendingConnection>(
+      &connection_interface_manager_, cid, psm, address, std::move(on_open), std::move(completed),
+      [this, address, psm]() {
+        ASSERT(!endpoint_to_pending_connection_map_[HashEndpoint(address, psm)].empty());
+        endpoint_to_pending_connection_map_[HashEndpoint(address, psm)].pop_front();
+        if (endpoint_to_pending_connection_map_[HashEndpoint(address, psm)].empty()) {
+          endpoint_to_pending_connection_map_.erase(HashEndpoint(address, psm));
+        }
+      });
+  endpoint_to_pending_connection_map_[HashEndpoint(address, psm)].push_back(pending_connection);
+
+  LOG_DEBUG("Initiating classic connection to psm:%hd device:%s cid:%hu", psm, address.ToString().c_str(), cid);
   bool rc = dynamic_channel_manager_->ConnectChannel(
       address, l2cap::classic::DynamicChannelConfigurationOption(), psm,
       common::Bind(&PendingConnection::OnConnectionOpen, common::Unretained(pending_connection.get())),
