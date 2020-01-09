@@ -29,7 +29,6 @@ namespace internal {
 
 std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::AllocateChannel(Psm psm, Cid remote_cid,
                                                                              SecurityPolicy security_policy) {
-  ASSERT_LOG(!IsPsmUsed((psm)), "Psm 0x%x for device %s is already in use", psm, link_->GetDevice().ToString().c_str());
   ASSERT_LOG(IsPsmValid(psm), "Psm 0x%x is invalid", psm);
 
   if (used_remote_cid_.find(remote_cid) != used_remote_cid_.end()) {
@@ -57,7 +56,6 @@ std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::AllocateChannel(Psm
 std::shared_ptr<DynamicChannelImpl> DynamicChannelAllocator::AllocateReservedChannel(Cid reserved_cid, Psm psm,
                                                                                      Cid remote_cid,
                                                                                      SecurityPolicy security_policy) {
-  ASSERT_LOG(!IsPsmUsed((psm)), "Psm 0x%x for device %s is already in use", psm, link_->GetDevice().ToString().c_str());
   ASSERT_LOG(IsPsmValid(psm), "Psm 0x%x is invalid", psm);
 
   if (used_remote_cid_.find(remote_cid) != used_remote_cid_.end()) {
