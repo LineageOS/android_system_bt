@@ -32,7 +32,7 @@ namespace bluetooth {
 namespace shim {
 
 struct Security::impl {
-  void CreateBond(std::string address);
+  void CreateBond(std::string address, uint8_t address_type, uint8_t transport);
 
   os::Handler* Handler() /*override*/;
 
@@ -55,7 +55,7 @@ os::Handler* Security::impl::Handler() {
   return handler_;
 }
 
-void Security::impl::CreateBond(std::string address) {
+void Security::impl::CreateBond(std::string address, uint8_t address_type, uint8_t transport) {
   hci::Address bdaddr;
   if (!hci::Address::FromString(address, bdaddr)) {
     LOG_ERROR("%s bad address: %s, aborting", __func__, address.c_str());
@@ -65,8 +65,8 @@ void Security::impl::CreateBond(std::string address) {
   security_manager_->CreateBond(hci::AddressWithType{bdaddr, hci::AddressType::PUBLIC_DEVICE_ADDRESS});
 }
 
-void Security::CreateBond(std::string address) {
-  pimpl_->CreateBond(address);
+void Security::CreateBond(std::string address, uint8_t address_type, uint8_t transport) {
+  pimpl_->CreateBond(address, address_type, transport);
 }
 
 /**

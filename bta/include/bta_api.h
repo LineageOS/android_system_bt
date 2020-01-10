@@ -1196,7 +1196,8 @@ tBTA_STATUS BTA_DmGetCachedRemoteName(const RawAddress& remote_device,
  * Returns          void
  *
  ******************************************************************************/
-extern void BTA_DmBond(const RawAddress& bd_addr, tBTA_TRANSPORT transport);
+extern void BTA_DmBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
+                       tBTA_TRANSPORT transport);
 
 /*******************************************************************************
  *

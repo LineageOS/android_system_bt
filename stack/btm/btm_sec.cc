@@ -1012,19 +1012,18 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
  *
  *  Note: After 2.1 parameters are not used and preserved here not to change API
  ******************************************************************************/
-tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                        uint8_t pin_len, uint8_t* p_pin,
-                        uint32_t trusted_mask[]) {
+tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
+                        tBT_TRANSPORT transport, uint8_t pin_len,
+                        uint8_t* p_pin, uint32_t trusted_mask[]) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_SecBond(bd_addr, transport, pin_len, p_pin,
-                                        trusted_mask);
+    return bluetooth::shim::BTM_SecBond(bd_addr, addr_type, transport, pin_len,
+                                        p_pin, trusted_mask);
   }
 
   if (transport == BT_TRANSPORT_INVALID)
     transport = BTM_UseLeLink(bd_addr) ? BT_TRANSPORT_LE : BT_TRANSPORT_BR_EDR;
 
   tBT_DEVICE_TYPE dev_type;
-  tBLE_ADDR_TYPE addr_type;
 
   BTM_ReadDevInfo(bd_addr, &dev_type, &addr_type);
   /* LE device, do SMP pairing */
