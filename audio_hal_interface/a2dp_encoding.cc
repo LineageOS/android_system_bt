@@ -53,7 +53,10 @@ class A2dpTransport : public ::bluetooth::audio::IBluetoothTransportInstance {
   A2dpTransport(SessionType sessionType)
       : IBluetoothTransportInstance(sessionType, {}),
         total_bytes_read_(0),
-        data_position_({}){};
+        data_position_({}) {
+    a2dp_pending_cmd_ = A2DP_CTRL_CMD_NONE;
+    remote_delay_report_ = 0;
+  }
 
   BluetoothAudioCtrlAck StartRequest() override {
     // Check if a previous request is not finished
@@ -390,8 +393,12 @@ void cleanup() {
   if (!is_hal_2_0_enabled()) return;
   end_session();
 
+  auto a2dp_sink = active_hal_interface->GetTransportInstance();
+  static_cast<A2dpTransport*>(a2dp_sink)->ResetPendingCmd();
+  static_cast<A2dpTransport*>(a2dp_sink)->ResetPresentationPosition();
   active_hal_interface = nullptr;
-  auto a2dp_sink = software_hal_interface->GetTransportInstance();
+
+  a2dp_sink = software_hal_interface->GetTransportInstance();
   delete software_hal_interface;
   software_hal_interface = nullptr;
   delete a2dp_sink;
@@ -457,6 +464,8 @@ void end_session() {
     return;
   }
   active_hal_interface->EndSession();
+  static_cast<A2dpTransport*>(active_hal_interface->GetTransportInstance())
+      ->ResetPresentationPosition();
 }
 
 void ack_stream_started(const tA2DP_CTRL_ACK& ack) {
