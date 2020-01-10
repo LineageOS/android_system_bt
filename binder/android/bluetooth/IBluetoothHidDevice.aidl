@@ -37,4 +37,5 @@ interface IBluetoothHidDevice {
     List<BluetoothDevice> getDevicesMatchingConnectionStates(in int[] states);
     int getConnectionState(in BluetoothDevice device);
     String getUserAppName();
+    boolean setConnectionPolicy(in BluetoothDevice device, int connectionPolicy);
 }
