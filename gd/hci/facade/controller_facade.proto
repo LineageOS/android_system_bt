@@ -1,0 +1,22 @@
+syntax = "proto3";
+
+package bluetooth.hci;
+
+import "google/protobuf/empty.proto";
+
+service ControllerFacade {
+  rpc GetMacAddress(google.protobuf.Empty) returns (AddressMsg) {}
+  rpc GetLocalExtendedFeatures(PageNumberMsg) returns (FeaturesMsg) {}
+}
+
+message AddressMsg {
+  bytes address = 1;
+}
+
+message PageNumberMsg {
+  uint32 page_number = 1;
+}
+
+message FeaturesMsg {
+  uint64 page = 1;
+}
