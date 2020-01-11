@@ -34,10 +34,11 @@ namespace facade {
 class NeighborFacadeService : public NeighborFacade::Service {
  public:
   NeighborFacadeService(ConnectabilityModule* connectability_module, DiscoverabilityModule* discoverability_module,
-                        InquiryModule* inquiry_module, NameModule* name_module, PageModule*, ScanModule*,
+                        InquiryModule* inquiry_module, NameModule* name_module, PageModule*, ScanModule* scan_module,
                         ::bluetooth::os::Handler* facade_handler)
       : connectability_module_(connectability_module), discoverability_module_(discoverability_module),
-        inquiry_module_(inquiry_module), name_module_(name_module), facade_handler_(facade_handler) {}
+        inquiry_module_(inquiry_module), name_module_(name_module), scan_module_(scan_module),
+        facade_handler_(facade_handler) {}
 
   ::grpc::Status SetConnectability(::grpc::ServerContext* context, const ::bluetooth::neighbor::EnableMsg* request,
                                    ::google::protobuf::Empty* response) override {
@@ -68,8 +69,8 @@ class NeighborFacadeService : public NeighborFacade::Service {
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status SetInquiry(::grpc::ServerContext* context, const ::bluetooth::neighbor::InquiryMsg* request,
-                            ::grpc::ServerWriter<InquiryResultMsg>* writer) override {
+  ::grpc::Status SetInquiryMode(::grpc::ServerContext* context, const ::bluetooth::neighbor::InquiryMsg* request,
+                                ::grpc::ServerWriter<InquiryResultMsg>* writer) override {
     inquiry_module_->RegisterCallbacks(inquiry_callbacks_);
     switch (request->result_mode()) {
       case ResultMode::STANDARD:
@@ -127,6 +128,26 @@ class NeighborFacadeService : public NeighborFacade::Service {
     return ::grpc::Status::OK;
   }
 
+  ::grpc::Status EnableInquiryScan(::grpc::ServerContext* context, const ::bluetooth::neighbor::EnableMsg* request,
+                                   ::google::protobuf::Empty* response) override {
+    if (request->enabled()) {
+      scan_module_->SetInquiryScan();
+    } else {
+      scan_module_->ClearInquiryScan();
+    }
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status EnablePageScan(::grpc::ServerContext* context, const ::bluetooth::neighbor::EnableMsg* request,
+                                ::google::protobuf::Empty* response) override {
+    if (request->enabled()) {
+      scan_module_->SetPageScan();
+    } else {
+      scan_module_->ClearPageScan();
+    }
+    return ::grpc::Status::OK;
+  }
+
  private:
   void on_incoming_inquiry_result(hci::EventPacketView view) {
     InquiryResultMsg inquiry_result_msg;
@@ -157,6 +178,7 @@ class NeighborFacadeService : public NeighborFacade::Service {
   DiscoverabilityModule* discoverability_module_;
   InquiryModule* inquiry_module_;
   NameModule* name_module_;
+  ScanModule* scan_module_;
   ::bluetooth::os::Handler* facade_handler_;
   ::bluetooth::grpc::GrpcEventQueue<InquiryResultMsg> pending_events_{"InquiryResponses"};
 };

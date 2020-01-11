@@ -73,6 +73,8 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
         modules.add<::bluetooth::neighbor::facade::NeighborFacadeModule>();
         break;
       case BluetoothModule::L2CAP:
+        modules.add<::bluetooth::hci::facade::ControllerFacadeModule>();
+        modules.add<::bluetooth::neighbor::facade::NeighborFacadeModule>();
         modules.add<::bluetooth::facade::ReadOnlyPropertyServerModule>();
         modules.add<::bluetooth::l2cap::classic::L2capClassicModuleFacadeModule>();
         break;
