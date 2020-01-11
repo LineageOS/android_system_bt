@@ -7,8 +7,10 @@ import "google/protobuf/empty.proto";
 service NeighborFacade {
   rpc SetConnectability(EnableMsg) returns (google.protobuf.Empty) {}
   rpc SetDiscoverability(DiscoverabilitiyMsg) returns (google.protobuf.Empty) {}
-  rpc SetInquiry(InquiryMsg) returns (stream InquiryResultMsg) {}
+  rpc SetInquiryMode(InquiryMsg) returns (stream InquiryResultMsg) {}
   rpc ReadRemoteName(RemoteNameRequestMsg) returns (RemoteNameResponseMsg) {}
+  rpc EnableInquiryScan(EnableMsg) returns (google.protobuf.Empty) {}
+  rpc EnablePageScan(EnableMsg) returns (google.protobuf.Empty) {}
 }
 
 message EnableMsg {
