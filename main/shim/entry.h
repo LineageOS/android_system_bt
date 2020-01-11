@@ -49,6 +49,7 @@ bluetooth::shim::IName* GetName();
 bluetooth::shim::IPage* GetPage();
 bluetooth::shim::IScanning* GetScanning();
 bluetooth::shim::ISecurity* GetSecurity();
+bluetooth::shim::IStorage* GetStorage();
 
 }  // namespace shim
 }  // namespace bluetooth
