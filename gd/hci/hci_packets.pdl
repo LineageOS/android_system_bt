@@ -3009,8 +3009,24 @@ packet LeSetExtendedScanEnableComplete : CommandComplete (command_op_code = LE_S
   status : ErrorCode,
 }
 
+struct LeCreateConnPhyScanParameters {
+  scan_interval : 16, // 0x0004-0xFFFF
+  scan_window : 16, // < = LeScanInterval
+  conn_interval_min : 16, // 0x0006-0x0C80 (7.5ms to 4s)
+  conn_interval_max : 16, // 0x0006-0x0C80 (7.5ms to 4s)
+  conn_latency : 16, // 0x0006-0x01F3
+  supervision_timeout : 16, // 0x00A to 0x0C80 (100ms to 32s)
+  min_ce_length : 16, // 0.625ms
+  max_ce_length : 16, // 0.625ms
+}
+
 packet LeExtendedCreateConnection : LeConnectionManagementCommand (op_code = LE_EXTENDED_CREATE_CONNECTION) {
-  _payload_,  // placeholder (unimplemented)
+  initiator_filter_policy : InitiatorFilterPolicy,
+  own_address_type : OwnAddressType,
+  peer_address_type : AddressType,
+  peer_address : Address,
+  initiating_phys : 8,
+  phy_scan_parameters : LeCreateConnPhyScanParameters[],
 }
 
 packet LePeriodicAdvertisingCreateSync : LeAdvertisingCommand (op_code = LE_PERIODIC_ADVERTISING_CREATE_SYNC) {
