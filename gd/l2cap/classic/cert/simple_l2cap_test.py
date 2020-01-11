@@ -29,6 +29,8 @@ from facade import rootservice_pb2 as facade_rootservice_pb2
 from google.protobuf import empty_pb2
 from l2cap.classic import facade_pb2 as l2cap_facade_pb2
 from l2cap.classic.cert import api_pb2 as l2cap_cert_pb2
+from hci.facade import controller_facade_pb2 as controller_facade
+from neighbor.facade import facade_pb2 as neighbor_facade
 
 ASYNC_OP_TIME_SECONDS = 1  # TODO: Use events to synchronize events instead
 
@@ -94,17 +96,18 @@ class SimpleL2capTest(GdBaseTestClass):
         self.device_under_test.wait_channel_ready()
         self.cert_device.wait_channel_ready()
 
-        dut_address = self.device_under_test.controller_read_only_property.ReadLocalAddress(
+        self.device_under_test.address = self.device_under_test.hci_controller.GetMacAddress(
             empty_pb2.Empty()).address
-        self.device_under_test.address = dut_address
         cert_address = self.cert_device.controller_read_only_property.ReadLocalAddress(
             empty_pb2.Empty()).address
         self.cert_device.address = cert_address
-
         self.dut_address = common_pb2.BluetoothAddress(
             address=self.device_under_test.address)
         self.cert_address = common_pb2.BluetoothAddress(
             address=self.cert_device.address)
+
+        self.device_under_test.neighbor.EnablePageScan(
+            neighbor_facade.EnableMsg(enabled=True))
 
         self.next_scid = 0x40
         self.scid_dcid_map = {}
