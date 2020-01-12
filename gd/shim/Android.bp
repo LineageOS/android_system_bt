@@ -13,6 +13,7 @@ filegroup {
             "scanning.cc",
             "security.cc",
             "stack.cc",
+            "storage.cc",
     ],
 }
 
