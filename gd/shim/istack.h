@@ -34,6 +34,7 @@ struct IL2cap;
 struct IPage;
 struct IScanning;
 struct ISecurity;
+struct IStorage;
 
 struct IStack {
   virtual void Start() = 0;
@@ -50,6 +51,7 @@ struct IStack {
   virtual IPage* GetPage() = 0;
   virtual IScanning* GetScanning() = 0;
   virtual ISecurity* GetSecurity() = 0;
+  virtual IStorage* GetStorage() = 0;
 
   virtual ~IStack() {}
 };

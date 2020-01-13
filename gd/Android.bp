@@ -112,6 +112,7 @@ cc_library {
         ":BluetoothPacketSources",
         ":BluetoothShimSources",
         ":BluetoothSecuritySources",
+        ":BluetoothStorageSources",
     ],
     generated_headers: [
         "BluetoothGeneratedPackets_h",
@@ -251,6 +252,7 @@ cc_test {
         ":BluetoothPacketTestSources",
         ":BluetoothSecurityTestSources",
         ":BluetoothShimTestSources",
+        ":BluetoothStorageTestSources",
     ],
     generated_headers: [
         "BluetoothGeneratedPackets_h",
