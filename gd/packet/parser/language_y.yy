@@ -22,14 +22,14 @@
 %parse-param { Declarations* decls }
 %lex-param { void* scanner }
 
-%pure-parser
 %glr-parser
 %skeleton "glr.cc"
 
 %expect-rr 0
 
 %debug
-%error-verbose
+%define parse.error verbose
+%locations
 %verbose
 
 %union {
