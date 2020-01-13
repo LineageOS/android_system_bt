@@ -92,7 +92,7 @@ void ClassicSignallingManager::SendDisconnectionRequest(Cid local_cid, Cid remot
       next_signal_id_, CommandCode::DISCONNECTION_REQUEST, {}, local_cid, remote_cid, {}, {}};
   next_signal_id_++;
   pending_commands_.push(std::move(pending_command));
-  channel_configuration_[local_cid] = ChannelConfigurationState();
+  channel_configuration_.erase(local_cid);
   if (command_just_sent_.signal_id_ == kInvalidSignalId) {
     handle_send_next_command();
   }
@@ -205,6 +205,12 @@ void ClassicSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remo
     handle_send_next_command();
     return;
   }
+  if (result == ConnectionResponseResult::PENDING) {
+    alarm_.Schedule(common::BindOnce(&ClassicSignallingManager::on_command_timeout, common::Unretained(this)),
+                    kTimeout);
+    return;
+  }
+
   command_just_sent_.signal_id_ = kInvalidSignalId;
   alarm_.Cancel();
   if (result != ConnectionResponseResult::SUCCESS) {
@@ -262,7 +268,7 @@ void ClassicSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remo
     config.emplace_back(std::move(retransmission_flow_control_configuration));
     config.emplace_back(std::move(fcs_option));
   }
-  SendConfigurationRequest(remote_cid, {});
+  SendConfigurationRequest(remote_cid, std::move(config));
 }
 
 void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid cid, Continuation is_continuation,
@@ -288,7 +294,7 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
         break;
       }
       case ConfigurationOptionType::RETRANSMISSION_AND_FLOW_CONTROL: {
-        auto config = RetransmissionAndFlowControlConfigurationOption::Specialize(option.get());
+        auto* config = RetransmissionAndFlowControlConfigurationOption::Specialize(option.get());
         if (config->retransmission_time_out_ == 0) {
           config->retransmission_time_out_ = 2000;
         }
@@ -296,7 +302,7 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
           config->monitor_time_out_ = 12000;
         }
         configuration_state.remote_retransmission_and_flow_control_ = *config;
-        rsp_options.emplace_back(std::make_unique<ConfigurationOption>(*config));
+        rsp_options.emplace_back(std::make_unique<RetransmissionAndFlowControlConfigurationOption>(*config));
         break;
       }
       case ConfigurationOptionType::FRAME_CHECK_SEQUENCE: {
@@ -349,7 +355,17 @@ void ClassicSignallingManager::OnConfigurationResponse(SignalId signal_id, Cid c
     return;
   }
 
-  // TODO: Handle status not SUCCESS
+  if (result == ConfigurationResponseResult::PENDING) {
+    alarm_.Schedule(common::BindOnce(&ClassicSignallingManager::on_command_timeout, common::Unretained(this)),
+                    kTimeout);
+    return;
+  }
+
+  if (result != ConfigurationResponseResult::SUCCESS) {
+    LOG_WARN("Configuration response not SUCCESS");
+    handle_send_next_command();
+    return;
+  }
 
   auto& configuration_state = channel_configuration_[channel->GetCid()];
 
@@ -404,7 +420,7 @@ void ClassicSignallingManager::OnDisconnectionRequest(SignalId signal_id, Cid ci
     LOG_WARN("Disconnect request for an unknown channel");
     return;
   }
-  channel_configuration_[cid] = ChannelConfigurationState();
+  channel_configuration_.erase(cid);
   auto builder = DisconnectionResponseBuilder::Create(signal_id.Value(), cid, remote_cid);
   enqueue_buffer_->Enqueue(std::move(builder), handler_);
   channel->OnClosed(hci::ErrorCode::SUCCESS);
