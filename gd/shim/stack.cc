@@ -44,6 +44,7 @@
 #include "shim/page.h"
 #include "shim/scanning.h"
 #include "shim/security.h"
+#include "shim/storage.h"
 #include "stack_manager.h"
 
 using ::bluetooth::os::Thread;
@@ -81,6 +82,7 @@ struct bluetooth::shim::Stack::impl {
     modules.add<::bluetooth::shim::Page>();
     modules.add<::bluetooth::shim::Scanning>();
     modules.add<::bluetooth::shim::Security>();
+    modules.add<::bluetooth::shim::Storage>();
 
     stack_thread_ = new Thread("gd_stack_thread", Thread::Priority::NORMAL);
     stack_manager_.StartUp(&modules, stack_thread_);
@@ -157,6 +159,11 @@ struct bluetooth::shim::Stack::impl {
     return stack_manager_.GetInstance<bluetooth::shim::Security>();
   }
 
+  IStorage* GetStorage() {
+    ASSERT(is_running_);
+    return stack_manager_.GetInstance<bluetooth::shim::Storage>();
+  }
+
  private:
   os::Thread* stack_thread_ = nullptr;
   bool is_running_ = false;
@@ -218,6 +225,10 @@ bluetooth::shim::IScanning* bluetooth::shim::Stack::GetScanning() {
 
 bluetooth::shim::ISecurity* bluetooth::shim::Stack::GetSecurity() {
   return pimpl_->GetSecurity();
+}
+
+bluetooth::shim::IStorage* bluetooth::shim::Stack::GetStorage() {
+  return pimpl_->GetStorage();
 }
 
 bluetooth::shim::IStack* bluetooth::shim::GetGabeldorscheStack() {
