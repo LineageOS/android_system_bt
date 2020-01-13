@@ -18,7 +18,15 @@
 namespace bluetooth {
 namespace l2cap {
 
-class SecurityPolicy {};
+class SecurityPolicy {
+ public:
+  enum class Level {
+    LEVEL_0,  // Encryption not needed. Only applies to SDP.
+    LEVEL_2,  // Encryption desired. Only needs unauthenticated link key.
+    LEVEL_3,  // Encryption required and authenticated link key required.
+  };
+  Level security_level_ = Level::LEVEL_0;
+};
 
 }  // namespace l2cap
 }  // namespace bluetooth
