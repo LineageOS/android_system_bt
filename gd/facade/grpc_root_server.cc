@@ -92,10 +92,18 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
         modules.add<::bluetooth::neighbor::facade::NeighborFacadeModule>();
         modules.add<::bluetooth::facade::ReadOnlyPropertyServerModule>();
         modules.add<::bluetooth::l2cap::classic::L2capClassicModuleFacadeModule>();
+        modules.add<::bluetooth::hci::facade::HciLayerFacadeModule>();
         break;
       case BluetoothModule::SECURITY:
         modules.add<::bluetooth::facade::ReadOnlyPropertyServerModule>();
+        modules.add<::bluetooth::hci::facade::ControllerFacadeModule>();
         modules.add<::bluetooth::security::SecurityModuleFacadeModule>();
+        modules.add<::bluetooth::neighbor::facade::NeighborFacadeModule>();
+        modules.add<::bluetooth::l2cap::classic::L2capClassicModuleFacadeModule>();
+        modules.add<::bluetooth::hci::facade::HciLayerFacadeModule>();
+        modules.add<::bluetooth::hci::facade::ControllerFacadeModule>();
+        modules.add<::bluetooth::hci::facade::LeAdvertisingManagerFacadeModule>();
+        modules.add<::bluetooth::hci::facade::LeScanningManagerFacadeModule>();
         break;
       case BluetoothModule::SHIM:
         modules.add<::bluetooth::shim::Advertising>();

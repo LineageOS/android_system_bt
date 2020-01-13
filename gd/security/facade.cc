@@ -15,9 +15,8 @@
  */
 #include "security/facade.h"
 
-#include "hci/hci_layer.h"
-#include "l2cap/classic/l2cap_classic_module.h"
-#include "l2cap/le/l2cap_le_module.h"
+#include "grpc/grpc_event_queue.h"
+#include "hci/address_with_type.h"
 #include "os/handler.h"
 #include "security/facade.grpc.pb.h"
 #include "security/security_manager_listener.h"
@@ -28,11 +27,8 @@ namespace security {
 
 class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public ISecurityManagerListener {
  public:
-  SecurityModuleFacadeService(SecurityModule* security_module, l2cap::le::L2capLeModule* l2cap_le_module,
-                              l2cap::classic::L2capClassicModule* l2cap_classic_module, hci::HciLayer* hci_layer,
-                              ::bluetooth::os::Handler* security_handler)
-      : security_module_(security_module), l2cap_le_module_(l2cap_le_module),
-        l2cap_classic_module_(l2cap_classic_module), security_handler_(security_handler) {
+  SecurityModuleFacadeService(SecurityModule* security_module, ::bluetooth::os::Handler* security_handler)
+      : security_module_(security_module), security_handler_(security_handler) {
     security_module_->GetSecurityManager()->RegisterCallbackListener(this, security_handler_);
   }
 
@@ -63,38 +59,137 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     return ::grpc::Status::OK;
   }
 
-  void OnDisplayYesNoDialogWithValue(const bluetooth::hci::AddressWithType& address, uint32_t numeric_value,
-                                     common::OnceCallback<void(bool)> input_callback) {}
-  void OnDisplayYesNoDialog(const bluetooth::hci::AddressWithType& address,
-                            common::OnceCallback<void(bool)> input_callback) {}
-  void OnDisplayPasskeyDialog(const bluetooth::hci::AddressWithType& address, uint32_t passkey) {}
-  void OnDisplayPasskeyInputDialog(const bluetooth::hci::AddressWithType& address,
-                                   common::OnceCallback<void(uint32_t)> input_callback){};
-  void OnDisplayCancelDialog(const bluetooth::hci::AddressWithType& address) {}
-  void OnDeviceBonded(hci::AddressWithType device) {}
-  void OnDeviceUnbonded(hci::AddressWithType device) {}
-  void OnDeviceBondFailed(hci::AddressWithType device) {}
+  ::grpc::Status FetchUiEvents(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
+                               ::grpc::ServerWriter<UiMsg>* writer) override {
+    return ui_events_.RunLoop(context, writer);
+  }
+
+  ::grpc::Status SendUiCallback(::grpc::ServerContext* context, const UiCallbackMsg* request,
+                                ::google::protobuf::Empty* response) override {
+    switch (request->message_type()) {
+      case UiCallbackType::PASSKEY:
+        security_handler_->Post(
+            common::BindOnce(std::move(user_passkey_callbacks_[request->unique_id()]), request->numeric_value()));
+        break;
+      case UiCallbackType::YES_NO:
+        security_handler_->Post(
+            common::BindOnce(std::move(user_yes_no_callbacks_[request->unique_id()]), request->boolean()));
+        break;
+      default:
+        LOG_ERROR("Unknown UiCallbackType %d", static_cast<int>(request->message_type()));
+        return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Unknown UiCallbackType");
+    }
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status FetchBondEvents(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
+                                 ::grpc::ServerWriter<BondMsg>* writer) override {
+    return bond_events_.RunLoop(context, writer);
+  }
+
+  void OnDisplayYesNoDialogWithValue(const bluetooth::hci::AddressWithType& peer, uint32_t numeric_value,
+                                     common::OnceCallback<void(bool)> callback) override {
+    LOG_INFO("%s value = 0x%x", peer.ToString().c_str(), numeric_value);
+    user_yes_no_callbacks_.emplace(unique_id, std::move(callback));
+    UiMsg display_with_value;
+    display_with_value.mutable_peer()->mutable_address()->set_address(peer.ToString());
+    display_with_value.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
+    display_with_value.set_message_type(UiMsgType::DISPLAY_YES_NO_WITH_VALUE);
+    display_with_value.set_numeric_value(numeric_value);
+    display_with_value.set_unique_id(unique_id++);
+    ui_events_.OnIncomingEvent(display_with_value);
+  }
+
+  void OnDisplayYesNoDialog(const bluetooth::hci::AddressWithType& peer,
+                            common::OnceCallback<void(bool)> callback) override {
+    LOG_INFO("%s", peer.ToString().c_str());
+    user_yes_no_callbacks_.emplace(unique_id, std::move(callback));
+    UiMsg display_yes_no;
+    display_yes_no.mutable_peer()->mutable_address()->set_address(peer.ToString());
+    display_yes_no.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
+    display_yes_no.set_message_type(UiMsgType::DISPLAY_YES_NO);
+    display_yes_no.set_unique_id(unique_id++);
+    ui_events_.OnIncomingEvent(display_yes_no);
+  }
+
+  void OnDisplayPasskeyDialog(const bluetooth::hci::AddressWithType& peer, uint32_t passkey) override {
+    LOG_INFO("%s value = 0x%x", peer.ToString().c_str(), passkey);
+    UiMsg display_passkey;
+    display_passkey.mutable_peer()->mutable_address()->set_address(peer.ToString());
+    display_passkey.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
+    display_passkey.set_message_type(UiMsgType::DISPLAY_PASSKEY);
+    display_passkey.set_numeric_value(passkey);
+    display_passkey.set_unique_id(unique_id++);
+    ui_events_.OnIncomingEvent(display_passkey);
+  }
+
+  void OnDisplayPasskeyInputDialog(const bluetooth::hci::AddressWithType& peer,
+                                   common::OnceCallback<void(uint32_t)> callback) override {
+    LOG_INFO("%s", peer.ToString().c_str());
+    user_passkey_callbacks_.emplace(unique_id, std::move(callback));
+    UiMsg display_passkey_input;
+    display_passkey_input.mutable_peer()->mutable_address()->set_address(peer.ToString());
+    display_passkey_input.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
+    display_passkey_input.set_message_type(UiMsgType::DISPLAY_PASSKEY_ENTRY);
+    display_passkey_input.set_unique_id(unique_id++);
+    ui_events_.OnIncomingEvent(display_passkey_input);
+  }
+
+  void OnDisplayCancelDialog(const bluetooth::hci::AddressWithType& peer) override {
+    LOG_INFO("%s", peer.ToString().c_str());
+    UiMsg display_cancel;
+    display_cancel.mutable_peer()->mutable_address()->set_address(peer.ToString());
+    display_cancel.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
+    display_cancel.set_message_type(UiMsgType::DISPLAY_CANCEL);
+    display_cancel.set_unique_id(unique_id++);
+    ui_events_.OnIncomingEvent(display_cancel);
+  }
+
+  void OnDeviceBonded(hci::AddressWithType peer) override {
+    LOG_INFO("%s", peer.ToString().c_str());
+    BondMsg bonded;
+    bonded.mutable_peer()->mutable_address()->set_address(peer.ToString());
+    bonded.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
+    bonded.set_message_type(BondMsgType::DEVICE_BONDED);
+    bond_events_.OnIncomingEvent(bonded);
+  }
+
+  void OnDeviceUnbonded(hci::AddressWithType peer) override {
+    LOG_INFO("%s", peer.ToString().c_str());
+    BondMsg unbonded;
+    unbonded.mutable_peer()->mutable_address()->set_address(peer.ToString());
+    unbonded.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
+    unbonded.set_message_type(BondMsgType::DEVICE_UNBONDED);
+    bond_events_.OnIncomingEvent(unbonded);
+  }
+
+  void OnDeviceBondFailed(hci::AddressWithType peer) override {
+    LOG_INFO("%s", peer.ToString().c_str());
+    BondMsg bond_failed;
+    bond_failed.mutable_peer()->mutable_address()->set_address(peer.ToString());
+    bond_failed.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
+    bond_failed.set_message_type(BondMsgType::DEVICE_BOND_FAILED);
+    bond_events_.OnIncomingEvent(bond_failed);
+  }
 
  private:
-  SecurityModule* security_module_ __attribute__((unused));
-  l2cap::le::L2capLeModule* l2cap_le_module_ __attribute__((unused));
-  l2cap::classic::L2capClassicModule* l2cap_classic_module_ __attribute__((unused));
-  ::bluetooth::os::Handler* security_handler_ __attribute__((unused));
+  SecurityModule* security_module_;
+  ::bluetooth::os::Handler* security_handler_;
+  ::bluetooth::grpc::GrpcEventQueue<UiMsg> ui_events_{"UI events"};
+  ::bluetooth::grpc::GrpcEventQueue<BondMsg> bond_events_{"Bond events"};
+  uint32_t unique_id{1};
+  std::map<uint32_t, common::OnceCallback<void(bool)>> user_yes_no_callbacks_;
+  std::map<uint32_t, common::OnceCallback<void(uint32_t)>> user_passkey_callbacks_;
 };
 
 void SecurityModuleFacadeModule::ListDependencies(ModuleList* list) {
   ::bluetooth::grpc::GrpcFacadeModule::ListDependencies(list);
   list->add<SecurityModule>();
-  list->add<l2cap::le::L2capLeModule>();
-  list->add<l2cap::classic::L2capClassicModule>();
-  list->add<hci::HciLayer>();
 }
 
 void SecurityModuleFacadeModule::Start() {
   ::bluetooth::grpc::GrpcFacadeModule::Start();
-  service_ = new SecurityModuleFacadeService(GetDependency<SecurityModule>(), GetDependency<l2cap::le::L2capLeModule>(),
-                                             GetDependency<l2cap::classic::L2capClassicModule>(),
-                                             GetDependency<hci::HciLayer>(), GetHandler());
+  service_ = new SecurityModuleFacadeService(GetDependency<SecurityModule>(), GetHandler());
 }
 
 void SecurityModuleFacadeModule::Stop() {
