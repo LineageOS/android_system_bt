@@ -937,28 +937,56 @@ struct AclManager::impl {
   void create_le_connection(AddressWithType address_with_type) {
     // TODO: Add white list handling.
     // TODO: Configure default LE connection parameters?
-    uint16_t le_scan_interval = 0x0020;
-    uint16_t le_scan_window = 0x0010;
+    uint16_t le_scan_interval = 0x0060;
+    uint16_t le_scan_window = 0x0030;
     InitiatorFilterPolicy initiator_filter_policy = InitiatorFilterPolicy::USE_PEER_ADDRESS;
     OwnAddressType own_address_type = OwnAddressType::RANDOM_DEVICE_ADDRESS;
-    uint16_t conn_interval_min = 0x0006;
-    uint16_t conn_interval_max = 0x0C00;
-    uint16_t conn_latency = 0x0C0;
-    uint16_t supervision_timeout = 0x0C00;
+    uint16_t conn_interval_min = 0x0018;
+    uint16_t conn_interval_max = 0x0028;
+    uint16_t conn_latency = 0x0000;
+    uint16_t supervision_timeout = 0x001f4;
     ASSERT(le_client_callbacks_ != nullptr);
 
     connecting_le_.insert(address_with_type);
 
-    hci_layer_->EnqueueCommand(
-        LeCreateConnectionBuilder::Create(le_scan_interval, le_scan_window, initiator_filter_policy,
-                                          address_with_type.GetAddressType(), address_with_type.GetAddress(),
-                                          own_address_type, conn_interval_min, conn_interval_max, conn_latency,
-                                          supervision_timeout, kMinimumCeLength, kMaximumCeLength),
-        common::BindOnce([](CommandStatusView status) {
-          ASSERT(status.IsValid());
-          ASSERT(status.GetCommandOpCode() == OpCode::LE_CREATE_CONNECTION);
-        }),
-        handler_);
+    // TODO: make features check nicer, like HCI_LE_EXTENDED_ADVERTISING_SUPPORTED
+    if (controller_->GetControllerLeLocalSupportedFeatures() & 0x0010) {
+      LeCreateConnPhyScanParameters tmp;
+      tmp.scan_interval_ = le_scan_interval;
+      tmp.scan_window_ = le_scan_window;
+      tmp.conn_interval_min_ = conn_interval_min;
+      tmp.conn_interval_max_ = conn_interval_max;
+      tmp.conn_latency_ = conn_latency;
+      tmp.supervision_timeout_ = supervision_timeout;
+      tmp.min_ce_length_ = 0x00;
+      tmp.max_ce_length_ = 0x00;
+
+      // With real controllers, we must set random address before using it to establish connection
+      // TODO: have separate state machine generate new address when needed, consider using auto-generation in
+      // controller
+      hci_layer_->EnqueueCommand(hci::LeSetRandomAddressBuilder::Create(Address{{0x00, 0x11, 0xFF, 0xFF, 0x33, 0x22}}),
+                                 common::BindOnce([](CommandCompleteView status) {}), handler_);
+
+      hci_layer_->EnqueueCommand(LeExtendedCreateConnectionBuilder::Create(
+                                     initiator_filter_policy, own_address_type, address_with_type.GetAddressType(),
+                                     address_with_type.GetAddress(), 0x01 /* 1M PHY ONLY */, {tmp}),
+                                 common::BindOnce([](CommandStatusView status) {
+                                   ASSERT(status.IsValid());
+                                   ASSERT(status.GetCommandOpCode() == OpCode::LE_EXTENDED_CREATE_CONNECTION);
+                                 }),
+                                 handler_);
+    } else {
+      hci_layer_->EnqueueCommand(
+          LeCreateConnectionBuilder::Create(le_scan_interval, le_scan_window, initiator_filter_policy,
+                                            address_with_type.GetAddressType(), address_with_type.GetAddress(),
+                                            own_address_type, conn_interval_min, conn_interval_max, conn_latency,
+                                            supervision_timeout, kMinimumCeLength, kMaximumCeLength),
+          common::BindOnce([](CommandStatusView status) {
+            ASSERT(status.IsValid());
+            ASSERT(status.GetCommandOpCode() == OpCode::LE_CREATE_CONNECTION);
+          }),
+          handler_);
+    }
   }
 
   void cancel_connect(Address address) {
