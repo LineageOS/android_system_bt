@@ -517,13 +517,13 @@ class SimpleL2capTest(GdBaseTestClass):
                     channel=self.scid_dcid_map[scid], req_seq=3, s=0))
 
             l2cap_event_asserts.assert_event_occurs(
-                lambda log: print(log) or log.HasField("data_packet") and log.data_packet.channel == scid and basic_frame_to_enhanced_information_frame(log.data_packet.payload) == b'abc'
+                lambda log: log.HasField("data_packet") and log.data_packet.channel == scid and basic_frame_to_enhanced_information_frame(log.data_packet.payload) == b'abc'
             )
             l2cap_event_asserts.assert_event_occurs(
-                lambda log: print(log) or log.HasField("data_packet") and log.data_packet.channel == scid and basic_frame_to_enhanced_information_frame(log.data_packet.payload) == b'abc'
+                lambda log: log.HasField("data_packet") and log.data_packet.channel == scid and basic_frame_to_enhanced_information_frame(log.data_packet.payload) == b'abc'
             )
             l2cap_event_asserts.assert_event_occurs(
-                lambda log: print(log) or log.HasField("data_packet") and log.data_packet.channel == scid and basic_frame_to_enhanced_information_frame(log.data_packet.payload) == b'abc'
+                lambda log: log.HasField("data_packet") and log.data_packet.channel == scid and basic_frame_to_enhanced_information_frame(log.data_packet.payload) == b'abc'
             )
             l2cap_event_asserts_alt.assert_event_occurs_at_most(
                 lambda log: log.HasField("data_packet"), 3)
@@ -636,15 +636,19 @@ class SimpleL2capTest(GdBaseTestClass):
                     channel=self.scid_dcid_map[scid],
                     req_seq=0,
                     tx_seq=0,
-                    sar=0))
+                    sar=0,
+                    sdu_size=3,
+                    information=b"abc"))
             self.cert_device.l2cap.SendIFrame(
                 l2cap_cert_pb2.IFrame(
                     channel=self.scid_dcid_map[scid],
                     req_seq=0,
                     tx_seq=(self.tx_window - 1),
-                    sar=0))
+                    sar=0,
+                    sdu_size=3,
+                    information=b"def"))
             l2cap_event_asserts.assert_event_occurs(
-                lambda log: print(log) or log.HasField("data_packet") and log.data_packet.channel == scid and log.data_packet.payload == b'\x05\x01'
+                lambda log: log.HasField("data_packet") and log.data_packet.channel == scid and log.data_packet.payload == b'\x05\x01'
             )
             self.cert_device.l2cap.SendSFrame(
                 l2cap_cert_pb2.SFrame(
