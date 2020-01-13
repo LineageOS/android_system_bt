@@ -106,3 +106,5 @@ bluetooth::shim::IPage* TestStack::GetPage() { return nullptr; }
 bluetooth::shim::IScanning* TestStack::GetScanning() { return nullptr; }
 
 bluetooth::shim::ISecurity* TestStack::GetSecurity() { return nullptr; }
+
+bluetooth::shim::IStorage* TestStack::GetStorage() { return nullptr; }
