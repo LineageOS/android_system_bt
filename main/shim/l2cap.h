@@ -33,7 +33,8 @@ static constexpr uint16_t kFinalClassicVirtualPsm = 0x8000;
 static constexpr uint16_t kInitialLeDynamicPsm = 0x0080;
 static constexpr uint16_t kFinalLeDynamicPsm = 0x00ff;
 
-struct PsmData {
+class PsmManager {
+ public:
   bool IsPsmRegistered(uint16_t psm) const;
   bool HasClient(uint16_t psm) const;
   void RegisterPsm(uint16_t psm, const tL2CAP_APPL_INFO* callbacks);
@@ -89,17 +90,18 @@ class L2cap {
 
   L2cap();
 
-  PsmData& Classic();
-  PsmData& Le();
+  PsmManager& Classic();
+  PsmManager& Le();
 
  private:
   uint16_t GetNextVirtualPsm(uint16_t real_psm);
   void SetDownstreamCallbacks(uint16_t cid);
 
-  PsmData classic_;
-  PsmData le_;
+  PsmManager classic_;
+  PsmManager le_;
 
   bool ConnectionExists(uint16_t cid) const;
+  uint16_t CidToPsm(uint16_t cid) const;
 
   uint16_t classic_dynamic_psm_;
   uint16_t le_dynamic_psm_;
@@ -112,7 +114,6 @@ class L2cap {
 
   std::unordered_map<uint16_t, uint16_t> cid_to_psm_map_;
   std::unordered_map<uint16_t, uint16_t> client_psm_to_real_psm_map_;
-  std::unordered_map<uint16_t, const tL2CAP_APPL_INFO*> cid_to_callback_map_;
 };
 
 }  // namespace shim
