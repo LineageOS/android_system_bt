@@ -22,6 +22,7 @@ from hal import facade_pb2_grpc as hal_facade_pb2_grpc
 from hci.facade import facade_pb2_grpc as hci_facade_pb2_grpc
 from hci.facade import acl_manager_facade_pb2_grpc
 from hci.facade import controller_facade_pb2_grpc
+from hci.facade import le_acl_manager_facade_pb2_grpc
 from hci.facade import le_advertising_manager_facade_pb2_grpc
 from hci.facade import le_scanning_manager_facade_pb2_grpc
 from neighbor.facade import facade_pb2_grpc as neighbor_facade_pb2_grpc
@@ -83,6 +84,8 @@ class GdDevice(GdDeviceBase):
         self.l2cap = l2cap_facade_pb2_grpc.L2capClassicModuleFacadeStub(
             self.grpc_channel)
         self.hci_acl_manager = acl_manager_facade_pb2_grpc.AclManagerFacadeStub(
+            self.grpc_channel)
+        self.hci_le_acl_manager = le_acl_manager_facade_pb2_grpc.LeAclManagerFacadeStub(
             self.grpc_channel)
         self.hci_controller = controller_facade_pb2_grpc.ControllerFacadeStub(
             self.grpc_channel)
