@@ -83,7 +83,7 @@ class NeighborTest(GdFacadeOnlyBaseTestClass):
             length_1_28s=3,
             max_results=0)
         with EventCallbackStream(
-                self.device_under_test.neighbor.SetInquiry(
+                self.device_under_test.neighbor.SetInquiryMode(
                     inquiry_msg)) as inquiry_event_stream:
             hci_event_asserts = EventAsserts(inquiry_event_stream)
             hci_event_asserts.assert_event_occurs(
@@ -101,7 +101,7 @@ class NeighborTest(GdFacadeOnlyBaseTestClass):
             length_1_28s=3,
             max_results=0)
         with EventCallbackStream(
-                self.device_under_test.neighbor.SetInquiry(
+                self.device_under_test.neighbor.SetInquiryMode(
                     inquiry_msg)) as inquiry_event_stream:
             hci_event_asserts = EventAsserts(inquiry_event_stream)
             hci_event_asserts.assert_event_occurs(
@@ -128,7 +128,7 @@ class NeighborTest(GdFacadeOnlyBaseTestClass):
             length_1_28s=3,
             max_results=0)
         with EventCallbackStream(
-                self.device_under_test.neighbor.SetInquiry(
+                self.device_under_test.neighbor.SetInquiryMode(
                     inquiry_msg)) as inquiry_event_stream:
             hci_event_asserts = EventAsserts(inquiry_event_stream)
             hci_event_asserts.assert_event_occurs(
