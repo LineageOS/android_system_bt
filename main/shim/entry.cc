@@ -46,6 +46,10 @@ bluetooth::shim::IDiscoverability* bluetooth::shim::GetDiscoverability() {
   return GetGabeldorscheStack()->GetDiscoverability();
 }
 
+bluetooth::shim::IDumpsys* bluetooth::shim::GetDumpsys() {
+  return GetGabeldorscheStack()->GetDumpsys();
+}
+
 bluetooth::shim::IInquiry* bluetooth::shim::GetInquiry() {
   return GetGabeldorscheStack()->GetInquiry();
 }

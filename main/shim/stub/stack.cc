@@ -93,6 +93,8 @@ bluetooth::shim::IDiscoverability* TestStack::GetDiscoverability() {
   return nullptr;
 }
 
+bluetooth::shim::IDumpsys* TestStack::GetDumpsys() { return nullptr; }
+
 bluetooth::shim::IHciLayer* TestStack::GetHciLayer() { return nullptr; }
 
 bluetooth::shim::IInquiry* TestStack::GetInquiry() { return nullptr; }

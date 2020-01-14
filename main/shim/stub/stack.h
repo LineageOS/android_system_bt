@@ -57,6 +57,7 @@ class TestStack : public bluetooth::shim::IStack {
   bluetooth::shim::IController* GetController();
   bluetooth::shim::IConnectability* GetConnectability();
   bluetooth::shim::IDiscoverability* GetDiscoverability();
+  bluetooth::shim::IDumpsys* GetDumpsys();
   bluetooth::shim::IHciLayer* GetHciLayer();
   bluetooth::shim::IInquiry* GetInquiry();
   bluetooth::shim::IL2cap* GetL2cap();
