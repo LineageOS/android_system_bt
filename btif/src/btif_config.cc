@@ -122,7 +122,7 @@ static const storage_config_t interface = {
 };
 
 static const storage_config_t* storage_config_get_interface() {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_stack_started_up()) {
     return bluetooth::shim::storage_config_get_interface();
   } else {
     return &interface;
