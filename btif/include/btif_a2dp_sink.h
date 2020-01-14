@@ -109,6 +109,9 @@ void btif_a2dp_sink_on_stopped(tBTA_AV_SUSPEND* p_av_suspend);
 // |tBTA_AV_SUSPEND|.
 void btif_a2dp_sink_on_suspended(tBTA_AV_SUSPEND* p_av_suspend);
 
+// Start the decoder for the A2DP Sink module.
+bool btif_a2dp_sink_on_start(void);
+
 // Enable/disable discarding of received A2DP frames.
 // If |enable| is true, the discarding is enabled, otherwise is disabled.
 void btif_a2dp_sink_set_rx_flush(bool enable);
