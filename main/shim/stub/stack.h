@@ -64,6 +64,7 @@ class TestStack : public bluetooth::shim::IStack {
   bluetooth::shim::IPage* GetPage();
   bluetooth::shim::IScanning* GetScanning();
   bluetooth::shim::ISecurity* GetSecurity();
+  bluetooth::shim::IStorage* GetStorage();
 
   TestGdShimL2cap test_l2cap_;
 

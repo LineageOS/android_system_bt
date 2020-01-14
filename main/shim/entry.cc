@@ -73,3 +73,7 @@ bluetooth::shim::IScanning* bluetooth::shim::GetScanning() {
 bluetooth::shim::ISecurity* bluetooth::shim::GetSecurity() {
   return GetGabeldorscheStack()->GetSecurity();
 }
+
+bluetooth::shim::IStorage* bluetooth::shim::GetStorage() {
+  return GetGabeldorscheStack()->GetStorage();
+}

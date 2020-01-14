@@ -36,3 +36,4 @@
 #include "gd/shim/iscanning.h"
 #include "gd/shim/isecurity.h"
 #include "gd/shim/istack.h"
+#include "gd/shim/istorage.h"

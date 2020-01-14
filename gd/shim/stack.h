@@ -30,6 +30,7 @@
 #include "shim/iscanning.h"
 #include "shim/isecurity.h"
 #include "shim/istack.h"
+#include "shim/istorage.h"
 
 /**
  * The shim layer implementation on the Gd stack side.
@@ -56,6 +57,7 @@ class Stack : public IStack {
   IPage* GetPage() override;                        // IStack
   IScanning* GetScanning() override;                // IStack
   ISecurity* GetSecurity() override;                // IStack
+  IStorage* GetStorage() override;                  // IStack
 
  private:
   struct impl;
