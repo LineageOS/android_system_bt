@@ -28,8 +28,6 @@
 #include "bte.h"
 #include "btif/include/btif_common.h"
 #include "common/message_loop_thread.h"
-#include "common/once_timer.h"
-#include "common/time_util.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_int.h"
 #include "stack/include/btu.h"
@@ -40,51 +38,12 @@
 #include <base/run_loop.h>
 #include <base/threading/thread.h>
 
-#ifndef HWBINDER_TIMEOUT_MS
-#define HWBINDER_TIMEOUT_MS 500
-#endif
-
 using bluetooth::common::MessageLoopThread;
-using bluetooth::common::OnceTimer;
-
-/* Define utils for HwBinder timer dumpsys */
-typedef struct {
-  uint64_t counter_5ms = 0;
-  uint64_t counter_20ms = 0;
-  uint64_t counter_50ms = 0;
-  uint64_t counter_100ms = 0;
-  uint64_t counter_250ms = 0;
-  uint64_t counter_max_ms = 0;
-  void addTime(uint64_t time) {
-    if (time < 5) {
-      counter_5ms++;
-    } else if (time < 20) {
-      counter_20ms++;
-    } else if (time < 50) {
-      counter_50ms++;
-    } else if (time < 100) {
-      counter_100ms++;
-    } else if (time < 250) {
-      counter_250ms++;
-    } else {
-      counter_max_ms++;
-    }
-  }
-} hwbinder_timer_collector_t;
-
-typedef struct {
-  uint64_t start_time_ms;
-  std::string from_here;
-} hwbinder_timestamp_t;
-
-std::map<std::string, hwbinder_timer_collector_t> timer_map;
-hwbinder_timestamp_t hwbinder_timestamp;
 
 /* Define BTU storage area */
 uint8_t btu_trace_level = HCI_INITIAL_TRACE_LEVEL;
 
 static MessageLoopThread main_thread("bt_main_thread");
-static OnceTimer hwbinder_timer;
 
 void btu_hci_msg_process(BT_HDR* p_msg) {
   /* Determine the input message type. */
@@ -136,60 +95,6 @@ bt_status_t do_in_main_thread(const base::Location& from_here,
     return BT_STATUS_FAIL;
   }
   return BT_STATUS_SUCCESS;
-}
-
-void hwbinder_timeout(const base::Location& from_here) {
-  LOG(FATAL) << "HwBinder thread timeout at " << from_here.ToString();
-}
-
-void main_thread_hwbinder_timer_start(const base::Location& from_here) {
-  if (hwbinder_timer.IsScheduled()) {
-    LOG(FATAL) << __func__ << ": hwbinder_timer is already scheduled!";
-  }
-  if (!hwbinder_timer.Schedule(
-          main_thread.GetWeakPtr(), from_here,
-          base::Bind(&hwbinder_timeout, from_here),
-          base::TimeDelta::FromMilliseconds(HWBINDER_TIMEOUT_MS))) {
-    LOG(FATAL) << __func__ << ": failed from " << from_here.ToString();
-  }
-
-  hwbinder_timestamp.start_time_ms =
-      bluetooth::common::time_get_os_boottime_ms();
-  hwbinder_timestamp.from_here = from_here.ToString();
-}
-
-void main_thread_hwbinder_timer_stop() {
-  if (!hwbinder_timer.IsScheduled()) {
-    LOG(FATAL) << __func__ << ": hwbinder_timer is not scheduled!";
-  }
-  hwbinder_timer.CancelAndWait();
-
-  uint64_t delta_time = bluetooth::common::time_get_os_boottime_ms() -
-                        hwbinder_timestamp.start_time_ms;
-  auto it = timer_map.find(hwbinder_timestamp.from_here);
-  if (it == timer_map.end()) {
-    hwbinder_timer_collector_t collector;
-    collector.addTime(delta_time);
-    timer_map.emplace(hwbinder_timestamp.from_here, collector);
-  } else {
-    it->second.addTime(delta_time);
-  }
-}
-
-void stack_debug_hwbinder_thread_dump(int fd) {
-  dprintf(fd, "\nHwBinder Thread Timer:\n");
-  for (auto it = timer_map.begin(); it != timer_map.end(); it++) {
-    dprintf(fd, "  %s:\n", it->first.c_str());
-    std::stringstream ss;
-    ss << "    Invoke Counts (5ms/20ms/50ms/100ms/250ms/Over 250ms) : "
-       << std::to_string(it->second.counter_5ms) << " / "
-       << std::to_string(it->second.counter_20ms) << " / "
-       << std::to_string(it->second.counter_50ms) << " / "
-       << std::to_string(it->second.counter_100ms) << " / "
-       << std::to_string(it->second.counter_250ms) << " / "
-       << std::to_string(it->second.counter_max_ms);
-    dprintf(fd, "%s\n", ss.str().c_str());
-  }
 }
 
 void btu_task_start_up(UNUSED_ATTR void* context) {
