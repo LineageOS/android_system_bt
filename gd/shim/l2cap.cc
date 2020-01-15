@@ -37,10 +37,13 @@
 #include "os/log.h"
 #include "packet/packet_view.h"
 #include "packet/raw_builder.h"
+#include "shim/dumpsys.h"
 #include "shim/l2cap.h"
 
 namespace bluetooth {
 namespace shim {
+
+constexpr char kDumpsysPrefix[] = "gd::shim::l2cap";
 
 const ModuleFactory L2cap::Factory = ModuleFactory([]() { return new L2cap(); });
 
@@ -399,6 +402,8 @@ struct L2cap::impl {
 
   void SendLoopbackResponse(std::function<void()> function);
 
+  void Dump(int fd);
+
   impl(L2cap& module, l2cap::classic::L2capClassicModule* l2cap_module);
 
  private:
@@ -421,6 +426,24 @@ L2cap::impl::impl(L2cap& module, l2cap::classic::L2capClassicModule* l2cap_modul
     : module_(module), l2cap_module_(l2cap_module), handler_(module_.GetHandler()),
       connection_interface_manager_(handler_) {
   dynamic_channel_manager_ = l2cap_module_->GetDynamicChannelManager();
+}
+
+void L2cap::impl::Dump(int fd) {
+  if (psm_to_service_interface_map_.empty()) {
+    dprintf(fd, "%s no psms registered\n", kDumpsysPrefix);
+  } else {
+    for (auto& service : psm_to_service_interface_map_) {
+      dprintf(fd, "%s psm registered:%hd\n", kDumpsysPrefix, service.first);
+    }
+  }
+
+  if (endpoint_to_pending_connection_map_.empty()) {
+    dprintf(fd, "%s no pending classic connections\n", kDumpsysPrefix);
+  } else {
+    for (auto& pending : endpoint_to_pending_connection_map_) {
+      dprintf(fd, "%s pending connection:%s\n", kDumpsysPrefix, pending.first.c_str());
+    }
+  }
 }
 
 void L2cap::impl::RegisterService(l2cap::Psm psm, l2cap::classic::DynamicChannelConfigurationOption option,
@@ -560,13 +583,16 @@ void L2cap::SendLoopbackResponse(std::function<void()> function) {
  */
 void L2cap::ListDependencies(ModuleList* list) {
   list->add<l2cap::classic::L2capClassicModule>();
+  list->add<shim::Dumpsys>();
 }
 
 void L2cap::Start() {
   pimpl_ = std::make_unique<impl>(*this, GetDependency<l2cap::classic::L2capClassicModule>());
+  GetDependency<shim::Dumpsys>()->Register(static_cast<void*>(this), [this](int fd) { pimpl_->Dump(fd); });
 }
 
 void L2cap::Stop() {
+  GetDependency<shim::Dumpsys>()->Unregister(static_cast<void*>(this));
   pimpl_.reset();
 }
 

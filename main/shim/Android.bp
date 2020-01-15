@@ -5,6 +5,7 @@ filegroup {
         "btm_api.cc",
         "controller.cc",
         "config.cc",
+        "dumpsys.cc",
         "entry.cc",
         "hci_layer.cc",
         "l2c_api.cc",

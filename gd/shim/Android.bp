@@ -5,6 +5,7 @@ filegroup {
             "controller.cc",
             "connectability.cc",
             "discoverability.cc",
+            "dumpsys.cc",
             "hci_layer.cc",
             "inquiry.cc",
             "l2cap.cc",
