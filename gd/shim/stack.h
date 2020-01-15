@@ -22,6 +22,7 @@
 #include "shim/iconnectability.h"
 #include "shim/icontroller.h"
 #include "shim/idiscoverability.h"
+#include "shim/idumpsys.h"
 #include "shim/ihci_layer.h"
 #include "shim/iinquiry.h"
 #include "shim/il2cap.h"
@@ -46,14 +47,15 @@ class Stack : public IStack {
   void Start() override;  // IStack
   void Stop() override;   // IStack
 
-  IAdvertising* GetAdvertising() override;  // IStack
-  IController* GetController() override;  // IStack
-  IConnectability* GetConnectability() override;  // IStack
-  IHciLayer* GetHciLayer() override;      // IStack
+  IAdvertising* GetAdvertising() override;          // IStack
+  IConnectability* GetConnectability() override;    // IStack
+  IController* GetController() override;            // IStack
   IDiscoverability* GetDiscoverability() override;  // IStack
+  IDumpsys* GetDumpsys() override;                  // IStack
+  IHciLayer* GetHciLayer() override;                // IStack
   IInquiry* GetInquiry() override;                  // IStack
-  IName* GetName() override;                        // IStack
   IL2cap* GetL2cap() override;                      // IStack
+  IName* GetName() override;                        // IStack
   IPage* GetPage() override;                        // IStack
   IScanning* GetScanning() override;                // IStack
   ISecurity* GetSecurity() override;                // IStack

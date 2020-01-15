@@ -37,6 +37,7 @@
 #include "shim/connectability.h"
 #include "shim/controller.h"
 #include "shim/discoverability.h"
+#include "shim/dumpsys.h"
 #include "shim/hci_layer.h"
 #include "shim/inquiry.h"
 #include "shim/l2cap.h"
@@ -76,6 +77,7 @@ struct bluetooth::shim::Stack::impl {
     modules.add<::bluetooth::shim::Advertising>();
     modules.add<::bluetooth::shim::Connectability>();
     modules.add<::bluetooth::shim::Discoverability>();
+    modules.add<::bluetooth::shim::Dumpsys>();
     modules.add<::bluetooth::shim::Inquiry>();
     modules.add<::bluetooth::shim::Name>();
     modules.add<::bluetooth::shim::L2cap>();
@@ -122,6 +124,11 @@ struct bluetooth::shim::Stack::impl {
   IDiscoverability* GetDiscoverability() {
     ASSERT(is_running_);
     return stack_manager_.GetInstance<bluetooth::shim::Discoverability>();
+  }
+
+  IDumpsys* GetDumpsys() {
+    ASSERT(is_running_);
+    return stack_manager_.GetInstance<bluetooth::shim::Dumpsys>();
   }
 
   IHciLayer* GetHciLayer() {
@@ -197,6 +204,10 @@ bluetooth::shim::IController* bluetooth::shim::Stack::GetController() {
 
 bluetooth::shim::IDiscoverability* bluetooth::shim::Stack::GetDiscoverability() {
   return pimpl_->GetDiscoverability();
+}
+
+bluetooth::shim::IDumpsys* bluetooth::shim::Stack::GetDumpsys() {
+  return pimpl_->GetDumpsys();
 }
 
 bluetooth::shim::IHciLayer* bluetooth::shim::Stack::GetHciLayer() {

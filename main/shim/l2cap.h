@@ -20,6 +20,7 @@
 #include <set>
 #include <unordered_map>
 
+#include "main/shim/dumpsys.h"
 #include "stack/include/l2c_api.h"
 
 namespace bluetooth {
@@ -55,7 +56,7 @@ struct PsmData {
   std::unordered_map<uint16_t, const tL2CAP_APPL_INFO*> psm_to_callback_map_;
 };
 
-class L2cap {
+class L2cap : public Dumpsys {
  public:
   void RegisterService(uint16_t psm, const tL2CAP_APPL_INFO* callbacks,
                        bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info);
@@ -87,6 +88,7 @@ class L2cap {
   bool DisconnectRequest(uint16_t cid);
   bool DisconnectResponse(uint16_t cid);
 
+  void Dump(int fd) override;
   L2cap();
 
   PsmData& Classic();
