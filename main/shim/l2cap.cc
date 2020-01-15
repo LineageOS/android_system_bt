@@ -360,3 +360,14 @@ bool bluetooth::legacy::shim::L2cap::DisconnectResponse(uint16_t cid) {
             __func__);
   return true;
 }
+
+void bluetooth::legacy::shim::L2cap::Dump(int fd) {
+  if (cid_to_psm_map_.empty()) {
+    dprintf(fd, "%s No active l2cap channels\n", "gd::shim::legacy::l2cap");
+  } else {
+    for (auto& connection : cid_to_psm_map_) {
+      dprintf(fd, "%s active l2cap channel cid:%hd psm:%hd\n",
+              "gd::shim::legacy::l2cap", connection.first, connection.second);
+    }
+  }
+}
