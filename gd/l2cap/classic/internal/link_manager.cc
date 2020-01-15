@@ -126,6 +126,9 @@ void LinkManager::OnConnectSuccess(std::unique_ptr<hci::AclConnection> acl_conne
     auto fixed_channel_impl = link->AllocateFixedChannel(fixed_channel_service.first, SecurityPolicy());
     fixed_channel_service.second->NotifyChannelCreation(
         std::make_unique<FixedChannel>(fixed_channel_impl, l2cap_handler_));
+    if (fixed_channel_service.first == kClassicPairingTriggerCid) {
+      link->Authenticate();
+    }
   }
   if (pending_dynamic_channels_.find(device) != pending_dynamic_channels_.end()) {
     for (Psm psm : pending_dynamic_channels_[device]) {
