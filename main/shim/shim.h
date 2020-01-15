@@ -49,6 +49,13 @@ namespace shim {
 bool is_gd_shim_enabled();
 
 /**
+ * Checks if the bluetooth gd stack has been started up.
+ *
+ * @return true if bluetooth gd stack is started, false otherwise.
+ */
+bool is_gd_stack_started_up();
+
+/**
  * Posts a task on the shim message queue.
  *
  * @param task Task to be posted onto the message queue.
