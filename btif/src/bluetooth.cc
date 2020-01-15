@@ -72,7 +72,6 @@
 #include "osi/include/osi.h"
 #include "osi/include/wakelock.h"
 #include "stack/gatt/connection_manager.h"
-#include "stack/include/btu.h"
 #include "stack_manager.h"
 
 using bluetooth::hearing_aid::HearingAidInterface;
@@ -320,7 +319,6 @@ static void dump(int fd, const char** arguments) {
   btif_debug_av_dump(fd);
   bta_debug_av_dump(fd);
   stack_debug_avdtp_api_dump(fd);
-  stack_debug_hwbinder_thread_dump(fd);
   bluetooth::avrcp::AvrcpService::DebugDump(fd);
   btif_debug_config_dump(fd);
   BTA_HfClientDumpStatistics(fd);
