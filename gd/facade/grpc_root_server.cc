@@ -25,6 +25,7 @@
 #include "hci/facade/acl_manager_facade.h"
 #include "hci/facade/controller_facade.h"
 #include "hci/facade/facade.h"
+#include "hci/facade/le_acl_manager_facade.h"
 #include "hci/facade/le_advertising_manager_facade.h"
 #include "hci/facade/le_scanning_manager_facade.h"
 #include "l2cap/classic/facade.h"
@@ -68,6 +69,7 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
         modules.add<::bluetooth::hci::facade::HciLayerFacadeModule>();
         modules.add<::bluetooth::hci::facade::AclManagerFacadeModule>();
         modules.add<::bluetooth::hci::facade::ControllerFacadeModule>();
+        modules.add<::bluetooth::hci::facade::LeAclManagerFacadeModule>();
         modules.add<::bluetooth::hci::facade::LeAdvertisingManagerFacadeModule>();
         modules.add<::bluetooth::hci::facade::LeScanningManagerFacadeModule>();
         modules.add<::bluetooth::neighbor::facade::NeighborFacadeModule>();
