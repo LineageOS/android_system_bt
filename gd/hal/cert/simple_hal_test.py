@@ -203,15 +203,15 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
             # Send ACL Data
             self.device_under_test.hal.SendHciAcl(
                 hal_facade_pb2.HciAclPacket(
-                    payload=b'\xfe\x0e\x0b\x00SomeAclData'))
+                    payload=b'\xfe\x2e\x0b\x00SomeAclData'))
             # Send ACL Data
             self.cert_device.hal.SendHciAcl(
                 hal_facade_pb2.HciAclPacket(
-                    payload=b'\xfe\x0e\x0f\x00SomeMoreAclData'))
+                    payload=b'\xfe\x2e\x0f\x00SomeMoreAclData'))
             cert_acl_data_asserts.assert_event_occurs(
-                lambda packet: b'\xfe\x0e\x0b\x00SomeAclData' in packet.payload)
+                lambda packet: b'\xfe\x2e\x0b\x00SomeAclData' in packet.payload)
             acl_data_asserts.assert_event_occurs(
-                lambda packet: b'\xfe\x0e\x0f\x00SomeMoreAclData' in packet.payload
+                lambda packet: b'\xfe\x2e\x0f\x00SomeMoreAclData' in packet.payload
             )
 
     def test_le_white_list_connection_cert_advertises(self):
