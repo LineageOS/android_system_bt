@@ -1309,6 +1309,13 @@ struct AclManager::impl {
     acl_manager_client_handler_ = handler;
   }
 
+  void handle_register_le_acl_manager_callbacks(AclManagerCallbacks* callbacks, os::Handler* handler) {
+    ASSERT(le_acl_manager_client_callbacks_ == nullptr);
+    ASSERT(le_acl_manager_client_handler_ == nullptr);
+    le_acl_manager_client_callbacks_ = callbacks;
+    le_acl_manager_client_handler_ = handler;
+  }
+
   acl_connection& check_and_get_connection(uint16_t handle) {
     auto connection = acl_connections_.find(handle);
     ASSERT(connection != acl_connections_.end());
@@ -1669,6 +1676,8 @@ struct AclManager::impl {
   os::Handler* le_client_handler_ = nullptr;
   AclManagerCallbacks* acl_manager_client_callbacks_ = nullptr;
   os::Handler* acl_manager_client_handler_ = nullptr;
+  AclManagerCallbacks* le_acl_manager_client_callbacks_ = nullptr;
+  os::Handler* le_acl_manager_client_handler_ = nullptr;
   common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* hci_queue_end_ = nullptr;
   std::map<uint16_t, AclManager::acl_connection> acl_connections_;
   std::set<Address> connecting_;
@@ -1831,6 +1840,12 @@ void AclManager::RegisterLeCallbacks(LeConnectionCallbacks* callbacks, os::Handl
 void AclManager::RegisterAclManagerCallbacks(AclManagerCallbacks* callbacks, os::Handler* handler) {
   ASSERT(callbacks != nullptr && handler != nullptr);
   GetHandler()->Post(common::BindOnce(&impl::handle_register_acl_manager_callbacks, common::Unretained(pimpl_.get()),
+                                      common::Unretained(callbacks), common::Unretained(handler)));
+}
+
+void AclManager::RegisterLeAclManagerCallbacks(AclManagerCallbacks* callbacks, os::Handler* handler) {
+  ASSERT(callbacks != nullptr && handler != nullptr);
+  GetHandler()->Post(common::BindOnce(&impl::handle_register_le_acl_manager_callbacks, common::Unretained(pimpl_.get()),
                                       common::Unretained(callbacks), common::Unretained(handler)));
 }
 
