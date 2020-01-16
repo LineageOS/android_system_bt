@@ -142,6 +142,8 @@ class AclConnection {
   virtual bool ReadAfhChannelMap();
   virtual bool ReadRssi();
   virtual bool ReadClock(WhichClock which_clock);
+  virtual bool ReadRemoteSupportedFeatures();
+  virtual bool ReadRemoteExtendedFeatures();
 
   // LE ACL Method
   virtual bool LeConnectionUpdate(uint16_t conn_interval_min, uint16_t conn_interval_max, uint16_t conn_latency,
