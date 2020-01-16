@@ -131,7 +131,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener {
   l2cap::classic::L2capClassicModule* l2cap_classic_module_ __attribute__((unused));
   std::unique_ptr<l2cap::le::FixedChannelManager> l2cap_manager_le_;
   hci::LeSecurityInterface* hci_security_interface_le_ __attribute__((unused));
-  channel::SecurityManagerChannel* security_manager_channel_ __attribute__((unused));
+  channel::SecurityManagerChannel* security_manager_channel_;
   std::unordered_map<hci::Address, std::shared_ptr<record::SecurityRecord>> security_record_map_;
   std::unordered_map<hci::Address, std::shared_ptr<pairing::PairingHandler>> pairing_handler_map_;
 };

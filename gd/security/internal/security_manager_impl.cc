@@ -251,6 +251,7 @@ SecurityManagerImpl::SecurityManagerImpl(os::Handler* security_handler, l2cap::l
       hci_security_interface_le_(hci_layer->GetLeSecurityInterface(
           common::Bind(&SecurityManagerImpl::OnHciLeEvent, common::Unretained(this)), security_handler)),
       security_manager_channel_(security_manager_channel) {
+  Init();
   l2cap_manager_le_->RegisterService(
       bluetooth::l2cap::kSmpCid, {},
       common::BindOnce(&SecurityManagerImpl::OnL2capRegistrationCompleteLe, common::Unretained(this)),
