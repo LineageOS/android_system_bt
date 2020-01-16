@@ -69,7 +69,7 @@ class GrpcFacadeModule : public ::bluetooth::Module {
 
   virtual ::grpc::Service* GetService() const = 0;
 
-  virtual void OnServerStarted(::grpc::ServerCompletionQueue* cq) {}
+  virtual void OnServerStarted() {}
 
   virtual void OnServerStopped() {}
 
