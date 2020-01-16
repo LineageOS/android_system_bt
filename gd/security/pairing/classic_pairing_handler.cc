@@ -17,42 +17,47 @@
  */
 #include "security/pairing/classic_pairing_handler.h"
 
+#include "common/bind.h"
+
 namespace bluetooth {
 namespace security {
 namespace pairing {
 
-void ClassicPairingHandler::NotifyUiDisplayYesNo(uint32_t numeric_value) {
+void ClassicPairingHandler::NotifyUiDisplayYesNo(uint32_t numeric_value,
+                                                 common::OnceCallback<void(bool)> input_callback) {
   for (auto& iter : client_listeners_) {
-    iter.second->Post(common::Bind(&ISecurityManagerListener::OnDisplayYesNoDialogWithValue,
-                                   common::Unretained(iter.first), GetRecord()->GetPseudoAddress(), numeric_value));
+    iter.second->Post(common::BindOnce(&ISecurityManagerListener::OnDisplayYesNoDialogWithValue,
+                                       common::Unretained(iter.first), GetRecord()->GetPseudoAddress(), numeric_value,
+                                       std::move(input_callback)));
   }
 }
 
-void ClassicPairingHandler::NotifyUiDisplayYesNo() {
+void ClassicPairingHandler::NotifyUiDisplayYesNo(common::OnceCallback<void(bool)> input_callback) {
   for (auto& iter : client_listeners_) {
-    iter.second->Post(common::Bind(&ISecurityManagerListener::OnDisplayYesNoDialog, common::Unretained(iter.first),
-                                   GetRecord()->GetPseudoAddress()));
+    iter.second->Post(common::BindOnce(&ISecurityManagerListener::OnDisplayYesNoDialog, common::Unretained(iter.first),
+                                       GetRecord()->GetPseudoAddress(), std::move(input_callback)));
   }
 }
 
 void ClassicPairingHandler::NotifyUiDisplayPasskey(uint32_t passkey) {
   for (auto& iter : client_listeners_) {
-    iter.second->Post(common::Bind(&ISecurityManagerListener::OnDisplayPasskeyDialog, common::Unretained(iter.first),
-                                   GetRecord()->GetPseudoAddress(), passkey));
+    iter.second->Post(common::BindOnce(&ISecurityManagerListener::OnDisplayPasskeyDialog,
+                                       common::Unretained(iter.first), GetRecord()->GetPseudoAddress(), passkey));
   }
 }
 
-void ClassicPairingHandler::NotifyUiDisplayPasskeyInput() {
+void ClassicPairingHandler::NotifyUiDisplayPasskeyInput(common::OnceCallback<void(uint32_t passkey)> input_callback) {
   for (auto& iter : client_listeners_) {
-    iter.second->Post(common::Bind(&ISecurityManagerListener::OnDisplayPasskeyInputDialog,
-                                   common::Unretained(iter.first), GetRecord()->GetPseudoAddress()));
+    iter.second->Post(common::BindOnce(&ISecurityManagerListener::OnDisplayPasskeyInputDialog,
+                                       common::Unretained(iter.first), GetRecord()->GetPseudoAddress(),
+                                       std::move(input_callback)));
   }
 }
 
 void ClassicPairingHandler::NotifyUiDisplayCancel() {
   for (auto& iter : client_listeners_) {
-    iter.second->Post(common::Bind(&ISecurityManagerListener::OnDisplayCancelDialog, common::Unretained(iter.first),
-                                   GetRecord()->GetPseudoAddress()));
+    iter.second->Post(common::BindOnce(&ISecurityManagerListener::OnDisplayCancelDialog, common::Unretained(iter.first),
+                                       GetRecord()->GetPseudoAddress()));
   }
 }
 
@@ -160,6 +165,7 @@ void ClassicPairingHandler::OnReceive(hci::LinkKeyNotificationView packet) {
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
   ASSERT_LOG(GetRecord()->GetPseudoAddress().GetAddress() == packet.GetBdAddr(), "Address mismatch");
   GetRecord()->SetLinkKey(packet.GetLinkKey(), packet.GetKeyType());
+  Cancel();
 }
 
 void ClassicPairingHandler::OnReceive(hci::IoCapabilityRequestView packet) {
@@ -181,7 +187,6 @@ void ClassicPairingHandler::OnReceive(hci::IoCapabilityResponseView packet) {
 
   // Using local variable until device database pointer is ready
   remote_io_capability_ = packet.GetIoCapability();
-  // TODO(optedoblivion): device->SetIoCapability(packet.GetIoCapability);
 }
 
 void ClassicPairingHandler::OnReceive(hci::SimplePairingCompleteView packet) {
@@ -189,7 +194,10 @@ void ClassicPairingHandler::OnReceive(hci::SimplePairingCompleteView packet) {
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
   ASSERT_LOG(GetRecord()->GetPseudoAddress().GetAddress() == packet.GetBdAddr(), "Address mismatch");
   last_status_ = packet.GetStatus();
-  Cancel();
+  if (last_status_ != hci::ErrorCode::SUCCESS) {
+    LOG_INFO("Failed SimplePairingComplete: %s", hci::ErrorCodeText(last_status_).c_str());
+    Cancel();
+  }
 }
 
 void ClassicPairingHandler::OnReceive(hci::ReturnLinkKeysView packet) {
@@ -292,13 +300,15 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
         case hci::IoCapability::DISPLAY_ONLY:
           // NumericComparison, Initiator display, Responder auto confirm
           LOG_INFO("Numeric Comparison: A DisplayYesNo, B auto confirm");
-          NotifyUiDisplayYesNo(packet.GetNumericValue());
+          NotifyUiDisplayYesNo(packet.GetNumericValue(),
+                               common::BindOnce(&ClassicPairingHandler::OnUserInput, common::Unretained(this)));
           // Unauthenticated
           break;
         case hci::IoCapability::DISPLAY_YES_NO:
           // NumericComparison Both Display, Both confirm
           LOG_INFO("Numeric Comparison: A and B DisplayYesNo");
-          NotifyUiDisplayYesNo(packet.GetNumericValue());
+          NotifyUiDisplayYesNo(packet.GetNumericValue(),
+                               common::BindOnce(&ClassicPairingHandler::OnUserInput, common::Unretained(this)));
           // Authenticated
           break;
         case hci::IoCapability::KEYBOARD_ONLY:
@@ -309,7 +319,7 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
           break;
         case hci::IoCapability::NO_INPUT_NO_OUTPUT:
           // NumericComparison, auto confirm Responder, Yes/No confirm Initiator. Don't show confirmation value
-          NotifyUiDisplayYesNo();
+          NotifyUiDisplayYesNo(common::BindOnce(&ClassicPairingHandler::OnUserInput, common::Unretained(this)));
           LOG_INFO("Numeric Comparison: A DisplayYesNo, B auto confirm, no show value");
           // Unauthenticated
           break;
@@ -319,19 +329,22 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
       switch (responder_io_capability) {
         case hci::IoCapability::DISPLAY_ONLY:
           // PassKey Entry, Responder display, Initiator input
-          NotifyUiDisplayPasskeyInput();
+          NotifyUiDisplayPasskeyInput(
+              common::BindOnce(&ClassicPairingHandler::OnPasskeyInput, common::Unretained(this)));
           LOG_INFO("Passkey Entry: A input, B display");
           // Authenticated
           break;
         case hci::IoCapability::DISPLAY_YES_NO:
           // PassKey Entry, Responder display, Initiator input
-          NotifyUiDisplayPasskeyInput();
+          NotifyUiDisplayPasskeyInput(
+              common::BindOnce(&ClassicPairingHandler::OnPasskeyInput, common::Unretained(this)));
           LOG_INFO("Passkey Entry: A input, B display");
           // Authenticated
           break;
         case hci::IoCapability::KEYBOARD_ONLY:
           // PassKey Entry, both input
-          NotifyUiDisplayPasskeyInput();
+          NotifyUiDisplayPasskeyInput(
+              common::BindOnce(&ClassicPairingHandler::OnPasskeyInput, common::Unretained(this)));
           LOG_INFO("Passkey Entry: A input, B input");
           // Authenticated
           break;
@@ -382,6 +395,28 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
 void ClassicPairingHandler::OnReceive(hci::UserPasskeyRequestView packet) {
   ASSERT(packet.IsValid());
   ASSERT_LOG(GetRecord()->GetPseudoAddress().GetAddress() == packet.GetBdAddr(), "Address mismatch");
+}
+
+void ClassicPairingHandler::OnUserInput(bool user_input) {
+  if (user_input) {
+    UserClickedYes();
+  } else {
+    UserClickedNo();
+  }
+}
+
+void ClassicPairingHandler::UserClickedYes() {
+  GetChannel()->SendCommand(
+      hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress()));
+}
+
+void ClassicPairingHandler::UserClickedNo() {
+  GetChannel()->SendCommand(
+      hci::UserConfirmationRequestNegativeReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress()));
+}
+
+void ClassicPairingHandler::OnPasskeyInput(uint32_t passkey) {
+  passkey_ = passkey;
 }
 
 }  // namespace pairing
