@@ -38,7 +38,6 @@
 #define BTA_PAN_RX_PUSH_BUF 0x01 /* RX push with zero copy. */
 #define BTA_PAN_RX_PULL 0x02     /* RX pull. */
 #define BTA_PAN_TX_PUSH 0x00     /* TX push. */
-#define BTA_PAN_TX_PUSH_BUF 0x10 /* TX push with zero copy. */
 #define BTA_PAN_TX_PULL 0x20     /* TX pull. */
 
 /*****************************************************************************
@@ -137,24 +136,6 @@ extern void bta_pan_co_tx_write(uint16_t handle, uint8_t app_id,
                                 const RawAddress& src, const RawAddress& dst,
                                 uint16_t protocol, uint8_t* p_data,
                                 uint16_t len, bool ext, bool forward);
-
-/*******************************************************************************
- *
- * Function         bta_pan_co_tx_writebuf
- *
- * Description      This function is called by PAN to send data to the phone
- *                  when the TX path is configured to use a push interface with
- *                  zero copy.  The phone must free the buffer using function
- *                  osi_free() when it is through processing the buffer.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-extern void bta_pan_co_tx_writebuf(uint16_t handle, uint8_t app_id,
-                                   const RawAddress& src, const RawAddress& dst,
-                                   uint16_t protocol, BT_HDR* p_buf, bool ext,
-                                   bool forward);
 
 /*******************************************************************************
  *
