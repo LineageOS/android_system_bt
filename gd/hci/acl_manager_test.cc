@@ -81,12 +81,17 @@ class TestController : public Controller {
     return total_acl_buffers_;
   }
 
+  uint64_t GetControllerLeLocalSupportedFeatures() const override {
+    return le_local_supported_features_;
+  }
+
   void CompletePackets(uint16_t handle, uint16_t packets) {
     acl_cb_handler_->Post(common::BindOnce(acl_cb_, handle, packets));
   }
 
   uint16_t acl_buffer_length_ = 1024;
   uint16_t total_acl_buffers_ = 2;
+  uint64_t le_local_supported_features_ = 0;
   common::Callback<void(uint16_t /* handle */, uint16_t /* packets */)> acl_cb_;
   os::Handler* acl_cb_handler_ = nullptr;
 
@@ -497,6 +502,8 @@ TEST_F(AclManagerTest, invoke_registered_callback_connection_complete_fail) {
   fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
 }
 
+// TODO: implement version of this test where controller supports Extended Advertising Feature in
+// GetControllerLeLocalSupportedFeatures, and LE Extended Create Connection is used
 TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_success) {
   AddressWithType remote_with_type(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
   test_hci_layer_->SetCommandFuture();
