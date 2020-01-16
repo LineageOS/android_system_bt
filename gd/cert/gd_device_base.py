@@ -40,6 +40,9 @@ def replace_vars(string, config):
     rootcanal_port = config.get("rootcanal_port")
     if rootcanal_port is None:
         rootcanal_port = ""
+    if serial_number == "DUT" or serial_number == "CERT":
+        logging.warn("Did you forget to configure the serial number?")
+        raise Exception
     return string.replace("$ANDROID_HOST_OUT", ANDROID_HOST_OUT) \
                  .replace("$(grpc_port)", config.get("grpc_port")) \
                  .replace("$(grpc_root_server_port)", config.get("grpc_root_server_port")) \
