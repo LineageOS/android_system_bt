@@ -41,8 +41,6 @@ class L2cap : public bluetooth::Module, public bluetooth::shim::IL2cap {
   void SetConnectionClosedCallback(uint16_t cid, ConnectionClosedCallback on_closed) override;
 
   void Write(uint16_t cid, const uint8_t* data, size_t len) override;
-  void WriteFlushable(uint16_t cid, const uint8_t* data, size_t len) override;
-  void WriteNonFlushable(uint16_t cid, const uint8_t* data, size_t len) override;
 
   void SendLoopbackResponse(std::function<void()>) override;
 
