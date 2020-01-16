@@ -24,10 +24,7 @@
                         "--btsnoop=data/misc/bluetooth/logs/btsnoop_hci.log",
                         "--signal-port=$(signal_port)"
                     ]
-                }
-            ],
-            "GdCertDevice":
-            [
+                },
                 {
                     "grpc_port": "8898",
                     "grpc_root_server_port": "8896",
@@ -40,7 +37,7 @@
                         "-s",
                         "$(serial_number)",
                         "shell",
-                        "/system/bin/bluetooth_cert_stack",
+                        "/system/bin/bluetooth_stack_with_facade",
                         "--grpc-port=$(grpc_port)",
                         "--root-server-port=$(grpc_root_server_port)",
                         "--btsnoop=data/misc/bluetooth/logs/btsnoop_hci.log",
