@@ -39,7 +39,7 @@ class L2capClassicFixedChannelImplTest : public ::testing::Test {
     std::promise<void> promise;
     auto future = promise.get_future();
     handler->Post(common::BindOnce(&std::promise<void>::set_value, common::Unretained(&promise)));
-    future.wait_for(std::chrono::milliseconds(3));
+    future.wait_for(std::chrono::seconds(1));
   }
 
  protected:
@@ -60,6 +60,8 @@ class L2capClassicFixedChannelImplTest : public ::testing::Test {
 
 TEST_F(L2capClassicFixedChannelImplTest, get_device) {
   MockParameterProvider mock_parameter_provider;
+  EXPECT_CALL(mock_parameter_provider, GetClassicLinkIdleDisconnectTimeout())
+      .WillRepeatedly(Return(std::chrono::seconds(5)));
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
@@ -70,6 +72,8 @@ TEST_F(L2capClassicFixedChannelImplTest, get_device) {
 
 TEST_F(L2capClassicFixedChannelImplTest, close_triggers_callback) {
   MockParameterProvider mock_parameter_provider;
+  EXPECT_CALL(mock_parameter_provider, GetClassicLinkIdleDisconnectTimeout())
+      .WillRepeatedly(Return(std::chrono::seconds(5)));
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
@@ -92,6 +96,8 @@ TEST_F(L2capClassicFixedChannelImplTest, close_triggers_callback) {
 
 TEST_F(L2capClassicFixedChannelImplTest, register_callback_after_close_should_call_immediately) {
   MockParameterProvider mock_parameter_provider;
+  EXPECT_CALL(mock_parameter_provider, GetClassicLinkIdleDisconnectTimeout())
+      .WillRepeatedly(Return(std::chrono::seconds(5)));
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
@@ -114,6 +120,8 @@ TEST_F(L2capClassicFixedChannelImplTest, register_callback_after_close_should_ca
 
 TEST_F(L2capClassicFixedChannelImplTest, close_twice_should_fail) {
   MockParameterProvider mock_parameter_provider;
+  EXPECT_CALL(mock_parameter_provider, GetClassicLinkIdleDisconnectTimeout())
+      .WillRepeatedly(Return(std::chrono::seconds(5)));
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
@@ -139,6 +147,8 @@ TEST_F(L2capClassicFixedChannelImplTest, close_twice_should_fail) {
 
 TEST_F(L2capClassicFixedChannelImplTest, multiple_registeration_should_fail) {
   MockParameterProvider mock_parameter_provider;
+  EXPECT_CALL(mock_parameter_provider, GetClassicLinkIdleDisconnectTimeout())
+      .WillRepeatedly(Return(std::chrono::seconds(5)));
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
@@ -160,6 +170,8 @@ TEST_F(L2capClassicFixedChannelImplTest, multiple_registeration_should_fail) {
 
 TEST_F(L2capClassicFixedChannelImplTest, call_acquire_before_registeration_should_fail) {
   MockParameterProvider mock_parameter_provider;
+  EXPECT_CALL(mock_parameter_provider, GetClassicLinkIdleDisconnectTimeout())
+      .WillRepeatedly(Return(std::chrono::seconds(5)));
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
@@ -170,6 +182,8 @@ TEST_F(L2capClassicFixedChannelImplTest, call_acquire_before_registeration_shoul
 
 TEST_F(L2capClassicFixedChannelImplTest, call_release_before_registeration_should_fail) {
   MockParameterProvider mock_parameter_provider;
+  EXPECT_CALL(mock_parameter_provider, GetClassicLinkIdleDisconnectTimeout())
+      .WillRepeatedly(Return(std::chrono::seconds(5)));
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
@@ -180,6 +194,10 @@ TEST_F(L2capClassicFixedChannelImplTest, call_release_before_registeration_shoul
 
 TEST_F(L2capClassicFixedChannelImplTest, test_acquire_release_channel) {
   MockParameterProvider mock_parameter_provider;
+  EXPECT_CALL(mock_parameter_provider, GetClassicLinkIdleDisconnectTimeout())
+      .WillRepeatedly(Return(std::chrono::seconds(5)));
+  EXPECT_CALL(mock_parameter_provider, GetClassicLinkIdleDisconnectTimeout())
+      .WillRepeatedly(Return(std::chrono::seconds(5)));
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
@@ -190,7 +208,8 @@ TEST_F(L2capClassicFixedChannelImplTest, test_acquire_release_channel) {
   auto user_handler = std::make_unique<os::Handler>(thread_);
   hci::ErrorCode my_status = hci::ErrorCode::SUCCESS;
   fixed_channel_impl.RegisterOnCloseCallback(
-      user_handler.get(), common::testing::BindLambdaForTesting([&](hci::ErrorCode status) { my_status = status; }));
+      user_handler.get(),
+      common::testing::BindLambdaForTesting([&my_status](hci::ErrorCode status) { my_status = status; }));
 
   // Default should be false
   EXPECT_FALSE(fixed_channel_impl.IsAcquired());
@@ -209,6 +228,8 @@ TEST_F(L2capClassicFixedChannelImplTest, test_acquire_release_channel) {
 
 TEST_F(L2capClassicFixedChannelImplTest, test_acquire_after_close) {
   MockParameterProvider mock_parameter_provider;
+  EXPECT_CALL(mock_parameter_provider, GetClassicLinkIdleDisconnectTimeout())
+      .WillRepeatedly(Return(std::chrono::seconds(5)));
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
@@ -218,12 +239,19 @@ TEST_F(L2capClassicFixedChannelImplTest, test_acquire_after_close) {
   // Register on close callback
   auto user_handler = std::make_unique<os::Handler>(thread_);
   hci::ErrorCode my_status = hci::ErrorCode::SUCCESS;
-  fixed_channel_impl.RegisterOnCloseCallback(
-      user_handler.get(), common::testing::BindLambdaForTesting([&](hci::ErrorCode status) { my_status = status; }));
+  std::promise<void> promise;
+  auto future = promise.get_future();
+  fixed_channel_impl.RegisterOnCloseCallback(user_handler.get(),
+                                             common::testing::BindLambdaForTesting([&](hci::ErrorCode status) {
+                                               my_status = status;
+                                               promise.set_value();
+                                             }));
 
   // Channel closure should trigger such callback
   fixed_channel_impl.OnClosed(hci::ErrorCode::REMOTE_USER_TERMINATED_CONNECTION);
   SyncHandler(user_handler.get());
+  auto future_status = future.wait_for(std::chrono::seconds(1));
+  EXPECT_EQ(future_status, std::future_status::ready);
   EXPECT_EQ(hci::ErrorCode::REMOTE_USER_TERMINATED_CONNECTION, my_status);
 
   // Release or Acquire after closing should crash

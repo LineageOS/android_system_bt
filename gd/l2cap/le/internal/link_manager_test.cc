@@ -38,6 +38,7 @@ namespace bluetooth {
 namespace l2cap {
 namespace le {
 namespace internal {
+namespace {
 
 using hci::testing::MockAclConnection;
 using hci::testing::MockAclManager;
@@ -51,7 +52,7 @@ using ::testing::Return;
 using ::testing::SaveArg;
 
 constexpr static auto kTestIdleDisconnectTimeoutLong = std::chrono::milliseconds(1000);
-constexpr static auto kTestIdleDisconnectTimeoutShort = std::chrono::milliseconds(30);
+constexpr static auto kTestIdleDisconnectTimeoutShort = std::chrono::milliseconds(1000);
 
 class L2capLeLinkManagerTest : public ::testing::Test {
  public:
@@ -88,7 +89,7 @@ TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl) {
   MockAclManager mock_acl_manager;
   hci::AddressWithType address_with_type({{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                                          hci::AddressType::RANDOM_DEVICE_ADDRESS);
-  auto user_handler = std::make_unique<os::Handler>(thread_);
+  auto user_handler = os::Handler(thread_);
 
   // Step 1: Verify callback registration with HCI
   hci::LeConnectionCallbacks* hci_le_connection_callbacks = nullptr;
@@ -110,7 +111,7 @@ TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl) {
   // Step 2: Connect to fixed channel without ACL connection should trigger ACL connection process
   EXPECT_CALL(mock_acl_manager, CreateLeConnection(address_with_type)).Times(1);
   LinkManager::PendingFixedChannelConnection pending_fixed_channel_connection{
-      .handler_ = user_handler.get(),
+      .handler_ = &user_handler,
       .on_fail_callback_ = common::BindOnce([](FixedChannelManager::ConnectionResult result) { FAIL(); })};
   le_link_manager.ConnectFixedChannelServices(address_with_type, std::move(pending_fixed_channel_connection));
 
@@ -121,27 +122,38 @@ TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl) {
   EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(address_with_type.GetAddress()));
   EXPECT_CALL(*acl_connection, GetAddressType()).WillRepeatedly(Return(address_with_type.GetAddressType()));
   std::unique_ptr<FixedChannel> channel_1, channel_2;
-  EXPECT_CALL(mock_service_1, NotifyChannelCreation(_)).WillOnce([&channel_1](std::unique_ptr<FixedChannel> channel) {
-    channel_1 = std::move(channel);
-  });
-  EXPECT_CALL(mock_service_2, NotifyChannelCreation(_)).WillOnce([&channel_2](std::unique_ptr<FixedChannel> channel) {
-    channel_2 = std::move(channel);
-  });
+  std::promise<void> promise_1, promise_2;
+  auto future_1 = promise_1.get_future();
+  auto future_2 = promise_2.get_future();
+  EXPECT_CALL(mock_service_1, NotifyChannelCreation(_))
+      .WillOnce([&channel_1, &promise_1](std::unique_ptr<FixedChannel> channel) {
+        channel_1 = std::move(channel);
+        promise_1.set_value();
+      });
+  EXPECT_CALL(mock_service_2, NotifyChannelCreation(_))
+      .WillOnce([&channel_2, &promise_2](std::unique_ptr<FixedChannel> channel) {
+        channel_2 = std::move(channel);
+        promise_2.set_value();
+      });
   hci_callback_handler->Post(common::BindOnce(&hci::LeConnectionCallbacks::OnLeConnectSuccess,
                                               common::Unretained(hci_le_connection_callbacks), address_with_type,
                                               std::move(acl_connection)));
   SyncHandler(hci_callback_handler);
+  auto future_1_status = future_1.wait_for(kTestIdleDisconnectTimeoutShort);
+  EXPECT_EQ(future_1_status, std::future_status::ready);
+  auto future_2_status = future_2.wait_for(kTestIdleDisconnectTimeoutShort);
+  EXPECT_EQ(future_2_status, std::future_status::ready);
   EXPECT_NE(channel_1, nullptr);
   EXPECT_NE(channel_2, nullptr);
 
   // Step 4: Calling ConnectServices() to the same device will no trigger another connection attempt
   FixedChannelManager::ConnectionResult my_result;
   LinkManager::PendingFixedChannelConnection pending_fixed_channel_connection_2{
-      .handler_ = user_handler.get(),
+      .handler_ = &user_handler,
       .on_fail_callback_ = common::testing::BindLambdaForTesting(
           [&my_result](FixedChannelManager::ConnectionResult result) { my_result = result; })};
   le_link_manager.ConnectFixedChannelServices(address_with_type, std::move(pending_fixed_channel_connection_2));
-  SyncHandler(user_handler.get());
+  SyncHandler(&user_handler);
   EXPECT_EQ(my_result.connection_result_code,
             FixedChannelManager::ConnectionResultCode::FAIL_ALL_SERVICES_HAVE_CHANNEL);
 
@@ -150,16 +162,22 @@ TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl) {
   results.emplace_back(kSmpBrCid + 1, &mock_service_3);
   EXPECT_CALL(mock_le_fixed_channel_service_manager, GetRegisteredServices()).WillRepeatedly(Return(results));
   LinkManager::PendingFixedChannelConnection pending_fixed_channel_connection_3{
-      .handler_ = user_handler.get(),
+      .handler_ = &user_handler,
       .on_fail_callback_ = common::BindOnce([](FixedChannelManager::ConnectionResult result) { FAIL(); })};
   std::unique_ptr<FixedChannel> channel_3;
-  EXPECT_CALL(mock_service_3, NotifyChannelCreation(_)).WillOnce([&channel_3](std::unique_ptr<FixedChannel> channel) {
-    channel_3 = std::move(channel);
-  });
+  std::promise<void> promise_3;
+  auto future_3 = promise_3.get_future();
+  EXPECT_CALL(mock_service_3, NotifyChannelCreation(_))
+      .WillOnce([&channel_3, &promise_3](std::unique_ptr<FixedChannel> channel) {
+        channel_3 = std::move(channel);
+        promise_3.set_value();
+      });
   le_link_manager.ConnectFixedChannelServices(address_with_type, std::move(pending_fixed_channel_connection_3));
+  auto future_3_status = future_3.wait_for(kTestIdleDisconnectTimeoutShort);
+  EXPECT_EQ(future_3_status, std::future_status::ready);
   EXPECT_NE(channel_3, nullptr);
 
-  user_handler->Clear();
+  user_handler.Clear();
 
   le_link_manager.OnDisconnect(address_with_type, hci::ErrorCode::SUCCESS);
 }
@@ -283,17 +301,28 @@ TEST_F(L2capLeLinkManagerTest, not_acquiring_channels_should_disconnect_acl_afte
   EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(address_with_type.GetAddress()));
   EXPECT_CALL(*acl_connection, GetAddressType()).WillRepeatedly(Return(address_with_type.GetAddressType()));
   std::unique_ptr<FixedChannel> channel_1, channel_2;
-  EXPECT_CALL(mock_service_1, NotifyChannelCreation(_)).WillOnce([&channel_1](std::unique_ptr<FixedChannel> channel) {
-    channel_1 = std::move(channel);
-  });
-  EXPECT_CALL(mock_service_2, NotifyChannelCreation(_)).WillOnce([&channel_2](std::unique_ptr<FixedChannel> channel) {
-    channel_2 = std::move(channel);
-  });
+  std::promise<void> promise_1, promise_2;
+  auto future_1 = promise_1.get_future();
+  auto future_2 = promise_2.get_future();
+  EXPECT_CALL(mock_service_1, NotifyChannelCreation(_))
+      .WillOnce([&channel_1, &promise_1](std::unique_ptr<FixedChannel> channel) {
+        channel_1 = std::move(channel);
+        promise_1.set_value();
+      });
+  EXPECT_CALL(mock_service_2, NotifyChannelCreation(_))
+      .WillOnce([&channel_2, &promise_2](std::unique_ptr<FixedChannel> channel) {
+        channel_2 = std::move(channel);
+        promise_2.set_value();
+      });
   hci_callback_handler->Post(common::BindOnce(&hci::LeConnectionCallbacks::OnLeConnectSuccess,
                                               common::Unretained(hci_le_connection_callbacks), address_with_type,
                                               std::move(acl_connection)));
   SyncHandler(hci_callback_handler);
+  auto future_1_status = future_1.wait_for(kTestIdleDisconnectTimeoutShort);
+  EXPECT_EQ(future_1_status, std::future_status::ready);
   EXPECT_NE(channel_1, nullptr);
+  auto future_2_status = future_2.wait_for(kTestIdleDisconnectTimeoutShort);
+  EXPECT_EQ(future_2_status, std::future_status::ready);
   EXPECT_NE(channel_2, nullptr);
   hci::ErrorCode status_1 = hci::ErrorCode::SUCCESS;
   channel_1->RegisterOnCloseCallback(
@@ -354,17 +383,28 @@ TEST_F(L2capLeLinkManagerTest, acquiring_channels_should_not_disconnect_acl_afte
   EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(address_with_type.GetAddress()));
   EXPECT_CALL(*acl_connection, GetAddressType()).WillRepeatedly(Return(address_with_type.GetAddressType()));
   std::unique_ptr<FixedChannel> channel_1, channel_2;
-  EXPECT_CALL(mock_service_1, NotifyChannelCreation(_)).WillOnce([&channel_1](std::unique_ptr<FixedChannel> channel) {
-    channel_1 = std::move(channel);
-  });
-  EXPECT_CALL(mock_service_2, NotifyChannelCreation(_)).WillOnce([&channel_2](std::unique_ptr<FixedChannel> channel) {
-    channel_2 = std::move(channel);
-  });
+  std::promise<void> promise_1, promise_2;
+  auto future_1 = promise_1.get_future();
+  auto future_2 = promise_2.get_future();
+  EXPECT_CALL(mock_service_1, NotifyChannelCreation(_))
+      .WillOnce([&channel_1, &promise_1](std::unique_ptr<FixedChannel> channel) {
+        channel_1 = std::move(channel);
+        promise_1.set_value();
+      });
+  EXPECT_CALL(mock_service_2, NotifyChannelCreation(_))
+      .WillOnce([&channel_2, &promise_2](std::unique_ptr<FixedChannel> channel) {
+        channel_2 = std::move(channel);
+        promise_2.set_value();
+      });
   hci_callback_handler->Post(common::BindOnce(&hci::LeConnectionCallbacks::OnLeConnectSuccess,
                                               common::Unretained(hci_le_connection_callbacks), address_with_type,
                                               std::move(acl_connection)));
   SyncHandler(hci_callback_handler);
+  auto future_1_status = future_1.wait_for(kTestIdleDisconnectTimeoutShort);
+  EXPECT_EQ(future_1_status, std::future_status::ready);
   EXPECT_NE(channel_1, nullptr);
+  auto future_2_status = future_2.wait_for(kTestIdleDisconnectTimeoutShort);
+  EXPECT_EQ(future_2_status, std::future_status::ready);
   EXPECT_NE(channel_2, nullptr);
   hci::ErrorCode status_1 = hci::ErrorCode::SUCCESS;
   channel_1->RegisterOnCloseCallback(
@@ -427,17 +467,28 @@ TEST_F(L2capLeLinkManagerTest, acquiring_and_releasing_channels_should_eventuall
   EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(address_with_type.GetAddress()));
   EXPECT_CALL(*acl_connection, GetAddressType()).WillRepeatedly(Return(address_with_type.GetAddressType()));
   std::unique_ptr<FixedChannel> channel_1, channel_2;
-  EXPECT_CALL(mock_service_1, NotifyChannelCreation(_)).WillOnce([&channel_1](std::unique_ptr<FixedChannel> channel) {
-    channel_1 = std::move(channel);
-  });
-  EXPECT_CALL(mock_service_2, NotifyChannelCreation(_)).WillOnce([&channel_2](std::unique_ptr<FixedChannel> channel) {
-    channel_2 = std::move(channel);
-  });
+  std::promise<void> promise_1, promise_2;
+  auto future_1 = promise_1.get_future();
+  auto future_2 = promise_2.get_future();
+  EXPECT_CALL(mock_service_1, NotifyChannelCreation(_))
+      .WillOnce([&channel_1, &promise_1](std::unique_ptr<FixedChannel> channel) {
+        channel_1 = std::move(channel);
+        promise_1.set_value();
+      });
+  EXPECT_CALL(mock_service_2, NotifyChannelCreation(_))
+      .WillOnce([&channel_2, &promise_2](std::unique_ptr<FixedChannel> channel) {
+        channel_2 = std::move(channel);
+        promise_2.set_value();
+      });
   hci_callback_handler->Post(common::BindOnce(&hci::LeConnectionCallbacks::OnLeConnectSuccess,
                                               common::Unretained(hci_le_connection_callbacks), address_with_type,
                                               std::move(acl_connection)));
   SyncHandler(hci_callback_handler);
+  auto future_1_status = future_1.wait_for(kTestIdleDisconnectTimeoutShort);
+  EXPECT_EQ(future_1_status, std::future_status::ready);
   EXPECT_NE(channel_1, nullptr);
+  auto future_2_status = future_2.wait_for(kTestIdleDisconnectTimeoutShort);
+  EXPECT_EQ(future_2_status, std::future_status::ready);
   EXPECT_NE(channel_2, nullptr);
   hci::ErrorCode status_1 = hci::ErrorCode::SUCCESS;
   channel_1->RegisterOnCloseCallback(
@@ -466,6 +517,7 @@ TEST_F(L2capLeLinkManagerTest, acquiring_and_releasing_channels_should_eventuall
   user_handler->Clear();
 }
 
+}  // namespace
 }  // namespace internal
 }  // namespace le
 }  // namespace l2cap

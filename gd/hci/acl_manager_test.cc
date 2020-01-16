@@ -397,6 +397,14 @@ class AclManagerWithConnectionTest : public AclManagerTest {
     connection_->RegisterCallbacks(&mock_connection_management_callbacks_, client_handler_);
   }
 
+  void sync_client_handler() {
+    std::promise<void> promise;
+    auto future = promise.get_future();
+    client_handler_->Post(common::BindOnce(&std::promise<void>::set_value, common::Unretained(&promise)));
+    auto future_status = future.wait_for(std::chrono::seconds(1));
+    EXPECT_EQ(future_status, std::future_status::ready);
+  }
+
   uint16_t handle_;
   std::shared_ptr<AclConnection> connection_;
 
@@ -1092,7 +1100,7 @@ TEST_F(AclManagerWithConnectionTest, send_read_rssi) {
   auto packet = test_hci_layer_->GetCommandPacket(OpCode::READ_RSSI);
   auto command_view = ReadRssiView::Create(packet);
   ASSERT(command_view.IsValid());
-
+  sync_client_handler();
   EXPECT_CALL(mock_connection_management_callbacks_, OnReadRssiComplete(0x00));
   uint8_t num_packets = 1;
   test_hci_layer_->IncomingEvent(ReadRssiCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, handle_, 0x00));
