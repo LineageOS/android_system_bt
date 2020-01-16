@@ -30,6 +30,7 @@ namespace bluetooth {
 namespace l2cap {
 namespace classic {
 namespace internal {
+namespace {
 
 class L2capDynamicServiceManagerTest : public ::testing::Test {
  public:
@@ -62,7 +63,8 @@ class L2capDynamicServiceManagerTest : public ::testing::Test {
     std::promise<void> promise;
     auto future = promise.get_future();
     user_handler_->Post(common::BindOnce(&std::promise<void>::set_value, common::Unretained(&promise)));
-    future.wait_for(std::chrono::milliseconds(3));
+    auto future_status = future.wait_for(std::chrono::seconds(1));
+    EXPECT_EQ(future_status, std::future_status::ready);
   }
 
   DynamicChannelServiceManagerImpl* manager_ = nullptr;
@@ -101,6 +103,7 @@ TEST_F(L2capDynamicServiceManagerTest, register_classic_dynamic_channel_bad_cid)
   EXPECT_FALSE(service_registered_);
 }
 
+}  // namespace
 }  // namespace internal
 }  // namespace classic
 }  // namespace l2cap
