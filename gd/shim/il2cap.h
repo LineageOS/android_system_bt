@@ -29,6 +29,7 @@ namespace shim {
 
 using ConnectionClosedCallback = std::function<void(uint16_t cid, int error_code)>;
 using ConnectionOpenCallback = std::function<void(std::string string_address, uint16_t psm, uint16_t cid)>;
+using ConnectionFailedCallback = ConnectionOpenCallback;
 using ReadDataReadyCallback = std::function<void(uint16_t cid, std::vector<const uint8_t> data)>;
 
 struct IL2cap {
@@ -44,8 +45,6 @@ struct IL2cap {
   virtual void SetConnectionClosedCallback(uint16_t cid, ConnectionClosedCallback on_closed) = 0;
 
   virtual void Write(uint16_t cid, const uint8_t* data, size_t len) = 0;
-  virtual void WriteFlushable(uint16_t cid, const uint8_t* data, size_t len) = 0;
-  virtual void WriteNonFlushable(uint16_t cid, const uint8_t* data, size_t len) = 0;
 
   virtual void SendLoopbackResponse(std::function<void()>) = 0;
   virtual ~IL2cap() {}
