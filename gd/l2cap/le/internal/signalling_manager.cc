@@ -42,7 +42,7 @@ LeSignallingManager::LeSignallingManager(os::Handler* handler, Link* link,
       dynamic_service_manager_(dynamic_service_manager), channel_allocator_(channel_allocator), alarm_(handler) {
   ASSERT(handler_ != nullptr);
   ASSERT(link_ != nullptr);
-  signalling_channel_ = link_->AllocateFixedChannel(kClassicSignallingCid, {});
+  signalling_channel_ = link_->AllocateFixedChannel(kLeSignallingCid, {});
   signalling_channel_->GetQueueUpEnd()->RegisterDequeue(
       handler_, common::Bind(&LeSignallingManager::on_incoming_packet, common::Unretained(this)));
   enqueue_buffer_ =

@@ -65,6 +65,7 @@
 #include "common/address_obfuscator.h"
 #include "common/metrics.h"
 #include "device/include/interop.h"
+#include "main/shim/dumpsys.h"
 #include "main/shim/shim.h"
 #include "osi/include/alarm.h"
 #include "osi/include/allocation_tracker.h"
@@ -72,7 +73,6 @@
 #include "osi/include/osi.h"
 #include "osi/include/wakelock.h"
 #include "stack/gatt/connection_manager.h"
-#include "stack/include/btu.h"
 #include "stack_manager.h"
 
 using bluetooth::hearing_aid::HearingAidInterface;
@@ -320,7 +320,6 @@ static void dump(int fd, const char** arguments) {
   btif_debug_av_dump(fd);
   bta_debug_av_dump(fd);
   stack_debug_avdtp_api_dump(fd);
-  stack_debug_hwbinder_thread_dump(fd);
   bluetooth::avrcp::AvrcpService::DebugDump(fd);
   btif_debug_config_dump(fd);
   BTA_HfClientDumpStatistics(fd);
@@ -330,9 +329,13 @@ static void dump(int fd, const char** arguments) {
   HearingAid::DebugDump(fd);
   connection_manager::dump(fd);
   bluetooth::bqr::DebugDump(fd);
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    bluetooth::shim::Dump(fd);
+  } else {
 #if (BTSNOOP_MEM == TRUE)
-  btif_debug_btsnoop_dump(fd);
+    btif_debug_btsnoop_dump(fd);
 #endif
+  }
 }
 
 static void dumpMetrics(std::string* output) {

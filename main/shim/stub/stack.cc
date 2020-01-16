@@ -67,12 +67,6 @@ void TestGdShimL2cap::Write(uint16_t cid, const uint8_t* data, size_t len) {
   memcpy(data_buffer_, data, len);
 }
 
-void TestGdShimL2cap::WriteFlushable(uint16_t cid, const uint8_t* data,
-                                     size_t len) {}
-
-void TestGdShimL2cap::WriteNonFlushable(uint16_t cid, const uint8_t* data,
-                                        size_t len) {}
-
 void TestGdShimL2cap::SendLoopbackResponse(std::function<void()> function) {
   function();
 }
@@ -92,6 +86,8 @@ bluetooth::shim::IConnectability* TestStack::GetConnectability() {
 bluetooth::shim::IDiscoverability* TestStack::GetDiscoverability() {
   return nullptr;
 }
+
+bluetooth::shim::IDumpsys* TestStack::GetDumpsys() { return nullptr; }
 
 bluetooth::shim::IHciLayer* TestStack::GetHciLayer() { return nullptr; }
 
