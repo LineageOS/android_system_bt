@@ -68,7 +68,7 @@ struct Storage::impl {
   std::map<const std::string, ChecksumReadCallback> checksum_read_to_callback_map_;
   std::map<const std::string, ChecksumWriteCallback> checksum_write_to_callback_map_;
 
-  std::unique_ptr<bluetooth::storage::LegacyModule> legacy_module_{nullptr};
+  bluetooth::storage::LegacyModule* legacy_module_{nullptr};
   os::Handler* handler_;
 };
 
