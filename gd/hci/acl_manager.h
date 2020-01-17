@@ -217,6 +217,9 @@ class AclManager : public Module {
   // Should register only once when user module starts.
   virtual void RegisterAclManagerCallbacks(AclManagerCallbacks* callbacks, os::Handler* handler);
 
+  // Should register only once when user module starts.
+  virtual void RegisterLeAclManagerCallbacks(AclManagerCallbacks* callbacks, os::Handler* handler);
+
   // Generates OnConnectSuccess if connected, or OnConnectFail otherwise
   virtual void CreateConnection(Address address);
 
