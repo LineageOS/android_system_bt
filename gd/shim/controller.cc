@@ -16,6 +16,7 @@
 #define LOG_TAG "bt_gd_shim"
 
 #include <memory>
+#include <string>
 
 #include "common/bidi_queue.h"
 #include "hci/address.h"
@@ -29,13 +30,17 @@
 namespace bluetooth {
 namespace shim {
 
-const ModuleFactory Controller::Factory = ModuleFactory([]() { return new Controller(); });
+namespace {
+constexpr char kModuleName[] = "shim::Controller";
+}  // namespace
 
 struct Controller::impl {
   impl(hci::Controller* hci_controller) : hci_controller_(hci_controller) {}
 
   hci::Controller* hci_controller_{nullptr};
 };
+
+const ModuleFactory Controller::Factory = ModuleFactory([]() { return new Controller(); });
 
 bool Controller::IsCommandSupported(int op_code) const {
   return pimpl_->hci_controller_->IsSupported((bluetooth::hci::OpCode)op_code);
@@ -107,6 +112,10 @@ void Controller::Start() {
 
 void Controller::Stop() {
   pimpl_.reset();
+}
+
+std::string Controller::ToString() const {
+  return kModuleName;
 }
 
 }  // namespace shim
