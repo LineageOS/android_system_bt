@@ -17,6 +17,7 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 
 #include "common/bind.h"
 #include "hci/address.h"
@@ -31,7 +32,10 @@
 namespace bluetooth {
 namespace shim {
 
+namespace {
+constexpr char kModuleName[] = "shim::Scanning";
 constexpr size_t kAdvertisingReportBufferSize = 1024;
+}  // namespace
 
 struct Scanning::impl : public hci::LeScanningManagerCallbacks {
   void StartScanning(bool set_active, AdvertisingReportCallback advertising_callback,
@@ -245,6 +249,10 @@ void Scanning::Start() {
 
 void Scanning::Stop() {
   pimpl_.reset();
+}
+
+std::string Scanning::ToString() const {
+  return kModuleName;
 }
 
 }  // namespace shim

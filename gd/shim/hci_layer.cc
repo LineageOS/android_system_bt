@@ -18,6 +18,7 @@
 #include <cstdint>
 #include <memory>
 #include <queue>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -31,6 +32,10 @@
 
 namespace bluetooth {
 namespace shim {
+
+namespace {
+constexpr char kModuleName[] = "shim::HciLayer";
+}  // namespace
 
 using TokenQueue = std::queue<const void*>;
 using OpCodeTokenQueueMap = std::unordered_map<hci::OpCode, TokenQueue>;
@@ -227,6 +232,10 @@ void HciLayer::Start() {
 
 void HciLayer::Stop() {
   pimpl_.reset();
+}
+
+std::string HciLayer::ToString() const {
+  return kModuleName;
 }
 
 }  // namespace shim
