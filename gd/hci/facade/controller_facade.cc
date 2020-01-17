@@ -48,6 +48,19 @@ class ControllerFacadeService : public ControllerFacade::Service {
     return ::grpc::Status::OK;
   }
 
+  ::grpc::Status GetLocalName(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
+                              NameMsg* response) override {
+    std::string local_name = controller_->GetControllerLocalName();
+    response->set_name(local_name);
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status WriteLocalName(::grpc::ServerContext* context, const NameMsg* request,
+                                ::google::protobuf::Empty* response) override {
+    controller_->WriteLocalName(request->name());
+    return ::grpc::Status::OK;
+  }
+
   ::grpc::Status GetLocalExtendedFeatures(::grpc::ServerContext* context, const PageNumberMsg* request,
                                           FeaturesMsg* response) override {
     if (request->page_number() > controller_->GetControllerLocalExtendedFeaturesMaxPageNumber()) {

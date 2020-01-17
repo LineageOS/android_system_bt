@@ -21,6 +21,7 @@ import sys
 
 sys.path.append(os.environ['ANDROID_BUILD_TOP'] + '/system/bt/gd')
 
+from acts import asserts
 from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
 from google.protobuf import empty_pb2 as empty_proto
 from facade import rootservice_pb2 as facade_rootservice
@@ -56,7 +57,10 @@ class ControllerTest(GdFacadeOnlyBaseTestClass):
             empty_proto.Empty())
         dut_address_response = self.device_under_test.hci_controller.GetMacAddress(
             empty_proto.Empty())
-        return cert_address_response.address != dut_address_response.address
+        asserts.assert_true(
+            cert_address_response.address != dut_address_response.address,
+            msg="Expected cert and dut address to be different %s" %
+            cert_address_response.address)
 
     def test_get_local_extended_features(self):
         request = controller_facade.PageNumberMsg()
@@ -67,4 +71,23 @@ class ControllerTest(GdFacadeOnlyBaseTestClass):
         request0.page_number = 0
         dut_feature_response0 = self.device_under_test.hci_controller.GetLocalExtendedFeatures(
             request0)
-        return dut_feature_response1.page != dut_feature_response0.page
+        asserts.assert_true(
+            dut_feature_response1.page != dut_feature_response0.page,
+            msg="Expected cert dut feature pages to be different %d" %
+            dut_feature_response1.page)
+
+    def test_write_local_name(self):
+        self.device_under_test.hci_controller.WriteLocalName(
+            controller_facade.NameMsg(name=b'ImTheDUT'))
+        self.cert_device.hci_controller.WriteLocalName(
+            controller_facade.NameMsg(name=b'ImTheCert'))
+        cert_name_msg = self.cert_device.hci_controller.GetLocalName(
+            empty_proto.Empty()).name
+        dut_name_msg = self.device_under_test.hci_controller.GetLocalName(
+            empty_proto.Empty()).name
+        asserts.assert_true(
+            dut_name_msg == b'ImTheDUT',
+            msg="unexpected dut name %s" % dut_name_msg)
+        asserts.assert_true(
+            cert_name_msg == b'ImTheCert',
+            msg="unexpected cert name %s" % cert_name_msg)
