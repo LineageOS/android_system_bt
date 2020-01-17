@@ -22,6 +22,7 @@
 #include <mutex>
 #include <queue>
 #include <set>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -43,7 +44,9 @@
 namespace bluetooth {
 namespace shim {
 
-constexpr char kDumpsysPrefix[] = "gd::shim::l2cap";
+namespace {
+constexpr char kModuleName[] = "shim::L2cap";
+}  // namespace
 
 const ModuleFactory L2cap::Factory = ModuleFactory([]() { return new L2cap(); });
 
@@ -418,18 +421,18 @@ L2cap::impl::impl(L2cap& module, l2cap::classic::L2capClassicModule* l2cap_modul
 
 void L2cap::impl::Dump(int fd) {
   if (psm_to_service_interface_map_.empty()) {
-    dprintf(fd, "%s no psms registered\n", kDumpsysPrefix);
+    dprintf(fd, "%s no psms registered\n", kModuleName);
   } else {
     for (auto& service : psm_to_service_interface_map_) {
-      dprintf(fd, "%s psm registered:%hd\n", kDumpsysPrefix, service.first);
+      dprintf(fd, "%s psm registered:%hd\n", kModuleName, service.first);
     }
   }
 
   if (endpoint_to_pending_connection_map_.empty()) {
-    dprintf(fd, "%s no pending classic connections\n", kDumpsysPrefix);
+    dprintf(fd, "%s no pending classic connections\n", kModuleName);
   } else {
     for (auto& pending : endpoint_to_pending_connection_map_) {
-      dprintf(fd, "%s pending connection:%s\n", kDumpsysPrefix, pending.first.c_str());
+      dprintf(fd, "%s pending connection:%s\n", kModuleName, pending.first.c_str());
     }
   }
 }
@@ -572,6 +575,10 @@ void L2cap::Start() {
 void L2cap::Stop() {
   GetDependency<shim::Dumpsys>()->Unregister(static_cast<void*>(this));
   pimpl_.reset();
+}
+
+std::string L2cap::ToString() const {
+  return kModuleName;
 }
 
 }  // namespace shim

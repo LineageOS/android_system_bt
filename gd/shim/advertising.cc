@@ -17,6 +17,7 @@
 
 #include <functional>
 #include <memory>
+#include <string>
 
 #include "hci/address.h"
 #include "hci/hci_packets.h"
@@ -28,6 +29,10 @@
 
 namespace bluetooth {
 namespace shim {
+
+namespace {
+constexpr char kModuleName[] = "shim::Advertising";
+}  // namespace
 
 struct Advertising::impl {
   impl(hci::LeAdvertisingManager* module, os::Handler* handler);
@@ -119,6 +124,10 @@ void Advertising::Start() {
 
 void Advertising::Stop() {
   pimpl_.reset();
+}
+
+std::string Advertising::ToString() const {
+  return kModuleName;
 }
 
 }  // namespace shim
