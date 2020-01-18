@@ -47,6 +47,7 @@
 #include "shim/security.h"
 #include "shim/storage.h"
 #include "stack_manager.h"
+#include "storage/legacy.h"
 
 using ::bluetooth::os::Thread;
 
@@ -74,6 +75,7 @@ struct bluetooth::shim::Stack::impl {
     modules.add<::bluetooth::shim::Controller>();
     modules.add<::bluetooth::shim::HciLayer>();
     modules.add<::bluetooth::security::SecurityModule>();
+    modules.add<::bluetooth::storage::LegacyModule>();
     modules.add<::bluetooth::shim::Advertising>();
     modules.add<::bluetooth::shim::Connectability>();
     modules.add<::bluetooth::shim::Discoverability>();
