@@ -16,6 +16,7 @@ enum BluetoothModule {
   HCI_INTERFACES = 2;
   L2CAP = 3;
   SECURITY = 4;
+  SHIM = 5;
 }
 
 message StartStackRequest {
