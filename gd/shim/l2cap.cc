@@ -22,6 +22,7 @@
 #include <mutex>
 #include <queue>
 #include <set>
+#include <string>
 #include <unordered_map>
 #include <vector>
 
@@ -43,11 +44,15 @@
 namespace bluetooth {
 namespace shim {
 
-constexpr char kDumpsysPrefix[] = "gd::shim::l2cap";
+namespace {
+constexpr char kModuleName[] = "shim::L2cap";
+}  // namespace
 
 const ModuleFactory L2cap::Factory = ModuleFactory([]() { return new L2cap(); });
 
 using ConnectionInterfaceDescriptor = uint16_t;
+using DeleterFunction = std::function<void(ConnectionInterfaceDescriptor)>;
+
 static const ConnectionInterfaceDescriptor kInvalidConnectionInterfaceDescriptor = 0;
 static const ConnectionInterfaceDescriptor kStartConnectionInterfaceDescriptor = 64;
 static const ConnectionInterfaceDescriptor kMaxConnections = UINT16_MAX - kStartConnectionInterfaceDescriptor - 1;
@@ -68,9 +73,9 @@ std::unique_ptr<packet::RawBuilder> MakeUniquePacket(const uint8_t* data, size_t
 class ConnectionInterface {
  public:
   ConnectionInterface(ConnectionInterfaceDescriptor cid, std::unique_ptr<l2cap::classic::DynamicChannel> channel,
-                      os::Handler* handler)
+                      os::Handler* handler, DeleterFunction deleter)
       : cid_(cid), channel_(std::move(channel)), handler_(handler), on_data_ready_callback_(nullptr),
-        on_connection_closed_callback_(nullptr), address_(channel_->GetDevice()) {
+        on_connection_closed_callback_(nullptr), address_(channel_->GetDevice()), deleter_(deleter) {
     channel_->RegisterOnCloseCallback(
         handler_, common::BindOnce(&ConnectionInterface::OnConnectionClosed, common::Unretained(this)));
     channel_->GetQueueUpEnd()->RegisterDequeue(
@@ -133,6 +138,7 @@ class ConnectionInterface {
               address_.ToString().c_str());
     ASSERT(on_connection_closed_callback_ != nullptr);
     on_connection_closed_callback_(cid_, static_cast<int>(error_code));
+    deleter_(cid_);
   }
 
   void SetConnectionClosedCallback(::bluetooth::shim::ConnectionClosedCallback on_connection_closed) {
@@ -154,6 +160,8 @@ class ConnectionInterface {
   ConnectionClosedCallback on_connection_closed_callback_;
 
   const hci::Address address_;
+
+  DeleterFunction deleter_{};
 
   std::queue<std::unique_ptr<packet::PacketBuilder<hci::kLittleEndian>>> write_queue_;
 
@@ -242,14 +250,17 @@ void ConnectionInterfaceManager::FreeConnectionInterfaceDescriptor(ConnectionInt
 void ConnectionInterfaceManager::AddConnection(ConnectionInterfaceDescriptor cid,
                                                std::unique_ptr<l2cap::classic::DynamicChannel> channel) {
   ASSERT(cid_to_interface_map_.count(cid) == 0);
-  cid_to_interface_map_.emplace(cid, std::make_unique<ConnectionInterface>(cid, std::move(channel), handler_));
+  cid_to_interface_map_.emplace(cid, std::make_unique<ConnectionInterface>(
+                                         cid, std::move(channel), handler_, [this](ConnectionInterfaceDescriptor cid) {
+                                           LOG_DEBUG("Deleting connection interface cid:%hd", cid);
+                                           cid_to_interface_map_.erase(cid);
+                                           FreeConnectionInterfaceDescriptor(cid);
+                                         }));
 }
 
 void ConnectionInterfaceManager::RemoveConnection(ConnectionInterfaceDescriptor cid) {
   ASSERT(cid_to_interface_map_.count(cid) == 1);
   cid_to_interface_map_.find(cid)->second->Close();
-  cid_to_interface_map_.erase(cid);
-  FreeConnectionInterfaceDescriptor(cid);
 }
 
 bool ConnectionInterfaceManager::HasResources() const {
@@ -418,18 +429,18 @@ L2cap::impl::impl(L2cap& module, l2cap::classic::L2capClassicModule* l2cap_modul
 
 void L2cap::impl::Dump(int fd) {
   if (psm_to_service_interface_map_.empty()) {
-    dprintf(fd, "%s no psms registered\n", kDumpsysPrefix);
+    dprintf(fd, "%s no psms registered\n", kModuleName);
   } else {
     for (auto& service : psm_to_service_interface_map_) {
-      dprintf(fd, "%s psm registered:%hd\n", kDumpsysPrefix, service.first);
+      dprintf(fd, "%s psm registered:%hd\n", kModuleName, service.first);
     }
   }
 
   if (endpoint_to_pending_connection_map_.empty()) {
-    dprintf(fd, "%s no pending classic connections\n", kDumpsysPrefix);
+    dprintf(fd, "%s no pending classic connections\n", kModuleName);
   } else {
     for (auto& pending : endpoint_to_pending_connection_map_) {
-      dprintf(fd, "%s pending connection:%s\n", kDumpsysPrefix, pending.first.c_str());
+      dprintf(fd, "%s pending connection:%s\n", kModuleName, pending.first.c_str());
     }
   }
 }
@@ -572,6 +583,10 @@ void L2cap::Start() {
 void L2cap::Stop() {
   GetDependency<shim::Dumpsys>()->Unregister(static_cast<void*>(this));
   pimpl_.reset();
+}
+
+std::string L2cap::ToString() const {
+  return kModuleName;
 }
 
 }  // namespace shim

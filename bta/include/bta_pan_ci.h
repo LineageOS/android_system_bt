@@ -67,8 +67,8 @@ extern void bta_pan_ci_rx_ready(uint16_t handle);
  * Description      This function is called to enable or disable data flow on
  *                  the TX path.  The phone should call this function to
  *                  disable data flow when it is congested and cannot handle
- *                  any more data sent by bta_pan_co_tx_write() or
- *                  bta_pan_co_tx_writebuf().  This function is used when the
+ *                  any more data sent by bta_pan_co_tx_write().
+ *                  This function is used when the
  *                  TX data path is configured to use a push interface.
  *
  *

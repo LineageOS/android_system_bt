@@ -29,6 +29,10 @@
 namespace bluetooth {
 namespace shim {
 
+namespace {
+constexpr char kModuleName[] = "shim::Storage";
+}
+
 struct Storage::impl {
   impl(bluetooth::storage::LegacyModule* storage_manager, os::Handler* handler);
   ~impl() = default;
@@ -64,7 +68,7 @@ struct Storage::impl {
   std::map<const std::string, ChecksumReadCallback> checksum_read_to_callback_map_;
   std::map<const std::string, ChecksumWriteCallback> checksum_write_to_callback_map_;
 
-  std::unique_ptr<bluetooth::storage::LegacyModule> legacy_module_{nullptr};
+  bluetooth::storage::LegacyModule* legacy_module_{nullptr};
   os::Handler* handler_;
 };
 
@@ -135,6 +139,10 @@ void Storage::Start() {
 
 void Storage::Stop() {
   pimpl_.reset();
+}
+
+std::string Storage::ToString() const {
+  return kModuleName;
 }
 
 }  // namespace shim

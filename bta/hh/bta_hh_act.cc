@@ -451,7 +451,7 @@ void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
      */
     if ((status == BTA_HH_ERR_SDP) && (p_cb->incoming_conn) &&
         (p_cb->app_id == 0)) {
-      APPL_TRACE_DEBUG("%s: SDP failed for  incoming conn :hndl %d", __func__,
+      APPL_TRACE_ERROR("%s: SDP failed for  incoming conn hndl: %d", __func__,
                        p_cb->incoming_hid_handle);
       HID_HostRemoveDev(p_cb->incoming_hid_handle);
     }
@@ -470,6 +470,8 @@ void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
     bta_hh_trace_dev_db();
 #endif
   }
+  p_cb->incoming_conn = false;
+  p_cb->incoming_hid_handle = BTA_HH_INVALID_HANDLE;
   return;
 }
 

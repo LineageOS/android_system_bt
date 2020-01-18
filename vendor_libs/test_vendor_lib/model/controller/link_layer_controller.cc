@@ -139,9 +139,11 @@ ErrorCode LinkLayerController::SendAclToRemote(
       std::make_unique<bluetooth::packet::RawBuilder>();
   std::vector<uint8_t> payload_bytes(acl_payload.begin(), acl_payload.end());
 
+  constexpr auto pb_flag_controller_to_host =
+      bluetooth::hci::PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE;
   uint16_t first_two_bytes =
       static_cast<uint16_t>(acl_packet.GetHandle()) +
-      (static_cast<uint16_t>(acl_packet.GetPacketBoundaryFlag()) << 12) +
+      (static_cast<uint16_t>(pb_flag_controller_to_host) << 12) +
       (static_cast<uint16_t>(acl_packet.GetBroadcastFlag()) << 14);
   raw_builder_ptr->AddOctets2(first_two_bytes);
   raw_builder_ptr->AddOctets2(static_cast<uint16_t>(payload_bytes.size()));
