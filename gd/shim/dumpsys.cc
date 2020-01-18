@@ -38,36 +38,32 @@ constexpr char kModuleName[] = "shim::Dumpsys";
 struct Dumpsys::impl {
  public:
   void Dump(int fd, std::promise<void> promise);
-  void Register(const void* token, DumpFunction func);
-  void Unregister(const void* token);
+  void RegisterDumpsysFunction(const void* token, DumpsysFunction func);
+  void UnregisterDumpsysFunction(const void* token);
 
-  ~impl();
+  ~impl() = default;
 
  private:
-  std::unordered_map<const void*, DumpFunction> dump_functions_;
+  std::unordered_map<const void*, DumpsysFunction> dumpsys_functions_;
 };
 
 const ModuleFactory Dumpsys::Factory = ModuleFactory([]() { return new Dumpsys(); });
 
-Dumpsys::impl::~impl() {
-  ASSERT(dump_functions_.empty());
-}
-
 void Dumpsys::impl::Dump(int fd, std::promise<void> promise) {
-  dprintf(fd, "%s Registered submodules:%zd\n", "gd::shim::dumpsys", dump_functions_.size());
-  std::for_each(dump_functions_.begin(), dump_functions_.end(),
-                [fd](std::pair<const void*, DumpFunction> element) { element.second(fd); });
+  dprintf(fd, "%s Registered submodules:%zd\n", kModuleName, dumpsys_functions_.size());
+  std::for_each(dumpsys_functions_.begin(), dumpsys_functions_.end(),
+                [fd](std::pair<const void*, DumpsysFunction> element) { element.second(fd); });
   promise.set_value();
 }
 
-void Dumpsys::impl::Register(const void* token, DumpFunction func) {
-  ASSERT(dump_functions_.find(token) == dump_functions_.end());
-  dump_functions_[token] = func;
+void Dumpsys::impl::RegisterDumpsysFunction(const void* token, DumpsysFunction func) {
+  ASSERT(dumpsys_functions_.find(token) == dumpsys_functions_.end());
+  dumpsys_functions_[token] = func;
 }
 
-void Dumpsys::impl::Unregister(const void* token) {
-  ASSERT(dump_functions_.find(token) != dump_functions_.end());
-  dump_functions_.erase(token);
+void Dumpsys::impl::UnregisterDumpsysFunction(const void* token) {
+  ASSERT(dumpsys_functions_.find(token) != dumpsys_functions_.end());
+  dumpsys_functions_.erase(token);
 }
 
 void Dumpsys::Dump(int fd) {
@@ -77,12 +73,14 @@ void Dumpsys::Dump(int fd) {
   future.get();
 }
 
-void Dumpsys::Register(const void* token, DumpFunction func) {
-  GetHandler()->Post(common::BindOnce(&Dumpsys::impl::Register, common::Unretained(pimpl_.get()), token, func));
+void Dumpsys::RegisterDumpsysFunction(const void* token, DumpsysFunction func) {
+  GetHandler()->Post(
+      common::BindOnce(&Dumpsys::impl::RegisterDumpsysFunction, common::Unretained(pimpl_.get()), token, func));
 }
 
-void Dumpsys::Unregister(const void* token) {
-  GetHandler()->Post(common::BindOnce(&Dumpsys::impl::Unregister, common::Unretained(pimpl_.get()), token));
+void Dumpsys::UnregisterDumpsysFunction(const void* token) {
+  GetHandler()->Post(
+      common::BindOnce(&Dumpsys::impl::UnregisterDumpsysFunction, common::Unretained(pimpl_.get()), token));
 }
 
 /**
