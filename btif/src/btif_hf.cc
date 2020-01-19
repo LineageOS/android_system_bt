@@ -119,6 +119,15 @@ struct btif_hf_cb_t {
 
 static btif_hf_cb_t btif_hf_cb[BTA_AG_MAX_NUM_CLIENTS];
 
+/* By default we use codec negotiation to determine whether to use WBS as
+ * the default, allow devices to disable WBS if it is unsupported
+ */
+#ifndef BTIF_HF_WBS_PREFERRED
+#define BTIF_HF_WBS_PREFERRED true
+#endif
+
+static bool btif_conf_hf_force_wbs = BTIF_HF_WBS_PREFERRED;
+
 static const char* dump_hf_call_state(bthf_call_state_t call_state) {
   switch (call_state) {
     CASE_RETURN_STR(BTHF_CALL_STATE_IDLE)
@@ -538,7 +547,7 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
       we should set the BTA AG Codec to mSBC. This would trigger a +BCS to mSBC
       at the time
       of SCO connection establishment */
-      if (p_data->val.num & BTA_AG_CODEC_MSBC) {
+      if ((btif_conf_hf_force_wbs == TRUE) && (p_data->val.num & BTA_AG_CODEC_MSBC)) {
         BTIF_TRACE_EVENT("%s: btif_hf override-Preferred Codec to MSBC",
                          __func__);
         BTA_AgSetCodec(btif_hf_cb[idx].handle, BTA_AG_CODEC_MSBC);
