@@ -27,8 +27,8 @@ namespace shim {
 class Dumpsys : public bluetooth::Module, public bluetooth::shim::IDumpsys {
  public:
   void Dump(int fd) override;
-  void Register(const void* token, DumpFunction func);
-  void Unregister(const void* token);
+  void RegisterDumpsysFunction(const void* token, DumpsysFunction func);
+  void UnregisterDumpsysFunction(const void* token);
 
   Dumpsys() = default;
   ~Dumpsys() = default;
