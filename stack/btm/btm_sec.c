@@ -4923,6 +4923,7 @@ void btm_sec_disconnected (UINT16 handle, UINT8 reason)
       tBTA_DM_MSG p_data;
       memcpy(p_data.remove_dev.bd_addr, p_dev_rec->bd_addr, BD_ADDR_LEN);
       bta_dm_remove_device(&p_data);
+      return;
     }
 
 #if BLE_INCLUDED == TRUE && SMP_INCLUDED == TRUE
