@@ -16,22 +16,25 @@
 
 #pragma once
 
+#include <functional>
+#include <list>
+
 namespace bluetooth {
 namespace shim {
+
+using DumpsysFunction = std::function<void(int fd)>;
+
+/**
+ * Entrypoint from legacy stack to provide dumpsys functionality
+ * for both the legacy shim and the Gabeldorsche stack.
+ */
 void Dump(int fd);
-}  // namespace shim
 
-namespace legacy {
-namespace shim {
-
-class Dumpsys {
- public:
-  Dumpsys();
-  virtual ~Dumpsys();
-  virtual void Dump(int fd) = 0;
-};
+/**
+ * Dumpsys access for legacy shim modules.
+ */
+void RegisterDumpsysFunction(const void* token, DumpsysFunction func);
+void UnregisterDumpsysFunction(const void* token);
 
 }  // namespace shim
-}  // namespace legacy
-
 }  // namespace bluetooth
