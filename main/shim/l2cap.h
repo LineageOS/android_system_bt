@@ -24,8 +24,8 @@
 #include "stack/include/l2c_api.h"
 
 namespace bluetooth {
-namespace legacy {
 namespace shim {
+namespace legacy {
 
 static constexpr uint16_t kInitialClassicDynamicPsm = 0x1001;
 static constexpr uint16_t kFinalClassicDynamicPsm = 0xfeff;
@@ -120,6 +120,6 @@ class L2cap {
   std::unordered_map<uint16_t, uint16_t> client_psm_to_real_psm_map_;
 };
 
-}  // namespace shim
 }  // namespace legacy
+}  // namespace shim
 }  // namespace bluetooth
