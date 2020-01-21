@@ -24,8 +24,8 @@
 #include "stack/include/l2c_api.h"
 
 namespace bluetooth {
-namespace legacy {
 namespace shim {
+namespace legacy {
 
 static constexpr uint16_t kInitialClassicDynamicPsm = 0x1001;
 static constexpr uint16_t kFinalClassicDynamicPsm = 0xfeff;
@@ -57,7 +57,7 @@ class PsmManager {
   std::unordered_map<uint16_t, const tL2CAP_APPL_INFO*> psm_to_callback_map_;
 };
 
-class L2cap : public Dumpsys {
+class L2cap {
  public:
   void RegisterService(uint16_t psm, const tL2CAP_APPL_INFO* callbacks,
                        bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info);
@@ -89,8 +89,8 @@ class L2cap : public Dumpsys {
   bool DisconnectRequest(uint16_t cid);
   bool DisconnectResponse(uint16_t cid);
 
-  void Dump(int fd) override;
   L2cap();
+  ~L2cap();
 
   PsmManager& Classic();
   PsmManager& Le();
@@ -98,6 +98,8 @@ class L2cap : public Dumpsys {
  private:
   uint16_t GetNextVirtualPsm(uint16_t real_psm);
   void SetDownstreamCallbacks(uint16_t cid);
+
+  void Dump(int fd);
 
   PsmManager classic_;
   PsmManager le_;
@@ -118,6 +120,6 @@ class L2cap : public Dumpsys {
   std::unordered_map<uint16_t, uint16_t> client_psm_to_real_psm_map_;
 };
 
-}  // namespace shim
 }  // namespace legacy
+}  // namespace shim
 }  // namespace bluetooth

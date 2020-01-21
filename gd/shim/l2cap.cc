@@ -44,18 +44,15 @@
 namespace bluetooth {
 namespace shim {
 
-namespace {
-constexpr char kModuleName[] = "shim::L2cap";
-}  // namespace
-
-const ModuleFactory L2cap::Factory = ModuleFactory([]() { return new L2cap(); });
-
 using ConnectionInterfaceDescriptor = uint16_t;
 using DeleterFunction = std::function<void(ConnectionInterfaceDescriptor)>;
 
-static const ConnectionInterfaceDescriptor kInvalidConnectionInterfaceDescriptor = 0;
-static const ConnectionInterfaceDescriptor kStartConnectionInterfaceDescriptor = 64;
-static const ConnectionInterfaceDescriptor kMaxConnections = UINT16_MAX - kStartConnectionInterfaceDescriptor - 1;
+namespace {
+constexpr char kModuleName[] = "shim::L2cap";
+constexpr ConnectionInterfaceDescriptor kInvalidConnectionInterfaceDescriptor = 0;
+constexpr ConnectionInterfaceDescriptor kStartConnectionInterfaceDescriptor = 64;
+constexpr ConnectionInterfaceDescriptor kMaxConnections = UINT16_MAX - kStartConnectionInterfaceDescriptor - 1;
+}  // namespace
 
 using ServiceInterfaceCallback =
     std::function<void(l2cap::Psm psm, l2cap::classic::DynamicChannelManager::RegistrationResult result)>;
@@ -421,6 +418,8 @@ struct L2cap::impl {
   }
 };
 
+const ModuleFactory L2cap::Factory = ModuleFactory([]() { return new L2cap(); });
+
 L2cap::impl::impl(L2cap& module, l2cap::classic::L2capClassicModule* l2cap_module)
     : module_(module), l2cap_module_(l2cap_module), handler_(module_.GetHandler()),
       connection_interface_manager_(handler_) {
@@ -571,17 +570,18 @@ void L2cap::SendLoopbackResponse(std::function<void()> function) {
  * Module methods
  */
 void L2cap::ListDependencies(ModuleList* list) {
-  list->add<l2cap::classic::L2capClassicModule>();
   list->add<shim::Dumpsys>();
+  list->add<l2cap::classic::L2capClassicModule>();
 }
 
 void L2cap::Start() {
   pimpl_ = std::make_unique<impl>(*this, GetDependency<l2cap::classic::L2capClassicModule>());
-  GetDependency<shim::Dumpsys>()->Register(static_cast<void*>(this), [this](int fd) { pimpl_->Dump(fd); });
+  GetDependency<shim::Dumpsys>()->RegisterDumpsysFunction(static_cast<void*>(this),
+                                                          [this](int fd) { pimpl_->Dump(fd); });
 }
 
 void L2cap::Stop() {
-  GetDependency<shim::Dumpsys>()->Unregister(static_cast<void*>(this));
+  GetDependency<shim::Dumpsys>()->UnregisterDumpsysFunction(static_cast<void*>(this));
   pimpl_.reset();
 }
 

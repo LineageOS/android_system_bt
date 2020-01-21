@@ -47,7 +47,7 @@ L2capTest* l2cap_test_ = nullptr;
 
 class L2capTest : public ::testing::Test {
  public:
-  static shim::L2cap* l2cap_;
+  static shim::legacy::L2cap* l2cap_;
 
   struct {
     int L2caConnectCfmCb;
@@ -77,7 +77,7 @@ class L2capTest : public ::testing::Test {
 
  protected:
   void SetUp() override {
-    l2cap_ = new shim::L2cap();
+    l2cap_ = new shim::legacy::L2cap();
     l2cap_test_ = this;
   }
 
@@ -89,7 +89,7 @@ class L2capTest : public ::testing::Test {
   uint8_t data_buffer_[kDataBufferSize];
 };
 
-shim::L2cap* L2capTest::l2cap_ = nullptr;
+shim::legacy::L2cap* L2capTest::l2cap_ = nullptr;
 // Indication of remotely initiated connection response sent
 void L2caConnectIndCb(const RawAddress& raw_address, uint16_t a, uint16_t b,
                       uint8_t c) {

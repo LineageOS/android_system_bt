@@ -21,7 +21,7 @@
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 
-static bluetooth::legacy::shim::L2cap shim_l2cap;
+static bluetooth::shim::legacy::L2cap shim_l2cap;
 
 /**
  * Classic Service Registration APIs

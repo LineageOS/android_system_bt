@@ -16,38 +16,38 @@
 
 #define LOG_TAG "bt_shim_storage"
 
-#include <base/logging.h>
-#include <algorithm>
-#include <list>
-
 #include "main/shim/dumpsys.h"
 #include "main/shim/entry.h"
 #include "main/shim/shim.h"
 
-using ::bluetooth::shim::GetDumpsys;
+namespace {
+constexpr char kModuleName[] = "shim::legacy::dumpsys";
+static std::unordered_map<const void*, bluetooth::shim::DumpsysFunction>*
+    dumpsys_functions_;
+}  // namespace
 
-std::list<bluetooth::legacy::shim::Dumpsys*> dumpsys_manager_;
-
-bluetooth::legacy::shim::Dumpsys::Dumpsys() {
-  CHECK(std::find(dumpsys_manager_.begin(), dumpsys_manager_.end(), this) ==
-        dumpsys_manager_.end());
-  dumpsys_manager_.push_back(this);
+void bluetooth::shim::RegisterDumpsysFunction(const void* token,
+                                              DumpsysFunction func) {
+  dumpsys_functions_ =
+      new std::unordered_map<const void*, bluetooth::shim::DumpsysFunction>();
+  CHECK(dumpsys_functions_->find(token) == dumpsys_functions_->end());
+  dumpsys_functions_->insert({token, func});
 }
 
-bluetooth::legacy::shim::Dumpsys::~Dumpsys() {
-  CHECK(std::find(dumpsys_manager_.begin(), dumpsys_manager_.end(), this) !=
-        dumpsys_manager_.end());
-  dumpsys_manager_.remove(this);
+void bluetooth::shim::UnregisterDumpsysFunction(const void* token) {
+  CHECK(dumpsys_functions_->find(token) != dumpsys_functions_->end());
+  dumpsys_functions_->erase(token);
 }
 
 void bluetooth::shim::Dump(int fd) {
-  for (auto& dumpsys : dumpsys_manager_) {
-    dumpsys->Dump(fd);
+  dprintf(fd, "%s Dumping shim legacy targets:%zd\n", kModuleName,
+          dumpsys_functions_->size());
+  for (auto& dumpsys : *dumpsys_functions_) {
+    dumpsys.second(fd);
   }
   if (bluetooth::shim::is_gd_stack_started_up()) {
-    GetDumpsys()->Dump(fd);
+    bluetooth::shim::GetDumpsys()->Dump(fd);
   } else {
-    dprintf(fd, "%s gd stack has not started up\n",
-            "gd::shim::legacy::dumpsys");
+    dprintf(fd, "%s gd stack has not started up\n", kModuleName);
   }
 }
