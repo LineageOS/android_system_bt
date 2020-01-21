@@ -42,7 +42,7 @@ constexpr uint8_t kH4HeaderSize = 1;
 constexpr uint8_t kHciAclHeaderSize = 4;
 constexpr uint8_t kHciScoHeaderSize = 3;
 constexpr uint8_t kHciEvtHeaderSize = 2;
-constexpr int kBufSize = 1024;
+constexpr int kBufSize = 1024 + 4 + 1;  // DeviceProperties::acl_data_packet_size_ + ACL header + H4 header
 
 int ConnectToRootCanal(const std::string& server, int port) {
   int socket_fd = socket(AF_INET, SOCK_STREAM, 0);
@@ -238,7 +238,7 @@ class HciHalHostRootcanal : public HciHal {
       ASSERT_LOG(received_size != -1, "Can't receive from socket: %s", strerror(errno));
       ASSERT_LOG(received_size == kHciAclHeaderSize, "malformed ACL header received");
 
-      uint16_t hci_acl_data_total_length = buf[4] * 256 + buf[3];
+      uint16_t hci_acl_data_total_length = (buf[4] << 8) + buf[3];
       int payload_size;
       RUN_NO_INTR(payload_size = recv(sock_fd_, buf + kH4HeaderSize + kHciAclHeaderSize, hci_acl_data_total_length, 0));
       ASSERT_LOG(payload_size != -1, "Can't receive from socket: %s", strerror(errno));
