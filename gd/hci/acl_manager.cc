@@ -36,10 +36,36 @@ constexpr size_t kMaxQueuedPacketsPerConnection = 10;
 using common::Bind;
 using common::BindOnce;
 
+namespace {
+class PacketViewForRecombination : public packet::PacketView<kLittleEndian> {
+ public:
+  PacketViewForRecombination(const PacketView& packetView) : PacketView(packetView) {}
+  void AppendPacketView(packet::PacketView<kLittleEndian> to_append) {
+    Append(to_append);
+  }
+};
+
+constexpr int kL2capBasicFrameHeaderSize = 4;
+
+// Per spec 5.1 Vol 2 Part B 5.3, ACL link shall carry L2CAP data. Therefore, an ACL packet shall contain L2CAP PDU.
+// This function returns the PDU size of the L2CAP data if it's a starting packet. Returns 0 if it's invalid.
+uint16_t GetL2capPduSize(AclPacketView packet) {
+  auto l2cap_payload = packet.GetPayload();
+  if (l2cap_payload.size() < kL2capBasicFrameHeaderSize) {
+    LOG_ERROR("Controller sent an invalid L2CAP starting packet!");
+    return 0;
+  }
+  return (l2cap_payload.at(1) << 8) + l2cap_payload.at(0);
+}
+
+}  // namespace
+
 struct AclManager::acl_connection {
-  acl_connection(AddressWithType address_with_type) : address_with_type_(address_with_type) {}
+  acl_connection(AddressWithType address_with_type, os::Handler* handler)
+      : address_with_type_(address_with_type), handler_(handler) {}
   friend AclConnection;
   AddressWithType address_with_type_;
+  os::Handler* handler_;
   std::unique_ptr<AclConnection::Queue> queue_ = std::make_unique<AclConnection::Queue>(10);
   bool is_disconnected_ = false;
   ErrorCode disconnect_reason_;
@@ -54,8 +80,69 @@ struct AclManager::acl_connection {
   bool is_registered_ = false;
   // Credits: Track the number of packets which have been sent to the controller
   uint16_t number_of_sent_packets_ = 0;
-  bool enqueue_registered_{false};
+  PacketViewForRecombination recombination_stage_{std::make_shared<std::vector<uint8_t>>()};
+  int remaining_sdu_continuation_packet_size_ = 0;
+  bool enqueue_registered_ = false;
   std::queue<packet::PacketView<kLittleEndian>> incoming_queue_;
+
+  std::unique_ptr<packet::PacketView<kLittleEndian>> on_incoming_data_ready() {
+    auto packet = incoming_queue_.front();
+    incoming_queue_.pop();
+    if (incoming_queue_.empty()) {
+      auto queue_end = queue_->GetDownEnd();
+      queue_end->UnregisterEnqueue();
+      enqueue_registered_ = false;
+    }
+    return std::make_unique<PacketView<kLittleEndian>>(packet);
+  }
+
+  void on_incoming_packet(AclPacketView packet) {
+    // TODO: What happens if the connection is stalled and fills up?
+    PacketView<kLittleEndian> payload = packet.GetPayload();
+    auto payload_size = payload.size();
+    auto packet_boundary_flag = packet.GetPacketBoundaryFlag();
+    if (packet_boundary_flag == PacketBoundaryFlag::FIRST_NON_AUTOMATICALLY_FLUSHABLE) {
+      LOG_ERROR("Controller is not allowed to send FIRST_NON_AUTOMATICALLY_FLUSHABLE to host except loopback mode");
+      return;
+    }
+    if (packet_boundary_flag == PacketBoundaryFlag::CONTINUING_FRAGMENT) {
+      if (remaining_sdu_continuation_packet_size_ < payload_size) {
+        LOG_WARN("Remote sent unexpected L2CAP PDU. Drop the entire L2CAP PDU");
+        recombination_stage_ = PacketViewForRecombination(std::make_shared<std::vector<uint8_t>>());
+        remaining_sdu_continuation_packet_size_ = 0;
+        return;
+      }
+      remaining_sdu_continuation_packet_size_ -= payload_size;
+      recombination_stage_.AppendPacketView(payload);
+      if (remaining_sdu_continuation_packet_size_ != 0) {
+        return;
+      } else {
+        payload = recombination_stage_;
+      }
+    } else if (packet_boundary_flag == PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE) {
+      if (recombination_stage_.size() > 0) {
+        LOG_ERROR("Controller sent a starting packet without finishing previous packet. Drop previous one.");
+      }
+      auto l2cap_pdu_size = GetL2capPduSize(packet);
+      remaining_sdu_continuation_packet_size_ = l2cap_pdu_size - (payload_size - kL2capBasicFrameHeaderSize);
+      if (remaining_sdu_continuation_packet_size_ > 0) {
+        recombination_stage_ = payload;
+        return;
+      }
+    }
+    if (incoming_queue_.size() > kMaxQueuedPacketsPerConnection) {
+      LOG_ERROR("Dropping packet due to congestion from remote:%s", address_with_type_.ToString().c_str());
+      return;
+    }
+
+    incoming_queue_.push(payload);
+    if (!enqueue_registered_) {
+      enqueue_registered_ = true;
+      auto queue_end = queue_->GetDownEnd();
+      queue_end->RegisterEnqueue(
+          handler_, common::Bind(&AclManager::acl_connection::on_incoming_data_ready, common::Unretained(this)));
+    }
+  }
 
   void call_disconnect_callback() {
     disconnect_handler_->Post(BindOnce(std::move(on_disconnect_callback_), disconnect_reason_));
@@ -225,17 +312,6 @@ struct AclManager::impl {
     return std::unique_ptr<AclPacketBuilder>(raw_pointer);
   }
 
-  std::unique_ptr<packet::PacketView<kLittleEndian>> OnIncomingReadReady(AclManager::acl_connection* connection) {
-    auto packet = connection->incoming_queue_.front();
-    connection->incoming_queue_.pop();
-    if (connection->incoming_queue_.empty()) {
-      auto queue_end = connection->queue_->GetDownEnd();
-      queue_end->UnregisterEnqueue();
-      connection->enqueue_registered_ = false;
-    }
-    return std::make_unique<PacketView<kLittleEndian>>(packet);
-  }
-
   void dequeue_and_route_acl_packet_to_connection() {
     auto packet = hci_queue_end_->TryDequeue();
     ASSERT(packet != nullptr);
@@ -252,23 +328,8 @@ struct AclManager::impl {
       LOG_INFO("Dropping packet of size %zu to unknown connection 0x%0hx", packet->size(), handle);
       return;
     }
-    // TODO: What happens if the connection is stalled and fills up?
-    // TODO hsz: define enqueue callback
-    auto queue_end = connection_pair->second.queue_->GetDownEnd();
-    PacketView<kLittleEndian> payload = packet->GetPayload();
 
-    if (connection_pair->second.incoming_queue_.size() > kMaxQueuedPacketsPerConnection) {
-      LOG_INFO("Dropping packet due to congestion from remote:%s",
-               connection_pair->second.address_with_type_.ToString().c_str());
-      return;
-    }
-
-    connection_pair->second.incoming_queue_.push(payload);
-    if (!connection_pair->second.enqueue_registered_) {
-      connection_pair->second.enqueue_registered_ = true;
-      queue_end->RegisterEnqueue(handler_, common::Bind(&AclManager::impl::OnIncomingReadReady,
-                                                        common::Unretained(this), &connection_pair->second));
-    }
+    connection_pair->second.on_incoming_packet(*packet);
   }
 
   void on_incoming_connection(EventPacketView packet) {
@@ -328,7 +389,8 @@ struct AclManager::impl {
     // TODO: Check and save other connection parameters
     uint16_t handle = connection_complete.GetConnectionHandle();
     ASSERT(acl_connections_.count(handle) == 0);
-    acl_connections_.emplace(handle, address_with_type);
+    acl_connections_.emplace(std::piecewise_construct, std::forward_as_tuple(handle),
+                             std::forward_as_tuple(address_with_type, handler_));
     if (acl_connections_.size() == 1 && fragments_to_send_.size() == 0) {
       start_round_robin();
     }
@@ -361,7 +423,8 @@ struct AclManager::impl {
     // TODO: Check and save other connection parameters
     uint16_t handle = connection_complete.GetConnectionHandle();
     ASSERT(acl_connections_.count(handle) == 0);
-    acl_connections_.emplace(handle, reporting_address_with_type);
+    acl_connections_.emplace(std::piecewise_construct, std::forward_as_tuple(handle),
+                             std::forward_as_tuple(reporting_address_with_type, handler_));
     if (acl_connections_.size() == 1 && fragments_to_send_.size() == 0) {
       start_round_robin();
     }
@@ -386,7 +449,9 @@ struct AclManager::impl {
     }
     uint16_t handle = connection_complete.GetConnectionHandle();
     ASSERT(acl_connections_.count(handle) == 0);
-    acl_connections_.emplace(handle, AddressWithType{address, AddressType::PUBLIC_DEVICE_ADDRESS});
+    acl_connections_.emplace(
+        std::piecewise_construct, std::forward_as_tuple(handle),
+        std::forward_as_tuple(AddressWithType{address, AddressType::PUBLIC_DEVICE_ADDRESS}, handler_));
     if (acl_connections_.size() == 1 && fragments_to_send_.size() == 0) {
       start_round_robin();
     }

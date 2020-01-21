@@ -54,6 +54,8 @@ PacketView<kLittleEndian> GetPacketView(std::unique_ptr<packet::BasePacketBuilde
 std::unique_ptr<BasePacketBuilder> NextPayload(uint16_t handle) {
   static uint32_t packet_number = 1;
   auto payload = std::make_unique<RawBuilder>();
+  payload->AddOctets2(6);  // L2CAP PDU size
+  payload->AddOctets2(2);  // L2CAP CID
   payload->AddOctets2(handle);
   payload->AddOctets4(packet_number++);
   return std::move(payload);
