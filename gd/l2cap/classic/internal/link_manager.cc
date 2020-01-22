@@ -52,6 +52,11 @@ void LinkManager::ConnectFixedChannelServices(hci::Address device,
         // This channel is already allocated for this link, do not allocated twice
         continue;
       }
+      if (fixed_channel_service.first == kClassicPairingTriggerCid) {
+        link->Authenticate();
+        link->ReadRemoteSupportedFeatures();
+        link->ReadRemoteExtendedFeatures();
+      }
       // Allocate channel for newly registered fixed channels
       auto fixed_channel_impl = link->AllocateFixedChannel(fixed_channel_service.first, SecurityPolicy());
       fixed_channel_service.second->NotifyChannelCreation(
@@ -128,6 +133,8 @@ void LinkManager::OnConnectSuccess(std::unique_ptr<hci::AclConnection> acl_conne
         std::make_unique<FixedChannel>(fixed_channel_impl, l2cap_handler_));
     if (fixed_channel_service.first == kClassicPairingTriggerCid) {
       link->Authenticate();
+      link->ReadRemoteSupportedFeatures();
+      link->ReadRemoteExtendedFeatures();
     }
   }
   if (pending_dynamic_channels_.find(device) != pending_dynamic_channels_.end()) {
