@@ -21,6 +21,7 @@
 
 #include <utility>
 
+#include "common/callback.h"
 #include "l2cap/classic/l2cap_classic_module.h"
 #include "security/initial_informations.h"
 #include "security/security_manager_listener.h"
@@ -81,11 +82,15 @@ class ClassicPairingHandler : public PairingHandler {
   void OnConnectionOpen(std::unique_ptr<l2cap::classic::FixedChannel> fixed_channel);
   void OnConnectionFail(l2cap::classic::FixedChannelManager::ConnectionResult result);
   void OnConnectionClose(hci::ErrorCode error_code);
-  void NotifyUiDisplayYesNo(uint32_t numeric_value);
-  void NotifyUiDisplayYesNo();
+  void OnUserInput(bool user_input);
+  void OnPasskeyInput(uint32_t passkey);
+  void NotifyUiDisplayYesNo(uint32_t numeric_value, common::OnceCallback<void(bool)> input_callback);
+  void NotifyUiDisplayYesNo(common::OnceCallback<void(bool)> input_callback);
   void NotifyUiDisplayPasskey(uint32_t passkey);
-  void NotifyUiDisplayPasskeyInput();
+  void NotifyUiDisplayPasskeyInput(common::OnceCallback<void(uint32_t)> input_callback);
   void NotifyUiDisplayCancel();
+  void UserClickedYes();
+  void UserClickedNo();
 
   std::shared_ptr<l2cap::classic::FixedChannelManager> fixed_channel_manager_;
   std::unique_ptr<l2cap::classic::FixedChannelService> fixed_channel_service_{nullptr};
@@ -100,6 +105,7 @@ class ClassicPairingHandler : public PairingHandler {
   std::vector<std::pair<ISecurityManagerListener*, os::Handler*>>& client_listeners_;
   hci::ErrorCode last_status_;
   bool locally_initiated_ = false;
+  uint32_t passkey_ = 0;
 };
 
 }  // namespace pairing
