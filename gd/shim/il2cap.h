@@ -28,17 +28,17 @@ namespace bluetooth {
 namespace shim {
 
 using ConnectionClosedCallback = std::function<void(uint16_t cid, int error_code)>;
-using ConnectionOpenCallback = std::function<void(std::string string_address, uint16_t psm, uint16_t cid)>;
-using ConnectionFailedCallback = ConnectionOpenCallback;
+using ConnectionCompleteCallback =
+    std::function<void(std::string string_address, uint16_t psm, uint16_t cid, bool connected)>;
 using ReadDataReadyCallback = std::function<void(uint16_t cid, std::vector<const uint8_t> data)>;
 
 struct IL2cap {
-  virtual void RegisterService(uint16_t psm, bool use_ertm, uint16_t mtu, ConnectionOpenCallback on_open,
-                               std::promise<void> completed) = 0;
+  virtual void RegisterService(uint16_t psm, bool use_ertm, uint16_t mtu, ConnectionCompleteCallback on_complete,
+                               std::promise<void> registered) = 0;
   virtual void UnregisterService(uint16_t psm) = 0;
 
-  virtual void CreateConnection(uint16_t psm, const std::string address, ConnectionOpenCallback on_open,
-                                std::promise<uint16_t> completed) = 0;
+  virtual void CreateConnection(uint16_t psm, const std::string address, ConnectionCompleteCallback on_complete,
+                                std::promise<uint16_t> created) = 0;
   virtual void CloseConnection(uint16_t cid) = 0;
 
   virtual void SetReadDataReadyCallback(uint16_t cid, ReadDataReadyCallback on_data_ready) = 0;

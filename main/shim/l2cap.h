@@ -68,7 +68,8 @@ class L2cap {
   bool Write(uint16_t cid, BT_HDR* bt_hdr);
 
   void OnLocalInitiatedConnectionCreated(std::string string_address,
-                                         uint16_t psm, uint16_t cid);
+                                         uint16_t psm, uint16_t cid,
+                                         bool connected);
   void OnRemoteInitiatedConnectionCreated(std::string string_addresss,
                                           uint16_t psm, uint16_t cid);
 
