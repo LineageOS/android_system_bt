@@ -63,6 +63,14 @@ void Link::Authenticate() {
   acl_connection_->AuthenticationRequested();
 }
 
+void Link::ReadRemoteSupportedFeatures() {
+  acl_connection_->ReadRemoteSupportedFeatures();
+}
+
+void Link::ReadRemoteExtendedFeatures() {
+  acl_connection_->ReadRemoteExtendedFeatures();
+}
+
 std::shared_ptr<FixedChannelImpl> Link::AllocateFixedChannel(Cid cid, SecurityPolicy security_policy) {
   auto channel = fixed_channel_allocator_.AllocateChannel(cid, security_policy);
   data_pipeline_manager_.AttachChannel(cid, channel, l2cap::internal::DataPipelineManager::ChannelMode::BASIC);

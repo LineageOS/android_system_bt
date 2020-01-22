@@ -198,6 +198,12 @@ struct AclManager::impl {
                                      Bind(&impl::on_flow_specification_complete, common::Unretained(this)), handler_);
     hci_layer_->RegisterEventHandler(EventCode::FLUSH_OCCURRED,
                                      Bind(&impl::on_flush_occurred, common::Unretained(this)), handler_);
+    hci_layer_->RegisterEventHandler(EventCode::READ_REMOTE_SUPPORTED_FEATURES_COMPLETE,
+                                     Bind(&impl::on_read_remote_supported_features_complete, common::Unretained(this)),
+                                     handler_);
+    hci_layer_->RegisterEventHandler(EventCode::READ_REMOTE_EXTENDED_FEATURES_COMPLETE,
+                                     Bind(&impl::on_read_remote_extended_features_complete, common::Unretained(this)),
+                                     handler_);
     hci_mtu_ = controller_->GetControllerAclPacketLength();
   }
 
@@ -206,6 +212,8 @@ struct AclManager::impl {
     hci_layer_->UnregisterEventHandler(EventCode::CONNECTION_COMPLETE);
     hci_layer_->UnregisterEventHandler(EventCode::CONNECTION_REQUEST);
     hci_layer_->UnregisterEventHandler(EventCode::AUTHENTICATION_COMPLETE);
+    hci_layer_->UnregisterEventHandler(EventCode::READ_REMOTE_SUPPORTED_FEATURES_COMPLETE);
+    hci_layer_->UnregisterEventHandler(EventCode::READ_REMOTE_EXTENDED_FEATURES_COMPLETE);
     hci_queue_end_->UnregisterDequeue();
     unregister_all_connections();
     acl_connections_.clear();
@@ -726,6 +734,14 @@ struct AclManager::impl {
     }
   }
 
+  void on_read_remote_supported_features_complete(EventPacketView packet) {
+    LOG_INFO("called");
+  }
+
+  void on_read_remote_extended_features_complete(EventPacketView packet) {
+    LOG_INFO("called");
+  }
+
   void on_role_discovery_complete(CommandCompleteView view) {
     auto complete_view = RoleDiscoveryCompleteView::Create(view);
     if (!complete_view.IsValid()) {
@@ -933,6 +949,14 @@ struct AclManager::impl {
           common::BindOnce(&ConnectionManagementCallbacks::OnReadRssiComplete,
                            common::Unretained(acl_connection.command_complete_callbacks_), rssi));
     }
+  }
+
+  void on_read_remote_supported_features_status(CommandStatusView view) {
+    LOG_INFO("called");
+  }
+
+  void on_read_remote_extended_features_status(CommandStatusView view) {
+    LOG_INFO("called");
   }
 
   void on_read_clock_complete(CommandCompleteView view) {
@@ -1327,6 +1351,19 @@ struct AclManager::impl {
     std::unique_ptr<ReadRssiBuilder> packet = ReadRssiBuilder::Create(handle);
     hci_layer_->EnqueueCommand(std::move(packet),
                                common::BindOnce(&impl::on_read_rssi_complete, common::Unretained(this)), handler_);
+  }
+
+  void handle_read_remote_supported_features(uint16_t handle) {
+    hci_layer_->EnqueueCommand(
+        ReadRemoteSupportedFeaturesBuilder::Create(handle),
+        common::BindOnce(&impl::on_read_remote_supported_features_status, common::Unretained(this)), handler_);
+  }
+
+  void handle_read_remote_extended_features(uint16_t handle) {
+    // TODO(optedoblivion): Read the other pages until max pages
+    hci_layer_->EnqueueCommand(
+        ReadRemoteExtendedFeaturesBuilder::Create(handle, 1),
+        common::BindOnce(&impl::on_read_remote_extended_features_status, common::Unretained(this)), handler_);
   }
 
   void handle_read_clock(uint16_t handle, WhichClock which_clock) {
@@ -1729,6 +1766,26 @@ struct AclManager::impl {
     return true;
   }
 
+  bool ReadRemoteSupportedFeatures(uint16_t handle) {
+    auto& connection = check_and_get_connection(handle);
+    if (connection.is_disconnected_) {
+      LOG_INFO("Already disconnected");
+      return false;
+    }
+    handler_->Post(BindOnce(&impl::handle_read_remote_supported_features, common::Unretained(this), handle));
+    return true;
+  }
+
+  bool ReadRemoteExtendedFeatures(uint16_t handle) {
+    auto& connection = check_and_get_connection(handle);
+    if (connection.is_disconnected_) {
+      LOG_INFO("Already disconnected");
+      return false;
+    }
+    handler_->Post(BindOnce(&impl::handle_read_remote_extended_features, common::Unretained(this), handle));
+    return true;
+  }
+
   bool ReadClock(uint16_t handle, WhichClock which_clock) {
     auto& connection = check_and_get_connection(handle);
     if (connection.is_disconnected_) {
@@ -1921,6 +1978,14 @@ bool AclConnection::ReadAfhChannelMap() {
 
 bool AclConnection::ReadRssi() {
   return manager_->pimpl_->ReadRssi(handle_);
+}
+
+bool AclConnection::ReadRemoteSupportedFeatures() {
+  return manager_->pimpl_->ReadRemoteSupportedFeatures(handle_);
+}
+
+bool AclConnection::ReadRemoteExtendedFeatures() {
+  return manager_->pimpl_->ReadRemoteExtendedFeatures(handle_);
 }
 
 bool AclConnection::ReadClock(WhichClock which_clock) {
