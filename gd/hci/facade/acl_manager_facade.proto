@@ -11,6 +11,7 @@ service AclManagerFacade {
   rpc AuthenticationRequested(HandleMsg) returns (google.protobuf.Empty) {}
   rpc SendAclData(AclData) returns (google.protobuf.Empty) {}
   rpc FetchAclData(google.protobuf.Empty) returns (stream AclData) {}
+  rpc FetchIncomingConnection(google.protobuf.Empty) returns (stream ConnectionEvent) {}
 }
 
 message HandleMsg {
