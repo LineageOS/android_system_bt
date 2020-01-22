@@ -139,11 +139,9 @@ ErrorCode LinkLayerController::SendAclToRemote(
       std::make_unique<bluetooth::packet::RawBuilder>();
   std::vector<uint8_t> payload_bytes(acl_payload.begin(), acl_payload.end());
 
-  constexpr auto pb_flag_controller_to_host =
-      bluetooth::hci::PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE;
   uint16_t first_two_bytes =
       static_cast<uint16_t>(acl_packet.GetHandle()) +
-      (static_cast<uint16_t>(pb_flag_controller_to_host) << 12) +
+      (static_cast<uint16_t>(acl_packet.GetPacketBoundaryFlag()) << 12) +
       (static_cast<uint16_t>(acl_packet.GetBroadcastFlag()) << 14);
   raw_builder_ptr->AddOctets2(first_two_bytes);
   raw_builder_ptr->AddOctets2(static_cast<uint16_t>(payload_bytes.size()));
@@ -303,14 +301,27 @@ void LinkLayerController::IncomingAclPacket(
 
   std::vector<uint8_t> payload_data(acl_view.GetPayload().begin(),
                                     acl_view.GetPayload().end());
-  std::unique_ptr<bluetooth::packet::RawBuilder> raw_builder_ptr =
-      std::make_unique<bluetooth::packet::RawBuilder>(payload_data);
+  uint16_t acl_buffer_size = properties_.GetAclDataPacketSize();
+  int num_packets =
+      (payload_data.size() + acl_buffer_size - 1) / acl_buffer_size;
 
-  auto acl_packet = bluetooth::hci::AclPacketBuilder::Create(
-      local_handle, acl_view.GetPacketBoundaryFlag(),
-      acl_view.GetBroadcastFlag(), std::move(raw_builder_ptr));
+  auto pb_flag_controller_to_host = acl_view.GetPacketBoundaryFlag();
+  for (int i = 0; i < num_packets; i++) {
+    size_t start_index = acl_buffer_size * i;
+    size_t end_index =
+        std::min(start_index + acl_buffer_size, payload_data.size());
+    std::vector<uint8_t> fragment(&payload_data[start_index],
+                                  &payload_data[end_index]);
+    std::unique_ptr<bluetooth::packet::RawBuilder> raw_builder_ptr =
+        std::make_unique<bluetooth::packet::RawBuilder>(fragment);
+    auto acl_packet = bluetooth::hci::AclPacketBuilder::Create(
+        local_handle, pb_flag_controller_to_host, acl_view.GetBroadcastFlag(),
+        std::move(raw_builder_ptr));
+    pb_flag_controller_to_host =
+        bluetooth::hci::PacketBoundaryFlag::CONTINUING_FRAGMENT;
 
-  send_acl_(std::move(acl_packet));
+    send_acl_(std::move(acl_packet));
+  }
 }
 
 void LinkLayerController::IncomingRemoteNameRequest(
