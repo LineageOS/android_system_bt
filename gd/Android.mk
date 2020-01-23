@@ -26,4 +26,4 @@ PRIVATE_BLUETOOTH_CERT_ZIP_PATH := \
 $(PRIVATE_BLUETOOTH_CERT_ZIP_PATH) : $(SOONG_ZIP) $(PRIVATE_BLUETOOTH_CERT_TEST_FILE_LIST)
 	$(hide) $(SOONG_ZIP) -d -o $@ -C system/bt/gd $(addprefix -f ,$(PRIVATE_BLUETOOTH_CERT_TEST_FILE_LIST))
 
-$(call dist-for-goals,libbluetooth_gd,$(PRIVATE_BLUETOOTH_CERT_ZIP_PATH):bluetooth_cert_test/bluetooth_cert_test.zip)
+$(call dist-for-goals,bluetooth_stack_with_facade,$(PRIVATE_BLUETOOTH_CERT_ZIP_PATH):bluetooth_cert_test.zip)
