@@ -24,6 +24,9 @@ bluetooth_cert_test_file_list += \
     $(HOST_OUT_EXECUTABLES)/bluetooth_stack_with_facade \
     $(HOST_OUT_SHARED_LIBRARIES)/libbluetooth_gd.so \
     $(HOST_OUT_SHARED_LIBRARIES)/libgrpc++_unsecure.so \
+    $(TARGET_OUT_EXECUTABLES)/bluetooth_stack_with_facade \
+    $(TARGET_OUT_SHARED_LIBRARIES)/libbluetooth_gd.so \
+    $(TARGET_OUT_SHARED_LIBRARIES)/libgrpc++_unsecure.so \
     $(HOST_OUT_NATIVE_TESTS)/root-canal/root-canal
 
 bluetooth_cert_zip_path := \
