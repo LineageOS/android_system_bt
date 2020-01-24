@@ -94,9 +94,9 @@ class DynamicChannelManager {
    *
    * Returns: true if connection was able to be initiated, false otherwise.
    */
-  bool ConnectChannel(hci::Address device, DynamicChannelConfigurationOption configuration_option, Psm psm,
-                      OnConnectionOpenCallback on_connection_open, OnConnectionFailureCallback on_fail_callback,
-                      os::Handler* handler);
+  virtual bool ConnectChannel(hci::Address device, DynamicChannelConfigurationOption configuration_option, Psm psm,
+                              OnConnectionOpenCallback on_connection_open, OnConnectionFailureCallback on_fail_callback,
+                              os::Handler* handler);
 
   /**
    * Register a service to receive incoming connections bound to a specific channel.
@@ -119,11 +119,17 @@ class DynamicChannelManager {
    * @param handler: The handler context in which to execute the @callback parameter.
    * @param configuration_option: The configuration options for this channel
    */
-  bool RegisterService(Psm psm, DynamicChannelConfigurationOption configuration_option,
-                       const SecurityPolicy& security_policy, OnRegistrationCompleteCallback on_registration_complete,
-                       OnConnectionOpenCallback on_connection_open, os::Handler* handler);
+  virtual bool RegisterService(Psm psm, DynamicChannelConfigurationOption configuration_option,
+                               const SecurityPolicy& security_policy,
+                               OnRegistrationCompleteCallback on_registration_complete,
+                               OnConnectionOpenCallback on_connection_open, os::Handler* handler);
 
   friend class L2capClassicModule;
+
+  virtual ~DynamicChannelManager() = default;
+
+ protected:
+  DynamicChannelManager() = default;
 
  private:
   // The constructor is not to be used by user code
