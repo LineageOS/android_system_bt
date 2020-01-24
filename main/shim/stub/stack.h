@@ -19,6 +19,8 @@
 #include "gd/shim/only_include_this_file_into_legacy_stack___ever.h"
 #include "main/shim/entry.h"
 
+using namespace bluetooth::shim;
+
 class TestGdShimL2cap : public bluetooth::shim::IL2cap {
  public:
   uint16_t cid_{0};
@@ -29,12 +31,15 @@ class TestGdShimL2cap : public bluetooth::shim::IL2cap {
   std::set<uint16_t /* psm */> registered_service_;
 
   void RegisterService(uint16_t psm, bool use_ertm, uint16_t mtu,
-                       bluetooth::shim::ConnectionCompleteCallback on_complete,
-                       std::promise<void> registered) override;
-  void UnregisterService(uint16_t psm);
-  void CreateConnection(uint16_t psm, const std::string address,
-                        bluetooth::shim::ConnectionCompleteCallback on_complete,
-                        std::promise<uint16_t> created) override;
+                       ConnectionCompleteCallback on_complete,
+                       RegisterServicePending register_pending) override;
+  void UnregisterService(uint16_t psm,
+                         UnregisterServicePending unregister_pending) override;
+
+  void CreateConnection(uint16_t psm, const std::string address_string,
+                        ConnectionCompleteCallback on_complete,
+                        CreateConnectionPending create_pending) override;
+
   void CloseConnection(uint16_t cid);
   void SetReadDataReadyCallback(
       uint16_t cid,
