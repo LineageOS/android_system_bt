@@ -18,6 +18,8 @@
 
 #pragma once
 
+#include "common/callback.h"
+
 namespace bluetooth {
 namespace security {
 
@@ -34,15 +36,16 @@ class ISecurityManagerListener {
    * @param address pairing device
    * @param numeric_value numeric comparison value to verify
    */
-  virtual void OnDisplayYesNoDialogWithValue(const bluetooth::hci::AddressWithType& address,
-                                             uint32_t numeric_value) = 0;
+  virtual void OnDisplayYesNoDialogWithValue(const bluetooth::hci::AddressWithType& address, uint32_t numeric_value,
+                                             common::OnceCallback<void(bool)> input_callback) = 0;
 
   /**
-   * Display Yes/No dialog with numeric value
+   * Display Yes/No
    *
    * @param address pairing device
    */
-  virtual void OnDisplayYesNoDialog(const bluetooth::hci::AddressWithType& address) = 0;
+  virtual void OnDisplayYesNoDialog(const bluetooth::hci::AddressWithType& address,
+                                    common::OnceCallback<void(bool)> input_callback) = 0;
 
   /**
    * Present the passkey value to the user
@@ -52,11 +55,12 @@ class ISecurityManagerListener {
   /**
    * Display a dialog box that will let user enter the Passkey
    */
-  virtual void OnDisplayPasskeyInputDialog(const bluetooth::hci::AddressWithType& address) = 0;
+  virtual void OnDisplayPasskeyInputDialog(const bluetooth::hci::AddressWithType& address,
+                                           common::OnceCallback<void(uint32_t)> input_callback) = 0;
 
   /**
    * Remove the pairing prompt from DisplayPairingPrompt, i.e. remote device
-   * disconnected, or some application requested bond with this device
+   * disconnected, or some application requested bond with this device.  So the UI should dismiss the pairing prompt.
    */
   virtual void OnDisplayCancelDialog(const bluetooth::hci::AddressWithType& address) = 0;
 

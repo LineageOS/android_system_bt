@@ -146,6 +146,9 @@ cc_binary {
     generated_sources: [
         "BluetoothFacadeGeneratedStub_cc",
     ],
+    required: [
+        "root-canal",
+    ],
     static_libs: [
         "libbluetooth_gd",
     ],
@@ -666,7 +669,7 @@ cc_defaults {
   allow_undefined_symbols: true,
 }
 
-cc_library_host_shared{
+cc_library_host_shared {
   name: "bluetooth_packets_python3",
   defaults: [
     "gd_defaults",
