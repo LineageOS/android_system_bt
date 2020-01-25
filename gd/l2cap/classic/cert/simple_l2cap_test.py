@@ -13,12 +13,10 @@
 #   WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
-from __future__ import print_function
 
 import os
 import sys
 import time
-sys.path.append(os.environ['ANDROID_BUILD_TOP'] + '/system/bt/gd')
 
 from cert.gd_base_test import GdBaseTestClass
 from cert.event_asserts import EventAsserts

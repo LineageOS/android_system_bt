@@ -14,14 +14,10 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from __future__ import print_function
-
 import os
 import sys
 import logging
 import time
-
-sys.path.append(os.environ['ANDROID_BUILD_TOP'] + '/system/bt/gd')
 
 from datetime import datetime, timedelta
 from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
