@@ -3,6 +3,8 @@ LOCAL_PATH := $(call my-dir)
 bluetooth_cert_test_file_list := \
     $(call all-named-files-under,*.py,cert) \
     $(call all-named-files-under,*.sh,cert) \
+    $(call all-named-files-under,*.proto,cert facade hal hci/cert hci/facade l2cap/classic \
+	    l2cap/classic/cert neighbor/facade) \
     cert/cert_testcases \
     cert/cert_testcases_facade_only \
     cert/host_only_config.json \
@@ -22,8 +24,12 @@ bluetooth_cert_test_file_list := $(addprefix $(LOCAL_PATH)/,$(bluetooth_cert_tes
 
 bluetooth_cert_test_file_list += \
     $(HOST_OUT_EXECUTABLES)/bluetooth_stack_with_facade \
+    $(HOST_OUT_SHARED_LIBRARIES)/bluetooth_packets_python3.so \
     $(HOST_OUT_SHARED_LIBRARIES)/libbluetooth_gd.so \
     $(HOST_OUT_SHARED_LIBRARIES)/libgrpc++_unsecure.so \
+    $(TARGET_OUT_EXECUTABLES)/bluetooth_stack_with_facade \
+    $(TARGET_OUT_SHARED_LIBRARIES)/libbluetooth_gd.so \
+    $(TARGET_OUT_SHARED_LIBRARIES)/libgrpc++_unsecure.so \
     $(HOST_OUT_NATIVE_TESTS)/root-canal/root-canal
 
 bluetooth_cert_zip_path := \
