@@ -86,9 +86,9 @@ void ClassicPairingHandler::OnConnectionOpen(std::unique_ptr<l2cap::classic::Fix
   ASSERT(fixed_channel_ == nullptr);
   fixed_channel_ = std::move(fixed_channel);
   ASSERT(fixed_channel_->GetDevice() == GetRecord()->GetPseudoAddress().GetAddress());
-  fixed_channel_->Acquire();
   fixed_channel_->RegisterOnCloseCallback(
       security_handler_, common::BindOnce(&ClassicPairingHandler::OnConnectionClose, common::Unretained(this)));
+  fixed_channel_->Acquire();
 }
 
 void ClassicPairingHandler::OnConnectionFail(l2cap::classic::FixedChannelManager::ConnectionResult result) {
