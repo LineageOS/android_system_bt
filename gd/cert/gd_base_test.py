@@ -30,9 +30,6 @@ sys.path.append(
     '/out/soong/.intermediates/system/bt/gd/BluetoothFacadeAndCertGeneratedStub_py/gen'
 )
 
-ANDROID_HOST_OUT = os.environ.get('ANDROID_HOST_OUT')
-ROOTCANAL = ANDROID_HOST_OUT + "/nativetest64/root-canal/root-canal"
-
 
 class GdBaseTestClass(BaseTestClass):
 
@@ -51,9 +48,11 @@ class GdBaseTestClass(BaseTestClass):
             self.rootcanal_logs = open(rootcanal_logpath, 'w')
             rootcanal_config = self.controller_configs['rootcanal']
             rootcanal_hci_port = str(rootcanal_config.get("hci_port", "6402"))
+            android_host_out = os.environ.get('ANDROID_HOST_OUT')
+            rootcanal = android_host_out + "/nativetest64/root-canal/root-canal"
             self.rootcanal_process = subprocess.Popen(
                 [
-                    ROOTCANAL,
+                    rootcanal,
                     str(rootcanal_config.get("test_port", "6401")),
                     rootcanal_hci_port,
                     str(rootcanal_config.get("link_layer_port", "6403"))
