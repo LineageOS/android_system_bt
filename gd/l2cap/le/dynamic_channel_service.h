@@ -47,13 +47,15 @@ class DynamicChannelService {
 
   Psm GetPsm() const;
 
- private:
+ protected:
   DynamicChannelService(Psm psm, internal::DynamicChannelServiceManagerImpl* manager, os::Handler* handler)
       : psm_(psm), manager_(manager), l2cap_layer_handler_(handler) {
     ASSERT(IsPsmValid(psm));
     ASSERT(manager_ != nullptr);
     ASSERT(l2cap_layer_handler_ != nullptr);
   }
+
+ private:
   Psm psm_ = kDefaultPsm;
   internal::DynamicChannelServiceManagerImpl* manager_ = nullptr;
   os::Handler* l2cap_layer_handler_;

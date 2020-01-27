@@ -173,13 +173,37 @@ tL2CAP_APPL_INFO test_callbacks{
 };
 
 TEST_F(L2capTest, RegisterService) {
-  l2cap_->RegisterService(kPsm, &test_callbacks, false, nullptr);
+  uint16_t psm = l2cap_->RegisterService(kPsm, &test_callbacks, true, nullptr);
+  CHECK(kPsm == psm);
+  CHECK(test_stack_.test_l2cap_.registered_service_.count(kPsm) == 1);
+}
+
+TEST_F(L2capTest, RegisterServiceTwice) {
+  uint16_t psm = l2cap_->RegisterService(kPsm, &test_callbacks, true, nullptr);
+  CHECK(psm == kPsm);
+  CHECK(test_stack_.test_l2cap_.registered_service_.count(kPsm) == 1);
+  psm = l2cap_->RegisterService(kPsm, &test_callbacks, true, nullptr);
+  CHECK(psm == 0);
   CHECK(test_stack_.test_l2cap_.registered_service_.count(kPsm) == 1);
 }
 
 TEST_F(L2capTest, UnregisterService) {
   l2cap_->RegisterService(kPsm, &test_callbacks, false, nullptr);
   CHECK(test_stack_.test_l2cap_.registered_service_.count(kPsm) == 1);
+  l2cap_->UnregisterService(kPsm);
+  CHECK(test_stack_.test_l2cap_.registered_service_.count(kPsm) == 0);
+}
+
+TEST_F(L2capTest, UnregisterServiceTwice) {
+  l2cap_->RegisterService(kPsm, &test_callbacks, false, nullptr);
+  CHECK(test_stack_.test_l2cap_.registered_service_.count(kPsm) == 1);
+  l2cap_->UnregisterService(kPsm);
+  CHECK(test_stack_.test_l2cap_.registered_service_.count(kPsm) == 0);
+  l2cap_->UnregisterService(kPsm);
+  CHECK(test_stack_.test_l2cap_.registered_service_.count(kPsm) == 0);
+}
+
+TEST_F(L2capTest, UnregisterServiceNeverRegistered) {
   l2cap_->UnregisterService(kPsm);
   CHECK(test_stack_.test_l2cap_.registered_service_.count(kPsm) == 0);
 }
