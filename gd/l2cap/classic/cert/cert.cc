@@ -24,7 +24,6 @@
 #include "common/blocking_queue.h"
 #include "grpc/grpc_event_queue.h"
 #include "hci/acl_manager.h"
-#include "hci/cert/cert.h"
 #include "hci/hci_packets.h"
 #include "l2cap/classic/cert/api.grpc.pb.h"
 #include "l2cap/classic/cert/cert.h"
