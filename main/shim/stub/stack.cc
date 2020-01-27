@@ -37,20 +37,22 @@ bluetooth::shim::IStack* bluetooth::shim::GetGabeldorscheStack() {
 void TestGdShimL2cap::RegisterService(
     uint16_t psm, bool use_ertm, uint16_t mtu,
     bluetooth::shim::ConnectionCompleteCallback on_complete,
-    std::promise<void> registered) {
-  registered.set_value();
+    RegisterServicePending register_pending) {
+  register_pending.set_value(psm);
   registered_service_.insert(psm);
 }
 
-void TestGdShimL2cap::UnregisterService(uint16_t psm) {
+void TestGdShimL2cap::UnregisterService(
+    uint16_t psm, UnregisterServicePending unregister_pending) {
   registered_service_.erase(psm);
+  unregister_pending.set_value();
 }
 
 void TestGdShimL2cap::CreateConnection(
     uint16_t psm, const std::string address,
     bluetooth::shim::ConnectionCompleteCallback on_complete,
-    std::promise<uint16_t> created) {
-  created.set_value(cid_);
+    CreateConnectionPending create_pending) {
+  create_pending.set_value(cid_);
 }
 
 void TestGdShimL2cap::CloseConnection(uint16_t cid) {}

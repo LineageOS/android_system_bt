@@ -32,13 +32,17 @@ using ConnectionCompleteCallback =
     std::function<void(std::string string_address, uint16_t psm, uint16_t cid, bool connected)>;
 using ReadDataReadyCallback = std::function<void(uint16_t cid, std::vector<const uint8_t> data)>;
 
+using RegisterServicePending = std::promise<uint16_t>;
+using UnregisterServicePending = std::promise<void>;
+using CreateConnectionPending = std::promise<uint16_t>;
+
 struct IL2cap {
   virtual void RegisterService(uint16_t psm, bool use_ertm, uint16_t mtu, ConnectionCompleteCallback on_complete,
-                               std::promise<void> registered) = 0;
-  virtual void UnregisterService(uint16_t psm) = 0;
+                               RegisterServicePending register_pending) = 0;
+  virtual void UnregisterService(uint16_t psm, UnregisterServicePending unregister_pending) = 0;
 
   virtual void CreateConnection(uint16_t psm, const std::string address, ConnectionCompleteCallback on_complete,
-                                std::promise<uint16_t> created) = 0;
+                                CreateConnectionPending create_pending) = 0;
   virtual void CloseConnection(uint16_t cid) = 0;
 
   virtual void SetReadDataReadyCallback(uint16_t cid, ReadDataReadyCallback on_data_ready) = 0;
