@@ -48,13 +48,6 @@ filegroup {
 }
 
 filegroup {
-    name: "BluetoothCertSource_hci_layer",
-    srcs: [
-        "cert/cert.cc",
-    ],
-}
-
-filegroup {
     name: "BluetoothHciFuzzTestSources",
     srcs: [
         "hci_packets_fuzz_test.cc",

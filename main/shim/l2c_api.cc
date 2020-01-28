@@ -61,9 +61,7 @@ uint16_t bluetooth::shim::L2CA_Register(uint16_t client_psm,
   LOG_INFO(LOG_TAG, "%s classic client_psm:%hd psm:%hd", __func__, client_psm,
            psm);
 
-  shim_l2cap.RegisterService(psm, callbacks, enable_snoop, p_ertm_info);
-
-  return client_psm;
+  return shim_l2cap.RegisterService(psm, callbacks, enable_snoop, p_ertm_info);
 }
 
 void bluetooth::shim::L2CA_Deregister(uint16_t client_psm) {

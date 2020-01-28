@@ -182,7 +182,6 @@ cc_binary {
         "cert/grpc_root_server.cc",
         "cert/read_only_property_server.cc",
         "grpc/grpc_module.cc",
-        ":BluetoothCertSource_hci_layer",
         ":BluetoothCertSource_l2cap_layer",
     ],
     generated_headers: [
@@ -542,8 +541,6 @@ genrule {
         "neighbor/facade/facade_pb2_grpc.py",
         "neighbor/facade/facade_pb2.py",
         "hci/cert/__init__.py",
-        "hci/cert/api_pb2_grpc.py",
-        "hci/cert/api_pb2.py",
         "l2cap/classic/cert/__init__.py",
         "l2cap/classic/cert/api_pb2_grpc.py",
         "l2cap/classic/cert/api_pb2.py",
@@ -557,7 +554,6 @@ filegroup {
     name: "BluetoothCertStackProto",
     srcs: [
         "cert/rootservice.proto",
-        "hci/cert/api.proto",
         "l2cap/classic/cert/api.proto",
     ],
 }
@@ -578,8 +574,6 @@ genrule {
         "cert/rootservice.pb.h",
         "facade/common.grpc.pb.h",
         "facade/common.pb.h",
-        "hci/cert/api.grpc.pb.h",
-        "hci/cert/api.pb.h",
         "l2cap/classic/cert/api.grpc.pb.h",
         "l2cap/classic/cert/api.pb.h",
     ],
@@ -601,8 +595,6 @@ genrule {
         "cert/rootservice.pb.cc",
         "facade/common.grpc.pb.cc",
         "facade/common.pb.cc",
-        "hci/cert/api.grpc.pb.cc",
-        "hci/cert/api.pb.cc",
         "l2cap/classic/cert/api.grpc.pb.cc",
         "l2cap/classic/cert/api.pb.cc",
     ],
