@@ -495,59 +495,27 @@ genrule {
     tools: [
         "aprotoc",
         "protoc-gen-grpc-python-plugin",
+        "soong_zip",
     ],
     cmd: "$(location aprotoc) -Isystem/bt/gd -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-python-plugin) $(in) --grpc_out=$(genDir) --python_out=$(genDir); " +
         "touch $(genDir)/facade/__init__.py; " +
         "touch $(genDir)/hal/__init__.py; " +
         "touch $(genDir)/hci/__init__.py; " +
         "touch $(genDir)/hci/facade/__init__.py; " +
-        "touch $(genDir)/hci/cert/__init__.py; " +
         "touch $(genDir)/l2cap/classic/__init__.py; " +
         "touch $(genDir)/l2cap/classic/cert/__init__.py; " +
         "touch $(genDir)/neighbor/facade/__init__.py; " +
-        "touch $(genDir)/security/__init__.py; ",
+        "touch $(genDir)/security/__init__.py; " +
+        "$(location soong_zip) -C $(genDir) -D $(genDir) -o $(out)",
     srcs: [
         ":BluetoothFacadeProto",
         ":BluetoothCertStackProto",
     ],
-    out: [
-        "cert/rootservice_pb2_grpc.py",
-        "cert/rootservice_pb2.py",
-        "facade/__init__.py",
-        "facade/common_pb2_grpc.py",
-        "facade/common_pb2.py",
-        "facade/rootservice_pb2_grpc.py",
-        "facade/rootservice_pb2.py",
-        "hal/__init__.py",
-        "hal/facade_pb2_grpc.py",
-        "hal/facade_pb2.py",
-        "hci/facade/__init__.py",
-        "hci/facade/facade_pb2_grpc.py",
-        "hci/facade/facade_pb2.py",
-        "hci/facade/acl_manager_facade_pb2_grpc.py",
-        "hci/facade/acl_manager_facade_pb2.py",
-        "hci/facade/controller_facade_pb2_grpc.py",
-        "hci/facade/controller_facade_pb2.py",
-        "hci/facade/le_acl_manager_facade_pb2_grpc.py",
-        "hci/facade/le_acl_manager_facade_pb2.py",
-        "hci/facade/le_advertising_manager_facade_pb2_grpc.py",
-        "hci/facade/le_advertising_manager_facade_pb2.py",
-        "hci/facade/le_scanning_manager_facade_pb2_grpc.py",
-        "hci/facade/le_scanning_manager_facade_pb2.py",
-        "l2cap/classic/__init__.py",
-        "l2cap/classic/facade_pb2_grpc.py",
-        "l2cap/classic/facade_pb2.py",
-        "neighbor/facade/__init__.py",
-        "neighbor/facade/facade_pb2_grpc.py",
-        "neighbor/facade/facade_pb2.py",
-        "hci/cert/__init__.py",
-        "l2cap/classic/cert/__init__.py",
-        "l2cap/classic/cert/api_pb2_grpc.py",
-        "l2cap/classic/cert/api_pb2.py",
-        "security/__init__.py",
-        "security/facade_pb2_grpc.py",
-        "security/facade_pb2.py",
-    ],
+    out: ["bluetooth_cert_generated_py.zip"],
+    dist: {
+        targets: ["bluetooth_stack_with_facade"],
+    },
+
 }
 
 filegroup {
