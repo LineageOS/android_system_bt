@@ -20,15 +20,7 @@ import importlib
 import logging
 import os
 import signal
-import sys
 import subprocess
-
-ANDROID_BUILD_TOP = os.environ.get('ANDROID_BUILD_TOP')
-
-sys.path.append(
-    ANDROID_BUILD_TOP +
-    '/out/soong/.intermediates/system/bt/gd/BluetoothFacadeAndCertGeneratedStub_py/gen'
-)
 
 
 class PTSBaseTestClass(BaseTestClass):
