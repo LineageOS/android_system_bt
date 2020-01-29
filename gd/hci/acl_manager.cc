@@ -118,6 +118,7 @@ struct AclManager::acl_connection {
         return;
       } else {
         payload = recombination_stage_;
+        recombination_stage_ = PacketViewForRecombination(std::make_shared<std::vector<uint8_t>>());
       }
     } else if (packet_boundary_flag == PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE) {
       if (recombination_stage_.size() > 0) {

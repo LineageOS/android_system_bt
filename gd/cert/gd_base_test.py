@@ -20,15 +20,9 @@ import importlib
 import logging
 import os
 import signal
-import sys
 import subprocess
 
 ANDROID_BUILD_TOP = os.environ.get('ANDROID_BUILD_TOP')
-
-sys.path.append(
-    ANDROID_BUILD_TOP +
-    '/out/soong/.intermediates/system/bt/gd/BluetoothFacadeAndCertGeneratedStub_py/gen'
-)
 
 
 class GdBaseTestClass(BaseTestClass):
@@ -36,7 +30,7 @@ class GdBaseTestClass(BaseTestClass):
     def __init__(self, configs):
         BaseTestClass.__init__(self, configs)
 
-        log_path_base = configs.log_path
+        log_path_base = getattr(configs, "log_path", "/tmp/logs")
         gd_devices = self.controller_configs.get("GdDevice")
         gd_cert_devices = self.controller_configs.get("GdCertDevice")
 
