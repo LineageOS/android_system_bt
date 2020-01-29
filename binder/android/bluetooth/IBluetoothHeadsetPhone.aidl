@@ -32,6 +32,7 @@ interface IBluetoothHeadsetPhone {
   boolean listCurrentCalls();
   boolean queryPhoneState();
   boolean isHighDefCallInProgress();
+  boolean isCsCallInProgress();
 
 
   // Internal for phone app to call
