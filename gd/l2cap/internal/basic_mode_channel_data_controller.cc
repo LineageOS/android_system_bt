@@ -36,6 +36,7 @@ void BasicModeDataController::OnSdu(std::unique_ptr<packet::BasePacketBuilder> s
 void BasicModeDataController::OnPdu(packet::PacketView<true> pdu) {
   auto basic_frame_view = BasicFrameView::Create(pdu);
   if (!basic_frame_view.IsValid()) {
+    LOG_WARN("Received invalid frame");
     return;
   }
   enqueue_buffer_.Enqueue(std::make_unique<PacketView<kLittleEndian>>(basic_frame_view.GetPayload()), handler_);
