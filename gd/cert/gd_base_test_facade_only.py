@@ -30,7 +30,7 @@ class GdFacadeOnlyBaseTestClass(BaseTestClass):
     def __init__(self, configs):
         BaseTestClass.__init__(self, configs)
 
-        log_path_base = configs.log_path
+        log_path_base = getattr(configs, "log_path", "/tmp/logs")
         gd_devices = self.controller_configs.get("GdDevice")
 
         self.rootcanal_running = False
