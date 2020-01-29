@@ -56,7 +56,8 @@ void PairingHandlerLe::PairingMain(InitialInformations i) {
   auto [pairing_request, pairing_response] = std::get<Phase1Result>(phase_1_result);
 
   /************************************************ PHASE 2 *********************************************************/
-  if (pairing_request.GetAuthReq() & pairing_response.GetAuthReq() & AuthReqMaskSc) {
+  bool isSecureConnections = pairing_request.GetAuthReq() & pairing_response.GetAuthReq() & AuthReqMaskSc;
+  if (isSecureConnections) {
     // 2.3.5.6 LE Secure Connections pairing phase 2
     LOG_INFO("Pairing Phase 2 LE Secure connections Started");
 
@@ -97,6 +98,7 @@ void PairingHandlerLe::PairingMain(InitialInformations i) {
 
     Octet16 ltk = std::get<Octet16>(stage_2_result);
     if (IAmMaster(i)) {
+      LOG_INFO("Sending start encryption request");
       SendHciLeStartEncryption(i, i.connection_handle, {0}, {0}, ltk);
     }
 
@@ -126,9 +128,9 @@ void PairingHandlerLe::PairingMain(InitialInformations i) {
   }
 
   /************************************************ PHASE 3 *********************************************************/
+  LOG_INFO("Waiting for encryption changed");
   auto encryption_change_result = WaitEncryptionChanged();
   if (std::holds_alternative<PairingFailure>(encryption_change_result)) {
-    LOG_ERROR("encryption change failed");
     i.OnPairingFinished(std::get<PairingFailure>(encryption_change_result));
     return;
   } else if (std::holds_alternative<EncryptionChangeView>(encryption_change_result)) {
@@ -136,24 +138,29 @@ void PairingHandlerLe::PairingMain(InitialInformations i) {
     if (encryption_changed.GetStatus() != hci::ErrorCode::SUCCESS ||
         encryption_changed.GetEncryptionEnabled() != hci::EncryptionEnabled::ON) {
       i.OnPairingFinished(PairingFailure("Encryption change failed"));
+      return;
     }
   } else if (std::holds_alternative<EncryptionKeyRefreshCompleteView>(encryption_change_result)) {
     EncryptionKeyRefreshCompleteView encryption_changed =
         std::get<EncryptionKeyRefreshCompleteView>(encryption_change_result);
     if (encryption_changed.GetStatus() != hci::ErrorCode::SUCCESS) {
       i.OnPairingFinished(PairingFailure("Encryption key refresh failed"));
+      return;
     }
   } else {
     i.OnPairingFinished(PairingFailure("Unknown case of encryption change result"));
+    return;
   }
+  LOG_INFO("Encryption change finished successfully");
 
-  DistributedKeysOrFailure keyExchangeStatus = DistributeKeys(i, pairing_response);
+  DistributedKeysOrFailure keyExchangeStatus = DistributeKeys(i, pairing_response, isSecureConnections);
   if (std::holds_alternative<PairingFailure>(keyExchangeStatus)) {
     i.OnPairingFinished(std::get<PairingFailure>(keyExchangeStatus));
     LOG_ERROR("Key exchange failed");
     return;
   }
 
+  LOG_INFO("Pairing finished successfully.");
   i.OnPairingFinished(PairingResult{
       .connection_address = i.remote_connection_address,
       .distributed_keys = std::get<DistributedKeys>(keyExchangeStatus),
@@ -259,16 +266,22 @@ Phase1ResultOrFailure PairingHandlerLe::ExchangePairingFeature(const InitialInfo
 }
 
 DistributedKeysOrFailure PairingHandlerLe::DistributeKeys(const InitialInformations& i,
-                                                          const PairingResponseView& pairing_response) {
-  LOG_INFO("Key distribution start");
-
-  const uint8_t& keys_i_receive =
+                                                          const PairingResponseView& pairing_response,
+                                                          bool isSecureConnections) {
+  uint8_t keys_i_receive =
       IAmMaster(i) ? pairing_response.GetResponderKeyDistribution() : pairing_response.GetInitiatorKeyDistribution();
-  const uint8_t& keys_i_send =
+  uint8_t keys_i_send =
       IAmMaster(i) ? pairing_response.GetInitiatorKeyDistribution() : pairing_response.GetResponderKeyDistribution();
 
-  // TODO: obtain actual values!
+  // In Secure Connections on the LE Transport, the EncKey field shall be ignored
+  if (isSecureConnections) {
+    keys_i_send = (~KeyMaskEnc) & keys_i_send;
+    keys_i_receive = (~KeyMaskEnc) & keys_i_receive;
+  }
 
+  LOG_INFO("Key distribution start, keys_i_send=%02x, keys_i_receive=%02x", keys_i_send, keys_i_receive);
+
+  // TODO: obtain actual values!
   Octet16 my_ltk = {0};
   uint16_t my_ediv{0};
   std::array<uint8_t, 8> my_rand = {0};
@@ -372,17 +385,21 @@ void PairingHandlerLe::SendKeys(const InitialInformations& i, const uint8_t& key
                                 std::array<uint8_t, 8> rand, Octet16 irk, Address identity_address,
                                 AddrType identity_addres_type, Octet16 signature_key) {
   if (keys_i_send & KeyMaskEnc) {
+    LOG_INFO("Sending Encryption Information");
     SendL2capPacket(i, EncryptionInformationBuilder::Create(ltk));
+    LOG_INFO("Sending Master Identification");
     SendL2capPacket(i, MasterIdentificationBuilder::Create(ediv, rand));
   }
 
   if (keys_i_send & KeyMaskId) {
+    LOG_INFO("Sending Identity Information");
     SendL2capPacket(i, IdentityInformationBuilder::Create(irk));
-
+    LOG_INFO("Sending Identity Address Information");
     SendL2capPacket(i, IdentityAddressInformationBuilder::Create(identity_addres_type, identity_address));
   }
 
   if (keys_i_send & KeyMaskSign) {
+    LOG_INFO("Sending Signing Information");
     SendL2capPacket(i, SigningInformationBuilder::Create(signature_key));
   }
 }
