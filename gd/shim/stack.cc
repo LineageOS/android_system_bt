@@ -17,6 +17,7 @@
 #define LOG_TAG "bt_gd_shim"
 
 #include "shim/stack.h"
+#include "att/att_module.h"
 #include "hal/hci_hal.h"
 #include "hci/acl_manager.h"
 #include "hci/classic_security_manager.h"
@@ -60,6 +61,7 @@ struct bluetooth::shim::Stack::impl {
 
     LOG_INFO("%s Starting Gd stack", __func__);
     ModuleList modules;
+    modules.add<::bluetooth::att::AttModule>();
     modules.add<::bluetooth::hal::HciHal>();
     modules.add<::bluetooth::hci::AclManager>();
     modules.add<::bluetooth::hci::LeAdvertisingManager>();
