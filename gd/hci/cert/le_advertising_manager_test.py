@@ -79,6 +79,9 @@ class LeAdvertisingManagerTest(GdFacadeOnlyBaseTestClass):
         with EventCallbackStream(
                 self.cert_device.hci.FetchLeSubevents(
                     empty_proto.Empty())) as hci_le_event_stream:
+
+            hci_event_asserts = EventAsserts(hci_le_event_stream)
+
             # CERT Scans
             self.enqueue_hci_command(
                 hci_packets.LeSetRandomAddressBuilder('0C:05:04:03:02:01'),
@@ -120,7 +123,6 @@ class LeAdvertisingManagerTest(GdFacadeOnlyBaseTestClass):
             create_response = self.device_under_test.hci_le_advertising_manager.CreateAdvertiser(
                 request)
 
-            hci_event_asserts = EventAsserts(hci_le_event_stream)
             hci_event_asserts.assert_event_occurs(
                 lambda packet: b'Im_The_DUT' in packet.event)
 

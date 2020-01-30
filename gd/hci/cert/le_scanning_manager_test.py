@@ -80,6 +80,8 @@ class LeScanningManagerTest(GdFacadeOnlyBaseTestClass):
                 self.device_under_test.hci_le_scanning_manager.StartScan(
                     empty_proto.Empty())) as advertising_event_stream:
 
+            hci_event_asserts = EventAsserts(advertising_event_stream)
+
             # CERT Advertises
             gap_name = hci_packets.GapData()
             gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
@@ -106,7 +108,6 @@ class LeScanningManagerTest(GdFacadeOnlyBaseTestClass):
             create_response = self.cert_device.hci_le_advertising_manager.CreateAdvertiser(
                 request)
 
-            hci_event_asserts = EventAsserts(advertising_event_stream)
             hci_event_asserts.assert_event_occurs(
                 lambda packet: b'Im_The_CERT' in packet.event)
 
