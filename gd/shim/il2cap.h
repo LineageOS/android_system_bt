@@ -29,20 +29,20 @@ namespace shim {
 
 using ConnectionClosedCallback = std::function<void(uint16_t cid, int error_code)>;
 using ConnectionCompleteCallback =
-    std::function<void(std::string string_address, uint16_t psm, uint16_t cid, bool connected)>;
+    std::function<void(std::string string_address, uint16_t psm, uint16_t cid, bool is_connected)>;
 using ReadDataReadyCallback = std::function<void(uint16_t cid, std::vector<const uint8_t> data)>;
 
-using RegisterServicePending = std::promise<uint16_t>;
-using UnregisterServicePending = std::promise<void>;
-using CreateConnectionPending = std::promise<uint16_t>;
+using RegisterServicePromise = std::promise<uint16_t>;
+using UnregisterServicePromise = std::promise<void>;
+using CreateConnectionPromise = std::promise<uint16_t>;
 
 struct IL2cap {
   virtual void RegisterService(uint16_t psm, bool use_ertm, uint16_t mtu, ConnectionCompleteCallback on_complete,
-                               RegisterServicePending register_pending) = 0;
-  virtual void UnregisterService(uint16_t psm, UnregisterServicePending unregister_pending) = 0;
+                               RegisterServicePromise register_promise) = 0;
+  virtual void UnregisterService(uint16_t psm, UnregisterServicePromise unregister_promise) = 0;
 
   virtual void CreateConnection(uint16_t psm, const std::string address, ConnectionCompleteCallback on_complete,
-                                CreateConnectionPending create_pending) = 0;
+                                CreateConnectionPromise create_promise) = 0;
   virtual void CloseConnection(uint16_t cid) = 0;
 
   virtual void SetReadDataReadyCallback(uint16_t cid, ReadDataReadyCallback on_data_ready) = 0;
