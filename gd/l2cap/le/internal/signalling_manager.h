@@ -72,6 +72,8 @@ class LeSignallingManager {
 
   void SendCredit(Cid local_cid, uint16_t credits);
 
+  void CancelAlarm();
+
   void OnCommandReject(LeCommandRejectView command_reject_view);
 
   void OnConnectionParameterUpdateRequest(uint16_t interval_min, uint16_t interval_max, uint16_t slave_latency,

@@ -74,6 +74,8 @@ class ClassicSignallingManager {
 
   void SendEchoRequest(std::unique_ptr<packet::RawBuilder> payload);
 
+  void CancelAlarm();
+
   void OnConnectionRequest(SignalId signal_id, Psm psm, Cid remote_cid);
 
   void OnConnectionResponse(SignalId signal_id, Cid remote_cid, Cid cid, ConnectionResponseResult result,
