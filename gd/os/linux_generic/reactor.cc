@@ -124,10 +124,10 @@ void Reactor::Run() {
       {
         std::lock_guard<std::mutex> reactable_lock(reactable->mutex_);
         reactable->is_executing_ = false;
-      }
-      if (reactable->removed_) {
-        reactable->finished_promise_->set_value();
-        delete reactable;
+        if (reactable->removed_) {
+          reactable->finished_promise_->set_value();
+          delete reactable;
+        }
       }
     }
   }
