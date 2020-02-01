@@ -124,16 +124,15 @@ StkOrFailure PairingHandlerLe::DoLegacyStage2(const InitialInformations& i, cons
 
     // LOG(INFO) << +(IAmMaster(i)) << " tk = " << base::HexEncode(tk.data(), tk.size());
     // LOG(INFO) << +(IAmMaster(i)) << " mrand = " << base::HexEncode(mrand.data(), mrand.size());
-    // LOG(INFO) << +(IAmMaster(i)) << " preq = " << base::HexEncode(preq.data(), preq.size());
     // LOG(INFO) << +(IAmMaster(i)) << " pres = " << base::HexEncode(pres.data(), pres.size());
-    // LOG(INFO) << +(IAmMaster(i)) << " i.remote_connection_address_type = " << +i.remote_connection_address_type;
-    // LOG(INFO) << +(IAmMaster(i)) << " i.i.remote_connection_address.address = " << i.remote_connection_address;
-    // LOG(INFO) << +(IAmMaster(i)) << " i.my_connection_address_type = " << +i.my_connection_address_type;
-    // LOG(INFO) << +(IAmMaster(i)) << " i.i.my_connection_address.address = " << i.my_connection_address;
+    // LOG(INFO) << +(IAmMaster(i)) << " preq = " << base::HexEncode(preq.data(), preq.size());
+
     Octet16 mconfirm = crypto_toolbox::c1(
         tk, mrand, preq.data(), pres.data(), (uint8_t)i.my_connection_address.GetAddressType(),
         i.my_connection_address.GetAddress().address, (uint8_t)i.remote_connection_address.GetAddressType(),
         i.remote_connection_address.GetAddress().address);
+
+    // LOG(INFO) << +(IAmMaster(i)) << " mconfirm = " << base::HexEncode(mconfirm.data(), mconfirm.size());
 
     LOG_INFO("Master sends Mconfirm");
     SendL2capPacket(i, PairingConfirmBuilder::Create(mconfirm));
@@ -155,14 +154,8 @@ StkOrFailure PairingHandlerLe::DoLegacyStage2(const InitialInformations& i, cons
     }
     srand = std::get<PairingRandomView>(random_pkt).GetRandomValue();
 
-    // LOG(INFO) << +(IAmMaster(i)) << " tk = " << base::HexEncode(tk.data(), tk.size());
     // LOG(INFO) << +(IAmMaster(i)) << " srand = " << base::HexEncode(srand.data(), srand.size());
-    // LOG(INFO) << +(IAmMaster(i)) << " preq = " << base::HexEncode(preq.data(), preq.size());
-    // LOG(INFO) << +(IAmMaster(i)) << " pres = " << base::HexEncode(pres.data(), pres.size());
-    // LOG(INFO) << +(IAmMaster(i)) << " i.my_connection_address_type = " << +i.my_connection_address_type;
-    // LOG(INFO) << +(IAmMaster(i)) << " i.i.my_connection_address.address = " << i.my_connection_address;
-    // LOG(INFO) << +(IAmMaster(i)) << " i.remote_connection_address_type = " << +i.remote_connection_address_type;
-    // LOG(INFO) << +(IAmMaster(i)) << " i.i.remote_connection_address.address = " << i.remote_connection_address;
+
     Octet16 sconfirm_generated = crypto_toolbox::c1(
         tk, srand, preq.data(), pres.data(), (uint8_t)i.my_connection_address.GetAddressType(),
         i.my_connection_address.GetAddress().address, (uint8_t)i.remote_connection_address.GetAddressType(),
@@ -202,14 +195,6 @@ StkOrFailure PairingHandlerLe::DoLegacyStage2(const InitialInformations& i, cons
     }
     mrand = std::get<PairingRandomView>(random_pkt).GetRandomValue();
 
-    // LOG(INFO) << +(IAmMaster(i)) << " tk = " << base::HexEncode(tk.data(), tk.size());
-    // LOG(INFO) << +(IAmMaster(i)) << " mrand = " << base::HexEncode(mrand.data(), mrand.size());
-    // LOG(INFO) << +(IAmMaster(i)) << " preq = " << base::HexEncode(preq.data(), preq.size());
-    // LOG(INFO) << +(IAmMaster(i)) << " pres = " << base::HexEncode(pres.data(), pres.size());
-    // LOG(INFO) << +(IAmMaster(i)) << " i.my_connection_address_type = " << +i.my_connection_address_type;
-    // LOG(INFO) << +(IAmMaster(i)) << " i.i.my_connection_address.address = " << i.my_connection_address;
-    // LOG(INFO) << +(IAmMaster(i)) << " i.remote_connection_address_type = " << +i.remote_connection_address_type;
-    // LOG(INFO) << +(IAmMaster(i)) << " i.i.remote_connection_address.address = " << i.remote_connection_address;
     Octet16 mconfirm_generated = crypto_toolbox::c1(
         tk, mrand, preq.data(), pres.data(), (uint8_t)i.remote_connection_address.GetAddressType(),
         i.remote_connection_address.GetAddress().address, (uint8_t)i.my_connection_address.GetAddressType(),
@@ -228,7 +213,7 @@ StkOrFailure PairingHandlerLe::DoLegacyStage2(const InitialInformations& i, cons
   LOG_INFO("Legacy stage 2 finish");
 
   /* STK */
-  return crypto_toolbox::s1(tk, srand, mrand);
+  return crypto_toolbox::s1(tk, mrand, srand);
 }
 }  // namespace security
 }  // namespace bluetooth
