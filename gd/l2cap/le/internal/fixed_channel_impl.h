@@ -43,6 +43,8 @@ class FixedChannelImpl : public l2cap::internal::ChannelImpl {
   /* Return the role we have in the associated link */
   virtual hci::Role GetRole() const;
 
+  virtual hci::AclConnection* GetAclConnection() const;
+
   virtual void RegisterOnCloseCallback(os::Handler* user_handler, FixedChannel::OnCloseCallback on_close_callback);
 
   virtual void Acquire();
