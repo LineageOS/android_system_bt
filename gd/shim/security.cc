@@ -67,7 +67,13 @@ void Security::impl::CreateBond(std::string address, uint8_t address_type, uint8
     return;
   }
 
-  security_manager_->CreateBond(hci::AddressWithType{bdaddr, hci::AddressType::PUBLIC_DEVICE_ADDRESS});
+  if (transport == 0x01 /* BT_TRANSPORT_BR_EDR */)
+    security_manager_->CreateBond(hci::AddressWithType{bdaddr, hci::AddressType::PUBLIC_DEVICE_ADDRESS});
+  else if (transport == 0x02 /* BT_TRANSPORT_LE */)
+    security_manager_->CreateBondLe(
+        hci::AddressWithType{bdaddr, static_cast<bluetooth::hci::AddressType>(address_type)});
+  else
+    LOG_ALWAYS_FATAL("Bad transport in CreateBond %d", transport);
 }
 
 void Security::CreateBond(std::string address, uint8_t address_type, uint8_t transport) {

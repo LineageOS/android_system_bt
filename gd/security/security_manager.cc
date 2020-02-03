@@ -35,6 +35,12 @@ void SecurityManager::CreateBond(hci::AddressWithType device) {
                                            std::forward<hci::AddressWithType>(device)));
 }
 
+void SecurityManager::CreateBondLe(hci::AddressWithType device) {
+  security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::CreateBondLe,
+                                           common::Unretained(security_manager_impl_),
+                                           std::forward<hci::AddressWithType>(device)));
+}
+
 void SecurityManager::CancelBond(hci::AddressWithType device) {
   security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::CancelBond,
                                            common::Unretained(security_manager_impl_),
