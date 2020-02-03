@@ -61,6 +61,10 @@ class Link : public l2cap::internal::ILink {
     return acl_connection_->GetRole();
   }
 
+  inline virtual hci::AclConnection* GetAclConnection() {
+    return acl_connection_.get();
+  }
+
   // ACL methods
 
   virtual void OnAclDisconnected(hci::ErrorCode status);
