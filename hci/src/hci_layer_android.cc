@@ -55,6 +55,7 @@ extern void acl_event_received(BT_HDR* packet);
 extern void sco_data_received(BT_HDR* packet);
 extern void iso_data_received(BT_HDR* packet);
 extern void hal_service_died();
+extern bool hci_is_root_inflammation_event_received();
 
 android::sp<V1_0::IBluetoothHci> btHci;
 android::sp<V1_1::IBluetoothHci> btHci_1_1;
@@ -89,6 +90,15 @@ class BluetoothHciCallbacks : public V1_1::IBluetoothHciCallbacks {
   }
 
   Return<void> initializationComplete(Status status) override {
+    if (hci_is_root_inflammation_event_received()) {
+      // Ignore the initializationComplete here as we have already received
+      // root inflammation event earlier.
+      LOG_ERROR(
+          LOG_TAG,
+          "initializationComplete after root inflammation event! status=%d",
+          status);
+      return Void();
+    }
     CHECK(status == Status::SUCCESS);
     initialization_complete();
     return Void();
@@ -160,9 +170,12 @@ void hci_close() {
     if (!death_unlink.isOk()) {
       LOG_ERROR(LOG_TAG, "%s: Error unlinking death recipient from the Bluetooth HAL", __func__);
     }
+    auto close_status = btHci->close();
+    if (!close_status.isOk()) {
+      LOG_ERROR(LOG_TAG, "%s: Error closing the Bluetooth HAL", __func__);
+    }
+    btHci = nullptr;
   }
-  btHci->close();
-  btHci = nullptr;
 }
 
 void hci_transmit(BT_HDR* packet) {
