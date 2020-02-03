@@ -53,6 +53,8 @@ class FixedChannel {
    */
   hci::Role GetRole() const;
 
+  hci::AclConnection* GetAclConnection() const;
+
   /**
    * Register close callback. If close callback is registered, when a channel is closed, the channel's resource will
    * only be freed after on_close callback is invoked. Otherwise, if no on_close callback is registered, the channel's
