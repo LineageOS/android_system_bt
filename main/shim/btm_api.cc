@@ -1066,6 +1066,10 @@ tBTM_STATUS bluetooth::shim::BTM_SecBond(const RawAddress& bd_addr,
                                          tBT_TRANSPORT transport,
                                          uint8_t pin_len, uint8_t* p_pin,
                                          uint32_t trusted_mask[]) {
+  if (transport == BT_TRANSPORT_INVALID) {
+    transport = BTM_UseLeLink(bd_addr) ? BT_TRANSPORT_LE : BT_TRANSPORT_BR_EDR;
+  }
+
   return shim_btm.CreateBond(bd_addr, addr_type, transport, pin_len, p_pin,
                              trusted_mask);
 }

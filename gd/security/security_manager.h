@@ -42,11 +42,18 @@ class SecurityManager {
   void Init();
 
   /**
-   * Checks the device for existing bond, if not bonded, initiates pairing.
+   * Initiates bond over Classic transport with device, if not bonded yet.
    *
-   * @param device pointer to device we want to bond with
+   * @param address device address we want to bond with
    */
-  void CreateBond(hci::AddressWithType device);
+  void CreateBond(hci::AddressWithType address);
+
+  /**
+   * Initiates bond over Low Energy transport with device, if not bonded yet.
+   *
+   * @param address device address we want to bond with
+   */
+  void CreateBondLe(hci::AddressWithType address);
 
   /**
    * Cancels the pairing process for this device.
