@@ -25,11 +25,13 @@ import time
 
 from acts import error
 from acts import tracelogger
+from acts.controllers.adb import AdbProxy
 
 import grpc
 
 ANDROID_BUILD_TOP = os.environ.get('ANDROID_BUILD_TOP')
 ANDROID_HOST_OUT = os.environ.get('ANDROID_HOST_OUT')
+ANDROID_PRODUCT_OUT = os.environ.get('ANDROID_PRODUCT_OUT')
 WAIT_CHANNEL_READY_TIMEOUT = 10
 
 
@@ -54,7 +56,7 @@ def replace_vars(string, config):
 class GdDeviceBase:
 
     def __init__(self, grpc_port, grpc_root_server_port, signal_port, cmd,
-                 label, type_identifier):
+                 label, type_identifier, serial_number):
         self.label = label if label is not None else grpc_port
         # logging.log_path only exists when this is used in an ACTS test run.
         log_path_base = getattr(logging, 'log_path', '/tmp/logs')
@@ -73,6 +75,24 @@ class GdDeviceBase:
             btsnoop_path = os.path.join(log_path_base,
                                         '%s_btsnoop_hci.log' % label)
             cmd.append("--btsnoop=" + btsnoop_path)
+
+        if serial_number:
+            ad = AdbProxy(serial_number)
+            ad.tcp_forward(int(grpc_port), int(grpc_port))
+            ad.tcp_forward(
+                int(grpc_root_server_port), int(grpc_root_server_port))
+            ad.reverse("tcp:%s tcp:%s" % (signal_port, signal_port))
+            ad.push(
+                os.path.join(ANDROID_PRODUCT_OUT,
+                             "system/bin/bluetooth_stack_with_facade"),
+                "system/bin")
+            ad.push(
+                os.path.join(ANDROID_PRODUCT_OUT,
+                             "system/lib64/libbluetooth_gd.so"), "system/lib64")
+            ad.push(
+                os.path.join(ANDROID_PRODUCT_OUT,
+                             "system/lib64/libgrpc++_unsecure.so"),
+                "system/lib64")
 
         tester_signal_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         tester_signal_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
