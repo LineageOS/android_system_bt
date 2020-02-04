@@ -53,9 +53,7 @@ void LinkManager::ConnectFixedChannelServices(hci::Address device,
         continue;
       }
       if (fixed_channel_service.first == kClassicPairingTriggerCid) {
-        link->Authenticate();
-        link->ReadRemoteSupportedFeatures();
-        link->ReadRemoteExtendedFeatures();
+        this->TriggerPairing(link);
       }
       // Allocate channel for newly registered fixed channels
       auto fixed_channel_impl = link->AllocateFixedChannel(fixed_channel_service.first, SecurityPolicy());
@@ -110,6 +108,13 @@ Link* LinkManager::GetLink(const hci::Address device) {
   return &links_.find(device)->second;
 }
 
+void LinkManager::TriggerPairing(Link* link) {
+  link->ReadRemoteVersionInformation();
+  link->ReadRemoteSupportedFeatures();
+  link->ReadRemoteExtendedFeatures();
+  link->ReadClockOffset();
+}
+
 void LinkManager::OnConnectSuccess(std::unique_ptr<hci::AclConnection> acl_connection) {
   // Same link should not be connected twice
   hci::Address device = acl_connection->GetAddress();
@@ -132,9 +137,7 @@ void LinkManager::OnConnectSuccess(std::unique_ptr<hci::AclConnection> acl_conne
     fixed_channel_service.second->NotifyChannelCreation(
         std::make_unique<FixedChannel>(fixed_channel_impl, l2cap_handler_));
     if (fixed_channel_service.first == kClassicPairingTriggerCid) {
-      link->Authenticate();
-      link->ReadRemoteSupportedFeatures();
-      link->ReadRemoteExtendedFeatures();
+      this->TriggerPairing(link);
     }
   }
   if (pending_dynamic_channels_.find(device) != pending_dynamic_channels_.end()) {
@@ -161,7 +164,8 @@ void LinkManager::OnConnectFail(hci::Address device, hci::ErrorCode reason) {
   auto pending_link = pending_links_.find(device);
   if (pending_link == pending_links_.end()) {
     // There is no pending link, exit
-    LOG_DEBUG("Connection to %s failed without a pending link", device.ToString().c_str());
+    LOG_DEBUG("Connection to %s failed without a pending link; reason: %s", device.ToString().c_str(),
+              hci::ErrorCodeText(reason).c_str());
     if (pending_dynamic_channels_callbacks_.find(device) != pending_dynamic_channels_callbacks_.end()) {
       for (Link::PendingDynamicChannelConnection& callbacks : pending_dynamic_channels_callbacks_[device]) {
         callbacks.handler_->Post(common::BindOnce(std::move(callbacks.on_fail_callback_),
