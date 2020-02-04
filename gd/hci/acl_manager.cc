@@ -205,6 +205,9 @@ struct AclManager::impl {
     hci_layer_->RegisterEventHandler(EventCode::READ_REMOTE_EXTENDED_FEATURES_COMPLETE,
                                      Bind(&impl::on_read_remote_extended_features_complete, common::Unretained(this)),
                                      handler_);
+    hci_layer_->RegisterEventHandler(EventCode::READ_REMOTE_VERSION_INFORMATION_COMPLETE,
+                                     Bind(&impl::on_read_remote_version_information_complete, common::Unretained(this)),
+                                     handler_);
     hci_mtu_ = controller_->GetControllerAclPacketLength();
   }
 
@@ -735,6 +738,10 @@ struct AclManager::impl {
     }
   }
 
+  void on_read_remote_version_information_complete(EventPacketView packet) {
+    LOG_INFO("Called");
+  }
+
   void on_read_remote_supported_features_complete(EventPacketView packet) {
     LOG_INFO("called");
   }
@@ -952,12 +959,19 @@ struct AclManager::impl {
     }
   }
 
+  void on_read_remote_version_information_status(CommandStatusView view) {
+    ASSERT_LOG(view.IsValid(), "Bad status packet!");
+    LOG_INFO("called: %s", hci::ErrorCodeText(view.GetStatus()).c_str());
+  }
+
   void on_read_remote_supported_features_status(CommandStatusView view) {
-    LOG_INFO("called");
+    ASSERT_LOG(view.IsValid(), "Bad status packet!");
+    LOG_INFO("called: %s", hci::ErrorCodeText(view.GetStatus()).c_str());
   }
 
   void on_read_remote_extended_features_status(CommandStatusView view) {
-    LOG_INFO("called");
+    ASSERT_LOG(view.IsValid(), "Broken");
+    LOG_INFO("called: %s", hci::ErrorCodeText(view.GetStatus()).c_str());
   }
 
   void on_read_clock_complete(CommandCompleteView view) {
@@ -1354,6 +1368,12 @@ struct AclManager::impl {
                                common::BindOnce(&impl::on_read_rssi_complete, common::Unretained(this)), handler_);
   }
 
+  void handle_read_remote_version_information(uint16_t handle) {
+    hci_layer_->EnqueueCommand(
+        ReadRemoteVersionInformationBuilder::Create(handle),
+        common::BindOnce(&impl::on_read_remote_version_information_status, common::Unretained(this)), handler_);
+  }
+
   void handle_read_remote_supported_features(uint16_t handle) {
     hci_layer_->EnqueueCommand(
         ReadRemoteSupportedFeaturesBuilder::Create(handle),
@@ -1518,6 +1538,7 @@ struct AclManager::impl {
   }
 
   bool AuthenticationRequested(uint16_t handle) {
+    LOG_INFO("Auth reqiuest");
     auto& connection = check_and_get_connection(handle);
     if (connection.is_disconnected_) {
       LOG_INFO("Already disconnected");
@@ -1767,6 +1788,16 @@ struct AclManager::impl {
     return true;
   }
 
+  bool ReadRemoteVersionInformation(uint16_t handle) {
+    auto& connection = check_and_get_connection(handle);
+    if (connection.is_disconnected_) {
+      LOG_INFO("Already disconnected");
+      return false;
+    }
+    handler_->Post(BindOnce(&impl::handle_read_remote_version_information, common::Unretained(this), handle));
+    return true;
+  }
+
   bool ReadRemoteSupportedFeatures(uint16_t handle) {
     auto& connection = check_and_get_connection(handle);
     if (connection.is_disconnected_) {
@@ -1979,6 +2010,10 @@ bool AclConnection::ReadAfhChannelMap() {
 
 bool AclConnection::ReadRssi() {
   return manager_->pimpl_->ReadRssi(handle_);
+}
+
+bool AclConnection::ReadRemoteVersionInformation() {
+  return manager_->pimpl_->ReadRemoteVersionInformation(handle_);
 }
 
 bool AclConnection::ReadRemoteSupportedFeatures() {
