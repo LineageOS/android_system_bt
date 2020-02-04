@@ -111,6 +111,10 @@ void ClassicSignallingManager::SendEchoRequest(std::unique_ptr<packet::RawBuilde
   LOG_WARN("Not supported");
 }
 
+void ClassicSignallingManager::CancelAlarm() {
+  alarm_.Cancel();
+}
+
 void ClassicSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, Cid remote_cid) {
   if (!IsPsmValid(psm)) {
     LOG_WARN("Invalid psm received from remote psm:%d remote_cid:%d", psm, remote_cid);
