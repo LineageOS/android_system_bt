@@ -2206,7 +2206,7 @@ packet EnableDeviceUnderTestModeComplete : CommandComplete (command_op_code = EN
   status : ErrorCode,
 }
 
-packet WriteSimplePairingDebugMode : CommandPacket (op_code = WRITE_SIMPLE_PAIRING_DEBUG_MODE) {
+packet WriteSimplePairingDebugMode : SecurityCommand (op_code = WRITE_SIMPLE_PAIRING_DEBUG_MODE) {
   simple_pairing_debug_mode : Enable,
 }
 
