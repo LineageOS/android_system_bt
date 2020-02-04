@@ -23,7 +23,15 @@ namespace storage {
 
 struct LegacyModule::impl {
   void config_read(const std::string filename, LegacyReadConfigCallback callback, os::Handler* handler) {
-    handler->Post(common::BindOnce(std::move(callback), filename, legacy::osi::config::config_new(filename.c_str())));
+    std::unique_ptr<config_t> config = legacy::osi::config::config_new(filename.c_str());
+    if (config && !legacy::osi::config::config_has_section(*config, "Adapter")) {
+      LOG_ERROR("Config is missing adapter section");
+      config = nullptr;
+    }
+    if (!config) {
+      config = legacy::osi::config::config_new_empty();
+    }
+    handler->Post(common::BindOnce(std::move(callback), filename, std::move(config)));
   }
 
   void config_write(const std::string filename, const config_t config, LegacyWriteConfigCallback callback,
