@@ -99,6 +99,8 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
         # Loopback mode responds with ACL and SCO connection complete
         self.register_for_event(hci_packets.EventCode.CONNECTION_COMPLETE)
         self.register_for_event(hci_packets.EventCode.LOOPBACK_COMMAND)
+        self.register_for_event(
+            hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
         with EventCallbackStream(
                 self.device_under_test.hci.FetchEvents(
                     empty_proto.Empty())) as hci_event_stream:
@@ -351,6 +353,8 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
 
     def test_connection_dut_connects(self):
         self.register_for_event(hci_packets.EventCode.CONNECTION_COMPLETE)
+        self.register_for_event(
+            hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
         with EventCallbackStream(self.device_under_test.hci.FetchEvents(empty_proto.Empty())) as hci_event_stream, \
             EventCallbackStream(self.device_under_test.hci.FetchAclPackets(empty_proto.Empty())) as acl_data_stream, \
             EventCallbackStream(self.cert_device.hal.FetchHciEvent(empty_proto.Empty())) as cert_hci_event_stream, \
@@ -465,6 +469,8 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
 
     def test_connection_cert_connects(self):
         self.register_for_event(hci_packets.EventCode.CONNECTION_COMPLETE)
+        self.register_for_event(
+            hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
         self.register_for_event(hci_packets.EventCode.CONNECTION_REQUEST)
         with EventCallbackStream(self.device_under_test.hci.FetchEvents(empty_proto.Empty())) as hci_event_stream, \
             EventCallbackStream(self.device_under_test.hci.FetchAclPackets(empty_proto.Empty())) as acl_data_stream, \
