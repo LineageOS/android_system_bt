@@ -22,6 +22,7 @@
 #include <string>
 #include <utility>
 
+#include "crypto_toolbox/crypto_toolbox.h"
 #include "hci/address.h"
 #include "hci/hci_packets.h"
 
@@ -40,6 +41,34 @@ class AddressWithType final {
 
   inline AddressType GetAddressType() const {
     return address_type_;
+  }
+
+  /* Is this an Resolvable Private Address ? */
+  inline bool IsRpa() const {
+    return address_type_ == hci::AddressType::RANDOM_DEVICE_ADDRESS && ((address_.address)[0] & 0xc0) == 0x40;
+  }
+
+  /* Is this an Resolvable Private Address, that was generated from given irk ? */
+  bool IsRpaThatMatchesIrk(const crypto_toolbox::Octet16& irk) const {
+    if (!IsRpa()) return false;
+
+    /* use the 3 MSB of bd address as prand */
+    uint8_t prand[3];
+    prand[0] = address_.address[2];
+    prand[1] = address_.address[1];
+    prand[2] = address_.address[0];
+    /* generate X = E irk(R0, R1, R2) and R is random address 3 LSO */
+    crypto_toolbox::Octet16 computed_hash = crypto_toolbox::aes_128(irk, &prand[0], 3);
+    uint8_t hash[3];
+    hash[0] = address_.address[5];
+    hash[1] = address_.address[4];
+    hash[2] = address_.address[3];
+    if (memcmp(computed_hash.data(), &hash[0], 3) == 0) {
+      // match
+      return true;
+    }
+    // not a match
+    return false;
   }
 
   bool operator<(const AddressWithType& rhs) const {
