@@ -90,6 +90,11 @@ void SecurityManagerImpl::CreateBond(hci::AddressWithType device) {
   }
 }
 
+void SecurityManagerImpl::CreateBondLe(hci::AddressWithType address) {
+  // TODO: this is just a placeholder for future implementation
+  LOG_INFO("%s: unimplemented yet!", address.ToString().c_str());
+}
+
 void SecurityManagerImpl::CancelBond(hci::AddressWithType device) {
   auto entry = pairing_handler_map_.find(device.GetAddress());
   if (entry != pairing_handler_map_.end()) {

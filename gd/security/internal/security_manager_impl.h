@@ -49,12 +49,18 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener {
   void Init();
 
   /**
-   * Checks the device for existing bond, if not bonded, initiates pairing.
+   * Initiates bond over Classic transport with device, if not bonded yet.
    *
-   * @param device pointer to device we want to bond with
-   * @return true if bonded or pairing started successfully, false if currently pairing
+   * @param address device address we want to bond with
    */
-  void CreateBond(hci::AddressWithType device);
+  void CreateBond(hci::AddressWithType address);
+
+  /**
+   * Initiates bond over Low Energy transport with device, if not bonded yet.
+   *
+   * @param address device address we want to bond with
+   */
+  void CreateBondLe(hci::AddressWithType address);
 
   /* void CreateBond(std::shared_ptr<hci::LeDevice> device); */
 
@@ -62,7 +68,6 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener {
    * Cancels the pairing process for this device.
    *
    * @param device pointer to device with which we want to cancel our bond
-   * @return <code>true</code> if successfully stopped
    */
   void CancelBond(hci::AddressWithType device);
 

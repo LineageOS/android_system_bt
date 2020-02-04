@@ -697,6 +697,14 @@ static void btif_dm_cb_create_bond(const RawAddress& bd_addr,
     if (status != BT_STATUS_SUCCESS)
       bond_state_changed(status, bd_addr, BT_BOND_STATE_NONE);
   } else {
+    if (transport == BTA_TRANSPORT_UNKNOWN) {
+      if (device_type & BT_DEVICE_TYPE_BLE) {
+        transport = BTA_TRANSPORT_LE;
+      } else if (device_type & BT_DEVICE_TYPE_BREDR) {
+        transport = BTA_TRANSPORT_BR_EDR;
+      }
+      LOG_DEBUG(LOG_TAG, "%s guessing transport as %02x ", __func__, transport);
+    }
     BTA_DmBond(bd_addr, addr_type, transport);
   }
   /*  Track  originator of bond creation  */
