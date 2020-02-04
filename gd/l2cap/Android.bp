@@ -45,6 +45,7 @@ filegroup {
         "classic/internal/dynamic_channel_service_manager_test.cc",
         "classic/internal/fixed_channel_impl_test.cc",
         "classic/internal/fixed_channel_service_manager_test.cc",
+        "classic/internal/link_test.cc",
         "classic/internal/link_manager_test.cc",
         "classic/internal/signalling_manager_test.cc",
         "internal/basic_mode_channel_data_controller_test.cc",
