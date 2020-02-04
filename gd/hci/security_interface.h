@@ -36,14 +36,23 @@ class SecurityInterface {
                               common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) = 0;
 
   static constexpr hci::EventCode SecurityEvents[] = {
-      hci::EventCode::ENCRYPTION_CHANGE,         hci::EventCode::CHANGE_CONNECTION_LINK_KEY_COMPLETE,
-      hci::EventCode::MASTER_LINK_KEY_COMPLETE,  hci::EventCode::RETURN_LINK_KEYS,
-      hci::EventCode::PIN_CODE_REQUEST,          hci::EventCode::LINK_KEY_REQUEST,
-      hci::EventCode::LINK_KEY_NOTIFICATION,     hci::EventCode::ENCRYPTION_KEY_REFRESH_COMPLETE,
-      hci::EventCode::IO_CAPABILITY_REQUEST,     hci::EventCode::IO_CAPABILITY_RESPONSE,
-      hci::EventCode::REMOTE_OOB_DATA_REQUEST,   hci::EventCode::SIMPLE_PAIRING_COMPLETE,
-      hci::EventCode::USER_PASSKEY_NOTIFICATION, hci::EventCode::KEYPRESS_NOTIFICATION,
-      hci::EventCode::USER_CONFIRMATION_REQUEST, hci::EventCode::USER_PASSKEY_REQUEST,
+      hci::EventCode::ENCRYPTION_CHANGE,
+      hci::EventCode::CHANGE_CONNECTION_LINK_KEY_COMPLETE,
+      hci::EventCode::MASTER_LINK_KEY_COMPLETE,
+      hci::EventCode::RETURN_LINK_KEYS,
+      hci::EventCode::PIN_CODE_REQUEST,
+      hci::EventCode::LINK_KEY_REQUEST,
+      hci::EventCode::LINK_KEY_NOTIFICATION,
+      hci::EventCode::ENCRYPTION_KEY_REFRESH_COMPLETE,
+      hci::EventCode::IO_CAPABILITY_REQUEST,
+      hci::EventCode::IO_CAPABILITY_RESPONSE,
+      hci::EventCode::REMOTE_OOB_DATA_REQUEST,
+      hci::EventCode::SIMPLE_PAIRING_COMPLETE,
+      hci::EventCode::USER_PASSKEY_NOTIFICATION,
+      hci::EventCode::KEYPRESS_NOTIFICATION,
+      hci::EventCode::USER_CONFIRMATION_REQUEST,
+      hci::EventCode::USER_PASSKEY_REQUEST,
+      hci::EventCode::REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION,
   };
 };
 }  // namespace hci

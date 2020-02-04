@@ -219,6 +219,9 @@ void SecurityManagerImpl::OnHciEventReceived(hci::EventPacketView packet) {
     case hci::EventCode::USER_PASSKEY_REQUEST:
       HandleEvent(hci::UserPasskeyRequestView::Create(event));
       break;
+    case hci::EventCode::REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION:
+      LOG_INFO("Unhandled event: %s", hci::EventCodeText(code).c_str());
+      break;
     default:
       ASSERT_LOG(false, "Cannot handle received packet: %s", hci::EventCodeText(code).c_str());
       break;
