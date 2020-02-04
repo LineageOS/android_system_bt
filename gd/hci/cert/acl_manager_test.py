@@ -78,6 +78,8 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
     def test_dut_connects(self):
         self.register_for_event(hci_packets.EventCode.CONNECTION_REQUEST)
         self.register_for_event(hci_packets.EventCode.CONNECTION_COMPLETE)
+        self.register_for_event(
+            hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
         with EventCallbackStream(self.cert_device.hci.FetchEvents(empty_proto.Empty())) as cert_hci_event_stream, \
             EventCallbackStream(self.cert_device.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
             EventCallbackStream(self.device_under_test.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
@@ -185,6 +187,8 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
     def test_recombination_l2cap_packet(self):
         self.register_for_event(hci_packets.EventCode.CONNECTION_REQUEST)
         self.register_for_event(hci_packets.EventCode.CONNECTION_COMPLETE)
+        self.register_for_event(
+            hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
         with EventCallbackStream(self.cert_device.hci.FetchEvents(empty_proto.Empty())) as cert_hci_event_stream, \
             EventCallbackStream(self.cert_device.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
             EventCallbackStream(self.device_under_test.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
@@ -277,7 +281,7 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
                     cert_handle, hci_packets.PacketBoundaryFlag.
                     FIRST_AUTOMATICALLY_FLUSHABLE,
                     hci_packets.BroadcastFlag.POINT_TO_POINT,
-                    bytes(b'\x88\x13\x07\x00' + b'Hello' * 1000))
+                    bytes(b'\xe8\x03\x07\x00' + b'Hello' * 200))
 
                 # DUT gets a connection complete event and sends and receives
                 connection_event_asserts.assert_event_occurs(get_handle)
@@ -285,4 +289,4 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
                 acl_data_asserts.assert_event_occurs(
                     lambda packet: b'Hello!' in packet.payload)
                 acl_data_asserts.assert_event_occurs(
-                    lambda packet: b'Hello' * 1000 in packet.payload)
+                    lambda packet: b'Hello' * 200 in packet.payload)
