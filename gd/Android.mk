@@ -7,6 +7,7 @@ bluetooth_cert_test_file_list := \
 	    l2cap/classic/cert neighbor/facade security) \
     cert/cert_testcases \
     cert/cert_testcases_facade_only \
+    cert/android_devices_config.json \
     cert/host_only_config.json \
     cert/host_only_config_facade_only.json \
     hal/cert/simple_hal_test.py \

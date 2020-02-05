@@ -31,15 +31,15 @@ class TestGdShimL2cap : public bluetooth::shim::IL2cap {
   void RegisterService(
       uint16_t psm, bool use_ertm, uint16_t mtu,
       bluetooth::shim::ConnectionCompleteCallback on_complete,
-      bluetooth::shim::RegisterServicePending register_pending) override;
+      bluetooth::shim::RegisterServicePromise register_promise) override;
   void UnregisterService(
       uint16_t psm,
-      bluetooth::shim::UnregisterServicePending unregister_pending) override;
+      bluetooth::shim::UnregisterServicePromise unregister_promise) override;
 
   void CreateConnection(
       uint16_t psm, const std::string address_string,
       bluetooth::shim::ConnectionCompleteCallback on_complete,
-      bluetooth::shim::CreateConnectionPending create_pending) override;
+      bluetooth::shim::CreateConnectionPromise create_promise) override;
 
   void CloseConnection(uint16_t cid);
   void SetReadDataReadyCallback(
