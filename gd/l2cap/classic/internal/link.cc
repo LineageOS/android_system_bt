@@ -73,12 +73,20 @@ void Link::Authenticate() {
   acl_connection_->AuthenticationRequested();
 }
 
+void Link::ReadRemoteVersionInformation() {
+  acl_connection_->ReadRemoteVersionInformation();
+}
+
 void Link::ReadRemoteSupportedFeatures() {
   acl_connection_->ReadRemoteSupportedFeatures();
 }
 
 void Link::ReadRemoteExtendedFeatures() {
   acl_connection_->ReadRemoteExtendedFeatures();
+}
+
+void Link::ReadClockOffset() {
+  acl_connection_->ReadClockOffset();
 }
 
 std::shared_ptr<FixedChannelImpl> Link::AllocateFixedChannel(Cid cid, SecurityPolicy security_policy) {
