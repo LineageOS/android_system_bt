@@ -77,6 +77,10 @@ def basic_frame_to_enhanced_information_frame(information_payload):
     return information_payload[2:]
 
 
+def get_enhanced_control_field(payload):
+    return payload[:2]
+
+
 class SimpleL2capTest(GdBaseTestClass):
 
     def setup_test(self):
@@ -208,9 +212,15 @@ class SimpleL2capTest(GdBaseTestClass):
             lambda log: log.HasField("link_up") and log.link_up.remote == self.dut_address
         )
 
-    def _open_channel(self, event_asserts, scid=0x0101, psm=0x33):
+    def _open_channel(
+            self,
+            event_asserts,
+            scid=0x0101,
+            psm=0x33,
+            mode=l2cap_cert_pb2.ChannelRetransmissionFlowControlMode.BASIC):
         self.device_under_test.l2cap.SetDynamicChannel(
-            l2cap_facade_pb2.SetEnableDynamicChannelRequest(psm=psm))
+            l2cap_facade_pb2.SetEnableDynamicChannelRequest(
+                psm=psm, retransmission_mode=mode))
         self.cert_device.l2cap.SendConnectionRequest(
             l2cap_cert_pb2.ConnectionRequest(scid=scid, psm=psm))
         event_asserts.assert_event_occurs(
@@ -537,25 +547,56 @@ class SimpleL2capTest(GdBaseTestClass):
             l2cap_event_asserts_alt = EventAsserts(l2cap_log_stream)
             self._register_callbacks(l2cap_log_stream)
             self.retransmission_mode = l2cap_cert_pb2.ChannelRetransmissionFlowControlMode.ERTM
-            self.device_under_test.l2cap.RegisterChannel(
-                l2cap_facade_pb2.RegisterChannelRequest(channel=2))
-            self.device_under_test.l2cap.SetDynamicChannel(
-                l2cap_facade_pb2.SetEnableDynamicChannelRequest(
-                    psm=0x33,
-                    retransmission_mode=l2cap_facade_pb2.
-                    RetransmissionFlowControlMode.ERTM))
-            self._setup_link(l2cap_event_asserts)
             scid = 0x0101
-            self._open_channel(l2cap_event_asserts, scid=scid)
+            psm = 0x33
+            self._setup_link(l2cap_event_asserts)
+            self._open_channel(
+                l2cap_event_asserts, mode=self.retransmission_mode)
             self.device_under_test.l2cap.SendDynamicChannelPacket(
-                l2cap_facade_pb2.DynamicChannelPacket(psm=0x33, payload=b'abc'))
+                l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
             # Retransmission timer = 1, 1 * monitor timer = 2, so total timeout is 3
             time.sleep(4)
-            l2cap_event_asserts.assert_event_occurs(lambda log : is_disconnection_request(log) and \
-                                                        log.disconnection_request.dcid == scid and \
-                                                        log.disconnection_request.scid == self.scid_dcid_map[scid])
+            l2cap_event_asserts.assert_event_occurs(
+                    lambda log : is_disconnection_request(log) and \
+                        log.disconnection_request.dcid == scid and \
+                        log.disconnection_request.scid == self.scid_dcid_map[scid])
             l2cap_event_asserts_alt.assert_event_occurs_at_most(
                 lambda log: is_disconnection_request(log), 1)
+
+    def test_i_frame_transmissions_exceed_max_transmit(self):
+        """
+        L2CAP/ERM/BV-12-C [I-Frame Transmissions Exceed MaxTransmit]
+        """
+        with EventCallbackStream(
+                self.cert_device.l2cap.FetchL2capLog(
+                    empty_pb2.Empty())) as l2cap_log_stream:
+            l2cap_event_asserts = EventAsserts(l2cap_log_stream)
+            l2cap_event_asserts_alt = EventAsserts(l2cap_log_stream)
+            self._register_callbacks(l2cap_log_stream)
+            self.retransmission_mode = l2cap_cert_pb2.ChannelRetransmissionFlowControlMode.ERTM
+            scid = 0x0101
+            psm = 0x33
+            self._setup_link(l2cap_event_asserts)
+            self._open_channel(
+                l2cap_event_asserts, mode=self.retransmission_mode)
+            self.device_under_test.l2cap.SendDynamicChannelPacket(
+                l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
+
+            l2cap_event_asserts.assert_event_occurs(
+                    lambda log: log.HasField("data_packet") and \
+                        log.data_packet.channel == scid and \
+                        get_enhanced_control_field(log.data_packet.payload) == b'\x11\x00'
+                )
+
+            self.cert_device.l2cap.SendSFrame(
+                l2cap_cert_pb2.SFrame(
+                    channel=self.scid_dcid_map[scid], req_seq=0, p=0, s=0, f=1))
+            l2cap_event_asserts.assert_none_matching(
+                lambda log: log.HasField("data_packet"))
+            l2cap_event_asserts_alt.assert_event_occurs(
+                    lambda log : is_disconnection_request(log) and \
+                        log.disconnection_request.dcid == scid and \
+                        log.disconnection_request.scid == self.scid_dcid_map[scid])
 
     def test_sent_rej_lost(self):
         """
@@ -565,69 +606,16 @@ class SimpleL2capTest(GdBaseTestClass):
                 self.cert_device.l2cap.FetchL2capLog(
                     empty_pb2.Empty())) as l2cap_log_stream:
             l2cap_event_asserts = EventAsserts(l2cap_log_stream)
-            self._setup_link(l2cap_event_asserts)
 
+            self._register_callbacks(l2cap_log_stream)
             signal_id = 3
             scid = 0x0101
-            psm = 1
-            mode = l2cap_cert_pb2.ChannelRetransmissionFlowControlMode.ERTM
-            self.tx_window = 1
-            self.device_under_test.l2cap.SetDynamicChannel(
-                l2cap_facade_pb2.SetEnableDynamicChannelRequest(
-                    psm=psm, retransmission_mode=mode))
+            tx_window = 5
+            self.retransmission_mode = l2cap_cert_pb2.ChannelRetransmissionFlowControlMode.ERTM
 
-            def handle_connection_response(log):
-                log = log.connection_response
-                self.scid_dcid_map[log.scid] = log.dcid
-                self.cert_device.l2cap.SendConfigurationRequest(
-                    l2cap_cert_pb2.ConfigurationRequest(
-                        dcid=self.scid_dcid_map[scid],
-                        signal_id=signal_id + 1,
-                        retransmission_config=l2cap_cert_pb2.
-                        ChannelRetransmissionFlowControlConfig(mode=mode)))
-                l2cap_log_stream.unregister_callback(
-                    handle_connection_response,
-                    matcher_fn=is_connection_response)
-
-            l2cap_log_stream.register_callback(
-                handle_connection_response, matcher_fn=is_connection_response)
-
-            def handle_configuration_request(log):
-                log = log.configuration_request
-                if log.dcid not in self.scid_dcid_map:
-                    return
-                dcid = self.scid_dcid_map[log.dcid]
-                if log.HasField("retransmission_config"):
-                    self.tx_window = log.retransmission_config.tx_window
-                self.cert_device.l2cap.SendConfigurationResponse(
-                    l2cap_cert_pb2.ConfigurationResponse(
-                        scid=dcid,
-                        signal_id=log.signal_id,
-                    ))
-                l2cap_log_stream.unregister_callback(
-                    handle_configuration_request,
-                    matcher_fn=is_configuration_request)
-
-            l2cap_log_stream.register_callback(
-                handle_configuration_request,
-                matcher_fn=is_configuration_request)
-
-            def handle_information_request(log):
-                log = log.information_request
-                self.cert_device.l2cap.SendInformationResponse(
-                    l2cap_cert_pb2.InformationResponse(
-                        type=log.type, signal_id=log.signal_id))
-
-            l2cap_log_stream.register_callback(
-                handle_information_request, matcher_fn=is_information_request)
-
-            self.cert_device.l2cap.SendConnectionRequest(
-                l2cap_cert_pb2.ConnectionRequest(scid=scid, psm=psm))
-
-            l2cap_event_asserts.assert_event_occurs(
-                lambda log: is_configuration_response(log) and scid == log.configuration_response.scid
-            )
-            time.sleep(0.5)
+            self._setup_link(l2cap_event_asserts)
+            self._open_channel(
+                l2cap_event_asserts, mode=self.retransmission_mode)
 
             self.cert_device.l2cap.SendIFrame(
                 l2cap_cert_pb2.IFrame(
@@ -635,37 +623,44 @@ class SimpleL2capTest(GdBaseTestClass):
                     req_seq=0,
                     tx_seq=0,
                     sar=0,
-                    sdu_size=3,
-                    information=b"abc"))
+                    information=b'abc'))
+            l2cap_event_asserts.assert_event_occurs(
+                    lambda log :log.HasField("data_packet") and \
+                    log.data_packet.channel == scid and \
+                    get_enhanced_control_field(log.data_packet.payload) == b'\x01\x01'
+                )
             self.cert_device.l2cap.SendIFrame(
                 l2cap_cert_pb2.IFrame(
                     channel=self.scid_dcid_map[scid],
                     req_seq=0,
-                    tx_seq=(self.tx_window - 1),
+                    tx_seq=(tx_window - 1),
                     sar=0,
-                    sdu_size=3,
-                    information=b"def"))
+                    information=b'def'))
             l2cap_event_asserts.assert_event_occurs(
-                lambda log: log.HasField("data_packet") and log.data_packet.channel == scid and log.data_packet.payload == b'\x05\x01'
-            )
+                    lambda log :log.HasField("data_packet") and \
+                    log.data_packet.channel == scid and \
+                    get_enhanced_control_field(log.data_packet.payload) == b'\x05\x01'
+                )
             self.cert_device.l2cap.SendSFrame(
                 l2cap_cert_pb2.SFrame(
                     channel=self.scid_dcid_map[scid], req_seq=0, p=1, s=0))
             l2cap_event_asserts.assert_event_occurs(
-                lambda log: log.HasField("data_packet") and log.data_packet.channel == scid and log.data_packet.payload == b'\x81\x01'
-            )
-
-            for i in range(1, self.tx_window):
+                    lambda log :log.HasField("data_packet") and \
+                    log.data_packet.channel == scid and \
+                    get_enhanced_control_field(log.data_packet.payload) == b'\x81\x01'
+                )
+            for i in range(1, tx_window):
                 self.cert_device.l2cap.SendIFrame(
                     l2cap_cert_pb2.IFrame(
                         channel=self.scid_dcid_map[scid],
                         req_seq=0,
                         tx_seq=(i),
                         sar=0))
-                time.sleep(0.1)
-            l2cap_event_asserts.assert_event_occurs(
-                lambda log: log.HasField("data_packet") and log.data_packet.channel == scid and log.data_packet.payload == b'\x01\x0a'
-            )
+                l2cap_event_asserts.assert_event_occurs(
+                        lambda log :log.HasField("data_packet") and \
+                        log.data_packet.channel == scid and \
+                        bytes([get_enhanced_control_field(log.data_packet.payload)[1]]) == bytes([i + 1])
+                    )
 
     def test_respond_configuration_request_ertm(self):
         """

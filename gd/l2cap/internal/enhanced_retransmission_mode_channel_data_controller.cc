@@ -243,7 +243,7 @@ struct ErtmController::impl {
 
   void recv_rr(uint8_t req_seq, Poll p = Poll::NOT_SET, Final f = Final::NOT_SET) {
     if (rx_state_ == RxState::RECV) {
-      if (p == Poll::NOT_SET && f == Final::NOT_SET && with_valid_req_seq(req_seq) && with_valid_f_bit(f)) {
+      if (p == Poll::NOT_SET && f == Final::NOT_SET && with_valid_req_seq_rr(req_seq) && with_valid_f_bit(f)) {
         pass_to_tx(req_seq, f);
         if (remote_busy() && unacked_frames_ > 0) {
           start_retrans_timer();
@@ -262,7 +262,7 @@ struct ErtmController::impl {
       } else if (p == Poll::POLL && with_valid_req_seq(req_seq) && with_valid_f_bit(f)) {
         pass_to_tx(req_seq, f);
         send_i_or_rr_or_rnr(Final::POLL_RESPONSE);
-      } else if (with_invalid_req_seq(req_seq)) {
+      } else if (with_invalid_req_seq_rr(req_seq)) {
         CloseChannel();
       }
     } else if (rx_state_ == RxState::REJ_SENT) {
@@ -275,7 +275,7 @@ struct ErtmController::impl {
           rej_actioned_ = false;
         }
         send_pending_i_frames();
-      } else if (p == Poll::NOT_SET && f == Final::NOT_SET && with_valid_req_seq(req_seq) && with_valid_f_bit(f)) {
+      } else if (p == Poll::NOT_SET && f == Final::NOT_SET && with_valid_req_seq_rr(req_seq) && with_valid_f_bit(f)) {
         pass_to_tx(req_seq, f);
         if (remote_busy() and unacked_frames_ > 0) {
           start_retrans_timer();
@@ -289,7 +289,7 @@ struct ErtmController::impl {
         }
         remote_busy_ = false;
         send_rr(Final::POLL_RESPONSE);
-      } else if (with_invalid_req_seq(req_seq)) {
+      } else if (with_invalid_req_seq_rr(req_seq)) {
         CloseChannel();
       }
     } else if (rx_state_ == RxState::SREJ_SENT) {
@@ -516,7 +516,7 @@ struct ErtmController::impl {
   }
 
   bool with_invalid_req_seq(uint8_t req_seq) {
-    return req_seq < expected_ack_seq_ || req_seq >= next_tx_seq_;
+    return req_seq < expected_ack_seq_ || req_seq > next_tx_seq_;
   }
 
   bool with_invalid_req_seq_retrans(uint8_t req_seq) {
@@ -525,6 +525,14 @@ struct ErtmController::impl {
 
   bool not_with_expected_tx_seq(uint8_t tx_seq) {
     return !with_invalid_tx_seq(tx_seq) && !with_expected_tx_seq(tx_seq);
+  }
+
+  bool with_valid_req_seq_rr(uint8_t req_seq) {
+    return expected_ack_seq_ < req_seq && req_seq <= next_tx_seq_;
+  }
+
+  bool with_invalid_req_seq_rr(uint8_t req_seq) {
+    return req_seq <= expected_ack_seq_ || req_seq > next_tx_seq_;
   }
 
   bool with_expected_tx_seq_srej() {
@@ -730,14 +738,15 @@ struct ErtmController::impl {
     uint8_t i = req_seq;
     Final f = (p == Poll::NOT_SET ? Final::NOT_SET : Final::POLL_RESPONSE);
     while (unacked_list_.find(i) != unacked_list_.end()) {
+      if (retry_i_frames_[i] == controller_->local_max_transmit_) {
+        CloseChannel();
+        return;
+      }
       std::unique_ptr<CopyablePacketBuilder> copyable_packet_builder =
           std::make_unique<CopyablePacketBuilder>(std::get<2>(unacked_list_.find(i)->second));
       _send_i_frame(std::get<0>(unacked_list_.find(i)->second), std::move(copyable_packet_builder), buffer_seq_, i,
                     std::get<1>(unacked_list_.find(i)->second), f);
       retry_i_frames_[i]++;
-      if (retry_i_frames_[i] == controller_->local_max_transmit_) {
-        CloseChannel();
-      }
       frames_sent_++;
       f = Final::NOT_SET;
       i++;
