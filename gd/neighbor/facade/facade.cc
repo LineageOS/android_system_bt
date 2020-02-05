@@ -103,7 +103,7 @@ class NeighborFacadeService : public NeighborFacade::Service {
 
   ::grpc::Status ReadRemoteName(::grpc::ServerContext* context,
                                 const ::bluetooth::neighbor::RemoteNameRequestMsg* request,
-                                ::bluetooth::neighbor::RemoteNameResponseMsg* response) override {
+                                ::google::protobuf::Empty* response) override {
     hci::Address remote;
     ASSERT(hci::Address::FromString(request->address(), remote));
     hci::PageScanRepetitionMode mode;
@@ -123,9 +123,13 @@ class NeighborFacadeService : public NeighborFacade::Service {
     name_module_->ReadRemoteNameRequest(
         remote, mode, request->clock_offset(),
         (request->clock_offset() != 0 ? hci::ClockOffsetValid::VALID : hci::ClockOffsetValid::INVALID),
-        common::Bind(&NeighborFacadeService::on_remote_name, common::Unretained(this), common::Unretained(response)),
-        facade_handler_);
+        common::Bind(&NeighborFacadeService::on_remote_name, common::Unretained(this)), facade_handler_);
     return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status GetRemoteNameEvents(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
+                                     ::grpc::ServerWriter<RemoteNameResponseMsg>* writer) override {
+    return pending_remote_names_.RunLoop(context, writer);
   }
 
   ::grpc::Status EnableInquiryScan(::grpc::ServerContext* context, const ::bluetooth::neighbor::EnableMsg* request,
@@ -167,11 +171,12 @@ class NeighborFacadeService : public NeighborFacade::Service {
       .extended_result = [this](hci::ExtendedInquiryResultView view) { on_incoming_inquiry_result(view); },
       .complete = [this](hci::ErrorCode status) { on_incoming_inquiry_complete(status); }};
 
-  void on_remote_name(::bluetooth::neighbor::RemoteNameResponseMsg* response, hci::ErrorCode status,
-                      hci::Address address, std::array<uint8_t, 248> name) {
-    response->set_status(static_cast<int>(status));
-    response->set_address(address.ToString());
-    response->set_name(name.begin(), name.size());
+  void on_remote_name(hci::ErrorCode status, hci::Address address, std::array<uint8_t, 248> name) {
+    RemoteNameResponseMsg response;
+    response.set_status(static_cast<int>(status));
+    response.set_address(address.ToString());
+    response.set_name(name.begin(), name.size());
+    pending_remote_names_.OnIncomingEvent(response);
   }
 
   ConnectabilityModule* connectability_module_;
@@ -181,6 +186,7 @@ class NeighborFacadeService : public NeighborFacade::Service {
   ScanModule* scan_module_;
   ::bluetooth::os::Handler* facade_handler_;
   ::bluetooth::grpc::GrpcEventQueue<InquiryResultMsg> pending_events_{"InquiryResponses"};
+  ::bluetooth::grpc::GrpcEventQueue<RemoteNameResponseMsg> pending_remote_names_{"RemoteNameResponses"};
 };
 
 void NeighborFacadeModule::ListDependencies(ModuleList* list) {
