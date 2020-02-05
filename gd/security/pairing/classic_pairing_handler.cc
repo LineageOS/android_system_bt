@@ -99,6 +99,7 @@ void ClassicPairingHandler::OnConnectionClose(hci::ErrorCode error_code) {
   // Called when the connection gets closed
   LOG_ERROR("Connection closed due to: %s", hci::ErrorCodeText(error_code).c_str());
   ASSERT(fixed_channel_ != nullptr);
+  fixed_channel_.reset();
   Cancel();
 }
 
