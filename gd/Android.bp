@@ -147,9 +147,6 @@ cc_binary {
     generated_sources: [
         "BluetoothFacadeGeneratedStub_cc",
     ],
-    required: [
-        "root-canal",
-    ],
     static_libs: [
         "libbluetooth_gd",
     ],
@@ -164,6 +161,11 @@ cc_binary {
                 "android.hardware.bluetooth@1.0",
                 "libhidlbase",
                 "libutils",
+            ],
+        },
+        host: {
+            required: [
+                "root-canal",
             ],
         },
     },
