@@ -73,6 +73,8 @@ class LinkManager : public hci::ConnectionCallbacks {
                                      Link::PendingDynamicChannelConnection pending_dynamic_channel_connection, Psm psm);
 
  private:
+  void TriggerPairing(Link* link);
+
   // Dependencies
   os::Handler* l2cap_handler_;
   hci::AclManager* acl_manager_;
