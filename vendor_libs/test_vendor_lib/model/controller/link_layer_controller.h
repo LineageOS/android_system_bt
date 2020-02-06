@@ -156,8 +156,8 @@ class LinkLayerController {
     return ErrorCode::SUCCESS;
   }
 
-  void SetLeScanEnable(uint8_t le_scan_enable) {
-    le_scan_enable_ = le_scan_enable;
+  void SetLeScanEnable(bluetooth::hci::OpCode enabling_opcode) {
+    le_scan_enable_ = enabling_opcode;
   }
   void SetLeScanType(uint8_t le_scan_type) {
     le_scan_type_ = le_scan_type;
@@ -337,7 +337,7 @@ class LinkLayerController {
   uint8_t le_advertising_enable_{false};
   std::chrono::steady_clock::time_point last_le_advertisement_;
 
-  uint8_t le_scan_enable_{false};
+  bluetooth::hci::OpCode le_scan_enable_{bluetooth::hci::OpCode::NONE};
   uint8_t le_scan_type_;
   uint16_t le_scan_interval_;
   uint16_t le_scan_window_;
