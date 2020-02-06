@@ -436,6 +436,12 @@ class DualModeController : public Device {
   // 7.8.40
   void LeClearResolvingList(CommandPacketView args);
 
+  // 7.8.64
+  void LeSetExtendedScanParameters(CommandPacketView args);
+
+  // 7.8.65
+  void LeSetExtendedScanEnable(CommandPacketView args);
+
   // 7.8.77
   void LeSetPrivacyMode(CommandPacketView args);
 
