@@ -53,16 +53,17 @@ def get_instances_with_configs(configs):
             resolved_cmd.append(replace_vars(entry, config))
         devices.append(
             GdCertDevice(config["grpc_port"], config["grpc_root_server_port"],
-                         config["signal_port"], resolved_cmd, config["label"]))
+                         config["signal_port"], resolved_cmd, config["label"],
+                         config.get("serial_number", "")))
     return devices
 
 
 class GdCertDevice(GdDeviceBase):
 
     def __init__(self, grpc_port, grpc_root_server_port, signal_port, cmd,
-                 label):
+                 label, serial_number):
         super().__init__(grpc_port, grpc_root_server_port, signal_port, cmd,
-                         label, ACTS_CONTROLLER_CONFIG_NAME)
+                         label, ACTS_CONTROLLER_CONFIG_NAME, serial_number)
 
         # Cert stubs
         self.rootservice = cert_rootservice_pb2_grpc.RootCertStub(
