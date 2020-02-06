@@ -414,7 +414,7 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsNumericComparison(const
 
 Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsJustWorks(const InitialInformations& i,
                                                                    const EcdhPublicKey& PKa, const EcdhPublicKey& PKb) {
-  Octet16 Ca, Cb, Na, Nb, ra, rb;
+  Octet16 Cb, Na, Nb, ra, rb;
 
   ra = rb = {0};
 
@@ -437,13 +437,13 @@ Stage1ResultOrFailure PairingHandlerLe::SecureConnectionsJustWorks(const Initial
     }
     Nb = std::get<PairingRandomView>(random).GetRandomValue();
 
-    // Compute confirm
-    Ca = crypto_toolbox::f4((uint8_t*)PKb.x.data(), (uint8_t*)PKa.x.data(), Nb, 0);
+    // Compute Cb locally
+    Octet16 Cb_local = crypto_toolbox::f4((uint8_t*)PKb.x.data(), (uint8_t*)PKa.x.data(), Nb, 0);
 
-    if (Ca != Cb) {
-      LOG_INFO("Ca != Cb, aborting!");
+    if (Cb_local != Cb) {
+      LOG_INFO("Cb_local != Cb, aborting!");
       SendL2capPacket(i, PairingFailedBuilder::Create(PairingFailedReason::CONFIRM_VALUE_FAILED));
-      return PairingFailure("Ca != Cb");
+      return PairingFailure("Cb_local != Cb");
     }
   } else {
     Nb = GenerateRandom<16>();

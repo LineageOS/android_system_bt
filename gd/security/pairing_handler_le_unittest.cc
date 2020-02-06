@@ -198,7 +198,7 @@ TEST_F(PairingHandlerUnitTest, test_secure_connections_just_works) {
   Octet16 Nb = PairingHandlerLe::GenerateRandom<16>();
 
   // Compute confirm
-  Octet16 Cb = crypto_toolbox::f4((uint8_t*)my_public_key.x.data(), (uint8_t*)public_key.x.data(), Nb, 0);
+  Octet16 Cb = crypto_toolbox::f4((uint8_t*)public_key.x.data(), (uint8_t*)my_public_key.x.data(), Nb, 0);
 
   pairing_handler->OnCommandView(BuilderToView(PairingConfirmBuilder::Create(Cb)));
 
@@ -208,11 +208,6 @@ TEST_F(PairingHandlerUnitTest, test_secure_connections_just_works) {
   auto prv = PairingRandomView::Create(outgoing_l2cap_packet_.value());
   prv.IsValid();
   Octet16 Na = prv.GetRandomValue();
-
-  // Compute Ca, compare
-  Octet16 Ca = crypto_toolbox::f4((uint8_t*)my_public_key.x.data(), (uint8_t*)public_key.x.data(), Na, 0);
-
-  EXPECT_EQ(Ca, Cb);
 
   pairing_handler->OnCommandView(BuilderToView(PairingRandomBuilder::Create(Nb)));
 
