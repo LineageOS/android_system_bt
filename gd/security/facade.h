@@ -18,7 +18,6 @@
 #include <grpc++/grpc++.h>
 
 #include "grpc/grpc_module.h"
-#include "hci/address_with_type.h"
 
 namespace bluetooth {
 namespace security {
