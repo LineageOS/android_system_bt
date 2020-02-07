@@ -14,6 +14,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from datetime import timedelta
 import os
 import sys
 import logging
@@ -411,7 +412,8 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
                 return False
 
             # Cert Accepts
-            cert_hci_event_asserts.assert_event_occurs(get_connect_request)
+            cert_hci_event_asserts.assert_event_occurs(
+                get_connect_request, timeout=timedelta(seconds=10))
             self.send_hal_hci_command(
                 hci_packets.AcceptConnectionRequestBuilder(
                     connection_request.GetBdAddr(),
@@ -525,7 +527,8 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
                     return True
                 return False
 
-            hci_event_asserts.assert_event_occurs(get_connect_request)
+            hci_event_asserts.assert_event_occurs(
+                get_connect_request, timeout=timedelta(seconds=10))
             self.enqueue_hci_command(
                 hci_packets.AcceptConnectionRequestBuilder(
                     connection_request.GetBdAddr(),
