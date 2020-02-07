@@ -52,6 +52,12 @@ class EventAsserts(object):
     def __del__(self):
         self.event_callback_stream.unregister_callback(self.callback)
 
+    def remaining_time_delta(self, end_time):
+        remaining = end_time - datetime.now()
+        if remaining < timedelta(milliseconds=0):
+            remaining = timedelta(milliseconds=0)
+        return remaining
+
     def assert_none(self, timeout=timedelta(seconds=DEFAULT_TIMEOUT_SECONDS)):
         """
         Assert no event happens within timeout period
@@ -81,16 +87,11 @@ class EventAsserts(object):
         """
         logging.debug("assert_none_matching %fs" % (timeout.total_seconds()))
         event = None
-        iter_count = 0
         end_time = datetime.now() + timeout
-        while iter_count == 0 or event is None and datetime.now() < end_time:
-            if iter_count > 0:
-                remaining = end_time - datetime.now()
-            else:
-                remaining = timeout
-            logging.debug("Waiting for event iteration %d %fs remaining" %
-                          (iter_count, remaining.total_seconds()))
-            iter_count += 1
+        while event is None and datetime.now() < end_time:
+            remaining = self.remaining_time_delta(end_time)
+            logging.debug("Waiting for event (%fs remaining)" %
+                          (remaining.total_seconds()))
             try:
                 current_event = self.event_queue.get(
                     timeout=remaining.total_seconds())
@@ -123,19 +124,12 @@ class EventAsserts(object):
         logging.debug("assert_event_occurs %d %fs" % (at_least_times,
                                                       timeout.total_seconds()))
         event_list = []
-        iter_count = 0
         end_time = datetime.now() + timeout
-        while iter_count == 0 or len(
-                event_list) < at_least_times and datetime.now() < end_time:
-            if iter_count > 0:
-                remaining = end_time - datetime.now()
-            else:
-                remaining = timeout
-            logging.debug("Waiting for event iteration %d %fs remaining" %
-                          (iter_count, remaining.total_seconds()))
-            iter_count += 1
+        while len(event_list) < at_least_times and datetime.now() < end_time:
+            remaining = self.remaining_time_delta(end_time)
+            logging.debug("Waiting for event (%fs remaining)" %
+                          (remaining.total_seconds()))
             try:
-                remaining = end_time - datetime.now()
                 current_event = self.event_queue.get(
                     timeout=remaining.total_seconds())
                 if match_fn(current_event):
@@ -165,16 +159,11 @@ class EventAsserts(object):
         """
         logging.debug("assert_event_occurs_at_most")
         event_list = []
-        iter_count = 0
         end_time = datetime.now() + timeout
         while len(event_list) <= at_most_times and datetime.now() < end_time:
-            if iter_count > 0:
-                remaining = end_time - datetime.now()
-            else:
-                remaining = timeout
-            logging.debug("Waiting for event iteration %d %fs remaining" %
-                          (iter_count, remaining.total_seconds()))
-            iter_count += 1
+            remaining = self.remaining_time_delta(end_time)
+            logging.debug("Waiting for event iteration (%fs remaining)" %
+                          (remaining.total_seconds()))
             try:
                 current_event = self.event_queue.get(
                     timeout=remaining.total_seconds())
