@@ -3056,7 +3056,8 @@ static void handle_get_capability_response(tBTA_AV_META_MSG* pmeta_msg,
           (p_rsp->param.event_id[xx] == AVRC_EVT_APP_SETTING_CHANGE) ||
           (p_rsp->param.event_id[xx] == AVRC_EVT_NOW_PLAYING_CHANGE) ||
           (p_rsp->param.event_id[xx] == AVRC_EVT_ADDR_PLAYER_CHANGE) ||
-          (p_rsp->param.event_id[xx] == AVRC_EVT_UIDS_CHANGE)) {
+          (p_rsp->param.event_id[xx] == AVRC_EVT_UIDS_CHANGE) ||
+          (p_rsp->param.event_id[xx] == AVRC_EVT_AVAL_PLAYERS_CHANGE)) {
         p_event = (btif_rc_supported_event_t*)osi_malloc(
             sizeof(btif_rc_supported_event_t));
         p_event->event_id = p_rsp->param.event_id[xx];
@@ -3171,6 +3172,11 @@ static void handle_notification_response(tBTA_AV_META_MSG* pmeta_msg,
         break;
 
       case AVRC_EVT_AVAL_PLAYERS_CHANGE:
+        BTIF_TRACE_DEBUG("%s: AVRC_EVT_AVAL_PLAYERS_CHANGE", __func__);
+        do_in_jni_thread(
+            FROM_HERE,
+            base::Bind(bt_rc_ctrl_callbacks->available_player_changed_cb,
+                       p_dev->rc_addr));
         break;
 
       case AVRC_EVT_ADDR_PLAYER_CHANGE:
