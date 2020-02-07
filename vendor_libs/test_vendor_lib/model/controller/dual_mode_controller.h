@@ -436,11 +436,29 @@ class DualModeController : public Device {
   // 7.8.40
   void LeClearResolvingList(CommandPacketView args);
 
+  // 7.8.52
+  void LeSetExtendedAdvertisingRandomAddress(CommandPacketView args);
+
+  // 7.8.53
+  void LeSetExtendedAdvertisingParameters(CommandPacketView args);
+
+  // 7.8.54
+  void LeSetExtendedAdvertisingData(CommandPacketView args);
+
+  // 7.8.55
+  void LeSetExtendedAdvertisingScanResponse(CommandPacketView args);
+
+  // 7.8.56
+  void LeSetExtendedAdvertisingEnable(CommandPacketView args);
+
   // 7.8.64
   void LeSetExtendedScanParameters(CommandPacketView args);
 
   // 7.8.65
   void LeSetExtendedScanEnable(CommandPacketView args);
+
+  // 7.8.66
+  void LeExtendedCreateConnection(CommandPacketView args);
 
   // 7.8.77
   void LeSetPrivacyMode(CommandPacketView args);

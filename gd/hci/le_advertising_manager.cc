@@ -210,8 +210,7 @@ struct LeAdvertisingManager::impl {
           LeSetExtendedAdvertisingLegacyParametersBuilder::Create(
               id, legacy_properties, config.interval_min, config.interval_max, config.channel_map,
               config.own_address_type, config.peer_address_type, config.peer_address, config.filter_policy,
-              config.tx_power, (config.use_le_coded_phy ? PrimaryPhyType::LE_CODED : PrimaryPhyType::LE_1M), config.sid,
-              config.enable_scan_request_notifications),
+              config.tx_power, config.sid, config.enable_scan_request_notifications),
           common::BindOnce(impl::check_status<LeSetExtendedAdvertisingParametersCompleteView>), module_handler_);
     } else {
       uint8_t legacy_properties = (config.connectable ? 0x1 : 0x00) | (config.scannable ? 0x2 : 0x00) |
