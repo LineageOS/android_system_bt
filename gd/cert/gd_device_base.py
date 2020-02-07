@@ -79,7 +79,7 @@ class GdDeviceBase:
         self.serial_number = serial_number
         if self.serial_number:
             self.ad = AdbProxy(serial_number)
-            self.ad.date(time.strftime("%m%d%H%M%Y.%S"))
+            self.ad.shell("date " + time.strftime("%m%d%H%M%Y.%S"))
             self.ad.tcp_forward(int(grpc_port), int(grpc_port))
             self.ad.tcp_forward(
                 int(grpc_root_server_port), int(grpc_root_server_port))
@@ -97,6 +97,7 @@ class GdDeviceBase:
                 "system/lib64")
             self.ad.shell("logcat -c")
             self.ad.shell("rm /data/misc/bluetooth/logs/btsnoop_hci.log")
+            self.ad.shell("svc bluetooth disable")
 
         tester_signal_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         tester_signal_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
@@ -129,7 +130,7 @@ class GdDeviceBase:
         if backing_process_return_code not in [-stop_signal, 0]:
             logging.error("backing process %s stopped with code: %d" %
                           (self.label, backing_process_return_code))
-            return False
+
         if self.serial_number:
             self.ad.shell("logcat -d -f /data/misc/bluetooth/logs/system_log")
             self.ad.pull(
