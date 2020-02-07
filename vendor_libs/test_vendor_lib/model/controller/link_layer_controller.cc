@@ -206,7 +206,7 @@ void LinkLayerController::IncomingPacket(
       IncomingIoCapabilityNegativeResponsePacket(incoming);
       break;
     case model::packets::PacketType::LE_ADVERTISEMENT:
-      if (le_scan_enable_ || le_connect_) {
+      if (le_scan_enable_ != bluetooth::hci::OpCode::NONE || le_connect_) {
         IncomingLeAdvertisementPacket(incoming);
       }
       break;
@@ -221,7 +221,8 @@ void LinkLayerController::IncomingPacket(
       IncomingLeScanPacket(incoming);
       break;
     case model::packets::PacketType::LE_SCAN_RESPONSE:
-      if (le_scan_enable_ && le_scan_type_ == 1) {
+      if (le_scan_enable_ != bluetooth::hci::OpCode::NONE &&
+          le_scan_type_ == 1) {
         IncomingLeScanResponsePacket(incoming);
       }
       break;
@@ -746,7 +747,7 @@ void LinkLayerController::IncomingLeAdvertisementPacket(
       advertisement.GetAdvertisementType());
   auto address_type = advertisement.GetAddressType();
 
-  if (le_scan_enable_) {
+  if (le_scan_enable_ == bluetooth::hci::OpCode::LE_SET_SCAN_ENABLE) {
     vector<uint8_t> ad = advertisement.GetData();
 
     std::unique_ptr<bluetooth::packet::RawBuilder> raw_builder_ptr =
@@ -765,8 +766,34 @@ void LinkLayerController::IncomingLeAdvertisementPacket(
     send_event_(std::move(packet));
   }
 
+  if (le_scan_enable_ == bluetooth::hci::OpCode::LE_SET_EXTENDED_SCAN_ENABLE) {
+    vector<uint8_t> ad = advertisement.GetData();
+
+    std::unique_ptr<bluetooth::packet::RawBuilder> raw_builder_ptr =
+        std::make_unique<bluetooth::packet::RawBuilder>();
+    raw_builder_ptr->AddOctets1(static_cast<uint8_t>(
+        bluetooth::hci::SubeventCode::EXTENDED_ADVERTISING_REPORT));
+    raw_builder_ptr->AddOctets1(0x01);  // num reports
+    raw_builder_ptr->AddOctets1(static_cast<uint8_t>(adv_type));
+    raw_builder_ptr->AddOctets1(static_cast<uint8_t>(address_type));
+    raw_builder_ptr->AddAddress(address);
+    raw_builder_ptr->AddOctets1(1);     // Primary_PHY
+    raw_builder_ptr->AddOctets1(0);     // Secondary_PHY
+    raw_builder_ptr->AddOctets1(0xFF);  // Advertising_SID - not provided
+    raw_builder_ptr->AddOctets1(0x7F);  // Tx_Power - Not available
+    raw_builder_ptr->AddOctets1(GetRssi());
+    raw_builder_ptr->AddOctets1(0);  // Periodic_Advertising_Interval - None
+    raw_builder_ptr->AddOctets1(0);  // Direct_Address_Type - PUBLIC
+    raw_builder_ptr->AddAddress(Address::kEmpty);  // Direct_Address
+    raw_builder_ptr->AddOctets1(ad.size());
+    raw_builder_ptr->AddOctets(ad);
+    auto packet = bluetooth::hci::EventPacketBuilder::Create(
+        bluetooth::hci::EventCode::LE_META_EVENT, std::move(raw_builder_ptr));
+    send_event_(std::move(packet));
+  }
+
   // Active scanning
-  if (le_scan_enable_ && le_scan_type_ == 1) {
+  if (le_scan_enable_ != bluetooth::hci::OpCode::NONE && le_scan_type_ == 1) {
     auto to_send = model::packets::LeScanBuilder::Create(
         properties_.GetLeAddress(), address);
     SendLeLinkLayerPacket(std::move(to_send));
@@ -790,7 +817,7 @@ void LinkLayerController::IncomingLeAdvertisementPacket(
     LOG_INFO("%s: connecting to %s (type %hhx)", __func__,
              incoming.GetSourceAddress().ToString().c_str(), address_type);
     le_connect_ = false;
-    le_scan_enable_ = false;
+    le_scan_enable_ = bluetooth::hci::OpCode::NONE;
 
     auto to_send = model::packets::LeConnectBuilder::Create(
         properties_.GetLeAddress(), incoming.GetSourceAddress(),
@@ -877,7 +904,6 @@ void LinkLayerController::IncomingLeConnectCompletePacket(
 
 void LinkLayerController::IncomingLeScanPacket(
     model::packets::LinkLayerPacketView incoming) {
-  LOG_INFO("LE Scan Packet");
 
   auto to_send = model::packets::LeScanResponseBuilder::Create(
       properties_.GetLeAddress(), incoming.GetSourceAddress(),
@@ -898,21 +924,46 @@ void LinkLayerController::IncomingLeScanResponsePacket(
       scan_response.GetAdvertisementType());
   auto address_type =
       static_cast<LeAdvertisement::AddressType>(scan_response.GetAddressType());
+  if (le_scan_enable_ == bluetooth::hci::OpCode::LE_SET_SCAN_ENABLE) {
+    std::unique_ptr<bluetooth::packet::RawBuilder> raw_builder_ptr =
+        std::make_unique<bluetooth::packet::RawBuilder>();
+    raw_builder_ptr->AddOctets1(
+        static_cast<uint8_t>(bluetooth::hci::SubeventCode::ADVERTISING_REPORT));
+    raw_builder_ptr->AddOctets1(0x01);  // num reports
+    raw_builder_ptr->AddOctets1(static_cast<uint8_t>(adv_type));
+    raw_builder_ptr->AddOctets1(static_cast<uint8_t>(address_type));
+    raw_builder_ptr->AddAddress(incoming.GetSourceAddress());
+    raw_builder_ptr->AddOctets1(ad.size());
+    raw_builder_ptr->AddOctets(ad);
+    raw_builder_ptr->AddOctets1(GetRssi());
+    auto packet = bluetooth::hci::EventPacketBuilder::Create(
+        bluetooth::hci::EventCode::LE_META_EVENT, std::move(raw_builder_ptr));
+    send_event_(std::move(packet));
+  }
 
-  std::unique_ptr<bluetooth::packet::RawBuilder> raw_builder_ptr =
-      std::make_unique<bluetooth::packet::RawBuilder>();
-  raw_builder_ptr->AddOctets1(
-      static_cast<uint8_t>(bluetooth::hci::SubeventCode::ADVERTISING_REPORT));
-  raw_builder_ptr->AddOctets1(0x01);  // num reports
-  raw_builder_ptr->AddOctets1(static_cast<uint8_t>(adv_type));
-  raw_builder_ptr->AddOctets1(static_cast<uint8_t>(address_type));
-  raw_builder_ptr->AddAddress(incoming.GetSourceAddress());
-  raw_builder_ptr->AddOctets1(ad.size());
-  raw_builder_ptr->AddOctets(ad);
-  raw_builder_ptr->AddOctets1(GetRssi());
-  auto packet = bluetooth::hci::EventPacketBuilder::Create(
-      bluetooth::hci::EventCode::LE_META_EVENT, std::move(raw_builder_ptr));
-  send_event_(std::move(packet));
+  if (le_scan_enable_ == bluetooth::hci::OpCode::LE_SET_EXTENDED_SCAN_ENABLE) {
+    std::unique_ptr<bluetooth::packet::RawBuilder> raw_builder_ptr =
+        std::make_unique<bluetooth::packet::RawBuilder>();
+    raw_builder_ptr->AddOctets1(static_cast<uint8_t>(
+        bluetooth::hci::SubeventCode::EXTENDED_ADVERTISING_REPORT));
+    raw_builder_ptr->AddOctets1(0x01);  // num reports
+    raw_builder_ptr->AddOctets1(static_cast<uint8_t>(adv_type));
+    raw_builder_ptr->AddOctets1(static_cast<uint8_t>(address_type));
+    raw_builder_ptr->AddAddress(incoming.GetSourceAddress());
+    raw_builder_ptr->AddOctets1(1);     // Primary_PHY
+    raw_builder_ptr->AddOctets1(0);     // Secondary_PHY
+    raw_builder_ptr->AddOctets1(0xFF);  // Advertising_SID - not provided
+    raw_builder_ptr->AddOctets1(0x7F);  // Tx_Power - Not available
+    raw_builder_ptr->AddOctets1(GetRssi());
+    raw_builder_ptr->AddOctets1(0);  // Periodic_Advertising_Interval - None
+    raw_builder_ptr->AddOctets1(0);  // Direct_Address_Type - PUBLIC
+    raw_builder_ptr->AddAddress(Address::kEmpty);  // Direct_Address
+    raw_builder_ptr->AddOctets1(ad.size());
+    raw_builder_ptr->AddOctets(ad);
+    auto packet = bluetooth::hci::EventPacketBuilder::Create(
+        bluetooth::hci::EventCode::LE_META_EVENT, std::move(raw_builder_ptr));
+    send_event_(std::move(packet));
+  }
 }
 
 void LinkLayerController::IncomingPagePacket(
@@ -1691,7 +1742,7 @@ bool LinkLayerController::LeResolvingListFull() {
 void LinkLayerController::Reset() {
   inquiry_state_ = Inquiry::InquiryState::STANDBY;
   last_inquiry_ = steady_clock::now();
-  le_scan_enable_ = 0;
+  le_scan_enable_ = bluetooth::hci::OpCode::NONE;
   le_advertising_enable_ = 0;
   le_connect_ = 0;
 }
