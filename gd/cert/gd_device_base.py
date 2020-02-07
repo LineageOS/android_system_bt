@@ -79,6 +79,7 @@ class GdDeviceBase:
         self.serial_number = serial_number
         if self.serial_number:
             self.ad = AdbProxy(serial_number)
+            self.ad.date(time.strftime("%m%d%H%M%Y.%S"))
             self.ad.tcp_forward(int(grpc_port), int(grpc_port))
             self.ad.tcp_forward(
                 int(grpc_root_server_port), int(grpc_root_server_port))
