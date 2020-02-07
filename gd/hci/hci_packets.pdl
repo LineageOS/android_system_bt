@@ -2781,9 +2781,9 @@ packet LeSetExtendedAdvertisingLegacyParameters : LeAdvertisingCommand (op_code 
   advertising_filter_policy : AdvertisingFilterPolicy,
   _reserved_ : 6,
   advertising_tx_power : 8, // -127 to +20, 0x7F - no preference
-  primary_advertising_phy : PrimaryPhyType,
+  _fixed_ = 0x1 : 8, // PrimaryPhyType LE_1M
   _reserved_ : 8, // secondary_advertising_max_skip
-  _reserved_ : 8, // secondary_advertising_phy
+  _fixed_ = 0x1 : 8, // secondary_advertising_phy LE_1M
   advertising_sid : 8, // SID subfield from the ADI field of the PDU
   scan_request_notification_enable : Enable,
 }
@@ -3027,6 +3027,9 @@ packet LeExtendedCreateConnection : LeConnectionManagementCommand (op_code = LE_
   peer_address : Address,
   initiating_phys : 8,
   phy_scan_parameters : LeCreateConnPhyScanParameters[],
+}
+
+packet LeExtendedCreateConnectionStatus : CommandStatus (command_op_code = LE_EXTENDED_CREATE_CONNECTION) {
 }
 
 packet LePeriodicAdvertisingCreateSync : LeAdvertisingCommand (op_code = LE_PERIODIC_ADVERTISING_CREATE_SYNC) {
