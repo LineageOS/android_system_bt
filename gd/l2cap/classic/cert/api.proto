@@ -54,6 +54,7 @@ message SFrame {
   uint32 f = 4;
   uint32 p = 5;
   uint32 s = 6;
+  bool with_fcs = 7;
 }
 
 message SendSFrameResult {}
@@ -99,12 +100,18 @@ message ChannelRetransmissionFlowControlConfig {
   uint32 mps = 6;
 }
 
+enum FcsConfig {
+  NO_FCS = 0;
+  DEFAULT = 1;
+  NON = 2;
+}
+
 message ConfigurationRequest {
   uint32 dcid = 1;
   uint32 signal_id = 2;
   uint32 mtu = 3;
   ChannelRetransmissionFlowControlConfig retransmission_config = 4;
-  bool fcs = 5;
+  FcsConfig fcs_config = 5;
 }
 
 enum ConfigurationResult {

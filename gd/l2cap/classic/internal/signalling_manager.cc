@@ -159,10 +159,10 @@ void ClassicSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, 
   configuration_state.incoming_mtu_ = initial_config.incoming_mtu;
 
   auto fcs_option = std::make_unique<FrameCheckSequenceOption>();
-  fcs_option->fcs_type_ = FcsType::DEFAULT;
-  if (!link_->GetRemoteSupportsFcs()) {
-    fcs_option->fcs_type_ = FcsType::NO_FCS;
-    configuration_state.fcs_type_ = FcsType::NO_FCS;
+  fcs_option->fcs_type_ = FcsType::NO_FCS;
+  if (link_->GetRemoteSupportsFcs()) {
+    fcs_option->fcs_type_ = FcsType::DEFAULT;
+    configuration_state.fcs_type_ = FcsType::DEFAULT;
   }
 
   auto retransmission_flow_control_configuration = std::make_unique<RetransmissionAndFlowControlConfigurationOption>();
@@ -485,7 +485,7 @@ void ClassicSignallingManager::OnInformationRequest(SignalId signal_id, Informat
     case InformationRequestInfoType::EXTENDED_FEATURES_SUPPORTED: {
       // TODO: implement this response
       auto response = InformationResponseExtendedFeaturesBuilder::Create(
-          signal_id.Value(), InformationRequestResult::SUCCESS, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0);
+          signal_id.Value(), InformationRequestResult::SUCCESS, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0);
       enqueue_buffer_->Enqueue(std::move(response), handler_);
       break;
     }
