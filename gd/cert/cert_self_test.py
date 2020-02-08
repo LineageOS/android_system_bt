@@ -19,6 +19,7 @@ import sys
 import logging
 import time
 
+from acts import asserts
 from datetime import datetime, timedelta
 from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
 from cert.event_callback_stream import EventCallbackStream
@@ -192,3 +193,7 @@ class CertSelfTest(GdFacadeOnlyBaseTestClass):
             logging.debug(e)
             return True  # Failed as expected
         return False
+
+    def test_skip_a_test(self):
+        asserts.skip("Skipping this test because it's blocked by b/xyz")
+        assert False
