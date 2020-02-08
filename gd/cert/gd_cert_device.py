@@ -14,10 +14,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from gd_device_base import GdDeviceBase
-from gd_device_base import replace_vars
-
-from cert import rootservice_pb2_grpc as cert_rootservice_pb2_grpc
+from cert.gd_device_base import GdDeviceBase, GdDeviceConfigError, replace_vars
+import cert.rootservice_pb2_grpc as cert_rootservice_pb2_grpc
 from l2cap.classic.cert import api_pb2_grpc as l2cap_cert_pb2_grpc
 
 ACTS_CONTROLLER_CONFIG_NAME = "GdCertDevice"
