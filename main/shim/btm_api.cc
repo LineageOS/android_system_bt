@@ -1073,3 +1073,52 @@ tBTM_STATUS bluetooth::shim::BTM_SecBond(const RawAddress& bd_addr,
   return shim_btm.CreateBond(bd_addr, addr_type, transport, pin_len, p_pin,
                              trusted_mask);
 }
+
+bool bluetooth::shim::BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info) {
+  CHECK(p_cb_info != nullptr);
+  LOG_DEBUG(LOG_TAG, "%s Registering security application", __func__);
+
+  if (p_cb_info->p_authorize_callback == nullptr) {
+    LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s authorize_callback", __func__);
+  }
+
+  if (p_cb_info->p_pin_callback == nullptr) {
+    LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s pin_callback", __func__);
+  }
+
+  if (p_cb_info->p_link_key_callback == nullptr) {
+    LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s link_key_callback", __func__);
+  }
+
+  if (p_cb_info->p_auth_complete_callback == nullptr) {
+    LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s auth_complete_callback", __func__);
+  }
+
+  if (p_cb_info->p_bond_cancel_cmpl_callback == nullptr) {
+    LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s bond_cancel_complete_callback",
+             __func__);
+  }
+
+  if (p_cb_info->p_le_callback == nullptr) {
+    LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s le_callback", __func__);
+  }
+
+  if (p_cb_info->p_le_key_callback == nullptr) {
+    LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s le_key_callback", __func__);
+  }
+
+  shim_btm.SetSimplePairingCallback(p_cb_info->p_sp_callback);
+  return true;
+}
+
+tBTM_STATUS bluetooth::shim::BTM_SecBondCancel(const RawAddress& bd_addr) {
+  if (shim_btm.CancelBond(bd_addr)) {
+    return BTM_SUCCESS;
+  } else {
+    return BTM_UNKNOWN_ADDR;
+  }
+}
+
+bool bluetooth::shim::BTM_SecDeleteDevice(const RawAddress& bd_addr) {
+  return shim_btm.RemoveBond(bd_addr);
+}
