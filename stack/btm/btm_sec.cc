@@ -234,6 +234,9 @@ static bool btm_serv_trusted(tBTM_SEC_DEV_REC* p_dev_rec,
  *
  ******************************************************************************/
 bool BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::BTM_SecRegister(p_cb_info);
+  }
 
   BTM_TRACE_EVENT("%s application registered", __func__);
 
@@ -1048,6 +1051,10 @@ tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
  *
  ******************************************************************************/
 tBTM_STATUS BTM_SecBondCancel(const RawAddress& bd_addr) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::BTM_SecBondCancel(bd_addr);
+  }
+
   tBTM_SEC_DEV_REC* p_dev_rec;
 
   BTM_TRACE_API("BTM_SecBondCancel()  State: %s flags:0x%x",

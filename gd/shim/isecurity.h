@@ -25,8 +25,15 @@
 namespace bluetooth {
 namespace shim {
 
+using SimplePairingCallback = std::function<bool(std::string address, uint32_t value, bool just_works)>;
+
 struct ISecurity {
-  virtual void CreateBond(std::string address, uint8_t address_type, uint8_t transport) = 0;
+  virtual void CreateBond(std::string address) = 0;
+  virtual void CreateBondLe(std::string address, uint8_t address_type) = 0;
+  virtual void CancelBond(std::string address) = 0;
+  virtual void RemoveBond(std::string address) = 0;
+
+  virtual void SetSimplePairingCallback(SimplePairingCallback callback) = 0;
 
   virtual ~ISecurity() {}
 };
