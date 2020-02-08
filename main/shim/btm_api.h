@@ -2355,5 +2355,32 @@ tBTM_STATUS BTM_BleGetEnergyInfo(tBTM_BLE_ENERGY_INFO_CBACK* p_ener_cback);
 tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                         tBT_TRANSPORT transport, uint8_t pin_len,
                         uint8_t* p_pin, uint32_t trusted_mask[]);
+
+/*******************************************************************************
+ *
+ * Function         BTM_SecRegister
+ *
+ * Description      Application manager calls this function to register for
+ *                  security services.  There can be one and only one
+ *                  application saving link keys.  BTM allows only first
+ *                  registration.
+ *
+ * Returns          true if registered OK, else false
+ *
+ ******************************************************************************/
+bool BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info);
+
+/** Free resources associated with the device associated with |bd_addr| address.
+ *
+ * *** WARNING ***
+ * tBTM_SEC_DEV_REC associated with bd_addr becomes invalid after this function
+ * is called, also any of it's fields. i.e. if you use p_dev_rec->bd_addr, it is
+ * no longer valid!
+ * *** WARNING ***
+ *
+ * Returns true if removed OK, false if not found or ACL link is active.
+ */
+bool BTM_SecDeleteDevice(const RawAddress& bd_addr);
+
 }  // namespace shim
 }  // namespace bluetooth

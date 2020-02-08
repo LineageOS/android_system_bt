@@ -29,7 +29,12 @@ class Security : public bluetooth::Module, public bluetooth::shim::ISecurity {
   Security() = default;
   ~Security() = default;
 
-  void CreateBond(std::string address, uint8_t address_type, uint8_t transport) override;
+  void CreateBond(std::string address) override;
+  void CreateBondLe(std::string address, uint8_t address_type) override;
+  void CancelBond(std::string address) override;
+  void RemoveBond(std::string address) override;
+
+  void SetSimplePairingCallback(SimplePairingCallback callback) override;
 
   static const ModuleFactory Factory;
 

@@ -34,17 +34,68 @@ namespace shim {
 
 namespace {
 constexpr char kModuleName[] = "shim::Security";
+
+constexpr uint8_t kLegacyAddressTypePublic = 0;
+constexpr uint8_t kLegacyAddressTypeRandom = 1;
+constexpr uint8_t kLegacyAddressTypePublicIdentity = 2;
+constexpr uint8_t kLegacyAddressTypeRandomIdentity = 3;
+
 }  // namespace
 
-struct Security::impl {
-  void CreateBond(std::string address, uint8_t address_type, uint8_t transport);
+struct Security::impl : public security::ISecurityManagerListener {
+  void OnDisplayYesNoDialogWithValue(const bluetooth::hci::AddressWithType& address, uint32_t numeric_value,
+                                     common::OnceCallback<void(bool)> input_callback) {
+    std::move(input_callback).Run(simple_pairing_callback_(address.ToString(), numeric_value, false));
+  }
+
+  void OnDisplayYesNoDialog(const bluetooth::hci::AddressWithType& address,
+                            common::OnceCallback<void(bool)> input_callback) {
+    LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+  }
+
+  void OnDisplayPasskeyDialog(const bluetooth::hci::AddressWithType& address, uint32_t passkey) {
+    LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+  }
+
+  void OnDisplayPasskeyInputDialog(const bluetooth::hci::AddressWithType& address,
+                                   common::OnceCallback<void(uint32_t)> input_callback) {
+    LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+  }
+
+  void OnDisplayCancelDialog(const bluetooth::hci::AddressWithType& address) {
+    LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+  }
+
+  void OnDeviceBonded(bluetooth::hci::AddressWithType device) {
+    LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+  }
+
+  void OnDeviceUnbonded(bluetooth::hci::AddressWithType device) {
+    LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+  }
+
+  void OnDeviceBondFailed(bluetooth::hci::AddressWithType device) {
+    LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+  }
+
+  void CreateBond(hci::AddressWithType bdaddr);
+  void CreateBondLe(hci::AddressWithType bdaddr);
+  void CancelBond(hci::AddressWithType bdaddr);
+  void RemoveBond(hci::AddressWithType bdaddr);
 
   os::Handler* Handler() /*override*/;
+
+  void SetSimplePairingCallback(SimplePairingCallback callback);
 
   impl(bluetooth::security::SecurityModule* security_module, os::Handler* handler);
   ~impl();
 
+  void Start();
+  void Stop();
+
  private:
+  SimplePairingCallback simple_pairing_callback_;
+
   std::unique_ptr<bluetooth::security::SecurityManager> security_manager_{nullptr};
   os::Handler* handler_;
 };
@@ -60,24 +111,92 @@ os::Handler* Security::impl::Handler() {
   return handler_;
 }
 
-void Security::impl::CreateBond(std::string address, uint8_t address_type, uint8_t transport) {
-  hci::Address bdaddr;
-  if (!hci::Address::FromString(address, bdaddr)) {
-    LOG_ERROR("%s bad address: %s, aborting", __func__, address.c_str());
-    return;
-  }
-
-  if (transport == 0x01 /* BT_TRANSPORT_BR_EDR */)
-    security_manager_->CreateBond(hci::AddressWithType{bdaddr, hci::AddressType::PUBLIC_DEVICE_ADDRESS});
-  else if (transport == 0x02 /* BT_TRANSPORT_LE */)
-    security_manager_->CreateBondLe(
-        hci::AddressWithType{bdaddr, static_cast<bluetooth::hci::AddressType>(address_type)});
-  else
-    LOG_ALWAYS_FATAL("Bad transport in CreateBond %d", transport);
+void Security::impl::CreateBond(hci::AddressWithType bdaddr) {
+  security_manager_->CreateBond(bdaddr);
 }
 
-void Security::CreateBond(std::string address, uint8_t address_type, uint8_t transport) {
-  pimpl_->CreateBond(address, address_type, transport);
+void Security::impl::CreateBondLe(hci::AddressWithType bdaddr) {
+  security_manager_->CreateBondLe(bdaddr);
+}
+
+void Security::impl::CancelBond(hci::AddressWithType bdaddr) {
+  security_manager_->CancelBond(bdaddr);
+}
+
+void Security::impl::RemoveBond(hci::AddressWithType bdaddr) {
+  security_manager_->RemoveBond(bdaddr);
+}
+
+void Security::impl::SetSimplePairingCallback(SimplePairingCallback callback) {
+  ASSERT(!simple_pairing_callback_);
+  simple_pairing_callback_ = callback;
+}
+
+void Security::impl::Start() {
+  LOG_DEBUG("Starting security manager shim");
+  security_manager_->RegisterCallbackListener(this, handler_);
+}
+
+void Security::impl::Stop() {
+  security_manager_->UnregisterCallbackListener(this);
+  LOG_DEBUG("Stopping security manager shim");
+}
+
+void Security::CreateBond(std::string string_address) {
+  hci::Address address;
+  if (!hci::Address::FromString(string_address, address)) {
+    LOG_ERROR("%s bad address: %s, aborting", __func__, address.ToString().c_str());
+    return;
+  }
+  pimpl_->CreateBond(hci::AddressWithType{address, hci::AddressType::PUBLIC_DEVICE_ADDRESS});
+}
+
+void Security::CreateBondLe(std::string string_address, uint8_t type) {
+  hci::AddressType address_type;
+  switch (type) {
+    case kLegacyAddressTypePublic:
+    default:
+      address_type = hci::AddressType::PUBLIC_DEVICE_ADDRESS;
+      break;
+    case kLegacyAddressTypeRandom:
+      address_type = hci::AddressType::RANDOM_DEVICE_ADDRESS;
+      break;
+    case kLegacyAddressTypePublicIdentity:
+      address_type = hci::AddressType::PUBLIC_IDENTITY_ADDRESS;
+      break;
+    case kLegacyAddressTypeRandomIdentity:
+      address_type = hci::AddressType::RANDOM_IDENTITY_ADDRESS;
+      break;
+  }
+
+  hci::Address address;
+  if (!hci::Address::FromString(string_address, address)) {
+    LOG_ERROR("%s bad address: %s, aborting", __func__, address.ToString().c_str());
+    return;
+  }
+  pimpl_->CreateBondLe(hci::AddressWithType{address, address_type});
+}
+
+void Security::CancelBond(std::string string_address) {
+  hci::Address address;
+  if (!hci::Address::FromString(string_address, address)) {
+    LOG_ERROR("%s bad address: %s, aborting", __func__, address.ToString().c_str());
+    return;
+  }
+  pimpl_->CancelBond(hci::AddressWithType{address, hci::AddressType::PUBLIC_DEVICE_ADDRESS});
+}
+
+void Security::RemoveBond(std::string string_address) {
+  hci::Address address;
+  if (!hci::Address::FromString(string_address, address)) {
+    LOG_ERROR("%s bad address: %s, aborting", __func__, address.ToString().c_str());
+    return;
+  }
+  pimpl_->RemoveBond(hci::AddressWithType{address, hci::AddressType::PUBLIC_DEVICE_ADDRESS});
+}
+
+void Security::SetSimplePairingCallback(SimplePairingCallback callback) {
+  pimpl_->SetSimplePairingCallback(callback);
 }
 
 /**
@@ -89,9 +208,11 @@ void Security::ListDependencies(ModuleList* list) {
 
 void Security::Start() {
   pimpl_ = std::make_unique<impl>(GetDependency<bluetooth::security::SecurityModule>(), GetHandler());
+  pimpl_->Start();
 }
 
 void Security::Stop() {
+  pimpl_->Stop();
   pimpl_.reset();
 }
 
