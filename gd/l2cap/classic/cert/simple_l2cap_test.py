@@ -485,7 +485,225 @@ class SimpleL2capTest(GdBaseTestClass):
                 lambda log : is_information_response(log) and \
                     log.information_response.signal_id == signal_id and \
                     log.information_response.type == expected_log_type and \
-                    log.information_response.information_value | expected_mask == expected_mask)
+                    log.information_response.information_value & expected_mask == expected_mask)
+
+    def test_extended_feature_info_response_fcs(self):
+        """
+        L2CAP/EXF/BV-03-C [Extended Features Information Response for FCS Option]
+        """
+        with EventCallbackStream(
+                self.cert_device.l2cap.FetchL2capLog(
+                    empty_pb2.Empty())) as l2cap_log_stream:
+            l2cap_event_asserts = EventAsserts(l2cap_log_stream)
+            l2cap_event_asserts_alt = EventAsserts(l2cap_log_stream)
+
+            self._register_callbacks(l2cap_log_stream)
+            self._setup_link(l2cap_event_asserts)
+            signal_id = 3
+            self.cert_device.l2cap.SendInformationRequest(
+                l2cap_cert_pb2.InformationRequest(
+                    type=l2cap_cert_pb2.InformationRequestType.
+                    EXTENDED_FEATURES,
+                    signal_id=signal_id))
+
+            l2cap_event_asserts_alt.assert_event_occurs_at_most(
+                is_information_response, 1)
+
+            expected_log_type = l2cap_cert_pb2.InformationRequestType.EXTENDED_FEATURES
+            expected_mask = 1 << 5
+            l2cap_event_asserts.assert_event_occurs(
+                lambda log : is_information_response(log) and \
+                    log.information_response.signal_id == signal_id and \
+                    log.information_response.type == expected_log_type and \
+                    log.information_response.information_value & expected_mask == expected_mask)
+
+    def test_config_channel_not_use_FCS(self):
+        """
+        L2CAP/FOC/BV-01-C [IUT Initiated Configuration of the FCS Option]
+        """
+        with EventCallbackStream(
+                self.cert_device.l2cap.FetchL2capLog(
+                    empty_pb2.Empty())) as l2cap_log_stream:
+            l2cap_event_asserts = EventAsserts(l2cap_log_stream)
+            self._register_callbacks(l2cap_log_stream)
+            self.retransmission_mode = l2cap_cert_pb2.ChannelRetransmissionFlowControlMode.ERTM
+            scid = 0x0101
+            self._setup_link(l2cap_event_asserts)
+            self._open_channel(
+                l2cap_event_asserts, scid=scid, mode=self.retransmission_mode)
+            self.device_under_test.l2cap.SendDynamicChannelPacket(
+                l2cap_facade_pb2.DynamicChannelPacket(psm=0x33, payload=b'abc'))
+
+            l2cap_event_asserts.assert_event_occurs(
+                    lambda log: log.HasField("data_packet") and \
+                        log.data_packet.channel == scid and \
+                        log.data_packet.payload == b'\x00\x00abc'
+                )
+
+    def test_explicitly_request_use_FCS(self):
+        """
+        L2CAP/FOC/BV-02-C [Lower Tester Explicitly Requests FCS should be Used]
+        """
+        with EventCallbackStream(
+                self.cert_device.l2cap.FetchL2capLog(
+                    empty_pb2.Empty())) as l2cap_log_stream:
+            l2cap_event_asserts = EventAsserts(l2cap_log_stream)
+            l2cap_event_asserts_alt = EventAsserts(l2cap_log_stream)
+            self._register_callbacks(l2cap_log_stream)
+            self.retransmission_mode = l2cap_cert_pb2.ChannelRetransmissionFlowControlMode.ERTM
+            scid = 0x0101
+            information_value = 1 << 3 | 1 << 5
+
+            def handle_information_request(log):
+                log = log.information_request
+                self.cert_device.l2cap.SendInformationResponse(
+                    l2cap_cert_pb2.InformationResponse(
+                        type=log.type,
+                        signal_id=log.signal_id,
+                        information_value=information_value))
+
+            l2cap_log_stream.unregister_callback(
+                self.handle_information_request,
+                matcher_fn=is_information_request)
+            l2cap_log_stream.register_callback(
+                handle_information_request, matcher_fn=is_information_request)
+
+            def handle_connection_response(log):
+                log = log.connection_response
+                self.scid_dcid_map[log.scid] = log.dcid
+
+            l2cap_log_stream.unregister_callback(
+                self.handle_connection_response,
+                matcher_fn=is_connection_response)
+            l2cap_log_stream.register_callback(
+                handle_connection_response, matcher_fn=is_connection_response)
+
+            def handle_configuration_request(log):
+                log = log.configuration_request
+                if log.dcid not in self.scid_dcid_map:
+                    return
+                dcid = self.scid_dcid_map[log.dcid]
+                self.cert_device.l2cap.SendConfigurationResponse(
+                    l2cap_cert_pb2.ConfigurationResponse(
+                        scid=dcid,
+                        signal_id=log.signal_id,
+                        retransmission_config=l2cap_cert_pb2.
+                        ChannelRetransmissionFlowControlConfig(
+                            mode=self.retransmission_mode)))
+                self.cert_device.l2cap.SendConfigurationRequest(
+                    l2cap_cert_pb2.ConfigurationRequest(
+                        dcid=dcid,
+                        signal_id=log.signal_id + 1,
+                        retransmission_config=l2cap_cert_pb2.
+                        ChannelRetransmissionFlowControlConfig(
+                            mode=self.retransmission_mode),
+                        fcs_config=l2cap_cert_pb2.FcsConfig.DEFAULT))
+
+            l2cap_log_stream.unregister_callback(
+                self.handle_configuration_request,
+                matcher_fn=is_configuration_request)
+            l2cap_log_stream.register_callback(
+                handle_configuration_request,
+                matcher_fn=is_configuration_request)
+
+            self._setup_link(l2cap_event_asserts)
+            self._open_channel(
+                l2cap_event_asserts, scid=scid, mode=self.retransmission_mode)
+            l2cap_event_asserts_alt.assert_event_occurs(
+                lambda log: is_configuration_request(log) and \
+                    log.configuration_request.fcs_config == l2cap_cert_pb2.FcsConfig.NO_FCS)
+            self.device_under_test.l2cap.SendDynamicChannelPacket(
+                l2cap_facade_pb2.DynamicChannelPacket(psm=0x33, payload=b'abc'))
+            l2cap_event_asserts.assert_event_occurs(
+                lambda log: log.HasField("data_packet") and \
+                    log.data_packet.channel == scid and \
+                    basic_frame_to_enhanced_information_frame(log.data_packet.payload) == b'abc\x0f\xb6'
+                )
+
+    def test_implicitly_request_use_FCS(self):
+        """
+        L2CAP/FOC/BV-03-C [Lower Tester Implicitly Requests FCS should be Used]
+        """
+        with EventCallbackStream(
+                self.cert_device.l2cap.FetchL2capLog(
+                    empty_pb2.Empty())) as l2cap_log_stream:
+            l2cap_event_asserts = EventAsserts(l2cap_log_stream)
+            l2cap_event_asserts_alt = EventAsserts(l2cap_log_stream)
+            self._register_callbacks(l2cap_log_stream)
+            self.retransmission_mode = l2cap_cert_pb2.ChannelRetransmissionFlowControlMode.ERTM
+            scid = 0x41
+            psm = 0x41
+            information_value = 1 << 3 | 1 << 5
+
+            def handle_information_request(log):
+                log = log.information_request
+                self.cert_device.l2cap.SendInformationResponse(
+                    l2cap_cert_pb2.InformationResponse(
+                        type=log.type,
+                        signal_id=log.signal_id,
+                        information_value=information_value))
+
+            l2cap_log_stream.unregister_callback(
+                self.handle_information_request,
+                matcher_fn=is_information_request)
+            l2cap_log_stream.register_callback(
+                handle_information_request, matcher_fn=is_information_request)
+
+            def handle_connection_response(log):
+                log = log.connection_response
+                self.scid_dcid_map[log.scid] = log.dcid
+
+            l2cap_log_stream.unregister_callback(
+                self.handle_connection_response,
+                matcher_fn=is_connection_response)
+            l2cap_log_stream.register_callback(
+                handle_connection_response, matcher_fn=is_connection_response)
+
+            def handle_configuration_request(log):
+                log = log.configuration_request
+                if log.dcid not in self.scid_dcid_map:
+                    return
+                dcid = self.scid_dcid_map[log.dcid]
+                self.cert_device.l2cap.SendConfigurationResponse(
+                    l2cap_cert_pb2.ConfigurationResponse(
+                        scid=dcid,
+                        signal_id=log.signal_id,
+                        retransmission_config=l2cap_cert_pb2.
+                        ChannelRetransmissionFlowControlConfig(
+                            mode=self.retransmission_mode)))
+                self.cert_device.l2cap.SendConfigurationRequest(
+                    l2cap_cert_pb2.ConfigurationRequest(
+                        dcid=dcid,
+                        signal_id=log.signal_id + 1,
+                        retransmission_config=l2cap_cert_pb2.
+                        ChannelRetransmissionFlowControlConfig(
+                            mode=self.retransmission_mode),
+                        fcs_config=l2cap_cert_pb2.FcsConfig.NON))
+
+            l2cap_log_stream.unregister_callback(
+                self.handle_configuration_request,
+                matcher_fn=is_configuration_request)
+            l2cap_log_stream.register_callback(
+                handle_configuration_request,
+                matcher_fn=is_configuration_request)
+
+            self._setup_link(l2cap_event_asserts)
+            self._open_channel(
+                l2cap_event_asserts,
+                scid=scid,
+                psm=psm,
+                mode=self.retransmission_mode)
+            l2cap_event_asserts_alt.assert_event_occurs(
+                lambda log: is_configuration_request(log) and \
+                    log.configuration_request.fcs_config == l2cap_cert_pb2.FcsConfig.NO_FCS)
+            self.cert_device.l2cap.SendSFrame(
+                l2cap_cert_pb2.SFrame(
+                    channel=self.scid_dcid_map[scid], p=1, withFcs=True))
+            l2cap_event_asserts.assert_event_occurs(
+                lambda log: log.HasField("data_packet") and \
+                    log.data_packet.channel == scid and \
+                    log.data_packet.payload == b'\x81\x00\x75\xe8'
+                )
 
     def test_transmit_i_frames(self):
         """

@@ -23,6 +23,7 @@ from facade import common_pb2
 from facade import rootservice_pb2 as facade_rootservice_pb2
 from l2cap.classic import facade_pb2 as l2cap_facade_pb2
 from google.protobuf import empty_pb2
+from neighbor.facade import facade_pb2 as neighbor_facade
 
 
 class PTSL2capTest(PTSBaseTestClass):
@@ -46,6 +47,9 @@ class PTSL2capTest(PTSBaseTestClass):
             address=self.device_under_test.address)
         self.pts_address = common_pb2.BluetoothAddress(
             address=str.encode(pts_address))
+
+        self.device_under_test.neighbor.EnablePageScan(
+            neighbor_facade.EnableMsg(enabled=True))
 
     def teardown_test(self):
         self.device_under_test.rootservice.StopStack(
@@ -71,6 +75,22 @@ class PTSL2capTest(PTSBaseTestClass):
         due_connection_close_asserts.assert_event_occurs(
             lambda device: device.remote.address == self.pts_address.address,
             timeout=timedelta(seconds=timeout))
+
+    def test_L2CAP_EXF_BV_03_C(self):
+        """
+        L2CAP/EXF/BV-03-C [Extended Features Information Response for FCS Option]
+        Verify the IUT can format an Information Response for the information type of Extended Features that
+        correctly identifies that the FCS Option is locally supported.
+        """
+        with self._dut_connection_close_stream() as dut_connection_close_stream:
+            due_connection_close_asserts = EventAsserts(
+                dut_connection_close_stream)
+        psm = 1
+        retransmission_mode = l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM
+        self.device_under_test.l2cap.SetDynamicChannel(
+            l2cap_facade_pb2.SetEnableDynamicChannelRequest(
+                psm=psm, retransmission_mode=retransmission_mode))
+        time.sleep(5)
 
     def test_L2CAP_COS_CED_BV_01_C(self):
         """

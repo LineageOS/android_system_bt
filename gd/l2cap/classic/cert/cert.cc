@@ -100,7 +100,12 @@ class L2capClassicModuleCertService : public L2capClassicModuleCert::Service {
     auto f = static_cast<Final>(request->f());
     auto p = static_cast<Poll>(request->p());
     auto s = static_cast<SupervisoryFunction>(request->s());
-    auto builder = EnhancedSupervisoryFrameBuilder::Create(request->channel(), s, p, f, request->req_seq());
+    std::unique_ptr<packet::BasePacketBuilder> builder;
+    if (request->with_fcs()) {
+      builder = EnhancedSupervisoryFrameWithFcsBuilder::Create(request->channel(), s, p, f, request->req_seq());
+    } else {
+      builder = EnhancedSupervisoryFrameBuilder::Create(request->channel(), s, p, f, request->req_seq());
+    }
     outgoing_packet_queue_.push(std::move(builder));
     send_packet_from_queue();
     return ::grpc::Status::OK;
@@ -140,9 +145,11 @@ class L2capClassicModuleCertService : public L2capClassicModuleCert::Service {
       option->monitor_time_out_ = 12000;
       option->maximum_pdu_size_ = 1010;
       config.push_back(std::move(option));
-      auto no_fcs = std::make_unique<FrameCheckSequenceOption>();
-      no_fcs->fcs_type_ = FcsType::NO_FCS;
-      config.push_back(std::move(no_fcs));
+      auto fcs = std::make_unique<FrameCheckSequenceOption>();
+      if (request->fcs_config() != FcsConfig::NON) {
+        fcs->fcs_type_ = request->fcs_config() ? FcsType::DEFAULT : FcsType::NO_FCS;
+        config.push_back(std::move(fcs));
+      }
     }
     auto builder = ConfigurationRequestBuilder::Create(request->signal_id(), request->dcid(), Continuation::END,
                                                        std::move(config));
@@ -242,7 +249,8 @@ class L2capClassicModuleCertService : public L2capClassicModuleCert::Service {
       }
       case InformationRequestType::EXTENDED_FEATURES: {
         auto builder = InformationResponseExtendedFeaturesBuilder::Create(
-            request->signal_id(), InformationRequestResult::SUCCESS, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0);
+            request->signal_id(), InformationRequestResult::SUCCESS, 0, 0, 0, 1, 0,
+            request->information_value() & (1 << 5) ? 1 : 0, 0, 0, 0, 0);
         auto l2cap_builder = BasicFrameBuilder::Create(kClassicSignallingCid, std::move(builder));
         outgoing_packet_queue_.push(std::move(l2cap_builder));
         send_packet_from_queue();
@@ -349,6 +357,7 @@ class L2capClassicModuleCertService : public L2capClassicModuleCert::Service {
         response.mutable_configuration_request()->set_signal_id(control_view.GetIdentifier());
         response.mutable_configuration_request()->set_dcid(view.GetDestinationCid());
 
+        bool fcs_set = false;
         for (auto& option : view.GetConfig()) {
           if (option->type_ == ConfigurationOptionType::RETRANSMISSION_AND_FLOW_CONTROL) {
             auto config = RetransmissionAndFlowControlConfigurationOption::Specialize(option.get());
@@ -365,6 +374,22 @@ class L2capClassicModuleCertService : public L2capClassicModuleCert::Service {
             response.mutable_configuration_request()->mutable_retransmission_config()->set_mps(
                 config->maximum_pdu_size_);
           }
+          if (option->type_ == ConfigurationOptionType::FRAME_CHECK_SEQUENCE) {
+            auto fcs_type = FrameCheckSequenceOption::Specialize(option.get())->fcs_type_;
+            LOG_INFO("fce_type=%hhu", fcs_type);
+            switch (fcs_type) {
+              case FcsType::NO_FCS:
+                response.mutable_configuration_request()->set_fcs_config(FcsConfig::NO_FCS);
+                break;
+              case FcsType::DEFAULT:
+                response.mutable_configuration_request()->set_fcs_config(FcsConfig::DEFAULT);
+                break;
+            }
+            fcs_set = true;
+          }
+        }
+        if (!fcs_set) {
+          response.mutable_configuration_request()->set_fcs_config(FcsConfig::NON);
         }
         LogEvent(response);
         break;

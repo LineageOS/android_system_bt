@@ -14,6 +14,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from datetime import timedelta
 import os
 import sys
 import logging
@@ -138,6 +139,8 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
             )
 
     def test_le_ad_scan_cert_advertises(self):
+        self.register_for_le_event(
+            hci_packets.SubeventCode.EXTENDED_ADVERTISING_REPORT)
         self.register_for_le_event(hci_packets.SubeventCode.ADVERTISING_REPORT)
         with EventCallbackStream(
                 self.device_under_test.hci.FetchLeSubevents(
@@ -149,97 +152,175 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
             self.enqueue_hci_command(
                 hci_packets.LeSetRandomAddressBuilder('0D:05:04:03:02:01'),
                 True)
+            phy_scan_params = hci_packets.PhyScanParameters()
+            phy_scan_params.le_scan_interval = 6553
+            phy_scan_params.le_scan_window = 6553
+            phy_scan_params.le_scan_type = hci_packets.LeScanType.ACTIVE
+
             self.enqueue_hci_command(
-                hci_packets.LeSetScanParametersBuilder(
-                    hci_packets.LeScanType.ACTIVE, 40, 20,
+                hci_packets.LeSetExtendedScanParametersBuilder(
                     hci_packets.AddressType.RANDOM_DEVICE_ADDRESS,
-                    hci_packets.LeSetScanningFilterPolicy.ACCEPT_ALL), True)
+                    hci_packets.LeSetScanningFilterPolicy.ACCEPT_ALL, 1,
+                    [phy_scan_params]), True)
             self.enqueue_hci_command(
-                hci_packets.LeSetScanEnableBuilder(
+                hci_packets.LeSetExtendedScanEnableBuilder(
                     hci_packets.Enable.ENABLED,
-                    hci_packets.Enable.DISABLED),  # duplicate filtering
-                True)
+                    hci_packets.FilterDuplicates.DISABLED, 0, 0), True)
 
             # CERT Advertises
+            advertising_handle = 0
             self.send_hal_hci_command(
-                hci_packets.LeSetRandomAddressBuilder('0C:05:04:03:02:01'))
-            self.send_hal_hci_command(
-                hci_packets.LeSetAdvertisingParametersBuilder(
-                    512, 768, hci_packets.AdvertisingEventType.ADV_IND,
-                    hci_packets.AddressType.RANDOM_DEVICE_ADDRESS, hci_packets.
-                    PeerAddressType.PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
-                    'A6:A5:A4:A3:A2:A1', 7,
-                    hci_packets.AdvertisingFilterPolicy.ALL_DEVICES))
+                hci_packets.LeSetExtendedAdvertisingLegacyParametersBuilder(
+                    advertising_handle,
+                    hci_packets.LegacyAdvertisingProperties.ADV_IND,
+                    512,
+                    768,
+                    7,
+                    hci_packets.OwnAddressType.RANDOM_DEVICE_ADDRESS,
+                    hci_packets.PeerAddressType.
+                    PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
+                    'A6:A5:A4:A3:A2:A1',
+                    hci_packets.AdvertisingFilterPolicy.ALL_DEVICES,
+                    0xF7,
+                    1,  # SID
+                    hci_packets.Enable.DISABLED  # Scan request notification
+                ))
 
+            self.send_hal_hci_command(
+                hci_packets.LeSetExtendedAdvertisingRandomAddressBuilder(
+                    advertising_handle, '0C:05:04:03:02:01'))
             gap_name = hci_packets.GapData()
             gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
             gap_name.data = list(bytes(b'Im_A_Cert!'))  # TODO: Fix and remove !
-            gap_data = list([gap_name])
 
             self.send_hal_hci_command(
-                hci_packets.LeSetAdvertisingDataBuilder(gap_data))
+                hci_packets.LeSetExtendedAdvertisingDataBuilder(
+                    advertising_handle,
+                    hci_packets.Operation.COMPLETE_ADVERTISMENT,
+                    hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT,
+                    [gap_name]))
+
+            gap_short_name = hci_packets.GapData()
+            gap_short_name.data_type = hci_packets.GapDataType.SHORTENED_LOCAL_NAME
+            gap_short_name.data = list(bytes(b'Im_A_C'))
+
             self.send_hal_hci_command(
-                hci_packets.LeSetAdvertisingEnableBuilder(
-                    hci_packets.Enable.ENABLED))
+                hci_packets.LeSetExtendedAdvertisingScanResponseBuilder(
+                    advertising_handle,
+                    hci_packets.Operation.COMPLETE_ADVERTISMENT,
+                    hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT,
+                    [gap_short_name]))
+
+            enabled_set = hci_packets.EnabledSet()
+            enabled_set.advertising_handle = 0
+            enabled_set.duration = 0
+            enabled_set.max_extended_advertising_events = 0
+            self.send_hal_hci_command(
+                hci_packets.LeSetExtendedAdvertisingEnableBuilder(
+                    hci_packets.Enable.ENABLED, [enabled_set]))
 
             hci_event_asserts.assert_event_occurs(
                 lambda packet: b'Im_A_Cert' in packet.event)
 
             self.send_hal_hci_command(
-                hci_packets.LeSetAdvertisingEnableBuilder(
-                    hci_packets.Enable.DISABLED))
+                hci_packets.LeSetExtendedAdvertisingEnableBuilder(
+                    hci_packets.Enable.DISABLED, [enabled_set]))
             self.enqueue_hci_command(
-                hci_packets.LeSetScanEnableBuilder(hci_packets.Enable.DISABLED,
-                                                   hci_packets.Enable.DISABLED),
-                True)
+                hci_packets.LeSetExtendedScanEnableBuilder(
+                    hci_packets.Enable.DISABLED,
+                    hci_packets.FilterDuplicates.DISABLED, 0, 0), True)
 
     def test_le_connection_dut_advertises(self):
         self.register_for_le_event(hci_packets.SubeventCode.CONNECTION_COMPLETE)
         with EventCallbackStream(self.device_under_test.hci.FetchLeSubevents(empty_proto.Empty())) as le_event_stream, \
+            EventCallbackStream(self.device_under_test.hci.FetchEvents(empty_proto.Empty())) as event_stream, \
             EventCallbackStream(self.device_under_test.hci.FetchAclPackets(empty_proto.Empty())) as acl_data_stream, \
             EventCallbackStream(self.cert_device.hal.FetchHciEvent(empty_proto.Empty())) as cert_hci_event_stream, \
             EventCallbackStream(self.cert_device.hal.FetchHciAcl(empty_proto.Empty())) as cert_acl_data_stream:
 
             le_event_asserts = EventAsserts(le_event_stream)
+            event_asserts = EventAsserts(event_stream)
             cert_hci_event_asserts = EventAsserts(cert_hci_event_stream)
             acl_data_asserts = EventAsserts(acl_data_stream)
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
 
+            # Cert Connects
             self.send_hal_hci_command(
                 hci_packets.LeSetRandomAddressBuilder('0C:05:04:03:02:01'))
-
+            phy_scan_params = hci_packets.LeCreateConnPhyScanParameters()
+            phy_scan_params.scan_interval = 0x60
+            phy_scan_params.scan_window = 0x30
+            phy_scan_params.conn_interval_min = 0x18
+            phy_scan_params.conn_interval_max = 0x28
+            phy_scan_params.conn_latency = 0
+            phy_scan_params.supervision_timeout = 0x1f4
+            phy_scan_params.min_ce_length = 0
+            phy_scan_params.max_ce_length = 0
             self.send_hal_hci_command(
-                hci_packets.LeCreateConnectionBuilder(
-                    0x111, 0x222,
+                hci_packets.LeExtendedCreateConnectionBuilder(
                     hci_packets.InitiatorFilterPolicy.USE_PEER_ADDRESS,
+                    hci_packets.OwnAddressType.RANDOM_DEVICE_ADDRESS,
                     hci_packets.AddressType.RANDOM_DEVICE_ADDRESS,
-                    '0D:05:04:03:02:01',
-                    hci_packets.OwnAddressType.RANDOM_DEVICE_ADDRESS, 0x06,
-                    0xC70, 0x40, 0x703, 0x01, 0x02))
+                    '0D:05:04:03:02:01', 1, [phy_scan_params]))
 
             # DUT Advertises
+            advertising_handle = 0
             self.enqueue_hci_command(
-                hci_packets.LeSetRandomAddressBuilder('0D:05:04:03:02:01'),
+                hci_packets.LeSetExtendedAdvertisingLegacyParametersBuilder(
+                    advertising_handle,
+                    hci_packets.LegacyAdvertisingProperties.ADV_IND,
+                    400,
+                    450,
+                    7,
+                    hci_packets.OwnAddressType.RANDOM_DEVICE_ADDRESS,
+                    hci_packets.PeerAddressType.
+                    PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
+                    '00:00:00:00:00:00',
+                    hci_packets.AdvertisingFilterPolicy.ALL_DEVICES,
+                    0xF8,
+                    1,  #SID
+                    hci_packets.Enable.DISABLED  # Scan request notification
+                ),
                 True)
+
             self.enqueue_hci_command(
-                hci_packets.LeSetAdvertisingParametersBuilder(
-                    512, 768, hci_packets.AdvertisingEventType.ADV_IND,
-                    hci_packets.AddressType.RANDOM_DEVICE_ADDRESS, hci_packets.
-                    PeerAddressType.PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
-                    'A6:A5:A4:A3:A2:A1', 7,
-                    hci_packets.AdvertisingFilterPolicy.ALL_DEVICES), True)
+                hci_packets.LeSetExtendedAdvertisingRandomAddressBuilder(
+                    advertising_handle, '0D:05:04:03:02:01'), True)
 
             gap_name = hci_packets.GapData()
             gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
             gap_name.data = list(
                 bytes(b'Im_The_DUT!'))  # TODO: Fix and remove !
-            gap_data = list([gap_name])
 
             self.enqueue_hci_command(
-                hci_packets.LeSetAdvertisingDataBuilder(gap_data), True)
+                hci_packets.LeSetExtendedAdvertisingDataBuilder(
+                    advertising_handle,
+                    hci_packets.Operation.COMPLETE_ADVERTISMENT,
+                    hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT,
+                    [gap_name]), True)
+
+            gap_short_name = hci_packets.GapData()
+            gap_short_name.data_type = hci_packets.GapDataType.SHORTENED_LOCAL_NAME
+            gap_short_name.data = list(bytes(b'Im_The_D'))
+
             self.enqueue_hci_command(
-                hci_packets.LeSetAdvertisingEnableBuilder(
-                    hci_packets.Enable.ENABLED), True)
+                hci_packets.LeSetExtendedAdvertisingScanResponseBuilder(
+                    advertising_handle,
+                    hci_packets.Operation.COMPLETE_ADVERTISMENT,
+                    hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT,
+                    [gap_short_name]), True)
+
+            enabled_set = hci_packets.EnabledSet()
+            enabled_set.advertising_handle = advertising_handle
+            enabled_set.duration = 0
+            enabled_set.max_extended_advertising_events = 0
+            self.enqueue_hci_command(
+                hci_packets.LeSetExtendedAdvertisingEnableBuilder(
+                    hci_packets.Enable.ENABLED, [enabled_set]), True)
+
+            # Check for success of Enable
+            event_asserts.assert_event_occurs(
+                lambda packet: b'\x0e\x04\x01\x39\x20\x00' in packet.event)
 
             conn_handle = 0xfff
 
@@ -286,12 +367,12 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
                 dut_handle, hci_packets.PacketBoundaryFlag.
                 FIRST_NON_AUTOMATICALLY_FLUSHABLE,
                 hci_packets.BroadcastFlag.POINT_TO_POINT,
-                bytes(b'This is just SomeAclData'))
+                bytes(b'Just SomeAclData'))
             self.send_hal_acl_data(
                 cert_handle, hci_packets.PacketBoundaryFlag.
                 FIRST_NON_AUTOMATICALLY_FLUSHABLE,
                 hci_packets.BroadcastFlag.POINT_TO_POINT,
-                bytes(b'This is just SomeMoreAclData'))
+                bytes(b'Just SomeMoreAclData'))
 
             cert_acl_data_asserts.assert_event_occurs(
                 lambda packet: logging.debug(packet.payload) or b'SomeAclData' in packet.payload
@@ -307,6 +388,7 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
             le_event_asserts = EventAsserts(le_event_stream)
             cert_hci_event_asserts = EventAsserts(cert_hci_event_stream)
 
+            # DUT Connects
             self.enqueue_hci_command(
                 hci_packets.LeSetRandomAddressBuilder('0D:05:04:03:02:01'),
                 True)
@@ -314,36 +396,62 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
                 hci_packets.LeAddDeviceToWhiteListBuilder(
                     hci_packets.WhiteListAddressType.RANDOM,
                     '0C:05:04:03:02:01'), True)
+            phy_scan_params = hci_packets.LeCreateConnPhyScanParameters()
+            phy_scan_params.scan_interval = 0x60
+            phy_scan_params.scan_window = 0x30
+            phy_scan_params.conn_interval_min = 0x18
+            phy_scan_params.conn_interval_max = 0x28
+            phy_scan_params.conn_latency = 0
+            phy_scan_params.supervision_timeout = 0x1f4
+            phy_scan_params.min_ce_length = 0
+            phy_scan_params.max_ce_length = 0
             self.enqueue_hci_command(
-                hci_packets.LeCreateConnectionBuilder(
-                    0x111, 0x222,
+                hci_packets.LeExtendedCreateConnectionBuilder(
                     hci_packets.InitiatorFilterPolicy.USE_WHITE_LIST,
+                    hci_packets.OwnAddressType.RANDOM_DEVICE_ADDRESS,
                     hci_packets.AddressType.RANDOM_DEVICE_ADDRESS,
-                    'BA:D5:A4:A3:A2:A1',
-                    hci_packets.OwnAddressType.RANDOM_DEVICE_ADDRESS, 0x06,
-                    0xC70, 0x40, 0x703, 0x01, 0x02), False)
+                    'BA:D5:A4:A3:A2:A1', 1, [phy_scan_params]), False)
 
             # CERT Advertises
+            advertising_handle = 1
             self.send_hal_hci_command(
-                hci_packets.LeSetRandomAddressBuilder('0C:05:04:03:02:01'))
+                hci_packets.LeSetExtendedAdvertisingLegacyParametersBuilder(
+                    advertising_handle,
+                    hci_packets.LegacyAdvertisingProperties.ADV_IND,
+                    512,
+                    768,
+                    7,
+                    hci_packets.OwnAddressType.RANDOM_DEVICE_ADDRESS,
+                    hci_packets.PeerAddressType.
+                    PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
+                    'A6:A5:A4:A3:A2:A1',
+                    hci_packets.AdvertisingFilterPolicy.ALL_DEVICES,
+                    0x7F,
+                    0,  # SID
+                    hci_packets.Enable.DISABLED  # Scan request notification
+                ))
+
             self.send_hal_hci_command(
-                hci_packets.LeSetAdvertisingParametersBuilder(
-                    512, 768, hci_packets.AdvertisingEventType.ADV_IND,
-                    hci_packets.AddressType.RANDOM_DEVICE_ADDRESS, hci_packets.
-                    PeerAddressType.PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
-                    'A6:A5:A4:A3:A2:A1', 7,
-                    hci_packets.AdvertisingFilterPolicy.ALL_DEVICES))
+                hci_packets.LeSetExtendedAdvertisingRandomAddressBuilder(
+                    advertising_handle, '0C:05:04:03:02:01'))
 
             gap_name = hci_packets.GapData()
             gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
             gap_name.data = list(bytes(b'Im_A_Cert!'))  # TODO: Fix and remove !
-            gap_data = list([gap_name])
 
             self.send_hal_hci_command(
-                hci_packets.LeSetAdvertisingDataBuilder(gap_data))
+                hci_packets.LeSetExtendedAdvertisingDataBuilder(
+                    advertising_handle,
+                    hci_packets.Operation.COMPLETE_ADVERTISMENT,
+                    hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT,
+                    [gap_name]))
+            enabled_set = hci_packets.EnabledSet()
+            enabled_set.advertising_handle = 1
+            enabled_set.duration = 0
+            enabled_set.max_extended_advertising_events = 0
             self.send_hal_hci_command(
-                hci_packets.LeSetAdvertisingEnableBuilder(
-                    hci_packets.Enable.ENABLED))
+                hci_packets.LeSetExtendedAdvertisingEnableBuilder(
+                    hci_packets.Enable.ENABLED, [enabled_set]))
 
             # LeConnectionComplete
             cert_hci_event_asserts.assert_event_occurs(
@@ -411,7 +519,8 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
                 return False
 
             # Cert Accepts
-            cert_hci_event_asserts.assert_event_occurs(get_connect_request)
+            cert_hci_event_asserts.assert_event_occurs(
+                get_connect_request, timeout=timedelta(seconds=20))
             self.send_hal_hci_command(
                 hci_packets.AcceptConnectionRequestBuilder(
                     connection_request.GetBdAddr(),
@@ -455,12 +564,12 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
                 dut_handle, hci_packets.PacketBoundaryFlag.
                 FIRST_NON_AUTOMATICALLY_FLUSHABLE,
                 hci_packets.BroadcastFlag.POINT_TO_POINT,
-                bytes(b'This is just SomeAclData'))
+                bytes(b'Just SomeAclData'))
             self.send_hal_acl_data(
                 cert_handle, hci_packets.PacketBoundaryFlag.
                 FIRST_NON_AUTOMATICALLY_FLUSHABLE,
                 hci_packets.BroadcastFlag.POINT_TO_POINT,
-                bytes(b'This is just SomeMoreAclData'))
+                bytes(b'Just SomeMoreAclData'))
 
             cert_acl_data_asserts.assert_event_occurs(
                 lambda packet: b'SomeAclData' in packet.payload)
@@ -525,7 +634,8 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
                     return True
                 return False
 
-            hci_event_asserts.assert_event_occurs(get_connect_request)
+            hci_event_asserts.assert_event_occurs(
+                get_connect_request, timeout=timedelta(seconds=20))
             self.enqueue_hci_command(
                 hci_packets.AcceptConnectionRequestBuilder(
                     connection_request.GetBdAddr(),
