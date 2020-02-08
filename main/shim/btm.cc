@@ -605,7 +605,53 @@ tBTM_STATUS bluetooth::shim::Btm::CreateBond(const RawAddress& bd_addr,
                                              tBT_TRANSPORT transport,
                                              uint8_t pin_len, uint8_t* p_pin,
                                              uint32_t trusted_mask[]) {
-  bluetooth::shim::GetSecurity()->CreateBond(bd_addr.ToString(), addr_type,
-                                             transport);
+  switch (transport) {
+    case BT_TRANSPORT_BR_EDR:
+      bluetooth::shim::GetSecurity()->CreateBond(bd_addr.ToString());
+      break;
+    case BT_TRANSPORT_LE:
+      bluetooth::shim::GetSecurity()->CreateBondLe(bd_addr.ToString(),
+                                                   addr_type);
+      break;
+    default:
+      return bluetooth::shim::BTM_ILLEGAL_VALUE;
+  }
   return bluetooth::shim::BTM_SUCCESS;
+}
+
+bool bluetooth::shim::Btm::CancelBond(const RawAddress& bd_addr) {
+  bluetooth::shim::GetSecurity()->CancelBond(bd_addr.ToString());
+  return true;
+}
+
+bool bluetooth::shim::Btm::RemoveBond(const RawAddress& bd_addr) {
+  // TODO(cmanton) Check if acl is connected
+  bluetooth::shim::GetSecurity()->RemoveBond(bd_addr.ToString());
+  return true;
+}
+
+void bluetooth::shim::Btm::SetSimplePairingCallback(
+    tBTM_SP_CALLBACK* callback) {
+  simple_pairing_callback_ = callback;
+
+  bluetooth::shim::GetSecurity()->SetSimplePairingCallback(
+      [this](std::string address_string, uint32_t value, bool just_works) {
+        RawAddress address;
+        RawAddress::FromString(address_string, address);
+
+        tBTM_SP_EVT event = BTM_SP_CFM_REQ_EVT;
+        tBTM_SP_EVT_DATA data;
+
+        data.cfm_req.bd_addr = address;
+        data.cfm_req.num_val = value;
+        data.cfm_req.just_works = just_works;
+        switch (simple_pairing_callback_(event, &data)) {
+          case BTM_SUCCESS:
+          case BTM_SUCCESS_NO_SECURITY:
+            return true;
+          default:
+            break;
+        }
+        return false;
+      });
 }
