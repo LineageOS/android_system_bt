@@ -16,15 +16,12 @@
 
 #include "hal/facade.h"
 
-#include <condition_variable>
 #include <memory>
 #include <mutex>
 
 #include "grpc/grpc_event_queue.h"
 #include "hal/facade.grpc.pb.h"
 #include "hal/hci_hal.h"
-#include "hal/serialize_packet.h"
-#include "hci/hci_packets.h"
 
 using ::grpc::ServerAsyncResponseWriter;
 using ::grpc::ServerAsyncWriter;
@@ -41,45 +38,6 @@ class HciHalFacadeService : public HciHalFacade::Service, public ::bluetooth::ha
 
   ~HciHalFacadeService() override {
     hal_->unregisterIncomingPacketCallback();
-  }
-
-  ::grpc::Status SendHciResetCommand(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
-                                     ::google::protobuf::Empty* response) override {
-    std::unique_lock<std::mutex> lock(mutex_);
-    can_send_hci_command_ = false;
-    hal_->sendHciCommand(SerializePacket(hci::ResetBuilder::Create()));
-    while (!can_send_hci_command_) {
-      cv_.wait(lock);
-    }
-    return ::grpc::Status::OK;
-  }
-
-  ::grpc::Status SetLoopbackMode(::grpc::ServerContext* context, const ::bluetooth::hal::LoopbackModeSettings* request,
-                                 ::google::protobuf::Empty* response) override {
-    std::unique_lock<std::mutex> lock(mutex_);
-    can_send_hci_command_ = false;
-    bool enable = request->enable();
-    hal_->sendHciCommand(SerializePacket(hci::WriteLoopbackModeBuilder::Create(
-        enable ? hci::LoopbackMode::ENABLE_LOCAL : hci::LoopbackMode::NO_LOOPBACK)));
-    while (!can_send_hci_command_) {
-      cv_.wait(lock);
-    }
-    return ::grpc::Status::OK;
-  }
-
-  ::grpc::Status SetInquiry(::grpc::ServerContext* context, const ::bluetooth::hal::InquirySettings* request,
-                            ::google::protobuf::Empty* response) override {
-    std::unique_lock<std::mutex> lock(mutex_);
-    can_send_hci_command_ = false;
-    hci::Lap lap;
-    lap.lap_ = 0x33;
-
-    hal_->sendHciCommand(SerializePacket(hci::InquiryBuilder::Create(lap, static_cast<uint8_t>(request->length()),
-                                                                     static_cast<uint8_t>(request->num_responses()))));
-    while (!can_send_hci_command_) {
-      cv_.wait(lock);
-    }
-    return ::grpc::Status::OK;
   }
 
   ::grpc::Status SendHciCommand(::grpc::ServerContext* context, const ::bluetooth::hal::HciCommandPacket* request,
