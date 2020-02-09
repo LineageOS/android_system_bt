@@ -472,6 +472,7 @@ struct L2cap::impl {
   void PendingConnectionFail(PendingConnectionId id, std::unique_ptr<PendingConnection> connection,
                              l2cap::classic::DynamicChannelManager::ConnectionResult result);
   void ServiceUnregistered(l2cap::Psm psm, std::unique_ptr<ServiceInterface> service);
+  const l2cap::SecurityPolicy GetSecurityPolicy(l2cap::Psm psm) const;
 };
 
 const ModuleFactory L2cap::Factory = ModuleFactory([]() { return new L2cap(); });
@@ -510,12 +511,21 @@ void L2cap::impl::ServiceUnregistered(l2cap::Psm psm, std::unique_ptr<ServiceInt
   service->NotifyUnregistered();
 }
 
+const l2cap::SecurityPolicy L2cap::impl::GetSecurityPolicy(l2cap::Psm psm) const {
+  l2cap::SecurityPolicy security_policy;
+  if (psm == 1) {
+    security_policy.security_level_ = l2cap::SecurityPolicy::Level::LEVEL_0;
+  } else {
+    security_policy.security_level_ = l2cap::SecurityPolicy::Level::LEVEL_3;
+  }
+  return security_policy;
+}
+
 void L2cap::impl::RegisterService(l2cap::Psm psm, l2cap::classic::DynamicChannelConfigurationOption option,
                                   ConnectionCompleteCallback on_complete, RegisterServicePromise register_promise) {
   ASSERT(psm_to_service_interface_map_.find(psm) == psm_to_service_interface_map_.end());
 
-  // TODO(cmanton) Understand how security policy affects service
-  const l2cap::SecurityPolicy security_policy;
+  const l2cap::SecurityPolicy security_policy = GetSecurityPolicy(psm);
 
   psm_to_service_interface_map_.emplace(
       psm,

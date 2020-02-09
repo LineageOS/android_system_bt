@@ -26,6 +26,10 @@ class SecurityPolicy {
     LEVEL_3,  // Encryption required and authenticated link key required.
   };
   Level security_level_ = Level::LEVEL_0;
+
+  bool RequiresAuthentication() const {
+    return security_level_ != SecurityPolicy::Level::LEVEL_0;
+  }
 };
 
 }  // namespace l2cap
