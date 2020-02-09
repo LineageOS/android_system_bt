@@ -71,7 +71,7 @@ struct AclManager::acl_connection {
   ErrorCode disconnect_reason_;
   os::Handler* command_complete_handler_ = nullptr;
   os::Handler* disconnect_handler_ = nullptr;
-  ConnectionManagementCallbacks* command_complete_callbacks_;
+  ConnectionManagementCallbacks* command_complete_callbacks_ = nullptr;
   common::OnceCallback<void(ErrorCode)> on_disconnect_callback_;
   // For LE Connection parameter update from L2CAP
   common::OnceCallback<void(ErrorCode)> on_connection_update_complete_callback_;
@@ -206,6 +206,9 @@ struct AclManager::impl {
                                      Bind(&impl::on_read_remote_extended_features_complete, common::Unretained(this)),
                                      handler_);
     hci_layer_->RegisterEventHandler(EventCode::READ_REMOTE_VERSION_INFORMATION_COMPLETE,
+                                     Bind(&impl::on_read_remote_version_information_complete, common::Unretained(this)),
+                                     handler_);
+    hci_layer_->RegisterEventHandler(EventCode::ENCRYPTION_CHANGE,
                                      Bind(&impl::on_read_remote_version_information_complete, common::Unretained(this)),
                                      handler_);
     hci_mtu_ = controller_->GetControllerAclPacketLength();
@@ -1502,8 +1505,15 @@ struct AclManager::impl {
 
   void RegisterCallbacks(uint16_t handle, ConnectionManagementCallbacks* callbacks, os::Handler* handler) {
     auto& connection = check_and_get_connection(handle);
+    ASSERT(connection.command_complete_callbacks_ == nullptr);
     connection.command_complete_callbacks_ = callbacks;
     connection.command_complete_handler_ = handler;
+  }
+
+  void UnregisterCallbacks(uint16_t handle, ConnectionManagementCallbacks* callbacks) {
+    auto& connection = check_and_get_connection(handle);
+    ASSERT(connection.command_complete_callbacks_ == callbacks);
+    connection.command_complete_callbacks_ = nullptr;
   }
 
   void RegisterDisconnectCallback(uint16_t handle, common::OnceCallback<void(ErrorCode)> on_disconnect,
@@ -1897,6 +1907,10 @@ AclConnection::QueueUpEnd* AclConnection::GetAclQueueEnd() const {
 
 void AclConnection::RegisterCallbacks(ConnectionManagementCallbacks* callbacks, os::Handler* handler) {
   return manager_->pimpl_->RegisterCallbacks(handle_, callbacks, handler);
+}
+
+void AclConnection::UnregisterCallbacks(ConnectionManagementCallbacks* callbacks) {
+  return manager_->pimpl_->UnregisterCallbacks(handle_, callbacks);
 }
 
 void AclConnection::RegisterDisconnectCallback(common::OnceCallback<void(ErrorCode)> on_disconnect,
