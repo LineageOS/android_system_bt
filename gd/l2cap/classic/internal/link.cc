@@ -44,6 +44,11 @@ Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_c
   ASSERT(parameter_provider_ != nullptr);
   link_idle_disconnect_alarm_.Schedule(common::BindOnce(&Link::Disconnect, common::Unretained(this)),
                                        parameter_provider_->GetClassicLinkIdleDisconnectTimeout());
+  acl_connection_->RegisterCallbacks(this, l2cap_handler_);
+}
+
+Link::~Link() {
+  acl_connection_->UnregisterCallbacks(this);
 }
 
 void Link::OnAclDisconnected(hci::ErrorCode status) {
@@ -71,6 +76,10 @@ void Link::Encrypt() {
 
 void Link::Authenticate() {
   acl_connection_->AuthenticationRequested();
+}
+
+bool Link::IsAuthenticated() const {
+  return encryption_enabled_ != hci::EncryptionEnabled::OFF;
 }
 
 void Link::ReadRemoteVersionInformation() {

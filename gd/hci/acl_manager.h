@@ -111,6 +111,7 @@ class AclConnection {
   using QueueDownEnd = common::BidiQueueEnd<PacketView<kLittleEndian>, BasePacketBuilder>;
   virtual QueueUpEnd* GetAclQueueEnd() const;
   virtual void RegisterCallbacks(ConnectionManagementCallbacks* callbacks, os::Handler* handler);
+  virtual void UnregisterCallbacks(ConnectionManagementCallbacks* callbacks);
   virtual void RegisterDisconnectCallback(common::OnceCallback<void(ErrorCode)> on_disconnect, os::Handler* handler);
   virtual bool Disconnect(DisconnectReason reason);
   virtual bool ChangeConnectionPacketType(uint16_t packet_type);
