@@ -39,14 +39,13 @@ namespace l2cap {
 namespace classic {
 namespace internal {
 
-class Link : public l2cap::internal::ILink {
+class Link : public l2cap::internal::ILink, public hci::ConnectionManagementCallbacks {
  public:
   Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_connection,
        l2cap::internal::ParameterProvider* parameter_provider,
        DynamicChannelServiceManagerImpl* dynamic_service_manager,
        FixedChannelServiceManagerImpl* fixed_service_manager);
-
-  ~Link() override = default;
+  ~Link();
 
   hci::AddressWithType GetDevice() override {
     return {acl_connection_->GetAddress(), acl_connection_->GetAddressType()};
@@ -68,6 +67,8 @@ class Link : public l2cap::internal::ILink {
   virtual void Encrypt();
 
   virtual void Authenticate();
+
+  virtual bool IsAuthenticated() const;
 
   virtual void ReadRemoteVersionInformation();
 
@@ -128,6 +129,32 @@ class Link : public l2cap::internal::ILink {
 
   void SendLeCredit(Cid local_cid, uint16_t credit) override {}
 
+  // ConnectionManagementCallbacks
+  virtual void OnConnectionPacketTypeChanged(uint16_t packet_type) override {}
+  virtual void OnAuthenticationComplete() override {}
+  virtual void OnEncryptionChange(hci::EncryptionEnabled enabled) override {
+    encryption_enabled_ = enabled;
+  }
+  virtual void OnChangeConnectionLinkKeyComplete() override {}
+  virtual void OnReadClockOffsetComplete(uint16_t clock_offset) override {}
+  virtual void OnModeChange(hci::Mode current_mode, uint16_t interval) override {}
+  virtual void OnQosSetupComplete(hci::ServiceType service_type, uint32_t token_rate, uint32_t peak_bandwidth,
+                                  uint32_t latency, uint32_t delay_variation) override {}
+  virtual void OnFlowSpecificationComplete(hci::FlowDirection flow_direction, hci::ServiceType service_type,
+                                           uint32_t token_rate, uint32_t token_bucket_size, uint32_t peak_bandwidth,
+                                           uint32_t access_latency) override {}
+  virtual void OnFlushOccurred() override {}
+  virtual void OnRoleDiscoveryComplete(hci::Role current_role) override {}
+  virtual void OnReadLinkPolicySettingsComplete(uint16_t link_policy_settings) override {}
+  virtual void OnReadAutomaticFlushTimeoutComplete(uint16_t flush_timeout) override {}
+  virtual void OnReadTransmitPowerLevelComplete(uint8_t transmit_power_level) override {}
+  virtual void OnReadLinkSupervisionTimeoutComplete(uint16_t link_supervision_timeout) override {}
+  virtual void OnReadFailedContactCounterComplete(uint16_t failed_contact_counter) override {}
+  virtual void OnReadLinkQualityComplete(uint8_t link_quality) override {}
+  virtual void OnReadAfhChannelMapComplete(hci::AfhMode afh_mode, std::array<uint8_t, 10> afh_channel_map) override {}
+  virtual void OnReadRssiComplete(uint8_t rssi) override {}
+  virtual void OnReadClockComplete(uint32_t clock, uint16_t accuracy) override {}
+
  private:
   os::Handler* l2cap_handler_;
   l2cap::internal::FixedChannelAllocator<FixedChannelImpl, Link> fixed_channel_allocator_{this, l2cap_handler_};
@@ -143,6 +170,7 @@ class Link : public l2cap::internal::ILink {
   Mtu remote_connectionless_mtu_ = kMinimumClassicMtu;
   bool remote_supports_ertm_ = false;
   bool remote_supports_fcs_ = false;
+  hci::EncryptionEnabled encryption_enabled_ = hci::EncryptionEnabled::OFF;
   DISALLOW_COPY_AND_ASSIGN(Link);
 };
 
