@@ -32,6 +32,9 @@ class MockAclConnection : public AclConnection {
               (common::OnceCallback<void(ErrorCode)> on_disconnect, os::Handler* handler), (override));
   MOCK_METHOD(bool, Disconnect, (DisconnectReason reason), (override));
   MOCK_METHOD(void, Finish, (), (override));
+  MOCK_METHOD(void, RegisterCallbacks, (ConnectionManagementCallbacks * callbacks, os::Handler* handler), (override));
+  MOCK_METHOD(void, UnregisterCallbacks, (ConnectionManagementCallbacks * callbacks), (override));
+
   QueueUpEnd* GetAclQueueEnd() const override {
     return acl_queue_.GetUpEnd();
   }
