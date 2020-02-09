@@ -17,7 +17,7 @@
 import logging
 
 from facade import rootservice_pb2_grpc as facade_rootservice_pb2_grpc
-from gd_device_base import GdDeviceBase, GdDeviceConfigError, replace_vars
+from cert.gd_device_base import GdDeviceBase, GdDeviceConfigError, replace_vars
 from hal import facade_pb2_grpc as hal_facade_pb2_grpc
 from hci.facade import facade_pb2_grpc as hci_facade_pb2_grpc
 from hci.facade import acl_manager_facade_pb2_grpc
