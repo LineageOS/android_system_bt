@@ -28,28 +28,29 @@ namespace bluetooth {
 namespace security {
 namespace record {
 
-enum BondState { NOT_BONDED, PAIRING, PAIRED, BONDED };
+enum BondState {
+  /* CreateBond was called, or remote send Pairing Request */
+  PAIRING,
+  /* Link key has been exchanged, but not stored */
+  PAIRED,
+  /* Link Keys are stored persistently */
+  BONDED
+};
 
 class SecurityRecord {
  public:
-  explicit SecurityRecord(hci::AddressWithType address) : pseudo_address_(address), state_(NOT_BONDED) {}
+  explicit SecurityRecord(hci::AddressWithType address) : pseudo_address_(address), state_(PAIRING) {}
 
   /**
-   * Returns true if the device is bonded to another device
+   * Returns true if Link Keys are stored persistently
    */
   bool IsBonded() {
     return state_ == BONDED;
   }
 
+  /* Link key has been exchanged, but not stored */
   bool IsPaired() {
     return state_ == PAIRED;
-  }
-
-  /**
-   * Returns true if a device is currently pairing to another device
-   */
-  bool IsPairing() {
-    return state_ == PAIRING;
   }
 
   void SetLinkKey(std::array<uint8_t, 16> link_key, hci::KeyType key_type) {
