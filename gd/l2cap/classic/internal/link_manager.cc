@@ -98,6 +98,13 @@ void LinkManager::ConnectDynamicChannelServices(
     }
     return;
   }
+  if (dynamic_channel_service_manager_->GetService(psm)->GetSecurityPolicy().RequiresAuthentication() &&
+      !link->IsAuthenticated()) {
+    link->AddChannelPendingingAuthentication(
+        {psm, link->ReserveDynamicChannel(), std::move(pending_dynamic_channel_connection)});
+    link->Authenticate();
+    return;
+  }
   link->SendConnectionRequest(psm, link->ReserveDynamicChannel(), std::move(pending_dynamic_channel_connection));
 }
 
