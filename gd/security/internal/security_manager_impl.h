@@ -24,7 +24,9 @@
 #include "l2cap/le/l2cap_le_module.h"
 #include "os/handler.h"
 #include "security/channel/security_manager_channel.h"
+#include "security/initial_informations.h"
 #include "security/pairing/classic_pairing_handler.h"
+#include "security/pairing_handler_le.h"
 #include "security/record/security_record.h"
 #include "security/security_record_database.h"
 
@@ -126,9 +128,11 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener {
   void DispatchPairingHandler(record::SecurityRecord& record, bool locally_initiated);
   void OnL2capRegistrationCompleteLe(l2cap::le::FixedChannelManager::RegistrationResult result,
                                      std::unique_ptr<l2cap::le::FixedChannelService> le_smp_service);
+  void OnSmpCommandLe();
   void OnConnectionOpenLe(std::unique_ptr<l2cap::le::FixedChannel> channel);
   void OnConnectionClosedLe(hci::AddressWithType address, hci::ErrorCode error_code);
   void OnConnectionFailureLe(bluetooth::l2cap::le::FixedChannelManager::ConnectionResult result);
+  void OnPairingFinished(bluetooth::security::PairingResultOrFailure pairing_result);
   void OnHciLeEvent(hci::LeMetaEventView event);
 
   os::Handler* security_handler_ __attribute__((unused));
@@ -139,6 +143,14 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener {
   channel::SecurityManagerChannel* security_manager_channel_;
   SecurityRecordDatabase security_database_;
   std::unordered_map<hci::Address, std::shared_ptr<pairing::PairingHandler>> pairing_handler_map_;
+
+  struct {
+    hci::AddressWithType address_;
+    std::unique_ptr<l2cap::le::FixedChannel> channel_;
+    uint8_t connection_handle_;
+    std::unique_ptr<PairingHandlerLe> handler_;
+    std::unique_ptr<os::EnqueueBuffer<packet::BasePacketBuilder>> enqueue_buffer_;
+  } pending_le_pairing_;
 };
 }  // namespace internal
 }  // namespace security
