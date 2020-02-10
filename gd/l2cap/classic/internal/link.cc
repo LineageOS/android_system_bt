@@ -237,6 +237,91 @@ bool Link::GetRemoteSupportsFcs() const {
   return remote_supports_fcs_;
 }
 
+void Link::AddChannelPendingingAuthentication(PendingAuthenticateDynamicChannelConnection pending_channel) {
+  pending_channel_list_.push_back(std::move(pending_channel));
+}
+
+void Link::OnConnectionPacketTypeChanged(uint16_t packet_type) {
+  LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+}
+
+void Link::OnAuthenticationComplete() {
+  if (!pending_channel_list_.empty()) {
+    acl_connection_->SetConnectionEncryption(hci::Enable::ENABLED);
+  }
+}
+
+void Link::OnEncryptionChange(hci::EncryptionEnabled enabled) {
+  encryption_enabled_ = enabled;
+  if (encryption_enabled_ == hci::EncryptionEnabled::OFF) {
+    LOG_DEBUG("Encryption has changed to disabled");
+    return;
+  }
+  LOG_DEBUG("Encryption has changed to enabled .. restarting channels:%zd", pending_channel_list_.size());
+
+  for (auto& channel : pending_channel_list_) {
+    local_cid_to_pending_dynamic_channel_connection_map_[channel.cid_] =
+        std::move(channel.pending_dynamic_channel_connection_);
+    signalling_manager_.SendConnectionRequest(channel.psm_, channel.cid_);
+  }
+  pending_channel_list_.clear();
+}
+
+void Link::OnChangeConnectionLinkKeyComplete() {
+  LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+}
+
+void Link::OnReadClockOffsetComplete(uint16_t clock_offset) {
+  LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+}
+
+void Link::OnModeChange(hci::Mode current_mode, uint16_t interval) {
+  LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+}
+
+void Link::OnQosSetupComplete(hci::ServiceType service_type, uint32_t token_rate, uint32_t peak_bandwidth,
+                              uint32_t latency, uint32_t delay_variation) {
+  LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+}
+void Link::OnFlowSpecificationComplete(hci::FlowDirection flow_direction, hci::ServiceType service_type,
+                                       uint32_t token_rate, uint32_t token_bucket_size, uint32_t peak_bandwidth,
+                                       uint32_t access_latency) {
+  LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+}
+void Link::OnFlushOccurred() {
+  LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+}
+void Link::OnRoleDiscoveryComplete(hci::Role current_role) {
+  LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+}
+void Link::OnReadLinkPolicySettingsComplete(uint16_t link_policy_settings) {
+  LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+}
+void Link::OnReadAutomaticFlushTimeoutComplete(uint16_t flush_timeout) {
+  LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+}
+void Link::OnReadTransmitPowerLevelComplete(uint8_t transmit_power_level) {
+  LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+}
+void Link::OnReadLinkSupervisionTimeoutComplete(uint16_t link_supervision_timeout) {
+  LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+}
+void Link::OnReadFailedContactCounterComplete(uint16_t failed_contact_counter) {
+  LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+}
+void Link::OnReadLinkQualityComplete(uint8_t link_quality) {
+  LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+}
+void Link::OnReadAfhChannelMapComplete(hci::AfhMode afh_mode, std::array<uint8_t, 10> afh_channel_map) {
+  LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+}
+void Link::OnReadRssiComplete(uint8_t rssi) {
+  LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+}
+void Link::OnReadClockComplete(uint32_t clock, uint16_t accuracy) {
+  LOG_DEBUG("UNIMPLEMENTED %s", __func__);
+}
+
 }  // namespace internal
 }  // namespace classic
 }  // namespace l2cap
