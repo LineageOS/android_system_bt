@@ -28,46 +28,29 @@ namespace bluetooth {
 namespace security {
 namespace internal {
 
-std::shared_ptr<bluetooth::security::record::SecurityRecord> SecurityManagerImpl::CreateSecurityRecord(
-    hci::Address address) {
-  hci::AddressWithType device(address, hci::AddressType::PUBLIC_DEVICE_ADDRESS);
-  // Security record check
-  auto entry = security_record_map_.find(device.GetAddress());
-  if (entry == security_record_map_.end()) {
-    LOG_INFO("No security record for device: %s ", device.ToString().c_str());
-    // Create one
-    std::shared_ptr<security::record::SecurityRecord> record =
-        std::make_shared<security::record::SecurityRecord>(device);
-    auto new_entry = std::pair<hci::Address, std::shared_ptr<security::record::SecurityRecord>>(
-        record->GetPseudoAddress().GetAddress(), record);
-    // Keep track of it
-    security_record_map_.insert(new_entry);
-    return record;
-  }
-  return entry->second;
-}
-
-void SecurityManagerImpl::DispatchPairingHandler(std::shared_ptr<security::record::SecurityRecord> record,
-                                                 bool locally_initiated) {
+void SecurityManagerImpl::DispatchPairingHandler(record::SecurityRecord& record, bool locally_initiated) {
   common::OnceCallback<void(hci::Address, PairingResultOrFailure)> callback =
       common::BindOnce(&SecurityManagerImpl::OnPairingHandlerComplete, common::Unretained(this));
-  auto entry = pairing_handler_map_.find(record->GetPseudoAddress().GetAddress());
+  auto entry = pairing_handler_map_.find(record.GetPseudoAddress().GetAddress());
   if (entry != pairing_handler_map_.end()) {
     LOG_WARN("Device already has a pairing handler, and is in the middle of pairing!");
     return;
   }
   std::shared_ptr<pairing::PairingHandler> pairing_handler = nullptr;
-  switch (record->GetPseudoAddress().GetAddressType()) {
-    case hci::AddressType::PUBLIC_DEVICE_ADDRESS:
+  switch (record.GetPseudoAddress().GetAddressType()) {
+    case hci::AddressType::PUBLIC_DEVICE_ADDRESS: {
+      std::shared_ptr<record::SecurityRecord> record_copy =
+          std::make_shared<record::SecurityRecord>(record.GetPseudoAddress());
       pairing_handler = std::make_shared<security::pairing::ClassicPairingHandler>(
-          l2cap_classic_module_->GetFixedChannelManager(), security_manager_channel_, record, security_handler_,
+          l2cap_classic_module_->GetFixedChannelManager(), security_manager_channel_, record_copy, security_handler_,
           std::move(callback), listeners_);
       break;
+    }
     default:
-      ASSERT_LOG(false, "Pairing type %hhu not implemented!", record->GetPseudoAddress().GetAddressType());
+      ASSERT_LOG(false, "Pairing type %hhu not implemented!", record.GetPseudoAddress().GetAddressType());
   }
   auto new_entry = std::pair<hci::Address, std::shared_ptr<pairing::PairingHandler>>(
-      record->GetPseudoAddress().GetAddress(), pairing_handler);
+      record.GetPseudoAddress().GetAddress(), pairing_handler);
   pairing_handler_map_.insert(std::move(new_entry));
   pairing_handler->Initiate(locally_initiated, pairing::kDefaultIoCapability, pairing::kDefaultOobDataPresent,
                             pairing::kDefaultAuthenticationRequirements);
@@ -81,8 +64,8 @@ void SecurityManagerImpl::Init() {
 }
 
 void SecurityManagerImpl::CreateBond(hci::AddressWithType device) {
-  auto record = CreateSecurityRecord(device.GetAddress());
-  if (record->IsBonded()) {
+  record::SecurityRecord& record = security_database_.FindOrCreate(device);
+  if (record.IsBonded()) {
     NotifyDeviceBonded(device);
   } else {
     // Dispatch pairing handler, if we are calling create we are the initiator
@@ -106,10 +89,7 @@ void SecurityManagerImpl::CancelBond(hci::AddressWithType device) {
 
 void SecurityManagerImpl::RemoveBond(hci::AddressWithType device) {
   CancelBond(device);
-  auto entry = security_record_map_.find(device.GetAddress());
-  if (entry != security_record_map_.end()) {
-    security_record_map_.erase(entry);
-  }
+  security_database_.Remove(device);
   // Signal disconnect
   // Remove security record
   // Signal Remove from database
@@ -168,7 +148,8 @@ void SecurityManagerImpl::HandleEvent(T packet) {
     auto event = hci::EventPacketView::Create(std::move(packet));
     ASSERT_LOG(event.IsValid(), "Received invalid packet");
     const hci::EventCode code = event.GetEventCode();
-    auto record = CreateSecurityRecord(bd_addr);
+    auto record =
+        security_database_.FindOrCreate(hci::AddressWithType{bd_addr, hci::AddressType::PUBLIC_DEVICE_ADDRESS});
     switch (code) {
       case hci::EventCode::LINK_KEY_REQUEST:
         DispatchPairingHandler(record, true);
