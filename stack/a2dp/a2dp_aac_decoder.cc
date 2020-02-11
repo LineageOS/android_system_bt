@@ -30,7 +30,7 @@
 typedef struct {
   HANDLE_AACDECODER aac_handle;
   bool has_aac_handle;  // True if aac_handle is valid
-  INT_PCM* decode_buf;
+  INT_PCM* decode_buf = nullptr;
   decoded_data_callback_t decode_callback;
 } tA2DP_AAC_DECODER_CB;
 
@@ -58,7 +58,7 @@ bool a2dp_aac_decoder_init(decoded_data_callback_t decode_callback) {
 void a2dp_aac_decoder_cleanup(void) {
   if (a2dp_aac_decoder_cb.has_aac_handle)
     aacDecoder_Close(a2dp_aac_decoder_cb.aac_handle);
-  free(a2dp_aac_decoder_cb.decode_buf);
+  osi_free(a2dp_aac_decoder_cb.decode_buf);
   memset(&a2dp_aac_decoder_cb, 0, sizeof(a2dp_aac_decoder_cb));
 }
 
