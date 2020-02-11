@@ -157,7 +157,7 @@ fi
 
 # Set up artifacts
 pushd .
-cd $ANDROID_BUILD_TOP/system/bt/gd/gd_cert_venv/lib/python3.8
+cd $ANDROID_BUILD_TOP/system/bt/gd/gd_cert_venv/lib/python3.8/site-packages
 # Python generated code
 ln -sfT $ANDROID_BUILD_TOP/tools/test/connectivity/acts/framework/acts acts
 ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py/cert cert
@@ -168,14 +168,13 @@ ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py/l2cap l2cap
 ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py/neighbor neighbor
 ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py/security security
 # Native libraries
-# Symbolic link does not work for dynamic libraries
 ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_test/out/host/linux-x86/lib64/bluetooth_packets_python3.so bluetooth_packets_python3.so
-ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_test/out/host/linux-x86/lib64/libbluetooth_gd.so libbluetooth_gd.so
-ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_test/out/host/linux-x86/lib64/libgrpc++_unsecure.so libgrpc++_unsecure.so
-# Per systrace, Python only load from python3.8/lib64 directory for libc++.so
+# Per systrace, Python only load from python3.8/lib64 directory for plugin imported native libraries
 mkdir -p $ANDROID_BUILD_TOP/system/bt/gd/gd_cert_venv/lib/python3.8/lib64
 cd $ANDROID_BUILD_TOP/system/bt/gd/gd_cert_venv/lib/python3.8/lib64
 ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_test/out/host/linux-x86/lib64/libc++.so libc++.so
+ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_test/out/host/linux-x86/lib64/libbluetooth_gd.so libbluetooth_gd.so
+ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_test/out/host/linux-x86/lib64/libgrpc++_unsecure.so libgrpc++_unsecure.so
 # Binaries
 cd $ANDROID_BUILD_TOP/system/bt/gd/gd_cert_venv/bin
 ln -sfT $ANDROID_BUILD_TOP/out/host/linux-x86/bin/bluetooth_stack_with_facade bluetooth_stack_with_facade
