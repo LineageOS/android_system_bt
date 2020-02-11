@@ -1622,6 +1622,9 @@ static tBTA_JV_PCB* bta_jv_add_rfc_port(tBTA_JV_RFC_CB* p_cb,
         p_pcb->handle = BTA_JV_RFC_H_S_TO_HDL(p_cb->handle, si);
         VLOG(2) << __func__ << ": p_pcb->handle=" << loghex(p_pcb->handle)
                 << ", curr_sess=" << p_cb->curr_sess;
+      } else {
+        LOG(ERROR) << __func__ << ": RFCOMM_CreateConnection failed";
+        return NULL;
       }
     } else {
       LOG(ERROR) << __func__ << ": cannot create new rfc listen port";
