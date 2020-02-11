@@ -96,6 +96,16 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
     }
   };
 
+  ::grpc::Status FetchIncomingConnection(::grpc::ServerContext* context, const google::protobuf::Empty* request,
+                                         ::grpc::ServerWriter<ConnectionEvent>* writer) override {
+    if (per_connection_events_.size() > current_connection_request_) {
+      return ::grpc::Status(::grpc::StatusCode::RESOURCE_EXHAUSTED, "Only one outstanding connection is supported");
+    }
+    per_connection_events_.emplace_back(std::make_unique<::bluetooth::grpc::GrpcEventQueue<ConnectionEvent>>(
+        std::string("incoming connection ") + std::to_string(current_connection_request_)));
+    return per_connection_events_[current_connection_request_]->RunLoop(context, writer);
+  }
+
   ::grpc::Status SendAclData(::grpc::ServerContext* context, const AclData* request,
                              ::google::protobuf::Empty* response) override {
     std::promise<void> promise;
@@ -172,13 +182,11 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
                          current_connection_request_),
         facade_handler_);
     shared_connection->RegisterCallbacks(this, facade_handler_);
-    {
-      std::unique_ptr<BasePacketBuilder> builder = ConnectionCompleteBuilder::Create(
-          ErrorCode::SUCCESS, to_handle(current_connection_request_), addr, LinkType::ACL, Enable::DISABLED);
-      ConnectionEvent success;
-      success.set_event(builder_to_string(std::move(builder)));
-      per_connection_events_[current_connection_request_]->OnIncomingEvent(success);
-    }
+    std::unique_ptr<BasePacketBuilder> builder = ConnectionCompleteBuilder::Create(
+        ErrorCode::SUCCESS, to_handle(current_connection_request_), addr, LinkType::ACL, Enable::DISABLED);
+    ConnectionEvent success;
+    success.set_event(builder_to_string(std::move(builder)));
+    per_connection_events_[current_connection_request_]->OnIncomingEvent(success);
     current_connection_request_++;
   }
 
