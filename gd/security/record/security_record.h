@@ -41,6 +41,8 @@ class SecurityRecord {
  public:
   explicit SecurityRecord(hci::AddressWithType address) : pseudo_address_(address), state_(PAIRING) {}
 
+  SecurityRecord& operator=(const SecurityRecord& other) = default;
+
   /**
    * Returns true if Link Keys are stored persistently
    */
@@ -72,14 +74,15 @@ class SecurityRecord {
 
  private:
   /* First address we have ever seen this device with, that we used to create bond */
-  const hci::AddressWithType pseudo_address_;
-
-  /* Identity Address */
-  std::optional<hci::AddressWithType> identity_address_;
+  hci::AddressWithType pseudo_address_;
 
   BondState state_;
   std::array<uint8_t, 16> link_key_ = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   hci::KeyType key_type_ = hci::KeyType::DEBUG_COMBINATION;
+
+ public:
+  /* Identity Address */
+  std::optional<hci::AddressWithType> identity_address_;
 
   std::optional<crypto_toolbox::Octet16> ltk;
   std::optional<uint16_t> ediv;
