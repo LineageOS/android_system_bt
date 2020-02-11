@@ -48,7 +48,9 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
         self.device_under_test.wait_channel_ready()
         self.cert_device.wait_channel_ready()
 
-        self.cert_device.hal.SendHciResetCommand(empty_proto.Empty())
+        self.cert_device.hal.SendHciCommand(
+            hal_facade.HciCommandPacket(
+                payload=bytes(hci_packets.ResetBuilder().Serialize())))
 
     def teardown_test(self):
         self.device_under_test.rootservice.StopStack(
