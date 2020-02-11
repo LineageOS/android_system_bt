@@ -139,6 +139,8 @@ static void transmit_fragment(BT_HDR* packet, bool send_transmit_finished);
 static void dispatch_reassembled(BT_HDR* packet);
 static void fragmenter_transmit_finished(BT_HDR* packet,
                                          bool all_fragments_sent);
+static bool filter_bqr_event(int16_t bqr_parameter_length,
+                             uint8_t* p_bqr_event);
 
 static const packet_fragmenter_callbacks_t packet_fragmenter_callbacks = {
     transmit_fragment, dispatch_reassembled, fragmenter_transmit_finished};
@@ -689,17 +691,12 @@ static bool filter_incoming_event(BT_HDR* packet) {
       buffer_allocator->free(packet);
       return true;
     } else if (sub_event_code == HCI_VSE_SUBCODE_BQR_SUB_EVT) {
-      uint8_t bqr_report_id;
-      STREAM_TO_UINT8(bqr_report_id, stream);
-
-      if (bqr_report_id ==
-              bluetooth::bqr::QUALITY_REPORT_ID_ROOT_INFLAMMATION &&
-          packet->len >= bluetooth::bqr::kRootInflammationPacketMinSize) {
-        uint8_t error_code;
-        uint8_t vendor_error_code;
-        STREAM_TO_UINT8(error_code, stream);
-        STREAM_TO_UINT8(vendor_error_code, stream);
-        handle_root_inflammation_event(error_code, vendor_error_code);
+      // Excluding the HCI Event packet header and 1 octet sub-event code
+      int16_t bqr_parameter_length = packet->len - HCIE_PREAMBLE_SIZE - 1;
+      // The stream currently points to the BQR sub-event parameters
+      if (filter_bqr_event(bqr_parameter_length, stream)) {
+        buffer_allocator->free(packet);
+        return true;
       }
     }
   }
@@ -772,6 +769,62 @@ static void update_command_response_timer(void) {
     alarm_set(command_response_timer, COMMAND_PENDING_TIMEOUT_MS,
               command_timed_out, list_front(commands_pending_response));
   }
+}
+
+// Returns true if the BQR event is handled and should not proceed to
+// higher layers.
+static bool filter_bqr_event(int16_t bqr_parameter_length,
+                             uint8_t* p_bqr_event) {
+  if (bqr_parameter_length <= 0) {
+    LOG(ERROR) << __func__ << ": Invalid parameter length : "
+               << std::to_string(bqr_parameter_length);
+    return true;
+  }
+
+  bool intercepted = false;
+  uint8_t quality_report_id = p_bqr_event[0];
+  switch (quality_report_id) {
+    case bluetooth::bqr::QUALITY_REPORT_ID_ROOT_INFLAMMATION:
+      if (bqr_parameter_length >=
+          bluetooth::bqr::kRootInflammationParamTotalLen) {
+        uint8_t error_code;
+        uint8_t vendor_error_code;
+        STREAM_TO_UINT8(quality_report_id, p_bqr_event);
+        STREAM_TO_UINT8(error_code, p_bqr_event);
+        STREAM_TO_UINT8(vendor_error_code, p_bqr_event);
+        handle_root_inflammation_event(error_code, vendor_error_code);
+      }
+      intercepted = true;
+      break;
+
+    case bluetooth::bqr::QUALITY_REPORT_ID_LMP_LL_MESSAGE_TRACE:
+      if (bqr_parameter_length >= bluetooth::bqr::kLogDumpParamTotalLen) {
+        bluetooth::bqr::DumpLmpLlMessage(bqr_parameter_length, p_bqr_event);
+      }
+      intercepted = true;
+      break;
+
+    case bluetooth::bqr::QUALITY_REPORT_ID_BT_SCHEDULING_TRACE:
+      if (bqr_parameter_length >= bluetooth::bqr::kLogDumpParamTotalLen) {
+        bluetooth::bqr::DumpBtScheduling(bqr_parameter_length, p_bqr_event);
+      }
+      intercepted = true;
+      break;
+
+    case bluetooth::bqr::QUALITY_REPORT_ID_CONTROLLER_DBG_INFO:
+      // TODO: Integrate with the HCI_VSE_SUBCODE_DEBUG_INFO_SUB_EVT
+      intercepted = true;
+      break;
+
+    case bluetooth::bqr::QUALITY_REPORT_ID_MONITOR_MODE:
+    case bluetooth::bqr::QUALITY_REPORT_ID_APPROACH_LSTO:
+    case bluetooth::bqr::QUALITY_REPORT_ID_A2DP_AUDIO_CHOPPY:
+    case bluetooth::bqr::QUALITY_REPORT_ID_SCO_VOICE_CHOPPY:
+    default:
+      break;
+  }
+
+  return intercepted;
 }
 
 static void init_layer_interface() {
