@@ -198,7 +198,7 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
             self.send_hal_hci_command(
                 hci_packets.LeSetExtendedAdvertisingDataBuilder(
                     advertising_handle,
-                    hci_packets.Operation.COMPLETE_ADVERTISMENT,
+                    hci_packets.Operation.COMPLETE_ADVERTISEMENT,
                     hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT,
                     [gap_name]))
 
@@ -209,7 +209,7 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
             self.send_hal_hci_command(
                 hci_packets.LeSetExtendedAdvertisingScanResponseBuilder(
                     advertising_handle,
-                    hci_packets.Operation.COMPLETE_ADVERTISMENT,
+                    hci_packets.Operation.COMPLETE_ADVERTISEMENT,
                     hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT,
                     [gap_short_name]))
 
@@ -297,7 +297,7 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
             self.enqueue_hci_command(
                 hci_packets.LeSetExtendedAdvertisingDataBuilder(
                     advertising_handle,
-                    hci_packets.Operation.COMPLETE_ADVERTISMENT,
+                    hci_packets.Operation.COMPLETE_ADVERTISEMENT,
                     hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT,
                     [gap_name]), True)
 
@@ -308,7 +308,7 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
             self.enqueue_hci_command(
                 hci_packets.LeSetExtendedAdvertisingScanResponseBuilder(
                     advertising_handle,
-                    hci_packets.Operation.COMPLETE_ADVERTISMENT,
+                    hci_packets.Operation.COMPLETE_ADVERTISEMENT,
                     hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT,
                     [gap_short_name]), True)
 
@@ -444,7 +444,7 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
             self.send_hal_hci_command(
                 hci_packets.LeSetExtendedAdvertisingDataBuilder(
                     advertising_handle,
-                    hci_packets.Operation.COMPLETE_ADVERTISMENT,
+                    hci_packets.Operation.COMPLETE_ADVERTISEMENT,
                     hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT,
                     [gap_name]))
             enabled_set = hci_packets.EnabledSet()
