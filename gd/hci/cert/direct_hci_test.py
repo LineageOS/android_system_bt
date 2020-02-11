@@ -48,7 +48,9 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
         self.device_under_test.wait_channel_ready()
         self.cert_device.wait_channel_ready()
 
-        self.cert_device.hal.SendHciResetCommand(empty_proto.Empty())
+        self.cert_device.hal.SendHciCommand(
+            hal_facade.HciCommandPacket(
+                payload=bytes(hci_packets.ResetBuilder().Serialize())))
 
     def teardown_test(self):
         self.device_under_test.rootservice.StopStack(
@@ -500,8 +502,11 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
             # DUT Connects
             self.enqueue_hci_command(
                 hci_packets.CreateConnectionBuilder(
-                    address, 0x11, hci_packets.PageScanRepetitionMode.R0, 0x22,
-                    hci_packets.ClockOffsetValid.VALID,
+                    address,
+                    0xcc18,  # Packet Type
+                    hci_packets.PageScanRepetitionMode.R0,
+                    0,
+                    hci_packets.ClockOffsetValid.INVALID,
                     hci_packets.CreateConnectionRoleSwitch.ALLOW_ROLE_SWITCH),
                 False)
 
@@ -617,8 +622,11 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
             # Cert Connects
             self.send_hal_hci_command(
                 hci_packets.CreateConnectionBuilder(
-                    address, 0x11, hci_packets.PageScanRepetitionMode.R0, 0x22,
-                    hci_packets.ClockOffsetValid.VALID,
+                    address,
+                    0xcc18,  # Packet Type
+                    hci_packets.PageScanRepetitionMode.R0,
+                    0,
+                    hci_packets.ClockOffsetValid.INVALID,
                     hci_packets.CreateConnectionRoleSwitch.ALLOW_ROLE_SWITCH))
 
             # DUT Accepts
