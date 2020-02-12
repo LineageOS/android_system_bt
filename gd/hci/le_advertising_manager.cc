@@ -72,7 +72,7 @@ ExtendedAdvertisingConfig::ExtendedAdvertisingConfig(const AdvertisingConfig& co
     own_address_type = OwnAddressType::RANDOM_DEVICE_ADDRESS;
   }
   // TODO(b/149221472): Support fragmentation
-  operation = Operation::COMPLETE_ADVERTISMENT;
+  operation = Operation::COMPLETE_ADVERTISEMENT;
 }
 
 struct LeAdvertisingManager::impl {

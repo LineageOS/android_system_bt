@@ -107,14 +107,14 @@ class LeAdvertisingManagerTest(GdFacadeOnlyBaseTestClass):
             config = le_advertising_facade.AdvertisingConfig(
                 advertisement=[gap_data],
                 random_address=common.BluetoothAddress(
-                    address=bytes(b'A6:A5:A4:A3:A2:A1')),
+                    address=bytes(b'0D:05:04:03:02:01')),
                 interval_min=512,
                 interval_max=768,
                 event_type=le_advertising_facade.AdvertisingEventType.ADV_IND,
                 address_type=common.RANDOM_DEVICE_ADDRESS,
                 peer_address_type=common.PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
                 peer_address=common.BluetoothAddress(
-                    address=bytes(b'0D:05:04:03:02:01')),
+                    address=bytes(b'A6:A5:A4:A3:A2:A1')),
                 channel_map=7,
                 filter_policy=le_advertising_facade.AdvertisingFilterPolicy.
                 ALL_DEVICES)
