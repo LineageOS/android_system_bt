@@ -44,10 +44,11 @@ constexpr uint8_t kLegacyAddressTypeRandomIdentity = 3;
 class UIHandler : public ::bluetooth::security::UI {
  public:
   void DisplayPairingPrompt(const hci::AddressWithType& address, std::string name) {}
-  void CancelPairingPrompt(const hci::AddressWithType& address) {}
-  void DisplayConfirmValue(uint32_t numeric_value) {}
-  void DisplayEnterPasskeyDialog() {}
-  void DisplayPasskey(uint32_t passkey) {}
+  void Cancel(const hci::AddressWithType& address) {}
+  void DisplayConfirmValue(const hci::AddressWithType& address, std::string name, uint32_t numeric_value) {}
+  void DisplayYesNoDialog(const bluetooth::hci::AddressWithType& address, std::string name) {}
+  void DisplayEnterPasskeyDialog(const hci::AddressWithType& address, std::string name) {}
+  void DisplayPasskey(const hci::AddressWithType& address, std::string name, uint32_t passkey) {}
 };
 UIHandler static_ui_handler;
 
