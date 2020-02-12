@@ -415,6 +415,8 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
 
             # LeConnectionComplete
             cert_hci_event_asserts.assert_event_occurs(
-                lambda packet: b'\x3e\x13\x01\x00' in packet.payload)
+                lambda packet: b'\x3e\x13\x01\x00' in packet.payload,
+                timeout=timedelta(seconds=20))
             hci_event_asserts.assert_event_occurs(
-                lambda packet: b'\x3e\x13\x01\x00' in packet.payload)
+                lambda packet: b'\x3e\x13\x01\x00' in packet.payload,
+                timeout=timedelta(seconds=20))
