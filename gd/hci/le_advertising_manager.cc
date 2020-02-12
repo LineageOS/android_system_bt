@@ -42,6 +42,39 @@ struct Advertiser {
   common::Callback<void(ErrorCode, uint8_t, uint8_t)> set_terminated_callback;
 };
 
+ExtendedAdvertisingConfig::ExtendedAdvertisingConfig(const AdvertisingConfig& config) : AdvertisingConfig(config) {
+  switch (config.event_type) {
+    case AdvertisingEventType::ADV_IND:
+      connectable = true;
+      scannable = true;
+      break;
+    case AdvertisingEventType::ADV_DIRECT_IND:
+      connectable = true;
+      directed = true;
+      high_duty_directed_connectable = true;
+      break;
+    case AdvertisingEventType::ADV_SCAN_IND:
+      scannable = true;
+      break;
+    case AdvertisingEventType::ADV_NONCONN_IND:
+      break;
+    case AdvertisingEventType::ADV_DIRECT_IND_LOW:
+      connectable = true;
+      directed = true;
+      break;
+    default:
+      LOG_WARN("Unknown event type");
+      break;
+  }
+  if (config.address_type == AddressType::PUBLIC_DEVICE_ADDRESS) {
+    own_address_type = OwnAddressType::PUBLIC_DEVICE_ADDRESS;
+  } else if (config.address_type == AddressType::RANDOM_DEVICE_ADDRESS) {
+    own_address_type = OwnAddressType::RANDOM_DEVICE_ADDRESS;
+  }
+  // TODO(b/149221472): Support fragmentation
+  operation = Operation::COMPLETE_ADVERTISMENT;
+}
+
 struct LeAdvertisingManager::impl {
   impl(Module* module) : module_(module), le_advertising_interface_(nullptr), num_instances_(0) {}
 
@@ -172,9 +205,7 @@ struct LeAdvertisingManager::impl {
                                                   module_handler_);
         break;
       case (AdvertisingApiType::LE_5_0): {
-        ExtendedAdvertisingConfig new_config;
-        AdvertisingConfig* base_config_ptr = &new_config;
-        *(base_config_ptr) = config;
+        ExtendedAdvertisingConfig new_config = config;
         new_config.legacy_pdus = true;
         create_extended_advertiser(id, new_config, scan_callback, set_terminated_callback, handler);
       } break;

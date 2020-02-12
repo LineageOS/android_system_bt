@@ -187,6 +187,8 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
     def test_cert_connects(self):
         self.register_for_event(hci_packets.EventCode.CONNECTION_COMPLETE)
         self.register_for_event(hci_packets.EventCode.ROLE_CHANGE)
+        self.register_for_event(
+            hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
         with EventCallbackStream(self.cert_device.hci.FetchEvents(empty_proto.Empty())) as cert_hci_event_stream, \
             EventCallbackStream(self.cert_device.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
             EventCallbackStream(self.device_under_test.hci_acl_manager.FetchIncomingConnection(empty_proto.Empty())) as incoming_connection_stream, \

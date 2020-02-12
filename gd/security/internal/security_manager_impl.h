@@ -26,6 +26,7 @@
 #include "security/channel/security_manager_channel.h"
 #include "security/pairing/classic_pairing_handler.h"
 #include "security/record/security_record.h"
+#include "security/security_record_database.h"
 
 namespace bluetooth {
 namespace security {
@@ -122,8 +123,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener {
   template <class T>
   void HandleEvent(T packet);
 
-  std::shared_ptr<record::SecurityRecord> CreateSecurityRecord(hci::Address address);
-  void DispatchPairingHandler(std::shared_ptr<record::SecurityRecord> record, bool locally_initiated);
+  void DispatchPairingHandler(record::SecurityRecord& record, bool locally_initiated);
   void OnL2capRegistrationCompleteLe(l2cap::le::FixedChannelManager::RegistrationResult result,
                                      std::unique_ptr<l2cap::le::FixedChannelService> le_smp_service);
   void OnConnectionOpenLe(std::unique_ptr<l2cap::le::FixedChannel> channel);
@@ -137,7 +137,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener {
   std::unique_ptr<l2cap::le::FixedChannelManager> l2cap_manager_le_;
   hci::LeSecurityInterface* hci_security_interface_le_ __attribute__((unused));
   channel::SecurityManagerChannel* security_manager_channel_;
-  std::unordered_map<hci::Address, std::shared_ptr<record::SecurityRecord>> security_record_map_;
+  SecurityRecordDatabase security_database_;
   std::unordered_map<hci::Address, std::shared_ptr<pairing::PairingHandler>> pairing_handler_map_;
 };
 }  // namespace internal

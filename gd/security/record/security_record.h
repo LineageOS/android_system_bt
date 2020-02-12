@@ -28,28 +28,31 @@ namespace bluetooth {
 namespace security {
 namespace record {
 
-enum BondState { NOT_BONDED, PAIRING, PAIRED, BONDED };
+enum BondState {
+  /* CreateBond was called, or remote send Pairing Request */
+  PAIRING,
+  /* Link key has been exchanged, but not stored */
+  PAIRED,
+  /* Link Keys are stored persistently */
+  BONDED
+};
 
 class SecurityRecord {
  public:
-  explicit SecurityRecord(hci::AddressWithType address) : pseudo_address_(address), state_(NOT_BONDED) {}
+  explicit SecurityRecord(hci::AddressWithType address) : pseudo_address_(address), state_(PAIRING) {}
+
+  SecurityRecord& operator=(const SecurityRecord& other) = default;
 
   /**
-   * Returns true if the device is bonded to another device
+   * Returns true if Link Keys are stored persistently
    */
   bool IsBonded() {
     return state_ == BONDED;
   }
 
+  /* Link key has been exchanged, but not stored */
   bool IsPaired() {
     return state_ == PAIRED;
-  }
-
-  /**
-   * Returns true if a device is currently pairing to another device
-   */
-  bool IsPairing() {
-    return state_ == PAIRING;
   }
 
   void SetLinkKey(std::array<uint8_t, 16> link_key, hci::KeyType key_type) {
@@ -71,14 +74,15 @@ class SecurityRecord {
 
  private:
   /* First address we have ever seen this device with, that we used to create bond */
-  const hci::AddressWithType pseudo_address_;
-
-  /* Identity Address */
-  std::optional<hci::AddressWithType> identity_address_;
+  hci::AddressWithType pseudo_address_;
 
   BondState state_;
   std::array<uint8_t, 16> link_key_ = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   hci::KeyType key_type_ = hci::KeyType::DEBUG_COMBINATION;
+
+ public:
+  /* Identity Address */
+  std::optional<hci::AddressWithType> identity_address_;
 
   std::optional<crypto_toolbox::Octet16> ltk;
   std::optional<uint16_t> ediv;
