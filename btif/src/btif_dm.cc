@@ -663,7 +663,7 @@ static void btif_dm_cb_create_bond(const RawAddress& bd_addr,
   bool is_hid = check_cod(&bd_addr, COD_HID_POINTING);
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
 
-  int device_type;
+  int device_type = 0;
   int addr_type;
   std::string addrstr = bd_addr.ToString();
   const char* bdstr = addrstr.c_str();
