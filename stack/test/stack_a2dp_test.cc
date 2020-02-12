@@ -236,6 +236,8 @@ class StackA2dpTest : public ::testing::Test {
         case BTAV_A2DP_CODEC_INDEX_SINK_AAC:
           supported = true;
           break;
+        case BTAV_A2DP_CODEC_INDEX_SINK_APTX:
+          break;
         case BTAV_A2DP_CODEC_INDEX_SINK_LDAC:
           // Codec LDAC is supported only if the device has the corresponding
           // shared library installed.
