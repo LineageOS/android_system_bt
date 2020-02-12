@@ -44,13 +44,14 @@ class ClassicPairingHandler : public PairingHandler {
                         channel::SecurityManagerChannel* security_manager_channel,
                         std::shared_ptr<record::SecurityRecord> record, os::Handler* security_handler,
                         common::OnceCallback<void(hci::Address, PairingResultOrFailure)> complete_callback,
-                        std::vector<std::pair<ISecurityManagerListener*, os::Handler*>>& client_listeners)
+                        UI* user_interface, os::Handler* user_interface_handler, std::string device_name)
       : PairingHandler(security_manager_channel, std::move(record)),
         fixed_channel_manager_(std::move(fixed_channel_manager)), security_policy_(),
         security_handler_(security_handler), remote_io_capability_(kDefaultIoCapability),
         local_io_capability_(kDefaultIoCapability), local_oob_present_(kDefaultOobDataPresent),
         local_authentication_requirements_(kDefaultAuthenticationRequirements),
-        complete_callback_(std::move(complete_callback)), client_listeners_(client_listeners) {}
+        complete_callback_(std::move(complete_callback)), user_interface_(user_interface),
+        user_interface_handler_(user_interface_handler), device_name_(device_name) {}
 
   ~ClassicPairingHandler() override = default;
 
@@ -84,10 +85,10 @@ class ClassicPairingHandler : public PairingHandler {
   void OnConnectionClose(hci::ErrorCode error_code);
   void OnUserInput(bool user_input);
   void OnPasskeyInput(uint32_t passkey);
-  void NotifyUiDisplayYesNo(uint32_t numeric_value, common::OnceCallback<void(bool)> input_callback);
-  void NotifyUiDisplayYesNo(common::OnceCallback<void(bool)> input_callback);
+  void NotifyUiDisplayYesNo(uint32_t numeric_value);
+  void NotifyUiDisplayYesNo();
   void NotifyUiDisplayPasskey(uint32_t passkey);
-  void NotifyUiDisplayPasskeyInput(common::OnceCallback<void(uint32_t)> input_callback);
+  void NotifyUiDisplayPasskeyInput();
   void NotifyUiDisplayCancel();
   void UserClickedYes();
   void UserClickedNo();
@@ -102,7 +103,10 @@ class ClassicPairingHandler : public PairingHandler {
   hci::AuthenticationRequirements local_authentication_requirements_ __attribute__((unused));
   std::unique_ptr<l2cap::classic::FixedChannel> fixed_channel_{nullptr};
   common::OnceCallback<void(hci::Address, PairingResultOrFailure)> complete_callback_;
-  std::vector<std::pair<ISecurityManagerListener*, os::Handler*>>& client_listeners_;
+  UI* user_interface_;
+  os::Handler* user_interface_handler_;
+  std::string device_name_;
+
   hci::ErrorCode last_status_;
   bool locally_initiated_ = false;
   uint32_t passkey_ = 0;
