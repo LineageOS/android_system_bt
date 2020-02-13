@@ -40,6 +40,17 @@ constexpr uint8_t kLegacyAddressTypeRandom = 1;
 constexpr uint8_t kLegacyAddressTypePublicIdentity = 2;
 constexpr uint8_t kLegacyAddressTypeRandomIdentity = 3;
 
+// TOOD: implement properly, have it passed from above shim ?
+class UIHandler : public ::bluetooth::security::UI {
+ public:
+  void DisplayPairingPrompt(const hci::AddressWithType& address, std::string name) {}
+  void CancelPairingPrompt(const hci::AddressWithType& address) {}
+  void DisplayConfirmValue(uint32_t numeric_value) {}
+  void DisplayEnterPasskeyDialog() {}
+  void DisplayPasskey(uint32_t passkey) {}
+};
+UIHandler static_ui_handler;
+
 }  // namespace
 
 struct Security::impl : public security::ISecurityManagerListener {
@@ -134,6 +145,7 @@ void Security::impl::SetSimplePairingCallback(SimplePairingCallback callback) {
 
 void Security::impl::Start() {
   LOG_DEBUG("Starting security manager shim");
+  security_manager_->SetUserInterfaceHandler(&static_ui_handler, handler_);
   security_manager_->RegisterCallbackListener(this, handler_);
 }
 

@@ -98,7 +98,8 @@ struct InitialInformations {
   std::optional<MyOobData> my_oob_data;
 
   /* Used by Pairing Handler to present user with requests*/
-  UI* ui_handler;
+  UI* user_interface;
+  os::Handler* user_interface_handler;
 
   /* HCI interface to use */
   hci::LeSecurityInterface* le_security_interface;

@@ -89,9 +89,11 @@ LegacyStage1ResultOrFailure PairingHandlerLe::LegacyPasskeyEntry(const InitialIn
     constexpr uint32_t PASSKEY_MAX = 999999;
     if (passkey > PASSKEY_MAX) passkey >>= 1;
 
-    i.ui_handler->DisplayConfirmValue(passkey);
+    i.user_interface_handler->Post(
+        common::BindOnce(&UI::DisplayConfirmValue, common::Unretained(i.user_interface), passkey));
   } else {
-    i.ui_handler->DisplayEnterPasskeyDialog();
+    i.user_interface_handler->Post(
+        common::BindOnce(&UI::DisplayEnterPasskeyDialog, common::Unretained(i.user_interface)));
     std::optional<PairingEvent> response = WaitUiPasskey();
     if (!response) return PairingFailure("Passkey did not arrive!");
 
