@@ -97,6 +97,16 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service,
     }
   };
 
+  ::grpc::Status FetchIncomingConnection(::grpc::ServerContext* context, const google::protobuf::Empty* request,
+                                         ::grpc::ServerWriter<LeConnectionEvent>* writer) override {
+    if (per_connection_events_.size() > current_connection_request_) {
+      return ::grpc::Status(::grpc::StatusCode::RESOURCE_EXHAUSTED, "Only one outstanding connection is supported");
+    }
+    per_connection_events_.emplace_back(std::make_unique<::bluetooth::grpc::GrpcEventQueue<LeConnectionEvent>>(
+        std::string("incoming connection ") + std::to_string(current_connection_request_)));
+    return per_connection_events_[current_connection_request_]->RunLoop(context, writer);
+  }
+
   ::grpc::Status SendAclData(::grpc::ServerContext* context, const LeAclData* request,
                              ::google::protobuf::Empty* response) override {
     std::promise<void> promise;

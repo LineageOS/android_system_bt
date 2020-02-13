@@ -196,7 +196,7 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
             self.send_cert_hci_command(
                 hci_packets.LeSetExtendedAdvertisingDataBuilder(
                     advertising_handle,
-                    hci_packets.Operation.COMPLETE_ADVERTISMENT,
+                    hci_packets.Operation.COMPLETE_ADVERTISEMENT,
                     hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT,
                     [gap_name]))
             enabled_set = hci_packets.EnabledSet()
@@ -282,7 +282,7 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
             self.send_dut_hci_command(
                 hci_packets.LeSetExtendedAdvertisingDataBuilder(
                     advertising_handle,
-                    hci_packets.Operation.COMPLETE_ADVERTISMENT,
+                    hci_packets.Operation.COMPLETE_ADVERTISEMENT,
                     hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT,
                     [gap_name]))
 
@@ -293,7 +293,7 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
             self.send_dut_hci_command(
                 hci_packets.LeSetExtendedAdvertisingScanResponseBuilder(
                     advertising_handle,
-                    hci_packets.Operation.COMPLETE_ADVERTISMENT,
+                    hci_packets.Operation.COMPLETE_ADVERTISEMENT,
                     hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT,
                     [gap_short_name]))
 
@@ -402,7 +402,7 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
             self.send_cert_hci_command(
                 hci_packets.LeSetExtendedAdvertisingDataBuilder(
                     advertising_handle,
-                    hci_packets.Operation.COMPLETE_ADVERTISMENT,
+                    hci_packets.Operation.COMPLETE_ADVERTISEMENT,
                     hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT,
                     [gap_name]))
             enabled_set = hci_packets.EnabledSet()
@@ -415,6 +415,8 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
 
             # LeConnectionComplete
             cert_hci_event_asserts.assert_event_occurs(
-                lambda packet: b'\x3e\x13\x01\x00' in packet.payload)
+                lambda packet: b'\x3e\x13\x01\x00' in packet.payload,
+                timeout=timedelta(seconds=20))
             hci_event_asserts.assert_event_occurs(
-                lambda packet: b'\x3e\x13\x01\x00' in packet.payload)
+                lambda packet: b'\x3e\x13\x01\x00' in packet.payload,
+                timeout=timedelta(seconds=20))

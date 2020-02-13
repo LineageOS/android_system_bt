@@ -468,7 +468,7 @@ TEST(HciPacketsTest, testLeSetExtendedAdvertisingData) {
       LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
   ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(0, view.GetAdvertisingHandle());
-  ASSERT_EQ(Operation::COMPLETE_ADVERTISMENT, view.GetOperation());
+  ASSERT_EQ(Operation::COMPLETE_ADVERTISEMENT, view.GetOperation());
   ASSERT_EQ(FragmentPreference::CONTROLLER_SHOULD_NOT, view.GetFragmentPreference());
   std::vector<uint8_t> advertising_data{
       0x02, 0x01, 0x02, 0x0a, 0x09, 0x50, 0x69, 0x78, 0x65, 0x6c, 0x20, 0x33, 0x20, 0x58,

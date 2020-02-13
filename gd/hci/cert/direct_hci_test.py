@@ -198,7 +198,7 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
             self.send_hal_hci_command(
                 hci_packets.LeSetExtendedAdvertisingDataBuilder(
                     advertising_handle,
-                    hci_packets.Operation.COMPLETE_ADVERTISMENT,
+                    hci_packets.Operation.COMPLETE_ADVERTISEMENT,
                     hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT,
                     [gap_name]))
 
@@ -209,7 +209,7 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
             self.send_hal_hci_command(
                 hci_packets.LeSetExtendedAdvertisingScanResponseBuilder(
                     advertising_handle,
-                    hci_packets.Operation.COMPLETE_ADVERTISMENT,
+                    hci_packets.Operation.COMPLETE_ADVERTISEMENT,
                     hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT,
                     [gap_short_name]))
 
@@ -297,7 +297,7 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
             self.enqueue_hci_command(
                 hci_packets.LeSetExtendedAdvertisingDataBuilder(
                     advertising_handle,
-                    hci_packets.Operation.COMPLETE_ADVERTISMENT,
+                    hci_packets.Operation.COMPLETE_ADVERTISEMENT,
                     hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT,
                     [gap_name]), True)
 
@@ -308,7 +308,7 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
             self.enqueue_hci_command(
                 hci_packets.LeSetExtendedAdvertisingScanResponseBuilder(
                     advertising_handle,
-                    hci_packets.Operation.COMPLETE_ADVERTISMENT,
+                    hci_packets.Operation.COMPLETE_ADVERTISEMENT,
                     hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT,
                     [gap_short_name]), True)
 
@@ -444,7 +444,7 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
             self.send_hal_hci_command(
                 hci_packets.LeSetExtendedAdvertisingDataBuilder(
                     advertising_handle,
-                    hci_packets.Operation.COMPLETE_ADVERTISMENT,
+                    hci_packets.Operation.COMPLETE_ADVERTISEMENT,
                     hci_packets.FragmentPreference.CONTROLLER_SHOULD_NOT,
                     [gap_name]))
             enabled_set = hci_packets.EnabledSet()
@@ -457,7 +457,8 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
 
             # LeConnectionComplete
             cert_hci_event_asserts.assert_event_occurs(
-                lambda packet: b'\x3e\x13\x01\x00' in packet.payload)
+                lambda packet: b'\x3e\x13\x01\x00' in packet.payload,
+                timeout=timedelta(seconds=20))
             le_event_asserts.assert_event_occurs(
                 lambda packet: b'\x3e\x13\x01\x00' in packet.event)
 
@@ -465,6 +466,8 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
         self.register_for_event(hci_packets.EventCode.CONNECTION_COMPLETE)
         self.register_for_event(
             hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
+        self.enqueue_hci_command(
+            hci_packets.WritePageTimeoutBuilder(0x4000), True)
         with EventCallbackStream(self.device_under_test.hci.FetchEvents(empty_proto.Empty())) as hci_event_stream, \
             EventCallbackStream(self.device_under_test.hci.FetchAclPackets(empty_proto.Empty())) as acl_data_stream, \
             EventCallbackStream(self.cert_device.hal.FetchHciEvent(empty_proto.Empty())) as cert_hci_event_stream, \
@@ -586,6 +589,7 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
         self.register_for_event(
             hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
         self.register_for_event(hci_packets.EventCode.CONNECTION_REQUEST)
+        self.send_hal_hci_command(hci_packets.WritePageTimeoutBuilder(0x4000))
         with EventCallbackStream(self.device_under_test.hci.FetchEvents(empty_proto.Empty())) as hci_event_stream, \
             EventCallbackStream(self.device_under_test.hci.FetchAclPackets(empty_proto.Empty())) as acl_data_stream, \
             EventCallbackStream(self.cert_device.hal.FetchHciEvent(empty_proto.Empty())) as cert_hci_event_stream, \

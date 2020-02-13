@@ -27,7 +27,7 @@ using bluetooth::common::MessageLoopThread;
 using bluetooth::common::RepeatingTimer;
 
 // Allowed error between the expected and actual delay for DoInThreadDelayed().
-constexpr uint32_t delay_error_ms = 3;
+constexpr uint32_t delay_error_ms = 100;
 
 /**
  * Unit tests to verify Task Scheduler.
