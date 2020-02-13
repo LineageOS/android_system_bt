@@ -673,18 +673,8 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
   /* Only one active inquiry is allowed in this implementation.
      Also do not allow an inquiry if the inquiry filter is being updated */
   if (p_inq->inq_active || p_inq->inqfilt_active) {
-    /*check if LE observe is already running*/
-    if (p_inq->scan_type == INQ_LE_OBSERVE &&
-        p_inq->p_inq_ble_results_cb != nullptr) {
-      BTM_TRACE_API("BTM_StartInquiry: LE observe in progress");
-      p_inq->scan_type = INQ_GENERAL;
-      p_inq->inq_active = BTM_INQUIRY_INACTIVE;
-      btm_cb.ble_ctr_cb.inq_var.scan_type = BTM_BLE_SCAN_MODE_NONE;
-      btm_send_hci_scan_enable(BTM_BLE_SCAN_DISABLE, BTM_BLE_DUPLICATE_ENABLE);
-    } else {
-      LOG(ERROR) << __func__ << ": BTM_BUSY";
-      return (BTM_BUSY);
-    }
+    LOG(ERROR) << __func__ << ": BTM_BUSY";
+    return (BTM_BUSY);
   } else {
     p_inq->scan_type = INQ_GENERAL;
   }
@@ -1783,13 +1773,6 @@ void btm_process_inq_complete(uint8_t status, uint8_t mode) {
 
   p_inq->inqparms.mode &= ~(mode);
 
-  if (p_inq->scan_type == INQ_LE_OBSERVE && !p_inq->inq_active) {
-    /*end of LE observe*/
-    p_inq->p_inq_ble_results_cb = NULL;
-    p_inq->p_inq_ble_cmpl_cb = NULL;
-    p_inq->scan_type = INQ_NONE;
-  }
-
 #if (BTM_INQ_DEBUG == TRUE)
   BTM_TRACE_DEBUG(
       "btm_process_inq_complete inq_active:0x%x state:%d inqfilt_active:%d",
@@ -1836,12 +1819,6 @@ void btm_process_inq_complete(uint8_t status, uint8_t mode) {
       p_inq->scan_type == INQ_GENERAL)  // this inquiry is complete
   {
     p_inq->scan_type = INQ_NONE;
-    /* check if the LE observe is pending */
-    if (p_inq->p_inq_ble_results_cb != NULL) {
-      BTM_TRACE_DEBUG("BTM Inq Compl: resuming a pending LE scan");
-      BTM_BleObserve(1, 0, p_inq->p_inq_ble_results_cb,
-                     p_inq->p_inq_ble_cmpl_cb);
-    }
   }
 #if (BTM_INQ_DEBUG == TRUE)
   BTM_TRACE_DEBUG("inq_active:0x%x state:%d inqfilt_active:%d",
