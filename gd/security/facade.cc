@@ -25,7 +25,7 @@
 namespace bluetooth {
 namespace security {
 
-class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public ISecurityManagerListener {
+class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public ISecurityManagerListener, public UI {
  public:
   SecurityModuleFacadeService(SecurityModule* security_module, ::bluetooth::os::Handler* security_handler)
       : security_module_(security_module), security_handler_(security_handler) {
@@ -87,10 +87,18 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     return bond_events_.RunLoop(context, writer);
   }
 
-  void OnDisplayYesNoDialogWithValue(const bluetooth::hci::AddressWithType& peer, uint32_t numeric_value,
-                                     common::OnceCallback<void(bool)> callback) override {
+  void DisplayPairingPrompt(const bluetooth::hci::AddressWithType& peer, std::string name) {
+    LOG_INFO("%s", peer.ToString().c_str());
+    UiMsg display_yes_no;
+    display_yes_no.mutable_peer()->mutable_address()->set_address(peer.ToString());
+    display_yes_no.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
+    display_yes_no.set_message_type(UiMsgType::DISPLAY_YES_NO);
+    display_yes_no.set_unique_id(unique_id++);
+  }
+
+  virtual void DisplayConfirmValue(const bluetooth::hci::AddressWithType& peer, std::string name,
+                                   uint32_t numeric_value) {
     LOG_INFO("%s value = 0x%x", peer.ToString().c_str(), numeric_value);
-    user_yes_no_callbacks_.emplace(unique_id, std::move(callback));
     UiMsg display_with_value;
     display_with_value.mutable_peer()->mutable_address()->set_address(peer.ToString());
     display_with_value.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
@@ -100,19 +108,16 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     ui_events_.OnIncomingEvent(display_with_value);
   }
 
-  void OnDisplayYesNoDialog(const bluetooth::hci::AddressWithType& peer,
-                            common::OnceCallback<void(bool)> callback) override {
+  void DisplayYesNoDialog(const bluetooth::hci::AddressWithType& peer, std::string name) override {
     LOG_INFO("%s", peer.ToString().c_str());
-    user_yes_no_callbacks_.emplace(unique_id, std::move(callback));
     UiMsg display_yes_no;
     display_yes_no.mutable_peer()->mutable_address()->set_address(peer.ToString());
     display_yes_no.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
     display_yes_no.set_message_type(UiMsgType::DISPLAY_YES_NO);
     display_yes_no.set_unique_id(unique_id++);
-    ui_events_.OnIncomingEvent(display_yes_no);
   }
 
-  void OnDisplayPasskeyDialog(const bluetooth::hci::AddressWithType& peer, uint32_t passkey) override {
+  void DisplayPasskey(const bluetooth::hci::AddressWithType& peer, std::string name, uint32_t passkey) override {
     LOG_INFO("%s value = 0x%x", peer.ToString().c_str(), passkey);
     UiMsg display_passkey;
     display_passkey.mutable_peer()->mutable_address()->set_address(peer.ToString());
@@ -123,10 +128,8 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     ui_events_.OnIncomingEvent(display_passkey);
   }
 
-  void OnDisplayPasskeyInputDialog(const bluetooth::hci::AddressWithType& peer,
-                                   common::OnceCallback<void(uint32_t)> callback) override {
+  void DisplayEnterPasskeyDialog(const bluetooth::hci::AddressWithType& peer, std::string name) override {
     LOG_INFO("%s", peer.ToString().c_str());
-    user_passkey_callbacks_.emplace(unique_id, std::move(callback));
     UiMsg display_passkey_input;
     display_passkey_input.mutable_peer()->mutable_address()->set_address(peer.ToString());
     display_passkey_input.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
@@ -135,7 +138,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     ui_events_.OnIncomingEvent(display_passkey_input);
   }
 
-  void OnDisplayCancelDialog(const bluetooth::hci::AddressWithType& peer) override {
+  void Cancel(const bluetooth::hci::AddressWithType& peer) override {
     LOG_INFO("%s", peer.ToString().c_str());
     UiMsg display_cancel;
     display_cancel.mutable_peer()->mutable_address()->set_address(peer.ToString());

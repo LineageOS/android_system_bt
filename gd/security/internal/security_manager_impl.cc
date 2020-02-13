@@ -48,7 +48,7 @@ void SecurityManagerImpl::DispatchPairingHandler(record::SecurityRecord& record,
           std::make_shared<record::SecurityRecord>(record.GetPseudoAddress());
       pairing_handler = std::make_shared<security::pairing::ClassicPairingHandler>(
           l2cap_classic_module_->GetFixedChannelManager(), security_manager_channel_, record_copy, security_handler_,
-          std::move(callback), listeners_);
+          std::move(callback), user_interface_, user_interface_handler_, "TODO: grab device name properly");
       break;
     }
     default:
