@@ -29,7 +29,7 @@ class UI {
   virtual ~UI(){};
 
   /* Remote device tries to initiate pairing, ask user to confirm */
-  virtual void DisplayPairingPrompt(const bluetooth::hci::AddressWithType& address, std::string& name) = 0;
+  virtual void DisplayPairingPrompt(const bluetooth::hci::AddressWithType& address, std::string name) = 0;
 
   /* Remove the pairing prompt from DisplayPairingPrompt, i.e. remote device disconnected, or some application requested
    * bond with this device */
@@ -51,13 +51,13 @@ class UICallbacks {
   virtual ~UICallbacks() = 0;
 
   /* User accepted pairing prompt */
-  virtual void OnPairingPromptAccepted(const bluetooth::hci::Address& address) = 0;
+  virtual void OnPairingPromptAccepted(const bluetooth::hci::AddressWithType& address) = 0;
 
   /* User confirmed that displayed value matches the value on the other device */
-  virtual void OnConfirmYesNo(const bluetooth::hci::Address& address, bool conformed) = 0;
+  virtual void OnConfirmYesNo(const bluetooth::hci::AddressWithType& address, bool conformed) = 0;
 
   /* User typed the value displayed on the other device. This is either Passkey or the Confirm value */
-  virtual void OnPasskeyEntry(const bluetooth::hci::Address& address, uint32_t passkey) = 0;
+  virtual void OnPasskeyEntry(const bluetooth::hci::AddressWithType& address, uint32_t passkey) = 0;
 };
 
 }  // namespace security
