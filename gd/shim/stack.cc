@@ -20,7 +20,6 @@
 #include "att/att_module.h"
 #include "hal/hci_hal.h"
 #include "hci/acl_manager.h"
-#include "hci/classic_security_manager.h"
 #include "hci/le_advertising_manager.h"
 #include "hci/le_scanning_manager.h"
 #include "l2cap/classic/l2cap_classic_module.h"
