@@ -223,7 +223,7 @@ typedef struct {
   bool scan_rsp;
 } tINQ_DB_ENT;
 
-enum { INQ_NONE, INQ_LE_OBSERVE, INQ_GENERAL };
+enum { INQ_NONE, INQ_GENERAL };
 typedef uint8_t tBTM_INQ_TYPE;
 
 typedef struct {
@@ -252,10 +252,6 @@ typedef struct {
 
   tBTM_CMPL_CB* p_inq_cmpl_cb;
   tBTM_INQ_RESULTS_CB* p_inq_results_cb;
-  tBTM_CMPL_CB*
-      p_inq_ble_cmpl_cb; /*completion callback exclusively for LE Observe*/
-  tBTM_INQ_RESULTS_CB*
-      p_inq_ble_results_cb; /*results callback exclusively for LE observe*/
   tBTM_CMPL_CB* p_inqfilter_cmpl_cb; /* Called (if not NULL) after inquiry
                                         filter completed */
   uint32_t inq_counter; /* Counter incremented each time an inquiry completes */
