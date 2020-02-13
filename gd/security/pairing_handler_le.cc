@@ -26,7 +26,8 @@ void PairingHandlerLe::PairingMain(InitialInformations i) {
 
   if (i.remotely_initiated) {
     LOG_INFO("Was remotely initiated, presenting user with the accept prompt");
-    i.ui_handler->DisplayPairingPrompt(i.remote_connection_address, i.remote_name);
+    i.user_interface_handler->Post(common::BindOnce(&UI::DisplayPairingPrompt, common::Unretained(i.user_interface),
+                                                    i.remote_connection_address, i.remote_name));
 
     // If pairing was initiated by remote device, wait for the user to accept
     // the request from the UI.

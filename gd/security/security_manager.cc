@@ -53,6 +53,11 @@ void SecurityManager::RemoveBond(hci::AddressWithType device) {
                                            std::forward<hci::AddressWithType>(device)));
 }
 
+void SecurityManager::SetUserInterfaceHandler(UI* user_interface, os::Handler* handler) {
+  security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::SetUserInterfaceHandler,
+                                           common::Unretained(security_manager_impl_), user_interface, handler));
+}
+
 void SecurityManager::RegisterCallbackListener(ISecurityManagerListener* listener, os::Handler* handler) {
   security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::RegisterCallbackListener,
                                            common::Unretained(security_manager_impl_), listener, handler));
