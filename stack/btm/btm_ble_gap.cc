@@ -88,6 +88,14 @@ class AdvertisingCache {
     return items.front().data;
   }
 
+  bool Exist(uint8_t addr_type, const RawAddress& addr) {
+    auto it = Find(addr_type, addr);
+    if (it != items.end()) {
+        return true;
+    }
+    return false;
+  }
+
   /* Append |data| for device |addr_type, addr| */
   const std::vector<uint8_t>& Append(uint8_t addr_type, const RawAddress& addr,
                                      std::vector<uint8_t> data) {
@@ -1950,11 +1958,19 @@ void btm_ble_process_adv_pkt_cont(uint16_t evt_type, uint8_t addr_type,
 
   bool is_scannable = ble_evt_type_is_scannable(evt_type);
   bool is_scan_resp = ble_evt_type_is_scan_resp(evt_type);
+  bool is_legacy = ble_evt_type_is_legacy(evt_type);
 
-  bool is_start =
-      ble_evt_type_is_legacy(evt_type) && is_scannable && !is_scan_resp;
+  // We might receive a legacy scan response without receving a ADV_IND
+  // or ADV_SCAN_IND before. Only parsing the scan response data which
+  // has no ad flag, the device will be set to DUMO mode. The createbond
+  // procedure will use the wrong device mode.
+  // In such case no necessary to report scan response
+  if(is_legacy && is_scan_resp && !cache.Exist(addr_type, bda))
+    return;
 
-  if (ble_evt_type_is_legacy(evt_type))
+  bool is_start = is_legacy && is_scannable && !is_scan_resp;
+
+  if (is_legacy)
     AdvertiseDataParser::RemoveTrailingZeros(tmp);
 
   // We might have send scan request to this device before, but didn't get the
