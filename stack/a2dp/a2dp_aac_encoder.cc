@@ -19,6 +19,7 @@
 #include "a2dp_aac_encoder.h"
 
 #include <inttypes.h>
+#include <math.h>
 #include <stdio.h>
 #include <string.h>
 
@@ -56,8 +57,8 @@ typedef struct {
 
 typedef struct {
   uint32_t counter;
-  uint32_t bytes_per_tick; /* pcm bytes read each media task tick */
-  uint64_t last_frame_us;
+  uint32_t bytes_per_tick;              // pcm bytes read each media task tick
+  uint64_t last_frame_timestamp_100ns;  // values in 1/10 microseconds
 } tA2DP_AAC_FEEDING_STATE;
 
 typedef struct {
@@ -537,16 +538,30 @@ static void a2dp_aac_get_num_frame_iteration(uint8_t* num_of_iterations,
   LOG_VERBOSE(LOG_TAG, "%s: pcm_bytes_per_frame %u", __func__,
               pcm_bytes_per_frame);
 
-  uint32_t us_this_tick = a2dp_aac_encoder_interval_ms * 1000;
-  uint64_t now_us = timestamp_us;
-  if (a2dp_aac_encoder_cb.aac_feeding_state.last_frame_us != 0)
-    us_this_tick =
-        (now_us - a2dp_aac_encoder_cb.aac_feeding_state.last_frame_us);
-  a2dp_aac_encoder_cb.aac_feeding_state.last_frame_us = now_us;
+  uint32_t hecto_ns_this_tick = a2dp_aac_encoder_interval_ms * 10000;
+  uint64_t* last_100ns =
+      &a2dp_aac_encoder_cb.aac_feeding_state.last_frame_timestamp_100ns;
+  uint64_t now_100ns = timestamp_us * 10;
+  if (*last_100ns != 0) {
+    hecto_ns_this_tick = (now_100ns - *last_100ns);
+  }
+  *last_100ns = now_100ns;
 
-  a2dp_aac_encoder_cb.aac_feeding_state.counter +=
-      a2dp_aac_encoder_cb.aac_feeding_state.bytes_per_tick * us_this_tick /
-      (a2dp_aac_encoder_interval_ms * 1000);
+  uint32_t bytes_this_tick =
+      a2dp_aac_encoder_cb.aac_feeding_state.bytes_per_tick *
+      hecto_ns_this_tick / (a2dp_aac_encoder_interval_ms * 10000);
+  a2dp_aac_encoder_cb.aac_feeding_state.counter += bytes_this_tick;
+  // Without this erratum, there was a three microseocnd shift per tick which
+  // would cause one frame mismatched after every 180 seconds
+  uint32_t erratum_100ns =
+      ceil(1.0f * bytes_this_tick * a2dp_aac_encoder_interval_ms * 10000 /
+           a2dp_aac_encoder_cb.aac_feeding_state.bytes_per_tick);
+  if (erratum_100ns < hecto_ns_this_tick) {
+    LOG_VERBOSE(LOG_TAG,
+                "%s: hecto_ns_this_tick=%d, bytes=%d, erratum_100ns=%d",
+                __func__, hecto_ns_this_tick, bytes_this_tick, erratum_100ns);
+    *last_100ns -= hecto_ns_this_tick - erratum_100ns;
+  }
 
   result = a2dp_aac_encoder_cb.aac_feeding_state.counter / pcm_bytes_per_frame;
   a2dp_aac_encoder_cb.aac_feeding_state.counter -= result * pcm_bytes_per_frame;
