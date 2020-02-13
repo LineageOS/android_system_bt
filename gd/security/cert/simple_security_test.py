@@ -38,9 +38,6 @@ import bluetooth_packets_python3 as bt_packets
 class SimpleSecurityTest(GdFacadeOnlyBaseTestClass):
 
     def setup_test(self):
-        self.cert_device = self.gd_devices[0]
-        self.device_under_test = self.gd_devices[1]
-
         self.device_under_test.rootservice.StartStack(
             facade_rootservice_pb2.StartStackRequest(
                 module_under_test=facade_rootservice_pb2.BluetoothModule.Value(
