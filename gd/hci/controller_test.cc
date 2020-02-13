@@ -173,7 +173,12 @@ class TestHciLayer : public HciLayer {
         event_builder = LeGetVendorCapabilitiesCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS,
                                                                        base_vendor_capabilities, std::move(payload));
       } break;
-      case (OpCode::SET_EVENT_MASK):
+      case (OpCode::SET_EVENT_MASK): {
+        auto view = SetEventMaskView::Create(command);
+        ASSERT(view.IsValid());
+        event_mask = view.GetEventMask();
+        event_builder = SetEventMaskCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS);
+      } break;
       case (OpCode::RESET):
       case (OpCode::SET_EVENT_FILTER):
       case (OpCode::HOST_BUFFER_SIZE):
@@ -247,6 +252,7 @@ class TestHciLayer : public HciLayer {
   constexpr static uint8_t synchronous_data_packet_length = 60;
   constexpr static uint16_t total_num_acl_data_packets = 10;
   constexpr static uint16_t total_num_synchronous_data_packets = 12;
+  uint64_t event_mask = 0;
 
  private:
   common::Callback<void(EventPacketView)> number_of_completed_packets_callback_;
@@ -280,7 +286,6 @@ class ControllerTest : public ::testing::Test {
 TEST_F(ControllerTest, startup_teardown) {}
 
 TEST_F(ControllerTest, read_controller_info) {
-  std::promise<void> callback_completed;
   ASSERT_EQ(controller_->GetControllerAclPacketLength(), test_hci_layer_->acl_data_packet_length);
   ASSERT_EQ(controller_->GetControllerNumAclPacketBuffers(), test_hci_layer_->total_num_acl_data_packets);
   ASSERT_EQ(controller_->GetControllerScoPacketLength(), test_hci_layer_->synchronous_data_packet_length);
@@ -323,11 +328,12 @@ TEST_F(ControllerTest, read_write_local_name) {
 }
 
 TEST_F(ControllerTest, send_set_event_mask_command) {
-  controller_->SetEventMask(0x00001FFFFFFFFFFF);
-  auto packet = test_hci_layer_->GetCommand(OpCode::SET_EVENT_MASK);
-  auto command = SetEventMaskView::Create(packet);
-  ASSERT(command.IsValid());
-  ASSERT_EQ(command.GetEventMask(), 0x00001FFFFFFFFFFF);
+  uint64_t new_event_mask = test_hci_layer_->event_mask - 1;
+  controller_->SetEventMask(new_event_mask);
+  // Send another command to make sure it was applied
+  controller_->Reset();
+  auto packet = test_hci_layer_->GetCommand(OpCode::RESET);
+  ASSERT_EQ(new_event_mask, test_hci_layer_->event_mask);
 }
 
 TEST_F(ControllerTest, send_reset_command) {
