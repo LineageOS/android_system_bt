@@ -118,6 +118,11 @@ bool GattServer::SendResponse(const std::string& device_address, int request_id,
     return false;
   }
 
+  if (offset < 0) {
+    LOG(ERROR) << "Offset is less than 0 offset: " << offset;
+    return false;
+  }
+
   if (value.size() + offset > BTGATT_MAX_ATTR_LEN) {
     LOG(ERROR) << "Value is too large";
     return false;
