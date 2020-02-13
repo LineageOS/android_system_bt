@@ -60,6 +60,9 @@ class GdFacadeOnlyBaseTestClass(BaseTestClass):
         self.register_controller(
             importlib.import_module('cert.gd_device'), builtin=True)
 
+        self.device_under_test = self.gd_devices[0]
+        self.cert_device = self.gd_devices[1]
+
     def teardown_class(self):
         if self.rootcanal_running:
             self.rootcanal_process.send_signal(signal.SIGINT)
