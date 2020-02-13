@@ -23,42 +23,29 @@ namespace bluetooth {
 namespace security {
 namespace pairing {
 
-void ClassicPairingHandler::NotifyUiDisplayYesNo(uint32_t numeric_value,
-                                                 common::OnceCallback<void(bool)> input_callback) {
-  for (auto& iter : client_listeners_) {
-    iter.second->Post(common::BindOnce(&ISecurityManagerListener::OnDisplayYesNoDialogWithValue,
-                                       common::Unretained(iter.first), GetRecord()->GetPseudoAddress(), numeric_value,
-                                       std::move(input_callback)));
-  }
+void ClassicPairingHandler::NotifyUiDisplayYesNo(uint32_t numeric_value) {
+  user_interface_handler_->Post(common::BindOnce(&UI::DisplayConfirmValue, common::Unretained(user_interface_),
+                                                 GetRecord()->GetPseudoAddress(), device_name_, numeric_value));
 }
 
-void ClassicPairingHandler::NotifyUiDisplayYesNo(common::OnceCallback<void(bool)> input_callback) {
-  for (auto& iter : client_listeners_) {
-    iter.second->Post(common::BindOnce(&ISecurityManagerListener::OnDisplayYesNoDialog, common::Unretained(iter.first),
-                                       GetRecord()->GetPseudoAddress(), std::move(input_callback)));
-  }
+void ClassicPairingHandler::NotifyUiDisplayYesNo() {
+  user_interface_handler_->Post(common::BindOnce(&UI::DisplayYesNoDialog, common::Unretained(user_interface_),
+                                                 GetRecord()->GetPseudoAddress(), device_name_));
 }
 
 void ClassicPairingHandler::NotifyUiDisplayPasskey(uint32_t passkey) {
-  for (auto& iter : client_listeners_) {
-    iter.second->Post(common::BindOnce(&ISecurityManagerListener::OnDisplayPasskeyDialog,
-                                       common::Unretained(iter.first), GetRecord()->GetPseudoAddress(), passkey));
-  }
+  user_interface_handler_->Post(common::BindOnce(&UI::DisplayPasskey, common::Unretained(user_interface_),
+                                                 GetRecord()->GetPseudoAddress(), device_name_, passkey));
 }
 
-void ClassicPairingHandler::NotifyUiDisplayPasskeyInput(common::OnceCallback<void(uint32_t passkey)> input_callback) {
-  for (auto& iter : client_listeners_) {
-    iter.second->Post(common::BindOnce(&ISecurityManagerListener::OnDisplayPasskeyInputDialog,
-                                       common::Unretained(iter.first), GetRecord()->GetPseudoAddress(),
-                                       std::move(input_callback)));
-  }
+void ClassicPairingHandler::NotifyUiDisplayPasskeyInput() {
+  user_interface_handler_->Post(common::BindOnce(&UI::DisplayEnterPasskeyDialog, common::Unretained(user_interface_),
+                                                 GetRecord()->GetPseudoAddress(), device_name_));
 }
 
 void ClassicPairingHandler::NotifyUiDisplayCancel() {
-  for (auto& iter : client_listeners_) {
-    iter.second->Post(common::BindOnce(&ISecurityManagerListener::OnDisplayCancelDialog, common::Unretained(iter.first),
-                                       GetRecord()->GetPseudoAddress()));
-  }
+  user_interface_handler_->Post(
+      common::BindOnce(&UI::Cancel, common::Unretained(user_interface_), GetRecord()->GetPseudoAddress()));
 }
 
 void ClassicPairingHandler::OnRegistrationComplete(
@@ -301,15 +288,13 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
         case hci::IoCapability::DISPLAY_ONLY:
           // NumericComparison, Initiator display, Responder auto confirm
           LOG_INFO("Numeric Comparison: A DisplayYesNo, B auto confirm");
-          NotifyUiDisplayYesNo(packet.GetNumericValue(),
-                               common::BindOnce(&ClassicPairingHandler::OnUserInput, common::Unretained(this)));
+          NotifyUiDisplayYesNo(packet.GetNumericValue());
           // Unauthenticated
           break;
         case hci::IoCapability::DISPLAY_YES_NO:
           // NumericComparison Both Display, Both confirm
           LOG_INFO("Numeric Comparison: A and B DisplayYesNo");
-          NotifyUiDisplayYesNo(packet.GetNumericValue(),
-                               common::BindOnce(&ClassicPairingHandler::OnUserInput, common::Unretained(this)));
+          NotifyUiDisplayYesNo(packet.GetNumericValue());
           // Authenticated
           break;
         case hci::IoCapability::KEYBOARD_ONLY:
@@ -320,7 +305,7 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
           break;
         case hci::IoCapability::NO_INPUT_NO_OUTPUT:
           // NumericComparison, auto confirm Responder, Yes/No confirm Initiator. Don't show confirmation value
-          NotifyUiDisplayYesNo(common::BindOnce(&ClassicPairingHandler::OnUserInput, common::Unretained(this)));
+          NotifyUiDisplayYesNo();
           LOG_INFO("Numeric Comparison: A DisplayYesNo, B auto confirm, no show value");
           // Unauthenticated
           break;
@@ -330,22 +315,19 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
       switch (responder_io_capability) {
         case hci::IoCapability::DISPLAY_ONLY:
           // PassKey Entry, Responder display, Initiator input
-          NotifyUiDisplayPasskeyInput(
-              common::BindOnce(&ClassicPairingHandler::OnPasskeyInput, common::Unretained(this)));
+          NotifyUiDisplayPasskeyInput();
           LOG_INFO("Passkey Entry: A input, B display");
           // Authenticated
           break;
         case hci::IoCapability::DISPLAY_YES_NO:
           // PassKey Entry, Responder display, Initiator input
-          NotifyUiDisplayPasskeyInput(
-              common::BindOnce(&ClassicPairingHandler::OnPasskeyInput, common::Unretained(this)));
+          NotifyUiDisplayPasskeyInput();
           LOG_INFO("Passkey Entry: A input, B display");
           // Authenticated
           break;
         case hci::IoCapability::KEYBOARD_ONLY:
           // PassKey Entry, both input
-          NotifyUiDisplayPasskeyInput(
-              common::BindOnce(&ClassicPairingHandler::OnPasskeyInput, common::Unretained(this)));
+          NotifyUiDisplayPasskeyInput();
           LOG_INFO("Passkey Entry: A input, B input");
           // Authenticated
           break;
