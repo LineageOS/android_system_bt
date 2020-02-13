@@ -433,14 +433,15 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_numeric_comparison) {
 
     RecordPairingPromptHandling(slave_user_interface, &pairing_handler_b);
 
-    EXPECT_CALL(slave_user_interface, DisplayConfirmValue(_)).WillOnce(SaveArg<0>(&num_value_slave));
-    EXPECT_CALL(master_user_interface, DisplayConfirmValue(_)).WillOnce(Invoke([&](uint32_t num_value) {
-      EXPECT_EQ(num_value_slave, num_value);
-      if (num_value_slave == num_value) {
-        pairing_handler_a->OnUiAction(PairingEvent::CONFIRM_YESNO, 0x01);
-        pairing_handler_b->OnUiAction(PairingEvent::CONFIRM_YESNO, 0x01);
-      }
-    }));
+    EXPECT_CALL(slave_user_interface, DisplayConfirmValue(_, _, _)).WillOnce(SaveArg<2>(&num_value_slave));
+    EXPECT_CALL(master_user_interface, DisplayConfirmValue(_, _, _))
+        .WillOnce(Invoke([&](const bluetooth::hci::AddressWithType&, std::string, uint32_t num_value) {
+          EXPECT_EQ(num_value_slave, num_value);
+          if (num_value_slave == num_value) {
+            pairing_handler_a->OnUiAction(PairingEvent::CONFIRM_YESNO, 0x01);
+            pairing_handler_b->OnUiAction(PairingEvent::CONFIRM_YESNO, 0x01);
+          }
+        }));
 
     pairing_handler_b = std::make_unique<PairingHandlerLe>(PairingHandlerLe::PHASE1, slave_setup);
   }
@@ -473,16 +474,17 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_passkey_entry) {
 
     RecordPairingPromptHandling(slave_user_interface, &pairing_handler_b);
 
-    EXPECT_CALL(slave_user_interface, DisplayPasskey(_)).WillOnce(SaveArg<0>(&passkey));
-    EXPECT_CALL(master_user_interface, DisplayEnterPasskeyDialog()).WillOnce(Invoke([&]() {
-      LOG_INFO("Passkey prompt displayed entering passkey: %08x", passkey);
-      std::this_thread::sleep_for(1ms);
+    EXPECT_CALL(slave_user_interface, DisplayPasskey(_, _, _)).WillOnce(SaveArg<2>(&passkey));
+    EXPECT_CALL(master_user_interface, DisplayEnterPasskeyDialog(_, _))
+        .WillOnce(Invoke([&](const bluetooth::hci::AddressWithType& address, std::string name) {
+          LOG_INFO("Passkey prompt displayed entering passkey: %08x", passkey);
+          std::this_thread::sleep_for(1ms);
 
-      // handle case where prompts are displayed in different order in the test!
-      if (passkey == std::numeric_limits<uint32_t>::max()) FAIL();
+          // handle case where prompts are displayed in different order in the test!
+          if (passkey == std::numeric_limits<uint32_t>::max()) FAIL();
 
-      pairing_handler_a->OnUiAction(PairingEvent::PASSKEY, passkey);
-    }));
+          pairing_handler_a->OnUiAction(PairingEvent::PASSKEY, passkey);
+        }));
 
     pairing_handler_b = std::make_unique<PairingHandlerLe>(PairingHandlerLe::PHASE1, slave_setup);
   }
@@ -622,14 +624,15 @@ TEST_F(PairingHandlerPairTest, test_legacy_passkey_entry) {
 
     RecordPairingPromptHandling(slave_user_interface, &pairing_handler_b);
 
-    EXPECT_CALL(slave_user_interface, DisplayEnterPasskeyDialog());
-    EXPECT_CALL(master_user_interface, DisplayConfirmValue(_)).WillOnce(Invoke([&](uint32_t passkey) {
-      LOG_INFO("Passkey prompt displayed entering passkey: %08x", passkey);
-      std::this_thread::sleep_for(1ms);
+    EXPECT_CALL(slave_user_interface, DisplayEnterPasskeyDialog(_, _));
+    EXPECT_CALL(master_user_interface, DisplayConfirmValue(_, _, _))
+        .WillOnce(Invoke([&](const bluetooth::hci::AddressWithType&, std::string, uint32_t passkey) {
+          LOG_INFO("Passkey prompt displayed entering passkey: %08x", passkey);
+          std::this_thread::sleep_for(1ms);
 
-      // TODO: handle case where prompts are displayed in different order in the test!
-      pairing_handler_b->OnUiAction(PairingEvent::PASSKEY, passkey);
-    }));
+          // TODO: handle case where prompts are displayed in different order in the test!
+          pairing_handler_b->OnUiAction(PairingEvent::PASSKEY, passkey);
+        }));
 
     pairing_handler_b = std::make_unique<PairingHandlerLe>(PairingHandlerLe::PHASE1, slave_setup);
   }
