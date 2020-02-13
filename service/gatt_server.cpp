@@ -16,6 +16,7 @@
 
 #include "service/gatt_server.h"
 
+#include "osi/include/log.h"
 #include "service/common/bluetooth/util/address_helper.h"
 #include "service/hal/gatt_helpers.h"
 #include "service/logging_helpers.h"
@@ -309,6 +310,12 @@ bool GattServer::SendResponse(
   bt_bdaddr_t addr;
   if (!util::BdAddrFromString(device_address, &addr)) {
     LOG(ERROR) << "Invalid device address given: " << device_address;
+    return false;
+  }
+
+  if (offset < 0) {
+    android_errorWriteLog(0x534e4554, "143231677");
+    LOG(ERROR) << "Offset is less than 0 offset: " << offset;
     return false;
   }
 
