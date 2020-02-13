@@ -38,8 +38,6 @@ typedef uint8_t tBTM_BLE_CHNL_MAP[CHNL_MAP_LEN];
 #define BTM_BLE_CONNECT_LO_DUTY_DIR_EVT 0x04
 /* 0x00 - 0x05 can be received on adv event type */
 #define BTM_BLE_SCAN_RSP_EVT 0x04
-#define BTM_BLE_SCAN_REQ_EVT 0x05
-#define BTM_BLE_UNKNOWN_EVT 0xff
 
 #define BTM_BLE_UNKNOWN_EVT 0xff
 
