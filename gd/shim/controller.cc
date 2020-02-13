@@ -32,7 +32,6 @@ namespace shim {
 
 namespace {
 constexpr char kModuleName[] = "shim::Controller";
-constexpr uint64_t kEventMask = 0x3dbfffffffffffff;
 }  // namespace
 
 struct Controller::impl {
@@ -109,7 +108,6 @@ void Controller::ListDependencies(ModuleList* list) {
 void Controller::Start() {
   LOG_INFO("%s Starting controller shim layer", __func__);
   pimpl_ = std::make_unique<impl>(GetDependency<hci::Controller>());
-  pimpl_->hci_controller_->SetEventMask(kEventMask);
 }
 
 void Controller::Stop() {
