@@ -43,50 +43,27 @@ constexpr uint8_t kLegacyAddressTypeRandomIdentity = 3;
 // TOOD: implement properly, have it passed from above shim ?
 class UIHandler : public ::bluetooth::security::UI {
  public:
-  void DisplayPairingPrompt(const hci::AddressWithType& address, std::string name) {}
-  void Cancel(const hci::AddressWithType& address) {}
-  void DisplayConfirmValue(const hci::AddressWithType& address, std::string name, uint32_t numeric_value) {}
-  void DisplayYesNoDialog(const bluetooth::hci::AddressWithType& address, std::string name) {}
-  void DisplayEnterPasskeyDialog(const hci::AddressWithType& address, std::string name) {}
-  void DisplayPasskey(const hci::AddressWithType& address, std::string name, uint32_t passkey) {}
+  void DisplayPairingPrompt(const hci::AddressWithType& address, std::string name) override {}
+  void Cancel(const hci::AddressWithType& address) override {}
+  void DisplayConfirmValue(const hci::AddressWithType& address, std::string name, uint32_t numeric_value) override {}
+  void DisplayYesNoDialog(const bluetooth::hci::AddressWithType& address, std::string name) override {}
+  void DisplayEnterPasskeyDialog(const hci::AddressWithType& address, std::string name) override {}
+  void DisplayPasskey(const hci::AddressWithType& address, std::string name, uint32_t passkey) override {}
 };
 UIHandler static_ui_handler;
 
 }  // namespace
 
 struct Security::impl : public security::ISecurityManagerListener {
-  void OnDisplayYesNoDialogWithValue(const bluetooth::hci::AddressWithType& address, uint32_t numeric_value,
-                                     common::OnceCallback<void(bool)> input_callback) {
-    std::move(input_callback).Run(simple_pairing_callback_(address.ToString(), numeric_value, false));
-  }
-
-  void OnDisplayYesNoDialog(const bluetooth::hci::AddressWithType& address,
-                            common::OnceCallback<void(bool)> input_callback) {
+  void OnDeviceBonded(bluetooth::hci::AddressWithType device) override {
     LOG_DEBUG("UNIMPLEMENTED %s", __func__);
   }
 
-  void OnDisplayPasskeyDialog(const bluetooth::hci::AddressWithType& address, uint32_t passkey) {
+  void OnDeviceUnbonded(bluetooth::hci::AddressWithType device) override {
     LOG_DEBUG("UNIMPLEMENTED %s", __func__);
   }
 
-  void OnDisplayPasskeyInputDialog(const bluetooth::hci::AddressWithType& address,
-                                   common::OnceCallback<void(uint32_t)> input_callback) {
-    LOG_DEBUG("UNIMPLEMENTED %s", __func__);
-  }
-
-  void OnDisplayCancelDialog(const bluetooth::hci::AddressWithType& address) {
-    LOG_DEBUG("UNIMPLEMENTED %s", __func__);
-  }
-
-  void OnDeviceBonded(bluetooth::hci::AddressWithType device) {
-    LOG_DEBUG("UNIMPLEMENTED %s", __func__);
-  }
-
-  void OnDeviceUnbonded(bluetooth::hci::AddressWithType device) {
-    LOG_DEBUG("UNIMPLEMENTED %s", __func__);
-  }
-
-  void OnDeviceBondFailed(bluetooth::hci::AddressWithType device) {
+  void OnDeviceBondFailed(bluetooth::hci::AddressWithType device) override {
     LOG_DEBUG("UNIMPLEMENTED %s", __func__);
   }
 
