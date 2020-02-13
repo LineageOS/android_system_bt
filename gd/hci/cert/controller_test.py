@@ -26,9 +26,6 @@ from hci.facade import controller_facade_pb2 as controller_facade
 class ControllerTest(GdFacadeOnlyBaseTestClass):
 
     def setup_test(self):
-        self.cert_device = self.gd_devices[0]
-        self.device_under_test = self.gd_devices[1]
-
         self.device_under_test.rootservice.StartStack(
             facade_rootservice.StartStackRequest(
                 module_under_test=facade_rootservice.BluetoothModule.Value(
