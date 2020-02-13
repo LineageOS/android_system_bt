@@ -44,6 +44,7 @@ struct Controller::impl {
                                Bind(&Controller::impl::NumberOfCompletedPackets, common::Unretained(this)),
                                module_.GetHandler());
 
+    set_event_mask(kDefaultEventMask);
     hci_->EnqueueCommand(ReadLocalNameBuilder::Create(),
                          BindOnce(&Controller::impl::read_local_name_complete_handler, common::Unretained(this)),
                          module_.GetHandler());
