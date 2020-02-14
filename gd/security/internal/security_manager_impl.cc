@@ -254,6 +254,22 @@ void SecurityManagerImpl::OnHciLeEvent(hci::LeMetaEventView event) {
   LOG_ERROR("Unhandled HCI LE security event");
 }
 
+void SecurityManagerImpl::OnPairingPromptAccepted(const bluetooth::hci::AddressWithType& address, bool confirmed) {
+  pending_le_pairing_.handler_->OnUiAction(PairingEvent::UI_ACTION_TYPE::PAIRING_ACCEPTED, confirmed);
+}
+
+void SecurityManagerImpl::OnConfirmYesNo(const bluetooth::hci::AddressWithType& address, bool confirmed) {
+  if (pending_le_pairing_.address_ == address) {
+    pending_le_pairing_.handler_->OnUiAction(PairingEvent::UI_ACTION_TYPE::CONFIRM_YESNO, confirmed);
+  }
+}
+
+void SecurityManagerImpl::OnPasskeyEntry(const bluetooth::hci::AddressWithType& address, uint32_t passkey) {
+  if (pending_le_pairing_.address_ == address) {
+    pending_le_pairing_.handler_->OnUiAction(PairingEvent::UI_ACTION_TYPE::PASSKEY, passkey);
+  }
+}
+
 void SecurityManagerImpl::OnPairingHandlerComplete(hci::Address address, PairingResultOrFailure status) {
   auto entry = pairing_handler_map_.find(address);
   if (entry != pairing_handler_map_.end()) {
