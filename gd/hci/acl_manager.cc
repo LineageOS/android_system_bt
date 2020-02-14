@@ -209,7 +209,9 @@ struct AclManager::impl {
                                      Bind(&impl::on_read_remote_version_information_complete, common::Unretained(this)),
                                      handler_);
     hci_layer_->RegisterEventHandler(EventCode::ENCRYPTION_CHANGE,
-                                     Bind(&impl::on_read_remote_version_information_complete, common::Unretained(this)),
+                                     Bind(&impl::on_encryption_change, common::Unretained(this)), handler_);
+    hci_layer_->RegisterEventHandler(EventCode::LINK_SUPERVISION_TIMEOUT_CHANGED,
+                                     Bind(&impl::on_link_supervision_timeout_changed, common::Unretained(this)),
                                      handler_);
     hci_mtu_ = controller_->GetControllerAclPacketLength();
   }
@@ -742,15 +744,27 @@ struct AclManager::impl {
   }
 
   void on_read_remote_version_information_complete(EventPacketView packet) {
-    LOG_INFO("Called");
+    auto view = ReadRemoteVersionInformationCompleteView::Create(packet);
+    ASSERT_LOG(view.IsValid(), "Read remote version information packet invalid");
+    LOG_INFO("UNIMPLEMENTED called");
   }
 
   void on_read_remote_supported_features_complete(EventPacketView packet) {
-    LOG_INFO("called");
+    auto view = ReadRemoteSupportedFeaturesCompleteView::Create(packet);
+    ASSERT_LOG(view.IsValid(), "Read remote supported features packet invalid");
+    LOG_INFO("UNIMPLEMENTED called");
   }
 
   void on_read_remote_extended_features_complete(EventPacketView packet) {
-    LOG_INFO("called");
+    auto view = ReadRemoteExtendedFeaturesCompleteView::Create(packet);
+    ASSERT_LOG(view.IsValid(), "Read remote extended features packet invalid");
+    LOG_INFO("UNIMPLEMENTED called");
+  }
+
+  void on_link_supervision_timeout_changed(EventPacketView packet) {
+    auto view = LinkSupervisionTimeoutChangedView::Create(packet);
+    ASSERT_LOG(view.IsValid(), "Link supervision timeout changed packet invalid");
+    LOG_INFO("UNIMPLEMENTED called");
   }
 
   void on_role_discovery_complete(CommandCompleteView view) {
@@ -964,17 +978,17 @@ struct AclManager::impl {
 
   void on_read_remote_version_information_status(CommandStatusView view) {
     ASSERT_LOG(view.IsValid(), "Bad status packet!");
-    LOG_INFO("called: %s", hci::ErrorCodeText(view.GetStatus()).c_str());
+    LOG_INFO("UNIMPLEMENTED called: %s", hci::ErrorCodeText(view.GetStatus()).c_str());
   }
 
   void on_read_remote_supported_features_status(CommandStatusView view) {
     ASSERT_LOG(view.IsValid(), "Bad status packet!");
-    LOG_INFO("called: %s", hci::ErrorCodeText(view.GetStatus()).c_str());
+    LOG_INFO("UNIMPLEMENTED called: %s", hci::ErrorCodeText(view.GetStatus()).c_str());
   }
 
   void on_read_remote_extended_features_status(CommandStatusView view) {
     ASSERT_LOG(view.IsValid(), "Broken");
-    LOG_INFO("called: %s", hci::ErrorCodeText(view.GetStatus()).c_str());
+    LOG_INFO("UNIMPLEMENTED called: %s", hci::ErrorCodeText(view.GetStatus()).c_str());
   }
 
   void on_read_clock_complete(CommandCompleteView view) {
