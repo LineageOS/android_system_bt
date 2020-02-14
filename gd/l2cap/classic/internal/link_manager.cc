@@ -116,7 +116,9 @@ Link* LinkManager::GetLink(const hci::Address device) {
 }
 
 void LinkManager::TriggerPairing(Link* link) {
-  link->Authenticate();
+  if (!link->IsAuthenticated()) {
+    link->Authenticate();
+  }
   link->ReadRemoteVersionInformation();
   link->ReadRemoteSupportedFeatures();
   link->ReadRemoteExtendedFeatures();
