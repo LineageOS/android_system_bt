@@ -87,6 +87,11 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener {
   /* void RemoveBond(std::shared_ptr<hci::LeDevice> device); */
 
   /**
+   * Register Security UI handler, for handling prompts around the Pairing process.
+   */
+  void SetUserInterfaceHandler(UI* user_interface, os::Handler* handler);
+
+  /**
    * Register to listen for callback events from SecurityManager
    *
    * @param listener ISecurityManagerListener instance to handle callbacks
@@ -117,6 +122,9 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener {
 
  protected:
   std::vector<std::pair<ISecurityManagerListener*, os::Handler*>> listeners_;
+  UI* user_interface_ = nullptr;
+  os::Handler* user_interface_handler_ = nullptr;
+
   void NotifyDeviceBonded(hci::AddressWithType device);
   void NotifyDeviceBondFailed(hci::AddressWithType device, PairingResultOrFailure status);
   void NotifyDeviceUnbonded(hci::AddressWithType device);

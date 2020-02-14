@@ -32,11 +32,12 @@ class UIMock : public UI {
   UIMock() {}
   ~UIMock() override = default;
 
-  MOCK_METHOD2(DisplayPairingPrompt, void(const bluetooth::hci::AddressWithType&, std::string&));
-  MOCK_METHOD1(CancelPairingPrompt, void(const bluetooth::hci::AddressWithType&));
-  MOCK_METHOD1(DisplayConfirmValue, void(uint32_t));
-  MOCK_METHOD0(DisplayEnterPasskeyDialog, void());
-  MOCK_METHOD1(DisplayPasskey, void(uint32_t));
+  MOCK_METHOD2(DisplayPairingPrompt, void(const bluetooth::hci::AddressWithType&, std::string));
+  MOCK_METHOD1(Cancel, void(const bluetooth::hci::AddressWithType&));
+  MOCK_METHOD3(DisplayConfirmValue, void(const bluetooth::hci::AddressWithType&, std::string, uint32_t));
+  MOCK_METHOD2(DisplayYesNoDialog, void(const bluetooth::hci::AddressWithType&, std::string));
+  MOCK_METHOD2(DisplayEnterPasskeyDialog, void(const bluetooth::hci::AddressWithType&, std::string));
+  MOCK_METHOD3(DisplayPasskey, void(const bluetooth::hci::AddressWithType&, std::string, uint32_t));
 
  private:
   DISALLOW_COPY_AND_ASSIGN(UIMock);

@@ -33,19 +33,6 @@ namespace bluetooth {
 namespace security {
 namespace internal {
 
-namespace {
-// TOOD: implement properly, have it passed form other module?
-class UIHandler : public ::bluetooth::security::UI {
- public:
-  void DisplayPairingPrompt(const hci::AddressWithType& address, std::string& name) {}
-  void CancelPairingPrompt(const hci::AddressWithType& address) {}
-  void DisplayConfirmValue(uint32_t numeric_value) {}
-  void DisplayEnterPasskeyDialog() {}
-  void DisplayPasskey(uint32_t passkey) {}
-};
-UIHandler static_ui_handler;
-}  // namespace
-
 void SecurityManagerImpl::DispatchPairingHandler(record::SecurityRecord& record, bool locally_initiated) {
   common::OnceCallback<void(hci::Address, PairingResultOrFailure)> callback =
       common::BindOnce(&SecurityManagerImpl::OnPairingHandlerComplete, common::Unretained(this));
@@ -61,7 +48,7 @@ void SecurityManagerImpl::DispatchPairingHandler(record::SecurityRecord& record,
           std::make_shared<record::SecurityRecord>(record.GetPseudoAddress());
       pairing_handler = std::make_shared<security::pairing::ClassicPairingHandler>(
           l2cap_classic_module_->GetFixedChannelManager(), security_manager_channel_, record_copy, security_handler_,
-          std::move(callback), listeners_);
+          std::move(callback), user_interface_, user_interface_handler_, "TODO: grab device name properly");
       break;
     }
     default:
@@ -120,6 +107,14 @@ void SecurityManagerImpl::RemoveBond(hci::AddressWithType device) {
   // Signal disconnect
   // Remove security record
   // Signal Remove from database
+}
+
+void SecurityManagerImpl::SetUserInterfaceHandler(UI* user_interface, os::Handler* handler) {
+  if (user_interface_ != nullptr || user_interface_handler_ != nullptr) {
+    LOG_ALWAYS_FATAL("Listener has already been registered!");
+  }
+  user_interface_ = user_interface;
+  user_interface_handler_ = handler;
 }
 
 void SecurityManagerImpl::RegisterCallbackListener(ISecurityManagerListener* listener, os::Handler* handler) {
@@ -320,8 +315,10 @@ void SecurityManagerImpl::OnConnectionOpenLe(std::unique_ptr<l2cap::le::FixedCha
       .pairing_request = std::nullopt,  // TODO: handle remotely initiated pairing in SecurityManager properly
       .remote_oob_data = std::nullopt,  // TODO:
       .my_oob_data = std::nullopt,      // TODO:
-      // /* Used by Pairing Handler to present user with requests*/
-      .ui_handler = &static_ui_handler,
+      /* Used by Pairing Handler to present user with requests*/
+      .user_interface = user_interface_,
+      .user_interface_handler = user_interface_handler_,
+
       /* HCI interface to use */
       .le_security_interface = hci_security_interface_le_,
       .proper_l2cap_interface = pending_le_pairing_.enqueue_buffer_.get(),

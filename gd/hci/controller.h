@@ -104,6 +104,8 @@ class Controller : public Module {
 
   static const ModuleFactory Factory;
 
+  static constexpr uint64_t kDefaultEventMask = 0x3dbfffffffffffff;
+
  protected:
   void ListDependencies(ModuleList* list) override;
 

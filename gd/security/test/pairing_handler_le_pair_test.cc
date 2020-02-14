@@ -178,7 +178,8 @@ class PairingHandlerPairTest : public testing::Test {
         .remotely_initiated = false,
         .connection_handle = CONN_HANDLE_MASTER,
         .remote_connection_address = {ADDRESS_SLAVE, ADDRESS_TYPE_SLAVE},
-        .ui_handler = &master_ui_handler,
+        .user_interface = &master_user_interface,
+        .user_interface_handler = handler_,
         .le_security_interface = &master_le_security_mock,
         .proper_l2cap_interface = up_buffer_a_.get(),
         .l2cap_handler = handler_,
@@ -198,7 +199,8 @@ class PairingHandlerPairTest : public testing::Test {
         .remotely_initiated = true,
         .connection_handle = CONN_HANDLE_SLAVE,
         .remote_connection_address = {ADDRESS_MASTER, ADDRESS_TYPE_MASTER},
-        .ui_handler = &slave_ui_handler,
+        .user_interface = &slave_user_interface,
+        .user_interface_handler = handler_,
         .le_security_interface = &slave_le_security_mock,
         .proper_l2cap_interface = up_buffer_b_.get(),
         .l2cap_handler = handler_,
@@ -209,8 +211,8 @@ class PairingHandlerPairTest : public testing::Test {
   }
 
   void TearDown() {
-    ::testing::Mock::VerifyAndClearExpectations(&slave_ui_handler);
-    ::testing::Mock::VerifyAndClearExpectations(&master_ui_handler);
+    ::testing::Mock::VerifyAndClearExpectations(&slave_user_interface);
+    ::testing::Mock::VerifyAndClearExpectations(&master_user_interface);
     ::testing::Mock::VerifyAndClearExpectations(&slave_le_security_mock);
     ::testing::Mock::VerifyAndClearExpectations(&master_le_security_mock);
 
@@ -276,8 +278,8 @@ class PairingHandlerPairTest : public testing::Test {
 
   InitialInformations master_setup;
   InitialInformations slave_setup;
-  UIMock master_ui_handler;
-  UIMock slave_ui_handler;
+  UIMock master_user_interface;
+  UIMock slave_user_interface;
   LeSecurityInterfaceMock master_le_security_mock;
   LeSecurityInterfaceMock slave_le_security_mock;
 
@@ -308,7 +310,7 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_just_works) {
     auto first_pkt = WaitFirstL2capCommand();
     slave_setup.pairing_request = PairingRequestView::Create(*first_pkt);
 
-    EXPECT_CALL(slave_ui_handler, DisplayPairingPrompt(_, _)).Times(1).WillOnce(InvokeWithoutArgs([] {
+    EXPECT_CALL(slave_user_interface, DisplayPairingPrompt(_, _)).Times(1).WillOnce(InvokeWithoutArgs([] {
       LOG_INFO("UI mock received pairing prompt");
 
       {
@@ -345,7 +347,8 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_just_works_slave_initiate
       .remotely_initiated = true,
       .connection_handle = CONN_HANDLE_MASTER,
       .remote_connection_address = {ADDRESS_SLAVE, ADDRESS_TYPE_SLAVE},
-      .ui_handler = &master_ui_handler,
+      .user_interface = &master_user_interface,
+      .user_interface_handler = handler_,
       .le_security_interface = &master_le_security_mock,
       .proper_l2cap_interface = up_buffer_a_.get(),
       .l2cap_handler = handler_,
@@ -364,7 +367,8 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_just_works_slave_initiate
       .remotely_initiated = false,
       .connection_handle = CONN_HANDLE_SLAVE,
       .remote_connection_address = {ADDRESS_MASTER, ADDRESS_TYPE_MASTER},
-      .ui_handler = &slave_ui_handler,
+      .user_interface = &slave_user_interface,
+      .user_interface_handler = handler_,
       .le_security_interface = &slave_le_security_mock,
       .proper_l2cap_interface = up_buffer_b_.get(),
       .l2cap_handler = handler_,
@@ -378,22 +382,24 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_just_works_slave_initiate
 
     first_pkt = WaitFirstL2capCommand();
 
-    EXPECT_CALL(master_ui_handler, DisplayPairingPrompt(_, _)).Times(1).WillOnce(InvokeWithoutArgs([&first_pkt, this] {
-      LOG_INFO("UI mock received pairing prompt");
+    EXPECT_CALL(master_user_interface, DisplayPairingPrompt(_, _))
+        .Times(1)
+        .WillOnce(InvokeWithoutArgs([&first_pkt, this] {
+          LOG_INFO("UI mock received pairing prompt");
 
-      {
-        // By grabbing the lock, we ensure initialization of both pairing handlers is finished.
-        std::lock_guard<std::mutex> lock(handlers_initialization_guard);
-      }
-      if (!pairing_handler_a) LOG_ALWAYS_FATAL("handler not initalized yet!");
-      // Simulate user accepting the pairing in UI
-      pairing_handler_a->OnUiAction(PairingEvent::PAIRING_ACCEPTED, 0x01 /* Non-zero value means success */);
+          {
+            // By grabbing the lock, we ensure initialization of both pairing handlers is finished.
+            std::lock_guard<std::mutex> lock(handlers_initialization_guard);
+          }
+          if (!pairing_handler_a) LOG_ALWAYS_FATAL("handler not initalized yet!");
+          // Simulate user accepting the pairing in UI
+          pairing_handler_a->OnUiAction(PairingEvent::PAIRING_ACCEPTED, 0x01 /* Non-zero value means success */);
 
-      // Send the first packet from the slave to master
-      auto view_to_packet = std::make_unique<packet::RawBuilder>();
-      view_to_packet->AddOctets(std::vector(first_pkt->begin(), first_pkt->end()));
-      up_buffer_b_->Enqueue(std::move(view_to_packet), handler_);
-    }));
+          // Send the first packet from the slave to master
+          auto view_to_packet = std::make_unique<packet::RawBuilder>();
+          view_to_packet->AddOctets(std::vector(first_pkt->begin(), first_pkt->end()));
+          up_buffer_b_->Enqueue(std::move(view_to_packet), handler_);
+        }));
     pairing_handler_a = std::make_unique<PairingHandlerLe>(PairingHandlerLe::PHASE1, master_setup);
   }
 
@@ -425,16 +431,17 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_numeric_comparison) {
     }
     slave_setup.pairing_request = PairingRequestView::Create(*first_command);
 
-    RecordPairingPromptHandling(slave_ui_handler, &pairing_handler_b);
+    RecordPairingPromptHandling(slave_user_interface, &pairing_handler_b);
 
-    EXPECT_CALL(slave_ui_handler, DisplayConfirmValue(_)).WillOnce(SaveArg<0>(&num_value_slave));
-    EXPECT_CALL(master_ui_handler, DisplayConfirmValue(_)).WillOnce(Invoke([&](uint32_t num_value) {
-      EXPECT_EQ(num_value_slave, num_value);
-      if (num_value_slave == num_value) {
-        pairing_handler_a->OnUiAction(PairingEvent::CONFIRM_YESNO, 0x01);
-        pairing_handler_b->OnUiAction(PairingEvent::CONFIRM_YESNO, 0x01);
-      }
-    }));
+    EXPECT_CALL(slave_user_interface, DisplayConfirmValue(_, _, _)).WillOnce(SaveArg<2>(&num_value_slave));
+    EXPECT_CALL(master_user_interface, DisplayConfirmValue(_, _, _))
+        .WillOnce(Invoke([&](const bluetooth::hci::AddressWithType&, std::string, uint32_t num_value) {
+          EXPECT_EQ(num_value_slave, num_value);
+          if (num_value_slave == num_value) {
+            pairing_handler_a->OnUiAction(PairingEvent::CONFIRM_YESNO, 0x01);
+            pairing_handler_b->OnUiAction(PairingEvent::CONFIRM_YESNO, 0x01);
+          }
+        }));
 
     pairing_handler_b = std::make_unique<PairingHandlerLe>(PairingHandlerLe::PHASE1, slave_setup);
   }
@@ -465,18 +472,19 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_passkey_entry) {
     }
     slave_setup.pairing_request = PairingRequestView::Create(*first_command);
 
-    RecordPairingPromptHandling(slave_ui_handler, &pairing_handler_b);
+    RecordPairingPromptHandling(slave_user_interface, &pairing_handler_b);
 
-    EXPECT_CALL(slave_ui_handler, DisplayPasskey(_)).WillOnce(SaveArg<0>(&passkey));
-    EXPECT_CALL(master_ui_handler, DisplayEnterPasskeyDialog()).WillOnce(Invoke([&]() {
-      LOG_INFO("Passkey prompt displayed entering passkey: %08x", passkey);
-      std::this_thread::sleep_for(1ms);
+    EXPECT_CALL(slave_user_interface, DisplayPasskey(_, _, _)).WillOnce(SaveArg<2>(&passkey));
+    EXPECT_CALL(master_user_interface, DisplayEnterPasskeyDialog(_, _))
+        .WillOnce(Invoke([&](const bluetooth::hci::AddressWithType& address, std::string name) {
+          LOG_INFO("Passkey prompt displayed entering passkey: %08x", passkey);
+          std::this_thread::sleep_for(1ms);
 
-      // handle case where prompts are displayed in different order in the test!
-      if (passkey == std::numeric_limits<uint32_t>::max()) FAIL();
+          // handle case where prompts are displayed in different order in the test!
+          if (passkey == std::numeric_limits<uint32_t>::max()) FAIL();
 
-      pairing_handler_a->OnUiAction(PairingEvent::PASSKEY, passkey);
-    }));
+          pairing_handler_a->OnUiAction(PairingEvent::PASSKEY, passkey);
+        }));
 
     pairing_handler_b = std::make_unique<PairingHandlerLe>(PairingHandlerLe::PHASE1, slave_setup);
   }
@@ -513,7 +521,7 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_out_of_band) {
     }
     slave_setup.pairing_request = PairingRequestView::Create(*first_command);
 
-    RecordPairingPromptHandling(slave_ui_handler, &pairing_handler_b);
+    RecordPairingPromptHandling(slave_user_interface, &pairing_handler_b);
 
     pairing_handler_b = std::make_unique<PairingHandlerLe>(PairingHandlerLe::PHASE1, slave_setup);
   }
@@ -556,7 +564,7 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_out_of_band_two_way) {
     }
     slave_setup.pairing_request = PairingRequestView::Create(*first_command);
 
-    RecordPairingPromptHandling(slave_ui_handler, &pairing_handler_b);
+    RecordPairingPromptHandling(slave_user_interface, &pairing_handler_b);
 
     pairing_handler_b = std::make_unique<PairingHandlerLe>(PairingHandlerLe::PHASE1, slave_setup);
   }
@@ -585,7 +593,7 @@ TEST_F(PairingHandlerPairTest, test_legacy_just_works) {
     }
     slave_setup.pairing_request = PairingRequestView::Create(*first_command);
 
-    RecordPairingPromptHandling(slave_ui_handler, &pairing_handler_b);
+    RecordPairingPromptHandling(slave_user_interface, &pairing_handler_b);
 
     pairing_handler_b = std::make_unique<PairingHandlerLe>(PairingHandlerLe::PHASE1, slave_setup);
   }
@@ -614,16 +622,17 @@ TEST_F(PairingHandlerPairTest, test_legacy_passkey_entry) {
     }
     slave_setup.pairing_request = PairingRequestView::Create(*first_command);
 
-    RecordPairingPromptHandling(slave_ui_handler, &pairing_handler_b);
+    RecordPairingPromptHandling(slave_user_interface, &pairing_handler_b);
 
-    EXPECT_CALL(slave_ui_handler, DisplayEnterPasskeyDialog());
-    EXPECT_CALL(master_ui_handler, DisplayConfirmValue(_)).WillOnce(Invoke([&](uint32_t passkey) {
-      LOG_INFO("Passkey prompt displayed entering passkey: %08x", passkey);
-      std::this_thread::sleep_for(1ms);
+    EXPECT_CALL(slave_user_interface, DisplayEnterPasskeyDialog(_, _));
+    EXPECT_CALL(master_user_interface, DisplayConfirmValue(_, _, _))
+        .WillOnce(Invoke([&](const bluetooth::hci::AddressWithType&, std::string, uint32_t passkey) {
+          LOG_INFO("Passkey prompt displayed entering passkey: %08x", passkey);
+          std::this_thread::sleep_for(1ms);
 
-      // TODO: handle case where prompts are displayed in different order in the test!
-      pairing_handler_b->OnUiAction(PairingEvent::PASSKEY, passkey);
-    }));
+          // TODO: handle case where prompts are displayed in different order in the test!
+          pairing_handler_b->OnUiAction(PairingEvent::PASSKEY, passkey);
+        }));
 
     pairing_handler_b = std::make_unique<PairingHandlerLe>(PairingHandlerLe::PHASE1, slave_setup);
   }

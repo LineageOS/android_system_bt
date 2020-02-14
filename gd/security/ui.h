@@ -28,21 +28,25 @@ class UI {
  public:
   virtual ~UI(){};
 
-  /* Remote device tries to initiate pairing, ask user to confirm */
-  virtual void DisplayPairingPrompt(const bluetooth::hci::AddressWithType& address, std::string& name) = 0;
+  /* Remote LE device tries to initiate pairing, ask user to confirm */
+  virtual void DisplayPairingPrompt(const bluetooth::hci::AddressWithType& address, std::string name) = 0;
 
   /* Remove the pairing prompt from DisplayPairingPrompt, i.e. remote device disconnected, or some application requested
    * bond with this device */
-  virtual void CancelPairingPrompt(const bluetooth::hci::AddressWithType& address) = 0;
+  virtual void Cancel(const bluetooth::hci::AddressWithType& address) = 0;
 
-  /* Display value for Comprision */
-  virtual void DisplayConfirmValue(uint32_t numeric_value) = 0;
+  /* Display value for Comprision, user responds yes/no */
+  virtual void DisplayConfirmValue(const bluetooth::hci::AddressWithType& address, std::string name,
+                                   uint32_t numeric_value) = 0;
+
+  /* Display Yes/No dialog, Classic pairing, numeric comparison with NoInputNoOutput device */
+  virtual void DisplayYesNoDialog(const bluetooth::hci::AddressWithType& address, std::string name) = 0;
 
   /* Display a dialog box that will let user enter the Passkey */
-  virtual void DisplayEnterPasskeyDialog() = 0;
+  virtual void DisplayEnterPasskeyDialog(const bluetooth::hci::AddressWithType& address, std::string name) = 0;
 
-  /* Present the passkey value to the user */
-  virtual void DisplayPasskey(uint32_t passkey) = 0;
+  /* Present the passkey value to the user, user compares with other device */
+  virtual void DisplayPasskey(const bluetooth::hci::AddressWithType& address, std::string name, uint32_t passkey) = 0;
 };
 
 /* Through this interface, UI provides us with user choices. */
@@ -51,13 +55,13 @@ class UICallbacks {
   virtual ~UICallbacks() = 0;
 
   /* User accepted pairing prompt */
-  virtual void OnPairingPromptAccepted(const bluetooth::hci::Address& address) = 0;
+  virtual void OnPairingPromptAccepted(const bluetooth::hci::AddressWithType& address) = 0;
 
   /* User confirmed that displayed value matches the value on the other device */
-  virtual void OnConfirmYesNo(const bluetooth::hci::Address& address, bool conformed) = 0;
+  virtual void OnConfirmYesNo(const bluetooth::hci::AddressWithType& address, bool confirmed) = 0;
 
   /* User typed the value displayed on the other device. This is either Passkey or the Confirm value */
-  virtual void OnPasskeyEntry(const bluetooth::hci::Address& address, uint32_t passkey) = 0;
+  virtual void OnPasskeyEntry(const bluetooth::hci::AddressWithType& address, uint32_t passkey) = 0;
 };
 
 }  // namespace security
