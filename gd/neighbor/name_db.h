@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Android Open Source Project
+ * Copyright 2020 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -23,25 +23,24 @@
 #include "hci/address.h"
 #include "hci/hci_packets.h"
 #include "module.h"
+#include "neighbor/name.h"
 
 namespace bluetooth {
 namespace neighbor {
 
-using RemoteName = std::array<uint8_t, 248>;
-using ReadRemoteNameCallback = common::OnceCallback<void(hci::ErrorCode status, hci::Address address, RemoteName name)>;
-using CancelRemoteNameCallback = common::OnceCallback<void(hci::ErrorCode status, hci::Address address)>;
+using ReadRemoteNameDbCallback = common::OnceCallback<void(hci::Address address, bool success)>;
 
-class NameModule : public bluetooth::Module {
+class NameDbModule : public bluetooth::Module {
  public:
-  void ReadRemoteNameRequest(hci::Address address, hci::PageScanRepetitionMode page_scan_repetition_mode,
-                             uint16_t clock_offset, hci::ClockOffsetValid clock_offset_valid,
-                             ReadRemoteNameCallback on_read_name, os::Handler* handler);
-  void CancelRemoteNameRequest(hci::Address address, CancelRemoteNameCallback on_cancel, os::Handler* handler);
+  void ReadRemoteNameRequest(hci::Address address, ReadRemoteNameDbCallback callback, os::Handler* handler);
+
+  bool IsNameCached(hci::Address address) const;
+  RemoteName ReadCachedRemoteName(hci::Address address) const;
 
   static const ModuleFactory Factory;
 
-  NameModule();
-  ~NameModule();
+  NameDbModule();
+  ~NameDbModule();
 
  protected:
   void ListDependencies(ModuleList* list) override;
@@ -52,7 +51,7 @@ class NameModule : public bluetooth::Module {
   struct impl;
   std::unique_ptr<impl> pimpl_;
 
-  DISALLOW_COPY_AND_ASSIGN(NameModule);
+  DISALLOW_COPY_AND_ASSIGN(NameDbModule);
 };
 
 }  // namespace neighbor
