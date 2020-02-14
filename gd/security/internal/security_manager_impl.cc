@@ -33,7 +33,8 @@ namespace bluetooth {
 namespace security {
 namespace internal {
 
-void SecurityManagerImpl::DispatchPairingHandler(record::SecurityRecord& record, bool locally_initiated) {
+void SecurityManagerImpl::DispatchPairingHandler(record::SecurityRecord& record, bool locally_initiated,
+                                                 hci::AuthenticationRequirements authentication_requirements) {
   common::OnceCallback<void(hci::Address, PairingResultOrFailure)> callback =
       common::BindOnce(&SecurityManagerImpl::OnPairingHandlerComplete, common::Unretained(this));
   auto entry = pairing_handler_map_.find(record.GetPseudoAddress().GetAddress());
@@ -58,7 +59,7 @@ void SecurityManagerImpl::DispatchPairingHandler(record::SecurityRecord& record,
       record.GetPseudoAddress().GetAddress(), pairing_handler);
   pairing_handler_map_.insert(std::move(new_entry));
   pairing_handler->Initiate(locally_initiated, pairing::kDefaultIoCapability, pairing::kDefaultOobDataPresent,
-                            pairing::kDefaultAuthenticationRequirements);
+                            authentication_requirements);
 }
 
 void SecurityManagerImpl::Init() {
@@ -74,7 +75,7 @@ void SecurityManagerImpl::CreateBond(hci::AddressWithType device) {
     NotifyDeviceBonded(device);
   } else {
     // Dispatch pairing handler, if we are calling create we are the initiator
-    DispatchPairingHandler(record, true);
+    DispatchPairingHandler(record, true, pairing::kDefaultAuthenticationRequirements);
   }
 }
 
@@ -162,26 +163,27 @@ template <class T>
 void SecurityManagerImpl::HandleEvent(T packet) {
   ASSERT(packet.IsValid());
   auto entry = pairing_handler_map_.find(packet.GetBdAddr());
-  if (entry != pairing_handler_map_.end()) {
-    entry->second->OnReceive(packet);
-  } else {
+
+  if (entry == pairing_handler_map_.end()) {
     auto bd_addr = packet.GetBdAddr();
     auto event_code = packet.GetEventCode();
     auto event = hci::EventPacketView::Create(std::move(packet));
     ASSERT_LOG(event.IsValid(), "Received invalid packet");
+
     const hci::EventCode code = event.GetEventCode();
+    if (code != hci::EventCode::LINK_KEY_REQUEST) {
+      LOG_ERROR("No classic pairing handler for device '%s' ready for command '%hhx' ", bd_addr.ToString().c_str(),
+                event_code);
+      return;
+    }
+
     auto record =
         security_database_.FindOrCreate(hci::AddressWithType{bd_addr, hci::AddressType::PUBLIC_DEVICE_ADDRESS});
-    switch (code) {
-      case hci::EventCode::LINK_KEY_REQUEST:
-        DispatchPairingHandler(record, true);
-        break;
-      default:
-        LOG_ERROR("No classic pairing handler for device '%s' ready for command '%hhx' ", bd_addr.ToString().c_str(),
-                  event_code);
-        break;
-    }
+    auto authentication_requirements = hci::AuthenticationRequirements::NO_BONDING;
+    DispatchPairingHandler(record, true, authentication_requirements);
+    entry = pairing_handler_map_.find(packet.GetBdAddr());
   }
+  entry->second->OnReceive(packet);
 }
 
 void SecurityManagerImpl::OnHciEventReceived(hci::EventPacketView packet) {

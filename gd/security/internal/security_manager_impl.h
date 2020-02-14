@@ -133,7 +133,8 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener {
   template <class T>
   void HandleEvent(T packet);
 
-  void DispatchPairingHandler(record::SecurityRecord& record, bool locally_initiated);
+  void DispatchPairingHandler(record::SecurityRecord& record, bool locally_initiated,
+                              hci::AuthenticationRequirements authentication_requirements);
   void OnL2capRegistrationCompleteLe(l2cap::le::FixedChannelManager::RegistrationResult result,
                                      std::unique_ptr<l2cap::le::FixedChannelService> le_smp_service);
   void OnSmpCommandLe();
