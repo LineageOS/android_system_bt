@@ -16,7 +16,6 @@
 
 from concurrent.futures import ThreadPoolExecutor
 from grpc import RpcError
-from grpc._channel import _Rendezvous
 import logging
 
 
@@ -140,10 +139,9 @@ class EventCallbackStream(object):
                         callback(event)
             return None
         except RpcError as exp:
-            if type(exp) is _Rendezvous:
-                if exp.cancelled():
-                    logging.debug("Cancelled")
-                    return None
-                else:
-                    logging.warning("Not cancelled")
+            if self.server_stream_call.cancelled():
+                logging.debug("Cancelled")
+                return None
+            else:
+                logging.warning("Some RPC error not due to cancellation")
             return exp
