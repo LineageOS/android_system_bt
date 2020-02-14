@@ -49,6 +49,7 @@
 #include "gattdefs.h"
 #include "l2c_int.h"
 #include "osi/include/log.h"
+#include "common/time_util.h"
 
 #include "main/shim/btm_api.h"
 #include "main/shim/shim.h"
@@ -1995,11 +1996,13 @@ void btm_ble_process_adv_pkt_cont(uint16_t evt_type, uint8_t addr_type,
     p_i = btm_inq_db_new(bda);
     if (p_i != NULL) {
       p_inq->inq_cmpl_info.num_resp++;
+      p_i->time_of_resp = bluetooth::common::time_get_os_boottime_ms();
     } else
       return;
   } else if (p_i->inq_count !=
              p_inq->inq_counter) /* first time seen in this inquiry */
   {
+    p_i->time_of_resp = bluetooth::common::time_get_os_boottime_ms();
     p_inq->inq_cmpl_info.num_resp++;
   }
 
