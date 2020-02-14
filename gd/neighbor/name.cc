@@ -41,7 +41,7 @@ struct CancelCallbackHandler {
   os::Handler* handler;
 };
 
-constexpr std::array<uint8_t, 248> kEmptyName{};
+constexpr RemoteName kEmptyName{};
 
 struct NameModule::impl {
   void ReadRemoteNameRequest(hci::Address address, hci::PageScanRepetitionMode page_scan_repetition_mode,
@@ -195,6 +195,8 @@ void neighbor::NameModule::ReadRemoteNameRequest(hci::Address address,
                                                  hci::PageScanRepetitionMode page_scan_repetition_mode,
                                                  uint16_t clock_offset, hci::ClockOffsetValid clock_offset_valid,
                                                  ReadRemoteNameCallback callback, os::Handler* handler) {
+  ASSERT(callback);
+  ASSERT(handler != nullptr);
   GetHandler()->Post(common::BindOnce(&NameModule::impl::ReadRemoteNameRequest, common::Unretained(pimpl_.get()),
                                       address, page_scan_repetition_mode, clock_offset, clock_offset_valid,
                                       std::move(callback), handler));
@@ -202,6 +204,8 @@ void neighbor::NameModule::ReadRemoteNameRequest(hci::Address address,
 
 void neighbor::NameModule::CancelRemoteNameRequest(hci::Address address, CancelRemoteNameCallback callback,
                                                    os::Handler* handler) {
+  ASSERT(callback);
+  ASSERT(handler != nullptr);
   GetHandler()->Post(common::BindOnce(&NameModule::impl::CancelRemoteNameRequest, common::Unretained(pimpl_.get()),
                                       address, std::move(callback), handler));
 }
