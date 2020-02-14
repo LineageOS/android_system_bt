@@ -19,7 +19,7 @@ import sys
 import logging
 import time
 
-from acts import asserts
+from mobly import asserts
 from datetime import datetime, timedelta
 from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
 from cert.event_callback_stream import EventCallbackStream
