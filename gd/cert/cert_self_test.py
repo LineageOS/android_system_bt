@@ -14,8 +14,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os
-import sys
 import logging
 import time
 
@@ -24,6 +22,10 @@ from datetime import datetime, timedelta
 from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
 from cert.event_callback_stream import EventCallbackStream
 from cert.event_asserts import EventAsserts
+
+# Test packet nesting
+from bluetooth_packets_python3 import hci_packets
+from bluetooth_packets_python3 import l2cap_packets
 
 
 class BogusProto:
@@ -197,3 +199,34 @@ class CertSelfTest(GdFacadeOnlyBaseTestClass):
     def test_skip_a_test(self):
         asserts.skip("Skipping this test because it's blocked by b/xyz")
         assert False
+
+    def test_nested_packets(self):
+        handle = 123
+        inside = hci_packets.ReadScanEnableBuilder()
+        logging.debug(inside.Serialize())
+        logging.debug("building outside")
+        outside = hci_packets.AclPacketBuilder(
+            handle,
+            hci_packets.PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
+            hci_packets.BroadcastFlag.POINT_TO_POINT, inside)
+        logging.debug(outside.Serialize())
+        logging.debug("Done!")
+
+    def test_l2cap_config_options(self):
+        mtu_opt = l2cap_packets.MtuConfigurationOption()
+        mtu_opt.mtu = 123
+        fcs_opt = l2cap_packets.FrameCheckSequenceOption()
+        fcs_opt.fcs_type = l2cap_packets.FcsType.DEFAULT
+        request = l2cap_packets.ConfigurationRequestBuilder(
+            0x1d,  # Command ID
+            0xc1d,  # Channel ID
+            l2cap_packets.Continuation.END,
+            [mtu_opt, fcs_opt])
+        request.Serialize()
+        handle = 123
+        wrapped = hci_packets.AclPacketBuilder(
+            handle,
+            hci_packets.PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
+            hci_packets.BroadcastFlag.POINT_TO_POINT, request)
+        asserts.assert_true(
+            len(wrapped.Serialize()) == 16, "Packet serialized incorrectly")

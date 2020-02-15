@@ -202,6 +202,7 @@ void StructDef::GenDefinitionPybind11(std::ostream& s) const {
       s << ", PacketStruct<!kLittleEndian>";
     }
   }
+  s << ", std::shared_ptr<" << name_ << ">";
   s << ">(m, \"" << name_ << "\")";
   s << ".def(py::init<>())";
   s << ".def(\"Serialize\", [](" << GetTypeName() << "& obj){";
