@@ -28,11 +28,17 @@
 
 #include <log/log.h>
 
+/* When including headers from legacy stack, this log definitions collide with existing logging system. Remove once we
+ * get rid of legacy stack. */
+#ifndef LOG_VERBOSE
+
 #define LOG_VERBOSE(fmt, args...) ALOGV("%s:%d %s: " fmt, __FILE__, __LINE__, __func__, ##args)
 #define LOG_DEBUG(fmt, args...) ALOGD("%s:%d %s: " fmt, __FILE__, __LINE__, __func__, ##args)
 #define LOG_INFO(fmt, args...) ALOGI("%s:%d %s: " fmt, __FILE__, __LINE__, __func__, ##args)
 #define LOG_WARN(fmt, args...) ALOGW("%s:%d %s: " fmt, __FILE__, __LINE__, __func__, ##args)
 #define LOG_ERROR(fmt, args...) ALOGE("%s:%d %s: " fmt, __FILE__, __LINE__, __func__, ##args)
+
+#endif /* LOG_VERBOSE*/
 
 #else
 
@@ -40,6 +46,10 @@
 #include <chrono>
 #include <cstdio>
 #include <ctime>
+
+/* When including headers from legacy stack, this log definitions collide with existing logging system. Remove once we
+ * get rid of legacy stack. */
+#ifndef LOG_VERBOSE
 
 #define LOGWRAPPER(fmt, args...)                                                                                      \
   do {                                                                                                                \
@@ -63,6 +73,8 @@
     LOGWRAPPER(__VA_ARGS__);  \
     abort();                  \
   } while (false)
+
+#endif /* LOG_VERBOE */
 
 #endif /* defined(OS_ANDROID) */
 
