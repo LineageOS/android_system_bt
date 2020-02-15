@@ -65,9 +65,11 @@ PYBIND11_MODULE(bluetooth_packets_python3, m) {
       m, "PacketBuilderLittleEndian");
   py::class_<PacketBuilder<!kLittleEndian>, BasePacketBuilder, std::shared_ptr<PacketBuilder<!kLittleEndian>>>(
       m, "PacketBuilderBigEndian");
-  py::class_<BaseStruct>(m, "BaseStruct");
-  py::class_<PacketStruct<kLittleEndian>, BaseStruct>(m, "PacketStructLittleEndian");
-  py::class_<PacketStruct<!kLittleEndian>, BaseStruct>(m, "PacketStructBigEndian");
+  py::class_<BaseStruct, std::shared_ptr<BaseStruct>>(m, "BaseStruct");
+  py::class_<PacketStruct<kLittleEndian>, BaseStruct, std::shared_ptr<PacketStruct<kLittleEndian>>>(
+      m, "PacketStructLittleEndian");
+  py::class_<PacketStruct<!kLittleEndian>, BaseStruct, std::shared_ptr<PacketStruct<!kLittleEndian>>>(
+      m, "PacketStructBigEndian");
   py::class_<Iterator<kLittleEndian>>(m, "IteratorLittleEndian");
   py::class_<Iterator<!kLittleEndian>>(m, "IteratorBigEndian");
   py::class_<PacketView<kLittleEndian>>(m, "PacketViewLittleEndian").def(py::init([](std::vector<uint8_t> bytes) {
