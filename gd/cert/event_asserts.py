@@ -18,11 +18,9 @@ from datetime import datetime, timedelta
 import logging
 from queue import SimpleQueue, Empty
 
-from acts import asserts
+from mobly import asserts
 
 from google.protobuf import text_format
-
-from cert.event_callback_stream import EventCallbackStream
 
 
 class EventAsserts(object):
