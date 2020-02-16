@@ -19,36 +19,52 @@
 #include <string>
 
 #include "module.h"
-#include "shim/iinquiry.h"
 
 namespace bluetooth {
 namespace shim {
 
-class Inquiry : public bluetooth::Module, public bluetooth::shim::IInquiry {
+using InquiryResultCallback = std::function<void(std::string string_address, uint8_t page_scan_rep_mode,
+                                                 std::string string_class_of_device, uint16_t clock_offset)>;
+using InquiryResultWithRssiCallback =
+    std::function<void(std::string string_address, uint8_t page_scan_rep_mode, std::string string_class_of_device,
+                       uint16_t clock_offset, int8_t rssi)>;
+using ExtendedInquiryResultCallback =
+    std::function<void(std::string string_address, uint8_t page_scan_rep_mode, std::string string_class_of_device,
+                       uint16_t clock_offset, int8_t rssi, const uint8_t* gap_data, size_t gap_data_len)>;
+using InquiryCompleteCallback = std::function<void(uint16_t status)>;
+
+struct LegacyInquiryCallbacks {
+  InquiryResultCallback result_callback;
+  InquiryResultWithRssiCallback result_with_rssi_callback;
+  ExtendedInquiryResultCallback extended_result_callback;
+  InquiryCompleteCallback complete_callback;
+};
+
+class Inquiry : public bluetooth::Module {
  public:
-  void StartGeneralInquiry(uint8_t duration, uint8_t max_responses, LegacyInquiryCallbacks callbacks) override;
-  void StartLimitedInquiry(uint8_t duration, uint8_t max_responses, LegacyInquiryCallbacks callbacks) override;
-  void StopInquiry() override;
-  bool IsGeneralInquiryActive() const override;
-  bool IsLimitedInquiryActive() const override;
+  void StartGeneralInquiry(uint8_t duration, uint8_t max_responses, LegacyInquiryCallbacks callbacks);
+  void StartLimitedInquiry(uint8_t duration, uint8_t max_responses, LegacyInquiryCallbacks callbacks);
+  void StopInquiry();
+  bool IsGeneralInquiryActive() const;
+  bool IsLimitedInquiryActive() const;
 
   void StartGeneralPeriodicInquiry(uint8_t duration, uint8_t max_responses, uint16_t max_delay, uint16_t min_delay,
-                                   LegacyInquiryCallbacks callbacks) override;
+                                   LegacyInquiryCallbacks callbacks);
   void StartLimitedPeriodicInquiry(uint8_t duration, uint8_t max_responses, uint16_t max_delay, uint16_t min_delay,
-                                   LegacyInquiryCallbacks callbacks) override;
-  void StopPeriodicInquiry() override;
-  bool IsGeneralPeriodicInquiryActive() const override;
-  bool IsLimitedPeriodicInquiryActive() const override;
+                                   LegacyInquiryCallbacks callbacks);
+  void StopPeriodicInquiry();
+  bool IsGeneralPeriodicInquiryActive() const;
+  bool IsLimitedPeriodicInquiryActive() const;
 
-  void SetInterlacedScan() override;
-  void SetStandardScan() override;
+  void SetInterlacedScan();
+  void SetStandardScan();
 
-  void SetScanActivity(uint16_t interval, uint16_t window) override;
-  void GetScanActivity(uint16_t& interval, uint16_t& window) const override;
+  void SetScanActivity(uint16_t interval, uint16_t window);
+  void GetScanActivity(uint16_t& interval, uint16_t& window) const;
 
-  void SetStandardInquiryResultMode() override;
-  void SetInquiryWithRssiResultMode() override;
-  void SetExtendedInquiryResultMode() override;
+  void SetStandardInquiryResultMode();
+  void SetInquiryWithRssiResultMode();
+  void SetExtendedInquiryResultMode();
 
   Inquiry() = default;
   ~Inquiry() = default;

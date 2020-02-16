@@ -14,12 +14,3 @@ filegroup {
         "timer.cc",
     ]
 }
-
-filegroup {
-    name: "LibBluetoothShimTestSources",
-    srcs: [
-        "l2cap_test.cc",
-        "timer_test.cc",
-    ]
-}
-

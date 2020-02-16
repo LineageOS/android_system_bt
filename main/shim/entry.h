@@ -33,25 +33,33 @@
 #include "osi/include/future.h"
 
 namespace bluetooth {
+namespace hci {
+class Controller;
+}
+
+namespace security {
+class SecurityModule;
+}
+
 namespace shim {
 
 future_t* StartGabeldorscheStack();
 future_t* StopGabeldorscheStack();
-
-bluetooth::shim::IAdvertising* GetAdvertising();
-bluetooth::shim::IController* GetController();
-bluetooth::shim::IDiscoverability* GetDiscoverability();
-bluetooth::shim::IConnectability* GetConnectability();
-bluetooth::shim::IDumpsys* GetDumpsys();
-bluetooth::shim::IInquiry* GetInquiry();
-bluetooth::shim::IHciLayer* GetHciLayer();
-bluetooth::shim::IL2cap* GetL2cap();
-bluetooth::shim::IName* GetName();
-bluetooth::shim::INameDb* GetNameDb();
-bluetooth::shim::IPage* GetPage();
-bluetooth::shim::IScanning* GetScanning();
-bluetooth::shim::ISecurity* GetSecurity();
-bluetooth::shim::IStorage* GetStorage();
+Advertising* GetAdvertising();
+bluetooth::hci::Controller* GetController();
+Discoverability* GetDiscoverability();
+Connectability* GetConnectability();
+Dumpsys* GetDumpsys();
+Inquiry* GetInquiry();
+HciLayer* GetHciLayer();
+L2cap* GetL2cap();
+Name* GetName();
+NameDb* GetNameDb();
+Page* GetPage();
+Scanning* GetScanning();
+Security* GetSecurity();
+bluetooth::security::SecurityModule* GetSecurityModule();
+Storage* GetStorage();
 
 }  // namespace shim
 }  // namespace bluetooth

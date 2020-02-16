@@ -20,6 +20,8 @@
 #include "main/shim/entry.h"
 #include "main/shim/shim.h"
 
+#include "shim/dumpsys.h"
+
 namespace {
 constexpr char kModuleName[] = "shim::legacy::dumpsys";
 static std::unordered_map<const void*, bluetooth::shim::DumpsysFunction>*
