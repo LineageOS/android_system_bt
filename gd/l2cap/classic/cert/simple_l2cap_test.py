@@ -1141,6 +1141,59 @@ class SimpleL2capTest(GdBaseTestClass):
                     lambda log: match_frame(log, scid=scid, payload=b'abc'),
                     timeout=timedelta(seconds=0.5))
 
+    def test_send_rej(self):
+        """
+        L2CAP/ERM/BV-16-C [Send S-Frame [REJ]]
+        Verify the IUT can send an S-frame [REJ] after receiving out of sequence I-frames.
+        """
+        with EventCallbackStream(
+                self.cert_device.l2cap.FetchL2capLog(
+                    empty_pb2.Empty())) as l2cap_log_stream:
+            l2cap_event_asserts = EventAsserts(l2cap_log_stream)
+
+            self._register_callbacks(l2cap_log_stream)
+            signal_id = 3
+            scid = 0x0101
+            tx_window = 5
+            self.retransmission_mode = l2cap_cert_pb2.ChannelRetransmissionFlowControlMode.ERTM
+
+            self._setup_link(l2cap_event_asserts)
+            self._open_channel(
+                l2cap_event_asserts, mode=self.retransmission_mode)
+
+            self.cert_device.l2cap.SendIFrame(
+                l2cap_cert_pb2.IFrame(
+                    channel=self.scid_dcid_map[scid],
+                    req_seq=0,
+                    tx_seq=0,
+                    sar=0,
+                    information=b'abc'))
+            l2cap_event_asserts.assert_event_occurs(
+                    lambda log: match_frame(log, scid=scid, control_field=b'\x01\x01')
+                )
+            self.cert_device.l2cap.SendIFrame(
+                l2cap_cert_pb2.IFrame(
+                    channel=self.scid_dcid_map[scid],
+                    req_seq=0,
+                    tx_seq=(tx_window - 1),
+                    sar=0,
+                    information=b'abc'))
+            l2cap_event_asserts.assert_event_occurs(
+                    lambda log: match_frame(log, scid=scid, control_field=b'\x05\x01')
+                )
+            for i in range(1, tx_window):
+                self.cert_device.l2cap.SendIFrame(
+                    l2cap_cert_pb2.IFrame(
+                        channel=self.scid_dcid_map[scid],
+                        req_seq=0,
+                        tx_seq=(i),
+                        sar=0))
+                l2cap_event_asserts.assert_event_occurs(
+                        lambda log :log.HasField("data_packet") and \
+                        log.data_packet.channel == scid and \
+                        bytes([get_enhanced_control_field(log.data_packet.payload)[1]]) == bytes([i + 1])
+                    )
+
     def test_receive_s_frame_rr_final_bit_set(self):
         """
         L2CAP/ERM/BV-18-C [Receive S-Frame [RR] Final Bit = 1]

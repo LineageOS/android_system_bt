@@ -335,6 +335,27 @@ class PTSL2capTest(PTSBaseTestClass):
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
             self._assert_connection_close(due_connection_close_asserts)
 
+    def test_L2CAP_ERM_BV_16_C(self):
+        """
+         L2CAP/ERM/BV-16-C [Send S-Frame [REJ]]
+        Verify the IUT can send an S-frame [REJ] after receiving out of sequence I-frames.
+        """
+        with self._dut_connection_stream() as dut_connection_stream, \
+            self._dut_connection_close_stream() as dut_connection_close_stream:
+            due_connection_asserts = EventAsserts(dut_connection_stream)
+            due_connection_close_asserts = EventAsserts(
+                dut_connection_close_stream)
+            psm = 1
+
+            self.device_under_test.l2cap.SetDynamicChannel(
+                l2cap_facade_pb2.SetEnableDynamicChannelRequest(
+                    psm=psm,
+                    retransmission_mode=l2cap_facade_pb2.
+                    RetransmissionFlowControlMode.ERTM))
+            self._assert_connection_complete(due_connection_asserts)
+            self._assert_connection_close(
+                due_connection_close_asserts, timeout=60)
+
     def test_L2CAP_ERM_BV_18_C(self):
         """
         L2CAP/ERM/BV-18-C [Receive S-Frame [RR] Final Bit = 1]
