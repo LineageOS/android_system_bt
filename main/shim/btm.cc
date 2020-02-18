@@ -31,10 +31,10 @@
 #include "types/class_of_device.h"
 #include "types/raw_address.h"
 
+#include "neighbor/discoverability.h"
 #include "shim/advertising.h"
 #include "shim/connectability.h"
 #include "shim/controller.h"
-#include "shim/discoverability.h"
 #include "shim/inquiry.h"
 #include "shim/name.h"
 #include "shim/page.h"
