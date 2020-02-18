@@ -18,10 +18,10 @@
 #include "osi/include/future.h"
 
 #include "hci/controller.h"
+#include "neighbor/discoverability.h"
 #include "security/security_module.h"
 #include "shim/advertising.h"
 #include "shim/connectability.h"
-#include "shim/discoverability.h"
 #include "shim/dumpsys.h"
 #include "shim/hci_layer.h"
 #include "shim/inquiry.h"
@@ -64,10 +64,11 @@ bluetooth::shim::Connectability* bluetooth::shim::GetConnectability() {
       ->GetInstance<bluetooth::shim::Connectability>();
 }
 
-bluetooth::shim::Discoverability* bluetooth::shim::GetDiscoverability() {
+bluetooth::neighbor::DiscoverabilityModule*
+bluetooth::shim::GetDiscoverability() {
   return GetGabeldorscheStack()
       ->GetStackManager()
-      ->GetInstance<bluetooth::shim::Discoverability>();
+      ->GetInstance<bluetooth::neighbor::DiscoverabilityModule>();
 }
 
 bluetooth::shim::Dumpsys* bluetooth::shim::GetDumpsys() {
