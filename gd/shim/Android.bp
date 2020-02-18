@@ -10,6 +10,7 @@ filegroup {
             "inquiry.cc",
             "l2cap.cc",
             "name.cc",
+            "name_db.cc",
             "page.cc",
             "scanning.cc",
             "security.cc",
