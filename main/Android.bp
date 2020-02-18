@@ -21,6 +21,7 @@ cc_library_static {
     ],
     include_dirs: [
         "system/bt",
+        "system/bt/gd",
         "system/bt/bta/include",
         "system/bt/bta/sys",
         "system/bt/bta/dm",
@@ -41,6 +42,9 @@ cc_library_static {
         "system/bt/utils/include",
         "system/security/keystore/include",
         "hardware/interfaces/keymaster/4.0/support/include",
+    ],
+    generated_headers: [
+        "BluetoothGeneratedPackets_h",
     ],
     host_supported: true,
 }
@@ -147,6 +151,7 @@ cc_library_static {
     host_supported: true,
     include_dirs: [
         "system/bt",
+        "system/bt/gd",
         "system/bt/bta/include",
         "system/bt/btcore/include",
         "system/bt/btif/include",
@@ -155,30 +160,13 @@ cc_library_static {
         "system/bt/stack/include",
         "system/bt/utils/include",
     ],
+    generated_headers: [
+        "BluetoothGeneratedPackets_h",
+    ],
     cflags: [
         "-DBUILDCFG",
     ],
-}
-
-cc_test {
-    name: "bluetooth_test_legacy",
-    defaults: ["fluoride_defaults",
-               "fluoride_osi_defaults",
-    ],
-    test_suites: ["device-tests"],
-    host_supported: true,
-    srcs: [
-        ":LibBluetoothShimTestSources",
-        ":LibBluetoothShimStubSources",
-    ],
-    static_libs: [
-        "libgmock",
-        "libbluetooth-for-tests",
-        "libosi",
-    ],
-    shared_libs: [
-        "libchrome",
-        "liblog",
+    whole_static_libs: [
+        "libbluetooth_gd", // Gabeldorsche
     ],
 }
-

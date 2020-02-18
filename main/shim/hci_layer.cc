@@ -26,6 +26,7 @@
 #include "main/shim/shim.h"
 #include "osi/include/allocator.h"
 #include "osi/include/future.h"
+#include "shim/hci_layer.h"
 #include "stack/include/bt_types.h"
 
 /**

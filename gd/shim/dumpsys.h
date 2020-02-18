@@ -19,14 +19,15 @@
 #include <string>
 
 #include "module.h"
-#include "shim/idumpsys.h"
 
 namespace bluetooth {
 namespace shim {
 
-class Dumpsys : public bluetooth::Module, public bluetooth::shim::IDumpsys {
+using DumpsysFunction = std::function<void(int fd)>;
+
+class Dumpsys : public bluetooth::Module {
  public:
-  void Dump(int fd) override;
+  void Dump(int fd);
   void RegisterDumpsysFunction(const void* token, DumpsysFunction func);
   void UnregisterDumpsysFunction(const void* token);
 

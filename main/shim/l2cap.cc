@@ -24,6 +24,8 @@
 #include "osi/include/allocator.h"
 #include "osi/include/log.h"
 
+#include "shim/l2cap.h"
+
 namespace {
 constexpr char kModuleName[] = "shim::legacy::L2cap";
 constexpr bool kDisconnectResponseRequired = false;

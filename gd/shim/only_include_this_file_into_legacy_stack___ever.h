@@ -24,18 +24,22 @@
  * Only common data structures should be used to pass data between the stacks.
  *
  */
-#include "gd/shim/iadvertising.h"
-#include "gd/shim/iconnectability.h"
-#include "gd/shim/icontroller.h"
-#include "gd/shim/idiscoverability.h"
-#include "gd/shim/idumpsys.h"
-#include "gd/shim/ihci_layer.h"
-#include "gd/shim/iinquiry.h"
-#include "gd/shim/il2cap.h"
-#include "gd/shim/iname.h"
-#include "gd/shim/iname_db.h"
-#include "gd/shim/ipage.h"
-#include "gd/shim/iscanning.h"
-#include "gd/shim/isecurity.h"
-#include "gd/shim/istack.h"
-#include "gd/shim/istorage.h"
+namespace bluetooth {
+namespace shim {
+class Advertising;
+class Security;
+class Connectability;
+class Discoverability;
+class Dumpsys;
+class Inquiry;
+class HciLayer;
+class L2cap;
+class Name;
+class NameDb;
+class Page;
+class Scanning;
+class Security;
+class SecurityModule;
+class Storage;
+}  // namespace shim
+}  // namespace bluetooth

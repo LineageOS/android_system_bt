@@ -19,21 +19,43 @@
 #include <string>
 
 #include "module.h"
-#include "shim/iscanning.h"
 
 namespace bluetooth {
 namespace shim {
 
-class Scanning : public bluetooth::Module, public bluetooth::shim::IScanning {
+struct AdvertisingReport {
+  uint16_t extended_event_type;
+  std::string string_address;
+  uint8_t address_type;
+  int8_t rssi;
+  uint8_t* data;
+  size_t len;
+};
+
+struct DirectedAdvertisingReport : public AdvertisingReport {
+  DirectedAdvertisingReport(AdvertisingReport report) : AdvertisingReport(report) {}
+  uint8_t directed_advertising_type;
+};
+
+struct ExtendedAdvertisingReport : public DirectedAdvertisingReport {
+  ExtendedAdvertisingReport(AdvertisingReport report) : DirectedAdvertisingReport(report) {}
+};
+
+class Scanning : public bluetooth::Module {
  public:
+  using AdvertisingReportCallback = std::function<void(AdvertisingReport report)>;
+  using DirectedAdvertisingReportCallback = std::function<void(DirectedAdvertisingReport report)>;
+  using ExtendedAdvertisingReportCallback = std::function<void(ExtendedAdvertisingReport report)>;
+  using ScanningTimeoutCallback = std::function<void()>;
+
   Scanning() = default;
   ~Scanning() = default;
 
   void StartScanning(bool set_active, AdvertisingReportCallback advertising_callback,
                      DirectedAdvertisingReportCallback directed_advertisting_callback,
                      ExtendedAdvertisingReportCallback extended_advertising_callback,
-                     ScanningTimeoutCallback timeout_callback) override;
-  void StopScanning() override;
+                     ScanningTimeoutCallback timeout_callback);
+  void StopScanning();
 
   static const ModuleFactory Factory;
 
