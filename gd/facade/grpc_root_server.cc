@@ -29,13 +29,13 @@
 #include "hci/facade/le_advertising_manager_facade.h"
 #include "hci/facade/le_scanning_manager_facade.h"
 #include "l2cap/classic/facade.h"
+#include "neighbor/discoverability.h"
 #include "neighbor/facade/facade.h"
 #include "os/log.h"
 #include "os/thread.h"
 #include "security/facade.h"
 #include "shim/advertising.h"
 #include "shim/connectability.h"
-#include "shim/discoverability.h"
 #include "shim/dumpsys.h"
 #include "shim/hci_layer.h"
 #include "shim/inquiry.h"
@@ -107,7 +107,7 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
       case BluetoothModule::SHIM:
         modules.add<::bluetooth::shim::Advertising>();
         modules.add<::bluetooth::shim::Connectability>();
-        modules.add<::bluetooth::shim::Discoverability>();
+        modules.add<::bluetooth::neighbor::DiscoverabilityModule>();
         modules.add<::bluetooth::shim::Dumpsys>();
         modules.add<::bluetooth::shim::HciLayer>();
         modules.add<::bluetooth::shim::Inquiry>();
