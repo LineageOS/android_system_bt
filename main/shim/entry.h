@@ -47,6 +47,7 @@ bluetooth::shim::IInquiry* GetInquiry();
 bluetooth::shim::IHciLayer* GetHciLayer();
 bluetooth::shim::IL2cap* GetL2cap();
 bluetooth::shim::IName* GetName();
+bluetooth::shim::INameDb* GetNameDb();
 bluetooth::shim::IPage* GetPage();
 bluetooth::shim::IScanning* GetScanning();
 bluetooth::shim::ISecurity* GetSecurity();
