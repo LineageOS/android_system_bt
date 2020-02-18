@@ -60,7 +60,6 @@ Name* GetName();
 NameDb* GetNameDb();
 Page* GetPage();
 Scanning* GetScanning();
-Security* GetSecurity();
 bluetooth::security::SecurityModule* GetSecurityModule();
 Storage* GetStorage();
 

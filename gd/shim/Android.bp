@@ -11,7 +11,6 @@ filegroup {
             "name_db.cc",
             "page.cc",
             "scanning.cc",
-            "security.cc",
             "stack.cc",
             "storage.cc",
     ]
