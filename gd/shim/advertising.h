@@ -19,20 +19,19 @@
 #include <string>
 
 #include "module.h"
-#include "shim/iadvertising.h"
 
 namespace bluetooth {
 namespace shim {
 
-class Advertising : public bluetooth::Module, public bluetooth::shim::IAdvertising {
+class Advertising : public bluetooth::Module {
  public:
   Advertising() = default;
   ~Advertising() = default;
 
-  void StartAdvertising() override;
-  void StopAdvertising() override;
+  void StartAdvertising();
+  void StopAdvertising();
 
-  size_t GetNumberOfAdvertisingInstances() const override;
+  size_t GetNumberOfAdvertisingInstances() const;
 
   static const ModuleFactory Factory;
 

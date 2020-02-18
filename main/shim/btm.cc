@@ -31,6 +31,16 @@
 #include "types/class_of_device.h"
 #include "types/raw_address.h"
 
+#include "shim/advertising.h"
+#include "shim/connectability.h"
+#include "shim/controller.h"
+#include "shim/discoverability.h"
+#include "shim/inquiry.h"
+#include "shim/name.h"
+#include "shim/page.h"
+#include "shim/scanning.h"
+#include "shim/security.h"
+
 extern tBTM_CB btm_cb;
 
 static constexpr size_t kRemoteDeviceNameLength = 248;

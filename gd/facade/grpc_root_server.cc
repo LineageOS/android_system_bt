@@ -35,7 +35,6 @@
 #include "security/facade.h"
 #include "shim/advertising.h"
 #include "shim/connectability.h"
-#include "shim/controller.h"
 #include "shim/discoverability.h"
 #include "shim/dumpsys.h"
 #include "shim/hci_layer.h"
@@ -108,7 +107,6 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
       case BluetoothModule::SHIM:
         modules.add<::bluetooth::shim::Advertising>();
         modules.add<::bluetooth::shim::Connectability>();
-        modules.add<::bluetooth::shim::Controller>();
         modules.add<::bluetooth::shim::Discoverability>();
         modules.add<::bluetooth::shim::Dumpsys>();
         modules.add<::bluetooth::shim::HciLayer>();

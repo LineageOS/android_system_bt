@@ -19,19 +19,18 @@
 #include <string>
 
 #include "module.h"
-#include "shim/idiscoverability.h"
 
 namespace bluetooth {
 namespace shim {
 
-class Discoverability : public bluetooth::Module, public bluetooth::shim::IDiscoverability {
+class Discoverability : public bluetooth::Module {
  public:
-  void StartGeneralDiscoverability() override;
-  void StartLimitedDiscoverability() override;
-  void StopDiscoverability() override;
+  void StartGeneralDiscoverability();
+  void StartLimitedDiscoverability();
+  void StopDiscoverability();
 
-  bool IsGeneralDiscoverabilityEnabled() const override;
-  bool IsLimitedDiscoverabilityEnabled() const override;
+  bool IsGeneralDiscoverabilityEnabled() const;
+  bool IsLimitedDiscoverabilityEnabled() const;
 
   Discoverability() = default;
   ~Discoverability() = default;
