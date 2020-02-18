@@ -27,6 +27,7 @@
 #include "shim/iinquiry.h"
 #include "shim/il2cap.h"
 #include "shim/iname.h"
+#include "shim/iname_db.h"
 #include "shim/ipage.h"
 #include "shim/iscanning.h"
 #include "shim/isecurity.h"
@@ -56,6 +57,7 @@ class Stack : public IStack {
   IInquiry* GetInquiry() override;                  // IStack
   IL2cap* GetL2cap() override;                      // IStack
   IName* GetName() override;                        // IStack
+  INameDb* GetNameDb() override;                    // IStack
   IPage* GetPage() override;                        // IStack
   IScanning* GetScanning() override;                // IStack
   ISecurity* GetSecurity() override;                // IStack
