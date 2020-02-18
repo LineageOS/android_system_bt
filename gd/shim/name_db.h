@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Android Open Source Project
+ * Copyright 2020 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,22 +15,25 @@
  */
 #pragma once
 
+#include <array>
 #include <memory>
 #include <string>
 
 #include "module.h"
-#include "shim/iname.h"
+#include "shim/iname_db.h"
 
 namespace bluetooth {
 namespace shim {
 
-class Name : public bluetooth::Module, public bluetooth::shim::IName {
+class NameDb : public bluetooth::Module, public bluetooth::shim::INameDb {
  public:
-  void ReadRemoteNameRequest(std::string string_address, ReadRemoteNameCallback callback) override;
-  void CancelRemoteNameRequest(std::string string_address, CancelRemoteNameCallback callback) override;
+  void ReadRemoteNameDbRequest(std::string string_address, ReadRemoteNameDbCallback callback) override;
 
-  Name() = default;
-  ~Name() = default;
+  bool IsNameCached(std::string string_address) const override;
+  std::array<uint8_t, 248> ReadCachedRemoteName(std::string string_address) const override;
+
+  NameDb() = default;
+  ~NameDb() = default;
 
   static const ModuleFactory Factory;
 
@@ -43,7 +46,7 @@ class Name : public bluetooth::Module, public bluetooth::shim::IName {
  private:
   struct impl;
   std::unique_ptr<impl> pimpl_;
-  DISALLOW_COPY_AND_ASSIGN(Name);
+  DISALLOW_COPY_AND_ASSIGN(NameDb);
 };
 
 }  // namespace shim
