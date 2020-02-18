@@ -18,10 +18,10 @@
 
 #include <memory>
 
+#include "neighbor/discoverability.h"
 #include "security/security_module.h"
 #include "shim/advertising.h"
 #include "shim/connectability.h"
-#include "shim/discoverability.h"
 #include "shim/dumpsys.h"
 #include "shim/hci_layer.h"
 #include "shim/inquiry.h"
