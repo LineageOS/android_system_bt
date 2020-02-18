@@ -19,7 +19,7 @@
 #ifndef BTIF_DM_H
 #define BTIF_DM_H
 
-#include "bta_api.h"
+#include "bta/include/bta_api.h"
 #include "bte_appl.h"
 #include "btif_uid.h"
 
