@@ -28,43 +28,55 @@ namespace bluetooth {
 namespace security {
 namespace record {
 
-enum BondState {
-  /* CreateBond was called, or remote send Pairing Request */
-  PAIRING,
-  /* Link key has been exchanged, but not stored */
-  PAIRED,
-  /* Link Keys are stored persistently */
-  BONDED
-};
-
 class SecurityRecord {
  public:
-  explicit SecurityRecord(hci::AddressWithType address) : pseudo_address_(address), state_(PAIRING) {}
+  explicit SecurityRecord(hci::AddressWithType address) : pseudo_address_(address), pairing_(true) {}
 
   SecurityRecord& operator=(const SecurityRecord& other) = default;
 
   /**
-   * Returns true if Link Keys are stored persistently
+   * Returns true if a device is currently pairing to another device
    */
-  bool IsBonded() {
-    return state_ == BONDED;
+  bool IsPairing() const {
+    return pairing_;
   }
 
   /* Link key has been exchanged, but not stored */
-  bool IsPaired() {
-    return state_ == PAIRED;
+  bool IsPaired() const {
+    return IsClassicLinkKeyValid();
+  }
+
+  /**
+   * Returns true if Link Keys are stored persistently
+   */
+  bool IsBonded() const {
+    return IsPaired() && persisted_;
+  }
+
+  /**
+   * Called by storage manager once record has persisted
+   */
+  void SetPersisted(bool persisted) {
+    persisted_ = persisted;
   }
 
   void SetLinkKey(std::array<uint8_t, 16> link_key, hci::KeyType key_type) {
     link_key_ = link_key;
     key_type_ = key_type;
+    CancelPairing();
+  }
+
+  void CancelPairing() {
+    pairing_ = false;
   }
 
   std::array<uint8_t, 16> GetLinkKey() {
+    ASSERT(IsClassicLinkKeyValid());
     return link_key_;
   }
 
   hci::KeyType GetKeyType() {
+    ASSERT(IsClassicLinkKeyValid());
     return key_type_;
   }
 
@@ -76,9 +88,14 @@ class SecurityRecord {
   /* First address we have ever seen this device with, that we used to create bond */
   hci::AddressWithType pseudo_address_;
 
-  BondState state_;
   std::array<uint8_t, 16> link_key_ = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   hci::KeyType key_type_ = hci::KeyType::DEBUG_COMBINATION;
+
+  bool IsClassicLinkKeyValid() const {
+    return !std::all_of(link_key_.begin(), link_key_.end(), [](uint8_t b) { return b == 0; });
+  }
+  bool persisted_ = false;
+  bool pairing_ = false;
 
  public:
   /* Identity Address */
