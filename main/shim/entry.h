@@ -34,6 +34,7 @@
 
 namespace bluetooth {
 namespace neighbor {
+class ConnectabilityModule;
 class DiscoverabilityModule;
 class PageModule;
 }
@@ -52,7 +53,7 @@ future_t* StopGabeldorscheStack();
 Advertising* GetAdvertising();
 bluetooth::hci::Controller* GetController();
 neighbor::DiscoverabilityModule* GetDiscoverability();
-Connectability* GetConnectability();
+neighbor::ConnectabilityModule* GetConnectability();
 Dumpsys* GetDumpsys();
 Inquiry* GetInquiry();
 HciLayer* GetHciLayer();
