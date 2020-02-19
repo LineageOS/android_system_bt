@@ -36,7 +36,6 @@ class HciLayer;
 class L2cap;
 class Name;
 class NameDb;
-class Page;
 class Scanning;
 class SecurityModule;
 class Storage;

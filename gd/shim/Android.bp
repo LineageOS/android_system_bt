@@ -9,7 +9,6 @@ filegroup {
             "l2cap.cc",
             "name.cc",
             "name_db.cc",
-            "page.cc",
             "scanning.cc",
             "stack.cc",
             "storage.cc",

@@ -33,13 +33,13 @@
 
 #include "main/shim/helpers.h"
 #include "neighbor/discoverability.h"
+#include "neighbor/page.h"
 #include "security/security_module.h"
 #include "shim/advertising.h"
 #include "shim/connectability.h"
 #include "shim/controller.h"
 #include "shim/inquiry.h"
 #include "shim/name.h"
-#include "shim/page.h"
 #include "shim/scanning.h"
 
 extern tBTM_CB btm_cb;
@@ -411,7 +411,10 @@ void bluetooth::shim::Btm::SetClassicConnectibleOff() {
 ConnectabilityState bluetooth::shim::Btm::GetClassicConnectabilityState()
     const {
   ConnectabilityState state;
-  bluetooth::shim::GetPage()->GetScanActivity(state.interval, state.window);
+  neighbor::ScanParameters parameters =
+      bluetooth::shim::GetPage()->GetScanActivity();
+  state.interval = parameters.interval;
+  state.window = parameters.window;
 
   if (bluetooth::shim::GetConnectability()->IsConnectable()) {
     state.mode = BTM_CONNECTABLE;

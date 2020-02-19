@@ -35,6 +35,7 @@
 namespace bluetooth {
 namespace neighbor {
 class DiscoverabilityModule;
+class PageModule;
 }
 namespace hci {
 class Controller;
@@ -58,7 +59,7 @@ HciLayer* GetHciLayer();
 L2cap* GetL2cap();
 Name* GetName();
 NameDb* GetNameDb();
-Page* GetPage();
+neighbor::PageModule* GetPage();
 Scanning* GetScanning();
 bluetooth::security::SecurityModule* GetSecurityModule();
 Storage* GetStorage();
