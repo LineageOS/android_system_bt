@@ -19,7 +19,8 @@
 
 #include "os/log.h"
 
-using namespace bluetooth::security;
+namespace bluetooth {
+namespace security {
 
 // Definition of Pure Virtual Destructor
 ISecurityManagerListener::~ISecurityManagerListener() {}
@@ -67,3 +68,19 @@ void SecurityManager::UnregisterCallbackListener(ISecurityManagerListener* liste
   security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::UnregisterCallbackListener,
                                            common::Unretained(security_manager_impl_), listener));
 }
+
+void SecurityManager::OnPairingPromptAccepted(const bluetooth::hci::AddressWithType& address, bool confirmed) {
+  security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::OnPairingPromptAccepted,
+                                           common::Unretained(security_manager_impl_), address, confirmed));
+}
+void SecurityManager::OnConfirmYesNo(const bluetooth::hci::AddressWithType& address, bool confirmed) {
+  security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::OnConfirmYesNo,
+                                           common::Unretained(security_manager_impl_), address, confirmed));
+}
+void SecurityManager::OnPasskeyEntry(const bluetooth::hci::AddressWithType& address, uint32_t passkey) {
+  security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::OnPasskeyEntry,
+                                           common::Unretained(security_manager_impl_), address, passkey));
+}
+
+}  // namespace security
+}  // namespace bluetooth
