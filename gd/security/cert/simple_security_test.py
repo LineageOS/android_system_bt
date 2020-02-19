@@ -118,7 +118,7 @@ class SimpleSecurityTest(GdFacadeOnlyBaseTestClass):
             data=acl)
         self.cert_device.hci.SendAclData(acl_msg)
 
-    def test_dut_connects(self):
+    def pair_justworks(self, cert_iocap_reply, expected_ui_event):
         # Cert event registration
         self.register_for_event(hci_packets.EventCode.LINK_KEY_REQUEST)
         self.register_for_event(hci_packets.EventCode.IO_CAPABILITY_REQUEST)
@@ -171,13 +171,7 @@ class SimpleSecurityTest(GdFacadeOnlyBaseTestClass):
                 lambda event: logging.debug(event.event) or hci_packets.EventCode.IO_CAPABILITY_REQUEST in event.event
             )
 
-            self.enqueue_hci_command(
-                hci_packets.IoCapabilityRequestReplyBuilder(
-                    dut_address.decode('utf8'),
-                    hci_packets.IoCapability.DISPLAY_YES_NO,
-                    hci_packets.OobDataPresent.NOT_PRESENT,
-                    hci_packets.AuthenticationRequirements.
-                    DEDICATED_BONDING_MITM_PROTECTION), True)
+            self.enqueue_hci_command(cert_iocap_reply, True)
 
             cert_hci_event_asserts.assert_event_occurs(
                 lambda event: logging.debug(event.event) or hci_packets.EventCode.USER_CONFIRMATION_REQUEST in event.event
@@ -190,8 +184,7 @@ class SimpleSecurityTest(GdFacadeOnlyBaseTestClass):
             ui_id = -1
 
             def get_unique_id(event):
-                if (event.message_type ==
-                        security_facade.UiMsgType.DISPLAY_YES_NO_WITH_VALUE):
+                if (event.message_type == expected_ui_event):
                     nonlocal ui_id
                     ui_id = event.unique_id
                     return True
@@ -209,3 +202,36 @@ class SimpleSecurityTest(GdFacadeOnlyBaseTestClass):
             dut_bond_asserts.assert_event_occurs(
                 lambda bond_event: bond_event.message_type == security_facade.BondMsgType.DEVICE_BONDED
             )
+
+    def test_display_only(self):
+        dut_address = self.device_under_test.hci_controller.GetMacAddress(
+            empty_proto.Empty()).address
+        self.pair_justworks(
+            hci_packets.IoCapabilityRequestReplyBuilder(
+                dut_address.decode('utf8'),
+                hci_packets.IoCapability.DISPLAY_ONLY,
+                hci_packets.OobDataPresent.NOT_PRESENT, hci_packets.
+                AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION),
+            security_facade.UiMsgType.DISPLAY_YES_NO_WITH_VALUE)
+
+    def test_no_input_no_output(self):
+        dut_address = self.device_under_test.hci_controller.GetMacAddress(
+            empty_proto.Empty()).address
+        self.pair_justworks(
+            hci_packets.IoCapabilityRequestReplyBuilder(
+                dut_address.decode('utf8'),
+                hci_packets.IoCapability.NO_INPUT_NO_OUTPUT,
+                hci_packets.OobDataPresent.NOT_PRESENT, hci_packets.
+                AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION),
+            security_facade.UiMsgType.DISPLAY_YES_NO)
+
+    def test_display_yes_no(self):
+        dut_address = self.device_under_test.hci_controller.GetMacAddress(
+            empty_proto.Empty()).address
+        self.pair_justworks(
+            hci_packets.IoCapabilityRequestReplyBuilder(
+                dut_address.decode('utf8'),
+                hci_packets.IoCapability.DISPLAY_YES_NO,
+                hci_packets.OobDataPresent.NOT_PRESENT, hci_packets.
+                AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION),
+            security_facade.UiMsgType.DISPLAY_YES_NO_WITH_VALUE)
