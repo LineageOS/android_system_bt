@@ -37,15 +37,12 @@ namespace {
 constexpr char kModuleName[] = "shim::HciLayer";
 }  // namespace
 
-using TokenQueue = std::queue<const void*>;
-using OpCodeTokenQueueMap = std::unordered_map<hci::OpCode, TokenQueue>;
-
 const ModuleFactory HciLayer::Factory = ModuleFactory([]() { return new HciLayer(); });
 
 struct HciLayer::impl {
   impl(os::Handler* handler, hci::HciLayer* hci_layer) : handler_(handler), hci_layer_(hci_layer) {}
 
-  void OnTransmitPacketCommandComplete(hci::CommandCompleteView view) {
+  void OnTransmitPacketCommandComplete(const void* token, hci::CommandCompleteView view) {
     if (command_complete_callback_ == nullptr) {
       LOG_WARN("%s Received packet complete with no complete callback registered", __func__);
       return;
@@ -54,21 +51,10 @@ struct HciLayer::impl {
     uint16_t command_op_code = static_cast<uint16_t>(view.GetCommandOpCode());
     std::vector<const uint8_t> data(view.begin(), view.end());
 
-    if (op_code_token_queue_map_.count(view.GetCommandOpCode()) == 0) {
-      LOG_WARN("%s Received unexpected command complete for opcode:0x%04x", __func__, command_op_code);
-      return;
-    }
-    const void* token = op_code_token_queue_map_[view.GetCommandOpCode()].front();
-    if (token == nullptr) {
-      LOG_WARN("%s Received expected command status but no token for opcode:0x%04x", __func__, command_op_code);
-      return;
-    }
-
-    op_code_token_queue_map_[view.GetCommandOpCode()].pop();
     command_complete_callback_(command_op_code, data, token);
   }
 
-  void OnTransmitPacketStatus(hci::CommandStatusView view) {
+  void OnTransmitPacketStatus(const void* token, hci::CommandStatusView view) {
     if (command_status_callback_ == nullptr) {
       LOG_WARN("%s Received packet complete with no status callback registered", __func__);
       return;
@@ -77,17 +63,6 @@ struct HciLayer::impl {
     uint16_t command_op_code = static_cast<uint16_t>(view.GetCommandOpCode());
     std::vector<const uint8_t> data(view.begin(), view.end());
 
-    if (op_code_token_queue_map_.count(view.GetCommandOpCode()) == 0) {
-      LOG_WARN("%s Received unexpected command status for opcode:0x%04x", __func__, command_op_code);
-      return;
-    }
-    const void* token = op_code_token_queue_map_[view.GetCommandOpCode()].front();
-    if (token == nullptr) {
-      LOG_WARN("%s Received expected command status but no token for opcode:0x%04x", __func__, command_op_code);
-      return;
-    }
-
-    op_code_token_queue_map_[view.GetCommandOpCode()].pop();
     uint8_t status = static_cast<uint8_t>(view.GetStatus());
     command_status_callback_(command_op_code, data, token, status);
   }
@@ -101,14 +76,14 @@ struct HciLayer::impl {
     auto payload = MakeUniquePacket(data, len);
     auto packet = hci::CommandPacketBuilder::Create(op_code, std::move(payload));
 
-    op_code_token_queue_map_[op_code].push(token);
     if (IsCommandStatusOpcode(op_code)) {
       hci_layer_->EnqueueCommand(std::move(packet),
-                                 common::BindOnce(&impl::OnTransmitPacketStatus, common::Unretained(this)), handler_);
-    } else {
-      hci_layer_->EnqueueCommand(std::move(packet),
-                                 common::BindOnce(&impl::OnTransmitPacketCommandComplete, common::Unretained(this)),
+                                 common::BindOnce(&impl::OnTransmitPacketStatus, common::Unretained(this), token),
                                  handler_);
+    } else {
+      hci_layer_->EnqueueCommand(
+          std::move(packet), common::BindOnce(&impl::OnTransmitPacketCommandComplete, common::Unretained(this), token),
+          handler_);
     }
   }
 
@@ -138,8 +113,6 @@ struct HciLayer::impl {
 
   CommandCompleteCallback command_complete_callback_;
   CommandStatusCallback command_status_callback_;
-
-  OpCodeTokenQueueMap op_code_token_queue_map_;
 
   /**
    * Returns true if expecting command complete, false otherwise
