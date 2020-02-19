@@ -101,7 +101,9 @@ void Sender::UpdateClassicConfiguration(classic::internal::ChannelConfigurationS
   if (mode == RetransmissionAndFlowControlModeOption::ENHANCED_RETRANSMISSION) {
     data_controller_ =
         std::make_unique<ErtmController>(link_, channel_id_, remote_channel_id_, queue_end_, handler_, scheduler_);
-    data_controller_->SetRetransmissionAndFlowControlOptions(config.local_retransmission_and_flow_control_);
+    RetransmissionAndFlowControlConfigurationOption option = config.local_retransmission_and_flow_control_;
+    option.tx_window_size_ = config.remote_retransmission_and_flow_control_.tx_window_size_;
+    data_controller_->SetRetransmissionAndFlowControlOptions(option);
     data_controller_->EnableFcs(config.fcs_type_ == FcsType::DEFAULT);
     return;
   }
