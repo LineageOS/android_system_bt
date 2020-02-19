@@ -29,8 +29,8 @@
 #include "shim/l2cap.h"
 #include "shim/name.h"
 #include "shim/scanning.h"
-#include "shim/storage.h"
 #include "stack_manager.h"
+#include "storage/legacy.h"
 
 /**
  * The shim layer implementation on the Gd stack side.

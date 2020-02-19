@@ -31,6 +31,9 @@ class Dumpsys : public bluetooth::Module {
   void RegisterDumpsysFunction(const void* token, DumpsysFunction func);
   void UnregisterDumpsysFunction(const void* token);
 
+  /* This is not a dumpsys-specific method, we just must grab thread from of one modules */
+  os::Handler* GetGdShimHandler();
+
   Dumpsys() = default;
   ~Dumpsys() = default;
 
