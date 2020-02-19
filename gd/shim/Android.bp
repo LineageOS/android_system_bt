@@ -6,7 +6,6 @@ filegroup {
             "hci_layer.cc",
             "inquiry.cc",
             "l2cap.cc",
-            "name.cc",
             "stack.cc",
     ]
 }

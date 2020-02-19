@@ -21,6 +21,7 @@
 #include "hci/le_scanning_manager.h"
 #include "neighbor/connectability.h"
 #include "neighbor/discoverability.h"
+#include "neighbor/name.h"
 #include "neighbor/page.h"
 #include "os/handler.h"
 #include "security/security_module.h"
@@ -29,7 +30,6 @@
 #include "shim/hci_layer.h"
 #include "shim/inquiry.h"
 #include "shim/l2cap.h"
-#include "shim/name.h"
 #include "shim/stack.h"
 #include "stack_manager.h"
 #include "storage/legacy.h"
@@ -100,10 +100,10 @@ bluetooth::shim::L2cap* bluetooth::shim::GetL2cap() {
       ->GetInstance<bluetooth::shim::L2cap>();
 }
 
-bluetooth::shim::Name* bluetooth::shim::GetName() {
+bluetooth::neighbor::NameModule* bluetooth::shim::GetName() {
   return GetGabeldorscheStack()
       ->GetStackManager()
-      ->GetInstance<bluetooth::shim::Name>();
+      ->GetInstance<bluetooth::neighbor::NameModule>();
 }
 
 bluetooth::neighbor::PageModule* bluetooth::shim::GetPage() {
