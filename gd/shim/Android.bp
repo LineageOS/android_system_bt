@@ -7,7 +7,6 @@ filegroup {
             "inquiry.cc",
             "l2cap.cc",
             "name.cc",
-            "name_db.cc",
             "stack.cc",
     ]
 }
