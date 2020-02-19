@@ -97,6 +97,17 @@ bt_status_t do_in_main_thread(const base::Location& from_here,
   return BT_STATUS_SUCCESS;
 }
 
+bt_status_t do_in_main_thread_delayed(const base::Location& from_here,
+                                      base::OnceClosure task,
+                                      const base::TimeDelta& delay) {
+  if (!get_main_message_loop()->task_runner()->PostDelayedTask(
+          from_here, std::move(task), delay)) {
+    LOG(ERROR) << __func__ << ": failed from " << from_here.ToString();
+    return BT_STATUS_FAIL;
+  }
+  return BT_STATUS_SUCCESS;
+}
+
 void btu_task_start_up(UNUSED_ATTR void* context) {
   LOG(INFO) << "Bluetooth chip preload is complete";
 
