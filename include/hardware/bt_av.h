@@ -354,6 +354,9 @@ typedef struct {
 
   /** Sets the audio track gain. */
   void (*set_audio_track_gain)(float gain);
+
+  /** sets the connected device as active */
+  bt_status_t (*set_active_device)(const RawAddress& bd_addr);
 } btav_sink_interface_t;
 
 __END_DECLS

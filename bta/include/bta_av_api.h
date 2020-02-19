@@ -360,7 +360,8 @@ typedef union {
 
 /* AV callback */
 typedef void(tBTA_AV_CBACK)(tBTA_AV_EVT event, tBTA_AV* p_data);
-typedef void(tBTA_AV_SINK_DATA_CBACK)(tBTA_AV_EVT event, tBTA_AV_MEDIA* p_data);
+typedef void(tBTA_AV_SINK_DATA_CBACK)(const RawAddress&, tBTA_AV_EVT event,
+                                      tBTA_AV_MEDIA* p_data);
 
 /* type for stream state machine action functions */
 struct tBTA_AV_SCB;
