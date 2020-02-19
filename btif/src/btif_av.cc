@@ -110,6 +110,7 @@ class BtifAvEvent {
 };
 
 class BtifAvPeer;
+static bt_status_t sink_set_active_device(const RawAddress& peer_address);
 
 // Should not need dedicated Suspend state as actual actions are no
 // different than Open state. Suspend flags are needed however to prevent
@@ -677,7 +678,8 @@ static void btif_av_report_sink_audio_config_state(
     const RawAddress& peer_address, int sample_rate, int channel_count);
 static void btif_av_source_initiate_av_open_timer_timeout(void* data);
 static void btif_av_sink_initiate_av_open_timer_timeout(void* data);
-static void bta_av_sink_media_callback(tBTA_AV_EVT event,
+static void bta_av_sink_media_callback(const RawAddress& peer_address,
+                                       tBTA_AV_EVT event,
                                        tBTA_AV_MEDIA* p_data);
 
 static BtifAvPeer* btif_av_source_find_peer(const RawAddress& peer_address) {
@@ -1990,6 +1992,8 @@ void BtifAvStateMachine::StateStarted::OnEnter() {
   // We are again in started state, clear any remote suspend flags
   peer_.ClearFlags(BtifAvPeer::kFlagRemoteSuspend);
 
+  btif_a2dp_sink_set_rx_flush(false);
+
   // Report that we have entered the Streaming stage. Usually, this should
   // be followed by focus grant. See update_audio_focus_state()
   btif_report_audio_state(peer_.PeerAddress(), BTAV_AUDIO_STATE_STARTED);
@@ -2591,14 +2595,17 @@ static void bta_av_sink_callback(tBTA_AV_EVT event, tBTA_AV* p_data) {
 }
 
 // TODO: All processing should be done on the JNI thread
-static void bta_av_sink_media_callback(tBTA_AV_EVT event,
+static void bta_av_sink_media_callback(const RawAddress& peer_address,
+                                       tBTA_AV_EVT event,
                                        tBTA_AV_MEDIA* p_data) {
   BTIF_TRACE_EVENT("%s: event=%d", __func__, event);
+  BTIF_TRACE_EVENT("%s: address=%s", __func__,
+                   (p_data->avk_config.bd_addr.ToString().c_str()));
 
   switch (event) {
     case BTA_AV_SINK_MEDIA_DATA_EVT: {
-      BtifAvPeer* peer = btif_av_sink_find_peer(btif_av_sink.ActivePeer());
-      if (peer != nullptr) {
+      BtifAvPeer* peer = btif_av_sink_find_peer(peer_address);
+      if (peer != nullptr && peer->IsActivePeer()) {
         int state = peer->StateMachine().StateId();
         if ((state == BtifAvStateMachine::kStateStarted) ||
             (state == BtifAvStateMachine::kStateOpened)) {
@@ -2790,6 +2797,28 @@ static bt_status_t sink_disconnect_src(const RawAddress& peer_address) {
                             peer_address, kBtaHandleUnknown, btif_av_event));
 }
 
+static bt_status_t sink_set_active_device(const RawAddress& peer_address) {
+  BTIF_TRACE_EVENT("%s: Peer %s", __func__, peer_address.ToString().c_str());
+
+  if (!btif_av_sink.Enabled()) {
+    LOG(WARNING) << __func__ << ": BTIF AV Source is not enabled";
+    return BT_STATUS_NOT_READY;
+  }
+
+  std::promise<void> peer_ready_promise;
+  std::future<void> peer_ready_future = peer_ready_promise.get_future();
+  bt_status_t status = do_in_main_thread(
+      FROM_HERE, base::BindOnce(&set_active_peer_int,
+                                AVDT_TSEP_SRC,  // peer_sep
+                                peer_address, std::move(peer_ready_promise)));
+  if (status == BT_STATUS_SUCCESS) {
+    peer_ready_future.wait();
+  } else {
+    LOG(WARNING) << __func__ << ": BTIF AV Sink fails to change peer";
+  }
+  return status;
+}
+
 static bt_status_t src_set_silence_sink(const RawAddress& peer_address,
                                         bool silence) {
   BTIF_TRACE_EVENT("%s: Peer %s", __func__, peer_address.ToString().c_str());
@@ -2878,10 +2907,14 @@ static const btav_source_interface_t bt_av_src_interface = {
 };
 
 static const btav_sink_interface_t bt_av_sink_interface = {
-    sizeof(btav_sink_interface_t), init_sink,    sink_connect_src,
-    sink_disconnect_src,           cleanup_sink, update_audio_focus_state,
+    sizeof(btav_sink_interface_t),
+    init_sink,
+    sink_connect_src,
+    sink_disconnect_src,
+    cleanup_sink,
+    update_audio_focus_state,
     update_audio_track_gain,
-};
+    sink_set_active_device};
 
 RawAddress btif_av_source_active_peer(void) {
   return btif_av_source.ActivePeer();
