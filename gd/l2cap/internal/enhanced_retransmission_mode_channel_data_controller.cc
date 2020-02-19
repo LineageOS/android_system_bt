@@ -499,7 +499,7 @@ struct ErtmController::impl {
   }
 
   bool with_valid_f_bit(Final f) {
-    return f == Final::NOT_SET || tx_state_ == TxState::WAIT_F;
+    return f == Final::NOT_SET ^ tx_state_ == TxState::WAIT_F;
   }
 
   bool with_unexpected_tx_seq(uint8_t tx_seq) {
@@ -1011,7 +1011,7 @@ void ErtmController::send_pdu(std::unique_ptr<packet::BasePacketBuilder> pdu) {
 
 void ErtmController::SetRetransmissionAndFlowControlOptions(
     const RetransmissionAndFlowControlConfigurationOption& option) {
-  local_tx_window_ = option.tx_window_size_;
+  remote_tx_window_ = option.tx_window_size_;
   local_max_transmit_ = option.max_transmit_;
   local_retransmit_timeout_ms_ = option.retransmission_time_out_;
   local_monitor_timeout_ms_ = option.monitor_time_out_;

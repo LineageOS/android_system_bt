@@ -342,3 +342,149 @@ class PTSL2capTest(PTSBaseTestClass):
                     RetransmissionFlowControlMode.ERTM))
             self._assert_connection_complete(due_connection_asserts)
             self._pending_connection_close(timeout=60)
+
+    def test_L2CAP_ERM_BV_05_C(self):
+        """
+        L2CAP/ERM/BV-05-C [Resume Transmitting I-Frames when an S-Frame [RR] is Received]
+        Verify the IUT will cease transmission of I-frames when the negotiated TxWindow is full. Verify the
+        IUT will resume transmission of I-frames when an S-frame [RR] is received that acknowledges
+        previously sent I-frames.
+        """
+        with self._dut_connection_stream() as dut_connection_stream, \
+            self._dut_connection_close_stream() as dut_connection_close_stream:
+            due_connection_asserts = EventAsserts(dut_connection_stream)
+            due_connection_close_asserts = EventAsserts(
+                dut_connection_close_stream)
+            psm = 1
+
+            self.device_under_test.l2cap.SetDynamicChannel(
+                l2cap_facade_pb2.SetEnableDynamicChannelRequest(
+                    psm=psm,
+                    retransmission_mode=l2cap_facade_pb2.
+                    RetransmissionFlowControlMode.ERTM))
+            self._assert_connection_complete(due_connection_asserts)
+            self.device_under_test.l2cap.SendDynamicChannelPacket(
+                l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
+            self.device_under_test.l2cap.SendDynamicChannelPacket(
+                l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
+            self._assert_connection_close(due_connection_close_asserts)
+
+    def test_L2CAP_ERM_BV_06_C(self):
+        """
+        L2CAP/ERM/BV-06-C [Resume Transmitting I-Frames when an I-Frame is Received]
+        Verify the IUT will cease transmission of I-frames when the negotiated TxWindow is full. Verify the
+        IUT will resume transmission of I-frames when an I-frame is received that acknowledges previously
+        sent I-frames.
+        """
+        with self._dut_connection_stream() as dut_connection_stream, \
+            self._dut_connection_close_stream() as dut_connection_close_stream:
+            due_connection_asserts = EventAsserts(dut_connection_stream)
+            due_connection_close_asserts = EventAsserts(
+                dut_connection_close_stream)
+            psm = 1
+
+            self.device_under_test.l2cap.SetDynamicChannel(
+                l2cap_facade_pb2.SetEnableDynamicChannelRequest(
+                    psm=psm,
+                    retransmission_mode=l2cap_facade_pb2.
+                    RetransmissionFlowControlMode.ERTM))
+            self._assert_connection_complete(due_connection_asserts)
+            self.device_under_test.l2cap.SendDynamicChannelPacket(
+                l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
+            self.device_under_test.l2cap.SendDynamicChannelPacket(
+                l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
+            self._assert_connection_close(due_connection_close_asserts)
+
+    def test_L2CAP_ERM_BV_13_C(self):
+        """
+        L2CAP/ERM/BV-13-C [Respond to S-Frame [REJ]]
+        """
+        with self._dut_connection_stream() as dut_connection_stream, \
+            self._dut_connection_close_stream() as dut_connection_close_stream:
+            due_connection_asserts = EventAsserts(dut_connection_stream)
+            due_connection_close_asserts = EventAsserts(
+                dut_connection_close_stream)
+            psm = 1
+
+            self.device_under_test.l2cap.SetDynamicChannel(
+                l2cap_facade_pb2.SetEnableDynamicChannelRequest(
+                    psm=psm,
+                    retransmission_mode=l2cap_facade_pb2.
+                    RetransmissionFlowControlMode.ERTM))
+            self._assert_connection_complete(due_connection_asserts)
+            self.device_under_test.l2cap.SendDynamicChannelPacket(
+                l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
+            self.device_under_test.l2cap.SendDynamicChannelPacket(
+                l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
+            self._assert_connection_close(due_connection_close_asserts)
+
+    def test_L2CAP_ERM_BI_03_C(self):
+        """
+        L2CAP/ERM/BI-03-C [Handle Duplicate S-Frame [SREJ]]
+        """
+        with self._dut_connection_stream() as dut_connection_stream, \
+            self._dut_connection_close_stream() as dut_connection_close_stream:
+            due_connection_asserts = EventAsserts(dut_connection_stream)
+            due_connection_close_asserts = EventAsserts(
+                dut_connection_close_stream)
+            psm = 1
+
+            self.device_under_test.l2cap.SetDynamicChannel(
+                l2cap_facade_pb2.SetEnableDynamicChannelRequest(
+                    psm=psm,
+                    retransmission_mode=l2cap_facade_pb2.
+                    RetransmissionFlowControlMode.ERTM))
+            self._assert_connection_complete(due_connection_asserts)
+            self.device_under_test.l2cap.SendDynamicChannelPacket(
+                l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
+            self.device_under_test.l2cap.SendDynamicChannelPacket(
+                l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
+            self._assert_connection_close(due_connection_close_asserts)
+
+    def test_L2CAP_ERM_BI_04_C(self):
+        """
+        L2CAP/ERM/BI-04-C [Handle Receipt of S-Frame [REJ] and S-Frame [RR, F=1]
+        that Both Require Retransmission of the Same I-Frames]
+        """
+        with self._dut_connection_stream() as dut_connection_stream, \
+            self._dut_connection_close_stream() as dut_connection_close_stream:
+            due_connection_asserts = EventAsserts(dut_connection_stream)
+            due_connection_close_asserts = EventAsserts(
+                dut_connection_close_stream)
+            psm = 1
+
+            self.device_under_test.l2cap.SetDynamicChannel(
+                l2cap_facade_pb2.SetEnableDynamicChannelRequest(
+                    psm=psm,
+                    retransmission_mode=l2cap_facade_pb2.
+                    RetransmissionFlowControlMode.ERTM))
+            self._assert_connection_complete(due_connection_asserts)
+            self.device_under_test.l2cap.SendDynamicChannelPacket(
+                l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
+            self.device_under_test.l2cap.SendDynamicChannelPacket(
+                l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
+            self._assert_connection_close(due_connection_close_asserts)
+
+    def test_L2CAP_ERM_BI_05_C(self):
+        """
+        L2CAP/ERM/BI-05-C [Handle receipt of S-Frame [REJ] and I-Frame [F=1] that
+        Both Require Retransmission of the Same I-Frames]
+        """
+        with self._dut_connection_stream() as dut_connection_stream, \
+            self._dut_connection_close_stream() as dut_connection_close_stream:
+            due_connection_asserts = EventAsserts(dut_connection_stream)
+            due_connection_close_asserts = EventAsserts(
+                dut_connection_close_stream)
+            psm = 1
+
+            self.device_under_test.l2cap.SetDynamicChannel(
+                l2cap_facade_pb2.SetEnableDynamicChannelRequest(
+                    psm=psm,
+                    retransmission_mode=l2cap_facade_pb2.
+                    RetransmissionFlowControlMode.ERTM))
+            self._assert_connection_complete(due_connection_asserts)
+            self.device_under_test.l2cap.SendDynamicChannelPacket(
+                l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
+            self.device_under_test.l2cap.SendDynamicChannelPacket(
+                l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
+            self._assert_connection_close(due_connection_close_asserts)
