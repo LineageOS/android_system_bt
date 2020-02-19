@@ -102,13 +102,10 @@ void bta_ar_reg_avdt(AvdtpRcb* p_reg, tAVDT_CTRL_CBACK* p_cback,
   } else if (sys_id == BTA_ID_AVK) {
     bta_ar_cb.p_avk_conn_cback = p_cback;
     mask = BTA_AR_AVK_MASK;
+  } else {
+    APPL_TRACE_ERROR("%s: the registration is from wrong sys_id:%d", __func__,
+                     sys_id);
   }
-#if (BTA_AR_DEBUG == TRUE)
-  else {
-    APPL_TRACE_ERROR(
-        "bta_ar_reg_avdt: the registration is from wrong sys_id:%d", sys_id);
-  }
-#endif
 
   if (mask) {
     if (bta_ar_cb.avdt_registered == 0) {
