@@ -43,6 +43,7 @@ class PageModule;
 }
 namespace hci {
 class Controller;
+class LeScanningManager;
 }
 
 namespace security {
@@ -70,7 +71,7 @@ L2cap* GetL2cap();
 Name* GetName();
 NameDb* GetNameDb();
 neighbor::PageModule* GetPage();
-Scanning* GetScanning();
+hci::LeScanningManager* GetScanning();
 bluetooth::security::SecurityModule* GetSecurityModule();
 storage::LegacyModule* GetStorage();
 

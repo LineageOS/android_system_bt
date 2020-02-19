@@ -28,6 +28,7 @@
 #include "hci/facade/le_acl_manager_facade.h"
 #include "hci/facade/le_advertising_manager_facade.h"
 #include "hci/facade/le_scanning_manager_facade.h"
+#include "hci/le_scanning_manager.h"
 #include "l2cap/classic/facade.h"
 #include "neighbor/connectability.h"
 #include "neighbor/discoverability.h"
@@ -43,7 +44,6 @@
 #include "shim/inquiry.h"
 #include "shim/l2cap.h"
 #include "shim/name.h"
-#include "shim/scanning.h"
 #include "stack_manager.h"
 #include "storage/legacy.h"
 
@@ -114,7 +114,7 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
         modules.add<::bluetooth::shim::L2cap>();
         modules.add<::bluetooth::shim::Name>();
         modules.add<::bluetooth::neighbor::PageModule>();
-        modules.add<::bluetooth::shim::Scanning>();
+        modules.add<::bluetooth::hci::LeScanningManager>();
         modules.add<::bluetooth::security::SecurityModule>();
         modules.add<::bluetooth::storage::LegacyModule>();
         break;
