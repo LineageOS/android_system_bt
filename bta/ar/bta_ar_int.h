@@ -27,10 +27,6 @@
 
 #include "bta_av_api.h"
 
-#ifndef BTA_AR_DEBUG
-#define BTA_AR_DEBUG TRUE
-#endif
-
 #define BTA_AR_AV_MASK 0x01
 #define BTA_AR_AVK_MASK 0x02
 
