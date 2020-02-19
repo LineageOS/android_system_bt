@@ -24,6 +24,7 @@
 #include "security/channel/security_manager_channel.h"
 #include "security/record/security_record.h"
 #include "security/smp_packets.h"
+#include "security/ui.h"
 
 namespace bluetooth {
 namespace security {
@@ -34,7 +35,7 @@ namespace pairing {
  *
  * <p>Extend this class in order to implement a new style of pairing.
  */
-class PairingHandler {
+class PairingHandler : public UICallbacks {
  public:
   PairingHandler(channel::SecurityManagerChannel* security_manager_channel,
                  std::shared_ptr<record::SecurityRecord> record)
@@ -61,6 +62,10 @@ class PairingHandler {
   virtual void OnReceive(hci::KeypressNotificationView packet) = 0;
   virtual void OnReceive(hci::UserConfirmationRequestView packet) = 0;
   virtual void OnReceive(hci::UserPasskeyRequestView packet) = 0;
+
+  virtual void OnPairingPromptAccepted(const bluetooth::hci::AddressWithType& address, bool confirmed) = 0;
+  virtual void OnConfirmYesNo(const bluetooth::hci::AddressWithType& address, bool confirmed) = 0;
+  virtual void OnPasskeyEntry(const bluetooth::hci::AddressWithType& address, uint32_t passkey) = 0;
 
  protected:
   std::shared_ptr<record::SecurityRecord> GetRecord() {

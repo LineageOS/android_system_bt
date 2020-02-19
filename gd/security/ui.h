@@ -52,10 +52,10 @@ class UI {
 /* Through this interface, UI provides us with user choices. */
 class UICallbacks {
  public:
-  virtual ~UICallbacks() = 0;
+  virtual ~UICallbacks() = default;
 
   /* User accepted pairing prompt */
-  virtual void OnPairingPromptAccepted(const bluetooth::hci::AddressWithType& address) = 0;
+  virtual void OnPairingPromptAccepted(const bluetooth::hci::AddressWithType& address, bool confirmed) = 0;
 
   /* User confirmed that displayed value matches the value on the other device */
   virtual void OnConfirmYesNo(const bluetooth::hci::AddressWithType& address, bool confirmed) = 0;
