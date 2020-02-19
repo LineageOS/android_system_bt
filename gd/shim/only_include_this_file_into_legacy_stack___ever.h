@@ -27,14 +27,8 @@
 namespace bluetooth {
 namespace shim {
 class Advertising;
-class Security;
-class Connectability;
-class Discoverability;
 class Dumpsys;
-class Inquiry;
 class HciLayer;
 class L2cap;
-class Scanning;
-class SecurityModule;
 }  // namespace shim
 }  // namespace bluetooth
