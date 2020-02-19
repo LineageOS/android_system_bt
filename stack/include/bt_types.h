@@ -639,9 +639,9 @@ typedef struct {
 } FLOW_SPEC;
 
 /* Values for service_type */
-#define NO_TRAFFIC 0
-#define BEST_EFFORT 1
-#define GUARANTEED 2
+#define SVC_TYPE_NO_TRAFFIC 0
+#define SVC_TYPE_BEST_EFFORT 1
+#define SVC_TYPE_GUARANTEED 2
 
 /* Service class of the CoD */
 #define SERV_CLASS_NETWORKING (1 << 1)
