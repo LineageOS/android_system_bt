@@ -31,7 +31,9 @@
 #include "types/class_of_device.h"
 #include "types/raw_address.h"
 
+#include "main/shim/helpers.h"
 #include "neighbor/discoverability.h"
+#include "security/security_module.h"
 #include "shim/advertising.h"
 #include "shim/connectability.h"
 #include "shim/controller.h"
@@ -39,7 +41,6 @@
 #include "shim/name.h"
 #include "shim/page.h"
 #include "shim/scanning.h"
-#include "shim/security.h"
 
 extern tBTM_CB btm_cb;
 
@@ -615,13 +616,15 @@ tBTM_STATUS bluetooth::shim::Btm::CreateBond(const RawAddress& bd_addr,
                                              tBT_TRANSPORT transport,
                                              uint8_t pin_len, uint8_t* p_pin,
                                              uint32_t trusted_mask[]) {
+  auto security_manager =
+      bluetooth::shim::GetSecurityModule()->GetSecurityManager();
   switch (transport) {
     case BT_TRANSPORT_BR_EDR:
-      bluetooth::shim::GetSecurity()->CreateBond(bd_addr.ToString());
+      security_manager->CreateBond(
+          ToAddressWithType(bd_addr.address, BLE_ADDR_PUBLIC));
       break;
     case BT_TRANSPORT_LE:
-      bluetooth::shim::GetSecurity()->CreateBondLe(bd_addr.ToString(),
-                                                   addr_type);
+      security_manager->CreateBondLe(ToAddressWithType(bd_addr, addr_type));
       break;
     default:
       return bluetooth::shim::BTM_ILLEGAL_VALUE;
@@ -630,38 +633,23 @@ tBTM_STATUS bluetooth::shim::Btm::CreateBond(const RawAddress& bd_addr,
 }
 
 bool bluetooth::shim::Btm::CancelBond(const RawAddress& bd_addr) {
-  bluetooth::shim::GetSecurity()->CancelBond(bd_addr.ToString());
+  auto security_manager =
+      bluetooth::shim::GetSecurityModule()->GetSecurityManager();
+  security_manager->CancelBond(ToAddressWithType(bd_addr, BLE_ADDR_PUBLIC));
   return true;
 }
 
 bool bluetooth::shim::Btm::RemoveBond(const RawAddress& bd_addr) {
   // TODO(cmanton) Check if acl is connected
-  bluetooth::shim::GetSecurity()->RemoveBond(bd_addr.ToString());
+  auto security_manager =
+      bluetooth::shim::GetSecurityModule()->GetSecurityManager();
+  security_manager->RemoveBond(ToAddressWithType(bd_addr, BLE_ADDR_PUBLIC));
   return true;
 }
 
 void bluetooth::shim::Btm::SetSimplePairingCallback(
     tBTM_SP_CALLBACK* callback) {
+  auto security_manager =
+      bluetooth::shim::GetSecurityModule()->GetSecurityManager();
   simple_pairing_callback_ = callback;
-
-  bluetooth::shim::GetSecurity()->SetSimplePairingCallback(
-      [this](std::string address_string, uint32_t value, bool just_works) {
-        RawAddress address;
-        RawAddress::FromString(address_string, address);
-
-        tBTM_SP_EVT event = BTM_SP_CFM_REQ_EVT;
-        tBTM_SP_EVT_DATA data;
-
-        data.cfm_req.bd_addr = address;
-        data.cfm_req.num_val = value;
-        data.cfm_req.just_works = just_works;
-        switch (simple_pairing_callback_(event, &data)) {
-          case BTM_SUCCESS:
-          case BTM_SUCCESS_NO_SECURITY:
-            return true;
-          default:
-            break;
-        }
-        return false;
-      });
 }

@@ -119,12 +119,6 @@ bluetooth::shim::Scanning* bluetooth::shim::GetScanning() {
       ->GetInstance<bluetooth::shim::Scanning>();
 }
 
-bluetooth::shim::Security* bluetooth::shim::GetSecurity() {
-  return GetGabeldorscheStack()
-      ->GetStackManager()
-      ->GetInstance<bluetooth::shim::Security>();
-}
-
 bluetooth::security::SecurityModule* bluetooth::shim::GetSecurityModule() {
   return GetGabeldorscheStack()
       ->GetStackManager()
