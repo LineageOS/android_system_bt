@@ -26,7 +26,6 @@
  */
 namespace bluetooth {
 namespace shim {
-class Advertising;
 class Dumpsys;
 class HciLayer;
 class L2cap;

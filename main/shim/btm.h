@@ -30,6 +30,7 @@
 #include "stack/include/btm_api_types.h"
 
 #include "hci/hci_packets.h"
+#include "hci/le_advertising_manager.h"
 
 //
 // NOTE: limited and general constants for inquiry and discoverable are swapped
@@ -213,6 +214,8 @@ class Btm {
   BtmStatus CancelAllReadRemoteDeviceName();
 
   // Le neighbor interaction API
+  bluetooth::hci::AdvertiserId advertiser_id_{
+      hci::LeAdvertisingManager::kInvalidId};
   void StartAdvertising();
   void StopAdvertising();
   void StartConnectability();

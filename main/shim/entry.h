@@ -44,6 +44,7 @@ class NameModule;
 class PageModule;
 }
 namespace hci {
+class LeAdvertisingManager;
 class Controller;
 class LeScanningManager;
 }
@@ -62,7 +63,7 @@ future_t* StopGabeldorscheStack();
 /* This returns a handler that might be used in shim to receive callbacks from
  * within the stack. */
 os::Handler* GetGdShimHandler();
-Advertising* GetAdvertising();
+hci::LeAdvertisingManager* GetAdvertising();
 bluetooth::hci::Controller* GetController();
 neighbor::DiscoverabilityModule* GetDiscoverability();
 neighbor::ConnectabilityModule* GetConnectability();

@@ -31,6 +31,7 @@
 #include "types/class_of_device.h"
 #include "types/raw_address.h"
 
+#include "hci/le_advertising_manager.h"
 #include "hci/le_scanning_manager.h"
 #include "main/shim/helpers.h"
 #include "neighbor/connectability.h"
@@ -39,7 +40,6 @@
 #include "neighbor/name.h"
 #include "neighbor/page.h"
 #include "security/security_module.h"
-#include "shim/advertising.h"
 #include "shim/controller.h"
 
 extern tBTM_CB btm_cb;
@@ -563,20 +563,38 @@ bluetooth::shim::Btm::CancelAllReadRemoteDeviceName() {
 }
 
 void bluetooth::shim::Btm::StartAdvertising() {
-  bluetooth::shim::GetAdvertising()->StartAdvertising();
+  if (advertiser_id_ == hci::LeAdvertisingManager::kInvalidId) {
+    LOG_WARN(LOG_TAG,
+             "%s Already advertising; please stop prior to starting again",
+             __func__);
+    return;
+  }
+
+  hci::AdvertisingConfig config;
+  advertiser_id_ = bluetooth::shim::GetAdvertising()->CreateAdvertiser(
+      config, common::Bind([](hci::Address, hci::AddressType) { /*OnScan*/ }),
+      common::Bind([](hci::ErrorCode, uint8_t, uint8_t) { /*OnTerminated*/ }),
+      bluetooth::shim::GetGdShimHandler());
+  if (advertiser_id_ == hci::LeAdvertisingManager::kInvalidId) {
+    LOG_WARN(LOG_TAG, "%s Unable to start advertising", __func__);
+    return;
+  }
+  LOG_DEBUG(LOG_TAG, "%s Started advertising", __func__);
 }
 
 void bluetooth::shim::Btm::StopAdvertising() {
-  bluetooth::shim::GetAdvertising()->StopAdvertising();
+  if (advertiser_id_ == hci::LeAdvertisingManager::kInvalidId) {
+    LOG_WARN(LOG_TAG, "%s No active advertising", __func__);
+    return;
+  }
+  bluetooth::shim::GetAdvertising()->RemoveAdvertiser(advertiser_id_);
+  advertiser_id_ = hci::LeAdvertisingManager::kInvalidId;
+  LOG_DEBUG(LOG_TAG, "%s Stopped advertising", __func__);
 }
 
-void bluetooth::shim::Btm::StartConnectability() {
-  bluetooth::shim::GetAdvertising()->StartAdvertising();
-}
+void bluetooth::shim::Btm::StartConnectability() { StartAdvertising(); }
 
-void bluetooth::shim::Btm::StopConnectability() {
-  bluetooth::shim::GetAdvertising()->StopAdvertising();
-}
+void bluetooth::shim::Btm::StopConnectability() { StopAdvertising(); }
 
 void bluetooth::shim::Btm::StartActiveScanning() {
   StartScanning(kActiveScanning);

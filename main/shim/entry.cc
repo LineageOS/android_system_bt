@@ -18,6 +18,7 @@
 #include "osi/include/future.h"
 
 #include "hci/controller.h"
+#include "hci/le_advertising_manager.h"
 #include "hci/le_scanning_manager.h"
 #include "neighbor/connectability.h"
 #include "neighbor/discoverability.h"
@@ -26,7 +27,6 @@
 #include "neighbor/page.h"
 #include "os/handler.h"
 #include "security/security_module.h"
-#include "shim/advertising.h"
 #include "shim/dumpsys.h"
 #include "shim/hci_layer.h"
 #include "shim/l2cap.h"
@@ -50,10 +50,10 @@ bluetooth::os::Handler* bluetooth::shim::GetGdShimHandler() {
   return bluetooth::shim::GetDumpsys()->GetGdShimHandler();
 }
 
-bluetooth::shim::Advertising* bluetooth::shim::GetAdvertising() {
+bluetooth::hci::LeAdvertisingManager* bluetooth::shim::GetAdvertising() {
   return GetGabeldorscheStack()
       ->GetStackManager()
-      ->GetInstance<bluetooth::shim::Advertising>();
+      ->GetInstance<bluetooth::hci::LeAdvertisingManager>();
 }
 
 bluetooth::hci::Controller* bluetooth::shim::GetController() {

@@ -1,7 +1,6 @@
 filegroup {
     name: "BluetoothShimSources",
     srcs: [
-            "advertising.cc",
             "dumpsys.cc",
             "hci_layer.cc",
             "l2cap.cc",
