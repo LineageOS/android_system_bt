@@ -524,8 +524,8 @@ void bta_av_sink_data_cback(uint8_t handle, BT_HDR* p_pkt, uint32_t time_stamp,
     return;
   }
   p_pkt->event = BTA_AV_SINK_MEDIA_DATA_EVT;
-  p_scb->seps[p_scb->sep_idx].p_app_sink_data_cback(BTA_AV_SINK_MEDIA_DATA_EVT,
-                                                    (tBTA_AV_MEDIA*)p_pkt);
+  p_scb->seps[p_scb->sep_idx].p_app_sink_data_cback(
+      p_scb->PeerAddress(), BTA_AV_SINK_MEDIA_DATA_EVT, (tBTA_AV_MEDIA*)p_pkt);
   /* Free the buffer: a copy of the packet has been delivered */
   osi_free(p_pkt);
 }
@@ -1149,8 +1149,8 @@ void bta_av_setconfig_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     tBTA_AV_MEDIA av_sink_codec_info;
     av_sink_codec_info.avk_config.bd_addr = p_scb->PeerAddress();
     av_sink_codec_info.avk_config.codec_info = p_scb->cfg.codec_info;
-    p_scb->seps[p_scb->sep_idx].p_app_sink_data_cback(BTA_AV_SINK_MEDIA_CFG_EVT,
-                                                      &av_sink_codec_info);
+    p_scb->seps[p_scb->sep_idx].p_app_sink_data_cback(
+        p_scb->PeerAddress(), BTA_AV_SINK_MEDIA_CFG_EVT, &av_sink_codec_info);
   }
 
   AVDT_ConfigRsp(p_scb->avdt_handle, p_scb->avdt_label,
@@ -1770,7 +1770,7 @@ void bta_av_getcap_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       av_sink_codec_info.avk_config.bd_addr = p_scb->PeerAddress();
       av_sink_codec_info.avk_config.codec_info = p_scb->cfg.codec_info;
       p_scb->seps[p_scb->sep_idx].p_app_sink_data_cback(
-          BTA_AV_SINK_MEDIA_CFG_EVT, &av_sink_codec_info);
+          p_scb->PeerAddress(), BTA_AV_SINK_MEDIA_CFG_EVT, &av_sink_codec_info);
     }
 
     if (uuid_int == UUID_SERVCLASS_AUDIO_SOURCE) {
