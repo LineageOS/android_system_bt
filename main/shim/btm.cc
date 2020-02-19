@@ -32,11 +32,11 @@
 #include "types/raw_address.h"
 
 #include "main/shim/helpers.h"
+#include "neighbor/connectability.h"
 #include "neighbor/discoverability.h"
 #include "neighbor/page.h"
 #include "security/security_module.h"
 #include "shim/advertising.h"
-#include "shim/connectability.h"
 #include "shim/controller.h"
 #include "shim/inquiry.h"
 #include "shim/name.h"
