@@ -28,7 +28,6 @@
 #include "shim/inquiry.h"
 #include "shim/l2cap.h"
 #include "shim/name.h"
-#include "shim/scanning.h"
 #include "stack_manager.h"
 #include "storage/legacy.h"
 
