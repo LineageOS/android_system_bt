@@ -35,12 +35,12 @@
 #include "main/shim/helpers.h"
 #include "neighbor/connectability.h"
 #include "neighbor/discoverability.h"
+#include "neighbor/name.h"
 #include "neighbor/page.h"
 #include "security/security_module.h"
 #include "shim/advertising.h"
 #include "shim/controller.h"
 #include "shim/inquiry.h"
-#include "shim/name.h"
 
 extern tBTM_CB btm_cb;
 
@@ -474,24 +474,32 @@ bluetooth::shim::BtmStatus bluetooth::shim::Btm::ReadClassicRemoteDeviceName(
   LOG_DEBUG(LOG_TAG, "%s Start read name from address:%s", __func__,
             raw_address.ToString().c_str());
   bluetooth::shim::GetName()->ReadRemoteNameRequest(
-      classic_read_remote_name_.AddressString(),
-      [this, callback](
-          std::string address_string, uint8_t hci_status,
-          std::array<uint8_t, kRemoteDeviceNameLength> remote_name) {
-        RawAddress raw_address;
-        RawAddress::FromString(address_string, raw_address);
+      hci::Address(raw_address.address), hci::PageScanRepetitionMode::R1,
+      0 /* clock_offset */, hci::ClockOffsetValid::INVALID,
 
-        BtmRemoteDeviceName name{
-            .status = (hci_status == 0) ? (BTM_SUCCESS) : (BTM_BAD_VALUE_RET),
-            .bd_addr = raw_address,
-            .length = kRemoteDeviceNameLength,
-        };
-        std::copy(remote_name.begin(), remote_name.end(), name.remote_bd_name);
-        LOG_DEBUG(LOG_TAG, "%s Finish read name from address:%s name:%s",
-                  __func__, address_string.c_str(), name.remote_bd_name);
-        callback(&name);
-        classic_read_remote_name_.Stop();
-      });
+      base::Bind(
+          [](tBTM_CMPL_CB* callback, ReadRemoteName* classic_read_remote_name_,
+             hci::ErrorCode status, hci::Address address,
+             std::array<uint8_t, kRemoteDeviceNameLength> remote_name) {
+            RawAddress raw_address(address.address);
+
+            BtmRemoteDeviceName name{
+                .status = (static_cast<uint8_t>(status) == 0)
+                              ? (BTM_SUCCESS)
+                              : (BTM_BAD_VALUE_RET),
+                .bd_addr = raw_address,
+                .length = kRemoteDeviceNameLength,
+            };
+            std::copy(remote_name.begin(), remote_name.end(),
+                      name.remote_bd_name);
+            LOG_DEBUG(LOG_TAG, "%s Finish read name from address:%s name:%s",
+                      __func__, address.ToString().c_str(),
+                      name.remote_bd_name);
+            callback(&name);
+            classic_read_remote_name_->Stop();
+          },
+          callback, &classic_read_remote_name_),
+      bluetooth::shim::GetGdShimHandler());
   return bluetooth::shim::BTM_CMD_STARTED;
 }
 
@@ -514,11 +522,18 @@ bluetooth::shim::Btm::CancelAllReadRemoteDeviceName() {
   if (classic_read_remote_name_.IsInProgress() ||
       le_read_remote_name_.IsInProgress()) {
     if (classic_read_remote_name_.IsInProgress()) {
+      hci::Address address;
+      hci::Address::FromString(classic_read_remote_name_.AddressString(),
+                               address);
+
       bluetooth::shim::GetName()->CancelRemoteNameRequest(
-          classic_read_remote_name_.AddressString(),
-          [this](std::string address_string, uint8_t status) {
-            classic_read_remote_name_.Stop();
-          });
+          address,
+          common::BindOnce(
+              [](ReadRemoteName* classic_read_remote_name_,
+                 hci::ErrorCode status,
+                 hci::Address address) { classic_read_remote_name_->Stop(); },
+              &classic_read_remote_name_),
+          bluetooth::shim::GetGdShimHandler());
     }
     if (le_read_remote_name_.IsInProgress()) {
       LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s need access to GATT module",
