@@ -41,7 +41,6 @@
 #include "shim/inquiry.h"
 #include "shim/l2cap.h"
 #include "shim/name.h"
-#include "shim/name_db.h"
 #include "stack_manager.h"
 #include "storage/legacy.h"
 
