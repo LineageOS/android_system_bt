@@ -83,6 +83,10 @@ void Dumpsys::UnregisterDumpsysFunction(const void* token) {
       common::BindOnce(&Dumpsys::impl::UnregisterDumpsysFunction, common::Unretained(pimpl_.get()), token));
 }
 
+os::Handler* Dumpsys::GetGdShimHandler() {
+  return GetHandler();
+}
+
 /**
  * Module methods
  */

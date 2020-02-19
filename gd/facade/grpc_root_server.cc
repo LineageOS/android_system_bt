@@ -44,8 +44,8 @@
 #include "shim/l2cap.h"
 #include "shim/name.h"
 #include "shim/scanning.h"
-#include "shim/storage.h"
 #include "stack_manager.h"
+#include "storage/legacy.h"
 
 namespace bluetooth {
 namespace facade {
@@ -116,7 +116,7 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
         modules.add<::bluetooth::neighbor::PageModule>();
         modules.add<::bluetooth::shim::Scanning>();
         modules.add<::bluetooth::security::SecurityModule>();
-        modules.add<::bluetooth::shim::Storage>();
+        modules.add<::bluetooth::storage::LegacyModule>();
         break;
       default:
         return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "invalid module under test");

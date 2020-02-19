@@ -10,7 +10,6 @@ filegroup {
             "name_db.cc",
             "scanning.cc",
             "stack.cc",
-            "storage.cc",
     ]
 }
 

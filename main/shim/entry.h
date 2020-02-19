@@ -33,6 +33,9 @@
 #include "osi/include/future.h"
 
 namespace bluetooth {
+namespace os {
+class Handler;
+}
 namespace neighbor {
 class ConnectabilityModule;
 class DiscoverabilityModule;
@@ -45,11 +48,17 @@ class Controller;
 namespace security {
 class SecurityModule;
 }
+namespace storage {
+class LegacyModule;
+}
 
 namespace shim {
-
 future_t* StartGabeldorscheStack();
 future_t* StopGabeldorscheStack();
+
+/* This returns a handler that might be used in shim to receive callbacks from
+ * within the stack. */
+os::Handler* GetGdShimHandler();
 Advertising* GetAdvertising();
 bluetooth::hci::Controller* GetController();
 neighbor::DiscoverabilityModule* GetDiscoverability();
@@ -63,7 +72,7 @@ NameDb* GetNameDb();
 neighbor::PageModule* GetPage();
 Scanning* GetScanning();
 bluetooth::security::SecurityModule* GetSecurityModule();
-Storage* GetStorage();
+storage::LegacyModule* GetStorage();
 
 }  // namespace shim
 }  // namespace bluetooth
