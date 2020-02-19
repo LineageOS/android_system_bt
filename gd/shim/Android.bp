@@ -8,7 +8,6 @@ filegroup {
             "l2cap.cc",
             "name.cc",
             "name_db.cc",
-            "scanning.cc",
             "stack.cc",
     ]
 }
