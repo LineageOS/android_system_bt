@@ -19,6 +19,7 @@
 
 #include "hci/controller.h"
 #include "neighbor/discoverability.h"
+#include "neighbor/page.h"
 #include "security/security_module.h"
 #include "shim/advertising.h"
 #include "shim/connectability.h"
@@ -28,7 +29,6 @@
 #include "shim/l2cap.h"
 #include "shim/name.h"
 #include "shim/name_db.h"
-#include "shim/page.h"
 #include "shim/scanning.h"
 #include "shim/stack.h"
 #include "shim/storage.h"
@@ -107,10 +107,10 @@ bluetooth::shim::NameDb* bluetooth::shim::GetNameDb() {
       ->GetInstance<bluetooth::shim::NameDb>();
 }
 
-bluetooth::shim::Page* bluetooth::shim::GetPage() {
+bluetooth::neighbor::PageModule* bluetooth::shim::GetPage() {
   return GetGabeldorscheStack()
       ->GetStackManager()
-      ->GetInstance<bluetooth::shim::Page>();
+      ->GetInstance<bluetooth::neighbor::PageModule>();
 }
 
 bluetooth::shim::Scanning* bluetooth::shim::GetScanning() {
