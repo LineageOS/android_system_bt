@@ -24,7 +24,6 @@
 #include "common/blocking_queue.h"
 #include "grpc/grpc_event_queue.h"
 #include "hci/address.h"
-#include "hci/classic_security_manager.h"
 #include "hci/controller.h"
 #include "hci/facade/controller_facade.grpc.pb.h"
 #include "hci/facade/controller_facade.pb.h"
