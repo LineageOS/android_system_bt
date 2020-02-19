@@ -45,7 +45,6 @@
 #include "shim/name_db.h"
 #include "shim/page.h"
 #include "shim/scanning.h"
-#include "shim/security.h"
 #include "shim/storage.h"
 #include "stack_manager.h"
 #include "storage/legacy.h"
@@ -86,7 +85,6 @@ struct bluetooth::shim::Stack::impl {
     modules.add<::bluetooth::shim::L2cap>();
     modules.add<::bluetooth::shim::Page>();
     modules.add<::bluetooth::shim::Scanning>();
-    modules.add<::bluetooth::shim::Security>();
     modules.add<::bluetooth::shim::Storage>();
 
     stack_thread_ = new Thread("gd_stack_thread", Thread::Priority::NORMAL);
