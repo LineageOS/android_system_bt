@@ -23,7 +23,6 @@
 #include "common/bind.h"
 #include "grpc/grpc_event_queue.h"
 #include "hci/acl_manager.h"
-#include "hci/classic_security_manager.h"
 #include "hci/facade/acl_manager_facade.grpc.pb.h"
 #include "hci/facade/acl_manager_facade.pb.h"
 #include "hci/hci_packets.h"
