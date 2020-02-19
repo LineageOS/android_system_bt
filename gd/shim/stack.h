@@ -20,6 +20,7 @@
 
 #include "neighbor/connectability.h"
 #include "neighbor/discoverability.h"
+#include "neighbor/name.h"
 #include "neighbor/page.h"
 #include "security/security_module.h"
 #include "shim/advertising.h"
@@ -27,7 +28,6 @@
 #include "shim/hci_layer.h"
 #include "shim/inquiry.h"
 #include "shim/l2cap.h"
-#include "shim/name.h"
 #include "stack_manager.h"
 #include "storage/legacy.h"
 

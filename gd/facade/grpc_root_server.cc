@@ -33,6 +33,7 @@
 #include "neighbor/connectability.h"
 #include "neighbor/discoverability.h"
 #include "neighbor/facade/facade.h"
+#include "neighbor/name.h"
 #include "neighbor/page.h"
 #include "os/log.h"
 #include "os/thread.h"
@@ -43,7 +44,6 @@
 #include "shim/hci_layer.h"
 #include "shim/inquiry.h"
 #include "shim/l2cap.h"
-#include "shim/name.h"
 #include "stack_manager.h"
 #include "storage/legacy.h"
 
@@ -108,11 +108,11 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
         modules.add<::bluetooth::shim::Advertising>();
         modules.add<::bluetooth::neighbor::ConnectabilityModule>();
         modules.add<::bluetooth::neighbor::DiscoverabilityModule>();
+        modules.add<::bluetooth::neighbor::NameModule>();
         modules.add<::bluetooth::shim::Dumpsys>();
         modules.add<::bluetooth::shim::HciLayer>();
         modules.add<::bluetooth::shim::Inquiry>();
         modules.add<::bluetooth::shim::L2cap>();
-        modules.add<::bluetooth::shim::Name>();
         modules.add<::bluetooth::neighbor::PageModule>();
         modules.add<::bluetooth::hci::LeScanningManager>();
         modules.add<::bluetooth::security::SecurityModule>();
