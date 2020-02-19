@@ -363,7 +363,7 @@ static tAVRC_STS avrc_pars_vendor_cmd(tAVRC_MSG_VENDOR* p_msg,
  *
  * Description      This function is used to parse cmds received for CTRL
  *                  Currently it is for SetAbsVolume and Volume Change
- *                  Notification..
+ *                  Notification.
  *
  * Returns          AVRC_STS_NO_ERROR, if the message in p_data is parsed
  *                  successfully.
@@ -390,6 +390,12 @@ tAVRC_STS AVRC_Ctrl_ParsCommand(tAVRC_MSG* p_msg, tAVRC_COMMAND* p_result) {
   return status;
 }
 
+#define RETURN_STATUS_IF_FALSE(_status_, _b_, _msg_, ...) \
+  if (!(_b_)) {                                           \
+    AVRC_TRACE_DEBUG(_msg_, ##__VA_ARGS__);               \
+    return _status_;                                      \
+  }
+
 /*******************************************************************************
  *
  * Function         avrc_pars_browsing_cmd
@@ -409,6 +415,10 @@ static tAVRC_STS avrc_pars_browsing_cmd(tAVRC_MSG_BROWSE* p_msg,
   uint8_t* p = p_msg->p_browse_data;
   int count;
 
+  uint16_t min_len = 3;
+  RETURN_STATUS_IF_FALSE(AVRC_STS_BAD_CMD, (p_msg->browse_len >= min_len),
+                         "msg too short");
+
   p_result->pdu = *p++;
   AVRC_TRACE_DEBUG("avrc_pars_browsing_cmd() pdu:0x%x", p_result->pdu);
   /* skip over len */
@@ -416,11 +426,20 @@ static tAVRC_STS avrc_pars_browsing_cmd(tAVRC_MSG_BROWSE* p_msg,
 
   switch (p_result->pdu) {
     case AVRC_PDU_SET_BROWSED_PLAYER: /* 0x70 */
+      min_len += 2;
+      RETURN_STATUS_IF_FALSE(AVRC_STS_BAD_CMD, (p_msg->browse_len >= min_len),
+                             "msg too short");
+
       // For current implementation all players are browsable.
       BE_STREAM_TO_UINT16(p_result->br_player.player_id, p);
       break;
 
     case AVRC_PDU_GET_FOLDER_ITEMS: /* 0x71 */
+
+      min_len += 10;
+      RETURN_STATUS_IF_FALSE(AVRC_STS_BAD_CMD, (p_msg->browse_len >= min_len),
+                             "msg too short");
+
       STREAM_TO_UINT8(p_result->get_items.scope, p);
       // To be modified later here (Scope) when all browsing commands are
       // supported
@@ -441,12 +460,21 @@ static tAVRC_STS avrc_pars_browsing_cmd(tAVRC_MSG_BROWSE* p_msg,
         if (buf_len < (count << 2))
           p_result->get_items.attr_count = count = (buf_len >> 2);
         for (int idx = 0; idx < count; idx++) {
+          min_len += 4;
+          RETURN_STATUS_IF_FALSE(AVRC_STS_BAD_CMD,
+                                 (p_msg->browse_len >= min_len),
+                                 "msg too short");
+
           BE_STREAM_TO_UINT32(p_result->get_items.p_attr_list[idx], p);
         }
       }
       break;
 
     case AVRC_PDU_CHANGE_PATH: /* 0x72 */
+      min_len += 11;
+      RETURN_STATUS_IF_FALSE(AVRC_STS_BAD_CMD, (p_msg->browse_len >= min_len),
+                             "msg too short");
+
       BE_STREAM_TO_UINT16(p_result->chg_path.uid_counter, p);
       BE_STREAM_TO_UINT8(p_result->chg_path.direction, p);
       if (p_result->chg_path.direction != AVRC_DIR_UP &&
@@ -457,7 +485,12 @@ static tAVRC_STS avrc_pars_browsing_cmd(tAVRC_MSG_BROWSE* p_msg,
       break;
 
     case AVRC_PDU_GET_ITEM_ATTRIBUTES: /* 0x73 */
+      min_len += 12;
+      RETURN_STATUS_IF_FALSE(AVRC_STS_BAD_CMD, (p_msg->browse_len >= min_len),
+                             "msg too short");
+
       BE_STREAM_TO_UINT8(p_result->get_attrs.scope, p);
+
       if (p_result->get_attrs.scope > AVRC_SCOPE_NOW_PLAYING) {
         status = AVRC_STS_BAD_SCOPE;
         break;
@@ -473,6 +506,11 @@ static tAVRC_STS avrc_pars_browsing_cmd(tAVRC_MSG_BROWSE* p_msg,
           p_result->get_attrs.attr_count = count = (buf_len >> 2);
         for (int idx = 0, count = 0; idx < p_result->get_attrs.attr_count;
              idx++) {
+          min_len += 4;
+          RETURN_STATUS_IF_FALSE(AVRC_STS_BAD_CMD,
+                                 (p_msg->browse_len >= min_len),
+                                 "msg too short");
+
           BE_STREAM_TO_UINT32(p_result->get_attrs.p_attr_list[count], p);
           if (AVRC_IS_VALID_MEDIA_ATTRIBUTE(
                   p_result->get_attrs.p_attr_list[count])) {
@@ -488,6 +526,10 @@ static tAVRC_STS avrc_pars_browsing_cmd(tAVRC_MSG_BROWSE* p_msg,
       break;
 
     case AVRC_PDU_GET_TOTAL_NUM_OF_ITEMS: /* 0x75 */
+      ++min_len;
+      RETURN_STATUS_IF_FALSE(AVRC_STS_BAD_CMD, (p_msg->browse_len >= min_len),
+                             "msg too short");
+
       BE_STREAM_TO_UINT8(p_result->get_num_of_items.scope, p);
       if (p_result->get_num_of_items.scope > AVRC_SCOPE_NOW_PLAYING) {
         status = AVRC_STS_BAD_SCOPE;
@@ -495,6 +537,10 @@ static tAVRC_STS avrc_pars_browsing_cmd(tAVRC_MSG_BROWSE* p_msg,
       break;
 
     case AVRC_PDU_SEARCH: /* 0x80 */
+      min_len += 4;
+      RETURN_STATUS_IF_FALSE(AVRC_STS_BAD_CMD, (p_msg->browse_len >= min_len),
+                             "msg too short");
+
       BE_STREAM_TO_UINT16(p_result->search.string.charset_id, p);
       BE_STREAM_TO_UINT16(p_result->search.string.str_len, p);
       p_result->search.string.p_str = p_buf;
@@ -504,6 +550,10 @@ static tAVRC_STS avrc_pars_browsing_cmd(tAVRC_MSG_BROWSE* p_msg,
         } else {
           android_errorWriteLog(0x534e4554, "63146237");
         }
+        min_len += p_result->search.string.str_len;
+        RETURN_STATUS_IF_FALSE(AVRC_STS_BAD_CMD, (p_msg->browse_len >= min_len),
+                               "msg too short");
+
         BE_STREAM_TO_ARRAY(p, p_buf, p_result->search.string.str_len);
       } else {
         status = AVRC_STS_INTERNAL_ERR;
