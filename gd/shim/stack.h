@@ -29,7 +29,6 @@
 #include "shim/name.h"
 #include "shim/page.h"
 #include "shim/scanning.h"
-#include "shim/security.h"
 #include "shim/storage.h"
 #include "stack_manager.h"
 

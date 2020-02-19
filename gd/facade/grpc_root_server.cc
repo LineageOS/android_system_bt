@@ -34,6 +34,7 @@
 #include "os/log.h"
 #include "os/thread.h"
 #include "security/facade.h"
+#include "security/security_module.h"
 #include "shim/advertising.h"
 #include "shim/connectability.h"
 #include "shim/dumpsys.h"
@@ -43,7 +44,6 @@
 #include "shim/name.h"
 #include "shim/page.h"
 #include "shim/scanning.h"
-#include "shim/security.h"
 #include "shim/storage.h"
 #include "stack_manager.h"
 
@@ -115,7 +115,7 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
         modules.add<::bluetooth::shim::Name>();
         modules.add<::bluetooth::shim::Page>();
         modules.add<::bluetooth::shim::Scanning>();
-        modules.add<::bluetooth::shim::Security>();
+        modules.add<::bluetooth::security::SecurityModule>();
         modules.add<::bluetooth::shim::Storage>();
         break;
       default:
