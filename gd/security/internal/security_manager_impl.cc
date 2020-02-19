@@ -172,8 +172,8 @@ void SecurityManagerImpl::HandleEvent(T packet) {
 
     const hci::EventCode code = event.GetEventCode();
     if (code != hci::EventCode::LINK_KEY_REQUEST) {
-      LOG_ERROR("No classic pairing handler for device '%s' ready for command '%hhx' ", bd_addr.ToString().c_str(),
-                event_code);
+      LOG_ERROR("No classic pairing handler for device '%s' ready for command %s ", bd_addr.ToString().c_str(),
+                hci::EventCodeText(event_code).c_str());
       return;
     }
 
@@ -255,18 +255,33 @@ void SecurityManagerImpl::OnHciLeEvent(hci::LeMetaEventView event) {
 }
 
 void SecurityManagerImpl::OnPairingPromptAccepted(const bluetooth::hci::AddressWithType& address, bool confirmed) {
-  pending_le_pairing_.handler_->OnUiAction(PairingEvent::UI_ACTION_TYPE::PAIRING_ACCEPTED, confirmed);
+  auto entry = pairing_handler_map_.find(address.GetAddress());
+  if (entry != pairing_handler_map_.end()) {
+    entry->second->OnPairingPromptAccepted(address, confirmed);
+  } else {
+    pending_le_pairing_.handler_->OnUiAction(PairingEvent::UI_ACTION_TYPE::PAIRING_ACCEPTED, confirmed);
+  }
 }
 
 void SecurityManagerImpl::OnConfirmYesNo(const bluetooth::hci::AddressWithType& address, bool confirmed) {
-  if (pending_le_pairing_.address_ == address) {
-    pending_le_pairing_.handler_->OnUiAction(PairingEvent::UI_ACTION_TYPE::CONFIRM_YESNO, confirmed);
+  auto entry = pairing_handler_map_.find(address.GetAddress());
+  if (entry != pairing_handler_map_.end()) {
+    entry->second->OnConfirmYesNo(address, confirmed);
+  } else {
+    if (pending_le_pairing_.address_ == address) {
+      pending_le_pairing_.handler_->OnUiAction(PairingEvent::UI_ACTION_TYPE::CONFIRM_YESNO, confirmed);
+    }
   }
 }
 
 void SecurityManagerImpl::OnPasskeyEntry(const bluetooth::hci::AddressWithType& address, uint32_t passkey) {
-  if (pending_le_pairing_.address_ == address) {
-    pending_le_pairing_.handler_->OnUiAction(PairingEvent::UI_ACTION_TYPE::PASSKEY, passkey);
+  auto entry = pairing_handler_map_.find(address.GetAddress());
+  if (entry != pairing_handler_map_.end()) {
+    entry->second->OnPasskeyEntry(address, passkey);
+  } else {
+    if (pending_le_pairing_.address_ == address) {
+      pending_le_pairing_.handler_->OnUiAction(PairingEvent::UI_ACTION_TYPE::PASSKEY, passkey);
+    }
   }
 }
 

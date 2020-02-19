@@ -74,11 +74,11 @@ void SecurityManager::OnPairingPromptAccepted(const bluetooth::hci::AddressWithT
                                            common::Unretained(security_manager_impl_), address, confirmed));
 }
 void SecurityManager::OnConfirmYesNo(const bluetooth::hci::AddressWithType& address, bool confirmed) {
-  security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::OnPairingPromptAccepted,
+  security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::OnConfirmYesNo,
                                            common::Unretained(security_manager_impl_), address, confirmed));
 }
 void SecurityManager::OnPasskeyEntry(const bluetooth::hci::AddressWithType& address, uint32_t passkey) {
-  security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::OnPairingPromptAccepted,
+  security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::OnPasskeyEntry,
                                            common::Unretained(security_manager_impl_), address, passkey));
 }
 
