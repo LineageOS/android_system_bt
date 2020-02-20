@@ -22,11 +22,12 @@
 #include <cstdint>
 
 #include "btcore/include/module.h"
+#include "hci/hci_layer.h"
 #include "main/shim/hci_layer.h"
 #include "main/shim/shim.h"
 #include "osi/include/allocator.h"
 #include "osi/include/future.h"
-#include "shim/hci_layer.h"
+#include "packet/raw_builder.h"
 #include "stack/include/bt_types.h"
 
 /**
@@ -38,8 +39,6 @@
  */
 using CommandCallbackData = struct {
   void* context;
-  command_complete_cb complete_callback;
-  command_status_cb status_callback;
 };
 
 constexpr size_t kBtHdrSize = sizeof(BT_HDR);
@@ -49,40 +48,64 @@ constexpr size_t kCommandOpcodeSize = sizeof(uint16_t);
 static hci_t interface;
 static base::Callback<void(const base::Location&, BT_HDR*)> send_data_upwards;
 
+namespace {
+bool IsCommandStatusOpcode(bluetooth::hci::OpCode op_code) {
+  switch (op_code) {
+    case bluetooth::hci::OpCode::INQUIRY:
+    case bluetooth::hci::OpCode::CREATE_CONNECTION:
+    case bluetooth::hci::OpCode::DISCONNECT:
+    case bluetooth::hci::OpCode::ACCEPT_CONNECTION_REQUEST:
+    case bluetooth::hci::OpCode::REJECT_CONNECTION_REQUEST:
+    case bluetooth::hci::OpCode::CHANGE_CONNECTION_PACKET_TYPE:
+    case bluetooth::hci::OpCode::AUTHENTICATION_REQUESTED:
+    case bluetooth::hci::OpCode::SET_CONNECTION_ENCRYPTION:
+    case bluetooth::hci::OpCode::CHANGE_CONNECTION_LINK_KEY:
+    case bluetooth::hci::OpCode::MASTER_LINK_KEY:
+    case bluetooth::hci::OpCode::REMOTE_NAME_REQUEST:
+    case bluetooth::hci::OpCode::READ_REMOTE_SUPPORTED_FEATURES:
+    case bluetooth::hci::OpCode::READ_REMOTE_EXTENDED_FEATURES:
+    case bluetooth::hci::OpCode::READ_REMOTE_VERSION_INFORMATION:
+    case bluetooth::hci::OpCode::READ_CLOCK_OFFSET:
+    case bluetooth::hci::OpCode::SETUP_SYNCHRONOUS_CONNECTION:
+    case bluetooth::hci::OpCode::ACCEPT_SYNCHRONOUS_CONNECTION:
+    case bluetooth::hci::OpCode::REJECT_SYNCHRONOUS_CONNECTION:
+    case bluetooth::hci::OpCode::ENHANCED_SETUP_SYNCHRONOUS_CONNECTION:
+    case bluetooth::hci::OpCode::ENHANCED_ACCEPT_SYNCHRONOUS_CONNECTION:
+    case bluetooth::hci::OpCode::HOLD_MODE:
+    case bluetooth::hci::OpCode::SNIFF_MODE:
+    case bluetooth::hci::OpCode::EXIT_SNIFF_MODE:
+    case bluetooth::hci::OpCode::QOS_SETUP:
+    case bluetooth::hci::OpCode::SWITCH_ROLE:
+    case bluetooth::hci::OpCode::FLOW_SPECIFICATION:
+    case bluetooth::hci::OpCode::REFRESH_ENCRYPTION_KEY:
+    case bluetooth::hci::OpCode::LE_CREATE_CONNECTION:
+    case bluetooth::hci::OpCode::LE_CONNECTION_UPDATE:
+    case bluetooth::hci::OpCode::LE_READ_REMOTE_FEATURES:
+    case bluetooth::hci::OpCode::LE_READ_LOCAL_P_256_PUBLIC_KEY_COMMAND:
+    case bluetooth::hci::OpCode::LE_GENERATE_DHKEY_COMMAND:
+    case bluetooth::hci::OpCode::LE_SET_PHY:
+    case bluetooth::hci::OpCode::LE_EXTENDED_CREATE_CONNECTION:
+    case bluetooth::hci::OpCode::LE_PERIODIC_ADVERTISING_CREATE_SYNC:
+      return true;
+    default:
+      return false;
+  }
+}
+
+std::unique_ptr<bluetooth::packet::RawBuilder> MakeUniquePacket(
+    const uint8_t* data, size_t len) {
+  bluetooth::packet::RawBuilder builder;
+  std::vector<uint8_t> bytes(data, data + len);
+
+  auto payload = std::make_unique<bluetooth::packet::RawBuilder>();
+  payload->AddOctets(bytes);
+
+  return payload;
+}
+}  // namespace
+
 static future_t* hci_module_shut_down(void);
 static future_t* hci_module_start_up(void);
-
-static void OnCommandComplete(uint16_t command_op_code,
-                              std::vector<const uint8_t> data,
-                              const void* token) {
-  BT_HDR* response = static_cast<BT_HDR*>(osi_calloc(data.size() + kBtHdrSize));
-  std::copy(data.begin(), data.end(), response->data);
-  response->len = data.size();
-
-  const CommandCallbackData* command_callback_data =
-      static_cast<const CommandCallbackData*>(token);
-  CHECK(command_callback_data->complete_callback != nullptr);
-
-  command_callback_data->complete_callback(response,
-                                           command_callback_data->context);
-  delete command_callback_data;
-}
-
-static void OnCommandStatus(uint16_t command_op_code,
-                            std::vector<const uint8_t> data, const void* token,
-                            uint8_t status) {
-  BT_HDR* response = static_cast<BT_HDR*>(osi_calloc(data.size() + kBtHdrSize));
-  std::copy(data.begin(), data.end(), response->data);
-  response->len = data.size();
-
-  const CommandCallbackData* command_callback_data =
-      static_cast<const CommandCallbackData*>(token);
-  CHECK(command_callback_data->status_callback != nullptr);
-
-  command_callback_data->status_callback(status, response,
-                                         command_callback_data->context);
-  delete command_callback_data;
-}
 
 EXPORT_SYMBOL extern const module_t gd_hci_module = {
     .name = GD_HCI_MODULE,
@@ -93,14 +116,10 @@ EXPORT_SYMBOL extern const module_t gd_hci_module = {
     .dependencies = {GD_SHIM_MODULE, nullptr}};
 
 static future_t* hci_module_start_up(void) {
-  bluetooth::shim::GetHciLayer()->RegisterCommandComplete(OnCommandComplete);
-  bluetooth::shim::GetHciLayer()->RegisterCommandStatus(OnCommandStatus);
   return nullptr;
 }
 
 static future_t* hci_module_shut_down(void) {
-  bluetooth::shim::GetHciLayer()->UnregisterCommandComplete();
-  bluetooth::shim::GetHciLayer()->UnregisterCommandStatus();
   return nullptr;
 }
 
@@ -108,6 +127,33 @@ static void set_data_cb(
     base::Callback<void(const base::Location&, BT_HDR*)> send_data_cb) {
   send_data_upwards = std::move(send_data_cb);
 }
+
+void OnTransmitPacketCommandComplete(command_complete_cb complete_callback,
+                                     void* context,
+                                     bluetooth::hci::CommandCompleteView view) {
+  std::vector<const uint8_t> data(view.begin(), view.end());
+
+  BT_HDR* response = static_cast<BT_HDR*>(osi_calloc(data.size() + kBtHdrSize));
+  std::copy(data.begin(), data.end(), response->data);
+  response->len = data.size();
+
+  complete_callback(response, context);
+}
+
+void OnTransmitPacketStatus(command_status_cb status_callback, void* context,
+                            bluetooth::hci::CommandStatusView view) {
+  std::vector<const uint8_t> data(view.begin(), view.end());
+
+  BT_HDR* response = static_cast<BT_HDR*>(osi_calloc(data.size() + kBtHdrSize));
+  std::copy(data.begin(), data.end(), response->data);
+  response->len = data.size();
+
+  uint8_t status = static_cast<uint8_t>(view.GetStatus());
+  status_callback(status, response, context);
+}
+
+using bluetooth::common::BindOnce;
+using bluetooth::common::Unretained;
 
 static void transmit_command(BT_HDR* command,
                              command_complete_cb complete_callback,
@@ -124,14 +170,24 @@ static void transmit_command(BT_HDR* command,
   data += (kCommandOpcodeSize + kCommandLengthSize);
   len -= (kCommandOpcodeSize + kCommandLengthSize);
 
-  const CommandCallbackData* command_callback_data = new CommandCallbackData{
-      context,
-      complete_callback,
-      status_callback,
-  };
-  bluetooth::shim::GetHciLayer()->TransmitCommand(
-      command_op_code, const_cast<const uint8_t*>(data), len,
-      static_cast<const void*>(command_callback_data));
+  const bluetooth::hci::OpCode op_code =
+      static_cast<const bluetooth::hci::OpCode>(command_op_code);
+
+  auto payload = MakeUniquePacket(data, len);
+  auto packet =
+      bluetooth::hci::CommandPacketBuilder::Create(op_code, std::move(payload));
+
+  if (IsCommandStatusOpcode(op_code)) {
+    bluetooth::shim::GetHciLayer()->EnqueueCommand(
+        std::move(packet),
+        BindOnce(OnTransmitPacketStatus, status_callback, context),
+        bluetooth::shim::GetGdShimHandler());
+  } else {
+    bluetooth::shim::GetHciLayer()->EnqueueCommand(
+        std::move(packet),
+        BindOnce(OnTransmitPacketCommandComplete, complete_callback, context),
+        bluetooth::shim::GetGdShimHandler());
+  }
 }
 
 const hci_t* bluetooth::shim::hci_layer_get_interface() {

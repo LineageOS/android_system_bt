@@ -20,6 +20,7 @@
 #include "att/att_module.h"
 #include "hal/hci_hal.h"
 #include "hci/acl_manager.h"
+#include "hci/hci_layer.h"
 #include "hci/le_advertising_manager.h"
 #include "hci/le_scanning_manager.h"
 #include "l2cap/classic/l2cap_classic_module.h"
@@ -34,10 +35,7 @@
 #include "os/log.h"
 #include "os/thread.h"
 #include "security/security_module.h"
-#include "shim/advertising.h"
 #include "shim/dumpsys.h"
-#include "shim/hci_layer.h"
-#include "shim/inquiry.h"
 #include "shim/l2cap.h"
 #include "stack_manager.h"
 #include "storage/legacy.h"
@@ -56,6 +54,7 @@ struct bluetooth::shim::Stack::impl {
     modules.add<::bluetooth::att::AttModule>();
     modules.add<::bluetooth::hal::HciHal>();
     modules.add<::bluetooth::hci::AclManager>();
+    modules.add<::bluetooth::hci::HciLayer>();
     modules.add<::bluetooth::hci::LeAdvertisingManager>();
     modules.add<::bluetooth::hci::LeScanningManager>();
     modules.add<::bluetooth::l2cap::classic::L2capClassicModule>();
@@ -67,12 +66,9 @@ struct bluetooth::shim::Stack::impl {
     modules.add<::bluetooth::neighbor::NameDbModule>();
     modules.add<::bluetooth::neighbor::PageModule>();
     modules.add<::bluetooth::neighbor::ScanModule>();
-    modules.add<::bluetooth::shim::HciLayer>();
     modules.add<::bluetooth::security::SecurityModule>();
     modules.add<::bluetooth::storage::LegacyModule>();
-    modules.add<::bluetooth::shim::Advertising>();
     modules.add<::bluetooth::shim::Dumpsys>();
-    modules.add<::bluetooth::shim::Inquiry>();
     modules.add<::bluetooth::shim::L2cap>();
 
     stack_thread_ = new Thread("gd_stack_thread", Thread::Priority::NORMAL);
