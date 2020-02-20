@@ -54,6 +54,7 @@ __BEGIN_DECLS
 #define BTRC_MEDIA_ATTR_ID_NUM_TRACKS 0x00000005
 #define BTRC_MEDIA_ATTR_ID_GENRE 0x00000006
 #define BTRC_MEDIA_ATTR_ID_PLAYING_TIME 0x00000007 /* in miliseconds */
+#define BTRC_MEDIA_ATTR_ID_COVER_ARTWORK_HANDLE 0x00000008
 
 /* Macros for folder types */
 #define BTRC_FOLDER_TYPE_MIXED 0x00
@@ -86,6 +87,7 @@ typedef enum {
   BTRC_FEAT_METADATA = 0x01,        /* AVRCP 1.3 */
   BTRC_FEAT_ABSOLUTE_VOLUME = 0x02, /* Supports TG role and volume sync */
   BTRC_FEAT_BROWSE = 0x04, /* AVRCP 1.4 and up, with Browsing support */
+  BTRC_FEAT_COVER_ARTWORK = 0x8,    /* AVRCP 1.6 and up, Cover Art */
 } btrc_remote_features_t;
 
 typedef enum {
@@ -620,6 +622,9 @@ typedef void (*btrc_ctrl_now_playing_contents_changed_callback)(
 typedef void (*btrc_ctrl_available_player_changed_callback)(
     const RawAddress& bd_addr);
 
+typedef void (*btrc_ctrl_get_cover_art_psm_callback)(const RawAddress& bd_addr,
+    const uint16_t psm);
+
 /** BT-RC Controller callback structure. */
 typedef struct {
   /** set to sizeof(BtRcCallbacks) */
@@ -646,6 +651,7 @@ typedef struct {
   btrc_ctrl_now_playing_contents_changed_callback
       now_playing_contents_changed_cb;
   btrc_ctrl_available_player_changed_callback available_player_changed_cb;
+  btrc_ctrl_get_cover_art_psm_callback get_cover_art_psm_cb;
 } btrc_ctrl_callbacks_t;
 
 /** Represents the standard BT-RC AVRCP Controller interface. */

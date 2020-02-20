@@ -362,6 +362,7 @@ uint8_t bta_av_rc_create(tBTA_AV_CB* p_cb, uint8_t role, uint8_t shdl,
   p_rcb->shdl = shdl;
   p_rcb->lidx = lidx;
   p_rcb->peer_features = 0;
+  p_rcb->cover_art_psm = 0;
   if (lidx == (BTA_AV_NUM_LINKS + 1)) {
     /* this LIDX is reserved for the AVRCP ACP connection */
     p_cb->rc_acp_handle = p_rcb->handle;
@@ -560,9 +561,11 @@ void bta_av_rc_opened(tBTA_AV_CB* p_cb, tBTA_AV_DATA* p_data) {
 
   rc_open.peer_addr = p_data->rc_conn_chg.peer_addr;
   rc_open.peer_features = p_cb->rcb[i].peer_features;
+  rc_open.cover_art_psm = p_cb->rcb[i].cover_art_psm;
   rc_open.status = BTA_AV_SUCCESS;
   APPL_TRACE_DEBUG("%s: local features:x%x peer_features:x%x", __func__,
                    p_cb->features, rc_open.peer_features);
+  APPL_TRACE_DEBUG("%s: cover art psm:x%x", __func__, rc_open.cover_art_psm);
   if (rc_open.peer_features == 0) {
     /* we have not done SDP on peer RC capabilities.
      * peer must have initiated the RC connection */
@@ -1720,25 +1723,31 @@ tBTA_AV_FEAT bta_avk_check_peer_features(uint16_t service_uuid) {
       if (peer_rc_version >= AVRC_REV_1_3)
         peer_features |= (BTA_AV_FEAT_VENDOR | BTA_AV_FEAT_METADATA);
 
-      /*
-       * Though Absolute Volume came after in 1.4 and above, but there are few
-       * devices
-       * in market which supports absolute Volume and they are still 1.3
-       * TO avoid IOT issuses with those devices, we check for 1.3 as minimum
-       * version
-       */
-      if (peer_rc_version >= AVRC_REV_1_3) {
-        /* get supported features */
-        tSDP_DISC_ATTR* p_attr =
-            SDP_FindAttributeInRec(p_rec, ATTR_ID_SUPPORTED_FEATURES);
-        if (p_attr != NULL) {
-          uint16_t categories = p_attr->attr_value.v.u16;
-          if (categories & AVRC_SUPF_CT_CAT2)
+      /* Get supported features */
+      tSDP_DISC_ATTR* p_attr =
+          SDP_FindAttributeInRec(p_rec, ATTR_ID_SUPPORTED_FEATURES);
+      if (p_attr != NULL) {
+        uint16_t categories = p_attr->attr_value.v.u16;
+        /*
+         * Though Absolute Volume came after in 1.4 and above, but there are
+         * few devices in market which supports absolute Volume and they are
+         * still 1.3. To avoid IOP issuses with those devices, we check for
+         * 1.3 as minimum version
+         */
+        if (peer_rc_version >= AVRC_REV_1_3) {
+          if (categories & AVRC_SUPF_TG_CAT2)
             peer_features |= (BTA_AV_FEAT_ADV_CTRL);
-          if (categories & AVRC_SUPF_CT_APP_SETTINGS)
+          if (categories & AVRC_SUPF_TG_APP_SETTINGS)
             peer_features |= (BTA_AV_FEAT_APP_SETTING);
-          if (categories & AVRC_SUPF_CT_BROWSE)
+          if (categories & AVRC_SUPF_TG_BROWSE)
             peer_features |= (BTA_AV_FEAT_BROWSE);
+        }
+
+        /* AVRCP Cover Artwork over BIP */
+        if (peer_rc_version >= AVRC_REV_1_6) {
+          if (service_uuid == UUID_SERVCLASS_AV_REM_CTRL_TARGET &&
+              categories & AVRC_SUPF_TG_PLAYER_COVER_ART)
+            peer_features |= (BTA_AV_FEAT_COVER_ARTWORK);
         }
       }
     }
@@ -1747,6 +1756,108 @@ tBTA_AV_FEAT bta_avk_check_peer_features(uint16_t service_uuid) {
   }
   APPL_TRACE_DEBUG("%s: peer_features:x%x", __func__, peer_features);
   return peer_features;
+}
+
+/******************************************************************************
+ *
+ * Function         bta_avk_get_cover_art_psm
+ *
+ * Description      Get the PSM associated with the AVRCP Target cover art
+ *                  feature
+ *
+ * Returns          uint16_t PSM value used to get cover artwork, or 0x0000 if
+ *                  one does not exist.
+ *
+ *****************************************************************************/
+uint16_t bta_avk_get_cover_art_psm() {
+  APPL_TRACE_DEBUG("%s: searching for cover art psm", __func__);
+  /* Cover Art L2CAP PSM is only available on a target device */
+  tBTA_AV_CB* p_cb = &bta_av_cb;
+  tSDP_DISC_REC* p_rec =
+      SDP_FindServiceInDb(p_cb->p_disc_db, UUID_SERVCLASS_AV_REM_CTRL_TARGET,
+          NULL);
+  while (p_rec) {
+    tSDP_DISC_ATTR* p_attr =
+        (SDP_FindAttributeInRec(p_rec, ATTR_ID_ADDITION_PROTO_DESC_LISTS));
+    /*
+     * If we have the Additional Protocol Description Lists attribute then we
+     * specifically want the list that is an L2CAP protocol leading to OBEX.
+     * Because the is a case where cover art is supported and browsing isn't
+     * we need to check each list for the one we want.
+     *
+     * This means we need to do drop down into the protocol list and do a
+     * "for each protocol, for each protocol element, for each protocol element
+     * list parameter, if the parameter is L2CAP then find the PSM associated
+     * with it, then make sure we see OBEX in that same protocol"
+     */
+    if (p_attr != NULL && SDP_DISC_ATTR_TYPE(p_attr->attr_len_type)
+        == DATA_ELE_SEQ_DESC_TYPE) {
+      // Point to first in List of protocols (i.e [(L2CAP -> AVCTP),
+      // (L2CAP -> OBEX)])
+      tSDP_DISC_ATTR* p_protocol_list = p_attr->attr_value.v.p_sub_attr;
+      while (p_protocol_list != NULL) {
+        if (SDP_DISC_ATTR_TYPE(p_protocol_list->attr_len_type)
+            == DATA_ELE_SEQ_DESC_TYPE) {
+          // Point to fist in list of protocol elements (i.e. [L2CAP, AVCTP])
+          tSDP_DISC_ATTR* p_protocol =
+              p_protocol_list->attr_value.v.p_sub_attr;
+          bool protocol_has_obex = false;
+          bool protocol_has_l2cap = false;
+          uint16_t psm = 0x0000;
+          while (p_protocol) {
+            if (SDP_DISC_ATTR_TYPE(p_protocol->attr_len_type)
+                == DATA_ELE_SEQ_DESC_TYPE) {
+              // Point to first item protocol parameters list (i.e [UUID=L2CAP,
+              // PSM=0x1234])
+              tSDP_DISC_ATTR* p_protocol_param =
+                  p_protocol->attr_value.v.p_sub_attr;
+              /*
+               * Currently there's only ever one UUID and one parameter. L2cap
+               * has a single PSM, AVCTP has a version and OBEX has nothing.
+               * Change this if that ever changes.
+               */
+              uint16_t protocol_uuid = 0;
+              uint16_t protocol_param = 0;
+              while (p_protocol_param) {
+                uint16_t param_type =
+                    SDP_DISC_ATTR_TYPE(p_protocol_param->attr_len_type);
+                uint16_t param_len =
+                    SDP_DISC_ATTR_LEN(p_protocol_param->attr_len_type);
+                if (param_type == UUID_DESC_TYPE) {
+                  protocol_uuid = p_protocol_param->attr_value.v.u16;
+                } else if (param_type == UINT_DESC_TYPE) {
+                    protocol_param = (param_len == 2)
+                      ? p_protocol_param->attr_value.v.u16
+                      : p_protocol_param->attr_value.v.u8;
+                } /* else dont care */
+                p_protocol_param = p_protocol_param->p_next_attr;  // next
+              }
+              // If we've found L2CAP then the parameter is a PSM
+              if (protocol_uuid == UUID_PROTOCOL_L2CAP) {
+                protocol_has_l2cap = true;
+                psm = protocol_param;
+              } else if (protocol_uuid == UUID_PROTOCOL_OBEX) {
+                protocol_has_obex = true;
+              }
+            }
+            // If this protocol has l2cap and obex then we're found the BIP PSM
+            if (protocol_has_l2cap && protocol_has_obex) {
+              APPL_TRACE_DEBUG("%s: found psm 0x%x", __func__, psm);
+              return psm;
+            }
+            p_protocol = p_protocol->p_next_attr;  // next protocol element
+          }
+        }
+        p_protocol_list = p_protocol_list->p_next_attr;  // next protocol
+      }
+    }
+    /* get next record; if none found, we're done */
+    p_rec = SDP_FindServiceInDb(p_cb->p_disc_db,
+        UUID_SERVCLASS_AV_REM_CTRL_TARGET, p_rec);
+  }
+  /* L2CAP PSM range is 0x1000-0xFFFF so 0x0000 is safe default invalid */
+  APPL_TRACE_DEBUG("%s: could not find a BIP psm", __func__);
+  return 0x0000;
 }
 
 /*******************************************************************************
@@ -1765,6 +1876,7 @@ void bta_av_rc_disc_done(UNUSED_ATTR tBTA_AV_DATA* p_data) {
   tBTA_AV_LCB* p_lcb;
   uint8_t rc_handle;
   tBTA_AV_FEAT peer_features = 0; /* peer features mask */
+  uint16_t cover_art_psm = 0x0000;
 
   APPL_TRACE_DEBUG("%s: bta_av_rc_disc_done disc:x%x", __func__, p_cb->disc);
   if (!p_cb->disc) {
@@ -1798,6 +1910,12 @@ void bta_av_rc_disc_done(UNUSED_ATTR tBTA_AV_DATA* p_data) {
     if (BTA_AV_FEAT_ADV_CTRL &
         bta_avk_check_peer_features(UUID_SERVCLASS_AV_REMOTE_CONTROL))
       peer_features |= (BTA_AV_FEAT_ADV_CTRL | BTA_AV_FEAT_RCCT);
+
+    if (peer_features & BTA_AV_FEAT_COVER_ARTWORK)
+      cover_art_psm = bta_avk_get_cover_art_psm();
+
+    APPL_TRACE_DEBUG("%s: populating rem ctrl target bip psm 0x%x", __func__,
+                     cover_art_psm);
   } else
 #endif
       if (p_cb->sdp_a2dp_handle) {
@@ -1850,6 +1968,7 @@ void bta_av_rc_disc_done(UNUSED_ATTR tBTA_AV_DATA* p_data) {
           rc_handle = bta_av_rc_create(p_cb, AVCT_INT,
                                        (uint8_t)(p_scb->hdi + 1), p_lcb->lidx);
           p_cb->rcb[rc_handle].peer_features = peer_features;
+          p_cb->rcb[rc_handle].cover_art_psm = cover_art_psm;
         } else {
           APPL_TRACE_ERROR("%s: can not find LCB!!", __func__);
         }
@@ -1859,6 +1978,7 @@ void bta_av_rc_disc_done(UNUSED_ATTR tBTA_AV_DATA* p_data) {
         tBTA_AV_RC_OPEN rc_open;
         rc_open.peer_addr = p_scb->PeerAddress();
         rc_open.peer_features = 0;
+        rc_open.cover_art_psm = 0;
         rc_open.status = BTA_AV_FAIL_SDP;
         tBTA_AV bta_av_data;
         bta_av_data.rc_open = rc_open;
@@ -1880,9 +2000,28 @@ void bta_av_rc_disc_done(UNUSED_ATTR tBTA_AV_DATA* p_data) {
     } else {
       rc_feat.peer_addr = p_scb->PeerAddress();
     }
-    tBTA_AV bta_av_data;
-    bta_av_data.rc_feat = rc_feat;
-    (*p_cb->p_cback)(BTA_AV_RC_FEAT_EVT, &bta_av_data);
+
+    tBTA_AV bta_av_feat;
+    bta_av_feat.rc_feat = rc_feat;
+    (*p_cb->p_cback)(BTA_AV_RC_FEAT_EVT, &bta_av_feat);
+
+    // Send PSM data
+    APPL_TRACE_DEBUG("%s: Send PSM data", __func__);
+    tBTA_AV_RC_PSM rc_psm;
+    p_cb->rcb[rc_handle].cover_art_psm = cover_art_psm;
+    rc_psm.rc_handle = rc_handle;
+    rc_psm.cover_art_psm = cover_art_psm;
+    if (p_scb == NULL) {
+      rc_psm.peer_addr = p_cb->lcb[p_cb->rcb[rc_handle].lidx - 1].addr;
+    } else {
+      rc_psm.peer_addr = p_scb->PeerAddress();
+    }
+
+    APPL_TRACE_DEBUG("%s: rc_psm = 0x%x", __func__, rc_psm.cover_art_psm);
+
+    tBTA_AV bta_av_psm;
+    bta_av_psm.rc_cover_art_psm = rc_psm;
+    (*p_cb->p_cback)(BTA_AV_RC_PSM_EVT, &bta_av_psm);
   }
 }
 
@@ -1916,6 +2055,7 @@ void bta_av_rc_closed(tBTA_AV_DATA* p_data) {
       rc_close.rc_handle = i;
       p_rcb->status &= ~BTA_AV_RC_CONN_MASK;
       p_rcb->peer_features = 0;
+      p_rcb->cover_art_psm = 0;
       APPL_TRACE_DEBUG("%s: shdl:%d, lidx:%d", __func__, p_rcb->shdl,
                        p_rcb->lidx);
       if (p_rcb->shdl) {
@@ -2038,7 +2178,8 @@ void bta_av_rc_disc(uint8_t disc) {
   tAVRC_SDP_DB_PARAMS db_params;
   uint16_t attr_list[] = {ATTR_ID_SERVICE_CLASS_ID_LIST,
                           ATTR_ID_BT_PROFILE_DESC_LIST,
-                          ATTR_ID_SUPPORTED_FEATURES};
+                          ATTR_ID_SUPPORTED_FEATURES,
+                          ATTR_ID_ADDITION_PROTO_DESC_LISTS};
   uint8_t hdi;
   tBTA_AV_SCB* p_scb;
   RawAddress peer_addr = RawAddress::kEmpty;
@@ -2071,7 +2212,7 @@ void bta_av_rc_disc(uint8_t disc) {
 
     /* set up parameters */
     db_params.db_len = BTA_AV_DISC_BUF_SIZE;
-    db_params.num_attr = 3;
+    db_params.num_attr = sizeof(attr_list) / sizeof(uint16_t);
     db_params.p_db = p_cb->p_disc_db;
     db_params.p_attrs = attr_list;
 

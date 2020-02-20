@@ -656,6 +656,7 @@ static BtifAvSink btif_av_sink;
   case BTA_AV_VENDOR_CMD_EVT:      \
   case BTA_AV_META_MSG_EVT:        \
   case BTA_AV_RC_FEAT_EVT:         \
+  case BTA_AV_RC_PSM_EVT:          \
   case BTA_AV_REMOTE_RSP_EVT: {    \
     btif_rc_handler(e, d);         \
   } break;
@@ -729,6 +730,7 @@ const char* dump_av_sm_event_name(btif_av_sm_event_t event) {
     CASE_RETURN_STR(BTA_AV_META_MSG_EVT)
     CASE_RETURN_STR(BTA_AV_REJECT_EVT)
     CASE_RETURN_STR(BTA_AV_RC_FEAT_EVT)
+    CASE_RETURN_STR(BTA_AV_RC_PSM_EVT)
     CASE_RETURN_STR(BTA_AV_OFFLOAD_START_RSP_EVT)
     CASE_RETURN_STR(BTIF_AV_CONNECT_REQ_EVT)
     CASE_RETURN_STR(BTIF_AV_DISCONNECT_REQ_EVT)
@@ -1543,6 +1545,7 @@ bool BtifAvStateMachine::StateIdle::ProcessEvent(uint32_t event, void* p_data) {
     case BTA_AV_VENDOR_CMD_EVT:
     case BTA_AV_META_MSG_EVT:
     case BTA_AV_RC_FEAT_EVT:
+    case BTA_AV_RC_PSM_EVT:
     case BTA_AV_REMOTE_RSP_EVT:
       btif_rc_handler(event, (tBTA_AV*)p_data);
       break;
@@ -2571,6 +2574,11 @@ static void btif_av_handle_bta_av_event(uint8_t peer_sep,
       peer_address = rc_feat.peer_addr;
       break;
     }
+    case BTA_AV_RC_PSM_EVT: {
+      const tBTA_AV_RC_PSM& rc_psm = p_data->rc_cover_art_psm;
+      peer_address = rc_psm.peer_addr;
+      break;
+    }
   }
   BTIF_TRACE_DEBUG("%s: peer_address=%s bta_handle=0x%x", __func__,
                    peer_address.ToString().c_str(), bta_handle);
@@ -3103,7 +3111,7 @@ bt_status_t btif_av_sink_execute_service(bool enable) {
     tBTA_AV_FEAT features = BTA_AV_FEAT_NO_SCO_SSPD | BTA_AV_FEAT_RCCT |
                             BTA_AV_FEAT_METADATA | BTA_AV_FEAT_VENDOR |
                             BTA_AV_FEAT_ADV_CTRL | BTA_AV_FEAT_RCTG |
-                            BTA_AV_FEAT_BROWSE;
+                            BTA_AV_FEAT_BROWSE | BTA_AV_FEAT_COVER_ARTWORK;
     BTA_AvEnable(BTA_SEC_AUTHENTICATE, features, bta_av_sink_callback);
     btif_av_sink.RegisterAllBtaHandles();
     return BT_STATUS_SUCCESS;
