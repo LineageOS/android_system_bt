@@ -485,6 +485,11 @@ void handle_rc_ctrl_features(btif_rc_device_cb_t* p_dev) {
     rc_features |= BTRC_FEAT_BROWSE;
   }
 
+  /* Add cover art feature capability */
+  if (p_dev->rc_features & BTA_AV_FEAT_COVER_ARTWORK) {
+    rc_features |= BTRC_FEAT_COVER_ARTWORK;
+  }
+
   BTIF_TRACE_DEBUG("%s: Update rc features to CTRL: %d", __func__, rc_features);
   do_in_jni_thread(FROM_HERE, base::Bind(bt_rc_ctrl_callbacks->getrcfeatures_cb,
                                          p_dev->rc_addr, rc_features));
@@ -1750,6 +1755,7 @@ static bt_status_t init_ctrl(btrc_ctrl_callbacks_t* callbacks) {
            sizeof(btif_rc_cb.rc_multi_cb[idx]));
     btif_rc_cb.rc_multi_cb[idx].rc_vol_label = MAX_LABEL;
     btif_rc_cb.rc_multi_cb[idx].rc_volume = MAX_VOLUME;
+    btif_rc_cb.rc_multi_cb[idx].rc_features_processed = FALSE;
   }
   lbl_init();
 
