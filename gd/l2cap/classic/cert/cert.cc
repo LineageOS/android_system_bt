@@ -139,8 +139,16 @@ class L2capClassicModuleCertService : public L2capClassicModuleCert::Service {
     if (request->retransmission_config().mode() == ChannelRetransmissionFlowControlMode::ERTM) {
       auto option = std::make_unique<RetransmissionAndFlowControlConfigurationOption>();
       option->mode_ = RetransmissionAndFlowControlModeOption::ENHANCED_RETRANSMISSION;
-      option->tx_window_size_ = 10;
-      option->max_transmit_ = 20;
+      if (request->retransmission_config().tx_window()) {
+        option->tx_window_size_ = request->retransmission_config().tx_window();
+      } else {
+        option->tx_window_size_ = 10;
+      }
+      if (request->retransmission_config().max_transmit()) {
+        option->max_transmit_ = request->retransmission_config().max_transmit();
+      } else {
+        option->max_transmit_ = 20;
+      }
       option->retransmission_time_out_ = 2000;
       option->monitor_time_out_ = 12000;
       option->maximum_pdu_size_ = 1010;
@@ -166,8 +174,16 @@ class L2capClassicModuleCertService : public L2capClassicModuleCert::Service {
     if (request->retransmission_config().mode() == ChannelRetransmissionFlowControlMode::ERTM) {
       auto option = std::make_unique<RetransmissionAndFlowControlConfigurationOption>();
       option->mode_ = RetransmissionAndFlowControlModeOption::ENHANCED_RETRANSMISSION;
-      option->tx_window_size_ = 5;
-      option->max_transmit_ = 1;
+      if (request->retransmission_config().tx_window()) {
+        option->tx_window_size_ = request->retransmission_config().tx_window();
+      } else {
+        option->tx_window_size_ = 5;
+      }
+      if (request->retransmission_config().max_transmit()) {
+        option->max_transmit_ = request->retransmission_config().max_transmit();
+      } else {
+        option->max_transmit_ = 1;
+      }
       option->retransmission_time_out_ = 1000;
       option->monitor_time_out_ = 2000;
       option->maximum_pdu_size_ = 1010;

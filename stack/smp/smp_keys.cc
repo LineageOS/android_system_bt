@@ -177,7 +177,7 @@ void smp_generate_stk(tSMP_CB* p_cb, UNUSED_ATTR tSMP_INT_DATA* p_data) {
   SMP_TRACE_DEBUG("%s", __func__);
 
   if (p_cb->le_secure_connections_mode_is_used) {
-    SMP_TRACE_WARNING("FOR LE SC LTK IS USED INSTEAD OF STK");
+    SMP_TRACE_DEBUG("FOR LE SC LTK IS USED INSTEAD OF STK");
     output = p_cb->ltk;
   } else {
     output = smp_calculate_legacy_short_term_key(p_cb);

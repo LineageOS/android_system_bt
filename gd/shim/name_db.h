@@ -20,17 +20,18 @@
 #include <string>
 
 #include "module.h"
-#include "shim/iname_db.h"
 
 namespace bluetooth {
 namespace shim {
 
-class NameDb : public bluetooth::Module, public bluetooth::shim::INameDb {
- public:
-  void ReadRemoteNameDbRequest(std::string string_address, ReadRemoteNameDbCallback callback) override;
+using ReadRemoteNameDbCallback = std::function<void(std::string string_address, bool success)>;
 
-  bool IsNameCached(std::string string_address) const override;
-  std::array<uint8_t, 248> ReadCachedRemoteName(std::string string_address) const override;
+class NameDb : public bluetooth::Module {
+ public:
+  void ReadRemoteNameDbRequest(std::string string_address, ReadRemoteNameDbCallback callback);
+
+  bool IsNameCached(std::string string_address) const;
+  std::array<uint8_t, 248> ReadCachedRemoteName(std::string string_address) const;
 
   NameDb() = default;
   ~NameDb() = default;

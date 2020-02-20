@@ -76,6 +76,10 @@ class ClassicPairingHandler : public PairingHandler {
   void OnReceive(hci::UserConfirmationRequestView packet) override;
   void OnReceive(hci::UserPasskeyRequestView packet) override;
 
+  void OnPairingPromptAccepted(const bluetooth::hci::AddressWithType& address, bool confirmed) override;
+  void OnConfirmYesNo(const bluetooth::hci::AddressWithType& address, bool confirmed) override;
+  void OnPasskeyEntry(const bluetooth::hci::AddressWithType& address, uint32_t passkey) override;
+
  private:
   void OnRegistrationComplete(l2cap::classic::FixedChannelManager::RegistrationResult result,
                               std::unique_ptr<l2cap::classic::FixedChannelService> fixed_channel_service);

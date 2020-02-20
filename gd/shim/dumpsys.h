@@ -19,16 +19,20 @@
 #include <string>
 
 #include "module.h"
-#include "shim/idumpsys.h"
 
 namespace bluetooth {
 namespace shim {
 
-class Dumpsys : public bluetooth::Module, public bluetooth::shim::IDumpsys {
+using DumpsysFunction = std::function<void(int fd)>;
+
+class Dumpsys : public bluetooth::Module {
  public:
-  void Dump(int fd) override;
+  void Dump(int fd);
   void RegisterDumpsysFunction(const void* token, DumpsysFunction func);
   void UnregisterDumpsysFunction(const void* token);
+
+  /* This is not a dumpsys-specific method, we just must grab thread from of one modules */
+  os::Handler* GetGdShimHandler();
 
   Dumpsys() = default;
   ~Dumpsys() = default;

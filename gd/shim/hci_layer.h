@@ -21,7 +21,6 @@
 #include <string>
 
 #include "module.h"
-#include "shim/ihci_layer.h"
 
 /**
  * The hci layer shim module that depends on the Gd hci layer module.
@@ -29,19 +28,26 @@
 namespace bluetooth {
 namespace shim {
 
-class HciLayer : public ::bluetooth::Module, public ::bluetooth::shim::IHciLayer {
+/**
+ * Legacy interface and API into the Gd shim hci layer module.
+ */
+using CommandCompleteCallback =
+    std::function<void(uint16_t command_op_code, std::vector<const uint8_t> data, const void* token)>;
+using CommandStatusCallback =
+    std::function<void(uint16_t command_op_code, std::vector<const uint8_t> data, const void* token, uint8_t status)>;
+
+class HciLayer : public ::bluetooth::Module {
  public:
   HciLayer() = default;
   ~HciLayer() = default;
 
-  void TransmitCommand(uint16_t op_code, const uint8_t* data, size_t len,
-                       const void* token);  // IHciLayer
+  void TransmitCommand(uint16_t op_code, const uint8_t* data, size_t len, const void* token);
 
-  void RegisterCommandComplete(CommandCompleteCallback callback);  // IHciLayer
-  void UnregisterCommandComplete();                                // IHciLayer
+  void RegisterCommandComplete(CommandCompleteCallback callback);
+  void UnregisterCommandComplete();
 
-  void RegisterCommandStatus(CommandStatusCallback callback);  // IHciLayer
-  void UnregisterCommandStatus();                              // IHciLayer
+  void RegisterCommandStatus(CommandStatusCallback callback);
+  void UnregisterCommandStatus();
 
   static const ModuleFactory Factory;
 

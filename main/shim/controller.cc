@@ -23,6 +23,8 @@
 #include "osi/include/future.h"
 #include "osi/include/log.h"
 
+#include "hci/controller.h"
+
 using ::bluetooth::shim::GetController;
 
 constexpr uint8_t kPageZero = 0;
@@ -72,7 +74,8 @@ static future_t* start_up(void) {
   LOG_INFO(LOG_TAG, "%s Starting up", __func__);
   data_.ready = true;
 
-  std::string string_address = GetController()->GetControllerMacAddress();
+  std::string string_address =
+      GetController()->GetControllerMacAddress().ToString();
   RawAddress::FromString(string_address, data_.raw_address);
 
   data_.le_supported_states =
@@ -146,7 +149,8 @@ static bool supports_simultaneous_le_bredr(void) {
 }
 
 static bool supports_reading_remote_extended_features(void) {
-  return GetController()->IsCommandSupported(kReadRemoteExtendedFeatures);
+  return GetController()->IsSupported(
+      (bluetooth::hci::OpCode)kReadRemoteExtendedFeatures);
 }
 
 static bool supports_interlaced_inquiry_scan(void) {
@@ -170,13 +174,13 @@ static bool supports_master_slave_role_switch(void) {
 }
 
 static bool supports_enhanced_setup_synchronous_connection(void) {
-  return GetController()->IsCommandSupported(
-      kEnhancedSetupSynchronousConnection);
+  return GetController()->IsSupported(
+      (bluetooth::hci::OpCode)kEnhancedSetupSynchronousConnection);
 }
 
 static bool supports_enhanced_accept_synchronous_connection(void) {
-  return GetController()->IsCommandSupported(
-      kEnhancedAcceptSynchronousConnection);
+  return GetController()->IsSupported(
+      (bluetooth::hci::OpCode)kEnhancedAcceptSynchronousConnection);
 }
 
 static bool supports_ble(void) {
@@ -188,7 +192,8 @@ static bool supports_ble_privacy(void) {
 }
 
 static bool supports_ble_set_privacy_mode() {
-  return GetController()->IsCommandSupported(kLeSetPrivacyMode);
+  return GetController()->IsSupported(
+      (bluetooth::hci::OpCode)kLeSetPrivacyMode);
 }
 
 static bool supports_ble_packet_extension(void) {
@@ -220,9 +225,9 @@ static uint16_t get_acl_data_size_classic(void) {
 }
 
 static uint16_t get_acl_data_size_ble(void) {
-  ::bluetooth::shim::LeBufferSize le_buffer_size =
+  ::bluetooth::hci::LeBufferSize le_buffer_size =
       GetController()->GetControllerLeBufferSize();
-  return le_buffer_size.le_data_packet_length;
+  return le_buffer_size.le_data_packet_length_;
 }
 
 static uint16_t get_acl_packet_size_classic(void) {
@@ -239,9 +244,9 @@ static uint16_t get_ble_suggested_default_data_length(void) {
 }
 
 static uint16_t get_ble_maximum_tx_data_length(void) {
-  ::bluetooth::shim::LeMaximumDataLength le_maximum_data_length =
+  ::bluetooth::hci::LeMaximumDataLength le_maximum_data_length =
       GetController()->GetControllerLeMaximumDataLength();
-  return le_maximum_data_length.supported_max_tx_octets;
+  return le_maximum_data_length.supported_max_tx_octets_;
 }
 
 static uint16_t get_ble_maxium_advertising_data_length(void) {

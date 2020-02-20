@@ -31,6 +31,17 @@
 #include "types/class_of_device.h"
 #include "types/raw_address.h"
 
+#include "hci/le_scanning_manager.h"
+#include "main/shim/helpers.h"
+#include "neighbor/connectability.h"
+#include "neighbor/discoverability.h"
+#include "neighbor/page.h"
+#include "security/security_module.h"
+#include "shim/advertising.h"
+#include "shim/controller.h"
+#include "shim/inquiry.h"
+#include "shim/name.h"
+
 extern tBTM_CB btm_cb;
 
 static constexpr size_t kRemoteDeviceNameLength = 248;
@@ -400,7 +411,10 @@ void bluetooth::shim::Btm::SetClassicConnectibleOff() {
 ConnectabilityState bluetooth::shim::Btm::GetClassicConnectabilityState()
     const {
   ConnectabilityState state;
-  bluetooth::shim::GetPage()->GetScanActivity(state.interval, state.window);
+  neighbor::ScanParameters parameters =
+      bluetooth::shim::GetPage()->GetScanActivity();
+  state.interval = parameters.interval;
+  state.window = parameters.window;
 
   if (bluetooth::shim::GetConnectability()->IsConnectable()) {
     state.mode = BTM_CONNECTABLE;
@@ -539,7 +553,7 @@ void bluetooth::shim::Btm::StartActiveScanning() {
 }
 
 void bluetooth::shim::Btm::StopActiveScanning() {
-  bluetooth::shim::GetScanning()->StopScanning();
+  bluetooth::shim::GetScanning()->StopScan(base::Bind([]() {}));
 }
 
 void bluetooth::shim::Btm::SetScanningTimer(uint64_t duration_ms,
@@ -562,38 +576,163 @@ void bluetooth::shim::Btm::CancelObservingTimer() {
   observing_timer_->Cancel();
 }
 
-void bluetooth::shim::Btm::StartScanning(bool use_active_scanning) {
-  bluetooth::shim::GetScanning()->StartScanning(
-      use_active_scanning,
-      [](AdvertisingReport report) {
-        RawAddress raw_address;
-        RawAddress::FromString(report.string_address, raw_address);
+namespace bluetooth {
+namespace hci {
 
-        btm_ble_process_adv_addr(raw_address, &report.address_type);
-        btm_ble_process_adv_pkt_cont(
-            report.extended_event_type, report.address_type, raw_address,
-            kPhyConnectionLe1M, kPhyConnectionNone, kAdvDataInfoNotPresent,
-            kTxPowerInformationNotPresent, report.rssi,
-            kNotPeriodicAdvertisement, report.len, report.data);
-      },
-      [](DirectedAdvertisingReport report) {
-        LOG_WARN(LOG_TAG,
-                 "%s Directed advertising is unsupported from device:%s",
-                 __func__, report.string_address.c_str());
-      },
-      [](ExtendedAdvertisingReport report) {
-        RawAddress raw_address;
-        RawAddress::FromString(report.string_address, raw_address);
-        if (report.address_type != BLE_ADDR_ANONYMOUS) {
-          btm_ble_process_adv_addr(raw_address, &report.address_type);
+constexpr int kAdvertisingReportBufferSize = 1024;
+
+struct ExtendedEventTypeOptions {
+  bool connectable{false};
+  bool scannable{false};
+  bool directed{false};
+  bool scan_response{false};
+  bool legacy{false};
+  bool continuing{false};
+  bool truncated{false};
+};
+
+constexpr uint16_t kBleEventConnectableBit =
+    (0x0001 << 0);  // BLE_EVT_CONNECTABLE_BIT
+constexpr uint16_t kBleEventScannableBit =
+    (0x0001 << 1);  // BLE_EVT_SCANNABLE_BIT
+constexpr uint16_t kBleEventDirectedBit =
+    (0x0001 << 2);  // BLE_EVT_DIRECTED_BIT
+constexpr uint16_t kBleEventScanResponseBit =
+    (0x0001 << 3);  // BLE_EVT_SCAN_RESPONSE_BIT
+constexpr uint16_t kBleEventLegacyBit = (0x0001 << 4);  // BLE_EVT_LEGACY_BIT
+constexpr uint16_t kBleEventIncompleteContinuing = (0x0001 << 5);
+constexpr uint16_t kBleEventIncompleteTruncated = (0x0001 << 6);
+
+static void TransformToExtendedEventType(uint16_t* extended_event_type,
+                                         ExtendedEventTypeOptions o) {
+  ASSERT(extended_event_type != nullptr);
+  *extended_event_type = (o.connectable ? kBleEventConnectableBit : 0) |
+                         (o.scannable ? kBleEventScannableBit : 0) |
+                         (o.directed ? kBleEventDirectedBit : 0) |
+                         (o.scan_response ? kBleEventScanResponseBit : 0) |
+                         (o.legacy ? kBleEventLegacyBit : 0) |
+                         (o.continuing ? kBleEventIncompleteContinuing : 0) |
+                         (o.truncated ? kBleEventIncompleteTruncated : 0);
+}
+
+class BtmScanningCallbacks : public bluetooth::hci::LeScanningManagerCallbacks {
+ public:
+  virtual void on_advertisements(
+      std::vector<std::shared_ptr<LeReport>> reports) {
+    for (auto le_report : reports) {
+      uint8_t address_type = static_cast<uint8_t>(le_report->address_type_);
+      uint16_t extended_event_type = 0;
+      uint8_t* report_data = nullptr;
+      size_t report_len = 0;
+
+      uint8_t advertising_data_buffer[kAdvertisingReportBufferSize];
+      // Copy gap data, if any, into temporary buffer as payload for legacy
+      // stack.
+      if (!le_report->gap_data_.empty()) {
+        bzero(advertising_data_buffer, kAdvertisingReportBufferSize);
+        uint8_t* p = advertising_data_buffer;
+        for (auto gap_data : le_report->gap_data_) {
+          *p++ = gap_data.data_.size() + sizeof(gap_data.data_type_);
+          *p++ = static_cast<uint8_t>(gap_data.data_type_);
+          p = (uint8_t*)memcpy(p, &gap_data.data_[0], gap_data.data_.size()) +
+              gap_data.data_.size();
         }
-        btm_ble_process_adv_pkt_cont(
-            report.extended_event_type, report.address_type, raw_address,
-            kPhyConnectionLe1M, kPhyConnectionNone, kAdvDataInfoNotPresent,
-            kTxPowerInformationNotPresent, report.rssi,
-            kNotPeriodicAdvertisement, report.len, report.data);
-      },
-      []() { LOG_WARN(LOG_TAG, "%s Scanning timeout", __func__); });
+        report_data = advertising_data_buffer;
+        report_len = p - report_data;
+      }
+
+      switch (le_report->GetReportType()) {
+        case hci::LeReport::ReportType::ADVERTISING_EVENT: {
+          switch (le_report->advertising_event_type_) {
+            case hci::AdvertisingEventType::ADV_IND:
+              TransformToExtendedEventType(
+                  &extended_event_type,
+                  {.connectable = true, .scannable = true, .legacy = true});
+              break;
+            case hci::AdvertisingEventType::ADV_DIRECT_IND:
+              TransformToExtendedEventType(
+                  &extended_event_type,
+                  {.connectable = true, .directed = true, .legacy = true});
+              break;
+            case hci::AdvertisingEventType::ADV_SCAN_IND:
+              TransformToExtendedEventType(&extended_event_type,
+                                           {.scannable = true, .legacy = true});
+              break;
+            case hci::AdvertisingEventType::ADV_NONCONN_IND:
+              TransformToExtendedEventType(&extended_event_type,
+                                           {.legacy = true});
+              break;
+            case hci::AdvertisingEventType::
+                ADV_DIRECT_IND_LOW:  // SCAN_RESPONSE
+              TransformToExtendedEventType(&extended_event_type,
+                                           {.connectable = true,
+                                            .scannable = true,
+                                            .scan_response = true,
+                                            .legacy = true});
+              break;
+            default:
+              LOG_WARN(
+                  LOG_TAG, "%s Unsupported event type:%s", __func__,
+                  AdvertisingEventTypeText(le_report->advertising_event_type_)
+                      .c_str());
+              return;
+          }
+
+          RawAddress raw_address(le_report->address_.address);
+
+          btm_ble_process_adv_addr(raw_address, &address_type);
+          btm_ble_process_adv_pkt_cont(
+              extended_event_type, address_type, raw_address,
+              kPhyConnectionLe1M, kPhyConnectionNone, kAdvDataInfoNotPresent,
+              kTxPowerInformationNotPresent, le_report->rssi_,
+              kNotPeriodicAdvertisement, report_len, report_data);
+        } break;
+
+        case hci::LeReport::ReportType::DIRECTED_ADVERTISING_EVENT:
+          LOG_WARN(LOG_TAG,
+                   "%s Directed advertising is unsupported from device:%s",
+                   __func__, le_report->address_.ToString().c_str());
+          break;
+
+        case hci::LeReport::ReportType::EXTENDED_ADVERTISING_EVENT: {
+          std::shared_ptr<hci::ExtendedLeReport> extended_le_report =
+              std::static_pointer_cast<hci::ExtendedLeReport>(le_report);
+          TransformToExtendedEventType(
+              &extended_event_type,
+              {.connectable = extended_le_report->connectable_,
+               .scannable = extended_le_report->scannable_,
+               .directed = extended_le_report->directed_,
+               .scan_response = extended_le_report->scan_response_,
+               .legacy = false,
+               .continuing = !extended_le_report->complete_,
+               .truncated = extended_le_report->truncated_});
+          RawAddress raw_address(le_report->address_.address);
+          if (address_type != BLE_ADDR_ANONYMOUS) {
+            btm_ble_process_adv_addr(raw_address, &address_type);
+          }
+          btm_ble_process_adv_pkt_cont(
+              extended_event_type, address_type, raw_address,
+              kPhyConnectionLe1M, kPhyConnectionNone, kAdvDataInfoNotPresent,
+              kTxPowerInformationNotPresent, le_report->rssi_,
+              kNotPeriodicAdvertisement, report_len, report_data);
+
+        } break;
+      }
+    }
+  }
+
+  virtual void on_timeout() {
+    LOG_WARN(LOG_TAG, "%s Scanning timeout", __func__);
+  }
+  os::Handler* Handler() { return bluetooth::shim::GetGdShimHandler(); }
+};
+}  // namespace hci
+}  // namespace bluetooth
+
+bluetooth::hci::BtmScanningCallbacks btm_scanning_callbacks;
+
+void bluetooth::shim::Btm::StartScanning(bool use_active_scanning) {
+  bluetooth::shim::GetScanning()->StartScan(&btm_scanning_callbacks);
 }
 
 size_t bluetooth::shim::Btm::GetNumberOfAdvertisingInstances() const {
@@ -605,13 +744,15 @@ tBTM_STATUS bluetooth::shim::Btm::CreateBond(const RawAddress& bd_addr,
                                              tBT_TRANSPORT transport,
                                              uint8_t pin_len, uint8_t* p_pin,
                                              uint32_t trusted_mask[]) {
+  auto security_manager =
+      bluetooth::shim::GetSecurityModule()->GetSecurityManager();
   switch (transport) {
     case BT_TRANSPORT_BR_EDR:
-      bluetooth::shim::GetSecurity()->CreateBond(bd_addr.ToString());
+      security_manager->CreateBond(
+          ToAddressWithType(bd_addr.address, BLE_ADDR_PUBLIC));
       break;
     case BT_TRANSPORT_LE:
-      bluetooth::shim::GetSecurity()->CreateBondLe(bd_addr.ToString(),
-                                                   addr_type);
+      security_manager->CreateBondLe(ToAddressWithType(bd_addr, addr_type));
       break;
     default:
       return bluetooth::shim::BTM_ILLEGAL_VALUE;
@@ -620,38 +761,23 @@ tBTM_STATUS bluetooth::shim::Btm::CreateBond(const RawAddress& bd_addr,
 }
 
 bool bluetooth::shim::Btm::CancelBond(const RawAddress& bd_addr) {
-  bluetooth::shim::GetSecurity()->CancelBond(bd_addr.ToString());
+  auto security_manager =
+      bluetooth::shim::GetSecurityModule()->GetSecurityManager();
+  security_manager->CancelBond(ToAddressWithType(bd_addr, BLE_ADDR_PUBLIC));
   return true;
 }
 
 bool bluetooth::shim::Btm::RemoveBond(const RawAddress& bd_addr) {
   // TODO(cmanton) Check if acl is connected
-  bluetooth::shim::GetSecurity()->RemoveBond(bd_addr.ToString());
+  auto security_manager =
+      bluetooth::shim::GetSecurityModule()->GetSecurityManager();
+  security_manager->RemoveBond(ToAddressWithType(bd_addr, BLE_ADDR_PUBLIC));
   return true;
 }
 
 void bluetooth::shim::Btm::SetSimplePairingCallback(
     tBTM_SP_CALLBACK* callback) {
+  auto security_manager =
+      bluetooth::shim::GetSecurityModule()->GetSecurityManager();
   simple_pairing_callback_ = callback;
-
-  bluetooth::shim::GetSecurity()->SetSimplePairingCallback(
-      [this](std::string address_string, uint32_t value, bool just_works) {
-        RawAddress address;
-        RawAddress::FromString(address_string, address);
-
-        tBTM_SP_EVT event = BTM_SP_CFM_REQ_EVT;
-        tBTM_SP_EVT_DATA data;
-
-        data.cfm_req.bd_addr = address;
-        data.cfm_req.num_val = value;
-        data.cfm_req.just_works = just_works;
-        switch (simple_pairing_callback_(event, &data)) {
-          case BTM_SUCCESS:
-          case BTM_SUCCESS_NO_SECURITY:
-            return true;
-          default:
-            break;
-        }
-        return false;
-      });
 }

@@ -25,6 +25,8 @@
 #include "main/shim/config.h"
 #include "main/shim/entry.h"
 
+#include "storage/legacy.h"
+
 using ::bluetooth::shim::GetStorage;
 
 namespace bluetooth {
@@ -37,16 +39,23 @@ std::string checksum_read(const char* filename) {
   auto future = promise.get_future();
   GetStorage()->ChecksumRead(
       std::string(filename),
-      [&promise](std::string hash_value) { promise.set_value(hash_value); });
+      common::BindOnce(
+          [](std::promise<std::string>* promise, std::string,
+             std::string hash_value) { promise->set_value(hash_value); },
+          &promise),
+      bluetooth::shim::GetGdShimHandler());
   return future.get();
 }
 
 bool checksum_save(const std::string& checksum, const std::string& filename) {
   std::promise<bool> promise;
   auto future = promise.get_future();
-  GetStorage()->ChecksumWrite(filename, checksum, [&promise](bool success) {
-    promise.set_value(success);
-  });
+  GetStorage()->ChecksumWrite(
+      filename, checksum,
+      common::BindOnce([](std::promise<bool>* promise, std::string,
+                          bool success) { promise->set_value(success); },
+                       &promise),
+      bluetooth::shim::GetGdShimHandler());
   return future.get();
 }
 
@@ -55,19 +64,27 @@ std::unique_ptr<config_t> config_new(const char* filename) {
 
   std::promise<std::unique_ptr<config_t>> promise;
   auto future = promise.get_future();
-  GetStorage()->ConfigRead(std::string(filename),
-                           [&promise](std::unique_ptr<config_t> config) {
-                             promise.set_value(std::move(config));
-                           });
+  GetStorage()->ConfigRead(
+      std::string(filename),
+      common::BindOnce(
+          [](std::promise<std::unique_ptr<config_t>>* promise, std::string,
+             std::unique_ptr<config_t> config) {
+            promise->set_value(std::move(config));
+          },
+          &promise),
+      bluetooth::shim::GetGdShimHandler());
   return future.get();
 }
 
 bool config_save(const config_t& config, const std::string& filename) {
   std::promise<bool> promise;
   auto future = promise.get_future();
-  GetStorage()->ConfigWrite(filename, &config, [&promise](bool success) {
-    promise.set_value(success);
-  });
+  GetStorage()->ConfigWrite(
+      filename, config,
+      common::BindOnce([](std::promise<bool>* promise, std::string,
+                          bool success) { promise->set_value(success); },
+                       &promise),
+      bluetooth::shim::GetGdShimHandler());
   return future.get();
 }
 

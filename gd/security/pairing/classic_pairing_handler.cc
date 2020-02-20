@@ -90,6 +90,20 @@ void ClassicPairingHandler::OnConnectionClose(hci::ErrorCode error_code) {
   Cancel();
 }
 
+void ClassicPairingHandler::OnPairingPromptAccepted(const bluetooth::hci::AddressWithType& address, bool confirmed) {
+  LOG_WARN("TODO Not Implemented!");
+}
+
+void ClassicPairingHandler::OnConfirmYesNo(const bluetooth::hci::AddressWithType& address, bool confirmed) {
+  LOG_WARN("TODO Not Implemented!");
+  GetChannel()->SendCommand(
+      hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress()));
+}
+
+void ClassicPairingHandler::OnPasskeyEntry(const bluetooth::hci::AddressWithType& address, uint32_t passkey) {
+  LOG_WARN("TODO Not Implemented!");
+}
+
 void ClassicPairingHandler::Initiate(bool locally_initiated, hci::IoCapability io_capability,
                                      hci::OobDataPresent oob_present,
                                      hci::AuthenticationRequirements auth_requirements) {

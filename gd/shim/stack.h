@@ -18,21 +18,18 @@
 
 #include <memory>
 
-#include "shim/iadvertising.h"
-#include "shim/iconnectability.h"
-#include "shim/icontroller.h"
-#include "shim/idiscoverability.h"
-#include "shim/idumpsys.h"
-#include "shim/ihci_layer.h"
-#include "shim/iinquiry.h"
-#include "shim/il2cap.h"
-#include "shim/iname.h"
-#include "shim/iname_db.h"
-#include "shim/ipage.h"
-#include "shim/iscanning.h"
-#include "shim/isecurity.h"
-#include "shim/istack.h"
-#include "shim/istorage.h"
+#include "neighbor/connectability.h"
+#include "neighbor/discoverability.h"
+#include "neighbor/page.h"
+#include "security/security_module.h"
+#include "shim/advertising.h"
+#include "shim/dumpsys.h"
+#include "shim/hci_layer.h"
+#include "shim/inquiry.h"
+#include "shim/l2cap.h"
+#include "shim/name.h"
+#include "stack_manager.h"
+#include "storage/legacy.h"
 
 /**
  * The shim layer implementation on the Gd stack side.
@@ -40,28 +37,15 @@
 namespace bluetooth {
 namespace shim {
 
-class Stack : public IStack {
+class Stack {
  public:
   Stack();
   ~Stack() = default;
 
-  void Start() override;  // IStack
-  void Stop() override;   // IStack
+  void Start();
+  void Stop();
 
-  IAdvertising* GetAdvertising() override;          // IStack
-  IConnectability* GetConnectability() override;    // IStack
-  IController* GetController() override;            // IStack
-  IDiscoverability* GetDiscoverability() override;  // IStack
-  IDumpsys* GetDumpsys() override;                  // IStack
-  IHciLayer* GetHciLayer() override;                // IStack
-  IInquiry* GetInquiry() override;                  // IStack
-  IL2cap* GetL2cap() override;                      // IStack
-  IName* GetName() override;                        // IStack
-  INameDb* GetNameDb() override;                    // IStack
-  IPage* GetPage() override;                        // IStack
-  IScanning* GetScanning() override;                // IStack
-  ISecurity* GetSecurity() override;                // IStack
-  IStorage* GetStorage() override;                  // IStack
+  StackManager* GetStackManager();
 
  private:
   struct impl;
@@ -70,6 +54,8 @@ class Stack : public IStack {
   Stack(const Stack&) = delete;
   void operator=(const Stack&) = delete;
 };
+
+Stack* GetGabeldorscheStack();
 
 }  // namespace shim
 }  // namespace bluetooth
