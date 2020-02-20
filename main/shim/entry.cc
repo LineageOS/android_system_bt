@@ -16,11 +16,13 @@
 
 #include "main/shim/entry.h"
 #include "osi/include/future.h"
+#include "osi/include/log.h"
 
 #include "hci/controller.h"
 #include "hci/hci_layer.h"
 #include "hci/le_advertising_manager.h"
 #include "hci/le_scanning_manager.h"
+#include "main/shim/btm.h"
 #include "neighbor/connectability.h"
 #include "neighbor/discoverability.h"
 #include "neighbor/inquiry.h"
@@ -36,8 +38,11 @@
 
 using bluetooth::shim::GetGabeldorscheStack;
 
+extern bluetooth::shim::Btm shim_btm;
+
 future_t* bluetooth::shim::StartGabeldorscheStack() {
   GetGabeldorscheStack()->Start();
+  shim_btm.RegisterInquiryCallbacks();
   return (future_t*)nullptr;
 }
 

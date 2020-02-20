@@ -89,7 +89,6 @@ void bluetooth::shim::Btm::StartUp(bluetooth::shim::Btm* btm) {
   btm->observing_timer_ = new bluetooth::shim::Timer("observing_timer");
   btm->scanning_timer_ = new bluetooth::shim::Timer("scanning_timer");
 
-  btm->RegisterInquiryCallbacks();
 }
 
 void bluetooth::shim::Btm::ShutDown(bluetooth::shim::Btm* btm) {
