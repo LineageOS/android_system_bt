@@ -9,3 +9,4 @@ ControllerTest
 AclManagerTest
 LeAclManagerTest
 StackTest
+L2capTest

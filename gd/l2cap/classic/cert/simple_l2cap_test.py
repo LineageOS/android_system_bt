@@ -247,15 +247,6 @@ class SimpleL2capTest(GdBaseTestClass):
         # Allow some time for channel creation on facade side after configuration response is received.
         time.sleep(0.5)
 
-    def test_connect(self):
-        with EventCallbackStream(
-                self.cert_device.l2cap.FetchL2capLog(
-                    empty_pb2.Empty())) as l2cap_log_stream:
-            l2cap_event_asserts = EventAsserts(l2cap_log_stream)
-            self._register_callbacks(l2cap_log_stream)
-            self._setup_link(l2cap_event_asserts)
-            self._open_channel(l2cap_event_asserts, scid=0x0101)
-
     def test_connect_and_send_data_ertm_no_segmentation(self):
         with EventCallbackStream(
                 self.cert_device.l2cap.FetchL2capLog(
@@ -346,26 +337,6 @@ class SimpleL2capTest(GdBaseTestClass):
             self._setup_link(l2cap_event_asserts)
             self._open_channel(l2cap_event_asserts, scid=0x0101, psm=0x1)
             self._open_channel(l2cap_event_asserts, scid=0x0102, psm=0x3)
-
-    def test_accept_disconnect(self):
-        """
-        L2CAP/COS/CED/BV-07-C
-        """
-        with EventCallbackStream(
-                self.cert_device.l2cap.FetchL2capLog(
-                    empty_pb2.Empty())) as l2cap_log_stream:
-            l2cap_event_asserts = EventAsserts(l2cap_log_stream)
-            self._register_callbacks(l2cap_log_stream)
-            self._setup_link(l2cap_event_asserts)
-            scid = 0x0101
-            self._open_channel(l2cap_event_asserts, scid=scid, psm=0x1)
-            dcid = self.scid_dcid_map[scid]
-            self.cert_device.l2cap.SendDisconnectionRequest(
-                l2cap_cert_pb2.DisconnectionRequest(
-                    scid=scid, dcid=dcid, signal_id=2))
-            l2cap_event_asserts.assert_event_occurs(
-                lambda log: is_disconnection_response(log) and log.disconnection_response.scid == scid and log.disconnection_response.dcid == dcid
-            )
 
     def test_disconnect_on_timeout(self):
         """
