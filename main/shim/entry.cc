@@ -18,6 +18,7 @@
 #include "osi/include/future.h"
 
 #include "hci/controller.h"
+#include "hci/hci_layer.h"
 #include "hci/le_advertising_manager.h"
 #include "hci/le_scanning_manager.h"
 #include "neighbor/connectability.h"
@@ -28,7 +29,6 @@
 #include "os/handler.h"
 #include "security/security_module.h"
 #include "shim/dumpsys.h"
-#include "shim/hci_layer.h"
 #include "shim/l2cap.h"
 #include "shim/stack.h"
 #include "stack_manager.h"
@@ -88,10 +88,10 @@ bluetooth::neighbor::InquiryModule* bluetooth::shim::GetInquiry() {
       ->GetInstance<bluetooth::neighbor::InquiryModule>();
 }
 
-bluetooth::shim::HciLayer* bluetooth::shim::GetHciLayer() {
+bluetooth::hci::HciLayer* bluetooth::shim::GetHciLayer() {
   return GetGabeldorscheStack()
       ->GetStackManager()
-      ->GetInstance<bluetooth::shim::HciLayer>();
+      ->GetInstance<bluetooth::hci::HciLayer>();
 }
 
 bluetooth::shim::L2cap* bluetooth::shim::GetL2cap() {

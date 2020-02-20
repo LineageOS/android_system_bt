@@ -25,7 +25,6 @@
 #include "neighbor/page.h"
 #include "security/security_module.h"
 #include "shim/dumpsys.h"
-#include "shim/hci_layer.h"
 #include "shim/l2cap.h"
 #include "stack_manager.h"
 #include "storage/legacy.h"

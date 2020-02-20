@@ -44,8 +44,9 @@ class NameModule;
 class PageModule;
 }
 namespace hci {
-class LeAdvertisingManager;
 class Controller;
+class HciLayer;
+class LeAdvertisingManager;
 class LeScanningManager;
 }
 
@@ -69,7 +70,7 @@ neighbor::DiscoverabilityModule* GetDiscoverability();
 neighbor::ConnectabilityModule* GetConnectability();
 Dumpsys* GetDumpsys();
 neighbor::InquiryModule* GetInquiry();
-HciLayer* GetHciLayer();
+hci::HciLayer* GetHciLayer();
 L2cap* GetL2cap();
 neighbor::NameModule* GetName();
 neighbor::PageModule* GetPage();
