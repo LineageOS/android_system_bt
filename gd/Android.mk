@@ -17,6 +17,7 @@ bluetooth_cert_test_file_list := \
     hci/cert/le_acl_manager_test.py \
     hci/cert/le_advertising_manager_test.py \
     hci/cert/le_scanning_manager_test.py \
+    l2cap/classic/cert/l2cap_test.py \
     l2cap/classic/cert/simple_l2cap_test.py \
     l2cap/classic/cert/pts_l2cap_test.py \
     neighbor/cert/neighbor_test.py \
