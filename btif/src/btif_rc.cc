@@ -307,7 +307,7 @@ static bt_status_t register_notification_cmd(uint8_t label, uint8_t event_id,
                                              uint32_t event_value,
                                              btif_rc_device_cb_t* p_dev);
 static bt_status_t get_element_attribute_cmd(uint8_t num_attribute,
-                                             uint32_t* p_attr_ids,
+                                             const uint32_t* p_attr_ids,
                                              btif_rc_device_cb_t* p_dev);
 static bt_status_t getcapabilities_cmd(uint8_t cap_id,
                                        btif_rc_device_cb_t* p_dev);
@@ -345,6 +345,26 @@ static bool absolute_volume_disabled(void);
 static rc_cb_t btif_rc_cb;
 static btrc_callbacks_t* bt_rc_callbacks = NULL;
 static btrc_ctrl_callbacks_t* bt_rc_ctrl_callbacks = NULL;
+
+// List of desired media attribute keys to request by default
+static const uint32_t media_attr_list[] = {
+      AVRC_MEDIA_ATTR_ID_TITLE,       AVRC_MEDIA_ATTR_ID_ARTIST,
+      AVRC_MEDIA_ATTR_ID_ALBUM,       AVRC_MEDIA_ATTR_ID_TRACK_NUM,
+      AVRC_MEDIA_ATTR_ID_NUM_TRACKS,  AVRC_MEDIA_ATTR_ID_GENRE,
+      AVRC_MEDIA_ATTR_ID_PLAYING_TIME,
+      AVRC_MEDIA_ATTR_ID_COVER_ARTWORK_HANDLE};
+static const uint8_t media_attr_list_size =
+    sizeof(media_attr_list)/sizeof(uint32_t);
+
+// List of desired media attribute keys to request if cover artwork is not a
+// supported feature
+static const uint32_t media_attr_list_no_cover_art[] = {
+      AVRC_MEDIA_ATTR_ID_TITLE,       AVRC_MEDIA_ATTR_ID_ARTIST,
+      AVRC_MEDIA_ATTR_ID_ALBUM,       AVRC_MEDIA_ATTR_ID_TRACK_NUM,
+      AVRC_MEDIA_ATTR_ID_NUM_TRACKS,  AVRC_MEDIA_ATTR_ID_GENRE,
+      AVRC_MEDIA_ATTR_ID_PLAYING_TIME};
+static const uint8_t media_attr_list_no_cover_art_size =
+    sizeof(media_attr_list_no_cover_art)/sizeof(uint32_t);
 
 /*****************************************************************************
  *  Static functions
@@ -423,6 +443,18 @@ btif_rc_device_cb_t* btif_rc_get_device_by_handle(uint8_t handle) {
   }
   BTIF_TRACE_ERROR("%s: returning NULL", __func__);
   return NULL;
+}
+
+const uint32_t* get_requested_attributes_list(btif_rc_device_cb_t* p_dev) {
+  return (p_dev->rc_features & BTA_AV_FEAT_COVER_ARTWORK
+      ? media_attr_list
+      : media_attr_list_no_cover_art);
+}
+
+uint8_t get_requested_attributes_list_size(btif_rc_device_cb_t* p_dev) {
+  return (p_dev->rc_features & BTA_AV_FEAT_COVER_ARTWORK
+      ? media_attr_list_size
+      : media_attr_list_no_cover_art_size);
 }
 
 void fill_pdu_queue(int index, uint8_t ctype, uint8_t label, bool pending,
@@ -1772,12 +1804,9 @@ static void rc_ctrl_procedure_complete(btif_rc_device_cb_t* p_dev) {
     return;
   }
   p_dev->rc_procedure_complete = true;
-  uint32_t attr_list[] = {
-      AVRC_MEDIA_ATTR_ID_TITLE,       AVRC_MEDIA_ATTR_ID_ARTIST,
-      AVRC_MEDIA_ATTR_ID_ALBUM,       AVRC_MEDIA_ATTR_ID_TRACK_NUM,
-      AVRC_MEDIA_ATTR_ID_NUM_TRACKS,  AVRC_MEDIA_ATTR_ID_GENRE,
-      AVRC_MEDIA_ATTR_ID_PLAYING_TIME};
-  get_element_attribute_cmd(AVRC_MAX_NUM_MEDIA_ATTR_ID, attr_list, p_dev);
+  const uint32_t* attr_list = get_requested_attributes_list(p_dev);
+  const uint8_t attr_list_size = get_requested_attributes_list_size(p_dev);
+  get_element_attribute_cmd(attr_list_size, attr_list, p_dev);
 }
 
 /***************************************************************************
@@ -3128,17 +3157,14 @@ static void handle_notification_response(tBTA_AV_META_MSG* pmeta_msg,
                                          tAVRC_REG_NOTIF_RSP* p_rsp) {
   btif_rc_device_cb_t* p_dev =
       btif_rc_get_device_by_handle(pmeta_msg->rc_handle);
-  uint32_t attr_list[] = {
-      AVRC_MEDIA_ATTR_ID_TITLE,       AVRC_MEDIA_ATTR_ID_ARTIST,
-      AVRC_MEDIA_ATTR_ID_ALBUM,       AVRC_MEDIA_ATTR_ID_TRACK_NUM,
-      AVRC_MEDIA_ATTR_ID_NUM_TRACKS,  AVRC_MEDIA_ATTR_ID_GENRE,
-      AVRC_MEDIA_ATTR_ID_PLAYING_TIME};
 
   if (p_dev == NULL) {
     BTIF_TRACE_ERROR("%s: p_dev NULL", __func__);
     return;
   }
 
+  const uint32_t* attr_list = get_requested_attributes_list(p_dev);
+  const uint8_t attr_list_size = get_requested_attributes_list_size(p_dev);
 
   if (pmeta_msg->code == AVRC_RSP_INTERIM) {
     btif_rc_supported_event_t* p_event;
@@ -3162,7 +3188,7 @@ static void handle_notification_response(tBTA_AV_META_MSG* pmeta_msg,
           uint8_t* p_data = p_rsp->param.track;
           BE_STREAM_TO_UINT64(p_dev->rc_playing_uid, p_data);
           get_play_status_cmd(p_dev);
-          get_element_attribute_cmd(AVRC_MAX_NUM_MEDIA_ATTR_ID, attr_list,
+          get_element_attribute_cmd(attr_list_size, attr_list,
                                     p_dev);
         }
         break;
@@ -3264,7 +3290,7 @@ static void handle_notification_response(tBTA_AV_META_MSG* pmeta_msg,
          * if the play state is playing.
          */
         if (p_rsp->param.play_status == AVRC_PLAYSTATE_PLAYING) {
-          get_element_attribute_cmd(AVRC_MAX_NUM_MEDIA_ATTR_ID, attr_list,
+          get_element_attribute_cmd(attr_list_size, attr_list,
                                     p_dev);
         }
         do_in_jni_thread(
@@ -3279,7 +3305,7 @@ static void handle_notification_response(tBTA_AV_META_MSG* pmeta_msg,
         if (rc_is_track_id_valid(p_rsp->param.track) != true) {
           break;
         }
-        get_element_attribute_cmd(AVRC_MAX_NUM_MEDIA_ATTR_ID, attr_list, p_dev);
+        get_element_attribute_cmd(attr_list_size, attr_list, p_dev);
         break;
 
       case AVRC_EVT_APP_SETTING_CHANGE: {
@@ -3787,12 +3813,9 @@ static void handle_get_elem_attr_response(tBTA_AV_META_MSG* pmeta_msg,
     /* Retry for timeout case, this covers error handling
      * for continuation failure also.
      */
-    uint32_t attr_list[] = {
-        AVRC_MEDIA_ATTR_ID_TITLE,       AVRC_MEDIA_ATTR_ID_ARTIST,
-        AVRC_MEDIA_ATTR_ID_ALBUM,       AVRC_MEDIA_ATTR_ID_TRACK_NUM,
-        AVRC_MEDIA_ATTR_ID_NUM_TRACKS,  AVRC_MEDIA_ATTR_ID_GENRE,
-        AVRC_MEDIA_ATTR_ID_PLAYING_TIME};
-    get_element_attribute_cmd(AVRC_MAX_NUM_MEDIA_ATTR_ID, attr_list, p_dev);
+    const uint32_t* attr_list = get_requested_attributes_list(p_dev);
+    const uint8_t attr_list_size = get_requested_attributes_list_size(p_dev);
+    get_element_attribute_cmd(attr_list_size, attr_list, p_dev);
   } else {
     BTIF_TRACE_ERROR("%s: Error in get element attr procedure: %d", __func__,
                      p_rsp->status);
@@ -4041,6 +4064,9 @@ void get_folder_item_type_media(const tAVRC_ITEM* avrc_item,
         break;
       case AVRC_MEDIA_ATTR_ID_PLAYING_TIME:
         btrc_attr_pair->attr_id = BTRC_MEDIA_ATTR_ID_PLAYING_TIME;
+        break;
+      case AVRC_MEDIA_ATTR_ID_COVER_ARTWORK_HANDLE:
+        btrc_attr_pair->attr_id = BTRC_MEDIA_ATTR_ID_COVER_ARTWORK_HANDLE;
         break;
       default:
         BTIF_TRACE_ERROR("%s invalid media attr id: 0x%x", __func__,
@@ -4974,7 +5000,7 @@ static bt_status_t register_notification_cmd(uint8_t label, uint8_t event_id,
  *
  **************************************************************************/
 static bt_status_t get_element_attribute_cmd(uint8_t num_attribute,
-                                             uint32_t* p_attr_ids,
+                                             const uint32_t* p_attr_ids,
                                              btif_rc_device_cb_t* p_dev) {
   BTIF_TRACE_DEBUG("%s: num_attribute: %d attribute_id: %d", __func__,
                    num_attribute, p_attr_ids[0]);

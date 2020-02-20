@@ -358,7 +358,8 @@ typedef uint8_t tAVRC_BATTERY_STATUS;
 #define AVRC_MEDIA_ATTR_ID_NUM_TRACKS 0x00000005
 #define AVRC_MEDIA_ATTR_ID_GENRE 0x00000006
 #define AVRC_MEDIA_ATTR_ID_PLAYING_TIME 0x00000007 /* in miliseconds */
-#define AVRC_MAX_NUM_MEDIA_ATTR_ID 7
+#define AVRC_MEDIA_ATTR_ID_COVER_ARTWORK_HANDLE 0x00000008
+#define AVRC_MAX_NUM_MEDIA_ATTR_ID 8
 
 /* Define the possible values of play state
 */
@@ -966,7 +967,7 @@ typedef union {
 
 #define AVRC_IS_VALID_MEDIA_ATTRIBUTE(a)            \
   (((a) >= AVRC_MEDIA_ATTR_ID_TITLE) &&             \
-           ((a) <= AVRC_MEDIA_ATTR_ID_PLAYING_TIME) \
+           ((a) <= AVRC_MAX_NUM_MEDIA_ATTR_ID) \
        ? true                                       \
        : false)
 
