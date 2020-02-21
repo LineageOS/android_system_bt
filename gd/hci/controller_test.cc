@@ -460,6 +460,18 @@ TEST_F(ControllerTest, aclCreditCallbacksTest) {
   credits1_set.get_future().wait();
   credits2_set.get_future().wait();
 }
+
+TEST_F(ControllerTest, aclCreditCallbackListenerUnregistered) {
+  os::Thread thread("test_thread", os::Thread::Priority::NORMAL);
+  os::Handler handler(&thread);
+  controller_->RegisterCompletedAclPacketsCallback(common::Bind(&CheckReceivedCredits), &handler);
+
+  handler.Clear();
+  handler.WaitUntilStopped(std::chrono::milliseconds(100));
+  controller_->UnregisterCompletedAclPacketsCallback();
+
+  test_hci_layer_->IncomingCredit();
+}
 }  // namespace
 }  // namespace hci
 }  // namespace bluetooth
