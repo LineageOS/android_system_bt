@@ -14,11 +14,15 @@ bluetooth_cert_test_file_list := \
     hci/cert/acl_manager_test.py \
     hci/cert/controller_test.py \
     hci/cert/direct_hci_test.py \
+    hci/cert/le_acl_manager_test.py \
     hci/cert/le_advertising_manager_test.py \
     hci/cert/le_scanning_manager_test.py \
+    l2cap/classic/cert/l2cap_test.py \
     l2cap/classic/cert/simple_l2cap_test.py \
     l2cap/classic/cert/pts_l2cap_test.py \
-    neighbor/cert/neighbor_test.py
+    neighbor/cert/neighbor_test.py \
+    security/cert/simple_security_test.py \
+    shim/cert/stack_test.py
 
 
 bluetooth_cert_test_file_list := $(addprefix $(LOCAL_PATH)/,$(bluetooth_cert_test_file_list))

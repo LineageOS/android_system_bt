@@ -26,7 +26,11 @@
 #include "main/shim/timer.h"
 #include "osi/include/alarm.h"
 #include "osi/include/future.h"
+#include "osi/include/log.h"
 #include "stack/include/btm_api_types.h"
+
+#include "hci/hci_packets.h"
+#include "hci/le_advertising_manager.h"
 
 //
 // NOTE: limited and general constants for inquiry and discoverable are swapped
@@ -140,19 +144,10 @@ class Btm {
   ~Btm() = default;
 
   // Inquiry result callbacks
-  void OnInquiryResult(std::string string_address, uint8_t page_scan_rep_mode,
-                       std::string string_class_of_device,
-                       uint16_t clock_offset);
-  void OnInquiryResultWithRssi(std::string string_address,
-                               uint8_t page_scan_rep_mode,
-                               std::string string_class_of_device,
-                               uint16_t clock_offset, int8_t rssi);
-  void OnExtendedInquiryResult(std::string string_address,
-                               uint8_t page_scan_rep_mode,
-                               std::string string_class_of_device,
-                               uint16_t clock_offset, int8_t rssi,
-                               const uint8_t* gap_data, size_t gap_data_len);
-  void OnInquiryComplete(uint16_t status);
+  void OnInquiryResult(bluetooth::hci::InquiryResultView view);
+  void OnInquiryResultWithRssi(bluetooth::hci::InquiryResultWithRssiView view);
+  void OnExtendedInquiryResult(bluetooth::hci::ExtendedInquiryResultView view);
+  void OnInquiryComplete(bluetooth::hci::ErrorCode status);
 
   // Inquiry API
   bool SetInquiryFilter(uint8_t mode, uint8_t type, tBTM_INQ_FILT_COND data);
@@ -184,6 +179,11 @@ class Btm {
   bool IsLimitedPeriodicInquiryActive() const;
 
   // Discoverability API
+  bool general_inquiry_active_{false};
+  bool limited_inquiry_active_{false};
+  bool general_periodic_inquiry_active_{false};
+  bool limited_periodic_inquiry_active_{false};
+  void RegisterInquiryCallbacks();
   void SetClassicGeneralDiscoverability(uint16_t window, uint16_t interval);
   void SetClassicLimitedDiscoverability(uint16_t window, uint16_t interval);
   void SetClassicDiscoverabilityOff();
@@ -214,6 +214,8 @@ class Btm {
   BtmStatus CancelAllReadRemoteDeviceName();
 
   // Le neighbor interaction API
+  bluetooth::hci::AdvertiserId advertiser_id_{
+      hci::LeAdvertisingManager::kInvalidId};
   void StartAdvertising();
   void StopAdvertising();
   void StartConnectability();

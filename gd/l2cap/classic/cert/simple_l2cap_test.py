@@ -247,15 +247,6 @@ class SimpleL2capTest(GdBaseTestClass):
         # Allow some time for channel creation on facade side after configuration response is received.
         time.sleep(0.5)
 
-    def test_connect(self):
-        with EventCallbackStream(
-                self.cert_device.l2cap.FetchL2capLog(
-                    empty_pb2.Empty())) as l2cap_log_stream:
-            l2cap_event_asserts = EventAsserts(l2cap_log_stream)
-            self._register_callbacks(l2cap_log_stream)
-            self._setup_link(l2cap_event_asserts)
-            self._open_channel(l2cap_event_asserts, scid=0x0101)
-
     def test_connect_and_send_data_ertm_no_segmentation(self):
         with EventCallbackStream(
                 self.cert_device.l2cap.FetchL2capLog(
@@ -347,52 +338,6 @@ class SimpleL2capTest(GdBaseTestClass):
             self._open_channel(l2cap_event_asserts, scid=0x0101, psm=0x1)
             self._open_channel(l2cap_event_asserts, scid=0x0102, psm=0x3)
 
-    def test_accept_disconnect(self):
-        """
-        L2CAP/COS/CED/BV-07-C
-        """
-        with EventCallbackStream(
-                self.cert_device.l2cap.FetchL2capLog(
-                    empty_pb2.Empty())) as l2cap_log_stream:
-            l2cap_event_asserts = EventAsserts(l2cap_log_stream)
-            self._register_callbacks(l2cap_log_stream)
-            self._setup_link(l2cap_event_asserts)
-            scid = 0x0101
-            self._open_channel(l2cap_event_asserts, scid=scid, psm=0x1)
-            dcid = self.scid_dcid_map[scid]
-            self.cert_device.l2cap.SendDisconnectionRequest(
-                l2cap_cert_pb2.DisconnectionRequest(
-                    scid=scid, dcid=dcid, signal_id=2))
-            l2cap_event_asserts.assert_event_occurs(
-                lambda log: is_disconnection_response(log) and log.disconnection_response.scid == scid and log.disconnection_response.dcid == dcid
-            )
-
-    def test_disconnect_on_timeout(self):
-        """
-        L2CAP/COS/CED/BV-08-C
-        """
-        with EventCallbackStream(
-                self.cert_device.l2cap.FetchL2capLog(
-                    empty_pb2.Empty())) as l2cap_log_stream:
-            l2cap_event_asserts = EventAsserts(l2cap_log_stream)
-            self._register_callbacks(l2cap_log_stream)
-            self._setup_link(l2cap_event_asserts)
-            scid = 0x0101
-            psm = 1
-            self._open_channel(l2cap_event_asserts, scid=0x0101, psm=0x1)
-
-            self.device_under_test.l2cap.SetDynamicChannel(
-                l2cap_facade_pb2.SetEnableDynamicChannelRequest(psm=psm))
-
-            # Don't send configuration response back
-            l2cap_log_stream.unregister_callback(
-                self.handle_configuration_request,
-                matcher_fn=is_configuration_request)
-
-            self.cert_device.l2cap.SendConnectionRequest(
-                l2cap_cert_pb2.ConnectionRequest(scid=scid, psm=psm))
-            l2cap_event_asserts.assert_none_matching(is_configuration_response)
-
     def test_basic_operation_request_connection(self):
         """
         L2CAP/COS/CED/BV-01-C [Request Connection]
@@ -411,46 +356,6 @@ class SimpleL2capTest(GdBaseTestClass):
                     remote=self.cert_address, psm=psm))
             l2cap_event_asserts.assert_event_occurs(
                 lambda log: is_connection_request(log) and log.connection_request.psm == psm
-            )
-
-    def test_respond_to_echo_request(self):
-        """
-        L2CAP/COS/ECH/BV-01-C [Respond to Echo Request]
-        Verify that the IUT responds to an echo request.
-        """
-        with EventCallbackStream(
-                self.cert_device.l2cap.FetchL2capLog(
-                    empty_pb2.Empty())) as l2cap_log_stream:
-            l2cap_event_asserts = EventAsserts(l2cap_log_stream)
-            self._register_callbacks(l2cap_log_stream)
-            self._setup_link(l2cap_event_asserts)
-            # TODO: Replace with constructed packets when PDL is available
-            echo_request_packet = b"\x08\x01\x00\x00"
-            self.cert_device.l2cap.SendL2capPacket(
-                l2cap_facade_pb2.L2capPacket(
-                    channel=1, payload=echo_request_packet))
-            l2cap_event_asserts.assert_event_occurs(
-                lambda log: is_echo_response(log) and log.echo_response.signal_id == 0x01
-            )
-
-    def test_reject_unknown_command(self):
-        """
-        L2CAP/COS/CED/BI-01-C
-        """
-        with EventCallbackStream(
-                self.cert_device.l2cap.FetchL2capLog(
-                    empty_pb2.Empty())) as l2cap_log_stream:
-            l2cap_event_asserts = EventAsserts(l2cap_log_stream)
-            self._register_callbacks(l2cap_log_stream)
-            self._setup_link(l2cap_event_asserts)
-            # TODO: Replace with constructed packets when PDL is available
-            invalid_command_packet = b"\xff\x01\x00\x00"
-            self.cert_device.l2cap.SendL2capPacket(
-                l2cap_facade_pb2.L2capPacket(
-                    channel=1, payload=invalid_command_packet))
-            # command_reject_packet = b"\x01\x01\x02\x00\x00\x00"
-            l2cap_event_asserts.assert_event_occurs(
-                lambda log: is_command_reject(log) and log.command_reject.signal_id == 0x01
             )
 
     def test_query_for_1_2_features(self):

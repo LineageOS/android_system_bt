@@ -32,7 +32,7 @@
 #include "types/class_of_device.h"
 #include "types/raw_address.h"
 
-static bluetooth::shim::Btm shim_btm;
+bluetooth::shim::Btm shim_btm;
 
 /**
  * Legacy bluetooth module global control block state
