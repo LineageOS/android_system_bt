@@ -13,6 +13,8 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
+#include <condition_variable>
 #include <cstdint>
 #include <unordered_map>
 
@@ -72,7 +74,9 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION, "Channel not registered");
     }
     std::vector<uint8_t> packet(request->payload().begin(), request->payload().end());
-    fixed_channel_helper_map_[request->channel()]->SendPacket(packet);
+    if (!fixed_channel_helper_map_[request->channel()]->SendPacket(packet)) {
+      return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION, "Channel not open");
+    }
     response->set_result_type(SendL2capPacketResultType::OK);
     return ::grpc::Status::OK;
   }
@@ -84,7 +88,9 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION, "Psm not registered");
     }
     std::vector<uint8_t> packet(request->payload().begin(), request->payload().end());
-    dynamic_channel_helper_map_[request->psm()]->SendPacket(packet);
+    if (!dynamic_channel_helper_map_[request->psm()]->SendPacket(packet)) {
+      return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION, "Channel not open");
+    }
     return ::grpc::Status::OK;
   }
 
@@ -211,13 +217,14 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       }
     }
 
-    void SendPacket(const std::vector<uint8_t>& packet) {
+    bool SendPacket(const std::vector<uint8_t>& packet) {
       if (channel_ == nullptr) {
         LOG_WARN("Channel is not open");
-        return;
+        return false;
       }
       channel_->GetQueueUpEnd()->RegisterEnqueue(
           handler_, common::Bind(&L2capFixedChannelHelper::enqueue_callback, common::Unretained(this), packet));
+      return true;
     }
 
     void on_close_callback(hci::ErrorCode error_code) {
@@ -306,7 +313,11 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       ConnectionCompleteEvent event;
       event.mutable_remote()->set_address(channel->GetDevice().ToString());
       facade_service_->pending_connection_complete_.OnIncomingEvent(event);
-      channel_ = std::move(channel);
+      {
+        std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
+        channel_ = std::move(channel);
+      }
+      channel_open_cv_.notify_all();
       channel_->RegisterOnCloseCallback(
           facade_service_->facade_handler_,
           common::BindOnce(&L2capDynamicChannelHelper::on_close_callback, common::Unretained(this)));
@@ -322,7 +333,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
 
     void on_close_callback(hci::ErrorCode error_code) {
       {
-        std::unique_lock<std::mutex> lock(facade_service_->channel_map_mutex_);
+        std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
         if (facade_service_->fetch_l2cap_data_) {
           channel_->GetQueueUpEnd()->UnregisterDequeue();
         }
@@ -345,13 +356,17 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       facade_service_->pending_l2cap_data_.OnIncomingEvent(l2cap_data);
     }
 
-    void SendPacket(std::vector<uint8_t> packet) {
+    bool SendPacket(std::vector<uint8_t> packet) {
       if (channel_ == nullptr) {
-        LOG_WARN("Channel is not open");
-        return;
+        std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
+        if (!channel_open_cv_.wait_for(lock, std::chrono::seconds(1), [this] { return channel_ != nullptr; })) {
+          LOG_WARN("Channel is not open");
+          return false;
+        }
       }
       channel_->GetQueueUpEnd()->RegisterEnqueue(
           handler_, common::Bind(&L2capDynamicChannelHelper::enqueue_callback, common::Unretained(this), packet));
+      return true;
     }
 
     std::unique_ptr<packet::BasePacketBuilder> enqueue_callback(std::vector<uint8_t> packet) {
@@ -368,6 +383,8 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
     std::unique_ptr<DynamicChannelService> service_;
     std::unique_ptr<DynamicChannel> channel_ = nullptr;
     Psm psm_;
+    std::condition_variable channel_open_cv_;
+    std::mutex channel_open_cv_mutex_;
   };
 
   L2capClassicModule* l2cap_layer_;
