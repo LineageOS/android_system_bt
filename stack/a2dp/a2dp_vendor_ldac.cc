@@ -69,7 +69,8 @@ static const tA2DP_LDAC_CIE a2dp_ldac_sink_caps = {
     (A2DP_LDAC_SAMPLING_FREQ_44100 | A2DP_LDAC_SAMPLING_FREQ_48000 |
      A2DP_LDAC_SAMPLING_FREQ_88200 | A2DP_LDAC_SAMPLING_FREQ_96000),
     // channelMode
-    (A2DP_LDAC_CHANNEL_MODE_DUAL | A2DP_LDAC_CHANNEL_MODE_STEREO),
+    (A2DP_LDAC_CHANNEL_MODE_MONO | A2DP_LDAC_CHANNEL_MODE_DUAL |
+     A2DP_LDAC_CHANNEL_MODE_STEREO),
     // bits_per_sample
     (BTAV_A2DP_CODEC_BITS_PER_SAMPLE_16 | BTAV_A2DP_CODEC_BITS_PER_SAMPLE_24 |
      BTAV_A2DP_CODEC_BITS_PER_SAMPLE_32)};
@@ -93,9 +94,9 @@ static const tA2DP_ENCODER_INTERFACE a2dp_encoder_interface_ldac = {
     a2dp_vendor_ldac_set_transmit_queue_length};
 
 static const tA2DP_DECODER_INTERFACE a2dp_decoder_interface_ldac = {
-    a2dp_vendor_ldac_decoder_init,
-    a2dp_vendor_ldac_decoder_cleanup,
-    a2dp_vendor_ldac_decoder_decode_packet,
+    a2dp_vendor_ldac_decoder_init,          a2dp_vendor_ldac_decoder_cleanup,
+    a2dp_vendor_ldac_decoder_decode_packet, a2dp_vendor_ldac_decoder_start,
+    a2dp_vendor_ldac_decoder_suspend,       a2dp_vendor_ldac_decoder_configure,
 };
 
 UNUSED_ATTR static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityLdac(

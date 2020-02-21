@@ -64,7 +64,9 @@ enum {
   BTIF_MEDIA_SINK_DECODER_UPDATE = 1,
   BTIF_MEDIA_SINK_CLEAR_TRACK,
   BTIF_MEDIA_SINK_SET_FOCUS_STATE,
-  BTIF_MEDIA_SINK_AUDIO_RX_FLUSH
+  BTIF_MEDIA_SINK_AUDIO_RX_FLUSH,
+  BTIF_MEDIA_SINK_START,
+  BTIF_MEDIA_SINK_SUSPEND
 };
 
 typedef struct {
@@ -149,6 +151,8 @@ static void btif_a2dp_sink_set_focus_state_event(
     btif_a2dp_sink_focus_state_t state);
 static void btif_a2dp_sink_audio_rx_flush_event();
 static void btif_a2dp_sink_clear_track_event_req();
+static void btif_a2dp_sink_on_start_event();
+static void btif_a2dp_sink_on_suspend_event();
 
 UNUSED_ATTR static const char* dump_media_event(uint16_t event) {
   switch (event) {
@@ -156,6 +160,8 @@ UNUSED_ATTR static const char* dump_media_event(uint16_t event) {
     CASE_RETURN_STR(BTIF_MEDIA_SINK_CLEAR_TRACK)
     CASE_RETURN_STR(BTIF_MEDIA_SINK_SET_FOCUS_STATE)
     CASE_RETURN_STR(BTIF_MEDIA_SINK_AUDIO_RX_FLUSH)
+    CASE_RETURN_STR(BTIF_MEDIA_SINK_START)
+    CASE_RETURN_STR(BTIF_MEDIA_SINK_SUSPEND)
     default:
       break;
   }
@@ -364,6 +370,12 @@ static void btif_a2dp_sink_command_ready(BT_HDR* p_msg) {
     case BTIF_MEDIA_SINK_AUDIO_RX_FLUSH:
       btif_a2dp_sink_audio_rx_flush_event();
       break;
+    case BTIF_MEDIA_SINK_START:
+      btif_a2dp_sink_on_start_event();
+      break;
+    case BTIF_MEDIA_SINK_SUSPEND:
+      btif_a2dp_sink_on_suspend_event();
+      break;
     default:
       LOG_ERROR(LOG_TAG, "%s: unknown event %d", __func__, p_msg->event);
       break;
@@ -392,6 +404,11 @@ void btif_a2dp_sink_update_decoder(const uint8_t* p_codec_info) {
 
 void btif_a2dp_sink_on_idle() {
   LOG_INFO(LOG_TAG, "%s", __func__);
+  BT_HDR* p_buf = reinterpret_cast<BT_HDR*>(osi_malloc(sizeof(BT_HDR)));
+  p_buf->event = BTIF_MEDIA_SINK_SUSPEND;
+  btif_a2dp_sink_cb.worker_thread.DoInThread(
+      FROM_HERE, base::BindOnce(btif_a2dp_sink_command_ready, p_buf));
+
   if (btif_a2dp_sink_state == BTIF_A2DP_SINK_STATE_OFF) return;
   btif_a2dp_sink_audio_handle_stop_decoding();
   btif_a2dp_sink_clear_track_event_req();
@@ -399,14 +416,35 @@ void btif_a2dp_sink_on_idle() {
 
 void btif_a2dp_sink_on_stopped(UNUSED_ATTR tBTA_AV_SUSPEND* p_av_suspend) {
   LOG_INFO(LOG_TAG, "%s", __func__);
+  BT_HDR* p_buf = reinterpret_cast<BT_HDR*>(osi_malloc(sizeof(BT_HDR)));
+  p_buf->event = BTIF_MEDIA_SINK_SUSPEND;
+  btif_a2dp_sink_cb.worker_thread.DoInThread(
+      FROM_HERE, base::BindOnce(btif_a2dp_sink_command_ready, p_buf));
+
   if (btif_a2dp_sink_state == BTIF_A2DP_SINK_STATE_OFF) return;
   btif_a2dp_sink_audio_handle_stop_decoding();
 }
 
 void btif_a2dp_sink_on_suspended(UNUSED_ATTR tBTA_AV_SUSPEND* p_av_suspend) {
   LOG_INFO(LOG_TAG, "%s", __func__);
+  BT_HDR* p_buf = reinterpret_cast<BT_HDR*>(osi_malloc(sizeof(BT_HDR)));
+  p_buf->event = BTIF_MEDIA_SINK_SUSPEND;
+  btif_a2dp_sink_cb.worker_thread.DoInThread(
+      FROM_HERE, base::BindOnce(btif_a2dp_sink_command_ready, p_buf));
+
   if (btif_a2dp_sink_state == BTIF_A2DP_SINK_STATE_OFF) return;
   btif_a2dp_sink_audio_handle_stop_decoding();
+}
+
+bool btif_a2dp_sink_on_start() {
+  LOG_INFO(LOG_TAG, "%s", __func__);
+
+  BT_HDR* p_buf = reinterpret_cast<BT_HDR*>(osi_malloc(sizeof(BT_HDR)));
+  p_buf->event = BTIF_MEDIA_SINK_START;
+  btif_a2dp_sink_cb.worker_thread.DoInThread(
+      FROM_HERE, base::BindOnce(btif_a2dp_sink_command_ready, p_buf));
+
+  return true;
 }
 
 static void btif_a2dp_sink_audio_handle_stop_decoding() {
@@ -592,6 +630,10 @@ static void btif_a2dp_sink_decoder_update_event(
     return;
   }
 
+  if (btif_a2dp_sink_cb.decoder_interface->decoder_configure != nullptr) {
+    btif_a2dp_sink_cb.decoder_interface->decoder_configure(p_buf->codec_info);
+  }
+
   APPL_TRACE_DEBUG("%s: create audio track", __func__);
   btif_a2dp_sink_cb.audio_track =
 #ifndef OS_GENERIC
@@ -693,4 +735,26 @@ static void btif_a2dp_sink_clear_track_event_req() {
   p_buf->event = BTIF_MEDIA_SINK_CLEAR_TRACK;
   btif_a2dp_sink_cb.worker_thread.DoInThread(
       FROM_HERE, base::BindOnce(btif_a2dp_sink_command_ready, p_buf));
+}
+
+static void btif_a2dp_sink_on_start_event() {
+  LOG_INFO(LOG_TAG, "%s", __func__);
+
+  if ((btif_a2dp_sink_cb.decoder_interface != nullptr) &&
+      (btif_a2dp_sink_cb.decoder_interface->decoder_start != nullptr)) {
+    btif_a2dp_sink_cb.decoder_interface->decoder_start();
+  }
+
+  return;
+}
+
+static void btif_a2dp_sink_on_suspend_event() {
+  LOG_INFO(LOG_TAG, "%s", __func__);
+
+  if ((btif_a2dp_sink_cb.decoder_interface != nullptr) &&
+      (btif_a2dp_sink_cb.decoder_interface->decoder_suspend != nullptr)) {
+    btif_a2dp_sink_cb.decoder_interface->decoder_suspend();
+  }
+
+  return;
 }
