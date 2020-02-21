@@ -5,7 +5,13 @@ cc_test {
     srcs: [
         "get_options.cc",
         "headless.cc",
-        "sdp/main.cc",
+        "main.cc",
+        "pairing/pairing.cc",
+        "sdp/sdp.cc",
+        "sdp/sdp_db.cc",
+        "nop/nop.cc",
+        "read/read.cc",
+        "read/name.cc",
     ],
     include_dirs: [
         "system/bt",

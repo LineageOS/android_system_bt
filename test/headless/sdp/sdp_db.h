@@ -16,43 +16,29 @@
 
 #pragma once
 
-#include <cstddef>
-#include <list>
-#include "types/bluetooth/uuid.h"
-#include "types/raw_address.h"
+#include <cstdint>
+#include <cstdio>
+
+#include "stack/include/sdp_api.h"
 
 namespace bluetooth {
 namespace test {
 namespace headless {
 
-class GetOpt {
+class SdpDb {
  public:
-  GetOpt(int argc, char** arv);
-  virtual ~GetOpt() = default;
+  SdpDb(unsigned int max_records);
+  ~SdpDb();
 
-  virtual void Usage() const;
-  virtual bool IsValid() const { return valid_; };
+  tSDP_DISCOVERY_DB* RawPointer();
 
-  std::string GetNextSubTest() const {
-    std::string test = non_options_.front();
-    non_options_.pop_front();
-    return test;
-  }
+  uint32_t Length() const;
 
-  std::list<RawAddress> device_;
-  std::list<bluetooth::Uuid> uuid_;
-  unsigned long loop_{1};
-  unsigned long msec_{0};
-
-  bool close_stderr_{true};
-
-  mutable std::list<std::string> non_options_;
+  void Print(FILE* filep) const;
 
  private:
-  void ParseValue(char* optarg, std::list<std::string>& my_list);
-  void ProcessOption(int option_index, char* optarg);
-  const char* name_{nullptr};
-  bool valid_{true};
+  unsigned int max_records_;
+  tSDP_DISCOVERY_DB* db_;
 };
 
 }  // namespace headless
