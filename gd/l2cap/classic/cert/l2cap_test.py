@@ -752,11 +752,12 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
                 self.cert_device.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
+            cert_acl_data_asserts_alt = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
             signal_id = 3
             information_request = l2cap_packets.InformationRequestBuilder(
                 signal_id, l2cap_packets.InformationRequestInfoType.
-                FIXED_CHANNELS_SUPPORTED)
+                EXTENDED_FEATURES_SUPPORTED)
             information_request_l2cap = l2cap_packets.BasicFrameBuilder(
                 1, information_request)
             self.cert_send_b_frame(information_request_l2cap)
@@ -775,10 +776,29 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
                 information_response_view = l2cap_packets.InformationResponseView(
                     l2cap_control_view)
                 return information_response_view.GetInfoType(
-                ) == l2cap_packets.InformationRequestInfoType.FIXED_CHANNELS_SUPPORTED
+                ) == l2cap_packets.InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED
 
             cert_acl_data_asserts.assert_event_occurs(
                 is_correct_information_response)
+
+            def is_correct_information_request(l2cap_packet):
+                packet_bytes = l2cap_packet.payload
+                l2cap_view = l2cap_packets.BasicFrameView(
+                    bt_packets.PacketViewLittleEndian(list(packet_bytes)))
+                if l2cap_view.GetChannelId() != 1:
+                    return False
+                l2cap_control_view = l2cap_packets.ControlView(
+                    l2cap_view.GetPayload())
+                if l2cap_control_view.GetCode(
+                ) != l2cap_packets.CommandCode.INFORMATION_REQUEST:
+                    return False
+                information_request_view = l2cap_packets.InformationRequestView(
+                    l2cap_control_view)
+                return information_request_view.GetInfoType(
+                ) == l2cap_packets.InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED
+
+            cert_acl_data_asserts_alt.assert_event_occurs(
+                is_correct_information_request)
 
     def test_extended_feature_info_response_ertm(self):
         """
