@@ -120,8 +120,11 @@ TEST_F(L2capClassicLinkManagerTest, connect_fixed_channel_service_without_acl) {
   // Step 3: ACL connection success event should trigger channel creation for all registered services
 
   std::unique_ptr<MockAclConnection> acl_connection = std::make_unique<MockAclConnection>();
-  EXPECT_CALL(*acl_connection, RegisterDisconnectCallback(_, l2cap_handler_)).Times(1);
   EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(device));
+  EXPECT_CALL(*acl_connection, GetAddressType()).WillRepeatedly(Return(hci::AddressType::PUBLIC_DEVICE_ADDRESS));
+  EXPECT_CALL(*acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
+  EXPECT_CALL(*acl_connection, RegisterDisconnectCallback(_, l2cap_handler_)).Times(1);
+  EXPECT_CALL(*acl_connection, UnregisterCallbacks(_)).Times(1);
   std::unique_ptr<FixedChannel> channel_1, channel_2;
   std::promise<void> promise_1, promise_2;
   auto future_1 = promise_1.get_future();
@@ -290,6 +293,10 @@ TEST_F(L2capClassicLinkManagerTest, not_acquiring_channels_should_disconnect_acl
   auto* raw_acl_connection = new MockAclConnection();
   std::unique_ptr<MockAclConnection> acl_connection(raw_acl_connection);
   EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(device));
+  EXPECT_CALL(*acl_connection, GetAddressType()).WillRepeatedly(Return(hci::AddressType::PUBLIC_DEVICE_ADDRESS));
+  EXPECT_CALL(*acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
+  EXPECT_CALL(*acl_connection, RegisterDisconnectCallback(_, l2cap_handler_)).Times(1);
+  EXPECT_CALL(*acl_connection, UnregisterCallbacks(_)).Times(1);
   std::unique_ptr<FixedChannel> channel_1, channel_2;
   std::promise<void> promise_1, promise_2;
   auto future_1 = promise_1.get_future();
@@ -369,6 +376,10 @@ TEST_F(L2capClassicLinkManagerTest, acquiring_channels_should_not_disconnect_acl
   auto* raw_acl_connection = new MockAclConnection();
   std::unique_ptr<MockAclConnection> acl_connection(raw_acl_connection);
   EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(device));
+  EXPECT_CALL(*acl_connection, GetAddressType()).WillRepeatedly(Return(hci::AddressType::PUBLIC_DEVICE_ADDRESS));
+  EXPECT_CALL(*acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
+  EXPECT_CALL(*acl_connection, RegisterDisconnectCallback(_, l2cap_handler_)).Times(1);
+  EXPECT_CALL(*acl_connection, UnregisterCallbacks(_)).Times(1);
   std::unique_ptr<FixedChannel> channel_1, channel_2;
   std::promise<void> promise_1, promise_2;
   auto future_1 = promise_1.get_future();
@@ -450,6 +461,10 @@ TEST_F(L2capClassicLinkManagerTest, acquiring_and_releasing_channels_should_even
   auto* raw_acl_connection = new MockAclConnection();
   std::unique_ptr<MockAclConnection> acl_connection(raw_acl_connection);
   EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(device));
+  EXPECT_CALL(*acl_connection, GetAddressType()).WillRepeatedly(Return(hci::AddressType::PUBLIC_DEVICE_ADDRESS));
+  EXPECT_CALL(*acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
+  EXPECT_CALL(*acl_connection, RegisterDisconnectCallback(_, l2cap_handler_)).Times(1);
+  EXPECT_CALL(*acl_connection, UnregisterCallbacks(_)).Times(1);
   std::unique_ptr<FixedChannel> channel_1, channel_2;
   std::promise<void> promise_1, promise_2;
   auto future_1 = promise_1.get_future();
