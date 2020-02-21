@@ -1869,6 +1869,7 @@ bool BtifAvStateMachine::StateOpened::ProcessEvent(uint32_t event,
       if (peer_.IsSource() && peer_.IsActivePeer()) {
         // Remove flush state, ready for streaming
         btif_a2dp_sink_set_rx_flush(false);
+        btif_a2dp_sink_on_start();
       }
 
       if (should_suspend) {

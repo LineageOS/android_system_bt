@@ -40,4 +40,13 @@ void a2dp_vendor_ldac_decoder_cleanup(void);
 // |a2dp_vendor_ldac_decoder_init| if decoded frames are available.
 bool a2dp_vendor_ldac_decoder_decode_packet(BT_HDR* p_buf);
 
+// Start the A2DP LDAC decoder.
+void a2dp_vendor_ldac_decoder_start(void);
+
+// Suspend the A2DP LDAC decoder.
+void a2dp_vendor_ldac_decoder_suspend(void);
+
+// A2DP LDAC decoder configuration.
+void a2dp_vendor_ldac_decoder_configure(const uint8_t* p_codec_info);
+
 #endif  // A2DP_VENDOR_LDAC_DECODER_H

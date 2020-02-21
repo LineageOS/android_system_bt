@@ -102,8 +102,12 @@ static const tA2DP_ENCODER_INTERFACE a2dp_encoder_interface_aac = {
 };
 
 static const tA2DP_DECODER_INTERFACE a2dp_decoder_interface_aac = {
-    a2dp_aac_decoder_init, a2dp_aac_decoder_cleanup,
+    a2dp_aac_decoder_init,
+    a2dp_aac_decoder_cleanup,
     a2dp_aac_decoder_decode_packet,
+    nullptr,  // decoder_start
+    nullptr,  // decoder_suspend
+    nullptr,  // decoder_configure
 };
 
 UNUSED_ATTR static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilityAac(
