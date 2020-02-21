@@ -573,13 +573,36 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
         cert_acl_data_asserts.assert_event_occurs(verify_connection_response)
 
-    def test_connect(self):
+    def test_connect_dynamic_channel_and_send_data(self):
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
                 self.cert_device.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
+            cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
-            self._open_channel(cert_acl_data_stream, 1, cert_acl_handle)
+            psm = 0x33
+            scid = 0x41
+            self._open_channel(cert_acl_data_stream, 1, cert_acl_handle, scid,
+                               psm)
+            self.device_under_test.l2cap.SendDynamicChannelPacket(
+                l2cap_facade_pb2.DynamicChannelPacket(psm=0x33, payload=b'abc'))
+            cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
+            cert_acl_data_asserts.assert_event_occurs(
+                lambda packet: b'abc' in packet.payload)
+
+    def test_fixed_channel(self):
+        cert_acl_handle = self._setup_link_from_cert()
+        self.device_under_test.l2cap.RegisterChannel(
+            l2cap_facade_pb2.RegisterChannelRequest(channel=2))
+        asserts.skip("FIXME: Not working")
+        with EventCallbackStream(
+                self.cert_device.hci_acl_manager.FetchAclData(
+                    empty_proto.Empty())) as cert_acl_data_stream:
+            cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
+            self.device_under_test.l2cap.SendL2capPacket(
+                l2cap_facade_pb2.L2capPacket(channel=2, payload=b"123"))
+            cert_acl_data_asserts.assert_event_occurs(
+                lambda packet: b'123' in packet.payload)
 
     def test_open_two_channels(self):
         cert_acl_handle = self._setup_link_from_cert()
@@ -591,6 +614,45 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
                                0x41)
             self._open_channel(cert_acl_data_stream, 2, cert_acl_handle, 0x43,
                                0x43)
+
+    def test_connect_and_send_data_ertm_no_segmentation(self):
+        cert_acl_handle = self._setup_link_from_cert()
+        with EventCallbackStream(
+                self.cert_device.hci_acl_manager.FetchAclData(
+                    empty_proto.Empty())) as cert_acl_data_stream:
+            cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
+            cert_acl_data_stream.register_callback(self._handle_control_packet)
+            self.on_connection_response = self._on_connection_response_use_ertm
+
+            psm = 0x33
+            scid = 0x41
+            self._open_channel(
+                cert_acl_data_stream,
+                1,
+                cert_acl_handle,
+                scid,
+                psm,
+                mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
+
+            # FIXME: Order shouldn't matter here
+            cert_acl_data_asserts.assert_event_occurs(
+                self.is_correct_configuration_response)
+            cert_acl_data_asserts.assert_event_occurs(
+                self.is_correct_configuration_request)
+
+            dcid = self.scid_to_dcid[scid]
+
+            self.device_under_test.l2cap.SendDynamicChannelPacket(
+                l2cap_facade_pb2.DynamicChannelPacket(
+                    psm=psm, payload=b'abc' * 34))
+            cert_acl_data_asserts.assert_event_occurs(
+                lambda packet: b'abc' * 34 in packet.payload)
+
+            i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
+                dcid, 0, l2cap_packets.Final.NOT_SET, 1,
+                l2cap_packets.SegmentationAndReassembly.UNSEGMENTED,
+                SAMPLE_PACKET)
+            self.cert_send_b_frame(i_frame)
 
     def test_basic_operation_request_connection(self):
         """
@@ -1953,3 +2015,31 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             cert_acl_data_asserts.assert_event_occurs(
                 self.is_correct_configuration_request)
             asserts.skip("Struct not working")
+
+    def test_respond_configuration_request_ertm(self):
+        """
+        L2CAP/CMC/BV-02-C [Lower Tester Initiated Configuration of Enhanced Retransmission Mode]
+        Verify the IUT can accept a Configuration Request from the Lower Tester containing an F&EC option
+        that specifies Enhanced Retransmission Mode.
+        """
+        cert_acl_handle = self._setup_link_from_cert()
+        with EventCallbackStream(
+                self.cert_device.hci_acl_manager.FetchAclData(
+                    empty_proto.Empty())) as cert_acl_data_stream:
+            cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
+            cert_acl_data_stream.register_callback(self._handle_control_packet)
+            psm = 1
+            scid = 0x0101
+            self.retransmission_mode = l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM
+            self.device_under_test.l2cap.SetDynamicChannel(
+                l2cap_facade_pb2.SetEnableDynamicChannelRequest(
+                    psm=psm, retransmission_mode=self.retransmission_mode))
+
+            open_channel = l2cap_packets.ConnectionRequestBuilder(1, psm, scid)
+            open_channel_l2cap = l2cap_packets.BasicFrameBuilder(
+                1, open_channel)
+            self.cert_send_b_frame(open_channel_l2cap)
+
+            # TODO: Verify that the type should be ERTM
+            cert_acl_data_asserts.assert_event_occurs(
+                self.is_correct_configuration_response)
