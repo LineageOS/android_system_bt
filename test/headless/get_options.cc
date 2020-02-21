@@ -24,18 +24,33 @@
 #include <string>
 
 namespace {
-constexpr struct option long_options[] = {{"device", required_argument, 0, 0},
-                                          {"loop", required_argument, 0, 0},
-                                          {"uuid", required_argument, 0, 0},
-                                          {0, 0, 0, 0}};
+constexpr struct option long_options[] = {
+    {"device", required_argument, 0, 0}, {"loop", required_argument, 0, 0},
+    {"uuid", required_argument, 0, 0},   {"msleep", required_argument, 0, 0},
+    {"stderr", no_argument, 0, 0},       {0, 0, 0, 0}};
 
 enum OptionType {
   kOptionDevice = 0,
   kOptionLoop = 1,
   kOptionUuid = 2,
+  kOptionMsleep = 3,
+  kOptionStdErr = 4,
 };
 
 }  // namespace
+
+void bluetooth::test::headless::GetOpt::Usage() const {
+  fprintf(stdout, "%s: Usage:\n", name_);
+  fprintf(stdout,
+          "%s  --device=<device,>  Comma separated list of remote devices\n",
+          name_);
+  fprintf(stdout, "%s  --uuid=<uuid,>      Comma separated list of uuids\n",
+          name_);
+  fprintf(stdout, "%s  --loop=<loop>       Number of loops\n", name_);
+  fprintf(stdout, "%s  --msleep=<msecs>    Sleep msec between loops\n", name_);
+  fprintf(stdout, "%s  --stderr            Dump stderr to stdout\n", name_);
+  fflush(nullptr);
+}
 
 void bluetooth::test::headless::GetOpt::ParseValue(
     char* optarg, std::list<std::string>& string_list) {
@@ -58,9 +73,9 @@ void bluetooth::test::headless::GetOpt::ProcessOption(int option_index,
   std::list<std::string> string_list;
   OptionType option_type = static_cast<OptionType>(option_index);
 
-  if (!optarg) return;
   switch (option_type) {
     case kOptionDevice:
+      if (!optarg) return;
       ParseValue(optarg, string_list);
       for (auto& entry : string_list) {
         if (RawAddress::IsValidAddress(entry)) {
@@ -74,11 +89,19 @@ void bluetooth::test::headless::GetOpt::ProcessOption(int option_index,
       loop_ = std::stoul(optarg, nullptr, 0);
       break;
     case kOptionUuid:
+      if (!optarg) return;
       ParseValue(optarg, string_list);
       for (auto& entry : string_list) {
         uuid_.push_back(
             bluetooth::Uuid::From16Bit(std::stoul(entry.c_str(), nullptr, 0)));
       }
+      break;
+    case kOptionMsleep:
+      if (!optarg) return;
+      msec_ = std::stoul(optarg, nullptr, 0);
+      break;
+    case kOptionStdErr:
+      close_stderr_ = false;
       break;
     default:
       fflush(nullptr);
@@ -108,20 +131,9 @@ bluetooth::test::headless::GetOpt::GetOpt(int argc, char** argv)
     }
   }
 
-  if (optind < argc) {
-    printf("non-option ARGV-elements: ");
-    while (optind < argc) printf("%s ", argv[optind++]);
-    printf("\n");
-    valid_ = false;
+  while (optind < argc) {
+    non_options_.push_back(argv[optind++]);
   }
   fflush(nullptr);
 }
 
-void bluetooth::test::headless::GetOpt::Usage() const {
-  printf("%s: Usage:\n", name_);
-  printf("%s  --device=<device,>  Comma separated list of remote devices\n",
-         name_);
-  printf("%s  --uuid=<uuid,>      Comma separated list of uuids\n", name_);
-  printf("%s  --loop=<loop>       Number of loops\n", name_);
-  fflush(nullptr);
-}
