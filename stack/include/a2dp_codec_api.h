@@ -559,6 +559,15 @@ typedef struct {
   // Decodes |p_buf| and calls |decode_callback| passed into init for the
   // decoded data.
   bool (*decode_packet)(BT_HDR* p_buf);
+
+  // Start the A2DP decoder.
+  void (*decoder_start)();
+
+  // Suspend the A2DP decoder.
+  void (*decoder_suspend)();
+
+  // A2DP decoder configuration.
+  void (*decoder_configure)(const uint8_t* p_codec_info);
 } tA2DP_DECODER_INTERFACE;
 
 // Gets the A2DP codec type.
