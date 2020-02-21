@@ -30,6 +30,7 @@ namespace classic {
 namespace internal {
 
 using l2cap::internal::testing::MockParameterProvider;
+using ::testing::_;
 using testing::MockLink;
 using ::testing::Return;
 
@@ -62,7 +63,13 @@ TEST_F(L2capClassicFixedChannelImplTest, get_device) {
   MockParameterProvider mock_parameter_provider;
   EXPECT_CALL(mock_parameter_provider, GetClassicLinkIdleDisconnectTimeout())
       .WillRepeatedly(Return(std::chrono::seconds(5)));
-  MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
+  testing::MockAclConnection* mock_acl_connection = new testing::MockAclConnection();
+  EXPECT_CALL(*mock_acl_connection, GetAddress()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, GetAddressType()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
+  EXPECT_CALL(*mock_acl_connection, UnregisterCallbacks(_)).Times(1);
+  MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider,
+                             std::unique_ptr<testing::MockAclConnection>(mock_acl_connection));
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
@@ -74,7 +81,13 @@ TEST_F(L2capClassicFixedChannelImplTest, close_triggers_callback) {
   MockParameterProvider mock_parameter_provider;
   EXPECT_CALL(mock_parameter_provider, GetClassicLinkIdleDisconnectTimeout())
       .WillRepeatedly(Return(std::chrono::seconds(5)));
-  MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
+  testing::MockAclConnection* mock_acl_connection = new testing::MockAclConnection();
+  EXPECT_CALL(*mock_acl_connection, GetAddress()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, GetAddressType()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
+  EXPECT_CALL(*mock_acl_connection, UnregisterCallbacks(_)).Times(1);
+  MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider,
+                             std::unique_ptr<testing::MockAclConnection>(mock_acl_connection));
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
@@ -98,7 +111,13 @@ TEST_F(L2capClassicFixedChannelImplTest, register_callback_after_close_should_ca
   MockParameterProvider mock_parameter_provider;
   EXPECT_CALL(mock_parameter_provider, GetClassicLinkIdleDisconnectTimeout())
       .WillRepeatedly(Return(std::chrono::seconds(5)));
-  MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
+  testing::MockAclConnection* mock_acl_connection = new testing::MockAclConnection();
+  EXPECT_CALL(*mock_acl_connection, GetAddress()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, GetAddressType()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
+  EXPECT_CALL(*mock_acl_connection, UnregisterCallbacks(_)).Times(1);
+  MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider,
+                             std::unique_ptr<testing::MockAclConnection>(mock_acl_connection));
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
@@ -119,10 +138,17 @@ TEST_F(L2capClassicFixedChannelImplTest, register_callback_after_close_should_ca
 }
 
 TEST_F(L2capClassicFixedChannelImplTest, close_twice_should_fail) {
+  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   MockParameterProvider mock_parameter_provider;
   EXPECT_CALL(mock_parameter_provider, GetClassicLinkIdleDisconnectTimeout())
       .WillRepeatedly(Return(std::chrono::seconds(5)));
-  MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
+  testing::MockAclConnection* mock_acl_connection = new testing::MockAclConnection();
+  EXPECT_CALL(*mock_acl_connection, GetAddress()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, GetAddressType()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
+  EXPECT_CALL(*mock_acl_connection, UnregisterCallbacks(_)).Times(1);
+  MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider,
+                             std::unique_ptr<testing::MockAclConnection>(mock_acl_connection));
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
@@ -140,16 +166,23 @@ TEST_F(L2capClassicFixedChannelImplTest, close_twice_should_fail) {
   EXPECT_EQ(hci::ErrorCode::REMOTE_USER_TERMINATED_CONNECTION, my_status);
 
   // 2nd OnClose() callback should fail
-  EXPECT_DEATH(fixed_channel_impl.OnClosed(hci::ErrorCode::PAGE_TIMEOUT), ".*OnClosed.*");
+  EXPECT_DEATH(fixed_channel_impl.OnClosed(hci::ErrorCode::PAGE_TIMEOUT), ".*assertion \'!closed_\' failed.*");
 
   user_handler->Clear();
 }
 
-TEST_F(L2capClassicFixedChannelImplTest, multiple_registeration_should_fail) {
+TEST_F(L2capClassicFixedChannelImplTest, multiple_registration_should_fail) {
+  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   MockParameterProvider mock_parameter_provider;
   EXPECT_CALL(mock_parameter_provider, GetClassicLinkIdleDisconnectTimeout())
       .WillRepeatedly(Return(std::chrono::seconds(5)));
-  MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
+  testing::MockAclConnection* mock_acl_connection = new testing::MockAclConnection();
+  EXPECT_CALL(*mock_acl_connection, GetAddress()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, GetAddressType()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
+  EXPECT_CALL(*mock_acl_connection, UnregisterCallbacks(_)).Times(1);
+  MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider,
+                             std::unique_ptr<testing::MockAclConnection>(mock_acl_connection));
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
@@ -163,33 +196,47 @@ TEST_F(L2capClassicFixedChannelImplTest, multiple_registeration_should_fail) {
 
   EXPECT_DEATH(fixed_channel_impl.RegisterOnCloseCallback(user_handler.get(),
                                                           common::BindOnce([](hci::ErrorCode status) { FAIL(); })),
-               ".*RegisterOnCloseCallback.*");
+               ".*OnCloseCallback can only be registered once.*");
 
   user_handler->Clear();
 }
 
-TEST_F(L2capClassicFixedChannelImplTest, call_acquire_before_registeration_should_fail) {
+TEST_F(L2capClassicFixedChannelImplTest, call_acquire_before_registration_should_fail) {
+  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   MockParameterProvider mock_parameter_provider;
   EXPECT_CALL(mock_parameter_provider, GetClassicLinkIdleDisconnectTimeout())
       .WillRepeatedly(Return(std::chrono::seconds(5)));
-  MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
+  testing::MockAclConnection* mock_acl_connection = new testing::MockAclConnection();
+  EXPECT_CALL(*mock_acl_connection, GetAddress()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, GetAddressType()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
+  EXPECT_CALL(*mock_acl_connection, UnregisterCallbacks(_)).Times(1);
+  MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider,
+                             std::unique_ptr<testing::MockAclConnection>(mock_acl_connection));
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
   FixedChannelImpl fixed_channel_impl(kSmpBrCid, &mock_classic_link, l2cap_handler_);
-  EXPECT_DEATH(fixed_channel_impl.Acquire(), ".*Acquire.*");
+  EXPECT_DEATH(fixed_channel_impl.Acquire(), ".*Must register OnCloseCallback before calling any methods.*");
 }
 
-TEST_F(L2capClassicFixedChannelImplTest, call_release_before_registeration_should_fail) {
+TEST_F(L2capClassicFixedChannelImplTest, call_release_before_registration_should_fail) {
+  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   MockParameterProvider mock_parameter_provider;
   EXPECT_CALL(mock_parameter_provider, GetClassicLinkIdleDisconnectTimeout())
       .WillRepeatedly(Return(std::chrono::seconds(5)));
-  MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
+  testing::MockAclConnection* mock_acl_connection = new testing::MockAclConnection();
+  EXPECT_CALL(*mock_acl_connection, GetAddress()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, GetAddressType()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
+  EXPECT_CALL(*mock_acl_connection, UnregisterCallbacks(_)).Times(1);
+  MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider,
+                             std::unique_ptr<testing::MockAclConnection>(mock_acl_connection));
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
   FixedChannelImpl fixed_channel_impl(kSmpBrCid, &mock_classic_link, l2cap_handler_);
-  EXPECT_DEATH(fixed_channel_impl.Release(), ".*Release.*");
+  EXPECT_DEATH(fixed_channel_impl.Release(), ".*Must register OnCloseCallback before calling any methods.*");
 }
 
 TEST_F(L2capClassicFixedChannelImplTest, test_acquire_release_channel) {
@@ -198,7 +245,13 @@ TEST_F(L2capClassicFixedChannelImplTest, test_acquire_release_channel) {
       .WillRepeatedly(Return(std::chrono::seconds(5)));
   EXPECT_CALL(mock_parameter_provider, GetClassicLinkIdleDisconnectTimeout())
       .WillRepeatedly(Return(std::chrono::seconds(5)));
-  MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
+  testing::MockAclConnection* mock_acl_connection = new testing::MockAclConnection();
+  EXPECT_CALL(*mock_acl_connection, GetAddress()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, GetAddressType()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
+  EXPECT_CALL(*mock_acl_connection, UnregisterCallbacks(_)).Times(1);
+  MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider,
+                             std::unique_ptr<testing::MockAclConnection>(mock_acl_connection));
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
@@ -227,10 +280,17 @@ TEST_F(L2capClassicFixedChannelImplTest, test_acquire_release_channel) {
 }
 
 TEST_F(L2capClassicFixedChannelImplTest, test_acquire_after_close) {
+  ::testing::FLAGS_gtest_death_test_style = "threadsafe";
   MockParameterProvider mock_parameter_provider;
   EXPECT_CALL(mock_parameter_provider, GetClassicLinkIdleDisconnectTimeout())
       .WillRepeatedly(Return(std::chrono::seconds(5)));
-  MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
+  testing::MockAclConnection* mock_acl_connection = new testing::MockAclConnection();
+  EXPECT_CALL(*mock_acl_connection, GetAddress()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, GetAddressType()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
+  EXPECT_CALL(*mock_acl_connection, UnregisterCallbacks(_)).Times(1);
+  MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider,
+                             std::unique_ptr<testing::MockAclConnection>(mock_acl_connection));
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
@@ -257,7 +317,7 @@ TEST_F(L2capClassicFixedChannelImplTest, test_acquire_after_close) {
   // Release or Acquire after closing should crash
   EXPECT_CALL(mock_classic_link, RefreshRefCount()).Times(0);
   EXPECT_FALSE(fixed_channel_impl.IsAcquired());
-  EXPECT_DEATH(fixed_channel_impl.Acquire(), ".*Acquire.*");
+  EXPECT_DEATH(fixed_channel_impl.Acquire(), ".*Must register OnCloseCallback before calling any methods.*");
 
   user_handler->Clear();
 }
