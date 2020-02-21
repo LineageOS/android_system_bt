@@ -23,7 +23,12 @@
 
 #include <base/files/file_util.h>
 
+#ifdef OS_ANDROID
+constexpr char CONFIG_FILE[] = "/data/local/tmp/config_test.conf";
+#else
 constexpr char CONFIG_FILE[] = "/tmp/config_test.conf";
+#endif
+
 constexpr char CONFIG_FILE_CONTENT[] =
     "                                                                                \n\
 first_key=value                                                                      \n\
