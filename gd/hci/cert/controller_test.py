@@ -16,7 +16,7 @@
 
 import time
 
-from acts import asserts
+from mobly import asserts
 from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
 from google.protobuf import empty_pb2 as empty_proto
 from facade import rootservice_pb2 as facade_rootservice

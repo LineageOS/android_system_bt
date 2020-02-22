@@ -17,7 +17,7 @@
 import logging
 
 from facade import rootservice_pb2_grpc as facade_rootservice_pb2_grpc
-from cert.gd_device_base import GdDeviceBase, GdDeviceConfigError, replace_vars
+from cert.gd_device_base import GdDeviceBase, replace_vars
 from hal import facade_pb2_grpc as hal_facade_pb2_grpc
 from hci.facade import facade_pb2_grpc as hci_facade_pb2_grpc
 from hci.facade import acl_manager_facade_pb2_grpc
@@ -35,9 +35,9 @@ ACTS_CONTROLLER_REFERENCE_NAME = "gd_devices"
 
 def create(configs):
     if not configs:
-        raise GdDeviceConfigError("Configuration is empty")
+        raise Exception("Configuration is empty")
     elif not isinstance(configs, list):
-        raise GdDeviceConfigError("Configuration should be a list")
+        raise Exception("Configuration should be a list")
     return get_instances_with_configs(configs)
 
 
