@@ -125,7 +125,10 @@ struct Controller::impl {
   }
 
   void NumberOfCompletedPackets(EventPacketView event) {
-    ASSERT(acl_credits_handler_ != nullptr);
+    if (acl_credits_handler_ == nullptr) {
+      LOG_WARN("Received event when AclManager is not listening");
+      return;
+    }
     auto complete_view = NumberOfCompletedPacketsView::Create(event);
     ASSERT(complete_view.IsValid());
     for (auto completed_packets : complete_view.GetCompletedPackets()) {
@@ -140,6 +143,12 @@ struct Controller::impl {
     ASSERT(acl_credits_handler_ == nullptr);
     acl_credits_callback_ = cb;
     acl_credits_handler_ = handler;
+  }
+
+  void UnregisterCompletedAclPacketsCallback() {
+    ASSERT(acl_credits_handler_ != nullptr);
+    acl_credits_callback_ = {};
+    acl_credits_handler_ = nullptr;
   }
 
   void read_local_name_complete_handler(CommandCompleteView view) {
@@ -698,6 +707,10 @@ Controller::~Controller() = default;
 void Controller::RegisterCompletedAclPacketsCallback(Callback<void(uint16_t /* handle */, uint16_t /* packets */)> cb,
                                                      Handler* handler) {
   impl_->RegisterCompletedAclPacketsCallback(cb, handler);  // TODO hsz: why here?
+}
+
+void Controller::UnregisterCompletedAclPacketsCallback() {
+  impl_->UnregisterCompletedAclPacketsCallback();  // TODO hsz: why here?
 }
 
 std::string Controller::GetControllerLocalName() const {
