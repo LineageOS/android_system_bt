@@ -75,6 +75,11 @@ class TestController : public Controller {
     acl_cb_handler_ = handler;
   }
 
+  void UnregisterCompletedAclPacketsCallback() override {
+    acl_cb_ = {};
+    acl_cb_handler_ = nullptr;
+  }
+
   uint16_t GetControllerAclPacketLength() const override {
     return acl_buffer_length_;
   }
