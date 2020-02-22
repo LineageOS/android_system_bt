@@ -90,7 +90,7 @@ LD_LIBRARY_PATH=./ ./bluetoothtbd -create-ipc-socket=fluoride
 ### Eclipse IDE Support
 
 1. Follows the Chromium project
- [Eclipse Setup Instructions](https://chromium.googlesource.com/chromium/src/+/master/docs/linux_eclipse_dev.md)
+ [Eclipse Setup Instructions](https://chromium.googlesource.com/chromium/src.git/+/master/docs/linux/eclipse_dev.md)
  until "Optional: Building inside Eclipse" section (don't do that section, we
  will set it up differently)
 
