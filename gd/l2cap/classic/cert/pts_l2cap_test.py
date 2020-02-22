@@ -76,6 +76,31 @@ class PTSL2capTest(PTSBaseTestClass):
             lambda device: device.remote.address == self.pts_address.address,
             timeout=timedelta(seconds=timeout))
 
+    def test_L2CAP_IEX_BV_01_C(self):
+        """
+        L2CAP/COS/IEX/BV-01-C [Query for 1.2 Features]
+        Verify that the IUT transmits an information request command to solicit if the remote device supports
+        Specification 1.2 features.
+        """
+        psm = 1
+        self.device_under_test.l2cap.OpenChannel(
+            l2cap_facade_pb2.OpenChannelRequest(
+                remote=self.pts_address, psm=psm))
+        time.sleep(5)
+
+    def test_L2CAP_IEX_BV_02_C(self):
+        """
+        L2CAP/COS/IEX/BV-02-C [Respond with 1.2 Features]
+        Verify that the IUT responds to an information request command soliciting for Specification 1.2
+        features.
+        """
+        psm = 1
+        retransmission_mode = l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM
+        self.device_under_test.l2cap.SetDynamicChannel(
+            l2cap_facade_pb2.SetEnableDynamicChannelRequest(
+                psm=psm, retransmission_mode=retransmission_mode))
+        time.sleep(20)
+
     def test_L2CAP_EXF_BV_01_C(self):
         """
         L2CAP/EXF/BV-01-C [Extended Features Information Response for Enhanced Retransmission Mode]
@@ -83,9 +108,6 @@ class PTSL2capTest(PTSBaseTestClass):
         correctly identifies that Enhanced Retransmission Mode is locally supported.
 
         """
-        with self._dut_connection_close_stream() as dut_connection_close_stream:
-            due_connection_close_asserts = EventAsserts(
-                dut_connection_close_stream)
         psm = 1
         retransmission_mode = l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM
         self.device_under_test.l2cap.SetDynamicChannel(
@@ -99,9 +121,6 @@ class PTSL2capTest(PTSBaseTestClass):
         Verify the IUT can format an Information Response for the information type of Extended Features that
         correctly identifies that the FCS Option is locally supported.
         """
-        with self._dut_connection_close_stream() as dut_connection_close_stream:
-            due_connection_close_asserts = EventAsserts(
-                dut_connection_close_stream)
         psm = 1
         retransmission_mode = l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM
         self.device_under_test.l2cap.SetDynamicChannel(
@@ -334,6 +353,27 @@ class PTSL2capTest(PTSBaseTestClass):
             self.device_under_test.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
             self._assert_connection_close(due_connection_close_asserts)
+
+    def test_L2CAP_ERM_BV_16_C(self):
+        """
+         L2CAP/ERM/BV-16-C [Send S-Frame [REJ]]
+        Verify the IUT can send an S-frame [REJ] after receiving out of sequence I-frames.
+        """
+        with self._dut_connection_stream() as dut_connection_stream, \
+            self._dut_connection_close_stream() as dut_connection_close_stream:
+            due_connection_asserts = EventAsserts(dut_connection_stream)
+            due_connection_close_asserts = EventAsserts(
+                dut_connection_close_stream)
+            psm = 1
+
+            self.device_under_test.l2cap.SetDynamicChannel(
+                l2cap_facade_pb2.SetEnableDynamicChannelRequest(
+                    psm=psm,
+                    retransmission_mode=l2cap_facade_pb2.
+                    RetransmissionFlowControlMode.ERTM))
+            self._assert_connection_complete(due_connection_asserts)
+            self._assert_connection_close(
+                due_connection_close_asserts, timeout=60)
 
     def test_L2CAP_ERM_BV_18_C(self):
         """

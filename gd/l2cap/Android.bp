@@ -74,13 +74,6 @@ filegroup {
 }
 
 filegroup {
-    name: "BluetoothCertSource_l2cap_layer",
-    srcs: [
-        "classic/cert/cert.cc",
-    ],
-}
-
-filegroup {
     name: "BluetoothL2capFuzzTestSources",
     srcs: [
         "internal/dynamic_channel_allocator_fuzz_test.cc",

@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Android Open Source Project
+ * Copyright 2020 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,30 +16,20 @@
 
 #pragma once
 
-#include <memory>
-
-#include <grpc++/grpc++.h>
-
-#include "cert/rootservice.grpc.pb.h"
-#include "grpc/grpc_module.h"
+#include "test/headless/get_options.h"
+#include "test/headless/headless.h"
 
 namespace bluetooth {
-namespace cert {
+namespace test {
+namespace headless {
 
-class ReadOnlyPropertyService;
-
-class ReadOnlyPropertyServerModule : public ::bluetooth::grpc::GrpcFacadeModule {
+class Name : public HeadlessTest<int> {
  public:
-  static const ModuleFactory Factory;
-
-  void ListDependencies(ModuleList* list) override;
-  void Start() override;
-  void Stop() override;
-  ::grpc::Service* GetService() const override;
-
- private:
-  std::unique_ptr<ReadOnlyPropertyService> service_;
+  Name(const bluetooth::test::headless::GetOpt& options)
+      : HeadlessTest<int>(options) {}
+  int Run() override;
 };
 
-}  // namespace cert
+}  // namespace headless
+}  // namespace test
 }  // namespace bluetooth

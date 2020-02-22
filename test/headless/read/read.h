@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Android Open Source Project
+ * Copyright 2020 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,26 +16,18 @@
 
 #pragma once
 
-#include <memory>
-#include <string>
-
-#include <grpc++/grpc++.h>
+#include "test/headless/get_options.h"
+#include "test/headless/headless.h"
 
 namespace bluetooth {
-namespace cert {
+namespace test {
+namespace headless {
 
-class GrpcRootServer {
+class Read : public HeadlessTest<int> {
  public:
-  void StartServer(const std::string& address, int grpc_root_server_port, int grpc_port);
-
-  void StopServer();
-
-  void RunGrpcLoop();
-
- private:
-  bool started_ = false;
-  std::unique_ptr<::grpc::Server> server_ = nullptr;
+  Read(const bluetooth::test::headless::GetOpt& options);
 };
 
-}  // namespace cert
+}  // namespace headless
+}  // namespace test
 }  // namespace bluetooth
