@@ -23,7 +23,7 @@ import socket
 import subprocess
 import time
 
-from acts import context, error, tracelogger
+from acts import context
 from acts.controllers.adb import AdbProxy
 
 import grpc
@@ -59,11 +59,6 @@ class GdDeviceBase:
         # logging.log_path only exists when this is used in an ACTS test run.
         self.log_path_base = context.get_current_context().get_full_output_path(
         )
-        self.log = tracelogger.TraceLogger(
-            GdDeviceBaseLoggerAdapter(logging.getLogger(), {
-                'device': label,
-                'type_identifier': type_identifier
-            }))
 
         backing_process_logpath = os.path.join(
             self.log_path_base,
@@ -146,19 +141,3 @@ class GdDeviceBase:
             future.result(timeout=WAIT_CHANNEL_READY_TIMEOUT)
         except grpc.FutureTimeoutError:
             logging.error("wait channel ready timeout")
-
-
-class GdDeviceBaseLoggerAdapter(logging.LoggerAdapter):
-
-    def process(self, msg, kwargs):
-        msg = "[%s|%s] %s" % (self.extra["type_identifier"],
-                              self.extra["device"], msg)
-        return (msg, kwargs)
-
-
-class GdDeviceConfigError(Exception):
-    """Raised when GdDevice configs are malformatted."""
-
-
-class GdDeviceError(error.ActsError):
-    """Raised when there is an error in GdDevice."""
