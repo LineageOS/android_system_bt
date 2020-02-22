@@ -225,6 +225,7 @@ struct AclManager::impl {
     hci_layer_->UnregisterEventHandler(EventCode::READ_REMOTE_EXTENDED_FEATURES_COMPLETE);
     hci_queue_end_->UnregisterDequeue();
     unregister_all_connections();
+    controller_->UnregisterCompletedAclPacketsCallback();
     acl_connections_.clear();
     hci_queue_end_ = nullptr;
     handler_ = nullptr;
