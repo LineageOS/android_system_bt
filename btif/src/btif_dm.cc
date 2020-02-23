@@ -64,6 +64,8 @@
 #include "device/include/controller.h"
 #include "device/include/interop.h"
 #include "internal_include/stack_config.h"
+#include "main/shim/btif_dm.h"
+#include "main/shim/shim.h"
 #include "osi/include/allocator.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
@@ -288,7 +290,24 @@ static void btif_dm_data_free(uint16_t event, tBTA_DM_SEC* dm_sec) {
     osi_free_and_reset((void**)&dm_sec->ble_key.p_key_value);
 }
 
-void btif_dm_init(uid_set_t* set) { uid_set = set; }
+void btif_dm_init(uid_set_t* set) {
+  uid_set = set;
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    bluetooth::shim::BTIF_DM_SetUiCallback(
+        [](RawAddress* bt_addr, bt_bdname_t* bd_name, uint32_t cod,
+           bt_ssp_variant_t pairing_variant, uint32_t pass_key) {
+          LOG(ERROR) << __func__ << ": UI Callback fired!";
+          // TODO(optedoblivion): Wire up HAL_CBACK
+          //      HAL_CBACK(bt_hal_cbacks, ssp_request_cb, &bd_addr, &bd_name,
+          //      cod,
+          //            (p_ssp_cfm_req->just_works ? BT_SSP_VARIANT_CONSENT
+          //                                       :
+          //                                       BT_SSP_VARIANT_PASSKEY_CONFIRMATION),
+          //            p_ssp_cfm_req->num_val);
+          //
+        });
+  }
+}
 
 void btif_dm_cleanup(void) {
   if (uid_set) {
