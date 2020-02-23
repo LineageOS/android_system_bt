@@ -24,26 +24,31 @@ namespace security {
 namespace pairing {
 
 void ClassicPairingHandler::NotifyUiDisplayYesNo(uint32_t numeric_value) {
+  ASSERT(user_interface_handler_ != nullptr);
   user_interface_handler_->Post(common::BindOnce(&UI::DisplayConfirmValue, common::Unretained(user_interface_),
                                                  GetRecord()->GetPseudoAddress(), device_name_, numeric_value));
 }
 
 void ClassicPairingHandler::NotifyUiDisplayYesNo() {
+  ASSERT(user_interface_handler_ != nullptr);
   user_interface_handler_->Post(common::BindOnce(&UI::DisplayYesNoDialog, common::Unretained(user_interface_),
                                                  GetRecord()->GetPseudoAddress(), device_name_));
 }
 
 void ClassicPairingHandler::NotifyUiDisplayPasskey(uint32_t passkey) {
+  ASSERT(user_interface_handler_ != nullptr);
   user_interface_handler_->Post(common::BindOnce(&UI::DisplayPasskey, common::Unretained(user_interface_),
                                                  GetRecord()->GetPseudoAddress(), device_name_, passkey));
 }
 
 void ClassicPairingHandler::NotifyUiDisplayPasskeyInput() {
+  ASSERT(user_interface_handler_ != nullptr);
   user_interface_handler_->Post(common::BindOnce(&UI::DisplayEnterPasskeyDialog, common::Unretained(user_interface_),
                                                  GetRecord()->GetPseudoAddress(), device_name_));
 }
 
 void ClassicPairingHandler::NotifyUiDisplayCancel() {
+  ASSERT(user_interface_handler_ != nullptr);
   user_interface_handler_->Post(
       common::BindOnce(&UI::Cancel, common::Unretained(user_interface_), GetRecord()->GetPseudoAddress()));
 }
