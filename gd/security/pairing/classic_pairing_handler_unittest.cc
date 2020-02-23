@@ -102,13 +102,6 @@ class SecurityManagerChannelCallback : public ISecurityManagerChannelListener {
 
 static void pairing_complete_callback(bluetooth::hci::Address address, PairingResultOrFailure status) {
   ASSERT(std::holds_alternative<PairingResult>(status));
-  // auto result = std::get<PairingResult>(status);
-  //  if (std::holds_alternative<PairingResult>(status)) {
-  //    auto result = status::get<PairingResult>(status);
-  //  }
-  //  if (std::holds_alternative<PairingFailure>(status)) {
-  //    auto failure = status::get<PairingFailure>(status);
-  //  }
 }
 
 class ClassicPairingHandlerTest : public ::testing::Test {
