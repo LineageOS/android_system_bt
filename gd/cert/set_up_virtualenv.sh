@@ -149,11 +149,12 @@ fi
 pushd .
 cd $ANDROID_BUILD_TOP/system/bt/gd
 virtualenv -p python3.8 gd_cert_venv
-popd
 if [[ $? -ne 0 ]] ; then
     echo "Error setting up virtualenv"
+    popd
     return 1
 fi
+popd
 
 # Set up artifacts
 pushd .
@@ -184,12 +185,13 @@ popd
 # Activate virtualenv
 pushd .
 source $ANDROID_BUILD_TOP/system/bt/gd/gd_cert_venv/bin/activate
-popd
 if [[ $? -ne 0 ]] ; then
     echo "Failed to activate virtualenv"
     deactivate
+    popd
     return 1
 fi
+popd
 if [[ -z "$ANDROID_BUILD_TOP" ]] ; then
     echo "Failed to inherit Android build environment"
     deactivate
