@@ -461,7 +461,10 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_passkey_entry) {
   slave_setup.myPairingCapabilities.oob_data_flag = OobDataFlag::NOT_PRESENT;
   slave_setup.myPairingCapabilities.auth_req = AuthReqMaskBondingFlag | AuthReqMaskMitm | AuthReqMaskSc;
 
-  uint32_t passkey = std::numeric_limits<uint32_t>::max();
+  // In this test either master or slave display the UI prompt first. This variable makes sure both prompts are
+  // displayed before passkey is confirmed. Since both UI handlers are same thread, it's safe.
+  int ui_prompts_count = 0;
+  uint32_t passkey_ = std::numeric_limits<uint32_t>::max();
   {
     std::unique_lock<std::mutex> lock(handlers_initialization_guard);
     pairing_handler_a = std::make_unique<PairingHandlerLe>(PairingHandlerLe::PHASE1, master_setup);
@@ -474,16 +477,21 @@ TEST_F(PairingHandlerPairTest, test_secure_connections_passkey_entry) {
 
     RecordPairingPromptHandling(slave_user_interface, &pairing_handler_b);
 
-    EXPECT_CALL(slave_user_interface, DisplayPasskey(_, _, _)).WillOnce(SaveArg<2>(&passkey));
+    EXPECT_CALL(slave_user_interface, DisplayPasskey(_, _, _))
+        .WillOnce(Invoke([&](const bluetooth::hci::AddressWithType& address, std::string name, uint32_t passkey) {
+          passkey_ = passkey;
+          ui_prompts_count++;
+          if (ui_prompts_count == 2) {
+            pairing_handler_a->OnUiAction(PairingEvent::PASSKEY, passkey);
+          }
+        }));
+
     EXPECT_CALL(master_user_interface, DisplayEnterPasskeyDialog(_, _))
         .WillOnce(Invoke([&](const bluetooth::hci::AddressWithType& address, std::string name) {
-          LOG_INFO("Passkey prompt displayed entering passkey: %08x", passkey);
-          std::this_thread::sleep_for(1ms);
-
-          // handle case where prompts are displayed in different order in the test!
-          if (passkey == std::numeric_limits<uint32_t>::max()) FAIL();
-
-          pairing_handler_a->OnUiAction(PairingEvent::PASSKEY, passkey);
+          ui_prompts_count++;
+          if (ui_prompts_count == 2) {
+            pairing_handler_a->OnUiAction(PairingEvent::PASSKEY, passkey_);
+          }
         }));
 
     pairing_handler_b = std::make_unique<PairingHandlerLe>(PairingHandlerLe::PHASE1, slave_setup);
