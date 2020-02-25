@@ -64,6 +64,7 @@ void Link::OnAclDisconnected(hci::ErrorCode status) {
     auto entry = local_cid_to_pending_dynamic_channel_connection_map_.begin();
     NotifyChannelFail(entry->first, result);
   }
+  acl_connection_->Finish();
 }
 
 void Link::Disconnect() {
