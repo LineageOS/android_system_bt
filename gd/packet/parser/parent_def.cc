@@ -241,7 +241,7 @@ void ParentDef::GenMembers(std::ostream& s) const {
   // Add the parameter list.
   for (int i = 0; i < fields_.size(); i++) {
     if (fields_[i]->GenBuilderMember(s)) {
-      s << "_;";
+      s << "_{};";
     }
   }
 }
