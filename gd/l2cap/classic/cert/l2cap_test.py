@@ -140,42 +140,10 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         config_request_l2cap = l2cap_packets.BasicFrameBuilder(
             1, config_request)
 
-        config_packet = bytearray([
-            0x1a,
-            0x00,
-            0x01,
-            0x00,
-            0x04,
-            sid + 1,
-            0x16,
-            0x00,
-            dcid & 0xff,
-            dcid >> 8,
-            0x00,
-            0x00,
-            0x01,
-            0x02,
-            0xa0,
-            0x02,  # MTU
-            0x04,
-            0x09,
-            0x03,
-            self.ertm_tx_window_size,
-            self.ertm_max_transmit,
-            0xd0,
-            0x07,
-            0xe0,
-            0x2e,
-            0xf2,
-            0x03,  # ERTM
-            0x05,
-            0x01,
-            0x00  # FCS
-        ])
-
         self.cert_device.hci_acl_manager.SendAclData(
             acl_manager_facade.AclData(
-                handle=self.cert_acl_handle, payload=bytes(config_packet)))
+                handle=self.cert_acl_handle,
+                payload=bytes(config_request_l2cap.Serialize())))
         return True
 
     def _on_connection_response_use_ertm_and_fcs(self, l2cap_control_view):
@@ -196,7 +164,10 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         ertm_option.monitor_time_out = 12000
         ertm_option.maximum_pdu_size = 1010
 
-        options = [ertm_option]
+        fcs_option = l2cap_packets.FrameCheckSequenceOption()
+        fcs_option.fcs_type = l2cap_packets.FcsType.DEFAULT
+
+        options = [ertm_option, fcs_option]
 
         config_request = l2cap_packets.ConfigurationRequestBuilder(
             sid + 1, dcid, l2cap_packets.Continuation.END, options)
@@ -204,42 +175,10 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         config_request_l2cap = l2cap_packets.BasicFrameBuilder(
             1, config_request)
 
-        config_packet = bytearray([
-            0x1a,
-            0x00,
-            0x01,
-            0x00,
-            0x04,
-            sid + 1,
-            0x16,
-            0x00,
-            dcid & 0xff,
-            dcid >> 8,
-            0x00,
-            0x00,
-            0x01,
-            0x02,
-            0xa0,
-            0x02,  # MTU
-            0x04,
-            0x09,
-            0x03,
-            self.ertm_tx_window_size,
-            self.ertm_max_transmit,
-            0xd0,
-            0x07,
-            0xe0,
-            0x2e,
-            0xf2,
-            0x03,  # ERTM
-            0x05,
-            0x01,
-            0x01  # FCS
-        ])
-
         self.cert_device.hci_acl_manager.SendAclData(
             acl_manager_facade.AclData(
-                handle=self.cert_acl_handle, payload=bytes(config_packet)))
+                handle=self.cert_acl_handle,
+                payload=bytes(config_request_l2cap.Serialize())))
         return True
 
     def _on_configuration_request_default(self, l2cap_control_view):
@@ -1986,7 +1925,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
                 lambda packet: self.get_tx_seq_from_ertm_i_frame(scid, packet) == 1
             )
 
-    def test_initiated_configurtion_request_ertm(self):
+    def test_initiated_configuration_request_ertm(self):
         """
         L2CAP/CMC/BV-01-C [IUT Initiated Configuration of Enhanced Retransmission Mode]
         Verify the IUT can send a Configuration Request command containing the F&EC option that specifies
