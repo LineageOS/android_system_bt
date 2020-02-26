@@ -361,18 +361,40 @@ void ClassicSignallingManager::OnConfigurationResponse(SignalId signal_id, Cid c
     return;
   }
 
-  if (result == ConfigurationResponseResult::PENDING) {
-    alarm_.Schedule(common::BindOnce(&ClassicSignallingManager::on_command_timeout, common::Unretained(this)),
-                    kTimeout);
-    return;
-  }
+  switch (result) {
+    default:
+    case ConfigurationResponseResult::REJECTED:
+    case ConfigurationResponseResult::UNKNOWN_OPTIONS:
+    case ConfigurationResponseResult::FLOW_SPEC_REJECTED:
+      LOG_WARN("Configuration response not SUCCESS: %s", ConfigurationResponseResultText(result).c_str());
+      handle_send_next_command();
+      return;
 
-  if (result != ConfigurationResponseResult::SUCCESS) {
-    LOG_WARN("Configuration response not SUCCESS");
-    handle_send_next_command();
-    return;
-  }
+    case ConfigurationResponseResult::PENDING:
+      alarm_.Schedule(common::BindOnce(&ClassicSignallingManager::on_command_timeout, common::Unretained(this)),
+                      kTimeout);
+      return;
 
+    case ConfigurationResponseResult::UNACCEPTABLE_PARAMETERS:
+      for (auto& option : options) {
+        if (option->type_ == ConfigurationOptionType::RETRANSMISSION_AND_FLOW_CONTROL) {
+          auto mtu_configuration = std::make_unique<MtuConfigurationOption>();
+          mtu_configuration->mtu_ = channel_configuration_[cid].incoming_mtu_;
+
+          std::vector<std::unique_ptr<ConfigurationOption>> config;
+          config.emplace_back(std::move(mtu_configuration));
+          alarm_.Cancel();
+          command_just_sent_.signal_id_ = kInvalidSignalId;
+          SendConfigurationRequest(channel->GetRemoteCid(), std::move(config));
+          return;
+        }
+      }
+      handle_send_next_command();
+      return;
+
+    case ConfigurationResponseResult::SUCCESS:
+      break;
+  }
   auto& configuration_state = channel_configuration_[channel->GetCid()];
 
   for (auto& option : options) {
