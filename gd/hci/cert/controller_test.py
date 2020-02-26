@@ -16,8 +16,8 @@
 
 import time
 
-from mobly.asserts import assert_true
 from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
+from cert.truth import assertThat
 from google.protobuf import empty_pb2 as empty_proto
 from facade import rootservice_pb2 as facade_rootservice
 from hci.facade import controller_facade_pb2 as controller_facade
@@ -32,10 +32,8 @@ class ControllerTest(GdFacadeOnlyBaseTestClass):
     def test_get_addresses(self):
         cert_address = self.cert.hci_controller.GetMacAddressSimple()
         dut_address = self.dut.hci_controller.GetMacAddressSimple()
-        assert_true(
-            cert_address != dut_address,
-            msg="Expected cert and dut address to be different %s" %
-            cert_address)
+
+        assertThat(cert_address).isNotEqualTo(dut_address)
         time.sleep(1)  # This shouldn't be needed b/149120542
 
     def test_get_local_extended_features(self):
@@ -47,10 +45,9 @@ class ControllerTest(GdFacadeOnlyBaseTestClass):
         request0.page_number = 0
         dut_feature_response0 = self.dut.hci_controller.GetLocalExtendedFeatures(
             request0)
-        assert_true(
-            dut_feature_response1.page != dut_feature_response0.page,
-            msg="Expected cert dut feature pages to be different %d" %
-            dut_feature_response1.page)
+
+        assertThat(dut_feature_response1.page).isNotEqualTo(
+            dut_feature_response0.page)
 
     def test_write_local_name(self):
         self.dut.hci_controller.WriteLocalName(
@@ -59,8 +56,6 @@ class ControllerTest(GdFacadeOnlyBaseTestClass):
             controller_facade.NameMsg(name=b'ImTheCert'))
         cert_name = self.cert.hci_controller.GetLocalNameSimple()
         dut_name = self.dut.hci_controller.GetLocalNameSimple()
-        assert_true(
-            dut_name == b'ImTheDUT', msg="unexpected dut name %s" % dut_name)
-        assert_true(
-            cert_name == b'ImTheCert',
-            msg="unexpected cert name %s" % cert_name)
+
+        assertThat(dut_name).isEqualTo(b'ImTheDUT')
+        assertThat(cert_name).isEqualTo(b'ImTheCert')
