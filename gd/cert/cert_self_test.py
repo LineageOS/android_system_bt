@@ -222,11 +222,12 @@ class CertSelfTest(GdFacadeOnlyBaseTestClass):
             0xc1d,  # Channel ID
             l2cap_packets.Continuation.END,
             [mtu_opt, fcs_opt])
-        request.Serialize()
+        request_b_frame = l2cap_packets.BasicFrameBuilder(0x01, request)
         handle = 123
         wrapped = hci_packets.AclPacketBuilder(
             handle,
             hci_packets.PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
-            hci_packets.BroadcastFlag.POINT_TO_POINT, request)
+            hci_packets.BroadcastFlag.POINT_TO_POINT, request_b_frame)
+        # Size is ACL (4) + L2CAP (4) + Configure (8) + MTU (4) + FCS (3)
         asserts.assert_true(
-            len(wrapped.Serialize()) == 16, "Packet serialized incorrectly")
+            len(wrapped.Serialize()) == 23, "Packet serialized incorrectly")
