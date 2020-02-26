@@ -61,8 +61,8 @@ class GdFacadeOnlyBaseTestClass(BaseTestClass):
         self.register_controller(
             importlib.import_module('cert.gd_device'), builtin=True)
 
-        self.device_under_test = self.gd_devices[1]
-        self.cert_device = self.gd_devices[0]
+        self.dut = self.gd_devices[1]
+        self.cert = self.gd_devices[0]
 
     def teardown_class(self):
         if self.rootcanal_running:
@@ -76,20 +76,18 @@ class GdFacadeOnlyBaseTestClass(BaseTestClass):
                 return False
 
     def setup_test(self):
-        self.device_under_test.rootservice.StartStack(
+        self.dut.rootservice.StartStack(
             facade_rootservice.StartStackRequest(
                 module_under_test=facade_rootservice.BluetoothModule.Value(
                     self.dut_module),))
-        self.cert_device.rootservice.StartStack(
+        self.cert.rootservice.StartStack(
             facade_rootservice.StartStackRequest(
                 module_under_test=facade_rootservice.BluetoothModule.Value(
                     self.cert_module),))
 
-        self.device_under_test.wait_channel_ready()
-        self.cert_device.wait_channel_ready()
+        self.dut.wait_channel_ready()
+        self.cert.wait_channel_ready()
 
     def teardown_test(self):
-        self.device_under_test.rootservice.StopStack(
-            facade_rootservice.StopStackRequest())
-        self.cert_device.rootservice.StopStack(
-            facade_rootservice.StopStackRequest())
+        self.dut.rootservice.StopStack(facade_rootservice.StopStackRequest())
+        self.cert.rootservice.StopStack(facade_rootservice.StopStackRequest())

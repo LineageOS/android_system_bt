@@ -30,9 +30,9 @@ class ControllerTest(GdFacadeOnlyBaseTestClass):
             dut_module='HCI_INTERFACES', cert_module='HCI_INTERFACES')
 
     def test_get_addresses(self):
-        cert_address_response = self.cert_device.hci_controller.GetMacAddress(
+        cert_address_response = self.cert.hci_controller.GetMacAddress(
             empty_proto.Empty())
-        dut_address_response = self.device_under_test.hci_controller.GetMacAddress(
+        dut_address_response = self.dut.hci_controller.GetMacAddress(
             empty_proto.Empty())
         asserts.assert_true(
             cert_address_response.address != dut_address_response.address,
@@ -43,11 +43,11 @@ class ControllerTest(GdFacadeOnlyBaseTestClass):
     def test_get_local_extended_features(self):
         request = controller_facade.PageNumberMsg()
         request.page_number = 1
-        dut_feature_response1 = self.device_under_test.hci_controller.GetLocalExtendedFeatures(
+        dut_feature_response1 = self.dut.hci_controller.GetLocalExtendedFeatures(
             request)
         request0 = controller_facade.PageNumberMsg()
         request0.page_number = 0
-        dut_feature_response0 = self.device_under_test.hci_controller.GetLocalExtendedFeatures(
+        dut_feature_response0 = self.dut.hci_controller.GetLocalExtendedFeatures(
             request0)
         asserts.assert_true(
             dut_feature_response1.page != dut_feature_response0.page,
@@ -55,13 +55,13 @@ class ControllerTest(GdFacadeOnlyBaseTestClass):
             dut_feature_response1.page)
 
     def test_write_local_name(self):
-        self.device_under_test.hci_controller.WriteLocalName(
+        self.dut.hci_controller.WriteLocalName(
             controller_facade.NameMsg(name=b'ImTheDUT'))
-        self.cert_device.hci_controller.WriteLocalName(
+        self.cert.hci_controller.WriteLocalName(
             controller_facade.NameMsg(name=b'ImTheCert'))
-        cert_name_msg = self.cert_device.hci_controller.GetLocalName(
+        cert_name_msg = self.cert.hci_controller.GetLocalName(
             empty_proto.Empty()).name
-        dut_name_msg = self.device_under_test.hci_controller.GetLocalName(
+        dut_name_msg = self.dut.hci_controller.GetLocalName(
             empty_proto.Empty()).name
         asserts.assert_true(
             dut_name_msg == b'ImTheDUT',

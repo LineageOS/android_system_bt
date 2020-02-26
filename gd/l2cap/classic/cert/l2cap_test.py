@@ -41,17 +41,16 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
     def setup_test(self):
         super().setup_test()
 
-        self.device_under_test.address = self.device_under_test.hci_controller.GetMacAddress(
+        self.dut.address = self.dut.hci_controller.GetMacAddress(
             empty_proto.Empty()).address
-        cert_address = self.cert_device.controller_read_only_property.ReadLocalAddress(
+        cert_address = self.cert.controller_read_only_property.ReadLocalAddress(
             empty_proto.Empty()).address
-        self.cert_device.address = cert_address
-        self.dut_address = common_pb2.BluetoothAddress(
-            address=self.device_under_test.address)
+        self.cert.address = cert_address
+        self.dut_address = common_pb2.BluetoothAddress(address=self.dut.address)
         self.cert_address = common_pb2.BluetoothAddress(
-            address=self.cert_device.address)
+            address=self.cert.address)
 
-        self.device_under_test.neighbor.EnablePageScan(
+        self.dut.neighbor.EnablePageScan(
             neighbor_facade.EnableMsg(enabled=True))
 
         self.cert_acl_handle = 0
@@ -83,7 +82,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             NO_FURTHER_INFORMATION_AVAILABLE)
         connection_response_l2cap = l2cap_packets.BasicFrameBuilder(
             1, connection_response)
-        self.cert_device.hci_acl_manager.SendAclData(
+        self.cert.hci_acl_manager.SendAclData(
             acl_manager_facade.AclData(
                 handle=self.cert_acl_handle,
                 payload=bytes(connection_response_l2cap.Serialize())))
@@ -101,7 +100,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             sid + 1, dcid, l2cap_packets.Continuation.END, [])
         config_request_l2cap = l2cap_packets.BasicFrameBuilder(
             1, config_request)
-        self.cert_device.hci_acl_manager.SendAclData(
+        self.cert.hci_acl_manager.SendAclData(
             acl_manager_facade.AclData(
                 handle=self.cert_acl_handle,
                 payload=bytes(config_request_l2cap.Serialize())))
@@ -133,7 +132,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         config_request_l2cap = l2cap_packets.BasicFrameBuilder(
             1, config_request)
 
-        self.cert_device.hci_acl_manager.SendAclData(
+        self.cert.hci_acl_manager.SendAclData(
             acl_manager_facade.AclData(
                 handle=self.cert_acl_handle,
                 payload=bytes(config_request_l2cap.Serialize())))
@@ -168,7 +167,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         config_request_l2cap = l2cap_packets.BasicFrameBuilder(
             1, config_request)
 
-        self.cert_device.hci_acl_manager.SendAclData(
+        self.cert.hci_acl_manager.SendAclData(
             acl_manager_facade.AclData(
                 handle=self.cert_acl_handle,
                 payload=bytes(config_request_l2cap.Serialize())))
@@ -201,7 +200,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             sid, dcid, scid)
         disconnection_response_l2cap = l2cap_packets.BasicFrameBuilder(
             1, disconnection_response)
-        self.cert_device.hci_acl_manager.SendAclData(
+        self.cert.hci_acl_manager.SendAclData(
             acl_manager_facade.AclData(
                 handle=self.cert_acl_handle,
                 payload=bytes(disconnection_response_l2cap.Serialize())))
@@ -219,7 +218,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             response = l2cap_packets.InformationResponseConnectionlessMtuBuilder(
                 sid, l2cap_packets.InformationRequestResult.SUCCESS, 100)
             response_l2cap = l2cap_packets.BasicFrameBuilder(1, response)
-            self.cert_device.hci_acl_manager.SendAclData(
+            self.cert.hci_acl_manager.SendAclData(
                 acl_manager_facade.AclData(
                     handle=self.cert_acl_handle,
                     payload=bytes(response_l2cap.Serialize())))
@@ -229,7 +228,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
                 sid, l2cap_packets.InformationRequestResult.SUCCESS, 0, 0, 0, 1,
                 0, 1, 0, 0, 0, 0)
             response_l2cap = l2cap_packets.BasicFrameBuilder(1, response)
-            self.cert_device.hci_acl_manager.SendAclData(
+            self.cert.hci_acl_manager.SendAclData(
                 acl_manager_facade.AclData(
                     handle=self.cert_acl_handle,
                     payload=bytes(response_l2cap.Serialize())))
@@ -238,7 +237,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             response = l2cap_packets.InformationResponseFixedChannelsBuilder(
                 sid, l2cap_packets.InformationRequestResult.SUCCESS, 2)
             response_l2cap = l2cap_packets.BasicFrameBuilder(1, response)
-            self.cert_device.hci_acl_manager.SendAclData(
+            self.cert.hci_acl_manager.SendAclData(
                 acl_manager_facade.AclData(
                     handle=self.cert_acl_handle,
                     payload=bytes(response_l2cap.Serialize())))
@@ -351,7 +350,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         ) == l2cap_packets.CommandCode.DISCONNECTION_REQUEST
 
     def cert_send_b_frame(self, b_frame):
-        self.cert_device.hci_acl_manager.SendAclData(
+        self.cert.hci_acl_manager.SendAclData(
             acl_manager_facade.AclData(
                 handle=self.cert_acl_handle,
                 payload=bytes(b_frame.Serialize())))
@@ -430,11 +429,11 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
     def _setup_link_from_cert(self):
 
-        self.device_under_test.neighbor.EnablePageScan(
+        self.dut.neighbor.EnablePageScan(
             neighbor_facade.EnableMsg(enabled=True))
 
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.CreateConnection(
+                self.cert.hci_acl_manager.CreateConnection(
                     acl_manager_facade.ConnectionMsg(
                         address_type=int(
                             hci_packets.AddressType.PUBLIC_DEVICE_ADDRESS),
@@ -473,7 +472,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.BASIC):
         cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
 
-        self.device_under_test.l2cap.SetDynamicChannel(
+        self.dut.l2cap.SetDynamicChannel(
             l2cap_facade_pb2.SetEnableDynamicChannelRequest(
                 psm=psm, retransmission_mode=mode))
         open_channel = l2cap_packets.ConnectionRequestBuilder(
@@ -502,7 +501,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
     def test_connect_dynamic_channel_and_send_data(self):
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -510,7 +509,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             scid = 0x41
             self._open_channel(cert_acl_data_stream, 1, cert_acl_handle, scid,
                                psm)
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=0x33, payload=b'abc'))
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_asserts.assert_event_occurs(
@@ -518,14 +517,14 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
     def test_fixed_channel(self):
         cert_acl_handle = self._setup_link_from_cert()
-        self.device_under_test.l2cap.RegisterChannel(
+        self.dut.l2cap.RegisterChannel(
             l2cap_facade_pb2.RegisterChannelRequest(channel=2))
         asserts.skip("FIXME: Not working")
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
-            self.device_under_test.l2cap.SendL2capPacket(
+            self.dut.l2cap.SendL2capPacket(
                 l2cap_facade_pb2.L2capPacket(channel=2, payload=b"123"))
             cert_acl_data_asserts.assert_event_occurs(
                 lambda packet: b'123' in packet.payload)
@@ -533,7 +532,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
     def test_open_two_channels(self):
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_stream.register_callback(self._handle_control_packet)
             self._open_channel(cert_acl_data_stream, 1, cert_acl_handle, 0x41,
@@ -544,7 +543,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
     def test_connect_and_send_data_ertm_no_segmentation(self):
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -568,7 +567,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
             dcid = self.scid_to_dcid[scid]
 
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(
                     psm=psm, payload=b'abc' * 34))
             cert_acl_data_asserts.assert_event_occurs(
@@ -589,13 +588,13 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         cert_acl_handle = self._setup_link_from_cert()
 
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
             psm = 0x33
             # TODO: Use another test case
-            self.device_under_test.l2cap.OpenChannel(
+            self.dut.l2cap.OpenChannel(
                 l2cap_facade_pb2.OpenChannelRequest(
                     remote=self.cert_address, psm=psm))
             cert_acl_data_asserts.assert_event_occurs(
@@ -608,7 +607,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         cert_acl_handle = self._setup_link_from_cert()
 
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -651,7 +650,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         cert_acl_handle = self._setup_link_from_cert()
 
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             scid = 0x41
@@ -686,7 +685,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -707,13 +706,13 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
 
             invalid_command_packet = b"\x04\x00\x01\x00\xff\x01\x00\x00"
-            self.cert_device.hci_acl_manager.SendAclData(
+            self.cert.hci_acl_manager.SendAclData(
                 acl_manager_facade.AclData(
                     handle=cert_acl_handle,
                     payload=bytes(invalid_command_packet)))
@@ -737,7 +736,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_asserts_alt = EventAsserts(cert_acl_data_stream)
@@ -795,7 +794,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -838,7 +837,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -881,7 +880,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -903,7 +902,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             cert_acl_data_asserts.assert_event_occurs(
                 self.is_correct_configuration_request)
 
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
             cert_acl_data_asserts.assert_event_occurs(
                 lambda packet: b"abc" in packet.payload)
@@ -917,7 +916,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -938,7 +937,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             cert_acl_data_asserts.assert_event_occurs(
                 self.is_correct_configuration_request)
 
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
             cert_acl_data_asserts.assert_event_occurs(
                 lambda packet: b"abc\x4f\xa3" in packet.payload
@@ -951,7 +950,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -972,7 +971,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             cert_acl_data_asserts.assert_event_occurs(
                 self.is_correct_configuration_request)
 
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
             cert_acl_data_asserts.assert_event_occurs(
                 lambda packet: b"abc\x4f\xa3" in packet.payload
@@ -984,7 +983,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -1008,7 +1007,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             cert_acl_data_asserts.assert_event_occurs(
                 self.is_correct_configuration_request)
 
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
             cert_acl_data_asserts.assert_event_occurs(
                 lambda packet: b"abc" in packet.payload)
@@ -1022,7 +1021,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
                 SAMPLE_PACKET)
             self.cert_send_b_frame(i_frame)
 
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
             cert_acl_data_asserts.assert_event_occurs(
                 lambda packet: b"abc" in packet.payload)
@@ -1033,7 +1032,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
                 SAMPLE_PACKET)
             self.cert_send_b_frame(i_frame)
 
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
             cert_acl_data_asserts.assert_event_occurs(
                 lambda packet: b"abc" in packet.payload)
@@ -1051,7 +1050,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -1118,7 +1117,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -1166,7 +1165,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.ertm_tx_window_size = 1
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -1190,9 +1189,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             cert_acl_data_asserts.assert_event_occurs(
                 self.is_correct_configuration_request)
 
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'def'))
 
             # TODO: Besides checking TxSeq, we also want to check payload, once we can get it from packet view
@@ -1221,7 +1220,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.ertm_tx_window_size = 1
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -1245,9 +1244,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             cert_acl_data_asserts.assert_event_occurs(
                 self.is_correct_configuration_request)
 
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'def'))
 
             cert_acl_data_asserts.assert_event_occurs(
@@ -1281,7 +1280,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -1303,7 +1302,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             cert_acl_data_asserts.assert_event_occurs(
                 self.is_correct_configuration_request)
 
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
             # TODO: Always use their retransmission timeout value
             time.sleep(2)
@@ -1319,7 +1318,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -1360,7 +1359,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         asserts.skip("Need to configure DUT to have a shorter timer")
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -1384,7 +1383,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
             dcid = self.scid_to_dcid[scid]
 
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
 
             # Retransmission timer = 2, 20 * monitor timer = 360, so total timeout is 362
@@ -1400,7 +1399,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -1424,7 +1423,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
             dcid = self.scid_to_dcid[scid]
 
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
 
             cert_acl_data_asserts.assert_event_occurs(
@@ -1449,7 +1448,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.ertm_max_transmit = 2
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -1473,9 +1472,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
             dcid = self.scid_to_dcid[scid]
 
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
             for i in range(2):
                 cert_acl_data_asserts.assert_event_occurs(
@@ -1500,7 +1499,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -1524,7 +1523,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
             dcid = self.scid_to_dcid[scid]
 
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
 
             # TODO: Always use their retransmission timeout value
@@ -1551,7 +1550,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -1575,7 +1574,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
             dcid = self.scid_to_dcid[scid]
 
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
 
             # TODO: Always use their retransmission timeout value
@@ -1602,7 +1601,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -1626,7 +1625,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
             dcid = self.scid_to_dcid[scid]
 
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=0x33, payload=b'abc'))
 
             # TODO: Always use their retransmission timeout value
@@ -1654,7 +1653,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.ertm_tx_window_size = 5
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -1720,7 +1719,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -1744,9 +1743,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
             dcid = self.scid_to_dcid[scid]
 
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
             cert_acl_data_asserts.assert_event_occurs(
                 lambda packet: self.get_tx_seq_from_ertm_i_frame(scid, packet) == 0,
@@ -1785,7 +1784,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -1809,9 +1808,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
             dcid = self.scid_to_dcid[scid]
 
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
             cert_acl_data_asserts.assert_event_occurs(
                 lambda packet: self.get_tx_seq_from_ertm_i_frame(scid, packet) == 0,
@@ -1853,7 +1852,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -1877,9 +1876,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
             dcid = self.scid_to_dcid[scid]
 
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
-            self.device_under_test.l2cap.SendDynamicChannelPacket(
+            self.dut.l2cap.SendDynamicChannelPacket(
                 l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
             cert_acl_data_asserts.assert_event_occurs(
                 lambda packet: self.get_tx_seq_from_ertm_i_frame(scid, packet) == 0,
@@ -1920,7 +1919,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -1950,14 +1949,14 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
             psm = 1
             scid = 0x0101
             self.retransmission_mode = l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM
-            self.device_under_test.l2cap.SetDynamicChannel(
+            self.dut.l2cap.SetDynamicChannel(
                 l2cap_facade_pb2.SetEnableDynamicChannelRequest(
                     psm=psm, retransmission_mode=self.retransmission_mode))
 
