@@ -543,6 +543,26 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             cert_acl_data_asserts.assert_event_occurs(
                 lambda packet: b'123' in packet.payload)
 
+    def test_receive_packet_from_unknown_channel(self):
+        cert_acl_handle = self._setup_link_from_cert()
+        with EventCallbackStream(
+                self.cert_device.hci_acl_manager.FetchAclData(
+                    empty_proto.Empty())) as cert_acl_data_stream:
+            cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
+            cert_acl_data_stream.register_callback(self._handle_control_packet)
+            psm = 0x33
+            scid = 0x41
+            self._open_channel(cert_acl_data_stream, 1, cert_acl_handle, scid,
+                               psm)
+            i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
+                0x99, 0, l2cap_packets.Final.NOT_SET, 1,
+                l2cap_packets.SegmentationAndReassembly.UNSEGMENTED,
+                SAMPLE_PACKET)
+            self.cert_send_b_frame(i_frame)
+            cert_acl_data_asserts.assert_none_matching(
+                lambda packet: self.get_req_seq_from_ertm_s_frame(scid, packet) == 4,
+                timedelta(seconds=1))
+
     def test_open_two_channels(self):
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
