@@ -28,6 +28,8 @@ class BodyField : public PacketField {
 
   virtual const std::string& GetFieldType() const override;
 
+  void SetSizeField(const SizeField* size_field);
+
   virtual Size GetSize() const override;
 
   virtual std::string GetDataType() const override;
@@ -47,4 +49,7 @@ class BodyField : public PacketField {
   virtual void GenInserter(std::ostream&) const override;
 
   virtual void GenValidator(std::ostream&) const override;
+
+  // Body fields can only be dynamically sized.
+  const SizeField* size_field_{nullptr};
 };
