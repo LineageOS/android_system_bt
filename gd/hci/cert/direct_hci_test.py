@@ -32,28 +32,15 @@ import bluetooth_packets_python3 as bt_packets
 
 class DirectHciTest(GdFacadeOnlyBaseTestClass):
 
-    def setup_test(self):
-        self.device_under_test.rootservice.StartStack(
-            facade_rootservice.StartStackRequest(
-                module_under_test=facade_rootservice.BluetoothModule.Value(
-                    'HCI'),))
-        self.cert_device.rootservice.StartStack(
-            facade_rootservice.StartStackRequest(
-                module_under_test=facade_rootservice.BluetoothModule.Value(
-                    'HAL'),))
+    def setup_class(self):
+        super().setup_class(dut_module='HCI', cert_module='HAL')
 
-        self.device_under_test.wait_channel_ready()
-        self.cert_device.wait_channel_ready()
+    def setup_test(self):
+        super().setup_test()
 
         self.cert_device.hal.SendHciCommand(
             hal_facade.HciCommandPacket(
                 payload=bytes(hci_packets.ResetBuilder().Serialize())))
-
-    def teardown_test(self):
-        self.device_under_test.rootservice.StopStack(
-            facade_rootservice.StopStackRequest())
-        self.cert_device.rootservice.StopStack(
-            facade_rootservice.StopStackRequest())
 
     def register_for_event(self, event_code):
         msg = hci_facade.EventCodeMsg(code=int(event_code))

@@ -28,6 +28,15 @@ import bluetooth_packets_python3 as bt_packets
 
 class SimpleHalTest(GdFacadeOnlyBaseTestClass):
 
+    def setup_class(self):
+        super().setup_class(dut_module='HAL', cert_module='HAL')
+
+    def setup_test(self):
+        super().setup_test()
+
+        self.send_dut_hci_command(hci_packets.ResetBuilder())
+        self.send_cert_hci_command(hci_packets.ResetBuilder())
+
     def send_cert_hci_command(self, command):
         self.cert_device.hal.SendHciCommand(
             hal_facade_pb2.HciCommandPacket(payload=bytes(command.Serialize())))
@@ -59,28 +68,6 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
                              list(acl))
         self.device_under_test.hal.SendHciAcl(
             hal_facade_pb2.HciAclPacket(payload=concatenated))
-
-    def setup_test(self):
-        self.device_under_test.rootservice.StartStack(
-            facade_rootservice_pb2.StartStackRequest(
-                module_under_test=facade_rootservice_pb2.BluetoothModule.Value(
-                    'HAL'),))
-        self.cert_device.rootservice.StartStack(
-            facade_rootservice_pb2.StartStackRequest(
-                module_under_test=facade_rootservice_pb2.BluetoothModule.Value(
-                    'HAL'),))
-
-        self.device_under_test.wait_channel_ready()
-        self.cert_device.wait_channel_ready()
-
-        self.send_dut_hci_command(hci_packets.ResetBuilder())
-        self.send_cert_hci_command(hci_packets.ResetBuilder())
-
-    def teardown_test(self):
-        self.device_under_test.rootservice.StopStack(
-            facade_rootservice_pb2.StopStackRequest())
-        self.cert_device.rootservice.StopStack(
-            facade_rootservice_pb2.StopStackRequest())
 
     def test_none_event(self):
         with EventCallbackStream(

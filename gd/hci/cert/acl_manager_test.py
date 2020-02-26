@@ -22,7 +22,6 @@ from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
 from cert.event_callback_stream import EventCallbackStream
 from cert.event_asserts import EventAsserts
 from google.protobuf import empty_pb2 as empty_proto
-from facade import rootservice_pb2 as facade_rootservice
 from hci.facade import acl_manager_facade_pb2 as acl_manager_facade
 from neighbor.facade import facade_pb2 as neighbor_facade
 from hci.facade import controller_facade_pb2 as controller_facade
@@ -33,24 +32,8 @@ from bluetooth_packets_python3 import hci_packets
 
 class AclManagerTest(GdFacadeOnlyBaseTestClass):
 
-    def setup_test(self):
-        self.device_under_test.rootservice.StartStack(
-            facade_rootservice.StartStackRequest(
-                module_under_test=facade_rootservice.BluetoothModule.Value(
-                    'HCI_INTERFACES'),))
-        self.cert_device.rootservice.StartStack(
-            facade_rootservice.StartStackRequest(
-                module_under_test=facade_rootservice.BluetoothModule.Value(
-                    'HCI'),))
-
-        self.device_under_test.wait_channel_ready()
-        self.cert_device.wait_channel_ready()
-
-    def teardown_test(self):
-        self.device_under_test.rootservice.StopStack(
-            facade_rootservice.StopStackRequest())
-        self.cert_device.rootservice.StopStack(
-            facade_rootservice.StopStackRequest())
+    def setup_class(self):
+        super().setup_class(dut_module='HCI_INTERFACES', cert_module='HCI')
 
     def register_for_event(self, event_code):
         msg = hci_facade.EventCodeMsg(code=int(event_code))

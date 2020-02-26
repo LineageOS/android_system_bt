@@ -35,18 +35,11 @@ SAMPLE_PACKET = l2cap_packets.CommandRejectNotUnderstoodBuilder(1)
 
 class L2capTest(GdFacadeOnlyBaseTestClass):
 
-    def setup_test(self):
-        self.device_under_test.rootservice.StartStack(
-            facade_rootservice.StartStackRequest(
-                module_under_test=facade_rootservice.BluetoothModule.Value(
-                    'L2CAP'),))
-        self.cert_device.rootservice.StartStack(
-            facade_rootservice.StartStackRequest(
-                module_under_test=facade_rootservice.BluetoothModule.Value(
-                    'HCI_INTERFACES'),))
+    def setup_class(self):
+        super().setup_class(dut_module='L2CAP', cert_module='HCI_INTERFACES')
 
-        self.device_under_test.wait_channel_ready()
-        self.cert_device.wait_channel_ready()
+    def setup_test(self):
+        super().setup_test()
 
         self.device_under_test.address = self.device_under_test.hci_controller.GetMacAddress(
             empty_proto.Empty()).address
@@ -254,12 +247,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
     def _on_information_response_default(self, l2cap_control_view):
         information_response = l2cap_packets.InformationResponseView(
             l2cap_control_view)
-
-    def teardown_test(self):
-        self.device_under_test.rootservice.StopStack(
-            facade_rootservice.StopStackRequest())
-        self.cert_device.rootservice.StopStack(
-            facade_rootservice.StopStackRequest())
 
     def _handle_control_packet(self, l2cap_packet):
         packet_bytes = l2cap_packet.payload

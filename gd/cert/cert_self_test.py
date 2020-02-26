@@ -19,7 +19,7 @@ import time
 
 from mobly import asserts
 from datetime import datetime, timedelta
-from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
+from acts.base_test import BaseTestClass
 from cert.event_callback_stream import EventCallbackStream
 from cert.event_asserts import EventAsserts
 
@@ -86,7 +86,7 @@ class FetchEvents:
         return None
 
 
-class CertSelfTest(GdFacadeOnlyBaseTestClass):
+class CertSelfTest(BaseTestClass):
 
     def setup_test(self):
         return True
