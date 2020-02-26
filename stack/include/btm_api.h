@@ -1205,8 +1205,9 @@ extern void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res,
  ******************************************************************************/
 extern tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr,
                                tBLE_ADDR_TYPE addr_type,
-                               tBT_TRANSPORT transport, uint8_t pin_len,
-                               uint8_t* p_pin, uint32_t trusted_mask[]);
+                               tBT_TRANSPORT transport, int device_type,
+                               uint8_t pin_len, uint8_t* p_pin,
+                               uint32_t trusted_mask[]);
 
 /*******************************************************************************
  *

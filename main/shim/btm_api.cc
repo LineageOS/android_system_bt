@@ -1064,10 +1064,8 @@ bool bluetooth::shim::BTM_BleLocalPrivacyEnabled(void) {
 tBTM_STATUS bluetooth::shim::BTM_SecBond(const RawAddress& bd_addr,
                                          tBLE_ADDR_TYPE addr_type,
                                          tBT_TRANSPORT transport,
-                                         uint8_t pin_len, uint8_t* p_pin,
-                                         uint32_t trusted_mask[]) {
-  return shim_btm.CreateBond(bd_addr, addr_type, transport, pin_len, p_pin,
-                             trusted_mask);
+                                         int device_type) {
+  return shim_btm.CreateBond(bd_addr, addr_type, transport, device_type);
 }
 
 bool bluetooth::shim::BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info) {
