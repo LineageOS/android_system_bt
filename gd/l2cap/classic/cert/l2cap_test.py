@@ -193,6 +193,29 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             1, config_response)
         self.cert_send_b_frame(config_response_l2cap)
 
+    def _on_configuration_request_unacceptable_parameters(
+            self, l2cap_control_view):
+        configuration_request = l2cap_packets.ConfigurationRequestView(
+            l2cap_control_view)
+        sid = configuration_request.GetIdentifier()
+        dcid = configuration_request.GetDestinationCid()
+
+        mtu_opt = l2cap_packets.MtuConfigurationOption()
+        mtu_opt.mtu = 123
+        fcs_opt = l2cap_packets.FrameCheckSequenceOption()
+        fcs_opt.fcs_type = l2cap_packets.FcsType.DEFAULT
+        rfc_opt = l2cap_packets.RetransmissionAndFlowControlConfigurationOption(
+        )
+        rfc_opt.mode = l2cap_packets.RetransmissionAndFlowControlModeOption.L2CAP_BASIC
+
+        config_response = l2cap_packets.ConfigurationResponseBuilder(
+            sid, self.scid_to_dcid.get(dcid, 0), l2cap_packets.Continuation.END,
+            l2cap_packets.ConfigurationResponseResult.UNACCEPTABLE_PARAMETERS,
+            [mtu_opt, fcs_opt, rfc_opt])
+        config_response_l2cap = l2cap_packets.BasicFrameBuilder(
+            1, config_response)
+        self.cert_send_b_frame(config_response_l2cap)
+
     def _on_configuration_response_default(self, l2cap_control_view):
         configuration_response = l2cap_packets.ConfigurationResponseView(
             l2cap_control_view)
@@ -711,6 +734,35 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
             cert_acl_data_asserts.assert_none_matching(
                 is_configuration_response)
+
+    def test_retry_config_after_rejection(self):
+        """
+        L2CAP/COS/CFD/BV-02-C
+        """
+        cert_acl_handle = self._setup_link_from_cert()
+        with EventCallbackStream(
+                self.cert_device.hci_acl_manager.FetchAclData(
+                    empty_proto.Empty())) as cert_acl_data_stream:
+            cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
+            cert_acl_data_stream.register_callback(self._handle_control_packet)
+
+            psm = 0x33
+            scid = 0x41
+
+            self.on_configuration_request = self._on_configuration_request_unacceptable_parameters
+
+            self._open_channel(
+                cert_acl_data_stream,
+                1,
+                cert_acl_handle,
+                scid,
+                psm,
+                mode=l2cap_facade_pb2.RetransmissionFlowControlMode.BASIC)
+
+            cert_acl_data_asserts.assert_event_occurs(
+                self.is_correct_configuration_response)
+            cert_acl_data_asserts.assert_event_occurs(
+                self.is_correct_configuration_request, at_least_times=2)
 
     def test_respond_to_echo_request(self):
         """
