@@ -211,9 +211,9 @@ void BTA_DmDiscoverUUID(const RawAddress& bd_addr, const Uuid& uuid,
 
 /** This function initiates a bonding procedure with a peer device */
 void BTA_DmBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                tBTA_TRANSPORT transport) {
-  do_in_main_thread(FROM_HERE,
-                    base::Bind(bta_dm_bond, bd_addr, addr_type, transport));
+                tBTA_TRANSPORT transport, int device_type) {
+  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_bond, bd_addr, addr_type,
+                                          transport, device_type));
 }
 
 /** This function cancels the bonding procedure with a peer device
