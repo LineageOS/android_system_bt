@@ -293,19 +293,16 @@ static void btif_dm_data_free(uint16_t event, tBTA_DM_SEC* dm_sec) {
 void btif_dm_init(uid_set_t* set) {
   uid_set = set;
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    bluetooth::shim::BTIF_DM_SetUiCallback(
-        [](RawAddress* bt_addr, bt_bdname_t* bd_name, uint32_t cod,
-           bt_ssp_variant_t pairing_variant, uint32_t pass_key) {
-          LOG(ERROR) << __func__ << ": UI Callback fired!";
-          // TODO(optedoblivion): Wire up HAL_CBACK
-          //      HAL_CBACK(bt_hal_cbacks, ssp_request_cb, &bd_addr, &bd_name,
-          //      cod,
-          //            (p_ssp_cfm_req->just_works ? BT_SSP_VARIANT_CONSENT
-          //                                       :
-          //                                       BT_SSP_VARIANT_PASSKEY_CONFIRMATION),
-          //            p_ssp_cfm_req->num_val);
-          //
-        });
+    bluetooth::shim::BTIF_DM_SetUiCallback([](RawAddress address, bt_bdname_t bd_name, uint32_t cod, bt_ssp_variant_t pairing_variant, uint32_t pass_key) {
+      do_in_jni_thread(FROM_HERE, base::BindOnce([](RawAddress address, bt_bdname_t bd_name, uint32_t cod, bt_ssp_variant_t pairing_variant, uint32_t pass_key) {
+        LOG(ERROR) << __func__ << ": UI Callback fired!";
+
+        //TODO: java BondStateMachine requires change into bonding state. If we ever send this event separately, consider removing this line
+        HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, BT_STATUS_SUCCESS, &address, BT_BOND_STATE_BONDING);
+
+        HAL_CBACK(bt_hal_cbacks, ssp_request_cb, &address, &bd_name, cod, pairing_variant, pass_key);
+      }, address, bd_name, cod, pairing_variant, pass_key));
+    });
   }
 }
 
@@ -2424,6 +2421,17 @@ bt_status_t btif_dm_pin_reply(const RawAddress* bd_addr, uint8_t accept,
 bt_status_t btif_dm_ssp_reply(const RawAddress* bd_addr,
                               bt_ssp_variant_t variant, uint8_t accept,
                               UNUSED_ATTR uint32_t passkey) {
+
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    uint8_t tmp_dev_type = 0;
+    uint8_t tmp_addr_type = 0;
+    BTM_ReadDevInfo(*bd_addr, &tmp_dev_type, &tmp_addr_type);
+
+    do_in_main_thread(
+    FROM_HERE,
+      base::Bind(&bluetooth::shim::BTIF_DM_ssp_reply, *bd_addr, tmp_addr_type, variant, accept));
+  }
+
   if (variant == BT_SSP_VARIANT_PASSKEY_ENTRY) {
     /* This is not implemented in the stack.
      * For devices with display, this is not needed
