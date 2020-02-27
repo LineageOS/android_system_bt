@@ -154,4 +154,4 @@ $DRY_RUN sed -i "s/\"CERT\"/\"${CERT_SERIAL}\"/g" ${DIR}/android_devices_config.
 #$DRY_RUN source $(get-android-root)/system/bt/gd/cert/set_up_acts.sh
 
 ## Start test
-$DRY_RUN $(get-android-root)/system/bt/gd/cert/run_device_cert.sh
+$DRY_RUN $(get-android-root)/system/bt/gd/cert/run

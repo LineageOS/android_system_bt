@@ -3,11 +3,12 @@ LOCAL_PATH := $(call my-dir)
 bluetooth_cert_test_file_list := \
     $(call all-named-files-under,*.py,cert) \
     $(call all-named-files-under,*.sh,cert) \
+    $(call all-named-files-under,run,cert) \
     $(call all-named-files-under,*.proto,cert facade hal hci/cert hci/facade l2cap/classic \
 	    l2cap/classic/cert neighbor/facade security) \
-    cert/cert_testcases_facade_only \
+    cert/all_cert_testcases \
     cert/android_devices_config.json \
-    cert/host_only_config_facade_only.json \
+    cert/host_config.json \
     hal/cert/simple_hal_test.py \
     hci/cert/acl_manager_test.py \
     hci/cert/controller_test.py \
