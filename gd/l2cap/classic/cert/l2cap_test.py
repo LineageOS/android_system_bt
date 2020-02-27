@@ -555,7 +555,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
     def test_receive_packet_from_unknown_channel(self):
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -727,7 +727,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         cert_acl_handle = self._setup_link_from_cert()
         with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
+                self.cert.hci_acl_manager.FetchAclData(
                     empty_proto.Empty())) as cert_acl_data_stream:
             cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
             cert_acl_data_stream.register_callback(self._handle_control_packet)
