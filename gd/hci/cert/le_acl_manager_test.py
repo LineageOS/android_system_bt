@@ -29,40 +29,24 @@ from bluetooth_packets_python3 import hci_packets
 
 class LeAclManagerTest(GdFacadeOnlyBaseTestClass):
 
-    def setup_test(self):
-        self.device_under_test.rootservice.StartStack(
-            facade_rootservice.StartStackRequest(
-                module_under_test=facade_rootservice.BluetoothModule.Value(
-                    'HCI_INTERFACES'),))
-        self.cert_device.rootservice.StartStack(
-            facade_rootservice.StartStackRequest(
-                module_under_test=facade_rootservice.BluetoothModule.Value(
-                    'HCI'),))
-
-        self.device_under_test.wait_channel_ready()
-        self.cert_device.wait_channel_ready()
-
-    def teardown_test(self):
-        self.device_under_test.rootservice.StopStack(
-            facade_rootservice.StopStackRequest())
-        self.cert_device.rootservice.StopStack(
-            facade_rootservice.StopStackRequest())
+    def setup_class(self):
+        super().setup_class(dut_module='HCI_INTERFACES', cert_module='HCI')
 
     def register_for_event(self, event_code):
         msg = hci_facade.EventCodeMsg(code=int(event_code))
-        self.cert_device.hci.RegisterEventHandler(msg)
+        self.cert.hci.RegisterEventHandler(msg)
 
     def register_for_le_event(self, event_code):
         msg = hci_facade.LeSubeventCodeMsg(code=int(event_code))
-        self.cert_device.hci.RegisterLeEventHandler(msg)
+        self.cert.hci.RegisterLeEventHandler(msg)
 
     def enqueue_hci_command(self, command, expect_complete):
         cmd_bytes = bytes(command.Serialize())
         cmd = hci_facade.CommandMsg(command=cmd_bytes)
         if (expect_complete):
-            self.cert_device.hci.EnqueueCommandWithComplete(cmd)
+            self.cert.hci.EnqueueCommandWithComplete(cmd)
         else:
-            self.cert_device.hci.EnqueueCommandWithStatus(cmd)
+            self.cert.hci.EnqueueCommandWithStatus(cmd)
 
     def enqueue_acl_data(self, handle, pb_flag, b_flag, acl):
         acl_msg = hci_facade.AclMsg(
@@ -70,13 +54,13 @@ class LeAclManagerTest(GdFacadeOnlyBaseTestClass):
             packet_boundary_flag=int(pb_flag),
             broadcast_flag=int(b_flag),
             data=acl)
-        self.cert_device.hci.SendAclData(acl_msg)
+        self.cert.hci.SendAclData(acl_msg)
 
     def test_dut_connects(self):
         self.register_for_le_event(hci_packets.SubeventCode.CONNECTION_COMPLETE)
-        with EventCallbackStream(self.cert_device.hci.FetchLeSubevents(empty_proto.Empty())) as cert_hci_le_event_stream, \
-            EventCallbackStream(self.cert_device.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
-            EventCallbackStream(self.device_under_test.hci_le_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
+        with EventCallbackStream(self.cert.hci.FetchLeSubevents(empty_proto.Empty())) as cert_hci_le_event_stream, \
+            EventCallbackStream(self.cert.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
+            EventCallbackStream(self.dut.hci_le_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
 
             cert_hci_le_event_asserts = EventAsserts(cert_hci_le_event_stream)
             acl_data_asserts = EventAsserts(acl_data_stream)
@@ -137,7 +121,7 @@ class LeAclManagerTest(GdFacadeOnlyBaseTestClass):
                     hci_packets.Enable.ENABLED, [enabled_set]), True)
 
             with EventCallbackStream(
-                    self.device_under_test.hci_le_acl_manager.CreateConnection(
+                    self.dut.hci_le_acl_manager.CreateConnection(
                         le_acl_manager_facade.LeConnectionMsg(
                             address_type=int(
                                 hci_packets.AddressType.RANDOM_DEVICE_ADDRESS),
@@ -183,7 +167,7 @@ class LeAclManagerTest(GdFacadeOnlyBaseTestClass):
                 handle = 0xfff
                 connection_event_asserts.assert_event_occurs(get_handle)
 
-                self.device_under_test.hci_le_acl_manager.SendAclData(
+                self.dut.hci_le_acl_manager.SendAclData(
                     le_acl_manager_facade.LeAclData(
                         handle=handle,
                         payload=bytes(
@@ -196,10 +180,10 @@ class LeAclManagerTest(GdFacadeOnlyBaseTestClass):
 
     def test_cert_connects(self):
         self.register_for_le_event(hci_packets.SubeventCode.CONNECTION_COMPLETE)
-        with EventCallbackStream(self.cert_device.hci.FetchLeSubevents(empty_proto.Empty())) as cert_hci_le_event_stream, \
-                EventCallbackStream(self.cert_device.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
-                EventCallbackStream(self.device_under_test.hci_le_acl_manager.FetchIncomingConnection(empty_proto.Empty())) as incoming_connection_stream, \
-                EventCallbackStream(self.device_under_test.hci_le_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
+        with EventCallbackStream(self.cert.hci.FetchLeSubevents(empty_proto.Empty())) as cert_hci_le_event_stream, \
+                EventCallbackStream(self.cert.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
+                EventCallbackStream(self.dut.hci_le_acl_manager.FetchIncomingConnection(empty_proto.Empty())) as incoming_connection_stream, \
+                EventCallbackStream(self.dut.hci_le_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
 
             cert_hci_le_event_asserts = EventAsserts(cert_hci_le_event_stream)
             incoming_connection_asserts = EventAsserts(
@@ -230,7 +214,7 @@ class LeAclManagerTest(GdFacadeOnlyBaseTestClass):
             request = le_advertising_facade.CreateAdvertiserRequest(
                 config=config)
 
-            create_response = self.device_under_test.hci_le_advertising_manager.CreateAdvertiser(
+            create_response = self.dut.hci_le_advertising_manager.CreateAdvertiser(
                 request)
 
             # Cert Connects
@@ -290,7 +274,7 @@ class LeAclManagerTest(GdFacadeOnlyBaseTestClass):
             handle = 0xfff
             incoming_connection_asserts.assert_event_occurs(get_handle)
 
-            self.device_under_test.hci_le_acl_manager.SendAclData(
+            self.dut.hci_le_acl_manager.SendAclData(
                 le_acl_manager_facade.LeAclData(
                     handle=handle,
                     payload=bytes(
@@ -303,9 +287,9 @@ class LeAclManagerTest(GdFacadeOnlyBaseTestClass):
 
     def test_recombination_l2cap_packet(self):
         self.register_for_le_event(hci_packets.SubeventCode.CONNECTION_COMPLETE)
-        with EventCallbackStream(self.cert_device.hci.FetchLeSubevents(empty_proto.Empty())) as cert_hci_le_event_stream, \
-                EventCallbackStream(self.cert_device.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
-                EventCallbackStream(self.device_under_test.hci_le_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
+        with EventCallbackStream(self.cert.hci.FetchLeSubevents(empty_proto.Empty())) as cert_hci_le_event_stream, \
+                EventCallbackStream(self.cert.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
+                EventCallbackStream(self.dut.hci_le_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
 
             cert_hci_le_event_asserts = EventAsserts(cert_hci_le_event_stream)
             acl_data_asserts = EventAsserts(acl_data_stream)
@@ -366,7 +350,7 @@ class LeAclManagerTest(GdFacadeOnlyBaseTestClass):
                     hci_packets.Enable.ENABLED, [enabled_set]), True)
 
             with EventCallbackStream(
-                    self.device_under_test.hci_le_acl_manager.CreateConnection(
+                    self.dut.hci_le_acl_manager.CreateConnection(
                         le_acl_manager_facade.LeConnectionMsg(
                             address_type=int(
                                 hci_packets.AddressType.RANDOM_DEVICE_ADDRESS),

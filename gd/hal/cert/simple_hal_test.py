@@ -28,8 +28,17 @@ import bluetooth_packets_python3 as bt_packets
 
 class SimpleHalTest(GdFacadeOnlyBaseTestClass):
 
+    def setup_class(self):
+        super().setup_class(dut_module='HAL', cert_module='HAL')
+
+    def setup_test(self):
+        super().setup_test()
+
+        self.send_dut_hci_command(hci_packets.ResetBuilder())
+        self.send_cert_hci_command(hci_packets.ResetBuilder())
+
     def send_cert_hci_command(self, command):
-        self.cert_device.hal.SendHciCommand(
+        self.cert.hal.SendHciCommand(
             hal_facade_pb2.HciCommandPacket(payload=bytes(command.Serialize())))
 
     def send_cert_acl_data(self, handle, pb_flag, b_flag, acl):
@@ -41,11 +50,11 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
         upper_length = (len(acl) & 0xff00) >> 8
         concatenated = bytes([lower, upper, lower_length, upper_length] +
                              list(acl))
-        self.cert_device.hal.SendHciAcl(
+        self.cert.hal.SendHciAcl(
             hal_facade_pb2.HciAclPacket(payload=concatenated))
 
     def send_dut_hci_command(self, command):
-        self.device_under_test.hal.SendHciCommand(
+        self.dut.hal.SendHciCommand(
             hal_facade_pb2.HciCommandPacket(payload=bytes(command.Serialize())))
 
     def send_dut_acl_data(self, handle, pb_flag, b_flag, acl):
@@ -57,42 +66,18 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
         upper_length = (len(acl) & 0xff00) >> 8
         concatenated = bytes([lower, upper, lower_length, upper_length] +
                              list(acl))
-        self.device_under_test.hal.SendHciAcl(
+        self.dut.hal.SendHciAcl(
             hal_facade_pb2.HciAclPacket(payload=concatenated))
 
-    def setup_test(self):
-        self.device_under_test.rootservice.StartStack(
-            facade_rootservice_pb2.StartStackRequest(
-                module_under_test=facade_rootservice_pb2.BluetoothModule.Value(
-                    'HAL'),))
-        self.cert_device.rootservice.StartStack(
-            facade_rootservice_pb2.StartStackRequest(
-                module_under_test=facade_rootservice_pb2.BluetoothModule.Value(
-                    'HAL'),))
-
-        self.device_under_test.wait_channel_ready()
-        self.cert_device.wait_channel_ready()
-
-        self.send_dut_hci_command(hci_packets.ResetBuilder())
-        self.send_cert_hci_command(hci_packets.ResetBuilder())
-
-    def teardown_test(self):
-        self.device_under_test.rootservice.StopStack(
-            facade_rootservice_pb2.StopStackRequest())
-        self.cert_device.rootservice.StopStack(
-            facade_rootservice_pb2.StopStackRequest())
-
     def test_none_event(self):
-        with EventCallbackStream(
-                self.device_under_test.hal.FetchHciEvent(
-                    empty_pb2.Empty())) as hci_event_stream:
+        with EventCallbackStream(self.dut.hal.FetchHciEvent(
+                empty_pb2.Empty())) as hci_event_stream:
             hci_event_asserts = EventAsserts(hci_event_stream)
             hci_event_asserts.assert_none(timeout=timedelta(seconds=1))
 
     def test_fetch_hci_event(self):
-        with EventCallbackStream(
-                self.device_under_test.hal.FetchHciEvent(
-                    empty_pb2.Empty())) as hci_event_stream:
+        with EventCallbackStream(self.dut.hal.FetchHciEvent(
+                empty_pb2.Empty())) as hci_event_stream:
 
             hci_event_asserts = EventAsserts(hci_event_stream)
 
@@ -106,9 +91,8 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
                 lambda packet: bytes(event.Serialize()) in packet.payload)
 
     def test_loopback_hci_command(self):
-        with EventCallbackStream(
-                self.device_under_test.hal.FetchHciEvent(
-                    empty_pb2.Empty())) as hci_event_stream:
+        with EventCallbackStream(self.dut.hal.FetchHciEvent(
+                empty_pb2.Empty())) as hci_event_stream:
 
             self.send_dut_hci_command(
                 hci_packets.WriteLoopbackModeBuilder(
@@ -123,9 +107,8 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
                 lambda packet: bytes(command.Serialize()) in packet.payload)
 
     def test_inquiry_from_dut(self):
-        with EventCallbackStream(
-                self.device_under_test.hal.FetchHciEvent(
-                    empty_pb2.Empty())) as hci_event_stream:
+        with EventCallbackStream(self.dut.hal.FetchHciEvent(
+                empty_pb2.Empty())) as hci_event_stream:
             hci_event_asserts = EventAsserts(hci_event_stream)
             self.send_cert_hci_command(
                 hci_packets.WriteScanEnableBuilder(
@@ -140,9 +123,8 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
             )
 
     def test_le_ad_scan_cert_advertises(self):
-        with EventCallbackStream(
-                self.device_under_test.hal.FetchHciEvent(
-                    empty_pb2.Empty())) as hci_event_stream:
+        with EventCallbackStream(self.dut.hal.FetchHciEvent(
+                empty_pb2.Empty())) as hci_event_stream:
             hci_event_asserts = EventAsserts(hci_event_stream)
 
             # DUT scans
@@ -219,10 +201,10 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
                     hci_packets.FilterDuplicates.DISABLED, 0, 0))
 
     def test_le_connection_dut_advertises(self):
-        with EventCallbackStream(self.device_under_test.hal.FetchHciEvent(empty_pb2.Empty())) as hci_event_stream, \
-                EventCallbackStream(self.cert_device.hal.FetchHciEvent(empty_pb2.Empty())) as cert_hci_event_stream, \
-                EventCallbackStream(self.device_under_test.hal.FetchHciAcl(empty_pb2.Empty())) as acl_data_stream, \
-                EventCallbackStream(self.cert_device.hal.FetchHciAcl(empty_pb2.Empty())) as cert_acl_data_stream:
+        with EventCallbackStream(self.dut.hal.FetchHciEvent(empty_pb2.Empty())) as hci_event_stream, \
+                EventCallbackStream(self.cert.hal.FetchHciEvent(empty_pb2.Empty())) as cert_hci_event_stream, \
+                EventCallbackStream(self.dut.hal.FetchHciAcl(empty_pb2.Empty())) as acl_data_stream, \
+                EventCallbackStream(self.cert.hal.FetchHciAcl(empty_pb2.Empty())) as cert_acl_data_stream:
 
             hci_event_asserts = EventAsserts(hci_event_stream)
             cert_hci_event_asserts = EventAsserts(cert_hci_event_stream)
@@ -341,8 +323,8 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
                 lambda packet: b'SomeMoreAclData' in packet.payload)
 
     def test_le_white_list_connection_cert_advertises(self):
-        with EventCallbackStream(self.device_under_test.hal.FetchHciEvent(empty_pb2.Empty())) as hci_event_stream, \
-            EventCallbackStream(self.cert_device.hal.FetchHciEvent(empty_pb2.Empty())) as cert_hci_event_stream:
+        with EventCallbackStream(self.dut.hal.FetchHciEvent(empty_pb2.Empty())) as hci_event_stream, \
+            EventCallbackStream(self.cert.hal.FetchHciEvent(empty_pb2.Empty())) as cert_hci_event_stream:
             hci_event_asserts = EventAsserts(hci_event_stream)
             cert_hci_event_asserts = EventAsserts(cert_hci_event_stream)
 
