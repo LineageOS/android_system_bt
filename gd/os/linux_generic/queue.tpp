@@ -19,8 +19,8 @@ Queue<T>::Queue(size_t capacity) : enqueue_(capacity), dequeue_(0){};
 
 template <typename T>
 Queue<T>::~Queue() {
-  ASSERT(enqueue_.handler_ == nullptr);
-  ASSERT(dequeue_.handler_ == nullptr);
+  ASSERT_LOG(enqueue_.handler_ == nullptr, "Enqueue is not unregistered");
+  ASSERT_LOG(dequeue_.handler_ == nullptr, "Dequeue is not unregistered");
 };
 
 template <typename T>
