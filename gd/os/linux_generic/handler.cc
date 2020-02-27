@@ -55,6 +55,7 @@ void Handler::Post(OnceClosure closure) {
   {
     std::lock_guard<std::mutex> lock(mutex_);
     if (was_cleared()) {
+      LOG_WARN("Posting to a handler which has been cleared");
       return;
     }
     tasks_->emplace(std::move(closure));
