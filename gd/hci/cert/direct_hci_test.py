@@ -32,47 +32,34 @@ import bluetooth_packets_python3 as bt_packets
 
 class DirectHciTest(GdFacadeOnlyBaseTestClass):
 
+    def setup_class(self):
+        super().setup_class(dut_module='HCI', cert_module='HAL')
+
     def setup_test(self):
-        self.device_under_test.rootservice.StartStack(
-            facade_rootservice.StartStackRequest(
-                module_under_test=facade_rootservice.BluetoothModule.Value(
-                    'HCI'),))
-        self.cert_device.rootservice.StartStack(
-            facade_rootservice.StartStackRequest(
-                module_under_test=facade_rootservice.BluetoothModule.Value(
-                    'HAL'),))
+        super().setup_test()
 
-        self.device_under_test.wait_channel_ready()
-        self.cert_device.wait_channel_ready()
-
-        self.cert_device.hal.SendHciCommand(
+        self.cert.hal.SendHciCommand(
             hal_facade.HciCommandPacket(
                 payload=bytes(hci_packets.ResetBuilder().Serialize())))
 
-    def teardown_test(self):
-        self.device_under_test.rootservice.StopStack(
-            facade_rootservice.StopStackRequest())
-        self.cert_device.rootservice.StopStack(
-            facade_rootservice.StopStackRequest())
-
     def register_for_event(self, event_code):
         msg = hci_facade.EventCodeMsg(code=int(event_code))
-        self.device_under_test.hci.RegisterEventHandler(msg)
+        self.dut.hci.RegisterEventHandler(msg)
 
     def register_for_le_event(self, event_code):
         msg = hci_facade.LeSubeventCodeMsg(code=int(event_code))
-        self.device_under_test.hci.RegisterLeEventHandler(msg)
+        self.dut.hci.RegisterLeEventHandler(msg)
 
     def enqueue_hci_command(self, command, expect_complete):
         cmd_bytes = bytes(command.Serialize())
         cmd = hci_facade.CommandMsg(command=cmd_bytes)
         if (expect_complete):
-            self.device_under_test.hci.EnqueueCommandWithComplete(cmd)
+            self.dut.hci.EnqueueCommandWithComplete(cmd)
         else:
-            self.device_under_test.hci.EnqueueCommandWithStatus(cmd)
+            self.dut.hci.EnqueueCommandWithStatus(cmd)
 
     def send_hal_hci_command(self, command):
-        self.cert_device.hal.SendHciCommand(
+        self.cert.hal.SendHciCommand(
             hal_facade.HciCommandPacket(payload=bytes(command.Serialize())))
 
     def enqueue_acl_data(self, handle, pb_flag, b_flag, acl):
@@ -81,7 +68,7 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
             packet_boundary_flag=int(pb_flag),
             broadcast_flag=int(b_flag),
             data=acl)
-        self.device_under_test.hci.SendAclData(acl_msg)
+        self.dut.hci.SendAclData(acl_msg)
 
     def send_hal_acl_data(self, handle, pb_flag, b_flag, acl):
         lower = handle & 0xff
@@ -92,8 +79,7 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
         upper_length = (len(acl) & 0xff00) >> 8
         concatenated = bytes([lower, upper, lower_length, upper_length] +
                              list(acl))
-        self.cert_device.hal.SendHciAcl(
-            hal_facade.HciAclPacket(payload=concatenated))
+        self.cert.hal.SendHciAcl(hal_facade.HciAclPacket(payload=concatenated))
 
     def test_local_hci_cmd_and_event(self):
         # Loopback mode responds with ACL and SCO connection complete
@@ -101,9 +87,8 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
         self.register_for_event(hci_packets.EventCode.LOOPBACK_COMMAND)
         self.register_for_event(
             hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
-        with EventCallbackStream(
-                self.device_under_test.hci.FetchEvents(
-                    empty_proto.Empty())) as hci_event_stream:
+        with EventCallbackStream(self.dut.hci.FetchEvents(
+                empty_proto.Empty())) as hci_event_stream:
             hci_event_asserts = EventAsserts(hci_event_stream)
 
             self.enqueue_hci_command(
@@ -119,9 +104,8 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
 
     def test_inquiry_from_dut(self):
         self.register_for_event(hci_packets.EventCode.INQUIRY_RESULT)
-        with EventCallbackStream(
-                self.device_under_test.hci.FetchEvents(
-                    empty_proto.Empty())) as hci_event_stream:
+        with EventCallbackStream(self.dut.hci.FetchEvents(
+                empty_proto.Empty())) as hci_event_stream:
 
             hci_event_asserts = EventAsserts(hci_event_stream)
 
@@ -142,7 +126,7 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
             hci_packets.SubeventCode.EXTENDED_ADVERTISING_REPORT)
         self.register_for_le_event(hci_packets.SubeventCode.ADVERTISING_REPORT)
         with EventCallbackStream(
-                self.device_under_test.hci.FetchLeSubevents(
+                self.dut.hci.FetchLeSubevents(
                     empty_proto.Empty())) as hci_le_event_stream:
 
             hci_event_asserts = EventAsserts(hci_le_event_stream)
@@ -231,11 +215,11 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
 
     def test_le_connection_dut_advertises(self):
         self.register_for_le_event(hci_packets.SubeventCode.CONNECTION_COMPLETE)
-        with EventCallbackStream(self.device_under_test.hci.FetchLeSubevents(empty_proto.Empty())) as le_event_stream, \
-            EventCallbackStream(self.device_under_test.hci.FetchEvents(empty_proto.Empty())) as event_stream, \
-            EventCallbackStream(self.device_under_test.hci.FetchAclPackets(empty_proto.Empty())) as acl_data_stream, \
-            EventCallbackStream(self.cert_device.hal.FetchHciEvent(empty_proto.Empty())) as cert_hci_event_stream, \
-            EventCallbackStream(self.cert_device.hal.FetchHciAcl(empty_proto.Empty())) as cert_acl_data_stream:
+        with EventCallbackStream(self.dut.hci.FetchLeSubevents(empty_proto.Empty())) as le_event_stream, \
+            EventCallbackStream(self.dut.hci.FetchEvents(empty_proto.Empty())) as event_stream, \
+            EventCallbackStream(self.dut.hci.FetchAclPackets(empty_proto.Empty())) as acl_data_stream, \
+            EventCallbackStream(self.cert.hal.FetchHciEvent(empty_proto.Empty())) as cert_hci_event_stream, \
+            EventCallbackStream(self.cert.hal.FetchHciAcl(empty_proto.Empty())) as cert_acl_data_stream:
 
             le_event_asserts = EventAsserts(le_event_stream)
             event_asserts = EventAsserts(event_stream)
@@ -382,8 +366,8 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
 
     def test_le_white_list_connection_cert_advertises(self):
         self.register_for_le_event(hci_packets.SubeventCode.CONNECTION_COMPLETE)
-        with EventCallbackStream(self.device_under_test.hci.FetchLeSubevents(empty_proto.Empty())) as le_event_stream, \
-                EventCallbackStream(self.cert_device.hal.FetchHciEvent(empty_proto.Empty())) as cert_hci_event_stream:
+        with EventCallbackStream(self.dut.hci.FetchLeSubevents(empty_proto.Empty())) as le_event_stream, \
+                EventCallbackStream(self.cert.hal.FetchHciEvent(empty_proto.Empty())) as cert_hci_event_stream:
             le_event_asserts = EventAsserts(le_event_stream)
             cert_hci_event_asserts = EventAsserts(cert_hci_event_stream)
 
@@ -465,10 +449,10 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
             hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
         self.enqueue_hci_command(
             hci_packets.WritePageTimeoutBuilder(0x4000), True)
-        with EventCallbackStream(self.device_under_test.hci.FetchEvents(empty_proto.Empty())) as hci_event_stream, \
-            EventCallbackStream(self.device_under_test.hci.FetchAclPackets(empty_proto.Empty())) as acl_data_stream, \
-            EventCallbackStream(self.cert_device.hal.FetchHciEvent(empty_proto.Empty())) as cert_hci_event_stream, \
-            EventCallbackStream(self.cert_device.hal.FetchHciAcl(empty_proto.Empty())) as cert_acl_data_stream:
+        with EventCallbackStream(self.dut.hci.FetchEvents(empty_proto.Empty())) as hci_event_stream, \
+            EventCallbackStream(self.dut.hci.FetchAclPackets(empty_proto.Empty())) as acl_data_stream, \
+            EventCallbackStream(self.cert.hal.FetchHciEvent(empty_proto.Empty())) as cert_hci_event_stream, \
+            EventCallbackStream(self.cert.hal.FetchHciAcl(empty_proto.Empty())) as cert_acl_data_stream:
 
             cert_hci_event_asserts = EventAsserts(cert_hci_event_stream)
             hci_event_asserts = EventAsserts(hci_event_stream)
@@ -587,10 +571,10 @@ class DirectHciTest(GdFacadeOnlyBaseTestClass):
             hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
         self.register_for_event(hci_packets.EventCode.CONNECTION_REQUEST)
         self.send_hal_hci_command(hci_packets.WritePageTimeoutBuilder(0x4000))
-        with EventCallbackStream(self.device_under_test.hci.FetchEvents(empty_proto.Empty())) as hci_event_stream, \
-            EventCallbackStream(self.device_under_test.hci.FetchAclPackets(empty_proto.Empty())) as acl_data_stream, \
-            EventCallbackStream(self.cert_device.hal.FetchHciEvent(empty_proto.Empty())) as cert_hci_event_stream, \
-            EventCallbackStream(self.cert_device.hal.FetchHciAcl(empty_proto.Empty())) as cert_acl_data_stream:
+        with EventCallbackStream(self.dut.hci.FetchEvents(empty_proto.Empty())) as hci_event_stream, \
+            EventCallbackStream(self.dut.hci.FetchAclPackets(empty_proto.Empty())) as acl_data_stream, \
+            EventCallbackStream(self.cert.hal.FetchHciEvent(empty_proto.Empty())) as cert_hci_event_stream, \
+            EventCallbackStream(self.cert.hal.FetchHciAcl(empty_proto.Empty())) as cert_acl_data_stream:
 
             hci_event_asserts = EventAsserts(hci_event_stream)
             cert_hci_event_asserts = EventAsserts(cert_hci_event_stream)

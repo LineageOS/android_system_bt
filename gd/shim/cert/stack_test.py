@@ -18,24 +18,12 @@ import os
 import sys
 
 from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
-from google.protobuf import empty_pb2 as empty_proto
-from facade import rootservice_pb2 as facade_rootservice
-from hci.facade import controller_facade_pb2 as controller_facade
 
 
 class StackTest(GdFacadeOnlyBaseTestClass):
 
-    def setup_test(self):
-        self.device_under_test.rootservice.StartStack(
-            facade_rootservice.StartStackRequest(
-                module_under_test=facade_rootservice.BluetoothModule.Value(
-                    'SHIM'),))
-
-        self.device_under_test.wait_channel_ready()
-
-    def teardown_test(self):
-        self.device_under_test.rootservice.StopStack(
-            facade_rootservice.StopStackRequest())
+    def setup_class(self):
+        super().setup_class(dut_module='SHIM', cert_module='SHIM')
 
     def test_test(self):
         return True
