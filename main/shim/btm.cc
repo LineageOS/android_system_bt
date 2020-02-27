@@ -792,7 +792,7 @@ tBTM_STATUS bluetooth::shim::Btm::CreateBond(const RawAddress& bd_addr,
                                              tBT_TRANSPORT transport,
                                              int device_type) {
   if (transport == BTA_TRANSPORT_UNKNOWN) {
-    if (BT_DEVICE_TYPE_BLE & BT_DEVICE_TYPE_BLE) {
+    if (device_type & BT_DEVICE_TYPE_BLE) {
       transport = BTA_TRANSPORT_LE;
     } else if (device_type & BT_DEVICE_TYPE_BREDR) {
       transport = BTA_TRANSPORT_BR_EDR;
