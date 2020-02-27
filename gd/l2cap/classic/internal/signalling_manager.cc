@@ -695,7 +695,7 @@ void ClassicSignallingManager::on_command_timeout() {
     LOG_ERROR("No pending command");
     return;
   }
-
+  LOG_WARN("Response time out for %s", CommandCodeText(command_just_sent_.command_code_).c_str());
   switch (command_just_sent_.command_code_) {
     case CommandCode::CONNECTION_REQUEST: {
       link_->OnOutgoingConnectionRequestFail(command_just_sent_.source_cid_);
