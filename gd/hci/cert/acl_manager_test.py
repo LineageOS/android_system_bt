@@ -22,7 +22,6 @@ from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
 from cert.event_callback_stream import EventCallbackStream
 from cert.event_asserts import EventAsserts
 from google.protobuf import empty_pb2 as empty_proto
-from facade import rootservice_pb2 as facade_rootservice
 from hci.facade import acl_manager_facade_pb2 as acl_manager_facade
 from neighbor.facade import facade_pb2 as neighbor_facade
 from hci.facade import controller_facade_pb2 as controller_facade
@@ -33,36 +32,20 @@ from bluetooth_packets_python3 import hci_packets
 
 class AclManagerTest(GdFacadeOnlyBaseTestClass):
 
-    def setup_test(self):
-        self.device_under_test.rootservice.StartStack(
-            facade_rootservice.StartStackRequest(
-                module_under_test=facade_rootservice.BluetoothModule.Value(
-                    'HCI_INTERFACES'),))
-        self.cert_device.rootservice.StartStack(
-            facade_rootservice.StartStackRequest(
-                module_under_test=facade_rootservice.BluetoothModule.Value(
-                    'HCI'),))
-
-        self.device_under_test.wait_channel_ready()
-        self.cert_device.wait_channel_ready()
-
-    def teardown_test(self):
-        self.device_under_test.rootservice.StopStack(
-            facade_rootservice.StopStackRequest())
-        self.cert_device.rootservice.StopStack(
-            facade_rootservice.StopStackRequest())
+    def setup_class(self):
+        super().setup_class(dut_module='HCI_INTERFACES', cert_module='HCI')
 
     def register_for_event(self, event_code):
         msg = hci_facade.EventCodeMsg(code=int(event_code))
-        self.cert_device.hci.RegisterEventHandler(msg)
+        self.cert.hci.RegisterEventHandler(msg)
 
     def enqueue_hci_command(self, command, expect_complete):
         cmd_bytes = bytes(command.Serialize())
         cmd = hci_facade.CommandMsg(command=cmd_bytes)
         if (expect_complete):
-            self.cert_device.hci.EnqueueCommandWithComplete(cmd)
+            self.cert.hci.EnqueueCommandWithComplete(cmd)
         else:
-            self.cert_device.hci.EnqueueCommandWithStatus(cmd)
+            self.cert.hci.EnqueueCommandWithStatus(cmd)
 
     def enqueue_acl_data(self, handle, pb_flag, b_flag, acl):
         acl_msg = hci_facade.AclMsg(
@@ -70,16 +53,16 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
             packet_boundary_flag=int(pb_flag),
             broadcast_flag=int(b_flag),
             data=acl)
-        self.cert_device.hci.SendAclData(acl_msg)
+        self.cert.hci.SendAclData(acl_msg)
 
     def test_dut_connects(self):
         self.register_for_event(hci_packets.EventCode.CONNECTION_REQUEST)
         self.register_for_event(hci_packets.EventCode.CONNECTION_COMPLETE)
         self.register_for_event(
             hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
-        with EventCallbackStream(self.cert_device.hci.FetchEvents(empty_proto.Empty())) as cert_hci_event_stream, \
-            EventCallbackStream(self.cert_device.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
-            EventCallbackStream(self.device_under_test.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
+        with EventCallbackStream(self.cert.hci.FetchEvents(empty_proto.Empty())) as cert_hci_event_stream, \
+            EventCallbackStream(self.cert.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
+            EventCallbackStream(self.dut.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
 
             cert_hci_event_asserts = EventAsserts(cert_hci_event_stream)
             acl_data_asserts = EventAsserts(acl_data_stream)
@@ -111,7 +94,7 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
                 get_address_from_complete)
 
             with EventCallbackStream(
-                    self.device_under_test.hci_acl_manager.CreateConnection(
+                    self.dut.hci_acl_manager.CreateConnection(
                         acl_manager_facade.ConnectionMsg(
                             address_type=int(
                                 hci_packets.AddressType.PUBLIC_DEVICE_ADDRESS),
@@ -169,7 +152,7 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
                 handle = 0xfff
                 connection_event_asserts.assert_event_occurs(get_handle)
 
-                self.device_under_test.hci_acl_manager.SendAclData(
+                self.dut.hci_acl_manager.SendAclData(
                     acl_manager_facade.AclData(
                         handle=handle,
                         payload=bytes(
@@ -186,10 +169,10 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
         self.register_for_event(hci_packets.EventCode.ROLE_CHANGE)
         self.register_for_event(
             hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
-        with EventCallbackStream(self.cert_device.hci.FetchEvents(empty_proto.Empty())) as cert_hci_event_stream, \
-            EventCallbackStream(self.cert_device.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
-            EventCallbackStream(self.device_under_test.hci_acl_manager.FetchIncomingConnection(empty_proto.Empty())) as incoming_connection_stream, \
-            EventCallbackStream(self.device_under_test.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
+        with EventCallbackStream(self.cert.hci.FetchEvents(empty_proto.Empty())) as cert_hci_event_stream, \
+            EventCallbackStream(self.cert.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
+            EventCallbackStream(self.dut.hci_acl_manager.FetchIncomingConnection(empty_proto.Empty())) as incoming_connection_stream, \
+            EventCallbackStream(self.dut.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
 
             cert_hci_event_asserts = EventAsserts(cert_hci_event_stream)
             incoming_connection_asserts = EventAsserts(
@@ -198,10 +181,10 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
             acl_data_asserts = EventAsserts(acl_data_stream)
 
             # DUT Enables scans and gets its address
-            dut_address = self.device_under_test.hci_controller.GetMacAddress(
+            dut_address = self.dut.hci_controller.GetMacAddress(
                 empty_proto.Empty()).address
 
-            self.device_under_test.neighbor.EnablePageScan(
+            self.dut.neighbor.EnablePageScan(
                 neighbor_facade.EnableMsg(enabled=True))
 
             # Cert connects
@@ -232,7 +215,7 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
             # DUT gets a connection request
             incoming_connection_asserts.assert_event_occurs(get_handle)
 
-            self.device_under_test.hci_acl_manager.SendAclData(
+            self.dut.hci_acl_manager.SendAclData(
                 acl_manager_facade.AclData(
                     handle=conn_handle,
                     payload=bytes(
@@ -261,9 +244,9 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
         self.register_for_event(hci_packets.EventCode.CONNECTION_COMPLETE)
         self.register_for_event(
             hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
-        with EventCallbackStream(self.cert_device.hci.FetchEvents(empty_proto.Empty())) as cert_hci_event_stream, \
-            EventCallbackStream(self.cert_device.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
-            EventCallbackStream(self.device_under_test.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
+        with EventCallbackStream(self.cert.hci.FetchEvents(empty_proto.Empty())) as cert_hci_event_stream, \
+            EventCallbackStream(self.cert.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
+            EventCallbackStream(self.dut.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
 
             cert_hci_event_asserts = EventAsserts(cert_hci_event_stream)
             acl_data_asserts = EventAsserts(acl_data_stream)
@@ -294,7 +277,7 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
                 get_address_from_complete)
 
             with EventCallbackStream(
-                    self.device_under_test.hci_acl_manager.CreateConnection(
+                    self.dut.hci_acl_manager.CreateConnection(
                         acl_manager_facade.ConnectionMsg(
                             address_type=int(
                                 hci_packets.AddressType.PUBLIC_DEVICE_ADDRESS),

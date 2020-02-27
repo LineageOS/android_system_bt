@@ -15,6 +15,7 @@
 #   limitations under the License.
 
 from acts.base_test import BaseTestClass
+from facade import rootservice_pb2 as facade_rootservice
 
 import importlib
 import logging
@@ -27,7 +28,9 @@ ANDROID_BUILD_TOP = os.environ.get('ANDROID_BUILD_TOP')
 
 class GdFacadeOnlyBaseTestClass(BaseTestClass):
 
-    def setup_class(self):
+    def setup_class(self, dut_module, cert_module):
+        self.dut_module = dut_module
+        self.cert_module = cert_module
 
         gd_devices = self.controller_configs.get("GdDevice")
 
@@ -58,8 +61,8 @@ class GdFacadeOnlyBaseTestClass(BaseTestClass):
         self.register_controller(
             importlib.import_module('cert.gd_device'), builtin=True)
 
-        self.device_under_test = self.gd_devices[1]
-        self.cert_device = self.gd_devices[0]
+        self.dut = self.gd_devices[1]
+        self.cert = self.gd_devices[0]
 
     def teardown_class(self):
         if self.rootcanal_running:
@@ -71,3 +74,20 @@ class GdFacadeOnlyBaseTestClass(BaseTestClass):
                 logging.error(
                     "rootcanal stopped with code: %d" % rootcanal_return_code)
                 return False
+
+    def setup_test(self):
+        self.dut.rootservice.StartStack(
+            facade_rootservice.StartStackRequest(
+                module_under_test=facade_rootservice.BluetoothModule.Value(
+                    self.dut_module),))
+        self.cert.rootservice.StartStack(
+            facade_rootservice.StartStackRequest(
+                module_under_test=facade_rootservice.BluetoothModule.Value(
+                    self.cert_module),))
+
+        self.dut.wait_channel_ready()
+        self.cert.wait_channel_ready()
+
+    def teardown_test(self):
+        self.dut.rootservice.StopStack(facade_rootservice.StopStackRequest())
+        self.cert.rootservice.StopStack(facade_rootservice.StopStackRequest())

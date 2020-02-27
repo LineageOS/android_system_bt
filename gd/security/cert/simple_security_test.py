@@ -37,15 +37,11 @@ import bluetooth_packets_python3 as bt_packets
 
 class SimpleSecurityTest(GdFacadeOnlyBaseTestClass):
 
+    def setup_class(self):
+        super().setup_class(dut_module='SECURITY', cert_module='L2CAP')
+
     def setup_test(self):
-        self.device_under_test.rootservice.StartStack(
-            facade_rootservice_pb2.StartStackRequest(
-                module_under_test=facade_rootservice_pb2.BluetoothModule.Value(
-                    'SECURITY'),))
-        self.cert_device.rootservice.StartStack(
-            facade_rootservice_pb2.StartStackRequest(
-                module_under_test=facade_rootservice_pb2.BluetoothModule.Value(
-                    'L2CAP'),))
+        super().setup_test()
 
         self.device_under_test.address = self.device_under_test.controller_read_only_property.ReadLocalAddress(
             empty_proto.Empty()).address
@@ -79,12 +75,6 @@ class SimpleSecurityTest(GdFacadeOnlyBaseTestClass):
         self.dut_name = b'ImTheDUT'
         self.device_under_test.hci_controller.WriteLocalName(
             controller_facade.NameMsg(name=self.dut_name))
-
-    def teardown_test(self):
-        self.device_under_test.rootservice.StopStack(
-            facade_rootservice_pb2.StopStackRequest())
-        self.cert_device.rootservice.StopStack(
-            facade_rootservice_pb2.StopStackRequest())
 
     def tmp_register_for_event(self, event_code):
         msg = hci_facade.EventCodeMsg(code=int(event_code))
