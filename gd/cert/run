@@ -1,0 +1,44 @@
+#! /bin/bash
+
+if [[ -z "${ANDROID_BUILD_TOP}" ]]; then
+  echo "ANDROID_BUILD_TOP is not set"
+fi
+
+if [[ -z "${ANDROID_HOST_OUT}" ]]; then
+  echo "ANDROID_HOST_OUT is not set for host run"
+fi
+
+$ANDROID_BUILD_TOP/build/soong/soong_ui.bash --build-mode --"all-modules" --dir="$(pwd)" dist bluetooth_stack_with_facade
+
+TEST_CONFIG="$ANDROID_BUILD_TOP/system/bt/gd/cert/android_devices_config.json"
+TEST_FILTER="-tf $ANDROID_BUILD_TOP/system/bt/gd/cert/all_cert_testcases"
+
+POSITIONAL=()
+while [[ $# -gt 0 ]]
+do
+key="$1"
+case $key in
+    --test_filter=*)
+    TEST_FILTER="-tc ${key#*=}"
+    shift # past argument=value
+    ;;
+    --host)
+    TEST_CONFIG=$ANDROID_BUILD_TOP/system/bt/gd/cert/host_config.json
+    shift # past argument
+    ;;
+    *)    # unknown option
+    POSITIONAL+=("$1") # save it in an array for later
+    shift # past argument
+    ;;
+esac
+done
+set -- "${POSITIONAL[@]}" # restore positional parameters
+
+unzip -o -q $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py.zip \
+   -d $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py
+
+PYTHONPATH=$PYTHONPATH:$ANDROID_BUILD_TOP/out/host/linux-x86/lib64:$ANDROID_BUILD_TOP/system/bt/gd:$ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py \
+    python3.8 `which act.py`\
+      -c $TEST_CONFIG \
+      $TEST_FILTER \
+      -tp $ANDROID_BUILD_TOP/system/bt/gd
