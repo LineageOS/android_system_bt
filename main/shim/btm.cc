@@ -830,12 +830,3 @@ bool bluetooth::shim::Btm::RemoveBond(const RawAddress& bd_addr) {
   security_manager->RemoveBond(ToAddressWithType(bd_addr, BLE_ADDR_PUBLIC));
   return true;
 }
-
-void bluetooth::shim::Btm::SetSimplePairingCallback(
-    tBTM_SP_CALLBACK* callback) {
-  auto security_manager =
-      bluetooth::shim::GetSecurityModule()->GetSecurityManager();
-  // TODO(optedoblivion): security_manager->RegisterCallback(new
-  // ExtendedCallback(simple_pairing_callback_))
-  simple_pairing_callback_ = callback;
-}

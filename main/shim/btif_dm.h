@@ -28,10 +28,7 @@ namespace shim {
 /**
  * Sets handler to SecurityModule and provides callback to handler
  */
-void BTIF_DM_SetUiCallback(
-    std::function<void(RawAddress*, bt_bdname_t*, uint32_t, bt_ssp_variant_t,
-                       uint32_t)>
-        callback);
-
+void BTIF_DM_SetUiCallback(std::function<void(RawAddress, bt_bdname_t, uint32_t, bt_ssp_variant_t, uint32_t)> callback);
+void BTIF_DM_ssp_reply(const RawAddress bd_addr, uint8_t, bt_ssp_variant_t variant, uint8_t accept);
 }  // namespace shim
 }  // namespace bluetooth
