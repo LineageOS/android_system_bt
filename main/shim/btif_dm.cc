@@ -15,10 +15,11 @@
  */
 #define LOG_TAG "bt_shim_btif_dm"
 
-#include "main/shim/btif_dm.h"
-
-#include "main/shim/entry.h"
 #include "osi/include/log.h"
+
+#include "main/shim/btif_dm.h"
+#include "main/shim/entry.h"
+#include "main/shim/helpers.h"
 #include "security/security_module.h"
 #include "security/ui.h"
 
@@ -32,46 +33,44 @@ class ShimUi : public security::UI {
   ~ShimUi() {}
   void DisplayPairingPrompt(const bluetooth::hci::AddressWithType& address,
                             std::string name) {
-    LOG_WARN(LOG_TAG, "%s TODO Unimplemented", __func__);
+    LOG_WARN(LOG_TAG, "%s ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ TODO Unimplemented", __func__);
   }
   void Cancel(const bluetooth::hci::AddressWithType& address) {
-    LOG_WARN(LOG_TAG, "%s TODO Unimplemented", __func__);
-  }
-  void DisplayConfirmValue(const bluetooth::hci::AddressWithType& address,
-                           std::string name, uint32_t numeric_value) {
-    LOG_WARN(LOG_TAG, "%s TODO Unimplemented", __func__);
-    // TODO(optedoblivion): Remove and wire up to UI callback
-    auto security_manager =
-        bluetooth::shim::GetSecurityModule()->GetSecurityManager();
-    security_manager->OnConfirmYesNo(address, true);
-    // callback(address, name, 0, 0, 0);
-  }
-  void DisplayYesNoDialog(const bluetooth::hci::AddressWithType& address,
-                          std::string name) {
-    LOG_WARN(LOG_TAG, "%s TODO Unimplemented", __func__);
-    // TODO(optedoblivion): Remove and wire up to UI callback
-    auto security_manager =
-        bluetooth::shim::GetSecurityModule()->GetSecurityManager();
-    security_manager->OnConfirmYesNo(address, true);
-    // callback(address, name, 0, 0, 0);
-  }
-  void DisplayEnterPasskeyDialog(const bluetooth::hci::AddressWithType& address,
-                                 std::string name) {
-    LOG_WARN(LOG_TAG, "%s TODO Unimplemented", __func__);
-  }
-  void DisplayPasskey(const bluetooth::hci::AddressWithType& address,
-                      std::string name, uint32_t passkey) {
-    LOG_WARN(LOG_TAG, "%s TODO Unimplemented", __func__);
+    LOG_WARN(LOG_TAG, "%s ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ TODO Unimplemented", __func__);
   }
 
-  void SetLegacyCallback(std::function<void(RawAddress*, bt_bdname_t*, uint32_t,
-                                            bt_ssp_variant_t, uint32_t)>
-                             callback) {
+  void DisplayConfirmValue(const bluetooth::hci::AddressWithType& address,
+                           std::string name, uint32_t numeric_value) {
+    bt_bdname_t legacy_name{0};
+    memcpy(legacy_name.name, name.data(), name.length());
+    callback_(RawAddress(address.GetAddress().address), legacy_name, ((0x1F) << 8) /* COD_UNCLASSIFIED*/ , BT_SSP_VARIANT_PASSKEY_CONFIRMATION, numeric_value);
+  }
+
+  void DisplayYesNoDialog(const bluetooth::hci::AddressWithType& address,
+                          std::string name) {
+    bt_bdname_t legacy_name{0};
+    memcpy(legacy_name.name, name.data(), name.length());
+    callback_(RawAddress(address.GetAddress().address), legacy_name, ((0x1F) << 8) /* COD_UNCLASSIFIED*/ , BT_SSP_VARIANT_CONSENT, 0);
+  }
+
+  void DisplayEnterPasskeyDialog(const bluetooth::hci::AddressWithType& address, std::string name) {
+    bt_bdname_t legacy_name{0};
+    memcpy(legacy_name.name, name.data(), name.length());
+    callback_(RawAddress(address.GetAddress().address), legacy_name, ((0x1F) << 8) /* COD_UNCLASSIFIED*/ , BT_SSP_VARIANT_PASSKEY_ENTRY, 0);
+  }
+
+  void DisplayPasskey(const bluetooth::hci::AddressWithType& address, std::string name, uint32_t passkey) {
+    bt_bdname_t legacy_name{0};
+    memcpy(legacy_name.name, name.data(), name.length());
+    callback_(RawAddress(address.GetAddress().address), legacy_name, ((0x1F) << 8) /* COD_UNCLASSIFIED*/ , BT_SSP_VARIANT_PASSKEY_NOTIFICATION, passkey);
+  }
+
+  void SetLegacyCallback(std::function<void(RawAddress, bt_bdname_t, uint32_t, bt_ssp_variant_t, uint32_t)> callback) {
     callback_ = callback;
   }
 
  private:
-  std::function<void(RawAddress*, bt_bdname_t*, uint32_t, bt_ssp_variant_t,
+  std::function<void(RawAddress, bt_bdname_t, uint32_t, bt_ssp_variant_t,
                      uint32_t)>
       callback_;
 };
@@ -81,16 +80,28 @@ ShimUi ui;
 /**
  * Sets handler to SecurityModule and provides callback to handler
  */
-void BTIF_DM_SetUiCallback(
-    std::function<void(RawAddress*, bt_bdname_t*, uint32_t, bt_ssp_variant_t,
-                       uint32_t)>
-        callback) {
-  LOG_WARN(LOG_TAG, "%s called", __func__);
-  auto security_manager =
-      bluetooth::shim::GetSecurityModule()->GetSecurityManager();
+void BTIF_DM_SetUiCallback(std::function<void(RawAddress, bt_bdname_t, uint32_t, bt_ssp_variant_t, uint32_t)> callback) {
+  LOG_WARN(LOG_TAG, "%s", __func__);
+  auto security_manager = bluetooth::shim::GetSecurityModule()->GetSecurityManager();
   ui.SetLegacyCallback(callback);
-  security_manager->SetUserInterfaceHandler(
-      &ui, bluetooth::shim::GetGdShimHandler());
+  security_manager->SetUserInterfaceHandler(&ui, bluetooth::shim::GetGdShimHandler());
+}
+
+void BTIF_DM_ssp_reply(const RawAddress bd_addr, uint8_t addr_type, bt_ssp_variant_t variant, uint8_t accept) {
+  LOG_WARN(LOG_TAG, "%s", __func__);
+
+  hci::AddressWithType address = ToAddressWithType(bd_addr, addr_type);
+
+  auto security_manager = bluetooth::shim::GetSecurityModule()->GetSecurityManager();
+
+  if (variant == BT_SSP_VARIANT_PASSKEY_CONFIRMATION || variant == BT_SSP_VARIANT_CONSENT) {
+    security_manager->OnConfirmYesNo(address, accept);
+  } else {
+    //TODO:
+    // void OnPairingPromptAccepted(const bluetooth::hci::AddressWithType& address, bool confirmed) override;
+    //  void OnPasskeyEntry(const bluetooth::hci::AddressWithType& address, uint32_t passkey) override;
+    LOG_WARN(LOG_TAG, "■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ Variant not implemented yet %02x", variant);
+  }
 }
 
 }  // namespace shim
