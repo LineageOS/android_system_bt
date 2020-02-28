@@ -88,10 +88,7 @@ void BTIF_DM_SetUiCallback(std::function<void(RawAddress, bt_bdname_t, uint32_t,
 }
 
 void BTIF_DM_ssp_reply(const RawAddress bd_addr, uint8_t addr_type, bt_ssp_variant_t variant, uint8_t accept) {
-  LOG_WARN(LOG_TAG, "%s", __func__);
-
   hci::AddressWithType address = ToAddressWithType(bd_addr, addr_type);
-
   auto security_manager = bluetooth::shim::GetSecurityModule()->GetSecurityManager();
 
   if (variant == BT_SSP_VARIANT_PASSKEY_CONFIRMATION || variant == BT_SSP_VARIANT_CONSENT) {
@@ -102,6 +99,24 @@ void BTIF_DM_ssp_reply(const RawAddress bd_addr, uint8_t addr_type, bt_ssp_varia
     //  void OnPasskeyEntry(const bluetooth::hci::AddressWithType& address, uint32_t passkey) override;
     LOG_WARN(LOG_TAG, "■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ Variant not implemented yet %02x", variant);
   }
+}
+
+void BTIF_DM_pin_reply(const RawAddress bd_addr, uint8_t addr_type, uint8_t accept, uint8_t pin_len, bt_pin_code_t pin_code) {
+  hci::AddressWithType address = ToAddressWithType(bd_addr, addr_type);
+  auto security_manager = bluetooth::shim::GetSecurityModule()->GetSecurityManager();
+
+  if (!accept) {
+    LOG_WARN(LOG_TAG, "This case is not implemented!!");
+    return;
+  }
+
+  uint32_t passkey = 0;
+  int multi[] = {100000, 10000, 1000, 100, 10, 1};
+  for (int i = 0; i < pin_len; i++) {
+    passkey += (multi[i] * (pin_code.pin[i] - '0'));
+  }
+
+  security_manager->OnPasskeyEntry(address, passkey);
 }
 
 }  // namespace shim
