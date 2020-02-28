@@ -100,9 +100,13 @@ void ClassicPairingHandler::OnPairingPromptAccepted(const bluetooth::hci::Addres
 }
 
 void ClassicPairingHandler::OnConfirmYesNo(const bluetooth::hci::AddressWithType& address, bool confirmed) {
-  LOG_WARN("TODO Not Implemented!");
-  GetChannel()->SendCommand(
-      hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress()));
+  if (confirmed) {
+    GetChannel()->SendCommand(
+        hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress()));
+  } else {
+    GetChannel()->SendCommand(
+        hci::UserConfirmationRequestNegativeReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress()));
+  }
 }
 
 void ClassicPairingHandler::OnPasskeyEntry(const bluetooth::hci::AddressWithType& address, uint32_t passkey) {
