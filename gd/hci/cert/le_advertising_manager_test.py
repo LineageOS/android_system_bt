@@ -19,8 +19,7 @@ import sys
 import logging
 
 from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
-from cert.event_callback_stream import EventCallbackStream
-from cert.event_asserts import EventAsserts
+from cert.event_stream import EventStream
 from google.protobuf import empty_pb2 as empty_proto
 from facade import rootservice_pb2 as facade_rootservice
 from hci.facade import facade_pb2 as hci_facade
@@ -55,11 +54,8 @@ class LeAdvertisingManagerTest(GdFacadeOnlyBaseTestClass):
         self.register_for_le_event(hci_packets.SubeventCode.ADVERTISING_REPORT)
         self.register_for_le_event(
             hci_packets.SubeventCode.EXTENDED_ADVERTISING_REPORT)
-        with EventCallbackStream(
-                self.cert.hci.FetchLeSubevents(
-                    empty_proto.Empty())) as hci_le_event_stream:
-
-            hci_event_asserts = EventAsserts(hci_le_event_stream)
+        with EventStream(self.cert.hci.FetchLeSubevents(
+                empty_proto.Empty())) as hci_le_event_stream:
 
             # CERT Scans
             self.enqueue_hci_command(
@@ -105,7 +101,7 @@ class LeAdvertisingManagerTest(GdFacadeOnlyBaseTestClass):
             create_response = self.dut.hci_le_advertising_manager.CreateAdvertiser(
                 request)
 
-            hci_event_asserts.assert_event_occurs(
+            hci_le_event_stream.assert_event_occurs(
                 lambda packet: b'Im_The_DUT' in packet.event)
 
             remove_request = le_advertising_facade.RemoveAdvertiserRequest(

@@ -19,8 +19,7 @@ import sys
 import logging
 
 from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
-from cert.event_callback_stream import EventCallbackStream
-from cert.event_asserts import EventAsserts
+from cert.event_stream import EventStream
 from google.protobuf import empty_pb2 as empty_proto
 from facade import rootservice_pb2 as facade_rootservice
 from hci.facade import facade_pb2 as hci_facade
@@ -53,12 +52,10 @@ class LeScanningManagerTest(GdFacadeOnlyBaseTestClass):
             self.cert.hci.EnqueueCommandWithStatus(cmd)
 
     def test_le_ad_scan_dut_scans(self):
-        with EventCallbackStream(
+        with EventStream(
                 # DUT Scans
                 self.dut.hci_le_scanning_manager.StartScan(
                     empty_proto.Empty())) as advertising_event_stream:
-
-            hci_event_asserts = EventAsserts(advertising_event_stream)
 
             # CERT Advertises
             gap_name = hci_packets.GapData()
@@ -86,7 +83,7 @@ class LeScanningManagerTest(GdFacadeOnlyBaseTestClass):
             create_response = self.cert.hci_le_advertising_manager.CreateAdvertiser(
                 request)
 
-            hci_event_asserts.assert_event_occurs(
+            advertising_event_stream.assert_event_occurs(
                 lambda packet: b'Im_The_CERT' in packet.event)
 
             remove_request = le_advertising_facade.RemoveAdvertiserRequest(

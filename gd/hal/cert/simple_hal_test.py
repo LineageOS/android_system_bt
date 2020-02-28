@@ -17,8 +17,8 @@
 from datetime import timedelta
 
 from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
-from cert.event_callback_stream import EventCallbackStream
-from cert.event_asserts import EventAsserts
+from cert.event_stream import EventStream
+from cert.truth import assertThat
 from google.protobuf import empty_pb2
 from facade import rootservice_pb2 as facade_rootservice_pb2
 from hal import facade_pb2 as hal_facade_pb2
@@ -70,16 +70,13 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
             hal_facade_pb2.HciAclPacket(payload=concatenated))
 
     def test_none_event(self):
-        with EventCallbackStream(self.dut.hal.FetchHciEvent(
+        with EventStream(self.dut.hal.FetchHciEvent(
                 empty_pb2.Empty())) as hci_event_stream:
-            hci_event_asserts = EventAsserts(hci_event_stream)
-            hci_event_asserts.assert_none(timeout=timedelta(seconds=1))
+            hci_event_stream.assert_none(timeout=timedelta(seconds=1))
 
     def test_fetch_hci_event(self):
-        with EventCallbackStream(self.dut.hal.FetchHciEvent(
+        with EventStream(self.dut.hal.FetchHciEvent(
                 empty_pb2.Empty())) as hci_event_stream:
-
-            hci_event_asserts = EventAsserts(hci_event_stream)
 
             self.send_dut_hci_command(
                 hci_packets.LeAddDeviceToWhiteListBuilder(
@@ -87,29 +84,29 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
                     '0C:05:04:03:02:01'))
             event = hci_packets.LeAddDeviceToWhiteListCompleteBuilder(
                 1, hci_packets.ErrorCode.SUCCESS)
-            hci_event_asserts.assert_event_occurs(
+
+            assertThat(hci_event_stream).emits(
                 lambda packet: bytes(event.Serialize()) in packet.payload)
 
     def test_loopback_hci_command(self):
-        with EventCallbackStream(self.dut.hal.FetchHciEvent(
+        with EventStream(self.dut.hal.FetchHciEvent(
                 empty_pb2.Empty())) as hci_event_stream:
 
             self.send_dut_hci_command(
                 hci_packets.WriteLoopbackModeBuilder(
                     hci_packets.LoopbackMode.ENABLE_LOCAL))
 
-            hci_event_asserts = EventAsserts(hci_event_stream)
-
             command = hci_packets.LeAddDeviceToWhiteListBuilder(
                 hci_packets.WhiteListAddressType.RANDOM, '0C:05:04:03:02:01')
             self.send_dut_hci_command(command)
-            hci_event_asserts.assert_event_occurs(
+
+            assertThat(hci_event_stream).emits(
                 lambda packet: bytes(command.Serialize()) in packet.payload)
 
     def test_inquiry_from_dut(self):
-        with EventCallbackStream(self.dut.hal.FetchHciEvent(
+        with EventStream(self.dut.hal.FetchHciEvent(
                 empty_pb2.Empty())) as hci_event_stream:
-            hci_event_asserts = EventAsserts(hci_event_stream)
+
             self.send_cert_hci_command(
                 hci_packets.WriteScanEnableBuilder(
                     hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
@@ -117,15 +114,15 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
             lap.lap = 0x33
             self.send_dut_hci_command(
                 hci_packets.InquiryBuilder(lap, 0x30, 0xff))
-            hci_event_asserts.assert_event_occurs(
+
+            assertThat(hci_event_stream).emits(
                 lambda packet: b'\x02\x0f' in packet.payload
                 # Expecting an HCI Event (code 0x02, length 0x0f)
             )
 
     def test_le_ad_scan_cert_advertises(self):
-        with EventCallbackStream(self.dut.hal.FetchHciEvent(
+        with EventStream(self.dut.hal.FetchHciEvent(
                 empty_pb2.Empty())) as hci_event_stream:
-            hci_event_asserts = EventAsserts(hci_event_stream)
 
             # DUT scans
             self.send_dut_hci_command(
@@ -186,7 +183,7 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
                 hci_packets.LeSetExtendedAdvertisingEnableBuilder(
                     hci_packets.Enable.ENABLED, [enabled_set]))
 
-            hci_event_asserts.assert_event_occurs(
+            assertThat(hci_event_stream).emits(
                 lambda packet: b'Im_A_Cert' in packet.payload)
 
             # Disable Advertising
@@ -201,15 +198,10 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
                     hci_packets.FilterDuplicates.DISABLED, 0, 0))
 
     def test_le_connection_dut_advertises(self):
-        with EventCallbackStream(self.dut.hal.FetchHciEvent(empty_pb2.Empty())) as hci_event_stream, \
-                EventCallbackStream(self.cert.hal.FetchHciEvent(empty_pb2.Empty())) as cert_hci_event_stream, \
-                EventCallbackStream(self.dut.hal.FetchHciAcl(empty_pb2.Empty())) as acl_data_stream, \
-                EventCallbackStream(self.cert.hal.FetchHciAcl(empty_pb2.Empty())) as cert_acl_data_stream:
-
-            hci_event_asserts = EventAsserts(hci_event_stream)
-            cert_hci_event_asserts = EventAsserts(cert_hci_event_stream)
-            acl_data_asserts = EventAsserts(acl_data_stream)
-            cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
+        with EventStream(self.dut.hal.FetchHciEvent(empty_pb2.Empty())) as hci_event_stream, \
+                EventStream(self.cert.hal.FetchHciEvent(empty_pb2.Empty())) as cert_hci_event_stream, \
+                EventStream(self.dut.hal.FetchHciAcl(empty_pb2.Empty())) as acl_data_stream, \
+                EventStream(self.cert.hal.FetchHciAcl(empty_pb2.Empty())) as cert_acl_data_stream:
 
             # Cert Connects
             self.send_cert_hci_command(
@@ -299,10 +291,10 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
                     return True
                 return False
 
-            cert_hci_event_asserts.assert_event_occurs(payload_handle)
+            assertThat(cert_hci_event_stream).emits(payload_handle)
             cert_handle = conn_handle
             conn_handle = 0xfff
-            hci_event_asserts.assert_event_occurs(payload_handle)
+            assertThat(hci_event_stream).emits(payload_handle)
             dut_handle = conn_handle
 
             # Send ACL Data
@@ -317,16 +309,14 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
                 hci_packets.BroadcastFlag.POINT_TO_POINT,
                 bytes(b'Just SomeMoreAclData'))
 
-            cert_acl_data_asserts.assert_event_occurs(
+            assertThat(cert_acl_data_stream).emits(
                 lambda packet: b'SomeAclData' in packet.payload)
-            acl_data_asserts.assert_event_occurs(
+            assertThat(acl_data_stream).emits(
                 lambda packet: b'SomeMoreAclData' in packet.payload)
 
     def test_le_white_list_connection_cert_advertises(self):
-        with EventCallbackStream(self.dut.hal.FetchHciEvent(empty_pb2.Empty())) as hci_event_stream, \
-            EventCallbackStream(self.cert.hal.FetchHciEvent(empty_pb2.Empty())) as cert_hci_event_stream:
-            hci_event_asserts = EventAsserts(hci_event_stream)
-            cert_hci_event_asserts = EventAsserts(cert_hci_event_stream)
+        with EventStream(self.dut.hal.FetchHciEvent(empty_pb2.Empty())) as hci_event_stream, \
+            EventStream(self.cert.hal.FetchHciEvent(empty_pb2.Empty())) as cert_hci_event_stream:
 
             # DUT Connects
             self.send_dut_hci_command(
@@ -393,9 +383,9 @@ class SimpleHalTest(GdFacadeOnlyBaseTestClass):
                     hci_packets.Enable.ENABLED, [enabled_set]))
 
             # LeConnectionComplete
-            cert_hci_event_asserts.assert_event_occurs(
+            cert_hci_event_stream.assert_event_occurs(
                 lambda packet: b'\x3e\x13\x01\x00' in packet.payload,
                 timeout=timedelta(seconds=20))
-            hci_event_asserts.assert_event_occurs(
+            hci_event_stream.assert_event_occurs(
                 lambda packet: b'\x3e\x13\x01\x00' in packet.payload,
                 timeout=timedelta(seconds=20))
