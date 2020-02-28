@@ -20,7 +20,7 @@ from mobly.asserts import assert_true
 from mobly.asserts import assert_false
 
 from mobly import signals
-from cert.event_asserts import EventAsserts
+from cert.event_stream import EventStream
 
 import sys, traceback
 
@@ -89,7 +89,7 @@ class BooleanSubject(ObjectSubject):
 def assertThat(subject):
     if type(subject) is bool:
         return BooleanSubject(subject)
-    elif isinstance(subject, EventAsserts):
+    elif isinstance(subject, EventStream):
         return EventStreamSubject(subject)
     else:
         return ObjectSubject(subject)

@@ -19,8 +19,7 @@ import sys
 import logging
 
 from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
-from cert.event_callback_stream import EventCallbackStream
-from cert.event_asserts import EventAsserts
+from cert.event_stream import EventStream
 from cert.truth import assertThat
 from google.protobuf import empty_pb2 as empty_proto
 from hci.facade import acl_manager_facade_pb2 as acl_manager_facade
@@ -61,13 +60,9 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
         self.register_for_event(hci_packets.EventCode.CONNECTION_COMPLETE)
         self.register_for_event(
             hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
-        with EventCallbackStream(self.cert.hci.FetchEvents(empty_proto.Empty())) as cert_hci_event_stream, \
-            EventCallbackStream(self.cert.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
-            EventCallbackStream(self.dut.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
-
-            cert_hci_event_asserts = EventAsserts(cert_hci_event_stream)
-            acl_data_asserts = EventAsserts(acl_data_stream)
-            cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
+        with EventStream(self.cert.hci.FetchEvents(empty_proto.Empty())) as cert_hci_event_stream, \
+            EventStream(self.cert.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
+            EventStream(self.dut.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
 
             # CERT Enables scans and gets its address
             self.enqueue_hci_command(
@@ -91,9 +86,9 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
 
             self.enqueue_hci_command(hci_packets.ReadBdAddrBuilder(), True)
 
-            assertThat(cert_hci_event_asserts).emits(get_address_from_complete)
+            assertThat(cert_hci_event_stream).emits(get_address_from_complete)
 
-            with EventCallbackStream(
+            with EventStream(
                     self.dut.hci_acl_manager.CreateConnection(
                         acl_manager_facade.ConnectionMsg(
                             address_type=int(
@@ -101,7 +96,6 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
                             address=bytes(cert_address,
                                           'utf8')))) as connection_event_stream:
 
-                connection_event_asserts = EventAsserts(connection_event_stream)
                 connection_request = None
 
                 def get_connect_request(packet):
@@ -115,7 +109,7 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
                     return False
 
                 # Cert Accepts
-                assertThat(cert_hci_event_asserts).emits(get_connect_request)
+                assertThat(cert_hci_event_stream).emits(get_connect_request)
                 self.enqueue_hci_command(
                     hci_packets.AcceptConnectionRequestBuilder(
                         connection_request.GetBdAddr(),
@@ -137,7 +131,7 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
                         return True
                     return False
 
-                assertThat(cert_hci_event_asserts).emits(get_handle)
+                assertThat(cert_hci_event_stream).emits(get_handle)
                 cert_handle = handle
 
                 self.enqueue_acl_data(
@@ -150,7 +144,7 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
 
                 # DUT gets a connection complete event and sends and receives
                 handle = 0xfff
-                connection_event_asserts.assert_event_occurs(get_handle)
+                connection_event_stream.assert_event_occurs(get_handle)
 
                 self.dut.hci_acl_manager.SendAclData(
                     acl_manager_facade.AclData(
@@ -159,9 +153,9 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
                             b'\x29\x00\x07\x00This is just SomeMoreAclData from the DUT'
                         )))
 
-                assertThat(cert_acl_data_asserts).emits(
+                assertThat(cert_acl_data_stream).emits(
                     lambda packet: b'SomeMoreAclData' in packet.data)
-                assertThat(acl_data_asserts).emits(
+                assertThat(acl_data_stream).emits(
                     lambda packet: b'SomeAclData' in packet.payload)
 
     def test_cert_connects(self):
@@ -169,16 +163,10 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
         self.register_for_event(hci_packets.EventCode.ROLE_CHANGE)
         self.register_for_event(
             hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
-        with EventCallbackStream(self.cert.hci.FetchEvents(empty_proto.Empty())) as cert_hci_event_stream, \
-            EventCallbackStream(self.cert.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
-            EventCallbackStream(self.dut.hci_acl_manager.FetchIncomingConnection(empty_proto.Empty())) as incoming_connection_stream, \
-            EventCallbackStream(self.dut.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
-
-            cert_hci_event_asserts = EventAsserts(cert_hci_event_stream)
-            incoming_connection_asserts = EventAsserts(
-                incoming_connection_stream)
-            cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
-            acl_data_asserts = EventAsserts(acl_data_stream)
+        with EventStream(self.cert.hci.FetchEvents(empty_proto.Empty())) as cert_hci_event_stream, \
+            EventStream(self.cert.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
+            EventStream(self.dut.hci_acl_manager.FetchIncomingConnection(empty_proto.Empty())) as incoming_connection_stream, \
+            EventStream(self.dut.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
 
             # DUT Enables scans and gets its address
             dut_address = self.dut.hci_controller.GetMacAddress(
@@ -213,7 +201,7 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
                 return False
 
             # DUT gets a connection request
-            incoming_connection_asserts.assert_event_occurs(get_handle)
+            incoming_connection_stream.assert_event_occurs(get_handle)
 
             self.dut.hci_acl_manager.SendAclData(
                 acl_manager_facade.AclData(
@@ -224,7 +212,7 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
 
             conn_handle = 0xfff
 
-            assertThat(cert_hci_event_asserts).emits(get_handle)
+            assertThat(cert_hci_event_stream).emits(get_handle)
             cert_handle = conn_handle
 
             self.enqueue_acl_data(
@@ -234,9 +222,9 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
                 bytes(
                     b'\x26\x00\x07\x00This is just SomeAclData from the Cert'))
 
-            assertThat(cert_acl_data_asserts).emits(
+            assertThat(cert_acl_data_stream).emits(
                 lambda packet: b'SomeMoreAclData' in packet.data)
-            assertThat(acl_data_asserts).emits(
+            assertThat(acl_data_stream).emits(
                 lambda packet: b'SomeAclData' in packet.payload)
 
     def test_recombination_l2cap_packet(self):
@@ -244,12 +232,9 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
         self.register_for_event(hci_packets.EventCode.CONNECTION_COMPLETE)
         self.register_for_event(
             hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
-        with EventCallbackStream(self.cert.hci.FetchEvents(empty_proto.Empty())) as cert_hci_event_stream, \
-            EventCallbackStream(self.cert.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
-            EventCallbackStream(self.dut.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
-
-            cert_hci_event_asserts = EventAsserts(cert_hci_event_stream)
-            acl_data_asserts = EventAsserts(acl_data_stream)
+        with EventStream(self.cert.hci.FetchEvents(empty_proto.Empty())) as cert_hci_event_stream, \
+            EventStream(self.cert.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
+            EventStream(self.dut.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
 
             # CERT Enables scans and gets its address
             self.enqueue_hci_command(
@@ -273,9 +258,9 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
 
             self.enqueue_hci_command(hci_packets.ReadBdAddrBuilder(), True)
 
-            assertThat(cert_hci_event_asserts).emits(get_address_from_complete)
+            assertThat(cert_hci_event_stream).emits(get_address_from_complete)
 
-            with EventCallbackStream(
+            with EventStream(
                     self.dut.hci_acl_manager.CreateConnection(
                         acl_manager_facade.ConnectionMsg(
                             address_type=int(
@@ -283,7 +268,6 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
                             address=bytes(cert_address,
                                           'utf8')))) as connection_event_stream:
 
-                connection_event_asserts = EventAsserts(connection_event_stream)
                 connection_request = None
 
                 def get_connect_request(packet):
@@ -297,7 +281,7 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
                     return False
 
                 # Cert Accepts
-                assertThat(cert_hci_event_asserts).emits(get_connect_request)
+                assertThat(cert_hci_event_stream).emits(get_connect_request)
                 self.enqueue_hci_command(
                     hci_packets.AcceptConnectionRequestBuilder(
                         connection_request.GetBdAddr(),
@@ -319,7 +303,7 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
                         return True
                     return False
 
-                assertThat(cert_hci_event_asserts).emits(get_handle)
+                assertThat(cert_hci_event_stream).emits(get_handle)
                 cert_handle = handle
 
                 self.enqueue_acl_data(
@@ -338,8 +322,8 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
                     bytes(b'\xe8\x03\x07\x00' + b'Hello' * 200))
 
                 # DUT gets a connection complete event and sends and receives
-                connection_event_asserts.assert_event_occurs(get_handle)
+                connection_event_stream.assert_event_occurs(get_handle)
 
-                assertThat(acl_data_asserts).emits(
+                assertThat(acl_data_stream).emits(
                     lambda packet: b'Hello!' in packet.payload).then(
                         lambda packet: b'Hello' * 200 in packet.payload)
