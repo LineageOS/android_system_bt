@@ -62,6 +62,68 @@ DEFINE_AND_INSTANTIATE_GroupFrameReflectionTest(g_frame);
 std::vector<uint8_t> config_mtu_request = {0x04, 0x05, 0x08, 0x00, 0x41, 0x00, 0x00, 0x00, 0x01, 0x02, 0xa0, 0x02};
 DEFINE_AND_INSTANTIATE_ConfigurationRequestReflectionTest(config_mtu_request);
 
+std::vector<uint8_t> config_request_one_defined_option = {0x04, 0x05, 0x08, 0x00, 0x41, 0x00,
+                                                          0x00, 0x00, 0x01, 0x02, 0x12, 0x34};
+std::vector<uint8_t> config_request_two_defined_options = {0x04, 0x05, 0x0c, 0x00, 0x41, 0x00, 0x00, 0x00,
+                                                           0x01, 0x02, 0x12, 0x34, 0x02, 0x02, 0x56, 0x78};
+std::vector<uint8_t> config_request_two_undefined_options = {0x04, 0x05, 0x0e, 0x00, 0x41, 0x00, 0x00, 0x00, 0x7f,
+                                                             0x02, 0x01, 0x00, 0x7e, 0x04, 0x11, 0x11, 0x00, 0x00};
+std::vector<uint8_t> config_request_hint_one_defined_option = {0x04, 0x05, 0x08, 0x00, 0x41, 0x00,
+                                                               0x00, 0x00, 0x81, 0x02, 0x12, 0x34};
+std::vector<uint8_t> config_request_hint_two_undefined_options = {0x04, 0x05, 0x0c, 0x00, 0x41, 0x00, 0x00, 0x00,
+                                                                  0x90, 0x02, 0x01, 0x00, 0x91, 0x02, 0x11, 0x11};
+TEST(L2capPacketsTest, testConfigRequestOptions) {
+  {
+    std::shared_ptr<std::vector<uint8_t>> view_bytes =
+        std::make_shared<std::vector<uint8_t>>(config_request_one_defined_option);
+
+    PacketView<kLittleEndian> packet_bytes_view(view_bytes);
+    auto view = ConfigurationRequestView::Create(ControlView::Create(packet_bytes_view));
+    ASSERT_TRUE(view.IsValid());
+    ASSERT_EQ(1, view.GetConfig().size());
+  }
+
+  {
+    std::shared_ptr<std::vector<uint8_t>> view_bytes =
+        std::make_shared<std::vector<uint8_t>>(config_request_two_defined_options);
+
+    PacketView<kLittleEndian> packet_bytes_view(view_bytes);
+    auto view = ConfigurationRequestView::Create(ControlView::Create(packet_bytes_view));
+    ASSERT_TRUE(view.IsValid());
+    ASSERT_EQ(2, view.GetConfig().size());
+  }
+
+  {
+    std::shared_ptr<std::vector<uint8_t>> view_bytes =
+        std::make_shared<std::vector<uint8_t>>(config_request_two_undefined_options);
+
+    PacketView<kLittleEndian> packet_bytes_view(view_bytes);
+    auto view = ConfigurationRequestView::Create(ControlView::Create(packet_bytes_view));
+    ASSERT_TRUE(view.IsValid());
+    ASSERT_EQ(2, view.GetConfig().size());
+  }
+
+  {
+    std::shared_ptr<std::vector<uint8_t>> view_bytes =
+        std::make_shared<std::vector<uint8_t>>(config_request_hint_one_defined_option);
+
+    PacketView<kLittleEndian> packet_bytes_view(view_bytes);
+    auto view = ConfigurationRequestView::Create(ControlView::Create(packet_bytes_view));
+    ASSERT_TRUE(view.IsValid());
+    ASSERT_EQ(1, view.GetConfig().size());
+  }
+
+  {
+    std::shared_ptr<std::vector<uint8_t>> view_bytes =
+        std::make_shared<std::vector<uint8_t>>(config_request_hint_two_undefined_options);
+
+    PacketView<kLittleEndian> packet_bytes_view(view_bytes);
+    auto view = ConfigurationRequestView::Create(ControlView::Create(packet_bytes_view));
+    ASSERT_TRUE(view.IsValid());
+    ASSERT_EQ(2, view.GetConfig().size());
+  }
+}
+
 DEFINE_ConfigurationRequestReflectionFuzzTest();
 
 TEST(L2capFuzzRegressions, ConfigurationRequestFuzz_5691566077247488) {
