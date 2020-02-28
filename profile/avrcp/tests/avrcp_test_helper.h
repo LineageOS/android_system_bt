@@ -58,8 +58,10 @@ class MockVolumeInterface : public VolumeInterface {
 
 class MockAvrcpInterface : public AvrcpInterface {
  public:
+  MOCK_METHOD0(GetAvrcpVersion, uint16_t(void));
   MOCK_METHOD7(AddRecord, uint16_t(uint16_t, const char*, const char*, uint16_t,
                                    uint32_t, bool, uint16_t));
+  MOCK_METHOD1(RemoveRecord, uint16_t(uint32_t));
   MOCK_METHOD4(FindService, uint16_t(uint16_t, const RawAddress&,
                                      tAVRC_SDP_DB_PARAMS*, tAVRC_FIND_CBACK));
   MOCK_METHOD3(Open, uint16_t(uint8_t*, tAVRC_CONN_CB*, const RawAddress&));

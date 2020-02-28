@@ -194,7 +194,9 @@ uint16_t AVRC_AddRecord(uint16_t service_uuid, const char* p_service_name,
   uint8_t index = 0;
   uint16_t class_list[2];
 
-  AVRC_TRACE_API("%s uuid: %x", __func__, service_uuid);
+  AVRC_TRACE_API("%s: Add AVRCP SDP record, uuid: %x, profile_version: 0x%x, "
+      "supported_features: 0x%x", __func__, service_uuid,
+      profile_version, categories);
 
   if (service_uuid != UUID_SERVCLASS_AV_REM_CTRL_TARGET &&
       service_uuid != UUID_SERVCLASS_AV_REMOTE_CONTROL)
@@ -235,20 +237,38 @@ uint16_t AVRC_AddRecord(uint16_t service_uuid, const char* p_service_name,
                                 &avrc_proto_desc_list[0]);
 
   /* additional protocal descriptor, required only for version > 1.3 */
-  if ((profile_version > AVRC_REV_1_3) && (browse_supported)) {
-    tSDP_PROTO_LIST_ELEM avrc_add_proto_desc_list;
-    avrc_add_proto_desc_list.num_elems = 2;
-    avrc_add_proto_desc_list.list_elem[0].num_params = 1;
-    avrc_add_proto_desc_list.list_elem[0].protocol_uuid = UUID_PROTOCOL_L2CAP;
-    avrc_add_proto_desc_list.list_elem[0].params[0] = AVCT_BR_PSM;
-    avrc_add_proto_desc_list.list_elem[0].params[1] = 0;
-    avrc_add_proto_desc_list.list_elem[1].num_params = 1;
-    avrc_add_proto_desc_list.list_elem[1].protocol_uuid = UUID_PROTOCOL_AVCTP;
-    avrc_add_proto_desc_list.list_elem[1].params[0] = protocol_reported_version;
-    avrc_add_proto_desc_list.list_elem[1].params[1] = 0;
+  if (profile_version > AVRC_REV_1_3) {
+    int num_additional_protocols = 0;
+    int i = 0;
+    tSDP_PROTO_LIST_ELEM avrc_add_proto_desc_lists[2];
 
-    result &=
-        SDP_AddAdditionProtoLists(sdp_handle, 1, &avrc_add_proto_desc_list);
+    /* If we support browsing then add the list */
+    if (browse_supported) {
+      AVRC_TRACE_API("%s: Add Browsing PSM to additonal protocol descriptor"
+                     " lists", __func__);
+      num_additional_protocols++;
+      avrc_add_proto_desc_lists[i].num_elems = 2;
+      avrc_add_proto_desc_lists[i].list_elem[0].num_params = 1;
+      avrc_add_proto_desc_lists[i].list_elem[0].protocol_uuid =
+          UUID_PROTOCOL_L2CAP;
+      avrc_add_proto_desc_lists[i].list_elem[0].params[0] = AVCT_BR_PSM;
+      avrc_add_proto_desc_lists[i].list_elem[0].params[1] = 0;
+      avrc_add_proto_desc_lists[i].list_elem[1].num_params = 1;
+      avrc_add_proto_desc_lists[i].list_elem[1].protocol_uuid =
+          UUID_PROTOCOL_AVCTP;
+      avrc_add_proto_desc_lists[i].list_elem[1].params[0] =
+          protocol_reported_version;
+      avrc_add_proto_desc_lists[i].list_elem[1].params[1] = 0;
+      i++;
+    }
+
+    /* Add the additional lists if we support any */
+    if (num_additional_protocols > 0) {
+      AVRC_TRACE_API("%s: Add %d additonal protocol descriptor lists",
+                     __func__, num_additional_protocols);
+      result &= SDP_AddAdditionProtoLists(sdp_handle, num_additional_protocols,
+                                          avrc_add_proto_desc_lists);
+    }
   }
   /* add profile descriptor list   */
   result &= SDP_AddProfileDescriptorList(
@@ -279,6 +299,25 @@ uint16_t AVRC_AddRecord(uint16_t service_uuid, const char* p_service_name,
   result &= SDP_AddUuidSequence(sdp_handle, ATTR_ID_BROWSE_GROUP_LIST, 1,
                                 browse_list);
 
+  return (result ? AVRC_SUCCESS : AVRC_FAIL);
+}
+
+/*******************************************************************************
+ *
+ * Function          AVRC_RemoveRecord
+ *
+ * Description       This function is called to remove an AVRCP SDP record.
+ *
+ *                   Input Parameters:
+ *                       sdp_handle:  Handle you used with AVRC_AddRecord
+ *
+ * Returns           AVRC_SUCCESS if successful.
+ *                   AVRC_FAIL otherwise
+ *
+ *******************************************************************************/
+uint16_t AVRC_RemoveRecord(uint32_t sdp_handle) {
+  AVRC_TRACE_API("%s: remove AVRCP SDP record", __func__);
+  bool result = SDP_DeleteRecord(sdp_handle);
   return (result ? AVRC_SUCCESS : AVRC_FAIL);
 }
 

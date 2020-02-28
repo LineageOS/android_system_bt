@@ -82,10 +82,14 @@ class AvrcpService : public MediaCallbacks {
 
  protected:
   void DeviceCallback(std::shared_ptr<Device> device);
+  uint16_t GetSupportedFeatures(uint16_t profile_version);
 
  private:
   static AvrcpService* instance_;
   static ServiceInterfaceImpl* service_interface_;
+
+  uint32_t sdp_record_handle = -1;
+  uint16_t profile_version = -1;
 
   MediaInterface* media_interface_ = nullptr;
   VolumeInterface* volume_interface_ = nullptr;

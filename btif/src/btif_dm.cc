@@ -2752,6 +2752,34 @@ void btif_dm_on_disable() {
  ******************************************************************************/
 void btif_dm_read_energy_info() { BTA_DmBleGetEnergyInfo(bta_energy_info_cb); }
 
+/*******************************************************************************
+ *
+ * Function        btif_dm_add_uuid_to_eir
+ *
+ * Description     Add a service class uuid to the local device's EIR data
+ *
+ * Returns         void
+ *
+ ******************************************************************************/
+void btif_dm_add_uuid_to_eir(uint16_t uuid16) {
+  BTIF_TRACE_DEBUG("%s: %d", __func__, uuid16);
+  BTA_AddEirUuid(uuid16);
+}
+
+/*******************************************************************************
+ *
+ * Function        btif_dm_remove_uuid_from_eir
+ *
+ * Description     Remove a service class uuid from the local device's EIR data
+ *
+ * Returns         void
+ *
+ ******************************************************************************/
+void btif_dm_remove_uuid_from_eir(uint16_t uuid16) {
+  BTIF_TRACE_DEBUG("%s: %d", __func__, uuid16);
+  BTA_RemoveEirUuid(uuid16);
+}
+
 static char* btif_get_default_local_name() {
   if (btif_default_local_name[0] == '\0') {
     int max_len = sizeof(btif_default_local_name) - 1;

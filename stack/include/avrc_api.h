@@ -109,6 +109,31 @@
  * response from the peer */
 #define AVRC_CMD_TIMEOUT_EVT 8
 
+/* Configurable avrcp version key and constant values */
+#ifndef AVRC_VERSION_PROPERTY
+#define AVRC_VERSION_PROPERTY "persist.bluetooth.avrcpversion"
+#endif
+
+#ifndef AVRC_1_6_STRING
+#define AVRC_1_6_STRING "avrcp16"
+#endif
+
+#ifndef AVRC_1_5_STRING
+#define AVRC_1_5_STRING "avrcp15"
+#endif
+
+#ifndef AVRC_1_4_STRING
+#define AVRC_1_4_STRING "avrcp14"
+#endif
+
+#ifndef AVRC_1_3_STRING
+#define AVRC_1_3_STRING "avrcp13"
+#endif
+
+#ifndef AVRC_DEFAULT_VERSION
+#define AVRC_DEFAULT_VERSION AVRC_1_4_STRING
+#endif
+
 /* Supported categories */
 #define AVRC_SUPF_CT_CAT1 0x0001         /* Category 1 */
 #define AVRC_SUPF_CT_CAT2 0x0002         /* Category 2 */
@@ -199,6 +224,17 @@ typedef struct {
 
 /******************************************************************************
  *
+ * Function         ARVC_GetProfileVersion
+ *
+ * Description      Get the user assigned AVRCP profile version
+ *
+ * Returns          The AVRCP profile version
+ *
+ *****************************************************************************/
+extern uint16_t AVRC_GetProfileVersion();
+
+/******************************************************************************
+ *
  * Function         AVRC_AddRecord
  *
  * Description      This function is called to build an AVRCP SDP record.
@@ -222,6 +258,10 @@ typedef struct {
  *
  *                      sdp_handle:  SDP handle returned by SDP_CreateRecord().
  *
+ *                      browse_supported:  browse support info.
+ *
+ *                      profile_version:  profile version of avrcp record.
+ *
  *                  Output Parameters:
  *                      None.
  *
@@ -235,6 +275,21 @@ extern uint16_t AVRC_AddRecord(uint16_t service_uuid,
                                const char* p_provider_name, uint16_t categories,
                                uint32_t sdp_handle, bool browse_supported,
                                uint16_t profile_version);
+
+/*******************************************************************************
+ *
+ * Function          AVRC_RemoveRecord
+ *
+ * Description       This function is called to remove an AVRCP SDP record.
+ *
+ *                   Input Parameters:
+ *                       sdp_handle:  Handle you used with AVRC_AddRecord
+ *
+ * Returns           AVRC_SUCCESS if successful.
+ *                   AVRC_FAIL otherwise
+ *
+ *******************************************************************************/
+extern uint16_t AVRC_RemoveRecord(uint32_t sdp_handle);
 
 /******************************************************************************
  *

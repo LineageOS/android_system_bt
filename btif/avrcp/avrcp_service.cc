@@ -24,6 +24,7 @@
 #include <sstream>
 
 #include "btif_av.h"
+#include "btif_dm.h"
 #include "btif_common.h"
 #include "device.h"
 #include "stack/include/btu.h"
@@ -60,6 +61,10 @@ class A2dpInterfaceImpl : public A2dpInterface {
 
 class AvrcpInterfaceImpl : public AvrcpInterface {
  public:
+  uint16_t GetAvrcpVersion() {
+    return AVRC_GetProfileVersion();
+  }
+
   uint16_t AddRecord(uint16_t service_uuid, const char* p_service_name,
                      const char* p_provider_name, uint16_t categories,
                      uint32_t sdp_handle, bool browse_supported,
@@ -67,6 +72,10 @@ class AvrcpInterfaceImpl : public AvrcpInterface {
     return AVRC_AddRecord(service_uuid, p_service_name, p_provider_name,
                           categories, sdp_handle, browse_supported,
                           profile_version);
+  }
+
+  uint16_t RemoveRecord(uint32_t sdp_handle) {
+    return AVRC_RemoveRecord(sdp_handle);
   }
 
   uint16_t FindService(uint16_t service_uuid, const RawAddress& bd_addr,
@@ -287,8 +296,16 @@ void AvrcpService::Init(MediaInterface* media_interface,
                         VolumeInterface* volume_interface) {
   LOG(INFO) << "AVRCP Target Service started";
 
-  // TODO (apanicke): Add a function that sets up the SDP records once we
-  // remove the AVRCP SDP setup in AVDTP (bta_av_main.cc)
+  profile_version = avrcp_interface_.GetAvrcpVersion();
+
+  uint16_t supported_features = GetSupportedFeatures(profile_version);
+  sdp_record_handle = SDP_CreateRecord();
+
+  avrcp_interface_.AddRecord(UUID_SERVCLASS_AV_REM_CTRL_TARGET,
+                             "AV Remote Control Target", NULL,
+                             supported_features, sdp_record_handle, true,
+                             profile_version);
+  btif_dm_add_uuid_to_eir(UUID_SERVCLASS_AV_REM_CTRL_TARGET);
 
   media_interface_ = new MediaInterfaceWrapper(media_interface);
   media_interface->RegisterUpdateCallback(instance_);
@@ -306,8 +323,26 @@ void AvrcpService::Init(MediaInterface* media_interface,
   connection_handler_ = ConnectionHandler::Get();
 }
 
+uint16_t AvrcpService::GetSupportedFeatures(uint16_t profile_version) {
+  switch (profile_version) {
+    case AVRC_REV_1_6:
+      return AVRCP_SUPF_TG_1_6;
+    case AVRC_REV_1_5:
+      return AVRCP_SUPF_TG_1_5;
+    case AVRC_REV_1_4:
+      return AVRCP_SUPF_TG_1_4;
+    case AVRC_REV_1_3:
+      return AVRCP_SUPF_TG_1_3;
+  }
+  return AVRCP_SUPF_TG_DEFAULT;
+}
+
 void AvrcpService::Cleanup() {
   LOG(INFO) << "AVRCP Target Service stopped";
+
+  avrcp_interface_.RemoveRecord(sdp_record_handle);
+  btif_dm_remove_uuid_from_eir(UUID_SERVCLASS_AV_REM_CTRL_TARGET);
+  sdp_record_handle = -1;
 
   connection_handler_->CleanUp();
   connection_handler_ = nullptr;
