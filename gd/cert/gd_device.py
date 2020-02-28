@@ -28,6 +28,7 @@ from hci.facade import le_scanning_manager_facade_pb2_grpc
 from neighbor.facade import facade_pb2_grpc as neighbor_facade_pb2_grpc
 from l2cap.classic import facade_pb2_grpc as l2cap_facade_pb2_grpc
 from security import facade_pb2_grpc as security_facade_pb2_grpc
+from google.protobuf import empty_pb2 as empty_proto
 
 ACTS_CONTROLLER_CONFIG_NAME = "GdDevice"
 ACTS_CONTROLLER_REFERENCE_NAME = "gd_devices"
@@ -90,6 +91,8 @@ class GdDevice(GdDeviceBase):
             self.grpc_channel)
         self.hci_controller = controller_facade_pb2_grpc.ControllerFacadeStub(
             self.grpc_channel)
+        self.hci_controller.GetMacAddressSimple = lambda : self.hci_controller.GetMacAddress(empty_proto.Empty()).address
+        self.hci_controller.GetLocalNameSimple = lambda : self.hci_controller.GetLocalName(empty_proto.Empty()).name
         self.hci_le_advertising_manager = le_advertising_manager_facade_pb2_grpc.LeAdvertisingManagerFacadeStub(
             self.grpc_channel)
         self.hci_le_scanning_manager = le_scanning_manager_facade_pb2_grpc.LeScanningManagerFacadeStub(
