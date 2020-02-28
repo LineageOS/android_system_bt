@@ -180,6 +180,7 @@ class ServiceInterface {
   virtual void UnregisterBipServer() = 0;
   virtual bool ConnectDevice(const RawAddress& bdaddr) = 0;
   virtual bool DisconnectDevice(const RawAddress& bdaddr) = 0;
+  virtual void SetBipClientStatus(const RawAddress& bdaddr, bool connected) = 0;
   virtual bool Cleanup() = 0;
 
  protected:

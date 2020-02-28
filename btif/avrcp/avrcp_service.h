@@ -62,6 +62,8 @@ class AvrcpService : public MediaCallbacks {
   void ConnectDevice(const RawAddress& bdaddr);
   void DisconnectDevice(const RawAddress& bdaddr);
 
+  void SetBipClientStatus(const RawAddress& bdaddr, bool connected);
+
   // Functions inherited from MediaCallbacks in order to receive updates
   void SendMediaUpdate(bool track_changed, bool play_state,
                        bool queue) override;
@@ -77,6 +79,7 @@ class AvrcpService : public MediaCallbacks {
     void UnregisterBipServer() override;
     bool ConnectDevice(const RawAddress& bdaddr) override;
     bool DisconnectDevice(const RawAddress& bdaddr) override;
+    void SetBipClientStatus(const RawAddress& bdaddr, bool connected) override;
     bool Cleanup() override;
 
    private:

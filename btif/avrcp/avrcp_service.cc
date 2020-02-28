@@ -401,6 +401,13 @@ void AvrcpService::DisconnectDevice(const RawAddress& bdaddr) {
   connection_handler_->DisconnectDevice(bdaddr);
 }
 
+void AvrcpService::SetBipClientStatus(const RawAddress& bdaddr,
+                                      bool connected) {
+  LOG(INFO) << __PRETTY_FUNCTION__ << ": address=" << bdaddr.ToString()
+            << ", connected=" << connected;
+  connection_handler_->SetBipClientStatus(bdaddr, connected);
+}
+
 void AvrcpService::SendMediaUpdate(bool track_changed, bool play_state,
                                    bool queue) {
   LOG(INFO) << __PRETTY_FUNCTION__ << " track_changed=" << track_changed
@@ -498,6 +505,15 @@ bool AvrcpService::ServiceInterfaceImpl::DisconnectDevice(
   do_in_main_thread(FROM_HERE, base::Bind(&AvrcpService::DisconnectDevice,
                                           base::Unretained(instance_), bdaddr));
   return true;
+}
+
+void AvrcpService::ServiceInterfaceImpl::SetBipClientStatus(
+    const RawAddress& bdaddr, bool connected) {
+  std::lock_guard<std::mutex> lock(service_interface_lock_);
+  CHECK(instance_ != nullptr);
+  do_in_main_thread(FROM_HERE, base::Bind(&AvrcpService::SetBipClientStatus,
+                                          base::Unretained(instance_), bdaddr,
+                                          connected));
 }
 
 bool AvrcpService::ServiceInterfaceImpl::Cleanup() {

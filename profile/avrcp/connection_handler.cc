@@ -149,6 +149,16 @@ bool ConnectionHandler::DisconnectDevice(const RawAddress& bdaddr) {
   return false;
 }
 
+void ConnectionHandler::SetBipClientStatus(const RawAddress& bdaddr,
+                                           bool connected) {
+  for (auto it = device_map_.begin(); it != device_map_.end(); it++) {
+    if (bdaddr == it->second->GetAddress()) {
+      it->second->SetBipClientStatus(connected);
+      return;
+    }
+  }
+}
+
 std::vector<std::shared_ptr<Device>> ConnectionHandler::GetListOfDevices()
     const {
   std::vector<std::shared_ptr<Device>> list;
