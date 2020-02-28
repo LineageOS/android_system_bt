@@ -87,6 +87,45 @@ void BTIF_DM_SetUiCallback(std::function<void(RawAddress, bt_bdname_t, uint32_t,
   security_manager->SetUserInterfaceHandler(&ui, bluetooth::shim::GetGdShimHandler());
 }
 
+class ShimBondListener : public security::ISecurityManagerListener {
+ public:
+  void SetLegacyCallbacks(std::function<void(RawAddress)> bond_state_bonding_cb,
+                          std::function<void(RawAddress)> bond_state_bonded_cb,
+                          std::function<void(RawAddress)> bond_state_none_cb) {
+    bond_state_bonding_cb_ = bond_state_bonding_cb;
+    bond_state_bonded_cb_ = bond_state_bonded_cb;
+    bond_state_none_cb_ = bond_state_none_cb;
+  }
+  void OnDeviceBonded(bluetooth::hci::AddressWithType device) {
+    bond_state_bonded_cb_(RawAddress(device.GetAddress().address));
+  }
+
+  void OnDeviceUnbonded(bluetooth::hci::AddressWithType device) {
+    bond_state_none_cb_(RawAddress(device.GetAddress().address));
+  }
+
+  void OnDeviceBondFailed(bluetooth::hci::AddressWithType device) {
+    bond_state_none_cb_(RawAddress(device.GetAddress().address));
+  }
+
+  std::function<void(RawAddress)> bond_state_bonding_cb_;
+  std::function<void(RawAddress)> bond_state_bonded_cb_;
+  std::function<void(RawAddress)> bond_state_none_cb_;
+};
+
+ShimBondListener shim_bond_listener;
+
+void BTIF_RegisterBondStateChangeListener(
+    std::function<void(RawAddress)> bonding_cb,
+    std::function<void(RawAddress)> bonded_cb,
+    std::function<void(RawAddress)> none_cb) {
+  auto security_manager =
+      bluetooth::shim::GetSecurityModule()->GetSecurityManager();
+  shim_bond_listener.SetLegacyCallbacks(bonding_cb, bonded_cb, none_cb);
+  security_manager->RegisterCallbackListener(
+      &shim_bond_listener, bluetooth::shim::GetGdShimHandler());
+}
+
 void BTIF_DM_ssp_reply(const RawAddress bd_addr, uint8_t addr_type, bt_ssp_variant_t variant, uint8_t accept) {
   hci::AddressWithType address = ToAddressWithType(bd_addr, addr_type);
   auto security_manager = bluetooth::shim::GetSecurityModule()->GetSecurityManager();

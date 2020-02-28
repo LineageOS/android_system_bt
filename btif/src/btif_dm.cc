@@ -290,6 +290,13 @@ static void btif_dm_data_free(uint16_t event, tBTA_DM_SEC* dm_sec) {
     osi_free_and_reset((void**)&dm_sec->ble_key.p_key_value);
 }
 
+static void btif_dm_send_bond_state_changed(RawAddress address, bt_bond_state_t bond_state) {
+  do_in_jni_thread(FROM_HERE, base::BindOnce([](RawAddress address, bt_bond_state_t bond_state) {
+    btif_stats_add_bond_event(address, BTIF_DM_FUNC_BOND_STATE_CHANGED, bond_state);
+    HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, BT_STATUS_SUCCESS, &address, bond_state);
+  }, address, bond_state));
+}
+
 void btif_dm_init(uid_set_t* set) {
   uid_set = set;
   if (bluetooth::shim::is_gd_shim_enabled()) {
@@ -309,6 +316,17 @@ void btif_dm_init(uid_set_t* set) {
         HAL_CBACK(bt_hal_cbacks, ssp_request_cb, &address, &bd_name, cod, pairing_variant, pass_key);
       }, address, bd_name, cod, pairing_variant, pass_key));
     });
+
+    bluetooth::shim::BTIF_RegisterBondStateChangeListener(
+        [](RawAddress address) {
+          btif_dm_send_bond_state_changed(address, BT_BOND_STATE_BONDING);
+        },
+        [](RawAddress address) {
+          btif_dm_send_bond_state_changed(address, BT_BOND_STATE_BONDED);
+        },
+        [](RawAddress address) {
+          btif_dm_send_bond_state_changed(address, BT_BOND_STATE_NONE);
+        });
   }
 }
 
