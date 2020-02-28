@@ -187,7 +187,11 @@ class SimpleSecurityTest(GdFacadeOnlyBaseTestClass):
                 security_facade.UiCallbackMsg(
                     message_type=security_facade.UiCallbackType.YES_NO,
                     boolean=True,
-                    unique_id=ui_id))
+                    unique_id=ui_id,
+                    address=common.BluetoothAddressWithType(
+                        address=common.BluetoothAddress(address=cert_address),
+                        type=common.BluetoothAddressTypeEnum.
+                        PUBLIC_DEVICE_ADDRESS)))
 
             dut_bond_asserts.assert_event_occurs(
                 lambda bond_event: bond_event.message_type == security_facade.BondMsgType.DEVICE_BONDED

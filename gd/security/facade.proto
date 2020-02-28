@@ -39,6 +39,7 @@ message UiCallbackMsg {
   bool boolean = 2;
   uint32 numeric_value = 3;
   uint32 unique_id = 4;
+  facade.BluetoothAddressWithType address = 5;
 }
 
 enum BondMsgType {
