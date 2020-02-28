@@ -618,6 +618,11 @@ size_field_definition
       DEBUG() << "Size for payload defined\n";
       $$ = new SizeField("payload", $6, LOC);
     }
+  | SIZE '(' BODY ')' ':' INTEGER
+    {
+      DEBUG() << "Size for body defined\n";
+      $$ = new SizeField("body", $6, LOC);
+    }
   | COUNT '(' IDENTIFIER ')' ':' INTEGER
     {
       DEBUG() << "Count field defined\n";
