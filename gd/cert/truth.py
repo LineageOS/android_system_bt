@@ -20,6 +20,7 @@ from mobly.asserts import assert_true
 from mobly.asserts import assert_false
 
 from mobly import signals
+from cert.event_asserts import EventAsserts
 
 import sys, traceback
 
@@ -53,6 +54,26 @@ class ObjectSubject(object):
                 "Expected \"%s\" to not be None" % self._value, extras=None)
 
 
+class EventStreamSubject(ObjectSubject):
+
+    def __init__(self, value):
+        super().__init__(value)
+
+    def emits(self, match_fn):
+        self._value.assert_event_occurs(match_fn)
+        return EventStreamContinuationSubject(self._value)
+
+
+class EventStreamContinuationSubject(ObjectSubject):
+
+    def __init__(self, value):
+        super().__init__(value)
+
+    def then(self, match_fn):
+        self._value.assert_event_occurs(match_fn)
+        return EventStreamContinuationSubject(self._value)
+
+
 class BooleanSubject(ObjectSubject):
 
     def __init__(self, value):
@@ -68,5 +89,7 @@ class BooleanSubject(ObjectSubject):
 def assertThat(subject):
     if type(subject) is bool:
         return BooleanSubject(subject)
+    elif isinstance(subject, EventAsserts):
+        return EventStreamSubject(subject)
     else:
         return ObjectSubject(subject)
