@@ -31,5 +31,9 @@ namespace shim {
 void BTIF_DM_SetUiCallback(std::function<void(RawAddress, bt_bdname_t, uint32_t, bt_ssp_variant_t, uint32_t)> callback);
 void BTIF_DM_ssp_reply(const RawAddress bd_addr, uint8_t, bt_ssp_variant_t variant, uint8_t accept);
 void BTIF_DM_pin_reply(const RawAddress bd_addr, uint8_t, uint8_t, uint8_t, bt_pin_code_t);
+void BTIF_RegisterBondStateChangeListener(
+    std::function<void(RawAddress)> bond_state_bonding_cb,
+    std::function<void(RawAddress)> bond_state_bonded_cb,
+    std::function<void(RawAddress)> bond_state_none_cb);
 }  // namespace shim
 }  // namespace bluetooth
