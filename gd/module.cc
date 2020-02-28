@@ -98,7 +98,10 @@ void ModuleRegistry::StopAll() {
     instance->second->handler_->Clear();
     instance->second->handler_->WaitUntilStopped(kModuleStopTimeout);
     instance->second->Stop();
-
+  }
+  for (auto it = start_order_.rbegin(); it != start_order_.rend(); it++) {
+    auto instance = started_modules_.find(*it);
+    ASSERT(instance != started_modules_.end());
     delete instance->second->handler_;
     delete instance->second;
     started_modules_.erase(instance);
