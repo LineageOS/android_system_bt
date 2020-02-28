@@ -176,6 +176,8 @@ class ServiceInterface {
   // Volume is disabled.
   virtual void Init(MediaInterface* mediaInterface,
                     VolumeInterface* volumeInterface) = 0;
+  virtual void RegisterBipServer(int psm) = 0;
+  virtual void UnregisterBipServer() = 0;
   virtual bool ConnectDevice(const RawAddress& bdaddr) = 0;
   virtual bool DisconnectDevice(const RawAddress& bdaddr) = 0;
   virtual bool Cleanup() = 0;

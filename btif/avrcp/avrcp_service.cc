@@ -68,10 +68,11 @@ class AvrcpInterfaceImpl : public AvrcpInterface {
   uint16_t AddRecord(uint16_t service_uuid, const char* p_service_name,
                      const char* p_provider_name, uint16_t categories,
                      uint32_t sdp_handle, bool browse_supported,
-                     uint16_t profile_version) override {
+                     uint16_t profile_version,
+                     uint16_t cover_art_psm) override {
     return AVRC_AddRecord(service_uuid, p_service_name, p_provider_name,
                           categories, sdp_handle, browse_supported,
-                          profile_version);
+                          profile_version, cover_art_psm);
   }
 
   uint16_t RemoveRecord(uint32_t sdp_handle) {
@@ -304,7 +305,7 @@ void AvrcpService::Init(MediaInterface* media_interface,
   avrcp_interface_.AddRecord(UUID_SERVCLASS_AV_REM_CTRL_TARGET,
                              "AV Remote Control Target", NULL,
                              supported_features, sdp_record_handle, true,
-                             profile_version);
+                             profile_version, 0);
   btif_dm_add_uuid_to_eir(UUID_SERVCLASS_AV_REM_CTRL_TARGET);
 
   media_interface_ = new MediaInterfaceWrapper(media_interface);
@@ -350,6 +351,30 @@ void AvrcpService::Cleanup() {
     delete volume_interface_;
   }
   delete media_interface_;
+}
+
+void AvrcpService::RegisterBipServer(int psm) {
+  LOG(INFO) << "AVRCP Target Service has registered a BIP OBEX server, psm="
+            << psm;
+  avrcp_interface_.RemoveRecord(sdp_record_handle);
+  uint16_t supported_features
+      = GetSupportedFeatures(profile_version) | AVRC_SUPF_TG_PLAYER_COVER_ART;
+  sdp_record_handle = SDP_CreateRecord();
+  avrcp_interface_.AddRecord(UUID_SERVCLASS_AV_REM_CTRL_TARGET,
+                             "AV Remote Control Target", NULL,
+                             supported_features, sdp_record_handle, true,
+                             profile_version, psm);
+}
+
+void AvrcpService::UnregisterBipServer() {
+  LOG(INFO) << "AVRCP Target Service has unregistered a BIP OBEX server";
+  avrcp_interface_.RemoveRecord(sdp_record_handle);
+  uint16_t supported_features = GetSupportedFeatures(profile_version);
+  sdp_record_handle = SDP_CreateRecord();
+  avrcp_interface_.AddRecord(UUID_SERVCLASS_AV_REM_CTRL_TARGET,
+                             "AV Remote Control Target", NULL,
+                             supported_features, sdp_record_handle, true,
+                             profile_version, 0);
 }
 
 AvrcpService* AvrcpService::Get() {
@@ -441,6 +466,20 @@ void AvrcpService::ServiceInterfaceImpl::Init(
   do_in_main_thread(FROM_HERE,
                     base::Bind(&AvrcpService::Init, base::Unretained(instance_),
                                media_interface, volume_interface));
+}
+
+void AvrcpService::ServiceInterfaceImpl::RegisterBipServer(int psm) {
+  std::lock_guard<std::mutex> lock(service_interface_lock_);
+  CHECK(instance_ != nullptr);
+  do_in_main_thread(FROM_HERE, base::Bind(&AvrcpService::RegisterBipServer,
+                                          base::Unretained(instance_), psm));
+}
+
+void AvrcpService::ServiceInterfaceImpl::UnregisterBipServer() {
+  std::lock_guard<std::mutex> lock(service_interface_lock_);
+  CHECK(instance_ != nullptr);
+  do_in_main_thread(FROM_HERE, base::Bind(&AvrcpService::UnregisterBipServer,
+                                          base::Unretained(instance_)));
 }
 
 bool AvrcpService::ServiceInterfaceImpl::ConnectDevice(

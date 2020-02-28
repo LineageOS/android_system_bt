@@ -174,6 +174,9 @@ uint16_t AVRC_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
  *
  *                      profile_version:  profile version of avrcp record.
  *
+ *                      cover_art_psm: The PSM of a cover art service, if
+ *                      supported. Use 0 Otherwise. Ignored on controller
+ *
  *                  Output Parameters:
  *                      None.
  *
@@ -185,7 +188,7 @@ uint16_t AVRC_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
 uint16_t AVRC_AddRecord(uint16_t service_uuid, const char* p_service_name,
                         const char* p_provider_name, uint16_t categories,
                         uint32_t sdp_handle, bool browse_supported,
-                        uint16_t profile_version) {
+                        uint16_t profile_version, uint16_t cover_art_psm) {
   uint16_t browse_list[1];
   bool result = true;
   uint8_t temp[8];
@@ -195,8 +198,8 @@ uint16_t AVRC_AddRecord(uint16_t service_uuid, const char* p_service_name,
   uint16_t class_list[2];
 
   AVRC_TRACE_API("%s: Add AVRCP SDP record, uuid: %x, profile_version: 0x%x, "
-      "supported_features: 0x%x", __func__, service_uuid,
-      profile_version, categories);
+      "supported_features: 0x%x, psm: 0x%x", __func__, service_uuid,
+      profile_version, categories, cover_art_psm);
 
   if (service_uuid != UUID_SERVCLASS_AV_REM_CTRL_TARGET &&
       service_uuid != UUID_SERVCLASS_AV_REMOTE_CONTROL)
@@ -259,6 +262,26 @@ uint16_t AVRC_AddRecord(uint16_t service_uuid, const char* p_service_name,
       avrc_add_proto_desc_lists[i].list_elem[1].params[0] =
           protocol_reported_version;
       avrc_add_proto_desc_lists[i].list_elem[1].params[1] = 0;
+      i++;
+    }
+
+    /* Add the BIP PSM for cover art on 1.6+ target devices that support it */
+    if (profile_version >= AVRC_REV_1_6 &&
+        service_uuid == UUID_SERVCLASS_AV_REM_CTRL_TARGET &&
+        cover_art_psm > 0) {
+      AVRC_TRACE_API("%s: Add AVRCP BIP PSM to additonal protocol descriptor"
+                     " lists, psm: 0x%x", __func__, cover_art_psm);
+      num_additional_protocols++;
+      avrc_add_proto_desc_lists[i].num_elems = 2;
+      avrc_add_proto_desc_lists[i].list_elem[0].num_params = 1;
+      avrc_add_proto_desc_lists[i].list_elem[0].protocol_uuid =
+          UUID_PROTOCOL_L2CAP;
+      avrc_add_proto_desc_lists[i].list_elem[0].params[0] = cover_art_psm;
+      avrc_add_proto_desc_lists[i].list_elem[0].params[1] = 0;
+      avrc_add_proto_desc_lists[i].list_elem[1].num_params = 0;
+      avrc_add_proto_desc_lists[i].list_elem[1].protocol_uuid =
+          UUID_PROTOCOL_OBEX;
+      avrc_add_proto_desc_lists[i].list_elem[1].params[0] = 0;
       i++;
     }
 

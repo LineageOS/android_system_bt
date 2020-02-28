@@ -56,6 +56,9 @@ class AvrcpService : public MediaCallbacks {
   void Init(MediaInterface* media_interface, VolumeInterface* volume_interface);
   void Cleanup();
 
+  void RegisterBipServer(int psm);
+  void UnregisterBipServer();
+
   void ConnectDevice(const RawAddress& bdaddr);
   void DisconnectDevice(const RawAddress& bdaddr);
 
@@ -70,6 +73,8 @@ class AvrcpService : public MediaCallbacks {
    public:
     void Init(MediaInterface* media_interface,
               VolumeInterface* volume_interface) override;
+    void RegisterBipServer(int psm) override;
+    void UnregisterBipServer() override;
     bool ConnectDevice(const RawAddress& bdaddr) override;
     bool DisconnectDevice(const RawAddress& bdaddr) override;
     bool Cleanup() override;

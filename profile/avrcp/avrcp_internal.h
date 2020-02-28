@@ -36,7 +36,8 @@ class AvrcpInterface {
   virtual uint16_t AddRecord(uint16_t service_uuid, const char* p_service_name,
                              const char* p_provider_name, uint16_t categories,
                              uint32_t sdp_handle, bool browse_supported,
-                             uint16_t profile_version) = 0;
+                             uint16_t profile_version,
+                             uint16_t cover_art_psm) = 0;
 
   virtual uint16_t RemoveRecord(uint32_t sdp_handle) = 0;
 
