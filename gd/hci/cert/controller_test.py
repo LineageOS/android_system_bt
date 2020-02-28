@@ -16,7 +16,7 @@
 
 import time
 
-from mobly import asserts
+from mobly.asserts import assert_true
 from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
 from google.protobuf import empty_pb2 as empty_proto
 from facade import rootservice_pb2 as facade_rootservice
@@ -30,14 +30,12 @@ class ControllerTest(GdFacadeOnlyBaseTestClass):
             dut_module='HCI_INTERFACES', cert_module='HCI_INTERFACES')
 
     def test_get_addresses(self):
-        cert_address_response = self.cert.hci_controller.GetMacAddress(
-            empty_proto.Empty())
-        dut_address_response = self.dut.hci_controller.GetMacAddress(
-            empty_proto.Empty())
-        asserts.assert_true(
-            cert_address_response.address != dut_address_response.address,
+        cert_address = self.cert.hci_controller.GetMacAddressSimple()
+        dut_address = self.dut.hci_controller.GetMacAddressSimple()
+        assert_true(
+            cert_address != dut_address,
             msg="Expected cert and dut address to be different %s" %
-            cert_address_response.address)
+            cert_address)
         time.sleep(1)  # This shouldn't be needed b/149120542
 
     def test_get_local_extended_features(self):
@@ -49,7 +47,7 @@ class ControllerTest(GdFacadeOnlyBaseTestClass):
         request0.page_number = 0
         dut_feature_response0 = self.dut.hci_controller.GetLocalExtendedFeatures(
             request0)
-        asserts.assert_true(
+        assert_true(
             dut_feature_response1.page != dut_feature_response0.page,
             msg="Expected cert dut feature pages to be different %d" %
             dut_feature_response1.page)
@@ -59,13 +57,10 @@ class ControllerTest(GdFacadeOnlyBaseTestClass):
             controller_facade.NameMsg(name=b'ImTheDUT'))
         self.cert.hci_controller.WriteLocalName(
             controller_facade.NameMsg(name=b'ImTheCert'))
-        cert_name_msg = self.cert.hci_controller.GetLocalName(
-            empty_proto.Empty()).name
-        dut_name_msg = self.dut.hci_controller.GetLocalName(
-            empty_proto.Empty()).name
-        asserts.assert_true(
-            dut_name_msg == b'ImTheDUT',
-            msg="unexpected dut name %s" % dut_name_msg)
-        asserts.assert_true(
-            cert_name_msg == b'ImTheCert',
-            msg="unexpected cert name %s" % cert_name_msg)
+        cert_name = self.cert.hci_controller.GetLocalNameSimple()
+        dut_name = self.dut.hci_controller.GetLocalNameSimple()
+        assert_true(
+            dut_name == b'ImTheDUT', msg="unexpected dut name %s" % dut_name)
+        assert_true(
+            cert_name == b'ImTheCert',
+            msg="unexpected cert name %s" % cert_name)
