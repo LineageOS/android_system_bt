@@ -59,9 +59,31 @@ class EventStreamSubject(ObjectSubject):
     def __init__(self, value):
         super().__init__(value)
 
-    def emits(self, match_fn):
-        self._value.assert_event_occurs(match_fn)
-        return EventStreamContinuationSubject(self._value)
+    def emits(self, *match_fns):
+        if len(match_fns) == 0:
+            raise signals.TestFailure("Must specify a match function")
+        elif len(match_fns) == 1:
+            self._value.assert_event_occurs(match_fns[0])
+            return EventStreamContinuationSubject(self._value)
+        else:
+            return MultiMatchStreamSubject(self._value, match_fns)
+
+
+class MultiMatchStreamSubject(object):
+
+    def __init__(self, stream, match_fns):
+        self._stream = stream
+        self._match_fns = match_fns
+
+    def inAnyOrder(self):
+        self._stream.assert_all_events_occur(
+            self._match_fns, order_matters=False)
+        return EventStreamContinuationSubject(self._stream)
+
+    def inOrder(self):
+        self._stream.assert_all_events_occur(
+            self._match_fns, order_matters=True)
+        return EventStreamContinuationSubject(self._stream)
 
 
 class EventStreamContinuationSubject(ObjectSubject):
@@ -69,9 +91,14 @@ class EventStreamContinuationSubject(ObjectSubject):
     def __init__(self, value):
         super().__init__(value)
 
-    def then(self, match_fn):
-        self._value.assert_event_occurs(match_fn)
-        return EventStreamContinuationSubject(self._value)
+    def then(self, *match_fns):
+        if len(match_fns) == 0:
+            raise signals.TestFailure("Must specify a match function")
+        elif len(match_fns) == 1:
+            self._value.assert_event_occurs(match_fns[0])
+            return EventStreamContinuationSubject(self._value)
+        else:
+            return MultiMatchStreamSubject(self._value, match_fns)
 
 
 class BooleanSubject(ObjectSubject):

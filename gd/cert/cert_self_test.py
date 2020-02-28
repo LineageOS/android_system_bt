@@ -301,3 +301,42 @@ class CertSelfTest(BaseTestClass):
             logging.debug(e)
             return True  # Failed as expected
         return False
+
+    def test_assertThat_eventStream_emitsInOrder_passes(self):
+        with EventStream(FetchEvents(events=[1, 2, 3],
+                                     delay_ms=50)) as event_stream:
+            assertThat(event_stream).emits(
+                lambda data: data.value_ == 1,
+                lambda data: data.value_ == 2).inOrder()
+
+    def test_assertThat_eventStream_emitsInAnyOrder_passes(self):
+        with EventStream(FetchEvents(events=[1, 2, 3],
+                                     delay_ms=50)) as event_stream:
+            assertThat(event_stream).emits(
+                lambda data: data.value_ == 2,
+                lambda data: data.value_ == 1).inAnyOrder().then(
+                    lambda data: data.value_ == 3)
+
+    def test_assertThat_eventStream_emitsInOrder_fails(self):
+        try:
+            with EventStream(FetchEvents(events=[1, 2, 3],
+                                         delay_ms=50)) as event_stream:
+                assertThat(event_stream).emits(
+                    lambda data: data.value_ == 2,
+                    lambda data: data.value_ == 1).inOrder()
+        except Exception as e:
+            logging.debug(e)
+            return True  # Failed as expected
+        return False
+
+    def test_assertThat_eventStream_emitsInAnyOrder_fails(self):
+        try:
+            with EventStream(FetchEvents(events=[1, 2, 3],
+                                         delay_ms=50)) as event_stream:
+                assertThat(event_stream).emits(
+                    lambda data: data.value_ == 4,
+                    lambda data: data.value_ == 1).inAnyOrder()
+        except Exception as e:
+            logging.debug(e)
+            return True  # Failed as expected
+        return False

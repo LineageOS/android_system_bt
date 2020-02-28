@@ -257,3 +257,42 @@ class EventStream(object):
             len(event_list) <= at_most_times,
             msg=("Expected at most %d events, but got %d" % (at_most_times,
                                                              len(event_list))))
+
+    def assert_all_events_occur(
+            self,
+            match_fns,
+            order_matters,
+            timeout=timedelta(seconds=DEFAULT_TIMEOUT_SECONDS)):
+        logging.debug("assert_all_events_occur %fs" % timeout.total_seconds())
+        pending_matches = list(match_fns)
+        matched_order = []
+        end_time = datetime.now() + timeout
+        while len(pending_matches) > 0 and datetime.now() < end_time:
+            remaining = self.remaining_time_delta(end_time)
+            logging.debug("Waiting for event (%fs remaining)" %
+                          (remaining.total_seconds()))
+            try:
+                current_event = self.event_queue.get(
+                    timeout=remaining.total_seconds())
+                for match_fn in pending_matches:
+                    if match_fn(current_event):
+                        pending_matches.remove(match_fn)
+                        matched_order.append(match_fn)
+            except Empty:
+                continue
+        logging.debug("Done waiting for event")
+        asserts.assert_true(
+            len(matched_order) == len(match_fns),
+            msg=("Expected at least %d events, but got %d" %
+                 (len(match_fns), len(matched_order))))
+        if order_matters:
+            correct_order = True
+            i = 0
+            while i < len(match_fns):
+                if match_fns[i] is not matched_order[i]:
+                    correct_order = False
+                    break
+                i += 1
+            asserts.assert_true(
+                correct_order, "Events not received in correct order %s %s" %
+                (match_fns, matched_order))
