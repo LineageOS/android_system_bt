@@ -309,15 +309,15 @@ enum ConfigurationOptionIsHint : 1 {
 struct ConfigurationOption {
   type : ConfigurationOptionType,
   is_hint : ConfigurationOptionIsHint,
-  length : 8,
+  _size_(_body_) : 8,
   _body_,
 }
 
-struct MtuConfigurationOption : ConfigurationOption (type = MTU, length = 2) {
+struct MtuConfigurationOption : ConfigurationOption (type = MTU) {
   mtu : 16,
 }
 
-struct FlushTimeoutConfigurationOption : ConfigurationOption (type = FLUSH_TIMEOUT, length = 2) {
+struct FlushTimeoutConfigurationOption : ConfigurationOption (type = FLUSH_TIMEOUT) {
   flush_timeout : 16,
 }
 
@@ -327,7 +327,7 @@ enum QosServiceType : 8 {
   GUARANTEED = 0x02,
 }
 
-struct QualityOfServiceConfigurationOption : ConfigurationOption (type = QUALITY_OF_SERVICE, length = 22) {
+struct QualityOfServiceConfigurationOption : ConfigurationOption (type = QUALITY_OF_SERVICE) {
   _reserved_ : 8, // Flags
   service_type : QosServiceType,
   token_rate : 32,         // 0 = ignore, 0xffffffff = max available
@@ -346,7 +346,7 @@ enum RetransmissionAndFlowControlModeOption : 8 {
 }
 
 
-struct RetransmissionAndFlowControlConfigurationOption : ConfigurationOption (type = RETRANSMISSION_AND_FLOW_CONTROL, length = 9) {
+struct RetransmissionAndFlowControlConfigurationOption : ConfigurationOption (type = RETRANSMISSION_AND_FLOW_CONTROL) {
   mode : RetransmissionAndFlowControlModeOption,
   tx_window_size : 8, // 1-32 for Flow Control and Retransmission, 1-63 for Enhanced
   max_transmit : 8,
@@ -360,12 +360,12 @@ enum FcsType : 8 {
   DEFAULT = 1,  // 16-bit FCS
 }
 
-struct FrameCheckSequenceOption : ConfigurationOption (type = FRAME_CHECK_SEQUENCE, length = 1) {
+struct FrameCheckSequenceOption : ConfigurationOption (type = FRAME_CHECK_SEQUENCE) {
   fcs_type : FcsType,
 }
 
 
-struct ExtendedFlowSpecificationOption : ConfigurationOption (type = EXTENDED_FLOW_SPECIFICATION, length = 16) {
+struct ExtendedFlowSpecificationOption : ConfigurationOption (type = EXTENDED_FLOW_SPECIFICATION) {
   identifier : 8, // Default 0x01, must be 0x01 for Extended Flow-Best-Effort
   service_type : QosServiceType,
   maximum_sdu_size : 16, // Octets
@@ -374,7 +374,7 @@ struct ExtendedFlowSpecificationOption : ConfigurationOption (type = EXTENDED_FL
   flush_timeout : 32, // in microseconds 0x0 = no retransmissions 0xFFFFFFFF = never flushed
 }
 
-struct ExtendedWindowSizeOption : ConfigurationOption (type = EXTENDED_WINDOW_SIZE, length = 2) {
+struct ExtendedWindowSizeOption : ConfigurationOption (type = EXTENDED_WINDOW_SIZE) {
   max_window_size : 16, // 0x0000 = Valid for streaming, 0x0001-0x3FFF Valid for Enhanced Retransmission
 }
 

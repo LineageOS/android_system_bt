@@ -90,6 +90,12 @@ void ParentDef::AssignSizeFields() {
       continue;
     }
 
+    if (var_len_field->GetFieldType() == BodyField::kFieldType) {
+      const auto& body_field = static_cast<BodyField*>(var_len_field);
+      body_field->SetSizeField(size_field);
+      continue;
+    }
+
     if (var_len_field->GetFieldType() == VectorField::kFieldType) {
       const auto& vector_field = static_cast<VectorField*>(var_len_field);
       vector_field->SetSizeField(size_field);
@@ -312,6 +318,16 @@ void ParentDef::GenSize(std::ostream& s) const {
   if (fields_.HasPayload()) {
     s << "+ payload_->size()";
   }
+  if (fields_.HasBody()) {
+    for (const auto& field : header_fields) {
+      if (field->GetFieldType() == SizeField::kFieldType) {
+        const auto& field_name = ((SizeField*)field)->GetSizedFieldName();
+        if (field_name == "body") {
+          s << "+ body_size_extracted_";
+        }
+      }
+    }
+  }
   s << " + (BitsOfFooter() / 8);";
   s << "}\n";
 }
@@ -351,6 +367,13 @@ void ParentDef::GenSerialize(std::ostream& s) const {
         }
         s << "ASSERT(payload_bytes < (static_cast<size_t>(1) << " << field->GetSize().bits() << "));";
         s << "insert(static_cast<" << field->GetDataType() << ">(payload_bytes), i," << field->GetSize().bits() << ");";
+      } else if (sized_field->GetFieldType() == BodyField::kFieldType) {
+        s << field->GetName() << "_extracted_ = 0;";
+        s << "size_t local_size = " << name_ << "::size();";
+
+        s << "ASSERT((size() - local_size) < (static_cast<size_t>(1) << " << field->GetSize().bits() << "));";
+        s << "insert(static_cast<" << field->GetDataType() << ">(size() - local_size), i," << field->GetSize().bits()
+          << ");";
       } else {
         if (sized_field->GetFieldType() != VectorField::kFieldType) {
           ERROR(field) << __func__ << ": Unhandled sized field type for " << field_name;
