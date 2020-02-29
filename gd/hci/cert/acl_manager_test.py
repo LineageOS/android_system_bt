@@ -60,7 +60,7 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
             hci_packets.EventCode.CONNECTION_COMPLETE,
             hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
 
-        with EventStream(self.cert.hci.FetchEvents(empty_proto.Empty())) as cert_hci_event_stream, \
+        with self.cert.hci.new_event_stream() as cert_hci_event_stream, \
             EventStream(self.cert.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
             EventStream(self.dut.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
 
@@ -129,7 +129,7 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
             hci_packets.EventCode.CONNECTION_COMPLETE,
             hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
 
-        with EventStream(self.cert.hci.FetchEvents(empty_proto.Empty())) as cert_hci_event_stream, \
+        with self.cert.hci.new_event_stream() as cert_hci_event_stream, \
             EventStream(self.cert.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
             EventStream(self.dut.hci_acl_manager.FetchIncomingConnection(empty_proto.Empty())) as incoming_connection_stream, \
             EventStream(self.dut.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
@@ -186,7 +186,7 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
             hci_packets.EventCode.CONNECTION_COMPLETE,
             hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
 
-        with EventStream(self.cert.hci.FetchEvents(empty_proto.Empty())) as cert_hci_event_stream, \
+        with self.cert.hci.new_event_stream() as cert_hci_event_stream, \
             EventStream(self.cert.hci.FetchAclPackets(empty_proto.Empty())) as cert_acl_data_stream, \
             EventStream(self.dut.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
 
