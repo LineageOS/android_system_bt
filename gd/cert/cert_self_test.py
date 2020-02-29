@@ -284,3 +284,40 @@ class CertSelfTest(BaseTestClass):
         except Exception as e:
             return True
         return False
+
+    def test_assertThat_eventStream_emits_passes(self):
+        with EventCallbackStream(FetchEvents(events=[1, 2, 3],
+                                             delay_ms=50)) as event_stream:
+            event_asserts = EventAsserts(event_stream)
+            assertThat(event_asserts).emits(lambda data: data.value_ == 1)
+
+    def test_assertThat_eventStream_emits_then_passes(self):
+        with EventCallbackStream(FetchEvents(events=[1, 2, 3],
+                                             delay_ms=50)) as event_stream:
+            event_asserts = EventAsserts(event_stream)
+            assertThat(event_asserts).emits(lambda data: data.value_ == 1).then(
+                lambda data: data.value_ == 3)
+
+    def test_assertThat_eventStream_emits_fails(self):
+        try:
+            with EventCallbackStream(
+                    FetchEvents(events=[1, 2, 3], delay_ms=50)) as event_stream:
+                event_asserts = EventAsserts(event_stream)
+                assertThat(event_asserts).emits(lambda data: data.value_ == 4)
+        except Exception as e:
+            logging.debug(e)
+            return True  # Failed as expected
+        return False
+
+    def test_assertThat_eventStream_emits_then_fails(self):
+        try:
+            with EventCallbackStream(
+                    FetchEvents(events=[1, 2, 3], delay_ms=50)) as event_stream:
+                event_asserts = EventAsserts(event_stream)
+                assertThat(event_asserts).emits(
+                    lambda data: data.value_ == 1).emits(
+                        lambda data: data.value_ == 4)
+        except Exception as e:
+            logging.debug(e)
+            return True  # Failed as expected
+        return False
