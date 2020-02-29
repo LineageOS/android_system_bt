@@ -16,6 +16,8 @@
 
 from google.protobuf import empty_pb2 as empty_proto
 from cert.event_stream import EventStream
+from cert.event_stream import FilteringEventStream
+from cert.event_stream import IEventStream
 from captures import ReadBdAddrCompleteCapture
 from captures import ConnectionCompleteCapture
 from captures import ConnectionRequestCapture
@@ -25,11 +27,13 @@ from hci.facade import facade_pb2 as hci_facade
 from hci.facade import acl_manager_facade_pb2 as acl_manager_facade
 
 
-class PyAclManagerAclConnection(object):
+class PyAclManagerAclConnection(IEventStream):
 
-    def __init__(self, device, remote_addr, handle):
+    def __init__(self, device, acl_stream, remote_addr, handle):
         self.device = device
         self.handle = handle
+        # todo enable filtering after sorting out handles
+        self.our_acl_stream = FilteringEventStream(acl_stream, None)
 
         if remote_addr:
             self.connection_event_stream = EventStream(
@@ -64,6 +68,9 @@ class PyAclManagerAclConnection(object):
         self.device.hci_acl_manager.SendAclData(
             acl_manager_facade.AclData(handle=self.handle, payload=bytes(data)))
 
+    def get_event_queue(self):
+        return self.our_acl_stream.get_event_queue()
+
 
 class PyAclManager(object):
 
@@ -94,14 +101,13 @@ class PyAclManager(object):
             self.device.hci_acl_manager.FetchIncomingConnection(
                 empty_proto.Empty()))
 
-    def get_acl_stream(self):
-        return self.acl_stream
-
     def initiate_connection(self, remote_addr):
-        return PyAclManagerAclConnection(self.device, remote_addr, None)
+        return PyAclManagerAclConnection(self.device, self.acl_stream,
+                                         remote_addr, None)
 
     def accept_connection(self):
         connection_complete = ConnectionCompleteCapture()
         assertThat(self.incoming_connection_stream).emits(connection_complete)
         handle = connection_complete.get().GetConnectionHandle()
-        return PyAclManagerAclConnection(self.device, None, handle)
+        return PyAclManagerAclConnection(self.device, self.acl_stream, None,
+                                         handle)

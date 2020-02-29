@@ -16,6 +16,8 @@
 
 from google.protobuf import empty_pb2 as empty_proto
 from cert.event_stream import EventStream
+from cert.event_stream import FilteringEventStream
+from cert.event_stream import IEventStream
 from captures import ReadBdAddrCompleteCapture
 from captures import ConnectionCompleteCapture
 from captures import ConnectionRequestCapture
@@ -24,16 +26,17 @@ from cert.truth import assertThat
 from hci.facade import facade_pb2 as hci_facade
 
 
-class PyHciAclConnection(object):
+class PyHciAclConnection(IEventStream):
 
     def __init__(self, handle, acl_stream, device):
-        self.handle = handle
-        self.acl_stream = acl_stream
+        self.handle = int(handle)
         self.device = device
+        # todo, handle we got is 0, so doesn't match - fix before enabling filtering
+        self.our_acl_stream = FilteringEventStream(acl_stream, None)
 
     def send(self, pb_flag, b_flag, data):
         acl_msg = hci_facade.AclMsg(
-            handle=int(self.handle),
+            handle=self.handle,
             packet_boundary_flag=int(pb_flag),
             broadcast_flag=int(b_flag),
             data=data)
@@ -46,6 +49,9 @@ class PyHciAclConnection(object):
     def send_continuing(self, data):
         self.send(hci_packets.PacketBoundaryFlag.CONTINUING_FRAGMENT,
                   hci_packets.BroadcastFlag.POINT_TO_POINT, bytes(data))
+
+    def get_event_queue(self):
+        return self.our_acl_stream.get_event_queue()
 
 
 class PyHci(object):
@@ -79,9 +85,6 @@ class PyHci(object):
 
     def get_event_stream(self):
         return self.event_stream
-
-    def get_acl_stream(self):
-        return self.acl_stream
 
     def send_command_with_complete(self, command):
         self.device.hci.send_command_with_complete(command)

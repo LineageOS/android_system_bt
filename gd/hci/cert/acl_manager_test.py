@@ -58,9 +58,9 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
                     b'\x29\x00\x07\x00This is just SomeMoreAclData from the DUT'
                 )
 
-                assertThat(cert_hci.get_acl_stream()).emits(
+                assertThat(cert_acl).emits(
                     lambda packet: b'SomeMoreAclData' in packet.data)
-                assertThat(dut_acl_manager.get_acl_stream()).emits(
+                assertThat(dut_acl).emits(
                     lambda packet: b'SomeAclData' in packet.payload)
 
     def test_cert_connects(self):
@@ -85,9 +85,9 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
             cert_acl.send_first(
                 b'\x26\x00\x07\x00This is just SomeAclData from the Cert')
 
-            assertThat(cert_hci.get_acl_stream()).emits(
+            assertThat(cert_acl).emits(
                 lambda packet: b'SomeMoreAclData' in packet.data)
-            assertThat(dut_acl_manager.get_acl_stream()).emits(
+            assertThat(dut_acl).emits(
                 lambda packet: b'SomeAclData' in packet.payload)
 
     def test_recombination_l2cap_packet(self):
@@ -105,6 +105,6 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
 
                 dut_acl.wait_for_connection_complete()
 
-                assertThat(dut_acl_manager.get_acl_stream()).emits(
+                assertThat(dut_acl).emits(
                     lambda packet: b'Hello!' in packet.payload,
                     lambda packet: b'Hello' * 200 in packet.payload).inOrder()
