@@ -56,16 +56,8 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
         with PyHci(self.cert) as cert_hci, \
             EventStream(self.dut.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
 
-            # CERT Enables scans and gets its address
-            cert_hci.send_command_with_complete(
-                hci_packets.WriteScanEnableBuilder(
-                    hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
-
-            cert_hci.send_command_with_complete(hci_packets.ReadBdAddrBuilder())
-
-            read_bd_addr = ReadBdAddrCompleteCapture()
-            assertThat(cert_hci.get_event_stream()).emits(read_bd_addr)
-            cert_address = read_bd_addr.get().GetBdAddr()
+            cert_hci.enable_inquiry_and_page_scan()
+            cert_address = cert_hci.read_own_address()
 
             with EventStream(
                     self.dut.hci_acl_manager.CreateConnection(
@@ -180,15 +172,8 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
             EventStream(self.dut.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
 
             # CERT Enables scans and gets its address
-            cert_hci.send_command_with_complete(
-                hci_packets.WriteScanEnableBuilder(
-                    hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
-
-            cert_hci.send_command_with_complete(hci_packets.ReadBdAddrBuilder())
-
-            read_bd_addr = ReadBdAddrCompleteCapture()
-            assertThat(cert_hci.get_event_stream()).emits(read_bd_addr)
-            cert_address = read_bd_addr.get().GetBdAddr()
+            cert_hci.enable_inquiry_and_page_scan()
+            cert_address = cert_hci.read_own_address()
 
             with EventStream(
                     self.dut.hci_acl_manager.CreateConnection(

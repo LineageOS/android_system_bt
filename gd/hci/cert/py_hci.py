@@ -16,6 +16,9 @@
 
 from google.protobuf import empty_pb2 as empty_proto
 from cert.event_stream import EventStream
+from captures import ReadBdAddrCompleteCapture
+from bluetooth_packets_python3 import hci_packets
+from cert.truth import assertThat
 
 
 class PyHci(object):
@@ -51,3 +54,14 @@ class PyHci(object):
 
     def send_command_with_status(self, command):
         self.device.hci.send_command_with_status(command)
+
+    def enable_inquiry_and_page_scan(self):
+        self.send_command_with_complete(
+            hci_packets.WriteScanEnableBuilder(
+                hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
+
+    def read_own_address(self):
+        self.send_command_with_complete(hci_packets.ReadBdAddrBuilder())
+        read_bd_addr = ReadBdAddrCompleteCapture()
+        assertThat(self.event_stream).emits(read_bd_addr)
+        return read_bd_addr.get().GetBdAddr()
