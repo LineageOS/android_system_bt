@@ -19,8 +19,7 @@ import sys
 import logging
 
 from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
-from cert.event_callback_stream import EventCallbackStream
-from cert.event_asserts import EventAsserts
+from cert.event_stream import EventStream
 from google.protobuf import empty_pb2 as empty_proto
 from facade import rootservice_pb2 as facade_rootservice
 from hci.facade import facade_pb2 as hci_facade
@@ -61,13 +60,12 @@ class NeighborTest(GdFacadeOnlyBaseTestClass):
             result_mode=neighbor_facade.ResultMode.STANDARD,
             length_1_28s=3,
             max_results=0)
-        with EventCallbackStream(self.dut.neighbor.SetInquiryMode(
+        with EventStream(self.dut.neighbor.SetInquiryMode(
                 inquiry_msg)) as inquiry_event_stream:
-            hci_event_asserts = EventAsserts(inquiry_event_stream)
             self.enqueue_hci_command(
                 hci_packets.WriteScanEnableBuilder(
                     hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN), True)
-            hci_event_asserts.assert_event_occurs(
+            hci_event_stream.assert_event_occurs(
                 lambda msg: b'\x02\x0f' in msg.packet
                 # Expecting an HCI Event (code 0x02, length 0x0f)
             )
@@ -78,13 +76,12 @@ class NeighborTest(GdFacadeOnlyBaseTestClass):
             result_mode=neighbor_facade.ResultMode.RSSI,
             length_1_28s=3,
             max_results=0)
-        with EventCallbackStream(self.dut.neighbor.SetInquiryMode(
+        with EventStream(self.dut.neighbor.SetInquiryMode(
                 inquiry_msg)) as inquiry_event_stream:
-            hci_event_asserts = EventAsserts(inquiry_event_stream)
             self.enqueue_hci_command(
                 hci_packets.WriteScanEnableBuilder(
                     hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN), True)
-            hci_event_asserts.assert_event_occurs(
+            hci_event_stream.assert_event_occurs(
                 lambda msg: b'\x22\x0f' in msg.packet
                 # Expecting an HCI Event (code 0x22, length 0x0f)
             )
@@ -104,23 +101,20 @@ class NeighborTest(GdFacadeOnlyBaseTestClass):
             result_mode=neighbor_facade.ResultMode.EXTENDED,
             length_1_28s=3,
             max_results=0)
-        with EventCallbackStream(self.dut.neighbor.SetInquiryMode(
+        with EventStream(self.dut.neighbor.SetInquiryMode(
                 inquiry_msg)) as inquiry_event_stream:
-            hci_event_asserts = EventAsserts(inquiry_event_stream)
             self.enqueue_hci_command(
                 hci_packets.WriteScanEnableBuilder(
                     hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN), True)
-            hci_event_asserts.assert_event_occurs(
+            hci_event_stream.assert_event_occurs(
                 lambda msg: name_string in msg.packet)
 
     def test_remote_name(self):
         self.register_for_dut_event(
             hci_packets.EventCode.REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION)
 
-        with EventCallbackStream(self.cert.hci.FetchEvents(empty_proto.Empty())) as hci_event_stream, \
-            EventCallbackStream(self.dut.neighbor.GetRemoteNameEvents(empty_proto.Empty())) as name_event_stream:
-            name_event_asserts = EventAsserts(name_event_stream)
-            hci_event_asserts = EventAsserts(hci_event_stream)
+        with EventStream(self.cert.hci.FetchEvents(empty_proto.Empty())) as hci_event_stream, \
+            EventStream(self.dut.neighbor.GetRemoteNameEvents(empty_proto.Empty())) as name_event_stream:
 
             cert_name = b'Im_A_Cert'
             padded_name = cert_name
@@ -129,7 +123,7 @@ class NeighborTest(GdFacadeOnlyBaseTestClass):
             self.enqueue_hci_command(
                 hci_packets.WriteLocalNameBuilder(padded_name), True)
 
-            hci_event_asserts.assert_event_occurs(
+            hci_event_stream.assert_event_occurs(
                 lambda msg: b'\x0e\x04\x01\x13\x0c' in msg.event)
 
             address = hci_packets.Address()
@@ -153,7 +147,7 @@ class NeighborTest(GdFacadeOnlyBaseTestClass):
                     hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN), True)
             self.enqueue_hci_command(hci_packets.ReadBdAddrBuilder(), True)
 
-            hci_event_asserts.assert_event_occurs(get_address_from_complete)
+            hci_event_stream.assert_event_occurs(get_address_from_complete)
 
             cert_address = address.encode('utf8')
 
@@ -162,5 +156,5 @@ class NeighborTest(GdFacadeOnlyBaseTestClass):
                     address=cert_address,
                     page_scan_repetition_mode=1,
                     clock_offset=0x6855))
-            name_event_asserts.assert_event_occurs(
+            name_event_stream.assert_event_occurs(
                 lambda msg: cert_name in msg.name)
