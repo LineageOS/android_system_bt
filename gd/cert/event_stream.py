@@ -21,40 +21,123 @@ from queue import SimpleQueue, Empty
 from mobly import asserts
 
 from google.protobuf import text_format
+from concurrent.futures import ThreadPoolExecutor
+from grpc import RpcError
 
 
-class EventAsserts(object):
+class EventStream(object):
     """
-    A class that handles various asserts with respect to a gRPC unary stream
+    A class that streams events from a gRPC stream, which you can assert on.
 
-    This class must be created before an event happens as events in a
-    EventCallbackStream is not sticky and will be lost if you don't subscribe
-    to them before generating those events.
-
-    When asserting on sequential events, a single EventAsserts object is enough
-
-    When asserting on simultaneous events, you would need multiple EventAsserts
-    objects as each EventAsserts object owns a separate queue that is actively
-    being popped as asserted events happen
+    Don't use these asserts directly, use the ones from cert.truth.
     """
     DEFAULT_TIMEOUT_SECONDS = 3
 
-    def __init__(self, event_callback_stream):
-        if event_callback_stream is None:
-            raise ValueError("event_callback_stream cannot be None")
-        self.event_callback_stream = event_callback_stream
+    def __init__(self, server_stream_call):
+        if server_stream_call is None:
+            raise ValueError("server_stream_call cannot be None")
+
+        self.server_stream_call = server_stream_call
         self.event_queue = SimpleQueue()
-        self.callback = lambda event: self.event_queue.put(event)
-        self.event_callback_stream.register_callback(self.callback)
+        self.handlers = []
+        self.executor = ThreadPoolExecutor()
+        self.future = self.executor.submit(EventStream._event_loop, self)
+
+    def __enter__(self):
+        return self
+
+    def __exit__(self, type, value, traceback):
+        self.shutdown()
+        return traceback is None
 
     def __del__(self):
-        self.event_callback_stream.unregister_callback(self.callback)
+        self.shutdown()
 
     def remaining_time_delta(self, end_time):
         remaining = end_time - datetime.now()
         if remaining < timedelta(milliseconds=0):
             remaining = timedelta(milliseconds=0)
         return remaining
+
+    def shutdown(self):
+        """
+        Stop the gRPC lambda so that event_callback will not be invoked after th
+        method returns.
+
+        This object will be useless after this call as there is no way to restart
+        the gRPC callback. You would have to create a new EventStream
+
+        :return: None on success, exception object on failure
+        """
+        while not self.server_stream_call.done():
+            self.server_stream_call.cancel()
+        exception_for_return = None
+        try:
+            result = self.future.result()
+            if result:
+                logging.warning("Inner loop error %s" % result)
+                raise result
+        except Exception as exp:
+            logging.warning("Exception: %s" % (exp))
+            exception_for_return = exp
+        self.executor.shutdown()
+        return exception_for_return
+
+    def register_callback(self, callback, matcher_fn=None):
+        """
+        Register a callback to handle events. Event will be handled by callback
+        if matcher_fn(event) returns True
+
+        callback and matcher are registered as a tuple. Hence the same callback
+        with different matcher are considered two different handler units. Same
+        matcher, but different callback are also considered different handling
+        unit
+
+        Callback will be invoked on a ThreadPoolExecutor owned by this
+        EventStream
+
+        :param callback: Will be called as callback(event)
+        :param matcher_fn: A boolean function that returns True or False when
+                           calling matcher_fn(event), if None, all event will
+                           be matched
+        """
+        if callback is None:
+            raise ValueError("callback must not be None")
+        self.handlers.append((callback, matcher_fn))
+
+    def unregister_callback(self, callback, matcher_fn=None):
+        """
+        Unregister callback and matcher_fn from the event stream. Both objects
+        must match exactly the ones when calling register_callback()
+
+        :param callback: callback used in register_callback()
+        :param matcher_fn: matcher_fn used in register_callback()
+        :raises ValueError when (callback, matcher_fn) tuple is not found
+        """
+        if callback is None:
+            raise ValueError("callback must not be None")
+        self.handlers.remove((callback, matcher_fn))
+
+    def _event_loop(self):
+        """
+        Main loop for consuming the gRPC stream events.
+        Blocks until computation is cancelled
+        :return: None on success, exception object on failure
+        """
+        try:
+            for event in self.server_stream_call:
+                self.event_queue.put(event)
+                for (callback, matcher_fn) in self.handlers:
+                    if not matcher_fn or matcher_fn(event):
+                        callback(event)
+            return None
+        except RpcError as exp:
+            if self.server_stream_call.cancelled():
+                logging.debug("Cancelled")
+                return None
+            else:
+                logging.warning("Some RPC error not due to cancellation")
+            return exp
 
     def assert_none(self, timeout=timedelta(seconds=DEFAULT_TIMEOUT_SECONDS)):
         """
@@ -174,3 +257,42 @@ class EventAsserts(object):
             len(event_list) <= at_most_times,
             msg=("Expected at most %d events, but got %d" % (at_most_times,
                                                              len(event_list))))
+
+    def assert_all_events_occur(
+            self,
+            match_fns,
+            order_matters,
+            timeout=timedelta(seconds=DEFAULT_TIMEOUT_SECONDS)):
+        logging.debug("assert_all_events_occur %fs" % timeout.total_seconds())
+        pending_matches = list(match_fns)
+        matched_order = []
+        end_time = datetime.now() + timeout
+        while len(pending_matches) > 0 and datetime.now() < end_time:
+            remaining = self.remaining_time_delta(end_time)
+            logging.debug("Waiting for event (%fs remaining)" %
+                          (remaining.total_seconds()))
+            try:
+                current_event = self.event_queue.get(
+                    timeout=remaining.total_seconds())
+                for match_fn in pending_matches:
+                    if match_fn(current_event):
+                        pending_matches.remove(match_fn)
+                        matched_order.append(match_fn)
+            except Empty:
+                continue
+        logging.debug("Done waiting for event")
+        asserts.assert_true(
+            len(matched_order) == len(match_fns),
+            msg=("Expected at least %d events, but got %d" %
+                 (len(match_fns), len(matched_order))))
+        if order_matters:
+            correct_order = True
+            i = 0
+            while i < len(match_fns):
+                if match_fns[i] is not matched_order[i]:
+                    correct_order = False
+                    break
+                i += 1
+            asserts.assert_true(
+                correct_order, "Events not received in correct order %s %s" %
+                (match_fns, matched_order))
