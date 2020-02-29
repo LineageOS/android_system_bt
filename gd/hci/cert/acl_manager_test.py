@@ -32,6 +32,7 @@ from captures import ReadBdAddrCompleteCapture
 from captures import ConnectionCompleteCapture
 from captures import ConnectionRequestCapture
 from py_hci import PyHci
+from py_acl_manager import PyAclManager
 
 
 class AclManagerTest(GdFacadeOnlyBaseTestClass):
@@ -41,7 +42,7 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
 
     def test_dut_connects(self):
         with PyHci(self.cert) as cert_hci, \
-            EventStream(self.dut.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
+            PyAclManager(self.dut) as dut_acl_manager:
 
             cert_hci.enable_inquiry_and_page_scan()
             cert_address = cert_hci.read_own_address()
@@ -72,7 +73,7 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
 
                 assertThat(cert_hci.get_acl_stream()).emits(
                     lambda packet: b'SomeMoreAclData' in packet.data)
-                assertThat(acl_data_stream).emits(
+                assertThat(dut_acl_manager.get_acl_stream()).emits(
                     lambda packet: b'SomeAclData' in packet.payload)
 
     def test_cert_connects(self):
@@ -111,7 +112,7 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
 
     def test_recombination_l2cap_packet(self):
         with PyHci(self.cert) as cert_hci, \
-            EventStream(self.dut.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
+            PyAclManager(self.dut) as dut_acl_manager:
 
             # CERT Enables scans and gets its address
             cert_hci.enable_inquiry_and_page_scan()
@@ -135,6 +136,6 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
                 connection_event_stream.assert_event_occurs(connection_complete)
                 dut_handle = connection_complete.get().GetConnectionHandle()
 
-                assertThat(acl_data_stream).emits(
-                    lambda packet: b'Hello!' in packet.payload).then(
-                        lambda packet: b'Hello' * 200 in packet.payload)
+                assertThat(dut_acl_manager.get_acl_stream()).emits(
+                    lambda packet: b'Hello!' in packet.payload,
+                    lambda packet: b'Hello' * 200 in packet.payload).inOrder()
