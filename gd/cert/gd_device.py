@@ -30,6 +30,7 @@ from neighbor.facade import facade_pb2_grpc as neighbor_facade_pb2_grpc
 from l2cap.classic import facade_pb2_grpc as l2cap_facade_pb2_grpc
 from security import facade_pb2_grpc as security_facade_pb2_grpc
 from google.protobuf import empty_pb2 as empty_proto
+from cert.event_stream import EventStream
 
 ACTS_CONTROLLER_CONFIG_NAME = "GdDevice"
 ACTS_CONTROLLER_REFERENCE_NAME = "gd_devices"
@@ -85,6 +86,7 @@ class GdDevice(GdDeviceBase):
             self.grpc_channel)
         self.hci = hci_facade_pb2_grpc.HciLayerFacadeStub(self.grpc_channel)
         self.hci.register_for_events = self.__register_for_hci_events
+        self.hci.new_event_stream = lambda: EventStream(self.hci.FetchEvents(empty_proto.Empty()))
         self.l2cap = l2cap_facade_pb2_grpc.L2capClassicModuleFacadeStub(
             self.grpc_channel)
         self.hci_acl_manager = acl_manager_facade_pb2_grpc.AclManagerFacadeStub(
