@@ -22,6 +22,7 @@ from datetime import datetime, timedelta
 from acts.base_test import BaseTestClass
 from cert.event_callback_stream import EventCallbackStream
 from cert.event_asserts import EventAsserts
+from cert.truth import assertThat
 
 # Test packet nesting
 from bluetooth_packets_python3 import hci_packets
@@ -231,3 +232,55 @@ class CertSelfTest(BaseTestClass):
         # Size is ACL (4) + L2CAP (4) + Configure (8) + MTU (4) + FCS (3)
         asserts.assert_true(
             len(wrapped.Serialize()) == 23, "Packet serialized incorrectly")
+
+    def test_assertThat_boolean_success(self):
+        assertThat(True).isTrue()
+        assertThat(False).isFalse()
+
+    def test_assertThat_boolean_falseIsTrue(self):
+        try:
+            assertThat(False).isTrue()
+        except Exception as e:
+            return True
+        return False
+
+    def test_assertThat_boolean_trueIsFalse(self):
+        try:
+            assertThat(True).isFalse()
+        except Exception as e:
+            return True
+        return False
+
+    def test_assertThat_object_success(self):
+        assertThat("this").isEqualTo("this")
+        assertThat("this").isNotEqualTo("that")
+        assertThat(None).isNone()
+        assertThat("this").isNotNone()
+
+    def test_assertThat_object_isEqualToFails(self):
+        try:
+            assertThat("this").isEqualTo("that")
+        except Exception as e:
+            return True
+        return False
+
+    def test_assertThat_object_isNotEqualToFails(self):
+        try:
+            assertThat("this").isNotEqualTo("this")
+        except Exception as e:
+            return True
+        return False
+
+    def test_assertThat_object_isNoneFails(self):
+        try:
+            assertThat("this").isNone()
+        except Exception as e:
+            return True
+        return False
+
+    def test_assertThat_object_isNotNoneFails(self):
+        try:
+            assertThat(None).isNotNone()
+        except Exception as e:
+            return True
+        return False
