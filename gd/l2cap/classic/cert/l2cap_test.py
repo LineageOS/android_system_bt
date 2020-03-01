@@ -19,6 +19,7 @@ from mobly import asserts
 
 from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
 from cert.event_stream import EventStream
+from cert.py_l2cap import PyL2cap
 from facade import common_pb2
 from facade import rootservice_pb2 as facade_rootservice
 from google.protobuf import empty_pb2 as empty_proto
@@ -66,6 +67,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.scid_to_dcid = {}
         self.ertm_tx_window_size = 10
         self.ertm_max_transmit = 20
+
+        self.dut_l2cap = PyL2cap(self.dut)
 
     def _on_connection_request_default(self, l2cap_control_view):
         connection_request_view = l2cap_packets.ConnectionRequestView(
@@ -491,13 +494,11 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             psm=0x33,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.BASIC):
 
-        self.dut.l2cap.SetDynamicChannel(
-            l2cap_facade_pb2.SetEnableDynamicChannelRequest(
-                psm=psm, retransmission_mode=mode))
-        open_channel = l2cap_packets.ConnectionRequestBuilder(
-            signal_id, psm, scid)
-        open_channel_l2cap = l2cap_packets.BasicFrameBuilder(1, open_channel)
-        self.cert_send_b_frame(open_channel_l2cap)
+        self.dut_l2cap.open_channel(psm, mode)
+
+        open_channel = l2cap_packets.BasicFrameBuilder(
+            1, l2cap_packets.ConnectionRequestBuilder(signal_id, psm, scid))
+        self.cert_send_b_frame(open_channel)
 
         def verify_connection_response(packet):
             packet_bytes = packet.payload
