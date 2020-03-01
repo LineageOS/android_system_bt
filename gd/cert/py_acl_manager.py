@@ -38,12 +38,15 @@ class PyAclManagerAclConnection(IEventStream, Closable):
         self.our_acl_stream = FilteringEventStream(acl_stream, None)
 
         if remote_addr:
+            remote_addr_bytes = bytes(
+                remote_addr,
+                'utf8') if type(remote_addr) is str else bytes(remote_addr)
             self.connection_event_stream = EventStream(
                 self.device.hci_acl_manager.CreateConnection(
                     acl_manager_facade.ConnectionMsg(
                         address_type=int(
                             hci_packets.AddressType.PUBLIC_DEVICE_ADDRESS),
-                        address=bytes(remote_addr, 'utf8'))))
+                        address=remote_addr_bytes)))
         else:
             self.connection_event_stream = None
 
@@ -75,6 +78,10 @@ class PyAclManager(Closable):
     def close(self):
         safeClose(self.acl_stream)
         safeClose(self.incoming_connection_stream)
+
+    # temporary, until everyone is migrated
+    def get_acl_stream(self):
+        return self.acl_stream
 
     def listen_for_incoming_connections(self):
         self.incoming_connection_stream = EventStream(
