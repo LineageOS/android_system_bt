@@ -313,124 +313,99 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
                 l2cap_control_view)
         return
 
-    def is_correct_connection_request(self, l2cap_packet):
-        packet_bytes = l2cap_packet.payload
-        l2cap_view = l2cap_packets.BasicFrameView(
-            bt_packets.PacketViewLittleEndian(list(packet_bytes)))
+    def get_basic_frame(self, l2cap_packet):
+        return l2cap_packets.BasicFrameView(
+            bt_packets.PacketViewLittleEndian(list(l2cap_packet.payload)))
+
+    def get_control_frame(self, l2cap_packet, code):
+        l2cap_view = self.get_basic_frame(l2cap_packet)
         if l2cap_view.GetChannelId() != 1:
-            return False
+            return None
         l2cap_control_view = l2cap_packets.ControlView(l2cap_view.GetPayload())
-        return l2cap_control_view.GetCode(
-        ) == l2cap_packets.CommandCode.CONNECTION_REQUEST
+        if l2cap_control_view.GetCode() != code:
+            return None
+        return l2cap_control_view
+
+    def is_correct_connection_request(self, l2cap_packet):
+        return self.get_control_frame(
+            l2cap_packet,
+            l2cap_packets.CommandCode.CONNECTION_REQUEST) is not None
 
     def is_correct_configuration_response(self, l2cap_packet):
-        packet_bytes = l2cap_packet.payload
-        l2cap_view = l2cap_packets.BasicFrameView(
-            bt_packets.PacketViewLittleEndian(list(packet_bytes)))
-        if l2cap_view.GetChannelId() != 1:
-            return False
-        l2cap_control_view = l2cap_packets.ControlView(l2cap_view.GetPayload())
-        if l2cap_control_view.GetCode(
-        ) != l2cap_packets.CommandCode.CONFIGURATION_RESPONSE:
+        control_frame = self.get_control_frame(
+            l2cap_packet, l2cap_packets.CommandCode.CONFIGURATION_RESPONSE)
+        if control_frame is None:
             return False
         configuration_response_view = l2cap_packets.ConfigurationResponseView(
-            l2cap_control_view)
+            control_frame)
         return configuration_response_view.GetResult(
         ) == l2cap_packets.ConfigurationResponseResult.SUCCESS
 
     def is_correct_configuration_request(self, l2cap_packet):
-        packet_bytes = l2cap_packet.payload
-        l2cap_view = l2cap_packets.BasicFrameView(
-            bt_packets.PacketViewLittleEndian(list(packet_bytes)))
-        if l2cap_view.GetChannelId() != 1:
-            return False
-        l2cap_control_view = l2cap_packets.ControlView(l2cap_view.GetPayload())
-        return l2cap_control_view.GetCode(
-        ) == l2cap_packets.CommandCode.CONFIGURATION_REQUEST
+        return self.get_control_frame(
+            l2cap_packet,
+            l2cap_packets.CommandCode.CONFIGURATION_REQUEST) is not None
 
     def is_correct_disconnection_request(self, l2cap_packet):
-        packet_bytes = l2cap_packet.payload
-        l2cap_view = l2cap_packets.BasicFrameView(
-            bt_packets.PacketViewLittleEndian(list(packet_bytes)))
-        if l2cap_view.GetChannelId() != 1:
-            return False
-        l2cap_control_view = l2cap_packets.ControlView(l2cap_view.GetPayload())
-        return l2cap_control_view.GetCode(
-        ) == l2cap_packets.CommandCode.DISCONNECTION_REQUEST
+        return self.get_control_frame(
+            l2cap_packet,
+            l2cap_packets.CommandCode.DISCONNECTION_REQUEST) is not None
 
     def cert_send_b_frame(self, b_frame):
         self.cert_acl.send(b_frame.Serialize())
 
-    def get_req_seq_from_ertm_s_frame(self, scid, packet):
-        packet_bytes = packet.payload
-        l2cap_view = l2cap_packets.BasicFrameView(
-            bt_packets.PacketViewLittleEndian(list(packet_bytes)))
+    def get_enhanced_supervisory_frame(self, scid, packet):
+        l2cap_view = self.get_basic_frame(packet)
         if l2cap_view.GetChannelId() != scid:
-            return False
+            return None
         standard_view = l2cap_packets.StandardFrameView(l2cap_view)
-        if standard_view.GetFrameType() == l2cap_packets.FrameType.I_FRAME:
+        if standard_view.GetFrameType() != l2cap_packets.FrameType.S_FRAME:
+            return None
+        return l2cap_packets.EnhancedSupervisoryFrameView(standard_view)
+
+    def get_enhanced_information_frame(self, scid, packet):
+        l2cap_view = self.get_basic_frame(packet)
+        if l2cap_view.GetChannelId() != scid:
+            return None
+        standard_view = l2cap_packets.StandardFrameView(l2cap_view)
+        if standard_view.GetFrameType() != l2cap_packets.FrameType.I_FRAME:
+            return None
+        return l2cap_packets.EnhancedInformationFrameView(standard_view)
+
+    def get_req_seq_from_ertm_s_frame(self, scid, packet):
+        s_frame = self.get_enhanced_supervisory_frame(scid, packet)
+        if s_frame is None:
             return False
-        s_frame = l2cap_packets.EnhancedSupervisoryFrameView(standard_view)
         return s_frame.GetReqSeq()
 
     def get_s_from_ertm_s_frame(self, scid, packet):
-        packet_bytes = packet.payload
-        l2cap_view = l2cap_packets.BasicFrameView(
-            bt_packets.PacketViewLittleEndian(list(packet_bytes)))
-        if l2cap_view.GetChannelId() != scid:
+        s_frame = self.get_enhanced_supervisory_frame(scid, packet)
+        if s_frame is None:
             return False
-        standard_view = l2cap_packets.StandardFrameView(l2cap_view)
-        if standard_view.GetFrameType() == l2cap_packets.FrameType.I_FRAME:
-            return False
-        s_frame = l2cap_packets.EnhancedSupervisoryFrameView(standard_view)
         return s_frame.GetS()
 
     def get_p_from_ertm_s_frame(self, scid, packet):
-        packet_bytes = packet.payload
-        l2cap_view = l2cap_packets.BasicFrameView(
-            bt_packets.PacketViewLittleEndian(list(packet_bytes)))
-        if l2cap_view.GetChannelId() != scid:
+        s_frame = self.get_enhanced_supervisory_frame(scid, packet)
+        if s_frame is None:
             return False
-        standard_view = l2cap_packets.StandardFrameView(l2cap_view)
-        if standard_view.GetFrameType() == l2cap_packets.FrameType.I_FRAME:
-            return False
-        s_frame = l2cap_packets.EnhancedSupervisoryFrameView(standard_view)
         return s_frame.GetP()
 
     def get_f_from_ertm_s_frame(self, scid, packet):
-        packet_bytes = packet.payload
-        l2cap_view = l2cap_packets.BasicFrameView(
-            bt_packets.PacketViewLittleEndian(list(packet_bytes)))
-        if l2cap_view.GetChannelId() != scid:
+        s_frame = self.get_enhanced_supervisory_frame(scid, packet)
+        if s_frame is None:
             return False
-        standard_view = l2cap_packets.StandardFrameView(l2cap_view)
-        if standard_view.GetFrameType() == l2cap_packets.FrameType.I_FRAME:
-            return False
-        s_frame = l2cap_packets.EnhancedSupervisoryFrameView(standard_view)
         return s_frame.GetF()
 
     def get_tx_seq_from_ertm_i_frame(self, scid, packet):
-        packet_bytes = packet.payload
-        l2cap_view = l2cap_packets.BasicFrameView(
-            bt_packets.PacketViewLittleEndian(list(packet_bytes)))
-        if l2cap_view.GetChannelId() != scid:
+        i_frame = self.get_enhanced_information_frame(scid, packet)
+        if i_frame is None:
             return False
-        standard_view = l2cap_packets.StandardFrameView(l2cap_view)
-        if standard_view.GetFrameType() == l2cap_packets.FrameType.S_FRAME:
-            return False
-        i_frame = l2cap_packets.EnhancedInformationFrameView(standard_view)
         return i_frame.GetTxSeq()
 
     def get_payload_from_ertm_i_frame(self, scid, packet):
-        packet_bytes = packet.payload
-        l2cap_view = l2cap_packets.BasicFrameView(
-            bt_packets.PacketViewLittleEndian(list(packet_bytes)))
-        if l2cap_view.GetChannelId() != scid:
+        i_frame = self.get_enhanced_information_frame(scid, packet)
+        if i_frame is None:
             return False
-        standard_view = l2cap_packets.StandardFrameView(l2cap_view)
-        if standard_view.GetFrameType() == l2cap_packets.FrameType.S_FRAME:
-            return False
-        i_frame = l2cap_packets.EnhancedInformationFrameView(standard_view)
         return i_frame.GetPayload()  # TODO(mylesgw): This doesn't work!
 
     def _setup_link_from_cert(self):
