@@ -459,14 +459,15 @@ genrule {
         "protoc-gen-grpc-python-plugin",
         "soong_zip",
     ],
-    cmd: "$(location aprotoc) -Isystem/bt/gd -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-python-plugin) $(in) --grpc_out=$(genDir) --python_out=$(genDir); " +
-        "touch $(genDir)/facade/__init__.py; " +
-        "touch $(genDir)/hal/__init__.py; " +
-        "touch $(genDir)/hci/__init__.py; " +
-        "touch $(genDir)/hci/facade/__init__.py; " +
-        "touch $(genDir)/l2cap/classic/__init__.py; " +
-        "touch $(genDir)/neighbor/facade/__init__.py; " +
-        "touch $(genDir)/security/__init__.py; " +
+    cmd: "mkdir -p $(genDir)/system/bt/gd && " +
+        "$(location aprotoc) -Isystem/bt/gd -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-python-plugin) $(in) --grpc_out=$(genDir)/system/bt/gd --python_out=$(genDir)/system/bt/gd && " +
+        "touch $(genDir)/system/bt/gd/facade/__init__.py && " +
+        "touch $(genDir)/system/bt/gd/hal/__init__.py && " +
+        "touch $(genDir)/system/bt/gd/hci/__init__.py && " +
+        "touch $(genDir)/system/bt/gd/hci/facade/__init__.py && " +
+        "touch $(genDir)/system/bt/gd/l2cap/classic/__init__.py && " +
+        "touch $(genDir)/system/bt/gd/neighbor/facade/__init__.py && " +
+        "touch $(genDir)/system/bt/gd/security/__init__.py && " +
         "$(location soong_zip) -C $(genDir) -D $(genDir) -o $(out)",
     srcs: [
         ":BluetoothFacadeProto",
