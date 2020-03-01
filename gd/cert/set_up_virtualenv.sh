@@ -161,13 +161,13 @@ pushd .
 cd $ANDROID_BUILD_TOP/system/bt/gd/gd_cert_venv/lib/python3.8/site-packages
 # Python generated code
 ln -sfT $ANDROID_BUILD_TOP/tools/test/connectivity/acts/framework/acts acts
-ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py/cert cert
-ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py/facade facade
-ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py/hal hal
-ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py/hci hci
-ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py/l2cap l2cap
-ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py/neighbor neighbor
-ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py/security security
+ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py/system/bt/gd/cert cert
+ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py/system/bt/gd/facade facade
+ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py/system/bt/gd/hal hal
+ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py/system/bt/gd/hci hci
+ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py/system/bt/gd/l2cap l2cap
+ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py/system/bt/gd/neighbor neighbor
+ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py/system/bt/gd/security security
 # Native libraries
 ln -sfT $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_test/out/host/linux-x86/lib64/bluetooth_packets_python3.so bluetooth_packets_python3.so
 # Per systrace, Python only load from python3.8/lib64 directory for plugin imported native libraries
