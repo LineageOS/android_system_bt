@@ -38,14 +38,6 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
     def setup_class(self):
         super().setup_class(dut_module='HCI_INTERFACES', cert_module='HCI')
 
-    def enqueue_hci_command(self, command, expect_complete):
-        cmd_bytes = bytes(command.Serialize())
-        cmd = hci_facade.CommandMsg(command=cmd_bytes)
-        if (expect_complete):
-            self.cert.hci.EnqueueCommandWithComplete(cmd)
-        else:
-            self.cert.hci.EnqueueCommandWithStatus(cmd)
-
     def enqueue_acl_data(self, handle, pb_flag, b_flag, acl):
         acl_msg = hci_facade.AclMsg(
             handle=int(handle),
@@ -65,11 +57,12 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
             EventStream(self.dut.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
 
             # CERT Enables scans and gets its address
-            self.enqueue_hci_command(
+            self.cert.hci.send_command_with_complete(
                 hci_packets.WriteScanEnableBuilder(
-                    hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN), True)
+                    hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
 
-            self.enqueue_hci_command(hci_packets.ReadBdAddrBuilder(), True)
+            self.cert.hci.send_command_with_complete(
+                hci_packets.ReadBdAddrBuilder())
 
             read_bd_addr = ReadBdAddrCompleteCapture()
             assertThat(cert_hci_event_stream).emits(read_bd_addr)
@@ -87,11 +80,10 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
                 connection_request = ConnectionRequestCapture()
                 assertThat(cert_hci_event_stream).emits(connection_request)
 
-                self.enqueue_hci_command(
+                self.cert.hci.send_command_with_status(
                     hci_packets.AcceptConnectionRequestBuilder(
                         connection_request.get().GetBdAddr(),
-                        hci_packets.AcceptConnectionRequestRole.REMAIN_SLAVE),
-                    False)
+                        hci_packets.AcceptConnectionRequestRole.REMAIN_SLAVE))
 
                 # Cert gets ConnectionComplete with a handle and sends ACL data
                 connection_complete = ConnectionCompleteCapture()
@@ -135,22 +127,20 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
             EventStream(self.dut.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
 
             # DUT Enables scans and gets its address
-            dut_address = self.dut.hci_controller.GetMacAddress(
-                empty_proto.Empty()).address
+            dut_address = self.dut.hci_controller.GetMacAddressSimple()
 
             self.dut.neighbor.EnablePageScan(
                 neighbor_facade.EnableMsg(enabled=True))
 
             # Cert connects
-            self.enqueue_hci_command(
+            self.cert.hci.send_command_with_status(
                 hci_packets.CreateConnectionBuilder(
                     dut_address.decode('utf-8'),
                     0xcc18,  # Packet Type
                     hci_packets.PageScanRepetitionMode.R1,
                     0x0,
                     hci_packets.ClockOffsetValid.INVALID,
-                    hci_packets.CreateConnectionRoleSwitch.ALLOW_ROLE_SWITCH),
-                False)
+                    hci_packets.CreateConnectionRoleSwitch.ALLOW_ROLE_SWITCH))
 
             # DUT gets a connection request
             connection_complete = ConnectionCompleteCapture()
@@ -191,11 +181,12 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
             EventStream(self.dut.hci_acl_manager.FetchAclData(empty_proto.Empty())) as acl_data_stream:
 
             # CERT Enables scans and gets its address
-            self.enqueue_hci_command(
+            self.cert.hci.send_command_with_complete(
                 hci_packets.WriteScanEnableBuilder(
-                    hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN), True)
+                    hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
 
-            self.enqueue_hci_command(hci_packets.ReadBdAddrBuilder(), True)
+            self.cert.hci.send_command_with_complete(
+                hci_packets.ReadBdAddrBuilder())
 
             read_bd_addr = ReadBdAddrCompleteCapture()
             assertThat(cert_hci_event_stream).emits(read_bd_addr)
@@ -212,11 +203,10 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
                 # Cert Accepts
                 connection_request = ConnectionRequestCapture()
                 assertThat(cert_hci_event_stream).emits(connection_request)
-                self.enqueue_hci_command(
+                self.cert.hci.send_command_with_status(
                     hci_packets.AcceptConnectionRequestBuilder(
                         connection_request.get().GetBdAddr(),
-                        hci_packets.AcceptConnectionRequestRole.REMAIN_SLAVE),
-                    False)
+                        hci_packets.AcceptConnectionRequestRole.REMAIN_SLAVE))
 
                 # Cert gets ConnectionComplete with a handle and sends ACL data
                 connection_complete = ConnectionCompleteCapture()
