@@ -467,13 +467,11 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
                 self.dut.address) as cert_acl:
             cert_acl.wait_for_connection_complete()
             self.cert_acl_handle = cert_acl.handle  ## HACK HACK HACK
-            return cert_acl.handle
 
     def _open_channel(
             self,
             cert_acl_data_stream,
             signal_id=1,
-            cert_acl_handle=0x1,
             scid=0x0101,
             psm=0x33,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.BASIC):
@@ -503,19 +501,19 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         cert_acl_data_stream.assert_event_occurs(verify_connection_response)
 
     def test_connect_dynamic_channel_and_send_data(self):
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         psm = 0x33
         scid = 0x41
-        self._open_channel(cert_acl_data_stream, 1, cert_acl_handle, scid, psm)
+        self._open_channel(cert_acl_data_stream, 1, scid, psm)
         self.dut.l2cap.SendDynamicChannelPacket(
             l2cap_facade_pb2.DynamicChannelPacket(psm=0x33, payload=b'abc'))
         cert_acl_data_stream.assert_event_occurs(
             lambda packet: b'abc' in packet.payload)
 
     def test_fixed_channel(self):
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         self.dut.l2cap.RegisterChannel(
             l2cap_facade_pb2.RegisterChannelRequest(channel=2))
@@ -526,12 +524,12 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             lambda packet: b'123' in packet.payload)
 
     def test_receive_packet_from_unknown_channel(self):
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         psm = 0x33
         scid = 0x41
-        self._open_channel(cert_acl_data_stream, 1, cert_acl_handle, scid, psm)
+        self._open_channel(cert_acl_data_stream, 1, scid, psm)
         i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
             0x99, 0, l2cap_packets.Final.NOT_SET, 1,
             l2cap_packets.SegmentationAndReassembly.UNSEGMENTED, SAMPLE_PACKET)
@@ -541,14 +539,14 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             timedelta(seconds=1))
 
     def test_open_two_channels(self):
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
-        self._open_channel(cert_acl_data_stream, 1, cert_acl_handle, 0x41, 0x41)
-        self._open_channel(cert_acl_data_stream, 2, cert_acl_handle, 0x43, 0x43)
+        self._open_channel(cert_acl_data_stream, 1, 0x41, 0x41)
+        self._open_channel(cert_acl_data_stream, 2, 0x43, 0x43)
 
     def test_connect_and_send_data_ertm_no_segmentation(self):
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
@@ -558,7 +556,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -587,7 +584,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Verify that the IUT is able to request the connection establishment for an L2CAP data channel and
         initiate the configuration procedure.
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
 
         cert_acl_data_stream.register_callback(self._handle_control_packet)
@@ -603,14 +600,14 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         L2CAP/COS/CED/BV-07-C
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
 
         cert_acl_data_stream.register_callback(self._handle_control_packet)
 
         scid = 0x41
         psm = 0x33
-        self._open_channel(cert_acl_data_stream, 1, cert_acl_handle, scid, psm)
+        self._open_channel(cert_acl_data_stream, 1, scid, psm)
 
         dcid = self.scid_to_dcid[scid]
 
@@ -638,7 +635,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         L2CAP/COS/CED/BV-08-C
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
 
         scid = 0x41
@@ -649,7 +646,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.on_configuration_request = lambda _: True
         self.on_connection_response = lambda _: True
 
-        self._open_channel(cert_acl_data_stream, 1, cert_acl_handle, scid, psm)
+        self._open_channel(cert_acl_data_stream, 1, scid, psm)
 
         def is_configuration_response(l2cap_packet):
             packet_bytes = l2cap_packet.payload
@@ -668,7 +665,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         L2CAP/COS/CFD/BV-02-C
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
 
@@ -680,7 +677,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.BASIC)
@@ -695,7 +691,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         L2CAP/COS/ECH/BV-01-C [Respond to Echo Request]
         Verify that the IUT responds to an echo request.
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
 
@@ -712,14 +708,15 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         L2CAP/COS/CED/BI-01-C
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
 
         invalid_command_packet = b"\x04\x00\x01\x00\xff\x01\x00\x00"
         self.cert.hci_acl_manager.SendAclData(
             acl_manager_facade.AclData(
-                handle=cert_acl_handle, payload=bytes(invalid_command_packet)))
+                handle=self.cert_acl_handle,
+                payload=bytes(invalid_command_packet)))
 
         def is_command_reject(l2cap_packet):
             packet_bytes = l2cap_packet.payload
@@ -738,7 +735,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         L2CAP/COS/IEX/BV-01-C [Query for 1.2 Features]
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         signal_id = 3
@@ -774,7 +771,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         L2CAP/EXF/BV-01-C [Extended Features Information Response for Enhanced
         Retransmission Mode]
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
 
@@ -815,7 +812,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         L2CAP/EXF/BV-03-C [Extended Features Information Response for FCS Option]
         Note: This is not mandated by L2CAP Spec
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
 
@@ -856,7 +853,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         L2CAP/FOC/BV-01-C [IUT Initiated Configuration of the FCS Option]
         Verify the IUT can configure a channel to not use FCS in I/S-frames.
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
 
@@ -867,7 +864,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -889,7 +885,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         should be used.
         """
 
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
 
@@ -899,7 +895,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -920,7 +915,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         L2CAP/FOC/BV-03-C [Lower Tester Implicitly Requests FCS should be Used]
         TODO: Update this test case. What's the difference between this one and test_explicitly_request_use_FCS?
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
 
@@ -930,7 +925,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -950,7 +944,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         L2CAP/ERM/BV-01-C [Transmit I-frames]
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
 
@@ -960,7 +954,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -1011,7 +1004,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         L2CAP/ERM/BV-02-C [Receive I-Frames]
         Verify the IUT can receive in-sequence valid I-frames and deliver L2CAP SDUs to the Upper Tester
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
@@ -1021,7 +1014,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -1074,7 +1066,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Verify the IUT sends S-frame [RR] with the Poll bit not set to acknowledge data received from the
         Lower Tester
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
@@ -1084,7 +1076,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -1119,7 +1110,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         previously sent I-frames.
         """
         self.ertm_tx_window_size = 1
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
@@ -1129,7 +1120,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -1168,7 +1158,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         sent I-frames.
         """
         self.ertm_tx_window_size = 1
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
@@ -1178,7 +1168,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -1221,7 +1210,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         L2CAP/ERM/BV-08-C [Send S-Frame [RR] with Poll Bit Set]
         Verify the IUT sends an S-frame [RR] with the Poll bit set when its retransmission timer expires.
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
@@ -1231,7 +1220,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -1256,7 +1244,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Verify the IUT responds with an S-frame [RR] with the Final bit set after receiving an S-frame [RR]
         with the Poll bit set.
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
@@ -1266,7 +1254,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -1294,7 +1281,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Verify the IUT will close the channel when the Monitor Timer expires.
         """
         asserts.skip("Need to configure DUT to have a shorter timer")
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
@@ -1304,7 +1291,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -1331,7 +1317,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Verify the IUT will close the channel when it receives an S-frame [RR] with the final bit set that does
         not acknowledge the previous I-frame sent by the IUT.
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
@@ -1341,7 +1327,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -1375,7 +1360,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self.ertm_tx_window_size = 2
         self.ertm_max_transmit = 2
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
@@ -1385,7 +1370,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -1423,7 +1407,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Verify the IUT will retransmit any previously sent I-frames unacknowledged by receipt of an S-Frame
         [RR] with the Final Bit set.
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
@@ -1433,7 +1417,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -1469,7 +1452,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Verify the IUT will retransmit any previously sent I-frames unacknowledged by receipt of an I-frame
         with the final bit set.
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
@@ -1479,7 +1462,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -1515,7 +1497,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Verify the IUT will not retransmit any I-frames when it receives a remote busy indication from the
         Lower Tester (S-frame [RNR]).
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
@@ -1525,7 +1507,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -1562,7 +1543,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         is lost.
         """
         self.ertm_tx_window_size = 5
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
@@ -1572,7 +1553,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -1623,7 +1603,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         L2CAP/ERM/BI-03-C [Handle Duplicate S-Frame [SREJ]]
         Verify the IUT will only retransmit the requested I-frame once after receiving a duplicate SREJ.
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
@@ -1633,7 +1613,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -1683,7 +1662,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         followed by an S-frame [RR] with the Final bit set that indicates the same I-frames should be
         retransmitted.
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
@@ -1693,7 +1672,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -1745,7 +1723,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Verify the IUT will only retransmit the requested I-frames once after receiving an S-frame [REJ]
         followed by an I-frame with the Final bit set that indicates the same I-frames should be retransmitted.
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
@@ -1755,7 +1733,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -1806,7 +1783,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Verify the IUT can send a Configuration Request command containing the F&EC option that specifies
         Enhanced Retransmission Mode.
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
@@ -1816,7 +1793,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_channel(
             cert_acl_data_stream,
             1,
-            cert_acl_handle,
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
@@ -1833,7 +1809,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Verify the IUT can accept a Configuration Request from the Lower Tester containing an F&EC option
         that specifies Enhanced Retransmission Mode.
         """
-        cert_acl_handle = self._setup_link_from_cert()
+        self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         psm = 1
