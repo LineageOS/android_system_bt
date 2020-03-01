@@ -440,6 +440,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.cert_acl = self.cert_acl_manager.initiate_connection(
             self.dut.address)
         self.cert_acl.wait_for_connection_complete()
+        self.cert_acl_manager.get_acl_stream().register_callback(
+            self._handle_control_packet)
 
     def _open_channel(
             self,
@@ -476,7 +478,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
     def test_connect_dynamic_channel_and_send_data(self):
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         psm = 0x33
         scid = 0x41
         self._open_channel(1, scid, psm)
@@ -499,7 +500,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
     def test_receive_packet_from_unknown_channel(self):
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         psm = 0x33
         scid = 0x41
         self._open_channel(1, scid, psm)
@@ -514,14 +514,12 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
     def test_open_two_channels(self):
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         self._open_channel(1, 0x41, 0x41)
         self._open_channel(2, 0x43, 0x43)
 
     def test_connect_and_send_data_ertm_no_segmentation(self):
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
 
         psm = 0x33
@@ -559,7 +557,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
 
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         psm = 0x33
         # TODO: Use another test case
         self.dut.l2cap.OpenChannel(
@@ -574,8 +571,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
 
         scid = 0x41
         psm = 0x33
@@ -612,7 +607,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
         scid = 0x41
         psm = 0x33
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
 
         # Don't send configuration request or response back
         self.on_configuration_request = lambda _: True
@@ -639,7 +633,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
 
         psm = 0x33
         scid = 0x41
@@ -664,7 +657,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
 
         echo_request = l2cap_packets.EchoRequestBuilder(
             100, l2cap_packets.DisconnectionRequestBuilder(1, 2, 3))
@@ -681,7 +673,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
 
         invalid_command_packet = b"\x04\x00\x01\x00\xff\x01\x00\x00"
         self.cert_acl.send(invalid_command_packet)
@@ -705,7 +696,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         signal_id = 3
         information_request = l2cap_packets.InformationRequestBuilder(
             signal_id,
@@ -741,7 +731,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
 
         signal_id = 3
         information_request = l2cap_packets.InformationRequestBuilder(
@@ -782,7 +771,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
 
         signal_id = 3
         information_request = l2cap_packets.InformationRequestBuilder(
@@ -823,7 +811,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
 
         self.on_connection_response = self._on_connection_response_use_ertm
 
@@ -854,7 +841,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
 
         self.on_connection_response = self._on_connection_response_use_ertm_and_fcs
         psm = 0x33
@@ -883,7 +869,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
 
         self.on_connection_response = self._on_connection_response_use_ertm_and_fcs
         psm = 0x33
@@ -911,7 +896,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
 
         self.on_connection_response = self._on_connection_response_use_ertm
         psm = 0x33
@@ -970,7 +954,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
 
         psm = 0x33
@@ -1031,7 +1014,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
 
         psm = 0x33
@@ -1074,7 +1056,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.ertm_tx_window_size = 1
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
 
         psm = 0x33
@@ -1121,7 +1102,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.ertm_tx_window_size = 1
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
 
         psm = 0x33
@@ -1172,7 +1152,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
 
         psm = 0x33
@@ -1205,7 +1184,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
 
         psm = 0x33
@@ -1241,7 +1219,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         asserts.skip("Need to configure DUT to have a shorter timer")
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
 
         psm = 0x33
@@ -1276,7 +1253,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
 
         psm = 0x33
@@ -1318,7 +1294,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.ertm_max_transmit = 2
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
 
         psm = 0x33
@@ -1364,7 +1339,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
 
         psm = 0x33
@@ -1408,7 +1382,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
 
         psm = 0x33
@@ -1452,7 +1425,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
 
         psm = 0x33
@@ -1497,7 +1469,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.ertm_tx_window_size = 5
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
 
         psm = 0x33
@@ -1556,7 +1527,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
 
         psm = 0x33
@@ -1614,7 +1584,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
 
         psm = 0x33
@@ -1674,7 +1643,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
 
         psm = 0x33
@@ -1733,7 +1701,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         self.on_connection_response = self._on_connection_response_use_ertm
 
         psm = 0x33
@@ -1758,7 +1725,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        cert_acl_data_stream.register_callback(self._handle_control_packet)
         psm = 1
         scid = 0x0101
         self.retransmission_mode = l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM
