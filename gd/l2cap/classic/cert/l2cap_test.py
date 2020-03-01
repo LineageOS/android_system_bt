@@ -20,6 +20,7 @@ from mobly import asserts
 from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
 from cert.event_stream import EventStream
 from cert.truth import assertThat
+from cert.closable import safeClose
 from cert.py_l2cap import PyL2cap
 from cert.py_acl_manager import PyAclManager
 from facade import common_pb2
@@ -55,8 +56,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.dut.neighbor.EnablePageScan(
             neighbor_facade.EnableMsg(enabled=True))
 
-        self.cert_acl_handle = 0
-
         self.on_connection_request = None
         self.on_connection_response = None
         self.on_configuration_request = None
@@ -72,9 +71,11 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
         self.dut_l2cap = PyL2cap(self.dut)
         self.cert_acl_manager = PyAclManager(self.cert)
+        self.cert_acl = None
 
     def teardown_test(self):
         self.cert_acl_manager.close()
+        safeClose(self.cert_acl)
         super().teardown_test()
 
     def _on_connection_request_default(self, l2cap_control_view):
@@ -91,10 +92,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             NO_FURTHER_INFORMATION_AVAILABLE)
         connection_response_l2cap = l2cap_packets.BasicFrameBuilder(
             1, connection_response)
-        self.cert.hci_acl_manager.SendAclData(
-            acl_manager_facade.AclData(
-                handle=self.cert_acl_handle,
-                payload=bytes(connection_response_l2cap.Serialize())))
+        self.cert_acl.send(connection_response_l2cap.Serialize())
         return True
 
     def _on_connection_response_default(self, l2cap_control_view):
@@ -109,10 +107,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             sid + 1, dcid, l2cap_packets.Continuation.END, [])
         config_request_l2cap = l2cap_packets.BasicFrameBuilder(
             1, config_request)
-        self.cert.hci_acl_manager.SendAclData(
-            acl_manager_facade.AclData(
-                handle=self.cert_acl_handle,
-                payload=bytes(config_request_l2cap.Serialize())))
+        self.cert_acl.send(config_request_l2cap.Serialize())
         return True
 
     def _on_connection_response_use_ertm(self, l2cap_control_view):
@@ -141,10 +136,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         config_request_l2cap = l2cap_packets.BasicFrameBuilder(
             1, config_request)
 
-        self.cert.hci_acl_manager.SendAclData(
-            acl_manager_facade.AclData(
-                handle=self.cert_acl_handle,
-                payload=bytes(config_request_l2cap.Serialize())))
+        self.cert_acl.send(config_request_l2cap.Serialize())
         return True
 
     def _on_connection_response_use_ertm_and_fcs(self, l2cap_control_view):
@@ -176,10 +168,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         config_request_l2cap = l2cap_packets.BasicFrameBuilder(
             1, config_request)
 
-        self.cert.hci_acl_manager.SendAclData(
-            acl_manager_facade.AclData(
-                handle=self.cert_acl_handle,
-                payload=bytes(config_request_l2cap.Serialize())))
+        self.cert_acl.send(config_request_l2cap.Serialize())
         return True
 
     def _on_configuration_request_default(self, l2cap_control_view):
@@ -232,10 +221,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             sid, dcid, scid)
         disconnection_response_l2cap = l2cap_packets.BasicFrameBuilder(
             1, disconnection_response)
-        self.cert.hci_acl_manager.SendAclData(
-            acl_manager_facade.AclData(
-                handle=self.cert_acl_handle,
-                payload=bytes(disconnection_response_l2cap.Serialize())))
+        self.cert_acl.send(disconnection_response_l2cap.Serialize())
 
     def _on_disconnection_response_default(self, l2cap_control_view):
         disconnection_response = l2cap_packets.DisconnectionResponseView(
@@ -250,29 +236,20 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             response = l2cap_packets.InformationResponseConnectionlessMtuBuilder(
                 sid, l2cap_packets.InformationRequestResult.SUCCESS, 100)
             response_l2cap = l2cap_packets.BasicFrameBuilder(1, response)
-            self.cert.hci_acl_manager.SendAclData(
-                acl_manager_facade.AclData(
-                    handle=self.cert_acl_handle,
-                    payload=bytes(response_l2cap.Serialize())))
+            self.cert_acl.send(response_l2cap.Serialize())
             return
         if information_type == l2cap_packets.InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED:
             response = l2cap_packets.InformationResponseExtendedFeaturesBuilder(
                 sid, l2cap_packets.InformationRequestResult.SUCCESS, 0, 0, 0, 1,
                 0, 1, 0, 0, 0, 0)
             response_l2cap = l2cap_packets.BasicFrameBuilder(1, response)
-            self.cert.hci_acl_manager.SendAclData(
-                acl_manager_facade.AclData(
-                    handle=self.cert_acl_handle,
-                    payload=bytes(response_l2cap.Serialize())))
+            self.cert_acl.send(response_l2cap.Serialize())
             return
         if information_type == l2cap_packets.InformationRequestInfoType.FIXED_CHANNELS_SUPPORTED:
             response = l2cap_packets.InformationResponseFixedChannelsBuilder(
                 sid, l2cap_packets.InformationRequestResult.SUCCESS, 2)
             response_l2cap = l2cap_packets.BasicFrameBuilder(1, response)
-            self.cert.hci_acl_manager.SendAclData(
-                acl_manager_facade.AclData(
-                    handle=self.cert_acl_handle,
-                    payload=bytes(response_l2cap.Serialize())))
+            self.cert_acl.send(response_l2cap.Serialize())
             return
 
     def _on_information_response_default(self, l2cap_control_view):
@@ -382,10 +359,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         ) == l2cap_packets.CommandCode.DISCONNECTION_REQUEST
 
     def cert_send_b_frame(self, b_frame):
-        self.cert.hci_acl_manager.SendAclData(
-            acl_manager_facade.AclData(
-                handle=self.cert_acl_handle,
-                payload=bytes(b_frame.Serialize())))
+        self.cert_acl.send(b_frame.Serialize())
 
     def get_req_seq_from_ertm_s_frame(self, scid, packet):
         packet_bytes = packet.payload
@@ -463,11 +437,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
         self.dut.neighbor.EnablePageScan(
             neighbor_facade.EnableMsg(enabled=True))
-
-        with self.cert_acl_manager.initiate_connection(
-                self.dut.address) as cert_acl:
-            cert_acl.wait_for_connection_complete()
-            self.cert_acl_handle = cert_acl.handle  ## HACK HACK HACK
+        self.cert_acl = self.cert_acl_manager.initiate_connection(
+            self.dut.address)
+        self.cert_acl.wait_for_connection_complete()
 
     def _open_channel(
             self,
@@ -712,10 +684,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         cert_acl_data_stream.register_callback(self._handle_control_packet)
 
         invalid_command_packet = b"\x04\x00\x01\x00\xff\x01\x00\x00"
-        self.cert.hci_acl_manager.SendAclData(
-            acl_manager_facade.AclData(
-                handle=self.cert_acl_handle,
-                payload=bytes(invalid_command_packet)))
+        self.cert_acl.send(invalid_command_packet)
 
         def is_command_reject(l2cap_packet):
             packet_bytes = l2cap_packet.payload
