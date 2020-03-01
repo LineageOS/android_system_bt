@@ -26,6 +26,8 @@ from grpc import RpcError
 
 from abc import ABC, abstractmethod
 
+from cert.closable import Closable
+
 
 class IEventStream(ABC):
 
@@ -56,7 +58,7 @@ class FilteringEventStream(IEventStream):
 DEFAULT_TIMEOUT_SECONDS = 3
 
 
-class EventStream(IEventStream):
+class EventStream(IEventStream, Closable):
     """
     A class that streams events from a gRPC stream, which you can assert on.
 
@@ -73,20 +75,10 @@ class EventStream(IEventStream):
         self.executor = ThreadPoolExecutor()
         self.future = self.executor.submit(EventStream._event_loop, self)
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type, value, traceback):
-        self.shutdown()
-        return traceback is None
-
-    def __del__(self):
-        self.shutdown()
-
     def get_event_queue(self):
         return self.event_queue
 
-    def shutdown(self):
+    def close(self):
         """
         Stop the gRPC lambda so that event_callback will not be invoked after th
         method returns.

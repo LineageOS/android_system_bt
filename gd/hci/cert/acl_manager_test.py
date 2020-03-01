@@ -47,8 +47,8 @@ class AclManagerTest(GdFacadeOnlyBaseTestClass):
         self.dut_acl_manager = PyAclManager(self.dut)
 
     def teardown_test(self):
-        self.cert_hci.clean_up()
-        self.dut_acl_manager.clean_up()
+        self.cert_hci.close()
+        self.dut_acl_manager.close()
         super().teardown_test()
 
     def test_dut_connects(self):

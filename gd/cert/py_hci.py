@@ -18,6 +18,8 @@ from google.protobuf import empty_pb2 as empty_proto
 from cert.event_stream import EventStream
 from cert.event_stream import FilteringEventStream
 from cert.event_stream import IEventStream
+from cert.closable import Closable
+from cert.closable import safeClose
 from cert.captures import ReadBdAddrCompleteCapture
 from cert.captures import ConnectionCompleteCapture
 from cert.captures import ConnectionRequestCapture
@@ -54,7 +56,7 @@ class PyHciAclConnection(IEventStream):
         return self.our_acl_stream.get_event_queue()
 
 
-class PyHci(object):
+class PyHci(Closable):
 
     def __init__(self, device):
         self.device = device
@@ -69,19 +71,9 @@ class PyHci(object):
         self.acl_stream = EventStream(
             self.device.hci.FetchAclPackets(empty_proto.Empty()))
 
-    def __enter__(self):
-        return self
-
-    def __exit__(self, type, value, traceback):
-        self.clean_up()
-        return traceback is None
-
-    def __del__(self):
-        self.clean_up()
-
-    def clean_up(self):
-        self.event_stream.shutdown()
-        self.acl_stream.shutdown()
+    def close(self):
+        safeClose(self.event_stream)
+        safeClose(self.acl_stream)
 
     def get_event_stream(self):
         return self.event_stream
