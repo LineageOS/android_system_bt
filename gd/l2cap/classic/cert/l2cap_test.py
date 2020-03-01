@@ -19,6 +19,7 @@ from mobly import asserts
 
 from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
 from cert.event_stream import EventStream
+from cert.truth import assertThat
 from cert.py_l2cap import PyL2cap
 from cert.py_acl_manager import PyAclManager
 from facade import common_pb2
@@ -470,7 +471,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
     def _open_channel(
             self,
-            cert_acl_data_stream,
             signal_id=1,
             scid=0x0101,
             psm=0x33,
@@ -498,7 +498,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             ) == l2cap_packets.ConnectionResponseResult.SUCCESS and connection_response_view.GetDestinationCid(
             ) != 0
 
-        cert_acl_data_stream.assert_event_occurs(verify_connection_response)
+        assertThat(self.cert_acl_manager.get_acl_stream()).emits(
+            verify_connection_response)
 
     def test_connect_dynamic_channel_and_send_data(self):
         self._setup_link_from_cert()
@@ -506,7 +507,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         psm = 0x33
         scid = 0x41
-        self._open_channel(cert_acl_data_stream, 1, scid, psm)
+        self._open_channel(1, scid, psm)
         self.dut.l2cap.SendDynamicChannelPacket(
             l2cap_facade_pb2.DynamicChannelPacket(psm=0x33, payload=b'abc'))
         cert_acl_data_stream.assert_event_occurs(
@@ -529,7 +530,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         cert_acl_data_stream.register_callback(self._handle_control_packet)
         psm = 0x33
         scid = 0x41
-        self._open_channel(cert_acl_data_stream, 1, scid, psm)
+        self._open_channel(1, scid, psm)
         i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
             0x99, 0, l2cap_packets.Final.NOT_SET, 1,
             l2cap_packets.SegmentationAndReassembly.UNSEGMENTED, SAMPLE_PACKET)
@@ -542,8 +543,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         cert_acl_data_stream.register_callback(self._handle_control_packet)
-        self._open_channel(cert_acl_data_stream, 1, 0x41, 0x41)
-        self._open_channel(cert_acl_data_stream, 2, 0x43, 0x43)
+        self._open_channel(1, 0x41, 0x41)
+        self._open_channel(2, 0x43, 0x43)
 
     def test_connect_and_send_data_ertm_no_segmentation(self):
         self._setup_link_from_cert()
@@ -554,7 +555,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -607,7 +607,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
         scid = 0x41
         psm = 0x33
-        self._open_channel(cert_acl_data_stream, 1, scid, psm)
+        self._open_channel(1, scid, psm)
 
         dcid = self.scid_to_dcid[scid]
 
@@ -646,7 +646,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.on_configuration_request = lambda _: True
         self.on_connection_response = lambda _: True
 
-        self._open_channel(cert_acl_data_stream, 1, scid, psm)
+        self._open_channel(1, scid, psm)
 
         def is_configuration_response(l2cap_packet):
             packet_bytes = l2cap_packet.payload
@@ -675,7 +675,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.on_configuration_request = self._on_configuration_request_unacceptable_parameters
 
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -862,7 +861,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -893,7 +891,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -923,7 +920,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -952,7 +948,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -1012,7 +1007,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -1074,7 +1068,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -1118,7 +1111,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -1166,7 +1158,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -1218,7 +1209,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -1252,7 +1242,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -1289,7 +1278,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -1325,7 +1313,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -1368,7 +1355,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -1415,7 +1401,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -1460,7 +1445,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -1505,7 +1489,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -1551,7 +1534,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -1611,7 +1593,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -1670,7 +1651,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -1731,7 +1711,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
@@ -1791,7 +1770,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
         self._open_channel(
-            cert_acl_data_stream,
             1,
             scid,
             psm,
