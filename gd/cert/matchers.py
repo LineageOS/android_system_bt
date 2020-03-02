@@ -43,6 +43,14 @@ class L2capMatchers(object):
         return lambda packet: L2capMatchers._is_control_frame_with_code(packet, CommandCode.DISCONNECTION_REQUEST)
 
     @staticmethod
+    def DisconnectionResponse(scid, dcid):
+        return lambda packet: L2capMatchers._is_matching_disconnection_response(packet, scid, dcid)
+
+    @staticmethod
+    def CommandReject():
+        return lambda packet: L2capMatchers._is_control_frame_with_code(packet, CommandCode.COMMAND_REJECT)
+
+    @staticmethod
     def _basic_frame(packet):
         if packet is None:
             return None
@@ -77,3 +85,13 @@ class L2capMatchers(object):
         return response.GetSourceCid() == scid and response.GetResult(
         ) == ConnectionResponseResult.SUCCESS and response.GetDestinationCid(
         ) != 0
+
+    @staticmethod
+    def _is_matching_disconnection_response(packet, scid, dcid):
+        frame = L2capMatchers._control_frame_with_code(
+            packet, CommandCode.DISCONNECTION_RESPONSE)
+        if frame is None:
+            return False
+        response = l2cap_packets.DisconnectionResponseView(frame)
+        return response.GetSourceCid() == scid and response.GetDestinationCid(
+        ) == dcid
