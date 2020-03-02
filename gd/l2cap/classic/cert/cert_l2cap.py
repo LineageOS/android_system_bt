@@ -89,6 +89,10 @@ class CertL2cap(Closable):
     def send_acl(self, packet):
         self._acl.send(packet.Serialize())
 
+    def send_control_packet(self, packet):
+        frame = l2cap_packets.BasicFrameBuilder(1, packet)
+        self.send_acl(frame)
+
     # temporary until clients migrated
     def get_acl_stream(self):
         return self._acl_manager.get_acl_stream()
@@ -144,9 +148,7 @@ class CertL2cap(Closable):
             sid, cid, cid, l2cap_packets.ConnectionResponseResult.SUCCESS,
             l2cap_packets.ConnectionResponseStatus.
             NO_FURTHER_INFORMATION_AVAILABLE)
-        connection_response_l2cap = l2cap_packets.BasicFrameBuilder(
-            1, connection_response)
-        self.send_acl(connection_response_l2cap)
+        self.send_control_packet(connection_response)
         return True
 
     def _on_connection_response_default(self, l2cap_control_view):
@@ -159,9 +161,7 @@ class CertL2cap(Closable):
 
         config_request = l2cap_packets.ConfigurationRequestBuilder(
             sid + 1, dcid, l2cap_packets.Continuation.END, [])
-        config_request_l2cap = l2cap_packets.BasicFrameBuilder(
-            1, config_request)
-        self.send_acl(config_request_l2cap)
+        self.send_control_packet(config_request)
         return True
 
     def _on_connection_response_use_ertm(self, l2cap_control_view):
@@ -187,10 +187,7 @@ class CertL2cap(Closable):
         config_request = l2cap_packets.ConfigurationRequestBuilder(
             sid + 1, dcid, l2cap_packets.Continuation.END, options)
 
-        config_request_l2cap = l2cap_packets.BasicFrameBuilder(
-            1, config_request)
-
-        self.send_acl(config_request_l2cap)
+        self.send_control_packet(config_request)
         return True
 
     def _on_connection_response_use_ertm_and_fcs(self, l2cap_control_view):
@@ -219,10 +216,7 @@ class CertL2cap(Closable):
         config_request = l2cap_packets.ConfigurationRequestBuilder(
             sid + 1, dcid, l2cap_packets.Continuation.END, options)
 
-        config_request_l2cap = l2cap_packets.BasicFrameBuilder(
-            1, config_request)
-
-        self.send_acl(config_request_l2cap)
+        self.send_control_packet(config_request)
         return True
 
     def _on_connection_response_configuration_request_with_unknown_options_and_hint(
@@ -258,9 +252,7 @@ class CertL2cap(Closable):
         config_response = l2cap_packets.ConfigurationResponseBuilder(
             sid, self.scid_to_dcid.get(dcid, 0), l2cap_packets.Continuation.END,
             l2cap_packets.ConfigurationResponseResult.SUCCESS, [])
-        config_response_l2cap = l2cap_packets.BasicFrameBuilder(
-            1, config_response)
-        self.send_acl(config_response_l2cap)
+        self.send_control_packet(config_response)
 
     def _on_configuration_request_unacceptable_parameters(
             self, l2cap_control_view):
@@ -281,9 +273,7 @@ class CertL2cap(Closable):
             sid, self.scid_to_dcid.get(dcid, 0), l2cap_packets.Continuation.END,
             l2cap_packets.ConfigurationResponseResult.UNACCEPTABLE_PARAMETERS,
             [mtu_opt, fcs_opt, rfc_opt])
-        config_response_l2cap = l2cap_packets.BasicFrameBuilder(
-            1, config_response)
-        self.send_acl(config_response_l2cap)
+        self.send_control_packet(config_response)
 
     def _on_configuration_response_default(self, l2cap_control_view):
         configuration_response = l2cap_packets.ConfigurationResponseView(
@@ -298,9 +288,7 @@ class CertL2cap(Closable):
         dcid = disconnection_request.GetDestinationCid()
         disconnection_response = l2cap_packets.DisconnectionResponseBuilder(
             sid, dcid, scid)
-        disconnection_response_l2cap = l2cap_packets.BasicFrameBuilder(
-            1, disconnection_response)
-        self.send_acl(disconnection_response_l2cap)
+        self.send_control_packet(disconnection_response)
 
     def _on_disconnection_response_default(self, l2cap_control_view):
         disconnection_response = l2cap_packets.DisconnectionResponseView(
@@ -314,21 +302,18 @@ class CertL2cap(Closable):
         if information_type == l2cap_packets.InformationRequestInfoType.CONNECTIONLESS_MTU:
             response = l2cap_packets.InformationResponseConnectionlessMtuBuilder(
                 sid, l2cap_packets.InformationRequestResult.SUCCESS, 100)
-            response_l2cap = l2cap_packets.BasicFrameBuilder(1, response)
-            self.send_acl(response_l2cap)
+            self.send_control_packet(response)
             return
         if information_type == l2cap_packets.InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED:
             response = l2cap_packets.InformationResponseExtendedFeaturesBuilder(
                 sid, l2cap_packets.InformationRequestResult.SUCCESS, 0, 0, 0, 1,
                 0, 1, 0, 0, 0, 0)
-            response_l2cap = l2cap_packets.BasicFrameBuilder(1, response)
-            self.send_acl(response_l2cap)
+            self.send_control_packet(response)
             return
         if information_type == l2cap_packets.InformationRequestInfoType.FIXED_CHANNELS_SUPPORTED:
             response = l2cap_packets.InformationResponseFixedChannelsBuilder(
                 sid, l2cap_packets.InformationRequestResult.SUCCESS, 2)
-            response_l2cap = l2cap_packets.BasicFrameBuilder(1, response)
-            self.send_acl(response_l2cap)
+            self.send_control_packet(response)
             return
 
     def _on_information_response_default(self, l2cap_control_view):
