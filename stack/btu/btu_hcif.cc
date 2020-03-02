@@ -48,6 +48,7 @@
 #include "btu.h"
 #include "common/metrics.h"
 #include "device/include/controller.h"
+#include "hci_evt_length.h"
 #include "hci_layer.h"
 #include "hcimsgs.h"
 #include "l2c_int.h"
@@ -256,6 +257,13 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
   uint8_t ble_sub_code;
   STREAM_TO_UINT8(hci_evt_code, p);
   STREAM_TO_UINT8(hci_evt_len, p);
+
+  // validate event size
+  if (hci_evt_len < hci_event_parameters_minimum_length[hci_evt_code]) {
+    HCI_TRACE_WARNING("%s: evt:0x%2X, malformed event of size %hhd", __func__,
+                      hci_evt_code, hci_evt_len);
+    return;
+  }
 
   btu_hcif_log_event_metrics(hci_evt_code, p);
 
