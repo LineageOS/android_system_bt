@@ -15,6 +15,7 @@
 #   limitations under the License.
 
 import time
+from datetime import timedelta
 
 from mobly.asserts import assert_true
 from mobly.asserts import assert_false
@@ -56,35 +57,49 @@ class ObjectSubject(object):
                 "Expected \"%s\" to not be None" % self._value, extras=None)
 
 
+DEFAULT_TIMEOUT = timedelta(seconds=3)
+
+
 class EventStreamSubject(ObjectSubject):
 
     def __init__(self, value):
         super().__init__(value)
 
-    def emits(self, *match_fns):
+    def emits(self, *match_fns, at_least_times=1, timeout=DEFAULT_TIMEOUT):
         if len(match_fns) == 0:
             raise signals.TestFailure("Must specify a match function")
         elif len(match_fns) == 1:
-            NOT_FOR_YOU_assert_event_occurs(self._value, match_fns[0])
+            NOT_FOR_YOU_assert_event_occurs(
+                self._value,
+                match_fns[0],
+                at_least_times=at_least_times,
+                timeout=timeout)
             return EventStreamContinuationSubject(self._value)
         else:
-            return MultiMatchStreamSubject(self._value, match_fns)
+            return MultiMatchStreamSubject(self._value, match_fns, timeout)
 
 
 class MultiMatchStreamSubject(object):
 
-    def __init__(self, stream, match_fns):
+    def __init__(self, stream, match_fns, timeout):
         self._stream = stream
         self._match_fns = match_fns
+        self._timeout = timeout
 
     def inAnyOrder(self):
         NOT_FOR_YOU_assert_all_events_occur(
-            self._stream, self._match_fns, order_matters=False)
+            self._stream,
+            self._match_fns,
+            order_matters=False,
+            timeout=self._timeout)
         return EventStreamContinuationSubject(self._stream)
 
     def inOrder(self):
         NOT_FOR_YOU_assert_all_events_occur(
-            self._stream, self._match_fns, order_matters=True)
+            self._stream,
+            self._match_fns,
+            order_matters=True,
+            timeout=self._timeout)
         return EventStreamContinuationSubject(self._stream)
 
 
@@ -93,14 +108,18 @@ class EventStreamContinuationSubject(ObjectSubject):
     def __init__(self, value):
         super().__init__(value)
 
-    def then(self, *match_fns):
+    def then(self, *match_fns, at_least_times=1, timeout=DEFAULT_TIMEOUT):
         if len(match_fns) == 0:
             raise signals.TestFailure("Must specify a match function")
         elif len(match_fns) == 1:
-            NOT_FOR_YOU_assert_event_occurs(self._value, match_fns[0])
+            NOT_FOR_YOU_assert_event_occurs(
+                self._value,
+                match_fns[0],
+                at_least_times=at_least_times,
+                timeout=timeout)
             return EventStreamContinuationSubject(self._value)
         else:
-            return MultiMatchStreamSubject(self._value, match_fns)
+            return MultiMatchStreamSubject(self._value, match_fns, timeout)
 
 
 class BooleanSubject(ObjectSubject):
