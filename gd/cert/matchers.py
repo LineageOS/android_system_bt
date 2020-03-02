@@ -55,11 +55,25 @@ class L2capMatchers(object):
         return lambda packet: L2capMatchers._is_matching_supervisory_frame(packet, scid, req_seq, f, s, p)
 
     @staticmethod
+    def InformationFrame(scid, tx_seq=None, payload=None):
+        return lambda packet: L2capMatchers._is_matching_information_frame(packet, scid, tx_seq, payload)
+
+    @staticmethod
     def _basic_frame(packet):
         if packet is None:
             return None
         return l2cap_packets.BasicFrameView(
             bt_packets.PacketViewLittleEndian(list(packet.payload)))
+
+    @staticmethod
+    def _information_frame(packet, scid):
+        frame = L2capMatchers._basic_frame(packet)
+        if frame.GetChannelId() != scid:
+            return None
+        standard_frame = l2cap_packets.StandardFrameView(frame)
+        if standard_frame.GetFrameType() != l2cap_packets.FrameType.I_FRAME:
+            return None
+        return l2cap_packets.EnhancedInformationFrameView(standard_frame)
 
     @staticmethod
     def _supervisory_frame(packet, scid):
@@ -70,6 +84,18 @@ class L2capMatchers(object):
         if standard_frame.GetFrameType() != l2cap_packets.FrameType.S_FRAME:
             return None
         return l2cap_packets.EnhancedSupervisoryFrameView(standard_frame)
+
+    @staticmethod
+    def _is_matching_information_frame(packet, scid, tx_seq, payload):
+        frame = L2capMatchers._information_frame(packet, scid)
+        if frame is None:
+            return False
+        if tx_seq is not None and frame.GetTxSeq() != tx_seq:
+            return False
+        if payload is not None and frame.GetPayload(
+        ) != payload:  # TODO(mylesgw) this doesn't work
+            return False
+        return True
 
     @staticmethod
     def _is_matching_supervisory_frame(packet, scid, req_seq, f, s, p):
