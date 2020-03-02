@@ -333,7 +333,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
     def test_receive_packet_from_unknown_channel(self):
         self._setup_link_from_cert()
-        cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         psm = 0x33
         scid = 0x41
         self._open_channel(1, scid, psm)
@@ -341,9 +340,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             0x99, 0, l2cap_packets.Final.NOT_SET, 1,
             l2cap_packets.SegmentationAndReassembly.UNSEGMENTED, SAMPLE_PACKET)
         self.cert_send_b_frame(i_frame)
-        cert_acl_data_stream.assert_none_matching(
+        assertThat(self.cert_acl).emitsNone(
             L2capMatchers.SupervisoryFrame(scid, req_seq=4),
-            timedelta(seconds=1))
+            timeout=timedelta(seconds=1))
 
     def test_open_two_channels(self):
         self._setup_link_from_cert()
@@ -420,7 +419,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         L2CAP/COS/CED/BV-08-C
         """
         self._setup_link_from_cert()
-        cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
 
         scid = 0x41
         psm = 0x33
@@ -431,7 +429,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
         self._open_channel(1, scid, psm)
 
-        cert_acl_data_stream.assert_none_matching(
+        assertThat(self.cert_acl).emitsNone(
             L2capMatchers.ConfigurationResponse())
 
     def test_retry_config_after_rejection(self):
@@ -791,7 +789,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Lower Tester
         """
         self._setup_link_from_cert()
-        cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         self.control_table[
             CommandCode.
             CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
@@ -819,9 +816,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             assertThat(self.cert_acl).emits(
                 L2capMatchers.SupervisoryFrame(scid, req_seq=i + 1))
 
-        cert_acl_data_stream.assert_none_matching(
+        assertThat(self.cert_acl).emitsNone(
             L2capMatchers.SupervisoryFrame(scid, req_seq=4),
-            timedelta(seconds=1))
+            timeout=timedelta(seconds=1))
 
     def test_resume_transmitting_when_received_rr(self):
         """
@@ -832,7 +829,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self.ertm_tx_window_size = 1
         self._setup_link_from_cert()
-        cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         self.control_table[
             CommandCode.
             CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
@@ -859,7 +855,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         # TODO: Besides checking TxSeq, we also want to check payload, once we can get it from packet view
         assertThat(self.cert_acl).emits(
             L2capMatchers.InformationFrame(scid, tx_seq=0))
-        cert_acl_data_stream.assert_none_matching(
+        assertThat(self.cert_acl).emitsNone(
             L2capMatchers.InformationFrame(scid, tx_seq=1))
         s_frame = l2cap_packets.EnhancedSupervisoryFrameBuilder(
             dcid, l2cap_packets.SupervisoryFunction.RECEIVER_READY,
@@ -877,7 +873,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self.ertm_tx_window_size = 1
         self._setup_link_from_cert()
-        cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         self.control_table[
             CommandCode.
             CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
@@ -904,9 +899,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         assertThat(self.cert_acl).emits(
             L2capMatchers.InformationFrame(scid, tx_seq=0))
         # TODO: If 1 second is greater than their retransmit timeout, use a smaller timeout
-        cert_acl_data_stream.assert_none_matching(
+        assertThat(self.cert_acl).emitsNone(
             L2capMatchers.InformationFrame(scid, tx_seq=1),
-            timedelta(seconds=1))
+            timeout=timedelta(seconds=1))
 
         i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
             dcid, 0, l2cap_packets.Final.NOT_SET, 1,
@@ -1188,7 +1183,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Lower Tester (S-frame [RNR]).
         """
         self._setup_link_from_cert()
-        cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         self.control_table[
             CommandCode.
             CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
@@ -1220,7 +1214,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             l2cap_packets.Poll.NOT_SET, l2cap_packets.Final.POLL_RESPONSE, 0)
         self.cert_send_b_frame(s_frame)
 
-        cert_acl_data_stream.assert_none_matching(
+        assertThat(self.cert_acl).emitsNone(
             L2capMatchers.InformationFrame(scid, tx_seq=0))
 
     def test_sent_rej_lost(self):
@@ -1287,7 +1281,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Verify the IUT will only retransmit the requested I-frame once after receiving a duplicate SREJ.
         """
         self._setup_link_from_cert()
-        cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         self.control_table[
             CommandCode.
             CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
@@ -1325,7 +1318,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             l2cap_packets.Poll.NOT_SET, l2cap_packets.Final.NOT_SET, 0)
         self.cert_send_b_frame(s_frame)
 
-        cert_acl_data_stream.assert_none(timeout=timedelta(seconds=0.5))
+        assertThat(self.cert_acl).emitsNone(timeout=timedelta(seconds=0.5))
         # Send SREJ with F set
         s_frame = l2cap_packets.EnhancedSupervisoryFrameBuilder(
             dcid, l2cap_packets.SupervisoryFunction.SELECT_REJECT,
@@ -1343,7 +1336,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         retransmitted.
         """
         self._setup_link_from_cert()
-        cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         self.control_table[
             CommandCode.
             CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
@@ -1382,7 +1374,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             l2cap_packets.Poll.NOT_SET, l2cap_packets.Final.NOT_SET, 0)
         self.cert_send_b_frame(s_frame)
 
-        cert_acl_data_stream.assert_none(timeout=timedelta(seconds=0.5))
+        assertThat(self.cert_acl).emitsNone(timeout=timedelta(seconds=0.5))
 
         # Send RR with F set
         s_frame = l2cap_packets.EnhancedSupervisoryFrameBuilder(
@@ -1402,7 +1394,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         followed by an I-frame with the Final bit set that indicates the same I-frames should be retransmitted.
         """
         self._setup_link_from_cert()
-        cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
         self.control_table[
             CommandCode.
             CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
@@ -1441,7 +1432,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             l2cap_packets.Poll.NOT_SET, l2cap_packets.Final.NOT_SET, 0)
         self.cert_send_b_frame(s_frame)
 
-        cert_acl_data_stream.assert_none(timeout=timedelta(seconds=0.5))
+        assertThat(self.cert_acl).emitsNone(timeout=timedelta(seconds=0.5))
 
         i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
             dcid, 0, l2cap_packets.Final.POLL_RESPONSE, 0,
