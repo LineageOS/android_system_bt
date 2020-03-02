@@ -472,9 +472,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
 
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         dcid = self.scid_to_dcid[scid]
 
@@ -751,9 +751,10 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         self.dut.l2cap.SendDynamicChannelPacket(
             l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
@@ -778,9 +779,10 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         self.dut.l2cap.SendDynamicChannelPacket(
             l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
@@ -805,9 +807,10 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             scid,
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         self.dut.l2cap.SendDynamicChannelPacket(
             l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
@@ -834,9 +837,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
         dcid = self.scid_to_dcid[scid]
 
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         self.dut.l2cap.SendDynamicChannelPacket(
             l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
@@ -888,9 +891,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
         dcid = self.scid_to_dcid[scid]
 
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         for i in range(3):
             i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
@@ -948,9 +951,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
         dcid = self.scid_to_dcid[scid]
 
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         for i in range(3):
             i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
@@ -990,9 +993,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
         dcid = self.scid_to_dcid[scid]
 
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         self.dut.l2cap.SendDynamicChannelPacket(
             l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
@@ -1036,9 +1039,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
         dcid = self.scid_to_dcid[scid]
 
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         self.dut.l2cap.SendDynamicChannelPacket(
             l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
@@ -1083,9 +1086,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
 
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         self.dut.l2cap.SendDynamicChannelPacket(
             l2cap_facade_pb2.DynamicChannelPacket(psm=psm, payload=b'abc'))
@@ -1114,9 +1117,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
 
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         dcid = self.scid_to_dcid[scid]
 
@@ -1148,9 +1151,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
 
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         dcid = self.scid_to_dcid[scid]
 
@@ -1180,9 +1183,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
 
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         dcid = self.scid_to_dcid[scid]
 
@@ -1219,9 +1222,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
 
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         dcid = self.scid_to_dcid[scid]
 
@@ -1263,9 +1266,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
 
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         dcid = self.scid_to_dcid[scid]
 
@@ -1305,9 +1308,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
 
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         dcid = self.scid_to_dcid[scid]
 
@@ -1348,9 +1351,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
 
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         dcid = self.scid_to_dcid[scid]
 
@@ -1391,9 +1394,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
 
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         dcid = self.scid_to_dcid[scid]
 
@@ -1449,9 +1452,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
 
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         dcid = self.scid_to_dcid[scid]
 
@@ -1506,9 +1509,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
 
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         dcid = self.scid_to_dcid[scid]
 
@@ -1565,9 +1568,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             psm,
             mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
 
-        # FIXME: Order shouldn't matter here
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_response)
-        assertThat(self.cert_acl).emits(self.is_correct_configuration_request)
+        assertThat(self.cert_acl).emits(
+            self.is_correct_configuration_response,
+            self.is_correct_configuration_request).inAnyOrder()
 
         dcid = self.scid_to_dcid[scid]
 
