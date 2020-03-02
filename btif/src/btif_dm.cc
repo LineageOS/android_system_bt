@@ -307,7 +307,7 @@ void btif_dm_init(uid_set_t* set) {
         //TODO: java BondStateMachine requires change into bonding state. If we ever send this event separately, consider removing this line
         HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, BT_STATUS_SUCCESS, &address, BT_BOND_STATE_BONDING);
 
-        if(BT_SSP_VARIANT_PASSKEY_ENTRY) {
+        if (pairing_variant == BT_SSP_VARIANT_PASSKEY_ENTRY) {
           // For passkey entry we must actually use pin request, due to BluetoothPairingController (in Settings)
           HAL_CBACK(bt_hal_cbacks, pin_request_cb, &address, &bd_name, cod, false);
           return;
