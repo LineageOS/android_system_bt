@@ -35,7 +35,8 @@ class PyAclManagerAclConnection(IEventStream, Closable):
         self.device = device
         self.handle = handle
         # todo enable filtering after sorting out handles
-        self.our_acl_stream = FilteringEventStream(acl_stream, None)
+        #self.our_acl_stream = FilteringEventStream(acl_stream, None)
+        self.our_acl_stream = acl_stream
 
         if remote_addr:
             remote_addr_bytes = bytes(
