@@ -17,9 +17,14 @@
 import bluetooth_packets_python3 as bt_packets
 from bluetooth_packets_python3 import l2cap_packets
 from bluetooth_packets_python3.l2cap_packets import CommandCode
+from bluetooth_packets_python3.l2cap_packets import ConnectionResponseResult
 
 
 class L2capMatchers(object):
+
+    @staticmethod
+    def ConnectionResponse(scid):
+        return lambda packet: L2capMatchers._is_matching_connection_response(packet, scid)
 
     @staticmethod
     def ConnectionRequest():
@@ -61,3 +66,14 @@ class L2capMatchers(object):
     @staticmethod
     def _is_control_frame_with_code(packet, code):
         return L2capMatchers._control_frame_with_code(packet, code) is not None
+
+    @staticmethod
+    def _is_matching_connection_response(packet, scid):
+        frame = L2capMatchers._control_frame_with_code(
+            packet, CommandCode.CONNECTION_RESPONSE)
+        if frame is None:
+            return False
+        response = l2cap_packets.ConnectionResponseView(frame)
+        return response.GetSourceCid() == scid and response.GetResult(
+        ) == ConnectionResponseResult.SUCCESS and response.GetDestinationCid(
+        ) != 0

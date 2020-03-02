@@ -364,24 +364,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             1, l2cap_packets.ConnectionRequestBuilder(signal_id, psm, scid))
         self.cert_send_b_frame(open_channel)
 
-        def verify_connection_response(packet):
-            packet_bytes = packet.payload
-            l2cap_view = l2cap_packets.BasicFrameView(
-                bt_packets.PacketViewLittleEndian(list(packet_bytes)))
-            l2cap_control_view = l2cap_packets.ControlView(
-                l2cap_view.GetPayload())
-            if l2cap_control_view.GetCode(
-            ) != l2cap_packets.CommandCode.CONNECTION_RESPONSE:
-                return False
-            connection_response_view = l2cap_packets.ConnectionResponseView(
-                l2cap_control_view)
-            return connection_response_view.GetSourceCid(
-            ) == scid and connection_response_view.GetResult(
-            ) == l2cap_packets.ConnectionResponseResult.SUCCESS and connection_response_view.GetDestinationCid(
-            ) != 0
-
         assertThat(self.cert_acl_manager.get_acl_stream()).emits(
-            verify_connection_response)
+            L2capMatchers.ConnectionResponse(scid))
 
     def test_connect_dynamic_channel_and_send_data(self):
         self._setup_link_from_cert()
