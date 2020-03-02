@@ -481,7 +481,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        self.cert_l2cap.turn_on_ertm_and_fcs()
+        self.cert_l2cap.turn_on_ertm()
+        self.cert_l2cap.turn_on_fcs()
 
         psm = 0x33
         scid = 0x41
@@ -508,7 +509,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        self.cert_l2cap.turn_on_ertm_and_fcs()
+        self.cert_l2cap.turn_on_ertm()
+        self.cert_l2cap.turn_on_fcs()
 
         psm = 0x33
         scid = 0x41

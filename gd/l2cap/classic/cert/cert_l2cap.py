@@ -64,8 +64,9 @@ class CertL2cap(Closable):
         }
 
         self.scid_to_dcid = {}
-        self.ertm_tx_window_size = 10
-        self.ertm_max_transmit = 20
+
+        self.ertm_option = None
+        self.fcs_option = None
 
     def close(self):
         self._acl_manager.close()
@@ -105,19 +106,19 @@ class CertL2cap(Closable):
     def get_dcid(self, scid):
         return self.scid_to_dcid[scid]
 
-    # more of a hack for the moment
     def turn_on_ertm(self, tx_window_size=10, max_transmit=20):
-        self.ertm_tx_window_size = tx_window_size
-        self.ertm_max_transmit = max_transmit
-        self.control_table[
-            CommandCode.
-            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
+        self.ertm_option = l2cap_packets.RetransmissionAndFlowControlConfigurationOption(
+        )
+        self.ertm_option.mode = l2cap_packets.RetransmissionAndFlowControlModeOption.L2CAP_BASIC
+        self.ertm_option.tx_window_size = tx_window_size
+        self.ertm_option.max_transmit = max_transmit
+        self.ertm_option.retransmission_time_out = 2000
+        self.ertm_option.monitor_time_out = 12000
+        self.ertm_option.maximum_pdu_size = 1010
 
-    # more of a hack for the moment
-    def turn_on_ertm_and_fcs(self):
-        self.control_table[
-            CommandCode.
-            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm_and_fcs
+    def turn_on_fcs(self):
+        self.fcs_option = l2cap_packets.FrameCheckSequenceOption()
+        self.fcs_option.fcs_type = l2cap_packets.FcsType.DEFAULT
 
     # more of a hack for the moment
     def ignore_config_and_connections(self):
@@ -159,63 +160,14 @@ class CertL2cap(Closable):
         dcid = connection_response_view.GetDestinationCid()
         self.scid_to_dcid[scid] = dcid
 
-        config_request = l2cap_packets.ConfigurationRequestBuilder(
-            sid + 1, dcid, l2cap_packets.Continuation.END, [])
-        self.send_control_packet(config_request)
-        return True
-
-    def _on_connection_response_use_ertm(self, l2cap_control_view):
-        connection_response_view = l2cap_packets.ConnectionResponseView(
-            l2cap_control_view)
-        sid = connection_response_view.GetIdentifier()
-        scid = connection_response_view.GetSourceCid()
-        dcid = connection_response_view.GetDestinationCid()
-        self.scid_to_dcid[scid] = dcid
-
-        # FIXME: This doesn't work!
-        ertm_option = l2cap_packets.RetransmissionAndFlowControlConfigurationOption(
-        )
-        ertm_option.mode = l2cap_packets.RetransmissionAndFlowControlModeOption.L2CAP_BASIC
-        ertm_option.tx_window_size = self.ertm_tx_window_size
-        ertm_option.max_transmit = self.ertm_max_transmit
-        ertm_option.retransmission_time_out = 2000
-        ertm_option.monitor_time_out = 12000
-        ertm_option.maximum_pdu_size = 1010
-
-        options = [ertm_option]
+        options = []
+        if self.ertm_option is not None:
+            options.append(self.ertm_option)
+        if self.fcs_option is not None:
+            options.append(self.fcs_option)
 
         config_request = l2cap_packets.ConfigurationRequestBuilder(
             sid + 1, dcid, l2cap_packets.Continuation.END, options)
-
-        self.send_control_packet(config_request)
-        return True
-
-    def _on_connection_response_use_ertm_and_fcs(self, l2cap_control_view):
-        connection_response_view = l2cap_packets.ConnectionResponseView(
-            l2cap_control_view)
-        sid = connection_response_view.GetIdentifier()
-        scid = connection_response_view.GetSourceCid()
-        dcid = connection_response_view.GetDestinationCid()
-        self.scid_to_dcid[scid] = dcid
-
-        # FIXME: This doesn't work!
-        ertm_option = l2cap_packets.RetransmissionAndFlowControlConfigurationOption(
-        )
-        ertm_option.mode = l2cap_packets.RetransmissionAndFlowControlModeOption.L2CAP_BASIC
-        ertm_option.tx_window_size = self.ertm_tx_window_size
-        ertm_option.max_transmit = self.ertm_max_transmit
-        ertm_option.retransmission_time_out = 2000
-        ertm_option.monitor_time_out = 12000
-        ertm_option.maximum_pdu_size = 1010
-
-        fcs_option = l2cap_packets.FrameCheckSequenceOption()
-        fcs_option.fcs_type = l2cap_packets.FcsType.DEFAULT
-
-        options = [ertm_option, fcs_option]
-
-        config_request = l2cap_packets.ConfigurationRequestBuilder(
-            sid + 1, dcid, l2cap_packets.Continuation.END, options)
-
         self.send_control_packet(config_request)
         return True
 
