@@ -628,6 +628,43 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
         assertThat(self.cert_acl).emits(is_correct_information_response)
 
+    def test_extended_feature_info_response_fixed_channels(self):
+        """
+        L2CAP/EXF/BV-05-C
+        """
+        self._setup_link_from_cert()
+
+        signal_id = 3
+        information_request = l2cap_packets.InformationRequestBuilder(
+            signal_id,
+            l2cap_packets.InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED
+        )
+        information_request_l2cap = l2cap_packets.BasicFrameBuilder(
+            1, information_request)
+        self.cert_send_b_frame(information_request_l2cap)
+
+        def is_correct_information_response(l2cap_packet):
+            packet_bytes = l2cap_packet.payload
+            l2cap_view = l2cap_packets.BasicFrameView(
+                bt_packets.PacketViewLittleEndian(list(packet_bytes)))
+            if l2cap_view.GetChannelId() != 1:
+                return False
+            l2cap_control_view = l2cap_packets.ControlView(
+                l2cap_view.GetPayload())
+            if l2cap_control_view.GetCode(
+            ) != l2cap_packets.CommandCode.INFORMATION_RESPONSE:
+                return False
+            information_response_view = l2cap_packets.InformationResponseView(
+                l2cap_control_view)
+            if information_response_view.GetInfoType(
+            ) != l2cap_packets.InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED:
+                return False
+            extended_features_view = l2cap_packets.InformationResponseExtendedFeaturesView(
+                information_response_view)
+            return extended_features_view.GetFixedChannels()
+
+        assertThat(self.cert_acl).emits(is_correct_information_response)
+
     def test_config_channel_not_use_FCS(self):
         """
         L2CAP/FOC/BV-01-C [IUT Initiated Configuration of the FCS Option]
