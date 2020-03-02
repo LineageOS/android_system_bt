@@ -31,6 +31,7 @@ from neighbor.facade import facade_pb2 as neighbor_facade
 from hci.facade import acl_manager_facade_pb2 as acl_manager_facade
 import bluetooth_packets_python3 as bt_packets
 from bluetooth_packets_python3 import hci_packets, l2cap_packets
+from bluetooth_packets_python3.l2cap_packets import CommandCode
 
 # Assemble a sample packet. TODO: Use RawBuilder
 SAMPLE_PACKET = l2cap_packets.CommandRejectNotUnderstoodBuilder(1)
@@ -56,14 +57,24 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.dut.neighbor.EnablePageScan(
             neighbor_facade.EnableMsg(enabled=True))
 
-        self.on_connection_request = None
-        self.on_connection_response = None
-        self.on_configuration_request = None
-        self.on_configuration_response = None
-        self.on_disconnection_request = None
-        self.on_disconnection_response = None
-        self.on_information_request = None
-        self.on_information_response = None
+        self.control_table = {
+            CommandCode.CONNECTION_REQUEST:
+            self._on_connection_request_default,
+            CommandCode.CONNECTION_RESPONSE:
+            self._on_connection_response_default,
+            CommandCode.CONFIGURATION_REQUEST:
+            self._on_configuration_request_default,
+            CommandCode.CONFIGURATION_RESPONSE:
+            self._on_configuration_response_default,
+            CommandCode.DISCONNECTION_REQUEST:
+            self._on_disconnection_request_default,
+            CommandCode.DISCONNECTION_RESPONSE:
+            self._on_disconnection_response_default,
+            CommandCode.INFORMATION_REQUEST:
+            self._on_information_request_default,
+            CommandCode.INFORMATION_RESPONSE:
+            self._on_information_response_default
+        }
 
         self.scid_to_dcid = {}
         self.ertm_tx_window_size = 10
@@ -263,54 +274,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         if l2cap_view.GetChannelId() != 1:
             return
         l2cap_control_view = l2cap_packets.ControlView(l2cap_view.GetPayload())
-        if l2cap_control_view.GetCode(
-        ) == l2cap_packets.CommandCode.CONNECTION_REQUEST:
-            return self.on_connection_request(
-                l2cap_control_view
-            ) if self.on_connection_request else self._on_connection_request_default(
-                l2cap_control_view)
-        if l2cap_control_view.GetCode(
-        ) == l2cap_packets.CommandCode.CONNECTION_RESPONSE:
-            return self.on_connection_response(
-                l2cap_control_view
-            ) if self.on_connection_response else self._on_connection_response_default(
-                l2cap_control_view)
-        if l2cap_control_view.GetCode(
-        ) == l2cap_packets.CommandCode.CONFIGURATION_REQUEST:
-            return self.on_configuration_request(
-                l2cap_control_view
-            ) if self.on_configuration_request else self._on_configuration_request_default(
-                l2cap_control_view)
-        if l2cap_control_view.GetCode(
-        ) == l2cap_packets.CommandCode.CONFIGURATION_RESPONSE:
-            return self.on_configuration_response(
-                l2cap_control_view
-            ) if self.on_configuration_response else self._on_configuration_response_default(
-                l2cap_control_view)
-        if l2cap_control_view.GetCode(
-        ) == l2cap_packets.CommandCode.DISCONNECTION_REQUEST:
-            return self.on_disconnection_request(
-                l2cap_control_view
-            ) if self.on_disconnection_request else self._on_disconnection_request_default(
-                l2cap_control_view)
-        if l2cap_control_view.GetCode(
-        ) == l2cap_packets.CommandCode.DISCONNECTION_RESPONSE:
-            return self.on_disconnection_response(
-                l2cap_control_view
-            ) if self.on_disconnection_response else self._on_disconnection_response_default(
-                l2cap_control_view)
-        if l2cap_control_view.GetCode(
-        ) == l2cap_packets.CommandCode.INFORMATION_REQUEST:
-            return self.on_information_request(
-                l2cap_control_view
-            ) if self.on_information_request else self._on_information_request_default(
-                l2cap_control_view)
-        if l2cap_control_view.GetCode(
-        ) == l2cap_packets.CommandCode.INFORMATION_RESPONSE:
-            return self.on_information_response(
-                l2cap_control_view
-            ) if self.on_information_response else self._on_information_response_default(
-                l2cap_control_view)
+        fn = self.control_table.get(l2cap_control_view.GetCode())
+        if fn is not None:
+            fn(l2cap_control_view)
         return
 
     def get_basic_frame(self, l2cap_packet):
@@ -494,7 +460,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
     def test_connect_and_send_data_ertm_no_segmentation(self):
         self._setup_link_from_cert()
-        self.on_connection_response = self._on_connection_response_use_ertm
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
 
         psm = 0x33
         scid = 0x41
@@ -578,8 +546,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
 
         # Don't send configuration request or response back
-        self.on_configuration_request = lambda _: True
-        self.on_connection_response = lambda _: True
+        self.control_table[CommandCode.CONFIGURATION_REQUEST] = lambda _: True
+        self.control_table[CommandCode.CONNECTION_RESPONSE] = lambda _: True
 
         self._open_channel(1, scid, psm)
 
@@ -605,7 +573,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         psm = 0x33
         scid = 0x41
 
-        self.on_configuration_request = self._on_configuration_request_unacceptable_parameters
+        self.control_table[
+            CommandCode.
+            CONFIGURATION_REQUEST] = self._on_configuration_request_unacceptable_parameters
 
         self._open_channel(
             1,
@@ -770,7 +740,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        self.on_connection_response = self._on_connection_response_use_ertm
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
 
         psm = 0x33
         scid = 0x41
@@ -796,7 +768,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
         self._setup_link_from_cert()
 
-        self.on_connection_response = self._on_connection_response_use_ertm_and_fcs
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm_and_fcs
         psm = 0x33
         scid = 0x41
         self._open_channel(
@@ -821,7 +795,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        self.on_connection_response = self._on_connection_response_use_ertm_and_fcs
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm_and_fcs
         psm = 0x33
         scid = 0x41
         self._open_channel(
@@ -845,7 +821,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        self.on_connection_response = self._on_connection_response_use_ertm
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
         psm = 0x33
         scid = 0x41
         self._open_channel(
@@ -896,7 +874,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Verify the IUT can receive in-sequence valid I-frames and deliver L2CAP SDUs to the Upper Tester
         """
         self._setup_link_from_cert()
-        self.on_connection_response = self._on_connection_response_use_ertm
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
 
         psm = 0x33
         scid = 0x41
@@ -954,7 +934,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        self.on_connection_response = self._on_connection_response_use_ertm
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
 
         psm = 0x33
         scid = 0x41
@@ -994,7 +976,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.ertm_tx_window_size = 1
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        self.on_connection_response = self._on_connection_response_use_ertm
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
 
         psm = 0x33
         scid = 0x41
@@ -1038,7 +1022,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.ertm_tx_window_size = 1
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        self.on_connection_response = self._on_connection_response_use_ertm
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
 
         psm = 0x33
         scid = 0x41
@@ -1085,7 +1071,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Verify the IUT sends an S-frame [RR] with the Poll bit set when its retransmission timer expires.
         """
         self._setup_link_from_cert()
-        self.on_connection_response = self._on_connection_response_use_ertm
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
 
         psm = 0x33
         scid = 0x41
@@ -1114,7 +1102,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         with the Poll bit set.
         """
         self._setup_link_from_cert()
-        self.on_connection_response = self._on_connection_response_use_ertm
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
 
         psm = 0x33
         scid = 0x41
@@ -1146,7 +1136,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         asserts.skip("Need to configure DUT to have a shorter timer")
         self._setup_link_from_cert()
-        self.on_connection_response = self._on_connection_response_use_ertm
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
 
         psm = 0x33
         scid = 0x41
@@ -1176,7 +1168,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         not acknowledge the previous I-frame sent by the IUT.
         """
         self._setup_link_from_cert()
-        self.on_connection_response = self._on_connection_response_use_ertm
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
 
         psm = 0x33
         scid = 0x41
@@ -1213,7 +1207,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.ertm_tx_window_size = 2
         self.ertm_max_transmit = 2
         self._setup_link_from_cert()
-        self.on_connection_response = self._on_connection_response_use_ertm
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
 
         psm = 0x33
         scid = 0x41
@@ -1255,7 +1251,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         [RR] with the Final Bit set.
         """
         self._setup_link_from_cert()
-        self.on_connection_response = self._on_connection_response_use_ertm
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
 
         psm = 0x33
         scid = 0x41
@@ -1295,7 +1293,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         with the final bit set.
         """
         self._setup_link_from_cert()
-        self.on_connection_response = self._on_connection_response_use_ertm
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
 
         psm = 0x33
         scid = 0x41
@@ -1336,7 +1336,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        self.on_connection_response = self._on_connection_response_use_ertm
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
 
         psm = 0x33
         scid = 0x41
@@ -1377,7 +1379,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self.ertm_tx_window_size = 5
         self._setup_link_from_cert()
-        self.on_connection_response = self._on_connection_response_use_ertm
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
 
         psm = 0x33
         scid = 0x41
@@ -1433,7 +1437,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        self.on_connection_response = self._on_connection_response_use_ertm
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
 
         psm = 0x33
         scid = 0x41
@@ -1488,7 +1494,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        self.on_connection_response = self._on_connection_response_use_ertm
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
 
         psm = 0x33
         scid = 0x41
@@ -1545,7 +1553,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         cert_acl_data_stream = self.cert_acl_manager.get_acl_stream()
-        self.on_connection_response = self._on_connection_response_use_ertm
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
 
         psm = 0x33
         scid = 0x41
@@ -1601,7 +1611,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        self.on_connection_response = self._on_connection_response_use_ertm
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_use_ertm
 
         psm = 0x33
         scid = 0x41
