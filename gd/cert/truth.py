@@ -24,6 +24,8 @@ from mobly import signals
 from cert.event_stream import IEventStream
 from cert.event_stream import NOT_FOR_YOU_assert_event_occurs
 from cert.event_stream import NOT_FOR_YOU_assert_all_events_occur
+from cert.event_stream import NOT_FOR_YOU_assert_none_matching
+from cert.event_stream import NOT_FOR_YOU_assert_none
 
 import sys, traceback
 
@@ -78,6 +80,17 @@ class EventStreamSubject(ObjectSubject):
         else:
             return MultiMatchStreamSubject(self._value, match_fns, timeout)
 
+    def emitsNone(self, *match_fns, timeout=DEFAULT_TIMEOUT):
+        if len(match_fns) == 0:
+            NOT_FOR_YOU_assert_none(self._value, timeout=timeout)
+            return EventStreamContinuationSubject(self._value)
+        elif len(match_fns) == 1:
+            NOT_FOR_YOU_assert_none_matching(
+                self._value, match_fns[0], timeout=timeout)
+            return EventStreamContinuationSubject(self._value)
+        else:
+            raise signals.TestFailure("Cannot specify multiple match functions")
+
 
 class MultiMatchStreamSubject(object):
 
@@ -120,6 +133,17 @@ class EventStreamContinuationSubject(ObjectSubject):
             return EventStreamContinuationSubject(self._value)
         else:
             return MultiMatchStreamSubject(self._value, match_fns, timeout)
+
+    def thenNone(self, *match_fns, timeout=DEFAULT_TIMEOUT):
+        if len(match_fns) == 0:
+            NOT_FOR_YOU_assert_none(self._value, timeout=timeout)
+            return EventStreamContinuationSubject(self._value)
+        elif len(match_fns) == 1:
+            NOT_FOR_YOU_assert_none_matching(
+                self._value, match_fns[0], timeout=timeout)
+            return EventStreamContinuationSubject(self._value)
+        else:
+            raise signals.TestFailure("Cannot specify multiple match functions")
 
 
 class BooleanSubject(ObjectSubject):
