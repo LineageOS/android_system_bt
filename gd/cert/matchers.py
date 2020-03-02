@@ -51,11 +51,40 @@ class L2capMatchers(object):
         return lambda packet: L2capMatchers._is_control_frame_with_code(packet, CommandCode.COMMAND_REJECT)
 
     @staticmethod
+    def SupervisoryFrame(scid, req_seq=None, f=None, s=None, p=None):
+        return lambda packet: L2capMatchers._is_matching_supervisory_frame(packet, scid, req_seq, f, s, p)
+
+    @staticmethod
     def _basic_frame(packet):
         if packet is None:
             return None
         return l2cap_packets.BasicFrameView(
             bt_packets.PacketViewLittleEndian(list(packet.payload)))
+
+    @staticmethod
+    def _supervisory_frame(packet, scid):
+        frame = L2capMatchers._basic_frame(packet)
+        if frame.GetChannelId() != scid:
+            return None
+        standard_frame = l2cap_packets.StandardFrameView(frame)
+        if standard_frame.GetFrameType() != l2cap_packets.FrameType.S_FRAME:
+            return None
+        return l2cap_packets.EnhancedSupervisoryFrameView(standard_frame)
+
+    @staticmethod
+    def _is_matching_supervisory_frame(packet, scid, req_seq, f, s, p):
+        frame = L2capMatchers._supervisory_frame(packet, scid)
+        if frame is None:
+            return False
+        if req_seq is not None and frame.GetReqSeq() != req_seq:
+            return False
+        if f is not None and frame.GetF() != f:
+            return False
+        if s is not None and frame.GetS() != s:
+            return False
+        if p is not None and frame.GetP() != p:
+            return False
+        return True
 
     @staticmethod
     def _control_frame(packet):
