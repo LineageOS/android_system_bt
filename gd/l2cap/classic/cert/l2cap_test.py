@@ -263,16 +263,11 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         L2CAP/COS/IEX/BV-01-C [Query for 1.2 Features]
         """
         self._setup_link_from_cert()
-        signal_id = 3
-        information_request = l2cap_packets.InformationRequestBuilder(
-            signal_id,
-            l2cap_packets.InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED
-        )
-        information_request_l2cap = l2cap_packets.BasicFrameBuilder(
-            1, information_request)
-        self.cert_send_b_frame(information_request_l2cap)
+        control_channel = self.cert_l2cap.get_control_channel()
 
-        assertThat(self.cert_l2cap.get_control_channel()).emits(
+        control_channel.send_extended_features_request()
+
+        assertThat(control_channel).emits(
             L2capMatchers.InformationResponseExtendedFeatures())
 
     def test_extended_feature_info_response_ertm(self):
@@ -281,17 +276,11 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Retransmission Mode]
         """
         self._setup_link_from_cert()
+        control_channel = self.cert_l2cap.get_control_channel()
 
-        signal_id = 3
-        information_request = l2cap_packets.InformationRequestBuilder(
-            signal_id,
-            l2cap_packets.InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED
-        )
-        information_request_l2cap = l2cap_packets.BasicFrameBuilder(
-            1, information_request)
-        self.cert_send_b_frame(information_request_l2cap)
+        control_channel.send_extended_features_request()
 
-        assertThat(self.cert_l2cap.get_control_channel()).emits(
+        assertThat(control_channel).emits(
             L2capMatchers.InformationResponseExtendedFeatures(
                 supports_ertm=True))
 
@@ -301,17 +290,11 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         asserts.skip("Streaming not supported")
         self._setup_link_from_cert()
+        control_channel = self.cert_l2cap.get_control_channel()
 
-        signal_id = 3
-        information_request = l2cap_packets.InformationRequestBuilder(
-            signal_id,
-            l2cap_packets.InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED
-        )
-        information_request_l2cap = l2cap_packets.BasicFrameBuilder(
-            1, information_request)
-        self.cert_send_b_frame(information_request_l2cap)
+        control_channel.send_extended_features_request()
 
-        assertThat(self.cert_l2cap.get_control_channel()).emits(
+        assertThat(control_channel).emits(
             L2capMatchers.InformationResponseExtendedFeatures(
                 supports_streaming=True))
 
@@ -321,17 +304,11 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Note: This is not mandated by L2CAP Spec
         """
         self._setup_link_from_cert()
+        control_channel = self.cert_l2cap.get_control_channel()
 
-        signal_id = 3
-        information_request = l2cap_packets.InformationRequestBuilder(
-            signal_id,
-            l2cap_packets.InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED
-        )
-        information_request_l2cap = l2cap_packets.BasicFrameBuilder(
-            1, information_request)
-        self.cert_send_b_frame(information_request_l2cap)
+        control_channel.send_extended_features_request()
 
-        assertThat(self.cert_l2cap.get_control_channel()).emits(
+        assertThat(control_channel).emits(
             L2capMatchers.InformationResponseExtendedFeatures(
                 supports_fcs=True))
 
@@ -340,17 +317,11 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         L2CAP/EXF/BV-05-C
         """
         self._setup_link_from_cert()
+        control_channel = self.cert_l2cap.get_control_channel()
 
-        signal_id = 3
-        information_request = l2cap_packets.InformationRequestBuilder(
-            signal_id,
-            l2cap_packets.InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED
-        )
-        information_request_l2cap = l2cap_packets.BasicFrameBuilder(
-            1, information_request)
-        self.cert_send_b_frame(information_request_l2cap)
+        control_channel.send_extended_features_request()
 
-        assertThat(self.cert_l2cap.get_control_channel()).emits(
+        assertThat(control_channel).emits(
             L2capMatchers.InformationResponseExtendedFeatures(
                 supports_fixed_channels=True))
 
