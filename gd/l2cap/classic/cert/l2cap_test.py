@@ -79,12 +79,11 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.cert_l2cap.connect_acl(self.dut.address)
         self.cert_acl = self.cert_l2cap.get_acl()
 
-    def _open_channel(
-            self,
-            signal_id=1,
-            scid=0x0101,
-            psm=0x33,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.BASIC):
+    def _open_channel(self, signal_id=1, scid=0x0101, psm=0x33, use_ertm=False):
+
+        mode = l2cap_facade_pb2.RetransmissionFlowControlMode.BASIC
+        if use_ertm:
+            mode = l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM
 
         self.dut_channel = self.dut_l2cap.open_channel(psm, mode)
         self.cert_channel = self.cert_l2cap.open_channel(signal_id, psm, scid)
@@ -110,9 +109,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
     def test_receive_packet_from_unknown_channel(self):
         self._setup_link_from_cert()
-        psm = 0x33
-        scid = 0x41
-        self._open_channel(1, scid, psm)
+
+        self._open_channel(signal_id=1, scid=0x41, psm=0x33)
 
         i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
             0x99, 0, l2cap_packets.Final.NOT_SET, 1,
@@ -132,19 +130,11 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._setup_link_from_cert()
         self.cert_l2cap.turn_on_ertm()
 
-        psm = 0x33
-        scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
+        self._open_channel(signal_id=1, scid=0x41, psm=0x33, use_ertm=True)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
             L2capMatchers.ConfigurationRequest()).inAnyOrder()
-
-        dcid = self.cert_l2cap.get_dcid(scid)
 
         self.dut_channel.send(b'abc' * 34)
         assertThat(self.cert_channel).emits(
@@ -194,14 +184,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         L2CAP/COS/CED/BV-08-C
         """
         self._setup_link_from_cert()
-
-        scid = 0x41
-        psm = 0x33
-
-        # Don't send configuration request or response back
         self.cert_l2cap.ignore_config_and_connections()
 
-        self._open_channel(1, scid, psm)
+        self._open_channel(signal_id=1, scid=0x41, psm=0x33)
 
         assertThat(self.cert_l2cap.get_control_channel()).emitsNone(
             L2capMatchers.ConfigurationResponse())
@@ -212,16 +197,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        psm = 0x33
-        scid = 0x41
-
         self.cert_l2cap.reply_with_unacceptable_parameters()
 
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.BASIC)
+        self._open_channel(signal_id=1, scid=0x41, psm=0x33)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse())
@@ -445,16 +423,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Verify the IUT can configure a channel to not use FCS in I/S-frames.
         """
         self._setup_link_from_cert()
-
         self.cert_l2cap.turn_on_ertm()
 
-        psm = 0x33
-        scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
+        self._open_channel(signal_id=1, scid=0x41, psm=0x33, use_ertm=True)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
@@ -471,17 +442,10 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         should be used.
         """
         self._setup_link_from_cert()
-
         self.cert_l2cap.turn_on_ertm()
         self.cert_l2cap.turn_on_fcs()
 
-        psm = 0x33
-        scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
+        self._open_channel(signal_id=1, scid=0x41, psm=0x33, use_ertm=True)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
@@ -498,17 +462,10 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         TODO: Update this test case. What's the difference between this one and test_explicitly_request_use_FCS?
         """
         self._setup_link_from_cert()
-
         self.cert_l2cap.turn_on_ertm()
         self.cert_l2cap.turn_on_fcs()
 
-        psm = 0x33
-        scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
+        self._open_channel(signal_id=1, scid=0x41, psm=0x33, use_ertm=True)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
@@ -524,18 +481,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         L2CAP/ERM/BV-01-C [Transmit I-frames]
         """
         self._setup_link_from_cert()
-
         self.cert_l2cap.turn_on_ertm()
 
-        psm = 0x33
-        scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
-
-        dcid = self.cert_l2cap.get_dcid(scid)
+        self._open_channel(signal_id=1, scid=0x41, psm=0x33, use_ertm=True)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
@@ -571,18 +519,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Verify the IUT can receive in-sequence valid I-frames and deliver L2CAP SDUs to the Upper Tester
         """
         self._setup_link_from_cert()
-
         self.cert_l2cap.turn_on_ertm()
 
-        psm = 0x33
-        scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
-
-        dcid = self.cert_l2cap.get_dcid(scid)
+        self._open_channel(signal_id=1, scid=0x41, psm=0x33, use_ertm=True)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
@@ -627,15 +566,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._setup_link_from_cert()
         self.cert_l2cap.turn_on_ertm()
 
-        psm = 0x33
-        scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
-
-        dcid = self.cert_l2cap.get_dcid(scid)
+        self._open_channel(signal_id=1, scid=0x41, psm=0x33, use_ertm=True)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
@@ -661,13 +592,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._setup_link_from_cert()
         self.cert_l2cap.turn_on_ertm(tx_window_size=1)
 
-        psm = 0x33
         scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
+        self._open_channel(signal_id=1, scid=scid, psm=0x33, use_ertm=True)
 
         dcid = self.cert_l2cap.get_dcid(scid)
 
@@ -699,15 +625,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._setup_link_from_cert()
         self.cert_l2cap.turn_on_ertm(tx_window_size=1)
 
-        psm = 0x33
-        scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
-
-        dcid = self.cert_l2cap.get_dcid(scid)
+        self._open_channel(signal_id=1, scid=0x41, psm=0x33, use_ertm=True)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
@@ -740,13 +658,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._setup_link_from_cert()
         self.cert_l2cap.turn_on_ertm()
 
-        psm = 0x33
-        scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
+        self._open_channel(signal_id=1, scid=0x41, psm=0x33, use_ertm=True)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
@@ -767,13 +679,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._setup_link_from_cert()
         self.cert_l2cap.turn_on_ertm()
 
-        psm = 0x33
         scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
+        self._open_channel(signal_id=1, scid=scid, psm=0x33, use_ertm=True)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
@@ -798,19 +705,11 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._setup_link_from_cert()
         self.cert_l2cap.turn_on_ertm()
 
-        psm = 0x33
-        scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
+        self._open_channel(signal_id=1, scid=0x41, psm=0x33, use_ertm=True)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
             L2capMatchers.ConfigurationRequest()).inAnyOrder()
-
-        dcid = self.cert_l2cap.get_dcid(scid)
 
         self.dut_channel.send(b'abc')
 
@@ -828,13 +727,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._setup_link_from_cert()
         self.cert_l2cap.turn_on_ertm()
 
-        psm = 0x33
         scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
+        self._open_channel(signal_id=1, scid=scid, psm=0x33, use_ertm=True)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
@@ -863,13 +757,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._setup_link_from_cert()
         self.cert_l2cap.turn_on_ertm(tx_window_size=2, max_transmit=2)
 
-        psm = 0x33
         scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
+        self._open_channel(signal_id=1, scid=scid, psm=0x33, use_ertm=True)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
@@ -903,13 +792,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._setup_link_from_cert()
         self.cert_l2cap.turn_on_ertm()
 
-        psm = 0x33
         scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
+        self._open_channel(signal_id=1, scid=scid, psm=0x33, use_ertm=True)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
@@ -941,19 +825,11 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._setup_link_from_cert()
         self.cert_l2cap.turn_on_ertm()
 
-        psm = 0x33
-        scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
+        self._open_channel(signal_id=1, scid=0x41, psm=0x33, use_ertm=True)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
             L2capMatchers.ConfigurationRequest()).inAnyOrder()
-
-        dcid = self.cert_l2cap.get_dcid(scid)
 
         self.dut_channel.send(b'abc')
 
@@ -977,13 +853,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._setup_link_from_cert()
         self.cert_l2cap.turn_on_ertm()
 
-        psm = 0x33
         scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
+        self._open_channel(signal_id=1, scid=scid, psm=0x33, use_ertm=True)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
@@ -1016,13 +887,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.cert_l2cap.turn_on_ertm(tx_window_size=5)
         ertm_tx_window_size = 5
 
-        psm = 0x33
         scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
+        self._open_channel(signal_id=1, scid=scid, psm=0x41, use_ertm=True)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
@@ -1063,13 +929,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._setup_link_from_cert()
         self.cert_l2cap.turn_on_ertm()
 
-        psm = 0x33
         scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
+        self._open_channel(signal_id=1, scid=scid, psm=0x33, use_ertm=True)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
@@ -1112,13 +973,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._setup_link_from_cert()
         self.cert_l2cap.turn_on_ertm()
 
-        psm = 0x33
         scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
+        self._open_channel(signal_id=1, scid=scid, psm=0x33, use_ertm=True)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
@@ -1164,13 +1020,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._setup_link_from_cert()
         self.cert_l2cap.turn_on_ertm()
 
-        psm = 0x33
         scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
+        self._open_channel(signal_id=1, scid=scid, psm=0x33, use_ertm=True)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
@@ -1214,13 +1065,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
         self.cert_l2cap.turn_on_ertm()
 
-        psm = 0x33
-        scid = 0x41
-        self._open_channel(
-            1,
-            scid,
-            psm,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.ERTM)
+        self._open_channel(signal_id=1, scid=0x41, psm=0x33, use_ertm=True)
 
         # TODO: Fix this test. It doesn't work so far with PDL struct
 
