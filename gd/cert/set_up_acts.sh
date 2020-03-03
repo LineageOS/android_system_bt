@@ -59,7 +59,7 @@ function CompileBluetoothPacketsPython3 {
 
 if [[ "${BASH_SOURCE[0]}" == "${0}" ]] ; then
     UsageSourcedNotExecuted
-    exit 1
+    return 1
 fi
 
 if [[ -z "$ANDROID_BUILD_TOP" ]] ; then
