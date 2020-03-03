@@ -71,9 +71,9 @@ class DataPipelineManager {
  private:
   os::Handler* handler_;
   ILink* link_;
+  std::unordered_map<Cid, Sender> sender_map_;
   std::unique_ptr<Scheduler> scheduler_;
   Receiver receiver_;
-  std::unordered_map<Cid, Sender> sender_map_;
 };
 }  // namespace internal
 }  // namespace l2cap
