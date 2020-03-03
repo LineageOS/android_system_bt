@@ -179,17 +179,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        scid = 0x41
-        psm = 0x33
-        self._open_channel(scid=scid, psm=0x33)
-
-        dcid = self.cert_l2cap.get_dcid(scid)
-
-        close_channel = l2cap_packets.DisconnectionRequestBuilder(1, dcid, scid)
-        self.cert_l2cap.get_control_channel().send(close_channel)
-
-        assertThat(self.cert_l2cap.get_control_channel()).emits(
-            L2capMatchers.DisconnectionResponse(scid, dcid))
+        (dut_channel, cert_channel) = self._open_channel(scid=0x41, psm=0x33)
+        cert_channel.disconnect_and_verify()
 
     def test_disconnect_on_timeout(self):
         """

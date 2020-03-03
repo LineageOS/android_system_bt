@@ -34,12 +34,13 @@ from cert.captures import L2capCaptures
 
 class CertL2capChannel(IEventStream):
 
-    def __init__(self, device, scid, dcid, acl_stream, acl):
+    def __init__(self, device, scid, dcid, acl_stream, acl, control_channel):
         self._device = device
         self._scid = scid
         self._dcid = dcid
         self._acl_stream = acl_stream
         self._acl = acl
+        self._control_channel = control_channel
         self._our_acl_view = FilteringEventStream(
             acl_stream, L2capMatchers.ExtractBasicFrame(scid))
 
@@ -80,6 +81,15 @@ class CertL2capChannel(IEventStream):
         self.send_information_request(
             InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED)
 
+    def disconnect_and_verify(self):
+        assertThat(self._scid).isNotEqualTo(1)
+        self._control_channel.send(
+            l2cap_packets.DisconnectionRequestBuilder(1, self._dcid,
+                                                      self._scid))
+
+        assertThat(self._control_channel).emits(
+            L2capMatchers.DisconnectionResponse(self._scid, self._dcid))
+
 
 class CertL2cap(Closable):
 
@@ -119,9 +129,13 @@ class CertL2cap(Closable):
     def connect_acl(self, remote_addr):
         self._acl = self._acl_manager.initiate_connection(remote_addr)
         self._acl.wait_for_connection_complete()
-        self.control_channel = CertL2capChannel(self._device, 1, 1,
-                                                self.get_acl_stream(),
-                                                self._acl)
+        self.control_channel = CertL2capChannel(
+            self._device,
+            1,
+            1,
+            self.get_acl_stream(),
+            self._acl,
+            control_channel=None)
         self.get_acl_stream().register_callback(self._handle_control_packet)
 
     def open_channel(self, signal_id, psm, scid):
@@ -132,7 +146,8 @@ class CertL2cap(Closable):
         assertThat(self.control_channel).emits(response)
         return CertL2capChannel(self._device, scid,
                                 response.get().GetDestinationCid(),
-                                self.get_acl_stream(), self._acl)
+                                self.get_acl_stream(), self._acl,
+                                self.control_channel)
 
     # prefer to use channel abstraction instead, if at all possible
     def send_acl(self, packet):
