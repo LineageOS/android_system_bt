@@ -23,6 +23,8 @@ from bluetooth_packets_python3 import l2cap_packets
 from bluetooth_packets_python3.l2cap_packets import CommandCode
 from bluetooth_packets_python3.l2cap_packets import Final
 from bluetooth_packets_python3.l2cap_packets import SegmentationAndReassembly
+from bluetooth_packets_python3.l2cap_packets import SupervisoryFunction
+from bluetooth_packets_python3.l2cap_packets import Poll
 from cert.event_stream import FilteringEventStream
 from cert.event_stream import IEventStream
 from cert.matchers import L2capMatchers
@@ -55,6 +57,15 @@ class CertL2capChannel(IEventStream):
                      payload=None):
         frame = l2cap_packets.EnhancedInformationFrameBuilder(
             self._dcid, tx_seq, f, req_seq, sar, payload)
+        self._acl.send(frame.Serialize())
+
+    def send_s_frame(self,
+                     req_seq,
+                     s=SupervisoryFunction.RECEIVER_READY,
+                     p=Poll.NOT_SET,
+                     f=Final.NOT_SET):
+        frame = l2cap_packets.EnhancedSupervisoryFrameBuilder(
+            self._dcid, s, p, f, req_seq)
         self._acl.send(frame.Serialize())
 
 
