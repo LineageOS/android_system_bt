@@ -4305,12 +4305,15 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
       }
     }
 
-    if (!addr_matched) {
-      /* Don't callback unless this Connection-Complete-failure event has the
-       * same mac address as the bonding device */
+    /* p_auth_complete_callback might have freed the p_dev_rec, ensure it exists
+     * before accessing */
+    p_dev_rec = btm_find_dev(bda);
+    if (!p_dev_rec) {
+      /* Don't callback when device security record was removed */
       VLOG(1) << __func__
-              << ": Different mac addresses: pairing_bda=" << btm_cb.pairing_bda
-              << ", bda=" << bda << ", do not callback";
+              << ": device security record associated with this bda has been "
+                 "removed! bda="
+              << bda << ", do not callback!";
       return;
     }
 

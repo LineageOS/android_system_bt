@@ -81,7 +81,7 @@ using bluetooth::hearing_aid::HearingAidInterface;
 
 bt_callbacks_t* bt_hal_cbacks = NULL;
 bool restricted_mode = false;
-bool single_user_mode = false;
+bool niap_mode = false;
 
 /*******************************************************************************
  *  Externs
@@ -134,9 +134,9 @@ static bool is_profile(const char* p1, const char* p2) {
  ****************************************************************************/
 
 static int init(bt_callbacks_t* callbacks, bool start_restricted,
-                bool is_single_user_mode) {
-  LOG_INFO(LOG_TAG, "%s: start restricted = %d ; single user = %d", __func__,
-           start_restricted, is_single_user_mode);
+                bool is_niap_mode) {
+  LOG_INFO(LOG_TAG, "%s: start restricted = %d ; niap = %d", __func__,
+           start_restricted, is_niap_mode);
 
   if (interface_ready()) return BT_STATUS_DONE;
 
@@ -146,7 +146,7 @@ static int init(bt_callbacks_t* callbacks, bool start_restricted,
 
   bt_hal_cbacks = callbacks;
   restricted_mode = start_restricted;
-  single_user_mode = is_single_user_mode;
+  niap_mode = is_niap_mode;
   stack_manager_get_interface()->init_stack();
   btif_debug_init();
   return BT_STATUS_SUCCESS;
@@ -169,7 +169,7 @@ static int disable(void) {
 static void cleanup(void) { stack_manager_get_interface()->clean_up_stack(); }
 
 bool is_restricted_mode() { return restricted_mode; }
-bool is_single_user_mode() { return single_user_mode; }
+bool is_niap_mode() { return niap_mode; }
 
 static int get_adapter_properties(void) {
   /* sanity check */

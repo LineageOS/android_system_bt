@@ -105,7 +105,7 @@ bool is_restricted_mode(void);
 
 /*******************************************************************************
  *
- * Function         is_single_user_mode_
+ * Function         is_niap_mode
  *
  * Description      Checks if BT was enabled in single user mode. In this
  *                  mode, use of keystore for key attestation of LTK is limitee
@@ -114,7 +114,7 @@ bool is_restricted_mode(void);
  * Returns          bool
  *
  ******************************************************************************/
-bool is_single_user_mode(void);
+bool is_niap_mode(void);
 
 /*******************************************************************************
  *
