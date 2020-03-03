@@ -18,16 +18,28 @@ from l2cap.classic import facade_pb2 as l2cap_facade_pb2
 from bluetooth_packets_python3 import l2cap_packets
 
 
+class PyL2capChannel(object):
+
+    def __init__(self, device, psm):
+        self._device = device
+        self._psm = psm
+
+    def send(self, payload):
+        self._device.l2cap.SendDynamicChannelPacket(
+            l2cap_facade_pb2.DynamicChannelPacket(psm=0x33, payload=payload))
+
+
 class PyL2cap(object):
 
     def __init__(self, device):
-        self.device = device
+        self._device = device
 
     def open_channel(self,
                      psm=0x33,
                      mode=l2cap_facade_pb2.RetransmissionFlowControlMode.BASIC):
 
         # todo, I don't understand what SetDynamicChannel means?
-        self.device.l2cap.SetDynamicChannel(
+        self._device.l2cap.SetDynamicChannel(
             l2cap_facade_pb2.SetEnableDynamicChannelRequest(
                 psm=psm, retransmission_mode=mode))
+        return PyL2capChannel(self._device, psm)
