@@ -52,11 +52,11 @@ class L2capMatchers(object):
         return lambda packet: L2capMatchers._is_control_frame_with_code(packet, CommandCode.COMMAND_REJECT)
 
     @staticmethod
-    def SupervisoryFrame(req_seq=None, f=None, s=None, p=None):
+    def SFrame(req_seq=None, f=None, s=None, p=None):
         return lambda packet: L2capMatchers._is_matching_supervisory_frame(packet, req_seq, f, s, p)
 
     @staticmethod
-    def InformationFrame(tx_seq=None, payload=None):
+    def IFrame(tx_seq=None, payload=None):
         return lambda packet: L2capMatchers._is_matching_information_frame(packet, tx_seq, payload)
 
     @staticmethod
