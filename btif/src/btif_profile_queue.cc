@@ -195,7 +195,14 @@ bt_status_t btif_queue_connect_next(void) {
 
   LOG_INFO(LOG_TAG, "%s: executing connection request: %s", __func__,
            head.ToString().c_str());
-  return head.connect();
+  bt_status_t b_status = head.connect();
+  if (b_status != BT_STATUS_SUCCESS) {
+    LOG_INFO(LOG_TAG,
+             "%s: connect %s failed, advance to next scheduled connection.",
+             __func__, head.ToString().c_str());
+    btif_queue_advance();
+  }
+  return b_status;
 }
 
 /*******************************************************************************

@@ -67,6 +67,11 @@ static constexpr int8_t kCriWarnRssi = -80;
 static constexpr uint8_t kCriWarnUnusedCh = 55;
 // The queue size of recording the BQR events.
 static constexpr uint8_t kBqrEventQueueSize = 25;
+// The minimum size of the ROOT_INFLAMMATION event
+// HCI_VENDOR_SPECIFIC_EVT(1) + BQR sub event(1) + BQR report ID(1) +
+// error code(1) + vendor error code(1) = 5
+static constexpr uint8_t kRootInflammationPacketMinSize = 5;
+
 // The Property of BQR event mask configuration.
 static constexpr const char* kpPropertyEventMask =
     "persist.bluetooth.bqr.event_mask";
@@ -90,7 +95,8 @@ enum BqrQualityReportId : uint8_t {
   QUALITY_REPORT_ID_MONITOR_MODE = 0x01,
   QUALITY_REPORT_ID_APPROACH_LSTO = 0x02,
   QUALITY_REPORT_ID_A2DP_AUDIO_CHOPPY = 0x03,
-  QUALITY_REPORT_ID_SCO_VOICE_CHOPPY = 0x04
+  QUALITY_REPORT_ID_SCO_VOICE_CHOPPY = 0x04,
+  QUALITY_REPORT_ID_ROOT_INFLAMMATION = 0x05
 };
 
 // Packet Type definition

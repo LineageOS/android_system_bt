@@ -17,6 +17,8 @@
  ******************************************************************************/
 
 #include "btif_keystore.h"
+#include "keystore_client.pb.h"
+#include "string.h"
 
 #include <base/files/file_util.h>
 #include <base/logging.h>
@@ -29,7 +31,9 @@
 using namespace keystore;
 using namespace bluetooth;
 
-constexpr char kKeyStore[] = "AndroidKeystore";
+const std::string kKeyStore = "bluetooth-key-encrypted";
+constexpr uint32_t kAESKeySize = 256;     // bits
+constexpr uint32_t kMACOutputSize = 128;  // bits
 
 namespace bluetooth {
 
@@ -43,18 +47,44 @@ std::string BtifKeystore::Encrypt(const std::string& data, int32_t flags) {
     LOG(ERROR) << __func__ << ": empty data";
     return output;
   }
-  if (!keystore_client_->doesKeyExist(kKeyStore)) {
-    auto gen_result = GenerateKey(kKeyStore, 0, false);
-    if (!gen_result.isOk()) {
-      LOG(FATAL) << "EncryptWithAuthentication Failed: generateKey response="
-                 << gen_result;
-      return output;
-    }
-  }
-  if (!keystore_client_->encryptWithAuthentication(kKeyStore, data, flags,
-                                                   &output)) {
-    LOG(FATAL) << "EncryptWithAuthentication failed.";
+  if (!GenerateKey(kKeyStore, flags)) {
     return output;
+  }
+
+  AuthorizationSetBuilder encrypt_params;
+  encrypt_params.Authorization(TAG_BLOCK_MODE, BlockMode::GCM)
+      .Authorization(TAG_MAC_LENGTH, kMACOutputSize)
+      .Padding(PaddingMode::NONE);
+  AuthorizationSet output_params;
+  std::string raw_encrypted_data;
+  if (!keystore_client_->oneShotOperation(
+          KeyPurpose::ENCRYPT, kKeyStore, encrypt_params, data,
+          std::string() /* signature_to_verify */, &output_params,
+          &raw_encrypted_data)) {
+    LOG(ERROR) << __func__ << ": AES operation failed.";
+    return output;
+  }
+  auto init_vector_blob = output_params.GetTagValue(TAG_NONCE);
+  if (!init_vector_blob.isOk()) {
+    LOG(ERROR) << __func__ << ": Missing initialization vector.";
+    return output;
+  }
+
+  const hidl_vec<uint8_t>& value = init_vector_blob.value();
+  std::string init_vector =
+      std::string(reinterpret_cast<const std::string::value_type*>(&value[0]),
+                  value.size());
+
+  if (memcmp(&init_vector_blob, &init_vector, init_vector.length()) == 0) {
+    LOG(ERROR) << __func__
+               << ": Protobuf nonce data doesn't match the actual nonce.";
+  }
+
+  EncryptedData protobuf;
+  protobuf.set_init_vector(init_vector);
+  protobuf.set_encrypted_data(raw_encrypted_data);
+  if (!protobuf.SerializeToString(&output)) {
+    LOG(ERROR) << __func__ << ": Failed to serialize EncryptedData protobuf.";
   }
   return output;
 }
@@ -66,36 +96,49 @@ std::string BtifKeystore::Decrypt(const std::string& input) {
     return "";
   }
   std::string output;
-  if (!keystore_client_->decryptWithAuthentication(kKeyStore, input, &output)) {
-    LOG(FATAL) << "DecryptWithAuthentication failed.\n";
+  EncryptedData protobuf;
+  if (!protobuf.ParseFromString(input)) {
+    LOG(ERROR) << __func__ << ": Failed to parse EncryptedData protobuf.";
+    return output;
+  }
+  AuthorizationSetBuilder encrypt_params;
+  encrypt_params.Authorization(TAG_BLOCK_MODE, BlockMode::GCM)
+      .Authorization(TAG_MAC_LENGTH, kMACOutputSize)
+      .Authorization(TAG_NONCE, protobuf.init_vector().data(),
+                     protobuf.init_vector().size())
+      .Padding(PaddingMode::NONE);
+  AuthorizationSet output_params;
+  if (!keystore_client_->oneShotOperation(
+          KeyPurpose::DECRYPT, kKeyStore, encrypt_params,
+          protobuf.encrypted_data(), std::string() /* signature_to_verify */,
+          &output_params, &output)) {
+    LOG(ERROR) << __func__ << ": AES operation failed.";
   }
   return output;
 }
 
-// Note: auth_bound keys created with this tool will not be usable.
-KeyStoreNativeReturnCode BtifKeystore::GenerateKey(const std::string& name,
-                                                   int32_t flags,
-                                                   bool auth_bound) {
-  AuthorizationSetBuilder params;
-  params.RsaSigningKey(2048, 65537)
-      .Digest(Digest::SHA_2_224)
-      .Digest(Digest::SHA_2_256)
-      .Digest(Digest::SHA_2_384)
-      .Digest(Digest::SHA_2_512)
-      .Padding(PaddingMode::RSA_PKCS1_1_5_SIGN)
-      .Padding(PaddingMode::RSA_PSS);
-  if (auth_bound) {
-    // Gatekeeper normally generates the secure user id.
-    // Using zero allows the key to be created, but it will not be usuable.
-    params.Authorization(TAG_USER_SECURE_ID, 0);
-  } else {
-    params.Authorization(TAG_NO_AUTH_REQUIRED);
+bool BtifKeystore::GenerateKey(const std::string& name, int32_t flags) {
+  if (!DoesKeyExist()) {
+    AuthorizationSetBuilder params;
+    params.AesEncryptionKey(kAESKeySize)
+        .Authorization(TAG_NO_AUTH_REQUIRED)
+        .Authorization(TAG_BLOCK_MODE, BlockMode::GCM)
+        .Authorization(TAG_PURPOSE, KeyPurpose::ENCRYPT)
+        .Authorization(TAG_PURPOSE, KeyPurpose::DECRYPT)
+        .Padding(PaddingMode::NONE)
+        .Authorization(TAG_MIN_MAC_LENGTH, kMACOutputSize);
+    AuthorizationSet hardware_enforced_characteristics;
+    AuthorizationSet software_enforced_characteristics;
+    auto result = keystore_client_->generateKey(
+        name, params, flags, &hardware_enforced_characteristics,
+        &software_enforced_characteristics);
+    if (!result.isOk()) {
+      LOG(FATAL) << __func__ << "Failed to generate key: name: " << name
+                 << ", error code: " << result.getErrorCode();
+      return false;
+    }
   }
-  AuthorizationSet hardware_enforced_characteristics;
-  AuthorizationSet software_enforced_characteristics;
-  return keystore_client_->generateKey(name, params, flags,
-                                       &hardware_enforced_characteristics,
-                                       &software_enforced_characteristics);
+  return true;
 }
 
 }  // namespace bluetooth
