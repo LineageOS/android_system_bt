@@ -20,6 +20,7 @@
 #include <gtest/gtest.h>
 
 #include "hci/hci_packets.h"
+#include "l2cap/classic/fixed_channel.h"
 #include "packet/raw_builder.h"
 #include "security/smp_packets.h"
 #include "security/test/fake_hci_layer.h"
@@ -40,6 +41,17 @@ using hci::OpCode;
 using os::Handler;
 using os::Thread;
 using packet::RawBuilder;
+
+class FakeSecurityManagerChannel : public SecurityManagerChannel {
+ public:
+  FakeSecurityManagerChannel(os::Handler* handler, hci::HciLayer* hci_layer)
+      : SecurityManagerChannel(handler, hci_layer) {}
+  ~FakeSecurityManagerChannel() {}
+
+  void OnConnectionOpen(std::unique_ptr<l2cap::classic::FixedChannel> fixed_channel) override {
+    LOG_ERROR("CALLED");
+  }
+};
 
 class SecurityManagerChannelCallback : public ISecurityManagerChannelListener {
  public:
@@ -184,6 +196,15 @@ class SecurityManagerChannelCallback : public ISecurityManagerChannelListener {
         break;
     }
   }
+
+  void OnConnectionClosed(hci::Address address, bluetooth::hci::ErrorCode error_code) override {
+    LOG_DEBUG("Called");
+  }
+
+  void OnConnectionFailed(hci::Address address,
+                          bluetooth::l2cap::classic::FixedChannelManager::ConnectionResult result) override {
+    LOG_DEBUG("Shouldn't be called");
+  }
 };
 
 class SecurityManagerChannelTest : public ::testing::Test {
@@ -194,7 +215,7 @@ class SecurityManagerChannelTest : public ::testing::Test {
     hci_layer_ = new FakeHciLayer();
     fake_registry_.InjectTestModule(&FakeHciLayer::Factory, hci_layer_);
     fake_registry_.Start<FakeHciLayer>(&thread_);
-    channel_ = new SecurityManagerChannel(handler_, hci_layer_);
+    channel_ = new FakeSecurityManagerChannel(handler_, hci_layer_);
     channel_->SetChannelListener(callback_);
   }
 
