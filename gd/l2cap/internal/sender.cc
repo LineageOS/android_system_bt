@@ -55,7 +55,7 @@ Sender::Sender(os::Handler* handler, ILink* link, Scheduler* scheduler, std::sha
 }
 
 Sender::~Sender() {
-  if (is_dequeue_registered_) {
+  if (is_dequeue_registered_.exchange(false)) {
     queue_end_->UnregisterDequeue();
   }
 }
@@ -73,19 +73,21 @@ DataController* Sender::GetDataController() {
 }
 
 void Sender::try_register_dequeue() {
-  if (is_dequeue_registered_) {
+  if (is_dequeue_registered_.exchange(true)) {
     return;
   }
   queue_end_->RegisterDequeue(handler_, common::Bind(&Sender::dequeue_callback, common::Unretained(this)));
-  is_dequeue_registered_ = true;
 }
 
+// From external context
 void Sender::dequeue_callback() {
   auto packet = queue_end_->TryDequeue();
   ASSERT(packet != nullptr);
-  data_controller_->OnSdu(std::move(packet));
-  queue_end_->UnregisterDequeue();
-  is_dequeue_registered_ = false;
+  handler_->Post(
+      common::BindOnce(&DataController::OnSdu, common::Unretained(data_controller_.get()), std::move(packet)));
+  if (is_dequeue_registered_.exchange(false)) {
+    queue_end_->UnregisterDequeue();
+  }
 }
 
 void Sender::UpdateClassicConfiguration(classic::internal::ChannelConfigurationState config) {

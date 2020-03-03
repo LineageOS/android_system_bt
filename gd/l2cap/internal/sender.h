@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <string>
 #include <unordered_map>
 
@@ -81,7 +82,7 @@ class Sender {
   Scheduler* scheduler_;
   const Cid channel_id_;
   const Cid remote_channel_id_;
-  bool is_dequeue_registered_ = false;
+  std::atomic_bool is_dequeue_registered_ = false;
   RetransmissionAndFlowControlModeOption mode_ = RetransmissionAndFlowControlModeOption::L2CAP_BASIC;
   std::unique_ptr<DataController> data_controller_;
 
