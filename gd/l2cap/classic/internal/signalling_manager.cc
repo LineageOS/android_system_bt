@@ -316,12 +316,15 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
         break;
       }
       default:
-        LOG_WARN("Received some unsupported configuration option: %d", static_cast<int>(option->type_));
-        auto response =
-            ConfigurationResponseBuilder::Create(signal_id.Value(), channel->GetRemoteCid(), is_continuation,
-                                                 ConfigurationResponseResult::UNKNOWN_OPTIONS, {});
-        enqueue_buffer_->Enqueue(std::move(response), handler_);
-        return;
+        if (option->is_hint_ != ConfigurationOptionIsHint::OPTION_IS_A_HINT) {
+          LOG_WARN("Received some unsupported configuration option: %d", static_cast<int>(option->type_));
+          auto response =
+              ConfigurationResponseBuilder::Create(signal_id.Value(), channel->GetRemoteCid(), is_continuation,
+                                                   ConfigurationResponseResult::UNKNOWN_OPTIONS, {});
+          enqueue_buffer_->Enqueue(std::move(response), handler_);
+          return;
+        }
+        break;
     }
   }
 
