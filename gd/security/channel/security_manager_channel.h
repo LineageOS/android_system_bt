@@ -18,12 +18,14 @@
 #pragma once
 
 #include <memory>
+#include <unordered_map>
 #include <vector>
 
 #include "hci/address_with_type.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
 #include "hci/security_interface.h"
+#include "l2cap/classic/l2cap_classic_module.h"
 
 namespace bluetooth {
 namespace security {
@@ -36,6 +38,9 @@ class ISecurityManagerChannelListener {
  public:
   virtual ~ISecurityManagerChannelListener() = default;
   virtual void OnHciEventReceived(hci::EventPacketView packet) = 0;
+  virtual void OnConnectionClosed(hci::Address, bluetooth::hci::ErrorCode error_code) = 0;
+  virtual void OnConnectionFailed(hci::Address,
+                                  bluetooth::l2cap::classic::FixedChannelManager::ConnectionResult result) = 0;
 };
 
 /**
@@ -43,11 +48,22 @@ class ISecurityManagerChannelListener {
  */
 class SecurityManagerChannel {
  public:
-  explicit SecurityManagerChannel(os::Handler* handler, hci::HciLayer* hci_layer)
-      : listener_(nullptr),
-        hci_security_interface_(hci_layer->GetSecurityInterface(
-            common::Bind(&SecurityManagerChannel::OnHciEventReceived, common::Unretained(this)), handler)),
-        handler_(handler) {}
+  SecurityManagerChannel(os::Handler* handler, hci::HciLayer* hci_layer,
+                         std::unique_ptr<l2cap::classic::FixedChannelManager> fixed_channel_manager);
+
+  virtual ~SecurityManagerChannel();
+
+  /**
+   * Creates a connection to the device which triggers pairing
+   *
+   * @param address remote address of device to pair with
+   */
+  void Connect(hci::Address address);
+
+  /**
+   * Disconnects currently connected channel
+   */
+  void Disconnect(hci::Address address);
 
   /**
    * Send a given SMP command over the SecurityManagerChannel
@@ -79,10 +95,27 @@ class SecurityManagerChannel {
    */
   void OnCommandComplete(hci::CommandCompleteView packet);
 
+ protected:
+  SecurityManagerChannel(os::Handler* handler, hci::HciLayer* hci_layer);
+
+  virtual void OnRegistrationComplete(l2cap::classic::FixedChannelManager::RegistrationResult result,
+                                      std::unique_ptr<l2cap::classic::FixedChannelService> fixed_channel_service);
+  virtual void OnUnregistered();
+  virtual void OnConnectionOpen(std::unique_ptr<l2cap::classic::FixedChannel> fixed_channel);
+  virtual void OnConnectionFail(hci::Address address, l2cap::classic::FixedChannelManager::ConnectionResult result);
+  virtual void OnConnectionClose(hci::Address address, hci::ErrorCode error_code);
+
+  bool is_test_mode_ = false;
+
  private:
-  ISecurityManagerChannelListener* listener_;
-  hci::SecurityInterface* hci_security_interface_;
-  os::Handler* handler_;
+  ISecurityManagerChannelListener* listener_{nullptr};
+  hci::SecurityInterface* hci_security_interface_{nullptr};
+  os::Handler* handler_{nullptr};
+  l2cap::SecurityPolicy security_policy_;
+
+  std::unique_ptr<l2cap::classic::FixedChannelManager> fixed_channel_manager_{nullptr};
+  std::unique_ptr<l2cap::classic::FixedChannelService> fixed_channel_service_{nullptr};
+  std::unordered_map<hci::Address, std::unique_ptr<l2cap::classic::FixedChannel>> fixed_channel_map_;
 };
 
 }  // namespace channel
