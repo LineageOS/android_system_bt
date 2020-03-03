@@ -37,11 +37,22 @@ void Queue<T>::RegisterEnqueue(Handler* handler, EnqueueCallback callback) {
 
 template <typename T>
 void Queue<T>::UnregisterEnqueue() {
-  std::lock_guard<std::mutex> lock(mutex_);
-  ASSERT(enqueue_.reactable_ != nullptr);
-  enqueue_.handler_->thread_->GetReactor()->Unregister(enqueue_.reactable_);
-  enqueue_.reactable_ = nullptr;
-  enqueue_.handler_ = nullptr;
+  Reactor* reactor = nullptr;
+  Reactor::Reactable* to_unregister = nullptr;
+  bool wait_for_unregister = false;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    ASSERT(enqueue_.reactable_ != nullptr);
+    reactor = enqueue_.handler_->thread_->GetReactor();
+    wait_for_unregister = (!enqueue_.handler_->thread_->IsSameThread());
+    to_unregister = enqueue_.reactable_;
+    enqueue_.reactable_ = nullptr;
+    enqueue_.handler_ = nullptr;
+  }
+  reactor->Unregister(to_unregister);
+  if (wait_for_unregister) {
+    reactor->WaitForUnregisteredReactable(std::chrono::milliseconds(1000));
+  }
 }
 
 template <typename T>
@@ -56,11 +67,22 @@ void Queue<T>::RegisterDequeue(Handler* handler, DequeueCallback callback) {
 
 template <typename T>
 void Queue<T>::UnregisterDequeue() {
-  std::lock_guard<std::mutex> lock(mutex_);
-  ASSERT(dequeue_.reactable_ != nullptr);
-  dequeue_.handler_->thread_->GetReactor()->Unregister(dequeue_.reactable_);
-  dequeue_.reactable_ = nullptr;
-  dequeue_.handler_ = nullptr;
+  Reactor* reactor = nullptr;
+  Reactor::Reactable* to_unregister = nullptr;
+  bool wait_for_unregister = false;
+  {
+    std::lock_guard<std::mutex> lock(mutex_);
+    ASSERT(dequeue_.reactable_ != nullptr);
+    reactor = dequeue_.handler_->thread_->GetReactor();
+    wait_for_unregister = (!dequeue_.handler_->thread_->IsSameThread());
+    to_unregister = dequeue_.reactable_;
+    dequeue_.reactable_ = nullptr;
+    dequeue_.handler_ = nullptr;
+  }
+  reactor->Unregister(to_unregister);
+  if (wait_for_unregister) {
+    reactor->WaitForUnregisteredReactable(std::chrono::milliseconds(1000));
+  }
 }
 
 template <typename T>
