@@ -21,16 +21,20 @@ from cert.truth import assertThat
 import bluetooth_packets_python3 as bt_packets
 from bluetooth_packets_python3 import l2cap_packets
 from bluetooth_packets_python3.l2cap_packets import CommandCode
+from bluetooth_packets_python3.l2cap_packets import Final
+from bluetooth_packets_python3.l2cap_packets import SegmentationAndReassembly
 from cert.event_stream import FilteringEventStream
 from cert.event_stream import IEventStream
 from cert.matchers import L2capMatchers
+from cert.captures import L2capCaptures
 
 
 class CertL2capChannel(IEventStream):
 
-    def __init__(self, device, scid, acl_stream, acl):
+    def __init__(self, device, scid, dcid, acl_stream, acl):
         self._device = device
         self._scid = scid
+        self._dcid = dcid
         self._acl_stream = acl_stream
         self._acl = acl
         self._our_acl_view = FilteringEventStream(
@@ -40,7 +44,17 @@ class CertL2capChannel(IEventStream):
         return self._our_acl_view.get_event_queue()
 
     def send(self, packet):
-        frame = l2cap_packets.BasicFrameBuilder(self._scid, packet)
+        frame = l2cap_packets.BasicFrameBuilder(self._dcid, packet)
+        self._acl.send(frame.Serialize())
+
+    def send_i_frame(self,
+                     tx_seq,
+                     req_seq,
+                     f=Final.NOT_SET,
+                     sar=SegmentationAndReassembly.UNSEGMENTED,
+                     payload=None):
+        frame = l2cap_packets.EnhancedInformationFrameBuilder(
+            self._dcid, tx_seq, f, req_seq, sar, payload)
         self._acl.send(frame.Serialize())
 
 
@@ -82,7 +96,7 @@ class CertL2cap(Closable):
     def connect_acl(self, remote_addr):
         self._acl = self._acl_manager.initiate_connection(remote_addr)
         self._acl.wait_for_connection_complete()
-        self.control_channel = CertL2capChannel(self._device, 1,
+        self.control_channel = CertL2capChannel(self._device, 1, 1,
                                                 self.get_acl_stream(),
                                                 self._acl)
         self.get_acl_stream().register_callback(self._handle_control_packet)
@@ -91,10 +105,11 @@ class CertL2cap(Closable):
         self.control_channel.send(
             l2cap_packets.ConnectionRequestBuilder(signal_id, psm, scid))
 
-        assertThat(self.control_channel).emits(
-            L2capMatchers.ConnectionResponse(scid))
-        return CertL2capChannel(self._device, scid, self.get_acl_stream(),
-                                self._acl)
+        response = L2capCaptures.ConnectionResponse(scid)
+        assertThat(self.control_channel).emits(response)
+        return CertL2capChannel(self._device, scid,
+                                response.get().GetDestinationCid(),
+                                self.get_acl_stream(), self._acl)
 
     # prefer to use channel abstraction instead, if at all possible
     def send_acl(self, packet):

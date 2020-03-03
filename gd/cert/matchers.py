@@ -107,8 +107,7 @@ class L2capMatchers(object):
             return False
         if tx_seq is not None and frame.GetTxSeq() != tx_seq:
             return False
-        if payload is not None and frame.GetPayload(
-        ) != payload:  # TODO(mylesgw) this doesn't work
+        if payload is not None and frame.GetPayload().GetBytes() != payload:
             return False
         return True
 
@@ -134,7 +133,7 @@ class L2capMatchers(object):
         return l2cap_packets.ControlView(packet.GetPayload())
 
     @staticmethod
-    def _control_frame_with_code(packet, code):
+    def control_frame_with_code(packet, code):
         frame = L2capMatchers._control_frame(packet)
         if frame is None or frame.GetCode() != code:
             return None
@@ -142,11 +141,11 @@ class L2capMatchers(object):
 
     @staticmethod
     def _is_control_frame_with_code(packet, code):
-        return L2capMatchers._control_frame_with_code(packet, code) is not None
+        return L2capMatchers.control_frame_with_code(packet, code) is not None
 
     @staticmethod
     def _is_matching_connection_response(packet, scid):
-        frame = L2capMatchers._control_frame_with_code(
+        frame = L2capMatchers.control_frame_with_code(
             packet, CommandCode.CONNECTION_RESPONSE)
         if frame is None:
             return False
@@ -157,7 +156,7 @@ class L2capMatchers(object):
 
     @staticmethod
     def _is_matching_disconnection_response(packet, scid, dcid):
-        frame = L2capMatchers._control_frame_with_code(
+        frame = L2capMatchers.control_frame_with_code(
             packet, CommandCode.DISCONNECTION_RESPONSE)
         if frame is None:
             return False

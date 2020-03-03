@@ -32,6 +32,8 @@ from neighbor.facade import facade_pb2 as neighbor_facade
 from hci.facade import acl_manager_facade_pb2 as acl_manager_facade
 import bluetooth_packets_python3 as bt_packets
 from bluetooth_packets_python3 import hci_packets, l2cap_packets
+from bluetooth_packets_python3.l2cap_packets import SegmentationAndReassembly
+from bluetooth_packets_python3.l2cap_packets import Final
 from bluetooth_packets_python3.l2cap_packets import CommandCode
 from cert_l2cap import CertL2cap
 
@@ -146,12 +148,11 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
         self.dut_channel.send(b'abc' * 34)
         assertThat(self.cert_channel).emits(
-            L2capMatchers.PartialData(b'abc' * 34))
+            L2capMatchers.InformationFrame(tx_seq=0, payload=b'abc' * 34))
 
-        i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
-            dcid, 0, l2cap_packets.Final.NOT_SET, 1,
-            l2cap_packets.SegmentationAndReassembly.UNSEGMENTED, SAMPLE_PACKET)
-        self.cert_send_b_frame(i_frame)
+        self.cert_channel.send_i_frame(
+            tx_seq=0, req_seq=1, payload=SAMPLE_PACKET)
+        # todo verify received?
 
     def test_basic_operation_request_connection(self):
         """
@@ -460,7 +461,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             L2capMatchers.ConfigurationRequest()).inAnyOrder()
 
         self.dut_channel.send(b'abc')
-        assertThat(self.cert_channel).emits(L2capMatchers.PartialData(b'abc'))
+        assertThat(self.cert_channel).emits(
+            L2capMatchers.InformationFrame(tx_seq=0, payload=b'abc'))
 
     def test_explicitly_request_use_FCS(self):
         """
@@ -540,31 +542,28 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             L2capMatchers.ConfigurationRequest()).inAnyOrder()
 
         self.dut_channel.send(b'abc')
-        assertThat(self.cert_channel).emits(L2capMatchers.PartialData(b"abc"))
+        assertThat(self.cert_channel).emits(
+            L2capMatchers.InformationFrame(tx_seq=0, payload=b"abc"))
 
         # Assemble a sample packet. TODO: Use RawBuilder
         SAMPLE_PACKET = l2cap_packets.CommandRejectNotUnderstoodBuilder(1)
 
-        i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
-            dcid, 0, l2cap_packets.Final.NOT_SET, 1,
-            l2cap_packets.SegmentationAndReassembly.UNSEGMENTED, SAMPLE_PACKET)
-        self.cert_send_b_frame(i_frame)
+        # todo: verify packet received?
+        self.cert_channel.send_i_frame(
+            tx_seq=0, req_seq=1, payload=SAMPLE_PACKET)
+
+        self.dut_channel.send(b'abc')
+        assertThat(self.cert_channel).emits(
+            L2capMatchers.InformationFrame(tx_seq=1, payload=b"abc"))
+
+        self.cert_channel.send_i_frame(
+            tx_seq=1, req_seq=2, payload=SAMPLE_PACKET)
 
         self.dut_channel.send(b'abc')
         assertThat(self.cert_channel).emits(L2capMatchers.PartialData(b"abc"))
 
-        i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
-            dcid, 1, l2cap_packets.Final.NOT_SET, 2,
-            l2cap_packets.SegmentationAndReassembly.UNSEGMENTED, SAMPLE_PACKET)
-        self.cert_send_b_frame(i_frame)
-
-        self.dut_channel.send(b'abc')
-        assertThat(self.cert_channel).emits(L2capMatchers.PartialData(b"abc"))
-
-        i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
-            dcid, 2, l2cap_packets.Final.NOT_SET, 3,
-            l2cap_packets.SegmentationAndReassembly.UNSEGMENTED, SAMPLE_PACKET)
-        self.cert_send_b_frame(i_frame)
+        self.cert_channel.send_i_frame(
+            tx_seq=2, req_seq=3, payload=SAMPLE_PACKET)
 
     def test_receive_i_frames(self):
         """
@@ -590,32 +589,32 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             L2capMatchers.ConfigurationRequest()).inAnyOrder()
 
         for i in range(3):
-            i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
-                dcid, i, l2cap_packets.Final.NOT_SET, 0,
-                l2cap_packets.SegmentationAndReassembly.UNSEGMENTED,
-                SAMPLE_PACKET)
-            self.cert_send_b_frame(i_frame)
+            self.cert_channel.send_i_frame(
+                tx_seq=i, req_seq=0, payload=SAMPLE_PACKET)
             assertThat(self.cert_channel).emits(
                 L2capMatchers.SupervisoryFrame(req_seq=i + 1))
 
-        i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
-            dcid, 3, l2cap_packets.Final.NOT_SET, 0,
-            l2cap_packets.SegmentationAndReassembly.START, SAMPLE_PACKET)
-        self.cert_send_b_frame(i_frame)
+        self.cert_channel.send_i_frame(
+            tx_seq=3,
+            req_seq=0,
+            sar=SegmentationAndReassembly.START,
+            payload=SAMPLE_PACKET)
         assertThat(self.cert_channel).emits(
             L2capMatchers.SupervisoryFrame(req_seq=4))
 
-        i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
-            dcid, 4, l2cap_packets.Final.NOT_SET, 0,
-            l2cap_packets.SegmentationAndReassembly.CONTINUATION, SAMPLE_PACKET)
-        self.cert_send_b_frame(i_frame)
+        self.cert_channel.send_i_frame(
+            tx_seq=4,
+            req_seq=0,
+            sar=SegmentationAndReassembly.CONTINUATION,
+            payload=SAMPLE_PACKET)
         assertThat(self.cert_channel).emits(
             L2capMatchers.SupervisoryFrame(req_seq=5))
 
-        i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
-            dcid, 5, l2cap_packets.Final.NOT_SET, 0,
-            l2cap_packets.SegmentationAndReassembly.END, SAMPLE_PACKET)
-        self.cert_send_b_frame(i_frame)
+        self.cert_channel.send_i_frame(
+            tx_seq=5,
+            req_seq=0,
+            sar=SegmentationAndReassembly.END,
+            payload=SAMPLE_PACKET)
         assertThat(self.cert_channel).emits(
             L2capMatchers.SupervisoryFrame(req_seq=6))
 
@@ -643,11 +642,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             L2capMatchers.ConfigurationRequest()).inAnyOrder()
 
         for i in range(3):
-            i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
-                dcid, i, l2cap_packets.Final.NOT_SET, 0,
-                l2cap_packets.SegmentationAndReassembly.UNSEGMENTED,
-                SAMPLE_PACKET)
-            self.cert_send_b_frame(i_frame)
+            self.cert_channel.send_i_frame(
+                tx_seq=i, req_seq=0, payload=SAMPLE_PACKET)
             assertThat(self.cert_channel).emits(
                 L2capMatchers.SupervisoryFrame(req_seq=i + 1))
 
@@ -682,11 +678,10 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.dut_channel.send(b'abc')
         self.dut_channel.send(b'def')
 
-        # TODO: Besides checking TxSeq, we also want to chpacketpayload, once we can get it from packet view
         assertThat(self.cert_channel).emits(
-            L2capMatchers.InformationFrame(tx_seq=0))
+            L2capMatchers.InformationFrame(tx_seq=0, payload=b'abc'))
         assertThat(self.cert_channel).emitsNone(
-            L2capMatchers.InformationFrame(tx_seq=1))
+            L2capMatchers.InformationFrame(tx_seq=1, payload=b'def'))
         s_frame = l2cap_packets.EnhancedSupervisoryFrameBuilder(
             dcid, l2cap_packets.SupervisoryFunction.RECEIVER_READY,
             l2cap_packets.Poll.NOT_SET, l2cap_packets.Final.POLL_RESPONSE, 1)
@@ -722,24 +717,20 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.dut_channel.send(b'def')
 
         assertThat(self.cert_channel).emits(
-            L2capMatchers.InformationFrame(tx_seq=0))
+            L2capMatchers.InformationFrame(tx_seq=0, payload=b'abc'))
         # TODO: If 1 second is greater than their retransmit timeout, use a smaller timeout
         assertThat(self.cert_channel).emitsNone(
-            L2capMatchers.InformationFrame(tx_seq=1),
+            L2capMatchers.InformationFrame(tx_seq=1, payload=b'abc'),
             timeout=timedelta(seconds=1))
 
-        i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
-            dcid, 0, l2cap_packets.Final.NOT_SET, 1,
-            l2cap_packets.SegmentationAndReassembly.UNSEGMENTED, SAMPLE_PACKET)
-        self.cert_send_b_frame(i_frame)
+        self.cert_channel.send_i_frame(
+            tx_seq=0, req_seq=1, payload=SAMPLE_PACKET)
 
         assertThat(self.cert_channel).emits(
-            L2capMatchers.InformationFrame(tx_seq=1))
+            L2capMatchers.InformationFrame(tx_seq=1, payload=b'def'))
 
-        i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
-            dcid, 1, l2cap_packets.Final.NOT_SET, 2,
-            l2cap_packets.SegmentationAndReassembly.UNSEGMENTED, SAMPLE_PACKET)
-        self.cert_send_b_frame(i_frame)
+        self.cert_channel.send_i_frame(
+            tx_seq=1, req_seq=2, payload=SAMPLE_PACKET)
 
     def test_transmit_s_frame_rr_with_poll_bit_set(self):
         """
@@ -971,10 +962,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         assertThat(self.cert_channel).emits(
             L2capMatchers.SupervisoryFrame(p=l2cap_packets.Poll.POLL))
 
-        i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
-            dcid, 0, l2cap_packets.Final.POLL_RESPONSE, 0,
-            l2cap_packets.SegmentationAndReassembly.UNSEGMENTED, SAMPLE_PACKET)
-        self.cert_send_b_frame(i_frame)
+        self.cert_channel.send_i_frame(
+            tx_seq=0, req_seq=0, f=Final.POLL_RESPONSE, payload=SAMPLE_PACKET)
 
         assertThat(self.cert_channel).emits(
             L2capMatchers.InformationFrame(tx_seq=0))
@@ -1041,17 +1030,13 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
         dcid = self.cert_l2cap.get_dcid(scid)
 
-        i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
-            dcid, 0, l2cap_packets.Final.NOT_SET, 0,
-            l2cap_packets.SegmentationAndReassembly.UNSEGMENTED, SAMPLE_PACKET)
-        self.cert_send_b_frame(i_frame)
+        self.cert_channel.send_i_frame(
+            tx_seq=0, req_seq=0, payload=SAMPLE_PACKET)
         assertThat(self.cert_channel).emits(
             L2capMatchers.SupervisoryFrame(req_seq=1))
 
-        i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
-            dcid, ertm_tx_window_size - 1, l2cap_packets.Final.NOT_SET, 0,
-            l2cap_packets.SegmentationAndReassembly.UNSEGMENTED, SAMPLE_PACKET)
-        self.cert_send_b_frame(i_frame)
+        self.cert_channel.send_i_frame(
+            tx_seq=ertm_tx_window_size - 1, req_seq=0, payload=SAMPLE_PACKET)
         assertThat(self.cert_channel).emits(
             L2capMatchers.SupervisoryFrame(
                 s=l2cap_packets.SupervisoryFunction.REJECT))
@@ -1065,11 +1050,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             L2capMatchers.SupervisoryFrame(
                 req_seq=1, f=l2cap_packets.Final.POLL_RESPONSE))
         for i in range(1, ertm_tx_window_size):
-            i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
-                dcid, i, l2cap_packets.Final.NOT_SET, 0,
-                l2cap_packets.SegmentationAndReassembly.UNSEGMENTED,
-                SAMPLE_PACKET)
-            self.cert_send_b_frame(i_frame)
+            self.cert_channel.send_i_frame(
+                tx_seq=i, req_seq=0, payload=SAMPLE_PACKET)
             assertThat(self.cert_channel).emits(
                 L2capMatchers.SupervisoryFrame(req_seq=i + 1))
 
@@ -1214,10 +1196,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
         assertThat(self.cert_channel).emitsNone(timeout=timedelta(seconds=0.5))
 
-        i_frame = l2cap_packets.EnhancedInformationFrameBuilder(
-            dcid, 0, l2cap_packets.Final.POLL_RESPONSE, 0,
-            l2cap_packets.SegmentationAndReassembly.UNSEGMENTED, SAMPLE_PACKET)
-        self.cert_send_b_frame(i_frame)
+        self.cert_channel.send_i_frame(
+            tx_seq=0, req_seq=0, f=Final.POLL_RESPONSE, payload=SAMPLE_PACKET)
 
         assertThat(self.cert_channel).emits(
             L2capMatchers.InformationFrame(tx_seq=0))
