@@ -183,6 +183,33 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self.cert_acl.send(config_request_l2cap.Serialize())
         return True
 
+    def _on_connection_response_configuration_request_with_unknown_options_and_hint(
+            self, l2cap_control_view):
+        connection_response_view = l2cap_packets.ConnectionResponseView(
+            l2cap_control_view)
+        sid = connection_response_view.GetIdentifier()
+        scid = connection_response_view.GetSourceCid()
+        dcid = connection_response_view.GetDestinationCid()
+        self.scid_to_dcid[scid] = dcid
+
+        mtu_opt = l2cap_packets.MtuConfigurationOption()
+        mtu_opt.mtu = 0x1234
+        mtu_opt.is_hint = l2cap_packets.ConfigurationOptionIsHint.OPTION_IS_A_HINT
+
+        options = [mtu_opt]
+        config_request = l2cap_packets.ConfigurationRequestBuilder(
+            sid + 1, dcid, l2cap_packets.Continuation.END, options)
+        config_request_l2cap = l2cap_packets.BasicFrameBuilder(
+            1, config_request)
+
+        byte_array = bytearray(config_request_l2cap.Serialize())
+        ## Modify configuration option type to be a unknown
+        byte_array[12] |= 0x7f
+        self.cert.hci_acl_manager.SendAclData(
+            acl_manager_facade.AclData(
+                handle=self.cert_acl_handle, payload=bytes(byte_array)))
+        return True
+
     def _on_configuration_request_default(self, l2cap_control_view):
         configuration_request = l2cap_packets.ConfigurationRequestView(
             l2cap_control_view)
@@ -454,6 +481,17 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         assertThat(self.cert_acl).emits(L2capMatchers.ConfigurationResponse())
         assertThat(self.cert_acl).emits(
             L2capMatchers.ConfigurationRequest(), at_least_times=2)
+
+    def test_config_unknown_options_with_hint(self):
+        """
+        L2CAP/COS/CFD/BV-12-C
+        """
+        self._setup_link_from_cert()
+        self.on_connection_response = self._on_connection_response_configuration_request_with_unknown_options_and_hint
+
+        self._open_channel(signal_id=1, scid=0x41, psm=0x33)
+
+        assertThat(self.cert_acl).emits(L2capMatchers.ConfigurationResponse())
 
     def test_respond_to_echo_request(self):
         """
