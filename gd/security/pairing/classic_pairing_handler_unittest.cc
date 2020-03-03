@@ -19,8 +19,10 @@
 
 #include <gtest/gtest.h>
 #include <memory>
+#include <utility>
 
 #include "hci/hci_packets.h"
+#include "l2cap/classic/fixed_channel.h"
 #include "l2cap/classic/fixed_channel_manager_mock.h"
 #include "packet/raw_builder.h"
 #include "security/channel/security_manager_channel.h"
@@ -44,6 +46,17 @@ using hci::OpCode;
 using os::Handler;
 using os::Thread;
 using packet::RawBuilder;
+
+class FakeSecurityManagerChannel : public channel::SecurityManagerChannel {
+ public:
+  FakeSecurityManagerChannel(os::Handler* handler, hci::HciLayer* hci_layer)
+      : channel::SecurityManagerChannel(handler, hci_layer) {}
+  ~FakeSecurityManagerChannel() {}
+
+  void OnConnectionOpen(std::unique_ptr<l2cap::classic::FixedChannel> fixed_channel) override {
+    LOG_ERROR("CALLED");
+  }
+};
 
 class SecurityManagerChannelCallback : public ISecurityManagerChannelListener {
  public:
@@ -96,6 +109,15 @@ class SecurityManagerChannelCallback : public ISecurityManagerChannelListener {
     }
   }
 
+  void OnConnectionClosed(hci::Address address, bluetooth::hci::ErrorCode error_code) override {
+    LOG_DEBUG("Called");
+  }
+
+  void OnConnectionFailed(hci::Address address,
+                          bluetooth::l2cap::classic::FixedChannelManager::ConnectionResult result) override {
+    LOG_DEBUG("Shouldn't be called");
+  }
+
  private:
   pairing::ClassicPairingHandler* pairing_handler_ = nullptr;
 };
@@ -109,16 +131,11 @@ class ClassicPairingHandlerTest : public ::testing::Test {
   void SetUp() override {
     handler_ = new Handler(&thread_);
     hci_layer_ = new FakeHciLayer();
-    channel_ = new channel::SecurityManagerChannel(handler_, hci_layer_);
+    channel_ = new FakeSecurityManagerChannel(handler_, hci_layer_);
     fake_registry_.InjectTestModule(&FakeHciLayer::Factory, hci_layer_);
     fake_registry_.Start<FakeHciLayer>(&thread_);
     security_record_ = std::make_shared<record::SecurityRecord>(device_);
-    std::shared_ptr<l2cap::classic::testing::MockFixedChannelManager> sptr =
-        std::shared_ptr<l2cap::classic::testing::MockFixedChannelManager>(
-            new l2cap::classic::testing::MockFixedChannelManager());
-    EXPECT_CALL(*sptr, RegisterService(::testing::_, ::testing::_, ::testing::_, ::testing::_, ::testing::_))
-        .Times(::testing::AnyNumber());
-    pairing_handler_ = new pairing::ClassicPairingHandler(sptr, channel_, security_record_, handler_,
+    pairing_handler_ = new pairing::ClassicPairingHandler(channel_, security_record_, handler_,
                                                           common::Bind(&pairing_complete_callback), user_interface_,
                                                           user_interface_handler_, "Fake name");
     channel_callback_ = new SecurityManagerChannelCallback(pairing_handler_);

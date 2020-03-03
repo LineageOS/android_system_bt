@@ -48,8 +48,8 @@ void SecurityManagerImpl::DispatchPairingHandler(record::SecurityRecord& record,
       std::shared_ptr<record::SecurityRecord> record_copy =
           std::make_shared<record::SecurityRecord>(record.GetPseudoAddress());
       pairing_handler = std::make_shared<security::pairing::ClassicPairingHandler>(
-          l2cap_classic_module_->GetFixedChannelManager(), security_manager_channel_, record_copy, security_handler_,
-          std::move(callback), user_interface_, user_interface_handler_, "TODO: grab device name properly");
+          security_manager_channel_, record_copy, security_handler_, std::move(callback), user_interface_,
+          user_interface_handler_, "TODO: grab device name properly");
       break;
     }
     default:
@@ -247,6 +247,26 @@ void SecurityManagerImpl::OnHciEventReceived(hci::EventPacketView packet) {
   }
 }
 
+void SecurityManagerImpl::OnConnectionClosed(hci::Address address, bluetooth::hci::ErrorCode error_code) {
+  LOG_DEBUG("Reason: %s ", hci::ErrorCodeText(error_code).c_str());
+  auto entry = pairing_handler_map_.find(address);
+  if (entry != pairing_handler_map_.end()) {
+    LOG_DEBUG("Cancelling pairing handler for '%s'", address.ToString().c_str());
+    entry->second->Cancel();
+  }
+}
+
+void SecurityManagerImpl::OnConnectionFailed(hci::Address address,
+                                             bluetooth::l2cap::classic::FixedChannelManager::ConnectionResult result) {
+  LOG_DEBUG("HCI Reason: %s ", hci::ErrorCodeText(result.hci_error).c_str());
+  LOG_DEBUG("L2CAP Reason: %d ", result.connection_result_code);
+  auto entry = pairing_handler_map_.find(address);
+  if (entry != pairing_handler_map_.end()) {
+    LOG_DEBUG("Cancelling pairing handler for '%s'", address.ToString().c_str());
+    entry->second->Cancel();
+  }
+}
+
 void SecurityManagerImpl::OnHciLeEvent(hci::LeMetaEventView event) {
   // hci::SubeventCode::LONG_TERM_KEY_REQUEST,
   // hci::SubeventCode::READ_LOCAL_P256_PUBLIC_KEY_COMPLETE,
@@ -289,6 +309,7 @@ void SecurityManagerImpl::OnPairingHandlerComplete(hci::Address address, Pairing
   auto entry = pairing_handler_map_.find(address);
   if (entry != pairing_handler_map_.end()) {
     pairing_handler_map_.erase(entry);
+    security_manager_channel_->Disconnect(address);
   }
   if (!std::holds_alternative<PairingFailure>(status)) {
     NotifyDeviceBonded(hci::AddressWithType(address, hci::AddressType::PUBLIC_DEVICE_ADDRESS));
@@ -382,15 +403,15 @@ void SecurityManagerImpl::OnConnectionFailureLe(bluetooth::l2cap::le::FixedChann
 }
 
 SecurityManagerImpl::SecurityManagerImpl(os::Handler* security_handler, l2cap::le::L2capLeModule* l2cap_le_module,
-                                         l2cap::classic::L2capClassicModule* l2cap_classic_module,
                                          channel::SecurityManagerChannel* security_manager_channel,
                                          hci::HciLayer* hci_layer)
     : security_handler_(security_handler), l2cap_le_module_(l2cap_le_module),
-      l2cap_classic_module_(l2cap_classic_module), l2cap_manager_le_(l2cap_le_module_->GetFixedChannelManager()),
+      l2cap_manager_le_(l2cap_le_module_->GetFixedChannelManager()),
       hci_security_interface_le_(hci_layer->GetLeSecurityInterface(
           common::Bind(&SecurityManagerImpl::OnHciLeEvent, common::Unretained(this)), security_handler)),
       security_manager_channel_(security_manager_channel) {
   Init();
+
   l2cap_manager_le_->RegisterService(
       bluetooth::l2cap::kSmpCid, {},
       common::BindOnce(&SecurityManagerImpl::OnL2capRegistrationCompleteLe, common::Unretained(this)),
