@@ -431,7 +431,24 @@ static tAVRC_STS avrc_bld_change_folder_cmd(BT_HDR* p_pkt,
   p_pkt->len = (p_data - p_start);
   return AVRC_STS_NO_ERROR;
 }
-
+static tAVRC_STS avrc_bld_get_item_attributes_cmd(
+    BT_HDR* p_pkt, const tAVRC_GET_ATTRS_CMD* cmd) {
+  AVRC_TRACE_API("%s", __func__);
+  uint8_t* p_start = (uint8_t*)(p_pkt + 1) + p_pkt->offset;
+  /* This is where the PDU specific for AVRC starts
+   * AVRCP Spec 1.4 section 22.19 */
+  uint8_t* p_data = p_start + 1; /* pdu */
+  UINT16_TO_BE_STREAM(p_data, 12 + 4 * cmd->attr_count);
+  UINT8_TO_BE_STREAM(p_data, cmd->scope);
+  uint64_t uid;
+  memcpy(&uid, cmd->uid, 8);
+  UINT64_TO_BE_STREAM(p_data, uid);
+  UINT16_TO_BE_STREAM(p_data, cmd->uid_counter);
+  UINT8_TO_BE_STREAM(p_data, cmd->attr_count);
+  ARRAY_TO_BE_STREAM(p_data, cmd->p_attr_list, 4 * cmd->attr_count);
+  p_pkt->len = (p_data - p_start);
+  return AVRC_STS_NO_ERROR;
+}
 /*******************************************************************************
  *
  * Function         avrc_bld_set_browsed_player_cmd
@@ -644,6 +661,9 @@ tAVRC_STS AVRC_BldCommand(tAVRC_COMMAND* p_cmd, BT_HDR** pp_pkt) {
       break;
     case AVRC_PDU_CHANGE_PATH:
       status = avrc_bld_change_folder_cmd(p_pkt, &(p_cmd->chg_path));
+      break;
+    case AVRC_PDU_GET_ITEM_ATTRIBUTES:
+      status = avrc_bld_get_item_attributes_cmd(p_pkt, &(p_cmd->get_attrs));
       break;
     case AVRC_PDU_SET_BROWSED_PLAYER:
       status = avrc_bld_set_browsed_player_cmd(p_pkt, &(p_cmd->br_player));

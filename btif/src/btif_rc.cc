@@ -295,7 +295,7 @@ static void handle_set_addressed_player_response(tBTA_AV_META_MSG* pmeta_msg,
                                                  tAVRC_RSP* p_rsp);
 static void cleanup_btrc_folder_items(btrc_folder_items_t* btrc_items,
                                       uint8_t item_count);
-static void handle_get_elem_attr_response(tBTA_AV_META_MSG* pmeta_msg,
+static void handle_get_metadata_attr_response(tBTA_AV_META_MSG* pmeta_msg,
                                           tAVRC_GET_ATTRS_RSP* p_rsp);
 static void handle_set_app_attr_val_response(tBTA_AV_META_MSG* pmeta_msg,
                                              tAVRC_RSP* p_rsp);
@@ -307,9 +307,16 @@ static bt_status_t get_player_app_setting_value_text_cmd(
 static bt_status_t register_notification_cmd(uint8_t label, uint8_t event_id,
                                              uint32_t event_value,
                                              btif_rc_device_cb_t* p_dev);
+static bt_status_t get_metadata_attribute_cmd(uint8_t num_attribute,
+                                              const uint32_t* p_attr_ids,
+                                              btif_rc_device_cb_t* p_dev);
 static bt_status_t get_element_attribute_cmd(uint8_t num_attribute,
                                              const uint32_t* p_attr_ids,
                                              btif_rc_device_cb_t* p_dev);
+static bt_status_t get_item_attribute_cmd(uint64_t uid, int scope,
+                                           uint8_t num_attribute,
+                                           const uint32_t* p_attr_ids,
+                                           btif_rc_device_cb_t* p_dev);
 static bt_status_t getcapabilities_cmd(uint8_t cap_id,
                                        btif_rc_device_cb_t* p_dev);
 static bt_status_t list_player_app_setting_attrib_cmd(
@@ -1840,7 +1847,7 @@ static void rc_ctrl_procedure_complete(btif_rc_device_cb_t* p_dev) {
   p_dev->rc_procedure_complete = true;
   const uint32_t* attr_list = get_requested_attributes_list(p_dev);
   const uint8_t attr_list_size = get_requested_attributes_list_size(p_dev);
-  get_element_attribute_cmd(attr_list_size, attr_list, p_dev);
+  get_metadata_attribute_cmd(attr_list_size, attr_list, p_dev);
 }
 
 /***************************************************************************
@@ -2913,7 +2920,7 @@ static void btif_rc_status_cmd_timeout_handler(UNUSED_ATTR uint16_t event,
 
     case AVRC_PDU_GET_ELEMENT_ATTR:
       avrc_response.get_attrs.status = BTIF_RC_STS_TIMEOUT;
-      handle_get_elem_attr_response(&meta_msg, &avrc_response.get_attrs);
+      handle_get_metadata_attr_response(&meta_msg, &avrc_response.get_attrs);
       break;
 
     case AVRC_PDU_GET_PLAY_STATUS:
@@ -3091,6 +3098,44 @@ bt_status_t build_and_send_vendor_cmd(tAVRC_COMMAND* avrc_cmd,
 
 /***************************************************************************
  *
+ * Function         send_browsing_command
+ *
+ * Description      Send a command to a device on the browsing channel
+ *
+ * Parameters       avrc_cmd: The command you're sending
+ *                  p_dev: Device control block
+ *
+ * Returns          BT_STATUS_SUCCESS if command is issued successfully
+ *                  otherwise BT_STATUS_FAIL
+ *
+ **************************************************************************/
+static bt_status_t build_and_send_browsing_cmd(tAVRC_COMMAND* avrc_cmd,
+                                         btif_rc_device_cb_t* p_dev) {
+  BT_HDR* p_msg = NULL;
+  tAVRC_STS status = AVRC_BldCommand(avrc_cmd, &p_msg);
+  if (status != AVRC_STS_NO_ERROR) {
+    BTIF_TRACE_ERROR("%s: failed to build command status %d", __func__, status);
+    return BT_STATUS_FAIL;
+  }
+
+  rc_transaction_t* p_transaction = NULL;
+  bt_status_t tran_status = get_transaction(&p_transaction);
+
+  if (tran_status != BT_STATUS_SUCCESS || p_transaction == NULL) {
+    osi_free(p_msg);
+    BTIF_TRACE_ERROR("%s: failed to obtain txn details. status: 0x%02x",
+                     __func__, tran_status);
+    return BT_STATUS_FAIL;
+  }
+
+  BTIF_TRACE_DEBUG("%s msgreq being sent out with label %d", __func__,
+                   p_transaction->lbl);
+  BTA_AvMetaCmd(p_dev->rc_handle, p_transaction->lbl, AVRC_CMD_CTRL, p_msg);
+  return BT_STATUS_SUCCESS;
+}
+
+/***************************************************************************
+ *
  * Function         handle_get_capability_response
  *
  * Description      Handles the get_cap_response to populate company id info
@@ -3222,7 +3267,7 @@ static void handle_notification_response(tBTA_AV_META_MSG* pmeta_msg,
           uint8_t* p_data = p_rsp->param.track;
           BE_STREAM_TO_UINT64(p_dev->rc_playing_uid, p_data);
           get_play_status_cmd(p_dev);
-          get_element_attribute_cmd(attr_list_size, attr_list,
+          get_metadata_attribute_cmd(attr_list_size, attr_list,
                                     p_dev);
         }
         break;
@@ -3324,7 +3369,7 @@ static void handle_notification_response(tBTA_AV_META_MSG* pmeta_msg,
          * if the play state is playing.
          */
         if (p_rsp->param.play_status == AVRC_PLAYSTATE_PLAYING) {
-          get_element_attribute_cmd(attr_list_size, attr_list,
+          get_metadata_attribute_cmd(attr_list_size, attr_list,
                                     p_dev);
         }
         do_in_jni_thread(
@@ -3339,7 +3384,7 @@ static void handle_notification_response(tBTA_AV_META_MSG* pmeta_msg,
         if (rc_is_track_id_valid(p_rsp->param.track) != true) {
           break;
         }
-        get_element_attribute_cmd(attr_list_size, attr_list, p_dev);
+        get_metadata_attribute_cmd(attr_list_size, attr_list, p_dev);
         break;
 
       case AVRC_EVT_APP_SETTING_CHANGE: {
@@ -3807,14 +3852,14 @@ static void handle_set_app_attr_val_response(tBTA_AV_META_MSG* pmeta_msg,
 
 /***************************************************************************
  *
- * Function         handle_get_elem_attr_response
+ * Function         handle_get_metadata_attr_response
  *
  * Description      handles the the element attributes response, calls
  *                  HAL callback to update track change information.
  * Returns          None
  *
  **************************************************************************/
-static void handle_get_elem_attr_response(tBTA_AV_META_MSG* pmeta_msg,
+static void handle_get_metadata_attr_response(tBTA_AV_META_MSG* pmeta_msg,
                                           tAVRC_GET_ATTRS_RSP* p_rsp) {
   btif_rc_device_cb_t* p_dev =
       btif_rc_get_device_by_handle(pmeta_msg->rc_handle);
@@ -3849,7 +3894,7 @@ static void handle_get_elem_attr_response(tBTA_AV_META_MSG* pmeta_msg,
      */
     const uint32_t* attr_list = get_requested_attributes_list(p_dev);
     const uint8_t attr_list_size = get_requested_attributes_list_size(p_dev);
-    get_element_attribute_cmd(attr_list_size, attr_list, p_dev);
+    get_metadata_attribute_cmd(attr_list_size, attr_list, p_dev);
   } else {
     BTIF_TRACE_ERROR("%s: Error in get element attr procedure: %d", __func__,
                      p_rsp->status);
@@ -4339,7 +4384,7 @@ static void handle_avk_rc_metamsg_rsp(tBTA_AV_META_MSG* pmeta_msg) {
         break;
 
       case AVRC_PDU_GET_ELEMENT_ATTR:
-        handle_get_elem_attr_response(pmeta_msg, &avrc_response.get_attrs);
+        handle_get_metadata_attr_response(pmeta_msg, &avrc_response.get_attrs);
         break;
 
       case AVRC_PDU_GET_PLAY_STATUS:
@@ -4363,6 +4408,9 @@ static void handle_avk_rc_metamsg_rsp(tBTA_AV_META_MSG* pmeta_msg) {
         break;
       case AVRC_PDU_SET_BROWSED_PLAYER:
         handle_set_browsed_player_response(pmeta_msg, &avrc_response.br_player);
+        break;
+      case AVRC_PDU_GET_ITEM_ATTRIBUTES:
+        handle_get_metadata_attr_response(pmeta_msg, &avrc_response.get_attrs);
         break;
       default:
         BTIF_TRACE_ERROR("%s cannot handle browse pdu %d", __func__,
@@ -4619,6 +4667,35 @@ static bt_status_t get_now_playing_list_cmd(const RawAddress& bd_addr,
 
 /***************************************************************************
  *
+ * Function         get_item_attribute_cmd
+ *
+ * Description      Fetch the item attributes for a given uid.
+ *
+ * Parameters       uid: Track UID you want attributes for
+ *                  scope: Constant representing which scope you're querying
+ *                         (i.e AVRC_SCOPE_FILE_SYSTEM)
+ *                  p_dev: Device control block
+ *
+ * Returns          BT_STATUS_SUCCESS if command is issued successfully
+ *                  otherwise BT_STATUS_FAIL
+ *
+ **************************************************************************/
+static bt_status_t get_item_attribute_cmd(uint64_t uid, int scope,
+                                           uint8_t num_attribute,
+                                           const uint32_t* p_attr_ids,
+                                           btif_rc_device_cb_t* p_dev) {
+  tAVRC_COMMAND avrc_cmd = {0};
+  avrc_cmd.pdu = AVRC_PDU_GET_ITEM_ATTRIBUTES;
+  avrc_cmd.get_attrs.scope = scope;
+  memcpy(avrc_cmd.get_attrs.uid, &uid, 8);
+  avrc_cmd.get_attrs.uid_counter = 0;
+  avrc_cmd.get_attrs.attr_count = 0;
+
+  return build_and_send_browsing_cmd(&avrc_cmd, p_dev);
+}
+
+/***************************************************************************
+ *
  * Function         get_folder_list_cmd
  *
  * Description      Fetch the currently selected folder list
@@ -4690,26 +4767,7 @@ static bt_status_t change_folder_path_cmd(const RawAddress& bd_addr,
   memset(avrc_cmd.chg_path.folder_uid, 0, AVRC_UID_SIZE * sizeof(uint8_t));
   memcpy(avrc_cmd.chg_path.folder_uid, uid, AVRC_UID_SIZE * sizeof(uint8_t));
 
-  BT_HDR* p_msg = NULL;
-  tAVRC_STS status = AVRC_BldCommand(&avrc_cmd, &p_msg);
-  if (status != AVRC_STS_NO_ERROR) {
-    BTIF_TRACE_ERROR("%s failed to build command status %d", __func__, status);
-    return BT_STATUS_FAIL;
-  }
-
-  rc_transaction_t* p_transaction = NULL;
-  bt_status_t tran_status = get_transaction(&p_transaction);
-  if (tran_status != BT_STATUS_SUCCESS || p_transaction == NULL) {
-    osi_free(p_msg);
-    BTIF_TRACE_ERROR("%s: failed to obtain transaction details. status: 0x%02x",
-                     __func__, tran_status);
-    return BT_STATUS_FAIL;
-  }
-
-  BTIF_TRACE_DEBUG("%s msgreq being sent out with label %d", __func__,
-                   p_transaction->lbl);
-  BTA_AvMetaCmd(p_dev->rc_handle, p_transaction->lbl, AVRC_CMD_CTRL, p_msg);
-  return BT_STATUS_SUCCESS;
+  return build_and_send_browsing_cmd(&avrc_cmd, p_dev);
 }
 
 /***************************************************************************
@@ -4731,33 +4789,13 @@ static bt_status_t set_browsed_player_cmd(const RawAddress& bd_addr,
   CHECK_RC_CONNECTED(p_dev);
   CHECK_BR_CONNECTED(p_dev);
 
-  rc_transaction_t* p_transaction = NULL;
-
   tAVRC_COMMAND avrc_cmd = {0};
   avrc_cmd.br_player.pdu = AVRC_PDU_SET_BROWSED_PLAYER;
   avrc_cmd.br_player.status = AVRC_STS_NO_ERROR;
   // TODO(sanketa): Improve for database aware clients.
   avrc_cmd.br_player.player_id = id;
 
-  BT_HDR* p_msg = NULL;
-  tAVRC_STS status = AVRC_BldCommand(&avrc_cmd, &p_msg);
-  if (status != AVRC_STS_NO_ERROR) {
-    BTIF_TRACE_ERROR("%s failed to build command status %d", __func__, status);
-    return BT_STATUS_FAIL;
-  }
-
-  bt_status_t tran_status = get_transaction(&p_transaction);
-  if (tran_status != BT_STATUS_SUCCESS || p_transaction == NULL) {
-    osi_free(p_msg);
-    BTIF_TRACE_ERROR("%s: failed to obtain transaction details. status: 0x%02x",
-                     __func__, tran_status);
-    return BT_STATUS_FAIL;
-  }
-
-  BTIF_TRACE_DEBUG("%s msgreq being sent out with label %d", __func__,
-                   p_transaction->lbl);
-  BTA_AvMetaCmd(p_dev->rc_handle, p_transaction->lbl, AVRC_CMD_CTRL, p_msg);
-  return BT_STATUS_SUCCESS;
+  return build_and_send_browsing_cmd(&avrc_cmd, p_dev);
 }
 
 /***************************************************************************
@@ -4781,33 +4819,12 @@ static bt_status_t set_addressed_player_cmd(const RawAddress& bd_addr,
   CHECK_BR_CONNECTED(p_dev);
 
   tAVRC_COMMAND avrc_cmd = {0};
-  BT_HDR* p_msg = NULL;
-
   avrc_cmd.addr_player.pdu = AVRC_PDU_SET_ADDRESSED_PLAYER;
   avrc_cmd.addr_player.status = AVRC_STS_NO_ERROR;
   // TODO(sanketa): Improve for database aware clients.
   avrc_cmd.addr_player.player_id = id;
 
-  tAVRC_STS status = AVRC_BldCommand(&avrc_cmd, &p_msg);
-  if (status != AVRC_STS_NO_ERROR) {
-    BTIF_TRACE_ERROR("%s: failed to build command status %d", __func__, status);
-    return BT_STATUS_FAIL;
-  }
-
-  rc_transaction_t* p_transaction = NULL;
-  bt_status_t tran_status = get_transaction(&p_transaction);
-
-  if (tran_status != BT_STATUS_SUCCESS || p_transaction == NULL) {
-    osi_free(p_msg);
-    BTIF_TRACE_ERROR("%s: failed to obtain txn details. status: 0x%02x",
-                     __func__, tran_status);
-    return BT_STATUS_FAIL;
-  }
-
-  BTIF_TRACE_DEBUG("%s msgreq being sent out with label %d", __func__,
-                   p_transaction->lbl);
-  BTA_AvMetaCmd(p_dev->rc_handle, p_transaction->lbl, AVRC_CMD_CTRL, p_msg);
-  return BT_STATUS_SUCCESS;
+  return build_and_send_browsing_cmd(&avrc_cmd, p_dev);
 }
 
 /***************************************************************************
@@ -4847,26 +4864,7 @@ static bt_status_t get_folder_items_cmd(const RawAddress& bd_addr,
   avrc_cmd.get_items.end_item = end_item;
   avrc_cmd.get_items.attr_count = 0; /* p_attr_list does not matter hence */
 
-  BT_HDR* p_msg = NULL;
-  tAVRC_STS status = AVRC_BldCommand(&avrc_cmd, &p_msg);
-  if (status != AVRC_STS_NO_ERROR) {
-    BTIF_TRACE_ERROR("%s failed to build command status %d", __func__, status);
-    return BT_STATUS_FAIL;
-  }
-
-  rc_transaction_t* p_transaction = NULL;
-  bt_status_t tran_status = get_transaction(&p_transaction);
-  if (tran_status != BT_STATUS_SUCCESS || p_transaction == NULL) {
-    osi_free(p_msg);
-    BTIF_TRACE_ERROR("%s: failed to obtain transaction details. status: 0x%02x",
-                     __func__, tran_status);
-    return BT_STATUS_FAIL;
-  }
-
-  BTIF_TRACE_DEBUG("%s msgreq being sent out with label %d", __func__,
-                   p_transaction->lbl);
-  BTA_AvMetaCmd(p_dev->rc_handle, p_transaction->lbl, AVRC_CMD_CTRL, p_msg);
-  return BT_STATUS_SUCCESS;
+  return build_and_send_browsing_cmd(&avrc_cmd, p_dev);
 }
 
 /***************************************************************************
@@ -4927,7 +4925,8 @@ static bt_status_t play_item_cmd(const RawAddress& bd_addr, uint8_t scope,
   memcpy(avrc_cmd.play_item.uid, uid, AVRC_UID_SIZE);
   avrc_cmd.play_item.uid_counter = uid_counter;
 
-  return build_and_send_vendor_cmd(&avrc_cmd, AVRC_CMD_CTRL, p_dev);
+  return build_and_send_browsing_cmd(&avrc_cmd, p_dev);
+  // return build_and_send_vendor_cmd(&avrc_cmd, AVRC_CMD_CTRL, p_dev);
 }
 
 /***************************************************************************
@@ -5026,6 +5025,35 @@ static bt_status_t register_notification_cmd(uint8_t label, uint8_t event_id,
 
 /***************************************************************************
  *
+ * Function         get_metadata_attribute_cmd
+ *
+ * Description      Get metadata attributes for attributeIds. This function
+ *                  will make the right determination of whether to use the
+ *                  control or browsing channel for the request
+ *
+ * Returns          BT_STATUS_SUCCESS if the command is successfully issued
+ *                  otherwise BT_STATUS_FAIL
+ *
+ **************************************************************************/
+static bt_status_t get_metadata_attribute_cmd(uint8_t num_attribute,
+                                              const uint32_t* p_attr_ids,
+                                              btif_rc_device_cb_t* p_dev) {
+  BTIF_TRACE_DEBUG("%s: num_attribute: %d attribute_id: %d", __func__,
+                   num_attribute, p_attr_ids[0]);
+
+  // If browsing is connected then send the command out that channel
+  if (p_dev->br_connected) {
+    return get_item_attribute_cmd(p_dev->rc_playing_uid,
+                                   AVRC_SCOPE_NOW_PLAYING, num_attribute,
+                                   p_attr_ids, p_dev);
+  }
+
+  // Otherwise, default to the control channel
+  return get_element_attribute_cmd(num_attribute, p_attr_ids, p_dev);
+}
+
+/***************************************************************************
+ *
  * Function         get_element_attribute_cmd
  *
  * Description      Get Element Attribute for  attributeIds
@@ -5039,7 +5067,6 @@ static bt_status_t get_element_attribute_cmd(uint8_t num_attribute,
   BTIF_TRACE_DEBUG("%s: num_attribute: %d attribute_id: %d", __func__,
                    num_attribute, p_attr_ids[0]);
   CHECK_RC_CONNECTED(p_dev);
-
   tAVRC_COMMAND avrc_cmd = {0};
   avrc_cmd.get_elem_attrs.opcode = AVRC_OP_VENDOR;
   avrc_cmd.get_elem_attrs.status = AVRC_STS_NO_ERROR;
