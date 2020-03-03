@@ -21,7 +21,7 @@ using ::bluetooth::os::Thread;
 
 namespace bluetooth {
 
-constexpr std::chrono::milliseconds kModuleStopTimeout = std::chrono::milliseconds(20);
+constexpr std::chrono::milliseconds kModuleStopTimeout = std::chrono::milliseconds(2000);
 
 ModuleFactory::ModuleFactory(std::function<Module*()> ctor) : ctor_(ctor) {
 }
