@@ -340,3 +340,49 @@ class CertSelfTest(BaseTestClass):
             logging.debug(e)
             return True  # Failed as expected
         return False
+
+    def test_assertThat_emitsNone_passes(self):
+        with EventStream(FetchEvents(events=[1, 2, 3],
+                                     delay_ms=50)) as event_stream:
+            assertThat(event_stream).emitsNone(
+                lambda data: data.value_ == 4,
+                timeout=timedelta(seconds=0.15)).thenNone(
+                    lambda data: data.value_ == 5,
+                    timeout=timedelta(seconds=0.15))
+
+    def test_assertThat_emitsNone_passes_after_1_second(self):
+        with EventStream(FetchEvents(events=[1, 2, 3, 4],
+                                     delay_ms=400)) as event_stream:
+            assertThat(event_stream).emitsNone(
+                lambda data: data.value_ == 4, timeout=timedelta(seconds=1))
+
+    def test_assertThat_emitsNone_fails(self):
+        try:
+            with EventStream(FetchEvents(events=[1, 2, 3],
+                                         delay_ms=50)) as event_stream:
+                assertThat(event_stream).emitsNone(
+                    lambda data: data.value_ == 2, timeout=timedelta(seconds=1))
+        except Exception as e:
+            logging.debug(e)
+            return True  # Failed as expected
+        return False
+
+    def test_assertThat_emitsNone_zero_passes(self):
+        with EventStream(FetchEvents(events=[], delay_ms=50)) as event_stream:
+            assertThat(event_stream).emitsNone(
+                timeout=timedelta(milliseconds=10)).thenNone(
+                    timeout=timedelta(milliseconds=10))
+
+    def test_assertThat_emitsNone_zero_passes_after_one_second(self):
+        with EventStream(FetchEvents([1], delay_ms=1500)) as event_stream:
+            assertThat(event_stream).emitsNone(timeout=timedelta(seconds=1.0))
+
+    def test_assertThat_emitsNone_zero_fails(self):
+        try:
+            with EventStream(FetchEvents(events=[17],
+                                         delay_ms=50)) as event_stream:
+                assertThat(event_stream).emitsNone(timeout=timedelta(seconds=1))
+        except Exception as e:
+            logging.debug(e)
+            return True  # Failed as expected
+        return False
