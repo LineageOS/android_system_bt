@@ -59,7 +59,6 @@ class TestModuleNoDependency : public Module {
 
   void Stop() override {
     // A module is not considered stopped until after Stop() finishes
-    test_module_no_dependency_handler = nullptr;
     EXPECT_TRUE(GetModuleRegistry()->IsStarted<TestModuleNoDependency>());
   }
 };
@@ -88,7 +87,6 @@ class TestModuleOneDependency : public Module {
   }
 
   void Stop() override {
-    test_module_one_dependency_handler = GetHandler();
     EXPECT_TRUE(GetModuleRegistry()->IsStarted<TestModuleNoDependency>());
 
     // A module is not considered stopped until after Stop() finishes
