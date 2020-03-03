@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <atomic>
 #include <string>
 #include <unordered_map>
 
@@ -44,7 +45,7 @@ class Fifo : public Scheduler {
   LowerQueueUpEnd* link_queue_up_end_;
   os::Handler* handler_;
   std::queue<std::pair<Cid, int>> next_to_dequeue_and_num_packets;
-  bool link_queue_enqueue_registered_ = false;
+  std::atomic_bool link_queue_enqueue_registered_ = false;
 
   void try_register_link_queue_enqueue();
   std::unique_ptr<LowerEnqueue> link_queue_enqueue_callback();
