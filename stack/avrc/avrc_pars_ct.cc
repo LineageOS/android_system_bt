@@ -425,6 +425,30 @@ static tAVRC_STS avrc_pars_browse_rsp(tAVRC_MSG_BROWSE* p_msg,
       break;
     }
 
+    case AVRC_PDU_GET_ITEM_ATTRIBUTES: {
+      tAVRC_GET_ATTRS_RSP* get_attr_rsp = &(p_rsp->get_attrs);
+      get_attr_rsp->pdu = pdu;
+      BE_STREAM_TO_UINT8(get_attr_rsp->status, p)
+      BE_STREAM_TO_UINT8(get_attr_rsp->num_attrs, p);
+      get_attr_rsp->p_attrs = (tAVRC_ATTR_ENTRY*)osi_malloc(
+          get_attr_rsp->num_attrs * sizeof(tAVRC_ATTR_ENTRY));
+      for (int i = 0; i < get_attr_rsp->num_attrs; i++) {
+        tAVRC_ATTR_ENTRY* attr_entry = &(get_attr_rsp->p_attrs[i]);
+        BE_STREAM_TO_UINT32(attr_entry->attr_id, p);
+        BE_STREAM_TO_UINT16(attr_entry->name.charset_id, p);
+        BE_STREAM_TO_UINT16(attr_entry->name.str_len, p);
+        min_len += attr_entry->name.str_len;
+        if (pkt_len < min_len) goto browse_length_error;
+        attr_entry->name.p_str =
+            (uint8_t*)osi_malloc(attr_entry->name.str_len * sizeof(uint8_t));
+        BE_STREAM_TO_ARRAY(p, attr_entry->name.p_str, attr_entry->name.str_len);
+        AVRC_TRACE_DEBUG("%s media attr id %d cs %d name len %d", __func__,
+                         attr_entry->attr_id, attr_entry->name.charset_id,
+                         attr_entry->name.str_len);
+      }
+
+      break;
+    }
     case AVRC_PDU_SET_BROWSED_PLAYER: {
       tAVRC_SET_BR_PLAYER_RSP* set_br_pl_rsp = &(p_rsp->br_player);
       /* Copyback the PDU */
