@@ -37,6 +37,7 @@ from bluetooth_packets_python3.l2cap_packets import Final
 from bluetooth_packets_python3.l2cap_packets import CommandCode
 from bluetooth_packets_python3.l2cap_packets import SupervisoryFunction
 from bluetooth_packets_python3.l2cap_packets import Poll
+from bluetooth_packets_python3.l2cap_packets import InformationRequestInfoType
 from cert_l2cap import CertL2cap
 
 # Assemble a sample packet. TODO: Use RawBuilder
@@ -271,19 +272,8 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             1, information_request)
         self.cert_send_b_frame(information_request_l2cap)
 
-        def is_correct_information_response(l2cap_packet):
-            l2cap_control_view = l2cap_packets.ControlView(
-                l2cap_packet.GetPayload())
-            if l2cap_control_view.GetCode(
-            ) != l2cap_packets.CommandCode.INFORMATION_RESPONSE:
-                return False
-            information_response_view = l2cap_packets.InformationResponseView(
-                l2cap_control_view)
-            return information_response_view.GetInfoType(
-            ) == l2cap_packets.InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED
-
         assertThat(self.cert_l2cap.get_control_channel()).emits(
-            is_correct_information_response)
+            L2capMatchers.InformationResponseExtendedFeatures())
 
     def test_extended_feature_info_response_ertm(self):
         """
@@ -301,23 +291,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             1, information_request)
         self.cert_send_b_frame(information_request_l2cap)
 
-        def is_correct_information_response(l2cap_packet):
-            l2cap_control_view = l2cap_packets.ControlView(
-                l2cap_packet.GetPayload())
-            if l2cap_control_view.GetCode(
-            ) != l2cap_packets.CommandCode.INFORMATION_RESPONSE:
-                return False
-            information_response_view = l2cap_packets.InformationResponseView(
-                l2cap_control_view)
-            if information_response_view.GetInfoType(
-            ) != l2cap_packets.InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED:
-                return False
-            extended_features_view = l2cap_packets.InformationResponseExtendedFeaturesView(
-                information_response_view)
-            return extended_features_view.GetEnhancedRetransmissionMode()
-
         assertThat(self.cert_l2cap.get_control_channel()).emits(
-            is_correct_information_response)
+            L2capMatchers.InformationResponseExtendedFeatures(
+                supports_ertm=True))
 
     def test_extended_feature_info_response_streaming(self):
         """
@@ -335,27 +311,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             1, information_request)
         self.cert_send_b_frame(information_request_l2cap)
 
-        def is_correct_information_response(l2cap_packet):
-            packet_bytes = l2cap_packet.payload
-            l2cap_view = l2cap_packets.BasicFrameView(
-                bt_packets.PacketViewLittleEndian(list(packet_bytes)))
-            if l2cap_view.GetChannelId() != 1:
-                return False
-            l2cap_control_view = l2cap_packets.ControlView(
-                l2cap_view.GetPayload())
-            if l2cap_control_view.GetCode(
-            ) != l2cap_packets.CommandCode.INFORMATION_RESPONSE:
-                return False
-            information_response_view = l2cap_packets.InformationResponseView(
-                l2cap_control_view)
-            if information_response_view.GetInfoType(
-            ) != l2cap_packets.InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED:
-                return False
-            extended_features_view = l2cap_packets.InformationResponseExtendedFeaturesView(
-                information_response_view)
-            return extended_features_view.GetStreamingMode()
-
-        assertThat(self.cert_acl).emits(is_correct_information_response)
+        assertThat(self.cert_l2cap.get_control_channel()).emits(
+            L2capMatchers.InformationResponseExtendedFeatures(
+                supports_streaming=True))
 
     def test_extended_feature_info_response_fcs(self):
         """
@@ -373,23 +331,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             1, information_request)
         self.cert_send_b_frame(information_request_l2cap)
 
-        def is_correct_information_response(l2cap_packet):
-            l2cap_control_view = l2cap_packets.ControlView(
-                l2cap_packet.GetPayload())
-            if l2cap_control_view.GetCode(
-            ) != l2cap_packets.CommandCode.INFORMATION_RESPONSE:
-                return False
-            information_response_view = l2cap_packets.InformationResponseView(
-                l2cap_control_view)
-            if information_response_view.GetInfoType(
-            ) != l2cap_packets.InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED:
-                return False
-            extended_features_view = l2cap_packets.InformationResponseExtendedFeaturesView(
-                information_response_view)
-            return extended_features_view.GetFcsOption()
-
         assertThat(self.cert_l2cap.get_control_channel()).emits(
-            is_correct_information_response)
+            L2capMatchers.InformationResponseExtendedFeatures(
+                supports_fcs=True))
 
     def test_extended_feature_info_response_fixed_channels(self):
         """
@@ -406,27 +350,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             1, information_request)
         self.cert_send_b_frame(information_request_l2cap)
 
-        def is_correct_information_response(l2cap_packet):
-            packet_bytes = l2cap_packet.payload
-            l2cap_view = l2cap_packets.BasicFrameView(
-                bt_packets.PacketViewLittleEndian(list(packet_bytes)))
-            if l2cap_view.GetChannelId() != 1:
-                return False
-            l2cap_control_view = l2cap_packets.ControlView(
-                l2cap_view.GetPayload())
-            if l2cap_control_view.GetCode(
-            ) != l2cap_packets.CommandCode.INFORMATION_RESPONSE:
-                return False
-            information_response_view = l2cap_packets.InformationResponseView(
-                l2cap_control_view)
-            if information_response_view.GetInfoType(
-            ) != l2cap_packets.InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED:
-                return False
-            extended_features_view = l2cap_packets.InformationResponseExtendedFeaturesView(
-                information_response_view)
-            return extended_features_view.GetFixedChannels()
-
-        assertThat(self.cert_acl).emits(is_correct_information_response)
+        assertThat(self.cert_l2cap.get_control_channel()).emits(
+            L2capMatchers.InformationResponseExtendedFeatures(
+                supports_fixed_channels=True))
 
     def test_config_channel_not_use_FCS(self):
         """

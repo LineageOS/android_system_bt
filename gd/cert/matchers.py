@@ -18,6 +18,7 @@ import bluetooth_packets_python3 as bt_packets
 from bluetooth_packets_python3 import l2cap_packets
 from bluetooth_packets_python3.l2cap_packets import CommandCode
 from bluetooth_packets_python3.l2cap_packets import ConnectionResponseResult
+from bluetooth_packets_python3.l2cap_packets import InformationRequestInfoType
 import logging
 
 
@@ -71,6 +72,13 @@ class L2capMatchers(object):
     @staticmethod
     def ExtractBasicFrame(scid):
         return lambda packet: L2capMatchers._basic_frame_for(packet, scid)
+
+    @staticmethod
+    def InformationResponseExtendedFeatures(supports_ertm=None,
+                                            supports_streaming=None,
+                                            supports_fcs=None,
+                                            supports_fixed_channels=None):
+        return lambda packet: L2capMatchers._is_matching_information_response_extended_features(packet, supports_ertm, supports_streaming, supports_fcs, supports_fixed_channels)
 
     @staticmethod
     def _basic_frame(packet):
@@ -163,3 +171,35 @@ class L2capMatchers(object):
         response = l2cap_packets.DisconnectionResponseView(frame)
         return response.GetSourceCid() == scid and response.GetDestinationCid(
         ) == dcid
+
+    @staticmethod
+    def _information_response_with_type(packet, info_type):
+        frame = L2capMatchers.control_frame_with_code(
+            packet, CommandCode.INFORMATION_RESPONSE)
+        if frame is None:
+            return None
+        response = l2cap_packets.InformationResponseView(frame)
+        if response.GetInfoType() != info_type:
+            return None
+        return response
+
+    @staticmethod
+    def _is_matching_information_response_extended_features(
+            packet, supports_ertm, supports_streaming, supports_fcs,
+            supports_fixed_channels):
+        frame = L2capMatchers._information_response_with_type(
+            packet, InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED)
+        if frame is None:
+            return False
+        features = l2cap_packets.InformationResponseExtendedFeaturesView(frame)
+        if supports_ertm is not None and features.GetEnhancedRetransmissionMode(
+        ) != supports_ertm:
+            return False
+        if supports_streaming is not None and features.GetStreamingMode != supports_streaming:
+            return False
+        if supports_fcs is not None and features.GetFcsOption() != supports_fcs:
+            return False
+        if supports_fixed_channels is not None and features.GetFixedChannels(
+        ) != supports_fixed_channels:
+            return False
+        return True
