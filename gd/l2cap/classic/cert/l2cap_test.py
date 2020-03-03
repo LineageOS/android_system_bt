@@ -52,35 +52,26 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
     def setup_test(self):
         super().setup_test()
 
-        self.dut.address = self.dut.hci_controller.GetMacAddress(
+        self.dut.address = self.dut.hci_controller.GetMacAddressSimple()
+        self.cert.address = self.cert.controller_read_only_property.ReadLocalAddress(
             empty_proto.Empty()).address
-        cert_address = self.cert.controller_read_only_property.ReadLocalAddress(
-            empty_proto.Empty()).address
-        self.cert.address = cert_address
-        self.dut_address = common_pb2.BluetoothAddress(address=self.dut.address)
         self.cert_address = common_pb2.BluetoothAddress(
             address=self.cert.address)
 
-        self.dut.neighbor.EnablePageScan(
-            neighbor_facade.EnableMsg(enabled=True))
-
         self.dut_l2cap = PyL2cap(self.dut)
         self.cert_l2cap = CertL2cap(self.cert)
-        self.cert_acl = None
 
     def teardown_test(self):
         self.cert_l2cap.close()
         super().teardown_test()
 
     def cert_send_b_frame(self, b_frame):
-        self.cert_acl.send(b_frame.Serialize())
+        self.cert_l2cap.send_acl(b_frame)
 
     def _setup_link_from_cert(self):
-
         self.dut.neighbor.EnablePageScan(
             neighbor_facade.EnableMsg(enabled=True))
         self.cert_l2cap.connect_acl(self.dut.address)
-        self.cert_acl = self.cert_l2cap.get_acl()
 
     def _open_unvalidated_channel(self,
                                   signal_id=1,
@@ -205,9 +196,9 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         self._open_unvalidated_channel(scid=0x41, psm=0x33)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
-            L2capMatchers.ConfigurationResponse())
-        assertThat(self.cert_l2cap.get_control_channel()).emits(
-            L2capMatchers.ConfigurationRequest(), at_least_times=2)
+            L2capMatchers.ConfigurationResponse(),
+            L2capMatchers.ConfigurationRequest(),
+            L2capMatchers.ConfigurationRequest()).inAnyOrder()
 
     def test_config_unknown_options_with_hint(self):
         """

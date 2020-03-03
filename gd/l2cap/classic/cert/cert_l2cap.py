@@ -133,10 +133,10 @@ class CertL2cap(Closable):
             self._device,
             1,
             1,
-            self.get_acl_stream(),
+            self._get_acl_stream(),
             self._acl,
             control_channel=None)
-        self.get_acl_stream().register_callback(self._handle_control_packet)
+        self._get_acl_stream().register_callback(self._handle_control_packet)
 
     def open_channel(self, signal_id, psm, scid):
         self.control_channel.send(
@@ -146,7 +146,7 @@ class CertL2cap(Closable):
         assertThat(self.control_channel).emits(response)
         return CertL2capChannel(self._device, scid,
                                 response.get().GetDestinationCid(),
-                                self.get_acl_stream(), self._acl,
+                                self._get_acl_stream(), self._acl,
                                 self.control_channel)
 
     # prefer to use channel abstraction instead, if at all possible
@@ -156,17 +156,8 @@ class CertL2cap(Closable):
     def get_control_channel(self):
         return self.control_channel
 
-    # temporary until clients migrated
-    def get_acl_stream(self):
+    def _get_acl_stream(self):
         return self._acl_manager.get_acl_stream()
-
-    # temporary until clients migrated
-    def get_acl(self):
-        return self._acl
-
-    # temporary until clients migrated
-    def get_dcid(self, scid):
-        return self.scid_to_dcid[scid]
 
     def turn_on_ertm(self, tx_window_size=10, max_transmit=20):
         self.ertm_option = l2cap_packets.RetransmissionAndFlowControlConfigurationOption(
