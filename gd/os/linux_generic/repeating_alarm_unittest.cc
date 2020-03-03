@@ -95,9 +95,9 @@ TEST_F(RepeatingAlarmTest, schedule) {
 }
 
 TEST_F(RepeatingAlarmTest, cancel_alarm) {
-  alarm_->Schedule(should_not_happen_, std::chrono::milliseconds(1));
+  alarm_->Schedule(should_not_happen_, std::chrono::milliseconds(10));
   alarm_->Cancel();
-  std::this_thread::sleep_for(std::chrono::milliseconds(5));
+  std::this_thread::sleep_for(std::chrono::milliseconds(50));
 }
 
 TEST_F(RepeatingAlarmTest, cancel_alarm_from_callback) {
