@@ -53,48 +53,6 @@ void ClassicPairingHandler::NotifyUiDisplayCancel() {
       common::BindOnce(&UI::Cancel, common::Unretained(user_interface_), GetRecord()->GetPseudoAddress()));
 }
 
-void ClassicPairingHandler::OnRegistrationComplete(
-    l2cap::classic::FixedChannelManager::RegistrationResult result,
-    std::unique_ptr<l2cap::classic::FixedChannelService> fixed_channel_service) {
-  if (result != l2cap::classic::FixedChannelManager::RegistrationResult::SUCCESS) {
-    LOG_ERROR("Failed service registration!");
-    return;
-  }
-  fixed_channel_service_ = std::move(fixed_channel_service);
-  fixed_channel_manager_->ConnectServices(
-      GetRecord()->GetPseudoAddress().GetAddress(),
-      common::Bind(&ClassicPairingHandler::OnConnectionFail, common::Unretained(this)), security_handler_);
-}
-
-void ClassicPairingHandler::OnUnregistered() {
-  PairingResultOrFailure result = PairingResult();
-  if (last_status_ != hci::ErrorCode::SUCCESS) {
-    result = PairingFailure(hci::ErrorCodeText(last_status_));
-  }
-  std::move(complete_callback_).Run(GetRecord()->GetPseudoAddress().GetAddress(), result);
-}
-
-void ClassicPairingHandler::OnConnectionOpen(std::unique_ptr<l2cap::classic::FixedChannel> fixed_channel) {
-  ASSERT(fixed_channel_ == nullptr);
-  fixed_channel_ = std::move(fixed_channel);
-  ASSERT(fixed_channel_->GetDevice() == GetRecord()->GetPseudoAddress().GetAddress());
-  fixed_channel_->RegisterOnCloseCallback(
-      security_handler_, common::BindOnce(&ClassicPairingHandler::OnConnectionClose, common::Unretained(this)));
-  fixed_channel_->Acquire();
-}
-
-void ClassicPairingHandler::OnConnectionFail(l2cap::classic::FixedChannelManager::ConnectionResult result) {
-  Cancel();
-}
-
-void ClassicPairingHandler::OnConnectionClose(hci::ErrorCode error_code) {
-  // Called when the connection gets closed
-  LOG_ERROR("Connection closed due to: %s", hci::ErrorCodeText(error_code).c_str());
-  ASSERT(fixed_channel_ != nullptr);
-  fixed_channel_.reset();
-  Cancel();
-}
-
 void ClassicPairingHandler::OnPairingPromptAccepted(const bluetooth::hci::AddressWithType& address, bool confirmed) {
   LOG_WARN("TODO Not Implemented!");
 }
@@ -116,6 +74,7 @@ void ClassicPairingHandler::OnPasskeyEntry(const bluetooth::hci::AddressWithType
 void ClassicPairingHandler::Initiate(bool locally_initiated, hci::IoCapability io_capability,
                                      hci::OobDataPresent oob_present,
                                      hci::AuthenticationRequirements auth_requirements) {
+  LOG_DEBUG("Initiate");
   locally_initiated_ = locally_initiated;
   local_io_capability_ = io_capability;
   local_oob_present_ = oob_present;
@@ -123,21 +82,15 @@ void ClassicPairingHandler::Initiate(bool locally_initiated, hci::IoCapability i
 
   // TODO(optedoblivion): Read OOB data
   // if host and controller support secure connections used HCIREADLOCALOOBEXTENDEDDATA vs HCIREADLOCALOOBDATA
-
-  fixed_channel_manager_->RegisterService(
-      l2cap::kClassicPairingTriggerCid, security_policy_,
-      common::Bind(&ClassicPairingHandler::OnRegistrationComplete, common::Unretained(this)),
-      common::Bind(&ClassicPairingHandler::OnConnectionOpen, common::Unretained(this)), security_handler_);
+  GetChannel()->Connect(GetRecord()->GetPseudoAddress().GetAddress());
 }
 
 void ClassicPairingHandler::Cancel() {
-  if (fixed_channel_ != nullptr) {
-    fixed_channel_->Release();
+  PairingResultOrFailure result = PairingResult();
+  if (last_status_ != hci::ErrorCode::SUCCESS) {
+    result = PairingFailure(hci::ErrorCodeText(last_status_));
   }
-  if (fixed_channel_service_ != nullptr) {
-    fixed_channel_service_->Unregister(common::Bind(&ClassicPairingHandler::OnUnregistered, common::Unretained(this)),
-                                       security_handler_);
-  }
+  std::move(complete_callback_).Run(GetRecord()->GetPseudoAddress().GetAddress(), result);
 }
 
 void ClassicPairingHandler::OnReceive(hci::ChangeConnectionLinkKeyCompleteView packet) {
@@ -176,6 +129,7 @@ void ClassicPairingHandler::OnReceive(hci::LinkKeyNotificationView packet) {
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
   ASSERT_LOG(GetRecord()->GetPseudoAddress().GetAddress() == packet.GetBdAddr(), "Address mismatch");
   GetRecord()->SetLinkKey(packet.GetLinkKey(), packet.GetKeyType());
+  // We are done with the pairing flow
   Cancel();
 }
 
@@ -207,6 +161,7 @@ void ClassicPairingHandler::OnReceive(hci::SimplePairingCompleteView packet) {
   last_status_ = packet.GetStatus();
   if (last_status_ != hci::ErrorCode::SUCCESS) {
     LOG_INFO("Failed SimplePairingComplete: %s", hci::ErrorCodeText(last_status_).c_str());
+    // Cancel here since we won't get LinkKeyNotification
     Cancel();
   }
 }

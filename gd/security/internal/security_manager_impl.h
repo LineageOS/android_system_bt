@@ -20,7 +20,6 @@
 #include <utility>
 
 #include "hci/classic_device.h"
-#include "l2cap/classic/l2cap_classic_module.h"
 #include "l2cap/le/l2cap_le_module.h"
 #include "os/handler.h"
 #include "security/channel/security_manager_channel.h"
@@ -40,7 +39,6 @@ namespace internal {
 class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, public UICallbacks {
  public:
   explicit SecurityManagerImpl(os::Handler* security_handler, l2cap::le::L2capLeModule* l2cap_le_module,
-                               l2cap::classic::L2capClassicModule* l2cap_classic_module,
                                channel::SecurityManagerChannel* security_manager_channel, hci::HciLayer* hci_layer);
   ~SecurityManagerImpl() = default;
 
@@ -113,6 +111,23 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   void OnHciEventReceived(hci::EventPacketView packet) override;
 
   /**
+   * When a conncetion closes we should clean up the pairing handler
+   *
+   * @param address Remote address
+   * @param error_code HCI error
+   */
+  void OnConnectionClosed(hci::Address address, bluetooth::hci::ErrorCode error_code) override;
+
+  /**
+   * This can occur when a remote device isn't in range or doesn't agree with local device
+   *
+   * @param address Remote address
+   * @param result holds hci error and connection error code
+   */
+  void OnConnectionFailed(hci::Address address,
+                          bluetooth::l2cap::classic::FixedChannelManager::ConnectionResult result) override;
+
+  /**
    * Pairing handler has finished or cancelled
    *
    * @param address address for pairing handler
@@ -151,7 +166,6 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
 
   os::Handler* security_handler_ __attribute__((unused));
   l2cap::le::L2capLeModule* l2cap_le_module_ __attribute__((unused));
-  l2cap::classic::L2capClassicModule* l2cap_classic_module_ __attribute__((unused));
   std::unique_ptr<l2cap::le::FixedChannelManager> l2cap_manager_le_;
   hci::LeSecurityInterface* hci_security_interface_le_ __attribute__((unused));
   channel::SecurityManagerChannel* security_manager_channel_;
