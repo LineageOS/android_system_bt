@@ -20,6 +20,9 @@
 
 #include "gtest/gtest.h"
 
+#include <functional>
+#include <future>
+
 using ::bluetooth::os::Thread;
 
 namespace bluetooth {
@@ -207,7 +210,7 @@ TEST_F(ModuleTest, two_dependencies) {
   EXPECT_FALSE(registry_->IsStarted<TestModuleTwoDependencies>());
 }
 
-void post_two_module_one_handler() {
+void post_to_module_one_handler() {
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   test_module_one_dependency_handler->Post(common::BindOnce([] { FAIL(); }));
 }
@@ -216,7 +219,7 @@ TEST_F(ModuleTest, shutdown_with_unhandled_callback) {
   ModuleList list;
   list.add<TestModuleOneDependency>();
   registry_->Start(&list, thread_);
-  test_module_no_dependency_handler->Post(common::BindOnce(&post_two_module_one_handler));
+  test_module_no_dependency_handler->Post(common::BindOnce(&post_to_module_one_handler));
   registry_->StopAll();
 }
 
