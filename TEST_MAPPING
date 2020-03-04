@@ -88,6 +88,10 @@
     {
       "name" : "net_test_hci_fragmenter_native",
       "host" : true
+    },
+    {
+      "name" : "net_test_hci_native",
+      "host" : true
     }
   ]
 }
