@@ -57,11 +57,11 @@ void StackManager::ShutDown() {
   auto future = promise.get_future();
   handler_->Post(common::BindOnce(&StackManager::handle_shut_down, common::Unretained(this), std::move(promise)));
 
-  auto stop_status = future.wait_for(std::chrono::seconds(3));
+  auto stop_status = future.wait_for(std::chrono::seconds(5));
   ASSERT_LOG(stop_status == std::future_status::ready, "Can't stop stack");
 
   handler_->Clear();
-  handler_->WaitUntilStopped(std::chrono::milliseconds(20));
+  handler_->WaitUntilStopped(std::chrono::milliseconds(2000));
   delete handler_;
   delete management_thread_;
 }
