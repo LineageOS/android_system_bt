@@ -22,7 +22,6 @@ bluetooth_cert_test_file_list := \
     security/cert/simple_security_test.py \
     shim/cert/stack_test.py
 
-
 bluetooth_cert_test_file_list := $(addprefix $(LOCAL_PATH)/,$(bluetooth_cert_test_file_list))
 
 bluetooth_cert_test_file_list += \
@@ -36,12 +35,22 @@ bluetooth_cert_test_file_list += \
     $(TARGET_OUT_SHARED_LIBRARIES)/libgrpc++_unsecure.so \
     $(HOST_OUT_NATIVE_TESTS)/root-canal/root-canal
 
+bluetooth_cert_env_provider_path := \
+    $(call intermediates-dir-for,PACKAGING,bluetooth_cert_test_package,HOST)/system/bt/gd/cert/environment_provider.py
+
+$(bluetooth_cert_env_provider_path):
+	@mkdir -p $(dir $@)
+	$(hide) echo "PRODUCT_DEVICE = \"$(PRODUCT_DEVICE)\"" > $@
+
 bluetooth_cert_zip_path := \
     $(call intermediates-dir-for,PACKAGING,bluetooth_cert_test_package,HOST)/bluetooth_cert_test.zip
 
 $(bluetooth_cert_zip_path): PRIVATE_BLUETOOTH_CERT_TEST_FILE_LIST := $(bluetooth_cert_test_file_list)
 
-$(bluetooth_cert_zip_path) : $(SOONG_ZIP) $(bluetooth_cert_test_file_list)
-	$(hide) $(SOONG_ZIP) -d -o $@ $(addprefix -f ,$(PRIVATE_BLUETOOTH_CERT_TEST_FILE_LIST))
+$(bluetooth_cert_zip_path): PRIVATE_BLUETOOTH_CERT_ENV_PROVIDER_PATH := $(bluetooth_cert_env_provider_path)
+
+$(bluetooth_cert_zip_path) : $(SOONG_ZIP) $(bluetooth_cert_env_provider_path) $(bluetooth_cert_test_file_list)
+	$(hide) $(SOONG_ZIP) -d -o $@ $(addprefix -f ,$(PRIVATE_BLUETOOTH_CERT_TEST_FILE_LIST)) \
+		-C $(call intermediates-dir-for,PACKAGING,bluetooth_cert_test_package,HOST) -f $(PRIVATE_BLUETOOTH_CERT_ENV_PROVIDER_PATH)
 
 $(call dist-for-goals,bluetooth_stack_with_facade,$(bluetooth_cert_zip_path):bluetooth_cert_test.zip)
