@@ -16,7 +16,10 @@
 
 import bluetooth_packets_python3 as bt_packets
 from bluetooth_packets_python3 import hci_packets
+from bluetooth_packets_python3 import l2cap_packets
+from bluetooth_packets_python3.l2cap_packets import CommandCode
 from cert.capture import Capture
+from cert.matchers import L2capMatchers
 
 
 def ReadBdAddrCompleteCapture():
@@ -42,3 +45,18 @@ def ConnectionCompleteCapture():
                             hci_packets.EventPacketView(
                                 bt_packets.PacketViewLittleEndian(
                                     list(packet.event)))))
+
+
+class L2capCaptures(object):
+
+    @staticmethod
+    def ConnectionResponse(scid):
+        return Capture(
+            L2capMatchers.ConnectionResponse(scid),
+            L2capCaptures._extract_connection_response)
+
+    @staticmethod
+    def _extract_connection_response(packet):
+        frame = L2capMatchers.control_frame_with_code(
+            packet, CommandCode.CONNECTION_RESPONSE)
+        return l2cap_packets.ConnectionResponseView(frame)
