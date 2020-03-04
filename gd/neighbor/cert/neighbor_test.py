@@ -65,7 +65,7 @@ class NeighborTest(GdFacadeOnlyBaseTestClass):
             self.enqueue_hci_command(
                 hci_packets.WriteScanEnableBuilder(
                     hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN), True)
-            hci_event_stream.assert_event_occurs(
+            inquiry_event_stream.assert_event_occurs(
                 lambda msg: b'\x02\x0f' in msg.packet
                 # Expecting an HCI Event (code 0x02, length 0x0f)
             )
@@ -81,7 +81,7 @@ class NeighborTest(GdFacadeOnlyBaseTestClass):
             self.enqueue_hci_command(
                 hci_packets.WriteScanEnableBuilder(
                     hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN), True)
-            hci_event_stream.assert_event_occurs(
+            inquiry_event_stream.assert_event_occurs(
                 lambda msg: b'\x22\x0f' in msg.packet
                 # Expecting an HCI Event (code 0x22, length 0x0f)
             )
@@ -106,7 +106,7 @@ class NeighborTest(GdFacadeOnlyBaseTestClass):
             self.enqueue_hci_command(
                 hci_packets.WriteScanEnableBuilder(
                     hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN), True)
-            hci_event_stream.assert_event_occurs(
+            inquiry_event_stream.assert_event_occurs(
                 lambda msg: name_string in msg.packet)
 
     def test_remote_name(self):
