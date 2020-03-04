@@ -50,9 +50,11 @@ ClassicSignallingManager::ClassicSignallingManager(os::Handler* handler, Link* l
 }
 
 ClassicSignallingManager::~ClassicSignallingManager() {
-  enqueue_buffer_.reset();
+  alarm_.Cancel();
   signalling_channel_->GetQueueUpEnd()->UnregisterDequeue();
   signalling_channel_ = nullptr;
+  enqueue_buffer_->Clear();
+  enqueue_buffer_.reset();
 }
 
 void ClassicSignallingManager::OnCommandReject(CommandRejectView command_reject_view) {
@@ -92,7 +94,6 @@ void ClassicSignallingManager::SendDisconnectionRequest(Cid local_cid, Cid remot
       next_signal_id_, CommandCode::DISCONNECTION_REQUEST, {}, local_cid, remote_cid, {}, {}};
   next_signal_id_++;
   pending_commands_.push(std::move(pending_command));
-  channel_configuration_.erase(local_cid);
   if (command_just_sent_.signal_id_ == kInvalidSignalId) {
     handle_send_next_command();
   }
@@ -336,6 +337,7 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
       dynamic_service_manager_->GetService(channel->GetPsm())->NotifyChannelCreation(std::move(user_channel));
     }
     configuration_state.state_ = ChannelConfigurationState::State::CONFIGURED;
+    data_pipeline_manager_->AttachChannel(cid, channel, l2cap::internal::DataPipelineManager::ChannelMode::BASIC);
     data_pipeline_manager_->UpdateClassicConfiguration(cid, configuration_state);
   } else if (configuration_state.state_ == ChannelConfigurationState::State::WAIT_CONFIG_REQ_RSP) {
     configuration_state.state_ = ChannelConfigurationState::State::WAIT_CONFIG_RSP;
@@ -435,6 +437,7 @@ void ClassicSignallingManager::OnConfigurationResponse(SignalId signal_id, Cid c
       dynamic_service_manager_->GetService(channel->GetPsm())->NotifyChannelCreation(std::move(user_channel));
     }
     configuration_state.state_ = ChannelConfigurationState::State::CONFIGURED;
+    data_pipeline_manager_->AttachChannel(cid, channel, l2cap::internal::DataPipelineManager::ChannelMode::BASIC);
     data_pipeline_manager_->UpdateClassicConfiguration(cid, configuration_state);
   } else if (configuration_state.state_ == ChannelConfigurationState::State::WAIT_CONFIG_REQ_RSP) {
     configuration_state.state_ = ChannelConfigurationState::State::WAIT_CONFIG_REQ;
@@ -451,11 +454,15 @@ void ClassicSignallingManager::OnDisconnectionRequest(SignalId signal_id, Cid ci
     LOG_WARN("Disconnect request for an unknown channel");
     return;
   }
-  channel_configuration_.erase(cid);
   auto builder = DisconnectionResponseBuilder::Create(signal_id.Value(), cid, remote_cid);
   enqueue_buffer_->Enqueue(std::move(builder), handler_);
   channel->OnClosed(hci::ErrorCode::SUCCESS);
+  auto& configuration_state = channel_configuration_[channel->GetCid()];
+  if (configuration_state.state_ == configuration_state.CONFIGURED) {
+    data_pipeline_manager_->DetachChannel(cid);
+  }
   link_->FreeDynamicChannel(cid);
+  channel_configuration_.erase(cid);
 }
 
 void ClassicSignallingManager::OnDisconnectionResponse(SignalId signal_id, Cid remote_cid, Cid cid) {
@@ -477,8 +484,13 @@ void ClassicSignallingManager::OnDisconnectionResponse(SignalId signal_id, Cid r
   }
 
   channel->OnClosed(hci::ErrorCode::SUCCESS);
+  auto& configuration_state = channel_configuration_[cid];
+  if (configuration_state.state_ == configuration_state.CONFIGURED) {
+    data_pipeline_manager_->DetachChannel(cid);
+  }
   link_->FreeDynamicChannel(cid);
   handle_send_next_command();
+  channel_configuration_.erase(cid);
 }
 
 void ClassicSignallingManager::OnEchoRequest(SignalId signal_id, const PacketView<kLittleEndian>& packet) {
