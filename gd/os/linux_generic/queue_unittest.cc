@@ -892,6 +892,18 @@ TEST_F(EnqueueBufferTest, clear) {
   ASSERT_FALSE(enqueue_.registered_);
 }
 
+TEST_F(EnqueueBufferTest, delete_when_in_callback) {
+  Queue<int>* queue = new Queue<int>(kQueueSize);
+  EnqueueBuffer<int>* enqueue_buffer = new EnqueueBuffer<int>(queue);
+  int num_items = 10;
+  for (int i = 0; i < num_items; i++) {
+    enqueue_buffer->Enqueue(std::make_unique<int>(i), handler_);
+  }
+
+  delete enqueue_buffer;
+  delete queue;
+}
+
 }  // namespace
 }  // namespace os
 }  // namespace bluetooth
