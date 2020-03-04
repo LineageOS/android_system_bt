@@ -72,11 +72,19 @@ PYBIND11_MODULE(bluetooth_packets_python3, m) {
       m, "PacketStructBigEndian");
   py::class_<Iterator<kLittleEndian>>(m, "IteratorLittleEndian");
   py::class_<Iterator<!kLittleEndian>>(m, "IteratorBigEndian");
-  py::class_<PacketView<kLittleEndian>>(m, "PacketViewLittleEndian").def(py::init([](std::vector<uint8_t> bytes) {
-    // Make a copy
-    auto bytes_shared = std::make_shared<std::vector<uint8_t>>(bytes);
-    return std::make_unique<PacketView<kLittleEndian>>(bytes_shared);
-  }));
+  py::class_<PacketView<kLittleEndian>>(m, "PacketViewLittleEndian")
+      .def(py::init([](std::vector<uint8_t> bytes) {
+        // Make a copy
+        auto bytes_shared = std::make_shared<std::vector<uint8_t>>(bytes);
+        return std::make_unique<PacketView<kLittleEndian>>(bytes_shared);
+      }))
+      .def("GetBytes", [](const PacketView<kLittleEndian> view) {
+        std::string result;
+        for (auto it = view.begin(); it != view.end(); it++) {
+          result += *it;
+        }
+        return py::bytes(result);
+      });
   py::class_<PacketView<!kLittleEndian>>(m, "PacketViewBigEndian").def(py::init([](std::vector<uint8_t> bytes) {
     // Make a copy
     auto bytes_shared = std::make_shared<std::vector<uint8_t>>(bytes);
