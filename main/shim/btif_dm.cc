@@ -33,10 +33,12 @@ class ShimUi : public security::UI {
   ~ShimUi() {}
   void DisplayPairingPrompt(const bluetooth::hci::AddressWithType& address,
                             std::string name) {
-    LOG_WARN(LOG_TAG, "%s ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ TODO Unimplemented", __func__);
+    LOG_WARN("%s ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ TODO Unimplemented",
+             __func__);
   }
   void Cancel(const bluetooth::hci::AddressWithType& address) {
-    LOG_WARN(LOG_TAG, "%s ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ TODO Unimplemented", __func__);
+    LOG_WARN("%s ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ TODO Unimplemented",
+             __func__);
   }
 
   void DisplayConfirmValue(const bluetooth::hci::AddressWithType& address,
@@ -81,7 +83,7 @@ ShimUi ui;
  * Sets handler to SecurityModule and provides callback to handler
  */
 void BTIF_DM_SetUiCallback(std::function<void(RawAddress, bt_bdname_t, uint32_t, bt_ssp_variant_t, uint32_t)> callback) {
-  LOG_WARN(LOG_TAG, "%s", __func__);
+  LOG_WARN("%s", __func__);
   auto security_manager = bluetooth::shim::GetSecurityModule()->GetSecurityManager();
   ui.SetLegacyCallback(callback);
   security_manager->SetUserInterfaceHandler(&ui, bluetooth::shim::GetGdShimHandler());
@@ -136,7 +138,10 @@ void BTIF_DM_ssp_reply(const RawAddress bd_addr, uint8_t addr_type, bt_ssp_varia
     //TODO:
     // void OnPairingPromptAccepted(const bluetooth::hci::AddressWithType& address, bool confirmed) override;
     //  void OnPasskeyEntry(const bluetooth::hci::AddressWithType& address, uint32_t passkey) override;
-    LOG_WARN(LOG_TAG, "■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ Variant not implemented yet %02x", variant);
+    LOG_WARN(
+        "■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ Variant not implemented yet "
+        "%02x",
+        variant);
   }
 }
 
@@ -145,7 +150,7 @@ void BTIF_DM_pin_reply(const RawAddress bd_addr, uint8_t addr_type, uint8_t acce
   auto security_manager = bluetooth::shim::GetSecurityModule()->GetSecurityManager();
 
   if (!accept) {
-    LOG_WARN(LOG_TAG, "This case is not implemented!!");
+    LOG_WARN("This case is not implemented!!");
     return;
   }
 

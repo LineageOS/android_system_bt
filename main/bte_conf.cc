@@ -35,7 +35,7 @@ void bte_load_did_conf(const char* p_path) {
 
   std::unique_ptr<config_t> config = config_new(p_path);
   if (!config) {
-    LOG_ERROR(LOG_TAG, "%s unable to load DID config '%s'.", __func__, p_path);
+    LOG_ERROR("%s unable to load DID config '%s'.", __func__, p_path);
     return;
   }
 
@@ -44,7 +44,7 @@ void bte_load_did_conf(const char* p_path) {
     snprintf(section_name, sizeof(section_name), "DID%d", i);
 
     if (!config_has_section(*config, section_name)) {
-      LOG_DEBUG(LOG_TAG, "%s no section named %s.", __func__, section_name);
+      LOG_DEBUG("%s no section named %s.", __func__, section_name);
       break;
     }
 
@@ -75,29 +75,26 @@ void bte_load_did_conf(const char* p_path) {
 
     if (record.vendor_id_source != DI_VENDOR_ID_SOURCE_BTSIG &&
         record.vendor_id_source != DI_VENDOR_ID_SOURCE_USBIF) {
-      LOG_ERROR(LOG_TAG,
-                "%s invalid vendor id source %d; ignoring DID record %d.",
+      LOG_ERROR("%s invalid vendor id source %d; ignoring DID record %d.",
                 __func__, record.vendor_id_source, i);
       continue;
     }
 
-    LOG_DEBUG(LOG_TAG, "Device ID record %d : %s", i,
+    LOG_DEBUG("Device ID record %d : %s", i,
               (record.primary_record ? "primary" : "not primary"));
-    LOG_DEBUG(LOG_TAG, "  vendorId            = %04x", record.vendor);
-    LOG_DEBUG(LOG_TAG, "  vendorIdSource      = %04x", record.vendor_id_source);
-    LOG_DEBUG(LOG_TAG, "  product             = %04x", record.product);
-    LOG_DEBUG(LOG_TAG, "  version             = %04x", record.version);
-    LOG_DEBUG(LOG_TAG, "  clientExecutableURL = %s",
-              record.client_executable_url);
-    LOG_DEBUG(LOG_TAG, "  serviceDescription  = %s",
-              record.service_description);
-    LOG_DEBUG(LOG_TAG, "  documentationURL    = %s", record.documentation_url);
+    LOG_DEBUG("  vendorId            = %04x", record.vendor);
+    LOG_DEBUG("  vendorIdSource      = %04x", record.vendor_id_source);
+    LOG_DEBUG("  product             = %04x", record.product);
+    LOG_DEBUG("  version             = %04x", record.version);
+    LOG_DEBUG("  clientExecutableURL = %s", record.client_executable_url);
+    LOG_DEBUG("  serviceDescription  = %s", record.service_description);
+    LOG_DEBUG("  documentationURL    = %s", record.documentation_url);
 
     uint32_t record_handle;
     tBTA_STATUS status = BTA_DmSetLocalDiRecord(&record, &record_handle);
     if (status != BTA_SUCCESS) {
-      LOG_ERROR(LOG_TAG, "%s unable to set device ID record %d: error %d.",
-                __func__, i, status);
+      LOG_ERROR("%s unable to set device ID record %d: error %d.", __func__, i,
+                status);
     }
   }
 }

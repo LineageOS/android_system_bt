@@ -58,14 +58,14 @@ using std::vector;
  *  Constants & Macros
  ******************************************************************************/
 
-#define CHECK_BTGATT_INIT()                                      \
-  do {                                                           \
-    if (bt_gatt_callbacks == NULL) {                             \
-      LOG_WARN(LOG_TAG, "%s: BTGATT not initialized", __func__); \
-      return BT_STATUS_NOT_READY;                                \
-    } else {                                                     \
-      LOG_VERBOSE(LOG_TAG, "%s", __func__);                      \
-    }                                                            \
+#define CHECK_BTGATT_INIT()                             \
+  do {                                                  \
+    if (bt_gatt_callbacks == NULL) {                    \
+      LOG_WARN("%s: BTGATT not initialized", __func__); \
+      return BT_STATUS_NOT_READY;                       \
+    } else {                                            \
+      LOG_VERBOSE("%s", __func__);                      \
+    }                                                   \
   } while (0)
 
 /*******************************************************************************
@@ -124,7 +124,7 @@ static void btapp_gatts_free_req_data(uint16_t event, tBTA_GATTS* p_data) {
 }
 
 static void btapp_gatts_handle_cback(uint16_t event, char* p_param) {
-  LOG_VERBOSE(LOG_TAG, "%s: Event %d", __func__, event);
+  LOG_VERBOSE("%s: Event %d", __func__, event);
 
   tBTA_GATTS* p_data = (tBTA_GATTS*)p_param;
   switch (event) {
@@ -231,7 +231,7 @@ static void btapp_gatts_handle_cback(uint16_t event, char* p_param) {
     case BTA_GATTS_OPEN_EVT:
     case BTA_GATTS_CANCEL_OPEN_EVT:
     case BTA_GATTS_CLOSE_EVT:
-      LOG_DEBUG(LOG_TAG, "%s: Empty event (%d)!", __func__, event);
+      LOG_DEBUG("%s: Empty event (%d)!", __func__, event);
       break;
 
     case BTA_GATTS_PHY_UPDATE_EVT:
@@ -248,7 +248,7 @@ static void btapp_gatts_handle_cback(uint16_t event, char* p_param) {
       break;
 
     default:
-      LOG_ERROR(LOG_TAG, "%s: Unhandled event (%d)!", __func__, event);
+      LOG_ERROR("%s: Unhandled event (%d)!", __func__, event);
       break;
   }
 
@@ -356,7 +356,7 @@ static void add_service_impl(int server_if,
   // refactored, and one can distinguish stack-internal aps from external apps
   if (service[0].uuid == Uuid::From16Bit(UUID_SERVCLASS_GATT_SERVER) ||
       service[0].uuid == Uuid::From16Bit(UUID_SERVCLASS_GAP_SERVER)) {
-    LOG_ERROR(LOG_TAG, "%s: Attept to register restricted service", __func__);
+    LOG_ERROR("%s: Attept to register restricted service", __func__);
     HAL_CBACK(bt_gatt_callbacks, server->service_added_cb, BT_STATUS_FAIL,
               server_if, std::move(service));
     return;

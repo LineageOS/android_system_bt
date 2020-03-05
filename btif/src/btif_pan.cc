@@ -420,8 +420,7 @@ int btpan_tap_send(int tap_fd, const RawAddress& src, const RawAddress& dst,
     char packet[TAP_MAX_PKT_WRITE_LEN + sizeof(tETH_HDR)];
     memcpy(packet, &eth_hdr, sizeof(tETH_HDR));
     if (len > TAP_MAX_PKT_WRITE_LEN) {
-      LOG_ERROR(LOG_TAG, "btpan_tap_send eth packet size:%d is exceeded limit!",
-                len);
+      LOG_ERROR("btpan_tap_send eth packet size:%d is exceeded limit!", len);
       return -1;
     }
     memcpy(packet + sizeof(tETH_HDR), buf, len);
@@ -616,7 +615,7 @@ static void bta_pan_callback_transfer(uint16_t event, char* p_param) {
       bt_status_t status;
       btpan_conn_t* conn = btpan_find_conn_handle(p_data->open.handle);
 
-      LOG_VERBOSE(LOG_TAG, "%s pan connection open status: %d", __func__,
+      LOG_VERBOSE("%s pan connection open status: %d", __func__,
                   p_data->open.status);
       if (p_data->open.status == BTA_PAN_SUCCESS) {
         state = BTPAN_STATE_CONNECTED;
@@ -638,7 +637,7 @@ static void bta_pan_callback_transfer(uint16_t event, char* p_param) {
       break;
     }
     case BTA_PAN_CLOSE_EVT: {
-      LOG_INFO(LOG_TAG, "%s: event = BTA_PAN_CLOSE_EVT handle %d", __func__,
+      LOG_INFO("%s: event = BTA_PAN_CLOSE_EVT handle %d", __func__,
                p_data->close.handle);
       btpan_conn_t* conn = btpan_find_conn_handle(p_data->close.handle);
       btpan_close_conn(conn);

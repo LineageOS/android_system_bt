@@ -56,7 +56,7 @@ void allocation_tracker_init(void) {
   // randomize the canary contents
   for (size_t i = 0; i < canary_size; i++) canary[i] = (char)osi_rand();
 
-  LOG_DEBUG(LOG_TAG, "canary initialized");
+  LOG_DEBUG("canary initialized");
 
   enabled = true;
 }
@@ -88,8 +88,7 @@ size_t allocation_tracker_expect_no_allocations(void) {
     if (!allocation->freed) {
       unfreed_memory_size +=
           allocation->size;  // Report back the unfreed byte count
-      LOG_ERROR(LOG_TAG,
-                "%s found unfreed allocation. address: 0x%zx size: %zd bytes",
+      LOG_ERROR("%s found unfreed allocation. address: 0x%zx size: %zd bytes",
                 __func__, (uintptr_t)allocation->ptr, allocation->size);
     }
   }

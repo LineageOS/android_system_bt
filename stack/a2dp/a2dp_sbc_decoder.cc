@@ -45,8 +45,7 @@ bool a2dp_sbc_decoder_init(decoded_data_callback_t decode_callback) {
       &a2dp_sbc_decoder_cb.decoder_context, a2dp_sbc_decoder_cb.context_data,
       sizeof(a2dp_sbc_decoder_cb.context_data), 2, 2, false);
   if (!OI_SUCCESS(status)) {
-    LOG_ERROR(LOG_TAG,
-              "%s: OI_CODEC_SBC_DecoderReset failed with error code %d",
+    LOG_ERROR("%s: OI_CODEC_SBC_DecoderReset failed with error code %d",
               __func__, status);
     return false;
   }
@@ -64,7 +63,7 @@ bool a2dp_sbc_decoder_decode_packet(BT_HDR* p_buf) {
   size_t data_size = p_buf->len;
 
   if (data_size == 0) {
-    LOG_ERROR(LOG_TAG, "%s: Empty packet", __func__);
+    LOG_ERROR("%s: Empty packet", __func__);
     return false;
   }
   size_t num_frames = data[0] & 0xf;
@@ -82,7 +81,7 @@ bool a2dp_sbc_decoder_decode_packet(BT_HDR* p_buf) {
         OI_CODEC_SBC_DecodeFrame(&a2dp_sbc_decoder_cb.decoder_context, &oi_data,
                                  &oi_size, out_ptr, &out_size);
     if (!OI_SUCCESS(status)) {
-      LOG_ERROR(LOG_TAG, "%s: Decoding failure: %d", __func__, status);
+      LOG_ERROR("%s: Decoding failure: %d", __func__, status);
       return false;
     }
     out_avail -= out_size;

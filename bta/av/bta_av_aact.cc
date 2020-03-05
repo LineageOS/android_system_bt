@@ -269,7 +269,7 @@ static void bta_av_save_addr(tBTA_AV_SCB* p_scb, const RawAddress& bd_addr) {
                    bd_addr.ToString().c_str(), p_scb->recfg_sup,
                    p_scb->suspend_sup);
   if (p_scb->PeerAddress() != bd_addr) {
-    LOG_INFO(LOG_TAG, "%s: reset flags old_addr=%s new_addr=%s", __func__,
+    LOG_INFO("%s: reset flags old_addr=%s new_addr=%s", __func__,
              p_scb->PeerAddress().ToString().c_str(),
              bd_addr.ToString().c_str());
     /* a new addr, reset the supported flags */
@@ -293,9 +293,9 @@ static void bta_av_save_addr(tBTA_AV_SCB* p_scb, const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 static void notify_start_failed(tBTA_AV_SCB* p_scb) {
-  LOG_ERROR(LOG_TAG, "%s: peer %s role:0x%x bta_channel:%d bta_handle:0x%x",
-            __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->role,
-            p_scb->chnl, p_scb->hndl);
+  LOG_ERROR("%s: peer %s role:0x%x bta_channel:%d bta_handle:0x%x", __func__,
+            p_scb->PeerAddress().ToString().c_str(), p_scb->role, p_scb->chnl,
+            p_scb->hndl);
   tBTA_AV_START start;
   /* if start failed, clear role */
   p_scb->role &= ~BTA_AV_ROLE_START_INT;
@@ -902,8 +902,7 @@ void bta_av_cleanup(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   tBTA_AV_CONN_CHG msg;
   uint8_t role = BTA_AV_ROLE_AD_INT;
 
-  LOG_INFO(LOG_TAG, "%s peer %s", __func__,
-           p_scb->PeerAddress().ToString().c_str());
+  LOG_INFO("%s peer %s", __func__, p_scb->PeerAddress().ToString().c_str());
 
   /* free any buffers */
   p_scb->sdp_discovery_started = false;
@@ -1138,7 +1137,6 @@ void bta_av_setconfig_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   local_sep = bta_av_get_scb_sep_type(p_scb, avdt_handle);
   bta_av_adjust_seps_idx(p_scb, avdt_handle);
   LOG_DEBUG(
-      LOG_TAG,
       "%s: peer %s bta_handle=0x%x avdt_handle=%d sep_idx=%d cur_psc_mask:0x%x",
       __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->hndl,
       p_scb->avdt_handle, p_scb->sep_idx, p_scb->cur_psc_mask);
@@ -1751,8 +1749,8 @@ void bta_av_getcap_results(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     else if (uuid_int == UUID_SERVCLASS_AUDIO_SINK)
       bta_av_adjust_seps_idx(p_scb,
                              bta_av_get_scb_handle(p_scb, AVDT_TSEP_SNK));
-    LOG_DEBUG(LOG_TAG, "%s: sep_idx=%d avdt_handle=%d bta_handle=0x%x",
-              __func__, p_scb->sep_idx, p_scb->avdt_handle, p_scb->hndl);
+    LOG_DEBUG("%s: sep_idx=%d avdt_handle=%d bta_handle=0x%x", __func__,
+              p_scb->sep_idx, p_scb->avdt_handle, p_scb->hndl);
 
     /* use only the services peer supports */
     cfg.psc_mask &= p_scb->peer_cap.psc_mask;
@@ -1801,7 +1799,7 @@ void bta_av_setconfig_rej(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   uint8_t avdt_handle = p_data->ci_setconfig.avdt_handle;
 
   bta_av_adjust_seps_idx(p_scb, avdt_handle);
-  LOG_DEBUG(LOG_TAG, "%s: sep_idx=%d avdt_handle=%d bta_handle=0x%x", __func__,
+  LOG_DEBUG("%s: sep_idx=%d avdt_handle=%d bta_handle=0x%x", __func__,
             p_scb->sep_idx, p_scb->avdt_handle, p_scb->hndl);
   AVDT_ConfigRsp(p_scb->avdt_handle, p_scb->avdt_label, AVDT_ERR_UNSUP_CFG, 0);
 
@@ -1859,8 +1857,7 @@ void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   uint8_t clear_policy = 0;
   uint8_t cur_role;
 
-  LOG_INFO(LOG_TAG,
-           "%s: peer %s sco_occupied:%s role:0x%x started:%s wait:0x%x",
+  LOG_INFO("%s: peer %s sco_occupied:%s role:0x%x started:%s wait:0x%x",
            __func__, p_scb->PeerAddress().ToString().c_str(),
            logbool(bta_av_cb.sco_occupied).c_str(), p_scb->role,
            logbool(p_scb->started).c_str(), p_scb->wait);
@@ -1883,7 +1880,6 @@ void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     p_scb->role |= BTA_AV_ROLE_START_INT;
     if (p_scb->wait != 0) {
       LOG_WARN(
-          LOG_TAG,
           "%s: peer %s start stream request ignored: "
           "already waiting: sco_occupied:%s role:0x%x started:%s wait:0x%x",
           __func__, p_scb->PeerAddress().ToString().c_str(),
@@ -1901,7 +1897,6 @@ void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   if ((p_scb->role & BTA_AV_ROLE_START_INT) != 0) {
     LOG_WARN(
-        LOG_TAG,
         "%s: peer %s start stream request ignored: "
         "already initiated: sco_occupied:%s role:0x%x started:%s wait:0x%x",
         __func__, p_scb->PeerAddress().ToString().c_str(),
@@ -1914,16 +1909,16 @@ void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   bta_sys_busy(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->PeerAddress());
   uint16_t result = AVDT_StartReq(&p_scb->avdt_handle, 1);
   if (result != AVDT_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: AVDT_StartReq failed for peer %s result:%d",
-              __func__, p_scb->PeerAddress().ToString().c_str(), result);
+    LOG_ERROR("%s: AVDT_StartReq failed for peer %s result:%d", __func__,
+              p_scb->PeerAddress().ToString().c_str(), result);
     bta_av_start_failed(p_scb, p_data);
   }
-  LOG_INFO(LOG_TAG,
-           "%s: peer %s start requested: sco_occupied:%s role:0x%x "
-           "started:%s wait:0x%x",
-           __func__, p_scb->PeerAddress().ToString().c_str(),
-           logbool(bta_av_cb.sco_occupied).c_str(), p_scb->role,
-           logbool(p_scb->started).c_str(), p_scb->wait);
+  LOG_INFO(
+      "%s: peer %s start requested: sco_occupied:%s role:0x%x "
+      "started:%s wait:0x%x",
+      __func__, p_scb->PeerAddress().ToString().c_str(),
+      logbool(bta_av_cb.sco_occupied).c_str(), p_scb->role,
+      logbool(p_scb->started).c_str(), p_scb->wait);
 }
 
 /*******************************************************************************
@@ -2253,8 +2248,7 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   uint8_t cur_role;
   uint8_t local_tsep = p_scb->seps[p_scb->sep_idx].tsep;
 
-  LOG_INFO(LOG_TAG,
-           "%s: peer %s bta_handle:0x%x wait:0x%x role:0x%x local_tsep:%d",
+  LOG_INFO("%s: peer %s bta_handle:0x%x wait:0x%x role:0x%x local_tsep:%d",
            __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->hndl,
            p_scb->wait, p_scb->role, local_tsep);
 
@@ -2839,11 +2833,10 @@ void bta_av_rcfg_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
       if (interop_match_name(INTEROP_DISABLE_AVDTP_RECONFIGURE, remote_name) ||
           interop_match_addr(INTEROP_DISABLE_AVDTP_RECONFIGURE,
                              (const RawAddress*)&p_scb->PeerAddress())) {
-        LOG_INFO(LOG_TAG,
-                 "%s: disable AVDTP RECONFIGURE: interop matched "
-                 "name %s address %s",
-                 __func__, remote_name,
-                 p_scb->PeerAddress().ToString().c_str());
+        LOG_INFO(
+            "%s: disable AVDTP RECONFIGURE: interop matched "
+            "name %s address %s",
+            __func__, remote_name, p_scb->PeerAddress().ToString().c_str());
         disable_avdtp_reconfigure = true;
       }
     }
@@ -2903,8 +2896,8 @@ void bta_av_rcfg_open(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
     /* we may choose to use a different SEP at reconfig.
      * adjust the sep_idx now */
     bta_av_adjust_seps_idx(p_scb, bta_av_get_scb_handle(p_scb, AVDT_TSEP_SRC));
-    LOG_DEBUG(LOG_TAG, "%s: sep_idx=%d avdt_handle=%d bta_handle=0x%x",
-              __func__, p_scb->sep_idx, p_scb->avdt_handle, p_scb->hndl);
+    LOG_DEBUG("%s: sep_idx=%d avdt_handle=%d bta_handle=0x%x", __func__,
+              p_scb->sep_idx, p_scb->avdt_handle, p_scb->hndl);
 
     /* open the stream with the new config */
     p_scb->sep_info_idx = p_scb->rcfg_idx;
@@ -2940,11 +2933,11 @@ void bta_av_security_rej(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
  ******************************************************************************/
 void bta_av_chk_2nd_start(tBTA_AV_SCB* p_scb,
                           UNUSED_ATTR tBTA_AV_DATA* p_data) {
-  LOG_INFO(LOG_TAG,
-           "%s: peer %s channel:%d bta_av_cb.audio_open_cnt:%d role:0x%x "
-           "features:0x%x",
-           __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->chnl,
-           bta_av_cb.audio_open_cnt, p_scb->role, bta_av_cb.features);
+  LOG_INFO(
+      "%s: peer %s channel:%d bta_av_cb.audio_open_cnt:%d role:0x%x "
+      "features:0x%x",
+      __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->chnl,
+      bta_av_cb.audio_open_cnt, p_scb->role, bta_av_cb.features);
 
   if ((p_scb->chnl == BTA_AV_CHNL_AUDIO) && (bta_av_cb.audio_open_cnt >= 2) &&
       (((p_scb->role & BTA_AV_ROLE_AD_ACP) == 0) ||  // Outgoing connection or
@@ -2963,11 +2956,11 @@ void bta_av_chk_2nd_start(tBTA_AV_SCB* p_scb,
           if (!new_started) {
             // Start the new stream
             new_started = true;
-            LOG_INFO(LOG_TAG,
-                     "%s: starting new stream for peer %s because peer %s "
-                     "already started",
-                     __func__, p_scb->PeerAddress().ToString().c_str(),
-                     p_scbi->PeerAddress().ToString().c_str());
+            LOG_INFO(
+                "%s: starting new stream for peer %s because peer %s "
+                "already started",
+                __func__, p_scb->PeerAddress().ToString().c_str(),
+                p_scbi->PeerAddress().ToString().c_str());
             bta_av_ssm_execute(p_scb, BTA_AV_AP_START_EVT, NULL);
           }
           // May need to update the flush timeout of this already started stream
