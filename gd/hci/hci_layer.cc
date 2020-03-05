@@ -172,8 +172,6 @@ class LeScanningInterfaceImpl : public LeScanningInterface {
 struct HciLayer::impl : public hal::HciHalCallbacks {
   impl(HciLayer& module) : hal_(nullptr), module_(module) {}
 
-  ~impl() {}
-
   void Start(hal::HciHal* hal) {
     hal_ = hal;
     hci_timeout_alarm_ = new Alarm(module_.GetHandler());
@@ -292,6 +290,7 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
     subevent_handlers_[subevent_code].handler->Post(BindOnce(registered_handler, meta_event_view));
   }
 
+  // Invoked from HAL thread
   void hciEventReceived(hal::HciPacket event_bytes) override {
     auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(event_bytes));
     EventPacketView event = EventPacketView::Create(packet);
@@ -308,6 +307,7 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
     event_handlers_[event_code].handler->Post(BindOnce(registered_handler, std::move(event)));
   }
 
+  // From HAL thread
   void aclDataReceived(hal::HciPacket data_bytes) override {
     auto packet =
         packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(std::move(data_bytes)));
