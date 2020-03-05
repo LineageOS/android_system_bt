@@ -203,6 +203,8 @@ enum OpCode : 16 {
   READ_SECURE_CONNECTIONS_HOST_SUPPORT = 0x0C79,
   WRITE_SECURE_CONNECTIONS_HOST_SUPPORT = 0x0C7A,
   READ_LOCAL_OOB_EXTENDED_DATA = 0x0C7D,
+  SET_ECOSYSTEM_BASE_INTERVAL = 0x0C82,
+  CONFIGURE_DATA_PATH = 0x0C83,
 
   // INFORMATIONAL_PARAMETERS
   READ_LOCAL_VERSION_INFORMATION = 0x1001,
@@ -212,7 +214,10 @@ enum OpCode : 16 {
   READ_BUFFER_SIZE = 0x1005,
   READ_BD_ADDR = 0x1009,
   READ_DATA_BLOCK_SIZE = 0x100A,
-  READ_LOCAL_SUPPORTED_CODECS = 0x100B,
+  READ_LOCAL_SUPPORTED_CODECS_V1 = 0x100B,
+  READ_LOCAL_SUPPORTED_CODECS_V2 = 0x100D,
+  READ_LOCAL_SUPPORTED_CODEC_CAPABILITIES = 0x100E,
+  READ_LOCAL_SUPPORTED_CONTROLLER_DELAY = 0X100F,
 
   // STATUS_PARAMETERS
   READ_FAILED_CONTACT_COUNTER = 0x1401,
@@ -232,7 +237,7 @@ enum OpCode : 16 {
 
   // LE_CONTROLLER
   LE_SET_EVENT_MASK = 0x2001,
-  LE_READ_BUFFER_SIZE = 0x2002,
+  LE_READ_BUFFER_SIZE_V1 = 0x2002,
   LE_READ_LOCAL_SUPPORTED_FEATURES = 0x2003,
   LE_SET_RANDOM_ADDRESS = 0x2005,
   LE_SET_ADVERTISING_PARAMETERS = 0x2006,
@@ -316,6 +321,7 @@ enum OpCode : 16 {
   LE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS = 0X205D,
   LE_GENERATE_DHKEY_COMMAND = 0x205E,
   LE_MODIFY_SLEEP_CLOCK_ACCURACY = 0X205F,
+  LE_READ_BUFFER_SIZE_V2 = 0x2060,
   LE_READ_ISO_TX_SYNC = 0X2061,
   LE_SET_CIG_PARAMETERS = 0X2062,
   LE_CREATE_CIS = 0X2064,
@@ -483,7 +489,7 @@ enum OpCodeIndex : 16 {
   READ_LE_HOST_SUPPORT = 245,
   WRITE_LE_HOST_SUPPORT = 246,
   LE_SET_EVENT_MASK = 250,
-  LE_READ_BUFFER_SIZE = 251,
+  LE_READ_BUFFER_SIZE_V1 = 251,
   LE_READ_LOCAL_SUPPORTED_FEATURES = 252,
   LE_SET_RANDOM_ADDRESS = 254,
   LE_SET_ADVERTISING_PARAMETERS = 255,
@@ -514,7 +520,7 @@ enum OpCodeIndex : 16 {
   LE_TEST_END = 286,
   ENHANCED_SETUP_SYNCHRONOUS_CONNECTION = 293,
   ENHANCED_ACCEPT_SYNCHRONOUS_CONNECTION = 294,
-  READ_LOCAL_SUPPORTED_CODECS = 295,
+  READ_LOCAL_SUPPORTED_CODECS_V1 = 295,
   READ_SECURE_CONNECTIONS_HOST_SUPPORT = 322,
   WRITE_SECURE_CONNECTIONS_HOST_SUPPORT = 323,
   READ_LOCAL_OOB_EXTENDED_DATA = 326,
@@ -574,6 +580,7 @@ enum OpCodeIndex : 16 {
   LE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS = 411,
   LE_GENERATE_DHKEY_COMMAND = 412,
   LE_MODIFY_SLEEP_CLOCK_ACCURACY = 414,
+  LE_READ_BUFFER_SIZE_V2 = 415,
   LE_READ_ISO_TX_SYNC = 416,
   LE_SET_CIG_PARAMETERS = 417,
   LE_CREATE_CIS = 421,
@@ -594,6 +601,11 @@ enum OpCodeIndex : 16 {
   LE_SET_PATH_LOSS_REPORTING_PARAMETERS = 445,
   LE_SET_PATH_LOSS_REPORTING_ENABLE = 446,
   LE_SET_TRANSMIT_POWER_REPORTING_ENABLE = 447,
+  SET_ECOSYSTEM_BASE_INTERVAL = 451,
+  READ_LOCAL_SUPPORTED_CODECS_V2 = 452,
+  READ_LOCAL_SUPPORTED_CODEC_CAPABILITIES = 453,
+  READ_LOCAL_SUPPORTED_CONTROLLER_DELAY = 454,
+  CONFIGURE_DATA_PATH = 455,
 }
 
 packet CommandPacket {
@@ -2040,6 +2052,30 @@ packet ReadLocalOobExtendedDataComplete : CommandComplete (command_op_code = REA
   r_256 : 8[16],
 }
 
+packet SetEcosystemBaseInterval : CommandPacket (op_code = SET_ECOSYSTEM_BASE_INTERVAL) {
+  interval : 16,
+}
+
+packet SetEcosystemBaseIntervalComplete : CommandComplete (command_op_code = SET_ECOSYSTEM_BASE_INTERVAL) {
+  status : ErrorCode,
+}
+
+enum DataPathDirection : 8 {
+  INPUT = 0,
+  OUTPUT = 1,
+}
+
+packet ConfigureDataPath : CommandPacket (op_code = CONFIGURE_DATA_PATH) {
+  data_path_direction : DataPathDirection,
+  data_path_id : 8,
+  _size_(vendor_specific_config) : 8,
+  vendor_specific_config : 8[],
+}
+
+packet ConfigureDataPathComplete : CommandComplete (command_op_code = CONFIGURE_DATA_PATH) {
+  status : ErrorCode,
+}
+
 
   // INFORMATIONAL_PARAMETERS
 packet ReadLocalVersionInformation : CommandPacket (op_code = READ_LOCAL_VERSION_INFORMATION) {
@@ -2135,16 +2171,82 @@ packet ReadBdAddrComplete : CommandComplete (command_op_code = READ_BD_ADDR) {
 packet ReadDataBlockSize : CommandPacket (op_code = READ_DATA_BLOCK_SIZE) {
 }
 
-packet ReadLocalSupportedCodecs : CommandPacket (op_code = READ_LOCAL_SUPPORTED_CODECS) {
+packet ReadLocalSupportedCodecsV1 : CommandPacket (op_code = READ_LOCAL_SUPPORTED_CODECS_V1) {
 }
 
-packet ReadLocalSupportedCodecsComplete : CommandComplete (command_op_code = READ_LOCAL_SUPPORTED_CODECS) {
+packet ReadLocalSupportedCodecsV1Complete : CommandComplete (command_op_code = READ_LOCAL_SUPPORTED_CODECS_V1) {
   status : ErrorCode,
   _size_(supported_codecs) : 8,
   supported_codecs : 8[],
   _size_(vendor_specific_codecs) : 8,
   vendor_specific_codecs : 32[],
 }
+
+packet ReadLocalSupportedCodecsV2 : CommandPacket (op_code = READ_LOCAL_SUPPORTED_CODECS_V2) {
+}
+
+group CodecTransport {
+  br_edr : 1,
+  br_edr_sco_and_esco : 1,
+  le_cis : 1,
+  le_bis : 1,
+  _reserved_ : 4,
+}
+
+struct CodecConfiguration {
+  codec_id : 8,
+  CodecTransport,
+}
+
+struct VendorCodecConfiguration {
+  company_id : 16,
+  codec_vendor_id : 16,
+  CodecTransport,
+}
+
+packet ReadLocalSupportedCodecsV2Complete : CommandComplete (command_op_code = READ_LOCAL_SUPPORTED_CODECS_V2) {
+  status : ErrorCode,
+  _size_(supported_codecs) : 8,
+  supported_codecs : CodecConfiguration[],
+  _size_(vendor_specific_codecs) : 8,
+  vendor_specific_codecs : VendorCodecConfiguration[],
+}
+
+packet ReadLocalSupportedCodecCapabilities : CommandPacket (op_code = READ_LOCAL_SUPPORTED_CODEC_CAPABILITIES) {
+  codec_id : 8,
+  company_id : 16,
+  codec_vendor_id : 16,
+  CodecTransport,
+  direction : DataPathDirection,
+}
+
+struct CodecCapability {
+  _size_(capability) : 8,
+  capability : 8[],
+}
+
+packet ReadLocalSupportedCodecCapabilitiesComplete : CommandComplete (command_op_code = READ_LOCAL_SUPPORTED_CODEC_CAPABILITIES) {
+  status : ErrorCode,
+  _count_(codec_capabilities) : 8,
+  codec_capabilities : CodecCapability[],
+}
+
+packet ReadLocalSupportedControllerDelay : CommandPacket (op_code = READ_LOCAL_SUPPORTED_CONTROLLER_DELAY) {
+  codec_id : 8,
+  company_id : 16,
+  codec_vendor_id : 16,
+  CodecTransport,
+  direction : DataPathDirection,
+  _size_(codec_configuration) : 8,
+  codec_configuration : 8[],
+}
+
+packet ReadLocalSupportedControllerDelayComplete : CommandComplete (command_op_code = READ_LOCAL_SUPPORTED_CONTROLLER_DELAY) {
+  status : ErrorCode,
+  min_controller_delay : 24,
+  max_controller_delay : 24,
+}
+
 
   // STATUS_PARAMETERS
 packet ReadFailedContactCounter : ConnectionManagementCommand (op_code = READ_FAILED_CONTACT_COUNTER) {
@@ -2303,7 +2405,7 @@ packet LeSetEventMaskComplete : CommandComplete (command_op_code = LE_SET_EVENT_
   status : ErrorCode,
 }
 
-packet LeReadBufferSize : CommandPacket (op_code = LE_READ_BUFFER_SIZE) {
+packet LeReadBufferSizeV1 : CommandPacket (op_code = LE_READ_BUFFER_SIZE_V1) {
 }
 
 struct LeBufferSize {
@@ -2311,7 +2413,7 @@ struct LeBufferSize {
   total_num_le_packets : 8,
 }
 
-packet LeReadBufferSizeComplete : CommandComplete (command_op_code = LE_READ_BUFFER_SIZE) {
+packet LeReadBufferSizeV1Complete : CommandComplete (command_op_code = LE_READ_BUFFER_SIZE_V1) {
   status : ErrorCode,
   le_buffer_size : LeBufferSize,
 }
@@ -3247,6 +3349,15 @@ packet LeModifySleepClockAccuracyComplete : CommandComplete (command_op_code = L
   status : ErrorCode,
 }
 
+packet LeReadBufferSizeV2 : CommandPacket (op_code = LE_READ_BUFFER_SIZE_V2) {
+}
+
+packet LeReadBufferSizeV2Complete : CommandComplete (command_op_code = LE_READ_BUFFER_SIZE_V2) {
+  status : ErrorCode,
+  le_buffer_size : LeBufferSize,
+  iso_buffer_size : LeBufferSize,
+}
+
 packet LeReadIsoTxSync : CommandPacket (op_code = LE_READ_ISO_TX_SYNC) {
   connection_handle : 12,
   _reserved_ : 4,
@@ -3412,11 +3523,6 @@ packet LeRequestPeerSca : CommandPacket (op_code = LE_REQUEST_PEER_SCA) {
 }
 
 packet LeRequestPeerScaStatus : CommandStatus (command_op_code = LE_REQUEST_PEER_SCA) {
-}
-
-enum DataPathDirection : 8 {
-  INPUT = 0,
-  OUTPUT = 1,
 }
 
 packet LeSetupIsoDataPath : CommandPacket (op_code = LE_SETUP_ISO_DATA_PATH) {
