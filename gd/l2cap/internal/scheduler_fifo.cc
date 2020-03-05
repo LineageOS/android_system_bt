@@ -33,6 +33,9 @@ Fifo::Fifo(DataPipelineManager* data_pipeline_manager, LowerQueueUpEnd* link_que
 // Invoked from some external Handler context
 Fifo::~Fifo() {
   // TODO(hsz): notify Sender don't send callback to me
+  if (link_queue_enqueue_registered_.exchange(false)) {
+    link_queue_up_end_->UnregisterEnqueue();
+  }
 }
 
 // Invoked within L2CAP Handler context
