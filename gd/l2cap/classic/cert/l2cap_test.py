@@ -38,7 +38,7 @@ from bluetooth_packets_python3.l2cap_packets import CommandCode
 from bluetooth_packets_python3.l2cap_packets import SupervisoryFunction
 from bluetooth_packets_python3.l2cap_packets import Poll
 from bluetooth_packets_python3.l2cap_packets import InformationRequestInfoType
-from cert_l2cap import CertL2cap
+from l2cap.classic.cert.cert_l2cap import CertL2cap
 
 # Assemble a sample packet. TODO: Use RawBuilder
 SAMPLE_PACKET = l2cap_packets.CommandRejectNotUnderstoodBuilder(1)

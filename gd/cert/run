@@ -34,16 +34,19 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
+BLUETOOTH_CERT_TEST_ENV=$ANDROID_BUILD_TOP/out/dist/bluetooth_cert_test_env
+rm -rf BLUETOOTH_CERT_TEST_ENV
+mkdir -p $BLUETOOTH_CERT_TEST_ENV
+
 unzip -o -q $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py.zip \
-   -d $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py
+   -d $BLUETOOTH_CERT_TEST_ENV
 
 unzip -o -q $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_test.zip \
-   -d $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_test
+   -d $BLUETOOTH_CERT_TEST_ENV
 
 pushd .
 cd $ANDROID_BUILD_TOP
-PYTHONPATH=$ANDROID_BUILD_TOP/out/host/linux-x86/lib64:$ANDROID_BUILD_TOP/system/bt/gd:$ANDROID_BUILD_TOP/out/dist/bluetooth_cert_test/system/bt/gd:$ANDROID_BUILD_TOP/system/bt/gd:$ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py/system/bt/gd:$PYTHONPATH \
-PATH=$ANDROID_BUILD_TOP/out/dist/bluetooth_cert_test/out/host/linux-x86/nativetest64/root-canal:$ANDROID_BUILD_TOP/out/dist/bluetooth_cert_test/out/host/linux-x86/bin:$PATH \
+PYTHONPATH=$BLUETOOTH_CERT_TEST_ENV/out/host/linux-x86/lib64:$BLUETOOTH_CERT_TEST_ENV/system/bt/gd:$PYTHONPATH \
     python3.8 `which act.py`\
       -c $TEST_CONFIG \
       $TEST_FILTER \
