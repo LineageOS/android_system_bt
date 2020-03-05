@@ -16,6 +16,7 @@
 
 #include "hci/acl_manager.h"
 
+#include <atomic>
 #include <future>
 #include <queue>
 #include <set>
@@ -81,16 +82,22 @@ struct AclManager::acl_connection {
   uint16_t number_of_sent_packets_ = 0;
   PacketViewForRecombination recombination_stage_{std::make_shared<std::vector<uint8_t>>()};
   int remaining_sdu_continuation_packet_size_ = 0;
-  bool enqueue_registered_ = false;
+  std::atomic_bool enqueue_registered_ = false;
   std::queue<packet::PacketView<kLittleEndian>> incoming_queue_;
 
+  ~acl_connection() {
+    if (enqueue_registered_.exchange(false)) {
+      queue_->GetDownEnd()->UnregisterEnqueue();
+    }
+    queue_.reset();
+  }
+
+  // Invoked from some external Queue Reactable context
   std::unique_ptr<packet::PacketView<kLittleEndian>> on_incoming_data_ready() {
     auto packet = incoming_queue_.front();
     incoming_queue_.pop();
-    if (incoming_queue_.empty()) {
-      auto queue_end = queue_->GetDownEnd();
-      queue_end->UnregisterEnqueue();
-      enqueue_registered_ = false;
+    if (incoming_queue_.empty() && enqueue_registered_.exchange(false)) {
+      queue_->GetDownEnd()->UnregisterEnqueue();
     }
     return std::make_unique<PacketView<kLittleEndian>>(packet);
   }
@@ -136,10 +143,8 @@ struct AclManager::acl_connection {
     }
 
     incoming_queue_.push(payload);
-    if (!enqueue_registered_) {
-      enqueue_registered_ = true;
-      auto queue_end = queue_->GetDownEnd();
-      queue_end->RegisterEnqueue(
+    if (!enqueue_registered_.exchange(true)) {
+      queue_->GetDownEnd()->RegisterEnqueue(
           handler_, common::Bind(&AclManager::acl_connection::on_incoming_data_ready, common::Unretained(this)));
     }
   }
@@ -224,6 +229,9 @@ struct AclManager::impl {
     hci_layer_->UnregisterEventHandler(EventCode::READ_REMOTE_EXTENDED_FEATURES_COMPLETE);
     hci_queue_end_->UnregisterDequeue();
     unregister_all_connections();
+    if (enqueue_registered_.exchange(false)) {
+      hci_queue_end_->UnregisterEnqueue();
+    }
     controller_->UnregisterCompletedAclPacketsCallback();
     acl_connections_.clear();
     hci_queue_end_ = nullptr;
@@ -312,14 +320,19 @@ struct AclManager::impl {
   }
 
   void send_next_fragment() {
-    hci_queue_end_->RegisterEnqueue(handler_,
-                                    common::Bind(&impl::handle_enqueue_next_fragment, common::Unretained(this)));
+    if (!enqueue_registered_.exchange(true)) {
+      hci_queue_end_->RegisterEnqueue(handler_,
+                                      common::Bind(&impl::handle_enqueue_next_fragment, common::Unretained(this)));
+    }
   }
 
+  // Invoked from some external Queue Reactable context 1
   std::unique_ptr<AclPacketBuilder> handle_enqueue_next_fragment() {
     ASSERT(acl_packet_credits_ > 0);
     if (acl_packet_credits_ == 1 || fragments_to_send_.size() == 1) {
-      hci_queue_end_->UnregisterEnqueue();
+      if (enqueue_registered_.exchange(false)) {
+        hci_queue_end_->UnregisterEnqueue();
+      }
       if (fragments_to_send_.size() == 1) {
         handler_->Post(common::BindOnce(&impl::start_round_robin, common::Unretained(this)));
       }
@@ -331,6 +344,7 @@ struct AclManager::impl {
     return std::unique_ptr<AclPacketBuilder>(raw_pointer);
   }
 
+  // Invoked from some external Queue Reactable context 2
   void dequeue_and_route_acl_packet_to_connection() {
     auto packet = hci_queue_end_->TryDequeue();
     ASSERT(packet != nullptr);
@@ -1909,6 +1923,7 @@ struct AclManager::impl {
   AclManagerCallbacks* le_acl_manager_client_callbacks_ = nullptr;
   os::Handler* le_acl_manager_client_handler_ = nullptr;
   common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* hci_queue_end_ = nullptr;
+  std::atomic_bool enqueue_registered_ = false;
   std::map<uint16_t, AclManager::acl_connection> acl_connections_;
   std::set<Address> connecting_;
   std::set<AddressWithType> connecting_le_;
