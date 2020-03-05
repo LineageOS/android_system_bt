@@ -467,3 +467,38 @@ cc_test {
         cfi: false,
     },
 }
+
+cc_test {
+    name: "net_test_stack_gatt_native",
+    defaults: ["fluoride_defaults"],
+    test_suites: ["device-tests"],
+    host_supported: true,
+    include_dirs: [
+        "system/bt",
+        "system/bt/stack/include",
+        "system/bt/stack/l2cap",
+        "system/bt/stack/btm",
+        "system/bt/utils/include",
+    ],
+    srcs: [
+        "test/gatt/gatt_sr_test.cc",
+        "gatt/gatt_utils.cc",
+    ],
+    shared_libs: [
+        "libcutils",
+        "libprotobuf-cpp-lite",
+        "libcrypto",
+    ],
+    static_libs: [
+        "liblog",
+        "libosi",
+        "libbt-common",
+        "libbt-protos-lite",
+        "libosi-AllocationTestHarness",
+    ],
+    sanitize: {
+        address: true,
+        cfi: true,
+        misc_undefined: ["bounds"],
+    },
+}
