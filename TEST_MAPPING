@@ -86,6 +86,10 @@
       "host" : true
     },
     {
+      "name" : "net_test_hci_fragmenter_native",
+      "host" : true
+    },
+    {
       "name" : "net_test_stack_a2dp_native",
       "host" : true
     }
