@@ -846,7 +846,7 @@ void LinkLayerController::HandleLeConnection(AddressWithType address,
       ErrorCode::SUCCESS, handle, static_cast<bluetooth::hci::Role>(role),
       address.GetAddressType(), address.GetAddress(), connection_interval,
       connection_latency, supervision_timeout,
-      static_cast<bluetooth::hci::MasterClockAccuracy>(0x00));
+      static_cast<bluetooth::hci::ClockAccuracy>(0x00));
   send_event_(std::move(packet));
 }
 
