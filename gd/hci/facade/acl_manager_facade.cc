@@ -116,12 +116,16 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
         LOG_ERROR("Invalid handle");
         return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Invalid handle");
       } else {
+        // TODO: This is unsafe because connection may have gone
         connection->second->GetAclQueueEnd()->RegisterEnqueue(
             facade_handler_, common::Bind(&AclManagerFacadeService::enqueue_packet, common::Unretained(this),
                                           common::Unretained(request), common::Passed(std::move(promise))));
       }
     }
-    future.wait();
+    auto status = future.wait_for(std::chrono::milliseconds(1000));
+    if (status != std::future_status::ready) {
+      return ::grpc::Status(::grpc::StatusCode::RESOURCE_EXHAUSTED, "Can't send packet");
+    }
     return ::grpc::Status::OK;
   }
 
