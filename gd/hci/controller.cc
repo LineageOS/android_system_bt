@@ -140,12 +140,23 @@ struct Controller::impl {
 
   void RegisterCompletedAclPacketsCallback(Callback<void(uint16_t /* handle */, uint16_t /* packets */)> cb,
                                            Handler* handler) {
+    module_.GetHandler()->Post(common::BindOnce(&impl::register_completed_acl_packets_callback,
+                                                common::Unretained(this), cb, common::Unretained(handler)));
+  }
+
+  void register_completed_acl_packets_callback(Callback<void(uint16_t /* handle */, uint16_t /* packets */)> cb,
+                                               Handler* handler) {
     ASSERT(acl_credits_handler_ == nullptr);
     acl_credits_callback_ = cb;
     acl_credits_handler_ = handler;
   }
 
   void UnregisterCompletedAclPacketsCallback() {
+    module_.GetHandler()->Post(
+        common::BindOnce(&impl::unregister_completed_acl_packets_callback, common::Unretained(this)));
+  }
+
+  void unregister_completed_acl_packets_callback() {
     ASSERT(acl_credits_handler_ != nullptr);
     acl_credits_callback_ = {};
     acl_credits_handler_ = nullptr;
