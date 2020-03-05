@@ -309,6 +309,7 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
           config->monitor_time_out_ = 12000;
         }
         configuration_state.remote_retransmission_and_flow_control_ = *config;
+        configuration_state.retransmission_and_flow_control_mode_ = config->mode_;
         rsp_options.emplace_back(std::make_unique<RetransmissionAndFlowControlConfigurationOption>(*config));
         break;
       }
