@@ -107,7 +107,7 @@ class MetricIdAllocator {
   MetricIdAllocator();
 
  private:
-  static const std::string LOG_TAG;
+  static const std::string LOGGING_TAG;
   mutable std::mutex id_allocator_mutex_;
 
   LruCache<RawAddress, int> paired_device_cache_;
