@@ -33,10 +33,12 @@ Receiver::Receiver(LowerQueueUpEnd* link_queue_up_end, os::Handler* handler,
                                       common::Bind(&Receiver::link_queue_dequeue_callback, common::Unretained(this)));
 }
 
+// Invoked from external handler/thread (ModuleRegistry)
 Receiver::~Receiver() {
   link_queue_up_end_->UnregisterDequeue();
 }
 
+// Invoked from external (Queue Reactable)
 void Receiver::link_queue_dequeue_callback() {
   auto packet = link_queue_up_end_->TryDequeue();
   auto basic_frame_view = BasicFrameView::Create(*packet);
@@ -47,6 +49,7 @@ void Receiver::link_queue_dequeue_callback() {
   Cid cid = static_cast<Cid>(basic_frame_view.GetChannelId());
   auto* data_controller = data_pipeline_manager_->GetDataController(cid);
   if (data_controller == nullptr) {
+    // TODO(b/150170271): Buffer a few packets before data controller is attached
     LOG_WARN("Received a packet with invalid cid: %d", cid);
     return;
   }
