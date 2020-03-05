@@ -162,7 +162,7 @@ class CertL2cap(Closable):
     def turn_on_ertm(self, tx_window_size=10, max_transmit=20):
         self.ertm_option = l2cap_packets.RetransmissionAndFlowControlConfigurationOption(
         )
-        self.ertm_option.mode = l2cap_packets.RetransmissionAndFlowControlModeOption.L2CAP_BASIC
+        self.ertm_option.mode = l2cap_packets.RetransmissionAndFlowControlModeOption.ENHANCED_RETRANSMISSION
         self.ertm_option.tx_window_size = tx_window_size
         self.ertm_option.max_transmit = max_transmit
         self.ertm_option.retransmission_time_out = 2000
