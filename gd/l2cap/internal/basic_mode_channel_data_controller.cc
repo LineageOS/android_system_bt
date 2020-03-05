@@ -27,6 +27,10 @@ BasicModeDataController::BasicModeDataController(Cid cid, Cid remote_cid, UpperQ
     : cid_(cid), remote_cid_(remote_cid), enqueue_buffer_(channel_queue_end), handler_(handler), scheduler_(scheduler) {
 }
 
+BasicModeDataController::~BasicModeDataController() {
+  enqueue_buffer_.Clear();
+}
+
 void BasicModeDataController::OnSdu(std::unique_ptr<packet::BasePacketBuilder> sdu) {
   auto l2cap_information = BasicFrameBuilder::Create(remote_cid_, std::move(sdu));
   pdu_queue_.emplace(std::move(l2cap_information));
