@@ -46,6 +46,8 @@ interface IBluetoothManager
     String getAddress();
     String getName();
 
+    boolean onFactoryReset();
+
     boolean isBleScanAlwaysAvailable();
     int updateBleAppCount(IBinder b, boolean enable, String packageName);
     boolean isBleAppPresent();
