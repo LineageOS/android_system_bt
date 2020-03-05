@@ -309,7 +309,33 @@ enum OpCode : 16 {
   LE_READ_RF_PATH_COMPENSATION_POWER = 0x204C,
   LE_WRITE_RF_PATH_COMPENSATION_POWER = 0x204D,
   LE_SET_PRIVACY_MODE = 0x204E,
+  LE_SET_PERIODIC_ADVERTISING_RECEIVE_ENABLE = 0X2059,
+  LE_PERIODIC_ADVERTISING_SYNC_TRANSFER = 0X205A,
+  LE_PERIODIC_ADVERTISING_SET_INFO_TRANSFER = 0X205B,
+  LE_SET_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS = 0X205C,
+  LE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS = 0X205D,
   LE_GENERATE_DHKEY_COMMAND = 0x205E,
+  LE_MODIFY_SLEEP_CLOCK_ACCURACY = 0X205F,
+  LE_READ_ISO_TX_SYNC = 0X2061,
+  LE_SET_CIG_PARAMETERS = 0X2062,
+  LE_CREATE_CIS = 0X2064,
+  LE_REMOVE_CIG = 0X2065,
+  LE_ACCEPT_CIS_REQUEST = 0X2066,
+  LE_REJECT_CIS_REQUEST = 0X2067,
+  LE_CREATE_BIG = 0X2068,
+  LE_TERMINATE_BIG = 0X206A,
+  LE_BIG_CREATE_SYNC = 0X206B,
+  LE_BIG_TERMINATE_SYNC = 0X206C,
+  LE_REQUEST_PEER_SCA = 0X206D,
+  LE_SETUP_ISO_DATA_PATH = 0X206E,
+  LE_REMOVE_ISO_DATA_PATH = 0X206F,
+  LE_SET_HOST_FEATURE = 0X2074,
+  LE_READ_ISO_LINK_QUALITY = 0X2075,
+  LE_ENHANCED_READ_TRANSMIT_POWER_LEVEL = 0X2076,
+  LE_READ_REMOTE_TRANSMIT_POWER_LEVEL = 0X2077,
+  LE_SET_PATH_LOSS_REPORTING_PARAMETERS = 0X2078,
+  LE_SET_PATH_LOSS_REPORTING_ENABLE = 0X2079,
+  LE_SET_TRANSMIT_POWER_REPORTING_ENABLE = 0X207A,
 
   // VENDOR_SPECIFIC
   LE_GET_VENDOR_CAPABILITIES = 0xFD53,
@@ -540,7 +566,34 @@ enum OpCodeIndex : 16 {
   LE_READ_RF_PATH_COMPENSATION_POWER = 390,
   LE_WRITE_RF_PATH_COMPENSATION_POWER = 391,
   LE_SET_PRIVACY_MODE = 392,
+
+  LE_SET_PERIODIC_ADVERTISING_RECEIVE_ENABLE = 405,
+  LE_PERIODIC_ADVERTISING_SYNC_TRANSFER = 406,
+  LE_PERIODIC_ADVERTISING_SET_INFO_TRANSFER = 407,
+  LE_SET_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS = 410,
+  LE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS = 411,
   LE_GENERATE_DHKEY_COMMAND = 412,
+  LE_MODIFY_SLEEP_CLOCK_ACCURACY = 414,
+  LE_READ_ISO_TX_SYNC = 416,
+  LE_SET_CIG_PARAMETERS = 417,
+  LE_CREATE_CIS = 421,
+  LE_REMOVE_CIG = 422,
+  LE_ACCEPT_CIS_REQUEST = 423,
+  LE_REJECT_CIS_REQUEST = 424,
+  LE_CREATE_BIG = 425,
+  LE_TERMINATE_BIG = 427,
+  LE_BIG_CREATE_SYNC = 430,
+  LE_BIG_TERMINATE_SYNC = 431,
+  LE_REQUEST_PEER_SCA = 432,
+  LE_SETUP_ISO_DATA_PATH = 433,
+  LE_REMOVE_ISO_DATA_PATH = 434,
+  LE_SET_HOST_FEATURE = 441,
+  LE_READ_ISO_LINK_QUALITY = 442,
+  LE_ENHANCED_READ_TRANSMIT_POWER_LEVEL = 443,
+  LE_READ_REMOTE_TRANSMIT_POWER_LEVEL = 444,
+  LE_SET_PATH_LOSS_REPORTING_PARAMETERS = 445,
+  LE_SET_PATH_LOSS_REPORTING_ENABLE = 446,
+  LE_SET_TRANSMIT_POWER_REPORTING_ENABLE = 447,
 }
 
 packet CommandPacket {
@@ -647,6 +700,21 @@ enum SubeventCode : 8 {
   SCAN_TIMEOUT = 0x11,
   ADVERTISING_SET_TERMINATED = 0x12,
   SCAN_REQUEST_RECEIVED = 0x13,
+  CHANNEL_SELECTION_ALGORITHM = 0X14,
+  CONNECTIONLESS_IQ_REPORT = 0X15,
+  CONNECTION_IQ_REPORT = 0X16,
+  CTE_REQUEST_FAILED = 0X17,
+  PERIODIC_ADVERTISING_SYNC_TRANSFER_RECEIVED = 0X18,
+  CIS_ESTABLISHED = 0X19,
+  CIS_REQUEST = 0X1A,
+  CREATE_BIG_COMPLETE = 0X1B,
+  TERMINATE_BIG_COMPLETE = 0X1C,
+  BIG_SYNC_ESTABLISHED = 0X1D,
+  BIG_SYNC_LOST = 0X1E,
+  REQUEST_PEER_SCA_COMPLETE = 0X1F,
+  PATH_LOSS_THRESHOLD = 0X20,
+  TRANSMIT_POWER_REPORTING = 0X21,
+  BIG_INFO_ADVERTISING_REPORT = 0X22,
 }
 
 // Vendor specific events
@@ -3088,6 +3156,71 @@ packet LeSetPrivacyModeComplete : CommandComplete (command_op_code = LE_SET_PRIV
   status : ErrorCode,
 }
 
+packet LeSetPeriodicAdvertisingReceiveEnable : CommandPacket (op_code = LE_SET_PERIODIC_ADVERTISING_RECEIVE_ENABLE) {
+  sync_handle : 12,
+  _reserved_ : 4,
+  enable : 8,
+}
+
+packet LeSetPeriodicAdvertisingReceiveEnableComplete : CommandComplete (command_op_code = LE_SET_PERIODIC_ADVERTISING_RECEIVE_ENABLE) {
+  status : ErrorCode,
+}
+
+packet LePeriodicAdvertisingSyncTransfer : CommandPacket (op_code = LE_PERIODIC_ADVERTISING_SYNC_TRANSFER) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  service_data : 16,
+  sync_handle: 12,
+  _reserved_ : 4,
+}
+
+packet LePeriodicAdvertisingSyncTransferComplete : CommandComplete (command_op_code = LE_PERIODIC_ADVERTISING_SYNC_TRANSFER) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+packet LePeriodicAdvertisingSetInfoTransfer : CommandPacket (op_code = LE_PERIODIC_ADVERTISING_SET_INFO_TRANSFER) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  service_data : 16,
+  advertising_handle: 8,
+}
+
+packet LePeriodicAdvertisingSetInfoTransferComplete : CommandComplete (command_op_code = LE_PERIODIC_ADVERTISING_SET_INFO_TRANSFER) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+enum SyncTransferMode : 8 {
+  NO_SYNC = 0,
+  SEND_SYNC_RECEIVED_DISABLE_REPORTS = 1,
+  SEND_SYNC_RECEIVED_SEND_REPORTS = 2,
+}
+
+packet LeSetPeriodicAdvertisingSyncTransferParameters : CommandPacket (op_code = LE_SET_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  mode : SyncTransferMode,
+  skip: 16,
+  sync_timeout : 16,
+  cte_type : 8,
+}
+
+packet LeSetPeriodicAdvertisingSyncTransferParametersComplete : CommandComplete (command_op_code = LE_SET_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+packet LeSetDefaultPeriodicAdvertisingSyncTransferParameters : CommandPacket (op_code = LE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS) {
+  mode : SyncTransferMode,
+  skip: 16,
+  sync_timeout : 16,
+  cte_type : 8,
+}
+
 enum UseDebugKey : 8 {
   USE_GENERATED_KEY = 0,
   USE_DEBUG_KEY = 1,
@@ -3099,6 +3232,319 @@ packet LeGenerateDhkeyCommand : LeSecurityCommand (op_code = LE_GENERATE_DHKEY_C
 }
 
 packet LeGenerateDhkeyCommandStatus : CommandStatus (command_op_code = LE_GENERATE_DHKEY_COMMAND) {
+}
+
+enum ScaAction : 8 {
+  MORE_ACCURATE_CLOCK = 0,
+  LESS_ACCURATE_CLOCK = 1,
+}
+
+packet LeModifySleepClockAccuracy : CommandPacket (op_code = LE_MODIFY_SLEEP_CLOCK_ACCURACY) {
+  action : ScaAction,
+}
+
+packet LeModifySleepClockAccuracyComplete : CommandComplete (command_op_code = LE_MODIFY_SLEEP_CLOCK_ACCURACY) {
+  status : ErrorCode,
+}
+
+packet LeReadIsoTxSync : CommandPacket (op_code = LE_READ_ISO_TX_SYNC) {
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+packet LeReadIsoTxSyncComplete : CommandComplete (command_op_code = LE_READ_ISO_TX_SYNC) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  packet_sequence_number : 16,
+  timestamp : 32,
+  time_offset : 24,
+}
+
+struct CisParametersConfig {
+  cis_id : 8,
+  max_sdu_m_to_s : 12,
+  _reserved_ : 4,
+  max_sdu_s_to_m : 12,
+  _reserved_ : 4,
+  phy_m_to_s : SecondaryPhyType,
+  phy_s_to_m : SecondaryPhyType,
+  rtn_m_to_s : 4,
+  _reserved_ : 4,
+  rtn_s_to_m : 4,
+  _reserved_ : 4,
+}
+
+enum Packing : 8 {
+  SEQUENTIAL = 0,
+  INTERLEAVED = 1,
+}
+
+enum ClockAccuracy : 8 {
+  PPM_500 = 0x00,
+  PPM_250 = 0x01,
+  PPM_150 = 0x02,
+  PPM_100 = 0x03,
+  PPM_75 = 0x04,
+  PPM_50 = 0x05,
+  PPM_30 = 0x06,
+  PPM_20 = 0x07,
+}
+
+packet LeSetCigParameters : CommandPacket (op_code = LE_SET_CIG_PARAMETERS) {
+  cig_id : 8,
+  sdu_interval_m_to_s : 24,
+  sdu_interval_s_to_m : 24,
+  slaves_clock_accuracy : ClockAccuracy,
+  packing : Packing,
+  framing : Enable,
+  max_transport_latency_m_to_s : 16,
+  max_transport_latency_s_to_m : 16,
+  _count_(cis_config) : 8,
+  cis_config : CisParametersConfig[],
+}
+
+packet LeSetCigParametersComplete : CommandComplete (command_op_code = LE_SET_CIG_PARAMETERS) {
+  status : ErrorCode,
+  cig_id : 8,
+  _count_(connection_handle) : 8,
+  connection_handle : 16[],
+}
+
+struct CreateCisConfig {
+  cis_connection_handle : 12,
+  _reserved_ : 4,
+  acl_connection_handle : 12,
+  _reserved_ : 4,
+}
+
+packet LeCreateCis : CommandPacket (op_code = LE_CREATE_CIS) {
+  _count_(cis_config) : 8,
+  cis_config : CreateCisConfig[],
+}
+
+packet LeCreateCisStatus : CommandStatus (command_op_code = LE_CREATE_CIS) {
+}
+
+packet LeRemoveCig : CommandPacket (op_code = LE_REMOVE_CIG) {
+  cig_id : 8,
+}
+
+packet LeRemoveCigComplete : CommandComplete (command_op_code = LE_REMOVE_CIG) {
+  status : ErrorCode,
+  cig_id : 8,
+}
+
+packet LeAcceptCisRequest : CommandPacket (op_code = LE_ACCEPT_CIS_REQUEST) {
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+packet LeAcceptCisRequestStatus : CommandStatus (command_op_code = LE_ACCEPT_CIS_REQUEST) {
+}
+
+packet LeRejectCisRequest : CommandPacket (op_code = LE_REJECT_CIS_REQUEST) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  reason : ErrorCode,
+}
+
+packet LeRejectCisRequestComplete : CommandComplete (command_op_code = LE_REJECT_CIS_REQUEST) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+packet LeCreateBig : CommandPacket (op_code = LE_CREATE_BIG) {
+  big_handle : 8,
+  advertising_handle : 8,
+  num_bis : 8,
+  sdu_interval : 24,
+  max_sdu : 16,
+  max_transport_latency : 16,
+  rtn : 4,
+  _reserved_ : 4,
+  phy : SecondaryPhyType,
+  packing : Packing,
+  framing : Enable,
+  encryption : Enable,
+  broadcast_code: 16[],
+}
+
+packet LeCreateBigStatus : CommandStatus (command_op_code = LE_CREATE_BIG) {
+}
+
+packet LeTerminateBig : CommandPacket (op_code = LE_TERMINATE_BIG) {
+  big_handle : 8,
+  reason : ErrorCode,
+}
+
+packet LeTerminateBigStatus : CommandStatus (command_op_code = LE_TERMINATE_BIG) {
+}
+
+packet LeBigCreateSync : CommandPacket (op_code = LE_BIG_CREATE_SYNC) {
+  big_handle : 8,
+  sync_handle : 12,
+  _reserved_ : 4,
+  encryption : Enable,
+  broadcast_code : 16[],
+  mse : 5,
+  _reserved_ : 3,
+  big_sync_timeout : 16,
+  _count_(bis) : 8,
+  bis : 8[],
+}
+
+packet LeBigCreateSyncStatus : CommandStatus (command_op_code = LE_BIG_CREATE_SYNC) {
+}
+
+packet LeBigTerminateSync : CommandPacket (op_code = LE_BIG_TERMINATE_SYNC) {
+  big_handle : 8,
+}
+
+packet LeBigTerminateSyncComplete : CommandComplete (command_op_code = LE_BIG_TERMINATE_SYNC) {
+  status : ErrorCode,
+  big_handle : 8,
+}
+
+packet LeRequestPeerSca : CommandPacket (op_code = LE_REQUEST_PEER_SCA) {
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+packet LeRequestPeerScaStatus : CommandStatus (command_op_code = LE_REQUEST_PEER_SCA) {
+}
+
+enum DataPathDirection : 8 {
+  INPUT = 0,
+  OUTPUT = 1,
+}
+
+packet LeSetupIsoDataPath : CommandPacket (op_code = LE_SETUP_ISO_DATA_PATH) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  data_path_direction : DataPathDirection,
+  data_path_id : 8,
+  codec_id : 40,
+  controller_delay : 24,
+  _count_(codec_configuration) : 8,
+  codec_configuration : 8[],
+}
+
+packet LeSetupIsoDataPathComplete : CommandComplete (command_op_code = LE_SETUP_ISO_DATA_PATH) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+packet LeRemoveIsoDataPath : CommandPacket (op_code = LE_REMOVE_ISO_DATA_PATH) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  data_path_direction : DataPathDirection,
+}
+
+packet LeRemoveIsoDataPathComplete : CommandComplete (command_op_code = LE_REMOVE_ISO_DATA_PATH) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+packet LeSetHostFeature : CommandPacket (op_code = LE_SET_HOST_FEATURE) {
+  bit_number : 8,
+  bit_value:  Enable,
+}
+
+packet LeSetHostFeatureComplete : CommandComplete (command_op_code = LE_SET_HOST_FEATURE) {
+  status : ErrorCode,
+}
+
+packet LeReadIsoLinkQuality : CommandPacket (op_code = LE_READ_ISO_LINK_QUALITY) {
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+packet LeReadIsoLinkQualityComplete : CommandComplete (command_op_code = LE_READ_ISO_LINK_QUALITY) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+  tx_unacked_packets : 32,
+  tx_flushed_packets : 32,
+  tx_last_subevent_packets : 32,
+  retransmitted_packets : 32,
+  crc_error_packets : 32,
+  rx_unreceived_packets : 32,
+  duplicate_packets : 32,
+}
+
+packet LeEnhancedReadTransmitPowerLevel : CommandPacket (op_code = LE_ENHANCED_READ_TRANSMIT_POWER_LEVEL) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  phy : 8,
+}
+
+enum PhyWithCodedSpecified : 8 {
+  LE_1M = 1,
+  LE_2M = 2,
+  LE_CODED_S_8 = 3,
+  LE_CODED_S_2 = 4,
+}
+
+packet LeEnhancedReadTransmitPowerLevelComplete : CommandComplete (command_op_code = LE_ENHANCED_READ_TRANSMIT_POWER_LEVEL) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+  phy : PhyWithCodedSpecified,
+  current_transmit_power_level : 8,
+  max_transmit_power_level : 8,
+}
+
+packet LeReadRemoteTransmitPowerLevel : CommandPacket (op_code = LE_READ_REMOTE_TRANSMIT_POWER_LEVEL) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  phy : 8,
+}
+
+packet LeReadRemoteTransmitPowerLevelStatus : CommandStatus (command_op_code = LE_READ_REMOTE_TRANSMIT_POWER_LEVEL) {
+}
+
+packet LeSetPathLossReportingParameters : CommandPacket (op_code = LE_SET_PATH_LOSS_REPORTING_PARAMETERS) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  high_threshold : 8,
+  high_hysteresis : 8,
+  low_threshold : 8,
+  low_hysteresis : 8,
+  min_time_spent : 16,
+}
+
+packet LeSetPathLossReportingParametersComplete : CommandComplete (command_op_code = LE_SET_PATH_LOSS_REPORTING_PARAMETERS) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+packet LeSetPathLossReportingEnable : CommandPacket (op_code = LE_SET_PATH_LOSS_REPORTING_ENABLE) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  enable : 8,
+}
+
+packet LeSetPathLossReportingEnableComplete : CommandComplete (command_op_code = LE_SET_PATH_LOSS_REPORTING_ENABLE) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+}
+
+packet LeSetTransmitPowerReportingEnable : CommandPacket (op_code = LE_SET_TRANSMIT_POWER_REPORTING_ENABLE) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  local_enable : 8,
+  remote_enable : 8,
+}
+
+packet LeSetTransmitPowerReportingEnableComplete : CommandComplete (command_op_code = LE_SET_TRANSMIT_POWER_REPORTING_ENABLE) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
 }
 
   // VENDOR_SPECIFIC
@@ -3664,18 +4110,6 @@ packet NumberOfCompletedDataBlocks : EventPacket (event_code = NUMBER_OF_COMPLET
 }
 
 // LE Events
-
-enum MasterClockAccuracy : 8 {
-  PPM_500 = 0x00,
-  PPM_250 = 0x01,
-  PPM_150 = 0x02,
-  PPM_100 = 0x03,
-  PPM_75 = 0x04,
-  PPM_50 = 0x05,
-  PPM_30 = 0x06,
-  PPM_20 = 0x07,
-}
-
 packet LeConnectionComplete : LeMetaEvent (subevent_code = CONNECTION_COMPLETE) {
   status : ErrorCode,
   connection_handle : 12,
@@ -3686,7 +4120,7 @@ packet LeConnectionComplete : LeMetaEvent (subevent_code = CONNECTION_COMPLETE) 
   conn_interval : 16, // 0x006 - 0x0C80 (7.5ms - 4000ms)
   conn_latency : 16,  // Number of connection events
   supervision_timeout : 16,  // 0x000A to 0x0C80 (100ms to 32s)
-  master_clock_accuracy : MasterClockAccuracy,
+  master_clock_accuracy : ClockAccuracy,
 }
 
 struct LeAdvertisingReport {
@@ -3767,7 +4201,7 @@ packet LeEnhancedConnectionComplete : LeMetaEvent (subevent_code = ENHANCED_CONN
   conn_interval : 16, // 0x006 - 0x0C80 (7.5ms - 4000ms)
   conn_latency : 16,  // Number of connection events
   supervision_timeout : 16,  // 0x000A to 0x0C80 (100ms to 32s)
-  master_clock_accuracy : MasterClockAccuracy,
+  master_clock_accuracy : ClockAccuracy,
 }
 
 enum DirectAdvertisingAddressType : 8 {
@@ -3866,6 +4300,166 @@ packet LeScanRequestReceived : LeMetaEvent (subevent_code = SCAN_REQUEST_RECEIVE
   advertising_handle : 8,
   scanner_address_type : AddressType,
   scanner_address : Address,
+}
+
+enum ChannelSelectionAlGorithm : 8 {
+  ALGORITHM1 = 0,
+  ALGORITHM2 = 1,
+}
+
+packet LeChannelSelectionAlgorithm : LeMetaEvent (subevent_code = CHANNEL_SELECTION_ALGORITHM) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  channel_selection_algorithm : ChannelSelectionAlGorithm,
+}
+
+packet LeConnectionlessIqReport : LeMetaEvent (subevent_code = CONNECTIONLESS_IQ_REPORT) {
+  _payload_, // placeholder (unimplemented)
+}
+
+packet LeConnectionIqReport : LeMetaEvent (subevent_code = CONNECTION_IQ_REPORT) {
+  _payload_, // placeholder (unimplemented)
+}
+
+packet LeCteRequestFailed : LeMetaEvent (subevent_code = CTE_REQUEST_FAILED) {
+  _payload_, // placeholder (unimplemented)
+}
+
+packet LePeriodicAdvertisingSyncTransferReceived : LeMetaEvent (subevent_code = PERIODIC_ADVERTISING_SYNC_TRANSFER_RECEIVED) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+  service_data : 16,
+  sync_handle : 12,
+  _reserved_ : 4,
+  advertising_sid : 4,
+  _reserved_ : 4,
+  advertiser_address_type : AddressType,
+  advertiser_address : Address,
+  advertiser_phy : SecondaryPhyType,
+  periodic_advertising_interval : 16,
+  advertiser_clock_accuracy : ClockAccuracy,
+}
+
+packet LeCisEstablished : LeMetaEvent (subevent_code = CIS_ESTABLISHED) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+  cig_sync_delay : 24,
+  cis_sync_delay : 24,
+  transport_latency_m_to_s : 24,
+  transport_latency_s_to_m : 24,
+  phy_m_to_s : SecondaryPhyType,
+  phy_s_to_m : SecondaryPhyType,
+  nse : 8,
+  bn_m_to_s : 4,
+  _reserved_ : 4,
+  bn_s_to_m : 4,
+  _reserved_ : 4,
+  ft_m_to_s : 8,
+  ft_s_to_m : 8,
+  max_pdu_m_to_s : 8,
+  _reserved_ : 8,
+  max_pdu_s_to_m : 8,
+  _reserved_ : 8,
+  iso_interval : 16,
+}
+
+packet LeCisRequest : LeMetaEvent (subevent_code = CIS_REQUEST) {
+  acl_connection_handle : 12,
+  _reserved_ : 4,
+  cis_connection_handle : 12,
+  _reserved_ : 4,
+  cig_id : 8,
+  cis_id : 8,
+}
+
+packet LeCreateBigComplete : LeMetaEvent (subevent_code = CREATE_BIG_COMPLETE) {
+  status : ErrorCode,
+  big_handle : 8,
+  big_sync_delay : 24,
+  transport_latency_big: 24,
+  phy : SecondaryPhyType,
+  nse : 8,
+  bn : 8,
+  pto : 8,
+  irc : 8,
+  max_pdu : 16,
+  iso_interval : 16,
+  _size_(connection_handle) : 8,
+  connection_handle : 16[],
+}
+
+packet LeTerminateBigComplete : LeMetaEvent (subevent_code = TERMINATE_BIG_COMPLETE) {
+  big_handle : 8,
+  reason : ErrorCode,
+}
+
+packet LeBigSyncEstablished : LeMetaEvent (subevent_code = BIG_SYNC_ESTABLISHED) {
+  status : ErrorCode,
+  big_handle : 8,
+  transport_latency_big : 24,
+  nse : 8,
+  bn : 8,
+  pto : 8,
+  irc : 8,
+  max_pdu : 16,
+  iso_interval : 16,
+  _size_(connection_handle) : 8,
+  connection_handle : 16[],
+}
+
+packet LeBigSyncLost : LeMetaEvent (subevent_code = BIG_SYNC_LOST) {
+  big_handle : 8,
+  reason : ErrorCode,
+}
+
+packet LeRequestPeerScaComplete : LeMetaEvent (subevent_code = REQUEST_PEER_SCA_COMPLETE) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+  peer_clock_accuracy : ClockAccuracy,
+}
+
+enum PathLossZone : 8 {
+  LOW = 0,
+  MID = 1,
+  HIGH = 2,
+}
+
+packet LePathLossThreshold : LeMetaEvent (subevent_code = PATH_LOSS_THRESHOLD) {
+  connection_handle : 12,
+  _reserved_ : 4,
+  current_path_loss : 8,
+  zone_entered : PathLossZone,
+}
+
+packet LeTransmitPowerReporting : LeMetaEvent (subevent_code = TRANSMIT_POWER_REPORTING) {
+  status : ErrorCode,
+  connection_handle : 12,
+  _reserved_ : 4,
+  reason : 8,
+  phy : 8,
+  transmit_power_level : 8,
+  transmit_power_level_flag : 8,
+  delta : 8,
+}
+
+packet LeBigInfoAdvertisingReport : LeMetaEvent (subevent_code = BIG_INFO_ADVERTISING_REPORT) {
+  sync_handle : 12,
+  _reserved_ : 4,
+  num_bis : 8,
+  nse : 8,
+  iso_interval : 16,
+  bn : 8,
+  pto : 8,
+  irc : 8,
+  max_pdu : 16,
+  sdu_interval : 24,
+  max_sdu : 16,
+  phy : SecondaryPhyType,
+  framing : Enable,
+  encryption : Enable,
 }
 
 // Vendor specific events
