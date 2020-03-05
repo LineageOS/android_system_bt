@@ -34,7 +34,9 @@ ErtmController::ErtmController(ILink* link, Cid cid, Cid remote_cid, UpperQueueD
     : link_(link), cid_(cid), remote_cid_(remote_cid), enqueue_buffer_(channel_queue_end), handler_(handler),
       scheduler_(scheduler), pimpl_(std::make_unique<impl>(this, handler)) {}
 
-ErtmController::~ErtmController() = default;
+ErtmController::~ErtmController() {
+  enqueue_buffer_.Clear();
+}
 
 struct ErtmController::impl {
   impl(ErtmController* controller, os::Handler* handler)
