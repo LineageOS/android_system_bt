@@ -121,10 +121,10 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
             facade_handler_, common::Bind(&AclManagerFacadeService::enqueue_packet, common::Unretained(this),
                                           common::Unretained(request), common::Passed(std::move(promise))));
       }
-    }
-    auto status = future.wait_for(std::chrono::milliseconds(1000));
-    if (status != std::future_status::ready) {
-      return ::grpc::Status(::grpc::StatusCode::RESOURCE_EXHAUSTED, "Can't send packet");
+      auto status = future.wait_for(std::chrono::milliseconds(1000));
+      if (status != std::future_status::ready) {
+        return ::grpc::Status(::grpc::StatusCode::RESOURCE_EXHAUSTED, "Can't send packet");
+      }
     }
     return ::grpc::Status::OK;
   }
