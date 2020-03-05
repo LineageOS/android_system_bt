@@ -36,12 +36,12 @@
  *  Constants & Macros
  ******************************************************************************/
 
-#define ASSERTC(cond, msg, val)                                              \
-  do {                                                                       \
-    if (!(cond)) {                                                           \
-      LOG_ERROR(LOG_TAG, "### ASSERT : %s %s line %d %s (%d) ###", __FILE__, \
-                __func__, __LINE__, (msg), (val));                           \
-    }                                                                        \
+#define ASSERTC(cond, msg, val)                                               \
+  do {                                                                        \
+    if (!(cond)) {                                                            \
+      LOG_ERROR("### ASSERT : %s %s line %d %s (%d) ###", __FILE__, __func__, \
+                __LINE__, (msg), (val));                                      \
+    }                                                                         \
   } while (0)
 
 /* Calculate start of event enumeration; id is top 8 bits of event */

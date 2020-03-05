@@ -150,8 +150,7 @@ bool thread_set_priority(thread_t* thread, int priority) {
 
   const int rc = setpriority(PRIO_PROCESS, thread->tid, priority);
   if (rc < 0) {
-    LOG_ERROR(LOG_TAG,
-              "%s unable to set thread priority %d for tid %d, error %d",
+    LOG_ERROR("%s unable to set thread priority %d for tid %d, error %d",
               __func__, priority, thread->tid, rc);
     return false;
   }
@@ -167,8 +166,7 @@ bool thread_set_rt_priority(thread_t* thread, int priority) {
 
   const int rc = sched_setscheduler(thread->tid, SCHED_FIFO, &rt_params);
   if (rc != 0) {
-    LOG_ERROR(LOG_TAG,
-              "%s unable to set SCHED_FIFO priority %d for tid %d, error %s",
+    LOG_ERROR("%s unable to set SCHED_FIFO priority %d for tid %d, error %s",
               __func__, priority, thread->tid, strerror(errno));
     return false;
   }
@@ -200,16 +198,15 @@ static void* run_thread(void* start_arg) {
   CHECK(thread != NULL);
 
   if (prctl(PR_SET_NAME, (unsigned long)thread->name) == -1) {
-    LOG_ERROR(LOG_TAG, "%s unable to set thread name: %s", __func__,
-              strerror(errno));
+    LOG_ERROR("%s unable to set thread name: %s", __func__, strerror(errno));
     start->error = errno;
     semaphore_post(start->start_sem);
     return NULL;
   }
   thread->tid = gettid();
 
-  LOG_INFO(LOG_TAG, "%s: thread id %d, thread name %s started", __func__,
-           thread->tid, thread->name);
+  LOG_INFO("%s: thread id %d, thread name %s started", __func__, thread->tid,
+           thread->name);
 
   semaphore_post(start->start_sem);
 
@@ -236,10 +233,10 @@ static void* run_thread(void* start_arg) {
   }
 
   if (count > fixed_queue_capacity(thread->work_queue))
-    LOG_DEBUG(LOG_TAG, "%s growing event queue on shutdown.", __func__);
+    LOG_DEBUG("%s growing event queue on shutdown.", __func__);
 
-  LOG_WARN(LOG_TAG, "%s: thread id %d, thread name %s exited", __func__,
-           thread->tid, thread->name);
+  LOG_WARN("%s: thread id %d, thread name %s exited", __func__, thread->tid,
+           thread->name);
   return NULL;
 }
 

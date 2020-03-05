@@ -322,12 +322,12 @@ void btif_sendmsg(void* p_msg) {
  *
  ******************************************************************************/
 bt_status_t btif_init_bluetooth() {
-  LOG_INFO(LOG_TAG, "%s entered", __func__);
+  LOG_INFO("%s entered", __func__);
   exit_manager = new base::AtExitManager();
   bte_main_boot_entry();
   jni_thread.StartUp();
   jni_thread.DoInThread(FROM_HERE, base::Bind(btif_jni_associate));
-  LOG_INFO(LOG_TAG, "%s finished", __func__);
+  LOG_INFO("%s finished", __func__);
   return BT_STATUS_SUCCESS;
 }
 
@@ -343,7 +343,7 @@ bt_status_t btif_init_bluetooth() {
  ******************************************************************************/
 
 void btif_enable_bluetooth_evt(tBTA_STATUS status) {
-  LOG_INFO(LOG_TAG, "%s entered: status %d", __func__, status);
+  LOG_INFO("%s entered: status %d", __func__, status);
 
   /* Fetch the local BD ADDR */
   RawAddress local_bd_addr = *controller_get_interface()->get_address();
@@ -399,7 +399,7 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status) {
     future_ready(stack_manager_get_hack_future(), FUTURE_FAIL);
   }
 
-  LOG_INFO(LOG_TAG, "%s finished", __func__);
+  LOG_INFO("%s finished", __func__);
 }
 
 /*******************************************************************************
@@ -414,7 +414,7 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status) {
  *
  ******************************************************************************/
 bt_status_t btif_disable_bluetooth() {
-  LOG_INFO(LOG_TAG, "%s entered", __func__);
+  LOG_INFO("%s entered", __func__);
 
   do_in_main_thread(FROM_HERE, base::Bind(&btm_ble_multi_adv_cleanup));
   // TODO(jpawlowski): this should do whole BTA_VendorCleanup(), but it would
@@ -426,7 +426,7 @@ bt_status_t btif_disable_bluetooth() {
   btif_pan_cleanup();
   BTA_DisableBluetooth();
 
-  LOG_INFO(LOG_TAG, "%s finished", __func__);
+  LOG_INFO("%s finished", __func__);
 
   return BT_STATUS_SUCCESS;
 }
@@ -444,14 +444,14 @@ bt_status_t btif_disable_bluetooth() {
  ******************************************************************************/
 
 void btif_disable_bluetooth_evt() {
-  LOG_INFO(LOG_TAG, "%s entered", __func__);
+  LOG_INFO("%s entered", __func__);
 
   bte_main_disable();
 
   /* callback to HAL */
   future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
 
-  LOG_INFO(LOG_TAG, "%s finished", __func__);
+  LOG_INFO("%s finished", __func__);
 }
 
 /*******************************************************************************
@@ -465,7 +465,7 @@ void btif_disable_bluetooth_evt() {
  ******************************************************************************/
 
 bt_status_t btif_cleanup_bluetooth() {
-  LOG_INFO(LOG_TAG, "%s entered", __func__);
+  LOG_INFO("%s entered", __func__);
   do_in_main_thread(FROM_HERE, base::Bind(&BTA_VendorCleanup));
   btif_dm_cleanup();
   jni_thread.DoInThread(FROM_HERE, base::BindOnce(btif_jni_disassociate));
@@ -475,7 +475,7 @@ bt_status_t btif_cleanup_bluetooth() {
   delete exit_manager;
   exit_manager = nullptr;
   btif_dut_mode = 0;
-  LOG_INFO(LOG_TAG, "%s finished", __func__);
+  LOG_INFO("%s finished", __func__);
   return BT_STATUS_SUCCESS;
 }
 

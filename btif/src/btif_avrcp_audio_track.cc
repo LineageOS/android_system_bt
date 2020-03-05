@@ -43,7 +43,7 @@ char outputFilename[50] = "/data/misc/bluedroid/output_sample.pcm";
 
 void* BtifAvrcpAudioTrackCreate(int trackFreq, int bitsPerSample,
                                 int channelCount) {
-  LOG_VERBOSE(LOG_TAG, "%s Track.cpp: btCreateTrack freq %d bps %d channel %d ",
+  LOG_VERBOSE("%s Track.cpp: btCreateTrack freq %d bps %d channel %d ",
               __func__, trackFreq, bitsPerSample, channelCount);
 
   AAudioStreamBuilder* builder;
@@ -76,36 +76,36 @@ void* BtifAvrcpAudioTrackCreate(int trackFreq, int bitsPerSample,
 
 void BtifAvrcpAudioTrackStart(void* handle) {
   if (handle == NULL) {
-    LOG_ERROR(LOG_TAG, "%s: handle is null!", __func__);
+    LOG_ERROR("%s: handle is null!", __func__);
     return;
   }
   BtifAvrcpAudioTrack* trackHolder = static_cast<BtifAvrcpAudioTrack*>(handle);
   CHECK(trackHolder != NULL);
   CHECK(trackHolder->stream != NULL);
-  LOG_VERBOSE(LOG_TAG, "%s Track.cpp: btStartTrack", __func__);
+  LOG_VERBOSE("%s Track.cpp: btStartTrack", __func__);
   AAudioStream_requestStart(trackHolder->stream);
 }
 
 void BtifAvrcpAudioTrackStop(void* handle) {
   if (handle == NULL) {
-    LOG_DEBUG(LOG_TAG, "%s handle is null.", __func__);
+    LOG_DEBUG("%s handle is null.", __func__);
     return;
   }
   BtifAvrcpAudioTrack* trackHolder = static_cast<BtifAvrcpAudioTrack*>(handle);
   if (trackHolder != NULL && trackHolder->stream != NULL) {
-    LOG_VERBOSE(LOG_TAG, "%s Track.cpp: btStartTrack", __func__);
+    LOG_VERBOSE("%s Track.cpp: btStartTrack", __func__);
     AAudioStream_requestStop(trackHolder->stream);
   }
 }
 
 void BtifAvrcpAudioTrackDelete(void* handle) {
   if (handle == NULL) {
-    LOG_DEBUG(LOG_TAG, "%s handle is null.", __func__);
+    LOG_DEBUG("%s handle is null.", __func__);
     return;
   }
   BtifAvrcpAudioTrack* trackHolder = static_cast<BtifAvrcpAudioTrack*>(handle);
   if (trackHolder != NULL && trackHolder->stream != NULL) {
-    LOG_VERBOSE(LOG_TAG, "%s Track.cpp: btStartTrack", __func__);
+    LOG_VERBOSE("%s Track.cpp: btStartTrack", __func__);
     AAudioStream_close(trackHolder->stream);
     delete trackHolder->buffer;
     delete trackHolder;
@@ -121,12 +121,12 @@ void BtifAvrcpAudioTrackDelete(void* handle) {
 
 void BtifAvrcpAudioTrackPause(void* handle) {
   if (handle == NULL) {
-    LOG_DEBUG(LOG_TAG, "%s handle is null.", __func__);
+    LOG_DEBUG("%s handle is null.", __func__);
     return;
   }
   BtifAvrcpAudioTrack* trackHolder = static_cast<BtifAvrcpAudioTrack*>(handle);
   if (trackHolder != NULL && trackHolder->stream != NULL) {
-    LOG_VERBOSE(LOG_TAG, "%s Track.cpp: btPauseTrack", __func__);
+    LOG_VERBOSE("%s Track.cpp: btPauseTrack", __func__);
     AAudioStream_requestPause(trackHolder->stream);
     AAudioStream_requestFlush(trackHolder->stream);
   }
@@ -134,7 +134,7 @@ void BtifAvrcpAudioTrackPause(void* handle) {
 
 void BtifAvrcpSetAudioTrackGain(void* handle, float gain) {
   if (handle == NULL) {
-    LOG_DEBUG(LOG_TAG, "%s handle is null.", __func__);
+    LOG_DEBUG("%s handle is null.", __func__);
     return;
   }
   // Does nothing right now
@@ -218,8 +218,8 @@ int BtifAvrcpAudioTrackWriteData(void* handle, void* audioBuffer,
         trackHolder->stream, trackHolder->buffer,
         transcodedCount / (sampleSize * trackHolder->channelCount),
         kTimeoutNanos);
-    LOG_VERBOSE(LOG_TAG, "%s Track.cpp: btWriteData len = %d ret = %d",
-                __func__, bufferLength, retval);
+    LOG_VERBOSE("%s Track.cpp: btWriteData len = %d ret = %d", __func__,
+                bufferLength, retval);
   } while (transcodedCount < bufferLength);
 
   return transcodedCount;
