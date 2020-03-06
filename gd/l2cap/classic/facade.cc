@@ -57,16 +57,6 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
     return pending_connection_close_.RunLoop(context, writer);
   }
 
-  ::grpc::Status Connect(::grpc::ServerContext* context, const facade::BluetoothAddress* request,
-                         ::google::protobuf::Empty* response) override {
-    auto fixed_channel_manager = l2cap_layer_->GetFixedChannelManager();
-    hci::Address peer;
-    ASSERT(hci::Address::FromString(request->address(), peer));
-    fixed_channel_manager->ConnectServices(peer, common::BindOnce([](FixedChannelManager::ConnectionResult) {}),
-                                           facade_handler_);
-    return ::grpc::Status::OK;
-  }
-
   ::grpc::Status SendL2capPacket(::grpc::ServerContext* context, const classic::L2capPacket* request,
                                  SendL2capPacketResult* response) override {
     std::unique_lock<std::mutex> lock(channel_map_mutex_);
