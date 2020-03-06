@@ -15,10 +15,8 @@ service L2capClassicModuleFacade {
   rpc FetchConnectionClose(google.protobuf.Empty) returns (stream ConnectionCloseEvent) {
     // Testing Android Bluetooth stack only. Optional for other stack.
   }
-  rpc Connect(facade.BluetoothAddress) returns (google.protobuf.Empty) {}
   rpc OpenChannel(OpenChannelRequest) returns (google.protobuf.Empty) {}
   rpc CloseChannel(CloseChannelRequest) returns (google.protobuf.Empty) {}
-  rpc ConfigureChannel(ConfigureChannelRequest) returns (google.protobuf.Empty) {}
   rpc SendL2capPacket(L2capPacket) returns (SendL2capPacketResult) {}
   rpc FetchL2capData(google.protobuf.Empty) returns (stream L2capPacket) {}
   rpc SetDynamicChannel(SetEnableDynamicChannelRequest) returns (google.protobuf.Empty) {}
@@ -47,11 +45,6 @@ message OpenChannelRequest {
   facade.BluetoothAddress remote = 1;
   uint32 psm = 2;
   RetransmissionFlowControlMode mode = 3;
-}
-
-message ConfigureChannelRequest {
-  facade.BluetoothAddress remote = 1;
-  // Config
 }
 
 message CloseChannelRequest {
