@@ -122,10 +122,10 @@ std::vector<uint8_t> le_read_white_list_size_complete = {0x0e, 0x05, 0x01, 0x0f,
 DEFINE_AND_INSTANTIATE_LeReadWhiteListSizeCompleteReflectionTest(le_read_white_list_size_complete);
 
 std::vector<uint8_t> le_read_buffer_size = {0x02, 0x20, 0x00};
-DEFINE_AND_INSTANTIATE_LeReadBufferSizeReflectionTest(le_read_buffer_size);
+DEFINE_AND_INSTANTIATE_LeReadBufferSizeV1ReflectionTest(le_read_buffer_size);
 
 std::vector<uint8_t> le_read_buffer_size_complete = {0x0e, 0x07, 0x01, 0x02, 0x20, 0x00, 0xfb, 0x00, 0x10};
-DEFINE_AND_INSTANTIATE_LeReadBufferSizeCompleteReflectionTest(le_read_buffer_size_complete);
+DEFINE_AND_INSTANTIATE_LeReadBufferSizeV1CompleteReflectionTest(le_read_buffer_size_complete);
 
 std::vector<uint8_t> write_current_iac_laps = {0x3a, 0x0c, 0x07, 0x02, 0x11, 0x8b, 0x9e, 0x22, 0x8b, 0x9e};
 DEFINE_AND_INSTANTIATE_WriteCurrentIacLapReflectionTest(write_current_iac_laps);
