@@ -74,7 +74,7 @@ struct Controller::impl {
                          BindOnce(&Controller::impl::read_buffer_size_complete_handler, common::Unretained(this)),
                          module_.GetHandler());
 
-    hci_->EnqueueCommand(LeReadBufferSizeBuilder::Create(),
+    hci_->EnqueueCommand(LeReadBufferSizeV1Builder::Create(),
                          BindOnce(&Controller::impl::le_read_buffer_size_handler, common::Unretained(this)),
                          module_.GetHandler());
 
@@ -242,7 +242,7 @@ struct Controller::impl {
   }
 
   void le_read_buffer_size_handler(CommandCompleteView view) {
-    auto complete_view = LeReadBufferSizeCompleteView::Create(view);
+    auto complete_view = LeReadBufferSizeV1CompleteView::Create(view);
     ASSERT(complete_view.IsValid());
     ErrorCode status = complete_view.GetStatus();
     ASSERT_LOG(status == ErrorCode::SUCCESS, "Status 0x%02hhx, %s", status, ErrorCodeText(status).c_str());
@@ -569,7 +569,7 @@ struct Controller::impl {
       OP_CODE_MAPPING(READ_LE_HOST_SUPPORT)
       OP_CODE_MAPPING(WRITE_LE_HOST_SUPPORT)
       OP_CODE_MAPPING(LE_SET_EVENT_MASK)
-      OP_CODE_MAPPING(LE_READ_BUFFER_SIZE)
+      OP_CODE_MAPPING(LE_READ_BUFFER_SIZE_V1)
       OP_CODE_MAPPING(LE_READ_LOCAL_SUPPORTED_FEATURES)
       OP_CODE_MAPPING(LE_SET_RANDOM_ADDRESS)
       OP_CODE_MAPPING(LE_SET_ADVERTISING_PARAMETERS)
@@ -600,7 +600,7 @@ struct Controller::impl {
       OP_CODE_MAPPING(LE_TEST_END)
       OP_CODE_MAPPING(ENHANCED_SETUP_SYNCHRONOUS_CONNECTION)
       OP_CODE_MAPPING(ENHANCED_ACCEPT_SYNCHRONOUS_CONNECTION)
-      OP_CODE_MAPPING(READ_LOCAL_SUPPORTED_CODECS)
+      OP_CODE_MAPPING(READ_LOCAL_SUPPORTED_CODECS_V1)
       OP_CODE_MAPPING(READ_SECURE_CONNECTIONS_HOST_SUPPORT)
       OP_CODE_MAPPING(WRITE_SECURE_CONNECTIONS_HOST_SUPPORT)
       OP_CODE_MAPPING(READ_LOCAL_OOB_EXTENDED_DATA)
@@ -659,6 +659,7 @@ struct Controller::impl {
       OP_CODE_MAPPING(LE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMETERS)
       OP_CODE_MAPPING(LE_GENERATE_DHKEY_COMMAND)
       OP_CODE_MAPPING(LE_MODIFY_SLEEP_CLOCK_ACCURACY)
+      OP_CODE_MAPPING(LE_READ_BUFFER_SIZE_V2)
       OP_CODE_MAPPING(LE_READ_ISO_TX_SYNC)
       OP_CODE_MAPPING(LE_SET_CIG_PARAMETERS)
       OP_CODE_MAPPING(LE_CREATE_CIS)
@@ -679,6 +680,11 @@ struct Controller::impl {
       OP_CODE_MAPPING(LE_SET_PATH_LOSS_REPORTING_PARAMETERS)
       OP_CODE_MAPPING(LE_SET_PATH_LOSS_REPORTING_ENABLE)
       OP_CODE_MAPPING(LE_SET_TRANSMIT_POWER_REPORTING_ENABLE)
+      OP_CODE_MAPPING(SET_ECOSYSTEM_BASE_INTERVAL)
+      OP_CODE_MAPPING(READ_LOCAL_SUPPORTED_CODECS_V2)
+      OP_CODE_MAPPING(READ_LOCAL_SUPPORTED_CODEC_CAPABILITIES)
+      OP_CODE_MAPPING(READ_LOCAL_SUPPORTED_CONTROLLER_DELAY)
+      OP_CODE_MAPPING(CONFIGURE_DATA_PATH)
 
       // vendor specific
       case OpCode::LE_GET_VENDOR_CAPABILITIES:
