@@ -104,7 +104,7 @@ DualModeController::DualModeController(const std::string& properties_filename, u
               ReadLocalSupportedCommands);
   SET_HANDLER(OpCode::READ_LOCAL_SUPPORTED_FEATURES,
               ReadLocalSupportedFeatures);
-  SET_HANDLER(OpCode::READ_LOCAL_SUPPORTED_CODECS, ReadLocalSupportedCodecs);
+  SET_HANDLER(OpCode::READ_LOCAL_SUPPORTED_CODECS_V1, ReadLocalSupportedCodecs);
   SET_HANDLER(OpCode::READ_LOCAL_EXTENDED_FEATURES, ReadLocalExtendedFeatures);
   SET_HANDLER(OpCode::READ_REMOTE_EXTENDED_FEATURES,
               ReadRemoteExtendedFeatures);
@@ -179,7 +179,7 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   SET_HANDLER(OpCode::DELETE_STORED_LINK_KEY, DeleteStoredLinkKey);
   SET_HANDLER(OpCode::REMOTE_NAME_REQUEST, RemoteNameRequest);
   SET_HANDLER(OpCode::LE_SET_EVENT_MASK, LeSetEventMask);
-  SET_HANDLER(OpCode::LE_READ_BUFFER_SIZE, LeReadBufferSize);
+  SET_HANDLER(OpCode::LE_READ_BUFFER_SIZE_V1, LeReadBufferSize);
   SET_HANDLER(OpCode::LE_READ_LOCAL_SUPPORTED_FEATURES,
               LeReadLocalSupportedFeatures);
   SET_HANDLER(OpCode::LE_SET_RANDOM_ADDRESS, LeSetRandomAddress);
@@ -490,11 +490,13 @@ void DualModeController::ReadLocalSupportedFeatures(CommandPacketView command) {
 }
 
 void DualModeController::ReadLocalSupportedCodecs(CommandPacketView command) {
-  auto command_view = gd_hci::ReadLocalSupportedCodecsView::Create(command);
+  auto command_view = gd_hci::ReadLocalSupportedCodecsV1View::Create(command);
   ASSERT(command_view.IsValid());
-  auto packet = bluetooth::hci::ReadLocalSupportedCodecsCompleteBuilder::Create(
-      kNumCommandPackets, ErrorCode::SUCCESS, properties_.GetSupportedCodecs(),
-      properties_.GetVendorSpecificCodecs());
+  auto packet =
+      bluetooth::hci::ReadLocalSupportedCodecsV1CompleteBuilder::Create(
+          kNumCommandPackets, ErrorCode::SUCCESS,
+          properties_.GetSupportedCodecs(),
+          properties_.GetVendorSpecificCodecs());
   send_event_(std::move(packet));
 }
 
@@ -1371,14 +1373,14 @@ void DualModeController::LeSetEventMask(CommandPacketView command) {
 }
 
 void DualModeController::LeReadBufferSize(CommandPacketView command) {
-  auto command_view = gd_hci::LeReadBufferSizeView::Create(command);
+  auto command_view = gd_hci::LeReadBufferSizeV1View::Create(command);
   ASSERT(command_view.IsValid());
 
   bluetooth::hci::LeBufferSize le_buffer_size;
   le_buffer_size.le_data_packet_length_ = properties_.GetLeDataPacketLength();
   le_buffer_size.total_num_le_packets_ = properties_.GetTotalNumLeDataPackets();
 
-  auto packet = bluetooth::hci::LeReadBufferSizeCompleteBuilder::Create(
+  auto packet = bluetooth::hci::LeReadBufferSizeV1CompleteBuilder::Create(
       kNumCommandPackets, ErrorCode::SUCCESS, le_buffer_size);
   send_event_(std::move(packet));
 }
