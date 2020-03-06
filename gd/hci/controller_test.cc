@@ -123,11 +123,11 @@ class TestHciLayer : public HciLayer {
       case (OpCode::READ_BD_ADDR): {
         event_builder = ReadBdAddrCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, Address::kAny);
       } break;
-      case (OpCode::LE_READ_BUFFER_SIZE): {
+      case (OpCode::LE_READ_BUFFER_SIZE_V1): {
         LeBufferSize le_buffer_size;
         le_buffer_size.le_data_packet_length_ = 0x16;
         le_buffer_size.total_num_le_packets_ = 0x08;
-        event_builder = LeReadBufferSizeCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, le_buffer_size);
+        event_builder = LeReadBufferSizeV1CompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, le_buffer_size);
       } break;
       case (OpCode::LE_READ_LOCAL_SUPPORTED_FEATURES): {
         event_builder =
