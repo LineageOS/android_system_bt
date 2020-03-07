@@ -20,7 +20,7 @@ import time
 from mobly import asserts
 from datetime import datetime, timedelta
 from acts.base_test import BaseTestClass
-from cert.event_stream import EventStream
+from cert.event_stream import EventStream, FilteringEventStream
 from cert.truth import assertThat
 
 # Test packet nesting
@@ -386,3 +386,11 @@ class CertSelfTest(BaseTestClass):
             logging.debug(e)
             return True  # Failed as expected
         return False
+
+    def test_filtering_event_stream_none_filter_function(self):
+        with EventStream(FetchEvents(events=[1, 2, 3],
+                                     delay_ms=50)) as event_stream:
+            filtered_event_stream = FilteringEventStream(event_stream, None)
+            assertThat(filtered_event_stream)\
+                .emits(lambda data: data.value_ == 1)\
+                .then(lambda data: data.value_ == 3)
