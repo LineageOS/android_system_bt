@@ -18,6 +18,10 @@
 
 #pragma once
 
+#ifndef LOG_TAG
+#define LOG_TAG "bt"
+#endif
+
 /*
  * TODO(armansito): Work-around until we figure out a way to generate logs in a
  * platform-independent manner.
@@ -27,8 +31,8 @@
 /* syslog didn't work well here since we would be redefining LOG_DEBUG. */
 #include <stdio.h>
 
-#define LOGWRAPPER(tag, fmt, args...) \
-  fprintf(stderr, "%s: " fmt "\n", tag, ##args)
+#define LOGWRAPPER(fmt, args...) \
+  fprintf(stderr, "%s: " fmt "\n", LOG_TAG, ##args)
 
 #define LOG_VERBOSE(...) LOGWRAPPER(__VA_ARGS__)
 #define LOG_DEBUG(...) LOGWRAPPER(__VA_ARGS__)
@@ -43,44 +47,45 @@
 #include <log/log.h>
 
 /**
- * These log statements are effectively executing only ALOG(_________, tag, fmt,
+ * These log statements are effectively executing only ALOG(_________, LOG_TAG,
+ * fmt,
  * ## args ).
  * fprintf is only to cause compilation error when LOG_TAG is not provided,
  * which breaks build on Linux (for OS_GENERIC).
  */
 
 #if LOG_NDEBUG
-#define LOG_VERBOSE(tag, fmt, args...)                          \
-  do {                                                          \
-    (true) ? ((int)0) : fprintf(stderr, "%s" fmt, tag, ##args); \
+#define LOG_VERBOSE(fmt, args...)                                   \
+  do {                                                              \
+    (true) ? ((int)0) : fprintf(stderr, "%s" fmt, LOG_TAG, ##args); \
   } while (0)
 #else  // LOG_NDEBUG
-#define LOG_VERBOSE(tag, fmt, args...)               \
-  do {                                               \
-    (true) ? ALOG(LOG_VERBOSE, tag, fmt, ##args)     \
-           : fprintf(stderr, "%s" fmt, tag, ##args); \
+#define LOG_VERBOSE(fmt, args...)                        \
+  do {                                                   \
+    (true) ? ALOG(LOG_VERBOSE, LOG_TAG, fmt, ##args)     \
+           : fprintf(stderr, "%s" fmt, LOG_TAG, ##args); \
   } while (0)
 #endif  // !LOG_NDEBUG
 
-#define LOG_DEBUG(tag, fmt, args...)                 \
-  do {                                               \
-    (true) ? ALOG(LOG_DEBUG, tag, fmt, ##args)       \
-           : fprintf(stderr, "%s" fmt, tag, ##args); \
+#define LOG_DEBUG(fmt, args...)                          \
+  do {                                                   \
+    (true) ? ALOG(LOG_DEBUG, LOG_TAG, fmt, ##args)       \
+           : fprintf(stderr, "%s" fmt, LOG_TAG, ##args); \
   } while (0)
-#define LOG_INFO(tag, fmt, args...)                  \
-  do {                                               \
-    (true) ? ALOG(LOG_INFO, tag, fmt, ##args)        \
-           : fprintf(stderr, "%s" fmt, tag, ##args); \
+#define LOG_INFO(fmt, args...)                           \
+  do {                                                   \
+    (true) ? ALOG(LOG_INFO, LOG_TAG, fmt, ##args)        \
+           : fprintf(stderr, "%s" fmt, LOG_TAG, ##args); \
   } while (0)
-#define LOG_WARN(tag, fmt, args...)                  \
-  do {                                               \
-    (true) ? ALOG(LOG_WARN, tag, fmt, ##args)        \
-           : fprintf(stderr, "%s" fmt, tag, ##args); \
+#define LOG_WARN(fmt, args...)                           \
+  do {                                                   \
+    (true) ? ALOG(LOG_WARN, LOG_TAG, fmt, ##args)        \
+           : fprintf(stderr, "%s" fmt, LOG_TAG, ##args); \
   } while (0)
-#define LOG_ERROR(tag, fmt, args...)                 \
-  do {                                               \
-    (true) ? ALOG(LOG_ERROR, tag, fmt, ##args)       \
-           : fprintf(stderr, "%s" fmt, tag, ##args); \
+#define LOG_ERROR(fmt, args...)                          \
+  do {                                                   \
+    (true) ? ALOG(LOG_ERROR, LOG_TAG, fmt, ##args)       \
+           : fprintf(stderr, "%s" fmt, LOG_TAG, ##args); \
   } while (0)
 
 #endif /* defined(OS_GENERIC) */

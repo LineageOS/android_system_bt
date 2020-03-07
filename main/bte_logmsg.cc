@@ -181,26 +181,31 @@ void LogMsg(uint32_t trace_set_mask, const char* fmt_str, ...) {
   vsnprintf(&buffer[MSG_BUFFER_OFFSET], BTE_LOG_MAX_SIZE, fmt_str, ap);
   va_end(ap);
 
+#undef LOG_TAG
+#define LOG_TAG bt_layer_tags[trace_layer]
+
   switch (TRACE_GET_TYPE(trace_set_mask)) {
     case TRACE_TYPE_ERROR:
-      LOG_ERROR(bt_layer_tags[trace_layer], "%s", buffer);
+      LOG_ERROR("%s", buffer);
       break;
     case TRACE_TYPE_WARNING:
-      LOG_WARN(bt_layer_tags[trace_layer], "%s", buffer);
+      LOG_WARN("%s", buffer);
       break;
     case TRACE_TYPE_API:
     case TRACE_TYPE_EVENT:
-      LOG_INFO(bt_layer_tags[trace_layer], "%s", buffer);
+      LOG_INFO("%s", buffer);
       break;
     case TRACE_TYPE_DEBUG:
-      LOG_DEBUG(bt_layer_tags[trace_layer], "%s", buffer);
+      LOG_DEBUG("%s", buffer);
       break;
     default:
       /* we should never get this */
-      LOG_ERROR(bt_layer_tags[trace_layer], "!BAD TRACE TYPE! %s", buffer);
+      LOG_ERROR("!BAD TRACE TYPE! %s", buffer);
       CHECK(TRACE_GET_TYPE(trace_set_mask) == TRACE_TYPE_ERROR);
       break;
   }
+#undef LOG_TAG
+#define LOG_TAG "bt_bte"
 }
 
 /* this function should go into BTAPP_DM for example */
@@ -230,8 +235,8 @@ static void load_levels_from_config(const config_t* config) {
     int value = config_get_int(*config, CONFIG_DEFAULT_SECTION,
                                functions->trc_name, -1);
     if (value != -1) functions->trace_level = value;
-    LOG_INFO(LOG_TAG, "BTE_InitTraceLevels -- %s : Level %d",
-             functions->trc_name, functions->trace_level);
+    LOG_INFO("BTE_InitTraceLevels -- %s : Level %d", functions->trc_name,
+             functions->trace_level);
     if (functions->p_f) functions->p_f(functions->trace_level);
   }
 }
@@ -239,7 +244,7 @@ static void load_levels_from_config(const config_t* config) {
 static future_t* init(void) {
   const stack_config_t* stack_config = stack_config_get_interface();
   if (!stack_config->get_trace_config_enabled()) {
-    LOG_INFO(LOG_TAG, "using compile default trace settings");
+    LOG_INFO("using compile default trace settings");
     return NULL;
   }
 

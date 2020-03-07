@@ -54,15 +54,13 @@ socket_t* socket_new(void) {
 
   ret->fd = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (ret->fd == INVALID_FD) {
-    LOG_ERROR(LOG_TAG, "%s unable to create socket: %s", __func__,
-              strerror(errno));
+    LOG_ERROR("%s unable to create socket: %s", __func__, strerror(errno));
     goto error;
   }
 
   if (setsockopt(ret->fd, SOL_SOCKET, SO_REUSEADDR, &enable, sizeof(enable)) ==
       -1) {
-    LOG_ERROR(LOG_TAG, "%s unable to set SO_REUSEADDR: %s", __func__,
-              strerror(errno));
+    LOG_ERROR("%s unable to set SO_REUSEADDR: %s", __func__, strerror(errno));
     goto error;
   }
 
@@ -99,13 +97,13 @@ bool socket_listen(const socket_t* socket, port_t port) {
   addr.sin_addr.s_addr = htonl(LOCALHOST_);
   addr.sin_port = htons(port);
   if (bind(socket->fd, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
-    LOG_ERROR(LOG_TAG, "%s unable to bind socket to port %u: %s", __func__,
-              port, strerror(errno));
+    LOG_ERROR("%s unable to bind socket to port %u: %s", __func__, port,
+              strerror(errno));
     return false;
   }
 
   if (listen(socket->fd, 10) == -1) {
-    LOG_ERROR(LOG_TAG, "%s unable to listen on port %u: %s", __func__, port,
+    LOG_ERROR("%s unable to listen on port %u: %s", __func__, port,
               strerror(errno));
     return false;
   }
@@ -119,8 +117,7 @@ socket_t* socket_accept(const socket_t* socket) {
   int fd;
   OSI_NO_INTR(fd = accept(socket->fd, NULL, NULL));
   if (fd == INVALID_FD) {
-    LOG_ERROR(LOG_TAG, "%s unable to accept socket: %s", __func__,
-              strerror(errno));
+    LOG_ERROR("%s unable to accept socket: %s", __func__, strerror(errno));
     return NULL;
   }
 

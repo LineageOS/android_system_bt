@@ -111,8 +111,7 @@ static tA2DP_LDAC_DECODER_CB a2dp_ldac_decoder_cb;
 static void* load_func(const char* func_name) {
   void* func_ptr = dlsym(ldac_bco_lib_handle, func_name);
   if (func_ptr == NULL) {
-    LOG_ERROR(LOG_TAG,
-              "%s: cannot find function '%s' in the decoder library: %s",
+    LOG_ERROR("%s: cannot find function '%s' in the decoder library: %s",
               __func__, func_name, dlerror());
     A2DP_VendorUnloadDecoderLdac();
     return NULL;
@@ -131,7 +130,7 @@ bool A2DP_VendorLoadDecoderLdac(void) {
   // Open the decoder library
   ldac_bco_lib_handle = dlopen(LDAC_BCO_LIB_NAME, RTLD_NOW);
   if (ldac_bco_lib_handle == NULL) {
-    LOG_ERROR(LOG_TAG, "%s: cannot open LDAC decoder library %s: %s", __func__,
+    LOG_ERROR("%s: cannot open LDAC decoder library %s: %s", __func__,
               LDAC_BCO_LIB_NAME, dlerror());
     return false;
   }
@@ -215,8 +214,7 @@ bool a2dp_vendor_ldac_decoder_decode_packet(BT_HDR* p_buf) {
   frame_number = (int)pBuffer[0];
   bs_bytes = (int)bytesValid;
   bytesValid -= 1;
-  LOG_DEBUG(LOG_TAG, "%s:INPUT size : %d, frame : %d", __func__, bs_bytes,
-            frame_number);
+  LOG_DEBUG("%s:INPUT size : %d, frame : %d", __func__, bs_bytes, frame_number);
 
   if (a2dp_ldac_decoder_cb.has_ldac_handle)
     ldac_BCO_decode_packet_func(a2dp_ldac_decoder_cb.ldac_handle_bco, pBuffer,
@@ -228,7 +226,7 @@ bool a2dp_vendor_ldac_decoder_decode_packet(BT_HDR* p_buf) {
 
 void a2dp_vendor_ldac_decoder_start(void) {
   pthread_mutex_lock(&(a2dp_ldac_decoder_cb.mutex));
-  LOG_DEBUG(LOG_TAG, "%s", __func__);
+  LOG_DEBUG("%s", __func__);
   if (a2dp_ldac_decoder_cb.has_ldac_handle)
     ldac_BCO_start_func(a2dp_ldac_decoder_cb.ldac_handle_bco);
   pthread_mutex_unlock(&(a2dp_ldac_decoder_cb.mutex));
@@ -236,7 +234,7 @@ void a2dp_vendor_ldac_decoder_start(void) {
 
 void a2dp_vendor_ldac_decoder_suspend(void) {
   pthread_mutex_lock(&(a2dp_ldac_decoder_cb.mutex));
-  LOG_DEBUG(LOG_TAG, "%s", __func__);
+  LOG_DEBUG("%s", __func__);
   if (a2dp_ldac_decoder_cb.has_ldac_handle)
     ldac_BCO_suspend_func(a2dp_ldac_decoder_cb.ldac_handle_bco);
   pthread_mutex_unlock(&(a2dp_ldac_decoder_cb.mutex));
@@ -248,7 +246,7 @@ void a2dp_vendor_ldac_decoder_configure(const uint8_t* p_codec_info) {
   int32_t channel_mode;
 
   if (p_codec_info == NULL) {
-    LOG_ERROR(LOG_TAG, "%s: p_codec_info is NULL", __func__);
+    LOG_ERROR("%s: p_codec_info is NULL", __func__);
     return;
   }
 
@@ -257,7 +255,7 @@ void a2dp_vendor_ldac_decoder_configure(const uint8_t* p_codec_info) {
   bits_per_sample = A2DP_VendorGetTrackBitsPerSampleLdac(p_codec_info);
   channel_mode = A2DP_VendorGetChannelModeCodeLdac(p_codec_info);
 
-  LOG_DEBUG(LOG_TAG, "%s , sample_rate=%d, bits_per_sample=%d, channel_mode=%d",
+  LOG_DEBUG("%s , sample_rate=%d, bits_per_sample=%d, channel_mode=%d",
             __func__, sample_rate, bits_per_sample, channel_mode);
 
   if (a2dp_ldac_decoder_cb.has_ldac_handle)

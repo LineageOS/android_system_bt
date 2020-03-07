@@ -636,13 +636,12 @@ bt_status_t btif_storage_get_adapter_property(bt_property_t* property) {
     /* Fetch the local BD ADDR */
     const controller_t* controller = controller_get_interface();
     if (!controller->get_is_ready()) {
-      LOG_ERROR(LOG_TAG,
-                "%s: Controller not ready! Unable to return Bluetooth Address",
+      LOG_ERROR("%s: Controller not ready! Unable to return Bluetooth Address",
                 __func__);
       *bd_addr = RawAddress::kEmpty;
       return BT_STATUS_FAIL;
     } else {
-      LOG_ERROR(LOG_TAG, "%s: Controller ready!", __func__);
+      LOG_ERROR("%s: Controller ready!", __func__);
       *bd_addr = *controller->get_address();
     }
     property->len = RawAddress::kLength;
@@ -671,7 +670,7 @@ bt_status_t btif_storage_get_adapter_property(bt_property_t* property) {
     uint32_t i;
 
     tBTA_SERVICE_MASK service_mask = btif_get_enabled_services_mask();
-    LOG_INFO(LOG_TAG, "%s service_mask:0x%x", __func__, service_mask);
+    LOG_INFO("%s service_mask:0x%x", __func__, service_mask);
     for (i = 0; i < BTA_MAX_SERVICE_ID; i++) {
       /* This should eventually become a function when more services are enabled
        */

@@ -334,7 +334,7 @@ bool A2DP_IsPeerSourceCodecSupportedSbc(const uint8_t* p_codec_info) {
 void A2DP_InitDefaultCodecSbc(uint8_t* p_codec_info) {
   if (A2DP_BuildInfoSbc(AVDT_MEDIA_TYPE_AUDIO, &a2dp_sbc_default_config,
                         p_codec_info) != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: A2DP_BuildInfoSbc failed", __func__);
+    LOG_ERROR("%s: A2DP_BuildInfoSbc failed", __func__);
   }
 }
 
@@ -353,25 +353,25 @@ static tA2DP_STATUS A2DP_CodecInfoMatchesCapabilitySbc(
   /* parse configuration */
   status = A2DP_ParseInfoSbc(&cfg_cie, p_codec_info, is_capability);
   if (status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: parsing failed %d", __func__, status);
+    LOG_ERROR("%s: parsing failed %d", __func__, status);
     return status;
   }
 
   /* verify that each parameter is in range */
 
-  LOG_VERBOSE(LOG_TAG, "%s: FREQ peer: 0x%x, capability 0x%x", __func__,
+  LOG_VERBOSE("%s: FREQ peer: 0x%x, capability 0x%x", __func__,
               cfg_cie.samp_freq, p_cap->samp_freq);
-  LOG_VERBOSE(LOG_TAG, "%s: CH_MODE peer: 0x%x, capability 0x%x", __func__,
+  LOG_VERBOSE("%s: CH_MODE peer: 0x%x, capability 0x%x", __func__,
               cfg_cie.ch_mode, p_cap->ch_mode);
-  LOG_VERBOSE(LOG_TAG, "%s: BLOCK_LEN peer: 0x%x, capability 0x%x", __func__,
+  LOG_VERBOSE("%s: BLOCK_LEN peer: 0x%x, capability 0x%x", __func__,
               cfg_cie.block_len, p_cap->block_len);
-  LOG_VERBOSE(LOG_TAG, "%s: SUB_BAND peer: 0x%x, capability 0x%x", __func__,
+  LOG_VERBOSE("%s: SUB_BAND peer: 0x%x, capability 0x%x", __func__,
               cfg_cie.num_subbands, p_cap->num_subbands);
-  LOG_VERBOSE(LOG_TAG, "%s: ALLOC_METHOD peer: 0x%x, capability 0x%x", __func__,
+  LOG_VERBOSE("%s: ALLOC_METHOD peer: 0x%x, capability 0x%x", __func__,
               cfg_cie.alloc_method, p_cap->alloc_method);
-  LOG_VERBOSE(LOG_TAG, "%s: MIN_BitPool peer: 0x%x, capability 0x%x", __func__,
+  LOG_VERBOSE("%s: MIN_BitPool peer: 0x%x, capability 0x%x", __func__,
               cfg_cie.min_bitpool, p_cap->min_bitpool);
-  LOG_VERBOSE(LOG_TAG, "%s: MAX_BitPool peer: 0x%x, capability 0x%x", __func__,
+  LOG_VERBOSE("%s: MAX_BitPool peer: 0x%x, capability 0x%x", __func__,
               cfg_cie.max_bitpool, p_cap->max_bitpool);
 
   /* sampling frequency */
@@ -409,14 +409,12 @@ bool A2DP_CodecTypeEqualsSbc(const uint8_t* p_codec_info_a,
   tA2DP_STATUS a2dp_status =
       A2DP_ParseInfoSbc(&sbc_cie_a, p_codec_info_a, true);
   if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
+    LOG_ERROR("%s: cannot decode codec information: %d", __func__, a2dp_status);
     return false;
   }
   a2dp_status = A2DP_ParseInfoSbc(&sbc_cie_b, p_codec_info_b, true);
   if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
+    LOG_ERROR("%s: cannot decode codec information: %d", __func__, a2dp_status);
     return false;
   }
 
@@ -435,14 +433,12 @@ bool A2DP_CodecEqualsSbc(const uint8_t* p_codec_info_a,
   tA2DP_STATUS a2dp_status =
       A2DP_ParseInfoSbc(&sbc_cie_a, p_codec_info_a, true);
   if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
+    LOG_ERROR("%s: cannot decode codec information: %d", __func__, a2dp_status);
     return false;
   }
   a2dp_status = A2DP_ParseInfoSbc(&sbc_cie_b, p_codec_info_b, true);
   if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
+    LOG_ERROR("%s: cannot decode codec information: %d", __func__, a2dp_status);
     return false;
   }
 
@@ -466,8 +462,7 @@ int A2DP_GetTrackSampleRateSbc(const uint8_t* p_codec_info) {
 
   tA2DP_STATUS a2dp_status = A2DP_ParseInfoSbc(&sbc_cie, p_codec_info, false);
   if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
+    LOG_ERROR("%s: cannot decode codec information: %d", __func__, a2dp_status);
     return -1;
   }
 
@@ -492,8 +487,7 @@ int A2DP_GetTrackBitsPerSampleSbc(const uint8_t* p_codec_info) {
 
   tA2DP_STATUS a2dp_status = A2DP_ParseInfoSbc(&sbc_cie, p_codec_info, false);
   if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
+    LOG_ERROR("%s: cannot decode codec information: %d", __func__, a2dp_status);
     return -1;
   }
 
@@ -506,8 +500,7 @@ int A2DP_GetTrackChannelCountSbc(const uint8_t* p_codec_info) {
 
   tA2DP_STATUS a2dp_status = A2DP_ParseInfoSbc(&sbc_cie, p_codec_info, false);
   if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
+    LOG_ERROR("%s: cannot decode codec information: %d", __func__, a2dp_status);
     return -1;
   }
 
@@ -530,8 +523,7 @@ int A2DP_GetNumberOfSubbandsSbc(const uint8_t* p_codec_info) {
 
   tA2DP_STATUS a2dp_status = A2DP_ParseInfoSbc(&sbc_cie, p_codec_info, false);
   if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
+    LOG_ERROR("%s: cannot decode codec information: %d", __func__, a2dp_status);
     return -1;
   }
 
@@ -552,8 +544,7 @@ int A2DP_GetNumberOfBlocksSbc(const uint8_t* p_codec_info) {
 
   tA2DP_STATUS a2dp_status = A2DP_ParseInfoSbc(&sbc_cie, p_codec_info, false);
   if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
+    LOG_ERROR("%s: cannot decode codec information: %d", __func__, a2dp_status);
     return -1;
   }
 
@@ -578,8 +569,7 @@ int A2DP_GetAllocationMethodCodeSbc(const uint8_t* p_codec_info) {
 
   tA2DP_STATUS a2dp_status = A2DP_ParseInfoSbc(&sbc_cie, p_codec_info, false);
   if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
+    LOG_ERROR("%s: cannot decode codec information: %d", __func__, a2dp_status);
     return -1;
   }
 
@@ -600,8 +590,7 @@ int A2DP_GetChannelModeCodeSbc(const uint8_t* p_codec_info) {
 
   tA2DP_STATUS a2dp_status = A2DP_ParseInfoSbc(&sbc_cie, p_codec_info, false);
   if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
+    LOG_ERROR("%s: cannot decode codec information: %d", __func__, a2dp_status);
     return -1;
   }
 
@@ -626,8 +615,7 @@ int A2DP_GetSamplingFrequencyCodeSbc(const uint8_t* p_codec_info) {
 
   tA2DP_STATUS a2dp_status = A2DP_ParseInfoSbc(&sbc_cie, p_codec_info, false);
   if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
+    LOG_ERROR("%s: cannot decode codec information: %d", __func__, a2dp_status);
     return -1;
   }
 
@@ -652,8 +640,7 @@ int A2DP_GetMinBitpoolSbc(const uint8_t* p_codec_info) {
 
   tA2DP_STATUS a2dp_status = A2DP_ParseInfoSbc(&sbc_cie, p_codec_info, true);
   if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
+    LOG_ERROR("%s: cannot decode codec information: %d", __func__, a2dp_status);
     return -1;
   }
 
@@ -665,8 +652,7 @@ int A2DP_GetMaxBitpoolSbc(const uint8_t* p_codec_info) {
 
   tA2DP_STATUS a2dp_status = A2DP_ParseInfoSbc(&sbc_cie, p_codec_info, true);
   if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
+    LOG_ERROR("%s: cannot decode codec information: %d", __func__, a2dp_status);
     return -1;
   }
 
@@ -679,8 +665,7 @@ int A2DP_GetSinkTrackChannelTypeSbc(const uint8_t* p_codec_info) {
 
   tA2DP_STATUS a2dp_status = A2DP_ParseInfoSbc(&sbc_cie, p_codec_info, false);
   if (a2dp_status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: cannot decode codec information: %d", __func__,
-              a2dp_status);
+    LOG_ERROR("%s: cannot decode codec information: %d", __func__, a2dp_status);
     return -1;
   }
 
@@ -804,8 +789,8 @@ bool A2DP_AdjustCodecSbc(uint8_t* p_codec_info) {
 
   // Updated the max bitpool
   if (cfg_cie.max_bitpool > A2DP_SBC_MAX_BITPOOL) {
-    LOG_WARN(LOG_TAG, "%s: Updated the SBC codec max bitpool from %d to %d",
-             __func__, cfg_cie.max_bitpool, A2DP_SBC_MAX_BITPOOL);
+    LOG_WARN("%s: Updated the SBC codec max bitpool from %d to %d", __func__,
+             cfg_cie.max_bitpool, A2DP_SBC_MAX_BITPOOL);
     cfg_cie.max_bitpool = A2DP_SBC_MAX_BITPOOL;
   }
 
@@ -905,7 +890,7 @@ bool A2dpCodecConfigSbcSource::init() {
 
   // Load the encoder
   if (!A2DP_LoadEncoderSbc()) {
-    LOG_ERROR(LOG_TAG, "%s: cannot load the encoder", __func__);
+    LOG_ERROR("%s: cannot load the encoder", __func__);
     return false;
   }
 
@@ -1106,8 +1091,8 @@ bool A2dpCodecConfigSbcBase::setCodecConfig(const uint8_t* p_peer_codec_info,
   tA2DP_STATUS status =
       A2DP_ParseInfoSbc(&peer_info_cie, p_peer_codec_info, is_capability);
   if (status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: can't parse peer's capabilities: error = %d",
-              __func__, status);
+    LOG_ERROR("%s: can't parse peer's capabilities: error = %d", __func__,
+              status);
     goto fail;
   }
   // Try using the prefered peer codec config (if valid), instead of the peer
@@ -1209,10 +1194,10 @@ bool A2dpCodecConfigSbcBase::setCodecConfig(const uint8_t* p_peer_codec_info,
     }
   } while (false);
   if (codec_config_.sample_rate == BTAV_A2DP_CODEC_SAMPLE_RATE_NONE) {
-    LOG_ERROR(LOG_TAG,
-              "%s: cannot match sample frequency: local caps = 0x%x "
-              "peer info = 0x%x",
-              __func__, p_a2dp_sbc_caps->samp_freq, peer_info_cie.samp_freq);
+    LOG_ERROR(
+        "%s: cannot match sample frequency: local caps = 0x%x "
+        "peer info = 0x%x",
+        __func__, p_a2dp_sbc_caps->samp_freq, peer_info_cie.samp_freq);
     goto fail;
   }
 
@@ -1264,8 +1249,7 @@ bool A2dpCodecConfigSbcBase::setCodecConfig(const uint8_t* p_peer_codec_info,
     }
   } while (false);
   if (codec_config_.bits_per_sample == BTAV_A2DP_CODEC_BITS_PER_SAMPLE_NONE) {
-    LOG_ERROR(LOG_TAG,
-              "%s: cannot match bits per sample: user preference = 0x%x",
+    LOG_ERROR("%s: cannot match bits per sample: user preference = 0x%x",
               __func__, codec_user_config_.bits_per_sample);
     goto fail;
   }
@@ -1358,10 +1342,10 @@ bool A2dpCodecConfigSbcBase::setCodecConfig(const uint8_t* p_peer_codec_info,
     }
   } while (false);
   if (codec_config_.channel_mode == BTAV_A2DP_CODEC_CHANNEL_MODE_NONE) {
-    LOG_ERROR(LOG_TAG,
-              "%s: cannot match channel mode: local caps = 0x%x "
-              "peer info = 0x%x",
-              __func__, p_a2dp_sbc_caps->ch_mode, peer_info_cie.ch_mode);
+    LOG_ERROR(
+        "%s: cannot match channel mode: local caps = 0x%x "
+        "peer info = 0x%x",
+        __func__, p_a2dp_sbc_caps->ch_mode, peer_info_cie.ch_mode);
     goto fail;
   }
 
@@ -1378,10 +1362,10 @@ bool A2dpCodecConfigSbcBase::setCodecConfig(const uint8_t* p_peer_codec_info,
   } else if (block_len & A2DP_SBC_IE_BLOCKS_4) {
     result_config_cie.block_len = A2DP_SBC_IE_BLOCKS_4;
   } else {
-    LOG_ERROR(LOG_TAG,
-              "%s: cannot match block length: local caps = 0x%x "
-              "peer info = 0x%x",
-              __func__, p_a2dp_sbc_caps->block_len, peer_info_cie.block_len);
+    LOG_ERROR(
+        "%s: cannot match block length: local caps = 0x%x "
+        "peer info = 0x%x",
+        __func__, p_a2dp_sbc_caps->block_len, peer_info_cie.block_len);
     goto fail;
   }
 
@@ -1394,11 +1378,10 @@ bool A2dpCodecConfigSbcBase::setCodecConfig(const uint8_t* p_peer_codec_info,
   } else if (num_subbands & A2DP_SBC_IE_SUBBAND_4) {
     result_config_cie.num_subbands = A2DP_SBC_IE_SUBBAND_4;
   } else {
-    LOG_ERROR(LOG_TAG,
-              "%s: cannot match number of sub-bands: local caps = 0x%x "
-              "peer info = 0x%x",
-              __func__, p_a2dp_sbc_caps->num_subbands,
-              peer_info_cie.num_subbands);
+    LOG_ERROR(
+        "%s: cannot match number of sub-bands: local caps = 0x%x "
+        "peer info = 0x%x",
+        __func__, p_a2dp_sbc_caps->num_subbands, peer_info_cie.num_subbands);
     goto fail;
   }
 
@@ -1411,11 +1394,10 @@ bool A2dpCodecConfigSbcBase::setCodecConfig(const uint8_t* p_peer_codec_info,
   } else if (alloc_method & A2DP_SBC_IE_ALLOC_MD_S) {
     result_config_cie.alloc_method = A2DP_SBC_IE_ALLOC_MD_S;
   } else {
-    LOG_ERROR(LOG_TAG,
-              "%s: cannot match allocation method: local caps = 0x%x "
-              "peer info = 0x%x",
-              __func__, p_a2dp_sbc_caps->alloc_method,
-              peer_info_cie.alloc_method);
+    LOG_ERROR(
+        "%s: cannot match allocation method: local caps = 0x%x "
+        "peer info = 0x%x",
+        __func__, p_a2dp_sbc_caps->alloc_method, peer_info_cie.alloc_method);
     goto fail;
   }
 
@@ -1429,12 +1411,11 @@ bool A2dpCodecConfigSbcBase::setCodecConfig(const uint8_t* p_peer_codec_info,
   if (result_config_cie.max_bitpool > peer_info_cie.max_bitpool)
     result_config_cie.max_bitpool = peer_info_cie.max_bitpool;
   if (result_config_cie.min_bitpool > result_config_cie.max_bitpool) {
-    LOG_ERROR(LOG_TAG,
-              "%s: cannot match min/max bitpool: "
-              "local caps min/max = 0x%x/0x%x peer info min/max = 0x%x/0x%x",
-              __func__, p_a2dp_sbc_caps->min_bitpool,
-              p_a2dp_sbc_caps->max_bitpool, peer_info_cie.min_bitpool,
-              peer_info_cie.max_bitpool);
+    LOG_ERROR(
+        "%s: cannot match min/max bitpool: "
+        "local caps min/max = 0x%x/0x%x peer info min/max = 0x%x/0x%x",
+        __func__, p_a2dp_sbc_caps->min_bitpool, p_a2dp_sbc_caps->max_bitpool,
+        peer_info_cie.min_bitpool, peer_info_cie.max_bitpool);
     goto fail;
   }
 
@@ -1504,8 +1485,8 @@ bool A2dpCodecConfigSbcBase::setPeerCodecCapabilities(
   tA2DP_STATUS status =
       A2DP_ParseInfoSbc(&peer_info_cie, p_peer_codec_capabilities, true);
   if (status != A2DP_SUCCESS) {
-    LOG_ERROR(LOG_TAG, "%s: can't parse peer's capabilities: error = %d",
-              __func__, status);
+    LOG_ERROR("%s: can't parse peer's capabilities: error = %d", __func__,
+              status);
     goto fail;
   }
 
@@ -1569,7 +1550,7 @@ bool A2dpCodecConfigSbcSink::init() {
 
   // Load the decoder
   if (!A2DP_LoadDecoderSbc()) {
-    LOG_ERROR(LOG_TAG, "%s: cannot load the decoder", __func__);
+    LOG_ERROR("%s: cannot load the decoder", __func__);
     return false;
   }
 

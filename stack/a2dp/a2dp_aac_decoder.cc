@@ -70,7 +70,7 @@ bool a2dp_aac_decoder_decode_packet(BT_HDR* p_buf) {
     AAC_DECODER_ERROR err = aacDecoder_Fill(a2dp_aac_decoder_cb.aac_handle,
                                             &pBuffer, &bufferSize, &bytesValid);
     if (err != AAC_DEC_OK) {
-      LOG_ERROR(LOG_TAG, "%s: aacDecoder_Fill failed: 0x%x", __func__,
+      LOG_ERROR("%s: aacDecoder_Fill failed: 0x%x", __func__,
                 static_cast<unsigned>(err));
       return false;
     }
@@ -83,7 +83,7 @@ bool a2dp_aac_decoder_decode_packet(BT_HDR* p_buf) {
         break;
       }
       if (err != AAC_DEC_OK) {
-        LOG_ERROR(LOG_TAG, "%s: aacDecoder_DecodeFrame failed: 0x%x", __func__,
+        LOG_ERROR("%s: aacDecoder_DecodeFrame failed: 0x%x", __func__,
                   static_cast<int>(err));
         break;
       }
@@ -91,7 +91,7 @@ bool a2dp_aac_decoder_decode_packet(BT_HDR* p_buf) {
       CStreamInfo* info =
           aacDecoder_GetStreamInfo(a2dp_aac_decoder_cb.aac_handle);
       if (!info || info->sampleRate <= 0) {
-        LOG_ERROR(LOG_TAG, "%s: Invalid stream info", __func__);
+        LOG_ERROR("%s: Invalid stream info", __func__);
         break;
       }
 

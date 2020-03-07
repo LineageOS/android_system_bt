@@ -122,7 +122,7 @@ static int hci_packet_to_event(hci_packet_t packet) {
     case HCI_PACKET_ISO_DATA:
       return MSG_STACK_TO_HC_HCI_ISO;
     default:
-      LOG_ERROR(LOG_TAG, "%s unsupported packet type: %d", __func__, packet);
+      LOG_ERROR("%s unsupported packet type: %d", __func__, packet);
       return -1;
   }
 }
@@ -139,7 +139,7 @@ static void accept_ready(socket_t* socket, UNUSED_ATTR void* context) {
   client->socket = socket;
 
   if (!list_append(clients, client)) {
-    LOG_ERROR(LOG_TAG, "%s unable to add client to list.", __func__);
+    LOG_ERROR("%s unable to add client to list.", __func__);
     client_free(client);
     return;
   }
@@ -183,7 +183,7 @@ static void read_ready(UNUSED_ATTR socket_t* socket, void* context) {
       memcpy(buf->data, buffer + 3, packet_len);
       hci->transmit_downward(buf->event, buf);
     } else {
-      LOG_ERROR(LOG_TAG, "%s dropping injected packet of length %zu", __func__,
+      LOG_ERROR("%s dropping injected packet of length %zu", __func__,
                 packet_len);
     }
 

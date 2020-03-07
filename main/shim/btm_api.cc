@@ -113,8 +113,7 @@ static void check_exceeded_responses(tBT_DEVICE_TYPE device_type,
       ((is_observing_or_active_scanning() && is_dual_mode_device(device_type) &&
         scan_rsp) ||
        (is_observing_or_active_scanning()))) {
-    LOG_INFO(LOG_TAG,
-             "UNIMPLEMENTED %s Device max responses found...cancelling inquiry",
+    LOG_INFO("UNIMPLEMENTED %s Device max responses found...cancelling inquiry",
              __func__);
   }
 }
@@ -313,7 +312,7 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
   shim_btm.StartActiveScanning();
   if (p_inqparms->duration != 0) {
     shim_btm.SetScanningTimer(p_inqparms->duration * 1000, []() {
-      LOG_INFO(LOG_TAG, "%s scanning timeout popped", __func__);
+      LOG_INFO("%s scanning timeout popped", __func__);
       std::lock_guard<std::mutex> lock(btm_cb_mutex_);
       shim_btm.StopActiveScanning();
     });
@@ -324,15 +323,14 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
   uint8_t classic_mode = p_inqparms->mode & 0x0f;
   if (!shim_btm.SetInquiryFilter(classic_mode, p_inqparms->filter_cond_type,
                                  p_inqparms->filter_cond)) {
-    LOG_WARN(LOG_TAG, "%s Unable to set inquiry filter", __func__);
+    LOG_WARN("%s Unable to set inquiry filter", __func__);
     return BTM_ERR_PROCESSING;
   }
 
   if (!shim_btm.StartInquiry(
           classic_mode, p_inqparms->duration, p_inqparms->max_resps,
           [](uint16_t status, uint8_t inquiry_mode) {
-            LOG_DEBUG(LOG_TAG,
-                      "%s Inquiry is complete status:%hd inquiry_mode:%hhd",
+            LOG_DEBUG("%s Inquiry is complete status:%hd inquiry_mode:%hhd",
                       __func__, status, inquiry_mode);
             btm_cb.btm_inq_vars.inqparms.mode &= ~(inquiry_mode);
 
@@ -358,8 +356,7 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
               btm_cb.btm_inq_vars.p_inq_cmpl_cb = nullptr;
 
               if (btm_cb.btm_inq_vars.p_inq_cmpl_cb != nullptr) {
-                LOG_DEBUG(LOG_TAG,
-                          "%s Sending inquiry completion to upper layer",
+                LOG_DEBUG("%s Sending inquiry completion to upper layer",
                           __func__);
                 (btm_cb.btm_inq_vars.p_inq_cmpl_cb)(
                     (tBTM_INQUIRY_CMPL*)&btm_cb.btm_inq_vars.inq_cmpl_info);
@@ -371,7 +368,7 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
               btm_cb.btm_inq_vars.scan_type = INQ_NONE;
             }
           })) {
-    LOG_WARN(LOG_TAG, "%s Unable to start inquiry", __func__);
+    LOG_WARN("%s Unable to start inquiry", __func__);
     return BTM_ERR_PROCESSING;
   }
 
@@ -403,7 +400,7 @@ tBTM_STATUS bluetooth::shim::BTM_SetDiscoverability(uint16_t discoverable_mode,
       shim_btm.StartAdvertising();
       break;
     default:
-      LOG_WARN(LOG_TAG, "%s Unexpected le discoverability mode:%d", __func__,
+      LOG_WARN("%s Unexpected le discoverability mode:%d", __func__,
                le_discoverable_mode);
   }
 
@@ -418,8 +415,8 @@ tBTM_STATUS bluetooth::shim::BTM_SetDiscoverability(uint16_t discoverable_mode,
       shim_btm.SetClassicGeneralDiscoverability(window, interval);
       break;
     default:
-      LOG_WARN(LOG_TAG, "%s Unexpected classic discoverability mode:%d",
-               __func__, classic_discoverable_mode);
+      LOG_WARN("%s Unexpected classic discoverability mode:%d", __func__,
+               classic_discoverable_mode);
   }
   return BTM_SUCCESS;
 }
@@ -450,7 +447,7 @@ tBTM_STATUS bluetooth::shim::BTM_BleObserve(bool start, uint8_t duration_sec,
     std::lock_guard<std::mutex> lock(btm_cb_mutex_);
 
     if (btm_cb.ble_ctr_cb.scan_activity & BTM_LE_OBSERVE_ACTIVE) {
-      LOG_WARN(LOG_TAG, "%s Observing already active", __func__);
+      LOG_WARN("%s Observing already active", __func__);
       return BTM_WRONG_MODE;
     }
 
@@ -461,7 +458,7 @@ tBTM_STATUS bluetooth::shim::BTM_BleObserve(bool start, uint8_t duration_sec,
 
     if (duration_sec != 0) {
       shim_btm.SetObservingTimer(duration_sec * 1000, []() {
-        LOG_DEBUG(LOG_TAG, "%s observing timeout popped", __func__);
+        LOG_DEBUG("%s observing timeout popped", __func__);
 
         shim_btm.CancelObservingTimer();
         shim_btm.StopObserving();
@@ -502,7 +499,7 @@ tBTM_STATUS bluetooth::shim::BTM_BleObserve(bool start, uint8_t duration_sec,
     std::lock_guard<std::mutex> lock(btm_cb_mutex_);
 
     if (!(btm_cb.ble_ctr_cb.scan_activity & BTM_LE_OBSERVE_ACTIVE)) {
-      LOG_WARN(LOG_TAG, "%s Observing already inactive", __func__);
+      LOG_WARN("%s Observing already inactive", __func__);
     }
     shim_btm.CancelObservingTimer();
     shim_btm.StopObserving();
@@ -626,7 +623,7 @@ uint16_t bluetooth::shim::BTM_IsInquiryActive(void) {
 }
 
 tBTM_STATUS bluetooth::shim::BTM_CancelInquiry(void) {
-  LOG_DEBUG(LOG_TAG, "%s Cancel inquiry", __func__);
+  LOG_DEBUG("%s Cancel inquiry", __func__);
   shim_btm.CancelInquiry();
 
   btm_cb.btm_inq_vars.state = BTM_INQ_INACTIVE_STATE;
@@ -656,7 +653,7 @@ tBTM_STATUS bluetooth::shim::BTM_CancelInquiry(void) {
     btm_cb.btm_inq_vars.inq_counter++;
 
     if (btm_cb.btm_inq_vars.p_inq_cmpl_cb != nullptr) {
-      LOG_DEBUG(LOG_TAG, "%s Sending cancel inquiry completion to upper layer",
+      LOG_DEBUG("%s Sending cancel inquiry completion to upper layer",
                 __func__);
       (btm_cb.btm_inq_vars.p_inq_cmpl_cb)(
           (tBTM_INQUIRY_CMPL*)&btm_cb.btm_inq_vars.inq_cmpl_info);
@@ -684,7 +681,7 @@ tBTM_STATUS bluetooth::shim::BTM_ReadRemoteDeviceName(
       status = shim_btm.ReadClassicRemoteDeviceName(raw_address, callback);
       break;
     default:
-      LOG_WARN(LOG_TAG, "%s Unspecified transport:%d", __func__, transport);
+      LOG_WARN("%s Unspecified transport:%d", __func__, transport);
       break;
   }
   return status;
@@ -695,23 +692,23 @@ tBTM_STATUS bluetooth::shim::BTM_CancelRemoteDeviceName(void) {
 }
 
 tBTM_INQ_INFO* bluetooth::shim::BTM_InqDbRead(const RawAddress& p_bda) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   return nullptr;
 }
 
 tBTM_INQ_INFO* bluetooth::shim::BTM_InqDbFirst(void) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   return nullptr;
 }
 
 tBTM_INQ_INFO* bluetooth::shim::BTM_InqDbNext(tBTM_INQ_INFO* p_cur) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_cur != nullptr);
   return nullptr;
 }
 
 tBTM_STATUS bluetooth::shim::BTM_ClearInqDb(const RawAddress* p_bda) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   if (p_bda == nullptr) {
     // clear all entries
   } else {
@@ -721,33 +718,33 @@ tBTM_STATUS bluetooth::shim::BTM_ClearInqDb(const RawAddress* p_bda) {
 }
 
 tBTM_STATUS bluetooth::shim::BTM_WriteEIR(BT_HDR* p_buff) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_buff != nullptr);
   return BTM_NO_RESOURCES;
 }
 
 bool bluetooth::shim::BTM_HasEirService(const uint32_t* p_eir_uuid,
                                         uint16_t uuid16) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_eir_uuid != nullptr);
   return false;
 }
 
 tBTM_EIR_SEARCH_RESULT bluetooth::shim::BTM_HasInquiryEirService(
     tBTM_INQ_RESULTS* p_results, uint16_t uuid16) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_results != nullptr);
   return BTM_EIR_UNKNOWN;
 }
 
 void bluetooth::shim::BTM_AddEirService(uint32_t* p_eir_uuid, uint16_t uuid16) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_eir_uuid != nullptr);
 }
 
 void bluetooth::shim::BTM_RemoveEirService(uint32_t* p_eir_uuid,
                                            uint16_t uuid16) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_eir_uuid != nullptr);
 }
 
@@ -755,7 +752,7 @@ uint8_t bluetooth::shim::BTM_GetEirSupportedServices(uint32_t* p_eir_uuid,
                                                      uint8_t** p,
                                                      uint8_t max_num_uuid16,
                                                      uint8_t* p_num_uuid16) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_eir_uuid != nullptr);
   CHECK(p != nullptr);
   CHECK(*p != nullptr);
@@ -768,7 +765,7 @@ uint8_t bluetooth::shim::BTM_GetEirUuidList(uint8_t* p_eir, size_t eir_len,
                                             uint8_t* p_num_uuid,
                                             uint8_t* p_uuid_list,
                                             uint8_t max_num_uuid) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_eir != nullptr);
   CHECK(p_num_uuid != nullptr);
   CHECK(p_uuid_list != nullptr);
@@ -779,21 +776,21 @@ bool bluetooth::shim::BTM_SecAddBleDevice(const RawAddress& bd_addr,
                                           BD_NAME bd_name,
                                           tBT_DEVICE_TYPE dev_type,
                                           tBLE_ADDR_TYPE addr_type) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   return false;
 }
 
 bool bluetooth::shim::BTM_SecAddBleKey(const RawAddress& bd_addr,
                                        tBTM_LE_KEY_VALUE* p_le_key,
                                        tBTM_LE_KEY_TYPE key_type) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_le_key != nullptr);
   return false;
 }
 
 void bluetooth::shim::BTM_BleLoadLocalKeys(uint8_t key_type,
                                            tBTM_BLE_LOCAL_KEYS* p_key) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_key != nullptr);
 }
 
@@ -801,74 +798,74 @@ static Octet16 bogus_root;
 
 /** Returns local device encryption root (ER) */
 const Octet16& bluetooth::shim::BTM_GetDeviceEncRoot() {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   return bogus_root;
 }
 
 /** Returns local device identity root (IR). */
 const Octet16& bluetooth::shim::BTM_GetDeviceIDRoot() {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   return bogus_root;
 }
 
 /** Return local device DHK. */
 const Octet16& bluetooth::shim::BTM_GetDeviceDHK() {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   return bogus_root;
 }
 
 void bluetooth::shim::BTM_ReadConnectionAddr(const RawAddress& remote_bda,
                                              RawAddress& local_conn_addr,
                                              tBLE_ADDR_TYPE* p_addr_type) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_addr_type != nullptr);
 }
 
 bool bluetooth::shim::BTM_IsBleConnection(uint16_t conn_handle) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   return false;
 }
 
 bool bluetooth::shim::BTM_ReadRemoteConnectionAddr(
     const RawAddress& pseudo_addr, RawAddress& conn_addr,
     tBLE_ADDR_TYPE* p_addr_type) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_addr_type != nullptr);
   return false;
 }
 
 void bluetooth::shim::BTM_SecurityGrant(const RawAddress& bd_addr,
                                         uint8_t res) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::BTM_BlePasskeyReply(const RawAddress& bd_addr,
                                           uint8_t res, uint32_t passkey) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::BTM_BleConfirmReply(const RawAddress& bd_addr,
                                           uint8_t res) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::BTM_BleOobDataReply(const RawAddress& bd_addr,
                                           uint8_t res, uint8_t len,
                                           uint8_t* p_data) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_data != nullptr);
 }
 
 void bluetooth::shim::BTM_BleSecureConnectionOobDataReply(
     const RawAddress& bd_addr, uint8_t* p_c, uint8_t* p_r) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_c != nullptr);
   CHECK(p_r != nullptr);
 }
 
 void bluetooth::shim::BTM_BleSetConnScanParams(uint32_t scan_interval,
                                                uint32_t scan_window) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::BTM_BleSetPrefConnParams(const RawAddress& bd_addr,
@@ -876,27 +873,27 @@ void bluetooth::shim::BTM_BleSetPrefConnParams(const RawAddress& bd_addr,
                                                uint16_t max_conn_int,
                                                uint16_t slave_latency,
                                                uint16_t supervision_tout) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::BTM_ReadDevInfo(const RawAddress& remote_bda,
                                       tBT_DEVICE_TYPE* p_dev_type,
                                       tBLE_ADDR_TYPE* p_addr_type) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_dev_type != nullptr);
   CHECK(p_addr_type != nullptr);
 }
 
 bool bluetooth::shim::BTM_ReadConnectedTransportAddress(
     RawAddress* remote_bda, tBT_TRANSPORT transport) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(remote_bda != nullptr);
   return false;
 }
 
 void bluetooth::shim::BTM_BleReceiverTest(uint8_t rx_freq,
                                           tBTM_CMPL_CB* p_cmd_cmpl_cback) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_cmd_cmpl_cback != nullptr);
 }
 
@@ -904,12 +901,12 @@ void bluetooth::shim::BTM_BleTransmitterTest(uint8_t tx_freq,
                                              uint8_t test_data_len,
                                              uint8_t packet_payload,
                                              tBTM_CMPL_CB* p_cmd_cmpl_cback) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_cmd_cmpl_cback != nullptr);
 }
 
 void bluetooth::shim::BTM_BleTestEnd(tBTM_CMPL_CB* p_cmd_cmpl_cback) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_cmd_cmpl_cback != nullptr);
 }
 
@@ -919,32 +916,32 @@ bool bluetooth::shim::BTM_UseLeLink(const RawAddress& raw_address) {
 
 tBTM_STATUS bluetooth::shim::BTM_SetBleDataLength(const RawAddress& bd_addr,
                                                   uint16_t tx_pdu_length) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   return BTM_NO_RESOURCES;
 }
 
 void bluetooth::shim::BTM_BleReadPhy(
     const RawAddress& bd_addr,
     base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
 tBTM_STATUS bluetooth::shim::BTM_BleSetDefaultPhy(uint8_t all_phys,
                                                   uint8_t tx_phys,
                                                   uint8_t rx_phys) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   return BTM_NO_RESOURCES;
 }
 
 void bluetooth::shim::BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys,
                                     uint8_t rx_phys, uint16_t phy_options) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
 bool bluetooth::shim::BTM_BleDataSignature(const RawAddress& bd_addr,
                                            uint8_t* p_text, uint16_t len,
                                            BLE_SIGNATURE signature) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_text != nullptr);
   return false;
 }
@@ -953,7 +950,7 @@ bool bluetooth::shim::BTM_BleVerifySignature(const RawAddress& bd_addr,
                                              uint8_t* p_orig, uint16_t len,
                                              uint32_t counter,
                                              uint8_t* p_comp) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_orig != nullptr);
   CHECK(p_comp != nullptr);
   return false;
@@ -962,7 +959,7 @@ bool bluetooth::shim::BTM_BleVerifySignature(const RawAddress& bd_addr,
 bool bluetooth::shim::BTM_GetLeSecurityState(const RawAddress& bd_addr,
                                              uint8_t* p_le_dev_sec_flags,
                                              uint8_t* p_le_key_size) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   CHECK(p_le_dev_sec_flags != nullptr);
   CHECK(p_le_key_size != nullptr);
   return false;
@@ -970,12 +967,12 @@ bool bluetooth::shim::BTM_GetLeSecurityState(const RawAddress& bd_addr,
 
 bool bluetooth::shim::BTM_BleSecurityProcedureIsRunning(
     const RawAddress& bd_addr) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   return false;
 }
 
 uint8_t bluetooth::shim::BTM_BleGetSupportedKeySize(const RawAddress& bd_addr) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
   return 0;
 }
 
@@ -987,33 +984,33 @@ void bluetooth::shim::BTM_LE_PF_local_name(tBTM_BLE_SCAN_COND_OP action,
                                            tBTM_BLE_PF_FILT_INDEX filt_index,
                                            std::vector<uint8_t> name,
                                            tBTM_BLE_PF_CFG_CBACK cb) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::BTM_LE_PF_srvc_data(tBTM_BLE_SCAN_COND_OP action,
                                           tBTM_BLE_PF_FILT_INDEX filt_index) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::BTM_LE_PF_manu_data(
     tBTM_BLE_SCAN_COND_OP action, tBTM_BLE_PF_FILT_INDEX filt_index,
     uint16_t company_id, uint16_t company_id_mask, std::vector<uint8_t> data,
     std::vector<uint8_t> data_mask, tBTM_BLE_PF_CFG_CBACK cb) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::BTM_LE_PF_srvc_data_pattern(
     tBTM_BLE_SCAN_COND_OP action, tBTM_BLE_PF_FILT_INDEX filt_index,
     std::vector<uint8_t> data, std::vector<uint8_t> data_mask,
     tBTM_BLE_PF_CFG_CBACK cb) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::BTM_LE_PF_addr_filter(tBTM_BLE_SCAN_COND_OP action,
                                             tBTM_BLE_PF_FILT_INDEX filt_index,
                                             tBLE_BD_ADDR addr,
                                             tBTM_BLE_PF_CFG_CBACK cb) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::BTM_LE_PF_uuid_filter(tBTM_BLE_SCAN_COND_OP action,
@@ -1023,34 +1020,34 @@ void bluetooth::shim::BTM_LE_PF_uuid_filter(tBTM_BLE_SCAN_COND_OP action,
                                             tBTM_BLE_PF_LOGIC_TYPE cond_logic,
                                             const bluetooth::Uuid& uuid_mask,
                                             tBTM_BLE_PF_CFG_CBACK cb) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::BTM_LE_PF_set(tBTM_BLE_PF_FILT_INDEX filt_index,
                                     std::vector<ApcfCommand> commands,
                                     tBTM_BLE_PF_CFG_CBACK cb) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::BTM_LE_PF_clear(tBTM_BLE_PF_FILT_INDEX filt_index,
                                       tBTM_BLE_PF_CFG_CBACK cb) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::BTM_BleAdvFilterParamSetup(
     int action, tBTM_BLE_PF_FILT_INDEX filt_index,
     std::unique_ptr<btgatt_filt_param_setup_t> p_filt_params,
     tBTM_BLE_PF_PARAM_CB cb) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::BTM_BleUpdateAdvFilterPolicy(tBTM_BLE_AFP adv_policy) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::BTM_BleEnableDisableFilterFeature(
     uint8_t enable, tBTM_BLE_PF_STATUS_CBACK p_stat_cback) {
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
 uint8_t bluetooth::shim::BTM_BleMaxMultiAdvInstanceCount() {
@@ -1070,35 +1067,34 @@ tBTM_STATUS bluetooth::shim::BTM_SecBond(const RawAddress& bd_addr,
 
 bool bluetooth::shim::BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info) {
   CHECK(p_cb_info != nullptr);
-  LOG_DEBUG(LOG_TAG, "%s Registering security application", __func__);
+  LOG_DEBUG("%s Registering security application", __func__);
 
   if (p_cb_info->p_authorize_callback == nullptr) {
-    LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s authorize_callback", __func__);
+    LOG_INFO("UNIMPLEMENTED %s authorize_callback", __func__);
   }
 
   if (p_cb_info->p_pin_callback == nullptr) {
-    LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s pin_callback", __func__);
+    LOG_INFO("UNIMPLEMENTED %s pin_callback", __func__);
   }
 
   if (p_cb_info->p_link_key_callback == nullptr) {
-    LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s link_key_callback", __func__);
+    LOG_INFO("UNIMPLEMENTED %s link_key_callback", __func__);
   }
 
   if (p_cb_info->p_auth_complete_callback == nullptr) {
-    LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s auth_complete_callback", __func__);
+    LOG_INFO("UNIMPLEMENTED %s auth_complete_callback", __func__);
   }
 
   if (p_cb_info->p_bond_cancel_cmpl_callback == nullptr) {
-    LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s bond_cancel_complete_callback",
-             __func__);
+    LOG_INFO("UNIMPLEMENTED %s bond_cancel_complete_callback", __func__);
   }
 
   if (p_cb_info->p_le_callback == nullptr) {
-    LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s le_callback", __func__);
+    LOG_INFO("UNIMPLEMENTED %s le_callback", __func__);
   }
 
   if (p_cb_info->p_le_key_callback == nullptr) {
-    LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s le_key_callback", __func__);
+    LOG_INFO("UNIMPLEMENTED %s le_key_callback", __func__);
   }
 
   return true;
