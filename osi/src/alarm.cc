@@ -317,7 +317,7 @@ static bool lazy_initialize(void) {
 
   alarms = list_new(NULL);
   if (!alarms) {
-    LOG_ERROR(LOG_TAG, "%s unable to allocate alarm list.", __func__);
+    LOG_ERROR("%s unable to allocate alarm list.", __func__);
     goto error;
   }
 
@@ -333,22 +333,20 @@ static bool lazy_initialize(void) {
 
   alarm_expired = semaphore_new(0);
   if (!alarm_expired) {
-    LOG_ERROR(LOG_TAG, "%s unable to create alarm expired semaphore", __func__);
+    LOG_ERROR("%s unable to create alarm expired semaphore", __func__);
     goto error;
   }
 
   default_callback_thread =
       thread_new_sized("alarm_default_callbacks", SIZE_MAX);
   if (default_callback_thread == NULL) {
-    LOG_ERROR(LOG_TAG, "%s unable to create default alarm callbacks thread.",
-              __func__);
+    LOG_ERROR("%s unable to create default alarm callbacks thread.", __func__);
     goto error;
   }
   thread_set_rt_priority(default_callback_thread, THREAD_RT_PRIORITY);
   default_callback_queue = fixed_queue_new(SIZE_MAX);
   if (default_callback_queue == NULL) {
-    LOG_ERROR(LOG_TAG, "%s unable to create default alarm callbacks queue.",
-              __func__);
+    LOG_ERROR("%s unable to create default alarm callbacks queue.", __func__);
     goto error;
   }
   alarm_register_processing_queue(default_callback_queue,
@@ -357,7 +355,7 @@ static bool lazy_initialize(void) {
   dispatcher_thread_active = true;
   dispatcher_thread = thread_new("alarm_dispatcher");
   if (!dispatcher_thread) {
-    LOG_ERROR(LOG_TAG, "%s unable to create alarm callback thread.", __func__);
+    LOG_ERROR("%s unable to create alarm callback thread.", __func__);
     goto error;
   }
   thread_set_rt_priority(dispatcher_thread, THREAD_RT_PRIORITY);
@@ -393,8 +391,7 @@ static uint64_t now_ms(void) {
 
   struct timespec ts;
   if (clock_gettime(CLOCK_ID, &ts) == -1) {
-    LOG_ERROR(LOG_TAG, "%s unable to get current time: %s", __func__,
-              strerror(errno));
+    LOG_ERROR("%s unable to get current time: %s", __func__, strerror(errno));
     return 0;
   }
 
@@ -476,7 +473,7 @@ static void reschedule_root_alarm(void) {
   if (next_expiration < TIMER_INTERVAL_FOR_WAKELOCK_IN_MS) {
     if (!timer_set) {
       if (!wakelock_acquire()) {
-        LOG_ERROR(LOG_TAG, "%s unable to acquire wake lock", __func__);
+        LOG_ERROR("%s unable to acquire wake lock", __func__);
         goto done;
       }
     }
@@ -510,8 +507,7 @@ static void reschedule_root_alarm(void) {
     wakeup_time.it_value.tv_sec = (next->deadline_ms / 1000);
     wakeup_time.it_value.tv_nsec = (next->deadline_ms % 1000) * 1000000LL;
     if (timer_settime(wakeup_timer, TIMER_ABSTIME, &wakeup_time, NULL) == -1)
-      LOG_ERROR(LOG_TAG, "%s unable to set wakeup timer: %s", __func__,
-                strerror(errno));
+      LOG_ERROR("%s unable to set wakeup timer: %s", __func__, strerror(errno));
   }
 
 done:
@@ -522,7 +518,7 @@ done:
   }
 
   if (timer_settime(timer, TIMER_ABSTIME, &timer_time, NULL) == -1)
-    LOG_ERROR(LOG_TAG, "%s unable to set timer: %s", __func__, strerror(errno));
+    LOG_ERROR("%s unable to set timer: %s", __func__, strerror(errno));
 
   // If next expiration was in the past (e.g. short timer that got context
   // switched) then the timer might have diarmed itself. Detect this case and
@@ -540,7 +536,7 @@ done:
     if (time_to_expire.it_value.tv_sec == 0 &&
         time_to_expire.it_value.tv_nsec == 0) {
       LOG_DEBUG(
-          LOG_TAG,
+
           "%s alarm expiration too close for posix timers, switching to guns",
           __func__);
       semaphore_post(alarm_expired);
@@ -652,7 +648,7 @@ static void callback_dispatch(UNUSED_ATTR void* context) {
     // Enqueue the alarm for processing
     if (alarm->for_msg_loop) {
       if (!get_main_message_loop()) {
-        LOG_ERROR(LOG_TAG, "%s: message loop already NULL. Alarm: %s", __func__,
+        LOG_ERROR("%s: message loop already NULL. Alarm: %s", __func__,
                   alarm->stats.name);
         continue;
       }
@@ -665,7 +661,7 @@ static void callback_dispatch(UNUSED_ATTR void* context) {
     }
   }
 
-  LOG_DEBUG(LOG_TAG, "%s Callback thread exited", __func__);
+  LOG_DEBUG("%s Callback thread exited", __func__);
 }
 
 static bool timer_create_internal(const clockid_t clock_id, timer_t* timer) {
@@ -685,17 +681,17 @@ static bool timer_create_internal(const clockid_t clock_id, timer_t* timer) {
   sigevent.sigev_notify_function = (void (*)(union sigval))timer_callback;
   sigevent.sigev_notify_attributes = &thread_attr;
   if (timer_create(clock_id, &sigevent, timer) == -1) {
-    LOG_ERROR(LOG_TAG, "%s unable to create timer with clock %d: %s", __func__,
-              clock_id, strerror(errno));
+    LOG_ERROR("%s unable to create timer with clock %d: %s", __func__, clock_id,
+              strerror(errno));
     if (clock_id == CLOCK_BOOTTIME_ALARM) {
-      LOG_ERROR(LOG_TAG,
-                "The kernel might not have support for "
-                "timer_create(CLOCK_BOOTTIME_ALARM): "
-                "https://lwn.net/Articles/429925/");
-      LOG_ERROR(LOG_TAG,
-                "See following patches: "
-                "https://git.kernel.org/cgit/linux/kernel/git/torvalds/"
-                "linux.git/log/?qt=grep&q=CLOCK_BOOTTIME_ALARM");
+      LOG_ERROR(
+          "The kernel might not have support for "
+          "timer_create(CLOCK_BOOTTIME_ALARM): "
+          "https://lwn.net/Articles/429925/");
+      LOG_ERROR(
+          "See following patches: "
+          "https://git.kernel.org/cgit/linux/kernel/git/torvalds/"
+          "linux.git/log/?qt=grep&q=CLOCK_BOOTTIME_ALARM");
     }
     return false;
   }

@@ -1049,7 +1049,7 @@ void btm_ble_set_adv_flag(uint16_t connect_mode, uint16_t disc_mode) {
 
   btm_ble_update_dmt_flag_bits(&flag, connect_mode, disc_mode);
 
-  LOG_DEBUG(LOG_TAG, "disc_mode %04x", disc_mode);
+  LOG_DEBUG("disc_mode %04x", disc_mode);
   /* update discoverable flag */
   if (disc_mode & BTM_BLE_LIMITED_DISCOVERABLE) {
     flag &= ~BTM_BLE_GEN_DISC_FLAG;
@@ -2020,8 +2020,7 @@ void btm_ble_process_adv_pkt_cont(uint16_t evt_type, uint8_t addr_type,
   uint8_t result = btm_ble_is_discoverable(bda, adv_data);
   if (result == 0) {
     cache.Clear(addr_type, bda);
-    LOG_WARN(LOG_TAG,
-             "%s device no longer discoverable, discarding advertising packet",
+    LOG_WARN("%s device no longer discoverable, discarding advertising packet",
              __func__);
     return;
   }

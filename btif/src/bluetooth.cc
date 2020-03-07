@@ -137,13 +137,13 @@ static bool is_profile(const char* p1, const char* p2) {
 
 static int init(bt_callbacks_t* callbacks, bool start_restricted,
                 bool is_single_user_mode) {
-  LOG_INFO(LOG_TAG, "%s: start restricted = %d ; single user = %d", __func__,
+  LOG_INFO("%s: start restricted = %d ; single user = %d", __func__,
            start_restricted, is_single_user_mode);
 
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    LOG_INFO(LOG_TAG, "%s Enable Gd bluetooth functionality", __func__);
+    LOG_INFO("%s Enable Gd bluetooth functionality", __func__);
   } else {
-    LOG_INFO(LOG_TAG, "%s Preserving legacy bluetooth functionality", __func__);
+    LOG_INFO("%s Preserving legacy bluetooth functionality", __func__);
   }
 
   if (interface_ready()) return BT_STATUS_DONE;
@@ -343,7 +343,7 @@ static void dumpMetrics(std::string* output) {
 }
 
 static const void* get_profile_interface(const char* profile_id) {
-  LOG_INFO(LOG_TAG, "%s: id = %s", __func__, profile_id);
+  LOG_INFO("%s: id = %s", __func__, profile_id);
 
   /* sanity check */
   if (!interface_ready()) return NULL;
@@ -391,7 +391,7 @@ static const void* get_profile_interface(const char* profile_id) {
 }
 
 int dut_mode_configure(uint8_t enable) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
 
   /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
@@ -400,7 +400,7 @@ int dut_mode_configure(uint8_t enable) {
 }
 
 int dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
 
   /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
@@ -409,7 +409,7 @@ int dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len) {
 }
 
 int le_test_mode(uint16_t opcode, uint8_t* buf, uint8_t len) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
 
   /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
@@ -447,7 +447,7 @@ static int set_os_callouts(bt_os_callouts_t* callouts) {
 }
 
 static int config_clear(void) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
   return btif_config_clear() ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 

@@ -1783,7 +1783,7 @@ static void bta_dm_find_services(const RawAddress& bd_addr) {
                        bta_dm_search_cb.services);
       /* try to search all services by search based on L2CAP UUID */
       if (bta_dm_search_cb.services == BTA_ALL_SERVICE_MASK) {
-        LOG_INFO(LOG_TAG, "%s services_to_search=%08x", __func__,
+        LOG_INFO("%s services_to_search=%08x", __func__,
                  bta_dm_search_cb.services_to_search);
         if (bta_dm_search_cb.services_to_search & BTA_RES_SERVICE_MASK) {
           uuid = Uuid::From16Bit(bta_service_id_to_uuid_lkup_tbl[0]);
@@ -1827,8 +1827,7 @@ static void bta_dm_find_services(const RawAddress& bd_addr) {
         uuid = bta_dm_search_cb.uuid;
       }
 
-      LOG_INFO(LOG_TAG, "%s search UUID = %s", __func__,
-               uuid.ToString().c_str());
+      LOG_INFO("%s search UUID = %s", __func__, uuid.ToString().c_str());
       SDP_InitDiscoveryDb(bta_dm_search_cb.p_sdp_db, BTA_DM_SDP_DB_SIZE, 1,
                           &uuid, 0, NULL);
 
@@ -2672,8 +2671,7 @@ static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
 
   tBTA_DM_PEER_DEVICE* p_dev = bta_dm_find_peer_device(bd_addr);
   if (!p_dev) return;
-  LOG_INFO(LOG_TAG,
-           "%s: peer %s info:0x%x new_role:0x%x dev count:%d hci_status=%d",
+  LOG_INFO("%s: peer %s info:0x%x new_role:0x%x dev count:%d hci_status=%d",
            __func__, bd_addr.ToString().c_str(), p_dev->info, new_role,
            bta_dm_cb.device_list.count, hci_status);
   if (p_dev->info & BTA_DM_DI_AV_ACTIVE) {
@@ -4188,7 +4186,7 @@ static void bta_dm_gatt_disc_result(tBTA_GATT_ID service_id) {
         __func__, bta_dm_search_cb.ble_raw_size, bta_dm_search_cb.ble_raw_used);
   }
 
-  LOG_INFO(LOG_TAG, "%s service_id_uuid_len=%zu", __func__,
+  LOG_INFO("%s service_id_uuid_len=%zu", __func__,
            service_id.uuid.GetShortestRepresentationSize());
   if (bta_dm_search_cb.state != BTA_DM_SEARCH_IDLE) {
     /* send result back to app now, one by one */

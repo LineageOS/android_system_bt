@@ -74,14 +74,14 @@ extern const btgatt_callbacks_t* bt_gatt_callbacks;
     }                                                                          \
   } while (0)
 
-#define CHECK_BTGATT_INIT()                                      \
-  do {                                                           \
-    if (bt_gatt_callbacks == NULL) {                             \
-      LOG_WARN(LOG_TAG, "%s: BTGATT not initialized", __func__); \
-      return BT_STATUS_NOT_READY;                                \
-    } else {                                                     \
-      LOG_VERBOSE(LOG_TAG, "%s", __func__);                      \
-    }                                                            \
+#define CHECK_BTGATT_INIT()                             \
+  do {                                                  \
+    if (bt_gatt_callbacks == NULL) {                    \
+      LOG_WARN("%s: BTGATT not initialized", __func__); \
+      return BT_STATUS_NOT_READY;                       \
+    } else {                                            \
+      LOG_VERBOSE("%s", __func__);                      \
+    }                                                   \
   } while (0)
 
 #define BLE_RESOLVE_ADDR_MSB                                                   \
@@ -96,7 +96,7 @@ namespace {
 uint8_t rssi_request_client_if;
 
 void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
-  LOG_VERBOSE(LOG_TAG, "%s: Event %d", __func__, event);
+  LOG_VERBOSE("%s: Event %d", __func__, event);
 
   tBTA_GATTC* p_data = (tBTA_GATTC*)p_param;
   switch (event) {
@@ -159,7 +159,7 @@ void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
     }
 
     case BTA_GATTC_ACL_EVT:
-      LOG_DEBUG(LOG_TAG, "BTA_GATTC_ACL_EVT: status = %d", p_data->status);
+      LOG_DEBUG("BTA_GATTC_ACL_EVT: status = %d", p_data->status);
       /* Ignore for now */
       break;
 
@@ -195,7 +195,7 @@ void btif_gattc_upstreams_evt(uint16_t event, char* p_param) {
       break;
 
     default:
-      LOG_ERROR(LOG_TAG, "%s: Unhandled event (%d)!", __func__, event);
+      LOG_ERROR("%s: Unhandled event (%d)!", __func__, event);
       break;
   }
 }
