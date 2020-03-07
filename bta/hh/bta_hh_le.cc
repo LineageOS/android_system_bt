@@ -462,7 +462,7 @@ static const gatt::Descriptor* find_descriptor_by_short_uuid(
       BTA_GATTC_GetCharacteristic(conn_id, char_handle);
 
   if (!p_char) {
-    LOG_WARN(LOG_TAG, "%s No such characteristic: %d", __func__, char_handle);
+    LOG_WARN("%s No such characteristic: %d", __func__, char_handle);
     return NULL;
   }
 
@@ -1401,7 +1401,7 @@ static void bta_hh_le_search_hid_chars(tBTA_HH_DEV_CB* p_dev_cb,
     if (!charac.uuid.Is16Bit()) continue;
 
     uint16_t uuid16 = charac.uuid.As16Bit();
-    LOG_DEBUG(LOG_TAG, "%s: %s %s", __func__, bta_hh_uuid_to_str(uuid16),
+    LOG_DEBUG("%s: %s %s", __func__, bta_hh_uuid_to_str(uuid16),
               charac.uuid.ToString().c_str());
 
     switch (uuid16) {

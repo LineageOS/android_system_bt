@@ -143,8 +143,7 @@ static void bta_hf_client_queue_at(tBTA_HF_CLIENT_CB* client_cb,
 static void bta_hf_client_at_resp_timer_cback(void* data) {
   tBTA_HF_CLIENT_CB* client_cb = (tBTA_HF_CLIENT_CB*)data;
   if (client_cb->at_cb.current_cmd == BTA_HF_CLIENT_AT_CNUM) {
-    LOG_INFO(LOG_TAG,
-             "%s: timed out waiting for AT+CNUM response; spoofing OK.",
+    LOG_INFO("%s: timed out waiting for AT+CNUM response; spoofing OK.",
              __func__);
     bta_hf_client_handle_ok(client_cb);
   } else {

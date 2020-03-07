@@ -56,8 +56,7 @@ void btsnoop_net_open() {
   listen_thread_valid_ =
       (pthread_create(&listen_thread_, NULL, listen_fn_, NULL) == 0);
   if (!listen_thread_valid_)
-    LOG_ERROR(LOG_TAG, "%s pthread_create failed: %s", __func__,
-              strerror(errno));
+    LOG_ERROR("%s pthread_create failed: %s", __func__, strerror(errno));
 }
 
 void btsnoop_net_close() {
@@ -96,15 +95,13 @@ static void* listen_fn_(UNUSED_ATTR void* context) {
 
   listen_socket_ = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
   if (listen_socket_ == -1) {
-    LOG_ERROR(LOG_TAG, "%s socket creation failed: %s", __func__,
-              strerror(errno));
+    LOG_ERROR("%s socket creation failed: %s", __func__, strerror(errno));
     goto cleanup;
   }
 
   if (setsockopt(listen_socket_, SOL_SOCKET, SO_REUSEADDR, &enable,
                  sizeof(enable)) == -1) {
-    LOG_ERROR(LOG_TAG, "%s unable to set SO_REUSEADDR: %s", __func__,
-              strerror(errno));
+    LOG_ERROR("%s unable to set SO_REUSEADDR: %s", __func__, strerror(errno));
     goto cleanup;
   }
 
@@ -113,13 +110,12 @@ static void* listen_fn_(UNUSED_ATTR void* context) {
   addr.sin_addr.s_addr = htonl(LOCALHOST_);
   addr.sin_port = htons(LISTEN_PORT_);
   if (bind(listen_socket_, (struct sockaddr*)&addr, sizeof(addr)) == -1) {
-    LOG_ERROR(LOG_TAG, "%s unable to bind listen socket: %s", __func__,
-              strerror(errno));
+    LOG_ERROR("%s unable to bind listen socket: %s", __func__, strerror(errno));
     goto cleanup;
   }
 
   if (listen(listen_socket_, 10) == -1) {
-    LOG_ERROR(LOG_TAG, "%s unable to listen: %s", __func__, strerror(errno));
+    LOG_ERROR("%s unable to listen: %s", __func__, strerror(errno));
     goto cleanup;
   }
 
@@ -130,8 +126,7 @@ static void* listen_fn_(UNUSED_ATTR void* context) {
       if (errno == EINVAL || errno == EBADF) {
         break;
       }
-      LOG_WARN(LOG_TAG, "%s error accepting socket: %s", __func__,
-               strerror(errno));
+      LOG_WARN("%s error accepting socket: %s", __func__, strerror(errno));
       continue;
     }
 

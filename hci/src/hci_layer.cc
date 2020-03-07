@@ -195,7 +195,7 @@ void hal_service_died() {
 static future_t* hci_module_shut_down();
 
 static future_t* hci_module_start_up(void) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
 
   // The host is only allowed to send at most one command initially,
   // as per the Bluetooth spec, Volume 2, Part E, 4.4 (Command Flow Control)
@@ -215,30 +215,29 @@ static future_t* hci_module_start_up(void) {
 
   startup_timer = alarm_new("hci.startup_timer");
   if (!startup_timer) {
-    LOG_ERROR(LOG_TAG, "%s unable to create startup timer.", __func__);
+    LOG_ERROR("%s unable to create startup timer.", __func__);
     goto error;
   }
 
   command_response_timer = alarm_new("hci.command_response_timer");
   if (!command_response_timer) {
-    LOG_ERROR(LOG_TAG, "%s unable to create command response timer.", __func__);
+    LOG_ERROR("%s unable to create command response timer.", __func__);
     goto error;
   }
 
   hci_thread.StartUp();
   if (!hci_thread.IsRunning()) {
-    LOG_ERROR(LOG_TAG, "%s unable to start thread.", __func__);
+    LOG_ERROR("%s unable to start thread.", __func__);
     goto error;
   }
   if (!hci_thread.EnableRealTimeScheduling()) {
-    LOG_ERROR(LOG_TAG, "%s unable to make thread RT.", __func__);
+    LOG_ERROR("%s unable to make thread RT.", __func__);
     goto error;
   }
 
   commands_pending_response = list_new(NULL);
   if (!commands_pending_response) {
-    LOG_ERROR(LOG_TAG,
-              "%s unable to create list for commands pending response.",
+    LOG_ERROR("%s unable to create list for commands pending response.",
               __func__);
     goto error;
   }
@@ -253,7 +252,7 @@ static future_t* hci_module_start_up(void) {
 
   hci_thread.DoInThread(FROM_HERE, base::Bind(&hci_initialize));
 
-  LOG_DEBUG(LOG_TAG, "%s starting async portion", __func__);
+  LOG_DEBUG("%s starting async portion", __func__);
   return local_startup_future;
 
 error:
@@ -262,7 +261,7 @@ error:
 }
 
 static future_t* hci_module_shut_down() {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
 
   // Free the timers
   {
@@ -353,8 +352,7 @@ static void transmit_downward(uint16_t type, void* data) {
   if (type == MSG_STACK_TO_HC_HCI_CMD) {
     // TODO(zachoverflow): eliminate this call
     transmit_command((BT_HDR*)data, NULL, NULL, NULL);
-    LOG_WARN(LOG_TAG,
-             "%s legacy transmit of command. Use transmit_command instead.",
+    LOG_WARN("%s legacy transmit of command. Use transmit_command instead.",
              __func__);
   } else {
     enqueue_packet(data);
@@ -364,7 +362,7 @@ static void transmit_downward(uint16_t type, void* data) {
 // Start up functions
 
 static void event_finish_startup(UNUSED_ATTR void* context) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
   std::lock_guard<std::recursive_timed_mutex> lock(
       commands_pending_response_mutex);
   alarm_cancel(startup_timer);
@@ -376,13 +374,13 @@ static void event_finish_startup(UNUSED_ATTR void* context) {
 }
 
 static void startup_timer_expired(UNUSED_ATTR void* context) {
-  LOG_ERROR(LOG_TAG, "%s", __func__);
+  LOG_ERROR("%s", __func__);
 
   LOG_EVENT_INT(BT_HCI_TIMEOUT_TAG_NUM, HCI_STARTUP_TIMED_OUT);
 
   hci_close();
   if (abort_timer.IsScheduled()) {
-    LOG_ERROR(LOG_TAG, "%s: waiting for abort_timer", __func__);
+    LOG_ERROR("%s: waiting for abort_timer", __func__);
     return;
   }
 
@@ -468,7 +466,7 @@ static void fragmenter_transmit_finished(BT_HDR* packet,
 
 // Abort.  The chip has had time to write any debugging information.
 static void hci_timeout_abort(void) {
-  LOG_ERROR(LOG_TAG, "%s restarting the Bluetooth process.", __func__);
+  LOG_ERROR("%s restarting the Bluetooth process.", __func__);
   hci_close_firmware_log_file(hci_firmware_log_fd);
 
   // We shouldn't try to recover the stack from this command timeout.
@@ -484,7 +482,7 @@ static void hci_root_inflamed_abort() {
 }
 
 static void command_timed_out_log_info(void* original_wait_entry) {
-  LOG_ERROR(LOG_TAG, "%s: %d commands pending response", __func__,
+  LOG_ERROR("%s: %d commands pending response", __func__,
             get_num_waiting_commands());
 
   for (const list_node_t* node = list_begin(commands_pending_response);
@@ -496,18 +494,18 @@ static void command_timed_out_log_info(void* original_wait_entry) {
         std::chrono::duration_cast<std::chrono::milliseconds>(
             std::chrono::steady_clock::now() - wait_entry->timestamp)
             .count();
-    LOG_ERROR(LOG_TAG, "%s: Waited %d ms for a response to opcode: 0x%x %s",
-              __func__, wait_time_ms, wait_entry->opcode,
+    LOG_ERROR("%s: Waited %d ms for a response to opcode: 0x%x %s", __func__,
+              wait_time_ms, wait_entry->opcode,
               (wait_entry == original_wait_entry) ? "*matches timer*" : "");
 
     // Dump the length field and the first byte of the payload, if present.
     uint8_t* command = wait_entry->command->data + wait_entry->command->offset;
     if (wait_entry->command->len > 3) {
-      LOG_ERROR(LOG_TAG, "%s: Size %d Hex %02x %02x %02x %02x", __func__,
+      LOG_ERROR("%s: Size %d Hex %02x %02x %02x %02x", __func__,
                 wait_entry->command->len, command[0], command[1], command[2],
                 command[3]);
     } else {
-      LOG_ERROR(LOG_TAG, "%s: Size %d Hex %02x %02x %02x", __func__,
+      LOG_ERROR("%s: Size %d Hex %02x %02x %02x", __func__,
                 wait_entry->command->len, command[0], command[1], command[2]);
     }
 
@@ -518,12 +516,12 @@ static void command_timed_out_log_info(void* original_wait_entry) {
 
 // Print debugging information and quit. Don't dereference original_wait_entry.
 static void command_timed_out(void* original_wait_entry) {
-  LOG_ERROR(LOG_TAG, "%s", __func__);
+  LOG_ERROR("%s", __func__);
   std::unique_lock<std::recursive_timed_mutex> lock(
       commands_pending_response_mutex, std::defer_lock);
   if (!lock.try_lock_for(std::chrono::milliseconds(
           COMMAND_PENDING_MUTEX_ACQUIRE_TIMEOUT_MS))) {
-    LOG_ERROR(LOG_TAG, "%s: Cannot obtain the mutex", __func__);
+    LOG_ERROR("%s: Cannot obtain the mutex", __func__);
     LOG_EVENT_INT(BT_HCI_TIMEOUT_TAG_NUM, HCI_UNKNOWN_COMMAND_TIMED_OUT);
     bluetooth::common::LogHciTimeoutEvent(android::bluetooth::hci::CMD_UNKNOWN);
   } else {
@@ -536,7 +534,7 @@ static void command_timed_out(void* original_wait_entry) {
     return;
   }
 
-  LOG_ERROR(LOG_TAG, "%s: requesting a firmware dump.", __func__);
+  LOG_ERROR("%s: requesting a firmware dump.", __func__);
 
   /* Allocate a buffer to hold the HCI command. */
   BT_HDR* bt_hdr =
@@ -556,13 +554,13 @@ static void command_timed_out(void* original_wait_entry) {
   transmit_fragment(bt_hdr, true);
 
   osi_free(bt_hdr);
-  LOG_ERROR(LOG_TAG, "%s: Setting a timer to restart.", __func__);
+  LOG_ERROR("%s: Setting a timer to restart.", __func__);
 
   // alarm_default_callbacks thread post to hci_thread.
   if (!abort_timer.Schedule(
           hci_thread.GetWeakPtr(), FROM_HERE, base::Bind(hci_timeout_abort),
           base::TimeDelta::FromMilliseconds(COMMAND_TIMEOUT_RESTART_MS))) {
-    LOG_ERROR(LOG_TAG, "%s unable to create an abort timer.", __func__);
+    LOG_ERROR("%s unable to create an abort timer.", __func__);
     abort();
   }
 }
@@ -654,10 +652,10 @@ static bool filter_incoming_event(BT_HDR* packet) {
 
     if (!wait_entry) {
       if (opcode != HCI_COMMAND_NONE) {
-        LOG_WARN(LOG_TAG,
-                 "%s command complete event with no matching command (opcode: "
-                 "0x%04x).",
-                 __func__, opcode);
+        LOG_WARN(
+            "%s command complete event with no matching command (opcode: "
+            "0x%04x).",
+            __func__, opcode);
       }
     } else {
       update_command_response_timer();
@@ -683,7 +681,6 @@ static bool filter_incoming_event(BT_HDR* packet) {
 
     if (!wait_entry) {
       LOG_WARN(
-          LOG_TAG,
           "%s command status event with no matching command. opcode: 0x%04x",
           __func__, opcode);
     } else {

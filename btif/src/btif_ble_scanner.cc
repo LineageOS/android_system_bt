@@ -128,8 +128,7 @@ void bta_scan_results_cb_impl(RawAddress bd_addr, tBT_DEVICE_TYPE device_type,
         if (remote_name_len > BD_NAME_LEN + 1 ||
             (remote_name_len == BD_NAME_LEN + 1 &&
              p_eir_remote_name[BD_NAME_LEN] != '\0')) {
-          LOG_INFO(LOG_TAG,
-                   "%s dropping invalid packet - device name too long: %d",
+          LOG_INFO("%s dropping invalid packet - device name too long: %d",
                    __func__, remote_name_len);
           return;
         }
@@ -139,8 +138,8 @@ void bta_scan_results_cb_impl(RawAddress bd_addr, tBT_DEVICE_TYPE device_type,
         if (remote_name_len < BD_NAME_LEN + 1)
           bdname.name[remote_name_len] = '\0';
 
-        LOG_VERBOSE(LOG_TAG, "%s BLE device name=%s len=%d dev_type=%d",
-                    __func__, bdname.name, remote_name_len, device_type);
+        LOG_VERBOSE("%s BLE device name=%s len=%d dev_type=%d", __func__,
+                    bdname.name, remote_name_len, device_type);
         btif_dm_update_ble_remote_properties(bd_addr, bdname.name, device_type);
       }
     }

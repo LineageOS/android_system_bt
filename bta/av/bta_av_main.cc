@@ -369,7 +369,7 @@ void tBTA_AV_SCB::OnConnected(const RawAddress& peer_address) {
   peer_address_ = peer_address;
 
   if (peer_address.IsEmpty()) {
-    LOG_ERROR(LOG_TAG, "%s: Invalid peer address: %s", __func__,
+    LOG_ERROR("%s: Invalid peer address: %s", __func__,
               peer_address.ToString().c_str());
     return;
   }
@@ -379,8 +379,8 @@ void tBTA_AV_SCB::OnConnected(const RawAddress& peer_address) {
   size_t version_value_size = sizeof(avdtp_version);
   if (!btif_config_get_bin(peer_address_.ToString(), AVDTP_VERSION_CONFIG_KEY,
                            (uint8_t*)&avdtp_version, &version_value_size)) {
-    LOG_WARN(LOG_TAG, "%s: Failed to read cached peer AVDTP version for %s",
-             __func__, peer_address_.ToString().c_str());
+    LOG_WARN("%s: Failed to read cached peer AVDTP version for %s", __func__,
+             peer_address_.ToString().c_str());
   } else {
     SetAvdtpVersion(avdtp_version);
   }
@@ -393,7 +393,7 @@ void tBTA_AV_SCB::OnDisconnected() {
 
 void tBTA_AV_SCB::SetAvdtpVersion(uint16_t avdtp_version) {
   avdtp_version_ = avdtp_version;
-  LOG_DEBUG(LOG_TAG, "%s: AVDTP version for %s set to 0x%x", __func__,
+  LOG_DEBUG("%s: AVDTP version for %s set to 0x%x", __func__,
             peer_address_.ToString().c_str(), avdtp_version_);
 }
 
@@ -430,7 +430,7 @@ void bta_av_conn_cback(UNUSED_ATTR uint8_t handle, const RawAddress& bd_addr,
       APPL_TRACE_DEBUG("%s: bta_handle x%x, role x%x", __func__, p_scb->hndl,
                        p_scb->role);
     }
-    LOG_INFO(LOG_TAG, "%s: conn_cback bd_addr: %s", __func__,
+    LOG_INFO("%s: conn_cback bd_addr: %s", __func__,
              bd_addr.ToString().c_str());
     bta_sys_sendmsg(p_msg);
   }
@@ -480,8 +480,7 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
   char avrcp_version[PROPERTY_VALUE_MAX] = {0};
   osi_property_get(AVRCP_VERSION_PROPERTY, avrcp_version,
                    AVRCP_DEFAULT_VERSION);
-  LOG_INFO(LOG_TAG, "%s: AVRCP version used for sdp: \"%s\"", __func__,
-           avrcp_version);
+  LOG_INFO("%s: AVRCP version used for sdp: \"%s\"", __func__, avrcp_version);
 
   uint16_t profile_initialized = p_data->api_reg.service_uuid;
   if (profile_initialized == UUID_SERVCLASS_AUDIO_SINK) {
@@ -490,7 +489,7 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
     p_bta_av_cfg = &bta_av_cfg;
 
     if (!strncmp(AVRCP_1_3_STRING, avrcp_version, sizeof(AVRCP_1_3_STRING))) {
-      LOG_INFO(LOG_TAG, "%s: AVRCP 1.3 capabilites used", __func__);
+      LOG_INFO("%s: AVRCP 1.3 capabilites used", __func__);
       p_bta_av_cfg = &bta_av_cfg_compatibility;
     }
   }
@@ -841,12 +840,12 @@ bool bta_av_chk_start(tBTA_AV_SCB* p_scb) {
     }
   }
 
-  LOG_INFO(LOG_TAG,
-           "%s: peer %s channel:%d bta_av_cb.audio_open_cnt:%d role:0x%x "
-           "features:0x%x start:%s",
-           __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->chnl,
-           bta_av_cb.audio_open_cnt, p_scb->role, bta_av_cb.features,
-           logbool(start).c_str());
+  LOG_INFO(
+      "%s: peer %s channel:%d bta_av_cb.audio_open_cnt:%d role:0x%x "
+      "features:0x%x start:%s",
+      __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->chnl,
+      bta_av_cb.audio_open_cnt, p_scb->role, bta_av_cb.features,
+      logbool(start).c_str());
   return start;
 }
 
@@ -1094,11 +1093,11 @@ bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits) {
   bool is_ok = true;
 
   if (BTM_GetRole(p_scb->PeerAddress(), &role) == BTM_SUCCESS) {
-    LOG_INFO(LOG_TAG,
-             "%s: peer %s bta_handle:0x%x role:%d conn_audio:0x%x bits:%d "
-             "features:0x%x",
-             __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->hndl,
-             role, bta_av_cb.conn_audio, bits, bta_av_cb.features);
+    LOG_INFO(
+        "%s: peer %s bta_handle:0x%x role:%d conn_audio:0x%x bits:%d "
+        "features:0x%x",
+        __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->hndl, role,
+        bta_av_cb.conn_audio, bits, bta_av_cb.features);
     if (BTM_ROLE_MASTER != role &&
         (A2DP_BitsSet(bta_av_cb.conn_audio) > bits ||
          (bta_av_cb.features & BTA_AV_FEAT_MASTER))) {
@@ -1110,8 +1109,7 @@ bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits) {
           BTM_SwitchRole(p_scb->PeerAddress(), BTM_ROLE_MASTER, NULL);
       if (status != BTM_CMD_STARTED) {
         /* can not switch role on SCB - start the timer on SCB */
-        LOG_ERROR(LOG_TAG,
-                  "%s: peer %s BTM_SwitchRole(BTM_ROLE_MASTER) error: %d",
+        LOG_ERROR("%s: peer %s BTM_SwitchRole(BTM_ROLE_MASTER) error: %d",
                   __func__, p_scb->PeerAddress().ToString().c_str(), status);
       }
       if (status != BTM_MODE_UNSUPPORTED && status != BTM_DEV_BLACKLISTED) {

@@ -543,8 +543,8 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role,
   tBTM_PM_MODE pwr_mode;
   tBTM_PM_PWR_MD settings;
 
-  LOG_INFO(LOG_TAG, "%s: peer %s new_role=0x%x p_cb=%p p_switch_role_cb=%p",
-           __func__, remote_bd_addr.ToString().c_str(), new_role, p_cb,
+  LOG_INFO("%s: peer %s new_role=0x%x p_cb=%p p_switch_role_cb=%p", __func__,
+           remote_bd_addr.ToString().c_str(), new_role, p_cb,
            btm_cb.devcb.p_switch_role_cb);
 
   /* Make sure the local device supports switching */

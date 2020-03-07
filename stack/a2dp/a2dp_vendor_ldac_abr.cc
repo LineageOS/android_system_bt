@@ -68,7 +68,7 @@ bool A2DP_VendorLoadLdacAbr(void) {
   // Open the LDAC ABR library
   ldac_abr_lib_handle = dlopen(LDAC_ABR_LIB_NAME, RTLD_NOW);
   if (ldac_abr_lib_handle == NULL) {
-    LOG_ERROR(LOG_TAG, "%s: cannot open LDAC ABR library %s: %s", __func__,
+    LOG_ERROR("%s: cannot open LDAC ABR library %s: %s", __func__,
               LDAC_ABR_LIB_NAME, dlerror());
     A2DP_VendorUnloadLdacAbr();
     return false;
@@ -78,8 +78,7 @@ bool A2DP_VendorLoadLdacAbr(void) {
   ldac_abr_get_handle_func = (tLDAC_ABR_GET_HANDLE)dlsym(
       ldac_abr_lib_handle, LDAC_ABR_GET_HANDLE_NAME);
   if (ldac_abr_get_handle_func == NULL) {
-    LOG_ERROR(LOG_TAG,
-              "%s: cannot find function '%s' in the LDAC ABR library: %s",
+    LOG_ERROR("%s: cannot find function '%s' in the LDAC ABR library: %s",
               __func__, LDAC_ABR_GET_HANDLE_NAME, dlerror());
     A2DP_VendorUnloadLdacAbr();
     return false;
@@ -88,8 +87,7 @@ bool A2DP_VendorLoadLdacAbr(void) {
   ldac_abr_free_handle_func = (tLDAC_ABR_FREE_HANDLE)dlsym(
       ldac_abr_lib_handle, LDAC_ABR_FREE_HANDLE_NAME);
   if (ldac_abr_free_handle_func == NULL) {
-    LOG_ERROR(LOG_TAG,
-              "%s: cannot find function '%s' in the LDAC ABR library: %s",
+    LOG_ERROR("%s: cannot find function '%s' in the LDAC ABR library: %s",
               __func__, LDAC_ABR_FREE_HANDLE_NAME, dlerror());
     A2DP_VendorUnloadLdacAbr();
     return false;
@@ -98,8 +96,7 @@ bool A2DP_VendorLoadLdacAbr(void) {
   ldac_abr_init_func =
       (tLDAC_ABR_INIT)dlsym(ldac_abr_lib_handle, LDAC_ABR_INIT_NAME);
   if (ldac_abr_init_func == NULL) {
-    LOG_ERROR(LOG_TAG,
-              "%s: cannot find function '%s' in the LDAC ABR library: %s",
+    LOG_ERROR("%s: cannot find function '%s' in the LDAC ABR library: %s",
               __func__, LDAC_ABR_INIT_NAME, dlerror());
     A2DP_VendorUnloadLdacAbr();
     return false;
@@ -108,8 +105,7 @@ bool A2DP_VendorLoadLdacAbr(void) {
   ldac_abr_set_thresholds_func = (tLDAC_ABR_SET_THRESHOLDS)dlsym(
       ldac_abr_lib_handle, LDAC_ABR_SET_THRESHOLDS_NAME);
   if (ldac_abr_set_thresholds_func == NULL) {
-    LOG_ERROR(LOG_TAG,
-              "%s: cannot find function '%s' in the LDAC ABR library: %s",
+    LOG_ERROR("%s: cannot find function '%s' in the LDAC ABR library: %s",
               __func__, LDAC_ABR_SET_THRESHOLDS_NAME, dlerror());
     A2DP_VendorUnloadLdacAbr();
     return false;
@@ -118,8 +114,7 @@ bool A2DP_VendorLoadLdacAbr(void) {
   ldac_abr_proc_func =
       (tLDAC_ABR_PROC)dlsym(ldac_abr_lib_handle, LDAC_ABR_PROC_NAME);
   if (ldac_abr_proc_func == NULL) {
-    LOG_ERROR(LOG_TAG,
-              "%s: cannot find function '%s' in the LDAC ABR library: %s",
+    LOG_ERROR("%s: cannot find function '%s' in the LDAC ABR library: %s",
               __func__, LDAC_ABR_PROC_NAME, dlerror());
     A2DP_VendorUnloadLdacAbr();
     return false;

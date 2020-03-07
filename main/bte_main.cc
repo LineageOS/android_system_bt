@@ -120,7 +120,7 @@ void bte_main_boot_entry(void) {
 
   hci = hci_layer_get_interface();
   if (!hci) {
-    LOG_ERROR(LOG_TAG, "%s could not get hci layer interface.", __func__);
+    LOG_ERROR("%s could not get hci layer interface.", __func__);
     return;
   }
 
@@ -158,7 +158,7 @@ void bte_main_enable() {
   APPL_TRACE_DEBUG("%s", __func__);
 
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    LOG_INFO(LOG_TAG, "%s Gd shim module enabled", __func__);
+    LOG_INFO("%s Gd shim module enabled", __func__);
     module_start_up(get_module(GD_SHIM_MODULE));
     module_start_up(get_module(GD_HCI_MODULE));
   } else {
@@ -183,7 +183,7 @@ void bte_main_disable(void) {
   APPL_TRACE_DEBUG("%s", __func__);
 
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    LOG_INFO(LOG_TAG, "%s Gd shim module enabled", __func__);
+    LOG_INFO("%s Gd shim module enabled", __func__);
     module_shut_down(get_module(GD_HCI_MODULE));
     module_shut_down(get_module(GD_SHIM_MODULE));
   } else {
