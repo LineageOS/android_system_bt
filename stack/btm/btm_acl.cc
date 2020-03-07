@@ -825,7 +825,8 @@ void btm_use_preferred_conn_params(const RawAddress& bda) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(bda);
 
   /* If there are any preferred connection parameters, set them now */
-  if ((p_dev_rec->conn_params.min_conn_int >= BTM_BLE_CONN_INT_MIN) &&
+  if ((p_lcb != NULL) && (p_dev_rec != NULL) &&
+      (p_dev_rec->conn_params.min_conn_int >= BTM_BLE_CONN_INT_MIN) &&
       (p_dev_rec->conn_params.min_conn_int <= BTM_BLE_CONN_INT_MAX) &&
       (p_dev_rec->conn_params.max_conn_int >= BTM_BLE_CONN_INT_MIN) &&
       (p_dev_rec->conn_params.max_conn_int <= BTM_BLE_CONN_INT_MAX) &&

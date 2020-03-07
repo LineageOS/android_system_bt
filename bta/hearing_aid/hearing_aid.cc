@@ -1012,13 +1012,16 @@ class HearingAidImpl : public HearingAid {
     }
   }
 
-  void OnAudioSuspend() {
+  void OnAudioSuspend(const std::function<void()>& stop_audio_ticks) {
+    CHECK(stop_audio_ticks) << "stop_audio_ticks is empty";
+
     if (!audio_running) {
       LOG(WARNING) << __func__ << ": Unexpected audio suspend";
     } else {
       LOG(INFO) << __func__ << ": audio_running=" << audio_running;
     }
     audio_running = false;
+    stop_audio_ticks();
 
     std::vector<uint8_t> stop({CONTROL_POINT_OP_STOP});
     for (auto& device : hearingDevices.devices) {
@@ -1039,23 +1042,33 @@ class HearingAidImpl : public HearingAid {
     }
   }
 
-  void OnAudioResume() {
+  void OnAudioResume(const std::function<void()>& start_audio_ticks) {
+    CHECK(start_audio_ticks) << "start_audio_ticks is empty";
+
     if (audio_running) {
       LOG(ERROR) << __func__ << ": Unexpected Audio Resume";
     } else {
       LOG(INFO) << __func__ << ": audio_running=" << audio_running;
     }
-    audio_running = true;
+
+    for (auto& device : hearingDevices.devices) {
+      if (!device.accepting_audio) continue;
+      audio_running = true;
+      SendStart(&device);
+    }
+
+    if (!audio_running) {
+      LOG(INFO) << __func__ << ": No device (0/" << GetDeviceCount()
+                << ") ready to start";
+      return;
+    }
 
     // TODO: shall we also reset the encoder ?
     encoder_state_release();
     encoder_state_init();
     seq_counter = 0;
 
-    for (auto& device : hearingDevices.devices) {
-      if (!device.accepting_audio) continue;
-      SendStart(&device);
-    }
+    start_audio_ticks();
   }
 
   uint8_t GetOtherSideStreamStatus(HearingDevice* this_side_device) {
@@ -1147,10 +1160,9 @@ class HearingAidImpl : public HearingAid {
     }
 
     if (left == nullptr && right == nullptr) {
-      HearingAidAudioSource::Stop();
-      audio_running = false;
-      encoder_state_release();
-      current_volume = VOLUME_UNKNOWN;
+      LOG(WARNING) << __func__ << ": No more (0/" << GetDeviceCount()
+                   << ") devices ready";
+      DoDisconnectAudioStop();
       return;
     }
 
@@ -1463,8 +1475,17 @@ class HearingAidImpl : public HearingAid {
 
     hearingDevices.Remove(address);
 
-    if (connected)
-      callbacks->OnConnectionState(ConnectionState::DISCONNECTED, address);
+    if (!connected) {
+      return;
+    }
+
+    callbacks->OnConnectionState(ConnectionState::DISCONNECTED, address);
+    for (const auto& device : hearingDevices.devices) {
+      if (device.accepting_audio) return;
+    }
+    LOG(INFO) << __func__ << ": No more (0/" << GetDeviceCount()
+              << ") devices ready";
+    DoDisconnectAudioStop();
   }
 
   void OnGattDisconnected(tGATT_STATUS status, uint16_t conn_id,
@@ -1486,7 +1507,16 @@ class HearingAidImpl : public HearingAid {
 
     DoDisconnectCleanUp(hearingDevice);
 
+    // Keep this hearing aid in the list, and allow to reconnect back.
+
     callbacks->OnConnectionState(ConnectionState::DISCONNECTED, remote_bda);
+
+    for (const auto& device : hearingDevices.devices) {
+      if (device.accepting_audio) return;
+    }
+    LOG(INFO) << __func__ << ": No more (0/" << GetDeviceCount()
+              << ") devices ready";
+    DoDisconnectAudioStop();
   }
 
   void DoDisconnectCleanUp(HearingDevice* hearingDevice) {
@@ -1517,6 +1547,13 @@ class HearingAidImpl : public HearingAid {
               << ", playback_started=" << hearingDevice->playback_started;
     hearingDevice->playback_started = false;
     hearingDevice->command_acked = false;
+  }
+
+  void DoDisconnectAudioStop() {
+    HearingAidAudioSource::Stop();
+    audio_running = false;
+    encoder_state_release();
+    current_volume = VOLUME_UNKNOWN;
   }
 
   void SetVolume(int8_t volume) override {
@@ -1730,14 +1767,11 @@ class HearingAidAudioReceiverImpl : public HearingAidAudioReceiver {
   void OnAudioDataReady(const std::vector<uint8_t>& data) override {
     if (instance) instance->OnAudioDataReady(data);
   }
-  void OnAudioSuspend(std::promise<void> do_suspend_promise) override {
-    if (instance) instance->OnAudioSuspend();
-    do_suspend_promise.set_value();
+  void OnAudioSuspend(const std::function<void()>& stop_audio_ticks) override {
+    if (instance) instance->OnAudioSuspend(stop_audio_ticks);
   }
-
-  void OnAudioResume(std::promise<void> do_resume_promise) override {
-    if (instance) instance->OnAudioResume();
-    do_resume_promise.set_value();
+  void OnAudioResume(const std::function<void()>& start_audio_ticks) override {
+    if (instance) instance->OnAudioResume(start_audio_ticks);
   }
 };
 

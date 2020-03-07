@@ -65,7 +65,8 @@ extern void btm_inq_remote_name_timer_timeout(void* data);
 /* Inquiry related functions */
 extern void btm_clr_inq_db(const RawAddress* p_bda);
 extern void btm_inq_db_init(void);
-extern void btm_process_inq_results(uint8_t* p, uint8_t inq_res_mode);
+extern void btm_process_inq_results(uint8_t* p, uint8_t hci_evt_len,
+                                    uint8_t inq_res_mode);
 extern void btm_process_inq_complete(uint8_t status, uint8_t mode);
 extern void btm_process_cancel_complete(uint8_t status, uint8_t mode);
 extern void btm_event_filter_complete(uint8_t* p);

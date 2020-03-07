@@ -21,7 +21,6 @@
 #include <base/callback_forward.h>
 #include <hardware/bt_hearing_aid.h>
 #include <deque>
-#include <future>
 #include <vector>
 
 constexpr uint16_t HEARINGAID_MAX_NUM_UUIDS = 1;
@@ -39,8 +38,22 @@ class HearingAidAudioReceiver {
  public:
   virtual ~HearingAidAudioReceiver() = default;
   virtual void OnAudioDataReady(const std::vector<uint8_t>& data) = 0;
-  virtual void OnAudioSuspend(std::promise<void> do_suspend_promise) = 0;
-  virtual void OnAudioResume(std::promise<void> do_resume_promise) = 0;
+
+  // API to stop our feeding timer, and notify hearing aid devices that the
+  // streaming would stop, too.
+  //
+  // @param stop_audio_ticks a callable function calls out to stop the media
+  // timer for reading data.
+  virtual void OnAudioSuspend(
+      const std::function<void()>& stop_audio_ticks) = 0;
+
+  // To notify hearing aid devices to be ready for streaming, and start the
+  // media timer to feed the audio data.
+  //
+  // @param start_audio_ticks a callable function calls out to start a periodic
+  // timer for feeding data from the audio HAL.
+  virtual void OnAudioResume(
+      const std::function<void()>& start_audio_ticks) = 0;
 };
 
 // Number of rssi reads to attempt when requested
