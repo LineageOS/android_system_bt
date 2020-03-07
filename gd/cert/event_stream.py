@@ -39,7 +39,7 @@ class IEventStream(ABC):
 class FilteringEventStream(IEventStream):
 
     def __init__(self, stream, filter_fn):
-        self.filter_fn = filter_fn
+        self.filter_fn = filter_fn if filter_fn else lambda x: x
         self.event_queue = SimpleQueue()
         self.stream = stream
 
@@ -264,11 +264,12 @@ def NOT_FOR_YOU_assert_event_occurs(
         try:
             current_event = istream.get_event_queue().get(
                 timeout=remaining.total_seconds())
+            logging.debug("current_event: %s", current_event)
             if match_fn(current_event):
                 event_list.append(current_event)
         except Empty:
             continue
-    logging.debug("Done waiting for event")
+    logging.debug("Done waiting for event, received %d", len(event_list))
     asserts.assert_true(
         len(event_list) >= at_least_times,
         msg=("Expected at least %d events, but got %d" % (at_least_times,
