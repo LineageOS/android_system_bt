@@ -11,9 +11,15 @@ bluetooth_cert_test_file_list := $(addprefix $(LOCAL_PATH)/,$(bluetooth_cert_tes
 bluetooth_cert_test_file_list += \
     $(HOST_OUT_EXECUTABLES)/bluetooth_stack_with_facade \
     $(HOST_OUT_SHARED_LIBRARIES)/bluetooth_packets_python3.so \
+    $(HOST_OUT_SHARED_LIBRARIES)/libbase.so \
     $(HOST_OUT_SHARED_LIBRARIES)/libbluetooth_gd.so \
     $(HOST_OUT_SHARED_LIBRARIES)/libc++.so \
+    $(HOST_OUT_SHARED_LIBRARIES)/libchrome.so \
+    $(HOST_OUT_SHARED_LIBRARIES)/libevent-host.so \
     $(HOST_OUT_SHARED_LIBRARIES)/libgrpc++_unsecure.so \
+    $(HOST_OUT_SHARED_LIBRARIES)/liblog.so \
+    $(HOST_OUT_SHARED_LIBRARIES)/libz-host.so \
+    $(HOST_OUT_SHARED_LIBRARIES)/libprotobuf-cpp-full.so \
     $(TARGET_OUT_EXECUTABLES)/bluetooth_stack_with_facade \
     $(TARGET_OUT_SHARED_LIBRARIES)/libbluetooth_gd.so \
     $(TARGET_OUT_SHARED_LIBRARIES)/libgrpc++_unsecure.so \
