@@ -48,11 +48,11 @@ static future_t* init() {
 #endif  // defined(OS_GENERIC)
   CHECK(path != NULL);
 
-  LOG_INFO(LOG_TAG, "%s attempt to load stack conf from %s", __func__, path);
+  LOG_INFO("%s attempt to load stack conf from %s", __func__, path);
 
   config = config_new(path);
   if (!config) {
-    LOG_INFO(LOG_TAG, "%s file >%s< not found", __func__, path);
+    LOG_INFO("%s file >%s< not found", __func__, path);
     config = config_new_empty();
   }
 

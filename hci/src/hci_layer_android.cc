@@ -63,7 +63,7 @@ android::sp<V1_1::IBluetoothHci> btHci_1_1;
 class BluetoothHciDeathRecipient : public hidl_death_recipient {
  public:
   virtual void serviceDied(uint64_t /*cookie*/, const android::wp<::android::hidl::base::V1_0::IBase>& /*who*/) {
-    LOG_ERROR(LOG_TAG, "Bluetooth HAL service died!");
+    LOG_ERROR("Bluetooth HAL service died!");
     hal_service_died();
   }
 };
@@ -94,7 +94,6 @@ class BluetoothHciCallbacks : public V1_1::IBluetoothHciCallbacks {
       // Ignore the initializationComplete here as we have already received
       // root inflammation event earlier.
       LOG_ERROR(
-          LOG_TAG,
           "initializationComplete after root inflammation event! status=%d",
           status);
       return Void();
@@ -132,7 +131,7 @@ class BluetoothHciCallbacks : public V1_1::IBluetoothHciCallbacks {
 };
 
 void hci_initialize() {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
 
   btHci_1_1 = V1_1::IBluetoothHci::getService();
 
@@ -146,11 +145,12 @@ void hci_initialize() {
   CHECK(btHci != nullptr);
   auto death_link = btHci->linkToDeath(bluetoothHciDeathRecipient, 0);
   if (!death_link.isOk()) {
-    LOG_ERROR(LOG_TAG, "%s: Unable to set the death recipient for the Bluetooth HAL", __func__);
+    LOG_ERROR("%s: Unable to set the death recipient for the Bluetooth HAL",
+              __func__);
     abort();
   }
-  LOG_INFO(LOG_TAG, "%s: IBluetoothHci::getService() returned %p (%s)",
-           __func__, btHci.get(), (btHci->isRemote() ? "remote" : "local"));
+  LOG_INFO("%s: IBluetoothHci::getService() returned %p (%s)", __func__,
+           btHci.get(), (btHci->isRemote() ? "remote" : "local"));
 
   // Block allows allocation of a variable that might be bypassed by goto.
   {
@@ -168,11 +168,12 @@ void hci_close() {
   if (btHci != nullptr) {
     auto death_unlink = btHci->unlinkToDeath(bluetoothHciDeathRecipient);
     if (!death_unlink.isOk()) {
-      LOG_ERROR(LOG_TAG, "%s: Error unlinking death recipient from the Bluetooth HAL", __func__);
+      LOG_ERROR("%s: Error unlinking death recipient from the Bluetooth HAL",
+                __func__);
     }
     auto close_status = btHci->close();
     if (!close_status.isOk()) {
-      LOG_ERROR(LOG_TAG, "%s: Error closing the Bluetooth HAL", __func__);
+      LOG_ERROR("%s: Error closing the Bluetooth HAL", __func__);
     }
     btHci = nullptr;
   }
@@ -197,19 +198,19 @@ void hci_transmit(BT_HDR* packet) {
       if (btHci_1_1 != nullptr) {
         btHci_1_1->sendIsoData(data);
       } else {
-        LOG_ERROR(LOG_TAG, "ISO is not supported in HAL v1.0");
+        LOG_ERROR("ISO is not supported in HAL v1.0");
       }
       break;
     default:
-      LOG_ERROR(LOG_TAG, "Unknown packet type (%d)", event);
+      LOG_ERROR("Unknown packet type (%d)", event);
       break;
   }
 }
 
 int hci_open_firmware_log_file() {
   if (rename(LOG_PATH, LAST_LOG_PATH) == -1 && errno != ENOENT) {
-    LOG_ERROR(LOG_TAG, "%s unable to rename '%s' to '%s': %s", __func__,
-              LOG_PATH, LAST_LOG_PATH, strerror(errno));
+    LOG_ERROR("%s unable to rename '%s' to '%s': %s", __func__, LOG_PATH,
+              LAST_LOG_PATH, strerror(errno));
   }
 
   mode_t prevmask = umask(0);
@@ -217,7 +218,7 @@ int hci_open_firmware_log_file() {
                         S_IRUSR | S_IWUSR | S_IRGRP | S_IWGRP | S_IROTH);
   umask(prevmask);
   if (logfile_fd == INVALID_FD) {
-    LOG_ERROR(LOG_TAG, "%s unable to open '%s': %s", __func__, LOG_PATH,
+    LOG_ERROR("%s unable to open '%s': %s", __func__, LOG_PATH,
               strerror(errno));
   }
 

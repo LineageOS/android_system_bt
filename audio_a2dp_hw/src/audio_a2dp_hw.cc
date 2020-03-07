@@ -70,12 +70,11 @@
 // sockets
 #define WRITE_POLL_MS 20
 
-#define FNLOG() LOG_VERBOSE(LOG_TAG, "%s", __func__);
-#define DEBUG(fmt, ...) \
-  LOG_VERBOSE(LOG_TAG, "%s: " fmt, __func__, ##__VA_ARGS__)
-#define INFO(fmt, ...) LOG_INFO(LOG_TAG, "%s: " fmt, __func__, ##__VA_ARGS__)
-#define WARN(fmt, ...) LOG_WARN(LOG_TAG, "%s: " fmt, __func__, ##__VA_ARGS__)
-#define ERROR(fmt, ...) LOG_ERROR(LOG_TAG, "%s: " fmt, __func__, ##__VA_ARGS__)
+#define FNLOG() LOG_VERBOSE("%s", __func__);
+#define DEBUG(fmt, ...) LOG_VERBOSE("%s: " fmt, __func__, ##__VA_ARGS__)
+#define INFO(fmt, ...) LOG_INFO("%s: " fmt, __func__, ##__VA_ARGS__)
+#define WARN(fmt, ...) LOG_WARN("%s: " fmt, __func__, ##__VA_ARGS__)
+#define ERROR(fmt, ...) LOG_ERROR("%s: " fmt, __func__, ##__VA_ARGS__)
 
 #define ASSERTC(cond, msg, val)                                           \
   if (!(cond)) {                                                          \

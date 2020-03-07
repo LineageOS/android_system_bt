@@ -70,11 +70,11 @@ void bta_av_ci_src_data_ready(tBTA_AV_CHNL chnl) {
 void bta_av_ci_setconfig(tBTA_AV_HNDL bta_av_handle, uint8_t err_code,
                          uint8_t category, uint8_t num_seid, uint8_t* p_seid,
                          bool recfg_needed, uint8_t avdt_handle) {
-  LOG_DEBUG(LOG_TAG,
-            "%s: bta_av_handle=0x%x err_code=%d category=%d "
-            "num_seid=%d recfg_needed=%s avdt_handle=%d",
-            __func__, bta_av_handle, err_code, category, num_seid,
-            recfg_needed ? "true" : "false", avdt_handle);
+  LOG_DEBUG(
+      "%s: bta_av_handle=0x%x err_code=%d category=%d "
+      "num_seid=%d recfg_needed=%s avdt_handle=%d",
+      __func__, bta_av_handle, err_code, category, num_seid,
+      recfg_needed ? "true" : "false", avdt_handle);
 
   tBTA_AV_CI_SETCONFIG* p_buf =
       (tBTA_AV_CI_SETCONFIG*)osi_malloc(sizeof(tBTA_AV_CI_SETCONFIG));

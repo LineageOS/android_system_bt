@@ -40,59 +40,59 @@ void adapter_state_changed(bt_state_t state) {
 }
 void adapter_properties(bt_status_t status, int num_properties,
                         bt_property_t* properties) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
 }
 
 void remote_device_properties(bt_status_t status, RawAddress* bd_addr,
                               int num_properties, bt_property_t* properties) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
 }
 
 void device_found(int num_properties, bt_property_t* properties) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
 }
 
 void discovery_state_changed(bt_discovery_state_t state) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
 }
 
 /** Bluetooth Legacy PinKey Request callback */
 void pin_request(RawAddress* remote_bd_addr, bt_bdname_t* bd_name, uint32_t cod,
                  bool min_16_digit) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
 }
 
 void ssp_request(RawAddress* remote_bd_addr, bt_bdname_t* bd_name, uint32_t cod,
                  bt_ssp_variant_t pairing_variant, uint32_t pass_key) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
 }
 
 /** Bluetooth Bond state changed callback */
 /* Invoked in response to create_bond, cancel_bond or remove_bond */
 void bond_state_changed(bt_status_t status, RawAddress* remote_bd_addr,
                         bt_bond_state_t state) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
 }
 
 /** Bluetooth ACL connection state changed callback */
 void acl_state_changed(bt_status_t status, RawAddress* remote_bd_addr,
                        bt_acl_state_t state) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
 }
 
-void thread_event(bt_cb_thread_evt evt) { LOG_INFO(LOG_TAG, "%s", __func__); }
+void thread_event(bt_cb_thread_evt evt) { LOG_INFO("%s", __func__); }
 
 void dut_mode_recv(uint16_t opcode, uint8_t* buf, uint8_t len) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
 }
 
 void le_test_mode(bt_status_t status, uint16_t num_packets) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
 }
 
 void energy_info(bt_activity_energy_info* energy_info,
                  bt_uid_traffic_t* uid_data) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
 }
 
 bt_callbacks_t bt_callbacks{
@@ -117,16 +117,16 @@ bt_callbacks_t bt_callbacks{
 // OS CALLOUTS
 bool set_wake_alarm_co(uint64_t delay_millis, bool should_wake, alarm_cb cb,
                        void* data) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
   return true;
 }
 int acquire_wake_lock_co(const char* lock_name) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
   return 1;
 }
 
 int release_wake_lock_co(const char* lock_name) {
-  LOG_INFO(LOG_TAG, "%s", __func__);
+  LOG_INFO("%s", __func__);
   return 0;
 }
 
@@ -152,15 +152,15 @@ void HeadlessStack::SetUp() {
       : LOG(ERROR) << "Failed to set up Bluetooth OS callouts";
 
   bluetoothInterface.enable();
-  LOG_INFO(LOG_TAG, "%s HeadlessStack stack has enabled", __func__);
+  LOG_INFO("%s HeadlessStack stack has enabled", __func__);
 
   std::unique_lock<std::mutex> lck(adapter_state_mutex_);
   while (bt_state_ != BT_STATE_ON) adapter_state_cv_.wait(lck);
-  LOG_INFO(LOG_TAG, "%s HeadlessStack stack is operational", __func__);
+  LOG_INFO("%s HeadlessStack stack is operational", __func__);
 }
 
 void HeadlessStack::TearDown() {
-  LOG_INFO(LOG_TAG, "Stack has disabled");
+  LOG_INFO("Stack has disabled");
   int status = bluetoothInterface.disable();
 
   LOG(INFO) << __func__ << " Interface has been disabled status:" << status;
@@ -170,5 +170,5 @@ void HeadlessStack::TearDown() {
 
   std::unique_lock<std::mutex> lck(adapter_state_mutex_);
   while (bt_state_ != BT_STATE_OFF) adapter_state_cv_.wait(lck);
-  LOG_INFO(LOG_TAG, "%s HeadlessStack stack has exited", __func__);
+  LOG_INFO("%s HeadlessStack stack has exited", __func__);
 }

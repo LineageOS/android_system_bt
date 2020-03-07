@@ -50,9 +50,8 @@ bool interop_match_addr(const interop_feature_t feature,
 
   if (interop_match_fixed_(feature, addr) ||
       interop_match_dynamic_(feature, addr)) {
-    LOG_INFO(LOG_TAG, "%s() Device %s is a match for interop workaround %s.",
-             __func__, addr->ToString().c_str(),
-             interop_feature_string_(feature));
+    LOG_INFO("%s() Device %s is a match for interop workaround %s.", __func__,
+             addr->ToString().c_str(), interop_feature_string_(feature));
     return true;
   }
 
@@ -69,8 +68,8 @@ bool interop_match_name(const interop_feature_t feature, const char* name) {
         strlen(name) >= interop_name_database[i].length &&
         strncmp(name, interop_name_database[i].name,
                 interop_name_database[i].length) == 0) {
-      LOG_INFO(LOG_TAG, "%s() Device %s is a match for interop workaround %s.",
-             __func__, name, interop_feature_string_(feature));
+      LOG_INFO("%s() Device %s is a match for interop workaround %s.", __func__,
+               name, interop_feature_string_(feature));
       return true;
     }
   }

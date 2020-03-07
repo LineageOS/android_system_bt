@@ -37,7 +37,7 @@ int osi_rand(void) {
   int rand_fd = open(RANDOM_PATH, O_RDONLY);
 
   if (rand_fd == INVALID_FD) {
-    LOG_ERROR(LOG_TAG, "%s can't open rand fd %s: %s ", __func__, RANDOM_PATH,
+    LOG_ERROR("%s can't open rand fd %s: %s ", __func__, RANDOM_PATH,
               strerror(errno));
     CHECK(rand_fd != INVALID_FD);
   }

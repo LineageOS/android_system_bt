@@ -71,7 +71,7 @@ struct {
 } data_;
 
 static future_t* start_up(void) {
-  LOG_INFO(LOG_TAG, "%s Starting up", __func__);
+  LOG_INFO("%s Starting up", __func__);
   data_.ready = true;
 
   std::string string_address =
@@ -81,7 +81,7 @@ static future_t* start_up(void) {
   data_.le_supported_states =
       bluetooth::shim::GetController()->GetControllerLeSupportedStates();
 
-  LOG_INFO(LOG_TAG, "Mac address:%s", string_address.c_str());
+  LOG_INFO("Mac address:%s", string_address.c_str());
 
   data_.phy = kPhyLe1M;
 
@@ -239,7 +239,7 @@ static uint16_t get_acl_packet_size_ble(void) {
 }
 
 static uint16_t get_ble_suggested_default_data_length(void) {
-  LOG_WARN(LOG_TAG, "%s TODO Unimplemented", __func__);
+  LOG_WARN("%s TODO Unimplemented", __func__);
   return 0;
 }
 
@@ -250,7 +250,7 @@ static uint16_t get_ble_maximum_tx_data_length(void) {
 }
 
 static uint16_t get_ble_maxium_advertising_data_length(void) {
-  LOG_WARN(LOG_TAG, "%s TODO Unimplemented", __func__);
+  LOG_WARN("%s TODO Unimplemented", __func__);
   return 0;
 }
 
@@ -263,22 +263,22 @@ static uint16_t get_acl_buffer_count_classic(void) {
 }
 
 static uint8_t get_acl_buffer_count_ble(void) {
-  LOG_WARN(LOG_TAG, "%s TODO Unimplemented", __func__);
+  LOG_WARN("%s TODO Unimplemented", __func__);
   return 0;
 }
 
 static uint8_t get_ble_white_list_size(void) {
-  LOG_WARN(LOG_TAG, "%s TODO Unimplemented", __func__);
+  LOG_WARN("%s TODO Unimplemented", __func__);
   return 0;
 }
 
 static uint8_t get_ble_resolving_list_max_size(void) {
-  LOG_WARN(LOG_TAG, "%s TODO Unimplemented", __func__);
+  LOG_WARN("%s TODO Unimplemented", __func__);
   return 0;
 }
 
 static void set_ble_resolving_list_max_size(int resolving_list_max_size) {
-  LOG_WARN(LOG_TAG, "%s TODO Unimplemented", __func__);
+  LOG_WARN("%s TODO Unimplemented", __func__);
 }
 
 static uint8_t get_le_all_initiating_phys() { return data_.phy; }

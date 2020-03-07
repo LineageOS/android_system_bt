@@ -167,28 +167,28 @@ bool bluetooth::shim::Btm::SetInquiryFilter(uint8_t mode, uint8_t type,
     case kInquiryModeOff:
       break;
     case kLimitedInquiryMode:
-      LOG_WARN(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+      LOG_WARN("UNIMPLEMENTED %s", __func__);
       break;
     case kGeneralInquiryMode:
-      LOG_WARN(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+      LOG_WARN("UNIMPLEMENTED %s", __func__);
       break;
     default:
-      LOG_WARN(LOG_TAG, "%s Unknown inquiry mode:%d", __func__, mode);
+      LOG_WARN("%s Unknown inquiry mode:%d", __func__, mode);
       return false;
   }
   return true;
 }
 
 void bluetooth::shim::Btm::SetFilterInquiryOnAddress() {
-  LOG_WARN(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_WARN("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::Btm::SetFilterInquiryOnDevice() {
-  LOG_WARN(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_WARN("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::Btm::ClearInquiryFilter() {
-  LOG_WARN(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_WARN("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::Btm::SetStandardInquiryResultMode() {
@@ -223,7 +223,7 @@ bool bluetooth::shim::Btm::StartInquiry(
     LegacyInquiryCompleteCallback legacy_inquiry_complete_callback) {
   switch (mode) {
     case kInquiryModeOff:
-      LOG_DEBUG(LOG_TAG, "%s Stopping inquiry mode", __func__);
+      LOG_DEBUG("%s Stopping inquiry mode", __func__);
       if (limited_inquiry_active_ || general_inquiry_active_) {
         bluetooth::shim::GetInquiry()->StopInquiry();
         limited_inquiry_active_ = false;
@@ -236,7 +236,7 @@ bool bluetooth::shim::Btm::StartInquiry(
     case kGeneralInquiryMode: {
       if (mode == kLimitedInquiryMode) {
         LOG_DEBUG(
-            LOG_TAG,
+
             "%s Starting limited inquiry mode duration:%hhd max responses:%hhd",
             __func__, duration, max_responses);
         limited_inquiry_active_ = true;
@@ -245,7 +245,7 @@ bool bluetooth::shim::Btm::StartInquiry(
         active_inquiry_mode_ = kLimitedInquiryMode;
       } else {
         LOG_DEBUG(
-            LOG_TAG,
+
             "%s Starting general inquiry mode duration:%hhd max responses:%hhd",
             __func__, duration, max_responses);
         general_inquiry_active_ = true;
@@ -256,14 +256,14 @@ bool bluetooth::shim::Btm::StartInquiry(
     } break;
 
     default:
-      LOG_WARN(LOG_TAG, "%s Unknown inquiry mode:%d", __func__, mode);
+      LOG_WARN("%s Unknown inquiry mode:%d", __func__, mode);
       return false;
   }
   return true;
 }
 
 void bluetooth::shim::Btm::CancelInquiry() {
-  LOG_DEBUG(LOG_TAG, "%s", __func__);
+  LOG_DEBUG("%s", __func__);
   if (limited_inquiry_active_ || general_inquiry_active_) {
     bluetooth::shim::GetInquiry()->StopInquiry();
     limited_inquiry_active_ = false;
@@ -299,14 +299,12 @@ bool bluetooth::shim::Btm::StartPeriodicInquiry(
     case kLimitedInquiryMode:
     case kGeneralInquiryMode: {
       if (mode == kLimitedInquiryMode) {
-        LOG_DEBUG(LOG_TAG, "%s Starting limited periodic inquiry mode",
-                  __func__);
+        LOG_DEBUG("%s Starting limited periodic inquiry mode", __func__);
         limited_periodic_inquiry_active_ = true;
         bluetooth::shim::GetInquiry()->StartLimitedPeriodicInquiry(
             duration, max_responses, max_delay, min_delay);
       } else {
-        LOG_DEBUG(LOG_TAG, "%s Starting general periodic inquiry mode",
-                  __func__);
+        LOG_DEBUG("%s Starting general periodic inquiry mode", __func__);
         general_periodic_inquiry_active_ = true;
         bluetooth::shim::GetInquiry()->StartGeneralPeriodicInquiry(
             duration, max_responses, max_delay, min_delay);
@@ -314,7 +312,7 @@ bool bluetooth::shim::Btm::StartPeriodicInquiry(
     } break;
 
     default:
-      LOG_WARN(LOG_TAG, "%s Unknown inquiry mode:%d", __func__, mode);
+      LOG_WARN("%s Unknown inquiry mode:%d", __func__, mode);
       return false;
   }
   return true;
@@ -394,15 +392,15 @@ DiscoverabilityState bluetooth::shim::Btm::GetClassicDiscoverabilityState()
 }
 
 void bluetooth::shim::Btm::SetLeGeneralDiscoverability() {
-  LOG_WARN(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_WARN("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::Btm::SetLeLimitedDiscoverability() {
-  LOG_WARN(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_WARN("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::Btm::SetLeDiscoverabilityOff() {
-  LOG_WARN(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_WARN("UNIMPLEMENTED %s", __func__);
 }
 
 DiscoverabilityState bluetooth::shim::Btm::GetLeDiscoverabilityState() const {
@@ -411,7 +409,7 @@ DiscoverabilityState bluetooth::shim::Btm::GetLeDiscoverabilityState() const {
       .interval = 0,
       .window = 0,
   };
-  LOG_WARN(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_WARN("UNIMPLEMENTED %s", __func__);
   return state;
 }
 
@@ -448,11 +446,11 @@ void bluetooth::shim::Btm::SetStandardPageScan() {
 }
 
 void bluetooth::shim::Btm::SetLeConnectibleOn() {
-  LOG_WARN(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_WARN("UNIMPLEMENTED %s", __func__);
 }
 
 void bluetooth::shim::Btm::SetLeConnectibleOff() {
-  LOG_WARN(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_WARN("UNIMPLEMENTED %s", __func__);
 }
 
 ConnectabilityState bluetooth::shim::Btm::GetLeConnectabilityState() const {
@@ -461,7 +459,7 @@ ConnectabilityState bluetooth::shim::Btm::GetLeConnectabilityState() const {
       .interval = 0,
       .window = 0,
   };
-  LOG_WARN(LOG_TAG, "UNIMPLEMENTED %s", __func__);
+  LOG_WARN("UNIMPLEMENTED %s", __func__);
   return state;
 }
 
@@ -469,8 +467,7 @@ bool bluetooth::shim::Btm::IsLeAclConnected(
     const RawAddress& raw_address) const {
   // TODO(cmanton) Check current acl's for this address and indicate if there is
   // an LE option.  For now ignore and default to classic.
-  LOG_INFO(LOG_TAG, "%s Le acl connection check is temporarily unsupported",
-           __func__);
+  LOG_INFO("%s Le acl connection check is temporarily unsupported", __func__);
   return false;
 }
 
@@ -481,12 +478,12 @@ bluetooth::shim::BtmStatus bluetooth::shim::Btm::ReadClassicRemoteDeviceName(
   }
 
   if (!classic_read_remote_name_.Start(raw_address)) {
-    LOG_INFO(LOG_TAG, "%s Read remote name is currently busy address:%s",
-             __func__, raw_address.ToString().c_str());
+    LOG_INFO("%s Read remote name is currently busy address:%s", __func__,
+             raw_address.ToString().c_str());
     return bluetooth::shim::BTM_BUSY;
   }
 
-  LOG_DEBUG(LOG_TAG, "%s Start read name from address:%s", __func__,
+  LOG_DEBUG("%s Start read name from address:%s", __func__,
             raw_address.ToString().c_str());
   bluetooth::shim::GetName()->ReadRemoteNameRequest(
       hci::Address(raw_address.address), hci::PageScanRepetitionMode::R1,
@@ -507,9 +504,8 @@ bluetooth::shim::BtmStatus bluetooth::shim::Btm::ReadClassicRemoteDeviceName(
             };
             std::copy(remote_name.begin(), remote_name.end(),
                       name.remote_bd_name);
-            LOG_DEBUG(LOG_TAG, "%s Finish read name from address:%s name:%s",
-                      __func__, address.ToString().c_str(),
-                      name.remote_bd_name);
+            LOG_DEBUG("%s Finish read name from address:%s name:%s", __func__,
+                      address.ToString().c_str(), name.remote_bd_name);
             callback(&name);
             classic_read_remote_name_->Stop();
           },
@@ -528,7 +524,7 @@ bluetooth::shim::BtmStatus bluetooth::shim::Btm::ReadLeRemoteDeviceName(
     return bluetooth::shim::BTM_BUSY;
   }
 
-  LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s need access to GATT module", __func__);
+  LOG_INFO("UNIMPLEMENTED %s need access to GATT module", __func__);
   return bluetooth::shim::BTM_UNKNOWN_ADDR;
 }
 
@@ -551,21 +547,18 @@ bluetooth::shim::Btm::CancelAllReadRemoteDeviceName() {
           bluetooth::shim::GetGdShimHandler());
     }
     if (le_read_remote_name_.IsInProgress()) {
-      LOG_INFO(LOG_TAG, "UNIMPLEMENTED %s need access to GATT module",
-               __func__);
+      LOG_INFO("UNIMPLEMENTED %s need access to GATT module", __func__);
     }
     return bluetooth::shim::BTM_UNKNOWN_ADDR;
   }
-  LOG_WARN(LOG_TAG,
-           "%s Cancelling classic remote device name without one in progress",
+  LOG_WARN("%s Cancelling classic remote device name without one in progress",
            __func__);
   return bluetooth::shim::BTM_WRONG_MODE;
 }
 
 void bluetooth::shim::Btm::StartAdvertising() {
   if (advertiser_id_ == hci::LeAdvertisingManager::kInvalidId) {
-    LOG_WARN(LOG_TAG,
-             "%s Already advertising; please stop prior to starting again",
+    LOG_WARN("%s Already advertising; please stop prior to starting again",
              __func__);
     return;
   }
@@ -576,20 +569,20 @@ void bluetooth::shim::Btm::StartAdvertising() {
       common::Bind([](hci::ErrorCode, uint8_t, uint8_t) { /*OnTerminated*/ }),
       bluetooth::shim::GetGdShimHandler());
   if (advertiser_id_ == hci::LeAdvertisingManager::kInvalidId) {
-    LOG_WARN(LOG_TAG, "%s Unable to start advertising", __func__);
+    LOG_WARN("%s Unable to start advertising", __func__);
     return;
   }
-  LOG_DEBUG(LOG_TAG, "%s Started advertising", __func__);
+  LOG_DEBUG("%s Started advertising", __func__);
 }
 
 void bluetooth::shim::Btm::StopAdvertising() {
   if (advertiser_id_ == hci::LeAdvertisingManager::kInvalidId) {
-    LOG_WARN(LOG_TAG, "%s No active advertising", __func__);
+    LOG_WARN("%s No active advertising", __func__);
     return;
   }
   bluetooth::shim::GetAdvertising()->RemoveAdvertiser(advertiser_id_);
   advertiser_id_ = hci::LeAdvertisingManager::kInvalidId;
-  LOG_DEBUG(LOG_TAG, "%s Stopped advertising", __func__);
+  LOG_DEBUG("%s Stopped advertising", __func__);
 }
 
 void bluetooth::shim::Btm::StartConnectability() { StartAdvertising(); }
@@ -720,7 +713,7 @@ class BtmScanningCallbacks : public bluetooth::hci::LeScanningManagerCallbacks {
               break;
             default:
               LOG_WARN(
-                  LOG_TAG, "%s Unsupported event type:%s", __func__,
+                  "%s Unsupported event type:%s", __func__,
                   AdvertisingEventTypeText(le_report->advertising_event_type_)
                       .c_str());
               return;
@@ -737,8 +730,7 @@ class BtmScanningCallbacks : public bluetooth::hci::LeScanningManagerCallbacks {
         } break;
 
         case hci::LeReport::ReportType::DIRECTED_ADVERTISING_EVENT:
-          LOG_WARN(LOG_TAG,
-                   "%s Directed advertising is unsupported from device:%s",
+          LOG_WARN("%s Directed advertising is unsupported from device:%s",
                    __func__, le_report->address_.ToString().c_str());
           break;
 
@@ -769,9 +761,7 @@ class BtmScanningCallbacks : public bluetooth::hci::LeScanningManagerCallbacks {
     }
   }
 
-  virtual void on_timeout() {
-    LOG_WARN(LOG_TAG, "%s Scanning timeout", __func__);
-  }
+  virtual void on_timeout() { LOG_WARN("%s Scanning timeout", __func__); }
   os::Handler* Handler() { return bluetooth::shim::GetGdShimHandler(); }
 };
 }  // namespace hci
@@ -797,7 +787,7 @@ tBTM_STATUS bluetooth::shim::Btm::CreateBond(const RawAddress& bd_addr,
     } else if (device_type & BT_DEVICE_TYPE_BREDR) {
       transport = BTA_TRANSPORT_BR_EDR;
     }
-    LOG_DEBUG(LOG_TAG, "%s guessing transport as %02x ", __func__, transport);
+    LOG_DEBUG("%s guessing transport as %02x ", __func__, transport);
   }
 
   auto security_manager =

@@ -161,10 +161,10 @@ bool A2dpCodecConfigAacSource::updateEncoderUserConfig(
   a2dp_aac_encoder_cb.timestamp = 0;
 
   if (a2dp_aac_encoder_cb.peer_mtu == 0) {
-    LOG_ERROR(LOG_TAG,
-              "%s: Cannot update the codec encoder for %s: "
-              "invalid peer MTU",
-              __func__, name().c_str());
+    LOG_ERROR(
+        "%s: Cannot update the codec encoder for %s: "
+        "invalid peer MTU",
+        __func__, name().c_str());
     return false;
   }
 
@@ -195,18 +195,18 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
     AACENC_ERROR aac_error = aacEncOpen(&a2dp_aac_encoder_cb.aac_handle, 0,
                                         2 /* max 2 channels: stereo */);
     if (aac_error != AACENC_OK) {
-      LOG_ERROR(LOG_TAG, "%s: Cannot open AAC encoder handle: AAC error 0x%x",
-                __func__, aac_error);
+      LOG_ERROR("%s: Cannot open AAC encoder handle: AAC error 0x%x", __func__,
+                aac_error);
       return;  // TODO: Return an error?
     }
     a2dp_aac_encoder_cb.has_aac_handle = true;
   }
 
   if (!a2dp_codec_config->copyOutOtaCodecConfig(codec_info)) {
-    LOG_ERROR(LOG_TAG,
-              "%s: Cannot update the codec encoder for %s: "
-              "invalid codec config",
-              __func__, a2dp_codec_config->name().c_str());
+    LOG_ERROR(
+        "%s: Cannot update the codec encoder for %s: "
+        "invalid codec config",
+        __func__, a2dp_codec_config->name().c_str());
     return;
   }
   const uint8_t* p_codec_info = codec_info;
@@ -217,28 +217,27 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
   p_feeding_params->bits_per_sample =
       a2dp_codec_config->getAudioBitsPerSample();
   p_feeding_params->channel_count = A2DP_GetTrackChannelCountAac(p_codec_info);
-  LOG_DEBUG(LOG_TAG, "%s: sample_rate=%u bits_per_sample=%u channel_count=%u",
-            __func__, p_feeding_params->sample_rate,
-            p_feeding_params->bits_per_sample, p_feeding_params->channel_count);
+  LOG_DEBUG("%s: sample_rate=%u bits_per_sample=%u channel_count=%u", __func__,
+            p_feeding_params->sample_rate, p_feeding_params->bits_per_sample,
+            p_feeding_params->channel_count);
 
   // The codec parameters
   p_encoder_params->sample_rate =
       a2dp_aac_encoder_cb.feeding_params.sample_rate;
   p_encoder_params->channel_mode = A2DP_GetChannelModeCodeAac(p_codec_info);
 
-  LOG_VERBOSE(LOG_TAG, "%s: original AVDTP MTU size: %d", __func__,
+  LOG_VERBOSE("%s: original AVDTP MTU size: %d", __func__,
               a2dp_aac_encoder_cb.TxAaMtuSize);
   if (a2dp_aac_encoder_cb.is_peer_edr &&
       !a2dp_aac_encoder_cb.peer_supports_3mbps) {
     // This condition would be satisfied only if the remote device is
     // EDR and supports only 2 Mbps, but the effective AVDTP MTU size
     // exceeds the 2DH5 packet size.
-    LOG_VERBOSE(LOG_TAG,
-                "%s: The remote device is EDR but does not support 3 Mbps",
+    LOG_VERBOSE("%s: The remote device is EDR but does not support 3 Mbps",
                 __func__);
     if (peer_mtu > MAX_2MBPS_AVDTP_MTU) {
-      LOG_WARN(LOG_TAG, "%s: Restricting AVDTP MTU size from %d to %d",
-               __func__, peer_mtu, MAX_2MBPS_AVDTP_MTU);
+      LOG_WARN("%s: Restricting AVDTP MTU size from %d to %d", __func__,
+               peer_mtu, MAX_2MBPS_AVDTP_MTU);
       peer_mtu = MAX_2MBPS_AVDTP_MTU;
     }
   }
@@ -249,9 +248,9 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
     a2dp_aac_encoder_cb.TxAaMtuSize = peer_mtu;
   }
 
-  LOG_DEBUG(LOG_TAG, "%s: MTU=%d, peer_mtu=%d", __func__,
+  LOG_DEBUG("%s: MTU=%d, peer_mtu=%d", __func__,
             a2dp_aac_encoder_cb.TxAaMtuSize, peer_mtu);
-  LOG_DEBUG(LOG_TAG, "%s: sample_rate: %d channel_mode: %d ", __func__,
+  LOG_DEBUG("%s: sample_rate: %d channel_mode: %d ", __func__,
             p_encoder_params->sample_rate, p_encoder_params->channel_mode);
 
   // Set the encoder's parameters: Audio Object Type - MANDATORY
@@ -275,19 +274,19 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
       aac_param_value = AOT_AAC_SCAL;
       break;
     default:
-      LOG_ERROR(LOG_TAG,
-                "%s: Cannot set AAC parameter AACENC_AOT: "
-                "invalid object type %d",
-                __func__, object_type);
+      LOG_ERROR(
+          "%s: Cannot set AAC parameter AACENC_AOT: "
+          "invalid object type %d",
+          __func__, object_type);
       return;  // TODO: Return an error?
   }
   aac_error = aacEncoder_SetParam(a2dp_aac_encoder_cb.aac_handle, AACENC_AOT,
                                   aac_param_value);
   if (aac_error != AACENC_OK) {
-    LOG_ERROR(LOG_TAG,
-              "%s: Cannot set AAC parameter AACENC_AOT to %d: "
-              "AAC error 0x%x",
-              __func__, aac_param_value, aac_error);
+    LOG_ERROR(
+        "%s: Cannot set AAC parameter AACENC_AOT to %d: "
+        "AAC error 0x%x",
+        __func__, aac_param_value, aac_error);
     return;  // TODO: Return an error?
   }
 
@@ -296,10 +295,10 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
   aac_error = aacEncoder_SetParam(a2dp_aac_encoder_cb.aac_handle,
                                   AACENC_AUDIOMUXVER, aac_param_value);
   if (aac_error != AACENC_OK) {
-    LOG_ERROR(LOG_TAG,
-              "%s: Cannot set AAC parameter AACENC_AUDIOMUXVER to %d: "
-              "AAC error 0x%x",
-              __func__, aac_param_value, aac_error);
+    LOG_ERROR(
+        "%s: Cannot set AAC parameter AACENC_AUDIOMUXVER to %d: "
+        "AAC error 0x%x",
+        __func__, aac_param_value, aac_error);
     return;  // TODO: Return an error?
   }
 
@@ -308,10 +307,10 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
   aac_error = aacEncoder_SetParam(a2dp_aac_encoder_cb.aac_handle,
                                   AACENC_SIGNALING_MODE, aac_param_value);
   if (aac_error != AACENC_OK) {
-    LOG_ERROR(LOG_TAG,
-              "%s: Cannot set AAC parameter AACENC_SIGNALING_MODE to %d: "
-              "AAC error 0x%x",
-              __func__, aac_param_value, aac_error);
+    LOG_ERROR(
+        "%s: Cannot set AAC parameter AACENC_SIGNALING_MODE to %d: "
+        "AAC error 0x%x",
+        __func__, aac_param_value, aac_error);
     return;  // TODO: Return an error?
   }
 
@@ -320,10 +319,10 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
   aac_error = aacEncoder_SetParam(a2dp_aac_encoder_cb.aac_handle,
                                   AACENC_SAMPLERATE, aac_param_value);
   if (aac_error != AACENC_OK) {
-    LOG_ERROR(LOG_TAG,
-              "%s: Cannot set AAC parameter AACENC_SAMPLERATE to %d: "
-              "AAC error 0x%x",
-              __func__, aac_param_value, aac_error);
+    LOG_ERROR(
+        "%s: Cannot set AAC parameter AACENC_SAMPLERATE to %d: "
+        "AAC error 0x%x",
+        __func__, aac_param_value, aac_error);
     return;  // TODO: Return an error?
   }
   aac_sampling_freq = aac_param_value;  // Save for extra usage below
@@ -334,23 +333,23 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
   aac_peak_bit_rate =
       A2DP_ComputeMaxBitRateAac(p_codec_info, a2dp_aac_encoder_cb.TxAaMtuSize);
   aac_param_value = std::min(aac_param_value, aac_peak_bit_rate);
-  LOG_DEBUG(LOG_TAG, "%s: MTU = %d Sampling Frequency = %d Bit Rate = %d",
-            __func__, a2dp_aac_encoder_cb.TxAaMtuSize, aac_sampling_freq,
+  LOG_DEBUG("%s: MTU = %d Sampling Frequency = %d Bit Rate = %d", __func__,
+            a2dp_aac_encoder_cb.TxAaMtuSize, aac_sampling_freq,
             aac_param_value);
   if (aac_param_value == -1) {
-    LOG_ERROR(LOG_TAG,
-              "%s: Cannot set AAC parameter AACENC_BITRATE: "
-              "invalid codec bit rate",
-              __func__);
+    LOG_ERROR(
+        "%s: Cannot set AAC parameter AACENC_BITRATE: "
+        "invalid codec bit rate",
+        __func__);
     return;  // TODO: Return an error?
   }
   aac_error = aacEncoder_SetParam(a2dp_aac_encoder_cb.aac_handle,
                                   AACENC_BITRATE, aac_param_value);
   if (aac_error != AACENC_OK) {
-    LOG_ERROR(LOG_TAG,
-              "%s: Cannot set AAC parameter AACENC_BITRATE to %d: "
-              "AAC error 0x%x",
-              __func__, aac_param_value, aac_error);
+    LOG_ERROR(
+        "%s: Cannot set AAC parameter AACENC_BITRATE to %d: "
+        "AAC error 0x%x",
+        __func__, aac_param_value, aac_error);
     return;  // TODO: Return an error?
   }
 
@@ -358,10 +357,10 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
   aac_error = aacEncoder_SetParam(a2dp_aac_encoder_cb.aac_handle,
                                   AACENC_PEAK_BITRATE, aac_peak_bit_rate);
   if (aac_error != AACENC_OK) {
-    LOG_ERROR(LOG_TAG,
-              "%s: Cannot set AAC parameter AACENC_PEAK_BITRATE to %d: "
-              "AAC error 0x%x",
-              __func__, aac_peak_bit_rate, aac_error);
+    LOG_ERROR(
+        "%s: Cannot set AAC parameter AACENC_PEAK_BITRATE to %d: "
+        "AAC error 0x%x",
+        __func__, aac_peak_bit_rate, aac_error);
     return;  // TODO: Return an error?
   }
 
@@ -374,10 +373,10 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
   aac_error = aacEncoder_SetParam(a2dp_aac_encoder_cb.aac_handle,
                                   AACENC_CHANNELMODE, aac_param_value);
   if (aac_error != AACENC_OK) {
-    LOG_ERROR(LOG_TAG,
-              "%s: Cannot set AAC parameter AACENC_CHANNELMODE to %d: "
-              "AAC error 0x%x",
-              __func__, aac_param_value, aac_error);
+    LOG_ERROR(
+        "%s: Cannot set AAC parameter AACENC_CHANNELMODE to %d: "
+        "AAC error 0x%x",
+        __func__, aac_param_value, aac_error);
     return;  // TODO: Return an error?
   }
 
@@ -386,10 +385,10 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
   aac_error = aacEncoder_SetParam(a2dp_aac_encoder_cb.aac_handle,
                                   AACENC_TRANSMUX, aac_param_value);
   if (aac_error != AACENC_OK) {
-    LOG_ERROR(LOG_TAG,
-              "%s: Cannot set AAC parameter AACENC_TRANSMUX to %d: "
-              "AAC error 0x%x",
-              __func__, aac_param_value, aac_error);
+    LOG_ERROR(
+        "%s: Cannot set AAC parameter AACENC_TRANSMUX to %d: "
+        "AAC error 0x%x",
+        __func__, aac_param_value, aac_error);
     return;  // TODO: Return an error?
   }
 
@@ -398,29 +397,29 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
   aac_error = aacEncoder_SetParam(a2dp_aac_encoder_cb.aac_handle,
                                   AACENC_HEADER_PERIOD, aac_param_value);
   if (aac_error != AACENC_OK) {
-    LOG_ERROR(LOG_TAG,
-              "%s: Cannot set AAC parameter AACENC_HEADER_PERIOD to %d: "
-              "AAC error 0x%x",
-              __func__, aac_param_value, aac_error);
+    LOG_ERROR(
+        "%s: Cannot set AAC parameter AACENC_HEADER_PERIOD to %d: "
+        "AAC error 0x%x",
+        __func__, aac_param_value, aac_error);
     return;  // TODO: Return an error?
   }
 
   // Set the encoder's parameters: Variable Bit Rate Support
   aac_param_value = A2DP_GetVariableBitRateSupportAac(p_codec_info);
   if (aac_param_value == -1) {
-    LOG_ERROR(LOG_TAG,
-              "%s: Cannot set AAC parameter AACENC_BITRATEMODE: "
-              "invalid codec bit rate mode",
-              __func__);
+    LOG_ERROR(
+        "%s: Cannot set AAC parameter AACENC_BITRATEMODE: "
+        "invalid codec bit rate mode",
+        __func__);
     return;  // TODO: Return an error?
   }
   aac_error = aacEncoder_SetParam(a2dp_aac_encoder_cb.aac_handle,
                                   AACENC_BITRATEMODE, aac_param_value);
   if (aac_error != AACENC_OK) {
-    LOG_ERROR(LOG_TAG,
-              "%s: Cannot set AAC parameter AACENC_BITRATEMODE to %d: "
-              "AAC error 0x%x",
-              __func__, aac_param_value, aac_error);
+    LOG_ERROR(
+        "%s: Cannot set AAC parameter AACENC_BITRATEMODE to %d: "
+        "AAC error 0x%x",
+        __func__, aac_param_value, aac_error);
     return;  // TODO: Return an error?
   }
 
@@ -428,8 +427,7 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
   aac_error =
       aacEncEncode(a2dp_aac_encoder_cb.aac_handle, NULL, NULL, NULL, NULL);
   if (aac_error != AACENC_OK) {
-    LOG_ERROR(LOG_TAG,
-              "%s: Cannot complete setting the AAC parameters: AAC error 0x%x",
+    LOG_ERROR("%s: Cannot complete setting the AAC parameters: AAC error 0x%x",
               __func__, aac_error);
     return;  // TODO: Return an error?
   }
@@ -438,20 +436,19 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
   AACENC_InfoStruct aac_info;
   aac_error = aacEncInfo(a2dp_aac_encoder_cb.aac_handle, &aac_info);
   if (aac_error != AACENC_OK) {
-    LOG_ERROR(LOG_TAG,
-              "%s: Cannot retrieve the AAC encoder info: AAC error 0x%x",
+    LOG_ERROR("%s: Cannot retrieve the AAC encoder info: AAC error 0x%x",
               __func__, aac_error);
     return;  // TODO: Return an error?
   }
   p_encoder_params->frame_length = aac_info.frameLength;
   p_encoder_params->input_channels_n = aac_info.inputChannels;
   p_encoder_params->max_encoded_buffer_bytes = aac_info.maxOutBufBytes;
-  LOG_DEBUG(LOG_TAG,
-            "%s: AAC frame_length = %u input_channels_n = %u "
-            "max_encoded_buffer_bytes = %d",
-            __func__, p_encoder_params->frame_length,
-            p_encoder_params->input_channels_n,
-            p_encoder_params->max_encoded_buffer_bytes);
+  LOG_DEBUG(
+      "%s: AAC frame_length = %u input_channels_n = %u "
+      "max_encoded_buffer_bytes = %d",
+      __func__, p_encoder_params->frame_length,
+      p_encoder_params->input_channels_n,
+      p_encoder_params->max_encoded_buffer_bytes);
 
   // After encoder params ready, reset the feeding state and its interval.
   a2dp_aac_feeding_reset();
@@ -467,7 +464,7 @@ void a2dp_aac_feeding_reset(void) {
   auto frame_length = a2dp_aac_encoder_cb.aac_encoder_params.frame_length;
   auto sample_rate = a2dp_aac_encoder_cb.feeding_params.sample_rate;
   if (frame_length == 0 || sample_rate == 0) {
-    LOG_WARN(LOG_TAG, "%s: AAC encoder is not configured", __func__);
+    LOG_WARN("%s: AAC encoder is not configured", __func__);
     a2dp_aac_encoder_interval_ms = A2DP_AAC_ENCODER_INTERVAL_MS;
   } else {
     // PCM data size per AAC frame (bits)
@@ -492,7 +489,7 @@ void a2dp_aac_feeding_reset(void) {
        a2dp_aac_encoder_interval_ms) /
       1000;
 
-  LOG_INFO(LOG_TAG, "%s: PCM bytes %u per tick %u ms", __func__,
+  LOG_INFO("%s: PCM bytes %u per tick %u ms", __func__,
            a2dp_aac_encoder_cb.aac_feeding_state.bytes_per_tick,
            a2dp_aac_encoder_interval_ms);
 }
@@ -510,8 +507,8 @@ void a2dp_aac_send_frames(uint64_t timestamp_us) {
   uint8_t nb_iterations = 0;
 
   a2dp_aac_get_num_frame_iteration(&nb_iterations, &nb_frame, timestamp_us);
-  LOG_VERBOSE(LOG_TAG, "%s: Sending %d frames per iteration, %d iterations",
-              __func__, nb_frame, nb_iterations);
+  LOG_VERBOSE("%s: Sending %d frames per iteration, %d iterations", __func__,
+              nb_frame, nb_iterations);
   if (nb_frame == 0) return;
 
   for (uint8_t counter = 0; counter < nb_iterations; counter++) {
@@ -534,8 +531,7 @@ static void a2dp_aac_get_num_frame_iteration(uint8_t* num_of_iterations,
       a2dp_aac_encoder_cb.aac_encoder_params.frame_length *
       a2dp_aac_encoder_cb.feeding_params.channel_count *
       a2dp_aac_encoder_cb.feeding_params.bits_per_sample / 8;
-  LOG_VERBOSE(LOG_TAG, "%s: pcm_bytes_per_frame %u", __func__,
-              pcm_bytes_per_frame);
+  LOG_VERBOSE("%s: pcm_bytes_per_frame %u", __func__, pcm_bytes_per_frame);
 
   uint32_t us_this_tick = a2dp_aac_encoder_interval_ms * 1000;
   uint64_t now_us = timestamp_us;
@@ -552,8 +548,8 @@ static void a2dp_aac_get_num_frame_iteration(uint8_t* num_of_iterations,
   a2dp_aac_encoder_cb.aac_feeding_state.counter -= result * pcm_bytes_per_frame;
   nof = result;
 
-  LOG_VERBOSE(LOG_TAG, "%s: effective num of frames %u, iterations %u",
-              __func__, nof, noi);
+  LOG_VERBOSE("%s: effective num of frames %u, iterations %u", __func__, nof,
+              noi);
 
   *num_of_frames = nof;
   *num_of_iterations = noi;
@@ -625,7 +621,7 @@ static void a2dp_aac_encode_frames(uint8_t nb_frame) {
       if (a2dp_aac_read_feeding(read_buffer, &bytes_read)) {
         uint8_t* packet = (uint8_t*)(p_buf + 1) + p_buf->offset + p_buf->len;
         if (!a2dp_aac_encoder_cb.has_aac_handle) {
-          LOG_ERROR(LOG_TAG, "%s: invalid AAC handle", __func__);
+          LOG_ERROR("%s: invalid AAC handle", __func__);
           a2dp_aac_encoder_cb.stats.media_read_total_dropped_packets++;
           osi_free(p_buf);
           return;
@@ -636,8 +632,7 @@ static void a2dp_aac_encode_frames(uint8_t nb_frame) {
             aacEncEncode(a2dp_aac_encoder_cb.aac_handle, &in_buf_desc,
                          &out_buf_desc, &aac_in_args, &aac_out_args);
         if (aac_error != AACENC_OK) {
-          LOG_ERROR(LOG_TAG, "%s: AAC encoding error: 0x%x", __func__,
-                    aac_error);
+          LOG_ERROR("%s: AAC encoding error: 0x%x", __func__, aac_error);
           a2dp_aac_encoder_cb.stats.media_read_total_dropped_packets++;
           osi_free(p_buf);
           return;
@@ -648,7 +643,7 @@ static void a2dp_aac_encode_frames(uint8_t nb_frame) {
         nb_frame--;
         p_buf->layer_specific++;  // added a frame to the buffer
       } else {
-        LOG_WARN(LOG_TAG, "%s: underflow %d", __func__, nb_frame);
+        LOG_WARN("%s: underflow %d", __func__, nb_frame);
         a2dp_aac_encoder_cb.aac_feeding_state.counter +=
             nb_frame * p_encoder_params->frame_length *
             p_feeding_params->channel_count *
