@@ -40,8 +40,7 @@ future_t* future_new(void) {
 
   ret->semaphore = semaphore_new(0);
   if (!ret->semaphore) {
-    LOG_ERROR(LOG_TAG, "%s unable to allocate memory for the semaphore.",
-              __func__);
+    LOG_ERROR("%s unable to allocate memory for the semaphore.", __func__);
     goto error;
   }
 

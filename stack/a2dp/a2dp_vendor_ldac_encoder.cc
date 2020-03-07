@@ -187,8 +187,7 @@ static std::string quality_mode_index_to_name(int quality_mode_index);
 static void* load_func(const char* func_name) {
   void* func_ptr = dlsym(ldac_encoder_lib_handle, func_name);
   if (func_ptr == NULL) {
-    LOG_ERROR(LOG_TAG,
-              "%s: cannot find function '%s' in the encoder library: %s",
+    LOG_ERROR("%s: cannot find function '%s' in the encoder library: %s",
               __func__, func_name, dlerror());
     A2DP_VendorUnloadEncoderLdac();
     return NULL;
@@ -205,7 +204,7 @@ bool A2DP_VendorLoadEncoderLdac(void) {
   // Open the encoder library
   ldac_encoder_lib_handle = dlopen(LDAC_ENCODER_LIB_NAME, RTLD_NOW);
   if (ldac_encoder_lib_handle == NULL) {
-    LOG_ERROR(LOG_TAG, "%s: cannot open LDAC encoder library %s: %s", __func__,
+    LOG_ERROR("%s: cannot open LDAC encoder library %s: %s", __func__,
               LDAC_ENCODER_LIB_NAME, dlerror());
     return false;
   }
@@ -242,7 +241,7 @@ bool A2DP_VendorLoadEncoderLdac(void) {
   if (ldac_get_error_code_func == NULL) return false;
 
   if (!A2DP_VendorLoadLdacAbr()) {
-    LOG_WARN(LOG_TAG, "%s: cannot load the LDAC ABR library", __func__);
+    LOG_WARN("%s: cannot load the LDAC ABR library", __func__);
     ldac_abr_loaded = false;
   } else {
     ldac_abr_loaded = true;
@@ -324,10 +323,10 @@ bool A2dpCodecConfigLdacSource::updateEncoderUserConfig(
   a2dp_ldac_encoder_cb.timestamp = 0;
 
   if (a2dp_ldac_encoder_cb.peer_mtu == 0) {
-    LOG_ERROR(LOG_TAG,
-              "%s: Cannot update the codec encoder for %s: "
-              "invalid peer MTU",
-              __func__, name().c_str());
+    LOG_ERROR(
+        "%s: Cannot update the codec encoder for %s: "
+        "invalid peer MTU",
+        __func__, name().c_str());
     return false;
   }
 
@@ -356,7 +355,7 @@ static void a2dp_vendor_ldac_encoder_update(uint16_t peer_mtu,
   if (!a2dp_ldac_encoder_cb.has_ldac_handle) {
     a2dp_ldac_encoder_cb.ldac_handle = ldac_get_handle_func();
     if (a2dp_ldac_encoder_cb.ldac_handle == NULL) {
-      LOG_ERROR(LOG_TAG, "%s: Cannot get LDAC encoder handle", __func__);
+      LOG_ERROR("%s: Cannot get LDAC encoder handle", __func__);
       return;  // TODO: Return an error?
     }
     a2dp_ldac_encoder_cb.has_ldac_handle = true;
@@ -364,10 +363,10 @@ static void a2dp_vendor_ldac_encoder_update(uint16_t peer_mtu,
   CHECK(a2dp_ldac_encoder_cb.ldac_handle != nullptr);
 
   if (!a2dp_codec_config->copyOutOtaCodecConfig(codec_info)) {
-    LOG_ERROR(LOG_TAG,
-              "%s: Cannot update the codec encoder for %s: "
-              "invalid codec config",
-              __func__, a2dp_codec_config->name().c_str());
+    LOG_ERROR(
+        "%s: Cannot update the codec encoder for %s: "
+        "invalid codec config",
+        __func__, a2dp_codec_config->name().c_str());
     return;
   }
   const uint8_t* p_codec_info = codec_info;
@@ -381,9 +380,9 @@ static void a2dp_vendor_ldac_encoder_update(uint16_t peer_mtu,
       a2dp_codec_config->getAudioBitsPerSample();
   p_feeding_params->channel_count =
       A2DP_VendorGetTrackChannelCountLdac(p_codec_info);
-  LOG_DEBUG(LOG_TAG, "%s: sample_rate=%u bits_per_sample=%u channel_count=%u",
-            __func__, p_feeding_params->sample_rate,
-            p_feeding_params->bits_per_sample, p_feeding_params->channel_count);
+  LOG_DEBUG("%s: sample_rate=%u bits_per_sample=%u channel_count=%u", __func__,
+            p_feeding_params->sample_rate, p_feeding_params->bits_per_sample,
+            p_feeding_params->channel_count);
   a2dp_vendor_ldac_feeding_reset();
 
   // The codec parameters
@@ -404,12 +403,12 @@ static void a2dp_vendor_ldac_encoder_update(uint16_t peer_mtu,
   int old_quality_mode_index = p_encoder_params->quality_mode_index;
   if (codec_config.codec_specific_1 != 0) {
     p_encoder_params->quality_mode_index = codec_config.codec_specific_1 % 10;
-    LOG_DEBUG(LOG_TAG, "%s: setting quality mode to %s", __func__,
+    LOG_DEBUG("%s: setting quality mode to %s", __func__,
               quality_mode_index_to_name(p_encoder_params->quality_mode_index)
                   .c_str());
   } else {
     p_encoder_params->quality_mode_index = A2DP_LDAC_QUALITY_ABR;
-    LOG_DEBUG(LOG_TAG, "%s: setting quality mode to default %s", __func__,
+    LOG_DEBUG("%s: setting quality mode to default %s", __func__,
               quality_mode_index_to_name(p_encoder_params->quality_mode_index)
                   .c_str());
   }
@@ -419,21 +418,20 @@ static void a2dp_vendor_ldac_encoder_update(uint16_t peer_mtu,
     if (!ldac_abr_loaded) {
       p_encoder_params->quality_mode_index = A2DP_LDAC_QUALITY_MID;
       LOG_WARN(
-          LOG_TAG,
+
           "%s: LDAC ABR library is not loaded, resetting quality mode to %s",
           __func__,
           quality_mode_index_to_name(p_encoder_params->quality_mode_index)
               .c_str());
     } else {
-      LOG_DEBUG(LOG_TAG, "%s: changing mode from %s to %s", __func__,
+      LOG_DEBUG("%s: changing mode from %s to %s", __func__,
                 quality_mode_index_to_name(old_quality_mode_index).c_str(),
                 quality_mode_index_to_name(p_encoder_params->quality_mode_index)
                     .c_str());
       if (a2dp_ldac_encoder_cb.ldac_abr_handle != NULL) {
-        LOG_DEBUG(LOG_TAG, "%s: already in LDAC ABR mode, do nothing.",
-                  __func__);
+        LOG_DEBUG("%s: already in LDAC ABR mode, do nothing.", __func__);
       } else {
-        LOG_DEBUG(LOG_TAG, "%s: get and init LDAC ABR handle.", __func__);
+        LOG_DEBUG("%s: get and init LDAC ABR handle.", __func__);
         a2dp_ldac_encoder_cb.ldac_abr_handle = a2dp_ldac_abr_get_handle();
         if (a2dp_ldac_encoder_cb.ldac_abr_handle != NULL) {
           a2dp_ldac_encoder_cb.has_ldac_abr_handle = true;
@@ -444,7 +442,7 @@ static void a2dp_vendor_ldac_encoder_update(uint16_t peer_mtu,
         } else {
           p_encoder_params->quality_mode_index = A2DP_LDAC_QUALITY_MID;
           LOG_DEBUG(
-              LOG_TAG,
+
               "%s: get LDAC ABR handle failed, resetting quality mode to %s.",
               __func__,
               quality_mode_index_to_name(p_encoder_params->quality_mode_index)
@@ -454,7 +452,7 @@ static void a2dp_vendor_ldac_encoder_update(uint16_t peer_mtu,
     }
   } else {
     ldac_eqmid = p_encoder_params->quality_mode_index;
-    LOG_DEBUG(LOG_TAG, "%s: in %s mode, free LDAC ABR handle.", __func__,
+    LOG_DEBUG("%s: in %s mode, free LDAC ABR handle.", __func__,
               quality_mode_index_to_name(ldac_eqmid).c_str());
     if (a2dp_ldac_encoder_cb.has_ldac_abr_handle) {
       a2dp_ldac_abr_free_handle(a2dp_ldac_encoder_cb.ldac_abr_handle);
@@ -479,15 +477,14 @@ static void a2dp_vendor_ldac_encoder_update(uint16_t peer_mtu,
   else if (p_encoder_params->pcm_wlength == 4)
     p_encoder_params->pcm_fmt = LDACBT_SMPL_FMT_S32;
 
-  LOG_DEBUG(LOG_TAG, "%s: MTU=%d, peer_mtu=%d", __func__,
+  LOG_DEBUG("%s: MTU=%d, peer_mtu=%d", __func__,
             a2dp_ldac_encoder_cb.TxAaMtuSize, peer_mtu);
-  LOG_DEBUG(LOG_TAG,
-            "%s: sample_rate: %d channel_mode: %d "
-            "quality_mode_index: %d pcm_wlength: %d pcm_fmt: %d",
-            __func__, p_encoder_params->sample_rate,
-            p_encoder_params->channel_mode,
-            p_encoder_params->quality_mode_index, p_encoder_params->pcm_wlength,
-            p_encoder_params->pcm_fmt);
+  LOG_DEBUG(
+      "%s: sample_rate: %d channel_mode: %d "
+      "quality_mode_index: %d pcm_wlength: %d pcm_fmt: %d",
+      __func__, p_encoder_params->sample_rate, p_encoder_params->channel_mode,
+      p_encoder_params->quality_mode_index, p_encoder_params->pcm_wlength,
+      p_encoder_params->pcm_fmt);
 
   // Initialize the encoder.
   // NOTE: MTU in the initialization must include the AVDT media header size.
@@ -498,12 +495,11 @@ static void a2dp_vendor_ldac_encoder_update(uint16_t peer_mtu,
       p_encoder_params->sample_rate);
   if (result != 0) {
     int err_code = ldac_get_error_code_func(a2dp_ldac_encoder_cb.ldac_handle);
-    LOG_ERROR(LOG_TAG,
-              "%s: error initializing the LDAC encoder: %d api_error = %d "
-              "handle_error = %d block_error = %d error_code = 0x%x",
-              __func__, result, LDACBT_API_ERR(err_code),
-              LDACBT_HANDLE_ERR(err_code), LDACBT_BLOCK_ERR(err_code),
-              err_code);
+    LOG_ERROR(
+        "%s: error initializing the LDAC encoder: %d api_error = %d "
+        "handle_error = %d block_error = %d error_code = 0x%x",
+        __func__, result, LDACBT_API_ERR(err_code), LDACBT_HANDLE_ERR(err_code),
+        LDACBT_BLOCK_ERR(err_code), err_code);
   }
 }
 
@@ -527,7 +523,7 @@ void a2dp_vendor_ldac_feeding_reset(void) {
        A2DP_LDAC_ENCODER_INTERVAL_MS) /
       1000;
 
-  LOG_DEBUG(LOG_TAG, "%s: PCM bytes per tick %u", __func__,
+  LOG_DEBUG("%s: PCM bytes per tick %u", __func__,
             a2dp_ldac_encoder_cb.ldac_feeding_state.bytes_per_tick);
 }
 
@@ -544,8 +540,8 @@ void a2dp_vendor_ldac_send_frames(uint64_t timestamp_us) {
   uint8_t nb_iterations = 0;
 
   a2dp_ldac_get_num_frame_iteration(&nb_iterations, &nb_frame, timestamp_us);
-  LOG_VERBOSE(LOG_TAG, "%s: Sending %d frames per iteration, %d iterations",
-              __func__, nb_frame, nb_iterations);
+  LOG_VERBOSE("%s: Sending %d frames per iteration, %d iterations", __func__,
+              nb_frame, nb_iterations);
   if (nb_frame == 0) return;
 
   for (uint8_t counter = 0; counter < nb_iterations; counter++) {
@@ -581,8 +577,7 @@ static void a2dp_ldac_get_num_frame_iteration(uint8_t* num_of_iterations,
       A2DP_LDAC_MEDIA_BYTES_PER_FRAME *
       a2dp_ldac_encoder_cb.feeding_params.channel_count *
       a2dp_ldac_encoder_cb.feeding_params.bits_per_sample / 8;
-  LOG_VERBOSE(LOG_TAG, "%s: pcm_bytes_per_frame %u", __func__,
-              pcm_bytes_per_frame);
+  LOG_VERBOSE("%s: pcm_bytes_per_frame %u", __func__, pcm_bytes_per_frame);
 
   uint32_t us_this_tick = A2DP_LDAC_ENCODER_INTERVAL_MS * 1000;
   uint64_t now_us = timestamp_us;
@@ -601,8 +596,8 @@ static void a2dp_ldac_get_num_frame_iteration(uint8_t* num_of_iterations,
       result * pcm_bytes_per_frame;
   nof = result;
 
-  LOG_VERBOSE(LOG_TAG, "%s: effective num of frames %u, iterations %u",
-              __func__, nof, noi);
+  LOG_VERBOSE("%s: effective num of frames %u, iterations %u", __func__, nof,
+              noi);
 
   *num_of_frames = nof;
   *num_of_iterations = noi;
@@ -654,7 +649,7 @@ static void a2dp_ldac_encode_frames(uint8_t nb_frame) {
         bytes_read += temp_bytes_read;
         uint8_t* packet = (uint8_t*)(p_buf + 1) + p_buf->offset + p_buf->len;
         if (a2dp_ldac_encoder_cb.ldac_handle == NULL) {
-          LOG_ERROR(LOG_TAG, "%s: invalid LDAC handle", __func__);
+          LOG_ERROR("%s: invalid LDAC handle", __func__);
           a2dp_ldac_encoder_cb.stats.media_read_total_dropped_packets++;
           osi_free(p_buf);
           return;
@@ -665,12 +660,12 @@ static void a2dp_ldac_encode_frames(uint8_t nb_frame) {
         if (result != 0) {
           int err_code =
               ldac_get_error_code_func(a2dp_ldac_encoder_cb.ldac_handle);
-          LOG_ERROR(LOG_TAG,
-                    "%s: LDAC encoding error: %d api_error = %d "
-                    "handle_error = %d block_error = %d error_code = 0x%x",
-                    __func__, result, LDACBT_API_ERR(err_code),
-                    LDACBT_HANDLE_ERR(err_code), LDACBT_BLOCK_ERR(err_code),
-                    err_code);
+          LOG_ERROR(
+              "%s: LDAC encoding error: %d api_error = %d "
+              "handle_error = %d block_error = %d error_code = 0x%x",
+              __func__, result, LDACBT_API_ERR(err_code),
+              LDACBT_HANDLE_ERR(err_code), LDACBT_BLOCK_ERR(err_code),
+              err_code);
           a2dp_ldac_encoder_cb.stats.media_read_total_dropped_packets++;
           osi_free(p_buf);
           return;
@@ -680,7 +675,7 @@ static void a2dp_ldac_encode_frames(uint8_t nb_frame) {
         nb_frame--;
         p_buf->layer_specific += out_frames;  // added a frame to the buffer
       } else {
-        LOG_WARN(LOG_TAG, "%s: underflow %d", __func__, nb_frame);
+        LOG_WARN("%s: underflow %d", __func__, nb_frame);
         a2dp_ldac_encoder_cb.ldac_feeding_state.counter +=
             nb_frame * LDACBT_ENC_LSU *
             a2dp_ldac_encoder_cb.feeding_params.channel_count *

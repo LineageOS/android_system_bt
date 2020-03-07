@@ -210,8 +210,7 @@ static void bta_ag_send_result(tBTA_AG_SCB* p_scb, size_t code,
                                const char* p_arg, int16_t int_arg) {
   const tBTA_AG_RESULT* result = bta_ag_result_by_code(code);
   if (result == nullptr) {
-    LOG_ERROR(LOG_TAG, "%s Unable to lookup result for code %zu", __func__,
-              code);
+    LOG_ERROR("%s Unable to lookup result for code %zu", __func__, code);
     return;
   }
 

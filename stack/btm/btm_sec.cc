@@ -240,7 +240,7 @@ bool BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info) {
 
   BTM_TRACE_EVENT("%s application registered", __func__);
 
-  LOG_INFO(LOG_TAG, "%s p_cb_info->p_le_callback == 0x%p", __func__,
+  LOG_INFO("%s p_cb_info->p_le_callback == 0x%p", __func__,
            p_cb_info->p_le_callback);
   if (p_cb_info->p_le_callback) {
     BTM_TRACE_EVENT("%s SMP_Register( btm_proc_smp_cback )", __func__);
@@ -251,11 +251,11 @@ bool BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info) {
       btm_ble_reset_id();
     }
   } else {
-    LOG_WARN(LOG_TAG, "%s p_cb_info->p_le_callback == NULL", __func__);
+    LOG_WARN("%s p_cb_info->p_le_callback == NULL", __func__);
   }
 
   btm_cb.api = *p_cb_info;
-  LOG_INFO(LOG_TAG, "%s btm_cb.api.p_le_callback = 0x%p ", __func__,
+  LOG_INFO("%s btm_cb.api.p_le_callback = 0x%p ", __func__,
            btm_cb.api.p_le_callback);
   BTM_TRACE_EVENT("%s application registered", __func__);
   return (true);
@@ -1973,7 +1973,7 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
       because of data path issues. Delay this disconnect a little bit
       */
       LOG_INFO(
-          LOG_TAG,
+
           "%s peer should have initiated security process by now (SM4 to SM4)",
           __func__);
       p_dev_rec->p_callback = p_callback;
@@ -4270,8 +4270,8 @@ void btm_sec_disconnected(uint16_t handle, uint8_t reason) {
   p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
 
 #if (BTM_DISC_DURING_RS == TRUE)
-  LOG_INFO(LOG_TAG, "%s clearing pending flag handle:%d reason:%d", __func__,
-           handle, reason);
+  LOG_INFO("%s clearing pending flag handle:%d reason:%d", __func__, handle,
+           reason);
   p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
 #endif
 

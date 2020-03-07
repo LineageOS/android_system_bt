@@ -307,16 +307,16 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
       btu_hcif_qos_setup_comp_evt(p);
       break;
     case HCI_COMMAND_COMPLETE_EVT:
-      LOG_ERROR(LOG_TAG,
-                "%s should not have received a command complete event. "
-                "Someone didn't go through the hci transmit_command function.",
-                __func__);
+      LOG_ERROR(
+          "%s should not have received a command complete event. "
+          "Someone didn't go through the hci transmit_command function.",
+          __func__);
       break;
     case HCI_COMMAND_STATUS_EVT:
-      LOG_ERROR(LOG_TAG,
-                "%s should not have received a command status event. "
-                "Someone didn't go through the hci transmit_command function.",
-                __func__);
+      LOG_ERROR(
+          "%s should not have received a command status event. "
+          "Someone didn't go through the hci transmit_command function.",
+          __func__);
       break;
     case HCI_HARDWARE_ERROR_EVT:
       btu_hcif_hardware_error_evt(p);
@@ -1660,7 +1660,7 @@ static void btu_hcif_hardware_error_evt(uint8_t* p) {
   if (hci_is_root_inflammation_event_received()) {
     // Ignore the hardware error event here as we have already received
     // root inflammation event earlier.
-    HCI_TRACE_ERROR(LOG_TAG, "H/w error event after root inflammation event!");
+    HCI_TRACE_ERROR("H/w error event after root inflammation event!");
     return;
   }
 

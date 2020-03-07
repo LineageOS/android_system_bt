@@ -39,7 +39,7 @@
 #include "sdp_api.h"
 
 #define error(fmt, ...) \
-  LOG_ERROR(LOG_TAG, "## ERROR : %s: " fmt "##", __func__, ##__VA_ARGS__)
+  LOG_ERROR("## ERROR : %s: " fmt "##", __func__, ##__VA_ARGS__)
 
 /* Mapping from PORT_* result codes to human readable strings. */
 static const char* result_code_strings[] = {"Success",

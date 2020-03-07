@@ -37,7 +37,7 @@
 #include "osi/include/log.h"
 
 void btif_a2dp_on_idle(void) {
-  LOG_INFO(LOG_TAG, "%s: ## ON A2DP IDLE ## peer_sep = %d", __func__,
+  LOG_INFO("%s: ## ON A2DP IDLE ## peer_sep = %d", __func__,
            btif_av_get_peer_sep());
   if (btif_av_get_peer_sep() == AVDT_TSEP_SNK) {
     btif_a2dp_source_on_idle();
@@ -110,8 +110,7 @@ bool btif_a2dp_on_started(const RawAddress& peer_addr, tBTA_AV_START* p_av_start
 }
 
 void btif_a2dp_on_stopped(tBTA_AV_SUSPEND* p_av_suspend) {
-  LOG_INFO(LOG_TAG, "%s: ## ON A2DP STOPPED ## p_av_suspend=%p", __func__,
-           p_av_suspend);
+  LOG_INFO("%s: ## ON A2DP STOPPED ## p_av_suspend=%p", __func__, p_av_suspend);
 
   if (btif_av_get_peer_sep() == AVDT_TSEP_SRC) {
     btif_a2dp_sink_on_stopped(p_av_suspend);
@@ -127,7 +126,7 @@ void btif_a2dp_on_stopped(tBTA_AV_SUSPEND* p_av_suspend) {
 }
 
 void btif_a2dp_on_suspended(tBTA_AV_SUSPEND* p_av_suspend) {
-  LOG_INFO(LOG_TAG, "%s: ## ON A2DP SUSPENDED ## p_av_suspend=%p", __func__,
+  LOG_INFO("%s: ## ON A2DP SUSPENDED ## p_av_suspend=%p", __func__,
            p_av_suspend);
   if (btif_av_get_peer_sep() == AVDT_TSEP_SRC) {
     btif_a2dp_sink_on_suspended(p_av_suspend);
@@ -145,20 +144,20 @@ void btif_a2dp_on_suspended(tBTA_AV_SUSPEND* p_av_suspend) {
 void btif_a2dp_on_offload_started(const RawAddress& peer_addr,
                                   tBTA_AV_STATUS status) {
   tA2DP_CTRL_ACK ack;
-  LOG_INFO(LOG_TAG, "%s: peer %s status %d", __func__,
-           peer_addr.ToString().c_str(), status);
+  LOG_INFO("%s: peer %s status %d", __func__, peer_addr.ToString().c_str(),
+           status);
 
   switch (status) {
     case BTA_AV_SUCCESS:
       ack = A2DP_CTRL_ACK_SUCCESS;
       break;
     case BTA_AV_FAIL_RESOURCES:
-      LOG_ERROR(LOG_TAG, "%s: peer %s FAILED UNSUPPORTED", __func__,
+      LOG_ERROR("%s: peer %s FAILED UNSUPPORTED", __func__,
                 peer_addr.ToString().c_str());
       ack = A2DP_CTRL_ACK_UNSUPPORTED;
       break;
     default:
-      LOG_ERROR(LOG_TAG, "%s: peer %s FAILED: status = %d", __func__,
+      LOG_ERROR("%s: peer %s FAILED: status = %d", __func__,
                 peer_addr.ToString().c_str(), status);
       ack = A2DP_CTRL_ACK_FAILURE;
       break;
@@ -168,7 +167,7 @@ void btif_a2dp_on_offload_started(const RawAddress& peer_addr,
       // Offload request will return with failure from btif_av sm if
       // suspend is triggered for remote start. Disconnect only if SoC
       // returned failure for offload VSC
-      LOG_ERROR(LOG_TAG, "%s: peer %s offload start failed", __func__,
+      LOG_ERROR("%s: peer %s offload start failed", __func__,
                 peer_addr.ToString().c_str());
       btif_av_src_disconnect_sink(peer_addr);
     }

@@ -82,7 +82,7 @@ bool LinuxIPCHost::EventLoop() {
     int status =
         TEMP_FAILURE_RETRY(ppoll(pfds_.data(), pfds_.size(), nullptr, nullptr));
     if (status < 1) {
-      LOG_ERROR(LOG_TAG, "ppoll error");
+      LOG_ERROR("ppoll error");
       return false;
     }
 
@@ -111,7 +111,7 @@ bool LinuxIPCHost::OnCreateService(const std::string& service_uuid) {
   bool status = gatt_servers_[service_uuid]->Initialize(
       Uuid::FromString(service_uuid), &gattfd);
   if (!status) {
-    LOG_ERROR(LOG_TAG, "Failed to initialize bluetooth");
+    LOG_ERROR("Failed to initialize bluetooth");
     return false;
   }
   pfds_.resize(kPossibleFds);
@@ -181,9 +181,8 @@ bool LinuxIPCHost::OnSetAdvertisement(const std::string& service_uuid,
                                       const std::string& advertise_data,
                                       const std::string& manufacturer_data,
                                       const std::string& transmit_name) {
-  LOG_INFO(LOG_TAG, "%s: service:%s uuids:%s data:%s", __func__,
-           service_uuid.c_str(), advertise_uuids.c_str(),
-           advertise_data.c_str());
+  LOG_INFO("%s: service:%s uuids:%s data:%s", __func__, service_uuid.c_str(),
+           advertise_uuids.c_str(), advertise_data.c_str());
 
   std::vector<std::string> advertise_uuid_tokens = base::SplitString(
       advertise_uuids, ".", base::TRIM_WHITESPACE, base::SPLIT_WANT_ALL);
@@ -251,20 +250,20 @@ bool LinuxIPCHost::OnMessage() {
   OSI_NO_INTR(size =
                   recv(pfds_[kFdIpc].fd, &ipc_msg[0], 0, MSG_PEEK | MSG_TRUNC));
   if (-1 == size) {
-    LOG_ERROR(LOG_TAG, "Error reading datagram size: %s", strerror(errno));
+    LOG_ERROR("Error reading datagram size: %s", strerror(errno));
     return false;
   } else if (0 == size) {
-    LOG_INFO(LOG_TAG, "%s:%d: Connection closed", __func__, __LINE__);
+    LOG_INFO("%s:%d: Connection closed", __func__, __LINE__);
     return false;
   }
 
   ipc_msg.resize(size);
   OSI_NO_INTR(size = read(pfds_[kFdIpc].fd, &ipc_msg[0], ipc_msg.size()));
   if (-1 == size) {
-    LOG_ERROR(LOG_TAG, "Error reading IPC: %s", strerror(errno));
+    LOG_ERROR("Error reading IPC: %s", strerror(errno));
     return false;
   } else if (0 == size) {
-    LOG_INFO(LOG_TAG, "%s:%d: Connection closed", __func__, __LINE__);
+    LOG_INFO("%s:%d: Connection closed", __func__, __LINE__);
     return false;
   }
 
@@ -300,7 +299,7 @@ bool LinuxIPCHost::OnMessage() {
       break;
   }
 
-  LOG_ERROR(LOG_TAG, "Malformed IPC message: %s", ipc_msg.c_str());
+  LOG_ERROR("Malformed IPC message: %s", ipc_msg.c_str());
   return false;
 }
 
@@ -310,7 +309,7 @@ bool LinuxIPCHost::OnGattWrite() {
 
   OSI_NO_INTR(r = read(pfds_[kFdGatt].fd, id.data(), id.size()));
   if (r != id.size()) {
-    LOG_ERROR(LOG_TAG, "Error reading GATT attribute ID");
+    LOG_ERROR("Error reading GATT attribute ID");
     return false;
   }
 
@@ -329,7 +328,7 @@ bool LinuxIPCHost::OnGattWrite() {
 
   OSI_NO_INTR(r = write(pfds_[kFdIpc].fd, transmit.data(), transmit.size()));
   if (-1 == r) {
-    LOG_ERROR(LOG_TAG, "Error replying to IPC: %s", strerror(errno));
+    LOG_ERROR("Error replying to IPC: %s", strerror(errno));
     return false;
   }
 

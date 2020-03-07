@@ -70,7 +70,7 @@ static void a2dp_sdp_cback(uint16_t status) {
   tSDP_PROTOCOL_ELEM elem;
   RawAddress peer_address = RawAddress::kEmpty;
 
-  LOG_INFO(LOG_TAG, "%s: status: %d", __func__, status);
+  LOG_INFO("%s: status: %d", __func__, status);
 
   if (status == SDP_SUCCESS) {
     /* loop through all records we found */
@@ -106,7 +106,7 @@ static void a2dp_sdp_cback(uint16_t status) {
       /* get AVDTP version */
       if (SDP_FindProtocolListElemInRec(p_rec, UUID_PROTOCOL_AVDTP, &elem)) {
         a2dp_svc.avdt_version = elem.params[0];
-        LOG_VERBOSE(LOG_TAG, "avdt_version: 0x%x", a2dp_svc.avdt_version);
+        LOG_VERBOSE("avdt_version: 0x%x", a2dp_svc.avdt_version);
       }
 
       /* we've got everything, we're done */
@@ -179,7 +179,7 @@ tA2DP_STATUS A2DP_AddRecord(uint16_t service_uuid, char* p_service_name,
   uint8_t* p;
   tSDP_PROTOCOL_ELEM proto_list[A2DP_NUM_PROTO_ELEMS];
 
-  LOG_VERBOSE(LOG_TAG, "%s: uuid: 0x%x", __func__, service_uuid);
+  LOG_VERBOSE("%s: uuid: 0x%x", __func__, service_uuid);
 
   if ((sdp_handle == 0) || (service_uuid != UUID_SERVCLASS_AUDIO_SOURCE &&
                             service_uuid != UUID_SERVCLASS_AUDIO_SINK))
@@ -275,22 +275,22 @@ tA2DP_STATUS A2DP_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
                               tA2DP_FIND_CBACK* p_cback) {
   bool result = true;
 
-  LOG_INFO(LOG_TAG, "%s: peer: %s UUID: 0x%x", __func__,
-           bd_addr.ToString().c_str(), service_uuid);
+  LOG_INFO("%s: peer: %s UUID: 0x%x", __func__, bd_addr.ToString().c_str(),
+           service_uuid);
   if ((service_uuid != UUID_SERVCLASS_AUDIO_SOURCE &&
        service_uuid != UUID_SERVCLASS_AUDIO_SINK) ||
       p_db == NULL || p_cback == NULL) {
-    LOG_ERROR(LOG_TAG,
-              "%s: cannot find service for peer %s UUID 0x%x: "
-              "invalid parameters",
-              __func__, bd_addr.ToString().c_str(), service_uuid);
+    LOG_ERROR(
+        "%s: cannot find service for peer %s UUID 0x%x: "
+        "invalid parameters",
+        __func__, bd_addr.ToString().c_str(), service_uuid);
     return A2DP_INVALID_PARAMS;
   }
 
   if (a2dp_cb.find.service_uuid == UUID_SERVCLASS_AUDIO_SOURCE ||
       a2dp_cb.find.service_uuid == UUID_SERVCLASS_AUDIO_SINK) {
-    LOG_ERROR(LOG_TAG, "%s: cannot find service for peer %s UUID 0x%x: busy",
-              __func__, bd_addr.ToString().c_str(), service_uuid);
+    LOG_ERROR("%s: cannot find service for peer %s UUID 0x%x: busy", __func__,
+              bd_addr.ToString().c_str(), service_uuid);
     return A2DP_BUSY;
   }
 
@@ -319,10 +319,10 @@ tA2DP_STATUS A2DP_FindService(uint16_t service_uuid, const RawAddress& bd_addr,
     }
   }
   if (!result) {
-    LOG_ERROR(LOG_TAG,
-              "%s: cannot find service for peer %s UUID 0x%x: "
-              "SDP error",
-              __func__, bd_addr.ToString().c_str(), service_uuid);
+    LOG_ERROR(
+        "%s: cannot find service for peer %s UUID 0x%x: "
+        "SDP error",
+        __func__, bd_addr.ToString().c_str(), service_uuid);
     return A2DP_FAIL;
   }
 

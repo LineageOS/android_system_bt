@@ -960,7 +960,7 @@ static void btif_hh_upstreams_evt(uint16_t event, char* p_param) {
       }
       if (p_dev->fd < 0) {
         LOG_ERROR(
-            LOG_TAG,
+
             "BTA_HH_GET_DSCP_EVT: Error, failed to find the uhid driver...");
         return;
       }
@@ -1084,7 +1084,7 @@ static void btif_hh_upstreams_evt(uint16_t event, char* p_param) {
       break;
 
     case BTA_HH_API_ERR_EVT:
-      LOG_INFO(LOG_TAG, "BTA_HH API_ERR");
+      LOG_INFO("BTA_HH API_ERR");
       break;
 
     default:
@@ -1550,7 +1550,7 @@ static bt_status_t set_report(RawAddress* bd_addr,
     /* Build a SetReport data buffer */
     // TODO
     hex_bytes_filled = ascii_2_hex(report, len, hexbuf);
-    LOG_INFO(LOG_TAG, "Hex bytes filled, hex value: %d", hex_bytes_filled);
+    LOG_INFO("Hex bytes filled, hex value: %d", hex_bytes_filled);
     if (hex_bytes_filled) {
       BT_HDR* p_buf = create_pbuf(hex_bytes_filled, hexbuf);
       if (p_buf == NULL) {

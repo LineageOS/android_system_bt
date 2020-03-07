@@ -197,7 +197,7 @@ static void dis_gatt_c_read_dis_value_cmpl(uint16_t conn_id) {
   srvc_eng_release_channel(conn_id);
 
   if (dis_cb.p_read_dis_cback && p_clcb) {
-    LOG_INFO(LOG_TAG, "%s conn_id:%d attr_mask = 0x%04x", __func__, conn_id,
+    LOG_INFO("%s conn_id:%d attr_mask = 0x%04x", __func__, conn_id,
              p_clcb->dis_value.attr_mask);
 
     (*dis_cb.p_read_dis_cback)(p_clcb->bda, &p_clcb->dis_value);
