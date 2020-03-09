@@ -41,5 +41,7 @@ class CustomFieldFixedSize : public ScalarField {
 
   virtual void GenValidator(std::ostream&) const override;
 
+  virtual void GenStringRepresentation(std::ostream& s, std::string accessor) const override;
+
   std::string type_name_;
 };

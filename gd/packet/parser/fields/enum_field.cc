@@ -51,3 +51,7 @@ void EnumField::GenInserter(std::ostream& s) const {
 void EnumField::GenValidator(std::ostream&) const {
   // Do nothing
 }
+
+void EnumField::GenStringRepresentation(std::ostream& s, std::string accessor) const {
+  s << GetDataType() << "Text(" << accessor << ")";
+}
