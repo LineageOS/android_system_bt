@@ -29,6 +29,10 @@ namespace l2cap {
 namespace classic {
 namespace internal {
 
+using RetransmissionAndFlowControlMode = DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode;
+using ConnectionResult = DynamicChannelManager::ConnectionResult;
+using ConnectionResultCode = DynamicChannelManager::ConnectionResultCode;
+
 Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_connection,
            l2cap::internal::ParameterProvider* parameter_provider,
            DynamicChannelServiceManagerImpl* dynamic_service_manager,
@@ -55,8 +59,8 @@ void Link::OnAclDisconnected(hci::ErrorCode status) {
   signalling_manager_.CancelAlarm();
   fixed_channel_allocator_.OnAclDisconnected(status);
   dynamic_channel_allocator_.OnAclDisconnected(status);
-  DynamicChannelManager::ConnectionResult result{
-      .connection_result_code = DynamicChannelManager::ConnectionResultCode::FAIL_HCI_ERROR,
+  ConnectionResult result{
+      .connection_result_code = ConnectionResultCode::FAIL_HCI_ERROR,
       .hci_error = status,
       .l2cap_connection_response_result = ConnectionResponseResult::SUCCESS,
   };
@@ -119,15 +123,26 @@ void Link::SendConnectionRequest(Psm psm, Cid local_cid) {
 
 void Link::SendConnectionRequest(Psm psm, Cid local_cid,
                                  PendingDynamicChannelConnection pending_dynamic_channel_connection) {
-  local_cid_to_pending_dynamic_channel_connection_map_[local_cid] = std::move(pending_dynamic_channel_connection);
-  signalling_manager_.SendConnectionRequest(psm, local_cid);
+  if (pending_dynamic_channel_connection.configuration_.channel_mode ==
+          RetransmissionAndFlowControlMode::ENHANCED_RETRANSMISSION &&
+      !GetRemoteSupportsErtm()) {
+    ConnectionResult result{
+        .connection_result_code = ConnectionResultCode::FAIL_REMOTE_NOT_SUPPORT,
+    };
+    pending_dynamic_channel_connection.handler_->Post(
+        common::BindOnce(std::move(pending_dynamic_channel_connection.on_fail_callback_), result));
+    return;
+  } else {
+    local_cid_to_pending_dynamic_channel_connection_map_[local_cid] = std::move(pending_dynamic_channel_connection);
+    signalling_manager_.SendConnectionRequest(psm, local_cid);
+  }
 }
 
 void Link::OnOutgoingConnectionRequestFail(Cid local_cid) {
   if (local_cid_to_pending_dynamic_channel_connection_map_.find(local_cid) !=
       local_cid_to_pending_dynamic_channel_connection_map_.end()) {
-    DynamicChannelManager::ConnectionResult result{
-        .connection_result_code = DynamicChannelManager::ConnectionResultCode::FAIL_HCI_ERROR,
+    ConnectionResult result{
+        .connection_result_code = ConnectionResultCode::FAIL_HCI_ERROR,
         .hci_error = hci::ErrorCode::CONNECTION_TIMEOUT,
         .l2cap_connection_response_result = ConnectionResponseResult::SUCCESS,
     };
@@ -200,7 +215,7 @@ void Link::NotifyChannelCreation(Cid cid, std::unique_ptr<DynamicChannel> user_c
   local_cid_to_pending_dynamic_channel_connection_map_.erase(cid);
 }
 
-void Link::NotifyChannelFail(Cid cid, DynamicChannelManager::ConnectionResult result) {
+void Link::NotifyChannelFail(Cid cid, ConnectionResult result) {
   ASSERT(local_cid_to_pending_dynamic_channel_connection_map_.find(cid) !=
          local_cid_to_pending_dynamic_channel_connection_map_.end());
   auto& pending_dynamic_channel_connection = local_cid_to_pending_dynamic_channel_connection_map_[cid];

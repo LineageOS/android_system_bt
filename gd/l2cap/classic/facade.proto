@@ -38,7 +38,8 @@ message ConnectionCloseEvent {
 
 enum RetransmissionFlowControlMode {
   BASIC = 0;
-  ERTM = 3;
+  ERTM = 1;
+  ERTM_OPTIONAL = 2;
 }
 
 message OpenChannelRequest {
