@@ -80,6 +80,10 @@
     {
       "name" : "net_test_btif_rc",
       "host" : true
+    },
+    {
+      "name" : "net_test_stack_a2dp_native",
+      "host" : true
     }
   ]
 }
