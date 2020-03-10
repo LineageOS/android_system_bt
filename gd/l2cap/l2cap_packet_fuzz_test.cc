@@ -46,7 +46,7 @@ DEFINE_AND_REGISTER_ConfigurationRequestReflectionFuzzTest(l2cap_packet_fuzz_tes
 }  // namespace bluetooth
 
 void RunL2capPacketFuzzTest(const uint8_t* data, size_t size) {
-  if (data == nullptr) return;
+  if (data == nullptr || size > 65536 /* Max ACL packet size */) return;
   for (auto test_function : bluetooth::l2cap::l2cap_packet_fuzz_tests) {
     test_function(data, size);
   }
