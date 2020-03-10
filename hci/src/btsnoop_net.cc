@@ -32,6 +32,7 @@
 
 #include <mutex>
 
+#include "bt_types.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 
