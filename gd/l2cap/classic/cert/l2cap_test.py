@@ -68,28 +68,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
     def cert_send_b_frame(self, b_frame):
         self.cert_l2cap.send_acl(b_frame)
 
-    def _send_configuration_request(self,
-                                    sid,
-                                    dcid,
-                                    continuation=l2cap_packets.Continuation.END,
-                                    options=[],
-                                    payload=[]):
-
-        config_request = l2cap_packets.ConfigurationRequestBuilder(
-            sid, dcid, continuation, options)
-
-        config_request_l2cap = l2cap_packets.BasicFrameBuilder(
-            1, config_request)
-
-        config_request_l2cap = config_request_l2cap.Serialize()
-        config_request_l2cap.extend(payload)
-        config_request_l2cap[0] += len(payload)
-        config_request_l2cap[6] += len(payload)
-        self.cert_device.hci_acl_manager.SendAclData(
-            acl_manager_facade.AclData(
-                handle=self.cert_acl_handle,
-                payload=bytes(config_request_l2cap)))
-
     def _setup_link_from_cert(self):
         self.dut.neighbor.EnablePageScan(
             neighbor_facade.EnableMsg(enabled=True))
@@ -213,29 +191,15 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         Verify the IUT is able to receive configuration requests that have the continuation flag set.
         """
         cert_acl_handle = self._setup_link_from_cert()
-        with EventCallbackStream(
-                self.cert_device.hci_acl_manager.FetchAclData(
-                    empty_proto.Empty())) as cert_acl_data_stream:
-            cert_acl_data_asserts = EventAsserts(cert_acl_data_stream)
-            scid = 0x41
-            psm = 0x33
-            cert_acl_data_stream.register_callback(self._handle_control_packet)
 
-            # Send configuration request with CONTINUE
-            self.on_connection_response = lambda log: self._on_connection_response_use_mtu(log, continuation=l2cap_packets.Continuation.CONTINUE, mtu_value=48)
+        # Send configuration request with CONTINUE
+        self.cert_l2cap.reply_with_continuation_flag()
 
-            self._open_channel(cert_acl_data_stream, 1, cert_acl_handle, scid,
-                               psm)
-            cert_acl_data_asserts.assert_event_occurs(
-                self.is_correct_configuration_response)
-            flush_timeout_option = l2cap_packets.FlushTimeoutConfigurationOption(
-            )
-            flush_timeout_option.flush_timeout = 65535
-            option = [flush_timeout_option]
-            self._send_configuration_request(
-                3, self.scid_to_dcid[scid], options=option)
-            cert_acl_data_asserts.assert_event_occurs(
-                self.is_correct_configuration_response)
+        (dut_channel, cert_channel) = self._open_unvalidated_channel(
+            scid=0x41, psm=0x33)
+
+        assertThat(self.cert_l2cap.get_control_channel()).emits(
+            L2capMatchers.ConfigurationResponse(), at_least_times=2)
 
     def test_retry_config_after_rejection(self):
         """

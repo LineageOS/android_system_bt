@@ -190,6 +190,12 @@ class CertL2cap(Closable):
             CommandCode.
             CONNECTION_RESPONSE] = self._on_connection_response_configuration_request_with_unknown_options_and_hint
 
+    # more of a hack for the moment
+    def reply_with_continuation_flag(self):
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_configuration_request_with_continuation_flag
+
     def _on_connection_request_default(self, l2cap_control_view):
         connection_request_view = l2cap_packets.ConnectionRequestView(
             l2cap_control_view)
@@ -247,6 +253,32 @@ class CertL2cap(Closable):
         ## Modify configuration option type to be a unknown
         byte_array[12] |= 0x7f
         self._acl.send(bytes(byte_array))
+        return True
+
+    def _on_connection_response_configuration_request_with_continuation_flag(
+            self, l2cap_control_view):
+        connection_response_view = l2cap_packets.ConnectionResponseView(
+            l2cap_control_view)
+        sid = connection_response_view.GetIdentifier()
+        scid = connection_response_view.GetSourceCid()
+        dcid = connection_response_view.GetDestinationCid()
+        self.scid_to_dcid[scid] = dcid
+
+        mtu_opt = l2cap_packets.MtuConfigurationOption()
+        mtu_opt.mtu = 0x1234
+
+        options = [mtu_opt]
+        config_request = l2cap_packets.ConfigurationRequestBuilder(
+            sid + 1, dcid, l2cap_packets.Continuation.CONTINUE, options)
+
+        self.control_channel.send(config_request)
+
+        flush_timeout_option = l2cap_packets.FlushTimeoutConfigurationOption()
+        flush_timeout_option.flush_timeout = 65535
+        option = [flush_timeout_option]
+        config_request = l2cap_packets.ConfigurationRequestBuilder(
+            sid + 2, dcid, l2cap_packets.Continuation.END, option)
+        self.get_control_channel().send(config_request)
         return True
 
     def _on_configuration_request_default(self, l2cap_control_view):
