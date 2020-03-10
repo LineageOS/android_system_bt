@@ -447,3 +447,36 @@ cc_test {
         cfi: false,
     },
 }
+
+cc_test {
+    name: "net_test_stack_a2dp_native",
+    defaults: ["fluoride_defaults"],
+    test_suites: ["device-tests"],
+    host_supported: true,
+    include_dirs: [
+        "external/libldac/inc",
+        "system/bt",
+        "system/bt/stack/include",
+    ],
+    srcs: [
+        "test/a2dp/a2dp_vendor_ldac_decoder_test.cc",
+        "test/a2dp/misc_fake.cc",
+    ],
+    shared_libs: [
+        "libcrypto",
+        "libcutils",
+        "libprotobuf-cpp-lite",
+    ],
+    static_libs: [
+        "libbt-common",
+        "libbt-protos-lite",
+        "liblog",
+        "libosi",
+        "libosi-AllocationTestHarness",
+    ],
+    sanitize: {
+        address: true,
+        cfi: true,
+        misc_undefined: ["bounds"],
+    },
+}
