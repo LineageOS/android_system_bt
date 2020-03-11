@@ -113,6 +113,10 @@ class AdvertisingCache {
     }
   }
 
+  void ClearAll() {
+    items.clear();
+  }
+
  private:
   struct Item {
     uint8_t addr_type;
@@ -448,6 +452,7 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
     /* scan is not started */
     if (!BTM_BLE_IS_SCAN_ACTIVE(btm_cb.ble_ctr_cb.scan_activity)) {
       /* allow config of scan type */
+      cache.ClearAll();
       p_inq->scan_type = (p_inq->scan_type == BTM_BLE_SCAN_MODE_NONE)
                              ? BTM_BLE_SCAN_MODE_ACTI
                              : p_inq->scan_type;
@@ -1298,6 +1303,7 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t mode, uint8_t duration) {
   }
 
   if (!BTM_BLE_IS_SCAN_ACTIVE(p_ble_cb->scan_activity)) {
+    cache.ClearAll();
     btm_send_hci_set_scan_params(
         BTM_BLE_SCAN_MODE_ACTI, BTM_BLE_LOW_LATENCY_SCAN_INT,
         BTM_BLE_LOW_LATENCY_SCAN_WIN,
@@ -1993,6 +1999,7 @@ void btm_ble_process_adv_pkt_cont(uint16_t evt_type, uint8_t addr_type,
       update = false;
     } else {
       /* if yes, skip it */
+      cache.Clear(addr_type, bda);
       return; /* assumption: one result per event */
     }
   }
