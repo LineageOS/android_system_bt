@@ -121,6 +121,7 @@ bool generate_cpp_headers_one_file(const Declarations& decls, const std::filesys
   out_file << "#pragma once\n";
   out_file << "\n\n";
   out_file << "#include <stdint.h>\n";
+  out_file << "#include <sstream>\n";
   out_file << "#include <string>\n";
   out_file << "#include <functional>\n";
   out_file << "\n\n";

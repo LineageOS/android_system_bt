@@ -61,3 +61,7 @@ void SizeField::GenValidator(std::ostream&) const {
 std::string SizeField::GetSizedFieldName() const {
   return sized_field_name_;
 }
+
+void SizeField::GenStringRepresentation(std::ostream& s, std::string accessor) const {
+  s << accessor;
+}
