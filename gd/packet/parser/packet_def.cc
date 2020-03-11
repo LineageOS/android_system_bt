@@ -62,6 +62,10 @@ void PacketDef::GenParserDefinition(std::ostream& s) const {
   GenValidator(s);
   s << "\n";
 
+  s << " public:";
+  GenParserToString(s);
+  s << "\n";
+
   s << " protected:\n";
   // Constructor from a View
   if (parent_ != nullptr) {
@@ -281,6 +285,35 @@ void PacketDef::GenValidator(std::ostream& s) const {
   if (parent_ == nullptr) {
     s << "bool was_validated_{false};\n";
   }
+}
+
+void PacketDef::GenParserToString(std::ostream& s) const {
+  s << "virtual std::string ToString() " << (parent_ != nullptr ? " override" : "") << " {";
+  s << "std::stringstream ss;";
+  s << "ss << std::showbase << std::hex << \"" << name_ << " { \";";
+
+  if (fields_.size() > 0) {
+    s << "ss << \"\" ";
+    bool firstfield = true;
+    for (const auto& field : fields_) {
+      if (field->GetFieldType() == ReservedField::kFieldType || field->GetFieldType() == FixedScalarField::kFieldType ||
+          field->GetFieldType() == ChecksumStartField::kFieldType)
+        continue;
+
+      s << (firstfield ? " << \"" : " << \", ") << field->GetName() << " = \" << ";
+
+      field->GenStringRepresentation(s, field->GetGetterFunctionName() + "()");
+
+      if (firstfield) {
+        firstfield = false;
+      }
+    }
+    s << ";";
+  }
+
+  s << "ss << \" }\";";
+  s << "return ss.str();";
+  s << "}\n";
 }
 
 void PacketDef::GenBuilderDefinition(std::ostream& s) const {

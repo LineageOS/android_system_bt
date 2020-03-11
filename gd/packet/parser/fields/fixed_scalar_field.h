@@ -33,6 +33,8 @@ class FixedScalarField : public FixedField {
 
   virtual std::string GetDataType() const override;
 
+  virtual void GenStringRepresentation(std::ostream& s, std::string accessor) const override;
+
   static const std::string field_type;
 
  private:

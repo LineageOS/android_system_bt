@@ -71,3 +71,7 @@ void BodyField::GenInserter(std::ostream&) const {
 void BodyField::GenValidator(std::ostream&) const {
   // Do nothing
 }
+
+void BodyField::GenStringRepresentation(std::ostream& s, std::string accessor) const {
+  s << "\"BODY REPRENTATION_UNIMPLEMENTED " << accessor << " \"";
+}

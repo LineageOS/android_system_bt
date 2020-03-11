@@ -107,3 +107,8 @@ void PayloadField::GenInserter(std::ostream&) const {
 void PayloadField::GenValidator(std::ostream&) const {
   // Do nothing
 }
+
+void PayloadField::GenStringRepresentation(std::ostream& s, std::string) const {
+  // TODO: we should parse the child packets
+  s << "\"PAYLOAD[]\"";
+}

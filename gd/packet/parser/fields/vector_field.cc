@@ -230,3 +230,22 @@ bool VectorField::IsContainerField() const {
 const PacketField* VectorField::GetElementField() const {
   return element_field_;
 }
+
+void VectorField::GenStringRepresentation(std::ostream& s, std::string accessor) const {
+  s << "\"VECTOR[\";";
+
+  std::string arr_idx = "arridx_" + accessor;
+  std::string vec_size = accessor + ".size()";
+  s << "for (size_t index = 0; index < " << vec_size << "; index++) {";
+  std::string element_accessor = "(" + accessor + "[index])";
+  s << "ss << ((index == 0) ? \"\" : \", \") << ";
+
+  if (element_field_->GetFieldType() == CustomField::kFieldType) {
+    s << element_accessor << ".ToString()";
+  } else {
+    element_field_->GenStringRepresentation(s, element_accessor);
+  }
+
+  s << ";}";
+  s << "ss << \"]\"";
+}
