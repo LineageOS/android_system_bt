@@ -13,22 +13,16 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#define LOG_TAG "l2cap2"
 
 #include <memory>
 
-#include "common/bidi_queue.h"
 #include "hci/acl_manager.h"
-#include "hci/address.h"
-#include "hci/hci_layer.h"
-#include "hci/hci_packets.h"
 #include "l2cap/internal/parameter_provider.h"
 #include "l2cap/le/internal/dynamic_channel_service_manager_impl.h"
 #include "l2cap/le/internal/fixed_channel_service_manager_impl.h"
 #include "l2cap/le/internal/link_manager.h"
 #include "module.h"
 #include "os/handler.h"
-#include "os/log.h"
 
 #include "l2cap/le/l2cap_le_module.h"
 
@@ -47,7 +41,7 @@ struct L2capLeModule::impl {
   internal::FixedChannelServiceManagerImpl fixed_channel_service_manager_impl_{l2cap_handler_};
   internal::DynamicChannelServiceManagerImpl dynamic_channel_service_manager_impl_{l2cap_handler_};
   internal::LinkManager link_manager_{l2cap_handler_, acl_manager_, &fixed_channel_service_manager_impl_,
-                                      &parameter_provider_};
+                                      &dynamic_channel_service_manager_impl_, &parameter_provider_};
 };
 
 L2capLeModule::L2capLeModule() {}

@@ -28,6 +28,7 @@
 #include "l2cap/internal/parameter_provider.h"
 #include "l2cap/internal/scheduler.h"
 #include "l2cap/le/fixed_channel_manager.h"
+#include "l2cap/le/internal/dynamic_channel_service_manager_impl.h"
 #include "l2cap/le/internal/fixed_channel_service_manager_impl.h"
 #include "l2cap/le/internal/link.h"
 
@@ -39,9 +40,10 @@ namespace internal {
 class LinkManager : public hci::LeConnectionCallbacks {
  public:
   LinkManager(os::Handler* l2cap_handler, hci::AclManager* acl_manager, FixedChannelServiceManagerImpl* service_manager,
+              DynamicChannelServiceManagerImpl* dynamic_service_manager,
               l2cap::internal::ParameterProvider* parameter_provider)
       : l2cap_handler_(l2cap_handler), acl_manager_(acl_manager), fixed_channel_service_manager_(service_manager),
-        parameter_provider_(parameter_provider) {
+        dynamic_channel_service_manager_(dynamic_service_manager), parameter_provider_(parameter_provider) {
     acl_manager_->RegisterLeCallbacks(this, l2cap_handler_);
   }
 
