@@ -76,3 +76,39 @@ cc_test {
         "libbt-protos-lite",
     ],
 }
+
+// HCI native unit tests for target
+// ========================================================
+cc_test {
+    name: "net_test_hci_native",
+    test_suites: ["device-tests"],
+    defaults: ["libbt-hci_defaults"],
+    host_supported: true,
+    local_include_dirs: [
+        "include",
+    ],
+    include_dirs: [
+        "system/bt",
+        "system/bt/stack/include",
+    ],
+    srcs: [
+        "test/hci_layer_test.cc",
+        "test/other_stack_stub.cc",
+    ],
+    shared_libs: [
+        "libcrypto",
+        "liblog",
+        "libprotobuf-cpp-lite",
+    ],
+    static_libs: [
+        "libbt-common",
+        "libbt-protos-lite",
+        "libosi",
+        "libosi-AllocationTestHarness",
+    ],
+    sanitize: {
+        address: true,
+        cfi: true,
+        misc_undefined: ["bounds"],
+    },
+}
