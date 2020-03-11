@@ -1899,6 +1899,68 @@ TEST(GeneratedPacketTest, testOneGenericStructArrayNoZeroEmpty) {
   ASSERT_EQ(1, view.GetAnArray().size());
 }
 
+TEST(GeneratedPacketTest, testToStringOutput) {
+  std::vector<TwoRelatedNumbersBe> count_array;
+  for (uint8_t i = 1; i < 5; i++) {
+    TwoRelatedNumbersBe trn;
+    trn.id_ = i;
+    trn.count_ = 0x0102 * i;
+    count_array.push_back(trn);
+  }
+
+  auto packet = ArrayOfStructBeBuilder::Create(count_array);
+
+  ASSERT_EQ(array_of_struct_be.size(), packet->size());
+
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  BitInserter it(*packet_bytes);
+  packet->Serialize(it);
+
+  ASSERT_EQ(array_of_struct_be.size(), packet_bytes->size());
+  for (size_t i = 0; i < array_of_struct_be.size(); i++) {
+    ASSERT_EQ(array_of_struct_be[i], packet_bytes->at(i));
+  }
+
+  PacketView<!kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = ArrayOfStructBeView::Create(packet_bytes_view);
+  ASSERT_TRUE(view.IsValid());
+
+  ASSERT_EQ(
+      "ArrayOfStructBe { array_count = 0x4, array = VECTOR[TwoRelatedNumbersBe { id = 0x1, count = 0x102 }, "
+      "TwoRelatedNumbersBe { id = 0x2, count = 0x204 }, TwoRelatedNumbersBe { id = 0x3, count = 0x306 }, "
+      "TwoRelatedNumbersBe { id = 0x4, count = 0x408 }] }",
+      view.ToString());
+}
+
+TEST(GeneratedPacketTest, testToStringOneFixedTypesStruct) {
+  StructWithFixedTypes swf;
+  swf.four_bits_ = FourBits::FIVE;
+  swf.id_ = 0x0d;
+  swf.array_ = {{0x01, 0x02, 0x03}};
+  swf.six_bytes_ = SixBytes{{0xa1, 0xa2, 0xa3, 0xa4, 0xa5, 0xa6}};
+
+  auto packet = OneFixedTypesStructBuilder::Create(swf);
+  ASSERT_EQ(one_fixed_types_struct.size(), packet->size());
+
+  std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();
+  BitInserter it(*packet_bytes);
+  packet->Serialize(it);
+
+  ASSERT_EQ(one_fixed_types_struct.size(), packet_bytes->size());
+  for (size_t i = 0; i < one_fixed_types_struct.size(); i++) {
+    ASSERT_EQ(one_fixed_types_struct[i], packet_bytes->at(i));
+  }
+
+  PacketView<kLittleEndian> packet_bytes_view(packet_bytes);
+  auto view = OneFixedTypesStructView::Create(packet_bytes_view);
+  ASSERT_TRUE(view.IsValid());
+
+  ASSERT_EQ(
+      "OneFixedTypesStruct { one = StructWithFixedTypes { four_bits = FIVE, id = 0xd, array = ARRAY[0x1, 0x2, 0x3], "
+      "example_checksum = CHECKSUM, six_bytes = SixBytes } }",
+      view.ToString());
+}
+
 }  // namespace parser
 }  // namespace packet
 }  // namespace bluetooth

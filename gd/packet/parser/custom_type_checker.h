@@ -36,14 +36,17 @@ class CustomTypeChecker {
   template <class C, bool little_endian, std::optional<Iterator<little_endian>> (*)(C* vec, Iterator<little_endian> it)>
   struct ParseChecker {};
 
+  template <class C, std::string (C::*)() const>
+  struct ToStringChecker {};
+
   template <class C, bool little_endian>
   static int Test(SerializeChecker<C, &C::Serialize>*, SizeChecker<C, &C::size>*,
-                  ParseChecker<C, little_endian, &C::Parse>*);
+                  ParseChecker<C, little_endian, &C::Parse>*, ToStringChecker<C, &C::ToString>*);
 
   template <class C, bool little_endian>
   static char Test(...);
 
-  static constexpr bool value = (sizeof(Test<T, packet_little_endian>(0, 0, 0)) == sizeof(int));
+  static constexpr bool value = (sizeof(Test<T, packet_little_endian>(0, 0, 0, 0)) == sizeof(int));
 };
 }  // namespace packet
 }  // namespace bluetooth
