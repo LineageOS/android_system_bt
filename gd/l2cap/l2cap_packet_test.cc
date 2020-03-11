@@ -141,5 +141,15 @@ TEST(L2capFuzzRegressions, ConfigurationRequestFuzz_5747922062802944) {
   RunConfigurationRequestReflectionFuzzTest(bluetooth_gd_fuzz_test_5747922062802944,
                                             sizeof(bluetooth_gd_fuzz_test_5747922062802944));
 }
+
+TEST(L2capFuzzRegressions, ConfigurationRequestFuzz_5202709231697920) {
+  uint8_t bluetooth_gd_fuzz_test_5747922062802944[] = {
+      0x04, 0x01, 0x45, 0x45, 0x05, 0x01, 0x01, 0x45, 0x05, 0x01,
+  };
+
+  RunConfigurationRequestReflectionFuzzTest(bluetooth_gd_fuzz_test_5747922062802944,
+                                            sizeof(bluetooth_gd_fuzz_test_5747922062802944));
+}
+
 }  // namespace l2cap
 }  // namespace bluetooth
