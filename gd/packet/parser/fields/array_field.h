@@ -62,6 +62,8 @@ class ArrayField : public PacketField {
 
   virtual const PacketField* GetElementField() const override;
 
+  virtual void GenStringRepresentation(std::ostream& s, std::string accessor) const override;
+
   const std::string name_;
 
   const PacketField* element_field_{nullptr};

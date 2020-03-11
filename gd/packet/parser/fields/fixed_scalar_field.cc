@@ -33,3 +33,7 @@ std::string FixedScalarField::GetDataType() const {
 void FixedScalarField::GenValue(std::ostream& s) const {
   s << value_;
 }
+
+void FixedScalarField::GenStringRepresentation(std::ostream& s, std::string) const {
+  s << "+" << value_;
+}
