@@ -58,3 +58,8 @@ void ChecksumField::GenInserter(std::ostream& s) const {
 void ChecksumField::GenValidator(std::ostream&) const {
   // Done in packet_def.cc
 }
+
+void ChecksumField::GenStringRepresentation(std::ostream& s, std::string) const {
+  // TODO: there is currently no way to get checksum value
+  s << "\"CHECKSUM\"";
+}

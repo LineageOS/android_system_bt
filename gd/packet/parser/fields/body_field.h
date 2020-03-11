@@ -50,6 +50,8 @@ class BodyField : public PacketField {
 
   virtual void GenValidator(std::ostream&) const override;
 
+  virtual void GenStringRepresentation(std::ostream& s, std::string accessor) const override;
+
   // Body fields can only be dynamically sized.
   const SizeField* size_field_{nullptr};
 };
