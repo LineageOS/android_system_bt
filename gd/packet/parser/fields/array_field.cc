@@ -175,3 +175,23 @@ bool ArrayField::IsContainerField() const {
 const PacketField* ArrayField::GetElementField() const {
   return element_field_;
 }
+
+void ArrayField::GenStringRepresentation(std::ostream& s, std::string accessor) const {
+  s << "\"ARRAY[\";";
+  s << "/* " << element_field_->GetDataType() << "   " << element_field_->GetFieldType() << " */";
+
+  std::string arr_idx = "arridx_" + accessor;
+  std::string arr_size = std::to_string(array_size_);
+  s << "for (size_t index = 0; index < " << arr_size << "; index++) {";
+  std::string element_accessor = "(" + accessor + "[index])";
+  s << "ss << ((index == 0) ? \"\" : \", \") << ";
+
+  if (element_field_->GetFieldType() == CustomField::kFieldType) {
+    s << element_accessor << ".ToString()";
+  } else {
+    element_field_->GenStringRepresentation(s, element_accessor);
+  }
+
+  s << ";}";
+  s << "ss << \"]\"";
+}

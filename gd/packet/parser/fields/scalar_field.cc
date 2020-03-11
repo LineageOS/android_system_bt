@@ -129,3 +129,7 @@ void ScalarField::GenInserter(std::ostream& s) const {
 void ScalarField::GenValidator(std::ostream&) const {
   // Do nothing
 }
+
+void ScalarField::GenStringRepresentation(std::ostream& s, std::string accessor) const {
+  s << "+" << accessor;
+}

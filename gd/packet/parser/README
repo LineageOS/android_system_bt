@@ -14,11 +14,11 @@ Packet Views and Builders
 
 Checksum types
   checksum MyChecksumClass : 16 "path/to/the/class/"
-  Checksum fields need to implement the following three static methods:
-    static void Initialize(MyChecksumClass&);
-    static void AddByte(MyChecksumClass&, uint8_t);
+  Checksum fields need to implement the following three methods:
+    void Initialize(MyChecksumClass&);
+    void AddByte(MyChecksumClass&, uint8_t);
     // Assuming a 16-bit (uint16_t) checksum:
-    static uint16_t GetChecksum(MyChecksumClass&);
+    uint16_t GetChecksum(MyChecksumClass&);
 -------------
  LIMITATIONS
 -------------
@@ -57,3 +57,4 @@ Custom fields need the folowing functions:
   static void Serialize(const Type&, MutableView&);
   static std::optional<size_t> Size(Iterator);
   static Type Parse(Iterator);
+  std::string ToString();
