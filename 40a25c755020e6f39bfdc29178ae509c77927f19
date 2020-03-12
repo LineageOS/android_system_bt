@@ -1,0 +1,27 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "913540d8_58a18974",
+        "filename": "btif/src/btif_hf.cc",
+        "patchSetId": 1
+      },
+      "lineNbr": 514,
+      "author": {
+        "id": 11883
+      },
+      "writtenOn": "2020-03-12T19:07:28Z",
+      "side": 1,
+      "message": "I know this an extra, but the old code checked \u003d\u003d TRUE\nCan you do it?",
+      "range": {
+        "startLine": 514,
+        "startChar": 11,
+        "endLine": 514,
+        "endChar": 33
+      },
+      "revId": "40a25c755020e6f39bfdc29178ae509c77927f19",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    }
+  ]
+}
