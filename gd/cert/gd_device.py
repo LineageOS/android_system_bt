@@ -28,6 +28,7 @@ from hci.facade import le_advertising_manager_facade_pb2_grpc
 from hci.facade import le_scanning_manager_facade_pb2_grpc
 from neighbor.facade import facade_pb2_grpc as neighbor_facade_pb2_grpc
 from l2cap.classic import facade_pb2_grpc as l2cap_facade_pb2_grpc
+from l2cap.le import facade_pb2_grpc as l2cap_le_facade_pb2_grpc
 from security import facade_pb2_grpc as security_facade_pb2_grpc
 from google.protobuf import empty_pb2 as empty_proto
 from cert.event_stream import EventStream
@@ -90,6 +91,8 @@ class GdDevice(GdDeviceBase):
         self.hci.send_command_with_complete = self.__send_hci_command_with_complete
         self.hci.send_command_with_status = self.__send_hci_command_with_status
         self.l2cap = l2cap_facade_pb2_grpc.L2capClassicModuleFacadeStub(
+            self.grpc_channel)
+        self.l2cap_le = l2cap_le_facade_pb2_grpc.L2capLeModuleFacadeStub(
             self.grpc_channel)
         self.hci_acl_manager = acl_manager_facade_pb2_grpc.AclManagerFacadeStub(
             self.grpc_channel)

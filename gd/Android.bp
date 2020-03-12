@@ -372,6 +372,7 @@ filegroup {
         "hci/facade/le_scanning_manager_facade.proto",
         "neighbor/facade/facade.proto",
         "l2cap/classic/facade.proto",
+        "l2cap/le/facade.proto",
         "security/facade.proto",
     ],
 }
@@ -407,6 +408,8 @@ genrule {
         "hci/facade/le_scanning_manager_facade.pb.h",
         "l2cap/classic/facade.grpc.pb.h",
         "l2cap/classic/facade.pb.h",
+        "l2cap/le/facade.grpc.pb.h",
+        "l2cap/le/facade.pb.h",
         "neighbor/facade/facade.grpc.pb.h",
         "neighbor/facade/facade.pb.h",
         "security/facade.grpc.pb.h",
@@ -445,6 +448,8 @@ genrule {
         "hci/facade/le_scanning_manager_facade.pb.cc",
         "l2cap/classic/facade.grpc.pb.cc",
         "l2cap/classic/facade.pb.cc",
+        "l2cap/le/facade.grpc.pb.cc",
+        "l2cap/le/facade.pb.cc",
         "neighbor/facade/facade.grpc.pb.cc",
         "neighbor/facade/facade.pb.cc",
         "security/facade.grpc.pb.cc",
@@ -466,6 +471,7 @@ genrule {
         "touch $(genDir)/system/bt/gd/hci/__init__.py && " +
         "touch $(genDir)/system/bt/gd/hci/facade/__init__.py && " +
         "touch $(genDir)/system/bt/gd/l2cap/classic/__init__.py && " +
+        "touch $(genDir)/system/bt/gd/l2cap/le/__init__.py && " +
         "touch $(genDir)/system/bt/gd/neighbor/facade/__init__.py && " +
         "touch $(genDir)/system/bt/gd/security/__init__.py && " +
         "$(location soong_zip) -C $(genDir) -D $(genDir) -o $(out)",
