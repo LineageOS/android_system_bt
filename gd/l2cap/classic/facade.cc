@@ -25,7 +25,6 @@
 #include "l2cap/classic/facade.grpc.pb.h"
 #include "l2cap/classic/facade.h"
 #include "l2cap/classic/l2cap_classic_module.h"
-#include "l2cap/l2cap_packets.h"
 #include "os/log.h"
 #include "packet/raw_builder.h"
 
