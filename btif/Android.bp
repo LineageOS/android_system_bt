@@ -208,3 +208,36 @@ cc_test {
     ],
     cflags: ["-DBUILDCFG"],
 }
+
+// btif rc unit tests for target
+// ========================================================
+cc_test {
+    name: "net_test_btif_rc",
+    defaults: ["fluoride_defaults"],
+    test_suites: ["device-tests"],
+    host_supported: true,
+    include_dirs: btifCommonIncludes,
+    srcs: [
+        "test/btif_rc_test.cc",
+    ],
+    header_libs: ["libbluetooth_headers"],
+    shared_libs: [
+        "libcrypto",
+        "libcutils",
+        "liblog",
+        "libprotobuf-cpp-lite",
+    ],
+    static_libs: [
+        "libbluetooth-types",
+        "libbt-common",
+        "libbt-protos-lite",
+        "libosi",
+        "libosi-AllocationTestHarness",
+    ],
+    cflags: ["-DBUILDCFG"],
+    sanitize: {
+        address: true,
+        cfi: true,
+        misc_undefined: ["bounds"],
+    },
+}
