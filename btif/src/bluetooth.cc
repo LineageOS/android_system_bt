@@ -63,6 +63,7 @@
 #include "btsnoop.h"
 #include "btsnoop_mem.h"
 #include "common/address_obfuscator.h"
+#include "common/metric_id_allocator.h"
 #include "common/metrics.h"
 #include "device/include/interop.h"
 #include "main/shim/dumpsys.h"
@@ -460,6 +461,11 @@ static std::string obfuscate_address(const RawAddress& address) {
       address);
 }
 
+static int get_metric_id(const RawAddress& address) {
+  return bluetooth::common::MetricIdAllocator::GetInstance().AllocateId(
+      address);
+}
+
 EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
     sizeof(bluetoothInterface),
     init,
@@ -496,4 +502,5 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
     interop_database_add,
     get_avrcp_service,
     obfuscate_address,
+    get_metric_id,
 };

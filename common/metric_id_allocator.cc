@@ -27,7 +27,7 @@ namespace bluetooth {
 
 namespace common {
 
-const std::string MetricIdAllocator::LOG_TAG = "BluetoothMetricIdAllocator";
+const std::string MetricIdAllocator::LOGGING_TAG = "BluetoothMetricIdAllocator";
 const size_t MetricIdAllocator::kMaxNumUnpairedDevicesInMemory = 200;
 const size_t MetricIdAllocator::kMaxNumPairedDevicesInMemory = 400;
 const int MetricIdAllocator::kMinId = 1;
@@ -42,11 +42,11 @@ static_assert((MetricIdAllocator::kMaxNumUnpairedDevicesInMemory +
               "kMaxNumPairedDevicesInMemory + MaxNumUnpairedDevicesInMemory");
 
 MetricIdAllocator::MetricIdAllocator()
-    : paired_device_cache_(kMaxNumPairedDevicesInMemory, LOG_TAG,
+    : paired_device_cache_(kMaxNumPairedDevicesInMemory, LOGGING_TAG,
                            [this](RawAddress dummy, int to_remove) {
                              this->id_set_.erase(to_remove);
                            }),
-      temporary_device_cache_(kMaxNumUnpairedDevicesInMemory, LOG_TAG,
+      temporary_device_cache_(kMaxNumUnpairedDevicesInMemory, LOGGING_TAG,
                               [this](RawAddress dummy, int to_remove) {
                                 this->id_set_.erase(to_remove);
                               }) {}
@@ -62,7 +62,7 @@ bool MetricIdAllocator::Init(
   // init paired_devices_map
   if (paired_device_map.size() > kMaxNumPairedDevicesInMemory) {
     LOG(FATAL)
-        << LOG_TAG
+        << LOGGING_TAG
         << "Paired device map is bigger than kMaxNumPairedDevicesInMemory";
     // fail loudly to let caller know
     return false;
@@ -71,7 +71,7 @@ bool MetricIdAllocator::Init(
   next_id_ = kMinId;
   for (const std::pair<RawAddress, int>& p : paired_device_map) {
     if (p.second < kMinId || p.second > kMaxId) {
-      LOG(FATAL) << LOG_TAG << "Invalid Bluetooth Metric Id in config";
+      LOG(FATAL) << LOGGING_TAG << "Invalid Bluetooth Metric Id in config";
     }
     paired_device_cache_.Put(p.first, p.second);
     id_set_.insert(p.second);
@@ -130,7 +130,7 @@ int MetricIdAllocator::AllocateId(const RawAddress& mac_address) {
     next_id_++;
     if (next_id_ > kMaxId) {
       next_id_ = kMinId;
-      LOG(WARNING) << LOG_TAG << "Bluetooth metric id overflow.";
+      LOG(WARNING) << LOGGING_TAG << "Bluetooth metric id overflow.";
     }
   }
   id = next_id_++;
