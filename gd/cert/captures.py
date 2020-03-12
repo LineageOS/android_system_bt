@@ -48,7 +48,7 @@ def ConnectionCompleteCapture():
 
 
 def LeConnectionCompleteCapture():
-    return Capture(lambda packet: print(packet.event[0:3]) or packet.event[0] == 0x3e
+    return Capture(lambda packet: packet.event[0] == 0x3e
                    and (packet.event[2] == 0x01 or packet.event[2] == 0x0a),
         lambda packet: hci_packets.LeConnectionCompleteView(
             hci_packets.LeMetaEventView(
