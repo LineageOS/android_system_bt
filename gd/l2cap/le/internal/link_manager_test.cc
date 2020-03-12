@@ -96,7 +96,7 @@ TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl) {
   os::Handler* hci_callback_handler = nullptr;
   EXPECT_CALL(mock_acl_manager, RegisterLeCallbacks(_, _))
       .WillOnce(DoAll(SaveArg<0>(&hci_le_connection_callbacks), SaveArg<1>(&hci_callback_handler)));
-  LinkManager le_link_manager(l2cap_handler_, &mock_acl_manager, &mock_le_fixed_channel_service_manager,
+  LinkManager le_link_manager(l2cap_handler_, &mock_acl_manager, &mock_le_fixed_channel_service_manager, nullptr,
                               mock_parameter_provider_);
   EXPECT_EQ(hci_le_connection_callbacks, &le_link_manager);
   EXPECT_EQ(hci_callback_handler, l2cap_handler_);
@@ -194,7 +194,7 @@ TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl_with_no
   os::Handler* hci_callback_handler = nullptr;
   EXPECT_CALL(mock_acl_manager, RegisterLeCallbacks(_, _))
       .WillOnce(DoAll(SaveArg<0>(&hci_le_connection_callbacks), SaveArg<1>(&hci_callback_handler)));
-  LinkManager le_link_manager(l2cap_handler_, &mock_acl_manager, &mock_le_fixed_channel_service_manager,
+  LinkManager le_link_manager(l2cap_handler_, &mock_acl_manager, &mock_le_fixed_channel_service_manager, nullptr,
                               mock_parameter_provider_);
   EXPECT_EQ(hci_le_connection_callbacks, &le_link_manager);
   EXPECT_EQ(hci_callback_handler, l2cap_handler_);
@@ -229,7 +229,7 @@ TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl_with_hc
   os::Handler* hci_callback_handler = nullptr;
   EXPECT_CALL(mock_acl_manager, RegisterLeCallbacks(_, _))
       .WillOnce(DoAll(SaveArg<0>(&hci_le_connection_callbacks), SaveArg<1>(&hci_callback_handler)));
-  LinkManager le_link_manager(l2cap_handler_, &mock_acl_manager, &mock_le_fixed_channel_service_manager,
+  LinkManager le_link_manager(l2cap_handler_, &mock_acl_manager, &mock_le_fixed_channel_service_manager, nullptr,
                               mock_parameter_provider_);
   EXPECT_EQ(hci_le_connection_callbacks, &le_link_manager);
   EXPECT_EQ(hci_callback_handler, l2cap_handler_);
@@ -276,7 +276,7 @@ TEST_F(L2capLeLinkManagerTest, not_acquiring_channels_should_disconnect_acl_afte
   os::Handler* hci_callback_handler = nullptr;
   EXPECT_CALL(mock_acl_manager, RegisterLeCallbacks(_, _))
       .WillOnce(DoAll(SaveArg<0>(&hci_le_connection_callbacks), SaveArg<1>(&hci_callback_handler)));
-  LinkManager le_link_manager(l2cap_handler_, &mock_acl_manager, &mock_le_fixed_channel_service_manager,
+  LinkManager le_link_manager(l2cap_handler_, &mock_acl_manager, &mock_le_fixed_channel_service_manager, nullptr,
                               mock_parameter_provider_);
   EXPECT_EQ(hci_le_connection_callbacks, &le_link_manager);
   EXPECT_EQ(hci_callback_handler, l2cap_handler_);
@@ -358,7 +358,7 @@ TEST_F(L2capLeLinkManagerTest, acquiring_channels_should_not_disconnect_acl_afte
   os::Handler* hci_callback_handler = nullptr;
   EXPECT_CALL(mock_acl_manager, RegisterLeCallbacks(_, _))
       .WillOnce(DoAll(SaveArg<0>(&hci_le_connection_callbacks), SaveArg<1>(&hci_callback_handler)));
-  LinkManager le_link_manager(l2cap_handler_, &mock_acl_manager, &mock_le_fixed_channel_service_manager,
+  LinkManager le_link_manager(l2cap_handler_, &mock_acl_manager, &mock_le_fixed_channel_service_manager, nullptr,
                               mock_parameter_provider_);
   EXPECT_EQ(hci_le_connection_callbacks, &le_link_manager);
   EXPECT_EQ(hci_callback_handler, l2cap_handler_);
@@ -442,7 +442,7 @@ TEST_F(L2capLeLinkManagerTest, acquiring_and_releasing_channels_should_eventuall
   os::Handler* hci_callback_handler = nullptr;
   EXPECT_CALL(mock_acl_manager, RegisterLeCallbacks(_, _))
       .WillOnce(DoAll(SaveArg<0>(&hci_le_connection_callbacks), SaveArg<1>(&hci_callback_handler)));
-  LinkManager le_link_manager(l2cap_handler_, &mock_acl_manager, &mock_le_fixed_channel_service_manager,
+  LinkManager le_link_manager(l2cap_handler_, &mock_acl_manager, &mock_le_fixed_channel_service_manager, nullptr,
                               mock_parameter_provider_);
   EXPECT_EQ(hci_le_connection_callbacks, &le_link_manager);
   EXPECT_EQ(hci_callback_handler, l2cap_handler_);

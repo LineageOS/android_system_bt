@@ -16,9 +16,10 @@
 
 import bluetooth_packets_python3 as bt_packets
 from bluetooth_packets_python3 import l2cap_packets
-from bluetooth_packets_python3.l2cap_packets import CommandCode
+from bluetooth_packets_python3.l2cap_packets import CommandCode, LeCommandCode
 from bluetooth_packets_python3.l2cap_packets import ConnectionResponseResult
 from bluetooth_packets_python3.l2cap_packets import InformationRequestInfoType
+from bluetooth_packets_python3.l2cap_packets import LeCreditBasedConnectionResponseResult
 import logging
 
 
@@ -51,6 +52,14 @@ class L2capMatchers(object):
     @staticmethod
     def CommandReject():
         return lambda packet: L2capMatchers._is_control_frame_with_code(packet, CommandCode.COMMAND_REJECT)
+
+    @staticmethod
+    def CreditBasedConnectionRequest():
+        return lambda packet: L2capMatchers._is_le_control_frame_with_code(packet, LeCommandCode.LE_CREDIT_BASED_CONNECTION_REQUEST)
+
+    @staticmethod
+    def CreditBasedConnectionResponse(scid):
+        return lambda packet: L2capMatchers._is_matching_credit_based_connection_response(packet, scid)
 
     @staticmethod
     def SFrame(req_seq=None, f=None, s=None, p=None):
@@ -141,6 +150,12 @@ class L2capMatchers(object):
         return l2cap_packets.ControlView(packet.GetPayload())
 
     @staticmethod
+    def _le_control_frame(packet):
+        if packet.GetChannelId() != 5:
+            return None
+        return l2cap_packets.LeControlView(packet.GetPayload())
+
+    @staticmethod
     def control_frame_with_code(packet, code):
         frame = L2capMatchers._control_frame(packet)
         if frame is None or frame.GetCode() != code:
@@ -148,8 +163,20 @@ class L2capMatchers(object):
         return frame
 
     @staticmethod
+    def le_control_frame_with_code(packet, code):
+        frame = L2capMatchers._le_control_frame(packet)
+        if frame is None or frame.GetCode() != code:
+            return None
+        return frame
+
+    @staticmethod
     def _is_control_frame_with_code(packet, code):
         return L2capMatchers.control_frame_with_code(packet, code) is not None
+
+    @staticmethod
+    def _is_le_control_frame_with_code(packet, code):
+        return L2capMatchers.le_control_frame_with_code(packet,
+                                                        code) is not None
 
     @staticmethod
     def _is_matching_connection_response(packet, scid):
@@ -203,3 +230,14 @@ class L2capMatchers(object):
         ) != supports_fixed_channels:
             return False
         return True
+
+    @staticmethod
+    def _is_matching_credit_based_connection_response(packet, scid):
+        frame = L2capMatchers.le_control_frame_with_code(
+            packet, LeCommandCode.LE_CREDIT_BASED_CONNECTION_RESPONSE)
+        if frame is None:
+            return False
+        response = l2cap_packets.LeCreditBasedConnectionResponseView(frame)
+        return response.GetResult(
+        ) == LeCreditBasedConnectionResponseResult.SUCCESS and response.GetDestinationCid(
+        ) != 0
