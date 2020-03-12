@@ -1,0 +1,50 @@
+{
+  "comments": [
+    {
+      "key": {
+        "uuid": "a2c98b3f_b355f5ad",
+        "filename": "btif/src/btif_hf.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 126,
+      "author": {
+        "id": 4550
+      },
+      "writtenOn": "2020-03-12T20:12:46Z",
+      "side": 1,
+      "message": "true...",
+      "range": {
+        "startLine": 126,
+        "startChar": 30,
+        "endLine": 126,
+        "endChar": 34
+      },
+      "revId": "3fa8235c4ea851ab517f020272356be1f4498042",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    },
+    {
+      "key": {
+        "uuid": "a2d6d8fa_3c474ec1",
+        "filename": "btif/src/btif_hf.cc",
+        "patchSetId": 2
+      },
+      "lineNbr": 514,
+      "author": {
+        "id": 4550
+      },
+      "writtenOn": "2020-03-12T20:12:46Z",
+      "side": 1,
+      "message": "...vs TRUE? Is it the same?",
+      "range": {
+        "startLine": 514,
+        "startChar": 37,
+        "endLine": 514,
+        "endChar": 41
+      },
+      "revId": "3fa8235c4ea851ab517f020272356be1f4498042",
+      "serverId": "1ec6b3db-b2c1-4fa4-84a2-4c7efe89ba71",
+      "unresolved": true
+    }
+  ]
+}
