@@ -33,6 +33,7 @@ from hci.facade import acl_manager_facade_pb2 as acl_manager_facade
 from hci.facade import le_advertising_manager_facade_pb2 as le_advertising_facade
 import bluetooth_packets_python3 as bt_packets
 from bluetooth_packets_python3 import hci_packets, l2cap_packets
+from bluetooth_packets_python3.l2cap_packets import LeCreditBasedConnectionResponseResult
 from l2cap.le.cert.cert_le_l2cap import CertLeL2cap
 
 # Assemble a sample packet. TODO: Use RawBuilder
@@ -89,13 +90,70 @@ class LeL2capTest(GdFacadeOnlyBaseTestClass):
                                   signal_id=1,
                                   scid=0x0101,
                                   psm=0x33,
-                                  use_ertm=False):
+                                  initial_credit=6):
 
         dut_channel = self.dut_l2cap.open_credit_based_flow_control_channel(psm)
-        cert_channel = self.cert_l2cap.open_channel(signal_id, psm, scid)
+        cert_channel = self.cert_l2cap.open_channel(signal_id, psm, scid,
+                                                    initial_credit)
 
         return (dut_channel, cert_channel)
 
-    def test_open_unvalidated_channel(self):
+    def test_credit_based_connection_response_on_supported_le_psm(self):
+        """
+        L2CAP/LE/CFC/BV-03-C
+        """
         self._setup_link_from_cert()
-        self._open_unvalidated_channel()
+        (dut_channel, cert_channel) = self._open_unvalidated_channel()
+        dut_channel.send_le(b'hello')
+        assertThat(cert_channel).emits(L2capMatchers.PartialData(b'hello'))
+
+    def test_credit_based_connection_request_unsupported_le_psm(self):
+        """
+        L2CAP/LE/CFC/BV-05-C
+        """
+        self._setup_link_from_cert()
+        self.cert_l2cap.get_control_channel().send(
+            l2cap_packets.LeCreditBasedConnectionRequestBuilder(
+                1, 0x34, 0x0101, 2000, 1000, 1000))
+        assertThat(self.cert_l2cap.get_control_channel()).emits(
+            L2capMatchers.CreditBasedConnectionResponse(
+                0x0101,
+                result=LeCreditBasedConnectionResponseResult.
+                LE_PSM_NOT_SUPPORTED))
+
+    def test_credit_exchange_receiving_incremental_credits(self):
+        """
+        L2CAP/LE/CFC/BV-06-C
+        """
+        self._setup_link_from_cert()
+        (dut_channel,
+         cert_channel) = self._open_unvalidated_channel(initial_credit=0)
+        for _ in range(4):
+            dut_channel.send_le(b'hello')
+        self.cert_l2cap.get_control_channel().send(
+            l2cap_packets.LeFlowControlCreditBuilder(2, cert_channel.get_scid(),
+                                                     1))
+        assertThat(cert_channel).emits(L2capMatchers.PartialData(b'hello'))
+        self.cert_l2cap.get_control_channel().send(
+            l2cap_packets.LeFlowControlCreditBuilder(3, cert_channel.get_scid(),
+                                                     1))
+        assertThat(cert_channel).emits(L2capMatchers.PartialData(b'hello'))
+        self.cert_l2cap.get_control_channel().send(
+            l2cap_packets.LeFlowControlCreditBuilder(4, cert_channel.get_scid(),
+                                                     2))
+        assertThat(cert_channel).emits(
+            L2capMatchers.PartialData(b'hello'), at_least_times=2)
+
+    def test_acredit_exchange_exceed_initial_credits(self):
+        """
+        L2CAP/LE/CFC/BI-01-C
+        """
+        self._setup_link_from_cert()
+        (dut_channel,
+         cert_channel) = self._open_unvalidated_channel(initial_credit=100)
+        self.cert_l2cap.get_control_channel().send(
+            l2cap_packets.LeFlowControlCreditBuilder(2, cert_channel.get_scid(),
+                                                     65500))
+        assertThat(self.cert_l2cap.get_control_channel()).emits(
+            L2capMatchers.LeDisconnectionRequest(cert_channel.get_dcid(),
+                                                 cert_channel.get_scid()))
