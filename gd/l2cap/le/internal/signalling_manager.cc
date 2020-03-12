@@ -161,7 +161,7 @@ void LeSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, Cid r
 
     return;
   }
-  send_connection_response(signal_id, remote_cid, local_mtu, local_mps, link_->GetInitialCredit(),
+  send_connection_response(signal_id, new_channel->GetCid(), local_mtu, local_mps, link_->GetInitialCredit(),
                            LeCreditBasedConnectionResponseResult::SUCCESS);
   auto* data_controller = reinterpret_cast<l2cap::internal::LeCreditBasedDataController*>(
       data_pipeline_manager_->GetDataController(new_channel->GetCid()));
@@ -223,7 +223,7 @@ void LeSignallingManager::OnDisconnectionRequest(SignalId signal_id, Cid cid, Ci
   link_->FreeDynamicChannel(cid);
 }
 
-void LeSignallingManager::OnDisconnectionResponse(SignalId signal_id, Cid cid, Cid remote_cid) {
+void LeSignallingManager::OnDisconnectionResponse(SignalId signal_id, Cid remote_cid, Cid cid) {
   if (signal_id != command_just_sent_.signal_id_ ||
       command_just_sent_.command_code_ != LeCommandCode::DISCONNECTION_REQUEST) {
     LOG_WARN("Unexpected response: no pending request");

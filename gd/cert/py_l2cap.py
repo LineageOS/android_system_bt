@@ -29,6 +29,10 @@ class PyL2capChannel(object):
         self._device.l2cap.SendDynamicChannelPacket(
             l2cap_facade_pb2.DynamicChannelPacket(psm=0x33, payload=payload))
 
+    def send_le(self, payload):
+        self._device.l2cap_le.SendDynamicChannelPacket(
+            l2cap_le_facade_pb2.DynamicChannelPacket(psm=0x33, payload=payload))
+
 
 class PyL2cap(object):
 
