@@ -625,6 +625,14 @@ typedef struct {
    * @return a string of uint8_t that is unique to this MAC address
    */
   std::string (*obfuscate_address)(const RawAddress& address);
+
+  /**
+   * Get an incremental id for as primary key for Bluetooth metric and log
+   *
+   * @param address Bluetooth MAC address of Bluetooth device
+   * @return int incremental Bluetooth id
+   */
+  int (*get_metric_id)(const RawAddress& address);
 } bt_interface_t;
 
 #define BLUETOOTH_INTERFACE_STRING "bluetoothInterface"
