@@ -1,0 +1,44 @@
+syntax = "proto3";
+
+package bluetooth.l2cap.le;
+
+import "google/protobuf/empty.proto";
+import "facade/common.proto";
+
+service L2capLeModuleFacade {
+  rpc RegisterChannel(google.protobuf.Empty) returns (google.protobuf.Empty) {
+    // Testing Android Bluetooth stack only. Optional for other stack.
+  }
+
+  rpc OpenChannel(OpenChannelRequest) returns (google.protobuf.Empty) {}
+  rpc CloseChannel(CloseChannelRequest) returns (google.protobuf.Empty) {}
+  rpc FetchL2capData(google.protobuf.Empty) returns (stream L2capPacket) {}
+  rpc SetDynamicChannel(SetEnableDynamicChannelRequest) returns (google.protobuf.Empty) {}
+  rpc SendDynamicChannelPacket(DynamicChannelPacket) returns (google.protobuf.Empty) {}
+}
+
+message OpenChannelRequest {
+  facade.BluetoothAddressWithType remote = 1;
+  uint32 psm = 2;
+}
+
+message CloseChannelRequest {
+  uint32 psm = 1;
+}
+
+message L2capPacket {
+  facade.BluetoothAddressWithType remote = 1;
+  uint32 channel = 2;
+  bytes payload = 3;
+}
+
+message SetEnableDynamicChannelRequest {
+  uint32 psm = 1;
+  bool enable = 2;
+}
+
+message DynamicChannelPacket {
+  facade.BluetoothAddressWithType remote = 1;
+  uint32 psm = 2;
+  bytes payload = 3;
+}
