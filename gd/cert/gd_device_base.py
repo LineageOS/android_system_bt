@@ -59,7 +59,7 @@ def replace_vars(string, config):
 class GdDeviceBase:
 
     def __init__(self, grpc_port, grpc_root_server_port, signal_port, cmd,
-                 label, type_identifier, serial_number):
+                 label, type_identifier, serial_number, name):
         self.label = label if label is not None else grpc_port
         # logging.log_path only exists when this is used in an ACTS test run.
         self.log_path_base = context.get_current_context().get_full_output_path(
@@ -101,6 +101,8 @@ class GdDeviceBase:
             self.ensure_no_output(self.adb.shell("logcat -c"))
             self.adb.shell("rm /data/misc/bluetooth/logs/btsnoop_hci.log")
             self.ensure_no_output(self.adb.shell("svc bluetooth disable"))
+
+        self.name = name
 
         tester_signal_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         tester_signal_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
