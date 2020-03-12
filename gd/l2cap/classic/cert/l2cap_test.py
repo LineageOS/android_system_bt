@@ -63,6 +63,7 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
 
     def teardown_test(self):
         self.cert_l2cap.close()
+        self.dut_l2cap.close()
         super().teardown_test()
 
     def cert_send_b_frame(self, b_frame):
