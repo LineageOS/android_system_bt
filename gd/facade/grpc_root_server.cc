@@ -32,6 +32,7 @@
 #include "hci/le_advertising_manager.h"
 #include "hci/le_scanning_manager.h"
 #include "l2cap/classic/facade.h"
+#include "l2cap/le/facade.h"
 #include "neighbor/connectability.h"
 #include "neighbor/discoverability.h"
 #include "neighbor/facade/facade.h"
@@ -88,9 +89,11 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
         break;
       case BluetoothModule::L2CAP:
         modules.add<::bluetooth::hci::facade::ControllerFacadeModule>();
+        modules.add<::bluetooth::hci::facade::LeAdvertisingManagerFacadeModule>();
         modules.add<::bluetooth::neighbor::facade::NeighborFacadeModule>();
         modules.add<::bluetooth::facade::ReadOnlyPropertyServerModule>();
         modules.add<::bluetooth::l2cap::classic::L2capClassicModuleFacadeModule>();
+        modules.add<::bluetooth::l2cap::le::L2capLeModuleFacadeModule>();
         modules.add<::bluetooth::hci::facade::HciLayerFacadeModule>();
         break;
       case BluetoothModule::SECURITY:
