@@ -58,8 +58,13 @@ class L2capMatchers(object):
         return lambda packet: L2capMatchers._is_le_control_frame_with_code(packet, LeCommandCode.LE_CREDIT_BASED_CONNECTION_REQUEST)
 
     @staticmethod
-    def CreditBasedConnectionResponse(scid):
-        return lambda packet: L2capMatchers._is_matching_credit_based_connection_response(packet, scid)
+    def CreditBasedConnectionResponse(
+            scid, result=LeCreditBasedConnectionResponseResult.SUCCESS):
+        return lambda packet: L2capMatchers._is_matching_credit_based_connection_response(packet, scid, result)
+
+    @staticmethod
+    def LeDisconnectionRequest(scid, dcid):
+        return lambda packet: L2capMatchers._is_matching_le_disconnection_request(packet, scid, dcid)
 
     @staticmethod
     def SFrame(req_seq=None, f=None, s=None, p=None):
@@ -200,6 +205,16 @@ class L2capMatchers(object):
         ) == dcid
 
     @staticmethod
+    def _is_matching_le_disconnection_request(packet, scid, dcid):
+        frame = L2capMatchers.le_control_frame_with_code(
+            packet, LeCommandCode.DISCONNECTION_REQUEST)
+        if frame is None:
+            return False
+        request = l2cap_packets.LeDisconnectionRequestView(frame)
+        return request.GetSourceCid() == scid and request.GetDestinationCid(
+        ) == dcid
+
+    @staticmethod
     def _information_response_with_type(packet, info_type):
         frame = L2capMatchers.control_frame_with_code(
             packet, CommandCode.INFORMATION_RESPONSE)
@@ -232,12 +247,12 @@ class L2capMatchers(object):
         return True
 
     @staticmethod
-    def _is_matching_credit_based_connection_response(packet, scid):
+    def _is_matching_credit_based_connection_response(packet, scid, result):
         frame = L2capMatchers.le_control_frame_with_code(
             packet, LeCommandCode.LE_CREDIT_BASED_CONNECTION_RESPONSE)
         if frame is None:
             return False
         response = l2cap_packets.LeCreditBasedConnectionResponseView(frame)
-        return response.GetResult(
-        ) == LeCreditBasedConnectionResponseResult.SUCCESS and response.GetDestinationCid(
-        ) != 0
+        return response.GetResult() == result and (
+            result != LeCreditBasedConnectionResponseResult.SUCCESS or
+            response.GetDestinationCid() != 0)
