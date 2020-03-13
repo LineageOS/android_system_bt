@@ -86,6 +86,8 @@ void ClassicPairingHandler::Initiate(bool locally_initiated, hci::IoCapability i
 }
 
 void ClassicPairingHandler::Cancel() {
+  if (is_cancelled_) return;
+  is_cancelled_ = true;
   PairingResultOrFailure result = PairingResult();
   if (last_status_ != hci::ErrorCode::SUCCESS) {
     result = PairingFailure(hci::ErrorCodeText(last_status_));
