@@ -46,6 +46,11 @@ class CertLeL2capChannel(IEventStream):
         frame = l2cap_packets.BasicFrameBuilder(self._dcid, packet)
         self._acl.send(frame.Serialize())
 
+    def send_first_le_i_frame(self, sdu_size, packet):
+        frame = l2cap_packets.FirstLeInformationFrameBuilder(
+            self._dcid, sdu_size, packet)
+        self._acl.send(frame.Serialize())
+
     def disconnect_and_verify(self):
         assertThat(self._scid).isNotEqualTo(1)
         self._control_channel.send(
@@ -53,13 +58,16 @@ class CertLeL2capChannel(IEventStream):
                                                       self._scid))
 
         assertThat(self._control_channel).emits(
-            L2capMatchers.DisconnectionResponse(self._scid, self._dcid))
+            L2capMatchers.LeDisconnectionResponse(self._scid, self._dcid))
 
-    def get_scid(self):
-        return self._scid
+    def verify_disconnect_request(self):
+        assertThat(self._control_channel).emits(
+            L2capMatchers.LeDisconnectionRequest(self._dcid, self._scid))
 
-    def get_dcid(self):
-        return self._dcid
+    def send_credits(self, num_credits):
+        self._control_channel.send(
+            l2cap_packets.LeFlowControlCreditBuilder(2, self._scid,
+                                                     num_credits))
 
 
 class CertLeL2cap(Closable):
@@ -94,10 +102,16 @@ class CertLeL2cap(Closable):
             control_channel=None)
         self._get_acl_stream().register_callback(self._handle_control_packet)
 
-    def open_channel(self, signal_id, psm, scid, initial_credit=6):
+    def open_channel(self,
+                     signal_id,
+                     psm,
+                     scid,
+                     mtu=1000,
+                     mps=100,
+                     initial_credit=6):
         self.control_channel.send(
             l2cap_packets.LeCreditBasedConnectionRequestBuilder(
-                signal_id, psm, scid, 2000, 1000, initial_credit))
+                signal_id, psm, scid, mtu, mps, initial_credit))
 
         response = L2capCaptures.CreditBasedConnectionResponse(scid)
         assertThat(self.control_channel).emits(response)
@@ -115,91 +129,6 @@ class CertLeL2cap(Closable):
 
     def _get_acl_stream(self):
         return self._le_acl_manager.get_le_acl_stream()
-
-    def _on_connection_request_default(self, l2cap_control_view):
-        connection_request_view = l2cap_packets.ConnectionRequestView(
-            l2cap_control_view)
-        sid = connection_request_view.GetIdentifier()
-        cid = connection_request_view.GetSourceCid()
-
-        self.scid_to_dcid[cid] = cid
-
-        connection_response = l2cap_packets.ConnectionResponseBuilder(
-            sid, cid, cid, l2cap_packets.ConnectionResponseResult.SUCCESS,
-            l2cap_packets.ConnectionResponseStatus.
-            NO_FURTHER_INFORMATION_AVAILABLE)
-        self.control_channel.send(connection_response)
-        return True
-
-    def _on_connection_response_default(self, l2cap_control_view):
-        connection_response_view = l2cap_packets.ConnectionResponseView(
-            l2cap_control_view)
-        sid = connection_response_view.GetIdentifier()
-        scid = connection_response_view.GetSourceCid()
-        dcid = connection_response_view.GetDestinationCid()
-        self.scid_to_dcid[scid] = dcid
-
-        options = []
-        if self.ertm_option is not None:
-            options.append(self.ertm_option)
-        if self.fcs_option is not None:
-            options.append(self.fcs_option)
-
-        config_request = l2cap_packets.ConfigurationRequestBuilder(
-            sid + 1, dcid, l2cap_packets.Continuation.END, options)
-        self.control_channel.send(config_request)
-        return True
-
-    def _on_connection_response_configuration_request_with_unknown_options_and_hint(
-            self, l2cap_control_view):
-        connection_response_view = l2cap_packets.ConnectionResponseView(
-            l2cap_control_view)
-        sid = connection_response_view.GetIdentifier()
-        scid = connection_response_view.GetSourceCid()
-        dcid = connection_response_view.GetDestinationCid()
-        self.scid_to_dcid[scid] = dcid
-
-        mtu_opt = l2cap_packets.MtuConfigurationOption()
-        mtu_opt.mtu = 0x1234
-        mtu_opt.is_hint = l2cap_packets.ConfigurationOptionIsHint.OPTION_IS_A_HINT
-
-        options = [mtu_opt]
-        config_request = l2cap_packets.ConfigurationRequestBuilder(
-            sid + 1, dcid, l2cap_packets.Continuation.END, options)
-        config_request_l2cap = l2cap_packets.BasicFrameBuilder(
-            1, config_request)
-
-        byte_array = bytearray(config_request_l2cap.Serialize())
-        ## Modify configuration option type to be a unknown
-        byte_array[12] |= 0x7f
-        self._acl.send(bytes(byte_array))
-        return True
-
-    def _on_connection_response_configuration_request_with_continuation_flag(
-            self, l2cap_control_view):
-        connection_response_view = l2cap_packets.ConnectionResponseView(
-            l2cap_control_view)
-        sid = connection_response_view.GetIdentifier()
-        scid = connection_response_view.GetSourceCid()
-        dcid = connection_response_view.GetDestinationCid()
-        self.scid_to_dcid[scid] = dcid
-
-        mtu_opt = l2cap_packets.MtuConfigurationOption()
-        mtu_opt.mtu = 0x1234
-
-        options = [mtu_opt]
-        config_request = l2cap_packets.ConfigurationRequestBuilder(
-            sid + 1, dcid, l2cap_packets.Continuation.CONTINUE, options)
-
-        self.control_channel.send(config_request)
-
-        flush_timeout_option = l2cap_packets.FlushTimeoutConfigurationOption()
-        flush_timeout_option.flush_timeout = 65535
-        option = [flush_timeout_option]
-        config_request = l2cap_packets.ConfigurationRequestBuilder(
-            sid + 2, dcid, l2cap_packets.Continuation.END, option)
-        self.get_control_channel().send(config_request)
-        return True
 
     def _on_disconnection_request_default(self, l2cap_control_view):
         disconnection_request = l2cap_packets.DisconnectionRequestView(
