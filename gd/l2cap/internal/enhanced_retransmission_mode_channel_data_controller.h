@@ -72,9 +72,6 @@ class ErtmController : public DataController {
   uint16_t remote_tx_window_ = 10;
   uint16_t remote_mps_ = 1010;
 
-  uint16_t size_each_packet_ =
-      (remote_mps_ - 4 /* basic L2CAP header */ - 2 /* SDU length */ - 2 /* Extended control */ - 2 /* FCS */);
-
   class PacketViewForReassembly : public packet::PacketView<kLittleEndian> {
    public:
     PacketViewForReassembly(const PacketView& packetView) : PacketView(packetView) {}
