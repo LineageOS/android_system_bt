@@ -610,6 +610,57 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
             L2capMatchers.IFrame(tx_seq=0, payload=b'abc'),
             L2capMatchers.IFrame(tx_seq=1, payload=b'abc')).inOrder()
 
+    def test_respond_to_srej_p_set(self):
+        """
+        L2CAP/ERM/BV-14-C [Respond to S-Frame [SREJ] POLL Bit Set]
+        """
+        self._setup_link_from_cert()
+        self.cert_l2cap.turn_on_ertm(tx_window_size=3, max_transmit=2)
+
+        (dut_channel, cert_channel) = self._open_channel(
+            scid=0x41, psm=0x33, use_ertm=True)
+
+        for _ in range(4):
+            dut_channel.send(b'abc')
+        assertThat(cert_channel).emits(
+            L2capMatchers.IFrame(tx_seq=0, payload=b'abc'),
+            L2capMatchers.IFrame(tx_seq=1, payload=b'abc'),
+            L2capMatchers.IFrame(tx_seq=2, payload=b'abc')).inOrder()
+
+        cert_channel.send_s_frame(
+            req_seq=1, p=Poll.POLL, s=SupervisoryFunction.SELECT_REJECT)
+
+        assertThat(cert_channel).emits(
+            L2capMatchers.IFrame(
+                tx_seq=1, payload=b'abc', f=Final.POLL_RESPONSE),
+            L2capMatchers.IFrame(tx_seq=3, payload=b'abc')).inOrder()
+
+    def test_respond_to_srej_p_clear(self):
+        """
+        L2CAP/ERM/BV-15-C [Respond to S-Frame [SREJ] POLL Bit Clear]
+        """
+        self._setup_link_from_cert()
+        self.cert_l2cap.turn_on_ertm(tx_window_size=3, max_transmit=2)
+
+        (dut_channel, cert_channel) = self._open_channel(
+            scid=0x41, psm=0x33, use_ertm=True)
+
+        for _ in range(4):
+            dut_channel.send(b'abc')
+        assertThat(cert_channel).emits(
+            L2capMatchers.IFrame(tx_seq=0, payload=b'abc'),
+            L2capMatchers.IFrame(tx_seq=1, payload=b'abc'),
+            L2capMatchers.IFrame(tx_seq=2, payload=b'abc')).inOrder()
+
+        cert_channel.send_s_frame(
+            req_seq=1, s=SupervisoryFunction.SELECT_REJECT)
+        assertThat(cert_channel).emits(
+            L2capMatchers.IFrame(tx_seq=1, payload=b'abc', f=Final.NOT_SET))
+        cert_channel.send_s_frame(
+            req_seq=3, s=SupervisoryFunction.RECEIVER_READY)
+        assertThat(cert_channel).emits(
+            L2capMatchers.IFrame(tx_seq=3, payload=b'abc', f=Final.NOT_SET))
+
     def test_receive_s_frame_rr_final_bit_set(self):
         """
         L2CAP/ERM/BV-18-C [Receive S-Frame [RR] Final Bit = 1]
