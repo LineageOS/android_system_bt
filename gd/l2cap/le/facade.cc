@@ -96,7 +96,13 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
     }
 
     void on_l2cap_service_registration_complete(DynamicChannelManager::RegistrationResult registration_result,
-                                                std::unique_ptr<DynamicChannelService> service) {}
+                                                std::unique_ptr<DynamicChannelService> service) {
+      if (registration_result != DynamicChannelManager::RegistrationResult::SUCCESS) {
+        LOG_ERROR("Service registration failed");
+      } else {
+        service_ = std::move(service);
+      }
+    }
 
     // invoked from Facade Handler
     void on_connection_open(std::unique_ptr<DynamicChannel> channel) {
