@@ -319,12 +319,48 @@ static void btif_hf_upstreams_evt(uint16_t event, char* p_param) {
     case BTA_AG_OPEN_EVT:
       // Check if an outoging connection is pending
       if (btif_hf_cb[idx].is_initiator) {
+        if ((p_data->open.status != BTA_AG_SUCCESS) &&
+            btif_hf_cb[idx].state != BTHF_CONNECTION_STATE_CONNECTING) {
+          if (p_data->open.bd_addr == btif_hf_cb[idx].connected_bda) {
+            LOG(WARNING) << __func__ << ": btif_hf_cb state["
+                         << p_data->open.status
+                         << "] is not expected, possible connection collision, "
+                            "ignoring AG open "
+                            "failure event for the same device "
+                         << p_data->open.bd_addr;
+          } else {
+            LOG(WARNING) << __func__ << ": btif_hf_cb state["
+                         << p_data->open.status
+                         << "] is not expected, possible connection collision, "
+                            "ignoring AG open failure "
+                            "event for the different devices btif_hf_cb bda: "
+                         << btif_hf_cb[idx].connected_bda
+                         << ", p_data bda: " << p_data->open.bd_addr
+                         << ", report disconnect state for p_data bda.";
+            bt_hf_callbacks->ConnectionStateCallback(
+                BTHF_CONNECTION_STATE_DISCONNECTED, &(p_data->open.bd_addr));
+          }
+          break;
+        }
+
         CHECK_EQ(btif_hf_cb[idx].state, BTHF_CONNECTION_STATE_CONNECTING)
             << "Control block must be in connecting state when initiating";
         CHECK(!btif_hf_cb[idx].connected_bda.IsEmpty())
             << "Remote device address must not be empty when initiating";
-        CHECK_EQ(btif_hf_cb[idx].connected_bda, p_data->open.bd_addr)
-            << "Incoming message's address must match expected one";
+        if (btif_hf_cb[idx].connected_bda != p_data->open.bd_addr) {
+          LOG(WARNING) << __func__
+                       << ": possible connection collision, ignore the "
+                          "outgoing connection for the "
+                          "different devices btif_hf_cb bda: "
+                       << btif_hf_cb[idx].connected_bda
+                       << ", p_data bda: " << p_data->open.bd_addr
+                       << ", report disconnect state for btif_hf_cb bda.";
+          bt_hf_callbacks->ConnectionStateCallback(
+              BTHF_CONNECTION_STATE_DISCONNECTED,
+              &(btif_hf_cb[idx].connected_bda));
+          reset_control_block(&btif_hf_cb[idx]);
+          btif_queue_advance();
+        }
       }
       if (p_data->open.status == BTA_AG_SUCCESS) {
         // In case this is an incoming connection
