@@ -17,6 +17,9 @@
 from l2cap.classic import facade_pb2 as l2cap_facade_pb2
 from l2cap.le import facade_pb2 as l2cap_le_facade_pb2
 from bluetooth_packets_python3 import l2cap_packets
+from cert.event_stream import EventStream
+from cert.closable import Closable, safeClose
+from google.protobuf import empty_pb2 as empty_proto
 
 
 class PyL2capChannel(object):
@@ -29,15 +32,14 @@ class PyL2capChannel(object):
         self._device.l2cap.SendDynamicChannelPacket(
             l2cap_facade_pb2.DynamicChannelPacket(psm=0x33, payload=payload))
 
-    def send_le(self, payload):
-        self._device.l2cap_le.SendDynamicChannelPacket(
-            l2cap_le_facade_pb2.DynamicChannelPacket(psm=0x33, payload=payload))
 
-
-class PyL2cap(object):
+class PyL2cap(Closable):
 
     def __init__(self, device):
         self._device = device
+
+    def close(self):
+        pass
 
     def open_channel(self,
                      psm=0x33,
@@ -49,8 +51,33 @@ class PyL2cap(object):
                 psm=psm, retransmission_mode=mode))
         return PyL2capChannel(self._device, psm)
 
+
+class PyLeL2capChannel(object):
+
+    def __init__(self, device, psm):
+        self._device = device
+        self._psm = psm
+
+    def send(self, payload):
+        self._device.l2cap_le.SendDynamicChannelPacket(
+            l2cap_le_facade_pb2.DynamicChannelPacket(psm=0x33, payload=payload))
+
+
+class PyLeL2cap(Closable):
+
+    def __init__(self, device):
+        self._device = device
+        self.le_l2cap_stream = EventStream(
+            self._device.l2cap_le.FetchL2capData(empty_proto.Empty()))
+
+    def close(self):
+        safeClose(self.le_l2cap_stream)
+
+    def get_le_l2cap_stream(self):
+        return self.le_l2cap_stream
+
     def open_credit_based_flow_control_channel(self, psm=0x33):
         # todo, I don't understand what SetDynamicChannel means?
         self._device.l2cap_le.SetDynamicChannel(
             l2cap_le_facade_pb2.SetEnableDynamicChannelRequest(psm=psm))
-        return PyL2capChannel(self._device, psm)
+        return PyLeL2capChannel(self._device, psm)
