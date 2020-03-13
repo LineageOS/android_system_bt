@@ -66,8 +66,8 @@ class L2capMatchers(object):
         return lambda packet: L2capMatchers._is_matching_supervisory_frame(packet, req_seq, f, s, p)
 
     @staticmethod
-    def IFrame(tx_seq=None, payload=None):
-        return lambda packet: L2capMatchers._is_matching_information_frame(packet, tx_seq, payload)
+    def IFrame(tx_seq=None, payload=None, f=None):
+        return lambda packet: L2capMatchers._is_matching_information_frame(packet, tx_seq, payload, f)
 
     @staticmethod
     def Data(payload):
@@ -118,13 +118,15 @@ class L2capMatchers(object):
         return l2cap_packets.EnhancedSupervisoryFrameView(standard_frame)
 
     @staticmethod
-    def _is_matching_information_frame(packet, tx_seq, payload):
+    def _is_matching_information_frame(packet, tx_seq, payload, f):
         frame = L2capMatchers._information_frame(packet)
         if frame is None:
             return False
         if tx_seq is not None and frame.GetTxSeq() != tx_seq:
             return False
         if payload is not None and frame.GetPayload().GetBytes() != payload:
+            return False
+        if f is not None and frame.GetF() != f:
             return False
         return True
 
