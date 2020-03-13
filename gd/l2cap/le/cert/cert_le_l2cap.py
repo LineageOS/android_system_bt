@@ -20,7 +20,8 @@ from cert.py_le_acl_manager import PyLeAclManager
 from cert.truth import assertThat
 import bluetooth_packets_python3 as bt_packets
 from bluetooth_packets_python3 import l2cap_packets
-from bluetooth_packets_python3.l2cap_packets import CommandCode
+from bluetooth_packets_python3.l2cap_packets import LeCommandCode
+from bluetooth_packets_python3.l2cap_packets import LeCreditBasedConnectionResponseResult
 from cert.event_stream import FilteringEventStream
 from cert.event_stream import IEventStream
 from cert.matchers import L2capMatchers
@@ -78,9 +79,9 @@ class CertLeL2cap(Closable):
         self._le_acl = None
 
         self.control_table = {
-            CommandCode.DISCONNECTION_REQUEST:
+            LeCommandCode.DISCONNECTION_REQUEST:
             self._on_disconnection_request_default,
-            CommandCode.DISCONNECTION_RESPONSE:
+            LeCommandCode.DISCONNECTION_RESPONSE:
             self._on_disconnection_response_default,
         }
 
@@ -120,6 +121,40 @@ class CertLeL2cap(Closable):
                                   self._get_acl_stream(), self._le_acl,
                                   self.control_channel)
 
+    def verify_and_respond_open_channel_from_remote(
+            self, psm=0x33,
+            result=LeCreditBasedConnectionResponseResult.SUCCESS):
+        request = L2capCaptures.CreditBasedConnectionRequest(psm)
+        assertThat(self.control_channel).emits(request)
+        (scid, dcid) = self._respond_connection_request_default(
+            request.get(), result)
+        return CertLeL2capChannel(self._device, scid, dcid,
+                                  self._get_acl_stream(), self._le_acl,
+                                  self.control_channel)
+
+    def verify_and_reject_open_channel_from_remote(self, psm=0x33):
+        request = L2capCaptures.CreditBasedConnectionRequest(psm)
+        assertThat(self.control_channel).emits(request)
+        sid = request.get().GetIdentifier()
+        reject = l2cap_packets.LeCommandRejectNotUnderstoodBuilder(sid)
+        self.control_channel.send(reject)
+
+    def _respond_connection_request_default(
+            self, request,
+            result=LeCreditBasedConnectionResponseResult.SUCCESS):
+        sid = request.GetIdentifier()
+        their_scid = request.GetSourceCid()
+        mtu = request.GetMtu()
+        mps = request.GetMps()
+        initial_credits = request.GetInitialCredits()
+        # Here we use the same value - their scid as their scid
+        our_scid = their_scid
+        our_dcid = their_scid
+        response = l2cap_packets.LeCreditBasedConnectionResponseBuilder(
+            sid, our_scid, mtu, mps, initial_credits, result)
+        self.control_channel.send(response)
+        return (our_scid, our_dcid)
+
     # prefer to use channel abstraction instead, if at all possible
     def send_acl(self, packet):
         self._acl.send(packet.Serialize())
@@ -130,19 +165,18 @@ class CertLeL2cap(Closable):
     def _get_acl_stream(self):
         return self._le_acl_manager.get_le_acl_stream()
 
-    def _on_disconnection_request_default(self, l2cap_control_view):
-        disconnection_request = l2cap_packets.DisconnectionRequestView(
-            l2cap_control_view)
+    def _on_disconnection_request_default(self, request):
+        disconnection_request = l2cap_packets.LeDisconnectionRequestView(
+            request)
         sid = disconnection_request.GetIdentifier()
         scid = disconnection_request.GetSourceCid()
         dcid = disconnection_request.GetDestinationCid()
-        disconnection_response = l2cap_packets.DisconnectionResponseBuilder(
-            sid, dcid, scid)
-        self.control_channel.send(disconnection_response)
+        response = l2cap_packets.LeDisconnectionResponseBuilder(sid, dcid, scid)
+        self.control_channel.send(response)
 
-    def _on_disconnection_response_default(self, l2cap_control_view):
-        disconnection_response = l2cap_packets.DisconnectionResponseView(
-            l2cap_control_view)
+    def _on_disconnection_response_default(self, request):
+        disconnection_response = l2cap_packets.LeDisconnectionResponseView(
+            request)
 
     def _handle_control_packet(self, l2cap_packet):
         packet_bytes = l2cap_packet.payload
@@ -150,8 +184,8 @@ class CertLeL2cap(Closable):
             bt_packets.PacketViewLittleEndian(list(packet_bytes)))
         if l2cap_view.GetChannelId() != 5:
             return
-        l2cap_control_view = l2cap_packets.ControlView(l2cap_view.GetPayload())
-        fn = self.control_table.get(l2cap_control_view.GetCode())
+        request = l2cap_packets.LeControlView(l2cap_view.GetPayload())
+        fn = self.control_table.get(request.GetCode())
         if fn is not None:
-            fn(l2cap_control_view)
+            fn(request)
         return

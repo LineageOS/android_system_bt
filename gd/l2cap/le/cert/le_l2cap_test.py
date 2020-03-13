@@ -27,7 +27,7 @@ from cert.matchers import L2capMatchers
 from facade import common_pb2 as common
 from facade import rootservice_pb2 as facade_rootservice
 from google.protobuf import empty_pb2 as empty_proto
-from l2cap.classic import facade_pb2 as l2cap_facade_pb2
+from l2cap.le import facade_pb2 as l2cap_facade_pb2
 from neighbor.facade import facade_pb2 as neighbor_facade
 from hci.facade import acl_manager_facade_pb2 as acl_manager_facade
 from hci.facade import le_advertising_manager_facade_pb2 as le_advertising_facade
@@ -87,18 +87,25 @@ class LeL2capTest(GdFacadeOnlyBaseTestClass):
             request)
         self.cert_l2cap.connect_le_acl(bytes(b'0D:05:04:03:02:01'))
 
-    def _open_unvalidated_channel(self,
-                                  signal_id=1,
-                                  scid=0x0101,
-                                  psm=0x33,
-                                  mtu=1000,
-                                  mps=100,
-                                  initial_credit=6):
+    def _open_channel_from_cert(self,
+                                signal_id=1,
+                                scid=0x0101,
+                                psm=0x33,
+                                mtu=1000,
+                                mps=100,
+                                initial_credit=6):
 
-        dut_channel = self.dut_l2cap.open_credit_based_flow_control_channel(psm)
+        dut_channel = self.dut_l2cap.register_coc(psm)
         cert_channel = self.cert_l2cap.open_channel(signal_id, psm, scid, mtu,
                                                     mps, initial_credit)
 
+        return (dut_channel, cert_channel)
+
+    def _open_channel_from_dut(self, psm=0x33):
+        response_future = self.dut_l2cap.connect_coc_to_cert(psm)
+        cert_channel = self.cert_l2cap.verify_and_respond_open_channel_from_remote(
+            psm)
+        dut_channel = response_future.get_channel()
         return (dut_channel, cert_channel)
 
     def test_segmentation(self):
@@ -106,7 +113,7 @@ class LeL2capTest(GdFacadeOnlyBaseTestClass):
         L2CAP/COS/CFC/BV-01-C
         """
         self._setup_link_from_cert()
-        (dut_channel, cert_channel) = self._open_unvalidated_channel(
+        (dut_channel, cert_channel) = self._open_channel_from_cert(
             mtu=1000, mps=102)
         dut_channel.send(b'hello' * 20 + b'world')
         # The first LeInformation packet contains 2 bytes of SDU size.
@@ -121,7 +128,7 @@ class LeL2capTest(GdFacadeOnlyBaseTestClass):
         L2CAP/COS/CFC/BV-02-C
         """
         self._setup_link_from_cert()
-        (dut_channel, cert_channel) = self._open_unvalidated_channel(
+        (dut_channel, cert_channel) = self._open_channel_from_cert(
             mtu=1000, mps=202)
         dut_channel.send(b'hello' * 40)
         assertThat(cert_channel).emits(
@@ -132,7 +139,7 @@ class LeL2capTest(GdFacadeOnlyBaseTestClass):
         L2CAP/COS/CFC/BV-03-C
         """
         self._setup_link_from_cert()
-        (dut_channel, cert_channel) = self._open_unvalidated_channel()
+        (dut_channel, cert_channel) = self._open_channel_from_cert()
         sdu_size_for_two_sample_packet = 12
         cert_channel.send_first_le_i_frame(sdu_size_for_two_sample_packet,
                                            SAMPLE_PACKET)
@@ -145,7 +152,7 @@ class LeL2capTest(GdFacadeOnlyBaseTestClass):
         L2CAP/COS/CFC/BV-04-C
         """
         self._setup_link_from_cert()
-        (dut_channel, cert_channel) = self._open_unvalidated_channel()
+        (dut_channel, cert_channel) = self._open_channel_from_cert()
         cert_channel.send_first_le_i_frame(6, SAMPLE_PACKET)
         assertThat(self.dut_l2cap.le_l2cap_stream).emits(
             L2capMatchers.PacketPayloadRawData(b'\x01\x01\x02\x00\x00\x00'))
@@ -161,16 +168,6 @@ class LeL2capTest(GdFacadeOnlyBaseTestClass):
                 EXTENDED_FEATURES_SUPPORTED))
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.LeCommandReject())
-
-    def test_credit_based_connection_response_on_supported_le_psm(self):
-        """
-        L2CAP/LE/CFC/BV-03-C
-        """
-        self._setup_link_from_cert()
-        (dut_channel, cert_channel) = self._open_unvalidated_channel()
-        dut_channel.send(b'hello')
-        assertThat(cert_channel).emits(
-            L2capMatchers.FirstLeIFrame(b'hello', sdu_size=5))
 
     def test_credit_based_connection_request_unsupported_le_psm(self):
         """
@@ -192,7 +189,7 @@ class LeL2capTest(GdFacadeOnlyBaseTestClass):
         """
         self._setup_link_from_cert()
         (dut_channel,
-         cert_channel) = self._open_unvalidated_channel(initial_credit=0)
+         cert_channel) = self._open_channel_from_cert(initial_credit=0)
         for _ in range(4):
             dut_channel.send(b'hello')
         cert_channel.send_credits(1)
@@ -206,12 +203,54 @@ class LeL2capTest(GdFacadeOnlyBaseTestClass):
             L2capMatchers.FirstLeIFrame(b'hello', sdu_size=5),
             L2capMatchers.FirstLeIFrame(b'hello', sdu_size=5))
 
+    def test_le_credit_based_connection_request_legacy_peer(self):
+        """
+        L2CAP/LE/CFC/BV-01-C
+        """
+        self._setup_link_from_cert()
+        response_future = self.dut_l2cap.connect_coc_to_cert(psm=0x33)
+        self.cert_l2cap.verify_and_reject_open_channel_from_remote(psm=0x33)
+        assertThat(response_future.get_status()).isNotEqualTo(
+            LeCreditBasedConnectionResponseResult.SUCCESS)
+
+    def test_le_credit_based_connection_request_on_supported_le_psm(self):
+        """
+        L2CAP/LE/CFC/BV-02-C
+        """
+        self._setup_link_from_cert()
+        (dut_channel, cert_channel) = self._open_channel_from_dut()
+        cert_channel.send_first_le_i_frame(6, SAMPLE_PACKET)
+        assertThat(self.dut_l2cap.le_l2cap_stream).emits(
+            L2capMatchers.PacketPayloadRawData(b'\x01\x01\x02\x00\x00\x00'))
+
+    def test_credit_based_connection_response_on_supported_le_psm(self):
+        """
+        L2CAP/LE/CFC/BV-03-C
+        """
+        self._setup_link_from_cert()
+        (dut_channel, cert_channel) = self._open_channel_from_cert()
+        dut_channel.send(b'hello')
+        assertThat(cert_channel).emits(
+            L2capMatchers.FirstLeIFrame(b'hello', sdu_size=5))
+
+    def test_credit_based_connection_request_on_an_unsupported_le_psm(self):
+        """
+        L2CAP/LE/CFC/BV-04-C
+        """
+        self._setup_link_from_cert()
+        response_future = self.dut_l2cap.connect_coc_to_cert(psm=0x33)
+        self.cert_l2cap.verify_and_respond_open_channel_from_remote(
+            psm=0x33,
+            result=LeCreditBasedConnectionResponseResult.LE_PSM_NOT_SUPPORTED)
+        assertThat(response_future.get_status()).isEqualTo(
+            LeCreditBasedConnectionResponseResult.LE_PSM_NOT_SUPPORTED)
+
     def test_credit_exchange_exceed_initial_credits(self):
         """
         L2CAP/LE/CFC/BI-01-C
         """
         self._setup_link_from_cert()
-        (dut_channel, cert_channel) = self._open_unvalidated_channel()
+        (dut_channel, cert_channel) = self._open_channel_from_cert()
         cert_channel.send_credits(65535)
         cert_channel.verify_disconnect_request()
 
@@ -220,5 +259,5 @@ class LeL2capTest(GdFacadeOnlyBaseTestClass):
         L2CAP/LE/CFC/BV-09-C
         """
         self._setup_link_from_cert()
-        (dut_channel, cert_channel) = self._open_unvalidated_channel()
+        (dut_channel, cert_channel) = self._open_channel_from_cert()
         cert_channel.disconnect_and_verify()
