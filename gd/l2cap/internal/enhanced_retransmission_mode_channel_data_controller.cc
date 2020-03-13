@@ -411,6 +411,7 @@ struct ErtmController::impl {
         remote_busy_ = false;
         pass_to_tx(req_seq, f);
         retransmit_requested_i_frame(req_seq, p);
+        send_pending_i_frames();
         if (p_bit_outstanding()) {
           srej_actioned_ = true;
           srej_save_req_seq_ = req_seq;
