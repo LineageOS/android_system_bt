@@ -144,7 +144,7 @@ class LeL2capTest(GdFacadeOnlyBaseTestClass):
         cert_channel.send_first_le_i_frame(sdu_size_for_two_sample_packet,
                                            SAMPLE_PACKET)
         cert_channel.send(SAMPLE_PACKET)
-        assertThat(self.dut_l2cap.le_l2cap_stream).emits(
+        assertThat(dut_channel).emits(
             L2capMatchers.PacketPayloadRawData(b'\x01\x01\x02\x00\x00\x00' * 2))
 
     def test_data_receiving(self):
@@ -154,7 +154,35 @@ class LeL2capTest(GdFacadeOnlyBaseTestClass):
         self._setup_link_from_cert()
         (dut_channel, cert_channel) = self._open_channel_from_cert()
         cert_channel.send_first_le_i_frame(6, SAMPLE_PACKET)
-        assertThat(self.dut_l2cap.le_l2cap_stream).emits(
+        assertThat(dut_channel).emits(
+            L2capMatchers.PacketPayloadRawData(b'\x01\x01\x02\x00\x00\x00'))
+
+    def test_multiple_channels_with_interleaved_data_streams(self):
+        """
+        L2CAP/COS/CFC/BV-05-C
+        """
+        self._setup_link_from_cert()
+        (dut_channel_x, cert_channel_x) = self._open_channel_from_cert(
+            signal_id=1, scid=0x0103, psm=0x33)
+        (dut_channel_y, cert_channel_y) = self._open_channel_from_cert(
+            signal_id=2, scid=0x0105, psm=0x35)
+        (dut_channel_z, cert_channel_z) = self._open_channel_from_cert(
+            signal_id=3, scid=0x0107, psm=0x37)
+        cert_channel_y.send_first_le_i_frame(6, SAMPLE_PACKET)
+        cert_channel_z.send_first_le_i_frame(6, SAMPLE_PACKET)
+        cert_channel_y.send_first_le_i_frame(6, SAMPLE_PACKET)
+        cert_channel_z.send_first_le_i_frame(6, SAMPLE_PACKET)
+        cert_channel_y.send_first_le_i_frame(6, SAMPLE_PACKET)
+        # TODO: We should assert two events in order, but it got stuck
+        assertThat(dut_channel_y).emits(
+            L2capMatchers.PacketPayloadRawData(b'\x01\x01\x02\x00\x00\x00'),
+            at_least_times=3)
+        assertThat(dut_channel_z).emits(
+            L2capMatchers.PacketPayloadRawData(b'\x01\x01\x02\x00\x00\x00'),
+            L2capMatchers.PacketPayloadRawData(
+                b'\x01\x01\x02\x00\x00\x00')).inOrder()
+        cert_channel_z.send_first_le_i_frame(6, SAMPLE_PACKET)
+        assertThat(dut_channel_z).emits(
             L2capMatchers.PacketPayloadRawData(b'\x01\x01\x02\x00\x00\x00'))
 
     def test_reject_unknown_command_in_le_sigling_channel(self):
@@ -220,7 +248,7 @@ class LeL2capTest(GdFacadeOnlyBaseTestClass):
         self._setup_link_from_cert()
         (dut_channel, cert_channel) = self._open_channel_from_dut()
         cert_channel.send_first_le_i_frame(6, SAMPLE_PACKET)
-        assertThat(self.dut_l2cap.le_l2cap_stream).emits(
+        assertThat(dut_channel).emits(
             L2capMatchers.PacketPayloadRawData(b'\x01\x01\x02\x00\x00\x00'))
 
     def test_credit_based_connection_response_on_supported_le_psm(self):

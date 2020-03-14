@@ -182,6 +182,7 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
       auto packet = channel_->GetQueueUpEnd()->TryDequeue();
       std::string data = std::string(packet->begin(), packet->end());
       L2capPacket l2cap_data;
+      l2cap_data.set_psm(psm_);
       l2cap_data.set_payload(data);
       facade_service_->pending_l2cap_data_.OnIncomingEvent(l2cap_data);
     }
@@ -232,7 +233,6 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
   os::Handler* facade_handler_;
   std::mutex channel_map_mutex_;
   std::map<Psm, std::unique_ptr<L2capDynamicChannelHelper>> dynamic_channel_helper_map_;
-  bool fetch_l2cap_data_ = false;
   ::bluetooth::grpc::GrpcEventQueue<L2capPacket> pending_l2cap_data_{"FetchL2capData"};
 };
 

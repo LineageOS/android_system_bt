@@ -18,9 +18,11 @@ from l2cap.classic import facade_pb2 as l2cap_facade_pb2
 from l2cap.le import facade_pb2 as l2cap_le_facade_pb2
 from bluetooth_packets_python3 import l2cap_packets
 from bluetooth_packets_python3.l2cap_packets import ConnectionResponseResult
-from cert.event_stream import EventStream
+from cert.event_stream import FilteringEventStream
+from cert.event_stream import EventStream, IEventStream
 from cert.closable import Closable, safeClose
 from cert.truth import assertThat
+from cert.matchers import L2capMatchers
 from facade import common_pb2 as common
 from google.protobuf import empty_pb2 as empty_proto
 
@@ -55,11 +57,18 @@ class PyL2cap(Closable):
         return PyL2capChannel(self._device, psm)
 
 
-class PyLeL2capChannel(object):
+class PyLeL2capChannel(IEventStream):
 
-    def __init__(self, device, psm):
+    def __init__(self, device, psm, l2cap_stream):
         self._device = device
         self._psm = psm
+        self._le_l2cap_stream = l2cap_stream
+        self._our_le_l2cap_view = FilteringEventStream(
+            self._le_l2cap_stream,
+            L2capMatchers.PacketPayloadWithMatchingPsm(self._psm))
+
+    def get_event_queue(self):
+        return self._our_le_l2cap_view.get_event_queue()
 
     def send(self, payload):
         self._device.l2cap_le.SendDynamicChannelPacket(
@@ -72,10 +81,11 @@ class CreditBasedConnectionResponseFutureWrapper(object):
     create the corresponding PyLeL2capChannel object later
     """
 
-    def __init__(self, grpc_response_future, device, psm):
+    def __init__(self, grpc_response_future, device, psm, le_l2cap_stream):
         self._grpc_response_future = grpc_response_future
         self._device = device
         self._psm = psm
+        self._le_l2cap_stream = le_l2cap_stream
 
     def get_status(self):
         return l2cap_packets.LeCreditBasedConnectionResponseResult(
@@ -84,27 +94,24 @@ class CreditBasedConnectionResponseFutureWrapper(object):
     def get_channel(self):
         assertThat(self.get_status()).isEqualTo(
             l2cap_packets.LeCreditBasedConnectionResponseResult.SUCCESS)
-        return PyLeL2capChannel(self._device, self._psm)
+        return PyLeL2capChannel(self._device, self._psm, self._le_l2cap_stream)
 
 
 class PyLeL2cap(Closable):
 
     def __init__(self, device):
         self._device = device
-        self.le_l2cap_stream = EventStream(
+        self._le_l2cap_stream = EventStream(
             self._device.l2cap_le.FetchL2capData(empty_proto.Empty()))
 
     def close(self):
-        safeClose(self.le_l2cap_stream)
-
-    def get_le_l2cap_stream(self):
-        return self.le_l2cap_stream
+        safeClose(self._le_l2cap_stream)
 
     def register_coc(self, psm=0x33):
         self._device.l2cap_le.SetDynamicChannel(
             l2cap_le_facade_pb2.SetEnableDynamicChannelRequest(
                 psm=psm, enable=True))
-        return PyLeL2capChannel(self._device, psm)
+        return PyLeL2capChannel(self._device, psm, self._le_l2cap_stream)
 
     def connect_coc_to_cert(self, psm=0x33):
         """
@@ -120,4 +127,4 @@ class PyLeL2cap(Closable):
                         address=b"22:33:ff:ff:11:00"))))
 
         return CreditBasedConnectionResponseFutureWrapper(
-            response_future, self._device, psm)
+            response_future, self._device, psm, self._le_l2cap_stream)

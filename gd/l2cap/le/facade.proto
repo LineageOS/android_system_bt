@@ -16,9 +16,8 @@ service L2capLeModuleFacade {
 }
 
 message L2capPacket {
-  facade.BluetoothAddressWithType remote = 1;
-  uint32 channel = 2;
-  bytes payload = 3;
+  uint32 psm = 1;
+  bytes payload = 2;
 }
 
 message DynamicChannelOpenEvent {
