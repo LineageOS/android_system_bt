@@ -2414,6 +2414,11 @@ bt_status_t btif_dm_pin_reply(const RawAddress* bd_addr, uint8_t accept,
   BTIF_TRACE_EVENT("%s: accept=%d", __func__, accept);
 
   if (bluetooth::shim::is_gd_shim_enabled()) {
+    if (pin_code == nullptr) {
+      LOG_ERROR("Pin code must be not null with GD shim enabled");
+      return BT_STATUS_FAIL;
+    }
+
     uint8_t tmp_dev_type = 0;
     uint8_t tmp_addr_type = 0;
     BTM_ReadDevInfo(*bd_addr, &tmp_dev_type, &tmp_addr_type);
