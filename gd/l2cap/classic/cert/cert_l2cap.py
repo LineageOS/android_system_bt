@@ -147,6 +147,7 @@ class CertL2cap(Closable):
         self.ertm_option = None
         self.fcs_option = None
         self.fcs_enabled = False
+        self.mtu_option = None
 
         self.config_response_result = l2cap_packets.ConfigurationResponseResult.SUCCESS
         self.config_response_options = []
@@ -228,6 +229,10 @@ class CertL2cap(Closable):
     def disable_fcs(self):
         self.support_fcs = False
 
+    def set_mtu(self, mtu=672):
+        self.mtu_option = l2cap_packets.MtuConfigurationOption()
+        self.mtu_option.mtu = mtu
+
     def turn_on_ertm(self, tx_window_size=10, max_transmit=20, mps=1010):
         self.ertm_option = l2cap_packets.RetransmissionAndFlowControlConfigurationOption(
         )
@@ -307,6 +312,8 @@ class CertL2cap(Closable):
             options.append(self.ertm_option)
         if self.fcs_option is not None:
             options.append(self.fcs_option)
+        if self.mtu_option is not None:
+            options.append(self.mtu_option)
 
         config_request = l2cap_packets.ConfigurationRequestBuilder(
             sid + 1, dcid, l2cap_packets.Continuation.END, options)
