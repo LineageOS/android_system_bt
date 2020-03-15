@@ -58,8 +58,7 @@ ClassicSignallingManager::~ClassicSignallingManager() {
 }
 
 void ClassicSignallingManager::OnCommandReject(CommandRejectView command_reject_view) {
-  if (command_just_sent_.signal_id_ != command_reject_view.GetIdentifier() ||
-      command_just_sent_.command_code_ != command_reject_view.GetCode()) {
+  if (command_just_sent_.signal_id_ != command_reject_view.GetIdentifier()) {
     LOG_WARN("Unexpected command reject: no pending request");
     return;
   }
