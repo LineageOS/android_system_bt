@@ -99,7 +99,7 @@ void LeSignallingManager::CancelAlarm() {
 
 void LeSignallingManager::OnCommandReject(LeCommandRejectView command_reject_view) {
   auto signal_id = command_reject_view.GetIdentifier();
-  if (signal_id != command_just_sent_.signal_id_ || command_just_sent_.command_code_ != command_reject_view.GetCode()) {
+  if (signal_id != command_just_sent_.signal_id_) {
     LOG_WARN("Unexpected response: no pending request");
     return;
   }
