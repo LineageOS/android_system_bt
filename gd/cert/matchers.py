@@ -58,8 +58,8 @@ class L2capMatchers(object):
         return lambda packet: L2capMatchers._is_le_control_frame_with_code(packet, LeCommandCode.COMMAND_REJECT)
 
     @staticmethod
-    def CreditBasedConnectionRequest():
-        return lambda packet: L2capMatchers._is_le_control_frame_with_code(packet, LeCommandCode.LE_CREDIT_BASED_CONNECTION_REQUEST)
+    def CreditBasedConnectionRequest(psm):
+        return lambda packet: L2capMatchers._is_matching_credit_based_connection_request(packet, psm)
 
     @staticmethod
     def CreditBasedConnectionResponse(
@@ -99,6 +99,11 @@ class L2capMatchers(object):
     @staticmethod
     def PacketPayloadRawData(payload):
         return lambda packet: payload in packet.payload
+
+    # this is a hack - should be removed
+    @staticmethod
+    def PacketPayloadWithMatchingPsm(psm):
+        return lambda packet: None if psm != packet.psm else packet
 
     @staticmethod
     def ExtractBasicFrame(scid):
@@ -280,6 +285,15 @@ class L2capMatchers(object):
         ) != supports_fixed_channels:
             return False
         return True
+
+    @staticmethod
+    def _is_matching_credit_based_connection_request(packet, psm):
+        frame = L2capMatchers.le_control_frame_with_code(
+            packet, LeCommandCode.LE_CREDIT_BASED_CONNECTION_REQUEST)
+        if frame is None:
+            return False
+        request = l2cap_packets.LeCreditBasedConnectionRequestView(frame)
+        return request.GetLePsm() == psm
 
     @staticmethod
     def _is_matching_credit_based_connection_response(packet, scid, result):
