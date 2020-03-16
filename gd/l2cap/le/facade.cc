@@ -42,12 +42,51 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
     return pending_l2cap_data_.RunLoop(context, writer);
   }
 
+  ::grpc::Status OpenDynamicChannel(::grpc::ServerContext* context, const OpenDynamicChannelRequest* request,
+                                    OpenDynamicChannelResponse* response) override {
+    auto service_helper = dynamic_channel_helper_map_.find(request->psm());
+    if (service_helper == dynamic_channel_helper_map_.end()) {
+      return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION, "Psm not registered");
+    }
+    request->remote();
+    hci::Address peer_address;
+    ASSERT(hci::Address::FromString(request->remote().address().address(), peer_address));
+    // TODO: Support different address type
+    hci::AddressWithType peer(peer_address, hci::AddressType::RANDOM_DEVICE_ADDRESS);
+    service_helper->second->Connect(peer);
+    response->set_status(
+        static_cast<int>(service_helper->second->channel_open_fail_reason_.l2cap_connection_response_result));
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status CloseDynamicChannel(::grpc::ServerContext* context, const CloseDynamicChannelRequest* request,
+                                     ::google::protobuf::Empty* response) override {
+    auto service_helper = dynamic_channel_helper_map_.find(request->psm());
+    if (service_helper == dynamic_channel_helper_map_.end()) {
+      return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION, "Psm not registered");
+    }
+    if (service_helper->second->channel_ == nullptr) {
+      return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION, "Channel not open");
+    }
+    service_helper->second->channel_->Close();
+    return ::grpc::Status::OK;
+  }
+
   ::grpc::Status SetDynamicChannel(::grpc::ServerContext* context,
                                    const ::bluetooth::l2cap::le::SetEnableDynamicChannelRequest* request,
                                    ::google::protobuf::Empty* response) override {
-    dynamic_channel_helper_map_.emplace(request->psm(), std::make_unique<L2capDynamicChannelHelper>(
-                                                            this, l2cap_layer_, facade_handler_, request->psm()));
-    return ::grpc::Status::OK;
+    if (request->enable()) {
+      dynamic_channel_helper_map_.emplace(request->psm(), std::make_unique<L2capDynamicChannelHelper>(
+                                                              this, l2cap_layer_, facade_handler_, request->psm()));
+      return ::grpc::Status::OK;
+    } else {
+      auto service_helper = dynamic_channel_helper_map_.find(request->psm());
+      if (service_helper == dynamic_channel_helper_map_.end()) {
+        return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION, "Psm not registered");
+      }
+      service_helper->second->service_->Unregister(common::BindOnce([] {}), facade_handler_);
+      return ::grpc::Status::OK;
+    }
   }
 
   ::grpc::Status SendDynamicChannelPacket(::grpc::ServerContext* context,
@@ -85,10 +124,13 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
     }
 
     void Connect(hci::AddressWithType address) {
-      // TODO: specify channel mode
       dynamic_channel_manager_->ConnectChannel(
           address, {}, psm_, common::Bind(&L2capDynamicChannelHelper::on_connection_open, common::Unretained(this)),
           common::Bind(&L2capDynamicChannelHelper::on_connect_fail, common::Unretained(this)), handler_);
+      std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
+      if (!channel_open_cv_.wait_for(lock, std::chrono::seconds(2), [this] { return channel_ != nullptr; })) {
+        LOG_WARN("Channel is not open for psm %d", psm_);
+      }
     }
 
     void disconnect() {
@@ -127,12 +169,20 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
       channel_ = nullptr;
     }
 
-    void on_connect_fail(DynamicChannelManager::ConnectionResult result) {}
+    void on_connect_fail(DynamicChannelManager::ConnectionResult result) {
+      {
+        std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
+        channel_ = nullptr;
+        channel_open_fail_reason_ = result;
+      }
+      channel_open_cv_.notify_all();
+    }
 
     void on_incoming_packet() {
       auto packet = channel_->GetQueueUpEnd()->TryDequeue();
       std::string data = std::string(packet->begin(), packet->end());
       L2capPacket l2cap_data;
+      l2cap_data.set_psm(psm_);
       l2cap_data.set_payload(data);
       facade_service_->pending_l2cap_data_.OnIncomingEvent(l2cap_data);
     }
@@ -174,6 +224,7 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
     std::unique_ptr<DynamicChannelService> service_;
     std::unique_ptr<DynamicChannel> channel_ = nullptr;
     Psm psm_;
+    DynamicChannelManager::ConnectionResult channel_open_fail_reason_;
     std::condition_variable channel_open_cv_;
     std::mutex channel_open_cv_mutex_;
   };
@@ -182,7 +233,6 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
   os::Handler* facade_handler_;
   std::mutex channel_map_mutex_;
   std::map<Psm, std::unique_ptr<L2capDynamicChannelHelper>> dynamic_channel_helper_map_;
-  bool fetch_l2cap_data_ = false;
   ::bluetooth::grpc::GrpcEventQueue<L2capPacket> pending_l2cap_data_{"FetchL2capData"};
 };
 
