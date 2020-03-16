@@ -861,10 +861,10 @@ void gatts_process_read_by_type_req(tGATT_TCB& tcb, uint8_t op_code,
 /**
  * This function is called to process the write request from client.
  */
-void gatts_process_write_req(tGATT_TCB& tcb, tGATT_SRV_LIST_ELEM& el,
-                             uint16_t handle, uint8_t op_code, uint16_t len,
-                             uint8_t* p_data,
-                             bt_gatt_db_attribute_type_t gatt_type) {
+static void gatts_process_write_req(tGATT_TCB& tcb, tGATT_SRV_LIST_ELEM& el,
+                                    uint16_t handle, uint8_t op_code,
+                                    uint16_t len, uint8_t* p_data,
+                                    bt_gatt_db_attribute_type_t gatt_type) {
   tGATTS_DATA sr_data;
   uint32_t trans_id;
   tGATT_STATUS status;
@@ -875,7 +875,7 @@ void gatts_process_write_req(tGATT_TCB& tcb, tGATT_SRV_LIST_ELEM& el,
 
   switch (op_code) {
     case GATT_REQ_PREPARE_WRITE:
-      if (len < 2) {
+      if (len < 2 || p == nullptr) {
         LOG(ERROR) << __func__
                    << ": Prepare write request was invalid - missing offset, "
                       "sending error response";
@@ -897,8 +897,9 @@ void gatts_process_write_req(tGATT_TCB& tcb, tGATT_SRV_LIST_ELEM& el,
       if (op_code == GATT_REQ_WRITE || op_code == GATT_REQ_PREPARE_WRITE)
         sr_data.write_req.need_rsp = true;
       sr_data.write_req.handle = handle;
+      if (len > GATT_MAX_ATTR_LEN) len = GATT_MAX_ATTR_LEN;
       sr_data.write_req.len = len;
-      if (len != 0 && p != NULL) {
+      if (len != 0 && p != nullptr) {
         memcpy(sr_data.write_req.value, p, len);
       }
       break;
