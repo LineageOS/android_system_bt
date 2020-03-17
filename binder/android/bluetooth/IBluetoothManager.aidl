@@ -50,7 +50,8 @@ interface IBluetoothManager
     String getName();
 
     boolean isBleScanAlwaysAvailable();
-    int updateBleAppCount(IBinder b, boolean enable, String packageName);
+    boolean enableBle(String packageName, IBinder b);
+    boolean disableBle(String packageName, IBinder b);
     boolean isBleAppPresent();
     boolean isHearingAidProfileSupported();
 }
