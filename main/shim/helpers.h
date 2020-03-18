@@ -21,10 +21,31 @@
 
 namespace bluetooth {
 
+inline RawAddress ToRawAddress(const hci::Address& address) {
+  RawAddress ret;
+  ret.address[0] = address.address[5];
+  ret.address[1] = address.address[4];
+  ret.address[2] = address.address[3];
+  ret.address[3] = address.address[2];
+  ret.address[4] = address.address[1];
+  ret.address[5] = address.address[0];
+  return ret;
+}
+
+inline hci::Address ToGdAddress(const RawAddress& address) {
+  hci::Address ret;
+  ret.address[0] = address.address[5];
+  ret.address[1] = address.address[4];
+  ret.address[2] = address.address[3];
+  ret.address[3] = address.address[2];
+  ret.address[4] = address.address[1];
+  ret.address[5] = address.address[0];
+  return ret;
+}
+
 inline hci::AddressWithType ToAddressWithType(const RawAddress& legacy_address,
                                        tBLE_ADDR_TYPE legacy_type) {
-  // Address and RawAddress are binary equivalent;
-  hci::Address address(legacy_address.address);
+  hci::Address address = ToGdAddress(legacy_address);
 
   hci::AddressType type;
   if (legacy_type == BLE_ADDR_PUBLIC)
