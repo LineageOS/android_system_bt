@@ -199,14 +199,17 @@ static void reset_complete(void* result) {
 
   l2c_link_processs_num_bufs(controller->get_acl_buffer_count_classic());
 
+  // setup the random number generator
+  std::srand(std::time(nullptr));
+
 #if (BLE_PRIVACY_SPT == TRUE)
   /* Set up the BLE privacy settings */
   if (controller->supports_ble() && controller->supports_ble_privacy() &&
       controller->get_ble_resolving_list_max_size() > 0) {
     btm_ble_resolving_list_init(controller->get_ble_resolving_list_max_size());
     /* set the default random private address timeout */
-    btsnd_hcic_ble_set_rand_priv_addr_timeout(BTM_BLE_PRIVATE_ADDR_INT_MS /
-                                              1000);
+    btsnd_hcic_ble_set_rand_priv_addr_timeout(
+        btm_get_next_private_addrress_interval_ms() / 1000);
   }
 #endif
 
