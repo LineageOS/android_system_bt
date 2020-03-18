@@ -107,7 +107,7 @@ void bluetooth::shim::Btm::OnInquiryResult(
     bluetooth::hci::InquiryResultView view) {
   for (auto& response : view.GetInquiryResults()) {
     btm_api_process_inquiry_result(
-        RawAddress(response.bd_addr_.address),
+        ToRawAddress(response.bd_addr_),
         static_cast<uint8_t>(response.page_scan_repetition_mode_),
         response.class_of_device_.cod, response.clock_offset_);
   }
@@ -117,7 +117,7 @@ void bluetooth::shim::Btm::OnInquiryResultWithRssi(
     bluetooth::hci::InquiryResultWithRssiView view) {
   for (auto& response : view.GetInquiryResults()) {
     btm_api_process_inquiry_result_with_rssi(
-        RawAddress(response.address_.address),
+        ToRawAddress(response.address_),
         static_cast<uint8_t>(response.page_scan_repetition_mode_),
         response.class_of_device_.cod, response.clock_offset_, response.rssi_);
   }
@@ -144,7 +144,7 @@ void bluetooth::shim::Btm::OnExtendedInquiryResult(
   }
 
   btm_api_process_extended_inquiry_result(
-      RawAddress(view.GetAddress().address),
+      ToRawAddress(view.GetAddress()),
       static_cast<uint8_t>(view.GetPageScanRepetitionMode()),
       view.GetClassOfDevice().cod, view.GetClockOffset(), view.GetRssi(), data,
       data_len);
@@ -486,14 +486,14 @@ bluetooth::shim::BtmStatus bluetooth::shim::Btm::ReadClassicRemoteDeviceName(
   LOG_DEBUG("%s Start read name from address:%s", __func__,
             raw_address.ToString().c_str());
   bluetooth::shim::GetName()->ReadRemoteNameRequest(
-      hci::Address(raw_address.address), hci::PageScanRepetitionMode::R1,
+      ToGdAddress(raw_address), hci::PageScanRepetitionMode::R1,
       0 /* clock_offset */, hci::ClockOffsetValid::INVALID,
 
       base::Bind(
           [](tBTM_CMPL_CB* callback, ReadRemoteName* classic_read_remote_name_,
              hci::ErrorCode status, hci::Address address,
              std::array<uint8_t, kRemoteDeviceNameLength> remote_name) {
-            RawAddress raw_address(address.address);
+            RawAddress raw_address = ToRawAddress(address);
 
             BtmRemoteDeviceName name{
                 .status = (static_cast<uint8_t>(status) == 0)
@@ -719,7 +719,7 @@ class BtmScanningCallbacks : public bluetooth::hci::LeScanningManagerCallbacks {
               return;
           }
 
-          RawAddress raw_address(le_report->address_.address);
+          RawAddress raw_address = ToRawAddress(le_report->address_);
 
           btm_ble_process_adv_addr(raw_address, &address_type);
           btm_ble_process_adv_pkt_cont(
@@ -746,7 +746,7 @@ class BtmScanningCallbacks : public bluetooth::hci::LeScanningManagerCallbacks {
                .legacy = false,
                .continuing = !extended_le_report->complete_,
                .truncated = extended_le_report->truncated_});
-          RawAddress raw_address(le_report->address_.address);
+          RawAddress raw_address = ToRawAddress(le_report->address_);
           if (address_type != BLE_ADDR_ANONYMOUS) {
             btm_ble_process_adv_addr(raw_address, &address_type);
           }
@@ -794,8 +794,7 @@ tBTM_STATUS bluetooth::shim::Btm::CreateBond(const RawAddress& bd_addr,
       bluetooth::shim::GetSecurityModule()->GetSecurityManager();
   switch (transport) {
     case BT_TRANSPORT_BR_EDR:
-      security_manager->CreateBond(
-          ToAddressWithType(bd_addr.address, BLE_ADDR_PUBLIC));
+      security_manager->CreateBond(ToAddressWithType(bd_addr, BLE_ADDR_PUBLIC));
       break;
     case BT_TRANSPORT_LE:
       security_manager->CreateBondLe(ToAddressWithType(bd_addr, addr_type));
