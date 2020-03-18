@@ -12,6 +12,7 @@ $ANDROID_BUILD_TOP/build/soong/soong_ui.bash --build-mode --"all-modules" --dir=
 
 TEST_CONFIG="$ANDROID_BUILD_TOP/system/bt/gd/cert/android_devices_config.json"
 TEST_FILTER="-tf $ANDROID_BUILD_TOP/system/bt/gd/cert/all_cert_testcases"
+REUSE_VENV=false
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -26,6 +27,19 @@ case $key in
     TEST_CONFIG=$ANDROID_BUILD_TOP/system/bt/gd/cert/host_config.json
     shift # past argument
     ;;
+    --test_file=*)
+    TEST_FILTER="-tc ${key#*=}"
+    shift # past argument
+    ;;
+    --test_config=*)
+    TEST_CONFIG="${key#*=}"
+    shift # past argument
+    ;;
+    # This will speed up the test by overwriting existing venv
+    --reuse_venv)
+    REUSE_VENV=true
+    shift # past argument
+    ;;
     *)    # unknown option
     POSITIONAL+=("$1") # save it in an array for later
     shift # past argument
@@ -34,21 +48,40 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
-BLUETOOTH_CERT_TEST_ENV=$ANDROID_BUILD_TOP/out/dist/bluetooth_cert_test_env
-rm -rf BLUETOOTH_CERT_TEST_ENV
-mkdir -p $BLUETOOTH_CERT_TEST_ENV
+CERT_TEST_VENV=$ANDROID_BUILD_TOP/out/dist/bluetooth_venv
 
-unzip -o -q $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_generated_py.zip \
-   -d $BLUETOOTH_CERT_TEST_ENV
+if [ "$REUSE_VENV" != true ] ; then
+  rm -rf $CERT_TEST_VENV
+fi
 
-unzip -o -q $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_test.zip \
-   -d $BLUETOOTH_CERT_TEST_ENV
+python3.8 -m virtualenv --python `which python3.8` $CERT_TEST_VENV
+if [[ $? -ne 0 ]] ; then
+    echo "Error setting up virtualenv"
+    return 1
+fi
 
-pushd .
-cd $ANDROID_BUILD_TOP
-PYTHONPATH=$BLUETOOTH_CERT_TEST_ENV/out/host/linux-x86/lib64:$BLUETOOTH_CERT_TEST_ENV/system/bt/gd:$PYTHONPATH \
-    python3.8 `which act.py`\
-      -c $TEST_CONFIG \
-      $TEST_FILTER \
-      -tp $ANDROID_BUILD_TOP/system/bt/gd
-popd
+unzip -o -q $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_tests.zip -d $CERT_TEST_VENV/acts
+if [[ $? -ne 0 ]] ; then
+    echo "Error unzipping bluetooth_cert_tests.zip"
+    return 1
+fi
+
+$CERT_TEST_VENV/bin/python $CERT_TEST_VENV/acts/setup.py install
+if [[ $? -ne 0 ]] ; then
+    echo "Error installing GD libraries"
+    return 1
+fi
+
+$CERT_TEST_VENV/bin/python -c "
+import bluetooth_packets_python3 as bp3
+bp3.BaseStruct
+"
+if [[ $? -ne 0 ]] ; then
+  echo "Setup failed as bluetooth_packets_python3 cannot be imported"
+  return 1
+fi
+
+$CERT_TEST_VENV/bin/python $CERT_TEST_VENV/bin/act.py \
+    -c $TEST_CONFIG \
+    $TEST_FILTER \
+    -tp $CERT_TEST_VENV/acts
