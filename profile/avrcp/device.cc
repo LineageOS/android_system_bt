@@ -98,6 +98,19 @@ void Device::VendorPacketHandler(uint8_t label,
       case CommandPdu::REGISTER_NOTIFICATION: {
         auto register_notification =
             Packet::Specialize<RegisterNotificationResponse>(pkt);
+
+        if (!register_notification->IsValid()) {
+          DEVICE_LOG(WARNING) << __func__ << ": Request packet is not valid";
+          auto response =
+              RejectBuilder::MakeBuilder(pkt->GetCommandPdu(),
+                                         Status::INVALID_PARAMETER);
+          send_message(label, false, std::move(response));
+          active_labels_.erase(label);
+          volume_interface_ = nullptr;
+          volume_ = VOL_REGISTRATION_FAILED;
+          return;
+        }
+
         if (register_notification->GetEvent() != Event::VOLUME_CHANGED) {
           DEVICE_LOG(WARNING)
               << __func__ << ": Unhandled register notification received: "
@@ -335,16 +348,6 @@ void Device::RegisterVolumeChanged() {
 void Device::HandleVolumeChanged(
     uint8_t label, const std::shared_ptr<RegisterNotificationResponse>& pkt) {
   DEVICE_VLOG(1) << __func__ << ": interim=" << pkt->IsInterim();
-
-  if (!pkt->IsValid()) {
-    DEVICE_LOG(WARNING) << __func__ << ": Request packet is not valid";
-    auto response = RejectBuilder::MakeBuilder(pkt->GetCommandPdu(), Status::INVALID_PARAMETER);
-    send_message(label, false, std::move(response));
-    active_labels_.erase(label);
-    volume_interface_ = nullptr;
-    volume_ = VOL_REGISTRATION_FAILED;
-    return;
-  }
 
   if (volume_interface_ == nullptr) return;
 
