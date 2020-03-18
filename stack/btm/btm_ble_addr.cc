@@ -72,7 +72,7 @@ void btm_gen_resolve_paddr_low(const RawAddress& address) {
   p_cb->own_addr_type = BLE_ADDR_RANDOM;
 
   /* start a periodical timer to refresh random addr */
-  uint64_t interval_ms = BTM_BLE_PRIVATE_ADDR_INT_MS;
+  uint64_t interval_ms = btm_get_next_private_addrress_interval_ms();
 #if (BTM_BLE_CONFORMANCE_TESTING == TRUE)
   interval_ms = btm_cb.ble_ctr_cb.rpa_tout * 1000;
 #endif
@@ -91,6 +91,14 @@ void btm_gen_resolvable_private_addr(
         cb.Run(generate_rpa_from_irk_and_rand(irk, random));
       },
       std::move(cb)));
+}
+
+uint64_t btm_get_next_private_addrress_interval_ms() {
+  /* 7 minutes minimum, 15 minutes maximum for random address refreshing */
+  const uint64_t interval_min_ms = (7 * 60 * 1000);
+  const uint64_t interval_random_part_max_ms = (8 * 60 * 1000);
+
+  return interval_min_ms + std::rand() % interval_random_part_max_ms;
 }
 
 /*******************************************************************************
