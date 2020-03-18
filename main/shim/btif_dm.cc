@@ -45,26 +45,33 @@ class ShimUi : public security::UI {
                            std::string name, uint32_t numeric_value) {
     bt_bdname_t legacy_name{0};
     memcpy(legacy_name.name, name.data(), name.length());
-    callback_(RawAddress(address.GetAddress().address), legacy_name, ((0x1F) << 8) /* COD_UNCLASSIFIED*/ , BT_SSP_VARIANT_PASSKEY_CONFIRMATION, numeric_value);
+    callback_(ToRawAddress(address.GetAddress()), legacy_name,
+              ((0x1F) << 8) /* COD_UNCLASSIFIED*/,
+              BT_SSP_VARIANT_PASSKEY_CONFIRMATION, numeric_value);
   }
 
   void DisplayYesNoDialog(const bluetooth::hci::AddressWithType& address,
                           std::string name) {
     bt_bdname_t legacy_name{0};
     memcpy(legacy_name.name, name.data(), name.length());
-    callback_(RawAddress(address.GetAddress().address), legacy_name, ((0x1F) << 8) /* COD_UNCLASSIFIED*/ , BT_SSP_VARIANT_CONSENT, 0);
+    callback_(ToRawAddress(address.GetAddress()), legacy_name,
+              ((0x1F) << 8) /* COD_UNCLASSIFIED*/, BT_SSP_VARIANT_CONSENT, 0);
   }
 
   void DisplayEnterPasskeyDialog(const bluetooth::hci::AddressWithType& address, std::string name) {
     bt_bdname_t legacy_name{0};
     memcpy(legacy_name.name, name.data(), name.length());
-    callback_(RawAddress(address.GetAddress().address), legacy_name, ((0x1F) << 8) /* COD_UNCLASSIFIED*/ , BT_SSP_VARIANT_PASSKEY_ENTRY, 0);
+    callback_(ToRawAddress(address.GetAddress()), legacy_name,
+              ((0x1F) << 8) /* COD_UNCLASSIFIED*/, BT_SSP_VARIANT_PASSKEY_ENTRY,
+              0);
   }
 
   void DisplayPasskey(const bluetooth::hci::AddressWithType& address, std::string name, uint32_t passkey) {
     bt_bdname_t legacy_name{0};
     memcpy(legacy_name.name, name.data(), name.length());
-    callback_(RawAddress(address.GetAddress().address), legacy_name, ((0x1F) << 8) /* COD_UNCLASSIFIED*/ , BT_SSP_VARIANT_PASSKEY_NOTIFICATION, passkey);
+    callback_(ToRawAddress(address.GetAddress()), legacy_name,
+              ((0x1F) << 8) /* COD_UNCLASSIFIED*/,
+              BT_SSP_VARIANT_PASSKEY_NOTIFICATION, passkey);
   }
 
   void SetLegacyCallback(std::function<void(RawAddress, bt_bdname_t, uint32_t, bt_ssp_variant_t, uint32_t)> callback) {
@@ -99,15 +106,15 @@ class ShimBondListener : public security::ISecurityManagerListener {
     bond_state_none_cb_ = bond_state_none_cb;
   }
   void OnDeviceBonded(bluetooth::hci::AddressWithType device) {
-    bond_state_bonded_cb_(RawAddress(device.GetAddress().address));
+    bond_state_bonded_cb_(ToRawAddress(device.GetAddress()));
   }
 
   void OnDeviceUnbonded(bluetooth::hci::AddressWithType device) {
-    bond_state_none_cb_(RawAddress(device.GetAddress().address));
+    bond_state_none_cb_(ToRawAddress(device.GetAddress()));
   }
 
   void OnDeviceBondFailed(bluetooth::hci::AddressWithType device) {
-    bond_state_none_cb_(RawAddress(device.GetAddress().address));
+    bond_state_none_cb_(ToRawAddress(device.GetAddress()));
   }
 
   std::function<void(RawAddress)> bond_state_bonding_cb_;
