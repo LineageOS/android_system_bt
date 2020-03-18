@@ -57,6 +57,7 @@ SecurityManagerChannel::~SecurityManagerChannel() {
   if (fixed_channel_service_ != nullptr) {
     fixed_channel_service_->Unregister(common::Bind(&SecurityManagerChannel::OnUnregistered, common::Unretained(this)),
                                        handler_);
+    fixed_channel_service_.reset();
   }
 }
 
@@ -132,7 +133,6 @@ void SecurityManagerChannel::OnConnectionFail(hci::Address address,
             result.connection_result_code);
   auto entry = fixed_channel_map_.find(address);
   if (entry != fixed_channel_map_.end()) {
-    entry->second->Release();
     entry->second.reset();
     fixed_channel_map_.erase(entry);
   }
@@ -144,7 +144,6 @@ void SecurityManagerChannel::OnConnectionClose(hci::Address address, hci::ErrorC
   LOG_ERROR("Connection closed due to: %s", hci::ErrorCodeText(error_code).c_str());
   auto entry = fixed_channel_map_.find(address);
   if (entry != fixed_channel_map_.end()) {
-    entry->second->Release();
     entry->second.reset();
     fixed_channel_map_.erase(entry);
   }
