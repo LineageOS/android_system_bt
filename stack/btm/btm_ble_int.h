@@ -139,6 +139,7 @@ extern void btm_gen_non_resolvable_private_addr(tBTM_BLE_ADDR_CBACK* p_cback,
 extern tBTM_SEC_DEV_REC* btm_ble_resolve_random_addr(
     const RawAddress& random_bda);
 extern void btm_gen_resolve_paddr_low(const RawAddress& address);
+extern uint64_t btm_get_next_private_addrress_interval_ms();
 
 /*  privacy function */
 #if (BLE_PRIVACY_SPT == TRUE)
