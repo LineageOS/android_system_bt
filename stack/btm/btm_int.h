@@ -59,7 +59,7 @@ extern tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda,
 
 extern void btm_process_remote_name(const RawAddress* bda, BD_NAME name,
                                     uint16_t evt_len, uint8_t hci_status);
-extern void btm_inq_rmt_name_failed(void);
+extern void btm_inq_rmt_name_failed_cancelled(void);
 extern void btm_inq_remote_name_timer_timeout(void* data);
 
 /* Inquiry related functions */
