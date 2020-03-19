@@ -143,6 +143,9 @@ cc_binary {
     generated_headers: [
         "BluetoothGeneratedPackets_h",
         "BluetoothFacadeGeneratedStub_h",
+        // Needed here to guarantee that generated zip file is created before
+        // bluetooth_cert_tests.zip is packaged
+        "BluetoothFacadeAndCertGeneratedStub_py",
     ],
     generated_sources: [
         "BluetoothFacadeGeneratedStub_cc",
@@ -464,25 +467,23 @@ genrule {
         "protoc-gen-grpc-python-plugin",
         "soong_zip",
     ],
-    cmd: "mkdir -p $(genDir)/system/bt/gd && " +
-        "$(location aprotoc) -Isystem/bt/gd -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-python-plugin) $(in) --grpc_out=$(genDir)/system/bt/gd --python_out=$(genDir)/system/bt/gd && " +
-        "touch $(genDir)/system/bt/gd/facade/__init__.py && " +
-        "touch $(genDir)/system/bt/gd/hal/__init__.py && " +
-        "touch $(genDir)/system/bt/gd/hci/__init__.py && " +
-        "touch $(genDir)/system/bt/gd/hci/facade/__init__.py && " +
-        "touch $(genDir)/system/bt/gd/l2cap/classic/__init__.py && " +
-        "touch $(genDir)/system/bt/gd/l2cap/le/__init__.py && " +
-        "touch $(genDir)/system/bt/gd/neighbor/facade/__init__.py && " +
-        "touch $(genDir)/system/bt/gd/security/__init__.py && " +
-        "$(location soong_zip) -C $(genDir) -D $(genDir) -o $(out)",
+    cmd: "mkdir -p $(genDir)/files && " +
+        "$(location aprotoc) -Isystem/bt/gd -Iexternal/protobuf/src --plugin=protoc-gen-grpc=$(location protoc-gen-grpc-python-plugin) $(in) --grpc_out=$(genDir)/files --python_out=$(genDir)/files && " +
+        "mkdir -p $(genDir)/files/cert && " +
+        "touch $(genDir)/files/cert/__init__.py && " +
+        "touch $(genDir)/files/facade/__init__.py && " +
+        "touch $(genDir)/files/hal/__init__.py && " +
+        "touch $(genDir)/files/hci/__init__.py && " +
+        "touch $(genDir)/files/hci/facade/__init__.py && " +
+        "touch $(genDir)/files/l2cap/classic/__init__.py && " +
+        "touch $(genDir)/files/l2cap/le/__init__.py && " +
+        "touch $(genDir)/files/neighbor/facade/__init__.py && " +
+        "touch $(genDir)/files/security/__init__.py && " +
+        "$(location soong_zip) -C $(genDir)/files -D $(genDir)/files -o $(out)",
     srcs: [
         ":BluetoothFacadeProto",
     ],
     out: ["bluetooth_cert_generated_py.zip"],
-    dist: {
-        targets: ["bluetooth_stack_with_facade"],
-    },
-
 }
 
 cc_defaults {
