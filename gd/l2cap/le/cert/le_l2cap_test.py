@@ -273,6 +273,19 @@ class LeL2capTest(GdFacadeOnlyBaseTestClass):
         assertThat(response_future.get_status()).isEqualTo(
             LeCreditBasedConnectionResponseResult.LE_PSM_NOT_SUPPORTED)
 
+    def test_request_refused_due_to_unacceptable_parameters_initiator(self):
+        """
+        L2CAP/LE/CFC/BV-21-C
+        """
+        self._setup_link_from_cert()
+        response_future = self.dut_l2cap.connect_coc_to_cert(psm=0x33)
+        self.cert_l2cap.verify_and_respond_open_channel_from_remote(
+            psm=0x33,
+            result=LeCreditBasedConnectionResponseResult.UNACCEPTABLE_PARAMETERS
+        )
+        assertThat(response_future.get_status()).isEqualTo(
+            LeCreditBasedConnectionResponseResult.UNACCEPTABLE_PARAMETERS)
+
     def test_credit_exchange_exceed_initial_credits(self):
         """
         L2CAP/LE/CFC/BI-01-C
