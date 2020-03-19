@@ -68,6 +68,8 @@ alarm_t* alarm_new(const char* name) { return nullptr; }
 void alarm_free(alarm_t* alarm) {}
 const controller_t* controller_get_interface() { return nullptr; }
 
+uint64_t btm_get_next_private_addrress_interval_ms() { return 15 * 60 * 1000; }
+
 namespace {
 void DoNothing(uint8_t) {}
 
