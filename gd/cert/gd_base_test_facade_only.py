@@ -21,8 +21,12 @@ from facade import rootservice_pb2 as facade_rootservice
 import importlib
 import logging
 import os
+from pathlib import Path
 import signal
 import subprocess
+
+# GD root is the parent directory of cert
+GD_ROOT = str(Path(__file__).absolute().parents[1])
 
 
 def is_subprocess_alive(process, timeout_seconds=1):
@@ -49,9 +53,7 @@ class GdFacadeOnlyBaseTestClass(BaseTestClass):
             self.rootcanal_logs = open(rootcanal_logpath, 'w')
             rootcanal_config = self.controller_configs['rootcanal']
             rootcanal_hci_port = str(rootcanal_config.get("hci_port", "6402"))
-            rootcanal = os.path.join(
-                os.getcwd(),
-                "out/host/linux-x86/nativetest64/root-canal/root-canal")
+            rootcanal = os.path.join(GD_ROOT, "root-canal")
             self.rootcanal_process = subprocess.Popen(
                 [
                     rootcanal,
@@ -59,7 +61,7 @@ class GdFacadeOnlyBaseTestClass(BaseTestClass):
                     rootcanal_hci_port,
                     str(rootcanal_config.get("link_layer_port", "6403"))
                 ],
-                cwd=os.getcwd(),
+                cwd=GD_ROOT,
                 env=os.environ.copy(),
                 stdout=self.rootcanal_logs,
                 stderr=self.rootcanal_logs)

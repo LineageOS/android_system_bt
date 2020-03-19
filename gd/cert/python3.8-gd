@@ -1,4 +1,0 @@
-#! /bin/bash
-BLUETOOTH_CERT_TEST_ENV=$ANDROID_BUILD_TOP/out/dist/bluetooth_cert_test_env
-PYTHONPATH=$BLUETOOTH_CERT_TEST_ENV/out/host/linux-x86/lib64:$BLUETOOTH_CERT_TEST_ENV/system/bt/gd:$PYTHONPATH \
- python3.8 "$@"
