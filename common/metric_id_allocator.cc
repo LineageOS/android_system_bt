@@ -29,7 +29,7 @@ namespace common {
 
 const std::string MetricIdAllocator::LOGGING_TAG = "BluetoothMetricIdAllocator";
 const size_t MetricIdAllocator::kMaxNumUnpairedDevicesInMemory = 200;
-const size_t MetricIdAllocator::kMaxNumPairedDevicesInMemory = 400;
+const size_t MetricIdAllocator::kMaxNumPairedDevicesInMemory = 65000;
 const int MetricIdAllocator::kMinId = 1;
 const int MetricIdAllocator::kMaxId = 65534;  // 2^16 - 2
 
@@ -43,13 +43,12 @@ static_assert((MetricIdAllocator::kMaxNumUnpairedDevicesInMemory +
 
 MetricIdAllocator::MetricIdAllocator()
     : paired_device_cache_(kMaxNumPairedDevicesInMemory, LOGGING_TAG,
-                           [this](RawAddress dummy, int to_remove) {
-                             this->id_set_.erase(to_remove);
+                           [this](RawAddress mac_address, int id) {
+                             ForgetDevicePostprocess(mac_address, id);
                            }),
-      temporary_device_cache_(kMaxNumUnpairedDevicesInMemory, LOGGING_TAG,
-                              [this](RawAddress dummy, int to_remove) {
-                                this->id_set_.erase(to_remove);
-                              }) {}
+      temporary_device_cache_(
+          kMaxNumUnpairedDevicesInMemory, LOGGING_TAG,
+          [this](RawAddress dummy, int id) { this->id_set_.erase(id); }) {}
 
 bool MetricIdAllocator::Init(
     const std::unordered_map<RawAddress, int>& paired_device_map,
@@ -157,16 +156,24 @@ bool MetricIdAllocator::SaveDevice(const RawAddress& mac_address) {
 }
 
 // call this function when a device is forgotten
-bool MetricIdAllocator::ForgetDevice(const RawAddress& mac_address) {
+void MetricIdAllocator::ForgetDevice(const RawAddress& mac_address) {
   std::lock_guard<std::mutex> lock(id_allocator_mutex_);
   int id = 0;
   bool success = paired_device_cache_.Get(mac_address, &id);
   success &= paired_device_cache_.Remove(mac_address);
   if (success) {
-    id_set_.erase(id);
-    success = forget_device_callback_(mac_address, id);
+    ForgetDevicePostprocess(mac_address, id);
   }
-  return success;
+}
+
+bool MetricIdAllocator::IsValidId(const int id) {
+  return id >= kMinId && id <= kMaxId;
+}
+
+void MetricIdAllocator::ForgetDevicePostprocess(const RawAddress& mac_address,
+                                                const int id) {
+  id_set_.erase(id);
+  forget_device_callback_(mac_address, id);
 }
 
 }  // namespace common
