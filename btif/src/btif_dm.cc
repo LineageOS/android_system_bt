@@ -60,6 +60,7 @@
 #include "btif_storage.h"
 #include "btif_util.h"
 #include "btu.h"
+#include "common/metric_id_allocator.h"
 #include "common/metrics.h"
 #include "device/include/controller.h"
 #include "device/include/interop.h"
@@ -74,6 +75,7 @@
 #include "stack_config.h"
 
 using bluetooth::Uuid;
+using bluetooth::common::MetricIdAllocator;
 /******************************************************************************
  *  Constants & Macros
  *****************************************************************************/
@@ -293,6 +295,15 @@ static void btif_dm_data_free(uint16_t event, tBTA_DM_SEC* dm_sec) {
 static void btif_dm_send_bond_state_changed(RawAddress address, bt_bond_state_t bond_state) {
   do_in_jni_thread(FROM_HERE, base::BindOnce([](RawAddress address, bt_bond_state_t bond_state) {
     btif_stats_add_bond_event(address, BTIF_DM_FUNC_BOND_STATE_CHANGED, bond_state);
+    if (bond_state == BT_BOND_STATE_NONE) {
+      MetricIdAllocator::GetInstance().ForgetDevice(address);
+    } else if (bond_state == BT_BOND_STATE_BONDED) {
+      MetricIdAllocator::GetInstance().AllocateId(address);
+      if (!MetricIdAllocator::GetInstance().SaveDevice(address)) {
+        LOG(FATAL) << __func__ << ": Fail to save metric id for device "
+                   << address;
+      }
+    }
     HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, BT_STATUS_SUCCESS, &address, bond_state);
   }, address, bond_state));
 }
@@ -545,6 +556,15 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
   BTIF_TRACE_DEBUG("%s: state=%d, prev_state=%d, sdp_attempts = %d", __func__,
                    state, pairing_cb.state, pairing_cb.sdp_attempts);
 
+  if (state == BT_BOND_STATE_NONE) {
+    MetricIdAllocator::GetInstance().ForgetDevice(bd_addr);
+  } else if (state == BT_BOND_STATE_BONDED) {
+    MetricIdAllocator::GetInstance().AllocateId(bd_addr);
+    if (!MetricIdAllocator::GetInstance().SaveDevice(bd_addr)) {
+      LOG(FATAL) << __func__ << ": Fail to save metric id for device "
+                 << bd_addr;
+    }
+  }
   auto tmp = bd_addr;
   HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, status, &tmp, state);
 
