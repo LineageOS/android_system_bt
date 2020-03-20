@@ -170,9 +170,9 @@ TEST(BluetoothMetricIdAllocatorTest, MetricIdAllocatorMainTest1) {
   EXPECT_EQ(dummy, 176);
 
   // forget
-  EXPECT_FALSE(allocator.ForgetDevice(RawAddress({0, 0, 0, 0, 0, 1})));
+  allocator.ForgetDevice(RawAddress({0, 0, 0, 0, 0, 1}));
   EXPECT_EQ(dummy, 176);
-  EXPECT_TRUE(allocator.ForgetDevice(RawAddress({0, 0, 0, 0, 0, 2})));
+  allocator.ForgetDevice(RawAddress({0, 0, 0, 0, 0, 2}));
   EXPECT_EQ(dummy, 88);
 
   EXPECT_TRUE(allocator.Close());
@@ -183,7 +183,7 @@ TEST(BluetoothMetricIdAllocatorTest, MetricIdAllocatorFullPairedMap) {
   // preset a full map
   std::unordered_map<RawAddress, int> paired_device_map =
       generateAddresses(MetricIdAllocator::kMaxNumPairedDevicesInMemory);
-  int dummy = 22;
+  int dummy = 243;
   int* pointer = &dummy;
   MetricIdAllocator::Callback save_callback = [pointer](const RawAddress&,
                                                         const int) {
@@ -192,7 +192,7 @@ TEST(BluetoothMetricIdAllocatorTest, MetricIdAllocatorFullPairedMap) {
   };
   MetricIdAllocator::Callback forget_callback = [pointer](const RawAddress&,
                                                           const int) {
-    *pointer = *pointer / 2;
+    *pointer = *pointer / 3;
     return true;
   };
 
@@ -222,7 +222,8 @@ TEST(BluetoothMetricIdAllocatorTest, MetricIdAllocatorFullPairedMap) {
 
   // save it and make sure the callback is called
   EXPECT_TRUE(allocator.SaveDevice(kthAddress(key)));
-  EXPECT_EQ(dummy, 44);
+  EXPECT_EQ(dummy, 162);  // one key is evicted, another key is saved so *2/3
+
   // paired: 1, 2 ... 199, 200,
   // scanned:
 
@@ -233,13 +234,13 @@ TEST(BluetoothMetricIdAllocatorTest, MetricIdAllocatorFullPairedMap) {
   // key == 200
   // should fail, since id of device is not allocated
   EXPECT_FALSE(allocator.SaveDevice(kthAddress(key + 1)));
-  EXPECT_EQ(dummy, 44);
+  EXPECT_EQ(dummy, 162);
   // paired: 1, 2 ... 199, 200,
   // scanned: 0
 
   EXPECT_EQ(allocator.AllocateId(kthAddress(key + 1)), id++);
   EXPECT_TRUE(allocator.SaveDevice(kthAddress(key + 1)));
-  EXPECT_EQ(dummy, 88);
+  EXPECT_EQ(dummy, 108);  // one key is evicted, another key is saved so *2/3,
   // paired: 2 ... 199, 200, 201
   // scanned: 0
 
@@ -253,23 +254,24 @@ TEST(BluetoothMetricIdAllocatorTest, MetricIdAllocatorFullPairedMap) {
   // paired: 2 ... 199, 200, 201,
   // scanned: 0, 1, 202, 203
 
-  dummy = 44;
+  dummy = 9;
   EXPECT_TRUE(allocator.SaveDevice(kthAddress(key + 2)));
-  EXPECT_EQ(dummy, 88);
+  EXPECT_EQ(dummy, 6);  // one key is evicted, another key is saved so *2/3,
   EXPECT_TRUE(allocator.SaveDevice(kthAddress(key + 3)));
-  EXPECT_EQ(dummy, 176);
+  EXPECT_EQ(dummy, 4);  // one key is evicted, another key is saved so *2/3,
   // paired: 4 ... 199, 200, 201, 202, 203
   // scanned: 0, 1
 
   // should fail, since id had been saved
   EXPECT_FALSE(allocator.SaveDevice(kthAddress(key + 2)));
-  EXPECT_EQ(dummy, 176);
+  EXPECT_EQ(dummy, 4);
 
+  dummy = 27;
   // forget
-  EXPECT_FALSE(allocator.ForgetDevice(kthAddress(key + 200)));
-  EXPECT_EQ(dummy, 176);
-  EXPECT_TRUE(allocator.ForgetDevice(kthAddress(key + 2)));
-  EXPECT_EQ(dummy, 88);
+  allocator.ForgetDevice(kthAddress(key + 200));
+  EXPECT_EQ(dummy, 27);  // should fail, no such a key
+  allocator.ForgetDevice(kthAddress(key + 2));
+  EXPECT_EQ(dummy, 9);
   // paired: 4 ... 199, 200, 201, 203
   // scanned: 0, 1
 
@@ -281,25 +283,25 @@ TEST(BluetoothMetricIdAllocatorTest, MetricIdAllocatorFullPairedMap) {
   // scanned: 0, 1, 202, 204, 205
 
   EXPECT_TRUE(allocator.SaveDevice(kthAddress(key + 2)));
-  EXPECT_EQ(dummy, 176);
+  EXPECT_EQ(dummy, 18);  // no key is evicted, a key is saved so *2,
   EXPECT_FALSE(allocator.SaveDevice(kthAddress(key + 3)));
-  EXPECT_EQ(dummy, 176);
+  EXPECT_EQ(dummy, 18);  // no such a key in scanned
   EXPECT_TRUE(allocator.SaveDevice(kthAddress(key + 4)));
-  EXPECT_EQ(dummy, 352);
-  // paired: 6 ... 199, 200, 201, 203, 202, 204
+  EXPECT_EQ(dummy, 12);  // one key is evicted, another key is saved so *2/3,
+  // paired: 5 6 ... 199, 200, 201, 203, 202, 204
   // scanned: 0, 1, 205
 
   // verify paired:
-  for (key = 6; key <= 199; key++) {
-    dummy = 10;
-    EXPECT_TRUE(allocator.ForgetDevice(kthAddress(key)));
-    EXPECT_EQ(dummy, 5);
+  for (key = 5; key <= 199; key++) {
+    dummy = 3;
+    allocator.ForgetDevice(kthAddress(key));
+    EXPECT_EQ(dummy, 1);
   }
   for (size_t k = MetricIdAllocator::kMaxNumPairedDevicesInMemory;
        k <= MetricIdAllocator::kMaxNumPairedDevicesInMemory + 4; k++) {
-    dummy = 10;
-    EXPECT_TRUE(allocator.ForgetDevice(kthAddress(k)));
-    EXPECT_EQ(dummy, 5);
+    dummy = 3;
+    allocator.ForgetDevice(kthAddress(k));
+    EXPECT_EQ(dummy, 1);
   }
 
   // verify scanned
@@ -397,14 +399,15 @@ TEST(BluetoothMetricIdAllocatorTest, MetricIdAllocatorMultiThreadPressureTest) {
   // make sure no deadlock
   std::vector<std::thread> workers;
   for (int key = 0;
-       key < static_cast<int>(MetricIdAllocator::kMaxNumPairedDevicesInMemory);
+       key <
+       static_cast<int>(MetricIdAllocator::kMaxNumUnpairedDevicesInMemory);
        key++) {
     workers.push_back(std::thread([key]() {
       auto& allocator = MetricIdAllocator::GetInstance();
       RawAddress fake_mac_address = kthAddress(key);
       allocator.AllocateId(fake_mac_address);
       EXPECT_TRUE(allocator.SaveDevice(fake_mac_address));
-      EXPECT_TRUE(allocator.ForgetDevice(fake_mac_address));
+      allocator.ForgetDevice(fake_mac_address);
     }));
   }
   for (auto& worker : workers) {
