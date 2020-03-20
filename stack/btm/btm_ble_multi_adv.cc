@@ -24,6 +24,7 @@
 #include "ble_advertiser.h"
 #include "ble_advertiser_hci_interface.h"
 #include "btm_int_types.h"
+#include "stack/btm/btm_ble_int.h"
 
 #include <string.h>
 #include <queue>
@@ -257,7 +258,7 @@ class BleAdvertisingManagerImpl
               p_inst->own_address = bda;
 
               alarm_set_on_mloop(p_inst->adv_raddr_timer,
-                                 BTM_BLE_PRIVATE_ADDR_INT_MS,
+                                 btm_get_next_private_addrress_interval_ms(),
                                  btm_ble_adv_raddr_timer_timeout, p_inst);
               cb.Run(p_inst->inst_id, BTM_BLE_MULTI_ADV_SUCCESS);
             },
