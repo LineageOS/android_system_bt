@@ -293,7 +293,8 @@ static BOOLEAN cmac_generate_subkey(BT_OCTET16 key)
 BOOLEAN aes_cipher_msg_auth_code(BT_OCTET16 key, UINT8 *input, UINT16 length,
                                  UINT16 tlen, UINT8 *p_signature)
 {
-    UINT16  len, diff;
+    UINT32  len;
+    UINT16  diff;
     UINT16  n = (length + BT_OCTET16_LEN - 1) / BT_OCTET16_LEN;       /* n is number of rounds */
     BOOLEAN ret = FALSE;
 
