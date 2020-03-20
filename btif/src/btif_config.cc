@@ -29,9 +29,11 @@
 #include <string.h>
 #include <time.h>
 #include <unistd.h>
+#include <functional>
 #include <mutex>
 #include <sstream>
 #include <string>
+#include <unordered_map>
 
 #include "bt_types.h"
 #include "btcore/include/module.h"
@@ -41,6 +43,7 @@
 //#include "btif_keystore.h"
 #include "btif_util.h"
 #include "common/address_obfuscator.h"
+#include "common/metric_id_allocator.h"
 #include "main/shim/config.h"
 #include "main/shim/shim.h"
 #include "osi/include/alarm.h"
@@ -50,6 +53,7 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
+#include "raw_address.h"
 
 #define BT_CONFIG_SOURCE_TAG_NUM 1010001
 
@@ -68,8 +72,11 @@ static const char* TIME_STRING_FORMAT = "%Y-%m-%d %H:%M:%S";
 
 #define BT_CONFIG_METRICS_SECTION "Metrics"
 #define BT_CONFIG_METRICS_SALT_256BIT "Salt256Bit"
+#define BT_CONFIG_METRICS_ID_KEY "MetricsId"
+
 // using bluetooth::BtifKeystore;
 using bluetooth::common::AddressObfuscator;
+using bluetooth::common::MetricIdAllocator;
 
 // TODO(armansito): Find a better way than searching by a hardcoded path.
 #if defined(OS_GENERIC)
@@ -191,6 +198,63 @@ static void read_or_set_metrics_salt() {
   AddressObfuscator::GetInstance()->Initialize(metrics_salt);
 }
 
+/**
+ * Initialize metric id allocator by reading metric_id from config by mac
+ * address. If there is no metric id for a mac address, then allocate it a new
+ * metric id.
+ */
+static void init_metric_id_allocator() {
+  std::unordered_map<RawAddress, int> paired_device_map;
+
+  // When user update the system, there will be devices paired with older
+  // version of android without a metric id.
+  std::vector<RawAddress> addresses_without_id;
+
+  for (auto& section : btif_config_sections()) {
+    auto& section_name = section.name;
+    RawAddress mac_address;
+    if (!RawAddress::FromString(section_name, mac_address)) {
+      continue;
+    }
+    // if the section name is a mac address
+    bool is_valid_id_found = false;
+    if (btif_config_exist(section_name, BT_CONFIG_METRICS_ID_KEY)) {
+      // there is one metric id under this mac_address
+      int id = 0;
+      btif_config_get_int(section_name, BT_CONFIG_METRICS_ID_KEY, &id);
+      if (MetricIdAllocator::IsValidId(id)) {
+        paired_device_map[mac_address] = id;
+        is_valid_id_found = true;
+      }
+    }
+    if (!is_valid_id_found) {
+      addresses_without_id.push_back(mac_address);
+    }
+  }
+
+  // Initialize MetricIdAllocator
+  MetricIdAllocator::Callback save_device_callback =
+      [](const RawAddress& address, const int id) {
+        return btif_config_set_int(address.ToString(), BT_CONFIG_METRICS_ID_KEY,
+                                   id);
+      };
+  MetricIdAllocator::Callback forget_device_callback =
+      [](const RawAddress& address, const int id) {
+        return btif_config_remove(address.ToString(), BT_CONFIG_METRICS_ID_KEY);
+      };
+  if (!MetricIdAllocator::GetInstance().Init(
+          paired_device_map, std::move(save_device_callback),
+          std::move(forget_device_callback))) {
+    LOG(FATAL) << __func__ << "Failed to initialize MetricIdAllocator";
+  }
+
+  // Add device_without_id
+  for (auto& address : addresses_without_id) {
+    MetricIdAllocator::GetInstance().AllocateId(address);
+    MetricIdAllocator::GetInstance().SaveDevice(address);
+  }
+}
+
 static std::recursive_mutex config_lock;  // protects operations on |config|.
 static std::unique_ptr<config_t> config;
 static alarm_t* config_timer;
@@ -262,6 +326,9 @@ static future_t* init(void) {
   // Read or set metrics 256 bit hashing salt
   read_or_set_metrics_salt();
 
+  // Initialize MetricIdAllocator
+  init_metric_id_allocator();
+
   // TODO(sharvil): use a non-wake alarm for this once we have
   // API support for it. There's no need to wake the system to
   // write back to disk.
@@ -326,6 +393,7 @@ static future_t* clean_up(void) {
   config_timer = NULL;
 
   std::unique_lock<std::recursive_mutex> lock(config_lock);
+  MetricIdAllocator::GetInstance().Close();
   config.reset();
   return future_new_immediate(FUTURE_SUCCESS);
 }
