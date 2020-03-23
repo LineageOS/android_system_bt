@@ -106,17 +106,6 @@ class L2capTest(GdFacadeOnlyBaseTestClass):
         dut_channel.send(b'abc')
         assertThat(cert_channel).emits(L2capMatchers.Data(b'abc'))
 
-    def test_fixed_channel(self):
-        self._setup_link_from_cert()
-
-        self.dut.l2cap.RegisterChannel(
-            l2cap_facade_pb2.RegisterChannelRequest(channel=2))
-        asserts.skip("FIXME: Not working")
-        self.dut.l2cap.SendL2capPacket(
-            l2cap_facade_pb2.L2capPacket(channel=2, payload=b"123"))
-
-        assertThat(self.cert_channel).emits(L2capMatchers.PartialData(b'123'))
-
     def test_receive_packet_from_unknown_channel(self):
         self._setup_link_from_cert()
 
