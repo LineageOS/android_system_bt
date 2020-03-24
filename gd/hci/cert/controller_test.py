@@ -16,14 +16,14 @@
 
 import time
 
-from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
+from cert.gd_base_test import GdBaseTestClass
 from cert.truth import assertThat
 from google.protobuf import empty_pb2 as empty_proto
 from facade import rootservice_pb2 as facade_rootservice
 from hci.facade import controller_facade_pb2 as controller_facade
 
 
-class ControllerTest(GdFacadeOnlyBaseTestClass):
+class ControllerTest(GdBaseTestClass):
 
     def setup_class(self):
         super().setup_class(
