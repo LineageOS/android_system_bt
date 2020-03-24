@@ -14,7 +14,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
+from cert.gd_base_test import GdBaseTestClass
 from cert.event_stream import EventStream
 from google.protobuf import empty_pb2 as empty_proto
 from facade import rootservice_pb2 as facade_rootservice
@@ -26,7 +26,7 @@ import bluetooth_packets_python3 as bt_packets
 from bluetooth_packets_python3 import hci_packets
 
 
-class LeAclManagerTest(GdFacadeOnlyBaseTestClass):
+class LeAclManagerTest(GdBaseTestClass):
 
     def setup_class(self):
         super().setup_class(dut_module='HCI_INTERFACES', cert_module='HCI')

@@ -17,10 +17,6 @@
 from acts.base_test import BaseTestClass
 
 import importlib
-import logging
-import os
-import signal
-import subprocess
 
 
 class PTSBaseTestClass(BaseTestClass):
