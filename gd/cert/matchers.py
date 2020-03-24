@@ -20,7 +20,6 @@ from bluetooth_packets_python3.l2cap_packets import CommandCode, LeCommandCode
 from bluetooth_packets_python3.l2cap_packets import ConnectionResponseResult
 from bluetooth_packets_python3.l2cap_packets import InformationRequestInfoType
 from bluetooth_packets_python3.l2cap_packets import LeCreditBasedConnectionResponseResult
-import logging
 
 
 class L2capMatchers(object):

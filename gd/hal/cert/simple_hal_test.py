@@ -16,7 +16,7 @@
 
 from datetime import timedelta
 
-from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
+from cert.gd_base_test import GdBaseTestClass
 from cert.event_stream import EventStream
 from cert.truth import assertThat
 from google.protobuf import empty_pb2
@@ -26,7 +26,7 @@ from bluetooth_packets_python3 import hci_packets
 import bluetooth_packets_python3 as bt_packets
 
 
-class SimpleHalTest(GdFacadeOnlyBaseTestClass):
+class SimpleHalTest(GdBaseTestClass):
 
     def setup_class(self):
         super().setup_class(dut_module='HAL', cert_module='HAL')

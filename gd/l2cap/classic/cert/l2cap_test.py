@@ -17,7 +17,7 @@ import time
 from datetime import timedelta
 from mobly import asserts
 
-from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
+from cert.gd_base_test import GdBaseTestClass
 from cert.event_stream import EventStream
 from cert.truth import assertThat
 from cert.closable import safeClose
@@ -44,7 +44,7 @@ from l2cap.classic.cert.cert_l2cap import CertL2cap
 SAMPLE_PACKET = l2cap_packets.CommandRejectNotUnderstoodBuilder(1)
 
 
-class L2capTest(GdFacadeOnlyBaseTestClass):
+class L2capTest(GdBaseTestClass):
 
     def setup_class(self):
         super().setup_class(dut_module='L2CAP', cert_module='HCI_INTERFACES')

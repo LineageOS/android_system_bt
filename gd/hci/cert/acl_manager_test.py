@@ -18,7 +18,7 @@ import os
 import sys
 import logging
 
-from cert.gd_base_test_facade_only import GdFacadeOnlyBaseTestClass
+from cert.gd_base_test import GdBaseTestClass
 from cert.event_stream import EventStream
 from cert.truth import assertThat
 from google.protobuf import empty_pb2 as empty_proto
@@ -35,12 +35,12 @@ from cert.py_hci import PyHci
 from cert.py_acl_manager import PyAclManager
 
 
-class AclManagerTest(GdFacadeOnlyBaseTestClass):
+class AclManagerTest(GdBaseTestClass):
 
     def setup_class(self):
         super().setup_class(dut_module='HCI_INTERFACES', cert_module='HCI')
 
-    # todo: move into GdFacadeOnlyBaseTestClass, based on modules inited
+    # todo: move into GdBaseTestClass, based on modules inited
     def setup_test(self):
         super().setup_test()
         self.cert_hci = PyHci(self.cert)

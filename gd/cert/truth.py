@@ -14,20 +14,17 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import time
 from datetime import timedelta
 
 from mobly.asserts import assert_true
 from mobly.asserts import assert_false
-
 from mobly import signals
+
 from cert.event_stream import IEventStream
 from cert.event_stream import NOT_FOR_YOU_assert_event_occurs
 from cert.event_stream import NOT_FOR_YOU_assert_all_events_occur
 from cert.event_stream import NOT_FOR_YOU_assert_none_matching
 from cert.event_stream import NOT_FOR_YOU_assert_none
-
-import sys, traceback
 
 
 class ObjectSubject(object):
