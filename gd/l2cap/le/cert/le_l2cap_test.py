@@ -108,6 +108,17 @@ class LeL2capTest(GdFacadeOnlyBaseTestClass):
         dut_channel = response_future.get_channel()
         return (dut_channel, cert_channel)
 
+    def test_reject_connection_parameter_update_request(self):
+        """
+        L2CAP/LE/CPU/BI-02-C
+        """
+        self._setup_link_from_cert()
+        self.cert_l2cap.get_control_channel().send(
+            l2cap_packets.ConnectionParameterUpdateRequestBuilder(
+                2, 100, 100, 512, 100))
+        assertThat(self.cert_l2cap.get_control_channel()).emits(
+            L2capMatchers.LeCommandReject())
+
     def test_segmentation(self):
         """
         L2CAP/COS/CFC/BV-01-C
