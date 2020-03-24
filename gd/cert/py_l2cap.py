@@ -14,17 +14,17 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from google.protobuf import empty_pb2 as empty_proto
+
 from l2cap.classic import facade_pb2 as l2cap_facade_pb2
 from l2cap.le import facade_pb2 as l2cap_le_facade_pb2
 from bluetooth_packets_python3 import l2cap_packets
-from bluetooth_packets_python3.l2cap_packets import ConnectionResponseResult
 from cert.event_stream import FilteringEventStream
 from cert.event_stream import EventStream, IEventStream
 from cert.closable import Closable, safeClose
 from cert.truth import assertThat
 from cert.matchers import L2capMatchers
 from facade import common_pb2 as common
-from google.protobuf import empty_pb2 as empty_proto
 
 
 class PyL2capChannel(object):
