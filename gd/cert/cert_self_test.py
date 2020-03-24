@@ -14,18 +14,18 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+from datetime import datetime, timedelta
 import logging
 import time
 
 from mobly import asserts
-from datetime import datetime, timedelta
-from acts.base_test import BaseTestClass
-from cert.event_stream import EventStream, FilteringEventStream
-from cert.truth import assertThat
 
-# Test packet nesting
+from acts.base_test import BaseTestClass
+
 from bluetooth_packets_python3 import hci_packets
 from bluetooth_packets_python3 import l2cap_packets
+from cert.event_stream import EventStream, FilteringEventStream
+from cert.truth import assertThat
 
 
 class BogusProto:
