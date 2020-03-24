@@ -134,7 +134,7 @@ void LeSignallingManager::OnConnectionParameterUpdateRequest(SignalId signal_id,
     enqueue_buffer_->Enqueue(std::move(builder), handler_);
     return;
   }
-  link_->UpdateConnectionParameter(signal_id, interval_min, interval_max, slave_latency, timeout_multiplier);
+  link_->UpdateConnectionParameterFromRemote(signal_id, interval_min, interval_max, slave_latency, timeout_multiplier);
 }
 
 void LeSignallingManager::OnConnectionParameterUpdateResponse(SignalId signal_id,
