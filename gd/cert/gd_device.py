@@ -16,23 +16,23 @@
 
 import logging
 
-from facade import rootservice_pb2_grpc as facade_rootservice_pb2_grpc
+from google.protobuf import empty_pb2 as empty_proto
+
 from cert.gd_device_base import GdDeviceBase, replace_vars
+from cert.event_stream import EventStream
+from facade import rootservice_pb2_grpc as facade_rootservice_pb2_grpc
 from hal import facade_pb2_grpc as hal_facade_pb2_grpc
 from hci.facade import facade_pb2 as hci_facade
 from hci.facade import facade_pb2_grpc as hci_facade_pb2_grpc
 from hci.facade import acl_manager_facade_pb2_grpc
-from hci.facade import controller_facade_pb2 as controller_facade
 from hci.facade import controller_facade_pb2_grpc
 from hci.facade import le_acl_manager_facade_pb2_grpc
 from hci.facade import le_advertising_manager_facade_pb2_grpc
 from hci.facade import le_scanning_manager_facade_pb2_grpc
-from neighbor.facade import facade_pb2_grpc as neighbor_facade_pb2_grpc
 from l2cap.classic import facade_pb2_grpc as l2cap_facade_pb2_grpc
 from l2cap.le import facade_pb2_grpc as l2cap_le_facade_pb2_grpc
+from neighbor.facade import facade_pb2_grpc as neighbor_facade_pb2_grpc
 from security import facade_pb2_grpc as security_facade_pb2_grpc
-from google.protobuf import empty_pb2 as empty_proto
-from cert.event_stream import EventStream
 
 ACTS_CONTROLLER_CONFIG_NAME = "GdDevice"
 ACTS_CONTROLLER_REFERENCE_NAME = "gd_devices"
