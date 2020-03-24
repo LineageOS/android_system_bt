@@ -49,6 +49,44 @@ struct PendingCommand {
   Mtu mtu_;
   uint16_t mps_;
   uint16_t credits_;
+  uint16_t interval_min_;
+  uint16_t interval_max_;
+  uint16_t slave_latency_;
+  uint16_t timeout_multiplier_;
+
+  static PendingCommand CreditBasedConnectionRequest(SignalId signal_id, Psm psm, Cid scid, Mtu mtu, uint16_t mps,
+                                                     uint16_t initial_credits) {
+    PendingCommand pending_command;
+    pending_command.signal_id_ = signal_id;
+    pending_command.command_code_ = LeCommandCode::LE_CREDIT_BASED_CONNECTION_REQUEST;
+    pending_command.psm_ = psm;
+    pending_command.source_cid_ = scid;
+    pending_command.mtu_ = mtu;
+    pending_command.mps_ = mps;
+    pending_command.credits_ = initial_credits;
+    return pending_command;
+  }
+
+  static PendingCommand DisconnectionRequest(SignalId signal_id, Cid scid, Cid dcid) {
+    PendingCommand pending_command;
+    pending_command.signal_id_ = signal_id;
+    pending_command.command_code_ = LeCommandCode::DISCONNECTION_REQUEST;
+    pending_command.source_cid_ = scid;
+    pending_command.destination_cid_ = dcid;
+    return pending_command;
+  }
+
+  static PendingCommand ConnectionParameterUpdate(SignalId signal_id, uint16_t interval_min, uint16_t interval_max,
+                                                  uint16_t slave_latency, uint16_t timeout_multiplier) {
+    PendingCommand pending_command;
+    pending_command.signal_id_ = signal_id;
+    pending_command.command_code_ = LeCommandCode::CONNECTION_PARAMETER_UPDATE_REQUEST;
+    pending_command.interval_min_ = interval_min;
+    pending_command.interval_max_ = interval_max;
+    pending_command.slave_latency_ = slave_latency;
+    pending_command.timeout_multiplier_ = timeout_multiplier;
+    return pending_command;
+  }
 };
 
 class Link;
@@ -65,6 +103,7 @@ class LeSignallingManager {
 
   void SendDisconnectRequest(Cid local_cid, Cid remote_cid);
 
+  // Note: Since Core 4.1, LL slave can send this through HCI command.
   void SendConnectionParameterUpdateRequest(uint16_t interval_min, uint16_t interval_max, uint16_t slave_latency,
                                             uint16_t timeout_multiplier);
 
@@ -76,9 +115,9 @@ class LeSignallingManager {
 
   void OnCommandReject(LeCommandRejectView command_reject_view);
 
-  void OnConnectionParameterUpdateRequest(uint16_t interval_min, uint16_t interval_max, uint16_t slave_latency,
-                                          uint16_t timeout_multiplier);
-  void OnConnectionParameterUpdateResponse(ConnectionParameterUpdateResponseResult result);
+  void OnConnectionParameterUpdateRequest(SignalId signal_id, uint16_t interval_min, uint16_t interval_max,
+                                          uint16_t slave_latency, uint16_t timeout_multiplier);
+  void OnConnectionParameterUpdateResponse(SignalId signal_id, ConnectionParameterUpdateResponseResult result);
 
   void OnConnectionRequest(SignalId signal_id, Psm psm, Cid remote_cid, Mtu mtu, uint16_t mps,
                            uint16_t initial_credits);
