@@ -57,6 +57,7 @@ void Link::Disconnect() {
 
 void Link::UpdateConnectionParameter(SignalId signal_id, uint16_t conn_interval_min, uint16_t conn_interval_max,
                                      uint16_t conn_latency, uint16_t supervision_timeout) {
+  // TODO: If we are slave and both only support legacy update connection parameter, use L2CAP
   acl_connection_->LeConnectionUpdate(
       conn_interval_min, conn_interval_max, conn_latency, supervision_timeout,
       common::BindOnce(&Link::on_connection_update_complete, common::Unretained(this), signal_id), l2cap_handler_);
