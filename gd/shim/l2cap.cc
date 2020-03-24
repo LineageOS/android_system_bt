@@ -81,7 +81,7 @@ class ConnectionInterface {
   ConnectionInterface(ConnectionInterfaceDescriptor cid, std::unique_ptr<l2cap::classic::DynamicChannel> channel,
                       os::Handler* handler, ConnectionClosed on_closed)
       : cid_(cid), channel_(std::move(channel)), handler_(handler), on_data_ready_callback_(nullptr),
-        on_connection_closed_callback_(nullptr), address_(channel_->GetDevice()), on_closed_(on_closed) {
+        on_connection_closed_callback_(nullptr), address_(channel_->GetDevice().GetAddress()), on_closed_(on_closed) {
     channel_->RegisterOnCloseCallback(
         handler_, common::BindOnce(&ConnectionInterface::OnConnectionClosed, common::Unretained(this)));
     channel_->GetQueueUpEnd()->RegisterDequeue(
@@ -315,7 +315,8 @@ class PendingConnection {
 
   void OnConnectionOpen(std::unique_ptr<l2cap::classic::DynamicChannel> channel) {
     LOG_DEBUG("Local initiated connection is open to device:%s for psm:%hd", address_.ToString().c_str(), psm_);
-    ASSERT_LOG(address_ == channel->GetDevice(), " Expected remote device does not match actual remote device");
+    ASSERT_LOG(address_ == channel->GetDevice().GetAddress(),
+               " Expected remote device does not match actual remote device");
     pending_open_(std::move(channel));
   }
 
