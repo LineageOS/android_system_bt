@@ -1034,7 +1034,7 @@ packet RemoteNameRequestCancelComplete : CommandComplete (command_op_code = REMO
   bd_addr : Address,
 }
 
-packet ReadRemoteSupportedFeatures : DiscoveryCommand (op_code = READ_REMOTE_SUPPORTED_FEATURES) {
+packet ReadRemoteSupportedFeatures : ConnectionManagementCommand (op_code = READ_REMOTE_SUPPORTED_FEATURES) {
   connection_handle : 12,
   _reserved_ : 4,
 }
@@ -1042,7 +1042,7 @@ packet ReadRemoteSupportedFeatures : DiscoveryCommand (op_code = READ_REMOTE_SUP
 packet ReadRemoteSupportedFeaturesStatus : CommandStatus (command_op_code = READ_REMOTE_SUPPORTED_FEATURES) {
 }
 
-packet ReadRemoteExtendedFeatures : DiscoveryCommand (op_code = READ_REMOTE_EXTENDED_FEATURES) {
+packet ReadRemoteExtendedFeatures : ConnectionManagementCommand (op_code = READ_REMOTE_EXTENDED_FEATURES) {
   connection_handle : 12,
   _reserved_ : 4,
   page_number : 8,
@@ -1051,7 +1051,7 @@ packet ReadRemoteExtendedFeatures : DiscoveryCommand (op_code = READ_REMOTE_EXTE
 packet ReadRemoteExtendedFeaturesStatus : CommandStatus (command_op_code = READ_REMOTE_EXTENDED_FEATURES) {
 }
 
-packet ReadRemoteVersionInformation : DiscoveryCommand (op_code = READ_REMOTE_VERSION_INFORMATION) {
+packet ReadRemoteVersionInformation : ConnectionManagementCommand (op_code = READ_REMOTE_VERSION_INFORMATION) {
   connection_handle : 12,
   _reserved_ : 4,
 }
