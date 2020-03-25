@@ -65,7 +65,7 @@ TEST_F(L2capClassicDynamicChannelImplTest, get_device) {
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
   DynamicChannelImpl dynamic_channel_impl(0x01, kFirstDynamicChannel, kFirstDynamicChannel, &mock_classic_link,
                                           l2cap_handler_);
-  EXPECT_EQ(device.GetAddress(), dynamic_channel_impl.GetDevice());
+  EXPECT_EQ(device, dynamic_channel_impl.GetDevice());
 }
 
 TEST_F(L2capClassicDynamicChannelImplTest, close_triggers_callback) {

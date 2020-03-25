@@ -21,7 +21,7 @@
 namespace bluetooth {
 namespace l2cap {
 
-hci::Address DynamicChannel::GetDevice() const {
+hci::AddressWithType DynamicChannel::GetDevice() const {
   return impl_->GetDevice();
 }
 
