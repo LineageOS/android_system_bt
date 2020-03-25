@@ -439,7 +439,7 @@ void DualModeController::ReadLocalVersionInformation(
 void DualModeController::ReadRemoteVersionInformation(
     CommandPacketView command) {
   auto command_view = gd_hci::ReadRemoteVersionInformationView::Create(
-      gd_hci::DiscoveryCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(command));
   ASSERT(command_view.IsValid());
 
   auto status = link_layer_controller_.SendCommandToRemoteByHandle(
@@ -515,7 +515,7 @@ void DualModeController::ReadLocalExtendedFeatures(CommandPacketView command) {
 
 void DualModeController::ReadRemoteExtendedFeatures(CommandPacketView command) {
   auto command_view = gd_hci::ReadRemoteExtendedFeaturesView::Create(
-      gd_hci::DiscoveryCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(command));
   ASSERT(command_view.IsValid());
 
   auto status = link_layer_controller_.SendCommandToRemoteByHandle(
@@ -543,7 +543,7 @@ void DualModeController::SwitchRole(CommandPacketView command) {
 void DualModeController::ReadRemoteSupportedFeatures(
     CommandPacketView command) {
   auto command_view = gd_hci::ReadRemoteSupportedFeaturesView::Create(
-      gd_hci::DiscoveryCommandView::Create(command));
+      gd_hci::ConnectionManagementCommandView::Create(command));
   ASSERT(command_view.IsValid());
 
   auto status = link_layer_controller_.SendCommandToRemoteByHandle(
