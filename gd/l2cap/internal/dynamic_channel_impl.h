@@ -38,7 +38,7 @@ class DynamicChannelImpl : public l2cap::internal::ChannelImpl {
 
   virtual ~DynamicChannelImpl() = default;
 
-  hci::Address GetDevice() const;
+  hci::AddressWithType GetDevice() const;
 
   virtual void RegisterOnCloseCallback(os::Handler* user_handler, DynamicChannel::OnCloseCallback on_close_callback);
 
