@@ -154,7 +154,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
     // invoked from Facade Handler
     void on_connection_open(std::unique_ptr<DynamicChannel> channel) {
       ConnectionCompleteEvent event;
-      event.mutable_remote()->set_address(channel->GetDevice().ToString());
+      event.mutable_remote()->set_address(channel->GetDevice().GetAddress().ToString());
       facade_service_->pending_connection_complete_.OnIncomingEvent(event);
       {
         std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
@@ -175,7 +175,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
         channel_->GetQueueUpEnd()->UnregisterDequeue();
       }
       classic::ConnectionCloseEvent event;
-      event.mutable_remote()->set_address(channel_->GetDevice().ToString());
+      event.mutable_remote()->set_address(channel_->GetDevice().GetAddress().ToString());
       event.set_reason(static_cast<uint32_t>(error_code));
       facade_service_->pending_connection_close_.OnIncomingEvent(event);
       channel_ = nullptr;
