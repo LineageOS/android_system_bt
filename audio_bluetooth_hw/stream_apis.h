@@ -46,7 +46,7 @@ std::ostream& operator<<(std::ostream& os, const BluetoothStreamState& state);
 struct BluetoothStreamOut {
   // Must be the first member so it can be cast from audio_stream
   // or audio_stream_out pointer
-  audio_stream_out stream_out_;
+  audio_stream_out stream_out_{};
   ::android::bluetooth::audio::BluetoothAudioPortOut bluetooth_output_;
   int64_t last_write_time_us_;
   // Audio PCM Configs
@@ -66,7 +66,7 @@ struct BluetoothStreamOut {
 struct BluetoothAudioDevice {
   // Important: device must be first as an audio_hw_device* may be cast to
   // BluetoothAudioDevice* when the type is implicitly known.
-  audio_hw_device audio_device_;
+  audio_hw_device audio_device_{};
   // protect against device->output and stream_out from being inconsistent
   std::mutex mutex_;
   std::list<BluetoothStreamOut*> opened_stream_outs_ =
