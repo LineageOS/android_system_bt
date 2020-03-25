@@ -36,6 +36,7 @@ class SecurityInterface {
                               common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) = 0;
 
   static constexpr hci::EventCode SecurityEvents[] = {
+      hci::EventCode::ENCRYPTION_CHANGE,
       hci::EventCode::CHANGE_CONNECTION_LINK_KEY_COMPLETE,
       hci::EventCode::MASTER_LINK_KEY_COMPLETE,
       hci::EventCode::RETURN_LINK_KEYS,
