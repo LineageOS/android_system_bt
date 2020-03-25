@@ -164,6 +164,8 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     bond_events_.OnIncomingEvent(bonded);
   }
 
+  void OnEncryptionStateChanged(hci::EncryptionChangeView encryption_change_view) override {}
+
   void OnDeviceUnbonded(hci::AddressWithType peer) override {
     LOG_INFO("%s", peer.ToString().c_str());
     BondMsg unbonded;
