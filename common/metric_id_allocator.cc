@@ -146,24 +146,45 @@ int MetricIdAllocator::AllocateId(const RawAddress& mac_address) {
 bool MetricIdAllocator::SaveDevice(const RawAddress& mac_address) {
   std::lock_guard<std::mutex> lock(id_allocator_mutex_);
   int id = 0;
-  bool success = temporary_device_cache_.Get(mac_address, &id);
-  success &= temporary_device_cache_.Remove(mac_address);
-  if (success) {
-    paired_device_cache_.Put(mac_address, id);
-    success = save_id_callback_(mac_address, id);
+  if (paired_device_cache_.Get(mac_address, &id)) {
+    return true;
   }
-  return success;
+  if (!temporary_device_cache_.Get(mac_address, &id)) {
+    LOG(ERROR) << LOGGING_TAG
+               << "Failed to save device because device is not in "
+               << "temporary_device_cache_";
+    return false;
+  }
+  if (!temporary_device_cache_.Remove(mac_address)) {
+    LOG(ERROR) << LOGGING_TAG
+               << "Failed to remove device from temporary_device_cache_";
+    return false;
+  }
+  paired_device_cache_.Put(mac_address, id);
+  if (!save_id_callback_(mac_address, id)) {
+    LOG(ERROR) << LOGGING_TAG
+               << "Callback returned false after saving the device";
+    return false;
+  }
+  return true;
 }
 
 // call this function when a device is forgotten
 void MetricIdAllocator::ForgetDevice(const RawAddress& mac_address) {
   std::lock_guard<std::mutex> lock(id_allocator_mutex_);
   int id = 0;
-  bool success = paired_device_cache_.Get(mac_address, &id);
-  success &= paired_device_cache_.Remove(mac_address);
-  if (success) {
-    ForgetDevicePostprocess(mac_address, id);
+  if (!paired_device_cache_.Get(mac_address, &id)) {
+    LOG(ERROR) << LOGGING_TAG
+               << "Failed to forget device because device is not in "
+               << "paired_device_cache_";
+    return;
   }
+  if (!paired_device_cache_.Remove(mac_address)) {
+    LOG(ERROR) << LOGGING_TAG
+               << "Failed to remove device from paired_device_cache_";
+    return;
+  }
+  ForgetDevicePostprocess(mac_address, id);
 }
 
 bool MetricIdAllocator::IsValidId(const int id) {
