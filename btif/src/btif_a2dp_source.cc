@@ -397,6 +397,7 @@ static void btif_a2dp_source_start_session_delayed(
   }
   if (bluetooth::audio::a2dp::is_hal_2_0_enabled()) {
     bluetooth::audio::a2dp::start_session();
+    bluetooth::audio::a2dp::set_remote_delay(btif_av_get_audio_delay());
     BluetoothMetricsLogger::GetInstance()->LogBluetoothSessionStart(
         bluetooth::common::CONNECTION_TECHNOLOGY_TYPE_BREDR, 0);
   } else if (btif_av_is_a2dp_offload_enabled()) {
