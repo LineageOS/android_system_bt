@@ -132,7 +132,7 @@ bool ConnectionHandler::ConnectDevice(const RawAddress& bdaddr) {
     return;
   };
 
-  return SdpLookup(bdaddr, base::Bind(connection_lambda, this, bdaddr));
+  return SdpLookup(bdaddr, base::Bind(connection_lambda, this, bdaddr), false);
 }
 
 bool ConnectionHandler::DisconnectDevice(const RawAddress& bdaddr) {
@@ -155,7 +155,8 @@ std::vector<std::shared_ptr<Device>> ConnectionHandler::GetListOfDevices()
   return list;
 }
 
-bool ConnectionHandler::SdpLookup(const RawAddress& bdaddr, SdpCallback cb) {
+bool ConnectionHandler::SdpLookup(const RawAddress& bdaddr, SdpCallback cb,
+                                  bool retry) {
   LOG(INFO) << __PRETTY_FUNCTION__;
 
   tAVRC_SDP_DB_PARAMS db_params;
@@ -172,11 +173,11 @@ bool ConnectionHandler::SdpLookup(const RawAddress& bdaddr, SdpCallback cb) {
   db_params.p_db = disc_db;
   db_params.p_attrs = attr_list;
 
-  return avrc_->FindService(
-             UUID_SERVCLASS_AV_REMOTE_CONTROL, bdaddr, &db_params,
-             base::Bind(&ConnectionHandler::SdpCb,
-                        weak_ptr_factory_.GetWeakPtr(), bdaddr, cb, disc_db)) ==
-         AVRC_SUCCESS;
+  return avrc_->FindService(UUID_SERVCLASS_AV_REMOTE_CONTROL, bdaddr,
+                            &db_params,
+                            base::Bind(&ConnectionHandler::SdpCb,
+                                       weak_ptr_factory_.GetWeakPtr(), bdaddr,
+                                       cb, disc_db, retry)) == AVRC_SUCCESS;
 }
 
 bool ConnectionHandler::AvrcpConnect(bool initiator, const RawAddress& bdaddr) {
@@ -342,7 +343,7 @@ void ConnectionHandler::AcceptorControlCb(uint8_t handle, uint8_t event,
         }
       };
 
-      SdpLookup(*peer_addr, base::Bind(sdp_lambda, this, handle));
+      SdpLookup(*peer_addr, base::Bind(sdp_lambda, this, handle), false);
 
       avrc_->OpenBrowse(handle, AVCT_ACP);
       AvrcpConnect(false, RawAddress::kAny);
@@ -406,10 +407,15 @@ void ConnectionHandler::MessageCb(uint8_t handle, uint8_t label, uint8_t opcode,
 }
 
 void ConnectionHandler::SdpCb(const RawAddress& bdaddr, SdpCallback cb,
-                              tSDP_DISCOVERY_DB* disc_db, uint16_t status) {
+                              tSDP_DISCOVERY_DB* disc_db, bool retry,
+                              uint16_t status) {
   LOG(INFO) << __PRETTY_FUNCTION__ << ": SDP lookup callback received";
 
-  if (status != AVRC_SUCCESS) {
+  if (status == SDP_CONN_FAILED and !retry) {
+    LOG(WARNING) << __PRETTY_FUNCTION__ << ": SDP Failure retry again";
+    SdpLookup(bdaddr, cb, true);
+    return;
+  } else if (status != AVRC_SUCCESS) {
     LOG(ERROR) << __PRETTY_FUNCTION__
                << ": SDP Failure: status = " << (unsigned int)status;
     cb.Run(status, 0, 0);
