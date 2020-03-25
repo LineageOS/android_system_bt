@@ -165,8 +165,8 @@ TEST(BluetoothMetricIdAllocatorTest, MetricIdAllocatorMainTest1) {
   EXPECT_TRUE(allocator.SaveDevice(RawAddress({0, 0, 0, 0, 0, 3})));
   EXPECT_EQ(dummy, 176);
 
-  // should fail, since id had been saved
-  EXPECT_FALSE(allocator.SaveDevice(RawAddress({0, 0, 0, 0, 0, 0})));
+  // should be true but callback won't be called, since id had been saved
+  EXPECT_TRUE(allocator.SaveDevice(RawAddress({0, 0, 0, 0, 0, 0})));
   EXPECT_EQ(dummy, 176);
 
   // forget
@@ -262,8 +262,8 @@ TEST(BluetoothMetricIdAllocatorTest, MetricIdAllocatorFullPairedMap) {
   // paired: 4 ... 199, 200, 201, 202, 203
   // scanned: 0, 1
 
-  // should fail, since id had been saved
-  EXPECT_FALSE(allocator.SaveDevice(kthAddress(key + 2)));
+  // should be true but callback won't be called, since id had been saved
+  EXPECT_TRUE(allocator.SaveDevice(kthAddress(key + 2)));
   EXPECT_EQ(dummy, 4);
 
   dummy = 27;
@@ -284,7 +284,9 @@ TEST(BluetoothMetricIdAllocatorTest, MetricIdAllocatorFullPairedMap) {
 
   EXPECT_TRUE(allocator.SaveDevice(kthAddress(key + 2)));
   EXPECT_EQ(dummy, 18);  // no key is evicted, a key is saved so *2,
-  EXPECT_FALSE(allocator.SaveDevice(kthAddress(key + 3)));
+
+  // should be true but callback won't be called, since id had been saved
+  EXPECT_TRUE(allocator.SaveDevice(kthAddress(key + 3)));
   EXPECT_EQ(dummy, 18);  // no such a key in scanned
   EXPECT_TRUE(allocator.SaveDevice(kthAddress(key + 4)));
   EXPECT_EQ(dummy, 12);  // one key is evicted, another key is saved so *2/3,
