@@ -30,6 +30,9 @@ namespace l2cap {
 namespace le {
 namespace internal {
 
+static constexpr uint16_t kDefaultMinimumCeLength = 0x0002;
+static constexpr uint16_t kDefaultMaximumCeLength = 0x0C00;
+
 Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_connection,
            l2cap::internal::ParameterProvider* parameter_provider,
            DynamicChannelServiceManagerImpl* dynamic_service_manager,
@@ -55,12 +58,27 @@ void Link::Disconnect() {
   acl_connection_->Disconnect(hci::DisconnectReason::REMOTE_USER_TERMINATED_CONNECTION);
 }
 
-void Link::UpdateConnectionParameter(SignalId signal_id, uint16_t conn_interval_min, uint16_t conn_interval_max,
-                                     uint16_t conn_latency, uint16_t supervision_timeout) {
-  // TODO: If we are slave and both only support legacy update connection parameter, use L2CAP
+void Link::UpdateConnectionParameterFromRemote(SignalId signal_id, uint16_t conn_interval_min,
+                                               uint16_t conn_interval_max, uint16_t conn_latency,
+                                               uint16_t supervision_timeout) {
   acl_connection_->LeConnectionUpdate(
-      conn_interval_min, conn_interval_max, conn_latency, supervision_timeout,
+      conn_interval_min, conn_interval_max, conn_latency, supervision_timeout, kDefaultMinimumCeLength,
+      kDefaultMaximumCeLength,
       common::BindOnce(&Link::on_connection_update_complete, common::Unretained(this), signal_id), l2cap_handler_);
+}
+
+void Link::SendConnectionParameterUpdate(uint16_t conn_interval_min, uint16_t conn_interval_max, uint16_t conn_latency,
+                                         uint16_t supervision_timeout, uint16_t min_ce_length, uint16_t max_ce_length) {
+  if (acl_connection_->GetRole() == hci::Role::SLAVE) {
+    // TODO: If both LL master and slave support 4.1, use HCI command directly
+    signalling_manager_.SendConnectionParameterUpdateRequest(conn_interval_min, conn_interval_max, conn_latency,
+                                                             supervision_timeout);
+    return;
+  }
+  acl_connection_->LeConnectionUpdate(
+      conn_interval_min, conn_interval_max, conn_latency, supervision_timeout, min_ce_length, max_ce_length,
+      common::BindOnce(&Link::on_connection_update_complete, common::Unretained(this), kInvalidSignalId),
+      l2cap_handler_);
 }
 
 std::shared_ptr<FixedChannelImpl> Link::AllocateFixedChannel(Cid cid, SecurityPolicy security_policy) {
@@ -135,12 +153,6 @@ std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateReservedDynam
   return channel;
 }
 
-DynamicChannelConfigurationOption Link::GetConfigurationForInitialConfiguration(Cid cid) {
-  ASSERT(local_cid_to_pending_dynamic_channel_connection_map_.find(cid) !=
-         local_cid_to_pending_dynamic_channel_connection_map_.end());
-  return local_cid_to_pending_dynamic_channel_connection_map_[cid].configuration_;
-}
-
 void Link::FreeDynamicChannel(Cid cid) {
   if (dynamic_channel_allocator_.FindChannelByCid(cid) == nullptr) {
     return;
@@ -195,6 +207,9 @@ void Link::SendLeCredit(Cid local_cid, uint16_t credit) {
 }
 
 void Link::on_connection_update_complete(SignalId signal_id, hci::ErrorCode error_code) {
+  if (!signal_id.IsValid()) {
+    return;
+  }
   ConnectionParameterUpdateResponseResult result = (error_code == hci::ErrorCode::SUCCESS)
                                                        ? ConnectionParameterUpdateResponseResult::ACCEPTED
                                                        : ConnectionParameterUpdateResponseResult::REJECTED;
