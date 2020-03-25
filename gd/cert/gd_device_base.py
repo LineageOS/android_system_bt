@@ -72,6 +72,10 @@ class GdDeviceBase:
                                         '%s_btsnoop_hci.log' % label)
             cmd.append("--btsnoop=" + btsnoop_path)
 
+        self.grpc_root_server_port = int(grpc_root_server_port)
+        self.grpc_port = int(grpc_port)
+        self.signal_port = int(signal_port)
+
         self.serial_number = serial_number
         if self.serial_number:
             self.adb = AdbProxy(self.serial_number)
@@ -81,10 +85,10 @@ class GdDeviceBase:
                 msg="device %s cannot run as root after enabling verity" %
                 self.serial_number)
             self.adb.shell("date " + time.strftime("%m%d%H%M%Y.%S"))
-            self.adb.tcp_forward(int(grpc_port), int(grpc_port))
-            self.adb.tcp_forward(
-                int(grpc_root_server_port), int(grpc_root_server_port))
-            self.adb.reverse("tcp:%s tcp:%s" % (signal_port, signal_port))
+            self.tcp_forward_or_die(self.grpc_port, self.grpc_port)
+            self.tcp_forward_or_die(self.grpc_root_server_port,
+                                    self.grpc_root_server_port)
+            self.tcp_reverse_or_die(self.signal_port, self.signal_port)
             self.push_or_die(
                 os.path.join(get_gd_root(), "target",
                              "bluetooth_stack_with_facade"), "system/bin")
@@ -103,7 +107,7 @@ class GdDeviceBase:
         tester_signal_socket = socket.socket(socket.AF_INET, socket.SOCK_STREAM)
         tester_signal_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR,
                                         1)
-        socket_address = ('localhost', int(signal_port))
+        socket_address = ('localhost', self.signal_port)
         tester_signal_socket.bind(socket_address)
         tester_signal_socket.listen(1)
 
@@ -125,7 +129,6 @@ class GdDeviceBase:
 
         self.grpc_root_server_channel = grpc.insecure_channel(
             "localhost:" + grpc_root_server_port)
-        self.grpc_port = int(grpc_port)
         self.grpc_channel = grpc.insecure_channel("localhost:" + grpc_port)
 
     def clean_up(self):
@@ -140,6 +143,9 @@ class GdDeviceBase:
                           (self.label, backing_process_return_code))
 
         if self.serial_number:
+            self.adb.remove_tcp_forward(self.grpc_port)
+            self.adb.remove_tcp_forward(self.grpc_root_server_port)
+            self.adb.reverse("--remove tcp:%d" % self.signal_port)
             self.adb.shell("logcat -d -f /data/misc/bluetooth/logs/system_log")
             self.adb.pull(
                 "/data/misc/bluetooth/logs/btsnoop_hci.log %s" % os.path.join(
@@ -184,6 +190,44 @@ class GdDeviceBase:
                 msg='Unable to push file %s to %s due to %s' %
                 (src_file_path, dst_file_path, e),
                 extras=e)
+
+    def tcp_forward_or_die(self, host_port, device_port):
+        """
+        Forward a TCP port from host to device or fail
+        :param host_port: host port, int, 0 for adb to assign one
+        :param device_port: device port, int
+        :return: host port int
+        """
+        error_or_port = self.adb.forward(
+            "tcp:%d tcp:%d" % (host_port, device_port), ignore_status=True)
+        if not error_or_port:
+            logging.debug("host port %d was already forwarded" % host_port)
+            return host_port
+        if not isinstance(error_or_port, int):
+            asserts.fail(
+                'Unable to forward host port %d to device port %d, error %s' %
+                (host_port, device_port, error_or_port))
+        return error_or_port
+
+    def tcp_reverse_or_die(self, device_port, host_port):
+        """
+        Forward a TCP port from device to host or fail
+        :param device_port: device port, int, 0 for adb to assign one
+        :param host_port: host port, int
+        :return: device port int
+        """
+        error_or_port = self.adb.reverse(
+            "tcp:%d tcp:%d" % (device_port, host_port))
+        if not error_or_port:
+            logging.debug("device port %d was already reversed" % device_port)
+            return device_port
+        try:
+            error_or_port = int(error_or_port)
+        except ValueError:
+            asserts.fail(
+                'Unable to reverse device port %d to host port %d, error %s' %
+                (device_port, host_port, error_or_port))
+        return error_or_port
 
     def ensure_verity_disabled(self):
         """Ensures that verity is enabled.
