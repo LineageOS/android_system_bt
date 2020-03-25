@@ -588,7 +588,7 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_update_success) 
   std::promise<ErrorCode> promise;
   auto future = promise.get_future();
   connection->LeConnectionUpdate(
-      0x0006, 0x0C80, 0x0000, 0x000A,
+      0x0006, 0x0C80, 0x0000, 0x000A, 0, 0,
       common::BindOnce([](std::promise<ErrorCode> promise, ErrorCode code) { promise.set_value(code); },
                        std::move(promise)),
       client_handler_);
