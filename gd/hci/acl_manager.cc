@@ -26,6 +26,7 @@
 #include "hci/acl_fragmenter.h"
 #include "hci/controller.h"
 #include "hci/hci_layer.h"
+#include "security/security_module.h"
 
 namespace bluetooth {
 namespace hci {
@@ -154,7 +155,7 @@ struct AclManager::acl_connection {
   }
 };
 
-struct AclManager::impl {
+struct AclManager::impl : public security::ISecurityManagerListener {
   impl(const AclManager& acl_manager) : acl_manager_(acl_manager) {}
 
   void Start() {
@@ -212,8 +213,6 @@ struct AclManager::impl {
     hci_layer_->RegisterEventHandler(EventCode::READ_REMOTE_VERSION_INFORMATION_COMPLETE,
                                      Bind(&impl::on_read_remote_version_information_complete, common::Unretained(this)),
                                      handler_);
-    hci_layer_->RegisterEventHandler(EventCode::ENCRYPTION_CHANGE,
-                                     Bind(&impl::on_encryption_change, common::Unretained(this)), handler_);
     hci_layer_->RegisterEventHandler(EventCode::LINK_SUPERVISION_TIMEOUT_CHANGED,
                                      Bind(&impl::on_link_supervision_timeout_changed, common::Unretained(this)),
                                      handler_);
@@ -237,6 +236,7 @@ struct AclManager::impl {
     hci_queue_end_ = nullptr;
     handler_ = nullptr;
     hci_layer_ = nullptr;
+    security_manager_.reset();
   }
 
   void incoming_acl_credits(uint16_t handle, uint16_t credits) {
@@ -588,8 +588,11 @@ struct AclManager::impl {
     }
   }
 
-  void on_encryption_change(EventPacketView packet) {
-    EncryptionChangeView encryption_change_view = EncryptionChangeView::Create(packet);
+  void OnDeviceBonded(bluetooth::hci::AddressWithType device) override {}
+  void OnDeviceUnbonded(bluetooth::hci::AddressWithType device) override {}
+  void OnDeviceBondFailed(bluetooth::hci::AddressWithType device) override {}
+
+  void OnEncryptionStateChanged(EncryptionChangeView encryption_change_view) override {
     if (!encryption_change_view.IsValid()) {
       LOG_ERROR("Received on_encryption_change with invalid packet");
       return;
@@ -1188,6 +1191,11 @@ struct AclManager::impl {
         BindOnce(&AclManager::impl::check_command_complete<WriteDefaultLinkPolicySettingsCompleteView>,
                  common::Unretained(this)),
         handler_);
+  }
+
+  void set_security_module(security::SecurityModule* security_module) {
+    security_manager_ = security_module->GetSecurityManager();
+    security_manager_->RegisterCallbackListener(this, handler_);
   }
 
   void accept_connection(Address address) {
@@ -1915,6 +1923,7 @@ struct AclManager::impl {
   std::map<uint16_t, acl_connection>::iterator current_connection_pair_;
 
   HciLayer* hci_layer_ = nullptr;
+  std::unique_ptr<security::SecurityManager> security_manager_;
   os::Handler* handler_ = nullptr;
   ConnectionCallbacks* client_callbacks_ = nullptr;
   os::Handler* client_handler_ = nullptr;
@@ -2141,6 +2150,10 @@ void AclManager::ReadDefaultLinkPolicySettings() {
 void AclManager::WriteDefaultLinkPolicySettings(uint16_t default_link_policy_settings) {
   GetHandler()->Post(BindOnce(&impl::write_default_link_policy_settings, common::Unretained(pimpl_.get()),
                               default_link_policy_settings));
+}
+
+void AclManager::SetSecurityModule(security::SecurityModule* security_module) {
+  GetHandler()->Post(BindOnce(&impl::set_security_module, common::Unretained(pimpl_.get()), security_module));
 }
 
 void AclManager::ListDependencies(ModuleList* list) {
