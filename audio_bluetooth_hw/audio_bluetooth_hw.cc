@@ -102,7 +102,8 @@ static int adev_get_mic_mute(const struct audio_hw_device* dev, bool* state) {
 static int adev_dump(const audio_hw_device_t* device, int fd) { return 0; }
 
 static int adev_close(hw_device_t* device) {
-  free(device);
+  auto* bluetooth_device = reinterpret_cast<BluetoothAudioDevice*>(device);
+  delete bluetooth_device;
   return 0;
 }
 
@@ -111,7 +112,7 @@ static int adev_open(const hw_module_t* module, const char* name,
   LOG(VERBOSE) << __func__ << ": name=[" << name << "]";
   if (strcmp(name, AUDIO_HARDWARE_INTERFACE) != 0) return -EINVAL;
 
-  auto bluetooth_audio_device = new BluetoothAudioDevice;
+  auto bluetooth_audio_device = new BluetoothAudioDevice{};
   struct audio_hw_device* adev = &bluetooth_audio_device->audio_device_;
   if (!adev) return -ENOMEM;
 

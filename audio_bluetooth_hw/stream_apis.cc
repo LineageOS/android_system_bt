@@ -635,7 +635,7 @@ int adev_open_output_stream(struct audio_hw_device* dev,
                             struct audio_stream_out** stream_out,
                             const char* address __unused) {
   *stream_out = nullptr;
-  auto* out = new BluetoothStreamOut;
+  auto* out = new BluetoothStreamOut{};
   if (!out->bluetooth_output_.SetUp(devices)) {
     delete out;
     return -EINVAL;
