@@ -163,9 +163,16 @@ void btif_debug_av_dump(int fd);
 /**
  * Set the audio delay for the stream.
  *
+ * @param peer_address the address of the peer to report
  * @param delay the delay to set in units of 1/10ms
  */
-void btif_av_set_audio_delay(uint16_t delay);
+void btif_av_set_audio_delay(const RawAddress& peer_address, uint16_t delay);
+
+/**
+ * Get the audio delay for the stream.
+ *  @param  none
+ */
+uint16_t btif_av_get_audio_delay(void);
 
 /**
  * Reset the audio delay and count of audio bytes sent to zero.
