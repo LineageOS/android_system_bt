@@ -108,6 +108,18 @@ class LeL2capTest(GdBaseTestClass):
         dut_channel = response_future.get_channel()
         return (dut_channel, cert_channel)
 
+    def test_send_connection_parameter_update_request(self):
+        """
+        L2CAP/LE/CPU/BV-01-C
+        NOTE: This is an option feature. Also if both LL master and slave supports 4.1+ connection parameter update, this should happen in LL only, not L2CAP
+        NOTE: Currently we need to establish at least one dynamic channel to allow update.
+        """
+        self._setup_link_from_cert()
+        self._open_channel_from_dut()
+        self.dut_l2cap.update_connection_parameter()
+        assertThat(self.cert_l2cap.get_control_channel()).emits(
+            L2capMatchers.LeConnectionParameterUpdateRequest())
+
     def test_reject_connection_parameter_update_request(self):
         """
         L2CAP/LE/CPU/BI-02-C
