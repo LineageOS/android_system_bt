@@ -103,6 +103,18 @@ class CertLeL2cap(Closable):
             control_channel=None)
         self._get_acl_stream().register_callback(self._handle_control_packet)
 
+    def wait_for_connection(self):
+        self._le_acl_manager.listen_for_incoming_connections()
+        self._le_acl = self._le_acl_manager.accept_connection()
+        self.control_channel = CertLeL2capChannel(
+            self._device,
+            5,
+            5,
+            self._get_acl_stream(),
+            self._le_acl,
+            control_channel=None)
+        self._get_acl_stream().register_callback(self._handle_control_packet)
+
     def open_channel(self,
                      signal_id,
                      psm,
