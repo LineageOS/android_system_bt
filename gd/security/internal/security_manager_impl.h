@@ -19,6 +19,7 @@
 #include <unordered_map>
 #include <utility>
 
+#include "hci/acl_manager.h"
 #include "hci/classic_device.h"
 #include "l2cap/le/l2cap_le_module.h"
 #include "os/handler.h"
@@ -148,6 +149,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   void NotifyDeviceBonded(hci::AddressWithType device);
   void NotifyDeviceBondFailed(hci::AddressWithType device, PairingResultOrFailure status);
   void NotifyDeviceUnbonded(hci::AddressWithType device);
+  void NotifyEncryptionStateChanged(hci::EncryptionChangeView encryption_change_view);
 
  private:
   template <class T>

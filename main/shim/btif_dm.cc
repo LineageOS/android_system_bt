@@ -105,17 +105,21 @@ class ShimBondListener : public security::ISecurityManagerListener {
     bond_state_bonded_cb_ = bond_state_bonded_cb;
     bond_state_none_cb_ = bond_state_none_cb;
   }
-  void OnDeviceBonded(bluetooth::hci::AddressWithType device) {
-    bond_state_bonded_cb_(ToRawAddress(device.GetAddress()));
+
+  void OnDeviceBonded(bluetooth::hci::AddressWithType device) override {
+    bond_state_bonded_cb_(RawAddress(device.GetAddress().address));
   }
 
-  void OnDeviceUnbonded(bluetooth::hci::AddressWithType device) {
-    bond_state_none_cb_(ToRawAddress(device.GetAddress()));
+  void OnDeviceUnbonded(bluetooth::hci::AddressWithType device) override {
+    bond_state_none_cb_(RawAddress(device.GetAddress().address));
   }
 
-  void OnDeviceBondFailed(bluetooth::hci::AddressWithType device) {
-    bond_state_none_cb_(ToRawAddress(device.GetAddress()));
+  void OnDeviceBondFailed(bluetooth::hci::AddressWithType device) override {
+    bond_state_none_cb_(RawAddress(device.GetAddress().address));
   }
+
+  void OnEncryptionStateChanged(
+      EncryptionChangeView encryption_change_view) override {}
 
   std::function<void(RawAddress)> bond_state_bonding_cb_;
   std::function<void(RawAddress)> bond_state_bonded_cb_;
