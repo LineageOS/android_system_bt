@@ -48,7 +48,6 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
     if (service_helper == dynamic_channel_helper_map_.end()) {
       return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION, "Psm not registered");
     }
-    request->remote();
     hci::Address peer_address;
     ASSERT(hci::Address::FromString(request->remote().address().address(), peer_address));
     // TODO: Support different address type
@@ -100,6 +99,19 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
     if (!dynamic_channel_helper_map_[request->psm()]->SendPacket(packet)) {
       return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION, "Channel not open");
     }
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status SendConnectionParameterUpdate(::grpc::ServerContext* context, const ConnectionParameter* request,
+                                               ::google::protobuf::Empty* response) override {
+    if (dynamic_channel_helper_map_.empty()) {
+      return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION, "Need to open at least one dynamic channel first");
+    }
+    auto& dynamic_channel_helper = dynamic_channel_helper_map_.begin()->second;
+    dynamic_channel_helper->channel_->GetLinkOptions()->UpdateConnectionParameter(
+        request->conn_interval_min(), request->conn_interval_max(), request->conn_latency(),
+        request->supervision_timeout(), request->min_ce_length(), request->max_ce_length());
+
     return ::grpc::Status::OK;
   }
 
