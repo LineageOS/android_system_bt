@@ -89,13 +89,16 @@ void ClassicSignallingManager::SendConfigurationRequest(Cid remote_cid,
 }
 
 void ClassicSignallingManager::SendDisconnectionRequest(Cid local_cid, Cid remote_cid) {
-  PendingCommand pending_command = {
-      next_signal_id_, CommandCode::DISCONNECTION_REQUEST, {}, local_cid, remote_cid, {}, {}};
+  command_just_sent_ = {next_signal_id_, CommandCode::DISCONNECTION_REQUEST, {}, local_cid, remote_cid, {}, {}};
   next_signal_id_++;
-  pending_commands_.push(std::move(pending_command));
-  if (command_just_sent_.signal_id_ == kInvalidSignalId) {
-    handle_send_next_command();
-  }
+
+  auto signal_id = command_just_sent_.signal_id_;
+  auto source_cid = command_just_sent_.source_cid_;
+  auto destination_cid = command_just_sent_.destination_cid_;
+
+  auto builder = DisconnectionRequestBuilder::Create(signal_id.Value(), destination_cid, source_cid);
+  enqueue_buffer_->Enqueue(std::move(builder), handler_);
+  alarm_.Schedule(common::BindOnce(&ClassicSignallingManager::on_command_timeout, common::Unretained(this)), kTimeout);
 }
 
 void ClassicSignallingManager::SendInformationRequest(InformationRequestInfoType type) {
@@ -173,6 +176,7 @@ void ClassicSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, 
       configuration_state.retransmission_and_flow_control_mode_ = RetransmissionAndFlowControlModeOption::L2CAP_BASIC;
       break;
     case DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::ENHANCED_RETRANSMISSION:
+    case DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::ENHANCED_RETRANSMISSION_OPTIONAL:
       retransmission_flow_control_configuration->mode_ =
           RetransmissionAndFlowControlModeOption::ENHANCED_RETRANSMISSION;
       configuration_state.retransmission_and_flow_control_mode_ =
@@ -254,6 +258,7 @@ void ClassicSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remo
       configuration_state.retransmission_and_flow_control_mode_ = RetransmissionAndFlowControlModeOption::L2CAP_BASIC;
       break;
     case DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::ENHANCED_RETRANSMISSION:
+    case DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::ENHANCED_RETRANSMISSION_OPTIONAL:
       retransmission_flow_control_configuration->mode_ =
           RetransmissionAndFlowControlModeOption::ENHANCED_RETRANSMISSION;
       configuration_state.retransmission_and_flow_control_mode_ =
@@ -308,11 +313,21 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
       }
       case ConfigurationOptionType::RETRANSMISSION_AND_FLOW_CONTROL: {
         auto* config = RetransmissionAndFlowControlConfigurationOption::Specialize(option.get());
-        if (config->retransmission_time_out_ == 0) {
-          config->retransmission_time_out_ = 2000;
-        }
-        if (config->monitor_time_out_ == 0) {
-          config->monitor_time_out_ = 12000;
+        if (config->mode_ == RetransmissionAndFlowControlModeOption::ENHANCED_RETRANSMISSION) {
+          if (config->retransmission_time_out_ == 0) {
+            config->retransmission_time_out_ = 2000;
+          }
+          if (config->monitor_time_out_ == 0) {
+            config->monitor_time_out_ = 12000;
+          }
+        } else if (config->mode_ == RetransmissionAndFlowControlModeOption::L2CAP_BASIC) {
+          auto initial_config_option = dynamic_service_manager_->GetService(channel->GetPsm())->GetConfigOption();
+          if (initial_config_option.channel_mode ==
+              DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::ENHANCED_RETRANSMISSION) {
+            LOG_WARN("ERTM mandatory not allow mode configuration, disconnect channel.");
+            SendDisconnectionRequest(channel->GetCid(), channel->GetRemoteCid());
+            return;
+          }
         }
         configuration_state.remote_retransmission_and_flow_control_ = *config;
         configuration_state.retransmission_and_flow_control_mode_ = config->mode_;
@@ -355,6 +370,65 @@ void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid ci
   enqueue_buffer_->Enqueue(std::move(response), handler_);
 }
 
+void ClassicSignallingManager::negotiate_configuration(Cid cid, Continuation is_continuation,
+                                                       std::vector<std::unique_ptr<ConfigurationOption>> options) {
+  auto channel = channel_allocator_->FindChannelByCid(cid);
+  auto& configuration_state = channel_configuration_[channel->GetCid()];
+  std::vector<std::unique_ptr<ConfigurationOption>> negotiation_config;
+  bool can_negotiate = false;
+  for (auto& option : options) {
+    switch (option->type_) {
+      case ConfigurationOptionType::MTU: {
+        // MTU is non-negotiable option. Use default mtu size
+        auto mtu_configuration = std::make_unique<MtuConfigurationOption>();
+        mtu_configuration->mtu_ = kDefaultClassicMtu;
+        configuration_state.incoming_mtu_ = kDefaultClassicMtu;
+        negotiation_config.emplace_back(std::move(mtu_configuration));
+        can_negotiate = true;
+        break;
+      }
+      case ConfigurationOptionType::FRAME_CHECK_SEQUENCE:
+      case ConfigurationOptionType::FLUSH_TIMEOUT: {
+        // TODO: Handle these two configuration options negotiation.
+        can_negotiate = true;
+        break;
+      }
+      case ConfigurationOptionType::RETRANSMISSION_AND_FLOW_CONTROL: {
+        auto* config = RetransmissionAndFlowControlConfigurationOption::Specialize(option.get());
+        if (config->mode_ == RetransmissionAndFlowControlModeOption::ENHANCED_RETRANSMISSION) {
+          configuration_state.retransmission_and_flow_control_mode_ = config->mode_;
+          configuration_state.local_retransmission_and_flow_control_ = *config;
+          negotiation_config.emplace_back(std::make_unique<RetransmissionAndFlowControlConfigurationOption>(*config));
+        } else if (config->mode_ == RetransmissionAndFlowControlModeOption::L2CAP_BASIC) {
+          auto initial_config_option = dynamic_service_manager_->GetService(channel->GetPsm())->GetConfigOption();
+          if (initial_config_option.channel_mode ==
+              DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::ENHANCED_RETRANSMISSION) {
+            // ERTM mandatory is not allow negotiating of retransmission and flow control mode, disconnect channel
+            SendDisconnectionRequest(channel->GetCid(), channel->GetRemoteCid());
+            return;
+          } else if (initial_config_option.channel_mode ==
+                     DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::
+                         ENHANCED_RETRANSMISSION_OPTIONAL) {
+            can_negotiate = true;
+            negotiation_config.emplace_back(std::make_unique<RetransmissionAndFlowControlConfigurationOption>(*config));
+          }
+        } else {
+          // Not support other retransmission and flow control mode, disconnect channel.
+          SendDisconnectionRequest(channel->GetCid(), channel->GetRemoteCid());
+          return;
+        }
+        break;
+      }
+      default:
+        LOG_WARN("Received some unsupported configuration option: %d", static_cast<int>(option->type_));
+        return;
+    }
+  }
+  if (can_negotiate) {
+    SendConfigurationRequest(channel->GetRemoteCid(), std::move(negotiation_config));
+  }
+}
+
 void ClassicSignallingManager::OnConfigurationResponse(SignalId signal_id, Cid cid, Continuation is_continuation,
                                                        ConfigurationResponseResult result,
                                                        std::vector<std::unique_ptr<ConfigurationOption>> options) {
@@ -388,19 +462,9 @@ void ClassicSignallingManager::OnConfigurationResponse(SignalId signal_id, Cid c
       return;
 
     case ConfigurationResponseResult::UNACCEPTABLE_PARAMETERS:
-      for (auto& option : options) {
-        if (option->type_ == ConfigurationOptionType::RETRANSMISSION_AND_FLOW_CONTROL) {
-          auto mtu_configuration = std::make_unique<MtuConfigurationOption>();
-          mtu_configuration->mtu_ = channel_configuration_[cid].incoming_mtu_;
-
-          std::vector<std::unique_ptr<ConfigurationOption>> config;
-          config.emplace_back(std::move(mtu_configuration));
-          alarm_.Cancel();
-          command_just_sent_.signal_id_ = kInvalidSignalId;
-          SendConfigurationRequest(channel->GetRemoteCid(), std::move(config));
-          return;
-        }
-      }
+      LOG_INFO("Configuration response with unacceptable parameters");
+      alarm_.Cancel();
+      negotiate_configuration(cid, is_continuation, std::move(options));
       handle_send_next_command();
       return;
 
@@ -727,7 +791,7 @@ void ClassicSignallingManager::on_command_timeout() {
     case CommandCode::CONFIGURATION_REQUEST: {
       auto channel = channel_allocator_->FindChannelByRemoteCid(command_just_sent_.destination_cid_);
       SendDisconnectionRequest(channel->GetCid(), channel->GetRemoteCid());
-      break;
+      return;
     }
     default:
       break;
