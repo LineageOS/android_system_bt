@@ -1378,7 +1378,7 @@ void BtaAvCo::ProcessAudioDelay(tBTA_AV_HNDL bta_av_handle,
   APPL_TRACE_DEBUG("%s: peer %s bta_av_handle: 0x%x delay:0x%x", __func__,
                    peer_address.ToString().c_str(), bta_av_handle, delay);
 
-  btif_av_set_audio_delay(delay);
+  btif_av_set_audio_delay(peer_address, delay);
 }
 
 void BtaAvCo::UpdateMtu(tBTA_AV_HNDL bta_av_handle,
