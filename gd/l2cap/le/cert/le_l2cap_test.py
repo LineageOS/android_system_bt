@@ -87,6 +87,43 @@ class LeL2capTest(GdBaseTestClass):
             request)
         self.cert_l2cap.connect_le_acl(bytes(b'0D:05:04:03:02:01'))
 
+    def _set_link_from_dut_and_open_channel(self,
+                                            signal_id=1,
+                                            scid=0x0101,
+                                            psm=0x33,
+                                            mtu=1000,
+                                            mps=100,
+                                            initial_credit=6):
+        # Cert Advertises
+        gap_name = hci_packets.GapData()
+        gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
+        gap_name.data = list(bytes(b'Im_The_DUT'))
+        gap_data = le_advertising_facade.GapDataMsg(
+            data=bytes(gap_name.Serialize()))
+        config = le_advertising_facade.AdvertisingConfig(
+            advertisement=[gap_data],
+            random_address=common.BluetoothAddress(
+                address=bytes(b'22:33:ff:ff:11:00')),
+            interval_min=512,
+            interval_max=768,
+            event_type=le_advertising_facade.AdvertisingEventType.ADV_IND,
+            address_type=common.RANDOM_DEVICE_ADDRESS,
+            peer_address_type=common.PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
+            peer_address=common.BluetoothAddress(
+                address=bytes(b'0D:05:04:03:02:01')),
+            channel_map=7,
+            filter_policy=le_advertising_facade.AdvertisingFilterPolicy.
+            ALL_DEVICES)
+        request = le_advertising_facade.CreateAdvertiserRequest(config=config)
+        create_response = self.cert.hci_le_advertising_manager.CreateAdvertiser(
+            request)
+        response_future = self.dut_l2cap.connect_coc_to_cert(psm)
+        self.cert_l2cap.wait_for_connection()
+        # TODO: Currently we can only connect by using Dynamic channel API. Use fixed channel instead.
+        cert_channel = self.cert_l2cap.verify_and_respond_open_channel_from_remote(
+            psm)
+        dut_channel = response_future.get_channel()
+
     def _open_channel_from_cert(self,
                                 signal_id=1,
                                 scid=0x0101,
@@ -108,6 +145,12 @@ class LeL2capTest(GdBaseTestClass):
         dut_channel = response_future.get_channel()
         return (dut_channel, cert_channel)
 
+    def test_connect_from_dut_and_open_dynamic_channel(self):
+        """
+        Internal test for GD stack only
+        """
+        self._set_link_from_dut_and_open_channel()
+
     def test_send_connection_parameter_update_request(self):
         """
         L2CAP/LE/CPU/BV-01-C
@@ -120,6 +163,32 @@ class LeL2capTest(GdBaseTestClass):
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.LeConnectionParameterUpdateRequest())
 
+    def test_accept_connection_parameter_update_request(self):
+        """
+        L2CAP/LE/CPU/BV-02-C
+        NOTE: Currently we need to establish at least one dynamic channel to allow update.
+        """
+        self._set_link_from_dut_and_open_channel()
+        self.cert_l2cap.get_control_channel().send(
+            l2cap_packets.ConnectionParameterUpdateRequestBuilder(
+                2, 0x10, 0x10, 0x0a, 0x64))
+        assertThat(self.cert_l2cap.get_control_channel()).emits(
+            L2capMatchers.LeConnectionParameterUpdateResponse(
+                l2cap_packets.ConnectionParameterUpdateResponseResult.ACCEPTED))
+
+    def test_reject_connection_parameter_update_parameters(self):
+        """
+        L2CAP/LE/CPU/BI-01-C
+        NOTE: Currently we need to establish at least one dynamic channel to allow update.
+        """
+        self._set_link_from_dut_and_open_channel()
+        self.cert_l2cap.get_control_channel().send(
+            l2cap_packets.ConnectionParameterUpdateRequestBuilder(
+                2, 0x10, 0x10, 512, 0x64))
+        assertThat(self.cert_l2cap.get_control_channel()).emits(
+            L2capMatchers.LeConnectionParameterUpdateResponse(
+                l2cap_packets.ConnectionParameterUpdateResponseResult.REJECTED))
+
     def test_reject_connection_parameter_update_request(self):
         """
         L2CAP/LE/CPU/BI-02-C
@@ -127,7 +196,7 @@ class LeL2capTest(GdBaseTestClass):
         self._setup_link_from_cert()
         self.cert_l2cap.get_control_channel().send(
             l2cap_packets.ConnectionParameterUpdateRequestBuilder(
-                2, 100, 100, 512, 100))
+                2, 0x10, 0x10, 0x0a, 0x64))
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.LeCommandReject())
 

@@ -61,6 +61,12 @@ class L2capMatchers(object):
         return lambda packet: L2capMatchers._is_le_control_frame_with_code(packet, LeCommandCode.CONNECTION_PARAMETER_UPDATE_REQUEST)
 
     @staticmethod
+    def LeConnectionParameterUpdateResponse(
+            result=l2cap_packets.ConnectionParameterUpdateResponseResult.
+            ACCEPTED):
+        return lambda packet: L2capMatchers._is_matching_connection_parameter_update_response(packet, result)
+
+    @staticmethod
     def CreditBasedConnectionRequest(psm):
         return lambda packet: L2capMatchers._is_matching_credit_based_connection_request(packet, psm)
 
@@ -288,6 +294,15 @@ class L2capMatchers(object):
         ) != supports_fixed_channels:
             return False
         return True
+
+    @staticmethod
+    def _is_matching_connection_parameter_update_response(packet, result):
+        frame = L2capMatchers.le_control_frame_with_code(
+            packet, LeCommandCode.CONNECTION_PARAMETER_UPDATE_RESPONSE)
+        if frame is None:
+            return False
+        return l2cap_packets.ConnectionParameterUpdateResponseView(
+            frame).GetResult() == result
 
     @staticmethod
     def _is_matching_credit_based_connection_request(packet, psm):

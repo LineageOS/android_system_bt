@@ -1441,7 +1441,7 @@ struct AclManager::impl : public security::ISecurityManagerListener {
                                                     supervision_timeout, min_ce_length, max_ce_length);
     hci_layer_->EnqueueCommand(std::move(packet), common::BindOnce([](CommandStatusView status) {
                                  ASSERT(status.IsValid());
-                                 ASSERT(status.GetCommandOpCode() == OpCode::LE_CREATE_CONNECTION);
+                                 ASSERT(status.GetCommandOpCode() == OpCode::LE_CONNECTION_UPDATE);
                                }),
                                handler_);
   }
