@@ -130,12 +130,12 @@ class PyLeL2cap(Closable):
             response_future, self._device, psm, self._le_l2cap_stream)
 
     def update_connection_parameter(self,
-                                    conn_interval_min=0x20,
-                                    conn_interval_max=0x20,
-                                    conn_latency=0x20,
-                                    supervision_timeout=0x20,
-                                    min_ce_length=0x20,
-                                    max_ce_length=0x20):
+                                    conn_interval_min=0x10,
+                                    conn_interval_max=0x10,
+                                    conn_latency=0x0a,
+                                    supervision_timeout=0x64,
+                                    min_ce_length=12,
+                                    max_ce_length=12):
         self._device.l2cap_le.SendConnectionParameterUpdate(
             l2cap_le_facade_pb2.ConnectionParameter(
                 conn_interval_min=conn_interval_min,
