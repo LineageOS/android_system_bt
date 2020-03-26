@@ -1537,15 +1537,11 @@ void DualModeController::LeConnectionUpdate(CommandPacketView command) {
   auto command_view = gd_hci::LeConnectionUpdateView::Create(
       gd_hci::LeConnectionManagementCommandView::Create(command));
   ASSERT(command_view.IsValid());
+  ErrorCode status = link_layer_controller_.LeConnectionUpdate(command_view);
 
   auto status_packet = bluetooth::hci::LeConnectionUpdateStatusBuilder::Create(
-      ErrorCode::CONNECTION_REJECTED_UNACCEPTABLE_BD_ADDR, kNumCommandPackets);
+      status, kNumCommandPackets);
   send_event_(std::move(status_packet));
-
-  auto complete_packet =
-      bluetooth::hci::LeConnectionUpdateCompleteBuilder::Create(
-          ErrorCode::SUCCESS, 0x0002, 0x0006, 0x0000, 0x01f4);
-  send_event_(std::move(complete_packet));
 }
 
 void DualModeController::CreateConnection(CommandPacketView command) {
