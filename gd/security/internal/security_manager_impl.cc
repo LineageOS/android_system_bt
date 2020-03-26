@@ -354,9 +354,9 @@ void SecurityManagerImpl::OnConnectionOpenLe(std::unique_ptr<l2cap::le::FixedCha
       security_handler_, common::Bind(&SecurityManagerImpl::OnSmpCommandLe, common::Unretained(this)));
 
   // TODO: this doesn't have to be a unique ptr, if there is a way to properly std::move it into place where it's stored
-  pending_le_pairing_.connection_handle_ = pending_le_pairing_.channel_->GetAclConnection()->GetHandle();
+  pending_le_pairing_.connection_handle_ = pending_le_pairing_.channel_->GetLinkOptions()->GetHandle();
   InitialInformations initial_informations{
-      .my_role = pending_le_pairing_.channel_->GetAclConnection()->GetRole(),
+      .my_role = pending_le_pairing_.channel_->GetLinkOptions()->GetRole(),
       .my_connection_address = {hci::Address{{0x00, 0x11, 0xFF, 0xFF, 0x33, 0x22}} /*TODO: obtain my address*/,
                                 hci::AddressType::RANDOM_DEVICE_ADDRESS},
       /*TODO: properly obtain capabilities from device-specific storage*/
@@ -367,7 +367,7 @@ void SecurityManagerImpl::OnConnectionOpenLe(std::unique_ptr<l2cap::le::FixedCha
                                 .initiator_key_distribution = 0x07,
                                 .responder_key_distribution = 0x07},
       .remotely_initiated = false,
-      .connection_handle = pending_le_pairing_.channel_->GetAclConnection()->GetHandle(),
+      .connection_handle = pending_le_pairing_.channel_->GetLinkOptions()->GetHandle(),
       .remote_connection_address = pending_le_pairing_.channel_->GetDevice(),
       .remote_name = "TODO: grab proper device name in sec mgr",
       /* contains pairing request, if the pairing was remotely initiated */
