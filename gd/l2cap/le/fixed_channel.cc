@@ -26,14 +26,6 @@ hci::AddressWithType FixedChannel::GetDevice() const {
   return impl_->GetDevice();
 }
 
-hci::Role FixedChannel::GetRole() const {
-  return impl_->GetRole();
-}
-
-hci::AclConnection* FixedChannel::GetAclConnection() const {
-  return impl_->GetAclConnection();
-}
-
 void FixedChannel::RegisterOnCloseCallback(os::Handler* user_handler, FixedChannel::OnCloseCallback on_close_callback) {
   l2cap_handler_->Post(common::BindOnce(&internal::FixedChannelImpl::RegisterOnCloseCallback, impl_, user_handler,
                                         std::move(on_close_callback)));
@@ -51,6 +43,11 @@ common::BidiQueueEnd<packet::BasePacketBuilder, packet::PacketView<packet::kLitt
 FixedChannel::GetQueueUpEnd() const {
   return impl_->GetQueueUpEnd();
 }
+
+LinkOptions* FixedChannel::GetLinkOptions() {
+  return impl_->GetLinkOptions();
+}
+
 }  // namespace le
 }  // namespace l2cap
 }  // namespace bluetooth

@@ -19,6 +19,7 @@
 #include "common/callback.h"
 #include "hci/acl_manager.h"
 #include "l2cap/cid.h"
+#include "l2cap/le/link_options.h"
 #include "os/handler.h"
 #include "packet/base_packet_builder.h"
 #include "packet/packet_view.h"
@@ -47,13 +48,6 @@ class FixedChannel {
   }
 
   hci::AddressWithType GetDevice() const;
-
-  /**
-   * Return the role we have in the associated link
-   */
-  hci::Role GetRole() const;
-
-  hci::AclConnection* GetAclConnection() const;
 
   /**
    * Register close callback. If close callback is registered, when a channel is closed, the channel's resource will
@@ -86,6 +80,13 @@ class FixedChannel {
    * @return The upper end of a bi-directional queue.
    */
   common::BidiQueueEnd<packet::BasePacketBuilder, packet::PacketView<packet::kLittleEndian>>* GetQueueUpEnd() const;
+
+  /**
+   * Get the Proxy for L2CAP Link Options.
+   * Only few special L2CAP users need to use it, including
+   * GATT, HID Device, Security Manager, and Java API.
+   */
+  LinkOptions* GetLinkOptions();
 
  private:
   std::shared_ptr<internal::FixedChannelImpl> impl_;

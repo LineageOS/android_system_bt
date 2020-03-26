@@ -57,6 +57,10 @@ class L2capMatchers(object):
         return lambda packet: L2capMatchers._is_le_control_frame_with_code(packet, LeCommandCode.COMMAND_REJECT)
 
     @staticmethod
+    def LeConnectionParameterUpdateRequest():
+        return lambda packet: L2capMatchers._is_le_control_frame_with_code(packet, LeCommandCode.CONNECTION_PARAMETER_UPDATE_REQUEST)
+
+    @staticmethod
     def CreditBasedConnectionRequest(psm):
         return lambda packet: L2capMatchers._is_matching_credit_based_connection_request(packet, psm)
 

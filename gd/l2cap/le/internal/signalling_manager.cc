@@ -204,7 +204,7 @@ void LeSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, Cid r
   data_controller->SetMtu(std::min(mtu, local_mtu));
   data_controller->SetMps(std::min(mps, local_mps));
   data_controller->OnCredit(initial_credits);
-  auto user_channel = std::make_unique<DynamicChannel>(new_channel, handler_);
+  auto user_channel = std::make_unique<DynamicChannel>(new_channel, handler_, link_);
   dynamic_service_manager_->GetService(psm)->NotifyChannelCreation(std::move(user_channel));
 }
 
@@ -240,7 +240,7 @@ void LeSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remote_ci
   data_controller->SetMtu(std::min(mtu, command_just_sent_.mtu_));
   data_controller->SetMps(std::min(mps, command_just_sent_.mps_));
   data_controller->OnCredit(initial_credits);
-  std::unique_ptr<DynamicChannel> user_channel = std::make_unique<DynamicChannel>(new_channel, handler_);
+  std::unique_ptr<DynamicChannel> user_channel = std::make_unique<DynamicChannel>(new_channel, handler_, link_);
   dynamic_service_manager_->GetService(command_just_sent_.psm_)->NotifyChannelCreation(std::move(user_channel));
 }
 
@@ -446,7 +446,9 @@ void LeSignallingManager::handle_send_next_command() {
       break;
     }
     case LeCommandCode::CONNECTION_PARAMETER_UPDATE_REQUEST: {
-      auto builder = ConnectionParameterUpdateRequestBuilder::Create(command_just_sent_.signal_id_.Value(), 0, 0, 0, 0);
+      auto builder = ConnectionParameterUpdateRequestBuilder::Create(
+          command_just_sent_.signal_id_.Value(), command_just_sent_.interval_min_, command_just_sent_.interval_max_,
+          command_just_sent_.slave_latency_, command_just_sent_.timeout_multiplier_);
       enqueue_buffer_->Enqueue(std::move(builder), handler_);
       alarm_.Schedule(common::BindOnce(&LeSignallingManager::on_command_timeout, common::Unretained(this)), kTimeout);
       break;
