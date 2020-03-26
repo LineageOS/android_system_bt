@@ -337,6 +337,9 @@ class PendingConnection {
         LOG_DEBUG("Connection failed result:l2cap error hci:%s l2cap:%s", hci::ErrorCodeText(result.hci_error).c_str(),
                   l2cap::ConnectionResponseResultText(result.l2cap_connection_response_result).c_str());
         break;
+      case l2cap::classic::DynamicChannelManager::ConnectionResultCode::FAIL_REMOTE_NOT_SUPPORT:
+        LOG_DEBUG("Connection failed result:Remote not support required retransmission and flow control mode");
+        break;
     }
     pending_fail_(result);
   }
