@@ -545,6 +545,13 @@ TEST_F(SecurityManagerChannelTest, send_delete_stored_link_key) {
   ASSERT_EQ(OpCode::DELETE_STORED_LINK_KEY, packet_view.GetOpCode());
 }
 
+TEST_F(SecurityManagerChannelTest, recv_encryption_change) {
+  uint16_t connection_handle = 0x0;
+  hci_layer_->IncomingEvent(
+      hci::EncryptionChangeBuilder::Create(hci::ErrorCode::SUCCESS, connection_handle, hci::EncryptionEnabled::ON));
+  ASSERT_TRUE(callback_->receivedEncryptionChange);
+}
+
 TEST_F(SecurityManagerChannelTest, recv_encryption_key_refresh) {
   uint16_t connection_handle = 0x0;
   hci_layer_->IncomingEvent(
