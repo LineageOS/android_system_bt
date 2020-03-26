@@ -131,6 +131,11 @@ class LinkLayerController {
 
   void LeAdvertising();
 
+  void LeConnectionUpdateComplete(
+      bluetooth::hci::LeConnectionUpdateView connection_update_view);
+  ErrorCode LeConnectionUpdate(
+      bluetooth::hci::LeConnectionUpdateView connection_update_view);
+
   void HandleLeConnection(AddressWithType addr, AddressWithType own_addr,
                           uint8_t role, uint16_t connection_interval,
                           uint16_t connection_latency,
