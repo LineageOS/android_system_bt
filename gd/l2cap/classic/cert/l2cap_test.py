@@ -609,7 +609,7 @@ class L2capTest(GdBaseTestClass):
         self.cert_l2cap.turn_on_ertm(tx_window_size=3, max_transmit=2)
 
         (dut_channel, cert_channel) = self._open_channel(
-            scid=0x41, psm=0x33, use_ertm=True)
+            scid=0x41, psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
 
         for _ in range(4):
             dut_channel.send(b'abc')
@@ -634,7 +634,7 @@ class L2capTest(GdBaseTestClass):
         self.cert_l2cap.turn_on_ertm(tx_window_size=3, max_transmit=2)
 
         (dut_channel, cert_channel) = self._open_channel(
-            scid=0x41, psm=0x33, use_ertm=True)
+            scid=0x41, psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
 
         for _ in range(4):
             dut_channel.send(b'abc')
@@ -889,7 +889,9 @@ class L2capTest(GdBaseTestClass):
 
         self.dut.l2cap.OpenChannel(
             l2cap_facade_pb2.OpenChannelRequest(
-                remote=self.cert_address, psm=0x33, mode=RetransmissionFlowControlMode.ERTM))
+                remote=self.cert_address,
+                psm=0x33,
+                mode=RetransmissionFlowControlMode.ERTM))
         assertThat(self.cert_l2cap.get_control_channel()).emitsNone(
             L2capMatchers.ConfigurationRequest())
 
