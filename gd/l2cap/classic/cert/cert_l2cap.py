@@ -119,6 +119,10 @@ class CertL2cap(Closable):
 
         self.scid_to_dcid = {}
 
+        self.support_ertm = True
+        self.support_fcs = True
+
+        self.basic_option = None
         self.ertm_option = None
         self.fcs_option = None
 
@@ -159,6 +163,14 @@ class CertL2cap(Closable):
     def _get_acl_stream(self):
         return self._acl_manager.get_acl_stream()
 
+    # Disable ERTM when exchange extened feature
+    def disable_ertm(self):
+        self.support_ertm = False
+
+    # Disable FCS when exchange extened feature
+    def disable_fcs(self):
+        self.support_fcs = False
+
     def turn_on_ertm(self, tx_window_size=10, max_transmit=20):
         self.ertm_option = l2cap_packets.RetransmissionAndFlowControlConfigurationOption(
         )
@@ -196,6 +208,25 @@ class CertL2cap(Closable):
             CommandCode.
             CONNECTION_RESPONSE] = self._on_connection_response_configuration_request_with_continuation_flag
 
+    # more of a hack for the moment
+    def reply_with_basic_mode(self):
+        self.control_table[
+            CommandCode.
+            CONFIGURATION_REQUEST] = self._on_configuration_request_basic_mode
+
+    # more of a hack for the moment
+    def reply_with_nothing(self):
+        self.control_table[
+            CommandCode.
+            CONNECTION_RESPONSE] = self._on_connection_response_do_nothing
+
+    # more of a hack for the moment
+    # Send configuration request after receive configuration request
+    def config_with_basic_mode(self):
+        self.control_table[
+            CommandCode.
+            CONFIGURATION_REQUEST] = self._on_configuration_request_send_configuration_request_basic_mode
+
     def _on_connection_request_default(self, l2cap_control_view):
         connection_request_view = l2cap_packets.ConnectionRequestView(
             l2cap_control_view)
@@ -220,7 +251,9 @@ class CertL2cap(Closable):
         self.scid_to_dcid[scid] = dcid
 
         options = []
-        if self.ertm_option is not None:
+        if self.basic_option is not None:
+            options.append(self.basic_option)
+        elif self.ertm_option is not None:
             options.append(self.ertm_option)
         if self.fcs_option is not None:
             options.append(self.fcs_option)
@@ -281,6 +314,14 @@ class CertL2cap(Closable):
         self.get_control_channel().send(config_request)
         return True
 
+    def _on_connection_response_do_nothing(self, l2cap_control_view):
+        connection_response_view = l2cap_packets.ConnectionResponseView(
+            l2cap_control_view)
+        sid = connection_response_view.GetIdentifier()
+        scid = connection_response_view.GetSourceCid()
+        dcid = connection_response_view.GetDestinationCid()
+        self.scid_to_dcid[scid] = dcid
+
     def _on_configuration_request_default(self, l2cap_control_view):
         configuration_request = l2cap_packets.ConfigurationRequestView(
             l2cap_control_view)
@@ -311,6 +352,38 @@ class CertL2cap(Closable):
             l2cap_packets.ConfigurationResponseResult.UNACCEPTABLE_PARAMETERS,
             [mtu_opt, fcs_opt, rfc_opt])
         self.control_channel.send(config_response)
+
+    def _on_configuration_request_basic_mode(self, l2cap_control_view):
+        configuration_request = l2cap_packets.ConfigurationRequestView(
+            l2cap_control_view)
+        sid = configuration_request.GetIdentifier()
+        dcid = configuration_request.GetDestinationCid()
+
+        basic_option = l2cap_packets.RetransmissionAndFlowControlConfigurationOption(
+        )
+        basic_option.mode = l2cap_packets.RetransmissionAndFlowControlModeOption.L2CAP_BASIC
+
+        config_response = l2cap_packets.ConfigurationResponseBuilder(
+            sid, self.scid_to_dcid.get(dcid, 0), l2cap_packets.Continuation.END,
+            l2cap_packets.ConfigurationResponseResult.UNACCEPTABLE_PARAMETERS,
+            [basic_option])
+        self.control_channel.send(config_response)
+
+    def _on_configuration_request_send_configuration_request_basic_mode(
+            self, l2cap_control_view):
+        configuration_request = l2cap_packets.ConfigurationRequestView(
+            l2cap_control_view)
+        sid = configuration_request.GetIdentifier()
+        dcid = configuration_request.GetDestinationCid()
+
+        basic_option = l2cap_packets.RetransmissionAndFlowControlConfigurationOption(
+        )
+        basic_option.mode = l2cap_packets.RetransmissionAndFlowControlModeOption.L2CAP_BASIC
+
+        config_request = l2cap_packets.ConfigurationRequestBuilder(
+            sid + 1, self.scid_to_dcid.get(dcid, 0),
+            l2cap_packets.Continuation.END, [basic_option])
+        self.control_channel.send(config_request)
 
     def _on_configuration_response_default(self, l2cap_control_view):
         configuration_response = l2cap_packets.ConfigurationResponseView(
@@ -343,8 +416,8 @@ class CertL2cap(Closable):
             return
         if information_type == l2cap_packets.InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED:
             response = l2cap_packets.InformationResponseExtendedFeaturesBuilder(
-                sid, l2cap_packets.InformationRequestResult.SUCCESS, 0, 0, 0, 1,
-                0, 1, 0, 0, 0, 0)
+                sid, l2cap_packets.InformationRequestResult.SUCCESS, 0, 0, 0, self.support_ertm,
+                0, self.support_fcs, 0, 0, 0, 0)
             self.control_channel.send(response)
             return
         if information_type == l2cap_packets.InformationRequestInfoType.FIXED_CHANNELS_SUPPORTED:
