@@ -106,6 +106,9 @@ class ClassicSignallingManager {
   void on_command_timeout();
   void handle_send_next_command();
 
+  void negotiate_configuration(Cid cid, Continuation is_continuation,
+                               std::vector<std::unique_ptr<ConfigurationOption>>);
+
   os::Handler* handler_;
   Link* link_;
   l2cap::internal::DataPipelineManager* data_pipeline_manager_;
