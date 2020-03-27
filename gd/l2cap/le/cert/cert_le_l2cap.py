@@ -26,11 +26,19 @@ from cert.event_stream import FilteringEventStream
 from cert.event_stream import IEventStream
 from cert.matchers import L2capMatchers
 from cert.captures import L2capCaptures
+from mobly import asserts
 
 
 class CertLeL2capChannel(IEventStream):
 
-    def __init__(self, device, scid, dcid, acl_stream, acl, control_channel):
+    def __init__(self,
+                 device,
+                 scid,
+                 dcid,
+                 acl_stream,
+                 acl,
+                 control_channel,
+                 initial_credits=0):
         self._device = device
         self._scid = scid
         self._dcid = dcid
@@ -39,6 +47,7 @@ class CertLeL2capChannel(IEventStream):
         self._control_channel = control_channel
         self._our_acl_view = FilteringEventStream(
             acl_stream, L2capMatchers.ExtractBasicFrame(scid))
+        self._credits_left = initial_credits
 
     def get_event_queue(self):
         return self._our_acl_view.get_event_queue()
@@ -46,17 +55,19 @@ class CertLeL2capChannel(IEventStream):
     def send(self, packet):
         frame = l2cap_packets.BasicFrameBuilder(self._dcid, packet)
         self._acl.send(frame.Serialize())
+        self._credits_left -= 1
 
     def send_first_le_i_frame(self, sdu_size, packet):
         frame = l2cap_packets.FirstLeInformationFrameBuilder(
             self._dcid, sdu_size, packet)
         self._acl.send(frame.Serialize())
+        self._credits_left -= 1
 
     def disconnect_and_verify(self):
         assertThat(self._scid).isNotEqualTo(1)
         self._control_channel.send(
-            l2cap_packets.DisconnectionRequestBuilder(1, self._dcid,
-                                                      self._scid))
+            l2cap_packets.LeDisconnectionRequestBuilder(1, self._dcid,
+                                                        self._scid))
 
         assertThat(self._control_channel).emits(
             L2capMatchers.LeDisconnectionResponse(self._scid, self._dcid))
@@ -69,6 +80,9 @@ class CertLeL2capChannel(IEventStream):
         self._control_channel.send(
             l2cap_packets.LeFlowControlCreditBuilder(2, self._scid,
                                                      num_credits))
+
+    def credits_left(self):
+        return self._credits_left
 
 
 class CertLeL2cap(Closable):
@@ -83,9 +97,11 @@ class CertLeL2cap(Closable):
             self._on_disconnection_request_default,
             LeCommandCode.DISCONNECTION_RESPONSE:
             self._on_disconnection_response_default,
+            LeCommandCode.LE_FLOW_CONTROL_CREDIT:
+            self._on_credit,
         }
 
-        self.scid_to_dcid = {}
+        self._cid_to_cert_channels = {}
 
     def close(self):
         self._le_acl_manager.close()
@@ -128,10 +144,13 @@ class CertLeL2cap(Closable):
 
         response = L2capCaptures.CreditBasedConnectionResponse(scid)
         assertThat(self.control_channel).emits(response)
-        return CertLeL2capChannel(self._device, scid,
-                                  response.get().GetDestinationCid(),
-                                  self._get_acl_stream(), self._le_acl,
-                                  self.control_channel)
+        channel = CertLeL2capChannel(self._device, scid,
+                                     response.get().GetDestinationCid(),
+                                     self._get_acl_stream(), self._le_acl,
+                                     self.control_channel,
+                                     response.get().GetInitialCredits())
+        self._cid_to_cert_channels[scid] = channel
+        return channel
 
     def verify_and_respond_open_channel_from_remote(
             self, psm=0x33,
@@ -140,9 +159,12 @@ class CertLeL2cap(Closable):
         assertThat(self.control_channel).emits(request)
         (scid, dcid) = self._respond_connection_request_default(
             request.get(), result)
-        return CertLeL2capChannel(self._device, scid, dcid,
-                                  self._get_acl_stream(), self._le_acl,
-                                  self.control_channel)
+        channel = CertLeL2capChannel(self._device, scid, dcid,
+                                     self._get_acl_stream(), self._le_acl,
+                                     self.control_channel,
+                                     request.get().GetInitialCredits())
+        self._cid_to_cert_channels[scid] = channel
+        return channel
 
     def verify_and_reject_open_channel_from_remote(self, psm=0x33):
         request = L2capCaptures.CreditBasedConnectionRequest(psm)
@@ -150,6 +172,10 @@ class CertLeL2cap(Closable):
         sid = request.get().GetIdentifier()
         reject = l2cap_packets.LeCommandRejectNotUnderstoodBuilder(sid)
         self.control_channel.send(reject)
+
+    def verify_le_flow_control_credit(self, channel):
+        assertThat(self.control_channel).emits(
+            L2capMatchers.LeFlowControlCredit(channel._dcid))
 
     def _respond_connection_request_default(
             self, request,
@@ -166,10 +192,6 @@ class CertLeL2cap(Closable):
             sid, our_scid, mtu, mps, initial_credits, result)
         self.control_channel.send(response)
         return (our_scid, our_dcid)
-
-    # prefer to use channel abstraction instead, if at all possible
-    def send_acl(self, packet):
-        self._acl.send(packet.Serialize())
 
     def get_control_channel(self):
         return self.control_channel
@@ -189,6 +211,15 @@ class CertLeL2cap(Closable):
     def _on_disconnection_response_default(self, request):
         disconnection_response = l2cap_packets.LeDisconnectionResponseView(
             request)
+
+    def _on_credit(self, l2cap_le_control_view):
+        credit_view = l2cap_packets.LeFlowControlCreditView(
+            l2cap_le_control_view)
+        cid = credit_view.GetCid()
+        if cid not in self._cid_to_cert_channels:
+            return
+        self._cid_to_cert_channels[
+            cid]._credits_left += credit_view.GetCredits()
 
     def _handle_control_packet(self, l2cap_packet):
         packet_bytes = l2cap_packet.payload

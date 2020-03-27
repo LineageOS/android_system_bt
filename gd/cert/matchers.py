@@ -84,6 +84,10 @@ class L2capMatchers(object):
         return lambda packet: L2capMatchers._is_matching_le_disconnection_response(packet, scid, dcid)
 
     @staticmethod
+    def LeFlowControlCredit(cid):
+        return lambda packet: L2capMatchers._is_matching_le_flow_control_credit(packet, cid)
+
+    @staticmethod
     def SFrame(req_seq=None, f=None, s=None, p=None):
         return lambda packet: L2capMatchers._is_matching_supervisory_frame(packet, req_seq, f, s, p)
 
@@ -262,6 +266,15 @@ class L2capMatchers(object):
         request = l2cap_packets.LeDisconnectionRequestView(frame)
         return request.GetSourceCid() == scid and request.GetDestinationCid(
         ) == dcid
+
+    @staticmethod
+    def _is_matching_le_flow_control_credit(packet, cid):
+        frame = L2capMatchers.le_control_frame_with_code(
+            packet, LeCommandCode.LE_FLOW_CONTROL_CREDIT)
+        if frame is None:
+            return False
+        request = l2cap_packets.LeFlowControlCreditView(frame)
+        return request.GetCid() == cid
 
     @staticmethod
     def _information_response_with_type(packet, info_type):
