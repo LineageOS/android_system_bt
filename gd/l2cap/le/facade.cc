@@ -67,6 +67,12 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
     if (service_helper->second->channel_ == nullptr) {
       return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION, "Channel not open");
     }
+    auto address = service_helper->second->channel_->GetDevice().GetAddress();
+    hci::Address peer_address;
+    ASSERT(hci::Address::FromString(request->remote().address().address(), peer_address));
+    if (address != peer_address) {
+      return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION, "Remote address doesn't match");
+    }
     service_helper->second->channel_->Close();
     return ::grpc::Status::OK;
   }
