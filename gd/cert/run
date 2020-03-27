@@ -8,6 +8,11 @@ if [[ -z "${ANDROID_HOST_OUT}" ]]; then
   echo "ANDROID_HOST_OUT is not set for host run"
 fi
 
+if ! [ -x "$(command -v python3.8)" ] ; then
+    echo "You must have python 3.8 installed"
+    exit 1
+fi
+
 $ANDROID_BUILD_TOP/build/soong/soong_ui.bash --build-mode --"all-modules" --dir="$(pwd)" dist bluetooth_stack_with_facade
 
 TEST_CONFIG="$ANDROID_BUILD_TOP/system/bt/gd/cert/android_devices_config.json"
@@ -57,19 +62,19 @@ fi
 python3.8 -m virtualenv --python `which python3.8` $CERT_TEST_VENV
 if [[ $? -ne 0 ]] ; then
     echo "Error setting up virtualenv"
-    return 1
+    exit 1
 fi
 
 unzip -o -q $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_tests.zip -d $CERT_TEST_VENV/acts
 if [[ $? -ne 0 ]] ; then
     echo "Error unzipping bluetooth_cert_tests.zip"
-    return 1
+    exit 1
 fi
 
 $CERT_TEST_VENV/bin/python $CERT_TEST_VENV/acts/setup.py install
 if [[ $? -ne 0 ]] ; then
     echo "Error installing GD libraries"
-    return 1
+    exit 1
 fi
 
 $CERT_TEST_VENV/bin/python -c "
@@ -78,7 +83,7 @@ bp3.BaseStruct
 "
 if [[ $? -ne 0 ]] ; then
   echo "Setup failed as bluetooth_packets_python3 cannot be imported"
-  return 1
+  exit 1
 fi
 
 $CERT_TEST_VENV/bin/python $CERT_TEST_VENV/bin/act.py \
