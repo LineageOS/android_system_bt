@@ -74,6 +74,14 @@ class PyLeL2capChannel(IEventStream):
         self._device.l2cap_le.SendDynamicChannelPacket(
             l2cap_le_facade_pb2.DynamicChannelPacket(psm=0x33, payload=payload))
 
+    def close_channel(self):
+        self._device.l2cap_le.CloseDynamicChannel(
+            l2cap_le_facade_pb2.CloseDynamicChannelRequest(
+                remote=common.BluetoothAddressWithType(
+                    address=common.BluetoothAddress(
+                        address=b"22:33:ff:ff:11:00")),
+                psm=self._psm))
+
 
 class CreditBasedConnectionResponseFutureWrapper(object):
     """
