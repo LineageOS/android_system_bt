@@ -131,6 +131,12 @@ class CertLeL2cap(Closable):
             control_channel=None)
         self._get_acl_stream().register_callback(self._handle_control_packet)
 
+    def open_fixed_channel(self, cid=4):
+        channel = CertLeL2capChannel(self._device, cid, cid,
+                                     self._get_acl_stream(), self._le_acl, None,
+                                     0)
+        return channel
+
     def open_channel(self,
                      signal_id,
                      psm,

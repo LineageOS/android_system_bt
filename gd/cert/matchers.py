@@ -122,6 +122,11 @@ class L2capMatchers(object):
     def PacketPayloadWithMatchingPsm(psm):
         return lambda packet: None if psm != packet.psm else packet
 
+    # this is a hack - should be removed
+    @staticmethod
+    def PacketPayloadWithMatchingCid(cid):
+        return lambda packet: None if cid != packet.fixed_cid else packet
+
     @staticmethod
     def ExtractBasicFrame(scid):
         return lambda packet: L2capMatchers._basic_frame_for(packet, scid)
