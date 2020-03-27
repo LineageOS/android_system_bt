@@ -86,10 +86,9 @@ class L2capCaptures(object):
         return l2cap_packets.LeCreditBasedConnectionRequestView(frame)
 
     @staticmethod
-    def CreditBasedConnectionResponse(scid):
-        return Capture(
-            L2capMatchers.CreditBasedConnectionResponse(scid),
-            L2capCaptures._extract_credit_based_connection_response)
+    def CreditBasedConnectionResponse():
+        return Capture(L2capMatchers.CreditBasedConnectionResponse(),
+                       L2capCaptures._extract_credit_based_connection_response)
 
     @staticmethod
     def _extract_credit_based_connection_response(packet):
