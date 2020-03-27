@@ -142,7 +142,7 @@ class CertLeL2cap(Closable):
             l2cap_packets.LeCreditBasedConnectionRequestBuilder(
                 signal_id, psm, scid, mtu, mps, initial_credit))
 
-        response = L2capCaptures.CreditBasedConnectionResponse(scid)
+        response = L2capCaptures.CreditBasedConnectionResponse()
         assertThat(self.control_channel).emits(response)
         channel = CertLeL2capChannel(self._device, scid,
                                      response.get().GetDestinationCid(),
