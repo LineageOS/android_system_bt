@@ -123,6 +123,7 @@ class LeL2capTest(GdBaseTestClass):
         cert_channel = self.cert_l2cap.verify_and_respond_open_channel_from_remote(
             psm)
         dut_channel = response_future.get_channel()
+        return (dut_channel, cert_channel)
 
     def _open_channel_from_cert(self,
                                 signal_id=1,
@@ -226,6 +227,15 @@ class LeL2capTest(GdBaseTestClass):
         assertThat(cert_channel).emits(
             L2capMatchers.FirstLeIFrame(b'hello' * 40, sdu_size=200))
 
+    def test_no_segmentation_dut_is_master(self):
+        """
+        L2CAP/COS/CFC/BV-02-C
+        """
+        (dut_channel, cert_channel) = self._set_link_from_dut_and_open_channel()
+        dut_channel.send(b'hello' * 40)
+        assertThat(cert_channel).emits(
+            L2capMatchers.FirstLeIFrame(b'hello' * 40, sdu_size=200))
+
     def test_reassembling(self):
         """
         L2CAP/COS/CFC/BV-03-C
@@ -245,6 +255,12 @@ class LeL2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
         (dut_channel, cert_channel) = self._open_channel_from_cert()
+        cert_channel.send_first_le_i_frame(6, SAMPLE_PACKET)
+        assertThat(dut_channel).emits(
+            L2capMatchers.PacketPayloadRawData(b'\x01\x01\x02\x00\x00\x00'))
+
+    def test_data_receiving_dut_is_master(self):
+        (dut_channel, cert_channel) = self._set_link_from_dut_and_open_channel()
         cert_channel.send_first_le_i_frame(6, SAMPLE_PACKET)
         assertThat(dut_channel).emits(
             L2capMatchers.PacketPayloadRawData(b'\x01\x01\x02\x00\x00\x00'))
