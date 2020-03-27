@@ -25,12 +25,12 @@ from bluetooth_packets_python3.l2cap_packets import LeCreditBasedConnectionRespo
 class L2capMatchers(object):
 
     @staticmethod
-    def ConnectionResponse(scid):
-        return lambda packet: L2capMatchers._is_matching_connection_response(packet, scid)
+    def ConnectionRequest(psm):
+        return lambda packet: L2capMatchers._is_matching_connection_request(packet, psm)
 
     @staticmethod
-    def ConnectionRequest():
-        return lambda packet: L2capMatchers._is_control_frame_with_code(packet, CommandCode.CONNECTION_REQUEST)
+    def ConnectionResponse(scid):
+        return lambda packet: L2capMatchers._is_matching_connection_response(packet, scid)
 
     @staticmethod
     def ConfigurationResponse():
@@ -41,8 +41,8 @@ class L2capMatchers(object):
         return lambda packet: L2capMatchers._is_control_frame_with_code(packet, CommandCode.CONFIGURATION_REQUEST)
 
     @staticmethod
-    def DisconnectionRequest():
-        return lambda packet: L2capMatchers._is_control_frame_with_code(packet, CommandCode.DISCONNECTION_REQUEST)
+    def DisconnectionRequest(scid, dcid):
+        return lambda packet: L2capMatchers._is_matching_disconnection_request(packet, scid, dcid)
 
     @staticmethod
     def DisconnectionResponse(scid, dcid):
@@ -236,6 +236,15 @@ class L2capMatchers(object):
                                                         code) is not None
 
     @staticmethod
+    def _is_matching_connection_request(packet, psm):
+        frame = L2capMatchers.control_frame_with_code(
+            packet, CommandCode.CONNECTION_REQUEST)
+        if frame is None:
+            return False
+        request = l2cap_packets.ConnectionRequestView(frame)
+        return request.GetPsm() == psm
+
+    @staticmethod
     def _is_matching_connection_response(packet, scid):
         frame = L2capMatchers.control_frame_with_code(
             packet, CommandCode.CONNECTION_RESPONSE)
@@ -245,6 +254,16 @@ class L2capMatchers(object):
         return response.GetSourceCid() == scid and response.GetResult(
         ) == ConnectionResponseResult.SUCCESS and response.GetDestinationCid(
         ) != 0
+
+    @staticmethod
+    def _is_matching_disconnection_request(packet, scid, dcid):
+        frame = L2capMatchers.control_frame_with_code(
+            packet, CommandCode.DISCONNECTION_REQUEST)
+        if frame is None:
+            return False
+        request = l2cap_packets.DisconnectionRequestView(frame)
+        return request.GetSourceCid() == scid and request.GetDestinationCid(
+        ) == dcid
 
     @staticmethod
     def _is_matching_disconnection_response(packet, scid, dcid):
