@@ -247,9 +247,9 @@ class L2capTest(GdBaseTestClass):
 
         assertThat(self.cert_channel).emits(L2capMatchers.CommandReject())
 
-    def test_query_for_1_2_features(self):
+    def test_respond_with_1_2_features(self):
         """
-        L2CAP/COS/IEX/BV-01-C [Query for 1.2 Features]
+        L2CAP/COS/IEX/BV-02-C [Respond with 1.2 Features]
         """
         self._setup_link_from_cert()
         control_channel = self.cert_l2cap.get_control_channel()
