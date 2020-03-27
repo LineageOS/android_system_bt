@@ -191,6 +191,10 @@ class CertL2cap(Closable):
         self.control_table[CommandCode.CONNECTION_RESPONSE] = lambda _: True
 
     # more of a hack for the moment
+    def ignore_config_request(self):
+        self.control_table[CommandCode.CONFIGURATION_REQUEST] = lambda _: True
+
+    # more of a hack for the moment
     def reply_with_unacceptable_parameters(self):
         self.control_table[
             CommandCode.
@@ -416,8 +420,8 @@ class CertL2cap(Closable):
             return
         if information_type == l2cap_packets.InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED:
             response = l2cap_packets.InformationResponseExtendedFeaturesBuilder(
-                sid, l2cap_packets.InformationRequestResult.SUCCESS, 0, 0, 0, self.support_ertm,
-                0, self.support_fcs, 0, 0, 0, 0)
+                sid, l2cap_packets.InformationRequestResult.SUCCESS, 0, 0, 0,
+                self.support_ertm, 0, self.support_fcs, 0, 0, 0, 0)
             self.control_channel.send(response)
             return
         if information_type == l2cap_packets.InformationRequestInfoType.FIXED_CHANNELS_SUPPORTED:
