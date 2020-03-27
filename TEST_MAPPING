@@ -76,6 +76,10 @@
     {
       "name" : "net_test_types",
       "host" : true
+    },
+    {
+      "name" : "net_test_btif_rc",
+      "host" : true
     }
   ]
 }
