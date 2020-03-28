@@ -72,14 +72,13 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
   ::grpc::Status OpenChannel(::grpc::ServerContext* context,
                              const ::bluetooth::l2cap::classic::OpenChannelRequest* request,
                              ::google::protobuf::Empty* response) override {
-    std::unique_lock<std::mutex> lock(channel_map_mutex_);
-    auto psm = request->psm();
-    auto mode = request->mode();
-    dynamic_channel_helper_map_.emplace(
-        psm, std::make_unique<L2capDynamicChannelHelper>(this, l2cap_layer_, facade_handler_, psm, mode));
+    auto service_helper = dynamic_channel_helper_map_.find(request->psm());
+    if (service_helper == dynamic_channel_helper_map_.end()) {
+      return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION, "Psm not registered");
+    }
     hci::Address peer;
     ASSERT(hci::Address::FromString(request->remote().address(), peer));
-    dynamic_channel_helper_map_[psm]->Connect(peer);
+    dynamic_channel_helper_map_[request->psm()]->Connect(peer);
     return ::grpc::Status::OK;
   }
 
@@ -90,7 +89,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
     if (dynamic_channel_helper_map_.find(request->psm()) == dynamic_channel_helper_map_.end()) {
       return ::grpc::Status(::grpc::StatusCode::FAILED_PRECONDITION, "Psm not registered");
     }
-    dynamic_channel_helper_map_[psm]->disconnect();
+    dynamic_channel_helper_map_[psm]->Disconnect();
     return ::grpc::Status::OK;
   }
 
@@ -139,9 +138,20 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
           address, configuration_option, psm_,
           common::Bind(&L2capDynamicChannelHelper::on_connection_open, common::Unretained(this)),
           common::Bind(&L2capDynamicChannelHelper::on_connect_fail, common::Unretained(this)), handler_);
+      std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
+      if (!channel_open_cv_.wait_for(lock, std::chrono::seconds(2), [this] { return channel_ != nullptr; })) {
+        LOG_WARN("Channel is not open for psm %d", psm_);
+      }
     }
 
-    void disconnect() {
+    void Disconnect() {
+      if (channel_ == nullptr) {
+        std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
+        if (!channel_open_cv_.wait_for(lock, std::chrono::seconds(2), [this] { return channel_ != nullptr; })) {
+          LOG_WARN("Channel is not open for psm %d", psm_);
+          return;
+        }
+      }
       channel_->Close();
     }
 
