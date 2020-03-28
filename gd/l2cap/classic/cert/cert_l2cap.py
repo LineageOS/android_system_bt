@@ -130,6 +130,9 @@ class CertL2cap(Closable):
         self.ertm_option = None
         self.fcs_option = None
 
+        self.config_response_result = l2cap_packets.ConfigurationResponseResult.SUCCESS
+        self.config_response_options = []
+
     def close(self):
         self._acl_manager.close()
         safeClose(self._acl)
@@ -231,12 +234,6 @@ class CertL2cap(Closable):
         self.control_table[CommandCode.CONFIGURATION_REQUEST] = lambda _: True
 
     # more of a hack for the moment
-    def reply_with_unacceptable_parameters(self):
-        self.control_table[
-            CommandCode.
-            CONFIGURATION_REQUEST] = self._on_configuration_request_unacceptable_parameters
-
-    # more of a hack for the moment
     def reply_with_unknown_options_and_hint(self):
         self.control_table[
             CommandCode.
@@ -247,12 +244,6 @@ class CertL2cap(Closable):
         self.control_table[
             CommandCode.
             CONNECTION_RESPONSE] = self._on_connection_response_configuration_request_with_continuation_flag
-
-    # more of a hack for the moment
-    def reply_with_basic_mode(self):
-        self.control_table[
-            CommandCode.
-            CONFIGURATION_REQUEST] = self._on_configuration_request_basic_mode
 
     # more of a hack for the moment
     def reply_with_nothing(self):
@@ -266,6 +257,18 @@ class CertL2cap(Closable):
         self.control_table[
             CommandCode.
             CONFIGURATION_REQUEST] = self._on_configuration_request_send_configuration_request_basic_mode
+
+    def set_config_response_result(self, result):
+        """
+        Set the result for config response packet
+        """
+        self.config_response_result = result
+
+    def set_config_response_options(self, options):
+        """
+        Set the options (list) for config response packet
+        """
+        self.config_response_options = options
 
     def _on_connection_request_default(self, l2cap_control_view):
         pass
@@ -357,16 +360,10 @@ class CertL2cap(Closable):
         dcid = configuration_request.GetDestinationCid()
         config_response = l2cap_packets.ConfigurationResponseBuilder(
             sid, self.scid_to_dcid.get(dcid, 0), l2cap_packets.Continuation.END,
-            l2cap_packets.ConfigurationResponseResult.SUCCESS, [])
+            self.config_response_result, self.config_response_options)
         self.control_channel.send(config_response)
 
-    def _on_configuration_request_unacceptable_parameters(
-            self, l2cap_control_view):
-        configuration_request = l2cap_packets.ConfigurationRequestView(
-            l2cap_control_view)
-        sid = configuration_request.GetIdentifier()
-        dcid = configuration_request.GetDestinationCid()
-
+    def reply_with_unacceptable_parameters(self):
         mtu_opt = l2cap_packets.MtuConfigurationOption()
         mtu_opt.mtu = 123
         fcs_opt = l2cap_packets.FrameCheckSequenceOption()
@@ -375,27 +372,34 @@ class CertL2cap(Closable):
         )
         rfc_opt.mode = l2cap_packets.RetransmissionAndFlowControlModeOption.L2CAP_BASIC
 
-        config_response = l2cap_packets.ConfigurationResponseBuilder(
-            sid, self.scid_to_dcid.get(dcid, 0), l2cap_packets.Continuation.END,
-            l2cap_packets.ConfigurationResponseResult.UNACCEPTABLE_PARAMETERS,
-            [mtu_opt, fcs_opt, rfc_opt])
-        self.control_channel.send(config_response)
+        self.set_config_response_result(
+            l2cap_packets.ConfigurationResponseResult.UNACCEPTABLE_PARAMETERS)
+        self.set_config_response_options([mtu_opt, fcs_opt, rfc_opt])
 
-    def _on_configuration_request_basic_mode(self, l2cap_control_view):
-        configuration_request = l2cap_packets.ConfigurationRequestView(
-            l2cap_control_view)
-        sid = configuration_request.GetIdentifier()
-        dcid = configuration_request.GetDestinationCid()
-
+    def reply_with_basic_mode(self):
         basic_option = l2cap_packets.RetransmissionAndFlowControlConfigurationOption(
         )
         basic_option.mode = l2cap_packets.RetransmissionAndFlowControlModeOption.L2CAP_BASIC
 
-        config_response = l2cap_packets.ConfigurationResponseBuilder(
-            sid, self.scid_to_dcid.get(dcid, 0), l2cap_packets.Continuation.END,
-            l2cap_packets.ConfigurationResponseResult.UNACCEPTABLE_PARAMETERS,
-            [basic_option])
-        self.control_channel.send(config_response)
+        self.set_config_response_result(
+            l2cap_packets.ConfigurationResponseResult.UNACCEPTABLE_PARAMETERS)
+        self.set_config_response_options([basic_option])
+
+    def reply_with_max_transmit_one(self):
+        mtu_opt = l2cap_packets.MtuConfigurationOption()
+        mtu_opt.mtu = 123
+        fcs_opt = l2cap_packets.FrameCheckSequenceOption()
+        fcs_opt.fcs_type = l2cap_packets.FcsType.DEFAULT
+        rfc_opt = l2cap_packets.RetransmissionAndFlowControlConfigurationOption(
+        )
+        rfc_opt.mode = l2cap_packets.RetransmissionAndFlowControlModeOption.ENHANCED_RETRANSMISSION
+        rfc_opt.tx_window_size = 10
+        rfc_opt.max_transmit = 1
+        rfc_opt.retransmission_time_out = 10
+        rfc_opt.monitor_time_out = 10
+        rfc_opt.maximum_pdu_size = 1010
+
+        self.set_config_response_options([mtu_opt, fcs_opt, rfc_opt])
 
     def _on_configuration_request_send_configuration_request_basic_mode(
             self, l2cap_control_view):
