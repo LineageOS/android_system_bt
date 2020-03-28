@@ -126,6 +126,7 @@ void Link::SendConnectionRequest(Psm psm, Cid local_cid,
   if (pending_dynamic_channel_connection.configuration_.channel_mode ==
           RetransmissionAndFlowControlMode::ENHANCED_RETRANSMISSION &&
       !GetRemoteSupportsErtm()) {
+    LOG_WARN("Remote doesn't support ERTM. Dropping connection request");
     ConnectionResult result{
         .connection_result_code = ConnectionResultCode::FAIL_REMOTE_NOT_SUPPORT,
     };

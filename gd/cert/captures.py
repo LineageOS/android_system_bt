@@ -62,6 +62,18 @@ def LeConnectionCompleteCapture():
 class L2capCaptures(object):
 
     @staticmethod
+    def ConnectionRequest(psm):
+        return Capture(
+            L2capMatchers.ConnectionRequest(psm),
+            L2capCaptures._extract_connection_request)
+
+    @staticmethod
+    def _extract_connection_request(packet):
+        frame = L2capMatchers.control_frame_with_code(
+            packet, CommandCode.CONNECTION_REQUEST)
+        return l2cap_packets.ConnectionRequestView(frame)
+
+    @staticmethod
     def ConnectionResponse(scid):
         return Capture(
             L2capMatchers.ConnectionResponse(scid),
