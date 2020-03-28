@@ -90,6 +90,10 @@ class CertL2capChannel(IEventStream):
         assertThat(self._control_channel).emits(
             L2capMatchers.DisconnectionResponse(self._scid, self._dcid))
 
+    def verify_disconnect_request(self):
+        assertThat(self._control_channel).emits(
+            L2capMatchers.DisconnectionRequest(self._dcid, self._scid))
+
 
 class CertL2cap(Closable):
 
@@ -152,6 +156,38 @@ class CertL2cap(Closable):
                                 response.get().GetDestinationCid(),
                                 self._get_acl_stream(), self._acl,
                                 self.control_channel)
+
+    def verify_and_respond_open_channel_from_remote(self, psm=0x33):
+        request = L2capCaptures.ConnectionRequest(psm)
+        assertThat(self.control_channel).emits(request)
+
+        sid = request.get().GetIdentifier()
+        cid = request.get().GetSourceCid()
+
+        self.scid_to_dcid[cid] = cid
+
+        connection_response = l2cap_packets.ConnectionResponseBuilder(
+            sid, cid, cid, l2cap_packets.ConnectionResponseResult.SUCCESS,
+            l2cap_packets.ConnectionResponseStatus.
+            NO_FURTHER_INFORMATION_AVAILABLE)
+        self.control_channel.send(connection_response)
+
+        config_options = []
+        if self.basic_option is not None:
+            config_options.append(self.basic_option)
+        elif self.ertm_option is not None:
+            config_options.append(self.ertm_option)
+        if self.fcs_option is not None:
+            config_options.append(self.fcs_option)
+
+        config_request = l2cap_packets.ConfigurationRequestBuilder(
+            sid + 1, cid, l2cap_packets.Continuation.END, config_options)
+        self.control_channel.send(config_request)
+
+        channel = CertL2capChannel(self._device, cid, cid,
+                                   self._get_acl_stream(), self._acl,
+                                   self.control_channel)
+        return channel
 
     # prefer to use channel abstraction instead, if at all possible
     def send_acl(self, packet):
@@ -232,19 +268,7 @@ class CertL2cap(Closable):
             CONFIGURATION_REQUEST] = self._on_configuration_request_send_configuration_request_basic_mode
 
     def _on_connection_request_default(self, l2cap_control_view):
-        connection_request_view = l2cap_packets.ConnectionRequestView(
-            l2cap_control_view)
-        sid = connection_request_view.GetIdentifier()
-        cid = connection_request_view.GetSourceCid()
-
-        self.scid_to_dcid[cid] = cid
-
-        connection_response = l2cap_packets.ConnectionResponseBuilder(
-            sid, cid, cid, l2cap_packets.ConnectionResponseResult.SUCCESS,
-            l2cap_packets.ConnectionResponseStatus.
-            NO_FURTHER_INFORMATION_AVAILABLE)
-        self.control_channel.send(connection_response)
-        return True
+        pass
 
     def _on_connection_response_default(self, l2cap_control_view):
         connection_response_view = l2cap_packets.ConnectionResponseView(

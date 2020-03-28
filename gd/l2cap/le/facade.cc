@@ -138,10 +138,6 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
       }
     }
 
-    void disconnect() {
-      channel_->Close();
-    }
-
     void on_l2cap_service_registration_complete(DynamicChannelManager::RegistrationResult registration_result,
                                                 std::unique_ptr<DynamicChannelService> service) {
       if (registration_result != DynamicChannelManager::RegistrationResult::SUCCESS) {
@@ -293,10 +289,6 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
       }
     }
 
-    void disconnect() {
-      channel_->Release();
-    }
-
     void on_l2cap_service_registration_complete(FixedChannelManager::RegistrationResult registration_result,
                                                 std::unique_ptr<FixedChannelService> service) {
       if (registration_result != FixedChannelManager::RegistrationResult::SUCCESS) {
@@ -310,7 +302,6 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
     void on_connection_open(std::unique_ptr<FixedChannel> channel) {
       {
         std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
-        LOG_INFO();
         channel_ = std::move(channel);
         channel_->RegisterOnCloseCallback(
             handler_, common::BindOnce(&L2capFixedChannelHelper::on_close_callback, common::Unretained(this)));
