@@ -59,7 +59,7 @@ class L2capTest(GdBaseTestClass):
         self.cert_address = common_pb2.BluetoothAddress(
             address=self.cert.address)
 
-        self.dut_l2cap = PyL2cap(self.dut)
+        self.dut_l2cap = PyL2cap(self.dut, self.cert_address)
         self.cert_l2cap = CertL2cap(self.cert)
 
     def teardown_test(self):
@@ -81,7 +81,7 @@ class L2capTest(GdBaseTestClass):
                                   psm=0x33,
                                   mode=RetransmissionFlowControlMode.BASIC):
 
-        dut_channel = self.dut_l2cap.open_channel(psm, mode)
+        dut_channel = self.dut_l2cap.register_dynamic_channel(psm, mode)
         cert_channel = self.cert_l2cap.open_channel(signal_id, psm, scid)
 
         return (dut_channel, cert_channel)
@@ -98,6 +98,17 @@ class L2capTest(GdBaseTestClass):
             L2capMatchers.ConfigurationRequest()).inAnyOrder()
 
         return result
+
+    def _open_channel_from_dut(self,
+                               psm=0x33,
+                               mode=RetransmissionFlowControlMode.BASIC):
+        dut_channel_future = self.dut_l2cap.connect_dynamic_channel_to_cert(
+            psm, mode)
+        cert_channel = self.cert_l2cap.verify_and_respond_open_channel_from_remote(
+            psm)
+        dut_channel = dut_channel_future.get_channel()
+
+        return (dut_channel, cert_channel)
 
     def test_connect_dynamic_channel_and_send_data(self):
         self._setup_link_from_cert()
@@ -146,14 +157,27 @@ class L2capTest(GdBaseTestClass):
         initiate the configuration procedure.
         """
         self._setup_link_from_cert()
+        (dut_channel, cert_channel) = self._open_channel_from_dut(psm=0x33)
 
-        psm = 0x33
-        # TODO: Use another test case
-        self.dut.l2cap.OpenChannel(
-            l2cap_facade_pb2.OpenChannelRequest(
-                remote=self.cert_address, psm=psm))
-        assertThat(self.cert_l2cap.get_control_channel()).emits(
-            L2capMatchers.ConnectionRequest())
+    def test_send_data(self):
+        """
+        L2CAP/COS/CED/BV-03-C [Send data]
+        """
+        self._setup_link_from_cert()
+
+        (dut_channel, cert_channel) = self._open_channel(scid=0x41, psm=0x33)
+        dut_channel.send(b'hello')
+        assertThat(cert_channel).emits(L2capMatchers.Data(b'hello'))
+
+    def test_disconnect(self):
+        """
+        L2CAP/COS/CED/BV-04-C [Disconnect]
+        """
+        self._setup_link_from_cert()
+
+        (dut_channel, cert_channel) = self._open_channel(scid=0x41, psm=0x33)
+        dut_channel.close_channel()
+        cert_channel.verify_disconnect_request()
 
     def test_accept_disconnect(self):
         """
@@ -569,8 +593,7 @@ class L2capTest(GdBaseTestClass):
 
         # Retransmission timer = 2, 20 * monitor timer = 360, so total timeout is 362
         time.sleep(362)
-        assertThat(self.cert_l2cap.get_control_channel()).emits(
-            L2capMatchers.DisconnectionRequest())
+        cert_channel.verify_disconnect_request()
 
     def test_i_frame_transmissions_exceed_max_transmit(self):
         """
@@ -589,8 +612,7 @@ class L2capTest(GdBaseTestClass):
         assertThat(cert_channel).emits(L2capMatchers.IFrame(tx_seq=0))
 
         cert_channel.send_s_frame(req_seq=0, f=Final.POLL_RESPONSE)
-        assertThat(self.cert_l2cap.get_control_channel()).emits(
-            L2capMatchers.DisconnectionRequest())
+        cert_channel.verify_disconnect_request()
 
     def test_respond_to_rej(self):
         """
@@ -900,14 +922,10 @@ class L2capTest(GdBaseTestClass):
         L2CAP/CMC/BV-12-C
         """
         self._setup_link_from_cert()
-
-        self.dut.l2cap.OpenChannel(
-            l2cap_facade_pb2.OpenChannelRequest(
-                remote=self.cert_address,
-                psm=0x33,
-                mode=RetransmissionFlowControlMode.ERTM))
+        dut_channel_future = self.dut_l2cap.connect_dynamic_channel_to_cert(
+            psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
         assertThat(self.cert_l2cap.get_control_channel()).emitsNone(
-            L2capMatchers.ConfigurationRequest())
+            L2capMatchers.ConnectionRequest(0x33))
 
     def test_config_respond_basic_mode_when_using_mandatory_ertm(self):
         """
@@ -916,11 +934,11 @@ class L2capTest(GdBaseTestClass):
         self._setup_link_from_cert()
         self.cert_l2cap.reply_with_nothing()
         self.cert_l2cap.reply_with_basic_mode()
-        self._open_unvalidated_channel(
+        (dut_channel, cert_channel) = self._open_unvalidated_channel(
             scid=0x41, psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
         assertThat(self.cert_l2cap.get_control_channel()).emits(
-            L2capMatchers.ConfigurationRequest(),
-            L2capMatchers.DisconnectionRequest()).inOrder()
+            L2capMatchers.ConfigurationRequest())
+        cert_channel.verify_disconnect_request()
 
     def test_config_request_basic_mode_when_using_mandatory_ertm(self):
         """
@@ -929,8 +947,8 @@ class L2capTest(GdBaseTestClass):
         self._setup_link_from_cert()
         self.cert_l2cap.reply_with_nothing()
         self.cert_l2cap.config_with_basic_mode()
-        self._open_unvalidated_channel(
+        (dut_channel, cert_channel) = self._open_unvalidated_channel(
             scid=0x41, psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
         assertThat(self.cert_l2cap.get_control_channel()).emits(
-            L2capMatchers.ConfigurationRequest(),
-            L2capMatchers.DisconnectionRequest()).inOrder()
+            L2capMatchers.ConfigurationRequest())
+        cert_channel.verify_disconnect_request()
