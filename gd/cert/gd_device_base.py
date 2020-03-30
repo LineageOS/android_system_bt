@@ -198,8 +198,7 @@ class GdDeviceBase:
         :param device_port: device port, int
         :return: host port int
         """
-        error_or_port = self.adb.forward(
-            "tcp:%d tcp:%d" % (host_port, device_port), ignore_status=True)
+        error_or_port = self.adb.tcp_forward(host_port, device_port)
         if not error_or_port:
             logging.debug("host port %d was already forwarded" % host_port)
             return host_port
