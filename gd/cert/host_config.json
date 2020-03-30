@@ -7,9 +7,9 @@
             "name": "HostOnlyCert",
             "rootcanal":
             {
-                "test_port": 6401,
-                "hci_port": 6402,
-                "link_layer_port": 6403
+                "test_port": "6401",
+                "hci_port": "6402",
+                "link_layer_port": "6403"
             },
             "GdDevice":
             [
