@@ -179,6 +179,17 @@ class L2capTest(GdBaseTestClass):
         dut_channel.close_channel()
         cert_channel.verify_disconnect_request()
 
+    def test_accept_connection(self):
+        """
+        L2CAP/COS/CED/BV-05-C [Accept connection]
+        Also verify that DUT can send 48 bytes PDU (minimal MTU)
+        """
+        self._setup_link_from_cert()
+
+        (dut_channel, cert_channel) = self._open_channel(scid=0x41, psm=0x33)
+        dut_channel.send(b'a' * 48)
+        assertThat(cert_channel).emits(L2capMatchers.Data(b'a' * 48))
+
     def test_accept_disconnect(self):
         """
         L2CAP/COS/CED/BV-07-C
@@ -230,6 +241,13 @@ class L2capTest(GdBaseTestClass):
             L2capMatchers.ConfigurationResponse(),
             L2capMatchers.ConfigurationRequest(),
             L2capMatchers.ConfigurationRequest()).inAnyOrder()
+
+    def test_send_requested_options(self):
+        """
+        L2CAP/COS/CFD/BV-03-C
+        """
+        self._setup_link_from_cert()
+        (dut_channel, cert_channel) = self._open_channel(scid=0x41, psm=0x33)
 
     def test_non_blocking_config_response(self):
         """
@@ -576,6 +594,25 @@ class L2capTest(GdBaseTestClass):
         cert_channel.send_s_frame(req_seq=0, p=Poll.POLL)
         assertThat(cert_channel).emits(
             L2capMatchers.SFrame(f=Final.POLL_RESPONSE))
+
+    def test_retransmit_s_frame_rr_with_poll_bit_set(self):
+        """
+        L2CAP/ERM/BV-10-C [Send S-Frame [RR] with Final Bit Set]
+        Verify the IUT responds with an S-frame [RR] with the Final bit set after receiving an S-frame [RR]
+        with the Poll bit set.
+        """
+        self._setup_link_from_cert()
+        self.cert_l2cap.turn_on_ertm(max_transmit=3)
+
+        (dut_channel, cert_channel) = self._open_channel(
+            scid=0x41, psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
+        dut_channel.send(b'abc')
+
+        assertThat(cert_channel).emits(
+            L2capMatchers.IFrame(tx_seq=0, payload=b'abc'))
+        assertThat(cert_channel).emits(
+            L2capMatchers.SFrame(req_seq=0, p=Poll.POLL, f=Final.NOT_SET))
+        cert_channel.send_s_frame(req_seq=1, f=Final.POLL_RESPONSE)
 
     def test_s_frame_transmissions_exceed_max_transmit(self):
         """
