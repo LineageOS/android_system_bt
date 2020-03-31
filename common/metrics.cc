@@ -37,6 +37,7 @@
 
 #include "address_obfuscator.h"
 #include "leaky_bonded_queue.h"
+#include "metric_id_allocator.h"
 #include "metrics.h"
 #include "time_util.h"
 
@@ -576,8 +577,10 @@ void LogLinkLayerConnectionEvent(const RawAddress* address,
                                  uint16_t hci_event, uint16_t hci_ble_event,
                                  uint16_t cmd_status, uint16_t reason_code) {
   std::string obfuscated_id;
+  int metric_id = 0;
   if (address != nullptr) {
     obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(*address);
+    metric_id = MetricIdAllocator::GetInstance().AllocateId(*address);
   }
   // nullptr and size 0 represent missing value for obfuscated_id
   android::util::BytesField bytes_field(
@@ -586,7 +589,7 @@ void LogLinkLayerConnectionEvent(const RawAddress* address,
   int ret = android::util::stats_write(
       android::util::BLUETOOTH_LINK_LAYER_CONNECTION_EVENT, bytes_field,
       connection_handle, direction, link_type, hci_cmd, hci_event,
-      hci_ble_event, cmd_status, reason_code);
+      hci_ble_event, cmd_status, reason_code, metric_id);
   if (ret < 0) {
     LOG(WARNING) << __func__ << ": failed to log status " << loghex(cmd_status)
                  << ", reason " << loghex(reason_code) << " from cmd "
@@ -624,8 +627,10 @@ void LogA2dpAudioUnderrunEvent(const RawAddress& address,
                                uint64_t encoding_interval_millis,
                                int num_missing_pcm_bytes) {
   std::string obfuscated_id;
+  int metric_id = 0;
   if (!address.IsEmpty()) {
     obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
+    metric_id = MetricIdAllocator::GetInstance().AllocateId(address);
   }
   // nullptr and size 0 represent missing value for obfuscated_id
   android::util::BytesField bytes_field(
@@ -634,7 +639,7 @@ void LogA2dpAudioUnderrunEvent(const RawAddress& address,
   int64_t encoding_interval_nanos = encoding_interval_millis * 1000000;
   int ret = android::util::stats_write(
       android::util::BLUETOOTH_A2DP_AUDIO_UNDERRUN_REPORTED, bytes_field,
-      encoding_interval_nanos, num_missing_pcm_bytes);
+      encoding_interval_nanos, num_missing_pcm_bytes, metric_id);
   if (ret < 0) {
     LOG(WARNING) << __func__ << ": failed for " << address
                  << ", encoding_interval_nanos " << encoding_interval_nanos
@@ -649,8 +654,10 @@ void LogA2dpAudioOverrunEvent(const RawAddress& address,
                               int num_dropped_encoded_frames,
                               int num_dropped_encoded_bytes) {
   std::string obfuscated_id;
+  int metric_id = 0;
   if (!address.IsEmpty()) {
     obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
+    metric_id = MetricIdAllocator::GetInstance().AllocateId(address);
   }
   // nullptr and size 0 represent missing value for obfuscated_id
   android::util::BytesField bytes_field(
@@ -660,7 +667,7 @@ void LogA2dpAudioOverrunEvent(const RawAddress& address,
   int ret = android::util::stats_write(
       android::util::BLUETOOTH_A2DP_AUDIO_OVERRUN_REPORTED, bytes_field,
       encoding_interval_nanos, num_dropped_buffers, num_dropped_encoded_frames,
-      num_dropped_encoded_bytes);
+      num_dropped_encoded_bytes, metric_id);
   if (ret < 0) {
     LOG(WARNING) << __func__ << ": failed to log for " << address
                  << ", encoding_interval_nanos " << encoding_interval_nanos
@@ -674,16 +681,18 @@ void LogA2dpAudioOverrunEvent(const RawAddress& address,
 void LogReadRssiResult(const RawAddress& address, uint16_t handle,
                        uint32_t cmd_status, int8_t rssi) {
   std::string obfuscated_id;
+  int metric_id = 0;
   if (!address.IsEmpty()) {
     obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
+    metric_id = MetricIdAllocator::GetInstance().AllocateId(address);
   }
   // nullptr and size 0 represent missing value for obfuscated_id
   android::util::BytesField bytes_field(
       address.IsEmpty() ? nullptr : obfuscated_id.c_str(),
       address.IsEmpty() ? 0 : obfuscated_id.size());
-  int ret =
-      android::util::stats_write(android::util::BLUETOOTH_DEVICE_RSSI_REPORTED,
-                                 bytes_field, handle, cmd_status, rssi);
+  int ret = android::util::stats_write(
+      android::util::BLUETOOTH_DEVICE_RSSI_REPORTED, bytes_field, handle,
+      cmd_status, rssi, metric_id);
   if (ret < 0) {
     LOG(WARNING) << __func__ << ": failed for " << address << ", handle "
                  << handle << ", status " << loghex(cmd_status) << ", rssi "
@@ -695,8 +704,10 @@ void LogReadFailedContactCounterResult(const RawAddress& address,
                                        uint16_t handle, uint32_t cmd_status,
                                        int32_t failed_contact_counter) {
   std::string obfuscated_id;
+  int metric_id = 0;
   if (!address.IsEmpty()) {
     obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
+    metric_id = MetricIdAllocator::GetInstance().AllocateId(address);
   }
   // nullptr and size 0 represent missing value for obfuscated_id
   android::util::BytesField bytes_field(
@@ -704,7 +715,7 @@ void LogReadFailedContactCounterResult(const RawAddress& address,
       address.IsEmpty() ? 0 : obfuscated_id.size());
   int ret = android::util::stats_write(
       android::util::BLUETOOTH_DEVICE_FAILED_CONTACT_COUNTER_REPORTED,
-      bytes_field, handle, cmd_status, failed_contact_counter);
+      bytes_field, handle, cmd_status, failed_contact_counter, metric_id);
   if (ret < 0) {
     LOG(WARNING) << __func__ << ": failed for " << address << ", handle "
                  << handle << ", status " << loghex(cmd_status)
@@ -717,8 +728,10 @@ void LogReadTxPowerLevelResult(const RawAddress& address, uint16_t handle,
                                uint32_t cmd_status,
                                int32_t transmit_power_level) {
   std::string obfuscated_id;
+  int metric_id = 0;
   if (!address.IsEmpty()) {
     obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
+    metric_id = MetricIdAllocator::GetInstance().AllocateId(address);
   }
   // nullptr and size 0 represent missing value for obfuscated_id
   android::util::BytesField bytes_field(
@@ -726,7 +739,7 @@ void LogReadTxPowerLevelResult(const RawAddress& address, uint16_t handle,
       address.IsEmpty() ? 0 : obfuscated_id.size());
   int ret = android::util::stats_write(
       android::util::BLUETOOTH_DEVICE_TX_POWER_LEVEL_REPORTED, bytes_field,
-      handle, cmd_status, transmit_power_level);
+      handle, cmd_status, transmit_power_level, metric_id);
   if (ret < 0) {
     LOG(WARNING) << __func__ << ": failed for " << address << ", handle "
                  << handle << ", status " << loghex(cmd_status)
@@ -739,8 +752,10 @@ void LogSmpPairingEvent(const RawAddress& address, uint8_t smp_cmd,
                         android::bluetooth::DirectionEnum direction,
                         uint8_t smp_fail_reason) {
   std::string obfuscated_id;
+  int metric_id = 0;
   if (!address.IsEmpty()) {
     obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
+    metric_id = MetricIdAllocator::GetInstance().AllocateId(address);
   }
   // nullptr and size 0 represent missing value for obfuscated_id
   android::util::BytesField obfuscated_id_field(
@@ -748,7 +763,7 @@ void LogSmpPairingEvent(const RawAddress& address, uint8_t smp_cmd,
       address.IsEmpty() ? 0 : obfuscated_id.size());
   int ret = android::util::stats_write(
       android::util::BLUETOOTH_SMP_PAIRING_EVENT_REPORTED, obfuscated_id_field,
-      smp_cmd, direction, smp_fail_reason);
+      smp_cmd, direction, smp_fail_reason, metric_id);
   if (ret < 0) {
     LOG(WARNING) << __func__ << ": failed for " << address << ", smp_cmd "
                  << loghex(smp_cmd) << ", direction " << direction
@@ -760,15 +775,19 @@ void LogSmpPairingEvent(const RawAddress& address, uint8_t smp_cmd,
 void LogClassicPairingEvent(const RawAddress& address, uint16_t handle, uint32_t hci_cmd, uint16_t hci_event,
                             uint16_t cmd_status, uint16_t reason_code, int64_t event_value) {
   std::string obfuscated_id;
+  int metric_id = 0;
   if (!address.IsEmpty()) {
     obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
+    metric_id = MetricIdAllocator::GetInstance().AllocateId(address);
   }
   // nullptr and size 0 represent missing value for obfuscated_id
   android::util::BytesField obfuscated_id_field(
       address.IsEmpty() ? nullptr : obfuscated_id.c_str(),
       address.IsEmpty() ? 0 : obfuscated_id.size());
-  int ret = android::util::stats_write(android::util::BLUETOOTH_CLASSIC_PAIRING_EVENT_REPORTED, obfuscated_id_field,
-                                       handle, hci_cmd, hci_event, cmd_status, reason_code, event_value);
+  int ret = android::util::stats_write(
+      android::util::BLUETOOTH_CLASSIC_PAIRING_EVENT_REPORTED,
+      obfuscated_id_field, handle, hci_cmd, hci_event, cmd_status, reason_code,
+      event_value, metric_id);
   if (ret < 0) {
     LOG(WARNING) << __func__ << ": failed for " << address << ", handle " << handle << ", hci_cmd " << loghex(hci_cmd)
                  << ", hci_event " << loghex(hci_event) << ", cmd_status " << loghex(cmd_status) << ", reason "
@@ -780,8 +799,10 @@ void LogSdpAttribute(const RawAddress& address, uint16_t protocol_uuid,
                      uint16_t attribute_id, size_t attribute_size,
                      const char* attribute_value) {
   std::string obfuscated_id;
+  int metric_id = 0;
   if (!address.IsEmpty()) {
     obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
+    metric_id = MetricIdAllocator::GetInstance().AllocateId(address);
   }
   // nullptr and size 0 represent missing value for obfuscated_id
   android::util::BytesField obfuscated_id_field(
@@ -790,7 +811,7 @@ void LogSdpAttribute(const RawAddress& address, uint16_t protocol_uuid,
   android::util::BytesField attribute_field(attribute_value, attribute_size);
   int ret = android::util::stats_write(
       android::util::BLUETOOTH_SDP_ATTRIBUTE_REPORTED, obfuscated_id_field,
-      protocol_uuid, attribute_id, attribute_field);
+      protocol_uuid, attribute_id, attribute_field, metric_id);
   if (ret < 0) {
     LOG(WARNING) << __func__ << ": failed for " << address << ", protocol_uuid "
                  << loghex(protocol_uuid) << ", attribute_id "
@@ -804,8 +825,10 @@ void LogSocketConnectionState(
     int64_t tx_bytes, int64_t rx_bytes, int uid, int server_port,
     android::bluetooth::SocketRoleEnum socket_role) {
   std::string obfuscated_id;
+  int metric_id = 0;
   if (!address.IsEmpty()) {
     obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
+    metric_id = MetricIdAllocator::GetInstance().AllocateId(address);
   }
   // nullptr and size 0 represent missing value for obfuscated_id
   android::util::BytesField obfuscated_id_field(
@@ -814,7 +837,7 @@ void LogSocketConnectionState(
   int ret = android::util::stats_write(
       android::util::BLUETOOTH_SOCKET_CONNECTION_STATE_CHANGED,
       obfuscated_id_field, port, type, connection_state, tx_bytes, rx_bytes,
-      uid, server_port, socket_role);
+      uid, server_port, socket_role, metric_id);
   if (ret < 0) {
     LOG(WARNING) << __func__ << ": failed for " << address << ", port " << port
                  << ", type " << type << ", state " << connection_state
@@ -832,8 +855,10 @@ void LogManufacturerInfo(const RawAddress& address,
                          const std::string& hardware_version,
                          const std::string& software_version) {
   std::string obfuscated_id;
+  int metric_id = 0;
   if (!address.IsEmpty()) {
     obfuscated_id = AddressObfuscator::GetInstance()->Obfuscate(address);
+    metric_id = MetricIdAllocator::GetInstance().AllocateId(address);
   }
   // nullptr and size 0 represent missing value for obfuscated_id
   android::util::BytesField obfuscated_id_field(
@@ -842,7 +867,7 @@ void LogManufacturerInfo(const RawAddress& address,
   int ret = android::util::stats_write(
       android::util::BLUETOOTH_DEVICE_INFO_REPORTED, obfuscated_id_field,
       source_type, source_name.c_str(), manufacturer.c_str(), model.c_str(),
-      hardware_version.c_str(), software_version.c_str());
+      hardware_version.c_str(), software_version.c_str(), metric_id);
   if (ret < 0) {
     LOG(WARNING) << __func__ << ": failed for " << address << ", source_type "
                  << source_type << ", source_name " << source_name
