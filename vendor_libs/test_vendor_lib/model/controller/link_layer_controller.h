@@ -124,9 +124,7 @@ class LinkLayerController {
 
   void RegisterTaskCancel(std::function<void(AsyncTaskId)> cancel);
   void Reset();
-  void AddControllerEvent(std::chrono::milliseconds delay, const TaskCallback& task);
 
-  void PageScan();
   void Connections();
 
   void LeAdvertising();
@@ -367,7 +365,7 @@ class LinkLayerController {
   SecurityManager security_manager_{10};
   std::chrono::steady_clock::time_point last_inquiry_;
   model::packets::InquiryType inquiry_mode_;
-  Inquiry::InquiryState inquiry_state_;
+  AsyncTaskId inquiry_timer_task_id_ = kInvalidTaskId;
   uint64_t inquiry_lap_;
   uint8_t inquiry_max_responses_;
 
