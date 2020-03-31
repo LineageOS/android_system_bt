@@ -26,6 +26,7 @@ from bluetooth_packets_python3 import hci_packets
 from bluetooth_packets_python3 import l2cap_packets
 from cert.event_stream import EventStream, FilteringEventStream
 from cert.truth import assertThat
+from cert.metadata import metadata, MetadataKey
 
 
 class BogusProto:
@@ -394,3 +395,105 @@ class CertSelfTest(BaseTestClass):
             assertThat(filtered_event_stream)\
                 .emits(lambda data: data.value_ == 1)\
                 .then(lambda data: data.value_ == 3)
+
+    def test_metadata_empty(self):
+        my_content = [{}]
+
+        class TestClass:
+
+            def record_data(self, content):
+                my_content[0] = content
+
+            @metadata()
+            def sample_pass_test(self):
+                pass
+
+            @metadata()
+            def sample_skipped_test(self):
+                asserts.skip("SKIP")
+
+            @metadata()
+            def sample_failed_test(self):
+                asserts.fail("FAIL")
+
+        test_class = TestClass()
+
+        try:
+            test_class.sample_pass_test()
+        except Exception:
+            asserts.fail("Should not raise exception")
+        finally:
+            asserts.assert_equal(my_content[0][str(MetadataKey.TEST_NAME)],
+                                 "sample_pass_test")
+            asserts.assert_equal(my_content[0][str(MetadataKey.TEST_CLASS)],
+                                 "TestClass")
+
+        try:
+            test_class.sample_skipped_test()
+        except Exception:
+            pass
+        finally:
+            asserts.assert_equal(my_content[0][str(MetadataKey.TEST_NAME)],
+                                 "sample_skipped_test")
+            asserts.assert_equal(my_content[0][str(MetadataKey.TEST_CLASS)],
+                                 "TestClass")
+
+        try:
+            test_class.sample_failed_test()
+        except Exception:
+            pass
+        finally:
+            asserts.assert_equal(my_content[0][str(MetadataKey.TEST_NAME)],
+                                 "sample_failed_test")
+            asserts.assert_equal(my_content[0][str(MetadataKey.TEST_CLASS)],
+                                 "TestClass")
+
+    def test_metadata_empty_no_function_call(self):
+        my_content = [{}]
+
+        class TestClass:
+
+            def record_data(self, content):
+                my_content[0] = content
+
+            @metadata()
+            def sample_pass_test(self):
+                pass
+
+        test_class = TestClass()
+
+        try:
+            test_class.sample_pass_test()
+        except Exception:
+            asserts.fail("Should not raise exception")
+        finally:
+            asserts.assert_equal(my_content[0][str(MetadataKey.TEST_NAME)],
+                                 "sample_pass_test")
+            asserts.assert_equal(my_content[0][str(MetadataKey.TEST_CLASS)],
+                                 "TestClass")
+
+    def test_metadata_pts_test_id(self):
+        my_content = [{}]
+
+        class TestClass:
+
+            def record_data(self, content):
+                my_content[0] = content
+
+            @metadata(pts_test_id="Hello World")
+            def sample_pass_test(self):
+                pass
+
+        test_class = TestClass()
+
+        try:
+            test_class.sample_pass_test()
+        except Exception:
+            asserts.fail("Should not raise exception")
+        finally:
+            asserts.assert_equal(my_content[0][str(MetadataKey.TEST_NAME)],
+                                 "sample_pass_test")
+            asserts.assert_equal(my_content[0][str(MetadataKey.TEST_CLASS)],
+                                 "TestClass")
+            asserts.assert_equal(my_content[0][str(MetadataKey.PTS_TEST_ID)],
+                                 "Hello World")
