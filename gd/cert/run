@@ -18,6 +18,7 @@ $ANDROID_BUILD_TOP/build/soong/soong_ui.bash --build-mode --"all-modules" --dir=
 TEST_CONFIG="$ANDROID_BUILD_TOP/system/bt/gd/cert/android_devices_config.json"
 TEST_FILTER="-tf $ANDROID_BUILD_TOP/system/bt/gd/cert/all_cert_testcases"
 REUSE_VENV=false
+NUM_REPETITIONS="1"
 
 POSITIONAL=()
 while [[ $# -gt 0 ]]
@@ -43,6 +44,11 @@ case $key in
     # This will speed up the test by overwriting existing venv
     --reuse_venv)
     REUSE_VENV=true
+    shift # past argument
+    ;;
+    # Repeat running the specified test cases by N times in one single setup
+    --repeat=*)
+    NUM_REPETITIONS="${key#*=}"
     shift # past argument
     ;;
     *)    # unknown option
@@ -86,7 +92,9 @@ if [[ $? -ne 0 ]] ; then
   exit 1
 fi
 
-$CERT_TEST_VENV/bin/python $CERT_TEST_VENV/bin/act.py \
-    -c $TEST_CONFIG \
-    $TEST_FILTER \
-    -tp $CERT_TEST_VENV/acts
+for n in $(seq $NUM_REPETITIONS); do
+  $CERT_TEST_VENV/bin/python $CERT_TEST_VENV/bin/act.py \
+      -c $TEST_CONFIG \
+      $TEST_FILTER \
+      -tp $CERT_TEST_VENV/acts
+done
