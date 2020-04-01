@@ -29,6 +29,7 @@
 
 #include "bt_common.h"
 #include "bt_types.h"
+#include "btif_config.h"
 
 #include "sdp_api.h"
 #include "sdpint.h"
@@ -274,6 +275,17 @@ void sdpu_log_attribute_metrics(const RawAddress& bda,
           bda, android::bluetooth::DeviceInfoSrcEnum::DEVICE_INFO_INTERNAL,
           ss.str(), loghex(di_record.rec.vendor), loghex(di_record.rec.product),
           loghex(di_record.rec.version), "");
+
+      std::string bda_string = bda.ToString();
+      // write manufacturer, model, HW version to config
+      btif_config_set_int(bda_string, BT_CONFIG_KEY_SDP_DI_MANUFACTURER,
+                          di_record.rec.vendor);
+      btif_config_set_int(bda_string, BT_CONFIG_KEY_SDP_DI_MODEL,
+                          di_record.rec.product);
+      btif_config_set_int(bda_string, BT_CONFIG_KEY_SDP_DI_HW_VERSION,
+                          di_record.rec.version);
+      btif_config_set_int(bda_string, BT_CONFIG_KEY_SDP_DI_VENDOR_ID_SRC,
+                          di_record.rec.vendor_id_source);
     }
   }
 }
