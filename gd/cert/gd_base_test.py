@@ -21,6 +21,7 @@ import signal
 import subprocess
 
 from acts import asserts
+from acts import context
 from acts.base_test import BaseTestClass
 from cert.os_utils import get_gd_root, is_subprocess_alive
 from facade import rootservice_pb2 as facade_rootservice
@@ -34,10 +35,13 @@ class GdBaseTestClass(BaseTestClass):
 
         gd_devices = self.controller_configs.get("GdDevice")
 
+        self.log_path_base = context.get_current_context().get_full_output_path(
+        )
+
         self.rootcanal_running = False
         if 'rootcanal' in self.controller_configs:
             self.rootcanal_running = True
-            rootcanal_logpath = os.path.join(self.log_path,
+            rootcanal_logpath = os.path.join(self.log_path_base,
                                              'rootcanal_logs.txt')
             self.rootcanal_logs = open(rootcanal_logpath, 'w')
             rootcanal_config = self.controller_configs['rootcanal']
