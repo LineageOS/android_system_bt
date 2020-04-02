@@ -37,11 +37,18 @@
 namespace bluetooth {
 namespace security {
 
-using DistributedKeys =
-    std::tuple<std::optional<crypto_toolbox::Octet16> /* ltk */, std::optional<uint16_t> /*ediv*/,
-               std::optional<std::array<uint8_t, 8>> /* rand */, std::optional<Address> /* Identity address */,
-               AddrType, std::optional<crypto_toolbox::Octet16> /* IRK */,
-               std::optional<crypto_toolbox::Octet16>> /* Signature Key */;
+struct DistributedKeys {
+  /* LE Keys*/
+  std::optional<crypto_toolbox::Octet16> ltk;
+  std::optional<uint16_t> ediv;
+  std::optional<std::array<uint8_t, 8>> rand;
+  std::optional<hci::AddressWithType> identity_address;
+  std::optional<crypto_toolbox::Octet16> irk;
+  std::optional<crypto_toolbox::Octet16> signature_key;
+
+  /* BR/EDR Keys */
+  std::optional<crypto_toolbox::Octet16> link_key;
+};
 
 /* This class represents the result of pairing, as returned from Pairing Handler */
 struct PairingResult {
