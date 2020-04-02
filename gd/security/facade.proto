@@ -9,6 +9,9 @@ service SecurityModuleFacade {
   rpc CreateBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
   rpc CancelBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
   rpc RemoveBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
+  rpc SetIoCapabilities(IoCapabilitiesMessage) returns (google.protobuf.Empty) {}
+  rpc SetAuthenticationRequirements(AuthenticationRequirementsMessage) returns (google.protobuf.Empty) {}
+  rpc SetOobDataPresent(OobDataMessage) returns (google.protobuf.Empty) {}
   rpc SendUiCallback(UiCallbackMsg) returns (google.protobuf.Empty) {}
   rpc FetchUiEvents(google.protobuf.Empty) returns (stream UiMsg) {}
   rpc FetchBondEvents(google.protobuf.Empty) returns (stream BondMsg) {}
@@ -51,4 +54,39 @@ enum BondMsgType {
 message BondMsg {
   BondMsgType message_type = 1;
   facade.BluetoothAddressWithType peer = 2;
+}
+
+enum IoCapabilities {
+  DISPLAY_ONLY = 0;
+  DISPLAY_YES_NO_IO_CAP = 1;
+  KEYBOARD_ONLY = 2;
+  NO_INPUT_NO_OUTPUT = 3;
+}
+
+message IoCapabilitiesMessage {
+  IoCapabilities capability = 1;
+}
+
+enum AuthenticationRequirements {
+  NO_BONDING = 0;
+  NO_BONDING_MITM_PROTECTION = 1;
+  DEDICATED_BONDING = 2;
+  DEDICATED_BONDING_MITM_PROTECTION = 3;
+  GENERAL_BONDING = 4;
+  GENERAL_BONDING_MITM_PROTECTION = 5;
+}
+
+message AuthenticationRequirementsMessage {
+  AuthenticationRequirements requirement = 1;
+}
+
+enum OobDataPresent {
+  NOT_PRESENT = 0;
+  P192_PRESENT = 1;
+  P256_PRESENT = 2;
+  P192_AND_256_PRESENT = 3;
+}
+
+message OobDataMessage {
+  OobDataPresent data_present = 1;
 }
