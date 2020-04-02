@@ -71,6 +71,35 @@ cc_defaults {
     },
 }
 
+cc_defaults {
+    name: "gd_clang_tidy",
+    tidy: true,
+    tidy_checks: [
+        "cppcoreguidelines-pro-type-member-init",
+        "clang-analyzer-core.CallAndMessage",
+        "clang-analyzer-optin.cplusplus.UninitializedObject",
+        "-google*",
+        "-performance*",
+        "-bugprone*",
+    ],
+    tidy_checks_as_errors: [
+        "cppcoreguidelines-pro-type-member-init",
+        "clang-analyzer-core.CallAndMessage",
+        "clang-analyzer-optin.cplusplus.UninitializedObject",
+    ],
+    tidy_flags: [
+        "--header-filter=^.*system/bt/.*.h$",
+        "--extra-arg-before=-Xclang",
+        "--extra-arg-before=-analyzer-config",
+        "--extra-arg-before=-Xclang",
+        "--extra-arg-before=optin.cplusplus.UninitializedObject:Pedantic=true",
+        "--extra-arg-before=-Xclang",
+        "--extra-arg-before=-analyzer-config",
+        "--extra-arg-before=-Xclang",
+        "--extra-arg-before=optin.cplusplus.UninitializedObject:CheckPointeeInitialization=true",
+    ],
+}
+
 cc_library {
     name: "libbluetooth_gd",
     defaults: [
