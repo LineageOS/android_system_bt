@@ -89,6 +89,7 @@ HciSocketDevice::HciSocketDevice(int file_descriptor) : socket_file_descriptor_(
       [this]() {
         LOG_INFO("HCI socket device disconnected");
         close_callback_();
+        socket_file_descriptor_ = -1;
       });
 
   RegisterEventChannel([this](std::shared_ptr<std::vector<uint8_t>> packet) {
@@ -105,7 +106,8 @@ void HciSocketDevice::TimerTick() {
 
 void HciSocketDevice::SendHci(hci::PacketType packet_type, const std::shared_ptr<std::vector<uint8_t>> packet) {
   if (socket_file_descriptor_ == -1) {
-    LOG_INFO("socket_file_descriptor == -1");
+    LOG_INFO("Closed socket. Dropping packet of type %d",
+             static_cast<int>(packet_type));
     return;
   }
   uint8_t type = static_cast<uint8_t>(packet_type);
