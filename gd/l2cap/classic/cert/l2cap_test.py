@@ -281,14 +281,12 @@ class L2capTest(GdBaseTestClass):
         Verify that the IUT responds to an echo request.
         """
         self._setup_link_from_cert()
-        asserts.skip("is echo without a channel supported?")
 
         echo_request = l2cap_packets.EchoRequestBuilder(
             100, l2cap_packets.DisconnectionRequestBuilder(1, 2, 3))
-        echo_request_l2cap = l2cap_packets.BasicFrameBuilder(1, echo_request)
-        self.cert_send_b_frame(echo_request_l2cap)
+        self.cert_l2cap.get_control_channel().send(echo_request)
 
-        assertThat(self.cert_channel).emits(
+        assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.PartialData(b"\x06\x01\x04\x00\x02\x00\x03\x00"))
 
     def test_reject_unknown_command(self):
@@ -297,8 +295,10 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        asserts.skip("need to use packet builders")
-        invalid_command_packet = b"\x04\x00\x01\x00\xff\x01\x00\x00"
+        asserts.skip("Need to use packet builders (RawBuilder)")
+
+        # TODO(hsz): Use packet builders with opcode 0xff, sid 0x1, size 0x0
+        invalid_command_packet = b"\xff\x01\x00\x00"
         self.cert_l2cap.get_control_channel().send(invalid_command_packet)
 
         assertThat(self.cert_channel).emits(L2capMatchers.CommandReject())
@@ -619,34 +619,32 @@ class L2capTest(GdBaseTestClass):
         L2CAP/ERM/BV-11-C [S-Frame Transmissions Exceed MaxTransmit]
         Verify the IUT will close the channel when the Monitor Timer expires.
         """
-        asserts.skip("Need to configure DUT to have a shorter timer")
         self._setup_link_from_cert()
-        self.cert_l2cap.turn_on_ertm()
+        self.cert_l2cap.reply_with_max_transmit_one()
+        self.cert_l2cap.turn_on_ertm(tx_window_size=1, max_transmit=1)
 
         (dut_channel, cert_channel) = self._open_channel(
             scid=0x41, psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
 
         dut_channel.send(b'abc')
 
-        # Retransmission timer = 2, 20 * monitor timer = 360, so total timeout is 362
-        time.sleep(362)
         cert_channel.verify_disconnect_request()
 
     def test_i_frame_transmissions_exceed_max_transmit(self):
         """
         L2CAP/ERM/BV-12-C [I-Frame Transmissions Exceed MaxTransmit]
-        Verify the IUT will close the channel when it receives an S-frame [RR] with the final bit set that does
-        not acknowledge the previous I-frame sent by the IUT.
         """
-        asserts.skip("Not working")
         self._setup_link_from_cert()
-        self.cert_l2cap.turn_on_ertm()
+        self.cert_l2cap.reply_with_max_transmit_one()
+        self.cert_l2cap.turn_on_ertm(tx_window_size=1, max_transmit=1)
 
         (dut_channel, cert_channel) = self._open_channel(
             scid=0x41, psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
 
         dut_channel.send(b'abc')
-        assertThat(cert_channel).emits(L2capMatchers.IFrame(tx_seq=0))
+        assertThat(cert_channel).emits(
+            L2capMatchers.IFrame(tx_seq=0),
+            L2capMatchers.SFrame(p=Poll.POLL)).inOrder()
 
         cert_channel.send_s_frame(req_seq=0, f=Final.POLL_RESPONSE)
         cert_channel.verify_disconnect_request()
@@ -937,7 +935,7 @@ class L2capTest(GdBaseTestClass):
         Verify the IUT can accept a Configuration Request from the Lower Tester containing an F&EC option
         that specifies Enhanced Retransmission Mode.
         """
-        asserts.skip("Not working")
+        asserts.skip("ConfigurationResponseView Not working")
         self._setup_link_from_cert()
         psm = 1
         scid = 0x0101
@@ -969,7 +967,6 @@ class L2capTest(GdBaseTestClass):
         L2CAP/CMC/BI-01-C
         """
         self._setup_link_from_cert()
-        self.cert_l2cap.reply_with_nothing()
         self.cert_l2cap.reply_with_basic_mode()
         (dut_channel, cert_channel) = self._open_unvalidated_channel(
             scid=0x41, psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
