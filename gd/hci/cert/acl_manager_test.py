@@ -79,10 +79,12 @@ class AclManagerTest(GdBaseTestClass):
         self.cert_hci.initiate_connection(dut_address)
 
         dut_acl = self.dut_acl_manager.accept_connection()
+
+        cert_acl = self.cert_hci.complete_connection()
+
         dut_acl.send(
             b'\x29\x00\x07\x00This is just SomeMoreAclData from the DUT')
 
-        cert_acl = self.cert_hci.complete_connection()
         cert_acl.send_first(
             b'\x26\x00\x07\x00This is just SomeAclData from the Cert')
 
