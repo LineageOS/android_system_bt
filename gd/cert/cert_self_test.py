@@ -20,13 +20,14 @@ import time
 
 from mobly import asserts
 
+from acts import signals
 from acts.base_test import BaseTestClass
 
 from bluetooth_packets_python3 import hci_packets
 from bluetooth_packets_python3 import l2cap_packets
 from cert.event_stream import EventStream, FilteringEventStream
 from cert.truth import assertThat
-from cert.metadata import metadata, MetadataKey
+from cert.metadata import metadata
 
 
 class BogusProto:
@@ -397,103 +398,89 @@ class CertSelfTest(BaseTestClass):
                 .then(lambda data: data.value_ == 3)
 
     def test_metadata_empty(self):
-        my_content = [{}]
 
-        class TestClass:
-
-            def record_data(self, content):
-                my_content[0] = content
-
-            @metadata()
-            def sample_pass_test(self):
-                pass
-
-            @metadata()
-            def sample_skipped_test(self):
-                asserts.skip("SKIP")
-
-            @metadata()
-            def sample_failed_test(self):
-                asserts.fail("FAIL")
-
-        test_class = TestClass()
-
-        try:
-            test_class.sample_pass_test()
-        except Exception:
-            asserts.fail("Should not raise exception")
-        finally:
-            asserts.assert_equal(my_content[0][str(MetadataKey.TEST_NAME)],
-                                 "sample_pass_test")
-            asserts.assert_equal(my_content[0][str(MetadataKey.TEST_CLASS)],
-                                 "TestClass")
-
-        try:
-            test_class.sample_skipped_test()
-        except Exception:
+        @metadata()
+        def simple_pass_test(arg):
             pass
-        finally:
-            asserts.assert_equal(my_content[0][str(MetadataKey.TEST_NAME)],
-                                 "sample_skipped_test")
-            asserts.assert_equal(my_content[0][str(MetadataKey.TEST_CLASS)],
-                                 "TestClass")
 
         try:
-            test_class.sample_failed_test()
-        except Exception:
+            simple_pass_test(1)
+        except signals.TestFailure:
             pass
-        finally:
-            asserts.assert_equal(my_content[0][str(MetadataKey.TEST_NAME)],
-                                 "sample_failed_test")
-            asserts.assert_equal(my_content[0][str(MetadataKey.TEST_CLASS)],
-                                 "TestClass")
+        except Exception as e:
+            asserts.fail("@metadata() should only raise signals.TestFailure, "
+                         "but raised %s with msg %s instead" %
+                         (e.__class__.__name__, str(e)))
+        else:
+            asserts.fail("@metadata() should not work")
 
     def test_metadata_empty_no_function_call(self):
-        my_content = [{}]
 
-        class TestClass:
-
-            def record_data(self, content):
-                my_content[0] = content
-
-            @metadata()
-            def sample_pass_test(self):
-                pass
-
-        test_class = TestClass()
+        @metadata
+        def simple_pass_test(arg):
+            pass
 
         try:
-            test_class.sample_pass_test()
-        except Exception:
-            asserts.fail("Should not raise exception")
-        finally:
-            asserts.assert_equal(my_content[0][str(MetadataKey.TEST_NAME)],
-                                 "sample_pass_test")
-            asserts.assert_equal(my_content[0][str(MetadataKey.TEST_CLASS)],
-                                 "TestClass")
+            simple_pass_test(1)
+        except signals.TestFailure:
+            pass
+        except Exception as e:
+            asserts.fail("@metadata should only raise signals.TestFailure, "
+                         "but raised %s with msg %s instead" %
+                         (e.__class__.__name__, str(e)))
+        else:
+            asserts.fail("@metadata should not work")
 
-    def test_metadata_pts_test_id(self):
-        my_content = [{}]
+    def test_metadata_pts_missing_id(self):
 
-        class TestClass:
-
-            def record_data(self, content):
-                my_content[0] = content
-
-            @metadata(pts_test_id="Hello World")
-            def sample_pass_test(self):
-                pass
-
-        test_class = TestClass()
+        @metadata(pts_test_name="Hello world")
+        def simple_pass_test(arg):
+            pass
 
         try:
-            test_class.sample_pass_test()
-        except Exception:
-            asserts.fail("Should not raise exception")
-        finally:
-            asserts.assert_equal(my_content[0][str(MetadataKey.TEST_NAME)],
-                                 "sample_pass_test")
-            asserts.assert_equal(my_content[0][str(MetadataKey.TEST_CLASS)],
-                                 "TestClass")
-            asserts.assert_equal(my_content[0][str(MetadataKey.PTS_TEST_ID)],
-                                 "Hello World")
+            simple_pass_test(1)
+        except signals.TestFailure:
+            pass
+        except Exception as e:
+            asserts.fail("should only raise signals.TestFailure, "
+                         "but raised %s with msg %s instead" %
+                         (e.__class__.__name__, str(e)))
+        else:
+            asserts.fail("missing pts_test_id should not work")
+
+    def test_metadata_pts_missing_name(self):
+
+        @metadata(pts_test_id="A/B/C")
+        def simple_pass_test(arg):
+            pass
+
+        try:
+            simple_pass_test(1)
+        except signals.TestFailure:
+            pass
+        except Exception as e:
+            asserts.fail("should only raise signals.TestFailure, "
+                         "but raised %s with msg %s instead" %
+                         (e.__class__.__name__, str(e)))
+        else:
+            asserts.fail("missing pts_test_name should not work")
+
+    def test_metadata_pts_test_id_and_description(self):
+
+        @metadata(pts_test_id="A/B/C", pts_test_name="Hello world")
+        def simple_pass_test(arg):
+            pass
+
+        try:
+            simple_pass_test(1)
+        except signals.TestPass as e:
+            asserts.assert_true(
+                "pts_test_id" in e.extras,
+                msg=("pts_test_id not in extra: %s" % str(e.extras)))
+            asserts.assert_equal(e.extras["pts_test_id"], "A/B/C")
+            asserts.assert_true(
+                "pts_test_name" in e.extras,
+                msg=("pts_test_name not in extra: %s" % str(e.extras)))
+            asserts.assert_equal(e.extras["pts_test_name"], "Hello world")
+        else:
+            asserts.fail("Must throw an exception using @metadata decorator")
