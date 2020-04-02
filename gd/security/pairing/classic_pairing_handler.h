@@ -33,11 +33,6 @@ class ISecurityManagerListener;
 
 namespace pairing {
 
-static constexpr hci::IoCapability kDefaultIoCapability = hci::IoCapability::DISPLAY_YES_NO;
-static constexpr hci::OobDataPresent kDefaultOobDataPresent = hci::OobDataPresent::NOT_PRESENT;
-static constexpr hci::AuthenticationRequirements kDefaultAuthenticationRequirements =
-    hci::AuthenticationRequirements::DEDICATED_BONDING_MITM_PROTECTION;
-
 class ClassicPairingHandler : public PairingHandler {
  public:
   ClassicPairingHandler(channel::SecurityManagerChannel* security_manager_channel,
@@ -45,11 +40,12 @@ class ClassicPairingHandler : public PairingHandler {
                         common::OnceCallback<void(hci::Address, PairingResultOrFailure)> complete_callback,
                         UI* user_interface, os::Handler* user_interface_handler, std::string device_name)
       : PairingHandler(security_manager_channel, std::move(record)), security_handler_(security_handler),
-        remote_io_capability_(kDefaultIoCapability), local_io_capability_(kDefaultIoCapability),
-        local_oob_present_(kDefaultOobDataPresent),
-        local_authentication_requirements_(kDefaultAuthenticationRequirements),
+        remote_io_capability_(hci::IoCapability::DISPLAY_YES_NO), remote_oob_present_(hci::OobDataPresent::NOT_PRESENT),
+        remote_authentication_requirements_(hci::AuthenticationRequirements::DEDICATED_BONDING_MITM_PROTECTION),
+        local_io_capability_(hci::IoCapability::DISPLAY_YES_NO), local_oob_present_(hci::OobDataPresent::NOT_PRESENT),
+        local_authentication_requirements_(hci::AuthenticationRequirements::DEDICATED_BONDING_MITM_PROTECTION),
         complete_callback_(std::move(complete_callback)), user_interface_(user_interface),
-        user_interface_handler_(user_interface_handler), device_name_(device_name) {}
+        user_interface_handler_(user_interface_handler), device_name_(std::move(device_name)) {}
 
   ~ClassicPairingHandler() override = default;
 
@@ -90,8 +86,10 @@ class ClassicPairingHandler : public PairingHandler {
   void UserClickedNo();
 
   os::Handler* security_handler_ __attribute__((unused));
-  hci::IoCapability remote_io_capability_ __attribute__((unused));
-  hci::IoCapability local_io_capability_ __attribute__((unused));
+  hci::IoCapability remote_io_capability_;
+  hci::OobDataPresent remote_oob_present_ __attribute__((unused));
+  hci::AuthenticationRequirements remote_authentication_requirements_ __attribute__((unused));
+  hci::IoCapability local_io_capability_;
   hci::OobDataPresent local_oob_present_ __attribute__((unused));
   hci::AuthenticationRequirements local_authentication_requirements_ __attribute__((unused));
   common::OnceCallback<void(hci::Address, PairingResultOrFailure)> complete_callback_;

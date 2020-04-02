@@ -9,7 +9,7 @@ service SecurityModuleFacade {
   rpc CreateBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
   rpc CancelBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
   rpc RemoveBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
-  rpc SetIoCapabilities(IoCapabilitiesMessage) returns (google.protobuf.Empty) {}
+  rpc SetIoCapability(IoCapabilityMessage) returns (google.protobuf.Empty) {}
   rpc SetAuthenticationRequirements(AuthenticationRequirementsMessage) returns (google.protobuf.Empty) {}
   rpc SetOobDataPresent(OobDataMessage) returns (google.protobuf.Empty) {}
   rpc SendUiCallback(UiCallbackMsg) returns (google.protobuf.Empty) {}
@@ -63,7 +63,7 @@ enum IoCapabilities {
   NO_INPUT_NO_OUTPUT = 3;
 }
 
-message IoCapabilitiesMessage {
+message IoCapabilityMessage {
   IoCapabilities capability = 1;
 }
 
