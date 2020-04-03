@@ -795,7 +795,9 @@ struct ErtmController::impl {
 void ErtmController::OnSdu(std::unique_ptr<packet::BasePacketBuilder> sdu) {
   auto sdu_size = sdu->size();
   std::vector<std::unique_ptr<packet::RawBuilder>> segments;
-  packet::FragmentingInserter fragmenting_inserter(size_each_packet_, std::back_insert_iterator(segments));
+  auto size_each_packet = (remote_mps_ - 4 /* basic L2CAP header */ - 2 /* SDU length */ - 2 /* Enhanced control */ -
+                           (fcs_enabled_ ? 2 : 0));
+  packet::FragmentingInserter fragmenting_inserter(size_each_packet, std::back_insert_iterator(segments));
   sdu->Serialize(fragmenting_inserter);
   fragmenting_inserter.finalize();
   if (segments.size() == 1) {
@@ -1011,6 +1013,7 @@ void ErtmController::SetRetransmissionAndFlowControlOptions(
   local_max_transmit_ = option.max_transmit_;
   local_retransmit_timeout_ms_ = option.retransmission_time_out_;
   local_monitor_timeout_ms_ = option.monitor_time_out_;
+  remote_mps_ = option.maximum_pdu_size_;
 }
 
 void ErtmController::close_channel() {
