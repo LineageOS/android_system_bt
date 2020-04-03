@@ -104,7 +104,7 @@ cc_test_host {
 
 // Linux RootCanal Executable
 // ========================================================
-cc_test_host {
+cc_binary_host {
     name: "root-canal",
     defaults: [
         "libchrome_support_defaults",

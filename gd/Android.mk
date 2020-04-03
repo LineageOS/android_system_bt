@@ -9,10 +9,8 @@ LOCAL_cert_test_sources := \
 	$(addprefix $(LOCAL_PATH)/, $(LOCAL_cert_test_sources))
 
 LOCAL_host_executables := \
-	$(HOST_OUT_EXECUTABLES)/bluetooth_stack_with_facade
-
-LOCAL_host_root_canal_executables := \
-	$(HOST_OUT_NATIVE_TESTS)/root-canal/root-canal
+	$(HOST_OUT_EXECUTABLES)/bluetooth_stack_with_facade \
+	$(HOST_OUT_EXECUTABLES)/root-canal
 
 LOCAL_host_python_extension_libraries := \
 	$(HOST_OUT_SHARED_LIBRARIES)/bluetooth_packets_python3.so
@@ -41,18 +39,16 @@ bluetooth_cert_src_and_bin_zip := \
 # Assume 64-bit OS
 $(bluetooth_cert_src_and_bin_zip): PRIVATE_cert_test_sources := $(LOCAL_cert_test_sources)
 $(bluetooth_cert_src_and_bin_zip): PRIVATE_host_executables := $(LOCAL_host_executables)
-$(bluetooth_cert_src_and_bin_zip): PRIVATE_host_root_canal_executables := $(LOCAL_host_root_canal_executables)
 $(bluetooth_cert_src_and_bin_zip): PRIVATE_host_python_extension_libraries := $(LOCAL_host_python_extension_libraries)
 $(bluetooth_cert_src_and_bin_zip): PRIVATE_host_libraries := $(LOCAL_host_libraries)
 $(bluetooth_cert_src_and_bin_zip): PRIVATE_target_executables := $(LOCAL_target_executables)
 $(bluetooth_cert_src_and_bin_zip): PRIVATE_target_libraries := $(LOCAL_target_libraries)
 $(bluetooth_cert_src_and_bin_zip): $(SOONG_ZIP) $(LOCAL_cert_test_sources) \
-		$(LOCAL_host_executables) $(LOCAL_host_root_canal_executables) $(LOCAL_host_libraries) \
-		$(LOCAL_target_executables) $(LOCAL_target_libraries) $(LOCAL_host_python_extension_libraries)
+		$(LOCAL_host_executables) $(LOCAL_host_libraries) $(LOCAL_host_python_extension_libraries) \
+		$(LOCAL_target_executables) $(LOCAL_target_libraries)
 	$(hide) $(SOONG_ZIP) -d -o $@ \
 		-C system/bt/gd $(addprefix -f ,$(PRIVATE_cert_test_sources)) \
 		-C $(HOST_OUT_EXECUTABLES) $(addprefix -f ,$(PRIVATE_host_executables)) \
-		-C $(HOST_OUT_NATIVE_TESTS)/root-canal $(addprefix -f ,$(PRIVATE_host_root_canal_executables)) \
 		-C $(HOST_OUT_SHARED_LIBRARIES) $(addprefix -f ,$(PRIVATE_host_python_extension_libraries)) \
 		-P lib64 \
 		-C $(HOST_OUT_SHARED_LIBRARIES) $(addprefix -f ,$(PRIVATE_host_libraries)) \
