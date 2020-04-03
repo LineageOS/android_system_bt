@@ -36,8 +36,8 @@ from bluetooth_packets_python3 import hci_packets, l2cap_packets
 from bluetooth_packets_python3.l2cap_packets import LeCreditBasedConnectionResponseResult
 from l2cap.le.cert.cert_le_l2cap import CertLeL2cap
 
-# Assemble a sample packet. TODO: Use RawBuilder
-SAMPLE_PACKET = l2cap_packets.CommandRejectNotUnderstoodBuilder(1)
+# Assemble a sample packet.
+SAMPLE_PACKET = bt_packets.RawBuilder([0x19, 0x26, 0x08, 0x17])
 
 
 class LeL2capTest(GdBaseTestClass):
@@ -164,7 +164,7 @@ class LeL2capTest(GdBaseTestClass):
         (dut_channel, cert_channel) = self._open_fixed_channel(4)
         cert_channel.send(SAMPLE_PACKET)
         assertThat(dut_channel).emits(
-            L2capMatchers.PacketPayloadRawData(b'\x01\x01\x02\x00\x00\x00'))
+            L2capMatchers.PacketPayloadRawData(b'\x19\x26\x08\x17'))
 
     def test_connect_from_dut_and_open_dynamic_channel(self):
         """
@@ -262,12 +262,12 @@ class LeL2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
         (dut_channel, cert_channel) = self._open_channel_from_cert()
-        sdu_size_for_two_sample_packet = 12
+        sdu_size_for_two_sample_packet = 8
         cert_channel.send_first_le_i_frame(sdu_size_for_two_sample_packet,
                                            SAMPLE_PACKET)
         cert_channel.send(SAMPLE_PACKET)
         assertThat(dut_channel).emits(
-            L2capMatchers.PacketPayloadRawData(b'\x01\x01\x02\x00\x00\x00' * 2))
+            L2capMatchers.PacketPayloadRawData(b'\x19\x26\x08\x17' * 2))
 
     def test_data_receiving(self):
         """
@@ -275,15 +275,15 @@ class LeL2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
         (dut_channel, cert_channel) = self._open_channel_from_cert()
-        cert_channel.send_first_le_i_frame(6, SAMPLE_PACKET)
+        cert_channel.send_first_le_i_frame(4, SAMPLE_PACKET)
         assertThat(dut_channel).emits(
-            L2capMatchers.PacketPayloadRawData(b'\x01\x01\x02\x00\x00\x00'))
+            L2capMatchers.PacketPayloadRawData(b'\x19\x26\x08\x17'))
 
     def test_data_receiving_dut_is_master(self):
         (dut_channel, cert_channel) = self._set_link_from_dut_and_open_channel()
-        cert_channel.send_first_le_i_frame(6, SAMPLE_PACKET)
+        cert_channel.send_first_le_i_frame(4, SAMPLE_PACKET)
         assertThat(dut_channel).emits(
-            L2capMatchers.PacketPayloadRawData(b'\x01\x01\x02\x00\x00\x00'))
+            L2capMatchers.PacketPayloadRawData(b'\x19\x26\x08\x17'))
 
     def test_multiple_channels_with_interleaved_data_streams(self):
         """
@@ -296,22 +296,21 @@ class LeL2capTest(GdBaseTestClass):
             signal_id=2, scid=0x0105, psm=0x35)
         (dut_channel_z, cert_channel_z) = self._open_channel_from_cert(
             signal_id=3, scid=0x0107, psm=0x37)
-        cert_channel_y.send_first_le_i_frame(6, SAMPLE_PACKET)
-        cert_channel_z.send_first_le_i_frame(6, SAMPLE_PACKET)
-        cert_channel_y.send_first_le_i_frame(6, SAMPLE_PACKET)
-        cert_channel_z.send_first_le_i_frame(6, SAMPLE_PACKET)
-        cert_channel_y.send_first_le_i_frame(6, SAMPLE_PACKET)
+        cert_channel_y.send_first_le_i_frame(4, SAMPLE_PACKET)
+        cert_channel_z.send_first_le_i_frame(4, SAMPLE_PACKET)
+        cert_channel_y.send_first_le_i_frame(4, SAMPLE_PACKET)
+        cert_channel_z.send_first_le_i_frame(4, SAMPLE_PACKET)
+        cert_channel_y.send_first_le_i_frame(4, SAMPLE_PACKET)
         # TODO: We should assert two events in order, but it got stuck
         assertThat(dut_channel_y).emits(
-            L2capMatchers.PacketPayloadRawData(b'\x01\x01\x02\x00\x00\x00'),
+            L2capMatchers.PacketPayloadRawData(b'\x19\x26\x08\x17'),
             at_least_times=3)
         assertThat(dut_channel_z).emits(
-            L2capMatchers.PacketPayloadRawData(b'\x01\x01\x02\x00\x00\x00'),
-            L2capMatchers.PacketPayloadRawData(
-                b'\x01\x01\x02\x00\x00\x00')).inOrder()
-        cert_channel_z.send_first_le_i_frame(6, SAMPLE_PACKET)
+            L2capMatchers.PacketPayloadRawData(b'\x19\x26\x08\x17'),
+            L2capMatchers.PacketPayloadRawData(b'\x19\x26\x08\x17')).inOrder()
+        cert_channel_z.send_first_le_i_frame(4, SAMPLE_PACKET)
         assertThat(dut_channel_z).emits(
-            L2capMatchers.PacketPayloadRawData(b'\x01\x01\x02\x00\x00\x00'))
+            L2capMatchers.PacketPayloadRawData(b'\x19\x26\x08\x17'))
 
     def test_reject_unknown_command_in_le_sigling_channel(self):
         """
@@ -351,9 +350,9 @@ class LeL2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
         (dut_channel, cert_channel) = self._open_channel_from_dut()
-        cert_channel.send_first_le_i_frame(6, SAMPLE_PACKET)
+        cert_channel.send_first_le_i_frame(4, SAMPLE_PACKET)
         assertThat(dut_channel).emits(
-            L2capMatchers.PacketPayloadRawData(b'\x01\x01\x02\x00\x00\x00'))
+            L2capMatchers.PacketPayloadRawData(b'\x19\x26\x08\x17'))
 
     def test_credit_based_connection_response_on_supported_le_psm(self):
         """
@@ -422,7 +421,7 @@ class LeL2capTest(GdBaseTestClass):
         # test without sending too many packets (may take too long).
         # This behavior is not expected for all Bluetooth stacks.
         for _ in range(min(credits + 1, 3)):
-            cert_channel.send_first_le_i_frame(6, SAMPLE_PACKET)
+            cert_channel.send_first_le_i_frame(4, SAMPLE_PACKET)
         self.cert_l2cap.verify_le_flow_control_credit(cert_channel)
 
     def test_disconnection_request(self):
