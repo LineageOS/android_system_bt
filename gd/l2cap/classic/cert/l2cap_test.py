@@ -41,8 +41,8 @@ from bluetooth_packets_python3.l2cap_packets import InformationRequestInfoType
 from l2cap.classic.cert.cert_l2cap import CertL2cap
 from l2cap.classic.facade_pb2 import RetransmissionFlowControlMode
 
-# Assemble a sample packet. TODO: Use RawBuilder
-SAMPLE_PACKET = l2cap_packets.CommandRejectNotUnderstoodBuilder(1)
+# Assemble a sample packet.
+SAMPLE_PACKET = bt_packets.RawBuilder([0x19, 0x26, 0x08, 0x17])
 
 
 class L2capTest(GdBaseTestClass):
@@ -295,13 +295,12 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        asserts.skip("Need to use packet builders (RawBuilder)")
-
-        # TODO(hsz): Use packet builders with opcode 0xff, sid 0x1, size 0x0
-        invalid_command_packet = b"\xff\x01\x00\x00"
+        # Command code ff, Signal id 01, size 0000
+        invalid_command_packet = bt_packets.RawBuilder([0xff, 0x01, 0x00, 0x00])
         self.cert_l2cap.get_control_channel().send(invalid_command_packet)
 
-        assertThat(self.cert_channel).emits(L2capMatchers.CommandReject())
+        assertThat(self.cert_l2cap.get_control_channel()).emits(
+            L2capMatchers.CommandReject())
 
     def test_respond_with_1_2_features(self):
         """
@@ -433,9 +432,6 @@ class L2capTest(GdBaseTestClass):
         dut_channel.send(b'abc')
         assertThat(cert_channel).emits(
             L2capMatchers.IFrame(tx_seq=0, payload=b"abc"))
-
-        # Assemble a sample packet. TODO: Use RawBuilder
-        SAMPLE_PACKET = l2cap_packets.CommandRejectNotUnderstoodBuilder(1)
 
         # todo: verify packet received?
         cert_channel.send_i_frame(tx_seq=0, req_seq=1, payload=SAMPLE_PACKET)
