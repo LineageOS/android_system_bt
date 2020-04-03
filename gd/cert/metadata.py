@@ -68,12 +68,12 @@ def metadata(_do_not_use=None, pts_test_id=None, pts_test_name=None):
     del args["_do_not_use"]
 
     # Check if at least one optional parameter is valid
-    if not any(args):
+    if not any(args.values()):
         return _fail_decorator("at least one optional argument should be valid")
 
     # Validate pts_test_id and pts_test_name
-    if (pts_test_id or pts_test_name) and \
-        (not pts_test_id or not pts_test_name):
+    if any((pts_test_id, pts_test_name)) and \
+            not all((pts_test_id, pts_test_name)):
         return _fail_decorator("pts_test_id and pts_test_name must both "
                                "be valid if one of them is valid")
 
