@@ -97,11 +97,15 @@ class L2capMatchers(object):
 
     @staticmethod
     def IFrame(tx_seq=None, payload=None, f=None):
-        return lambda packet: L2capMatchers._is_matching_information_frame(packet, tx_seq, payload, f)
+        return lambda packet: L2capMatchers._is_matching_information_frame(packet, tx_seq, payload, f, fcs=False)
+
+    @staticmethod
+    def IFrameWithFcs(tx_seq=None, payload=None, f=None):
+        return lambda packet: L2capMatchers._is_matching_information_frame(packet, tx_seq, payload, f, fcs=True)
 
     @staticmethod
     def IFrameStart(tx_seq=None, payload=None, f=None):
-        return lambda packet: L2capMatchers._is_matching_information_start_frame(packet, tx_seq, payload, f)
+        return lambda packet: L2capMatchers._is_matching_information_start_frame(packet, tx_seq, payload, f, fcs=False)
 
     @staticmethod
     def Data(payload):
@@ -136,6 +140,10 @@ class L2capMatchers(object):
         return lambda packet: L2capMatchers._basic_frame_for(packet, scid)
 
     @staticmethod
+    def ExtractBasicFrameWithFcs(scid):
+        return lambda packet: L2capMatchers._basic_frame_with_fcs_for(packet, scid)
+
+    @staticmethod
     def InformationResponseExtendedFeatures(supports_ertm=None,
                                             supports_streaming=None,
                                             supports_fcs=None,
@@ -150,9 +158,26 @@ class L2capMatchers(object):
             bt_packets.PacketViewLittleEndian(list(packet.payload)))
 
     @staticmethod
+    def _basic_frame_with_fcs(packet):
+        if packet is None:
+            return None
+        return l2cap_packets.BasicFrameWithFcsView(
+            bt_packets.PacketViewLittleEndian(list(packet.payload)))
+
+    @staticmethod
     def _basic_frame_for(packet, scid):
         frame = L2capMatchers._basic_frame(packet)
         if frame.GetChannelId() != scid:
+            return None
+        return frame
+
+    @staticmethod
+    def _basic_frame_with_fcs_for(packet, scid):
+        frame = L2capMatchers._basic_frame(packet)
+        if frame.GetChannelId() != scid:
+            return None
+        frame = L2capMatchers._basic_frame_with_fcs(packet)
+        if frame is None:
             return None
         return frame
 
@@ -164,11 +189,28 @@ class L2capMatchers(object):
         return l2cap_packets.EnhancedInformationFrameView(standard_frame)
 
     @staticmethod
+    def _information_frame_with_fcs(packet):
+        standard_frame = l2cap_packets.StandardFrameWithFcsView(packet)
+        if standard_frame is None:
+            return None
+        if standard_frame.GetFrameType() != l2cap_packets.FrameType.I_FRAME:
+            return None
+        return l2cap_packets.EnhancedInformationFrameWithFcsView(standard_frame)
+
+    @staticmethod
     def _information_start_frame(packet):
         start_frame = L2capMatchers._information_frame(packet)
         if start_frame is None:
             return None
         return l2cap_packets.EnhancedInformationStartFrameView(start_frame)
+
+    @staticmethod
+    def _information_start_frame_with_fcs(packet):
+        start_frame = L2capMatchers._information_frame_with_fcs(packet)
+        if start_frame is None:
+            return None
+        return l2cap_packets.EnhancedInformationStartFrameWithFcsView(
+            start_frame)
 
     @staticmethod
     def _supervisory_frame(packet):
@@ -178,8 +220,11 @@ class L2capMatchers(object):
         return l2cap_packets.EnhancedSupervisoryFrameView(standard_frame)
 
     @staticmethod
-    def _is_matching_information_frame(packet, tx_seq, payload, f):
-        frame = L2capMatchers._information_frame(packet)
+    def _is_matching_information_frame(packet, tx_seq, payload, f, fcs=False):
+        if fcs:
+            frame = L2capMatchers._information_frame_with_fcs(packet)
+        else:
+            frame = L2capMatchers._information_frame(packet)
         if frame is None:
             return False
         if tx_seq is not None and frame.GetTxSeq() != tx_seq:
@@ -191,8 +236,15 @@ class L2capMatchers(object):
         return True
 
     @staticmethod
-    def _is_matching_information_start_frame(packet, tx_seq, payload, f):
-        frame = L2capMatchers._information_start_frame(packet)
+    def _is_matching_information_start_frame(packet,
+                                             tx_seq,
+                                             payload,
+                                             f,
+                                             fcs=False):
+        if fcs:
+            frame = L2capMatchers._information_start_frame_with_fcs(packet)
+        else:
+            frame = L2capMatchers._information_start_frame(packet)
         if frame is None:
             return False
         if tx_seq is not None and frame.GetTxSeq() != tx_seq:
