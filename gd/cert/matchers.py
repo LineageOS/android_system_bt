@@ -100,6 +100,10 @@ class L2capMatchers(object):
         return lambda packet: L2capMatchers._is_matching_information_frame(packet, tx_seq, payload, f)
 
     @staticmethod
+    def IFrameStart(tx_seq=None, payload=None, f=None):
+        return lambda packet: L2capMatchers._is_matching_information_start_frame(packet, tx_seq, payload, f)
+
+    @staticmethod
     def Data(payload):
         return lambda packet: packet.GetPayload().GetBytes() == payload
 
@@ -160,6 +164,13 @@ class L2capMatchers(object):
         return l2cap_packets.EnhancedInformationFrameView(standard_frame)
 
     @staticmethod
+    def _information_start_frame(packet):
+        start_frame = L2capMatchers._information_frame(packet)
+        if start_frame is None:
+            return None
+        return l2cap_packets.EnhancedInformationStartFrameView(start_frame)
+
+    @staticmethod
     def _supervisory_frame(packet):
         standard_frame = l2cap_packets.StandardFrameView(packet)
         if standard_frame.GetFrameType() != l2cap_packets.FrameType.S_FRAME:
@@ -169,6 +180,19 @@ class L2capMatchers(object):
     @staticmethod
     def _is_matching_information_frame(packet, tx_seq, payload, f):
         frame = L2capMatchers._information_frame(packet)
+        if frame is None:
+            return False
+        if tx_seq is not None and frame.GetTxSeq() != tx_seq:
+            return False
+        if payload is not None and frame.GetPayload().GetBytes() != payload:
+            return False
+        if f is not None and frame.GetF() != f:
+            return False
+        return True
+
+    @staticmethod
+    def _is_matching_information_start_frame(packet, tx_seq, payload, f):
+        frame = L2capMatchers._information_start_frame(packet)
         if frame is None:
             return False
         if tx_seq is not None and frame.GetTxSeq() != tx_seq:

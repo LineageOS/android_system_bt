@@ -616,7 +616,7 @@ class L2capTest(GdBaseTestClass):
         Verify the IUT will close the channel when the Monitor Timer expires.
         """
         self._setup_link_from_cert()
-        self.cert_l2cap.reply_with_max_transmit_one()
+        self.cert_l2cap.reply_ertm_with_max_transmit_one()
         self.cert_l2cap.turn_on_ertm(tx_window_size=1, max_transmit=1)
 
         (dut_channel, cert_channel) = self._open_channel(
@@ -631,7 +631,7 @@ class L2capTest(GdBaseTestClass):
         L2CAP/ERM/BV-12-C [I-Frame Transmissions Exceed MaxTransmit]
         """
         self._setup_link_from_cert()
-        self.cert_l2cap.reply_with_max_transmit_one()
+        self.cert_l2cap.reply_ertm_with_max_transmit_one()
         self.cert_l2cap.turn_on_ertm(tx_window_size=1, max_transmit=1)
 
         (dut_channel, cert_channel) = self._open_channel(
@@ -788,6 +788,39 @@ class L2capTest(GdBaseTestClass):
             s=SupervisoryFunction.RECEIVER_NOT_READY,
             f=Final.POLL_RESPONSE)
         assertThat(cert_channel).emitsNone(L2capMatchers.IFrame(tx_seq=0))
+
+    @metadata(
+        pts_test_id="L2CAP/ERM/BV-23-C",
+        pts_test_name="Transmit I-Frames using SAR")
+    def test_transmit_i_frames_using_sar(self):
+        """
+        Verify the IUT can send correctly formatted sequential I-frames with
+        valid values for the enhanced control fields (SAR, F-bit, ReqSeq,
+        TxSeq) when performing SAR.
+        """
+        self._setup_link_from_cert()
+        self.cert_l2cap.reply_ertm_with_specified_mps(11)
+        self.cert_l2cap.turn_on_ertm(tx_window_size=3, max_transmit=2, mps=11)
+
+        (dut_channel, cert_channel) = self._open_channel(
+            scid=0x41, psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
+
+        dut_channel.send(b'abcabcabc')
+        # First IFrame should contain SDU size after control field
+        assertThat(cert_channel).emits(
+            L2capMatchers.IFrameStart(tx_seq=0, payload=b'abc'),
+            L2capMatchers.IFrame(tx_seq=1, payload=b'abc'),
+            L2capMatchers.IFrame(tx_seq=2, payload=b'abc')).inOrder()
+
+        cert_channel.send_s_frame(
+            req_seq=3, s=SupervisoryFunction.RECEIVER_READY)
+
+        dut_channel.send(b'defdefdef')
+        # First IFrame should contain SDU size after control field
+        assertThat(cert_channel).emits(
+            L2capMatchers.IFrameStart(tx_seq=3, payload=b'def'),
+            L2capMatchers.IFrame(tx_seq=4, payload=b'def'),
+            L2capMatchers.IFrame(tx_seq=5, payload=b'def')).inOrder()
 
     def test_sent_rej_lost(self):
         """
