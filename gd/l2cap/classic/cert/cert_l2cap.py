@@ -34,15 +34,27 @@ from cert.captures import L2capCaptures
 
 class CertL2capChannel(IEventStream):
 
-    def __init__(self, device, scid, dcid, acl_stream, acl, control_channel):
+    def __init__(self,
+                 device,
+                 scid,
+                 dcid,
+                 acl_stream,
+                 acl,
+                 control_channel,
+                 fcs_enabled=False):
         self._device = device
         self._scid = scid
         self._dcid = dcid
         self._acl_stream = acl_stream
         self._acl = acl
         self._control_channel = control_channel
-        self._our_acl_view = FilteringEventStream(
-            acl_stream, L2capMatchers.ExtractBasicFrame(scid))
+        self.fcs_enabled = fcs_enabled
+        if fcs_enabled:
+            self._our_acl_view = FilteringEventStream(
+                acl_stream, L2capMatchers.ExtractBasicFrameWithFcs(scid))
+        else:
+            self._our_acl_view = FilteringEventStream(
+                acl_stream, L2capMatchers.ExtractBasicFrame(scid))
 
     def get_event_queue(self):
         return self._our_acl_view.get_event_queue()
@@ -56,9 +68,14 @@ class CertL2capChannel(IEventStream):
                      req_seq,
                      f=Final.NOT_SET,
                      sar=SegmentationAndReassembly.UNSEGMENTED,
-                     payload=None):
-        frame = l2cap_packets.EnhancedInformationFrameBuilder(
-            self._dcid, tx_seq, f, req_seq, sar, payload)
+                     payload=None,
+                     fcs=False):
+        if fcs:
+            frame = l2cap_packets.EnhancedInformationFrameWithFcsBuilder(
+                self._dcid, tx_seq, f, req_seq, sar, payload)
+        else:
+            frame = l2cap_packets.EnhancedInformationFrameBuilder(
+                self._dcid, tx_seq, f, req_seq, sar, payload)
         self._acl.send(frame.Serialize())
 
     def send_s_frame(self,
@@ -129,6 +146,7 @@ class CertL2cap(Closable):
         self.basic_option = None
         self.ertm_option = None
         self.fcs_option = None
+        self.fcs_enabled = False
 
         self.config_response_result = l2cap_packets.ConfigurationResponseResult.SUCCESS
         self.config_response_options = []
@@ -158,7 +176,7 @@ class CertL2cap(Closable):
         return CertL2capChannel(self._device, scid,
                                 response.get().GetDestinationCid(),
                                 self._get_acl_stream(), self._acl,
-                                self.control_channel)
+                                self.control_channel, self.fcs_enabled)
 
     def verify_and_respond_open_channel_from_remote(self, psm=0x33):
         request = L2capCaptures.ConnectionRequest(psm)
@@ -189,7 +207,7 @@ class CertL2cap(Closable):
 
         channel = CertL2capChannel(self._device, cid, cid,
                                    self._get_acl_stream(), self._acl,
-                                   self.control_channel)
+                                   self.control_channel, self.fcs_enabled)
         return channel
 
     # prefer to use channel abstraction instead, if at all possible
@@ -223,6 +241,7 @@ class CertL2cap(Closable):
     def turn_on_fcs(self):
         self.fcs_option = l2cap_packets.FrameCheckSequenceOption()
         self.fcs_option.fcs_type = l2cap_packets.FcsType.DEFAULT
+        self.fcs_enabled = True
 
     # more of a hack for the moment
     def ignore_config_and_connections(self):
