@@ -72,9 +72,6 @@ using bluetooth::Uuid;
 #define BTIF_STORAGE_PATH_REMOTE_DEVCLASS "DevClass"
 #define BTIF_STORAGE_PATH_REMOTE_DEVTYPE "DevType"
 #define BTIF_STORAGE_PATH_REMOTE_NAME "Name"
-#define BTIF_STORAGE_PATH_REMOTE_VER_MFCT "Manufacturer"
-#define BTIF_STORAGE_PATH_REMOTE_VER_VER "LmpVer"
-#define BTIF_STORAGE_PATH_REMOTE_VER_SUBVER "LmpSubVer"
 
 //#define BTIF_STORAGE_PATH_REMOTE_LINKKEYS "remote_linkkeys"
 #define BTIF_STORAGE_PATH_REMOTE_ALIASE "Aliase"
@@ -260,11 +257,10 @@ static int prop2cfg(const RawAddress* remote_bd_addr, bt_property_t* prop) {
 
       if (!info) return false;
 
-      btif_config_set_int(bdstr, BTIF_STORAGE_PATH_REMOTE_VER_MFCT,
+      btif_config_set_int(bdstr, BT_CONFIG_KEY_REMOTE_VER_MFCT,
                           info->manufacturer);
-      btif_config_set_int(bdstr, BTIF_STORAGE_PATH_REMOTE_VER_VER,
-                          info->version);
-      btif_config_set_int(bdstr, BTIF_STORAGE_PATH_REMOTE_VER_SUBVER,
+      btif_config_set_int(bdstr, BT_CONFIG_KEY_REMOTE_VER_VER, info->version);
+      btif_config_set_int(bdstr, BT_CONFIG_KEY_REMOTE_VER_SUBVER,
                           info->sub_ver);
     } break;
 
@@ -382,15 +378,15 @@ static int cfg2prop(const RawAddress* remote_bd_addr, bt_property_t* prop) {
       bt_remote_version_t* info = (bt_remote_version_t*)prop->val;
 
       if (prop->len >= (int)sizeof(bt_remote_version_t)) {
-        ret = btif_config_get_int(bdstr, BTIF_STORAGE_PATH_REMOTE_VER_MFCT,
+        ret = btif_config_get_int(bdstr, BT_CONFIG_KEY_REMOTE_VER_MFCT,
                                   &info->manufacturer);
 
         if (ret)
-          ret = btif_config_get_int(bdstr, BTIF_STORAGE_PATH_REMOTE_VER_VER,
+          ret = btif_config_get_int(bdstr, BT_CONFIG_KEY_REMOTE_VER_VER,
                                     &info->version);
 
         if (ret)
-          ret = btif_config_get_int(bdstr, BTIF_STORAGE_PATH_REMOTE_VER_SUBVER,
+          ret = btif_config_get_int(bdstr, BT_CONFIG_KEY_REMOTE_VER_SUBVER,
                                     &info->sub_ver);
       }
     } break;
