@@ -467,8 +467,7 @@ class L2capTest(GdBaseTestClass):
 
         dut_channel.send(b'abc')
         assertThat(cert_channel).emits(
-            L2capMatchers.PartialData(
-                b"abc\x4f\xa3"))  # TODO: Use packet parser
+            L2capMatchers.IFrameWithFcs(payload=b"abc"))
 
     @metadata(
         pts_test_id="L2CAP/FOC/BV-03-C",
@@ -491,8 +490,77 @@ class L2capTest(GdBaseTestClass):
 
         dut_channel.send(b'abc')
         assertThat(cert_channel).emits(
-            L2capMatchers.PartialData(
-                b"abc\x4f\xa3"))  # TODO: Use packet parser
+            L2capMatchers.IFrameWithFcs(payload=b"abc"))
+
+    @metadata(
+        pts_test_id="L2CAP/OFS/BV-01-C",
+        pts_test_name="Sending I-Frames without FCS for ERTM")
+    def test_sending_i_frames_without_fcs_for_ertm(self):
+        """
+        Verify the IUT does not include the FCS in I-frames.
+        """
+        self._setup_link_from_cert()
+        self.cert_l2cap.turn_on_ertm()
+
+        (dut_channel, cert_channel) = self._open_channel(
+            scid=0x41, psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
+
+        dut_channel.send(b'abc')
+        assertThat(cert_channel).emits(
+            L2capMatchers.IFrame(tx_seq=0, payload=b"abc"))
+
+    @metadata(
+        pts_test_id="L2CAP/OFS/BV-02-C",
+        pts_test_name="Receiving I-Frames without FCS for ERTM")
+    def test_receiving_i_frames_without_fcs_for_ertm(self):
+        """
+        Verify the IUT can handle I-frames that do not contain the FCS.
+        """
+        self._setup_link_from_cert()
+        self.cert_l2cap.turn_on_ertm()
+
+        (dut_channel, cert_channel) = self._open_channel(
+            scid=0x41, psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
+
+        dut_channel.send(b"abc")
+        assertThat(cert_channel).emits(
+            L2capMatchers.IFrame(tx_seq=0, payload=b"abc"))
+
+    @metadata(
+        pts_test_id="L2CAP/OFS/BV-05-C",
+        pts_test_name="Sending I-Frames with FCS for ERTM")
+    def test_sending_i_frames_with_fcs_for_ertm(self):
+        """
+        Verify the IUT does include the FCS in I-frames.
+        """
+        self._setup_link_from_cert()
+        self.cert_l2cap.turn_on_ertm()
+        self.cert_l2cap.turn_on_fcs()
+
+        (dut_channel, cert_channel) = self._open_channel(
+            scid=0x41, psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
+
+        dut_channel.send(b'abc')
+        assertThat(cert_channel).emits(
+            L2capMatchers.IFrameWithFcs(tx_seq=0, payload=b"abc"))
+
+    @metadata(
+        pts_test_id="L2CAP/OFS/BV-06-C",
+        pts_test_name="Receiving I-Frames with FCS for ERTM")
+    def test_aareceiving_i_frames_with_fcs_for_ertm(self):
+        """
+        Verify the IUT can handle I-frames that do contain the FCS.
+        """
+        self._setup_link_from_cert()
+        self.cert_l2cap.turn_on_ertm()
+        self.cert_l2cap.turn_on_fcs()
+
+        (dut_channel, cert_channel) = self._open_channel(
+            scid=0x41, psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
+
+        dut_channel.send(b"abc")
+        assertThat(cert_channel).emits(
+            L2capMatchers.IFrameWithFcs(tx_seq=0, payload=b"abc"))
 
     @metadata(
         pts_test_id="L2CAP/ERM/BV-01-C", pts_test_name="Transmit I-frames")
@@ -512,7 +580,6 @@ class L2capTest(GdBaseTestClass):
         assertThat(cert_channel).emits(
             L2capMatchers.IFrame(tx_seq=0, payload=b"abc"))
 
-        # todo: verify packet received?
         cert_channel.send_i_frame(tx_seq=0, req_seq=1, payload=SAMPLE_PACKET)
 
         dut_channel.send(b'abc')
