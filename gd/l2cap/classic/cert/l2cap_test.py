@@ -222,6 +222,16 @@ class L2capTest(GdBaseTestClass):
             L2capMatchers.ConfigurationResponse())
 
     @metadata(
+        pts_test_id="L2CAP/COS/CED/BV-11-C", pts_test_name="Configure MTU size")
+    def test_configure_mtu_size(self):
+        """
+        Verify that the IUT is able to configure the supported MTU size
+        """
+        self._setup_link_from_cert()
+        self.cert_l2cap.set_mtu(672)
+        self._open_channel(scid=0x41, psm=0x33)
+
+    @metadata(
         pts_test_id="L2CAP/COS/CFD/BV-01-C", pts_test_name="Continuation Flag")
     def test_continuation_flag(self):
         """
@@ -287,6 +297,20 @@ class L2capTest(GdBaseTestClass):
         assertThat(self.cert_l2cap.get_control_channel()).emits(
             L2capMatchers.ConfigurationResponse(),
             L2capMatchers.ConfigurationRequest()).inAnyOrder()
+
+    @metadata(
+        pts_test_id="L2CAP/COS/CFD/BV-09-C",
+        pts_test_name="Mandatory 48 Byte MTU")
+    def test_mandatory_48_byte_mtu(self):
+        """
+        Verify that the IUT can support mandatory 48 byte MTU
+        """
+        self._setup_link_from_cert()
+        self.cert_l2cap.set_mtu(48)
+        (dut_channel, cert_channel) = self._open_channel(scid=0x41, psm=0x33)
+
+        dut_channel.send(b"a" * 44)
+        assertThat(cert_channel).emits(L2capMatchers.Data(b"a" * 44))
 
     @metadata(
         pts_test_id="L2CAP/COS/CFD/BV-12-C",
