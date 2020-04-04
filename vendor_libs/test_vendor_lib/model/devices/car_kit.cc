@@ -80,7 +80,7 @@ CarKit::CarKit() : Device(kCarKitPropertiesFile) {
 void CarKit::Initialize(const vector<std::string>& args) {
   if (args.size() < 2) return;
 
-  Address addr;
+  Address addr{};
   if (Address::FromString(args[1], addr)) properties_.SetAddress(addr);
   LOG_INFO("%s SetAddress %s", ToString().c_str(), addr.ToString().c_str());
 

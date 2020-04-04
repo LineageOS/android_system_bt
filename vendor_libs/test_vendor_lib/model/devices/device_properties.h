@@ -309,18 +309,18 @@ class DeviceProperties {
   uint8_t lmp_pal_version_;
   uint16_t manufacturer_name_;
   uint16_t lmp_pal_subversion_;
-  uint64_t supported_features_;
-  uint8_t authentication_enable_;
+  uint64_t supported_features_{};
+  uint8_t authentication_enable_{};
   std::vector<uint8_t> supported_codecs_;
   std::vector<uint32_t> vendor_specific_codecs_;
   std::vector<uint8_t> supported_commands_;
   std::vector<uint64_t> extended_features_{{0x875b3fd8fe8ffeff, 0x0f}};
   ClassOfDevice class_of_device_{{0, 0, 0}};
   std::vector<uint8_t> extended_inquiry_data_;
-  std::array<uint8_t, 248> name_;
-  Address address_;
-  uint8_t page_scan_repetition_mode_;
-  uint16_t clock_offset_;
+  std::array<uint8_t, 248> name_{};
+  Address address_{};
+  uint8_t page_scan_repetition_mode_{};
+  uint16_t clock_offset_{};
   uint8_t encryption_key_size_{10};
 
   // Low Energy
@@ -331,17 +331,17 @@ class DeviceProperties {
   uint64_t le_supported_features_{0x075b3fd8fe8ffeff};
   uint64_t le_supported_states_;
   std::vector<uint8_t> le_vendor_cap_;
-  Address le_address_;
-  uint8_t le_address_type_;
+  Address le_address_{};
+  uint8_t le_address_type_{};
 
-  uint16_t le_advertising_interval_min_;
-  uint16_t le_advertising_interval_max_;
-  uint8_t le_advertising_own_address_type_;
-  uint8_t le_advertising_peer_address_type_;
-  Address le_advertising_peer_address_;
-  uint8_t le_advertising_channel_map_;
-  uint8_t le_advertising_filter_policy_;
-  uint8_t le_advertisement_type_;
+  uint16_t le_advertising_interval_min_{};
+  uint16_t le_advertising_interval_max_{};
+  uint8_t le_advertising_own_address_type_{};
+  uint8_t le_advertising_peer_address_type_{};
+  Address le_advertising_peer_address_{};
+  uint8_t le_advertising_channel_map_{};
+  uint8_t le_advertising_filter_policy_{};
+  uint8_t le_advertisement_type_{};
   std::vector<uint8_t> le_advertisement_;
   std::vector<uint8_t> le_scan_response_;
 };

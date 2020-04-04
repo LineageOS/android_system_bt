@@ -51,7 +51,7 @@ class Sniffer : public Device {
 
  private:
   static bool registered_;
-  Address device_to_sniff_;
+  Address device_to_sniff_{};
 };
 
 }  // namespace test_vendor_lib

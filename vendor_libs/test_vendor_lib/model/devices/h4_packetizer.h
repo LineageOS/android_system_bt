@@ -74,7 +74,7 @@ class H4Packetizer : public HciProtocol {
 
   enum State { HCI_PREAMBLE, HCI_PAYLOAD };
   State state_{HCI_PREAMBLE};
-  uint8_t preamble_[PREAMBLE_SIZE_MAX];
+  uint8_t preamble_[PREAMBLE_SIZE_MAX]{};
   std::vector<uint8_t> packet_;
   size_t bytes_remaining_{0};
   size_t bytes_read_{0};
