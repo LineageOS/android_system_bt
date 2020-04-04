@@ -99,7 +99,7 @@ class TestModel {
   std::function<int(const std::string&, int)> connect_to_remote_;
 
   AsyncTaskId timer_tick_task_{kInvalidTaskId};
-  std::chrono::milliseconds timer_period_;
+  std::chrono::milliseconds timer_period_{};
 
   TestModel(TestModel& model) = delete;
   TestModel& operator=(const TestModel& model) = delete;

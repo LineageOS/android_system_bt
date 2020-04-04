@@ -126,7 +126,7 @@ int TestEnvironment::ConnectToRemoteServer(const std::string& server, int port) 
     return -1;
   }
 
-  struct sockaddr_in serv_addr;
+  struct sockaddr_in serv_addr {};
   memset((void*)&serv_addr, 0, sizeof(serv_addr));
   serv_addr.sin_family = AF_INET;
   serv_addr.sin_addr.s_addr = INADDR_ANY;
