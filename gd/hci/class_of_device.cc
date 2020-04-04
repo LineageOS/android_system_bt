@@ -30,6 +30,8 @@ namespace hci {
 
 static_assert(sizeof(ClassOfDevice) == ClassOfDevice::kLength, "ClassOfDevice must be 3 bytes long!");
 
+// ClassOfDevice cannot initialize member variables as it is a POD type
+// NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init)
 ClassOfDevice::ClassOfDevice(const uint8_t (&class_of_device)[kLength]) {
   std::copy(class_of_device, class_of_device + kLength, cod);
 };
@@ -43,7 +45,7 @@ std::string ClassOfDevice::ToString() const {
 }
 
 bool ClassOfDevice::FromString(const std::string& from, ClassOfDevice& to) {
-  ClassOfDevice new_cod;
+  ClassOfDevice new_cod{};
   if (from.length() != 8) return false;
 
   std::istringstream stream(from);
@@ -90,7 +92,7 @@ size_t ClassOfDevice::FromOctets(const uint8_t* from) {
 };
 
 bool ClassOfDevice::IsValid(const std::string& cod) {
-  ClassOfDevice tmp;
+  ClassOfDevice tmp{};
   return ClassOfDevice::FromString(cod, tmp);
 }
 }  // namespace hci

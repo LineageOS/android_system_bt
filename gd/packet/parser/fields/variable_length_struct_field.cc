@@ -61,7 +61,7 @@ void VariableLengthStructField::GenGetter(std::ostream& s, Size start_offset, Si
   s << "size_t end_index = size();";
   s << "auto to_bound = begin();";
   int num_leading_bits = GenBounds(s, start_offset, end_offset, GetSize());
-  s << GetDataType() << " " << GetName() << "_ptr;";
+  s << GetDataType() << " " << GetName() << "_ptr{};";
   GenExtractor(s, num_leading_bits, false);
   s << "return " << GetName() << "_ptr;";
   s << "}\n";

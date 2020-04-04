@@ -66,7 +66,7 @@ std::string Keyboard::GetTypeString() const {
 void Keyboard::Initialize(const vector<std::string>& args) {
   if (args.size() < 2) return;
 
-  Address addr;
+  Address addr{};
   if (Address::FromString(args[1], addr)) properties_.SetLeAddress(addr);
 
   if (args.size() < 3) return;

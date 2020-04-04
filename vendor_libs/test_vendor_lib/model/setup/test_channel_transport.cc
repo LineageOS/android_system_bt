@@ -30,7 +30,7 @@ using std::vector;
 namespace test_vendor_lib {
 
 int TestChannelTransport::SetUp(int port) {
-  struct sockaddr_in listen_address;
+  struct sockaddr_in listen_address {};
   socklen_t sockaddr_in_size = sizeof(struct sockaddr_in);
   memset(&listen_address, 0, sockaddr_in_size);
 
