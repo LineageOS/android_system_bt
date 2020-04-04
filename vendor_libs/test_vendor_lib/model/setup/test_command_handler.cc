@@ -220,7 +220,7 @@ void TestCommandHandler::SetDeviceAddress(const vector<std::string>& args) {
     return;
   }
   size_t device_id = std::stoi(args[0]);
-  Address device_address;
+  Address device_address{};
   Address::FromString(args[1], device_address);
   model_.SetDeviceAddress(device_id, device_address);
   response_string_ = "set_device_address " + args[0];

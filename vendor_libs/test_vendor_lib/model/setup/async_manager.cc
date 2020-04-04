@@ -262,8 +262,8 @@ class AsyncManager::AsyncFdWatcher {
   std::map<int, ReadCallback> watched_shared_fds_;
 
   // A pair of FD to send information to the reading thread
-  int notification_listen_fd_;
-  int notification_write_fd_;
+  int notification_listen_fd_{};
+  int notification_write_fd_{};
 };
 
 // Async task manager implementation
@@ -335,7 +335,7 @@ class AsyncManager::AsyncTaskManager {
     // public or gets more complex
     std::chrono::steady_clock::time_point time;
     bool periodic;
-    std::chrono::milliseconds period;
+    std::chrono::milliseconds period{};
     TaskCallback callback;
     AsyncTaskId task_id;
   };
