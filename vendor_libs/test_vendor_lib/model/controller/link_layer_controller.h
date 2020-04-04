@@ -307,7 +307,7 @@ class LinkLayerController {
 
   // Timing related state
   std::vector<AsyncTaskId> controller_events_;
-  AsyncTaskId timer_tick_task_;
+  AsyncTaskId timer_tick_task_{};
   std::chrono::milliseconds timer_period_ = std::chrono::milliseconds(100);
 
   // Callbacks to schedule tasks.
@@ -341,33 +341,34 @@ class LinkLayerController {
   std::chrono::steady_clock::time_point last_le_advertisement_;
 
   bluetooth::hci::OpCode le_scan_enable_{bluetooth::hci::OpCode::NONE};
-  uint8_t le_scan_type_;
-  uint16_t le_scan_interval_;
-  uint16_t le_scan_window_;
-  uint8_t le_scan_filter_policy_;
-  uint8_t le_scan_filter_duplicates_;
-  uint8_t le_address_type_;
+  uint8_t le_scan_type_{};
+  uint16_t le_scan_interval_{};
+  uint16_t le_scan_window_{};
+  uint8_t le_scan_filter_policy_{};
+  uint8_t le_scan_filter_duplicates_{};
+  uint8_t le_address_type_{};
 
   bool le_connect_{false};
-  uint16_t le_connection_interval_min_;
-  uint16_t le_connection_interval_max_;
-  uint16_t le_connection_latency_;
-  uint16_t le_connection_supervision_timeout_;
-  uint16_t le_connection_minimum_ce_length_;
-  uint16_t le_connection_maximum_ce_length_;
-  uint8_t le_initiator_filter_policy_;
+  uint16_t le_connection_interval_min_{};
+  uint16_t le_connection_interval_max_{};
+  uint16_t le_connection_latency_{};
+  uint16_t le_connection_supervision_timeout_{};
+  uint16_t le_connection_minimum_ce_length_{};
+  uint16_t le_connection_maximum_ce_length_{};
+  uint8_t le_initiator_filter_policy_{};
 
-  Address le_peer_address_;
-  uint8_t le_peer_address_type_;
+  Address le_peer_address_{};
+  uint8_t le_peer_address_type_{};
 
   // Classic state
 
   SecurityManager security_manager_{10};
   std::chrono::steady_clock::time_point last_inquiry_;
-  model::packets::InquiryType inquiry_mode_;
+  model::packets::InquiryType inquiry_mode_{
+      model::packets::InquiryType::STANDARD};
   AsyncTaskId inquiry_timer_task_id_ = kInvalidTaskId;
-  uint64_t inquiry_lap_;
-  uint8_t inquiry_max_responses_;
+  uint64_t inquiry_lap_{};
+  uint8_t inquiry_max_responses_{};
 
   bool page_scans_enabled_{false};
   bool inquiry_scans_enabled_{false};

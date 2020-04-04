@@ -67,7 +67,7 @@ class Iterator : public std::iterator<std::random_access_iterator_tag, uint8_t> 
   template <typename FixedWidthPODType>
   FixedWidthPODType extract() {
     static_assert(std::is_pod<FixedWidthPODType>::value, "Iterator::extract requires a fixed-width type.");
-    FixedWidthPODType extracted_value;
+    FixedWidthPODType extracted_value{};
     uint8_t* value_ptr = (uint8_t*)&extracted_value;
 
     for (size_t i = 0; i < sizeof(FixedWidthPODType); i++) {
