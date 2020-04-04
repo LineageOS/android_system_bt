@@ -79,7 +79,7 @@ class PhyLayerImpl : public PhyLayer {
   bool IsFactoryId(uint32_t factory_id) override;
   void TimerTick() override;
 
-  uint32_t device_id_;
+  uint32_t device_id_{};
 
  private:
   std::shared_ptr<PhyLayerFactory> factory_;

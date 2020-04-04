@@ -31,7 +31,6 @@ class ClassOfDevice final {
 
   ClassOfDevice() = default;
   ClassOfDevice(const uint8_t (&class_of_device)[kLength]);
-
   bool operator==(const ClassOfDevice& rhs) const {
     return (std::memcmp(cod, rhs.cod, sizeof(cod)) == 0);
   }

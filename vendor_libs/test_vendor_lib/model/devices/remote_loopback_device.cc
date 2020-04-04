@@ -38,7 +38,7 @@ std::string RemoteLoopbackDevice::ToString() const {
 void RemoteLoopbackDevice::Initialize(const std::vector<std::string>& args) {
   if (args.size() < 2) return;
 
-  Address addr;
+  Address addr{};
   if (Address::FromString(args[1], addr)) properties_.SetAddress(addr);
 }
 
