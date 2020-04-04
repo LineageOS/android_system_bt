@@ -980,7 +980,7 @@ void LinkLayerController::IncomingPagePacket(
              incoming.GetSourceAddress().ToString().c_str());
   }
 
-  bluetooth::hci::Address source_address;
+  bluetooth::hci::Address source_address{};
   bluetooth::hci::Address::FromString(page.GetSourceAddress().ToString(),
                                       source_address);
 
