@@ -88,9 +88,6 @@ class GdDevice(GdDeviceBase):
         self.controller_read_only_property = facade_rootservice_pb2_grpc.ReadOnlyPropertyStub(
             self.grpc_channel)
         self.hci = hci_facade_pb2_grpc.HciLayerFacadeStub(self.grpc_channel)
-        self.hci.register_for_events = self.__register_for_hci_events
-        self.hci.send_command_with_complete = self.__send_hci_command_with_complete
-        self.hci.send_command_with_status = self.__send_hci_command_with_status
         self.l2cap = l2cap_facade_pb2_grpc.L2capClassicModuleFacadeStub(
             self.grpc_channel)
         self.l2cap_le = l2cap_le_facade_pb2_grpc.L2capLeModuleFacadeStub(
@@ -111,18 +108,3 @@ class GdDevice(GdDeviceBase):
             self.grpc_channel)
         self.security = security_facade_pb2_grpc.SecurityModuleFacadeStub(
             self.grpc_channel)
-
-    def __register_for_hci_events(self, *event_codes):
-        for event_code in event_codes:
-            msg = hci_facade.EventCodeMsg(code=int(event_code))
-            self.hci.RegisterEventHandler(msg)
-
-    def __send_hci_command_with_complete(self, command):
-        cmd_bytes = bytes(command.Serialize())
-        cmd = hci_facade.CommandMsg(command=cmd_bytes)
-        self.hci.EnqueueCommandWithComplete(cmd)
-
-    def __send_hci_command_with_status(self, command):
-        cmd_bytes = bytes(command.Serialize())
-        cmd = hci_facade.CommandMsg(command=cmd_bytes)
-        self.hci.EnqueueCommandWithStatus(cmd)
