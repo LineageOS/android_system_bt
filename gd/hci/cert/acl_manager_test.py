@@ -28,9 +28,6 @@ from hci.facade import controller_facade_pb2 as controller_facade
 from hci.facade import facade_pb2 as hci_facade
 import bluetooth_packets_python3 as bt_packets
 from bluetooth_packets_python3 import hci_packets
-from cert.captures import ReadBdAddrCompleteCapture
-from cert.captures import ConnectionCompleteCapture
-from cert.captures import ConnectionRequestCapture
 from cert.py_hci import PyHci
 from cert.py_acl_manager import PyAclManager
 
