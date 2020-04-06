@@ -2696,20 +2696,25 @@ static bt_status_t connect_int(RawAddress* peer_address, uint16_t uuid) {
   BTIF_TRACE_EVENT("%s: peer_address=%s uuid=0x%x", __func__,
                    peer_address->ToString().c_str(), uuid);
 
-  BtifAvPeer* peer = nullptr;
-  if (uuid == UUID_SERVCLASS_AUDIO_SOURCE) {
-    peer = btif_av_source.FindOrCreatePeer(*peer_address, kBtaHandleUnknown);
-    if (peer == nullptr) {
-      return BT_STATUS_FAIL;
+  auto connection_task = [](RawAddress* peer_address, uint16_t uuid) {
+    BtifAvPeer* peer = nullptr;
+    if (uuid == UUID_SERVCLASS_AUDIO_SOURCE) {
+      peer = btif_av_source.FindOrCreatePeer(*peer_address, kBtaHandleUnknown);
+    } else if (uuid == UUID_SERVCLASS_AUDIO_SINK) {
+      peer = btif_av_sink.FindOrCreatePeer(*peer_address, kBtaHandleUnknown);
     }
-  } else if (uuid == UUID_SERVCLASS_AUDIO_SINK) {
-    peer = btif_av_sink.FindOrCreatePeer(*peer_address, kBtaHandleUnknown);
     if (peer == nullptr) {
-      return BT_STATUS_FAIL;
+      btif_queue_advance();
+      return;
     }
+    peer->StateMachine().ProcessEvent(BTIF_AV_CONNECT_REQ_EVT, nullptr);
+  };
+  bt_status_t status = do_in_main_thread(
+      FROM_HERE, base::BindOnce(connection_task, peer_address, uuid));
+  if (status != BT_STATUS_SUCCESS) {
+    LOG(ERROR) << __func__ << ": can't post connection task to main_thread";
   }
-  peer->StateMachine().ProcessEvent(BTIF_AV_CONNECT_REQ_EVT, nullptr);
-  return BT_STATUS_SUCCESS;
+  return status;
 }
 
 static void set_source_silence_peer_int(const RawAddress& peer_address,
