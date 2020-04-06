@@ -38,11 +38,6 @@ class LeL2capTest(GdBaseTestClass):
     def setup_test(self):
         super().setup_test()
 
-        self.dut.address = self.dut.hci_controller.GetMacAddressSimple()
-        self.cert.address = self.cert.controller_read_only_property.ReadLocalAddress(
-            empty_proto.Empty()).address
-        self.cert_address = common.BluetoothAddress(address=self.cert.address)
-
         self.dut_l2cap = PyLeL2cap(self.dut)
         self.cert_l2cap = CertLeL2cap(self.cert)
 
