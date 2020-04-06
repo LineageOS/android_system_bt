@@ -14,19 +14,16 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os
-import sys
-import logging
+from datetime import timedelta
 
 from cert.gd_base_test import GdBaseTestClass
-from cert.event_stream import EventStream
-from google.protobuf import empty_pb2 as empty_proto
-from facade import rootservice_pb2 as facade_rootservice
-from hci.facade import facade_pb2 as hci_facade
-from hci.facade import controller_facade_pb2 as controller_facade
+from cert.matchers import HciMatchers, NeighborMatchers
+from cert.py_hci import PyHci
+from cert.truth import assertThat
+from neighbor.cert.py_neighbor import PyNeighbor
 from neighbor.facade import facade_pb2 as neighbor_facade
 from bluetooth_packets_python3 import hci_packets
-import bluetooth_packets_python3 as bt_packets
+from bluetooth_packets_python3.hci_packets import OpCode
 
 
 class NeighborTest(GdBaseTestClass):
@@ -34,25 +31,30 @@ class NeighborTest(GdBaseTestClass):
     def setup_class(self):
         super().setup_class(dut_module='HCI_INTERFACES', cert_module='HCI')
 
-    def register_for_dut_event(self, event_code):
-        msg = hci_facade.EventCodeMsg(code=int(event_code))
-        self.dut.hci.RegisterEventHandler(msg)
+    def setup_test(self):
+        super().setup_test()
+        self.cert_hci = PyHci(self.cert)
+        self.cert_hci.send_command_with_complete(
+            hci_packets.WriteScanEnableBuilder(
+                hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
+        self.cert_name = b'Im_A_Cert'
+        self.cert_address = self.cert_hci.read_own_address()
+        self.cert_name += b'@' + self.cert_address.encode('utf8')
+        self.dut_neighbor = PyNeighbor(self.dut)
 
-    def register_for_event(self, event_code):
-        msg = hci_facade.EventCodeMsg(code=int(event_code))
-        self.cert.hci.RegisterEventHandler(msg)
+    def teardown_test(self):
+        self.cert_hci.close()
+        super().teardown_test()
 
-    def register_for_le_event(self, event_code):
-        msg = hci_facade.LeSubeventCodeMsg(code=int(event_code))
-        self.cert.hci.RegisterLeEventHandler(msg)
+    def _set_name(self):
+        padded_name = self.cert_name
+        while len(padded_name) < 248:
+            padded_name = padded_name + b'\0'
+        self.cert_hci.send_command_with_complete(
+            hci_packets.WriteLocalNameBuilder(padded_name))
 
-    def enqueue_hci_command(self, command, expect_complete):
-        cmd_bytes = bytes(command.Serialize())
-        cmd = hci_facade.CommandMsg(command=cmd_bytes)
-        if (expect_complete):
-            self.cert.hci.EnqueueCommandWithComplete(cmd)
-        else:
-            self.cert.hci.EnqueueCommandWithStatus(cmd)
+        assertThat(self.cert_hci.get_event_stream()).emits(
+            HciMatchers.CommandComplete(OpCode.WRITE_LOCAL_NAME))
 
     def test_inquiry_from_dut(self):
         inquiry_msg = neighbor_facade.InquiryMsg(
@@ -60,101 +62,52 @@ class NeighborTest(GdBaseTestClass):
             result_mode=neighbor_facade.ResultMode.STANDARD,
             length_1_28s=3,
             max_results=0)
-        with EventStream(self.dut.neighbor.SetInquiryMode(
-                inquiry_msg)) as inquiry_event_stream:
-            self.enqueue_hci_command(
-                hci_packets.WriteScanEnableBuilder(
-                    hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN), True)
-            inquiry_event_stream.assert_event_occurs(
-                lambda msg: b'\x02\x0f' in msg.packet
-                # Expecting an HCI Event (code 0x02, length 0x0f)
-            )
+        session = self.dut_neighbor.set_inquiry_mode(inquiry_msg)
+        self.cert_hci.send_command_with_complete(
+            hci_packets.WriteScanEnableBuilder(
+                hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
+        assertThat(session).emits(
+            NeighborMatchers.InquiryResult(self.cert_address),
+            timeout=timedelta(seconds=10))
 
     def test_inquiry_rssi_from_dut(self):
         inquiry_msg = neighbor_facade.InquiryMsg(
             inquiry_mode=neighbor_facade.DiscoverabilityMode.GENERAL,
             result_mode=neighbor_facade.ResultMode.RSSI,
-            length_1_28s=3,
+            length_1_28s=6,
             max_results=0)
-        with EventStream(self.dut.neighbor.SetInquiryMode(
-                inquiry_msg)) as inquiry_event_stream:
-            self.enqueue_hci_command(
-                hci_packets.WriteScanEnableBuilder(
-                    hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN), True)
-            inquiry_event_stream.assert_event_occurs(
-                lambda msg: b'\x22\x0f' in msg.packet
-                # Expecting an HCI Event (code 0x22, length 0x0f)
-            )
+        session = self.dut_neighbor.set_inquiry_mode(inquiry_msg)
+        self.cert_hci.send_command_with_complete(
+            hci_packets.WriteScanEnableBuilder(
+                hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
+        assertThat(session).emits(
+            NeighborMatchers.InquiryResultwithRssi(self.cert_address),
+            timeout=timedelta(seconds=10))
 
     def test_inquiry_extended_from_dut(self):
-        name_string = b'Im_A_Cert'
+        self._set_name()
         gap_name = hci_packets.GapData()
         gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
-        gap_name.data = list(bytes(name_string))
+        gap_name.data = list(bytes(self.cert_name))
         gap_data = list([gap_name])
 
-        self.enqueue_hci_command(
+        self.cert_hci.send_command_with_complete(
             hci_packets.WriteExtendedInquiryResponseBuilder(
-                hci_packets.FecRequired.NOT_REQUIRED, gap_data), True)
+                hci_packets.FecRequired.NOT_REQUIRED, gap_data))
         inquiry_msg = neighbor_facade.InquiryMsg(
             inquiry_mode=neighbor_facade.DiscoverabilityMode.GENERAL,
             result_mode=neighbor_facade.ResultMode.EXTENDED,
-            length_1_28s=3,
+            length_1_28s=8,
             max_results=0)
-        with EventStream(self.dut.neighbor.SetInquiryMode(
-                inquiry_msg)) as inquiry_event_stream:
-            self.enqueue_hci_command(
-                hci_packets.WriteScanEnableBuilder(
-                    hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN), True)
-            inquiry_event_stream.assert_event_occurs(
-                lambda msg: name_string in msg.packet)
+        session = self.dut_neighbor.set_inquiry_mode(inquiry_msg)
+        self.cert_hci.send_command_with_complete(
+            hci_packets.WriteScanEnableBuilder(
+                hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))
+        assertThat(session).emits(
+            NeighborMatchers.ExtendedInquiryResult(self.cert_address),
+            timeout=timedelta(seconds=10))
 
     def test_remote_name(self):
-        self.register_for_dut_event(
-            hci_packets.EventCode.REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION)
-
-        with EventStream(self.cert.hci.FetchEvents(empty_proto.Empty())) as hci_event_stream, \
-            EventStream(self.dut.neighbor.GetRemoteNameEvents(empty_proto.Empty())) as name_event_stream:
-
-            cert_name = b'Im_A_Cert'
-            padded_name = cert_name
-            while len(padded_name) < 248:
-                padded_name = padded_name + b'\0'
-            self.enqueue_hci_command(
-                hci_packets.WriteLocalNameBuilder(padded_name), True)
-
-            hci_event_stream.assert_event_occurs(
-                lambda msg: b'\x0e\x04\x01\x13\x0c' in msg.event)
-
-            address = hci_packets.Address()
-
-            def get_address_from_complete(packet):
-                packet_bytes = packet.event
-                if b'\x0e\x0a\x01\x09\x10' in packet_bytes:
-                    nonlocal address
-                    addr_view = hci_packets.ReadBdAddrCompleteView(
-                        hci_packets.CommandCompleteView(
-                            hci_packets.EventPacketView(
-                                bt_packets.PacketViewLittleEndian(
-                                    list(packet_bytes)))))
-                    address = addr_view.GetBdAddr()
-                    return True
-                return False
-
-            # DUT Enables scans and gets its address
-            self.enqueue_hci_command(
-                hci_packets.WriteScanEnableBuilder(
-                    hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN), True)
-            self.enqueue_hci_command(hci_packets.ReadBdAddrBuilder(), True)
-
-            hci_event_stream.assert_event_occurs(get_address_from_complete)
-
-            cert_address = address.encode('utf8')
-
-            self.dut.neighbor.ReadRemoteName(
-                neighbor_facade.RemoteNameRequestMsg(
-                    address=cert_address,
-                    page_scan_repetition_mode=1,
-                    clock_offset=0x6855))
-            name_event_stream.assert_event_occurs(
-                lambda msg: cert_name in msg.name)
+        self._set_name()
+        session = self.dut_neighbor.get_remote_name(self.cert_address)
+        session.verify_name(self.cert_name)
