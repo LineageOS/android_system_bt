@@ -7,9 +7,12 @@ import "google/protobuf/empty.proto";
 service NeighborFacade {
   rpc SetConnectability(EnableMsg) returns (google.protobuf.Empty) {}
   rpc SetDiscoverability(DiscoverabilitiyMsg) returns (google.protobuf.Empty) {}
-  rpc SetInquiryMode(InquiryMsg) returns (stream InquiryResultMsg) {}
+  rpc SetInquiryMode(InquiryMsg) returns (stream InquiryResultMsg) {
+    // Sets inquiry mode and fetches inquiry result HCI packet
+  }
   rpc ReadRemoteName(RemoteNameRequestMsg) returns (google.protobuf.Empty) {}
   rpc GetRemoteNameEvents(google.protobuf.Empty) returns (stream RemoteNameResponseMsg) {}
+  // TODO: Should we use a blocking call for ReadRemoteName instead? (Note: blocking model may not work for GD stack)
   rpc EnableInquiryScan(EnableMsg) returns (google.protobuf.Empty) {}
   rpc EnablePageScan(EnableMsg) returns (google.protobuf.Empty) {}
 }
