@@ -22,41 +22,80 @@ from cert.capture import Capture
 from cert.matchers import L2capMatchers
 
 
-def ReadBdAddrCompleteCapture():
-    return Capture(lambda packet: b'\x0e\x0a\x01\x09\x10' in packet.event,
-      lambda packet: hci_packets.ReadBdAddrCompleteView(
-                  hci_packets.CommandCompleteView(
-                            hci_packets.EventPacketView(
-                                bt_packets.PacketViewLittleEndian(
-                                    list(packet.event))))))
+class HalCaptures(object):
+
+    @staticmethod
+    def ReadBdAddrCompleteCapture():
+        return Capture(lambda packet: b'\x0e\x0a\x01\x09\x10' in packet.payload,
+                       lambda packet: hci_packets.ReadBdAddrCompleteView(
+                           hci_packets.CommandCompleteView(
+                               hci_packets.EventPacketView(
+                                   bt_packets.PacketViewLittleEndian(
+                                       list(packet.payload))))))
+
+    @staticmethod
+    def ConnectionRequestCapture():
+        return Capture(lambda packet: b'\x04\x0a' in packet.payload,
+                       lambda packet: hci_packets.ConnectionRequestView(
+                           hci_packets.EventPacketView(
+                               bt_packets.PacketViewLittleEndian(
+                                   list(packet.payload)))))
+
+    @staticmethod
+    def ConnectionCompleteCapture():
+        return Capture(lambda packet: b'\x03\x0b\x00' in packet.payload,
+                       lambda packet: hci_packets.ConnectionCompleteView(
+                           hci_packets.EventPacketView(
+                               bt_packets.PacketViewLittleEndian(
+                                   list(packet.payload)))))
+
+    @staticmethod
+    def LeConnectionCompleteCapture():
+        return Capture(lambda packet: packet.payload[0] == 0x3e
+                                      and (packet.payload[2] == 0x01 or packet.payload[2] == 0x0a),
+                       lambda packet: hci_packets.LeConnectionCompleteView(
+                           hci_packets.LeMetaEventView(
+                               hci_packets.EventPacketView(
+                                   bt_packets.PacketViewLittleEndian(
+                                       list(packet.payload))))))
 
 
-def ConnectionRequestCapture():
-    return Capture(lambda packet: b'\x04\x0a' in packet.event,
-      lambda packet: hci_packets.ConnectionRequestView(
-                            hci_packets.EventPacketView(
-                                bt_packets.PacketViewLittleEndian(
-                                    list(packet.event)))))
+class HciCaptures(object):
 
+    @staticmethod
+    def ReadBdAddrCompleteCapture():
+        return Capture(lambda packet: b'\x0e\x0a\x01\x09\x10' in packet.event,
+          lambda packet: hci_packets.ReadBdAddrCompleteView(
+                      hci_packets.CommandCompleteView(
+                                hci_packets.EventPacketView(
+                                    bt_packets.PacketViewLittleEndian(
+                                        list(packet.event))))))
 
-def ConnectionCompleteCapture():
-    return Capture(lambda packet: b'\x03\x0b\x00' in packet.event,
-      lambda packet: hci_packets.ConnectionCompleteView(
-                            hci_packets.EventPacketView(
-                                bt_packets.PacketViewLittleEndian(
-                                    list(packet.event)))))
+    @staticmethod
+    def ConnectionRequestCapture():
+        return Capture(lambda packet: b'\x04\x0a' in packet.event,
+          lambda packet: hci_packets.ConnectionRequestView(
+                                hci_packets.EventPacketView(
+                                    bt_packets.PacketViewLittleEndian(
+                                        list(packet.event)))))
 
+    @staticmethod
+    def ConnectionCompleteCapture():
+        return Capture(lambda packet: b'\x03\x0b\x00' in packet.event,
+          lambda packet: hci_packets.ConnectionCompleteView(
+                                hci_packets.EventPacketView(
+                                    bt_packets.PacketViewLittleEndian(
+                                        list(packet.event)))))
 
-def LeConnectionCompleteCapture():
-    return Capture(lambda packet: packet.event[0] == 0x3e
-                   and (packet.event[2] == 0x01 or packet.event[2] == 0x0a),
-        lambda packet: hci_packets.LeConnectionCompleteView(
-            hci_packets.LeMetaEventView(
-                            hci_packets.EventPacketView(
-                                bt_packets.PacketViewLittleEndian(
-                                    list(packet.event)
-                                )
-                            ))))
+    @staticmethod
+    def LeConnectionCompleteCapture():
+        return Capture(lambda packet: packet.event[0] == 0x3e
+                       and (packet.event[2] == 0x01 or packet.event[2] == 0x0a),
+            lambda packet: hci_packets.LeConnectionCompleteView(
+                hci_packets.LeMetaEventView(
+                                hci_packets.EventPacketView(
+                                    bt_packets.PacketViewLittleEndian(
+                                        list(packet.event))))))
 
 
 class L2capCaptures(object):
