@@ -42,6 +42,10 @@ class HciMatchers(object):
                frame.GetNumHciCommandPackets() == num_complete
 
     @staticmethod
+    def EventWithCode(event_code):
+        return lambda msg: HciMatchers.extract_hci_event_with_code(msg.event, event_code)
+
+    @staticmethod
     def extract_hci_event_with_code(packet_bytes, event_code=None):
         hci_event = hci_packets.EventPacketView(
             bt_packets.PacketViewLittleEndian(list(packet_bytes)))
