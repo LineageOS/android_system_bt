@@ -159,12 +159,14 @@ class CertLeL2cap(Closable):
         return channel
 
     def verify_and_respond_open_channel_from_remote(
-            self, psm=0x33,
-            result=LeCreditBasedConnectionResponseResult.SUCCESS):
+            self,
+            psm=0x33,
+            result=LeCreditBasedConnectionResponseResult.SUCCESS,
+            our_scid=None):
         request = L2capCaptures.CreditBasedConnectionRequest(psm)
         assertThat(self.control_channel).emits(request)
         (scid, dcid) = self._respond_connection_request_default(
-            request.get(), result)
+            request.get(), result, our_scid)
         channel = CertLeL2capChannel(self._device, scid, dcid,
                                      self._get_acl_stream(), self._le_acl,
                                      self.control_channel,
@@ -184,15 +186,18 @@ class CertLeL2cap(Closable):
             L2capMatchers.LeFlowControlCredit(channel._dcid))
 
     def _respond_connection_request_default(
-            self, request,
-            result=LeCreditBasedConnectionResponseResult.SUCCESS):
+            self,
+            request,
+            result=LeCreditBasedConnectionResponseResult.SUCCESS,
+            our_scid=None):
         sid = request.GetIdentifier()
         their_scid = request.GetSourceCid()
         mtu = request.GetMtu()
         mps = request.GetMps()
         initial_credits = request.GetInitialCredits()
-        # Here we use the same value - their scid as their scid
-        our_scid = their_scid
+        # If our_scid is not specified, we use the same value - their scid as their scid
+        if our_scid is None:
+            our_scid = their_scid
         our_dcid = their_scid
         response = l2cap_packets.LeCreditBasedConnectionResponseBuilder(
             sid, our_scid, mtu, mps, initial_credits, result)
