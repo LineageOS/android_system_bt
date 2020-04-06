@@ -89,7 +89,6 @@ class GdDevice(GdDeviceBase):
             self.grpc_channel)
         self.hci = hci_facade_pb2_grpc.HciLayerFacadeStub(self.grpc_channel)
         self.hci.register_for_events = self.__register_for_hci_events
-        self.hci.new_event_stream = lambda: EventStream(self.hci.FetchEvents(empty_proto.Empty()))
         self.hci.send_command_with_complete = self.__send_hci_command_with_complete
         self.hci.send_command_with_status = self.__send_hci_command_with_status
         self.l2cap = l2cap_facade_pb2_grpc.L2capClassicModuleFacadeStub(
