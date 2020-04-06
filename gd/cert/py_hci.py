@@ -20,9 +20,7 @@ from cert.event_stream import FilteringEventStream
 from cert.event_stream import IEventStream
 from cert.closable import Closable
 from cert.closable import safeClose
-from cert.captures import ReadBdAddrCompleteCapture
-from cert.captures import ConnectionCompleteCapture
-from cert.captures import ConnectionRequestCapture
+from cert.captures import HciCaptures
 from bluetooth_packets_python3 import hci_packets
 from cert.truth import assertThat
 from hci.facade import facade_pb2 as hci_facade
@@ -61,7 +59,7 @@ class PyHci(Closable):
     def __init__(self, device):
         self.device = device
 
-        self.device.hci.register_for_events(
+        self.register_for_events(
             hci_packets.EventCode.ROLE_CHANGE,
             hci_packets.EventCode.CONNECTION_REQUEST,
             hci_packets.EventCode.CONNECTION_COMPLETE,
@@ -69,21 +67,44 @@ class PyHci(Closable):
 
         self.event_stream = EventStream(
             self.device.hci.FetchEvents(empty_proto.Empty()))
+        self.le_event_stream = EventStream(
+            self.device.hci.FetchLeSubevents(empty_proto.Empty()))
         self.acl_stream = EventStream(
             self.device.hci.FetchAclPackets(empty_proto.Empty()))
 
     def close(self):
         safeClose(self.event_stream)
+        safeClose(self.le_event_stream)
         safeClose(self.acl_stream)
 
     def get_event_stream(self):
         return self.event_stream
 
+    def get_le_event_stream(self):
+        return self.le_event_stream
+
+    def get_raw_acl_stream(self):
+        return self.acl_stream
+
+    def register_for_events(self, *event_codes):
+        for event_code in event_codes:
+            msg = hci_facade.EventCodeMsg(code=int(event_code))
+            self.device.hci.RegisterEventHandler(msg)
+
+    def register_for_le_events(self, *event_codes):
+        for event_code in event_codes:
+            msg = hci_facade.EventCodeMsg(code=int(event_code))
+            self.device.hci.RegisterLeEventHandler(msg)
+
     def send_command_with_complete(self, command):
-        self.device.hci.send_command_with_complete(command)
+        cmd_bytes = bytes(command.Serialize())
+        cmd = hci_facade.CommandMsg(command=cmd_bytes)
+        self.device.hci.EnqueueCommandWithComplete(cmd)
 
     def send_command_with_status(self, command):
-        self.device.hci.send_command_with_status(command)
+        cmd_bytes = bytes(command.Serialize())
+        cmd = hci_facade.CommandMsg(command=cmd_bytes)
+        self.device.hci.EnqueueCommandWithStatus(cmd)
 
     def enable_inquiry_and_page_scan(self):
         self.send_command_with_complete(
@@ -92,7 +113,7 @@ class PyHci(Closable):
 
     def read_own_address(self):
         self.send_command_with_complete(hci_packets.ReadBdAddrBuilder())
-        read_bd_addr = ReadBdAddrCompleteCapture()
+        read_bd_addr = HciCaptures.ReadBdAddrCompleteCapture()
         assertThat(self.event_stream).emits(read_bd_addr)
         return read_bd_addr.get().GetBdAddr()
 
@@ -107,7 +128,7 @@ class PyHci(Closable):
                 hci_packets.CreateConnectionRoleSwitch.ALLOW_ROLE_SWITCH))
 
     def accept_connection(self):
-        connection_request = ConnectionRequestCapture()
+        connection_request = HciCaptures.ConnectionRequestCapture()
         assertThat(self.event_stream).emits(connection_request)
 
         self.send_command_with_status(
@@ -117,7 +138,7 @@ class PyHci(Closable):
         return self.complete_connection()
 
     def complete_connection(self):
-        connection_complete = ConnectionCompleteCapture()
+        connection_complete = HciCaptures.ConnectionCompleteCapture()
         assertThat(self.event_stream).emits(connection_complete)
 
         handle = connection_complete.get().GetConnectionHandle()
