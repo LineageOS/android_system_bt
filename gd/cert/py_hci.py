@@ -67,7 +67,8 @@ class PyHci(Closable):
             hci_packets.EventCode.CONNECTION_COMPLETE,
             hci_packets.EventCode.CONNECTION_PACKET_TYPE_CHANGED)
 
-        self.event_stream = self.device.hci.new_event_stream()
+        self.event_stream = EventStream(
+            self.device.hci.FetchEvents(empty_proto.Empty()))
         self.acl_stream = EventStream(
             self.device.hci.FetchAclPackets(empty_proto.Empty()))
 
