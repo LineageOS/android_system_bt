@@ -233,6 +233,10 @@ class L2capMatchers(object):
         return lambda packet: L2capMatchers._basic_frame_with_fcs_for(packet, scid)
 
     @staticmethod
+    def InformationRequestWithType(info_type):
+        return lambda packet: L2capMatchers._information_request_with_type(packet, info_type)
+
+    @staticmethod
     def InformationResponseExtendedFeatures(supports_ertm=None,
                                             supports_streaming=None,
                                             supports_fcs=None,
@@ -489,6 +493,17 @@ class L2capMatchers(object):
             return False
         request = l2cap_packets.LeFlowControlCreditView(frame)
         return request.GetCid() == cid
+
+    @staticmethod
+    def _information_request_with_type(packet, info_type):
+        frame = L2capMatchers.control_frame_with_code(
+            packet, CommandCode.INFORMATION_REQUEST)
+        if frame is None:
+            return None
+        request = l2cap_packets.InformationRequestView(frame)
+        if request.GetInfoType() != info_type:
+            return None
+        return request
 
     @staticmethod
     def _information_response_with_type(packet, info_type):
