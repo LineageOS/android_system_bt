@@ -1908,9 +1908,6 @@ uint8_t l2c_fcr_chk_chan_modes(tL2C_CCB* p_ccb) {
   if (!(p_ccb->p_lcb->peer_ext_fea & L2CAP_EXTFEA_ENH_RETRANS))
     p_ccb->ertm_info.allowed_modes &= ~L2CAP_FCR_CHAN_OPT_ERTM;
 
-  if (!(p_ccb->p_lcb->peer_ext_fea & L2CAP_EXTFEA_STREAM_MODE))
-    p_ccb->ertm_info.allowed_modes &= ~L2CAP_FCR_CHAN_OPT_STREAM;
-
   /* At least one type needs to be set (Basic, ERTM, STM) to continue */
   if (!p_ccb->ertm_info.allowed_modes) {
     L2CAP_TRACE_WARNING(
@@ -1985,11 +1982,9 @@ bool l2c_fcr_adj_our_req_options(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
      * Override mode from available mode options based on preference, if needed
      */
     else {
-      /* If peer does not support STREAMING, try ERTM */
-      if (p_fcr->mode == L2CAP_FCR_STREAM_MODE &&
-          !(p_ccb->ertm_info.allowed_modes & L2CAP_FCR_CHAN_OPT_STREAM)) {
-        L2CAP_TRACE_DEBUG(
-            "L2C CFG: mode is STREAM, but peer does not support; Try ERTM");
+      /* There is no STREAMING use case, try ERTM */
+      if (p_fcr->mode == L2CAP_FCR_STREAM_MODE) {
+        L2CAP_TRACE_DEBUG("L2C CFG: mode is STREAM, but use case; Try ERTM");
         p_fcr->mode = L2CAP_FCR_ERTM_MODE;
       }
 
