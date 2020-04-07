@@ -48,13 +48,12 @@ class L2capTest(GdBaseTestClass):
     def setup_test(self):
         super().setup_test()
 
-        self.dut.address = self.dut.hci_controller.GetMacAddressSimple()
-        self.cert.address = self.cert.controller_read_only_property.ReadLocalAddress(
-            empty_proto.Empty()).address
-        self.cert_address = common_pb2.BluetoothAddress(
-            address=self.cert.address)
+        self.dut_address = self.dut.hci_controller.GetMacAddressSimple()
+        cert_address = common_pb2.BluetoothAddress(
+            address=self.cert.controller_read_only_property.ReadLocalAddress(
+                empty_proto.Empty()).address)
 
-        self.dut_l2cap = PyL2cap(self.dut, self.cert_address)
+        self.dut_l2cap = PyL2cap(self.dut, cert_address)
         self.cert_l2cap = CertL2cap(self.cert)
 
     def teardown_test(self):
@@ -65,7 +64,7 @@ class L2capTest(GdBaseTestClass):
     def _setup_link_from_cert(self):
         self.dut.neighbor.EnablePageScan(
             neighbor_facade.EnableMsg(enabled=True))
-        self.cert_l2cap.connect_acl(self.dut.address)
+        self.cert_l2cap.connect_acl(self.dut_address)
 
     def _open_unvalidated_channel(self,
                                   signal_id=1,
