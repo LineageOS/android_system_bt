@@ -83,7 +83,6 @@
 /* GAP_ConnOpen() - optional channels to negotiate */
 #define GAP_FCR_CHAN_OPT_BASIC L2CAP_FCR_CHAN_OPT_BASIC
 #define GAP_FCR_CHAN_OPT_ERTM L2CAP_FCR_CHAN_OPT_ERTM
-#define GAP_FCR_CHAN_OPT_STREAM L2CAP_FCR_CHAN_OPT_STREAM
 /*** used in connection variables and functions ***/
 #define GAP_INVALID_HANDLE 0xFFFF
 
