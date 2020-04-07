@@ -192,7 +192,6 @@ typedef struct {
   uint8_t max_held_acks;     /* Max acks we can hold before sending */
 
   bool remote_busy; /* true if peer has flowed us off */
-  bool local_busy;  /* true if we have flowed off the peer */
 
   bool rej_sent;       /* Reject was sent */
   bool srej_sent;      /* Selective Reject was sent */
