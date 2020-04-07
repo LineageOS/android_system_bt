@@ -18,8 +18,19 @@
 
 #include "security/pairing_handler_le.h"
 
+#include "os/rand.h"
+
 namespace bluetooth {
 namespace security {
+
+MyOobData PairingHandlerLe::GenerateOobData() {
+  MyOobData data{};
+  std::tie(data.private_key, data.public_key) = GenerateECDHKeyPair();
+
+  data.r = bluetooth::os::GenerateRandom<16>();
+  data.c = crypto_toolbox::f4(data.public_key.x.data(), data.public_key.x.data(), data.r, 0);
+  return data;
+}
 
 void PairingHandlerLe::PairingMain(InitialInformations i) {
   LOG_INFO("Pairing Started");
