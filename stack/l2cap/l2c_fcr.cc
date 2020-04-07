@@ -698,8 +698,6 @@ void l2c_fcr_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
           (ctrl_word & L2CAP_FCR_S_FRAME_BIT)) {
         if (p_ccb->fcrb.srej_sent)
           l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_SREJ, L2CAP_FCR_F_BIT);
-        else if (p_ccb->fcrb.local_busy)
-          l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_RNR, L2CAP_FCR_F_BIT);
         else
           l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_RR, L2CAP_FCR_F_BIT);
 
@@ -750,7 +748,7 @@ void l2c_fcr_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
 
   /* If we have some buffers held while doing SREJ, and SREJ has cleared,
    * process them now */
-  if ((!p_ccb->fcrb.local_busy) && (!p_ccb->fcrb.srej_sent) &&
+  if ((!p_ccb->fcrb.srej_sent) &&
       (!fixed_queue_is_empty(p_ccb->fcrb.srej_rcv_hold_q))) {
     fixed_queue_t* temp_q = p_ccb->fcrb.srej_rcv_hold_q;
     p_ccb->fcrb.srej_rcv_hold_q = fixed_queue_new(SIZE_MAX);
@@ -786,17 +784,15 @@ void l2c_fcr_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
     fixed_queue_free(temp_q, NULL);
 
     /* Now, if needed, send one RR for the whole held queue */
-    if ((!p_ccb->fcrb.local_busy) && (!p_ccb->fcrb.rej_sent) &&
-        (!p_ccb->fcrb.srej_sent) &&
+    if ((!p_ccb->fcrb.rej_sent) && (!p_ccb->fcrb.srej_sent) &&
         (p_ccb->fcrb.next_seq_expected != p_ccb->fcrb.last_ack_sent))
       l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_RR, 0);
     else {
       L2CAP_TRACE_DEBUG(
           "l2c_fcr_proc_pdu() not sending RR CID: 0x%04x  local_busy:%d "
           "rej_sent:%d srej_sent:%d Expected_Seq:%u Last_Ack:%u",
-          p_ccb->local_cid, p_ccb->fcrb.local_busy, p_ccb->fcrb.rej_sent,
-          p_ccb->fcrb.srej_sent, p_ccb->fcrb.next_seq_expected,
-          p_ccb->fcrb.last_ack_sent);
+          p_ccb->local_cid, 0, p_ccb->fcrb.rej_sent, p_ccb->fcrb.srej_sent,
+          p_ccb->fcrb.next_seq_expected, p_ccb->fcrb.last_ack_sent);
     }
   }
 
@@ -935,10 +931,7 @@ void l2c_fcr_proc_tout(tL2C_CCB* p_ccb) {
     l2cu_disconnect_chnl(p_ccb);
   } else {
     if (!p_ccb->fcrb.srej_sent && !p_ccb->fcrb.rej_sent) {
-      if (p_ccb->fcrb.local_busy)
-        l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_RNR, L2CAP_FCR_P_BIT);
-      else
-        l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_RR, L2CAP_FCR_P_BIT);
+      l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_RR, L2CAP_FCR_P_BIT);
     }
   }
 }
@@ -964,10 +957,7 @@ void l2c_fcr_proc_ack_tout(tL2C_CCB* p_ccb) {
 #if (L2CAP_ERTM_STATS == TRUE)
     p_ccb->fcrb.xmit_ack_touts++;
 #endif
-    if (p_ccb->fcrb.local_busy)
-      l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_RNR, 0);
-    else
-      l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_RR, 0);
+    l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_RR, 0);
   }
 }
 
@@ -1134,8 +1124,6 @@ static void process_s_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf,
     if (p_fcrb->send_f_rsp) {
       if (p_fcrb->srej_sent)
         l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_SREJ, L2CAP_FCR_F_BIT);
-      else if (p_fcrb->local_busy)
-        l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_RNR, L2CAP_FCR_F_BIT);
       else
         l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_RR, L2CAP_FCR_F_BIT);
 
@@ -1181,15 +1169,6 @@ static void process_i_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf, uint16_t ctrl_word,
 
   /* Extract the sequence number */
   tx_seq = (ctrl_word & L2CAP_FCR_TX_SEQ_BITS) >> L2CAP_FCR_TX_SEQ_BITS_SHIFT;
-
-  /* If we have flow controlled the peer, ignore any bad I-frames from him */
-  if ((tx_seq != p_fcrb->next_seq_expected) && (p_fcrb->local_busy)) {
-    L2CAP_TRACE_WARNING("Dropping bad I-Frame since we flowed off, tx_seq:%u",
-                        tx_seq);
-    l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_RNR, 0);
-    osi_free(p_buf);
-    return;
-  }
 
   /* Check if tx-sequence is the expected one */
   if (tx_seq != p_fcrb->next_seq_expected) {
@@ -1319,8 +1298,7 @@ static void process_i_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf, uint16_t ctrl_word,
   num_to_ack = (p_fcrb->next_seq_expected - p_fcrb->last_ack_sent) &
                L2CAP_FCR_SEQ_MODULO;
 
-  if ((num_to_ack < p_ccb->fcrb.max_held_acks) && (!p_fcrb->local_busy))
-    delay_ack = true;
+  if (num_to_ack < p_ccb->fcrb.max_held_acks) delay_ack = true;
 
   /* We should neve never ack frame if we are not in OPEN state */
   if ((num_to_ack != 0) && p_ccb->in_use && (p_ccb->chnl_state == CST_OPEN)) {
@@ -1335,10 +1313,7 @@ static void process_i_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf, uint16_t ctrl_word,
     } else if ((fixed_queue_is_empty(p_ccb->xmit_hold_q) ||
                 l2c_fcr_is_flow_controlled(p_ccb)) &&
                fixed_queue_is_empty(p_ccb->fcrb.srej_rcv_hold_q)) {
-      if (p_fcrb->local_busy)
-        l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_RNR, 0);
-      else
-        l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_RR, 0);
+      l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_RR, 0);
     }
   }
 }
