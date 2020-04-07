@@ -305,8 +305,7 @@ static void bta_hf_client_sco_event(tBTA_HF_CLIENT_CB* client_cb,
         case BTA_HF_CLIENT_SCO_LISTEN_E:
           /* create SCO listen connection */
           bta_hf_client_sco_create(client_cb, false);
-          /* TODO(b/143901894): Is this correct? */
-          [[fallthrough]];
+          break;
 
         case BTA_HF_CLIENT_SCO_OPEN_E:
           /* remove listening connection */
