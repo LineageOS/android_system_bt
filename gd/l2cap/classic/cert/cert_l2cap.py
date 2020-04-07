@@ -179,17 +179,19 @@ class CertL2cap(Closable):
                                 self._get_acl_stream(), self._acl,
                                 self.control_channel, self.fcs_enabled)
 
-    def verify_and_respond_open_channel_from_remote(self, psm=0x33):
+    def verify_and_respond_open_channel_from_remote(self, psm=0x33, scid=None):
         request = L2capCaptures.ConnectionRequest(psm)
         assertThat(self.control_channel).emits(request)
 
         sid = request.get().GetIdentifier()
-        cid = request.get().GetSourceCid()
+        dcid = request.get().GetSourceCid()
+        if scid is None or scid in self.scid_to_dcid:
+            scid = dcid
 
-        self.scid_to_dcid[cid] = cid
+        self.scid_to_dcid[scid] = dcid
 
         connection_response = l2cap_packets.ConnectionResponseBuilder(
-            sid, cid, cid, l2cap_packets.ConnectionResponseResult.SUCCESS,
+            sid, scid, dcid, l2cap_packets.ConnectionResponseResult.SUCCESS,
             l2cap_packets.ConnectionResponseStatus.
             NO_FURTHER_INFORMATION_AVAILABLE)
         self.control_channel.send(connection_response)
@@ -203,10 +205,10 @@ class CertL2cap(Closable):
             config_options.append(self.fcs_option)
 
         config_request = l2cap_packets.ConfigurationRequestBuilder(
-            sid + 1, cid, l2cap_packets.Continuation.END, config_options)
+            sid + 1, dcid, l2cap_packets.Continuation.END, config_options)
         self.control_channel.send(config_request)
 
-        channel = CertL2capChannel(self._device, cid, cid,
+        channel = CertL2capChannel(self._device, scid, dcid,
                                    self._get_acl_stream(), self._acl,
                                    self.control_channel, self.fcs_enabled)
         return channel
