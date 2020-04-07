@@ -921,6 +921,43 @@ class L2capTest(GdBaseTestClass):
             L2capMatchers.IFrame(tx_seq=3, payload=b'abc', f=Final.NOT_SET))
 
     @metadata(
+        pts_test_id="L2CAP/ERM/BV-16-C", pts_test_name="Send S-Frame [REJ]")
+    def test_send_s_frame_rej(self):
+        """
+        Verify the IUT can send an S-Frame [REJ] after receiving out of sequence
+        I-Frames
+        """
+        self._setup_link_from_cert()
+        tx_window_size = 4
+        self.cert_l2cap.turn_on_ertm(
+            tx_window_size=tx_window_size, max_transmit=2)
+
+        (dut_channel, cert_channel) = self._open_channel(
+            scid=0x41, psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
+
+        cert_channel.send_i_frame(
+            tx_seq=0, req_seq=0, f=Final.NOT_SET, payload=SAMPLE_PACKET)
+        cert_channel.send_i_frame(
+            tx_seq=2, req_seq=0, f=Final.NOT_SET, payload=SAMPLE_PACKET)
+
+        assertThat(cert_channel).emits(
+            L2capMatchers.SFrame(
+                req_seq=1,
+                f=Final.NOT_SET,
+                s=SupervisoryFunction.REJECT,
+                p=Poll.NOT_SET))
+
+        for i in range(1, tx_window_size):
+            cert_channel.send_i_frame(
+                tx_seq=i, req_seq=0, f=Final.NOT_SET, payload=SAMPLE_PACKET)
+        assertThat(cert_channel).emits(
+            L2capMatchers.SFrame(
+                req_seq=tx_window_size,
+                f=Final.NOT_SET,
+                s=SupervisoryFunction.RECEIVER_READY,
+                p=Poll.NOT_SET))
+
+    @metadata(
         pts_test_id="L2CAP/ERM/BV-18-C",
         pts_test_name="Receive S-Frame [RR] Final Bit = 1")
     def test_receive_s_frame_rr_final_bit_set(self):
