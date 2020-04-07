@@ -441,8 +441,6 @@ class L2capTest(GdBaseTestClass):
         type of Extended Features that correctly identifies that the Fixed
         Channels option is locally supported
         """
-        asserts.skip("Fixed channel is not supported")
-
         self._setup_link_from_cert()
         control_channel = self.cert_l2cap.get_control_channel()
 
@@ -451,6 +449,20 @@ class L2capTest(GdBaseTestClass):
         assertThat(control_channel).emits(
             L2capMatchers.InformationResponseExtendedFeatures(
                 supports_fixed_channels=True))
+
+    @metadata(
+        pts_test_id="L2CAP/FIX/BV-01-C",
+        pts_test_name="Fixed Channels Supported Information Request")
+    def test_fixed_channels_supported_information_request(self):
+        """
+        Verify that the IUT can send an Information Request for the information
+        type of Fixed Channels Supported.
+        """
+        self._setup_link_from_cert()
+        assertThat(self.cert_l2cap.get_control_channel()).emits(
+            L2capMatchers.InformationRequestWithType(
+                l2cap_packets.InformationRequestInfoType.
+                FIXED_CHANNELS_SUPPORTED))
 
     @metadata(
         pts_test_id="L2CAP/FOC/BV-01-C",
