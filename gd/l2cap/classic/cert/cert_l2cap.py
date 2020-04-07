@@ -87,6 +87,12 @@ class CertL2capChannel(IEventStream):
             self._dcid, s, p, f, req_seq)
         self._acl.send(frame.Serialize())
 
+    def send_configure_request(self, cert_channel, options):
+        assertThat(self._scid).isEqualTo(1)
+        request = l2cap_packets.ConfigurationRequestBuilder(
+            2, cert_channel._dcid, l2cap_packets.Continuation.END, options)
+        self.send(request)
+
     def send_information_request(self, type):
         assertThat(self._scid).isEqualTo(1)
         signal_id = 3
@@ -251,9 +257,18 @@ class CertL2cap(Closable):
         self.fcs_enabled = True
 
     # more of a hack for the moment
-    def ignore_config_and_connections(self):
-        self.control_table[CommandCode.CONFIGURATION_REQUEST] = lambda _: True
-        self.control_table[CommandCode.CONNECTION_RESPONSE] = lambda _: True
+    def dont_send_configuration_req(self):
+        self.control_table[CommandCode.CONNECTION_RESPONSE] =\
+            self.on_connection_response_dont_send_configuration_req
+
+    def on_connection_response_dont_send_configuration_req(
+            self, l2cap_control_view):
+        connection_response_view = l2cap_packets.ConnectionResponseView(
+            l2cap_control_view)
+        sid = connection_response_view.GetIdentifier()
+        scid = connection_response_view.GetSourceCid()
+        dcid = connection_response_view.GetDestinationCid()
+        self.scid_to_dcid[scid] = dcid
 
     # more of a hack for the moment
     def ignore_config_request(self):
