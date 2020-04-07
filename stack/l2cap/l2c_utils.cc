@@ -2016,9 +2016,6 @@ void l2cu_process_our_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
       /*                 timer value in config response shall be greater than
        * received processing time */
       p_cfg->fcr.mon_tout = p_cfg->fcr.rtrans_tout = 0;
-
-      if (p_cfg->fcr.mode == L2CAP_FCR_STREAM_MODE)
-        p_cfg->fcr.max_transmit = p_cfg->fcr.tx_win_sz = 0;
     }
 
     /* Set the threshold to send acks (may be updated in the cfg response) */
