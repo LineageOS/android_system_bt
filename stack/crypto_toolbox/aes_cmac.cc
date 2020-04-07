@@ -180,7 +180,8 @@ static void cmac_generate_subkey(const Octet16& key) {
  *  length - length of the input in byte.
  */
 Octet16 aes_cmac(const Octet16& key, const uint8_t* input, uint16_t length) {
-  uint16_t len, diff;
+  uint32_t len;
+  uint16_t diff;
   /* n is number of rounds */
   uint16_t n = (length + OCTET16_LEN - 1) / OCTET16_LEN;
 
