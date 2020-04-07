@@ -278,7 +278,8 @@ static bool cmac_generate_subkey(BT_OCTET16 key) {
  ******************************************************************************/
 bool aes_cipher_msg_auth_code(BT_OCTET16 key, uint8_t* input, uint16_t length,
                               uint16_t tlen, uint8_t* p_signature) {
-  uint16_t len, diff;
+  uint32_t len;
+  uint16_t diff;
   uint16_t n = (length + BT_OCTET16_LEN - 1) /
                BT_OCTET16_LEN; /* n is number of rounds */
   bool ret = false;
