@@ -101,11 +101,11 @@ Link* LinkManager::GetLink(hci::AddressWithType address_with_type) {
 }
 
 void LinkManager::OnLeConnectSuccess(hci::AddressWithType connecting_address_with_type,
-                                     std::unique_ptr<hci::AclConnection> acl_connection) {
+                                     std::unique_ptr<hci::LeAclConnection> acl_connection) {
   // Same link should not be connected twice
-  hci::AddressWithType connected_address_with_type(acl_connection->GetAddress(), acl_connection->GetAddressType());
+  hci::AddressWithType connected_address_with_type = acl_connection->GetAddressWithType();
   ASSERT_LOG(GetLink(connected_address_with_type) == nullptr, "%s is connected twice without disconnection",
-             acl_connection->GetAddress().ToString().c_str());
+             acl_connection->GetAddressWithType().ToString().c_str());
   // Register ACL disconnection callback in LinkManager so that we can clean up link resource properly
   acl_connection->RegisterDisconnectCallback(
       common::BindOnce(&LinkManager::OnDisconnect, common::Unretained(this), connected_address_with_type),

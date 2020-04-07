@@ -33,7 +33,7 @@ namespace internal {
 static constexpr uint16_t kDefaultMinimumCeLength = 0x0002;
 static constexpr uint16_t kDefaultMaximumCeLength = 0x0C00;
 
-Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_connection,
+Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::LeAclConnection> acl_connection,
            l2cap::internal::ParameterProvider* parameter_provider,
            DynamicChannelServiceManagerImpl* dynamic_service_manager,
            FixedChannelServiceManagerImpl* fixed_service_manager)

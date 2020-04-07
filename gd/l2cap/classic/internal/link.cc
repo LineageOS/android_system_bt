@@ -33,7 +33,7 @@ using RetransmissionAndFlowControlMode = DynamicChannelConfigurationOption::Retr
 using ConnectionResult = DynamicChannelManager::ConnectionResult;
 using ConnectionResultCode = DynamicChannelManager::ConnectionResultCode;
 
-Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::AclConnection> acl_connection,
+Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::ClassicAclConnection> acl_connection,
            l2cap::internal::ParameterProvider* parameter_provider,
            DynamicChannelServiceManagerImpl* dynamic_service_manager,
            FixedChannelServiceManagerImpl* fixed_service_manager)
@@ -337,6 +337,12 @@ void Link::OnReadRssiComplete(uint8_t rssi) {
 }
 void Link::OnReadClockComplete(uint32_t clock, uint16_t accuracy) {
   LOG_DEBUG("UNIMPLEMENTED %s clock:%u accuracy:%hu", __func__, clock, accuracy);
+}
+void Link::OnMasterLinkKeyComplete(hci::KeyFlag key_flag) {
+  LOG_DEBUG("UNIMPLEMENTED key_flag:%s", hci::KeyFlagText(key_flag).c_str());
+}
+void Link::OnRoleChange(hci::Role new_role) {
+  LOG_DEBUG("UNIMPLEMENTED role:%s", hci::RoleText(new_role).c_str());
 }
 
 }  // namespace internal
