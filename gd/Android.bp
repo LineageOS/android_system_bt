@@ -156,6 +156,7 @@ cc_binary {
     name: "bluetooth_stack_with_facade",
     defaults: [
         "gd_defaults",
+        "gd_clang_coverage_bin",
     ],
     host_supported: true,
     srcs: [
