@@ -356,6 +356,20 @@ class L2capTest(GdBaseTestClass):
             L2capMatchers.CommandReject())
 
     @metadata(
+        pts_test_id="L2CAP/COS/IEX/BV-01-C",
+        pts_test_name="Query for 1.2 Features")
+    def test_query_for_1_2_features(self):
+        """
+        Verify that the IUT transmits an information request command to solicit
+        if the remote device supports Specification 1.2 features.
+        """
+        self._setup_link_from_cert()
+        assertThat(self.cert_l2cap.get_control_channel()).emits(
+            L2capMatchers.InformationRequestWithType(
+                l2cap_packets.InformationRequestInfoType.
+                EXTENDED_FEATURES_SUPPORTED))
+
+    @metadata(
         pts_test_id="L2CAP/COS/IEX/BV-02-C",
         pts_test_name="Respond with 1.2 Features")
     def test_respond_with_1_2_features(self):
