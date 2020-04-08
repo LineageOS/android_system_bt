@@ -124,10 +124,9 @@ class Link : public l2cap::internal::ILink, public hci::ConnectionManagementCall
   // Information received from signaling channel
   virtual void SetRemoteConnectionlessMtu(Mtu mtu);
   virtual Mtu GetRemoteConnectionlessMtu() const;
-  virtual void SetRemoteSupportsErtm(bool supported);
   virtual bool GetRemoteSupportsErtm() const;
-  virtual void SetRemoteSupportsFcs(bool supported);
   virtual bool GetRemoteSupportsFcs() const;
+  virtual void OnRemoteExtendedFeatureReceived(bool ertm_supported, bool fcs_supported);
 
   virtual std::string ToString() {
     return GetDevice().ToString();
@@ -174,6 +173,7 @@ class Link : public l2cap::internal::ILink, public hci::ConnectionManagementCall
   os::Alarm link_idle_disconnect_alarm_{l2cap_handler_};
   ClassicSignallingManager signalling_manager_;
   Mtu remote_connectionless_mtu_ = kMinimumClassicMtu;
+  bool remote_extended_feature_received_ = false;
   bool remote_supports_ertm_ = false;
   bool remote_supports_fcs_ = false;
   hci::EncryptionEnabled encryption_enabled_ = hci::EncryptionEnabled::OFF;
