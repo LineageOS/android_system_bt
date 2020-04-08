@@ -149,6 +149,7 @@ cc_library {
     ],
     shared_libs: [
         "libchrome",
+        "libcrypto",
     ],
 }
 
@@ -185,6 +186,7 @@ cc_binary {
     ],
     shared_libs: [
         "libchrome",
+        "libcrypto",
         "libgrpc++_unsecure",
         "libprotobuf-cpp-full",
     ],
@@ -260,6 +262,7 @@ cc_test {
     ],
     shared_libs: [
         "libchrome",
+        "libcrypto",
     ],
     sanitize: {
         address: true,
@@ -304,6 +307,9 @@ cc_fuzz {
   host_supported: true,
   generated_headers: [
     "BluetoothGeneratedPackets_h",
+  ],
+  shared_libs: [
+    "libcrypto",
   ],
   target: {
     android: {
