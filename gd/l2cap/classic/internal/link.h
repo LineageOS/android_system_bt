@@ -98,6 +98,10 @@ class Link : public l2cap::internal::ILink, public hci::ConnectionManagementCall
   virtual void SendConnectionRequest(Psm psm, Cid local_cid,
                                      PendingDynamicChannelConnection pending_dynamic_channel_connection);
 
+  // When a Link is established, LinkManager notifies pending dynamic channels to connect
+  virtual void SetPendingDynamicChannels(std::list<Psm> psm_list,
+                                         std::list<Link::PendingDynamicChannelConnection> callback_list);
+
   // Invoked by signalling manager to indicate an outgoing connection request failed and link shall free resources
   virtual void OnOutgoingConnectionRequestFail(Cid local_cid);
 
@@ -161,6 +165,8 @@ class Link : public l2cap::internal::ILink, public hci::ConnectionManagementCall
   virtual void OnReadClockComplete(uint32_t clock, uint16_t accuracy) override;
 
  private:
+  void connect_to_pending_dynamic_channels();
+
   os::Handler* l2cap_handler_;
   l2cap::internal::FixedChannelAllocator<FixedChannelImpl, Link> fixed_channel_allocator_{this, l2cap_handler_};
   l2cap::internal::DynamicChannelAllocator dynamic_channel_allocator_{this, l2cap_handler_};
@@ -178,6 +184,8 @@ class Link : public l2cap::internal::ILink, public hci::ConnectionManagementCall
   bool remote_supports_fcs_ = false;
   hci::EncryptionEnabled encryption_enabled_ = hci::EncryptionEnabled::OFF;
   std::list<Link::PendingAuthenticateDynamicChannelConnection> pending_channel_list_;
+  std::list<Psm> pending_dynamic_psm_list_;
+  std::list<Link::PendingDynamicChannelConnection> pending_dynamic_channel_callback_list_;
   DISALLOW_COPY_AND_ASSIGN(Link);
 };
 

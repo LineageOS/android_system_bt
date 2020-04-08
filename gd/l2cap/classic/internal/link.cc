@@ -125,17 +125,43 @@ void Link::SendConnectionRequest(Psm psm, Cid local_cid,
                                  PendingDynamicChannelConnection pending_dynamic_channel_connection) {
   if (pending_dynamic_channel_connection.configuration_.channel_mode ==
           RetransmissionAndFlowControlMode::ENHANCED_RETRANSMISSION &&
-      !GetRemoteSupportsErtm()) {
+      !remote_extended_feature_received_) {
+    pending_dynamic_psm_list_.push_back(psm);
+    pending_dynamic_channel_callback_list_.push_back(std::move(pending_dynamic_channel_connection));
+    LOG_INFO("Will connect after information response ERTM feature support is received");
+    dynamic_channel_allocator_.FreeChannel(local_cid);
+    return;
+  } else if (pending_dynamic_channel_connection.configuration_.channel_mode ==
+                 RetransmissionAndFlowControlMode::ENHANCED_RETRANSMISSION &&
+             !GetRemoteSupportsErtm()) {
     LOG_WARN("Remote doesn't support ERTM. Dropping connection request");
     ConnectionResult result{
         .connection_result_code = ConnectionResultCode::FAIL_REMOTE_NOT_SUPPORT,
     };
     pending_dynamic_channel_connection.handler_->Post(
         common::BindOnce(std::move(pending_dynamic_channel_connection.on_fail_callback_), result));
+    dynamic_channel_allocator_.FreeChannel(local_cid);
     return;
   } else {
     local_cid_to_pending_dynamic_channel_connection_map_[local_cid] = std::move(pending_dynamic_channel_connection);
     signalling_manager_.SendConnectionRequest(psm, local_cid);
+  }
+}
+
+void Link::SetPendingDynamicChannels(std::list<Psm> psm_list,
+                                     std::list<Link::PendingDynamicChannelConnection> callback_list) {
+  ASSERT(psm_list.size() == callback_list.size());
+  pending_dynamic_psm_list_ = std::move(psm_list);
+  pending_dynamic_channel_callback_list_ = std::move(callback_list);
+}
+
+void Link::connect_to_pending_dynamic_channels() {
+  auto psm = pending_dynamic_psm_list_.begin();
+  auto callback = pending_dynamic_channel_callback_list_.begin();
+  while (psm != pending_dynamic_psm_list_.end()) {
+    SendConnectionRequest(*psm, ReserveDynamicChannel(), std::move(*callback));
+    psm++;
+    callback++;
   }
 }
 
@@ -245,6 +271,7 @@ void Link::OnRemoteExtendedFeatureReceived(bool ertm_supported, bool fcs_support
   remote_supports_ertm_ = ertm_supported;
   remote_supports_fcs_ = fcs_supported;
   remote_extended_feature_received_ = true;
+  connect_to_pending_dynamic_channels();
 }
 
 void Link::AddChannelPendingingAuthentication(PendingAuthenticateDynamicChannelConnection pending_channel) {
