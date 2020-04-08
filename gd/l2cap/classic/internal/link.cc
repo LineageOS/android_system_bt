@@ -233,20 +233,18 @@ Mtu Link::GetRemoteConnectionlessMtu() const {
   return remote_connectionless_mtu_;
 }
 
-void Link::SetRemoteSupportsErtm(bool supported) {
-  remote_supports_ertm_ = supported;
-}
-
 bool Link::GetRemoteSupportsErtm() const {
   return remote_supports_ertm_;
 }
 
-void Link::SetRemoteSupportsFcs(bool supported) {
-  remote_supports_fcs_ = supported;
-}
-
 bool Link::GetRemoteSupportsFcs() const {
   return remote_supports_fcs_;
+}
+
+void Link::OnRemoteExtendedFeatureReceived(bool ertm_supported, bool fcs_supported) {
+  remote_supports_ertm_ = ertm_supported;
+  remote_supports_fcs_ = fcs_supported;
+  remote_extended_feature_received_ = true;
 }
 
 void Link::AddChannelPendingingAuthentication(PendingAuthenticateDynamicChannelConnection pending_channel) {
