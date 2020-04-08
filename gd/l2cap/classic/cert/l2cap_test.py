@@ -1337,9 +1337,6 @@ class L2capTest(GdBaseTestClass):
         Verify the IUT can accept a Configuration Request from the Lower Tester
         containing an F&EC option that specifies Enhanced Retransmission Mode
         """
-        asserts.skip(
-            "This doesn't work. Currently if DUT sends connection request before information response is received, DUT assumes remote doesn't support ERTM, and drops request"
-        )
         self._setup_link_from_cert()
         self.cert_l2cap.turn_on_ertm()
 
@@ -1358,6 +1355,7 @@ class L2capTest(GdBaseTestClass):
         Information Response [Extended Features]
         """
         self._setup_link_from_cert()
+        self.cert_l2cap.disable_ertm()
         dut_channel_future = self.dut_l2cap.connect_dynamic_channel_to_cert(
             psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
         assertThat(self.cert_l2cap.get_control_channel()).emitsNone(
