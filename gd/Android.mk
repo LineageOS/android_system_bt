@@ -20,6 +20,7 @@ LOCAL_host_libraries := \
 	$(HOST_OUT_SHARED_LIBRARIES)/libbluetooth_gd.so \
 	$(HOST_OUT_SHARED_LIBRARIES)/libc++.so \
 	$(HOST_OUT_SHARED_LIBRARIES)/libchrome.so \
+	$(HOST_OUT_SHARED_LIBRARIES)/libcrypto-host.so \
 	$(HOST_OUT_SHARED_LIBRARIES)/libevent-host.so \
 	$(HOST_OUT_SHARED_LIBRARIES)/libgrpc++_unsecure.so \
 	$(HOST_OUT_SHARED_LIBRARIES)/liblog.so \
@@ -30,6 +31,7 @@ LOCAL_target_executables := \
 	$(TARGET_OUT_EXECUTABLES)/bluetooth_stack_with_facade
 
 LOCAL_target_libraries := \
+	$(TARGET_OUT_SHARED_LIBRARIES)/libcrypto.so \
 	$(TARGET_OUT_SHARED_LIBRARIES)/libbluetooth_gd.so \
 	$(TARGET_OUT_SHARED_LIBRARIES)/libgrpc++_unsecure.so
 
