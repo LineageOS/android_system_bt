@@ -151,22 +151,14 @@ void LinkManager::OnConnectSuccess(std::unique_ptr<hci::AclConnection> acl_conne
     }
   }
   if (pending_dynamic_channels_.find(device) != pending_dynamic_channels_.end()) {
-    for (Psm psm : pending_dynamic_channels_[device]) {
-      auto& callbacks = pending_dynamic_channels_callbacks_[device].front();
-      link->SendConnectionRequest(psm, link->ReserveDynamicChannel(), std::move(callbacks));
-      pending_dynamic_channels_callbacks_[device].pop_front();
-    }
+    auto psm_list = pending_dynamic_channels_[device];
+    auto& callback_list = pending_dynamic_channels_callbacks_[device];
+    link->SetPendingDynamicChannels(psm_list, std::move(callback_list));
     pending_dynamic_channels_.erase(device);
     pending_dynamic_channels_callbacks_.erase(device);
   }
   // Remove device from pending links list, if any
-  auto pending_link = pending_links_.find(device);
-  if (pending_link == pending_links_.end()) {
-    // This an incoming connection, exit
-    return;
-  }
-  // This is an outgoing connection, remove entry in pending link list
-  pending_links_.erase(pending_link);
+  pending_links_.erase(device);
 }
 
 void LinkManager::OnConnectFail(hci::Address device, hci::ErrorCode reason) {
