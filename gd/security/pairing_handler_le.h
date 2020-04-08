@@ -177,14 +177,7 @@ class PairingHandlerLe {
 
   /* This function generates data that should be passed to remote device, except
      the private key. */
-  static MyOobData GenerateOobData() {
-    MyOobData data;
-    std::tie(data.private_key, data.public_key) = GenerateECDHKeyPair();
-
-    data.r = GenerateRandom<16>();
-    data.c = crypto_toolbox::f4(data.public_key.x.data(), data.public_key.x.data(), data.r, 0);
-    return data;
-  }
+  static MyOobData GenerateOobData();
 
   std::variant<PairingFailure, KeyExchangeResult> ExchangePublicKeys(const InitialInformations& i,
                                                                      OobDataFlag remote_have_oob_data);
@@ -461,23 +454,6 @@ class PairingHandlerLe {
 
   auto WaitSigningInformation() {
     return WaitPacket<Code::SIGNING_INFORMATION>();
-  }
-
-  template <size_t SIZE>
-  static std::array<uint8_t, SIZE> GenerateRandom() {
-    // TODO:  We need a proper  random number generator here.
-    // use current time as seed for random generator
-    std::srand(std::time(nullptr));
-    std::array<uint8_t, SIZE> r;
-    for (size_t i = 0; i < SIZE; i++) r[i] = std::rand();
-    return r;
-  }
-
-  uint32_t GenerateRandom() {
-    // TODO:  We need a proper  random number generator here.
-    // use current time as seed for random generator
-    std::srand(std::time(nullptr));
-    return std::rand();
   }
 
   /* This is just for test, never use in production code! */

@@ -21,6 +21,7 @@
 #include <memory>
 
 #include "os/log.h"
+#include "os/rand.h"
 #include "security/pairing_handler_le.h"
 #include "security/test/mocks.h"
 
@@ -29,6 +30,7 @@ using ::testing::Eq;
 using ::testing::Field;
 using ::testing::VariantWith;
 
+using bluetooth::os::GenerateRandom;
 using bluetooth::security::CommandView;
 
 namespace bluetooth {
@@ -212,7 +214,7 @@ TEST_F(PairingHandlerUnitTest, test_secure_connections_just_works) {
   Octet16 ra, rb;
   ra = rb = {0};
 
-  Octet16 Nb = PairingHandlerLe::GenerateRandom<16>();
+  Octet16 Nb = GenerateRandom<16>();
 
   // Compute confirm
   Octet16 Cb = crypto_toolbox::f4((uint8_t*)public_key.x.data(), (uint8_t*)my_public_key.x.data(), Nb, 0);
