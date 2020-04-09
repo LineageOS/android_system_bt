@@ -8,7 +8,6 @@ service LeAclManagerFacade {
   rpc CreateConnection(LeConnectionMsg) returns (stream LeConnectionEvent) {}
   rpc CancelConnection(LeConnectionMsg) returns (google.protobuf.Empty) {}
   rpc Disconnect(LeHandleMsg) returns (google.protobuf.Empty) {}
-  rpc AuthenticationRequested(LeHandleMsg) returns (google.protobuf.Empty) {}
   rpc SendAclData(LeAclData) returns (google.protobuf.Empty) {}
   rpc FetchAclData(google.protobuf.Empty) returns (stream LeAclData) {}
   rpc FetchIncomingConnection(google.protobuf.Empty) returns (stream LeConnectionEvent) {}

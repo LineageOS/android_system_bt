@@ -24,16 +24,30 @@ namespace bluetooth {
 namespace hci {
 namespace testing {
 
-class MockAclConnection : public AclConnection {
+class MockClassicAclConnection : public ClassicAclConnection {
  public:
   MOCK_METHOD(Address, GetAddress, (), (const, override));
-  MOCK_METHOD(AddressType, GetAddressType, (), (const, override));
   MOCK_METHOD(void, RegisterDisconnectCallback,
               (common::OnceCallback<void(ErrorCode)> on_disconnect, os::Handler* handler), (override));
   MOCK_METHOD(bool, Disconnect, (DisconnectReason reason), (override));
   MOCK_METHOD(void, Finish, (), (override));
   MOCK_METHOD(void, RegisterCallbacks, (ConnectionManagementCallbacks * callbacks, os::Handler* handler), (override));
   MOCK_METHOD(void, UnregisterCallbacks, (ConnectionManagementCallbacks * callbacks), (override));
+
+  QueueUpEnd* GetAclQueueEnd() const override {
+    return acl_queue_.GetUpEnd();
+  }
+  mutable common::BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder> acl_queue_{10};
+};
+
+class MockLeAclConnection : public LeAclConnection {
+ public:
+  MOCK_METHOD(AddressWithType, GetAddressWithType, (), (const, override));
+  MOCK_METHOD(void, RegisterDisconnectCallback,
+              (common::OnceCallback<void(ErrorCode)> on_disconnect, os::Handler* handler), (override));
+  MOCK_METHOD(bool, Disconnect, (DisconnectReason reason), (override));
+  MOCK_METHOD(void, Finish, (), (override));
+  MOCK_METHOD(void, RegisterCallbacks, (LeConnectionManagementCallbacks * callbacks, os::Handler* handler), (override));
 
   QueueUpEnd* GetAclQueueEnd() const override {
     return acl_queue_.GetUpEnd();
