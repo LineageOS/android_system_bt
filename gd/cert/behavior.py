@@ -15,6 +15,7 @@
 #   limitations under the License.
 
 from abc import ABC, abstractmethod
+from mobly import signals
 
 from cert.truth import assertThat
 
@@ -35,11 +36,16 @@ def when(has_behaviors):
     return has_behaviors.get_behaviors()
 
 
+def IGNORE_UNHANDLED(obj):
+    pass
+
+
 class SingleArgumentBehavior(object):
 
     def __init__(self, reply_stage_factory):
         self._reply_stage_factory = reply_stage_factory
         self._instances = []
+        self.set_default_to_crash()
 
     def begin(self, matcher):
         return PersistenceStage(self, matcher, self._reply_stage_factory)
@@ -47,10 +53,27 @@ class SingleArgumentBehavior(object):
     def append(self, behavior_instance):
         self._instances.append(behavior_instance)
 
+    def set_default(self, fn):
+        assertThat(fn).isNotNone()
+        self._default_fn = fn
+
+    def set_default_to_crash(self):
+        self._default_fn = None
+
+    def set_default_to_ignore(self):
+        self._default_fn = IGNORE_UNHANDLED
+
     def run(self, obj):
         for instance in self._instances:
             if instance.try_run(obj):
                 return
+        if self._default_fn is not None:
+            self._default_fn(obj)
+        else:
+            raise signals.TestFailure(
+                "%s: behavior for %s went unhandled" %
+                (self._reply_stage_factory().__class__.__name__, obj),
+                extras=None)
 
 
 class PersistenceStage(object):

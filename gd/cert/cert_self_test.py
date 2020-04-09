@@ -122,9 +122,13 @@ class ObjectWithBehaviors(IHasBehaviors):
         self.behaviors = TestBehaviors(self)
         self.count = 0
         self.captured = []
+        self.unhandled_count = 0
 
     def get_behaviors(self):
         return self.behaviors
+
+    def increment_unhandled(self):
+        self.unhandled_count += 1
 
 
 class CertSelfTest(BaseTestClass):
@@ -526,6 +530,7 @@ class CertSelfTest(BaseTestClass):
 
     def test_fluent_behavior_simple(self):
         thing = ObjectWithBehaviors()
+
         when(thing).test_request(anything()).then().increment_count()
 
         thing.behaviors.test_request_behavior.run("A")
@@ -535,6 +540,9 @@ class CertSelfTest(BaseTestClass):
 
     def test_fluent_behavior__then_single__captures_one(self):
         thing = ObjectWithBehaviors()
+
+        thing.behaviors.test_request_behavior.set_default_to_ignore()
+
         when(thing).test_request(anything()).then().increment_count()
 
         thing.behaviors.test_request_behavior.run("A")
@@ -546,6 +554,7 @@ class CertSelfTest(BaseTestClass):
 
     def test_fluent_behavior__then_times__captures_all(self):
         thing = ObjectWithBehaviors()
+
         when(thing).test_request(anything()).then(times=3).increment_count()
 
         thing.behaviors.test_request_behavior.run("A")
@@ -557,6 +566,7 @@ class CertSelfTest(BaseTestClass):
 
     def test_fluent_behavior__always__captures_all(self):
         thing = ObjectWithBehaviors()
+
         when(thing).test_request(anything()).always().increment_count()
 
         thing.behaviors.test_request_behavior.run("A")
@@ -568,6 +578,8 @@ class CertSelfTest(BaseTestClass):
 
     def test_fluent_behavior__matcher__captures_relevant(self):
         thing = ObjectWithBehaviors()
+        thing.behaviors.test_request_behavior.set_default_to_ignore()
+
         when(thing).test_request(
             lambda obj: obj == "B").always().increment_count()
 
@@ -580,6 +592,8 @@ class CertSelfTest(BaseTestClass):
 
     def test_fluent_behavior__then_repeated__captures_relevant(self):
         thing = ObjectWithBehaviors()
+        thing.behaviors.test_request_behavior.set_default_to_ignore()
+
         when(thing).test_request(
             anything()).then().increment_count().increment_count()
 
@@ -592,6 +606,8 @@ class CertSelfTest(BaseTestClass):
 
     def test_fluent_behavior__fallback__captures_relevant(self):
         thing = ObjectWithBehaviors()
+        thing.behaviors.test_request_behavior.set_default_to_ignore()
+
         when(thing).test_request(lambda obj: obj == "B").then(
             times=1).increment_count()
         when(thing).test_request(
@@ -606,3 +622,27 @@ class CertSelfTest(BaseTestClass):
 
         assertThat(thing.count).isEqualTo(3)
         assertThat(thing.captured).isEqualTo(["B", "C", "C"])
+
+    def test_fluent_behavior__default_unhandled_crash(self):
+        thing = ObjectWithBehaviors()
+
+        when(thing).test_request(anything()).then().increment_count()
+
+        thing.behaviors.test_request_behavior.run("A")
+        try:
+            thing.behaviors.test_request_behavior.run("A")
+        except Exception as e:
+            logging.debug(e)
+            return True  # Failed as expected
+        return False
+
+    def test_fluent_behavior__set_default_works(self):
+        thing = ObjectWithBehaviors()
+        thing.behaviors.test_request_behavior.set_default(
+            lambda obj: thing.increment_unhandled())
+
+        when(thing).test_request(anything()).then().increment_count()
+
+        thing.behaviors.test_request_behavior.run("A")
+        thing.behaviors.test_request_behavior.run("A")
+        assertThat(thing.unhandled_count).isEqualTo(1)
