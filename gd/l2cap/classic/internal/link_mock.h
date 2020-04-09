@@ -29,14 +29,14 @@ namespace classic {
 namespace internal {
 namespace testing {
 
-using hci::testing::MockAclConnection;
+using hci::testing::MockClassicAclConnection;
 
 class MockLink : public Link {
  public:
   explicit MockLink(os::Handler* handler, l2cap::internal::ParameterProvider* parameter_provider)
-      : Link(handler, std::make_unique<MockAclConnection>(), parameter_provider, nullptr, nullptr){};
+      : Link(handler, std::make_unique<MockClassicAclConnection>(), parameter_provider, nullptr, nullptr){};
   explicit MockLink(os::Handler* handler, l2cap::internal::ParameterProvider* parameter_provider,
-                    std::unique_ptr<hci::AclConnection> acl_connection)
+                    std::unique_ptr<hci::ClassicAclConnection> acl_connection)
       : Link(handler, std::move(acl_connection), parameter_provider, nullptr, nullptr){};
   MOCK_METHOD(hci::AddressWithType, GetDevice, (), (override));
   MOCK_METHOD(void, OnAclDisconnected, (hci::ErrorCode status), (override));

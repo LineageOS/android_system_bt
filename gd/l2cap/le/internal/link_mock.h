@@ -29,12 +29,12 @@ namespace le {
 namespace internal {
 namespace testing {
 
-using hci::testing::MockAclConnection;
+using hci::testing::MockLeAclConnection;
 
 class MockLink : public Link {
  public:
   explicit MockLink(os::Handler* handler, l2cap::internal::ParameterProvider* parameter_provider,
-                    std::unique_ptr<MockAclConnection> mock_acl_connection)
+                    std::unique_ptr<MockLeAclConnection> mock_acl_connection)
       : Link(handler, std::move(mock_acl_connection), parameter_provider, nullptr, nullptr){};
 
   MOCK_METHOD(hci::AddressWithType, GetDevice, (), (override));

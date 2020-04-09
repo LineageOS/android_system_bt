@@ -59,7 +59,7 @@ class LinkManager : public hci::ConnectionCallbacks {
   // ACL methods
 
   Link* GetLink(hci::Address device);
-  void OnConnectSuccess(std::unique_ptr<hci::AclConnection> acl_connection) override;
+  void OnConnectSuccess(std::unique_ptr<hci::ClassicAclConnection> acl_connection) override;
   void OnConnectFail(hci::Address device, hci::ErrorCode reason) override;
   void OnDisconnect(hci::Address device, hci::ErrorCode status);
 
