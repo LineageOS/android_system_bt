@@ -97,6 +97,7 @@ static void btsock_l2cap_server_listen(l2cap_socket* sock);
 static std::mutex state_lock;
 
 l2cap_socket* socks = NULL;
+static uint32_t last_sock_id = 0;
 static uid_set_t* uid_set = NULL;
 static int pth = -1;
 
@@ -254,6 +255,11 @@ static void btsock_l2cap_free_l(l2cap_socket* sock) {
     }
     if ((sock->channel >= 0) && (sock->server)) {
       BTA_JvFreeChannel(sock->channel, BTA_JV_CONN_TYPE_L2CAP_LE);
+      if (!sock->fixed_chan) {
+        VLOG(2) << __func__ << ": stopping L2CAP LE COC server channel "
+                << sock->channel;
+        BTA_JvL2capStopServer(sock->channel, sock->id);
+      }
     }
   } else {
     // Only call if we are non server connections
@@ -322,7 +328,7 @@ static l2cap_socket* btsock_l2cap_alloc_l(const char* name,
   sock->next = socks;
   sock->prev = NULL;
   if (socks) socks->prev = sock;
-  sock->id = (socks ? socks->id : 0) + 1;
+  sock->id = last_sock_id + 1;
   sock->tx_bytes = 0;
   sock->rx_bytes = 0;
   socks = sock;
@@ -340,6 +346,7 @@ static l2cap_socket* btsock_l2cap_alloc_l(const char* name,
     if (!++sock->id) /* no zero IDs allowed */
       sock->id++;
   }
+  last_sock_id = sock->id;
   DVLOG(2) << __func__ << " SOCK_LIST: alloc id:" << sock->id;
   return sock;
 
