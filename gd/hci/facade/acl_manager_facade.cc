@@ -40,13 +40,11 @@ namespace facade {
 
 class AclManagerFacadeService : public AclManagerFacade::Service,
                                 public ::bluetooth::hci::ConnectionCallbacks,
-                                public ::bluetooth::hci::ConnectionManagementCallbacks,
-                                public ::bluetooth::hci::AclManagerCallbacks {
+                                public ::bluetooth::hci::ConnectionManagementCallbacks {
  public:
   AclManagerFacadeService(AclManager* acl_manager, ::bluetooth::os::Handler* facade_handler)
       : acl_manager_(acl_manager), facade_handler_(facade_handler) {
     acl_manager_->RegisterCallbacks(this, facade_handler_);
-    acl_manager_->RegisterAclManagerCallbacks(this, facade_handler_);
   }
 
   ~AclManagerFacadeService() override {
@@ -153,7 +151,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
     return std::string(bytes.begin(), bytes.end());
   }
 
-  void on_incoming_acl(std::shared_ptr<AclConnection> connection, uint16_t handle) {
+  void on_incoming_classic_acl(std::shared_ptr<ClassicAclConnection> connection, uint16_t handle) {
     auto packet = connection->GetAclQueueEnd()->TryDequeue();
     AclData acl_data;
     acl_data.set_handle(handle);
@@ -161,7 +159,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
     pending_acl_data_.OnIncomingEvent(acl_data);
   }
 
-  void on_disconnect(std::shared_ptr<AclConnection> connection, uint32_t entry, ErrorCode code) {
+  void on_disconnect(std::shared_ptr<ClassicAclConnection> connection, uint32_t entry, ErrorCode code) {
     connection->GetAclQueueEnd()->UnregisterDequeue();
     connection->Finish();
     std::unique_ptr<BasePacketBuilder> builder =
@@ -171,14 +169,14 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
     per_connection_events_[entry]->OnIncomingEvent(disconnection);
   }
 
-  void OnConnectSuccess(std::unique_ptr<::bluetooth::hci::AclConnection> connection) override {
+  void OnConnectSuccess(std::unique_ptr<::bluetooth::hci::ClassicAclConnection> connection) override {
     std::unique_lock<std::mutex> lock(acl_connections_mutex_);
     auto addr = connection->GetAddress();
-    std::shared_ptr<::bluetooth::hci::AclConnection> shared_connection = std::move(connection);
+    std::shared_ptr<::bluetooth::hci::ClassicAclConnection> shared_connection = std::move(connection);
     acl_connections_.emplace(to_handle(current_connection_request_), shared_connection);
     auto remote_address = shared_connection->GetAddress().ToString();
     shared_connection->GetAclQueueEnd()->RegisterDequeue(
-        facade_handler_, common::Bind(&AclManagerFacadeService::on_incoming_acl, common::Unretained(this),
+        facade_handler_, common::Bind(&AclManagerFacadeService::on_incoming_classic_acl, common::Unretained(this),
                                       shared_connection, to_handle(current_connection_request_)));
     shared_connection->RegisterDisconnectCallback(
         common::BindOnce(&AclManagerFacadeService::on_disconnect, common::Unretained(this), shared_connection,
@@ -193,16 +191,16 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
     current_connection_request_++;
   }
 
-  void OnMasterLinkKeyComplete(uint16_t connection_handle, KeyFlag key_flag) override {
-    LOG_DEBUG("OnMasterLinkKeyComplete connection_handle:%d", connection_handle);
+  void OnMasterLinkKeyComplete(KeyFlag key_flag) override {
+    LOG_DEBUG("key_flag:%s", KeyFlagText(key_flag).c_str());
   }
 
-  void OnRoleChange(Address bd_addr, Role new_role) override {
-    LOG_DEBUG("OnRoleChange bd_addr:%s, new_role:%d", bd_addr.ToString().c_str(), (uint8_t)new_role);
+  void OnRoleChange(Role new_role) override {
+    LOG_DEBUG("new_role:%d", (uint8_t)new_role);
   }
 
-  void OnReadDefaultLinkPolicySettingsComplete(uint16_t default_link_policy_settings) override {
-    LOG_DEBUG("OnReadDefaultLinkPolicySettingsComplete default_link_policy_settings:%d", default_link_policy_settings);
+  void OnReadLinkPolicySettingsComplete(uint16_t link_policy_settings) override {
+    LOG_DEBUG("link_policy_settings:%d", link_policy_settings);
   }
 
   void OnConnectFail(Address address, ErrorCode reason) override {
@@ -261,10 +259,6 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
     LOG_DEBUG("OnRoleDiscoveryComplete current_role:%d", (uint8_t)current_role);
   }
 
-  void OnReadLinkPolicySettingsComplete(uint16_t link_policy_settings) override {
-    LOG_DEBUG("OnReadLinkPolicySettingsComplete link_policy_settings:%d", link_policy_settings);
-  }
-
   void OnReadAutomaticFlushTimeoutComplete(uint16_t flush_timeout) override {
     LOG_DEBUG("OnReadAutomaticFlushTimeoutComplete flush_timeout:%d", flush_timeout);
   }
@@ -301,7 +295,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
   AclManager* acl_manager_;
   ::bluetooth::os::Handler* facade_handler_;
   mutable std::mutex acl_connections_mutex_;
-  std::map<uint16_t, std::shared_ptr<AclConnection>> acl_connections_;
+  std::map<uint16_t, std::shared_ptr<ClassicAclConnection>> acl_connections_;
   ::bluetooth::grpc::GrpcEventQueue<AclData> pending_acl_data_{"FetchAclData"};
   std::vector<std::unique_ptr<::bluetooth::grpc::GrpcEventQueue<ConnectionEvent>>> per_connection_events_;
   uint32_t current_connection_request_{0};
