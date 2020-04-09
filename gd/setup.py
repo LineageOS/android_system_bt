@@ -15,10 +15,11 @@
 #   limitations under the License.
 
 from distutils import log
+from distutils.errors import DistutilsModuleError
 import os
-from setuptools import setup, find_packages
+from setuptools import find_packages
+from setuptools import setup
 from setuptools.command.install import install
-from setuptools.command.develop import develop
 import stat
 import subprocess
 import sys
@@ -33,14 +34,21 @@ host_executables = [
 ]
 
 
+# Need to verify acts is importable in a new Python context
+def is_acts_importable():
+    cmd = [sys.executable, '-c', 'import acts']
+    completed_process = subprocess.run(cmd, cwd=os.getcwd())
+    return completed_process.returncode == 0
+
+
 def setup_acts_for_cmd_or_die(cmd_str):
     acts_framework_dir = os.path.abspath('acts_framework')
     acts_setup_bin = os.path.join(acts_framework_dir, 'setup.py')
     cmd = [sys.executable, acts_setup_bin, cmd_str]
-    subprocess.check_call(cmd, cwd=acts_framework_dir)
+    subprocess.run(cmd, cwd=acts_framework_dir, check=True)
 
 
-def set_permssions_for_host_executables(outputs):
+def set_permissions_for_host_executables(outputs):
     for file in outputs:
         if os.path.basename(file) in host_executables:
             current_mode = os.stat(file).st_mode
@@ -53,22 +61,26 @@ def set_permssions_for_host_executables(outputs):
 
 class InstallLocalPackagesForInstallation(install):
 
+    user_options = install.user_options + [
+        ('reuse-acts', None, "Skip ACTS installation if already installed"),
+    ]
+    boolean_options = install.boolean_options + ['reuse-acts']
+
+    def initialize_options(self):
+        install.initialize_options(self)
+        self.reuse_acts = False
+
     def run(self):
-        self.announce('Installing ACTS for installation', log.INFO)
-        setup_acts_for_cmd_or_die("install")
-        self.announce('ACTS installed for installation.', log.INFO)
+        if self.reuse_acts and is_acts_importable():
+            self.announce('Reusing existing ACTS installation', log.WARN)
+        else:
+            self.announce('Installing ACTS for installation', log.WARN)
+            setup_acts_for_cmd_or_die("install")
+            self.announce('ACTS installed for installation.', log.WARN)
+        if not is_acts_importable():
+            raise DistutilsModuleError("Cannot import acts after installation")
         install.run(self)
-        set_permssions_for_host_executables(self.get_outputs())
-
-
-class InstallLocalPackagesForDevelopment(develop):
-
-    def run(self):
-        log.log(log.INFO, 'Installing ACTS for development')
-        setup_acts_for_cmd_or_die("develop")
-        log.log(log.INFO, 'ACTS installed for development')
-        develop.run(self)
-        set_permssions_for_host_executables(self.get_outputs())
+        set_permissions_for_host_executables(self.get_outputs())
 
 
 def main():
@@ -85,7 +97,8 @@ def main():
         description="""Bluetooth Cert Tests Package""",
         # Include root package so that bluetooth_packets_python3.so can be
         # included as well
-        packages=[''] + find_packages(exclude='acts_framework'),
+        packages=[''] +
+        find_packages(exclude=['acts_framework', 'acts_framework.*']),
         install_requires=install_requires,
         package_data={
             '': host_executables + ['*.so', 'lib64/*.so', 'target/*'],
@@ -93,7 +106,6 @@ def main():
         },
         cmdclass={
             'install': InstallLocalPackagesForInstallation,
-            'develop': InstallLocalPackagesForDevelopment,
         })
 
 
