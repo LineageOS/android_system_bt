@@ -28,6 +28,11 @@ from bluetooth_packets_python3 import l2cap_packets
 from cert.event_stream import EventStream, FilteringEventStream
 from cert.truth import assertThat
 from cert.metadata import metadata
+from cert.behavior import when
+from cert.behavior import IHasBehaviors
+from cert.behavior import anything
+from cert.behavior import SingleArgumentBehavior
+from cert.behavior import ReplyStage
 
 
 class BogusProto:
@@ -86,6 +91,44 @@ class FetchEvents:
         logging.debug("cancel")
         self.done_ = True
         return None
+
+
+class TestBehaviors(object):
+
+    def __init__(self, parent):
+        self.test_request_behavior = SingleArgumentBehavior(
+            lambda: TestBehaviors.TestRequestReplyStage(parent))
+
+    def test_request(self, matcher):
+        return self.test_request_behavior.begin(matcher)
+
+    class TestRequestReplyStage(ReplyStage):
+
+        def __init__(self, parent):
+            self._parent = parent
+
+        def increment_count(self):
+            self._commit(lambda obj: self._increment_count(obj))
+            return self
+
+        def _increment_count(self, obj):
+            self._parent.count += 1
+            self._parent.captured.append(obj)
+
+
+class ObjectWithBehaviors(IHasBehaviors):
+
+    def __init__(self):
+        self.behaviors = TestBehaviors(self)
+        self.count = 0
+        self.captured = []
+        self.unhandled_count = 0
+
+    def get_behaviors(self):
+        return self.behaviors
+
+    def increment_unhandled(self):
+        self.unhandled_count += 1
 
 
 class CertSelfTest(BaseTestClass):
@@ -484,3 +527,122 @@ class CertSelfTest(BaseTestClass):
             asserts.assert_equal(e.extras["pts_test_name"], "Hello world")
         else:
             asserts.fail("Must throw an exception using @metadata decorator")
+
+    def test_fluent_behavior_simple(self):
+        thing = ObjectWithBehaviors()
+
+        when(thing).test_request(anything()).then().increment_count()
+
+        thing.behaviors.test_request_behavior.run("A")
+
+        assertThat(thing.count).isEqualTo(1)
+        assertThat(thing.captured).isEqualTo(["A"])
+
+    def test_fluent_behavior__then_single__captures_one(self):
+        thing = ObjectWithBehaviors()
+
+        thing.behaviors.test_request_behavior.set_default_to_ignore()
+
+        when(thing).test_request(anything()).then().increment_count()
+
+        thing.behaviors.test_request_behavior.run("A")
+        thing.behaviors.test_request_behavior.run("A")
+        thing.behaviors.test_request_behavior.run("A")
+
+        assertThat(thing.count).isEqualTo(1)
+        assertThat(thing.captured).isEqualTo(["A"])
+
+    def test_fluent_behavior__then_times__captures_all(self):
+        thing = ObjectWithBehaviors()
+
+        when(thing).test_request(anything()).then(times=3).increment_count()
+
+        thing.behaviors.test_request_behavior.run("A")
+        thing.behaviors.test_request_behavior.run("B")
+        thing.behaviors.test_request_behavior.run("C")
+
+        assertThat(thing.count).isEqualTo(3)
+        assertThat(thing.captured).isEqualTo(["A", "B", "C"])
+
+    def test_fluent_behavior__always__captures_all(self):
+        thing = ObjectWithBehaviors()
+
+        when(thing).test_request(anything()).always().increment_count()
+
+        thing.behaviors.test_request_behavior.run("A")
+        thing.behaviors.test_request_behavior.run("B")
+        thing.behaviors.test_request_behavior.run("C")
+
+        assertThat(thing.count).isEqualTo(3)
+        assertThat(thing.captured).isEqualTo(["A", "B", "C"])
+
+    def test_fluent_behavior__matcher__captures_relevant(self):
+        thing = ObjectWithBehaviors()
+        thing.behaviors.test_request_behavior.set_default_to_ignore()
+
+        when(thing).test_request(
+            lambda obj: obj == "B").always().increment_count()
+
+        thing.behaviors.test_request_behavior.run("A")
+        thing.behaviors.test_request_behavior.run("B")
+        thing.behaviors.test_request_behavior.run("C")
+
+        assertThat(thing.count).isEqualTo(1)
+        assertThat(thing.captured).isEqualTo(["B"])
+
+    def test_fluent_behavior__then_repeated__captures_relevant(self):
+        thing = ObjectWithBehaviors()
+        thing.behaviors.test_request_behavior.set_default_to_ignore()
+
+        when(thing).test_request(
+            anything()).then().increment_count().increment_count()
+
+        thing.behaviors.test_request_behavior.run("A")
+        thing.behaviors.test_request_behavior.run("B")
+        thing.behaviors.test_request_behavior.run("A")
+
+        assertThat(thing.count).isEqualTo(2)
+        assertThat(thing.captured).isEqualTo(["A", "B"])
+
+    def test_fluent_behavior__fallback__captures_relevant(self):
+        thing = ObjectWithBehaviors()
+        thing.behaviors.test_request_behavior.set_default_to_ignore()
+
+        when(thing).test_request(lambda obj: obj == "B").then(
+            times=1).increment_count()
+        when(thing).test_request(
+            lambda obj: obj == "C").always().increment_count()
+
+        thing.behaviors.test_request_behavior.run("A")
+        thing.behaviors.test_request_behavior.run("B")
+        thing.behaviors.test_request_behavior.run("A")
+        thing.behaviors.test_request_behavior.run("C")
+        thing.behaviors.test_request_behavior.run("B")
+        thing.behaviors.test_request_behavior.run("C")
+
+        assertThat(thing.count).isEqualTo(3)
+        assertThat(thing.captured).isEqualTo(["B", "C", "C"])
+
+    def test_fluent_behavior__default_unhandled_crash(self):
+        thing = ObjectWithBehaviors()
+
+        when(thing).test_request(anything()).then().increment_count()
+
+        thing.behaviors.test_request_behavior.run("A")
+        try:
+            thing.behaviors.test_request_behavior.run("A")
+        except Exception as e:
+            logging.debug(e)
+            return True  # Failed as expected
+        return False
+
+    def test_fluent_behavior__set_default_works(self):
+        thing = ObjectWithBehaviors()
+        thing.behaviors.test_request_behavior.set_default(
+            lambda obj: thing.increment_unhandled())
+
+        when(thing).test_request(anything()).then().increment_count()
+
+        thing.behaviors.test_request_behavior.run("A")
+        thing.behaviors.test_request_behavior.run("A")
+        assertThat(thing.unhandled_count).isEqualTo(1)
