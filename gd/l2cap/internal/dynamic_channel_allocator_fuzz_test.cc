@@ -25,7 +25,7 @@ namespace l2cap {
 namespace internal {
 
 using classic::internal::testing::MockLink;
-using hci::testing::MockAclConnection;
+using hci::testing::MockClassicAclConnection;
 using l2cap::internal::testing::MockParameterProvider;
 using l2cap::internal::testing::MockScheduler;
 using ::testing::NiceMock;
@@ -46,8 +46,8 @@ class L2capClassicDynamicChannelAllocatorFuzzTest {
     thread_ = new os::Thread("test_thread", os::Thread::Priority::NORMAL);
     handler_ = new os::Handler(thread_);
     mock_parameter_provider_ = new NiceMock<MockParameterProvider>();
-    mock_classic_link_ =
-        new NiceMock<MockLink>(handler_, mock_parameter_provider_, std::make_unique<NiceMock<MockAclConnection>>());
+    mock_classic_link_ = new NiceMock<MockLink>(handler_, mock_parameter_provider_,
+                                                std::make_unique<NiceMock<MockClassicAclConnection>>());
     EXPECT_CALL(*mock_classic_link_, GetDevice()).WillRepeatedly(Return(device));
     channel_allocator_ = std::make_unique<DynamicChannelAllocator>(mock_classic_link_, handler_);
   }

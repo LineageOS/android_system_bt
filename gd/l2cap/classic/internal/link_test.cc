@@ -38,7 +38,7 @@ constexpr Psm kPsm = 123;
 constexpr Cid kCid = 456;
 
 using classic::internal::testing::MockDynamicChannelServiceManagerImpl;
-using hci::testing::MockAclConnection;
+using hci::testing::MockClassicAclConnection;
 using l2cap::internal::testing::MockParameterProvider;
 using testing::MockFixedChannelServiceManagerImpl;
 
@@ -74,8 +74,8 @@ class L2capClassicLinkTest : public ::testing::Test {
     handler_ = new os::Handler(thread_);
     signalling_handler_ = new os::Handler(thread_);
 
-    raw_acl_connection_ = new NiceMock<MockAclConnection>();
-    link_ = new Link(signalling_handler_, std::unique_ptr<MockAclConnection>(raw_acl_connection_),
+    raw_acl_connection_ = new NiceMock<MockClassicAclConnection>();
+    link_ = new Link(signalling_handler_, std::unique_ptr<MockClassicAclConnection>(raw_acl_connection_),
                      &mock_parameter_provider_, &mock_classic_dynamic_channel_service_manager_,
                      &mock_classic_fixed_channel_service_manager_);
   }
@@ -96,8 +96,8 @@ class L2capClassicLinkTest : public ::testing::Test {
   os::Handler* handler_ = nullptr;
   os::Handler* signalling_handler_ = nullptr;
 
-  MockAclConnection* raw_acl_connection_ = nullptr;
-  std::unique_ptr<MockAclConnection> acl_connection_;
+  MockClassicAclConnection* raw_acl_connection_ = nullptr;
+  std::unique_ptr<MockClassicAclConnection> acl_connection_;
 
   NiceMock<MockParameterProvider> mock_parameter_provider_;
   MockFixedChannelServiceManagerImpl mock_classic_fixed_channel_service_manager_;
