@@ -11,6 +11,7 @@ filegroup {
         "hci_layer.cc",
         "le_advertising_manager.cc",
         "le_scanning_manager.cc",
+        "round_robin_scheduler.cc",
     ],
 }
 
