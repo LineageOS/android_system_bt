@@ -41,8 +41,8 @@ namespace classic {
 namespace internal {
 namespace {
 
-using hci::testing::MockAclConnection;
 using hci::testing::MockAclManager;
+using hci::testing::MockClassicAclConnection;
 using l2cap::internal::testing::MockParameterProvider;
 using ::testing::_;  // Matcher to any value
 using ::testing::ByMove;
@@ -119,9 +119,8 @@ TEST_F(L2capClassicLinkManagerTest, connect_fixed_channel_service_without_acl) {
 
   // Step 3: ACL connection success event should trigger channel creation for all registered services
 
-  std::unique_ptr<MockAclConnection> acl_connection = std::make_unique<MockAclConnection>();
+  std::unique_ptr<MockClassicAclConnection> acl_connection = std::make_unique<MockClassicAclConnection>();
   EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(device));
-  EXPECT_CALL(*acl_connection, GetAddressType()).WillRepeatedly(Return(hci::AddressType::PUBLIC_DEVICE_ADDRESS));
   EXPECT_CALL(*acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
   EXPECT_CALL(*acl_connection, RegisterDisconnectCallback(_, l2cap_handler_)).Times(1);
   EXPECT_CALL(*acl_connection, UnregisterCallbacks(_)).Times(1);
@@ -290,10 +289,9 @@ TEST_F(L2capClassicLinkManagerTest, not_acquiring_channels_should_disconnect_acl
   classic_link_manager.ConnectFixedChannelServices(device, std::move(pending_fixed_channel_connection));
 
   // Step 3: ACL connection success event should trigger channel creation for all registered services
-  auto* raw_acl_connection = new MockAclConnection();
-  std::unique_ptr<MockAclConnection> acl_connection(raw_acl_connection);
+  auto* raw_acl_connection = new MockClassicAclConnection();
+  std::unique_ptr<MockClassicAclConnection> acl_connection(raw_acl_connection);
   EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(device));
-  EXPECT_CALL(*acl_connection, GetAddressType()).WillRepeatedly(Return(hci::AddressType::PUBLIC_DEVICE_ADDRESS));
   EXPECT_CALL(*acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
   EXPECT_CALL(*acl_connection, RegisterDisconnectCallback(_, l2cap_handler_)).Times(1);
   EXPECT_CALL(*acl_connection, UnregisterCallbacks(_)).Times(1);
@@ -373,10 +371,9 @@ TEST_F(L2capClassicLinkManagerTest, acquiring_channels_should_not_disconnect_acl
   classic_link_manager.ConnectFixedChannelServices(device, std::move(pending_fixed_channel_connection));
 
   // Step 3: ACL connection success event should trigger channel creation for all registered services
-  auto* raw_acl_connection = new MockAclConnection();
-  std::unique_ptr<MockAclConnection> acl_connection(raw_acl_connection);
+  auto* raw_acl_connection = new MockClassicAclConnection();
+  std::unique_ptr<MockClassicAclConnection> acl_connection(raw_acl_connection);
   EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(device));
-  EXPECT_CALL(*acl_connection, GetAddressType()).WillRepeatedly(Return(hci::AddressType::PUBLIC_DEVICE_ADDRESS));
   EXPECT_CALL(*acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
   EXPECT_CALL(*acl_connection, RegisterDisconnectCallback(_, l2cap_handler_)).Times(1);
   EXPECT_CALL(*acl_connection, UnregisterCallbacks(_)).Times(1);
@@ -458,10 +455,9 @@ TEST_F(L2capClassicLinkManagerTest, acquiring_and_releasing_channels_should_even
   classic_link_manager.ConnectFixedChannelServices(device, std::move(pending_fixed_channel_connection));
 
   // Step 3: ACL connection success event should trigger channel creation for all registered services
-  auto* raw_acl_connection = new MockAclConnection();
-  std::unique_ptr<MockAclConnection> acl_connection(raw_acl_connection);
+  auto* raw_acl_connection = new MockClassicAclConnection();
+  std::unique_ptr<MockClassicAclConnection> acl_connection(raw_acl_connection);
   EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(device));
-  EXPECT_CALL(*acl_connection, GetAddressType()).WillRepeatedly(Return(hci::AddressType::PUBLIC_DEVICE_ADDRESS));
   EXPECT_CALL(*acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
   EXPECT_CALL(*acl_connection, RegisterDisconnectCallback(_, l2cap_handler_)).Times(1);
   EXPECT_CALL(*acl_connection, UnregisterCallbacks(_)).Times(1);
