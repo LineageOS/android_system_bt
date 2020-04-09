@@ -32,7 +32,7 @@ hci::Role FixedChannelImpl::GetRole() const {
   return link_->GetRole();
 }
 
-hci::AclConnection* FixedChannelImpl::GetAclConnection() const {
+hci::LeAclConnection* FixedChannelImpl::GetAclConnection() const {
   return link_->GetAclConnection();
 }
 

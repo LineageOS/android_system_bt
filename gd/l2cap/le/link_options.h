@@ -68,10 +68,10 @@ class LinkOptions {
    */
   bool SetPhy(uint8_t all_phys, uint8_t tx_phys, uint8_t rx_phys, uint16_t phy_options);
 
-  LinkOptions(hci::AclConnection* acl_connection, internal::Link* link, os::Handler* l2cap_handler);
+  LinkOptions(hci::LeAclConnection* acl_connection, internal::Link* link, os::Handler* l2cap_handler);
 
  private:
-  hci::AclConnection* acl_connection_ = nullptr;
+  hci::LeAclConnection* acl_connection_ = nullptr;
   internal::Link* link_ = nullptr;
   os::Handler* l2cap_handler_ = nullptr;
 };

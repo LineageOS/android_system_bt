@@ -125,7 +125,7 @@ void LinkManager::TriggerPairing(Link* link) {
   link->ReadClockOffset();
 }
 
-void LinkManager::OnConnectSuccess(std::unique_ptr<hci::AclConnection> acl_connection) {
+void LinkManager::OnConnectSuccess(std::unique_ptr<hci::ClassicAclConnection> acl_connection) {
   // Same link should not be connected twice
   hci::Address device = acl_connection->GetAddress();
   ASSERT_LOG(GetLink(device) == nullptr, "%s is connected twice without disconnection",

@@ -40,8 +40,8 @@ namespace le {
 namespace internal {
 namespace {
 
-using hci::testing::MockAclConnection;
 using hci::testing::MockAclManager;
+using hci::testing::MockLeAclConnection;
 using l2cap::internal::testing::MockParameterProvider;
 using ::testing::_;  // Matcher to any value
 using ::testing::ByMove;
@@ -117,10 +117,9 @@ TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl) {
 
   // Step 3: ACL connection success event should trigger channel creation for all registered services
 
-  std::unique_ptr<MockAclConnection> acl_connection = std::make_unique<MockAclConnection>();
+  std::unique_ptr<MockLeAclConnection> acl_connection = std::make_unique<MockLeAclConnection>();
   EXPECT_CALL(*acl_connection, RegisterDisconnectCallback(_, l2cap_handler_)).Times(1);
-  EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(address_with_type.GetAddress()));
-  EXPECT_CALL(*acl_connection, GetAddressType()).WillRepeatedly(Return(address_with_type.GetAddressType()));
+  EXPECT_CALL(*acl_connection, GetAddressWithType()).WillRepeatedly(Return(address_with_type));
   std::unique_ptr<FixedChannel> channel_1, channel_2;
   std::promise<void> promise_1, promise_2;
   auto future_1 = promise_1.get_future();
@@ -296,10 +295,9 @@ TEST_F(L2capLeLinkManagerTest, not_acquiring_channels_should_disconnect_acl_afte
   le_link_manager.ConnectFixedChannelServices(address_with_type, std::move(pending_fixed_channel_connection));
 
   // Step 3: ACL connection success event should trigger channel creation for all registered services
-  auto* raw_acl_connection = new MockAclConnection();
-  std::unique_ptr<MockAclConnection> acl_connection(raw_acl_connection);
-  EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(address_with_type.GetAddress()));
-  EXPECT_CALL(*acl_connection, GetAddressType()).WillRepeatedly(Return(address_with_type.GetAddressType()));
+  auto* raw_acl_connection = new MockLeAclConnection();
+  std::unique_ptr<MockLeAclConnection> acl_connection(raw_acl_connection);
+  EXPECT_CALL(*acl_connection, GetAddressWithType()).WillRepeatedly(Return(address_with_type));
   std::unique_ptr<FixedChannel> channel_1, channel_2;
   std::promise<void> promise_1, promise_2;
   auto future_1 = promise_1.get_future();
@@ -378,10 +376,9 @@ TEST_F(L2capLeLinkManagerTest, acquiring_channels_should_not_disconnect_acl_afte
   le_link_manager.ConnectFixedChannelServices(address_with_type, std::move(pending_fixed_channel_connection));
 
   // Step 3: ACL connection success event should trigger channel creation for all registered services
-  auto* raw_acl_connection = new MockAclConnection();
-  std::unique_ptr<MockAclConnection> acl_connection(raw_acl_connection);
-  EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(address_with_type.GetAddress()));
-  EXPECT_CALL(*acl_connection, GetAddressType()).WillRepeatedly(Return(address_with_type.GetAddressType()));
+  auto* raw_acl_connection = new MockLeAclConnection();
+  std::unique_ptr<MockLeAclConnection> acl_connection(raw_acl_connection);
+  EXPECT_CALL(*acl_connection, GetAddressWithType()).WillRepeatedly(Return(address_with_type));
   std::unique_ptr<FixedChannel> channel_1, channel_2;
   std::promise<void> promise_1, promise_2;
   auto future_1 = promise_1.get_future();
@@ -462,10 +459,9 @@ TEST_F(L2capLeLinkManagerTest, acquiring_and_releasing_channels_should_eventuall
   le_link_manager.ConnectFixedChannelServices(address_with_type, std::move(pending_fixed_channel_connection));
 
   // Step 3: ACL connection success event should trigger channel creation for all registered services
-  auto* raw_acl_connection = new MockAclConnection();
-  std::unique_ptr<MockAclConnection> acl_connection(raw_acl_connection);
-  EXPECT_CALL(*acl_connection, GetAddress()).WillRepeatedly(Return(address_with_type.GetAddress()));
-  EXPECT_CALL(*acl_connection, GetAddressType()).WillRepeatedly(Return(address_with_type.GetAddressType()));
+  auto* raw_acl_connection = new MockLeAclConnection();
+  std::unique_ptr<MockLeAclConnection> acl_connection(raw_acl_connection);
+  EXPECT_CALL(*acl_connection, GetAddressWithType()).WillRepeatedly(Return(address_with_type));
   std::unique_ptr<FixedChannel> channel_1, channel_2;
   std::promise<void> promise_1, promise_2;
   auto future_1 = promise_1.get_future();
