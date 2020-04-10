@@ -111,10 +111,16 @@ class GdDeviceBase:
         tester_signal_socket.bind(socket_address)
         tester_signal_socket.listen(1)
 
+        environment = os.environ.copy()
+        # Enable LLVM code coverage output for host only tests
+        if not self.serial_number:
+            environment["LLVM_PROFILE_FILE"] = os.path.join(
+                self.log_path_base,
+                "%s_%s_backing_coverage.profraw" % (type_identifier, label))
         self.backing_process = subprocess.Popen(
             cmd,
             cwd=get_gd_root(),
-            env=os.environ.copy(),
+            env=environment,
             stdout=self.backing_process_logs,
             stderr=self.backing_process_logs)
         asserts.assert_true(
