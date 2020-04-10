@@ -15,6 +15,7 @@
  */
 
 #include "fuzzing/helpers.h"
+#include "common/bind.h"
 
 namespace bluetooth {
 namespace fuzzing {
@@ -34,6 +35,17 @@ std::vector<std::vector<uint8_t>> SplitInput(const uint8_t* data, size_t size, c
     result.push_back({beg, end});
   }
   return result;
+}
+
+void SentinelWorkItem::notify_handler_quiesced() {
+  quiesce_promise_->set_value();
+}
+
+void SentinelWorkItem::WaitUntilFinishedOn(os::Handler* handler) {
+  quiesce_promise_ = std::make_unique<std::promise<void>>();
+  handler->Post(common::Bind(&SentinelWorkItem::notify_handler_quiesced, common::Unretained(this)));
+  quiesce_promise_->get_future().wait_for(std::chrono::milliseconds(300));
+  quiesce_promise_ = nullptr;
 }
 
 }  // namespace fuzzing
