@@ -100,8 +100,8 @@ cc_defaults {
     ],
 }
 
-cc_library {
-    name: "libbluetooth_gd",
+cc_defaults {
+    name: "libbluetooth_gd_defaults",
     defaults: [
         "gd_defaults",
         "gd_clang_file_coverage",
@@ -150,6 +150,23 @@ cc_library {
     shared_libs: [
         "libchrome",
         "libcrypto",
+    ],
+}
+
+cc_library {
+    name: "libbluetooth_gd",
+    defaults: [
+      "libbluetooth_gd_defaults",
+    ],
+}
+
+cc_library {
+    name: "libbluetooth_gd_fuzzing",
+    defaults: [
+      "libbluetooth_gd_defaults",
+    ],
+    cflags: [
+      "-DFUZZ_TARGET",
     ],
 }
 
@@ -297,7 +314,7 @@ cc_defaults {
     ":BluetoothFuzzingHelperSources",
   ],
   static_libs: [
-    "libbluetooth_gd",
+    "libbluetooth_gd_fuzzing",
     "libchrome",
     "libgmock",
     "libgtest",
@@ -308,6 +325,9 @@ cc_defaults {
   ],
   shared_libs: [
     "libcrypto",
+  ],
+  cflags: [
+    "-DFUZZ_TARGET",
   ],
   target: {
     android: {
