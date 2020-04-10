@@ -14,11 +14,11 @@
  * limitations under the License.
  */
 
-#include "fuzzing/helpers.h"
+#include "fuzz/helpers.h"
 #include "common/bind.h"
 
 namespace bluetooth {
-namespace fuzzing {
+namespace fuzz {
 
 // cribbed from https://github.com/google/fuzzing/blob/master/docs/split-inputs.md#magic-separator
 std::vector<std::vector<uint8_t>> SplitInput(const uint8_t* data, size_t size, const uint8_t* separator,
@@ -48,5 +48,5 @@ void SentinelWorkItem::WaitUntilFinishedOn(os::Handler* handler) {
   quiesce_promise_ = nullptr;
 }
 
-}  // namespace fuzzing
+}  // namespace fuzz
 }  // namespace bluetooth

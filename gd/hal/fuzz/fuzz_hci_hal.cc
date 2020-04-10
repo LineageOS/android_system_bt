@@ -14,25 +14,25 @@
  * limitations under the License.
  */
 
-#include "hal/fuzzing/fuzzing_hci_hal.h"
-#include "fuzzing/helpers.h"
+#include "hal/fuzz/fuzz_hci_hal.h"
+#include "fuzz/helpers.h"
 #include "hci/hci_packets.h"
 
 namespace bluetooth {
 namespace hal {
-namespace fuzzing {
+namespace fuzz {
 
-void FuzzingHciHal::registerIncomingPacketCallback(HciHalCallbacks* callbacks) {
+void FuzzHciHal::registerIncomingPacketCallback(HciHalCallbacks* callbacks) {
   callbacks_ = callbacks;
 }
 
-void FuzzingHciHal::unregisterIncomingPacketCallback() {
+void FuzzHciHal::unregisterIncomingPacketCallback() {
   callbacks_ = nullptr;
 }
 
-int FuzzingHciHal::injectFuzzInput(const uint8_t* data, size_t size) {
+int FuzzHciHal::injectFuzzInput(const uint8_t* data, size_t size) {
   const uint8_t separator[] = {0xDE, 0xAD, 0xBE, 0xEF};
-  auto inputs = ::bluetooth::fuzzing::SplitInput(data, size, separator, sizeof(separator));
+  auto inputs = ::bluetooth::fuzz::SplitInput(data, size, separator, sizeof(separator));
   for (auto const& sdata : inputs) {
     auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(sdata));
     hci::AclPacketView aclPacket = hci::AclPacketView::Create(packet);
@@ -46,6 +46,6 @@ int FuzzingHciHal::injectFuzzInput(const uint8_t* data, size_t size) {
   return 0;
 }
 
-}  // namespace fuzzing
+}  // namespace fuzz
 }  // namespace hal
 }  // namespace bluetooth
