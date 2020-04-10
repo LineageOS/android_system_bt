@@ -78,7 +78,7 @@ class Reactor {
   int control_fd_;
   std::atomic<bool> is_running_;
   std::list<Reactable*> invalidation_list_;
-  std::unique_ptr<std::future<void>> executing_reactable_finished_;
+  std::shared_ptr<std::future<void>> executing_reactable_finished_;
 };
 
 }  // namespace os
