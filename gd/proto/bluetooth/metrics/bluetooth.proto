@@ -181,8 +181,7 @@ message PairEvent {
   optional int32 disconnect_reason = 1;
 
   // Pair event time
-  optional int64 event_time_millis =
-      2;  // [(datapol.semantic_type) = ST_TIMESTAMP];
+  optional int64 event_time_millis = 2;  // [(datapol.semantic_type) = ST_TIMESTAMP];
 
   // The information about the device which it is paired to.
   optional DeviceInfo device_paired_with = 3;
@@ -209,8 +208,7 @@ message WakeEvent {
   optional string name = 3;
 
   // Time of the event.
-  optional int64 event_time_millis =
-      4;  // [(datapol.semantic_type) = ST_TIMESTAMP];
+  optional int64 event_time_millis = 4;  // [(datapol.semantic_type) = ST_TIMESTAMP];
 }
 
 message ScanEvent {
@@ -247,8 +245,7 @@ message ScanEvent {
   optional int32 number_results = 4;
 
   // Time of the event.
-  optional int64 event_time_millis =
-      5;  // [(datapol.semantic_type) = ST_TIMESTAMP];
+  optional int64 event_time_millis = 5;  // [(datapol.semantic_type) = ST_TIMESTAMP];
 }
 
 // Profile IDs defined in BluetoothProfile API class
