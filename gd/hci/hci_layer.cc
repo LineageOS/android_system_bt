@@ -234,12 +234,6 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
 
   void Stop() {
     hal_->unregisterIncomingPacketCallback();
-    UnregisterEventHandler(EventCode::COMMAND_COMPLETE);
-    UnregisterEventHandler(EventCode::COMMAND_STATUS);
-    UnregisterEventHandler(EventCode::LE_META_EVENT);
-    UnregisterEventHandler(EventCode::PAGE_SCAN_REPETITION_MODE_CHANGE);
-    UnregisterEventHandler(EventCode::MAX_SLOTS_CHANGE);
-    UnregisterEventHandler(EventCode::VENDOR_SPECIFIC);
 
     acl_queue_.GetDownEnd()->UnregisterDequeue();
     incoming_acl_packet_buffer_.Clear();

@@ -105,6 +105,7 @@ void Reactor::Run() {
       }
       auto* reactable = static_cast<Reactor::Reactable*>(event.data.ptr);
       std::unique_lock<std::mutex> lock(mutex_);
+      executing_reactable_finished_ = nullptr;
       // See if this reactable has been removed in the meantime.
       if (std::find(invalidation_list_.begin(), invalidation_list_.end(), reactable) != invalidation_list_.end()) {
         continue;
@@ -194,11 +195,11 @@ void Reactor::Unregister(Reactor::Reactable* reactable) {
 
 bool Reactor::WaitForUnregisteredReactable(std::chrono::milliseconds timeout) {
   std::lock_guard<std::mutex> lock(mutex_);
-  if (executing_reactable_finished_ == nullptr) {
+  std::shared_ptr<std::future<void>> reactable_finished_future = executing_reactable_finished_;
+  if (reactable_finished_future == nullptr) {
     return true;
   }
-  auto stop_status = executing_reactable_finished_->wait_for(timeout);
-  executing_reactable_finished_ = nullptr;
+  auto stop_status = reactable_finished_future->wait_for(timeout);
   if (stop_status != std::future_status::ready) {
     LOG_ERROR("Unregister reactable timed out");
   }
