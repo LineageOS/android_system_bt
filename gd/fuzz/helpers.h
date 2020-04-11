@@ -21,7 +21,7 @@
 #include "os/handler.h"
 
 namespace bluetooth {
-namespace fuzzing {
+namespace fuzz {
 
 std::vector<std::vector<uint8_t>> SplitInput(const uint8_t* data, size_t size, const uint8_t* separator,
                                              size_t separatorSize);
@@ -34,5 +34,5 @@ class SentinelWorkItem {
   void notify_handler_quiesced();
   std::unique_ptr<std::promise<void>> quiesce_promise_;
 };
-}
+}  // namespace fuzz
 }  // namespace bluetooth
