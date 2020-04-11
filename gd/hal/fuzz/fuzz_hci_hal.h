@@ -18,6 +18,7 @@
 
 #include "fuzz/helpers.h"
 #include "hal/hci_hal.h"
+#include "hci/hci_packets.h"
 
 namespace bluetooth {
 namespace hal {
@@ -28,7 +29,7 @@ class FuzzHciHal : public HciHal {
   void registerIncomingPacketCallback(HciHalCallbacks* callbacks) override;
   void unregisterIncomingPacketCallback() override;
 
-  void sendHciCommand(HciPacket command) override {}
+  void sendHciCommand(HciPacket command) override;
   void sendAclData(HciPacket packet) override {}
   void sendScoData(HciPacket packet) override {}
 
@@ -46,6 +47,9 @@ class FuzzHciHal : public HciHal {
  private:
   HciHalCallbacks* callbacks_;
   ::bluetooth::fuzz::SentinelWorkItem sentinel_work_item_;
+  bool is_currently_valid_event(packet::PacketView<packet::kLittleEndian> packet);
+  hci::OpCode waiting_opcode_;
+  bool waiting_for_status_;
 };
 
 }  // namespace fuzz
