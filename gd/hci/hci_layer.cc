@@ -330,13 +330,13 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
 
   void hci_event_received_handler(EventPacketView event) {
     EventCode event_code = event.GetEventCode();
-    ASSERT_LOG(event_handlers_.find(event_code) != event_handlers_.end(), "Unhandled event of type 0x%02hhx (%s)",
-               event_code, EventCodeText(event_code).c_str());
+    if (event_handlers_.find(event_code) == event_handlers_.end()) {
+      LOG_DEBUG("Dropping unregistered event of type 0x%02hhx (%s)", event_code, EventCodeText(event_code).c_str());
+      return;
+    }
     auto& registered = event_handlers_[event_code];
     if (registered.handler != nullptr) {
       registered.handler->Post(BindOnce(registered.event_handler, event));
-    } else {
-      LOG_DEBUG("Dropping unregistered event of type 0x%02hhx (%s)", event_code, EventCodeText(event_code).c_str());
     }
   }
 
