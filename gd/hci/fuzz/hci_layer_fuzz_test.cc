@@ -16,24 +16,24 @@
 
 #include <stddef.h>
 #include <stdint.h>
-#include "hal/fuzzing/fuzzing_hci_hal.h"
-#include "hci/fuzzing/dev_null_hci.h"
+#include "hal/fuzz/fuzz_hci_hal.h"
+#include "hci/fuzz/dev_null_hci.h"
 #include "hci/hci_layer.h"
 #include "module.h"
 
 using bluetooth::TestModuleRegistry;
 using bluetooth::hal::HciHal;
-using bluetooth::hal::fuzzing::FuzzingHciHal;
-using bluetooth::hci::fuzzing::DevNullHci;
+using bluetooth::hal::fuzz::FuzzHciHal;
+using bluetooth::hci::fuzz::DevNullHci;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   static TestModuleRegistry moduleRegistry = TestModuleRegistry();
-  FuzzingHciHal* fuzzingHal = new FuzzingHciHal();
+  FuzzHciHal* fuzzHal = new FuzzHciHal();
 
-  moduleRegistry.InjectTestModule(&HciHal::Factory, fuzzingHal);
+  moduleRegistry.InjectTestModule(&HciHal::Factory, fuzzHal);
   moduleRegistry.Start<DevNullHci>(&moduleRegistry.GetTestThread());
 
-  fuzzingHal->injectFuzzInput(data, size);
+  fuzzHal->injectFuzzInput(data, size);
 
   moduleRegistry.StopAll();
 

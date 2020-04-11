@@ -16,14 +16,14 @@
 
 #pragma once
 
-#include "fuzzing/helpers.h"
+#include "fuzz/helpers.h"
 #include "hal/hci_hal.h"
 
 namespace bluetooth {
 namespace hal {
-namespace fuzzing {
+namespace fuzz {
 
-class FuzzingHciHal : public HciHal {
+class FuzzHciHal : public HciHal {
  public:
   void registerIncomingPacketCallback(HciHalCallbacks* callbacks) override;
   void unregisterIncomingPacketCallback() override;
@@ -45,9 +45,9 @@ class FuzzingHciHal : public HciHal {
 
  private:
   HciHalCallbacks* callbacks_;
-  ::bluetooth::fuzzing::SentinelWorkItem sentinel_work_item_;
+  ::bluetooth::fuzz::SentinelWorkItem sentinel_work_item_;
 };
 
-}  // namespace fuzzing
+}  // namespace fuzz
 }  // namespace hal
 }  // namespace bluetooth
