@@ -311,7 +311,7 @@ cc_defaults {
     name: "gd_fuzz_defaults",
     defaults: ["gd_defaults"],
     srcs: [
-        ":BluetoothFuzzingHelperSources",
+        ":BluetoothFuzzHelperSources",
     ],
     static_libs: [
         "libbluetooth_gd_fuzzing",
@@ -354,8 +354,8 @@ cc_fuzz {
     name: "bluetooth_gd_hci_fuzz_test",
     defaults: ["gd_fuzz_defaults"],
     srcs: [
-        "hci/fuzzing/hci_layer_fuzz_test.cc",
-        ":BluetoothHalFuzzingSources",
+        "hci/fuzz/hci_layer_fuzz_test.cc",
+        ":BluetoothHalFuzzSources",
     ],
 }
 

@@ -19,15 +19,15 @@
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
 #include "module.h"
-#include "os/fuzzing/dev_null_queue.h"
+#include "os/fuzz/dev_null_queue.h"
 
 using bluetooth::hci::AclPacketView;
 using bluetooth::hci::HciLayer;
-using bluetooth::os::fuzzing::DevNullQueue;
+using bluetooth::os::fuzz::DevNullQueue;
 
 namespace bluetooth {
 namespace hci {
-namespace fuzzing {
+namespace fuzz {
 
 class DevNullHci : public Module {
  public:
@@ -61,6 +61,6 @@ class DevNullHci : public Module {
 
 const ModuleFactory DevNullHci::Factory = ModuleFactory([]() { return new DevNullHci(); });
 
-}  // namespace fuzzing
+}  // namespace fuzz
 }  // namespace hci
 }  // namespace bluetooth
