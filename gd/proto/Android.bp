@@ -16,3 +16,16 @@ cc_library_static {
     },
     srcs: ["bluetooth/metrics/bluetooth.proto"],
 }
+
+cc_library_static {
+    name: "libbluetooth-protos",
+    host_supported: true,
+    proto: {
+        export_proto_headers: true,
+        include_dirs: ["external/protobuf/src"],
+    },
+    srcs: [
+        "bluetooth/dumpmod.proto",
+        "bluetooth/metrics/bluetooth.proto"
+    ],
+}
