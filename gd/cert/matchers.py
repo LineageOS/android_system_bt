@@ -122,8 +122,8 @@ class L2capMatchers(object):
         return lambda packet: L2capMatchers._is_matching_configuration_response(packet, result)
 
     @staticmethod
-    def ConfigurationRequest():
-        return lambda packet: L2capMatchers._is_control_frame_with_code(packet, CommandCode.CONFIGURATION_REQUEST)
+    def ConfigurationRequest(cid=None):
+        return lambda packet: L2capMatchers._is_matching_configuration_request_with_cid(packet, cid)
 
     @staticmethod
     def ConfigurationRequestWithErtm():
@@ -423,6 +423,16 @@ class L2capMatchers(object):
         return response.GetSourceCid() == scid and response.GetResult(
         ) == ConnectionResponseResult.SUCCESS and response.GetDestinationCid(
         ) != 0
+
+    @staticmethod
+    def _is_matching_configuration_request_with_cid(packet, cid=None):
+        frame = L2capMatchers.control_frame_with_code(
+            packet, CommandCode.CONFIGURATION_REQUEST)
+        if frame is None:
+            return False
+        request = l2cap_packets.ConfigurationRequestView(frame)
+        dcid = request.GetDestinationCid()
+        return cid is None or cid == dcid
 
     @staticmethod
     def _is_matching_configuration_request_with_ertm(packet):
