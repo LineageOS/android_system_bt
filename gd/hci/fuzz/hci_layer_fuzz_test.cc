@@ -21,21 +21,37 @@
 #include "hci/hci_layer.h"
 #include "module.h"
 
+#include <fuzzer/FuzzedDataProvider.h>
+
 using bluetooth::TestModuleRegistry;
 using bluetooth::hal::HciHal;
 using bluetooth::hal::fuzz::FuzzHciHal;
 using bluetooth::hci::fuzz::DevNullHci;
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
+  FuzzedDataProvider dataProvider(data, size);
+
   static TestModuleRegistry moduleRegistry = TestModuleRegistry();
   FuzzHciHal* fuzzHal = new FuzzHciHal();
 
   moduleRegistry.InjectTestModule(&HciHal::Factory, fuzzHal);
   moduleRegistry.Start<DevNullHci>(&moduleRegistry.GetTestThread());
 
-  fuzzHal->injectFuzzInput(data, size);
+  while (dataProvider.remaining_bytes() > 0) {
+    const uint8_t action = dataProvider.ConsumeIntegralInRange(0, 2);
+    switch (action) {
+      case 1:
+        fuzzHal->injectAcl(dataProvider.ConsumeBytes<uint8_t>(dataProvider.ConsumeIntegral<size_t>()));
+        break;
+      case 2:
+        fuzzHal->injectHciEvent(dataProvider.ConsumeBytes<uint8_t>(dataProvider.ConsumeIntegral<size_t>()));
+        break;
+    }
+  }
+
+  // TODO replace with something more general in thread/reactor
+  fuzzHal->waitForHandler();
 
   moduleRegistry.StopAll();
-
   return 0;
 }
