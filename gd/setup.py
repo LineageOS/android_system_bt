@@ -97,11 +97,17 @@ def main():
         description="""Bluetooth Cert Tests Package""",
         # Include root package so that bluetooth_packets_python3.so can be
         # included as well
-        packages=[''] +
-        find_packages(exclude=['acts_framework', 'acts_framework.*']),
+        packages=[''] + find_packages(exclude=[
+            'acts_framework', 'acts_framework.*', 'llvm_binutils',
+            'llvm_binutils.*'
+        ]),
         install_requires=install_requires,
         package_data={
-            '': host_executables + ['*.so', 'lib64/*.so', 'target/*'],
+            '':
+            host_executables + [
+                '*.so', 'lib64/*.so', 'target/*', 'llvm_binutils/bin/*',
+                'llvm_binutils/lib64/*'
+            ],
             'cert': ['all_test_cases'],
         },
         cmdclass={
