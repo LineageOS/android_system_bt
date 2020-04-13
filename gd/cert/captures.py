@@ -125,6 +125,18 @@ class L2capCaptures(object):
         return l2cap_packets.ConnectionResponseView(frame)
 
     @staticmethod
+    def ConfigurationRequest(cid=None):
+        return Capture(
+            L2capMatchers.ConfigurationRequest(cid),
+            L2capCaptures._extract_configuration_request)
+
+    @staticmethod
+    def _extract_configuration_request(packet):
+        frame = L2capMatchers.control_frame_with_code(
+            packet, CommandCode.CONFIGURATION_REQUEST)
+        return l2cap_packets.ConfigurationRequestView(frame)
+
+    @staticmethod
     def CreditBasedConnectionRequest(psm):
         return Capture(
             L2capMatchers.CreditBasedConnectionRequest(psm),
