@@ -26,6 +26,10 @@ constexpr std::chrono::milliseconds kModuleStopTimeout = std::chrono::millisecon
 ModuleFactory::ModuleFactory(std::function<Module*()> ctor) : ctor_(ctor) {
 }
 
+std::unique_ptr<google::protobuf::Message> Module::DumpState() const {
+  return nullptr;
+}
+
 std::string Module::ToString() const {
   return "Module";
 }
@@ -120,4 +124,17 @@ os::Handler* ModuleRegistry::GetModuleHandler(const ModuleFactory* module) const
   }
   return nullptr;
 }
+
+void ModuleDumper::DumpState() const {
+  for (auto it = module_registry_.start_order_.rbegin(); it != module_registry_.start_order_.rend(); it++) {
+    auto instance = module_registry_.started_modules_.find(*it);
+    ASSERT(instance != module_registry_.started_modules_.end());
+    std::unique_ptr<google::protobuf::Message> message = instance->second->DumpState();
+    if (message == nullptr) {
+      continue;
+    }
+    // TODO(cmanton) Process module message into master proto
+  }
+}
+
 }  // namespace bluetooth
