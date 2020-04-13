@@ -1,5 +1,6 @@
 cc_defaults {
     name: "gd_defaults",
+    include_dirs: ["external/protobuf/src"],
     target: {
         android: {
             test_config_template: "AndroidTestTemplate.xml",
