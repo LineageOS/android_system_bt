@@ -100,13 +100,16 @@ class DualL2capTest(GdBaseTestClass):
             psm=psm, scid=our_scid)
         dut_channel = dut_channel_future.get_channel()
 
-        assertThat(self.cert_l2cap.get_control_channel()).emits(
-            L2capMatchers.ConfigurationResponse(),
-            L2capMatchers.ConfigurationRequest()).inAnyOrder()
+        cert_channel.verify_configuration_request_and_respond()
+        cert_channel.send_configure_request([])
+        cert_channel.verify_configuration_response()
 
         return (dut_channel, cert_channel)
 
-    def _open_unvalidated_channel(self, signal_id=1, scid=0x0101, psm=0x33):
+    def _open_unconfigured_channel_from_cert(self,
+                                             signal_id=1,
+                                             scid=0x0101,
+                                             psm=0x33):
 
         dut_channel = self.dut_l2cap.register_dynamic_channel(psm)
         cert_channel = self.cert_l2cap.open_channel(signal_id, psm, scid)
@@ -114,13 +117,13 @@ class DualL2capTest(GdBaseTestClass):
         return (dut_channel, cert_channel)
 
     def _open_channel_from_cert(self, signal_id=1, scid=0x0101, psm=0x33):
-        result = self._open_unvalidated_channel(signal_id, scid, psm)
+        (dut_channel, cert_channel) = self._open_unconfigured_channel_from_cert(
+            signal_id, scid, psm)
+        cert_channel.verify_configuration_request_and_respond()
+        cert_channel.send_configure_request([])
+        cert_channel.verify_configuration_response()
 
-        assertThat(self.cert_l2cap.get_control_channel()).emits(
-            L2capMatchers.ConfigurationResponse(),
-            L2capMatchers.ConfigurationRequest()).inAnyOrder()
-
-        return result
+        return (dut_channel, cert_channel)
 
     def _open_le_coc_from_cert(self,
                                signal_id=1,
