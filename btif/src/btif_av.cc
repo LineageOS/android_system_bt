@@ -1046,12 +1046,18 @@ BtifAvPeer* BtifAvSource::FindOrCreatePeer(const RawAddress& peer_address,
         __PRETTY_FUNCTION__, peer_address.ToString().c_str());
     return nullptr;
   }
+
   // Get the BTA Handle (if known)
   if (bta_handle == kBtaHandleUnknown) {
     auto it = peer_id2bta_handle_.find(peer_id);
-    if (it != peer_id2bta_handle_.end()) {
-      bta_handle = it->second;
+    if (it == peer_id2bta_handle_.end() || it->second == kBtaHandleUnknown) {
+      BTIF_TRACE_ERROR(
+          "%s: Cannot create peer for peer_address=%s : "
+          "cannot convert Peer ID=%d to unique BTA Handle",
+          __PRETTY_FUNCTION__, peer_address.ToString().c_str(), peer_id);
+      return nullptr;
     }
+    bta_handle = it->second;
   }
 
   LOG_INFO(LOG_TAG,
@@ -1140,7 +1146,18 @@ void BtifAvSource::BtaHandleRegistered(uint8_t peer_id,
 
   // Set the BTA Handle for the Peer (if exists)
   BtifAvPeer* peer = FindPeerByPeerId(peer_id);
-  if (peer != nullptr) {
+  if (peer != nullptr && peer->BtaHandle() != bta_handle) {
+    if (peer->BtaHandle() == kBtaHandleUnknown) {
+      BTIF_TRACE_EVENT(
+          "%s: Assign peer: peer_address=%s bta_handle=0x%x peer_id=%d",
+          __PRETTY_FUNCTION__, peer->PeerAddress().ToString().c_str(),
+          bta_handle, peer_id);
+    } else {
+      BTIF_TRACE_WARNING(
+          "%s: Correct peer: peer_address=%s bta_handle=0x%x->0x%x peer_id=%d",
+          __PRETTY_FUNCTION__, peer->PeerAddress().ToString().c_str(),
+          peer->BtaHandle(), bta_handle, peer_id);
+    }
     peer->SetBtaHandle(bta_handle);
   }
 }
@@ -1237,9 +1254,14 @@ BtifAvPeer* BtifAvSink::FindOrCreatePeer(const RawAddress& peer_address,
   // Get the BTA Handle (if known)
   if (bta_handle == kBtaHandleUnknown) {
     auto it = peer_id2bta_handle_.find(peer_id);
-    if (it != peer_id2bta_handle_.end()) {
-      bta_handle = it->second;
+    if (it == peer_id2bta_handle_.end() || it->second == kBtaHandleUnknown) {
+      BTIF_TRACE_ERROR(
+          "%s: Cannot create peer for peer_address=%s : "
+          "cannot convert Peer ID=%d to unique BTA Handle",
+          __PRETTY_FUNCTION__, peer_address.ToString().c_str(), peer_id);
+      return nullptr;
     }
+    bta_handle = it->second;
   }
 
   LOG_INFO(LOG_TAG,
@@ -1330,7 +1352,18 @@ void BtifAvSink::BtaHandleRegistered(uint8_t peer_id, tBTA_AV_HNDL bta_handle) {
 
   // Set the BTA Handle for the Peer (if exists)
   BtifAvPeer* peer = FindPeerByPeerId(peer_id);
-  if (peer != nullptr) {
+  if (peer != nullptr && peer->BtaHandle() != bta_handle) {
+    if (peer->BtaHandle() == kBtaHandleUnknown) {
+      BTIF_TRACE_EVENT(
+          "%s: Assign peer: peer_address=%s bta_handle=0x%x peer_id=%d",
+          __PRETTY_FUNCTION__, peer->PeerAddress().ToString().c_str(),
+          bta_handle, peer_id);
+    } else {
+      BTIF_TRACE_WARNING(
+          "%s: Correct peer: peer_address=%s bta_handle=0x%x->0x%x peer_id=%d",
+          __PRETTY_FUNCTION__, peer->PeerAddress().ToString().c_str(),
+          peer->BtaHandle(), bta_handle, peer_id);
+    }
     peer->SetBtaHandle(bta_handle);
   }
 }
