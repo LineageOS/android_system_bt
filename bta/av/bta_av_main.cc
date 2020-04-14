@@ -218,6 +218,30 @@ static const char* bta_av_st_code(uint8_t state);
  *
  ******************************************************************************/
 static void bta_av_api_enable(tBTA_AV_DATA* p_data) {
+  if (bta_av_cb.disabling) {
+    APPL_TRACE_WARNING("%s: previous (reg_audio=%#x) is still disabling",
+                       __func__, bta_av_cb.reg_audio);
+    if (bta_av_cb.sdp_a2dp_handle) {
+      SDP_DeleteRecord(bta_av_cb.sdp_a2dp_handle);
+      bta_sys_remove_uuid(UUID_SERVCLASS_AUDIO_SOURCE);
+    }
+#if (BTA_AV_SINK_INCLUDED == TRUE)
+    if (bta_av_cb.sdp_a2dp_snk_handle) {
+      SDP_DeleteRecord(bta_av_cb.sdp_a2dp_snk_handle);
+      bta_sys_remove_uuid(UUID_SERVCLASS_AUDIO_SINK);
+    }
+#endif
+#if (BTA_AR_INCLUDED == TRUE)
+    // deregister from AVDT
+    bta_ar_dereg_avdt(BTA_ID_AV);
+
+    // deregister from AVCT
+    bta_ar_dereg_avrc(UUID_SERVCLASS_AV_REMOTE_CONTROL, BTA_ID_AV);
+    bta_ar_dereg_avrc(UUID_SERVCLASS_AV_REM_CTRL_TARGET, BTA_ID_AV);
+    bta_ar_dereg_avct(BTA_ID_AV);
+#endif
+  }
+
   /* initialize control block */
   memset(&bta_av_cb, 0, sizeof(tBTA_AV_CB));
 
