@@ -16,44 +16,33 @@
 
 #pragma once
 
-#include "common/callback.h"
+#include "hci/command_interface.h"
 #include "hci/hci_packets.h"
-#include "os/utils.h"
 
 namespace bluetooth {
 namespace hci {
 
-class SecurityInterface {
- public:
-  SecurityInterface() = default;
-  virtual ~SecurityInterface() = default;
-  DISALLOW_COPY_AND_ASSIGN(SecurityInterface);
-
-  virtual void EnqueueCommand(std::unique_ptr<SecurityCommandBuilder> command,
-                              common::OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler) = 0;
-
-  virtual void EnqueueCommand(std::unique_ptr<SecurityCommandBuilder> command,
-                              common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) = 0;
-
-  static constexpr hci::EventCode SecurityEvents[] = {
-      hci::EventCode::ENCRYPTION_CHANGE,
-      hci::EventCode::CHANGE_CONNECTION_LINK_KEY_COMPLETE,
-      hci::EventCode::MASTER_LINK_KEY_COMPLETE,
-      hci::EventCode::RETURN_LINK_KEYS,
-      hci::EventCode::PIN_CODE_REQUEST,
-      hci::EventCode::LINK_KEY_REQUEST,
-      hci::EventCode::LINK_KEY_NOTIFICATION,
-      hci::EventCode::ENCRYPTION_KEY_REFRESH_COMPLETE,
-      hci::EventCode::IO_CAPABILITY_REQUEST,
-      hci::EventCode::IO_CAPABILITY_RESPONSE,
-      hci::EventCode::REMOTE_OOB_DATA_REQUEST,
-      hci::EventCode::SIMPLE_PAIRING_COMPLETE,
-      hci::EventCode::USER_PASSKEY_NOTIFICATION,
-      hci::EventCode::KEYPRESS_NOTIFICATION,
-      hci::EventCode::USER_CONFIRMATION_REQUEST,
-      hci::EventCode::USER_PASSKEY_REQUEST,
-      hci::EventCode::REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION,
-  };
+constexpr hci::EventCode SecurityEvents[] = {
+    hci::EventCode::ENCRYPTION_CHANGE,
+    hci::EventCode::CHANGE_CONNECTION_LINK_KEY_COMPLETE,
+    hci::EventCode::MASTER_LINK_KEY_COMPLETE,
+    hci::EventCode::RETURN_LINK_KEYS,
+    hci::EventCode::PIN_CODE_REQUEST,
+    hci::EventCode::LINK_KEY_REQUEST,
+    hci::EventCode::LINK_KEY_NOTIFICATION,
+    hci::EventCode::ENCRYPTION_KEY_REFRESH_COMPLETE,
+    hci::EventCode::IO_CAPABILITY_REQUEST,
+    hci::EventCode::IO_CAPABILITY_RESPONSE,
+    hci::EventCode::REMOTE_OOB_DATA_REQUEST,
+    hci::EventCode::SIMPLE_PAIRING_COMPLETE,
+    hci::EventCode::USER_PASSKEY_NOTIFICATION,
+    hci::EventCode::KEYPRESS_NOTIFICATION,
+    hci::EventCode::USER_CONFIRMATION_REQUEST,
+    hci::EventCode::USER_PASSKEY_REQUEST,
+    hci::EventCode::REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION,
 };
+
+typedef CommandInterface<SecurityCommandBuilder> SecurityInterface;
+
 }  // namespace hci
 }  // namespace bluetooth
