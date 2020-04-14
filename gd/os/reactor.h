@@ -69,6 +69,9 @@ class Reactor {
   // Wait for up to timeout milliseconds, and return true if the reactable finished executing.
   bool WaitForUnregisteredReactable(std::chrono::milliseconds timeout);
 
+  // Wait for up to timeout milliseconds, and return true if we reached idle.
+  bool WaitForIdle(std::chrono::milliseconds timeout);
+
   // Modify the registration for a reactable with given reactable
   void ModifyRegistration(Reactable* reactable, Closure on_read_ready, Closure on_write_ready);
 
@@ -79,6 +82,7 @@ class Reactor {
   std::atomic<bool> is_running_;
   std::list<Reactable*> invalidation_list_;
   std::shared_ptr<std::future<void>> executing_reactable_finished_;
+  std::shared_ptr<std::promise<void>> idle_promise_;
 };
 
 }  // namespace os
