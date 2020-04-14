@@ -21,6 +21,7 @@
 #include <unistd.h>
 
 #include "common/bind.h"
+#include "os/linux_generic/linux.h"
 #include "os/log.h"
 #include "os/utils.h"
 
@@ -33,7 +34,7 @@
 namespace bluetooth {
 namespace os {
 
-RepeatingAlarm::RepeatingAlarm(Handler* handler) : handler_(handler), fd_(timerfd_create(ALARM_CLOCK, 0)) {
+RepeatingAlarm::RepeatingAlarm(Handler* handler) : handler_(handler), fd_(TIMERFD_CREATE(ALARM_CLOCK, 0)) {
   ASSERT(fd_ != -1);
 
   token_ = handler_->thread_->GetReactor()->Register(
@@ -44,7 +45,7 @@ RepeatingAlarm::~RepeatingAlarm() {
   handler_->thread_->GetReactor()->Unregister(token_);
 
   int close_status;
-  RUN_NO_INTR(close_status = close(fd_));
+  RUN_NO_INTR(close_status = TIMERFD_CLOSE(fd_));
   ASSERT(close_status != -1);
 }
 
@@ -55,7 +56,7 @@ void RepeatingAlarm::Schedule(Closure task, std::chrono::milliseconds period) {
     {period_ms / 1000, period_ms % 1000 * 1000000},
     {period_ms / 1000, period_ms % 1000 * 1000000}
   };
-  int result = timerfd_settime(fd_, 0, &timer_itimerspec, nullptr);
+  int result = TIMERFD_SETTIME(fd_, 0, &timer_itimerspec, nullptr);
   ASSERT(result == 0);
 
   task_ = std::move(task);
@@ -64,7 +65,7 @@ void RepeatingAlarm::Schedule(Closure task, std::chrono::milliseconds period) {
 void RepeatingAlarm::Cancel() {
   std::lock_guard<std::mutex> lock(mutex_);
   itimerspec disarm_itimerspec{/* disarm timer */};
-  int result = timerfd_settime(fd_, 0, &disarm_itimerspec, nullptr);
+  int result = TIMERFD_SETTIME(fd_, 0, &disarm_itimerspec, nullptr);
   ASSERT(result == 0);
 }
 
