@@ -26,6 +26,7 @@ import sys
 
 install_requires = [
     'grpcio',
+    'psutil',
 ]
 
 host_executables = [
