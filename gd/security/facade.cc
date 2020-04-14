@@ -92,6 +92,82 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     return bond_events_.RunLoop(context, writer);
   }
 
+  ::grpc::Status SetIoCapabilities(::grpc::ServerContext* context, const IoCapabilitiesMessage* request,
+                                   ::google::protobuf::Empty* response) override {
+    hci::IoCapability io_capability = hci::IoCapability::NO_INPUT_NO_OUTPUT;
+    switch (request->capability()) {
+      case IoCapabilities::DISPLAY_ONLY:
+        io_capability = hci::IoCapability::DISPLAY_ONLY;
+        break;
+      case IoCapabilities::DISPLAY_YES_NO_IO_CAP:
+        io_capability = hci::IoCapability::DISPLAY_YES_NO;
+        break;
+      case IoCapabilities::KEYBOARD_ONLY:
+        io_capability = hci::IoCapability::KEYBOARD_ONLY;
+        break;
+      case IoCapabilities::NO_INPUT_NO_OUTPUT:
+        io_capability = hci::IoCapability::NO_INPUT_NO_OUTPUT;
+        break;
+      default:
+        LOG_ERROR("Unknown IoCapability %d", static_cast<int>(request->capability()));
+    }
+    security_module_->GetFacadeConfigurationApi()->SetIoCapabilities(io_capability);
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status SetAuthenticationRequirements(::grpc::ServerContext* context,
+                                               const AuthenticationRequirementsMessage* request,
+                                               ::google::protobuf::Empty* response) override {
+    hci::AuthenticationRequirements authentication_requirements = hci::AuthenticationRequirements::NO_BONDING;
+    switch (request->requirement()) {
+      case AuthenticationRequirements::NO_BONDING:
+        authentication_requirements = hci::AuthenticationRequirements::NO_BONDING;
+        break;
+      case AuthenticationRequirements::NO_BONDING_MITM_PROTECTION:
+        authentication_requirements = hci::AuthenticationRequirements::NO_BONDING_MITM_PROTECTION;
+        break;
+      case AuthenticationRequirements::DEDICATED_BONDING:
+        authentication_requirements = hci::AuthenticationRequirements::DEDICATED_BONDING;
+        break;
+      case AuthenticationRequirements::DEDICATED_BONDING_MITM_PROTECTION:
+        authentication_requirements = hci::AuthenticationRequirements::DEDICATED_BONDING_MITM_PROTECTION;
+        break;
+      case AuthenticationRequirements::GENERAL_BONDING:
+        authentication_requirements = hci::AuthenticationRequirements::GENERAL_BONDING;
+        break;
+      case AuthenticationRequirements::GENERAL_BONDING_MITM_PROTECTION:
+        authentication_requirements = hci::AuthenticationRequirements::GENERAL_BONDING_MITM_PROTECTION;
+        break;
+      default:
+        LOG_ERROR("Unknown Authentication Requirements %d", static_cast<int>(request->requirement()));
+    }
+    security_module_->GetFacadeConfigurationApi()->SetAuthenticationRequirements(authentication_requirements);
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status SetOobDataPresent(::grpc::ServerContext* context, const OobDataMessage* request,
+                                   ::google::protobuf::Empty* response) override {
+    hci::OobDataPresent data_present = hci::OobDataPresent::NOT_PRESENT;
+    switch (request->data_present()) {
+      case OobDataPresent::NOT_PRESENT:
+        data_present = hci::OobDataPresent::NOT_PRESENT;
+        break;
+      case OobDataPresent::P192_PRESENT:
+        data_present = hci::OobDataPresent::P_192_PRESENT;
+        break;
+      case OobDataPresent::P256_PRESENT:
+        data_present = hci::OobDataPresent::P_256_PRESENT;
+        break;
+      case OobDataPresent::P192_AND_256_PRESENT:
+        data_present = hci::OobDataPresent::P_192_AND_256_PRESENT;
+        break;
+      default:
+        LOG_ERROR("Unknown oob data present %d", static_cast<int>(data_present()));
+    }
+    security_module_->GetFacadeConfigurationApi()->SetOobData(data_present);
+    return ::grpc::Status::OK;
+  }
+
   void DisplayPairingPrompt(const bluetooth::hci::AddressWithType& peer, std::string name) {
     LOG_INFO("%s", peer.ToString().c_str());
     UiMsg display_yes_no;
