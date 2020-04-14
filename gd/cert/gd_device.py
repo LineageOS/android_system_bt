@@ -35,6 +35,7 @@ from google.protobuf import empty_pb2 as empty_proto
 
 from cert.os_utils import get_gd_root
 from cert.os_utils import is_subprocess_alive
+from cert.os_utils import make_ports_available
 from facade import rootservice_pb2_grpc as facade_rootservice_pb2_grpc
 from hal import facade_pb2_grpc as hal_facade_pb2_grpc
 from hci.facade import facade_pb2_grpc as hci_facade_pb2_grpc
@@ -174,6 +175,11 @@ class GdDeviceBase(ABC):
         - Should be executed after children classes' setup() methods
         :return:
         """
+        # Ensure signal port is available
+        # signal port is the only port that always listen on the host machine
+        asserts.assert_true(
+            make_ports_available([self.signal_port]),
+            "[%s] Failed to make signal port available" % self.label)
         # Start backing process
         with socket.socket(socket.AF_INET, socket.SOCK_STREAM) as signal_socket:
             # Setup signaling socket
@@ -289,6 +295,16 @@ class GdHostOnlyDevice(GdDeviceBase):
             self.log_path_base, "%s_%s_backing_coverage.profraw" %
             (self.type_identifier, self.label))
 
+    def setup(self):
+        # Ensure ports are available
+        # Only check on host only test, for Android devices, these ports will
+        # be opened on Android device and host machine ports will be occupied
+        # by sshd or adb forwarding
+        asserts.assert_true(
+            make_ports_available((self.grpc_port, self.grpc_root_server_port)),
+            "[%s] Failed to make backing process ports available" % self.label)
+        super().setup()
+
 
 class GdAndroidDevice(GdDeviceBase):
     """Real Android device where the backing process is running on it
@@ -313,10 +329,16 @@ class GdAndroidDevice(GdDeviceBase):
             msg="device %s cannot run as root after enabling verity" %
             self.serial_number)
         self.adb.shell("date " + time.strftime("%m%d%H%M%Y.%S"))
+        # Try freeing ports and ignore results
+        self.adb.remove_tcp_forward(self.grpc_port)
+        self.adb.remove_tcp_forward(self.grpc_root_server_port)
+        self.adb.reverse("--remove tcp:%d" % self.signal_port)
+        # Set up port forwarding or reverse or die
         self.tcp_forward_or_die(self.grpc_port, self.grpc_port)
         self.tcp_forward_or_die(self.grpc_root_server_port,
                                 self.grpc_root_server_port)
         self.tcp_reverse_or_die(self.signal_port, self.signal_port)
+        # Puh test binaries
         self.push_or_die(
             os.path.join(get_gd_root(), "target",
                          "bluetooth_stack_with_facade"), "system/bin")
@@ -374,11 +396,12 @@ class GdAndroidDevice(GdDeviceBase):
                 (src_file_path, dst_file_path, e),
                 extras=e)
 
-    def tcp_forward_or_die(self, host_port, device_port):
+    def tcp_forward_or_die(self, host_port, device_port, num_retry=1):
         """
         Forward a TCP port from host to device or fail
         :param host_port: host port, int, 0 for adb to assign one
         :param device_port: device port, int
+        :param num_retry: number of times to reboot and retry this before dying
         :return: host port int
         """
         error_or_port = self.adb.tcp_forward(host_port, device_port)
@@ -386,16 +409,26 @@ class GdAndroidDevice(GdDeviceBase):
             logging.debug("host port %d was already forwarded" % host_port)
             return host_port
         if not isinstance(error_or_port, int):
+            if num_retry > 0:
+                # If requested, reboot an retry
+                num_retry -= 1
+                logging.warning("[%s] Failed to TCP forward host port %d to "
+                                "device port %d, num_retries left is %d" %
+                                (self.label, host_port, device_port, num_retry))
+                self.reboot()
+                return self.tcp_forward_or_die(
+                    host_port, device_port, num_retry=num_retry)
             asserts.fail(
                 'Unable to forward host port %d to device port %d, error %s' %
                 (host_port, device_port, error_or_port))
         return error_or_port
 
-    def tcp_reverse_or_die(self, device_port, host_port):
+    def tcp_reverse_or_die(self, device_port, host_port, num_retry=1):
         """
         Forward a TCP port from device to host or fail
         :param device_port: device port, int, 0 for adb to assign one
         :param host_port: host port, int
+        :param num_retry: number of times to reboot and retry this before dying
         :return: device port int
         """
         error_or_port = self.adb.reverse(
@@ -406,6 +439,15 @@ class GdAndroidDevice(GdDeviceBase):
         try:
             error_or_port = int(error_or_port)
         except ValueError:
+            if num_retry > 0:
+                # If requested, reboot an retry
+                num_retry -= 1
+                logging.warning("[%s] Failed to TCP reverse device port %d to "
+                                "host port %d, num_retries left is %d" %
+                                (self.label, device_port, host_port, num_retry))
+                self.reboot()
+                return self.tcp_reverse_or_die(
+                    device_port, host_port, num_retry=num_retry)
             asserts.fail(
                 'Unable to reverse device port %d to host port %d, error %s' %
                 (device_port, host_port, error_or_port))

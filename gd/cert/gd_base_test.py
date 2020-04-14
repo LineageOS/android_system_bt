@@ -23,7 +23,10 @@ import subprocess
 from acts import asserts
 from acts.context import get_current_context
 from acts.base_test import BaseTestClass
-from cert.os_utils import get_gd_root, is_subprocess_alive
+
+from cert.os_utils import get_gd_root
+from cert.os_utils import is_subprocess_alive
+from cert.os_utils import make_ports_available
 from facade import rootservice_pb2 as facade_rootservice
 
 
@@ -40,18 +43,35 @@ class GdBaseTestClass(BaseTestClass):
         self.rootcanal_running = False
         if 'rootcanal' in self.controller_configs:
             self.rootcanal_running = True
+            # Get root canal binary
+            rootcanal = os.path.join(get_gd_root(), "root-canal")
+            asserts.assert_true(
+                os.path.isfile(rootcanal),
+                "Root canal does not exist at %s" % rootcanal)
+
+            # Get root canal log
             rootcanal_logpath = os.path.join(self.log_path_base,
                                              'rootcanal_logs.txt')
             self.rootcanal_logs = open(rootcanal_logpath, 'w')
+
+            # Make sure ports are available
             rootcanal_config = self.controller_configs['rootcanal']
-            rootcanal_hci_port = str(rootcanal_config.get("hci_port", "6402"))
-            rootcanal = os.path.join(get_gd_root(), "root-canal")
+            rootcanal_test_port = int(rootcanal_config.get("test_port", "6401"))
+            rootcanal_hci_port = int(rootcanal_config.get("hci_port", "6402"))
+            rootcanal_link_layer_port = int(
+                rootcanal_config.get("link_layer_port", "6403"))
+            asserts.assert_true(
+                make_ports_available((rootcanal_test_port, rootcanal_hci_port,
+                                      rootcanal_link_layer_port)),
+                "Failed to make root canal ports available")
+
+            # Start root canal process
             self.rootcanal_process = subprocess.Popen(
                 [
                     rootcanal,
-                    str(rootcanal_config.get("test_port", "6401")),
-                    rootcanal_hci_port,
-                    str(rootcanal_config.get("link_layer_port", "6403"))
+                    str(rootcanal_test_port),
+                    str(rootcanal_hci_port),
+                    str(rootcanal_link_layer_port)
                 ],
                 cwd=get_gd_root(),
                 env=os.environ.copy(),
@@ -63,9 +83,10 @@ class GdBaseTestClass(BaseTestClass):
             asserts.assert_true(
                 is_subprocess_alive(self.rootcanal_process),
                 msg="root-canal stopped immediately after running")
+
             # Modify the device config to include the correct root-canal port
             for gd_device_config in self.controller_configs.get("GdDevice"):
-                gd_device_config["rootcanal_port"] = rootcanal_hci_port
+                gd_device_config["rootcanal_port"] = str(rootcanal_hci_port)
 
         # Parse and construct GD device objects
         self.register_controller(
