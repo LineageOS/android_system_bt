@@ -18,6 +18,8 @@ from abc import ABC
 import inspect
 import logging
 import os
+import pathlib
+import shutil
 import signal
 import socket
 import subprocess
@@ -66,7 +68,8 @@ def destroy(devices):
         try:
             device.teardown()
         except:
-            device.log.exception("Failed to clean up properly.")
+            logging.exception(
+                "[%s] Failed to clean up properly due to" % device.label)
 
 
 def get_info(devices):
@@ -160,6 +163,8 @@ class GdDeviceBase(ABC):
         self.label = label
         # logging.log_path only exists when this is used in an ACTS test run.
         self.log_path_base = get_current_context().get_full_output_path()
+        self.test_runner_base_path = \
+            get_current_context().get_base_output_path()
         self.backing_process_log_path = os.path.join(
             self.log_path_base,
             '%s_%s_backing_logs.txt' % (self.type_identifier, self.label))
@@ -257,8 +262,8 @@ class GdDeviceBase(ABC):
                 timeout=self.WAIT_CHANNEL_READY_TIMEOUT_SECONDS)
         except subprocess.TimeoutExpired:
             logging.error(
-                "Failed to interrupt backing process via SIGINT, sending SIGKILL"
-            )
+                "[%s] Failed to interrupt backing process via SIGINT, sending SIGKILL"
+                % self.label)
             stop_signal = signal.SIGKILL
             self.backing_process.kill()
             try:
@@ -277,7 +282,7 @@ class GdDeviceBase(ABC):
         try:
             future.result(timeout=self.WAIT_CHANNEL_READY_TIMEOUT_SECONDS)
         except grpc.FutureTimeoutError:
-            asserts.fail("wait channel ready timeout")
+            asserts.fail("[%s] wait channel ready timeout" % self.label)
 
 
 class GdHostOnlyDevice(GdDeviceBase):
@@ -291,9 +296,107 @@ class GdHostOnlyDevice(GdDeviceBase):
         super().__init__(grpc_port, grpc_root_server_port, signal_port, cmd,
                          label, ACTS_CONTROLLER_CONFIG_NAME, name)
         # Enable LLVM code coverage output for host only tests
-        self.environment["LLVM_PROFILE_FILE"] = os.path.join(
-            self.log_path_base, "%s_%s_backing_coverage.profraw" %
+        self.backing_process_profraw_path = pathlib.Path(
+            self.log_path_base).joinpath("%s_%s_backing_coverage.profraw" %
+                                         (self.type_identifier, self.label))
+        self.environment["LLVM_PROFILE_FILE"] = str(
+            self.backing_process_profraw_path)
+
+    def teardown(self):
+        super().teardown()
+        self.generate_coverage_report()
+
+    def generate_coverage_report(self):
+        if not self.backing_process_profraw_path.is_file():
+            logging.info(
+                "[%s] Skip coverage report as there is no profraw file at %s" %
+                (self.label, str(self.backing_process_profraw_path)))
+            return
+        try:
+            if self.backing_process_profraw_path.stat().st_size <= 0:
+                logging.info(
+                    "[%s] Skip coverage report as profraw file is empty at %s" %
+                    (self.label, str(self.backing_process_profraw_path)))
+                return
+        except OSError:
+            logging.info(
+                "[%s] Skip coverage report as profraw file is inaccessible at %s"
+                % (self.label, str(self.backing_process_profraw_path)))
+            return
+        llvm_binutils = pathlib.Path(
+            get_gd_root()).joinpath("llvm_binutils").joinpath("bin")
+        llvm_profdata = llvm_binutils.joinpath("llvm-profdata")
+        if not llvm_profdata.is_file():
+            logging.info(
+                "[%s] Skip coverage report as llvm-profdata is not found at %s"
+                % (self.label, str(llvm_profdata)))
+            return
+        llvm_cov = llvm_binutils.joinpath("llvm-cov")
+        if not llvm_cov.is_file():
+            logging.info(
+                "[%s] Skip coverage report as llvm-cov is not found at %s" %
+                (self.label, str(llvm_cov)))
+            return
+        logging.info("[%s] Generating coverage report" % self.label)
+        profdata_path = pathlib.Path(self.test_runner_base_path).joinpath(
+            "%s_%s_backing_process_coverage.profdata" % (self.type_identifier,
+                                                         self.label))
+        profdata_path_tmp = pathlib.Path(self.test_runner_base_path).joinpath(
+            "%s_%s_backing_process_coverage_tmp.profdata" %
             (self.type_identifier, self.label))
+        # Merge with existing profdata if possible
+        profdata_cmd = [
+            str(llvm_profdata), "merge", "-sparse",
+            str(self.backing_process_profraw_path)
+        ]
+        if profdata_path.is_file():
+            profdata_cmd.append(str(profdata_path))
+        profdata_cmd += ["-o", str(profdata_path_tmp)]
+        result = subprocess.run(
+            profdata_cmd, stdout=subprocess.PIPE, stderr=subprocess.STDOUT)
+        if result.returncode != 0:
+            logging.warning("[%s] Failed to index profdata, cmd result: %r" %
+                            (self.label, result))
+            profdata_path.unlink(missing_ok=True)
+            return
+        shutil.move(profdata_path_tmp, profdata_path)
+        coverage_result_path = pathlib.Path(
+            self.test_runner_base_path).joinpath(
+                "%s_%s_backing_process_coverage.json" % (self.type_identifier,
+                                                         self.label))
+        with coverage_result_path.open("w") as coverage_result_file:
+            result = subprocess.run(
+                [
+                    str(llvm_cov), "export", "--format=text", "--instr-profile",
+                    profdata_path, self.cmd[0]
+                ],
+                stderr=subprocess.PIPE,
+                stdout=coverage_result_file,
+                cwd=os.path.join(get_gd_root()))
+        if result.returncode != 0:
+            logging.warning(
+                "[%s] Failed to generated coverage report, cmd result: %r" %
+                (self.label, result))
+            coverage_result_path.unlink(missing_ok=True)
+            return
+        coverage_summary_path = pathlib.Path(
+            self.test_runner_base_path).joinpath(
+                "%s_%s_backing_process_coverage_summary.txt" %
+                (self.type_identifier, self.label))
+        with coverage_summary_path.open("w") as coverage_summary_file:
+            result = subprocess.run(
+                [
+                    llvm_cov, "report", "--instr-profile", profdata_path,
+                    self.cmd[0]
+                ],
+                stderr=subprocess.PIPE,
+                stdout=coverage_summary_file,
+                cwd=os.path.join(get_gd_root()))
+        if result.returncode != 0:
+            logging.warning(
+                "[%s] Failed to generated coverage summary, cmd result: %r" %
+                (self.label, result))
+            coverage_summary_path.unlink(missing_ok=True)
 
     def setup(self):
         # Ensure ports are available
