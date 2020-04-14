@@ -18,6 +18,7 @@
 #include <memory>
 
 #include "module.h"
+#include "security/facade_configuration_api.h"
 #include "security/security_manager.h"
 
 namespace bluetooth {
@@ -32,6 +33,13 @@ class SecurityModule : public bluetooth::Module {
    * Get the api to the SecurityManager
    */
   std::unique_ptr<SecurityManager> GetSecurityManager();
+
+  /**
+   * Facade configuration API.
+   *
+   * <p> This allows you to set thins like IO Capabilities, Authentication Requirements, and OOB Data.
+   */
+  std::unique_ptr<FacadeConfigurationApi> GetFacadeConfigurationApi();
 
   static const ModuleFactory Factory;
 
