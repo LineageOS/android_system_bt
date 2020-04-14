@@ -40,9 +40,10 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   moduleRegistry.InjectTestModule(&HciHal::Factory, fuzzHal);
   moduleRegistry.Start<DevNullHci>(&moduleRegistry.GetTestThread());
+  DevNullHci* devNullHci = moduleRegistry.GetModuleUnderTest<DevNullHci>();
 
   while (dataProvider.remaining_bytes() > 0) {
-    const uint8_t action = dataProvider.ConsumeIntegralInRange(0, 4);
+    const uint8_t action = dataProvider.ConsumeIntegralInRange(0, 5);
     switch (action) {
       case 1:
         fake_timerfd_advance(dataProvider.ConsumeIntegral<uint64_t>());
@@ -55,6 +56,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
         break;
       case 4:
         fuzzHal->injectScoData(dataProvider.ConsumeBytes<uint8_t>(dataProvider.ConsumeIntegral<size_t>()));
+        break;
+      case 5:
+        devNullHci->injectAclData(dataProvider.ConsumeBytes<uint8_t>(dataProvider.ConsumeIntegral<size_t>()));
         break;
     }
   }
