@@ -110,6 +110,9 @@ void bta_ar_reg_avdt(AvdtpRcb* p_reg, tAVDT_CTRL_CBACK* p_cback,
   if (mask) {
     if (bta_ar_cb.avdt_registered == 0) {
       AVDT_Register(p_reg, bta_ar_avdt_cback);
+    } else {
+      APPL_TRACE_WARNING("%s: sys_id:%d doesn't register again (registered:%d)",
+                         __func__, sys_id, bta_ar_cb.avdt_registered);
     }
     bta_ar_cb.avdt_registered |= mask;
   }

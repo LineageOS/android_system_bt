@@ -203,7 +203,7 @@ const tBTA_AV_NSM_ACT bta_av_nsm_act[] = {
  ****************************************************************************/
 
 /* AV control block */
-tBTA_AV_CB bta_av_cb;
+tBTA_AV_CB bta_av_cb = {};
 
 static const char* bta_av_st_code(uint8_t state);
 
@@ -218,6 +218,39 @@ static const char* bta_av_st_code(uint8_t state);
  *
  ******************************************************************************/
 static void bta_av_api_enable(tBTA_AV_DATA* p_data) {
+  if (bta_av_cb.disabling) {
+    APPL_TRACE_WARNING(
+        "%s: previous (reg_audio=%#x) is still disabling (attempts=%d)",
+        __func__, bta_av_cb.reg_audio, bta_av_cb.enabling_attempts);
+    if (++bta_av_cb.enabling_attempts <= kEnablingAttemptsCountMaximum) {
+      tBTA_AV_API_ENABLE* p_buf =
+          (tBTA_AV_API_ENABLE*)osi_malloc(sizeof(tBTA_AV_API_ENABLE));
+      memcpy(p_buf, &p_data->api_enable, sizeof(tBTA_AV_API_ENABLE));
+      bta_sys_sendmsg_delayed(p_buf, base::TimeDelta::FromMilliseconds(
+                                         kEnablingAttemptsIntervalMs));
+      return;
+    }
+    if (bta_av_cb.sdp_a2dp_handle) {
+      SDP_DeleteRecord(bta_av_cb.sdp_a2dp_handle);
+      bta_sys_remove_uuid(UUID_SERVCLASS_AUDIO_SOURCE);
+    }
+#if (BTA_AV_SINK_INCLUDED == TRUE)
+    if (bta_av_cb.sdp_a2dp_snk_handle) {
+      SDP_DeleteRecord(bta_av_cb.sdp_a2dp_snk_handle);
+      bta_sys_remove_uuid(UUID_SERVCLASS_AUDIO_SINK);
+    }
+#endif
+#if (BTA_AR_INCLUDED == TRUE)
+    // deregister from AVDT
+    bta_ar_dereg_avdt(BTA_ID_AV);
+
+    // deregister from AVCT
+    bta_ar_dereg_avrc(UUID_SERVCLASS_AV_REMOTE_CONTROL, BTA_ID_AV);
+    bta_ar_dereg_avrc(UUID_SERVCLASS_AV_REM_CTRL_TARGET, BTA_ID_AV);
+    bta_ar_dereg_avct(BTA_ID_AV);
+#endif
+  }
+
   /* initialize control block */
   memset(&bta_av_cb, 0, sizeof(tBTA_AV_CB));
 
@@ -471,6 +504,21 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
   char* p_service_name;
   tBTA_UTL_COD cod;
 
+  if (bta_av_cb.disabling ||
+      (bta_av_cb.features == 0 && bta_av_cb.sec_mask == 0)) {
+    APPL_TRACE_WARNING(
+        "%s: AV instance (features=%#x, sec_mask=%#x, reg_audio=%#x) is not "
+        "ready for app_id %d",
+        __func__, bta_av_cb.features, bta_av_cb.sec_mask, bta_av_cb.reg_audio,
+        p_data->api_reg.app_id);
+    tBTA_AV_API_REG* p_buf =
+        (tBTA_AV_API_REG*)osi_malloc(sizeof(tBTA_AV_API_REG));
+    memcpy(p_buf, &p_data->api_reg, sizeof(tBTA_AV_API_REG));
+    bta_sys_sendmsg_delayed(
+        p_buf, base::TimeDelta::FromMilliseconds(kEnablingAttemptsIntervalMs));
+    return;
+  }
+
   avdtp_stream_config.Reset();
 
   registr.status = BTA_AV_FAIL_RESOURCES;
@@ -640,6 +688,9 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
       }
       if (AVDT_CreateStream(p_scb->app_id, &p_scb->seps[codec_index].av_handle,
                             avdtp_stream_config) != AVDT_SUCCESS) {
+        APPL_TRACE_WARNING(
+            "%s: bta_handle=0x%x (app_id %d) failed to alloc an SEP index:%d",
+            __func__, p_scb->hndl, p_scb->app_id, codec_index);
         continue;
       }
       /* Save a copy of the codec */
