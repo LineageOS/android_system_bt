@@ -33,8 +33,9 @@ class FuzzHciHal : public HciHal {
   void sendAclData(HciPacket packet) override {}
   void sendScoData(HciPacket packet) override {}
 
-  void injectAcl(std::vector<uint8_t> data);
+  void injectAclData(std::vector<uint8_t> data);
   void injectHciEvent(std::vector<uint8_t> data);
+  void injectScoData(std::vector<uint8_t> data);
 
   std::string ToString() const override {
     return "HciHalFuzz";
