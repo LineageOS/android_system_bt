@@ -203,7 +203,7 @@ const tBTA_AV_NSM_ACT bta_av_nsm_act[] = {
  ****************************************************************************/
 
 /* AV control block */
-tBTA_AV_CB bta_av_cb;
+tBTA_AV_CB bta_av_cb = {};
 
 static const char* bta_av_st_code(uint8_t state);
 
@@ -641,6 +641,9 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
       }
       if (AVDT_CreateStream(p_scb->app_id, &p_scb->seps[codec_index].av_handle,
                             avdtp_stream_config) != AVDT_SUCCESS) {
+        APPL_TRACE_WARNING(
+            "%s: bta_handle=0x%x (app_id %d) failed to alloc an SEP index:%d",
+            __func__, p_scb->hndl, p_scb->app_id, codec_index);
         continue;
       }
       /* Save a copy of the codec */

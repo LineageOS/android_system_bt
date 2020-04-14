@@ -1304,6 +1304,7 @@ void bta_av_conn_chg(tBTA_AV_DATA* p_data) {
  ******************************************************************************/
 void bta_av_disable(tBTA_AV_CB* p_cb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   BT_HDR hdr;
+  bool disabling_in_progress = false;
   uint16_t xx;
 
   p_cb->disabling = true;
@@ -1318,8 +1319,13 @@ void bta_av_disable(tBTA_AV_CB* p_cb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
     if (p_cb->p_scb[xx] != NULL) {
       hdr.layer_specific = xx + 1;
       bta_av_api_deregister((tBTA_AV_DATA*)&hdr);
+      disabling_in_progress = true;
     }
   }
+  // Since All channels are deregistering by API_DEREGISTER, the DEREG_COMP_EVT
+  // would come first before API_DISABLE if there is no connections, and it is
+  // no needed to setup this disabling flag.
+  p_cb->disabling = disabling_in_progress;
 
   alarm_free(p_cb->link_signalling_timer);
   p_cb->link_signalling_timer = NULL;
@@ -2250,9 +2256,9 @@ void bta_av_dereg_comp(tBTA_AV_DATA* p_data) {
                      p_scb->hndl);
     mask = BTA_AV_HNDL_TO_MSK(p_scb->hdi);
     p_cb->reg_audio &= ~mask;
-    if ((p_cb->conn_audio & mask) && bta_av_cb.audio_open_cnt) {
+    if ((p_cb->conn_audio & mask) && p_cb->audio_open_cnt) {
       /* this channel is still marked as open. decrease the count */
-      bta_av_cb.audio_open_cnt--;
+      p_cb->audio_open_cnt--;
     }
     p_cb->conn_audio &= ~mask;
 
@@ -2303,7 +2309,9 @@ void bta_av_dereg_comp(tBTA_AV_DATA* p_data) {
 
     if (p_cb->disabling) {
       p_cb->disabling = false;
-      bta_av_cb.features = 0;
+      // reset enabling parameters
+      p_cb->features = 0;
+      p_cb->sec_mask = 0;
     }
 
     /* Clear the Capturing service class bit */
