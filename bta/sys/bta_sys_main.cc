@@ -532,6 +532,14 @@ void bta_sys_sendmsg(void* p_msg) {
   }
 }
 
+void bta_sys_sendmsg_delayed(void* p_msg, const base::TimeDelta& delay) {
+  if (do_in_main_thread_delayed(
+          FROM_HERE, base::Bind(&bta_sys_event, static_cast<BT_HDR*>(p_msg)),
+          delay) != BT_STATUS_SUCCESS) {
+    LOG(ERROR) << __func__ << ": do_in_main_thread_delayed failed";
+  }
+}
+
 /*******************************************************************************
  *
  * Function         bta_sys_start_timer
