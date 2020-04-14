@@ -79,10 +79,6 @@ void FuzzHciHal::injectAcl(std::vector<uint8_t> data) {
   callbacks_->aclDataReceived(data);
 }
 
-void FuzzHciHal::waitForHandler() {
-  sentinel_work_item_.WaitUntilFinishedOn(GetHandler());
-}
-
 }  // namespace fuzz
 }  // namespace hal
 }  // namespace bluetooth
