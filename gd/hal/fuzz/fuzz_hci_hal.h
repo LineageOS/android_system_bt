@@ -35,7 +35,6 @@ class FuzzHciHal : public HciHal {
 
   void injectAcl(std::vector<uint8_t> data);
   void injectHciEvent(std::vector<uint8_t> data);
-  void waitForHandler();
 
   std::string ToString() const override {
     return "HciHalFuzz";
@@ -48,7 +47,6 @@ class FuzzHciHal : public HciHal {
 
  private:
   HciHalCallbacks* callbacks_;
-  ::bluetooth::fuzz::SentinelWorkItem sentinel_work_item_;
   hci::OpCode waiting_opcode_;
   bool waiting_for_status_;
 };
