@@ -219,8 +219,17 @@ static const char* bta_av_st_code(uint8_t state);
  ******************************************************************************/
 static void bta_av_api_enable(tBTA_AV_DATA* p_data) {
   if (bta_av_cb.disabling) {
-    APPL_TRACE_WARNING("%s: previous (reg_audio=%#x) is still disabling",
-                       __func__, bta_av_cb.reg_audio);
+    APPL_TRACE_WARNING(
+        "%s: previous (reg_audio=%#x) is still disabling (attempts=%d)",
+        __func__, bta_av_cb.reg_audio, bta_av_cb.enabling_attempts);
+    if (++bta_av_cb.enabling_attempts <= kEnablingAttemptsCountMaximum) {
+      tBTA_AV_API_ENABLE* p_buf =
+          (tBTA_AV_API_ENABLE*)osi_malloc(sizeof(tBTA_AV_API_ENABLE));
+      memcpy(p_buf, &p_data->api_enable, sizeof(tBTA_AV_API_ENABLE));
+      bta_sys_sendmsg_delayed(p_buf, base::TimeDelta::FromMilliseconds(
+                                         kEnablingAttemptsIntervalMs));
+      return;
+    }
     if (bta_av_cb.sdp_a2dp_handle) {
       SDP_DeleteRecord(bta_av_cb.sdp_a2dp_handle);
       bta_sys_remove_uuid(UUID_SERVCLASS_AUDIO_SOURCE);
@@ -494,6 +503,21 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
   AvdtpStreamConfig avdtp_stream_config;
   char* p_service_name;
   tBTA_UTL_COD cod;
+
+  if (bta_av_cb.disabling ||
+      (bta_av_cb.features == 0 && bta_av_cb.sec_mask == 0)) {
+    APPL_TRACE_WARNING(
+        "%s: AV instance (features=%#x, sec_mask=%#x, reg_audio=%#x) is not "
+        "ready for app_id %d",
+        __func__, bta_av_cb.features, bta_av_cb.sec_mask, bta_av_cb.reg_audio,
+        p_data->api_reg.app_id);
+    tBTA_AV_API_REG* p_buf =
+        (tBTA_AV_API_REG*)osi_malloc(sizeof(tBTA_AV_API_REG));
+    memcpy(p_buf, &p_data->api_reg, sizeof(tBTA_AV_API_REG));
+    bta_sys_sendmsg_delayed(
+        p_buf, base::TimeDelta::FromMilliseconds(kEnablingAttemptsIntervalMs));
+    return;
+  }
 
   avdtp_stream_config.Reset();
 
