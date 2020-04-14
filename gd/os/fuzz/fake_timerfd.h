@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Android Open Source Project
+ * Copyright 2020 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,17 +16,23 @@
 
 #pragma once
 
-#ifndef EFD_SEMAPHORE
-#define EFD_SEMAPHORE 1
-#endif
+#include <sys/timerfd.h>
+#include <cstdint>
 
-#ifdef FUZZ_TARGET
-#include "os/fuzz/fake_timerfd.h"
-#define TIMERFD_CREATE ::bluetooth::os::fuzz::fake_timerfd_create
-#define TIMERFD_SETTIME ::bluetooth::os::fuzz::fake_timerfd_settime
-#define TIMERFD_CLOSE ::bluetooth::os::fuzz::fake_timerfd_close
-#else
-#define TIMERFD_CREATE timerfd_create
-#define TIMERFD_SETTIME timerfd_settime
-#define TIMERFD_CLOSE close
-#endif
+namespace bluetooth {
+namespace os {
+namespace fuzz {
+
+int fake_timerfd_create(int clockid, int flags);
+
+int fake_timerfd_settime(int fd, int flags, const struct itimerspec* new_value, struct itimerspec* old_value);
+
+int fake_timerfd_close(int fd);
+
+void fake_timerfd_reset();
+
+void fake_timerfd_advance(uint64_t ms);
+
+}  // namespace fuzz
+}  // namespace os
+}  // namespace bluetooth
