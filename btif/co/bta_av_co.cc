@@ -958,8 +958,9 @@ tA2DP_STATUS BtaAvCo::ProcessSourceGetConfig(
       (p_peer->num_sup_sinks != BTA_AV_CO_NUM_ELEMENTS(p_peer->sinks))) {
     return A2DP_FAIL;
   }
-  APPL_TRACE_DEBUG("%s: last Sink codec reached for peer %s", __func__,
-                   p_peer->addr.ToString().c_str());
+  APPL_TRACE_DEBUG("%s: last Sink codec reached for peer %s (local %s)",
+                   __func__, p_peer->addr.ToString().c_str(),
+                   p_peer->acceptor ? "acceptor" : "initiator");
 
   // Select the Source codec
   const BtaAvCoSep* p_sink = nullptr;
@@ -977,6 +978,32 @@ tA2DP_STATUS BtaAvCo::ProcessSourceGetConfig(
       return A2DP_FAIL;
     }
   } else {
+    if (btif_av_peer_prefers_mandatory_codec(p_peer->addr)) {
+      // Apply user preferred codec directly before first codec selected.
+      p_sink = FindPeerSink(p_peer, BTAV_A2DP_CODEC_INDEX_SOURCE_SBC);
+      if (p_sink != nullptr) {
+        APPL_TRACE_API("%s: mandatory codec preferred for peer %s", __func__,
+                       p_peer->addr.ToString().c_str());
+        btav_a2dp_codec_config_t high_priority_mandatory{
+            .codec_type = BTAV_A2DP_CODEC_INDEX_SOURCE_SBC,
+            .codec_priority = BTAV_A2DP_CODEC_PRIORITY_HIGHEST,
+            // Using default settings for those untouched fields
+        };
+        uint8_t result_codec_config[AVDT_CODEC_SIZE];
+        bool restart_input = false;
+        bool restart_output = false;
+        bool config_updated = false;
+        tA2DP_ENCODER_INIT_PEER_PARAMS peer_params;
+        GetPeerEncoderParameters(p_peer->addr, &peer_params);
+        p_peer->GetCodecs()->setCodecUserConfig(
+            high_priority_mandatory, &peer_params, p_sink->codec_caps,
+            result_codec_config, &restart_input, &restart_output,
+            &config_updated);
+      } else {
+        APPL_TRACE_WARNING("%s: mandatory codec not found for peer %s",
+                           __func__, p_peer->addr.ToString().c_str());
+      }
+    }
     p_sink = SelectSourceCodec(p_peer);
     if (p_sink == nullptr) {
       APPL_TRACE_ERROR("%s: cannot set up codec for peer %s", __func__,
