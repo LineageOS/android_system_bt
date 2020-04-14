@@ -34,6 +34,7 @@ cc_defaults {
     conlyflags: [
         "-std=c99",
     ],
+    header_libs: ["jni_headers"],
     sanitize: {
         misc_undefined: ["bounds"],
     },
