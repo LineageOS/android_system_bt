@@ -25,6 +25,7 @@
 #include "hci/hci_layer.h"
 #include "l2cap/le/l2cap_le_module.h"
 #include "security/channel/security_manager_channel.h"
+#include "security/facade_configuration_api.h"
 #include "security/internal/security_manager_impl.h"
 #include "security/security_module.h"
 
@@ -79,6 +80,11 @@ std::string SecurityModule::ToString() const {
 std::unique_ptr<SecurityManager> SecurityModule::GetSecurityManager() {
   return std::unique_ptr<SecurityManager>(
       new SecurityManager(pimpl_->security_handler_, &pimpl_->security_manager_impl));
+}
+
+std::unique_ptr<FacadeConfigurationApi> SecurityModule::GetFacadeConfigurationApi() {
+  return std::unique_ptr<FacadeConfigurationApi>(
+      new FacadeConfigurationApi(pimpl_->security_handler_, &pimpl_->security_manager_impl));
 }
 
 }  // namespace security

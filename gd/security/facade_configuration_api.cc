@@ -22,8 +22,8 @@
 namespace bluetooth {
 namespace security {
 
-void FacadeConfigurationApi::SetIoCapabilities(hci::IoCapability io_capability) {
-  security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::SetIoCapabilities,
+void FacadeConfigurationApi::SetIoCapability(hci::IoCapability io_capability) {
+  security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::SetIoCapability,
                                            common::Unretained(security_manager_impl_), io_capability));
 }
 
