@@ -48,8 +48,7 @@ void DevNullHci::Stop() {
 }
 
 void DevNullHci::injectAclData(std::vector<uint8_t> data) {
-  auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(data));
-  hci::AclPacketView aclPacket = hci::AclPacketView::Create(packet);
+  hci::AclPacketView aclPacket = hci::AclPacketView::FromBytes(data);
   if (!aclPacket.IsValid()) {
     return;
   }
