@@ -16,31 +16,19 @@
 
 #pragma once
 
-#include "common/callback.h"
+#include "hci/command_interface.h"
 #include "hci/hci_packets.h"
-#include "os/handler.h"
-#include "os/utils.h"
 
 namespace bluetooth {
 namespace hci {
 
-class LeSecurityInterface {
- public:
-  LeSecurityInterface() = default;
-  virtual ~LeSecurityInterface() = default;
-  DISALLOW_COPY_AND_ASSIGN(LeSecurityInterface);
-
-  virtual void EnqueueCommand(std::unique_ptr<LeSecurityCommandBuilder> command,
-                              common::OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler) = 0;
-
-  virtual void EnqueueCommand(std::unique_ptr<LeSecurityCommandBuilder> command,
-                              common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) = 0;
-
-  static constexpr hci::SubeventCode LeSecurityEvents[] = {
-      hci::SubeventCode::LONG_TERM_KEY_REQUEST,
-      hci::SubeventCode::READ_LOCAL_P256_PUBLIC_KEY_COMPLETE,
-      hci::SubeventCode::GENERATE_DHKEY_COMPLETE,
-  };
+constexpr hci::SubeventCode LeSecurityEvents[] = {
+    hci::SubeventCode::LONG_TERM_KEY_REQUEST,
+    hci::SubeventCode::READ_LOCAL_P256_PUBLIC_KEY_COMPLETE,
+    hci::SubeventCode::GENERATE_DHKEY_COMPLETE,
 };
+
+typedef CommandInterface<LeSecurityCommandBuilder> LeSecurityInterface;
+
 }  // namespace hci
 }  // namespace bluetooth
