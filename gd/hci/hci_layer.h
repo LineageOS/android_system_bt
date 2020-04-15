@@ -37,17 +37,18 @@
 namespace bluetooth {
 namespace hci {
 
-class HciLayer : public Module {
+class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
  public:
   HciLayer();
   virtual ~HciLayer();
   DISALLOW_COPY_AND_ASSIGN(HciLayer);
 
   virtual void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
-                              common::OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler);
+                              common::OnceCallback<void(CommandCompleteView)> on_complete,
+                              os::Handler* handler) override;
 
   virtual void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
-                              common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler);
+                              common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) override;
 
   virtual common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* GetAclQueueEnd();
 

@@ -16,31 +16,19 @@
 
 #pragma once
 
-#include "common/callback.h"
+#include "hci/command_interface.h"
 #include "hci/hci_packets.h"
-#include "os/handler.h"
-#include "os/utils.h"
 
 namespace bluetooth {
 namespace hci {
 
-class LeAclConnectionInterface {
- public:
-  LeAclConnectionInterface() = default;
-  virtual ~LeAclConnectionInterface() = default;
-  DISALLOW_COPY_AND_ASSIGN(LeAclConnectionInterface);
-
-  virtual void EnqueueCommand(std::unique_ptr<LeConnectionManagementCommandBuilder> command,
-                              common::OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler) = 0;
-
-  virtual void EnqueueCommand(std::unique_ptr<LeConnectionManagementCommandBuilder> command,
-                              common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) = 0;
-
-  static constexpr SubeventCode LeConnectionManagementEvents[] = {
-      SubeventCode::CONNECTION_COMPLETE,
-      SubeventCode::ENHANCED_CONNECTION_COMPLETE,
-      SubeventCode::CONNECTION_UPDATE_COMPLETE,
-  };
+constexpr SubeventCode LeConnectionManagementEvents[] = {
+    SubeventCode::CONNECTION_COMPLETE,
+    SubeventCode::ENHANCED_CONNECTION_COMPLETE,
+    SubeventCode::CONNECTION_UPDATE_COMPLETE,
 };
+
+typedef CommandInterface<LeConnectionManagementCommandBuilder> LeAclConnectionInterface;
+
 }  // namespace hci
 }  // namespace bluetooth
