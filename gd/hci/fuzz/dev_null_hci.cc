@@ -29,6 +29,16 @@ void DevNullHci::Start() {
   aclDevNull_ = new os::fuzz::DevNullQueue<AclPacketView>(hci_->GetAclQueueEnd(), GetHandler());
   aclDevNull_->Start();
   aclInject_ = new os::fuzz::FuzzInjectQueue<AclPacketBuilder>(hci_->GetAclQueueEnd(), GetHandler());
+
+  // Can't do security right now, due to the Encryption Change conflict between ACL manager & security
+  // security_interface_ = hci_->GetSecurityInterface(common::Bind([](EventPacketView){}), GetHandler());
+  le_security_interface_ = hci_->GetLeSecurityInterface(common::Bind([](LeMetaEventView) {}), GetHandler());
+  acl_connection_interface_ = hci_->GetAclConnectionInterface(
+      common::Bind([](EventPacketView) {}), common::Bind([](uint16_t, hci::ErrorCode) {}), GetHandler());
+  le_acl_connection_interface_ = hci_->GetLeAclConnectionInterface(
+      common::Bind([](LeMetaEventView) {}), common::Bind([](uint16_t, hci::ErrorCode) {}), GetHandler());
+  le_advertising_interface_ = hci_->GetLeAdvertisingInterface(common::Bind([](LeMetaEventView) {}), GetHandler());
+  le_scanning_interface_ = hci_->GetLeScanningInterface(common::Bind([](LeMetaEventView) {}), GetHandler());
 }
 
 void DevNullHci::Stop() {
@@ -49,6 +59,31 @@ void DevNullHci::injectAclData(std::vector<uint8_t> data) {
 
 void DevNullHci::injectHciCommand(std::vector<uint8_t> data) {
   inject_command<CommandPacketView, CommandPacketBuilder>(data, hci_);
+}
+
+void DevNullHci::injectSecurityCommand(std::vector<uint8_t> data) {
+  inject_command<SecurityCommandView, SecurityCommandBuilder>(data, security_interface_);
+}
+
+void DevNullHci::injectLeSecurityCommand(std::vector<uint8_t> data) {
+  inject_command<LeSecurityCommandView, LeSecurityCommandBuilder>(data, le_security_interface_);
+}
+
+void DevNullHci::injectAclConnectionCommand(std::vector<uint8_t> data) {
+  inject_command<ConnectionManagementCommandView, ConnectionManagementCommandBuilder>(data, acl_connection_interface_);
+}
+
+void DevNullHci::injectLeAclConnectionCommand(std::vector<uint8_t> data) {
+  inject_command<LeConnectionManagementCommandView, LeConnectionManagementCommandBuilder>(data,
+                                                                                          le_acl_connection_interface_);
+}
+
+void DevNullHci::injectLeAdvertisingCommand(std::vector<uint8_t> data) {
+  inject_command<LeAdvertisingCommandView, LeAdvertisingCommandBuilder>(data, le_advertising_interface_);
+}
+
+void DevNullHci::injectLeScanningCommand(std::vector<uint8_t> data) {
+  inject_command<LeScanningCommandView, LeScanningCommandBuilder>(data, le_scanning_interface_);
 }
 
 }  // namespace fuzz
