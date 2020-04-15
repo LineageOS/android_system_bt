@@ -33,6 +33,8 @@ class PacketDef : public ParentDef {
 
   void GenParserDefinition(std::ostream& s) const;
 
+  void GenTestingParserFromBytes(std::ostream& s) const;
+
   void GenParserDefinitionPybind11(std::ostream& s) const;
 
   void GenParserFieldGetter(std::ostream& s, const PacketField* field) const;
