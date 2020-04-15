@@ -161,6 +161,11 @@ class TestModuleRegistry : public ModuleRegistry {
     return Get(module);
   }
 
+  template <class T>
+  T* GetModuleUnderTest() const {
+    return static_cast<T*>(GetModuleUnderTest(&T::Factory));
+  }
+
   os::Handler* GetTestModuleHandler(const ModuleFactory* module) const {
     return GetModuleHandler(module);
   }
