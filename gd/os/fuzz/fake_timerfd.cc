@@ -33,6 +33,7 @@ class FakeTimerFd {
 
 static std::map<int, FakeTimerFd*> fake_timers;
 static uint64_t clock = 0;
+static uint64_t max_clock = UINT64_MAX;
 
 static uint64_t timespec_to_ms(const timespec* t) {
   return t->tv_sec * 1000 + t->tv_nsec / 1000000;
@@ -80,6 +81,7 @@ int fake_timerfd_close(int fd) {
 
 void fake_timerfd_reset() {
   clock = 0;
+  max_clock = UINT64_MAX;
   // if there are entries still here, it is a failure of our users to clean up
   // so let them leak and trigger errors
   fake_timers.clear();
@@ -118,9 +120,16 @@ static bool fire_next_event(uint64_t new_clock) {
 
 void fake_timerfd_advance(uint64_t ms) {
   uint64_t new_clock = clock + ms;
+  if (new_clock > max_clock) {
+    new_clock = max_clock;
+  }
   while (fire_next_event(new_clock)) {
   }
   clock = new_clock;
+}
+
+void fake_timerfd_cap_at(uint64_t ms) {
+  max_clock = ms;
 }
 
 }  // namespace fuzz
