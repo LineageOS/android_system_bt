@@ -53,24 +53,27 @@ class LeL2capTest(GdBaseTestClass):
         gap_name.data = list(bytes(b'Im_The_DUT'))
         gap_data = le_advertising_facade.GapDataMsg(
             data=bytes(gap_name.Serialize()))
+        self.dut_address = common.BluetoothAddressWithType(
+            address = common.BluetoothAddress(address=bytes(b'0D:05:04:03:02:01')),
+            type=common.RANDOM_DEVICE_ADDRESS)
+        self.cert_address = common.BluetoothAddressWithType(
+            address=common.BluetoothAddress(address=b"22:33:ff:ff:11:00"),
+            type=common.RANDOM_DEVICE_ADDRESS)
         config = le_advertising_facade.AdvertisingConfig(
             advertisement=[gap_data],
-            random_address=common.BluetoothAddress(
-                address=bytes(b'0D:05:04:03:02:01')),
+            random_address=self.dut_address.address,
             interval_min=512,
             interval_max=768,
             event_type=le_advertising_facade.AdvertisingEventType.ADV_IND,
             address_type=common.RANDOM_DEVICE_ADDRESS,
-            peer_address_type=common.PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
-            peer_address=common.BluetoothAddress(
-                address=bytes(b'A6:A5:A4:A3:A2:A1')),
+            peer_address_type=common.PUBLIC_DEVICE_ADDRESS,
+            peer_address=common.BluetoothAddress(address=bytes(b'00:00:00:00:00:00')),
             channel_map=7,
-            filter_policy=le_advertising_facade.AdvertisingFilterPolicy.
-            ALL_DEVICES)
+            filter_policy=le_advertising_facade.AdvertisingFilterPolicy.ALL_DEVICES)
         request = le_advertising_facade.CreateAdvertiserRequest(config=config)
         create_response = self.dut.hci_le_advertising_manager.CreateAdvertiser(
             request)
-        self.cert_l2cap.connect_le_acl(bytes(b'0D:05:04:03:02:01'))
+        self.cert_l2cap.connect_le_acl(self.dut_address)
 
     def _set_link_from_dut_and_open_channel(self,
                                             signal_id=1,
@@ -85,24 +88,27 @@ class LeL2capTest(GdBaseTestClass):
         gap_name.data = list(bytes(b'Im_The_DUT'))
         gap_data = le_advertising_facade.GapDataMsg(
             data=bytes(gap_name.Serialize()))
+        self.dut_address = common.BluetoothAddressWithType(
+            address = common.BluetoothAddress(address=bytes(b'0D:05:04:03:02:01')),
+            type=common.RANDOM_DEVICE_ADDRESS)
+        self.cert_address = common.BluetoothAddressWithType(
+            address = common.BluetoothAddress(address=bytes(b'22:33:ff:ff:11:00')),
+            type=common.RANDOM_DEVICE_ADDRESS)
         config = le_advertising_facade.AdvertisingConfig(
             advertisement=[gap_data],
-            random_address=common.BluetoothAddress(
-                address=bytes(b'22:33:ff:ff:11:00')),
+            random_address=self.cert_address.address,
             interval_min=512,
             interval_max=768,
             event_type=le_advertising_facade.AdvertisingEventType.ADV_IND,
             address_type=common.RANDOM_DEVICE_ADDRESS,
-            peer_address_type=common.PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
-            peer_address=common.BluetoothAddress(
-                address=bytes(b'0D:05:04:03:02:01')),
+            peer_address_type=common.PUBLIC_DEVICE_ADDRESS,
+            peer_address=common.BluetoothAddress(address=bytes(b'00:00:00:00:00:00')),
             channel_map=7,
-            filter_policy=le_advertising_facade.AdvertisingFilterPolicy.
-            ALL_DEVICES)
+            filter_policy=le_advertising_facade.AdvertisingFilterPolicy.ALL_DEVICES)
         request = le_advertising_facade.CreateAdvertiserRequest(config=config)
         create_response = self.cert.hci_le_advertising_manager.CreateAdvertiser(
             request)
-        response_future = self.dut_l2cap.connect_coc_to_cert(psm)
+        response_future = self.dut_l2cap.connect_coc_to_cert(self.cert_address, psm)
         self.cert_l2cap.wait_for_connection()
         # TODO: Currently we can only connect by using Dynamic channel API. Use fixed channel instead.
         cert_channel = self.cert_l2cap.verify_and_respond_open_channel_from_remote(
@@ -118,14 +124,14 @@ class LeL2capTest(GdBaseTestClass):
                                 mps=100,
                                 initial_credit=6):
 
-        dut_channel = self.dut_l2cap.register_coc(psm)
+        dut_channel = self.dut_l2cap.register_coc(self.cert_address, psm)
         cert_channel = self.cert_l2cap.open_channel(signal_id, psm, scid, mtu,
                                                     mps, initial_credit)
 
         return (dut_channel, cert_channel)
 
     def _open_channel_from_dut(self, psm=0x33):
-        response_future = self.dut_l2cap.connect_coc_to_cert(psm)
+        response_future = self.dut_l2cap.connect_coc_to_cert(self.cert_address, psm)
         cert_channel = self.cert_l2cap.verify_and_respond_open_channel_from_remote(
             psm)
         dut_channel = response_future.get_channel()
@@ -357,7 +363,7 @@ class LeL2capTest(GdBaseTestClass):
         Verify that an IUT sending an LE Credit Based Connection Request to a legacy peer and receiving a Command Reject does not establish the channel.
         """
         self._setup_link_from_cert()
-        response_future = self.dut_l2cap.connect_coc_to_cert(psm=0x33)
+        response_future = self.dut_l2cap.connect_coc_to_cert(self.cert_address, psm=0x33)
         self.cert_l2cap.verify_and_reject_open_channel_from_remote(psm=0x33)
         assertThat(response_future.get_status()).isNotEqualTo(
             LeCreditBasedConnectionResponseResult.SUCCESS)
@@ -397,7 +403,7 @@ class LeL2capTest(GdBaseTestClass):
         Verify that an IUT sending an LE Credit Based Connection Request on an unsupported LE_PSM will not establish a channel upon receiving an LE Credit Based Connection Response refusing the connection.
         """
         self._setup_link_from_cert()
-        response_future = self.dut_l2cap.connect_coc_to_cert(psm=0x33)
+        response_future = self.dut_l2cap.connect_coc_to_cert(self.cert_address, psm=0x33)
         self.cert_l2cap.verify_and_respond_open_channel_from_remote(
             psm=0x33,
             result=LeCreditBasedConnectionResponseResult.LE_PSM_NOT_SUPPORTED)
@@ -492,7 +498,7 @@ class LeL2capTest(GdBaseTestClass):
         Verify that the IUT does not establish the channel upon receipt of an LE Credit Based Connection Response indicating the connection was refused with Result “0x0005 – Connection Refused – Insufficient Authentication".
         """
         self._setup_link_from_cert()
-        response_future = self.dut_l2cap.connect_coc_to_cert(psm=0x33)
+        response_future = self.dut_l2cap.connect_coc_to_cert(self.cert_address, psm=0x33)
         self.cert_l2cap.verify_and_respond_open_channel_from_remote(
             psm=0x33,
             result=LeCreditBasedConnectionResponseResult.
@@ -508,7 +514,7 @@ class LeL2capTest(GdBaseTestClass):
         Verify that the IUT does not establish the channel upon receipt of an LE Credit Based Connection Response indicating the connection was refused with Result “0x0006 – Connection Refused – Insufficient Authorization”.
         """
         self._setup_link_from_cert()
-        response_future = self.dut_l2cap.connect_coc_to_cert(psm=0x33)
+        response_future = self.dut_l2cap.connect_coc_to_cert(self.cert_address, psm=0x33)
         self.cert_l2cap.verify_and_respond_open_channel_from_remote(
             psm=0x33,
             result=LeCreditBasedConnectionResponseResult.
@@ -526,7 +532,7 @@ class LeL2capTest(GdBaseTestClass):
         Verify that an IUT sending an LE Credit Based Connection Request does not establish the channel upon receiving an LE Credit Based Connection Response refusing the connection with result "0x0009 – Connection refused – Invalid Source CID".
         """
         self._setup_link_from_cert()
-        response_future = self.dut_l2cap.connect_coc_to_cert(psm=0x33)
+        response_future = self.dut_l2cap.connect_coc_to_cert(self.cert_address, psm=0x33)
         self.cert_l2cap.verify_and_respond_open_channel_from_remote(
             psm=0x33,
             result=LeCreditBasedConnectionResponseResult.INVALID_SOURCE_CID)
@@ -544,7 +550,7 @@ class LeL2capTest(GdBaseTestClass):
         Verify that an IUT sending an LE Credit Based Connection Request does not establish the channel upon receiving an LE Credit Based Connection Response refusing the connection with result "0x000A – Connection refused – Source CID already allocated".
         """
         self._setup_link_from_cert()
-        response_future = self.dut_l2cap.connect_coc_to_cert(psm=0x33)
+        response_future = self.dut_l2cap.connect_coc_to_cert(self.cert_address, psm=0x33)
         self.cert_l2cap.verify_and_respond_open_channel_from_remote(
             psm=0x33,
             result=LeCreditBasedConnectionResponseResult.
@@ -565,7 +571,7 @@ class LeL2capTest(GdBaseTestClass):
         self._setup_link_from_cert()
         (dut_channel, cert_channel) = self._open_channel_from_cert(
             psm=0x33, scid=0x0101)
-        self.dut_l2cap.register_coc(psm=0x35)
+        self.dut_l2cap.register_coc(self.cert_address, psm=0x35)
         self.cert_l2cap.get_control_channel().send(
             l2cap_packets.LeCreditBasedConnectionRequestBuilder(
                 2, 0x35, 0x0101, 1000, 1000, 1000))
@@ -582,7 +588,7 @@ class LeL2capTest(GdBaseTestClass):
         Verify that an IUT sending an LE Credit Based Connection Request does not establish the channel upon receiving an LE Credit Based Connection Response refusing the connection with result "0x000B – Connection refused – Unacceptable Parameters".
         """
         self._setup_link_from_cert()
-        response_future = self.dut_l2cap.connect_coc_to_cert(psm=0x33)
+        response_future = self.dut_l2cap.connect_coc_to_cert(self.cert_address, psm=0x33)
         self.cert_l2cap.verify_and_respond_open_channel_from_remote(
             psm=0x33,
             result=LeCreditBasedConnectionResponseResult.UNACCEPTABLE_PARAMETERS
