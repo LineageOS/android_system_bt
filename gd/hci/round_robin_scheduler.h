@@ -33,14 +33,17 @@ class RoundRobinScheduler {
                       common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* hci_queue_end);
   ~RoundRobinScheduler();
 
+  enum ConnectionType { CLASSIC, LE };
+
   struct acl_queue_handler {
+    ConnectionType connection_type_;
     AclConnection::QueueDownEnd* queue_down_end_;
     bool dequeue_is_registered_ = false;
     uint16_t number_of_sent_packets_ = 0;  // Track credits
     bool is_disconnected_ = false;
   };
 
-  void Register(uint16_t handle, AclConnection::QueueDownEnd* queue_down_end);
+  void Register(ConnectionType connection_type, uint16_t handle, AclConnection::QueueDownEnd* queue_down_end);
   void Unregister(uint16_t handle);
   void SetDisconnect(uint16_t handle);
 
@@ -55,10 +58,13 @@ class RoundRobinScheduler {
   os::Handler* handler_ = nullptr;
   Controller* controller_ = nullptr;
   std::map<uint16_t, acl_queue_handler> acl_queue_handlers_;
-  std::queue<std::unique_ptr<AclPacketBuilder>> fragments_to_send_;
+  std::queue<std::pair<ConnectionType, std::unique_ptr<AclPacketBuilder>>> fragments_to_send_;
   uint16_t max_acl_packet_credits_ = 0;
   uint16_t acl_packet_credits_ = 0;
+  uint16_t le_max_acl_packet_credits_ = 0;
+  uint16_t le_acl_packet_credits_ = 0;
   size_t hci_mtu_{0};
+  size_t le_hci_mtu_{0};
   std::atomic_bool enqueue_registered_ = false;
   common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* hci_queue_end_ = nullptr;
   // first register queue end for the Round-robin schedule
