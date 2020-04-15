@@ -68,27 +68,32 @@ class DualL2capTest(GdBaseTestClass):
         gap_name.data = list(bytes(b'Im_The_DUT'))
         gap_data = le_advertising_facade.GapDataMsg(
             data=bytes(gap_name.Serialize()))
+        self.dut_address = common.BluetoothAddressWithType(
+            address = common.BluetoothAddress(address=bytes(b'0D:05:04:03:02:01')),
+            type=common.RANDOM_DEVICE_ADDRESS)
+        self.cert_address = common.BluetoothAddressWithType(
+            address=common.BluetoothAddress(address=b"22:33:ff:ff:11:00"),
+            type=common.RANDOM_DEVICE_ADDRESS)
         config = le_advertising_facade.AdvertisingConfig(
             advertisement=[gap_data],
-            random_address=common.BluetoothAddress(
-                address=bytes(b'0D:05:04:03:02:01')),
+            random_address=self.dut_address.address,
             interval_min=512,
             interval_max=768,
             event_type=le_advertising_facade.AdvertisingEventType.ADV_IND,
             address_type=common.RANDOM_DEVICE_ADDRESS,
             peer_address_type=common.PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
             peer_address=common.BluetoothAddress(
-                address=bytes(b'A6:A5:A4:A3:A2:A1')),
+                address=bytes(b'00:00:00:00:00:00')),
             channel_map=7,
             filter_policy=le_advertising_facade.AdvertisingFilterPolicy.
             ALL_DEVICES)
         request = le_advertising_facade.CreateAdvertiserRequest(config=config)
         create_response = self.dut.hci_le_advertising_manager.CreateAdvertiser(
             request)
-        self.cert_le_l2cap.connect_le_acl(bytes(b'0D:05:04:03:02:01'))
+        self.cert_le_l2cap.connect_le_acl(self.dut_address)
 
     def _open_le_coc_from_dut(self, psm=0x33, our_scid=None):
-        response_future = self.dut_le_l2cap.connect_coc_to_cert(psm)
+        response_future = self.dut_le_l2cap.connect_coc_to_cert(self.cert_address, psm)
         cert_channel = self.cert_le_l2cap.verify_and_respond_open_channel_from_remote(
             psm=psm, our_scid=our_scid)
         dut_channel = response_future.get_channel()
@@ -133,7 +138,7 @@ class DualL2capTest(GdBaseTestClass):
                                mps=100,
                                initial_credit=6):
 
-        dut_channel = self.dut_le_l2cap.register_coc(psm)
+        dut_channel = self.dut_le_l2cap.register_coc(self.cert_address, psm)
         cert_channel = self.cert_le_l2cap.open_channel(signal_id, psm, scid,
                                                        mtu, mps, initial_credit)
 
