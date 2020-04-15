@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Android Open Source Project
+ * Copyright 2020 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -16,22 +16,26 @@
 
 #pragma once
 
-#include "hci/command_interface.h"
+#include "common/callback.h"
 #include "hci/hci_packets.h"
+#include "os/handler.h"
+#include "os/utils.h"
 
 namespace bluetooth {
 namespace hci {
 
-constexpr hci::SubeventCode LeScanningEvents[] = {
-    hci::SubeventCode::SCAN_TIMEOUT,
-    hci::SubeventCode::ADVERTISING_REPORT,
-    hci::SubeventCode::DIRECTED_ADVERTISING_REPORT,
-    hci::SubeventCode::EXTENDED_ADVERTISING_REPORT,
-    hci::SubeventCode::PERIODIC_ADVERTISING_REPORT,
-    hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_ESTABLISHED,
-    hci::SubeventCode::PERIODIC_ADVERTISING_SYNC_LOST,
-};
+template <typename T>
+class CommandInterface {
+ public:
+  CommandInterface() = default;
+  virtual ~CommandInterface() = default;
+  DISALLOW_COPY_AND_ASSIGN(CommandInterface);
 
-typedef CommandInterface<LeScanningCommandBuilder> LeScanningInterface;
+  virtual void EnqueueCommand(std::unique_ptr<T> command, common::OnceCallback<void(CommandCompleteView)> on_complete,
+                              os::Handler* handler) = 0;
+
+  virtual void EnqueueCommand(std::unique_ptr<T> command, common::OnceCallback<void(CommandStatusView)> on_status,
+                              os::Handler* handler) = 0;
+};
 }  // namespace hci
 }  // namespace bluetooth
