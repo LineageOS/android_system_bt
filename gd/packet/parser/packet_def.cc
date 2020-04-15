@@ -334,6 +334,9 @@ void PacketDef::GenBuilderDefinition(std::ostream& s) const {
   if (!fields_.HasBody()) {
     GenBuilderCreate(s);
     s << "\n";
+
+    GenTestingFromView(s);
+    s << "\n";
   }
 
   GenSerialize(s);
@@ -357,6 +360,26 @@ void PacketDef::GenBuilderDefinition(std::ostream& s) const {
 
   GenFuzzTestDefine(s);
   s << "\n";
+}
+
+void PacketDef::GenTestingFromView(std::ostream& s) const {
+  s << "#if defined(PACKET_FUZZ_TESTING) || defined(PACKET_TESTING) || defined(FUZZ_TARGET)\n";
+
+  s << "static std::unique_ptr<" << name_ << "Builder> FromView(" << name_ << "View view) {";
+  s << "return " << name_ << "Builder::Create(";
+  FieldList params = GetParamList().GetFieldsWithoutTypes({
+      BodyField::kFieldType,
+  });
+  for (int i = 0; i < params.size(); i++) {
+    params[i]->GenBuilderParameterFromView(s);
+    if (i != params.size() - 1) {
+      s << ", ";
+    }
+  }
+  s << ");";
+  s << "}";
+
+  s << "\n#endif\n";
 }
 
 void PacketDef::GenBuilderDefinitionPybind11(std::ostream& s) const {
@@ -406,17 +429,7 @@ void PacketDef::GenTestDefine(std::ostream& s) const {
   s << "if (!view.IsValid()) { LOG_INFO(\"Invalid Packet Bytes (size = %zu)\", view.size());";
   s << "for (size_t i = 0; i < view.size(); i++) { LOG_DEBUG(\"%5zd:%02X\", i, *(view.begin() + i)); }}";
   s << "ASSERT_TRUE(view.IsValid());";
-  s << "auto packet = " << name_ << "Builder::Create(";
-  FieldList params = GetParamList().GetFieldsWithoutTypes({
-      BodyField::kFieldType,
-  });
-  for (int i = 0; i < params.size(); i++) {
-    params[i]->GenBuilderParameterFromView(s);
-    if (i != params.size() - 1) {
-      s << ", ";
-    }
-  }
-  s << ");";
+  s << "auto packet = " << name_ << "Builder::FromView(view);";
   s << "std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();";
   s << "packet_bytes->reserve(packet->size());";
   s << "BitInserter it(*packet_bytes);";
@@ -451,17 +464,7 @@ void PacketDef::GenFuzzTestDefine(std::ostream& s) const {
   }
   s << ");";
   s << "if (!view.IsValid()) { return; }";
-  s << "auto packet = " << name_ << "Builder::Create(";
-  FieldList params = GetParamList().GetFieldsWithoutTypes({
-      BodyField::kFieldType,
-  });
-  for (int i = 0; i < params.size(); i++) {
-    params[i]->GenBuilderParameterFromView(s);
-    if (i != params.size() - 1) {
-      s << ", ";
-    }
-  }
-  s << ");";
+  s << "auto packet = " << name_ << "Builder::FromView(view);";
   s << "std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();";
   s << "packet_bytes->reserve(packet->size());";
   s << "BitInserter it(*packet_bytes);";
