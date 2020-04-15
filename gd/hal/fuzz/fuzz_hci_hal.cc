@@ -16,6 +16,7 @@
 
 #include "hal/fuzz/fuzz_hci_hal.h"
 #include "fuzz/helpers.h"
+#include "hci/fuzz/status_vs_complete_commands.h"
 
 namespace bluetooth {
 namespace hal {
@@ -37,8 +38,7 @@ void FuzzHciHal::sendHciCommand(HciPacket packet) {
   }
 
   waiting_opcode_ = command.GetOpCode();
-  // TODO: expand list or find better way to associate opcodes needing status vs complete
-  waiting_for_status_ = waiting_opcode_ == hci::OpCode::RESET;
+  waiting_for_status_ = hci::fuzz::uses_command_status(waiting_opcode_);
 }
 
 void FuzzHciHal::injectHciEvent(std::vector<uint8_t> data) {
