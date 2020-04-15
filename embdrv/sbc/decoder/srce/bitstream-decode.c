@@ -39,10 +39,9 @@ Functions for manipulating input bitstreams.
 #include "oi_stddefs.h"
 
 PRIVATE void OI_BITSTREAM_ReadInit(OI_BITSTREAM* bs, const OI_BYTE* buffer) {
-  bs->value =
-      ((int32_t)buffer[0] << 16) | ((int32_t)buffer[1] << 8) | (buffer[2]);
-  bs->ptr.r = buffer + 3;
-  bs->bitPtr = 8;
+  bs->value = 0;
+  bs->ptr.r = buffer;
+  bs->bitPtr = 32;
 }
 
 PRIVATE uint32_t OI_BITSTREAM_ReadUINT(OI_BITSTREAM* bs, OI_UINT bits) {
