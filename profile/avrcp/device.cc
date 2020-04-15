@@ -995,9 +995,16 @@ void Device::GetItemAttributesNowPlayingResponse(
   DEVICE_VLOG(2) << __func__ << ": media_id=\"" << media_id << "\"";
 
   SongInfo info;
-  for (const auto& temp : song_list) {
-    if (temp.media_id == media_id) {
-      info = temp;
+  if (song_list.size() == 1) {
+    DEVICE_VLOG(2)
+        << __func__
+        << " Send out the only song in the queue as now playing song.";
+    info = song_list.front();
+  } else {
+    for (const auto& temp : song_list) {
+      if (temp.media_id == media_id) {
+        info = temp;
+      }
     }
   }
 
