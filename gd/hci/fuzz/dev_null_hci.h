@@ -20,10 +20,12 @@
 #include "hci/hci_packets.h"
 #include "module.h"
 #include "os/fuzz/dev_null_queue.h"
+#include "os/fuzz/fuzz_inject_queue.h"
 
 using bluetooth::hci::AclPacketView;
 using bluetooth::hci::HciLayer;
 using bluetooth::os::fuzz::DevNullQueue;
+using bluetooth::os::fuzz::FuzzInjectQueue;
 
 namespace bluetooth {
 namespace hci {
@@ -37,11 +39,23 @@ class DevNullHci : public Module {
     hci_ = GetDependency<HciLayer>();
     aclDevNull_ = new DevNullQueue<AclPacketView>(hci_->GetAclQueueEnd(), GetHandler());
     aclDevNull_->Start();
+    aclInject_ = new FuzzInjectQueue<AclPacketBuilder>(hci_->GetAclQueueEnd(), GetHandler());
   }
 
   void Stop() override {
     aclDevNull_->Stop();
     delete aclDevNull_;
+    delete aclInject_;
+  }
+
+  void injectAclData(std::vector<uint8_t> data) {
+    auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(data));
+    hci::AclPacketView aclPacket = hci::AclPacketView::Create(packet);
+    if (!aclPacket.IsValid()) {
+      return;
+    }
+
+    aclInject_->Inject(AclPacketBuilder::FromView(aclPacket));
   }
 
   void ListDependencies(ModuleList* list) override {
@@ -57,6 +71,7 @@ class DevNullHci : public Module {
  private:
   HciLayer* hci_ = nullptr;
   DevNullQueue<AclPacketView>* aclDevNull_;
+  FuzzInjectQueue<AclPacketBuilder>* aclInject_;
 };
 
 const ModuleFactory DevNullHci::Factory = ModuleFactory([]() { return new DevNullHci(); });
