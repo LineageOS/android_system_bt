@@ -247,6 +247,14 @@ struct Controller::impl {
     ErrorCode status = complete_view.GetStatus();
     ASSERT_LOG(status == ErrorCode::SUCCESS, "Status 0x%02hhx, %s", status, ErrorCodeText(status).c_str());
     le_buffer_size_ = complete_view.GetLeBufferSize();
+
+    // If LE buffer size is zero, then buffers returned by Read_Buffer_Size are shared between BR/EDR and LE.
+    if (le_buffer_size_.total_num_le_packets_ == 0) {
+      ASSERT(acl_buffers_ != 0);
+      le_buffer_size_.total_num_le_packets_ = acl_buffers_ / 2;
+      acl_buffers_ -= le_buffer_size_.total_num_le_packets_;
+      le_buffer_size_.le_data_packet_length_ = acl_buffer_length_;
+    }
   }
 
   void le_read_local_supported_features_handler(CommandCompleteView view) {
