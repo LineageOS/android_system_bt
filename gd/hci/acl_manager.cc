@@ -314,9 +314,9 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     acl_connections_.emplace(std::piecewise_construct, std::forward_as_tuple(handle),
                              std::forward_as_tuple(address_with_type, handler_));
     auto& connection = check_and_get_connection(handle);
-    hci_layer_->GetHciHandler()->Post(common::BindOnce(&RoundRobinScheduler::Register,
-                                                       common::Unretained(round_robin_scheduler_), handle,
-                                                       connection.queue_->GetDownEnd()));
+    hci_layer_->GetHciHandler()->Post(
+        common::BindOnce(&RoundRobinScheduler::Register, common::Unretained(round_robin_scheduler_),
+                         RoundRobinScheduler::ConnectionType::LE, handle, connection.queue_->GetDownEnd()));
     auto role = connection_complete.GetRole();
     std::unique_ptr<LeAclConnection> connection_proxy(new LeAclConnection(
         &acl_manager_, connection.queue_->GetUpEnd(), le_acl_connection_interface_, handle, address_with_type, role));
@@ -349,9 +349,9 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     acl_connections_.emplace(std::piecewise_construct, std::forward_as_tuple(handle),
                              std::forward_as_tuple(reporting_address_with_type, handler_));
     auto& connection = check_and_get_connection(handle);
-    hci_layer_->GetHciHandler()->Post(common::BindOnce(&RoundRobinScheduler::Register,
-                                                       common::Unretained(round_robin_scheduler_), handle,
-                                                       connection.queue_->GetDownEnd()));
+    hci_layer_->GetHciHandler()->Post(
+        common::BindOnce(&RoundRobinScheduler::Register, common::Unretained(round_robin_scheduler_),
+                         RoundRobinScheduler::ConnectionType::LE, handle, connection.queue_->GetDownEnd()));
     auto role = connection_complete.GetRole();
     std::unique_ptr<LeAclConnection> connection_proxy(new LeAclConnection(&acl_manager_, connection.queue_->GetUpEnd(),
                                                                           le_acl_connection_interface_, handle,
@@ -378,9 +378,9 @@ struct AclManager::impl : public security::ISecurityManagerListener {
         std::piecewise_construct, std::forward_as_tuple(handle),
         std::forward_as_tuple(AddressWithType{address, AddressType::PUBLIC_DEVICE_ADDRESS}, handler_));
     auto& connection = check_and_get_connection(handle);
-    hci_layer_->GetHciHandler()->Post(common::BindOnce(&RoundRobinScheduler::Register,
-                                                       common::Unretained(round_robin_scheduler_), handle,
-                                                       check_and_get_connection(handle).queue_->GetDownEnd()));
+    hci_layer_->GetHciHandler()->Post(common::BindOnce(
+        &RoundRobinScheduler::Register, common::Unretained(round_robin_scheduler_),
+        RoundRobinScheduler::ConnectionType::CLASSIC, handle, check_and_get_connection(handle).queue_->GetDownEnd()));
     std::unique_ptr<ClassicAclConnection> connection_proxy(
         new ClassicAclConnection(&acl_manager_, connection.queue_->GetUpEnd(), acl_connection_interface_, handle,
                                  address, Role::MASTER /* TODO: Did we connect? */));
