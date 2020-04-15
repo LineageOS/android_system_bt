@@ -97,103 +97,19 @@ void on_hci_timeout(OpCode op_code) {
 }
 }  // namespace
 
-class AclConnectionManagerInterfaceImpl : public AclConnectionInterface {
+template <typename T>
+class CommandInterfaceImpl : public CommandInterface<T> {
  public:
-  explicit AclConnectionManagerInterfaceImpl(HciLayer& hci) : hci_(hci) {}
-  ~AclConnectionManagerInterfaceImpl() override = default;
+  explicit CommandInterfaceImpl(HciLayer& hci) : hci_(hci) {}
+  ~CommandInterfaceImpl() override = default;
 
-  void EnqueueCommand(std::unique_ptr<ConnectionManagementCommandBuilder> command,
-                      common::OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler) override {
+  void EnqueueCommand(std::unique_ptr<T> command, common::OnceCallback<void(CommandCompleteView)> on_complete,
+                      os::Handler* handler) override {
     hci_.EnqueueCommand(std::move(command), std::move(on_complete), handler);
   }
 
-  void EnqueueCommand(std::unique_ptr<ConnectionManagementCommandBuilder> command,
-                      common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) override {
-    hci_.EnqueueCommand(std::move(command), std::move(on_status), handler);
-  }
-  HciLayer& hci_;
-};
-
-class SecurityInterfaceImpl : public SecurityInterface {
- public:
-  explicit SecurityInterfaceImpl(HciLayer& hci) : hci_(hci) {}
-  ~SecurityInterfaceImpl() override = default;
-
-  void EnqueueCommand(std::unique_ptr<SecurityCommandBuilder> command,
-                      common::OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler) override {
-    hci_.EnqueueCommand(std::move(command), std::move(on_complete), handler);
-  }
-
-  void EnqueueCommand(std::unique_ptr<SecurityCommandBuilder> command,
-                      common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) override {
-    hci_.EnqueueCommand(std::move(command), std::move(on_status), handler);
-  }
-  HciLayer& hci_;
-};
-
-class LeAclConnectionManagerInterfaceImpl : public LeAclConnectionInterface {
- public:
-  explicit LeAclConnectionManagerInterfaceImpl(HciLayer& hci) : hci_(hci) {}
-  ~LeAclConnectionManagerInterfaceImpl() override = default;
-
-  void EnqueueCommand(std::unique_ptr<LeConnectionManagementCommandBuilder> command,
-                      common::OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler) override {
-    hci_.EnqueueCommand(std::move(command), std::move(on_complete), handler);
-  }
-
-  void EnqueueCommand(std::unique_ptr<LeConnectionManagementCommandBuilder> command,
-                      common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) override {
-    hci_.EnqueueCommand(std::move(command), std::move(on_status), handler);
-  }
-  HciLayer& hci_;
-};
-
-class LeSecurityInterfaceImpl : public LeSecurityInterface {
- public:
-  explicit LeSecurityInterfaceImpl(HciLayer& hci) : hci_(hci) {}
-  ~LeSecurityInterfaceImpl() override = default;
-
-  void EnqueueCommand(std::unique_ptr<LeSecurityCommandBuilder> command,
-                      common::OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler) override {
-    hci_.EnqueueCommand(std::move(command), std::move(on_complete), handler);
-  }
-
-  void EnqueueCommand(std::unique_ptr<LeSecurityCommandBuilder> command,
-                      common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) override {
-    hci_.EnqueueCommand(std::move(command), std::move(on_status), handler);
-  }
-  HciLayer& hci_;
-};
-
-class LeAdvertisingInterfaceImpl : public LeAdvertisingInterface {
- public:
-  explicit LeAdvertisingInterfaceImpl(HciLayer& hci) : hci_(hci) {}
-  ~LeAdvertisingInterfaceImpl() override = default;
-
-  void EnqueueCommand(std::unique_ptr<LeAdvertisingCommandBuilder> command,
-                      common::OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler) override {
-    hci_.EnqueueCommand(std::move(command), std::move(on_complete), handler);
-  }
-
-  void EnqueueCommand(std::unique_ptr<LeAdvertisingCommandBuilder> command,
-                      common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) override {
-    hci_.EnqueueCommand(std::move(command), std::move(on_status), handler);
-  }
-  HciLayer& hci_;
-};
-
-class LeScanningInterfaceImpl : public LeScanningInterface {
- public:
-  explicit LeScanningInterfaceImpl(HciLayer& hci) : hci_(hci) {}
-  ~LeScanningInterfaceImpl() override = default;
-
-  void EnqueueCommand(std::unique_ptr<LeScanningCommandBuilder> command,
-                      common::OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler) override {
-    hci_.EnqueueCommand(std::move(command), std::move(on_complete), handler);
-  }
-
-  void EnqueueCommand(std::unique_ptr<LeScanningCommandBuilder> command,
-                      common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) override {
+  void EnqueueCommand(std::unique_ptr<T> command, common::OnceCallback<void(CommandStatusView)> on_status,
+                      os::Handler* handler) override {
     hci_.EnqueueCommand(std::move(command), std::move(on_status), handler);
   }
   HciLayer& hci_;
@@ -457,12 +373,12 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
   HciLayer& module_;
 
   // Interfaces
-  AclConnectionManagerInterfaceImpl acl_connection_manager_interface_{module_};
-  LeAclConnectionManagerInterfaceImpl le_acl_connection_manager_interface_{module_};
-  SecurityInterfaceImpl security_interface{module_};
-  LeSecurityInterfaceImpl le_security_interface{module_};
-  LeAdvertisingInterfaceImpl le_advertising_interface{module_};
-  LeScanningInterfaceImpl le_scanning_interface{module_};
+  CommandInterfaceImpl<ConnectionManagementCommandBuilder> acl_connection_manager_interface_{module_};
+  CommandInterfaceImpl<LeConnectionManagementCommandBuilder> le_acl_connection_manager_interface_{module_};
+  CommandInterfaceImpl<SecurityCommandBuilder> security_interface{module_};
+  CommandInterfaceImpl<LeSecurityCommandBuilder> le_security_interface{module_};
+  CommandInterfaceImpl<LeAdvertisingCommandBuilder> le_advertising_interface{module_};
+  CommandInterfaceImpl<LeScanningCommandBuilder> le_scanning_interface{module_};
 
   // Command Handling
   std::list<CommandQueueEntry> command_queue_;
@@ -519,7 +435,7 @@ void HciLayer::UnregisterLeEventHandler(SubeventCode subevent_code) {
 AclConnectionInterface* HciLayer::GetAclConnectionInterface(common::Callback<void(EventPacketView)> event_handler,
                                                             common::Callback<void(uint16_t, ErrorCode)> on_disconnect,
                                                             os::Handler* handler) {
-  for (const auto event : AclConnectionInterface::AclConnectionEvents) {
+  for (const auto event : AclConnectionEvents) {
     RegisterEventHandler(event, event_handler, handler);
   }
   return &impl_->acl_connection_manager_interface_;
@@ -528,7 +444,7 @@ AclConnectionInterface* HciLayer::GetAclConnectionInterface(common::Callback<voi
 LeAclConnectionInterface* HciLayer::GetLeAclConnectionInterface(
     common::Callback<void(LeMetaEventView)> event_handler, common::Callback<void(uint16_t, ErrorCode)> on_disconnect,
     os::Handler* handler) {
-  for (const auto event : LeAclConnectionInterface::LeConnectionManagementEvents) {
+  for (const auto event : LeConnectionManagementEvents) {
     RegisterLeEventHandler(event, event_handler, handler);
   }
   return &impl_->le_acl_connection_manager_interface_;
@@ -536,7 +452,7 @@ LeAclConnectionInterface* HciLayer::GetLeAclConnectionInterface(
 
 SecurityInterface* HciLayer::GetSecurityInterface(common::Callback<void(EventPacketView)> event_handler,
                                                   os::Handler* handler) {
-  for (const auto event : SecurityInterface::SecurityEvents) {
+  for (const auto event : SecurityEvents) {
     RegisterEventHandler(event, event_handler, handler);
   }
   return &impl_->security_interface;
@@ -544,7 +460,7 @@ SecurityInterface* HciLayer::GetSecurityInterface(common::Callback<void(EventPac
 
 LeSecurityInterface* HciLayer::GetLeSecurityInterface(common::Callback<void(LeMetaEventView)> event_handler,
                                                       os::Handler* handler) {
-  for (const auto subevent : LeSecurityInterface::LeSecurityEvents) {
+  for (const auto subevent : LeSecurityEvents) {
     RegisterLeEventHandler(subevent, event_handler, handler);
   }
   return &impl_->le_security_interface;
@@ -552,7 +468,7 @@ LeSecurityInterface* HciLayer::GetLeSecurityInterface(common::Callback<void(LeMe
 
 LeAdvertisingInterface* HciLayer::GetLeAdvertisingInterface(common::Callback<void(LeMetaEventView)> event_handler,
                                                             os::Handler* handler) {
-  for (const auto subevent : LeAdvertisingInterface::LeAdvertisingEvents) {
+  for (const auto subevent : LeAdvertisingEvents) {
     RegisterLeEventHandler(subevent, event_handler, handler);
   }
   return &impl_->le_advertising_interface;
@@ -560,7 +476,7 @@ LeAdvertisingInterface* HciLayer::GetLeAdvertisingInterface(common::Callback<voi
 
 LeScanningInterface* HciLayer::GetLeScanningInterface(common::Callback<void(LeMetaEventView)> event_handler,
                                                       os::Handler* handler) {
-  for (const auto subevent : LeScanningInterface::LeScanningEvents) {
+  for (const auto subevent : LeScanningEvents) {
     RegisterLeEventHandler(subevent, event_handler, handler);
   }
   return &impl_->le_scanning_interface;
