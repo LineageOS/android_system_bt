@@ -47,6 +47,8 @@ void PacketDef::GenParserDefinition(std::ostream& s) const {
     s << "{ return " << name_ << "View(packet); }";
   }
 
+  GenTestingParserFromBytes(s);
+
   std::set<std::string> fixed_types = {
       FixedScalarField::kFieldType,
       FixedEnumField::kFieldType,
@@ -86,6 +88,29 @@ void PacketDef::GenParserDefinition(std::ostream& s) const {
     }
   }
   s << "};\n";
+}
+
+void PacketDef::GenTestingParserFromBytes(std::ostream& s) const {
+  s << "\n#if defined(PACKET_FUZZ_TESTING) || defined(PACKET_TESTING) || defined(FUZZ_TARGET)\n";
+
+  s << "static " << name_ << "View FromBytes(std::vector<uint8_t> bytes) {";
+  s << "auto vec = std::make_shared<std::vector<uint8_t>>(bytes);";
+  s << "return " << name_ << "View::Create(";
+  auto ancestor_ptr = parent_;
+  size_t parent_parens = 0;
+  while (ancestor_ptr != nullptr) {
+    s << ancestor_ptr->name_ << "View::Create(";
+    parent_parens++;
+    ancestor_ptr = ancestor_ptr->parent_;
+  }
+  s << "vec";
+  for (size_t i = 0; i < parent_parens; i++) {
+    s << ")";
+  }
+  s << ");";
+  s << "}";
+
+  s << "\n#endif\n";
 }
 
 void PacketDef::GenParserDefinitionPybind11(std::ostream& s) const {
@@ -412,20 +437,7 @@ void PacketDef::GenTestDefine(std::ostream& s) const {
   s << "class " << name_ << "ReflectionTest : public testing::TestWithParam<std::vector<uint8_t>> { ";
   s << "public: ";
   s << "void CompareBytes(std::vector<uint8_t> captured_packet) {";
-  s << "auto vec = std::make_shared<std::vector<uint8_t>>(captured_packet.begin(), captured_packet.end());";
-  s << name_ << "View view = " << name_ << "View::Create(";
-  auto ancestor_ptr = parent_;
-  size_t parent_parens = 0;
-  while (ancestor_ptr != nullptr) {
-    s << ancestor_ptr->name_ << "View::Create(";
-    parent_parens++;
-    ancestor_ptr = ancestor_ptr->parent_;
-  }
-  s << "vec";
-  for (size_t i = 0; i < parent_parens; i++) {
-    s << ")";
-  }
-  s << ");";
+  s << name_ << "View view = " << name_ << "View::FromBytes(captured_packet);";
   s << "if (!view.IsValid()) { LOG_INFO(\"Invalid Packet Bytes (size = %zu)\", view.size());";
   s << "for (size_t i = 0; i < view.size(); i++) { LOG_DEBUG(\"%5zd:%02X\", i, *(view.begin() + i)); }}";
   s << "ASSERT_TRUE(view.IsValid());";
@@ -434,7 +446,7 @@ void PacketDef::GenTestDefine(std::ostream& s) const {
   s << "packet_bytes->reserve(packet->size());";
   s << "BitInserter it(*packet_bytes);";
   s << "packet->Serialize(it);";
-  s << "ASSERT_EQ(*packet_bytes, *vec);";
+  s << "ASSERT_EQ(*packet_bytes, captured_packet);";
   s << "}";
   s << "};";
   s << "TEST_P(" << name_ << "ReflectionTest, generatedReflectionTest) {";
@@ -449,20 +461,8 @@ void PacketDef::GenFuzzTestDefine(std::ostream& s) const {
   s << "#if defined(PACKET_FUZZ_TESTING) || defined(PACKET_TESTING)\n";
   s << "#define DEFINE_" << name_ << "ReflectionFuzzTest() ";
   s << "void Run" << name_ << "ReflectionFuzzTest(const uint8_t* data, size_t size) {";
-  s << "auto vec = std::make_shared<std::vector<uint8_t>>(data, data + size);";
-  s << name_ << "View view = " << name_ << "View::Create(";
-  auto ancestor_ptr = parent_;
-  size_t parent_parens = 0;
-  while (ancestor_ptr != nullptr) {
-    s << ancestor_ptr->name_ << "View::Create(";
-    parent_parens++;
-    ancestor_ptr = ancestor_ptr->parent_;
-  }
-  s << "vec";
-  for (size_t i = 0; i < parent_parens; i++) {
-    s << ")";
-  }
-  s << ");";
+  s << "auto vec = std::vector<uint8_t>(data, data + size);";
+  s << name_ << "View view = " << name_ << "View::FromBytes(vec);";
   s << "if (!view.IsValid()) { return; }";
   s << "auto packet = " << name_ << "Builder::FromView(view);";
   s << "std::shared_ptr<std::vector<uint8_t>> packet_bytes = std::make_shared<std::vector<uint8_t>>();";
