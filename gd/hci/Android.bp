@@ -52,3 +52,12 @@ filegroup {
         "hci_packets_fuzz_test.cc",
     ],
 }
+
+filegroup {
+    name: "BluetoothHciFuzzHelperSources",
+    srcs: [
+        "fuzz/status_vs_complete_commands.cc",
+        "fuzz/dev_null_hci.cc",
+    ],
+}
+
