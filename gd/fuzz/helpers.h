@@ -20,11 +20,15 @@
 #include <vector>
 #include "os/handler.h"
 
+#include <fuzzer/FuzzedDataProvider.h>
+
 namespace bluetooth {
 namespace fuzz {
 
 std::vector<std::vector<uint8_t>> SplitInput(const uint8_t* data, size_t size, const uint8_t* separator,
                                              size_t separatorSize);
+
+std::vector<uint8_t> GetArbitraryBytes(FuzzedDataProvider* fdp);
 
 }  // namespace fuzz
 }  // namespace bluetooth

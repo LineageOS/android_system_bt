@@ -16,6 +16,7 @@
 
 #include <stddef.h>
 #include <stdint.h>
+#include "fuzz/helpers.h"
 #include "hal/fuzz/fuzz_hci_hal.h"
 #include "hci/fuzz/hci_layer_fuzz_client.h"
 #include "hci/hci_layer.h"
@@ -26,16 +27,13 @@
 #include <fuzzer/FuzzedDataProvider.h>
 
 using bluetooth::TestModuleRegistry;
+using bluetooth::fuzz::GetArbitraryBytes;
 using bluetooth::hal::HciHal;
 using bluetooth::hal::fuzz::FuzzHciHal;
 using bluetooth::hci::fuzz::HciLayerFuzzClient;
 using bluetooth::os::fuzz::fake_timerfd_advance;
 using bluetooth::os::fuzz::fake_timerfd_cap_at;
 using bluetooth::os::fuzz::fake_timerfd_reset;
-
-static std::vector<uint8_t> GetArbitraryBytes(FuzzedDataProvider* fdp) {
-  return fdp->ConsumeBytes<uint8_t>(fdp->ConsumeIntegral<size_t>());
-}
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   FuzzedDataProvider dataProvider(data, size);
