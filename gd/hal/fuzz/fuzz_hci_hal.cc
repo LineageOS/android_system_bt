@@ -85,6 +85,8 @@ void FuzzHciHal::injectScoData(std::vector<uint8_t> data) {
   callbacks_->scoDataReceived(data);
 }
 
+const ModuleFactory FuzzHciHal::Factory = ModuleFactory([]() { return new FuzzHciHal(); });
+
 }  // namespace fuzz
 }  // namespace hal
 }  // namespace bluetooth
