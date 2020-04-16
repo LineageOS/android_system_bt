@@ -4208,7 +4208,7 @@ packet RemoteHostSupportedFeaturesNotification : EventPacket (event_code = REMOT
 
 packet LeMetaEvent : EventPacket (event_code = LE_META_EVENT) {
   subevent_code : SubeventCode,
-  _payload_,
+  _body_,
 }
 
 packet NumberOfCompletedDataBlocks : EventPacket (event_code = NUMBER_OF_COMPLETED_DATA_BLOCKS){
