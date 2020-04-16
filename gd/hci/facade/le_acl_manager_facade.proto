@@ -3,6 +3,7 @@ syntax = "proto3";
 package bluetooth.hci;
 
 import "google/protobuf/empty.proto";
+import "facade/common.proto";
 
 service LeAclManagerFacade {
   rpc CreateConnection(LeConnectionMsg) returns (stream LeConnectionEvent) {}
@@ -11,6 +12,7 @@ service LeAclManagerFacade {
   rpc SendAclData(LeAclData) returns (google.protobuf.Empty) {}
   rpc FetchAclData(google.protobuf.Empty) returns (stream LeAclData) {}
   rpc FetchIncomingConnection(google.protobuf.Empty) returns (stream LeConnectionEvent) {}
+  rpc SetInitiatorAddress(bluetooth.facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
 }
 
 message LeHandleMsg {

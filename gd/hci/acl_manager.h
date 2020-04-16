@@ -260,6 +260,8 @@ class AclManager : public Module {
   // Generates OnLeConnectSuccess if connected, or OnLeConnectFail otherwise
   virtual void CreateLeConnection(AddressWithType address_with_type);
 
+  virtual void SetLeInitiatorAddress(AddressWithType initiator_address);
+
   // Generates OnConnectFail with error code "terminated by local host 0x16" if cancelled, or OnConnectSuccess if not
   // successfully cancelled and already connected
   virtual void CancelConnect(Address address);

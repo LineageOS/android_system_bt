@@ -111,6 +111,15 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service,
     return ::grpc::Status::OK;
   }
 
+  ::grpc::Status SetInitiatorAddress(::grpc::ServerContext* context,
+                                     const ::bluetooth::facade::BluetoothAddressWithType* request,
+                                     ::google::protobuf::Empty* writer) override {
+    Address address;
+    ASSERT(Address::FromString(request->address().address(), address));
+    acl_manager_->SetLeInitiatorAddress(AddressWithType(address, static_cast<AddressType>(request->type())));
+    return ::grpc::Status::OK;
+  }
+
   std::unique_ptr<BasePacketBuilder> enqueue_packet(const LeAclData* request, std::promise<void> promise) {
     acl_connections_[request->handle()]->GetAclQueueEnd()->UnregisterEnqueue();
     std::unique_ptr<RawBuilder> packet =
