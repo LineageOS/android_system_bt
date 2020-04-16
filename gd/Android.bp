@@ -365,6 +365,14 @@ cc_fuzz {
     ],
 }
 
+cc_fuzz {
+    name: "bluetooth_gd_acl_manager_fuzz_test",
+    defaults: ["gd_fuzz_defaults"],
+    srcs: [
+        "hci/fuzz/acl_manager_fuzz_test.cc",
+    ],
+}
+
 cc_benchmark {
     name: "bluetooth_benchmark_gd",
     defaults: ["gd_defaults"],
