@@ -31,6 +31,7 @@ filegroup {
         "hci_packets_test.cc",
         "le_advertising_manager_test.cc",
         "le_scanning_manager_test.cc",
+        "round_robin_scheduler_test.cc",
     ],
 }
 
