@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "hci/fuzz/dev_null_hci.h"
+#include "hci/fuzz/hci_layer_fuzz_client.h"
 
 using bluetooth::hci::AclPacketView;
 
@@ -22,9 +22,9 @@ namespace bluetooth {
 namespace hci {
 namespace fuzz {
 
-const ModuleFactory DevNullHci::Factory = ModuleFactory([]() { return new DevNullHci(); });
+const ModuleFactory HciLayerFuzzClient::Factory = ModuleFactory([]() { return new HciLayerFuzzClient(); });
 
-void DevNullHci::Start() {
+void HciLayerFuzzClient::Start() {
   hci_ = GetDependency<hci::HciLayer>();
   aclDevNull_ = new os::fuzz::DevNullQueue<AclPacketView>(hci_->GetAclQueueEnd(), GetHandler());
   aclDevNull_->Start();
@@ -41,13 +41,13 @@ void DevNullHci::Start() {
   le_scanning_interface_ = hci_->GetLeScanningInterface(common::Bind([](LeMetaEventView) {}), GetHandler());
 }
 
-void DevNullHci::Stop() {
+void HciLayerFuzzClient::Stop() {
   aclDevNull_->Stop();
   delete aclDevNull_;
   delete aclInject_;
 }
 
-void DevNullHci::injectAclData(std::vector<uint8_t> data) {
+void HciLayerFuzzClient::injectAclData(std::vector<uint8_t> data) {
   hci::AclPacketView aclPacket = hci::AclPacketView::FromBytes(data);
   if (!aclPacket.IsValid()) {
     return;
@@ -56,32 +56,32 @@ void DevNullHci::injectAclData(std::vector<uint8_t> data) {
   aclInject_->Inject(AclPacketBuilder::FromView(aclPacket));
 }
 
-void DevNullHci::injectHciCommand(std::vector<uint8_t> data) {
+void HciLayerFuzzClient::injectHciCommand(std::vector<uint8_t> data) {
   inject_command<CommandPacketView, CommandPacketBuilder>(data, hci_);
 }
 
-void DevNullHci::injectSecurityCommand(std::vector<uint8_t> data) {
+void HciLayerFuzzClient::injectSecurityCommand(std::vector<uint8_t> data) {
   inject_command<SecurityCommandView, SecurityCommandBuilder>(data, security_interface_);
 }
 
-void DevNullHci::injectLeSecurityCommand(std::vector<uint8_t> data) {
+void HciLayerFuzzClient::injectLeSecurityCommand(std::vector<uint8_t> data) {
   inject_command<LeSecurityCommandView, LeSecurityCommandBuilder>(data, le_security_interface_);
 }
 
-void DevNullHci::injectAclConnectionCommand(std::vector<uint8_t> data) {
+void HciLayerFuzzClient::injectAclConnectionCommand(std::vector<uint8_t> data) {
   inject_command<ConnectionManagementCommandView, ConnectionManagementCommandBuilder>(data, acl_connection_interface_);
 }
 
-void DevNullHci::injectLeAclConnectionCommand(std::vector<uint8_t> data) {
+void HciLayerFuzzClient::injectLeAclConnectionCommand(std::vector<uint8_t> data) {
   inject_command<LeConnectionManagementCommandView, LeConnectionManagementCommandBuilder>(data,
                                                                                           le_acl_connection_interface_);
 }
 
-void DevNullHci::injectLeAdvertisingCommand(std::vector<uint8_t> data) {
+void HciLayerFuzzClient::injectLeAdvertisingCommand(std::vector<uint8_t> data) {
   inject_command<LeAdvertisingCommandView, LeAdvertisingCommandBuilder>(data, le_advertising_interface_);
 }
 
-void DevNullHci::injectLeScanningCommand(std::vector<uint8_t> data) {
+void HciLayerFuzzClient::injectLeScanningCommand(std::vector<uint8_t> data) {
   inject_command<LeScanningCommandView, LeScanningCommandBuilder>(data, le_scanning_interface_);
 }
 

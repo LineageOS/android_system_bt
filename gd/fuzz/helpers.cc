@@ -37,5 +37,9 @@ std::vector<std::vector<uint8_t>> SplitInput(const uint8_t* data, size_t size, c
   return result;
 }
 
+std::vector<uint8_t> GetArbitraryBytes(FuzzedDataProvider* fdp) {
+  return fdp->ConsumeBytes<uint8_t>(fdp->ConsumeIntegral<size_t>());
+}
+
 }  // namespace fuzz
 }  // namespace bluetooth
