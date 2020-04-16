@@ -357,11 +357,19 @@ cc_fuzz {
 }
 
 cc_fuzz {
-    name: "bluetooth_gd_hci_fuzz_test",
+    name: "bluetooth_gd_hci_layer_fuzz_test",
     defaults: ["gd_fuzz_defaults"],
     srcs: [
         "hci/fuzz/hci_layer_fuzz_test.cc",
         ":BluetoothHalFuzzSources",
+    ],
+}
+
+cc_fuzz {
+    name: "bluetooth_gd_acl_manager_fuzz_test",
+    defaults: ["gd_fuzz_defaults"],
+    srcs: [
+        "hci/fuzz/acl_manager_fuzz_test.cc",
     ],
 }
 
