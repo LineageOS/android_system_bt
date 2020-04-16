@@ -62,24 +62,25 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
 
   virtual void UnregisterLeEventHandler(SubeventCode subevent_code);
 
-  SecurityInterface* GetSecurityInterface(common::Callback<void(EventPacketView)> event_handler, os::Handler* handler);
+  virtual SecurityInterface* GetSecurityInterface(common::Callback<void(EventPacketView)> event_handler,
+                                                  os::Handler* handler);
 
-  LeSecurityInterface* GetLeSecurityInterface(common::Callback<void(LeMetaEventView)> event_handler,
-                                              os::Handler* handler);
+  virtual LeSecurityInterface* GetLeSecurityInterface(common::Callback<void(LeMetaEventView)> event_handler,
+                                                      os::Handler* handler);
 
-  AclConnectionInterface* GetAclConnectionInterface(common::Callback<void(EventPacketView)> event_handler,
-                                                    common::Callback<void(uint16_t, hci::ErrorCode)> on_disconnect,
-                                                    os::Handler* handler);
+  virtual AclConnectionInterface* GetAclConnectionInterface(
+      common::Callback<void(EventPacketView)> event_handler,
+      common::Callback<void(uint16_t, hci::ErrorCode)> on_disconnect, os::Handler* handler);
 
-  LeAclConnectionInterface* GetLeAclConnectionInterface(common::Callback<void(LeMetaEventView)> event_handler,
-                                                        common::Callback<void(uint16_t, hci::ErrorCode)> on_disconnect,
-                                                        os::Handler* handler);
+  virtual LeAclConnectionInterface* GetLeAclConnectionInterface(
+      common::Callback<void(LeMetaEventView)> event_handler,
+      common::Callback<void(uint16_t, hci::ErrorCode)> on_disconnect, os::Handler* handler);
 
-  LeAdvertisingInterface* GetLeAdvertisingInterface(common::Callback<void(LeMetaEventView)> event_handler,
-                                                    os::Handler* handler);
+  virtual LeAdvertisingInterface* GetLeAdvertisingInterface(common::Callback<void(LeMetaEventView)> event_handler,
+                                                            os::Handler* handler);
 
-  LeScanningInterface* GetLeScanningInterface(common::Callback<void(LeMetaEventView)> event_handler,
-                                              os::Handler* handler);
+  virtual LeScanningInterface* GetLeScanningInterface(common::Callback<void(LeMetaEventView)> event_handler,
+                                                      os::Handler* handler);
 
   static const ModuleFactory Factory;
 

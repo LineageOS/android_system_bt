@@ -57,7 +57,8 @@ filegroup {
     name: "BluetoothHciFuzzHelperSources",
     srcs: [
         "fuzz/status_vs_complete_commands.cc",
-        "fuzz/dev_null_hci.cc",
+        "fuzz/hci_layer_fuzz_client.cc",
+        "fuzz/fuzz_hci_layer.cc",
     ],
 }
 
