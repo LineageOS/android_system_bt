@@ -40,6 +40,13 @@ class LeL2capTest(GdBaseTestClass):
 
         self.dut_l2cap = PyLeL2cap(self.dut)
         self.cert_l2cap = CertLeL2cap(self.cert)
+        self.dut_address = common.BluetoothAddressWithType(
+            address = common.BluetoothAddress(address=bytes(b'0D:05:04:03:02:01')),
+            type=common.RANDOM_DEVICE_ADDRESS)
+        self.cert_address = common.BluetoothAddressWithType(
+            address = common.BluetoothAddress(address=bytes(b'55:11:FF:AA:33:22')),
+            type=common.RANDOM_DEVICE_ADDRESS)
+        self.cert_l2cap._device.hci_le_acl_manager.SetInitiatorAddress(self.cert_address)
 
     def teardown_test(self):
         self.cert_l2cap.close()
@@ -53,12 +60,6 @@ class LeL2capTest(GdBaseTestClass):
         gap_name.data = list(bytes(b'Im_The_DUT'))
         gap_data = le_advertising_facade.GapDataMsg(
             data=bytes(gap_name.Serialize()))
-        self.dut_address = common.BluetoothAddressWithType(
-            address = common.BluetoothAddress(address=bytes(b'0D:05:04:03:02:01')),
-            type=common.RANDOM_DEVICE_ADDRESS)
-        self.cert_address = common.BluetoothAddressWithType(
-            address=common.BluetoothAddress(address=b"22:33:ff:ff:11:00"),
-            type=common.RANDOM_DEVICE_ADDRESS)
         config = le_advertising_facade.AdvertisingConfig(
             advertisement=[gap_data],
             random_address=self.dut_address.address,
@@ -88,12 +89,6 @@ class LeL2capTest(GdBaseTestClass):
         gap_name.data = list(bytes(b'Im_The_DUT'))
         gap_data = le_advertising_facade.GapDataMsg(
             data=bytes(gap_name.Serialize()))
-        self.dut_address = common.BluetoothAddressWithType(
-            address = common.BluetoothAddress(address=bytes(b'0D:05:04:03:02:01')),
-            type=common.RANDOM_DEVICE_ADDRESS)
-        self.cert_address = common.BluetoothAddressWithType(
-            address = common.BluetoothAddress(address=bytes(b'22:33:ff:ff:11:00')),
-            type=common.RANDOM_DEVICE_ADDRESS)
         config = le_advertising_facade.AdvertisingConfig(
             advertisement=[gap_data],
             random_address=self.cert_address.address,
