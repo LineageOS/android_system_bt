@@ -41,6 +41,8 @@ class FuzzHciHal : public HciHal {
     return "HciHalFuzz";
   }
 
+  static const ModuleFactory Factory;
+
  protected:
   void ListDependencies(ModuleList* list) override {}
   void Start() override {}
