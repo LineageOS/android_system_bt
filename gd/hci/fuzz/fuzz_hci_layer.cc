@@ -77,6 +77,8 @@ void FuzzHciLayer::injectAclData(std::vector<uint8_t> data) {
   acl_inject_->Inject(std::make_unique<AclPacketView>(aclPacket));
 }
 
+const ModuleFactory FuzzHciLayer::Factory = ModuleFactory([]() { return new FuzzHciLayer(); });
+
 }  // namespace fuzz
 }  // namespace hci
 }  // namespace bluetooth

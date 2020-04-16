@@ -26,7 +26,7 @@
 
 #include <fuzzer/FuzzedDataProvider.h>
 
-using bluetooth::TestModuleRegistry;
+using bluetooth::FuzzTestModuleRegistry;
 using bluetooth::fuzz::GetArbitraryBytes;
 using bluetooth::hci::AclManager;
 using bluetooth::hci::HciLayer;
@@ -38,12 +38,9 @@ using bluetooth::os::fuzz::fake_timerfd_reset;
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   FuzzedDataProvider dataProvider(data, size);
 
-  static TestModuleRegistry moduleRegistry = TestModuleRegistry();
-  FuzzHciLayer* fuzzHci = new FuzzHciLayer();
-
-  moduleRegistry.InjectTestModule(&HciLayer::Factory, fuzzHci);
-  fuzzHci->Start();
-  moduleRegistry.Start<AclManager>(&moduleRegistry.GetTestThread());
+  static FuzzTestModuleRegistry moduleRegistry = FuzzTestModuleRegistry();
+  FuzzHciLayer* fuzzHci = moduleRegistry.Inject<FuzzHciLayer>(&HciLayer::Factory);
+  moduleRegistry.Start<AclManager>();
 
   while (dataProvider.remaining_bytes() > 0) {
     const uint8_t action = dataProvider.ConsumeIntegralInRange(0, 12);
@@ -57,10 +54,7 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
     }
   }
 
-  if (!moduleRegistry.GetTestThread().GetReactor()->WaitForIdle(std::chrono::milliseconds(100))) {
-    LOG_ERROR("idle timed out");
-  }
-  moduleRegistry.StopAll();
+  moduleRegistry.WaitForIdleAndStopAll();
   fake_timerfd_reset();
   return 0;
 }
