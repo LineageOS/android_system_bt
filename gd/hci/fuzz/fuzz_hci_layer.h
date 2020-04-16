@@ -83,6 +83,9 @@ class FuzzHciLayer : public HciLayer {
     return "FuzzHciLayer";
   }
 
+  static const ModuleFactory Factory;
+
+ protected:
   void ListDependencies(ModuleList* list) override {}
   void Start() override;
   void Stop() override;
