@@ -48,6 +48,13 @@ class DualL2capTest(GdBaseTestClass):
         self.cert_l2cap = CertL2cap(self.cert)
         self.dut_le_l2cap = PyLeL2cap(self.dut)
         self.cert_le_l2cap = CertLeL2cap(self.cert)
+        self.dut_le_address = common.BluetoothAddressWithType(
+            address = common.BluetoothAddress(address=bytes(b'0D:05:04:03:02:01')),
+            type=common.RANDOM_DEVICE_ADDRESS)
+        self.cert_address = common.BluetoothAddressWithType(
+            address = common.BluetoothAddress(address=bytes(b'55:11:FF:AA:33:22')),
+            type=common.RANDOM_DEVICE_ADDRESS)
+        self.cert_le_l2cap._device.hci_le_acl_manager.SetInitiatorAddress(self.cert_address)
 
     def teardown_test(self):
         self.cert_le_l2cap.close()
@@ -68,15 +75,9 @@ class DualL2capTest(GdBaseTestClass):
         gap_name.data = list(bytes(b'Im_The_DUT'))
         gap_data = le_advertising_facade.GapDataMsg(
             data=bytes(gap_name.Serialize()))
-        self.dut_address = common.BluetoothAddressWithType(
-            address = common.BluetoothAddress(address=bytes(b'0D:05:04:03:02:01')),
-            type=common.RANDOM_DEVICE_ADDRESS)
-        self.cert_address = common.BluetoothAddressWithType(
-            address=common.BluetoothAddress(address=b"22:33:ff:ff:11:00"),
-            type=common.RANDOM_DEVICE_ADDRESS)
         config = le_advertising_facade.AdvertisingConfig(
             advertisement=[gap_data],
-            random_address=self.dut_address.address,
+            random_address=self.dut_le_address.address,
             interval_min=512,
             interval_max=768,
             event_type=le_advertising_facade.AdvertisingEventType.ADV_IND,
@@ -90,7 +91,7 @@ class DualL2capTest(GdBaseTestClass):
         request = le_advertising_facade.CreateAdvertiserRequest(config=config)
         create_response = self.dut.hci_le_advertising_manager.CreateAdvertiser(
             request)
-        self.cert_le_l2cap.connect_le_acl(self.dut_address)
+        self.cert_le_l2cap.connect_le_acl(self.dut_le_address)
 
     def _open_le_coc_from_dut(self, psm=0x33, our_scid=None):
         response_future = self.dut_le_l2cap.connect_coc_to_cert(self.cert_address, psm)
