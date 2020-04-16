@@ -31,8 +31,7 @@ void FuzzHciHal::unregisterIncomingPacketCallback() {
 }
 
 void FuzzHciHal::sendHciCommand(HciPacket packet) {
-  auto packetView = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(packet));
-  hci::CommandPacketView command = hci::CommandPacketView::Create(packetView);
+  hci::CommandPacketView command = hci::CommandPacketView::FromBytes(packet);
   if (!command.IsValid()) {
     return;
   }
@@ -42,8 +41,7 @@ void FuzzHciHal::sendHciCommand(HciPacket packet) {
 }
 
 void FuzzHciHal::injectHciEvent(std::vector<uint8_t> data) {
-  auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(data));
-  hci::EventPacketView event = hci::EventPacketView::Create(packet);
+  hci::EventPacketView event = hci::EventPacketView::FromBytes(data);
   if (!event.IsValid()) {
     return;
   }
@@ -70,8 +68,7 @@ void FuzzHciHal::injectHciEvent(std::vector<uint8_t> data) {
 }
 
 void FuzzHciHal::injectAclData(std::vector<uint8_t> data) {
-  auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(data));
-  hci::AclPacketView aclPacket = hci::AclPacketView::Create(packet);
+  hci::AclPacketView aclPacket = hci::AclPacketView::FromBytes(data);
   if (!aclPacket.IsValid()) {
     return;
   }
@@ -80,8 +77,7 @@ void FuzzHciHal::injectAclData(std::vector<uint8_t> data) {
 }
 
 void FuzzHciHal::injectScoData(std::vector<uint8_t> data) {
-  auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(data));
-  hci::ScoPacketView scoPacket = hci::ScoPacketView::Create(packet);
+  hci::ScoPacketView scoPacket = hci::ScoPacketView::FromBytes(data);
   if (!scoPacket.IsValid()) {
     return;
   }
