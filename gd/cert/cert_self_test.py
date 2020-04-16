@@ -16,6 +16,7 @@
 
 from datetime import datetime, timedelta
 import logging
+from threading import Timer
 import time
 
 from mobly import asserts
@@ -28,7 +29,7 @@ from bluetooth_packets_python3 import l2cap_packets
 from cert.event_stream import EventStream, FilteringEventStream
 from cert.truth import assertThat
 from cert.metadata import metadata
-from cert.behavior import when
+from cert.behavior import when, wait_until
 from cert.behavior import IHasBehaviors
 from cert.behavior import anything
 from cert.behavior import SingleArgumentBehavior
@@ -646,3 +647,112 @@ class CertSelfTest(BaseTestClass):
         thing.behaviors.test_request_behavior.run("A")
         thing.behaviors.test_request_behavior.run("A")
         assertThat(thing.unhandled_count).isEqualTo(1)
+
+    def test_fluent_behavior__wait_until_done(self):
+        thing = ObjectWithBehaviors()
+        is_a = lambda obj: obj == "A"
+        when(thing).test_request(is_a).then().increment_count()
+
+        closure = lambda: thing.behaviors.test_request_behavior.run("A")
+        t = Timer(0.5, closure)
+        t.start()
+
+        wait_until(thing).test_request(is_a).times(1)
+        assertThat(thing.count).isEqualTo(1)
+        assertThat(thing.captured).isEqualTo(["A"])
+
+    def test_fluent_behavior__wait_until_done_different_lambda(self):
+        thing = ObjectWithBehaviors()
+        when(thing).test_request(
+            lambda obj: obj == "A").then().increment_count()
+
+        closure = lambda: thing.behaviors.test_request_behavior.run("A")
+        t = Timer(0.5, closure)
+        t.start()
+
+        wait_until(thing).test_request(lambda obj: obj == "A").times(1)
+        assertThat(thing.count).isEqualTo(1)
+        assertThat(thing.captured).isEqualTo(["A"])
+
+    def test_fluent_behavior__wait_until_done_anything(self):
+        thing = ObjectWithBehaviors()
+        when(thing).test_request(
+            lambda obj: obj == "A").then().increment_count()
+
+        closure = lambda: thing.behaviors.test_request_behavior.run("A")
+        t = Timer(0.5, closure)
+        t.start()
+
+        wait_until(thing).test_request(anything()).times(1)
+        assertThat(thing.count).isEqualTo(1)
+        assertThat(thing.captured).isEqualTo(["A"])
+
+    def test_fluent_behavior__wait_until_done_not_happened(self):
+        thing = ObjectWithBehaviors()
+        thing.behaviors.test_request_behavior.set_default_to_ignore()
+        when(thing).test_request(
+            lambda obj: obj == "A").then().increment_count()
+
+        closure = lambda: thing.behaviors.test_request_behavior.run("B")
+        t = Timer(0.5, closure)
+        t.start()
+        assertThat(
+            wait_until(thing).test_request(lambda obj: obj == "A").times(
+                1)).isFalse()
+
+    def test_fluent_behavior__wait_until_done_with_default(self):
+        thing = ObjectWithBehaviors()
+        thing.behaviors.test_request_behavior.set_default(
+            lambda obj: thing.increment_unhandled())
+
+        closure = lambda: thing.behaviors.test_request_behavior.run("A")
+        t = Timer(0.5, closure)
+        t.start()
+
+        wait_until(thing).test_request(anything()).times(1)
+        assertThat(thing.unhandled_count).isEqualTo(1)
+
+    def test_fluent_behavior__wait_until_done_two_events_AA(self):
+        thing = ObjectWithBehaviors()
+        when(thing).test_request(
+            lambda obj: obj == "A").then().increment_count().increment_count()
+
+        closure1 = lambda: thing.behaviors.test_request_behavior.run("A")
+        t1 = Timer(0.5, closure1)
+        t1.start()
+        closure2 = lambda: thing.behaviors.test_request_behavior.run("A")
+        t2 = Timer(0.5, closure2)
+        t2.start()
+
+        wait_until(thing).test_request(lambda obj: obj == "A").times(2)
+        assertThat(thing.count).isEqualTo(2)
+        assertThat(thing.captured).isEqualTo(["A", "A"])
+
+    def test_fluent_behavior__wait_until_done_two_events_AB(self):
+        thing = ObjectWithBehaviors()
+        when(thing).test_request(anything()).always().increment_count()
+
+        closure1 = lambda: thing.behaviors.test_request_behavior.run("A")
+        t1 = Timer(0.5, closure1)
+        t1.start()
+        closure2 = lambda: thing.behaviors.test_request_behavior.run("B")
+        t2 = Timer(0.5, closure2)
+        t2.start()
+
+        wait_until(thing).test_request(anything()).times(2)
+        assertThat(thing.count).isEqualTo(2)
+        assertThat(thing.captured).isEqualTo(["A", "B"])
+
+    def test_fluent_behavior__wait_until_done_only_one_event_is_done(self):
+        thing = ObjectWithBehaviors()
+        when(thing).test_request(anything()).always().increment_count()
+
+        closure1 = lambda: thing.behaviors.test_request_behavior.run("A")
+        t1 = Timer(1, closure1)
+        t1.start()
+        closure2 = lambda: thing.behaviors.test_request_behavior.run("B")
+        t2 = Timer(3, closure2)
+        t2.start()
+        assertThat(
+            wait_until(thing).test_request(lambda obj: obj == "A").times(
+                2)).isFalse()
