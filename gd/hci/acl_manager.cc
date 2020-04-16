@@ -212,6 +212,9 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     hci_layer_->RegisterEventHandler(EventCode::LINK_SUPERVISION_TIMEOUT_CHANGED,
                                      Bind(&impl::on_link_supervision_timeout_changed, common::Unretained(this)),
                                      handler_);
+
+    le_initiator_address_ =
+        AddressWithType(Address{{0x00, 0x11, 0xFF, 0xFF, 0x33, 0x22}}, AddressType::RANDOM_DEVICE_ADDRESS);
   }
 
   void Stop() {
@@ -994,7 +997,7 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     uint16_t le_scan_interval = 0x0060;
     uint16_t le_scan_window = 0x0030;
     InitiatorFilterPolicy initiator_filter_policy = InitiatorFilterPolicy::USE_PEER_ADDRESS;
-    OwnAddressType own_address_type = OwnAddressType::RANDOM_DEVICE_ADDRESS;
+    OwnAddressType own_address_type = static_cast<OwnAddressType>(le_initiator_address_.GetAddressType());
     uint16_t conn_interval_min = 0x0018;
     uint16_t conn_interval_max = 0x0028;
     uint16_t conn_latency = 0x0000;
@@ -1018,8 +1021,10 @@ struct AclManager::impl : public security::ISecurityManagerListener {
       // With real controllers, we must set random address before using it to establish connection
       // TODO: have separate state machine generate new address when needed, consider using auto-generation in
       // controller
-      hci_layer_->EnqueueCommand(hci::LeSetRandomAddressBuilder::Create(Address{{0x00, 0x11, 0xFF, 0xFF, 0x33, 0x22}}),
-                                 common::BindOnce([](CommandCompleteView status) {}), handler_);
+      if (own_address_type == OwnAddressType::RANDOM_DEVICE_ADDRESS) {
+        hci_layer_->EnqueueCommand(hci::LeSetRandomAddressBuilder::Create(le_initiator_address_.GetAddress()),
+                                   common::BindOnce([](CommandCompleteView status) {}), handler_);
+      }
 
       hci_layer_->EnqueueCommand(LeExtendedCreateConnectionBuilder::Create(
                                      initiator_filter_policy, own_address_type, address_with_type.GetAddressType(),
@@ -1040,6 +1045,15 @@ struct AclManager::impl : public security::ISecurityManagerListener {
             ASSERT(status.GetCommandOpCode() == OpCode::LE_CREATE_CONNECTION);
           }),
           handler_);
+    }
+  }
+
+  void set_le_initiator_address(AddressWithType le_initiator_address) {
+    le_initiator_address_ = le_initiator_address;
+
+    if (le_initiator_address_.GetAddressType() != AddressType::RANDOM_DEVICE_ADDRESS) {
+      // Usually controllers provide vendor-specific way to override public address. Implement it if it's ever needed.
+      LOG_ALWAYS_FATAL("Don't know how to use this type of address");
     }
   }
 
@@ -1817,6 +1831,7 @@ struct AclManager::impl : public security::ISecurityManagerListener {
   common::Callback<bool(Address, ClassOfDevice)> should_accept_connection_;
   std::queue<std::pair<Address, std::unique_ptr<CreateConnectionBuilder>>> pending_outgoing_connections_;
   uint16_t default_link_policy_settings_ = 0;
+  AddressWithType le_initiator_address_;
 };
 
 AclConnection::QueueUpEnd* AclConnection::GetAclQueueEnd() const {
@@ -2007,6 +2022,11 @@ void AclManager::CreateConnection(Address address) {
 void AclManager::CreateLeConnection(AddressWithType address_with_type) {
   GetHandler()->Post(
       common::BindOnce(&impl::create_le_connection, common::Unretained(pimpl_.get()), address_with_type));
+}
+
+void AclManager::SetLeInitiatorAddress(AddressWithType initiator_address) {
+  GetHandler()->Post(
+      common::BindOnce(&impl::set_le_initiator_address, common::Unretained(pimpl_.get()), initiator_address));
 }
 
 void AclManager::CancelConnect(Address address) {
