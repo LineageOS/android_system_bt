@@ -30,6 +30,7 @@ using bluetooth::hal::HciHal;
 using bluetooth::hal::fuzz::FuzzHciHal;
 using bluetooth::hci::fuzz::DevNullHci;
 using bluetooth::os::fuzz::fake_timerfd_advance;
+using bluetooth::os::fuzz::fake_timerfd_cap_at;
 using bluetooth::os::fuzz::fake_timerfd_reset;
 
 static std::vector<uint8_t> GetArbitraryBytes(FuzzedDataProvider* fdp) {
@@ -38,6 +39,7 @@ static std::vector<uint8_t> GetArbitraryBytes(FuzzedDataProvider* fdp) {
 
 extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
   FuzzedDataProvider dataProvider(data, size);
+  fake_timerfd_cap_at(1999);  // prevent command timeouts
 
   static TestModuleRegistry moduleRegistry = TestModuleRegistry();
   FuzzHciHal* fuzzHal = new FuzzHciHal();
