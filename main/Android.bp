@@ -95,9 +95,6 @@ cc_library_shared {
         "libtinyxml2",
         "libz",
         "libcrypto",
-        //"android.hardware.keymaster@4.0",
-        //"libkeymaster4support",
-        //"libkeystore_binder",
     ],
     static_libs: [
         "libbte",
