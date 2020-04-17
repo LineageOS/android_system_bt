@@ -38,9 +38,7 @@ namespace bluetooth {
 namespace hci {
 namespace facade {
 
-class AclManagerFacadeService : public AclManagerFacade::Service,
-                                public ::bluetooth::hci::ConnectionCallbacks,
-                                public ::bluetooth::hci::ConnectionManagementCallbacks {
+class AclManagerFacadeService : public AclManagerFacade::Service, public ::bluetooth::hci::ConnectionCallbacks {
  public:
   AclManagerFacadeService(AclManager* acl_manager, ::bluetooth::os::Handler* facade_handler)
       : acl_manager_(acl_manager), facade_handler_(facade_handler) {
@@ -50,7 +48,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
   ~AclManagerFacadeService() override {
     std::unique_lock<std::mutex> lock(acl_connections_mutex_);
     for (auto connection : acl_connections_) {
-      connection.second->GetAclQueueEnd()->UnregisterDequeue();
+      connection.second.connection_->GetAclQueueEnd()->UnregisterDequeue();
     }
   }
 
@@ -75,7 +73,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
       LOG_ERROR("Invalid handle");
       return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Invalid handle");
     } else {
-      connection->second->Disconnect(DisconnectReason::REMOTE_USER_TERMINATED_CONNECTION);
+      connection->second.connection_->Disconnect(DisconnectReason::REMOTE_USER_TERMINATED_CONNECTION);
       return ::grpc::Status::OK;
     }
   }
@@ -88,7 +86,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
       LOG_ERROR("Invalid handle");
       return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Invalid handle");
     } else {
-      connection->second->AuthenticationRequested();
+      connection->second.connection_->AuthenticationRequested();
       return ::grpc::Status::OK;
     }
   };
@@ -115,7 +113,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
         return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Invalid handle");
       } else {
         // TODO: This is unsafe because connection may have gone
-        connection->second->GetAclQueueEnd()->RegisterEnqueue(
+        connection->second.connection_->GetAclQueueEnd()->RegisterEnqueue(
             facade_handler_, common::Bind(&AclManagerFacadeService::enqueue_packet, common::Unretained(this),
                                           common::Unretained(request), common::Passed(std::move(promise))));
       }
@@ -128,7 +126,9 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
   }
 
   std::unique_ptr<BasePacketBuilder> enqueue_packet(const AclData* request, std::promise<void> promise) {
-    acl_connections_[request->handle()]->GetAclQueueEnd()->UnregisterEnqueue();
+    auto connection = acl_connections_.find(request->handle());
+    ASSERT_LOG(connection != acl_connections_.end(), "handle %d", request->handle());
+    connection->second.connection_->GetAclQueueEnd()->UnregisterEnqueue();
     std::unique_ptr<RawBuilder> packet =
         std::make_unique<RawBuilder>(std::vector<uint8_t>(request->payload().begin(), request->payload().end()));
     promise.set_value();
@@ -173,34 +173,24 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
     std::unique_lock<std::mutex> lock(acl_connections_mutex_);
     auto addr = connection->GetAddress();
     std::shared_ptr<::bluetooth::hci::ClassicAclConnection> shared_connection = std::move(connection);
-    acl_connections_.emplace(to_handle(current_connection_request_), shared_connection);
+    uint16_t handle = to_handle(current_connection_request_);
+    acl_connections_.emplace(std::pair(handle, Connection(handle, shared_connection)));
     auto remote_address = shared_connection->GetAddress().ToString();
     shared_connection->GetAclQueueEnd()->RegisterDequeue(
         facade_handler_, common::Bind(&AclManagerFacadeService::on_incoming_classic_acl, common::Unretained(this),
-                                      shared_connection, to_handle(current_connection_request_)));
+                                      shared_connection, handle));
     shared_connection->RegisterDisconnectCallback(
         common::BindOnce(&AclManagerFacadeService::on_disconnect, common::Unretained(this), shared_connection,
                          current_connection_request_),
         facade_handler_);
-    shared_connection->RegisterCallbacks(this, facade_handler_);
-    std::unique_ptr<BasePacketBuilder> builder = ConnectionCompleteBuilder::Create(
-        ErrorCode::SUCCESS, to_handle(current_connection_request_), addr, LinkType::ACL, Enable::DISABLED);
+    auto callbacks = acl_connections_.find(handle)->second.GetCallbacks();
+    shared_connection->RegisterCallbacks(callbacks, facade_handler_);
+    std::unique_ptr<BasePacketBuilder> builder =
+        ConnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, addr, LinkType::ACL, Enable::DISABLED);
     ConnectionEvent success;
     success.set_event(builder_to_string(std::move(builder)));
     per_connection_events_[current_connection_request_]->OnIncomingEvent(success);
     current_connection_request_++;
-  }
-
-  void OnMasterLinkKeyComplete(KeyFlag key_flag) override {
-    LOG_DEBUG("key_flag:%s", KeyFlagText(key_flag).c_str());
-  }
-
-  void OnRoleChange(Role new_role) override {
-    LOG_DEBUG("new_role:%d", (uint8_t)new_role);
-  }
-
-  void OnReadLinkPolicySettingsComplete(uint16_t link_policy_settings) override {
-    LOG_DEBUG("link_policy_settings:%d", link_policy_settings);
   }
 
   void OnConnectFail(Address address, ErrorCode reason) override {
@@ -212,90 +202,116 @@ class AclManagerFacadeService : public AclManagerFacade::Service,
     current_connection_request_++;
   }
 
-  void OnConnectionPacketTypeChanged(uint16_t packet_type) override {
-    LOG_DEBUG("OnConnectionPacketTypeChanged packet_type:%d", packet_type);
-  }
+  class Connection : public ::bluetooth::hci::ConnectionManagementCallbacks {
+   public:
+    Connection(uint16_t handle, std::shared_ptr<ClassicAclConnection> connection)
+        : handle_(handle), connection_(std::move(connection)) {}
 
-  void OnAuthenticationComplete() override {
-    LOG_DEBUG("OnAuthenticationComplete");
-  }
+    ConnectionManagementCallbacks* GetCallbacks() {
+      return this;
+    }
 
-  void OnEncryptionChange(EncryptionEnabled enabled) override {
-    LOG_DEBUG("OnConnectionPacketTypeChanged enabled:%d", (uint8_t)enabled);
-  }
+    void OnMasterLinkKeyComplete(KeyFlag key_flag) override {
+      LOG_DEBUG("key_flag:%s", KeyFlagText(key_flag).c_str());
+    }
 
-  void OnChangeConnectionLinkKeyComplete() override {
-    LOG_DEBUG("OnChangeConnectionLinkKeyComplete");
+    void OnRoleChange(Role new_role) override {
+      LOG_DEBUG("new_role:%d", (uint8_t)new_role);
+    }
+
+    void OnReadLinkPolicySettingsComplete(uint16_t link_policy_settings) override {
+      LOG_DEBUG("link_policy_settings:%d", link_policy_settings);
+    }
+
+    void OnConnectionPacketTypeChanged(uint16_t packet_type) override {
+      LOG_DEBUG("OnConnectionPacketTypeChanged packet_type:%d", packet_type);
+    }
+
+    void OnAuthenticationComplete() override {
+      LOG_DEBUG("OnAuthenticationComplete");
+    }
+
+    void OnEncryptionChange(EncryptionEnabled enabled) override {
+      LOG_DEBUG("OnConnectionPacketTypeChanged enabled:%d", (uint8_t)enabled);
+    }
+
+    void OnChangeConnectionLinkKeyComplete() override {
+      LOG_DEBUG("OnChangeConnectionLinkKeyComplete");
+    };
+
+    void OnReadClockOffsetComplete(uint16_t clock_offset) override {
+      LOG_DEBUG("OnReadClockOffsetComplete clock_offset:%d", clock_offset);
+    };
+
+    void OnModeChange(Mode current_mode, uint16_t interval) override {
+      LOG_DEBUG("OnModeChange Mode:%d, interval:%d", (uint8_t)current_mode, interval);
+    };
+
+    void OnQosSetupComplete(ServiceType service_type, uint32_t token_rate, uint32_t peak_bandwidth, uint32_t latency,
+                            uint32_t delay_variation) override {
+      LOG_DEBUG("OnQosSetupComplete service_type:%d, token_rate:%d, peak_bandwidth:%d, latency:%d, delay_variation:%d",
+                (uint8_t)service_type, token_rate, peak_bandwidth, latency, delay_variation);
+    }
+
+    void OnFlowSpecificationComplete(FlowDirection flow_direction, ServiceType service_type, uint32_t token_rate,
+                                     uint32_t token_bucket_size, uint32_t peak_bandwidth,
+                                     uint32_t access_latency) override {
+      LOG_DEBUG(
+          "OnFlowSpecificationComplete flow_direction:%d. service_type:%d, token_rate:%d, token_bucket_size:%d, "
+          "peak_bandwidth:%d, access_latency:%d",
+          (uint8_t)flow_direction, (uint8_t)service_type, token_rate, token_bucket_size, peak_bandwidth,
+          access_latency);
+    }
+
+    void OnFlushOccurred() override {
+      LOG_DEBUG("OnFlushOccurred");
+    }
+
+    void OnRoleDiscoveryComplete(Role current_role) override {
+      LOG_DEBUG("OnRoleDiscoveryComplete current_role:%d", (uint8_t)current_role);
+    }
+
+    void OnReadAutomaticFlushTimeoutComplete(uint16_t flush_timeout) override {
+      LOG_DEBUG("OnReadAutomaticFlushTimeoutComplete flush_timeout:%d", flush_timeout);
+    }
+
+    void OnReadTransmitPowerLevelComplete(uint8_t transmit_power_level) override {
+      LOG_DEBUG("OnReadTransmitPowerLevelComplete transmit_power_level:%d", transmit_power_level);
+    }
+
+    void OnReadLinkSupervisionTimeoutComplete(uint16_t link_supervision_timeout) override {
+      LOG_DEBUG("OnReadLinkSupervisionTimeoutComplete link_supervision_timeout:%d", link_supervision_timeout);
+    }
+
+    void OnReadFailedContactCounterComplete(uint16_t failed_contact_counter) override {
+      LOG_DEBUG("OnReadFailedContactCounterComplete failed_contact_counter:%d", failed_contact_counter);
+    }
+
+    void OnReadLinkQualityComplete(uint8_t link_quality) override {
+      LOG_DEBUG("OnReadLinkQualityComplete link_quality:%d", link_quality);
+    }
+
+    void OnReadAfhChannelMapComplete(AfhMode afh_mode, std::array<uint8_t, 10> afh_channel_map) override {
+      LOG_DEBUG("OnReadAfhChannelMapComplete afh_mode:%d", (uint8_t)afh_mode);
+    }
+
+    void OnReadRssiComplete(uint8_t rssi) override {
+      LOG_DEBUG("OnReadRssiComplete rssi:%d", rssi);
+    }
+
+    void OnReadClockComplete(uint32_t clock, uint16_t accuracy) override {
+      LOG_DEBUG("OnReadClockComplete clock:%d, accuracy:%d", clock, accuracy);
+    }
+
+    uint16_t handle_;
+    std::shared_ptr<ClassicAclConnection> connection_;
   };
-
-  void OnReadClockOffsetComplete(uint16_t clock_offset) override {
-    LOG_DEBUG("OnReadClockOffsetComplete clock_offset:%d", clock_offset);
-  };
-
-  void OnModeChange(Mode current_mode, uint16_t interval) override {
-    LOG_DEBUG("OnModeChange Mode:%d, interval:%d", (uint8_t)current_mode, interval);
-  };
-
-  void OnQosSetupComplete(ServiceType service_type, uint32_t token_rate, uint32_t peak_bandwidth, uint32_t latency,
-                          uint32_t delay_variation) override {
-    LOG_DEBUG("OnQosSetupComplete service_type:%d, token_rate:%d, peak_bandwidth:%d, latency:%d, delay_variation:%d",
-              (uint8_t)service_type, token_rate, peak_bandwidth, latency, delay_variation);
-  }
-
-  void OnFlowSpecificationComplete(FlowDirection flow_direction, ServiceType service_type, uint32_t token_rate,
-                                   uint32_t token_bucket_size, uint32_t peak_bandwidth,
-                                   uint32_t access_latency) override {
-    LOG_DEBUG(
-        "OnFlowSpecificationComplete flow_direction:%d. service_type:%d, token_rate:%d, token_bucket_size:%d, "
-        "peak_bandwidth:%d, access_latency:%d",
-        (uint8_t)flow_direction, (uint8_t)service_type, token_rate, token_bucket_size, peak_bandwidth, access_latency);
-  }
-
-  void OnFlushOccurred() override {
-    LOG_DEBUG("OnFlushOccurred");
-  }
-
-  void OnRoleDiscoveryComplete(Role current_role) override {
-    LOG_DEBUG("OnRoleDiscoveryComplete current_role:%d", (uint8_t)current_role);
-  }
-
-  void OnReadAutomaticFlushTimeoutComplete(uint16_t flush_timeout) override {
-    LOG_DEBUG("OnReadAutomaticFlushTimeoutComplete flush_timeout:%d", flush_timeout);
-  }
-
-  void OnReadTransmitPowerLevelComplete(uint8_t transmit_power_level) override {
-    LOG_DEBUG("OnReadTransmitPowerLevelComplete transmit_power_level:%d", transmit_power_level);
-  }
-
-  void OnReadLinkSupervisionTimeoutComplete(uint16_t link_supervision_timeout) override {
-    LOG_DEBUG("OnReadLinkSupervisionTimeoutComplete link_supervision_timeout:%d", link_supervision_timeout);
-  }
-
-  void OnReadFailedContactCounterComplete(uint16_t failed_contact_counter) override {
-    LOG_DEBUG("OnReadFailedContactCounterComplete failed_contact_counter:%d", failed_contact_counter);
-  }
-
-  void OnReadLinkQualityComplete(uint8_t link_quality) override {
-    LOG_DEBUG("OnReadLinkQualityComplete link_quality:%d", link_quality);
-  }
-
-  void OnReadAfhChannelMapComplete(AfhMode afh_mode, std::array<uint8_t, 10> afh_channel_map) override {
-    LOG_DEBUG("OnReadAfhChannelMapComplete afh_mode:%d", (uint8_t)afh_mode);
-  }
-
-  void OnReadRssiComplete(uint8_t rssi) override {
-    LOG_DEBUG("OnReadRssiComplete rssi:%d", rssi);
-  }
-
-  void OnReadClockComplete(uint32_t clock, uint16_t accuracy) override {
-    LOG_DEBUG("OnReadClockComplete clock:%d, accuracy:%d", clock, accuracy);
-  }
 
  private:
   AclManager* acl_manager_;
   ::bluetooth::os::Handler* facade_handler_;
   mutable std::mutex acl_connections_mutex_;
-  std::map<uint16_t, std::shared_ptr<ClassicAclConnection>> acl_connections_;
+  std::map<uint16_t, Connection> acl_connections_;
   ::bluetooth::grpc::GrpcEventQueue<AclData> pending_acl_data_{"FetchAclData"};
   std::vector<std::unique_ptr<::bluetooth::grpc::GrpcEventQueue<ConnectionEvent>>> per_connection_events_;
   uint32_t current_connection_request_{0};
