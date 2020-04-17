@@ -355,8 +355,7 @@ void SecurityManagerImpl::OnConnectionOpenLe(std::unique_ptr<l2cap::le::FixedCha
   pending_le_pairing_.connection_handle_ = pending_le_pairing_.channel_->GetLinkOptions()->GetHandle();
   InitialInformations initial_informations{
       .my_role = pending_le_pairing_.channel_->GetLinkOptions()->GetRole(),
-      .my_connection_address = {hci::Address{{0x00, 0x11, 0xFF, 0xFF, 0x33, 0x22}} /*TODO: obtain my address*/,
-                                hci::AddressType::RANDOM_DEVICE_ADDRESS},
+      .my_connection_address = pending_le_pairing_.channel_->GetLinkOptions()->GetLocalAddress(),
       /*TODO: properly obtain capabilities from device-specific storage*/
       .myPairingCapabilities = {.io_capability = IoCapability::KEYBOARD_DISPLAY,
                                 .oob_data_flag = OobDataFlag::NOT_PRESENT,

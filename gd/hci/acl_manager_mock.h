@@ -42,7 +42,8 @@ class MockClassicAclConnection : public ClassicAclConnection {
 
 class MockLeAclConnection : public LeAclConnection {
  public:
-  MOCK_METHOD(AddressWithType, GetAddressWithType, (), (const, override));
+  MOCK_METHOD(AddressWithType, GetLocalAddress, (), (const, override));
+  MOCK_METHOD(AddressWithType, GetRemoteAddress, (), (const, override));
   MOCK_METHOD(void, RegisterDisconnectCallback,
               (common::OnceCallback<void(ErrorCode)> on_disconnect, os::Handler* handler), (override));
   MOCK_METHOD(bool, Disconnect, (DisconnectReason reason), (override));
