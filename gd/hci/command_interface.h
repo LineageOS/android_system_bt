@@ -16,19 +16,26 @@
 
 #pragma once
 
-#include <cstdint>
-#include <vector>
+#include "common/callback.h"
+#include "hci/hci_packets.h"
 #include "os/handler.h"
-
-#include <fuzzer/FuzzedDataProvider.h>
+#include "os/utils.h"
 
 namespace bluetooth {
-namespace fuzz {
+namespace hci {
 
-std::vector<std::vector<uint8_t>> SplitInput(const uint8_t* data, size_t size, const uint8_t* separator,
-                                             size_t separatorSize);
+template <typename T>
+class CommandInterface {
+ public:
+  CommandInterface() = default;
+  virtual ~CommandInterface() = default;
+  DISALLOW_COPY_AND_ASSIGN(CommandInterface);
 
-std::vector<uint8_t> GetArbitraryBytes(FuzzedDataProvider* fdp);
+  virtual void EnqueueCommand(std::unique_ptr<T> command, common::OnceCallback<void(CommandCompleteView)> on_complete,
+                              os::Handler* handler) = 0;
 
-}  // namespace fuzz
+  virtual void EnqueueCommand(std::unique_ptr<T> command, common::OnceCallback<void(CommandStatusView)> on_status,
+                              os::Handler* handler) = 0;
+};
+}  // namespace hci
 }  // namespace bluetooth

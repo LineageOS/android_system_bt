@@ -16,19 +16,31 @@
 
 #pragma once
 
-#include <cstdint>
-#include <vector>
-#include "os/handler.h"
-
-#include <fuzzer/FuzzedDataProvider.h>
+#include "os/queue.h"
 
 namespace bluetooth {
+namespace os {
 namespace fuzz {
 
-std::vector<std::vector<uint8_t>> SplitInput(const uint8_t* data, size_t size, const uint8_t* separator,
-                                             size_t separatorSize);
+template <typename T>
+class FuzzInjectQueue {
+ public:
+  FuzzInjectQueue(IQueueEnqueue<T>* queue, Handler* handler) : handler_(handler) {
+    buffer_ = new EnqueueBuffer<T>(queue);
+  }
+  ~FuzzInjectQueue() {
+    delete buffer_;
+  }
 
-std::vector<uint8_t> GetArbitraryBytes(FuzzedDataProvider* fdp);
+  void Inject(std::unique_ptr<T> data) {
+    buffer_->Enqueue(std::move(data), handler_);
+  }
+
+ private:
+  EnqueueBuffer<T>* buffer_;
+  Handler* handler_;
+};
 
 }  // namespace fuzz
+}  // namespace os
 }  // namespace bluetooth

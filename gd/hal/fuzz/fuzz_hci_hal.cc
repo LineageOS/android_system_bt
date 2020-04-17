@@ -16,6 +16,7 @@
 
 #include "hal/fuzz/fuzz_hci_hal.h"
 #include "fuzz/helpers.h"
+#include "hci/fuzz/status_vs_complete_commands.h"
 
 namespace bluetooth {
 namespace hal {
@@ -30,20 +31,17 @@ void FuzzHciHal::unregisterIncomingPacketCallback() {
 }
 
 void FuzzHciHal::sendHciCommand(HciPacket packet) {
-  auto packetView = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(packet));
-  hci::CommandPacketView command = hci::CommandPacketView::Create(packetView);
+  hci::CommandPacketView command = hci::CommandPacketView::FromBytes(packet);
   if (!command.IsValid()) {
     return;
   }
 
   waiting_opcode_ = command.GetOpCode();
-  // TODO: expand list or find better way to associate opcodes needing status vs complete
-  waiting_for_status_ = waiting_opcode_ == hci::OpCode::RESET;
+  waiting_for_status_ = hci::fuzz::uses_command_status(waiting_opcode_);
 }
 
 void FuzzHciHal::injectHciEvent(std::vector<uint8_t> data) {
-  auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(data));
-  hci::EventPacketView event = hci::EventPacketView::Create(packet);
+  hci::EventPacketView event = hci::EventPacketView::FromBytes(data);
   if (!event.IsValid()) {
     return;
   }
@@ -70,8 +68,7 @@ void FuzzHciHal::injectHciEvent(std::vector<uint8_t> data) {
 }
 
 void FuzzHciHal::injectAclData(std::vector<uint8_t> data) {
-  auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(data));
-  hci::AclPacketView aclPacket = hci::AclPacketView::Create(packet);
+  hci::AclPacketView aclPacket = hci::AclPacketView::FromBytes(data);
   if (!aclPacket.IsValid()) {
     return;
   }
@@ -80,14 +77,15 @@ void FuzzHciHal::injectAclData(std::vector<uint8_t> data) {
 }
 
 void FuzzHciHal::injectScoData(std::vector<uint8_t> data) {
-  auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(data));
-  hci::ScoPacketView scoPacket = hci::ScoPacketView::Create(packet);
+  hci::ScoPacketView scoPacket = hci::ScoPacketView::FromBytes(data);
   if (!scoPacket.IsValid()) {
     return;
   }
 
   callbacks_->scoDataReceived(data);
 }
+
+const ModuleFactory FuzzHciHal::Factory = ModuleFactory([]() { return new FuzzHciHal(); });
 
 }  // namespace fuzz
 }  // namespace hal

@@ -17,44 +17,33 @@
 #pragma once
 
 #include "common/callback.h"
+#include "hci/command_interface.h"
 #include "hci/hci_packets.h"
 #include "os/utils.h"
 
 namespace bluetooth {
 namespace hci {
 
-class AclConnectionInterface {
- public:
-  AclConnectionInterface() = default;
-  virtual ~AclConnectionInterface() = default;
-  DISALLOW_COPY_AND_ASSIGN(AclConnectionInterface);
-
-  virtual void EnqueueCommand(std::unique_ptr<ConnectionManagementCommandBuilder> command,
-                              common::OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler) = 0;
-
-  virtual void EnqueueCommand(std::unique_ptr<ConnectionManagementCommandBuilder> command,
-                              common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) = 0;
-
-  static constexpr EventCode AclConnectionEvents[] = {
-      EventCode::CONNECTION_PACKET_TYPE_CHANGED,
-      EventCode::ROLE_CHANGE,
-      EventCode::CONNECTION_COMPLETE,
-      EventCode::DISCONNECTION_COMPLETE,
-      EventCode::CONNECTION_REQUEST,
-      EventCode::CONNECTION_PACKET_TYPE_CHANGED,
-      EventCode::AUTHENTICATION_COMPLETE,
-      EventCode::READ_CLOCK_OFFSET_COMPLETE,
-      EventCode::MODE_CHANGE,
-      EventCode::QOS_SETUP_COMPLETE,
-      EventCode::ROLE_CHANGE,
-      EventCode::FLOW_SPECIFICATION_COMPLETE,
-      EventCode::FLUSH_OCCURRED,
-      EventCode::READ_REMOTE_SUPPORTED_FEATURES_COMPLETE,
-      EventCode::READ_REMOTE_EXTENDED_FEATURES_COMPLETE,
-      EventCode::READ_REMOTE_VERSION_INFORMATION_COMPLETE,
-      EventCode::ENCRYPTION_CHANGE,
-      EventCode::LINK_SUPERVISION_TIMEOUT_CHANGED,
-  };
+constexpr EventCode AclConnectionEvents[] = {
+    EventCode::CONNECTION_PACKET_TYPE_CHANGED,
+    EventCode::ROLE_CHANGE,
+    EventCode::CONNECTION_COMPLETE,
+    EventCode::DISCONNECTION_COMPLETE,
+    EventCode::CONNECTION_REQUEST,
+    EventCode::AUTHENTICATION_COMPLETE,
+    EventCode::READ_CLOCK_OFFSET_COMPLETE,
+    EventCode::MODE_CHANGE,
+    EventCode::QOS_SETUP_COMPLETE,
+    EventCode::FLOW_SPECIFICATION_COMPLETE,
+    EventCode::FLUSH_OCCURRED,
+    EventCode::READ_REMOTE_SUPPORTED_FEATURES_COMPLETE,
+    EventCode::READ_REMOTE_EXTENDED_FEATURES_COMPLETE,
+    EventCode::READ_REMOTE_VERSION_INFORMATION_COMPLETE,
+    EventCode::ENCRYPTION_CHANGE,
+    EventCode::LINK_SUPERVISION_TIMEOUT_CHANGED,
 };
+
+typedef CommandInterface<ConnectionManagementCommandBuilder> AclConnectionInterface;
+
 }  // namespace hci
 }  // namespace bluetooth
