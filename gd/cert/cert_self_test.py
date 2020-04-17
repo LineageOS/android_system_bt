@@ -18,6 +18,7 @@ from datetime import datetime, timedelta
 import logging
 from threading import Timer
 import time
+import traceback
 
 from mobly import asserts
 
@@ -526,6 +527,31 @@ class CertSelfTest(BaseTestClass):
                 "pts_test_name" in e.extras,
                 msg=("pts_test_name not in extra: %s" % str(e.extras)))
             asserts.assert_equal(e.extras["pts_test_name"], "Hello world")
+        else:
+            asserts.fail("Must throw an exception using @metadata decorator")
+
+    def test_metadata_test_with_exception_stacktrace(self):
+
+        @metadata(pts_test_id="A/B/C", pts_test_name="Hello world")
+        def simple_fail_test(failure_argument):
+            raise ValueError(failure_argument)
+
+        try:
+            simple_fail_test("BEEFBEEF")
+        except signals.TestError as e:
+            asserts.assert_true(
+                "pts_test_id" in e.extras,
+                msg=("pts_test_id not in extra: %s" % str(e.extras)))
+            asserts.assert_equal(e.extras["pts_test_id"], "A/B/C")
+            asserts.assert_true(
+                "pts_test_name" in e.extras,
+                msg=("pts_test_name not in extra: %s" % str(e.extras)))
+            asserts.assert_equal(e.extras["pts_test_name"], "Hello world")
+            trace_str = traceback.format_exc()
+            asserts.assert_true(
+                "raise ValueError(failure_argument)" in trace_str,
+                msg="Failed test method not in error stack trace: %s" %
+                trace_str)
         else:
             asserts.fail("Must throw an exception using @metadata decorator")
 
