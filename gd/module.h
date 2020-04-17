@@ -99,6 +99,11 @@ class Module {
     return static_cast<T*>(GetDependency(&T::Factory));
   }
 
+  template <typename Functor, typename... Args>
+  void Call(Functor&& functor, Args&&... args) {
+    GetHandler()->Post(common::BindOnce(std::forward<Functor>(functor), std::forward<Args>(args)...));
+  }
+
  private:
   Module* GetDependency(const ModuleFactory* module) const;
 
