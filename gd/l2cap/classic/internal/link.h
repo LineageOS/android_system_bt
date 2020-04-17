@@ -105,6 +105,8 @@ class Link : public l2cap::internal::ILink, public hci::ConnectionManagementCall
   // Invoked by signalling manager to indicate an outgoing connection request failed and link shall free resources
   virtual void OnOutgoingConnectionRequestFail(Cid local_cid);
 
+  virtual void SendInitialConfigRequestOrQueue(Cid local_cid);
+
   virtual void SendInformationRequest(InformationRequestInfoType type);
 
   virtual void SendDisconnectionRequest(Cid local_cid, Cid remote_cid) override;
@@ -168,6 +170,7 @@ class Link : public l2cap::internal::ILink, public hci::ConnectionManagementCall
 
  private:
   void connect_to_pending_dynamic_channels();
+  void send_pending_configuration_requests();
 
   os::Handler* l2cap_handler_;
   l2cap::internal::FixedChannelAllocator<FixedChannelImpl, Link> fixed_channel_allocator_{this, l2cap_handler_};
@@ -188,6 +191,7 @@ class Link : public l2cap::internal::ILink, public hci::ConnectionManagementCall
   std::list<Link::PendingAuthenticateDynamicChannelConnection> pending_channel_list_;
   std::list<Psm> pending_dynamic_psm_list_;
   std::list<Link::PendingDynamicChannelConnection> pending_dynamic_channel_callback_list_;
+  std::list<uint16_t> pending_outgoing_configuration_request_list_;
   DISALLOW_COPY_AND_ASSIGN(Link);
 };
 
