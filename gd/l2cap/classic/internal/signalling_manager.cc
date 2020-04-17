@@ -81,8 +81,8 @@ void ClassicSignallingManager::SendConnectionRequest(Psm psm, Cid local_cid) {
   }
 }
 
-void ClassicSignallingManager::SendConfigurationRequest(Cid remote_cid,
-                                                        std::vector<std::unique_ptr<ConfigurationOption>> config) {
+void ClassicSignallingManager::send_configuration_request(Cid remote_cid,
+                                                          std::vector<std::unique_ptr<ConfigurationOption>> config) {
   PendingCommand pending_command = {next_signal_id_,  CommandCode::CONFIGURATION_REQUEST, {}, {}, remote_cid, {},
                                     std::move(config)};
   next_signal_id_++;
@@ -93,16 +93,13 @@ void ClassicSignallingManager::SendConfigurationRequest(Cid remote_cid,
 }
 
 void ClassicSignallingManager::SendDisconnectionRequest(Cid local_cid, Cid remote_cid) {
-  command_just_sent_ = {next_signal_id_, CommandCode::DISCONNECTION_REQUEST, {}, local_cid, remote_cid, {}, {}};
+  PendingCommand pending_command = {
+      next_signal_id_, CommandCode::DISCONNECTION_REQUEST, {}, local_cid, remote_cid, {}, {}};
   next_signal_id_++;
-
-  auto signal_id = command_just_sent_.signal_id_;
-  auto source_cid = command_just_sent_.source_cid_;
-  auto destination_cid = command_just_sent_.destination_cid_;
-
-  auto builder = DisconnectionRequestBuilder::Create(signal_id.Value(), destination_cid, source_cid);
-  enqueue_buffer_->Enqueue(std::move(builder), handler_);
-  alarm_.Schedule(common::BindOnce(&ClassicSignallingManager::on_command_timeout, common::Unretained(this)), kTimeout);
+  pending_commands_.push(std::move(pending_command));
+  if (command_just_sent_.signal_id_ == kInvalidSignalId) {
+    handle_send_next_command();
+  }
 }
 
 void ClassicSignallingManager::SendInformationRequest(InformationRequestInfoType type) {
@@ -157,7 +154,145 @@ void ClassicSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, 
   }
   send_connection_response(signal_id, remote_cid, new_channel->GetCid(), ConnectionResponseResult::SUCCESS,
                            ConnectionResponseStatus::NO_FURTHER_INFORMATION_AVAILABLE);
-  auto& configuration_state = channel_configuration_[new_channel->GetCid()];
+
+  link_->SendInitialConfigRequestOrQueue(new_channel->GetCid());
+}
+
+void ClassicSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remote_cid, Cid cid,
+                                                    ConnectionResponseResult result, ConnectionResponseStatus status) {
+  if (command_just_sent_.signal_id_ != signal_id ||
+      command_just_sent_.command_code_ != CommandCode::CONNECTION_REQUEST) {
+    LOG_WARN("Unexpected response: no pending request. Expected signal id %d type %s, got %d",
+             command_just_sent_.signal_id_.Value(), CommandCodeText(command_just_sent_.command_code_).data(),
+             signal_id.Value());
+    return;
+  }
+  if (command_just_sent_.source_cid_ != cid) {
+    LOG_WARN("SCID doesn't match: expected %d, received %d", command_just_sent_.source_cid_, cid);
+    handle_send_next_command();
+    return;
+  }
+  if (result == ConnectionResponseResult::PENDING) {
+    alarm_.Schedule(common::BindOnce(&ClassicSignallingManager::on_command_timeout, common::Unretained(this)),
+                    kTimeout);
+    return;
+  }
+
+  command_just_sent_.signal_id_ = kInvalidSignalId;
+  alarm_.Cancel();
+  if (result != ConnectionResponseResult::SUCCESS) {
+    link_->OnOutgoingConnectionRequestFail(cid);
+    handle_send_next_command();
+    return;
+  }
+  Psm pending_psm = command_just_sent_.psm_;
+  auto new_channel = link_->AllocateReservedDynamicChannel(cid, pending_psm, remote_cid, {});
+  if (new_channel == nullptr) {
+    LOG_WARN("Can't allocate dynamic channel");
+    link_->OnOutgoingConnectionRequestFail(cid);
+    handle_send_next_command();
+    return;
+  }
+
+  link_->SendInitialConfigRequestOrQueue(cid);
+}
+
+void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid cid, Continuation is_continuation,
+                                                      std::vector<std::unique_ptr<ConfigurationOption>> options) {
+  auto channel = channel_allocator_->FindChannelByCid(cid);
+  if (channel == nullptr) {
+    LOG_WARN("Configuration request for an unknown channel");
+    return;
+  }
+
+  auto& configuration_state = channel_configuration_[cid];
+  std::vector<std::unique_ptr<ConfigurationOption>> rsp_options;
+  ConfigurationResponseResult result = ConfigurationResponseResult::SUCCESS;
+  auto remote_rfc_mode = RetransmissionAndFlowControlModeOption::L2CAP_BASIC;
+
+  for (auto& option : options) {
+    switch (option->type_) {
+      case ConfigurationOptionType::MTU: {
+        auto* config = MtuConfigurationOption::Specialize(option.get());
+        if (config->mtu_ < kMinimumClassicMtu) {
+          LOG_WARN("Configuration request with Invalid MTU");
+          config->mtu_ = kDefaultClassicMtu;
+          rsp_options.emplace_back(std::make_unique<MtuConfigurationOption>(*config));
+          result = ConfigurationResponseResult::UNACCEPTABLE_PARAMETERS;
+        }
+        configuration_state.outgoing_mtu_ = config->mtu_;
+        break;
+      }
+      case ConfigurationOptionType::FLUSH_TIMEOUT: {
+        // TODO: Handle this configuration option
+        break;
+      }
+      case ConfigurationOptionType::RETRANSMISSION_AND_FLOW_CONTROL: {
+        auto* config = RetransmissionAndFlowControlConfigurationOption::Specialize(option.get());
+        remote_rfc_mode = config->mode_;
+        if (config->mode_ == RetransmissionAndFlowControlModeOption::ENHANCED_RETRANSMISSION) {
+          if (config->retransmission_time_out_ == 0) {
+            config->retransmission_time_out_ = 2000;
+          }
+          if (config->monitor_time_out_ == 0) {
+            config->monitor_time_out_ = 12000;
+          }
+        }
+        configuration_state.remote_retransmission_and_flow_control_ = *config;
+        configuration_state.retransmission_and_flow_control_mode_ = config->mode_;
+        rsp_options.emplace_back(std::make_unique<RetransmissionAndFlowControlConfigurationOption>(*config));
+        break;
+      }
+      case ConfigurationOptionType::FRAME_CHECK_SEQUENCE: {
+        // We determine whether to use FCS or not when we send config request
+        break;
+      }
+      default:
+        if (option->is_hint_ != ConfigurationOptionIsHint::OPTION_IS_A_HINT) {
+          LOG_WARN("Received some unsupported configuration option: %d", static_cast<int>(option->type_));
+          auto response =
+              ConfigurationResponseBuilder::Create(signal_id.Value(), channel->GetRemoteCid(), is_continuation,
+                                                   ConfigurationResponseResult::UNKNOWN_OPTIONS, {});
+          enqueue_buffer_->Enqueue(std::move(response), handler_);
+          return;
+        }
+        break;
+    }
+  }
+
+  auto initial_config_option = dynamic_service_manager_->GetService(channel->GetPsm())->GetConfigOption();
+
+  if (remote_rfc_mode == RetransmissionAndFlowControlModeOption::L2CAP_BASIC &&
+      initial_config_option.channel_mode ==
+          DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::ENHANCED_RETRANSMISSION) {
+    LOG_WARN("ERTM mandatory not allow mode configuration, disconnect channel.");
+    SendDisconnectionRequest(channel->GetCid(), channel->GetRemoteCid());
+    return;
+  }
+
+  if (configuration_state.state_ == ChannelConfigurationState::State::WAIT_CONFIG_REQ) {
+    std::unique_ptr<DynamicChannel> user_channel = std::make_unique<DynamicChannel>(channel, handler_);
+    if (channel->local_initiated_) {
+      link_->NotifyChannelCreation(cid, std::move(user_channel));
+    } else {
+      dynamic_service_manager_->GetService(channel->GetPsm())->NotifyChannelCreation(std::move(user_channel));
+    }
+    configuration_state.state_ = ChannelConfigurationState::State::CONFIGURED;
+    data_pipeline_manager_->AttachChannel(cid, channel, l2cap::internal::DataPipelineManager::ChannelMode::BASIC);
+    data_pipeline_manager_->UpdateClassicConfiguration(cid, configuration_state);
+  } else if (configuration_state.state_ == ChannelConfigurationState::State::WAIT_CONFIG_REQ_RSP) {
+    configuration_state.state_ = ChannelConfigurationState::State::WAIT_CONFIG_RSP;
+  }
+
+  auto response = ConfigurationResponseBuilder::Create(signal_id.Value(), channel->GetRemoteCid(), is_continuation,
+                                                       result, std::move(rsp_options));
+  enqueue_buffer_->Enqueue(std::move(response), handler_);
+}
+
+void ClassicSignallingManager::SendInitialConfigRequest(Cid local_cid) {
+  auto channel = channel_allocator_->FindChannelByCid(local_cid);
+  auto psm = channel->GetPsm();
+  auto& configuration_state = channel_configuration_[local_cid];
   auto* service = dynamic_service_manager_->GetService(psm);
   auto initial_config = service->GetConfigOption();
 
@@ -201,177 +336,7 @@ void ClassicSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, 
     config.emplace_back(std::move(retransmission_flow_control_configuration));
     config.emplace_back(std::move(fcs_option));
   }
-  SendConfigurationRequest(remote_cid, std::move(config));
-}
-
-void ClassicSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remote_cid, Cid cid,
-                                                    ConnectionResponseResult result, ConnectionResponseStatus status) {
-  if (command_just_sent_.signal_id_ != signal_id ||
-      command_just_sent_.command_code_ != CommandCode::CONNECTION_REQUEST) {
-    LOG_WARN("Unexpected response: no pending request. Expected signal id %d type %s, got %d",
-             command_just_sent_.signal_id_.Value(), CommandCodeText(command_just_sent_.command_code_).data(),
-             signal_id.Value());
-    return;
-  }
-  if (command_just_sent_.source_cid_ != cid) {
-    LOG_WARN("SCID doesn't match: expected %d, received %d", command_just_sent_.source_cid_, cid);
-    handle_send_next_command();
-    return;
-  }
-  if (result == ConnectionResponseResult::PENDING) {
-    alarm_.Schedule(common::BindOnce(&ClassicSignallingManager::on_command_timeout, common::Unretained(this)),
-                    kTimeout);
-    return;
-  }
-
-  command_just_sent_.signal_id_ = kInvalidSignalId;
-  alarm_.Cancel();
-  if (result != ConnectionResponseResult::SUCCESS) {
-    link_->OnOutgoingConnectionRequestFail(cid);
-    handle_send_next_command();
-    return;
-  }
-  Psm pending_psm = command_just_sent_.psm_;
-  auto new_channel = link_->AllocateReservedDynamicChannel(cid, pending_psm, remote_cid, {});
-  if (new_channel == nullptr) {
-    LOG_WARN("Can't allocate dynamic channel");
-    link_->OnOutgoingConnectionRequestFail(cid);
-    handle_send_next_command();
-    return;
-  }
-
-  auto& configuration_state = channel_configuration_[new_channel->GetCid()];
-  auto initial_config = link_->GetConfigurationForInitialConfiguration(new_channel->GetCid());
-
-  auto mtu_configuration = std::make_unique<MtuConfigurationOption>();
-  mtu_configuration->mtu_ = initial_config.incoming_mtu;
-  configuration_state.incoming_mtu_ = initial_config.incoming_mtu;
-
-  auto fcs_option = std::make_unique<FrameCheckSequenceOption>();
-  fcs_option->fcs_type_ = FcsType::DEFAULT;
-  configuration_state.fcs_type_ = FcsType::DEFAULT;
-  if (!link_->GetRemoteSupportsFcs()) {
-    fcs_option->fcs_type_ = FcsType::NO_FCS;
-    configuration_state.fcs_type_ = FcsType::NO_FCS;
-  }
-
-  auto retransmission_flow_control_configuration = std::make_unique<RetransmissionAndFlowControlConfigurationOption>();
-  switch (initial_config.channel_mode) {
-    case DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::L2CAP_BASIC:
-      retransmission_flow_control_configuration->mode_ = RetransmissionAndFlowControlModeOption::L2CAP_BASIC;
-      configuration_state.retransmission_and_flow_control_mode_ = RetransmissionAndFlowControlModeOption::L2CAP_BASIC;
-      break;
-    case DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::ENHANCED_RETRANSMISSION:
-    case DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::ENHANCED_RETRANSMISSION_OPTIONAL:
-      retransmission_flow_control_configuration->mode_ =
-          RetransmissionAndFlowControlModeOption::ENHANCED_RETRANSMISSION;
-      configuration_state.retransmission_and_flow_control_mode_ =
-          RetransmissionAndFlowControlModeOption::ENHANCED_RETRANSMISSION;
-      // TODO: Decide where to put initial values
-      retransmission_flow_control_configuration->tx_window_size_ = 10;
-      retransmission_flow_control_configuration->max_transmit_ = 20;
-      retransmission_flow_control_configuration->retransmission_time_out_ = 2000;
-      retransmission_flow_control_configuration->monitor_time_out_ = 12000;
-      retransmission_flow_control_configuration->maximum_pdu_size_ = 1010;
-      break;
-  }
-  configuration_state.local_retransmission_and_flow_control_ = *retransmission_flow_control_configuration;
-
-  std::vector<std::unique_ptr<ConfigurationOption>> config;
-  config.emplace_back(std::move(mtu_configuration));
-  if (initial_config.channel_mode != DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::L2CAP_BASIC) {
-    config.emplace_back(std::move(retransmission_flow_control_configuration));
-    config.emplace_back(std::move(fcs_option));
-  }
-  SendConfigurationRequest(remote_cid, std::move(config));
-}
-
-void ClassicSignallingManager::OnConfigurationRequest(SignalId signal_id, Cid cid, Continuation is_continuation,
-                                                      std::vector<std::unique_ptr<ConfigurationOption>> options) {
-  auto channel = channel_allocator_->FindChannelByCid(cid);
-  if (channel == nullptr) {
-    LOG_WARN("Configuration request for an unknown channel");
-    return;
-  }
-
-  auto& configuration_state = channel_configuration_[cid];
-  std::vector<std::unique_ptr<ConfigurationOption>> rsp_options;
-  ConfigurationResponseResult result = ConfigurationResponseResult::SUCCESS;
-
-  for (auto& option : options) {
-    switch (option->type_) {
-      case ConfigurationOptionType::MTU: {
-        auto* config = MtuConfigurationOption::Specialize(option.get());
-        if (config->mtu_ < kMinimumClassicMtu) {
-          LOG_WARN("Configuration request with Invalid MTU");
-          config->mtu_ = kDefaultClassicMtu;
-          rsp_options.emplace_back(std::make_unique<MtuConfigurationOption>(*config));
-          result = ConfigurationResponseResult::UNACCEPTABLE_PARAMETERS;
-        }
-        configuration_state.outgoing_mtu_ = config->mtu_;
-        break;
-      }
-      case ConfigurationOptionType::FLUSH_TIMEOUT: {
-        // TODO: Handle this configuration option
-        break;
-      }
-      case ConfigurationOptionType::RETRANSMISSION_AND_FLOW_CONTROL: {
-        auto* config = RetransmissionAndFlowControlConfigurationOption::Specialize(option.get());
-        if (config->mode_ == RetransmissionAndFlowControlModeOption::ENHANCED_RETRANSMISSION) {
-          if (config->retransmission_time_out_ == 0) {
-            config->retransmission_time_out_ = 2000;
-          }
-          if (config->monitor_time_out_ == 0) {
-            config->monitor_time_out_ = 12000;
-          }
-        } else if (config->mode_ == RetransmissionAndFlowControlModeOption::L2CAP_BASIC) {
-          auto initial_config_option = dynamic_service_manager_->GetService(channel->GetPsm())->GetConfigOption();
-          if (initial_config_option.channel_mode ==
-              DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode::ENHANCED_RETRANSMISSION) {
-            LOG_WARN("ERTM mandatory not allow mode configuration, disconnect channel.");
-            SendDisconnectionRequest(channel->GetCid(), channel->GetRemoteCid());
-            return;
-          }
-        }
-        configuration_state.remote_retransmission_and_flow_control_ = *config;
-        configuration_state.retransmission_and_flow_control_mode_ = config->mode_;
-        rsp_options.emplace_back(std::make_unique<RetransmissionAndFlowControlConfigurationOption>(*config));
-        break;
-      }
-      case ConfigurationOptionType::FRAME_CHECK_SEQUENCE: {
-        configuration_state.fcs_type_ = FrameCheckSequenceOption::Specialize(option.get())->fcs_type_;
-        break;
-      }
-      default:
-        if (option->is_hint_ != ConfigurationOptionIsHint::OPTION_IS_A_HINT) {
-          LOG_WARN("Received some unsupported configuration option: %d", static_cast<int>(option->type_));
-          auto response =
-              ConfigurationResponseBuilder::Create(signal_id.Value(), channel->GetRemoteCid(), is_continuation,
-                                                   ConfigurationResponseResult::UNKNOWN_OPTIONS, {});
-          enqueue_buffer_->Enqueue(std::move(response), handler_);
-          return;
-        }
-        break;
-    }
-  }
-
-  if (configuration_state.state_ == ChannelConfigurationState::State::WAIT_CONFIG_REQ) {
-    std::unique_ptr<DynamicChannel> user_channel = std::make_unique<DynamicChannel>(channel, handler_);
-    if (channel->local_initiated_) {
-      link_->NotifyChannelCreation(cid, std::move(user_channel));
-    } else {
-      dynamic_service_manager_->GetService(channel->GetPsm())->NotifyChannelCreation(std::move(user_channel));
-    }
-    configuration_state.state_ = ChannelConfigurationState::State::CONFIGURED;
-    data_pipeline_manager_->AttachChannel(cid, channel, l2cap::internal::DataPipelineManager::ChannelMode::BASIC);
-    data_pipeline_manager_->UpdateClassicConfiguration(cid, configuration_state);
-  } else if (configuration_state.state_ == ChannelConfigurationState::State::WAIT_CONFIG_REQ_RSP) {
-    configuration_state.state_ = ChannelConfigurationState::State::WAIT_CONFIG_RSP;
-  }
-
-  auto response = ConfigurationResponseBuilder::Create(signal_id.Value(), channel->GetRemoteCid(), is_continuation,
-                                                       result, std::move(rsp_options));
-  enqueue_buffer_->Enqueue(std::move(response), handler_);
+  send_configuration_request(channel->GetRemoteCid(), std::move(config));
 }
 
 void ClassicSignallingManager::negotiate_configuration(Cid cid, Continuation is_continuation,
@@ -429,7 +394,9 @@ void ClassicSignallingManager::negotiate_configuration(Cid cid, Continuation is_
     }
   }
   if (can_negotiate) {
-    SendConfigurationRequest(channel->GetRemoteCid(), std::move(negotiation_config));
+    send_configuration_request(channel->GetRemoteCid(), std::move(negotiation_config));
+  } else {
+    LOG_DEBUG("No suggested parameter received");
   }
 }
 
@@ -457,6 +424,7 @@ void ClassicSignallingManager::OnConfigurationResponse(SignalId signal_id, Cid c
     case ConfigurationResponseResult::UNKNOWN_OPTIONS:
     case ConfigurationResponseResult::FLOW_SPEC_REJECTED:
       LOG_WARN("Configuration response not SUCCESS: %s", ConfigurationResponseResultText(result).c_str());
+      alarm_.Cancel();
       handle_send_next_command();
       return;
 
@@ -490,7 +458,12 @@ void ClassicSignallingManager::OnConfigurationResponse(SignalId signal_id, Cid c
       }
       case ConfigurationOptionType::RETRANSMISSION_AND_FLOW_CONTROL: {
         auto config = RetransmissionAndFlowControlConfigurationOption::Specialize(option.get());
-        configuration_state.retransmission_and_flow_control_mode_ = config->mode_;
+        if (configuration_state.retransmission_and_flow_control_mode_ != config->mode_) {
+          SendDisconnectionRequest(cid, channel->GetRemoteCid());
+          alarm_.Cancel();
+          handle_send_next_command();
+          return;
+        }
         configuration_state.local_retransmission_and_flow_control_ = *config;
         break;
       }
@@ -500,6 +473,8 @@ void ClassicSignallingManager::OnConfigurationResponse(SignalId signal_id, Cid c
       }
       default:
         LOG_WARN("Received some unsupported configuration option: %d", static_cast<int>(option->type_));
+        alarm_.Cancel();
+        handle_send_next_command();
         return;
     }
   }
@@ -597,7 +572,6 @@ void ClassicSignallingManager::OnInformationRequest(SignalId signal_id, Informat
       break;
     }
     case InformationRequestInfoType::EXTENDED_FEATURES_SUPPORTED: {
-      // TODO: implement this response
       auto response = InformationResponseExtendedFeaturesBuilder::Create(
           signal_id.Value(), InformationRequestResult::SUCCESS, 0, 0, 0, 1 /* ERTM */, 0 /* Streaming mode */,
           1 /* FCS */, 0, 1 /* Fixed Channels */, 0, 0);
