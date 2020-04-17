@@ -48,7 +48,7 @@ class Link : public l2cap::internal::ILink {
   ~Link() override = default;
 
   inline hci::AddressWithType GetDevice() override {
-    return acl_connection_->GetAddressWithType();
+    return acl_connection_->GetRemoteAddress();
   }
 
   struct PendingDynamicChannelConnection {

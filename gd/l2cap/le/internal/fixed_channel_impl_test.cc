@@ -64,7 +64,7 @@ TEST_F(L2capLeFixedChannelImplTest, get_device) {
   MockParameterProvider mock_parameter_provider;
   EXPECT_CALL(mock_parameter_provider, GetLeLinkIdleDisconnectTimeout()).Times(1);
   testing::MockLeAclConnection* mock_acl_connection = new testing::MockLeAclConnection();
-  EXPECT_CALL(*mock_acl_connection, GetAddressWithType()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, GetRemoteAddress()).Times(1);
   MockLink mock_le_link(l2cap_handler_, &mock_parameter_provider,
                         std::unique_ptr<testing::MockLeAclConnection>(mock_acl_connection));
   AddressWithType device{{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}, hci::AddressType::PUBLIC_DEVICE_ADDRESS};
@@ -78,7 +78,7 @@ TEST_F(L2capLeFixedChannelImplTest, close_triggers_callback) {
   MockParameterProvider mock_parameter_provider;
   EXPECT_CALL(mock_parameter_provider, GetLeLinkIdleDisconnectTimeout()).Times(1);
   testing::MockLeAclConnection* mock_acl_connection = new testing::MockLeAclConnection();
-  EXPECT_CALL(*mock_acl_connection, GetAddressWithType()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, GetRemoteAddress()).Times(1);
   MockLink mock_le_link(l2cap_handler_, &mock_parameter_provider,
                         std::unique_ptr<testing::MockLeAclConnection>(mock_acl_connection));
   AddressWithType device{{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}, hci::AddressType::PUBLIC_DEVICE_ADDRESS};
@@ -103,7 +103,7 @@ TEST_F(L2capLeFixedChannelImplTest, register_callback_after_close_should_call_im
   MockParameterProvider mock_parameter_provider;
   EXPECT_CALL(mock_parameter_provider, GetLeLinkIdleDisconnectTimeout()).Times(1);
   testing::MockLeAclConnection* mock_acl_connection = new testing::MockLeAclConnection();
-  EXPECT_CALL(*mock_acl_connection, GetAddressWithType()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, GetRemoteAddress()).Times(1);
   MockLink mock_le_link(l2cap_handler_, &mock_parameter_provider,
                         std::unique_ptr<testing::MockLeAclConnection>(mock_acl_connection));
   AddressWithType device{{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}, hci::AddressType::PUBLIC_DEVICE_ADDRESS};
@@ -128,7 +128,7 @@ TEST_F(L2capLeFixedChannelImplTest, close_twice_should_fail) {
   MockParameterProvider mock_parameter_provider;
   EXPECT_CALL(mock_parameter_provider, GetLeLinkIdleDisconnectTimeout()).Times(1);
   testing::MockLeAclConnection* mock_acl_connection = new testing::MockLeAclConnection();
-  EXPECT_CALL(*mock_acl_connection, GetAddressWithType()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, GetRemoteAddress()).Times(1);
   MockLink mock_le_link(l2cap_handler_, &mock_parameter_provider,
                         std::unique_ptr<testing::MockLeAclConnection>(mock_acl_connection));
   AddressWithType device{{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}, hci::AddressType::PUBLIC_DEVICE_ADDRESS};
@@ -156,7 +156,7 @@ TEST_F(L2capLeFixedChannelImplTest, multiple_registeration_should_fail) {
   MockParameterProvider mock_parameter_provider;
   EXPECT_CALL(mock_parameter_provider, GetLeLinkIdleDisconnectTimeout()).Times(1);
   testing::MockLeAclConnection* mock_acl_connection = new testing::MockLeAclConnection();
-  EXPECT_CALL(*mock_acl_connection, GetAddressWithType()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, GetRemoteAddress()).Times(1);
   MockLink mock_le_link(l2cap_handler_, &mock_parameter_provider,
                         std::unique_ptr<testing::MockLeAclConnection>(mock_acl_connection));
   AddressWithType device{{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}, hci::AddressType::PUBLIC_DEVICE_ADDRESS};
@@ -180,7 +180,7 @@ TEST_F(L2capLeFixedChannelImplTest, call_acquire_before_registeration_should_fai
   MockParameterProvider mock_parameter_provider;
   EXPECT_CALL(mock_parameter_provider, GetLeLinkIdleDisconnectTimeout()).Times(1);
   testing::MockLeAclConnection* mock_acl_connection = new testing::MockLeAclConnection();
-  EXPECT_CALL(*mock_acl_connection, GetAddressWithType()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, GetRemoteAddress()).Times(1);
   MockLink mock_le_link(l2cap_handler_, &mock_parameter_provider,
                         std::unique_ptr<testing::MockLeAclConnection>(mock_acl_connection));
   AddressWithType device{{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}, hci::AddressType::PUBLIC_DEVICE_ADDRESS};
@@ -193,7 +193,7 @@ TEST_F(L2capLeFixedChannelImplTest, call_release_before_registeration_should_fai
   MockParameterProvider mock_parameter_provider;
   EXPECT_CALL(mock_parameter_provider, GetLeLinkIdleDisconnectTimeout()).Times(1);
   testing::MockLeAclConnection* mock_acl_connection = new testing::MockLeAclConnection();
-  EXPECT_CALL(*mock_acl_connection, GetAddressWithType()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, GetRemoteAddress()).Times(1);
   MockLink mock_le_link(l2cap_handler_, &mock_parameter_provider,
                         std::unique_ptr<testing::MockLeAclConnection>(mock_acl_connection));
   AddressWithType device{{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}, hci::AddressType::PUBLIC_DEVICE_ADDRESS};
@@ -206,7 +206,7 @@ TEST_F(L2capLeFixedChannelImplTest, test_acquire_release_channel) {
   MockParameterProvider mock_parameter_provider;
   EXPECT_CALL(mock_parameter_provider, GetLeLinkIdleDisconnectTimeout()).Times(1);
   testing::MockLeAclConnection* mock_acl_connection = new testing::MockLeAclConnection();
-  EXPECT_CALL(*mock_acl_connection, GetAddressWithType()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, GetRemoteAddress()).Times(1);
   MockLink mock_le_link(l2cap_handler_, &mock_parameter_provider,
                         std::unique_ptr<testing::MockLeAclConnection>(mock_acl_connection));
   AddressWithType device{{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}, hci::AddressType::PUBLIC_DEVICE_ADDRESS};
@@ -238,7 +238,7 @@ TEST_F(L2capLeFixedChannelImplTest, test_acquire_after_close) {
   MockParameterProvider mock_parameter_provider;
   EXPECT_CALL(mock_parameter_provider, GetLeLinkIdleDisconnectTimeout()).Times(1);
   testing::MockLeAclConnection* mock_acl_connection = new testing::MockLeAclConnection();
-  EXPECT_CALL(*mock_acl_connection, GetAddressWithType()).Times(1);
+  EXPECT_CALL(*mock_acl_connection, GetRemoteAddress()).Times(1);
   MockLink mock_le_link(l2cap_handler_, &mock_parameter_provider,
                         std::unique_ptr<testing::MockLeAclConnection>(mock_acl_connection));
   AddressWithType device{{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}}, hci::AddressType::PUBLIC_DEVICE_ADDRESS};
