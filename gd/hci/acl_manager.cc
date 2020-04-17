@@ -29,6 +29,8 @@
 #include "hci/round_robin_scheduler.h"
 #include "security/security_module.h"
 
+using bluetooth::crypto_toolbox::Octet16;
+
 namespace bluetooth {
 namespace hci {
 
@@ -304,27 +306,29 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     auto address = connection_complete.GetPeerAddress();
     auto peer_address_type = connection_complete.GetPeerAddressType();
     // TODO: find out which address and type was used to initiate the connection
-    AddressWithType address_with_type(address, peer_address_type);
-    on_common_le_connection_complete(address_with_type);
+    AddressWithType remote_address(address, peer_address_type);
+    AddressWithType local_address = le_initiator_address_;
+    on_common_le_connection_complete(remote_address);
     if (status != ErrorCode::SUCCESS) {
       le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectFail,
-                                                common::Unretained(le_client_callbacks_), address_with_type, status));
+                                                common::Unretained(le_client_callbacks_), remote_address, status));
       return;
     }
     // TODO: Check and save other connection parameters
     uint16_t handle = connection_complete.GetConnectionHandle();
     ASSERT(acl_connections_.count(handle) == 0);
     acl_connections_.emplace(std::piecewise_construct, std::forward_as_tuple(handle),
-                             std::forward_as_tuple(address_with_type, handler_));
+                             std::forward_as_tuple(remote_address, handler_));
     auto& connection = check_and_get_connection(handle);
     hci_layer_->GetHciHandler()->Post(
         common::BindOnce(&RoundRobinScheduler::Register, common::Unretained(round_robin_scheduler_),
                          RoundRobinScheduler::ConnectionType::LE, handle, connection.queue_->GetDownEnd()));
     auto role = connection_complete.GetRole();
-    std::unique_ptr<LeAclConnection> connection_proxy(new LeAclConnection(
-        &acl_manager_, connection.queue_->GetUpEnd(), le_acl_connection_interface_, handle, address_with_type, role));
+    std::unique_ptr<LeAclConnection> connection_proxy(new LeAclConnection(&acl_manager_, connection.queue_->GetUpEnd(),
+                                                                          le_acl_connection_interface_, handle,
+                                                                          local_address, remote_address, role));
     le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectSuccess,
-                                              common::Unretained(le_client_callbacks_), address_with_type,
+                                              common::Unretained(le_client_callbacks_), remote_address,
                                               std::move(connection_proxy)));
   }
 
@@ -335,22 +339,22 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     auto address = connection_complete.GetPeerAddress();
     auto peer_address_type = connection_complete.GetPeerAddressType();
     auto peer_resolvable_address = connection_complete.GetPeerResolvablePrivateAddress();
-    AddressWithType reporting_address_with_type(address, peer_address_type);
+    AddressWithType remote_address(address, peer_address_type);
+    AddressWithType local_address = le_initiator_address_;
     if (!peer_resolvable_address.IsEmpty()) {
-      reporting_address_with_type = AddressWithType(peer_resolvable_address, AddressType::RANDOM_DEVICE_ADDRESS);
+      remote_address = AddressWithType(peer_resolvable_address, AddressType::RANDOM_DEVICE_ADDRESS);
     }
-    on_common_le_connection_complete(reporting_address_with_type);
+    on_common_le_connection_complete(remote_address);
     if (status != ErrorCode::SUCCESS) {
       le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectFail,
-                                                common::Unretained(le_client_callbacks_), reporting_address_with_type,
-                                                status));
+                                                common::Unretained(le_client_callbacks_), remote_address, status));
       return;
     }
     // TODO: Check and save other connection parameters
     uint16_t handle = connection_complete.GetConnectionHandle();
     ASSERT(acl_connections_.count(handle) == 0);
     acl_connections_.emplace(std::piecewise_construct, std::forward_as_tuple(handle),
-                             std::forward_as_tuple(reporting_address_with_type, handler_));
+                             std::forward_as_tuple(remote_address, handler_));
     auto& connection = check_and_get_connection(handle);
     hci_layer_->GetHciHandler()->Post(
         common::BindOnce(&RoundRobinScheduler::Register, common::Unretained(round_robin_scheduler_),
@@ -358,9 +362,9 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     auto role = connection_complete.GetRole();
     std::unique_ptr<LeAclConnection> connection_proxy(new LeAclConnection(&acl_manager_, connection.queue_->GetUpEnd(),
                                                                           le_acl_connection_interface_, handle,
-                                                                          reporting_address_with_type, role));
+                                                                          local_address, remote_address, role));
     le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectSuccess,
-                                              common::Unretained(le_client_callbacks_), reporting_address_with_type,
+                                              common::Unretained(le_client_callbacks_), remote_address,
                                               std::move(connection_proxy)));
   }
 
