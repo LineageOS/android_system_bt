@@ -534,7 +534,7 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_success
   ASSERT_EQ(first_connection_status, std::future_status::ready);
 
   auto connection = GetLastLeConnection();
-  ASSERT_EQ(connection->GetAddressWithType(), remote_with_type);
+  ASSERT_EQ(connection->GetRemoteAddress(), remote_with_type);
 }
 
 TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_fail) {
@@ -582,7 +582,7 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_update_success) 
   ASSERT_EQ(first_connection_status, std::future_status::ready);
 
   auto connection = GetLastLeConnection();
-  ASSERT_EQ(connection->GetAddressWithType(), remote_with_type);
+  ASSERT_EQ(connection->GetRemoteAddress(), remote_with_type);
 
   std::promise<ErrorCode> promise;
   auto future = promise.get_future();
