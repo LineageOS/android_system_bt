@@ -147,6 +147,8 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   SET_HANDLER(OpCode::SNIFF_MODE, SniffMode);
   SET_HANDLER(OpCode::EXIT_SNIFF_MODE, ExitSniffMode);
   SET_HANDLER(OpCode::QOS_SETUP, QosSetup);
+  SET_HANDLER(OpCode::READ_DEFAULT_LINK_POLICY_SETTINGS,
+              ReadDefaultLinkPolicySettings);
   SET_HANDLER(OpCode::WRITE_DEFAULT_LINK_POLICY_SETTINGS,
               WriteDefaultLinkPolicySettings);
   SET_HANDLER(OpCode::FLOW_SPECIFICATION, FlowSpecification);
@@ -1010,14 +1012,28 @@ void DualModeController::QosSetup(CommandPacketView command) {
   send_event_(std::move(packet));
 }
 
+void DualModeController::ReadDefaultLinkPolicySettings(
+    CommandPacketView command) {
+  auto command_view = gd_hci::ReadDefaultLinkPolicySettingsView::Create(
+      gd_hci::ConnectionManagementCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+  uint16_t settings = link_layer_controller_.ReadDefaultLinkPolicySettings();
+  auto packet =
+      bluetooth::hci::ReadDefaultLinkPolicySettingsCompleteBuilder::Create(
+          kNumCommandPackets, ErrorCode::SUCCESS, settings);
+  send_event_(std::move(packet));
+}
+
 void DualModeController::WriteDefaultLinkPolicySettings(
     CommandPacketView command) {
   auto command_view = gd_hci::WriteDefaultLinkPolicySettingsView::Create(
       gd_hci::ConnectionManagementCommandView::Create(command));
   ASSERT(command_view.IsValid());
+  ErrorCode status = link_layer_controller_.WriteDefaultLinkPolicySettings(
+      command_view.GetDefaultLinkPolicySettings());
   auto packet =
       bluetooth::hci::WriteDefaultLinkPolicySettingsCompleteBuilder::Create(
-          kNumCommandPackets, ErrorCode::SUCCESS);
+          kNumCommandPackets, status);
   send_event_(std::move(packet));
 }
 

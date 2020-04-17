@@ -243,6 +243,8 @@ class LinkLayerController {
                               uint32_t token_bucket_size,
                               uint32_t peak_bandwidth, uint32_t access_latency);
   ErrorCode WriteLinkSupervisionTimeout(uint16_t handle, uint16_t timeout);
+  ErrorCode WriteDefaultLinkPolicySettings(uint16_t settings);
+  uint16_t ReadDefaultLinkPolicySettings();
 
  protected:
   void SendLeLinkLayerPacket(
@@ -369,6 +371,7 @@ class LinkLayerController {
   AsyncTaskId inquiry_timer_task_id_ = kInvalidTaskId;
   uint64_t inquiry_lap_{};
   uint8_t inquiry_max_responses_{};
+  uint16_t default_link_policy_settings_ = 0;
 
   bool page_scans_enabled_{false};
   bool inquiry_scans_enabled_{false};
