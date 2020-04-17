@@ -165,6 +165,13 @@ void Link::connect_to_pending_dynamic_channels() {
   }
 }
 
+void Link::send_pending_configuration_requests() {
+  for (auto local_cid : pending_outgoing_configuration_request_list_) {
+    signalling_manager_.SendInitialConfigRequest(local_cid);
+  }
+  pending_outgoing_configuration_request_list_.clear();
+}
+
 void Link::OnOutgoingConnectionRequestFail(Cid local_cid) {
   if (local_cid_to_pending_dynamic_channel_connection_map_.find(local_cid) !=
       local_cid_to_pending_dynamic_channel_connection_map_.end()) {
@@ -176,6 +183,14 @@ void Link::OnOutgoingConnectionRequestFail(Cid local_cid) {
     NotifyChannelFail(local_cid, result);
   }
   dynamic_channel_allocator_.FreeChannel(local_cid);
+}
+
+void Link::SendInitialConfigRequestOrQueue(Cid local_cid) {
+  if (remote_extended_feature_received_) {
+    signalling_manager_.SendInitialConfigRequest(local_cid);
+  } else {
+    pending_outgoing_configuration_request_list_.push_back(local_cid);
+  }
 }
 
 void Link::SendDisconnectionRequest(Cid local_cid, Cid remote_cid) {
@@ -272,6 +287,7 @@ void Link::OnRemoteExtendedFeatureReceived(bool ertm_supported, bool fcs_support
   remote_supports_fcs_ = fcs_supported;
   remote_extended_feature_received_ = true;
   connect_to_pending_dynamic_channels();
+  send_pending_configuration_requests();
 }
 
 void Link::AddChannelPendingingAuthentication(PendingAuthenticateDynamicChannelConnection pending_channel) {
