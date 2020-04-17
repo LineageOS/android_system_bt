@@ -33,7 +33,7 @@ class NeighborTest(GdBaseTestClass):
 
     def setup_test(self):
         super().setup_test()
-        self.cert_hci = PyHci(self.cert)
+        self.cert_hci = PyHci(self.cert, acl_streaming=True)
         self.cert_hci.send_command_with_complete(
             hci_packets.WriteScanEnableBuilder(
                 hci_packets.ScanEnable.INQUIRY_AND_PAGE_SCAN))

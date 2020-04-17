@@ -34,7 +34,7 @@ class DirectHciTest(GdBaseTestClass):
 
     def setup_test(self):
         super().setup_test()
-        self.dut_hci = PyHci(self.dut)
+        self.dut_hci = PyHci(self.dut, acl_streaming=True)
         self.cert_hal = PyHal(self.cert)
         self.cert_hal.send_hci_command(hci_packets.ResetBuilder().Serialize())
 

@@ -40,7 +40,7 @@ class AclManagerTest(GdBaseTestClass):
     # todo: move into GdBaseTestClass, based on modules inited
     def setup_test(self):
         super().setup_test()
-        self.cert_hci = PyHci(self.cert)
+        self.cert_hci = PyHci(self.cert, acl_streaming=True)
         self.dut_acl_manager = PyAclManager(self.dut)
 
     def teardown_test(self):
