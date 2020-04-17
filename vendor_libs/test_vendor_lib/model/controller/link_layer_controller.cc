@@ -904,7 +904,6 @@ void LinkLayerController::IncomingLeConnectCompletePacket(
 
 void LinkLayerController::IncomingLeScanPacket(
     model::packets::LinkLayerPacketView incoming) {
-
   auto to_send = model::packets::LeScanResponseBuilder::Create(
       properties_.GetLeAddress(), incoming.GetSourceAddress(),
       static_cast<model::packets::AddressType>(properties_.GetLeAddressType()),
@@ -1614,6 +1613,19 @@ ErrorCode LinkLayerController::WriteLinkPolicySettings(uint16_t handle,
     return ErrorCode::UNKNOWN_CONNECTION;
   }
   return ErrorCode::SUCCESS;
+}
+
+ErrorCode LinkLayerController::WriteDefaultLinkPolicySettings(
+    uint16_t settings) {
+  if (settings > 7 /* Sniff + Hold + Role switch */) {
+    return ErrorCode::INVALID_HCI_COMMAND_PARAMETERS;
+  }
+  default_link_policy_settings_ = settings;
+  return ErrorCode::SUCCESS;
+}
+
+uint16_t LinkLayerController::ReadDefaultLinkPolicySettings() {
+  return default_link_policy_settings_;
 }
 
 ErrorCode LinkLayerController::FlowSpecification(
