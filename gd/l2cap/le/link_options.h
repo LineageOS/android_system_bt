@@ -48,6 +48,11 @@ class LinkOptions {
   uint16_t GetHandle() const;
 
   /**
+   * Return Local address used for initiation of this connection.
+   */
+  hci::AddressWithType GetLocalAddress() const;
+
+  /**
    * Update the LE link layer connection parameters.
    * Depending on the link role and supported features, may directly send HCI command to update link, or send L2CAP
    * request to advise the remote. The updated connection parameters are still determined by controller. It's a link
