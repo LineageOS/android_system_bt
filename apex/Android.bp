@@ -1,6 +1,5 @@
 apex {
     name: "com.android.bluetooth.updatable",
-    updatable: true,
 
     manifest: "apex_manifest.json",
 
