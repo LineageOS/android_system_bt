@@ -45,6 +45,12 @@ class EventHandler {
       : callback(std::move(on_event)), handler(on_event_handler) {}
   Callback<void(T)> callback;
   Handler* handler;
+
+  void Post(T event) {
+    if (handler != nullptr) {
+      handler->Post(BindOnce(callback, event));
+    }
+  }
 };
 
 class CommandQueueEntry {
@@ -215,13 +221,7 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
     SubeventCode subevent_code = meta_event_view.GetSubeventCode();
     ASSERT_LOG(subevent_handlers_.find(subevent_code) != subevent_handlers_.end(),
                "Unhandled le event of type 0x%02hhx (%s)", subevent_code, SubeventCodeText(subevent_code).c_str());
-    auto& registered = subevent_handlers_[subevent_code];
-    if (registered.handler != nullptr) {
-      registered.handler->Post(BindOnce(registered.callback, meta_event_view));
-    } else {
-      LOG_DEBUG("Dropping unregistered le event of type 0x%02hhx (%s)", subevent_code,
-                SubeventCodeText(subevent_code).c_str());
-    }
+    subevent_handlers_[subevent_code].Post(meta_event_view);
   }
 
   // Invoked from HAL thread
@@ -238,10 +238,7 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
       LOG_DEBUG("Dropping unregistered event of type 0x%02hhx (%s)", event_code, EventCodeText(event_code).c_str());
       return;
     }
-    auto& registered = event_handlers_[event_code];
-    if (registered.handler != nullptr) {
-      registered.handler->Post(BindOnce(registered.callback, event));
-    }
+    event_handlers_[event_code].Post(event);
   }
 
   // From HAL thread
