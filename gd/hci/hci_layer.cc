@@ -116,10 +116,10 @@ struct HciLayer::impl {
 
     auto queue_end = acl_queue_.GetDownEnd();
     Handler* handler = module_.GetHandler();
-    queue_end->RegisterDequeue(handler, BindOn(this, &impl::dequeue_and_send_acl));
-    module_.RegisterEventHandler(EventCode::COMMAND_COMPLETE, BindOn(this, &impl::command_complete_callback), handler);
-    module_.RegisterEventHandler(EventCode::COMMAND_STATUS, BindOn(this, &impl::command_status_callback), handler);
-    module_.RegisterEventHandler(EventCode::LE_META_EVENT, BindOn(this, &impl::le_meta_event_callback), handler);
+    queue_end->RegisterDequeue(handler, BindOn(this, &impl::on_outbound_acl_ready));
+    module_.RegisterEventHandler(EventCode::COMMAND_COMPLETE, BindOn(this, &impl::on_command_complete), handler);
+    module_.RegisterEventHandler(EventCode::COMMAND_STATUS, BindOn(this, &impl::on_command_status), handler);
+    module_.RegisterEventHandler(EventCode::LE_META_EVENT, BindOn(this, &impl::on_le_meta_event), handler);
     // TODO find the right place
     module_.RegisterEventHandler(EventCode::PAGE_SCAN_REPETITION_MODE_CHANGE, BindOn(this, &impl::drop), handler);
     module_.RegisterEventHandler(EventCode::MAX_SLOTS_CHANGE, BindOn(this, &impl::drop), handler);
@@ -130,7 +130,7 @@ struct HciLayer::impl {
 
   void drop(EventPacketView) {}
 
-  void dequeue_and_send_acl() {
+  void on_outbound_acl_ready() {
     auto packet = acl_queue_.GetDownEnd()->TryDequeue();
     std::vector<uint8_t> bytes;
     BitInserter bi(bytes);
@@ -146,14 +146,7 @@ struct HciLayer::impl {
     hal_ = nullptr;
   }
 
-  void send_sco(std::unique_ptr<hci::BasePacketBuilder> packet) {
-    std::vector<uint8_t> bytes;
-    BitInserter bi(bytes);
-    packet->Serialize(bi);
-    hal_->sendScoData(bytes);
-  }
-
-  void command_status_callback(EventPacketView event) {
+  void on_command_status(EventPacketView event) {
     CommandStatusView status_view = CommandStatusView::Create(event);
     ASSERT(status_view.IsValid());
     command_credits_ = status_view.GetNumHciCommandPackets();
@@ -177,7 +170,7 @@ struct HciLayer::impl {
     send_next_command();
   }
 
-  void command_complete_callback(EventPacketView event) {
+  void on_command_complete(EventPacketView event) {
     CommandCompleteView complete_view = CommandCompleteView::Create(event);
     ASSERT(complete_view.IsValid());
     command_credits_ = complete_view.GetNumHciCommandPackets();
@@ -201,7 +194,7 @@ struct HciLayer::impl {
     send_next_command();
   }
 
-  void le_meta_event_callback(EventPacketView event) {
+  void on_le_meta_event(EventPacketView event) {
     LeMetaEventView meta_event_view = LeMetaEventView::Create(event);
     ASSERT(meta_event_view.IsValid());
     SubeventCode subevent_code = meta_event_view.GetSubeventCode();
@@ -210,7 +203,7 @@ struct HciLayer::impl {
     subevent_handlers_[subevent_code].Post(meta_event_view);
   }
 
-  void hci_event_received_handler(EventPacketView event) {
+  void on_hci_event(EventPacketView event) {
     EventCode event_code = event.GetEventCode();
     if (event_handlers_.find(event_code) == event_handlers_.end()) {
       LOG_DEBUG("Dropping unregistered event of type 0x%02hhx (%s)", event_code, EventCodeText(event_code).c_str());
@@ -314,7 +307,7 @@ struct HciLayer::hal_callbacks : public hal::HciHalCallbacks {
     auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(event_bytes));
     EventPacketView event = EventPacketView::Create(packet);
     ASSERT(event.IsValid());
-    module_.CallOn(module_.impl_, &impl::hci_event_received_handler, std::move(event));
+    module_.CallOn(module_.impl_, &impl::on_hci_event, std::move(event));
   }
 
   void aclDataReceived(hal::HciPacket data_bytes) override {
