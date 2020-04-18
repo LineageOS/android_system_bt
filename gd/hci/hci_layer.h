@@ -103,7 +103,9 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
 
  private:
   struct impl;
+  struct hal_callbacks;
   impl* impl_;
+  hal_callbacks* hal_callbacks_;
 };
 }  // namespace hci
 }  // namespace bluetooth

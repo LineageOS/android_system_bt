@@ -114,7 +114,7 @@ class CommandInterfaceImpl : public CommandInterface<T> {
   HciLayer& hci_;
 };
 
-struct HciLayer::impl : public hal::HciHalCallbacks {
+struct HciLayer::impl {
   impl(HciLayer& module) : hal_(nullptr), module_(module) {}
 
   void Start(hal::HciHal* hal) {
@@ -133,7 +133,6 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
     module_.RegisterEventHandler(EventCode::VENDOR_SPECIFIC, BindOn(this, &impl::drop), handler);
 
     module_.EnqueueCommand(ResetBuilder::Create(), BindOnce(&fail_if_reset_complete_not_success), handler);
-    hal_->registerIncomingPacketCallback(this);
   }
 
   void drop(EventPacketView) {}
@@ -144,8 +143,6 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
   }
 
   void Stop() {
-    hal_->unregisterIncomingPacketCallback();
-
     acl_queue_.GetDownEnd()->UnregisterDequeue();
     incoming_acl_packet_buffer_.Clear();
     delete hci_timeout_alarm_;
@@ -224,14 +221,6 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
     subevent_handlers_[subevent_code].Post(meta_event_view);
   }
 
-  // Invoked from HAL thread
-  void hciEventReceived(hal::HciPacket event_bytes) override {
-    auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(event_bytes));
-    EventPacketView event = EventPacketView::Create(packet);
-    ASSERT(event.IsValid());
-    module_.CallOn(this, &HciLayer::impl::hci_event_received_handler, std::move(event));
-  }
-
   void hci_event_received_handler(EventPacketView event) {
     EventCode event_code = event.GetEventCode();
     if (event_handlers_.find(event_code) == event_handlers_.end()) {
@@ -239,19 +228,6 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
       return;
     }
     event_handlers_[event_code].Post(event);
-  }
-
-  // From HAL thread
-  void aclDataReceived(hal::HciPacket data_bytes) override {
-    auto packet =
-        packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(std::move(data_bytes)));
-    AclPacketView acl = AclPacketView::Create(packet);
-    incoming_acl_packet_buffer_.Enqueue(std::make_unique<AclPacketView>(acl), module_.GetHandler());
-  }
-
-  void scoDataReceived(hal::HciPacket data_bytes) override {
-    auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(data_bytes));
-    ScoPacketView sco = ScoPacketView::Create(packet);
   }
 
   void handle_enqueue_command_with_complete(std::unique_ptr<CommandPacketBuilder> command,
@@ -341,10 +317,36 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
   os::EnqueueBuffer<AclPacketView> incoming_acl_packet_buffer_{acl_queue_.GetDownEnd()};
 };
 
-HciLayer::HciLayer() : impl_(new impl(*this)) {}
+// All functions here are running on the HAL thread
+struct HciLayer::hal_callbacks : public hal::HciHalCallbacks {
+  hal_callbacks(HciLayer& module) : module_(module) {}
+
+  void hciEventReceived(hal::HciPacket event_bytes) override {
+    auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(event_bytes));
+    EventPacketView event = EventPacketView::Create(packet);
+    ASSERT(event.IsValid());
+    module_.CallOn(module_.impl_, &impl::hci_event_received_handler, std::move(event));
+  }
+
+  void aclDataReceived(hal::HciPacket data_bytes) override {
+    auto packet =
+        packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(std::move(data_bytes)));
+    AclPacketView acl = AclPacketView::Create(packet);
+    module_.impl_->incoming_acl_packet_buffer_.Enqueue(std::make_unique<AclPacketView>(acl), module_.GetHandler());
+  }
+
+  void scoDataReceived(hal::HciPacket data_bytes) override {
+    // Not implemented yet
+  }
+
+  HciLayer& module_;
+};
+
+HciLayer::HciLayer() : impl_(new impl(*this)), hal_callbacks_(new hal_callbacks(*this)) {}
 
 HciLayer::~HciLayer() {
   delete impl_;
+  delete hal_callbacks_;
 }
 
 void HciLayer::EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
@@ -438,10 +440,14 @@ void HciLayer::ListDependencies(ModuleList* list) {
 }
 
 void HciLayer::Start() {
-  impl_->Start(GetDependency<hal::HciHal>());
+  auto hal = GetDependency<hal::HciHal>();
+  impl_->Start(hal);
+  hal->registerIncomingPacketCallback(hal_callbacks_);
 }
 
 void HciLayer::Stop() {
+  auto hal = GetDependency<hal::HciHal>();
+  hal->unregisterIncomingPacketCallback();
   impl_->Stop();
 }
 
