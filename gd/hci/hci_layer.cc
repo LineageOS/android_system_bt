@@ -24,6 +24,7 @@
 
 namespace {
 using bluetooth::common::Bind;
+using bluetooth::common::BindOn;
 using bluetooth::common::BindOnce;
 using bluetooth::common::Callback;
 using bluetooth::common::Closure;
@@ -124,18 +125,14 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
 
     auto queue_end = acl_queue_.GetDownEnd();
     Handler* handler = module_.GetHandler();
-    queue_end->RegisterDequeue(handler, Bind(&impl::dequeue_and_send_acl, common::Unretained(this)));
-    module_.RegisterEventHandler(EventCode::COMMAND_COMPLETE,
-                                 Bind(&impl::command_complete_callback, common::Unretained(this)), handler);
-    module_.RegisterEventHandler(EventCode::COMMAND_STATUS,
-                                 Bind(&impl::command_status_callback, common::Unretained(this)), handler);
-    module_.RegisterEventHandler(EventCode::LE_META_EVENT,
-                                 Bind(&impl::le_meta_event_callback, common::Unretained(this)), handler);
+    queue_end->RegisterDequeue(handler, BindOn(this, &impl::dequeue_and_send_acl));
+    module_.RegisterEventHandler(EventCode::COMMAND_COMPLETE, BindOn(this, &impl::command_complete_callback), handler);
+    module_.RegisterEventHandler(EventCode::COMMAND_STATUS, BindOn(this, &impl::command_status_callback), handler);
+    module_.RegisterEventHandler(EventCode::LE_META_EVENT, BindOn(this, &impl::le_meta_event_callback), handler);
     // TODO find the right place
-    module_.RegisterEventHandler(EventCode::PAGE_SCAN_REPETITION_MODE_CHANGE,
-                                 Bind(&impl::drop, common::Unretained(this)), handler);
-    module_.RegisterEventHandler(EventCode::MAX_SLOTS_CHANGE, Bind(&impl::drop, common::Unretained(this)), handler);
-    module_.RegisterEventHandler(EventCode::VENDOR_SPECIFIC, Bind(&impl::drop, common::Unretained(this)), handler);
+    module_.RegisterEventHandler(EventCode::PAGE_SCAN_REPETITION_MODE_CHANGE, BindOn(this, &impl::drop), handler);
+    module_.RegisterEventHandler(EventCode::MAX_SLOTS_CHANGE, BindOn(this, &impl::drop), handler);
+    module_.RegisterEventHandler(EventCode::VENDOR_SPECIFIC, BindOn(this, &impl::drop), handler);
 
     module_.EnqueueCommand(ResetBuilder::Create(), BindOnce(&fail_if_reset_complete_not_success), handler);
     hal_->registerIncomingPacketCallback(this);
