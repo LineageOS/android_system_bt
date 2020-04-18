@@ -37,21 +37,13 @@ using bluetooth::hci::EventPacketView;
 using bluetooth::hci::LeMetaEventView;
 using bluetooth::os::Handler;
 
+template <typename T>
 class EventHandler {
  public:
-  EventHandler() : event_handler(), handler(nullptr) {}
-  EventHandler(Callback<void(EventPacketView)> on_event, Handler* on_event_handler)
-      : event_handler(std::move(on_event)), handler(on_event_handler) {}
-  Callback<void(EventPacketView)> event_handler;
-  Handler* handler;
-};
-
-class SubeventHandler {
- public:
-  SubeventHandler() : subevent_handler(), handler(nullptr) {}
-  SubeventHandler(Callback<void(LeMetaEventView)> on_event, Handler* on_event_handler)
-      : subevent_handler(std::move(on_event)), handler(on_event_handler) {}
-  Callback<void(LeMetaEventView)> subevent_handler;
+  EventHandler() : callback(), handler(nullptr) {}
+  EventHandler(Callback<void(T)> on_event, Handler* on_event_handler)
+      : callback(std::move(on_event)), handler(on_event_handler) {}
+  Callback<void(T)> callback;
   Handler* handler;
 };
 
@@ -225,7 +217,7 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
                "Unhandled le event of type 0x%02hhx (%s)", subevent_code, SubeventCodeText(subevent_code).c_str());
     auto& registered = subevent_handlers_[subevent_code];
     if (registered.handler != nullptr) {
-      registered.handler->Post(BindOnce(registered.subevent_handler, meta_event_view));
+      registered.handler->Post(BindOnce(registered.callback, meta_event_view));
     } else {
       LOG_DEBUG("Dropping unregistered le event of type 0x%02hhx (%s)", subevent_code,
                 SubeventCodeText(subevent_code).c_str());
@@ -248,7 +240,7 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
     }
     auto& registered = event_handlers_[event_code];
     if (registered.handler != nullptr) {
-      registered.handler->Post(BindOnce(registered.event_handler, event));
+      registered.handler->Post(BindOnce(registered.callback, event));
     }
   }
 
@@ -305,11 +297,11 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
                                      os::Handler* handler) {
     ASSERT_LOG(event_handlers_.count(event_code) == 0, "Can not register a second handler for event_code %02hhx (%s)",
                event_code, EventCodeText(event_code).c_str());
-    event_handlers_[event_code] = EventHandler(event_handler, handler);
+    event_handlers_[event_code] = EventHandler<EventPacketView>(event_handler, handler);
   }
 
   void handle_unregister_event_handler(EventCode event_code) {
-    event_handlers_[event_code] = EventHandler();
+    event_handlers_[event_code] = EventHandler<EventPacketView>();
   }
 
   void handle_register_le_event_handler(SubeventCode subevent_code, Callback<void(LeMetaEventView)> subevent_handler,
@@ -317,11 +309,11 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
     ASSERT_LOG(subevent_handlers_.count(subevent_code) == 0,
                "Can not register a second handler for subevent_code %02hhx (%s)", subevent_code,
                SubeventCodeText(subevent_code).c_str());
-    subevent_handlers_[subevent_code] = SubeventHandler(subevent_handler, handler);
+    subevent_handlers_[subevent_code] = EventHandler<LeMetaEventView>(subevent_handler, handler);
   }
 
   void handle_unregister_le_event_handler(SubeventCode subevent_code) {
-    subevent_handlers_[subevent_code] = SubeventHandler();
+    subevent_handlers_[subevent_code] = EventHandler<LeMetaEventView>();
   }
 
   // The HAL
@@ -341,8 +333,8 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
   // Command Handling
   std::list<CommandQueueEntry> command_queue_;
 
-  std::map<EventCode, EventHandler> event_handlers_;
-  std::map<SubeventCode, SubeventHandler> subevent_handlers_;
+  std::map<EventCode, EventHandler<EventPacketView>> event_handlers_;
+  std::map<SubeventCode, EventHandler<LeMetaEventView>> subevent_handlers_;
   OpCode waiting_command_{OpCode::NONE};
   uint8_t command_credits_{1};  // Send reset first
   Alarm* hci_timeout_alarm_{nullptr};
