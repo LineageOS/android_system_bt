@@ -82,14 +82,6 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
   virtual LeScanningInterface* GetLeScanningInterface(common::Callback<void(LeMetaEventView)> event_handler,
                                                       os::Handler* handler);
 
-  static const ModuleFactory Factory;
-
-  void ListDependencies(ModuleList* list) override;
-
-  void Start() override;
-
-  void Stop() override;
-
   os::Handler* GetHciHandler() {
     return GetHandler();
   }
@@ -99,6 +91,15 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
   }
 
   static constexpr std::chrono::milliseconds kHciTimeoutMs = std::chrono::milliseconds(2000);
+
+  static const ModuleFactory Factory;
+
+ protected:
+  void ListDependencies(ModuleList* list) override;
+
+  void Start() override;
+
+  void Stop() override;
 
  private:
   struct impl;
