@@ -46,14 +46,16 @@ class RoundRobinScheduler {
   void Register(ConnectionType connection_type, uint16_t handle, AclConnection::QueueDownEnd* queue_down_end);
   void Unregister(uint16_t handle);
   void SetDisconnect(uint16_t handle);
+  uint16_t GetCredits();
+  uint16_t GetLeCredits();
 
  private:
-  void StartRoundRobin();
-  void BufferPacket(std::map<uint16_t, acl_queue_handler>::iterator acl_queue_handler);
-  void UnregisterAllConnections();
-  void SendNextFragment();
-  std::unique_ptr<AclPacketBuilder> HandleEnqueueNextFragment();
-  void IncomingAclCredits(uint16_t handle, uint16_t credits);
+  void start_round_robin();
+  void buffer_packet(std::map<uint16_t, acl_queue_handler>::iterator acl_queue_handler);
+  void unregister_all_connections();
+  void send_next_fragment();
+  std::unique_ptr<AclPacketBuilder> handle_enqueue_next_fragment();
+  void incoming_acl_credits(uint16_t handle, uint16_t credits);
 
   os::Handler* handler_ = nullptr;
   Controller* controller_ = nullptr;
