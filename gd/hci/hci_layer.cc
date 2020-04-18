@@ -139,7 +139,10 @@ struct HciLayer::impl {
 
   void dequeue_and_send_acl() {
     auto packet = acl_queue_.GetDownEnd()->TryDequeue();
-    send_acl(std::move(packet));
+    std::vector<uint8_t> bytes;
+    BitInserter bi(bytes);
+    packet->Serialize(bi);
+    hal_->sendAclData(bytes);
   }
 
   void Stop() {
@@ -148,13 +151,6 @@ struct HciLayer::impl {
     delete hci_timeout_alarm_;
     command_queue_.clear();
     hal_ = nullptr;
-  }
-
-  void send_acl(std::unique_ptr<hci::BasePacketBuilder> packet) {
-    std::vector<uint8_t> bytes;
-    BitInserter bi(bytes);
-    packet->Serialize(bi);
-    hal_->sendAclData(bytes);
   }
 
   void send_sco(std::unique_ptr<hci::BasePacketBuilder> packet) {
