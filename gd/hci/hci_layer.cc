@@ -316,10 +316,6 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
     hci_timeout_alarm_->Schedule(BindOnce(&on_hci_timeout, op_code), kHciTimeoutMs);
   }
 
-  BidiQueueEnd<AclPacketBuilder, AclPacketView>* GetAclQueueEnd() {
-    return acl_queue_.GetUpEnd();
-  }
-
   void RegisterEventHandler(EventCode event_code, Callback<void(EventPacketView)> event_handler, os::Handler* handler) {
     module_.CallOn(this, &impl::handle_register_event_handler, event_code, event_handler, common::Unretained(handler));
   }
@@ -406,7 +402,7 @@ void HciLayer::EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
 }
 
 common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* HciLayer::GetAclQueueEnd() {
-  return impl_->GetAclQueueEnd();
+  return impl_->acl_queue_.GetUpEnd();
 }
 
 void HciLayer::RegisterEventHandler(EventCode event_code, common::Callback<void(EventPacketView)> event_handler,
