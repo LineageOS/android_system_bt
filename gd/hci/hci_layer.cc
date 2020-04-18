@@ -240,7 +240,7 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
     auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(event_bytes));
     EventPacketView event = EventPacketView::Create(packet);
     ASSERT(event.IsValid());
-    module_.Call(&HciLayer::impl::hci_event_received_handler, common::Unretained(this), std::move(event));
+    module_.CallOn(this, &HciLayer::impl::hci_event_received_handler, std::move(event));
   }
 
   void hci_event_received_handler(EventPacketView event) {
@@ -270,14 +270,14 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
 
   void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
                       OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler) {
-    module_.Call(&impl::handle_enqueue_command_with_complete, common::Unretained(this), std::move(command),
-                 std::move(on_complete), common::Unretained(handler));
+    module_.CallOn(this, &impl::handle_enqueue_command_with_complete, std::move(command), std::move(on_complete),
+                   common::Unretained(handler));
   }
 
   void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command, OnceCallback<void(CommandStatusView)> on_status,
                       os::Handler* handler) {
-    module_.Call(&impl::handle_enqueue_command_with_status, common::Unretained(this), std::move(command),
-                 std::move(on_status), common::Unretained(handler));
+    module_.CallOn(this, &impl::handle_enqueue_command_with_status, std::move(command), std::move(on_status),
+                   common::Unretained(handler));
   }
 
   void handle_enqueue_command_with_complete(std::unique_ptr<CommandPacketBuilder> command,
@@ -321,8 +321,7 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
   }
 
   void RegisterEventHandler(EventCode event_code, Callback<void(EventPacketView)> event_handler, os::Handler* handler) {
-    module_.Call(&impl::handle_register_event_handler, common::Unretained(this), event_code, event_handler,
-                 common::Unretained(handler));
+    module_.CallOn(this, &impl::handle_register_event_handler, event_code, event_handler, common::Unretained(handler));
   }
 
   void handle_register_event_handler(EventCode event_code, Callback<void(EventPacketView)> event_handler,
@@ -333,7 +332,7 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
   }
 
   void UnregisterEventHandler(EventCode event_code) {
-    module_.Call(&impl::handle_unregister_event_handler, common::Unretained(this), event_code);
+    module_.CallOn(this, &impl::handle_unregister_event_handler, event_code);
   }
 
   void handle_unregister_event_handler(EventCode event_code) {
@@ -342,8 +341,8 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
 
   void RegisterLeEventHandler(SubeventCode subevent_code, Callback<void(LeMetaEventView)> event_handler,
                               os::Handler* handler) {
-    module_.Call(&impl::handle_register_le_event_handler, common::Unretained(this), subevent_code, event_handler,
-                 common::Unretained(handler));
+    module_.CallOn(this, &impl::handle_register_le_event_handler, subevent_code, event_handler,
+                   common::Unretained(handler));
   }
 
   void handle_register_le_event_handler(SubeventCode subevent_code, Callback<void(LeMetaEventView)> subevent_handler,
@@ -355,7 +354,7 @@ struct HciLayer::impl : public hal::HciHalCallbacks {
   }
 
   void UnregisterLeEventHandler(SubeventCode subevent_code) {
-    module_.Call(&impl::handle_unregister_le_event_handler, common::Unretained(this), subevent_code);
+    module_.CallOn(this, &impl::handle_unregister_le_event_handler, subevent_code);
   }
 
   void handle_unregister_le_event_handler(SubeventCode subevent_code) {
