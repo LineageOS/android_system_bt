@@ -483,10 +483,6 @@ void HciLayer::ListDependencies(ModuleList* list) {
   list->add<hal::HciHal>();
 }
 
-os::Handler* HciLayer::GetHciHandler() {
-  return GetHandler();
-}
-
 void HciLayer::Start() {
   impl_->Start(GetDependency<hal::HciHal>());
 }
@@ -495,8 +491,5 @@ void HciLayer::Stop() {
   impl_->Stop();
 }
 
-std::string HciLayer::ToString() const {
-  return "Hci Layer";
-}
 }  // namespace hci
 }  // namespace bluetooth

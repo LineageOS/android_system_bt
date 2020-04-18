@@ -90,9 +90,14 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
 
   void Stop() override;
 
-  os::Handler* GetHciHandler();
+  os::Handler* GetHciHandler() {
+    return GetHandler();
+  }
 
-  std::string ToString() const override;
+  std::string ToString() const override {
+    return "Hci Layer";
+  }
+
   static constexpr std::chrono::milliseconds kHciTimeoutMs = std::chrono::milliseconds(2000);
 
  private:
