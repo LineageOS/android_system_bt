@@ -22,7 +22,8 @@
 #include "os/queue.h"
 #include "packet/packet_builder.h"
 
-namespace {
+namespace bluetooth {
+namespace hci {
 using bluetooth::common::Bind;
 using bluetooth::common::BindOn;
 using bluetooth::common::BindOnce;
@@ -36,6 +37,22 @@ using bluetooth::hci::CommandStatusView;
 using bluetooth::hci::EventPacketView;
 using bluetooth::hci::LeMetaEventView;
 using bluetooth::os::Handler;
+using common::BidiQueue;
+using common::BidiQueueEnd;
+using hci::OpCode;
+using hci::ResetCompleteView;
+using os::Alarm;
+using os::Handler;
+
+static void fail_if_reset_complete_not_success(CommandCompleteView complete) {
+  auto reset_complete = ResetCompleteView::Create(complete);
+  ASSERT(reset_complete.IsValid());
+  ASSERT(reset_complete.GetStatus() == ErrorCode::SUCCESS);
+}
+
+static void on_hci_timeout(OpCode op_code) {
+  ASSERT_LOG(false, "Timed out waiting for 0x%02hx (%s)", op_code, OpCodeText(op_code).c_str());
+}
 
 template <typename T>
 class EventHandler {
@@ -71,30 +88,6 @@ class CommandQueueEntry {
   OnceCallback<void(CommandCompleteView)> on_complete;
   Handler* caller_handler;
 };
-}  // namespace
-
-namespace bluetooth {
-namespace hci {
-
-using common::BidiQueue;
-using common::BidiQueueEnd;
-using os::Alarm;
-using os::Handler;
-
-namespace {
-using hci::OpCode;
-using hci::ResetCompleteView;
-
-void fail_if_reset_complete_not_success(CommandCompleteView complete) {
-  auto reset_complete = ResetCompleteView::Create(complete);
-  ASSERT(reset_complete.IsValid());
-  ASSERT(reset_complete.GetStatus() == ErrorCode::SUCCESS);
-}
-
-void on_hci_timeout(OpCode op_code) {
-  ASSERT_LOG(false, "Timed out waiting for 0x%02hx (%s)", op_code, OpCodeText(op_code).c_str());
-}
-}  // namespace
 
 template <typename T>
 class CommandInterfaceImpl : public CommandInterface<T> {
