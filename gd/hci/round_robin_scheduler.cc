@@ -31,11 +31,11 @@ RoundRobinScheduler::RoundRobinScheduler(os::Handler* handler, Controller* contr
   le_acl_packet_credits_ = le_max_acl_packet_credits_;
   le_hci_mtu_ = le_buffer_size.le_data_packet_length_;
   controller_->RegisterCompletedAclPacketsCallback(
-      common::Bind(&RoundRobinScheduler::IncomingAclCredits, common::Unretained(this)), handler_);
+      common::Bind(&RoundRobinScheduler::incoming_acl_credits, common::Unretained(this)), handler_);
 }
 
 RoundRobinScheduler::~RoundRobinScheduler() {
-  UnregisterAllConnections();
+  unregister_all_connections();
   controller_->UnregisterCompletedAclPacketsCallback();
 }
 
@@ -44,7 +44,7 @@ void RoundRobinScheduler::Register(ConnectionType connection_type, uint16_t hand
   acl_queue_handler acl_queue_handler = {connection_type, queue_down_end, false, 0, false};
   acl_queue_handlers_.insert(std::pair<uint16_t, RoundRobinScheduler::acl_queue_handler>(handle, acl_queue_handler));
   if (fragments_to_send_.size() == 0) {
-    StartRoundRobin();
+    start_round_robin();
   }
 }
 
@@ -71,12 +71,20 @@ void RoundRobinScheduler::SetDisconnect(uint16_t handle) {
   acl_queue_handler.number_of_sent_packets_ = 0;
 }
 
-void RoundRobinScheduler::StartRoundRobin() {
+uint16_t RoundRobinScheduler::GetCredits() {
+  return acl_packet_credits_;
+}
+
+uint16_t RoundRobinScheduler::GetLeCredits() {
+  return le_acl_packet_credits_;
+}
+
+void RoundRobinScheduler::start_round_robin() {
   if (acl_packet_credits_ == 0 && le_acl_packet_credits_ == 0) {
     return;
   }
   if (!fragments_to_send_.empty()) {
-    SendNextFragment();
+    send_next_fragment();
     return;
   }
 
@@ -86,10 +94,15 @@ void RoundRobinScheduler::StartRoundRobin() {
   size_t count = acl_queue_handlers_.size();
 
   for (auto acl_queue_handler = starting_point_; count > 0; count--) {
-    if (!acl_queue_handler->second.dequeue_is_registered_) {
+    // Prevent registration when credits is zero
+    bool classic_buffer_full =
+        acl_packet_credits_ == 0 && acl_queue_handler->second.connection_type_ == ConnectionType::CLASSIC;
+    bool le_buffer_full =
+        le_acl_packet_credits_ == 0 && acl_queue_handler->second.connection_type_ == ConnectionType::LE;
+    if (!acl_queue_handler->second.dequeue_is_registered_ && !classic_buffer_full && !le_buffer_full) {
       acl_queue_handler->second.dequeue_is_registered_ = true;
       acl_queue_handler->second.queue_down_end_->RegisterDequeue(
-          handler_, common::Bind(&RoundRobinScheduler::BufferPacket, common::Unretained(this), acl_queue_handler));
+          handler_, common::Bind(&RoundRobinScheduler::buffer_packet, common::Unretained(this), acl_queue_handler));
     }
     acl_queue_handler = std::next(acl_queue_handler);
     if (acl_queue_handler == acl_queue_handlers_.end()) {
@@ -100,9 +113,9 @@ void RoundRobinScheduler::StartRoundRobin() {
   starting_point_ = std::next(starting_point_);
 }
 
-void RoundRobinScheduler::BufferPacket(std::map<uint16_t, acl_queue_handler>::iterator acl_queue_handler) {
+void RoundRobinScheduler::buffer_packet(std::map<uint16_t, acl_queue_handler>::iterator acl_queue_handler) {
   BroadcastFlag broadcast_flag = BroadcastFlag::POINT_TO_POINT;
-  //   Wrap packet and enqueue it
+  // Wrap packet and enqueue it
   uint16_t handle = acl_queue_handler->first;
   auto packet = acl_queue_handler->second.queue_down_end_->TryDequeue();
   ASSERT(packet != nullptr);
@@ -124,13 +137,13 @@ void RoundRobinScheduler::BufferPacket(std::map<uint16_t, acl_queue_handler>::it
     }
   }
   ASSERT(fragments_to_send_.size() > 0);
-  UnregisterAllConnections();
+  unregister_all_connections();
 
   acl_queue_handler->second.number_of_sent_packets_ += fragments_to_send_.size();
-  SendNextFragment();
+  send_next_fragment();
 }
 
-void RoundRobinScheduler::UnregisterAllConnections() {
+void RoundRobinScheduler::unregister_all_connections() {
   for (auto acl_queue_handler = acl_queue_handlers_.begin(); acl_queue_handler != acl_queue_handlers_.end();
        acl_queue_handler = std::next(acl_queue_handler)) {
     if (acl_queue_handler->second.dequeue_is_registered_) {
@@ -140,15 +153,15 @@ void RoundRobinScheduler::UnregisterAllConnections() {
   }
 }
 
-void RoundRobinScheduler::SendNextFragment() {
+void RoundRobinScheduler::send_next_fragment() {
   if (!enqueue_registered_.exchange(true)) {
     hci_queue_end_->RegisterEnqueue(
-        handler_, common::Bind(&RoundRobinScheduler::HandleEnqueueNextFragment, common::Unretained(this)));
+        handler_, common::Bind(&RoundRobinScheduler::handle_enqueue_next_fragment, common::Unretained(this)));
   }
 }
 
 // Invoked from some external Queue Reactable context 1
-std::unique_ptr<AclPacketBuilder> RoundRobinScheduler::HandleEnqueueNextFragment() {
+std::unique_ptr<AclPacketBuilder> RoundRobinScheduler::handle_enqueue_next_fragment() {
   ConnectionType connection_type = fragments_to_send_.front().first;
   if (connection_type == ConnectionType::CLASSIC) {
     ASSERT(acl_packet_credits_ > 0);
@@ -164,7 +177,7 @@ std::unique_ptr<AclPacketBuilder> RoundRobinScheduler::HandleEnqueueNextFragment
     if (enqueue_registered_.exchange(false)) {
       hci_queue_end_->UnregisterEnqueue();
     }
-    handler_->Post(common::BindOnce(&RoundRobinScheduler::StartRoundRobin, common::Unretained(this)));
+    handler_->Post(common::BindOnce(&RoundRobinScheduler::start_round_robin, common::Unretained(this)));
   } else {
     ConnectionType next_connection_type = fragments_to_send_.front().first;
     bool classic_buffer_full = next_connection_type == ConnectionType::CLASSIC && acl_packet_credits_ == 0;
@@ -176,7 +189,7 @@ std::unique_ptr<AclPacketBuilder> RoundRobinScheduler::HandleEnqueueNextFragment
   return std::unique_ptr<AclPacketBuilder>(raw_pointer);
 }
 
-void RoundRobinScheduler::IncomingAclCredits(uint16_t handle, uint16_t credits) {
+void RoundRobinScheduler::incoming_acl_credits(uint16_t handle, uint16_t credits) {
   auto acl_queue_handler = acl_queue_handlers_.find(handle);
   if (acl_queue_handler == acl_queue_handlers_.end()) {
     LOG_INFO("Dropping %hx received credits to unknown connection 0x%0hx", credits, handle);
@@ -195,7 +208,7 @@ void RoundRobinScheduler::IncomingAclCredits(uint16_t handle, uint16_t credits) 
   ASSERT(acl_packet_credits_ <= max_acl_packet_credits_);
   ASSERT(le_acl_packet_credits_ <= le_max_acl_packet_credits_);
   if (acl_packet_credits_ == credits || le_acl_packet_credits_ == credits) {
-    StartRoundRobin();
+    start_round_robin();
   }
 }
 
