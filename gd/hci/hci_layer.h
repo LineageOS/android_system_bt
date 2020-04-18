@@ -103,7 +103,7 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
 
  private:
   struct impl;
-  std::unique_ptr<impl> impl_;
+  impl* impl_;
 };
 }  // namespace hci
 }  // namespace bluetooth
