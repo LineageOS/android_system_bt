@@ -90,9 +90,8 @@ void SecurityManagerChannel::OnCommandComplete(hci::CommandCompleteView packet) 
 }
 
 void SecurityManagerChannel::SendCommand(std::unique_ptr<hci::SecurityCommandBuilder> command) {
-  hci_security_interface_->EnqueueCommand(
-      std::move(command), common::BindOnce(&SecurityManagerChannel::OnCommandComplete, common::Unretained(this)),
-      handler_);
+  hci_security_interface_->EnqueueCommand(std::move(command),
+                                          handler_->BindOnceOn(this, &SecurityManagerChannel::OnCommandComplete));
 }
 
 void SecurityManagerChannel::OnHciEventReceived(hci::EventPacketView packet) {

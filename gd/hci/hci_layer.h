@@ -23,6 +23,7 @@
 #include "class_of_device.h"
 #include "common/bidi_queue.h"
 #include "common/callback.h"
+#include "common/contextual_callback.h"
 #include "hal/hci_hal.h"
 #include "hci/acl_connection_interface.h"
 #include "hci/hci_packets.h"
@@ -43,12 +44,11 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
   virtual ~HciLayer();
   DISALLOW_COPY_AND_ASSIGN(HciLayer);
 
-  virtual void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
-                              common::OnceCallback<void(CommandCompleteView)> on_complete,
-                              os::Handler* handler) override;
+  void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
+                      common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) override;
 
-  virtual void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
-                              common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) override;
+  void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
+                      common::ContextualOnceCallback<void(CommandStatusView)> on_status) override;
 
   virtual common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* GetAclQueueEnd();
 

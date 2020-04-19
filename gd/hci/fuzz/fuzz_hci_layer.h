@@ -28,21 +28,20 @@ namespace fuzz {
 template <typename T>
 class FuzzCommandInterface : public CommandInterface<T> {
  public:
-  void EnqueueCommand(std::unique_ptr<T> command, common::OnceCallback<void(hci::CommandCompleteView)> on_complete,
-                      os::Handler* handler) override {}
+  void EnqueueCommand(std::unique_ptr<T> command,
+                      common::ContextualOnceCallback<void(hci::CommandCompleteView)> on_complete) override {}
 
-  void EnqueueCommand(std::unique_ptr<T> command, common::OnceCallback<void(hci::CommandStatusView)> on_status,
-                      os::Handler* handler) override {}
+  void EnqueueCommand(std::unique_ptr<T> command,
+                      common::ContextualOnceCallback<void(hci::CommandStatusView)> on_status) override {}
 };
 
 class FuzzHciLayer : public HciLayer {
  public:
   void EnqueueCommand(std::unique_ptr<hci::CommandPacketBuilder> command,
-                      common::OnceCallback<void(hci::CommandCompleteView)> on_complete, os::Handler* handler) override {
-  }
+                      common::ContextualOnceCallback<void(hci::CommandCompleteView)> on_complete) override {}
 
   void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
-                      common::OnceCallback<void(hci::CommandStatusView)> on_status, os::Handler* handler) override {}
+                      common::ContextualOnceCallback<void(hci::CommandStatusView)> on_status) override {}
 
   common::BidiQueueEnd<hci::AclPacketBuilder, hci::AclPacketView>* GetAclQueueEnd() override;
 

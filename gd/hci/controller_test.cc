@@ -57,18 +57,18 @@ PacketView<kLittleEndian> GetPacketView(std::unique_ptr<packet::BasePacketBuilde
 class TestHciLayer : public HciLayer {
  public:
   void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
-                      common::OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler) override {
+                      common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) override {
     GetHandler()->Post(common::BindOnce(&TestHciLayer::HandleCommand, common::Unretained(this), std::move(command),
-                                        std::move(on_complete), common::Unretained(handler)));
+                                        std::move(on_complete)));
   }
 
   void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
-                      common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) override {
+                      common::ContextualOnceCallback<void(CommandStatusView)> on_status) override {
     EXPECT_TRUE(false) << "Controller properties should not generate Command Status";
   }
 
   void HandleCommand(std::unique_ptr<CommandPacketBuilder> command_builder,
-                     common::OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler) {
+                     common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) {
     auto packet_view = GetPacketView(std::move(command_builder));
     CommandPacketView command = CommandPacketView::Create(packet_view);
     ASSERT(command.IsValid());
@@ -195,7 +195,7 @@ class TestHciLayer : public HciLayer {
     ASSERT(event.IsValid());
     CommandCompleteView command_complete = CommandCompleteView::Create(event);
     ASSERT(command_complete.IsValid());
-    handler->Post(common::BindOnce(std::move(on_complete), std::move(command_complete)));
+    on_complete.Invoke(std::move(command_complete));
   }
 
   void RegisterEventHandler(EventCode event_code, common::Callback<void(EventPacketView)> event_handler,

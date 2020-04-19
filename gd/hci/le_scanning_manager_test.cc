@@ -75,7 +75,7 @@ class TestHciLayer : public HciLayer {
   }
 
   void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
-                      common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) override {
+                      common::ContextualOnceCallback<void(CommandStatusView)> on_status) override {
     command_queue_.push(std::move(command));
     command_status_callbacks.push_front(std::move(on_status));
     if (command_promise_ != nullptr) {
@@ -85,7 +85,7 @@ class TestHciLayer : public HciLayer {
   }
 
   void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
-                      common::OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler) override {
+                      common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) override {
     command_queue_.push(std::move(command));
     command_complete_callbacks.push_front(std::move(on_complete));
     if (command_promise_ != nullptr) {
@@ -150,14 +150,14 @@ class TestHciLayer : public HciLayer {
   void CommandCompleteCallback(EventPacketView event) {
     CommandCompleteView complete_view = CommandCompleteView::Create(event);
     ASSERT(complete_view.IsValid());
-    std::move(command_complete_callbacks.front()).Run(complete_view);
+    std::move(command_complete_callbacks.front()).Invoke(complete_view);
     command_complete_callbacks.pop_front();
   }
 
   void CommandStatusCallback(EventPacketView event) {
     CommandStatusView status_view = CommandStatusView::Create(event);
     ASSERT(status_view.IsValid());
-    std::move(command_status_callbacks.front()).Run(status_view);
+    std::move(command_status_callbacks.front()).Invoke(status_view);
     command_status_callbacks.pop_front();
   }
 
@@ -168,8 +168,8 @@ class TestHciLayer : public HciLayer {
  private:
   std::map<EventCode, common::Callback<void(EventPacketView)>> registered_events_;
   std::map<SubeventCode, common::Callback<void(LeMetaEventView)>> registered_le_events_;
-  std::list<base::OnceCallback<void(CommandCompleteView)>> command_complete_callbacks;
-  std::list<base::OnceCallback<void(CommandStatusView)>> command_status_callbacks;
+  std::list<common::ContextualOnceCallback<void(CommandCompleteView)>> command_complete_callbacks;
+  std::list<common::ContextualOnceCallback<void(CommandStatusView)>> command_status_callbacks;
 
   std::queue<std::unique_ptr<CommandPacketBuilder>> command_queue_;
   mutable std::mutex mutex_;

@@ -72,8 +72,7 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
     auto packet = std::make_unique<TestCommandBuilder>(
         std::vector<uint8_t>(command->command().begin(), command->command().end()));
     hci_layer_->EnqueueCommand(std::move(packet),
-                               common::BindOnce(&HciLayerFacadeService::on_complete, common::Unretained(this)),
-                               facade_handler_);
+                               facade_handler_->BindOnceOn(this, &HciLayerFacadeService::on_complete));
     return ::grpc::Status::OK;
   }
 
@@ -81,9 +80,7 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
                                           ::google::protobuf::Empty* response) override {
     auto packet = std::make_unique<TestCommandBuilder>(
         std::vector<uint8_t>(command->command().begin(), command->command().end()));
-    hci_layer_->EnqueueCommand(std::move(packet),
-                               common::BindOnce(&HciLayerFacadeService::on_status, common::Unretained(this)),
-                               facade_handler_);
+    hci_layer_->EnqueueCommand(std::move(packet), facade_handler_->BindOnceOn(this, &HciLayerFacadeService::on_status));
     return ::grpc::Status::OK;
   }
 

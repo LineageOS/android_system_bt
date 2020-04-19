@@ -572,11 +572,10 @@ struct AclManager::impl : public security::ISecurityManagerListener {
       if (!is_classic_link_already_connected(create_connection_packet_and_address.first)) {
         connecting_.insert(create_connection_packet_and_address.first);
         acl_connection_interface_->EnqueueCommand(std::move(create_connection_packet_and_address.second),
-                                                  common::BindOnce([](CommandStatusView status) {
+                                                  handler_->BindOnce([](CommandStatusView status) {
                                                     ASSERT(status.IsValid());
                                                     ASSERT(status.GetCommandOpCode() == OpCode::CREATE_CONNECTION);
-                                                  }),
-                                                  handler_);
+                                                  }));
         break;
       }
     }
@@ -1145,11 +1144,10 @@ struct AclManager::impl : public security::ISecurityManagerListener {
         return;
       }
       connecting_.insert(address);
-      acl_connection_interface_->EnqueueCommand(std::move(packet), common::BindOnce([](CommandStatusView status) {
-                                                  ASSERT(status.IsValid());
-                                                  ASSERT(status.GetCommandOpCode() == OpCode::CREATE_CONNECTION);
-                                                }),
-                                                handler_);
+      acl_connection_interface_->EnqueueCommand(std::move(packet), handler_->BindOnce([](CommandStatusView status) {
+        ASSERT(status.IsValid());
+        ASSERT(status.GetCommandOpCode() == OpCode::CREATE_CONNECTION);
+      }));
     } else {
       pending_outgoing_connections_.emplace(address, std::move(packet));
     }
@@ -1187,29 +1185,27 @@ struct AclManager::impl : public security::ISecurityManagerListener {
       // controller
       if (own_address_type == OwnAddressType::RANDOM_DEVICE_ADDRESS) {
         hci_layer_->EnqueueCommand(hci::LeSetRandomAddressBuilder::Create(le_initiator_address_.GetAddress()),
-                                   common::BindOnce([](CommandCompleteView status) {}), handler_);
+                                   handler_->BindOnce([](CommandCompleteView status) {}));
       }
 
       le_acl_connection_interface_->EnqueueCommand(
           LeExtendedCreateConnectionBuilder::Create(initiator_filter_policy, own_address_type,
                                                     address_with_type.GetAddressType(), address_with_type.GetAddress(),
                                                     0x01 /* 1M PHY ONLY */, {tmp}),
-          common::BindOnce([](CommandStatusView status) {
+          handler_->BindOnce([](CommandStatusView status) {
             ASSERT(status.IsValid());
             ASSERT(status.GetCommandOpCode() == OpCode::LE_EXTENDED_CREATE_CONNECTION);
-          }),
-          handler_);
+          }));
     } else {
       le_acl_connection_interface_->EnqueueCommand(
           LeCreateConnectionBuilder::Create(le_scan_interval, le_scan_window, initiator_filter_policy,
                                             address_with_type.GetAddressType(), address_with_type.GetAddress(),
                                             own_address_type, conn_interval_min, conn_interval_max, conn_latency,
                                             supervision_timeout, kMinimumCeLength, kMaximumCeLength),
-          common::BindOnce([](CommandStatusView status) {
+          handler_->BindOnce([](CommandStatusView status) {
             ASSERT(status.IsValid());
             ASSERT(status.GetCommandOpCode() == OpCode::LE_CREATE_CONNECTION);
-          }),
-          handler_);
+          }));
     }
   }
 
@@ -1229,22 +1225,20 @@ struct AclManager::impl : public security::ISecurityManagerListener {
       return;
     }
     std::unique_ptr<CreateConnectionCancelBuilder> packet = CreateConnectionCancelBuilder::Create(address);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet), common::BindOnce([](CommandCompleteView complete) { /* TODO */ }), handler_);
+    acl_connection_interface_->EnqueueCommand(std::move(packet),
+                                              handler_->BindOnce([](CommandCompleteView complete) { /* TODO */ }));
   }
 
   void master_link_key(KeyFlag key_flag) {
     std::unique_ptr<MasterLinkKeyBuilder> packet = MasterLinkKeyBuilder::Create(key_flag);
     acl_connection_interface_->EnqueueCommand(
-        std::move(packet),
-        common::BindOnce(&impl::check_command_status<MasterLinkKeyStatusView>, common::Unretained(this)), handler_);
+        std::move(packet), handler_->BindOnceOn(this, &impl::check_command_status<MasterLinkKeyStatusView>));
   }
 
   void switch_role(Address address, Role role) {
     std::unique_ptr<SwitchRoleBuilder> packet = SwitchRoleBuilder::Create(address, role);
     acl_connection_interface_->EnqueueCommand(
-        std::move(packet),
-        common::BindOnce(&impl::check_command_status<SwitchRoleStatusView>, common::Unretained(this)), handler_);
+        std::move(packet), handler_->BindOnceOn(this, &impl::check_command_status<SwitchRoleStatusView>));
   }
 
   void write_default_link_policy_settings(uint16_t default_link_policy_settings) {
@@ -1252,9 +1246,8 @@ struct AclManager::impl : public security::ISecurityManagerListener {
         WriteDefaultLinkPolicySettingsBuilder::Create(default_link_policy_settings);
     acl_connection_interface_->EnqueueCommand(
         std::move(packet),
-        BindOnce(&AclManager::impl::check_command_complete<WriteDefaultLinkPolicySettingsCompleteView>,
-                 common::Unretained(this)),
-        handler_);
+        handler_->BindOnceOn(this,
+                             &AclManager::impl::check_command_complete<WriteDefaultLinkPolicySettingsCompleteView>));
   }
 
   void set_security_module(security::SecurityModule* security_module) {
@@ -1264,15 +1257,14 @@ struct AclManager::impl : public security::ISecurityManagerListener {
 
   void accept_connection(Address address) {
     auto role = AcceptConnectionRequestRole::BECOME_MASTER;  // We prefer to be master
-    acl_connection_interface_->EnqueueCommand(
-        AcceptConnectionRequestBuilder::Create(address, role),
-        common::BindOnce(&impl::on_accept_connection_status, common::Unretained(this), address), handler_);
+    acl_connection_interface_->EnqueueCommand(AcceptConnectionRequestBuilder::Create(address, role),
+                                              handler_->BindOnceOn(this, &impl::on_accept_connection_status, address));
   }
 
   void handle_disconnect(uint16_t handle, DisconnectReason reason) {
     std::unique_ptr<DisconnectBuilder> packet = DisconnectBuilder::Create(handle, reason);
     acl_connection_interface_->EnqueueCommand(std::move(packet),
-                                              BindOnce([](CommandStatusView status) { /* TODO: check? */ }), handler_);
+                                              handler_->BindOnce([](CommandStatusView status) { /* TODO: check? */ }));
   }
 
   void handle_change_connection_packet_type(uint16_t handle, uint16_t packet_type) {
@@ -1281,48 +1273,41 @@ struct AclManager::impl : public security::ISecurityManagerListener {
         ChangeConnectionPacketTypeBuilder::Create(handle, packet_type);
     acl_connection_interface_->EnqueueCommand(
         std::move(packet),
-        BindOnce(&AclManager::impl::check_command_status<ChangeConnectionPacketTypeStatusView>,
-                 common::Unretained(this)),
-        handler_);
+        handler_->BindOnceOn(this, &AclManager::impl::check_command_status<ChangeConnectionPacketTypeStatusView>));
   }
 
   void handle_authentication_requested(uint16_t handle) {
     std::unique_ptr<AuthenticationRequestedBuilder> packet = AuthenticationRequestedBuilder::Create(handle);
     acl_connection_interface_->EnqueueCommand(
         std::move(packet),
-        BindOnce(&AclManager::impl::check_command_status<AuthenticationRequestedStatusView>, common::Unretained(this)),
-        handler_);
+        handler_->BindOnceOn(this, &AclManager::impl::check_command_status<AuthenticationRequestedStatusView>));
   }
 
   void handle_set_connection_encryption(uint16_t handle, Enable enable) {
     std::unique_ptr<SetConnectionEncryptionBuilder> packet = SetConnectionEncryptionBuilder::Create(handle, enable);
     acl_connection_interface_->EnqueueCommand(
         std::move(packet),
-        BindOnce(&AclManager::impl::check_command_status<SetConnectionEncryptionStatusView>, common::Unretained(this)),
-        handler_);
+        handler_->BindOnceOn(this, &AclManager::impl::check_command_status<SetConnectionEncryptionStatusView>));
   }
 
   void handle_change_connection_link_key(uint16_t handle) {
     std::unique_ptr<ChangeConnectionLinkKeyBuilder> packet = ChangeConnectionLinkKeyBuilder::Create(handle);
     acl_connection_interface_->EnqueueCommand(
         std::move(packet),
-        BindOnce(&AclManager::impl::check_command_status<ChangeConnectionLinkKeyStatusView>, common::Unretained(this)),
-        handler_);
+        handler_->BindOnceOn(this, &AclManager::impl::check_command_status<ChangeConnectionLinkKeyStatusView>));
   }
 
   void handle_read_clock_offset(uint16_t handle) {
     std::unique_ptr<ReadClockOffsetBuilder> packet = ReadClockOffsetBuilder::Create(handle);
     acl_connection_interface_->EnqueueCommand(
         std::move(packet),
-        BindOnce(&AclManager::impl::check_command_status<ReadClockOffsetStatusView>, common::Unretained(this)),
-        handler_);
+        handler_->BindOnceOn(this, &AclManager::impl::check_command_status<ReadClockOffsetStatusView>));
   }
 
   void handle_hold_mode(uint16_t handle, uint16_t max_interval, uint16_t min_interval) {
     std::unique_ptr<HoldModeBuilder> packet = HoldModeBuilder::Create(handle, max_interval, min_interval);
     acl_connection_interface_->EnqueueCommand(
-        std::move(packet),
-        BindOnce(&AclManager::impl::check_command_status<HoldModeStatusView>, common::Unretained(this)), handler_);
+        std::move(packet), handler_->BindOnceOn(this, &AclManager::impl::check_command_status<HoldModeStatusView>));
   }
 
   void handle_sniff_mode(uint16_t handle, uint16_t max_interval, uint16_t min_interval, int16_t attempt,
@@ -1330,15 +1315,14 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     std::unique_ptr<SniffModeBuilder> packet =
         SniffModeBuilder::Create(handle, max_interval, min_interval, attempt, timeout);
     acl_connection_interface_->EnqueueCommand(
-        std::move(packet),
-        BindOnce(&AclManager::impl::check_command_status<SniffModeStatusView>, common::Unretained(this)), handler_);
+        std::move(packet), handler_->BindOnceOn(this, &AclManager::impl::check_command_status<SniffModeStatusView>));
   }
 
   void handle_exit_sniff_mode(uint16_t handle) {
     std::unique_ptr<ExitSniffModeBuilder> packet = ExitSniffModeBuilder::Create(handle);
     acl_connection_interface_->EnqueueCommand(
         std::move(packet),
-        BindOnce(&AclManager::impl::check_command_status<ExitSniffModeStatusView>, common::Unretained(this)), handler_);
+        handler_->BindOnceOn(this, &AclManager::impl::check_command_status<ExitSniffModeStatusView>));
   }
 
   void handle_qos_setup_mode(uint16_t handle, ServiceType service_type, uint32_t token_rate, uint32_t peak_bandwidth,
@@ -1346,21 +1330,19 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     std::unique_ptr<QosSetupBuilder> packet =
         QosSetupBuilder::Create(handle, service_type, token_rate, peak_bandwidth, latency, delay_variation);
     acl_connection_interface_->EnqueueCommand(
-        std::move(packet),
-        BindOnce(&AclManager::impl::check_command_status<QosSetupStatusView>, common::Unretained(this)), handler_);
+        std::move(packet), handler_->BindOnceOn(this, &AclManager::impl::check_command_status<QosSetupStatusView>));
   }
 
   void handle_role_discovery(uint16_t handle) {
     std::unique_ptr<RoleDiscoveryBuilder> packet = RoleDiscoveryBuilder::Create(handle);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet), common::BindOnce(&impl::on_role_discovery_complete, common::Unretained(this)), handler_);
+    acl_connection_interface_->EnqueueCommand(std::move(packet),
+                                              handler_->BindOnceOn(this, &impl::on_role_discovery_complete));
   }
 
   void handle_read_link_policy_settings(uint16_t handle) {
     std::unique_ptr<ReadLinkPolicySettingsBuilder> packet = ReadLinkPolicySettingsBuilder::Create(handle);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet), common::BindOnce(&impl::on_read_link_policy_settings_complete, common::Unretained(this)),
-        handler_);
+    acl_connection_interface_->EnqueueCommand(std::move(packet),
+                                              handler_->BindOnceOn(this, &impl::on_read_link_policy_settings_complete));
   }
 
   void handle_write_link_policy_settings(uint16_t handle, uint16_t link_policy_settings) {
@@ -1368,9 +1350,7 @@ struct AclManager::impl : public security::ISecurityManagerListener {
         WriteLinkPolicySettingsBuilder::Create(handle, link_policy_settings);
     acl_connection_interface_->EnqueueCommand(
         std::move(packet),
-        BindOnce(&AclManager::impl::check_command_complete<WriteLinkPolicySettingsCompleteView>,
-                 common::Unretained(this)),
-        handler_);
+        handler_->BindOnceOn(this, &AclManager::impl::check_command_complete<WriteLinkPolicySettingsCompleteView>));
   }
 
   void handle_flow_specification(uint16_t handle, FlowDirection flow_direction, ServiceType service_type,
@@ -1380,8 +1360,7 @@ struct AclManager::impl : public security::ISecurityManagerListener {
         handle, flow_direction, service_type, token_rate, token_bucket_size, peak_bandwidth, access_latency);
     acl_connection_interface_->EnqueueCommand(
         std::move(packet),
-        BindOnce(&AclManager::impl::check_command_status<FlowSpecificationStatusView>, common::Unretained(this)),
-        handler_);
+        handler_->BindOnceOn(this, &AclManager::impl::check_command_status<FlowSpecificationStatusView>));
   }
 
   void handle_sniff_subrating(uint16_t handle, uint16_t maximum_latency, uint16_t minimum_remote_timeout,
@@ -1390,22 +1369,19 @@ struct AclManager::impl : public security::ISecurityManagerListener {
         SniffSubratingBuilder::Create(handle, maximum_latency, minimum_remote_timeout, minimum_local_timeout);
     acl_connection_interface_->EnqueueCommand(
         std::move(packet),
-        BindOnce(&AclManager::impl::check_command_complete<SniffSubratingCompleteView>, common::Unretained(this)),
-        handler_);
+        handler_->BindOnceOn(this, &AclManager::impl::check_command_complete<SniffSubratingCompleteView>));
   }
 
   void handle_flush(uint16_t handle) {
     std::unique_ptr<FlushBuilder> packet = FlushBuilder::Create(handle);
     acl_connection_interface_->EnqueueCommand(
-        std::move(packet),
-        BindOnce(&AclManager::impl::check_command_complete<FlushCompleteView>, common::Unretained(this)), handler_);
+        std::move(packet), handler_->BindOnceOn(this, &AclManager::impl::check_command_complete<FlushCompleteView>));
   }
 
   void handle_read_automatic_flush_timeout(uint16_t handle) {
     std::unique_ptr<ReadAutomaticFlushTimeoutBuilder> packet = ReadAutomaticFlushTimeoutBuilder::Create(handle);
     acl_connection_interface_->EnqueueCommand(
-        std::move(packet), common::BindOnce(&impl::on_read_automatic_flush_timeout_complete, common::Unretained(this)),
-        handler_);
+        std::move(packet), handler_->BindOnceOn(this, &impl::on_read_automatic_flush_timeout_complete));
   }
 
   void handle_write_automatic_flush_timeout(uint16_t handle, uint16_t flush_timeout) {
@@ -1413,23 +1389,19 @@ struct AclManager::impl : public security::ISecurityManagerListener {
         WriteAutomaticFlushTimeoutBuilder::Create(handle, flush_timeout);
     acl_connection_interface_->EnqueueCommand(
         std::move(packet),
-        BindOnce(&AclManager::impl::check_command_complete<WriteAutomaticFlushTimeoutCompleteView>,
-                 common::Unretained(this)),
-        handler_);
+        handler_->BindOnceOn(this, &AclManager::impl::check_command_complete<WriteAutomaticFlushTimeoutCompleteView>));
   }
 
   void handle_read_transmit_power_level(uint16_t handle, TransmitPowerLevelType type) {
     std::unique_ptr<ReadTransmitPowerLevelBuilder> packet = ReadTransmitPowerLevelBuilder::Create(handle, type);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet), common::BindOnce(&impl::on_read_transmit_power_level_complete, common::Unretained(this)),
-        handler_);
+    acl_connection_interface_->EnqueueCommand(std::move(packet),
+                                              handler_->BindOnceOn(this, &impl::on_read_transmit_power_level_complete));
   }
 
   void handle_read_link_supervision_timeout(uint16_t handle) {
     std::unique_ptr<ReadLinkSupervisionTimeoutBuilder> packet = ReadLinkSupervisionTimeoutBuilder::Create(handle);
     acl_connection_interface_->EnqueueCommand(
-        std::move(packet), common::BindOnce(&impl::on_read_link_supervision_timeout_complete, common::Unretained(this)),
-        handler_);
+        std::move(packet), handler_->BindOnceOn(this, &impl::on_read_link_supervision_timeout_complete));
   }
 
   void handle_write_link_supervision_timeout(uint16_t handle, uint16_t link_supervision_timeout) {
@@ -1437,66 +1409,62 @@ struct AclManager::impl : public security::ISecurityManagerListener {
         WriteLinkSupervisionTimeoutBuilder::Create(handle, link_supervision_timeout);
     acl_connection_interface_->EnqueueCommand(
         std::move(packet),
-        BindOnce(&AclManager::impl::check_command_complete<WriteLinkSupervisionTimeoutCompleteView>,
-                 common::Unretained(this)),
-        handler_);
+        handler_->BindOnceOn(this, &AclManager::impl::check_command_complete<WriteLinkSupervisionTimeoutCompleteView>));
   }
 
   void handle_read_failed_contact_counter(uint16_t handle) {
     std::unique_ptr<ReadFailedContactCounterBuilder> packet = ReadFailedContactCounterBuilder::Create(handle);
     acl_connection_interface_->EnqueueCommand(
-        std::move(packet), common::BindOnce(&impl::on_read_failed_contact_counter_complete, common::Unretained(this)),
-        handler_);
+        std::move(packet), handler_->BindOnceOn(this, &impl::on_read_failed_contact_counter_complete));
   }
 
   void handle_reset_failed_contact_counter(uint16_t handle) {
     std::unique_ptr<ResetFailedContactCounterBuilder> packet = ResetFailedContactCounterBuilder::Create(handle);
     acl_connection_interface_->EnqueueCommand(std::move(packet),
-                                              BindOnce([](CommandCompleteView view) { /* TODO: check? */ }), handler_);
+                                              handler_->BindOnce([](CommandCompleteView view) { /* TODO: check? */ }));
   }
 
   void handle_read_link_quality(uint16_t handle) {
     std::unique_ptr<ReadLinkQualityBuilder> packet = ReadLinkQualityBuilder::Create(handle);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet), common::BindOnce(&impl::on_read_link_quality_complete, common::Unretained(this)), handler_);
+    acl_connection_interface_->EnqueueCommand(std::move(packet),
+                                              handler_->BindOnceOn(this, &impl::on_read_link_quality_complete));
   }
 
   void handle_afh_channel_map(uint16_t handle) {
     std::unique_ptr<ReadAfhChannelMapBuilder> packet = ReadAfhChannelMapBuilder::Create(handle);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet), common::BindOnce(&impl::on_read_afh_channel_map_complete, common::Unretained(this)),
-        handler_);
+    acl_connection_interface_->EnqueueCommand(std::move(packet),
+                                              handler_->BindOnceOn(this, &impl::on_read_afh_channel_map_complete));
   }
 
   void handle_read_rssi(uint16_t handle) {
     std::unique_ptr<ReadRssiBuilder> packet = ReadRssiBuilder::Create(handle);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet), common::BindOnce(&impl::on_read_rssi_complete, common::Unretained(this)), handler_);
+    acl_connection_interface_->EnqueueCommand(std::move(packet),
+                                              handler_->BindOnceOn(this, &impl::on_read_rssi_complete));
   }
 
   void handle_read_remote_version_information(uint16_t handle) {
     acl_connection_interface_->EnqueueCommand(
         ReadRemoteVersionInformationBuilder::Create(handle),
-        common::BindOnce(&impl::on_read_remote_version_information_status, common::Unretained(this)), handler_);
+        handler_->BindOnceOn(this, &impl::on_read_remote_version_information_status));
   }
 
   void handle_read_remote_supported_features(uint16_t handle) {
     acl_connection_interface_->EnqueueCommand(
         ReadRemoteSupportedFeaturesBuilder::Create(handle),
-        common::BindOnce(&impl::on_read_remote_supported_features_status, common::Unretained(this)), handler_);
+        handler_->BindOnceOn(this, &impl::on_read_remote_supported_features_status));
   }
 
   void handle_read_remote_extended_features(uint16_t handle) {
     // TODO(optedoblivion): Read the other pages until max pages
     acl_connection_interface_->EnqueueCommand(
         ReadRemoteExtendedFeaturesBuilder::Create(handle, 1),
-        common::BindOnce(&impl::on_read_remote_extended_features_status, common::Unretained(this)), handler_);
+        handler_->BindOnceOn(this, &impl::on_read_remote_extended_features_status));
   }
 
   void handle_read_clock(uint16_t handle, WhichClock which_clock) {
     std::unique_ptr<ReadClockBuilder> packet = ReadClockBuilder::Create(handle, which_clock);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet), common::BindOnce(&impl::on_read_clock_complete, common::Unretained(this)), handler_);
+    acl_connection_interface_->EnqueueCommand(std::move(packet),
+                                              handler_->BindOnceOn(this, &impl::on_read_clock_complete));
   }
 
   template <class T>
@@ -1549,7 +1517,7 @@ struct AclManager::impl : public security::ISecurityManagerListener {
 
   void reject_connection(std::unique_ptr<RejectConnectionRequestBuilder> builder) {
     acl_connection_interface_->EnqueueCommand(std::move(builder),
-                                              BindOnce([](CommandStatusView status) { /* TODO: check? */ }), handler_);
+                                              handler_->BindOnce([](CommandStatusView status) { /* TODO: check? */ }));
   }
 
   void handle_register_callbacks(ConnectionCallbacks* callbacks, os::Handler* handler) {
@@ -2143,11 +2111,10 @@ bool LeAclConnection::LeConnectionUpdate(uint16_t conn_interval_min, uint16_t co
   auto packet = LeConnectionUpdateBuilder::Create(handle_, conn_interval_min, conn_interval_max, conn_latency,
                                                   supervision_timeout, min_ce_length, max_ce_length);
   pimpl_->tracker.le_acl_connection_interface_->EnqueueCommand(
-      std::move(packet), common::BindOnce([](CommandStatusView status) {
+      std::move(packet), pimpl_->tracker.client_handler_->BindOnce([](CommandStatusView status) {
         ASSERT(status.IsValid());
         ASSERT(status.GetCommandOpCode() == OpCode::LE_CONNECTION_UPDATE);
-      }),
-      pimpl_->tracker.client_handler_);
+      }));
   return true;
 }
 

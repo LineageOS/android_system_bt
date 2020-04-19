@@ -257,21 +257,18 @@ void neighbor::InquiryModule::impl::UnregisterCallbacks() {
 }
 
 void neighbor::InquiryModule::impl::EnqueueCommandComplete(std::unique_ptr<hci::CommandPacketBuilder> command) {
-  hci_layer_->EnqueueCommand(std::move(command), common::BindOnce(&impl::OnCommandComplete, common::Unretained(this)),
-                             handler_);
+  hci_layer_->EnqueueCommand(std::move(command), handler_->BindOnceOn(this, &impl::OnCommandComplete));
 }
 
 void neighbor::InquiryModule::impl::EnqueueCommandStatus(std::unique_ptr<hci::CommandPacketBuilder> command) {
-  hci_layer_->EnqueueCommand(std::move(command), common::BindOnce(&impl::OnCommandStatus, common::Unretained(this)),
-                             handler_);
+  hci_layer_->EnqueueCommand(std::move(command), handler_->BindOnceOn(this, &impl::OnCommandStatus));
 }
 
 void neighbor::InquiryModule::impl::EnqueueCommandCompleteSync(std::unique_ptr<hci::CommandPacketBuilder> command) {
   ASSERT(command_sync_ == nullptr);
   command_sync_ = new std::promise<void>();
   auto command_received = command_sync_->get_future();
-  hci_layer_->EnqueueCommand(std::move(command),
-                             common::BindOnce(&impl::OnCommandCompleteSync, common::Unretained(this)), handler_);
+  hci_layer_->EnqueueCommand(std::move(command), handler_->BindOnceOn(this, &impl::OnCommandCompleteSync));
   command_received.wait();
   delete command_sync_;
   command_sync_ = nullptr;
