@@ -205,6 +205,9 @@ class DualModeController : public Device {
   // 7.2.10
   void WriteLinkPolicySettings(CommandPacketView args);
 
+  // 7.2.11
+  void ReadDefaultLinkPolicySettings(CommandPacketView args);
+
   // 7.2.12
   void WriteDefaultLinkPolicySettings(CommandPacketView args);
 

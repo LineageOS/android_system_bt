@@ -191,10 +191,15 @@ class LeAclConnection : public AclConnection {
  public:
   LeAclConnection()
       : AclConnection(), le_acl_connection_interface_(nullptr),
-        address_with_type_(Address::kEmpty, AddressType::PUBLIC_DEVICE_ADDRESS){};
+        local_address_(Address::kEmpty, AddressType::PUBLIC_DEVICE_ADDRESS),
+        remote_address_(Address::kEmpty, AddressType::PUBLIC_DEVICE_ADDRESS){};
 
-  virtual AddressWithType GetAddressWithType() const {
-    return address_with_type_;
+  virtual AddressWithType GetLocalAddress() const {
+    return local_address_;
+  }
+
+  virtual AddressWithType GetRemoteAddress() const {
+    return remote_address_;
   }
 
   virtual void RegisterCallbacks(LeConnectionManagementCallbacks* callbacks, os::Handler* handler);
@@ -210,12 +215,14 @@ class LeAclConnection : public AclConnection {
  private:
   friend AclManager;
   LeAclConnection(const AclManager* acl_manager, QueueUpEnd* queue_up_end,
-                  LeAclConnectionInterface* le_acl_connection_interface, uint16_t handle,
-                  AddressWithType address_with_type, Role role)
+                  LeAclConnectionInterface* le_acl_connection_interface, uint16_t handle, AddressWithType local_address,
+                  AddressWithType remote_address, Role role)
       : AclConnection(acl_manager, queue_up_end, handle, role),
-        le_acl_connection_interface_(le_acl_connection_interface), address_with_type_(address_with_type) {}
+        le_acl_connection_interface_(le_acl_connection_interface), local_address_(local_address),
+        remote_address_(remote_address) {}
   LeAclConnectionInterface* le_acl_connection_interface_;
-  AddressWithType address_with_type_;
+  AddressWithType local_address_;
+  AddressWithType remote_address_;
   DISALLOW_COPY_AND_ASSIGN(LeAclConnection);
 };
 

@@ -36,6 +36,10 @@ uint16_t LinkOptions::GetHandle() const {
   return acl_connection_->GetHandle();
 }
 
+hci::AddressWithType LinkOptions::GetLocalAddress() const {
+  return acl_connection_->GetLocalAddress();
+}
+
 bool LinkOptions::UpdateConnectionParameter(uint16_t conn_interval_min, uint16_t conn_interval_max,
                                             uint16_t conn_latency, uint16_t supervision_timeout, uint16_t min_ce_length,
                                             uint16_t max_ce_length) {

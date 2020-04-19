@@ -28,26 +28,22 @@
 #if (SBC_ARM_ASM_OPT == TRUE)
 #define Mult32(s32In1, s32In2, s32OutLow)    \
   {                                          \
-    __asm {                                                                                    \
+    __asm {                                  \
         MUL s32OutLow,s32In1,s32In2; } \
   }
 #define Mult64(s32In1, s32In2, s32OutLow, s32OutHi)     \
   {                                                     \
-    __asm {														    						\
+    __asm {                                             \
         SMULL s32OutLow,s32OutHi,s32In1,s32In2 } \
   }
 #else
 #define Mult32(s32In1, s32In2, s32OutLow) \
   s32OutLow = (int32_t)(s32In1) * (int32_t)(s32In2);
-#define Mult64(s32In1, s32In2, s32OutLow, s32OutHi)                   \
-  {                                                                   \
-    (s32OutLow) = ((int32_t)(uint16_t)(s32In1) * (uint16_t)(s32In2)); \
-    s32TempVal2 = (int32_t)(((s32In1) >> 16) * (uint16_t)(s32In2));   \
-    s32Carry = ((((uint32_t)(s32OutLow) >> 16) & 0xFFFF) +            \
-                +(s32TempVal2 & 0xFFFF)) >>                           \
-               16;                                                    \
-    (s32OutLow) += (s32TempVal2 << 16);                               \
-    (s32OutHi) = (s32TempVal2 >> 16) + s32Carry;                      \
+#define Mult64(s32In1, s32In2, s32OutLow, s32OutHi)                \
+  {                                                                \
+    __builtin_mul_overflow(s32In1, (uint16_t)s32In2, &s64OutTemp); \
+    s32OutLow = s64OutTemp & 0xFFFFFFFF;                           \
+    s32OutHi = (s64OutTemp >> 32) & 0xFFFFFFFF;                    \
   }
 #endif
 
@@ -77,7 +73,10 @@ uint32_t EncPacking(SBC_ENC_PARAMS* pstrEncParams, uint8_t* output) {
   int32_t s32Temp1;   /*used in 64-bit multiplication*/
   int32_t s32Low;     /*used in 64-bit multiplication*/
 #if (SBC_IS_64_MULT_IN_QUANTIZER == TRUE)
-  int32_t s32Hi1, s32Low1, s32Carry, s32TempVal2, s32Hi, s32Temp2;
+  int32_t s32Hi1, s32Low1, s32Hi, s32Temp2;
+#if (SBC_ARM_ASM_OPT != TRUE)
+  int64_t s64OutTemp;
+#endif
 #endif
 
   pu8PacketPtr = output;           /*Initialize the ptr*/
@@ -141,7 +140,7 @@ uint32_t EncPacking(SBC_ENC_PARAMS* pstrEncParams, uint8_t* output) {
         u16Levels = (uint16_t)(((uint32_t)1 << s32LoopCount) - 1);
 
         /* quantizer */
-        s32Temp1 = (*ps32SbPtr >> 2) + (u32SfRaisedToPow2 << 12);
+        s32Temp1 = (*ps32SbPtr >> 2) + (int32_t)(u32SfRaisedToPow2 << 12);
         s32Temp2 = u16Levels;
 
         Mult64(s32Temp1, s32Temp2, s32Low, s32Hi);
