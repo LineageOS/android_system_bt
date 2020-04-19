@@ -66,6 +66,19 @@ class Handler : public common::IPostableContext {
         common::BindOnce(std::forward<Functor>(functor), common::Unretained(obj), std::forward<Args>(args)...), this);
   }
 
+  template <typename Functor, typename... Args>
+  common::ContextualCallback<common::MakeUnboundRunType<Functor, Args...>> Bind(Functor&& functor, Args&&... args) {
+    return common::ContextualCallback<common::MakeUnboundRunType<Functor, Args...>>(
+        common::Bind(std::forward<Functor>(functor), std::forward<Args>(args)...), this);
+  }
+
+  template <typename Functor, typename T, typename... Args>
+  common::ContextualCallback<common::MakeUnboundRunType<Functor, T, Args...>> BindOn(T* obj, Functor&& functor,
+                                                                                     Args&&... args) {
+    return common::ContextualCallback<common::MakeUnboundRunType<Functor, T, Args...>>(
+        common::Bind(std::forward<Functor>(functor), common::Unretained(obj), std::forward<Args>(args)...), this);
+  }
+
   template <typename T>
   friend class Queue;
 

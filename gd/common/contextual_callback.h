@@ -31,6 +31,7 @@ class IPostableContext {
 template <typename R, typename... Args>
 class ContextualOnceCallback;
 
+// A callback bound to an execution context that can be invoked only once.
 template <typename R, typename... Args>
 class ContextualOnceCallback<R(Args...)> {
  public:
@@ -50,6 +51,32 @@ class ContextualOnceCallback<R(Args...)> {
 
  private:
   common::OnceCallback<R(Args...)> callback_;
+  IPostableContext* context_;
+};
+
+template <typename R, typename... Args>
+class ContextualCallback;
+
+// A callback bound to an execution context that can be invoked multiple times.
+template <typename R, typename... Args>
+class ContextualCallback<R(Args...)> {
+ public:
+  ContextualCallback(common::Callback<R(Args...)>&& callback, IPostableContext* context)
+      : callback_(std::move(callback)), context_(context) {}
+
+  constexpr ContextualCallback() = default;
+
+  ContextualCallback(const ContextualCallback&) = default;
+  ContextualCallback& operator=(const ContextualCallback&) = default;
+  ContextualCallback(ContextualCallback&&) noexcept = default;
+  ContextualCallback& operator=(ContextualCallback&&) noexcept = default;
+
+  void Invoke(Args... args) {
+    context_->Post(common::BindOnce(callback_, std::forward<Args>(args)...));
+  }
+
+ private:
+  common::Callback<R(Args...)> callback_;
   IPostableContext* context_;
 };
 

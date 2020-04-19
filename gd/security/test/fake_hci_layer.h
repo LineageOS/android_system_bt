@@ -81,8 +81,8 @@ class FakeHciLayer : public HciLayer {
     return last;
   }
 
-  void RegisterEventHandler(EventCode event_code, common::Callback<void(EventPacketView)> event_handler,
-                            Handler* handler) override {
+  void RegisterEventHandler(EventCode event_code,
+                            common::ContextualCallback<void(EventPacketView)> event_handler) override {
     registered_events_[event_code] = event_handler;
   }
 
@@ -96,7 +96,7 @@ class FakeHciLayer : public HciLayer {
     ASSERT_TRUE(event.IsValid());
     EventCode event_code = event.GetEventCode();
     ASSERT_TRUE(registered_events_.find(event_code) != registered_events_.end());
-    registered_events_[event_code].Run(event);
+    registered_events_[event_code].Invoke(event);
   }
 
   void ListDependencies(ModuleList* list) override {}
@@ -104,7 +104,7 @@ class FakeHciLayer : public HciLayer {
   void Stop() override {}
 
  private:
-  std::map<EventCode, common::Callback<void(EventPacketView)>> registered_events_;
+  std::map<EventCode, common::ContextualCallback<void(EventPacketView)>> registered_events_;
   std::queue<std::unique_ptr<CommandQueueEntry>> command_queue_;
 };
 

@@ -137,7 +137,7 @@ void neighbor::NameModule::impl::Start() {
   handler_ = module_.GetHandler();
 
   hci_layer_->RegisterEventHandler(hci::EventCode::REMOTE_NAME_REQUEST_COMPLETE,
-                                   common::Bind(&NameModule::impl::OnEvent, common::Unretained(this)), handler_);
+                                   handler_->BindOn(this, &NameModule::impl::OnEvent));
 }
 
 void neighbor::NameModule::impl::Stop() {

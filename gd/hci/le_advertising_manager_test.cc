@@ -74,13 +74,6 @@ class TestController : public Controller {
 
 class TestHciLayer : public HciLayer {
  public:
-  TestHciLayer() {
-    RegisterEventHandler(EventCode::COMMAND_COMPLETE,
-                         base::Bind(&TestHciLayer::CommandCompleteCallback, common::Unretained(this)), nullptr);
-    RegisterEventHandler(EventCode::COMMAND_STATUS,
-                         base::Bind(&TestHciLayer::CommandStatusCallback, common::Unretained(this)), nullptr);
-  }
-
   void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
                       common::ContextualOnceCallback<void(CommandStatusView)> on_status) override {
     auto packet_view = CommandPacketView::Create(GetPacketView(std::move(command)));
@@ -143,13 +136,13 @@ class TestHciLayer : public HciLayer {
     return command;
   }
 
-  void RegisterEventHandler(EventCode event_code, common::Callback<void(EventPacketView)> event_handler,
-                            os::Handler* handler) override {
+  void RegisterEventHandler(EventCode event_code,
+                            common::ContextualCallback<void(EventPacketView)> event_handler) override {
     registered_events_[event_code] = event_handler;
   }
 
-  void RegisterLeEventHandler(SubeventCode subevent_code, common::Callback<void(LeMetaEventView)> event_handler,
-                              os::Handler* handler) override {
+  void RegisterLeEventHandler(SubeventCode subevent_code,
+                              common::ContextualCallback<void(LeMetaEventView)> event_handler) override {
     registered_le_events_[subevent_code] = event_handler;
   }
 
@@ -159,7 +152,7 @@ class TestHciLayer : public HciLayer {
     ASSERT_TRUE(event.IsValid());
     EventCode event_code = event.GetEventCode();
     ASSERT_TRUE(registered_events_.find(event_code) != registered_events_.end()) << EventCodeText(event_code);
-    registered_events_[event_code].Run(event);
+    registered_events_[event_code].Invoke(event);
   }
 
   void IncomingLeMetaEvent(std::unique_ptr<LeMetaEventBuilder> event_builder) {
@@ -170,7 +163,7 @@ class TestHciLayer : public HciLayer {
     SubeventCode subevent_code = meta_event_view.GetSubeventCode();
     ASSERT_TRUE(registered_le_events_.find(subevent_code) != registered_le_events_.end())
         << SubeventCodeText(subevent_code);
-    registered_le_events_[subevent_code].Run(meta_event_view);
+    registered_le_events_[subevent_code].Invoke(meta_event_view);
   }
 
   void CommandCompleteCallback(EventPacketView event) {
@@ -188,12 +181,16 @@ class TestHciLayer : public HciLayer {
   }
 
   void ListDependencies(ModuleList* list) override {}
-  void Start() override {}
+  void Start() override {
+    RegisterEventHandler(EventCode::COMMAND_COMPLETE,
+                         GetHandler()->BindOn(this, &TestHciLayer::CommandCompleteCallback));
+    RegisterEventHandler(EventCode::COMMAND_STATUS, GetHandler()->BindOn(this, &TestHciLayer::CommandStatusCallback));
+  }
   void Stop() override {}
 
  private:
-  std::map<EventCode, common::Callback<void(EventPacketView)>> registered_events_;
-  std::map<SubeventCode, common::Callback<void(LeMetaEventView)>> registered_le_events_;
+  std::map<EventCode, common::ContextualCallback<void(EventPacketView)>> registered_events_;
+  std::map<SubeventCode, common::ContextualCallback<void(LeMetaEventView)>> registered_le_events_;
   std::list<common::ContextualOnceCallback<void(CommandCompleteView)>> command_complete_callbacks;
   std::list<common::ContextualOnceCallback<void(CommandStatusView)>> command_status_callbacks;
 
@@ -215,9 +212,7 @@ class LeAdvertisingManagerTest : public ::testing::Test {
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
     test_controller_->num_advertisers = 1;
-    fake_registry_.Start<LeAdvertisingManager>(&thread_);
-    le_advertising_manager_ =
-        static_cast<LeAdvertisingManager*>(fake_registry_.GetModuleUnderTest(&LeAdvertisingManager::Factory));
+    le_advertising_manager_ = fake_registry_.Start<LeAdvertisingManager>(&thread_);
   }
 
   void TearDown() override {

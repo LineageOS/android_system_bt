@@ -45,36 +45,35 @@ class FuzzHciLayer : public HciLayer {
 
   common::BidiQueueEnd<hci::AclPacketBuilder, hci::AclPacketView>* GetAclQueueEnd() override;
 
-  void RegisterEventHandler(hci::EventCode event_code, common::Callback<void(hci::EventPacketView)> event_handler,
-                            os::Handler* handler) override {}
+  void RegisterEventHandler(hci::EventCode event_code,
+                            common::ContextualCallback<void(hci::EventPacketView)> event_handler) override {}
 
   void UnregisterEventHandler(hci::EventCode event_code) override {}
 
   void RegisterLeEventHandler(hci::SubeventCode subevent_code,
-                              common::Callback<void(hci::LeMetaEventView)> event_handler,
-                              os::Handler* handler) override {}
+                              common::ContextualCallback<void(hci::LeMetaEventView)> event_handler) override {}
 
   void UnregisterLeEventHandler(hci::SubeventCode subevent_code) override {}
 
-  hci::SecurityInterface* GetSecurityInterface(common::Callback<void(hci::EventPacketView)> event_handler,
-                                               os::Handler* handler) override;
+  hci::SecurityInterface* GetSecurityInterface(
+      common::ContextualCallback<void(hci::EventPacketView)> event_handler) override;
 
-  hci::LeSecurityInterface* GetLeSecurityInterface(common::Callback<void(hci::LeMetaEventView)> event_handler,
-                                                   os::Handler* handler) override;
+  hci::LeSecurityInterface* GetLeSecurityInterface(
+      common::ContextualCallback<void(hci::LeMetaEventView)> event_handler) override;
 
-  hci::AclConnectionInterface* GetAclConnectionInterface(common::Callback<void(hci::EventPacketView)> event_handler,
-                                                         common::Callback<void(uint16_t, hci::ErrorCode)> on_disconnect,
-                                                         os::Handler* handler) override;
+  hci::AclConnectionInterface* GetAclConnectionInterface(
+      common::ContextualCallback<void(hci::EventPacketView)> event_handler,
+      common::ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect) override;
 
   hci::LeAclConnectionInterface* GetLeAclConnectionInterface(
-      common::Callback<void(hci::LeMetaEventView)> event_handler,
-      common::Callback<void(uint16_t, hci::ErrorCode)> on_disconnect, os::Handler* handler) override;
+      common::ContextualCallback<void(hci::LeMetaEventView)> event_handler,
+      common::ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect) override;
 
-  hci::LeAdvertisingInterface* GetLeAdvertisingInterface(common::Callback<void(hci::LeMetaEventView)> event_handler,
-                                                         os::Handler* handler) override;
+  hci::LeAdvertisingInterface* GetLeAdvertisingInterface(
+      common::ContextualCallback<void(hci::LeMetaEventView)> event_handler) override;
 
-  hci::LeScanningInterface* GetLeScanningInterface(common::Callback<void(hci::LeMetaEventView)> event_handler,
-                                                   os::Handler* handler) override;
+  hci::LeScanningInterface* GetLeScanningInterface(
+      common::ContextualCallback<void(hci::LeMetaEventView)> event_handler) override;
 
   void injectAclData(std::vector<uint8_t> data);
 

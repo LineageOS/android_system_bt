@@ -238,13 +238,13 @@ void neighbor::InquiryModule::impl::RegisterCallbacks(InquiryCallbacks callbacks
   inquiry_callbacks_ = callbacks;
 
   hci_layer_->RegisterEventHandler(hci::EventCode::INQUIRY_RESULT,
-                                   common::Bind(&InquiryModule::impl::OnEvent, common::Unretained(this)), handler_);
+                                   handler_->BindOn(this, &InquiryModule::impl::OnEvent));
   hci_layer_->RegisterEventHandler(hci::EventCode::INQUIRY_RESULT_WITH_RSSI,
-                                   common::Bind(&InquiryModule::impl::OnEvent, common::Unretained(this)), handler_);
+                                   handler_->BindOn(this, &InquiryModule::impl::OnEvent));
   hci_layer_->RegisterEventHandler(hci::EventCode::EXTENDED_INQUIRY_RESULT,
-                                   common::Bind(&InquiryModule::impl::OnEvent, common::Unretained(this)), handler_);
+                                   handler_->BindOn(this, &InquiryModule::impl::OnEvent));
   hci_layer_->RegisterEventHandler(hci::EventCode::INQUIRY_COMPLETE,
-                                   common::Bind(&InquiryModule::impl::OnEvent, common::Unretained(this)), handler_);
+                                   handler_->BindOn(this, &InquiryModule::impl::OnEvent));
 }
 
 void neighbor::InquiryModule::impl::UnregisterCallbacks() {

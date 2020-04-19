@@ -82,8 +82,8 @@ struct LeAdvertisingManager::impl {
     module_handler_ = handler;
     hci_layer_ = hci_layer;
     controller_ = controller;
-    le_advertising_interface_ = hci_layer_->GetLeAdvertisingInterface(
-        common::Bind(&LeAdvertisingManager::impl::handle_event, common::Unretained(this)), module_handler_);
+    le_advertising_interface_ =
+        hci_layer_->GetLeAdvertisingInterface(module_handler_->BindOn(this, &LeAdvertisingManager::impl::handle_event));
     num_instances_ = controller_->GetControllerLeNumberOfSupportedAdverisingSets();
     enabled_sets_ = std::vector<EnabledSet>(num_instances_);
     if (controller_->IsSupported(hci::OpCode::LE_SET_EXTENDED_ADVERTISING_PARAMETERS)) {

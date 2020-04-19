@@ -48,7 +48,7 @@ struct LeScanningManager::impl {
     hci_layer_ = hci_layer;
     controller_ = controller;
     le_scanning_interface_ = hci_layer_->GetLeScanningInterface(
-        common::Bind(&LeScanningManager::impl::handle_scan_results, common::Unretained(this)), module_handler_);
+        module_handler_->BindOn(this, &LeScanningManager::impl::handle_scan_results));
     if (controller_->IsSupported(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS)) {
       api_type_ = ScanApiType::LE_5_0;
     } else if (controller_->IsSupported(OpCode::LE_EXTENDED_SCAN_PARAMS)) {

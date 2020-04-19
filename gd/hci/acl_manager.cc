@@ -300,11 +300,9 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     hci_queue_end_->RegisterDequeue(
         handler_, common::Bind(&impl::dequeue_and_route_acl_packet_to_connection, common::Unretained(this)));
     acl_connection_interface_ = hci_layer_->GetAclConnectionInterface(
-        common::Bind(&impl::on_classic_event, common::Unretained(this)),
-        common::Bind(&impl::on_classic_disconnect, common::Unretained(this)), handler_);
+        handler_->BindOn(this, &impl::on_classic_event), handler_->BindOn(this, &impl::on_classic_disconnect));
     le_acl_connection_interface_ = hci_layer_->GetLeAclConnectionInterface(
-        common::Bind(&impl::on_le_event, common::Unretained(this)),
-        common::Bind(&impl::on_le_disconnect, common::Unretained(this)), handler_);
+        handler_->BindOn(this, &impl::on_le_event), handler_->BindOn(this, &impl::on_le_disconnect));
     le_initiator_address_ =
         AddressWithType(Address{{0x00, 0x11, 0xFF, 0xFF, 0x33, 0x22}}, AddressType::RANDOM_DEVICE_ADDRESS);
   }
