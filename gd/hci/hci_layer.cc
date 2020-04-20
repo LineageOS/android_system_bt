@@ -126,6 +126,12 @@ struct HciLayer::impl {
     hal_->sendAclData(bytes);
   }
 
+  template <typename TResponse>
+  void enqueue_command(unique_ptr<CommandPacketBuilder> command, ContextualOnceCallback<void(TResponse)> on_response) {
+    command_queue_.emplace_back(move(command), move(on_response));
+    send_next_command();
+  }
+
   void on_command_status(EventPacketView event) {
     handle_command_response<CommandStatusView>(event, "status");
   }
@@ -157,31 +163,6 @@ struct HciLayer::impl {
     command_queue_.pop_front();
     waiting_command_ = OpCode::NONE;
     hci_timeout_alarm_->Cancel();
-    send_next_command();
-  }
-
-  void on_le_meta_event(EventPacketView event) {
-    LeMetaEventView meta_event_view = LeMetaEventView::Create(event);
-    ASSERT(meta_event_view.IsValid());
-    SubeventCode subevent_code = meta_event_view.GetSubeventCode();
-    ASSERT_LOG(subevent_handlers_.find(subevent_code) != subevent_handlers_.end(),
-               "Unhandled le event of type 0x%02hhx (%s)", subevent_code, SubeventCodeText(subevent_code).c_str());
-    subevent_handlers_[subevent_code].Invoke(meta_event_view);
-  }
-
-  void on_hci_event(EventPacketView event) {
-    ASSERT(event.IsValid());
-    EventCode event_code = event.GetEventCode();
-    if (event_handlers_.find(event_code) == event_handlers_.end()) {
-      LOG_DEBUG("Dropping unregistered event of type 0x%02hhx (%s)", event_code, EventCodeText(event_code).c_str());
-      return;
-    }
-    event_handlers_[event_code].Invoke(event);
-  }
-
-  template <typename TResponse>
-  void enqueue_command(unique_ptr<CommandPacketBuilder> command, ContextualOnceCallback<void(TResponse)> on_response) {
-    command_queue_.emplace_back(move(command), move(on_response));
     send_next_command();
   }
 
@@ -226,6 +207,25 @@ struct HciLayer::impl {
 
   void unregister_le_event(SubeventCode event) {
     subevent_handlers_.erase(subevent_handlers_.find(event));
+  }
+
+  void on_hci_event(EventPacketView event) {
+    ASSERT(event.IsValid());
+    EventCode event_code = event.GetEventCode();
+    if (event_handlers_.find(event_code) == event_handlers_.end()) {
+      LOG_DEBUG("Dropping unregistered event of type 0x%02hhx (%s)", event_code, EventCodeText(event_code).c_str());
+      return;
+    }
+    event_handlers_[event_code].Invoke(event);
+  }
+
+  void on_le_meta_event(EventPacketView event) {
+    LeMetaEventView meta_event_view = LeMetaEventView::Create(event);
+    ASSERT(meta_event_view.IsValid());
+    SubeventCode subevent_code = meta_event_view.GetSubeventCode();
+    ASSERT_LOG(subevent_handlers_.find(subevent_code) != subevent_handlers_.end(),
+               "Unhandled le event of type 0x%02hhx (%s)", subevent_code, SubeventCodeText(subevent_code).c_str());
+    subevent_handlers_[subevent_code].Invoke(meta_event_view);
   }
 
   hal::HciHal* hal_;
@@ -281,6 +281,10 @@ HciLayer::HciLayer() : impl_(nullptr), hal_callbacks_(nullptr) {}
 HciLayer::~HciLayer() {
 }
 
+common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* HciLayer::GetAclQueueEnd() {
+  return impl_->acl_queue_.GetUpEnd();
+}
+
 void HciLayer::EnqueueCommand(unique_ptr<CommandPacketBuilder> command,
                               common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) {
   CallOn(impl_, &impl::enqueue_command<CommandCompleteView>, move(command), move(on_complete));
@@ -289,10 +293,6 @@ void HciLayer::EnqueueCommand(unique_ptr<CommandPacketBuilder> command,
 void HciLayer::EnqueueCommand(unique_ptr<CommandPacketBuilder> command,
                               common::ContextualOnceCallback<void(CommandStatusView)> on_status) {
   CallOn(impl_, &impl::enqueue_command<CommandStatusView>, move(command), move(on_status));
-}
-
-common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* HciLayer::GetAclQueueEnd() {
-  return impl_->acl_queue_.GetUpEnd();
 }
 
 void HciLayer::RegisterEventHandler(EventCode event, ContextualCallback<void(EventPacketView)> handler) {
