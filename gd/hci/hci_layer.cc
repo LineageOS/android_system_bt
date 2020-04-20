@@ -17,22 +17,16 @@
 #include "hci/hci_layer.h"
 
 #include "common/bind.h"
-#include "common/callback.h"
 #include "os/alarm.h"
 #include "os/queue.h"
 #include "packet/packet_builder.h"
 
 namespace bluetooth {
 namespace hci {
-using bluetooth::common::Bind;
 using bluetooth::common::BindOn;
 using bluetooth::common::BindOnce;
-using bluetooth::common::Callback;
-using bluetooth::common::Closure;
 using bluetooth::common::ContextualCallback;
 using bluetooth::common::ContextualOnceCallback;
-using bluetooth::common::OnceCallback;
-using bluetooth::common::OnceClosure;
 using bluetooth::hci::CommandCompleteView;
 using bluetooth::hci::CommandPacketBuilder;
 using bluetooth::hci::CommandStatusView;
@@ -286,12 +280,12 @@ common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* HciLayer::GetAclQueueEnd(
 }
 
 void HciLayer::EnqueueCommand(unique_ptr<CommandPacketBuilder> command,
-                              common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) {
+                              ContextualOnceCallback<void(CommandCompleteView)> on_complete) {
   CallOn(impl_, &impl::enqueue_command<CommandCompleteView>, move(command), move(on_complete));
 }
 
 void HciLayer::EnqueueCommand(unique_ptr<CommandPacketBuilder> command,
-                              common::ContextualOnceCallback<void(CommandStatusView)> on_status) {
+                              ContextualOnceCallback<void(CommandStatusView)> on_status) {
   CallOn(impl_, &impl::enqueue_command<CommandStatusView>, move(command), move(on_status));
 }
 
