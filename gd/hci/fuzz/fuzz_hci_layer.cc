@@ -20,39 +20,41 @@ namespace bluetooth {
 namespace hci {
 namespace fuzz {
 
+using bluetooth::common::ContextualCallback;
+
 common::BidiQueueEnd<hci::AclPacketBuilder, hci::AclPacketView>* FuzzHciLayer::GetAclQueueEnd() {
   return acl_queue_.GetUpEnd();
 }
 
-hci::SecurityInterface* FuzzHciLayer::GetSecurityInterface(common::Callback<void(hci::EventPacketView)> event_handler,
-                                                           os::Handler* handler) {
+hci::SecurityInterface* FuzzHciLayer::GetSecurityInterface(
+    ContextualCallback<void(hci::EventPacketView)> event_handler) {
   return &security_interface_;
 }
 
 hci::LeSecurityInterface* FuzzHciLayer::GetLeSecurityInterface(
-    common::Callback<void(hci::LeMetaEventView)> event_handler, os::Handler* handler) {
+    ContextualCallback<void(hci::LeMetaEventView)> event_handler) {
   return &le_security_interface_;
 }
 
 hci::AclConnectionInterface* FuzzHciLayer::GetAclConnectionInterface(
-    common::Callback<void(hci::EventPacketView)> event_handler,
-    common::Callback<void(uint16_t, hci::ErrorCode)> on_disconnect, os::Handler* handler) {
+    ContextualCallback<void(hci::EventPacketView)> event_handler,
+    ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect) {
   return &acl_connection_interface_;
 }
 
 hci::LeAclConnectionInterface* FuzzHciLayer::GetLeAclConnectionInterface(
-    common::Callback<void(hci::LeMetaEventView)> event_handler,
-    common::Callback<void(uint16_t, hci::ErrorCode)> on_disconnect, os::Handler* handler) {
+    ContextualCallback<void(hci::LeMetaEventView)> event_handler,
+    ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect) {
   return &le_acl_connection_interface_;
 }
 
 hci::LeAdvertisingInterface* FuzzHciLayer::GetLeAdvertisingInterface(
-    common::Callback<void(hci::LeMetaEventView)> event_handler, os::Handler* handler) {
+    ContextualCallback<void(hci::LeMetaEventView)> event_handler) {
   return &le_advertising_interface_;
 }
 
 hci::LeScanningInterface* FuzzHciLayer::GetLeScanningInterface(
-    common::Callback<void(hci::LeMetaEventView)> event_handler, os::Handler* handler) {
+    ContextualCallback<void(hci::LeMetaEventView)> event_handler) {
   return &le_scanning_interface_;
 }
 
