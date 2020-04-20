@@ -38,12 +38,14 @@ namespace l2cap {
 namespace le {
 namespace internal {
 
-class Link : public l2cap::internal::ILink {
+class LinkManager;
+
+class Link : public l2cap::internal::ILink, public hci::LeConnectionManagementCallbacks {
  public:
   Link(os::Handler* l2cap_handler, std::unique_ptr<hci::LeAclConnection> acl_connection,
        l2cap::internal::ParameterProvider* parameter_provider,
-       DynamicChannelServiceManagerImpl* dynamic_service_manager,
-       FixedChannelServiceManagerImpl* fixed_service_manager);
+       DynamicChannelServiceManagerImpl* dynamic_service_manager, FixedChannelServiceManagerImpl* fixed_service_manager,
+       LinkManager* link_manager);
 
   ~Link() override = default;
 
@@ -69,6 +71,11 @@ class Link : public l2cap::internal::ILink {
   // ACL methods
 
   virtual void OnAclDisconnected(hci::ErrorCode status);
+
+  void OnDisconnection(hci::ErrorCode status) override;
+
+  void OnConnectionUpdate(uint16_t connection_interval, uint16_t connection_latency,
+                          uint16_t supervision_timeout) override;
 
   virtual void Disconnect();
 
@@ -138,6 +145,12 @@ class Link : public l2cap::internal::ILink {
   std::unordered_map<Cid, PendingDynamicChannelConnection> local_cid_to_pending_dynamic_channel_connection_map_;
   os::Alarm link_idle_disconnect_alarm_{l2cap_handler_};
   LinkOptions link_options_{acl_connection_.get(), this, l2cap_handler_};
+  LinkManager* link_manager_;
+  SignalId update_request_signal_id_ = kInvalidSignalId;
+  uint16_t update_request_interval_min_;
+  uint16_t update_request_interval_max_;
+  uint16_t update_request_latency_;
+  uint16_t update_request_supervision_timeout_;
   DISALLOW_COPY_AND_ASSIGN(Link);
 
   // Received connection update complete from ACL manager. SignalId is bound to a valid number when we need to send a

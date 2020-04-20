@@ -106,12 +106,8 @@ void LinkManager::OnLeConnectSuccess(hci::AddressWithType connecting_address_wit
   hci::AddressWithType connected_address_with_type = acl_connection->GetRemoteAddress();
   ASSERT_LOG(GetLink(connected_address_with_type) == nullptr, "%s is connected twice without disconnection",
              acl_connection->GetRemoteAddress().ToString().c_str());
-  // Register ACL disconnection callback in LinkManager so that we can clean up link resource properly
-  acl_connection->RegisterDisconnectCallback(
-      common::BindOnce(&LinkManager::OnDisconnect, common::Unretained(this), connected_address_with_type),
-      l2cap_handler_);
   links_.try_emplace(connected_address_with_type, l2cap_handler_, std::move(acl_connection), parameter_provider_,
-                     dynamic_channel_service_manager_, fixed_channel_service_manager_);
+                     dynamic_channel_service_manager_, fixed_channel_service_manager_, this);
   auto* link = GetLink(connected_address_with_type);
   // Allocate and distribute channels for all registered fixed channel services
   auto fixed_channel_services = fixed_channel_service_manager_->GetRegisteredServices();
@@ -149,11 +145,10 @@ void LinkManager::OnLeConnectFail(hci::AddressWithType address_with_type, hci::E
   pending_links_.erase(pending_link);
 }
 
-void LinkManager::OnDisconnect(hci::AddressWithType address_with_type, hci::ErrorCode status) {
+void LinkManager::OnDisconnect(bluetooth::hci::AddressWithType address_with_type) {
   auto* link = GetLink(address_with_type);
-  ASSERT_LOG(link != nullptr, "Device %s is disconnected with reason 0x%x, but not in local database",
-             address_with_type.ToString().c_str(), static_cast<uint8_t>(status));
-  link->OnAclDisconnected(status);
+  ASSERT_LOG(link != nullptr, "Device %s is disconnected but not in local database",
+             address_with_type.ToString().c_str());
   links_.erase(address_with_type);
 }
 
