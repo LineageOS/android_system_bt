@@ -25,6 +25,8 @@
 #include "os/fuzz/dev_null_queue.h"
 #include "os/fuzz/fuzz_inject_queue.h"
 
+#include <fuzzer/FuzzedDataProvider.h>
+
 namespace bluetooth {
 namespace hci {
 namespace fuzz {
@@ -36,14 +38,7 @@ class HciLayerFuzzClient : public Module {
   void Start() override;
   void Stop() override;
 
-  void injectAclData(std::vector<uint8_t> data);
-  void injectHciCommand(std::vector<uint8_t> data);
-  void injectSecurityCommand(std::vector<uint8_t> data);
-  void injectLeSecurityCommand(std::vector<uint8_t> data);
-  void injectAclConnectionCommand(std::vector<uint8_t> data);
-  void injectLeAclConnectionCommand(std::vector<uint8_t> data);
-  void injectLeAdvertisingCommand(std::vector<uint8_t> data);
-  void injectLeScanningCommand(std::vector<uint8_t> data);
+  void injectArbitrary(FuzzedDataProvider& fdp);
 
   void ListDependencies(ModuleList* list) override {
     list->add<hci::HciLayer>();
@@ -56,6 +51,15 @@ class HciLayerFuzzClient : public Module {
   }
 
  private:
+  void injectAclData(std::vector<uint8_t> data);
+  void injectHciCommand(std::vector<uint8_t> data);
+  void injectSecurityCommand(std::vector<uint8_t> data);
+  void injectLeSecurityCommand(std::vector<uint8_t> data);
+  void injectAclConnectionCommand(std::vector<uint8_t> data);
+  void injectLeAclConnectionCommand(std::vector<uint8_t> data);
+  void injectLeAdvertisingCommand(std::vector<uint8_t> data);
+  void injectLeScanningCommand(std::vector<uint8_t> data);
+
   template <typename TVIEW, typename TBUILDER>
   void inject_command(std::vector<uint8_t> data, CommandInterface<TBUILDER>* interface) {
     TVIEW commandPacket = TVIEW::FromBytes(data);
