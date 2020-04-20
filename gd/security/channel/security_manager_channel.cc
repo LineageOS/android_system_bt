@@ -25,12 +25,11 @@ namespace security {
 namespace channel {
 
 /**
- * Constructor for testing onlyu
+ * Constructor for testing only
  */
 SecurityManagerChannel::SecurityManagerChannel(os::Handler* handler, hci::HciLayer* hci_layer)
-    : listener_(nullptr),
-      hci_security_interface_(hci_layer->GetSecurityInterface(
-          common::Bind(&SecurityManagerChannel::OnHciEventReceived, common::Unretained(this)), handler)),
+    : listener_(nullptr), hci_security_interface_(hci_layer->GetSecurityInterface(
+                              handler->BindOn(this, &SecurityManagerChannel::OnHciEventReceived))),
       handler_(handler) {
   is_test_mode_ = true;
 }
@@ -41,9 +40,8 @@ SecurityManagerChannel::SecurityManagerChannel(os::Handler* handler, hci::HciLay
 SecurityManagerChannel::SecurityManagerChannel(
     os::Handler* handler, hci::HciLayer* hci_layer,
     std::unique_ptr<l2cap::classic::FixedChannelManager> fixed_channel_manager)
-    : listener_(nullptr),
-      hci_security_interface_(hci_layer->GetSecurityInterface(
-          common::Bind(&SecurityManagerChannel::OnHciEventReceived, common::Unretained(this)), handler)),
+    : listener_(nullptr), hci_security_interface_(hci_layer->GetSecurityInterface(
+                              handler->BindOn(this, &SecurityManagerChannel::OnHciEventReceived))),
       handler_(handler), fixed_channel_manager_(std::move(fixed_channel_manager)) {
   ASSERT_LOG(fixed_channel_manager_ != nullptr, "No channel manager!");
   LOG_DEBUG("Registering for a fixed channel service");
@@ -90,9 +88,8 @@ void SecurityManagerChannel::OnCommandComplete(hci::CommandCompleteView packet) 
 }
 
 void SecurityManagerChannel::SendCommand(std::unique_ptr<hci::SecurityCommandBuilder> command) {
-  hci_security_interface_->EnqueueCommand(
-      std::move(command), common::BindOnce(&SecurityManagerChannel::OnCommandComplete, common::Unretained(this)),
-      handler_);
+  hci_security_interface_->EnqueueCommand(std::move(command),
+                                          handler_->BindOnceOn(this, &SecurityManagerChannel::OnCommandComplete));
 }
 
 void SecurityManagerChannel::OnHciEventReceived(hci::EventPacketView packet) {

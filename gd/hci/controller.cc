@@ -40,82 +40,64 @@ struct Controller::impl {
 
   void Start(hci::HciLayer* hci) {
     hci_ = hci;
+    Handler* handler = module_.GetHandler();
     hci_->RegisterEventHandler(EventCode::NUMBER_OF_COMPLETED_PACKETS,
-                               Bind(&Controller::impl::NumberOfCompletedPackets, common::Unretained(this)),
-                               module_.GetHandler());
+                               handler->BindOn(this, &Controller::impl::NumberOfCompletedPackets));
 
     set_event_mask(kDefaultEventMask);
     hci_->EnqueueCommand(ReadLocalNameBuilder::Create(),
-                         BindOnce(&Controller::impl::read_local_name_complete_handler, common::Unretained(this)),
-                         module_.GetHandler());
-    hci_->EnqueueCommand(
-        ReadLocalVersionInformationBuilder::Create(),
-        BindOnce(&Controller::impl::read_local_version_information_complete_handler, common::Unretained(this)),
-        module_.GetHandler());
-    hci_->EnqueueCommand(
-        ReadLocalSupportedCommandsBuilder::Create(),
-        BindOnce(&Controller::impl::read_local_supported_commands_complete_handler, common::Unretained(this)),
-        module_.GetHandler());
-    hci_->EnqueueCommand(
-        ReadLocalSupportedFeaturesBuilder::Create(),
-        BindOnce(&Controller::impl::read_local_supported_features_complete_handler, common::Unretained(this)),
-        module_.GetHandler());
+                         handler->BindOnceOn(this, &Controller::impl::read_local_name_complete_handler));
+    hci_->EnqueueCommand(ReadLocalVersionInformationBuilder::Create(),
+                         handler->BindOnceOn(this, &Controller::impl::read_local_version_information_complete_handler));
+    hci_->EnqueueCommand(ReadLocalSupportedCommandsBuilder::Create(),
+                         handler->BindOnceOn(this, &Controller::impl::read_local_supported_commands_complete_handler));
+    hci_->EnqueueCommand(ReadLocalSupportedFeaturesBuilder::Create(),
+                         handler->BindOnceOn(this, &Controller::impl::read_local_supported_features_complete_handler));
 
     // Wait for all extended features read
     std::promise<void> features_promise;
     auto features_future = features_promise.get_future();
     hci_->EnqueueCommand(ReadLocalExtendedFeaturesBuilder::Create(0x00),
-                         BindOnce(&Controller::impl::read_local_extended_features_complete_handler,
-                                  common::Unretained(this), std::move(features_promise)),
-                         module_.GetHandler());
+                         handler->BindOnceOn(this, &Controller::impl::read_local_extended_features_complete_handler,
+                                             std::move(features_promise)));
     features_future.wait();
 
     hci_->EnqueueCommand(ReadBufferSizeBuilder::Create(),
-                         BindOnce(&Controller::impl::read_buffer_size_complete_handler, common::Unretained(this)),
-                         module_.GetHandler());
+                         handler->BindOnceOn(this, &Controller::impl::read_buffer_size_complete_handler));
 
     hci_->EnqueueCommand(LeReadBufferSizeV1Builder::Create(),
-                         BindOnce(&Controller::impl::le_read_buffer_size_handler, common::Unretained(this)),
-                         module_.GetHandler());
+                         handler->BindOnceOn(this, &Controller::impl::le_read_buffer_size_handler));
 
-    hci_->EnqueueCommand(
-        LeReadLocalSupportedFeaturesBuilder::Create(),
-        BindOnce(&Controller::impl::le_read_local_supported_features_handler, common::Unretained(this)),
-        module_.GetHandler());
+    hci_->EnqueueCommand(LeReadLocalSupportedFeaturesBuilder::Create(),
+                         handler->BindOnceOn(this, &Controller::impl::le_read_local_supported_features_handler));
 
     hci_->EnqueueCommand(LeReadSupportedStatesBuilder::Create(),
-                         BindOnce(&Controller::impl::le_read_supported_states_handler, common::Unretained(this)),
-                         module_.GetHandler());
+                         handler->BindOnceOn(this, &Controller::impl::le_read_supported_states_handler));
 
     if (is_supported(OpCode::LE_READ_MAXIMUM_DATA_LENGTH)) {
       hci_->EnqueueCommand(LeReadMaximumDataLengthBuilder::Create(),
-                           BindOnce(&Controller::impl::le_read_maximum_data_length_handler, common::Unretained(this)),
-                           module_.GetHandler());
+                           handler->BindOnceOn(this, &Controller::impl::le_read_maximum_data_length_handler));
     }
     if (is_supported(OpCode::LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH)) {
       hci_->EnqueueCommand(
           LeReadMaximumAdvertisingDataLengthBuilder::Create(),
-          BindOnce(&Controller::impl::le_read_maximum_advertising_data_length_handler, common::Unretained(this)),
-          module_.GetHandler());
+          handler->BindOnceOn(this, &Controller::impl::le_read_maximum_advertising_data_length_handler));
     }
     if (is_supported(OpCode::LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS)) {
       hci_->EnqueueCommand(
           LeReadNumberOfSupportedAdvertisingSetsBuilder::Create(),
-          BindOnce(&Controller::impl::le_read_number_of_supported_advertising_sets_handler, common::Unretained(this)),
-          module_.GetHandler());
+          handler->BindOnceOn(this, &Controller::impl::le_read_number_of_supported_advertising_sets_handler));
     }
 
     hci_->EnqueueCommand(LeGetVendorCapabilitiesBuilder::Create(),
-                         BindOnce(&Controller::impl::le_get_vendor_capabilities_handler, common::Unretained(this)),
-                         module_.GetHandler());
+                         handler->BindOnceOn(this, &Controller::impl::le_get_vendor_capabilities_handler));
 
     // We only need to synchronize the last read. Make BD_ADDR to be the last one.
     std::promise<void> promise;
     auto future = promise.get_future();
     hci_->EnqueueCommand(
         ReadBdAddrBuilder::Create(),
-        BindOnce(&Controller::impl::read_controller_mac_address_handler, common::Unretained(this), std::move(promise)),
-        module_.GetHandler());
+        handler->BindOnceOn(this, &Controller::impl::read_controller_mac_address_handler, std::move(promise)));
     future.wait();
   }
 
@@ -211,10 +193,10 @@ struct Controller::impl {
     // Query all extended features
     if (page_number < maximum_page_number_) {
       page_number++;
-      hci_->EnqueueCommand(ReadLocalExtendedFeaturesBuilder::Create(page_number),
-                           BindOnce(&Controller::impl::read_local_extended_features_complete_handler,
-                                    common::Unretained(this), std::move(promise)),
-                           module_.GetHandler());
+      hci_->EnqueueCommand(
+          ReadLocalExtendedFeaturesBuilder::Create(page_number),
+          module_.GetHandler()->BindOnceOn(this, &Controller::impl::read_local_extended_features_complete_handler,
+                                           std::move(promise)));
     } else {
       promise.set_value();
     }
@@ -373,23 +355,19 @@ struct Controller::impl {
 
   void set_event_mask(uint64_t event_mask) {
     std::unique_ptr<SetEventMaskBuilder> packet = SetEventMaskBuilder::Create(event_mask);
-    hci_->EnqueueCommand(std::move(packet),
-                         BindOnce(&Controller::impl::check_status<SetEventMaskCompleteView>, common::Unretained(this)),
-                         module_.GetHandler());
+    hci_->EnqueueCommand(std::move(packet), module_.GetHandler()->BindOnceOn(
+                                                this, &Controller::impl::check_status<SetEventMaskCompleteView>));
   }
 
   void reset() {
     std::unique_ptr<ResetBuilder> packet = ResetBuilder::Create();
     hci_->EnqueueCommand(std::move(packet),
-                         BindOnce(&Controller::impl::check_status<ResetCompleteView>, common::Unretained(this)),
-                         module_.GetHandler());
+                         module_.GetHandler()->BindOnceOn(this, &Controller::impl::check_status<ResetCompleteView>));
   }
 
   void set_event_filter(std::unique_ptr<SetEventFilterBuilder> packet) {
-    hci_->EnqueueCommand(
-        std::move(packet),
-        BindOnce(&Controller::impl::check_status<SetEventFilterCompleteView>, common::Unretained(this)),
-        module_.GetHandler());
+    hci_->EnqueueCommand(std::move(packet), module_.GetHandler()->BindOnceOn(
+                                                this, &Controller::impl::check_status<SetEventFilterCompleteView>));
   }
 
   void write_local_name(std::string local_name) {
@@ -400,10 +378,8 @@ struct Controller::impl {
     std::copy(std::begin(local_name), std::end(local_name), std::begin(local_name_array));
 
     std::unique_ptr<WriteLocalNameBuilder> packet = WriteLocalNameBuilder::Create(local_name_array);
-    hci_->EnqueueCommand(
-        std::move(packet),
-        BindOnce(&Controller::impl::check_status<WriteLocalNameCompleteView>, common::Unretained(this)),
-        module_.GetHandler());
+    hci_->EnqueueCommand(std::move(packet), module_.GetHandler()->BindOnceOn(
+                                                this, &Controller::impl::check_status<WriteLocalNameCompleteView>));
   }
 
   void host_buffer_size(uint16_t host_acl_data_packet_length, uint8_t host_synchronous_data_packet_length,
@@ -411,18 +387,14 @@ struct Controller::impl {
     std::unique_ptr<HostBufferSizeBuilder> packet =
         HostBufferSizeBuilder::Create(host_acl_data_packet_length, host_synchronous_data_packet_length,
                                       host_total_num_acl_data_packets, host_total_num_synchronous_data_packets);
-    hci_->EnqueueCommand(
-        std::move(packet),
-        BindOnce(&Controller::impl::check_status<HostBufferSizeCompleteView>, common::Unretained(this)),
-        module_.GetHandler());
+    hci_->EnqueueCommand(std::move(packet), module_.GetHandler()->BindOnceOn(
+                                                this, &Controller::impl::check_status<HostBufferSizeCompleteView>));
   }
 
   void le_set_event_mask(uint64_t le_event_mask) {
     std::unique_ptr<LeSetEventMaskBuilder> packet = LeSetEventMaskBuilder::Create(le_event_mask);
-    hci_->EnqueueCommand(
-        std::move(packet),
-        BindOnce(&Controller::impl::check_status<LeSetEventMaskCompleteView>, common::Unretained(this)),
-        module_.GetHandler());
+    hci_->EnqueueCommand(std::move(packet), module_.GetHandler()->BindOnceOn(
+                                                this, &Controller::impl::check_status<LeSetEventMaskCompleteView>));
   }
 
   template <class T>
