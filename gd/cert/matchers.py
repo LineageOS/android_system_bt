@@ -130,12 +130,20 @@ class L2capMatchers(object):
         return lambda packet: L2capMatchers._is_matching_configuration_request_with_ertm(packet)
 
     @staticmethod
+    def ConfigurationRequestView(dcid):
+        return lambda request_view: request_view.GetDestinationCid() == dcid
+
+    @staticmethod
     def DisconnectionRequest(scid, dcid):
         return lambda packet: L2capMatchers._is_matching_disconnection_request(packet, scid, dcid)
 
     @staticmethod
     def DisconnectionResponse(scid, dcid):
         return lambda packet: L2capMatchers._is_matching_disconnection_response(packet, scid, dcid)
+
+    @staticmethod
+    def EchoResponse():
+        return lambda packet: L2capMatchers._is_control_frame_with_code(packet, CommandCode.ECHO_RESPONSE)
 
     @staticmethod
     def CommandReject():
