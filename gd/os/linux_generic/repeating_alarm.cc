@@ -33,6 +33,7 @@
 
 namespace bluetooth {
 namespace os {
+using common::Closure;
 
 RepeatingAlarm::RepeatingAlarm(Handler* handler) : handler_(handler), fd_(TIMERFD_CREATE(ALARM_CLOCK, 0)) {
   ASSERT(fd_ != -1);

@@ -69,7 +69,7 @@ class RepeatingAlarmTest : public ::testing::Test {
 
   RepeatingAlarm* alarm_;
 
-  Closure should_not_happen_ = common::Bind([] { ASSERT_TRUE(false); });
+  common::Closure should_not_happen_ = common::Bind([] { ASSERT_TRUE(false); });
 
  private:
   Thread* thread_;
