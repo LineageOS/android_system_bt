@@ -14,6 +14,8 @@
  * limitations under the License.
  */
 
+#include "l2cap/le/internal/link.h"
+
 #include <chrono>
 #include <memory>
 
@@ -22,7 +24,7 @@
 #include "l2cap/internal/parameter_provider.h"
 #include "l2cap/le/dynamic_channel_manager.h"
 #include "l2cap/le/internal/fixed_channel_impl.h"
-#include "l2cap/le/internal/link.h"
+#include "l2cap/le/internal/link_manager.h"
 #include "os/alarm.h"
 
 namespace bluetooth {
@@ -36,22 +38,44 @@ static constexpr uint16_t kDefaultMaximumCeLength = 0x0C00;
 Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::LeAclConnection> acl_connection,
            l2cap::internal::ParameterProvider* parameter_provider,
            DynamicChannelServiceManagerImpl* dynamic_service_manager,
-           FixedChannelServiceManagerImpl* fixed_service_manager)
+           FixedChannelServiceManagerImpl* fixed_service_manager, LinkManager* link_manager)
     : l2cap_handler_(l2cap_handler), acl_connection_(std::move(acl_connection)),
       data_pipeline_manager_(l2cap_handler, this, acl_connection_->GetAclQueueEnd()),
       parameter_provider_(parameter_provider), dynamic_service_manager_(dynamic_service_manager),
       signalling_manager_(l2cap_handler_, this, &data_pipeline_manager_, dynamic_service_manager_,
-                          &dynamic_channel_allocator_) {
+                          &dynamic_channel_allocator_),
+      link_manager_(link_manager) {
   ASSERT(l2cap_handler_ != nullptr);
   ASSERT(acl_connection_ != nullptr);
   ASSERT(parameter_provider_ != nullptr);
   link_idle_disconnect_alarm_.Schedule(common::BindOnce(&Link::Disconnect, common::Unretained(this)),
                                        parameter_provider_->GetLeLinkIdleDisconnectTimeout());
+  acl_connection_->RegisterCallbacks(this, l2cap_handler_);
 }
 
 void Link::OnAclDisconnected(hci::ErrorCode status) {
   fixed_channel_allocator_.OnAclDisconnected(status);
   dynamic_channel_allocator_.OnAclDisconnected(status);
+}
+
+void Link::OnDisconnection(bluetooth::hci::ErrorCode status) {
+  OnAclDisconnected(status);
+
+  link_manager_->OnDisconnect(GetAclConnection()->GetRemoteAddress());
+}
+
+void Link::OnConnectionUpdate(uint16_t connection_interval, uint16_t connection_latency, uint16_t supervision_timeout) {
+  LOG_DEBUG("interval %hx latency %hx supervision_timeout %hx", connection_interval, connection_latency,
+            supervision_timeout);
+  if (update_request_signal_id_ != kInvalidSignalId) {
+    hci::ErrorCode result = hci::ErrorCode::SUCCESS;
+    if (connection_interval > update_request_interval_max_ || connection_interval < update_request_interval_min_ ||
+        connection_latency != update_request_latency_ || supervision_timeout != update_request_supervision_timeout_) {
+      result = hci::ErrorCode::UNSPECIFIED_ERROR;
+    }
+    on_connection_update_complete(update_request_signal_id_, result);
+    update_request_signal_id_ = kInvalidSignalId;
+  }
 }
 
 void Link::Disconnect() {
@@ -61,10 +85,13 @@ void Link::Disconnect() {
 void Link::UpdateConnectionParameterFromRemote(SignalId signal_id, uint16_t conn_interval_min,
                                                uint16_t conn_interval_max, uint16_t conn_latency,
                                                uint16_t supervision_timeout) {
-  acl_connection_->LeConnectionUpdate(
-      conn_interval_min, conn_interval_max, conn_latency, supervision_timeout, kDefaultMinimumCeLength,
-      kDefaultMaximumCeLength,
-      common::BindOnce(&Link::on_connection_update_complete, common::Unretained(this), signal_id), l2cap_handler_);
+  acl_connection_->LeConnectionUpdate(conn_interval_min, conn_interval_max, conn_latency, supervision_timeout,
+                                      kDefaultMinimumCeLength, kDefaultMaximumCeLength);
+  update_request_signal_id_ = signal_id;
+  update_request_interval_min_ = conn_interval_min;
+  update_request_interval_max_ = conn_interval_max;
+  update_request_latency_ = conn_latency;
+  update_request_supervision_timeout_ = supervision_timeout;
 }
 
 void Link::SendConnectionParameterUpdate(uint16_t conn_interval_min, uint16_t conn_interval_max, uint16_t conn_latency,
@@ -75,10 +102,9 @@ void Link::SendConnectionParameterUpdate(uint16_t conn_interval_min, uint16_t co
                                                              supervision_timeout);
     return;
   }
-  acl_connection_->LeConnectionUpdate(
-      conn_interval_min, conn_interval_max, conn_latency, supervision_timeout, min_ce_length, max_ce_length,
-      common::BindOnce(&Link::on_connection_update_complete, common::Unretained(this), kInvalidSignalId),
-      l2cap_handler_);
+  acl_connection_->LeConnectionUpdate(conn_interval_min, conn_interval_max, conn_latency, supervision_timeout,
+                                      min_ce_length, max_ce_length);
+  update_request_signal_id_ = kInvalidSignalId;
 }
 
 std::shared_ptr<FixedChannelImpl> Link::AllocateFixedChannel(Cid cid, SecurityPolicy security_policy) {
@@ -208,6 +234,7 @@ void Link::SendLeCredit(Cid local_cid, uint16_t credit) {
 
 void Link::on_connection_update_complete(SignalId signal_id, hci::ErrorCode error_code) {
   if (!signal_id.IsValid()) {
+    LOG_INFO("Invalid signal_id");
     return;
   }
   ConnectionParameterUpdateResponseResult result = (error_code == hci::ErrorCode::SUCCESS)
