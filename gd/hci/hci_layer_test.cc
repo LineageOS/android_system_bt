@@ -148,34 +148,30 @@ class DependsOnHci : public Module {
 
   void SendHciCommandExpectingStatus(std::unique_ptr<CommandPacketBuilder> command) {
     hci_->EnqueueCommand(std::move(command),
-                         common::Bind(&DependsOnHci::handle_event<CommandStatusView>, common::Unretained(this)),
-                         GetHandler());
+                         GetHandler()->BindOnceOn(this, &DependsOnHci::handle_event<CommandStatusView>));
   }
 
   void SendHciCommandExpectingComplete(std::unique_ptr<CommandPacketBuilder> command) {
     hci_->EnqueueCommand(std::move(command),
-                         common::Bind(&DependsOnHci::handle_event<CommandCompleteView>, common::Unretained(this)),
-                         GetHandler());
+                         GetHandler()->BindOnceOn(this, &DependsOnHci::handle_event<CommandCompleteView>));
   }
 
   void SendSecurityCommandExpectingComplete(std::unique_ptr<SecurityCommandBuilder> command) {
     if (security_interface_ == nullptr) {
-      security_interface_ = hci_->GetSecurityInterface(
-          common::Bind(&DependsOnHci::handle_event<EventPacketView>, common::Unretained(this)), GetHandler());
+      security_interface_ =
+          hci_->GetSecurityInterface(GetHandler()->BindOn(this, &DependsOnHci::handle_event<EventPacketView>));
     }
     hci_->EnqueueCommand(std::move(command),
-                         common::Bind(&DependsOnHci::handle_event<CommandCompleteView>, common::Unretained(this)),
-                         GetHandler());
+                         GetHandler()->BindOnceOn(this, &DependsOnHci::handle_event<CommandCompleteView>));
   }
 
   void SendLeSecurityCommandExpectingComplete(std::unique_ptr<LeSecurityCommandBuilder> command) {
     if (le_security_interface_ == nullptr) {
-      le_security_interface_ = hci_->GetLeSecurityInterface(
-          common::Bind(&DependsOnHci::handle_event<LeMetaEventView>, common::Unretained(this)), GetHandler());
+      le_security_interface_ =
+          hci_->GetLeSecurityInterface(GetHandler()->BindOn(this, &DependsOnHci::handle_event<LeMetaEventView>));
     }
     hci_->EnqueueCommand(std::move(command),
-                         common::Bind(&DependsOnHci::handle_event<CommandCompleteView>, common::Unretained(this)),
-                         GetHandler());
+                         GetHandler()->BindOnceOn(this, &DependsOnHci::handle_event<CommandCompleteView>));
   }
 
   void SendAclData(std::unique_ptr<AclPacketBuilder> acl) {
@@ -215,11 +211,9 @@ class DependsOnHci : public Module {
   void Start() {
     hci_ = GetDependency<HciLayer>();
     hci_->RegisterEventHandler(EventCode::CONNECTION_COMPLETE,
-                               common::Bind(&DependsOnHci::handle_event<EventPacketView>, common::Unretained(this)),
-                               GetHandler());
+                               GetHandler()->BindOn(this, &DependsOnHci::handle_event<EventPacketView>));
     hci_->RegisterLeEventHandler(SubeventCode::CONNECTION_COMPLETE,
-                                 common::Bind(&DependsOnHci::handle_event<LeMetaEventView>, common::Unretained(this)),
-                                 GetHandler());
+                                 GetHandler()->BindOn(this, &DependsOnHci::handle_event<LeMetaEventView>));
     hci_->GetAclQueueEnd()->RegisterDequeue(GetHandler(),
                                             common::Bind(&DependsOnHci::handle_acl, common::Unretained(this)));
   }

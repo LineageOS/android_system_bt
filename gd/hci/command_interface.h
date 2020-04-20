@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "common/callback.h"
+#include "common/contextual_callback.h"
 #include "hci/hci_packets.h"
 #include "os/handler.h"
 #include "os/utils.h"
@@ -31,11 +31,11 @@ class CommandInterface {
   virtual ~CommandInterface() = default;
   DISALLOW_COPY_AND_ASSIGN(CommandInterface);
 
-  virtual void EnqueueCommand(std::unique_ptr<T> command, common::OnceCallback<void(CommandCompleteView)> on_complete,
-                              os::Handler* handler) = 0;
+  virtual void EnqueueCommand(std::unique_ptr<T> command,
+                              common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) = 0;
 
-  virtual void EnqueueCommand(std::unique_ptr<T> command, common::OnceCallback<void(CommandStatusView)> on_status,
-                              os::Handler* handler) = 0;
+  virtual void EnqueueCommand(std::unique_ptr<T> command,
+                              common::ContextualOnceCallback<void(CommandStatusView)> on_status) = 0;
 };
 }  // namespace hci
 }  // namespace bluetooth

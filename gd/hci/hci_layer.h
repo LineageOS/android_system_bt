@@ -23,6 +23,7 @@
 #include "class_of_device.h"
 #include "common/bidi_queue.h"
 #include "common/callback.h"
+#include "common/contextual_callback.h"
 #include "hal/hci_hal.h"
 #include "hci/acl_connection_interface.h"
 #include "hci/hci_packets.h"
@@ -43,44 +44,40 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
   virtual ~HciLayer();
   DISALLOW_COPY_AND_ASSIGN(HciLayer);
 
-  virtual void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
-                              common::OnceCallback<void(CommandCompleteView)> on_complete,
-                              os::Handler* handler) override;
+  void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
+                      common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) override;
 
-  virtual void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
-                              common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) override;
+  void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
+                      common::ContextualOnceCallback<void(CommandStatusView)> on_status) override;
 
   virtual common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* GetAclQueueEnd();
 
-  virtual void RegisterEventHandler(EventCode event_code, common::Callback<void(EventPacketView)> event_handler,
-                                    os::Handler* handler);
+  virtual void RegisterEventHandler(EventCode event_code,
+                                    common::ContextualCallback<void(EventPacketView)> event_handler);
 
   virtual void UnregisterEventHandler(EventCode event_code);
 
-  virtual void RegisterLeEventHandler(SubeventCode subevent_code, common::Callback<void(LeMetaEventView)> event_handler,
-                                      os::Handler* handler);
+  virtual void RegisterLeEventHandler(SubeventCode subevent_code,
+                                      common::ContextualCallback<void(LeMetaEventView)> event_handler);
 
   virtual void UnregisterLeEventHandler(SubeventCode subevent_code);
 
-  virtual SecurityInterface* GetSecurityInterface(common::Callback<void(EventPacketView)> event_handler,
-                                                  os::Handler* handler);
+  virtual SecurityInterface* GetSecurityInterface(common::ContextualCallback<void(EventPacketView)> event_handler);
 
-  virtual LeSecurityInterface* GetLeSecurityInterface(common::Callback<void(LeMetaEventView)> event_handler,
-                                                      os::Handler* handler);
+  virtual LeSecurityInterface* GetLeSecurityInterface(common::ContextualCallback<void(LeMetaEventView)> event_handler);
 
   virtual AclConnectionInterface* GetAclConnectionInterface(
-      common::Callback<void(EventPacketView)> event_handler,
-      common::Callback<void(uint16_t, hci::ErrorCode)> on_disconnect, os::Handler* handler);
+      common::ContextualCallback<void(EventPacketView)> event_handler,
+      common::ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect);
 
   virtual LeAclConnectionInterface* GetLeAclConnectionInterface(
-      common::Callback<void(LeMetaEventView)> event_handler,
-      common::Callback<void(uint16_t, hci::ErrorCode)> on_disconnect, os::Handler* handler);
+      common::ContextualCallback<void(LeMetaEventView)> event_handler,
+      common::ContextualCallback<void(uint16_t, hci::ErrorCode)> on_disconnect);
 
-  virtual LeAdvertisingInterface* GetLeAdvertisingInterface(common::Callback<void(LeMetaEventView)> event_handler,
-                                                            os::Handler* handler);
+  virtual LeAdvertisingInterface* GetLeAdvertisingInterface(
+      common::ContextualCallback<void(LeMetaEventView)> event_handler);
 
-  virtual LeScanningInterface* GetLeScanningInterface(common::Callback<void(LeMetaEventView)> event_handler,
-                                                      os::Handler* handler);
+  virtual LeScanningInterface* GetLeScanningInterface(common::ContextualCallback<void(LeMetaEventView)> event_handler);
 
   os::Handler* GetHciHandler() {
     return GetHandler();
