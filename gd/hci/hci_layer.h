@@ -82,22 +82,30 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
   virtual LeScanningInterface* GetLeScanningInterface(common::Callback<void(LeMetaEventView)> event_handler,
                                                       os::Handler* handler);
 
+  os::Handler* GetHciHandler() {
+    return GetHandler();
+  }
+
+  std::string ToString() const override {
+    return "Hci Layer";
+  }
+
+  static constexpr std::chrono::milliseconds kHciTimeoutMs = std::chrono::milliseconds(2000);
+
   static const ModuleFactory Factory;
 
+ protected:
   void ListDependencies(ModuleList* list) override;
 
   void Start() override;
 
   void Stop() override;
 
-  os::Handler* GetHciHandler();
-
-  std::string ToString() const override;
-  static constexpr std::chrono::milliseconds kHciTimeoutMs = std::chrono::milliseconds(2000);
-
  private:
   struct impl;
-  std::unique_ptr<impl> impl_;
+  struct hal_callbacks;
+  impl* impl_;
+  hal_callbacks* hal_callbacks_;
 };
 }  // namespace hci
 }  // namespace bluetooth
