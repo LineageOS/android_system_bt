@@ -70,6 +70,21 @@ class CommandQueueEntry {
   bool waiting_for_status_;
   ContextualOnceCallback<void(CommandStatusView)> on_status;
   ContextualOnceCallback<void(CommandCompleteView)> on_complete;
+
+  template <typename TView>
+  ContextualOnceCallback<void(TView)>* GetCallback() {
+    return nullptr;
+  }
+
+  template <>
+  ContextualOnceCallback<void(CommandStatusView)>* GetCallback<CommandStatusView>() {
+    return &on_status;
+  }
+
+  template <>
+  ContextualOnceCallback<void(CommandCompleteView)>* GetCallback<CommandCompleteView>() {
+    return &on_complete;
+  }
 };
 
 template <typename T>
@@ -111,45 +126,33 @@ struct HciLayer::impl {
   }
 
   void on_command_status(EventPacketView event) {
-    CommandStatusView status_view = CommandStatusView::Create(event);
-    ASSERT(status_view.IsValid());
-    command_credits_ = status_view.GetNumHciCommandPackets();
-    OpCode op_code = status_view.GetCommandOpCode();
-    if (op_code == OpCode::NONE) {
-      send_next_command();
-      return;
-    }
-    ASSERT_LOG(!command_queue_.empty(), "Unexpected status event with OpCode 0x%02hx (%s)", op_code,
-               OpCodeText(op_code).c_str());
-    ASSERT_LOG(waiting_command_ == op_code, "Waiting for 0x%02hx (%s), got 0x%02hx (%s)", waiting_command_,
-               OpCodeText(waiting_command_).c_str(), op_code, OpCodeText(op_code).c_str());
-    ASSERT_LOG(command_queue_.front().waiting_for_status_,
-               "Waiting for command complete 0x%02hx (%s), got command status for 0x%02hx (%s)", waiting_command_,
-               OpCodeText(waiting_command_).c_str(), op_code, OpCodeText(op_code).c_str());
-    command_queue_.front().on_status.Invoke(std::move(status_view));
-    command_queue_.pop_front();
-    waiting_command_ = OpCode::NONE;
-    hci_timeout_alarm_->Cancel();
-    send_next_command();
+    handle_command_response<CommandStatusView>(event, "status");
   }
 
   void on_command_complete(EventPacketView event) {
-    CommandCompleteView complete_view = CommandCompleteView::Create(event);
-    ASSERT(complete_view.IsValid());
-    command_credits_ = complete_view.GetNumHciCommandPackets();
-    OpCode op_code = complete_view.GetCommandOpCode();
+    handle_command_response<CommandCompleteView>(event, "complete");
+  }
+
+  template <typename TView>
+  void handle_command_response(EventPacketView event, std::string logging_id) {
+    TView response_view = TView::Create(event);
+    ASSERT(response_view.IsValid());
+    command_credits_ = response_view.GetNumHciCommandPackets();
+    OpCode op_code = response_view.GetCommandOpCode();
     if (op_code == OpCode::NONE) {
       send_next_command();
       return;
     }
-    ASSERT_LOG(command_queue_.size() > 0, "Unexpected command complete with OpCode 0x%02hx (%s)", op_code,
+    bool is_status = logging_id == "status";
+
+    ASSERT_LOG(!command_queue_.empty(), "Unexpected %s event with OpCode 0x%02hx (%s)", logging_id.c_str(), op_code,
                OpCodeText(op_code).c_str());
     ASSERT_LOG(waiting_command_ == op_code, "Waiting for 0x%02hx (%s), got 0x%02hx (%s)", waiting_command_,
                OpCodeText(waiting_command_).c_str(), op_code, OpCodeText(op_code).c_str());
-    ASSERT_LOG(!command_queue_.front().waiting_for_status_,
-               "Waiting for command status 0x%02hx (%s), got command complete for 0x%02hx (%s)", waiting_command_,
-               OpCodeText(waiting_command_).c_str(), op_code, OpCodeText(op_code).c_str());
-    command_queue_.front().on_complete.Invoke(std::move(complete_view));
+    ASSERT_LOG(command_queue_.front().waiting_for_status_ == is_status, "0x%02hx (%s) was not expecting %s event",
+               op_code, OpCodeText(op_code).c_str(), logging_id.c_str());
+
+    command_queue_.front().GetCallback<TView>()->Invoke(std::move(response_view));
     command_queue_.pop_front();
     waiting_command_ = OpCode::NONE;
     hci_timeout_alarm_->Cancel();
