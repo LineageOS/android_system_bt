@@ -111,7 +111,7 @@ struct HciLayer::impl {
   }
 
   ~impl() {
-    incoming_acl_packet_buffer_.Clear();
+    incoming_acl_buffer_.Clear();
     delete hci_timeout_alarm_;
     command_queue_.clear();
   }
@@ -170,6 +170,7 @@ struct HciLayer::impl {
   }
 
   void on_hci_event(EventPacketView event) {
+    ASSERT(event.IsValid());
     EventCode event_code = event.GetEventCode();
     if (event_handlers_.find(event_code) == event_handlers_.end()) {
       LOG_DEBUG("Dropping unregistered event of type 0x%02hhx (%s)", event_code, EventCodeText(event_code).c_str());
@@ -207,26 +208,24 @@ struct HciLayer::impl {
     hci_timeout_alarm_->Schedule(BindOnce(&on_hci_timeout, op_code), kHciTimeoutMs);
   }
 
-  void handle_register_event_handler(EventCode event_code, ContextualCallback<void(EventPacketView)> event_handler) {
-    ASSERT_LOG(event_handlers_.count(event_code) == 0, "Can not register a second handler for event_code %02hhx (%s)",
-               event_code, EventCodeText(event_code).c_str());
-    event_handlers_[event_code] = event_handler;
+  void register_event(EventCode event, ContextualCallback<void(EventPacketView)> handler) {
+    ASSERT_LOG(event_handlers_.count(event) == 0, "Can not register a second handler for %02hhx (%s)", event,
+               EventCodeText(event).c_str());
+    event_handlers_[event] = handler;
   }
 
-  void handle_unregister_event_handler(EventCode event_code) {
-    event_handlers_.erase(event_handlers_.find(event_code));
+  void unregister_event(EventCode event) {
+    event_handlers_.erase(event_handlers_.find(event));
   }
 
-  void handle_register_le_event_handler(SubeventCode subevent_code,
-                                        ContextualCallback<void(LeMetaEventView)> subevent_handler) {
-    ASSERT_LOG(subevent_handlers_.count(subevent_code) == 0,
-               "Can not register a second handler for subevent_code %02hhx (%s)", subevent_code,
-               SubeventCodeText(subevent_code).c_str());
-    subevent_handlers_[subevent_code] = subevent_handler;
+  void register_le_event(SubeventCode event, ContextualCallback<void(LeMetaEventView)> handler) {
+    ASSERT_LOG(subevent_handlers_.count(event) == 0, "Can not register a second handler for %02hhx (%s)", event,
+               SubeventCodeText(event).c_str());
+    subevent_handlers_[event] = handler;
   }
 
-  void handle_unregister_le_event_handler(SubeventCode subevent_code) {
-    subevent_handlers_.erase(subevent_handlers_.find(subevent_code));
+  void unregister_le_event(SubeventCode event) {
+    subevent_handlers_.erase(subevent_handlers_.find(event));
   }
 
   hal::HciHal* hal_;
@@ -251,7 +250,7 @@ struct HciLayer::impl {
 
   // Acl packets
   BidiQueue<AclPacketView, AclPacketBuilder> acl_queue_{3 /* TODO: Set queue depth */};
-  os::EnqueueBuffer<AclPacketView> incoming_acl_packet_buffer_{acl_queue_.GetDownEnd()};
+  os::EnqueueBuffer<AclPacketView> incoming_acl_buffer_{acl_queue_.GetDownEnd()};
 };
 
 // All functions here are running on the HAL thread
@@ -261,14 +260,13 @@ struct HciLayer::hal_callbacks : public hal::HciHalCallbacks {
   void hciEventReceived(hal::HciPacket event_bytes) override {
     auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(event_bytes));
     EventPacketView event = EventPacketView::Create(packet);
-    ASSERT(event.IsValid());
     module_.CallOn(module_.impl_, &impl::on_hci_event, move(event));
   }
 
   void aclDataReceived(hal::HciPacket data_bytes) override {
     auto packet = packet::PacketView<packet::kLittleEndian>(std::make_shared<std::vector<uint8_t>>(move(data_bytes)));
-    AclPacketView acl = AclPacketView::Create(packet);
-    module_.impl_->incoming_acl_packet_buffer_.Enqueue(std::make_unique<AclPacketView>(acl), module_.GetHandler());
+    auto acl = std::make_unique<AclPacketView>(AclPacketView::Create(packet));
+    module_.impl_->incoming_acl_buffer_.Enqueue(move(acl), module_.GetHandler());
   }
 
   void scoDataReceived(hal::HciPacket data_bytes) override {
@@ -297,21 +295,20 @@ common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* HciLayer::GetAclQueueEnd(
   return impl_->acl_queue_.GetUpEnd();
 }
 
-void HciLayer::RegisterEventHandler(EventCode event_code, ContextualCallback<void(EventPacketView)> event_handler) {
-  CallOn(impl_, &impl::handle_register_event_handler, event_code, event_handler);
+void HciLayer::RegisterEventHandler(EventCode event, ContextualCallback<void(EventPacketView)> handler) {
+  CallOn(impl_, &impl::register_event, event, handler);
 }
 
-void HciLayer::UnregisterEventHandler(EventCode event_code) {
-  CallOn(impl_, &impl::handle_unregister_event_handler, event_code);
+void HciLayer::UnregisterEventHandler(EventCode event) {
+  CallOn(impl_, &impl::unregister_event, event);
 }
 
-void HciLayer::RegisterLeEventHandler(SubeventCode subevent_code,
-                                      ContextualCallback<void(LeMetaEventView)> event_handler) {
-  CallOn(impl_, &impl::handle_register_le_event_handler, subevent_code, event_handler);
+void HciLayer::RegisterLeEventHandler(SubeventCode event, ContextualCallback<void(LeMetaEventView)> handler) {
+  CallOn(impl_, &impl::register_le_event, event, handler);
 }
 
-void HciLayer::UnregisterLeEventHandler(SubeventCode subevent_code) {
-  CallOn(impl_, &impl::handle_unregister_le_event_handler, subevent_code);
+void HciLayer::UnregisterLeEventHandler(SubeventCode event) {
+  CallOn(impl_, &impl::unregister_le_event, event);
 }
 
 AclConnectionInterface* HciLayer::GetAclConnectionInterface(
