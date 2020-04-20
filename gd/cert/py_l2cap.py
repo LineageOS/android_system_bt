@@ -27,11 +27,18 @@ from cert.matchers import L2capMatchers
 from facade import common_pb2 as common
 
 
-class PyL2capChannel(object):
+class PyL2capChannel(IEventStream):
 
-    def __init__(self, device, psm):
+    def __init__(self, device, psm, l2cap_stream):
         self._device = device
         self._psm = psm
+        self._le_l2cap_stream = l2cap_stream
+        self._our_le_l2cap_view = FilteringEventStream(
+            self._le_l2cap_stream,
+            L2capMatchers.PacketPayloadWithMatchingPsm(self._psm))
+
+    def get_event_queue(self):
+        return self._our_le_l2cap_view.get_event_queue()
 
     def send(self, payload):
         self._device.l2cap.SendDynamicChannelPacket(
@@ -49,13 +56,14 @@ class _ClassicConnectionResponseFutureWrapper(object):
     create the corresponding PyL2capDynamicChannel object later
     """
 
-    def __init__(self, grpc_response_future, device, psm):
+    def __init__(self, grpc_response_future, device, psm, l2cap_stream):
         self._grpc_response_future = grpc_response_future
         self._device = device
         self._psm = psm
+        self._l2cap_stream = l2cap_stream
 
     def get_channel(self):
-        return PyL2capChannel(self._device, self._psm)
+        return PyL2capChannel(self._device, self._psm, self._l2cap_stream)
 
 
 class PyL2cap(Closable):
@@ -63,9 +71,11 @@ class PyL2cap(Closable):
     def __init__(self, device, cert_address):
         self._device = device
         self._cert_address = cert_address
+        self._l2cap_stream = EventStream(
+            self._device.l2cap.FetchL2capData(empty_proto.Empty()))
 
     def close(self):
-        pass
+        safeClose(self._l2cap_stream)
 
     def register_dynamic_channel(
             self,
@@ -74,7 +84,7 @@ class PyL2cap(Closable):
         self._device.l2cap.SetDynamicChannel(
             l2cap_facade_pb2.SetEnableDynamicChannelRequest(
                 psm=psm, retransmission_mode=mode))
-        return PyL2capChannel(self._device, psm)
+        return PyL2capChannel(self._device, psm, self._l2cap_stream)
 
     def connect_dynamic_channel_to_cert(
             self,
@@ -89,8 +99,8 @@ class PyL2cap(Closable):
             l2cap_facade_pb2.OpenChannelRequest(
                 psm=psm, remote=self._cert_address, mode=mode))
 
-        return _ClassicConnectionResponseFutureWrapper(response_future,
-                                                       self._device, psm)
+        return _ClassicConnectionResponseFutureWrapper(
+            response_future, self._device, psm, self._l2cap_stream)
 
 
 class PyLeL2capFixedChannel(IEventStream):
@@ -148,7 +158,8 @@ class _CreditBasedConnectionResponseFutureWrapper(object):
     create the corresponding PyLeL2capDynamicChannel object later
     """
 
-    def __init__(self, grpc_response_future, device, cert_address, psm, le_l2cap_stream):
+    def __init__(self, grpc_response_future, device, cert_address, psm,
+                 le_l2cap_stream):
         self._grpc_response_future = grpc_response_future
         self._device = device
         self._cert_address = cert_address
@@ -162,8 +173,8 @@ class _CreditBasedConnectionResponseFutureWrapper(object):
     def get_channel(self):
         assertThat(self.get_status()).isEqualTo(
             l2cap_packets.LeCreditBasedConnectionResponseResult.SUCCESS)
-        return PyLeL2capDynamicChannel(self._device, self._cert_address, self._psm,
-                                       self._le_l2cap_stream)
+        return PyLeL2capDynamicChannel(self._device, self._cert_address,
+                                       self._psm, self._le_l2cap_stream)
 
 
 class PyLeL2cap(Closable):
@@ -188,7 +199,8 @@ class PyLeL2cap(Closable):
         self._device.l2cap_le.SetDynamicChannel(
             l2cap_le_facade_pb2.SetEnableDynamicChannelRequest(
                 psm=psm, enable=True))
-        return PyLeL2capDynamicChannel(self._device, cert_address, psm, self._le_l2cap_stream)
+        return PyLeL2capDynamicChannel(self._device, cert_address, psm,
+                                       self._le_l2cap_stream)
 
     def connect_coc_to_cert(self, cert_address, psm=0x33):
         """
@@ -196,10 +208,12 @@ class PyLeL2cap(Closable):
         """
         self.register_coc(cert_address, psm)
         response_future = self._device.l2cap_le.OpenDynamicChannel.future(
-            l2cap_le_facade_pb2.OpenDynamicChannelRequest(psm=psm, remote=cert_address))
+            l2cap_le_facade_pb2.OpenDynamicChannelRequest(
+                psm=psm, remote=cert_address))
 
         return _CreditBasedConnectionResponseFutureWrapper(
-            response_future, self._device, cert_address, psm, self._le_l2cap_stream)
+            response_future, self._device, cert_address, psm,
+            self._le_l2cap_stream)
 
     def update_connection_parameter(self,
                                     conn_interval_min=0x10,

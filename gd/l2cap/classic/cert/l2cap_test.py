@@ -13,7 +13,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import time
 from datetime import timedelta
 
 from mobly import asserts
@@ -25,6 +24,7 @@ from bluetooth_packets_python3.l2cap_packets import Final
 from bluetooth_packets_python3.l2cap_packets import Poll
 from bluetooth_packets_python3.l2cap_packets import SegmentationAndReassembly
 from bluetooth_packets_python3.l2cap_packets import SupervisoryFunction
+from cert.behavior import when, anything, wait_until
 from cert.gd_base_test import GdBaseTestClass
 from cert.matchers import L2capMatchers
 from cert.metadata import metadata
@@ -32,13 +32,13 @@ from cert.py_l2cap import PyL2cap
 from cert.truth import assertThat
 from facade import common_pb2
 from google.protobuf import empty_pb2 as empty_proto
-from l2cap.classic import facade_pb2 as l2cap_facade_pb2
 from l2cap.classic.cert.cert_l2cap import CertL2cap
 from l2cap.classic.facade_pb2 import RetransmissionFlowControlMode
 from neighbor.facade import facade_pb2 as neighbor_facade
 
 # Assemble a sample packet.
-SAMPLE_PACKET = RawBuilder([0x19, 0x26, 0x08, 0x17])
+SAMPLE_PACKET_DATA = b"\x19\x26\x08\x17"
+SAMPLE_PACKET = RawBuilder([x for x in SAMPLE_PACKET_DATA])
 
 
 class L2capTest(GdBaseTestClass):
@@ -86,22 +86,31 @@ class L2capTest(GdBaseTestClass):
                                 scid=0x0101,
                                 psm=0x33,
                                 mode=RetransmissionFlowControlMode.BASIC,
-                                fcs=None):
+                                fcs=None,
+                                req_config_options=None,
+                                rsp_config_options=None):
+        request_matcher = L2capMatchers.ConfigurationRequestView(scid)
+        if rsp_config_options is not None:
+            when(self.cert_l2cap).on_config_req(request_matcher).then(
+            ).send_configuration_response(options=rsp_config_options)
+        if rsp_config_options is None and fcs is not None:
+            when(self.cert_l2cap).on_config_req(
+                request_matcher).then().send_configuration_response(
+                    options=CertL2cap.config_option_ertm(fcs=fcs))
+
         (dut_channel, cert_channel) = self._open_unconfigured_channel_from_cert(
             signal_id, scid, psm, mode, fcs)
-        response_options = []
-        if fcs is not None:
-            fcs_opt = l2cap_packets.FrameCheckSequenceOption()
-            fcs_opt.fcs_type = fcs
-            response_options.append(fcs_opt)
-        cert_channel.verify_configuration_request_and_respond(
-            options=response_options)
-        if mode == RetransmissionFlowControlMode.BASIC:
-            cert_channel.send_configure_request([])
-        if mode == RetransmissionFlowControlMode.ERTM:
-            cert_channel.send_configure_request(
-                CertL2cap.config_option_ertm(fcs=fcs))
+        if req_config_options is None:
+            req_config_options = CertL2cap.config_option_ertm(
+                fcs=fcs) if mode == RetransmissionFlowControlMode.ERTM else []
+
+        cert_channel.send_configure_request(req_config_options)
+
         cert_channel.verify_configuration_response()
+
+        wait_until(self.cert_l2cap).on_config_req(request_matcher).times(1)
+
+        assertThat(cert_channel.is_configured()).isTrue()
 
         return (dut_channel, cert_channel)
 
@@ -115,7 +124,10 @@ class L2capTest(GdBaseTestClass):
         dut_channel = dut_channel_future.get_channel()
 
         cert_channel.verify_configuration_request_and_respond()
-        cert_channel.send_configure_request([])
+        outgoing_config = []
+        if mode == RetransmissionFlowControlMode.ERTM:
+            outgoing_config = CertL2cap.config_option_ertm()
+        cert_channel.send_configure_request(outgoing_config)
         cert_channel.verify_configuration_response()
 
         return (dut_channel, cert_channel)
@@ -123,8 +135,7 @@ class L2capTest(GdBaseTestClass):
     def test_connect_dynamic_channel_and_send_data(self):
         self._setup_link_from_cert()
 
-        (dut_channel, cert_channel) = self._open_channel_from_cert(
-            scid=0x41, psm=0x33)
+        (dut_channel, cert_channel) = self._open_channel_from_cert()
 
         dut_channel.send(b'abc')
         assertThat(cert_channel).emits(L2capMatchers.Data(b'abc'))
@@ -178,8 +189,7 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        (dut_channel, cert_channel) = self._open_channel_from_cert(
-            scid=0x41, psm=0x33)
+        (dut_channel, cert_channel) = self._open_channel_from_cert()
         dut_channel.send(b'hello')
         assertThat(cert_channel).emits(L2capMatchers.Data(b'hello'))
 
@@ -190,8 +200,7 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        (dut_channel, cert_channel) = self._open_channel_from_cert(
-            scid=0x41, psm=0x33)
+        (dut_channel, cert_channel) = self._open_channel_from_cert()
         dut_channel.close_channel()
         cert_channel.verify_disconnect_request()
 
@@ -203,8 +212,7 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        (dut_channel, cert_channel) = self._open_channel_from_cert(
-            scid=0x41, psm=0x33)
+        (dut_channel, cert_channel) = self._open_channel_from_cert()
         dut_channel.send(b'a' * 48)
         assertThat(cert_channel).emits(L2capMatchers.Data(b'a' * 48))
 
@@ -217,8 +225,7 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        (dut_channel, cert_channel) = self._open_channel_from_cert(
-            scid=0x41, psm=0x33)
+        (dut_channel, cert_channel) = self._open_channel_from_cert()
         cert_channel.disconnect_and_verify()
 
     @metadata(
@@ -231,10 +238,12 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        self._open_unconfigured_channel_from_cert(scid=0x41, psm=0x33)
+        (dut_channel,
+         cert_channel) = self._open_unconfigured_channel_from_cert()
 
         assertThat(self.cert_l2cap.get_control_channel()).emitsNone(
             L2capMatchers.ConfigurationResponse())
+        # TODO: Verify that IUT sends disconnect request (not mandated)
 
     @metadata(
         pts_test_id="L2CAP/COS/CED/BV-11-C", pts_test_name="Configure MTU size")
@@ -243,11 +252,12 @@ class L2capTest(GdBaseTestClass):
         Verify that the IUT is able to configure the supported MTU size
         """
         self._setup_link_from_cert()
-        (dut_channel, cert_channel) = self._open_unconfigured_channel_from_cert(
-            scid=0x41, psm=0x33)
+        (dut_channel,
+         cert_channel) = self._open_unconfigured_channel_from_cert()
         cert_channel.send_configure_request(
             CertL2cap.config_option_mtu_explicit(672))
         cert_channel.verify_configuration_request_and_respond()
+        # TODO: Probably remove verify_configuration_request_and_respond
 
     @metadata(
         pts_test_id="L2CAP/COS/CFD/BV-01-C", pts_test_name="Continuation Flag")
@@ -258,8 +268,8 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        (dut_channel, cert_channel) = self._open_unconfigured_channel_from_cert(
-            scid=0x41, psm=0x33)
+        (dut_channel,
+         cert_channel) = self._open_unconfigured_channel_from_cert()
 
         # Send configuration request with CONTINUE
         mtu_opt = l2cap_packets.MtuConfigurationOption()
@@ -284,14 +294,19 @@ class L2capTest(GdBaseTestClass):
         Tester rejects the proposed configuration parameter values
         """
         self._setup_link_from_cert()
+        scid = 0x41
+        when(self.cert_l2cap).on_config_req(
+            L2capMatchers.ConfigurationRequestView(
+                scid)).then().send_configuration_response(
+                    result=l2cap_packets.ConfigurationResponseResult.
+                    UNACCEPTABLE_PARAMETERS,
+                    options=CertL2cap.config_option_mtu_explicit(
+                        200)).send_configuration_response(options=[])
         (dut_channel,
-         cert_channel) = self._open_unconfigured_channel_from_cert()
+         cert_channel) = self._open_unconfigured_channel_from_cert(scid=scid)
 
-        cert_channel.verify_configuration_request_and_respond(
-            l2cap_packets.ConfigurationResponseResult.UNACCEPTABLE_PARAMETERS,
-            CertL2cap.config_option_basic_explicit())
         assertThat(self.cert_l2cap.get_control_channel()).emits(
-            L2capMatchers.ConfigurationRequest())
+            L2capMatchers.ConfigurationRequest(), at_least_times=2)
 
     @metadata(
         pts_test_id="L2CAP/COS/CFD/BV-03-C",
@@ -304,6 +319,8 @@ class L2capTest(GdBaseTestClass):
         self._setup_link_from_cert()
         (dut_channel, cert_channel) = self._open_channel_from_cert(
             scid=0x41, psm=0x33)
+
+        # TODO(hsz) implement me!
 
     @metadata(
         pts_test_id="L2CAP/COS/CFD/BV-08-C",
@@ -322,6 +339,8 @@ class L2capTest(GdBaseTestClass):
         cert_channel.verify_configuration_response()
         cert_channel.verify_configuration_request_and_respond()
 
+        # TODO(hsz) implement me!
+
     @metadata(
         pts_test_id="L2CAP/COS/CFD/BV-09-C",
         pts_test_name="Mandatory 48 Byte MTU")
@@ -330,12 +349,8 @@ class L2capTest(GdBaseTestClass):
         Verify that the IUT can support mandatory 48 byte MTU
         """
         self._setup_link_from_cert()
-        (dut_channel, cert_channel) = self._open_unconfigured_channel_from_cert(
-            scid=0x41, psm=0x33)
-        cert_channel.send_configure_request(
-            CertL2cap.config_option_mtu_explicit(48))
-        cert_channel.verify_configuration_response()
-        cert_channel.verify_configuration_request_and_respond()
+        (dut_channel, cert_channel) = self._open_channel_from_cert(
+            req_config_options=CertL2cap.config_option_mtu_explicit(48))
 
         dut_channel.send(b"a" * 44)
         assertThat(cert_channel).emits(L2capMatchers.Data(b"a" * 44))
@@ -349,19 +364,15 @@ class L2capTest(GdBaseTestClass):
         parameter value.
         """
         self._setup_link_from_cert()
+        (dut_channel,
+         cert_channel) = self._open_unconfigured_channel_from_cert()
 
-        (dut_channel, cert_channel) = self._open_unconfigured_channel_from_cert(
-            scid=0x41, psm=0x33)
+        cert_channel.send_configure_request(
+            CertL2cap.config_option_mtu_explicit(20))
+        # Invalid because minimum is 48
 
-        mtu_opt = l2cap_packets.MtuConfigurationOption()
-        mtu_opt.mtu = 20  # Invalid because minimum is 48
-
-        cert_channel.send_configure_request([mtu_opt])
-
-        assertThat(self.cert_l2cap.get_control_channel()).emits(
-            L2capMatchers.ConfigurationResponse(
-                result=l2cap_packets.ConfigurationResponseResult.
-                UNACCEPTABLE_PARAMETERS))
+        cert_channel.verify_configuration_response(
+            l2cap_packets.ConfigurationResponseResult.UNACCEPTABLE_PARAMETERS)
 
     @metadata(
         pts_test_id="L2CAP/COS/CFD/BV-12-C",
@@ -370,14 +381,21 @@ class L2capTest(GdBaseTestClass):
         """
         Verify that the IUT can give the appropriate error code when the Lower
         Tester proposes any number of unknown options that are optional
+        NOTE: In GD stack, ExtendedWindowSizeOption in unsupported
         """
         self._setup_link_from_cert()
-        self.cert_l2cap.reply_with_unknown_options_and_hint()
 
-        self._open_unconfigured_channel_from_cert(scid=0x41, psm=0x33)
+        (dut_channel,
+         cert_channel) = self._open_unconfigured_channel_from_cert()
 
-        assertThat(self.cert_l2cap.get_control_channel()).emits(
-            L2capMatchers.ConfigurationResponse())
+        unknown_opt_hint = l2cap_packets.ExtendedWindowSizeOption()
+        unknown_opt_hint.max_window_size = 20
+        unknown_opt_hint.is_hint = l2cap_packets.ConfigurationOptionIsHint.OPTION_IS_A_HINT
+
+        for i in range(10):
+            cert_channel.send_configure_request([unknown_opt_hint] * i)
+            cert_channel.verify_configuration_response(
+                l2cap_packets.ConfigurationResponseResult.SUCCESS)
 
     @metadata(
         pts_test_id="L2CAP/COS/CFD/BV-14-C",
@@ -431,10 +449,8 @@ class L2capTest(GdBaseTestClass):
 
         for option_list in configuration_option_attempts:
             cert_channel.send_configure_request(option_list)
-        assertThat(self.cert_l2cap.get_control_channel()).emits(
-            L2capMatchers.ConfigurationResponse(
-                result=l2cap_packets.ConfigurationResponseResult.UNKNOWN_OPTIONS
-            ))
+            cert_channel.verify_configuration_response(
+                l2cap_packets.ConfigurationResponseResult.UNKNOWN_OPTIONS)
 
     @metadata(
         pts_test_id="L2CAP/COS/ECH/BV-01-C",
@@ -449,7 +465,7 @@ class L2capTest(GdBaseTestClass):
         self.cert_l2cap.get_control_channel().send(echo_request)
 
         assertThat(self.cert_l2cap.get_control_channel()).emits(
-            L2capMatchers.PartialData(b"\x01\x02\x03"))
+            L2capMatchers.EchoResponse())
 
     @metadata(
         pts_test_id="L2CAP/COS/CED/BI-01-C",
@@ -566,6 +582,8 @@ class L2capTest(GdBaseTestClass):
         Verify the IUT can format an Information Response for the information
         type of Extended Features that correctly identifies that the Fixed
         Channels option is locally supported
+
+        Note: This is not mandated by L2CAP Spec
         """
         self._setup_link_from_cert()
         control_channel = self.cert_l2cap.get_control_channel()
@@ -618,10 +636,7 @@ class L2capTest(GdBaseTestClass):
         self._setup_link_from_cert()
 
         (dut_channel, cert_channel) = self._open_channel_from_cert(
-            scid=0x41,
-            psm=0x33,
-            mode=RetransmissionFlowControlMode.ERTM,
-            fcs=FcsType.DEFAULT)
+            mode=RetransmissionFlowControlMode.ERTM, fcs=FcsType.DEFAULT)
 
         dut_channel.send(b'abc')
         assertThat(cert_channel).emits(
@@ -636,12 +651,12 @@ class L2capTest(GdBaseTestClass):
         Verify the IUT will include the FCS in I/S-frames if the Lower Tester
         implicitly requests that FCS should be used.
         """
-        asserts.skip("b/153673032, L2CAP should enable FCS implicitly")
-
         self._setup_link_from_cert()
 
         (dut_channel, cert_channel) = self._open_channel_from_cert(
-            mode=RetransmissionFlowControlMode.ERTM)
+            mode=RetransmissionFlowControlMode.ERTM,
+            fcs=FcsType.DEFAULT,
+            req_config_options=CertL2cap.config_option_ertm(fcs=FcsType.NO_FCS))
 
         dut_channel.send(b'abc')
         assertThat(cert_channel).emits(
@@ -655,7 +670,6 @@ class L2capTest(GdBaseTestClass):
         Verify the IUT does not include the FCS in I-frames.
         """
         self._setup_link_from_cert()
-        self.cert_l2cap.turn_on_ertm()
 
         (dut_channel, cert_channel) = self._open_channel_from_cert(
             mode=RetransmissionFlowControlMode.ERTM, fcs=FcsType.NO_FCS)
@@ -672,14 +686,13 @@ class L2capTest(GdBaseTestClass):
         Verify the IUT can handle I-frames that do not contain the FCS.
         """
         self._setup_link_from_cert()
-        self.cert_l2cap.turn_on_ertm()
 
         (dut_channel, cert_channel) = self._open_channel_from_cert(
             mode=RetransmissionFlowControlMode.ERTM, fcs=FcsType.NO_FCS)
 
-        dut_channel.send(b"abc")
-        assertThat(cert_channel).emits(
-            L2capMatchers.IFrame(tx_seq=0, payload=b"abc"))
+        cert_channel.send_i_frame(tx_seq=0, req_seq=0, payload=SAMPLE_PACKET)
+        assertThat(dut_channel).emits(
+            L2capMatchers.PacketPayloadRawData(SAMPLE_PACKET_DATA))
 
     @metadata(
         pts_test_id="L2CAP/OFS/BV-05-C",
@@ -691,10 +704,7 @@ class L2capTest(GdBaseTestClass):
         self._setup_link_from_cert()
 
         (dut_channel, cert_channel) = self._open_channel_from_cert(
-            scid=0x41,
-            psm=0x33,
-            mode=RetransmissionFlowControlMode.ERTM,
-            fcs=FcsType.DEFAULT)
+            mode=RetransmissionFlowControlMode.ERTM, fcs=FcsType.DEFAULT)
 
         dut_channel.send(b'abc')
         assertThat(cert_channel).emits(
@@ -712,9 +722,10 @@ class L2capTest(GdBaseTestClass):
         (dut_channel, cert_channel) = self._open_channel_from_cert(
             mode=RetransmissionFlowControlMode.ERTM, fcs=FcsType.DEFAULT)
 
-        dut_channel.send(b"abc")
-        assertThat(cert_channel).emits(
-            L2capMatchers.IFrameWithFcs(tx_seq=0, payload=b"abc"))
+        cert_channel.send_i_frame(
+            tx_seq=0, req_seq=0, payload=SAMPLE_PACKET, fcs=FcsType.DEFAULT)
+        assertThat(dut_channel).emits(
+            L2capMatchers.PacketPayloadRawData(SAMPLE_PACKET_DATA))
 
     @metadata(
         pts_test_id="L2CAP/ERM/BV-01-C", pts_test_name="Transmit I-frames")
@@ -817,13 +828,13 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        (dut_channel, cert_channel) = self._open_unconfigured_channel_from_cert(
-            mode=RetransmissionFlowControlMode.ERTM)
         config = CertL2cap.config_option_ertm(
             fcs=FcsType.NO_FCS, tx_window_size=1)
-        cert_channel.verify_configuration_request_and_respond(options=config)
-        cert_channel.send_configure_request(config)
-        cert_channel.verify_configuration_response()
+
+        (dut_channel, cert_channel) = self._open_channel_from_cert(
+            mode=RetransmissionFlowControlMode.ERTM,
+            req_config_options=config,
+            rsp_config_options=config)
 
         dut_channel.send(b'abc')
         dut_channel.send(b'def')
@@ -848,13 +859,13 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        (dut_channel, cert_channel) = self._open_unconfigured_channel_from_cert(
-            mode=RetransmissionFlowControlMode.ERTM, fcs=FcsType.NO_FCS)
         config = CertL2cap.config_option_ertm(
             fcs=FcsType.NO_FCS, tx_window_size=1)
-        cert_channel.verify_configuration_request_and_respond(options=config)
-        cert_channel.send_configure_request(config)
-        cert_channel.verify_configuration_response()
+
+        (dut_channel, cert_channel) = self._open_channel_from_cert(
+            mode=RetransmissionFlowControlMode.ERTM,
+            req_config_options=config,
+            rsp_config_options=config)
 
         dut_channel.send(b'abc')
         dut_channel.send(b'def')
@@ -882,12 +893,16 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
 
+        config = CertL2cap.config_option_ertm(
+            fcs=FcsType.NO_FCS, retransmission_time_out=1500)
+
         (dut_channel, cert_channel) = self._open_channel_from_cert(
-            scid=0x41, psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
+            mode=RetransmissionFlowControlMode.ERTM,
+            fcs=FcsType.NO_FCS,
+            req_config_options=config,
+            rsp_config_options=config)
 
         dut_channel.send(b'abc')
-        # TODO: Always use their retransmission timeout value
-        time.sleep(2)
         assertThat(cert_channel).emits(
             L2capMatchers.SFrame(p=l2cap_packets.Poll.POLL))
 
@@ -937,17 +952,16 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        (dut_channel, cert_channel) = self._open_unconfigured_channel_from_cert(
-            scid=0x41, psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
         config = CertL2cap.config_option_ertm(
             fcs=FcsType.NO_FCS,
             tx_window_size=1,
             max_transmit=1,
             monitor_time_out=10)
 
-        cert_channel.verify_configuration_request_and_respond(options=config)
-        cert_channel.send_configure_request(options=config)
-        cert_channel.verify_configuration_response()
+        (dut_channel, cert_channel) = self._open_channel_from_cert(
+            mode=RetransmissionFlowControlMode.ERTM,
+            req_config_options=config,
+            rsp_config_options=config)
 
         dut_channel.send(b'abc')
         cert_channel.verify_disconnect_request()
@@ -963,12 +977,13 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        (dut_channel, cert_channel) = self._open_unconfigured_channel_from_cert(
-            scid=0x41, psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
-        config = CertL2cap.config_option_ertm(tx_window_size=1, max_transmit=1)
-        cert_channel.verify_configuration_request_and_respond(options=config)
-        cert_channel.send_configure_request(config)
-        cert_channel.verify_configuration_response()
+        config = CertL2cap.config_option_ertm(
+            fcs=FcsType.NO_FCS, tx_window_size=1, max_transmit=1)
+
+        (dut_channel, cert_channel) = self._open_channel_from_cert(
+            mode=RetransmissionFlowControlMode.ERTM,
+            req_config_options=config,
+            rsp_config_options=config)
 
         dut_channel.send(b'abc')
         assertThat(cert_channel).emits(
@@ -988,13 +1003,13 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        (dut_channel, cert_channel) = self._open_unconfigured_channel_from_cert(
-            mode=RetransmissionFlowControlMode.ERTM, fcs=FcsType.NO_FCS)
         config = CertL2cap.config_option_ertm(
-            tx_window_size=2, max_transmit=2, fcs=FcsType.NO_FCS)
-        cert_channel.verify_configuration_request_and_respond(options=config)
-        cert_channel.send_configure_request(config)
-        cert_channel.verify_configuration_response()
+            fcs=FcsType.NO_FCS, tx_window_size=2, max_transmit=2)
+
+        (dut_channel, cert_channel) = self._open_channel_from_cert(
+            mode=RetransmissionFlowControlMode.ERTM,
+            req_config_options=config,
+            rsp_config_options=config)
 
         dut_channel.send(b'abc')
         dut_channel.send(b'abc')
@@ -1019,13 +1034,13 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        (dut_channel, cert_channel) = self._open_unconfigured_channel_from_cert(
-            mode=RetransmissionFlowControlMode.ERTM)
         config = CertL2cap.config_option_ertm(
             fcs=FcsType.NO_FCS, max_transmit=2, tx_window_size=3)
-        cert_channel.verify_configuration_request_and_respond(options=config)
-        cert_channel.send_configure_request(config)
-        cert_channel.verify_configuration_response()
+
+        (dut_channel, cert_channel) = self._open_channel_from_cert(
+            mode=RetransmissionFlowControlMode.ERTM,
+            req_config_options=config,
+            rsp_config_options=config)
 
         for _ in range(4):
             dut_channel.send(b'abc')
@@ -1051,13 +1066,12 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        (dut_channel, cert_channel) = self._open_unconfigured_channel_from_cert(
-            mode=RetransmissionFlowControlMode.ERTM)
         config = CertL2cap.config_option_ertm(
             fcs=FcsType.NO_FCS, max_transmit=2, tx_window_size=3)
-        cert_channel.verify_configuration_request_and_respond(options=config)
-        cert_channel.send_configure_request(config)
-        cert_channel.verify_configuration_response()
+        (dut_channel, cert_channel) = self._open_channel_from_cert(
+            mode=RetransmissionFlowControlMode.ERTM,
+            req_config_options=config,
+            rsp_config_options=config)
 
         for _ in range(4):
             dut_channel.send(b'abc')
@@ -1084,11 +1098,13 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
         tx_window_size = 4
-        self.cert_l2cap.turn_on_ertm(
-            tx_window_size=tx_window_size, max_transmit=2)
 
+        config = CertL2cap.config_option_ertm(
+            fcs=FcsType.NO_FCS, tx_window_size=tx_window_size)
         (dut_channel, cert_channel) = self._open_channel_from_cert(
-            mode=RetransmissionFlowControlMode.ERTM, fcs=FcsType.NO_FCS)
+            mode=RetransmissionFlowControlMode.ERTM,
+            req_config_options=config,
+            rsp_config_options=config)
 
         cert_channel.send_i_frame(
             tx_seq=0, req_seq=0, f=Final.NOT_SET, payload=SAMPLE_PACKET)
@@ -1122,13 +1138,16 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
 
+        config = CertL2cap.config_option_ertm(
+            fcs=FcsType.NO_FCS, retransmission_time_out=1500)
+
         (dut_channel, cert_channel) = self._open_channel_from_cert(
-            mode=RetransmissionFlowControlMode.ERTM, fcs=FcsType.NO_FCS)
+            mode=RetransmissionFlowControlMode.ERTM,
+            req_config_options=config,
+            rsp_config_options=config)
 
         dut_channel.send(b'abc')
 
-        # TODO: Always use their retransmission timeout value
-        time.sleep(2)
         assertThat(cert_channel).emits(
             L2capMatchers.SFrame(p=l2cap_packets.Poll.POLL))
 
@@ -1145,18 +1164,18 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
 
+        config = CertL2cap.config_option_ertm(
+            fcs=FcsType.NO_FCS, retransmission_time_out=1500)
         (dut_channel, cert_channel) = self._open_channel_from_cert(
-            mode=RetransmissionFlowControlMode.ERTM, fcs=FcsType.NO_FCS)
+            mode=RetransmissionFlowControlMode.ERTM,
+            req_config_options=config,
+            rsp_config_options=config)
 
         dut_channel.send(b'abc')
-
-        # TODO: Always use their retransmission timeout value
-        time.sleep(2)
         assertThat(cert_channel).emits(L2capMatchers.SFrame(p=Poll.POLL))
 
         cert_channel.send_i_frame(
             tx_seq=0, req_seq=0, f=Final.POLL_RESPONSE, payload=SAMPLE_PACKET)
-
         assertThat(cert_channel).emits(L2capMatchers.IFrame(tx_seq=0))
 
     @metadata(
@@ -1169,13 +1188,14 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
 
+        config = CertL2cap.config_option_ertm(
+            fcs=FcsType.NO_FCS, retransmission_time_out=1500)
         (dut_channel, cert_channel) = self._open_channel_from_cert(
-            scid=0x41, psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
+            mode=RetransmissionFlowControlMode.ERTM,
+            req_config_options=config,
+            rsp_config_options=config)
 
         dut_channel.send(b'abc')
-
-        # TODO: Always use their retransmission timeout value
-        time.sleep(2)
         assertThat(cert_channel).emits(
             L2capMatchers.SFrame(p=l2cap_packets.Poll.POLL))
 
@@ -1196,13 +1216,11 @@ class L2capTest(GdBaseTestClass):
         """
         self._setup_link_from_cert()
 
-        (dut_channel, cert_channel) = self._open_unconfigured_channel_from_cert(
-            mode=RetransmissionFlowControlMode.ERTM, fcs=FcsType.NO_FCS)
-
         config = CertL2cap.config_option_ertm(fcs=FcsType.NO_FCS, mps=11)
-        cert_channel.send_configure_request(options=config)
-        cert_channel.verify_configuration_response()
-        cert_channel.verify_configuration_request_and_respond(options=config)
+        (dut_channel, cert_channel) = self._open_channel_from_cert(
+            mode=RetransmissionFlowControlMode.ERTM,
+            req_config_options=config,
+            rsp_config_options=config)
 
         dut_channel.send(b'abcabcabc')
         # First IFrame should contain SDU size after control field
@@ -1230,11 +1248,14 @@ class L2capTest(GdBaseTestClass):
         S-frame [REJ] sent from the IUT is lost
         """
         self._setup_link_from_cert()
-        self.cert_l2cap.turn_on_ertm(tx_window_size=5)
         ertm_tx_window_size = 5
 
+        config = CertL2cap.config_option_ertm(
+            fcs=FcsType.NO_FCS, tx_window_size=ertm_tx_window_size)
         (dut_channel, cert_channel) = self._open_channel_from_cert(
-            mode=RetransmissionFlowControlMode.ERTM, fcs=FcsType.NO_FCS)
+            mode=RetransmissionFlowControlMode.ERTM,
+            req_config_options=config,
+            rsp_config_options=config)
 
         cert_channel.send_i_frame(tx_seq=0, req_seq=0, payload=SAMPLE_PACKET)
         assertThat(cert_channel).emits(L2capMatchers.SFrame(req_seq=1))
@@ -1376,8 +1397,6 @@ class L2capTest(GdBaseTestClass):
         Verify the IUT can accept a Configuration Request from the Lower Tester
         containing an F&EC option that specifies Enhanced Retransmission Mode
         """
-        asserts.skip("Need to send ERTM config request when we open from DUT")
-
         self._setup_link_from_cert()
 
         self._open_channel_from_dut(
@@ -1413,16 +1432,13 @@ class L2capTest(GdBaseTestClass):
         entity doesn’t wish to use Enhanced Retransmission Mode (Configure
         Response Result = Reject Unacceptable Parameters)
         """
-        self._setup_link_from_cert()
-        (dut_channel, cert_channel) = self._open_unconfigured_channel_from_cert(
-            scid=0x41, psm=0x33, mode=RetransmissionFlowControlMode.ERTM)
 
-        basic_option = l2cap_packets.RetransmissionAndFlowControlConfigurationOption(
-        )
-        basic_option.mode = l2cap_packets.RetransmissionAndFlowControlModeOption.L2CAP_BASIC
-        cert_channel.verify_configuration_request_and_respond(
-            l2cap_packets.ConfigurationResponseResult.UNACCEPTABLE_PARAMETERS,
-            [basic_option])
+        self._setup_link_from_cert()
+
+        (dut_channel, cert_channel) = self._open_channel_from_cert(
+            mode=RetransmissionFlowControlMode.ERTM,
+            req_config_options=CertL2cap.config_option_ertm(),
+            rsp_config_options=CertL2cap.config_option_basic_explicit())
 
         cert_channel.verify_disconnect_request()
 
@@ -1437,8 +1453,9 @@ class L2capTest(GdBaseTestClass):
         configure Basic Mode.
         """
         self._setup_link_from_cert()
+
         (dut_channel, cert_channel) = self._open_unconfigured_channel_from_cert(
             mode=RetransmissionFlowControlMode.ERTM)
-        cert_channel.verify_configuration_request_and_respond(
-            options=CertL2cap.config_option_basic_explicit())
+        cert_channel.send_configure_request(
+            CertL2cap.config_option_basic_explicit())
         cert_channel.verify_disconnect_request()

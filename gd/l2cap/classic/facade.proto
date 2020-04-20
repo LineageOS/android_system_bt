@@ -69,8 +69,10 @@ message SendL2capPacketResult {
 }
 
 message L2capPacket {
-  facade.BluetoothAddress remote = 1;
-  uint32 channel = 2;
+  oneof channel_type {
+    uint32 psm = 1;
+    uint32 fixed_cid = 2;
+  }
   bytes payload = 3;
 }
 
