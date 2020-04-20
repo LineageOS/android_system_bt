@@ -21,7 +21,9 @@
 #include <mutex>
 #include <queue>
 
+#include "common/bind.h"
 #include "common/callback.h"
+#include "common/contextual_callback.h"
 #include "os/thread.h"
 #include "os/utils.h"
 
@@ -31,24 +33,51 @@ namespace os {
 // A message-queue style handler for reactor-based thread to handle incoming events from different threads. When it's
 // constructed, it will register a reactable on the specified thread; when it's destroyed, it will unregister itself
 // from the thread.
-class Handler {
+class Handler : public common::IPostableContext {
  public:
   // Create and register a handler on given thread
   explicit Handler(Thread* thread);
 
   // Unregister this handler from the thread and release resource. Unhandled events will be discarded and not executed.
-  ~Handler();
+  virtual ~Handler();
 
   DISALLOW_COPY_AND_ASSIGN(Handler);
 
   // Enqueue a closure to the queue of this handler
-  void Post(OnceClosure closure);
+  virtual void Post(OnceClosure closure) override;
 
   // Remove all pending events from the queue of this handler
   void Clear();
 
   // Die if the current reactable doesn't stop before the timeout.  Must be called after Clear()
   void WaitUntilStopped(std::chrono::milliseconds timeout);
+
+  template <typename Functor, typename... Args>
+  common::ContextualOnceCallback<common::MakeUnboundRunType<Functor, Args...>> BindOnce(Functor&& functor,
+                                                                                        Args&&... args) {
+    return common::ContextualOnceCallback<common::MakeUnboundRunType<Functor, Args...>>(
+        common::BindOnce(std::forward<Functor>(functor), std::forward<Args>(args)...), this);
+  }
+
+  template <typename Functor, typename T, typename... Args>
+  common::ContextualOnceCallback<common::MakeUnboundRunType<Functor, T, Args...>> BindOnceOn(T* obj, Functor&& functor,
+                                                                                             Args&&... args) {
+    return common::ContextualOnceCallback<common::MakeUnboundRunType<Functor, T, Args...>>(
+        common::BindOnce(std::forward<Functor>(functor), common::Unretained(obj), std::forward<Args>(args)...), this);
+  }
+
+  template <typename Functor, typename... Args>
+  common::ContextualCallback<common::MakeUnboundRunType<Functor, Args...>> Bind(Functor&& functor, Args&&... args) {
+    return common::ContextualCallback<common::MakeUnboundRunType<Functor, Args...>>(
+        common::Bind(std::forward<Functor>(functor), std::forward<Args>(args)...), this);
+  }
+
+  template <typename Functor, typename T, typename... Args>
+  common::ContextualCallback<common::MakeUnboundRunType<Functor, T, Args...>> BindOn(T* obj, Functor&& functor,
+                                                                                     Args&&... args) {
+    return common::ContextualCallback<common::MakeUnboundRunType<Functor, T, Args...>>(
+        common::Bind(std::forward<Functor>(functor), common::Unretained(obj), std::forward<Args>(args)...), this);
+  }
 
   template <typename T>
   friend class Queue;

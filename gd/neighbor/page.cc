@@ -112,13 +112,13 @@ void neighbor::PageModule::impl::Start() {
   handler_ = module_.GetHandler();
 
   hci_layer_->EnqueueCommand(hci::ReadPageScanActivityBuilder::Create(),
-                             common::BindOnce(&impl::OnCommandComplete, common::Unretained(this)), handler_);
+                             handler_->BindOnceOn(this, &impl::OnCommandComplete));
 
   hci_layer_->EnqueueCommand(hci::ReadPageScanTypeBuilder::Create(),
-                             common::BindOnce(&impl::OnCommandComplete, common::Unretained(this)), handler_);
+                             handler_->BindOnceOn(this, &impl::OnCommandComplete));
 
   hci_layer_->EnqueueCommand(hci::ReadPageTimeoutBuilder::Create(),
-                             common::BindOnce(&impl::OnCommandComplete, common::Unretained(this)), handler_);
+                             handler_->BindOnceOn(this, &impl::OnCommandComplete));
 }
 
 void neighbor::PageModule::impl::Stop() {
@@ -128,10 +128,10 @@ void neighbor::PageModule::impl::Stop() {
 
 void neighbor::PageModule::impl::SetScanActivity(ScanParameters params) {
   hci_layer_->EnqueueCommand(hci::WritePageScanActivityBuilder::Create(params.interval, params.window),
-                             common::BindOnce(&impl::OnCommandComplete, common::Unretained(this)), handler_);
+                             handler_->BindOnceOn(this, &impl::OnCommandComplete));
 
   hci_layer_->EnqueueCommand(hci::ReadPageScanActivityBuilder::Create(),
-                             common::BindOnce(&impl::OnCommandComplete, common::Unretained(this)), handler_);
+                             handler_->BindOnceOn(this, &impl::OnCommandComplete));
   LOG_DEBUG("Set page scan activity interval:0x%x/%.02fms window:0x%x/%.02fms", params.interval,
             ScanIntervalTimeMs(params.interval), params.window, ScanWindowTimeMs(params.window));
 }
@@ -142,19 +142,19 @@ ScanParameters neighbor::PageModule::impl::GetScanActivity() const {
 
 void neighbor::PageModule::impl::SetScanType(hci::PageScanType scan_type) {
   hci_layer_->EnqueueCommand(hci::WritePageScanTypeBuilder::Create(scan_type),
-                             common::BindOnce(&impl::OnCommandComplete, common::Unretained(this)), handler_);
+                             handler_->BindOnceOn(this, &impl::OnCommandComplete));
 
   hci_layer_->EnqueueCommand(hci::ReadPageScanTypeBuilder::Create(),
-                             common::BindOnce(&impl::OnCommandComplete, common::Unretained(this)), handler_);
+                             handler_->BindOnceOn(this, &impl::OnCommandComplete));
   LOG_DEBUG("Set page scan type:%s", hci::PageScanTypeText(scan_type).c_str());
 }
 
 void neighbor::PageModule::impl::SetTimeout(PageTimeout timeout) {
   hci_layer_->EnqueueCommand(hci::WritePageTimeoutBuilder::Create(timeout),
-                             common::BindOnce(&impl::OnCommandComplete, common::Unretained(this)), handler_);
+                             handler_->BindOnceOn(this, &impl::OnCommandComplete));
 
   hci_layer_->EnqueueCommand(hci::ReadPageTimeoutBuilder::Create(),
-                             common::BindOnce(&impl::OnCommandComplete, common::Unretained(this)), handler_);
+                             handler_->BindOnceOn(this, &impl::OnCommandComplete));
   LOG_DEBUG("Set page scan timeout:0x%x/%.02fms", timeout, PageTimeoutMs(timeout));
 }
 
