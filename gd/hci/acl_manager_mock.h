@@ -44,9 +44,7 @@ class MockLeAclConnection : public LeAclConnection {
  public:
   MOCK_METHOD(AddressWithType, GetLocalAddress, (), (const, override));
   MOCK_METHOD(AddressWithType, GetRemoteAddress, (), (const, override));
-  MOCK_METHOD(void, RegisterDisconnectCallback,
-              (common::OnceCallback<void(ErrorCode)> on_disconnect, os::Handler* handler), (override));
-  MOCK_METHOD(bool, Disconnect, (DisconnectReason reason), (override));
+  MOCK_METHOD(void, Disconnect, (DisconnectReason reason), (override));
   MOCK_METHOD(void, Finish, (), (override));
   MOCK_METHOD(void, RegisterCallbacks, (LeConnectionManagementCallbacks * callbacks, os::Handler* handler), (override));
 
