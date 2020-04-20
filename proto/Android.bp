@@ -4,7 +4,10 @@ java_library_static {
     proto: {
         type: "lite",
     },
-    srcs: ["bluetooth/metrics/bluetooth.proto"],
+    srcs: [
+        "bluetooth/metrics/bluetooth.proto",
+        "bluetooth/bluetoothKeystore/keystore.proto",
+    ],
 }
 
 cc_library_static {
@@ -14,5 +17,8 @@ cc_library_static {
         export_proto_headers: true,
         type: "lite",
     },
-    srcs: ["bluetooth/metrics/bluetooth.proto"],
+    srcs: [
+        "bluetooth/metrics/bluetooth.proto",
+        "bluetooth/bluetoothKeystore/keystore.proto",
+    ],
 }
