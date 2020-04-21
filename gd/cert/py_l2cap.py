@@ -49,6 +49,11 @@ class PyL2capChannel(IEventStream):
         self._device.l2cap.CloseChannel(
             l2cap_facade_pb2.CloseChannelRequest(psm=self._psm))
 
+    def set_traffic_paused(self, paused):
+        self._device.l2cap.SetTrafficPaused(
+            l2cap_facade_pb2.SetTrafficPausedRequest(
+                psm=self._psm, paused=paused))
+
 
 class _ClassicConnectionResponseFutureWrapper(object):
     """
@@ -101,6 +106,9 @@ class PyL2cap(Closable):
 
         return _ClassicConnectionResponseFutureWrapper(
             response_future, self._device, psm, self._l2cap_stream)
+
+    def get_channel_queue_buffer_size(self):
+        return self._device.l2cap.GetChannelQueueDepth(empty_proto.Empty()).size
 
 
 class PyLeL2capFixedChannel(IEventStream):
