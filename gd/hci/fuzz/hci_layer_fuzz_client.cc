@@ -32,13 +32,13 @@ void HciLayerFuzzClient::Start() {
 
   // Can't do security right now, due to the Encryption Change conflict between ACL manager & security
   // security_interface_ = hci_->GetSecurityInterface(common::Bind([](EventPacketView){}), GetHandler());
-  le_security_interface_ = hci_->GetLeSecurityInterface(common::Bind([](LeMetaEventView) {}), GetHandler());
-  acl_connection_interface_ = hci_->GetAclConnectionInterface(
-      common::Bind([](EventPacketView) {}), common::Bind([](uint16_t, hci::ErrorCode) {}), GetHandler());
-  le_acl_connection_interface_ = hci_->GetLeAclConnectionInterface(
-      common::Bind([](LeMetaEventView) {}), common::Bind([](uint16_t, hci::ErrorCode) {}), GetHandler());
-  le_advertising_interface_ = hci_->GetLeAdvertisingInterface(common::Bind([](LeMetaEventView) {}), GetHandler());
-  le_scanning_interface_ = hci_->GetLeScanningInterface(common::Bind([](LeMetaEventView) {}), GetHandler());
+  le_security_interface_ = hci_->GetLeSecurityInterface(GetHandler()->Bind([](LeMetaEventView) {}));
+  acl_connection_interface_ = hci_->GetAclConnectionInterface(GetHandler()->Bind([](EventPacketView) {}),
+                                                              GetHandler()->Bind([](uint16_t, hci::ErrorCode) {}));
+  le_acl_connection_interface_ = hci_->GetLeAclConnectionInterface(GetHandler()->Bind([](LeMetaEventView) {}),
+                                                                   GetHandler()->Bind([](uint16_t, hci::ErrorCode) {}));
+  le_advertising_interface_ = hci_->GetLeAdvertisingInterface(GetHandler()->Bind([](LeMetaEventView) {}));
+  le_scanning_interface_ = hci_->GetLeScanningInterface(GetHandler()->Bind([](LeMetaEventView) {}));
 }
 
 void HciLayerFuzzClient::Stop() {
