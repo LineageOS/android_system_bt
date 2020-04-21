@@ -35,9 +35,37 @@ namespace {
 constexpr char kModuleName[] = "shim::Dumpsys";
 }  // namespace
 
+constexpr char kArgumentDeveloper[] = "--dev";
+
+class ParsedDumpsysArgs {
+ public:
+  ParsedDumpsysArgs(const char** args) {
+    if (args == nullptr) return;
+    const char* p = *args;
+    while (p != nullptr) {
+      num_args_++;
+      if (!strcmp(p, kArgumentDeveloper)) {
+        dev_arg_ = true;
+      } else {
+        // silently ignore unexpected option
+      }
+      if (++args == nullptr) break;
+      p = *args;
+    }
+  }
+  bool IsDeveloper() const {
+    return dev_arg_;
+  }
+
+ private:
+  unsigned num_args_{0};
+  bool dev_arg_{false};
+};
+
 struct Dumpsys::impl {
  public:
-  void Dump(int fd, std::promise<void> promise);
+  void DumpWithArgs(int fd, const char** args, std::promise<void> promise);
+
   void RegisterDumpsysFunction(const void* token, DumpsysFunction func);
   void UnregisterDumpsysFunction(const void* token);
 
@@ -49,8 +77,14 @@ struct Dumpsys::impl {
 
 const ModuleFactory Dumpsys::Factory = ModuleFactory([]() { return new Dumpsys(); });
 
-void Dumpsys::impl::Dump(int fd, std::promise<void> promise) {
-  dprintf(fd, "%s Registered submodules:%zd\n", kModuleName, dumpsys_functions_.size());
+void Dumpsys::impl::DumpWithArgs(int fd, const char** args, std::promise<void> promise) {
+  ParsedDumpsysArgs parsed_dumpsys_args(args);
+  if (parsed_dumpsys_args.IsDeveloper()) {
+    // TODO(cmanton) Create development Dumper
+  } else {
+    // TODO(cmanton) Create typical Dumper
+  }
+
   std::for_each(dumpsys_functions_.begin(), dumpsys_functions_.end(),
                 [fd](std::pair<const void*, DumpsysFunction> element) { element.second(fd); });
   promise.set_value();
@@ -66,10 +100,10 @@ void Dumpsys::impl::UnregisterDumpsysFunction(const void* token) {
   dumpsys_functions_.erase(token);
 }
 
-void Dumpsys::Dump(int fd) {
+void Dumpsys::Dump(int fd, const char** args) {
   std::promise<void> promise;
   auto future = promise.get_future();
-  GetHandler()->Post(common::BindOnce(&Dumpsys::impl::Dump, common::Unretained(pimpl_.get()), fd, std::move(promise)));
+  GetHandler()->BindOnceOn(pimpl_.get(), &Dumpsys::impl::DumpWithArgs, fd, args, std::move(promise));
   future.get();
 }
 
