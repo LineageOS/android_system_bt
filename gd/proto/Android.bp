@@ -22,10 +22,15 @@ cc_library_static {
     host_supported: true,
     proto: {
         export_proto_headers: true,
+        type: "lite",
         include_dirs: ["external/protobuf/src"],
     },
     srcs: [
         "bluetooth/dumpmod.proto",
         "bluetooth/metrics/bluetooth.proto"
+    ],
+    apex_available: [
+        "//apex_available:platform",
+        "com.android.bluetooth.updatable",
     ],
 }
