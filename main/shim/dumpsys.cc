@@ -41,15 +41,15 @@ void bluetooth::shim::UnregisterDumpsysFunction(const void* token) {
   dumpsys_functions_->erase(token);
 }
 
-void bluetooth::shim::Dump(int fd) {
+void bluetooth::shim::Dump(int fd, const char** args) {
   dprintf(fd, "%s Dumping shim legacy targets:%zd\n", kModuleName,
           dumpsys_functions_->size());
   for (auto& dumpsys : *dumpsys_functions_) {
     dumpsys.second(fd);
   }
   if (bluetooth::shim::is_gd_stack_started_up()) {
-    bluetooth::shim::GetDumpsys()->Dump(fd);
+    bluetooth::shim::GetDumpsys()->Dump(fd, args);
   } else {
-    dprintf(fd, "%s gd stack has not started up\n", kModuleName);
+    dprintf(fd, "%s gd stack is enabled but not started\n", kModuleName);
   }
 }
