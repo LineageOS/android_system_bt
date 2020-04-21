@@ -167,6 +167,19 @@ class TestHciLayer : public HciLayer {
     return command;
   }
 
+  LeSetRandomAddressView GetLeSetRandomAddressPacket() {
+    if (command_future_ != nullptr) {
+      auto result = command_future_->wait_for(std::chrono::milliseconds(1000));
+      EXPECT_NE(std::future_status::timeout, result);
+    }
+    ASSERT(!command_queue_.empty());
+
+    auto command = LeSetRandomAddressView::Create(
+        LeAdvertisingCommandView::Create(CommandPacketView::Create(GetPacketView(GetLastCommand()))));
+    ASSERT(command.IsValid());
+    return command;
+  }
+
   void RegisterEventHandler(EventCode event_code,
                             common::ContextualCallback<void(EventPacketView)> event_handler) override {
     registered_events_[event_code] = event_handler;
@@ -288,6 +301,12 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
     fake_registry_.Start<AclManager>(&thread_);
     acl_manager_ = static_cast<AclManager*>(fake_registry_.GetModuleUnderTest(&AclManager::Factory));
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
+
+    // Verify LE Set Random Address was sent during setup
+    auto set_random_address_packet = test_hci_layer_->GetLeSetRandomAddressPacket();
+    EXPECT_TRUE(set_random_address_packet.IsValid());
+    my_initiating_address =
+        AddressWithType(set_random_address_packet.GetRandomAddress(), AddressType::RANDOM_DEVICE_ADDRESS);
   }
 
   void TearDown() override {
@@ -302,6 +321,7 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
   AclManager* acl_manager_ = nullptr;
   os::Handler* client_handler_ = nullptr;
   Address remote;
+  AddressWithType my_initiating_address;
 
   std::future<void> GetConnectionFuture() {
     ASSERT_LOG(mock_connection_callback_.connection_promise_ == nullptr, "Promises promises ... Only one at a time");
@@ -539,6 +559,7 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_success
   ASSERT_EQ(first_connection_status, std::future_status::ready);
 
   auto connection = GetLastLeConnection();
+  ASSERT_EQ(connection->GetLocalAddress(), my_initiating_address);
   ASSERT_EQ(connection->GetRemoteAddress(), remote_with_type);
 }
 
@@ -638,6 +659,7 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_update_success) 
   ASSERT_EQ(first_connection_status, std::future_status::ready);
 
   auto connection = GetLastLeConnection();
+  ASSERT_EQ(connection->GetLocalAddress(), my_initiating_address);
   ASSERT_EQ(connection->GetRemoteAddress(), remote_with_type);
   ASSERT_EQ(connection->GetHandle(), handle);
 
