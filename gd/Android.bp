@@ -114,10 +114,16 @@ cc_defaults {
             srcs: [
                 ":BluetoothOsSources_linux_generic",
             ],
+            shared_libs: [
+                "libprotobuf-cpp-full",
+            ],
         },
         host: {
             srcs: [
                 ":BluetoothHalSources_hci_rootcanal",
+            ],
+            shared_libs: [
+                "libprotobuf-cpp-full",
             ],
         },
         android: {
@@ -153,6 +159,9 @@ cc_defaults {
         "libchrome",
         "libcrypto",
     ],
+    static_libs: [
+        "libbluetooth-protos",
+    ]
 }
 
 cc_library {
@@ -205,6 +214,7 @@ cc_binary {
     ],
     static_libs: [
         "libbluetooth_gd",
+        "libbluetooth-protos",
     ],
     shared_libs: [
         "libchrome",
@@ -279,12 +289,14 @@ cc_test {
         "BluetoothGeneratedPackets_h",
     ],
     static_libs: [
+        "libbluetooth-protos",
         "libbluetooth_gd",
         "libgmock",
     ],
     shared_libs: [
         "libchrome",
         "libcrypto",
+        "libprotobuf-cpp-full",
     ],
     sanitize: {
         address: true,
@@ -320,6 +332,7 @@ cc_defaults {
         ":BluetoothHciFuzzHelperSources",
     ],
     static_libs: [
+        "libbluetooth-protos",
         "libbluetooth_gd_fuzzing",
         "libchrome",
         "libgmock",
@@ -331,6 +344,7 @@ cc_defaults {
     ],
     shared_libs: [
         "libcrypto",
+        "libprotobuf-cpp-full",
     ],
     cflags: [
         "-DFUZZ_TARGET",
