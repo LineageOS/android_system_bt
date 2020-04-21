@@ -409,8 +409,8 @@ SecurityManagerImpl::SecurityManagerImpl(os::Handler* security_handler, l2cap::l
                                          hci::HciLayer* hci_layer)
     : security_handler_(security_handler), l2cap_le_module_(l2cap_le_module),
       l2cap_manager_le_(l2cap_le_module_->GetFixedChannelManager()),
-      hci_security_interface_le_(hci_layer->GetLeSecurityInterface(
-          common::Bind(&SecurityManagerImpl::OnHciLeEvent, common::Unretained(this)), security_handler)),
+      hci_security_interface_le_(
+          hci_layer->GetLeSecurityInterface(security_handler_->BindOn(this, &SecurityManagerImpl::OnHciLeEvent))),
       security_manager_channel_(security_manager_channel) {
   Init();
 

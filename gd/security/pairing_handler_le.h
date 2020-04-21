@@ -136,14 +136,13 @@ class PairingHandlerLe {
   void SendHciLeStartEncryption(const InitialInformations& i, uint16_t conn_handle, const std::array<uint8_t, 8>& rand,
                                 const uint16_t& ediv, const Octet16& ltk) {
     i.le_security_interface->EnqueueCommand(hci::LeStartEncryptionBuilder::Create(conn_handle, rand, ediv, ltk),
-                                            common::BindOnce([](hci::CommandStatusView) {
+                                            i.l2cap_handler->BindOnce([](hci::CommandStatusView) {
                                               // TODO: handle command status. It's important - can show we are not
                                               // connected any more.
 
                                               // TODO: if anything useful must be done there, use some sort of proper
                                               // handler, wait/notify, and execute on the handler thread
-                                            }),
-                                            i.l2cap_handler);
+                                            }));
   }
 
   std::variant<PairingFailure, EncryptionChangeView, EncryptionKeyRefreshCompleteView> WaitEncryptionChanged() {
