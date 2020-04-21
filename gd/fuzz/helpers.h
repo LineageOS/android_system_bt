@@ -45,5 +45,14 @@ void InvokeIfValid(common::ContextualOnceCallback<void(TView)> callback, std::ve
   callback.InvokeIfNotEmpty(packet);
 }
 
+template <typename TView>
+void InvokeIfValid(common::ContextualCallback<void(TView)> callback, std::vector<uint8_t> data) {
+  auto packet = TView::FromBytes(data);
+  if (!packet.IsValid()) {
+    return;
+  }
+  callback.InvokeIfNotEmpty(packet);
+}
+
 }  // namespace fuzz
 }  // namespace bluetooth
