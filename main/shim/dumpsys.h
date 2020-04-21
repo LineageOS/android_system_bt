@@ -28,7 +28,7 @@ using DumpsysFunction = std::function<void(int fd)>;
  * Entrypoint from legacy stack to provide dumpsys functionality
  * for both the legacy shim and the Gabeldorsche stack.
  */
-void Dump(int fd);
+void Dump(int fd, const char** args);
 
 /**
  * Dumpsys access for legacy shim modules.
