@@ -194,7 +194,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       auto packet = channel_->GetQueueUpEnd()->TryDequeue();
       std::string data = std::string(packet->begin(), packet->end());
       L2capPacket l2cap_data;
-      //      l2cap_data.set_channel(cid_);
+      l2cap_data.set_psm(psm_);
       l2cap_data.set_payload(data);
       facade_service_->pending_l2cap_data_.OnIncomingEvent(l2cap_data);
     }

@@ -62,7 +62,6 @@ class LinkManager : public hci::LeConnectionCallbacks {
   void OnLeConnectSuccess(hci::AddressWithType connecting_address_with_type,
                           std::unique_ptr<hci::LeAclConnection> acl_connection) override;
   void OnLeConnectFail(hci::AddressWithType address_with_type, hci::ErrorCode reason) override;
-  void OnDisconnect(hci::AddressWithType address_with_type, hci::ErrorCode status);
 
   // FixedChannelManager methods
 
@@ -73,6 +72,8 @@ class LinkManager : public hci::LeConnectionCallbacks {
 
   void ConnectDynamicChannelServices(hci::AddressWithType device,
                                      Link::PendingDynamicChannelConnection pending_dynamic_channel_connection, Psm psm);
+
+  void OnDisconnect(hci::AddressWithType address_with_type);
 
  private:
   // Dependencies
