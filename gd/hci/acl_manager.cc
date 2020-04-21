@@ -23,11 +23,16 @@
 #include <utility>
 
 #include "common/bidi_queue.h"
+#include "crypto_toolbox/crypto_toolbox.h"
 #include "hci/acl_fragmenter.h"
 #include "hci/controller.h"
 #include "hci/hci_layer.h"
 #include "hci/round_robin_scheduler.h"
+#include "os/alarm.h"
+#include "os/rand.h"
 #include "security/security_module.h"
+
+using bluetooth::crypto_toolbox::Octet16;
 
 namespace bluetooth {
 namespace hci {
@@ -305,6 +310,11 @@ struct AclManager::impl : public security::ISecurityManagerListener {
         handler_->BindOn(this, &impl::on_le_event), handler_->BindOn(this, &impl::on_le_disconnect));
     le_initiator_address_ =
         AddressWithType(Address{{0x00, 0x11, 0xFF, 0xFF, 0x33, 0x22}}, AddressType::RANDOM_DEVICE_ADDRESS);
+
+    if (le_initiator_address_.GetAddressType() == AddressType::RANDOM_DEVICE_ADDRESS) {
+      address_rotation_alarm_ = std::make_unique<os::Alarm>(handler_);
+      RotateRandomAddress();
+    }
   }
 
   void Stop() {
@@ -325,6 +335,12 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     handler_ = nullptr;
     hci_layer_ = nullptr;
     security_manager_.reset();
+
+    // Address might have been already canceled if public address was used
+    if (address_rotation_alarm_) {
+      address_rotation_alarm_->Cancel();
+      address_rotation_alarm_.reset();
+    }
   }
 
   void on_classic_event(EventPacketView event_packet) {
@@ -1151,6 +1167,56 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     }
   }
 
+  std::chrono::milliseconds GetNextPrivateAddrressIntervalMs() {
+    /* 7 minutes minimum, 15 minutes maximum for random address refreshing */
+    const uint64_t interval_min_ms = (7 * 60 * 1000);
+    const uint64_t interval_random_part_max_ms = (8 * 60 * 1000);
+
+    return std::chrono::milliseconds(interval_min_ms + os::GenerateRandom() % interval_random_part_max_ms);
+  }
+
+  /* This function generates Resolvable Private Address (RPA) from Identity
+   * Resolving Key |irk| and |prand|*/
+  hci::Address GenerateRpa(const Octet16& irk, std::array<uint8_t, 8> prand) {
+    /* most significant bit, bit7, bit6 is 01 to be resolvable random */
+    constexpr uint8_t BLE_RESOLVE_ADDR_MSB = 0x40;
+    constexpr uint8_t BLE_RESOLVE_ADDR_MASK = 0xc0;
+    prand[2] &= (~BLE_RESOLVE_ADDR_MASK);
+    prand[2] |= BLE_RESOLVE_ADDR_MSB;
+
+    hci::Address address;
+    address.address[3] = prand[0];
+    address.address[4] = prand[1];
+    address.address[5] = prand[2];
+
+    /* encrypt with IRK */
+    Octet16 p = crypto_toolbox::aes_128(irk, prand.data(), 3);
+
+    /* set hash to be LSB of rpAddress */
+    address.address[0] = p[0];
+    address.address[1] = p[1];
+    address.address[2] = p[2];
+    return address;
+  }
+
+  void RotateRandomAddress() {
+    // TODO: we must stop advertising, conection initiation, and scanning before calling SetRandomAddress.
+    // TODO: ensure this is called before first connection initiation.
+    // TODO: obtain proper IRK
+    Octet16 irk = {} /* TODO: = BTM_GetDeviceIDRoot() */;
+    std::array<uint8_t, 8> random = os::GenerateRandom<8>();
+    hci::Address address = GenerateRpa(irk, random);
+
+    hci_layer_->EnqueueCommand(
+        hci::LeSetRandomAddressBuilder::Create(address),
+        handler_->BindOnce(&AclManager::impl::check_command_complete<LeSetRandomAddressCompleteView>,
+                           common::Unretained(this)));
+
+    le_initiator_address_ = AddressWithType(address, AddressType::RANDOM_DEVICE_ADDRESS);
+    address_rotation_alarm_->Schedule(BindOnce(&impl::RotateRandomAddress, common::Unretained(this)),
+                                      GetNextPrivateAddrressIntervalMs());
+  }
+
   void create_le_connection(AddressWithType address_with_type) {
     // TODO: Add white list handling.
     // TODO: Configure default LE connection parameters?
@@ -1177,14 +1243,6 @@ struct AclManager::impl : public security::ISecurityManagerListener {
       tmp.supervision_timeout_ = supervision_timeout;
       tmp.min_ce_length_ = 0x00;
       tmp.max_ce_length_ = 0x00;
-
-      // With real controllers, we must set random address before using it to establish connection
-      // TODO: have separate state machine generate new address when needed, consider using auto-generation in
-      // controller
-      if (own_address_type == OwnAddressType::RANDOM_DEVICE_ADDRESS) {
-        hci_layer_->EnqueueCommand(hci::LeSetRandomAddressBuilder::Create(le_initiator_address_.GetAddress()),
-                                   handler_->BindOnce([](CommandCompleteView status) {}));
-      }
 
       le_acl_connection_interface_->EnqueueCommand(
           LeExtendedCreateConnectionBuilder::Create(initiator_filter_policy, own_address_type,
@@ -1214,6 +1272,15 @@ struct AclManager::impl : public security::ISecurityManagerListener {
       // Usually controllers provide vendor-specific way to override public address. Implement it if it's ever needed.
       LOG_ALWAYS_FATAL("Don't know how to use this type of address");
     }
+
+    if (address_rotation_alarm_) {
+      address_rotation_alarm_->Cancel();
+      address_rotation_alarm_.reset();
+    }
+
+    // TODO: we must stop advertising, conection initiation, and scanning before calling SetRandomAddress.
+    hci_layer_->EnqueueCommand(hci::LeSetRandomAddressBuilder::Create(le_initiator_address_.GetAddress()),
+                               handler_->BindOnce([](CommandCompleteView status) {}));
   }
 
   void cancel_connect(Address address) {
@@ -1913,7 +1980,8 @@ struct AclManager::impl : public security::ISecurityManagerListener {
   common::Callback<bool(Address, ClassOfDevice)> should_accept_connection_;
   std::queue<std::pair<Address, std::unique_ptr<CreateConnectionBuilder>>> pending_outgoing_connections_;
   uint16_t default_link_policy_settings_ = 0xffff;
-  AddressWithType le_initiator_address_;
+  AddressWithType le_initiator_address_{Address{}, AddressType::RANDOM_DEVICE_ADDRESS};
+  std::unique_ptr<os::Alarm> address_rotation_alarm_;
 };
 
 AclConnection::QueueUpEnd* AclConnection::GetAclQueueEnd() const {
