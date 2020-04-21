@@ -90,25 +90,14 @@ class CommandInterfaceImpl : public CommandInterface<T> {
 };
 
 struct HciLayer::impl {
-  impl(HciLayer& module) : hal_(nullptr), module_(module) {}
+  impl(hal::HciHal* hal, HciLayer& module) : hal_(hal), module_(module) {
+    hci_timeout_alarm_ = new Alarm(module.GetHandler());
+  }
 
-  void Start(hal::HciHal* hal) {
-    hal_ = hal;
-    hci_timeout_alarm_ = new Alarm(module_.GetHandler());
-
-    auto queue_end = acl_queue_.GetDownEnd();
-    Handler* handler = module_.GetHandler();
-    queue_end->RegisterDequeue(handler, BindOn(this, &impl::on_outbound_acl_ready));
-    module_.RegisterEventHandler(EventCode::COMMAND_COMPLETE, handler->BindOn(this, &impl::on_command_complete));
-    module_.RegisterEventHandler(EventCode::COMMAND_STATUS, handler->BindOn(this, &impl::on_command_status));
-    module_.RegisterEventHandler(EventCode::LE_META_EVENT, handler->BindOn(this, &impl::on_le_meta_event));
-    // TODO find the right place
-    auto drop_packet = handler->BindOn(this, &impl::drop);
-    module_.RegisterEventHandler(EventCode::PAGE_SCAN_REPETITION_MODE_CHANGE, drop_packet);
-    module_.RegisterEventHandler(EventCode::MAX_SLOTS_CHANGE, drop_packet);
-    module_.RegisterEventHandler(EventCode::VENDOR_SPECIFIC, drop_packet);
-
-    module_.EnqueueCommand(ResetBuilder::Create(), handler->BindOnce(&fail_if_reset_complete_not_success));
+  ~impl() {
+    incoming_acl_packet_buffer_.Clear();
+    delete hci_timeout_alarm_;
+    command_queue_.clear();
   }
 
   void drop(EventPacketView) {}
@@ -119,14 +108,6 @@ struct HciLayer::impl {
     BitInserter bi(bytes);
     packet->Serialize(bi);
     hal_->sendAclData(bytes);
-  }
-
-  void Stop() {
-    acl_queue_.GetDownEnd()->UnregisterDequeue();
-    incoming_acl_packet_buffer_.Clear();
-    delete hci_timeout_alarm_;
-    command_queue_.clear();
-    hal_ = nullptr;
   }
 
   void on_command_status(EventPacketView event) {
@@ -251,10 +232,7 @@ struct HciLayer::impl {
     subevent_handlers_.erase(subevent_handlers_.find(subevent_code));
   }
 
-  // The HAL
   hal::HciHal* hal_;
-
-  // A reference to the HciLayer module
   HciLayer& module_;
 
   // Interfaces
@@ -304,11 +282,9 @@ struct HciLayer::hal_callbacks : public hal::HciHalCallbacks {
   HciLayer& module_;
 };
 
-HciLayer::HciLayer() : impl_(new impl(*this)), hal_callbacks_(new hal_callbacks(*this)) {}
+HciLayer::HciLayer() : impl_(nullptr), hal_callbacks_(nullptr) {}
 
 HciLayer::~HciLayer() {
-  delete impl_;
-  delete hal_callbacks_;
 }
 
 void HciLayer::EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
@@ -396,14 +372,31 @@ void HciLayer::ListDependencies(ModuleList* list) {
 
 void HciLayer::Start() {
   auto hal = GetDependency<hal::HciHal>();
-  impl_->Start(hal);
+  impl_ = new impl(hal, *this);
+  hal_callbacks_ = new hal_callbacks(*this);
+
+  Handler* handler = GetHandler();
+  impl_->acl_queue_.GetDownEnd()->RegisterDequeue(handler, BindOn(impl_, &impl::on_outbound_acl_ready));
+  RegisterEventHandler(EventCode::COMMAND_COMPLETE, handler->BindOn(impl_, &impl::on_command_complete));
+  RegisterEventHandler(EventCode::COMMAND_STATUS, handler->BindOn(impl_, &impl::on_command_status));
+  RegisterEventHandler(EventCode::LE_META_EVENT, handler->BindOn(impl_, &impl::on_le_meta_event));
+  // TODO find the right place
+  auto drop_packet = handler->BindOn(impl_, &impl::drop);
+  RegisterEventHandler(EventCode::PAGE_SCAN_REPETITION_MODE_CHANGE, drop_packet);
+  RegisterEventHandler(EventCode::MAX_SLOTS_CHANGE, drop_packet);
+  RegisterEventHandler(EventCode::VENDOR_SPECIFIC, drop_packet);
+
+  EnqueueCommand(ResetBuilder::Create(), handler->BindOnce(&fail_if_reset_complete_not_success));
   hal->registerIncomingPacketCallback(hal_callbacks_);
 }
 
 void HciLayer::Stop() {
   auto hal = GetDependency<hal::HciHal>();
   hal->unregisterIncomingPacketCallback();
-  impl_->Stop();
+  delete hal_callbacks_;
+
+  impl_->acl_queue_.GetDownEnd()->UnregisterDequeue();
+  delete impl_;
 }
 
 }  // namespace hci
