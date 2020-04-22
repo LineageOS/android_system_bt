@@ -181,7 +181,7 @@ void SecurityManagerImpl::HandleEvent(T packet) {
         security_database_.FindOrCreate(hci::AddressWithType{bd_addr, hci::AddressType::PUBLIC_DEVICE_ADDRESS});
     auto authentication_requirements = hci::AuthenticationRequirements::NO_BONDING;
     DispatchPairingHandler(record, true, authentication_requirements);
-    entry = pairing_handler_map_.find(packet.GetBdAddr());
+    entry = pairing_handler_map_.find(bd_addr);
   }
   entry->second->OnReceive(packet);
 }
