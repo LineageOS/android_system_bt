@@ -83,22 +83,6 @@ class CommandQueueEntry {
   }
 };
 
-template <typename T>
-class CommandInterfaceImpl : public CommandInterface<T> {
- public:
-  explicit CommandInterfaceImpl(HciLayer& hci) : hci_(hci) {}
-  ~CommandInterfaceImpl() override = default;
-
-  void EnqueueCommand(unique_ptr<T> command, ContextualOnceCallback<void(CommandCompleteView)> on_complete) override {
-    hci_.EnqueueCommand(move(command), move(on_complete));
-  }
-
-  void EnqueueCommand(unique_ptr<T> command, ContextualOnceCallback<void(CommandStatusView)> on_status) override {
-    hci_.EnqueueCommand(move(command), move(on_status));
-  }
-  HciLayer& hci_;
-};
-
 struct HciLayer::impl {
   impl(hal::HciHal* hal, HciLayer& module) : hal_(hal), module_(module) {
     hci_timeout_alarm_ = new Alarm(module.GetHandler());
@@ -225,14 +209,6 @@ struct HciLayer::impl {
   hal::HciHal* hal_;
   HciLayer& module_;
 
-  // Interfaces
-  CommandInterfaceImpl<ConnectionManagementCommandBuilder> acl_connection_manager_interface_{module_};
-  CommandInterfaceImpl<LeConnectionManagementCommandBuilder> le_acl_connection_manager_interface_{module_};
-  CommandInterfaceImpl<SecurityCommandBuilder> security_interface{module_};
-  CommandInterfaceImpl<LeSecurityCommandBuilder> le_security_interface{module_};
-  CommandInterfaceImpl<LeAdvertisingCommandBuilder> le_advertising_interface{module_};
-  CommandInterfaceImpl<LeScanningCommandBuilder> le_scanning_interface{module_};
-
   // Command Handling
   std::list<CommandQueueEntry> command_queue_;
 
@@ -311,7 +287,7 @@ AclConnectionInterface* HciLayer::GetAclConnectionInterface(
   for (const auto event : AclConnectionEvents) {
     RegisterEventHandler(event, event_handler);
   }
-  return &impl_->acl_connection_manager_interface_;
+  return &acl_connection_manager_interface_;
 }
 
 LeAclConnectionInterface* HciLayer::GetLeAclConnectionInterface(
@@ -320,35 +296,35 @@ LeAclConnectionInterface* HciLayer::GetLeAclConnectionInterface(
   for (const auto event : LeConnectionManagementEvents) {
     RegisterLeEventHandler(event, event_handler);
   }
-  return &impl_->le_acl_connection_manager_interface_;
+  return &le_acl_connection_manager_interface_;
 }
 
 SecurityInterface* HciLayer::GetSecurityInterface(ContextualCallback<void(EventPacketView)> event_handler) {
   for (const auto event : SecurityEvents) {
     RegisterEventHandler(event, event_handler);
   }
-  return &impl_->security_interface;
+  return &security_interface;
 }
 
 LeSecurityInterface* HciLayer::GetLeSecurityInterface(ContextualCallback<void(LeMetaEventView)> event_handler) {
   for (const auto subevent : LeSecurityEvents) {
     RegisterLeEventHandler(subevent, event_handler);
   }
-  return &impl_->le_security_interface;
+  return &le_security_interface;
 }
 
 LeAdvertisingInterface* HciLayer::GetLeAdvertisingInterface(ContextualCallback<void(LeMetaEventView)> event_handler) {
   for (const auto subevent : LeAdvertisingEvents) {
     RegisterLeEventHandler(subevent, event_handler);
   }
-  return &impl_->le_advertising_interface;
+  return &le_advertising_interface;
 }
 
 LeScanningInterface* HciLayer::GetLeScanningInterface(ContextualCallback<void(LeMetaEventView)> event_handler) {
   for (const auto subevent : LeScanningEvents) {
     RegisterLeEventHandler(subevent, event_handler);
   }
-  return &impl_->le_scanning_interface;
+  return &le_scanning_interface;
 }
 
 const ModuleFactory HciLayer::Factory = ModuleFactory([]() { return new HciLayer(); });
