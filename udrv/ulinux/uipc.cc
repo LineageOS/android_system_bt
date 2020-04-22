@@ -485,7 +485,7 @@ int uipc_start_main_server_thread(tUIPC_STATE& uipc) {
   uipc.running = 1;
 
   if (pthread_create(&uipc.tid, (const pthread_attr_t*)NULL, uipc_read_task,
-                     &uipc) < 0) {
+                     &uipc) != 0) {
     BTIF_TRACE_ERROR("uipc_thread_create pthread_create failed:%d", errno);
     return -1;
   }
