@@ -42,7 +42,7 @@ class MockLink : public Link {
   MOCK_METHOD(void, OnAclDisconnected, (hci::ErrorCode status), (override));
   MOCK_METHOD(void, Disconnect, (), (override));
   MOCK_METHOD(std::shared_ptr<l2cap::internal::DynamicChannelImpl>, AllocateDynamicChannel,
-              (Psm psm, Cid cid, SecurityPolicy security_policy), (override));
+              (Psm psm, Cid cid, classic::SecurityPolicy security_policy), (override));
   MOCK_METHOD(bool, IsFixedChannelAllocated, (Cid cid), (override));
   MOCK_METHOD(void, RefreshRefCount, (), (override));
 };

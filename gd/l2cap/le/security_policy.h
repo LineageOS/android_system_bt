@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Android Open Source Project
+ * Copyright 2020 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -13,24 +13,29 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
 
 namespace bluetooth {
 namespace l2cap {
+namespace le {
 
+// Security Policy for LE Security Mode 1, used by COC and GATT. Defined in Core 5.2, 3, C 10.2.1
 class SecurityPolicy {
  public:
   enum class Level {
-    LEVEL_0,  // Encryption not needed. Only applies to SDP.
-    LEVEL_2,  // Encryption desired. Only needs unauthenticated link key.
-    LEVEL_3,  // Encryption required and authenticated link key required.
+    NO_SECURITY,
+    UNAUTHENTICATED_PAIRING_WITH_ENCRYPTION,
+    AUTHENTICATED_PAIRING_WITH_ENCRYPTION,
+    AUTHENTICATED_PAIRING_WITH_128_BYTE_KEY,
   };
-  Level security_level_ = Level::LEVEL_0;
+  Level security_level_ = Level::NO_SECURITY;
 
   bool RequiresAuthentication() const {
-    return security_level_ != SecurityPolicy::Level::LEVEL_0;
+    return security_level_ != SecurityPolicy::Level::NO_SECURITY;
   }
 };
 
+}  // namespace le
 }  // namespace l2cap
 }  // namespace bluetooth
