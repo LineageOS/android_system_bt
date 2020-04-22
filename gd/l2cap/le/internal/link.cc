@@ -53,12 +53,12 @@ Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::LeAclConnection> acl
   acl_connection_->RegisterCallbacks(this, l2cap_handler_);
 }
 
-void Link::OnAclDisconnected(hci::ErrorCode status) {
-  fixed_channel_allocator_.OnAclDisconnected(status);
-  dynamic_channel_allocator_.OnAclDisconnected(status);
+void Link::OnAclDisconnected(hci::ErrorCode reason) {
+  fixed_channel_allocator_.OnAclDisconnected(static_cast<hci::ErrorCode>(reason));
+  dynamic_channel_allocator_.OnAclDisconnected(static_cast<hci::ErrorCode>(reason));
 }
 
-void Link::OnDisconnection(bluetooth::hci::ErrorCode status) {
+void Link::OnDisconnection(hci::ErrorCode status) {
   OnAclDisconnected(status);
 
   link_manager_->OnDisconnect(GetAclConnection()->GetRemoteAddress());

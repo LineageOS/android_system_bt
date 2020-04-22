@@ -14,13 +14,15 @@
  * limitations under the License.
  */
 
+#include "l2cap/classic/internal/link.h"
+
 #include <chrono>
 #include <memory>
 
 #include "hci/acl_manager.h"
 #include "l2cap/classic/dynamic_channel_manager.h"
 #include "l2cap/classic/internal/fixed_channel_impl.h"
-#include "l2cap/classic/internal/link.h"
+#include "l2cap/classic/internal/link_manager.h"
 #include "l2cap/internal/parameter_provider.h"
 #include "os/alarm.h"
 
@@ -36,11 +38,11 @@ using ConnectionResultCode = DynamicChannelManager::ConnectionResultCode;
 Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::ClassicAclConnection> acl_connection,
            l2cap::internal::ParameterProvider* parameter_provider,
            DynamicChannelServiceManagerImpl* dynamic_service_manager,
-           FixedChannelServiceManagerImpl* fixed_service_manager)
+           FixedChannelServiceManagerImpl* fixed_service_manager, LinkManager* link_manager)
     : l2cap_handler_(l2cap_handler), acl_connection_(std::move(acl_connection)),
       data_pipeline_manager_(l2cap_handler, this, acl_connection_->GetAclQueueEnd()),
       parameter_provider_(parameter_provider), dynamic_service_manager_(dynamic_service_manager),
-      fixed_service_manager_(fixed_service_manager),
+      fixed_service_manager_(fixed_service_manager), link_manager_(link_manager),
       signalling_manager_(l2cap_handler_, this, &data_pipeline_manager_, dynamic_service_manager_,
                           &dynamic_channel_allocator_, fixed_service_manager_) {
   ASSERT(l2cap_handler_ != nullptr);
@@ -49,10 +51,6 @@ Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::ClassicAclConnection
   link_idle_disconnect_alarm_.Schedule(common::BindOnce(&Link::Disconnect, common::Unretained(this)),
                                        parameter_provider_->GetClassicLinkIdleDisconnectTimeout());
   acl_connection_->RegisterCallbacks(this, l2cap_handler_);
-}
-
-Link::~Link() {
-  acl_connection_->UnregisterCallbacks(this);
 }
 
 void Link::OnAclDisconnected(hci::ErrorCode status) {
@@ -68,7 +66,6 @@ void Link::OnAclDisconnected(hci::ErrorCode status) {
     auto entry = local_cid_to_pending_dynamic_channel_connection_map_.begin();
     NotifyChannelFail(entry->first, result);
   }
-  acl_connection_->Finish();
 }
 
 void Link::Disconnect() {
@@ -384,6 +381,10 @@ void Link::OnMasterLinkKeyComplete(hci::KeyFlag key_flag) {
 }
 void Link::OnRoleChange(hci::Role new_role) {
   LOG_DEBUG("UNIMPLEMENTED role:%s", hci::RoleText(new_role).c_str());
+}
+void Link::OnDisconnection(hci::ErrorCode reason) {
+  OnAclDisconnected(reason);
+  link_manager_->OnDisconnect(GetDevice().GetAddress(), reason);
 }
 
 }  // namespace internal

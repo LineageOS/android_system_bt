@@ -277,6 +277,10 @@ class TestHciLayer : public HciLayer {
   }
   void Stop() override {}
 
+  void Disconnect(uint16_t handle, ErrorCode reason) override {
+    GetHandler()->Post(common::BindOnce(&TestHciLayer::do_disconnect, common::Unretained(this), handle, reason));
+  }
+
  private:
   std::map<EventCode, common::ContextualCallback<void(EventPacketView)>> registered_events_;
   std::map<SubeventCode, common::ContextualCallback<void(LeMetaEventView)>> registered_le_events_;
@@ -287,6 +291,10 @@ class TestHciLayer : public HciLayer {
   std::queue<std::unique_ptr<CommandPacketBuilder>> command_queue_;
   std::unique_ptr<std::promise<void>> command_promise_;
   std::unique_ptr<std::future<void>> command_future_;
+
+  void do_disconnect(uint16_t handle, ErrorCode reason) {
+    HciLayer::Disconnect(handle, reason);
+  }
 };
 
 class AclManagerNoCallbacksTest : public ::testing::Test {
@@ -468,6 +476,7 @@ class AclManagerWithConnectionTest : public AclManagerTest {
     MOCK_METHOD2(OnReadClockComplete, void(uint32_t clock, uint16_t accuracy));
     MOCK_METHOD1(OnMasterLinkKeyComplete, void(KeyFlag flag));
     MOCK_METHOD1(OnRoleChange, void(Role new_role));
+    MOCK_METHOD1(OnDisconnection, void(ErrorCode reason));
   } mock_connection_management_callbacks_;
 };
 
@@ -533,34 +542,61 @@ TEST_F(AclManagerTest, invoke_registered_callback_connection_complete_fail) {
   fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
 }
 
+class AclManagerWithLeConnectionTest : public AclManagerTest {
+ protected:
+  void SetUp() override {
+    AclManagerTest::SetUp();
+
+    remote_with_type_ = AddressWithType(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
+    test_hci_layer_->SetCommandFuture();
+    acl_manager_->CreateLeConnection(remote_with_type_);
+
+    auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
+    auto le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
+    auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);
+    ASSERT(command_view.IsValid());
+    EXPECT_EQ(command_view.GetPeerAddress(), remote);
+    EXPECT_EQ(command_view.GetPeerAddressType(), AddressType::PUBLIC_DEVICE_ADDRESS);
+
+    test_hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
+
+    auto first_connection = GetLeConnectionFuture();
+
+    test_hci_layer_->IncomingLeMetaEvent(LeConnectionCompleteBuilder::Create(
+        ErrorCode::SUCCESS, handle_, Role::SLAVE, AddressType::PUBLIC_DEVICE_ADDRESS, remote, 0x0100, 0x0010, 0x0011,
+        ClockAccuracy::PPM_30));
+
+    auto first_connection_status = first_connection.wait_for(kTimeout);
+    ASSERT_EQ(first_connection_status, std::future_status::ready);
+
+    connection_ = GetLastLeConnection();
+  }
+
+  void sync_client_handler() {
+    std::promise<void> promise;
+    auto future = promise.get_future();
+    client_handler_->Post(common::BindOnce(&std::promise<void>::set_value, common::Unretained(&promise)));
+    auto future_status = future.wait_for(std::chrono::seconds(1));
+    EXPECT_EQ(future_status, std::future_status::ready);
+  }
+
+  uint16_t handle_ = 0x123;
+  std::shared_ptr<LeAclConnection> connection_;
+  AddressWithType remote_with_type_;
+
+  class MockLeConnectionManagementCallbacks : public LeConnectionManagementCallbacks {
+   public:
+    MOCK_METHOD1(OnDisconnection, void(ErrorCode reason));
+    MOCK_METHOD3(OnConnectionUpdate,
+                 void(uint16_t connection_interval, uint16_t connection_latency, uint16_t supervision_timeout));
+  } mock_le_connection_management_callbacks_;
+};
+
 // TODO: implement version of this test where controller supports Extended Advertising Feature in
 // GetControllerLeLocalSupportedFeatures, and LE Extended Create Connection is used
-TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_success) {
-  AddressWithType remote_with_type(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
-  test_hci_layer_->SetCommandFuture();
-  acl_manager_->CreateLeConnection(remote_with_type);
-
-  auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
-  auto le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
-  auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);
-  ASSERT(command_view.IsValid());
-  EXPECT_EQ(command_view.GetPeerAddress(), remote);
-  EXPECT_EQ(command_view.GetPeerAddressType(), AddressType::PUBLIC_DEVICE_ADDRESS);
-
-  test_hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
-
-  auto first_connection = GetLeConnectionFuture();
-
-  test_hci_layer_->IncomingLeMetaEvent(
-      LeConnectionCompleteBuilder::Create(ErrorCode::SUCCESS, 0x123, Role::SLAVE, AddressType::PUBLIC_DEVICE_ADDRESS,
-                                          remote, 0x0100, 0x0010, 0x0011, ClockAccuracy::PPM_30));
-
-  auto first_connection_status = first_connection.wait_for(kTimeout);
-  ASSERT_EQ(first_connection_status, std::future_status::ready);
-
-  auto connection = GetLastLeConnection();
-  ASSERT_EQ(connection->GetLocalAddress(), my_initiating_address);
-  ASSERT_EQ(connection->GetRemoteAddress(), remote_with_type);
+TEST_F(AclManagerWithLeConnectionTest, invoke_registered_callback_le_connection_complete_success) {
+  ASSERT_EQ(connection_->GetLocalAddress(), my_initiating_address);
+  ASSERT_EQ(connection_->GetRemoteAddress(), remote_with_type_);
 }
 
 TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_fail) {
@@ -584,37 +620,13 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_fail) {
       0x0100, 0x0010, 0x0011, ClockAccuracy::PPM_30));
 }
 
-TEST_F(AclManagerTest, acl_send_data_one_le_connection) {
-  AddressWithType remote_with_type(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
-  test_hci_layer_->SetCommandFuture();
-  acl_manager_->CreateLeConnection(remote_with_type);
-
-  auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
-  auto le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
-  auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);
-  ASSERT(command_view.IsValid());
-  EXPECT_EQ(command_view.GetPeerAddress(), remote);
-  EXPECT_EQ(command_view.GetPeerAddressType(), AddressType::PUBLIC_DEVICE_ADDRESS);
-
-  test_hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
-
-  auto first_connection = GetLeConnectionFuture();
-
-  uint16_t handle = 0x123;
-  test_hci_layer_->IncomingLeMetaEvent(
-      LeConnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, Role::SLAVE, AddressType::PUBLIC_DEVICE_ADDRESS,
-                                          remote, 0x0100, 0x0010, 0x0011, ClockAccuracy::PPM_30));
-
-  auto first_connection_status = first_connection.wait_for(kTimeout);
-  ASSERT_EQ(first_connection_status, std::future_status::ready);
-
-  auto connection = GetLastLeConnection();
-  ASSERT_EQ(connection->GetRemoteAddress(), remote_with_type);
-  ASSERT_EQ(connection->GetHandle(), handle);
+TEST_F(AclManagerWithLeConnectionTest, acl_send_data_one_le_connection) {
+  ASSERT_EQ(connection_->GetRemoteAddress(), remote_with_type_);
+  ASSERT_EQ(connection_->GetHandle(), handle_);
 
   // Send a packet from HCI
-  test_hci_layer_->IncomingAclData(handle);
-  auto queue_end = connection->GetAclQueueEnd();
+  test_hci_layer_->IncomingAclData(handle_);
+  auto queue_end = connection_->GetAclQueueEnd();
 
   std::unique_ptr<PacketView<kLittleEndian>> received;
   do {
@@ -624,47 +636,21 @@ TEST_F(AclManagerTest, acl_send_data_one_le_connection) {
   PacketView<kLittleEndian> received_packet = *received;
 
   // Send a packet from the connection
-  SendAclData(handle, connection->GetAclQueueEnd());
+  SendAclData(handle_, connection_->GetAclQueueEnd());
 
   auto sent_packet = test_hci_layer_->OutgoingAclData();
 
   // Send another packet from the connection
-  SendAclData(handle, connection->GetAclQueueEnd());
+  SendAclData(handle_, connection_->GetAclQueueEnd());
 
   sent_packet = test_hci_layer_->OutgoingAclData();
 }
 
-TEST_F(AclManagerTest, invoke_registered_callback_le_connection_update_success) {
-  AddressWithType remote_with_type(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
-  test_hci_layer_->SetCommandFuture();
-  acl_manager_->CreateLeConnection(remote_with_type);
-
-  auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
-  auto le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
-  auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);
-  ASSERT(command_view.IsValid());
-  EXPECT_EQ(command_view.GetPeerAddress(), remote);
-  EXPECT_EQ(command_view.GetPeerAddressType(), AddressType::PUBLIC_DEVICE_ADDRESS);
-
-  test_hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
-
-  auto first_connection = GetLeConnectionFuture();
-
-  uint16_t handle = 0x123;
-  test_hci_layer_->IncomingLeMetaEvent(
-      LeConnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, Role::SLAVE, AddressType::PUBLIC_DEVICE_ADDRESS,
-                                          remote, 0x0100, 0x0010, 0x0011, ClockAccuracy::PPM_30));
-
-  auto first_connection_status = first_connection.wait_for(kTimeout);
-  ASSERT_EQ(first_connection_status, std::future_status::ready);
-
-  auto connection = GetLastLeConnection();
-  ASSERT_EQ(connection->GetLocalAddress(), my_initiating_address);
-  ASSERT_EQ(connection->GetRemoteAddress(), remote_with_type);
-  ASSERT_EQ(connection->GetHandle(), handle);
-
-  MockLeConnectionManagementCallbacks mock_le_connection_management_callbacks;
-  connection->RegisterCallbacks(&mock_le_connection_management_callbacks, client_handler_);
+TEST_F(AclManagerWithLeConnectionTest, invoke_registered_callback_le_connection_update_success) {
+  ASSERT_EQ(connection_->GetLocalAddress(), my_initiating_address);
+  ASSERT_EQ(connection_->GetRemoteAddress(), remote_with_type_);
+  ASSERT_EQ(connection_->GetHandle(), handle_);
+  connection_->RegisterCallbacks(&mock_le_connection_management_callbacks_, client_handler_);
 
   std::promise<ErrorCode> promise;
   uint16_t connection_interval_min = 0x0012;
@@ -673,248 +659,70 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_update_success) 
   uint16_t connection_latency = 0x0001;
   uint16_t supervision_timeout = 0x000A;
   test_hci_layer_->SetCommandFuture();
-  connection->LeConnectionUpdate(connection_interval_min, connection_interval_max, connection_latency,
-                                 supervision_timeout, 0x10, 0x20);
+  connection_->LeConnectionUpdate(connection_interval_min, connection_interval_max, connection_latency,
+                                  supervision_timeout, 0x10, 0x20);
   auto update_packet = test_hci_layer_->GetCommandPacket(OpCode::LE_CONNECTION_UPDATE);
   auto update_view = LeConnectionUpdateView::Create(LeConnectionManagementCommandView::Create(update_packet));
   ASSERT(update_view.IsValid());
-  EXPECT_EQ(update_view.GetConnectionHandle(), handle);
-  LOG_INFO("Expecting interval %hd, latency %hd, timeout %hd", connection_interval, connection_latency,
-           supervision_timeout);
-  EXPECT_CALL(mock_le_connection_management_callbacks,
+  EXPECT_EQ(update_view.GetConnectionHandle(), handle_);
+  EXPECT_CALL(mock_le_connection_management_callbacks_,
               OnConnectionUpdate(connection_interval, connection_latency, supervision_timeout));
   test_hci_layer_->IncomingLeMetaEvent(LeConnectionUpdateCompleteBuilder::Create(
-      ErrorCode::SUCCESS, handle, connection_interval, connection_latency, supervision_timeout));
+      ErrorCode::SUCCESS, handle_, connection_interval, connection_latency, supervision_timeout));
   fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
   fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
 }
 
-TEST_F(AclManagerTest, invoke_registered_callback_le_disconnect) {
-  AddressWithType remote_with_type(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
-  test_hci_layer_->SetCommandFuture();
-  acl_manager_->CreateLeConnection(remote_with_type);
+TEST_F(AclManagerWithLeConnectionTest, invoke_registered_callback_le_disconnect) {
+  ASSERT_EQ(connection_->GetRemoteAddress(), remote_with_type_);
+  ASSERT_EQ(connection_->GetHandle(), handle_);
+  connection_->RegisterCallbacks(&mock_le_connection_management_callbacks_, client_handler_);
 
-  auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
-  auto le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
-  auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);
-  ASSERT(command_view.IsValid());
-  EXPECT_EQ(command_view.GetPeerAddress(), remote);
-  EXPECT_EQ(command_view.GetPeerAddressType(), AddressType::PUBLIC_DEVICE_ADDRESS);
-
-  test_hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
-
-  auto first_connection = GetLeConnectionFuture();
-
-  uint16_t handle = 0x123;
-  test_hci_layer_->IncomingLeMetaEvent(
-      LeConnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, Role::SLAVE, AddressType::PUBLIC_DEVICE_ADDRESS,
-                                          remote, 0x0100, 0x0010, 0x0011, ClockAccuracy::PPM_30));
-
-  auto first_connection_status = first_connection.wait_for(kTimeout);
-  ASSERT_EQ(first_connection_status, std::future_status::ready);
-
-  auto connection = GetLastLeConnection();
-  ASSERT_EQ(connection->GetRemoteAddress(), remote_with_type);
-  ASSERT_EQ(connection->GetHandle(), handle);
-
-  MockLeConnectionManagementCallbacks mock_le_connection_management_callbacks;
-  connection->RegisterCallbacks(&mock_le_connection_management_callbacks, client_handler_);
-
-  ErrorCode reason = ErrorCode::REMOTE_USER_TERMINATED_CONNECTION;
-  EXPECT_CALL(mock_le_connection_management_callbacks, OnDisconnection(reason));
-  test_hci_layer_->IncomingEvent(DisconnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, reason));
+  auto reason = ErrorCode::REMOTE_USER_TERMINATED_CONNECTION;
+  EXPECT_CALL(mock_le_connection_management_callbacks_, OnDisconnection(reason));
+  test_hci_layer_->Disconnect(handle_, reason);
   fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
   fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
 }
 
-TEST_F(AclManagerTest, DISABLED_invoke_registered_callback_le_disconnect_data_race) {
-  AddressWithType remote_with_type(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
-  test_hci_layer_->SetCommandFuture();
-  acl_manager_->CreateLeConnection(remote_with_type);
+TEST_F(AclManagerWithLeConnectionTest, DISABLED_invoke_registered_callback_le_disconnect_data_race) {
+  ASSERT_EQ(connection_->GetRemoteAddress(), remote_with_type_);
+  ASSERT_EQ(connection_->GetHandle(), handle_);
+  connection_->RegisterCallbacks(&mock_le_connection_management_callbacks_, client_handler_);
 
-  auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
-  auto le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
-  auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);
-  ASSERT(command_view.IsValid());
-  EXPECT_EQ(command_view.GetPeerAddress(), remote);
-  EXPECT_EQ(command_view.GetPeerAddressType(), AddressType::PUBLIC_DEVICE_ADDRESS);
-
-  test_hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
-
-  auto first_connection = GetLeConnectionFuture();
-
-  uint16_t handle = 0x123;
-  test_hci_layer_->IncomingLeMetaEvent(
-      LeConnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, Role::SLAVE, AddressType::PUBLIC_DEVICE_ADDRESS,
-                                          remote, 0x0100, 0x0010, 0x0011, ClockAccuracy::PPM_30));
-
-  auto first_connection_status = first_connection.wait_for(kTimeout);
-  ASSERT_EQ(first_connection_status, std::future_status::ready);
-
-  auto connection = GetLastLeConnection();
-  ASSERT_EQ(connection->GetRemoteAddress(), remote_with_type);
-  ASSERT_EQ(connection->GetHandle(), handle);
-
-  MockLeConnectionManagementCallbacks mock_le_connection_management_callbacks;
-  connection->RegisterCallbacks(&mock_le_connection_management_callbacks, client_handler_);
-
-  test_hci_layer_->IncomingAclData(handle);
-  ErrorCode reason = ErrorCode::REMOTE_USER_TERMINATED_CONNECTION;
-  EXPECT_CALL(mock_le_connection_management_callbacks, OnDisconnection(reason));
-  test_hci_layer_->IncomingEvent(DisconnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, reason));
+  test_hci_layer_->IncomingAclData(handle_);
+  auto reason = ErrorCode::REMOTE_USER_TERMINATED_CONNECTION;
+  EXPECT_CALL(mock_le_connection_management_callbacks_, OnDisconnection(reason));
+  test_hci_layer_->Disconnect(handle_, reason);
   fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
   fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
 }
 
-TEST_F(AclManagerTest, invoke_registered_callback_le_queue_disconnect) {
-  AddressWithType remote_with_type(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
-  test_hci_layer_->SetCommandFuture();
-  acl_manager_->CreateLeConnection(remote_with_type);
-
-  auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
-  auto le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
-  auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);
-  ASSERT(command_view.IsValid());
-  EXPECT_EQ(command_view.GetPeerAddress(), remote);
-  EXPECT_EQ(command_view.GetPeerAddressType(), AddressType::PUBLIC_DEVICE_ADDRESS);
-
-  test_hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
-
-  auto first_connection = GetLeConnectionFuture();
-
-  uint16_t handle = 0x123;
-  test_hci_layer_->IncomingLeMetaEvent(
-      LeConnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, Role::SLAVE, AddressType::PUBLIC_DEVICE_ADDRESS,
-                                          remote, 0x0100, 0x0010, 0x0011, ClockAccuracy::PPM_30));
-
-  auto first_connection_status = first_connection.wait_for(kTimeout);
-  ASSERT_EQ(first_connection_status, std::future_status::ready);
-
-  auto connection = GetLastLeConnection();
-  ASSERT_EQ(connection->GetRemoteAddress(), remote_with_type);
-  ASSERT_EQ(connection->GetHandle(), handle);
-
-  ErrorCode reason = ErrorCode::REMOTE_USER_TERMINATED_CONNECTION;
-  test_hci_layer_->IncomingEvent(DisconnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, reason));
-  MockLeConnectionManagementCallbacks mock_le_connection_management_callbacks;
+TEST_F(AclManagerWithLeConnectionTest, invoke_registered_callback_le_queue_disconnect) {
+  auto reason = ErrorCode::REMOTE_USER_TERMINATED_CONNECTION;
+  test_hci_layer_->Disconnect(handle_, reason);
   fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
   fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
 
-  EXPECT_CALL(mock_le_connection_management_callbacks, OnDisconnection(reason));
-  connection->RegisterCallbacks(&mock_le_connection_management_callbacks, client_handler_);
+  EXPECT_CALL(mock_le_connection_management_callbacks_, OnDisconnection(reason));
+  connection_->RegisterCallbacks(&mock_le_connection_management_callbacks_, client_handler_);
   fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
   fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
 }
 
-TEST_F(AclManagerTest, invoke_registered_callback_disconnection_complete) {
-  uint16_t handle = 0x123;
-
-  test_hci_layer_->SetCommandFuture();
-  acl_manager_->CreateConnection(remote);
-
-  // Wait for the connection request
-  std::unique_ptr<CommandPacketBuilder> last_command;
-  do {
-    last_command = test_hci_layer_->GetLastCommand();
-  } while (last_command == nullptr);
-
-  auto first_connection = GetConnectionFuture();
-
-  test_hci_layer_->IncomingEvent(
-      ConnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, remote, LinkType::ACL, Enable::DISABLED));
-
-  auto first_connection_status = first_connection.wait_for(kTimeout);
-  ASSERT_EQ(first_connection_status, std::future_status::ready);
-
-  auto connection = GetLastConnection();
-
-  // Register the disconnect handler
-  std::promise<ErrorCode> promise;
-  auto future = promise.get_future();
-  connection->RegisterDisconnectCallback(
-      common::BindOnce([](std::promise<ErrorCode> promise, ErrorCode reason) { promise.set_value(reason); },
-                       std::move(promise)),
-      client_handler_);
-
-  test_hci_layer_->IncomingEvent(
-      DisconnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, ErrorCode::REMOTE_USER_TERMINATED_CONNECTION));
-
-  auto disconnection_status = future.wait_for(kTimeout);
-  ASSERT_EQ(disconnection_status, std::future_status::ready);
-  ASSERT_EQ(ErrorCode::REMOTE_USER_TERMINATED_CONNECTION, future.get());
+TEST_F(AclManagerWithConnectionTest, invoke_registered_callback_disconnection_complete) {
+  auto reason = ErrorCode::REMOTE_USER_TERMINATED_CONNECTION;
+  EXPECT_CALL(mock_connection_management_callbacks_, OnDisconnection(reason));
+  test_hci_layer_->Disconnect(handle_, reason);
 
   fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
+  fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
 }
 
-TEST_F(AclManagerTest, acl_connection_finish_after_disconnected) {
-  uint16_t handle = 0x123;
-
-  test_hci_layer_->SetCommandFuture();
-  acl_manager_->CreateConnection(remote);
-
-  // Wait for the connection request
-  std::unique_ptr<CommandPacketBuilder> last_command;
-  do {
-    last_command = test_hci_layer_->GetLastCommand();
-  } while (last_command == nullptr);
-
-  auto first_connection = GetConnectionFuture();
-
-  test_hci_layer_->IncomingEvent(
-      ConnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, remote, LinkType::ACL, Enable::DISABLED));
-
-  auto first_connection_status = first_connection.wait_for(kTimeout);
-  ASSERT_EQ(first_connection_status, std::future_status::ready);
-
-  auto connection = GetLastConnection();
-
-  // Register the disconnect handler
-  std::promise<ErrorCode> promise;
-  auto future = promise.get_future();
-  connection->RegisterDisconnectCallback(
-      common::BindOnce([](std::promise<ErrorCode> promise, ErrorCode reason) { promise.set_value(reason); },
-                       std::move(promise)),
-      client_handler_);
-
-  test_hci_layer_->IncomingEvent(DisconnectionCompleteBuilder::Create(
-      ErrorCode::SUCCESS, handle, ErrorCode::REMOTE_DEVICE_TERMINATED_CONNECTION_POWER_OFF));
-
-  auto disconnection_status = future.wait_for(kTimeout);
-  ASSERT_EQ(disconnection_status, std::future_status::ready);
-  ASSERT_EQ(ErrorCode::REMOTE_DEVICE_TERMINATED_CONNECTION_POWER_OFF, future.get());
-
-  connection->Finish();
-}
-
-TEST_F(AclManagerTest, acl_send_data_one_connection) {
-  uint16_t handle = 0x123;
-
-  acl_manager_->CreateConnection(remote);
-
-  // Wait for the connection request
-  std::unique_ptr<CommandPacketBuilder> last_command;
-  do {
-    last_command = test_hci_layer_->GetLastCommand();
-  } while (last_command == nullptr);
-
-  auto first_connection = GetConnectionFuture();
-
-  test_hci_layer_->IncomingEvent(
-      ConnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, remote, LinkType::ACL, Enable::DISABLED));
-
-  auto first_connection_status = first_connection.wait_for(kTimeout);
-  ASSERT_EQ(first_connection_status, std::future_status::ready);
-
-  auto connection = GetLastConnection();
-
-  // Register the disconnect handler
-  connection->RegisterDisconnectCallback(
-      common::Bind([](std::shared_ptr<AclConnection> conn, ErrorCode) { conn->Finish(); }, connection),
-      client_handler_);
-
+TEST_F(AclManagerWithConnectionTest, acl_send_data_one_connection) {
   // Send a packet from HCI
-  test_hci_layer_->IncomingAclData(handle);
-  auto queue_end = connection->GetAclQueueEnd();
+  test_hci_layer_->IncomingAclData(handle_);
+  auto queue_end = connection_->GetAclQueueEnd();
 
   std::unique_ptr<PacketView<kLittleEndian>> received;
   do {
@@ -924,60 +732,46 @@ TEST_F(AclManagerTest, acl_send_data_one_connection) {
   PacketView<kLittleEndian> received_packet = *received;
 
   // Send a packet from the connection
-  SendAclData(handle, connection->GetAclQueueEnd());
+  SendAclData(handle_, connection_->GetAclQueueEnd());
 
   auto sent_packet = test_hci_layer_->OutgoingAclData();
 
   // Send another packet from the connection
-  SendAclData(handle, connection->GetAclQueueEnd());
+  SendAclData(handle_, connection_->GetAclQueueEnd());
 
   sent_packet = test_hci_layer_->OutgoingAclData();
-  connection->Disconnect(DisconnectReason::AUTHENTICATION_FAILURE);
+  test_hci_layer_->SetCommandFuture();
+  auto reason = ErrorCode::AUTHENTICATION_FAILURE;
+  EXPECT_CALL(mock_connection_management_callbacks_, OnDisconnection(reason));
+  connection_->Disconnect(DisconnectReason::AUTHENTICATION_FAILURE);
+  auto packet = test_hci_layer_->GetCommandPacket(OpCode::DISCONNECT);
+  auto command_view = DisconnectView::Create(packet);
+  ASSERT(command_view.IsValid());
+  ASSERT_EQ(command_view.GetConnectionHandle(), handle_);
+  test_hci_layer_->Disconnect(handle_, reason);
+  fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
+  fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
 }
 
-TEST_F(AclManagerTest, acl_send_data_credits) {
-  uint16_t handle = 0x123;
-
-  acl_manager_->CreateConnection(remote);
-
-  // Wait for the connection request
-  std::unique_ptr<CommandPacketBuilder> last_command;
-  do {
-    last_command = test_hci_layer_->GetLastCommand();
-  } while (last_command == nullptr);
-
-  auto first_connection = GetConnectionFuture();
-  test_hci_layer_->IncomingEvent(
-      ConnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, remote, LinkType::ACL, Enable::DISABLED));
-
-  auto first_connection_status = first_connection.wait_for(kTimeout);
-  ASSERT_EQ(first_connection_status, std::future_status::ready);
-
-  auto connection = GetLastConnection();
-
-  // Register the disconnect handler
-  connection->RegisterDisconnectCallback(
-      common::BindOnce([](std::shared_ptr<AclConnection> conn, ErrorCode) { conn->Finish(); }, connection),
-      client_handler_);
-
+TEST_F(AclManagerWithConnectionTest, acl_send_data_credits) {
   // Use all the credits
   for (uint16_t credits = 0; credits < test_controller_->total_acl_buffers_; credits++) {
     // Send a packet from the connection
-    SendAclData(handle, connection->GetAclQueueEnd());
+    SendAclData(handle_, connection_->GetAclQueueEnd());
 
     auto sent_packet = test_hci_layer_->OutgoingAclData();
   }
 
   // Send another packet from the connection
-  SendAclData(handle, connection->GetAclQueueEnd());
+  SendAclData(handle_, connection_->GetAclQueueEnd());
 
   test_hci_layer_->AssertNoOutgoingAclData();
 
-  test_controller_->CompletePackets(handle, 1);
+  test_controller_->CompletePackets(handle_, 1);
 
   auto after_credits_sent_packet = test_hci_layer_->OutgoingAclData();
 
-  connection->Disconnect(DisconnectReason::AUTHENTICATION_FAILURE);
+  connection_->Disconnect(DisconnectReason::AUTHENTICATION_FAILURE);
 }
 
 TEST_F(AclManagerWithConnectionTest, send_switch_role) {
