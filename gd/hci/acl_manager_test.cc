@@ -118,7 +118,7 @@ class TestController : public Controller {
 class TestHciLayer : public HciLayer {
  public:
   void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
-                      common::OnceCallback<void(CommandStatusView)> on_status, os::Handler* handler) override {
+                      common::ContextualOnceCallback<void(CommandStatusView)> on_status) override {
     command_queue_.push(std::move(command));
     command_status_callbacks.push_front(std::move(on_status));
     if (command_promise_ != nullptr) {
@@ -128,7 +128,7 @@ class TestHciLayer : public HciLayer {
   }
 
   void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
-                      common::OnceCallback<void(CommandCompleteView)> on_complete, os::Handler* handler) override {
+                      common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) override {
     command_queue_.push(std::move(command));
     command_complete_callbacks.push_front(std::move(on_complete));
     if (command_promise_ != nullptr) {
@@ -167,8 +167,21 @@ class TestHciLayer : public HciLayer {
     return command;
   }
 
-  void RegisterEventHandler(EventCode event_code, common::Callback<void(EventPacketView)> event_handler,
-                            os::Handler* handler) override {
+  LeSetRandomAddressView GetLeSetRandomAddressPacket() {
+    if (command_future_ != nullptr) {
+      auto result = command_future_->wait_for(std::chrono::milliseconds(1000));
+      EXPECT_NE(std::future_status::timeout, result);
+    }
+    ASSERT(!command_queue_.empty());
+
+    auto command = LeSetRandomAddressView::Create(
+        LeAdvertisingCommandView::Create(CommandPacketView::Create(GetPacketView(GetLastCommand()))));
+    ASSERT(command.IsValid());
+    return command;
+  }
+
+  void RegisterEventHandler(EventCode event_code,
+                            common::ContextualCallback<void(EventPacketView)> event_handler) override {
     registered_events_[event_code] = event_handler;
   }
 
@@ -176,8 +189,8 @@ class TestHciLayer : public HciLayer {
     registered_events_.erase(event_code);
   }
 
-  void RegisterLeEventHandler(SubeventCode subevent_code, common::Callback<void(LeMetaEventView)> event_handler,
-                              os::Handler* handler) override {
+  void RegisterLeEventHandler(SubeventCode subevent_code,
+                              common::ContextualCallback<void(LeMetaEventView)> event_handler) override {
     registered_le_events_[subevent_code] = event_handler;
   }
 
@@ -191,7 +204,7 @@ class TestHciLayer : public HciLayer {
     ASSERT_TRUE(event.IsValid());
     EventCode event_code = event.GetEventCode();
     ASSERT_TRUE(registered_events_.find(event_code) != registered_events_.end()) << EventCodeText(event_code);
-    registered_events_[event_code].Run(event);
+    registered_events_[event_code].Invoke(event);
   }
 
   void IncomingLeMetaEvent(std::unique_ptr<LeMetaEventBuilder> event_builder) {
@@ -201,7 +214,7 @@ class TestHciLayer : public HciLayer {
     EXPECT_TRUE(meta_event_view.IsValid());
     SubeventCode subevent_code = meta_event_view.GetSubeventCode();
     EXPECT_TRUE(registered_le_events_.find(subevent_code) != registered_le_events_.end());
-    registered_le_events_[subevent_code].Run(meta_event_view);
+    registered_le_events_[subevent_code].Invoke(meta_event_view);
   }
 
   void IncomingAclData(uint16_t handle) {
@@ -231,14 +244,14 @@ class TestHciLayer : public HciLayer {
   void CommandCompleteCallback(EventPacketView event) {
     CommandCompleteView complete_view = CommandCompleteView::Create(event);
     ASSERT(complete_view.IsValid());
-    std::move(command_complete_callbacks.front()).Run(complete_view);
+    std::move(command_complete_callbacks.front()).Invoke(complete_view);
     command_complete_callbacks.pop_front();
   }
 
   void CommandStatusCallback(EventPacketView event) {
     CommandStatusView status_view = CommandStatusView::Create(event);
     ASSERT(status_view.IsValid());
-    std::move(command_status_callbacks.front()).Run(status_view);
+    std::move(command_status_callbacks.front()).Invoke(status_view);
     command_status_callbacks.pop_front();
   }
 
@@ -259,17 +272,16 @@ class TestHciLayer : public HciLayer {
   void ListDependencies(ModuleList* list) override {}
   void Start() override {
     RegisterEventHandler(EventCode::COMMAND_COMPLETE,
-                         base::Bind(&TestHciLayer::CommandCompleteCallback, common::Unretained(this)), nullptr);
-    RegisterEventHandler(EventCode::COMMAND_STATUS,
-                         base::Bind(&TestHciLayer::CommandStatusCallback, common::Unretained(this)), nullptr);
+                         GetHandler()->BindOn(this, &TestHciLayer::CommandCompleteCallback));
+    RegisterEventHandler(EventCode::COMMAND_STATUS, GetHandler()->BindOn(this, &TestHciLayer::CommandStatusCallback));
   }
   void Stop() override {}
 
  private:
-  std::map<EventCode, common::Callback<void(EventPacketView)>> registered_events_;
-  std::map<SubeventCode, common::Callback<void(LeMetaEventView)>> registered_le_events_;
-  std::list<base::OnceCallback<void(CommandCompleteView)>> command_complete_callbacks;
-  std::list<base::OnceCallback<void(CommandStatusView)>> command_status_callbacks;
+  std::map<EventCode, common::ContextualCallback<void(EventPacketView)>> registered_events_;
+  std::map<SubeventCode, common::ContextualCallback<void(LeMetaEventView)>> registered_le_events_;
+  std::list<common::ContextualOnceCallback<void(CommandCompleteView)>> command_complete_callbacks;
+  std::list<common::ContextualOnceCallback<void(CommandStatusView)>> command_status_callbacks;
   BidiQueue<AclPacketView, AclPacketBuilder> acl_queue_{3 /* TODO: Set queue depth */};
 
   std::queue<std::unique_ptr<CommandPacketBuilder>> command_queue_;
@@ -281,7 +293,6 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
  protected:
   void SetUp() override {
     test_hci_layer_ = new TestHciLayer;  // Ownership is transferred to registry
-    test_hci_layer_->Start();
     test_controller_ = new TestController;
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
     fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
@@ -290,6 +301,12 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
     fake_registry_.Start<AclManager>(&thread_);
     acl_manager_ = static_cast<AclManager*>(fake_registry_.GetModuleUnderTest(&AclManager::Factory));
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
+
+    // Verify LE Set Random Address was sent during setup
+    auto set_random_address_packet = test_hci_layer_->GetLeSetRandomAddressPacket();
+    EXPECT_TRUE(set_random_address_packet.IsValid());
+    my_initiating_address =
+        AddressWithType(set_random_address_packet.GetRandomAddress(), AddressType::RANDOM_DEVICE_ADDRESS);
   }
 
   void TearDown() override {
@@ -304,6 +321,7 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
   AclManager* acl_manager_ = nullptr;
   os::Handler* client_handler_ = nullptr;
   Address remote;
+  AddressWithType my_initiating_address;
 
   std::future<void> GetConnectionFuture() {
     ASSERT_LOG(mock_connection_callback_.connection_promise_ == nullptr, "Promises promises ... Only one at a time");
@@ -541,6 +559,7 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_success
   ASSERT_EQ(first_connection_status, std::future_status::ready);
 
   auto connection = GetLastLeConnection();
+  ASSERT_EQ(connection->GetLocalAddress(), my_initiating_address);
   ASSERT_EQ(connection->GetRemoteAddress(), remote_with_type);
 }
 
@@ -640,6 +659,7 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_update_success) 
   ASSERT_EQ(first_connection_status, std::future_status::ready);
 
   auto connection = GetLastLeConnection();
+  ASSERT_EQ(connection->GetLocalAddress(), my_initiating_address);
   ASSERT_EQ(connection->GetRemoteAddress(), remote_with_type);
   ASSERT_EQ(connection->GetHandle(), handle);
 
