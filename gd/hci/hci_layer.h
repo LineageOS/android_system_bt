@@ -103,6 +103,32 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
   struct hal_callbacks;
   impl* impl_;
   hal_callbacks* hal_callbacks_;
+
+  template <typename T>
+  class CommandInterfaceImpl : public CommandInterface<T> {
+   public:
+    explicit CommandInterfaceImpl(HciLayer& hci) : hci_(hci) {}
+    ~CommandInterfaceImpl() override = default;
+
+    void EnqueueCommand(std::unique_ptr<T> command,
+                        common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) override {
+      hci_.EnqueueCommand(move(command), std::move(on_complete));
+    }
+
+    void EnqueueCommand(std::unique_ptr<T> command,
+                        common::ContextualOnceCallback<void(CommandStatusView)> on_status) override {
+      hci_.EnqueueCommand(move(command), std::move(on_status));
+    }
+    HciLayer& hci_;
+  };
+
+  // Interfaces
+  CommandInterfaceImpl<ConnectionManagementCommandBuilder> acl_connection_manager_interface_{*this};
+  CommandInterfaceImpl<LeConnectionManagementCommandBuilder> le_acl_connection_manager_interface_{*this};
+  CommandInterfaceImpl<SecurityCommandBuilder> security_interface{*this};
+  CommandInterfaceImpl<LeSecurityCommandBuilder> le_security_interface{*this};
+  CommandInterfaceImpl<LeAdvertisingCommandBuilder> le_advertising_interface{*this};
+  CommandInterfaceImpl<LeScanningCommandBuilder> le_scanning_interface{*this};
 };
 }  // namespace hci
 }  // namespace bluetooth
