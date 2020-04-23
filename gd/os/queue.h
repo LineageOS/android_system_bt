@@ -129,6 +129,16 @@ class EnqueueBuffer {
     }
   }
 
+  auto Size() const {
+    return buffer_.size();
+  }
+
+  void NotifyOnEmpty(common::OnceClosure callback) {
+    std::lock_guard<std::mutex> lock(mutex_);
+    ASSERT(callback_on_empty_.is_null());
+    callback_on_empty_ = std::move(callback);
+  }
+
  private:
   std::unique_ptr<T> enqueue_callback() {
     std::lock_guard<std::mutex> lock(mutex_);
@@ -136,6 +146,9 @@ class EnqueueBuffer {
     buffer_.pop();
     if (buffer_.empty() && enqueue_registered_.exchange(false)) {
       queue_->UnregisterEnqueue();
+      if (!callback_on_empty_.is_null()) {
+        std::move(callback_on_empty_).Run();
+      }
     }
     return enqueued_t;
   }
@@ -144,6 +157,7 @@ class EnqueueBuffer {
   IQueueEnqueue<T>* queue_;
   std::atomic_bool enqueue_registered_ = false;
   std::queue<std::unique_ptr<T>> buffer_;
+  common::OnceClosure callback_on_empty_;
 };
 
 #ifdef OS_LINUX_GENERIC
