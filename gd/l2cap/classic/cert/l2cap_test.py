@@ -884,6 +884,47 @@ class L2capTest(GdBaseTestClass):
         cert_channel.send_i_frame(tx_seq=1, req_seq=2, payload=SAMPLE_PACKET)
 
     @metadata(
+        pts_test_id="L2CAP/ERM/BV-07-C", pts_test_name="Send S-Frame [RNR]")
+    def test_send_s_frame_rnr(self):
+        """
+        Verify the IUT sends an S-frame [RNR] when it detects local busy condition
+        NOTE: In GD stack, we enter local busy condition if client doesn't dequeue
+        and packets are accumulating in buffer
+        """
+        self._setup_link_from_cert()
+
+        config = CertL2cap.config_option_ertm(
+            fcs=FcsType.NO_FCS, tx_window_size=10)
+
+        (dut_channel, cert_channel) = self._open_channel_from_cert(
+            mode=RetransmissionFlowControlMode.ERTM,
+            fcs=FcsType.NO_FCS,
+            req_config_options=config,
+            rsp_config_options=config)
+
+        dut_channel.send(b'abc')
+        assertThat(cert_channel).emits(
+            L2capMatchers.IFrame(tx_seq=0, payload=b'abc'))
+        cert_channel.send_i_frame(tx_seq=0, req_seq=1, payload=SAMPLE_PACKET)
+
+        dut_channel.set_traffic_paused(True)
+
+        buffer_size = self.dut_l2cap.get_channel_queue_buffer_size()
+
+        for i in range(buffer_size):
+            cert_channel.send_i_frame(
+                tx_seq=i + 1, req_seq=1, payload=SAMPLE_PACKET)
+            assertThat(cert_channel).emits(
+                L2capMatchers.SFrame(
+                    s=l2cap_packets.SupervisoryFunction.RECEIVER_READY))
+
+        cert_channel.send_i_frame(
+            tx_seq=buffer_size + 1, req_seq=1, payload=SAMPLE_PACKET)
+        assertThat(cert_channel).emits(
+            L2capMatchers.SFrame(
+                s=l2cap_packets.SupervisoryFunction.RECEIVER_NOT_READY))
+
+    @metadata(
         pts_test_id="L2CAP/ERM/BV-08-C",
         pts_test_name="Send S-Frame [RR] with Poll Bit Set")
     def test_transmit_s_frame_rr_with_poll_bit_set(self):
@@ -1204,6 +1245,55 @@ class L2capTest(GdBaseTestClass):
             s=SupervisoryFunction.RECEIVER_NOT_READY,
             f=Final.POLL_RESPONSE)
         assertThat(cert_channel).emitsNone(L2capMatchers.IFrame(tx_seq=0))
+
+    @metadata(
+        pts_test_id="L2CAP/ERM/BV-22-C",
+        pts_test_name="Exit Local Busy Condition")
+    def test_exit_local_busy_condition(self):
+        """
+        Verify the IUT sends an S-frame [RR] Poll = 1 when the local busy condition is cleared
+        NOTE: In GD stack, we enter local busy condition if client doesn't dequeue
+        and packets are accumulating in buffer
+        """
+        self._setup_link_from_cert()
+
+        config = CertL2cap.config_option_ertm(
+            fcs=FcsType.NO_FCS, tx_window_size=10)
+
+        (dut_channel, cert_channel) = self._open_channel_from_cert(
+            mode=RetransmissionFlowControlMode.ERTM,
+            fcs=FcsType.NO_FCS,
+            req_config_options=config,
+            rsp_config_options=config)
+
+        dut_channel.send(b'abc')
+        assertThat(cert_channel).emits(
+            L2capMatchers.IFrame(tx_seq=0, payload=b'abc'))
+        cert_channel.send_i_frame(tx_seq=0, req_seq=1, payload=SAMPLE_PACKET)
+
+        dut_channel.set_traffic_paused(True)
+
+        buffer_size = self.dut_l2cap.get_channel_queue_buffer_size()
+
+        for i in range(buffer_size):
+            cert_channel.send_i_frame(
+                tx_seq=i + 1, req_seq=1, payload=SAMPLE_PACKET)
+            assertThat(cert_channel).emits(
+                L2capMatchers.SFrame(
+                    s=l2cap_packets.SupervisoryFunction.RECEIVER_READY))
+
+        cert_channel.send_i_frame(
+            tx_seq=buffer_size + 1, req_seq=1, payload=SAMPLE_PACKET)
+        assertThat(cert_channel).emits(
+            L2capMatchers.SFrame(
+                s=l2cap_packets.SupervisoryFunction.RECEIVER_NOT_READY))
+
+        dut_channel.set_traffic_paused(False)
+        assertThat(cert_channel).emits(
+            L2capMatchers.SFrame(
+                s=l2cap_packets.SupervisoryFunction.RECEIVER_READY,
+                p=l2cap_packets.Poll.POLL))
+        cert_channel.send_s_frame(1, f=l2cap_packets.Final.POLL_RESPONSE)
 
     @metadata(
         pts_test_id="L2CAP/ERM/BV-23-C",
