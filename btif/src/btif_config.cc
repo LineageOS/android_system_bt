@@ -40,7 +40,6 @@
 #include "btif_api.h"
 #include "btif_common.h"
 #include "btif_config_transcode.h"
-//#include "btif_keystore.h"
 #include "btif_util.h"
 #include "common/address_obfuscator.h"
 #include "common/metric_id_allocator.h"
@@ -64,17 +63,10 @@
 #define DISABLED "disabled"
 static const char* TIME_STRING_FORMAT = "%Y-%m-%d %H:%M:%S";
 
-// constexpr int kBufferSize = 400 * 10;  // initial file is ~400B
-
-/*static bool use_key_attestation() {
-  return getuid() == AID_BLUETOOTH && is_single_user_mode();
-}*/
-
 #define BT_CONFIG_METRICS_SECTION "Metrics"
 #define BT_CONFIG_METRICS_SALT_256BIT "Salt256Bit"
 #define BT_CONFIG_METRICS_ID_KEY "MetricsId"
 
-// using bluetooth::BtifKeystore;
 using bluetooth::common::AddressObfuscator;
 using bluetooth::common::MetricIdAllocator;
 
@@ -86,8 +78,6 @@ static const char* CONFIG_LEGACY_FILE_PATH = "bt_config.xml";
 #else   // !defined(OS_GENERIC)
 static const char* CONFIG_FILE_PATH = "/data/misc/bluedroid/bt_config.conf";
 static const char* CONFIG_BACKUP_PATH = "/data/misc/bluedroid/bt_config.bak";
-static const char* CONFIG_FILE_CHECKSUM_PATH = "/data/misc/bluedroid/bt_config.conf.encrypted-checksum";
-static const char* CONFIG_BACKUP_CHECKSUM_PATH = "/data/misc/bluedroid/bt_config.bak.encrypted-checksum";
 static const char* CONFIG_LEGACY_FILE_PATH =
     "/data/misc/bluedroid/bt_config.xml";
 #endif  // defined(OS_GENERIC)
@@ -99,13 +89,7 @@ static bool is_factory_reset(void);
 static void delete_config_files(void);
 static void btif_config_remove_unpaired(config_t* config);
 static void btif_config_remove_restricted(config_t* config);
-static std::unique_ptr<config_t> btif_config_open(const char* filename, const char* checksum_filename);
-
-// Key attestation
-// static std::string hash_file(const char* filename);
-// static std::string read_checksum_file(const char* filename);
-// static void write_checksum_file(const char* filename, const std::string&
-// hash);
+static std::unique_ptr<config_t> btif_config_open(const char* filename);
 
 static enum ConfigSource {
   NOT_LOADED,
@@ -259,34 +243,27 @@ static std::recursive_mutex config_lock;  // protects operations on |config|.
 static std::unique_ptr<config_t> config;
 static alarm_t* config_timer;
 
-// static BtifKeystore btif_keystore(new keystore::KeystoreClientImpl);
-
 // Module lifecycle functions
 
 static future_t* init(void) {
   std::unique_lock<std::recursive_mutex> lock(config_lock);
 
   if (is_factory_reset()) delete_config_files();
-  /*if (is_factory_reset() ||
-      (use_key_attestation() && !btif_keystore.DoesKeyExist()))
-    delete_config_files();*/
 
   std::string file_source;
 
-  config = btif_config_open(CONFIG_FILE_PATH, CONFIG_FILE_CHECKSUM_PATH);
+  config = btif_config_open(CONFIG_FILE_PATH);
   btif_config_source = ORIGINAL;
   if (!config) {
     LOG_WARN("%s unable to load config file: %s; using backup.", __func__,
              CONFIG_FILE_PATH);
-    remove(CONFIG_FILE_CHECKSUM_PATH);
-    config = btif_config_open(CONFIG_BACKUP_PATH, CONFIG_BACKUP_CHECKSUM_PATH);
+    config = btif_config_open(CONFIG_BACKUP_PATH);
     btif_config_source = BACKUP;
     file_source = "Backup";
   }
   if (!config) {
     LOG_WARN("%s unable to load backup; attempting to transcode legacy file.",
              __func__);
-    remove(CONFIG_BACKUP_CHECKSUM_PATH);
     config = btif_config_transcode(CONFIG_LEGACY_FILE_PATH);
     btif_config_source = LEGACY;
     file_source = "Legacy";
@@ -350,25 +327,7 @@ error:
   return future_new_immediate(FUTURE_FAIL);
 }
 
-static std::unique_ptr<config_t> btif_config_open(const char* filename, const char* checksum_filename) {
-  /*// START KEY ATTESTATION
-  // Get hash of current file
-  std::string current_hash = hash_file(filename);
-  // Get stored hash
-  std::string stored_hash = read_checksum_file(checksum_filename);
-  if (stored_hash.empty()) {
-    LOG(ERROR) << __func__ << ": stored_hash=<empty>";
-    if (!current_hash.empty()) {
-      write_checksum_file(checksum_filename, current_hash);
-      stored_hash = read_checksum_file(checksum_filename);
-    }
-  }
-  // Compare hashes
-  if (current_hash != stored_hash) {
-    return nullptr;
-  }
-  // END KEY ATTESTATION*/
-
+static std::unique_ptr<config_t> btif_config_open(const char* filename) {
   std::unique_ptr<config_t> config =
       storage_config_get_interface()->config_new(filename);
   if (!config) return nullptr;
@@ -620,12 +579,6 @@ bool btif_config_clear(void) {
       storage_config_get_interface()->config_save(*config, CONFIG_FILE_PATH);
   btif_config_source = RESET;
 
-  /*// Save encrypted hash
-  std::string current_hash = hash_file(CONFIG_FILE_PATH);
-  if (!current_hash.empty()) {
-    write_checksum_file(CONFIG_FILE_CHECKSUM_PATH, current_hash);
-  }*/
-
   return ret;
 }
 
@@ -643,16 +596,10 @@ static void btif_config_write(UNUSED_ATTR uint16_t event,
 
   std::unique_lock<std::recursive_mutex> lock(config_lock);
   rename(CONFIG_FILE_PATH, CONFIG_BACKUP_PATH);
-  rename(CONFIG_FILE_CHECKSUM_PATH, CONFIG_BACKUP_CHECKSUM_PATH);
   std::unique_ptr<config_t> config_paired =
       storage_config_get_interface()->config_new_clone(*config);
   btif_config_remove_unpaired(config_paired.get());
   storage_config_get_interface()->config_save(*config_paired, CONFIG_FILE_PATH);
-  /*// Save hash
-  std::string current_hash = hash_file(CONFIG_FILE_PATH);
-  if (!current_hash.empty()) {
-    write_checksum_file(CONFIG_FILE_CHECKSUM_PATH, current_hash);
-  }*/
 }
 
 static void btif_config_remove_unpaired(config_t* conf) {
@@ -746,65 +693,5 @@ static bool is_factory_reset(void) {
 static void delete_config_files(void) {
   remove(CONFIG_FILE_PATH);
   remove(CONFIG_BACKUP_PATH);
-  // remove(CONFIG_FILE_CHECKSUM_PATH);
-  // remove(CONFIG_BACKUP_CHECKSUM_PATH);
   osi_property_set("persist.bluetooth.factoryreset", "false");
 }
-
-/*static std::string hash_file(const char* filename) {
-  if (!use_key_attestation()) {
-    LOG(INFO) << __func__ << ": Disabled for multi-user";
-    return DISABLED;
-  }
-  FILE* fp = fopen(filename, "rb");
-  if (!fp) {
-    LOG(ERROR) << __func__ << ": unable to open config file: '" << filename
-               << "': " << strerror(errno);
-    return "";
-  }
-  uint8_t hash[SHA256_DIGEST_LENGTH];
-  SHA256_CTX sha256;
-  SHA256_Init(&sha256);
-  std::array<std::byte, kBufferSize> buffer;
-  int bytes_read = 0;
-  while ((bytes_read = fread(buffer.data(), 1, buffer.size(), fp))) {
-    SHA256_Update(&sha256, buffer.data(), bytes_read);
-  }
-  SHA256_Final(hash, &sha256);
-  std::stringstream ss;
-  for (int i = 0; i < SHA256_DIGEST_LENGTH; i++) {
-    ss << std::hex << std::setw(2) << std::setfill('0') << (int)hash[i];
-  }
-  fclose(fp);
-  return ss.str();
-}
-
-static std::string read_checksum_file(const char* checksum_filename) {
-  if (!use_key_attestation()) {
-    LOG(INFO) << __func__ << ": Disabled for multi-user";
-    return DISABLED;
-  }
-  std::string encrypted_hash = checksum_read(checksum_filename);
-  if (encrypted_hash.empty()) {
-    LOG(INFO) << __func__ << ": read empty hash.";
-    return "";
-  }
-  return btif_keystore.Decrypt(encrypted_hash);
-}
-
-static void write_checksum_file(const char* checksum_filename,
-                                const std::string& hash) {
-  if (!use_key_attestation()) {
-    LOG(INFO) << __func__
-              << ": Disabled for multi-user, since config changed removing "
-                 "checksums.";
-    remove(CONFIG_FILE_CHECKSUM_PATH);
-    remove(CONFIG_BACKUP_CHECKSUM_PATH);
-    return;
-  }
-  std::string encrypted_checksum = btif_keystore.Encrypt(hash, 0);
-  CHECK(!encrypted_checksum.empty())
-      << __func__ << ": Failed encrypting checksum";
-  CHECK(checksum_save(encrypted_checksum, checksum_filename))
-      << __func__ << ": Failed to save checksum!";
-}*/
