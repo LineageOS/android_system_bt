@@ -17,22 +17,16 @@
 #include "hci/hci_layer.h"
 
 #include "common/bind.h"
-#include "common/callback.h"
 #include "os/alarm.h"
 #include "os/queue.h"
 #include "packet/packet_builder.h"
 
 namespace bluetooth {
 namespace hci {
-using bluetooth::common::Bind;
 using bluetooth::common::BindOn;
 using bluetooth::common::BindOnce;
-using bluetooth::common::Callback;
-using bluetooth::common::Closure;
 using bluetooth::common::ContextualCallback;
 using bluetooth::common::ContextualOnceCallback;
-using bluetooth::common::OnceCallback;
-using bluetooth::common::OnceClosure;
 using bluetooth::hci::CommandCompleteView;
 using bluetooth::hci::CommandPacketBuilder;
 using bluetooth::hci::CommandStatusView;
@@ -89,22 +83,6 @@ class CommandQueueEntry {
   }
 };
 
-template <typename T>
-class CommandInterfaceImpl : public CommandInterface<T> {
- public:
-  explicit CommandInterfaceImpl(HciLayer& hci) : hci_(hci) {}
-  ~CommandInterfaceImpl() override = default;
-
-  void EnqueueCommand(unique_ptr<T> command, ContextualOnceCallback<void(CommandCompleteView)> on_complete) override {
-    hci_.EnqueueCommand(move(command), move(on_complete));
-  }
-
-  void EnqueueCommand(unique_ptr<T> command, ContextualOnceCallback<void(CommandStatusView)> on_status) override {
-    hci_.EnqueueCommand(move(command), move(on_status));
-  }
-  HciLayer& hci_;
-};
-
 struct HciLayer::impl {
   impl(hal::HciHal* hal, HciLayer& module) : hal_(hal), module_(module) {
     hci_timeout_alarm_ = new Alarm(module.GetHandler());
@@ -124,6 +102,12 @@ struct HciLayer::impl {
     BitInserter bi(bytes);
     packet->Serialize(bi);
     hal_->sendAclData(bytes);
+  }
+
+  template <typename TResponse>
+  void enqueue_command(unique_ptr<CommandPacketBuilder> command, ContextualOnceCallback<void(TResponse)> on_response) {
+    command_queue_.emplace_back(move(command), move(on_response));
+    send_next_command();
   }
 
   void on_command_status(EventPacketView event) {
@@ -157,31 +141,6 @@ struct HciLayer::impl {
     command_queue_.pop_front();
     waiting_command_ = OpCode::NONE;
     hci_timeout_alarm_->Cancel();
-    send_next_command();
-  }
-
-  void on_le_meta_event(EventPacketView event) {
-    LeMetaEventView meta_event_view = LeMetaEventView::Create(event);
-    ASSERT(meta_event_view.IsValid());
-    SubeventCode subevent_code = meta_event_view.GetSubeventCode();
-    ASSERT_LOG(subevent_handlers_.find(subevent_code) != subevent_handlers_.end(),
-               "Unhandled le event of type 0x%02hhx (%s)", subevent_code, SubeventCodeText(subevent_code).c_str());
-    subevent_handlers_[subevent_code].Invoke(meta_event_view);
-  }
-
-  void on_hci_event(EventPacketView event) {
-    ASSERT(event.IsValid());
-    EventCode event_code = event.GetEventCode();
-    if (event_handlers_.find(event_code) == event_handlers_.end()) {
-      LOG_DEBUG("Dropping unregistered event of type 0x%02hhx (%s)", event_code, EventCodeText(event_code).c_str());
-      return;
-    }
-    event_handlers_[event_code].Invoke(event);
-  }
-
-  template <typename TResponse>
-  void enqueue_command(unique_ptr<CommandPacketBuilder> command, ContextualOnceCallback<void(TResponse)> on_response) {
-    command_queue_.emplace_back(move(command), move(on_response));
     send_next_command();
   }
 
@@ -228,16 +187,27 @@ struct HciLayer::impl {
     subevent_handlers_.erase(subevent_handlers_.find(event));
   }
 
+  void on_hci_event(EventPacketView event) {
+    ASSERT(event.IsValid());
+    EventCode event_code = event.GetEventCode();
+    if (event_handlers_.find(event_code) == event_handlers_.end()) {
+      LOG_DEBUG("Dropping unregistered event of type 0x%02hhx (%s)", event_code, EventCodeText(event_code).c_str());
+      return;
+    }
+    event_handlers_[event_code].Invoke(event);
+  }
+
+  void on_le_meta_event(EventPacketView event) {
+    LeMetaEventView meta_event_view = LeMetaEventView::Create(event);
+    ASSERT(meta_event_view.IsValid());
+    SubeventCode subevent_code = meta_event_view.GetSubeventCode();
+    ASSERT_LOG(subevent_handlers_.find(subevent_code) != subevent_handlers_.end(),
+               "Unhandled le event of type 0x%02hhx (%s)", subevent_code, SubeventCodeText(subevent_code).c_str());
+    subevent_handlers_[subevent_code].Invoke(meta_event_view);
+  }
+
   hal::HciHal* hal_;
   HciLayer& module_;
-
-  // Interfaces
-  CommandInterfaceImpl<ConnectionManagementCommandBuilder> acl_connection_manager_interface_{module_};
-  CommandInterfaceImpl<LeConnectionManagementCommandBuilder> le_acl_connection_manager_interface_{module_};
-  CommandInterfaceImpl<SecurityCommandBuilder> security_interface{module_};
-  CommandInterfaceImpl<LeSecurityCommandBuilder> le_security_interface{module_};
-  CommandInterfaceImpl<LeAdvertisingCommandBuilder> le_advertising_interface{module_};
-  CommandInterfaceImpl<LeScanningCommandBuilder> le_scanning_interface{module_};
 
   // Command Handling
   std::list<CommandQueueEntry> command_queue_;
@@ -281,18 +251,18 @@ HciLayer::HciLayer() : impl_(nullptr), hal_callbacks_(nullptr) {}
 HciLayer::~HciLayer() {
 }
 
+common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* HciLayer::GetAclQueueEnd() {
+  return impl_->acl_queue_.GetUpEnd();
+}
+
 void HciLayer::EnqueueCommand(unique_ptr<CommandPacketBuilder> command,
-                              common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) {
+                              ContextualOnceCallback<void(CommandCompleteView)> on_complete) {
   CallOn(impl_, &impl::enqueue_command<CommandCompleteView>, move(command), move(on_complete));
 }
 
 void HciLayer::EnqueueCommand(unique_ptr<CommandPacketBuilder> command,
-                              common::ContextualOnceCallback<void(CommandStatusView)> on_status) {
+                              ContextualOnceCallback<void(CommandStatusView)> on_status) {
   CallOn(impl_, &impl::enqueue_command<CommandStatusView>, move(command), move(on_status));
-}
-
-common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* HciLayer::GetAclQueueEnd() {
-  return impl_->acl_queue_.GetUpEnd();
 }
 
 void HciLayer::RegisterEventHandler(EventCode event, ContextualCallback<void(EventPacketView)> handler) {
@@ -317,7 +287,7 @@ AclConnectionInterface* HciLayer::GetAclConnectionInterface(
   for (const auto event : AclConnectionEvents) {
     RegisterEventHandler(event, event_handler);
   }
-  return &impl_->acl_connection_manager_interface_;
+  return &acl_connection_manager_interface_;
 }
 
 LeAclConnectionInterface* HciLayer::GetLeAclConnectionInterface(
@@ -326,35 +296,35 @@ LeAclConnectionInterface* HciLayer::GetLeAclConnectionInterface(
   for (const auto event : LeConnectionManagementEvents) {
     RegisterLeEventHandler(event, event_handler);
   }
-  return &impl_->le_acl_connection_manager_interface_;
+  return &le_acl_connection_manager_interface_;
 }
 
 SecurityInterface* HciLayer::GetSecurityInterface(ContextualCallback<void(EventPacketView)> event_handler) {
   for (const auto event : SecurityEvents) {
     RegisterEventHandler(event, event_handler);
   }
-  return &impl_->security_interface;
+  return &security_interface;
 }
 
 LeSecurityInterface* HciLayer::GetLeSecurityInterface(ContextualCallback<void(LeMetaEventView)> event_handler) {
   for (const auto subevent : LeSecurityEvents) {
     RegisterLeEventHandler(subevent, event_handler);
   }
-  return &impl_->le_security_interface;
+  return &le_security_interface;
 }
 
 LeAdvertisingInterface* HciLayer::GetLeAdvertisingInterface(ContextualCallback<void(LeMetaEventView)> event_handler) {
   for (const auto subevent : LeAdvertisingEvents) {
     RegisterLeEventHandler(subevent, event_handler);
   }
-  return &impl_->le_advertising_interface;
+  return &le_advertising_interface;
 }
 
 LeScanningInterface* HciLayer::GetLeScanningInterface(ContextualCallback<void(LeMetaEventView)> event_handler) {
   for (const auto subevent : LeScanningEvents) {
     RegisterLeEventHandler(subevent, event_handler);
   }
-  return &impl_->le_scanning_interface;
+  return &le_scanning_interface;
 }
 
 const ModuleFactory HciLayer::Factory = ModuleFactory([]() { return new HciLayer(); });
