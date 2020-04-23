@@ -167,6 +167,7 @@ struct ErtmController::impl {
       send_rr_or_rnr(Poll::POLL);
       start_monitor_timer();
     } else if (tx_state_ == TxState::WAIT_F) {
+      LOG_INFO("Close channel because max transmit reached");
       CloseChannel();
     }
   }
@@ -636,6 +637,7 @@ struct ErtmController::impl {
 
   void send_rnr(Final f) {
     _send_s_frame(SupervisoryFunction::RECEIVER_NOT_READY, expected_tx_seq_, Poll::NOT_SET, f);
+    rnr_sent_ = true;
   }
 
   void send_rej(Poll p = Poll::NOT_SET, Final f = Final::NOT_SET) {
@@ -723,7 +725,7 @@ struct ErtmController::impl {
   }
 
   void store_or_ignore() {
-    // We choose to ignore. We don't support local busy so far.
+    // We choose to ignore.
   }
 
   bool p_bit_outstanding() {
@@ -947,6 +949,8 @@ std::unique_ptr<packet::BasePacketBuilder> ErtmController::GetNextPacket() {
 
 void ErtmController::stage_for_reassembly(SegmentationAndReassembly sar, uint16_t sdu_size,
                                           const packet::PacketView<kLittleEndian>& payload) {
+  // If EnqueueBuffer has more than 1 packets, we claim LocalBusy, until queue is empty
+  constexpr size_t kEnqueueBufferBusyThreshold = 2;
   switch (sar) {
     case SegmentationAndReassembly::UNSEGMENTED:
       if (sar_state_ != SegmentationAndReassembly::END) {
@@ -956,6 +960,10 @@ void ErtmController::stage_for_reassembly(SegmentationAndReassembly sar, uint16_
       }
       // TODO: Enforce MTU
       enqueue_buffer_.Enqueue(std::make_unique<packet::PacketView<kLittleEndian>>(payload), handler_);
+      if (enqueue_buffer_.Size() == kEnqueueBufferBusyThreshold) {
+        pimpl_->local_busy_detected();
+        enqueue_buffer_.NotifyOnEmpty(common::BindOnce(&impl::local_busy_clear, common::Unretained(pimpl_.get())));
+      }
       break;
     case SegmentationAndReassembly::START:
       if (sar_state_ != SegmentationAndReassembly::END) {
@@ -994,6 +1002,10 @@ void ErtmController::stage_for_reassembly(SegmentationAndReassembly sar, uint16_
       }
       reassembly_stage_.AppendPacketView(payload);
       enqueue_buffer_.Enqueue(std::make_unique<packet::PacketView<kLittleEndian>>(reassembly_stage_), handler_);
+      if (enqueue_buffer_.Size() == kEnqueueBufferBusyThreshold) {
+        pimpl_->local_busy_detected();
+        enqueue_buffer_.NotifyOnEmpty(common::BindOnce(&impl::local_busy_clear, common::Unretained(pimpl_.get())));
+      }
       break;
   }
 }
