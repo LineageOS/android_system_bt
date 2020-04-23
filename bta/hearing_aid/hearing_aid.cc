@@ -921,9 +921,6 @@ class HearingAidImpl : public HearingAid {
     }
 
     if (hearingDevice->first_connection) {
-      /* add device into BG connection to accept remote initiated connection */
-      BTA_GATTC_Open(gatt_if, address, false, GATT_TRANSPORT_LE, false);
-
       btif_storage_add_hearing_aid(*hearingDevice);
 
       hearingDevice->first_connection = false;
@@ -1507,7 +1504,10 @@ class HearingAidImpl : public HearingAid {
 
     DoDisconnectCleanUp(hearingDevice);
 
-    // Keep this hearing aid in the list, and allow to reconnect back.
+    // This is needed just for the first connection. After stack is restarted,
+    // code that loads device will add them to whitelist.
+    BTA_GATTC_Open(gatt_if, hearingDevice->address, false, GATT_TRANSPORT_LE,
+                   false);
 
     callbacks->OnConnectionState(ConnectionState::DISCONNECTED, remote_bda);
 
