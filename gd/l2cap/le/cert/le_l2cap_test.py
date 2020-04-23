@@ -518,6 +518,48 @@ class LeL2capTest(GdBaseTestClass):
             LeCreditBasedConnectionResponseResult.INSUFFICIENT_AUTHORIZATION)
 
     @metadata(
+        pts_test_id="L2CAP/LE/CFC/BV-14-C",
+        pts_test_name="Security - Insufficient Key Size – Initiator")
+    def test_security_insufficient_authorization_initiator(self):
+        """
+        Verify that the IUT does not establish the channel upon receipt of an
+        LE Credit Based Connection Response indicating the connection was
+        refused with Result "0x0007 – Connection Refused – Insufficient
+        Encryption Key Size".
+        """
+        self._setup_link_from_cert()
+        response_future = self.dut_l2cap.connect_coc_to_cert(
+            self.cert_address, psm=0x33)
+        self.cert_l2cap.verify_and_respond_open_channel_from_remote(
+            psm=0x33,
+            result=LeCreditBasedConnectionResponseResult.
+            INSUFFICIENT_ENCRYPTION_KEY_SIZE)
+        assertThat(response_future.get_status()).isEqualTo(
+            LeCreditBasedConnectionResponseResult.
+            INSUFFICIENT_ENCRYPTION_KEY_SIZE)
+
+    @metadata(
+        pts_test_id="L2CAP/LE/CFC/BV-16-C",
+        pts_test_name=
+        "LE Credit Based Connection Request - refuse due to insufficient resources - Initiator"
+    )
+    def test_le_connection_request_insufficient_resources_initiator(self):
+        """
+        Verify that an IUT sending an LE Credit Based Connection Request does
+        not establish the channel upon receiving an LE Credit Based Connection
+        Response refusing the connection with result "0x0004 – Connection
+        refused – no resources available".
+        """
+        self._setup_link_from_cert()
+        response_future = self.dut_l2cap.connect_coc_to_cert(
+            self.cert_address, psm=0x33)
+        self.cert_l2cap.verify_and_respond_open_channel_from_remote(
+            psm=0x33,
+            result=LeCreditBasedConnectionResponseResult.NO_RESOURCES_AVAILABLE)
+        assertThat(response_future.get_status()).isEqualTo(
+            LeCreditBasedConnectionResponseResult.NO_RESOURCES_AVAILABLE)
+
+    @metadata(
         pts_test_id="L2CAP/LE/CFC/BV-18-C",
         pts_test_name=
         "LE Credit Based Connection Request - refused due to Invalid Source CID - Initiator"
