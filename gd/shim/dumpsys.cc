@@ -103,7 +103,7 @@ void Dumpsys::impl::UnregisterDumpsysFunction(const void* token) {
 void Dumpsys::Dump(int fd, const char** args) {
   std::promise<void> promise;
   auto future = promise.get_future();
-  GetHandler()->BindOnceOn(pimpl_.get(), &Dumpsys::impl::DumpWithArgs, fd, args, std::move(promise));
+  CallOn(pimpl_.get(), &Dumpsys::impl::DumpWithArgs, fd, args, std::move(promise));
   future.get();
 }
 
