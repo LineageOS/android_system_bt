@@ -57,6 +57,12 @@ class FilteringEventStream(IEventStream):
         self.stream.unregister(self.__event_callback)
 
 
+def pretty_print(proto_event):
+    return '{} {}'.format(
+        type(proto_event).__name__,
+        text_format.MessageToString(proto_event, as_one_line=True))
+
+
 DEFAULT_TIMEOUT_SECONDS = 3
 
 
@@ -337,8 +343,7 @@ def NOT_FOR_YOU_assert_none_matching(
         return  # Avoid an assert in MessageToString(None, ...)
     asserts.assert_true(
         event is None,
-        msg=("Expected None matching, but got %s" % text_format.MessageToString(
-            event, as_one_line=True)))
+        msg='Expected None matching, but got {}'.format(pretty_print(event)))
 
 
 def NOT_FOR_YOU_assert_none(istream,
@@ -348,7 +353,6 @@ def NOT_FOR_YOU_assert_none(istream,
         event = istream.get_event_queue().get(timeout=timeout.total_seconds())
         asserts.assert_true(
             event is None,
-            msg=("Expected None, but got %s" % text_format.MessageToString(
-                event, as_one_line=True)))
+            msg='Expected None, but got {}'.format(pretty_print(event)))
     except Empty:
         return
