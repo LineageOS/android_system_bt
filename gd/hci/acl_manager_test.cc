@@ -727,7 +727,7 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_disconnect) {
   fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
 }
 
-TEST_F(AclManagerTest, invoke_registered_callback_le_disconnect_data_race) {
+TEST_F(AclManagerTest, DISABLED_invoke_registered_callback_le_disconnect_data_race) {
   AddressWithType remote_with_type(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
   test_hci_layer_->SetCommandFuture();
   acl_manager_->CreateLeConnection(remote_with_type);
