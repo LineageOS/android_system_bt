@@ -56,6 +56,42 @@ class HciMatchers(object):
             return None
         return hci_event
 
+    @staticmethod
+    def LinkKeyRequest():
+        return lambda event: HciMatchers.EventWithCode(EventCode.LINK_KEY_REQUEST)
+
+    @staticmethod
+    def IoCapabilityRequest():
+        return lambda event: HciMatchers.EventWithCode(EventCode.IO_CAPABILITY_REQUEST)
+
+    @staticmethod
+    def IoCapabilityResponse():
+        return lambda event: HciMatchers.EventWithCode(EventCode.IO_CAPABILITY_RESPONSE)
+
+    @staticmethod
+    def UserPasskeyNotification():
+        return lambda event: HciMatchers.EventWithCode(EventCode.USER_PASSKEY_NOTIFICATION)
+
+    @staticmethod
+    def UserPasskeyRequest():
+        return lambda event: HciMatchers.EventWithCode(EventCode.USER_PASSKEY_REQUEST)
+
+    @staticmethod
+    def UserConfirmationRequest():
+        return lambda event: HciMatchers.EventWithCode(EventCode.USER_CONFIRMATION_REQUEST)
+
+    @staticmethod
+    def RemoteHostSupportedFeaturesNotification():
+        return lambda event: HciMatchers.EventWithCode(EventCode.REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION)
+
+    @staticmethod
+    def LinkKeyNotification():
+        return lambda event: HciMatchers.EventWithCode(EventCode.LINK_KEY_NOTIFICATION)
+
+    @staticmethod
+    def SimplePairingComplete():
+        return lambda event: HciMatchers.EventWithCode(EventCode.SIMPLE_PAIRING_COMPLETE)
+
 
 class NeighborMatchers(object):
 
