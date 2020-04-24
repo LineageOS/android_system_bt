@@ -17,6 +17,11 @@ service L2capClassicModuleFacade {
   rpc FetchL2capData(google.protobuf.Empty) returns (stream L2capPacket) {}
   rpc SetDynamicChannel(SetEnableDynamicChannelRequest) returns (google.protobuf.Empty) {}
   rpc SendDynamicChannelPacket(DynamicChannelPacket) returns (google.protobuf.Empty) {}
+  rpc SetTrafficPaused(SetTrafficPausedRequest) returns (google.protobuf.Empty) {}
+  rpc GetChannelQueueDepth(google.protobuf.Empty) returns (GetChannelQueueDepthResponse) {
+    // Get the buffer size of channel queue end for L2CAP user (how many packets we can buffer
+    // before L2CAP user dequeues.
+  }
 }
 
 message RegisterChannelRequest {
@@ -86,4 +91,13 @@ message DynamicChannelPacket {
   facade.BluetoothAddress remote = 1;
   uint32 psm = 2;
   bytes payload = 3;
+}
+
+message SetTrafficPausedRequest {
+  bool paused = 1;
+  uint32 psm = 2;
+}
+
+message GetChannelQueueDepthResponse {
+  uint32 size = 1;
 }
