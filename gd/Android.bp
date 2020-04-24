@@ -215,12 +215,14 @@ cc_binary {
     static_libs: [
         "libbluetooth_gd",
         "libbluetooth-protos",
+        "breakpad_client",
     ],
     shared_libs: [
         "libchrome",
         "libcrypto",
         "libgrpc++_unsecure",
         "libprotobuf-cpp-full",
+        "libbacktrace",
     ],
     target: {
         android: {
