@@ -25,7 +25,11 @@ LOCAL_host_libraries := \
 	$(HOST_OUT_SHARED_LIBRARIES)/libgrpc++_unsecure.so \
 	$(HOST_OUT_SHARED_LIBRARIES)/liblog.so \
 	$(HOST_OUT_SHARED_LIBRARIES)/libz-host.so \
-	$(HOST_OUT_SHARED_LIBRARIES)/libprotobuf-cpp-full.so
+	$(HOST_OUT_SHARED_LIBRARIES)/libprotobuf-cpp-full.so \
+	$(HOST_OUT_SHARED_LIBRARIES)/libunwindstack.so \
+	$(HOST_OUT_SHARED_LIBRARIES)/libdexfile_support.so \
+	$(HOST_OUT_SHARED_LIBRARIES)/liblzma.so \
+	$(HOST_OUT_SHARED_LIBRARIES)/libbacktrace.so
 
 LOCAL_target_executables := \
 	$(TARGET_OUT_EXECUTABLES)/bluetooth_stack_with_facade
