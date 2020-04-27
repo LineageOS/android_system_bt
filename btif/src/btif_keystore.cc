@@ -23,6 +23,7 @@
 #include <base/location.h>
 #include <base/logging.h>
 #include <hardware/bluetooth.h>
+#include <map>
 
 using base::Bind;
 using base::Unretained;
@@ -40,18 +41,21 @@ class BluetoothKeystoreInterfaceImpl
   ~BluetoothKeystoreInterfaceImpl() override = default;
 
   void init(BluetoothKeystoreCallbacks* callbacks) override {
-    DVLOG(2) << __func__;
+    VLOG(2) << __func__;
     this->callbacks = callbacks;
   }
 
   void set_encrypt_key_or_remove_key(std::string prefix,
                                      std::string decryptedString) override {
-    DVLOG(2) << __func__ << " prefix: " << prefix;
+    VLOG(2) << __func__ << " prefix: " << prefix;
 
     if (!callbacks) {
       LOG(WARNING) << __func__ << " callback isn't ready. prefix: " << prefix;
       return;
     }
+
+    // Save the value into a map.
+    key_map[prefix] = decryptedString;
 
     do_in_jni_thread(
         base::Bind(&bluetooth::bluetooth_keystore::BluetoothKeystoreCallbacks::
@@ -60,18 +64,38 @@ class BluetoothKeystoreInterfaceImpl
   }
 
   std::string get_key(std::string prefix) override {
-    DVLOG(2) << __func__ << " prefix: " << prefix;
+    VLOG(2) << __func__ << " prefix: " << prefix;
 
     if (!callbacks) {
       LOG(WARNING) << __func__ << " callback isn't ready. prefix: " << prefix;
       return "";
     }
 
-    return callbacks->get_key(prefix);
+    std::string decryptedString;
+    // try to find the key.
+    std::map<std::string, std::string>::iterator iter = key_map.find(prefix);
+    if (iter == key_map.end()) {
+      decryptedString = callbacks->get_key(prefix);
+      // Save the value into a map.
+      key_map[prefix] = decryptedString;
+      VLOG(2) << __func__ << ": get key from bluetoothkeystore.";
+    } else {
+      decryptedString = iter->second;
+    }
+    return decryptedString;
+  }
+
+  void clear_map() override {
+    VLOG(2) << __func__;
+
+    std::map<std::string, std::string> empty_map;
+    key_map.swap(empty_map);
+    key_map.clear();
   }
 
  private:
   BluetoothKeystoreCallbacks* callbacks = nullptr;
+  std::map<std::string, std::string> key_map;
 };
 
 BluetoothKeystoreInterface* getBluetoothKeystoreInterface() {
