@@ -70,9 +70,9 @@ class Link : public l2cap::internal::ILink, public hci::LeConnectionManagementCa
 
   // ACL methods
 
-  virtual void OnAclDisconnected(hci::ErrorCode status);
+  virtual void OnAclDisconnected(hci::ErrorCode reason);
 
-  void OnDisconnection(hci::ErrorCode status) override;
+  void OnDisconnection(hci::ErrorCode reason) override;
 
   void OnConnectionUpdate(uint16_t connection_interval, uint16_t connection_latency,
                           uint16_t supervision_timeout) override;
