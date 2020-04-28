@@ -26,7 +26,9 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
+TEST_NAME=bluetooth_gd_${1}_fuzz_test
+
 if [ "$HOST" == true ] ; then
   HOST_ARCH=$($ANDROID_BUILD_TOP/build/soong/soong_ui.bash --dumpvar-mode HOST_ARCH)
-  SANITIZE_HOST=address $ANDROID_BUILD_TOP/build/soong/soong_ui.bash --build-mode --"all-modules" --dir="$(pwd)" $1 && ${ANDROID_HOST_OUT}/fuzz/$HOST_ARCH/$1/$1 $2
+  SANITIZE_HOST=address $ANDROID_BUILD_TOP/build/soong/soong_ui.bash --build-mode --"all-modules" --dir="$(pwd)" $TEST_NAME && ${ANDROID_HOST_OUT}/fuzz/$HOST_ARCH/$TEST_NAME/$TEST_NAME $2
 fi
