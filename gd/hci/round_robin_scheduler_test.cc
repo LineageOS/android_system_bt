@@ -15,9 +15,12 @@
  */
 
 #include "hci/round_robin_scheduler.h"
+
 #include <gtest/gtest.h>
+
 #include "common/bidi_queue.h"
 #include "common/callback.h"
+#include "hci/acl_manager.h"
 #include "hci/controller.h"
 #include "hci/hci_packets.h"
 #include "os/handler.h"
@@ -172,20 +175,18 @@ TEST_F(RoundRobinSchedulerTest, startup_teardown) {}
 
 TEST_F(RoundRobinSchedulerTest, register_unregister_connection) {
   uint16_t handle = 0x01;
-  BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder> connection_queue{10};
-  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle, connection_queue.GetDownEnd());
+  auto connection_queue = std::make_shared<AclConnection::Queue>(10);
+  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle, connection_queue);
   round_robin_scheduler_->Unregister(handle);
 }
 
 TEST_F(RoundRobinSchedulerTest, buffer_packet) {
   uint16_t handle = 0x01;
-  BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder> connection_queue{10};
-
-  AclConnection::QueueDownEnd* queue_down_end = connection_queue.GetDownEnd();
-  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle, queue_down_end);
+  auto connection_queue = std::make_shared<AclConnection::Queue>(10);
+  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle, connection_queue);
 
   SetPacketFuture(2);
-  AclConnection::QueueUpEnd* queue_up_end = connection_queue.GetUpEnd();
+  AclConnection::QueueUpEnd* queue_up_end = connection_queue->GetUpEnd();
   std::vector<uint8_t> packet1 = {0x01, 0x02, 0x03};
   std::vector<uint8_t> packet2 = {0x04, 0x05, 0x06};
   EnqueueAclUpEnd(queue_up_end, packet1);
@@ -202,17 +203,15 @@ TEST_F(RoundRobinSchedulerTest, buffer_packet) {
 TEST_F(RoundRobinSchedulerTest, buffer_packet_from_two_connections) {
   uint16_t handle = 0x01;
   uint16_t le_handle = 0x02;
-  BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder> connection_queue{10};
-  BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder> le_connection_queue{10};
+  auto connection_queue = std::make_shared<AclConnection::Queue>(10);
+  auto le_connection_queue = std::make_shared<AclConnection::Queue>(10);
 
-  AclConnection::QueueDownEnd* queue_down_end = connection_queue.GetDownEnd();
-  AclConnection::QueueDownEnd* le_queue_down_end = le_connection_queue.GetDownEnd();
-  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle, queue_down_end);
-  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::LE, le_handle, le_queue_down_end);
+  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle, connection_queue);
+  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::LE, le_handle, le_connection_queue);
 
   SetPacketFuture(2);
-  AclConnection::QueueUpEnd* queue_up_end = connection_queue.GetUpEnd();
-  AclConnection::QueueUpEnd* le_queue_up_end = le_connection_queue.GetUpEnd();
+  AclConnection::QueueUpEnd* queue_up_end = connection_queue->GetUpEnd();
+  AclConnection::QueueUpEnd* le_queue_up_end = le_connection_queue->GetUpEnd();
   std::vector<uint8_t> packet = {0x01, 0x02, 0x03};
   std::vector<uint8_t> le_packet = {0x04, 0x05, 0x06};
   EnqueueAclUpEnd(le_queue_up_end, le_packet);
@@ -230,12 +229,11 @@ TEST_F(RoundRobinSchedulerTest, buffer_packet_from_two_connections) {
 
 TEST_F(RoundRobinSchedulerTest, do_not_register_when_credits_is_zero) {
   uint16_t handle = 0x01;
-  BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder> connection_queue{15};
-  AclConnection::QueueDownEnd* queue_down_end = connection_queue.GetDownEnd();
-  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle, queue_down_end);
+  auto connection_queue = std::make_shared<AclConnection::Queue>(15);
+  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle, connection_queue);
 
   SetPacketFuture(10);
-  AclConnection::QueueUpEnd* queue_up_end = connection_queue.GetUpEnd();
+  AclConnection::QueueUpEnd* queue_up_end = connection_queue->GetUpEnd();
   for (uint8_t i = 0; i < 15; i++) {
     std::vector<uint8_t> packet = {0x01, 0x02, 0x03, i};
     EnqueueAclUpEnd(queue_up_end, packet);
@@ -273,25 +271,21 @@ TEST_F(RoundRobinSchedulerTest, buffer_packet_intervally) {
   uint16_t handle2 = 0x02;
   uint16_t le_handle1 = 0x03;
   uint16_t le_handle2 = 0x04;
-  BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder> connection_queue1{10};
-  BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder> connection_queue2{10};
-  BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder> le_connection_queue1{10};
-  BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder> le_connection_queue2{10};
-  AclConnection::QueueDownEnd* queue_down_end1 = connection_queue1.GetDownEnd();
-  AclConnection::QueueDownEnd* queue_down_end2 = connection_queue2.GetDownEnd();
-  AclConnection::QueueDownEnd* le_queue_down_end1 = le_connection_queue1.GetDownEnd();
-  AclConnection::QueueDownEnd* le_queue_down_end2 = le_connection_queue2.GetDownEnd();
+  auto connection_queue1 = std::make_shared<AclConnection::Queue>(10);
+  auto connection_queue2 = std::make_shared<AclConnection::Queue>(10);
+  auto le_connection_queue1 = std::make_shared<AclConnection::Queue>(10);
+  auto le_connection_queue2 = std::make_shared<AclConnection::Queue>(10);
 
   SetPacketFuture(18);
-  AclConnection::QueueUpEnd* queue_up_end1 = connection_queue1.GetUpEnd();
-  AclConnection::QueueUpEnd* queue_up_end2 = connection_queue2.GetUpEnd();
-  AclConnection::QueueUpEnd* le_queue_up_end1 = le_connection_queue1.GetUpEnd();
-  AclConnection::QueueUpEnd* le_queue_up_end2 = le_connection_queue2.GetUpEnd();
+  AclConnection::QueueUpEnd* queue_up_end1 = connection_queue1->GetUpEnd();
+  AclConnection::QueueUpEnd* queue_up_end2 = connection_queue2->GetUpEnd();
+  AclConnection::QueueUpEnd* le_queue_up_end1 = le_connection_queue1->GetUpEnd();
+  AclConnection::QueueUpEnd* le_queue_up_end2 = le_connection_queue2->GetUpEnd();
 
-  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle1, queue_down_end1);
-  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle2, queue_down_end2);
-  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::LE, le_handle1, le_queue_down_end1);
-  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::LE, le_handle2, le_queue_down_end2);
+  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle1, connection_queue1);
+  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle2, connection_queue2);
+  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::LE, le_handle1, le_connection_queue1);
+  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::LE, le_handle2, le_connection_queue2);
 
   std::vector<uint8_t> packet = {0x01, 0x02, 0x03};
   EnqueueAclUpEnd(queue_up_end1, packet);
@@ -333,17 +327,15 @@ TEST_F(RoundRobinSchedulerTest, buffer_packet_intervally) {
 TEST_F(RoundRobinSchedulerTest, send_fragments_without_interval) {
   uint16_t handle = 0x01;
   uint16_t le_handle = 0x02;
-  BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder> connection_queue{10};
-  BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder> le_connection_queue{10};
+  auto connection_queue = std::make_shared<AclConnection::Queue>(10);
+  auto le_connection_queue = std::make_shared<AclConnection::Queue>(10);
 
-  AclConnection::QueueDownEnd* queue_down_end = connection_queue.GetDownEnd();
-  AclConnection::QueueDownEnd* le_queue_down_end = le_connection_queue.GetDownEnd();
-  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle, queue_down_end);
-  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::LE, le_handle, le_queue_down_end);
+  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle, connection_queue);
+  round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::LE, le_handle, le_connection_queue);
 
   SetPacketFuture(5);
-  AclConnection::QueueUpEnd* queue_up_end = connection_queue.GetUpEnd();
-  AclConnection::QueueUpEnd* le_queue_up_end = le_connection_queue.GetUpEnd();
+  AclConnection::QueueUpEnd* queue_up_end = connection_queue->GetUpEnd();
+  AclConnection::QueueUpEnd* le_queue_up_end = le_connection_queue->GetUpEnd();
   std::vector<uint8_t> packet(controller_->hci_mtu_, 0xff);
   std::vector<uint8_t> packet_part1(controller_->hci_mtu_, 0xff);
   std::vector<uint8_t> packet_part2 = {0x03, 0x02, 0x01};
