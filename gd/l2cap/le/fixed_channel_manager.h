@@ -21,7 +21,7 @@
 #include "l2cap/cid.h"
 #include "l2cap/le/fixed_channel.h"
 #include "l2cap/le/fixed_channel_service.h"
-#include "l2cap/security_policy.h"
+#include "l2cap/le/security_policy.h"
 #include "os/handler.h"
 
 namespace bluetooth {
@@ -114,7 +114,7 @@ class FixedChannelManager {
    *   FixedChannelService object. The registered service can be managed from that object.
    * - If a CID is already registered or some other error happens, on_registration_complete will be triggered with a
    *   non-SUCCESS value
-   * - After a service is registered, any classic ACL connection will create a FixedChannel object that is
+   * - After a service is registered, any LE ACL connection will create a FixedChannel object that is
    *   delivered through on_open_callback
    * - on_open_callback, will only be triggered after on_service_registered callback
    *
