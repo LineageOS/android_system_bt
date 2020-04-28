@@ -21,6 +21,7 @@
 namespace bluetooth {
 namespace hal {
 namespace fuzz {
+using bluetooth::fuzz::GetArbitraryBytes;
 
 void FuzzHciHal::registerIncomingPacketCallback(HciHalCallbacks* callbacks) {
   callbacks_ = callbacks;
@@ -28,6 +29,21 @@ void FuzzHciHal::registerIncomingPacketCallback(HciHalCallbacks* callbacks) {
 
 void FuzzHciHal::unregisterIncomingPacketCallback() {
   callbacks_ = nullptr;
+}
+
+void FuzzHciHal::injectArbitrary(FuzzedDataProvider& fdp) {
+  const uint8_t action = fdp.ConsumeIntegralInRange(0, 3);
+  switch (action) {
+    case 1:
+      injectAclData(GetArbitraryBytes(&fdp));
+      break;
+    case 2:
+      injectHciEvent(GetArbitraryBytes(&fdp));
+      break;
+    case 3:
+      injectScoData(GetArbitraryBytes(&fdp));
+      break;
+  }
 }
 
 void FuzzHciHal::sendHciCommand(HciPacket packet) {

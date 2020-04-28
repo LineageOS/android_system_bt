@@ -21,6 +21,8 @@
 #include "os/fuzz/dev_null_queue.h"
 #include "os/fuzz/fuzz_inject_queue.h"
 
+#include <fuzzer/FuzzedDataProvider.h>
+
 namespace bluetooth {
 namespace hci {
 namespace fuzz {
@@ -75,7 +77,7 @@ class FuzzHciLayer : public HciLayer {
   hci::LeScanningInterface* GetLeScanningInterface(
       common::ContextualCallback<void(hci::LeMetaEventView)> event_handler) override;
 
-  void injectAclData(std::vector<uint8_t> data);
+  void injectArbitrary(FuzzedDataProvider& fdp);
 
   std::string ToString() const override {
     return "FuzzHciLayer";
@@ -89,6 +91,8 @@ class FuzzHciLayer : public HciLayer {
   void Stop() override;
 
  private:
+  void injectAclData(std::vector<uint8_t> data);
+
   common::BidiQueue<hci::AclPacketView, hci::AclPacketBuilder> acl_queue_{3};
   os::fuzz::DevNullQueue<AclPacketBuilder>* acl_dev_null_;
   os::fuzz::FuzzInjectQueue<AclPacketView>* acl_inject_;
