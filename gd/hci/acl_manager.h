@@ -35,8 +35,6 @@ class SecurityModule;
 
 namespace hci {
 
-class AclManager;
-
 class ConnectionManagementCallbacks {
  public:
   virtual ~ConnectionManagementCallbacks() = default;
@@ -88,6 +86,8 @@ class ConnectionManagementCallbacks {
   virtual void OnMasterLinkKeyComplete(KeyFlag key_flag) = 0;
   // Invoked when controller sends Role Change event
   virtual void OnRoleChange(Role new_role) = 0;
+  // Invoked when controller sends DisconnectComplete
+  virtual void OnDisconnection(ErrorCode reason) = 0;
 };
 
 class LeConnectionManagementCallbacks {
@@ -100,7 +100,7 @@ class LeConnectionManagementCallbacks {
 
 class AclConnection {
  public:
-  AclConnection() : manager_(nullptr), queue_up_end_(nullptr), handle_(0), role_(Role::MASTER){};
+  AclConnection() : queue_up_end_(nullptr), handle_(0), role_(Role::MASTER){};
   virtual ~AclConnection() = default;
 
   uint16_t GetHandle() const {
@@ -116,15 +116,9 @@ class AclConnection {
   using QueueDownEnd = common::BidiQueueEnd<PacketView<kLittleEndian>, BasePacketBuilder>;
   virtual QueueUpEnd* GetAclQueueEnd() const;
 
-  // Ask AclManager to clean me up. Must invoke after on_disconnect is called
-  virtual void Finish();
-
-  // TODO: API to change link settings ... ?
-
  protected:
-  AclConnection(const AclManager* acl_manager, QueueUpEnd* queue_up_end, uint16_t handle, Role role)
-      : manager_(acl_manager), queue_up_end_(queue_up_end), handle_(handle), role_(role) {}
-  const AclManager* manager_;
+  AclConnection(QueueUpEnd* queue_up_end, uint16_t handle, Role role)
+      : queue_up_end_(queue_up_end), handle_(handle), role_(role) {}
   QueueUpEnd* queue_up_end_;
   uint16_t handle_;
   Role role_;
@@ -133,15 +127,16 @@ class AclConnection {
 
 class ClassicAclConnection : public AclConnection {
  public:
-  ClassicAclConnection() : AclConnection(), acl_connection_interface_(nullptr), address_(Address::kEmpty) {}
+  ClassicAclConnection();
+  ClassicAclConnection(std::shared_ptr<Queue> queue, AclConnectionInterface* acl_connection_interface, uint16_t handle,
+                       Address address, Role role);
+  ~ClassicAclConnection() override;
 
   virtual Address GetAddress() const {
     return address_;
   }
 
   virtual void RegisterCallbacks(ConnectionManagementCallbacks* callbacks, os::Handler* handler);
-  virtual void UnregisterCallbacks(ConnectionManagementCallbacks* callbacks);
-  virtual void RegisterDisconnectCallback(common::OnceCallback<void(ErrorCode)> on_disconnect, os::Handler* handler);
   virtual bool Disconnect(DisconnectReason reason);
   virtual bool ChangeConnectionPacketType(uint16_t packet_type);
   virtual bool AuthenticationRequested();
@@ -176,22 +171,21 @@ class ClassicAclConnection : public AclConnection {
   virtual bool ReadRemoteSupportedFeatures();
   virtual bool ReadRemoteExtendedFeatures();
 
+  // Called once before passing the connection to the client
+  virtual ConnectionManagementCallbacks* GetEventCallbacks();
+
  private:
-  friend AclManager;
-  ClassicAclConnection(const AclManager* acl_manager, QueueUpEnd* queue_up_end,
-                       AclConnectionInterface* acl_connection_interface, uint16_t handle, Address address, Role role)
-      : AclConnection(acl_manager, queue_up_end, handle, Role::MASTER),
-        acl_connection_interface_(acl_connection_interface), address_(address) {}
   AclConnectionInterface* acl_connection_interface_;
   Address address_;
+  struct impl;
+  struct impl* pimpl_ = nullptr;
   DISALLOW_COPY_AND_ASSIGN(ClassicAclConnection);
 };
 
 class LeAclConnection : public AclConnection {
  public:
   LeAclConnection();
-  LeAclConnection(const AclManager* acl_manager, QueueUpEnd* queue_up_end,
-                  LeAclConnectionInterface* le_acl_connection_interface,
+  LeAclConnection(std::shared_ptr<Queue> queue, LeAclConnectionInterface* le_acl_connection_interface,
                   common::OnceCallback<void(DisconnectReason)> disconnect, uint16_t handle,
                   AddressWithType local_address, AddressWithType remote_address, Role role);
   ~LeAclConnection() override;
@@ -213,11 +207,9 @@ class LeAclConnection : public AclConnection {
   // Called once before passing the connection to the client
   virtual LeConnectionManagementCallbacks* GetEventCallbacks();
 
-  // TODO: API to change link settings ... ?
-
  private:
   struct impl;
-  struct impl* pimpl_{};
+  struct impl* pimpl_ = nullptr;
   AddressWithType local_address_;
   AddressWithType remote_address_;
   DISALLOW_COPY_AND_ASSIGN(LeAclConnection);
@@ -290,8 +282,6 @@ class AclManager : public Module {
   std::string ToString() const override;
 
  private:
-  friend AclConnection;
-  friend ClassicAclConnection;
   struct impl;
   std::unique_ptr<impl> pimpl_;
 
