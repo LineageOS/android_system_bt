@@ -33,6 +33,8 @@
 
 namespace bluetooth {
 namespace os {
+using common::Closure;
+using common::OnceClosure;
 
 Alarm::Alarm(Handler* handler) : handler_(handler), fd_(TIMERFD_CREATE(ALARM_CLOCK, 0)) {
   ASSERT_LOG(fd_ != -1, "cannot create timerfd: %s", strerror(errno));

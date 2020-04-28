@@ -38,6 +38,7 @@ constexpr uint64_t kWaitForIdle = 1 << 1;
 
 namespace bluetooth {
 namespace os {
+using common::Closure;
 
 class Reactor::Reactable {
  public:
