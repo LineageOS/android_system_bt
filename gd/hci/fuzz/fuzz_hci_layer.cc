@@ -23,10 +23,7 @@ namespace fuzz {
 
 using bluetooth::common::ContextualCallback;
 using bluetooth::fuzz::GetArbitraryBytes;
-
-common::BidiQueueEnd<hci::AclPacketBuilder, hci::AclPacketView>* FuzzHciLayer::GetAclQueueEnd() {
-  return acl_queue_.GetUpEnd();
-}
+using bluetooth::fuzz::InvokeIfValid;
 
 hci::SecurityInterface* FuzzHciLayer::GetSecurityInterface(
     ContextualCallback<void(hci::EventPacketView)> event_handler) {
@@ -73,21 +70,31 @@ void FuzzHciLayer::Stop() {
 }
 
 void FuzzHciLayer::injectArbitrary(FuzzedDataProvider& fdp) {
-  const uint8_t action = fdp.ConsumeIntegralInRange(0, 1);
+  const uint8_t action = fdp.ConsumeIntegralInRange(0, 3);
   switch (action) {
     case 1:
       injectAclData(GetArbitraryBytes(&fdp));
+      break;
+    case 2:
+      injectCommandComplete(GetArbitraryBytes(&fdp));
+      break;
+    case 3:
+      injectCommandStatus(GetArbitraryBytes(&fdp));
       break;
   }
 }
 
 void FuzzHciLayer::injectAclData(std::vector<uint8_t> data) {
-  hci::AclPacketView aclPacket = hci::AclPacketView::FromBytes(data);
-  if (!aclPacket.IsValid()) {
-    return;
-  }
+  CONSTRUCT_VALID_UNIQUE_OTHERWISE_BAIL(hci::AclPacketView, packet, data);
+  acl_inject_->Inject(std::move(packet));
+}
 
-  acl_inject_->Inject(std::make_unique<AclPacketView>(aclPacket));
+void FuzzHciLayer::injectCommandComplete(std::vector<uint8_t> data) {
+  InvokeIfValid<hci::CommandCompleteView>(std::move(on_command_complete), data);
+}
+
+void FuzzHciLayer::injectCommandStatus(std::vector<uint8_t> data) {
+  InvokeIfValid<hci::CommandStatusView>(std::move(on_command_status), data);
 }
 
 const ModuleFactory FuzzHciLayer::Factory = ModuleFactory([]() { return new FuzzHciLayer(); });

@@ -20,8 +20,10 @@
 #include "hci/hci_layer.h"
 #include "os/fuzz/dev_null_queue.h"
 #include "os/fuzz/fuzz_inject_queue.h"
+#include "os/log.h"
 
 #include <fuzzer/FuzzedDataProvider.h>
+#include "fuzz/helpers.h"
 
 namespace bluetooth {
 namespace hci {
@@ -39,13 +41,33 @@ class FuzzCommandInterface : public CommandInterface<T> {
 
 class FuzzHciLayer : public HciLayer {
  public:
+  void TurnOnAutoReply(FuzzedDataProvider* fdp) {
+    auto_reply_fdp = fdp;
+  }
+
+  void TurnOffAutoReply() {
+    auto_reply_fdp = nullptr;
+  }
+
   void EnqueueCommand(std::unique_ptr<hci::CommandPacketBuilder> command,
-                      common::ContextualOnceCallback<void(hci::CommandCompleteView)> on_complete) override {}
+                      common::ContextualOnceCallback<void(hci::CommandCompleteView)> on_complete) override {
+    on_command_complete = std::move(on_complete);
+    if (auto_reply_fdp != nullptr) {
+      injectCommandComplete(bluetooth::fuzz::GetArbitraryBytes(auto_reply_fdp));
+    }
+  }
 
   void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
-                      common::ContextualOnceCallback<void(hci::CommandStatusView)> on_status) override {}
+                      common::ContextualOnceCallback<void(hci::CommandStatusView)> on_status) override {
+    on_command_status = std::move(on_status);
+    if (auto_reply_fdp != nullptr) {
+      injectCommandStatus(bluetooth::fuzz::GetArbitraryBytes(auto_reply_fdp));
+    }
+  }
 
-  common::BidiQueueEnd<hci::AclPacketBuilder, hci::AclPacketView>* GetAclQueueEnd() override;
+  common::BidiQueueEnd<hci::AclPacketBuilder, hci::AclPacketView>* GetAclQueueEnd() override {
+    return acl_queue_.GetUpEnd();
+  }
 
   void RegisterEventHandler(hci::EventCode event_code,
                             common::ContextualCallback<void(hci::EventPacketView)> event_handler) override {}
@@ -92,6 +114,10 @@ class FuzzHciLayer : public HciLayer {
 
  private:
   void injectAclData(std::vector<uint8_t> data);
+  void injectCommandComplete(std::vector<uint8_t> data);
+  void injectCommandStatus(std::vector<uint8_t> data);
+
+  FuzzedDataProvider* auto_reply_fdp;
 
   common::BidiQueue<hci::AclPacketView, hci::AclPacketBuilder> acl_queue_{3};
   os::fuzz::DevNullQueue<AclPacketBuilder>* acl_dev_null_;
@@ -103,6 +129,9 @@ class FuzzHciLayer : public HciLayer {
   FuzzCommandInterface<LeSecurityCommandBuilder> le_security_interface_{};
   FuzzCommandInterface<LeAdvertisingCommandBuilder> le_advertising_interface_{};
   FuzzCommandInterface<LeScanningCommandBuilder> le_scanning_interface_{};
+
+  common::ContextualOnceCallback<void(hci::CommandCompleteView)> on_command_complete;
+  common::ContextualOnceCallback<void(hci::CommandStatusView)> on_command_status;
 };
 
 }  // namespace fuzz
