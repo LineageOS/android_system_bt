@@ -15,12 +15,13 @@
  */
 
 #include "hci/fuzz/hci_layer_fuzz_client.h"
-
-using bluetooth::hci::AclPacketView;
+#include "fuzz/helpers.h"
 
 namespace bluetooth {
 namespace hci {
 namespace fuzz {
+using bluetooth::fuzz::GetArbitraryBytes;
+using bluetooth::hci::AclPacketView;
 
 const ModuleFactory HciLayerFuzzClient::Factory = ModuleFactory([]() { return new HciLayerFuzzClient(); });
 
@@ -45,6 +46,36 @@ void HciLayerFuzzClient::Stop() {
   aclDevNull_->Stop();
   delete aclDevNull_;
   delete aclInject_;
+}
+
+void HciLayerFuzzClient::injectArbitrary(FuzzedDataProvider& fdp) {
+  const uint8_t action = fdp.ConsumeIntegralInRange(0, 8);
+  switch (action) {
+    case 1:
+      injectAclData(GetArbitraryBytes(&fdp));
+      break;
+    case 2:
+      injectHciCommand(GetArbitraryBytes(&fdp));
+      break;
+    case 3:
+      // TODO: injectSecurityCommand(GetArbitraryBytes(&fdp));
+      break;
+    case 4:
+      injectLeSecurityCommand(GetArbitraryBytes(&fdp));
+      break;
+    case 5:
+      injectAclConnectionCommand(GetArbitraryBytes(&fdp));
+      break;
+    case 6:
+      injectLeAclConnectionCommand(GetArbitraryBytes(&fdp));
+      break;
+    case 7:
+      injectLeAdvertisingCommand(GetArbitraryBytes(&fdp));
+      break;
+    case 8:
+      injectLeScanningCommand(GetArbitraryBytes(&fdp));
+      break;
+  }
 }
 
 void HciLayerFuzzClient::injectAclData(std::vector<uint8_t> data) {
