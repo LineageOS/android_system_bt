@@ -128,10 +128,24 @@ class FuzzHciLayer : public HciLayer {
 
  private:
   void injectAclData(std::vector<uint8_t> data);
+
   void injectCommandComplete(std::vector<uint8_t> data);
   void injectCommandStatus(std::vector<uint8_t> data);
+
   void injectEvent(FuzzedDataProvider& fdp);
   void injectLeEvent(FuzzedDataProvider& fdp);
+
+  void injectSecurityEvent(std::vector<uint8_t> data);
+  void injectLeSecurityEvent(std::vector<uint8_t> data);
+
+  void injectAclEvent(std::vector<uint8_t> data);
+  void injectAclDisconnect(FuzzedDataProvider& fdp);
+  void injectLeAclEvent(std::vector<uint8_t> data);
+  void injectLeAclDisconnect(FuzzedDataProvider& fdp);
+
+  void injectLeAdvertisingEvent(std::vector<uint8_t> data);
+
+  void injectLeScanningEvent(std::vector<uint8_t> data);
 
   FuzzedDataProvider* auto_reply_fdp;
 
@@ -151,6 +165,15 @@ class FuzzHciLayer : public HciLayer {
 
   std::map<hci::EventCode, common::ContextualCallback<void(hci::EventPacketView)>> event_handlers_;
   std::map<hci::SubeventCode, common::ContextualCallback<void(hci::LeMetaEventView)>> le_event_handlers_;
+
+  common::ContextualCallback<void(hci::EventPacketView)> security_event_handler_;
+  common::ContextualCallback<void(hci::LeMetaEventView)> le_security_event_handler_;
+  common::ContextualCallback<void(hci::EventPacketView)> acl_event_handler_;
+  common::ContextualCallback<void(uint16_t, hci::ErrorCode)> acl_on_disconnect_;
+  common::ContextualCallback<void(hci::LeMetaEventView)> le_acl_event_handler_;
+  common::ContextualCallback<void(uint16_t, hci::ErrorCode)> le_acl_on_disconnect_;
+  common::ContextualCallback<void(hci::LeMetaEventView)> le_advertising_event_handler_;
+  common::ContextualCallback<void(hci::LeMetaEventView)> le_scanning_event_handler_;
 };
 
 }  // namespace fuzz
