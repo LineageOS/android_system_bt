@@ -157,7 +157,7 @@ void hci_initialize() {
     android::sp<V1_1::IBluetoothHciCallbacks> callbacks =
         new BluetoothHciCallbacks();
     if (btHci_1_1 != nullptr) {
-      btHci_1_1->initialize(callbacks);
+      btHci_1_1->initialize_1_1(callbacks);
     } else {
       btHci->initialize(callbacks);
     }
