@@ -52,7 +52,7 @@ TEST_F(HandlerTest, post_task_invoked) {
   int val = 0;
   std::promise<void> closure_ran;
   auto future = closure_ran.get_future();
-  OnceClosure closure = common::BindOnce(
+  common::OnceClosure closure = common::BindOnce(
       [](int* val, std::promise<void> closure_ran) {
         *val = *val + 1;
         closure_ran.set_value();
