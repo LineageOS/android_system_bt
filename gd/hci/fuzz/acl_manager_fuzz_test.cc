@@ -40,7 +40,9 @@ extern "C" int LLVMFuzzerTestOneInput(const uint8_t* data, size_t size) {
 
   static FuzzTestModuleRegistry moduleRegistry = FuzzTestModuleRegistry();
   FuzzHciLayer* fuzzHci = moduleRegistry.Inject<FuzzHciLayer>(&HciLayer::Factory);
+  fuzzHci->TurnOnAutoReply(&dataProvider);
   moduleRegistry.Start<AclManager>();
+  fuzzHci->TurnOffAutoReply();
 
   while (dataProvider.remaining_bytes() > 0) {
     const uint8_t action = dataProvider.ConsumeIntegralInRange(0, 2);
