@@ -66,9 +66,9 @@ TEST_F(L2capClassicFixedChannelImplTest, get_device) {
   testing::MockClassicAclConnection* mock_acl_connection = new testing::MockClassicAclConnection();
   EXPECT_CALL(*mock_acl_connection, GetAddress()).Times(1);
   EXPECT_CALL(*mock_acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
-  EXPECT_CALL(*mock_acl_connection, UnregisterCallbacks(_)).Times(1);
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider,
-                             std::unique_ptr<testing::MockClassicAclConnection>(mock_acl_connection));
+                             std::unique_ptr<testing::MockClassicAclConnection>(mock_acl_connection),
+                             nullptr /* LinkManager */);
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
@@ -83,9 +83,9 @@ TEST_F(L2capClassicFixedChannelImplTest, close_triggers_callback) {
   testing::MockClassicAclConnection* mock_acl_connection = new testing::MockClassicAclConnection();
   EXPECT_CALL(*mock_acl_connection, GetAddress()).Times(1);
   EXPECT_CALL(*mock_acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
-  EXPECT_CALL(*mock_acl_connection, UnregisterCallbacks(_)).Times(1);
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider,
-                             std::unique_ptr<testing::MockClassicAclConnection>(mock_acl_connection));
+                             std::unique_ptr<testing::MockClassicAclConnection>(mock_acl_connection),
+                             nullptr /* LinkManager */);
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
@@ -112,9 +112,9 @@ TEST_F(L2capClassicFixedChannelImplTest, register_callback_after_close_should_ca
   testing::MockClassicAclConnection* mock_acl_connection = new testing::MockClassicAclConnection();
   EXPECT_CALL(*mock_acl_connection, GetAddress()).Times(1);
   EXPECT_CALL(*mock_acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
-  EXPECT_CALL(*mock_acl_connection, UnregisterCallbacks(_)).Times(1);
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider,
-                             std::unique_ptr<testing::MockClassicAclConnection>(mock_acl_connection));
+                             std::unique_ptr<testing::MockClassicAclConnection>(mock_acl_connection),
+                             nullptr /* LinkManager */);
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
@@ -142,9 +142,9 @@ TEST_F(L2capClassicFixedChannelImplTest, close_twice_should_fail) {
   testing::MockClassicAclConnection* mock_acl_connection = new testing::MockClassicAclConnection();
   EXPECT_CALL(*mock_acl_connection, GetAddress()).Times(1);
   EXPECT_CALL(*mock_acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
-  EXPECT_CALL(*mock_acl_connection, UnregisterCallbacks(_)).Times(1);
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider,
-                             std::unique_ptr<testing::MockClassicAclConnection>(mock_acl_connection));
+                             std::unique_ptr<testing::MockClassicAclConnection>(mock_acl_connection),
+                             nullptr /* LinkManager */);
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
@@ -175,9 +175,9 @@ TEST_F(L2capClassicFixedChannelImplTest, multiple_registration_should_fail) {
   testing::MockClassicAclConnection* mock_acl_connection = new testing::MockClassicAclConnection();
   EXPECT_CALL(*mock_acl_connection, GetAddress()).Times(1);
   EXPECT_CALL(*mock_acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
-  EXPECT_CALL(*mock_acl_connection, UnregisterCallbacks(_)).Times(1);
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider,
-                             std::unique_ptr<testing::MockClassicAclConnection>(mock_acl_connection));
+                             std::unique_ptr<testing::MockClassicAclConnection>(mock_acl_connection),
+                             nullptr /* LinkManager */);
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
@@ -204,9 +204,9 @@ TEST_F(L2capClassicFixedChannelImplTest, call_acquire_before_registration_should
   testing::MockClassicAclConnection* mock_acl_connection = new testing::MockClassicAclConnection();
   EXPECT_CALL(*mock_acl_connection, GetAddress()).Times(1);
   EXPECT_CALL(*mock_acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
-  EXPECT_CALL(*mock_acl_connection, UnregisterCallbacks(_)).Times(1);
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider,
-                             std::unique_ptr<testing::MockClassicAclConnection>(mock_acl_connection));
+                             std::unique_ptr<testing::MockClassicAclConnection>(mock_acl_connection),
+                             nullptr /* LinkManager */);
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
@@ -222,9 +222,9 @@ TEST_F(L2capClassicFixedChannelImplTest, call_release_before_registration_should
   testing::MockClassicAclConnection* mock_acl_connection = new testing::MockClassicAclConnection();
   EXPECT_CALL(*mock_acl_connection, GetAddress()).Times(1);
   EXPECT_CALL(*mock_acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
-  EXPECT_CALL(*mock_acl_connection, UnregisterCallbacks(_)).Times(1);
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider,
-                             std::unique_ptr<testing::MockClassicAclConnection>(mock_acl_connection));
+                             std::unique_ptr<testing::MockClassicAclConnection>(mock_acl_connection),
+                             nullptr /* LinkManager */);
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
@@ -241,9 +241,9 @@ TEST_F(L2capClassicFixedChannelImplTest, test_acquire_release_channel) {
   testing::MockClassicAclConnection* mock_acl_connection = new testing::MockClassicAclConnection();
   EXPECT_CALL(*mock_acl_connection, GetAddress()).Times(1);
   EXPECT_CALL(*mock_acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
-  EXPECT_CALL(*mock_acl_connection, UnregisterCallbacks(_)).Times(1);
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider,
-                             std::unique_ptr<testing::MockClassicAclConnection>(mock_acl_connection));
+                             std::unique_ptr<testing::MockClassicAclConnection>(mock_acl_connection),
+                             nullptr /* LinkManager */);
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));
@@ -279,9 +279,9 @@ TEST_F(L2capClassicFixedChannelImplTest, test_acquire_after_close) {
   testing::MockClassicAclConnection* mock_acl_connection = new testing::MockClassicAclConnection();
   EXPECT_CALL(*mock_acl_connection, GetAddress()).Times(1);
   EXPECT_CALL(*mock_acl_connection, RegisterCallbacks(_, l2cap_handler_)).Times(1);
-  EXPECT_CALL(*mock_acl_connection, UnregisterCallbacks(_)).Times(1);
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider,
-                             std::unique_ptr<testing::MockClassicAclConnection>(mock_acl_connection));
+                             std::unique_ptr<testing::MockClassicAclConnection>(mock_acl_connection),
+                             nullptr /* LinkManager */);
   hci::AddressWithType device{hci::Address{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                               hci::AddressType::PUBLIC_IDENTITY_ADDRESS};
   EXPECT_CALL(mock_classic_link, GetDevice()).WillRepeatedly(Return(device));

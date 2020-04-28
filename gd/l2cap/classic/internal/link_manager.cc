@@ -130,11 +130,8 @@ void LinkManager::OnConnectSuccess(std::unique_ptr<hci::ClassicAclConnection> ac
   hci::Address device = acl_connection->GetAddress();
   ASSERT_LOG(GetLink(device) == nullptr, "%s is connected twice without disconnection",
              acl_connection->GetAddress().ToString().c_str());
-  // Register ACL disconnection callback in LinkManager so that we can clean up link resource properly
-  acl_connection->RegisterDisconnectCallback(
-      common::BindOnce(&LinkManager::OnDisconnect, common::Unretained(this), device), l2cap_handler_);
   links_.try_emplace(device, l2cap_handler_, std::move(acl_connection), parameter_provider_,
-                     dynamic_channel_service_manager_, fixed_channel_service_manager_);
+                     dynamic_channel_service_manager_, fixed_channel_service_manager_, this);
   auto* link = GetLink(device);
   ASSERT(link != nullptr);
   link->SendInformationRequest(InformationRequestInfoType::EXTENDED_FEATURES_SUPPORTED);
