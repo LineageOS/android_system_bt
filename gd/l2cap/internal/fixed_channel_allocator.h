@@ -21,7 +21,7 @@
 
 #include "hci/hci_packets.h"
 #include "l2cap/cid.h"
-#include "l2cap/security_policy.h"
+#include "l2cap/classic/security_policy.h"
 #include "os/handler.h"
 #include "os/log.h"
 
@@ -43,7 +43,7 @@ class FixedChannelAllocator {
 
   // Allocates a channel. If cid is used, return nullptr. NOTE: The returned BaseFixedChannelImpl object is still
   // owned by the channel allocator, NOT the client.
-  virtual std::shared_ptr<FixedChannelImplType> AllocateChannel(Cid cid, SecurityPolicy security_policy) {
+  virtual std::shared_ptr<FixedChannelImplType> AllocateChannel(Cid cid) {
     ASSERT_LOG(!IsChannelAllocated((cid)), "Cid 0x%x for link %s is already in use", cid, link_->ToString().c_str());
     ASSERT_LOG(cid >= kFirstFixedChannel && cid <= kLastFixedChannel, "Cid %d out of bound", cid);
     auto elem = channels_.try_emplace(cid, std::make_shared<FixedChannelImplType>(cid, link_, l2cap_handler_));
