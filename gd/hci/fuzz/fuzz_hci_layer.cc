@@ -15,12 +15,14 @@
  */
 
 #include "hci/fuzz/fuzz_hci_layer.h"
+#include "fuzz/helpers.h"
 
 namespace bluetooth {
 namespace hci {
 namespace fuzz {
 
 using bluetooth::common::ContextualCallback;
+using bluetooth::fuzz::GetArbitraryBytes;
 
 common::BidiQueueEnd<hci::AclPacketBuilder, hci::AclPacketView>* FuzzHciLayer::GetAclQueueEnd() {
   return acl_queue_.GetUpEnd();
@@ -68,6 +70,15 @@ void FuzzHciLayer::Stop() {
   acl_dev_null_->Stop();
   delete acl_dev_null_;
   delete acl_inject_;
+}
+
+void FuzzHciLayer::injectArbitrary(FuzzedDataProvider& fdp) {
+  const uint8_t action = fdp.ConsumeIntegralInRange(0, 1);
+  switch (action) {
+    case 1:
+      injectAclData(GetArbitraryBytes(&fdp));
+      break;
+  }
 }
 
 void FuzzHciLayer::injectAclData(std::vector<uint8_t> data) {
