@@ -77,7 +77,7 @@ class L2capClassicLinkTest : public ::testing::Test {
     raw_acl_connection_ = new NiceMock<MockClassicAclConnection>();
     link_ = new Link(signalling_handler_, std::unique_ptr<MockClassicAclConnection>(raw_acl_connection_),
                      &mock_parameter_provider_, &mock_classic_dynamic_channel_service_manager_,
-                     &mock_classic_fixed_channel_service_manager_);
+                     &mock_classic_fixed_channel_service_manager_, nullptr);
   }
 
   void TearDown() override {

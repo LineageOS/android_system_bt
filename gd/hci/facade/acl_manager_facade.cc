@@ -161,7 +161,6 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public ::bluet
 
   void on_disconnect(std::shared_ptr<ClassicAclConnection> connection, uint32_t entry, ErrorCode code) {
     connection->GetAclQueueEnd()->UnregisterDequeue();
-    connection->Finish();
     std::unique_ptr<BasePacketBuilder> builder =
         DisconnectBuilder::Create(to_handle(entry), static_cast<DisconnectReason>(code));
     ConnectionEvent disconnection;
@@ -179,10 +178,6 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public ::bluet
     shared_connection->GetAclQueueEnd()->RegisterDequeue(
         facade_handler_, common::Bind(&AclManagerFacadeService::on_incoming_classic_acl, common::Unretained(this),
                                       shared_connection, handle));
-    shared_connection->RegisterDisconnectCallback(
-        common::BindOnce(&AclManagerFacadeService::on_disconnect, common::Unretained(this), shared_connection,
-                         current_connection_request_),
-        facade_handler_);
     auto callbacks = acl_connections_.find(handle)->second.GetCallbacks();
     shared_connection->RegisterCallbacks(callbacks, facade_handler_);
     std::unique_ptr<BasePacketBuilder> builder =
@@ -303,6 +298,9 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public ::bluet
       LOG_DEBUG("OnReadClockComplete clock:%d, accuracy:%d", clock, accuracy);
     }
 
+    void OnDisconnection(ErrorCode reason) override {
+      LOG_DEBUG("OnDisconnection reason: %s", ErrorCodeText(reason).c_str());
+    }
     uint16_t handle_;
     std::shared_ptr<ClassicAclConnection> connection_;
   };
