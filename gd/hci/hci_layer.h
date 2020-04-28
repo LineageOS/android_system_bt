@@ -98,6 +98,8 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
 
   void Stop() override;
 
+  virtual void Disconnect(uint16_t handle, ErrorCode reason);
+
  private:
   struct impl;
   struct hal_callbacks;
@@ -121,6 +123,9 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
     }
     HciLayer& hci_;
   };
+
+  std::list<common::ContextualCallback<void(uint16_t, ErrorCode)>> disconnect_handlers_;
+  void on_disconnection_complete(EventPacketView event_view);
 
   // Interfaces
   CommandInterfaceImpl<ConnectionManagementCommandBuilder> acl_connection_manager_interface_{*this};
