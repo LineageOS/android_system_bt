@@ -281,12 +281,31 @@ void HciLayer::UnregisterLeEventHandler(SubeventCode event) {
   CallOn(impl_, &impl::unregister_le_event, event);
 }
 
+void HciLayer::on_disconnection_complete(EventPacketView event_view) {
+  auto disconnection_view = DisconnectionCompleteView::Create(event_view);
+  if (!disconnection_view.IsValid()) {
+    LOG_INFO("Dropping invalid disconnection packet");
+    return;
+  }
+
+  uint16_t handle = disconnection_view.GetConnectionHandle();
+  ErrorCode reason = disconnection_view.GetReason();
+  Disconnect(handle, reason);
+}
+
+void HciLayer::Disconnect(uint16_t handle, ErrorCode reason) {
+  for (auto callback : disconnect_handlers_) {
+    callback.Invoke(handle, reason);
+  }
+}
+
 AclConnectionInterface* HciLayer::GetAclConnectionInterface(
     ContextualCallback<void(EventPacketView)> event_handler,
     ContextualCallback<void(uint16_t, ErrorCode)> on_disconnect) {
   for (const auto event : AclConnectionEvents) {
     RegisterEventHandler(event, event_handler);
   }
+  disconnect_handlers_.push_back(on_disconnect);
   return &acl_connection_manager_interface_;
 }
 
@@ -296,6 +315,7 @@ LeAclConnectionInterface* HciLayer::GetLeAclConnectionInterface(
   for (const auto event : LeConnectionManagementEvents) {
     RegisterLeEventHandler(event, event_handler);
   }
+  disconnect_handlers_.push_back(on_disconnect);
   return &le_acl_connection_manager_interface_;
 }
 
@@ -343,6 +363,7 @@ void HciLayer::Start() {
   RegisterEventHandler(EventCode::COMMAND_COMPLETE, handler->BindOn(impl_, &impl::on_command_complete));
   RegisterEventHandler(EventCode::COMMAND_STATUS, handler->BindOn(impl_, &impl::on_command_status));
   RegisterEventHandler(EventCode::LE_META_EVENT, handler->BindOn(impl_, &impl::on_le_meta_event));
+  RegisterEventHandler(EventCode::DISCONNECTION_COMPLETE, handler->BindOn(this, &HciLayer::on_disconnection_complete));
   // TODO find the right place
   auto drop_packet = handler->BindOn(impl_, &impl::drop);
   RegisterEventHandler(EventCode::PAGE_SCAN_REPETITION_MODE_CHANGE, drop_packet);
