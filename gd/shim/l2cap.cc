@@ -29,8 +29,8 @@
 #include "hci/hci_packets.h"
 #include "l2cap/classic/dynamic_channel_manager.h"
 #include "l2cap/classic/l2cap_classic_module.h"
+#include "l2cap/classic/security_policy.h"
 #include "l2cap/psm.h"
-#include "l2cap/security_policy.h"
 #include "module.h"
 #include "os/handler.h"
 #include "os/log.h"
@@ -395,7 +395,7 @@ struct L2cap::impl {
                              std::unique_ptr<l2cap::classic::DynamicChannel> channel);
   void PendingConnectionFail(PendingConnectionId id, std::unique_ptr<PendingConnection> connection,
                              l2cap::classic::DynamicChannelManager::ConnectionResult result);
-  const l2cap::SecurityPolicy GetSecurityPolicy(l2cap::Psm psm) const;
+  const l2cap::classic::SecurityPolicy GetSecurityPolicy(l2cap::Psm psm) const;
 };
 
 const ModuleFactory L2cap::Factory = ModuleFactory([]() { return new L2cap(); });
@@ -428,19 +428,19 @@ void L2cap::impl::Dump(int fd) {
   }
 }
 
-const l2cap::SecurityPolicy L2cap::impl::GetSecurityPolicy(l2cap::Psm psm) const {
-  l2cap::SecurityPolicy security_policy;
+const l2cap::classic::SecurityPolicy L2cap::impl::GetSecurityPolicy(l2cap::Psm psm) const {
+  l2cap::classic::SecurityPolicy security_policy;
   if (psm == 1) {
-    security_policy.security_level_ = l2cap::SecurityPolicy::Level::LEVEL_0;
+    security_policy.security_level_ = l2cap::classic::SecurityPolicy::Level::LEVEL_0;
   } else {
-    security_policy.security_level_ = l2cap::SecurityPolicy::Level::LEVEL_3;
+    security_policy.security_level_ = l2cap::classic::SecurityPolicy::Level::LEVEL_3;
   }
   return security_policy;
 }
 
 void L2cap::impl::RegisterService(l2cap::Psm psm, l2cap::classic::DynamicChannelConfigurationOption option,
                                   ConnectionCompleteCallback on_complete, RegisterServicePromise register_promise) {
-  const l2cap::SecurityPolicy security_policy = GetSecurityPolicy(psm);
+  const l2cap::classic::SecurityPolicy security_policy = GetSecurityPolicy(psm);
 
   bool rc = dynamic_channel_manager_->RegisterService(
       psm, option, security_policy,
