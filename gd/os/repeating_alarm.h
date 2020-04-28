@@ -42,13 +42,13 @@ class RepeatingAlarm {
   DISALLOW_COPY_AND_ASSIGN(RepeatingAlarm);
 
   // Schedule a repeating alarm with given period
-  void Schedule(Closure task, std::chrono::milliseconds period);
+  void Schedule(common::Closure task, std::chrono::milliseconds period);
 
   // Cancel the alarm. No-op if it's not armed.
   void Cancel();
 
  private:
-  Closure task_;
+  common::Closure task_;
   Handler* handler_;
   int fd_ = 0;
   Reactor::Reactable* token_;

@@ -44,7 +44,7 @@ class Handler : public common::IPostableContext {
   DISALLOW_COPY_AND_ASSIGN(Handler);
 
   // Enqueue a closure to the queue of this handler
-  virtual void Post(OnceClosure closure) override;
+  virtual void Post(common::OnceClosure closure) override;
 
   // Remove all pending events from the queue of this handler
   void Clear();
@@ -90,7 +90,7 @@ class Handler : public common::IPostableContext {
   inline bool was_cleared() const {
     return tasks_ == nullptr;
   };
-  std::queue<OnceClosure>* tasks_;
+  std::queue<common::OnceClosure>* tasks_;
   Thread* thread_;
   int fd_;
   Reactor::Reactable* reactable_;
