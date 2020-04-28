@@ -70,7 +70,7 @@ void FuzzHciLayer::Stop() {
 }
 
 void FuzzHciLayer::injectArbitrary(FuzzedDataProvider& fdp) {
-  const uint8_t action = fdp.ConsumeIntegralInRange(0, 5);
+  const uint8_t action = fdp.ConsumeIntegralInRange(0, 13);
   switch (action) {
     case 1:
       injectAclData(GetArbitraryBytes(&fdp));
@@ -86,6 +86,30 @@ void FuzzHciLayer::injectArbitrary(FuzzedDataProvider& fdp) {
       break;
     case 5:
       injectLeEvent(fdp);
+      break;
+    case 6:
+      injectSecurityEvent(GetArbitraryBytes(&fdp));
+      break;
+    case 7:
+      injectLeSecurityEvent(GetArbitraryBytes(&fdp));
+      break;
+    case 8:
+      injectAclEvent(GetArbitraryBytes(&fdp));
+      break;
+    case 9:
+      injectAclDisconnect(fdp);
+      break;
+    case 10:
+      injectLeAclEvent(GetArbitraryBytes(&fdp));
+      break;
+    case 11:
+      injectLeAclDisconnect(fdp);
+      break;
+    case 12:
+      injectLeAdvertisingEvent(GetArbitraryBytes(&fdp));
+      break;
+    case 13:
+      injectLeScanningEvent(GetArbitraryBytes(&fdp));
       break;
   }
 }
@@ -115,6 +139,40 @@ void FuzzHciLayer::injectLeEvent(FuzzedDataProvider& fdp) {
   if (handler_pair != le_event_handlers_.end()) {
     InvokeIfValid<LeMetaEventView>(handler_pair->second, GetArbitraryBytes(&fdp));
   }
+}
+
+void FuzzHciLayer::injectSecurityEvent(std::vector<uint8_t> data) {
+  InvokeIfValid<EventPacketView>(security_event_handler_, data);
+}
+
+void FuzzHciLayer::injectLeSecurityEvent(std::vector<uint8_t> data) {
+  InvokeIfValid<LeMetaEventView>(le_security_event_handler_, data);
+}
+
+void FuzzHciLayer::injectAclEvent(std::vector<uint8_t> data) {
+  InvokeIfValid<EventPacketView>(acl_event_handler_, data);
+}
+
+void FuzzHciLayer::injectAclDisconnect(FuzzedDataProvider& fdp) {
+  acl_on_disconnect_.InvokeIfNotEmpty(fdp.ConsumeIntegral<uint16_t>(),
+                                      static_cast<hci::ErrorCode>(fdp.ConsumeIntegral<uint8_t>()));
+}
+
+void FuzzHciLayer::injectLeAclEvent(std::vector<uint8_t> data) {
+  InvokeIfValid<LeMetaEventView>(le_acl_event_handler_, data);
+}
+
+void FuzzHciLayer::injectLeAclDisconnect(FuzzedDataProvider& fdp) {
+  le_acl_on_disconnect_.InvokeIfNotEmpty(fdp.ConsumeIntegral<uint16_t>(),
+                                         static_cast<hci::ErrorCode>(fdp.ConsumeIntegral<uint8_t>()));
+}
+
+void FuzzHciLayer::injectLeAdvertisingEvent(std::vector<uint8_t> data) {
+  InvokeIfValid<LeMetaEventView>(le_advertising_event_handler_, data);
+}
+
+void FuzzHciLayer::injectLeScanningEvent(std::vector<uint8_t> data) {
+  InvokeIfValid<LeMetaEventView>(le_scanning_event_handler_, data);
 }
 
 const ModuleFactory FuzzHciLayer::Factory = ModuleFactory([]() { return new FuzzHciLayer(); });
