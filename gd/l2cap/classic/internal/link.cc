@@ -103,8 +103,8 @@ void Link::ReadClockOffset() {
   acl_connection_->ReadClockOffset();
 }
 
-std::shared_ptr<FixedChannelImpl> Link::AllocateFixedChannel(Cid cid, SecurityPolicy security_policy) {
-  auto channel = fixed_channel_allocator_.AllocateChannel(cid, security_policy);
+std::shared_ptr<FixedChannelImpl> Link::AllocateFixedChannel(Cid cid, classic::SecurityPolicy security_policy) {
+  auto channel = fixed_channel_allocator_.AllocateChannel(cid);
   data_pipeline_manager_.AttachChannel(cid, channel, l2cap::internal::DataPipelineManager::ChannelMode::BASIC);
   return channel;
 }
@@ -201,9 +201,9 @@ void Link::SendInformationRequest(InformationRequestInfoType type) {
   signalling_manager_.SendInformationRequest(type);
 }
 
-std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateDynamicChannel(Psm psm, Cid remote_cid,
-                                                                                  SecurityPolicy security_policy) {
-  auto channel = dynamic_channel_allocator_.AllocateChannel(psm, remote_cid, security_policy);
+std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateDynamicChannel(
+    Psm psm, Cid remote_cid, classic::SecurityPolicy security_policy) {
+  auto channel = dynamic_channel_allocator_.AllocateChannel(psm, remote_cid);
   if (channel != nullptr) {
     RefreshRefCount();
   }
@@ -212,8 +212,8 @@ std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateDynamicChanne
 }
 
 std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateReservedDynamicChannel(
-    Cid reserved_cid, Psm psm, Cid remote_cid, SecurityPolicy security_policy) {
-  auto channel = dynamic_channel_allocator_.AllocateReservedChannel(reserved_cid, psm, remote_cid, security_policy);
+    Cid reserved_cid, Psm psm, Cid remote_cid, classic::SecurityPolicy security_policy) {
+  auto channel = dynamic_channel_allocator_.AllocateReservedChannel(reserved_cid, psm, remote_cid);
   if (channel != nullptr) {
     RefreshRefCount();
   }

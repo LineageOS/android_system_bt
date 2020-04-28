@@ -19,7 +19,6 @@
 #include "l2cap/cid.h"
 #include "l2cap/le/internal/fixed_channel_impl.h"
 #include "l2cap/le/internal/link.h"
-#include "l2cap/security_policy.h"
 #include "os/handler.h"
 #include "os/log.h"
 

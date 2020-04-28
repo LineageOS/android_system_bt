@@ -86,7 +86,7 @@ class Link : public l2cap::internal::ILink, public hci::ConnectionManagementCall
 
   // FixedChannel methods
 
-  std::shared_ptr<FixedChannelImpl> AllocateFixedChannel(Cid cid, SecurityPolicy security_policy);
+  std::shared_ptr<FixedChannelImpl> AllocateFixedChannel(Cid cid, classic::SecurityPolicy security_policy);
 
   virtual bool IsFixedChannelAllocated(Cid cid);
 
@@ -111,11 +111,11 @@ class Link : public l2cap::internal::ILink, public hci::ConnectionManagementCall
 
   virtual void SendDisconnectionRequest(Cid local_cid, Cid remote_cid) override;
 
-  virtual std::shared_ptr<l2cap::internal::DynamicChannelImpl> AllocateDynamicChannel(Psm psm, Cid remote_cid,
-                                                                                      SecurityPolicy security_policy);
+  virtual std::shared_ptr<l2cap::internal::DynamicChannelImpl> AllocateDynamicChannel(
+      Psm psm, Cid remote_cid, classic::SecurityPolicy security_policy);
 
   virtual std::shared_ptr<l2cap::internal::DynamicChannelImpl> AllocateReservedDynamicChannel(
-      Cid reserved_cid, Psm psm, Cid remote_cid, SecurityPolicy security_policy);
+      Cid reserved_cid, Psm psm, Cid remote_cid, classic::SecurityPolicy security_policy);
 
   virtual classic::DynamicChannelConfigurationOption GetConfigurationForInitialConfiguration(Cid cid);
 

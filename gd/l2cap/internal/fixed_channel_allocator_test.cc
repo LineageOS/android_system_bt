@@ -69,7 +69,7 @@ TEST_F(L2capFixedChannelAllocatorTest, precondition) {
 
 TEST_F(L2capFixedChannelAllocatorTest, allocate_and_free_channel) {
   Cid cid = kFirstFixedChannel;
-  auto channel = channel_allocator_->AllocateChannel(cid, {});
+  auto channel = channel_allocator_->AllocateChannel(cid);
   EXPECT_TRUE(channel_allocator_->IsChannelAllocated(cid));
   EXPECT_EQ(channel, channel_allocator_->FindChannel(cid));
   ASSERT_NO_FATAL_FAILURE(channel_allocator_->FreeChannel(cid));
