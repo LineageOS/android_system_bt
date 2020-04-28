@@ -22,7 +22,7 @@
 #include "l2cap/classic/dynamic_channel_configuration_option.h"
 #include "l2cap/classic/dynamic_channel_manager.h"
 #include "l2cap/classic/dynamic_channel_service.h"
-#include "l2cap/security_policy.h"
+#include "l2cap/classic/security_policy.h"
 
 namespace bluetooth {
 namespace l2cap {
@@ -34,7 +34,7 @@ class DynamicChannelServiceImpl {
 
   struct PendingRegistration {
     os::Handler* user_handler_ = nullptr;
-    SecurityPolicy security_policy_;
+    classic::SecurityPolicy security_policy_;
     DynamicChannelManager::OnRegistrationCompleteCallback on_registration_complete_callback_;
     DynamicChannelManager::OnConnectionOpenCallback on_connection_open_callback_;
     DynamicChannelConfigurationOption configuration_;
@@ -48,7 +48,7 @@ class DynamicChannelServiceImpl {
     return config_option_;
   }
 
-  SecurityPolicy GetSecurityPolicy() const {
+  classic::SecurityPolicy GetSecurityPolicy() const {
     return security_policy_;
   }
 
@@ -56,16 +56,15 @@ class DynamicChannelServiceImpl {
 
  protected:
   // protected access for mocking
-  DynamicChannelServiceImpl(os::Handler* user_handler,
-                            SecurityPolicy security_policy,
+  DynamicChannelServiceImpl(os::Handler* user_handler, classic::SecurityPolicy security_policy,
                             DynamicChannelManager::OnConnectionOpenCallback on_connection_open_callback,
                             DynamicChannelConfigurationOption config_option)
-      : user_handler_(user_handler), security_policy_(security_policy), on_connection_open_callback_(std::move(on_connection_open_callback)),
-        config_option_(config_option) {}
+      : user_handler_(user_handler), security_policy_(security_policy),
+        on_connection_open_callback_(std::move(on_connection_open_callback)), config_option_(config_option) {}
 
  private:
   os::Handler* user_handler_ = nullptr;
-  SecurityPolicy security_policy_;
+  classic::SecurityPolicy security_policy_;
   DynamicChannelManager::OnConnectionOpenCallback on_connection_open_callback_;
   DynamicChannelConfigurationOption config_option_;
 };
