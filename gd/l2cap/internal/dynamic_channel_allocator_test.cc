@@ -66,7 +66,7 @@ TEST_F(L2capClassicDynamicChannelAllocatorTest, precondition) {
 TEST_F(L2capClassicDynamicChannelAllocatorTest, allocate_and_free_channel) {
   Psm psm = 0x03;
   Cid remote_cid = kFirstDynamicChannel;
-  auto channel = channel_allocator_->AllocateChannel(psm, remote_cid, {});
+  auto channel = channel_allocator_->AllocateChannel(psm, remote_cid);
   Cid local_cid = channel->GetCid();
   EXPECT_TRUE(channel_allocator_->IsPsmUsed(psm));
   EXPECT_EQ(channel, channel_allocator_->FindChannelByCid(local_cid));
@@ -78,7 +78,7 @@ TEST_F(L2capClassicDynamicChannelAllocatorTest, reserve_channel) {
   Psm psm = 0x03;
   Cid remote_cid = kFirstDynamicChannel;
   Cid reserved = channel_allocator_->ReserveChannel();
-  auto channel = channel_allocator_->AllocateReservedChannel(reserved, psm, remote_cid, {});
+  auto channel = channel_allocator_->AllocateReservedChannel(reserved, psm, remote_cid);
   Cid local_cid = channel->GetCid();
   EXPECT_EQ(local_cid, reserved);
   EXPECT_TRUE(channel_allocator_->IsPsmUsed(psm));

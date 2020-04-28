@@ -27,9 +27,9 @@
 #include "l2cap/classic/dynamic_channel_manager.h"
 #include "l2cap/classic/internal/dynamic_channel_service_manager_impl_mock.h"
 #include "l2cap/classic/l2cap_classic_module.h"
+#include "l2cap/classic/security_policy.h"
 #include "l2cap/internal/ilink.h"
 #include "l2cap/psm.h"
-#include "l2cap/security_policy.h"
 #include "os/handler.h"
 
 namespace bluetooth {
@@ -83,7 +83,7 @@ class TestDynamicChannelManagerImpl {
   int connections_{0};
 
   bool RegisterService(l2cap::Psm psm, l2cap::classic::DynamicChannelConfigurationOption configuration_option,
-                       const l2cap::SecurityPolicy& security_policy,
+                       const l2cap::classic::SecurityPolicy& security_policy,
                        l2cap::classic::DynamicChannelManager::OnRegistrationCompleteCallback on_registration_complete,
                        l2cap::classic::DynamicChannelManager::OnConnectionOpenCallback on_open_callback,
                        os::Handler* handler) {
@@ -150,7 +150,7 @@ class TestDynamicChannelManager : public l2cap::classic::DynamicChannelManager {
   }
 
   bool RegisterService(l2cap::Psm psm, l2cap::classic::DynamicChannelConfigurationOption configuration_option,
-                       const l2cap::SecurityPolicy& security_policy,
+                       const l2cap::classic::SecurityPolicy& security_policy,
                        l2cap::classic::DynamicChannelManager::OnRegistrationCompleteCallback on_registration_complete,
                        l2cap::classic::DynamicChannelManager::OnConnectionOpenCallback on_open_callback,
                        os::Handler* handler) override {
