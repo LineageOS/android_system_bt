@@ -48,7 +48,10 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public ::b
   ~LeAclManagerFacadeService() override {
     std::unique_lock<std::mutex> lock(acl_connections_mutex_);
     for (auto& conn : acl_connections_) {
-      conn.second.connection_->GetAclQueueEnd()->UnregisterDequeue();
+      if (conn.second.connection_ != nullptr) {
+        conn.second.connection_->GetAclQueueEnd()->UnregisterDequeue();
+        conn.second.connection_.reset();
+      }
     }
   }
 
@@ -152,11 +155,9 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public ::b
     pending_acl_data_.OnIncomingEvent(acl_data);
   }
 
-  void on_disconnect(std::shared_ptr<LeAclConnection> connection, uint32_t entry, ErrorCode code) {
-    connection->GetAclQueueEnd()->UnregisterDequeue();
-    connection->Finish();
+  void OnDisconnection(uint32_t entry, ErrorCode code) {
     std::unique_ptr<BasePacketBuilder> builder =
-        DisconnectBuilder::Create(to_handle(entry), static_cast<DisconnectReason>(code));
+        DisconnectionCompleteBuilder::Create(ErrorCode::SUCCESS, to_handle(entry), code);
     LeConnectionEvent disconnection;
     disconnection.set_event(builder_to_string(std::move(builder)));
     per_connection_events_[entry]->OnIncomingEvent(disconnection);
@@ -170,7 +171,8 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public ::b
     auto addr = address_with_type.GetAddress();
     std::shared_ptr<::bluetooth::hci::LeAclConnection> shared_connection = std::move(connection);
     uint16_t handle = to_handle(current_connection_request_);
-    acl_connections_.emplace(std::pair(handle, Connection(handle, shared_connection)));
+    acl_connections_.emplace(
+        std::pair(handle, Connection(current_connection_request_, handle, shared_connection, this)));
     shared_connection->GetAclQueueEnd()->RegisterDequeue(
         facade_handler_, common::Bind(&LeAclManagerFacadeService::on_incoming_acl, common::Unretained(this),
                                       shared_connection, to_handle(current_connection_request_)));
@@ -198,8 +200,9 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public ::b
 
   class Connection : public ::bluetooth::hci::LeConnectionManagementCallbacks {
    public:
-    Connection(uint16_t handle, std::shared_ptr<LeAclConnection> connection)
-        : handle_(handle), connection_(std::move(connection)) {}
+    Connection(uint32_t entry, uint16_t handle, std::shared_ptr<LeAclConnection> connection,
+               LeAclManagerFacadeService* facade)
+        : entry_(entry), handle_(handle), connection_(std::move(connection)), facade_(facade) {}
     void OnConnectionUpdate(uint16_t connection_interval, uint16_t connection_latency,
                             uint16_t supervision_timeout) override {
       LOG_DEBUG("interval: 0x%hx, latency: 0x%hx, timeout 0x%hx", connection_interval, connection_latency,
@@ -207,15 +210,19 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public ::b
     }
 
     void OnDisconnection(ErrorCode reason) override {
-      LOG_DEBUG("reason: %s", ErrorCodeText(reason).c_str());
+      connection_->GetAclQueueEnd()->UnregisterDequeue();
+      connection_.reset();
+      facade_->OnDisconnection(entry_, reason);
     }
 
     LeConnectionManagementCallbacks* GetCallbacks() {
       return this;
     }
 
+    uint32_t entry_;
     uint16_t handle_;
     std::shared_ptr<LeAclConnection> connection_;
+    LeAclManagerFacadeService* facade_;
   };
 
  private:

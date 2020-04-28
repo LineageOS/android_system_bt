@@ -183,7 +183,7 @@ TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl) {
 
   connection_management_handler->Post(common::BindOnce(&hci::LeConnectionManagementCallbacks::OnDisconnection,
                                                        common::Unretained(connection_management_callbacks),
-                                                       hci::ErrorCode::SUCCESS));
+                                                       hci::ErrorCode::REMOTE_USER_TERMINATED_CONNECTION));
   SyncHandler(connection_management_handler);
 }
 
