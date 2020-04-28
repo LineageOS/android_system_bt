@@ -40,8 +40,8 @@ RoundRobinScheduler::~RoundRobinScheduler() {
 }
 
 void RoundRobinScheduler::Register(ConnectionType connection_type, uint16_t handle,
-                                   AclConnection::QueueDownEnd* queue_down_end) {
-  acl_queue_handler acl_queue_handler = {connection_type, queue_down_end, false, 0, false};
+                                   std::shared_ptr<AclConnection::Queue> queue) {
+  acl_queue_handler acl_queue_handler = {connection_type, std::move(queue), false, 0, false};
   acl_queue_handlers_.insert(std::pair<uint16_t, RoundRobinScheduler::acl_queue_handler>(handle, acl_queue_handler));
   if (fragments_to_send_.size() == 0) {
     start_round_robin();
@@ -53,7 +53,7 @@ void RoundRobinScheduler::Unregister(uint16_t handle) {
   auto acl_queue_handler = acl_queue_handlers_.find(handle)->second;
   if (acl_queue_handler.dequeue_is_registered_) {
     acl_queue_handler.dequeue_is_registered_ = false;
-    acl_queue_handler.queue_down_end_->UnregisterDequeue();
+    acl_queue_handler.queue_->GetDownEnd()->UnregisterDequeue();
   }
   acl_queue_handlers_.erase(handle);
   starting_point_ = acl_queue_handlers_.begin();
@@ -101,7 +101,7 @@ void RoundRobinScheduler::start_round_robin() {
         le_acl_packet_credits_ == 0 && acl_queue_handler->second.connection_type_ == ConnectionType::LE;
     if (!acl_queue_handler->second.dequeue_is_registered_ && !classic_buffer_full && !le_buffer_full) {
       acl_queue_handler->second.dequeue_is_registered_ = true;
-      acl_queue_handler->second.queue_down_end_->RegisterDequeue(
+      acl_queue_handler->second.queue_->GetDownEnd()->RegisterDequeue(
           handler_, common::Bind(&RoundRobinScheduler::buffer_packet, common::Unretained(this), acl_queue_handler));
     }
     acl_queue_handler = std::next(acl_queue_handler);
@@ -117,7 +117,7 @@ void RoundRobinScheduler::buffer_packet(std::map<uint16_t, acl_queue_handler>::i
   BroadcastFlag broadcast_flag = BroadcastFlag::POINT_TO_POINT;
   // Wrap packet and enqueue it
   uint16_t handle = acl_queue_handler->first;
-  auto packet = acl_queue_handler->second.queue_down_end_->TryDequeue();
+  auto packet = acl_queue_handler->second.queue_->GetDownEnd()->TryDequeue();
   ASSERT(packet != nullptr);
 
   ConnectionType connection_type = acl_queue_handler->second.connection_type_;
@@ -148,7 +148,7 @@ void RoundRobinScheduler::unregister_all_connections() {
        acl_queue_handler = std::next(acl_queue_handler)) {
     if (acl_queue_handler->second.dequeue_is_registered_) {
       acl_queue_handler->second.dequeue_is_registered_ = false;
-      acl_queue_handler->second.queue_down_end_->UnregisterDequeue();
+      acl_queue_handler->second.queue_->GetDownEnd()->UnregisterDequeue();
     }
   }
 }
