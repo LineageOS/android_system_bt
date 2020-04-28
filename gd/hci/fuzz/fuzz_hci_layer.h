@@ -51,7 +51,7 @@ class FuzzHciLayer : public HciLayer {
 
   void EnqueueCommand(std::unique_ptr<hci::CommandPacketBuilder> command,
                       common::ContextualOnceCallback<void(hci::CommandCompleteView)> on_complete) override {
-    on_command_complete = std::move(on_complete);
+    on_command_complete_ = std::move(on_complete);
     if (auto_reply_fdp != nullptr) {
       injectCommandComplete(bluetooth::fuzz::GetArbitraryBytes(auto_reply_fdp));
     }
@@ -59,7 +59,7 @@ class FuzzHciLayer : public HciLayer {
 
   void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
                       common::ContextualOnceCallback<void(hci::CommandStatusView)> on_status) override {
-    on_command_status = std::move(on_status);
+    on_command_status_ = std::move(on_status);
     if (auto_reply_fdp != nullptr) {
       injectCommandStatus(bluetooth::fuzz::GetArbitraryBytes(auto_reply_fdp));
     }
@@ -69,15 +69,29 @@ class FuzzHciLayer : public HciLayer {
     return acl_queue_.GetUpEnd();
   }
 
-  void RegisterEventHandler(hci::EventCode event_code,
-                            common::ContextualCallback<void(hci::EventPacketView)> event_handler) override {}
+  void RegisterEventHandler(hci::EventCode event,
+                            common::ContextualCallback<void(hci::EventPacketView)> handler) override {
+    event_handlers_[event] = handler;
+  }
 
-  void UnregisterEventHandler(hci::EventCode event_code) override {}
+  void UnregisterEventHandler(hci::EventCode event) override {
+    auto it = event_handlers_.find(event);
+    if (it != event_handlers_.end()) {
+      event_handlers_.erase(it);
+    }
+  }
 
-  void RegisterLeEventHandler(hci::SubeventCode subevent_code,
-                              common::ContextualCallback<void(hci::LeMetaEventView)> event_handler) override {}
+  void RegisterLeEventHandler(hci::SubeventCode event,
+                              common::ContextualCallback<void(hci::LeMetaEventView)> handler) override {
+    le_event_handlers_[event] = handler;
+  }
 
-  void UnregisterLeEventHandler(hci::SubeventCode subevent_code) override {}
+  void UnregisterLeEventHandler(hci::SubeventCode event) override {
+    auto it = le_event_handlers_.find(event);
+    if (it != le_event_handlers_.end()) {
+      le_event_handlers_.erase(it);
+    }
+  }
 
   hci::SecurityInterface* GetSecurityInterface(
       common::ContextualCallback<void(hci::EventPacketView)> event_handler) override;
@@ -116,6 +130,8 @@ class FuzzHciLayer : public HciLayer {
   void injectAclData(std::vector<uint8_t> data);
   void injectCommandComplete(std::vector<uint8_t> data);
   void injectCommandStatus(std::vector<uint8_t> data);
+  void injectEvent(FuzzedDataProvider& fdp);
+  void injectLeEvent(FuzzedDataProvider& fdp);
 
   FuzzedDataProvider* auto_reply_fdp;
 
@@ -130,8 +146,11 @@ class FuzzHciLayer : public HciLayer {
   FuzzCommandInterface<LeAdvertisingCommandBuilder> le_advertising_interface_{};
   FuzzCommandInterface<LeScanningCommandBuilder> le_scanning_interface_{};
 
-  common::ContextualOnceCallback<void(hci::CommandCompleteView)> on_command_complete;
-  common::ContextualOnceCallback<void(hci::CommandStatusView)> on_command_status;
+  common::ContextualOnceCallback<void(hci::CommandCompleteView)> on_command_complete_;
+  common::ContextualOnceCallback<void(hci::CommandStatusView)> on_command_status_;
+
+  std::map<hci::EventCode, common::ContextualCallback<void(hci::EventPacketView)>> event_handlers_;
+  std::map<hci::SubeventCode, common::ContextualCallback<void(hci::LeMetaEventView)>> le_event_handlers_;
 };
 
 }  // namespace fuzz

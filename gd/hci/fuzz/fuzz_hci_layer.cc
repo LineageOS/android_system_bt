@@ -70,7 +70,7 @@ void FuzzHciLayer::Stop() {
 }
 
 void FuzzHciLayer::injectArbitrary(FuzzedDataProvider& fdp) {
-  const uint8_t action = fdp.ConsumeIntegralInRange(0, 3);
+  const uint8_t action = fdp.ConsumeIntegralInRange(0, 5);
   switch (action) {
     case 1:
       injectAclData(GetArbitraryBytes(&fdp));
@@ -81,6 +81,12 @@ void FuzzHciLayer::injectArbitrary(FuzzedDataProvider& fdp) {
     case 3:
       injectCommandStatus(GetArbitraryBytes(&fdp));
       break;
+    case 4:
+      injectEvent(fdp);
+      break;
+    case 5:
+      injectLeEvent(fdp);
+      break;
   }
 }
 
@@ -90,11 +96,25 @@ void FuzzHciLayer::injectAclData(std::vector<uint8_t> data) {
 }
 
 void FuzzHciLayer::injectCommandComplete(std::vector<uint8_t> data) {
-  InvokeIfValid<hci::CommandCompleteView>(std::move(on_command_complete), data);
+  InvokeIfValid<hci::CommandCompleteView>(std::move(on_command_complete_), data);
 }
 
 void FuzzHciLayer::injectCommandStatus(std::vector<uint8_t> data) {
-  InvokeIfValid<hci::CommandStatusView>(std::move(on_command_status), data);
+  InvokeIfValid<hci::CommandStatusView>(std::move(on_command_status_), data);
+}
+
+void FuzzHciLayer::injectEvent(FuzzedDataProvider& fdp) {
+  auto handler_pair = event_handlers_.find(static_cast<EventCode>(fdp.ConsumeIntegral<uint8_t>()));
+  if (handler_pair != event_handlers_.end()) {
+    InvokeIfValid<EventPacketView>(handler_pair->second, GetArbitraryBytes(&fdp));
+  }
+}
+
+void FuzzHciLayer::injectLeEvent(FuzzedDataProvider& fdp) {
+  auto handler_pair = le_event_handlers_.find(static_cast<SubeventCode>(fdp.ConsumeIntegral<uint8_t>()));
+  if (handler_pair != le_event_handlers_.end()) {
+    InvokeIfValid<LeMetaEventView>(handler_pair->second, GetArbitraryBytes(&fdp));
+  }
 }
 
 const ModuleFactory FuzzHciLayer::Factory = ModuleFactory([]() { return new FuzzHciLayer(); });
