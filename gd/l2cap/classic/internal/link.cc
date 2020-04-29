@@ -19,7 +19,7 @@
 #include <chrono>
 #include <memory>
 
-#include "hci/acl_manager.h"
+#include "hci/acl_manager/classic_acl_connection.h"
 #include "l2cap/classic/dynamic_channel_manager.h"
 #include "l2cap/classic/internal/fixed_channel_impl.h"
 #include "l2cap/classic/internal/link_manager.h"
@@ -35,7 +35,7 @@ using RetransmissionAndFlowControlMode = DynamicChannelConfigurationOption::Retr
 using ConnectionResult = DynamicChannelManager::ConnectionResult;
 using ConnectionResultCode = DynamicChannelManager::ConnectionResultCode;
 
-Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::ClassicAclConnection> acl_connection,
+Link::Link(os::Handler* l2cap_handler, std::unique_ptr<hci::acl_manager::ClassicAclConnection> acl_connection,
            l2cap::internal::ParameterProvider* parameter_provider,
            DynamicChannelServiceManagerImpl* dynamic_service_manager,
            FixedChannelServiceManagerImpl* fixed_service_manager, LinkManager* link_manager)
