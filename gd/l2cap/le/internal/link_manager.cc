@@ -16,7 +16,7 @@
 #include <memory>
 #include <unordered_map>
 
-#include "hci/acl_manager.h"
+#include "hci/acl_manager/le_acl_connection.h"
 #include "hci/address.h"
 #include "l2cap/internal/scheduler_fifo.h"
 #include "l2cap/le/internal/link.h"
@@ -101,7 +101,7 @@ Link* LinkManager::GetLink(hci::AddressWithType address_with_type) {
 }
 
 void LinkManager::OnLeConnectSuccess(hci::AddressWithType connecting_address_with_type,
-                                     std::unique_ptr<hci::LeAclConnection> acl_connection) {
+                                     std::unique_ptr<hci::acl_manager::LeAclConnection> acl_connection) {
   // Same link should not be connected twice
   hci::AddressWithType connected_address_with_type = acl_connection->GetRemoteAddress();
   ASSERT_LOG(GetLink(connected_address_with_type) == nullptr, "%s is connected twice without disconnection",

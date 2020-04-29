@@ -19,7 +19,7 @@
 #include <memory>
 #include <unordered_map>
 
-#include "hci/acl_manager.h"
+#include "hci/acl_manager/classic_acl_connection.h"
 #include "hci/address.h"
 #include "l2cap/classic/dynamic_channel_manager.h"
 #include "l2cap/classic/fixed_channel_manager.h"
@@ -35,7 +35,7 @@ namespace l2cap {
 namespace classic {
 namespace internal {
 
-class LinkManager : public hci::ConnectionCallbacks {
+class LinkManager : public hci::acl_manager::ConnectionCallbacks {
  public:
   LinkManager(os::Handler* l2cap_handler, hci::AclManager* acl_manager,
               FixedChannelServiceManagerImpl* fixed_channel_service_manager,
@@ -59,7 +59,7 @@ class LinkManager : public hci::ConnectionCallbacks {
   // ACL methods
 
   Link* GetLink(hci::Address device);
-  void OnConnectSuccess(std::unique_ptr<hci::ClassicAclConnection> acl_connection) override;
+  void OnConnectSuccess(std::unique_ptr<hci::acl_manager::ClassicAclConnection> acl_connection) override;
   void OnConnectFail(hci::Address device, hci::ErrorCode reason) override;
   void OnDisconnect(hci::Address device, hci::ErrorCode status);
 
