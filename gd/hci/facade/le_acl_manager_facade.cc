@@ -38,7 +38,11 @@ namespace bluetooth {
 namespace hci {
 namespace facade {
 
-class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public ::bluetooth::hci::LeConnectionCallbacks {
+using acl_manager::LeAclConnection;
+using acl_manager::LeConnectionCallbacks;
+using acl_manager::LeConnectionManagementCallbacks;
+
+class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeConnectionCallbacks {
  public:
   LeAclManagerFacadeService(AclManager* acl_manager, ::bluetooth::os::Handler* facade_handler)
       : acl_manager_(acl_manager), facade_handler_(facade_handler) {
@@ -163,13 +167,12 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public ::b
     per_connection_events_[entry]->OnIncomingEvent(disconnection);
   }
 
-  void OnLeConnectSuccess(AddressWithType address_with_type,
-                          std::unique_ptr<::bluetooth::hci::LeAclConnection> connection) override {
+  void OnLeConnectSuccess(AddressWithType address_with_type, std::unique_ptr<LeAclConnection> connection) override {
     LOG_DEBUG("%s", address_with_type.ToString().c_str());
 
     std::unique_lock<std::mutex> lock(acl_connections_mutex_);
     auto addr = address_with_type.GetAddress();
-    std::shared_ptr<::bluetooth::hci::LeAclConnection> shared_connection = std::move(connection);
+    std::shared_ptr<LeAclConnection> shared_connection = std::move(connection);
     uint16_t handle = to_handle(current_connection_request_);
     acl_connections_.emplace(
         std::pair(handle, Connection(current_connection_request_, handle, shared_connection, this)));
@@ -198,7 +201,7 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public ::b
     current_connection_request_++;
   }
 
-  class Connection : public ::bluetooth::hci::LeConnectionManagementCallbacks {
+  class Connection : public LeConnectionManagementCallbacks {
    public:
     Connection(uint32_t entry, uint16_t handle, std::shared_ptr<LeAclConnection> connection,
                LeAclManagerFacadeService* facade)

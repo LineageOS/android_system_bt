@@ -16,6 +16,12 @@
 #pragma once
 
 #include "hci/acl_manager.h"
+#include "hci/acl_manager/classic_acl_connection.h"
+#include "hci/acl_manager/connection_callbacks.h"
+#include "hci/acl_manager/connection_management_callbacks.h"
+#include "hci/acl_manager/le_acl_connection.h"
+#include "hci/acl_manager/le_connection_callbacks.h"
+#include "hci/acl_manager/le_connection_management_callbacks.h"
 
 #include <gmock/gmock.h>
 
@@ -23,6 +29,14 @@
 namespace bluetooth {
 namespace hci {
 namespace testing {
+
+using acl_manager::LeAclConnection;
+using acl_manager::LeConnectionCallbacks;
+using acl_manager::LeConnectionManagementCallbacks;
+
+using acl_manager::ClassicAclConnection;
+using acl_manager::ConnectionCallbacks;
+using acl_manager::ConnectionManagementCallbacks;
 
 class MockClassicAclConnection : public ClassicAclConnection {
  public:

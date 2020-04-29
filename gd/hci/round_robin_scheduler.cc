@@ -40,7 +40,7 @@ RoundRobinScheduler::~RoundRobinScheduler() {
 }
 
 void RoundRobinScheduler::Register(ConnectionType connection_type, uint16_t handle,
-                                   std::shared_ptr<AclConnection::Queue> queue) {
+                                   std::shared_ptr<acl_manager::AclConnection::Queue> queue) {
   acl_queue_handler acl_queue_handler = {connection_type, std::move(queue), false, 0, false};
   acl_queue_handlers_.insert(std::pair<uint16_t, RoundRobinScheduler::acl_queue_handler>(handle, acl_queue_handler));
   if (fragments_to_send_.size() == 0) {
