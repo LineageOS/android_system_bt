@@ -38,7 +38,11 @@ namespace bluetooth {
 namespace hci {
 namespace facade {
 
-class AclManagerFacadeService : public AclManagerFacade::Service, public ::bluetooth::hci::ConnectionCallbacks {
+using acl_manager::ClassicAclConnection;
+using acl_manager::ConnectionCallbacks;
+using acl_manager::ConnectionManagementCallbacks;
+
+class AclManagerFacadeService : public AclManagerFacade::Service, public ConnectionCallbacks {
  public:
   AclManagerFacadeService(AclManager* acl_manager, ::bluetooth::os::Handler* facade_handler)
       : acl_manager_(acl_manager), facade_handler_(facade_handler) {
@@ -168,10 +172,10 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public ::bluet
     per_connection_events_[entry]->OnIncomingEvent(disconnection);
   }
 
-  void OnConnectSuccess(std::unique_ptr<::bluetooth::hci::ClassicAclConnection> connection) override {
+  void OnConnectSuccess(std::unique_ptr<ClassicAclConnection> connection) override {
     std::unique_lock<std::mutex> lock(acl_connections_mutex_);
     auto addr = connection->GetAddress();
-    std::shared_ptr<::bluetooth::hci::ClassicAclConnection> shared_connection = std::move(connection);
+    std::shared_ptr<ClassicAclConnection> shared_connection = std::move(connection);
     uint16_t handle = to_handle(current_connection_request_);
     acl_connections_.emplace(std::pair(handle, Connection(handle, shared_connection)));
     auto remote_address = shared_connection->GetAddress().ToString();
@@ -197,7 +201,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public ::bluet
     current_connection_request_++;
   }
 
-  class Connection : public ::bluetooth::hci::ConnectionManagementCallbacks {
+  class Connection : public ConnectionManagementCallbacks {
    public:
     Connection(uint16_t handle, std::shared_ptr<ClassicAclConnection> connection)
         : handle_(handle), connection_(std::move(connection)) {}

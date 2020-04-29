@@ -16,7 +16,7 @@
 #include <memory>
 #include <unordered_map>
 
-#include "hci/acl_manager.h"
+#include "hci/acl_manager/classic_acl_connection.h"
 #include "hci/address.h"
 #include "l2cap/classic/internal/link.h"
 #include "l2cap/internal/scheduler_fifo.h"
@@ -125,7 +125,7 @@ void LinkManager::TriggerPairing(Link* link) {
   link->ReadClockOffset();
 }
 
-void LinkManager::OnConnectSuccess(std::unique_ptr<hci::ClassicAclConnection> acl_connection) {
+void LinkManager::OnConnectSuccess(std::unique_ptr<hci::acl_manager::ClassicAclConnection> acl_connection) {
   // Same link should not be connected twice
   hci::Address device = acl_connection->GetAddress();
   ASSERT_LOG(GetLink(device) == nullptr, "%s is connected twice without disconnection",
