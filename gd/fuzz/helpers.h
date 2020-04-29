@@ -30,5 +30,29 @@ std::vector<std::vector<uint8_t>> SplitInput(const uint8_t* data, size_t size, c
 
 std::vector<uint8_t> GetArbitraryBytes(FuzzedDataProvider* fdp);
 
+#define CONSTRUCT_VALID_UNIQUE_OTHERWISE_BAIL(T, name, data) \
+  auto name = std::make_unique<T>(T::FromBytes(data));       \
+  if (!name->IsValid()) {                                    \
+    return;                                                  \
+  }
+
+template <typename TView>
+void InvokeIfValid(common::ContextualOnceCallback<void(TView)> callback, std::vector<uint8_t> data) {
+  auto packet = TView::FromBytes(data);
+  if (!packet.IsValid()) {
+    return;
+  }
+  callback.InvokeIfNotEmpty(packet);
+}
+
+template <typename TView>
+void InvokeIfValid(common::ContextualCallback<void(TView)> callback, std::vector<uint8_t> data) {
+  auto packet = TView::FromBytes(data);
+  if (!packet.IsValid()) {
+    return;
+  }
+  callback.InvokeIfNotEmpty(packet);
+}
+
 }  // namespace fuzz
 }  // namespace bluetooth

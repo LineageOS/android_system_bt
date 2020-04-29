@@ -22,7 +22,7 @@
 #include "l2cap/cid.h"
 #include "l2cap/classic/fixed_channel.h"
 #include "l2cap/classic/fixed_channel_service.h"
-#include "l2cap/security_policy.h"
+#include "l2cap/classic/security_policy.h"
 #include "os/handler.h"
 
 namespace bluetooth {

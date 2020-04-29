@@ -15,16 +15,15 @@
  */
 
 #include "hci/fuzz/fuzz_hci_layer.h"
+#include "fuzz/helpers.h"
 
 namespace bluetooth {
 namespace hci {
 namespace fuzz {
 
 using bluetooth::common::ContextualCallback;
-
-common::BidiQueueEnd<hci::AclPacketBuilder, hci::AclPacketView>* FuzzHciLayer::GetAclQueueEnd() {
-  return acl_queue_.GetUpEnd();
-}
+using bluetooth::fuzz::GetArbitraryBytes;
+using bluetooth::fuzz::InvokeIfValid;
 
 hci::SecurityInterface* FuzzHciLayer::GetSecurityInterface(
     ContextualCallback<void(hci::EventPacketView)> event_handler) {
@@ -70,13 +69,110 @@ void FuzzHciLayer::Stop() {
   delete acl_inject_;
 }
 
-void FuzzHciLayer::injectAclData(std::vector<uint8_t> data) {
-  hci::AclPacketView aclPacket = hci::AclPacketView::FromBytes(data);
-  if (!aclPacket.IsValid()) {
-    return;
+void FuzzHciLayer::injectArbitrary(FuzzedDataProvider& fdp) {
+  const uint8_t action = fdp.ConsumeIntegralInRange(0, 13);
+  switch (action) {
+    case 1:
+      injectAclData(GetArbitraryBytes(&fdp));
+      break;
+    case 2:
+      injectCommandComplete(GetArbitraryBytes(&fdp));
+      break;
+    case 3:
+      injectCommandStatus(GetArbitraryBytes(&fdp));
+      break;
+    case 4:
+      injectEvent(fdp);
+      break;
+    case 5:
+      injectLeEvent(fdp);
+      break;
+    case 6:
+      injectSecurityEvent(GetArbitraryBytes(&fdp));
+      break;
+    case 7:
+      injectLeSecurityEvent(GetArbitraryBytes(&fdp));
+      break;
+    case 8:
+      injectAclEvent(GetArbitraryBytes(&fdp));
+      break;
+    case 9:
+      injectAclDisconnect(fdp);
+      break;
+    case 10:
+      injectLeAclEvent(GetArbitraryBytes(&fdp));
+      break;
+    case 11:
+      injectLeAclDisconnect(fdp);
+      break;
+    case 12:
+      injectLeAdvertisingEvent(GetArbitraryBytes(&fdp));
+      break;
+    case 13:
+      injectLeScanningEvent(GetArbitraryBytes(&fdp));
+      break;
   }
+}
 
-  acl_inject_->Inject(std::make_unique<AclPacketView>(aclPacket));
+void FuzzHciLayer::injectAclData(std::vector<uint8_t> data) {
+  CONSTRUCT_VALID_UNIQUE_OTHERWISE_BAIL(hci::AclPacketView, packet, data);
+  acl_inject_->Inject(std::move(packet));
+}
+
+void FuzzHciLayer::injectCommandComplete(std::vector<uint8_t> data) {
+  InvokeIfValid<hci::CommandCompleteView>(std::move(on_command_complete_), data);
+}
+
+void FuzzHciLayer::injectCommandStatus(std::vector<uint8_t> data) {
+  InvokeIfValid<hci::CommandStatusView>(std::move(on_command_status_), data);
+}
+
+void FuzzHciLayer::injectEvent(FuzzedDataProvider& fdp) {
+  auto handler_pair = event_handlers_.find(static_cast<EventCode>(fdp.ConsumeIntegral<uint8_t>()));
+  if (handler_pair != event_handlers_.end()) {
+    InvokeIfValid<EventPacketView>(handler_pair->second, GetArbitraryBytes(&fdp));
+  }
+}
+
+void FuzzHciLayer::injectLeEvent(FuzzedDataProvider& fdp) {
+  auto handler_pair = le_event_handlers_.find(static_cast<SubeventCode>(fdp.ConsumeIntegral<uint8_t>()));
+  if (handler_pair != le_event_handlers_.end()) {
+    InvokeIfValid<LeMetaEventView>(handler_pair->second, GetArbitraryBytes(&fdp));
+  }
+}
+
+void FuzzHciLayer::injectSecurityEvent(std::vector<uint8_t> data) {
+  InvokeIfValid<EventPacketView>(security_event_handler_, data);
+}
+
+void FuzzHciLayer::injectLeSecurityEvent(std::vector<uint8_t> data) {
+  InvokeIfValid<LeMetaEventView>(le_security_event_handler_, data);
+}
+
+void FuzzHciLayer::injectAclEvent(std::vector<uint8_t> data) {
+  InvokeIfValid<EventPacketView>(acl_event_handler_, data);
+}
+
+void FuzzHciLayer::injectAclDisconnect(FuzzedDataProvider& fdp) {
+  acl_on_disconnect_.InvokeIfNotEmpty(fdp.ConsumeIntegral<uint16_t>(),
+                                      static_cast<hci::ErrorCode>(fdp.ConsumeIntegral<uint8_t>()));
+}
+
+void FuzzHciLayer::injectLeAclEvent(std::vector<uint8_t> data) {
+  InvokeIfValid<LeMetaEventView>(le_acl_event_handler_, data);
+}
+
+void FuzzHciLayer::injectLeAclDisconnect(FuzzedDataProvider& fdp) {
+  le_acl_on_disconnect_.InvokeIfNotEmpty(fdp.ConsumeIntegral<uint16_t>(),
+                                         static_cast<hci::ErrorCode>(fdp.ConsumeIntegral<uint8_t>()));
+}
+
+void FuzzHciLayer::injectLeAdvertisingEvent(std::vector<uint8_t> data) {
+  InvokeIfValid<LeMetaEventView>(le_advertising_event_handler_, data);
+}
+
+void FuzzHciLayer::injectLeScanningEvent(std::vector<uint8_t> data) {
+  InvokeIfValid<LeMetaEventView>(le_scanning_event_handler_, data);
 }
 
 const ModuleFactory FuzzHciLayer::Factory = ModuleFactory([]() { return new FuzzHciLayer(); });

@@ -17,7 +17,6 @@
 #include "hci/acl_manager.h"
 
 #include <atomic>
-#include <future>
 #include <queue>
 #include <set>
 #include <utility>
@@ -67,122 +66,55 @@ uint16_t GetL2capPduSize(AclPacketView packet) {
 
 }  // namespace
 
-struct AclManager::acl_connection {
-  acl_connection(AddressWithType address_with_type, os::Handler* handler)
-      : address_with_type_(address_with_type), handler_(handler) {}
+template <class T>
+void check_command_complete(CommandCompleteView view) {
+  ASSERT(view.IsValid());
+  auto status_view = T::Create(view);
+  if (!status_view.IsValid()) {
+    LOG_ERROR("Received command complete with invalid packet, opcode 0x%02hx", view.GetCommandOpCode());
+    return;
+  }
+  ErrorCode status = status_view.GetStatus();
+  OpCode op_code = status_view.GetCommandOpCode();
+  if (status != ErrorCode::SUCCESS) {
+    std::string error_code = ErrorCodeText(status);
+    LOG_ERROR("Received command complete with error code %s, opcode 0x%02hx", error_code.c_str(), op_code);
+    return;
+  }
+}
+
+template <class T>
+void check_command_status(CommandStatusView view) {
+  ASSERT(view.IsValid());
+  auto status_view = T::Create(view);
+  if (!status_view.IsValid()) {
+    LOG_ERROR("Received command status with invalid packet, opcode 0x%02hx", view.GetCommandOpCode());
+    return;
+  }
+  ErrorCode status = status_view.GetStatus();
+  OpCode op_code = status_view.GetCommandOpCode();
+  if (status != ErrorCode::SUCCESS) {
+    std::string error_code = ErrorCodeText(status);
+    LOG_ERROR("Received command status with error code %s, opcode 0x%02hx", error_code.c_str(), op_code);
+    return;
+  }
+}
+
+struct assembler {
+  assembler(AddressWithType address_with_type, AclConnection::QueueDownEnd* down_end, os::Handler* handler)
+      : address_with_type_(address_with_type), down_end_(down_end), handler_(handler) {}
   AddressWithType address_with_type_;
+  AclConnection::QueueDownEnd* down_end_;
   os::Handler* handler_;
-  std::unique_ptr<AclConnection::Queue> queue_ = std::make_unique<AclConnection::Queue>(10);
-  bool is_disconnected_ = false;
-  ErrorCode disconnect_reason_;
-  os::Handler* command_complete_handler_ = nullptr;
-  os::Handler* disconnect_handler_ = nullptr;
-  ConnectionManagementCallbacks* command_complete_callbacks_ = nullptr;
-  os::Handler* le_command_complete_handler_ = nullptr;
-  LeConnectionManagementCallbacks* le_command_complete_callbacks_ = nullptr;
-  common::OnceCallback<void(ErrorCode)> on_disconnect_callback_;
-  // For LE Connection parameter update from L2CAP
-  common::OnceCallback<void(ErrorCode)> on_connection_update_complete_callback_;
-  os::Handler* on_connection_update_complete_callback_handler_ = nullptr;
-  PacketViewForRecombination recombination_stage_{std::make_shared<std::vector<uint8_t>>()};
-  int remaining_sdu_continuation_packet_size_ = 0;
-  std::atomic_bool enqueue_registered_ = false;
-  std::queue<packet::PacketView<kLittleEndian>> incoming_queue_;
-
-  ~acl_connection() {
-    if (enqueue_registered_.exchange(false)) {
-      queue_->GetDownEnd()->UnregisterEnqueue();
-    }
-    queue_.reset();
-  }
-
-  // Invoked from some external Queue Reactable context
-  std::unique_ptr<packet::PacketView<kLittleEndian>> on_incoming_data_ready() {
-    auto packet = incoming_queue_.front();
-    incoming_queue_.pop();
-    if (incoming_queue_.empty() && enqueue_registered_.exchange(false)) {
-      queue_->GetDownEnd()->UnregisterEnqueue();
-    }
-    return std::make_unique<PacketView<kLittleEndian>>(packet);
-  }
-
-  void on_incoming_packet(AclPacketView packet) {
-    // TODO: What happens if the connection is stalled and fills up?
-    PacketView<kLittleEndian> payload = packet.GetPayload();
-    auto payload_size = payload.size();
-    auto packet_boundary_flag = packet.GetPacketBoundaryFlag();
-    if (packet_boundary_flag == PacketBoundaryFlag::FIRST_NON_AUTOMATICALLY_FLUSHABLE) {
-      LOG_ERROR("Controller is not allowed to send FIRST_NON_AUTOMATICALLY_FLUSHABLE to host except loopback mode");
-      return;
-    }
-    if (packet_boundary_flag == PacketBoundaryFlag::CONTINUING_FRAGMENT) {
-      if (remaining_sdu_continuation_packet_size_ < payload_size) {
-        LOG_WARN("Remote sent unexpected L2CAP PDU. Drop the entire L2CAP PDU");
-        recombination_stage_ = PacketViewForRecombination(std::make_shared<std::vector<uint8_t>>());
-        remaining_sdu_continuation_packet_size_ = 0;
-        return;
-      }
-      remaining_sdu_continuation_packet_size_ -= payload_size;
-      recombination_stage_.AppendPacketView(payload);
-      if (remaining_sdu_continuation_packet_size_ != 0) {
-        return;
-      } else {
-        payload = recombination_stage_;
-        recombination_stage_ = PacketViewForRecombination(std::make_shared<std::vector<uint8_t>>());
-      }
-    } else if (packet_boundary_flag == PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE) {
-      if (recombination_stage_.size() > 0) {
-        LOG_ERROR("Controller sent a starting packet without finishing previous packet. Drop previous one.");
-      }
-      auto l2cap_pdu_size = GetL2capPduSize(packet);
-      remaining_sdu_continuation_packet_size_ = l2cap_pdu_size - (payload_size - kL2capBasicFrameHeaderSize);
-      if (remaining_sdu_continuation_packet_size_ > 0) {
-        recombination_stage_ = payload;
-        return;
-      }
-    }
-    if (incoming_queue_.size() > kMaxQueuedPacketsPerConnection) {
-      LOG_ERROR("Dropping packet due to congestion from remote:%s", address_with_type_.ToString().c_str());
-      return;
-    }
-
-    incoming_queue_.push(payload);
-    if (!enqueue_registered_.exchange(true)) {
-      queue_->GetDownEnd()->RegisterEnqueue(
-          handler_, common::Bind(&AclManager::acl_connection::on_incoming_data_ready, common::Unretained(this)));
-    }
-  }
-
-  void call_disconnect_callback() {
-    disconnect_handler_->Post(BindOnce(std::move(on_disconnect_callback_), disconnect_reason_));
-  }
-};
-
-struct AclManager::le_acl_connection {
-  le_acl_connection(AddressWithType address_with_type, os::Handler* handler)
-      : address_with_type_(address_with_type), handler_(handler) {}
-  AddressWithType address_with_type_;
-  LeConnectionManagementCallbacks* le_connection_management_callbacks_;
-  os::Handler* handler_;
-  std::shared_ptr<AclConnection::Queue> queue_ = std::make_unique<AclConnection::Queue>(10);
   PacketViewForRecombination recombination_stage_{std::make_shared<std::vector<uint8_t>>()};
   int remaining_sdu_continuation_packet_size_ = 0;
   std::shared_ptr<std::atomic_bool> enqueue_registered_ = std::make_shared<std::atomic_bool>(false);
   std::queue<packet::PacketView<kLittleEndian>> incoming_queue_;
 
-  ~le_acl_connection() {
+  ~assembler() {
     if (enqueue_registered_->exchange(false)) {
-      queue_->GetDownEnd()->UnregisterEnqueue();
+      down_end_->UnregisterEnqueue();
     }
-    queue_.reset();
-  }
-
-  AclConnection::QueueDownEnd* GetDownEnd() {
-    return queue_->GetDownEnd();
-  }
-
-  void SetLeConnectionManagementCallbacks(LeConnectionManagementCallbacks* callbacks) {
-    le_connection_management_callbacks_ = callbacks;
   }
 
   // Invoked from some external Queue Reactable context
@@ -190,7 +122,7 @@ struct AclManager::le_acl_connection {
     auto packet = incoming_queue_.front();
     incoming_queue_.pop();
     if (incoming_queue_.empty() && enqueue_registered_->exchange(false)) {
-      queue_->GetDownEnd()->UnregisterEnqueue();
+      down_end_->UnregisterEnqueue();
     }
     return std::make_unique<PacketView<kLittleEndian>>(packet);
   }
@@ -237,10 +169,288 @@ struct AclManager::le_acl_connection {
 
     incoming_queue_.push(payload);
     if (!enqueue_registered_->exchange(true)) {
-      queue_->GetDownEnd()->RegisterEnqueue(
-          handler_, common::Bind(&AclManager::le_acl_connection::on_le_incoming_data_ready, common::Unretained(this)));
+      down_end_->RegisterEnqueue(handler_,
+                                 common::Bind(&assembler::on_le_incoming_data_ready, common::Unretained(this)));
     }
   }
+};
+
+struct AclManager::acl_connection {
+  acl_connection(AddressWithType address_with_type, AclConnection::QueueDownEnd* queue_down_end, os::Handler* handler)
+      : assembler_(address_with_type, queue_down_end, handler), address_with_type_(address_with_type) {}
+  ~acl_connection() = default;
+  struct assembler assembler_;
+  AddressWithType address_with_type_;
+  ConnectionManagementCallbacks* connection_management_callbacks_ = nullptr;
+};
+
+struct AclManager::le_acl_connection {
+  le_acl_connection(AddressWithType address_with_type, AclConnection::QueueDownEnd* queue_down_end,
+                    os::Handler* handler)
+      : assembler_(address_with_type, queue_down_end, handler) {}
+  ~le_acl_connection() = default;
+  struct assembler assembler_;
+  LeConnectionManagementCallbacks* le_connection_management_callbacks_ = nullptr;
+};
+
+class AclConnectionTracker : public ConnectionManagementCallbacks {
+ public:
+  AclConnectionTracker(AclConnectionInterface* acl_connection_interface)
+      : acl_connection_interface_(acl_connection_interface) {}
+  ~AclConnectionTracker() override {
+    ASSERT(queued_callbacks_.empty());
+  }
+  void RegisterCallbacks(ConnectionManagementCallbacks* callbacks, os::Handler* handler) {
+    while (!queued_callbacks_.empty()) {
+      auto iter = queued_callbacks_.begin();
+      handler->Post(std::move(*iter));
+      queued_callbacks_.erase(iter);
+    }
+    client_handler_ = handler;
+    client_callbacks_ = callbacks;
+  }
+
+#define SAVE_OR_CALL(f, ...)                                                                                        \
+  if (client_handler_ == nullptr) {                                                                                 \
+    queued_callbacks_.emplace_back(                                                                                 \
+        common::BindOnce(&ConnectionManagementCallbacks::f, common::Unretained(this), ##__VA_ARGS__));              \
+  } else {                                                                                                          \
+    client_handler_->Post(                                                                                          \
+        common::BindOnce(&ConnectionManagementCallbacks::f, common::Unretained(client_callbacks_), ##__VA_ARGS__)); \
+  }
+
+  void OnConnectionPacketTypeChanged(uint16_t packet_type) override {
+    SAVE_OR_CALL(OnConnectionPacketTypeChanged, packet_type)
+  }
+  void OnAuthenticationComplete() override {
+    SAVE_OR_CALL(OnAuthenticationComplete)
+  }
+  void OnEncryptionChange(EncryptionEnabled enabled) override {
+    SAVE_OR_CALL(OnEncryptionChange, enabled)
+  }
+  void OnChangeConnectionLinkKeyComplete() override {
+    SAVE_OR_CALL(OnChangeConnectionLinkKeyComplete)
+  }
+  void OnReadClockOffsetComplete(uint16_t clock_offset) override {
+    SAVE_OR_CALL(OnReadClockOffsetComplete, clock_offset)
+  }
+  void OnModeChange(Mode current_mode, uint16_t interval) override {
+    SAVE_OR_CALL(OnModeChange, current_mode, interval)
+  }
+  void OnQosSetupComplete(ServiceType service_type, uint32_t token_rate, uint32_t peak_bandwidth, uint32_t latency,
+                          uint32_t delay_variation) override {
+    SAVE_OR_CALL(OnQosSetupComplete, service_type, token_rate, peak_bandwidth, latency, delay_variation)
+  }
+  void OnFlowSpecificationComplete(FlowDirection flow_direction, ServiceType service_type, uint32_t token_rate,
+                                   uint32_t token_bucket_size, uint32_t peak_bandwidth,
+                                   uint32_t access_latency) override {
+    SAVE_OR_CALL(OnFlowSpecificationComplete, flow_direction, service_type, token_rate, token_bucket_size,
+                 peak_bandwidth, access_latency)
+  }
+  void OnFlushOccurred() override {
+    SAVE_OR_CALL(OnFlushOccurred)
+  }
+  void OnRoleDiscoveryComplete(Role current_role) override {
+    SAVE_OR_CALL(OnRoleDiscoveryComplete, current_role)
+  }
+  void OnReadLinkPolicySettingsComplete(uint16_t link_policy_settings) override {
+    SAVE_OR_CALL(OnReadLinkPolicySettingsComplete, link_policy_settings)
+  }
+  void OnReadAutomaticFlushTimeoutComplete(uint16_t flush_timeout) override {
+    SAVE_OR_CALL(OnReadAutomaticFlushTimeoutComplete, flush_timeout)
+  }
+  void OnReadTransmitPowerLevelComplete(uint8_t transmit_power_level) override {
+    SAVE_OR_CALL(OnReadTransmitPowerLevelComplete, transmit_power_level)
+  }
+  void OnReadLinkSupervisionTimeoutComplete(uint16_t link_supervision_timeout) override {
+    SAVE_OR_CALL(OnReadLinkSupervisionTimeoutComplete, link_supervision_timeout)
+  }
+  void OnReadFailedContactCounterComplete(uint16_t failed_contact_counter) override {
+    SAVE_OR_CALL(OnReadFailedContactCounterComplete, failed_contact_counter)
+  }
+  void OnReadLinkQualityComplete(uint8_t link_quality) override {
+    SAVE_OR_CALL(OnReadLinkQualityComplete, link_quality)
+  }
+  void OnReadAfhChannelMapComplete(AfhMode afh_mode, std::array<uint8_t, 10> afh_channel_map) override {
+    SAVE_OR_CALL(OnReadAfhChannelMapComplete, afh_mode, afh_channel_map)
+  }
+  void OnReadRssiComplete(uint8_t rssi) override {
+    SAVE_OR_CALL(OnReadRssiComplete, rssi)
+  }
+  void OnReadClockComplete(uint32_t clock, uint16_t accuracy) override {
+    SAVE_OR_CALL(OnReadClockComplete, clock, accuracy)
+  }
+  void OnMasterLinkKeyComplete(KeyFlag key_flag) override {
+    SAVE_OR_CALL(OnMasterLinkKeyComplete, key_flag)
+  }
+  void OnRoleChange(Role new_role) override {
+    SAVE_OR_CALL(OnRoleChange, new_role)
+  }
+  void OnDisconnection(ErrorCode reason) {
+    SAVE_OR_CALL(OnDisconnection, reason);
+  }
+#undef SAVE_OR_CALL
+
+  void on_role_discovery_complete(CommandCompleteView view) {
+    auto complete_view = RoleDiscoveryCompleteView::Create(view);
+    if (!complete_view.IsValid()) {
+      LOG_ERROR("Received on_role_discovery_complete with invalid packet");
+      return;
+    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
+      auto status = complete_view.GetStatus();
+      std::string error_code = ErrorCodeText(status);
+      LOG_ERROR("Received on_role_discovery_complete with error code %s", error_code.c_str());
+      return;
+    }
+    OnRoleDiscoveryComplete(complete_view.GetCurrentRole());
+  }
+
+  void on_read_link_policy_settings_complete(CommandCompleteView view) {
+    auto complete_view = ReadLinkPolicySettingsCompleteView::Create(view);
+    if (!complete_view.IsValid()) {
+      LOG_ERROR("Received on_read_link_policy_settings_complete with invalid packet");
+      return;
+    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
+      auto status = complete_view.GetStatus();
+      std::string error_code = ErrorCodeText(status);
+      LOG_ERROR("Received on_read_link_policy_settings_complete with error code %s", error_code.c_str());
+      return;
+    }
+    OnReadLinkPolicySettingsComplete(complete_view.GetLinkPolicySettings());
+  }
+
+  void on_read_automatic_flush_timeout_complete(CommandCompleteView view) {
+    auto complete_view = ReadAutomaticFlushTimeoutCompleteView::Create(view);
+    if (!complete_view.IsValid()) {
+      LOG_ERROR("Received on_read_automatic_flush_timeout_complete with invalid packet");
+      return;
+    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
+      auto status = complete_view.GetStatus();
+      std::string error_code = ErrorCodeText(status);
+      LOG_ERROR("Received on_read_automatic_flush_timeout_complete with error code %s", error_code.c_str());
+      return;
+    }
+    OnReadAutomaticFlushTimeoutComplete(complete_view.GetFlushTimeout());
+  }
+
+  void on_read_transmit_power_level_complete(CommandCompleteView view) {
+    auto complete_view = ReadTransmitPowerLevelCompleteView::Create(view);
+    if (!complete_view.IsValid()) {
+      LOG_ERROR("Received on_read_transmit_power_level_complete with invalid packet");
+      return;
+    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
+      auto status = complete_view.GetStatus();
+      std::string error_code = ErrorCodeText(status);
+      LOG_ERROR("Received on_read_transmit_power_level_complete with error code %s", error_code.c_str());
+      return;
+    }
+    OnReadTransmitPowerLevelComplete(complete_view.GetTransmitPowerLevel());
+  }
+
+  void on_read_link_supervision_timeout_complete(CommandCompleteView view) {
+    auto complete_view = ReadLinkSupervisionTimeoutCompleteView::Create(view);
+    if (!complete_view.IsValid()) {
+      LOG_ERROR("Received on_read_link_supervision_timeout_complete with invalid packet");
+      return;
+    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
+      auto status = complete_view.GetStatus();
+      std::string error_code = ErrorCodeText(status);
+      LOG_ERROR("Received on_read_link_supervision_timeout_complete with error code %s", error_code.c_str());
+      return;
+    }
+    OnReadLinkSupervisionTimeoutComplete(complete_view.GetLinkSupervisionTimeout());
+  }
+
+  void on_read_failed_contact_counter_complete(CommandCompleteView view) {
+    auto complete_view = ReadFailedContactCounterCompleteView::Create(view);
+    if (!complete_view.IsValid()) {
+      LOG_ERROR("Received on_read_failed_contact_counter_complete with invalid packet");
+      return;
+    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
+      auto status = complete_view.GetStatus();
+      std::string error_code = ErrorCodeText(status);
+      LOG_ERROR("Received on_read_failed_contact_counter_complete with error code %s", error_code.c_str());
+      return;
+    }
+    OnReadFailedContactCounterComplete(complete_view.GetFailedContactCounter());
+  }
+
+  void on_read_link_quality_complete(CommandCompleteView view) {
+    auto complete_view = ReadLinkQualityCompleteView::Create(view);
+    if (!complete_view.IsValid()) {
+      LOG_ERROR("Received on_read_link_quality_complete with invalid packet");
+      return;
+    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
+      auto status = complete_view.GetStatus();
+      std::string error_code = ErrorCodeText(status);
+      LOG_ERROR("Received on_read_link_quality_complete with error code %s", error_code.c_str());
+      return;
+    }
+    OnReadLinkQualityComplete(complete_view.GetLinkQuality());
+  }
+
+  void on_read_afh_channel_map_complete(CommandCompleteView view) {
+    auto complete_view = ReadAfhChannelMapCompleteView::Create(view);
+    if (!complete_view.IsValid()) {
+      LOG_ERROR("Received on_read_afh_channel_map_complete with invalid packet");
+      return;
+    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
+      auto status = complete_view.GetStatus();
+      std::string error_code = ErrorCodeText(status);
+      LOG_ERROR("Received on_read_afh_channel_map_complete with error code %s", error_code.c_str());
+      return;
+    }
+    OnReadAfhChannelMapComplete(complete_view.GetAfhMode(), complete_view.GetAfhChannelMap());
+  }
+
+  void on_read_rssi_complete(CommandCompleteView view) {
+    auto complete_view = ReadRssiCompleteView::Create(view);
+    if (!complete_view.IsValid()) {
+      LOG_ERROR("Received on_read_rssi_complete with invalid packet");
+      return;
+    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
+      auto status = complete_view.GetStatus();
+      std::string error_code = ErrorCodeText(status);
+      LOG_ERROR("Received on_read_rssi_complete with error code %s", error_code.c_str());
+      return;
+    }
+    OnReadRssiComplete(complete_view.GetRssi());
+  }
+
+  void on_read_remote_version_information_status(CommandStatusView view) {
+    ASSERT_LOG(view.IsValid(), "Bad status packet!");
+    LOG_INFO("UNIMPLEMENTED called: %s", hci::ErrorCodeText(view.GetStatus()).c_str());
+  }
+
+  void on_read_remote_supported_features_status(CommandStatusView view) {
+    ASSERT_LOG(view.IsValid(), "Bad status packet!");
+    LOG_INFO("UNIMPLEMENTED called: %s", hci::ErrorCodeText(view.GetStatus()).c_str());
+  }
+
+  void on_read_remote_extended_features_status(CommandStatusView view) {
+    ASSERT_LOG(view.IsValid(), "Broken");
+    LOG_INFO("UNIMPLEMENTED called: %s", hci::ErrorCodeText(view.GetStatus()).c_str());
+  }
+  void on_read_clock_complete(CommandCompleteView view) {
+    auto complete_view = ReadClockCompleteView::Create(view);
+    if (!complete_view.IsValid()) {
+      LOG_ERROR("Received on_read_clock_complete with invalid packet");
+      return;
+    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
+      auto status = complete_view.GetStatus();
+      std::string error_code = ErrorCodeText(status);
+      LOG_ERROR("Received on_read_clock_complete with error code %s", error_code.c_str());
+      return;
+    }
+    uint32_t clock = complete_view.GetClock();
+    uint16_t accuracy = complete_view.GetAccuracy();
+    OnReadClockComplete(clock, accuracy);
+  }
+
+  AclConnectionInterface* acl_connection_interface_;
+  os::Handler* client_handler_ = nullptr;
+  ConnectionManagementCallbacks* client_callbacks_ = nullptr;
+  std::list<common::OnceClosure> queued_callbacks_;
 };
 
 class LeAclConnectionTracker : public LeConnectionManagementCallbacks {
@@ -261,27 +471,23 @@ class LeAclConnectionTracker : public LeConnectionManagementCallbacks {
     client_callbacks_ = callbacks;
   }
 
+#define SAVE_OR_CALL(f, ...)                                                                                        \
+  if (client_handler_ == nullptr) {                                                                                 \
+    queued_callbacks_.emplace_back(                                                                                 \
+        common::BindOnce(&LeConnectionManagementCallbacks::f, common::Unretained(this), __VA_ARGS__));              \
+  } else {                                                                                                          \
+    client_handler_->Post(                                                                                          \
+        common::BindOnce(&LeConnectionManagementCallbacks::f, common::Unretained(client_callbacks_), __VA_ARGS__)); \
+  }
+
   void OnConnectionUpdate(uint16_t conn_interval, uint16_t conn_latency, uint16_t supervision_timeout) override {
-    if (client_handler_ == nullptr) {
-      queued_callbacks_.emplace_back(common::BindOnce(&LeConnectionManagementCallbacks::OnConnectionUpdate,
-                                                      common::Unretained(this), conn_interval, conn_latency,
-                                                      supervision_timeout));
-    } else {
-      client_handler_->Post(common::BindOnce(&LeConnectionManagementCallbacks::OnConnectionUpdate,
-                                             common::Unretained(client_callbacks_), conn_interval, conn_latency,
-                                             supervision_timeout));
-    }
+    SAVE_OR_CALL(OnConnectionUpdate, conn_interval, conn_latency, supervision_timeout)
   }
 
   void OnDisconnection(ErrorCode reason) override {
-    if (client_handler_ == nullptr) {
-      queued_callbacks_.emplace_back(
-          common::BindOnce(&LeConnectionManagementCallbacks::OnDisconnection, common::Unretained(this), reason));
-    } else {
-      client_handler_->Post(common::BindOnce(&LeConnectionManagementCallbacks::OnDisconnection,
-                                             common::Unretained(client_callbacks_), reason));
-    }
+    SAVE_OR_CALL(OnDisconnection, reason);
   }
+#undef SAVE_OR_CALL
 
   LeAclConnectionInterface* le_acl_connection_interface_;
   common::OnceCallback<void(DisconnectReason)> do_disconnect_;
@@ -349,9 +555,6 @@ struct AclManager::impl : public security::ISecurityManagerListener {
       case EventCode::CONNECTION_COMPLETE:
         on_connection_complete(event_packet);
         break;
-      case EventCode::DISCONNECTION_COMPLETE:
-        on_disconnection_complete(event_packet);
-        break;
       case EventCode::CONNECTION_REQUEST:
         on_incoming_connection(event_packet);
         break;
@@ -396,7 +599,17 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     }
   }
 
-  void on_classic_disconnect(uint16_t handle, ErrorCode reason) {}
+  void on_classic_disconnect(uint16_t handle, ErrorCode reason) {
+    if (acl_connections_.count(handle) == 1) {
+      auto& connection = acl_connections_.find(handle)->second;
+      hci_layer_->GetHciHandler()->Post(
+          common::BindOnce(&RoundRobinScheduler::SetDisconnect, common::Unretained(round_robin_scheduler_), handle));
+      hci_layer_->GetHciHandler()->Post(
+          common::BindOnce(&RoundRobinScheduler::Unregister, common::Unretained(round_robin_scheduler_), handle));
+      connection.connection_management_callbacks_->OnDisconnection(reason);
+      cleanup(handle);
+    }
+  }
 
   void on_le_event(LeMetaEventView event_packet) {
     SubeventCode code = event_packet.GetSubeventCode();
@@ -415,7 +628,22 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     }
   }
 
-  void on_le_disconnect(uint16_t handle, ErrorCode reason) {}
+  void on_le_disconnect(uint16_t handle, ErrorCode reason) {
+    if (le_acl_connections_.count(handle) == 1) {
+      auto& connection = le_acl_connections_.find(handle)->second;
+      hci_layer_->GetHciHandler()->Post(
+          common::BindOnce(&RoundRobinScheduler::SetDisconnect, common::Unretained(round_robin_scheduler_), handle));
+      hci_layer_->GetHciHandler()->Post(
+          common::BindOnce(&RoundRobinScheduler::Unregister, common::Unretained(round_robin_scheduler_), handle));
+      connection.le_connection_management_callbacks_->OnDisconnection(reason);
+      cleanup(handle);
+    }
+  }
+
+  void handle_disconnect(uint16_t handle, DisconnectReason reason) {
+    acl_connection_interface_->EnqueueCommand(hci::DisconnectBuilder::Create(handle, reason),
+                                              handler_->BindOnce(&check_command_status<DisconnectStatusView>));
+  }
 
   // Invoked from some external Queue Reactable context 2
   void dequeue_and_route_acl_packet_to_connection() {
@@ -431,14 +659,14 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     }
     auto connection_pair = acl_connections_.find(handle);
     if (connection_pair != acl_connections_.end()) {
-      connection_pair->second.on_incoming_packet(*packet);
+      connection_pair->second.assembler_.on_incoming_packet(*packet);
     } else {
       auto le_connection_pair = le_acl_connections_.find(handle);
       if (le_connection_pair == le_acl_connections_.end()) {
         LOG_INFO("Dropping packet of size %zu to unknown connection 0x%0hx", packet->size(), handle);
         return;
       }
-      le_connection_pair->second.on_incoming_packet(*packet);
+      le_connection_pair->second.assembler_.on_incoming_packet(*packet);
     }
   }
 
@@ -501,20 +729,21 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     auto role = connection_complete.GetRole();
     uint16_t handle = connection_complete.GetConnectionHandle();
     ASSERT(le_acl_connections_.count(handle) == 0);
+    auto queue = std::make_shared<AclConnection::Queue>(10);
     le_acl_connections_.emplace(std::piecewise_construct, std::forward_as_tuple(handle),
-                                std::forward_as_tuple(remote_address, handler_));
-    auto& connection = check_and_get_le_connection(handle);
+                                std::forward_as_tuple(remote_address, queue->GetDownEnd(), handler_));
+    auto& connection_proxy = check_and_get_le_connection(handle);
     auto do_disconnect = common::BindOnce(&impl::handle_disconnect, common::Unretained(this), handle);
-    std::unique_ptr<LeAclConnection> connection_proxy(
-        new LeAclConnection(&acl_manager_, connection.queue_->GetUpEnd(), le_acl_connection_interface_,
-                            std::move(do_disconnect), handle, local_address, remote_address, role));
-    connection.SetLeConnectionManagementCallbacks(connection_proxy->GetEventCallbacks());
+    hci_layer_->GetHciHandler()->Post(common::BindOnce(&RoundRobinScheduler::Register,
+                                                       common::Unretained(round_robin_scheduler_),
+                                                       RoundRobinScheduler::ConnectionType::LE, handle, queue));
+    std::unique_ptr<LeAclConnection> connection(new LeAclConnection(std::move(queue), le_acl_connection_interface_,
+                                                                    std::move(do_disconnect), handle, local_address,
+                                                                    remote_address, role));
+    connection_proxy.le_connection_management_callbacks_ = connection->GetEventCallbacks();
     le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectSuccess,
                                               common::Unretained(le_client_callbacks_), remote_address,
-                                              std::move(connection_proxy)));
-    hci_layer_->GetHciHandler()->Post(
-        common::BindOnce(&RoundRobinScheduler::Register, common::Unretained(round_robin_scheduler_),
-                         RoundRobinScheduler::ConnectionType::LE, handle, connection.queue_->GetDownEnd()));
+                                              std::move(connection)));
   }
 
   void on_le_enhanced_connection_complete(LeMetaEventView packet) {
@@ -538,21 +767,22 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     // TODO: Check and save other connection parameters
     uint16_t handle = connection_complete.GetConnectionHandle();
     ASSERT(acl_connections_.count(handle) == 0);
-    acl_connections_.emplace(std::piecewise_construct, std::forward_as_tuple(handle),
-                             std::forward_as_tuple(remote_address, handler_));
-    auto& connection = check_and_get_le_connection(handle);
-    hci_layer_->GetHciHandler()->Post(
-        common::BindOnce(&RoundRobinScheduler::Register, common::Unretained(round_robin_scheduler_),
-                         RoundRobinScheduler::ConnectionType::LE, handle, connection.queue_->GetDownEnd()));
+    auto queue = std::make_shared<AclConnection::Queue>(10);
+    le_acl_connections_.emplace(std::piecewise_construct, std::forward_as_tuple(handle),
+                                std::forward_as_tuple(remote_address, queue->GetDownEnd(), handler_));
+    auto& connection_proxy = check_and_get_le_connection(handle);
+    hci_layer_->GetHciHandler()->Post(common::BindOnce(&RoundRobinScheduler::Register,
+                                                       common::Unretained(round_robin_scheduler_),
+                                                       RoundRobinScheduler::ConnectionType::LE, handle, queue));
     auto role = connection_complete.GetRole();
     auto do_disconnect = common::BindOnce(&impl::handle_disconnect, common::Unretained(this), handle);
-    std::unique_ptr<LeAclConnection> connection_proxy(
-        new LeAclConnection(&acl_manager_, connection.queue_->GetUpEnd(), le_acl_connection_interface_,
-                            std::move(do_disconnect), handle, local_address, remote_address, role));
-    connection.SetLeConnectionManagementCallbacks(connection_proxy->GetEventCallbacks());
+    std::unique_ptr<LeAclConnection> connection(new LeAclConnection(std::move(queue), le_acl_connection_interface_,
+                                                                    std::move(do_disconnect), handle, local_address,
+                                                                    remote_address, role));
+    connection_proxy.le_connection_management_callbacks_ = connection->GetEventCallbacks();
     le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectSuccess,
                                               common::Unretained(le_client_callbacks_), remote_address,
-                                              std::move(connection_proxy)));
+                                              std::move(connection)));
   }
 
   void on_connection_complete(EventPacketView packet) {
@@ -568,18 +798,19 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     }
     uint16_t handle = connection_complete.GetConnectionHandle();
     ASSERT(acl_connections_.count(handle) == 0);
-    acl_connections_.emplace(
-        std::piecewise_construct, std::forward_as_tuple(handle),
-        std::forward_as_tuple(AddressWithType{address, AddressType::PUBLIC_DEVICE_ADDRESS}, handler_));
-    auto& connection = check_and_get_connection(handle);
-    hci_layer_->GetHciHandler()->Post(common::BindOnce(
-        &RoundRobinScheduler::Register, common::Unretained(round_robin_scheduler_),
-        RoundRobinScheduler::ConnectionType::CLASSIC, handle, check_and_get_connection(handle).queue_->GetDownEnd()));
-    std::unique_ptr<ClassicAclConnection> connection_proxy(
-        new ClassicAclConnection(&acl_manager_, connection.queue_->GetUpEnd(), acl_connection_interface_, handle,
-                                 address, Role::MASTER /* TODO: Did we connect? */));
+    auto queue = std::make_shared<AclConnection::Queue>(10);
+    acl_connections_.emplace(std::piecewise_construct, std::forward_as_tuple(handle),
+                             std::forward_as_tuple(AddressWithType{address, AddressType::PUBLIC_DEVICE_ADDRESS},
+                                                   queue->GetDownEnd(), handler_));
+    hci_layer_->GetHciHandler()->Post(common::BindOnce(&RoundRobinScheduler::Register,
+                                                       common::Unretained(round_robin_scheduler_),
+                                                       RoundRobinScheduler::ConnectionType::CLASSIC, handle, queue));
+    std::unique_ptr<ClassicAclConnection> connection(new ClassicAclConnection(
+        std::move(queue), acl_connection_interface_, handle, address, Role::MASTER /* TODO: Did we connect? */));
+    auto& connection_proxy = check_and_get_connection(handle);
+    connection_proxy.connection_management_callbacks_ = connection->GetEventCallbacks();
     client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectSuccess,
-                                           common::Unretained(client_callbacks_), std::move(connection_proxy)));
+                                           common::Unretained(client_callbacks_), std::move(connection)));
     while (!pending_outgoing_connections_.empty()) {
       auto create_connection_packet_and_address = std::move(pending_outgoing_connections_.front());
       pending_outgoing_connections_.pop();
@@ -592,32 +823,6 @@ struct AclManager::impl : public security::ISecurityManagerListener {
                                                   }));
         break;
       }
-    }
-  }
-
-  void on_disconnection_complete(EventPacketView packet) {
-    DisconnectionCompleteView disconnection_complete = DisconnectionCompleteView::Create(packet);
-    ASSERT(disconnection_complete.IsValid());
-    uint16_t handle = disconnection_complete.GetConnectionHandle();
-    auto status = disconnection_complete.GetStatus();
-    if (status == ErrorCode::SUCCESS) {
-      if (acl_connections_.count(handle) == 1) {
-        auto& acl_connection = acl_connections_.find(handle)->second;
-        acl_connection.is_disconnected_ = true;
-        hci_layer_->GetHciHandler()->Post(
-            common::BindOnce(&RoundRobinScheduler::SetDisconnect, common::Unretained(round_robin_scheduler_), handle));
-        acl_connection.disconnect_reason_ = disconnection_complete.GetReason();
-        acl_connection.call_disconnect_callback();
-      } else {
-        ASSERT(le_acl_connections_.count(handle) == 1);
-        auto& connection = le_acl_connections_.find(handle)->second;
-        hci_layer_->GetHciHandler()->Post(
-            common::BindOnce(&RoundRobinScheduler::SetDisconnect, common::Unretained(round_robin_scheduler_), handle));
-        connection.le_connection_management_callbacks_->OnDisconnection(disconnection_complete.GetReason());
-      }
-    } else {
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received disconnection complete with error code %s, handle 0x%02hx", error_code.c_str(), handle);
     }
   }
 
@@ -634,12 +839,8 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     }
     uint16_t handle = packet_type_changed.GetConnectionHandle();
     auto& acl_connection = acl_connections_.find(handle)->second;
-    if (acl_connection.command_complete_handler_ != nullptr) {
-      uint16_t packet_type = packet_type_changed.GetPacketType();
-      acl_connection.command_complete_handler_->Post(
-          common::BindOnce(&ConnectionManagementCallbacks::OnConnectionPacketTypeChanged,
-                           common::Unretained(acl_connection.command_complete_callbacks_), packet_type));
-    }
+    uint16_t packet_type = packet_type_changed.GetPacketType();
+    acl_connection.connection_management_callbacks_->OnConnectionPacketTypeChanged(packet_type);
   }
 
   void on_master_link_key_complete(EventPacketView packet) {
@@ -655,12 +856,8 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     }
     uint16_t handle = complete_view.GetConnectionHandle();
     auto& acl_connection = acl_connections_.find(handle)->second;
-    if (acl_connection.command_complete_handler_ != nullptr) {
-      KeyFlag key_flag = complete_view.GetKeyFlag();
-      acl_connection.command_complete_handler_->Post(
-          common::BindOnce(&ConnectionManagementCallbacks::OnMasterLinkKeyComplete,
-                           common::Unretained(acl_connection.command_complete_callbacks_), key_flag));
-    }
+    KeyFlag key_flag = complete_view.GetKeyFlag();
+    acl_connection.connection_management_callbacks_->OnMasterLinkKeyComplete(key_flag);
   }
 
   void on_authentication_complete(EventPacketView packet) {
@@ -676,11 +873,7 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     }
     uint16_t handle = authentication_complete.GetConnectionHandle();
     auto& acl_connection = acl_connections_.find(handle)->second;
-    if (acl_connection.command_complete_handler_ != nullptr) {
-      acl_connection.command_complete_handler_->Post(
-          common::BindOnce(&ConnectionManagementCallbacks::OnAuthenticationComplete,
-                           common::Unretained(acl_connection.command_complete_callbacks_)));
-    }
+    acl_connection.connection_management_callbacks_->OnAuthenticationComplete();
   }
 
   void OnDeviceBonded(bluetooth::hci::AddressWithType device) override {}
@@ -699,12 +892,8 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     }
     uint16_t handle = encryption_change_view.GetConnectionHandle();
     auto& acl_connection = acl_connections_.find(handle)->second;
-    if (acl_connection.command_complete_handler_ != nullptr) {
-      EncryptionEnabled enabled = encryption_change_view.GetEncryptionEnabled();
-      acl_connection.command_complete_handler_->Post(
-          common::BindOnce(&ConnectionManagementCallbacks::OnEncryptionChange,
-                           common::Unretained(acl_connection.command_complete_callbacks_), enabled));
-    }
+    EncryptionEnabled enabled = encryption_change_view.GetEncryptionEnabled();
+    acl_connection.connection_management_callbacks_->OnEncryptionChange(enabled);
   }
 
   void on_change_connection_link_key_complete(EventPacketView packet) {
@@ -720,11 +909,7 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     }
     uint16_t handle = complete_view.GetConnectionHandle();
     auto& acl_connection = acl_connections_.find(handle)->second;
-    if (acl_connection.command_complete_handler_ != nullptr) {
-      acl_connection.command_complete_handler_->Post(
-          common::BindOnce(&ConnectionManagementCallbacks::OnChangeConnectionLinkKeyComplete,
-                           common::Unretained(acl_connection.command_complete_callbacks_)));
-    }
+    acl_connection.connection_management_callbacks_->OnChangeConnectionLinkKeyComplete();
   }
 
   void on_read_clock_offset_complete(EventPacketView packet) {
@@ -740,12 +925,8 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     }
     uint16_t handle = complete_view.GetConnectionHandle();
     auto& acl_connection = acl_connections_.find(handle)->second;
-    if (acl_connection.command_complete_handler_ != nullptr) {
-      uint16_t clock_offset = complete_view.GetClockOffset();
-      acl_connection.command_complete_handler_->Post(
-          common::BindOnce(&ConnectionManagementCallbacks::OnReadClockOffsetComplete,
-                           common::Unretained(acl_connection.command_complete_callbacks_), clock_offset));
-    }
+    uint16_t clock_offset = complete_view.GetClockOffset();
+    acl_connection.connection_management_callbacks_->OnReadClockOffsetComplete(clock_offset);
   }
 
   void on_mode_change(EventPacketView packet) {
@@ -761,13 +942,9 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     }
     uint16_t handle = mode_change_view.GetConnectionHandle();
     auto& acl_connection = acl_connections_.find(handle)->second;
-    if (acl_connection.command_complete_handler_ != nullptr) {
-      Mode current_mode = mode_change_view.GetCurrentMode();
-      uint16_t interval = mode_change_view.GetInterval();
-      acl_connection.command_complete_handler_->Post(
-          common::BindOnce(&ConnectionManagementCallbacks::OnModeChange,
-                           common::Unretained(acl_connection.command_complete_callbacks_), current_mode, interval));
-    }
+    Mode current_mode = mode_change_view.GetCurrentMode();
+    uint16_t interval = mode_change_view.GetInterval();
+    acl_connection.connection_management_callbacks_->OnModeChange(current_mode, interval);
   }
 
   void on_qos_setup_complete(EventPacketView packet) {
@@ -783,17 +960,13 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     }
     uint16_t handle = complete_view.GetConnectionHandle();
     auto& acl_connection = acl_connections_.find(handle)->second;
-    if (acl_connection.command_complete_handler_ != nullptr) {
-      ServiceType service_type = complete_view.GetServiceType();
-      uint32_t token_rate = complete_view.GetTokenRate();
-      uint32_t peak_bandwidth = complete_view.GetPeakBandwidth();
-      uint32_t latency = complete_view.GetLatency();
-      uint32_t delay_variation = complete_view.GetDelayVariation();
-      acl_connection.command_complete_handler_->Post(
-          common::BindOnce(&ConnectionManagementCallbacks::OnQosSetupComplete,
-                           common::Unretained(acl_connection.command_complete_callbacks_), service_type, token_rate,
-                           peak_bandwidth, latency, delay_variation));
-    }
+    ServiceType service_type = complete_view.GetServiceType();
+    uint32_t token_rate = complete_view.GetTokenRate();
+    uint32_t peak_bandwidth = complete_view.GetPeakBandwidth();
+    uint32_t latency = complete_view.GetLatency();
+    uint32_t delay_variation = complete_view.GetDelayVariation();
+    acl_connection.connection_management_callbacks_->OnQosSetupComplete(service_type, token_rate, peak_bandwidth,
+                                                                        latency, delay_variation);
   }
 
   void on_role_change(EventPacketView packet) {
@@ -810,10 +983,9 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     Address bd_addr = role_change_view.GetBdAddr();
     Role new_role = role_change_view.GetNewRole();
     for (auto& connection_pair : acl_connections_) {
-      if (connection_pair.second.address_with_type_.GetAddress() == bd_addr)
-        connection_pair.second.command_complete_handler_->Post(
-            common::BindOnce(&ConnectionManagementCallbacks::OnRoleChange,
-                             common::Unretained(connection_pair.second.command_complete_callbacks_), new_role));
+      if (connection_pair.second.address_with_type_.GetAddress() == bd_addr) {
+        connection_pair.second.connection_management_callbacks_->OnRoleChange(new_role);
+      }
     }
   }
 
@@ -830,18 +1002,14 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     }
     uint16_t handle = complete_view.GetConnectionHandle();
     auto& acl_connection = acl_connections_.find(handle)->second;
-    if (acl_connection.command_complete_handler_ != nullptr) {
-      FlowDirection flow_direction = complete_view.GetFlowDirection();
-      ServiceType service_type = complete_view.GetServiceType();
-      uint32_t token_rate = complete_view.GetTokenRate();
-      uint32_t token_bucket_size = complete_view.GetTokenBucketSize();
-      uint32_t peak_bandwidth = complete_view.GetPeakBandwidth();
-      uint32_t access_latency = complete_view.GetAccessLatency();
-      acl_connection.command_complete_handler_->Post(
-          common::BindOnce(&ConnectionManagementCallbacks::OnFlowSpecificationComplete,
-                           common::Unretained(acl_connection.command_complete_callbacks_), flow_direction, service_type,
-                           token_rate, token_bucket_size, peak_bandwidth, access_latency));
-    }
+    FlowDirection flow_direction = complete_view.GetFlowDirection();
+    ServiceType service_type = complete_view.GetServiceType();
+    uint32_t token_rate = complete_view.GetTokenRate();
+    uint32_t token_bucket_size = complete_view.GetTokenBucketSize();
+    uint32_t peak_bandwidth = complete_view.GetPeakBandwidth();
+    uint32_t access_latency = complete_view.GetAccessLatency();
+    acl_connection.connection_management_callbacks_->OnFlowSpecificationComplete(
+        flow_direction, service_type, token_rate, token_bucket_size, peak_bandwidth, access_latency);
   }
 
   void on_flush_occurred(EventPacketView packet) {
@@ -852,11 +1020,7 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     }
     uint16_t handle = flush_occurred_view.GetConnectionHandle();
     auto& acl_connection = acl_connections_.find(handle)->second;
-    if (acl_connection.command_complete_handler_ != nullptr) {
-      acl_connection.command_complete_handler_->Post(
-          common::BindOnce(&ConnectionManagementCallbacks::OnFlushOccurred,
-                           common::Unretained(acl_connection.command_complete_callbacks_)));
-    }
+    acl_connection.connection_management_callbacks_->OnFlushOccurred();
   }
 
   void on_read_remote_version_information_complete(EventPacketView packet) {
@@ -883,233 +1047,6 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     LOG_INFO("UNIMPLEMENTED called");
   }
 
-  void on_role_discovery_complete(CommandCompleteView view) {
-    auto complete_view = RoleDiscoveryCompleteView::Create(view);
-    if (!complete_view.IsValid()) {
-      LOG_ERROR("Received on_role_discovery_complete with invalid packet");
-      return;
-    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-      auto status = complete_view.GetStatus();
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_role_discovery_complete with error code %s", error_code.c_str());
-      return;
-    }
-    uint16_t handle = complete_view.GetConnectionHandle();
-    auto& acl_connection = acl_connections_.find(handle)->second;
-    if (acl_connection.command_complete_handler_ != nullptr) {
-      Role role = complete_view.GetCurrentRole();
-      acl_connection.command_complete_handler_->Post(
-          common::BindOnce(&ConnectionManagementCallbacks::OnRoleDiscoveryComplete,
-                           common::Unretained(acl_connection.command_complete_callbacks_), role));
-    }
-  }
-
-  void on_read_link_policy_settings_complete(CommandCompleteView view) {
-    auto complete_view = ReadLinkPolicySettingsCompleteView::Create(view);
-    if (!complete_view.IsValid()) {
-      LOG_ERROR("Received on_read_link_policy_settings_complete with invalid packet");
-      return;
-    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-      auto status = complete_view.GetStatus();
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_read_link_policy_settings_complete with error code %s", error_code.c_str());
-      return;
-    }
-    uint16_t handle = complete_view.GetConnectionHandle();
-    auto& acl_connection = acl_connections_.find(handle)->second;
-    if (acl_connection.command_complete_handler_ != nullptr) {
-      uint16_t link_policy_settings = complete_view.GetLinkPolicySettings();
-      acl_connection.command_complete_handler_->Post(
-          common::BindOnce(&ConnectionManagementCallbacks::OnReadLinkPolicySettingsComplete,
-                           common::Unretained(acl_connection.command_complete_callbacks_), link_policy_settings));
-    }
-  }
-
-  void on_read_automatic_flush_timeout_complete(CommandCompleteView view) {
-    auto complete_view = ReadAutomaticFlushTimeoutCompleteView::Create(view);
-    if (!complete_view.IsValid()) {
-      LOG_ERROR("Received on_read_automatic_flush_timeout_complete with invalid packet");
-      return;
-    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-      auto status = complete_view.GetStatus();
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_read_automatic_flush_timeout_complete with error code %s", error_code.c_str());
-      return;
-    }
-    uint16_t handle = complete_view.GetConnectionHandle();
-    auto& acl_connection = acl_connections_.find(handle)->second;
-    if (acl_connection.command_complete_handler_ != nullptr) {
-      uint16_t flush_timeout = complete_view.GetFlushTimeout();
-      acl_connection.command_complete_handler_->Post(
-          common::BindOnce(&ConnectionManagementCallbacks::OnReadAutomaticFlushTimeoutComplete,
-                           common::Unretained(acl_connection.command_complete_callbacks_), flush_timeout));
-    }
-  }
-
-  void on_read_transmit_power_level_complete(CommandCompleteView view) {
-    auto complete_view = ReadTransmitPowerLevelCompleteView::Create(view);
-    if (!complete_view.IsValid()) {
-      LOG_ERROR("Received on_read_transmit_power_level_complete with invalid packet");
-      return;
-    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-      auto status = complete_view.GetStatus();
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_read_transmit_power_level_complete with error code %s", error_code.c_str());
-      return;
-    }
-    uint16_t handle = complete_view.GetConnectionHandle();
-    auto& acl_connection = acl_connections_.find(handle)->second;
-    if (acl_connection.command_complete_handler_ != nullptr) {
-      uint8_t transmit_power_level = complete_view.GetTransmitPowerLevel();
-      acl_connection.command_complete_handler_->Post(
-          common::BindOnce(&ConnectionManagementCallbacks::OnReadTransmitPowerLevelComplete,
-                           common::Unretained(acl_connection.command_complete_callbacks_), transmit_power_level));
-    }
-  }
-
-  void on_read_link_supervision_timeout_complete(CommandCompleteView view) {
-    auto complete_view = ReadLinkSupervisionTimeoutCompleteView::Create(view);
-    if (!complete_view.IsValid()) {
-      LOG_ERROR("Received on_read_link_supervision_timeout_complete with invalid packet");
-      return;
-    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-      auto status = complete_view.GetStatus();
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_read_link_supervision_timeout_complete with error code %s", error_code.c_str());
-      return;
-    }
-    uint16_t handle = complete_view.GetConnectionHandle();
-    auto& acl_connection = acl_connections_.find(handle)->second;
-    if (acl_connection.command_complete_handler_ != nullptr) {
-      uint16_t link_supervision_timeout = complete_view.GetLinkSupervisionTimeout();
-      acl_connection.command_complete_handler_->Post(
-          common::BindOnce(&ConnectionManagementCallbacks::OnReadLinkSupervisionTimeoutComplete,
-                           common::Unretained(acl_connection.command_complete_callbacks_), link_supervision_timeout));
-    }
-  }
-
-  void on_read_failed_contact_counter_complete(CommandCompleteView view) {
-    auto complete_view = ReadFailedContactCounterCompleteView::Create(view);
-    if (!complete_view.IsValid()) {
-      LOG_ERROR("Received on_read_failed_contact_counter_complete with invalid packet");
-      return;
-    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-      auto status = complete_view.GetStatus();
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_read_failed_contact_counter_complete with error code %s", error_code.c_str());
-      return;
-    }
-    uint16_t handle = complete_view.GetConnectionHandle();
-    auto& acl_connection = acl_connections_.find(handle)->second;
-    if (acl_connection.command_complete_handler_ != nullptr) {
-      uint16_t failed_contact_counter = complete_view.GetFailedContactCounter();
-      acl_connection.command_complete_handler_->Post(
-          common::BindOnce(&ConnectionManagementCallbacks::OnReadFailedContactCounterComplete,
-                           common::Unretained(acl_connection.command_complete_callbacks_), failed_contact_counter));
-    }
-  }
-
-  void on_read_link_quality_complete(CommandCompleteView view) {
-    auto complete_view = ReadLinkQualityCompleteView::Create(view);
-    if (!complete_view.IsValid()) {
-      LOG_ERROR("Received on_read_link_quality_complete with invalid packet");
-      return;
-    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-      auto status = complete_view.GetStatus();
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_read_link_quality_complete with error code %s", error_code.c_str());
-      return;
-    }
-    uint16_t handle = complete_view.GetConnectionHandle();
-    auto& acl_connection = acl_connections_.find(handle)->second;
-    if (acl_connection.command_complete_handler_ != nullptr) {
-      uint8_t link_quality = complete_view.GetLinkQuality();
-      acl_connection.command_complete_handler_->Post(
-          common::BindOnce(&ConnectionManagementCallbacks::OnReadLinkQualityComplete,
-                           common::Unretained(acl_connection.command_complete_callbacks_), link_quality));
-    }
-  }
-
-  void on_read_afh_channel_map_complete(CommandCompleteView view) {
-    auto complete_view = ReadAfhChannelMapCompleteView::Create(view);
-    if (!complete_view.IsValid()) {
-      LOG_ERROR("Received on_read_afh_channel_map_complete with invalid packet");
-      return;
-    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-      auto status = complete_view.GetStatus();
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_read_afh_channel_map_complete with error code %s", error_code.c_str());
-      return;
-    }
-    uint16_t handle = complete_view.GetConnectionHandle();
-    auto& acl_connection = acl_connections_.find(handle)->second;
-    if (acl_connection.command_complete_handler_ != nullptr) {
-      AfhMode afh_mode = complete_view.GetAfhMode();
-      std::array<uint8_t, 10> afh_channel_map = complete_view.GetAfhChannelMap();
-      acl_connection.command_complete_handler_->Post(
-          common::BindOnce(&ConnectionManagementCallbacks::OnReadAfhChannelMapComplete,
-                           common::Unretained(acl_connection.command_complete_callbacks_), afh_mode, afh_channel_map));
-    }
-  }
-
-  void on_read_rssi_complete(CommandCompleteView view) {
-    auto complete_view = ReadRssiCompleteView::Create(view);
-    if (!complete_view.IsValid()) {
-      LOG_ERROR("Received on_read_rssi_complete with invalid packet");
-      return;
-    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-      auto status = complete_view.GetStatus();
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_read_rssi_complete with error code %s", error_code.c_str());
-      return;
-    }
-    uint16_t handle = complete_view.GetConnectionHandle();
-    auto& acl_connection = acl_connections_.find(handle)->second;
-    if (acl_connection.command_complete_handler_ != nullptr) {
-      uint8_t rssi = complete_view.GetRssi();
-      acl_connection.command_complete_handler_->Post(
-          common::BindOnce(&ConnectionManagementCallbacks::OnReadRssiComplete,
-                           common::Unretained(acl_connection.command_complete_callbacks_), rssi));
-    }
-  }
-
-  void on_read_remote_version_information_status(CommandStatusView view) {
-    ASSERT_LOG(view.IsValid(), "Bad status packet!");
-    LOG_INFO("UNIMPLEMENTED called: %s", hci::ErrorCodeText(view.GetStatus()).c_str());
-  }
-
-  void on_read_remote_supported_features_status(CommandStatusView view) {
-    ASSERT_LOG(view.IsValid(), "Bad status packet!");
-    LOG_INFO("UNIMPLEMENTED called: %s", hci::ErrorCodeText(view.GetStatus()).c_str());
-  }
-
-  void on_read_remote_extended_features_status(CommandStatusView view) {
-    ASSERT_LOG(view.IsValid(), "Broken");
-    LOG_INFO("UNIMPLEMENTED called: %s", hci::ErrorCodeText(view.GetStatus()).c_str());
-  }
-
-  void on_read_clock_complete(CommandCompleteView view) {
-    auto complete_view = ReadClockCompleteView::Create(view);
-    if (!complete_view.IsValid()) {
-      LOG_ERROR("Received on_read_clock_complete with invalid packet");
-      return;
-    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-      auto status = complete_view.GetStatus();
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_read_clock_complete with error code %s", error_code.c_str());
-      return;
-    }
-    uint16_t handle = complete_view.GetConnectionHandle();
-    auto& acl_connection = acl_connections_.find(handle)->second;
-    if (acl_connection.command_complete_handler_ != nullptr) {
-      uint32_t clock = complete_view.GetClock();
-      uint16_t accuracy = complete_view.GetAccuracy();
-      acl_connection.command_complete_handler_->Post(
-          common::BindOnce(&ConnectionManagementCallbacks::OnReadClockComplete,
-                           common::Unretained(acl_connection.command_complete_callbacks_), clock, accuracy));
-    }
-  }
-
   void on_le_connection_update_complete(LeMetaEventView view) {
     auto complete_view = LeConnectionUpdateCompleteView::Create(view);
     if (!complete_view.IsValid()) {
@@ -1126,7 +1063,6 @@ struct AclManager::impl : public security::ISecurityManagerListener {
       LOG_WARN("Can't find connection %hd", handle);
       return;
     }
-    LOG_INFO("%hx", handle);
     auto& connection = le_acl_connections_.find(handle)->second;
     connection.le_connection_management_callbacks_->OnConnectionUpdate(
         complete_view.GetConnInterval(), complete_view.GetConnLatency(), complete_view.GetSupervisionTimeout());
@@ -1207,10 +1143,8 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     std::array<uint8_t, 8> random = os::GenerateRandom<8>();
     hci::Address address = GenerateRpa(irk, random);
 
-    hci_layer_->EnqueueCommand(
-        hci::LeSetRandomAddressBuilder::Create(address),
-        handler_->BindOnce(&AclManager::impl::check_command_complete<LeSetRandomAddressCompleteView>,
-                           common::Unretained(this)));
+    hci_layer_->EnqueueCommand(hci::LeSetRandomAddressBuilder::Create(address),
+                               handler_->BindOnce(check_command_complete<LeSetRandomAddressCompleteView>));
 
     le_initiator_address_ = AddressWithType(address, AddressType::RANDOM_DEVICE_ADDRESS);
     address_rotation_alarm_->Schedule(BindOnce(&impl::RotateRandomAddress, common::Unretained(this)),
@@ -1296,23 +1230,21 @@ struct AclManager::impl : public security::ISecurityManagerListener {
 
   void master_link_key(KeyFlag key_flag) {
     std::unique_ptr<MasterLinkKeyBuilder> packet = MasterLinkKeyBuilder::Create(key_flag);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet), handler_->BindOnceOn(this, &impl::check_command_status<MasterLinkKeyStatusView>));
+    acl_connection_interface_->EnqueueCommand(std::move(packet),
+                                              handler_->BindOnce(&check_command_status<MasterLinkKeyStatusView>));
   }
 
   void switch_role(Address address, Role role) {
     std::unique_ptr<SwitchRoleBuilder> packet = SwitchRoleBuilder::Create(address, role);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet), handler_->BindOnceOn(this, &impl::check_command_status<SwitchRoleStatusView>));
+    acl_connection_interface_->EnqueueCommand(std::move(packet),
+                                              handler_->BindOnce(&check_command_status<SwitchRoleStatusView>));
   }
 
   void write_default_link_policy_settings(uint16_t default_link_policy_settings) {
     std::unique_ptr<WriteDefaultLinkPolicySettingsBuilder> packet =
         WriteDefaultLinkPolicySettingsBuilder::Create(default_link_policy_settings);
     acl_connection_interface_->EnqueueCommand(
-        std::move(packet),
-        handler_->BindOnceOn(this,
-                             &AclManager::impl::check_command_complete<WriteDefaultLinkPolicySettingsCompleteView>));
+        std::move(packet), handler_->BindOnce(&check_command_complete<WriteDefaultLinkPolicySettingsCompleteView>));
   }
 
   void set_security_module(security::SecurityModule* security_module) {
@@ -1326,250 +1258,13 @@ struct AclManager::impl : public security::ISecurityManagerListener {
                                               handler_->BindOnceOn(this, &impl::on_accept_connection_status, address));
   }
 
-  void handle_disconnect(uint16_t handle, DisconnectReason reason) {
-    std::unique_ptr<DisconnectBuilder> packet = DisconnectBuilder::Create(handle, reason);
-    acl_connection_interface_->EnqueueCommand(std::move(packet),
-                                              handler_->BindOnce([](CommandStatusView status) { /* TODO: check? */ }));
-  }
-
-  void handle_change_connection_packet_type(uint16_t handle, uint16_t packet_type) {
-    ASSERT(acl_connections_.count(handle) == 1);
-    std::unique_ptr<ChangeConnectionPacketTypeBuilder> packet =
-        ChangeConnectionPacketTypeBuilder::Create(handle, packet_type);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet),
-        handler_->BindOnceOn(this, &AclManager::impl::check_command_status<ChangeConnectionPacketTypeStatusView>));
-  }
-
-  void handle_authentication_requested(uint16_t handle) {
-    std::unique_ptr<AuthenticationRequestedBuilder> packet = AuthenticationRequestedBuilder::Create(handle);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet),
-        handler_->BindOnceOn(this, &AclManager::impl::check_command_status<AuthenticationRequestedStatusView>));
-  }
-
-  void handle_set_connection_encryption(uint16_t handle, Enable enable) {
-    std::unique_ptr<SetConnectionEncryptionBuilder> packet = SetConnectionEncryptionBuilder::Create(handle, enable);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet),
-        handler_->BindOnceOn(this, &AclManager::impl::check_command_status<SetConnectionEncryptionStatusView>));
-  }
-
-  void handle_change_connection_link_key(uint16_t handle) {
-    std::unique_ptr<ChangeConnectionLinkKeyBuilder> packet = ChangeConnectionLinkKeyBuilder::Create(handle);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet),
-        handler_->BindOnceOn(this, &AclManager::impl::check_command_status<ChangeConnectionLinkKeyStatusView>));
-  }
-
-  void handle_read_clock_offset(uint16_t handle) {
-    std::unique_ptr<ReadClockOffsetBuilder> packet = ReadClockOffsetBuilder::Create(handle);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet),
-        handler_->BindOnceOn(this, &AclManager::impl::check_command_status<ReadClockOffsetStatusView>));
-  }
-
-  void handle_hold_mode(uint16_t handle, uint16_t max_interval, uint16_t min_interval) {
-    std::unique_ptr<HoldModeBuilder> packet = HoldModeBuilder::Create(handle, max_interval, min_interval);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet), handler_->BindOnceOn(this, &AclManager::impl::check_command_status<HoldModeStatusView>));
-  }
-
-  void handle_sniff_mode(uint16_t handle, uint16_t max_interval, uint16_t min_interval, int16_t attempt,
-                         uint16_t timeout) {
-    std::unique_ptr<SniffModeBuilder> packet =
-        SniffModeBuilder::Create(handle, max_interval, min_interval, attempt, timeout);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet), handler_->BindOnceOn(this, &AclManager::impl::check_command_status<SniffModeStatusView>));
-  }
-
-  void handle_exit_sniff_mode(uint16_t handle) {
-    std::unique_ptr<ExitSniffModeBuilder> packet = ExitSniffModeBuilder::Create(handle);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet),
-        handler_->BindOnceOn(this, &AclManager::impl::check_command_status<ExitSniffModeStatusView>));
-  }
-
-  void handle_qos_setup_mode(uint16_t handle, ServiceType service_type, uint32_t token_rate, uint32_t peak_bandwidth,
-                             uint32_t latency, uint32_t delay_variation) {
-    std::unique_ptr<QosSetupBuilder> packet =
-        QosSetupBuilder::Create(handle, service_type, token_rate, peak_bandwidth, latency, delay_variation);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet), handler_->BindOnceOn(this, &AclManager::impl::check_command_status<QosSetupStatusView>));
-  }
-
-  void handle_role_discovery(uint16_t handle) {
-    std::unique_ptr<RoleDiscoveryBuilder> packet = RoleDiscoveryBuilder::Create(handle);
-    acl_connection_interface_->EnqueueCommand(std::move(packet),
-                                              handler_->BindOnceOn(this, &impl::on_role_discovery_complete));
-  }
-
-  void handle_read_link_policy_settings(uint16_t handle) {
-    std::unique_ptr<ReadLinkPolicySettingsBuilder> packet = ReadLinkPolicySettingsBuilder::Create(handle);
-    acl_connection_interface_->EnqueueCommand(std::move(packet),
-                                              handler_->BindOnceOn(this, &impl::on_read_link_policy_settings_complete));
-  }
-
-  void handle_write_link_policy_settings(uint16_t handle, uint16_t link_policy_settings) {
-    std::unique_ptr<WriteLinkPolicySettingsBuilder> packet =
-        WriteLinkPolicySettingsBuilder::Create(handle, link_policy_settings);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet),
-        handler_->BindOnceOn(this, &AclManager::impl::check_command_complete<WriteLinkPolicySettingsCompleteView>));
-  }
-
-  void handle_flow_specification(uint16_t handle, FlowDirection flow_direction, ServiceType service_type,
-                                 uint32_t token_rate, uint32_t token_bucket_size, uint32_t peak_bandwidth,
-                                 uint32_t access_latency) {
-    std::unique_ptr<FlowSpecificationBuilder> packet = FlowSpecificationBuilder::Create(
-        handle, flow_direction, service_type, token_rate, token_bucket_size, peak_bandwidth, access_latency);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet),
-        handler_->BindOnceOn(this, &AclManager::impl::check_command_status<FlowSpecificationStatusView>));
-  }
-
-  void handle_sniff_subrating(uint16_t handle, uint16_t maximum_latency, uint16_t minimum_remote_timeout,
-                              uint16_t minimum_local_timeout) {
-    std::unique_ptr<SniffSubratingBuilder> packet =
-        SniffSubratingBuilder::Create(handle, maximum_latency, minimum_remote_timeout, minimum_local_timeout);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet),
-        handler_->BindOnceOn(this, &AclManager::impl::check_command_complete<SniffSubratingCompleteView>));
-  }
-
-  void handle_flush(uint16_t handle) {
-    std::unique_ptr<FlushBuilder> packet = FlushBuilder::Create(handle);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet), handler_->BindOnceOn(this, &AclManager::impl::check_command_complete<FlushCompleteView>));
-  }
-
-  void handle_read_automatic_flush_timeout(uint16_t handle) {
-    std::unique_ptr<ReadAutomaticFlushTimeoutBuilder> packet = ReadAutomaticFlushTimeoutBuilder::Create(handle);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet), handler_->BindOnceOn(this, &impl::on_read_automatic_flush_timeout_complete));
-  }
-
-  void handle_write_automatic_flush_timeout(uint16_t handle, uint16_t flush_timeout) {
-    std::unique_ptr<WriteAutomaticFlushTimeoutBuilder> packet =
-        WriteAutomaticFlushTimeoutBuilder::Create(handle, flush_timeout);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet),
-        handler_->BindOnceOn(this, &AclManager::impl::check_command_complete<WriteAutomaticFlushTimeoutCompleteView>));
-  }
-
-  void handle_read_transmit_power_level(uint16_t handle, TransmitPowerLevelType type) {
-    std::unique_ptr<ReadTransmitPowerLevelBuilder> packet = ReadTransmitPowerLevelBuilder::Create(handle, type);
-    acl_connection_interface_->EnqueueCommand(std::move(packet),
-                                              handler_->BindOnceOn(this, &impl::on_read_transmit_power_level_complete));
-  }
-
-  void handle_read_link_supervision_timeout(uint16_t handle) {
-    std::unique_ptr<ReadLinkSupervisionTimeoutBuilder> packet = ReadLinkSupervisionTimeoutBuilder::Create(handle);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet), handler_->BindOnceOn(this, &impl::on_read_link_supervision_timeout_complete));
-  }
-
-  void handle_write_link_supervision_timeout(uint16_t handle, uint16_t link_supervision_timeout) {
-    std::unique_ptr<WriteLinkSupervisionTimeoutBuilder> packet =
-        WriteLinkSupervisionTimeoutBuilder::Create(handle, link_supervision_timeout);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet),
-        handler_->BindOnceOn(this, &AclManager::impl::check_command_complete<WriteLinkSupervisionTimeoutCompleteView>));
-  }
-
-  void handle_read_failed_contact_counter(uint16_t handle) {
-    std::unique_ptr<ReadFailedContactCounterBuilder> packet = ReadFailedContactCounterBuilder::Create(handle);
-    acl_connection_interface_->EnqueueCommand(
-        std::move(packet), handler_->BindOnceOn(this, &impl::on_read_failed_contact_counter_complete));
-  }
-
-  void handle_reset_failed_contact_counter(uint16_t handle) {
-    std::unique_ptr<ResetFailedContactCounterBuilder> packet = ResetFailedContactCounterBuilder::Create(handle);
-    acl_connection_interface_->EnqueueCommand(std::move(packet),
-                                              handler_->BindOnce([](CommandCompleteView view) { /* TODO: check? */ }));
-  }
-
-  void handle_read_link_quality(uint16_t handle) {
-    std::unique_ptr<ReadLinkQualityBuilder> packet = ReadLinkQualityBuilder::Create(handle);
-    acl_connection_interface_->EnqueueCommand(std::move(packet),
-                                              handler_->BindOnceOn(this, &impl::on_read_link_quality_complete));
-  }
-
-  void handle_afh_channel_map(uint16_t handle) {
-    std::unique_ptr<ReadAfhChannelMapBuilder> packet = ReadAfhChannelMapBuilder::Create(handle);
-    acl_connection_interface_->EnqueueCommand(std::move(packet),
-                                              handler_->BindOnceOn(this, &impl::on_read_afh_channel_map_complete));
-  }
-
-  void handle_read_rssi(uint16_t handle) {
-    std::unique_ptr<ReadRssiBuilder> packet = ReadRssiBuilder::Create(handle);
-    acl_connection_interface_->EnqueueCommand(std::move(packet),
-                                              handler_->BindOnceOn(this, &impl::on_read_rssi_complete));
-  }
-
-  void handle_read_remote_version_information(uint16_t handle) {
-    acl_connection_interface_->EnqueueCommand(
-        ReadRemoteVersionInformationBuilder::Create(handle),
-        handler_->BindOnceOn(this, &impl::on_read_remote_version_information_status));
-  }
-
-  void handle_read_remote_supported_features(uint16_t handle) {
-    acl_connection_interface_->EnqueueCommand(
-        ReadRemoteSupportedFeaturesBuilder::Create(handle),
-        handler_->BindOnceOn(this, &impl::on_read_remote_supported_features_status));
-  }
-
-  void handle_read_remote_extended_features(uint16_t handle) {
-    // TODO(optedoblivion): Read the other pages until max pages
-    acl_connection_interface_->EnqueueCommand(
-        ReadRemoteExtendedFeaturesBuilder::Create(handle, 1),
-        handler_->BindOnceOn(this, &impl::on_read_remote_extended_features_status));
-  }
-
-  void handle_read_clock(uint16_t handle, WhichClock which_clock) {
-    std::unique_ptr<ReadClockBuilder> packet = ReadClockBuilder::Create(handle, which_clock);
-    acl_connection_interface_->EnqueueCommand(std::move(packet),
-                                              handler_->BindOnceOn(this, &impl::on_read_clock_complete));
-  }
-
-  template <class T>
-  void check_command_complete(CommandCompleteView view) {
-    ASSERT(view.IsValid());
-    auto status_view = T::Create(view);
-    if (!status_view.IsValid()) {
-      LOG_ERROR("Received command complete with invalid packet, opcode 0x%02hx", view.GetCommandOpCode());
-      return;
-    }
-    ErrorCode status = status_view.GetStatus();
-    OpCode op_code = status_view.GetCommandOpCode();
-    if (status != ErrorCode::SUCCESS) {
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received command complete with error code %s, opcode 0x%02hx", error_code.c_str(), op_code);
-      return;
-    }
-  }
-
-  template <class T>
-  void check_command_status(CommandStatusView view) {
-    ASSERT(view.IsValid());
-    auto status_view = T::Create(view);
-    if (!status_view.IsValid()) {
-      LOG_ERROR("Received command status with invalid packet, opcode 0x%02hx", view.GetCommandOpCode());
-      return;
-    }
-    ErrorCode status = status_view.GetStatus();
-    OpCode op_code = status_view.GetCommandOpCode();
-    if (status != ErrorCode::SUCCESS) {
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received command status with error code %s, opcode 0x%02hx", error_code.c_str(), op_code);
-      return;
-    }
-  }
-
   void cleanup(uint16_t handle) {
-    ASSERT(acl_connections_.count(handle) == 1);
-
-    acl_connections_.erase(handle);
+    if (acl_connections_.count(handle) == 1) {
+      acl_connections_.erase(handle);
+    } else {
+      ASSERT(le_acl_connections_.count(handle) == 1);
+      le_acl_connections_.erase(handle);
+    }
   }
 
   void on_accept_connection_status(Address address, CommandStatusView status) {
@@ -1611,349 +1306,6 @@ struct AclManager::impl : public security::ISecurityManagerListener {
     return connection->second;
   }
 
-  void RegisterCallbacks(uint16_t handle, ConnectionManagementCallbacks* callbacks, os::Handler* handler) {
-    auto& connection = check_and_get_connection(handle);
-    ASSERT(connection.command_complete_callbacks_ == nullptr);
-    connection.command_complete_callbacks_ = callbacks;
-    connection.command_complete_handler_ = handler;
-  }
-
-  void UnregisterCallbacks(uint16_t handle, ConnectionManagementCallbacks* callbacks) {
-    auto& connection = check_and_get_connection(handle);
-    ASSERT(connection.command_complete_callbacks_ == callbacks);
-    connection.command_complete_callbacks_ = nullptr;
-  }
-
-  void RegisterDisconnectCallback(uint16_t handle, common::OnceCallback<void(ErrorCode)> on_disconnect,
-                                  os::Handler* handler) {
-    auto& connection = check_and_get_connection(handle);
-    connection.on_disconnect_callback_ = std::move(on_disconnect);
-    connection.disconnect_handler_ = handler;
-    if (connection.is_disconnected_) {
-      connection.call_disconnect_callback();
-    }
-  }
-
-  bool Disconnect(uint16_t handle, DisconnectReason reason) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_disconnect, common::Unretained(this), handle, reason));
-    return true;
-  }
-
-  bool ChangeConnectionPacketType(uint16_t handle, uint16_t packet_type) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(
-        BindOnce(&impl::handle_change_connection_packet_type, common::Unretained(this), handle, packet_type));
-    return true;
-  }
-
-  bool AuthenticationRequested(uint16_t handle) {
-    LOG_INFO("Auth reqiuest");
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_authentication_requested, common::Unretained(this), handle));
-    return true;
-  }
-
-  bool SetConnectionEncryption(uint16_t handle, Enable enable) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_set_connection_encryption, common::Unretained(this), handle, enable));
-    return true;
-  }
-
-  bool ChangeConnectionLinkKey(uint16_t handle) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_change_connection_link_key, common::Unretained(this), handle));
-    return true;
-  }
-
-  bool ReadClockOffset(uint16_t handle) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_read_clock_offset, common::Unretained(this), handle));
-    return true;
-  }
-
-  bool HoldMode(uint16_t handle, uint16_t max_interval, uint16_t min_interval) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_hold_mode, common::Unretained(this), handle, max_interval, min_interval));
-    return true;
-  }
-
-  bool SniffMode(uint16_t handle, uint16_t max_interval, uint16_t min_interval, int16_t attempt, uint16_t timeout) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_sniff_mode, common::Unretained(this), handle, max_interval, min_interval,
-                            attempt, timeout));
-    return true;
-  }
-
-  bool ExitSniffMode(uint16_t handle) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_exit_sniff_mode, common::Unretained(this), handle));
-    return true;
-  }
-
-  bool QosSetup(uint16_t handle, ServiceType service_type, uint32_t token_rate, uint32_t peak_bandwidth,
-                uint32_t latency, uint32_t delay_variation) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_qos_setup_mode, common::Unretained(this), handle, service_type, token_rate,
-                            peak_bandwidth, latency, delay_variation));
-    return true;
-  }
-
-  bool RoleDiscovery(uint16_t handle) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_role_discovery, common::Unretained(this), handle));
-    return true;
-  }
-
-  bool ReadLinkPolicySettings(uint16_t handle) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_read_link_policy_settings, common::Unretained(this), handle));
-    return true;
-  }
-
-  bool WriteLinkPolicySettings(uint16_t handle, uint16_t link_policy_settings) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(
-        BindOnce(&impl::handle_write_link_policy_settings, common::Unretained(this), handle, link_policy_settings));
-    return true;
-  }
-
-  bool FlowSpecification(uint16_t handle, FlowDirection flow_direction, ServiceType service_type, uint32_t token_rate,
-                         uint32_t token_bucket_size, uint32_t peak_bandwidth, uint32_t access_latency) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_flow_specification, common::Unretained(this), handle, flow_direction,
-                            service_type, token_rate, token_bucket_size, peak_bandwidth, access_latency));
-    return true;
-  }
-
-  bool SniffSubrating(uint16_t handle, uint16_t maximum_latency, uint16_t minimum_remote_timeout,
-                      uint16_t minimum_local_timeout) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_sniff_subrating, common::Unretained(this), handle, maximum_latency,
-                            minimum_remote_timeout, minimum_local_timeout));
-    return true;
-  }
-
-  bool Flush(uint16_t handle) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_flush, common::Unretained(this), handle));
-    return true;
-  }
-
-  bool ReadAutomaticFlushTimeout(uint16_t handle) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_read_automatic_flush_timeout, common::Unretained(this), handle));
-    return true;
-  }
-
-  bool WriteAutomaticFlushTimeout(uint16_t handle, uint16_t flush_timeout) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(
-        BindOnce(&impl::handle_write_automatic_flush_timeout, common::Unretained(this), handle, flush_timeout));
-    return true;
-  }
-
-  bool ReadTransmitPowerLevel(uint16_t handle, TransmitPowerLevelType type) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_read_transmit_power_level, common::Unretained(this), handle, type));
-    return true;
-  }
-
-  bool ReadLinkSupervisionTimeout(uint16_t handle) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_read_link_supervision_timeout, common::Unretained(this), handle));
-    return true;
-  }
-
-  bool WriteLinkSupervisionTimeout(uint16_t handle, uint16_t link_supervision_timeout) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_write_link_supervision_timeout, common::Unretained(this), handle,
-                            link_supervision_timeout));
-    return true;
-  }
-
-  bool ReadFailedContactCounter(uint16_t handle) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_read_failed_contact_counter, common::Unretained(this), handle));
-    return true;
-  }
-
-  bool ResetFailedContactCounter(uint16_t handle) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_reset_failed_contact_counter, common::Unretained(this), handle));
-    return true;
-  }
-
-  bool ReadLinkQuality(uint16_t handle) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_read_link_quality, common::Unretained(this), handle));
-    return true;
-  }
-
-  bool ReadAfhChannelMap(uint16_t handle) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_afh_channel_map, common::Unretained(this), handle));
-    return true;
-  }
-
-  bool ReadRssi(uint16_t handle) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_read_rssi, common::Unretained(this), handle));
-    return true;
-  }
-
-  bool ReadRemoteVersionInformation(uint16_t handle) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_read_remote_version_information, common::Unretained(this), handle));
-    return true;
-  }
-
-  bool ReadRemoteSupportedFeatures(uint16_t handle) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_read_remote_supported_features, common::Unretained(this), handle));
-    return true;
-  }
-
-  bool ReadRemoteExtendedFeatures(uint16_t handle) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_read_remote_extended_features, common::Unretained(this), handle));
-    return true;
-  }
-
-  bool ReadClock(uint16_t handle, WhichClock which_clock) {
-    auto& connection = check_and_get_connection(handle);
-    if (connection.is_disconnected_) {
-      LOG_INFO("Already disconnected");
-      return false;
-    }
-    handler_->Post(BindOnce(&impl::handle_read_clock, common::Unretained(this), handle, which_clock));
-    return true;
-  }
-
-  void Finish(uint16_t handle) {
-    auto& connection = check_and_get_connection(handle);
-    ASSERT_LOG(connection.is_disconnected_, "Finish must be invoked after disconnection (handle 0x%04hx)", handle);
-    hci_layer_->GetHciHandler()->Post(
-        common::BindOnce(&RoundRobinScheduler::Unregister, common::Unretained(round_robin_scheduler_), handle));
-    handler_->Post(BindOnce(&impl::cleanup, common::Unretained(this), handle));
-  }
-
   const AclManager& acl_manager_;
 
   static constexpr uint16_t kMinimumCeLength = 0x0002;
@@ -1988,151 +1340,280 @@ AclConnection::QueueUpEnd* AclConnection::GetAclQueueEnd() const {
   return queue_up_end_;
 }
 
+struct ClassicAclConnection::impl {
+  impl(AclConnectionInterface* acl_connection_interface, std::shared_ptr<Queue> queue)
+      : tracker(acl_connection_interface), queue_(std::move(queue)) {}
+  ConnectionManagementCallbacks* GetEventCallbacks() {
+    ASSERT(!callbacks_given_);
+    callbacks_given_ = true;
+    return &tracker;
+  }
+
+  bool callbacks_given_{false};
+  AclConnectionTracker tracker;
+  std::shared_ptr<Queue> queue_;
+};
+
+ClassicAclConnection::ClassicAclConnection()
+    : AclConnection(), acl_connection_interface_(nullptr), address_(Address::kEmpty) {}
+
+ClassicAclConnection::ClassicAclConnection(std::shared_ptr<Queue> queue,
+                                           AclConnectionInterface* acl_connection_interface, uint16_t handle,
+                                           Address address, Role role)
+    : AclConnection(queue->GetUpEnd(), handle, Role::MASTER), acl_connection_interface_(acl_connection_interface),
+      address_(address) {
+  pimpl_ = new ClassicAclConnection::impl(acl_connection_interface, std::move(queue));
+}
+
+ClassicAclConnection::~ClassicAclConnection() {
+  delete pimpl_;
+}
+
+ConnectionManagementCallbacks* ClassicAclConnection::GetEventCallbacks() {
+  return pimpl_->GetEventCallbacks();
+}
+
 void ClassicAclConnection::RegisterCallbacks(ConnectionManagementCallbacks* callbacks, os::Handler* handler) {
-  return manager_->pimpl_->RegisterCallbacks(handle_, callbacks, handler);
-}
-
-void ClassicAclConnection::UnregisterCallbacks(ConnectionManagementCallbacks* callbacks) {
-  return manager_->pimpl_->UnregisterCallbacks(handle_, callbacks);
-}
-
-void ClassicAclConnection::RegisterDisconnectCallback(common::OnceCallback<void(ErrorCode)> on_disconnect,
-                                                      os::Handler* handler) {
-  return manager_->pimpl_->RegisterDisconnectCallback(handle_, std::move(on_disconnect), handler);
+  return pimpl_->tracker.RegisterCallbacks(callbacks, handler);
 }
 
 bool ClassicAclConnection::Disconnect(DisconnectReason reason) {
-  return manager_->pimpl_->Disconnect(handle_, reason);
+  acl_connection_interface_->EnqueueCommand(
+      DisconnectBuilder::Create(handle_, reason),
+      pimpl_->tracker.client_handler_->BindOnce([](CommandStatusView status) { /* TODO: check? */ }));
+  return true;
 }
 
 bool ClassicAclConnection::ChangeConnectionPacketType(uint16_t packet_type) {
-  return manager_->pimpl_->ChangeConnectionPacketType(handle_, packet_type);
+  acl_connection_interface_->EnqueueCommand(
+      ChangeConnectionPacketTypeBuilder::Create(handle_, packet_type),
+      pimpl_->tracker.client_handler_->BindOnce(&check_command_status<ChangeConnectionPacketTypeStatusView>));
+  return true;
 }
 
 bool ClassicAclConnection::AuthenticationRequested() {
-  return manager_->pimpl_->AuthenticationRequested(handle_);
+  acl_connection_interface_->EnqueueCommand(
+      AuthenticationRequestedBuilder::Create(handle_),
+      pimpl_->tracker.client_handler_->BindOnce(&check_command_status<AuthenticationRequestedStatusView>));
+  return true;
 }
 
 bool ClassicAclConnection::SetConnectionEncryption(Enable enable) {
-  return manager_->pimpl_->SetConnectionEncryption(handle_, enable);
+  acl_connection_interface_->EnqueueCommand(
+      SetConnectionEncryptionBuilder::Create(handle_, enable),
+      pimpl_->tracker.client_handler_->BindOnce(&check_command_status<SetConnectionEncryptionStatusView>));
+  return true;
 }
 
 bool ClassicAclConnection::ChangeConnectionLinkKey() {
-  return manager_->pimpl_->ChangeConnectionLinkKey(handle_);
+  acl_connection_interface_->EnqueueCommand(
+      ChangeConnectionLinkKeyBuilder::Create(handle_),
+      pimpl_->tracker.client_handler_->BindOnce(&check_command_status<ChangeConnectionLinkKeyStatusView>));
+  return true;
 }
 
 bool ClassicAclConnection::ReadClockOffset() {
-  return manager_->pimpl_->ReadClockOffset(handle_);
+  acl_connection_interface_->EnqueueCommand(
+      ReadClockOffsetBuilder::Create(handle_),
+      pimpl_->tracker.client_handler_->BindOnce(&check_command_status<ReadClockOffsetStatusView>));
+  return true;
 }
 
 bool ClassicAclConnection::HoldMode(uint16_t max_interval, uint16_t min_interval) {
-  return manager_->pimpl_->HoldMode(handle_, max_interval, min_interval);
+  acl_connection_interface_->EnqueueCommand(
+      HoldModeBuilder::Create(handle_, max_interval, min_interval),
+      pimpl_->tracker.client_handler_->BindOnce(&check_command_status<HoldModeStatusView>));
+  return true;
 }
 
 bool ClassicAclConnection::SniffMode(uint16_t max_interval, uint16_t min_interval, uint16_t attempt, uint16_t timeout) {
-  return manager_->pimpl_->SniffMode(handle_, max_interval, min_interval, attempt, timeout);
+  acl_connection_interface_->EnqueueCommand(
+      SniffModeBuilder::Create(handle_, max_interval, min_interval, attempt, timeout),
+      pimpl_->tracker.client_handler_->BindOnce(&check_command_status<SniffModeStatusView>));
+  return true;
 }
 
 bool ClassicAclConnection::ExitSniffMode() {
-  return manager_->pimpl_->ExitSniffMode(handle_);
+  acl_connection_interface_->EnqueueCommand(
+      ExitSniffModeBuilder::Create(handle_),
+      pimpl_->tracker.client_handler_->BindOnce(&check_command_status<ExitSniffModeStatusView>));
+  return true;
 }
 
 bool ClassicAclConnection::QosSetup(ServiceType service_type, uint32_t token_rate, uint32_t peak_bandwidth,
                                     uint32_t latency, uint32_t delay_variation) {
-  return manager_->pimpl_->QosSetup(handle_, service_type, token_rate, peak_bandwidth, latency, delay_variation);
+  acl_connection_interface_->EnqueueCommand(
+      QosSetupBuilder::Create(handle_, service_type, token_rate, peak_bandwidth, latency, delay_variation),
+      pimpl_->tracker.client_handler_->BindOnce(&check_command_status<QosSetupStatusView>));
+  return true;
 }
 
 bool ClassicAclConnection::RoleDiscovery() {
-  return manager_->pimpl_->RoleDiscovery(handle_);
+  acl_connection_interface_->EnqueueCommand(
+      RoleDiscoveryBuilder::Create(handle_),
+      pimpl_->tracker.client_handler_->BindOnceOn(&pimpl_->tracker, &AclConnectionTracker::on_role_discovery_complete));
+  return true;
 }
 
 bool ClassicAclConnection::ReadLinkPolicySettings() {
-  return manager_->pimpl_->ReadLinkPolicySettings(handle_);
+  acl_connection_interface_->EnqueueCommand(
+      ReadLinkPolicySettingsBuilder::Create(handle_),
+      pimpl_->tracker.client_handler_->BindOnceOn(&pimpl_->tracker,
+                                                  &AclConnectionTracker::on_read_link_policy_settings_complete));
+  return true;
 }
 
 bool ClassicAclConnection::WriteLinkPolicySettings(uint16_t link_policy_settings) {
-  return manager_->pimpl_->WriteLinkPolicySettings(handle_, link_policy_settings);
+  acl_connection_interface_->EnqueueCommand(
+      WriteLinkPolicySettingsBuilder::Create(handle_, link_policy_settings),
+      pimpl_->tracker.client_handler_->BindOnce(&check_command_complete<WriteLinkPolicySettingsCompleteView>));
+  return true;
 }
 
 bool ClassicAclConnection::FlowSpecification(FlowDirection flow_direction, ServiceType service_type,
                                              uint32_t token_rate, uint32_t token_bucket_size, uint32_t peak_bandwidth,
                                              uint32_t access_latency) {
-  return manager_->pimpl_->FlowSpecification(handle_, flow_direction, service_type, token_rate, token_bucket_size,
-                                             peak_bandwidth, access_latency);
+  acl_connection_interface_->EnqueueCommand(
+      FlowSpecificationBuilder::Create(handle_, flow_direction, service_type, token_rate, token_bucket_size,
+                                       peak_bandwidth, access_latency),
+      pimpl_->tracker.client_handler_->BindOnce(&check_command_status<FlowSpecificationStatusView>));
+  return true;
 }
 
 bool ClassicAclConnection::SniffSubrating(uint16_t maximum_latency, uint16_t minimum_remote_timeout,
                                           uint16_t minimum_local_timeout) {
-  return manager_->pimpl_->SniffSubrating(handle_, maximum_latency, minimum_remote_timeout, minimum_local_timeout);
+  acl_connection_interface_->EnqueueCommand(
+      SniffSubratingBuilder::Create(handle_, maximum_latency, minimum_remote_timeout, minimum_local_timeout),
+      pimpl_->tracker.client_handler_->BindOnce(&check_command_complete<SniffSubratingCompleteView>));
+  return true;
 }
 
 bool ClassicAclConnection::Flush() {
-  return manager_->pimpl_->Flush(handle_);
+  acl_connection_interface_->EnqueueCommand(
+      FlushBuilder::Create(handle_),
+      pimpl_->tracker.client_handler_->BindOnce(&check_command_complete<FlushCompleteView>));
+  return true;
 }
 
 bool ClassicAclConnection::ReadAutomaticFlushTimeout() {
-  return manager_->pimpl_->ReadAutomaticFlushTimeout(handle_);
+  acl_connection_interface_->EnqueueCommand(
+      ReadAutomaticFlushTimeoutBuilder::Create(handle_),
+      pimpl_->tracker.client_handler_->BindOnceOn(&pimpl_->tracker,
+                                                  &AclConnectionTracker::on_read_automatic_flush_timeout_complete));
+  return true;
 }
 
 bool ClassicAclConnection::WriteAutomaticFlushTimeout(uint16_t flush_timeout) {
-  return manager_->pimpl_->WriteAutomaticFlushTimeout(handle_, flush_timeout);
+  acl_connection_interface_->EnqueueCommand(
+      WriteAutomaticFlushTimeoutBuilder::Create(handle_, flush_timeout),
+      pimpl_->tracker.client_handler_->BindOnce(&check_command_complete<WriteAutomaticFlushTimeoutCompleteView>));
+  return true;
 }
 
 bool ClassicAclConnection::ReadTransmitPowerLevel(TransmitPowerLevelType type) {
-  return manager_->pimpl_->ReadTransmitPowerLevel(handle_, type);
+  acl_connection_interface_->EnqueueCommand(
+      ReadTransmitPowerLevelBuilder::Create(handle_, type),
+      pimpl_->tracker.client_handler_->BindOnceOn(&pimpl_->tracker,
+                                                  &AclConnectionTracker::on_read_transmit_power_level_complete));
+  return true;
 }
 
 bool ClassicAclConnection::ReadLinkSupervisionTimeout() {
-  return manager_->pimpl_->ReadLinkSupervisionTimeout(handle_);
+  acl_connection_interface_->EnqueueCommand(
+      ReadLinkSupervisionTimeoutBuilder::Create(handle_),
+      pimpl_->tracker.client_handler_->BindOnceOn(&pimpl_->tracker,
+                                                  &AclConnectionTracker::on_read_link_supervision_timeout_complete));
+  return true;
 }
 
 bool ClassicAclConnection::WriteLinkSupervisionTimeout(uint16_t link_supervision_timeout) {
-  return manager_->pimpl_->WriteLinkSupervisionTimeout(handle_, link_supervision_timeout);
+  acl_connection_interface_->EnqueueCommand(
+      WriteLinkSupervisionTimeoutBuilder::Create(handle_, link_supervision_timeout),
+      pimpl_->tracker.client_handler_->BindOnce(&check_command_complete<WriteLinkSupervisionTimeoutCompleteView>));
+  return true;
 }
 
 bool ClassicAclConnection::ReadFailedContactCounter() {
-  return manager_->pimpl_->ReadFailedContactCounter(handle_);
+  acl_connection_interface_->EnqueueCommand(
+      ReadFailedContactCounterBuilder::Create(handle_),
+      pimpl_->tracker.client_handler_->BindOnceOn(&pimpl_->tracker,
+                                                  &AclConnectionTracker::on_read_failed_contact_counter_complete));
+  return true;
 }
 
 bool ClassicAclConnection::ResetFailedContactCounter() {
-  return manager_->pimpl_->ResetFailedContactCounter(handle_);
+  acl_connection_interface_->EnqueueCommand(
+      ResetFailedContactCounterBuilder::Create(handle_),
+      pimpl_->tracker.client_handler_->BindOnce([](CommandCompleteView view) { /* TODO: check? */ }));
+  return true;
 }
 
 bool ClassicAclConnection::ReadLinkQuality() {
-  return manager_->pimpl_->ReadLinkQuality(handle_);
+  acl_connection_interface_->EnqueueCommand(
+      ReadLinkQualityBuilder::Create(handle_),
+      pimpl_->tracker.client_handler_->BindOnceOn(&pimpl_->tracker,
+                                                  &AclConnectionTracker::on_read_link_quality_complete));
+  return true;
 }
 
 bool ClassicAclConnection::ReadAfhChannelMap() {
-  return manager_->pimpl_->ReadAfhChannelMap(handle_);
+  acl_connection_interface_->EnqueueCommand(
+      ReadAfhChannelMapBuilder::Create(handle_),
+      pimpl_->tracker.client_handler_->BindOnceOn(&pimpl_->tracker,
+                                                  &AclConnectionTracker::on_read_afh_channel_map_complete));
+  return true;
 }
 
 bool ClassicAclConnection::ReadRssi() {
-  return manager_->pimpl_->ReadRssi(handle_);
+  acl_connection_interface_->EnqueueCommand(
+      ReadRssiBuilder::Create(handle_),
+      pimpl_->tracker.client_handler_->BindOnceOn(&pimpl_->tracker, &AclConnectionTracker::on_read_rssi_complete));
+  return true;
 }
 
 bool ClassicAclConnection::ReadRemoteVersionInformation() {
-  return manager_->pimpl_->ReadRemoteVersionInformation(handle_);
+  acl_connection_interface_->EnqueueCommand(
+      ReadRemoteVersionInformationBuilder::Create(handle_),
+      pimpl_->tracker.client_handler_->BindOnceOn(&pimpl_->tracker,
+                                                  &AclConnectionTracker::on_read_remote_version_information_status));
+  return true;
 }
 
 bool ClassicAclConnection::ReadRemoteSupportedFeatures() {
-  return manager_->pimpl_->ReadRemoteSupportedFeatures(handle_);
+  acl_connection_interface_->EnqueueCommand(
+      ReadRemoteSupportedFeaturesBuilder::Create(handle_),
+      pimpl_->tracker.client_handler_->BindOnceOn(&pimpl_->tracker,
+                                                  &AclConnectionTracker::on_read_remote_supported_features_status));
+  return true;
 }
 
 bool ClassicAclConnection::ReadRemoteExtendedFeatures() {
-  return manager_->pimpl_->ReadRemoteExtendedFeatures(handle_);
+  acl_connection_interface_->EnqueueCommand(
+      ReadRemoteExtendedFeaturesBuilder::Create(handle_, 1),
+      pimpl_->tracker.client_handler_->BindOnceOn(&pimpl_->tracker,
+                                                  &AclConnectionTracker::on_read_remote_extended_features_status));
+  return true;
 }
 
 bool ClassicAclConnection::ReadClock(WhichClock which_clock) {
-  return manager_->pimpl_->ReadClock(handle_, which_clock);
+  pimpl_->tracker.acl_connection_interface_->EnqueueCommand(
+      ReadClockBuilder::Create(handle_, which_clock),
+      pimpl_->tracker.client_handler_->BindOnceOn(&pimpl_->tracker, &AclConnectionTracker::on_read_clock_complete));
+  return true;
 }
 
 struct LeAclConnection::impl {
-  impl(LeAclConnectionInterface* le_acl_connection_interface, common::OnceCallback<void(DisconnectReason)> disconnect)
-      : tracker(le_acl_connection_interface, std::move(disconnect)) {}
+  impl(LeAclConnectionInterface* le_acl_connection_interface, std::shared_ptr<Queue> queue,
+       common::OnceCallback<void(DisconnectReason)> disconnect)
+      : queue_(std::move(queue)), tracker(le_acl_connection_interface, std::move(disconnect)) {}
   LeConnectionManagementCallbacks* GetEventCallbacks() {
+    ASSERT(!callbacks_given_);
+    callbacks_given_ = true;
     return &tracker;
   }
 
+  bool callbacks_given_{false};
+  std::shared_ptr<Queue> queue_;
   LeAclConnectionTracker tracker;
 };
 
@@ -2140,13 +1621,11 @@ LeAclConnection::LeAclConnection()
     : AclConnection(), local_address_(Address::kEmpty, AddressType::PUBLIC_DEVICE_ADDRESS),
       remote_address_(Address::kEmpty, AddressType::PUBLIC_DEVICE_ADDRESS) {}
 
-LeAclConnection::LeAclConnection(const AclManager* acl_manager, QueueUpEnd* queue_up_end,
-                                 LeAclConnectionInterface* le_acl_connection_interface,
+LeAclConnection::LeAclConnection(std::shared_ptr<Queue> queue, LeAclConnectionInterface* le_acl_connection_interface,
                                  common::OnceCallback<void(DisconnectReason)> disconnect, uint16_t handle,
                                  AddressWithType local_address, AddressWithType remote_address, Role role)
-    : AclConnection(acl_manager, queue_up_end, handle, role), local_address_(local_address),
-      remote_address_(remote_address) {
-  pimpl_ = new LeAclConnection::impl(le_acl_connection_interface, std::move(disconnect));
+    : AclConnection(queue->GetUpEnd(), handle, role), local_address_(local_address), remote_address_(remote_address) {
+  pimpl_ = new LeAclConnection::impl(le_acl_connection_interface, std::move(queue), std::move(disconnect));
 }
 
 LeAclConnection::~LeAclConnection() {
@@ -2174,18 +1653,14 @@ bool LeAclConnection::LeConnectionUpdate(uint16_t conn_interval_min, uint16_t co
     LOG_ERROR("Invalid parameter");
     return false;
   }
-  auto packet = LeConnectionUpdateBuilder::Create(handle_, conn_interval_min, conn_interval_max, conn_latency,
-                                                  supervision_timeout, min_ce_length, max_ce_length);
   pimpl_->tracker.le_acl_connection_interface_->EnqueueCommand(
-      std::move(packet), pimpl_->tracker.client_handler_->BindOnce([](CommandStatusView status) {
+      LeConnectionUpdateBuilder::Create(handle_, conn_interval_min, conn_interval_max, conn_latency,
+                                        supervision_timeout, min_ce_length, max_ce_length),
+      pimpl_->tracker.client_handler_->BindOnce([](CommandStatusView status) {
         ASSERT(status.IsValid());
         ASSERT(status.GetCommandOpCode() == OpCode::LE_CONNECTION_UPDATE);
       }));
   return true;
-}
-
-void AclConnection::Finish() {
-  return manager_->pimpl_->Finish(handle_);
 }
 
 AclManager::AclManager() : pimpl_(std::make_unique<impl>(*this)) {}
