@@ -22,7 +22,7 @@
 
 #include "os/handler.h"
 
-#include "hci/acl_manager.h"
+#include "hci/acl_manager/le_acl_connection.h"
 #include "hci/address.h"
 #include "hci/address_with_type.h"
 #include "l2cap/internal/parameter_provider.h"
@@ -37,7 +37,7 @@ namespace l2cap {
 namespace le {
 namespace internal {
 
-class LinkManager : public hci::LeConnectionCallbacks {
+class LinkManager : public hci::acl_manager::LeConnectionCallbacks {
  public:
   LinkManager(os::Handler* l2cap_handler, hci::AclManager* acl_manager, FixedChannelServiceManagerImpl* service_manager,
               DynamicChannelServiceManagerImpl* dynamic_service_manager,
@@ -60,7 +60,7 @@ class LinkManager : public hci::LeConnectionCallbacks {
 
   Link* GetLink(hci::AddressWithType address_with_type);
   void OnLeConnectSuccess(hci::AddressWithType connecting_address_with_type,
-                          std::unique_ptr<hci::LeAclConnection> acl_connection) override;
+                          std::unique_ptr<hci::acl_manager::LeAclConnection> acl_connection) override;
   void OnLeConnectFail(hci::AddressWithType address_with_type, hci::ErrorCode reason) override;
 
   // FixedChannelManager methods
