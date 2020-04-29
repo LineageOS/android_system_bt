@@ -16,6 +16,7 @@
 
 #include <unordered_map>
 
+#include "hci/acl_manager/le_acl_connection.h"
 #include "l2cap/cid.h"
 #include "l2cap/le/internal/fixed_channel_impl.h"
 #include "l2cap/le/internal/link.h"
@@ -31,7 +32,7 @@ hci::Role FixedChannelImpl::GetRole() const {
   return link_->GetRole();
 }
 
-hci::LeAclConnection* FixedChannelImpl::GetAclConnection() const {
+hci::acl_manager::LeAclConnection* FixedChannelImpl::GetAclConnection() const {
   return link_->GetAclConnection();
 }
 

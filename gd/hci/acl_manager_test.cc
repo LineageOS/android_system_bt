@@ -33,6 +33,7 @@
 
 namespace bluetooth {
 namespace hci {
+namespace acl_manager {
 namespace {
 
 using common::BidiQueue;
@@ -1126,5 +1127,6 @@ TEST_F(AclManagerWithConnectionTest, send_read_clock) {
 }
 
 }  // namespace
+}  // namespace acl_manager
 }  // namespace hci
 }  // namespace bluetooth
