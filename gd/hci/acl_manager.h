@@ -20,6 +20,12 @@
 
 #include "common/bidi_queue.h"
 #include "common/callback.h"
+#include "hci/acl_manager/classic_acl_connection.h"
+#include "hci/acl_manager/connection_callbacks.h"
+#include "hci/acl_manager/connection_management_callbacks.h"
+#include "hci/acl_manager/le_acl_connection.h"
+#include "hci/acl_manager/le_connection_callbacks.h"
+#include "hci/acl_manager/le_connection_management_callbacks.h"
 #include "hci/address.h"
 #include "hci/address_with_type.h"
 #include "hci/hci_layer.h"
@@ -35,205 +41,6 @@ class SecurityModule;
 
 namespace hci {
 
-class ConnectionManagementCallbacks {
- public:
-  virtual ~ConnectionManagementCallbacks() = default;
-  // Invoked when controller sends Connection Packet Type Changed event with Success error code
-  virtual void OnConnectionPacketTypeChanged(uint16_t packet_type) = 0;
-  // Invoked when controller sends Authentication Complete event with Success error code
-  virtual void OnAuthenticationComplete() = 0;
-  // Invoked when controller sends Encryption Change event with Success error code
-  virtual void OnEncryptionChange(EncryptionEnabled enabled) = 0;
-  // Invoked when controller sends Change Connection Link Key Complete event with Success error code
-  virtual void OnChangeConnectionLinkKeyComplete() = 0;
-  // Invoked when controller sends Read Clock Offset Complete event with Success error code
-  virtual void OnReadClockOffsetComplete(uint16_t clock_offset) = 0;
-  // Invoked when controller sends Mode Change event with Success error code
-  virtual void OnModeChange(Mode current_mode, uint16_t interval) = 0;
-  // Invoked when controller sends QoS Setup Complete event with Success error code
-  virtual void OnQosSetupComplete(ServiceType service_type, uint32_t token_rate, uint32_t peak_bandwidth,
-                                  uint32_t latency, uint32_t delay_variation) = 0;
-  // Invoked when controller sends Flow Specification Complete event with Success error code
-  virtual void OnFlowSpecificationComplete(FlowDirection flow_direction, ServiceType service_type, uint32_t token_rate,
-                                           uint32_t token_bucket_size, uint32_t peak_bandwidth,
-                                           uint32_t access_latency) = 0;
-  // Invoked when controller sends Flush Occurred event
-  virtual void OnFlushOccurred() = 0;
-  // Invoked when controller sends Command Complete event for Role Discovery command with Success error code
-  virtual void OnRoleDiscoveryComplete(Role current_role) = 0;
-  // Invoked when controller sends Command Complete event for Read Link Policy Settings command with Success error code
-  virtual void OnReadLinkPolicySettingsComplete(uint16_t link_policy_settings) = 0;
-  // Invoked when controller sends Command Complete event for Read Automatic Flush Timeout command with Success error
-  // code
-  virtual void OnReadAutomaticFlushTimeoutComplete(uint16_t flush_timeout) = 0;
-  // Invoked when controller sends Command Complete event for Read Transmit Power Level command with Success error code
-  virtual void OnReadTransmitPowerLevelComplete(uint8_t transmit_power_level) = 0;
-  // Invoked when controller sends Command Complete event for Read Link Supervision Time out command with Success error
-  // code
-  virtual void OnReadLinkSupervisionTimeoutComplete(uint16_t link_supervision_timeout) = 0;
-  // Invoked when controller sends Command Complete event for Read Failed Contact Counter command with Success error
-  // code
-  virtual void OnReadFailedContactCounterComplete(uint16_t failed_contact_counter) = 0;
-  // Invoked when controller sends Command Complete event for Read Link Quality command with Success error code
-  virtual void OnReadLinkQualityComplete(uint8_t link_quality) = 0;
-  // Invoked when controller sends Command Complete event for Read AFH Channel Map command with Success error code
-  virtual void OnReadAfhChannelMapComplete(AfhMode afh_mode, std::array<uint8_t, 10> afh_channel_map) = 0;
-  // Invoked when controller sends Command Complete event for Read RSSI command with Success error code
-  virtual void OnReadRssiComplete(uint8_t rssi) = 0;
-  // Invoked when controller sends Command Complete event for Read Clock command with Success error code
-  virtual void OnReadClockComplete(uint32_t clock, uint16_t accuracy) = 0;
-  // Invoked when controller sends Master Link Key Complete event
-  virtual void OnMasterLinkKeyComplete(KeyFlag key_flag) = 0;
-  // Invoked when controller sends Role Change event
-  virtual void OnRoleChange(Role new_role) = 0;
-  // Invoked when controller sends DisconnectComplete
-  virtual void OnDisconnection(ErrorCode reason) = 0;
-};
-
-class LeConnectionManagementCallbacks {
- public:
-  virtual ~LeConnectionManagementCallbacks() = default;
-  virtual void OnConnectionUpdate(uint16_t connection_interval, uint16_t connection_latency,
-                                  uint16_t supervision_timeout) = 0;
-  virtual void OnDisconnection(ErrorCode reason) = 0;
-};
-
-class AclConnection {
- public:
-  AclConnection() : queue_up_end_(nullptr), handle_(0), role_(Role::MASTER){};
-  virtual ~AclConnection() = default;
-
-  uint16_t GetHandle() const {
-    return handle_;
-  }
-
-  Role GetRole() const {
-    return role_;
-  }
-
-  using Queue = common::BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder>;
-  using QueueUpEnd = common::BidiQueueEnd<BasePacketBuilder, PacketView<kLittleEndian>>;
-  using QueueDownEnd = common::BidiQueueEnd<PacketView<kLittleEndian>, BasePacketBuilder>;
-  virtual QueueUpEnd* GetAclQueueEnd() const;
-
- protected:
-  AclConnection(QueueUpEnd* queue_up_end, uint16_t handle, Role role)
-      : queue_up_end_(queue_up_end), handle_(handle), role_(role) {}
-  QueueUpEnd* queue_up_end_;
-  uint16_t handle_;
-  Role role_;
-  DISALLOW_COPY_AND_ASSIGN(AclConnection);
-};
-
-class ClassicAclConnection : public AclConnection {
- public:
-  ClassicAclConnection();
-  ClassicAclConnection(std::shared_ptr<Queue> queue, AclConnectionInterface* acl_connection_interface, uint16_t handle,
-                       Address address, Role role);
-  ~ClassicAclConnection() override;
-
-  virtual Address GetAddress() const {
-    return address_;
-  }
-
-  virtual void RegisterCallbacks(ConnectionManagementCallbacks* callbacks, os::Handler* handler);
-  virtual bool Disconnect(DisconnectReason reason);
-  virtual bool ChangeConnectionPacketType(uint16_t packet_type);
-  virtual bool AuthenticationRequested();
-  virtual bool SetConnectionEncryption(Enable enable);
-  virtual bool ChangeConnectionLinkKey();
-  virtual bool ReadClockOffset();
-  virtual bool HoldMode(uint16_t max_interval, uint16_t min_interval);
-  virtual bool SniffMode(uint16_t max_interval, uint16_t min_interval, uint16_t attempt, uint16_t timeout);
-  virtual bool ExitSniffMode();
-  virtual bool QosSetup(ServiceType service_type, uint32_t token_rate, uint32_t peak_bandwidth, uint32_t latency,
-                        uint32_t delay_variation);
-  virtual bool RoleDiscovery();
-  virtual bool ReadLinkPolicySettings();
-  virtual bool WriteLinkPolicySettings(uint16_t link_policy_settings);
-  virtual bool FlowSpecification(FlowDirection flow_direction, ServiceType service_type, uint32_t token_rate,
-                                 uint32_t token_bucket_size, uint32_t peak_bandwidth, uint32_t access_latency);
-  virtual bool SniffSubrating(uint16_t maximum_latency, uint16_t minimum_remote_timeout,
-                              uint16_t minimum_local_timeout);
-  virtual bool Flush();
-  virtual bool ReadAutomaticFlushTimeout();
-  virtual bool WriteAutomaticFlushTimeout(uint16_t flush_timeout);
-  virtual bool ReadTransmitPowerLevel(TransmitPowerLevelType type);
-  virtual bool ReadLinkSupervisionTimeout();
-  virtual bool WriteLinkSupervisionTimeout(uint16_t link_supervision_timeout);
-  virtual bool ReadFailedContactCounter();
-  virtual bool ResetFailedContactCounter();
-  virtual bool ReadLinkQuality();
-  virtual bool ReadAfhChannelMap();
-  virtual bool ReadRssi();
-  virtual bool ReadClock(WhichClock which_clock);
-  virtual bool ReadRemoteVersionInformation();
-  virtual bool ReadRemoteSupportedFeatures();
-  virtual bool ReadRemoteExtendedFeatures();
-
-  // Called once before passing the connection to the client
-  virtual ConnectionManagementCallbacks* GetEventCallbacks();
-
- private:
-  AclConnectionInterface* acl_connection_interface_;
-  Address address_;
-  struct impl;
-  struct impl* pimpl_ = nullptr;
-  DISALLOW_COPY_AND_ASSIGN(ClassicAclConnection);
-};
-
-class LeAclConnection : public AclConnection {
- public:
-  LeAclConnection();
-  LeAclConnection(std::shared_ptr<Queue> queue, LeAclConnectionInterface* le_acl_connection_interface,
-                  common::OnceCallback<void(DisconnectReason)> disconnect, uint16_t handle,
-                  AddressWithType local_address, AddressWithType remote_address, Role role);
-  ~LeAclConnection() override;
-
-  virtual AddressWithType GetLocalAddress() const {
-    return local_address_;
-  }
-
-  virtual AddressWithType GetRemoteAddress() const {
-    return remote_address_;
-  }
-
-  virtual void RegisterCallbacks(LeConnectionManagementCallbacks* callbacks, os::Handler* handler);
-  virtual void Disconnect(DisconnectReason reason);
-
-  virtual bool LeConnectionUpdate(uint16_t conn_interval_min, uint16_t conn_interval_max, uint16_t conn_latency,
-                                  uint16_t supervision_timeout, uint16_t min_ce_length, uint16_t max_ce_length);
-
-  // Called once before passing the connection to the client
-  virtual LeConnectionManagementCallbacks* GetEventCallbacks();
-
- private:
-  struct impl;
-  struct impl* pimpl_ = nullptr;
-  AddressWithType local_address_;
-  AddressWithType remote_address_;
-  DISALLOW_COPY_AND_ASSIGN(LeAclConnection);
-};
-
-class ConnectionCallbacks {
- public:
-  virtual ~ConnectionCallbacks() = default;
-  // Invoked when controller sends Connection Complete event with Success error code
-  virtual void OnConnectSuccess(std::unique_ptr<ClassicAclConnection>) = 0;
-  // Invoked when controller sends Connection Complete event with non-Success error code
-  virtual void OnConnectFail(Address, ErrorCode reason) = 0;
-};
-
-class LeConnectionCallbacks {
- public:
-  virtual ~LeConnectionCallbacks() = default;
-  // Invoked when controller sends Connection Complete event with Success error code
-  // AddressWithType is always equal to the object used in AclManager#CreateLeConnection
-  virtual void OnLeConnectSuccess(AddressWithType, std::unique_ptr<LeAclConnection>) = 0;
-  // Invoked when controller sends Connection Complete event with non-Success error code
-  virtual void OnLeConnectFail(AddressWithType, ErrorCode reason) = 0;
-};
-
 class AclManager : public Module {
  public:
   AclManager();
@@ -245,10 +52,10 @@ class AclManager : public Module {
 
   // Should register only once when user module starts.
   // Generates OnConnectSuccess when an incoming connection is established.
-  virtual void RegisterCallbacks(ConnectionCallbacks* callbacks, os::Handler* handler);
+  virtual void RegisterCallbacks(acl_manager::ConnectionCallbacks* callbacks, os::Handler* handler);
 
   // Should register only once when user module starts.
-  virtual void RegisterLeCallbacks(LeConnectionCallbacks* callbacks, os::Handler* handler);
+  virtual void RegisterLeCallbacks(acl_manager::LeConnectionCallbacks* callbacks, os::Handler* handler);
 
   // Generates OnConnectSuccess if connected, or OnConnectFail otherwise
   virtual void CreateConnection(Address address);
