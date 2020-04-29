@@ -35,6 +35,8 @@ using ::bluetooth::os::Thread;
 namespace bluetooth {
 namespace hci {
 
+using hci::acl_manager::AclConnection;
+
 class TestController : public Controller {
  public:
   uint16_t GetControllerNumAclPacketBuffers() const {
