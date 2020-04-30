@@ -47,6 +47,7 @@ bool DynamicChannelManager::RegisterService(Psm psm, DynamicChannelConfiguration
                                             OnConnectionOpenCallback on_connection_open, os::Handler* handler) {
   internal::DynamicChannelServiceImpl::PendingRegistration pending_registration{
       .user_handler_ = handler,
+      .security_policy_ = security_policy,
       .on_registration_complete_callback_ = std::move(on_registration_complete),
       .on_connection_open_callback_ = std::move(on_connection_open),
       .configuration_ = configuration_option,

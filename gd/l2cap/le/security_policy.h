@@ -23,13 +23,17 @@ namespace le {
 // Security Policy for LE Security Mode 1, used by COC and GATT. Defined in Core 5.2, 3, C 10.2.1
 class SecurityPolicy {
  public:
-  enum class Level {
-    NO_SECURITY,
-    UNAUTHENTICATED_PAIRING_WITH_ENCRYPTION,
-    AUTHENTICATED_PAIRING_WITH_ENCRYPTION,
-    AUTHENTICATED_PAIRING_WITH_128_BYTE_KEY,
+  enum class Level : uint32_t {
+    NO_SECURITY = 0,
+    UNAUTHENTICATED_PAIRING_WITH_ENCRYPTION = 1,
+    AUTHENTICATED_PAIRING_WITH_ENCRYPTION = 2,
+    AUTHENTICATED_PAIRING_WITH_128_BIT_KEY = 3,
+    AUTHORIZATION = 4,
   };
   Level security_level_ = Level::NO_SECURITY;
+
+  SecurityPolicy() : security_level_(Level::NO_SECURITY) {}
+  SecurityPolicy(Level level) : security_level_(level) {}
 
   bool RequiresAuthentication() const {
     return security_level_ != SecurityPolicy::Level::NO_SECURITY;
