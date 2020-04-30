@@ -44,9 +44,18 @@ message CloseDynamicChannelRequest {
   uint32 psm = 2;
 }
 
+enum SecurityLevel {
+  NO_SECURITY = 0;
+  UNAUTHENTICATED_PAIRING_WITH_ENCRYPTION = 1;
+  AUTHENTICATED_PAIRING_WITH_ENCRYPTION = 2;
+  AUTHENTICATED_PAIRING_WITH_128_BIT_KEY = 3;
+  AUTHORIZATION = 4;
+}
+
 message SetEnableDynamicChannelRequest {
   uint32 psm = 1;
   bool enable = 2;
+  SecurityLevel security_level = 3;
 }
 
 message DynamicChannelPacket {
