@@ -158,6 +158,16 @@ class CertLeL2cap(Closable):
         self._cid_to_cert_channels[scid] = channel
         return channel
 
+    def open_channel_with_expected_result(
+            self, psm=0x33,
+            result=LeCreditBasedConnectionResponseResult.SUCCESS):
+        self.control_channel.send(
+            l2cap_packets.LeCreditBasedConnectionRequestBuilder(
+                1, psm, 0x40, 1000, 100, 6))
+
+        response = L2capMatchers.CreditBasedConnectionResponse(result)
+        assertThat(self.control_channel).emits(response)
+
     def verify_and_respond_open_channel_from_remote(
             self,
             psm=0x33,

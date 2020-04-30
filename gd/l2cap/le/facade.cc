@@ -81,8 +81,10 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
                                    const ::bluetooth::l2cap::le::SetEnableDynamicChannelRequest* request,
                                    ::google::protobuf::Empty* response) override {
     if (request->enable()) {
-      dynamic_channel_helper_map_.emplace(request->psm(), std::make_unique<L2capDynamicChannelHelper>(
-                                                              this, l2cap_layer_, facade_handler_, request->psm()));
+      dynamic_channel_helper_map_.emplace(
+          request->psm(),
+          std::make_unique<L2capDynamicChannelHelper>(this, l2cap_layer_, facade_handler_, request->psm(),
+                                                      static_cast<SecurityPolicy::Level>(request->security_level())));
       return ::grpc::Status::OK;
     } else {
       auto service_helper = dynamic_channel_helper_map_.find(request->psm());
@@ -111,11 +113,11 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
   class L2capDynamicChannelHelper {
    public:
     L2capDynamicChannelHelper(L2capLeModuleFacadeService* service, L2capLeModule* l2cap_layer, os::Handler* handler,
-                              Psm psm)
+                              Psm psm, SecurityPolicy::Level security_level)
         : facade_service_(service), l2cap_layer_(l2cap_layer), handler_(handler), psm_(psm) {
       dynamic_channel_manager_ = l2cap_layer_->GetDynamicChannelManager();
       dynamic_channel_manager_->RegisterService(
-          psm, {}, {},
+          psm, {}, security_level,
           common::BindOnce(&L2capDynamicChannelHelper::on_l2cap_service_registration_complete,
                            common::Unretained(this)),
           common::Bind(&L2capDynamicChannelHelper::on_connection_open, common::Unretained(this)), handler_);
