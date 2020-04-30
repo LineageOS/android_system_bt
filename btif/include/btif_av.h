@@ -114,6 +114,14 @@ bool btif_av_is_peer_edr(const RawAddress& peer_address);
 bool btif_av_peer_supports_3mbps(const RawAddress& peer_address);
 
 /**
+ * Check whether the mandatory codec is more preferred for this peer.
+ *
+ * @param peer_address the target peer address
+ * @return true if optional codecs are not preferred to be used
+ */
+bool btif_av_peer_prefers_mandatory_codec(const RawAddress& peer_address);
+
+/**
  * Report A2DP Source Codec State for a peer.
  *
  * @param peer_address the address of the peer to report
