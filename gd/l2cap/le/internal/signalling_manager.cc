@@ -185,11 +185,33 @@ void LeSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, Cid r
   }
 
   auto* service = dynamic_service_manager_->GetService(psm);
+  auto security_policy = service->GetSecurityPolicy();
+  switch (security_policy.security_level_) {
+    case SecurityPolicy::Level::NO_SECURITY:
+      break;
+    // Security module is not integrated so far. Other levels are not supported
+    case SecurityPolicy::Level::UNAUTHENTICATED_PAIRING_WITH_ENCRYPTION:
+      send_connection_response(signal_id, kInvalidCid, 0, 0, 0,
+                               LeCreditBasedConnectionResponseResult::INSUFFICIENT_AUTHENTICATION);
+      return;
+    case SecurityPolicy::Level::AUTHENTICATED_PAIRING_WITH_ENCRYPTION:
+      send_connection_response(signal_id, kInvalidCid, 0, 0, 0,
+                               LeCreditBasedConnectionResponseResult::INSUFFICIENT_AUTHENTICATION);
+      return;
+    case SecurityPolicy::Level::AUTHENTICATED_PAIRING_WITH_128_BIT_KEY:
+      send_connection_response(signal_id, kInvalidCid, 0, 0, 0,
+                               LeCreditBasedConnectionResponseResult::INSUFFICIENT_ENCRYPTION_KEY_SIZE);
+      return;
+    case SecurityPolicy::Level::AUTHORIZATION:
+      send_connection_response(signal_id, kInvalidCid, 0, 0, 0,
+                               LeCreditBasedConnectionResponseResult::INSUFFICIENT_AUTHORIZATION);
+      return;
+  }
   auto config = service->GetConfigOption();
   auto local_mtu = config.mtu;
   auto local_mps = link_->GetMps();
 
-  auto new_channel = link_->AllocateDynamicChannel(psm, remote_cid, {});
+  auto new_channel = link_->AllocateDynamicChannel(psm, remote_cid);
   if (new_channel == nullptr) {
     LOG_WARN("Can't allocate dynamic channel");
     // TODO: We need to respond with the correct reason
@@ -228,7 +250,7 @@ void LeSignallingManager::OnConnectionResponse(SignalId signal_id, Cid remote_ci
     return;
   }
   auto new_channel =
-      link_->AllocateReservedDynamicChannel(command_just_sent_.source_cid_, command_just_sent_.psm_, remote_cid, {});
+      link_->AllocateReservedDynamicChannel(command_just_sent_.source_cid_, command_just_sent_.psm_, remote_cid);
   if (new_channel == nullptr) {
     LOG_WARN("Can't allocate dynamic channel");
     link_->OnOutgoingConnectionRequestFail(command_just_sent_.source_cid_,
