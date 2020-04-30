@@ -20,8 +20,8 @@
 #include "hci/acl_manager/assembler.h"
 #include "hci/acl_manager/disconnector_for_le.h"
 #include "hci/acl_manager/event_checkers.h"
+#include "hci/acl_manager/round_robin_scheduler.h"
 #include "hci/controller.h"
-#include "hci/round_robin_scheduler.h"
 #include "security/security_manager_listener.h"
 #include "security/security_module.h"
 

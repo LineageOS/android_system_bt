@@ -20,6 +20,7 @@
 #include "crypto_toolbox/crypto_toolbox.h"
 #include "hci/acl_manager/assembler.h"
 #include "hci/acl_manager/disconnector_for_le.h"
+#include "hci/acl_manager/round_robin_scheduler.h"
 #include "os/alarm.h"
 #include "os/rand.h"
 

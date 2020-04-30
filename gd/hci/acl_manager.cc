@@ -24,9 +24,9 @@
 #include "hci/acl_manager/connection_management_callbacks.h"
 #include "hci/acl_manager/le_acl_connection.h"
 #include "hci/acl_manager/le_impl.h"
+#include "hci/acl_manager/round_robin_scheduler.h"
 #include "hci/controller.h"
 #include "hci/hci_layer.h"
-#include "hci/round_robin_scheduler.h"
 #include "security/security_module.h"
 
 namespace bluetooth {
@@ -45,6 +45,8 @@ using acl_manager::ConnectionCallbacks;
 using acl_manager::le_impl;
 using acl_manager::LeAclConnection;
 using acl_manager::LeConnectionCallbacks;
+
+using acl_manager::RoundRobinScheduler;
 
 struct AclManager::impl {
   impl(const AclManager& acl_manager) : acl_manager_(acl_manager) {}
