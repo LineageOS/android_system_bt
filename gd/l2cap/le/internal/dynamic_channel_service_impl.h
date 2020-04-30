@@ -22,6 +22,7 @@
 #include "l2cap/le/dynamic_channel_configuration_option.h"
 #include "l2cap/le/dynamic_channel_manager.h"
 #include "l2cap/le/dynamic_channel_service.h"
+#include "l2cap/le/security_policy.h"
 
 namespace bluetooth {
 namespace l2cap {
@@ -33,6 +34,7 @@ class DynamicChannelServiceImpl {
 
   struct PendingRegistration {
     os::Handler* user_handler_ = nullptr;
+    SecurityPolicy security_policy_;
     DynamicChannelManager::OnRegistrationCompleteCallback on_registration_complete_callback_;
     DynamicChannelManager::OnConnectionOpenCallback on_connection_open_callback_;
     DynamicChannelConfigurationOption configuration_;
@@ -46,20 +48,25 @@ class DynamicChannelServiceImpl {
     return config_option_;
   }
 
+  SecurityPolicy GetSecurityPolicy() {
+    return security_policy_;
+  }
+
   friend class DynamicChannelServiceManagerImpl;
 
  protected:
   // protected access for mocking
   DynamicChannelServiceImpl(os::Handler* user_handler,
                             DynamicChannelManager::OnConnectionOpenCallback on_connection_open_callback,
-                            DynamicChannelConfigurationOption config_option)
+                            DynamicChannelConfigurationOption config_option, SecurityPolicy security_policy)
       : user_handler_(user_handler), on_connection_open_callback_(std::move(on_connection_open_callback)),
-        config_option_(config_option) {}
+        config_option_(config_option), security_policy_(security_policy) {}
 
  private:
   os::Handler* user_handler_ = nullptr;
   DynamicChannelManager::OnConnectionOpenCallback on_connection_open_callback_;
   DynamicChannelConfigurationOption config_option_;
+  SecurityPolicy security_policy_;
 };
 
 }  // namespace internal
