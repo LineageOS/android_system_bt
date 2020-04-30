@@ -20,12 +20,8 @@
 
 #include "common/bidi_queue.h"
 #include "common/callback.h"
-#include "hci/acl_manager/classic_acl_connection.h"
 #include "hci/acl_manager/connection_callbacks.h"
-#include "hci/acl_manager/connection_management_callbacks.h"
-#include "hci/acl_manager/le_acl_connection.h"
 #include "hci/acl_manager/le_connection_callbacks.h"
-#include "hci/acl_manager/le_connection_management_callbacks.h"
 #include "hci/address.h"
 #include "hci/address_with_type.h"
 #include "hci/hci_layer.h"
@@ -92,8 +88,6 @@ class AclManager : public Module {
   struct impl;
   std::unique_ptr<impl> pimpl_;
 
-  struct acl_connection;
-  struct le_acl_connection;
   DISALLOW_COPY_AND_ASSIGN(AclManager);
 };
 

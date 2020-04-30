@@ -772,7 +772,8 @@ TEST_F(AclManagerWithConnectionTest, acl_send_data_credits) {
 
   auto after_credits_sent_packet = test_hci_layer_->OutgoingAclData();
 
-  connection_->Disconnect(DisconnectReason::AUTHENTICATION_FAILURE);
+  fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
+  fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
 }
 
 TEST_F(AclManagerWithConnectionTest, send_switch_role) {
