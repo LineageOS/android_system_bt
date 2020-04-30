@@ -423,6 +423,9 @@ SecurityManagerImpl::SecurityManagerImpl(os::Handler* security_handler, l2cap::l
 void SecurityManagerImpl::OnPairingFinished(security::PairingResultOrFailure pairing_result) {
   LOG_INFO(" ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ Received pairing result");
 
+  pending_le_pairing_.channel_->GetQueueUpEnd()->UnregisterDequeue();
+  pending_le_pairing_.enqueue_buffer_.reset();
+
   if (std::holds_alternative<PairingFailure>(pairing_result)) {
     PairingFailure failure = std::get<PairingFailure>(pairing_result);
     LOG_INFO(" ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ failure message: %s",
