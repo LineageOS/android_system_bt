@@ -43,6 +43,15 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     return ::grpc::Status::OK;
   }
 
+  ::grpc::Status CreateBondLe(::grpc::ServerContext* context, const facade::BluetoothAddressWithType* request,
+                              ::google::protobuf::Empty* response) override {
+    hci::Address peer;
+    ASSERT(hci::Address::FromString(request->address().address(), peer));
+    hci::AddressType peer_type = static_cast<hci::AddressType>(request->type());
+    security_module_->GetSecurityManager()->CreateBondLe(hci::AddressWithType(peer, peer_type));
+    return ::grpc::Status::OK;
+  }
+
   ::grpc::Status CancelBond(::grpc::ServerContext* context, const facade::BluetoothAddressWithType* request,
                             ::google::protobuf::Empty* response) override {
     hci::Address peer;
