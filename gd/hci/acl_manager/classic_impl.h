@@ -112,10 +112,8 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
   void on_classic_disconnect(uint16_t handle, ErrorCode reason) {
     if (acl_connections_.count(handle) == 1) {
       auto& connection = acl_connections_.find(handle)->second;
-      hci_layer_->GetHciHandler()->Post(
-          common::BindOnce(&RoundRobinScheduler::SetDisconnect, common::Unretained(round_robin_scheduler_), handle));
-      hci_layer_->GetHciHandler()->Post(
-          common::BindOnce(&RoundRobinScheduler::Unregister, common::Unretained(round_robin_scheduler_), handle));
+      round_robin_scheduler_->SetDisconnect(handle);
+      round_robin_scheduler_->Unregister(handle);
       connection.connection_management_callbacks_->OnDisconnection(reason);
       acl_connections_.erase(handle);
     }
@@ -216,9 +214,7 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
     acl_connections_.emplace(std::piecewise_construct, std::forward_as_tuple(handle),
                              std::forward_as_tuple(AddressWithType{address, AddressType::PUBLIC_DEVICE_ADDRESS},
                                                    queue->GetDownEnd(), handler_));
-    hci_layer_->GetHciHandler()->Post(common::BindOnce(&RoundRobinScheduler::Register,
-                                                       common::Unretained(round_robin_scheduler_),
-                                                       RoundRobinScheduler::ConnectionType::CLASSIC, handle, queue));
+    round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle, queue);
     std::unique_ptr<ClassicAclConnection> connection(new ClassicAclConnection(
         std::move(queue), acl_connection_interface_, handle, address, Role::MASTER /* TODO: Did we connect? */));
     auto& connection_proxy = check_and_get_connection(handle);

@@ -92,10 +92,8 @@ struct le_impl {
   void on_le_disconnect(uint16_t handle, ErrorCode reason) {
     if (le_acl_connections_.count(handle) == 1) {
       auto& connection = le_acl_connections_.find(handle)->second;
-      hci_layer_->GetHciHandler()->Post(
-          common::BindOnce(&RoundRobinScheduler::SetDisconnect, common::Unretained(round_robin_scheduler_), handle));
-      hci_layer_->GetHciHandler()->Post(
-          common::BindOnce(&RoundRobinScheduler::Unregister, common::Unretained(round_robin_scheduler_), handle));
+      round_robin_scheduler_->SetDisconnect(handle);
+      round_robin_scheduler_->Unregister(handle);
       connection.le_connection_management_callbacks_->OnDisconnection(reason);
       le_acl_connections_.erase(handle);
     }
@@ -135,9 +133,7 @@ struct le_impl {
     auto& connection_proxy = check_and_get_le_connection(handle);
     auto do_disconnect =
         common::BindOnce(&DisconnectorForLe::handle_disconnect, common::Unretained(disconnector_), handle);
-    hci_layer_->GetHciHandler()->Post(common::BindOnce(&RoundRobinScheduler::Register,
-                                                       common::Unretained(round_robin_scheduler_),
-                                                       RoundRobinScheduler::ConnectionType::LE, handle, queue));
+    round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::LE, handle, queue);
     std::unique_ptr<LeAclConnection> connection(new LeAclConnection(std::move(queue), le_acl_connection_interface_,
                                                                     std::move(do_disconnect), handle, local_address,
                                                                     remote_address, role));
@@ -172,9 +168,7 @@ struct le_impl {
     le_acl_connections_.emplace(std::piecewise_construct, std::forward_as_tuple(handle),
                                 std::forward_as_tuple(remote_address, queue->GetDownEnd(), handler_));
     auto& connection_proxy = check_and_get_le_connection(handle);
-    hci_layer_->GetHciHandler()->Post(common::BindOnce(&RoundRobinScheduler::Register,
-                                                       common::Unretained(round_robin_scheduler_),
-                                                       RoundRobinScheduler::ConnectionType::LE, handle, queue));
+    round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::LE, handle, queue);
     auto role = connection_complete.GetRole();
     auto do_disconnect =
         common::BindOnce(&DisconnectorForLe::handle_disconnect, common::Unretained(disconnector_), handle);
