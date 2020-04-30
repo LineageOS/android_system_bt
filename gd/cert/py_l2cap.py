@@ -18,6 +18,7 @@ from google.protobuf import empty_pb2 as empty_proto
 
 from l2cap.classic import facade_pb2 as l2cap_facade_pb2
 from l2cap.le import facade_pb2 as l2cap_le_facade_pb2
+from l2cap.le.facade_pb2 import SecurityLevel
 from bluetooth_packets_python3 import l2cap_packets
 from cert.event_stream import FilteringEventStream
 from cert.event_stream import EventStream, IEventStream
@@ -203,10 +204,13 @@ class PyLeL2cap(Closable):
     def get_fixed_channel(self, cid=4):
         return PyLeL2capFixedChannel(self._device, cid, self._le_l2cap_stream)
 
-    def register_coc(self, cert_address, psm=0x33):
+    def register_coc(self,
+                     cert_address,
+                     psm=0x33,
+                     security_level=SecurityLevel.NO_SECURITY):
         self._device.l2cap_le.SetDynamicChannel(
             l2cap_le_facade_pb2.SetEnableDynamicChannelRequest(
-                psm=psm, enable=True))
+                psm=psm, enable=True, security_level=security_level))
         return PyLeL2capDynamicChannel(self._device, cert_address, psm,
                                        self._le_l2cap_stream)
 

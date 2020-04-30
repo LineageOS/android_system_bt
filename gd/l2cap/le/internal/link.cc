@@ -155,8 +155,7 @@ void Link::OnOutgoingConnectionRequestFail(Cid local_cid, LeCreditBasedConnectio
   dynamic_channel_allocator_.FreeChannel(local_cid);
 }
 
-std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateDynamicChannel(Psm psm, Cid remote_cid,
-                                                                                  SecurityPolicy security_policy) {
+std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateDynamicChannel(Psm psm, Cid remote_cid) {
   auto channel = dynamic_channel_allocator_.AllocateChannel(psm, remote_cid);
   if (channel != nullptr) {
     data_pipeline_manager_.AttachChannel(channel->GetCid(), channel,
@@ -167,8 +166,8 @@ std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateDynamicChanne
   return channel;
 }
 
-std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateReservedDynamicChannel(
-    Cid reserved_cid, Psm psm, Cid remote_cid, SecurityPolicy security_policy) {
+std::shared_ptr<l2cap::internal::DynamicChannelImpl> Link::AllocateReservedDynamicChannel(Cid reserved_cid, Psm psm,
+                                                                                          Cid remote_cid) {
   auto channel = dynamic_channel_allocator_.AllocateReservedChannel(reserved_cid, psm, remote_cid);
   if (channel != nullptr) {
     data_pipeline_manager_.AttachChannel(channel->GetCid(), channel,
