@@ -266,6 +266,13 @@ typedef void (*btav_audio_sink_config_callback)(const RawAddress& bd_addr,
                                                 uint32_t sample_rate,
                                                 uint8_t channel_count);
 
+/** Callback for querying whether the mandatory codec is more preferred.
+ *  Used only for the A2DP Source interface.
+ *  Return true if optional codecs are not preferred.
+ */
+typedef bool (*btav_mandatory_codec_preferred_callback)(
+    const RawAddress& bd_addr);
+
 /** BT-AV A2DP Source callback structure. */
 typedef struct {
   /** set to sizeof(btav_source_callbacks_t) */
@@ -273,6 +280,7 @@ typedef struct {
   btav_connection_state_callback connection_state_cb;
   btav_audio_state_callback audio_state_cb;
   btav_audio_source_config_callback audio_config_cb;
+  btav_mandatory_codec_preferred_callback mandatory_codec_preferred_cb;
 } btav_source_callbacks_t;
 
 /** BT-AV A2DP Sink callback structure. */
