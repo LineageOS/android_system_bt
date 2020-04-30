@@ -14,24 +14,33 @@
  * limitations under the License.
  */
 
-#include "hci/acl_fragmenter.h"
+#pragma once
 
-#include "os/log.h"
-#include "packet/fragmenting_inserter.h"
+#include <cstdint>
+#include <forward_list>
+#include <iterator>
+#include <memory>
+#include <vector>
+
+#include "packet/base_packet_builder.h"
+#include "packet/raw_builder.h"
 
 namespace bluetooth {
 namespace hci {
+namespace acl_manager {
 
-AclFragmenter::AclFragmenter(size_t mtu, std::unique_ptr<packet::BasePacketBuilder> packet)
-    : mtu_(mtu), packet_(std::move(packet)) {}
+class AclFragmenter {
+ public:
+  AclFragmenter(size_t mtu, std::unique_ptr<packet::BasePacketBuilder> input);
+  virtual ~AclFragmenter() = default;
 
-std::vector<std::unique_ptr<packet::RawBuilder>> AclFragmenter::GetFragments() {
-  std::vector<std::unique_ptr<packet::RawBuilder>> to_return;
-  packet::FragmentingInserter fragmenting_inserter(mtu_, std::back_insert_iterator(to_return));
-  packet_->Serialize(fragmenting_inserter);
-  fragmenting_inserter.finalize();
-  return to_return;
-}
+  std::vector<std::unique_ptr<packet::RawBuilder>> GetFragments();
 
+ private:
+  size_t mtu_;
+  std::unique_ptr<packet::BasePacketBuilder> packet_;
+};
+
+}  // namespace acl_manager
 }  // namespace hci
 }  // namespace bluetooth
