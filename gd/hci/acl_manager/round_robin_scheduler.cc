@@ -14,11 +14,12 @@
  * limitations under the License.
  */
 
-#include "hci/round_robin_scheduler.h"
-#include "hci/acl_fragmenter.h"
+#include "hci/acl_manager/round_robin_scheduler.h"
+#include "hci/acl_manager/acl_fragmenter.h"
 
 namespace bluetooth {
 namespace hci {
+namespace acl_manager {
 
 RoundRobinScheduler::RoundRobinScheduler(os::Handler* handler, Controller* controller,
                                          common::BidiQueueEnd<AclPacketBuilder, AclPacketView>* hci_queue_end)
@@ -212,5 +213,6 @@ void RoundRobinScheduler::incoming_acl_credits(uint16_t handle, uint16_t credits
   }
 }
 
+}  // namespace acl_manager
 }  // namespace hci
 }  // namespace bluetooth
