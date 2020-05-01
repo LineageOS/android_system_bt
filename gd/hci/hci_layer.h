@@ -79,10 +79,6 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
 
   virtual LeScanningInterface* GetLeScanningInterface(common::ContextualCallback<void(LeMetaEventView)> event_handler);
 
-  os::Handler* GetHciHandler() {
-    return GetHandler();
-  }
-
   std::string ToString() const override {
     return "Hci Layer";
   }
