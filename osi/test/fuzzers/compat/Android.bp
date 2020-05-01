@@ -1,0 +1,15 @@
+cc_fuzz {
+    name: "libosi_fuzz_compat",
+    defaults: ["libosi_fuzz_defaults"],
+    host_supported: true,
+    srcs: [
+        "fuzz_compat.cc",
+    ],
+    shared_libs: [
+        "liblog",
+        "libcutils",
+    ],
+    static_libs: [
+        "libosi",
+    ],
+}
