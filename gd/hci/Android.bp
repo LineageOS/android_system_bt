@@ -4,8 +4,9 @@ filegroup {
         "acl_manager/acl_connection.cc",
         "acl_manager/classic_acl_connection.cc",
         "acl_manager/le_acl_connection.cc",
+        "acl_manager/round_robin_scheduler.cc",
+        "acl_manager/acl_fragmenter.cc",
         "acl_manager.cc",
-        "acl_fragmenter.cc",
         "address.cc",
         "class_of_device.cc",
         "controller.cc",
@@ -14,7 +15,6 @@ filegroup {
         "hci_layer.cc",
         "le_advertising_manager.cc",
         "le_scanning_manager.cc",
-        "round_robin_scheduler.cc",
     ],
 }
 
@@ -22,6 +22,7 @@ filegroup {
     name: "BluetoothHciTestSources",
     srcs: [
         "acl_builder_test.cc",
+        "acl_manager/round_robin_scheduler_test.cc",
         "acl_manager_test.cc",
         "address_unittest.cc",
         "address_with_type_test.cc",
@@ -34,7 +35,6 @@ filegroup {
         "hci_packets_test.cc",
         "le_advertising_manager_test.cc",
         "le_scanning_manager_test.cc",
-        "round_robin_scheduler_test.cc",
     ],
 }
 
