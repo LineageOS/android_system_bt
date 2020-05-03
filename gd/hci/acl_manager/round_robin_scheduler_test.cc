@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "hci/round_robin_scheduler.h"
+#include "hci/acl_manager/round_robin_scheduler.h"
 
 #include <gtest/gtest.h>
 
@@ -34,8 +34,7 @@ using ::bluetooth::os::Thread;
 
 namespace bluetooth {
 namespace hci {
-
-using hci::acl_manager::AclConnection;
+namespace acl_manager {
 
 class TestController : public Controller {
  public:
@@ -372,5 +371,6 @@ TEST_F(RoundRobinSchedulerTest, send_fragments_without_interval) {
   round_robin_scheduler_->Unregister(le_handle);
 }
 
+}  // namespace acl_manager
 }  // namespace hci
 }  // namespace bluetooth
