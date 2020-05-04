@@ -41,13 +41,11 @@ class RoundRobinScheduler {
     std::shared_ptr<acl_manager::AclConnection::Queue> queue_;
     bool dequeue_is_registered_ = false;
     uint16_t number_of_sent_packets_ = 0;  // Track credits
-    bool is_disconnected_ = false;
   };
 
   void Register(ConnectionType connection_type, uint16_t handle,
                 std::shared_ptr<acl_manager::AclConnection::Queue> queue);
   void Unregister(uint16_t handle);
-  void SetDisconnect(uint16_t handle);
   uint16_t GetCredits();
   uint16_t GetLeCredits();
 
