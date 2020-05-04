@@ -112,7 +112,6 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
   void on_classic_disconnect(uint16_t handle, ErrorCode reason) {
     if (acl_connections_.count(handle) == 1) {
       auto& connection = acl_connections_.find(handle)->second;
-      round_robin_scheduler_->SetDisconnect(handle);
       round_robin_scheduler_->Unregister(handle);
       connection.connection_management_callbacks_->OnDisconnection(reason);
       acl_connections_.erase(handle);
