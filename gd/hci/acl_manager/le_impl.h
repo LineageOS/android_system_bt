@@ -92,7 +92,6 @@ struct le_impl {
   void on_le_disconnect(uint16_t handle, ErrorCode reason) {
     if (le_acl_connections_.count(handle) == 1) {
       auto& connection = le_acl_connections_.find(handle)->second;
-      round_robin_scheduler_->SetDisconnect(handle);
       round_robin_scheduler_->Unregister(handle);
       connection.le_connection_management_callbacks_->OnDisconnection(reason);
       le_acl_connections_.erase(handle);
