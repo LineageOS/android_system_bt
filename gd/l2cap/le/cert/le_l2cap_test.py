@@ -567,7 +567,7 @@ Request which fails to satisfy authentication requirements.
     @metadata(
         pts_test_id="L2CAP/LE/CFC/BV-14-C",
         pts_test_name="Security - Insufficient Key Size – Initiator")
-    def test_security_insufficient_authorization_initiator(self):
+    def test_security_insufficient_key_size_initiator(self):
         """
         Verify that the IUT does not establish the channel upon receipt of an
         LE Credit Based Connection Response indicating the connection was
