@@ -84,6 +84,30 @@ class SecurityRecord {
     return pseudo_address_;
   }
 
+  void SetAuthenticated(bool is_authenticated) {
+    this->is_authenticated_ = is_authenticated;
+  }
+
+  bool IsAuthenticated() {
+    return this->is_authenticated_;
+  }
+
+  void SetRequiresMitmProtection(bool requires_mitm_protection) {
+    this->requires_mitm_protection_ = requires_mitm_protection;
+  }
+
+  bool RequiresMitmProtection() {
+    return this->requires_mitm_protection_;
+  }
+
+  void SetIsEncryptionRequired(bool is_encryption_required) {
+    this->is_encryption_required_ = is_encryption_required;
+  }
+
+  bool IsEncryptionRequired() {
+    return this->is_encryption_required_;
+  }
+
  private:
   /* First address we have ever seen this device with, that we used to create bond */
   hci::AddressWithType pseudo_address_;
@@ -96,6 +120,9 @@ class SecurityRecord {
   }
   bool persisted_ = false;
   bool pairing_ = false;
+  bool is_authenticated_ = false;
+  bool requires_mitm_protection_ = false;
+  bool is_encryption_required_ = false;
 
  public:
   /* Identity Address */
