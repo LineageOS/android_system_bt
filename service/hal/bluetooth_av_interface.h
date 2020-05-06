@@ -41,6 +41,8 @@ class BluetoothAvInterface {
         const std::vector<btav_a2dp_codec_config_t> codecs_local_capabilities,
         const std::vector<btav_a2dp_codec_config_t>
             codecs_selectable_capabilities);
+    virtual bool MandatoryCodecPreferredCallback(BluetoothAvInterface* iface,
+                                                 const RawAddress& bd_addr);
 
    protected:
     virtual ~A2dpSourceObserver() = default;
