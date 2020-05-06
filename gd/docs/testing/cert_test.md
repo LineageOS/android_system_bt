@@ -78,6 +78,14 @@ Assume user has an Android checkout and finished `source build/envsetup.sh` and
 $ANDROID_BUILD_TOP/system/bt/gd/cert/run --host
 ```
 
+#### Python 3.8+
+The cert tests require >python3.8 to operate and the associated python
+virtualenv package.  The script may help properly install these requisites.
+
+```shell
+source $ANDROID_BUILD_TOP/system/bt/gd/cert/set_up_virtualenv.sh
+```
+
 ### Run GD cert tests on devices for the first time
 
 Connect at least two Android devices and follow on-screen instructions after
