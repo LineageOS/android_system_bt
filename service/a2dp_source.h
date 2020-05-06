@@ -82,6 +82,8 @@ class A2dpSource : public BluetoothInstance,
       const std::vector<btav_a2dp_codec_config_t> codecs_local_capabilities,
       const std::vector<btav_a2dp_codec_config_t>
           codecs_selectable_capabilities) override;
+  bool MandatoryCodecPreferredCallback(hal::BluetoothAvInterface* iface,
+                                       const RawAddress& bd_addr) override;
 
   // For |GetAppIdentifier|.
   const Uuid app_identifier_;

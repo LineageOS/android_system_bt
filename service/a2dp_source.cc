@@ -199,6 +199,13 @@ void A2dpSource::AudioConfigCallback(
                              codecs_selectable_capabilities);
 }
 
+bool A2dpSource::MandatoryCodecPreferredCallback(BluetoothAvInterface* iface,
+                                                 const RawAddress& bd_addr) {
+  LockGuard lock(delegate_mutex_);
+  // Do nothing. Optional codecs are preferred by default.
+  return false;
+}
+
 // A2dpSourceFactory implementation
 // ========================================================
 A2dpSourceFactory::A2dpSourceFactory() = default;
