@@ -26,9 +26,16 @@ namespace hal {
 
 class FakeBluetoothAvInterface : public BluetoothAvInterface {
  public:
-  // Handles HAL Bluetooth A2DP sink API calls for testing. Test code can
-  // provide a fake or mock implementation of this and all calls will be routed
-  // to it.
+  // Handles HAL Bluetooth A2DP API calls for testing. Test code can provide a
+  // fake or mock implementation of this and all calls will be routed to it.
+  class TestA2dpSourceHandler {
+   public:
+    virtual bt_status_t Connect(RawAddress bda) = 0;
+    virtual bt_status_t Disconnect(RawAddress bda) = 0;
+
+   protected:
+    virtual ~TestA2dpSourceHandler() = default;
+  };
   class TestA2dpSinkHandler {
    public:
     virtual bt_status_t Connect(RawAddress bda) = 0;
@@ -44,16 +51,26 @@ class FakeBluetoothAvInterface : public BluetoothAvInterface {
   // provide their own handlers or simply pass "nullptr" for the default
   // behavior in which BT_STATUS_FAIL will be returned from all calls.
   FakeBluetoothAvInterface(
+      std::shared_ptr<TestA2dpSourceHandler> a2dp_source_handler);
+  FakeBluetoothAvInterface(
       std::shared_ptr<TestA2dpSinkHandler> a2dp_sink_handler);
   ~FakeBluetoothAvInterface();
 
   // The methods below can be used to notify observers with certain events and
   // given parameters.
 
-  // A2DP sink callbacks
+  // A2DP common callbacks
   void NotifyConnectionState(const RawAddress& bda,
                              btav_connection_state_t state);
   void NotifyAudioState(const RawAddress& bda, btav_audio_state_t state);
+  // A2DP source callbacks
+  void NotifyAudioConfig(
+      const RawAddress& bda, const btav_a2dp_codec_config_t& codec_config,
+      const std::vector<btav_a2dp_codec_config_t> codecs_local_capabilities,
+      const std::vector<btav_a2dp_codec_config_t>
+          codecs_selectable_capabilities);
+  bool QueryMandatoryCodecPreferred(const RawAddress& bda);
+  // A2DP sink callbacks
   void NotifyAudioConfig(const RawAddress& bda, uint32_t sample_rate,
                          uint8_t channel_count);
 
@@ -73,7 +90,6 @@ class FakeBluetoothAvInterface : public BluetoothAvInterface {
  private:
   base::ObserverList<A2dpSourceObserver> a2dp_source_observers_;
   base::ObserverList<A2dpSinkObserver> a2dp_sink_observers_;
-  std::shared_ptr<TestA2dpSinkHandler> scanner_handler_;
 
   DISALLOW_COPY_AND_ASSIGN(FakeBluetoothAvInterface);
 };
