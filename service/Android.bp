@@ -63,6 +63,7 @@ btserviceBaseTestSrc = [
     "hal/fake_bluetooth_gatt_interface.cc",
     "hal/fake_bluetooth_interface.cc",
     "test/a2dp_sink_unittest.cc",
+    "test/a2dp_source_unittest.cc",
     "test/adapter_unittest.cc",
     "test/advertise_data_unittest.cc",
     "test/fake_hal_util.cc",
