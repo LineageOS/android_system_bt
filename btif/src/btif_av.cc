@@ -278,13 +278,18 @@ class BtifAvPeer {
 
   bool IsConnected() const;
   bool IsStreaming() const;
-  bool IsInSilenceMode() const { return is_silenced_; };
+  bool IsInSilenceMode() const { return is_silenced_; }
 
-  void SetSilence(bool silence) { is_silenced_ = silence; };
+  void SetSilence(bool silence) { is_silenced_ = silence; }
 
   // AVDTP delay reporting in 1/10 milliseconds
-  void SetDelayReport(uint16_t delay) { delay_report_ = delay; };
-  uint16_t GetDelayReport() const { return delay_report_; };
+  void SetDelayReport(uint16_t delay) { delay_report_ = delay; }
+  uint16_t GetDelayReport() const { return delay_report_; }
+
+  void SetMandatoryCodecPreferred(bool preferred) {
+    mandatory_codec_preferred_ = preferred;
+  }
+  bool IsMandatoryCodecPreferred() const { return mandatory_codec_preferred_; }
 
   /**
    * Check whether any of the flags specified by the bitlags mask is set.
@@ -335,6 +340,7 @@ class BtifAvPeer {
   bool self_initiated_connection_;
   bool is_silenced_;
   uint16_t delay_report_;
+  bool mandatory_codec_preferred_ = false;
 };
 
 class BtifAvSource {
@@ -682,6 +688,8 @@ static void btif_report_audio_state(const RawAddress& peer_address,
                                     btav_audio_state_t state);
 static void btif_av_report_sink_audio_config_state(
     const RawAddress& peer_address, int sample_rate, int channel_count);
+static void btif_av_query_mandatory_codec_priority(
+    const RawAddress& peer_address);
 static void btif_av_source_initiate_av_open_timer_timeout(void* data);
 static void btif_av_sink_initiate_av_open_timer_timeout(void* data);
 static void bta_av_sink_media_callback(const RawAddress& peer_address,
@@ -1459,6 +1467,7 @@ bool BtifAvStateMachine::StateIdle::ProcessEvent(uint32_t event, void* p_data) {
         }
         break;
       }
+      btif_av_query_mandatory_codec_priority(peer_.PeerAddress());
       BTA_AvOpen(peer_.PeerAddress(), peer_.BtaHandle(), true,
                  BTA_SEC_AUTHENTICATE, peer_.LocalUuidServiceClass());
       peer_.StateMachine().TransitionTo(BtifAvStateMachine::kStateOpening);
@@ -2439,6 +2448,36 @@ static void btif_av_report_sink_audio_config_state(
 }
 
 /**
+ * Call out to JNI / JAVA layers to retrieve whether the mandatory codec is more
+ * preferred than others.
+ *
+ * @param peer_address the peer address
+ */
+static void btif_av_query_mandatory_codec_priority(
+    const RawAddress& peer_address) {
+  auto query_priority = [](const RawAddress& peer_address) {
+    auto apply_priority = [](const RawAddress& peer_address, bool preferred) {
+      BtifAvPeer* peer = btif_av_source_find_peer(peer_address);
+      if (peer == nullptr) {
+        BTIF_TRACE_WARNING(
+            "btif_av_query_mandatory_codec_priority: peer is null");
+        return;
+      }
+      peer->SetMandatoryCodecPreferred(preferred);
+    };
+    bool preferred =
+        btif_av_source.Callbacks()->mandatory_codec_preferred_cb(peer_address);
+    if (preferred) {
+      do_in_main_thread(
+          FROM_HERE, base::BindOnce(apply_priority, peer_address, preferred));
+    }
+  };
+  if (btif_av_source.Enabled()) {
+    do_in_jni_thread(FROM_HERE, base::BindOnce(query_priority, peer_address));
+  }
+}
+
+/**
  * Process BTIF or BTA AV or BTA AVRCP events. The processing is done on the
  * JNI thread.
  *
@@ -3255,6 +3294,16 @@ bool btif_av_peer_supports_3mbps(const RawAddress& peer_address) {
   return (is_connected && is3mbps);
 }
 
+bool btif_av_peer_prefers_mandatory_codec(const RawAddress& peer_address) {
+  BtifAvPeer* peer = btif_av_find_peer(peer_address);
+  if (peer == nullptr) {
+    BTIF_TRACE_WARNING("%s: No peer found for peer_address=%s", __func__,
+                       peer_address.ToString().c_str());
+    return false;
+  }
+  return peer->IsMandatoryCodecPreferred();
+}
+
 void btif_av_acl_disconnected(const RawAddress& peer_address) {
   // Inform the application that ACL is disconnected and move to idle state
   LOG_INFO(LOG_TAG, "%s: Peer %s : ACL Disconnected", __func__,
@@ -3308,6 +3357,8 @@ static void btif_debug_av_peer_dump(int fd, const BtifAvPeer& peer) {
   dprintf(fd, "    Self Initiated Connection: %s\n",
           peer.SelfInitiatedConnection() ? "true" : "false");
   dprintf(fd, "    Delay Reporting: %u\n", peer.GetDelayReport());
+  dprintf(fd, "    Codec Preferred: %s\n",
+          peer.IsMandatoryCodecPreferred() ? "Mandatory" : "Optional");
 }
 
 static void btif_debug_av_source_dump(int fd) {
