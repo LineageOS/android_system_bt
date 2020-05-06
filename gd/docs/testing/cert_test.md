@@ -27,7 +27,7 @@ process will load and execute the actual test case and use the auto-generated
 gRPC facade client APIs to interact with the device being tested. The following
 diagram shows how the system could be configured:
 
-![cert_test_architecture_drawing](./cert_test_architecture_drawing.svg)
+![cert_test_architecture_drawing](./cert_test_architecture_drawing.png)
 
 ## Terminology
 
