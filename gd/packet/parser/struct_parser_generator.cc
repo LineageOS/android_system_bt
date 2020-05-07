@@ -80,7 +80,7 @@ void StructParserGenerator::Generate(std::ostream& s) const {
     s << "std::make_unique<" << node.struct_def_->name_ << ">();";
 
     s << "auto " << field->GetName() << "_it = to_bound;";
-    s << "auto optional_it = ";
+    s << "auto parent_optional_it = ";
     s << node.struct_def_->name_ << "::Parse( " << field->GetName() << "_value.get(), ";
     s << field->GetName() << "_it";
     if (node.struct_def_->parent_ != nullptr) {
@@ -88,8 +88,8 @@ void StructParserGenerator::Generate(std::ostream& s) const {
     } else {
       s << ");";
     }
-    s << "if (optional_it) {";
-    s << field->GetName() << "_it = *optional_it;";
+    s << "if (parent_optional_it) {";
+    s << field->GetName() << "_it = *parent_optional_it;";
     s << "} else { return nullptr; }";
 
     explore_children(node, s);

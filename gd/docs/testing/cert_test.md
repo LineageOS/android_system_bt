@@ -27,7 +27,7 @@ process will load and execute the actual test case and use the auto-generated
 gRPC facade client APIs to interact with the device being tested. The following
 diagram shows how the system could be configured:
 
-![cert_test_architecture_drawing](./cert_test_architecture_drawing.svg)
+![cert_test_architecture_drawing](./cert_test_architecture_drawing.png)
 
 ## Terminology
 
@@ -76,6 +76,14 @@ Assume user has an Android checkout and finished `source build/envsetup.sh` and
 
 ```shell
 $ANDROID_BUILD_TOP/system/bt/gd/cert/run --host
+```
+
+#### Python 3.8+
+The cert tests require >python3.8 to operate and the associated python
+virtualenv package.  The script may help properly install these requisites.
+
+```shell
+source $ANDROID_BUILD_TOP/system/bt/gd/cert/set_up_virtualenv.sh
 ```
 
 ### Run GD cert tests on devices for the first time

@@ -128,11 +128,11 @@ Root directory under Android tree:
     *   classic/: Classic L2CAP module
         *   cert/: certification tests for this module
         *   internal/: internal code to be used only in classic
-        *   # Source code and headers being exported to other modules
+        *   Source code and headers being exported to other modules
     *   le/: LE L2CAP module
         *   cert/: certification tests for this module
         *   internal/: internal code to be used only in classic
-        *   # Source code and headers being exported to other modules
+        *   Source code and headers being exported to other modules
     *   internal/: L2CAP internal code that should not be used by sources
         outside L2CAP
         *   data_pipeline_manager.h
