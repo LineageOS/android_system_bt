@@ -23,6 +23,7 @@
 #include "model/devices/classic.h"
 #include "model/devices/keyboard.h"
 #include "model/devices/remote_loopback_device.h"
+#include "model/devices/scripted_beacon.h"
 #include "model/devices/sniffer.h"
 
 #include <memory>
@@ -63,6 +64,7 @@ TestModel::TestModel(
   example_devices_.push_back(std::make_shared<CarKit>());
   example_devices_.push_back(std::make_shared<Classic>());
   example_devices_.push_back(std::make_shared<Sniffer>());
+  example_devices_.push_back(std::make_shared<ScriptedBeacon>());
   example_devices_.push_back(std::make_shared<RemoteLoopbackDevice>());
 }
 
