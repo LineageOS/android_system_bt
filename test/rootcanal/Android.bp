@@ -32,6 +32,7 @@ cc_binary {
         "libhidlbase",
         "liblog",
         "libutils",
+        "libprotobuf-cpp-lite",
     ],
     cflags: [
         "-fvisibility=hidden",
@@ -49,6 +50,7 @@ cc_binary {
         "android.hardware.bluetooth-hci",
         "libbt-rootcanal",
         "libbt-rootcanal-types",
+	"libscriptedbeaconpayload-protos-lite",
     ],
     include_dirs: [
         "system/bt",
@@ -78,6 +80,7 @@ cc_library_shared {
         "libhidlbase",
         "liblog",
         "libutils",
+        "libprotobuf-cpp-lite",
     ],
     cflags: [
         "-Wall",
@@ -94,6 +97,7 @@ cc_library_shared {
         "android.hardware.bluetooth-hci",
         "libbt-rootcanal",
         "libbt-rootcanal-types",
+        "libscriptedbeaconpayload-protos-lite",
     ],
     include_dirs: [
         "system/bt",
