@@ -33,17 +33,6 @@
 using base::StringPrintf;
 using bluetooth::Uuid;
 
-#define GATTP_MAX_NUM_INC_SVR 0
-#define GATTP_MAX_CHAR_NUM 2
-#define GATTP_MAX_ATTR_NUM (GATTP_MAX_CHAR_NUM * 2 + GATTP_MAX_NUM_INC_SVR + 1)
-#define GATTP_MAX_CHAR_VALUE_SIZE 50
-
-#ifndef GATTP_ATTR_DB_SIZE
-#define GATTP_ATTR_DB_SIZE                                    \
-  GATT_DB_MEM_SIZE(GATTP_MAX_NUM_INC_SVR, GATTP_MAX_CHAR_NUM, \
-                   GATTP_MAX_CHAR_VALUE_SIZE)
-#endif
-
 static void gatt_request_cback(uint16_t conn_id, uint32_t trans_id,
                                uint8_t op_code, tGATTS_DATA* p_data);
 static void gatt_connect_cback(UNUSED_ATTR tGATT_IF gatt_if,
