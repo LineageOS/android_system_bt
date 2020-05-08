@@ -28,7 +28,7 @@
 #include "security/pairing/classic_pairing_handler.h"
 #include "security/pairing_handler_le.h"
 #include "security/record/security_record.h"
-#include "security/security_record_database.h"
+#include "security/record/security_record_database.h"
 
 namespace bluetooth {
 namespace security {
@@ -180,7 +180,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   std::unique_ptr<l2cap::le::FixedChannelManager> l2cap_manager_le_;
   hci::LeSecurityInterface* hci_security_interface_le_ __attribute__((unused));
   channel::SecurityManagerChannel* security_manager_channel_;
-  SecurityRecordDatabase security_database_;
+  record::SecurityRecordDatabase security_database_;
   std::unordered_map<hci::Address, std::shared_ptr<pairing::PairingHandler>> pairing_handler_map_;
   hci::IoCapability local_io_capability_ = kDefaultIoCapability;
   hci::AuthenticationRequirements local_authentication_requirements_ = kDefaultAuthenticationRequirements;
