@@ -681,6 +681,9 @@ typedef struct {
   bt_status_t (*play_item_cmd)(const RawAddress& bd_addr, uint8_t scope,
                                uint8_t* uid, uint16_t uid_counter);
 
+  /** get the current track's media metadata */
+  bt_status_t (*get_current_metadata_cmd)(const RawAddress& bd_addr);
+
   /** get the playback state */
   bt_status_t (*get_playback_state_cmd)(const RawAddress& bd_addr);
 
