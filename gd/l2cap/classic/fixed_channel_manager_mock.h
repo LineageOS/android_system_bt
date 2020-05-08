@@ -31,7 +31,7 @@ class MockFixedChannelManager : public FixedChannelManager {
   MOCK_METHOD(bool, ConnectServices,
               (hci::Address device, OnConnectionFailureCallback on_fail_callback, os::Handler* handler), (override));
   MOCK_METHOD(bool, RegisterService,
-              (Cid cid, const SecurityPolicy& security_policy, OnRegistrationCompleteCallback on_registration_complete,
+              (Cid cid, OnRegistrationCompleteCallback on_registration_complete,
                OnConnectionOpenCallback on_connection_open, os::Handler* handler),
               (override));
 };

@@ -286,7 +286,7 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
         : facade_service_(service), l2cap_layer_(l2cap_layer), handler_(handler), cid_(cid) {
       fixed_channel_manager_ = l2cap_layer_->GetFixedChannelManager();
       fixed_channel_manager_->RegisterService(
-          cid_, SecurityPolicy::NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK,
+          cid_,
           common::BindOnce(&L2capFixedChannelHelper::on_l2cap_service_registration_complete, common::Unretained(this)),
           common::Bind(&L2capFixedChannelHelper::on_connection_open, common::Unretained(this)), handler_);
     }

@@ -48,9 +48,9 @@ struct AttModule::impl {
     // TODO: move that into a ATT manager, or other proper place
     std::unique_ptr<bluetooth::l2cap::le::FixedChannelManager> l2cap_manager_le_(
         l2cap_le_module_->GetFixedChannelManager());
-    l2cap_manager_le_->RegisterService(
-        bluetooth::l2cap::kLeAttributeCid, l2cap::le::SecurityPolicy::NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK,
-        common::BindOnce(&OnAttRegistrationCompleteLe), common::Bind(&OnAttConnectionOpenLe), att_handler_);
+    l2cap_manager_le_->RegisterService(bluetooth::l2cap::kLeAttributeCid,
+                                       common::BindOnce(&OnAttRegistrationCompleteLe),
+                                       common::Bind(&OnAttConnectionOpenLe), att_handler_);
   }
 
   os::Handler* att_handler_;
