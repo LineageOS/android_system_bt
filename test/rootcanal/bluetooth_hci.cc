@@ -190,9 +190,6 @@ Return<void> BluetoothHci::initialize_impl(
   test_channel_.AddDeviceToPhy({"2", "1"});
   test_channel_.Add({"beacon", "be:ac:10:00:00:02", "1000"});
   test_channel_.AddDeviceToPhy({"3", "1"});
-  test_channel_.Add(
-      {"scripted_beacon", "5b:ea:c1:00:00:03", "path_to_config.log"});
-  test_channel_.AddDeviceToPhy({"4", "1"});
 
   unlink_cb_ = [this, cb](sp<BluetoothDeathRecipient>& death_recipient) {
     if (death_recipient->getHasDied())

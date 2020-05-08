@@ -31,7 +31,6 @@ cc_library_static {
         "model/devices/loopback.cc",
         "model/devices/polled_socket.cc",
         "model/devices/remote_loopback_device.cc",
-        "model/devices/scripted_beacon.cc",
         "model/devices/sniffer.cc",
         "model/setup/async_manager.cc",
         "model/setup/device_boutique.cc",
