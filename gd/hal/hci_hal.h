@@ -56,6 +56,7 @@ class HciHalCallbacks {
 // Abstraction Layer (HAL). Dealing only in HCI packets and events simplifies
 // the stack and abstracts away power management, initialization, and other
 // implementation-specific details related to the hardware.
+// LINT.IfChange
 class HciHal : public ::bluetooth::Module {
  public:
   static const ModuleFactory Factory;
@@ -88,6 +89,7 @@ class HciHal : public ::bluetooth::Module {
   // Packets must be processed in order.
   virtual void sendScoData(HciPacket data) = 0;
 };
+// LINT.ThenChange(fuzz/fuzz_hci_hal.h)
 
 }  // namespace hal
 }  // namespace bluetooth
