@@ -14,6 +14,7 @@ filegroup {
         "classic/internal/link_manager.cc",
         "classic/internal/signalling_manager.cc",
         "classic/l2cap_classic_module.cc",
+        "classic/security_policy.cc",
         "dynamic_channel.cc",
         "internal/basic_mode_channel_data_controller.cc",
         "internal/data_pipeline_manager.cc",
@@ -38,6 +39,7 @@ filegroup {
         "le/internal/link_manager.cc",
         "le/internal/signalling_manager.cc",
         "le/l2cap_le_module.cc",
+        "le/security_policy.cc",
     ],
 }
 
