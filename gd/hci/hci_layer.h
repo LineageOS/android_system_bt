@@ -39,6 +39,7 @@ namespace bluetooth {
 namespace hci {
 
 class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
+  // LINT.IfChange
  public:
   HciLayer();
   virtual ~HciLayer();
@@ -88,6 +89,7 @@ class HciLayer : public Module, public CommandInterface<CommandPacketBuilder> {
   static const ModuleFactory Factory;
 
  protected:
+  // Lint.ThenChange(fuzz/fuzz_hci_layer.h)
   void ListDependencies(ModuleList* list) override;
 
   void Start() override;
