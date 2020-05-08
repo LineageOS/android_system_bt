@@ -14,20 +14,9 @@
  * limitations under the License.
  */
 
-#define OS_ANDROID
-#include "os/log.h"
-#undef OS_ANDROID
 #include "scripted_beacon.h"
 
-#include <fstream>
-#include <cstdint>
-#include <unistd.h>
-#include <stdlib.h>
-#include <errno.h>
-#include <sys/types.h>
-#include <sys/inotify.h>
-
-#include "model/devices/scripted_beacon_ble_payload.pb.h"
+// #include "hci/hci_packets.h" // To use error-checking packets
 #include "model/setup/device_boutique.h"
 
 using std::vector;
@@ -35,9 +24,10 @@ using std::vector;
 namespace test_vendor_lib {
 bool ScriptedBeacon::registered_ =
     DeviceBoutique::Register("scripted_beacon", &ScriptedBeacon::Create);
+
 ScriptedBeacon::ScriptedBeacon() {
   advertising_interval_ms_ = std::chrono::milliseconds(1280);
-  properties_.SetLeAdvertisementType(0x02 /* SCANNABLE */);
+  properties_.SetLeAdvertisementType(0x03 /* NON_CONNECT */);
   properties_.SetLeAdvertisement({
       0x18,  // Length
       0x09 /* TYPE_NAME_CMPL */,
@@ -69,43 +59,9 @@ ScriptedBeacon::ScriptedBeacon() {
       0x4 /* BREDR_NOT_SPT */ | 0x2 /* GEN_DISC_FLAG */,
   });
 
-  properties_.SetLeScanResponse({0x05,  // Length
-                                 0x08,  // TYPE_NAME_SHORT
+  properties_.SetLeScanResponse({0x06,  // Length
+                                 0x07,  // TYPE_NAME_SHORT
                                  'g', 'b', 'e', 'a'});
-}
-
-bool ScriptedBeacon::is_config_file_ready() {
-  static bool file_absence_logged = false;
-  if (access(config_file_.c_str(), F_OK) == -1) {
-   if (!file_absence_logged) {
-     LOG_INFO("%s: playback file %s not available",
-              __func__,
-              config_file_.c_str());
-     file_absence_logged = true;
-   }
-   return false;
- }
-
- if (access(config_file_.c_str(), R_OK) == -1) {
-   LOG_ERROR("%s: playback file %s is not readable",
-            __func__,
-            config_file_.c_str());
-   return false;
- }
- LOG_INFO("%s: playback file %s is available and readable",
-            __func__,
-            config_file_.c_str());
- return true;
-}
-
-bool has_time_elapsed(std::chrono::steady_clock::time_point time_point) {
-  std::chrono::steady_clock::time_point now =
-        std::chrono::steady_clock::now();
-  if (now > time_point) {
-    return true;
-  } else {
-    return false;
-  }
 }
 
 void ScriptedBeacon::Initialize(const vector<std::string>& args) {
@@ -123,41 +79,11 @@ void ScriptedBeacon::TimerTick() {
   if (!scanned_once_) {
     Beacon::TimerTick();
   } else {
-    static std::chrono::steady_clock::time_point next_check_time =
-      std::chrono::steady_clock::now();
-    if (!play_back_on_) {
-      if (!has_time_elapsed(next_check_time)) {
-        return;
-      }
-      if (!is_config_file_ready()) {
-        next_check_time = std::chrono::steady_clock::now() +
-            std::chrono::steady_clock::duration(std::chrono::seconds(1));
-        return;
-      }
-      // Give time for the file to be written completely before being read
-      {
-        static std::chrono::steady_clock::time_point write_delay_next_check_time =
-            std::chrono::steady_clock::now() +
-            std::chrono::steady_clock::duration(std::chrono::seconds(1));
-         if (!has_time_elapsed(write_delay_next_check_time)) {
-           return;
-         }
-      }
-
-      std::fstream input(config_file_, std::ios::in | std::ios::binary);
-      if (!ble_ad_list_.ParseFromIstream(&input)) {
-        LOG_ERROR("%s: Cannot parse playback file %s", __func__, config_file_.c_str());
-        return;
-      }
-      LOG_INFO("%s: Starting Ble advertisement playback from file: %s", __func__, config_file_.c_str());
-      play_back_on_ = true;
-      get_next_advertisement();
-    }
     std::shared_ptr<model::packets::LinkLayerPacketBuilder> to_send;
     std::chrono::steady_clock::time_point now =
         std::chrono::steady_clock::now();
     elapsed_time_ += now - last_timer_tick_;
-    while (play_back_on_ && !play_back_complete_ && next_ad_.ad_time < now) {
+    while (next_ad_.ad_time < now) {
       auto ad = model::packets::LeAdvertisementBuilder::Create(
           next_ad_.address, Address::kEmpty /* Destination */,
           model::packets::AddressType::RANDOM,
@@ -187,6 +113,7 @@ void ScriptedBeacon::IncomingPacket(
           std::move(scan_response);
       scanned_once_ = true;
       Address::FromString("12:34:56:78:9A:BC", next_ad_.address);
+      open_config_file();
       for (auto phy : phy_layers_[Phy::Type::LOW_ENERGY]) {
         phy->Send(to_send);
       }
@@ -195,22 +122,55 @@ void ScriptedBeacon::IncomingPacket(
 }
 
 void ScriptedBeacon::get_next_advertisement() {
-  static int packet_num = 0;
+  next_ad_.address.address[2]++;
+  /* For more recent versions:
+   * using bluetooth::hci::GapData;
+   * using bluetooth::hci::GapDataType;
+   * GapData flags;
+   * flags.data_type_ = GapDataType::FLAGS;
+   * flags.data_ = {0x1A};
+   * GapData service;
+   * service.data_type_ = GapDataType::COMPLETE_LIST_16_BIT_UUIDS;
+   * service.data_ = {0x6F, 0xFD}; // 0xFD6F Contact Detection Service
+   * GapData proximity_id;
+   * proximity_id.data_type = GapDataType::SERVICE_DATA_128_BIT_UUIDS;
+   * proximity_id.data_ = {0x00, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x07,
+   *                       0x08, 0x09, 0x0a, 0x0b, 0x0c, 0x0d, 0x0e, 0x0f,
+   *                       };
+   */
+  // For older/all versions:
+  next_ad_.ad = {
+      0x02,  // Size
+      0x01,  // Flag
+      0x1A,
+      0x03,  // Size
+      0x03,  // Complete 16-bit Service UUID
+      0x6F,
+      0xFD,
+      0x13,  // Size
+      0x16,  // Service Data - 16 bit UUID
+      0x6F,  // FD6F
+      0xFD,
+      0x00,  // ID
+      0x01,
+      next_ad_.address.address[2],  // make it different from the others
+      0x03,
+      0x04,
+      0x05,
+      0x06,
+      0x07,
+      0x08,
+      0x09,
+      0x0a,
+      0x0b,
+      0x0c,
+      0x0d,
+      0x0e,
+      0x0f,
+  };
+}
 
-  if (packet_num < ble_ad_list_.advertisements().size()) {
-    std::string payload = ble_ad_list_.advertisements(packet_num).payload();
-    std::string mac_address = ble_ad_list_.advertisements(packet_num).mac_address();
-    uint32_t delay_before_send_ms =
-        ble_ad_list_.advertisements(packet_num).delay_before_send_ms();
-    next_ad_.ad.assign(payload.begin(), payload.end());
-    Address::FromString(mac_address, next_ad_.address);
-    next_ad_.ad_time = std::chrono::steady_clock::now() +
-                      std::chrono::steady_clock::duration(
-                          std::chrono::milliseconds(delay_before_send_ms));
-    packet_num++;
-  } else {
-    play_back_complete_ = true;
-    LOG_INFO("%s: Completed Ble advertisement playback from file: %s", __func__, config_file_.c_str());
-  }
+void ScriptedBeacon::open_config_file() {
+  // Open the config file and read it all?
 }
 }  // namespace test_vendor_lib

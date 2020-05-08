@@ -19,10 +19,10 @@
 #include <cstdint>
 #include <vector>
 
-#include "model/devices/scripted_beacon_ble_payload.pb.h"
 #include "beacon.h"
 
 namespace test_vendor_lib {
+
 // Pretend to be a lot of beacons by advertising from a file.
 class ScriptedBeacon : public Beacon {
  public:
@@ -55,6 +55,7 @@ class ScriptedBeacon : public Beacon {
   std::chrono::steady_clock::duration elapsed_time_{};
   std::chrono::steady_clock::time_point last_timer_tick_{};
   std::string config_file_{};
+  void open_config_file();
   struct Advertisement {
     std::vector<uint8_t> ad;
     Address address;
@@ -63,14 +64,7 @@ class ScriptedBeacon : public Beacon {
 
   void get_next_advertisement();
 
-  bool is_config_file_ready();
-
   Advertisement next_ad_{};
-
-  android::bluetooth::test_vendor_lib::model::devices::ScriptedBeaconBleAdProto::BleAdvertisementList ble_ad_list_;
-
-  bool play_back_on_{false};
-
-  bool play_back_complete_{false};
 };
+
 }  // namespace test_vendor_lib

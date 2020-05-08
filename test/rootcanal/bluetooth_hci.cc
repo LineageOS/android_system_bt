@@ -18,13 +18,13 @@
 
 #include "bluetooth_hci.h"
 
-#include "log/log.h"
 #include <cutils/properties.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <string.h>
 
 #include "hci_internals.h"
+#include "os/log.h"
 
 namespace android {
 namespace hardware {
@@ -85,6 +85,7 @@ Return<void> BluetoothHci::initialize_impl(
     const sp<V1_0::IBluetoothHciCallbacks>& cb,
     const sp<V1_1::IBluetoothHciCallbacks>& cb_1_1) {
   LOG_INFO("%s", __func__);
+
   if (cb == nullptr) {
     LOG_ERROR("cb == nullptr! -> Unable to call initializationComplete(ERR)");
     return Void();
@@ -190,8 +191,7 @@ Return<void> BluetoothHci::initialize_impl(
   test_channel_.Add({"beacon", "be:ac:10:00:00:02", "1000"});
   test_channel_.AddDeviceToPhy({"3", "1"});
   test_channel_.Add(
-      {"scripted_beacon", "5b:ea:c1:00:00:03",
-       "/data/vendor/bluetooth/bluetooth_sim_ble_playback_file"});
+      {"scripted_beacon", "5b:ea:c1:00:00:03", "path_to_config.log"});
   test_channel_.AddDeviceToPhy({"4", "1"});
 
   unlink_cb_ = [this, cb](sp<BluetoothDeathRecipient>& death_recipient) {
