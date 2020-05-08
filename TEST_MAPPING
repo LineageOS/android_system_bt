@@ -28,6 +28,9 @@
       "name" : "net_test_device"
     },
     {
+      "name" : "net_test_eatt"
+    },
+    {
       "name" : "net_test_hci"
     },
     {
@@ -75,6 +78,10 @@
     },
     {
       "name" : "net_test_btpackets",
+      "host" : true
+    },
+    {
+      "name" : "net_test_eatt",
       "host" : true
     },
     {

@@ -71,7 +71,7 @@ void gatt_set_ch_state(tGATT_TCB* p_tcb, tGATT_CH_STATE ch_state) {}
 /** stack/gatt/gatt_sr.cc */
 uint32_t gatt_sr_enqueue_cmd(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code,
                              uint16_t handle) { return 0x0000; }
-void gatt_dequeue_sr_cmd(tGATT_TCB& tcb) {}
+void gatt_dequeue_sr_cmd(tGATT_TCB& tcb, uint16_t cid) {}
 
 
 /** stack/l2cap/l2c_ble.cc */

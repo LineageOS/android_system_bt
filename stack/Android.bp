@@ -25,6 +25,7 @@ cc_library_static {
         "avrc",
         "l2cap",
         "avdt",
+        "eatt",
         "gatt",
         "gap",
         "pan",
@@ -125,6 +126,7 @@ cc_library_static {
         "btm/btm_scn.cc",
         "btu/btu_hcif.cc",
         "btu/btu_task.cc",
+        "eatt/eatt.cc",
         "gap/gap_ble.cc",
         "gap/gap_conn.cc",
         "gatt/att_protocol.cc",
@@ -453,6 +455,7 @@ cc_test {
     include_dirs: [
         "system/bt",
         "system/bt/stack/include",
+        "system/bt/stack/eatt",
         "system/bt/stack/l2cap",
         "system/bt/stack/btm",
         "system/bt/utils/include",
@@ -460,6 +463,8 @@ cc_test {
     srcs: [
         "test/gatt/gatt_sr_test.cc",
         "gatt/gatt_utils.cc",
+        "test/common/mock_eatt.cc",
+        "test/common/mock_gatt_layer.cc",
     ],
     shared_libs: [
         "libcutils",
@@ -471,6 +476,7 @@ cc_test {
         "libosi",
         "libbt-common",
         "libbt-protos-lite",
+        "libgmock",
         "libosi-AllocationTestHarness",
     ],
     sanitize: {
@@ -489,6 +495,7 @@ cc_test {
     include_dirs: [
         "system/bt",
         "system/bt/stack/btm",
+        "system/bt/stack/eatt",
         "system/bt/stack/include",
         "system/bt/utils/include",
     ],
@@ -497,6 +504,8 @@ cc_test {
         "gatt/gatt_sr_hash.cc",
         "gatt/gatt_utils.cc",
         "test/gatt/mock_gatt_utils_ref.cc",
+        "test/common/mock_eatt.cc",
+        "test/common/mock_gatt_layer.cc",
         "test/stack_gatt_sr_hash_test.cc",
     ],
     shared_libs: [
@@ -508,6 +517,7 @@ cc_test {
         "libbt-common",
         "libbt-protos-lite",
         "liblog",
+        "libgmock",
         "libosi",
     ],
 }
@@ -531,6 +541,7 @@ cc_test {
         "btm/btm_iso.cc",
         "test/btm_iso_test.cc",
         "test/common/mock_controller.cc",
+        "test/common/mock_gatt_layer.cc",
         "test/common/mock_hcic_layer.cc",
     ],
     static_libs: [
@@ -548,5 +559,53 @@ cc_test {
         diag: {
             undefined : true
         },
+    },
+}
+
+// EATT unit tests
+cc_test {
+    name: "net_test_eatt",
+    test_suites: ["device-tests"],
+    host_supported: true,
+    defaults: [
+        "fluoride_defaults",
+        "clang_coverage_bin",
+    ],
+    local_include_dirs: [
+        "include",
+        "btm",
+        "eatt",
+        "gatt",
+        "l2cap",
+        "test/common",
+    ],
+    include_dirs:[
+        "system/bt",
+        "system/bt/btcore/include",
+    ],
+    srcs: [
+        "eatt/eatt.cc",
+        "test/common/mock_btm_api_layer.cc",
+	"test/common/mock_btif_storage.cc",
+        "test/common/mock_controller.cc",
+        "test/common/mock_gatt_layer.cc",
+        "test/common/mock_l2cap_layer.cc",
+        "test/gatt/mock_gatt_utils_ref.cc",
+        "test/eatt/eatt_test.cc",
+    ],
+    shared_libs: [
+        "libcutils",
+        "libcrypto",
+        "libprotobuf-cpp-lite",
+    ],
+    static_libs: [
+        "libbt-common",
+        "libbt-protos-lite",
+        "liblog",
+        "libgmock",
+        "libosi",
+    ],
+    sanitize: {
+        cfi: false,
     },
 }
