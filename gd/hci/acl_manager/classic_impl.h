@@ -292,8 +292,8 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
       return;
     }
     std::unique_ptr<CreateConnectionCancelBuilder> packet = CreateConnectionCancelBuilder::Create(address);
-    acl_connection_interface_->EnqueueCommand(std::move(packet),
-                                              handler_->BindOnce([](CommandCompleteView complete) { /* TODO */ }));
+    acl_connection_interface_->EnqueueCommand(
+        std::move(packet), handler_->BindOnce(&check_command_complete<CreateConnectionCancelCompleteView>));
   }
 
   void master_link_key(KeyFlag key_flag) {
@@ -482,8 +482,8 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
   }
 
   void reject_connection(std::unique_ptr<RejectConnectionRequestBuilder> builder) {
-    acl_connection_interface_->EnqueueCommand(std::move(builder),
-                                              handler_->BindOnce([](CommandStatusView status) { /* TODO: check? */ }));
+    acl_connection_interface_->EnqueueCommand(
+        std::move(builder), handler_->BindOnce(&check_command_status<RejectConnectionRequestStatusView>));
   }
 
   acl_connection& check_and_get_connection(uint16_t handle) {
