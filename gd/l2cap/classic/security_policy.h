@@ -13,24 +13,30 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
+
+#include <cstdint>
 
 namespace bluetooth {
 namespace l2cap {
 namespace classic {
 
-class SecurityPolicy {
- public:
-  enum class Level {
-    LEVEL_0,  // Encryption not needed. Only applies to SDP.
-    LEVEL_2,  // Encryption desired. Only needs unauthenticated link key.
-    LEVEL_3,  // Encryption required and authenticated link key required.
-  };
-  Level security_level_ = Level::LEVEL_0;
+enum class SecurityPolicy {
+  // Predefined security policies for user to pick
 
-  bool RequiresAuthentication() const {
-    return security_level_ != SecurityPolicy::Level::LEVEL_0;
-  }
+  // Just encryption, but no MITM
+  ENCRYPTED_TRANSPORT,
+
+  // Implicitly MITM protected
+  AUTHENTICATED_ENCRYPTED_TRANSPORT,
+
+  // Same as AUTHENTICATED_ENCRYPTED_TRANSPORT
+  BEST,
+
+  // No security enforced. SDP only.
+  _SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK,
+
 };
 
 }  // namespace classic

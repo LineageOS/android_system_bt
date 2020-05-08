@@ -110,6 +110,8 @@ class ClassicSignallingManager {
                                std::vector<std::unique_ptr<ConfigurationOption>>);
 
   void send_configuration_request(Cid remote_cid, std::vector<std::unique_ptr<ConfigurationOption>> config);
+  void on_security_result_for_incoming(Psm psm, bool result);
+  void on_security_result_for_outgoing(Psm psm, bool result);
 
   os::Handler* handler_;
   Link* link_;
@@ -124,6 +126,13 @@ class ClassicSignallingManager {
   os::Alarm alarm_;
   SignalId next_signal_id_ = kInitialSignalId;
   std::unordered_map<Cid, ChannelConfigurationState> channel_configuration_;
+
+  struct PendingConnection {
+    Cid local_cid;
+    Cid remote_cid;
+    SignalId incoming_signal_id;
+  };
+  std::unordered_map<Psm, PendingConnection> pending_security_requests_;
 };
 
 }  // namespace internal

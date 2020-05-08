@@ -42,7 +42,8 @@ LeSignallingManager::LeSignallingManager(os::Handler* handler, Link* link,
       dynamic_service_manager_(dynamic_service_manager), channel_allocator_(channel_allocator), alarm_(handler) {
   ASSERT(handler_ != nullptr);
   ASSERT(link_ != nullptr);
-  signalling_channel_ = link_->AllocateFixedChannel(kLeSignallingCid, {});
+  signalling_channel_ =
+      link_->AllocateFixedChannel(kLeSignallingCid, SecurityPolicy::NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK);
   signalling_channel_->GetQueueUpEnd()->RegisterDequeue(
       handler_, common::Bind(&LeSignallingManager::on_incoming_packet, common::Unretained(this)));
   enqueue_buffer_ =
@@ -56,8 +57,30 @@ LeSignallingManager::~LeSignallingManager() {
 }
 
 void LeSignallingManager::SendConnectionRequest(Psm psm, Cid local_cid, Mtu mtu) {
+  PendingConnection pending{
+      .local_cid = local_cid,
+      .mtu = mtu,
+  };
+  pending_security_requests_[psm] = pending;
+  dynamic_service_manager_->GetSecurityModuleInterface()->EnforceSecurityPolicy(
+      link_->GetDevice(), dynamic_service_manager_->GetService(psm)->GetSecurityPolicy(),
+      handler_->BindOnceOn(this, &LeSignallingManager::on_security_result_for_outgoing, psm));
+}
+
+void LeSignallingManager::on_security_result_for_outgoing(Psm psm, bool result) {
+  ASSERT_LOG(pending_security_requests_.find(psm) != pending_security_requests_.end(),
+             "Received security result without pending request");
+
+  auto request = pending_security_requests_[psm];
+  pending_security_requests_.erase(psm);
+
+  if (!result) {
+    LOG_WARN("Security requirement can't be satisfied. Dropping connection request");
+    return;
+  }
+
   PendingCommand pending_command = PendingCommand::CreditBasedConnectionRequest(
-      next_signal_id_, psm, local_cid, mtu, link_->GetMps(), link_->GetInitialCredit());
+      next_signal_id_, psm, request.local_cid, request.mtu, link_->GetMps(), link_->GetInitialCredit());
   next_signal_id_++;
   pending_commands_.push(pending_command);
   if (pending_commands_.size() == 1) {
@@ -184,49 +207,72 @@ void LeSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, Cid r
     return;
   }
 
+  PendingConnection pending{
+      .remote_cid = remote_cid,
+      .incoming_signal_id = signal_id,
+      .initial_credits = initial_credits,
+      .max_pdu_size = mps,
+      .mtu = mtu,
+  };
+  pending_security_requests_[psm] = pending;
+  dynamic_service_manager_->GetSecurityModuleInterface()->EnforceSecurityPolicy(
+      link_->GetDevice(), dynamic_service_manager_->GetService(psm)->GetSecurityPolicy(),
+      handler_->BindOnceOn(this, &LeSignallingManager::on_security_result_for_incoming, psm));
+}
+
+void LeSignallingManager::on_security_result_for_incoming(Psm psm, bool result) {
+  ASSERT_LOG(pending_security_requests_.find(psm) != pending_security_requests_.end(),
+             "Received security result without pending request");
+
+  auto request = pending_security_requests_[psm];
+  pending_security_requests_.erase(psm);
+  auto signal_id = request.incoming_signal_id;
   auto* service = dynamic_service_manager_->GetService(psm);
-  auto security_policy = service->GetSecurityPolicy();
-  switch (security_policy.security_level_) {
-    case SecurityPolicy::Level::NO_SECURITY:
-      break;
-    // Security module is not integrated so far. Other levels are not supported
-    case SecurityPolicy::Level::UNAUTHENTICATED_PAIRING_WITH_ENCRYPTION:
-      send_connection_response(signal_id, kInvalidCid, 0, 0, 0,
-                               LeCreditBasedConnectionResponseResult::INSUFFICIENT_AUTHENTICATION);
-      return;
-    case SecurityPolicy::Level::AUTHENTICATED_PAIRING_WITH_ENCRYPTION:
-      send_connection_response(signal_id, kInvalidCid, 0, 0, 0,
-                               LeCreditBasedConnectionResponseResult::INSUFFICIENT_AUTHENTICATION);
-      return;
-    case SecurityPolicy::Level::AUTHENTICATED_PAIRING_WITH_128_BIT_KEY:
-      send_connection_response(signal_id, kInvalidCid, 0, 0, 0,
-                               LeCreditBasedConnectionResponseResult::INSUFFICIENT_ENCRYPTION_KEY_SIZE);
-      return;
-    case SecurityPolicy::Level::AUTHORIZATION:
-      send_connection_response(signal_id, kInvalidCid, 0, 0, 0,
-                               LeCreditBasedConnectionResponseResult::INSUFFICIENT_AUTHORIZATION);
-      return;
+  if (!result) {
+    auto security_policy = service->GetSecurityPolicy();
+    switch (security_policy) {
+      case SecurityPolicy::NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK:
+        LOG_ERROR("If no security requirement, we should never fail");
+        break;
+      case SecurityPolicy::ENCRYPTED_TRANSPORT:
+        send_connection_response(signal_id, kInvalidCid, 0, 0, 0,
+                                 LeCreditBasedConnectionResponseResult::INSUFFICIENT_AUTHENTICATION);
+        return;
+      case SecurityPolicy::AUTHENTICATED_ENCRYPTED_TRANSPORT:
+      case SecurityPolicy::BEST:
+        send_connection_response(signal_id, kInvalidCid, 0, 0, 0,
+                                 LeCreditBasedConnectionResponseResult::INSUFFICIENT_AUTHENTICATION);
+        return;
+      case SecurityPolicy::_NOT_FOR_YOU__AUTHENTICATED_PAIRING_WITH_128_BIT_KEY:
+        send_connection_response(signal_id, kInvalidCid, 0, 0, 0,
+                                 LeCreditBasedConnectionResponseResult::INSUFFICIENT_ENCRYPTION_KEY_SIZE);
+        return;
+      case SecurityPolicy::_NOT_FOR_YOU__AUTHORIZATION:
+        send_connection_response(signal_id, kInvalidCid, 0, 0, 0,
+                                 LeCreditBasedConnectionResponseResult::INSUFFICIENT_AUTHORIZATION);
+        return;
+    }
   }
   auto config = service->GetConfigOption();
   auto local_mtu = config.mtu;
   auto local_mps = link_->GetMps();
 
-  auto new_channel = link_->AllocateDynamicChannel(psm, remote_cid);
+  auto new_channel = link_->AllocateDynamicChannel(psm, request.remote_cid);
   if (new_channel == nullptr) {
     LOG_WARN("Can't allocate dynamic channel");
     // TODO: We need to respond with the correct reason
     send_connection_response(signal_id, kInvalidCid, 0, 0, 0,
                              LeCreditBasedConnectionResponseResult::SOURCE_CID_ALREADY_ALLOCATED);
-
     return;
   }
+
   send_connection_response(signal_id, new_channel->GetCid(), local_mtu, local_mps, link_->GetInitialCredit(),
                            LeCreditBasedConnectionResponseResult::SUCCESS);
   auto* data_controller = reinterpret_cast<l2cap::internal::LeCreditBasedDataController*>(
       data_pipeline_manager_->GetDataController(new_channel->GetCid()));
-  data_controller->SetMtu(std::min(mtu, local_mtu));
-  data_controller->SetMps(std::min(mps, local_mps));
-  data_controller->OnCredit(initial_credits);
+  data_controller->SetMtu(std::min(request.mtu, local_mtu));
+  data_controller->SetMps(std::min(request.max_pdu_size, local_mps));
+  data_controller->OnCredit(request.initial_credits);
   auto user_channel = std::make_unique<DynamicChannel>(new_channel, handler_, link_);
   dynamic_service_manager_->GetService(psm)->NotifyChannelCreation(std::move(user_channel));
 }

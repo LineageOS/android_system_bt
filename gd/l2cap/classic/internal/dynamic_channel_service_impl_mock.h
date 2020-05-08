@@ -13,34 +13,27 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-
 #pragma once
 
-#include <cstdint>
+#include "l2cap/classic/internal/dynamic_channel_service_impl.h"
 
+#include <gmock/gmock.h>
+
+// Unit test interfaces
 namespace bluetooth {
 namespace l2cap {
-namespace le {
+namespace classic {
+namespace internal {
+namespace testing {
 
-enum class SecurityPolicy {
-  // Predefined security policies for user to pick
-
-  // No security enforced
-  NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK,
-
-  // Just encryption, but no MITM
-  ENCRYPTED_TRANSPORT,
-
-  // Implicitly MITM protected
-  AUTHENTICATED_ENCRYPTED_TRANSPORT,
-
-  // Same as AUTHENTICATED_ENCRYPTED_TRANSPORT
-  BEST,
-
-  _NOT_FOR_YOU__AUTHENTICATED_PAIRING_WITH_128_BIT_KEY,
-  _NOT_FOR_YOU__AUTHORIZATION,
+class MockDynamicChannelServiceImpl : public DynamicChannelServiceImpl {
+ public:
+  MockDynamicChannelServiceImpl() : DynamicChannelServiceImpl({}, {}, {}, {}) {}
+  MOCK_METHOD(SecurityPolicy, GetSecurityPolicy, (), (const, override));
 };
 
-}  // namespace le
+}  // namespace testing
+}  // namespace internal
+}  // namespace classic
 }  // namespace l2cap
 }  // namespace bluetooth

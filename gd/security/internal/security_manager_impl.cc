@@ -415,7 +415,7 @@ SecurityManagerImpl::SecurityManagerImpl(os::Handler* security_handler, l2cap::l
   Init();
 
   l2cap_manager_le_->RegisterService(
-      bluetooth::l2cap::kSmpCid, {},
+      bluetooth::l2cap::kSmpCid, l2cap::le::SecurityPolicy::NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK,
       common::BindOnce(&SecurityManagerImpl::OnL2capRegistrationCompleteLe, common::Unretained(this)),
       common::Bind(&SecurityManagerImpl::OnConnectionOpenLe, common::Unretained(this)), security_handler_);
 }

@@ -78,6 +78,7 @@ class L2capDynamicServiceManagerTest : public ::testing::Test {
 TEST_F(L2capDynamicServiceManagerTest, register_and_unregister_classic_dynamic_channel) {
   DynamicChannelServiceImpl::PendingRegistration pending_registration{
       .user_handler_ = user_handler_,
+      .security_policy_ = SecurityPolicy::_SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK,
       .on_registration_complete_callback_ =
           common::BindOnce(&L2capDynamicServiceManagerTest::OnServiceRegistered, common::Unretained(this), true)};
   Cid cid = kSmpBrCid;
@@ -93,6 +94,7 @@ TEST_F(L2capDynamicServiceManagerTest, register_and_unregister_classic_dynamic_c
 TEST_F(L2capDynamicServiceManagerTest, register_classic_dynamic_channel_bad_cid) {
   DynamicChannelServiceImpl::PendingRegistration pending_registration{
       .user_handler_ = user_handler_,
+      .security_policy_ = SecurityPolicy::_SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK,
       .on_registration_complete_callback_ =
           common::BindOnce(&L2capDynamicServiceManagerTest::OnServiceRegistered, common::Unretained(this), false)};
   Cid cid = 0x1000;
