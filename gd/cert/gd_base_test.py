@@ -19,8 +19,12 @@ import logging
 import os
 import signal
 import subprocess
+import traceback
 
-from acts import asserts
+from functools import wraps
+from grpc import RpcError
+
+from acts import asserts, signals
 from acts.context import get_current_context
 from acts.base_test import BaseTestClass
 
@@ -133,3 +137,51 @@ class GdBaseTestClass(BaseTestClass):
     def teardown_test(self):
         self.cert.rootservice.StopStack(facade_rootservice.StopStackRequest())
         self.dut.rootservice.StopStack(facade_rootservice.StopStackRequest())
+
+    def __getattribute__(self, name):
+        attr = super().__getattribute__(name)
+        if not callable(attr) or not GdBaseTestClass.__is_entry_function(name):
+            return attr
+
+        @wraps(attr)
+        def __wrapped(*args, **kwargs):
+            try:
+                return attr(*args, **kwargs)
+            except RpcError as e:
+                exception_info = "".join(
+                    traceback.format_exception(e.__class__, e, e.__traceback__))
+                raise signals.TestFailure(
+                    "RpcError during test\n\nRpcError:\n\n%s\n%s" %
+                    (exception_info, self.__dump_crashes()))
+
+        return __wrapped
+
+    __ENTRY_METHODS = {
+        "setup_class", "teardown_class", "setup_test", "teardown_test"
+    }
+
+    @staticmethod
+    def __is_entry_function(name):
+        return name.startswith(
+            "test_") or name in GdBaseTestClass.__ENTRY_METHODS
+
+    def __dump_crashes(self):
+        """
+        :return: formatted stack traces if found, or last few lines of log
+        """
+        dut_crash, dut_log_tail = self.dut.get_crash_snippet_and_log_tail()
+        cert_crash, cert_log_tail = self.cert.get_crash_snippet_and_log_tail()
+
+        crash_detail = ""
+        if dut_crash or cert_crash:
+            if dut_crash:
+                crash_detail += "dut stack crashed:\n\n%s\n\n" % dut_crash
+            if cert_crash:
+                crash_detail += "cert stack crashed:\n\n%s\n\n" % cert_crash
+        else:
+            if dut_log_tail:
+                crash_detail += "dut log tail:\n\n%s\n\n" % dut_log_tail
+            if cert_log_tail:
+                crash_detail += "cert log tail:\n\n%s\n\n" % cert_log_tail
+
+        return crash_detail
