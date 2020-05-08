@@ -22,12 +22,30 @@
 #include "l2cap/le/dynamic_channel_service.h"
 #include "l2cap/le/facade.grpc.pb.h"
 #include "l2cap/le/l2cap_le_module.h"
+#include "l2cap/le/security_policy.h"
 #include "l2cap/psm.h"
 #include "packet/raw_builder.h"
 
 namespace bluetooth {
 namespace l2cap {
 namespace le {
+
+SecurityPolicy SecurityLevelToPolicy(SecurityLevel level) {
+  switch (level) {
+    case SecurityLevel::NO_SECURITY:
+      return SecurityPolicy::NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK;
+    case SecurityLevel::UNAUTHENTICATED_PAIRING_WITH_ENCRYPTION:
+      return SecurityPolicy::ENCRYPTED_TRANSPORT;
+    case SecurityLevel::AUTHENTICATED_PAIRING_WITH_ENCRYPTION:
+      return SecurityPolicy::AUTHENTICATED_ENCRYPTED_TRANSPORT;
+    case SecurityLevel::AUTHENTICATED_PAIRING_WITH_128_BIT_KEY:
+      return SecurityPolicy::_NOT_FOR_YOU__AUTHENTICATED_PAIRING_WITH_128_BIT_KEY;
+    case SecurityLevel::AUTHORIZATION:
+      return SecurityPolicy::_NOT_FOR_YOU__AUTHORIZATION;
+    default:
+      return SecurityPolicy::NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK;
+  }
+}
 
 class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
  public:
@@ -81,10 +99,9 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
                                    const ::bluetooth::l2cap::le::SetEnableDynamicChannelRequest* request,
                                    ::google::protobuf::Empty* response) override {
     if (request->enable()) {
-      dynamic_channel_helper_map_.emplace(
-          request->psm(),
-          std::make_unique<L2capDynamicChannelHelper>(this, l2cap_layer_, facade_handler_, request->psm(),
-                                                      static_cast<SecurityPolicy::Level>(request->security_level())));
+      dynamic_channel_helper_map_.emplace(request->psm(), std::make_unique<L2capDynamicChannelHelper>(
+                                                              this, l2cap_layer_, facade_handler_, request->psm(),
+                                                              SecurityLevelToPolicy(request->security_level())));
       return ::grpc::Status::OK;
     } else {
       auto service_helper = dynamic_channel_helper_map_.find(request->psm());
@@ -113,11 +130,11 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
   class L2capDynamicChannelHelper {
    public:
     L2capDynamicChannelHelper(L2capLeModuleFacadeService* service, L2capLeModule* l2cap_layer, os::Handler* handler,
-                              Psm psm, SecurityPolicy::Level security_level)
+                              Psm psm, SecurityPolicy security_policy)
         : facade_service_(service), l2cap_layer_(l2cap_layer), handler_(handler), psm_(psm) {
       dynamic_channel_manager_ = l2cap_layer_->GetDynamicChannelManager();
       dynamic_channel_manager_->RegisterService(
-          psm, {}, security_level,
+          psm, {}, security_policy,
           common::BindOnce(&L2capDynamicChannelHelper::on_l2cap_service_registration_complete,
                            common::Unretained(this)),
           common::Bind(&L2capDynamicChannelHelper::on_connection_open, common::Unretained(this)), handler_);
@@ -269,7 +286,7 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
         : facade_service_(service), l2cap_layer_(l2cap_layer), handler_(handler), cid_(cid) {
       fixed_channel_manager_ = l2cap_layer_->GetFixedChannelManager();
       fixed_channel_manager_->RegisterService(
-          cid_, {},
+          cid_, SecurityPolicy::NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK,
           common::BindOnce(&L2capFixedChannelHelper::on_l2cap_service_registration_complete, common::Unretained(this)),
           common::Bind(&L2capFixedChannelHelper::on_connection_open, common::Unretained(this)), handler_);
     }

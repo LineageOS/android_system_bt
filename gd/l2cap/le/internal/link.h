@@ -31,6 +31,7 @@
 #include "l2cap/le/internal/fixed_channel_service_manager_impl.h"
 #include "l2cap/le/internal/signalling_manager.h"
 #include "l2cap/le/link_options.h"
+#include "l2cap/le/security_module_interface.h"
 #include "os/alarm.h"
 
 namespace bluetooth {

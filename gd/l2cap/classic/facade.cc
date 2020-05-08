@@ -138,7 +138,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       DynamicChannelConfigurationOption configuration_option = {};
       configuration_option.channel_mode = (DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode)mode;
       dynamic_channel_manager_->RegisterService(
-          psm, configuration_option, {},
+          psm, configuration_option, SecurityPolicy::_SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK,
           common::BindOnce(&L2capDynamicChannelHelper::on_l2cap_service_registration_complete,
                            common::Unretained(this)),
           common::Bind(&L2capDynamicChannelHelper::on_connection_open, common::Unretained(this)), handler_);
