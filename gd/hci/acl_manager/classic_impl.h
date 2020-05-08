@@ -140,7 +140,7 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
       this->reject_connection(RejectConnectionRequestBuilder::Create(address, reason));
       return;
     }
-    connecting_.insert(address);
+    incoming_connecting_address_ = address;
     if (is_classic_link_already_connected(address)) {
       auto reason = RejectConnectionReason::UNACCEPTABLE_BD_ADDR;
       this->reject_connection(RejectConnectionRequestBuilder::Create(address, reason));
@@ -172,12 +172,12 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
     std::unique_ptr<CreateConnectionBuilder> packet = CreateConnectionBuilder::Create(
         address, packet_type, page_scan_repetition_mode, clock_offset, clock_offset_valid, allow_role_switch);
 
-    if (connecting_.empty()) {
+    if (incoming_connecting_address_ == Address::kEmpty && outgoing_connecting_address_ == Address::kEmpty) {
       if (is_classic_link_already_connected(address)) {
         LOG_WARN("already connected: %s", address.ToString().c_str());
         return;
       }
-      connecting_.insert(address);
+      outgoing_connecting_address_ = address;
       acl_connection_interface_->EnqueueCommand(std::move(packet), handler_->BindOnce([](CommandStatusView status) {
         ASSERT(status.IsValid());
         ASSERT(status.GetCommandOpCode() == OpCode::CREATE_CONNECTION);
@@ -187,21 +187,20 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
     }
   }
 
-  void on_classic_connection_complete(Address address) {
-    auto connecting_addr = connecting_.find(address);
-    if (connecting_addr == connecting_.end()) {
-      LOG_WARN("No prior connection request for %s", address.ToString().c_str());
-    } else {
-      connecting_.erase(connecting_addr);
-    }
-  }
-
   void on_connection_complete(EventPacketView packet) {
     ConnectionCompleteView connection_complete = ConnectionCompleteView::Create(packet);
     ASSERT(connection_complete.IsValid());
     auto status = connection_complete.GetStatus();
     auto address = connection_complete.GetBdAddr();
-    on_classic_connection_complete(address);
+    Role current_role = Role::MASTER;
+    if (outgoing_connecting_address_ == address) {
+      outgoing_connecting_address_ = Address::kEmpty;
+    } else {
+      ASSERT_LOG(incoming_connecting_address_ == address, "No prior connection request for %s",
+                 address.ToString().c_str());
+      incoming_connecting_address_ = Address::kEmpty;
+      current_role = Role::SLAVE;
+    }
     if (status != ErrorCode::SUCCESS) {
       client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectFail, common::Unretained(client_callbacks_),
                                              address, status));
@@ -214,8 +213,8 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
                              std::forward_as_tuple(AddressWithType{address, AddressType::PUBLIC_DEVICE_ADDRESS},
                                                    queue->GetDownEnd(), handler_));
     round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle, queue);
-    std::unique_ptr<ClassicAclConnection> connection(new ClassicAclConnection(
-        std::move(queue), acl_connection_interface_, handle, address, Role::MASTER /* TODO: Did we connect? */));
+    std::unique_ptr<ClassicAclConnection> connection(
+        new ClassicAclConnection(std::move(queue), acl_connection_interface_, handle, address, current_role));
     auto& connection_proxy = check_and_get_connection(handle);
     connection_proxy.connection_management_callbacks_ = connection->GetEventCallbacks();
     client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectSuccess,
@@ -224,7 +223,7 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
       auto create_connection_packet_and_address = std::move(pending_outgoing_connections_.front());
       pending_outgoing_connections_.pop();
       if (!is_classic_link_already_connected(create_connection_packet_and_address.first)) {
-        connecting_.insert(create_connection_packet_and_address.first);
+        outgoing_connecting_address_ = create_connection_packet_and_address.first;
         acl_connection_interface_->EnqueueCommand(std::move(create_connection_packet_and_address.second),
                                                   handler_->BindOnce([](CommandStatusView status) {
                                                     ASSERT(status.IsValid());
@@ -286,8 +285,7 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
   }
 
   void cancel_connect(Address address) {
-    auto connecting_addr = connecting_.find(address);
-    if (connecting_addr == connecting_.end()) {
+    if (outgoing_connecting_address_ == address) {
       LOG_INFO("Cannot cancel non-existent connection to %s", address.ToString().c_str());
       return;
     }
@@ -526,7 +524,8 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
   ConnectionCallbacks* client_callbacks_ = nullptr;
   os::Handler* client_handler_ = nullptr;
   std::map<uint16_t, acl_connection> acl_connections_;
-  std::set<Address> connecting_;
+  Address outgoing_connecting_address_{Address::kEmpty};
+  Address incoming_connecting_address_{Address::kEmpty};
   common::Callback<bool(Address, ClassOfDevice)> should_accept_connection_;
   std::queue<std::pair<Address, std::unique_ptr<CreateConnectionBuilder>>> pending_outgoing_connections_;
 
