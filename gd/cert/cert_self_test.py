@@ -762,7 +762,7 @@ class CertSelfTest(BaseTestClass):
         t1 = Timer(0.5, closure1)
         t1.start()
         closure2 = lambda: thing.behaviors.test_request_behavior.run("B")
-        t2 = Timer(0.5, closure2)
+        t2 = Timer(1, closure2)
         t2.start()
 
         wait_until(thing).test_request(anything()).times(2)
