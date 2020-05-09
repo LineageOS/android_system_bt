@@ -35,8 +35,7 @@ bool FixedChannelManager::ConnectServices(hci::Address device, OnConnectionFailu
   return true;
 }
 
-bool FixedChannelManager::RegisterService(Cid cid, const classic::SecurityPolicy& security_policy,
-                                          OnRegistrationCompleteCallback on_registration_complete,
+bool FixedChannelManager::RegisterService(Cid cid, OnRegistrationCompleteCallback on_registration_complete,
                                           OnConnectionOpenCallback on_connection_open, os::Handler* handler) {
   internal::FixedChannelServiceImpl::PendingRegistration pending_registration{
       .user_handler_ = handler,

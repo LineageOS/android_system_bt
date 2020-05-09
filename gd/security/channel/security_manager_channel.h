@@ -111,8 +111,6 @@ class SecurityManagerChannel {
   ISecurityManagerChannelListener* listener_{nullptr};
   hci::SecurityInterface* hci_security_interface_{nullptr};
   os::Handler* handler_{nullptr};
-  l2cap::classic::SecurityPolicy security_policy_{
-      l2cap::classic::SecurityPolicy::_SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK};
 
   std::unique_ptr<l2cap::classic::FixedChannelManager> fixed_channel_manager_{nullptr};
   std::unique_ptr<l2cap::classic::FixedChannelService> fixed_channel_service_{nullptr};
