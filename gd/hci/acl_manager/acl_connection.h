@@ -27,15 +27,11 @@ namespace acl_manager {
 
 class AclConnection {
  public:
-  AclConnection() : queue_up_end_(nullptr), handle_(0), role_(Role::MASTER){};
+  AclConnection() : queue_up_end_(nullptr), handle_(0){};
   virtual ~AclConnection() = default;
 
   uint16_t GetHandle() const {
     return handle_;
-  }
-
-  Role GetRole() const {
-    return role_;
   }
 
   using Queue = common::BidiQueue<PacketView<kLittleEndian>, BasePacketBuilder>;
@@ -44,11 +40,9 @@ class AclConnection {
   virtual QueueUpEnd* GetAclQueueEnd() const;
 
  protected:
-  AclConnection(QueueUpEnd* queue_up_end, uint16_t handle, Role role)
-      : queue_up_end_(queue_up_end), handle_(handle), role_(role) {}
+  AclConnection(QueueUpEnd* queue_up_end, uint16_t handle) : queue_up_end_(queue_up_end), handle_(handle) {}
   QueueUpEnd* queue_up_end_;
   uint16_t handle_;
-  Role role_;
   DISALLOW_COPY_AND_ASSIGN(AclConnection);
 };
 
