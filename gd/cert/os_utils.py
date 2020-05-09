@@ -19,6 +19,7 @@ from pathlib import Path
 import psutil
 import subprocess
 from typing import Container
+from collections import deque
 
 
 def is_subprocess_alive(process, timeout_seconds=1):
@@ -82,3 +83,44 @@ def make_ports_available(ports: Container[int], timeout_seconds=10):
                           (timeout_seconds, conn.pid))
             continue
     return success
+
+
+# e.g. 2020-05-06 16:02:04.216 bt - system/bt/gd/facade/facade_main.cc:79 - crash_callback: #03 pc 0000000000013520  /lib/x86_64-linux-gnu/libpthread-2.29.so
+HOST_CRASH_LINE_REGEX = re.compile(r"^.* - crash_callback: (?P<line>.*)$")
+HOST_ABORT_HEADER = "Process crashed, signal: Aborted"
+
+
+def read_crash_snippet_and_log_tail(logpath):
+    """
+    Get crash snippet if regex matched or last 20 lines of log
+    :return: crash_snippet, log_tail_20
+            1) crash snippet without timestamp in one string;
+            2) last 20 lines of log in one string;
+    """
+    gd_root_prefix = get_gd_root() + "/"
+    abort_line = None
+    last_20_lines = deque(maxlen=20)
+    crash_log_lines = []
+
+    with open(logpath) as f:
+        for _, line in enumerate(f):
+            m = HOST_CRASH_LINE_REGEX.match(line)
+            if m:
+                crash_line = m.group("line").replace(gd_root_prefix, "")
+                if HOST_ABORT_HEADER in crash_line \
+                        and len(last_20_lines) > 0:
+                    abort_line = last_20_lines[-1]
+                crash_log_lines.append(crash_line)
+            last_20_lines.append(line)
+
+    log_tail_20 = "".join(last_20_lines)
+
+    if len(crash_log_lines) == 0:
+        return None, log_tail_20
+
+    crash_snippet = ""
+    if abort_line is not None:
+        crash_snippet += "abort log line:\n\n%s\n" % abort_line
+    crash_snippet += "\n".join(crash_log_lines)
+
+    return crash_snippet, log_tail_20
