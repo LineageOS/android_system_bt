@@ -88,6 +88,7 @@ def make_ports_available(ports: Container[int], timeout_seconds=10):
 # e.g. 2020-05-06 16:02:04.216 bt - system/bt/gd/facade/facade_main.cc:79 - crash_callback: #03 pc 0000000000013520  /lib/x86_64-linux-gnu/libpthread-2.29.so
 HOST_CRASH_LINE_REGEX = re.compile(r"^.* - crash_callback: (?P<line>.*)$")
 HOST_ABORT_HEADER = "Process crashed, signal: Aborted"
+ASAN_OUTPUT_START_REGEX = re.compile(r"^==.*AddressSanitizer.*$")
 
 
 def read_crash_snippet_and_log_tail(logpath):
@@ -101,26 +102,37 @@ def read_crash_snippet_and_log_tail(logpath):
     abort_line = None
     last_20_lines = deque(maxlen=20)
     crash_log_lines = []
+    asan = False
+    asan_lines = []
 
     with open(logpath) as f:
         for _, line in enumerate(f):
-            m = HOST_CRASH_LINE_REGEX.match(line)
-            if m:
-                crash_line = m.group("line").replace(gd_root_prefix, "")
-                if HOST_ABORT_HEADER in crash_line \
-                        and len(last_20_lines) > 0:
-                    abort_line = last_20_lines[-1]
-                crash_log_lines.append(crash_line)
             last_20_lines.append(line)
+            asan_match = ASAN_OUTPUT_START_REGEX.match(line)
+            if asan or asan_match:
+                asan_lines.append(line)
+                asan = True
+                continue
+
+            host_crash_match = HOST_CRASH_LINE_REGEX.match(line)
+            if host_crash_match:
+                crash_line = host_crash_match.group("line").replace(
+                    gd_root_prefix, "")
+                if HOST_ABORT_HEADER in crash_line \
+                        and len(last_20_lines) > 1:
+                    abort_line = last_20_lines[-2]
+                crash_log_lines.append(crash_line)
 
     log_tail_20 = "".join(last_20_lines)
-
-    if len(crash_log_lines) == 0:
-        return None, log_tail_20
-
     crash_snippet = ""
     if abort_line is not None:
         crash_snippet += "abort log line:\n\n%s\n" % abort_line
     crash_snippet += "\n".join(crash_log_lines)
 
-    return crash_snippet, log_tail_20
+    if len(asan_lines) > 0:
+        return "".join(asan_lines), log_tail_20
+
+    if len(crash_log_lines) > 0:
+        return crash_snippet, log_tail_20
+
+    return None, log_tail_20
