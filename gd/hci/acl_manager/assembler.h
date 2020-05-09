@@ -73,7 +73,6 @@ struct assembler {
   }
 
   void on_incoming_packet(AclPacketView packet) {
-    // TODO: What happens if the connection is stalled and fills up?
     PacketView<kLittleEndian> payload = packet.GetPayload();
     auto payload_size = payload.size();
     auto packet_boundary_flag = packet.GetPacketBoundaryFlag();
@@ -108,7 +107,7 @@ struct assembler {
       }
     }
     if (incoming_queue_.size() > kMaxQueuedPacketsPerConnection) {
-      LOG_ERROR("Dropping packet due to congestion from remote:%s", address_with_type_.ToString().c_str());
+      LOG_ERROR("Dropping packet from %s due to congestion", address_with_type_.ToString().c_str());
       return;
     }
 

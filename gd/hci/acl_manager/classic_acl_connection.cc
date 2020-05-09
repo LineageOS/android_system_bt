@@ -322,7 +322,7 @@ void ClassicAclConnection::RegisterCallbacks(ConnectionManagementCallbacks* call
 bool ClassicAclConnection::Disconnect(DisconnectReason reason) {
   acl_connection_interface_->EnqueueCommand(
       DisconnectBuilder::Create(handle_, reason),
-      pimpl_->tracker.client_handler_->BindOnce([](CommandStatusView status) { /* TODO: check? */ }));
+      pimpl_->tracker.client_handler_->BindOnce(&check_command_status<DisconnectStatusView>));
   return true;
 }
 
@@ -486,7 +486,7 @@ bool ClassicAclConnection::ReadFailedContactCounter() {
 bool ClassicAclConnection::ResetFailedContactCounter() {
   acl_connection_interface_->EnqueueCommand(
       ResetFailedContactCounterBuilder::Create(handle_),
-      pimpl_->tracker.client_handler_->BindOnce([](CommandCompleteView view) { /* TODO: check? */ }));
+      pimpl_->tracker.client_handler_->BindOnce(&check_command_complete<ResetFailedContactCounterCompleteView>));
   return true;
 }
 
