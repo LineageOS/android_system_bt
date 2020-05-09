@@ -24,6 +24,7 @@
 #include "l2cap/classic/internal/dynamic_channel_service_manager_impl.h"
 #include "l2cap/classic/internal/fixed_channel_impl.h"
 #include "l2cap/classic/internal/fixed_channel_service_manager_impl.h"
+#include "l2cap/classic/security_module_interface.h"
 #include "l2cap/internal/data_pipeline_manager.h"
 #include "l2cap/internal/dynamic_channel_allocator.h"
 #include "l2cap/internal/dynamic_channel_impl.h"
@@ -87,7 +88,7 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
 
   // FixedChannel methods
 
-  std::shared_ptr<FixedChannelImpl> AllocateFixedChannel(Cid cid, classic::SecurityPolicy security_policy);
+  std::shared_ptr<FixedChannelImpl> AllocateFixedChannel(Cid cid);
 
   virtual bool IsFixedChannelAllocated(Cid cid);
 
@@ -112,11 +113,10 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
 
   virtual void SendDisconnectionRequest(Cid local_cid, Cid remote_cid) override;
 
-  virtual std::shared_ptr<l2cap::internal::DynamicChannelImpl> AllocateDynamicChannel(
-      Psm psm, Cid remote_cid, classic::SecurityPolicy security_policy);
+  virtual std::shared_ptr<l2cap::internal::DynamicChannelImpl> AllocateDynamicChannel(Psm psm, Cid remote_cid);
 
-  virtual std::shared_ptr<l2cap::internal::DynamicChannelImpl> AllocateReservedDynamicChannel(
-      Cid reserved_cid, Psm psm, Cid remote_cid, classic::SecurityPolicy security_policy);
+  virtual std::shared_ptr<l2cap::internal::DynamicChannelImpl> AllocateReservedDynamicChannel(Cid reserved_cid, Psm psm,
+                                                                                              Cid remote_cid);
 
   virtual classic::DynamicChannelConfigurationOption GetConfigurationForInitialConfiguration(Cid cid);
 
