@@ -15,6 +15,7 @@
 #   limitations under the License.
 
 from abc import ABC
+import concurrent.futures
 import inspect
 import logging
 import os
@@ -24,7 +25,6 @@ import signal
 import socket
 import subprocess
 import time
-import re
 from typing import List
 
 import grpc
@@ -40,6 +40,7 @@ from cert.os_utils import get_gd_root
 from cert.os_utils import read_crash_snippet_and_log_tail
 from cert.os_utils import is_subprocess_alive
 from cert.os_utils import make_ports_available
+from cert.os_utils import TerminalColor
 from facade import rootservice_pb2_grpc as facade_rootservice_pb2_grpc
 from hal import facade_pb2_grpc as hal_facade_pb2_grpc
 from hci.facade import facade_pb2_grpc as hci_facade_pb2_grpc
@@ -86,17 +87,18 @@ def get_instances_with_configs(configs):
         for arg in config["cmd"]:
             logging.debug(arg)
             resolved_cmd.append(replace_vars(arg, config))
+        verbose_mode = bool(config.get('verbose_mode', False))
         if config.get("serial_number"):
             device = GdAndroidDevice(
                 config["grpc_port"], config["grpc_root_server_port"],
                 config["signal_port"], resolved_cmd, config["label"],
                 ACTS_CONTROLLER_CONFIG_NAME, config["name"],
-                config["serial_number"])
+                config["serial_number"], verbose_mode)
         else:
             device = GdHostOnlyDevice(
                 config["grpc_port"], config["grpc_root_server_port"],
                 config["signal_port"], resolved_cmd, config["label"],
-                ACTS_CONTROLLER_CONFIG_NAME, config["name"])
+                ACTS_CONTROLLER_CONFIG_NAME, config["name"], verbose_mode)
         device.setup()
         devices.append(device)
     return devices
@@ -135,7 +137,7 @@ class GdDeviceBase(ABC):
 
     def __init__(self, grpc_port: str, grpc_root_server_port: str,
                  signal_port: str, cmd: List[str], label: str,
-                 type_identifier: str, name: str):
+                 type_identifier: str, name: str, verbose_mode: bool):
         """Base GD device, common traits for both device based and host only GD
         cert tests
         :param grpc_port: main gRPC service port
@@ -151,12 +153,14 @@ class GdDeviceBase(ABC):
         arguments = [
             values[arg]
             for arg in inspect.getfullargspec(GdDeviceBase.__init__).args
+            if arg != "verbose_mode"
         ]
         asserts.assert_true(
             all(arguments),
             "All arguments to GdDeviceBase must not be None nor empty")
         asserts.assert_true(
             all(cmd), "cmd list should not have None nor empty component")
+        self.verbose_mode = verbose_mode
         self.grpc_root_server_port = int(grpc_root_server_port)
         self.grpc_port = int(grpc_port)
         self.signal_port = int(signal_port)
@@ -175,6 +179,18 @@ class GdDeviceBase(ABC):
                 self.log_path_base, '%s_btsnoop_hci.log' % self.label))
         self.cmd = cmd
         self.environment = os.environ.copy()
+        if "cert" in self.label:
+            self.terminal_color = TerminalColor.BLUE
+        else:
+            self.terminal_color = TerminalColor.YELLOW
+
+    def __backing_process_logging_loop(self):
+        with open(self.backing_process_log_path, 'w') as backing_process_log:
+            for line in self.backing_process.stdout:
+                backing_process_log.write(line)
+                if self.verbose_mode:
+                    print("[%s%s%s] %s" % (self.terminal_color, self.label,
+                                           TerminalColor.END, line.strip()))
 
     def setup(self):
         """Set up this device for test, must run before using this device
@@ -195,13 +211,13 @@ class GdDeviceBase(ABC):
             signal_socket.listen(1)
 
             # Start backing process
-            self.backing_process_logs = open(self.backing_process_log_path, 'w')
             self.backing_process = subprocess.Popen(
                 self.cmd,
                 cwd=get_gd_root(),
                 env=self.environment,
-                stdout=self.backing_process_logs,
-                stderr=self.backing_process_logs)
+                stdout=subprocess.PIPE,
+                stderr=subprocess.STDOUT,
+                universal_newlines=True)
             asserts.assert_true(
                 self.backing_process,
                 msg="Cannot start backing_process at " + " ".join(self.cmd))
@@ -212,6 +228,11 @@ class GdDeviceBase(ABC):
 
             # Wait for process to be ready
             signal_socket.accept()
+
+        self.backing_process_logging_executor = concurrent.futures.ThreadPoolExecutor(
+            max_workers=1)
+        self.backing_process_logging_future = self.backing_process_logging_executor.submit(
+            self.__backing_process_logging_loop)
 
         # Setup gRPC management channels
         self.grpc_root_server_channel = grpc.insecure_channel(
@@ -283,7 +304,17 @@ class GdDeviceBase(ABC):
         if return_code not in [-stop_signal, 0]:
             logging.error("backing process %s stopped with code: %d" %
                           (self.label, return_code))
-        self.backing_process_logs.close()
+        try:
+            result = self.backing_process_logging_future.result(
+                timeout=self.WAIT_CHANNEL_READY_TIMEOUT_SECONDS)
+            if result:
+                logging.error(
+                    "backing process logging thread produced an error when executing: %s"
+                    % str(result))
+        except concurrent.futures.TimeoutError:
+            logging.error(
+                "backing process logging thread failed to finish on time")
+        self.backing_process_logging_executor.shutdown(wait=False)
 
     def wait_channel_ready(self):
         future = grpc.channel_ready_future(self.grpc_channel)
@@ -300,9 +331,9 @@ class GdHostOnlyDevice(GdDeviceBase):
 
     def __init__(self, grpc_port: str, grpc_root_server_port: str,
                  signal_port: str, cmd: List[str], label: str,
-                 type_identifier: str, name: str):
+                 type_identifier: str, name: str, verbose_mode: bool):
         super().__init__(grpc_port, grpc_root_server_port, signal_port, cmd,
-                         label, ACTS_CONTROLLER_CONFIG_NAME, name)
+                         label, ACTS_CONTROLLER_CONFIG_NAME, name, verbose_mode)
         # Enable LLVM code coverage output for host only tests
         self.backing_process_profraw_path = pathlib.Path(
             self.log_path_base).joinpath("%s_%s_backing_coverage.profraw" %
@@ -425,9 +456,10 @@ class GdAndroidDevice(GdDeviceBase):
 
     def __init__(self, grpc_port: str, grpc_root_server_port: str,
                  signal_port: str, cmd: List[str], label: str,
-                 type_identifier: str, name: str, serial_number: str):
+                 type_identifier: str, name: str, serial_number: str,
+                 verbose_mode: bool):
         super().__init__(grpc_port, grpc_root_server_port, signal_port, cmd,
-                         label, type_identifier, name)
+                         label, type_identifier, name, verbose_mode)
         asserts.assert_true(serial_number,
                             "serial_number must not be None nor empty")
         self.serial_number = serial_number
