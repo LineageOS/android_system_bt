@@ -26,6 +26,7 @@
 #include "hci/address.h"
 #include "l2cap/cid.h"
 #include "l2cap/classic/fixed_channel_manager.h"
+#include "l2cap/classic/internal/dynamic_channel_service_impl_mock.h"
 #include "l2cap/classic/internal/fixed_channel_service_impl_mock.h"
 #include "l2cap/classic/internal/fixed_channel_service_manager_impl_mock.h"
 #include "l2cap/internal/parameter_provider_mock.h"
@@ -47,6 +48,7 @@ using l2cap::internal::testing::MockParameterProvider;
 using ::testing::_;  // Matcher to any value
 using ::testing::ByMove;
 using ::testing::DoAll;
+using testing::MockDynamicChannelServiceImpl;
 using testing::MockDynamicChannelServiceManagerImpl;
 using testing::MockFixedChannelServiceImpl;
 using testing::MockFixedChannelServiceManagerImpl;
@@ -89,6 +91,13 @@ class L2capClassicLinkManagerTest : public ::testing::Test {
 TEST_F(L2capClassicLinkManagerTest, connect_fixed_channel_service_without_acl) {
   MockFixedChannelServiceManagerImpl mock_classic_fixed_channel_service_manager;
   MockDynamicChannelServiceManagerImpl mock_classic_dynamic_channel_service_manager;
+  SecurityModuleRejectAllImpl security_module_impl;
+  MockDynamicChannelServiceImpl service;
+  ON_CALL(service, GetSecurityPolicy())
+      .WillByDefault(Return(SecurityPolicy::_SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK));
+
+  ON_CALL(mock_classic_dynamic_channel_service_manager, GetSecurityModuleInterface())
+      .WillByDefault(Return(&security_module_impl));
   MockAclManager mock_acl_manager;
   hci::Address device{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
   auto user_handler = std::make_unique<os::Handler>(thread_);
@@ -98,6 +107,7 @@ TEST_F(L2capClassicLinkManagerTest, connect_fixed_channel_service_without_acl) {
   os::Handler* hci_callback_handler = nullptr;
   EXPECT_CALL(mock_acl_manager, RegisterCallbacks(_, _))
       .WillOnce(DoAll(SaveArg<0>(&hci_connection_callbacks), SaveArg<1>(&hci_callback_handler)));
+  ON_CALL(mock_classic_dynamic_channel_service_manager, GetService(_)).WillByDefault(Return(&service));
   LinkManager classic_link_manager(l2cap_handler_, &mock_acl_manager, &mock_classic_fixed_channel_service_manager,
                                    &mock_classic_dynamic_channel_service_manager, mock_parameter_provider_);
   EXPECT_EQ(hci_connection_callbacks, &classic_link_manager);
