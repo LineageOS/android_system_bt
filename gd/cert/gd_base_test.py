@@ -29,6 +29,7 @@ from acts.context import get_current_context
 from acts.base_test import BaseTestClass
 
 from cert.os_utils import get_gd_root
+from cert.os_utils import read_crash_snippet_and_log_tail
 from cert.os_utils import is_subprocess_alive
 from cert.os_utils import make_ports_available
 from facade import rootservice_pb2 as facade_rootservice
@@ -54,9 +55,9 @@ class GdBaseTestClass(BaseTestClass):
                 "Root canal does not exist at %s" % rootcanal)
 
             # Get root canal log
-            rootcanal_logpath = os.path.join(self.log_path_base,
-                                             'rootcanal_logs.txt')
-            self.rootcanal_logs = open(rootcanal_logpath, 'w')
+            self.rootcanal_logpath = os.path.join(self.log_path_base,
+                                                  'rootcanal_logs.txt')
+            self.rootcanal_logs = open(self.rootcanal_logpath, 'w')
 
             # Make sure ports are available
             rootcanal_config = self.controller_configs['rootcanal']
@@ -171,14 +172,24 @@ class GdBaseTestClass(BaseTestClass):
         """
         dut_crash, dut_log_tail = self.dut.get_crash_snippet_and_log_tail()
         cert_crash, cert_log_tail = self.cert.get_crash_snippet_and_log_tail()
+        rootcanal_crash = None
+        rootcanal_log_tail = None
+        if self.rootcanal_running and not is_subprocess_alive(
+                self.rootcanal_process):
+            rootcanal_crash, roocanal_log_tail = read_crash_snippet_and_log_tail(
+                self.rootcanal_logpath)
 
         crash_detail = ""
-        if dut_crash or cert_crash:
+        if dut_crash or cert_crash or rootcanal_crash:
+            if rootcanal_crash:
+                crash_detail += "rootcanal crashed:\n\n%s\n\n" % rootcanal_crash
             if dut_crash:
                 crash_detail += "dut stack crashed:\n\n%s\n\n" % dut_crash
             if cert_crash:
                 crash_detail += "cert stack crashed:\n\n%s\n\n" % cert_crash
         else:
+            if rootcanal_log_tail:
+                crash_detail += "rootcanal log tail:\n\n%s\n\n" % rootcanal_log_tail
             if dut_log_tail:
                 crash_detail += "dut log tail:\n\n%s\n\n" % dut_log_tail
             if cert_log_tail:

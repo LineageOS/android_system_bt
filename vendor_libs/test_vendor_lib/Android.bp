@@ -146,12 +146,14 @@ cc_binary_host {
     ],
     shared_libs: [
         "liblog",
+        "libbacktrace",
     ],
     static_libs: [
         "libbt-rootcanal-types",
         "libprotobuf-cpp-lite",
         "libscriptedbeaconpayload-protos-lite",
         "libbt-rootcanal",
+        "breakpad_client",
     ],
     sanitize: {
         address: true,
