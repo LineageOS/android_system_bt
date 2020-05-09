@@ -29,7 +29,7 @@ class ClassicAclConnection : public AclConnection {
  public:
   ClassicAclConnection();
   ClassicAclConnection(std::shared_ptr<Queue> queue, AclConnectionInterface* acl_connection_interface, uint16_t handle,
-                       Address address, Role role);
+                       Address address);
   ~ClassicAclConnection() override;
 
   virtual Address GetAddress() const {

@@ -86,7 +86,8 @@ LeAclConnection::LeAclConnection()
 LeAclConnection::LeAclConnection(std::shared_ptr<Queue> queue, LeAclConnectionInterface* le_acl_connection_interface,
                                  common::OnceCallback<void(DisconnectReason)> disconnect, uint16_t handle,
                                  AddressWithType local_address, AddressWithType remote_address, Role role)
-    : AclConnection(queue->GetUpEnd(), handle, role), local_address_(local_address), remote_address_(remote_address) {
+    : AclConnection(queue->GetUpEnd(), handle), local_address_(local_address), remote_address_(remote_address),
+      role_(role) {
   pimpl_ = new LeAclConnection::impl(le_acl_connection_interface, std::move(queue), std::move(disconnect));
 }
 
