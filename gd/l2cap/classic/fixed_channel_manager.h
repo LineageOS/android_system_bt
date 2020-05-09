@@ -22,7 +22,6 @@
 #include "l2cap/cid.h"
 #include "l2cap/classic/fixed_channel.h"
 #include "l2cap/classic/fixed_channel_service.h"
-#include "l2cap/classic/security_policy.h"
 #include "os/handler.h"
 
 namespace bluetooth {
@@ -122,14 +121,12 @@ class FixedChannelManager {
    * - on_open_callback, will only be triggered after on_service_registered callback
    *
    * @param cid:  cid used to receive incoming connections
-   * @param security_policy: The security policy used for the connection.
    * @param on_registration_complete: A callback to indicate the service setup has completed. If the return status is
    *        not SUCCESS, it means service is not registered due to reasons like CID already take
    * @param on_open_callback: A callback to indicate success of a connection initiated from a remote device.
    * @param handler: The handler context in which to execute the @callback parameter.
    */
-  virtual bool RegisterService(Cid cid, const SecurityPolicy& security_policy,
-                               OnRegistrationCompleteCallback on_registration_complete,
+  virtual bool RegisterService(Cid cid, OnRegistrationCompleteCallback on_registration_complete,
                                OnConnectionOpenCallback on_connection_open, os::Handler* handler);
 
   virtual ~FixedChannelManager() = default;
