@@ -214,9 +214,10 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
                                                    queue->GetDownEnd(), handler_));
     round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::CLASSIC, handle, queue);
     std::unique_ptr<ClassicAclConnection> connection(
-        new ClassicAclConnection(std::move(queue), acl_connection_interface_, handle, address, current_role));
+        new ClassicAclConnection(std::move(queue), acl_connection_interface_, handle, address));
     auto& connection_proxy = check_and_get_connection(handle);
     connection_proxy.connection_management_callbacks_ = connection->GetEventCallbacks();
+    connection_proxy.connection_management_callbacks_->OnRoleChange(current_role);
     client_handler_->Post(common::BindOnce(&ConnectionCallbacks::OnConnectSuccess,
                                            common::Unretained(client_callbacks_), std::move(connection)));
     while (!pending_outgoing_connections_.empty()) {
