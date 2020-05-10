@@ -20,6 +20,7 @@
 
 namespace bluetooth {
 namespace security {
+namespace record {
 
 class SecurityRecordDatabase {
  public:
@@ -59,5 +60,6 @@ class SecurityRecordDatabase {
   std::vector<record::SecurityRecord> records_;
 };
 
+}  // namespace record
 }  // namespace security
 }  // namespace bluetooth
