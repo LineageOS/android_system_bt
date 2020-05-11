@@ -17,9 +17,18 @@
 import logging
 from pathlib import Path
 import psutil
+import re
 import subprocess
 from typing import Container
 from collections import deque
+
+
+class TerminalColor:
+    RED = "\033[31;1m"
+    BLUE = "\033[34;1m"
+    YELLOW = "\033[33:1m"
+    MAGENTA = "\033[35;1m"
+    END = "\033[0m"
 
 
 def is_subprocess_alive(process, timeout_seconds=1):
