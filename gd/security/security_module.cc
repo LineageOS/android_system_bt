@@ -43,8 +43,8 @@ struct SecurityModule::impl {
         security_manager_channel_(new channel::SecurityManagerChannel(security_handler_, hci_layer,
                                                                       l2cap_classic_module->GetFixedChannelManager())),
         hci_layer_(hci_layer), l2cap_security_interface_(&security_manager_impl, security_handler) {
-    l2cap_classic_module->InjectSecurityModuleInterface(&l2cap_security_interface_);
-    l2cap_le_module->InjectSecurityModuleInterface(&l2cap_security_interface_);
+    l2cap_classic_module->InjectSecurityEnforcementInterface(&l2cap_security_interface_);
+    l2cap_le_module->InjectSecurityEnforcementInterface(&l2cap_security_interface_);
   }
 
   os::Handler* security_handler_;
@@ -59,8 +59,8 @@ struct SecurityModule::impl {
 
   ~impl() {
     delete security_manager_channel_;
-    l2cap_classic_module_->InjectSecurityModuleInterface(nullptr);
-    l2cap_le_module_->InjectSecurityModuleInterface(nullptr);
+    l2cap_classic_module_->InjectSecurityEnforcementInterface(nullptr);
+    l2cap_le_module_->InjectSecurityEnforcementInterface(nullptr);
   }
 };
 

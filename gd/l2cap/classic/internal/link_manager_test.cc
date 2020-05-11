@@ -91,12 +91,12 @@ class L2capClassicLinkManagerTest : public ::testing::Test {
 TEST_F(L2capClassicLinkManagerTest, connect_fixed_channel_service_without_acl) {
   MockFixedChannelServiceManagerImpl mock_classic_fixed_channel_service_manager;
   MockDynamicChannelServiceManagerImpl mock_classic_dynamic_channel_service_manager;
-  SecurityModuleRejectAllImpl security_module_impl;
+  SecurityEnforcementRejectAllImpl security_module_impl;
   MockDynamicChannelServiceImpl service;
   ON_CALL(service, GetSecurityPolicy())
       .WillByDefault(Return(SecurityPolicy::_SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK));
 
-  ON_CALL(mock_classic_dynamic_channel_service_manager, GetSecurityModuleInterface())
+  ON_CALL(mock_classic_dynamic_channel_service_manager, GetSecurityEnforcementInterface())
       .WillByDefault(Return(&security_module_impl));
   MockAclManager mock_acl_manager;
   hci::Address device{{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
