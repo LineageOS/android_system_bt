@@ -172,9 +172,9 @@ class HciHalRootcanalTest : public ::testing::Test {
 
 void check_packet_equal(std::pair<uint8_t, HciPacket> hci_packet1_type_data_pair, H4Packet h4_packet2) {
   auto packet1_hci_size = hci_packet1_type_data_pair.second.size();
-  EXPECT_EQ(packet1_hci_size + 1, h4_packet2.size());
-  EXPECT_EQ(hci_packet1_type_data_pair.first, h4_packet2[0]);
-  EXPECT_EQ(memcmp(hci_packet1_type_data_pair.second.data(), h4_packet2.data() + 1, packet1_hci_size), 0);
+  ASSERT_EQ(packet1_hci_size + 1, h4_packet2.size());
+  ASSERT_EQ(hci_packet1_type_data_pair.first, h4_packet2[0]);
+  ASSERT_EQ(memcmp(hci_packet1_type_data_pair.second.data(), h4_packet2.data() + 1, packet1_hci_size), 0);
 }
 
 HciPacket make_sample_hci_cmd_pkt(uint8_t parameter_total_length) {
@@ -221,6 +221,16 @@ HciPacket make_sample_h4_sco_pkt(uint8_t payload_size) {
   pkt[0] = kH4Sco;
   pkt[3] = payload_size;
   return pkt;
+}
+
+size_t read_with_retry(int socket, uint8_t* data, size_t length) {
+  size_t bytes_read = 0;
+  ssize_t bytes_read_current = 0;
+  do {
+    bytes_read_current = read(socket, data + bytes_read, length - bytes_read);
+    bytes_read += bytes_read_current;
+  } while (length > bytes_read && bytes_read_current > 0);
+  return bytes_read;
 }
 
 TEST_F(HciHalRootcanalTest, init_and_close) {}
@@ -319,9 +329,9 @@ TEST_F(HciHalRootcanalTest, send_hci_cmd) {
   hal_->sendHciCommand(hci_data);
   H4Packet read_buf(1 + 2 + 1 + hci_cmd_param_size);
   SetFakeServerSocketToBlocking();
-  auto size_read = read(fake_server_socket_, read_buf.data(), read_buf.size());
+  auto size_read = read_with_retry(fake_server_socket_, read_buf.data(), read_buf.size());
 
-  EXPECT_EQ(size_read, 1 + hci_data.size());
+  ASSERT_EQ(size_read, 1 + hci_data.size());
   check_packet_equal({kH4Command, hci_data}, read_buf);
 }
 
@@ -331,9 +341,9 @@ TEST_F(HciHalRootcanalTest, send_acl) {
   hal_->sendAclData(acl_packet);
   H4Packet read_buf(1 + 2 + 2 + acl_payload_size);
   SetFakeServerSocketToBlocking();
-  auto size_read = read(fake_server_socket_, read_buf.data(), read_buf.size());
+  auto size_read = read_with_retry(fake_server_socket_, read_buf.data(), read_buf.size());
 
-  EXPECT_EQ(size_read, 1 + acl_packet.size());
+  ASSERT_EQ(size_read, 1 + acl_packet.size());
   check_packet_equal({kH4Acl, acl_packet}, read_buf);
 }
 
@@ -343,9 +353,9 @@ TEST_F(HciHalRootcanalTest, send_sco) {
   hal_->sendScoData(sco_packet);
   H4Packet read_buf(1 + 3 + sco_payload_size);
   SetFakeServerSocketToBlocking();
-  auto size_read = read(fake_server_socket_, read_buf.data(), read_buf.size());
+  auto size_read = read_with_retry(fake_server_socket_, read_buf.data(), read_buf.size());
 
-  EXPECT_EQ(size_read, 1 + sco_packet.size());
+  ASSERT_EQ(size_read, 1 + sco_packet.size());
   check_packet_equal({kH4Sco, sco_packet}, read_buf);
 }
 
@@ -359,8 +369,8 @@ TEST_F(HciHalRootcanalTest, send_multiple_acl_batch) {
   H4Packet read_buf(1 + 2 + 2 + acl_payload_size);
   SetFakeServerSocketToBlocking();
   for (int i = 0; i < num_packets; i++) {
-    auto size_read = read(fake_server_socket_, read_buf.data(), read_buf.size());
-    EXPECT_EQ(size_read, 1 + acl_packet.size());
+    auto size_read = read_with_retry(fake_server_socket_, read_buf.data(), read_buf.size());
+    ASSERT_EQ(size_read, 1 + acl_packet.size());
     check_packet_equal({kH4Acl, acl_packet}, read_buf);
   }
 }
@@ -373,8 +383,8 @@ TEST_F(HciHalRootcanalTest, send_multiple_acl_sequential) {
   for (int i = 0; i < num_packets; i++) {
     hal_->sendAclData(acl_packet);
     H4Packet read_buf(1 + 2 + 2 + acl_payload_size);
-    auto size_read = read(fake_server_socket_, read_buf.data(), read_buf.size());
-    EXPECT_EQ(size_read, 1 + acl_packet.size());
+    auto size_read = read_with_retry(fake_server_socket_, read_buf.data(), read_buf.size());
+    ASSERT_EQ(size_read, 1 + acl_packet.size());
     check_packet_equal({kH4Acl, acl_packet}, read_buf);
   }
 }
@@ -382,7 +392,7 @@ TEST_F(HciHalRootcanalTest, send_multiple_acl_sequential) {
 TEST(HciHalHidlTest, serialize) {
   std::vector<uint8_t> bytes = {1, 2, 3, 4, 5, 6, 7, 8, 9};
   auto packet_bytes = hal::SerializePacket(std::unique_ptr<packet::BasePacketBuilder>(new packet::RawBuilder(bytes)));
-  EXPECT_EQ(bytes, packet_bytes);
+  ASSERT_EQ(bytes, packet_bytes);
 }
 }  // namespace
 }  // namespace hal
