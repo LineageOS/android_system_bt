@@ -155,6 +155,10 @@ void AclManager::CancelConnect(Address address) {
   GetHandler()->Post(BindOnce(&classic_impl::cancel_connect, common::Unretained(pimpl_->classic_impl_), address));
 }
 
+void AclManager::CancelLeConnect(AddressWithType address_with_type) {
+  GetHandler()->Post(BindOnce(&le_impl::cancel_connect, common::Unretained(pimpl_->le_impl_), address_with_type));
+}
+
 void AclManager::MasterLinkKey(KeyFlag key_flag) {
   GetHandler()->Post(BindOnce(&classic_impl::master_link_key, common::Unretained(pimpl_->classic_impl_), key_flag));
 }
