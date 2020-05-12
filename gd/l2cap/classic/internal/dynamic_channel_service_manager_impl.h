@@ -20,7 +20,7 @@
 
 #include "l2cap/classic/dynamic_channel_service.h"
 #include "l2cap/classic/internal/dynamic_channel_service_impl.h"
-#include "l2cap/classic/security_module_interface.h"
+#include "l2cap/classic/security_enforcement_interface.h"
 #include "l2cap/psm.h"
 #include "os/handler.h"
 #include "os/log.h"
@@ -47,18 +47,18 @@ class DynamicChannelServiceManagerImpl {
   virtual std::vector<std::pair<Psm, DynamicChannelServiceImpl*>> GetRegisteredServices();
 
   // Implementation is set by SecurityManager through L2capModule
-  void SetSecurityModuleInterface(SecurityModuleInterface* impl) {
-    security_module_interface_ = impl;
+  void SetSecurityEnforcementInterface(SecurityEnforcementInterface* impl) {
+    security_enforcement_interface_ = impl;
   }
 
-  virtual SecurityModuleInterface* GetSecurityModuleInterface() {
-    return security_module_interface_;
+  virtual SecurityEnforcementInterface* GetSecurityEnforcementInterface() {
+    return security_enforcement_interface_;
   }
 
  private:
   os::Handler* l2cap_layer_handler_ = nullptr;
   std::unordered_map<Psm, DynamicChannelServiceImpl> service_map_;
-  SecurityModuleInterface* security_module_interface_ = nullptr;
+  SecurityEnforcementInterface* security_enforcement_interface_ = nullptr;
 };
 }  // namespace internal
 }  // namespace classic
