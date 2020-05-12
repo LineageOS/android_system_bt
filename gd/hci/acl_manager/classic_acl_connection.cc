@@ -27,7 +27,8 @@ class AclConnectionTracker : public ConnectionManagementCallbacks {
   AclConnectionTracker(AclConnectionInterface* acl_connection_interface)
       : acl_connection_interface_(acl_connection_interface) {}
   ~AclConnectionTracker() override {
-    ASSERT(queued_callbacks_.empty());
+    // If callbacks were registered, they should have been delivered.
+    ASSERT(client_callbacks_ == nullptr || queued_callbacks_.empty());
   }
   void RegisterCallbacks(ConnectionManagementCallbacks* callbacks, os::Handler* handler) {
     while (!queued_callbacks_.empty()) {
@@ -301,9 +302,8 @@ ClassicAclConnection::ClassicAclConnection()
 
 ClassicAclConnection::ClassicAclConnection(std::shared_ptr<Queue> queue,
                                            AclConnectionInterface* acl_connection_interface, uint16_t handle,
-                                           Address address, Role role)
-    : AclConnection(queue->GetUpEnd(), handle, Role::MASTER), acl_connection_interface_(acl_connection_interface),
-      address_(address) {
+                                           Address address)
+    : AclConnection(queue->GetUpEnd(), handle), acl_connection_interface_(acl_connection_interface), address_(address) {
   pimpl_ = new ClassicAclConnection::impl(acl_connection_interface, std::move(queue));
 }
 
@@ -322,7 +322,7 @@ void ClassicAclConnection::RegisterCallbacks(ConnectionManagementCallbacks* call
 bool ClassicAclConnection::Disconnect(DisconnectReason reason) {
   acl_connection_interface_->EnqueueCommand(
       DisconnectBuilder::Create(handle_, reason),
-      pimpl_->tracker.client_handler_->BindOnce([](CommandStatusView status) { /* TODO: check? */ }));
+      pimpl_->tracker.client_handler_->BindOnce(&check_command_status<DisconnectStatusView>));
   return true;
 }
 
@@ -486,7 +486,7 @@ bool ClassicAclConnection::ReadFailedContactCounter() {
 bool ClassicAclConnection::ResetFailedContactCounter() {
   acl_connection_interface_->EnqueueCommand(
       ResetFailedContactCounterBuilder::Create(handle_),
-      pimpl_->tracker.client_handler_->BindOnce([](CommandCompleteView view) { /* TODO: check? */ }));
+      pimpl_->tracker.client_handler_->BindOnce(&check_command_complete<ResetFailedContactCounterCompleteView>));
   return true;
 }
 

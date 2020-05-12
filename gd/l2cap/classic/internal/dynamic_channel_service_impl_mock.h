@@ -1,5 +1,5 @@
 /*
- * Copyright 2019 The Android Open Source Project
+ * Copyright 2020 The Android Open Source Project
  *
  * Licensed under the Apache License, Version 2.0 (the "License");
  * you may not use this file except in compliance with the License.
@@ -15,7 +15,7 @@
  */
 #pragma once
 
-#include "l2cap/classic/fixed_channel_manager.h"
+#include "l2cap/classic/internal/dynamic_channel_service_impl.h"
 
 #include <gmock/gmock.h>
 
@@ -23,20 +23,17 @@
 namespace bluetooth {
 namespace l2cap {
 namespace classic {
+namespace internal {
 namespace testing {
 
-class MockFixedChannelManager : public FixedChannelManager {
+class MockDynamicChannelServiceImpl : public DynamicChannelServiceImpl {
  public:
-  MockFixedChannelManager() : FixedChannelManager(nullptr, nullptr, nullptr){};
-  MOCK_METHOD(bool, ConnectServices,
-              (hci::Address device, OnConnectionFailureCallback on_fail_callback, os::Handler* handler), (override));
-  MOCK_METHOD(bool, RegisterService,
-              (Cid cid, OnRegistrationCompleteCallback on_registration_complete,
-               OnConnectionOpenCallback on_connection_open, os::Handler* handler),
-              (override));
+  MockDynamicChannelServiceImpl() : DynamicChannelServiceImpl({}, {}, {}, {}) {}
+  MOCK_METHOD(SecurityPolicy, GetSecurityPolicy, (), (const, override));
 };
 
 }  // namespace testing
+}  // namespace internal
 }  // namespace classic
 }  // namespace l2cap
 }  // namespace bluetooth

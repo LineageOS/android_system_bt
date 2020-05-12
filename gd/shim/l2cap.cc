@@ -395,7 +395,7 @@ struct L2cap::impl {
                              std::unique_ptr<l2cap::classic::DynamicChannel> channel);
   void PendingConnectionFail(PendingConnectionId id, std::unique_ptr<PendingConnection> connection,
                              l2cap::classic::DynamicChannelManager::ConnectionResult result);
-  const l2cap::classic::SecurityPolicy GetSecurityPolicy(l2cap::Psm psm) const;
+  l2cap::classic::SecurityPolicy GetSecurityPolicy(l2cap::Psm psm) const;
 };
 
 const ModuleFactory L2cap::Factory = ModuleFactory([]() { return new L2cap(); });
@@ -428,14 +428,12 @@ void L2cap::impl::Dump(int fd) {
   }
 }
 
-const l2cap::classic::SecurityPolicy L2cap::impl::GetSecurityPolicy(l2cap::Psm psm) const {
-  l2cap::classic::SecurityPolicy security_policy;
+l2cap::classic::SecurityPolicy L2cap::impl::GetSecurityPolicy(l2cap::Psm psm) const {
   if (psm == 1) {
-    security_policy.security_level_ = l2cap::classic::SecurityPolicy::Level::LEVEL_0;
+    return l2cap::classic::SecurityPolicy::_SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK;
   } else {
-    security_policy.security_level_ = l2cap::classic::SecurityPolicy::Level::LEVEL_3;
+    return l2cap::classic::SecurityPolicy::ENCRYPTED_TRANSPORT;
   }
-  return security_policy;
 }
 
 void L2cap::impl::RegisterService(l2cap::Psm psm, l2cap::classic::DynamicChannelConfigurationOption option,

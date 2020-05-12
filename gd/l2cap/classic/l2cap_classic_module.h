@@ -19,9 +19,15 @@
 
 #include "l2cap/classic/dynamic_channel_manager.h"
 #include "l2cap/classic/fixed_channel_manager.h"
+#include "l2cap/classic/security_module_interface.h"
 #include "module.h"
 
 namespace bluetooth {
+
+namespace security {
+class SecurityModule;
+}
+
 namespace l2cap {
 namespace classic {
 
@@ -54,6 +60,14 @@ class L2capClassicModule : public bluetooth::Module {
  private:
   struct impl;
   std::unique_ptr<impl> pimpl_;
+
+  friend security::SecurityModule;
+  /**
+   * Only for the classic security module to inject functionality to enforce security level for a connection. When
+   * classic security module is stopping, inject nullptr. Note: We expect this only to be called during stack startup.
+   * This is not synchronized.
+   */
+  virtual void InjectSecurityModuleInterface(SecurityModuleInterface* security_module_interface);
   DISALLOW_COPY_AND_ASSIGN(L2capClassicModule);
 };
 

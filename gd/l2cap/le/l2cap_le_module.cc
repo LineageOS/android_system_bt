@@ -21,6 +21,7 @@
 #include "l2cap/le/internal/dynamic_channel_service_manager_impl.h"
 #include "l2cap/le/internal/fixed_channel_service_manager_impl.h"
 #include "l2cap/le/internal/link_manager.h"
+#include "l2cap/le/security_module_interface.h"
 #include "module.h"
 #include "os/handler.h"
 
@@ -32,9 +33,13 @@ namespace le {
 
 const ModuleFactory L2capLeModule::Factory = ModuleFactory([]() { return new L2capLeModule(); });
 
+static SecurityModuleRejectAllImpl default_security_module_impl_;
+
 struct L2capLeModule::impl {
   impl(os::Handler* l2cap_handler, hci::AclManager* acl_manager)
-      : l2cap_handler_(l2cap_handler), acl_manager_(acl_manager) {}
+      : l2cap_handler_(l2cap_handler), acl_manager_(acl_manager) {
+    dynamic_channel_service_manager_impl_.SetSecurityModuleInterface(&default_security_module_impl_);
+  }
   os::Handler* l2cap_handler_;
   hci::AclManager* acl_manager_;
   l2cap::internal::ParameterProvider parameter_provider_;
@@ -71,6 +76,14 @@ std::unique_ptr<FixedChannelManager> L2capLeModule::GetFixedChannelManager() {
 std::unique_ptr<DynamicChannelManager> L2capLeModule::GetDynamicChannelManager() {
   return std::unique_ptr<DynamicChannelManager>(new DynamicChannelManager(
       &pimpl_->dynamic_channel_service_manager_impl_, &pimpl_->link_manager_, pimpl_->l2cap_handler_));
+}
+
+void L2capLeModule::InjectSecurityModuleInterface(SecurityModuleInterface* security_module_interface) {
+  if (security_module_interface != nullptr) {
+    pimpl_->dynamic_channel_service_manager_impl_.SetSecurityModuleInterface(security_module_interface);
+  } else {
+    pimpl_->dynamic_channel_service_manager_impl_.SetSecurityModuleInterface(&default_security_module_impl_);
+  }
 }
 
 }  // namespace le

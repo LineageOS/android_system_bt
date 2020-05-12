@@ -16,28 +16,29 @@
 
 #pragma once
 
+#include <cstdint>
+
 namespace bluetooth {
 namespace l2cap {
 namespace le {
 
-// Security Policy for LE Security Mode 1, used by COC and GATT. Defined in Core 5.2, 3, C 10.2.1
-class SecurityPolicy {
- public:
-  enum class Level : uint32_t {
-    NO_SECURITY = 0,
-    UNAUTHENTICATED_PAIRING_WITH_ENCRYPTION = 1,
-    AUTHENTICATED_PAIRING_WITH_ENCRYPTION = 2,
-    AUTHENTICATED_PAIRING_WITH_128_BIT_KEY = 3,
-    AUTHORIZATION = 4,
-  };
-  Level security_level_ = Level::NO_SECURITY;
+enum class SecurityPolicy {
+  // Predefined security policies for user to pick
 
-  SecurityPolicy() : security_level_(Level::NO_SECURITY) {}
-  SecurityPolicy(Level level) : security_level_(level) {}
+  // No security enforced
+  NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK,
 
-  bool RequiresAuthentication() const {
-    return security_level_ != SecurityPolicy::Level::NO_SECURITY;
-  }
+  // Just encryption, but no MITM
+  ENCRYPTED_TRANSPORT,
+
+  // Implicitly MITM protected
+  AUTHENTICATED_ENCRYPTED_TRANSPORT,
+
+  // Same as AUTHENTICATED_ENCRYPTED_TRANSPORT
+  BEST,
+
+  _NOT_FOR_YOU__AUTHENTICATED_PAIRING_WITH_128_BIT_KEY,
+  _NOT_FOR_YOU__AUTHORIZATION,
 };
 
 }  // namespace le

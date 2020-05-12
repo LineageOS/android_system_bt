@@ -21,7 +21,6 @@
 
 #include "hci/hci_packets.h"
 #include "l2cap/cid.h"
-#include "l2cap/classic/security_policy.h"
 #include "os/handler.h"
 #include "os/log.h"
 
