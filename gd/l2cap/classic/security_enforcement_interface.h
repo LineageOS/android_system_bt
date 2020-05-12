@@ -18,18 +18,18 @@
 
 #include "common/contextual_callback.h"
 #include "hci/address_with_type.h"
-#include "l2cap/le/security_policy.h"
+#include "l2cap/classic/security_policy.h"
 
 namespace bluetooth {
 namespace l2cap {
-namespace le {
+namespace classic {
 
 /**
  * The interface for Security Module to implement.
  */
-class SecurityModuleInterface {
+class SecurityEnforcementInterface {
  public:
-  virtual ~SecurityModuleInterface() = default;
+  virtual ~SecurityEnforcementInterface() = default;
 
   using ResultCallback = common::ContextualOnceCallback<void(bool)>;
 
@@ -37,25 +37,23 @@ class SecurityModuleInterface {
    * Invoked when L2CAP needs to open a channel with given security requirement. When the Security Module satisfies the
    * required security level, or cannot satisfy at all, invoke the result_callback.
    */
-  virtual void EnforceSecurityPolicy(hci::AddressWithType remote, SecurityPolicy policy,
-                                     ResultCallback result_callback) = 0;
+  virtual void Enforce(hci::AddressWithType remote, SecurityPolicy policy, ResultCallback result_callback) = 0;
 };
 
 /**
  * A default implementation which cannot satisfy any security level except
- * NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK.
+ * _SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK.
  */
-class SecurityModuleRejectAllImpl : public SecurityModuleInterface {
+class SecurityEnforcementRejectAllImpl : public SecurityEnforcementInterface {
  public:
-  void EnforceSecurityPolicy(hci::AddressWithType remote, SecurityPolicy policy,
-                             ResultCallback result_callback) override {
-    if (policy == SecurityPolicy::NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK) {
+  void Enforce(hci::AddressWithType remote, SecurityPolicy policy, ResultCallback result_callback) override {
+    if (policy == SecurityPolicy::_SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK) {
       result_callback.InvokeIfNotEmpty(true);
     } else {
       result_callback.InvokeIfNotEmpty(false);
     }
   }
 };
-}  // namespace le
+}  // namespace classic
 }  // namespace l2cap
 }  // namespace bluetooth

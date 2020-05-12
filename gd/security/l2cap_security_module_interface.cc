@@ -23,22 +23,21 @@ L2capSecurityModuleInterface::L2capSecurityModuleInterface(internal::SecurityMan
                                                            os::Handler* security_handler)
     : security_manager_impl_(security_manager_impl), security_handler_(security_handler) {}
 
-void L2capSecurityModuleInterface::EnforceSecurityPolicy(
+void L2capSecurityModuleInterface::Enforce(
     hci::AddressWithType remote, l2cap::classic::SecurityPolicy policy,
-    l2cap::classic::SecurityModuleInterface::ResultCallback result_callback) {
+    l2cap::classic::SecurityEnforcementInterface::ResultCallback result_callback) {
   this->security_handler_->Post(common::BindOnce(
       &internal::SecurityManagerImpl::EnforceSecurityPolicy, common::Unretained(security_manager_impl_),
       std::forward<hci::AddressWithType>(remote), std::forward<l2cap::classic::SecurityPolicy>(policy),
-      std::forward<l2cap::classic::SecurityModuleInterface::ResultCallback>(result_callback)));
+      std::forward<l2cap::classic::SecurityEnforcementInterface::ResultCallback>(result_callback)));
 }
 
-void L2capSecurityModuleInterface::EnforceSecurityPolicy(
-    hci::AddressWithType remote, l2cap::le::SecurityPolicy policy,
-    l2cap::le::SecurityModuleInterface::ResultCallback result_callback) {
+void L2capSecurityModuleInterface::Enforce(hci::AddressWithType remote, l2cap::le::SecurityPolicy policy,
+                                           l2cap::le::SecurityEnforcementInterface::ResultCallback result_callback) {
   this->security_handler_->Post(common::BindOnce(
       &internal::SecurityManagerImpl::EnforceLeSecurityPolicy, common::Unretained(security_manager_impl_),
       std::forward<hci::AddressWithType>(remote), std::forward<l2cap::le::SecurityPolicy>(policy),
-      std::forward<l2cap::le::SecurityModuleInterface::ResultCallback>(result_callback)));
+      std::forward<l2cap::le::SecurityEnforcementInterface::ResultCallback>(result_callback)));
 }
 
 }  // namespace security

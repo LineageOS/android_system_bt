@@ -24,7 +24,7 @@
 #include "l2cap/classic/internal/dynamic_channel_service_manager_impl.h"
 #include "l2cap/classic/internal/fixed_channel_impl.h"
 #include "l2cap/classic/internal/fixed_channel_service_manager_impl.h"
-#include "l2cap/classic/security_module_interface.h"
+#include "l2cap/classic/security_enforcement_interface.h"
 #include "l2cap/internal/data_pipeline_manager.h"
 #include "l2cap/internal/dynamic_channel_allocator.h"
 #include "l2cap/internal/dynamic_channel_impl.h"
