@@ -15,21 +15,21 @@
  */
 #pragma once
 
-#include "l2cap/classic/security_module_interface.h"
-#include "l2cap/le/security_module_interface.h"
+#include "l2cap/classic/security_enforcement_interface.h"
+#include "l2cap/le/security_enforcement_interface.h"
 #include "os/handler.h"
 #include "security/internal/security_manager_impl.h"
 
 namespace bluetooth {
 namespace security {
-class L2capSecurityModuleInterface : public l2cap::classic::SecurityModuleInterface,
-                                     public l2cap::le::SecurityModuleInterface {
+class L2capSecurityModuleInterface : public l2cap::classic::SecurityEnforcementInterface,
+                                     public l2cap::le::SecurityEnforcementInterface {
  public:
   L2capSecurityModuleInterface(internal::SecurityManagerImpl* security_manager_impl, os::Handler* security_handler);
-  void EnforceSecurityPolicy(hci::AddressWithType remote, l2cap::classic::SecurityPolicy policy,
-                             l2cap::classic::SecurityModuleInterface::ResultCallback result_callback) override;
-  void EnforceSecurityPolicy(hci::AddressWithType remote, l2cap::le::SecurityPolicy policy,
-                             l2cap::le::SecurityModuleInterface::ResultCallback result_callback) override;
+  void Enforce(hci::AddressWithType remote, l2cap::classic::SecurityPolicy policy,
+               l2cap::classic::SecurityEnforcementInterface::ResultCallback result_callback) override;
+  void Enforce(hci::AddressWithType remote, l2cap::le::SecurityPolicy policy,
+               l2cap::le::SecurityEnforcementInterface::ResultCallback result_callback) override;
 
  private:
   internal::SecurityManagerImpl* security_manager_impl_;

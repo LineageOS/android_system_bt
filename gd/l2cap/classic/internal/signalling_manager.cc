@@ -77,7 +77,7 @@ void ClassicSignallingManager::SendConnectionRequest(Psm psm, Cid local_cid) {
       .local_cid = local_cid,
   };
   pending_security_requests_[psm] = pending;
-  dynamic_service_manager_->GetSecurityModuleInterface()->EnforceSecurityPolicy(
+  dynamic_service_manager_->GetSecurityEnforcementInterface()->Enforce(
       link_->GetDevice(), dynamic_service_manager_->GetService(psm)->GetSecurityPolicy(),
       handler_->BindOnceOn(this, &ClassicSignallingManager::on_security_result_for_outgoing, psm));
 }
@@ -174,7 +174,7 @@ void ClassicSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, 
       .incoming_signal_id = signal_id,
   };
   pending_security_requests_[psm] = pending;
-  dynamic_service_manager_->GetSecurityModuleInterface()->EnforceSecurityPolicy(
+  dynamic_service_manager_->GetSecurityEnforcementInterface()->Enforce(
       link_->GetDevice(), dynamic_service_manager_->GetService(psm)->GetSecurityPolicy(),
       handler_->BindOnceOn(this, &ClassicSignallingManager::on_security_result_for_incoming, psm));
 }
