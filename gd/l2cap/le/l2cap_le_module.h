@@ -19,7 +19,7 @@
 
 #include "l2cap/le/dynamic_channel_manager.h"
 #include "l2cap/le/fixed_channel_manager.h"
-#include "l2cap/le/security_module_interface.h"
+#include "l2cap/le/security_enforcement_interface.h"
 #include "module.h"
 
 namespace bluetooth {
@@ -67,7 +67,7 @@ class L2capLeModule : public bluetooth::Module {
    * security module is stopping, inject nullptr. Note: We expect this only to be called during stack startup. This is
    * not synchronized.
    */
-  virtual void InjectSecurityModuleInterface(SecurityModuleInterface* security_module_interface);
+  virtual void InjectSecurityEnforcementInterface(SecurityEnforcementInterface* security_enforcement_interface);
   DISALLOW_COPY_AND_ASSIGN(L2capLeModule);
 };
 

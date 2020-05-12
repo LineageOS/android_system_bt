@@ -452,7 +452,7 @@ void SecurityManagerImpl::SetOobDataPresent(hci::OobDataPresent data_present) {
 
 void SecurityManagerImpl::EnforceSecurityPolicy(
     hci::AddressWithType remote, l2cap::classic::SecurityPolicy policy,
-    l2cap::classic::SecurityModuleInterface::ResultCallback result_callback) {
+    l2cap::classic::SecurityEnforcementInterface::ResultCallback result_callback) {
   bool result = false;
   auto record = this->security_database_.FindOrCreate(remote);
   switch (policy) {
@@ -473,8 +473,9 @@ void SecurityManagerImpl::EnforceSecurityPolicy(
   result_callback.Invoke(result);
 }
 
-void SecurityManagerImpl::EnforceLeSecurityPolicy(hci::AddressWithType remote, l2cap::le::SecurityPolicy policy,
-                                                  l2cap::le::SecurityModuleInterface::ResultCallback result_callback) {
+void SecurityManagerImpl::EnforceLeSecurityPolicy(
+    hci::AddressWithType remote, l2cap::le::SecurityPolicy policy,
+    l2cap::le::SecurityEnforcementInterface::ResultCallback result_callback) {
   bool result = false;
   // TODO(jpawlowski): Implement for LE
   switch (policy) {
