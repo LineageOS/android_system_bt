@@ -15,7 +15,6 @@
 #   limitations under the License.
 
 from abc import ABC
-import concurrent.futures
 import inspect
 import logging
 import os
@@ -36,6 +35,7 @@ from acts.controllers.adb import AdbError
 
 from google.protobuf import empty_pb2 as empty_proto
 
+from cert.async_subprocess_logger import AsyncSubprocessLogger
 from cert.os_utils import get_gd_root
 from cert.os_utils import read_crash_snippet_and_log_tail
 from cert.os_utils import is_subprocess_alive
@@ -184,14 +184,6 @@ class GdDeviceBase(ABC):
         else:
             self.terminal_color = TerminalColor.YELLOW
 
-    def __backing_process_logging_loop(self):
-        with open(self.backing_process_log_path, 'w') as backing_process_log:
-            for line in self.backing_process.stdout:
-                backing_process_log.write(line)
-                if self.verbose_mode:
-                    print("[%s%s%s] %s" % (self.terminal_color, self.label,
-                                           TerminalColor.END, line.strip()))
-
     def setup(self):
         """Set up this device for test, must run before using this device
         - After calling this, teardown() must be called when test finishes
@@ -229,10 +221,11 @@ class GdDeviceBase(ABC):
             # Wait for process to be ready
             signal_socket.accept()
 
-        self.backing_process_logging_executor = concurrent.futures.ThreadPoolExecutor(
-            max_workers=1)
-        self.backing_process_logging_future = self.backing_process_logging_executor.submit(
-            self.__backing_process_logging_loop)
+        self.backing_process_logger = AsyncSubprocessLogger(
+            self.backing_process, [self.backing_process_log_path],
+            log_to_stdout=self.verbose_mode,
+            tag=self.label,
+            color=self.terminal_color)
 
         # Setup gRPC management channels
         self.grpc_root_server_channel = grpc.insecure_channel(
@@ -304,17 +297,7 @@ class GdDeviceBase(ABC):
         if return_code not in [-stop_signal, 0]:
             logging.error("backing process %s stopped with code: %d" %
                           (self.label, return_code))
-        try:
-            result = self.backing_process_logging_future.result(
-                timeout=self.WAIT_CHANNEL_READY_TIMEOUT_SECONDS)
-            if result:
-                logging.error(
-                    "backing process logging thread produced an error when executing: %s"
-                    % str(result))
-        except concurrent.futures.TimeoutError:
-            logging.error(
-                "backing process logging thread failed to finish on time")
-        self.backing_process_logging_executor.shutdown(wait=False)
+        self.backing_process_logger.stop()
 
     def wait_channel_ready(self):
         future = grpc.channel_ready_future(self.grpc_channel)
