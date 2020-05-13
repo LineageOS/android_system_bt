@@ -14,7 +14,6 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import concurrent.futures
 import importlib
 import logging
 import os
@@ -29,6 +28,7 @@ from acts import asserts, signals
 from acts.context import get_current_context
 from acts.base_test import BaseTestClass
 
+from cert.async_subprocess_logger import AsyncSubprocessLogger
 from cert.os_utils import get_gd_root
 from cert.os_utils import read_crash_snippet_and_log_tail
 from cert.os_utils import is_subprocess_alive
@@ -94,10 +94,11 @@ class GdBaseTestClass(BaseTestClass):
                 is_subprocess_alive(self.rootcanal_process),
                 msg="root-canal stopped immediately after running")
 
-            self.rootcanal_logging_executor = concurrent.futures.ThreadPoolExecutor(
-                max_workers=1)
-            self.rootcanal_logging_future = self.rootcanal_logging_executor.submit(
-                self.__rootcanal_logging_loop)
+            self.rootcanal_logger = AsyncSubprocessLogger(
+                self.rootcanal_process, [self.rootcanal_logpath],
+                log_to_stdout=self.verbose_mode,
+                tag="root_canal",
+                color=TerminalColor.MAGENTA)
 
             # Modify the device config to include the correct root-canal port
             for gd_device_config in self.controller_configs.get("GdDevice"):
@@ -108,14 +109,6 @@ class GdBaseTestClass(BaseTestClass):
             importlib.import_module('cert.gd_device'), builtin=True)
         self.dut = self.gd_devices[1]
         self.cert = self.gd_devices[0]
-
-    def __rootcanal_logging_loop(self):
-        with open(self.rootcanal_logpath, 'w') as rootcanal_log:
-            for line in self.rootcanal_process.stdout:
-                rootcanal_log.write(line)
-                if self.verbose_mode:
-                    print("[%s%s%s] %s" % (TerminalColor.MAGENTA, "root_canal",
-                                           TerminalColor.END, line.strip()))
 
     def teardown_class(self):
         if self.rootcanal_running:
@@ -138,17 +131,7 @@ class GdBaseTestClass(BaseTestClass):
                     return_code = -65536
             if return_code != 0 and return_code != -stop_signal:
                 logging.error("rootcanal stopped with code: %d" % return_code)
-            try:
-                result = self.rootcanal_logging_future.result(
-                    timeout=self.SUBPROCESS_WAIT_TIMEOUT_SECONDS)
-                if result:
-                    logging.error(
-                        "rootcanal process logging thread produced an error when executing: %s"
-                        % str(result))
-            except concurrent.futures.TimeoutError:
-                logging.error(
-                    "rootcanal process logging thread failed to finish on time")
-            self.rootcanal_logging_executor.shutdown(wait=False)
+            self.rootcanal_logger.stop()
 
     def setup_test(self):
         self.dut.rootservice.StartStack(
