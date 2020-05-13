@@ -623,7 +623,7 @@ bool A2dpCodecs::init() {
     }
 
     // In offload mode, disable the codecs based on the property
-    if ((codec_index < BTAV_A2DP_CODEC_INDEX_SOURCE_MAX) &&
+    if ((codec_index < BTAV_A2DP_QVA_CODEC_INDEX_SOURCE_MAX) &&
         a2dp_offload_status && (offload_codec_support[i] != true)) {
       codec_priority = BTAV_A2DP_CODEC_PRIORITY_DISABLED;
     }
@@ -645,7 +645,7 @@ bool A2dpCodecs::init() {
 
     indexed_codecs_.insert(std::make_pair(codec_index, codec_config));
 
-    if (codec_index < BTAV_A2DP_CODEC_INDEX_SOURCE_MAX) {
+    if (codec_index < BTAV_A2DP_QVA_CODEC_INDEX_SOURCE_MAX) {
       ordered_source_codecs_.push_back(codec_config);
       ordered_source_codecs_.sort(compare_codec_priority);
     } else {
