@@ -29,6 +29,7 @@ from typing import List
 import grpc
 
 from acts import asserts
+from acts import utils
 from acts.context import get_current_context
 from acts.controllers.adb import AdbProxy
 from acts.controllers.adb import AdbError
@@ -449,22 +450,25 @@ class GdAndroidDevice(GdDeviceBase):
         self.adb = AdbProxy(serial_number)
 
     def setup(self):
+        logging.info(
+            "Setting up device %s %s" % (self.label, self.serial_number))
         self.ensure_verity_disabled()
         asserts.assert_true(
             self.adb.ensure_root(),
             msg="device %s cannot run as root after enabling verity" %
             self.serial_number)
-        self.adb.shell("date " + time.strftime("%m%d%H%M%Y.%S"))
+
         # Try freeing ports and ignore results
-        self.adb.remove_tcp_forward(self.grpc_port)
-        self.adb.remove_tcp_forward(self.grpc_root_server_port)
-        self.adb.reverse("--remove tcp:%d" % self.signal_port)
+        self.cleanup_port_forwarding()
+        self.sync_device_time()
+
         # Set up port forwarding or reverse or die
         self.tcp_forward_or_die(self.grpc_port, self.grpc_port)
         self.tcp_forward_or_die(self.grpc_root_server_port,
                                 self.grpc_root_server_port)
         self.tcp_reverse_or_die(self.signal_port, self.signal_port)
-        # Puh test binaries
+
+        # Push test binaries
         self.push_or_die(
             os.path.join(get_gd_root(), "target",
                          "bluetooth_stack_with_facade"), "system/bin")
@@ -474,22 +478,71 @@ class GdAndroidDevice(GdDeviceBase):
         self.push_or_die(
             os.path.join(get_gd_root(), "target", "libgrpc++_unsecure.so"),
             "system/lib64")
-        self.ensure_no_output(self.adb.shell("logcat -c"))
         self.adb.shell("rm /data/misc/bluetooth/logs/btsnoop_hci.log")
         self.ensure_no_output(self.adb.shell("svc bluetooth disable"))
+
+        # Start logcat logging
+        self.logcat_output_path = os.path.join(
+            self.log_path_base, '%s_%s_%s_logcat_logs.txt' %
+            (self.type_identifier, self.label, self.serial_number))
+        self.logcat_cmd = [
+            "adb", "-s", self.serial_number, "logcat", "-T", "1", "-v", "year",
+            "-v", "uid"
+        ]
+        self.logcat_process = subprocess.Popen(
+            self.logcat_cmd,
+            stdout=subprocess.PIPE,
+            stderr=subprocess.STDOUT,
+            universal_newlines=True)
+        asserts.assert_true(
+            self.logcat_process,
+            msg="Cannot start logcat_process at " + " ".join(self.logcat_cmd))
+        asserts.assert_true(
+            is_subprocess_alive(self.logcat_process),
+            msg="logcat_process stopped immediately after running " + " ".join(
+                self.logcat_cmd))
+        self.logcat_logger = AsyncSubprocessLogger(
+            self.logcat_process, [self.logcat_output_path],
+            log_to_stdout=self.verbose_mode,
+            tag="%s_%s" % (self.label, self.serial_number),
+            color=self.terminal_color)
+
+        # Done run parent setup
         super().setup()
 
     def teardown(self):
         super().teardown()
-        self.adb.remove_tcp_forward(self.grpc_port)
-        self.adb.remove_tcp_forward(self.grpc_root_server_port)
-        self.adb.reverse("--remove tcp:%d" % self.signal_port)
-        self.adb.shell("logcat -d -f /data/misc/bluetooth/logs/system_log")
+        stop_signal = signal.SIGINT
+        self.logcat_process.send_signal(stop_signal)
+        try:
+            return_code = self.logcat_process.wait(
+                timeout=self.WAIT_CHANNEL_READY_TIMEOUT_SECONDS)
+        except subprocess.TimeoutExpired:
+            logging.error(
+                "[%s_%s] Failed to interrupt logcat process via SIGINT, sending SIGKILL"
+                % (self.label, self.serial_number))
+            stop_signal = signal.SIGKILL
+            self.logcat_process.kill()
+            try:
+                return_code = self.logcat_process.wait(
+                    timeout=self.WAIT_CHANNEL_READY_TIMEOUT_SECONDS)
+            except subprocess.TimeoutExpired:
+                logging.error("Failed to kill logcat_process %s %s" %
+                              (self.label, self.serial_number))
+                return_code = -65536
+        if return_code not in [-stop_signal, 0]:
+            logging.error("logcat_process %s_%s stopped with code: %d" %
+                          (self.label, self.serial_number, return_code))
+        self.logcat_logger.stop()
+        self.cleanup_port_forwarding()
         self.adb.pull(
             "/data/misc/bluetooth/logs/btsnoop_hci.log %s" % os.path.join(
                 self.log_path_base, "%s_btsnoop_hci.log" % self.label))
-        self.adb.pull("/data/misc/bluetooth/logs/system_log %s" % os.path.join(
-            self.log_path_base, "%s_system_log" % self.label))
+
+    def cleanup_port_forwarding(self):
+        self.adb.remove_tcp_forward(self.grpc_port)
+        self.adb.remove_tcp_forward(self.grpc_root_server_port)
+        self.adb.reverse("--remove tcp:%d" % self.signal_port)
 
     @staticmethod
     def ensure_no_output(result):
@@ -499,6 +552,28 @@ class GdAndroidDevice(GdDeviceBase):
         asserts.assert_true(
             result is None or len(result) == 0,
             msg="command returned something when it shouldn't: %s" % result)
+
+    def sync_device_time(self):
+        self.adb.shell("settings put global auto_time 0")
+        self.adb.shell("settings put global auto_time_zone 0")
+        device_tz = self.adb.shell("date +%z")
+        asserts.assert_true(
+            device_tz, "date +%z must return device timezone, "
+            "but returned {} instead".format(device_tz))
+        host_tz = time.strftime("%z")
+        if device_tz != host_tz:
+            target_timezone = utils.get_timezone_olson_id()
+            logging.info("Device timezone %s does not match host timezone %s, "
+                         "syncing them by setting timezone to %s" %
+                         (device_tz, host_tz, target_timezone))
+            self.adb.shell("setprop persist.sys.timezone %s" % target_timezone)
+            self.reboot()
+            device_tz = self.adb.shell("date +%z")
+            asserts.assert_equal(
+                host_tz, device_tz,
+                "Device timezone %s still does not match host "
+                "timezone %s after reset" % (device_tz, host_tz))
+        self.adb.shell("date %s" % time.strftime("%m%d%H%M%Y.%S"))
 
     def push_or_die(self, src_file_path, dst_file_path, push_timeout=300):
         """Pushes a file to the Android device

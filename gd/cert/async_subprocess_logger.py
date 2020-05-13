@@ -67,10 +67,11 @@ class AsyncSubprocessLogger:
             result = self.future.result(timeout=self.WAIT_TIMEOUT_SECONDS)
             if result:
                 logging.error(
-                    "logging thread produced an error when executing: %s" %
-                    str(result))
+                    "logging thread %s produced an error when executing: %s" %
+                    (self.tag, str(result)))
         except concurrent.futures.TimeoutError:
-            logging.error("logging thread failed to finish on time")
+            logging.error("logging thread %s failed to finish after %d seconds"
+                          % (self.tag, self.WAIT_TIMEOUT_SECONDS))
         self.executor.shutdown(wait=False)
 
     def __logging_loop(self):
