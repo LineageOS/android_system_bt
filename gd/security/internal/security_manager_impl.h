@@ -21,7 +21,9 @@
 
 #include "hci/acl_manager.h"
 #include "hci/classic_device.h"
+#include "l2cap/classic/security_enforcement_interface.h"
 #include "l2cap/le/l2cap_le_module.h"
+#include "l2cap/le/security_enforcement_interface.h"
 #include "os/handler.h"
 #include "security/channel/security_manager_channel.h"
 #include "security/initial_informations.h"
@@ -150,6 +152,11 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   void SetIoCapability(hci::IoCapability io_capability);
   void SetAuthenticationRequirements(hci::AuthenticationRequirements authentication_requirements);
   void SetOobDataPresent(hci::OobDataPresent data_present);
+
+  void EnforceSecurityPolicy(hci::AddressWithType remote, l2cap::classic::SecurityPolicy policy,
+                             l2cap::classic::SecurityEnforcementInterface::ResultCallback result_callback);
+  void EnforceLeSecurityPolicy(hci::AddressWithType remote, l2cap::le::SecurityPolicy policy,
+                               l2cap::le::SecurityEnforcementInterface::ResultCallback result_callback);
 
  protected:
   std::vector<std::pair<ISecurityManagerListener*, os::Handler*>> listeners_;

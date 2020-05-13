@@ -450,6 +450,52 @@ void SecurityManagerImpl::SetOobDataPresent(hci::OobDataPresent data_present) {
   this->local_oob_data_present_ = data_present;
 }
 
+void SecurityManagerImpl::EnforceSecurityPolicy(
+    hci::AddressWithType remote, l2cap::classic::SecurityPolicy policy,
+    l2cap::classic::SecurityEnforcementInterface::ResultCallback result_callback) {
+  bool result = false;
+  auto record = this->security_database_.FindOrCreate(remote);
+  switch (policy) {
+    case l2cap::classic::SecurityPolicy::BEST:
+    case l2cap::classic::SecurityPolicy::AUTHENTICATED_ENCRYPTED_TRANSPORT:
+      result = record.IsAuthenticated() && record.RequiresMitmProtection() && record.IsEncryptionRequired();
+      break;
+    case l2cap::classic::SecurityPolicy::ENCRYPTED_TRANSPORT:
+      result = record.IsAuthenticated() && record.IsEncryptionRequired();
+      break;
+    case l2cap::classic::SecurityPolicy::_SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK:
+      result = true;
+      break;
+  }
+  if (!result) {
+    // TODO(optedoblivion): Start pairing process to meet requirements
+  }
+  result_callback.Invoke(result);
+}
+
+void SecurityManagerImpl::EnforceLeSecurityPolicy(
+    hci::AddressWithType remote, l2cap::le::SecurityPolicy policy,
+    l2cap::le::SecurityEnforcementInterface::ResultCallback result_callback) {
+  bool result = false;
+  // TODO(jpawlowski): Implement for LE
+  switch (policy) {
+    case l2cap::le::SecurityPolicy::BEST:
+      break;
+    case l2cap::le::SecurityPolicy::AUTHENTICATED_ENCRYPTED_TRANSPORT:
+      break;
+    case l2cap::le::SecurityPolicy::ENCRYPTED_TRANSPORT:
+      break;
+    case l2cap::le::SecurityPolicy::NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK:
+      result = true;
+      break;
+    case l2cap::le::SecurityPolicy::_NOT_FOR_YOU__AUTHENTICATED_PAIRING_WITH_128_BIT_KEY:
+      break;
+    case l2cap::le::SecurityPolicy::_NOT_FOR_YOU__AUTHORIZATION:
+      break;
+  }
+  result_callback.Invoke(result);
+}
+
 }  // namespace internal
 }  // namespace security
 }  // namespace bluetooth

@@ -104,7 +104,7 @@ class L2capClassicLinkTest : public ::testing::Test {
   NiceMock<MockParameterProvider> mock_parameter_provider_;
   MockFixedChannelServiceManagerImpl mock_classic_fixed_channel_service_manager_;
   MockDynamicChannelServiceManagerImpl mock_classic_dynamic_channel_service_manager_;
-  SecurityModuleRejectAllImpl security_module_impl_;
+  SecurityEnforcementRejectAllImpl security_module_impl_;
 
   std::promise<void> on_open_promise_;
   std::promise<void> on_fail_promise_;
@@ -128,7 +128,7 @@ TEST_F(L2capClassicLinkTest, pending_channels_get_notified_on_acl_disconnect) {
   ON_CALL(service, GetSecurityPolicy())
       .WillByDefault(::testing::Return(SecurityPolicy::_SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK));
 
-  EXPECT_CALL(mock_classic_dynamic_channel_service_manager_, GetSecurityModuleInterface())
+  EXPECT_CALL(mock_classic_dynamic_channel_service_manager_, GetSecurityEnforcementInterface())
       .WillOnce(::testing::Return(&security_module_impl_));
   EXPECT_CALL(mock_classic_dynamic_channel_service_manager_, GetService(::testing::_))
       .WillOnce(::testing::Return(&service));

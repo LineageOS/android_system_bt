@@ -62,7 +62,7 @@ void LeSignallingManager::SendConnectionRequest(Psm psm, Cid local_cid, Mtu mtu)
       .mtu = mtu,
   };
   pending_security_requests_[psm] = pending;
-  dynamic_service_manager_->GetSecurityModuleInterface()->EnforceSecurityPolicy(
+  dynamic_service_manager_->GetSecurityEnforcementInterface()->Enforce(
       link_->GetDevice(), dynamic_service_manager_->GetService(psm)->GetSecurityPolicy(),
       handler_->BindOnceOn(this, &LeSignallingManager::on_security_result_for_outgoing, psm));
 }
@@ -215,7 +215,7 @@ void LeSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, Cid r
       .mtu = mtu,
   };
   pending_security_requests_[psm] = pending;
-  dynamic_service_manager_->GetSecurityModuleInterface()->EnforceSecurityPolicy(
+  dynamic_service_manager_->GetSecurityEnforcementInterface()->Enforce(
       link_->GetDevice(), dynamic_service_manager_->GetService(psm)->GetSecurityPolicy(),
       handler_->BindOnceOn(this, &LeSignallingManager::on_security_result_for_incoming, psm));
 }
