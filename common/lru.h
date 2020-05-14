@@ -119,8 +119,10 @@ class LruCache {
     // remove tail
     if (lru_map_.size() == capacity_) {
       lru_map_.erase(node_list_.back().first);
+      K key_evicted = node_list_.back().first;
+      V value_evicted = node_list_.back().second;
       node_list_.pop_back();
-      lru_eviction_callback_(node_list_.back().first, node_list_.back().second);
+      lru_eviction_callback_(key_evicted, value_evicted);
       value_popped = true;
     }
     // insert to dummy next;
