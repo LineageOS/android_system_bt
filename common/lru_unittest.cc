@@ -32,7 +32,7 @@ TEST(BluetoothLruCacheTest, LruCacheMainTest1) {
   int* value = new int(0);
   int dummy = 0;
   int* pointer = &dummy;
-  auto callback = [pointer](int a, int b) { (*pointer) = 1; };
+  auto callback = [pointer](int a, int b) { (*pointer) = a * b; };
   LruCache<int, int> cache(3, "testing", callback);  // capacity = 3;
   cache.Put(1, 10);
   EXPECT_EQ(cache.Size(), 1);
@@ -51,8 +51,8 @@ TEST(BluetoothLruCacheTest, LruCacheMainTest1) {
   EXPECT_EQ(cache.Size(), 3);
 
   cache.Put(4, 40);
-  EXPECT_EQ(dummy, 1);
-  // 2, 3, 4 should be in cache, 1 should not
+  EXPECT_EQ(dummy, 10);
+  // 2, 3, 4 should be in cache, 1 is evicted
   EXPECT_FALSE(cache.Get(1, value));
   EXPECT_TRUE(cache.Get(4, value));
   EXPECT_EQ(*value, 40);
@@ -63,7 +63,8 @@ TEST(BluetoothLruCacheTest, LruCacheMainTest1) {
 
   cache.Put(5, 50);
   EXPECT_EQ(cache.Size(), 3);
-  // 2, 3, 5 should be in cache
+  EXPECT_EQ(dummy, 160);
+  // 2, 3, 5 should be in cache, 4 is evicted
 
   EXPECT_TRUE(cache.Remove(3));
   cache.Put(6, 60);
