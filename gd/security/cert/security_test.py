@@ -142,29 +142,6 @@ class SecurityTest(GdBaseTestClass):
             expected_init_bond_event=BondMsgType.DEVICE_BONDED,
             expected_resp_bond_event=None)
 
-    # keyboard_only + display_only is JustWorks no confirmation
-    def test_dut_initiated_keyboard_only_display_only(self):
-        # Arrange
-        self.dut_security.set_io_capabilities(IoCapabilities.KEYBOARD_ONLY)
-        self.dut_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(IoCapabilities.DISPLAY_ONLY)
-        self.cert_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-
-        # Act and Assert
-        self._run_ssp_numeric_comparison(
-            initiator=self.dut_security,
-            responder=self.cert_security,
-            init_ui_response=True,
-            resp_ui_response=True,
-            expected_init_ui_event=None,
-            expected_resp_ui_event=None,
-            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
-            expected_resp_bond_event=None)
-
     # no_input_no_output + display_only is JustWorks no confirmation
     def test_dut_initiated_no_input_no_output_display_only(self):
         # Arrange
@@ -237,30 +214,6 @@ class SecurityTest(GdBaseTestClass):
             expected_init_bond_event=BondMsgType.DEVICE_BONDED,
             expected_resp_bond_event=None)
 
-    # keyboard_only + display_yes_no is JustWorks no confirmation
-    def test_dut_initiated_keyboard_only_display_yes_no(self):
-        # Arrange
-        self.dut_security.set_io_capabilities(IoCapabilities.KEYBOARD_ONLY)
-        self.dut_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(
-            IoCapabilities.DISPLAY_YES_NO_IO_CAP)
-        self.cert_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-
-        # Act and Assert
-        self._run_ssp_numeric_comparison(
-            initiator=self.dut_security,
-            responder=self.cert_security,
-            init_ui_response=True,
-            resp_ui_response=True,
-            expected_init_ui_event=None,
-            expected_resp_ui_event=None,
-            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
-            expected_resp_bond_event=None)
-
     # no_input_no_output + display_yes_no is JustWorks no confirmation
     def test_dut_initiated_no_input_no_output_display_yes_no(self):
         # Arrange
@@ -270,76 +223,6 @@ class SecurityTest(GdBaseTestClass):
         self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
         self.cert_security.set_io_capabilities(
             IoCapabilities.DISPLAY_YES_NO_IO_CAP)
-        self.cert_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-
-        # Act and Assert
-        self._run_ssp_numeric_comparison(
-            initiator=self.dut_security,
-            responder=self.cert_security,
-            init_ui_response=True,
-            resp_ui_response=True,
-            expected_init_ui_event=None,
-            expected_resp_ui_event=None,
-            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
-            expected_resp_bond_event=None)
-
-    # display_only + keyboard_only is JustWorks no confirmation
-    def test_dut_initiated_display_only_keyboard_only(self):
-        # Arrange
-        self.dut_security.set_io_capabilities(IoCapabilities.DISPLAY_ONLY)
-        self.dut_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(IoCapabilities.KEYBOARD_ONLY)
-        self.cert_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-
-        # Act and Assert
-        self._run_ssp_numeric_comparison(
-            initiator=self.dut_security,
-            responder=self.cert_security,
-            init_ui_response=True,
-            resp_ui_response=True,
-            expected_init_ui_event=None,
-            expected_resp_ui_event=None,
-            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
-            expected_resp_bond_event=None)
-
-    # display_yes_no + keyboard_only is JustWorks no confirmation
-    def test_dut_initiated_display_yes_no_keyboard_only(self):
-        # Arrange
-        self.dut_security.set_io_capabilities(
-            IoCapabilities.DISPLAY_YES_NO_IO_CAP)
-        self.dut_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(IoCapabilities.KEYBOARD_ONLY)
-        self.cert_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-
-        # Act and Assert
-        self._run_ssp_numeric_comparison(
-            initiator=self.dut_security,
-            responder=self.cert_security,
-            init_ui_response=True,
-            resp_ui_response=True,
-            expected_init_ui_event=UiMsgType.DISPLAY_PASSKEY,
-            expected_resp_ui_event=None,
-            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
-            expected_resp_bond_event=None)
-
-    # keyboard_only + display_yes_no is JustWorks no confirmation
-    def test_dut_initiated_keyboard_only_keyboard_only(self):
-        # Arrange
-        self.dut_security.set_io_capabilities(IoCapabilities.KEYBOARD_ONLY)
-        self.dut_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(IoCapabilities.KEYBOARD_ONLY)
         self.cert_security.set_authentication_requirements(
             AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
         self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
@@ -379,55 +262,6 @@ class SecurityTest(GdBaseTestClass):
             expected_init_bond_event=BondMsgType.DEVICE_BONDED,
             expected_resp_bond_event=None)
 
-    # display_only + no_input_no_output is JustWorks no confirmation
-    def test_dut_initiated_display_only_keyboard_only(self):
-        # Arrange
-        self.dut_security.set_io_capabilities(IoCapabilities.DISPLAY_ONLY)
-        self.dut_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(
-            IoCapabilities.NO_INPUT_NO_OUTPUT)
-        self.cert_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-
-        # Act and Assert
-        self._run_ssp_numeric_comparison(
-            initiator=self.dut_security,
-            responder=self.cert_security,
-            init_ui_response=True,
-            resp_ui_response=True,
-            expected_init_ui_event=None,
-            expected_resp_ui_event=None,
-            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
-            expected_resp_bond_event=None)
-
-    # display_yes_no + keyboard_only is JustWorks no confirmation
-    def test_dut_initiated_display_yes_no_no_input_no_output(self):
-        # Arrange
-        self.dut_security.set_io_capabilities(
-            IoCapabilities.DISPLAY_YES_NO_IO_CAP)
-        self.dut_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(
-            IoCapabilities.NO_INPUT_NO_OUTPUT)
-        self.cert_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-
-        # Act and Assert
-        self._run_ssp_numeric_comparison(
-            initiator=self.dut_security,
-            responder=self.cert_security,
-            init_ui_response=True,
-            resp_ui_response=True,
-            expected_init_ui_event=UiMsgType.DISPLAY_YES_NO_WITH_VALUE,
-            expected_resp_ui_event=None,
-            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
-            expected_resp_bond_event=None)
-
     # keyboard_only + display_yes_no is JustWorks no confirmation
     def test_dut_initiated_keyboard_only_no_input_no_output(self):
         # Arrange
@@ -452,7 +286,7 @@ class SecurityTest(GdBaseTestClass):
             expected_init_bond_event=BondMsgType.DEVICE_BONDED,
             expected_resp_bond_event=None)
 
-    # no_input_no_output + keyboard_only is JustWorks no confirmation
+    # no_input_no_output + no_input_no_output is JustWorks no confirmation
     def test_dut_initiated_no_input_no_output_no_input_no_output(self):
         # Arrange
         self.dut_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
@@ -475,7 +309,6 @@ class SecurityTest(GdBaseTestClass):
             expected_resp_ui_event=None,
             expected_init_bond_event=BondMsgType.DEVICE_BONDED,
             expected_resp_bond_event=None)
-
 
 ## Other permutations
 #def xtest_dut_initiated_display_only_display_only_local_user_deny(self)
