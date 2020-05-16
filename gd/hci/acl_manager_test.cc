@@ -313,10 +313,19 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
 
     // Verify LE Set Random Address was sent during setup
+    hci::AddressWithType address_with_type(hci::Address::kEmpty, hci::AddressType::RANDOM_DEVICE_ADDRESS);
+    crypto_toolbox::Octet16 irk = {};
+    auto interval_min_ms = std::chrono::milliseconds(7 * 60 * 1000);
+    auto interval_random_part_max_ms = std::chrono::milliseconds(15 * 60 * 1000);
+    acl_manager_->SetPrivacyPolicyForInitiatorAddress(LeAddressRotator::AddressPolicy::USE_RESOLVABLE_ADDRESS,
+                                                      address_with_type, irk, interval_min_ms,
+                                                      interval_random_part_max_ms);
+
     auto set_random_address_packet = test_hci_layer_->GetLeSetRandomAddressPacket();
     EXPECT_TRUE(set_random_address_packet.IsValid());
     my_initiating_address =
         AddressWithType(set_random_address_packet.GetRandomAddress(), AddressType::RANDOM_DEVICE_ADDRESS);
+    test_hci_layer_->IncomingEvent(LeSetRandomAddressCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   }
 
   void TearDown() override {

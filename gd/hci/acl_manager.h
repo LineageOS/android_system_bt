@@ -26,6 +26,7 @@
 #include "hci/address_with_type.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
+#include "hci/le_address_rotator.h"
 #include "module.h"
 #include "os/handler.h"
 
@@ -60,6 +61,10 @@ class AclManager : public Module {
   virtual void CreateLeConnection(AddressWithType address_with_type);
 
   virtual void SetLeInitiatorAddress(AddressWithType initiator_address);
+  virtual void SetPrivacyPolicyForInitiatorAddress(LeAddressRotator::AddressPolicy address_policy,
+                                                   AddressWithType fixed_address, crypto_toolbox::Octet16 rotation_irk,
+                                                   std::chrono::milliseconds minimum_rotation_time,
+                                                   std::chrono::milliseconds maximum_rotation_time);
 
   // Generates OnConnectFail with error code "terminated by local host 0x16" if cancelled, or OnConnectSuccess if not
   // successfully cancelled and already connected
@@ -72,6 +77,8 @@ class AclManager : public Module {
 
   // In order to avoid circular dependency use setter rather than module dependency.
   virtual void SetSecurityModule(security::SecurityModule* security_module);
+
+  virtual LeAddressRotator* GetLeAddressRotator();
 
   static const ModuleFactory Factory;
 

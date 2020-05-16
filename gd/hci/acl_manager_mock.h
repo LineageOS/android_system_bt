@@ -70,6 +70,11 @@ class MockAclManager : public AclManager {
   MOCK_METHOD(void, CreateConnection, (Address address), (override));
   MOCK_METHOD(void, CreateLeConnection, (AddressWithType address_with_type), (override));
   MOCK_METHOD(void, CancelConnect, (Address address), (override));
+  MOCK_METHOD(void, SetPrivacyPolicyForInitiatorAddress,
+              (LeAddressRotator::AddressPolicy address_policy, AddressWithType fixed_address,
+               crypto_toolbox::Octet16 rotation_irk, std::chrono::milliseconds minimum_rotation_time,
+               std::chrono::milliseconds maximum_rotation_time),
+              (override));
 };
 
 }  // namespace testing
