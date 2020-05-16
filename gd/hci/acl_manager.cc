@@ -145,6 +145,16 @@ void AclManager::SetLeInitiatorAddress(AddressWithType initiator_address) {
       common::BindOnce(&le_impl::set_le_initiator_address, common::Unretained(pimpl_->le_impl_), initiator_address));
 }
 
+void AclManager::SetPrivacyPolicyForInitiatorAddress(LeAddressRotator::AddressPolicy address_policy,
+                                                     AddressWithType fixed_address,
+                                                     crypto_toolbox::Octet16 rotation_irk,
+                                                     std::chrono::milliseconds minimum_rotation_time,
+                                                     std::chrono::milliseconds maximum_rotation_time) {
+  GetHandler()->Post(common::BindOnce(&le_impl::set_privacy_policy_for_initiator_address,
+                                      common::Unretained(pimpl_->le_impl_), address_policy, fixed_address, rotation_irk,
+                                      minimum_rotation_time, maximum_rotation_time));
+}
+
 void AclManager::CancelConnect(Address address) {
   GetHandler()->Post(BindOnce(&classic_impl::cancel_connect, common::Unretained(pimpl_->classic_impl_), address));
 }
@@ -171,6 +181,10 @@ void AclManager::WriteDefaultLinkPolicySettings(uint16_t default_link_policy_set
 void AclManager::SetSecurityModule(security::SecurityModule* security_module) {
   GetHandler()->Post(
       BindOnce(&classic_impl::set_security_module, common::Unretained(pimpl_->classic_impl_), security_module));
+}
+
+LeAddressRotator* AclManager::GetLeAddressRotator() {
+  return pimpl_->le_impl_->le_address_rotator_;
 }
 
 void AclManager::ListDependencies(ModuleList* list) {
