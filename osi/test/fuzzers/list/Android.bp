@@ -1,0 +1,11 @@
+cc_fuzz {
+    name: "libosi_fuzz_list",
+    defaults: ["libosi_fuzz_defaults"],
+    host_supported: true,
+    srcs: [
+        "fuzz_list.cc",
+    ],
+    static_libs: [
+        "libosi",
+    ],
+}
