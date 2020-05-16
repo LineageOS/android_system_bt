@@ -23,6 +23,7 @@
 #include <map>
 
 #include "common/bind.h"
+#include "hci/acl_manager.h"
 #include "hci/address.h"
 #include "hci/controller.h"
 #include "hci/hci_layer.h"
@@ -173,14 +174,47 @@ class TestHciLayer : public HciLayer {
   std::unique_ptr<std::promise<void>> command_promise_{};
 };
 
+class TestAclManager : public AclManager {
+ public:
+  LeAddressRotator* GetLeAddressRotator() override {
+    return le_address_rotator_;
+  }
+
+ protected:
+  void Start() override {
+    thread_ = new os::Thread("thread", os::Thread::Priority::NORMAL);
+    handler_ = new os::Handler(thread_);
+    Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
+    le_address_rotator_ = new LeAddressRotator(
+        common::Bind(&TestAclManager::SetRandomAddress, common::Unretained(this)), handler_, address);
+  }
+
+  void Stop() override {
+    delete le_address_rotator_;
+    handler_->Clear();
+    delete handler_;
+    delete thread_;
+  }
+
+  void ListDependencies(ModuleList* list) override {}
+
+  void SetRandomAddress(Address address) {}
+
+  os::Thread* thread_;
+  os::Handler* handler_;
+  LeAddressRotator* le_address_rotator_;
+};
+
 class LeScanningManagerTest : public ::testing::Test {
  protected:
   void SetUp() override {
     test_hci_layer_ = new TestHciLayer;  // Ownership is transferred to registry
     test_controller_ = new TestController;
     test_controller_->AddSupported(param_opcode_);
+    test_acl_manager_ = new TestAclManager;
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
     fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
+    fake_registry_.InjectTestModule(&AclManager::Factory, test_acl_manager_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
     mock_callbacks_.handler_ = client_handler_;
@@ -206,6 +240,7 @@ class LeScanningManagerTest : public ::testing::Test {
   TestModuleRegistry fake_registry_;
   TestHciLayer* test_hci_layer_ = nullptr;
   TestController* test_controller_ = nullptr;
+  TestAclManager* test_acl_manager_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
   LeScanningManager* le_scanning_manager = nullptr;
   os::Handler* client_handler_ = nullptr;
