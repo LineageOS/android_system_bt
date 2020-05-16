@@ -1,0 +1,14 @@
+cc_fuzz {
+    name: "libosi_fuzz_array",
+    defaults: ["libosi_fuzz_defaults"],
+    host_supported: true,
+    srcs: [
+        "fuzz_array.cc",
+    ],
+    shared_libs: [
+        "liblog",
+    ],
+    static_libs: [
+        "libosi",
+    ],
+}
