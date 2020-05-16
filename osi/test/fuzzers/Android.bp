@@ -1,0 +1,8 @@
+cc_defaults {
+    name: "libosi_fuzz_defaults",
+    defaults: ["fluoride_osi_defaults"],
+    host_supported: true,
+    static_libs: [
+        "libosi",
+    ],
+}

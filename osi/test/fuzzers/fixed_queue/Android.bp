@@ -1,0 +1,15 @@
+cc_fuzz {
+    name: "libosi_fuzz_fixed_queue",
+    defaults: ["libosi_fuzz_defaults"],
+    host_supported: true,
+    srcs: [
+        "fuzz_fixed_queue.cc",
+    ],
+    shared_libs: [
+        "liblog",
+        "libcutils",
+    ],
+    static_libs: [
+        "libosi",
+    ],
+}
