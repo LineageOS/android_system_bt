@@ -16,6 +16,7 @@
 #include <memory>
 #include <mutex>
 
+#include "hci/acl_manager.h"
 #include "hci/controller.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
@@ -75,15 +76,22 @@ ExtendedAdvertisingConfig::ExtendedAdvertisingConfig(const AdvertisingConfig& co
   operation = Operation::COMPLETE_ADVERTISEMENT;
 }
 
-struct LeAdvertisingManager::impl {
+struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressRotatorCallback {
   impl(Module* module) : module_(module), le_advertising_interface_(nullptr), num_instances_(0) {}
 
-  void start(os::Handler* handler, hci::HciLayer* hci_layer, hci::Controller* controller) {
+  ~impl() {
+    le_address_rotator_->Unregister(this);
+  }
+
+  void start(os::Handler* handler, hci::HciLayer* hci_layer, hci::Controller* controller,
+             hci::AclManager* acl_manager) {
     module_handler_ = handler;
     hci_layer_ = hci_layer;
     controller_ = controller;
+    le_address_rotator_ = acl_manager->GetLeAddressRotator();
     le_advertising_interface_ =
         hci_layer_->GetLeAdvertisingInterface(module_handler_->BindOn(this, &LeAdvertisingManager::impl::handle_event));
+    le_address_rotator_->Register(this);
     num_instances_ = controller_->GetControllerLeNumberOfSupportedAdverisingSets();
     enabled_sets_ = std::vector<EnabledSet>(num_instances_);
     if (controller_->IsSupported(hci::OpCode::LE_SET_EXTENDED_ADVERTISING_PARAMETERS)) {
@@ -319,6 +327,24 @@ struct LeAdvertisingManager::impl {
     advertising_sets_.erase(advertising_set);
   }
 
+  void OnPause() override {
+    if (!advertising_sets_.empty()) {
+      le_advertising_interface_->EnqueueCommand(
+          hci::LeSetAdvertisingEnableBuilder::Create(Enable::DISABLED),
+          module_handler_->BindOnce(impl::check_status<LeSetAdvertisingEnableCompleteView>));
+    }
+    le_address_rotator_->AckPause(this);
+  }
+
+  void OnResume() override {
+    if (!advertising_sets_.empty()) {
+      le_advertising_interface_->EnqueueCommand(
+          hci::LeSetAdvertisingEnableBuilder::Create(Enable::ENABLED),
+          module_handler_->BindOnce(impl::check_status<LeSetAdvertisingEnableCompleteView>));
+    }
+    le_address_rotator_->AckResume(this);
+  }
+
   common::Callback<void(Address, AddressType)> scan_callback_;
   common::Callback<void(ErrorCode, uint8_t, uint8_t)> set_terminated_callback_;
   os::Handler* registered_handler_{nullptr};
@@ -328,6 +354,7 @@ struct LeAdvertisingManager::impl {
   hci::Controller* controller_;
   hci::LeAdvertisingInterface* le_advertising_interface_;
   std::map<AdvertiserId, Advertiser> advertising_sets_;
+  hci::LeAddressRotator* le_address_rotator_;
 
   std::mutex id_mutex_;
   size_t num_instances_;
@@ -353,10 +380,12 @@ LeAdvertisingManager::LeAdvertisingManager() {
 void LeAdvertisingManager::ListDependencies(ModuleList* list) {
   list->add<hci::HciLayer>();
   list->add<hci::Controller>();
+  list->add<hci::AclManager>();
 }
 
 void LeAdvertisingManager::Start() {
-  pimpl_->start(GetHandler(), GetDependency<hci::HciLayer>(), GetDependency<hci::Controller>());
+  pimpl_->start(GetHandler(), GetDependency<hci::HciLayer>(), GetDependency<hci::Controller>(),
+                GetDependency<AclManager>());
 }
 
 void LeAdvertisingManager::Stop() {
