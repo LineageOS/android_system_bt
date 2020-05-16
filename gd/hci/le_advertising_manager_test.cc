@@ -25,6 +25,7 @@
 #include <gtest/gtest.h>
 
 #include "common/bind.h"
+#include "hci/acl_manager.h"
 #include "hci/address.h"
 #include "hci/controller.h"
 #include "hci/hci_layer.h"
@@ -201,14 +202,58 @@ class TestHciLayer : public HciLayer {
   SubOcf command_sub_ocf_;
 };
 
+class TestLeAddressRotator : public LeAddressRotator {
+ public:
+  TestLeAddressRotator(common::Callback<void(Address address)> set_random_address, os::Handler* handler,
+                       Address public_address)
+      : LeAddressRotator(set_random_address, handler, public_address) {}
+
+  void Register(LeAddressRotatorCallback* callback) override {}
+
+  void Unregister(LeAddressRotatorCallback* callback) override {}
+};
+
+class TestAclManager : public AclManager {
+ public:
+  LeAddressRotator* GetLeAddressRotator() override {
+    return test_le_address_rotator_;
+  }
+
+ protected:
+  void Start() override {
+    thread_ = new os::Thread("thread", os::Thread::Priority::NORMAL);
+    handler_ = new os::Handler(thread_);
+    Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
+    test_le_address_rotator_ = new TestLeAddressRotator(
+        common::Bind(&TestAclManager::SetRandomAddress, common::Unretained(this)), handler_, address);
+  }
+
+  void Stop() override {
+    delete test_le_address_rotator_;
+    handler_->Clear();
+    delete handler_;
+    delete thread_;
+  }
+
+  void ListDependencies(ModuleList* list) override {}
+
+  void SetRandomAddress(Address address) {}
+
+  os::Thread* thread_;
+  os::Handler* handler_;
+  TestLeAddressRotator* test_le_address_rotator_;
+};
+
 class LeAdvertisingManagerTest : public ::testing::Test {
  protected:
   void SetUp() override {
     test_hci_layer_ = new TestHciLayer;  // Ownership is transferred to registry
     test_controller_ = new TestController;
+    test_acl_manager_ = new TestAclManager;
     test_controller_->AddSupported(param_opcode_);
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
     fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
+    fake_registry_.InjectTestModule(&AclManager::Factory, test_acl_manager_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
     ASSERT_NE(client_handler_, nullptr);
     test_controller_->num_advertisers = 1;
@@ -223,6 +268,7 @@ class LeAdvertisingManagerTest : public ::testing::Test {
   TestModuleRegistry fake_registry_;
   TestHciLayer* test_hci_layer_ = nullptr;
   TestController* test_controller_ = nullptr;
+  TestAclManager* test_acl_manager_ = nullptr;
   os::Thread& thread_ = fake_registry_.GetTestThread();
   LeAdvertisingManager* le_advertising_manager_ = nullptr;
   os::Handler* client_handler_ = nullptr;
