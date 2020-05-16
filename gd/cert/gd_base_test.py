@@ -75,13 +75,15 @@ class GdBaseTestClass(BaseTestClass):
                 "Failed to make root canal ports available")
 
             # Start root canal process
+            rootcanal_cmd = [
+                rootcanal,
+                str(rootcanal_test_port),
+                str(rootcanal_hci_port),
+                str(rootcanal_link_layer_port)
+            ]
+            self.log.debug("Running %s" % " ".join(rootcanal_cmd))
             self.rootcanal_process = subprocess.Popen(
-                [
-                    rootcanal,
-                    str(rootcanal_test_port),
-                    str(rootcanal_hci_port),
-                    str(rootcanal_link_layer_port)
-                ],
+                rootcanal_cmd,
                 cwd=get_gd_root(),
                 env=os.environ.copy(),
                 stdout=subprocess.PIPE,
