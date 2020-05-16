@@ -1,0 +1,21 @@
+cc_fuzz {
+    name: "libosi_fuzz_alarm",
+    defaults: ["libosi_fuzz_defaults"],
+    host_supported: false,
+    srcs: [
+        "fuzz_alarm.cc",
+    ],
+    shared_libs: [
+        "liblog",
+        "libprotobuf-cpp-lite",
+        "libcutils",
+        "libcrypto",
+    ],
+    static_libs: [
+        "libbt-common",
+        "libbt-protos-lite",
+        "libgmock",
+        "libosi",
+    ],
+    cflags: [ "-Wno-unused-function" ],
+}
