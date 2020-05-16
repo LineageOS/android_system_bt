@@ -452,11 +452,9 @@ class GdAndroidDevice(GdDeviceBase):
     def setup(self):
         logging.info(
             "Setting up device %s %s" % (self.label, self.serial_number))
+        asserts.assert_true(self.adb.ensure_root(),
+                            "device %s cannot run as root", self.serial_number)
         self.ensure_verity_disabled()
-        asserts.assert_true(
-            self.adb.ensure_root(),
-            msg="device %s cannot run as root after enabling verity" %
-            self.serial_number)
 
         # Try freeing ports and ignore results
         self.cleanup_port_forwarding()
@@ -584,7 +582,6 @@ class GdAndroidDevice(GdDeviceBase):
             push_timeout: How long to wait for the push to finish in seconds
         """
         try:
-            self.adb.ensure_root()
             self.ensure_verity_disabled()
             out = self.adb.push(
                 '%s %s' % (src_file_path, dst_file_path), timeout=push_timeout)
@@ -661,8 +658,6 @@ class GdAndroidDevice(GdDeviceBase):
         this only works on debuggable builds.
         """
         logging.debug("Disabling verity and remount for %s", self.serial_number)
-        asserts.assert_true(self.adb.ensure_root(),
-                            "device %s cannot run as root", self.serial_number)
         # The below properties will only exist if verity has been enabled.
         system_verity = self.adb.getprop('partition.system.verified')
         vendor_verity = self.adb.getprop('partition.vendor.verified')
@@ -697,6 +692,9 @@ class GdAndroidDevice(GdDeviceBase):
                 break
         minutes_left = timeout_minutes - (time.time() - timeout_start) / 60.0
         self.wait_for_boot_completion(timeout_minutes=minutes_left)
+        asserts.assert_true(self.adb.ensure_root(),
+                            "device %s cannot run as root after reboot",
+                            self.serial_number)
 
     def wait_for_boot_completion(self, timeout_minutes=15.0):
         """
