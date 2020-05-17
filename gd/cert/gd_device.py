@@ -15,6 +15,7 @@
 #   limitations under the License.
 
 from abc import ABC
+from datetime import datetime
 import inspect
 import logging
 import os
@@ -204,6 +205,7 @@ class GdDeviceBase(ABC):
             signal_socket.listen(1)
 
             # Start backing process
+            logging.debug("Running %s" % " ".join(self.cmd))
             self.backing_process = subprocess.Popen(
                 self.cmd,
                 cwd=get_gd_root(),
@@ -452,11 +454,9 @@ class GdAndroidDevice(GdDeviceBase):
     def setup(self):
         logging.info(
             "Setting up device %s %s" % (self.label, self.serial_number))
+        asserts.assert_true(self.adb.ensure_root(),
+                            "device %s cannot run as root", self.serial_number)
         self.ensure_verity_disabled()
-        asserts.assert_true(
-            self.adb.ensure_root(),
-            msg="device %s cannot run as root after enabling verity" %
-            self.serial_number)
 
         # Try freeing ports and ignore results
         self.cleanup_port_forwarding()
@@ -489,6 +489,7 @@ class GdAndroidDevice(GdDeviceBase):
             "adb", "-s", self.serial_number, "logcat", "-T", "1", "-v", "year",
             "-v", "uid"
         ]
+        logging.debug("Running %s", " ".join(self.logcat_cmd))
         self.logcat_process = subprocess.Popen(
             self.logcat_cmd,
             stdout=subprocess.PIPE,
@@ -508,6 +509,8 @@ class GdAndroidDevice(GdDeviceBase):
             color=self.terminal_color)
 
         # Done run parent setup
+        logging.info("Done preparation for %s, starting backing process" %
+                     self.serial_number)
         super().setup()
 
     def teardown(self):
@@ -563,9 +566,9 @@ class GdAndroidDevice(GdDeviceBase):
         host_tz = time.strftime("%z")
         if device_tz != host_tz:
             target_timezone = utils.get_timezone_olson_id()
-            logging.info("Device timezone %s does not match host timezone %s, "
-                         "syncing them by setting timezone to %s" %
-                         (device_tz, host_tz, target_timezone))
+            logging.debug("Device timezone %s does not match host timezone %s, "
+                          "syncing them by setting timezone to %s" %
+                          (device_tz, host_tz, target_timezone))
             self.adb.shell("setprop persist.sys.timezone %s" % target_timezone)
             self.reboot()
             device_tz = self.adb.shell("date +%z")
@@ -574,6 +577,22 @@ class GdAndroidDevice(GdDeviceBase):
                 "Device timezone %s still does not match host "
                 "timezone %s after reset" % (device_tz, host_tz))
         self.adb.shell("date %s" % time.strftime("%m%d%H%M%Y.%S"))
+        datetime_format = "%Y-%m-%dZ%H:%M:%S%z"
+        host_time = datetime.today()
+        try:
+            device_time = datetime.strptime(
+                self.adb.shell("date +'%s'" % datetime_format), datetime_format)
+        except ValueError:
+            asserts.fail("Failed to get time after sync")
+            return
+        max_delta_seconds = 0.5
+        asserts.assert_almost_equal(
+            (device_time - host_time).total_seconds(),
+            0,
+            msg="Device time %s and host time %s off by >%dms after sync" %
+            (device_time.isoformat, host_time.isoformat(),
+             int(max_delta_seconds * 1000)),
+            delta=max_delta_seconds)
 
     def push_or_die(self, src_file_path, dst_file_path, push_timeout=300):
         """Pushes a file to the Android device
@@ -584,8 +603,6 @@ class GdAndroidDevice(GdDeviceBase):
             push_timeout: How long to wait for the push to finish in seconds
         """
         try:
-            self.adb.ensure_root()
-            self.ensure_verity_disabled()
             out = self.adb.push(
                 '%s %s' % (src_file_path, dst_file_path), timeout=push_timeout)
             if 'error' in out:
@@ -661,8 +678,6 @@ class GdAndroidDevice(GdDeviceBase):
         this only works on debuggable builds.
         """
         logging.debug("Disabling verity and remount for %s", self.serial_number)
-        asserts.assert_true(self.adb.ensure_root(),
-                            "device %s cannot run as root", self.serial_number)
         # The below properties will only exist if verity has been enabled.
         system_verity = self.adb.getprop('partition.system.verified')
         vendor_verity = self.adb.getprop('partition.vendor.verified')
@@ -697,6 +712,9 @@ class GdAndroidDevice(GdDeviceBase):
                 break
         minutes_left = timeout_minutes - (time.time() - timeout_start) / 60.0
         self.wait_for_boot_completion(timeout_minutes=minutes_left)
+        asserts.assert_true(self.adb.ensure_root(),
+                            "device %s cannot run as root after reboot",
+                            self.serial_number)
 
     def wait_for_boot_completion(self, timeout_minutes=15.0):
         """

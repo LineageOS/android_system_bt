@@ -1,0 +1,14 @@
+cc_fuzz {
+    name: "libosi_fuzz_allocation_tracker",
+    defaults: ["libosi_fuzz_defaults"],
+    host_supported: true,
+    srcs: [
+        "fuzz_allocation_tracker.cc",
+    ],
+    shared_libs: [
+        "liblog",
+    ],
+    static_libs: [
+        "libosi",
+    ],
+}

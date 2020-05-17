@@ -31,6 +31,14 @@ class LeAclManagerTest(GdBaseTestClass):
     def setup_class(self):
         super().setup_class(dut_module='HCI_INTERFACES', cert_module='HCI')
 
+    def setup_test(self):
+        super().setup_test()
+        dut_address = common.BluetoothAddressWithType(
+            address=common.BluetoothAddress(
+                address=bytes(b'0D:05:04:03:02:01')),
+            type=common.RANDOM_DEVICE_ADDRESS)
+        self.dut.hci_le_acl_manager.SetInitiatorAddress(dut_address)
+
     def register_for_event(self, event_code):
         msg = hci_facade.EventCodeMsg(code=int(event_code))
         self.cert.hci.RegisterEventHandler(msg)

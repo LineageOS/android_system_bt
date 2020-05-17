@@ -122,6 +122,13 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
     Address address;
     ASSERT(Address::FromString(request->address().address(), address));
     acl_manager_->SetLeInitiatorAddress(AddressWithType(address, static_cast<AddressType>(request->type())));
+    AddressWithType address_with_type(Address::kEmpty, AddressType::RANDOM_DEVICE_ADDRESS);
+    crypto_toolbox::Octet16 irk = {};
+    auto interval_min_ms = std::chrono::milliseconds(7 * 60 * 1000);
+    auto interval_random_part_max_ms = std::chrono::milliseconds(15 * 60 * 1000);
+    acl_manager_->SetPrivacyPolicyForInitiatorAddress(LeAddressRotator::AddressPolicy::USE_RESOLVABLE_ADDRESS,
+                                                      address_with_type, irk, interval_min_ms,
+                                                      interval_random_part_max_ms);
     return ::grpc::Status::OK;
   }
 
