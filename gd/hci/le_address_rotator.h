@@ -63,7 +63,9 @@ class LeAddressRotator {
 
  private:
   void pause_registered_clients();
+  void ack_pause(LeAddressRotatorCallback* callback);
   void resume_registered_clients();
+  void ack_resume(LeAddressRotatorCallback* callback);
   void rotate_random_address();
   hci::Address generate_rpa(const crypto_toolbox::Octet16& irk, std::array<uint8_t, 8> prand);
   hci::Address generate_nrpa();
