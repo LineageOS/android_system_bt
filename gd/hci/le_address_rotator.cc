@@ -79,20 +79,11 @@ void LeAddressRotator::Unregister(LeAddressRotatorCallback* callback) {
 }
 
 void LeAddressRotator::AckPause(LeAddressRotatorCallback* callback) {
-  ASSERT(registered_clients_.find(callback) != registered_clients_.end());
-  registered_clients_.find(callback)->second = ClientState::PAUSED;
-  for (auto client : registered_clients_) {
-    if (client.second != ClientState::PAUSED) {
-      // make sure all client paused
-      return;
-    }
-  }
-  rotate_random_address();
+  handler_->Post(common::BindOnce(&LeAddressRotator::ack_pause, common::Unretained(this), callback));
 }
 
 void LeAddressRotator::AckResume(LeAddressRotatorCallback* callback) {
-  ASSERT(registered_clients_.find(callback) != registered_clients_.end());
-  registered_clients_.find(callback)->second = ClientState::RESUMED;
+  handler_->Post(common::BindOnce(&LeAddressRotator::ack_resume, common::Unretained(this), callback));
 }
 
 void LeAddressRotator::OnLeSetRandomAddressComplete(bool success) {
@@ -136,12 +127,29 @@ void LeAddressRotator::pause_registered_clients() {
   }
 }
 
+void LeAddressRotator::ack_pause(LeAddressRotatorCallback* callback) {
+  ASSERT(registered_clients_.find(callback) != registered_clients_.end());
+  registered_clients_.find(callback)->second = ClientState::PAUSED;
+  for (auto client : registered_clients_) {
+    if (client.second != ClientState::PAUSED) {
+      // make sure all client paused
+      return;
+    }
+  }
+  rotate_random_address();
+}
+
 void LeAddressRotator::resume_registered_clients() {
   std::lock_guard<std::mutex> lock(mutex_);
   for (auto client : registered_clients_) {
     client.second = ClientState::WAITING_FOR_RESUME;
     client.first->OnResume();
   }
+}
+
+void LeAddressRotator::ack_resume(LeAddressRotatorCallback* callback) {
+  ASSERT(registered_clients_.find(callback) != registered_clients_.end());
+  registered_clients_.find(callback)->second = ClientState::RESUMED;
 }
 
 void LeAddressRotator::rotate_random_address() {
