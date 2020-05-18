@@ -93,23 +93,19 @@ def decode_snooz_v1(decompressed, last_timestamp_ms):
     first_timestamp_ms = last_timestamp_ms + 0x00dcddb30f2f8000
     offset = 0
     while offset < len(decompressed):
-        length, delta_time_ms, type = struct.unpack_from(
-            '=HIb', decompressed, offset)
+        length, delta_time_ms, type = struct.unpack_from('=HIb', decompressed, offset)
         offset += 7 + length - 1
         first_timestamp_ms -= delta_time_ms
 
     # Second pass does the actual writing out to stdout.
     offset = 0
     while offset < len(decompressed):
-        length, delta_time_ms, type = struct.unpack_from(
-            '=HIb', decompressed, offset)
+        length, delta_time_ms, type = struct.unpack_from('=HIb', decompressed, offset)
         first_timestamp_ms += delta_time_ms
         offset += 7
         sys.stdout.write(struct.pack('>II', length, length))
         sys.stdout.write(struct.pack('>II', type_to_direction(type), 0))
-        sys.stdout.write(
-            struct.pack('>II', (first_timestamp_ms >> 32),
-                        (first_timestamp_ms & 0xFFFFFFFF)))
+        sys.stdout.write(struct.pack('>II', (first_timestamp_ms >> 32), (first_timestamp_ms & 0xFFFFFFFF)))
         sys.stdout.write(type_to_hci(type))
         sys.stdout.write(decompressed[offset:offset + length - 1])
         offset += length - 1
@@ -124,23 +120,19 @@ def decode_snooz_v2(decompressed, last_timestamp_ms):
     first_timestamp_ms = last_timestamp_ms + 0x00dcddb30f2f8000
     offset = 0
     while offset < len(decompressed):
-        length, packet_length, delta_time_ms, snooz_type = struct.unpack_from(
-            '=HHIb', decompressed, offset)
+        length, packet_length, delta_time_ms, snooz_type = struct.unpack_from('=HHIb', decompressed, offset)
         offset += 9 + length - 1
         first_timestamp_ms -= delta_time_ms
 
     # Second pass does the actual writing out to stdout.
     offset = 0
     while offset < len(decompressed):
-        length, packet_length, delta_time_ms, snooz_type = struct.unpack_from(
-            '=HHIb', decompressed, offset)
+        length, packet_length, delta_time_ms, snooz_type = struct.unpack_from('=HHIb', decompressed, offset)
         first_timestamp_ms += delta_time_ms
         offset += 9
         sys.stdout.write(struct.pack('>II', packet_length, length))
         sys.stdout.write(struct.pack('>II', type_to_direction(snooz_type), 0))
-        sys.stdout.write(
-            struct.pack('>II', (first_timestamp_ms >> 32),
-                        (first_timestamp_ms & 0xFFFFFFFF)))
+        sys.stdout.write(struct.pack('>II', (first_timestamp_ms >> 32), (first_timestamp_ms & 0xFFFFFFFF)))
         sys.stdout.write(type_to_hci(snooz_type))
         sys.stdout.write(decompressed[offset:offset + length - 1])
         offset += length - 1

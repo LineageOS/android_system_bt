@@ -43,14 +43,13 @@ class PyLeAclManagerAclConnection(IEventStream, Closable):
         self.our_acl_stream = acl_stream
 
         if remote_addr:
-            remote_addr_bytes = bytes(
-                remote_addr.address.address,
-                'utf8') if type(remote_addr.address.address) is str else bytes(remote_addr.address.address)
+            remote_addr_bytes = bytes(remote_addr.address.address,
+                                      'utf8') if type(remote_addr.address.address) is str else bytes(
+                                          remote_addr.address.address)
             self.connection_event_stream = EventStream(
                 self.device.hci_le_acl_manager.CreateConnection(
                     le_acl_manager_facade.LeConnectionMsg(
-                        address_type=int(remote_addr.type),
-                        address=remote_addr_bytes)))
+                        address_type=int(remote_addr.type), address=remote_addr_bytes)))
         else:
             self.connection_event_stream = None
 
@@ -64,8 +63,7 @@ class PyLeAclManagerAclConnection(IEventStream, Closable):
 
     def send(self, data):
         self.device.hci_le_acl_manager.SendAclData(
-            le_acl_manager_facade.LeAclData(
-                handle=self.handle, payload=bytes(data)))
+            le_acl_manager_facade.LeAclData(handle=self.handle, payload=bytes(data)))
 
     def get_event_queue(self):
         return self.our_acl_stream.get_event_queue()
@@ -80,8 +78,7 @@ class PyLeAclManager(Closable):
         """
         self.device = device
 
-        self.le_acl_stream = EventStream(
-            self.device.hci_le_acl_manager.FetchAclData(empty_proto.Empty()))
+        self.le_acl_stream = EventStream(self.device.hci_le_acl_manager.FetchAclData(empty_proto.Empty()))
         self.incoming_connection_stream = None
 
     def close(self):
@@ -94,16 +91,13 @@ class PyLeAclManager(Closable):
 
     def listen_for_incoming_connections(self):
         self.incoming_connection_stream = EventStream(
-            self.device.hci_le_acl_manager.FetchIncomingConnection(
-                empty_proto.Empty()))
+            self.device.hci_le_acl_manager.FetchIncomingConnection(empty_proto.Empty()))
 
     def initiate_connection(self, remote_addr):
-        return PyLeAclManagerAclConnection(self.device, self.le_acl_stream,
-                                           remote_addr, None)
+        return PyLeAclManagerAclConnection(self.device, self.le_acl_stream, remote_addr, None)
 
     def accept_connection(self):
         connection_complete = HciCaptures.LeConnectionCompleteCapture()
         assertThat(self.incoming_connection_stream).emits(connection_complete)
         handle = connection_complete.get().GetConnectionHandle()
-        return PyLeAclManagerAclConnection(self.device, self.le_acl_stream,
-                                           None, handle)
+        return PyLeAclManagerAclConnection(self.device, self.le_acl_stream, None, handle)

@@ -26,10 +26,8 @@ class PyHal(Closable):
     def __init__(self, device):
         self.device = device
 
-        self.hci_event_stream = EventStream(
-            self.device.hal.FetchHciEvent(empty_proto.Empty()))
-        self.acl_stream = EventStream(
-            self.device.hal.FetchHciAcl(empty_proto.Empty()))
+        self.hci_event_stream = EventStream(self.device.hal.FetchHciEvent(empty_proto.Empty()))
+        self.acl_stream = EventStream(self.device.hal.FetchHciAcl(empty_proto.Empty()))
 
         # We don't deal with SCO for now
 
@@ -44,8 +42,7 @@ class PyHal(Closable):
         return self.acl_stream
 
     def send_hci_command(self, command):
-        self.device.hal.SendHciCommand(
-            hal_facade.HciCommandPacket(payload=bytes(command)))
+        self.device.hal.SendHciCommand(hal_facade.HciCommandPacket(payload=bytes(command)))
 
     def send_acl(self, acl):
         self.device.hal.SendHciAcl(hal_facade.HciAclPacket(payload=bytes(acl)))

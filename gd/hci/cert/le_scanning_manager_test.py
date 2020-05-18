@@ -32,8 +32,7 @@ from facade import common_pb2 as common
 class LeScanningManagerTest(GdBaseTestClass):
 
     def setup_class(self):
-        super().setup_class(
-            dut_module='HCI_INTERFACES', cert_module='HCI_INTERFACES')
+        super().setup_class(dut_module='HCI_INTERFACES', cert_module='HCI_INTERFACES')
 
     def register_for_event(self, event_code):
         msg = hci_facade.EventCodeMsg(code=int(event_code))
@@ -54,39 +53,29 @@ class LeScanningManagerTest(GdBaseTestClass):
     def test_le_ad_scan_dut_scans(self):
         with EventStream(
                 # DUT Scans
-                self.dut.hci_le_scanning_manager.StartScan(
-                    empty_proto.Empty())) as advertising_event_stream:
+                self.dut.hci_le_scanning_manager.StartScan(empty_proto.Empty())) as advertising_event_stream:
 
             # CERT Advertises
             gap_name = hci_packets.GapData()
             gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
             gap_name.data = list(bytes(b'Im_The_CERT!'))
-            gap_data = le_advertising_facade.GapDataMsg(
-                data=bytes(gap_name.Serialize()))
+            gap_data = le_advertising_facade.GapDataMsg(data=bytes(gap_name.Serialize()))
             config = le_advertising_facade.AdvertisingConfig(
                 advertisement=[gap_data],
-                random_address=common.BluetoothAddress(
-                    address=bytes(b'A6:A5:A4:A3:A2:A1')),
+                random_address=common.BluetoothAddress(address=bytes(b'A6:A5:A4:A3:A2:A1')),
                 interval_min=512,
                 interval_max=768,
                 event_type=le_advertising_facade.AdvertisingEventType.ADV_IND,
                 address_type=common.RANDOM_DEVICE_ADDRESS,
                 peer_address_type=common.PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
-                peer_address=common.BluetoothAddress(
-                    address=bytes(b'0C:05:04:03:02:01')),
+                peer_address=common.BluetoothAddress(address=bytes(b'0C:05:04:03:02:01')),
                 channel_map=7,
-                filter_policy=le_advertising_facade.AdvertisingFilterPolicy.
-                ALL_DEVICES)
-            request = le_advertising_facade.CreateAdvertiserRequest(
-                config=config)
+                filter_policy=le_advertising_facade.AdvertisingFilterPolicy.ALL_DEVICES)
+            request = le_advertising_facade.CreateAdvertiserRequest(config=config)
 
-            create_response = self.cert.hci_le_advertising_manager.CreateAdvertiser(
-                request)
+            create_response = self.cert.hci_le_advertising_manager.CreateAdvertiser(request)
 
-            advertising_event_stream.assert_event_occurs(
-                lambda packet: b'Im_The_CERT' in packet.event)
+            advertising_event_stream.assert_event_occurs(lambda packet: b'Im_The_CERT' in packet.event)
 
-            remove_request = le_advertising_facade.RemoveAdvertiserRequest(
-                advertiser_id=create_response.advertiser_id)
-            self.cert.hci_le_advertising_manager.RemoveAdvertiser(
-                remove_request)
+            remove_request = le_advertising_facade.RemoveAdvertiserRequest(advertiser_id=create_response.advertiser_id)
+            self.cert.hci_le_advertising_manager.RemoveAdvertiser(remove_request)
