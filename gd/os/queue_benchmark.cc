@@ -14,10 +14,9 @@
  * limitations under the License.
  */
 
-#include "benchmark/benchmark.h"
-
 #include <future>
 
+#include "benchmark/benchmark.h"
 #include "os/handler.h"
 #include "os/queue.h"
 #include "os/thread.h"

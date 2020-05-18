@@ -17,7 +17,9 @@
  ******************************************************************************/
 
 #include "common/link_key.h"
+
 #include <gtest/gtest.h>
+
 #include "os/log.h"
 
 using bluetooth::common::LinkKey;
@@ -25,8 +27,8 @@ using bluetooth::common::LinkKey;
 static const char* test_link_key = "4c68384139f574d836bcf34e9dfb01bf\0";
 
 TEST(LinkKeyUnittest, test_constructor_array) {
-  uint8_t data[LinkKey::kLength] = {0x4c, 0x87, 0x49, 0xe1, 0x2e, 0x55, 0x0f, 0x7f,
-                                    0x60, 0x8b, 0x4f, 0x96, 0xd7, 0xc5, 0xbc, 0x2a};
+  uint8_t data[LinkKey::kLength] = {
+      0x4c, 0x87, 0x49, 0xe1, 0x2e, 0x55, 0x0f, 0x7f, 0x60, 0x8b, 0x4f, 0x96, 0xd7, 0xc5, 0xbc, 0x2a};
 
   LinkKey link_key(data);
 

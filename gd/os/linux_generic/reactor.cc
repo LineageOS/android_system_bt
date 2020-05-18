@@ -20,6 +20,7 @@
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <unistd.h>
+
 #include <algorithm>
 #include <cerrno>
 #include <cinttypes>
@@ -43,8 +44,11 @@ using common::Closure;
 class Reactor::Reactable {
  public:
   Reactable(int fd, Closure on_read_ready, Closure on_write_ready)
-      : fd_(fd), on_read_ready_(std::move(on_read_ready)), on_write_ready_(std::move(on_write_ready)),
-        is_executing_(false), removed_(false) {}
+      : fd_(fd),
+        on_read_ready_(std::move(on_read_ready)),
+        on_write_ready_(std::move(on_write_ready)),
+        is_executing_(false),
+        removed_(false) {}
   const int fd_;
   Closure on_read_ready_;
   Closure on_write_ready_;
@@ -54,10 +58,7 @@ class Reactor::Reactable {
   std::unique_ptr<std::promise<void>> finished_promise_;
 };
 
-Reactor::Reactor()
-  : epoll_fd_(0),
-    control_fd_(0),
-    is_running_(false) {
+Reactor::Reactor() : epoll_fd_(0), control_fd_(0), is_running_(false) {
   RUN_NO_INTR(epoll_fd_ = epoll_create1(EPOLL_CLOEXEC));
   ASSERT_LOG(epoll_fd_ != -1, "could not create epoll fd: %s", strerror(errno));
 

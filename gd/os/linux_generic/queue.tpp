@@ -61,8 +61,8 @@ void Queue<T>::RegisterDequeue(Handler* handler, DequeueCallback callback) {
   ASSERT(dequeue_.handler_ == nullptr);
   ASSERT(dequeue_.reactable_ == nullptr);
   dequeue_.handler_ = handler;
-  dequeue_.reactable_ = dequeue_.handler_->thread_->GetReactor()->Register(dequeue_.reactive_semaphore_.GetFd(),
-                                                                           callback, base::Closure());
+  dequeue_.reactable_ = dequeue_.handler_->thread_->GetReactor()->Register(
+      dequeue_.reactive_semaphore_.GetFd(), callback, base::Closure());
 }
 
 template <typename T>

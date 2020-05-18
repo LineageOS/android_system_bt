@@ -23,8 +23,8 @@
 #include "os/handler.h"
 #include "os/thread.h"
 
-using ::bluetooth::os::Thread;
 using ::bluetooth::os::Handler;
+using ::bluetooth::os::Thread;
 
 namespace bluetooth {
 namespace common {
@@ -52,17 +52,14 @@ class BidiQueueTest : public ::testing::Test {
   Handler* down_handler_;
 };
 
-class A {
-};
+class A {};
 
-class B {
-};
+class B {};
 
 template <typename TA, typename TB>
 class TestBidiQueueEnd {
  public:
-  explicit TestBidiQueueEnd(BidiQueueEnd<TA, TB>* end, Handler* handler)
-      : handler_(handler), end_(end) {}
+  explicit TestBidiQueueEnd(BidiQueueEnd<TA, TB>* end, Handler* handler) : handler_(handler), end_(end) {}
 
   ~TestBidiQueueEnd() {
     handler_->Clear();
@@ -70,8 +67,11 @@ class TestBidiQueueEnd {
 
   std::promise<void>* Send(TA* value) {
     std::promise<void>* promise = new std::promise<void>();
-    handler_->Post(BindOnce(&TestBidiQueueEnd<TA, TB>::handle_send, common::Unretained(this), common::Unretained(value),
-                            common::Unretained(promise)));
+    handler_->Post(BindOnce(
+        &TestBidiQueueEnd<TA, TB>::handle_send,
+        common::Unretained(this),
+        common::Unretained(value),
+        common::Unretained(promise)));
     return promise;
   }
 
@@ -84,8 +84,13 @@ class TestBidiQueueEnd {
   }
 
   void handle_send(TA* value, std::promise<void>* promise) {
-    end_->RegisterEnqueue(handler_, Bind(&TestBidiQueueEnd<TA, TB>::handle_register_enqueue, common::Unretained(this),
-                                         common::Unretained(value), common::Unretained(promise)));
+    end_->RegisterEnqueue(
+        handler_,
+        Bind(
+            &TestBidiQueueEnd<TA, TB>::handle_register_enqueue,
+            common::Unretained(this),
+            common::Unretained(value),
+            common::Unretained(promise)));
   }
 
   std::unique_ptr<TA> handle_register_enqueue(TA* value, std::promise<void>* promise) {
@@ -95,8 +100,10 @@ class TestBidiQueueEnd {
   }
 
   void handle_receive(std::promise<TB*>* promise) {
-    end_->RegisterDequeue(handler_, Bind(&TestBidiQueueEnd<TA, TB>::handle_register_dequeue, common::Unretained(this),
-                                         common::Unretained(promise)));
+    end_->RegisterDequeue(
+        handler_,
+        Bind(
+            &TestBidiQueueEnd<TA, TB>::handle_register_dequeue, common::Unretained(this), common::Unretained(promise)));
   }
 
   void handle_register_dequeue(std::promise<TB*>* promise) {
@@ -132,5 +139,5 @@ TEST_F(BidiQueueTest, simple_test) {
 }
 
 }  // namespace
-}  // namespace os
+}  // namespace common
 }  // namespace bluetooth

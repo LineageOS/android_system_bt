@@ -17,8 +17,9 @@
 #include "os/alarm.h"
 
 #include <sys/timerfd.h>
-#include <cstring>
 #include <unistd.h>
+
+#include <cstring>
 
 #include "common/bind.h"
 #include "os/linux_generic/linux.h"
@@ -39,8 +40,8 @@ using common::OnceClosure;
 Alarm::Alarm(Handler* handler) : handler_(handler), fd_(TIMERFD_CREATE(ALARM_CLOCK, 0)) {
   ASSERT_LOG(fd_ != -1, "cannot create timerfd: %s", strerror(errno));
 
-  token_ = handler_->thread_->GetReactor()->Register(fd_, common::Bind(&Alarm::on_fire, common::Unretained(this)),
-                                                     Closure());
+  token_ = handler_->thread_->GetReactor()->Register(
+      fd_, common::Bind(&Alarm::on_fire, common::Unretained(this)), Closure());
 }
 
 Alarm::~Alarm() {
@@ -54,10 +55,7 @@ Alarm::~Alarm() {
 void Alarm::Schedule(OnceClosure task, std::chrono::milliseconds delay) {
   std::lock_guard<std::mutex> lock(mutex_);
   long delay_ms = delay.count();
-  itimerspec timer_itimerspec{
-    {/* interval for periodic timer */},
-    {delay_ms / 1000, delay_ms % 1000 * 1000000}
-  };
+  itimerspec timer_itimerspec{{/* interval for periodic timer */}, {delay_ms / 1000, delay_ms % 1000 * 1000000}};
   int result = TIMERFD_SETTIME(fd_, 0, &timer_itimerspec, nullptr);
   ASSERT(result == 0);
 
