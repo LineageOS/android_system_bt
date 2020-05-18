@@ -221,14 +221,6 @@ struct le_impl : public bluetooth::hci::LeAddressRotatorCallback {
     le_address_rotator_->OnLeSetRandomAddressComplete(true);
   }
 
-  std::chrono::milliseconds GetNextPrivateAddrressIntervalMs() {
-    /* 7 minutes minimum, 15 minutes maximum for random address refreshing */
-    const uint64_t interval_min_ms = (7 * 60 * 1000);
-    const uint64_t interval_random_part_max_ms = (8 * 60 * 1000);
-
-    return std::chrono::milliseconds(interval_min_ms + os::GenerateRandom() % interval_random_part_max_ms);
-  }
-
   void SetRandomAddress(Address address) {
     hci_layer_->EnqueueCommand(
         hci::LeSetRandomAddressBuilder::Create(address),
