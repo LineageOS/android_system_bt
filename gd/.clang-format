@@ -24,5 +24,8 @@ CommentPragmas: NOLINT:.*
 DerivePointerAlignment: false
 ColumnLimit: 120
 AllowShortFunctionsOnASingleLine: Empty
-ConstructorInitializerAllOnOneLineOrOnePerLine: false
+ConstructorInitializerAllOnOneLineOrOnePerLine: true
 BreakConstructorInitializers: BeforeColon
+AlignAfterOpenBracket: AlwaysBreak
+BinPackArguments: false
+BinPackParameters: false
