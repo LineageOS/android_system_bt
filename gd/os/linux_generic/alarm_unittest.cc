@@ -58,8 +58,8 @@ TEST_F(AlarmTest, schedule) {
   auto before = std::chrono::steady_clock::now();
   int delay_ms = 10;
   int delay_error_ms = 3;
-  alarm_->Schedule(BindOnce(&std::promise<void>::set_value, common::Unretained(&promise)),
-                   std::chrono::milliseconds(delay_ms));
+  alarm_->Schedule(
+      BindOnce(&std::promise<void>::set_value, common::Unretained(&promise)), std::chrono::milliseconds(delay_ms));
   future.get();
   auto after = std::chrono::steady_clock::now();
   auto duration_ms = std::chrono::duration_cast<std::chrono::milliseconds>(after - before);
@@ -81,8 +81,8 @@ TEST_F(AlarmTest, schedule_while_alarm_armed) {
   alarm_->Schedule(BindOnce([]() { ASSERT_TRUE(false) << "Should not happen"; }), std::chrono::milliseconds(1));
   std::promise<void> promise;
   auto future = promise.get_future();
-  alarm_->Schedule(BindOnce(&std::promise<void>::set_value, common::Unretained(&promise)),
-                   std::chrono::milliseconds(10));
+  alarm_->Schedule(
+      BindOnce(&std::promise<void>::set_value, common::Unretained(&promise)), std::chrono::milliseconds(10));
   future.get();
 }
 
