@@ -56,28 +56,22 @@ class GdBaseTestClass(BaseTestClass):
             self.rootcanal_running = True
             # Get root canal binary
             rootcanal = os.path.join(get_gd_root(), "root-canal")
-            asserts.assert_true(
-                os.path.isfile(rootcanal),
-                "Root canal does not exist at %s" % rootcanal)
+            asserts.assert_true(os.path.isfile(rootcanal), "Root canal does not exist at %s" % rootcanal)
 
             # Get root canal log
-            self.rootcanal_logpath = os.path.join(self.log_path_base,
-                                                  'rootcanal_logs.txt')
+            self.rootcanal_logpath = os.path.join(self.log_path_base, 'rootcanal_logs.txt')
             # Make sure ports are available
             rootcanal_config = self.controller_configs['rootcanal']
             rootcanal_test_port = int(rootcanal_config.get("test_port", "6401"))
             rootcanal_hci_port = int(rootcanal_config.get("hci_port", "6402"))
-            rootcanal_link_layer_port = int(
-                rootcanal_config.get("link_layer_port", "6403"))
+            rootcanal_link_layer_port = int(rootcanal_config.get("link_layer_port", "6403"))
             asserts.assert_true(
-                make_ports_available((rootcanal_test_port, rootcanal_hci_port,
-                                      rootcanal_link_layer_port)),
+                make_ports_available((rootcanal_test_port, rootcanal_hci_port, rootcanal_link_layer_port)),
                 "Failed to make root canal ports available")
 
             # Start root canal process
             rootcanal_cmd = [
-                rootcanal,
-                str(rootcanal_test_port),
+                rootcanal, str(rootcanal_test_port),
                 str(rootcanal_hci_port),
                 str(rootcanal_link_layer_port)
             ]
@@ -89,12 +83,9 @@ class GdBaseTestClass(BaseTestClass):
                 stdout=subprocess.PIPE,
                 stderr=subprocess.STDOUT,
                 universal_newlines=True)
+            asserts.assert_true(self.rootcanal_process, msg="Cannot start root-canal at " + str(rootcanal))
             asserts.assert_true(
-                self.rootcanal_process,
-                msg="Cannot start root-canal at " + str(rootcanal))
-            asserts.assert_true(
-                is_subprocess_alive(self.rootcanal_process),
-                msg="root-canal stopped immediately after running")
+                is_subprocess_alive(self.rootcanal_process), msg="root-canal stopped immediately after running")
 
             self.rootcanal_logger = AsyncSubprocessLogger(
                 self.rootcanal_process, [self.rootcanal_logpath],
@@ -107,8 +98,7 @@ class GdBaseTestClass(BaseTestClass):
                 gd_device_config["rootcanal_port"] = str(rootcanal_hci_port)
 
         # Parse and construct GD device objects
-        self.register_controller(
-            importlib.import_module('cert.gd_device'), builtin=True)
+        self.register_controller(importlib.import_module('cert.gd_device'), builtin=True)
         self.dut = self.gd_devices[1]
         self.cert = self.gd_devices[0]
 
@@ -117,17 +107,13 @@ class GdBaseTestClass(BaseTestClass):
             stop_signal = signal.SIGINT
             self.rootcanal_process.send_signal(stop_signal)
             try:
-                return_code = self.rootcanal_process.wait(
-                    timeout=self.SUBPROCESS_WAIT_TIMEOUT_SECONDS)
+                return_code = self.rootcanal_process.wait(timeout=self.SUBPROCESS_WAIT_TIMEOUT_SECONDS)
             except subprocess.TimeoutExpired:
-                logging.error(
-                    "Failed to interrupt root canal via SIGINT, sending SIGKILL"
-                )
+                logging.error("Failed to interrupt root canal via SIGINT, sending SIGKILL")
                 stop_signal = signal.SIGKILL
                 self.rootcanal_process.kill()
                 try:
-                    return_code = self.rootcanal_process.wait(
-                        timeout=self.SUBPROCESS_WAIT_TIMEOUT_SECONDS)
+                    return_code = self.rootcanal_process.wait(timeout=self.SUBPROCESS_WAIT_TIMEOUT_SECONDS)
                 except subprocess.TimeoutExpired:
                     logging.error("Failed to kill root canal")
                     return_code = -65536
@@ -138,12 +124,10 @@ class GdBaseTestClass(BaseTestClass):
     def setup_test(self):
         self.dut.rootservice.StartStack(
             facade_rootservice.StartStackRequest(
-                module_under_test=facade_rootservice.BluetoothModule.Value(
-                    self.dut_module),))
+                module_under_test=facade_rootservice.BluetoothModule.Value(self.dut_module),))
         self.cert.rootservice.StartStack(
             facade_rootservice.StartStackRequest(
-                module_under_test=facade_rootservice.BluetoothModule.Value(
-                    self.cert_module),))
+                module_under_test=facade_rootservice.BluetoothModule.Value(self.cert_module),))
 
         self.dut.wait_channel_ready()
         self.cert.wait_channel_ready()
@@ -162,22 +146,17 @@ class GdBaseTestClass(BaseTestClass):
             try:
                 return attr(*args, **kwargs)
             except RpcError as e:
-                exception_info = "".join(
-                    traceback.format_exception(e.__class__, e, e.__traceback__))
+                exception_info = "".join(traceback.format_exception(e.__class__, e, e.__traceback__))
                 raise signals.TestFailure(
-                    "RpcError during test\n\nRpcError:\n\n%s\n%s" %
-                    (exception_info, self.__dump_crashes()))
+                    "RpcError during test\n\nRpcError:\n\n%s\n%s" % (exception_info, self.__dump_crashes()))
 
         return __wrapped
 
-    __ENTRY_METHODS = {
-        "setup_class", "teardown_class", "setup_test", "teardown_test"
-    }
+    __ENTRY_METHODS = {"setup_class", "teardown_class", "setup_test", "teardown_test"}
 
     @staticmethod
     def __is_entry_function(name):
-        return name.startswith(
-            "test_") or name in GdBaseTestClass.__ENTRY_METHODS
+        return name.startswith("test_") or name in GdBaseTestClass.__ENTRY_METHODS
 
     def __dump_crashes(self):
         """
@@ -187,10 +166,8 @@ class GdBaseTestClass(BaseTestClass):
         cert_crash, cert_log_tail = self.cert.get_crash_snippet_and_log_tail()
         rootcanal_crash = None
         rootcanal_log_tail = None
-        if self.rootcanal_running and not is_subprocess_alive(
-                self.rootcanal_process):
-            rootcanal_crash, roocanal_log_tail = read_crash_snippet_and_log_tail(
-                self.rootcanal_logpath)
+        if self.rootcanal_running and not is_subprocess_alive(self.rootcanal_process):
+            rootcanal_crash, roocanal_log_tail = read_crash_snippet_and_log_tail(self.rootcanal_logpath)
 
         crash_detail = ""
         if dut_crash or cert_crash or rootcanal_crash:

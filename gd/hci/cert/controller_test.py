@@ -26,8 +26,7 @@ from hci.facade import controller_facade_pb2 as controller_facade
 class ControllerTest(GdBaseTestClass):
 
     def setup_class(self):
-        super().setup_class(
-            dut_module='HCI_INTERFACES', cert_module='HCI_INTERFACES')
+        super().setup_class(dut_module='HCI_INTERFACES', cert_module='HCI_INTERFACES')
 
     def test_get_addresses(self):
         cert_address = self.cert.hci_controller.GetMacAddressSimple()
@@ -39,21 +38,16 @@ class ControllerTest(GdBaseTestClass):
     def test_get_local_extended_features(self):
         request = controller_facade.PageNumberMsg()
         request.page_number = 1
-        dut_feature_response1 = self.dut.hci_controller.GetLocalExtendedFeatures(
-            request)
+        dut_feature_response1 = self.dut.hci_controller.GetLocalExtendedFeatures(request)
         request0 = controller_facade.PageNumberMsg()
         request0.page_number = 0
-        dut_feature_response0 = self.dut.hci_controller.GetLocalExtendedFeatures(
-            request0)
+        dut_feature_response0 = self.dut.hci_controller.GetLocalExtendedFeatures(request0)
 
-        assertThat(dut_feature_response1.page).isNotEqualTo(
-            dut_feature_response0.page)
+        assertThat(dut_feature_response1.page).isNotEqualTo(dut_feature_response0.page)
 
     def test_write_local_name(self):
-        self.dut.hci_controller.WriteLocalName(
-            controller_facade.NameMsg(name=b'ImTheDUT'))
-        self.cert.hci_controller.WriteLocalName(
-            controller_facade.NameMsg(name=b'ImTheCert'))
+        self.dut.hci_controller.WriteLocalName(controller_facade.NameMsg(name=b'ImTheDUT'))
+        self.cert.hci_controller.WriteLocalName(controller_facade.NameMsg(name=b'ImTheCert'))
         cert_name = self.cert.hci_controller.GetLocalNameSimple()
         dut_name = self.dut.hci_controller.GetLocalNameSimple()
 

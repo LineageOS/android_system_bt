@@ -57,8 +57,7 @@ def metadata(_do_not_use=None, pts_test_id=None, pts_test_name=None):
     if _do_not_use is not None:
 
         def fail(*args, **kwargs):
-            asserts.fail("@metadata must be used in functional form such "
-                         "as @metadta(key=value)")
+            asserts.fail("@metadata must be used in functional form such " "as @metadta(key=value)")
 
         return fail
 
@@ -74,7 +73,6 @@ def metadata(_do_not_use=None, pts_test_id=None, pts_test_name=None):
     # Validate pts_test_id and pts_test_name
     if any((pts_test_id, pts_test_name)) and \
             not all((pts_test_id, pts_test_name)):
-        return _fail_decorator("pts_test_id and pts_test_name must both "
-                               "be valid if one of them is valid")
+        return _fail_decorator("pts_test_id and pts_test_name must both " "be valid if one of them is valid")
 
     return test_info(**args)

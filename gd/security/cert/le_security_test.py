@@ -51,11 +51,9 @@ class LeSecurityTest(GdBaseTestClass):
         self.cert_security = PyLeSecurity(self.cert)
 
         self.dut_address = common.BluetoothAddressWithType(
-            address = common.BluetoothAddress(address=bytes(b'0D:05:04:03:02:01')),
-            type=common.RANDOM_DEVICE_ADDRESS)
+            address=common.BluetoothAddress(address=bytes(b'0D:05:04:03:02:01')), type=common.RANDOM_DEVICE_ADDRESS)
         self.cert_address = common.BluetoothAddressWithType(
-            address = common.BluetoothAddress(address=bytes(b'55:11:FF:AA:33:22')),
-            type=common.RANDOM_DEVICE_ADDRESS)
+            address=common.BluetoothAddress(address=bytes(b'55:11:FF:AA:33:22')), type=common.RANDOM_DEVICE_ADDRESS)
 
     def teardown_test(self):
         self.dut_security.close()
@@ -67,8 +65,7 @@ class LeSecurityTest(GdBaseTestClass):
         gap_name = hci_packets.GapData()
         gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
         gap_name.data = list(bytes(b'Im_The_CERT'))
-        gap_data = le_advertising_facade.GapDataMsg(
-            data=bytes(gap_name.Serialize()))
+        gap_data = le_advertising_facade.GapDataMsg(data=bytes(gap_name.Serialize()))
         config = le_advertising_facade.AdvertisingConfig(
             advertisement=[gap_data],
             random_address=self.cert_address.address,
@@ -81,12 +78,9 @@ class LeSecurityTest(GdBaseTestClass):
             channel_map=7,
             filter_policy=le_advertising_facade.AdvertisingFilterPolicy.ALL_DEVICES)
         request = le_advertising_facade.CreateAdvertiserRequest(config=config)
-        create_response = self.cert.hci_le_advertising_manager.CreateAdvertiser(
-            request)
+        create_response = self.cert.hci_le_advertising_manager.CreateAdvertiser(request)
 
-    @metadata(
-        pts_test_id="SM/MAS/PROT/BV-01-C",
-        pts_test_name="SMP Time Out – IUT Initiator")
+    @metadata(pts_test_id="SM/MAS/PROT/BV-01-C", pts_test_name="SMP Time Out – IUT Initiator")
     def test_le_smp_timeout_iut_initiator(self):
         """
             Verify that the IUT handles the lack of pairing response after 30 seconds when acting as initiator.
@@ -94,5 +88,4 @@ class LeSecurityTest(GdBaseTestClass):
         self._prepare_cert_for_connection()
         self.dut.security.CreateBondLe(self.cert_address)
         self.dut_security.wait_for_bond_event(
-            expected_bond_event=BondMsgType.DEVICE_BOND_FAILED,
-            timeout=timedelta(seconds=35))
+            expected_bond_event=BondMsgType.DEVICE_BOND_FAILED, timeout=timedelta(seconds=35))

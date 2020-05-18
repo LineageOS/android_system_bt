@@ -52,62 +52,46 @@ class LeAdvertisingManagerTest(GdBaseTestClass):
 
     def test_le_ad_scan_dut_advertises(self):
         self.register_for_le_event(hci_packets.SubeventCode.ADVERTISING_REPORT)
-        self.register_for_le_event(
-            hci_packets.SubeventCode.EXTENDED_ADVERTISING_REPORT)
-        with EventStream(self.cert.hci.FetchLeSubevents(
-                empty_proto.Empty())) as hci_le_event_stream:
+        self.register_for_le_event(hci_packets.SubeventCode.EXTENDED_ADVERTISING_REPORT)
+        with EventStream(self.cert.hci.FetchLeSubevents(empty_proto.Empty())) as hci_le_event_stream:
 
             # CERT Scans
-            self.enqueue_hci_command(
-                hci_packets.LeSetRandomAddressBuilder('0C:05:04:03:02:01'),
-                True)
+            self.enqueue_hci_command(hci_packets.LeSetRandomAddressBuilder('0C:05:04:03:02:01'), True)
             scan_parameters = hci_packets.PhyScanParameters()
             scan_parameters.le_scan_type = hci_packets.LeScanType.ACTIVE
             scan_parameters.le_scan_interval = 40
             scan_parameters.le_scan_window = 20
             self.enqueue_hci_command(
-                hci_packets.LeSetExtendedScanParametersBuilder(
-                    hci_packets.AddressType.RANDOM_DEVICE_ADDRESS,
-                    hci_packets.LeSetScanningFilterPolicy.ACCEPT_ALL, 1,
-                    [scan_parameters]), True)
+                hci_packets.LeSetExtendedScanParametersBuilder(hci_packets.AddressType.RANDOM_DEVICE_ADDRESS,
+                                                               hci_packets.LeSetScanningFilterPolicy.ACCEPT_ALL, 1,
+                                                               [scan_parameters]), True)
             self.enqueue_hci_command(
-                hci_packets.LeSetExtendedScanEnableBuilder(
-                    hci_packets.Enable.ENABLED,
-                    hci_packets.FilterDuplicates.DISABLED, 0, 0), True)
+                hci_packets.LeSetExtendedScanEnableBuilder(hci_packets.Enable.ENABLED,
+                                                           hci_packets.FilterDuplicates.DISABLED, 0, 0), True)
 
             # DUT Advertises
             gap_name = hci_packets.GapData()
             gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
             gap_name.data = list(bytes(b'Im_The_DUT!'))
-            gap_data = le_advertising_facade.GapDataMsg(
-                data=bytes(gap_name.Serialize()))
+            gap_data = le_advertising_facade.GapDataMsg(data=bytes(gap_name.Serialize()))
             config = le_advertising_facade.AdvertisingConfig(
                 advertisement=[gap_data],
-                random_address=common.BluetoothAddress(
-                    address=bytes(b'0D:05:04:03:02:01')),
+                random_address=common.BluetoothAddress(address=bytes(b'0D:05:04:03:02:01')),
                 interval_min=512,
                 interval_max=768,
                 event_type=le_advertising_facade.AdvertisingEventType.ADV_IND,
                 address_type=common.RANDOM_DEVICE_ADDRESS,
                 peer_address_type=common.PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
-                peer_address=common.BluetoothAddress(
-                    address=bytes(b'A6:A5:A4:A3:A2:A1')),
+                peer_address=common.BluetoothAddress(address=bytes(b'A6:A5:A4:A3:A2:A1')),
                 channel_map=7,
-                filter_policy=le_advertising_facade.AdvertisingFilterPolicy.
-                ALL_DEVICES)
-            request = le_advertising_facade.CreateAdvertiserRequest(
-                config=config)
+                filter_policy=le_advertising_facade.AdvertisingFilterPolicy.ALL_DEVICES)
+            request = le_advertising_facade.CreateAdvertiserRequest(config=config)
 
-            create_response = self.dut.hci_le_advertising_manager.CreateAdvertiser(
-                request)
+            create_response = self.dut.hci_le_advertising_manager.CreateAdvertiser(request)
 
-            hci_le_event_stream.assert_event_occurs(
-                lambda packet: b'Im_The_DUT' in packet.event)
+            hci_le_event_stream.assert_event_occurs(lambda packet: b'Im_The_DUT' in packet.event)
 
-            remove_request = le_advertising_facade.RemoveAdvertiserRequest(
-                advertiser_id=create_response.advertiser_id)
+            remove_request = le_advertising_facade.RemoveAdvertiserRequest(advertiser_id=create_response.advertiser_id)
             self.dut.hci_le_advertising_manager.RemoveAdvertiser(remove_request)
             self.enqueue_hci_command(
-                hci_packets.LeSetScanEnableBuilder(hci_packets.Enable.DISABLED,
-                                                   hci_packets.Enable.DISABLED),
-                True)
+                hci_packets.LeSetScanEnableBuilder(hci_packets.Enable.DISABLED, hci_packets.Enable.DISABLED), True)
