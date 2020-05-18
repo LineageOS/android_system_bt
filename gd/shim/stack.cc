@@ -17,6 +17,7 @@
 #define LOG_TAG "bt_gd_shim"
 
 #include "shim/stack.h"
+
 #include "att/att_module.h"
 #include "hal/hci_hal.h"
 #include "hci/acl_manager.h"
