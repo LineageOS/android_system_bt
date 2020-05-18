@@ -17,6 +17,7 @@
 #include "os/handler.h"
 
 #include <sys/eventfd.h>
+
 #include <future>
 #include <thread>
 
@@ -57,7 +58,8 @@ TEST_F(HandlerTest, post_task_invoked) {
         *val = *val + 1;
         closure_ran.set_value();
       },
-      common::Unretained(&val), std::move(closure_ran));
+      common::Unretained(&val),
+      std::move(closure_ran));
   handler_->Post(std::move(closure));
   future.wait();
   ASSERT_EQ(val, 1);
@@ -76,7 +78,9 @@ TEST_F(HandlerTest, post_task_cleared) {
         *val = *val + 1;
         can_continue_future.wait();
       },
-      common::Unretained(&val), std::move(closure_started), std::move(can_continue_future)));
+      common::Unretained(&val),
+      std::move(closure_started),
+      std::move(can_continue_future)));
   handler_->Post(common::BindOnce([]() { ASSERT_TRUE(false); }));
   closure_started_future.wait();
   handler_->Clear();

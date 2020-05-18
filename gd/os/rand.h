@@ -16,9 +16,9 @@
 
 #pragma once
 
-#include <array>
-
 #include <openssl/rand.h>
+
+#include <array>
 
 namespace bluetooth {
 namespace os {

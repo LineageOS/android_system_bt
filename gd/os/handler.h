@@ -53,15 +53,15 @@ class Handler : public common::IPostableContext {
   void WaitUntilStopped(std::chrono::milliseconds timeout);
 
   template <typename Functor, typename... Args>
-  common::ContextualOnceCallback<common::MakeUnboundRunType<Functor, Args...>> BindOnce(Functor&& functor,
-                                                                                        Args&&... args) {
+  common::ContextualOnceCallback<common::MakeUnboundRunType<Functor, Args...>> BindOnce(
+      Functor&& functor, Args&&... args) {
     return common::ContextualOnceCallback<common::MakeUnboundRunType<Functor, Args...>>(
         common::BindOnce(std::forward<Functor>(functor), std::forward<Args>(args)...), this);
   }
 
   template <typename Functor, typename T, typename... Args>
-  common::ContextualOnceCallback<common::MakeUnboundRunType<Functor, T, Args...>> BindOnceOn(T* obj, Functor&& functor,
-                                                                                             Args&&... args) {
+  common::ContextualOnceCallback<common::MakeUnboundRunType<Functor, T, Args...>> BindOnceOn(
+      T* obj, Functor&& functor, Args&&... args) {
     return common::ContextualOnceCallback<common::MakeUnboundRunType<Functor, T, Args...>>(
         common::BindOnce(std::forward<Functor>(functor), common::Unretained(obj), std::forward<Args>(args)...), this);
   }
@@ -73,8 +73,8 @@ class Handler : public common::IPostableContext {
   }
 
   template <typename Functor, typename T, typename... Args>
-  common::ContextualCallback<common::MakeUnboundRunType<Functor, T, Args...>> BindOn(T* obj, Functor&& functor,
-                                                                                     Args&&... args) {
+  common::ContextualCallback<common::MakeUnboundRunType<Functor, T, Args...>> BindOn(
+      T* obj, Functor&& functor, Args&&... args) {
     return common::ContextualCallback<common::MakeUnboundRunType<Functor, T, Args...>>(
         common::Bind(std::forward<Functor>(functor), common::Unretained(obj), std::forward<Args>(args)...), this);
   }

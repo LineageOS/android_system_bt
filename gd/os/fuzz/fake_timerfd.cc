@@ -15,8 +15,10 @@
  */
 
 #include "os/fuzz/fake_timerfd.h"
+
 #include <sys/eventfd.h>
 #include <unistd.h>
+
 #include <map>
 
 namespace bluetooth {
