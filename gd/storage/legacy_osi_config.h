@@ -17,6 +17,7 @@
 // This code wraps osi/include/config.h
 
 #include <stdbool.h>
+
 #include <list>
 #include <memory>
 #include <string>
@@ -84,8 +85,8 @@ int config_get_int(const config_t& config, const std::string& section, const std
 // Returns the uint64_t value for a given |key| in |section|. If |section|
 // or |key| do not exist, or the value cannot be fully converted to an integer,
 // this function returns |def_value|.
-uint64_t config_get_uint64(const config_t& config, const std::string& section, const std::string& key,
-                           uint64_t def_value);
+uint64_t config_get_uint64(
+    const config_t& config, const std::string& section, const std::string& key, uint64_t def_value);
 
 // Returns the boolean value for a given |key| in |section|. If |section|
 // or |key| do not exist, or the value cannot be converted to a boolean, this
@@ -96,8 +97,8 @@ bool config_get_bool(const config_t& config, const std::string& section, const s
 // |key| do not exist, this function returns |def_value|. The returned string
 // is owned by the config module and must not be freed or modified. |def_value|
 // may be NULL.
-const std::string* config_get_string(const config_t& config, const std::string& section, const std::string& key,
-                                     const std::string* def_value);
+const std::string* config_get_string(
+    const config_t& config, const std::string& section, const std::string& key, const std::string* def_value);
 
 // Sets an integral value for the |key| in |section|. If |key| or |section| do
 // not already exist, this function creates them. |config| must not be NULL.

@@ -18,6 +18,7 @@
 
 #include <base/files/file_util.h>
 #include <fcntl.h>
+
 #include <string>
 
 #include "os/log.h"
@@ -26,11 +27,12 @@ namespace {
 
 bool config_parse(FILE* fp, config_t* config);
 
-template <typename T,
-          class = typename std::enable_if<std::is_same<config_t, typename std::remove_const<T>::type>::value>>
+template <
+    typename T,
+    class = typename std::enable_if<std::is_same<config_t, typename std::remove_const<T>::type>::value>>
 auto section_find(T& config, const std::string& section) {
-  return std::find_if(config.sections.begin(), config.sections.end(),
-                      [&section](const section_t& sec) { return sec.name == section; });
+  return std::find_if(
+      config.sections.begin(), config.sections.end(), [&section](const section_t& sec) { return sec.name == section; });
 }
 
 const entry_t* entry_find(const config_t& config, const std::string& section, const std::string& key) {
@@ -148,13 +150,13 @@ bool bluetooth::legacy::osi::config::config_has_section(const config_t& config, 
   return (section_find(config, section) != config.sections.end());
 }
 
-bool bluetooth::legacy::osi::config::config_has_key(const config_t& config, const std::string& section,
-                                                    const std::string& key) {
+bool bluetooth::legacy::osi::config::config_has_key(
+    const config_t& config, const std::string& section, const std::string& key) {
   return (entry_find(config, section, key) != nullptr);
 }
 
-int bluetooth::legacy::osi::config::config_get_int(const config_t& config, const std::string& section,
-                                                   const std::string& key, int def_value) {
+int bluetooth::legacy::osi::config::config_get_int(
+    const config_t& config, const std::string& section, const std::string& key, int def_value) {
   const entry_t* entry = entry_find(config, section, key);
   if (!entry) return def_value;
 
@@ -163,8 +165,8 @@ int bluetooth::legacy::osi::config::config_get_int(const config_t& config, const
   return (*endptr == '\0') ? ret : def_value;
 }
 
-uint64_t bluetooth::legacy::osi::config::config_get_uint64(const config_t& config, const std::string& section,
-                                                           const std::string& key, uint64_t def_value) {
+uint64_t bluetooth::legacy::osi::config::config_get_uint64(
+    const config_t& config, const std::string& section, const std::string& key, uint64_t def_value) {
   const entry_t* entry = entry_find(config, section, key);
   if (!entry) return def_value;
 
@@ -173,8 +175,8 @@ uint64_t bluetooth::legacy::osi::config::config_get_uint64(const config_t& confi
   return (*endptr == '\0') ? ret : def_value;
 }
 
-bool bluetooth::legacy::osi::config::config_get_bool(const config_t& config, const std::string& section,
-                                                     const std::string& key, bool def_value) {
+bool bluetooth::legacy::osi::config::config_get_bool(
+    const config_t& config, const std::string& section, const std::string& key, bool def_value) {
   const entry_t* entry = entry_find(config, section, key);
   if (!entry) return def_value;
 
@@ -184,32 +186,31 @@ bool bluetooth::legacy::osi::config::config_get_bool(const config_t& config, con
   return def_value;
 }
 
-const std::string* bluetooth::legacy::osi::config::config_get_string(const config_t& config, const std::string& section,
-                                                                     const std::string& key,
-                                                                     const std::string* def_value) {
+const std::string* bluetooth::legacy::osi::config::config_get_string(
+    const config_t& config, const std::string& section, const std::string& key, const std::string* def_value) {
   const entry_t* entry = entry_find(config, section, key);
   if (!entry) return def_value;
 
   return &entry->value;
 }
 
-void bluetooth::legacy::osi::config::config_set_int(config_t* config, const std::string& section,
-                                                    const std::string& key, int value) {
+void bluetooth::legacy::osi::config::config_set_int(
+    config_t* config, const std::string& section, const std::string& key, int value) {
   legacy::osi::config::config_set_string(config, section, key, std::to_string(value));
 }
 
-void bluetooth::legacy::osi::config::config_set_uint64(config_t* config, const std::string& section,
-                                                       const std::string& key, uint64_t value) {
+void bluetooth::legacy::osi::config::config_set_uint64(
+    config_t* config, const std::string& section, const std::string& key, uint64_t value) {
   legacy::osi::config::config_set_string(config, section, key, std::to_string(value));
 }
 
-void bluetooth::legacy::osi::config::config_set_bool(config_t* config, const std::string& section,
-                                                     const std::string& key, bool value) {
+void bluetooth::legacy::osi::config::config_set_bool(
+    config_t* config, const std::string& section, const std::string& key, bool value) {
   legacy::osi::config::config_set_string(config, section, key, value ? "true" : "false");
 }
 
-void bluetooth::legacy::osi::config::config_set_string(config_t* config, const std::string& section,
-                                                       const std::string& key, const std::string& value) {
+void bluetooth::legacy::osi::config::config_set_string(
+    config_t* config, const std::string& section, const std::string& key, const std::string& value) {
   CHECK(config);
 
   auto sec = section_find(*config, section);
@@ -247,8 +248,8 @@ bool bluetooth::legacy::osi::config::config_remove_section(config_t* config, con
   return true;
 }
 
-bool bluetooth::legacy::osi::config::config_remove_key(config_t* config, const std::string& section,
-                                                       const std::string& key) {
+bool bluetooth::legacy::osi::config::config_remove_key(
+    config_t* config, const std::string& section, const std::string& key) {
   CHECK(config);
   auto sec = section_find(*config, section);
   if (sec == config->sections.end()) return false;
