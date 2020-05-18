@@ -20,6 +20,7 @@ from cert.matchers import L2capMatchers
 from cert.metadata import metadata
 from facade import common_pb2 as common
 from google.protobuf import empty_pb2 as empty_proto
+from hci.facade import le_acl_manager_facade_pb2 as le_acl_manager_facade
 from hci.facade import le_advertising_manager_facade_pb2 as le_advertising_facade
 import bluetooth_packets_python3 as bt_packets
 from bluetooth_packets_python3 import hci_packets, l2cap_packets
@@ -49,12 +50,28 @@ class DualL2capTest(GdBaseTestClass):
         self.dut_le_l2cap = PyLeL2cap(self.dut)
         self.cert_le_l2cap = CertLeL2cap(self.cert)
         self.dut_le_address = common.BluetoothAddressWithType(
-            address = common.BluetoothAddress(address=bytes(b'0D:05:04:03:02:01')),
+            address=common.BluetoothAddress(
+                address=bytes(b'0D:05:04:03:02:01')),
             type=common.RANDOM_DEVICE_ADDRESS)
         self.cert_address = common.BluetoothAddressWithType(
-            address = common.BluetoothAddress(address=bytes(b'55:11:FF:AA:33:22')),
+            address=common.BluetoothAddress(
+                address=bytes(b'55:11:FF:AA:33:22')),
             type=common.RANDOM_DEVICE_ADDRESS)
-        self.cert_le_l2cap._device.hci_le_acl_manager.SetInitiatorAddress(self.cert_address)
+        self.cert_le_l2cap._device.hci_le_acl_manager.SetInitiatorAddress(
+            self.cert_address)
+        private_policy = le_acl_manager_facade.PrivacyPolicy(
+            address_policy=le_acl_manager_facade.AddressPolicy.
+            USE_RESOLVABLE_ADDRESS,
+            address_with_type=common.BluetoothAddressWithType(
+                address=common.BluetoothAddress(
+                    address=bytes(b'00:00:00:00:00:00')),
+                type=common.RANDOM_DEVICE_ADDRESS),
+            rotation_irk=
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+            minimum_rotation_time=(7 * 60 * 1000),
+            maximum_rotation_time=(15 * 60 * 1000))
+        self.cert_le_l2cap._device.hci_le_acl_manager.SetPrivacyPolicyForInitiatorAddress(
+            private_policy)
 
     def teardown_test(self):
         self.cert_le_l2cap.close()
@@ -94,7 +111,8 @@ class DualL2capTest(GdBaseTestClass):
         self.cert_le_l2cap.connect_le_acl(self.dut_le_address)
 
     def _open_le_coc_from_dut(self, psm=0x33, our_scid=None):
-        response_future = self.dut_le_l2cap.connect_coc_to_cert(self.cert_address, psm)
+        response_future = self.dut_le_l2cap.connect_coc_to_cert(
+            self.cert_address, psm)
         cert_channel = self.cert_le_l2cap.verify_and_respond_open_channel_from_remote(
             psm=psm, our_scid=our_scid)
         dut_channel = response_future.get_channel()

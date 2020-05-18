@@ -122,13 +122,23 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
     Address address;
     ASSERT(Address::FromString(request->address().address(), address));
     acl_manager_->SetLeInitiatorAddress(AddressWithType(address, static_cast<AddressType>(request->type())));
-    AddressWithType address_with_type(Address::kEmpty, AddressType::RANDOM_DEVICE_ADDRESS);
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status SetPrivacyPolicyForInitiatorAddress(::grpc::ServerContext* context, const PrivacyPolicy* request,
+                                                     ::google::protobuf::Empty* writer) override {
+    Address address;
+    ASSERT(Address::FromString(request->address_with_type().address().address(), address));
+    LeAddressRotator::AddressPolicy address_policy =
+        static_cast<LeAddressRotator::AddressPolicy>(request->address_policy());
+    AddressWithType address_with_type(address, static_cast<AddressType>(request->address_with_type().type()));
+    std::vector<uint8_t> irk_data(request->rotation_irk().begin(), request->rotation_irk().end());
     crypto_toolbox::Octet16 irk = {};
-    auto interval_min_ms = std::chrono::milliseconds(7 * 60 * 1000);
-    auto interval_random_part_max_ms = std::chrono::milliseconds(15 * 60 * 1000);
-    acl_manager_->SetPrivacyPolicyForInitiatorAddress(LeAddressRotator::AddressPolicy::USE_RESOLVABLE_ADDRESS,
-                                                      address_with_type, irk, interval_min_ms,
-                                                      interval_random_part_max_ms);
+    std::copy_n(irk_data.begin(), crypto_toolbox::OCTET16_LEN, irk.begin());
+    auto minimum_rotation_time = std::chrono::milliseconds(request->minimum_rotation_time());
+    auto maximum_rotation_time = std::chrono::milliseconds(request->maximum_rotation_time());
+    acl_manager_->SetPrivacyPolicyForInitiatorAddress(address_policy, address_with_type, irk, minimum_rotation_time,
+                                                      maximum_rotation_time);
     return ::grpc::Status::OK;
   }
 
