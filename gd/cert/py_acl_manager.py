@@ -35,15 +35,11 @@ class PyAclManagerAclConnection(IEventStream, Closable):
         self.our_acl_stream = acl_stream
 
         if remote_addr:
-            remote_addr_bytes = bytes(
-                remote_addr,
-                'utf8') if type(remote_addr) is str else bytes(remote_addr)
+            remote_addr_bytes = bytes(remote_addr, 'utf8') if type(remote_addr) is str else bytes(remote_addr)
             self.connection_event_stream = EventStream(
                 self.device.hci_acl_manager.CreateConnection(
                     acl_manager_facade.ConnectionMsg(
-                        address_type=int(
-                            hci_packets.AddressType.PUBLIC_DEVICE_ADDRESS),
-                        address=remote_addr_bytes)))
+                        address_type=int(hci_packets.AddressType.PUBLIC_DEVICE_ADDRESS), address=remote_addr_bytes)))
         else:
             self.connection_event_stream = None
 
@@ -56,8 +52,7 @@ class PyAclManagerAclConnection(IEventStream, Closable):
         self.handle = connection_complete.get().GetConnectionHandle()
 
     def send(self, data):
-        self.device.hci_acl_manager.SendAclData(
-            acl_manager_facade.AclData(handle=self.handle, payload=bytes(data)))
+        self.device.hci_acl_manager.SendAclData(acl_manager_facade.AclData(handle=self.handle, payload=bytes(data)))
 
     def get_event_queue(self):
         return self.our_acl_stream.get_event_queue()
@@ -68,8 +63,7 @@ class PyAclManager(Closable):
     def __init__(self, device):
         self.device = device
 
-        self.acl_stream = EventStream(
-            self.device.hci_acl_manager.FetchAclData(empty_proto.Empty()))
+        self.acl_stream = EventStream(self.device.hci_acl_manager.FetchAclData(empty_proto.Empty()))
         self.incoming_connection_stream = None
 
     def close(self):
@@ -82,16 +76,13 @@ class PyAclManager(Closable):
 
     def listen_for_incoming_connections(self):
         self.incoming_connection_stream = EventStream(
-            self.device.hci_acl_manager.FetchIncomingConnection(
-                empty_proto.Empty()))
+            self.device.hci_acl_manager.FetchIncomingConnection(empty_proto.Empty()))
 
     def initiate_connection(self, remote_addr):
-        return PyAclManagerAclConnection(self.device, self.acl_stream,
-                                         remote_addr, None)
+        return PyAclManagerAclConnection(self.device, self.acl_stream, remote_addr, None)
 
     def accept_connection(self):
         connection_complete = HciCaptures.ConnectionCompleteCapture()
         assertThat(self.incoming_connection_stream).emits(connection_complete)
         handle = connection_complete.get().GetConnectionHandle()
-        return PyAclManagerAclConnection(self.device, self.acl_stream, None,
-                                         handle)
+        return PyAclManagerAclConnection(self.device, self.acl_stream, None, handle)

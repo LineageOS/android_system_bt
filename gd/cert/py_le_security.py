@@ -43,22 +43,18 @@ class PyLeSecurity(Closable):
         logging.info("DUT: Init")
         self._device = device
         self._device.wait_channel_ready()
-        self._ui_event_stream = EventStream(
-            self._device.security.FetchUiEvents(empty_proto.Empty()))
-        self._bond_event_stream = EventStream(
-            self._device.security.FetchBondEvents(empty_proto.Empty()))
+        self._ui_event_stream = EventStream(self._device.security.FetchUiEvents(empty_proto.Empty()))
+        self._bond_event_stream = EventStream(self._device.security.FetchBondEvents(empty_proto.Empty()))
 
-    def wait_for_bond_event(
-            self, expected_bond_event, timeout=timedelta(
-                seconds=3)):  # =timedelta(seconds=DEFAULT_TIMEOUT_SECONDS)
+    def wait_for_bond_event(self, expected_bond_event,
+                            timeout=timedelta(seconds=3)):  # =timedelta(seconds=DEFAULT_TIMEOUT_SECONDS)
         """
             A bond event will be triggered once the bond process
             is complete.  For the DUT we need to wait for it,
             for Cert it isn't needed.
         """
         self._bond_event_stream.assert_event_occurs(
-            match_fn=lambda event: event.message_type == expected_bond_event,
-            timeout=timeout)
+            match_fn=lambda event: event.message_type == expected_bond_event, timeout=timeout)
 
     def close(self):
         if self._ui_event_stream is not None:

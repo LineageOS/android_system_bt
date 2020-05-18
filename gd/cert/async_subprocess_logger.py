@@ -66,26 +66,19 @@ class AsyncSubprocessLogger:
         try:
             result = self.future.result(timeout=self.WAIT_TIMEOUT_SECONDS)
             if result:
-                logging.error(
-                    "logging thread %s produced an error when executing: %s" %
-                    (self.tag, str(result)))
+                logging.error("logging thread %s produced an error when executing: %s" % (self.tag, str(result)))
         except concurrent.futures.TimeoutError:
-            logging.error("logging thread %s failed to finish after %d seconds"
-                          % (self.tag, self.WAIT_TIMEOUT_SECONDS))
+            logging.error("logging thread %s failed to finish after %d seconds" % (self.tag, self.WAIT_TIMEOUT_SECONDS))
         self.executor.shutdown(wait=False)
 
     def __logging_loop(self):
         with ExitStack() as stack:
-            log_files = [
-                stack.enter_context(open(file_path, 'w'))
-                for file_path in self.log_file_paths
-            ]
+            log_files = [stack.enter_context(open(file_path, 'w')) for file_path in self.log_file_paths]
             for line in self.process.stdout:
                 for log_file in log_files:
                     log_file.write(line)
                 if self.log_to_stdout:
                     if self.color:
-                        print("[%s%s%s] %s" % (self.color, self.tag,
-                                               TerminalColor.END, line.strip()))
+                        print("[%s%s%s] %s" % (self.color, self.tag, TerminalColor.END, line.strip()))
                     else:
                         print("[%s] %s" % (self.tag, line.strip()))
