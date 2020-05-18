@@ -23,9 +23,7 @@ PYTHONPATH_KEY = 'PYTHONPATH'
 COMMIT_ID_ENV_KEY = 'PREUPLOAD_COMMIT'
 ANDROID_BUILD_TOP_KEY = 'ANDROID_BUILD_TOP'
 DEFAULT_YAPF_DIR = 'external/yapf'
-GIT_COMMAND = [
-    'git', 'diff-tree', '--no-commit-id', '--name-only', '--diff-filter=d'
-]
+GIT_COMMAND = ['git', 'diff-tree', '--no-commit-id', '--name-only', '--diff-filter=d']
 
 
 def main():
@@ -47,8 +45,7 @@ def main():
     # Gather changed Python files
     commit_id = os.environ[COMMIT_ID_ENV_KEY]
     full_git_command = GIT_COMMAND + ['-r', commit_id]
-    files = subprocess.check_output(full_git_command).decode(
-        'utf-8').splitlines()
+    files = subprocess.check_output(full_git_command).decode('utf-8').splitlines()
     full_files = [os.path.abspath(f) for f in files if f.endswith('.py')]
     if not full_files:
         return
@@ -58,32 +55,20 @@ def main():
     yapf_binary = os.path.join(yapf_dir, 'yapf')
 
     # Run YAPF
-    full_yapf_command = [
-        "%s=$%s:%s" % (PYTHONPATH_KEY, PYTHONPATH_KEY, yapf_dir), 'python3',
-        yapf_binary, '-d', '-p'
-    ] + full_files
+    full_yapf_command = ["%s=$%s:%s" % (PYTHONPATH_KEY, PYTHONPATH_KEY, yapf_dir), 'python3', yapf_binary, '-d', '-p'
+                        ] + full_files
     environment = os.environ.copy()
     environment[PYTHONPATH_KEY] = environment[PYTHONPATH_KEY] + ":" + yapf_dir
-    result = subprocess.run(
-        full_yapf_command[1:],
-        env=environment,
-        stderr=subprocess.STDOUT,
-        stdout=subprocess.PIPE)
+    result = subprocess.run(full_yapf_command[1:], env=environment, stderr=subprocess.STDOUT, stdout=subprocess.PIPE)
 
     if result.returncode != 0 or result.stdout:
         logging.error(result.stdout.decode('utf-8').strip())
         logging.error('INVALID FORMATTING, return code %d', result.returncode)
-        logging.error('To re-run the format command:\n\n'
-                      '    %s\n' % ' '.join(full_yapf_command))
-        yapf_inplace_format = ' '.join([
-            "%s=$%s:%s" % (PYTHONPATH_KEY, PYTHONPATH_KEY,
-                           yapf_dir), 'python3', yapf_binary, '-p', '-i'
-        ] + full_files)
-        logging.error('If this is a legitimate format error, please run:\n\n'
-                      '    %s\n' % yapf_inplace_format)
-        logging.error(
-            'CAVEAT: Currently, this format the entire Python file if you modify even part of it'
-        )
+        logging.error('To re-run the format command:\n\n' '    %s\n' % ' '.join(full_yapf_command))
+        yapf_inplace_format = ' '.join(
+            ["%s=$%s:%s" % (PYTHONPATH_KEY, PYTHONPATH_KEY, yapf_dir), 'python3', yapf_binary, '-p', '-i'] + full_files)
+        logging.error('If this is a legitimate format error, please run:\n\n' '    %s\n' % yapf_inplace_format)
+        logging.error('CAVEAT: Currently, this format the entire Python file if you modify even part of it')
         exit(1)
 
 

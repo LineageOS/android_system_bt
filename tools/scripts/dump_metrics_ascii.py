@@ -33,10 +33,8 @@ def compile_proto(proto_path, output_dir):
     if not protoc:
         protoc = find_executable('protoc')
     if not protoc:
-        logging.error(
-            "Cannot find Protobuf compiler (>=3.0.0), please install"
-            "protobuf-compiler package. Prefer copying from <top>/prebuilts/tools"
-        )
+        logging.error("Cannot find Protobuf compiler (>=3.0.0), please install"
+                      "protobuf-compiler package. Prefer copying from <top>/prebuilts/tools")
         logging.error("    prebuilts/tools/linux-x86_64/protoc/bin/protoc")
         logging.error("If prebuilts are not available, use apt-get:")
         logging.error("    sudo apt-get install protobuf-compiler")
@@ -54,11 +52,7 @@ def compile_proto(proto_path, output_dir):
     input_dir = os.path.dirname(proto_path)
     output_filename = os.path.basename(proto_path).replace('.proto', '_pb2.py')
     output_path = os.path.join(output_dir, output_filename)
-    protoc_command = [
-        protoc,
-        '-I=%s' % (input_dir),
-        '--python_out=%s' % (output_dir), proto_path
-    ]
+    protoc_command = [protoc, '-I=%s' % (input_dir), '--python_out=%s' % (output_dir), proto_path]
     if subprocess.call(protoc_command, stderr=subprocess.STDOUT) != 0:
         logging.error("Fail to compile proto")
         return None
@@ -82,8 +76,7 @@ def compile_import_proto(output_dir, proto_path):
     try:
         output_module = import_module(output_module_name)
     except ImportError:
-        logging.error(
-            "Cannot import generated py-proto %s" % (output_module_name))
+        logging.error("Cannot import generated py-proto %s" % (output_module_name))
     return output_module
 
 
@@ -130,8 +123,7 @@ def main():
         logging.info("Usage: " + sys.argv[0] + " <path_to_metric_proto>")
         logging.info("Requires Protobuf compiler, protoc, version >=3.0.0")
         sys.exit(0)
-    bluetooth_proto_module = compile_import_proto(tempfile.gettempdir(),
-                                                  sys.argv[1])
+    bluetooth_proto_module = compile_import_proto(tempfile.gettempdir(), sys.argv[1])
     if not bluetooth_proto_module:
         logging.error("Cannot compile " + sys.argv[1])
         sys.exit(1)
