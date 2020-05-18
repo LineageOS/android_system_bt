@@ -16,10 +16,10 @@
 
 #pragma once
 
+#include <grpc++/grpc++.h>
+
 #include <list>
 #include <mutex>
-
-#include <grpc++/grpc++.h>
 
 #include "grpc/grpc_module.h"
 #include "hal/hci_hal.h"
