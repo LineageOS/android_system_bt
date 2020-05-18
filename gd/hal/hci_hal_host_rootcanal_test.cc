@@ -15,24 +15,24 @@
  */
 
 #include "hal/hci_hal_host_rootcanal.h"
-#include "hal/hci_hal.h"
-#include "hal/serialize_packet.h"
 
 #include <fcntl.h>
+#include <gtest/gtest.h>
 #include <netdb.h>
 #include <netinet/in.h>
 #include <netinet/ip.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #include <cstring>
 #include <queue>
 #include <thread>
 #include <utility>
 #include <vector>
 
-#include <gtest/gtest.h>
-
+#include "hal/hci_hal.h"
+#include "hal/serialize_packet.h"
 #include "os/log.h"
 #include "os/thread.h"
 #include "os/utils.h"
