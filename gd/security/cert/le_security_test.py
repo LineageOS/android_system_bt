@@ -51,9 +51,11 @@ class LeSecurityTest(GdBaseTestClass):
         self.cert_security = PyLeSecurity(self.cert)
 
         self.dut_address = common.BluetoothAddressWithType(
-            address=common.BluetoothAddress(address=bytes(b'0D:05:04:03:02:01')), type=common.RANDOM_DEVICE_ADDRESS)
+            address=common.BluetoothAddress(address=bytes(b'DD:05:04:03:02:01')), type=common.RANDOM_DEVICE_ADDRESS)
+        self.dut.security.SetLeInitiatorAddress(self.dut_address)
         self.cert_address = common.BluetoothAddressWithType(
-            address=common.BluetoothAddress(address=bytes(b'55:11:FF:AA:33:22')), type=common.RANDOM_DEVICE_ADDRESS)
+            address=common.BluetoothAddress(address=bytes(b'C5:11:FF:AA:33:22')), type=common.RANDOM_DEVICE_ADDRESS)
+        self.cert.security.SetLeInitiatorAddress(self.cert_address)
 
     def teardown_test(self):
         self.dut_security.close()

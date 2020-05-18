@@ -123,6 +123,17 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     return ::grpc::Status::OK;
   }
 
+  ::grpc::Status SetLeInitiatorAddress(
+      ::grpc::ServerContext* context,
+      const facade::BluetoothAddressWithType* request,
+      ::google::protobuf::Empty* response) override {
+    hci::Address peer;
+    ASSERT(hci::Address::FromString(request->address().address(), peer));
+    hci::AddressType peer_type = static_cast<hci::AddressType>(request->type());
+    security_module_->GetSecurityManager()->SetLeInitiatorAddress(hci::AddressWithType(peer, peer_type));
+    return ::grpc::Status::OK;
+  }
+
   void DisplayPairingPrompt(const bluetooth::hci::AddressWithType& peer, std::string name) {
     LOG_INFO("%s", peer.ToString().c_str());
     UiMsg display_yes_no;

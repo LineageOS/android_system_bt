@@ -118,6 +118,15 @@ void SecurityManagerImpl::SetUserInterfaceHandler(UI* user_interface, os::Handle
   user_interface_handler_ = handler;
 }
 
+void SecurityManagerImpl::SetLeInitiatorAddress(hci::AddressWithType address) {
+  acl_manager_->SetPrivacyPolicyForInitiatorAddress(
+      hci::LeAddressRotator::AddressPolicy::USE_STATIC_ADDRESS,
+      address,
+      crypto_toolbox::Octet16{},
+      std::chrono::milliseconds{0},
+      std::chrono::milliseconds{0});
+}
+
 void SecurityManagerImpl::RegisterCallbackListener(ISecurityManagerListener* listener, os::Handler* handler) {
   for (auto it = listeners_.begin(); it != listeners_.end(); ++it) {
     if (it->first == listener) {
@@ -393,14 +402,19 @@ void SecurityManagerImpl::OnConnectionFailureLe(bluetooth::l2cap::le::FixedChann
   NotifyDeviceBondFailed(pending_le_pairing_.address_, PairingFailure("Connection establishment failed"));
 }
 
-SecurityManagerImpl::SecurityManagerImpl(os::Handler* security_handler, l2cap::le::L2capLeModule* l2cap_le_module,
-                                         channel::SecurityManagerChannel* security_manager_channel,
-                                         hci::HciLayer* hci_layer)
-    : security_handler_(security_handler), l2cap_le_module_(l2cap_le_module),
+SecurityManagerImpl::SecurityManagerImpl(
+    os::Handler* security_handler,
+    l2cap::le::L2capLeModule* l2cap_le_module,
+    channel::SecurityManagerChannel* security_manager_channel,
+    hci::HciLayer* hci_layer,
+    hci::AclManager* acl_manager)
+    : security_handler_(security_handler),
+      l2cap_le_module_(l2cap_le_module),
       l2cap_manager_le_(l2cap_le_module_->GetFixedChannelManager()),
       hci_security_interface_le_(
           hci_layer->GetLeSecurityInterface(security_handler_->BindOn(this, &SecurityManagerImpl::OnHciLeEvent))),
-      security_manager_channel_(security_manager_channel) {
+      security_manager_channel_(security_manager_channel),
+      acl_manager_(acl_manager) {
   Init();
 
   l2cap_manager_le_->RegisterService(

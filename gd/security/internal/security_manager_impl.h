@@ -46,8 +46,12 @@ namespace internal {
 
 class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, public UICallbacks {
  public:
-  explicit SecurityManagerImpl(os::Handler* security_handler, l2cap::le::L2capLeModule* l2cap_le_module,
-                               channel::SecurityManagerChannel* security_manager_channel, hci::HciLayer* hci_layer);
+  explicit SecurityManagerImpl(
+      os::Handler* security_handler,
+      l2cap::le::L2capLeModule* l2cap_le_module,
+      channel::SecurityManagerChannel* security_manager_channel,
+      hci::HciLayer* hci_layer,
+      hci::AclManager* acl_manager);
   ~SecurityManagerImpl() = default;
 
   // All APIs must be invoked in SM layer handler
@@ -96,6 +100,11 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
    * Register Security UI handler, for handling prompts around the Pairing process.
    */
   void SetUserInterfaceHandler(UI* user_interface, os::Handler* handler);
+
+  /**
+   * Specify the initiator address used for LE transport, used for tests only.
+   */
+  void SetLeInitiatorAddress(hci::AddressWithType address);
 
   /**
    * Register to listen for callback events from SecurityManager
@@ -177,6 +186,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   std::unique_ptr<l2cap::le::FixedChannelManager> l2cap_manager_le_;
   hci::LeSecurityInterface* hci_security_interface_le_ __attribute__((unused));
   channel::SecurityManagerChannel* security_manager_channel_;
+  hci::AclManager* acl_manager_;
   record::SecurityRecordDatabase security_database_;
   std::unordered_map<hci::Address, std::shared_ptr<pairing::PairingHandler>> pairing_handler_map_;
   hci::IoCapability local_io_capability_ = kDefaultIoCapability;

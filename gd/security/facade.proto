@@ -13,6 +13,7 @@ service SecurityModuleFacade {
   rpc SetIoCapability(IoCapabilityMessage) returns (google.protobuf.Empty) {}
   rpc SetAuthenticationRequirements(AuthenticationRequirementsMessage) returns (google.protobuf.Empty) {}
   rpc SetOobDataPresent(OobDataMessage) returns (google.protobuf.Empty) {}
+  rpc SetLeInitiatorAddress(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
   rpc SendUiCallback(UiCallbackMsg) returns (google.protobuf.Empty) {}
   rpc FetchUiEvents(google.protobuf.Empty) returns (stream UiMsg) {}
   rpc FetchBondEvents(google.protobuf.Empty) returns (stream BondMsg) {}
