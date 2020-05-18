@@ -47,11 +47,11 @@ class LinkManager : public hci::acl_manager::LeConnectionCallbacks {
     acl_manager_->RegisterLeCallbacks(this, l2cap_handler_);
     hci::AddressWithType address_with_type(hci::Address::kEmpty, hci::AddressType::RANDOM_DEVICE_ADDRESS);
     crypto_toolbox::Octet16 irk = {};
-    auto interval_min_ms = std::chrono::milliseconds(7 * 60 * 1000);
-    auto interval_random_part_max_ms = std::chrono::milliseconds(15 * 60 * 1000);
+    auto minimum_rotation_time = std::chrono::milliseconds(7 * 60 * 1000);
+    auto maximum_rotation_time = std::chrono::milliseconds(15 * 60 * 1000);
     acl_manager_->SetPrivacyPolicyForInitiatorAddress(hci::LeAddressRotator::AddressPolicy::USE_RESOLVABLE_ADDRESS,
-                                                      address_with_type, irk, interval_min_ms,
-                                                      interval_random_part_max_ms);
+                                                      address_with_type, irk, minimum_rotation_time,
+                                                      maximum_rotation_time);
   }
 
   struct PendingFixedChannelConnection {

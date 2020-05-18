@@ -38,6 +38,19 @@ class LeAclManagerTest(GdBaseTestClass):
                 address=bytes(b'0D:05:04:03:02:01')),
             type=common.RANDOM_DEVICE_ADDRESS)
         self.dut.hci_le_acl_manager.SetInitiatorAddress(dut_address)
+        private_policy = le_acl_manager_facade.PrivacyPolicy(
+            address_policy=le_acl_manager_facade.AddressPolicy.
+            USE_RESOLVABLE_ADDRESS,
+            address_with_type=common.BluetoothAddressWithType(
+                address=common.BluetoothAddress(
+                    address=bytes(b'00:00:00:00:00:00')),
+                type=common.RANDOM_DEVICE_ADDRESS),
+            rotation_irk=
+            b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+            minimum_rotation_time=(7 * 60 * 1000),
+            maximum_rotation_time=(15 * 60 * 1000))
+        self.dut.hci_le_acl_manager.SetPrivacyPolicyForInitiatorAddress(
+            private_policy)
 
     def register_for_event(self, event_code):
         msg = hci_facade.EventCodeMsg(code=int(event_code))
