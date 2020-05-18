@@ -52,8 +52,7 @@ def get_output_from_command(cmd):
     try:
         return subprocess.check_output(cmd).strip()
     except subprocess.CalledProcessError as e:
-        print 'Failed to call {cmd}, return code {code}'.format(
-            cmd=cmd, code=e.returncode)
+        print 'Failed to call {cmd}, return code {code}'.format(cmd=cmd, code=e.returncode)
         print e
         return None
 
@@ -68,8 +67,7 @@ def get_android_root_or_die():
             if os.path.isfile(soong_ui_bash_path):
                 # Use value returned from Soong UI instead in case definition to TOP
                 # changes in the future
-                value = get_output_from_command(
-                    (soong_ui_bash_path, '--dumpvar-mode', '--abs', 'TOP'))
+                value = get_output_from_command((soong_ui_bash_path, '--dumpvar-mode', '--abs', 'TOP'))
                 break
             parent_path = os.path.abspath(os.path.join(current_path, os.pardir))
             if parent_path == current_path:
@@ -87,9 +85,8 @@ def get_android_host_out_or_die():
     value = os.environ.get('ANDROID_HOST_OUT')
     if not value:
         ANDROID_BUILD_TOP = get_android_root_or_die()
-        value = get_output_from_command(
-            (os.path.join(ANDROID_BUILD_TOP, SOONG_UI_BASH), '--dumpvar-mode',
-             '--abs', 'HOST_OUT'))
+        value = get_output_from_command((os.path.join(ANDROID_BUILD_TOP, SOONG_UI_BASH), '--dumpvar-mode', '--abs',
+                                         'HOST_OUT'))
         if not value:
             print 'Cannot determine ANDROID_HOST_OUT'
             sys.exit(1)
@@ -132,8 +129,7 @@ def get_test_cmd_or_die(test_root, test_name, enable_xml, test_filter):
     cmd = [test_path]
     if enable_xml:
         dist_dir = get_android_dist_dir_or_die()
-        log_output_path = os.path.join(
-            dist_dir, 'gtest/{0}_test_details.xml'.format(test_name))
+        log_output_path = os.path.join(dist_dir, 'gtest/{0}_test_details.xml'.format(test_name))
         cmd.append('--gtest_output=xml:{0}'.format(log_output_path))
     if test_filter:
         cmd.append('--gtest_filter=%s' % test_filter)
@@ -147,8 +143,7 @@ def build_target(target, num_tasks):
     if num_tasks > 1:
         build_cmd.append('-j' + str(num_tasks))
     build_cmd.append(target)
-    p = subprocess.Popen(
-        build_cmd, cwd=ANDROID_BUILD_TOP, env=os.environ.copy())
+    p = subprocess.Popen(build_cmd, cwd=ANDROID_BUILD_TOP, env=os.environ.copy())
     return_code = p.wait()
     if return_code != 0:
         print 'BUILD FAILED, return code: {0}'.format(str(return_code))
@@ -167,9 +162,7 @@ def main():
         nargs='?',
         const=True,
         default=False,
-        help=
-        'Whether to output structured XML log output in out/dist/gtest directory'
-    )
+        help='Whether to output structured XML log output in out/dist/gtest directory')
     parser.add_argument(
         '-j',
         type=int,
@@ -179,17 +172,14 @@ def main():
         default=-1,
         help='Number of tasks to run at the same time')
     parser.add_argument(
-        'rest',
-        nargs=argparse.REMAINDER,
-        help='-- args, other gtest arguments for each individual test')
+        'rest', nargs=argparse.REMAINDER, help='-- args, other gtest arguments for each individual test')
     args = parser.parse_args()
 
     build_target('MODULES-IN-system-bt', args.num_tasks)
     TEST_ROOT = get_native_test_root_or_die()
     test_results = []
     for test in HOST_TESTS:
-        test_cmd = get_test_cmd_or_die(TEST_ROOT, test, args.enable_xml,
-                                       args.rest)
+        test_cmd = get_test_cmd_or_die(TEST_ROOT, test, args.enable_xml, args.rest)
         if subprocess.call(test_cmd) != 0:
             test_results.append(False)
         else:

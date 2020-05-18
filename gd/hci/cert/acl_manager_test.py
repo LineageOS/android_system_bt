@@ -54,23 +54,18 @@ class AclManagerTest(GdBaseTestClass):
 
         with self.dut_acl_manager.initiate_connection(cert_address) as dut_acl:
             cert_acl = self.cert_hci.accept_connection()
-            cert_acl.send_first(
-                b'\x26\x00\x07\x00This is just SomeAclData from the Cert')
+            cert_acl.send_first(b'\x26\x00\x07\x00This is just SomeAclData from the Cert')
 
             dut_acl.wait_for_connection_complete()
 
-            dut_acl.send(
-                b'\x29\x00\x07\x00This is just SomeMoreAclData from the DUT')
+            dut_acl.send(b'\x29\x00\x07\x00This is just SomeMoreAclData from the DUT')
 
-            assertThat(cert_acl).emits(
-                lambda packet: b'SomeMoreAclData' in packet.data)
-            assertThat(dut_acl).emits(
-                lambda packet: b'SomeAclData' in packet.payload)
+            assertThat(cert_acl).emits(lambda packet: b'SomeMoreAclData' in packet.data)
+            assertThat(dut_acl).emits(lambda packet: b'SomeAclData' in packet.payload)
 
     def test_cert_connects(self):
         dut_address = self.dut.hci_controller.GetMacAddressSimple()
-        self.dut.neighbor.EnablePageScan(
-            neighbor_facade.EnableMsg(enabled=True))
+        self.dut.neighbor.EnablePageScan(neighbor_facade.EnableMsg(enabled=True))
 
         self.dut_acl_manager.listen_for_incoming_connections()
         self.cert_hci.initiate_connection(dut_address)
@@ -79,16 +74,12 @@ class AclManagerTest(GdBaseTestClass):
 
         cert_acl = self.cert_hci.complete_connection()
 
-        dut_acl.send(
-            b'\x29\x00\x07\x00This is just SomeMoreAclData from the DUT')
+        dut_acl.send(b'\x29\x00\x07\x00This is just SomeMoreAclData from the DUT')
 
-        cert_acl.send_first(
-            b'\x26\x00\x07\x00This is just SomeAclData from the Cert')
+        cert_acl.send_first(b'\x26\x00\x07\x00This is just SomeAclData from the Cert')
 
-        assertThat(cert_acl).emits(
-            lambda packet: b'SomeMoreAclData' in packet.data)
-        assertThat(dut_acl).emits(
-            lambda packet: b'SomeAclData' in packet.payload)
+        assertThat(cert_acl).emits(lambda packet: b'SomeMoreAclData' in packet.data)
+        assertThat(dut_acl).emits(lambda packet: b'SomeAclData' in packet.payload)
 
     def test_recombination_l2cap_packet(self):
         self.cert_hci.enable_inquiry_and_page_scan()
@@ -102,6 +93,5 @@ class AclManagerTest(GdBaseTestClass):
 
             dut_acl.wait_for_connection_complete()
 
-            assertThat(dut_acl).emits(
-                lambda packet: b'Hello!' in packet.payload,
-                lambda packet: b'Hello' * 200 in packet.payload).inOrder()
+            assertThat(dut_acl).emits(lambda packet: b'Hello!' in packet.payload,
+                                      lambda packet: b'Hello' * 200 in packet.payload).inOrder()

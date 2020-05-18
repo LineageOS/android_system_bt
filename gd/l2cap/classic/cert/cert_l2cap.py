@@ -38,14 +38,7 @@ from cert.captures import L2capCaptures
 
 class CertL2capChannel(IEventStream):
 
-    def __init__(self,
-                 device,
-                 scid,
-                 dcid,
-                 acl_stream,
-                 acl,
-                 control_channel,
-                 fcs=None):
+    def __init__(self, device, scid, dcid, acl_stream, acl, control_channel, fcs=None):
         self._device = device
         self._scid = scid
         self._dcid = dcid
@@ -55,11 +48,9 @@ class CertL2capChannel(IEventStream):
         self._config_rsp_received = False
         self._config_rsp_sent = False
         if fcs == l2cap_packets.FcsType.DEFAULT:
-            self._our_acl_view = FilteringEventStream(
-                acl_stream, L2capMatchers.ExtractBasicFrameWithFcs(scid))
+            self._our_acl_view = FilteringEventStream(acl_stream, L2capMatchers.ExtractBasicFrameWithFcs(scid))
         else:
-            self._our_acl_view = FilteringEventStream(
-                acl_stream, L2capMatchers.ExtractBasicFrame(scid))
+            self._our_acl_view = FilteringEventStream(acl_stream, L2capMatchers.ExtractBasicFrame(scid))
 
     def get_event_queue(self):
         return self._our_acl_view.get_event_queue()
@@ -79,86 +70,63 @@ class CertL2capChannel(IEventStream):
                      payload=None,
                      fcs=False):
         if fcs == l2cap_packets.FcsType.DEFAULT:
-            frame = l2cap_packets.EnhancedInformationFrameWithFcsBuilder(
-                self._dcid, tx_seq, f, req_seq, sar, payload)
+            frame = l2cap_packets.EnhancedInformationFrameWithFcsBuilder(self._dcid, tx_seq, f, req_seq, sar, payload)
         else:
-            frame = l2cap_packets.EnhancedInformationFrameBuilder(
-                self._dcid, tx_seq, f, req_seq, sar, payload)
+            frame = l2cap_packets.EnhancedInformationFrameBuilder(self._dcid, tx_seq, f, req_seq, sar, payload)
         self._acl.send(frame.Serialize())
 
-    def send_s_frame(self,
-                     req_seq,
-                     s=SupervisoryFunction.RECEIVER_READY,
-                     p=Poll.NOT_SET,
-                     f=Final.NOT_SET):
-        frame = l2cap_packets.EnhancedSupervisoryFrameBuilder(
-            self._dcid, s, p, f, req_seq)
+    def send_s_frame(self, req_seq, s=SupervisoryFunction.RECEIVER_READY, p=Poll.NOT_SET, f=Final.NOT_SET):
+        frame = l2cap_packets.EnhancedSupervisoryFrameBuilder(self._dcid, s, p, f, req_seq)
         self._acl.send(frame.Serialize())
 
     def config_request_for_me(self):
         return L2capMatchers.ConfigurationRequest(self._scid)
 
-    def send_configure_request(self,
-                               options,
-                               sid=2,
-                               continuation=l2cap_packets.Continuation.END):
+    def send_configure_request(self, options, sid=2, continuation=l2cap_packets.Continuation.END):
         assertThat(self._scid).isNotEqualTo(1)
-        request = l2cap_packets.ConfigurationRequestBuilder(
-            sid, self._dcid, continuation, options)
+        request = l2cap_packets.ConfigurationRequestBuilder(sid, self._dcid, continuation, options)
         self._control_channel.send(request)
 
     def _send_information_request(self, type):
         assertThat(self._scid).isEqualTo(1)
         signal_id = 3
-        information_request = l2cap_packets.InformationRequestBuilder(
-            signal_id, type)
+        information_request = l2cap_packets.InformationRequestBuilder(signal_id, type)
         self.send(information_request)
 
     def send_extended_features_request(self):
-        self._send_information_request(
-            InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED)
+        self._send_information_request(InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED)
 
-    def verify_configuration_request_and_respond(
-            self, result=ConfigurationResponseResult.SUCCESS, options=None):
+    def verify_configuration_request_and_respond(self, result=ConfigurationResponseResult.SUCCESS, options=None):
         request_capture = L2capCaptures.ConfigurationRequest(self._scid)
         assertThat(self._control_channel).emits(request_capture)
         request = request_capture.get()
         sid = request.GetIdentifier()
         if options is None:
             options = []
-        config_response = l2cap_packets.ConfigurationResponseBuilder(
-            sid, self._dcid, l2cap_packets.Continuation.END, result, options)
+        config_response = l2cap_packets.ConfigurationResponseBuilder(sid, self._dcid, l2cap_packets.Continuation.END,
+                                                                     result, options)
         self._control_channel.send(config_response)
 
-    def send_configuration_response(self,
-                                    request,
-                                    result=ConfigurationResponseResult.SUCCESS,
-                                    options=None):
+    def send_configuration_response(self, request, result=ConfigurationResponseResult.SUCCESS, options=None):
         sid = request.GetIdentifier()
         if options is None:
             options = []
-        config_response = l2cap_packets.ConfigurationResponseBuilder(
-            sid, self._dcid, l2cap_packets.Continuation.END, result, options)
+        config_response = l2cap_packets.ConfigurationResponseBuilder(sid, self._dcid, l2cap_packets.Continuation.END,
+                                                                     result, options)
         self._control_channel.send(config_response)
         self._config_rsp_sent = True
 
-    def verify_configuration_response(
-            self, result=ConfigurationResponseResult.SUCCESS):
-        assertThat(self._control_channel).emits(
-            L2capMatchers.ConfigurationResponse(result))
+    def verify_configuration_response(self, result=ConfigurationResponseResult.SUCCESS):
+        assertThat(self._control_channel).emits(L2capMatchers.ConfigurationResponse(result))
 
     def disconnect_and_verify(self):
         assertThat(self._scid).isNotEqualTo(1)
-        self._control_channel.send(
-            l2cap_packets.DisconnectionRequestBuilder(1, self._dcid,
-                                                      self._scid))
+        self._control_channel.send(l2cap_packets.DisconnectionRequestBuilder(1, self._dcid, self._scid))
 
-        assertThat(self._control_channel).emits(
-            L2capMatchers.DisconnectionResponse(self._scid, self._dcid))
+        assertThat(self._control_channel).emits(L2capMatchers.DisconnectionResponse(self._scid, self._dcid))
 
     def verify_disconnect_request(self):
-        assertThat(self._control_channel).emits(
-            L2capMatchers.DisconnectionRequest(self._dcid, self._scid))
+        assertThat(self._control_channel).emits(L2capMatchers.DisconnectionRequest(self._dcid, self._scid))
 
 
 class CertL2capControlChannelBehaviors(object):
@@ -175,22 +143,16 @@ class CertL2capControlChannelBehaviors(object):
         def __init__(self, parent):
             self.parent = parent
 
-        def send_configuration_response(
-                self, result=ConfigurationResponseResult.SUCCESS, options=None):
+        def send_configuration_response(self, result=ConfigurationResponseResult.SUCCESS, options=None):
             self._commit(lambda request: self._send_configuration_response(request, result, options))
             return self
 
-        def _send_configuration_response(
-                self,
-                request,
-                result=ConfigurationResponseResult.SUCCESS,
-                options=None):
+        def _send_configuration_response(self, request, result=ConfigurationResponseResult.SUCCESS, options=None):
             dcid = request.GetDestinationCid()
             if dcid not in self.parent.scid_to_channel:
                 logging.warning("Received config request with unknown dcid")
                 return
-            self.parent.scid_to_channel[dcid].send_configuration_response(
-                request, result, options)
+            self.parent.scid_to_channel[dcid].send_configuration_response(request, result, options)
 
 
 class CertL2cap(Closable, IHasBehaviors):
@@ -201,20 +163,13 @@ class CertL2cap(Closable, IHasBehaviors):
         self._acl = None
 
         self.control_table = {
-            CommandCode.CONNECTION_RESPONSE:
-            self._on_connection_response_default,
-            CommandCode.CONFIGURATION_REQUEST:
-            self._on_configuration_request_default,
-            CommandCode.CONFIGURATION_RESPONSE:
-            self._on_configuration_response_default,
-            CommandCode.DISCONNECTION_REQUEST:
-            self._on_disconnection_request_default,
-            CommandCode.DISCONNECTION_RESPONSE:
-            self._on_disconnection_response_default,
-            CommandCode.INFORMATION_REQUEST:
-            self._on_information_request_default,
-            CommandCode.INFORMATION_RESPONSE:
-            self._on_information_response_default
+            CommandCode.CONNECTION_RESPONSE: self._on_connection_response_default,
+            CommandCode.CONFIGURATION_REQUEST: self._on_configuration_request_default,
+            CommandCode.CONFIGURATION_RESPONSE: self._on_configuration_response_default,
+            CommandCode.DISCONNECTION_REQUEST: self._on_disconnection_request_default,
+            CommandCode.DISCONNECTION_RESPONSE: self._on_disconnection_response_default,
+            CommandCode.INFORMATION_REQUEST: self._on_information_request_default,
+            CommandCode.INFORMATION_RESPONSE: self._on_information_response_default
         }
 
         self.scid_to_channel = {}
@@ -223,8 +178,7 @@ class CertL2cap(Closable, IHasBehaviors):
         self.support_fcs = True
 
         self._control_behaviors = CertL2capControlChannelBehaviors(self)
-        self._control_behaviors.on_config_req_behavior.set_default(
-            self._send_configuration_response_default)
+        self._control_behaviors.on_config_req_behavior.set_default(self._send_configuration_response_default)
 
     def close(self):
         self._acl_manager.close()
@@ -237,32 +191,22 @@ class CertL2cap(Closable, IHasBehaviors):
         self._acl = self._acl_manager.initiate_connection(remote_addr)
         self._acl.wait_for_connection_complete()
         self.control_channel = CertL2capChannel(
-            self._device,
-            1,
-            1,
-            self._get_acl_stream(),
-            self._acl,
-            control_channel=None)
+            self._device, 1, 1, self._get_acl_stream(), self._acl, control_channel=None)
         self._get_acl_stream().register_callback(self._handle_control_packet)
 
     def open_channel(self, signal_id, psm, scid, fcs=None):
-        self.control_channel.send(
-            l2cap_packets.ConnectionRequestBuilder(signal_id, psm, scid))
+        self.control_channel.send(l2cap_packets.ConnectionRequestBuilder(signal_id, psm, scid))
 
         response = L2capCaptures.ConnectionResponse(scid)
         assertThat(self.control_channel).emits(response)
         channel = CertL2capChannel(self._device, scid,
-                                   response.get().GetDestinationCid(),
-                                   self._get_acl_stream(), self._acl,
+                                   response.get().GetDestinationCid(), self._get_acl_stream(), self._acl,
                                    self.control_channel, fcs)
         self.scid_to_channel[scid] = channel
 
         return channel
 
-    def verify_and_respond_open_channel_from_remote(self,
-                                                    psm=0x33,
-                                                    scid=None,
-                                                    fcs=None):
+    def verify_and_respond_open_channel_from_remote(self, psm=0x33, scid=None, fcs=None):
 
         request = L2capCaptures.ConnectionRequest(psm)
         assertThat(self.control_channel).emits(request)
@@ -271,15 +215,13 @@ class CertL2cap(Closable, IHasBehaviors):
         dcid = request.get().GetSourceCid()
         if scid is None or scid in self.scid_to_channel:
             scid = dcid
-        channel = CertL2capChannel(self._device, scid, dcid,
-                                   self._get_acl_stream(), self._acl,
-                                   self.control_channel, fcs)
+        channel = CertL2capChannel(self._device, scid, dcid, self._get_acl_stream(), self._acl, self.control_channel,
+                                   fcs)
         self.scid_to_channel[scid] = channel
 
         connection_response = l2cap_packets.ConnectionResponseBuilder(
             sid, scid, dcid, l2cap_packets.ConnectionResponseResult.SUCCESS,
-            l2cap_packets.ConnectionResponseStatus.
-            NO_FURTHER_INFORMATION_AVAILABLE)
+            l2cap_packets.ConnectionResponseStatus.NO_FURTHER_INFORMATION_AVAILABLE)
         self.control_channel.send(connection_response)
 
         return channel
@@ -313,15 +255,13 @@ class CertL2cap(Closable, IHasBehaviors):
         dcid = captured_request_view.GetDestinationCid()
         if dcid not in self.scid_to_channel:
             return
-        self.scid_to_channel[dcid].send_configuration_response(
-            captured_request_view)
+        self.scid_to_channel[dcid].send_configuration_response(captured_request_view)
 
     @staticmethod
     def config_option_basic_explicit(mtu=642):
         mtu_opt = l2cap_packets.MtuConfigurationOption()
         mtu_opt.mtu = mtu
-        rfc_opt = l2cap_packets.RetransmissionAndFlowControlConfigurationOption(
-        )
+        rfc_opt = l2cap_packets.RetransmissionAndFlowControlConfigurationOption()
         rfc_opt.mode = l2cap_packets.RetransmissionAndFlowControlModeOption.L2CAP_BASIC
         return [mtu_opt, rfc_opt]
 
@@ -347,8 +287,7 @@ class CertL2cap(Closable, IHasBehaviors):
             fcs_opt = l2cap_packets.FrameCheckSequenceOption()
             fcs_opt.fcs_type = fcs
             result.append(fcs_opt)
-        rfc_opt = l2cap_packets.RetransmissionAndFlowControlConfigurationOption(
-        )
+        rfc_opt = l2cap_packets.RetransmissionAndFlowControlConfigurationOption()
         rfc_opt.mode = l2cap_packets.RetransmissionAndFlowControlModeOption.ENHANCED_RETRANSMISSION
         rfc_opt.tx_window_size = tx_window_size
         rfc_opt.max_transmit = max_transmit
@@ -377,21 +316,18 @@ class CertL2cap(Closable, IHasBehaviors):
             self.scid_to_channel[scid]._config_rsp_received = True
 
     def _on_disconnection_request_default(self, l2cap_control_view):
-        disconnection_request = l2cap_packets.DisconnectionRequestView(
-            l2cap_control_view)
+        disconnection_request = l2cap_packets.DisconnectionRequestView(l2cap_control_view)
         sid = disconnection_request.GetIdentifier()
         scid = disconnection_request.GetSourceCid()
         dcid = disconnection_request.GetDestinationCid()
-        disconnection_response = l2cap_packets.DisconnectionResponseBuilder(
-            sid, dcid, scid)
+        disconnection_response = l2cap_packets.DisconnectionResponseBuilder(sid, dcid, scid)
         self.control_channel.send(disconnection_response)
 
     def _on_disconnection_response_default(self, l2cap_control_view):
         pass
 
     def _on_information_request_default(self, l2cap_control_view):
-        information_request = l2cap_packets.InformationRequestView(
-            l2cap_control_view)
+        information_request = l2cap_packets.InformationRequestView(l2cap_control_view)
         sid = information_request.GetIdentifier()
         information_type = information_request.GetInfoType()
         if information_type == l2cap_packets.InformationRequestInfoType.CONNECTIONLESS_MTU:
@@ -401,8 +337,8 @@ class CertL2cap(Closable, IHasBehaviors):
             return
         if information_type == l2cap_packets.InformationRequestInfoType.EXTENDED_FEATURES_SUPPORTED:
             response = l2cap_packets.InformationResponseExtendedFeaturesBuilder(
-                sid, l2cap_packets.InformationRequestResult.SUCCESS, 0, 0, 0,
-                self.support_ertm, 0, self.support_fcs, 0, 0, 0, 0)
+                sid, l2cap_packets.InformationRequestResult.SUCCESS, 0, 0, 0, self.support_ertm, 0, self.support_fcs, 0,
+                0, 0, 0)
             self.control_channel.send(response)
             return
         if information_type == l2cap_packets.InformationRequestInfoType.FIXED_CHANNELS_SUPPORTED:
@@ -416,8 +352,7 @@ class CertL2cap(Closable, IHasBehaviors):
 
     def _handle_control_packet(self, l2cap_packet):
         packet_bytes = l2cap_packet.payload
-        l2cap_view = l2cap_packets.BasicFrameView(
-            bt_packets.PacketViewLittleEndian(list(packet_bytes)))
+        l2cap_view = l2cap_packets.BasicFrameView(bt_packets.PacketViewLittleEndian(list(packet_bytes)))
         if l2cap_view.GetChannelId() != 1:
             return
         l2cap_control_view = l2cap_packets.ControlView(l2cap_view.GetPayload())
