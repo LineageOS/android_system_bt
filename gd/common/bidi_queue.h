@@ -25,16 +25,13 @@ namespace bluetooth {
 namespace common {
 
 template <typename TENQUEUE, typename TDEQUEUE>
-class BidiQueueEnd
-    : public ::bluetooth::os::IQueueEnqueue<TENQUEUE>,
-      public ::bluetooth::os::IQueueDequeue<TDEQUEUE> {
+class BidiQueueEnd : public ::bluetooth::os::IQueueEnqueue<TENQUEUE>, public ::bluetooth::os::IQueueDequeue<TDEQUEUE> {
  public:
   using EnqueueCallback = Callback<std::unique_ptr<TENQUEUE>()>;
   using DequeueCallback = Callback<void()>;
 
   BidiQueueEnd(::bluetooth::os::IQueueEnqueue<TENQUEUE>* tx, ::bluetooth::os::IQueueDequeue<TDEQUEUE>* rx)
-      : tx_(tx), rx_(rx) {
-  }
+      : tx_(tx), rx_(rx) {}
 
   void RegisterEnqueue(::bluetooth::os::Handler* handler, EnqueueCallback callback) override {
     tx_->RegisterEnqueue(handler, callback);
@@ -68,8 +65,7 @@ class BidiQueue {
       : up_queue_(capacity),
         down_queue_(capacity),
         up_end_(&down_queue_, &up_queue_),
-        down_end_(&up_queue_, &down_queue_) {
-  }
+        down_end_(&up_queue_, &down_queue_) {}
 
   BidiQueueEnd<TDOWN, TUP>* GetUpEnd() {
     return &up_end_;
