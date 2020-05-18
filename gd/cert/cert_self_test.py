@@ -98,8 +98,7 @@ class FetchEvents:
 class TestBehaviors(object):
 
     def __init__(self, parent):
-        self.test_request_behavior = SingleArgumentBehavior(
-            lambda: TestBehaviors.TestRequestReplyStage(parent))
+        self.test_request_behavior = SingleArgumentBehavior(lambda: TestBehaviors.TestRequestReplyStage(parent))
 
     def test_request(self, matcher):
         return self.test_request_behavior.begin(matcher)
@@ -151,8 +150,7 @@ class CertSelfTest(BaseTestClass):
 
     def test_assert_none_fails(self):
         try:
-            with EventStream(FetchEvents(events=[17],
-                                         delay_ms=50)) as event_stream:
+            with EventStream(FetchEvents(events=[17], delay_ms=50)) as event_stream:
                 event_stream.assert_none(timeout=timedelta(seconds=1))
         except Exception as e:
             logging.debug(e)
@@ -160,69 +158,50 @@ class CertSelfTest(BaseTestClass):
         return False
 
     def test_assert_none_matching_passes(self):
-        with EventStream(FetchEvents(events=[1, 2, 3],
-                                     delay_ms=50)) as event_stream:
-            event_stream.assert_none_matching(
-                lambda data: data.value_ == 4, timeout=timedelta(seconds=0.15))
+        with EventStream(FetchEvents(events=[1, 2, 3], delay_ms=50)) as event_stream:
+            event_stream.assert_none_matching(lambda data: data.value_ == 4, timeout=timedelta(seconds=0.15))
 
     def test_assert_none_matching_passes_after_1_second(self):
-        with EventStream(FetchEvents(events=[1, 2, 3, 4],
-                                     delay_ms=400)) as event_stream:
-            event_stream.assert_none_matching(
-                lambda data: data.value_ == 4, timeout=timedelta(seconds=1))
+        with EventStream(FetchEvents(events=[1, 2, 3, 4], delay_ms=400)) as event_stream:
+            event_stream.assert_none_matching(lambda data: data.value_ == 4, timeout=timedelta(seconds=1))
 
     def test_assert_none_matching_fails(self):
         try:
-            with EventStream(FetchEvents(events=[1, 2, 3],
-                                         delay_ms=50)) as event_stream:
-                event_stream.assert_none_matching(
-                    lambda data: data.value_ == 2, timeout=timedelta(seconds=1))
+            with EventStream(FetchEvents(events=[1, 2, 3], delay_ms=50)) as event_stream:
+                event_stream.assert_none_matching(lambda data: data.value_ == 2, timeout=timedelta(seconds=1))
         except Exception as e:
             logging.debug(e)
             return True  # Failed as expected
         return False
 
     def test_assert_occurs_at_least_passes(self):
-        with EventStream(FetchEvents(events=[1, 2, 3, 1, 2, 3],
-                                     delay_ms=40)) as event_stream:
+        with EventStream(FetchEvents(events=[1, 2, 3, 1, 2, 3], delay_ms=40)) as event_stream:
             event_stream.assert_event_occurs(
-                lambda data: data.value_ == 1,
-                timeout=timedelta(milliseconds=300),
-                at_least_times=2)
+                lambda data: data.value_ == 1, timeout=timedelta(milliseconds=300), at_least_times=2)
 
     def test_assert_occurs_passes(self):
-        with EventStream(FetchEvents(events=[1, 2, 3],
-                                     delay_ms=50)) as event_stream:
-            event_stream.assert_event_occurs(
-                lambda data: data.value_ == 1, timeout=timedelta(seconds=1))
+        with EventStream(FetchEvents(events=[1, 2, 3], delay_ms=50)) as event_stream:
+            event_stream.assert_event_occurs(lambda data: data.value_ == 1, timeout=timedelta(seconds=1))
 
     def test_assert_occurs_fails(self):
         try:
-            with EventStream(FetchEvents(events=[1, 2, 3],
-                                         delay_ms=50)) as event_stream:
-                event_stream.assert_event_occurs(
-                    lambda data: data.value_ == 4, timeout=timedelta(seconds=1))
+            with EventStream(FetchEvents(events=[1, 2, 3], delay_ms=50)) as event_stream:
+                event_stream.assert_event_occurs(lambda data: data.value_ == 4, timeout=timedelta(seconds=1))
         except Exception as e:
             logging.debug(e)
             return True  # Failed as expected
         return False
 
     def test_assert_occurs_at_most_passes(self):
-        with EventStream(FetchEvents(events=[1, 2, 3, 4],
-                                     delay_ms=50)) as event_stream:
+        with EventStream(FetchEvents(events=[1, 2, 3, 4], delay_ms=50)) as event_stream:
             event_stream.assert_event_occurs_at_most(
-                lambda data: data.value_ < 4,
-                timeout=timedelta(seconds=1),
-                at_most_times=3)
+                lambda data: data.value_ < 4, timeout=timedelta(seconds=1), at_most_times=3)
 
     def test_assert_occurs_at_most_fails(self):
         try:
-            with EventStream(FetchEvents(events=[1, 2, 3, 4],
-                                         delay_ms=50)) as event_stream:
+            with EventStream(FetchEvents(events=[1, 2, 3, 4], delay_ms=50)) as event_stream:
                 event_stream.assert_event_occurs_at_most(
-                    lambda data: data.value_ > 1,
-                    timeout=timedelta(seconds=1),
-                    at_most_times=2)
+                    lambda data: data.value_ > 1, timeout=timedelta(seconds=1), at_most_times=2)
         except Exception as e:
             logging.debug(e)
             return True  # Failed as expected
@@ -237,10 +216,8 @@ class CertSelfTest(BaseTestClass):
         inside = hci_packets.ReadScanEnableBuilder()
         logging.debug(inside.Serialize())
         logging.debug("building outside")
-        outside = hci_packets.AclPacketBuilder(
-            handle,
-            hci_packets.PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
-            hci_packets.BroadcastFlag.POINT_TO_POINT, inside)
+        outside = hci_packets.AclPacketBuilder(handle, hci_packets.PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
+                                               hci_packets.BroadcastFlag.POINT_TO_POINT, inside)
         logging.debug(outside.Serialize())
         logging.debug("Done!")
 
@@ -256,13 +233,10 @@ class CertSelfTest(BaseTestClass):
             [mtu_opt, fcs_opt])
         request_b_frame = l2cap_packets.BasicFrameBuilder(0x01, request)
         handle = 123
-        wrapped = hci_packets.AclPacketBuilder(
-            handle,
-            hci_packets.PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
-            hci_packets.BroadcastFlag.POINT_TO_POINT, request_b_frame)
+        wrapped = hci_packets.AclPacketBuilder(handle, hci_packets.PacketBoundaryFlag.FIRST_NON_AUTOMATICALLY_FLUSHABLE,
+                                               hci_packets.BroadcastFlag.POINT_TO_POINT, request_b_frame)
         # Size is ACL (4) + L2CAP (4) + Configure (8) + MTU (4) + FCS (3)
-        asserts.assert_true(
-            len(wrapped.Serialize()) == 23, "Packet serialized incorrectly")
+        asserts.assert_true(len(wrapped.Serialize()) == 23, "Packet serialized incorrectly")
 
     def test_assertThat_boolean_success(self):
         assertThat(True).isTrue()
@@ -317,20 +291,16 @@ class CertSelfTest(BaseTestClass):
         return False
 
     def test_assertThat_eventStream_emits_passes(self):
-        with EventStream(FetchEvents(events=[1, 2, 3],
-                                     delay_ms=50)) as event_stream:
+        with EventStream(FetchEvents(events=[1, 2, 3], delay_ms=50)) as event_stream:
             assertThat(event_stream).emits(lambda data: data.value_ == 1)
 
     def test_assertThat_eventStream_emits_then_passes(self):
-        with EventStream(FetchEvents(events=[1, 2, 3],
-                                     delay_ms=50)) as event_stream:
-            assertThat(event_stream).emits(lambda data: data.value_ == 1).then(
-                lambda data: data.value_ == 3)
+        with EventStream(FetchEvents(events=[1, 2, 3], delay_ms=50)) as event_stream:
+            assertThat(event_stream).emits(lambda data: data.value_ == 1).then(lambda data: data.value_ == 3)
 
     def test_assertThat_eventStream_emits_fails(self):
         try:
-            with EventStream(FetchEvents(events=[1, 2, 3],
-                                         delay_ms=50)) as event_stream:
+            with EventStream(FetchEvents(events=[1, 2, 3], delay_ms=50)) as event_stream:
                 assertThat(event_stream).emits(lambda data: data.value_ == 4)
         except Exception as e:
             logging.debug(e)
@@ -339,38 +309,27 @@ class CertSelfTest(BaseTestClass):
 
     def test_assertThat_eventStream_emits_then_fails(self):
         try:
-            with EventStream(FetchEvents(events=[1, 2, 3],
-                                         delay_ms=50)) as event_stream:
-                assertThat(event_stream).emits(
-                    lambda data: data.value_ == 1).emits(
-                        lambda data: data.value_ == 4)
+            with EventStream(FetchEvents(events=[1, 2, 3], delay_ms=50)) as event_stream:
+                assertThat(event_stream).emits(lambda data: data.value_ == 1).emits(lambda data: data.value_ == 4)
         except Exception as e:
             logging.debug(e)
             return True  # Failed as expected
         return False
 
     def test_assertThat_eventStream_emitsInOrder_passes(self):
-        with EventStream(FetchEvents(events=[1, 2, 3],
-                                     delay_ms=50)) as event_stream:
-            assertThat(event_stream).emits(
-                lambda data: data.value_ == 1,
-                lambda data: data.value_ == 2).inOrder()
+        with EventStream(FetchEvents(events=[1, 2, 3], delay_ms=50)) as event_stream:
+            assertThat(event_stream).emits(lambda data: data.value_ == 1, lambda data: data.value_ == 2).inOrder()
 
     def test_assertThat_eventStream_emitsInAnyOrder_passes(self):
-        with EventStream(FetchEvents(events=[1, 2, 3],
-                                     delay_ms=50)) as event_stream:
+        with EventStream(FetchEvents(events=[1, 2, 3], delay_ms=50)) as event_stream:
             assertThat(event_stream).emits(
                 lambda data: data.value_ == 2,
-                lambda data: data.value_ == 1).inAnyOrder().then(
-                    lambda data: data.value_ == 3)
+                lambda data: data.value_ == 1).inAnyOrder().then(lambda data: data.value_ == 3)
 
     def test_assertThat_eventStream_emitsInOrder_fails(self):
         try:
-            with EventStream(FetchEvents(events=[1, 2, 3],
-                                         delay_ms=50)) as event_stream:
-                assertThat(event_stream).emits(
-                    lambda data: data.value_ == 2,
-                    lambda data: data.value_ == 1).inOrder()
+            with EventStream(FetchEvents(events=[1, 2, 3], delay_ms=50)) as event_stream:
+                assertThat(event_stream).emits(lambda data: data.value_ == 2, lambda data: data.value_ == 1).inOrder()
         except Exception as e:
             logging.debug(e)
             return True  # Failed as expected
@@ -378,37 +337,28 @@ class CertSelfTest(BaseTestClass):
 
     def test_assertThat_eventStream_emitsInAnyOrder_fails(self):
         try:
-            with EventStream(FetchEvents(events=[1, 2, 3],
-                                         delay_ms=50)) as event_stream:
-                assertThat(event_stream).emits(
-                    lambda data: data.value_ == 4,
-                    lambda data: data.value_ == 1).inAnyOrder()
+            with EventStream(FetchEvents(events=[1, 2, 3], delay_ms=50)) as event_stream:
+                assertThat(event_stream).emits(lambda data: data.value_ == 4,
+                                               lambda data: data.value_ == 1).inAnyOrder()
         except Exception as e:
             logging.debug(e)
             return True  # Failed as expected
         return False
 
     def test_assertThat_emitsNone_passes(self):
-        with EventStream(FetchEvents(events=[1, 2, 3],
-                                     delay_ms=50)) as event_stream:
+        with EventStream(FetchEvents(events=[1, 2, 3], delay_ms=50)) as event_stream:
             assertThat(event_stream).emitsNone(
-                lambda data: data.value_ == 4,
-                timeout=timedelta(seconds=0.15)).thenNone(
-                    lambda data: data.value_ == 5,
-                    timeout=timedelta(seconds=0.15))
+                lambda data: data.value_ == 4, timeout=timedelta(seconds=0.15)).thenNone(
+                    lambda data: data.value_ == 5, timeout=timedelta(seconds=0.15))
 
     def test_assertThat_emitsNone_passes_after_1_second(self):
-        with EventStream(FetchEvents(events=[1, 2, 3, 4],
-                                     delay_ms=400)) as event_stream:
-            assertThat(event_stream).emitsNone(
-                lambda data: data.value_ == 4, timeout=timedelta(seconds=1))
+        with EventStream(FetchEvents(events=[1, 2, 3, 4], delay_ms=400)) as event_stream:
+            assertThat(event_stream).emitsNone(lambda data: data.value_ == 4, timeout=timedelta(seconds=1))
 
     def test_assertThat_emitsNone_fails(self):
         try:
-            with EventStream(FetchEvents(events=[1, 2, 3],
-                                         delay_ms=50)) as event_stream:
-                assertThat(event_stream).emitsNone(
-                    lambda data: data.value_ == 2, timeout=timedelta(seconds=1))
+            with EventStream(FetchEvents(events=[1, 2, 3], delay_ms=50)) as event_stream:
+                assertThat(event_stream).emitsNone(lambda data: data.value_ == 2, timeout=timedelta(seconds=1))
         except Exception as e:
             logging.debug(e)
             return True  # Failed as expected
@@ -416,9 +366,8 @@ class CertSelfTest(BaseTestClass):
 
     def test_assertThat_emitsNone_zero_passes(self):
         with EventStream(FetchEvents(events=[], delay_ms=50)) as event_stream:
-            assertThat(event_stream).emitsNone(
-                timeout=timedelta(milliseconds=10)).thenNone(
-                    timeout=timedelta(milliseconds=10))
+            assertThat(event_stream).emitsNone(timeout=timedelta(milliseconds=10)).thenNone(
+                timeout=timedelta(milliseconds=10))
 
     def test_assertThat_emitsNone_zero_passes_after_one_second(self):
         with EventStream(FetchEvents([1], delay_ms=1500)) as event_stream:
@@ -426,8 +375,7 @@ class CertSelfTest(BaseTestClass):
 
     def test_assertThat_emitsNone_zero_fails(self):
         try:
-            with EventStream(FetchEvents(events=[17],
-                                         delay_ms=50)) as event_stream:
+            with EventStream(FetchEvents(events=[17], delay_ms=50)) as event_stream:
                 assertThat(event_stream).emitsNone(timeout=timedelta(seconds=1))
         except Exception as e:
             logging.debug(e)
@@ -435,8 +383,7 @@ class CertSelfTest(BaseTestClass):
         return False
 
     def test_filtering_event_stream_none_filter_function(self):
-        with EventStream(FetchEvents(events=[1, 2, 3],
-                                     delay_ms=50)) as event_stream:
+        with EventStream(FetchEvents(events=[1, 2, 3], delay_ms=50)) as event_stream:
             filtered_event_stream = FilteringEventStream(event_stream, None)
             assertThat(filtered_event_stream)\
                 .emits(lambda data: data.value_ == 1)\
@@ -454,8 +401,7 @@ class CertSelfTest(BaseTestClass):
             pass
         except Exception as e:
             asserts.fail("@metadata() should only raise signals.TestFailure, "
-                         "but raised %s with msg %s instead" %
-                         (e.__class__.__name__, str(e)))
+                         "but raised %s with msg %s instead" % (e.__class__.__name__, str(e)))
         else:
             asserts.fail("@metadata() should not work")
 
@@ -471,8 +417,7 @@ class CertSelfTest(BaseTestClass):
             pass
         except Exception as e:
             asserts.fail("@metadata should only raise signals.TestFailure, "
-                         "but raised %s with msg %s instead" %
-                         (e.__class__.__name__, str(e)))
+                         "but raised %s with msg %s instead" % (e.__class__.__name__, str(e)))
         else:
             asserts.fail("@metadata should not work")
 
@@ -488,8 +433,7 @@ class CertSelfTest(BaseTestClass):
             pass
         except Exception as e:
             asserts.fail("should only raise signals.TestFailure, "
-                         "but raised %s with msg %s instead" %
-                         (e.__class__.__name__, str(e)))
+                         "but raised %s with msg %s instead" % (e.__class__.__name__, str(e)))
         else:
             asserts.fail("missing pts_test_id should not work")
 
@@ -505,8 +449,7 @@ class CertSelfTest(BaseTestClass):
             pass
         except Exception as e:
             asserts.fail("should only raise signals.TestFailure, "
-                         "but raised %s with msg %s instead" %
-                         (e.__class__.__name__, str(e)))
+                         "but raised %s with msg %s instead" % (e.__class__.__name__, str(e)))
         else:
             asserts.fail("missing pts_test_name should not work")
 
@@ -519,13 +462,9 @@ class CertSelfTest(BaseTestClass):
         try:
             simple_pass_test(1)
         except signals.TestPass as e:
-            asserts.assert_true(
-                "pts_test_id" in e.extras,
-                msg=("pts_test_id not in extra: %s" % str(e.extras)))
+            asserts.assert_true("pts_test_id" in e.extras, msg=("pts_test_id not in extra: %s" % str(e.extras)))
             asserts.assert_equal(e.extras["pts_test_id"], "A/B/C")
-            asserts.assert_true(
-                "pts_test_name" in e.extras,
-                msg=("pts_test_name not in extra: %s" % str(e.extras)))
+            asserts.assert_true("pts_test_name" in e.extras, msg=("pts_test_name not in extra: %s" % str(e.extras)))
             asserts.assert_equal(e.extras["pts_test_name"], "Hello world")
         else:
             asserts.fail("Must throw an exception using @metadata decorator")
@@ -539,19 +478,14 @@ class CertSelfTest(BaseTestClass):
         try:
             simple_fail_test("BEEFBEEF")
         except signals.TestError as e:
-            asserts.assert_true(
-                "pts_test_id" in e.extras,
-                msg=("pts_test_id not in extra: %s" % str(e.extras)))
+            asserts.assert_true("pts_test_id" in e.extras, msg=("pts_test_id not in extra: %s" % str(e.extras)))
             asserts.assert_equal(e.extras["pts_test_id"], "A/B/C")
-            asserts.assert_true(
-                "pts_test_name" in e.extras,
-                msg=("pts_test_name not in extra: %s" % str(e.extras)))
+            asserts.assert_true("pts_test_name" in e.extras, msg=("pts_test_name not in extra: %s" % str(e.extras)))
             asserts.assert_equal(e.extras["pts_test_name"], "Hello world")
             trace_str = traceback.format_exc()
             asserts.assert_true(
                 "raise ValueError(failure_argument)" in trace_str,
-                msg="Failed test method not in error stack trace: %s" %
-                trace_str)
+                msg="Failed test method not in error stack trace: %s" % trace_str)
         else:
             asserts.fail("Must throw an exception using @metadata decorator")
 
@@ -607,8 +541,7 @@ class CertSelfTest(BaseTestClass):
         thing = ObjectWithBehaviors()
         thing.behaviors.test_request_behavior.set_default_to_ignore()
 
-        when(thing).test_request(
-            lambda obj: obj == "B").always().increment_count()
+        when(thing).test_request(lambda obj: obj == "B").always().increment_count()
 
         thing.behaviors.test_request_behavior.run("A")
         thing.behaviors.test_request_behavior.run("B")
@@ -621,8 +554,7 @@ class CertSelfTest(BaseTestClass):
         thing = ObjectWithBehaviors()
         thing.behaviors.test_request_behavior.set_default_to_ignore()
 
-        when(thing).test_request(
-            anything()).then().increment_count().increment_count()
+        when(thing).test_request(anything()).then().increment_count().increment_count()
 
         thing.behaviors.test_request_behavior.run("A")
         thing.behaviors.test_request_behavior.run("B")
@@ -635,10 +567,8 @@ class CertSelfTest(BaseTestClass):
         thing = ObjectWithBehaviors()
         thing.behaviors.test_request_behavior.set_default_to_ignore()
 
-        when(thing).test_request(lambda obj: obj == "B").then(
-            times=1).increment_count()
-        when(thing).test_request(
-            lambda obj: obj == "C").always().increment_count()
+        when(thing).test_request(lambda obj: obj == "B").then(times=1).increment_count()
+        when(thing).test_request(lambda obj: obj == "C").always().increment_count()
 
         thing.behaviors.test_request_behavior.run("A")
         thing.behaviors.test_request_behavior.run("B")
@@ -665,8 +595,7 @@ class CertSelfTest(BaseTestClass):
 
     def test_fluent_behavior__set_default_works(self):
         thing = ObjectWithBehaviors()
-        thing.behaviors.test_request_behavior.set_default(
-            lambda obj: thing.increment_unhandled())
+        thing.behaviors.test_request_behavior.set_default(lambda obj: thing.increment_unhandled())
 
         when(thing).test_request(anything()).then().increment_count()
 
@@ -689,8 +618,7 @@ class CertSelfTest(BaseTestClass):
 
     def test_fluent_behavior__wait_until_done_different_lambda(self):
         thing = ObjectWithBehaviors()
-        when(thing).test_request(
-            lambda obj: obj == "A").then().increment_count()
+        when(thing).test_request(lambda obj: obj == "A").then().increment_count()
 
         closure = lambda: thing.behaviors.test_request_behavior.run("A")
         t = Timer(0.5, closure)
@@ -702,8 +630,7 @@ class CertSelfTest(BaseTestClass):
 
     def test_fluent_behavior__wait_until_done_anything(self):
         thing = ObjectWithBehaviors()
-        when(thing).test_request(
-            lambda obj: obj == "A").then().increment_count()
+        when(thing).test_request(lambda obj: obj == "A").then().increment_count()
 
         closure = lambda: thing.behaviors.test_request_behavior.run("A")
         t = Timer(0.5, closure)
@@ -716,20 +643,16 @@ class CertSelfTest(BaseTestClass):
     def test_fluent_behavior__wait_until_done_not_happened(self):
         thing = ObjectWithBehaviors()
         thing.behaviors.test_request_behavior.set_default_to_ignore()
-        when(thing).test_request(
-            lambda obj: obj == "A").then().increment_count()
+        when(thing).test_request(lambda obj: obj == "A").then().increment_count()
 
         closure = lambda: thing.behaviors.test_request_behavior.run("B")
         t = Timer(0.5, closure)
         t.start()
-        assertThat(
-            wait_until(thing).test_request(lambda obj: obj == "A").times(
-                1)).isFalse()
+        assertThat(wait_until(thing).test_request(lambda obj: obj == "A").times(1)).isFalse()
 
     def test_fluent_behavior__wait_until_done_with_default(self):
         thing = ObjectWithBehaviors()
-        thing.behaviors.test_request_behavior.set_default(
-            lambda obj: thing.increment_unhandled())
+        thing.behaviors.test_request_behavior.set_default(lambda obj: thing.increment_unhandled())
 
         closure = lambda: thing.behaviors.test_request_behavior.run("A")
         t = Timer(0.5, closure)
@@ -740,8 +663,7 @@ class CertSelfTest(BaseTestClass):
 
     def test_fluent_behavior__wait_until_done_two_events_AA(self):
         thing = ObjectWithBehaviors()
-        when(thing).test_request(
-            lambda obj: obj == "A").then().increment_count().increment_count()
+        when(thing).test_request(lambda obj: obj == "A").then().increment_count().increment_count()
 
         closure1 = lambda: thing.behaviors.test_request_behavior.run("A")
         t1 = Timer(0.5, closure1)
@@ -779,6 +701,4 @@ class CertSelfTest(BaseTestClass):
         closure2 = lambda: thing.behaviors.test_request_behavior.run("B")
         t2 = Timer(3, closure2)
         t2.start()
-        assertThat(
-            wait_until(thing).test_request(lambda obj: obj == "A").times(
-                2)).isFalse()
+        assertThat(wait_until(thing).test_request(lambda obj: obj == "A").times(2)).isFalse()

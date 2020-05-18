@@ -70,8 +70,7 @@ COVERAGE_TESTS = [
         ],
     },
     {
-        "test_name":
-        "test-vendor_test_host",
+        "test_name": "test-vendor_test_host",
         "covered_files": [
             "system/bt/vendor_libs/test_vendor_lib/include",
             "system/bt/vendor_libs/test_vendor_lib/src",
@@ -154,9 +153,8 @@ def write_root_html_rows(f, tests):
         json_results = generate_coverage_json(test)
         test_totals = json_results['data'][0]['totals']
 
-        f.write("<tr class='light-row'><td><pre><a href=\'" +
-                os.path.join(test_name, "index.html") + "\'>" + test_name +
-                "</a></pre></td>")
+        f.write("<tr class='light-row'><td><pre><a href=\'" + os.path.join(test_name, "index.html") + "\'>" +
+                test_name + "</a></pre></td>")
         for field_name in ['functions', 'instantiations', 'lines', 'regions']:
             field = test_totals[field_name]
             totals[field_name]['covered'] += field['covered']
@@ -180,8 +178,7 @@ def write_root_html_tail(f):
 
 def generate_root_html(tests):
     # Copy the css file from one of the coverage reports.
-    source_file = os.path.join(
-        os.path.join(WORKING_DIR, tests[0]['test_name']), "style.css")
+    source_file = os.path.join(os.path.join(WORKING_DIR, tests[0]['test_name']), "style.css")
     dest_file = os.path.join(WORKING_DIR, "style.css")
     shutil.copy2(source_file, dest_file)
 
@@ -196,28 +193,23 @@ def get_profraw_for_test(test_name):
     test_root = get_native_test_root_or_die()
     test_cmd = os.path.join(os.path.join(test_root, test_name), test_name)
     if not os.path.isfile(test_cmd):
-        logging.error('The test ' + test_name +
-                      ' does not exist, please compile first')
+        logging.error('The test ' + test_name + ' does not exist, please compile first')
         sys.exit(1)
 
     profraw_file_name = test_name + ".profraw"
-    profraw_path = os.path.join(WORKING_DIR,
-                                os.path.join(test_name, profraw_file_name))
+    profraw_path = os.path.join(WORKING_DIR, os.path.join(test_name, profraw_file_name))
     llvm_env_var = "LLVM_PROFILE_FILE=\"" + profraw_path + "\""
 
     test_cmd = llvm_env_var + " " + test_cmd
     logging.info('Generating profraw data for ' + test_name)
     logging.debug('cmd: ' + test_cmd)
     if subprocess.call(test_cmd, shell=True) != 0:
-        logging.error(
-            'Test ' + test_name +
-            ' failed. Please fix the test before generating coverage.')
+        logging.error('Test ' + test_name + ' failed. Please fix the test before generating coverage.')
         sys.exit(1)
 
     if not os.path.isfile(profraw_path):
         logging.error(
-            'Generating the profraw file failed. Did you remember to add the proper compiler flags to your build?'
-        )
+            'Generating the profraw file failed. Did you remember to add the proper compiler flags to your build?')
         sys.exit(1)
 
     return profraw_file_name
@@ -249,16 +241,14 @@ def generate_coverage_html(test):
     test_profdata_file = os.path.join(test_working_dir, test_name + ".profdata")
 
     cmd = [
-        os.path.join(get_android_root_or_die(), LLVM_COV), "show",
-        "-format=html", "-summary-only", "-show-line-counts-or-regions",
-        "-show-instantiation-summary", "-instr-profile=" + test_profdata_file,
-        "-path-equivalence=\"" + COVERAGE_ROOT + "\",\"" +
-        get_android_root_or_die() + "\"", "-output-dir=" + test_working_dir
+        os.path.join(get_android_root_or_die(), LLVM_COV), "show", "-format=html", "-summary-only",
+        "-show-line-counts-or-regions", "-show-instantiation-summary", "-instr-profile=" + test_profdata_file,
+        "-path-equivalence=\"" + COVERAGE_ROOT + "\",\"" + get_android_root_or_die() + "\"",
+        "-output-dir=" + test_working_dir
     ]
 
     # We have to have one object file not as an argument otherwise we can't specify source files.
-    test_cmd = os.path.join(
-        os.path.join(get_native_test_root_or_die(), test_name), test_name)
+    test_cmd = os.path.join(os.path.join(get_native_test_root_or_die(), test_name), test_name)
     cmd.append(test_cmd)
 
     # Filter out the specific files we want coverage for
@@ -286,12 +276,10 @@ def generate_coverage_json(test):
         "-summary-only",
         "-show-region-summary",
         "-instr-profile=" + test_profdata_file,
-        "-path-equivalence=\"" + COVERAGE_ROOT + "\",\"" +
-        get_android_root_or_die() + "\"",
+        "-path-equivalence=\"" + COVERAGE_ROOT + "\",\"" + get_android_root_or_die() + "\"",
     ]
 
-    test_cmd = os.path.join(
-        os.path.join(get_native_test_root_or_die(), test_name), test_name)
+    test_cmd = os.path.join(os.path.join(get_native_test_root_or_die(), test_name), test_name)
     cmd.append(test_cmd)
 
     # Filter out the specific files we want coverage for
@@ -325,8 +313,7 @@ def list_tests():
 
 
 def main():
-    parser = argparse.ArgumentParser(
-        description='Generate code coverage for enabled tests.')
+    parser = argparse.ArgumentParser(description='Generate code coverage for enabled tests.')
     parser.add_argument(
         '-l',
         '--list-tests',
@@ -368,22 +355,11 @@ def main():
         action='store_true',
         help='Write out summary results to json file in test directory.')
 
-    logging.basicConfig(
-        stream=sys.stderr,
-        level=logging.DEBUG,
-        format='%(levelname)s %(message)s')
-    logging.addLevelName(
-        logging.DEBUG,
-        "[\033[1;34m%s\033[0m]" % logging.getLevelName(logging.DEBUG))
-    logging.addLevelName(
-        logging.INFO,
-        "[\033[1;34m%s\033[0m]" % logging.getLevelName(logging.INFO))
-    logging.addLevelName(
-        logging.WARNING,
-        "[\033[1;31m%s\033[0m]" % logging.getLevelName(logging.WARNING))
-    logging.addLevelName(
-        logging.ERROR,
-        "[\033[1;31m%s\033[0m]" % logging.getLevelName(logging.ERROR))
+    logging.basicConfig(stream=sys.stderr, level=logging.DEBUG, format='%(levelname)s %(message)s')
+    logging.addLevelName(logging.DEBUG, "[\033[1;34m%s\033[0m]" % logging.getLevelName(logging.DEBUG))
+    logging.addLevelName(logging.INFO, "[\033[1;34m%s\033[0m]" % logging.getLevelName(logging.INFO))
+    logging.addLevelName(logging.WARNING, "[\033[1;31m%s\033[0m]" % logging.getLevelName(logging.WARNING))
+    logging.addLevelName(logging.ERROR, "[\033[1;31m%s\033[0m]" % logging.getLevelName(logging.ERROR))
 
     args = parser.parse_args()
     logging.debug("Args: " + str(args))
@@ -413,8 +389,7 @@ def main():
     # Error if a test was specified but doesn't exist.
     if len(args.tests) != 0:
         for test_name in args.tests:
-            logging.error('\"' + test_name +
-                          '\" was not found in the list of available tests.')
+            logging.error('\"' + test_name + '\" was not found in the list of available tests.')
         sys.exit(1)
 
     # Generate the info for the tests

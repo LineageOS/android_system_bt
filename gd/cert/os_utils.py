@@ -73,23 +73,18 @@ def make_ports_available(ports: Container[int], timeout_seconds=10):
         psutil.net_connections())
     success = True
     for conn in listening_conns_for_port:
-        logging.warning(
-            "Freeing port %d used by %s" % (conn.laddr.port, str(conn)))
+        logging.warning("Freeing port %d used by %s" % (conn.laddr.port, str(conn)))
         if not conn.pid:
-            logging.error(
-                "Failed to kill process occupying port %d due to lack of pid" %
-                conn.laddr.port)
+            logging.error("Failed to kill process occupying port %d due to lack of pid" % conn.laddr.port)
             success = False
             continue
-        logging.warning("Killing pid %d that is using port port %d" %
-                        (conn.pid, conn.laddr.port))
+        logging.warning("Killing pid %d that is using port port %d" % (conn.pid, conn.laddr.port))
         process = psutil.Process(conn.pid)
         process.kill()
         try:
             process.wait(timeout=timeout_seconds)
         except psutil.TimeoutExpired:
-            logging.error("SIGKILL timeout after %d seconds for pid %d" %
-                          (timeout_seconds, conn.pid))
+            logging.error("SIGKILL timeout after %d seconds for pid %d" % (timeout_seconds, conn.pid))
             continue
     return success
 
@@ -125,8 +120,7 @@ def read_crash_snippet_and_log_tail(logpath):
 
             host_crash_match = HOST_CRASH_LINE_REGEX.match(line)
             if host_crash_match:
-                crash_line = host_crash_match.group("line").replace(
-                    gd_root_prefix, "")
+                crash_line = host_crash_match.group("line").replace(gd_root_prefix, "")
                 if HOST_ABORT_HEADER in crash_line \
                         and len(last_20_lines) > 1:
                     abort_line = last_20_lines[-2]

@@ -92,8 +92,7 @@ class LinkLayerSocket(object):
         while not self.done_:
             raw_bytes = b''
             while len(raw_bytes) < size and not self.done_:
-                more_raw_bytes = self._socket.recv(
-                    min(size - len(raw_bytes), 2048))
+                more_raw_bytes = self._socket.recv(min(size - len(raw_bytes), 2048))
                 if more_raw_bytes:
                     raw_bytes += more_raw_bytes
             return raw_bytes
@@ -110,15 +109,12 @@ class LinkLayerSocket(object):
             payload_length |= header[2] << 16
             payload_length |= header[3] << 24
             print('Rx: type_byte ' + hex(header[4]))
-            print('Rx: from ' + hex(header[5]) + ':' + hex(header[6]) + ':' +
-                  hex(header[7]) + ':' + hex(header[8]) + ':' + hex(header[9]) +
-                  ':' + hex(header[10]))
-            print('Rx: to ' + hex(header[11]) + ':' + hex(header[12]) + ':' +
-                  hex(header[13]) + ':' + hex(header[14]) + ':' +
-                  hex(header[15]) + ':' + hex(header[16]))
+            print('Rx: from ' + hex(header[5]) + ':' + hex(header[6]) + ':' + hex(header[7]) + ':' + hex(header[8]) +
+                  ':' + hex(header[9]) + ':' + hex(header[10]))
+            print('Rx: to ' + hex(header[11]) + ':' + hex(header[12]) + ':' + hex(header[13]) + ':' + hex(header[14]) +
+                  ':' + hex(header[15]) + ':' + hex(header[16]))
             # Read the Payload
-            payload = self.rx_bytes(
-                payload_length) if payload_length != 0 else b''
+            payload = self.rx_bytes(payload_length) if payload_length != 0 else b''
             packet_bytes = header + payload
             self.packets_.put(packet_bytes)
 
@@ -191,9 +187,8 @@ def main(argv):
         else:
             link_layer_shell = LinkLayerShell(link_layer)
             link_layer_shell.prompt = '$ '
-            link_layer_shell.cmdloop(
-                'Welcome to the RootCanal LinkLayer Console \n' +
-                'Type \'help\' for more information.')
+            link_layer_shell.cmdloop('Welcome to the RootCanal LinkLayer Console \n' +
+                                     'Type \'help\' for more information.')
 
 
 if __name__ == '__main__':

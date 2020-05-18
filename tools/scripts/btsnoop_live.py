@@ -94,8 +94,7 @@ def get_file_time():
     Obtain current time in file time format for display
     """
     date_time = datetime.now()
-    file_time = FILETIME_EPOCH_DELTA + (
-        timegm(date_time.timetuple()) * HUNDREDS_OF_NANOSECONDS)
+    file_time = FILETIME_EPOCH_DELTA + (timegm(date_time.timetuple()) * HUNDREDS_OF_NANOSECONDS)
     file_time = file_time + (date_time.microsecond * 10)
     return file_time
 
@@ -189,8 +188,7 @@ def init_live_import(conn_str, config_str):
 
     print(dllName + " loaded successfully")
     result = live_import.InitializeLiveImport(
-        conn_str.encode('ascii', 'ignore'), config_str.encode(
-            'ascii', 'ignore'), byref(success))
+        conn_str.encode('ascii', 'ignore'), config_str.encode('ascii', 'ignore'), byref(success))
     if (result < 0):
         print("Live Import Init failed")
         return None
@@ -261,8 +259,7 @@ def main():
                     if data_frag is not None:
                         snoop_data += data_frag
 
-                print("Bytes received %d Olen %d ilen %d flags %d" %
-                      (len(snoop_data), olen, ilen, flags))
+                print("Bytes received %d Olen %d ilen %d flags %d" % (len(snoop_data), olen, ilen, flags))
                 packet_type = struct.unpack(">B", snoop_data[0:1])[0]
                 if packet_type == 1:
                     drf = 1
@@ -283,9 +280,7 @@ def main():
                     drf = 8
                     isend = 1
 
-                result = live_import.SendFrame(olen - 1, olen - 1,
-                                               snoop_data[1:olen], drf, isend,
-                                               timestamp)
+                result = live_import.SendFrame(olen - 1, olen - 1, snoop_data[1:olen], drf, isend, timestamp)
                 if (result < 0):
                     print("Send frame failed")
         except KeyboardInterrupt:
