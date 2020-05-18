@@ -30,8 +30,7 @@ from neighbor.facade import facade_pb2 as neighbor_facade
 class InquirySession(Closable, IEventStream):
 
     def __init__(self, device, inquiry_msg):
-        self.inquiry_event_stream = EventStream(
-            device.neighbor.SetInquiryMode(inquiry_msg))
+        self.inquiry_event_stream = EventStream(device.neighbor.SetInquiryMode(inquiry_msg))
 
     def get_event_queue(self):
         return self.inquiry_event_stream.get_event_queue()
@@ -43,12 +42,10 @@ class InquirySession(Closable, IEventStream):
 class GetRemoteNameSession(Closable):
 
     def __init__(self, device):
-        self.remote_name_stream = EventStream(
-            device.neighbor.GetRemoteNameEvents(empty_proto.Empty()))
+        self.remote_name_stream = EventStream(device.neighbor.GetRemoteNameEvents(empty_proto.Empty()))
 
     def verify_name(self, name):
-        assertThat(self.remote_name_stream).emits(
-            lambda msg: bytes(name) in msg.name, timeout=timedelta(seconds=10))
+        assertThat(self.remote_name_stream).emits(lambda msg: bytes(name) in msg.name, timeout=timedelta(seconds=10))
 
     def close(self):
         safeClose(self.remote_name_stream)
@@ -72,9 +69,7 @@ class PyNeighbor(object):
         """
         if self.remote_host_supported_features_notification_registered:
             return
-        msg = hci_facade.EventCodeMsg(
-            code=int(hci_packets.EventCode.
-                     REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION))
+        msg = hci_facade.EventCodeMsg(code=int(hci_packets.EventCode.REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION))
         self.device.hci.RegisterEventHandler(msg)
         self.remote_host_supported_features_notification_registered = True
 
@@ -85,7 +80,5 @@ class PyNeighbor(object):
         self._register_remote_host_supported_features_notification()
         self.device.neighbor.ReadRemoteName(
             neighbor_facade.RemoteNameRequestMsg(
-                address=remote_address.encode('utf8'),
-                page_scan_repetition_mode=1,
-                clock_offset=0x6855))
+                address=remote_address.encode('utf8'), page_scan_repetition_mode=1, clock_offset=0x6855))
         return GetRemoteNameSession(self.device)

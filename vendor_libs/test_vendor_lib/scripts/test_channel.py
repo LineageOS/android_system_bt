@@ -100,8 +100,7 @@ class TestChannel(object):
         args_size = len(args)
         self.lint_command(name, args, name_size, args_size)
         encoded_name = chr(name_size) + name
-        encoded_args = chr(args_size) + ''.join(
-            chr(len(arg)) + arg for arg in args)
+        encoded_args = chr(args_size) + ''.join(chr(len(arg)) + arg for arg in args)
         command = encoded_name + encoded_args
         if self._closed:
             return
@@ -280,8 +279,7 @@ def main(argv):
         else:
             test_channel_shell = TestChannelShell(test_channel)
             test_channel_shell.prompt = '$ '
-            test_channel_shell.cmdloop('Welcome to the RootCanal Console \n' +
-                                       'Type \'help\' for more information.')
+            test_channel_shell.cmdloop('Welcome to the RootCanal Console \n' + 'Type \'help\' for more information.')
 
 
 if __name__ == '__main__':

@@ -55,9 +55,7 @@ def set_permissions_for_host_executables(outputs):
             current_mode = os.stat(file).st_mode
             new_mode = current_mode | stat.S_IEXEC
             os.chmod(file, new_mode)
-            log.log(
-                log.INFO, "Changed file mode of %s from %s to %s" %
-                (file, oct(current_mode), oct(new_mode)))
+            log.log(log.INFO, "Changed file mode of %s from %s to %s" % (file, oct(current_mode), oct(new_mode)))
 
 
 class InstallLocalPackagesForInstallation(install):
@@ -98,17 +96,11 @@ def main():
         description="""Bluetooth Cert Tests Package""",
         # Include root package so that bluetooth_packets_python3.so can be
         # included as well
-        packages=[''] + find_packages(exclude=[
-            'acts_framework', 'acts_framework.*', 'llvm_binutils',
-            'llvm_binutils.*'
-        ]),
+        packages=[''] +
+        find_packages(exclude=['acts_framework', 'acts_framework.*', 'llvm_binutils', 'llvm_binutils.*']),
         install_requires=install_requires,
         package_data={
-            '':
-            host_executables + [
-                '*.so', 'lib64/*.so', 'target/*', 'llvm_binutils/bin/*',
-                'llvm_binutils/lib64/*'
-            ],
+            '': host_executables + ['*.so', 'lib64/*.so', 'target/*', 'llvm_binutils/bin/*', 'llvm_binutils/lib64/*'],
             'cert': ['all_test_cases'],
         },
         cmdclass={

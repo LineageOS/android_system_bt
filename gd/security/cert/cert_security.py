@@ -38,14 +38,10 @@ class CertSecurity(PySecurity):
         HCI commands following the Classic Pairing flows.
     """
     _io_cap_lookup = {
-        IoCapabilities.DISPLAY_ONLY:
-        hci_packets.IoCapability.DISPLAY_ONLY,
-        IoCapabilities.DISPLAY_YES_NO_IO_CAP:
-        hci_packets.IoCapability.DISPLAY_YES_NO,
-        IoCapabilities.KEYBOARD_ONLY:
-        hci_packets.IoCapability.KEYBOARD_ONLY,
-        IoCapabilities.NO_INPUT_NO_OUTPUT:
-        hci_packets.IoCapability.NO_INPUT_NO_OUTPUT,
+        IoCapabilities.DISPLAY_ONLY: hci_packets.IoCapability.DISPLAY_ONLY,
+        IoCapabilities.DISPLAY_YES_NO_IO_CAP: hci_packets.IoCapability.DISPLAY_YES_NO,
+        IoCapabilities.KEYBOARD_ONLY: hci_packets.IoCapability.KEYBOARD_ONLY,
+        IoCapabilities.NO_INPUT_NO_OUTPUT: hci_packets.IoCapability.NO_INPUT_NO_OUTPUT,
     }
 
     _auth_req_lookup = {
@@ -56,8 +52,7 @@ class CertSecurity(PySecurity):
         AuthenticationRequirements.DEDICATED_BONDING:
         hci_packets.AuthenticationRequirements.DEDICATED_BONDING,
         AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION:
-        hci_packets.AuthenticationRequirements.
-        DEDICATED_BONDING_MITM_PROTECTION,
+        hci_packets.AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION,
         AuthenticationRequirements.GENERAL_BONDING:
         hci_packets.AuthenticationRequirements.GENERAL_BONDING,
         AuthenticationRequirements.GENERAL_BONDING_MITM_PROTECTION:
@@ -65,14 +60,10 @@ class CertSecurity(PySecurity):
     }
 
     _oob_present_lookup = {
-        OobDataPresent.NOT_PRESENT:
-        hci_packets.OobDataPresent.NOT_PRESENT,
-        OobDataPresent.P192_PRESENT:
-        hci_packets.OobDataPresent.P_192_PRESENT,
-        OobDataPresent.P256_PRESENT:
-        hci_packets.OobDataPresent.P_256_PRESENT,
-        OobDataPresent.P192_AND_256_PRESENT:
-        hci_packets.OobDataPresent.P_192_AND_256_PRESENT,
+        OobDataPresent.NOT_PRESENT: hci_packets.OobDataPresent.NOT_PRESENT,
+        OobDataPresent.P192_PRESENT: hci_packets.OobDataPresent.P_192_PRESENT,
+        OobDataPresent.P256_PRESENT: hci_packets.OobDataPresent.P_256_PRESENT,
+        OobDataPresent.P192_AND_256_PRESENT: hci_packets.OobDataPresent.P_192_AND_256_PRESENT,
     }
 
     _hci_event_stream = None
@@ -97,23 +88,18 @@ class CertSecurity(PySecurity):
         self._device.wait_channel_ready()
         self._hci = PyHci(device)
         self._hci.register_for_events(
-            hci_packets.EventCode.LINK_KEY_REQUEST,
-            hci_packets.EventCode.IO_CAPABILITY_REQUEST,
-            hci_packets.EventCode.IO_CAPABILITY_RESPONSE,
-            hci_packets.EventCode.USER_PASSKEY_NOTIFICATION,
-            hci_packets.EventCode.USER_PASSKEY_REQUEST,
-            hci_packets.EventCode.USER_CONFIRMATION_REQUEST,
+            hci_packets.EventCode.LINK_KEY_REQUEST, hci_packets.EventCode.IO_CAPABILITY_REQUEST,
+            hci_packets.EventCode.IO_CAPABILITY_RESPONSE, hci_packets.EventCode.USER_PASSKEY_NOTIFICATION,
+            hci_packets.EventCode.USER_PASSKEY_REQUEST, hci_packets.EventCode.USER_CONFIRMATION_REQUEST,
             hci_packets.EventCode.REMOTE_HOST_SUPPORTED_FEATURES_NOTIFICATION,
-            hci_packets.EventCode.LINK_KEY_NOTIFICATION,
-            hci_packets.EventCode.SIMPLE_PAIRING_COMPLETE)
+            hci_packets.EventCode.LINK_KEY_NOTIFICATION, hci_packets.EventCode.SIMPLE_PAIRING_COMPLETE)
         self._hci_event_stream = self._hci.get_event_stream()
 
     def create_bond(self, address, type):
         """
             Creates a bond from the cert perspective
         """
-        logging.info("Cert: Creating bond to '%s' from '%s'" %
-                     (str(address), str(self._device.address)))
+        logging.info("Cert: Creating bond to '%s' from '%s'" % (str(address), str(self._device.address)))
         # TODO(optedoblivion): Trigger connection to Send AuthenticationRequested
 
     def remove_bond(self, address):
@@ -127,34 +113,28 @@ class CertSecurity(PySecurity):
         """
             Set the IO Capabilities used for the cert
         """
-        logging.info(
-            "Cert: setting IO Capabilities data to '%s'" % io_capabilities)
-        self._io_caps = self._io_cap_lookup.get(
-            io_capabilities, hci_packets.IoCapability.DISPLAY_YES_NO)
+        logging.info("Cert: setting IO Capabilities data to '%s'" % io_capabilities)
+        self._io_caps = self._io_cap_lookup.get(io_capabilities, hci_packets.IoCapability.DISPLAY_YES_NO)
 
     def set_authentication_requirements(self, auth_reqs):
         """
             Establish authentication requirements for the stack
         """
-        logging.info("Cert: setting Authentication Requirements data to '%s'" %
-                     auth_reqs)
-        self._auth_reqs = self._auth_req_lookup.get(
-            auth_reqs, hci_packets.AuthenticationRequirements.GENERAL_BONDING)
+        logging.info("Cert: setting Authentication Requirements data to '%s'" % auth_reqs)
+        self._auth_reqs = self._auth_req_lookup.get(auth_reqs, hci_packets.AuthenticationRequirements.GENERAL_BONDING)
 
     def set_oob_data(self, data):
         """
             Set the Out-of-band data for SSP pairing
         """
         logging.info("Cert: setting OOB data present to '%s'" % data)
-        self._oob_data = self._oob_present_lookup.get(
-            data, hci_packets.OobDataPresent.NOT_PRESENT)
+        self._oob_data = self._oob_present_lookup.get(data, hci_packets.OobDataPresent.NOT_PRESENT)
 
     def send_ui_callback(self, address, callback_type, b, uid):
         """
             Pretend to answer the pairing dailog as a user
         """
-        logging.info(
-            "Cert: Send user input callback uid:%d; response: %s" % (uid, b))
+        logging.info("Cert: Send user input callback uid:%d; response: %s" % (uid, b))
         # TODO(optedoblivion): Make callback and set it to the module
 
     def enable_secure_simple_pairing(self):
@@ -162,12 +142,9 @@ class CertSecurity(PySecurity):
             This is called when you want to enable SSP for testing
         """
         logging.info("Cert: Sending WRITE_SIMPLE_PAIRING_MODE [True]")
-        self._enqueue_hci_command(
-            hci_packets.WriteSimplePairingModeBuilder(
-                hci_packets.Enable.ENABLED), True)
+        self._enqueue_hci_command(hci_packets.WriteSimplePairingModeBuilder(hci_packets.Enable.ENABLED), True)
         logging.info("Cert: Waiting for controller response")
-        assertThat(self._hci_event_stream).emits(
-            lambda msg: b'\x0e\x04\x01\x56\x0c' in msg.event)
+        assertThat(self._hci_event_stream).emits(lambda msg: b'\x0e\x04\x01\x56\x0c' in msg.event)
 
     def accept_pairing(self, dut_address, reply_boolean):
         """
@@ -176,42 +153,29 @@ class CertSecurity(PySecurity):
         logging.info("Cert: Waiting for LINK_KEY_REQUEST")
         assertThat(self._hci_event_stream).emits(HciMatchers.LinkKeyRequest())
         logging.info("Cert: Sending LINK_KEY_REQUEST_NEGATIVE_REPLY")
-        self._enqueue_hci_command(
-            hci_packets.LinkKeyRequestNegativeReplyBuilder(
-                dut_address.decode('utf8')), True)
+        self._enqueue_hci_command(hci_packets.LinkKeyRequestNegativeReplyBuilder(dut_address.decode('utf8')), True)
         logging.info("Cert: Waiting for IO_CAPABILITY_REQUEST")
-        assertThat(self._hci_event_stream).emits(
-            HciMatchers.IoCapabilityRequest())
+        assertThat(self._hci_event_stream).emits(HciMatchers.IoCapabilityRequest())
         logging.info("Cert: Sending IO_CAPABILITY_REQUEST_REPLY")
         self._enqueue_hci_command(
             hci_packets.IoCapabilityRequestReplyBuilder(
-                dut_address.decode('utf8'), self._io_caps, self._oob_data,
-                self._auth_reqs), True)
+                dut_address.decode('utf8'), self._io_caps, self._oob_data, self._auth_reqs), True)
         logging.info("Cert: Waiting for USER_CONFIRMATION_REQUEST")
-        assertThat(self._hci_event_stream).emits(
-            HciMatchers.UserConfirmationRequest())
-        logging.info(
-            "Cert: Sending Simulated User Response '%s'" % reply_boolean)
+        assertThat(self._hci_event_stream).emits(HciMatchers.UserConfirmationRequest())
+        logging.info("Cert: Sending Simulated User Response '%s'" % reply_boolean)
         if reply_boolean:
             logging.info("Cert: Sending USER_CONFIRMATION_REQUEST_REPLY")
-            self._enqueue_hci_command(
-                hci_packets.UserConfirmationRequestReplyBuilder(
-                    dut_address.decode('utf8')), True)
+            self._enqueue_hci_command(hci_packets.UserConfirmationRequestReplyBuilder(dut_address.decode('utf8')), True)
             logging.info("Cert: Waiting for LINK_KEY_NOTIFICATION")
-            assertThat(self._hci_event_stream).emits(
-                HciMatchers.LinkKeyNotification())
+            assertThat(self._hci_event_stream).emits(HciMatchers.LinkKeyNotification())
             logging.info("Cert: Waiting for SIMPLE_PAIRING_COMPLETE")
-            assertThat(self._hci_event_stream).emits(
-                HciMatchers.SimplePairingComplete())
+            assertThat(self._hci_event_stream).emits(HciMatchers.SimplePairingComplete())
         else:
-            logging.info(
-                "Cert: Sending USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY")
+            logging.info("Cert: Sending USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY")
             self._enqueue_hci_command(
-                hci_packets.UserConfirmationRequestNegativeReplyBuilder(
-                    dut_address.decode('utf8')), True)
+                hci_packets.UserConfirmationRequestNegativeReplyBuilder(dut_address.decode('utf8')), True)
             logging.info("Cert: Waiting for SIMPLE_PAIRING_COMPLETE")
-            assertThat(self._hci_event_stream).emits(
-                HciMatchers.SimplePairingComplete())
+            assertThat(self._hci_event_stream).emits(HciMatchers.SimplePairingComplete())
 
     def on_user_input(self, dut_address, reply_boolean, expected_ui_event):
         """

@@ -54,14 +54,11 @@ DEBUG_DATA = "DEBUG_DATA"
 AUDIO_DATA_B = "AUDIO_DATA_B"
 
 # Debug packet header struct
-header_list_str = [
-    "Event Processed", "Number Packet Nacked By Slave",
-    "Number Packet Nacked By Master"
-]
+header_list_str = ["Event Processed", "Number Packet Nacked By Slave", "Number Packet Nacked By Master"]
 # Debug frame information structs
 data_list_str = [
-    "Event Number", "Overrun", "Underrun", "Skips", "Rendered Audio Frame",
-    "First PDU Option", "Second PDU Option", "Third PDU Option"
+    "Event Number", "Overrun", "Underrun", "Skips", "Rendered Audio Frame", "First PDU Option", "Second PDU Option",
+    "Third PDU Option"
 ]
 
 AUDIO_CONTROL_POINT_UUID = "f0d4de7e4a88476c9d9f1937b0996cc0"
@@ -90,14 +87,12 @@ def parse_acl_ha_debug_buffer(data, result):
         return
 
     version, data = unpack_data(data, 1)
-    update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE],
-                      DEBUG_VERSION, str(version))
+    update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE], DEBUG_VERSION, str(version))
 
     debug_str = result[TIMESTAMP_TIME_FORMAT]
     for p in range(3):
         byte_data, data = unpack_data(data, 1)
-        debug_str = debug_str + ", " + header_list_str[p] + "=" + str(
-            byte_data).rjust(3)
+        debug_str = debug_str + ", " + header_list_str[p] + "=" + str(byte_data).rjust(3)
 
     if full_debug:
         debug_str = debug_str + "\n" + "|".join(data_list_str) + "\n"
@@ -110,22 +105,15 @@ def parse_acl_ha_debug_buffer(data, result):
                 p = base + counter
                 byte_data, data = unpack_data(data, 1)
                 if p == 1:
-                    data_list_content.append(
-                        str(byte_data & 0x03).rjust(len(data_list_str[p])))
-                    data_list_content.append(
-                        str((byte_data >> 2) & 0x03).rjust(
-                            len(data_list_str[p + 1])))
-                    data_list_content.append(
-                        str((byte_data >> 4) & 0x0f).rjust(
-                            len(data_list_str[p + 2])))
+                    data_list_content.append(str(byte_data & 0x03).rjust(len(data_list_str[p])))
+                    data_list_content.append(str((byte_data >> 2) & 0x03).rjust(len(data_list_str[p + 1])))
+                    data_list_content.append(str((byte_data >> 4) & 0x0f).rjust(len(data_list_str[p + 2])))
                     base = 2
                 else:
-                    data_list_content.append(
-                        str(byte_data).rjust(len(data_list_str[p])))
+                    data_list_content.append(str(byte_data).rjust(len(data_list_str[p])))
             debug_str = debug_str + "|".join(data_list_content) + "\n"
 
-    update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE], DEBUG_DATA,
-                      debug_str)
+    update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE], DEBUG_DATA, debug_str)
 
 
 def parse_acl_ha_audio_data(data, result):
@@ -134,8 +122,7 @@ def parse_acl_ha_audio_data(data, result):
         return
     # Remove audio packet number
     audio_data_b = data[1:]
-    update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE],
-                      AUDIO_DATA_B, audio_data_b)
+    update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE], AUDIO_DATA_B, audio_data_b)
 
 
 def parse_acl_ha_audio_type(data, result):
@@ -151,8 +138,7 @@ def parse_acl_ha_audio_type(data, result):
         audio_type = "Media"
     else:
         audio_type = "Unknown"
-    update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE], AUDIO_TYPE,
-                      audio_type)
+    update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE], AUDIO_TYPE, audio_type)
 
 
 def parse_acl_ha_codec(data, result):
@@ -167,10 +153,8 @@ def parse_acl_ha_codec(data, result):
     else:
         codec = "Unknown"
         sample_rate = "Unknown"
-    update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE], CODEC,
-                      codec)
-    update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE], SAMPLE_RATE,
-                      sample_rate)
+    update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE], CODEC, codec)
+    update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE], SAMPLE_RATE, sample_rate)
     parse_acl_ha_audio_type(data, result)
 
 
@@ -178,14 +162,12 @@ def parse_acl_ha_audio_control_cmd(data, result):
     """This function parses HA audio control cmd is start/stop."""
     control_cmd, data = unpack_data(data, 1)
     if control_cmd == 0x01:
-        update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE], START,
-                          True)
-        update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE],
-                          TIMESTAMP_STR_FORMAT, result[TIMESTAMP_STR_FORMAT])
+        update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE], START, True)
+        update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE], TIMESTAMP_STR_FORMAT,
+                          result[TIMESTAMP_STR_FORMAT])
         parse_acl_ha_codec(data, result)
     elif control_cmd == 0x02:
-        update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE], START,
-                          False)
+        update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE], START, False)
 
 
 #-----------------------------------------------------------------------
@@ -209,8 +191,7 @@ def parse_acl_att_long_uuid(data, result):
     long_uuid = "".join(long_uuid_list)
     # Check long_uuid is AUDIO_CONTROL_POINT uuid to get the attr_handle.
     if long_uuid == AUDIO_CONTROL_POINT_UUID:
-        update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE],
-                          AUDIO_CONTROL_ATTR_HANDLE, attr_handle)
+        update_audio_data(CONNECTION_HANDLE, result[CONNECTION_HANDLE], AUDIO_CONTROL_ATTR_HANDLE, attr_handle)
 
 
 def parse_acl_opcode(data, result):
@@ -276,8 +257,7 @@ def parse_hci_evt_peer_address(data, result):
         if len(data) < 6:
             return
         for p in range(0, 6):
-            peer_address_list.append("{0:02x}".format(
-                struct.unpack(">B", data[p])[0]))
+            peer_address_list.append("{0:02x}".format(struct.unpack(">B", data[p])[0]))
         # Check the address is empty or not.
         if peer_address_list == address_empty_list:
             del peer_address_list[:]
@@ -287,8 +267,7 @@ def parse_hci_evt_peer_address(data, result):
     peer_address_list.reverse()
     peer_address = "_".join(peer_address_list)
     update_audio_data("", "", PEER_ADDRESS, peer_address)
-    update_audio_data(PEER_ADDRESS, peer_address, CONNECTION_HANDLE,
-                      result[CONNECTION_HANDLE])
+    update_audio_data(PEER_ADDRESS, peer_address, CONNECTION_HANDLE, result[CONNECTION_HANDLE])
 
 
 def parse_hci_evt_code(data, result):
@@ -350,8 +329,7 @@ def parse_packet(btsnoop_file):
             return False
         if packet_flag != 2 and drop == 0:
             packet_result[IS_SENT] = (packet_flag == 0)
-            packet_result[TIMESTAMP_STR_FORMAT], packet_result[
-                TIMESTAMP_TIME_FORMAT] = convert_time_str(timestamp)
+            packet_result[TIMESTAMP_STR_FORMAT], packet_result[TIMESTAMP_TIME_FORMAT] = convert_time_str(timestamp)
             parse_packet_data(packet_data, packet_result)
     else:
         return False
@@ -375,12 +353,10 @@ def dump_audio_data(data):
     if folder is not None:
         if not os.path.exists(folder):
             os.makedirs(folder)
-        audio_file_name = os.path.join(folder,
-                                       "-".join(file_name_list) + file_type)
+        audio_file_name = os.path.join(folder, "-".join(file_name_list) + file_type)
         if data.has_key(DEBUG_VERSION):
             file_prefix = "debug_ver_" + data[DEBUG_VERSION] + "-"
-            debug_file_name = os.path.join(
-                folder, file_prefix + "-".join(file_name_list) + ".txt")
+            debug_file_name = os.path.join(folder, file_prefix + "-".join(file_name_list) + ".txt")
     else:
         audio_file_name = "-".join(file_name_list) + file_type
         if data.has_key(DEBUG_VERSION):
@@ -391,23 +367,19 @@ def dump_audio_data(data):
     if data.has_key(AUDIO_DATA_B):
         with open(audio_file_name, "wb+") as audio_file:
             audio_file.write(data[AUDIO_DATA_B])
-            sys.stdout.write(
-                "Finished to dump Audio File: %s\n\n" % audio_file_name)
+            sys.stdout.write("Finished to dump Audio File: %s\n\n" % audio_file_name)
     else:
         sys.stdout.write("Fail to dump Audio File: %s\n" % audio_file_name)
         sys.stdout.write("There isn't any Hearing Aid audio data.\n\n")
 
     if simple_debug:
-        sys.stdout.write(
-            "Start to dump audio %s Debug File\n" % audio_file_name)
+        sys.stdout.write("Start to dump audio %s Debug File\n" % audio_file_name)
         if data.has_key(DEBUG_DATA):
             with open(debug_file_name, "wb+") as debug_file:
                 debug_file.write(data[DEBUG_DATA])
-                sys.stdout.write(
-                    "Finished to dump Debug File: %s\n\n" % debug_file_name)
+                sys.stdout.write("Finished to dump Debug File: %s\n\n" % debug_file_name)
         else:
-            sys.stdout.write(
-                "Fail to dump audio %s Debug File\n" % audio_file_name)
+            sys.stdout.write("Fail to dump audio %s Debug File\n" % audio_file_name)
             sys.stdout.write("There isn't any Hearing Aid debug data.\n\n")
 
 
@@ -534,11 +506,9 @@ def convert_time_str(timestamp):
 
 def set_config():
     """This function is for set config by flag and check the argv is correct."""
-    argv_parser = argparse.ArgumentParser(
-        description="Extracts Hearing Aid audio data from BTSNOOP.")
+    argv_parser = argparse.ArgumentParser(description="Extracts Hearing Aid audio data from BTSNOOP.")
     argv_parser.add_argument("BTSNOOP", help="BLUETOOTH BTSNOOP file.")
-    argv_parser.add_argument(
-        "-f", "--folder", help="select output folder.", dest="folder")
+    argv_parser.add_argument("-f", "--folder", help="select output folder.", dest="folder")
     argv_parser.add_argument(
         "-c1",
         "--connection-handle1",
@@ -574,17 +544,9 @@ def set_config():
         dest="audio_control_attr_handle",
         type=int)
     argv_parser.add_argument(
-        "-d",
-        "--debug",
-        help="dump full debug buffer content.",
-        dest="full_debug",
-        default="False")
+        "-d", "--debug", help="dump full debug buffer content.", dest="full_debug", default="False")
     argv_parser.add_argument(
-        "-sd",
-        "--simple-debug",
-        help="dump debug buffer header content.",
-        dest="simple_debug",
-        default="False")
+        "-sd", "--simple-debug", help="dump debug buffer header content.", dest="simple_debug", default="False")
     arg = argv_parser.parse_args()
 
     if arg.folder is not None:
@@ -598,19 +560,16 @@ def set_config():
         exit(1)
 
     if not (arg.no_start.lower() == "true" or arg.no_start.lower() == "false"):
-        argv_parser.error(
-            "-ns/--no-start arg is invalid, it should be true/false.")
+        argv_parser.error("-ns/--no-start arg is invalid, it should be true/false.")
         exit(1)
 
     if arg.connection_handle1 is not None:
         fake_name = "ConnectionHandle" + str(arg.connection_handle1)
         update_audio_data("", "", PEER_ADDRESS, fake_name)
-        update_audio_data(PEER_ADDRESS, fake_name, CONNECTION_HANDLE,
-                          arg.connection_handle1)
+        update_audio_data(PEER_ADDRESS, fake_name, CONNECTION_HANDLE, arg.connection_handle1)
         if arg.no_start.lower() == "true":
             update_audio_data(PEER_ADDRESS, fake_name, START, True)
-            update_audio_data(PEER_ADDRESS, fake_name, TIMESTAMP_STR_FORMAT,
-                              "Unknown")
+            update_audio_data(PEER_ADDRESS, fake_name, TIMESTAMP_STR_FORMAT, "Unknown")
             update_audio_data(PEER_ADDRESS, fake_name, CODEC, arg.codec)
             update_audio_data(PEER_ADDRESS, fake_name, SAMPLE_RATE, "Unknown")
             update_audio_data(PEER_ADDRESS, fake_name, AUDIO_TYPE, "Unknown")
@@ -618,12 +577,10 @@ def set_config():
     if arg.connection_handle2 is not None:
         fake_name = "ConnectionHandle" + str(arg.connection_handle2)
         update_audio_data("", "", PEER_ADDRESS, fake_name)
-        update_audio_data(PEER_ADDRESS, fake_name, CONNECTION_HANDLE,
-                          arg.connection_handle2)
+        update_audio_data(PEER_ADDRESS, fake_name, CONNECTION_HANDLE, arg.connection_handle2)
         if arg.no_start.lower() == "true":
             update_audio_data(PEER_ADDRESS, fake_name, START, True)
-            update_audio_data(PEER_ADDRESS, fake_name, TIMESTAMP_STR_FORMAT,
-                              "Unknown")
+            update_audio_data(PEER_ADDRESS, fake_name, TIMESTAMP_STR_FORMAT, "Unknown")
             update_audio_data(PEER_ADDRESS, fake_name, CODEC, arg.codec)
             update_audio_data(PEER_ADDRESS, fake_name, SAMPLE_RATE, "Unknown")
             update_audio_data(PEER_ADDRESS, fake_name, AUDIO_TYPE, "Unknown")
@@ -653,14 +610,12 @@ def main():
     with open(btsnoop_file_name, "rb") as btsnoop_file:
         identification = btsnoop_file.read(8)
         if identification != "btsnoop\0":
-            sys.stderr.write(
-                "Check identification fail. It is not correct btsnoop file.")
+            sys.stderr.write("Check identification fail. It is not correct btsnoop file.")
             exit(1)
 
         ver, data_link = struct.unpack(">II", btsnoop_file.read(4 + 4))
         if (ver != 1) or (data_link != 1002):
-            sys.stderr.write(
-                "Check ver or dataLink fail. It is not correct btsnoop file.")
+            sys.stderr.write("Check ver or dataLink fail. It is not correct btsnoop file.")
             exit(1)
 
         while True:

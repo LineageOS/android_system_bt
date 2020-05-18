@@ -43,23 +43,17 @@ class SecurityTest(GdBaseTestClass):
     def setup_test(self):
         super().setup_test()
 
-        self.dut.neighbor.EnablePageScan(
-            neighbor_facade.EnableMsg(enabled=True))
-        self.cert.neighbor.EnablePageScan(
-            neighbor_facade.EnableMsg(enabled=True))
+        self.dut.neighbor.EnablePageScan(neighbor_facade.EnableMsg(enabled=True))
+        self.cert.neighbor.EnablePageScan(neighbor_facade.EnableMsg(enabled=True))
 
         self.dut.name = b'DUT Device'
-        self.dut.address = self.dut.hci_controller.GetMacAddress(
-            empty_proto.Empty()).address
+        self.dut.address = self.dut.hci_controller.GetMacAddress(empty_proto.Empty()).address
         self.cert.name = b'Cert Device'
-        self.cert.address = self.cert.hci_controller.GetMacAddress(
-            empty_proto.Empty()).address
+        self.cert.address = self.cert.hci_controller.GetMacAddress(empty_proto.Empty()).address
 
         # TODO(optedoblivion): Make this happen in PySecurity or GdDevice
-        self.dut.hci_controller.WriteLocalName(
-            controller_facade.NameMsg(name=self.dut.name))
-        self.cert.hci_controller.WriteLocalName(
-            controller_facade.NameMsg(name=self.cert.name))
+        self.dut.hci_controller.WriteLocalName(controller_facade.NameMsg(name=self.dut.name))
+        self.cert.hci_controller.WriteLocalName(controller_facade.NameMsg(name=self.cert.name))
 
         self.dut_security = PySecurity(self.dut)
         self.cert_security = CertSecurity(self.cert)
@@ -70,18 +64,14 @@ class SecurityTest(GdBaseTestClass):
         super().teardown_test()
 
     # SSP Numeric Comparison test cases
-    def _run_ssp_numeric_comparison(
-            self, initiator, responder, init_ui_response, resp_ui_response,
-            expected_init_ui_event, expected_resp_ui_event,
-            expected_init_bond_event, expected_resp_bond_event):
+    def _run_ssp_numeric_comparison(self, initiator, responder, init_ui_response, resp_ui_response,
+                                    expected_init_ui_event, expected_resp_ui_event, expected_init_bond_event,
+                                    expected_resp_bond_event):
         initiator.enable_secure_simple_pairing()
         responder.enable_secure_simple_pairing()
-        initiator.create_bond(
-            responder.get_address(),
-            common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
+        initiator.create_bond(responder.get_address(), common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
         responder.accept_pairing(initiator.get_address(), resp_ui_response)
-        initiator.on_user_input(responder.get_address(), init_ui_response,
-                                expected_init_ui_event)
+        initiator.on_user_input(responder.get_address(), init_ui_response, expected_init_ui_event)
         initiator.wait_for_bond_event(expected_init_bond_event)
         responder.wait_for_bond_event(expected_resp_bond_event)
 
@@ -99,12 +89,10 @@ class SecurityTest(GdBaseTestClass):
     def test_dut_initiated_display_only_display_only(self):
         # Arrange
         self.dut_security.set_io_capabilities(IoCapabilities.DISPLAY_ONLY)
-        self.dut_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
         self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
         self.cert_security.set_io_capabilities(IoCapabilities.DISPLAY_ONLY)
-        self.cert_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
         self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
 
         # Act and Assert
@@ -121,14 +109,11 @@ class SecurityTest(GdBaseTestClass):
     # display_yes_no + display_only is JustWorks no confirmation
     def test_dut_initiated_display_yes_no_display_only(self):
         # Arrange
-        self.dut_security.set_io_capabilities(
-            IoCapabilities.DISPLAY_YES_NO_IO_CAP)
-        self.dut_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.dut_security.set_io_capabilities(IoCapabilities.DISPLAY_YES_NO_IO_CAP)
+        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
         self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
         self.cert_security.set_io_capabilities(IoCapabilities.DISPLAY_ONLY)
-        self.cert_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
         self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
 
         # Act and Assert
@@ -146,12 +131,10 @@ class SecurityTest(GdBaseTestClass):
     def test_dut_initiated_no_input_no_output_display_only(self):
         # Arrange
         self.dut_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
-        self.dut_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
         self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
         self.cert_security.set_io_capabilities(IoCapabilities.DISPLAY_ONLY)
-        self.cert_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
         self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
 
         # Act and Assert
@@ -169,13 +152,10 @@ class SecurityTest(GdBaseTestClass):
     def test_dut_initiated_display_only_display_yes_no(self):
         # Arrange
         self.dut_security.set_io_capabilities(IoCapabilities.DISPLAY_ONLY)
-        self.dut_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
         self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(
-            IoCapabilities.DISPLAY_YES_NO_IO_CAP)
-        self.cert_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.cert_security.set_io_capabilities(IoCapabilities.DISPLAY_YES_NO_IO_CAP)
+        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
         self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
 
         # Act and Assert
@@ -192,15 +172,11 @@ class SecurityTest(GdBaseTestClass):
     # display_yes_no + display_yes_no is JustWorks no confirmation
     def test_dut_initiated_display_yes_no_display_yes_no(self):
         # Arrange
-        self.dut_security.set_io_capabilities(
-            IoCapabilities.DISPLAY_YES_NO_IO_CAP)
-        self.dut_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.dut_security.set_io_capabilities(IoCapabilities.DISPLAY_YES_NO_IO_CAP)
+        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
         self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(
-            IoCapabilities.DISPLAY_YES_NO_IO_CAP)
-        self.cert_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.cert_security.set_io_capabilities(IoCapabilities.DISPLAY_YES_NO_IO_CAP)
+        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
         self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
 
         # Act and Assert
@@ -218,13 +194,10 @@ class SecurityTest(GdBaseTestClass):
     def test_dut_initiated_no_input_no_output_display_yes_no(self):
         # Arrange
         self.dut_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
-        self.dut_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
         self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(
-            IoCapabilities.DISPLAY_YES_NO_IO_CAP)
-        self.cert_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.cert_security.set_io_capabilities(IoCapabilities.DISPLAY_YES_NO_IO_CAP)
+        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
         self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
 
         # Act and Assert
@@ -242,13 +215,10 @@ class SecurityTest(GdBaseTestClass):
     def test_dut_initiated_no_input_no_output_keyboard_only(self):
         # Arrange
         self.dut_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
-        self.dut_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
         self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(
-            IoCapabilities.DISPLAY_YES_NO_IO_CAP)
-        self.cert_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.cert_security.set_io_capabilities(IoCapabilities.DISPLAY_YES_NO_IO_CAP)
+        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
         self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
 
         # Act and Assert
@@ -266,13 +236,10 @@ class SecurityTest(GdBaseTestClass):
     def test_dut_initiated_keyboard_only_no_input_no_output(self):
         # Arrange
         self.dut_security.set_io_capabilities(IoCapabilities.KEYBOARD_ONLY)
-        self.dut_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
         self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(
-            IoCapabilities.NO_INPUT_NO_OUTPUT)
-        self.cert_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.cert_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
+        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
         self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
 
         # Act and Assert
@@ -290,13 +257,10 @@ class SecurityTest(GdBaseTestClass):
     def test_dut_initiated_no_input_no_output_no_input_no_output(self):
         # Arrange
         self.dut_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
-        self.dut_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
         self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(
-            IoCapabilities.NO_INPUT_NO_OUTPUT)
-        self.cert_security.set_authentication_requirements(
-            AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.cert_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
+        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
         self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
 
         # Act and Assert
@@ -309,6 +273,7 @@ class SecurityTest(GdBaseTestClass):
             expected_resp_ui_event=None,
             expected_init_bond_event=BondMsgType.DEVICE_BONDED,
             expected_resp_bond_event=None)
+
 
 ## Other permutations
 #def xtest_dut_initiated_display_only_display_only_local_user_deny(self)
