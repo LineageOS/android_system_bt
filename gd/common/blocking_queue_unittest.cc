@@ -16,9 +16,9 @@
 
 #include "common/blocking_queue.h"
 
-#include <thread>
-
 #include <gtest/gtest.h>
+
+#include <thread>
 
 namespace bluetooth {
 namespace common {
