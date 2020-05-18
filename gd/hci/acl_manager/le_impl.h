@@ -54,7 +54,6 @@ struct le_impl : public bluetooth::hci::LeAddressRotatorCallback {
         handler_->BindOn(this, &le_impl::on_le_event), handler_->BindOn(this, &le_impl::on_le_disconnect));
     le_address_rotator_ = new LeAddressRotator(common::Bind(&le_impl::SetRandomAddress, common::Unretained(this)),
                                                handler_, controller->GetControllerMacAddress());
-    le_address_rotator_->Register(this);
   }
 
   ~le_impl() {
@@ -281,20 +280,14 @@ struct le_impl : public bluetooth::hci::LeAddressRotatorCallback {
     }
   }
 
-  void set_le_initiator_address(AddressWithType le_initiator_address) {
-    if (le_initiator_address.GetAddressType() != AddressType::RANDOM_DEVICE_ADDRESS) {
-      // Usually controllers provide vendor-specific way to override public address. Implement it if it's ever needed.
-      LOG_ALWAYS_FATAL("Don't know how to use this type of address");
-    }
-    le_address_rotator_->SetAddress(le_initiator_address);
-  }
-
   void set_privacy_policy_for_initiator_address(LeAddressRotator::AddressPolicy address_policy,
                                                 AddressWithType fixed_address, crypto_toolbox::Octet16 rotation_irk,
                                                 std::chrono::milliseconds minimum_rotation_time,
                                                 std::chrono::milliseconds maximum_rotation_time) {
     le_address_rotator_->SetPrivacyPolicyForInitiatorAddress(address_policy, fixed_address, rotation_irk,
                                                              minimum_rotation_time, maximum_rotation_time);
+    // Policy must be set before clients are registered.
+    le_address_rotator_->Register(this);
   }
 
   void handle_register_le_callbacks(LeConnectionCallbacks* callbacks, os::Handler* handler) {

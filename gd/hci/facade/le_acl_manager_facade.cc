@@ -116,32 +116,6 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status SetInitiatorAddress(::grpc::ServerContext* context,
-                                     const ::bluetooth::facade::BluetoothAddressWithType* request,
-                                     ::google::protobuf::Empty* writer) override {
-    Address address;
-    ASSERT(Address::FromString(request->address().address(), address));
-    acl_manager_->SetLeInitiatorAddress(AddressWithType(address, static_cast<AddressType>(request->type())));
-    return ::grpc::Status::OK;
-  }
-
-  ::grpc::Status SetPrivacyPolicyForInitiatorAddress(::grpc::ServerContext* context, const PrivacyPolicy* request,
-                                                     ::google::protobuf::Empty* writer) override {
-    Address address;
-    ASSERT(Address::FromString(request->address_with_type().address().address(), address));
-    LeAddressRotator::AddressPolicy address_policy =
-        static_cast<LeAddressRotator::AddressPolicy>(request->address_policy());
-    AddressWithType address_with_type(address, static_cast<AddressType>(request->address_with_type().type()));
-    std::vector<uint8_t> irk_data(request->rotation_irk().begin(), request->rotation_irk().end());
-    crypto_toolbox::Octet16 irk = {};
-    std::copy_n(irk_data.begin(), crypto_toolbox::OCTET16_LEN, irk.begin());
-    auto minimum_rotation_time = std::chrono::milliseconds(request->minimum_rotation_time());
-    auto maximum_rotation_time = std::chrono::milliseconds(request->maximum_rotation_time());
-    acl_manager_->SetPrivacyPolicyForInitiatorAddress(address_policy, address_with_type, irk, minimum_rotation_time,
-                                                      maximum_rotation_time);
-    return ::grpc::Status::OK;
-  }
-
   std::unique_ptr<BasePacketBuilder> enqueue_packet(const LeAclData* request, std::promise<void> promise) {
     auto connection = acl_connections_.find(request->handle());
     ASSERT_LOG(connection != acl_connections_.end(), "handle %d", request->handle());

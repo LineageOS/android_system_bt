@@ -80,7 +80,9 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressRotatorCallb
   impl(Module* module) : module_(module), le_advertising_interface_(nullptr), num_instances_(0) {}
 
   ~impl() {
-    le_address_rotator_->Unregister(this);
+    if (address_rotator_registered) {
+      le_address_rotator_->Unregister(this);
+    }
   }
 
   void start(os::Handler* handler, hci::HciLayer* hci_layer, hci::Controller* controller,
@@ -91,7 +93,6 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressRotatorCallb
     le_address_rotator_ = acl_manager->GetLeAddressRotator();
     le_advertising_interface_ =
         hci_layer_->GetLeAdvertisingInterface(module_handler_->BindOn(this, &LeAdvertisingManager::impl::handle_event));
-    le_address_rotator_->Register(this);
     num_instances_ = controller_->GetControllerLeNumberOfSupportedAdverisingSets();
     enabled_sets_ = std::vector<EnabledSet>(num_instances_);
     if (controller_->IsSupported(hci::OpCode::LE_SET_EXTENDED_ADVERTISING_PARAMETERS)) {
@@ -169,6 +170,11 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressRotatorCallb
     advertising_sets_[id].scan_callback = scan_callback;
     advertising_sets_[id].set_terminated_callback = set_terminated_callback;
     advertising_sets_[id].handler = handler;
+
+    if (!address_rotator_registered) {
+      le_address_rotator_->Register(this);
+    }
+
     switch (advertising_api_type_) {
       case (AdvertisingApiType::LE_4_0):
         le_advertising_interface_->EnqueueCommand(
@@ -176,9 +182,6 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressRotatorCallb
                 config.interval_min, config.interval_max, config.event_type, config.address_type,
                 config.peer_address_type, config.peer_address, config.channel_map, config.filter_policy),
             module_handler_->BindOnce(impl::check_status<LeSetAdvertisingParametersCompleteView>));
-        le_advertising_interface_->EnqueueCommand(
-            hci::LeSetRandomAddressBuilder::Create(config.random_address),
-            module_handler_->BindOnce(impl::check_status<LeSetRandomAddressCompleteView>));
         if (!config.scan_response.empty()) {
           le_advertising_interface_->EnqueueCommand(
               hci::LeSetScanResponseDataBuilder::Create(config.scan_response),
@@ -206,7 +209,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressRotatorCallb
               module_handler_->BindOnce(impl::check_status<LeMultiAdvtCompleteView>));
         }
         le_advertising_interface_->EnqueueCommand(
-            hci::LeMultiAdvtSetRandomAddrBuilder::Create(config.random_address, id),
+            hci::LeMultiAdvtSetRandomAddrBuilder::Create(le_address_rotator_->GetAnotherAddress().GetAddress(), id),
             module_handler_->BindOnce(impl::check_status<LeMultiAdvtCompleteView>));
         le_advertising_interface_->EnqueueCommand(
             hci::LeMultiAdvtSetEnableBuilder::Create(Enable::ENABLED, id),
@@ -227,6 +230,10 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressRotatorCallb
     if (advertising_api_type_ != AdvertisingApiType::LE_5_0) {
       create_advertiser(id, config, scan_callback, set_terminated_callback, handler);
       return;
+    }
+
+    if (!address_rotator_registered) {
+      le_address_rotator_->Register(this);
     }
 
     if (config.legacy_pdus) {
@@ -267,7 +274,8 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressRotatorCallb
     }
 
     le_advertising_interface_->EnqueueCommand(
-        hci::LeSetExtendedAdvertisingRandomAddressBuilder::Create(id, config.random_address),
+        hci::LeSetExtendedAdvertisingRandomAddressBuilder::Create(
+            id, le_address_rotator_->GetAnotherAddress().GetAddress()),
         module_handler_->BindOnce(impl::check_status<LeSetExtendedAdvertisingRandomAddressCompleteView>));
     if (!config.scan_response.empty()) {
       le_advertising_interface_->EnqueueCommand(
@@ -355,6 +363,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressRotatorCallb
   hci::LeAdvertisingInterface* le_advertising_interface_;
   std::map<AdvertiserId, Advertiser> advertising_sets_;
   hci::LeAddressRotator* le_address_rotator_;
+  bool address_rotator_registered = false;
 
   std::mutex id_mutex_;
   size_t num_instances_;

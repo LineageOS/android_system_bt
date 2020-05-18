@@ -48,6 +48,7 @@ filegroup {
         "facade/controller_facade.cc",
         "facade/le_acl_manager_facade.cc",
         "facade/le_advertising_manager_facade.cc",
+        "facade/le_initiator_address_facade.cc",
         "facade/le_scanning_manager_facade.cc",
     ],
 }

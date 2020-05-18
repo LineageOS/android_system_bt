@@ -174,10 +174,21 @@ class TestHciLayer : public HciLayer {
   std::unique_ptr<std::promise<void>> command_promise_{};
 };
 
+class TestLeAddressRotator : public LeAddressRotator {
+ public:
+  TestLeAddressRotator(
+      common::Callback<void(Address address)> set_random_address, os::Handler* handler, Address public_address)
+      : LeAddressRotator(set_random_address, handler, public_address) {}
+
+  void Register(LeAddressRotatorCallback* callback) override {}
+
+  void Unregister(LeAddressRotatorCallback* callback) override {}
+};
+
 class TestAclManager : public AclManager {
  public:
   LeAddressRotator* GetLeAddressRotator() override {
-    return le_address_rotator_;
+    return test_le_address_rotator_;
   }
 
  protected:
@@ -185,12 +196,12 @@ class TestAclManager : public AclManager {
     thread_ = new os::Thread("thread", os::Thread::Priority::NORMAL);
     handler_ = new os::Handler(thread_);
     Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
-    le_address_rotator_ = new LeAddressRotator(
+    test_le_address_rotator_ = new TestLeAddressRotator(
         common::Bind(&TestAclManager::SetRandomAddress, common::Unretained(this)), handler_, address);
   }
 
   void Stop() override {
-    delete le_address_rotator_;
+    delete test_le_address_rotator_;
     handler_->Clear();
     delete handler_;
     delete thread_;
@@ -202,7 +213,7 @@ class TestAclManager : public AclManager {
 
   os::Thread* thread_;
   os::Handler* handler_;
-  LeAddressRotator* le_address_rotator_;
+  TestLeAddressRotator* test_le_address_rotator_;
 };
 
 class LeScanningManagerTest : public ::testing::Test {
