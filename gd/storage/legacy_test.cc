@@ -16,12 +16,11 @@
 
 #include "storage/legacy.h"
 
+#include <base/files/file_util.h>
 #include <gtest/gtest.h>
 
 #include "os/handler.h"
 #include "os/thread.h"
-
-#include <base/files/file_util.h>
 
 #ifdef OS_ANDROID
 constexpr char CONFIG_FILE[] = "/data/local/tmp/config_test.conf";
@@ -124,8 +123,8 @@ TEST_F(LegacyStorageTest, Module) {}
 TEST_F(LegacyStorageTest, ConfigRead) {
   std::string filename(CONFIG_FILE);
   auto future = promise.get_future();
-  legacy_module_->ConfigRead(filename, common::BindOnce(&LegacyStorageTest::OnConfigRead, common::Unretained(this)),
-                             handler_);
+  legacy_module_->ConfigRead(
+      filename, common::BindOnce(&LegacyStorageTest::OnConfigRead, common::Unretained(this)), handler_);
   future.wait();
 }
 
@@ -133,16 +132,16 @@ TEST_F(LegacyStorageTest, ConfigWrite) {
   std::string filename(CONFIG_FILE);
   config_t config;
   auto future = promise.get_future();
-  legacy_module_->ConfigWrite(filename, config,
-                              common::BindOnce(&LegacyStorageTest::OnConfigWrite, common::Unretained(this)), handler_);
+  legacy_module_->ConfigWrite(
+      filename, config, common::BindOnce(&LegacyStorageTest::OnConfigWrite, common::Unretained(this)), handler_);
   future.wait();
 }
 
 TEST_F(LegacyStorageTest, ChecksumRead) {
   std::string filename(CONFIG_FILE);
   auto future = promise.get_future();
-  legacy_module_->ChecksumRead(filename, common::BindOnce(&LegacyStorageTest::OnChecksumRead, common::Unretained(this)),
-                               handler_);
+  legacy_module_->ChecksumRead(
+      filename, common::BindOnce(&LegacyStorageTest::OnChecksumRead, common::Unretained(this)), handler_);
   future.wait();
 }
 
