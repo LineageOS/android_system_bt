@@ -16,9 +16,9 @@
 
 #pragma once
 
-#include <memory>
-
 #include <grpc++/grpc++.h>
+
+#include <memory>
 
 #include "facade/rootservice.grpc.pb.h"
 #include "grpc/grpc_module.h"

@@ -59,8 +59,10 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
  public:
   RootFacadeService(int grpc_port) : grpc_port_(grpc_port) {}
 
-  ::grpc::Status StartStack(::grpc::ServerContext* context, const ::bluetooth::facade::StartStackRequest* request,
-                            ::bluetooth::facade::StartStackResponse* response) override {
+  ::grpc::Status StartStack(
+      ::grpc::ServerContext* context,
+      const ::bluetooth::facade::StartStackRequest* request,
+      ::bluetooth::facade::StartStackResponse* response) override {
     if (is_running_) {
       return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "stack is running");
     }
@@ -137,8 +139,10 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status StopStack(::grpc::ServerContext* context, const ::bluetooth::facade::StopStackRequest* request,
-                           ::bluetooth::facade::StopStackResponse* response) override {
+  ::grpc::Status StopStack(
+      ::grpc::ServerContext* context,
+      const ::bluetooth::facade::StopStackRequest* request,
+      ::bluetooth::facade::StopStackResponse* response) override {
     if (!is_running_) {
       return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "stack is not running");
     }

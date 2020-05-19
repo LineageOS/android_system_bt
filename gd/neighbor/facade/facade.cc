@@ -33,15 +33,25 @@ namespace facade {
 
 class NeighborFacadeService : public NeighborFacade::Service {
  public:
-  NeighborFacadeService(ConnectabilityModule* connectability_module, DiscoverabilityModule* discoverability_module,
-                        InquiryModule* inquiry_module, NameModule* name_module, PageModule*, ScanModule* scan_module,
-                        ::bluetooth::os::Handler* facade_handler)
-      : connectability_module_(connectability_module), discoverability_module_(discoverability_module),
-        inquiry_module_(inquiry_module), name_module_(name_module), scan_module_(scan_module),
+  NeighborFacadeService(
+      ConnectabilityModule* connectability_module,
+      DiscoverabilityModule* discoverability_module,
+      InquiryModule* inquiry_module,
+      NameModule* name_module,
+      PageModule*,
+      ScanModule* scan_module,
+      ::bluetooth::os::Handler* facade_handler)
+      : connectability_module_(connectability_module),
+        discoverability_module_(discoverability_module),
+        inquiry_module_(inquiry_module),
+        name_module_(name_module),
+        scan_module_(scan_module),
         facade_handler_(facade_handler) {}
 
-  ::grpc::Status SetConnectability(::grpc::ServerContext* context, const ::bluetooth::neighbor::EnableMsg* request,
-                                   ::google::protobuf::Empty* response) override {
+  ::grpc::Status SetConnectability(
+      ::grpc::ServerContext* context,
+      const ::bluetooth::neighbor::EnableMsg* request,
+      ::google::protobuf::Empty* response) override {
     if (request->enabled()) {
       connectability_module_->StartConnectability();
     } else {
@@ -50,9 +60,10 @@ class NeighborFacadeService : public NeighborFacade::Service {
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status SetDiscoverability(::grpc::ServerContext* context,
-                                    const ::bluetooth::neighbor::DiscoverabilitiyMsg* request,
-                                    ::google::protobuf::Empty* response) override {
+  ::grpc::Status SetDiscoverability(
+      ::grpc::ServerContext* context,
+      const ::bluetooth::neighbor::DiscoverabilitiyMsg* request,
+      ::google::protobuf::Empty* response) override {
     switch (request->mode()) {
       case DiscoverabilityMode::OFF:
         discoverability_module_->StopDiscoverability();
@@ -69,8 +80,10 @@ class NeighborFacadeService : public NeighborFacade::Service {
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status SetInquiryMode(::grpc::ServerContext* context, const ::bluetooth::neighbor::InquiryMsg* request,
-                                ::grpc::ServerWriter<InquiryResultMsg>* writer) override {
+  ::grpc::Status SetInquiryMode(
+      ::grpc::ServerContext* context,
+      const ::bluetooth::neighbor::InquiryMsg* request,
+      ::grpc::ServerWriter<InquiryResultMsg>* writer) override {
     inquiry_module_->RegisterCallbacks(inquiry_callbacks_);
     switch (request->result_mode()) {
       case ResultMode::STANDARD:
@@ -101,9 +114,10 @@ class NeighborFacadeService : public NeighborFacade::Service {
     return pending_events_.RunLoop(context, writer);
   }
 
-  ::grpc::Status ReadRemoteName(::grpc::ServerContext* context,
-                                const ::bluetooth::neighbor::RemoteNameRequestMsg* request,
-                                ::google::protobuf::Empty* response) override {
+  ::grpc::Status ReadRemoteName(
+      ::grpc::ServerContext* context,
+      const ::bluetooth::neighbor::RemoteNameRequestMsg* request,
+      ::google::protobuf::Empty* response) override {
     hci::Address remote;
     ASSERT(hci::Address::FromString(request->address(), remote));
     hci::PageScanRepetitionMode mode;
@@ -121,19 +135,26 @@ class NeighborFacadeService : public NeighborFacade::Service {
         LOG_ALWAYS_FATAL("Unknown PageScanRepetition mode %d", static_cast<int>(request->page_scan_repetition_mode()));
     }
     name_module_->ReadRemoteNameRequest(
-        remote, mode, request->clock_offset(),
+        remote,
+        mode,
+        request->clock_offset(),
         (request->clock_offset() != 0 ? hci::ClockOffsetValid::VALID : hci::ClockOffsetValid::INVALID),
-        common::Bind(&NeighborFacadeService::on_remote_name, common::Unretained(this)), facade_handler_);
+        common::Bind(&NeighborFacadeService::on_remote_name, common::Unretained(this)),
+        facade_handler_);
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status GetRemoteNameEvents(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
-                                     ::grpc::ServerWriter<RemoteNameResponseMsg>* writer) override {
+  ::grpc::Status GetRemoteNameEvents(
+      ::grpc::ServerContext* context,
+      const ::google::protobuf::Empty* request,
+      ::grpc::ServerWriter<RemoteNameResponseMsg>* writer) override {
     return pending_remote_names_.RunLoop(context, writer);
   }
 
-  ::grpc::Status EnableInquiryScan(::grpc::ServerContext* context, const ::bluetooth::neighbor::EnableMsg* request,
-                                   ::google::protobuf::Empty* response) override {
+  ::grpc::Status EnableInquiryScan(
+      ::grpc::ServerContext* context,
+      const ::bluetooth::neighbor::EnableMsg* request,
+      ::google::protobuf::Empty* response) override {
     if (request->enabled()) {
       scan_module_->SetInquiryScan();
     } else {
@@ -142,8 +163,10 @@ class NeighborFacadeService : public NeighborFacade::Service {
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status EnablePageScan(::grpc::ServerContext* context, const ::bluetooth::neighbor::EnableMsg* request,
-                                ::google::protobuf::Empty* response) override {
+  ::grpc::Status EnablePageScan(
+      ::grpc::ServerContext* context,
+      const ::bluetooth::neighbor::EnableMsg* request,
+      ::google::protobuf::Empty* response) override {
     if (request->enabled()) {
       scan_module_->SetPageScan();
     } else {
@@ -201,9 +224,14 @@ void NeighborFacadeModule::ListDependencies(ModuleList* list) {
 
 void NeighborFacadeModule::Start() {
   ::bluetooth::grpc::GrpcFacadeModule::Start();
-  service_ = new NeighborFacadeService(GetDependency<ConnectabilityModule>(), GetDependency<DiscoverabilityModule>(),
-                                       GetDependency<InquiryModule>(), GetDependency<NameModule>(),
-                                       GetDependency<PageModule>(), GetDependency<ScanModule>(), GetHandler());
+  service_ = new NeighborFacadeService(
+      GetDependency<ConnectabilityModule>(),
+      GetDependency<DiscoverabilityModule>(),
+      GetDependency<InquiryModule>(),
+      GetDependency<NameModule>(),
+      GetDependency<PageModule>(),
+      GetDependency<ScanModule>(),
+      GetHandler());
 }
 
 void NeighborFacadeModule::Stop() {

@@ -64,8 +64,8 @@ const ModuleFactory neighbor::NameDbModule::Factory = ModuleFactory([]() { retur
 
 neighbor::NameDbModule::impl::impl(const neighbor::NameDbModule& module) : module_(module) {}
 
-void neighbor::NameDbModule::impl::ReadRemoteNameRequest(hci::Address address, ReadRemoteNameDbCallback callback,
-                                                         os::Handler* handler) {
+void neighbor::NameDbModule::impl::ReadRemoteNameRequest(
+    hci::Address address, ReadRemoteNameDbCallback callback, os::Handler* handler) {
   if (address_to_pending_read_map_.find(address) != address_to_pending_read_map_.end()) {
     LOG_WARN("Already have remote read db in progress and currently can only have one outstanding");
     return;
@@ -78,8 +78,12 @@ void neighbor::NameDbModule::impl::ReadRemoteNameRequest(hci::Address address, R
   uint16_t clock_offset = 0;
   hci::ClockOffsetValid clock_offset_valid = hci::ClockOffsetValid::INVALID;
   name_module_->ReadRemoteNameRequest(
-      address, page_scan_repetition_mode, clock_offset, clock_offset_valid,
-      common::BindOnce(&NameDbModule::impl::OnRemoteNameResponse, common::Unretained(this)), handler_);
+      address,
+      page_scan_repetition_mode,
+      clock_offset,
+      clock_offset_valid,
+      common::BindOnce(&NameDbModule::impl::OnRemoteNameResponse, common::Unretained(this)),
+      handler_);
 }
 
 void neighbor::NameDbModule::impl::OnRemoteNameResponse(hci::ErrorCode status, hci::Address address, RemoteName name) {
@@ -111,10 +115,14 @@ neighbor::NameDbModule::~NameDbModule() {
   pimpl_.reset();
 }
 
-void neighbor::NameDbModule::ReadRemoteNameRequest(hci::Address address, ReadRemoteNameDbCallback callback,
-                                                   os::Handler* handler) {
-  GetHandler()->Post(common::BindOnce(&NameDbModule::impl::ReadRemoteNameRequest, common::Unretained(pimpl_.get()),
-                                      address, std::move(callback), handler));
+void neighbor::NameDbModule::ReadRemoteNameRequest(
+    hci::Address address, ReadRemoteNameDbCallback callback, os::Handler* handler) {
+  GetHandler()->Post(common::BindOnce(
+      &NameDbModule::impl::ReadRemoteNameRequest,
+      common::Unretained(pimpl_.get()),
+      address,
+      std::move(callback),
+      handler));
 }
 
 bool neighbor::NameDbModule::IsNameCached(hci::Address address) const {
