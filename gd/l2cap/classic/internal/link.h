@@ -86,6 +86,12 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
 
   virtual void ReadClockOffset();
 
+  // Increase the link usage refcount to ensure the link won't be disconnected when SecurityModule needs it
+  virtual void AcquireSecurityHold();
+
+  // Decrease the link usage refcount when SecurityModule no longer needs it
+  virtual void ReleaseSecurityHold();
+
   // FixedChannel methods
 
   std::shared_ptr<FixedChannelImpl> AllocateFixedChannel(Cid cid);
@@ -195,6 +201,7 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
   std::list<Psm> pending_dynamic_psm_list_;
   std::list<Link::PendingDynamicChannelConnection> pending_dynamic_channel_callback_list_;
   std::list<uint16_t> pending_outgoing_configuration_request_list_;
+  bool used_by_security_module_ = false;
   DISALLOW_COPY_AND_ASSIGN(Link);
 };
 
