@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "common/callback.h"
+#include "common/contextual_callback.h"
 #include "hci/address.h"
 #include "hci/hci_packets.h"
 #include "module.h"
@@ -31,8 +31,9 @@ class Controller : public Module {
   virtual ~Controller();
   DISALLOW_COPY_AND_ASSIGN(Controller);
 
-  virtual void RegisterCompletedAclPacketsCallback(
-      common::Callback<void(uint16_t /* handle */, uint16_t /* num_packets */)> cb, os::Handler* handler);
+  using CompletedAclPacketsCallback =
+      common::ContextualCallback<void(uint16_t /* handle */, uint16_t /* num_packets */)>;
+  virtual void RegisterCompletedAclPacketsCallback(CompletedAclPacketsCallback cb);
 
   virtual void UnregisterCompletedAclPacketsCallback();
 
