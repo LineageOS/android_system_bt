@@ -19,7 +19,6 @@
 #include <thread>
 
 #include "benchmark/benchmark.h"
-
 #include "common/bind.h"
 #include "os/handler.h"
 #include "os/thread.h"
@@ -81,8 +80,8 @@ BENCHMARK_DEFINE_F(BM_ReactorThread, batch_enque_dequeue)(State& state) {
     counter_promise_ = std::promise<void>();
     std::future<void> counter_future = counter_promise_.get_future();
     for (int i = 0; i < num_messages_to_send_; i++) {
-      handler_->Post(BindOnce(&BM_ReactorThread_batch_enque_dequeue_Benchmark::callback_batch,
-                              bluetooth::common::Unretained(this)));
+      handler_->Post(BindOnce(
+          &BM_ReactorThread_batch_enque_dequeue_Benchmark::callback_batch, bluetooth::common::Unretained(this)));
     }
     counter_future.wait();
   }

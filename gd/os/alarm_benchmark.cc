@@ -19,7 +19,6 @@
 #include <unordered_map>
 
 #include "benchmark/benchmark.h"
-
 #include "common/bind.h"
 #include "os/alarm.h"
 #include "os/repeating_alarm.h"
@@ -117,9 +116,11 @@ BENCHMARK_DEFINE_F(BM_ReactableAlarm, periodic_accuracy)(State& state) {
     task_length_ = state.range(1);
     task_interval_ = state.range(2);
     start_time_ = std::chrono::steady_clock::now();
-    repeating_alarm_->Schedule(Bind(&BM_ReactableAlarm_periodic_accuracy_Benchmark::AlarmSleepAndCountDelayedTime,
-                                    bluetooth::common::Unretained(this)),
-                               std::chrono::milliseconds(task_interval_));
+    repeating_alarm_->Schedule(
+        Bind(
+            &BM_ReactableAlarm_periodic_accuracy_Benchmark::AlarmSleepAndCountDelayedTime,
+            bluetooth::common::Unretained(this)),
+        std::chrono::milliseconds(task_interval_));
     promise_.get_future().get();
     repeating_alarm_->Cancel();
   }

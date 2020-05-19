@@ -17,6 +17,7 @@
 #pragma once
 
 #include <sys/timerfd.h>
+
 #include <cstdint>
 
 namespace bluetooth {

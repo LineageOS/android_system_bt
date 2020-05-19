@@ -18,8 +18,7 @@ clang_version_major = 0
 clang_version_minor = 0
 
 if clang_path:
-    clang_version_out = subprocess.Popen(
-        [clang_path, "--version"], stdout=subprocess.PIPE).communicate()[0]
+    clang_version_out = subprocess.Popen([clang_path, "--version"], stdout=subprocess.PIPE).communicate()[0]
     clang_version_match = re.search(CLANG_VERSION_REGEX, clang_version_out)
     clang_version_str = clang_version_match.group(1)
     clang_version_array = clang_version_str.split('.')

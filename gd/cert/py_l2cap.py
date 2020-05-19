@@ -34,26 +34,21 @@ class PyL2capChannel(IEventStream):
         self._device = device
         self._psm = psm
         self._le_l2cap_stream = l2cap_stream
-        self._our_le_l2cap_view = FilteringEventStream(
-            self._le_l2cap_stream,
-            L2capMatchers.PacketPayloadWithMatchingPsm(self._psm))
+        self._our_le_l2cap_view = FilteringEventStream(self._le_l2cap_stream,
+                                                       L2capMatchers.PacketPayloadWithMatchingPsm(self._psm))
 
     def get_event_queue(self):
         return self._our_le_l2cap_view.get_event_queue()
 
     def send(self, payload):
         self._device.l2cap.SendDynamicChannelPacket(
-            l2cap_facade_pb2.DynamicChannelPacket(
-                psm=self._psm, payload=payload))
+            l2cap_facade_pb2.DynamicChannelPacket(psm=self._psm, payload=payload))
 
     def close_channel(self):
-        self._device.l2cap.CloseChannel(
-            l2cap_facade_pb2.CloseChannelRequest(psm=self._psm))
+        self._device.l2cap.CloseChannel(l2cap_facade_pb2.CloseChannelRequest(psm=self._psm))
 
     def set_traffic_paused(self, paused):
-        self._device.l2cap.SetTrafficPaused(
-            l2cap_facade_pb2.SetTrafficPausedRequest(
-                psm=self._psm, paused=paused))
+        self._device.l2cap.SetTrafficPaused(l2cap_facade_pb2.SetTrafficPausedRequest(psm=self._psm, paused=paused))
 
 
 class _ClassicConnectionResponseFutureWrapper(object):
@@ -77,36 +72,26 @@ class PyL2cap(Closable):
     def __init__(self, device, cert_address):
         self._device = device
         self._cert_address = cert_address
-        self._l2cap_stream = EventStream(
-            self._device.l2cap.FetchL2capData(empty_proto.Empty()))
+        self._l2cap_stream = EventStream(self._device.l2cap.FetchL2capData(empty_proto.Empty()))
 
     def close(self):
         safeClose(self._l2cap_stream)
 
-    def register_dynamic_channel(
-            self,
-            psm=0x33,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.BASIC):
+    def register_dynamic_channel(self, psm=0x33, mode=l2cap_facade_pb2.RetransmissionFlowControlMode.BASIC):
         self._device.l2cap.SetDynamicChannel(
-            l2cap_facade_pb2.SetEnableDynamicChannelRequest(
-                psm=psm, retransmission_mode=mode))
+            l2cap_facade_pb2.SetEnableDynamicChannelRequest(psm=psm, retransmission_mode=mode))
         return PyL2capChannel(self._device, psm, self._l2cap_stream)
 
-    def connect_dynamic_channel_to_cert(
-            self,
-            psm=0x33,
-            mode=l2cap_facade_pb2.RetransmissionFlowControlMode.BASIC):
+    def connect_dynamic_channel_to_cert(self, psm=0x33, mode=l2cap_facade_pb2.RetransmissionFlowControlMode.BASIC):
         """
         Send open Dynamic channel request to CERT.
         Get a future for connection result, to be used after CERT accepts request
         """
         self.register_dynamic_channel(psm, mode)
         response_future = self._device.l2cap.OpenChannel.future(
-            l2cap_facade_pb2.OpenChannelRequest(
-                psm=psm, remote=self._cert_address, mode=mode))
+            l2cap_facade_pb2.OpenChannelRequest(psm=psm, remote=self._cert_address, mode=mode))
 
-        return _ClassicConnectionResponseFutureWrapper(
-            response_future, self._device, psm, self._l2cap_stream)
+        return _ClassicConnectionResponseFutureWrapper(response_future, self._device, psm, self._l2cap_stream)
 
     def get_channel_queue_buffer_size(self):
         return self._device.l2cap.GetChannelQueueDepth(empty_proto.Empty()).size
@@ -118,22 +103,19 @@ class PyLeL2capFixedChannel(IEventStream):
         self._device = device
         self._cid = cid
         self._le_l2cap_stream = l2cap_stream
-        self._our_le_l2cap_view = FilteringEventStream(
-            self._le_l2cap_stream,
-            L2capMatchers.PacketPayloadWithMatchingCid(self._cid))
+        self._our_le_l2cap_view = FilteringEventStream(self._le_l2cap_stream,
+                                                       L2capMatchers.PacketPayloadWithMatchingCid(self._cid))
 
     def get_event_queue(self):
         return self._our_le_l2cap_view.get_event_queue()
 
     def send(self, payload):
         self._device.l2cap_le.SendFixedChannelPacket(
-            l2cap_le_facade_pb2.FixedChannelPacket(
-                cid=self._cid, payload=payload))
+            l2cap_le_facade_pb2.FixedChannelPacket(cid=self._cid, payload=payload))
 
     def close_channel(self):
         self._device.l2cap_le.SetFixedChannel(
-            l2cap_le_facade_pb2.SetEnableFixedChannelRequest(
-                cid=self._cid, enable=False))
+            l2cap_le_facade_pb2.SetEnableFixedChannelRequest(cid=self._cid, enable=False))
 
 
 class PyLeL2capDynamicChannel(IEventStream):
@@ -143,22 +125,19 @@ class PyLeL2capDynamicChannel(IEventStream):
         self._cert_address = cert_address
         self._psm = psm
         self._le_l2cap_stream = l2cap_stream
-        self._our_le_l2cap_view = FilteringEventStream(
-            self._le_l2cap_stream,
-            L2capMatchers.PacketPayloadWithMatchingPsm(self._psm))
+        self._our_le_l2cap_view = FilteringEventStream(self._le_l2cap_stream,
+                                                       L2capMatchers.PacketPayloadWithMatchingPsm(self._psm))
 
     def get_event_queue(self):
         return self._our_le_l2cap_view.get_event_queue()
 
     def send(self, payload):
         self._device.l2cap_le.SendDynamicChannelPacket(
-            l2cap_le_facade_pb2.DynamicChannelPacket(
-                psm=self._psm, payload=payload))
+            l2cap_le_facade_pb2.DynamicChannelPacket(psm=self._psm, payload=payload))
 
     def close_channel(self):
         self._device.l2cap_le.CloseDynamicChannel(
-            l2cap_le_facade_pb2.CloseDynamicChannelRequest(
-                remote=self._cert_address, psm=self._psm))
+            l2cap_le_facade_pb2.CloseDynamicChannelRequest(remote=self._cert_address, psm=self._psm))
 
 
 class _CreditBasedConnectionResponseFutureWrapper(object):
@@ -167,8 +146,7 @@ class _CreditBasedConnectionResponseFutureWrapper(object):
     create the corresponding PyLeL2capDynamicChannel object later
     """
 
-    def __init__(self, grpc_response_future, device, cert_address, psm,
-                 le_l2cap_stream):
+    def __init__(self, grpc_response_future, device, cert_address, psm, le_l2cap_stream):
         self._grpc_response_future = grpc_response_future
         self._device = device
         self._cert_address = cert_address
@@ -176,43 +154,32 @@ class _CreditBasedConnectionResponseFutureWrapper(object):
         self._le_l2cap_stream = le_l2cap_stream
 
     def get_status(self):
-        return l2cap_packets.LeCreditBasedConnectionResponseResult(
-            self._grpc_response_future.result().status)
+        return l2cap_packets.LeCreditBasedConnectionResponseResult(self._grpc_response_future.result().status)
 
     def get_channel(self):
-        assertThat(self.get_status()).isEqualTo(
-            l2cap_packets.LeCreditBasedConnectionResponseResult.SUCCESS)
-        return PyLeL2capDynamicChannel(self._device, self._cert_address,
-                                       self._psm, self._le_l2cap_stream)
+        assertThat(self.get_status()).isEqualTo(l2cap_packets.LeCreditBasedConnectionResponseResult.SUCCESS)
+        return PyLeL2capDynamicChannel(self._device, self._cert_address, self._psm, self._le_l2cap_stream)
 
 
 class PyLeL2cap(Closable):
 
     def __init__(self, device):
         self._device = device
-        self._le_l2cap_stream = EventStream(
-            self._device.l2cap_le.FetchL2capData(empty_proto.Empty()))
+        self._le_l2cap_stream = EventStream(self._device.l2cap_le.FetchL2capData(empty_proto.Empty()))
 
     def close(self):
         safeClose(self._le_l2cap_stream)
 
     def enable_fixed_channel(self, cid=4):
-        self._device.l2cap_le.SetFixedChannel(
-            l2cap_le_facade_pb2.SetEnableFixedChannelRequest(
-                cid=cid, enable=True))
+        self._device.l2cap_le.SetFixedChannel(l2cap_le_facade_pb2.SetEnableFixedChannelRequest(cid=cid, enable=True))
 
     def get_fixed_channel(self, cid=4):
         return PyLeL2capFixedChannel(self._device, cid, self._le_l2cap_stream)
 
-    def register_coc(self,
-                     cert_address,
-                     psm=0x33,
-                     security_level=SecurityLevel.NO_SECURITY):
+    def register_coc(self, cert_address, psm=0x33, security_level=SecurityLevel.NO_SECURITY):
         self._device.l2cap_le.SetDynamicChannel(
-            l2cap_le_facade_pb2.SetEnableDynamicChannelRequest(
-                psm=psm, enable=True, security_level=security_level))
-        return PyLeL2capDynamicChannel(self._device, cert_address, psm,
-                                       self._le_l2cap_stream)
+            l2cap_le_facade_pb2.SetEnableDynamicChannelRequest(psm=psm, enable=True, security_level=security_level))
+        return PyLeL2capDynamicChannel(self._device, cert_address, psm, self._le_l2cap_stream)
 
     def connect_coc_to_cert(self, cert_address, psm=0x33):
         """
@@ -220,12 +187,10 @@ class PyLeL2cap(Closable):
         """
         self.register_coc(cert_address, psm)
         response_future = self._device.l2cap_le.OpenDynamicChannel.future(
-            l2cap_le_facade_pb2.OpenDynamicChannelRequest(
-                psm=psm, remote=cert_address))
+            l2cap_le_facade_pb2.OpenDynamicChannelRequest(psm=psm, remote=cert_address))
 
-        return _CreditBasedConnectionResponseFutureWrapper(
-            response_future, self._device, cert_address, psm,
-            self._le_l2cap_stream)
+        return _CreditBasedConnectionResponseFutureWrapper(response_future, self._device, cert_address, psm,
+                                                           self._le_l2cap_stream)
 
     def update_connection_parameter(self,
                                     conn_interval_min=0x10,

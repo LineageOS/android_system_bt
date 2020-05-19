@@ -17,6 +17,7 @@
 #include "os/queue.h"
 
 #include <sys/eventfd.h>
+
 #include <atomic>
 #include <future>
 #include <unordered_map>
@@ -360,8 +361,8 @@ TEST_F(QueueTest, register_dequeue_with_half_empty_queue) {
 
   // Register dequeue and expect data move to dequeue end buffer
   std::unordered_map<int, std::promise<int>> dequeue_promise_map;
-  dequeue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(kHalfOfQueueSize),
-                              std::forward_as_tuple());
+  dequeue_promise_map.emplace(
+      std::piecewise_construct, std::forward_as_tuple(kHalfOfQueueSize), std::forward_as_tuple());
   auto dequeue_future = dequeue_promise_map[kHalfOfQueueSize].get_future();
   test_dequeue_end.RegisterDequeue(&dequeue_promise_map);
   dequeue_future.wait();
@@ -419,15 +420,15 @@ TEST_F(QueueTest, queue_becomes_full_dequeue_callback_unregister) {
 
   // Register dequeue
   std::unordered_map<int, std::promise<int>> dequeue_promise_map;
-  dequeue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(kHalfOfQueueSize),
-                              std::forward_as_tuple());
+  dequeue_promise_map.emplace(
+      std::piecewise_construct, std::forward_as_tuple(kHalfOfQueueSize), std::forward_as_tuple());
   auto dequeue_future = dequeue_promise_map[kHalfOfQueueSize].get_future();
   test_dequeue_end.RegisterDequeue(&dequeue_promise_map);
 
   // Register enqueue
   std::unordered_map<int, std::promise<int>> enqueue_promise_map;
-  enqueue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(kHalfOfQueueSize),
-                              std::forward_as_tuple());
+  enqueue_promise_map.emplace(
+      std::piecewise_construct, std::forward_as_tuple(kHalfOfQueueSize), std::forward_as_tuple());
   auto enqueue_future = enqueue_promise_map[kHalfOfQueueSize].get_future();
   test_enqueue_end.RegisterEnqueue(&enqueue_promise_map);
 
@@ -604,8 +605,8 @@ TEST_F(QueueTest, queue_becomes_empty_dequeue_callback_only) {
 
   // Register dequeue, expect kHalfOfQueueSize data move to dequeue end buffer
   std::unordered_map<int, std::promise<int>> dequeue_promise_map;
-  dequeue_promise_map.emplace(std::piecewise_construct, std::forward_as_tuple(kHalfOfQueueSize),
-                              std::forward_as_tuple());
+  dequeue_promise_map.emplace(
+      std::piecewise_construct, std::forward_as_tuple(kHalfOfQueueSize), std::forward_as_tuple());
   auto dequeue_future = dequeue_promise_map[kHalfOfQueueSize].get_future();
   test_dequeue_end.RegisterDequeue(&dequeue_promise_map);
   dequeue_future.wait();
@@ -689,21 +690,27 @@ TEST_F(QueueTest, pass_smart_pointer_and_unregister) {
   // Enqueue a string
   std::string valid = "Valid String";
   std::shared_ptr<std::string> shared = std::make_shared<std::string>(valid);
-  queue->RegisterEnqueue(enqueue_handler_, common::Bind(
-                                               [](Queue<std::string>* queue, std::shared_ptr<std::string> shared) {
-                                                 queue->UnregisterEnqueue();
-                                                 return std::make_unique<std::string>(*shared);
-                                               },
-                                               common::Unretained(queue), shared));
+  queue->RegisterEnqueue(
+      enqueue_handler_,
+      common::Bind(
+          [](Queue<std::string>* queue, std::shared_ptr<std::string> shared) {
+            queue->UnregisterEnqueue();
+            return std::make_unique<std::string>(*shared);
+          },
+          common::Unretained(queue),
+          shared));
 
   // Dequeue the string
-  queue->RegisterDequeue(dequeue_handler_, common::Bind(
-                                               [](Queue<std::string>* queue, std::string valid) {
-                                                 queue->UnregisterDequeue();
-                                                 auto answer = *queue->TryDequeue();
-                                                 ASSERT_EQ(answer, valid);
-                                               },
-                                               common::Unretained(queue), valid));
+  queue->RegisterDequeue(
+      dequeue_handler_,
+      common::Bind(
+          [](Queue<std::string>* queue, std::string valid) {
+            queue->UnregisterDequeue();
+            auto answer = *queue->TryDequeue();
+            ASSERT_EQ(answer, valid);
+          },
+          common::Unretained(queue),
+          valid));
 
   // Wait for both handlers to finish and delete the Queue
   std::promise<void> promise;
@@ -716,9 +723,12 @@ TEST_F(QueueTest, pass_smart_pointer_and_unregister) {
               delete queue;
               promise->set_value();
             },
-            common::Unretained(queue), common::Unretained(promise)));
+            common::Unretained(queue),
+            common::Unretained(promise)));
       },
-      common::Unretained(dequeue_handler_), common::Unretained(queue), common::Unretained(&promise)));
+      common::Unretained(dequeue_handler_),
+      common::Unretained(queue),
+      common::Unretained(&promise)));
   future.wait();
 }
 
@@ -738,8 +748,8 @@ TEST_F(QueueTest, unregister_enqueue_and_wait) {
   delete indicator;
 }
 
-std::unique_ptr<std::string> sleep_and_enqueue_callback_and_unregister(int* to_increase, Queue<std::string>* queue,
-                                                                       std::atomic_bool* is_registered) {
+std::unique_ptr<std::string> sleep_and_enqueue_callback_and_unregister(
+    int* to_increase, Queue<std::string>* queue, std::atomic_bool* is_registered) {
   std::this_thread::sleep_for(std::chrono::milliseconds(100));
   (*to_increase)++;
   if (is_registered->exchange(false)) {
@@ -752,9 +762,13 @@ TEST_F(QueueTest, unregister_enqueue_and_wait_maybe_unregistered) {
   Queue<std::string> queue(10);
   int* indicator = new int(100);
   std::atomic_bool is_registered = true;
-  queue.RegisterEnqueue(enqueue_handler_,
-                        common::Bind(&sleep_and_enqueue_callback_and_unregister, common::Unretained(indicator),
-                                     common::Unretained(&queue), common::Unretained(&is_registered)));
+  queue.RegisterEnqueue(
+      enqueue_handler_,
+      common::Bind(
+          &sleep_and_enqueue_callback_and_unregister,
+          common::Unretained(indicator),
+          common::Unretained(&queue),
+          common::Unretained(&is_registered)));
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   if (is_registered.exchange(false)) {
     queue.UnregisterEnqueue();
@@ -771,12 +785,14 @@ void sleep_and_dequeue_callback(int* to_increase) {
 TEST_F(QueueTest, unregister_dequeue_and_wait) {
   int* indicator = new int(100);
   Queue<std::string> queue(10);
-  queue.RegisterEnqueue(enqueue_handler_, common::Bind(
-                                              [](Queue<std::string>* queue) {
-                                                queue->UnregisterEnqueue();
-                                                return std::make_unique<std::string>("Hello");
-                                              },
-                                              common::Unretained(&queue)));
+  queue.RegisterEnqueue(
+      enqueue_handler_,
+      common::Bind(
+          [](Queue<std::string>* queue) {
+            queue->UnregisterEnqueue();
+            return std::make_unique<std::string>("Hello");
+          },
+          common::Unretained(&queue)));
   queue.RegisterDequeue(enqueue_handler_, common::Bind(&sleep_and_dequeue_callback, common::Unretained(indicator)));
   std::this_thread::sleep_for(std::chrono::milliseconds(50));
   queue.UnregisterDequeue();
@@ -791,8 +807,8 @@ class QueueDeathTest : public ::testing::Test {
     Thread* enqueue_thread = new Thread("enqueue_thread", Thread::Priority::NORMAL);
     Handler* enqueue_handler = new Handler(enqueue_thread);
     Queue<std::string>* queue = new Queue<std::string>(kQueueSizeOne);
-    queue->RegisterEnqueue(enqueue_handler,
-                           common::Bind([]() { return std::make_unique<std::string>("A string to fill the queue"); }));
+    queue->RegisterEnqueue(
+        enqueue_handler, common::Bind([]() { return std::make_unique<std::string>("A string to fill the queue"); }));
     delete queue;
   }
 
@@ -800,8 +816,9 @@ class QueueDeathTest : public ::testing::Test {
     Thread* dequeue_thread = new Thread("dequeue_thread", Thread::Priority::NORMAL);
     Handler* dequeue_handler = new Handler(dequeue_thread);
     Queue<std::string>* queue = new Queue<std::string>(kQueueSizeOne);
-    queue->RegisterDequeue(dequeue_handler, common::Bind([](Queue<std::string>* queue) { queue->TryDequeue(); },
-                                                         common::Unretained(queue)));
+    queue->RegisterDequeue(
+        dequeue_handler,
+        common::Bind([](Queue<std::string>* queue) { queue->TryDequeue(); }, common::Unretained(queue)));
     delete queue;
   }
 };

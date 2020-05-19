@@ -86,7 +86,8 @@ TEST_F(ThreadTest, same_thread) {
   Reactor* reactor = thread->GetReactor();
   SampleReactable sample_reactable(thread);
   auto* reactable = reactor->Register(
-      sample_reactable.fd_, common::Bind(&SampleReactable::OnReadReady, common::Unretained(&sample_reactable)),
+      sample_reactable.fd_,
+      common::Bind(&SampleReactable::OnReadReady, common::Unretained(&sample_reactable)),
       common::Closure());
   int fd = sample_reactable.fd_;
   int write_result = eventfd_write(fd, kCheckIsSameThread);
