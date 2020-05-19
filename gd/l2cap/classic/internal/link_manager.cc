@@ -109,6 +109,19 @@ void LinkManager::ConnectDynamicChannelServices(
   link->SendConnectionRequest(psm, link->ReserveDynamicChannel(), std::move(pending_dynamic_channel_connection));
 }
 
+void LinkManager::InitiateConnectionForSecurity(hci::Address remote) {
+  auto* link = GetLink(remote);
+  if (link != nullptr) {
+    LOG_ERROR("Link already exists for %s", remote.ToString().c_str());
+  }
+  acl_manager_->CreateConnection(remote);
+}
+
+void LinkManager::RegisterLinkSecurityInterfaceListener(os::Handler* handler, LinkSecurityInterfaceListener* listener) {
+  link_security_interface_listener_handler_ = handler;
+  link_security_interface_listener_ = listener;
+}
+
 Link* LinkManager::GetLink(const hci::Address device) {
   if (links_.find(device) == links_.end()) {
     return nullptr;
@@ -125,6 +138,76 @@ void LinkManager::TriggerPairing(Link* link) {
   link->ReadRemoteExtendedFeatures();
   link->ReadClockOffset();
 }
+
+/**
+ * The implementation for LinkSecurityInterface, which allows the SecurityModule to access some link functionalities.
+ * Note: All public methods implementing this interface are invoked from external context.
+ */
+struct LinkSecurityInterfaceImpl : public LinkSecurityInterface {
+ public:
+  LinkSecurityInterfaceImpl(os::Handler* handler, LinkManager* link_manager, Link* link)
+      : handler_(handler), link_manager_(link_manager), link_(link), remote_(link_->GetDevice().GetAddress()) {}
+
+  hci::Address GetRemoteAddress() override {
+    return remote_;
+  }
+
+  void Hold() override {
+    handler_->CallOn(this, &LinkSecurityInterfaceImpl::handle_hold);
+  }
+
+  void handle_hold() {
+    if (link_manager_->GetLink(remote_) == nullptr) {
+      LOG_WARN("Remote is disconnected");
+      return;
+    }
+    link_->AcquireSecurityHold();
+  }
+
+  void Release() override {
+    handler_->CallOn(this, &LinkSecurityInterfaceImpl::handle_release);
+  }
+
+  void handle_release() {
+    if (link_manager_->GetLink(remote_) == nullptr) {
+      LOG_WARN("Remote is disconnected");
+      return;
+    }
+    link_->ReleaseSecurityHold();
+  }
+
+  void Disconnect() override {
+    handler_->CallOn(this, &LinkSecurityInterfaceImpl::handle_disconnect);
+  }
+
+  void handle_disconnect() {
+    if (link_manager_->GetLink(remote_) == nullptr) {
+      LOG_WARN("Remote is disconnected");
+      return;
+    }
+    link_->Disconnect();
+  }
+
+  void EnsureAuthenticated() override {
+    handler_->CallOn(this, &LinkSecurityInterfaceImpl::handle_ensure_authenticated);
+  }
+
+  void handle_ensure_authenticated() {
+    if (link_manager_->GetLink(remote_) == nullptr) {
+      LOG_WARN("Remote is disconnected");
+      return;
+    }
+
+    if (!link_->IsAuthenticated()) {
+      link_->Authenticate();
+    }
+  }
+
+  os::Handler* handler_;
+  LinkManager* link_manager_;
+  Link* link_;
+  hci::Address remote_;
+};
 
 void LinkManager::OnConnectSuccess(std::unique_ptr<hci::acl_manager::ClassicAclConnection> acl_connection) {
   // Same link should not be connected twice
@@ -155,6 +238,14 @@ void LinkManager::OnConnectSuccess(std::unique_ptr<hci::acl_manager::ClassicAclC
     pending_dynamic_channels_.erase(device);
     pending_dynamic_channels_callbacks_.erase(device);
   }
+  // Notify security manager
+  if (link_security_interface_listener_handler_ != nullptr) {
+    link_security_interface_listener_handler_->CallOn(
+        link_security_interface_listener_,
+        &LinkSecurityInterfaceListener::OnLinkConnected,
+        std::make_unique<LinkSecurityInterfaceImpl>(l2cap_handler_, this, link));
+  }
+
   // Remove device from pending links list, if any
   pending_links_.erase(device);
 }
@@ -194,6 +285,10 @@ void LinkManager::OnDisconnect(hci::Address device, hci::ErrorCode status) {
              device.ToString().c_str(), static_cast<uint8_t>(status));
   link->OnAclDisconnected(status);
   links_.erase(device);
+  if (link_security_interface_listener_handler_ != nullptr) {
+    link_security_interface_listener_handler_->CallOn(
+        link_security_interface_listener_, &LinkSecurityInterfaceListener::OnLinkDisconnected, device);
+  }
 }
 
 }  // namespace internal

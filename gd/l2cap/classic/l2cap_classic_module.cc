@@ -52,6 +52,27 @@ struct L2capClassicModule::impl {
   internal::DynamicChannelServiceManagerImpl dynamic_channel_service_manager_impl_{l2cap_handler_};
   internal::LinkManager link_manager_{l2cap_handler_, acl_manager_, &fixed_channel_service_manager_impl_,
                                       &dynamic_channel_service_manager_impl_, &parameter_provider_};
+
+  struct SecurityInterfaceImpl : public SecurityInterface {
+    SecurityInterfaceImpl(impl* module_impl) : module_impl_(module_impl) {}
+
+    void RegisterLinkSecurityInterfaceListener(os::Handler* handler, LinkSecurityInterfaceListener* listener) {
+      ASSERT(!registered_);
+      module_impl_->link_manager_.RegisterLinkSecurityInterfaceListener(handler, listener);
+    }
+
+    void InitiateConnectionForSecurity(hci::Address remote) override {
+      ASSERT(registered_);
+      module_impl_->link_manager_.InitiateConnectionForSecurity(remote);
+    }
+
+    void Unregister() override {
+      ASSERT(registered_);
+      module_impl_->link_manager_.RegisterLinkSecurityInterfaceListener(nullptr, nullptr);
+    }
+    impl* module_impl_;
+    bool registered_ = false;
+  } security_interface_impl_{this};
 };
 
 L2capClassicModule::L2capClassicModule() {}
@@ -91,6 +112,12 @@ void L2capClassicModule::InjectSecurityEnforcementInterface(
   } else {
     pimpl_->dynamic_channel_service_manager_impl_.SetSecurityEnforcementInterface(&default_security_module_impl_);
   }
+}
+
+SecurityInterface* L2capClassicModule::GetSecurityInterface(
+    os::Handler* handler, LinkSecurityInterfaceListener* listener) {
+  pimpl_->security_interface_impl_.RegisterLinkSecurityInterfaceListener(handler, listener);
+  return &pimpl_->security_interface_impl_;
 }
 
 }  // namespace classic
