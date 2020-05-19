@@ -15,13 +15,14 @@
  */
 #define LOG_TAG "bt_gd_neigh"
 
+#include "neighbor/discoverability.h"
+
 #include <memory>
 
 #include "common/bind.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
 #include "module.h"
-#include "neighbor/discoverability.h"
 #include "neighbor/scan.h"
 #include "os/handler.h"
 #include "os/log.h"
@@ -91,10 +92,10 @@ void neighbor::DiscoverabilityModule::impl::OnCommandComplete(hci::CommandComple
 
 void neighbor::DiscoverabilityModule::impl::StartDiscoverability(std::vector<hci::Lap>& laps) {
   ASSERT(laps.size() <= num_supported_iac_);
-  hci_layer_->EnqueueCommand(hci::WriteCurrentIacLapBuilder::Create(laps),
-                             handler_->BindOnceOn(this, &impl::OnCommandComplete));
-  hci_layer_->EnqueueCommand(hci::ReadCurrentIacLapBuilder::Create(),
-                             handler_->BindOnceOn(this, &impl::OnCommandComplete));
+  hci_layer_->EnqueueCommand(
+      hci::WriteCurrentIacLapBuilder::Create(laps), handler_->BindOnceOn(this, &impl::OnCommandComplete));
+  hci_layer_->EnqueueCommand(
+      hci::ReadCurrentIacLapBuilder::Create(), handler_->BindOnceOn(this, &impl::OnCommandComplete));
   scan_module_->SetInquiryScan();
 }
 
@@ -115,11 +116,11 @@ void neighbor::DiscoverabilityModule::impl::Start() {
   scan_module_ = module_.GetDependency<neighbor::ScanModule>();
   handler_ = module_.GetHandler();
 
-  hci_layer_->EnqueueCommand(hci::ReadCurrentIacLapBuilder::Create(),
-                             handler_->BindOnceOn(this, &impl::OnCommandComplete));
+  hci_layer_->EnqueueCommand(
+      hci::ReadCurrentIacLapBuilder::Create(), handler_->BindOnceOn(this, &impl::OnCommandComplete));
 
-  hci_layer_->EnqueueCommand(hci::ReadNumberOfSupportedIacBuilder::Create(),
-                             handler_->BindOnceOn(this, &impl::OnCommandComplete));
+  hci_layer_->EnqueueCommand(
+      hci::ReadNumberOfSupportedIacBuilder::Create(), handler_->BindOnceOn(this, &impl::OnCommandComplete));
   LOG_DEBUG("Started discoverability module");
 }
 
