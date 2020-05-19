@@ -31,8 +31,7 @@ RoundRobinScheduler::RoundRobinScheduler(os::Handler* handler, Controller* contr
   le_max_acl_packet_credits_ = le_buffer_size.total_num_le_packets_;
   le_acl_packet_credits_ = le_max_acl_packet_credits_;
   le_hci_mtu_ = le_buffer_size.le_data_packet_length_;
-  controller_->RegisterCompletedAclPacketsCallback(
-      common::Bind(&RoundRobinScheduler::incoming_acl_credits, common::Unretained(this)), handler_);
+  controller_->RegisterCompletedAclPacketsCallback(handler->BindOn(this, &RoundRobinScheduler::incoming_acl_credits));
 }
 
 RoundRobinScheduler::~RoundRobinScheduler() {
