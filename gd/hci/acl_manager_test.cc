@@ -70,15 +70,13 @@ std::unique_ptr<AclPacketBuilder> NextAclPacket(uint16_t handle) {
 
 class TestController : public Controller {
  public:
-  void RegisterCompletedAclPacketsCallback(common::Callback<void(uint16_t /* handle */, uint16_t /* packets */)> cb,
-                                           os::Handler* handler) override {
+  void RegisterCompletedAclPacketsCallback(
+      common::ContextualCallback<void(uint16_t /* handle */, uint16_t /* packets */)> cb) override {
     acl_cb_ = cb;
-    acl_cb_handler_ = handler;
   }
 
   void UnregisterCompletedAclPacketsCallback() override {
     acl_cb_ = {};
-    acl_cb_handler_ = nullptr;
   }
 
   uint16_t GetControllerAclPacketLength() const override {
@@ -101,14 +99,13 @@ class TestController : public Controller {
   }
 
   void CompletePackets(uint16_t handle, uint16_t packets) {
-    acl_cb_handler_->Post(common::BindOnce(acl_cb_, handle, packets));
+    acl_cb_.Invoke(handle, packets);
   }
 
   uint16_t acl_buffer_length_ = 1024;
   uint16_t total_acl_buffers_ = 2;
   uint64_t le_local_supported_features_ = 0;
-  common::Callback<void(uint16_t /* handle */, uint16_t /* packets */)> acl_cb_;
-  os::Handler* acl_cb_handler_ = nullptr;
+  common::ContextualCallback<void(uint16_t /* handle */, uint16_t /* packets */)> acl_cb_;
 
  protected:
   void Start() override {}
