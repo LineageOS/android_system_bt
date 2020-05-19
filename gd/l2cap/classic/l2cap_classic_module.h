@@ -19,6 +19,7 @@
 
 #include "l2cap/classic/dynamic_channel_manager.h"
 #include "l2cap/classic/fixed_channel_manager.h"
+#include "l2cap/classic/link_security_interface.h"
 #include "l2cap/classic/security_enforcement_interface.h"
 #include "module.h"
 
@@ -68,6 +69,15 @@ class L2capClassicModule : public bluetooth::Module {
    * This is not synchronized.
    */
   virtual void InjectSecurityEnforcementInterface(SecurityEnforcementInterface* security_enforcement_interface);
+
+  /**
+   * Get the interface for Security Module to access link function.
+   * Security Module needs to register the callback for ACL link connected and disconnected. When connected, either by
+   * incoming or by outgoing connection request, Security Module receives a LinkSecurityInterface proxy, which can be
+   * used to access some link functionlities.
+   */
+  virtual SecurityInterface* GetSecurityInterface(os::Handler* handler, LinkSecurityInterfaceListener* listener);
+
   DISALLOW_COPY_AND_ASSIGN(L2capClassicModule);
 };
 
