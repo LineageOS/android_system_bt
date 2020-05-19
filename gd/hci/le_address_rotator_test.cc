@@ -126,7 +126,7 @@ TEST_F(LeAddressRotatorTest, rotator_non_resolvable_address_for_single_client) {
   delete rotator_client;
 }
 
-TEST_F(LeAddressRotatorTest, rotator_address_for_multiple_clients) {
+TEST_F(LeAddressRotatorTest, DISABLED_rotator_address_for_multiple_clients) {
   RotatorClient* rotator_client1 = new RotatorClient(le_address_rotator_);
   RotatorClient* rotator_client2 = new RotatorClient(le_address_rotator_);
   RotatorClient* rotator_client3 = new RotatorClient(le_address_rotator_);
