@@ -15,12 +15,13 @@
  */
 #define LOG_TAG "neighbor2"
 
+#include "neighbor/connectability.h"
+
 #include <memory>
 
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
 #include "module.h"
-#include "neighbor/connectability.h"
 #include "neighbor/scan.h"
 #include "os/handler.h"
 #include "os/log.h"

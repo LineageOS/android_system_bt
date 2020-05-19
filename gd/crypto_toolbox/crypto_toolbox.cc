@@ -15,10 +15,12 @@
  */
 
 #include "crypto_toolbox/crypto_toolbox.h"
-#include "crypto_toolbox/aes.h"
 
 #include <endian.h>
+
 #include <algorithm>
+
+#include "crypto_toolbox/aes.h"
 
 namespace bluetooth {
 namespace crypto_toolbox {
@@ -48,8 +50,15 @@ Octet16 f4(uint8_t* u, uint8_t* v, const Octet16& x, uint8_t z) {
 }
 
 /** helper for f5 */
-static Octet16 calculate_mac_key_or_ltk(const Octet16& t, uint8_t counter, uint8_t* key_id, const Octet16& n1,
-                                        const Octet16& n2, uint8_t* a1, uint8_t* a2, uint8_t* length) {
+static Octet16 calculate_mac_key_or_ltk(
+    const Octet16& t,
+    uint8_t counter,
+    uint8_t* key_id,
+    const Octet16& n1,
+    const Octet16& n2,
+    uint8_t* a1,
+    uint8_t* a2,
+    uint8_t* length) {
   constexpr size_t msg_len = 1 /* Counter size */ + 4 /* keyID size */ + OCTET16_LEN /* N1 size */ +
                              OCTET16_LEN /* N2 size */ + 7 /* A1 size*/ + 7 /* A2 size*/ + 2 /* Length size */;
 
@@ -87,8 +96,8 @@ void f5(uint8_t* w, const Octet16& n1, const Octet16& n2, uint8_t* a1, uint8_t* 
   // DVLOG(2) << "ltk=" << HexEncode(ltk->data(), ltk->size());
 }
 
-Octet16 f6(const Octet16& w, const Octet16& n1, const Octet16& n2, const Octet16& r, uint8_t* iocap, uint8_t* a1,
-           uint8_t* a2) {
+Octet16
+f6(const Octet16& w, const Octet16& n1, const Octet16& n2, const Octet16& r, uint8_t* iocap, uint8_t* a1, uint8_t* a2) {
   const uint8_t msg_len = OCTET16_LEN /* N1 size */ + OCTET16_LEN /* N2 size */ + OCTET16_LEN /* R size */ +
                           3 /* IOcap size */ + 7 /* A1 size*/ + 7 /* A2 size*/;
 
@@ -130,8 +139,8 @@ uint32_t g2(uint8_t* u, uint8_t* v, const Octet16& x, const Octet16& y) {
 Octet16 ltk_to_link_key(const Octet16& ltk, bool use_h7) {
   Octet16 ilk; /* intermidiate link key */
   if (use_h7) {
-    constexpr Octet16 salt{0x31, 0x70, 0x6D, 0x74, 0x00, 0x00, 0x00, 0x00,
-                           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    constexpr Octet16 salt{
+        0x31, 0x70, 0x6D, 0x74, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     ilk = h7(salt, ltk);
   } else {
     /* "tmp1" mapping to extended ASCII, little endian*/
@@ -147,8 +156,8 @@ Octet16 ltk_to_link_key(const Octet16& ltk, bool use_h7) {
 Octet16 link_key_to_ltk(const Octet16& link_key, bool use_h7) {
   Octet16 iltk; /* intermidiate long term key */
   if (use_h7) {
-    constexpr Octet16 salt{0x32, 0x70, 0x6D, 0x74, 0x00, 0x00, 0x00, 0x00,
-                           0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
+    constexpr Octet16 salt{
+        0x32, 0x70, 0x6D, 0x74, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00};
     iltk = h7(salt, link_key);
   } else {
     /* "tmp2" mapping to extended ASCII, little endian */
@@ -161,8 +170,15 @@ Octet16 link_key_to_ltk(const Octet16& link_key, bool use_h7) {
   return h6(iltk, keyID_brle);
 }
 
-Octet16 c1(const Octet16& k, const Octet16& r, const uint8_t* preq, const uint8_t* pres, const uint8_t iat,
-           const uint8_t* ia, const uint8_t rat, const uint8_t* ra) {
+Octet16 c1(
+    const Octet16& k,
+    const Octet16& r,
+    const uint8_t* preq,
+    const uint8_t* pres,
+    const uint8_t iat,
+    const uint8_t* ia,
+    const uint8_t rat,
+    const uint8_t* ra) {
   Octet16 p1;
   auto it = p1.begin();
   it = std::copy(&iat, &iat + 1, it);
