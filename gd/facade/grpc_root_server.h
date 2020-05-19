@@ -16,10 +16,10 @@
 
 #pragma once
 
+#include <grpc++/grpc++.h>
+
 #include <memory>
 #include <string>
-
-#include <grpc++/grpc++.h>
 
 namespace bluetooth {
 namespace facade {

@@ -24,17 +24,24 @@ namespace crypto_toolbox {
 constexpr int OCTET16_LEN = 16;
 using Octet16 = std::array<uint8_t, OCTET16_LEN>;
 
-Octet16 c1(const Octet16& k, const Octet16& r, const uint8_t* pres, const uint8_t* preq, const uint8_t iat,
-           const uint8_t* ia, const uint8_t rat, const uint8_t* ra);
+Octet16 c1(
+    const Octet16& k,
+    const Octet16& r,
+    const uint8_t* pres,
+    const uint8_t* preq,
+    const uint8_t iat,
+    const uint8_t* ia,
+    const uint8_t rat,
+    const uint8_t* ra);
 Octet16 s1(const Octet16& k, const Octet16& r1, const Octet16& r2);
 
 extern Octet16 aes_128(const Octet16& key, const Octet16& message);
 extern Octet16 aes_cmac(const Octet16& key, const uint8_t* message, uint16_t length);
 extern Octet16 f4(uint8_t* u, uint8_t* v, const Octet16& x, uint8_t z);
-extern void f5(uint8_t* w, const Octet16& n1, const Octet16& n2, uint8_t* a1, uint8_t* a2, Octet16* mac_key,
-               Octet16* ltk);
-extern Octet16 f6(const Octet16& w, const Octet16& n1, const Octet16& n2, const Octet16& r, uint8_t* iocap, uint8_t* a1,
-                  uint8_t* a2);
+extern void f5(
+    uint8_t* w, const Octet16& n1, const Octet16& n2, uint8_t* a1, uint8_t* a2, Octet16* mac_key, Octet16* ltk);
+extern Octet16 f6(
+    const Octet16& w, const Octet16& n1, const Octet16& n2, const Octet16& r, uint8_t* iocap, uint8_t* a1, uint8_t* a2);
 extern Octet16 h6(const Octet16& w, std::array<uint8_t, 4> keyid);
 extern Octet16 h7(const Octet16& salt, const Octet16& w);
 extern uint32_t g2(uint8_t* u, uint8_t* v, const Octet16& x, const Octet16& y);
