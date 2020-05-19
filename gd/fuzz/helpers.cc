@@ -15,14 +15,15 @@
  */
 
 #include "fuzz/helpers.h"
+
 #include "common/bind.h"
 
 namespace bluetooth {
 namespace fuzz {
 
 // cribbed from https://github.com/google/fuzzing/blob/master/docs/split-inputs.md#magic-separator
-std::vector<std::vector<uint8_t>> SplitInput(const uint8_t* data, size_t size, const uint8_t* separator,
-                                             size_t separatorSize) {
+std::vector<std::vector<uint8_t>> SplitInput(
+    const uint8_t* data, size_t size, const uint8_t* separator, size_t separatorSize) {
   std::vector<std::vector<uint8_t>> result;
   assert(SeparatorSize > 0);
   auto beg = data;

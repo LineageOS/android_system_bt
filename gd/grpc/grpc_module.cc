@@ -24,8 +24,7 @@ using ::grpc::ServerBuilder;
 namespace bluetooth {
 namespace grpc {
 
-void GrpcModule::ListDependencies(ModuleList* list) {
-}
+void GrpcModule::ListDependencies(ModuleList* list) {}
 
 void GrpcModule::Start() {
   ASSERT(!started_);
@@ -103,10 +102,7 @@ std::string GrpcModule::ToString() const {
   return "Grpc Module";
 }
 
-const ::bluetooth::ModuleFactory GrpcModule::Factory = ::bluetooth::ModuleFactory([]() {
-  return new GrpcModule();
-});
-
+const ::bluetooth::ModuleFactory GrpcModule::Factory = ::bluetooth::ModuleFactory([]() { return new GrpcModule(); });
 
 void GrpcFacadeModule::ListDependencies(ModuleList* list) {
   list->add<GrpcModule>();
