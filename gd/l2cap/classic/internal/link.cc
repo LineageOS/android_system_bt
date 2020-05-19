@@ -100,6 +100,15 @@ void Link::ReadClockOffset() {
   acl_connection_->ReadClockOffset();
 }
 
+void Link::AcquireSecurityHold() {
+  used_by_security_module_ = true;
+  RefreshRefCount();
+}
+void Link::ReleaseSecurityHold() {
+  used_by_security_module_ = false;
+  RefreshRefCount();
+}
+
 std::shared_ptr<FixedChannelImpl> Link::AllocateFixedChannel(Cid cid) {
   auto channel = fixed_channel_allocator_.AllocateChannel(cid);
   data_pipeline_manager_.AttachChannel(cid, channel, l2cap::internal::DataPipelineManager::ChannelMode::BASIC);
@@ -235,6 +244,9 @@ void Link::RefreshRefCount() {
   int ref_count = 0;
   ref_count += fixed_channel_allocator_.GetRefCount();
   ref_count += dynamic_channel_allocator_.NumberOfChannels();
+  if (used_by_security_module_) {
+    ref_count += 1;
+  }
   ASSERT_LOG(ref_count >= 0, "ref_count %d is less than 0", ref_count);
   if (ref_count > 0) {
     link_idle_disconnect_alarm_.Cancel();
