@@ -147,8 +147,8 @@ class HciLayerFacadeService : public HciLayerFacade::Service {
     std::promise<void> enqueued;
     auto future = enqueued.get_future();
     if (!completed_packets_callback_registered_) {
-      controller_->RegisterCompletedAclPacketsCallback(common::Bind([](uint16_t, uint16_t) { /* do nothing */ }),
-                                                       facade_handler_);
+      controller_->RegisterCompletedAclPacketsCallback(
+          facade_handler_->Bind([](uint16_t, uint16_t) { /* do nothing */ }));
       completed_packets_callback_registered_ = true;
     }
     hci_layer_->GetAclQueueEnd()->RegisterEnqueue(
