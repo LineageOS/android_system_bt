@@ -53,6 +53,16 @@ class Handler : public common::IPostableContext {
   void WaitUntilStopped(std::chrono::milliseconds timeout);
 
   template <typename Functor, typename... Args>
+  void Call(Functor&& functor, Args&&... args) {
+    Post(common::BindOnce(std::forward<Functor>(functor), std::forward<Args>(args)...));
+  }
+
+  template <typename T, typename Functor, typename... Args>
+  void CallOn(T* obj, Functor&& functor, Args&&... args) {
+    Post(common::BindOnce(std::forward<Functor>(functor), common::Unretained(obj), std::forward<Args>(args)...));
+  }
+
+  template <typename Functor, typename... Args>
   common::ContextualOnceCallback<common::MakeUnboundRunType<Functor, Args...>> BindOnce(
       Functor&& functor, Args&&... args) {
     return common::ContextualOnceCallback<common::MakeUnboundRunType<Functor, Args...>>(
