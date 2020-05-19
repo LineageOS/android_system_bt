@@ -16,11 +16,11 @@
 
 #pragma once
 
-#include <functional>
-#include <vector>
-
 #include <grpc++/grpc++.h>
 #include <module.h>
+
+#include <functional>
+#include <vector>
 
 namespace bluetooth {
 namespace grpc {
@@ -59,7 +59,8 @@ class GrpcModule : public ::bluetooth::Module {
 };
 
 class GrpcFacadeModule : public ::bluetooth::Module {
- friend GrpcModule;
+  friend GrpcModule;
+
  protected:
   void ListDependencies(ModuleList* list) override;
 

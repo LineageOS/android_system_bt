@@ -16,14 +16,15 @@
 
 #define LOG_TAG "att"
 
+#include "att/att_module.h"
+
 #include <memory>
+
+#include "l2cap/classic/l2cap_classic_module.h"
+#include "l2cap/le/l2cap_le_module.h"
 #include "module.h"
 #include "os/handler.h"
 #include "os/log.h"
-
-#include "att/att_module.h"
-#include "l2cap/classic/l2cap_classic_module.h"
-#include "l2cap/le/l2cap_le_module.h"
 
 namespace bluetooth {
 namespace att {
@@ -31,8 +32,9 @@ namespace att {
 const ModuleFactory AttModule::Factory = ModuleFactory([]() { return new AttModule(); });
 
 namespace {
-void OnAttRegistrationCompleteLe(l2cap::le::FixedChannelManager::RegistrationResult result,
-                                 std::unique_ptr<l2cap::le::FixedChannelService> le_smp_service) {
+void OnAttRegistrationCompleteLe(
+    l2cap::le::FixedChannelManager::RegistrationResult result,
+    std::unique_ptr<l2cap::le::FixedChannelService> le_smp_service) {
   LOG_INFO("ATT channel registration complete");
 }
 
@@ -42,15 +44,19 @@ void OnAttConnectionOpenLe(std::unique_ptr<l2cap::le::FixedChannel> channel) {
 }  // namespace
 
 struct AttModule::impl {
-  impl(os::Handler* att_handler, l2cap::le::L2capLeModule* l2cap_le_module,
-       l2cap::classic::L2capClassicModule* l2cap_classic_module)
+  impl(
+      os::Handler* att_handler,
+      l2cap::le::L2capLeModule* l2cap_le_module,
+      l2cap::classic::L2capClassicModule* l2cap_classic_module)
       : att_handler_(att_handler), l2cap_le_module_(l2cap_le_module), l2cap_classic_module_(l2cap_classic_module) {
     // TODO: move that into a ATT manager, or other proper place
     std::unique_ptr<bluetooth::l2cap::le::FixedChannelManager> l2cap_manager_le_(
         l2cap_le_module_->GetFixedChannelManager());
-    l2cap_manager_le_->RegisterService(bluetooth::l2cap::kLeAttributeCid,
-                                       common::BindOnce(&OnAttRegistrationCompleteLe),
-                                       common::Bind(&OnAttConnectionOpenLe), att_handler_);
+    l2cap_manager_le_->RegisterService(
+        bluetooth::l2cap::kLeAttributeCid,
+        common::BindOnce(&OnAttRegistrationCompleteLe),
+        common::Bind(&OnAttConnectionOpenLe),
+        att_handler_);
   }
 
   os::Handler* att_handler_;
@@ -64,8 +70,8 @@ void AttModule::ListDependencies(ModuleList* list) {
 }
 
 void AttModule::Start() {
-  pimpl_ = std::make_unique<impl>(GetHandler(), GetDependency<l2cap::le::L2capLeModule>(),
-                                  GetDependency<l2cap::classic::L2capClassicModule>());
+  pimpl_ = std::make_unique<impl>(
+      GetHandler(), GetDependency<l2cap::le::L2capLeModule>(), GetDependency<l2cap::classic::L2capClassicModule>());
 }
 
 void AttModule::Stop() {
