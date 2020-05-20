@@ -15,17 +15,18 @@
  */
 
 #include "hal/hci_hal_host_rootcanal.h"
-#include "hal/hci_hal.h"
 
 #include <netdb.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #include <chrono>
 #include <csignal>
 #include <mutex>
 #include <queue>
 
+#include "hal/hci_hal.h"
 #include "hal/snoop_logger.h"
 #include "os/log.h"
 #include "os/reactor.h"
@@ -151,7 +152,8 @@ class HciHalHostRootcanal : public HciHal {
     sock_fd_ = ConnectToRootCanal(config_->GetServerAddress(), config_->GetPort());
     ASSERT(sock_fd_ != INVALID_FD);
     reactable_ = hci_incoming_thread_.GetReactor()->Register(
-        sock_fd_, common::Bind(&HciHalHostRootcanal::incoming_packet_received, common::Unretained(this)),
+        sock_fd_,
+        common::Bind(&HciHalHostRootcanal::incoming_packet_received, common::Unretained(this)),
         common::Closure());
     btsnoop_logger_ = GetDependency<SnoopLogger>();
     LOG_INFO("Rootcanal HAL opened successfully");
@@ -196,7 +198,8 @@ class HciHalHostRootcanal : public HciHal {
     hci_outgoing_queue_.emplace(packet);
     if (hci_outgoing_queue_.size() == 1) {
       hci_incoming_thread_.GetReactor()->ModifyRegistration(
-          reactable_, common::Bind(&HciHalHostRootcanal::incoming_packet_received, common::Unretained(this)),
+          reactable_,
+          common::Bind(&HciHalHostRootcanal::incoming_packet_received, common::Unretained(this)),
           common::Bind(&HciHalHostRootcanal::send_packet_ready, common::Unretained(this)));
     }
   }
@@ -211,7 +214,8 @@ class HciHalHostRootcanal : public HciHal {
     }
     if (hci_outgoing_queue_.empty()) {
       this->hci_incoming_thread_.GetReactor()->ModifyRegistration(
-          this->reactable_, common::Bind(&HciHalHostRootcanal::incoming_packet_received, common::Unretained(this)),
+          this->reactable_,
+          common::Bind(&HciHalHostRootcanal::incoming_packet_received, common::Unretained(this)),
           common::Closure());
     }
   }
@@ -242,12 +246,14 @@ class HciHalHostRootcanal : public HciHal {
 
       uint8_t hci_evt_parameter_total_length = buf[2];
       ssize_t payload_size;
-      RUN_NO_INTR(payload_size =
-                      recv(sock_fd_, buf + kH4HeaderSize + kHciEvtHeaderSize, hci_evt_parameter_total_length, 0));
+      RUN_NO_INTR(
+          payload_size = recv(sock_fd_, buf + kH4HeaderSize + kHciEvtHeaderSize, hci_evt_parameter_total_length, 0));
       ASSERT_LOG(payload_size != -1, "Can't receive from socket: %s", strerror(errno));
-      ASSERT_LOG(payload_size == hci_evt_parameter_total_length,
-                 "malformed HCI event total parameter size received: %zu != %d", payload_size,
-                 hci_evt_parameter_total_length);
+      ASSERT_LOG(
+          payload_size == hci_evt_parameter_total_length,
+          "malformed HCI event total parameter size received: %zu != %d",
+          payload_size,
+          hci_evt_parameter_total_length);
 
       HciPacket receivedHciPacket;
       receivedHciPacket.assign(buf + kH4HeaderSize, buf + kH4HeaderSize + kHciEvtHeaderSize + payload_size);
@@ -271,8 +277,11 @@ class HciHalHostRootcanal : public HciHal {
       int payload_size;
       RUN_NO_INTR(payload_size = recv(sock_fd_, buf + kH4HeaderSize + kHciAclHeaderSize, hci_acl_data_total_length, 0));
       ASSERT_LOG(payload_size != -1, "Can't receive from socket: %s", strerror(errno));
-      ASSERT_LOG(payload_size == hci_acl_data_total_length, "malformed ACL length received: %d != %d", payload_size,
-                 hci_acl_data_total_length);
+      ASSERT_LOG(
+          payload_size == hci_acl_data_total_length,
+          "malformed ACL length received: %d != %d",
+          payload_size,
+          hci_acl_data_total_length);
       ASSERT_LOG(hci_acl_data_total_length <= kBufSize - kH4HeaderSize - kHciAclHeaderSize, "packet too long");
 
       HciPacket receivedHciPacket;
