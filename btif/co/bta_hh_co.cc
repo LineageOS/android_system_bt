@@ -126,8 +126,7 @@ static int uhid_read_event(btif_hh_device_t* p_dev) {
         btif_hh_setreport(p_dev, BTHH_FEATURE_REPORT, ev.u.output.size,
                           ev.u.output.data);
       else if (ev.u.output.rtype == UHID_OUTPUT_REPORT)
-        btif_hh_setreport(p_dev, BTHH_OUTPUT_REPORT, ev.u.output.size,
-                          ev.u.output.data);
+        btif_hh_senddata(p_dev, ev.u.output.size, ev.u.output.data);
       else
         APPL_TRACE_ERROR("%s: UHID_OUTPUT: Invalid report type = %d", __func__,
                          ev.u.output.rtype);
