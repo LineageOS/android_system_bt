@@ -383,7 +383,6 @@ class GdAndroidDevice(GdDeviceBase):
     def setup(self):
         logging.info("Setting up device %s %s" % (self.label, self.serial_number))
         asserts.assert_true(self.adb.ensure_root(), "device %s cannot run as root", self.serial_number)
-        self.ensure_verity_disabled()
 
         # Try freeing ports and ignore results
         self.cleanup_port_forwarding()
@@ -395,6 +394,7 @@ class GdAndroidDevice(GdDeviceBase):
         self.tcp_reverse_or_die(self.signal_port, self.signal_port)
 
         # Push test binaries
+        self.ensure_verity_disabled()
         self.push_or_die(os.path.join(get_gd_root(), "target", "bluetooth_stack_with_facade"), "system/bin")
         self.push_or_die(os.path.join(get_gd_root(), "target", "libbluetooth_gd.so"), "system/lib64")
         self.push_or_die(os.path.join(get_gd_root(), "target", "libgrpc++_unsecure.so"), "system/lib64")
@@ -476,19 +476,20 @@ class GdAndroidDevice(GdDeviceBase):
                 host_tz, device_tz, "Device timezone %s still does not match host "
                 "timezone %s after reset" % (device_tz, host_tz))
         self.adb.shell("date %s" % time.strftime("%m%d%H%M%Y.%S"))
-        datetime_format = "%Y-%m-%dZ%H:%M:%S%z"
-        host_time = datetime.today()
+        datetime_format = "%Y-%m-%dT%H:%M:%S%z"
         try:
             device_time = datetime.strptime(self.adb.shell("date +'%s'" % datetime_format), datetime_format)
         except ValueError:
             asserts.fail("Failed to get time after sync")
             return
-        max_delta_seconds = 0.5
+        # Include ADB delay that might be longer in SSH environment
+        max_delta_seconds = 3
+        host_time = datetime.now(tz=device_time.tzinfo)
         asserts.assert_almost_equal(
             (device_time - host_time).total_seconds(),
             0,
             msg="Device time %s and host time %s off by >%dms after sync" %
-            (device_time.isoformat, host_time.isoformat(), int(max_delta_seconds * 1000)),
+            (device_time.isoformat(), host_time.isoformat(), int(max_delta_seconds * 1000)),
             delta=max_delta_seconds)
 
     def push_or_die(self, src_file_path, dst_file_path, push_timeout=300):
@@ -499,12 +500,9 @@ class GdAndroidDevice(GdDeviceBase):
             dst_file_path: The destination of the file.
             push_timeout: How long to wait for the push to finish in seconds
         """
-        try:
-            out = self.adb.push('%s %s' % (src_file_path, dst_file_path), timeout=push_timeout)
-            if 'error' in out:
-                asserts.fail('Unable to push file %s to %s due to %s' % (src_file_path, dst_file_path, out))
-        except Exception as e:
-            asserts.fail(msg='Unable to push file %s to %s due to %s' % (src_file_path, dst_file_path, e), extras=e)
+        out = self.adb.push('%s %s' % (src_file_path, dst_file_path), timeout=push_timeout)
+        if 'error' in out:
+            asserts.fail('Unable to push file %s to %s due to %s' % (src_file_path, dst_file_path, out))
 
     def tcp_forward_or_die(self, host_port, device_port, num_retry=1):
         """
