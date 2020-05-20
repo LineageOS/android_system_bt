@@ -25,62 +25,49 @@ namespace security {
 namespace channel {
 
 /**
- * Constructor for testing only
- */
-SecurityManagerChannel::SecurityManagerChannel(os::Handler* handler, hci::HciLayer* hci_layer)
-    : listener_(nullptr), hci_security_interface_(hci_layer->GetSecurityInterface(
-                              handler->BindOn(this, &SecurityManagerChannel::OnHciEventReceived))),
-      handler_(handler) {
-  is_test_mode_ = true;
-}
-
-/**
  * Main Constructor
  */
-SecurityManagerChannel::SecurityManagerChannel(
-    os::Handler* handler, hci::HciLayer* hci_layer,
-    std::unique_ptr<l2cap::classic::FixedChannelManager> fixed_channel_manager)
-    : listener_(nullptr), hci_security_interface_(hci_layer->GetSecurityInterface(
-                              handler->BindOn(this, &SecurityManagerChannel::OnHciEventReceived))),
-      handler_(handler), fixed_channel_manager_(std::move(fixed_channel_manager)) {
-  ASSERT_LOG(fixed_channel_manager_ != nullptr, "No channel manager!");
-  LOG_DEBUG("Registering for a fixed channel service");
-  fixed_channel_manager_->RegisterService(
-      l2cap::kClassicPairingTriggerCid,
-      common::BindOnce(&SecurityManagerChannel::OnRegistrationComplete, common::Unretained(this)),
-      common::Bind(&SecurityManagerChannel::OnConnectionOpen, common::Unretained(this)), handler_);
-}
+SecurityManagerChannel::SecurityManagerChannel(os::Handler* handler, hci::HciLayer* hci_layer)
+    : listener_(nullptr),
+      hci_security_interface_(
+          hci_layer->GetSecurityInterface(handler->BindOn(this, &SecurityManagerChannel::OnHciEventReceived))),
+      handler_(handler),
+      l2cap_security_interface_(nullptr) {}
 
 SecurityManagerChannel::~SecurityManagerChannel() {
-  if (fixed_channel_service_ != nullptr) {
-    fixed_channel_service_->Unregister(common::Bind(&SecurityManagerChannel::OnUnregistered, common::Unretained(this)),
-                                       handler_);
-    fixed_channel_service_.reset();
-  }
+  l2cap_security_interface_->Unregister();
+  l2cap_security_interface_ = nullptr;
 }
 
 void SecurityManagerChannel::Connect(hci::Address address) {
-  if (is_test_mode_) return;
-  ASSERT_LOG(fixed_channel_manager_ != nullptr, "No channel manager!");
-  auto entry = fixed_channel_map_.find(address);
-  if (entry != fixed_channel_map_.end()) {
-    LOG_ERROR("Already connected to device: %s", address.ToString().c_str());
+  ASSERT_LOG(l2cap_security_interface_ != nullptr, "L2cap Security Interface is null!");
+  if (link_map_.find(address) != link_map_.end()) {
+    LOG_WARN("Already connected to '%s'", address.ToString().c_str());
     return;
   }
-  fixed_channel_manager_->ConnectServices(
-      address, common::Bind(&SecurityManagerChannel::OnConnectionFail, common::Unretained(this), address), handler_);
+  l2cap_security_interface_->InitiateConnectionForSecurity(address);
+}
+
+void SecurityManagerChannel::Release(hci::Address address) {
+  auto entry = link_map_.find(address);
+  if (entry == link_map_.end()) {
+    LOG_WARN("Unknown address '%s'", address.ToString().c_str());
+    return;
+  }
+  entry->second->Release();
+  entry->second.reset();
+  link_map_.erase(entry);
 }
 
 void SecurityManagerChannel::Disconnect(hci::Address address) {
-  if (is_test_mode_) return;
-  auto entry = fixed_channel_map_.find(address);
-  if (entry != fixed_channel_map_.end()) {
-    entry->second->Release();
-    entry->second.reset();
-    fixed_channel_map_.erase(entry);
-  } else {
+  auto entry = link_map_.find(address);
+  if (entry == link_map_.end()) {
     LOG_WARN("Unknown address '%s'", address.ToString().c_str());
+    return;
   }
+  entry->second->Disconnect();
+  entry->second.reset();
+  link_map_.erase(entry);
 }
 
 void SecurityManagerChannel::OnCommandComplete(hci::CommandCompleteView packet) {
@@ -98,53 +85,23 @@ void SecurityManagerChannel::OnHciEventReceived(hci::EventPacketView packet) {
   listener_->OnHciEventReceived(packet);
 }
 
-void SecurityManagerChannel::OnRegistrationComplete(
-    l2cap::classic::FixedChannelManager::RegistrationResult result,
-    std::unique_ptr<l2cap::classic::FixedChannelService> fixed_channel_service) {
-  ASSERT(fixed_channel_service_ == nullptr);
-  ASSERT_LOG(result == l2cap::classic::FixedChannelManager::RegistrationResult::SUCCESS,
-             "Failed service registration!");
-  fixed_channel_service_ = std::move(fixed_channel_service);
+void SecurityManagerChannel::OnLinkConnected(std::unique_ptr<l2cap::classic::LinkSecurityInterface> link) {
+  // Multiple links possible?
+  link->Hold();
+  link->EnsureAuthenticated();
+  link_map_.emplace(link->GetRemoteAddress(), std::move(link));
 }
 
-void SecurityManagerChannel::OnUnregistered() {
-  fixed_channel_manager_.reset();
-}
-
-void SecurityManagerChannel::OnConnectionOpen(std::unique_ptr<l2cap::classic::FixedChannel> fixed_channel) {
-  ASSERT_LOG(fixed_channel != nullptr, "Null channel passed in");
-  ASSERT_LOG(fixed_channel_map_.find(fixed_channel->GetDevice()) == fixed_channel_map_.end(),
-             "Multiple fixed channel for a single device is not allowed.");
-  fixed_channel->RegisterOnCloseCallback(
-      handler_, common::BindOnce(&SecurityManagerChannel::OnConnectionClose, common::Unretained(this),
-                                 fixed_channel->GetDevice()));
-  fixed_channel->Acquire();
-  auto new_entry = std::pair<hci::Address, std::unique_ptr<l2cap::classic::FixedChannel>>(fixed_channel->GetDevice(),
-                                                                                          std::move(fixed_channel));
-  fixed_channel_map_.insert(std::move(new_entry));
-}
-
-void SecurityManagerChannel::OnConnectionFail(hci::Address address,
-                                              l2cap::classic::FixedChannelManager::ConnectionResult result) {
-  LOG_ERROR("Connection closed due to: %s ; %d", hci::ErrorCodeText(result.hci_error).c_str(),
-            result.connection_result_code);
-  auto entry = fixed_channel_map_.find(address);
-  if (entry != fixed_channel_map_.end()) {
-    entry->second.reset();
-    fixed_channel_map_.erase(entry);
+void SecurityManagerChannel::OnLinkDisconnected(hci::Address address) {
+  auto entry = link_map_.find(address);
+  if (entry == link_map_.end()) {
+    LOG_WARN("Unknown address '%s'", address.ToString().c_str());
+    return;
   }
-  listener_->OnConnectionFailed(address, result);
-}
-
-void SecurityManagerChannel::OnConnectionClose(hci::Address address, hci::ErrorCode error_code) {
-  // Called when the connection gets closed
-  LOG_ERROR("Connection closed due to: %s", hci::ErrorCodeText(error_code).c_str());
-  auto entry = fixed_channel_map_.find(address);
-  if (entry != fixed_channel_map_.end()) {
-    entry->second.reset();
-    fixed_channel_map_.erase(entry);
-  }
-  listener_->OnConnectionClosed(address, error_code);
+  entry->second.reset();
+  link_map_.erase(entry);
+  ASSERT_LOG(listener_ != nullptr, "Set listener!");
+  listener_->OnConnectionClosed(address);
 }
 
 }  // namespace channel

@@ -26,6 +26,7 @@
 #include "hci/hci_packets.h"
 #include "hci/security_interface.h"
 #include "l2cap/classic/l2cap_classic_module.h"
+#include "l2cap/classic/link_security_interface.h"
 
 namespace bluetooth {
 namespace security {
@@ -38,18 +39,15 @@ class ISecurityManagerChannelListener {
  public:
   virtual ~ISecurityManagerChannelListener() = default;
   virtual void OnHciEventReceived(hci::EventPacketView packet) = 0;
-  virtual void OnConnectionClosed(hci::Address, bluetooth::hci::ErrorCode error_code) = 0;
-  virtual void OnConnectionFailed(hci::Address,
-                                  bluetooth::l2cap::classic::FixedChannelManager::ConnectionResult result) = 0;
+  virtual void OnConnectionClosed(hci::Address) = 0;
 };
 
 /**
  * Channel for consolidating traffic and making the transport agnostic.
  */
-class SecurityManagerChannel {
+class SecurityManagerChannel : public l2cap::classic::LinkSecurityInterfaceListener {
  public:
-  SecurityManagerChannel(os::Handler* handler, hci::HciLayer* hci_layer,
-                         std::unique_ptr<l2cap::classic::FixedChannelManager> fixed_channel_manager);
+  SecurityManagerChannel(os::Handler* handler, hci::HciLayer* hci_layer);
 
   virtual ~SecurityManagerChannel();
 
@@ -61,7 +59,20 @@ class SecurityManagerChannel {
   void Connect(hci::Address address);
 
   /**
-   * Disconnects currently connected channel
+   * Releases link hold so it can disconnect as normally
+   *
+   * i.e. signals we no longer need this if acl manager wants to clean it up
+   *
+   * @param address remote address to disconnect
+   */
+  void Release(hci::Address address);
+
+  /**
+   * Immediately disconnects currently connected channel
+   *
+   * i.e. force disconnect
+   *
+   * @param address remote address to disconnect
    */
   void Disconnect(hci::Address address);
 
@@ -81,6 +92,10 @@ class SecurityManagerChannel {
     listener_ = listener;
   }
 
+  void SetSecurityInterface(l2cap::classic::SecurityInterface* security_interface) {
+    l2cap_security_interface_ = security_interface;
+  }
+
   /**
    * Called when an incoming HCI event happens
    *
@@ -95,26 +110,16 @@ class SecurityManagerChannel {
    */
   void OnCommandComplete(hci::CommandCompleteView packet);
 
- protected:
-  SecurityManagerChannel(os::Handler* handler, hci::HciLayer* hci_layer);
-
-  virtual void OnRegistrationComplete(l2cap::classic::FixedChannelManager::RegistrationResult result,
-                                      std::unique_ptr<l2cap::classic::FixedChannelService> fixed_channel_service);
-  virtual void OnUnregistered();
-  virtual void OnConnectionOpen(std::unique_ptr<l2cap::classic::FixedChannel> fixed_channel);
-  virtual void OnConnectionFail(hci::Address address, l2cap::classic::FixedChannelManager::ConnectionResult result);
-  virtual void OnConnectionClose(hci::Address address, hci::ErrorCode error_code);
-
-  bool is_test_mode_ = false;
+  // Interface overrides
+  void OnLinkConnected(std::unique_ptr<l2cap::classic::LinkSecurityInterface> link) override;
+  void OnLinkDisconnected(hci::Address address) override;
 
  private:
   ISecurityManagerChannelListener* listener_{nullptr};
   hci::SecurityInterface* hci_security_interface_{nullptr};
   os::Handler* handler_{nullptr};
-
-  std::unique_ptr<l2cap::classic::FixedChannelManager> fixed_channel_manager_{nullptr};
-  std::unique_ptr<l2cap::classic::FixedChannelService> fixed_channel_service_{nullptr};
-  std::unordered_map<hci::Address, std::unique_ptr<l2cap::classic::FixedChannel>> fixed_channel_map_;
+  l2cap::classic::SecurityInterface* l2cap_security_interface_{nullptr};
+  std::unordered_map<hci::Address, std::unique_ptr<l2cap::classic::LinkSecurityInterface>> link_map_;
 };
 
 }  // namespace channel
