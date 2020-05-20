@@ -211,6 +211,13 @@ class TestLeAddressRotator : public LeAddressRotator {
   void Register(LeAddressRotatorCallback* callback) override {}
 
   void Unregister(LeAddressRotatorCallback* callback) override {}
+
+  AddressWithType GetAnotherAddress() override {
+    hci::Address address;
+    Address::FromString("05:04:03:02:01:00", address);
+    auto random_address = AddressWithType(address, AddressType::RANDOM_DEVICE_ADDRESS);
+    return random_address;
+  }
 };
 
 class TestAclManager : public AclManager {
@@ -354,8 +361,10 @@ TEST_F(LeAdvertisingManagerTest, create_advertiser_test) {
                                                       client_handler_);
   ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
   std::vector<OpCode> adv_opcodes = {
-      OpCode::LE_SET_ADVERTISING_PARAMETERS, OpCode::LE_SET_RANDOM_ADDRESS,     OpCode::LE_SET_SCAN_RESPONSE_DATA,
-      OpCode::LE_SET_ADVERTISING_DATA,       OpCode::LE_SET_ADVERTISING_ENABLE,
+      OpCode::LE_SET_ADVERTISING_PARAMETERS,
+      OpCode::LE_SET_SCAN_RESPONSE_DATA,
+      OpCode::LE_SET_ADVERTISING_DATA,
+      OpCode::LE_SET_ADVERTISING_ENABLE,
   };
   std::vector<uint8_t> success_vector{static_cast<uint8_t>(ErrorCode::SUCCESS)};
   auto result = last_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));

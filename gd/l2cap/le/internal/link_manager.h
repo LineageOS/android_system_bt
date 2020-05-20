@@ -45,13 +45,6 @@ class LinkManager : public hci::acl_manager::LeConnectionCallbacks {
       : l2cap_handler_(l2cap_handler), acl_manager_(acl_manager), fixed_channel_service_manager_(service_manager),
         dynamic_channel_service_manager_(dynamic_service_manager), parameter_provider_(parameter_provider) {
     acl_manager_->RegisterLeCallbacks(this, l2cap_handler_);
-    hci::AddressWithType address_with_type(hci::Address::kEmpty, hci::AddressType::RANDOM_DEVICE_ADDRESS);
-    crypto_toolbox::Octet16 irk = {};
-    auto minimum_rotation_time = std::chrono::milliseconds(7 * 60 * 1000);
-    auto maximum_rotation_time = std::chrono::milliseconds(15 * 60 * 1000);
-    acl_manager_->SetPrivacyPolicyForInitiatorAddress(hci::LeAddressRotator::AddressPolicy::USE_RESOLVABLE_ADDRESS,
-                                                      address_with_type, irk, minimum_rotation_time,
-                                                      maximum_rotation_time);
   }
 
   struct PendingFixedChannelConnection {

@@ -60,7 +60,6 @@ class AclManager : public Module {
   // Generates OnLeConnectSuccess if connected, or OnLeConnectFail otherwise
   virtual void CreateLeConnection(AddressWithType address_with_type);
 
-  virtual void SetLeInitiatorAddress(AddressWithType initiator_address);
   virtual void SetPrivacyPolicyForInitiatorAddress(LeAddressRotator::AddressPolicy address_policy,
                                                    AddressWithType fixed_address, crypto_toolbox::Octet16 rotation_irk,
                                                    std::chrono::milliseconds minimum_rotation_time,

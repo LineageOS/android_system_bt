@@ -58,16 +58,17 @@ class LeAddressRotator {
   virtual void Unregister(LeAddressRotatorCallback* callback);
   void OnLeSetRandomAddressComplete(bool success);
   AddressWithType GetCurrentAddress();  // What was set in SetRandomAddress()
-  AddressWithType GetAnotherAddress();  // A new random address without rotating.
-  void SetAddress(AddressWithType address_with_type);
+  virtual AddressWithType GetAnotherAddress();  // A new random address without rotating.
 
  private:
   void pause_registered_clients();
   void ack_pause(LeAddressRotatorCallback* callback);
   void resume_registered_clients();
   void ack_resume(LeAddressRotatorCallback* callback);
+  void register_client(LeAddressRotatorCallback* callback);
+  void unregister_client(LeAddressRotatorCallback* callback);
   void rotate_random_address();
-  hci::Address generate_rpa(const crypto_toolbox::Octet16& irk, std::array<uint8_t, 8> prand);
+  hci::Address generate_rpa();
   hci::Address generate_nrpa();
   std::chrono::milliseconds get_next_private_address_interval_ms();
   common::Callback<void(Address address)> set_random_address_;
@@ -81,13 +82,10 @@ class LeAddressRotator {
 
   os::Handler* handler_;
   std::map<LeAddressRotatorCallback*, ClientState> registered_clients_;
-  mutable std::mutex mutex_;
 
   AddressPolicy address_policy_ = AddressPolicy::POLICY_NOT_SET;
-  bool use_address_from_set_address = false;
-  AddressWithType public_address_;
-  AddressWithType fixed_address_;
-  AddressWithType le_random_address_;
+  AddressWithType le_address_;
+  Address public_address_;
   std::unique_ptr<os::Alarm> address_rotation_alarm_;
   crypto_toolbox::Octet16 rotation_irk_;
   std::chrono::milliseconds minimum_rotation_time_;
