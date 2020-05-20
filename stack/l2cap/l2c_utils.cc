@@ -2241,7 +2241,8 @@ bool l2cu_create_conn_after_switch(tL2C_LCB* p_lcb) {
 
   /* Check with the BT manager if details about remote device are known */
   p_inq_info = BTM_InqDbRead(p_lcb->remote_bd_addr);
-  if (p_inq_info != NULL) {
+  if ((p_inq_info != NULL) &&
+      (p_inq_info->results.inq_result_type & BTM_INQ_RESULT_BR)) {
     page_scan_rep_mode = p_inq_info->results.page_scan_rep_mode;
     page_scan_mode = p_inq_info->results.page_scan_mode;
     clock_offset = (uint16_t)(p_inq_info->results.clock_offset);
