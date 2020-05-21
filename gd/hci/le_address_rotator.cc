@@ -5,14 +5,11 @@
 namespace bluetooth {
 namespace hci {
 
-static constexpr uint8_t BLE_ADDR_MASK = 0xc0;
+static constexpr uint8_t BLE_ADDR_MASK = 0xc0u;
 
-LeAddressRotator::LeAddressRotator(common::Callback<void(Address address)> set_random_address, os::Handler* handler,
-                                   Address public_address) {
-  set_random_address_ = set_random_address;
-  handler_ = handler;
-  public_address_ = AddressWithType(public_address, AddressType::PUBLIC_DEVICE_ADDRESS);
-};
+LeAddressRotator::LeAddressRotator(
+    common::Callback<void(Address address)> set_random_address, os::Handler* handler, Address public_address)
+    : set_random_address_(set_random_address), handler_(handler), public_address_(public_address){};
 
 LeAddressRotator::~LeAddressRotator() {
   if (address_rotation_alarm_ != nullptr) {
@@ -28,13 +25,16 @@ void LeAddressRotator::SetPrivacyPolicyForInitiatorAddress(AddressPolicy address
                                                            std::chrono::milliseconds maximum_rotation_time) {
   ASSERT(address_policy_ == AddressPolicy::POLICY_NOT_SET);
   ASSERT(address_policy != AddressPolicy::POLICY_NOT_SET);
+  ASSERT_LOG(registered_clients_.empty(), "Policy must be set before clients are registered.");
   address_policy_ = address_policy;
 
   switch (address_policy_) {
     case AddressPolicy::USE_PUBLIC_ADDRESS:
+      le_address_ = fixed_address;
+      break;
     case AddressPolicy::USE_STATIC_ADDRESS:
-      fixed_address_ = fixed_address;
-      resume_registered_clients();
+      le_address_ = fixed_address;
+      handler_->Post(common::Bind(set_random_address_, le_address_.GetAddress()));
       break;
     case AddressPolicy::USE_NON_RESOLVABLE_ADDRESS:
     case AddressPolicy::USE_RESOLVABLE_ADDRESS:
@@ -42,18 +42,6 @@ void LeAddressRotator::SetPrivacyPolicyForInitiatorAddress(AddressPolicy address
       minimum_rotation_time_ = minimum_rotation_time;
       maximum_rotation_time_ = maximum_rotation_time;
       address_rotation_alarm_ = std::make_unique<os::Alarm>(handler_);
-
-      if (registered_clients_.empty()) {
-        return;
-      }
-
-      for (auto client : registered_clients_) {
-        if (client.second != ClientState::PAUSED) {
-          // make sure all client paused
-          return;
-        }
-      }
-      rotate_random_address();
       break;
     default:
       LOG_ALWAYS_FATAL("invalid parameters");
@@ -61,7 +49,10 @@ void LeAddressRotator::SetPrivacyPolicyForInitiatorAddress(AddressPolicy address
 }
 
 void LeAddressRotator::Register(LeAddressRotatorCallback* callback) {
-  std::lock_guard<std::mutex> lock(mutex_);
+  handler_->Post(common::BindOnce(&LeAddressRotator::register_client, common::Unretained(this), callback));
+}
+
+void LeAddressRotator::register_client(LeAddressRotatorCallback* callback) {
   registered_clients_.insert(std::pair<LeAddressRotatorCallback*, ClientState>(callback, ClientState::RESUMED));
   if (address_policy_ == AddressPolicy::POLICY_NOT_SET || address_policy_ == AddressPolicy::USE_RESOLVABLE_ADDRESS ||
       address_policy_ == AddressPolicy::USE_NON_RESOLVABLE_ADDRESS) {
@@ -70,7 +61,10 @@ void LeAddressRotator::Register(LeAddressRotatorCallback* callback) {
 }
 
 void LeAddressRotator::Unregister(LeAddressRotatorCallback* callback) {
-  std::lock_guard<std::mutex> lock(mutex_);
+  handler_->Post(common::BindOnce(&LeAddressRotator::unregister_client, common::Unretained(this), callback));
+}
+
+void LeAddressRotator::unregister_client(LeAddressRotatorCallback* callback) {
   registered_clients_.erase(callback);
   if (registered_clients_.empty() && address_rotation_alarm_ != nullptr) {
     address_rotation_alarm_->Cancel();
@@ -93,29 +87,16 @@ void LeAddressRotator::OnLeSetRandomAddressComplete(bool success) {
 
 AddressWithType LeAddressRotator::GetCurrentAddress() {
   ASSERT(address_policy_ != AddressPolicy::POLICY_NOT_SET);
-  switch (address_policy_) {
-    case AddressPolicy::USE_PUBLIC_ADDRESS:
-      return public_address_;
-    case AddressPolicy::USE_STATIC_ADDRESS:
-      return fixed_address_;
-    case AddressPolicy::USE_NON_RESOLVABLE_ADDRESS:
-    case AddressPolicy::USE_RESOLVABLE_ADDRESS:
-      return le_random_address_;
-    default:
-      LOG_ALWAYS_FATAL("invalid parameters");
-  }
+  return le_address_;
 }
 
 AddressWithType LeAddressRotator::GetAnotherAddress() {
-  std::array<uint8_t, 8> random = os::GenerateRandom<8>();
-  hci::Address address = generate_rpa(rotation_irk_, random);
+  ASSERT(
+      address_policy_ == AddressPolicy::USE_NON_RESOLVABLE_ADDRESS ||
+      address_policy_ == AddressPolicy::USE_RESOLVABLE_ADDRESS);
+  hci::Address address = generate_rpa();
   auto random_address = AddressWithType(address, AddressType::RANDOM_DEVICE_ADDRESS);
   return random_address;
-}
-
-void LeAddressRotator::SetAddress(AddressWithType address_with_type) {
-  use_address_from_set_address = true;
-  le_random_address_ = address_with_type;
 }
 
 void LeAddressRotator::pause_registered_clients() {
@@ -140,7 +121,6 @@ void LeAddressRotator::ack_pause(LeAddressRotatorCallback* callback) {
 }
 
 void LeAddressRotator::resume_registered_clients() {
-  std::lock_guard<std::mutex> lock(mutex_);
   for (auto client : registered_clients_) {
     client.second = ClientState::WAITING_FOR_RESUME;
     client.first->OnResume();
@@ -162,30 +142,24 @@ void LeAddressRotator::rotate_random_address() {
       common::BindOnce(&LeAddressRotator::pause_registered_clients, common::Unretained(this)),
       get_next_private_address_interval_ms());
 
-  if (use_address_from_set_address) {
-    use_address_from_set_address = false;
-    handler_->Post(common::Bind(set_random_address_, le_random_address_.GetAddress()));
-    return;
-  }
-
   hci::Address address;
   if (address_policy_ == AddressPolicy::USE_RESOLVABLE_ADDRESS) {
-    std::array<uint8_t, 8> random = os::GenerateRandom<8>();
-    address = generate_rpa(rotation_irk_, random);
+    address = generate_rpa();
   } else {
     address = generate_nrpa();
   }
   handler_->Post(common::Bind(set_random_address_, address));
-  le_random_address_ = AddressWithType(address, AddressType::RANDOM_DEVICE_ADDRESS);
+  le_address_ = AddressWithType(address, AddressType::RANDOM_DEVICE_ADDRESS);
 }
 
 /* This function generates Resolvable Private Address (RPA) from Identity
  * Resolving Key |irk| and |prand|*/
-hci::Address LeAddressRotator::generate_rpa(const crypto_toolbox::Octet16& irk, std::array<uint8_t, 8> prand) {
+hci::Address LeAddressRotator::generate_rpa() {
   // most significant bit, bit7, bit6 is 01 to be resolvable random
   // Bits of the random part of prand shall not be all 1 or all 0
+  std::array<uint8_t, 3> prand = os::GenerateRandom<3>();
   constexpr uint8_t BLE_RESOLVE_ADDR_MSB = 0x40;
-  prand[2] &= (~BLE_ADDR_MASK);
+  prand[2] &= ~BLE_ADDR_MASK;
   if ((prand[0] == 0x00 && prand[1] == 0x00 && prand[2] == 0x00) ||
       (prand[0] == 0xFF && prand[1] == 0xFF && prand[2] == 0x3F)) {
     prand[0] = (uint8_t)(os::GenerateRandom() % 0xFE + 1);
@@ -198,7 +172,7 @@ hci::Address LeAddressRotator::generate_rpa(const crypto_toolbox::Octet16& irk, 
   address.address[5] = prand[2];
 
   /* encrypt with IRK */
-  crypto_toolbox::Octet16 p = crypto_toolbox::aes_128(irk, prand.data(), 3);
+  crypto_toolbox::Octet16 p = crypto_toolbox::aes_128(rotation_irk_, prand.data(), 3);
 
   /* set hash to be LSB of rpAddress */
   address.address[0] = p[0];
@@ -212,7 +186,7 @@ hci::Address LeAddressRotator::generate_nrpa() {
   // The two most significant bits of the address shall be equal to 0
   // Bits of the random part of the address shall not be all 1 or all 0
   std::array<uint8_t, 6> random = os::GenerateRandom<6>();
-  random[5] &= (~BLE_ADDR_MASK);
+  random[5] &= ~BLE_ADDR_MASK;
   if ((random[0] == 0x00 && random[1] == 0x00 && random[2] == 0x00 && random[3] == 0x00 && random[4] == 0x00 &&
        random[5] == 0x00) ||
       (random[0] == 0xFF && random[1] == 0xFF && random[2] == 0xFF && random[3] == 0xFF && random[4] == 0xFF &&
@@ -221,15 +195,10 @@ hci::Address LeAddressRotator::generate_nrpa() {
   }
 
   hci::Address address;
-  address.address[0] = random[0];
-  address.address[1] = random[1];
-  address.address[2] = random[2];
-  address.address[3] = random[3];
-  address.address[4] = random[4];
-  address.address[5] = random[5];
+  address.FromOctets(random.data());
 
   // the address shall not be equal to the public address
-  while (address == public_address_.GetAddress()) {
+  while (address == public_address_) {
     address.address[0] = (uint8_t)(os::GenerateRandom() % 0xFE + 1);
   }
 

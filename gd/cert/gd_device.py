@@ -50,6 +50,7 @@ from hci.facade import acl_manager_facade_pb2_grpc
 from hci.facade import controller_facade_pb2_grpc
 from hci.facade import le_acl_manager_facade_pb2_grpc
 from hci.facade import le_advertising_manager_facade_pb2_grpc
+from hci.facade import le_initiator_address_facade_pb2_grpc
 from hci.facade import le_scanning_manager_facade_pb2_grpc
 from l2cap.classic import facade_pb2_grpc as l2cap_facade_pb2_grpc
 from l2cap.le import facade_pb2_grpc as l2cap_le_facade_pb2_grpc
@@ -225,6 +226,8 @@ class GdDeviceBase(ABC):
         self.l2cap_le = l2cap_le_facade_pb2_grpc.L2capLeModuleFacadeStub(self.grpc_channel)
         self.hci_acl_manager = acl_manager_facade_pb2_grpc.AclManagerFacadeStub(self.grpc_channel)
         self.hci_le_acl_manager = le_acl_manager_facade_pb2_grpc.LeAclManagerFacadeStub(self.grpc_channel)
+        self.hci_le_initiator_address = le_initiator_address_facade_pb2_grpc.LeInitiatorAddressFacadeStub(
+            self.grpc_channel)
         self.hci_controller = controller_facade_pb2_grpc.ControllerFacadeStub(self.grpc_channel)
         self.hci_controller.GetMacAddressSimple = lambda: self.hci_controller.GetMacAddress(empty_proto.Empty()).address
         self.hci_controller.GetLocalNameSimple = lambda: self.hci_controller.GetLocalName(empty_proto.Empty()).name
