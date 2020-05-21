@@ -224,6 +224,20 @@ class L2capTest(GdBaseTestClass):
         assertThat(self.cert_l2cap.get_control_channel()).emitsNone(L2capMatchers.ConfigurationResponse())
         # TODO: Verify that IUT sends disconnect request (not mandated)
 
+    @metadata(pts_test_id="L2CAP/COS/CED/BV-09-C", pts_test_name="Receive Multi-Command Packet")
+    def test_receive_multi_command_packet(self):
+        """
+        Verify that the IUT is able to receive more than one signaling command in one L2CAP
+        packet.
+        """
+        self._setup_link_from_cert()
+
+        psm = 0x33
+        self.dut_l2cap.connect_dynamic_channel_to_cert(psm)
+        self.cert_l2cap.verify_and_respond_open_channel_from_remote_and_send_config_req(psm)
+
+        assertThat(self.cert_l2cap.get_control_channel()).emits(L2capMatchers.ConfigurationResponse())
+
     @metadata(pts_test_id="L2CAP/COS/CED/BV-11-C", pts_test_name="Configure MTU size")
     def test_configure_mtu_size(self):
         """
