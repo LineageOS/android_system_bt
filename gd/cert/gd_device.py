@@ -38,6 +38,7 @@ from acts.controllers.adb import AdbError
 from google.protobuf import empty_pb2 as empty_proto
 
 from cert.async_subprocess_logger import AsyncSubprocessLogger
+from cert.logging_client_interceptor import LoggingClientInterceptor
 from cert.os_utils import get_gd_root
 from cert.os_utils import read_crash_snippet_and_log_tail
 from cert.os_utils import is_subprocess_alive
@@ -216,6 +217,9 @@ class GdDeviceBase(ABC):
         # Setup gRPC management channels
         self.grpc_root_server_channel = grpc.insecure_channel("localhost:%d" % self.grpc_root_server_port)
         self.grpc_channel = grpc.insecure_channel("localhost:%d" % self.grpc_port)
+
+        if self.verbose_mode:
+            self.grpc_channel = grpc.intercept_channel(self.grpc_channel, LoggingClientInterceptor(self.label))
 
         # Establish services from facades
         self.rootservice = facade_rootservice_pb2_grpc.RootFacadeStub(self.grpc_root_server_channel)
