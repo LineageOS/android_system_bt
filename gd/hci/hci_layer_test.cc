@@ -286,7 +286,7 @@ class HciTest : public ::testing::Test {
     fake_registry_.Start<DependsOnHci>(&fake_registry_.GetTestThread());
     hci = static_cast<HciLayer*>(fake_registry_.GetModuleUnderTest(&HciLayer::Factory));
     upper = static_cast<DependsOnHci*>(fake_registry_.GetModuleUnderTest(&DependsOnHci::Factory));
-    ASSERT(fake_registry_.IsStarted<HciLayer>());
+    ASSERT_TRUE(fake_registry_.IsStarted<HciLayer>());
 
     auto reset_sent_status = command_future.wait_for(kTimeout);
     ASSERT_EQ(reset_sent_status, std::future_status::ready);
@@ -349,7 +349,7 @@ TEST_F(HciTest, leMetaEvent) {
   ASSERT_EQ(event_status, std::future_status::ready);
 
   auto event = upper->GetReceivedEvent();
-  ASSERT(LeConnectionCompleteView::Create(LeMetaEventView::Create(EventPacketView::Create(event))).IsValid());
+  ASSERT_TRUE(LeConnectionCompleteView::Create(LeMetaEventView::Create(EventPacketView::Create(event))).IsValid());
 }
 
 TEST_F(HciTest, noOpCredits) {
@@ -392,8 +392,9 @@ TEST_F(HciTest, noOpCredits) {
   ASSERT_EQ(event_status, std::future_status::ready);
 
   auto event = upper->GetReceivedEvent();
-  ASSERT(ReadLocalVersionInformationCompleteView::Create(CommandCompleteView::Create(EventPacketView::Create(event)))
-             .IsValid());
+  ASSERT_TRUE(
+      ReadLocalVersionInformationCompleteView::Create(CommandCompleteView::Create(EventPacketView::Create(event)))
+          .IsValid());
 }
 
 TEST_F(HciTest, creditsTest) {
@@ -439,8 +440,9 @@ TEST_F(HciTest, creditsTest) {
   ASSERT_EQ(event_status, std::future_status::ready);
 
   auto event = upper->GetReceivedEvent();
-  ASSERT(ReadLocalVersionInformationCompleteView::Create(CommandCompleteView::Create(EventPacketView::Create(event)))
-             .IsValid());
+  ASSERT_TRUE(
+      ReadLocalVersionInformationCompleteView::Create(CommandCompleteView::Create(EventPacketView::Create(event)))
+          .IsValid());
 
   // Verify that the second one is sent
   command_sent_status = command_future.wait_for(kTimeout);
@@ -468,8 +470,9 @@ TEST_F(HciTest, creditsTest) {
   ASSERT_EQ(event_status, std::future_status::ready);
 
   event = upper->GetReceivedEvent();
-  ASSERT(ReadLocalSupportedCommandsCompleteView::Create(CommandCompleteView::Create(EventPacketView::Create(event)))
-             .IsValid());
+  ASSERT_TRUE(
+      ReadLocalSupportedCommandsCompleteView::Create(CommandCompleteView::Create(EventPacketView::Create(event)))
+          .IsValid());
   // Verify that the third one is sent
   command_sent_status = command_future.wait_for(kTimeout);
   ASSERT_EQ(command_sent_status, std::future_status::ready);
@@ -492,8 +495,9 @@ TEST_F(HciTest, creditsTest) {
   event_status = event_future.wait_for(kTimeout);
   ASSERT_EQ(event_status, std::future_status::ready);
   event = upper->GetReceivedEvent();
-  ASSERT(ReadLocalSupportedFeaturesCompleteView::Create(CommandCompleteView::Create(EventPacketView::Create(event)))
-             .IsValid());
+  ASSERT_TRUE(
+      ReadLocalSupportedFeaturesCompleteView::Create(CommandCompleteView::Create(EventPacketView::Create(event)))
+          .IsValid());
 }
 
 TEST_F(HciTest, leSecurityInterfaceTest) {
