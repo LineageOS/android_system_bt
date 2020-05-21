@@ -22,6 +22,7 @@ from facade import common_pb2 as common
 from google.protobuf import empty_pb2 as empty_proto
 from hci.facade import le_acl_manager_facade_pb2 as le_acl_manager_facade
 from hci.facade import le_advertising_manager_facade_pb2 as le_advertising_facade
+from hci.facade import le_initiator_address_facade_pb2 as le_initiator_address_facade
 import bluetooth_packets_python3 as bt_packets
 from bluetooth_packets_python3 import hci_packets, l2cap_packets
 from bluetooth_packets_python3.l2cap_packets import LeCreditBasedConnectionResponseResult
@@ -46,16 +47,20 @@ class LeL2capTest(GdBaseTestClass):
             address=common.BluetoothAddress(address=bytes(b'0D:05:04:03:02:01')), type=common.RANDOM_DEVICE_ADDRESS)
         self.cert_address = common.BluetoothAddressWithType(
             address=common.BluetoothAddress(address=bytes(b'55:11:FF:AA:33:22')), type=common.RANDOM_DEVICE_ADDRESS)
-        self.cert_l2cap._device.hci_le_acl_manager.SetInitiatorAddress(self.cert_address)
-        private_policy = le_acl_manager_facade.PrivacyPolicy(
-            address_policy=le_acl_manager_facade.AddressPolicy.USE_RESOLVABLE_ADDRESS,
-            address_with_type=common.BluetoothAddressWithType(
-                address=common.BluetoothAddress(address=bytes(b'00:00:00:00:00:00')),
-                type=common.RANDOM_DEVICE_ADDRESS),
+        dut_privacy_policy = le_initiator_address_facade.PrivacyPolicy(
+            address_policy=le_initiator_address_facade.AddressPolicy.USE_STATIC_ADDRESS,
+            address_with_type=self.dut_address,
             rotation_irk=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
-            minimum_rotation_time=(7 * 60 * 1000),
-            maximum_rotation_time=(15 * 60 * 1000))
-        self.cert_l2cap._device.hci_le_acl_manager.SetPrivacyPolicyForInitiatorAddress(private_policy)
+            minimum_rotation_time=0,
+            maximum_rotation_time=0)
+        self.dut_l2cap._device.hci_le_initiator_address.SetPrivacyPolicyForInitiatorAddress(dut_privacy_policy)
+        privacy_policy = le_initiator_address_facade.PrivacyPolicy(
+            address_policy=le_initiator_address_facade.AddressPolicy.USE_STATIC_ADDRESS,
+            address_with_type=self.cert_address,
+            rotation_irk=b'\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00',
+            minimum_rotation_time=0,
+            maximum_rotation_time=0)
+        self.cert_l2cap._device.hci_le_initiator_address.SetPrivacyPolicyForInitiatorAddress(privacy_policy)
 
     def teardown_test(self):
         self.cert_l2cap.close()
