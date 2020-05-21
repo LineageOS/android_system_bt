@@ -100,6 +100,14 @@ bool config_get_bool(const config_t& config, const std::string& section, const s
 const std::string* config_get_string(
     const config_t& config, const std::string& section, const std::string& key, const std::string* def_value);
 
+// Gets the |value| of |key| from |section|
+bool config_get_bin(
+    const config_t* config, const std::string& section, const std::string& key, uint8_t* value, size_t* length);
+
+// Sets some binary data |value| to the |key| in the config
+bool config_set_bin(
+    config_t* config, const std::string& section, const std::string& key, const uint8_t* value, size_t length);
+
 // Sets an integral value for the |key| in |section|. If |key| or |section| do
 // not already exist, this function creates them. |config| must not be NULL.
 void config_set_int(config_t* config, const std::string& section, const std::string& key, int value);
