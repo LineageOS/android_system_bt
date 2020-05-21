@@ -361,6 +361,9 @@ class PendingConnection {
       case l2cap::classic::DynamicChannelManager::ConnectionResultCode::FAIL_REMOTE_NOT_SUPPORT:
         LOG_DEBUG("Connection failed result:Remote not support required retransmission and flow control mode");
         break;
+      case l2cap::classic::DynamicChannelManager::ConnectionResultCode::FAIL_SECURITY_BLOCK:
+        LOG_DEBUG("Connection failed result:security block");
+        break;
     }
     pending_fail_(result);
   }
