@@ -101,6 +101,7 @@ class ClassicSignallingManager {
 
  private:
   void on_incoming_packet();
+  void handle_one_command(ControlView control_view);
   void send_connection_response(SignalId signal_id, Cid remote_cid, Cid local_cid, ConnectionResponseResult result,
                                 ConnectionResponseStatus status);
   void on_command_timeout();

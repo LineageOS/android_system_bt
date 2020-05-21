@@ -23,6 +23,7 @@ from cert.py_acl_manager import PyAclManager
 from cert.truth import assertThat
 import bluetooth_packets_python3 as bt_packets
 from bluetooth_packets_python3 import l2cap_packets
+from bluetooth_packets_python3 import RawBuilder
 from bluetooth_packets_python3.l2cap_packets import CommandCode
 from bluetooth_packets_python3.l2cap_packets import Final
 from bluetooth_packets_python3.l2cap_packets import SegmentationAndReassembly
@@ -223,6 +224,28 @@ class CertL2cap(Closable, IHasBehaviors):
             sid, scid, dcid, l2cap_packets.ConnectionResponseResult.SUCCESS,
             l2cap_packets.ConnectionResponseStatus.NO_FURTHER_INFORMATION_AVAILABLE)
         self.control_channel.send(connection_response)
+
+        return channel
+
+    def verify_and_respond_open_channel_from_remote_and_send_config_req(self, psm=0x33):
+        """
+        Verify a connection request, and send a combo packet of connection response and configuration request
+        """
+        request = L2capCaptures.ConnectionRequest(psm)
+        assertThat(self.control_channel).emits(request)
+
+        sid = request.get().GetIdentifier()
+        dcid = request.get().GetSourceCid()
+        scid = dcid
+        channel = CertL2capChannel(self._device, scid, dcid, self._get_acl_stream(), self._acl, self.control_channel)
+        self.scid_to_channel[scid] = channel
+
+        # Connection response and config request combo packet
+        conn_rsp_and_config_req = RawBuilder([
+            0x03, sid, 0x08, 0x00, dcid, 0x00, dcid, 0x00, 0x00, 0x00, 0x00, 0x00, 0x04, sid + 1, 0x04, 0x00, dcid,
+            0x00, 0x00, 0x00
+        ])
+        self.control_channel.send(conn_rsp_and_config_req)
 
         return channel
 
