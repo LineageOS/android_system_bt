@@ -45,7 +45,9 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressRotatorCallback
   impl(Module* module) : module_(module), le_scanning_interface_(nullptr) {}
 
   ~impl() {
-    le_address_rotator_->Unregister(this);
+    if (address_rotator_registered) {
+      le_address_rotator_->Unregister(this);
+    }
   }
 
   void start(os::Handler* handler, hci::HciLayer* hci_layer, hci::Controller* controller,
@@ -54,7 +56,6 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressRotatorCallback
     hci_layer_ = hci_layer;
     controller_ = controller;
     le_address_rotator_ = acl_manager->GetLeAddressRotator();
-    le_address_rotator_->Register(this);
     le_scanning_interface_ = hci_layer_->GetLeScanningInterface(
         module_handler_->BindOn(this, &LeScanningManager::impl::handle_scan_results));
     if (controller_->IsSupported(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS)) {
@@ -149,6 +150,10 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressRotatorCallback
   }
 
   void start_scan(LeScanningManagerCallbacks* le_scanning_manager_callbacks) {
+    if (!address_rotator_registered) {
+      le_address_rotator_->Register(this);
+    }
+
     registered_callback_ = le_scanning_manager_callbacks;
     switch (api_type_) {
       case ScanApiType::LE_5_0:
@@ -217,6 +222,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressRotatorCallback
   hci::Controller* controller_;
   hci::LeScanningInterface* le_scanning_interface_;
   hci::LeAddressRotator* le_address_rotator_;
+  bool address_rotator_registered = false;
 
   uint32_t interval_ms_{1000};
   uint16_t window_ms_{1000};
