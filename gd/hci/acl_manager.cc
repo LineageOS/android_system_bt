@@ -140,11 +140,6 @@ void AclManager::CreateLeConnection(AddressWithType address_with_type) {
       common::BindOnce(&le_impl::create_le_connection, common::Unretained(pimpl_->le_impl_), address_with_type));
 }
 
-void AclManager::SetLeInitiatorAddress(AddressWithType initiator_address) {
-  GetHandler()->Post(
-      common::BindOnce(&le_impl::set_le_initiator_address, common::Unretained(pimpl_->le_impl_), initiator_address));
-}
-
 void AclManager::SetPrivacyPolicyForInitiatorAddress(LeAddressRotator::AddressPolicy address_policy,
                                                      AddressWithType fixed_address,
                                                      crypto_toolbox::Octet16 rotation_irk,

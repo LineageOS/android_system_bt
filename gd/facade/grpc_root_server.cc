@@ -27,6 +27,7 @@
 #include "hci/facade/facade.h"
 #include "hci/facade/le_acl_manager_facade.h"
 #include "hci/facade/le_advertising_manager_facade.h"
+#include "hci/facade/le_initiator_address_facade.h"
 #include "hci/facade/le_scanning_manager_facade.h"
 #include "hci/hci_layer.h"
 #include "hci/le_advertising_manager.h"
@@ -86,12 +87,14 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
         modules.add<::bluetooth::hci::facade::ControllerFacadeModule>();
         modules.add<::bluetooth::hci::facade::LeAclManagerFacadeModule>();
         modules.add<::bluetooth::hci::facade::LeAdvertisingManagerFacadeModule>();
+        modules.add<::bluetooth::hci::facade::LeInitiatorAddressFacadeModule>();
         modules.add<::bluetooth::hci::facade::LeScanningManagerFacadeModule>();
         modules.add<::bluetooth::neighbor::facade::NeighborFacadeModule>();
         break;
       case BluetoothModule::L2CAP:
         modules.add<::bluetooth::hci::facade::ControllerFacadeModule>();
         modules.add<::bluetooth::hci::facade::LeAdvertisingManagerFacadeModule>();
+        modules.add<::bluetooth::hci::facade::LeInitiatorAddressFacadeModule>();
         modules.add<::bluetooth::neighbor::facade::NeighborFacadeModule>();
         modules.add<::bluetooth::facade::ReadOnlyPropertyServerModule>();
         modules.add<::bluetooth::l2cap::classic::L2capClassicModuleFacadeModule>();
