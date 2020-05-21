@@ -111,7 +111,7 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
                                          std::list<Link::PendingDynamicChannelConnection> callback_list);
 
   // Invoked by signalling manager to indicate an outgoing connection request failed and link shall free resources
-  virtual void OnOutgoingConnectionRequestFail(Cid local_cid);
+  virtual void OnOutgoingConnectionRequestFail(Cid local_cid, DynamicChannelManager::ConnectionResult result);
 
   virtual void SendInitialConfigRequestOrQueue(Cid local_cid);
 

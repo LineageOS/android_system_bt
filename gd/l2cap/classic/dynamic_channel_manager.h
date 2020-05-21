@@ -46,6 +46,7 @@ class DynamicChannelManager {
     FAIL_HCI_ERROR = 2,              // See hci_error
     FAIL_L2CAP_ERROR = 3,            // See l2cap_connection_response_result
     FAIL_REMOTE_NOT_SUPPORT = 4,     // Remote not support required retansmission and flow control mode
+    FAIL_SECURITY_BLOCK = 5,         // Cannot enhance required security level
   };
 
   struct ConnectionResult {
