@@ -32,6 +32,22 @@ namespace classic {
 namespace internal {
 static constexpr auto kTimeout = std::chrono::seconds(3);
 
+static std::vector<ControlView> GetCommandsFromPacketView(PacketView<kLittleEndian> packet) {
+  size_t curr = 0;
+  size_t end = packet.size();
+  std::vector<ControlView> result;
+  while (curr < end) {
+    auto sub_view = packet.GetLittleEndianSubview(curr, end);
+    auto control = ControlView::Create(sub_view);
+    if (!control.IsValid()) {
+      return {};
+    }
+    result.push_back(control);
+    curr += 1 + 1 + 2 + control.GetPayload().size();
+  }
+  return result;
+}
+
 ClassicSignallingManager::ClassicSignallingManager(os::Handler* handler, Link* link,
                                                    l2cap::internal::DataPipelineManager* data_pipeline_manager,
                                                    DynamicChannelServiceManagerImpl* dynamic_service_manager,
@@ -678,7 +694,13 @@ void ClassicSignallingManager::OnInformationResponse(SignalId signal_id, const I
 
 void ClassicSignallingManager::on_incoming_packet() {
   auto packet = signalling_channel_->GetQueueUpEnd()->TryDequeue();
-  ControlView control_packet_view = ControlView::Create(*packet);
+  auto command_list = GetCommandsFromPacketView(*packet);
+  for (auto& command : command_list) {
+    handle_one_command(command);
+  }
+}
+
+void ClassicSignallingManager::handle_one_command(ControlView control_packet_view) {
   if (!control_packet_view.IsValid()) {
     LOG_WARN("Invalid signalling packet received");
     return;
