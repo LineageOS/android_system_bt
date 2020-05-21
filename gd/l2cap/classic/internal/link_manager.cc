@@ -139,73 +139,75 @@ void LinkManager::TriggerPairing(Link* link) {
   link->ReadClockOffset();
 }
 
+void LinkManager::handle_link_security_hold(hci::Address remote) {
+  auto link = GetLink(remote);
+  if (link == nullptr) {
+    LOG_WARN("Remote is disconnected");
+    return;
+  }
+  link->AcquireSecurityHold();
+}
+
+void LinkManager::handle_link_security_release(hci::Address remote) {
+  auto link = GetLink(remote);
+  if (link == nullptr) {
+    LOG_WARN("Remote is disconnected");
+    return;
+  }
+  link->ReleaseSecurityHold();
+}
+
+void LinkManager::handle_link_security_disconnect(hci::Address remote) {
+  auto link = GetLink(remote);
+  if (link == nullptr) {
+    LOG_WARN("Remote is disconnected");
+    return;
+  }
+  link->Disconnect();
+}
+
+void LinkManager::handle_link_security_ensure_authenticated(hci::Address remote) {
+  auto link = GetLink(remote);
+  if (link == nullptr) {
+    LOG_WARN("Remote is disconnected");
+    return;
+  }
+  if (!link->IsAuthenticated()) {
+    link->Authenticate();
+  }
+}
+
 /**
  * The implementation for LinkSecurityInterface, which allows the SecurityModule to access some link functionalities.
  * Note: All public methods implementing this interface are invoked from external context.
  */
-struct LinkSecurityInterfaceImpl : public LinkSecurityInterface {
+class LinkSecurityInterfaceImpl : public LinkSecurityInterface {
  public:
   LinkSecurityInterfaceImpl(os::Handler* handler, LinkManager* link_manager, Link* link)
-      : handler_(handler), link_manager_(link_manager), link_(link), remote_(link_->GetDevice().GetAddress()) {}
+      : handler_(handler), link_manager_(link_manager), remote_(link->GetDevice().GetAddress()) {}
 
   hci::Address GetRemoteAddress() override {
     return remote_;
   }
 
   void Hold() override {
-    handler_->CallOn(this, &LinkSecurityInterfaceImpl::handle_hold);
-  }
-
-  void handle_hold() {
-    if (link_manager_->GetLink(remote_) == nullptr) {
-      LOG_WARN("Remote is disconnected");
-      return;
-    }
-    link_->AcquireSecurityHold();
+    handler_->CallOn(link_manager_, &LinkManager::handle_link_security_hold, remote_);
   }
 
   void Release() override {
-    handler_->CallOn(this, &LinkSecurityInterfaceImpl::handle_release);
-  }
-
-  void handle_release() {
-    if (link_manager_->GetLink(remote_) == nullptr) {
-      LOG_WARN("Remote is disconnected");
-      return;
-    }
-    link_->ReleaseSecurityHold();
+    handler_->CallOn(link_manager_, &LinkManager::handle_link_security_release, remote_);
   }
 
   void Disconnect() override {
-    handler_->CallOn(this, &LinkSecurityInterfaceImpl::handle_disconnect);
-  }
-
-  void handle_disconnect() {
-    if (link_manager_->GetLink(remote_) == nullptr) {
-      LOG_WARN("Remote is disconnected");
-      return;
-    }
-    link_->Disconnect();
+    handler_->CallOn(link_manager_, &LinkManager::handle_link_security_disconnect, remote_);
   }
 
   void EnsureAuthenticated() override {
-    handler_->CallOn(this, &LinkSecurityInterfaceImpl::handle_ensure_authenticated);
-  }
-
-  void handle_ensure_authenticated() {
-    if (link_manager_->GetLink(remote_) == nullptr) {
-      LOG_WARN("Remote is disconnected");
-      return;
-    }
-
-    if (!link_->IsAuthenticated()) {
-      link_->Authenticate();
-    }
+    handler_->CallOn(link_manager_, &LinkManager::handle_link_security_ensure_authenticated, remote_);
   }
 
   os::Handler* handler_;
   LinkManager* link_manager_;
-  Link* link_;
   hci::Address remote_;
 };
 
