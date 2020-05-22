@@ -50,9 +50,9 @@ class DualL2capTest(GdBaseTestClass):
         self.dut_le_l2cap = PyLeL2cap(self.dut)
         self.cert_le_l2cap = CertLeL2cap(self.cert)
         self.dut_le_address = common.BluetoothAddressWithType(
-            address=common.BluetoothAddress(address=bytes(b'0D:05:04:03:02:01')), type=common.RANDOM_DEVICE_ADDRESS)
+            address=common.BluetoothAddress(address=bytes(b'D0:05:04:03:02:01')), type=common.RANDOM_DEVICE_ADDRESS)
         self.cert_address = common.BluetoothAddressWithType(
-            address=common.BluetoothAddress(address=bytes(b'55:11:FF:AA:33:22')), type=common.RANDOM_DEVICE_ADDRESS)
+            address=common.BluetoothAddress(address=bytes(b'C0:11:FF:AA:33:22')), type=common.RANDOM_DEVICE_ADDRESS)
         dut_privacy_policy = le_initiator_address_facade.PrivacyPolicy(
             address_policy=le_initiator_address_facade.AddressPolicy.USE_STATIC_ADDRESS,
             address_with_type=self.dut_le_address,
