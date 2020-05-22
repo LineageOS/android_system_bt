@@ -15,15 +15,16 @@
  *  limitations under the License.
  *
  */
-#include "security_manager_channel.h"
+#include "security/channel/security_manager_channel.h"
 
 #include <gtest/gtest.h>
 
+#include "hci/address.h"
 #include "hci/hci_packets.h"
-#include "l2cap/classic/fixed_channel.h"
 #include "packet/raw_builder.h"
 #include "security/smp_packets.h"
 #include "security/test/fake_hci_layer.h"
+#include "security/test/fake_security_interface.h"
 
 namespace bluetooth {
 namespace security {
@@ -42,14 +43,21 @@ using os::Handler;
 using os::Thread;
 using packet::RawBuilder;
 
+static bool on_link_connected_called = false;
+static bool on_link_disconnected_called = false;
+
 class FakeSecurityManagerChannel : public SecurityManagerChannel {
  public:
   FakeSecurityManagerChannel(os::Handler* handler, hci::HciLayer* hci_layer)
       : SecurityManagerChannel(handler, hci_layer) {}
   ~FakeSecurityManagerChannel() {}
 
-  void OnConnectionOpen(std::unique_ptr<l2cap::classic::FixedChannel> fixed_channel) override {
-    LOG_ERROR("CALLED");
+  void OnLinkConnected(std::unique_ptr<l2cap::classic::LinkSecurityInterface> link) {
+    on_link_connected_called = true;
+  }
+
+  void OnLinkDisconnected(hci::Address address) {
+    on_link_disconnected_called = true;
   }
 };
 
@@ -197,19 +205,19 @@ class SecurityManagerChannelCallback : public ISecurityManagerChannelListener {
     }
   }
 
-  void OnConnectionClosed(hci::Address address, bluetooth::hci::ErrorCode error_code) override {
+  void OnConnectionClosed(hci::Address address) override {
     LOG_DEBUG("Called");
-  }
-
-  void OnConnectionFailed(hci::Address address,
-                          bluetooth::l2cap::classic::FixedChannelManager::ConnectionResult result) override {
-    LOG_DEBUG("Shouldn't be called");
   }
 };
 
 class SecurityManagerChannelTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    hci::Address address;
+    hci::Address::FromString("01:23:45:67:89:AB:CD", address);
+    device_ = hci::AddressWithType(address, hci::AddressType::PUBLIC_DEVICE_ADDRESS);
+    on_link_connected_called = false;
+    on_link_disconnected_called = false;
     handler_ = new Handler(&thread_);
     callback_ = new SecurityManagerChannelCallback();
     hci_layer_ = new FakeHciLayer();
@@ -217,6 +225,8 @@ class SecurityManagerChannelTest : public ::testing::Test {
     fake_registry_.Start<FakeHciLayer>(&thread_);
     channel_ = new FakeSecurityManagerChannel(handler_, hci_layer_);
     channel_->SetChannelListener(callback_);
+    security_interface_ = new FakeSecurityInterface(handler_, channel_);
+    channel_->SetSecurityInterface(security_interface_);
   }
 
   void TearDown() override {
@@ -227,6 +237,7 @@ class SecurityManagerChannelTest : public ::testing::Test {
     delete handler_;
     delete channel_;
     delete callback_;
+    delete security_interface_;
   }
 
   void synchronize() {
@@ -237,6 +248,7 @@ class SecurityManagerChannelTest : public ::testing::Test {
   Thread& thread_ = fake_registry_.GetTestThread();
   Handler* handler_ = nullptr;
   FakeHciLayer* hci_layer_ = nullptr;
+  l2cap::classic::SecurityInterface* security_interface_ = nullptr;
   SecurityManagerChannel* channel_ = nullptr;
   SecurityManagerChannelCallback* callback_ = nullptr;
   hci::AddressWithType device_;
@@ -671,6 +683,16 @@ TEST_F(SecurityManagerChannelTest, recv_user_passkey_request) {
   hci_layer_->IncomingEvent(hci::UserPasskeyRequestBuilder::Create(device_.GetAddress()));
   synchronize();
   ASSERT_TRUE(callback_->receivedUserPasskeyRequest);
+}
+
+TEST_F(SecurityManagerChannelTest, test_l2cap_security_interface_api) {
+  ASSERT_FALSE(on_link_connected_called);
+  channel_->Connect(device_.GetAddress());
+  ASSERT_TRUE(on_link_connected_called);
+  ASSERT_FALSE(on_link_disconnected_called);
+  channel_->Release(device_.GetAddress());
+  // TODO(optedoblivion): Lock and wait
+  // ASSERT_TRUE(on_link_disconnected_called);
 }
 
 }  // namespace
