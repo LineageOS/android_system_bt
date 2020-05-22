@@ -104,6 +104,7 @@ void SecurityManagerImpl::CancelBond(hci::AddressWithType device) {
 void SecurityManagerImpl::RemoveBond(hci::AddressWithType device) {
   CancelBond(device);
   security_database_.Remove(device);
+  security_manager_channel_->Disconnect(device.GetAddress());
   // Signal disconnect
   // Remove security record
   // Signal Remove from database
@@ -250,19 +251,7 @@ void SecurityManagerImpl::OnHciEventReceived(hci::EventPacketView packet) {
   }
 }
 
-void SecurityManagerImpl::OnConnectionClosed(hci::Address address, bluetooth::hci::ErrorCode error_code) {
-  LOG_DEBUG("Reason: %s ", hci::ErrorCodeText(error_code).c_str());
-  auto entry = pairing_handler_map_.find(address);
-  if (entry != pairing_handler_map_.end()) {
-    LOG_DEBUG("Cancelling pairing handler for '%s'", address.ToString().c_str());
-    entry->second->Cancel();
-  }
-}
-
-void SecurityManagerImpl::OnConnectionFailed(hci::Address address,
-                                             bluetooth::l2cap::classic::FixedChannelManager::ConnectionResult result) {
-  LOG_DEBUG("HCI Reason: %s ", hci::ErrorCodeText(result.hci_error).c_str());
-  LOG_DEBUG("L2CAP Reason: %d ", result.connection_result_code);
+void SecurityManagerImpl::OnConnectionClosed(hci::Address address) {
   auto entry = pairing_handler_map_.find(address);
   if (entry != pairing_handler_map_.end()) {
     LOG_DEBUG("Cancelling pairing handler for '%s'", address.ToString().c_str());
@@ -312,7 +301,7 @@ void SecurityManagerImpl::OnPairingHandlerComplete(hci::Address address, Pairing
   auto entry = pairing_handler_map_.find(address);
   if (entry != pairing_handler_map_.end()) {
     pairing_handler_map_.erase(entry);
-    security_manager_channel_->Disconnect(address);
+    security_manager_channel_->Release(address);
   }
   if (!std::holds_alternative<PairingFailure>(status)) {
     NotifyDeviceBonded(hci::AddressWithType(address, hci::AddressType::PUBLIC_DEVICE_ADDRESS));
