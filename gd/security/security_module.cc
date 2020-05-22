@@ -36,15 +36,22 @@ namespace security {
 const ModuleFactory SecurityModule::Factory = ModuleFactory([]() { return new SecurityModule(); });
 
 struct SecurityModule::impl {
-  impl(os::Handler* security_handler, l2cap::le::L2capLeModule* l2cap_le_module,
-       l2cap::classic::L2capClassicModule* l2cap_classic_module, hci::HciLayer* hci_layer, hci::AclManager* acl_manager)
-      : security_handler_(security_handler), l2cap_classic_module_(l2cap_classic_module),
+  impl(
+      os::Handler* security_handler,
+      l2cap::le::L2capLeModule* l2cap_le_module,
+      l2cap::classic::L2capClassicModule* l2cap_classic_module,
+      hci::HciLayer* hci_layer,
+      hci::AclManager* acl_manager)
+      : security_handler_(security_handler),
+        l2cap_classic_module_(l2cap_classic_module),
         l2cap_le_module_(l2cap_le_module),
-        security_manager_channel_(new channel::SecurityManagerChannel(security_handler_, hci_layer,
-                                                                      l2cap_classic_module->GetFixedChannelManager())),
-        hci_layer_(hci_layer), l2cap_security_interface_(&security_manager_impl, security_handler) {
+        security_manager_channel_(new channel::SecurityManagerChannel(security_handler_, hci_layer)),
+        hci_layer_(hci_layer),
+        l2cap_security_interface_(&security_manager_impl, security_handler) {
     l2cap_classic_module->InjectSecurityEnforcementInterface(&l2cap_security_interface_);
     l2cap_le_module->InjectSecurityEnforcementInterface(&l2cap_security_interface_);
+    security_manager_channel_->SetSecurityInterface(
+        l2cap_classic_module->GetSecurityInterface(security_handler_, security_manager_channel_));
   }
 
   os::Handler* security_handler_;

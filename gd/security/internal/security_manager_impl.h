@@ -122,18 +122,8 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
    * When a conncetion closes we should clean up the pairing handler
    *
    * @param address Remote address
-   * @param error_code HCI error
    */
-  void OnConnectionClosed(hci::Address address, bluetooth::hci::ErrorCode error_code) override;
-
-  /**
-   * This can occur when a remote device isn't in range or doesn't agree with local device
-   *
-   * @param address Remote address
-   * @param result holds hci error and connection error code
-   */
-  void OnConnectionFailed(hci::Address address,
-                          bluetooth::l2cap::classic::FixedChannelManager::ConnectionResult result) override;
+  void OnConnectionClosed(hci::Address address) override;
 
   /**
    * Pairing handler has finished or cancelled
