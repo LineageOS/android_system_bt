@@ -82,6 +82,13 @@ class LinkManager : public hci::acl_manager::ConnectionCallbacks {
  private:
   void TriggerPairing(Link* link);
 
+  // Handles requests from LinkSecurityInterface
+  friend class LinkSecurityInterfaceImpl;
+  void handle_link_security_hold(hci::Address remote);
+  void handle_link_security_release(hci::Address remote);
+  void handle_link_security_disconnect(hci::Address remote);
+  void handle_link_security_ensure_authenticated(hci::Address remote);
+
   // Dependencies
   os::Handler* l2cap_handler_;
   hci::AclManager* acl_manager_;
