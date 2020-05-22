@@ -160,26 +160,6 @@ class EventStream(IEventStream, Closable):
             else:
                 raise exp
 
-    def assert_none(self, timeout=timedelta(seconds=DEFAULT_TIMEOUT_SECONDS)):
-        """
-        Assert no event happens within timeout period
-
-        :param timeout: a timedelta object
-        :return:
-        """
-        NOT_FOR_YOU_assert_none(self, timeout)
-
-    def assert_none_matching(self, match_fn, timeout=timedelta(seconds=DEFAULT_TIMEOUT_SECONDS)):
-        """
-        Assert no events where match_fn(event) is True happen within timeout
-        period
-
-        :param match_fn: return True/False on match_fn(event)
-        :param timeout: a timedelta object
-        :return:
-        """
-        NOT_FOR_YOU_assert_none_matching(self, match_fn, timeout)
-
     def assert_event_occurs(self, match_fn, at_least_times=1, timeout=timedelta(seconds=DEFAULT_TIMEOUT_SECONDS)):
         """
         Assert at least |at_least_times| instances of events happen where
