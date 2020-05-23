@@ -201,9 +201,6 @@ class EventStream(IEventStream, Closable):
             len(event_list) <= at_most_times,
             msg=("Expected at most %d events, but got %d" % (at_most_times, len(event_list))))
 
-    def assert_all_events_occur(self, match_fns, order_matters, timeout=timedelta(seconds=DEFAULT_TIMEOUT_SECONDS)):
-        NOT_FOR_YOU_assert_all_events_occur(self, match_fns, order_matters, timeout)
-
 
 def static_remaining_time_delta(end_time):
     remaining = end_time - datetime.now()
