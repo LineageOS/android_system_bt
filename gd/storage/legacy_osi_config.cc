@@ -455,3 +455,62 @@ error2:
   if (dir_fd != -1) close(dir_fd);
   return false;
 }
+
+bool bluetooth::legacy::osi::config::config_get_bin(
+    const config_t* config, const std::string& section, const std::string& key, uint8_t* value, size_t* length) {
+  CHECK(config != NULL);
+  CHECK(value != NULL);
+  CHECK(length != NULL);
+
+  const std::string* value_str = config_get_string(*config, section, key, NULL);
+
+  if (!value_str) {
+    VLOG(1) << __func__ << ": cannot find string for section " << section << ", key " << key;
+    return false;
+  }
+
+  size_t value_len = value_str->length();
+  if ((value_len % 2) != 0 || *length < (value_len / 2)) {
+    LOG(WARNING) << ": value size not divisible by 2, size is " << value_len;
+    return false;
+  }
+
+  for (size_t i = 0; i < value_len; ++i)
+    if (!isxdigit(value_str->c_str()[i])) {
+      LOG(WARNING) << ": value is not hex digit";
+      return false;
+    }
+
+  const char* ptr = value_str->c_str();
+  for (*length = 0; *ptr; ptr += 2, *length += 1) sscanf(ptr, "%02hhx", &value[*length]);
+  return true;
+}
+
+bool bluetooth::legacy::osi::config::config_set_bin(
+    config_t* config, const std::string& section, const std::string& key, const uint8_t* value, size_t length) {
+  const char* lookup = "0123456789abcdef";
+
+  CHECK(config != NULL);
+
+  if (length > 0) CHECK(value != NULL);
+
+  size_t max_value = ((size_t)-1);
+  if (((max_value - 1) / 2) < length) {
+    LOG(ERROR) << __func__ << ": length too long";
+    return false;
+  }
+
+  char* str = (char*)malloc(length * 2 + 1);
+
+  for (size_t i = 0; i < length; ++i) {
+    str[(i * 2) + 0] = lookup[(value[i] >> 4) & 0x0F];
+    str[(i * 2) + 1] = lookup[value[i] & 0x0F];
+  }
+
+  LOG(ERROR) << __func__ << ": str: " << str;
+
+  config_set_string(config, section, key, str);
+
+  free(str);
+  return true;
+}
