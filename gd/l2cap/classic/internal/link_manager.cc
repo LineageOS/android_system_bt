@@ -245,10 +245,9 @@ void LinkManager::OnConnectFail(hci::Address device, hci::ErrorCode reason) {
               hci::ErrorCodeText(reason).c_str());
     if (pending_dynamic_channels_callbacks_.find(device) != pending_dynamic_channels_callbacks_.end()) {
       for (Link::PendingDynamicChannelConnection& callbacks : pending_dynamic_channels_callbacks_[device]) {
-        callbacks.handler_->Post(common::BindOnce(std::move(callbacks.on_fail_callback_),
-                                                  DynamicChannelManager::ConnectionResult{
-                                                      .hci_error = hci::ErrorCode::CONNECTION_TIMEOUT,
-                                                  }));
+        callbacks.on_fail_callback_.Invoke(DynamicChannelManager::ConnectionResult{
+            .hci_error = hci::ErrorCode::CONNECTION_TIMEOUT,
+        });
       }
       pending_dynamic_channels_.erase(device);
       pending_dynamic_channels_callbacks_.erase(device);
