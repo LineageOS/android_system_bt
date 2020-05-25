@@ -11,6 +11,7 @@ service SecurityModuleFacade {
   rpc CancelBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
   rpc RemoveBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
   rpc SetIoCapability(IoCapabilityMessage) returns (google.protobuf.Empty) {}
+  rpc SetLeIoCapability(LeIoCapabilityMessage) returns (google.protobuf.Empty) {}
   rpc SetAuthenticationRequirements(AuthenticationRequirementsMessage) returns (google.protobuf.Empty) {}
   rpc SetOobDataPresent(OobDataMessage) returns (google.protobuf.Empty) {}
   rpc SetLeInitiatorAddress(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
@@ -25,6 +26,7 @@ enum UiMsgType {
   DISPLAY_PASSKEY = 2;
   DISPLAY_PASSKEY_ENTRY = 3;
   DISPLAY_CANCEL = 4;
+  DISPLAY_PAIRING_PROMPT = 5;
 }
 
 message UiMsg {
@@ -37,6 +39,7 @@ message UiMsg {
 enum UiCallbackType {
   YES_NO = 0;
   PASSKEY = 1;
+  PAIRING_PROMPT = 2;
 }
 
 message UiCallbackMsg {
@@ -67,6 +70,17 @@ enum IoCapabilities {
 
 message IoCapabilityMessage {
   IoCapabilities capability = 1;
+}
+
+message LeIoCapabilityMessage {
+  enum LeIoCapabilities {
+    DISPLAY_ONLY = 0;
+    DISPLAY_YES_NO_IO_CAP = 1;
+    KEYBOARD_ONLY = 2;
+    NO_INPUT_NO_OUTPUT = 3;
+    KEYBOARD_DISPLAY = 4;
+  }
+  LeIoCapabilities capabilities = 1;
 }
 
 enum AuthenticationRequirements {

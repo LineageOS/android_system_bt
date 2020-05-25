@@ -79,7 +79,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
                                 ::google::protobuf::Empty* response) override {
     hci::Address peer;
     ASSERT(hci::Address::FromString(request->address().address().address(), peer));
-    hci::AddressType remote_type = hci::AddressType::PUBLIC_DEVICE_ADDRESS;
+    hci::AddressType remote_type = static_cast<hci::AddressType>(request->address().type());
 
     switch (request->message_type()) {
       case UiCallbackType::PASSKEY:
@@ -88,6 +88,10 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
       case UiCallbackType::YES_NO:
         security_module_->GetSecurityManager()->OnConfirmYesNo(hci::AddressWithType(peer, remote_type),
                                                                request->boolean());
+        break;
+      case UiCallbackType::PAIRING_PROMPT:
+        security_module_->GetSecurityManager()->OnPairingPromptAccepted(
+            hci::AddressWithType(peer, remote_type), request->boolean());
         break;
       default:
         LOG_ERROR("Unknown UiCallbackType %d", static_cast<int>(request->message_type()));
@@ -105,6 +109,15 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
                                  ::google::protobuf::Empty* response) override {
     security_module_->GetFacadeConfigurationApi()->SetIoCapability(
         static_cast<hci::IoCapability>(request->capability()));
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status SetLeIoCapability(
+      ::grpc::ServerContext* context,
+      const LeIoCapabilityMessage* request,
+      ::google::protobuf::Empty* response) override {
+    security_module_->GetFacadeConfigurationApi()->SetLeIoCapability(
+        static_cast<security::IoCapability>(request->capabilities()));
     return ::grpc::Status::OK;
   }
 
@@ -138,8 +151,8 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     LOG_INFO("%s", peer.ToString().c_str());
     UiMsg display_yes_no;
     display_yes_no.mutable_peer()->mutable_address()->set_address(peer.ToString());
-    display_yes_no.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
-    display_yes_no.set_message_type(UiMsgType::DISPLAY_YES_NO);
+    display_yes_no.mutable_peer()->set_type(static_cast<facade::BluetoothAddressTypeEnum>(peer.GetAddressType()));
+    display_yes_no.set_message_type(UiMsgType::DISPLAY_PAIRING_PROMPT);
     display_yes_no.set_unique_id(unique_id++);
     ui_events_.OnIncomingEvent(display_yes_no);
   }
@@ -149,7 +162,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     LOG_INFO("%s value = 0x%x", peer.ToString().c_str(), numeric_value);
     UiMsg display_with_value;
     display_with_value.mutable_peer()->mutable_address()->set_address(peer.ToString());
-    display_with_value.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
+    display_with_value.mutable_peer()->set_type(static_cast<facade::BluetoothAddressTypeEnum>(peer.GetAddressType()));
     display_with_value.set_message_type(UiMsgType::DISPLAY_YES_NO_WITH_VALUE);
     display_with_value.set_numeric_value(numeric_value);
     display_with_value.set_unique_id(unique_id++);
@@ -160,7 +173,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     LOG_INFO("%s", peer.ToString().c_str());
     UiMsg display_yes_no;
     display_yes_no.mutable_peer()->mutable_address()->set_address(peer.ToString());
-    display_yes_no.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
+    display_yes_no.mutable_peer()->set_type(static_cast<facade::BluetoothAddressTypeEnum>(peer.GetAddressType()));
     display_yes_no.set_message_type(UiMsgType::DISPLAY_YES_NO);
     display_yes_no.set_unique_id(unique_id++);
     ui_events_.OnIncomingEvent(display_yes_no);
@@ -170,7 +183,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     LOG_INFO("%s value = 0x%x", peer.ToString().c_str(), passkey);
     UiMsg display_passkey;
     display_passkey.mutable_peer()->mutable_address()->set_address(peer.ToString());
-    display_passkey.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
+    display_passkey.mutable_peer()->set_type(static_cast<facade::BluetoothAddressTypeEnum>(peer.GetAddressType()));
     display_passkey.set_message_type(UiMsgType::DISPLAY_PASSKEY);
     display_passkey.set_numeric_value(passkey);
     display_passkey.set_unique_id(unique_id++);
@@ -181,7 +194,8 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     LOG_INFO("%s", peer.ToString().c_str());
     UiMsg display_passkey_input;
     display_passkey_input.mutable_peer()->mutable_address()->set_address(peer.ToString());
-    display_passkey_input.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
+    display_passkey_input.mutable_peer()->set_type(
+        static_cast<facade::BluetoothAddressTypeEnum>(peer.GetAddressType()));
     display_passkey_input.set_message_type(UiMsgType::DISPLAY_PASSKEY_ENTRY);
     display_passkey_input.set_unique_id(unique_id++);
     ui_events_.OnIncomingEvent(display_passkey_input);
@@ -191,7 +205,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     LOG_INFO("%s", peer.ToString().c_str());
     UiMsg display_cancel;
     display_cancel.mutable_peer()->mutable_address()->set_address(peer.ToString());
-    display_cancel.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
+    display_cancel.mutable_peer()->set_type(static_cast<facade::BluetoothAddressTypeEnum>(peer.GetAddressType()));
     display_cancel.set_message_type(UiMsgType::DISPLAY_CANCEL);
     display_cancel.set_unique_id(unique_id++);
     ui_events_.OnIncomingEvent(display_cancel);
@@ -201,7 +215,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     LOG_INFO("%s", peer.ToString().c_str());
     BondMsg bonded;
     bonded.mutable_peer()->mutable_address()->set_address(peer.ToString());
-    bonded.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
+    bonded.mutable_peer()->set_type(static_cast<facade::BluetoothAddressTypeEnum>(peer.GetAddressType()));
     bonded.set_message_type(BondMsgType::DEVICE_BONDED);
     bond_events_.OnIncomingEvent(bonded);
   }
@@ -212,7 +226,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     LOG_INFO("%s", peer.ToString().c_str());
     BondMsg unbonded;
     unbonded.mutable_peer()->mutable_address()->set_address(peer.ToString());
-    unbonded.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
+    unbonded.mutable_peer()->set_type(static_cast<facade::BluetoothAddressTypeEnum>(peer.GetAddressType()));
     unbonded.set_message_type(BondMsgType::DEVICE_UNBONDED);
     bond_events_.OnIncomingEvent(unbonded);
   }
@@ -221,7 +235,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     LOG_INFO("%s", peer.ToString().c_str());
     BondMsg bond_failed;
     bond_failed.mutable_peer()->mutable_address()->set_address(peer.ToString());
-    bond_failed.mutable_peer()->set_type(facade::BluetoothAddressTypeEnum::PUBLIC_DEVICE_ADDRESS);
+    bond_failed.mutable_peer()->set_type(static_cast<facade::BluetoothAddressTypeEnum>(peer.GetAddressType()));
     bond_failed.set_message_type(BondMsgType::DEVICE_BOND_FAILED);
     bond_events_.OnIncomingEvent(bond_failed);
   }
