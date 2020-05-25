@@ -42,6 +42,9 @@ class BluetoothKeystoreInterface {
 
   /** Interface for get key. */
   virtual std::string get_key(std::string prefix) = 0;
+
+  /** Interface for clear map. */
+  virtual void clear_map() = 0;
 };
 
 }  // namespace bluetooth_keystore
