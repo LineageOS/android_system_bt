@@ -105,7 +105,7 @@ bool is_restricted_mode(void);
 
 /*******************************************************************************
  *
- * Function         is_single_user_mode_
+ * Function         is_niap_mode_
  *
  * Description      Checks if BT was enabled in single user mode. In this
  *                  mode, use of keystore for key attestation of LTK is limitee
@@ -114,7 +114,23 @@ bool is_restricted_mode(void);
  * Returns          bool
  *
  ******************************************************************************/
-bool is_single_user_mode(void);
+bool is_niap_mode(void);
+
+/*******************************************************************************
+ *
+ * Function         get_niap_config_compare_result
+ *
+ * Description      Get the niap config compare result for confirming the config
+ *                  checksum compare result. When the niap mode doesn't enable,
+ *                  it should be all pass (0b11).
+ *                  Bit define:
+ *                    CONFIG_FILE_COMPARE_PASS = 0b01
+ *                    CONFIG_BACKUP_COMPARE_PASS = 0b10
+ *
+ * Returns          int
+ *
+ ******************************************************************************/
+int get_niap_config_compare_result(void);
 
 /*******************************************************************************
  *

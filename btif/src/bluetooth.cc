@@ -84,7 +84,9 @@ using bluetooth::hearing_aid::HearingAidInterface;
 
 bt_callbacks_t* bt_hal_cbacks = NULL;
 bool restricted_mode = false;
-bool single_user_mode = false;
+bool niap_mode = false;
+const int CONFIG_COMPARE_ALL_PASS = 0b11;
+int niap_config_compare_result = CONFIG_COMPARE_ALL_PASS;
 
 /*******************************************************************************
  *  Externs
@@ -137,9 +139,9 @@ static bool is_profile(const char* p1, const char* p2) {
  ****************************************************************************/
 
 static int init(bt_callbacks_t* callbacks, bool start_restricted,
-                bool is_single_user_mode) {
-  LOG_INFO("%s: start restricted = %d ; single user = %d", __func__,
-           start_restricted, is_single_user_mode);
+                bool is_niap_mode, int config_compare_result) {
+  LOG_INFO("%s: start restricted = %d ; niap = %d, config compare result = %d",
+           __func__, start_restricted, is_niap_mode, config_compare_result);
 
   if (bluetooth::shim::is_gd_shim_enabled()) {
     LOG_INFO("%s Enable Gd bluetooth functionality", __func__);
@@ -155,7 +157,9 @@ static int init(bt_callbacks_t* callbacks, bool start_restricted,
 
   bt_hal_cbacks = callbacks;
   restricted_mode = start_restricted;
-  single_user_mode = is_single_user_mode;
+  niap_mode = is_niap_mode;
+  niap_config_compare_result = config_compare_result;
+
   stack_manager_get_interface()->init_stack();
   btif_debug_init();
   return BT_STATUS_SUCCESS;
@@ -178,7 +182,12 @@ static int disable(void) {
 static void cleanup(void) { stack_manager_get_interface()->clean_up_stack(); }
 
 bool is_restricted_mode() { return restricted_mode; }
-bool is_single_user_mode() { return single_user_mode; }
+bool is_niap_mode() { return niap_mode; }
+// if niap mode disable, will always return CONFIG_COMPARE_ALL_PASS(0b11)
+// indicate don't check config checksum.
+int get_niap_config_compare_result() {
+  return niap_mode ? niap_config_compare_result : CONFIG_COMPARE_ALL_PASS;
+}
 
 static int get_adapter_properties(void) {
   /* sanity check */
