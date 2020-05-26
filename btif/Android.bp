@@ -87,6 +87,7 @@ cc_library_static {
         "src/btif_storage.cc",
         "src/btif_uid.cc",
         "src/btif_util.cc",
+        "src/btif_keystore.cc",
         "src/stack_manager.cc",
     ],
     header_libs: [
