@@ -180,7 +180,6 @@ class TestDynamicChannelManager : public l2cap::classic::DynamicChannelManager {
 class TestL2capClassicModule : public l2cap::classic::L2capClassicModule {
  public:
   std::unique_ptr<l2cap::classic::DynamicChannelManager> GetDynamicChannelManager() override {
-    ASSERT(impl_ != nullptr);
     return std::make_unique<TestDynamicChannelManager>(*impl_);
   }
 
@@ -193,6 +192,7 @@ class TestL2capClassicModule : public l2cap::classic::L2capClassicModule {
 
 void TestL2capClassicModule::Start() {
   impl_ = std::make_unique<TestDynamicChannelManagerImpl>();
+  ASSERT_NE(impl_, nullptr);
 }
 
 void TestL2capClassicModule::Stop() {

@@ -229,9 +229,10 @@ hci::SecurityCommandView GetLastCommand(FakeHciLayer* hci_layer) {
   auto last_command = std::move(hci_layer->GetLastCommand()->command);
   auto command_packet = GetPacketView(std::move(last_command));
   auto command_packet_view = hci::CommandPacketView::Create(command_packet);
-  ASSERT(command_packet_view.IsValid());
   auto security_command_view = hci::SecurityCommandView::Create(command_packet_view);
-  ASSERT(security_command_view.IsValid());
+  if (!security_command_view.IsValid()) {
+    LOG_ERROR("Invalid security command received");
+  }
   return security_command_view;
 }
 
