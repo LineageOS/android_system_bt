@@ -150,11 +150,19 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressRotatorCallback
   }
 
   void start_scan(LeScanningManagerCallbacks* le_scanning_manager_callbacks) {
+    registered_callback_ = le_scanning_manager_callbacks;
+
     if (!address_rotator_registered) {
       le_address_rotator_->Register(this);
+      address_rotator_registered = true;
     }
 
-    registered_callback_ = le_scanning_manager_callbacks;
+    // If we receive start_scan during paused, replace the cached_registered_callback_ for OnResume
+    if (cached_registered_callback_ != nullptr) {
+      cached_registered_callback_ = registered_callback_;
+      return;
+    }
+
     switch (api_type_) {
       case ScanApiType::LE_5_0:
         le_scanning_interface_->EnqueueCommand(
@@ -171,7 +179,12 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressRotatorCallback
     }
   }
 
-  void stop_scan(common::Callback<void()> on_stopped) {
+  void stop_scan(common::Callback<void()> on_stopped, bool from_on_pause) {
+    if (address_rotator_registered && !from_on_pause) {
+      cached_registered_callback_ = nullptr;
+      le_address_rotator_->Unregister(this);
+      address_rotator_registered = false;
+    }
     if (registered_callback_ == nullptr) {
       return;
     }
@@ -195,11 +208,8 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressRotatorCallback
   }
 
   void OnPause() override {
-    if (registered_callback_ == nullptr) {
-      le_address_rotator_->AckPause(this);
-    } else {
-      stop_scan(common::Bind(&impl::ack_pause, common::Unretained(this)));
-    }
+    cached_registered_callback_ = registered_callback_;
+    stop_scan(common::Bind(&impl::ack_pause, common::Unretained(this)), true);
   }
 
   void ack_pause() {
@@ -207,8 +217,9 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressRotatorCallback
   }
 
   void OnResume() override {
-    if (registered_callback_ != nullptr) {
-      start_scan(registered_callback_);
+    if (cached_registered_callback_ != nullptr) {
+      start_scan(cached_registered_callback_);
+      cached_registered_callback_ = nullptr;
     }
     le_address_rotator_->AckResume(this);
   }
@@ -216,6 +227,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressRotatorCallback
   ScanApiType api_type_;
 
   LeScanningManagerCallbacks* registered_callback_ = nullptr;
+  LeScanningManagerCallbacks* cached_registered_callback_ = nullptr;
   Module* module_;
   os::Handler* module_handler_;
   hci::HciLayer* hci_layer_;
@@ -290,7 +302,7 @@ void LeScanningManager::StartScan(LeScanningManagerCallbacks* callbacks) {
 }
 
 void LeScanningManager::StopScan(common::Callback<void()> on_stopped) {
-  GetHandler()->Post(common::Bind(&impl::stop_scan, common::Unretained(pimpl_.get()), on_stopped));
+  GetHandler()->Post(common::Bind(&impl::stop_scan, common::Unretained(pimpl_.get()), on_stopped, false));
 }
 
 }  // namespace hci

@@ -59,8 +59,9 @@ void LeAddressRotator::SetPrivacyPolicyForInitiatorAddress(AddressPolicy address
   }
 }
 
-void LeAddressRotator::Register(LeAddressRotatorCallback* callback) {
+LeAddressRotator::AddressPolicy LeAddressRotator::Register(LeAddressRotatorCallback* callback) {
   handler_->Post(common::BindOnce(&LeAddressRotator::register_client, common::Unretained(this), callback));
+  return address_policy_;
 }
 
 void LeAddressRotator::register_client(LeAddressRotatorCallback* callback) {
