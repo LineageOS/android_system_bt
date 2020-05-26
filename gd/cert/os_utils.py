@@ -26,7 +26,7 @@ from collections import deque
 class TerminalColor:
     RED = "\033[31;1m"
     BLUE = "\033[34;1m"
-    YELLOW = "\033[33:1m"
+    YELLOW = "\033[33;1m"
     MAGENTA = "\033[35;1m"
     END = "\033[0m"
 

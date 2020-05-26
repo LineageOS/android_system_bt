@@ -10,7 +10,7 @@
                     "grpc_port": "8898",
                     "grpc_root_server_port": "8896",
                     "signal_port": "8894",
-                    "label": "cert_stack",
+                    "label": "cert",
                     "serial_number": "CERT",
                     "name": "Cert Device",
                     "cmd":
@@ -30,7 +30,7 @@
                     "grpc_port": "8899",
                     "grpc_root_server_port": "8897",
                     "signal_port": "8895",
-                    "label": "stack_under_test",
+                    "label": "dut",
                     "serial_number": "DUT",
                     "name": "DUT Device",
                     "cmd":
