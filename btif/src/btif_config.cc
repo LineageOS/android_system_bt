@@ -384,6 +384,7 @@ static future_t* clean_up(void) {
   config_timer = NULL;
 
   std::unique_lock<std::recursive_mutex> lock(config_lock);
+  get_bluetooth_keystore_interface()->clear_map();
   MetricIdAllocator::GetInstance().Close();
   config.reset();
   return future_new_immediate(FUTURE_SUCCESS);
