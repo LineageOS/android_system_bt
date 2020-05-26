@@ -954,8 +954,7 @@ class L2capTest(GdBaseTestClass):
         for i in range(1, tx_window_size):
             cert_channel.send_i_frame(tx_seq=i, req_seq=0, f=Final.NOT_SET, payload=SAMPLE_PACKET)
         assertThat(cert_channel).emits(
-            L2capMatchers.SFrame(
-                req_seq=tx_window_size, f=Final.NOT_SET, s=SupervisoryFunction.RECEIVER_READY, p=Poll.NOT_SET))
+            L2capMatchers.SFrame(req_seq=i + 1, f=Final.NOT_SET, s=SupervisoryFunction.RECEIVER_READY, p=Poll.NOT_SET))
 
     @metadata(pts_test_id="L2CAP/ERM/BV-18-C", pts_test_name="Receive S-Frame [RR] Final Bit = 1")
     def test_receive_s_frame_rr_final_bit_set(self):
