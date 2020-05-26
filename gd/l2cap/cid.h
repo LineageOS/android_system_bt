@@ -36,7 +36,5 @@ constexpr Cid kLeSignallingCid = 5;
 constexpr Cid kSmpCid = 6;
 constexpr Cid kSmpBrCid = 7;
 
-constexpr Cid kClassicPairingTriggerCid = kLastFixedChannel - 1;
-
 }  // namespace l2cap
 }  // namespace bluetooth
