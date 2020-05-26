@@ -140,40 +140,6 @@ class CertSelfTest(BaseTestClass):
     def teardown_test(self):
         return True
 
-    def test_assert_none_passes(self):
-        with EventStream(FetchEvents(events=[], delay_ms=50)) as event_stream:
-            event_stream.assert_none(timeout=timedelta(milliseconds=10))
-
-    def test_assert_none_passes_after_one_second(self):
-        with EventStream(FetchEvents([1], delay_ms=1500)) as event_stream:
-            event_stream.assert_none(timeout=timedelta(seconds=1.0))
-
-    def test_assert_none_fails(self):
-        try:
-            with EventStream(FetchEvents(events=[17], delay_ms=50)) as event_stream:
-                event_stream.assert_none(timeout=timedelta(seconds=1))
-        except Exception as e:
-            logging.debug(e)
-            return True  # Failed as expected
-        return False
-
-    def test_assert_none_matching_passes(self):
-        with EventStream(FetchEvents(events=[1, 2, 3], delay_ms=50)) as event_stream:
-            event_stream.assert_none_matching(lambda data: data.value_ == 4, timeout=timedelta(seconds=0.15))
-
-    def test_assert_none_matching_passes_after_1_second(self):
-        with EventStream(FetchEvents(events=[1, 2, 3, 4], delay_ms=400)) as event_stream:
-            event_stream.assert_none_matching(lambda data: data.value_ == 4, timeout=timedelta(seconds=1))
-
-    def test_assert_none_matching_fails(self):
-        try:
-            with EventStream(FetchEvents(events=[1, 2, 3], delay_ms=50)) as event_stream:
-                event_stream.assert_none_matching(lambda data: data.value_ == 2, timeout=timedelta(seconds=1))
-        except Exception as e:
-            logging.debug(e)
-            return True  # Failed as expected
-        return False
-
     def test_assert_occurs_at_least_passes(self):
         with EventStream(FetchEvents(events=[1, 2, 3, 1, 2, 3], delay_ms=40)) as event_stream:
             event_stream.assert_event_occurs(

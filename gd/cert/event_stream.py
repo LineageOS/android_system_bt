@@ -160,26 +160,6 @@ class EventStream(IEventStream, Closable):
             else:
                 raise exp
 
-    def assert_none(self, timeout=timedelta(seconds=DEFAULT_TIMEOUT_SECONDS)):
-        """
-        Assert no event happens within timeout period
-
-        :param timeout: a timedelta object
-        :return:
-        """
-        NOT_FOR_YOU_assert_none(self, timeout)
-
-    def assert_none_matching(self, match_fn, timeout=timedelta(seconds=DEFAULT_TIMEOUT_SECONDS)):
-        """
-        Assert no events where match_fn(event) is True happen within timeout
-        period
-
-        :param match_fn: return True/False on match_fn(event)
-        :param timeout: a timedelta object
-        :return:
-        """
-        NOT_FOR_YOU_assert_none_matching(self, match_fn, timeout)
-
     def assert_event_occurs(self, match_fn, at_least_times=1, timeout=timedelta(seconds=DEFAULT_TIMEOUT_SECONDS)):
         """
         Assert at least |at_least_times| instances of events happen where
@@ -220,9 +200,6 @@ class EventStream(IEventStream, Closable):
         asserts.assert_true(
             len(event_list) <= at_most_times,
             msg=("Expected at most %d events, but got %d" % (at_most_times, len(event_list))))
-
-    def assert_all_events_occur(self, match_fns, order_matters, timeout=timedelta(seconds=DEFAULT_TIMEOUT_SECONDS)):
-        NOT_FOR_YOU_assert_all_events_occur(self, match_fns, order_matters, timeout)
 
 
 def static_remaining_time_delta(end_time):

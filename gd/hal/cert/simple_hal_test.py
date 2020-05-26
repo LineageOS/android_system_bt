@@ -65,7 +65,7 @@ class SimpleHalTest(GdBaseTestClass):
 
     def test_none_event(self):
         with EventStream(self.dut.hal.FetchHciEvent(empty_pb2.Empty())) as hci_event_stream:
-            hci_event_stream.assert_none(timeout=timedelta(seconds=1))
+            assertThat(hci_event_stream).emitsNone(timeout=timedelta(seconds=1))
 
     def test_fetch_hci_event(self):
         with EventStream(self.dut.hal.FetchHciEvent(empty_pb2.Empty())) as hci_event_stream:
