@@ -27,12 +27,18 @@ def pretty_print(request):
 
 class LoggingClientInterceptor(grpc.UnaryUnaryClientInterceptor):
 
+    TAG_MIN_WIDTH = 24
+
     def __init__(self, name):
         self.name = name
+        self.loggableTag = "[host ▶▶▶▶▶ %s]" % self.name
+        tagLength = len(re.sub('[^\w\s]', '', self.loggableTag)) + 11
+        if tagLength < self.TAG_MIN_WIDTH:
+            self.loggableTag += " " * (self.TAG_MIN_WIDTH - tagLength)
 
     def _intercept_call(self, continuation, client_call_details, request_or_iterator):
         return continuation(client_call_details, request_or_iterator)
 
     def intercept_unary_unary(self, continuation, client_call_details, request):
-        print('[host ▶▶▶▶▶ ' + self.name + '] ' + client_call_details.method + ' ' + pretty_print(request))
+        print("%s%s %s" % (self.loggableTag, client_call_details.method, pretty_print(request)))
         return self._intercept_call(continuation, client_call_details, request)

@@ -90,7 +90,7 @@ class GdBaseTestClass(BaseTestClass):
             self.rootcanal_logger = AsyncSubprocessLogger(
                 self.rootcanal_process, [self.rootcanal_logpath],
                 log_to_stdout=self.verbose_mode,
-                tag="root_canal",
+                tag="rootcanal",
                 color=TerminalColor.MAGENTA)
 
             # Modify the device config to include the correct root-canal port
