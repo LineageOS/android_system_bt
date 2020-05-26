@@ -208,7 +208,9 @@ class TestLeAddressRotator : public LeAddressRotator {
                        Address public_address)
       : LeAddressRotator(set_random_address, handler, public_address) {}
 
-  void Register(LeAddressRotatorCallback* callback) override {}
+  AddressPolicy Register(LeAddressRotatorCallback* callback) override {
+    return AddressPolicy::USE_STATIC_ADDRESS;
+  }
 
   void Unregister(LeAddressRotatorCallback* callback) override {}
 

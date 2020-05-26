@@ -54,7 +54,7 @@ class LeAddressRotator {
                                            std::chrono::milliseconds maximum_rotation_time);
   void AckPause(LeAddressRotatorCallback* callback);
   void AckResume(LeAddressRotatorCallback* callback);
-  virtual void Register(LeAddressRotatorCallback* callback);
+  virtual AddressPolicy Register(LeAddressRotatorCallback* callback);
   virtual void Unregister(LeAddressRotatorCallback* callback);
   void OnLeSetRandomAddressComplete(bool success);
   AddressWithType GetCurrentAddress();  // What was set in SetRandomAddress()
