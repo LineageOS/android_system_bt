@@ -50,6 +50,7 @@ cc_test {
         "libosi",
         "liblog",
         "libcutils",
+        "libbase",
         "libbtdevice",
         "avrcp-target-service",
     ],
