@@ -29,6 +29,7 @@ class AsyncSubprocessLogger:
     from STDOUT from subprocess.Popen
     """
     WAIT_TIMEOUT_SECONDS = 10
+    PROCESS_TAG_MIN_WIDTH = 24
 
     def __init__(self,
                  process: subprocess.Popen,
@@ -72,13 +73,17 @@ class AsyncSubprocessLogger:
         self.executor.shutdown(wait=False)
 
     def __logging_loop(self):
+        if self.color:
+            loggableTag = "[%s%s%s]" % (self.color, self.tag, TerminalColor.END)
+        else:
+            loggableTag = "[%s]" % self.tag
+        tagLength = len(re.sub('[^\w\s]', '', loggableTag))
+        if tagLength < self.PROCESS_TAG_MIN_WIDTH:
+            loggableTag += " " * (self.PROCESS_TAG_MIN_WIDTH - tagLength)
         with ExitStack() as stack:
             log_files = [stack.enter_context(open(file_path, 'w')) for file_path in self.log_file_paths]
             for line in self.process.stdout:
                 for log_file in log_files:
                     log_file.write(line)
                 if self.log_to_stdout:
-                    if self.color:
-                        print("[%s%s%s] %s" % (self.color, self.tag, TerminalColor.END, line.strip()))
-                    else:
-                        print("[%s] %s" % (self.tag, line.strip()))
+                    print("{}{}".format(loggableTag, line.strip()))
