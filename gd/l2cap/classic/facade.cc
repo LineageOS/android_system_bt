@@ -138,10 +138,11 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       DynamicChannelConfigurationOption configuration_option = {};
       configuration_option.channel_mode = (DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode)mode;
       dynamic_channel_manager_->RegisterService(
-          psm, configuration_option, SecurityPolicy::_SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK,
-          common::BindOnce(&L2capDynamicChannelHelper::on_l2cap_service_registration_complete,
-                           common::Unretained(this)),
-          common::Bind(&L2capDynamicChannelHelper::on_connection_open, common::Unretained(this)), handler_);
+          psm,
+          configuration_option,
+          SecurityPolicy::_SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK,
+          handler_->BindOnceOn(this, &L2capDynamicChannelHelper::on_l2cap_service_registration_complete),
+          handler_->BindOn(this, &L2capDynamicChannelHelper::on_connection_open));
     }
 
     ~L2capDynamicChannelHelper() {
@@ -156,9 +157,11 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       configuration_option.channel_mode = (DynamicChannelConfigurationOption::RetransmissionAndFlowControlMode)mode_;
 
       dynamic_channel_manager_->ConnectChannel(
-          address, configuration_option, psm_,
-          common::Bind(&L2capDynamicChannelHelper::on_connection_open, common::Unretained(this)),
-          common::Bind(&L2capDynamicChannelHelper::on_connect_fail, common::Unretained(this)), handler_);
+          address,
+          configuration_option,
+          psm_,
+          handler_->BindOn(this, &L2capDynamicChannelHelper::on_connection_open),
+          handler_->BindOnceOn(this, &L2capDynamicChannelHelper::on_connect_fail));
       std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
       if (!channel_open_cv_.wait_for(lock, std::chrono::seconds(2), [this] { return channel_ != nullptr; })) {
         LOG_WARN("Channel is not open for psm %d", psm_);
@@ -190,8 +193,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       }
       channel_open_cv_.notify_all();
       channel_->RegisterOnCloseCallback(
-          facade_service_->facade_handler_,
-          common::BindOnce(&L2capDynamicChannelHelper::on_close_callback, common::Unretained(this)));
+          facade_service_->facade_handler_->BindOnceOn(this, &L2capDynamicChannelHelper::on_close_callback));
       dequeue_registered_ = true;
       channel_->GetQueueUpEnd()->RegisterDequeue(
           facade_service_->facade_handler_,

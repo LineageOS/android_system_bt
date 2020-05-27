@@ -33,8 +33,7 @@ class MockDynamicChannelServiceManagerImpl : public DynamicChannelServiceManager
   MockDynamicChannelServiceManagerImpl() : DynamicChannelServiceManagerImpl(nullptr) {}
   MOCK_METHOD(void, Register, (Psm psm, DynamicChannelServiceImpl::PendingRegistration pending_registration),
               (override));
-  MOCK_METHOD(void, Unregister, (Psm psm, DynamicChannelService::OnUnregisteredCallback callback, os::Handler* handler),
-              (override));
+  MOCK_METHOD(void, Unregister, (Psm psm, DynamicChannelService::OnUnregisteredCallback callback), (override));
   MOCK_METHOD(bool, IsServiceRegistered, (Psm psm), (const, override));
   MOCK_METHOD(DynamicChannelServiceImpl*, GetService, (Psm psm), (override));
   MOCK_METHOD((std::vector<std::pair<Psm, DynamicChannelServiceImpl*>>), GetRegisteredServices, (), (override));
