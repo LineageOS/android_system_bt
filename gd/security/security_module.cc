@@ -47,6 +47,7 @@ struct SecurityModule::impl {
         l2cap_le_module_(l2cap_le_module),
         security_manager_channel_(new channel::SecurityManagerChannel(security_handler_, hci_layer)),
         hci_layer_(hci_layer),
+        acl_manager_(acl_manager),
         l2cap_security_interface_(&security_manager_impl, security_handler) {
     l2cap_classic_module->InjectSecurityEnforcementInterface(&l2cap_security_interface_);
     l2cap_le_module->InjectSecurityEnforcementInterface(&l2cap_security_interface_);
@@ -59,10 +60,11 @@ struct SecurityModule::impl {
   l2cap::le::L2capLeModule* l2cap_le_module_;
   channel::SecurityManagerChannel* security_manager_channel_;
   hci::HciLayer* hci_layer_;
+  hci::AclManager* acl_manager_;
   L2capSecurityModuleInterface l2cap_security_interface_;
 
-  internal::SecurityManagerImpl security_manager_impl{security_handler_, l2cap_le_module_, security_manager_channel_,
-                                                      hci_layer_};
+  internal::SecurityManagerImpl security_manager_impl{
+      security_handler_, l2cap_le_module_, security_manager_channel_, hci_layer_, acl_manager_};
 
   ~impl() {
     delete security_manager_channel_;
