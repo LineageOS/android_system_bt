@@ -83,7 +83,7 @@ class LeAddressRotatorTest : public ::testing::Test {
   void SetRandomAddress(Address address) {
     le_address_rotator_->OnLeSetRandomAddressComplete(true);
     for (auto& client : clients) {
-      ASSERT(client->paused);
+      ASSERT_TRUE(client->paused);
     }
   }
 

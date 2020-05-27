@@ -94,20 +94,21 @@ class TestHciLayer : public HciLayer {
     return command_promise_->get_future();
   }
 
-  std::unique_ptr<CommandPacketBuilder> GetLastCommand() {
-    ASSERT(!command_queue_.empty());
-    auto last = std::move(command_queue_.front());
-    command_queue_.pop();
-    return last;
+  CommandPacketView GetLastCommand() {
+    if (command_queue_.empty()) {
+      return CommandPacketView::Create(GetPacketView(nullptr));
+    } else {
+      auto last = std::move(command_queue_.front());
+      command_queue_.pop();
+      return CommandPacketView::Create(GetPacketView(std::move(last)));
+    }
   }
 
   ConnectionManagementCommandView GetCommandPacket(OpCode op_code) {
-    auto packet_view = GetPacketView(GetLastCommand());
-    CommandPacketView command_packet_view = CommandPacketView::Create(packet_view);
+    CommandPacketView command_packet_view = GetLastCommand();
     ConnectionManagementCommandView command = ConnectionManagementCommandView::Create(command_packet_view);
-    ASSERT(command.IsValid());
+    EXPECT_TRUE(command.IsValid());
     EXPECT_EQ(command.GetOpCode(), op_code);
-
     return command;
   }
 
