@@ -1,47 +1,4 @@
 cc_fuzz {
-    name: "packet_fuzzer",
-    defaults: ["fluoride_defaults"],
-    host_supported: true,
-
-    include_dirs: [
-        "system/bt/",
-        "system/bt/include",
-        "system/bt/packet/include",
-        "system/bt/packet/tests",
-        "system/bt/packet/tests/avrcp",
-        "system/bt/packet/base",
-    ],
-    srcs: [
-        "avrcp_packet_fuzzer.cc",
-        "avrcp_browse_packet_fuzzer.cc",
-        "change_path_res_fuzzer.cc",
-        "change_path_req_fuzzer.cc",
-        "get_capabilities_req_fuzzer.cc",
-        "get_element_attributes_req_packet_fuzzer.cc",
-        "get_element_attributes_res_packet_fuzzer.cc",
-        //"get_item_attributes_packet_fuzzer.cc",
-        //"get_play_status_packet_fuzzer.cc",
-        //"get_total_number_of_items_packet_fuzzer.cc",
-        "pass_through_packet_fuzzer.cc",
-        "play_item_packet_fuzzer.cc",
-        "register_notification_packet_fuzzer.cc",
-        "set_absolute_volume_packet_fuzzer.cc",
-        "set_addressed_player_packet_fuzzer.cc",
-        //"set_browsed_player_packet_fuzzer.cc",
-        "vendor_packet_fuzzer.cc",
-        "reject_packet_fuzzer.cc",
-
-    ],
-    static_libs: [
-        "libgmock",
-        "lib-bt-packets",
-    ],
-    cflags: [
-        "-DBUILDCFG",
-    ],
-}
-
-cc_fuzz {
     name: "avrcp_browse_packet_fuzzer",
     defaults: ["fluoride_defaults"],
     host_supported: true,
