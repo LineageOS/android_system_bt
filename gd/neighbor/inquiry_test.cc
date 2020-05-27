@@ -102,7 +102,7 @@ class TestHciLayer : public hci::HciLayer {
       std::unique_ptr<hci::CommandPacketBuilder> command_builder,
       common::ContextualOnceCallback<void(hci::CommandCompleteView)> on_complete) {
     hci::CommandPacketView command = hci::CommandPacketView::Create(GetPacketView(std::move(command_builder)));
-    ASSERT(command.IsValid());
+    ASSERT_TRUE(command.IsValid());
 
     std::unique_ptr<packet::BasePacketBuilder> event_builder;
     switch (command.GetOpCode()) {
@@ -114,7 +114,7 @@ class TestHciLayer : public hci::HciLayer {
 
       case hci::OpCode::PERIODIC_INQUIRY_MODE: {
         auto inquiry = hci::PeriodicInquiryModeView::Create(hci::DiscoveryCommandView::Create(command));
-        ASSERT(inquiry.IsValid());
+        ASSERT_TRUE(inquiry.IsValid());
         event_builder =
             hci::PeriodicInquiryModeCompleteBuilder::Create(kNumberPacketsReadyToReceive, hci::ErrorCode::SUCCESS);
         hci_register_.periodic_inquiry_active = true;
@@ -135,7 +135,7 @@ class TestHciLayer : public hci::HciLayer {
             hci::WriteInquiryModeCompleteBuilder::Create(kNumberPacketsReadyToReceive, hci::ErrorCode::SUCCESS);
         {
           auto view = hci::WriteInquiryModeView::Create(hci::DiscoveryCommandView::Create(command));
-          ASSERT(view.IsValid());
+          ASSERT_TRUE(view.IsValid());
           hci_register_.inquiry_mode = view.GetInquiryMode();
         }
         break;
@@ -150,7 +150,7 @@ class TestHciLayer : public hci::HciLayer {
             hci::WriteInquiryScanActivityCompleteBuilder::Create(kNumberPacketsReadyToReceive, hci::ErrorCode::SUCCESS);
         {
           auto view = hci::WriteInquiryScanActivityView::Create(hci::DiscoveryCommandView::Create(command));
-          ASSERT(view.IsValid());
+          ASSERT_TRUE(view.IsValid());
           hci_register_.inquiry_scan_interval = view.GetInquiryScanInterval();
           hci_register_.inquiry_scan_window = view.GetInquiryScanWindow();
         }
@@ -169,7 +169,7 @@ class TestHciLayer : public hci::HciLayer {
             hci::WriteInquiryScanTypeCompleteBuilder::Create(kNumberPacketsReadyToReceive, hci::ErrorCode::SUCCESS);
         {
           auto view = hci::WriteInquiryScanTypeView::Create(hci::DiscoveryCommandView::Create(command));
-          ASSERT(view.IsValid());
+          ASSERT_TRUE(view.IsValid());
           hci_register_.inquiry_scan_type = view.GetInquiryScanType();
         }
         break;
@@ -189,9 +189,9 @@ class TestHciLayer : public hci::HciLayer {
         return;
     }
     hci::EventPacketView event = hci::EventPacketView::Create(GetPacketView(std::move(event_builder)));
-    ASSERT(event.IsValid());
+    ASSERT_TRUE(event.IsValid());
     hci::CommandCompleteView command_complete = hci::CommandCompleteView::Create(event);
-    ASSERT(command_complete.IsValid());
+    ASSERT_TRUE(command_complete.IsValid());
     on_complete.Invoke(std::move(command_complete));
 
     if (promise_sync_complete_ != nullptr) {
@@ -203,13 +203,13 @@ class TestHciLayer : public hci::HciLayer {
       std::unique_ptr<hci::CommandPacketBuilder> command_builder,
       common::ContextualOnceCallback<void(hci::CommandStatusView)> on_status) {
     hci::CommandPacketView command = hci::CommandPacketView::Create(GetPacketView(std::move(command_builder)));
-    ASSERT(command.IsValid());
+    ASSERT_TRUE(command.IsValid());
 
     std::unique_ptr<packet::BasePacketBuilder> event_builder;
     switch (command.GetOpCode()) {
       case hci::OpCode::INQUIRY: {
         auto inquiry = hci::InquiryView::Create(hci::DiscoveryCommandView::Create(command));
-        ASSERT(inquiry.IsValid());
+        ASSERT_TRUE(inquiry.IsValid());
         event_builder = hci::InquiryStatusBuilder::Create(hci::ErrorCode::SUCCESS, kNumberPacketsReadyToReceive);
         hci_register_.one_shot_inquiry_active = true;
         hci_register_.num_responses = inquiry.GetNumResponses();
@@ -220,9 +220,9 @@ class TestHciLayer : public hci::HciLayer {
         return;
     }
     hci::EventPacketView event = hci::EventPacketView::Create(GetPacketView(std::move(event_builder)));
-    ASSERT(event.IsValid());
+    ASSERT_TRUE(event.IsValid());
     hci::CommandStatusView command_status = hci::CommandStatusView::Create(event);
-    ASSERT(command_status.IsValid());
+    ASSERT_TRUE(command_status.IsValid());
     on_status.Invoke(std::move(command_status));
 
     if (promise_sync_complete_ != nullptr) {
@@ -277,7 +277,7 @@ class TestHciLayer : public hci::HciLayer {
   }
 
   void Synchronize(std::function<void()> func, hci::OpCode op_code) {
-    ASSERT(promise_sync_complete_ == nullptr);
+    ASSERT_EQ(promise_sync_complete_, nullptr);
     promise_sync_complete_ = new std::promise<hci::OpCode>();
     auto future = promise_sync_complete_->get_future();
     func();
@@ -290,7 +290,7 @@ class TestHciLayer : public hci::HciLayer {
 
   void InjectInquiryResult(std::unique_ptr<hci::InquiryResultBuilder> result) {
     hci::EventPacketView view = hci::EventPacketView::Create(GetPacketView(std::move(result)));
-    ASSERT(view.IsValid());
+    ASSERT_TRUE(view.IsValid());
     inquiry_result_callback_.Invoke(std::move(view));
   }
 
@@ -310,12 +310,12 @@ class TestHciLayer : public hci::HciLayer {
 class InquiryTest : public ::testing::Test {
  public:
   void Result(hci::InquiryResultView view) {
-    ASSERT(view.size() >= sizeof(uint16_t));
+    ASSERT_TRUE(view.size() >= sizeof(uint16_t));
     promise_result_complete_->set_value(true);
   }
 
   void WaitForInquiryResult(std::function<void()> func) {
-    ASSERT(promise_result_complete_ == nullptr);
+    ASSERT_EQ(promise_result_complete_, nullptr);
     promise_result_complete_ = new std::promise<bool>();
     auto future = promise_result_complete_->get_future();
     func();
@@ -325,11 +325,11 @@ class InquiryTest : public ::testing::Test {
   }
 
   void ResultWithRssi(hci::InquiryResultWithRssiView view) {
-    ASSERT(view.size() >= sizeof(uint16_t));
+    ASSERT_TRUE(view.size() >= sizeof(uint16_t));
   }
 
   void ExtendedResult(hci::ExtendedInquiryResultView view) {
-    ASSERT(view.size() >= sizeof(uint16_t));
+    ASSERT_TRUE(view.size() >= sizeof(uint16_t));
   }
 
   void Complete(hci::ErrorCode status) {}
