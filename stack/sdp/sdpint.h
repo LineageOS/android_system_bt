@@ -235,6 +235,7 @@ extern uint16_t sdpu_get_attrib_entry_len(tSDP_ATTRIBUTE* p_attr);
 extern uint8_t* sdpu_build_partial_attrib_entry(uint8_t* p_out,
                                                 tSDP_ATTRIBUTE* p_attr,
                                                 uint16_t len, uint16_t* offset);
+extern uint16_t sdpu_is_avrcp_profile_description_list(tSDP_ATTRIBUTE* p_attr);
 
 /* Functions provided by sdp_db.cc
  */
