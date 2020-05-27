@@ -49,11 +49,10 @@ class DynamicChannel {
    * only be freed after on_close callback is invoked. Otherwise, if no on_close callback is registered, the channel's
    * resource will be freed immediately after closing.
    *
-   * @param user_handler The handler used to invoke the callback on
    * @param on_close_callback The callback invoked upon channel closing.
    */
-  using OnCloseCallback = common::OnceCallback<void(hci::ErrorCode)>;
-  void RegisterOnCloseCallback(os::Handler* user_handler, OnCloseCallback on_close_callback);
+  using OnCloseCallback = common::ContextualOnceCallback<void(hci::ErrorCode)>;
+  void RegisterOnCloseCallback(OnCloseCallback on_close_callback);
 
   /**
    * Indicate that this Dynamic Channel should be closed. OnCloseCallback will be invoked when channel close is done.

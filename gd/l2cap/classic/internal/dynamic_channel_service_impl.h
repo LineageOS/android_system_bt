@@ -41,7 +41,7 @@ class DynamicChannelServiceImpl {
   };
 
   virtual void NotifyChannelCreation(std::unique_ptr<DynamicChannel> channel) {
-    user_handler_->Post(common::BindOnce(on_connection_open_callback_, std::move(channel)));
+    on_connection_open_callback_.Invoke(std::move(channel));
   }
 
   virtual DynamicChannelConfigurationOption GetConfigOption() const {
@@ -56,14 +56,15 @@ class DynamicChannelServiceImpl {
 
  protected:
   // protected access for mocking
-  DynamicChannelServiceImpl(os::Handler* user_handler, classic::SecurityPolicy security_policy,
-                            DynamicChannelManager::OnConnectionOpenCallback on_connection_open_callback,
-                            DynamicChannelConfigurationOption config_option)
-      : user_handler_(user_handler), security_policy_(security_policy),
-        on_connection_open_callback_(std::move(on_connection_open_callback)), config_option_(config_option) {}
+  DynamicChannelServiceImpl(
+      classic::SecurityPolicy security_policy,
+      DynamicChannelManager::OnConnectionOpenCallback on_connection_open_callback,
+      DynamicChannelConfigurationOption config_option)
+      : security_policy_(security_policy),
+        on_connection_open_callback_(std::move(on_connection_open_callback)),
+        config_option_(config_option) {}
 
  private:
-  os::Handler* user_handler_ = nullptr;
   classic::SecurityPolicy security_policy_;
   DynamicChannelManager::OnConnectionOpenCallback on_connection_open_callback_;
   DynamicChannelConfigurationOption config_option_;
