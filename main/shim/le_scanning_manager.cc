@@ -333,6 +333,15 @@ class BleScannerInterfaceImpl : public BleScannerInterface,
 
   ScanningCallbacks* scanning_callbacks_;
 
+  void CancelCreateSync(uint8_t sid, RawAddress address) override {}
+  void TransferSync(RawAddress address, uint16_t service_data,
+                         uint16_t sync_handle, SyncTransferCb cb) override {}
+
+  void TransferSetInfo(RawAddress address, uint16_t service_data,
+                         uint8_t adv_handle, SyncTransferCb cb) override {}
+  void SyncTxParameters(RawAddress address, uint8_t mode, uint16_t skip,
+                         uint16_t timeout, StartSyncCb cb) override {}
+
  private:
   bool parse_filter_command(
       bluetooth::hci::AdvertisingPacketContentFilterCommand&
