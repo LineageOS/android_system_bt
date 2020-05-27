@@ -141,13 +141,13 @@ class TestHciLayer : public HciLayer {
     command_future_ = std::make_unique<std::future<void>>(command_promise_->get_future());
   }
 
-  std::unique_ptr<CommandPacketBuilder> GetLastCommand() {
+  CommandPacketView GetLastCommand() {
     if (command_queue_.size() == 0) {
-      return nullptr;
+      return CommandPacketView::Create(std::make_shared<std::vector<uint8_t>>());
     }
     auto last = std::move(command_queue_.front());
     command_queue_.pop();
-    return last;
+    return CommandPacketView::Create(GetPacketView(std::move(last)));
   }
 
   ConnectionManagementCommandView GetCommandPacket(OpCode op_code) {
@@ -155,26 +155,15 @@ class TestHciLayer : public HciLayer {
       auto result = command_future_->wait_for(std::chrono::milliseconds(1000));
       EXPECT_NE(std::future_status::timeout, result);
     }
-    ASSERT(!command_queue_.empty());
-    auto packet_view = GetPacketView(GetLastCommand());
-    CommandPacketView command_packet_view = CommandPacketView::Create(packet_view);
+    if (command_queue_.empty()) {
+      return ConnectionManagementCommandView::Create(
+          CommandPacketView::Create(std::make_shared<std::vector<uint8_t>>()));
+    }
+    CommandPacketView command_packet_view = GetLastCommand();
     ConnectionManagementCommandView command = ConnectionManagementCommandView::Create(command_packet_view);
-    ASSERT(command.IsValid());
+    EXPECT_TRUE(command.IsValid());
     EXPECT_EQ(command.GetOpCode(), op_code);
 
-    return command;
-  }
-
-  LeSetRandomAddressView GetLeSetRandomAddressPacket() {
-    if (command_future_ != nullptr) {
-      auto result = command_future_->wait_for(std::chrono::milliseconds(1000));
-      EXPECT_NE(std::future_status::timeout, result);
-    }
-    ASSERT(!command_queue_.empty());
-
-    auto command = LeSetRandomAddressView::Create(
-        LeAdvertisingCommandView::Create(CommandPacketView::Create(GetPacketView(GetLastCommand()))));
-    ASSERT(command.IsValid());
     return command;
   }
 
@@ -318,8 +307,9 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
                                                       address_with_type, irk, minimum_rotation_time,
                                                       maximum_rotation_time);
 
-    auto set_random_address_packet = test_hci_layer_->GetLeSetRandomAddressPacket();
-    EXPECT_TRUE(set_random_address_packet.IsValid());
+    auto set_random_address_packet = LeSetRandomAddressView::Create(
+        LeAdvertisingCommandView::Create(test_hci_layer_->GetCommandPacket(OpCode::LE_SET_RANDOM_ADDRESS)));
+    ASSERT_TRUE(set_random_address_packet.IsValid());
     my_initiating_address =
         AddressWithType(set_random_address_packet.GetRandomAddress(), AddressType::RANDOM_DEVICE_ADDRESS);
     test_hci_layer_->IncomingEvent(LeSetRandomAddressCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
@@ -431,10 +421,10 @@ class AclManagerWithConnectionTest : public AclManagerTest {
     acl_manager_->CreateConnection(remote);
 
     // Wait for the connection request
-    std::unique_ptr<CommandPacketBuilder> last_command;
-    do {
-      last_command = test_hci_layer_->GetLastCommand();
-    } while (last_command == nullptr);
+    auto last_command = test_hci_layer_->GetCommandPacket(OpCode::CREATE_CONNECTION);
+    while (!last_command.IsValid()) {
+      last_command = test_hci_layer_->GetCommandPacket(OpCode::CREATE_CONNECTION);
+    }
 
     auto first_connection = GetConnectionFuture();
     test_hci_layer_->IncomingEvent(
@@ -504,9 +494,7 @@ TEST_F(AclManagerNoCallbacksTest, acl_connection_before_registered_callbacks) {
   fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
   fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
   fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
-  auto last_command = test_hci_layer_->GetLastCommand();
-  auto packet = GetPacketView(std::move(last_command));
-  CommandPacketView command = CommandPacketView::Create(packet);
+  CommandPacketView command = CommandPacketView::Create(test_hci_layer_->GetLastCommand());
   EXPECT_TRUE(command.IsValid());
   OpCode op_code = command.GetOpCode();
   EXPECT_EQ(op_code, OpCode::REJECT_CONNECTION_REQUEST);
@@ -519,10 +507,10 @@ TEST_F(AclManagerTest, invoke_registered_callback_connection_complete_success) {
   acl_manager_->CreateConnection(remote);
 
   // Wait for the connection request
-  std::unique_ptr<CommandPacketBuilder> last_command;
-  do {
-    last_command = test_hci_layer_->GetLastCommand();
-  } while (last_command == nullptr);
+  auto last_command = test_hci_layer_->GetCommandPacket(OpCode::CREATE_CONNECTION);
+  while (!last_command.IsValid()) {
+    last_command = test_hci_layer_->GetCommandPacket(OpCode::CREATE_CONNECTION);
+  }
 
   auto first_connection = GetConnectionFuture();
 
@@ -543,10 +531,10 @@ TEST_F(AclManagerTest, invoke_registered_callback_connection_complete_fail) {
   acl_manager_->CreateConnection(remote);
 
   // Wait for the connection request
-  std::unique_ptr<CommandPacketBuilder> last_command;
-  do {
-    last_command = test_hci_layer_->GetLastCommand();
-  } while (last_command == nullptr);
+  auto last_command = test_hci_layer_->GetCommandPacket(OpCode::CREATE_CONNECTION);
+  while (!last_command.IsValid()) {
+    last_command = test_hci_layer_->GetCommandPacket(OpCode::CREATE_CONNECTION);
+  }
 
   EXPECT_CALL(mock_connection_callback_, OnConnectFail(remote, ErrorCode::PAGE_TIMEOUT));
   test_hci_layer_->IncomingEvent(

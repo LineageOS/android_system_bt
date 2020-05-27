@@ -1895,7 +1895,7 @@ TEST(GeneratedPacketTest, testOneGenericStructArrayNoZeroEmpty) {
   };
   too_few_bytes = std::make_shared<std::vector<uint8_t>>(a_two_byte_struct);
   view = OneGenericStructArrayNoZeroView::Create(too_few_bytes);
-  ASSERT(view.IsValid());
+  ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(1, view.GetAnArray().size());
 }
 
