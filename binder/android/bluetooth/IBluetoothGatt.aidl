@@ -70,7 +70,8 @@ interface IBluetoothGatt {
 
     void registerSync(in ScanResult scanResult, in int skip, in int timeout, in IPeriodicAdvertisingCallback callback);
     void unregisterSync(in IPeriodicAdvertisingCallback callback);
-
+    void transferSync(in BluetoothDevice bda, in int serviceData, in int syncHandle);
+    void transferSetInfo(in BluetoothDevice bda, in int serviceData, in int advertisingHandle, in IPeriodicAdvertisingCallback callback);
     @UnsupportedAppUsage
     void registerClient(in ParcelUuid appId, in IBluetoothGattCallback callback);
 
