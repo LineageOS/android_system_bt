@@ -130,7 +130,7 @@ class RoundRobinSchedulerTest : public ::testing::Test {
     packet->Serialize(i);
     auto packet_view = bluetooth::packet::PacketView<bluetooth::packet::kLittleEndian>(bytes);
     AclPacketView acl_packet_view = AclPacketView::Create(packet_view);
-    ASSERT(acl_packet_view.IsValid());
+    ASSERT_TRUE(acl_packet_view.IsValid());
     PacketView<true> count_view = acl_packet_view.GetPayload();
     sent_acl_packets_.push(acl_packet_view);
 
