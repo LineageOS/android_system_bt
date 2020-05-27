@@ -16,7 +16,7 @@
 
 #pragma once
 
-#include "common/callback.h"
+#include "common/contextual_callback.h"
 #include "l2cap/psm.h"
 #include "os/handler.h"
 #include "os/log.h"
@@ -33,7 +33,7 @@ class DynamicChannelService {
  public:
   DynamicChannelService() = default;
 
-  using OnUnregisteredCallback = common::OnceCallback<void()>;
+  using OnUnregisteredCallback = common::ContextualOnceCallback<void()>;
 
   /**
    * Unregister a service from L2CAP module. This operation cannot fail.
@@ -41,7 +41,7 @@ class DynamicChannelService {
    *
    * @param on_unregistered will be triggered when unregistration is complete
    */
-  void Unregister(OnUnregisteredCallback on_unregistered, os::Handler* on_unregistered_handler);
+  void Unregister(OnUnregisteredCallback on_unregistered);
 
   friend internal::DynamicChannelServiceManagerImpl;
 
