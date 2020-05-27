@@ -235,7 +235,10 @@ class TestHciLayer : public HciLayer {
         break;
       }
     }
-    ASSERT(command_queue_.size() > 0);
+    EXPECT_TRUE(command_queue_.size() > 0);
+    if (command_queue_.empty()) {
+      return CommandPacketView::Create(std::make_shared<std::vector<uint8_t>>());
+    }
     CommandPacketView command = command_queue_.front();
     EXPECT_EQ(command.GetOpCode(), op_code);
     command_queue_.pop();
