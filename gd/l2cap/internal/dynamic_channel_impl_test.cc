@@ -58,6 +58,14 @@ class L2capClassicDynamicChannelImplTest : public ::testing::Test {
   os::Handler* l2cap_handler_ = nullptr;
 };
 
+class StatusCapture {
+ public:
+  hci::ErrorCode value = hci::ErrorCode::SUCCESS;
+  void capture(hci::ErrorCode status) {
+    value = status;
+  }
+};
+
 TEST_F(L2capClassicDynamicChannelImplTest, get_device) {
   MockParameterProvider mock_parameter_provider;
   MockLink mock_classic_link(l2cap_handler_, &mock_parameter_provider);
@@ -78,16 +86,16 @@ TEST_F(L2capClassicDynamicChannelImplTest, close_triggers_callback) {
 
   // Register on close callback
   auto user_handler = std::make_unique<os::Handler>(thread_);
-  hci::ErrorCode my_status = hci::ErrorCode::SUCCESS;
-  dynamic_channel_impl.RegisterOnCloseCallback(
-      user_handler.get(), common::testing::BindLambdaForTesting([&](hci::ErrorCode status) { my_status = status; }));
+  StatusCapture* my_status = new StatusCapture();
+  dynamic_channel_impl.RegisterOnCloseCallback(user_handler->BindOnceOn(my_status, &StatusCapture::capture));
 
   // Channel closure should trigger such callback
   dynamic_channel_impl.OnClosed(hci::ErrorCode::REMOTE_USER_TERMINATED_CONNECTION);
   SyncHandler(user_handler.get());
-  EXPECT_EQ(hci::ErrorCode::REMOTE_USER_TERMINATED_CONNECTION, my_status);
+  EXPECT_EQ(hci::ErrorCode::REMOTE_USER_TERMINATED_CONNECTION, my_status->value);
 
   user_handler->Clear();
+  delete my_status;
 }
 
 TEST_F(L2capClassicDynamicChannelImplTest, register_callback_after_close_should_call_immediately) {
@@ -103,13 +111,14 @@ TEST_F(L2capClassicDynamicChannelImplTest, register_callback_after_close_should_
 
   // Register on close callback should trigger callback immediately
   auto user_handler = std::make_unique<os::Handler>(thread_);
-  hci::ErrorCode my_status = hci::ErrorCode::SUCCESS;
-  dynamic_channel_impl.RegisterOnCloseCallback(
-      user_handler.get(), common::testing::BindLambdaForTesting([&](hci::ErrorCode status) { my_status = status; }));
+  StatusCapture* my_status = new StatusCapture();
+  dynamic_channel_impl.RegisterOnCloseCallback(user_handler->BindOnceOn(my_status, &StatusCapture::capture));
+
   SyncHandler(user_handler.get());
-  EXPECT_EQ(hci::ErrorCode::REMOTE_USER_TERMINATED_CONNECTION, my_status);
+  EXPECT_EQ(hci::ErrorCode::REMOTE_USER_TERMINATED_CONNECTION, my_status->value);
 
   user_handler->Clear();
+  delete my_status;
 }
 
 TEST_F(L2capClassicDynamicChannelImplTest, close_twice_should_fail) {
@@ -122,19 +131,19 @@ TEST_F(L2capClassicDynamicChannelImplTest, close_twice_should_fail) {
 
   // Register on close callback
   auto user_handler = std::make_unique<os::Handler>(thread_);
-  hci::ErrorCode my_status = hci::ErrorCode::SUCCESS;
-  dynamic_channel_impl.RegisterOnCloseCallback(
-      user_handler.get(), common::testing::BindLambdaForTesting([&](hci::ErrorCode status) { my_status = status; }));
+  StatusCapture* my_status = new StatusCapture();
+  dynamic_channel_impl.RegisterOnCloseCallback(user_handler->BindOnceOn(my_status, &StatusCapture::capture));
 
   // Channel closure should trigger such callback
   dynamic_channel_impl.OnClosed(hci::ErrorCode::REMOTE_USER_TERMINATED_CONNECTION);
   SyncHandler(user_handler.get());
-  EXPECT_EQ(hci::ErrorCode::REMOTE_USER_TERMINATED_CONNECTION, my_status);
+  EXPECT_EQ(hci::ErrorCode::REMOTE_USER_TERMINATED_CONNECTION, my_status->value);
 
   // 2nd OnClose() callback should fail
   EXPECT_DEATH(dynamic_channel_impl.OnClosed(hci::ErrorCode::PAGE_TIMEOUT), ".*OnClosed.*");
 
   user_handler->Clear();
+  delete my_status;
 }
 
 TEST_F(L2capClassicDynamicChannelImplTest, multiple_registeration_should_fail) {
@@ -147,15 +156,15 @@ TEST_F(L2capClassicDynamicChannelImplTest, multiple_registeration_should_fail) {
 
   // Register on close callback
   auto user_handler = std::make_unique<os::Handler>(thread_);
-  hci::ErrorCode my_status = hci::ErrorCode::SUCCESS;
-  dynamic_channel_impl.RegisterOnCloseCallback(
-      user_handler.get(), common::testing::BindLambdaForTesting([&](hci::ErrorCode status) { my_status = status; }));
+  StatusCapture* my_status = new StatusCapture();
+  dynamic_channel_impl.RegisterOnCloseCallback(user_handler->BindOnceOn(my_status, &StatusCapture::capture));
 
-  EXPECT_DEATH(dynamic_channel_impl.RegisterOnCloseCallback(user_handler.get(),
-                                                            common::BindOnce([](hci::ErrorCode status) { FAIL(); })),
-               ".*RegisterOnCloseCallback.*");
+  EXPECT_DEATH(
+      dynamic_channel_impl.RegisterOnCloseCallback(user_handler->BindOnce([](hci::ErrorCode status) { FAIL(); })),
+      ".*RegisterOnCloseCallback.*");
 
   user_handler->Clear();
+  delete my_status;
 }
 
 }  // namespace internal

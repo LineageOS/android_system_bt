@@ -174,8 +174,7 @@ class L2capLeModuleFacadeService : public L2capLeModuleFacade::Service {
       }
       channel_open_cv_.notify_all();
       channel_->RegisterOnCloseCallback(
-          facade_service_->facade_handler_,
-          common::BindOnce(&L2capDynamicChannelHelper::on_close_callback, common::Unretained(this)));
+          facade_service_->facade_handler_->BindOnceOn(this, &L2capDynamicChannelHelper::on_close_callback));
       channel_->GetQueueUpEnd()->RegisterDequeue(
           facade_service_->facade_handler_,
           common::Bind(&L2capDynamicChannelHelper::on_incoming_packet, common::Unretained(this)));
