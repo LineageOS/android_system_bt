@@ -28,7 +28,7 @@ namespace testing {
 
 class MockDynamicChannelServiceImpl : public DynamicChannelServiceImpl {
  public:
-  MockDynamicChannelServiceImpl() : DynamicChannelServiceImpl({}, {}, {}, {}) {}
+  MockDynamicChannelServiceImpl() : DynamicChannelServiceImpl({}, {}, {}) {}
   MOCK_METHOD(SecurityPolicy, GetSecurityPolicy, (), (const, override));
 };
 

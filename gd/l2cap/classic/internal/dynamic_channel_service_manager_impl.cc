@@ -29,32 +29,29 @@ void DynamicChannelServiceManagerImpl::Register(Psm psm,
                                                 DynamicChannelServiceImpl::PendingRegistration pending_registration) {
   if (!IsPsmValid(psm)) {
     std::unique_ptr<DynamicChannelService> invalid_service(new DynamicChannelService());
-    pending_registration.user_handler_->Post(
-        common::BindOnce(std::move(pending_registration.on_registration_complete_callback_),
-                         DynamicChannelManager::RegistrationResult::FAIL_INVALID_SERVICE, std::move(invalid_service)));
+    pending_registration.on_registration_complete_callback_.Invoke(
+        DynamicChannelManager::RegistrationResult::FAIL_INVALID_SERVICE, std::move(invalid_service));
   } else if (IsServiceRegistered(psm)) {
     std::unique_ptr<DynamicChannelService> invalid_service(new DynamicChannelService());
-    pending_registration.user_handler_->Post(common::BindOnce(
-        std::move(pending_registration.on_registration_complete_callback_),
-        DynamicChannelManager::RegistrationResult::FAIL_DUPLICATE_SERVICE, std::move(invalid_service)));
+    pending_registration.on_registration_complete_callback_.Invoke(
+        DynamicChannelManager::RegistrationResult::FAIL_DUPLICATE_SERVICE, std::move(invalid_service));
   } else {
-    service_map_.try_emplace(psm,
-                             DynamicChannelServiceImpl(pending_registration.user_handler_,
-                                                       pending_registration.security_policy_,
-                                                       std::move(pending_registration.on_connection_open_callback_),
-                                                       pending_registration.configuration_));
+    service_map_.try_emplace(
+        psm,
+        DynamicChannelServiceImpl(
+            pending_registration.security_policy_,
+            std::move(pending_registration.on_connection_open_callback_),
+            pending_registration.configuration_));
     std::unique_ptr<DynamicChannelService> user_service(new DynamicChannelService(psm, this, l2cap_layer_handler_));
-    pending_registration.user_handler_->Post(
-        common::BindOnce(std::move(pending_registration.on_registration_complete_callback_),
-                         DynamicChannelManager::RegistrationResult::SUCCESS, std::move(user_service)));
+    pending_registration.on_registration_complete_callback_.Invoke(
+        DynamicChannelManager::RegistrationResult::SUCCESS, std::move(user_service));
   }
 }
 
-void DynamicChannelServiceManagerImpl::Unregister(Psm psm, DynamicChannelService::OnUnregisteredCallback callback,
-                                                  os::Handler* handler) {
+void DynamicChannelServiceManagerImpl::Unregister(Psm psm, DynamicChannelService::OnUnregisteredCallback callback) {
   if (IsServiceRegistered(psm)) {
     service_map_.erase(psm);
-    handler->Post(std::move(callback));
+    callback.Invoke();
   } else {
     LOG_ERROR("service not registered psm:%d", psm);
   }

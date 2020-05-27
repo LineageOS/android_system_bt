@@ -19,6 +19,7 @@
 #include <chrono>
 #include <memory>
 
+#include "common/bind.h"
 #include "hci/acl_manager/classic_acl_connection.h"
 #include "l2cap/classic/dynamic_channel_manager.h"
 #include "l2cap/classic/internal/fixed_channel_impl.h"
@@ -144,8 +145,7 @@ void Link::SendConnectionRequest(Psm psm, Cid local_cid,
     ConnectionResult result{
         .connection_result_code = ConnectionResultCode::FAIL_REMOTE_NOT_SUPPORT,
     };
-    pending_dynamic_channel_connection.handler_->Post(
-        common::BindOnce(std::move(pending_dynamic_channel_connection.on_fail_callback_), result));
+    pending_dynamic_channel_connection.on_fail_callback_.Invoke(result);
     dynamic_channel_allocator_.FreeChannel(local_cid);
     return;
   } else {
@@ -255,8 +255,7 @@ void Link::NotifyChannelCreation(Cid cid, std::unique_ptr<DynamicChannel> user_c
   ASSERT(local_cid_to_pending_dynamic_channel_connection_map_.find(cid) !=
          local_cid_to_pending_dynamic_channel_connection_map_.end());
   auto& pending_dynamic_channel_connection = local_cid_to_pending_dynamic_channel_connection_map_[cid];
-  pending_dynamic_channel_connection.handler_->Post(
-      common::BindOnce(std::move(pending_dynamic_channel_connection.on_open_callback_), std::move(user_channel)));
+  pending_dynamic_channel_connection.on_open_callback_.Invoke(std::move(user_channel));
   local_cid_to_pending_dynamic_channel_connection_map_.erase(cid);
 }
 
@@ -264,8 +263,7 @@ void Link::NotifyChannelFail(Cid cid, ConnectionResult result) {
   ASSERT(local_cid_to_pending_dynamic_channel_connection_map_.find(cid) !=
          local_cid_to_pending_dynamic_channel_connection_map_.end());
   auto& pending_dynamic_channel_connection = local_cid_to_pending_dynamic_channel_connection_map_[cid];
-  pending_dynamic_channel_connection.handler_->Post(
-      common::BindOnce(std::move(pending_dynamic_channel_connection.on_fail_callback_), result));
+  pending_dynamic_channel_connection.on_fail_callback_.Invoke(result);
   local_cid_to_pending_dynamic_channel_connection_map_.erase(cid);
 }
 
