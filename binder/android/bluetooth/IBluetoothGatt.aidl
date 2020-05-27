@@ -91,6 +91,8 @@ interface IBluetoothGatt {
     void registerSync(in ScanResult scanResult, in int skip, in int timeout, in IPeriodicAdvertisingCallback callback, in AttributionSource attributionSource);
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_SCAN)")
     void unregisterSync(in IPeriodicAdvertisingCallback callback, in AttributionSource attributionSource);
+    void transferSync(in BluetoothDevice bda, in int serviceData, in int syncHandle);
+    void transferSetInfo(in BluetoothDevice bda, in int serviceData, in int advertisingHandle, in IPeriodicAdvertisingCallback callback);
 
     @UnsupportedAppUsage
     @JavaPassthrough(annotation="@android.annotation.RequiresPermission(android.Manifest.permission.BLUETOOTH_CONNECT)")
