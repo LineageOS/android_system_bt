@@ -126,7 +126,7 @@ class TestHciLayer : public HciLayer {
     EventPacketView event = EventPacketView::Create(packet);
     ASSERT_TRUE(event.IsValid());
     EventCode event_code = event.GetEventCode();
-    ASSERT_TRUE(registered_events_.find(event_code) != registered_events_.end()) << EventCodeText(event_code);
+    ASSERT_NE(registered_events_.find(event_code), registered_events_.end()) << EventCodeText(event_code);
     registered_events_[event_code].Invoke(event);
   }
 
@@ -136,21 +136,21 @@ class TestHciLayer : public HciLayer {
     LeMetaEventView meta_event_view = LeMetaEventView::Create(event);
     ASSERT_TRUE(meta_event_view.IsValid());
     SubeventCode subevent_code = meta_event_view.GetSubeventCode();
-    ASSERT_TRUE(registered_le_events_.find(subevent_code) != registered_le_events_.end())
+    ASSERT_NE(registered_le_events_.find(subevent_code), registered_le_events_.end())
         << SubeventCodeText(subevent_code);
     registered_le_events_[subevent_code].Invoke(meta_event_view);
   }
 
   void CommandCompleteCallback(EventPacketView event) {
     CommandCompleteView complete_view = CommandCompleteView::Create(event);
-    ASSERT(complete_view.IsValid());
+    ASSERT_TRUE(complete_view.IsValid());
     std::move(command_complete_callbacks.front()).Invoke(complete_view);
     command_complete_callbacks.pop_front();
   }
 
   void CommandStatusCallback(EventPacketView event) {
     CommandStatusView status_view = CommandStatusView::Create(event);
-    ASSERT(status_view.IsValid());
+    ASSERT_TRUE(status_view.IsValid());
     std::move(command_status_callbacks.front()).Invoke(status_view);
     command_status_callbacks.pop_front();
   }

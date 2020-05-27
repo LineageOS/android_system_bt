@@ -271,7 +271,7 @@ TEST(HciPacketsTest, testLeSetScanParameters) {
   auto view =
       LeSetScanParametersView::Create(LeScanningCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
 
-  ASSERT(view.IsValid());
+  ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(LeScanType::ACTIVE, view.GetLeScanType());
   ASSERT_EQ(0x12, view.GetLeScanInterval());
   ASSERT_EQ(0x12, view.GetLeScanWindow());
@@ -288,7 +288,7 @@ TEST(HciPacketsTest, testLeSetScanEnable) {
   PacketView<kLittleEndian> packet_bytes_view(std::make_shared<std::vector<uint8_t>>(le_set_scan_enable));
   auto view = LeSetScanEnableView::Create(LeScanningCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
 
-  ASSERT(view.IsValid());
+  ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(Enable::ENABLED, view.GetLeScanEnable());
   ASSERT_EQ(Enable::DISABLED, view.GetFilterDuplicates());
 }
@@ -305,7 +305,7 @@ TEST(HciPacketsTest, testLeGetVendorCapabilities) {
   auto view =
       LeGetVendorCapabilitiesView::Create(VendorCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
 
-  ASSERT(view.IsValid());
+  ASSERT_TRUE(view.IsValid());
 }
 
 DEFINE_AND_INSTANTIATE_LeGetVendorCapabilitiesReflectionTest(le_get_vendor_capabilities);
@@ -319,7 +319,7 @@ TEST(HciPacketsTest, testLeGetVendorCapabilitiesComplete) {
   auto view = LeGetVendorCapabilitiesCompleteView::Create(
       CommandCompleteView::Create(EventPacketView::Create(packet_bytes_view)));
 
-  ASSERT(view.IsValid());
+  ASSERT_TRUE(view.IsValid());
   auto base_capabilities = view.GetBaseVendorCapabilities();
   ASSERT_EQ(5, base_capabilities.max_advt_instances_);
   ASSERT_EQ(1, base_capabilities.offloaded_resolution_of_private_address_);
@@ -341,7 +341,7 @@ TEST(HciPacketsTest, testLeSetExtendedScanParameters) {
   auto view = LeSetExtendedScanParametersView::Create(
       LeScanningCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
 
-  ASSERT(view.IsValid());
+  ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(1, view.GetScanningPhys());
   auto params = view.GetParameters();
   ASSERT_EQ(1, params.size());
@@ -360,7 +360,7 @@ TEST(HciPacketsTest, testLeSetExtendedScanParameters_6553) {
   auto view = LeSetExtendedScanParametersView::Create(
       LeScanningCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
 
-  ASSERT(view.IsValid());
+  ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(1, view.GetScanningPhys());
   auto params = view.GetParameters();
   ASSERT_EQ(1, params.size());
@@ -386,7 +386,7 @@ TEST(HciPacketsTest, testLeSetExtendedScanEnable) {
   auto view =
       LeSetExtendedScanEnableView::Create(LeScanningCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
 
-  ASSERT(view.IsValid());
+  ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(FilterDuplicates::DISABLED, view.GetFilterDuplicates());
   ASSERT_EQ(Enable::ENABLED, view.GetEnable());
   ASSERT_EQ(0, view.GetDuration());
@@ -403,7 +403,7 @@ TEST(HciPacketsTest, testLeSetExtendedScanEnableDisable) {
   auto view =
       LeSetExtendedScanEnableView::Create(LeScanningCommandView::Create(CommandPacketView::Create(packet_bytes_view)));
 
-  ASSERT(view.IsValid());
+  ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(FilterDuplicates::ENABLED, view.GetFilterDuplicates());
   ASSERT_EQ(Enable::DISABLED, view.GetEnable());
   ASSERT_EQ(0, view.GetDuration());
@@ -604,10 +604,10 @@ TEST(HciPacketsTest, testLeSetAdvertisingDataBuilderLength) {
   BitInserter bit_inserter(*packet_bytes);
   builder->Serialize(bit_inserter);
   auto command_view = LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes));
-  ASSERT(command_view.IsValid());
+  ASSERT_TRUE(command_view.IsValid());
   ASSERT_EQ(1 /* data_length */ + 31 /* data */, command_view.GetPayload().size());
   auto view = LeSetAdvertisingDataView::Create(command_view);
-  ASSERT(view.IsValid());
+  ASSERT_TRUE(view.IsValid());
 }
 
 TEST(HciPacketsTest, testLeSetScanResponseDataBuilderLength) {
@@ -622,10 +622,10 @@ TEST(HciPacketsTest, testLeSetScanResponseDataBuilderLength) {
   BitInserter bit_inserter(*packet_bytes);
   builder->Serialize(bit_inserter);
   auto command_view = LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes));
-  ASSERT(command_view.IsValid());
+  ASSERT_TRUE(command_view.IsValid());
   ASSERT_EQ(1 /* data_length */ + 31 /* data */, command_view.GetPayload().size());
   auto view = LeSetScanResponseDataView::Create(command_view);
-  ASSERT(view.IsValid());
+  ASSERT_TRUE(view.IsValid());
 }
 
 TEST(HciPacketsTest, testLeMultiAdvSetAdvertisingDataBuilderLength) {
@@ -642,10 +642,10 @@ TEST(HciPacketsTest, testLeMultiAdvSetAdvertisingDataBuilderLength) {
   builder->Serialize(bit_inserter);
   auto command_view =
       LeMultiAdvtView::Create(LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes)));
-  ASSERT(command_view.IsValid());
+  ASSERT_TRUE(command_view.IsValid());
   EXPECT_EQ(1 /* data_length */ + 31 /* data */ + 1 /* set */, command_view.GetPayload().size());
   auto view = LeMultiAdvtSetDataView::Create(command_view);
-  ASSERT(view.IsValid());
+  ASSERT_TRUE(view.IsValid());
 }
 
 TEST(HciPacketsTest, testLeMultiAdvSetScanResponseDataBuilderLength) {
@@ -662,10 +662,10 @@ TEST(HciPacketsTest, testLeMultiAdvSetScanResponseDataBuilderLength) {
   builder->Serialize(bit_inserter);
   auto command_view =
       LeMultiAdvtView::Create(LeAdvertisingCommandView::Create(CommandPacketView::Create(packet_bytes)));
-  ASSERT(command_view.IsValid());
+  ASSERT_TRUE(command_view.IsValid());
   ASSERT_EQ(1 /* data_length */ + 31 /* data */ + 1 /* set */, command_view.GetPayload().size());
   auto view = LeMultiAdvtSetScanRespView::Create(command_view);
-  ASSERT(view.IsValid());
+  ASSERT_TRUE(view.IsValid());
 }
 
 std::vector<uint8_t> controller_bqr = {0x5e, 0xfd, 0x07, 0x00, 0x1f, 0x00, 0x07, 0x00, 0x88, 0x13};
