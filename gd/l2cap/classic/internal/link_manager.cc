@@ -52,9 +52,6 @@ void LinkManager::ConnectFixedChannelServices(hci::Address device,
         // This channel is already allocated for this link, do not allocated twice
         continue;
       }
-      if (fixed_channel_service.first == kClassicPairingTriggerCid) {
-        this->TriggerPairing(link);
-      }
       // Allocate channel for newly registered fixed channels
       auto fixed_channel_impl = link->AllocateFixedChannel(fixed_channel_service.first);
       fixed_channel_service.second->NotifyChannelCreation(
@@ -127,16 +124,6 @@ Link* LinkManager::GetLink(const hci::Address device) {
     return nullptr;
   }
   return &links_.find(device)->second;
-}
-
-void LinkManager::TriggerPairing(Link* link) {
-  if (!link->IsAuthenticated()) {
-    link->Authenticate();
-  }
-  link->ReadRemoteVersionInformation();
-  link->ReadRemoteSupportedFeatures();
-  link->ReadRemoteExtendedFeatures();
-  link->ReadClockOffset();
 }
 
 void LinkManager::handle_link_security_hold(hci::Address remote) {
@@ -229,9 +216,6 @@ void LinkManager::OnConnectSuccess(std::unique_ptr<hci::acl_manager::ClassicAclC
     auto fixed_channel_impl = link->AllocateFixedChannel(fixed_channel_service.first);
     fixed_channel_service.second->NotifyChannelCreation(
         std::make_unique<FixedChannel>(fixed_channel_impl, l2cap_handler_));
-    if (fixed_channel_service.first == kClassicPairingTriggerCid) {
-      this->TriggerPairing(link);
-    }
   }
   if (pending_dynamic_channels_.find(device) != pending_dynamic_channels_.end()) {
     auto psm_list = pending_dynamic_channels_[device];

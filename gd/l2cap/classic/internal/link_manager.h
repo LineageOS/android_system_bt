@@ -80,8 +80,6 @@ class LinkManager : public hci::acl_manager::ConnectionCallbacks {
   void RegisterLinkSecurityInterfaceListener(os::Handler* handler, LinkSecurityInterfaceListener* listener);
 
  private:
-  void TriggerPairing(Link* link);
-
   // Handles requests from LinkSecurityInterface
   friend class LinkSecurityInterfaceImpl;
   void handle_link_security_hold(hci::Address remote);

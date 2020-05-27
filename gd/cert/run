@@ -70,6 +70,10 @@ esac
 done
 set -- "${POSITIONAL[@]}" # restore positional parameters
 
+if [[ -n "$1" ]] ; then
+  TEST_FILTER="-tc $1"
+fi
+
 CERT_TEST_VENV=$ANDROID_BUILD_TOP/out/dist/bluetooth_venv
 
 YELLOW="\033[1;33m"
