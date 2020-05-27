@@ -117,9 +117,8 @@ TEST_F(L2capClassicLinkTest, pending_channels_get_notified_on_acl_disconnect) {
   EnqueueCallbackForTest();
 
   Link::PendingDynamicChannelConnection pending_dynamic_channel_connection{
-      .handler_ = handler_,
-      .on_open_callback_ = common::Bind(&L2capClassicLinkTest::OnOpen, common::Unretained(this)),
-      .on_fail_callback_ = common::Bind(&L2capClassicLinkTest::OnFail, common::Unretained(this)),
+      .on_open_callback_ = handler_->BindOn(this, &L2capClassicLinkTest::OnOpen),
+      .on_fail_callback_ = handler_->BindOnceOn(this, &L2capClassicLinkTest::OnFail),
       .configuration_ = DynamicChannelConfigurationOption(),
   };
   auto future = on_fail_promise_.get_future();

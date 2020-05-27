@@ -70,8 +70,8 @@ class LinkManager : public hci::acl_manager::ConnectionCallbacks {
 
   // DynamicChannelManager methods
 
-  void ConnectDynamicChannelServices(hci::Address device,
-                                     Link::PendingDynamicChannelConnection pending_dynamic_channel_connection, Psm psm);
+  void ConnectDynamicChannelServices(
+      hci::Address device, Link::PendingDynamicChannelConnection pending_connection, Psm psm);
 
   // For SecurityModule to initiate an ACL link
   void InitiateConnectionForSecurity(hci::Address remote);
