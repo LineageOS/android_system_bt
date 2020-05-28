@@ -24,6 +24,7 @@
 #include "hci/address_with_type.h"
 #include "hci/hci_packets.h"
 #include "security/internal/security_manager_impl.h"
+#include "security/smp_packets.h"
 
 namespace bluetooth {
 namespace security {
@@ -40,6 +41,8 @@ class FacadeConfigurationApi {
   void SetIoCapability(hci::IoCapability io_capability);
   void SetAuthenticationRequirements(hci::AuthenticationRequirements authentication_requirement);
   void SetOobData(hci::OobDataPresent oob_present);
+
+  void SetLeIoCapability(security::IoCapability io_capability);
 
  protected:
   FacadeConfigurationApi(os::Handler* security_handler, internal::SecurityManagerImpl* security_manager_impl)

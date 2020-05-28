@@ -44,11 +44,28 @@ static constexpr hci::AuthenticationRequirements kDefaultAuthenticationRequireme
 
 namespace internal {
 
+struct LeFixedChannelEntry {
+  std::unique_ptr<l2cap::le::FixedChannel> channel_;
+  std::unique_ptr<os::EnqueueBuffer<packet::BasePacketBuilder>> enqueue_buffer_;
+};
+
 class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, public UICallbacks {
  public:
-  explicit SecurityManagerImpl(os::Handler* security_handler, l2cap::le::L2capLeModule* l2cap_le_module,
-                               channel::SecurityManagerChannel* security_manager_channel, hci::HciLayer* hci_layer);
-  ~SecurityManagerImpl() = default;
+  explicit SecurityManagerImpl(
+      os::Handler* security_handler,
+      l2cap::le::L2capLeModule* l2cap_le_module,
+      channel::SecurityManagerChannel* security_manager_channel,
+      hci::HciLayer* hci_layer,
+      hci::AclManager* acl_manager);
+
+  ~SecurityManagerImpl() {
+    /* L2CAP layer doesn't guarantee to send the registered OnCloseCallback during shutdown. Cleanup the remaining
+     * queues to prevent crashes */
+    for (auto& stored_chan : all_channels_) {
+      stored_chan.channel_->GetQueueUpEnd()->UnregisterDequeue();
+      stored_chan.enqueue_buffer_.reset();
+    }
+  }
 
   // All APIs must be invoked in SM layer handler
 
@@ -98,6 +115,11 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   void SetUserInterfaceHandler(UI* user_interface, os::Handler* handler);
 
   /**
+   * Specify the initiator address used for LE transport, used for tests only.
+   */
+  void SetLeInitiatorAddress(hci::AddressWithType address);
+
+  /**
    * Register to listen for callback events from SecurityManager
    *
    * @param listener ISecurityManagerListener instance to handle callbacks
@@ -140,6 +162,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
 
   // Facade Configuration API functions
   void SetIoCapability(hci::IoCapability io_capability);
+  void SetLeIoCapability(security::IoCapability io_capability);
   void SetAuthenticationRequirements(hci::AuthenticationRequirements authentication_requirements);
   void SetOobDataPresent(hci::OobDataPresent data_present);
 
@@ -147,7 +170,6 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
                              l2cap::classic::SecurityEnforcementInterface::ResultCallback result_callback);
   void EnforceLeSecurityPolicy(hci::AddressWithType remote, l2cap::le::SecurityPolicy policy,
                                l2cap::le::SecurityEnforcementInterface::ResultCallback result_callback);
-
  protected:
   std::vector<std::pair<ISecurityManagerListener*, os::Handler*>> listeners_;
   UI* user_interface_ = nullptr;
@@ -165,31 +187,35 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   void DispatchPairingHandler(record::SecurityRecord& record, bool locally_initiated);
   void OnL2capRegistrationCompleteLe(l2cap::le::FixedChannelManager::RegistrationResult result,
                                      std::unique_ptr<l2cap::le::FixedChannelService> le_smp_service);
-  void OnSmpCommandLe();
+  void OnSmpCommandLe(hci::AddressWithType device);
   void OnConnectionOpenLe(std::unique_ptr<l2cap::le::FixedChannel> channel);
   void OnConnectionClosedLe(hci::AddressWithType address, hci::ErrorCode error_code);
   void OnConnectionFailureLe(bluetooth::l2cap::le::FixedChannelManager::ConnectionResult result);
   void OnPairingFinished(bluetooth::security::PairingResultOrFailure pairing_result);
   void OnHciLeEvent(hci::LeMetaEventView event);
+  LeFixedChannelEntry* FindStoredLeChannel(const hci::AddressWithType& device);
+  bool EraseStoredLeChannel(const hci::AddressWithType& device);
 
   os::Handler* security_handler_ __attribute__((unused));
   l2cap::le::L2capLeModule* l2cap_le_module_ __attribute__((unused));
   std::unique_ptr<l2cap::le::FixedChannelManager> l2cap_manager_le_;
   hci::LeSecurityInterface* hci_security_interface_le_ __attribute__((unused));
   channel::SecurityManagerChannel* security_manager_channel_;
+  hci::AclManager* acl_manager_;
   record::SecurityRecordDatabase security_database_;
   std::unordered_map<hci::Address, std::shared_ptr<pairing::PairingHandler>> pairing_handler_map_;
   hci::IoCapability local_io_capability_ = kDefaultIoCapability;
   hci::AuthenticationRequirements local_authentication_requirements_ = kDefaultAuthenticationRequirements;
   hci::OobDataPresent local_oob_data_present_ = kDefaultOobDataPresent;
+  security::IoCapability local_le_io_capability_ = security::IoCapability::NO_INPUT_NO_OUTPUT;
 
   struct {
     hci::AddressWithType address_;
-    std::unique_ptr<l2cap::le::FixedChannel> channel_;
-    uint8_t connection_handle_;
+    uint16_t connection_handle_;
     std::unique_ptr<PairingHandlerLe> handler_;
-    std::unique_ptr<os::EnqueueBuffer<packet::BasePacketBuilder>> enqueue_buffer_;
   } pending_le_pairing_;
+
+  std::list<LeFixedChannelEntry> all_channels_;
 };
 }  // namespace internal
 }  // namespace security
