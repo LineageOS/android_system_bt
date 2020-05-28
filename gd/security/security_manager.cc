@@ -59,6 +59,11 @@ void SecurityManager::SetUserInterfaceHandler(UI* user_interface, os::Handler* h
                                            common::Unretained(security_manager_impl_), user_interface, handler));
 }
 
+void SecurityManager::SetLeInitiatorAddress(hci::AddressWithType address) {
+  security_handler_->Post(common::BindOnce(
+      &internal::SecurityManagerImpl::SetLeInitiatorAddress, common::Unretained(security_manager_impl_), address));
+}
+
 void SecurityManager::RegisterCallbackListener(ISecurityManagerListener* listener, os::Handler* handler) {
   security_handler_->Post(common::BindOnce(&internal::SecurityManagerImpl::RegisterCallbackListener,
                                            common::Unretained(security_manager_impl_), listener, handler));

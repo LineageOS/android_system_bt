@@ -75,6 +75,11 @@ class SecurityManager : public UICallbacks {
   void SetUserInterfaceHandler(UI* user_interface, os::Handler* handler);
 
   /**
+   * Specify the initiator address used for LE transport, used for tests only.
+   */
+  void SetLeInitiatorAddress(hci::AddressWithType address);
+
+  /**
    * Register to listen for callback events from SecurityManager
    *
    * @param listener ISecurityManagerListener instance to handle callbacks

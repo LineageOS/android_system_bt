@@ -46,15 +46,13 @@ class PyLeSecurity(Closable):
         self._ui_event_stream = EventStream(self._device.security.FetchUiEvents(empty_proto.Empty()))
         self._bond_event_stream = EventStream(self._device.security.FetchBondEvents(empty_proto.Empty()))
 
-    def wait_for_bond_event(self, expected_bond_event,
-                            timeout=timedelta(seconds=3)):  # =timedelta(seconds=DEFAULT_TIMEOUT_SECONDS)
-        """
-            A bond event will be triggered once the bond process
-            is complete.  For the DUT we need to wait for it,
-            for Cert it isn't needed.
-        """
+    def wait_for_bond_event(self, expected_bond_event, timeout=timedelta(seconds=3)):
         self._bond_event_stream.assert_event_occurs(
             match_fn=lambda event: event.message_type == expected_bond_event, timeout=timeout)
+
+    def wait_for_ui_event(self, expected_ui_event, timeout=timedelta(seconds=3)):
+        self._ui_event_stream.assert_event_occurs(
+            match_fn=lambda event: event.message_type == expected_ui_event, timeout=timeout)
 
     def close(self):
         if self._ui_event_stream is not None:
