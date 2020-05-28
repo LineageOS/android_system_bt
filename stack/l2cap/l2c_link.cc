@@ -1239,6 +1239,8 @@ void l2c_link_process_num_completed_pkts(uint8_t* p, uint8_t evt_len) {
 
   for (xx = 0; xx < num_handles; xx++) {
     STREAM_TO_UINT16(handle, p);
+    /* Extract the handle */
+    handle = HCID_GET_HANDLE(handle);
     STREAM_TO_UINT16(num_sent, p);
 
     p_lcb = l2cu_find_lcb_by_handle(handle);
