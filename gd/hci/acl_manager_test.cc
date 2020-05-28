@@ -299,13 +299,18 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
     Address::FromString("A1:A2:A3:A4:A5:A6", remote);
 
     // Verify LE Set Random Address was sent during setup
-    hci::AddressWithType address_with_type(hci::Address::kEmpty, hci::AddressType::RANDOM_DEVICE_ADDRESS);
+    hci::Address address;
+    Address::FromString("D0:05:04:03:02:01", address);
+    hci::AddressWithType address_with_type(address, hci::AddressType::RANDOM_DEVICE_ADDRESS);
     crypto_toolbox::Octet16 irk = {};
     auto minimum_rotation_time = std::chrono::milliseconds(7 * 60 * 1000);
     auto maximum_rotation_time = std::chrono::milliseconds(15 * 60 * 1000);
-    acl_manager_->SetPrivacyPolicyForInitiatorAddress(LeAddressRotator::AddressPolicy::USE_RESOLVABLE_ADDRESS,
-                                                      address_with_type, irk, minimum_rotation_time,
-                                                      maximum_rotation_time);
+    acl_manager_->SetPrivacyPolicyForInitiatorAddress(
+        LeAddressRotator::AddressPolicy::USE_STATIC_ADDRESS,
+        address_with_type,
+        irk,
+        minimum_rotation_time,
+        maximum_rotation_time);
 
     auto set_random_address_packet = LeSetRandomAddressView::Create(
         LeAdvertisingCommandView::Create(test_hci_layer_->GetCommandPacket(OpCode::LE_SET_RANDOM_ADDRESS)));
@@ -611,7 +616,6 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_fail) {
   AddressWithType remote_with_type(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
   test_hci_layer_->SetCommandFuture();
   acl_manager_->CreateLeConnection(remote_with_type);
-
   auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
   auto le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
   auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);
