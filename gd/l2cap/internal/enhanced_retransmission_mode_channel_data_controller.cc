@@ -490,16 +490,30 @@ struct ErtmController::impl {
     return retry_count_ < controller_->local_max_transmit_;
   }
 
+  // Compares two sequence numbers (tx_seq or rx_seq)
+  bool sequence_less_than(uint8_t x, uint8_t y) {
+    // Assuming the maximum overflow of sequence number is the same as local_tx_window_ (10 by default).
+    return x < y || kMaxTxWin - (x - y) < controller_->local_tx_window_;
+  }
+
+  // Compares two sequence numbers (tx_seq or rx_seq)
+  bool sequence_less_than_or_equal(uint8_t x, uint8_t y) {
+    // Assuming the maximum overflow of sequence number is the same as local_tx_window_ (10 by default).
+    return x <= y || kMaxTxWin - (x - y) <= controller_->local_tx_window_;
+  }
+
   bool with_expected_tx_seq(uint8_t tx_seq) {
     return tx_seq == expected_tx_seq_;
   }
 
   bool with_valid_req_seq(uint8_t req_seq) {
-    return expected_ack_seq_ <= req_seq && req_seq <= next_tx_seq_;
+    return sequence_less_than_or_equal(expected_ack_seq_, req_seq) &&
+           sequence_less_than_or_equal(req_seq, next_tx_seq_);
   }
 
   bool with_valid_req_seq_retrans(uint8_t req_seq) {
-    return expected_ack_seq_ <= req_seq && req_seq <= next_tx_seq_;
+    return sequence_less_than_or_equal(expected_ack_seq_, req_seq) &&
+           sequence_less_than_or_equal(req_seq, next_tx_seq_);
   }
 
   bool with_valid_f_bit(Final f) {
@@ -507,24 +521,26 @@ struct ErtmController::impl {
   }
 
   bool with_unexpected_tx_seq(uint8_t tx_seq) {
-    return tx_seq > expected_tx_seq_ && tx_seq <= expected_tx_seq_ + controller_->local_tx_window_;
+    return sequence_less_than(expected_tx_seq_, tx_seq) &&
+           sequence_less_than_or_equal(tx_seq, expected_tx_seq_ + controller_->local_tx_window_);
   }
 
   bool with_duplicate_tx_seq(uint8_t tx_seq) {
-    return tx_seq < expected_tx_seq_ && tx_seq >= expected_tx_seq_ - controller_->local_tx_window_;
+    return sequence_less_than(tx_seq, expected_tx_seq_) &&
+           sequence_less_than_or_equal(expected_tx_seq_ - controller_->local_tx_window_, tx_seq);
   }
 
   bool with_invalid_tx_seq(uint8_t tx_seq) {
-    return tx_seq < expected_tx_seq_ - controller_->local_tx_window_ ||
-           tx_seq > expected_tx_seq_ + controller_->local_tx_window_;
+    return sequence_less_than(tx_seq, expected_tx_seq_ - controller_->local_tx_window_) ||
+           sequence_less_than(expected_tx_seq_ + controller_->local_tx_window_, tx_seq);
   }
 
   bool with_invalid_req_seq(uint8_t req_seq) {
-    return req_seq < expected_ack_seq_ || req_seq > next_tx_seq_;
+    return sequence_less_than(req_seq, expected_ack_seq_) || sequence_less_than(next_tx_seq_, req_seq);
   }
 
   bool with_invalid_req_seq_retrans(uint8_t req_seq) {
-    return req_seq < expected_ack_seq_ || req_seq > next_tx_seq_;
+    return sequence_less_than(req_seq, expected_ack_seq_) || sequence_less_than(next_tx_seq_, req_seq);
   }
 
   bool not_with_expected_tx_seq(uint8_t tx_seq) {
