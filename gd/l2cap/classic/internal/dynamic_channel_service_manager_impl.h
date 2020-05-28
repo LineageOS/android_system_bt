@@ -40,7 +40,7 @@ class DynamicChannelServiceManagerImpl {
   // All APIs must be invoked in L2CAP layer handler
   //
   virtual void Register(Psm psm, DynamicChannelServiceImpl::PendingRegistration pending_registration);
-  virtual void Unregister(Psm psm, DynamicChannelService::OnUnregisteredCallback callback, os::Handler* handler);
+  virtual void Unregister(Psm psm, DynamicChannelService::OnUnregisteredCallback callback);
   virtual bool IsServiceRegistered(Psm psm) const;
   virtual DynamicChannelServiceImpl* GetService(Psm psm);
 

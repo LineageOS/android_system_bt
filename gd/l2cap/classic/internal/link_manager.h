@@ -62,7 +62,7 @@ class LinkManager : public hci::acl_manager::ConnectionCallbacks {
   Link* GetLink(hci::Address device);
   void OnConnectSuccess(std::unique_ptr<hci::acl_manager::ClassicAclConnection> acl_connection) override;
   void OnConnectFail(hci::Address device, hci::ErrorCode reason) override;
-  void OnDisconnect(hci::Address device, hci::ErrorCode status);
+  virtual void OnDisconnect(hci::Address device, hci::ErrorCode status);
 
   // FixedChannelManager methods
 
@@ -70,8 +70,8 @@ class LinkManager : public hci::acl_manager::ConnectionCallbacks {
 
   // DynamicChannelManager methods
 
-  void ConnectDynamicChannelServices(hci::Address device,
-                                     Link::PendingDynamicChannelConnection pending_dynamic_channel_connection, Psm psm);
+  void ConnectDynamicChannelServices(
+      hci::Address device, Link::PendingDynamicChannelConnection pending_connection, Psm psm);
 
   // For SecurityModule to initiate an ACL link
   void InitiateConnectionForSecurity(hci::Address remote);

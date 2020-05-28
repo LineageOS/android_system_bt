@@ -71,7 +71,7 @@ class TestHciLayer : public HciLayer {
                      common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) {
     auto packet_view = GetPacketView(std::move(command_builder));
     CommandPacketView command = CommandPacketView::Create(packet_view);
-    ASSERT(command.IsValid());
+    ASSERT_TRUE(command.IsValid());
 
     uint8_t num_packets = 1;
     std::unique_ptr<packet::BasePacketBuilder> event_builder;
@@ -108,7 +108,7 @@ class TestHciLayer : public HciLayer {
       } break;
       case (OpCode::READ_LOCAL_EXTENDED_FEATURES): {
         ReadLocalExtendedFeaturesView read_command = ReadLocalExtendedFeaturesView::Create(command);
-        ASSERT(read_command.IsValid());
+        ASSERT_TRUE(read_command.IsValid());
         uint8_t page_bumber = read_command.GetPageNumber();
         uint64_t lmp_features = 0x012345678abcdef;
         lmp_features += page_bumber;
@@ -175,7 +175,7 @@ class TestHciLayer : public HciLayer {
       } break;
       case (OpCode::SET_EVENT_MASK): {
         auto view = SetEventMaskView::Create(command);
-        ASSERT(view.IsValid());
+        ASSERT_TRUE(view.IsValid());
         event_mask = view.GetEventMask();
         event_builder = SetEventMaskCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS);
       } break;
@@ -192,9 +192,9 @@ class TestHciLayer : public HciLayer {
     }
     auto packet = GetPacketView(std::move(event_builder));
     EventPacketView event = EventPacketView::Create(packet);
-    ASSERT(event.IsValid());
+    ASSERT_TRUE(event.IsValid());
     CommandCompleteView command_complete = CommandCompleteView::Create(event);
-    ASSERT(command_complete.IsValid());
+    ASSERT_TRUE(command_complete.IsValid());
     on_complete.Invoke(std::move(command_complete));
   }
 
@@ -221,7 +221,7 @@ class TestHciLayer : public HciLayer {
     auto event_builder = NumberOfCompletedPacketsBuilder::Create(completed_packets);
     auto packet = GetPacketView(std::move(event_builder));
     EventPacketView event = EventPacketView::Create(packet);
-    ASSERT(event.IsValid());
+    ASSERT_TRUE(event.IsValid());
     number_of_completed_packets_callback_.Invoke(event);
   }
 
@@ -235,7 +235,10 @@ class TestHciLayer : public HciLayer {
         break;
       }
     }
-    ASSERT(command_queue_.size() > 0);
+    EXPECT_TRUE(command_queue_.size() > 0);
+    if (command_queue_.empty()) {
+      return CommandPacketView::Create(std::make_shared<std::vector<uint8_t>>());
+    }
     CommandPacketView command = command_queue_.front();
     EXPECT_EQ(command.GetOpCode(), op_code);
     command_queue_.pop();
@@ -337,7 +340,7 @@ TEST_F(ControllerTest, send_reset_command) {
   controller_->Reset();
   auto packet = test_hci_layer_->GetCommand(OpCode::RESET);
   auto command = ResetView::Create(packet);
-  ASSERT(command.IsValid());
+  ASSERT_TRUE(command.IsValid());
 }
 
 TEST_F(ControllerTest, send_set_event_filter_command) {
@@ -346,7 +349,7 @@ TEST_F(ControllerTest, send_set_event_filter_command) {
   auto set_event_filter_view1 = SetEventFilterView::Create(packet);
   auto set_event_filter_inquiry_result_view1 = SetEventFilterInquiryResultView::Create(set_event_filter_view1);
   auto command1 = SetEventFilterInquiryResultAllDevicesView::Create(set_event_filter_inquiry_result_view1);
-  ASSERT(command1.IsValid());
+  ASSERT_TRUE(command1.IsValid());
 
   ClassOfDevice class_of_device({0xab, 0xcd, 0xef});
   ClassOfDevice class_of_device_mask({0x12, 0x34, 0x56});
@@ -355,7 +358,7 @@ TEST_F(ControllerTest, send_set_event_filter_command) {
   auto set_event_filter_view2 = SetEventFilterView::Create(packet);
   auto set_event_filter_inquiry_result_view2 = SetEventFilterInquiryResultView::Create(set_event_filter_view2);
   auto command2 = SetEventFilterInquiryResultClassOfDeviceView::Create(set_event_filter_inquiry_result_view2);
-  ASSERT(command2.IsValid());
+  ASSERT_TRUE(command2.IsValid());
   ASSERT_EQ(command2.GetClassOfDevice(), class_of_device);
 
   Address bdaddr({0x12, 0x34, 0x56, 0x78, 0x9a, 0xbc});
@@ -364,7 +367,7 @@ TEST_F(ControllerTest, send_set_event_filter_command) {
   auto set_event_filter_view3 = SetEventFilterView::Create(packet);
   auto set_event_filter_connection_setup_view = SetEventFilterConnectionSetupView::Create(set_event_filter_view3);
   auto command3 = SetEventFilterConnectionSetupAddressView::Create(set_event_filter_connection_setup_view);
-  ASSERT(command3.IsValid());
+  ASSERT_TRUE(command3.IsValid());
   ASSERT_EQ(command3.GetAddress(), bdaddr);
 }
 
@@ -372,7 +375,7 @@ TEST_F(ControllerTest, send_host_buffer_size_command) {
   controller_->HostBufferSize(0xFF00, 0xF1, 0xFF02, 0xFF03);
   auto packet = test_hci_layer_->GetCommand(OpCode::HOST_BUFFER_SIZE);
   auto command = HostBufferSizeView::Create(packet);
-  ASSERT(command.IsValid());
+  ASSERT_TRUE(command.IsValid());
   ASSERT_EQ(command.GetHostAclDataPacketLength(), 0xFF00);
   ASSERT_EQ(command.GetHostSynchronousDataPacketLength(), 0xF1);
   ASSERT_EQ(command.GetHostTotalNumAclDataPackets(), 0xFF02);
@@ -383,7 +386,7 @@ TEST_F(ControllerTest, send_le_set_event_mask_command) {
   controller_->LeSetEventMask(0x000000000000001F);
   auto packet = test_hci_layer_->GetCommand(OpCode::LE_SET_EVENT_MASK);
   auto command = LeSetEventMaskView::Create(packet);
-  ASSERT(command.IsValid());
+  ASSERT_TRUE(command.IsValid());
   ASSERT_EQ(command.GetLeEventMask(), 0x000000000000001F);
 }
 

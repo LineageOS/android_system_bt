@@ -17,6 +17,7 @@
 
 #include <string>
 
+#include "common/contextual_callback.h"
 #include "hci/acl_manager.h"
 #include "hci/address.h"
 #include "l2cap/classic/dynamic_channel.h"
@@ -54,15 +55,10 @@ class DynamicChannelManager {
     hci::ErrorCode hci_error = hci::ErrorCode::SUCCESS;
     ConnectionResponseResult l2cap_connection_response_result = ConnectionResponseResult::SUCCESS;
   };
-  /**
-   * OnConnectionFailureCallback(std::string failure_reason);
-   */
-  using OnConnectionFailureCallback = common::OnceCallback<void(ConnectionResult result)>;
 
-  /**
-   * OnConnectionOpenCallback(DynamicChannel channel);
-   */
-  using OnConnectionOpenCallback = common::Callback<void(std::unique_ptr<DynamicChannel>)>;
+  using OnConnectionFailureCallback = common::ContextualOnceCallback<void(ConnectionResult result)>;
+
+  using OnConnectionOpenCallback = common::ContextualCallback<void(std::unique_ptr<DynamicChannel>)>;
 
   enum class RegistrationResult {
     SUCCESS = 0,
@@ -70,11 +66,8 @@ class DynamicChannelManager {
     FAIL_INVALID_SERVICE = 2,    // Invalid PSM
   };
 
-  /**
-   * OnRegistrationFailureCallback(RegistrationResult result, DynamicChannelService service);
-   */
   using OnRegistrationCompleteCallback =
-      common::OnceCallback<void(RegistrationResult, std::unique_ptr<DynamicChannelService>)>;
+      common::ContextualOnceCallback<void(RegistrationResult, std::unique_ptr<DynamicChannelService>)>;
 
   /**
    * Connect to a Dynamic channel on a remote device
@@ -91,14 +84,14 @@ class DynamicChannelManager {
    * @param psm: Service PSM to connect. PSM is defined in Core spec Vol 3 Part A 4.2.
    * @param on_open_callback: A callback to indicate success of a connection initiated from a remote device.
    * @param on_fail_callback: A callback to indicate connection failure along with a status code.
-   * @param handler: The handler context in which to execute the @callback parameters.
    * @param configuration_option: The configuration options for this channel
-   *
-   * Returns: true if connection was able to be initiated, false otherwise.
    */
-  virtual bool ConnectChannel(hci::Address device, DynamicChannelConfigurationOption configuration_option, Psm psm,
-                              OnConnectionOpenCallback on_connection_open, OnConnectionFailureCallback on_fail_callback,
-                              os::Handler* handler);
+  virtual void ConnectChannel(
+      hci::Address device,
+      DynamicChannelConfigurationOption configuration_option,
+      Psm psm,
+      OnConnectionOpenCallback on_connection_open,
+      OnConnectionFailureCallback on_fail_callback);
 
   /**
    * Register a service to receive incoming connections bound to a specific channel.
@@ -118,13 +111,14 @@ class DynamicChannelManager {
    * @param on_registration_complete: A callback to indicate the service setup has completed. If the return status is
    *        not SUCCESS, it means service is not registered due to reasons like PSM already take
    * @param on_open_callback: A callback to indicate success of a connection initiated from a remote device.
-   * @param handler: The handler context in which to execute the @callback parameter.
    * @param configuration_option: The configuration options for this channel
    */
-  virtual bool RegisterService(Psm psm, DynamicChannelConfigurationOption configuration_option,
-                               const SecurityPolicy& security_policy,
-                               OnRegistrationCompleteCallback on_registration_complete,
-                               OnConnectionOpenCallback on_connection_open, os::Handler* handler);
+  virtual void RegisterService(
+      Psm psm,
+      DynamicChannelConfigurationOption configuration_option,
+      const SecurityPolicy& security_policy,
+      OnRegistrationCompleteCallback on_registration_complete,
+      OnConnectionOpenCallback on_connection_open);
 
   friend class L2capClassicModule;
 

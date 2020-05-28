@@ -22,11 +22,10 @@ namespace bluetooth {
 namespace l2cap {
 namespace classic {
 
-void DynamicChannelService::Unregister(OnUnregisteredCallback on_unregistered, os::Handler* on_unregistered_handler) {
+void DynamicChannelService::Unregister(OnUnregisteredCallback on_unregistered) {
   ASSERT_LOG(manager_ != nullptr, "this service is invalid");
-  l2cap_layer_handler_->Post(common::BindOnce(&internal::DynamicChannelServiceManagerImpl::Unregister,
-                                              common::Unretained(manager_), psm_, std::move(on_unregistered),
-                                              on_unregistered_handler));
+  l2cap_layer_handler_->CallOn(
+      manager_, &internal::DynamicChannelServiceManagerImpl::Unregister, psm_, std::move(on_unregistered));
 }
 
 Psm DynamicChannelService::GetPsm() const {

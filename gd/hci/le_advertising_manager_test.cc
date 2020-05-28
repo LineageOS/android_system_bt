@@ -78,7 +78,7 @@ class TestHciLayer : public HciLayer {
   void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
                       common::ContextualOnceCallback<void(CommandStatusView)> on_status) override {
     auto packet_view = CommandPacketView::Create(GetPacketView(std::move(command)));
-    ASSERT(packet_view.IsValid());
+    ASSERT_TRUE(packet_view.IsValid());
     command_queue_.push_back(packet_view);
     command_status_callbacks.push_back(std::move(on_status));
     if (command_promise_ != nullptr &&
@@ -94,14 +94,14 @@ class TestHciLayer : public HciLayer {
   void EnqueueCommand(std::unique_ptr<CommandPacketBuilder> command,
                       common::ContextualOnceCallback<void(CommandCompleteView)> on_complete) override {
     auto packet_view = CommandPacketView::Create(GetPacketView(std::move(command)));
-    ASSERT(packet_view.IsValid());
+    ASSERT_TRUE(packet_view.IsValid());
     command_queue_.push_back(packet_view);
     command_complete_callbacks.push_back(std::move(on_complete));
     if (command_promise_ != nullptr &&
         (command_op_code_ == OpCode::NONE || command_op_code_ == packet_view.GetOpCode())) {
       if (command_op_code_ == OpCode::LE_MULTI_ADVT) {
         auto sub_view = LeMultiAdvtView::Create(LeAdvertisingCommandView::Create(packet_view));
-        ASSERT(sub_view.IsValid());
+        ASSERT_TRUE(sub_view.IsValid());
         if (sub_view.GetSubCmd() != command_sub_ocf_) {
           return;
         }
@@ -127,11 +127,14 @@ class TestHciLayer : public HciLayer {
   }
 
   ConnectionManagementCommandView GetCommandPacket(OpCode op_code) {
-    ASSERT(!command_queue_.empty());
+    if (command_queue_.empty()) {
+      return ConnectionManagementCommandView::Create(
+          CommandPacketView::Create(std::make_shared<std::vector<uint8_t>>()));
+    }
     CommandPacketView command_packet_view = CommandPacketView::Create(command_queue_.front());
     command_queue_.pop_front();
     ConnectionManagementCommandView command = ConnectionManagementCommandView::Create(command_packet_view);
-    ASSERT(command.IsValid());
+    EXPECT_TRUE(command.IsValid());
     EXPECT_EQ(command.GetOpCode(), op_code);
 
     return command;
@@ -152,7 +155,7 @@ class TestHciLayer : public HciLayer {
     EventPacketView event = EventPacketView::Create(packet);
     ASSERT_TRUE(event.IsValid());
     EventCode event_code = event.GetEventCode();
-    ASSERT_TRUE(registered_events_.find(event_code) != registered_events_.end()) << EventCodeText(event_code);
+    ASSERT_NE(registered_events_.find(event_code), registered_events_.end()) << EventCodeText(event_code);
     registered_events_[event_code].Invoke(event);
   }
 
@@ -162,21 +165,21 @@ class TestHciLayer : public HciLayer {
     LeMetaEventView meta_event_view = LeMetaEventView::Create(event);
     ASSERT_TRUE(meta_event_view.IsValid());
     SubeventCode subevent_code = meta_event_view.GetSubeventCode();
-    ASSERT_TRUE(registered_le_events_.find(subevent_code) != registered_le_events_.end())
+    ASSERT_NE(registered_le_events_.find(subevent_code), registered_le_events_.end())
         << SubeventCodeText(subevent_code);
     registered_le_events_[subevent_code].Invoke(meta_event_view);
   }
 
   void CommandCompleteCallback(EventPacketView event) {
     CommandCompleteView complete_view = CommandCompleteView::Create(event);
-    ASSERT(complete_view.IsValid());
+    ASSERT_TRUE(complete_view.IsValid());
     std::move(command_complete_callbacks.front()).Invoke(complete_view);
     command_complete_callbacks.pop_front();
   }
 
   void CommandStatusCallback(EventPacketView event) {
     CommandStatusView status_view = CommandStatusView::Create(event);
-    ASSERT(status_view.IsValid());
+    ASSERT_TRUE(status_view.IsValid());
     std::move(command_status_callbacks.front()).Invoke(status_view);
     command_status_callbacks.pop_front();
   }
@@ -414,7 +417,7 @@ TEST_F(LeAndroidHciAdvertisingManagerTest, create_advertiser_test) {
   for (size_t i = 0; i < sub_ocf.size(); i++) {
     auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_MULTI_ADVT);
     auto sub_packet = LeMultiAdvtView::Create(LeAdvertisingCommandView::Create(packet));
-    ASSERT(sub_packet.IsValid());
+    ASSERT_TRUE(sub_packet.IsValid());
     test_hci_layer_->IncomingEvent(LeMultiAdvtCompleteBuilder::Create(uint8_t{1}, ErrorCode::SUCCESS, sub_ocf[i]));
     num_commands -= 1;
   }

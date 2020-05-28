@@ -70,35 +70,31 @@ class TestLink : public l2cap::internal::ILink {
 
 class TestDynamicChannelManagerImpl {
  public:
-  bool ConnectChannel(
+  void ConnectChannel(
       hci::Address device,
       l2cap::classic::DynamicChannelConfigurationOption configuration_option,
       l2cap::Psm psm,
       l2cap::classic::DynamicChannelManager::OnConnectionOpenCallback on_open_callback,
-      l2cap::classic::DynamicChannelManager::OnConnectionFailureCallback on_fail_callback,
-      os::Handler* handler) {
+      l2cap::classic::DynamicChannelManager::OnConnectionFailureCallback on_fail_callback) {
     connections_++;
     on_open_callback_ = std::move(on_open_callback);
     on_fail_callback_ = std::move(on_fail_callback);
 
     connected_promise_.set_value();
-    return true;
   }
   int connections_{0};
 
-  bool RegisterService(
+  void RegisterService(
       l2cap::Psm psm,
       l2cap::classic::DynamicChannelConfigurationOption configuration_option,
       const l2cap::classic::SecurityPolicy& security_policy,
       l2cap::classic::DynamicChannelManager::OnRegistrationCompleteCallback on_registration_complete,
-      l2cap::classic::DynamicChannelManager::OnConnectionOpenCallback on_open_callback,
-      os::Handler* handler) {
+      l2cap::classic::DynamicChannelManager::OnConnectionOpenCallback on_open_callback) {
     services_++;
     on_registration_complete_ = std::move(on_registration_complete);
     on_open_callback_ = std::move(on_open_callback);
 
     register_promise_.set_value();
-    return true;
   }
   int services_{0};
 
@@ -121,12 +117,12 @@ class TestDynamicChannelManagerImpl {
   }
 
   void SetConnectionOnFail(l2cap::classic::DynamicChannelManager::ConnectionResult result, std::promise<void> promise) {
-    std::move(on_fail_callback_).Run(result);
+    std::move(on_fail_callback_).Invoke(result);
     promise.set_value();
   }
 
   void SetConnectionOnOpen(std::unique_ptr<l2cap::DynamicChannel> channel, std::promise<void> promise) {
-    std::move(on_open_callback_).Run(std::move(channel));
+    std::move(on_open_callback_).Invoke(std::move(channel));
     promise.set_value();
   }
 
@@ -147,31 +143,23 @@ class TestDynamicChannelManagerImpl {
 
 class TestDynamicChannelManager : public l2cap::classic::DynamicChannelManager {
  public:
-  bool ConnectChannel(
+  void ConnectChannel(
       hci::Address device,
       l2cap::classic::DynamicChannelConfigurationOption configuration_option,
       l2cap::Psm psm,
       l2cap::classic::DynamicChannelManager::OnConnectionOpenCallback on_open_callback,
-      l2cap::classic::DynamicChannelManager::OnConnectionFailureCallback on_fail_callback,
-      os::Handler* handler) override {
-    return impl_.ConnectChannel(
-        device, configuration_option, psm, std::move(on_open_callback), std::move(on_fail_callback), handler);
+      l2cap::classic::DynamicChannelManager::OnConnectionFailureCallback on_fail_callback) override {
+    impl_.ConnectChannel(device, configuration_option, psm, std::move(on_open_callback), std::move(on_fail_callback));
   }
 
-  bool RegisterService(
+  void RegisterService(
       l2cap::Psm psm,
       l2cap::classic::DynamicChannelConfigurationOption configuration_option,
       const l2cap::classic::SecurityPolicy& security_policy,
       l2cap::classic::DynamicChannelManager::OnRegistrationCompleteCallback on_registration_complete,
-      l2cap::classic::DynamicChannelManager::OnConnectionOpenCallback on_open_callback,
-      os::Handler* handler) override {
-    return impl_.RegisterService(
-        psm,
-        configuration_option,
-        security_policy,
-        std::move(on_registration_complete),
-        std::move(on_open_callback),
-        handler);
+      l2cap::classic::DynamicChannelManager::OnConnectionOpenCallback on_open_callback) override {
+    impl_.RegisterService(
+        psm, configuration_option, security_policy, std::move(on_registration_complete), std::move(on_open_callback));
   }
   TestDynamicChannelManager(TestDynamicChannelManagerImpl& impl) : impl_(impl) {}
   TestDynamicChannelManagerImpl& impl_;
@@ -180,7 +168,6 @@ class TestDynamicChannelManager : public l2cap::classic::DynamicChannelManager {
 class TestL2capClassicModule : public l2cap::classic::L2capClassicModule {
  public:
   std::unique_ptr<l2cap::classic::DynamicChannelManager> GetDynamicChannelManager() override {
-    ASSERT(impl_ != nullptr);
     return std::make_unique<TestDynamicChannelManager>(*impl_);
   }
 
@@ -193,6 +180,7 @@ class TestL2capClassicModule : public l2cap::classic::L2capClassicModule {
 
 void TestL2capClassicModule::Start() {
   impl_ = std::make_unique<TestDynamicChannelManagerImpl>();
+  ASSERT_NE(impl_, nullptr);
 }
 
 void TestL2capClassicModule::Stop() {
@@ -290,12 +278,12 @@ class ShimL2capTest : public ::testing::Test {
 TEST_F(ShimL2capTest, CreateThenDisconnectBeforeCompletion) {
   SetConnectionFuture();
 
-  ASSERT(NumberOfConnections() == 0);
+  ASSERT_EQ(NumberOfConnections(), 0);
   uint16_t cid = CreateConnection(kPsm, device_address);
-  ASSERT(cid != 0);
+  ASSERT_NE(cid, 0);
 
   WaitConnectionFuture();
-  ASSERT(NumberOfConnections() == 1);
+  ASSERT_EQ(NumberOfConnections(), 1);
 
   shim_l2cap_->CloseConnection(cid);
 }
@@ -304,44 +292,44 @@ TEST_F(ShimL2capTest, MaxCreatedConnections) {
   for (int i = 0; i < 65536 - 64; i++) {
     SetConnectionFuture();
     uint16_t cid = CreateConnection(kPsm, device_address);
-    ASSERT(cid != 0);
+    ASSERT_NE(cid, 0);
     WaitConnectionFuture();
 
-    ASSERT(NumberOfConnections() == i + 1);
+    ASSERT_EQ(NumberOfConnections(), i + 1);
   }
   uint16_t cid = CreateConnection(kPsm, device_address);
-  ASSERT(cid == 0);
+  ASSERT_EQ(cid, 0);
 
-  ASSERT(NumberOfConnections() == 65536 - 64);
+  ASSERT_EQ(NumberOfConnections(), 65536 - 64);
 }
 
 TEST_F(ShimL2capTest, TwoDifferentCreatedConnections) {
   {
     SetConnectionFuture();
     uint16_t cid = CreateConnection(kPsm, device_address);
-    ASSERT(cid != 0);
+    ASSERT_NE(cid, 0);
     WaitConnectionFuture();
 
-    ASSERT(NumberOfConnections() == 1);
+    ASSERT_EQ(NumberOfConnections(), 1);
   }
 
   {
     SetConnectionFuture();
     uint16_t cid = CreateConnection(kPsm2, device_address2);
-    ASSERT(cid != 0);
+    ASSERT_NE(cid, 0);
     WaitConnectionFuture();
 
-    ASSERT(NumberOfConnections() == 2);
+    ASSERT_EQ(NumberOfConnections(), 2);
   }
 }
 
 TEST_F(ShimL2capTest, ConnectFail) {
   SetConnectionFuture();
   uint16_t cid = CreateConnection(kPsm, device_address);
-  ASSERT(cid != 0);
+  ASSERT_NE(cid, 0);
   WaitConnectionFuture();
 
-  ASSERT(NumberOfConnections() == 1);
+  ASSERT_EQ(NumberOfConnections(), 1);
 
   l2cap::classic::DynamicChannelManager::ConnectionResult result{
       .connection_result_code = TestDynamicChannelManager::ConnectionResultCode::FAIL_NO_SERVICE_REGISTERED,
@@ -351,14 +339,14 @@ TEST_F(ShimL2capTest, ConnectFail) {
 
   std::promise<void> on_fail_promise;
   auto on_fail_future = on_fail_promise.get_future();
-  handler_->Post(common::BindOnce(
+  handler_->CallOn(
+      test_l2cap_classic_module_->impl_.get(),
       &TestDynamicChannelManagerImpl::SetConnectionOnFail,
-      common::Unretained(test_l2cap_classic_module_->impl_.get()),
       result,
-      std::move(on_fail_promise)));
+      std::move(on_fail_promise));
   on_fail_future.wait();
 
-  ASSERT(connection_connected_ == false);
+  ASSERT_EQ(connection_connected_, false);
 
   shim_l2cap_->CloseConnection(cid);
 }
@@ -366,10 +354,10 @@ TEST_F(ShimL2capTest, ConnectFail) {
 TEST_F(ShimL2capTest, ConnectOpen) {
   SetConnectionFuture();
   uint16_t cid = CreateConnection(kPsm, device_address);
-  ASSERT(cid != 0);
+  ASSERT_NE(cid, 0);
   WaitConnectionFuture();
 
-  ASSERT(NumberOfConnections() == 1);
+  ASSERT_EQ(NumberOfConnections(), 1);
 
   hci::Address address;
   hci::Address::FromString(device_address, address);
@@ -388,16 +376,16 @@ TEST_F(ShimL2capTest, ConnectOpen) {
   auto on_fail_future = on_fail_promise.get_future();
 
   auto connection_complete_future = connection_complete_promise_.get_future();
-  handler_->Post(common::BindOnce(
+  handler_->CallOn(
+      test_l2cap_classic_module_->impl_.get(),
       &TestDynamicChannelManagerImpl::SetConnectionOnOpen,
-      common::Unretained(test_l2cap_classic_module_->impl_.get()),
       std::move(channel),
-      std::move(on_fail_promise)));
+      std::move(on_fail_promise));
   connection_complete_future.wait();
 
   on_fail_future.wait();
 
-  ASSERT(connection_connected_ == true);
+  ASSERT_EQ(connection_connected_, true);
 
   auto future = test_link_.connection_closed_promise_.get_future();
   shim_l2cap_->CloseConnection(cid);
@@ -422,18 +410,17 @@ TEST_F(ShimL2capTest, RegisterService_Success) {
           std::placeholders::_4),
       std::move(registration_promise));
   WaitRegistrationFuture();
-  ASSERT_LOG(test_l2cap_classic_module_->impl_->on_registration_complete_, "Synchronization failure");
-  ASSERT(test_l2cap_classic_module_->impl_->services_ == 1);
+  ASSERT_LOG(!test_l2cap_classic_module_->impl_->on_registration_complete_.IsEmpty(), "Synchronization failure");
+  ASSERT_EQ(test_l2cap_classic_module_->impl_->services_, 1);
 
   l2cap::classic::DynamicChannelManager::RegistrationResult result{
       l2cap::classic::DynamicChannelManager::RegistrationResult::SUCCESS,
   };
   auto service = std::make_unique<TestDynamicChannelService>(kPsm, &mock_, handler_);
 
-  handler_->Post(common::BindOnce(
-      std::move(test_l2cap_classic_module_->impl_->on_registration_complete_), result, std::move(service)));
+  test_l2cap_classic_module_->impl_->on_registration_complete_.Invoke(result, std::move(service));
   uint16_t psm = registration_pending.get();
-  ASSERT(psm == kPsm);
+  ASSERT_EQ(psm, kPsm);
 }
 
 TEST_F(ShimL2capTest, RegisterService_Duplicate) {
@@ -454,18 +441,17 @@ TEST_F(ShimL2capTest, RegisterService_Duplicate) {
           std::placeholders::_4),
       std::move(promise));
   WaitRegistrationFuture();
-  ASSERT_LOG(test_l2cap_classic_module_->impl_->on_registration_complete_, "Synchronization failure");
-  ASSERT(test_l2cap_classic_module_->impl_->services_ == 1);
+  ASSERT_LOG(!test_l2cap_classic_module_->impl_->on_registration_complete_.IsEmpty(), "Synchronization failure");
+  ASSERT_EQ(test_l2cap_classic_module_->impl_->services_, 1);
 
   l2cap::classic::DynamicChannelManager::RegistrationResult result{
       l2cap::classic::DynamicChannelManager::RegistrationResult::FAIL_DUPLICATE_SERVICE,
   };
   auto service = std::make_unique<TestDynamicChannelService>(kPsm, &mock_, handler_);
 
-  handler_->Post(common::BindOnce(
-      std::move(test_l2cap_classic_module_->impl_->on_registration_complete_), result, std::move(service)));
+  test_l2cap_classic_module_->impl_->on_registration_complete_.Invoke(result, std::move(service));
   uint16_t psm = future.get();
-  ASSERT(psm == l2cap::kDefaultPsm);
+  ASSERT_EQ(psm, l2cap::kDefaultPsm);
 }
 
 TEST_F(ShimL2capTest, RegisterService_Invalid) {
@@ -493,12 +479,11 @@ TEST_F(ShimL2capTest, RegisterService_Invalid) {
   auto service = std::make_unique<TestDynamicChannelService>(kPsm, &mock_, handler_);
   WaitRegistrationFuture();
 
-  ASSERT_LOG(test_l2cap_classic_module_->impl_->on_registration_complete_, "Synchronization failure");
-  handler_->Post(common::BindOnce(
-      std::move(test_l2cap_classic_module_->impl_->on_registration_complete_), result, std::move(service)));
+  ASSERT_LOG(!test_l2cap_classic_module_->impl_->on_registration_complete_.IsEmpty(), "Synchronization failure");
+  test_l2cap_classic_module_->impl_->on_registration_complete_.Invoke(result, std::move(service));
   uint16_t psm = future.get();
-  ASSERT(psm == l2cap::kDefaultPsm);
-  ASSERT(test_l2cap_classic_module_->impl_->services_ == 1);
+  ASSERT_EQ(psm, l2cap::kDefaultPsm);
+  ASSERT_EQ(test_l2cap_classic_module_->impl_->services_, 1);
 }
 
 }  // namespace

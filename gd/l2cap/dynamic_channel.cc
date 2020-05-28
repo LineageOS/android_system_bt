@@ -25,14 +25,13 @@ hci::AddressWithType DynamicChannel::GetDevice() const {
   return impl_->GetDevice();
 }
 
-void DynamicChannel::RegisterOnCloseCallback(os::Handler* user_handler,
-                                             DynamicChannel::OnCloseCallback on_close_callback) {
-  l2cap_handler_->Post(common::BindOnce(&l2cap::internal::DynamicChannelImpl::RegisterOnCloseCallback, impl_,
-                                        user_handler, std::move(on_close_callback)));
+void DynamicChannel::RegisterOnCloseCallback(DynamicChannel::OnCloseCallback on_close_callback) {
+  l2cap_handler_->CallOn(
+      impl_.get(), &l2cap::internal::DynamicChannelImpl::RegisterOnCloseCallback, std::move(on_close_callback));
 }
 
 void DynamicChannel::Close() {
-  l2cap_handler_->Post(common::BindOnce(&l2cap::internal::DynamicChannelImpl::Close, impl_));
+  l2cap_handler_->CallOn(impl_.get(), &l2cap::internal::DynamicChannelImpl::Close);
 }
 
 common::BidiQueueEnd<packet::BasePacketBuilder, packet::PacketView<packet::kLittleEndian>>*

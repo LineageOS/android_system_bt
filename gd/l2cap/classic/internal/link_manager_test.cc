@@ -335,12 +335,6 @@ TEST_F(L2capClassicLinkManagerTest, not_acquiring_channels_should_disconnect_acl
   EXPECT_CALL(*raw_acl_connection, Disconnect(hci::DisconnectReason::REMOTE_USER_TERMINATED_CONNECTION)).Times(1);
   std::this_thread::sleep_for(kTestIdleDisconnectTimeoutShort * 1.2);
 
-  // Step 5: Link disconnect will trigger all callbacks
-  classic_link_manager.OnDisconnect(device, hci::ErrorCode::CONNECTION_TERMINATED_BY_LOCAL_HOST);
-  SyncHandler(user_handler.get());
-  EXPECT_EQ(hci::ErrorCode::CONNECTION_TERMINATED_BY_LOCAL_HOST, status_1);
-  EXPECT_EQ(hci::ErrorCode::CONNECTION_TERMINATED_BY_LOCAL_HOST, status_2);
-
   user_handler->Clear();
 }
 
@@ -416,12 +410,6 @@ TEST_F(L2capClassicLinkManagerTest, acquiring_channels_should_not_disconnect_acl
   // Step 4: Leave channel IDLE, it won't disconnect to due acquired channel 1
   EXPECT_CALL(*raw_acl_connection, Disconnect(hci::DisconnectReason::REMOTE_USER_TERMINATED_CONNECTION)).Times(0);
   std::this_thread::sleep_for(kTestIdleDisconnectTimeoutShort * 2);
-
-  // Step 5: Link disconnect will trigger all callbacks
-  classic_link_manager.OnDisconnect(device, hci::ErrorCode::CONNECTION_TERMINATED_BY_LOCAL_HOST);
-  SyncHandler(user_handler.get());
-  EXPECT_EQ(hci::ErrorCode::CONNECTION_TERMINATED_BY_LOCAL_HOST, status_1);
-  EXPECT_EQ(hci::ErrorCode::CONNECTION_TERMINATED_BY_LOCAL_HOST, status_2);
 
   user_handler->Clear();
 }
@@ -503,12 +491,6 @@ TEST_F(L2capClassicLinkManagerTest, acquiring_and_releasing_channels_should_even
   channel_1->Release();
   EXPECT_CALL(*raw_acl_connection, Disconnect(hci::DisconnectReason::REMOTE_USER_TERMINATED_CONNECTION)).Times(1);
   std::this_thread::sleep_for(kTestIdleDisconnectTimeoutShort * 1.2);
-
-  // Step 6: Link disconnect will trigger all callbacks
-  classic_link_manager.OnDisconnect(device, hci::ErrorCode::CONNECTION_TERMINATED_BY_LOCAL_HOST);
-  SyncHandler(user_handler.get());
-  EXPECT_EQ(hci::ErrorCode::CONNECTION_TERMINATED_BY_LOCAL_HOST, status_1);
-  EXPECT_EQ(hci::ErrorCode::CONNECTION_TERMINATED_BY_LOCAL_HOST, status_2);
 
   user_handler->Clear();
 }

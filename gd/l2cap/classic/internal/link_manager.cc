@@ -245,10 +245,9 @@ void LinkManager::OnConnectFail(hci::Address device, hci::ErrorCode reason) {
               hci::ErrorCodeText(reason).c_str());
     if (pending_dynamic_channels_callbacks_.find(device) != pending_dynamic_channels_callbacks_.end()) {
       for (Link::PendingDynamicChannelConnection& callbacks : pending_dynamic_channels_callbacks_[device]) {
-        callbacks.handler_->Post(common::BindOnce(std::move(callbacks.on_fail_callback_),
-                                                  DynamicChannelManager::ConnectionResult{
-                                                      .hci_error = hci::ErrorCode::CONNECTION_TIMEOUT,
-                                                  }));
+        callbacks.on_fail_callback_.Invoke(DynamicChannelManager::ConnectionResult{
+            .hci_error = hci::ErrorCode::CONNECTION_TIMEOUT,
+        });
       }
       pending_dynamic_channels_.erase(device);
       pending_dynamic_channels_callbacks_.erase(device);
@@ -269,7 +268,6 @@ void LinkManager::OnDisconnect(hci::Address device, hci::ErrorCode status) {
   auto* link = GetLink(device);
   ASSERT_LOG(link != nullptr, "Device %s is disconnected with reason 0x%x, but not in local database",
              device.ToString().c_str(), static_cast<uint8_t>(status));
-  link->OnAclDisconnected(status);
   links_.erase(device);
   if (link_security_interface_listener_handler_ != nullptr) {
     link_security_interface_listener_handler_->CallOn(
