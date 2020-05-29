@@ -60,7 +60,9 @@ struct le_impl : public bluetooth::hci::LeAddressRotatorCallback {
     for (auto subevent_code : LeConnectionManagementEvents) {
       hci_layer_->UnregisterLeEventHandler(subevent_code);
     }
-    le_address_rotator_->Unregister(this);
+    if (address_rotator_registered) {
+      le_address_rotator_->Unregister(this);
+    }
     delete le_address_rotator_;
     le_acl_connections_.clear();
   }
@@ -114,8 +116,12 @@ struct le_impl : public bluetooth::hci::LeAddressRotatorCallback {
         canceled_connections_.find(remote_address) != canceled_connections_.end()) {
       // connection canceled by LeAddressRotator.OnPause(), will auto reconnect by LeAddressRotator.OnResume()
       return;
-    } else if (status != ErrorCode::SUCCESS) {
+    } else {
       canceled_connections_.erase(remote_address);
+    }
+
+    if (status != ErrorCode::SUCCESS) {
+      check_for_unregister();
       le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectFail,
                                                 common::Unretained(le_client_callbacks_), remote_address, status));
       return;
@@ -157,8 +163,12 @@ struct le_impl : public bluetooth::hci::LeAddressRotatorCallback {
         canceled_connections_.find(remote_address) != canceled_connections_.end()) {
       // connection canceled by LeAddressRotator.OnPause(), will auto reconnect by LeAddressRotator.OnResume()
       return;
-    } else if (status != ErrorCode::SUCCESS) {
+    } else {
       canceled_connections_.erase(remote_address);
+    }
+
+    if (status != ErrorCode::SUCCESS) {
+      check_for_unregister();
       le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectFail,
                                                 common::Unretained(le_client_callbacks_), remote_address, status));
       return;
@@ -240,6 +250,11 @@ struct le_impl : public bluetooth::hci::LeAddressRotatorCallback {
     uint16_t supervision_timeout = 0x001f4;
     ASSERT(le_client_callbacks_ != nullptr);
 
+    if (!address_rotator_registered) {
+      le_address_rotator_->Register(this);
+      address_rotator_registered = true;
+    }
+
     if (pause_connection) {
       canceled_connections_.insert(address_with_type);
       return;
@@ -286,8 +301,6 @@ struct le_impl : public bluetooth::hci::LeAddressRotatorCallback {
                                                 std::chrono::milliseconds maximum_rotation_time) {
     le_address_rotator_->SetPrivacyPolicyForInitiatorAddress(address_policy, fixed_address, rotation_irk,
                                                              minimum_rotation_time, maximum_rotation_time);
-    // Policy must be set before clients are registered.
-    le_address_rotator_->Register(this);
   }
 
   void handle_register_le_callbacks(LeConnectionCallbacks* callbacks, os::Handler* handler) {
@@ -304,20 +317,15 @@ struct le_impl : public bluetooth::hci::LeAddressRotatorCallback {
   }
 
   void OnPause() override {
-    if (pause_connection) {
+    pause_connection = true;
+    if (connecting_le_.empty()) {
       le_address_rotator_->AckPause(this);
       return;
     }
-
-    pause_connection = true;
-    if (!connecting_le_.empty()) {
-      canceled_connections_ = connecting_le_;
-      le_acl_connection_interface_->EnqueueCommand(
-          LeCreateConnectionCancelBuilder::Create(),
-          handler_->BindOnce(&le_impl::on_create_connection_cancel_complete, common::Unretained(this)));
-    } else {
-      le_address_rotator_->AckPause(this);
-    }
+    canceled_connections_ = connecting_le_;
+    le_acl_connection_interface_->EnqueueCommand(
+        LeCreateConnectionCancelBuilder::Create(),
+        handler_->BindOnce(&le_impl::on_create_connection_cancel_complete, common::Unretained(this)));
   }
 
   void on_create_connection_cancel_complete(CommandCompleteView view) {
@@ -325,6 +333,15 @@ struct le_impl : public bluetooth::hci::LeAddressRotatorCallback {
     ASSERT(complete_view.IsValid());
     ASSERT(complete_view.GetStatus() == ErrorCode::SUCCESS);
     le_address_rotator_->AckPause(this);
+  }
+
+  void check_for_unregister() {
+    if (le_acl_connections_.empty() && connecting_le_.empty() && canceled_connections_.empty() &&
+        address_rotator_registered) {
+      le_address_rotator_->Unregister(this);
+      address_rotator_registered = false;
+      pause_connection = false;
+    }
   }
 
   void OnResume() override {
@@ -350,6 +367,7 @@ struct le_impl : public bluetooth::hci::LeAddressRotatorCallback {
   std::set<AddressWithType> connecting_le_;
   std::set<AddressWithType> canceled_connections_;
   DisconnectorForLe* disconnector_;
+  bool address_rotator_registered = false;
   bool pause_connection = false;
 };
 
