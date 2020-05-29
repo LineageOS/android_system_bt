@@ -227,6 +227,7 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   SET_HANDLER(OpCode::LE_REMOVE_DEVICE_FROM_RESOLVING_LIST,
               LeRemoveDeviceFromResolvingList);
   SET_HANDLER(OpCode::LE_CLEAR_RESOLVING_LIST, LeClearResolvingList);
+  SET_HANDLER(OpCode::LE_READ_RESOLVING_LIST_SIZE, LeReadResolvingListSize);
   SET_HANDLER(OpCode::LE_SET_EXTENDED_SCAN_PARAMETERS,
               LeSetExtendedScanParameters);
   SET_HANDLER(OpCode::LE_SET_EXTENDED_SCAN_ENABLE, LeSetExtendedScanEnable);
@@ -1675,6 +1676,16 @@ void DualModeController::LeClearResolvingList(CommandPacketView command) {
   link_layer_controller_.LeResolvingListClear();
   auto packet = bluetooth::hci::LeClearResolvingListCompleteBuilder::Create(
       kNumCommandPackets, ErrorCode::SUCCESS);
+  send_event_(std::move(packet));
+}
+
+void DualModeController::LeReadResolvingListSize(CommandPacketView command) {
+  auto command_view = gd_hci::LeReadResolvingListSizeView::Create(
+      gd_hci::LeSecurityCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+  auto packet = bluetooth::hci::LeReadResolvingListSizeCompleteBuilder::Create(
+      kNumCommandPackets, ErrorCode::SUCCESS,
+      properties_.GetLeResolvingListSize());
   send_event_(std::move(packet));
 }
 
