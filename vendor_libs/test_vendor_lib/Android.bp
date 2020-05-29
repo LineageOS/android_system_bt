@@ -3,7 +3,7 @@
 cc_library_static {
     name: "libbt-rootcanal",
     defaults: [
-        "libchrome_support_defaults",
+        "gd_defaults",
         "gd_clang_tidy",
     ],
     host_supported: true,
@@ -63,6 +63,7 @@ cc_library_static {
     ],
     shared_libs: [
         "libbase",
+        "libchrome",
         "liblog",
     ],
     static_libs: [
