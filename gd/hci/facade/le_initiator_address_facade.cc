@@ -42,7 +42,7 @@ class LeInitiatorAddressFacadeService : public LeInitiatorAddressFacade::Service
  public:
   LeInitiatorAddressFacadeService(AclManager* acl_manager, ::bluetooth::os::Handler* facade_handler)
       : acl_manager_(acl_manager),
-        address_rotator_(acl_manager_->GetLeAddressRotator()),
+        address_manager_(acl_manager_->GetLeAddressManager()),
         facade_handler_(facade_handler) {
     ASSERT(facade_handler_ != nullptr);
   }
@@ -51,8 +51,8 @@ class LeInitiatorAddressFacadeService : public LeInitiatorAddressFacade::Service
       ::grpc::ServerContext* context, const PrivacyPolicy* request, ::google::protobuf::Empty* writer) override {
     Address address;
     ASSERT(Address::FromString(request->address_with_type().address().address(), address));
-    LeAddressRotator::AddressPolicy address_policy =
-        static_cast<LeAddressRotator::AddressPolicy>(request->address_policy());
+    LeAddressManager::AddressPolicy address_policy =
+        static_cast<LeAddressManager::AddressPolicy>(request->address_policy());
     AddressWithType address_with_type(address, static_cast<AddressType>(request->address_with_type().type()));
     std::vector<uint8_t> irk_data(request->rotation_irk().begin(), request->rotation_irk().end());
     crypto_toolbox::Octet16 irk = {};
@@ -68,7 +68,7 @@ class LeInitiatorAddressFacadeService : public LeInitiatorAddressFacade::Service
       ::grpc::ServerContext* context,
       const ::google::protobuf::Empty* request,
       ::bluetooth::facade::BluetoothAddressWithType* response) override {
-    AddressWithType current = address_rotator_->GetCurrentAddress();
+    AddressWithType current = address_manager_->GetCurrentAddress();
     auto bluetooth_address = new ::bluetooth::facade::BluetoothAddress();
     bluetooth_address->set_address(current.GetAddress().ToString());
     response->set_type(static_cast<::bluetooth::facade::BluetoothAddressTypeEnum>(current.GetAddressType()));
@@ -80,7 +80,7 @@ class LeInitiatorAddressFacadeService : public LeInitiatorAddressFacade::Service
       ::grpc::ServerContext* context,
       const ::google::protobuf::Empty* request,
       ::bluetooth::facade::BluetoothAddressWithType* response) override {
-    AddressWithType another = address_rotator_->GetAnotherAddress();
+    AddressWithType another = address_manager_->GetAnotherAddress();
     auto bluetooth_address = new ::bluetooth::facade::BluetoothAddress();
     bluetooth_address->set_address(another.GetAddress().ToString());
     response->set_type(static_cast<::bluetooth::facade::BluetoothAddressTypeEnum>(another.GetAddressType()));
@@ -90,7 +90,7 @@ class LeInitiatorAddressFacadeService : public LeInitiatorAddressFacade::Service
 
  private:
   AclManager* acl_manager_;
-  LeAddressRotator* address_rotator_;
+  LeAddressManager* address_manager_;
   ::bluetooth::os::Handler* facade_handler_;
 };
 
