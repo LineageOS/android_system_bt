@@ -26,18 +26,18 @@
 namespace bluetooth {
 namespace hci {
 
-class LeAddressRotatorCallback {
+class LeAddressManagerCallback {
  public:
-  virtual ~LeAddressRotatorCallback() = default;
+  virtual ~LeAddressManagerCallback() = default;
   virtual void OnPause() = 0;
   virtual void OnResume() = 0;
 };
 
-class LeAddressRotator {
+class LeAddressManager {
  public:
-  LeAddressRotator(common::Callback<void(Address address)> set_random_address, os::Handler* handler,
-                   Address pulic_address);
-  virtual ~LeAddressRotator();
+  LeAddressManager(
+      common::Callback<void(Address address)> set_random_address, os::Handler* handler, Address pulic_address);
+  virtual ~LeAddressManager();
 
   enum AddressPolicy {
     POLICY_NOT_SET,
@@ -48,25 +48,27 @@ class LeAddressRotator {
   };
 
   // Aborts if called more than once
-  void SetPrivacyPolicyForInitiatorAddress(AddressPolicy address_policy, AddressWithType fixed_address,
-                                           crypto_toolbox::Octet16 rotation_irk,
-                                           std::chrono::milliseconds minimum_rotation_time,
-                                           std::chrono::milliseconds maximum_rotation_time);
-  void AckPause(LeAddressRotatorCallback* callback);
-  void AckResume(LeAddressRotatorCallback* callback);
-  virtual AddressPolicy Register(LeAddressRotatorCallback* callback);
-  virtual void Unregister(LeAddressRotatorCallback* callback);
+  void SetPrivacyPolicyForInitiatorAddress(
+      AddressPolicy address_policy,
+      AddressWithType fixed_address,
+      crypto_toolbox::Octet16 rotation_irk,
+      std::chrono::milliseconds minimum_rotation_time,
+      std::chrono::milliseconds maximum_rotation_time);
+  void AckPause(LeAddressManagerCallback* callback);
+  void AckResume(LeAddressManagerCallback* callback);
+  virtual AddressPolicy Register(LeAddressManagerCallback* callback);
+  virtual void Unregister(LeAddressManagerCallback* callback);
   void OnLeSetRandomAddressComplete(bool success);
-  AddressWithType GetCurrentAddress();  // What was set in SetRandomAddress()
+  AddressWithType GetCurrentAddress();          // What was set in SetRandomAddress()
   virtual AddressWithType GetAnotherAddress();  // A new random address without rotating.
 
  private:
   void pause_registered_clients();
-  void ack_pause(LeAddressRotatorCallback* callback);
+  void ack_pause(LeAddressManagerCallback* callback);
   void resume_registered_clients();
-  void ack_resume(LeAddressRotatorCallback* callback);
-  void register_client(LeAddressRotatorCallback* callback);
-  void unregister_client(LeAddressRotatorCallback* callback);
+  void ack_resume(LeAddressManagerCallback* callback);
+  void register_client(LeAddressManagerCallback* callback);
+  void unregister_client(LeAddressManagerCallback* callback);
   void rotate_random_address();
   hci::Address generate_rpa();
   hci::Address generate_nrpa();
@@ -81,7 +83,7 @@ class LeAddressRotator {
   };
 
   os::Handler* handler_;
-  std::map<LeAddressRotatorCallback*, ClientState> registered_clients_;
+  std::map<LeAddressManagerCallback*, ClientState> registered_clients_;
 
   AddressPolicy address_policy_ = AddressPolicy::POLICY_NOT_SET;
   AddressWithType le_address_;
