@@ -120,7 +120,7 @@ void SecurityManagerImpl::SetUserInterfaceHandler(UI* user_interface, os::Handle
 
 void SecurityManagerImpl::SetLeInitiatorAddress(hci::AddressWithType address) {
   acl_manager_->SetPrivacyPolicyForInitiatorAddress(
-      hci::LeAddressRotator::AddressPolicy::USE_STATIC_ADDRESS,
+      hci::LeAddressManager::AddressPolicy::USE_STATIC_ADDRESS,
       address,
       crypto_toolbox::Octet16{},
       std::chrono::milliseconds{0},
