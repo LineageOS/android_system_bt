@@ -76,12 +76,12 @@ ExtendedAdvertisingConfig::ExtendedAdvertisingConfig(const AdvertisingConfig& co
   operation = Operation::COMPLETE_ADVERTISEMENT;
 }
 
-struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressRotatorCallback {
+struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallback {
   impl(Module* module) : module_(module), le_advertising_interface_(nullptr), num_instances_(0) {}
 
   ~impl() {
-    if (address_rotator_registered) {
-      le_address_rotator_->Unregister(this);
+    if (address_manager_registered) {
+      le_address_manager_->Unregister(this);
     }
   }
 
@@ -90,7 +90,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressRotatorCallb
     module_handler_ = handler;
     hci_layer_ = hci_layer;
     controller_ = controller;
-    le_address_rotator_ = acl_manager->GetLeAddressRotator();
+    le_address_manager_ = acl_manager->GetLeAddressManager();
     le_advertising_interface_ =
         hci_layer_->GetLeAdvertisingInterface(module_handler_->BindOn(this, &LeAdvertisingManager::impl::handle_event));
     num_instances_ = controller_->GetControllerLeNumberOfSupportedAdverisingSets();
@@ -161,9 +161,9 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressRotatorCallb
       return;
     }
     advertising_sets_.erase(id);
-    if (advertising_sets_.empty() && address_rotator_registered) {
-      le_address_rotator_->Unregister(this);
-      address_rotator_registered = false;
+    if (advertising_sets_.empty() && address_manager_registered) {
+      le_address_manager_->Unregister(this);
+      address_manager_registered = false;
       paused = false;
     }
   }
@@ -176,9 +176,9 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressRotatorCallb
     advertising_sets_[id].set_terminated_callback = set_terminated_callback;
     advertising_sets_[id].handler = handler;
 
-    if (!address_rotator_registered) {
-      le_address_rotator_->Register(this);
-      address_rotator_registered = true;
+    if (!address_manager_registered) {
+      le_address_manager_->Register(this);
+      address_manager_registered = true;
     }
 
     switch (advertising_api_type_) {
@@ -234,7 +234,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressRotatorCallb
               module_handler_->BindOnce(impl::check_status<LeMultiAdvtCompleteView>));
         }
         le_advertising_interface_->EnqueueCommand(
-            hci::LeMultiAdvtSetRandomAddrBuilder::Create(le_address_rotator_->GetAnotherAddress().GetAddress(), id),
+            hci::LeMultiAdvtSetRandomAddrBuilder::Create(le_address_manager_->GetAnotherAddress().GetAddress(), id),
             module_handler_->BindOnce(impl::check_status<LeMultiAdvtCompleteView>));
         if (!paused) {
           le_advertising_interface_->EnqueueCommand(
@@ -266,9 +266,9 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressRotatorCallb
     advertising_sets_[id].set_terminated_callback = set_terminated_callback;
     advertising_sets_[id].handler = handler;
 
-    if (!address_rotator_registered) {
-      le_address_rotator_->Register(this);
-      address_rotator_registered = true;
+    if (!address_manager_registered) {
+      le_address_manager_->Register(this);
+      address_manager_registered = true;
     }
 
     if (config.legacy_pdus) {
@@ -310,7 +310,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressRotatorCallb
 
     le_advertising_interface_->EnqueueCommand(
         hci::LeSetExtendedAdvertisingRandomAddressBuilder::Create(
-            id, le_address_rotator_->GetAnotherAddress().GetAddress()),
+            id, le_address_manager_->GetAnotherAddress().GetAddress()),
         module_handler_->BindOnce(impl::check_status<LeSetExtendedAdvertisingRandomAddressCompleteView>));
     if (!config.scan_response.empty()) {
       le_advertising_interface_->EnqueueCommand(
@@ -402,7 +402,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressRotatorCallb
         } break;
       }
     }
-    le_address_rotator_->AckPause(this);
+    le_address_manager_->AckPause(this);
   }
 
   void OnResume() override {
@@ -440,7 +440,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressRotatorCallb
         } break;
       }
     }
-    le_address_rotator_->AckResume(this);
+    le_address_manager_->AckResume(this);
   }
 
   common::Callback<void(Address, AddressType)> scan_callback_;
@@ -452,8 +452,8 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressRotatorCallb
   hci::Controller* controller_;
   hci::LeAdvertisingInterface* le_advertising_interface_;
   std::map<AdvertiserId, Advertiser> advertising_sets_;
-  hci::LeAddressRotator* le_address_rotator_;
-  bool address_rotator_registered = false;
+  hci::LeAddressManager* le_address_manager_;
+  bool address_manager_registered = false;
   bool paused = false;
 
   std::mutex id_mutex_;
