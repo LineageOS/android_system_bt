@@ -1,4 +1,4 @@
-#include "hci/le_address_rotator.h"
+#include "hci/le_address_manager.h"
 #include "os/log.h"
 #include "os/rand.h"
 
@@ -7,11 +7,11 @@ namespace hci {
 
 static constexpr uint8_t BLE_ADDR_MASK = 0xc0u;
 
-LeAddressRotator::LeAddressRotator(
+LeAddressManager::LeAddressManager(
     common::Callback<void(Address address)> set_random_address, os::Handler* handler, Address public_address)
     : set_random_address_(set_random_address), handler_(handler), public_address_(public_address){};
 
-LeAddressRotator::~LeAddressRotator() {
+LeAddressManager::~LeAddressManager() {
   if (address_rotation_alarm_ != nullptr) {
     address_rotation_alarm_->Cancel();
     address_rotation_alarm_.reset();
@@ -19,10 +19,12 @@ LeAddressRotator::~LeAddressRotator() {
 }
 
 // Aborts if called more than once
-void LeAddressRotator::SetPrivacyPolicyForInitiatorAddress(AddressPolicy address_policy, AddressWithType fixed_address,
-                                                           crypto_toolbox::Octet16 rotation_irk,
-                                                           std::chrono::milliseconds minimum_rotation_time,
-                                                           std::chrono::milliseconds maximum_rotation_time) {
+void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
+    AddressPolicy address_policy,
+    AddressWithType fixed_address,
+    crypto_toolbox::Octet16 rotation_irk,
+    std::chrono::milliseconds minimum_rotation_time,
+    std::chrono::milliseconds maximum_rotation_time) {
   ASSERT(address_policy_ == AddressPolicy::POLICY_NOT_SET);
   ASSERT(address_policy != AddressPolicy::POLICY_NOT_SET);
   ASSERT_LOG(registered_clients_.empty(), "Policy must be set before clients are registered.");
@@ -59,24 +61,24 @@ void LeAddressRotator::SetPrivacyPolicyForInitiatorAddress(AddressPolicy address
   }
 }
 
-LeAddressRotator::AddressPolicy LeAddressRotator::Register(LeAddressRotatorCallback* callback) {
-  handler_->Post(common::BindOnce(&LeAddressRotator::register_client, common::Unretained(this), callback));
+LeAddressManager::AddressPolicy LeAddressManager::Register(LeAddressManagerCallback* callback) {
+  handler_->Post(common::BindOnce(&LeAddressManager::register_client, common::Unretained(this), callback));
   return address_policy_;
 }
 
-void LeAddressRotator::register_client(LeAddressRotatorCallback* callback) {
-  registered_clients_.insert(std::pair<LeAddressRotatorCallback*, ClientState>(callback, ClientState::RESUMED));
+void LeAddressManager::register_client(LeAddressManagerCallback* callback) {
+  registered_clients_.insert(std::pair<LeAddressManagerCallback*, ClientState>(callback, ClientState::RESUMED));
   if (address_policy_ == AddressPolicy::POLICY_NOT_SET || address_policy_ == AddressPolicy::USE_RESOLVABLE_ADDRESS ||
       address_policy_ == AddressPolicy::USE_NON_RESOLVABLE_ADDRESS) {
     pause_registered_clients();
   }
 }
 
-void LeAddressRotator::Unregister(LeAddressRotatorCallback* callback) {
-  handler_->Post(common::BindOnce(&LeAddressRotator::unregister_client, common::Unretained(this), callback));
+void LeAddressManager::Unregister(LeAddressManagerCallback* callback) {
+  handler_->Post(common::BindOnce(&LeAddressManager::unregister_client, common::Unretained(this), callback));
 }
 
-void LeAddressRotator::unregister_client(LeAddressRotatorCallback* callback) {
+void LeAddressManager::unregister_client(LeAddressManagerCallback* callback) {
   registered_clients_.erase(callback);
   if (registered_clients_.empty() && address_rotation_alarm_ != nullptr) {
     address_rotation_alarm_->Cancel();
@@ -84,25 +86,25 @@ void LeAddressRotator::unregister_client(LeAddressRotatorCallback* callback) {
   }
 }
 
-void LeAddressRotator::AckPause(LeAddressRotatorCallback* callback) {
-  handler_->Post(common::BindOnce(&LeAddressRotator::ack_pause, common::Unretained(this), callback));
+void LeAddressManager::AckPause(LeAddressManagerCallback* callback) {
+  handler_->Post(common::BindOnce(&LeAddressManager::ack_pause, common::Unretained(this), callback));
 }
 
-void LeAddressRotator::AckResume(LeAddressRotatorCallback* callback) {
-  handler_->Post(common::BindOnce(&LeAddressRotator::ack_resume, common::Unretained(this), callback));
+void LeAddressManager::AckResume(LeAddressManagerCallback* callback) {
+  handler_->Post(common::BindOnce(&LeAddressManager::ack_resume, common::Unretained(this), callback));
 }
 
-void LeAddressRotator::OnLeSetRandomAddressComplete(bool success) {
+void LeAddressManager::OnLeSetRandomAddressComplete(bool success) {
   ASSERT(success);
   resume_registered_clients();
 }
 
-AddressWithType LeAddressRotator::GetCurrentAddress() {
+AddressWithType LeAddressManager::GetCurrentAddress() {
   ASSERT(address_policy_ != AddressPolicy::POLICY_NOT_SET);
   return le_address_;
 }
 
-AddressWithType LeAddressRotator::GetAnotherAddress() {
+AddressWithType LeAddressManager::GetAnotherAddress() {
   ASSERT(
       address_policy_ == AddressPolicy::USE_NON_RESOLVABLE_ADDRESS ||
       address_policy_ == AddressPolicy::USE_RESOLVABLE_ADDRESS);
@@ -111,7 +113,7 @@ AddressWithType LeAddressRotator::GetAnotherAddress() {
   return random_address;
 }
 
-void LeAddressRotator::pause_registered_clients() {
+void LeAddressManager::pause_registered_clients() {
   for (auto client : registered_clients_) {
     if (client.second != ClientState::PAUSED && client.second != ClientState::WAITING_FOR_PAUSE) {
       client.second = ClientState::WAITING_FOR_PAUSE;
@@ -120,7 +122,7 @@ void LeAddressRotator::pause_registered_clients() {
   }
 }
 
-void LeAddressRotator::ack_pause(LeAddressRotatorCallback* callback) {
+void LeAddressManager::ack_pause(LeAddressManagerCallback* callback) {
   ASSERT(registered_clients_.find(callback) != registered_clients_.end());
   registered_clients_.find(callback)->second = ClientState::PAUSED;
   for (auto client : registered_clients_) {
@@ -132,26 +134,26 @@ void LeAddressRotator::ack_pause(LeAddressRotatorCallback* callback) {
   rotate_random_address();
 }
 
-void LeAddressRotator::resume_registered_clients() {
+void LeAddressManager::resume_registered_clients() {
   for (auto client : registered_clients_) {
     client.second = ClientState::WAITING_FOR_RESUME;
     client.first->OnResume();
   }
 }
 
-void LeAddressRotator::ack_resume(LeAddressRotatorCallback* callback) {
+void LeAddressManager::ack_resume(LeAddressManagerCallback* callback) {
   ASSERT(registered_clients_.find(callback) != registered_clients_.end());
   registered_clients_.find(callback)->second = ClientState::RESUMED;
 }
 
-void LeAddressRotator::rotate_random_address() {
+void LeAddressManager::rotate_random_address() {
   if (address_policy_ != AddressPolicy::USE_RESOLVABLE_ADDRESS &&
       address_policy_ != AddressPolicy::USE_NON_RESOLVABLE_ADDRESS) {
     return;
   }
 
   address_rotation_alarm_->Schedule(
-      common::BindOnce(&LeAddressRotator::pause_registered_clients, common::Unretained(this)),
+      common::BindOnce(&LeAddressManager::pause_registered_clients, common::Unretained(this)),
       get_next_private_address_interval_ms());
 
   hci::Address address;
@@ -166,7 +168,7 @@ void LeAddressRotator::rotate_random_address() {
 
 /* This function generates Resolvable Private Address (RPA) from Identity
  * Resolving Key |irk| and |prand|*/
-hci::Address LeAddressRotator::generate_rpa() {
+hci::Address LeAddressManager::generate_rpa() {
   // most significant bit, bit7, bit6 is 01 to be resolvable random
   // Bits of the random part of prand shall not be all 1 or all 0
   std::array<uint8_t, 3> prand = os::GenerateRandom<3>();
@@ -194,7 +196,7 @@ hci::Address LeAddressRotator::generate_rpa() {
 }
 
 // This function generates NON-Resolvable Private Address (NRPA)
-hci::Address LeAddressRotator::generate_nrpa() {
+hci::Address LeAddressManager::generate_nrpa() {
   // The two most significant bits of the address shall be equal to 0
   // Bits of the random part of the address shall not be all 1 or all 0
   std::array<uint8_t, 6> random = os::GenerateRandom<6>();
@@ -217,7 +219,7 @@ hci::Address LeAddressRotator::generate_nrpa() {
   return address;
 }
 
-std::chrono::milliseconds LeAddressRotator::get_next_private_address_interval_ms() {
+std::chrono::milliseconds LeAddressManager::get_next_private_address_interval_ms() {
   auto interval_random_part_max_ms = maximum_rotation_time_ - minimum_rotation_time_;
   auto random_ms = std::chrono::milliseconds(os::GenerateRandom()) % (interval_random_part_max_ms);
   return minimum_rotation_time_ + random_ms;

@@ -306,7 +306,7 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
     auto minimum_rotation_time = std::chrono::milliseconds(7 * 60 * 1000);
     auto maximum_rotation_time = std::chrono::milliseconds(15 * 60 * 1000);
     acl_manager_->SetPrivacyPolicyForInitiatorAddress(
-        LeAddressRotator::AddressPolicy::USE_STATIC_ADDRESS,
+        LeAddressManager::AddressPolicy::USE_STATIC_ADDRESS,
         address_with_type,
         irk,
         minimum_rotation_time,
