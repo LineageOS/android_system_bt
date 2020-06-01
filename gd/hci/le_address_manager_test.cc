@@ -14,7 +14,7 @@
  * limitations under the License.
  */
 
-#include "hci/le_address_rotator.h"
+#include "hci/le_address_manager.h"
 
 #include <gtest/gtest.h>
 
@@ -27,33 +27,33 @@ using ::bluetooth::os::Thread;
 namespace bluetooth {
 namespace hci {
 
-class RotatorClient : public LeAddressRotatorCallback {
+class RotatorClient : public LeAddressManagerCallback {
  public:
-  RotatorClient(LeAddressRotator* le_address_rotator, size_t id) : le_address_rotator_(le_address_rotator), id_(id){};
+  RotatorClient(LeAddressManager* le_address_manager, size_t id) : le_address_manager_(le_address_manager), id_(id){};
 
   void OnPause() {
     paused = true;
-    le_address_rotator_->AckPause(this);
+    le_address_manager_->AckPause(this);
   }
 
   void OnResume() {
     paused = false;
-    le_address_rotator_->AckResume(this);
+    le_address_manager_->AckResume(this);
   }
 
   bool paused{false};
-  LeAddressRotator* le_address_rotator_;
+  LeAddressManager* le_address_manager_;
   size_t id_;
 };
 
-class LeAddressRotatorTest : public ::testing::Test {
+class LeAddressManagerTest : public ::testing::Test {
  public:
   void SetUp() override {
     thread_ = new Thread("thread", Thread::Priority::NORMAL);
     handler_ = new Handler(thread_);
     Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
-    le_address_rotator_ = new LeAddressRotator(
-        common::Bind(&LeAddressRotatorTest::SetRandomAddress, common::Unretained(this)), handler_, address);
+    le_address_manager_ = new LeAddressManager(
+        common::Bind(&LeAddressManagerTest::SetRandomAddress, common::Unretained(this)), handler_, address);
     AllocateClients(1);
   }
 
@@ -67,7 +67,7 @@ class LeAddressRotatorTest : public ::testing::Test {
 
   void TearDown() override {
     sync_handler(handler_);
-    delete le_address_rotator_;
+    delete le_address_manager_;
     handler_->Clear();
     delete handler_;
     delete thread_;
@@ -76,12 +76,12 @@ class LeAddressRotatorTest : public ::testing::Test {
   void AllocateClients(size_t num_clients) {
     size_t first_id = clients.size();
     for (size_t i = 0; i < num_clients; i++) {
-      clients.emplace_back(std::make_unique<RotatorClient>(le_address_rotator_, first_id + i));
+      clients.emplace_back(std::make_unique<RotatorClient>(le_address_manager_, first_id + i));
     }
   }
 
   void SetRandomAddress(Address address) {
-    le_address_rotator_->OnLeSetRandomAddressComplete(true);
+    le_address_manager_->OnLeSetRandomAddressComplete(true);
     for (auto& client : clients) {
       ASSERT_TRUE(client->paused);
     }
@@ -89,67 +89,76 @@ class LeAddressRotatorTest : public ::testing::Test {
 
   Thread* thread_;
   Handler* handler_;
-  LeAddressRotator* le_address_rotator_;
+  LeAddressManager* le_address_manager_;
   std::vector<std::unique_ptr<RotatorClient>> clients;
 };
 
-TEST_F(LeAddressRotatorTest, startup_teardown) {}
+TEST_F(LeAddressManagerTest, startup_teardown) {}
 
-TEST_F(LeAddressRotatorTest, register_unregister_callback) {
-  le_address_rotator_->Register(clients[0].get());
+TEST_F(LeAddressManagerTest, register_unregister_callback) {
+  le_address_manager_->Register(clients[0].get());
   sync_handler(handler_);
-  le_address_rotator_->Unregister(clients[0].get());
+  le_address_manager_->Unregister(clients[0].get());
   sync_handler(handler_);
 }
 
-TEST_F(LeAddressRotatorTest, rotator_address_for_single_client) {
+TEST_F(LeAddressManagerTest, rotator_address_for_single_client) {
   Octet16 irk = {0xec, 0x02, 0x34, 0xa3, 0x57, 0xc8, 0xad, 0x05, 0x34, 0x10, 0x10, 0xa6, 0x0a, 0x39, 0x7d, 0x9b};
   auto minimum_rotation_time = std::chrono::milliseconds(1000);
   auto maximum_rotation_time = std::chrono::milliseconds(3000);
   AddressWithType remote_address(Address::kEmpty, AddressType::RANDOM_DEVICE_ADDRESS);
-  le_address_rotator_->SetPrivacyPolicyForInitiatorAddress(LeAddressRotator::AddressPolicy::USE_RESOLVABLE_ADDRESS,
-                                                           remote_address, irk, minimum_rotation_time,
-                                                           maximum_rotation_time);
+  le_address_manager_->SetPrivacyPolicyForInitiatorAddress(
+      LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS,
+      remote_address,
+      irk,
+      minimum_rotation_time,
+      maximum_rotation_time);
 
-  le_address_rotator_->Register(clients[0].get());
+  le_address_manager_->Register(clients[0].get());
   sync_handler(handler_);
-  le_address_rotator_->Unregister(clients[0].get());
+  le_address_manager_->Unregister(clients[0].get());
   sync_handler(handler_);
 }
 
-TEST_F(LeAddressRotatorTest, rotator_non_resolvable_address_for_single_client) {
+TEST_F(LeAddressManagerTest, rotator_non_resolvable_address_for_single_client) {
   Octet16 irk = {};
   auto minimum_rotation_time = std::chrono::milliseconds(1000);
   auto maximum_rotation_time = std::chrono::milliseconds(3000);
   AddressWithType remote_address(Address::kEmpty, AddressType::RANDOM_DEVICE_ADDRESS);
-  le_address_rotator_->SetPrivacyPolicyForInitiatorAddress(LeAddressRotator::AddressPolicy::USE_NON_RESOLVABLE_ADDRESS,
-                                                           remote_address, irk, minimum_rotation_time,
-                                                           maximum_rotation_time);
+  le_address_manager_->SetPrivacyPolicyForInitiatorAddress(
+      LeAddressManager::AddressPolicy::USE_NON_RESOLVABLE_ADDRESS,
+      remote_address,
+      irk,
+      minimum_rotation_time,
+      maximum_rotation_time);
 
-  le_address_rotator_->Register(clients[0].get());
+  le_address_manager_->Register(clients[0].get());
   sync_handler(handler_);
-  le_address_rotator_->Unregister(clients[0].get());
+  le_address_manager_->Unregister(clients[0].get());
   sync_handler(handler_);
 }
 
 // TODO handle the case "register during rotate_random_address" and enable this
-TEST_F(LeAddressRotatorTest, DISABLED_rotator_address_for_multiple_clients) {
+TEST_F(LeAddressManagerTest, DISABLED_rotator_address_for_multiple_clients) {
   AllocateClients(2);
   Octet16 irk = {0xec, 0x02, 0x34, 0xa3, 0x57, 0xc8, 0xad, 0x05, 0x34, 0x10, 0x10, 0xa6, 0x0a, 0x39, 0x7d, 0x9b};
   auto minimum_rotation_time = std::chrono::milliseconds(1000);
   auto maximum_rotation_time = std::chrono::milliseconds(3000);
   AddressWithType remote_address(Address::kEmpty, AddressType::RANDOM_DEVICE_ADDRESS);
-  le_address_rotator_->SetPrivacyPolicyForInitiatorAddress(LeAddressRotator::AddressPolicy::USE_RESOLVABLE_ADDRESS,
-                                                           remote_address, irk, minimum_rotation_time,
-                                                           maximum_rotation_time);
-  le_address_rotator_->Register(clients[0].get());
-  le_address_rotator_->Register(clients[1].get());
-  le_address_rotator_->Register(clients[2].get());
+  le_address_manager_->SetPrivacyPolicyForInitiatorAddress(
+      LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS,
+      remote_address,
+      irk,
+      minimum_rotation_time,
+      maximum_rotation_time);
+  le_address_manager_->Register(clients[0].get());
+  le_address_manager_->Register(clients[1].get());
+  le_address_manager_->Register(clients[2].get());
   sync_handler(handler_);
 
-  le_address_rotator_->Unregister(clients[0].get());
-  le_address_rotator_->Unregister(clients[1].get());
-  le_address_rotator_->Unregister(clients[2].get());
+  le_address_manager_->Unregister(clients[0].get());
+  le_address_manager_->Unregister(clients[1].get());
+  le_address_manager_->Unregister(clients[2].get());
   sync_handler(handler_);
 }
 
