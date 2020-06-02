@@ -200,6 +200,7 @@ cc_test {
     ],
     srcs: [
         "test/stack_a2dp_test.cc",
+        "test/stack_avrcp_test.cc",
     ],
     shared_libs: [
         "libcrypto",
