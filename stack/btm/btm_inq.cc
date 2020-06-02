@@ -915,10 +915,9 @@ tBTM_STATUS BTM_CancelRemoteDeviceName(void) {
   /* Make sure there is not already one in progress */
   if (p_inq->remname_active) {
     if (BTM_UseLeLink(p_inq->remname_bda)) {
-      if (btm_ble_cancel_remote_name(p_inq->remname_bda))
-        return (BTM_CMD_STARTED);
-      else
-        return (BTM_UNKNOWN_ADDR);
+      /* Cancel remote name request for LE device, and process remote name
+       * callback. */
+      btm_inq_rmt_name_failed_cancelled();
     } else
       btsnd_hcic_rmt_name_req_cancel(p_inq->remname_bda);
     return (BTM_CMD_STARTED);
@@ -2091,22 +2090,22 @@ void btm_process_remote_name(const RawAddress* bda, BD_NAME bdn,
 }
 
 void btm_inq_remote_name_timer_timeout(UNUSED_ATTR void* data) {
-  btm_inq_rmt_name_failed();
+  btm_inq_rmt_name_failed_cancelled();
 }
 
 /*******************************************************************************
  *
- * Function         btm_inq_rmt_name_failed
+ * Function         btm_inq_rmt_name_failed_cancelled
  *
- * Description      This function is if timeout expires while getting remote
- *                  name.  This is done for devices that incorrectly do not
- *                  report operation failure
+ * Description      This function is if timeout expires or request is cancelled
+ *                  while getting remote name.  This is done for devices that
+ *                  incorrectly do not report operation failure
  *
  * Returns          void
  *
  ******************************************************************************/
-void btm_inq_rmt_name_failed(void) {
-  BTM_TRACE_ERROR("btm_inq_rmt_name_failed()  remname_active=%d",
+void btm_inq_rmt_name_failed_cancelled(void) {
+  BTM_TRACE_ERROR("btm_inq_rmt_name_failed_cancelled()  remname_active=%d",
                   btm_cb.btm_inq_vars.remname_active);
 
   if (btm_cb.btm_inq_vars.remname_active)

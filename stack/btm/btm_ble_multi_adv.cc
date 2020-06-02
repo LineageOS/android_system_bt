@@ -728,16 +728,13 @@ class BleAdvertisingManagerImpl
       data.insert(data.begin(), flags.begin(), flags.end());
     }
 
-    // Find and fill TX Power with the correct value
-    if (data.size()) {
-      size_t i = 0;
-      while (i < data.size()) {
-        uint8_t type = data[i + 1];
-        if (type == HCI_EIR_TX_POWER_LEVEL_TYPE) {
-          data[i + 2] = adv_inst[inst_id].tx_power;
-        }
-        i += data[i] + 1;
+    // Find and fill TX Power with the correct value.
+    // The TX Power section is a 3 byte section.
+    for (size_t i = 0; (i + 2) < data.size();) {
+      if (data[i + 1] == HCI_EIR_TX_POWER_LEVEL_TYPE) {
+        data[i + 2] = adv_inst[inst_id].tx_power;
       }
+      i += data[i] + 1;
     }
 
     VLOG(1) << "data is: " << base::HexEncode(data.data(), data.size());
