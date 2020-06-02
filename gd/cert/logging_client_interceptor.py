@@ -25,20 +25,54 @@ def pretty_print(request):
     return '{} {}'.format(type(request).__name__, text_format.MessageToString(request, as_one_line=True))
 
 
-class LoggingClientInterceptor(grpc.UnaryUnaryClientInterceptor):
+class LoggingRandezvousWrapper():
+
+    def __init__(self, server_stream_call, logTag):
+        if server_stream_call is None:
+            raise ValueError("server_stream_call cannot be None")
+        self.server_stream_call = server_stream_call
+        self.logTag = logTag
+
+    def cancel(self):
+        self.server_stream_call.cancel()
+
+    def cancelled(self):
+        return self.server_stream_call.cancelled()
+
+    def __iter__(self):
+        return self
+
+    def __next__(self):
+        resp = self.server_stream_call.__next__()
+        print("%s %s" % (self.logTag, pretty_print(resp)))
+        return resp
+
+
+class LoggingClientInterceptor(grpc.UnaryUnaryClientInterceptor, grpc.UnaryStreamClientInterceptor):
 
     TAG_MIN_WIDTH = 24
 
     def __init__(self, name):
         self.name = name
-        self.loggableTag = "[host ▶▶▶▶▶ %s]" % self.name
-        tagLength = len(re.sub('[^\w\s]', '', self.loggableTag)) + 11
+        self.inLogTag = "[host ▶▶▶▶▶ %s]" % self.name
+        self.outLogTag = "[host ◀◀◀◀◀ %s]" % self.name
+        tagLength = len(re.sub('[^\w\s]', '', self.inLogTag)) + 11
         if tagLength < self.TAG_MIN_WIDTH:
-            self.loggableTag += " " * (self.TAG_MIN_WIDTH - tagLength)
-
-    def _intercept_call(self, continuation, client_call_details, request_or_iterator):
-        return continuation(client_call_details, request_or_iterator)
+            self.inLogTag += " " * (self.TAG_MIN_WIDTH - tagLength)
+            self.outLogTag += " " * (self.TAG_MIN_WIDTH - tagLength)
 
     def intercept_unary_unary(self, continuation, client_call_details, request):
-        print("%s%s %s" % (self.loggableTag, client_call_details.method, pretty_print(request)))
-        return self._intercept_call(continuation, client_call_details, request)
+        """
+        This interceptor logs the requests from host
+        """
+        print("%s%s %s" % (self.inLogTag, client_call_details.method, pretty_print(request)))
+        return continuation(client_call_details, request)
+
+    def intercept_unary_stream(self, continuation, client_call_details, request):
+        """
+        This interceptor wraps the server response, and logs all the messages coming to host
+        """
+        print("%s%s %s" % (self.inLogTag, client_call_details.method, pretty_print(request)))
+        server_stream_call = continuation(client_call_details, request)
+        retuningMsgLogTag = self.outLogTag + client_call_details.method
+        return LoggingRandezvousWrapper(server_stream_call, retuningMsgLogTag)
