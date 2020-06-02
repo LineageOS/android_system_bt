@@ -175,23 +175,23 @@ class TestHciLayer : public HciLayer {
   std::unique_ptr<std::promise<void>> command_promise_{};
 };
 
-class TestLeAddressRotator : public LeAddressRotator {
+class TestLeAddressManager : public LeAddressManager {
  public:
-  TestLeAddressRotator(
+  TestLeAddressManager(
       common::Callback<void(Address address)> set_random_address, os::Handler* handler, Address public_address)
-      : LeAddressRotator(set_random_address, handler, public_address) {}
+      : LeAddressManager(set_random_address, handler, public_address) {}
 
-  AddressPolicy Register(LeAddressRotatorCallback* callback) override {
+  AddressPolicy Register(LeAddressManagerCallback* callback) override {
     return AddressPolicy::USE_STATIC_ADDRESS;
   }
 
-  void Unregister(LeAddressRotatorCallback* callback) override {}
+  void Unregister(LeAddressManagerCallback* callback) override {}
 };
 
 class TestAclManager : public AclManager {
  public:
-  LeAddressRotator* GetLeAddressRotator() override {
-    return test_le_address_rotator_;
+  LeAddressManager* GetLeAddressManager() override {
+    return test_le_address_manager_;
   }
 
  protected:
@@ -199,12 +199,12 @@ class TestAclManager : public AclManager {
     thread_ = new os::Thread("thread", os::Thread::Priority::NORMAL);
     handler_ = new os::Handler(thread_);
     Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
-    test_le_address_rotator_ = new TestLeAddressRotator(
+    test_le_address_manager_ = new TestLeAddressManager(
         common::Bind(&TestAclManager::SetRandomAddress, common::Unretained(this)), handler_, address);
   }
 
   void Stop() override {
-    delete test_le_address_rotator_;
+    delete test_le_address_manager_;
     handler_->Clear();
     delete handler_;
     delete thread_;
@@ -216,7 +216,7 @@ class TestAclManager : public AclManager {
 
   os::Thread* thread_;
   os::Handler* handler_;
-  TestLeAddressRotator* test_le_address_rotator_;
+  TestLeAddressManager* test_le_address_manager_;
 };
 
 class LeScanningManagerTest : public ::testing::Test {

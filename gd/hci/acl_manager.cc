@@ -140,11 +140,12 @@ void AclManager::CreateLeConnection(AddressWithType address_with_type) {
       common::BindOnce(&le_impl::create_le_connection, common::Unretained(pimpl_->le_impl_), address_with_type));
 }
 
-void AclManager::SetPrivacyPolicyForInitiatorAddress(LeAddressRotator::AddressPolicy address_policy,
-                                                     AddressWithType fixed_address,
-                                                     crypto_toolbox::Octet16 rotation_irk,
-                                                     std::chrono::milliseconds minimum_rotation_time,
-                                                     std::chrono::milliseconds maximum_rotation_time) {
+void AclManager::SetPrivacyPolicyForInitiatorAddress(
+    LeAddressManager::AddressPolicy address_policy,
+    AddressWithType fixed_address,
+    crypto_toolbox::Octet16 rotation_irk,
+    std::chrono::milliseconds minimum_rotation_time,
+    std::chrono::milliseconds maximum_rotation_time) {
   GetHandler()->Post(common::BindOnce(&le_impl::set_privacy_policy_for_initiator_address,
                                       common::Unretained(pimpl_->le_impl_), address_policy, fixed_address, rotation_irk,
                                       minimum_rotation_time, maximum_rotation_time));
@@ -178,8 +179,8 @@ void AclManager::SetSecurityModule(security::SecurityModule* security_module) {
       BindOnce(&classic_impl::set_security_module, common::Unretained(pimpl_->classic_impl_), security_module));
 }
 
-LeAddressRotator* AclManager::GetLeAddressRotator() {
-  return pimpl_->le_impl_->le_address_rotator_;
+LeAddressManager* AclManager::GetLeAddressManager() {
+  return pimpl_->le_impl_->le_address_manager_;
 }
 
 void AclManager::ListDependencies(ModuleList* list) {
