@@ -274,6 +274,43 @@ class SecurityTest(GdBaseTestClass):
             expected_init_bond_event=BondMsgType.DEVICE_BONDED,
             expected_resp_bond_event=None)
 
+    # no_input_no_output + no_input_no_output is JustWorks no confirmation
+    def test_dut_initiated_no_input_no_output_no_input_no_output_twice(self):
+        # Arrange
+        self.dut_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
+        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
+        self.cert_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
+        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
+
+        # Act and Assert
+        self._run_ssp_numeric_comparison(
+            initiator=self.dut_security,
+            responder=self.cert_security,
+            init_ui_response=True,
+            resp_ui_response=True,
+            expected_init_ui_event=None,
+            expected_resp_ui_event=None,
+            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
+            expected_resp_bond_event=None)
+
+        self.dut_security.remove_bond(self.cert.address, common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
+
+        # Give time for ACL to disconnect
+        time.sleep(1)
+
+        # Act and Assert
+        self._run_ssp_numeric_comparison(
+            initiator=self.dut_security,
+            responder=self.cert_security,
+            init_ui_response=True,
+            resp_ui_response=True,
+            expected_init_ui_event=None,
+            expected_resp_ui_event=None,
+            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
+            expected_resp_bond_event=None)
+
 
 ## Other permutations
 #def xtest_dut_initiated_display_only_display_only_local_user_deny(self)
