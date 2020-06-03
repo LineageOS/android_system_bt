@@ -191,8 +191,10 @@ Return<void> BluetoothHci::initialize_impl(
   test_channel_.AddDeviceToPhy({"3", "1"});
   test_channel_.Add(
       {"scripted_beacon", "5b:ea:c1:00:00:03",
-       "/data/vendor/bluetooth/bluetooth_sim_ble_playback_file"});
+       "/data/vendor/bluetooth/bluetooth_sim_ble_playback_file",
+       "/data/vendor/bluetooth/bluetooth_sim_ble_playback_events"});
   test_channel_.AddDeviceToPhy({"4", "1"});
+  test_channel_.List({});
 
   unlink_cb_ = [this, cb](sp<BluetoothDeathRecipient>& death_recipient) {
     if (death_recipient->getHasDied())
