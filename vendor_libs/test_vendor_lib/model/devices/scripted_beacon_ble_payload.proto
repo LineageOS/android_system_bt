@@ -13,3 +13,21 @@ message BleAdvertisement {
 message BleAdvertisementList {
   repeated BleAdvertisement advertisements = 1;
 }
+
+message PlaybackEvent {
+  // These events should occur in order, starting from INITIALIZED
+  enum PlaybackEventType {
+    UNKNOWN = 0;
+    INITIALIZED = 1;
+    SCANNED_ONCE = 2;
+    WAITING_FOR_FILE = 3;
+    WAITING_FOR_FILE_TO_BE_READABLE = 4;
+    PARSING_FILE = 5;
+    PLAYBACK_STARTED = 6;
+    PLAYBACK_ENDED = 7;
+    // Error conditions
+    FILE_PARSING_FAILED = 8;
+  }
+  optional PlaybackEventType type = 1;
+  optional uint64 secs_since_epoch = 2;
+}
