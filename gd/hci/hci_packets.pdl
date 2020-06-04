@@ -2579,9 +2579,6 @@ packet LeCreateConnectionStatus : CommandStatus (command_op_code = LE_CREATE_CON
 packet LeCreateConnectionCancel : LeConnectionManagementCommand (op_code = LE_CREATE_CONNECTION_CANCEL) {
 }
 
-packet LeCreateConnectionCancelStatus : CommandStatus (command_op_code = LE_CREATE_CONNECTION_CANCEL) {
-}
-
 packet LeCreateConnectionCancelComplete : CommandComplete (command_op_code = LE_CREATE_CONNECTION_CANCEL) {
   status : ErrorCode,
 }
