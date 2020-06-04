@@ -19,17 +19,14 @@
 #define LOG_TAG "bt_shim"
 
 #include "common/message_loop_thread.h"
+#include "gd/common/init_flags.h"
 #include "main/shim/entry.h"
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "osi/include/properties.h"
 
-static const char* kPropertyKey = "bluetooth.gd.enabled";
-
 static bluetooth::common::MessageLoopThread bt_shim_thread("bt_shim_thread");
 
-static bool gd_shim_enabled_ = false;
-static bool gd_shim_property_checked_ = false;
 static bool gd_stack_started_up_ = false;
 
 future_t* ShimModuleStartUp() {
@@ -63,11 +60,7 @@ void bluetooth::shim::Post(base::OnceClosure task) {
 }
 
 bool bluetooth::shim::is_gd_shim_enabled() {
-  if (!gd_shim_property_checked_) {
-    gd_shim_property_checked_ = true;
-    gd_shim_enabled_ = osi_property_get_bool(kPropertyKey, false);
-  }
-  return gd_shim_enabled_;
+  return common::InitFlags::GdCoreEnabled();
 }
 
 bool bluetooth::shim::is_gd_stack_started_up() { return gd_stack_started_up_; }
