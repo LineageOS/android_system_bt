@@ -3368,10 +3368,6 @@ static void handle_notification_response(tBTA_AV_META_MSG* pmeta_msg,
         /* Start timer to get play status periodically
          * if the play state is playing.
          */
-        if (p_rsp->param.play_status == AVRC_PLAYSTATE_PLAYING) {
-          get_metadata_attribute_cmd(attr_list_size, attr_list,
-                                    p_dev);
-        }
         do_in_jni_thread(
             FROM_HERE,
             base::Bind(bt_rc_ctrl_callbacks->play_status_changed_cb,
