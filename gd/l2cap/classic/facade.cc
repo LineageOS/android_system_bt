@@ -150,6 +150,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
         channel_->GetQueueUpEnd()->UnregisterDequeue();
         channel_ = nullptr;
       }
+      enqueue_buffer_.reset();
     }
 
     void Connect(hci::Address address) {
@@ -190,6 +191,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       {
         std::unique_lock<std::mutex> lock(channel_open_cv_mutex_);
         channel_ = std::move(channel);
+        enqueue_buffer_ = std::make_unique<os::EnqueueBuffer<BasePacketBuilder>>(channel_->GetQueueUpEnd());
       }
       channel_open_cv_.notify_all();
       channel_->RegisterOnCloseCallback(
@@ -212,6 +214,7 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
       event.set_reason(static_cast<uint32_t>(error_code));
       facade_service_->pending_connection_close_.OnIncomingEvent(event);
       channel_ = nullptr;
+      enqueue_buffer_.reset();
     }
 
     void SuspendDequeue() {
@@ -247,34 +250,18 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
           return false;
         }
       }
-      std::promise<void> promise;
-      auto future = promise.get_future();
-      channel_->GetQueueUpEnd()->RegisterEnqueue(
-          handler_, common::Bind(&L2capDynamicChannelHelper::enqueue_callback, common::Unretained(this), packet,
-                                 common::Passed(std::move(promise))));
-      auto status = future.wait_for(std::chrono::milliseconds(500));
-      if (status != std::future_status::ready) {
-        LOG_ERROR("Can't send packet");
-        return false;
-      }
-      return true;
-    }
-
-    std::unique_ptr<packet::BasePacketBuilder> enqueue_callback(std::vector<uint8_t> packet,
-                                                                std::promise<void> promise) {
       auto packet_one = std::make_unique<packet::RawBuilder>(2000);
       packet_one->AddOctets(packet);
-      channel_->GetQueueUpEnd()->UnregisterEnqueue();
-      promise.set_value();
-      return packet_one;
-    };
-
+      enqueue_buffer_->Enqueue(std::move(packet_one), handler_);
+      return true;
+    }
     L2capClassicModuleFacadeService* facade_service_;
     L2capClassicModule* l2cap_layer_;
     os::Handler* handler_;
     std::unique_ptr<DynamicChannelManager> dynamic_channel_manager_;
     std::unique_ptr<DynamicChannelService> service_;
     std::unique_ptr<DynamicChannel> channel_ = nullptr;
+    std::unique_ptr<os::EnqueueBuffer<BasePacketBuilder>> enqueue_buffer_ = nullptr;
     Psm psm_;
     RetransmissionFlowControlMode mode_ = RetransmissionFlowControlMode::BASIC;
     std::atomic_bool dequeue_registered_ = false;
@@ -286,7 +273,6 @@ class L2capClassicModuleFacadeService : public L2capClassicModuleFacade::Service
   ::bluetooth::os::Handler* facade_handler_;
   std::mutex channel_map_mutex_;
   std::map<Psm, std::unique_ptr<L2capDynamicChannelHelper>> dynamic_channel_helper_map_;
-  bool fetch_l2cap_data_ = false;
   ::bluetooth::grpc::GrpcEventQueue<classic::ConnectionCompleteEvent> pending_connection_complete_{
       "FetchConnectionComplete"};
   ::bluetooth::grpc::GrpcEventQueue<classic::ConnectionCloseEvent> pending_connection_close_{"FetchConnectionClose"};
