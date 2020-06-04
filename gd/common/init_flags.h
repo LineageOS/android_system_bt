@@ -16,17 +16,20 @@
 
 #pragma once
 
-/**
- * This common file provides the only visibility from the legacy stack into GD stack.
- *
- * Only interfaces or APIs should be exported.
- *
- * Only common data structures should be used to pass data between the stacks.
- *
- */
 namespace bluetooth {
-namespace shim {
-class Dumpsys;
-class L2cap;
-}  // namespace shim
+namespace common {
+
+class InitFlags final {
+ public:
+  static void Load(const char** flags);
+
+  static bool GdCoreEnabled() {
+    return gd_core_enabled;
+  }
+
+ private:
+  static bool gd_core_enabled;
+};
+
+}  // namespace common
 }  // namespace bluetooth
