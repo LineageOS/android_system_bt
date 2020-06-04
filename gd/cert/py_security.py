@@ -53,11 +53,12 @@ class PySecurity(Closable):
         self._device.security.CreateBond(
             common.BluetoothAddressWithType(address=common.BluetoothAddress(address=address), type=type))
 
-    def remove_bond(self, address_with_type):
+    def remove_bond(self, address, type):
         """
             Removes bond from stack under test
         """
-        self._device.security.RemoveBond(address_with_type)
+        self._device.security.RemoveBond(
+            common.BluetoothAddressWithType(address=common.BluetoothAddress(address=address), type=type))
 
     def set_io_capabilities(self, io_capabilities):
         """
