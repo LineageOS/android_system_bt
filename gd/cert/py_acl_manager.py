@@ -38,8 +38,7 @@ class PyAclManagerAclConnection(IEventStream, Closable):
             remote_addr_bytes = bytes(remote_addr, 'utf8') if type(remote_addr) is str else bytes(remote_addr)
             self.connection_event_stream = EventStream(
                 self.device.hci_acl_manager.CreateConnection(
-                    acl_manager_facade.ConnectionMsg(
-                        address_type=int(hci_packets.AddressType.PUBLIC_DEVICE_ADDRESS), address=remote_addr_bytes)))
+                    acl_manager_facade.ConnectionMsg(address=remote_addr_bytes)))
         else:
             self.connection_event_stream = None
 

@@ -19,8 +19,7 @@ message HandleMsg {
 }
 
 message ConnectionMsg {
-  uint32 address_type = 1;
-  bytes address = 2;
+  bytes address = 1;
 }
 
 message ConnectionEvent {
