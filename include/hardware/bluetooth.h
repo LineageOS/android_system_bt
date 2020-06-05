@@ -473,9 +473,10 @@ typedef struct {
    * The |is_niap_mode| flag inits the adapter in NIAP mode.
    * The |config_compare_result| flag show the config checksum check result if
    * is in NIAP mode.
+   * The |init_flags| are config flags that cannot change during run.
    */
   int (*init)(bt_callbacks_t* callbacks, bool guest_mode, bool is_niap_mode,
-              int config_compare_result);
+              int config_compare_result, const char** init_flags);
 
   /** Enable Bluetooth. */
   int (*enable)();
