@@ -1604,8 +1604,8 @@ void DualModeController::LeConnectionCancel(CommandPacketView command) {
       gd_hci::LeConnectionManagementCommandView::Create(command));
   ASSERT(command_view.IsValid());
   link_layer_controller_.SetLeConnect(false);
-  auto packet = bluetooth::hci::LeCreateConnectionCancelStatusBuilder::Create(
-      ErrorCode::SUCCESS, kNumCommandPackets);
+  auto packet = bluetooth::hci::LeCreateConnectionCancelCompleteBuilder::Create(
+      kNumCommandPackets, ErrorCode::SUCCESS);
   send_event_(std::move(packet));
   /* For testing Jakub's patch:  Figure out a neat way to call this without
      recompiling.  I'm thinking about a bad device. */
