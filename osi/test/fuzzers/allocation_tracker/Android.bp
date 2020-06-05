@@ -11,4 +11,7 @@ cc_fuzz {
     static_libs: [
         "libosi",
     ],
+    corpus: [
+        "corpus/checkfail-regression-156805580",
+    ],
 }
