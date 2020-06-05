@@ -20,6 +20,13 @@
 #define MAX_NUM_FUNCTIONS 512
 #define MAX_BUF_SIZE 256
 
+// Add a tracker_initialized bool to track if we initialized or not
+// (This is to handle a call to allocation_tracker_notify_alloc immediately
+// returning the provided pointer if the allocator is not ready, and
+// notify_free on the same ptr failing as the allocator did not
+// track that allocation)
+bool tracker_initialized = false;
+
 struct alloc_struct {
   allocator_id_t alloc_id;
   void* ptr;
@@ -47,6 +54,7 @@ void callArbitraryFunction(std::vector<alloc_struct>* alloc_vector,
     // Init
     case 1:
       allocation_tracker_init();
+      tracker_initialized = true;
       return;
     case 2:
       // NOTE: This will print to stderr if allocations exist. May clutter logs
@@ -70,8 +78,10 @@ void callArbitraryFunction(std::vector<alloc_struct>* alloc_vector,
       alloc.ptr =
           allocation_tracker_notify_alloc(alloc.alloc_id, tmp_ptr, size);
       // Put our id/ptr pair in our tracking vector to be freed later
-      if (alloc.ptr) {
+      if (tracker_initialized && alloc.ptr) {
         alloc_vector->push_back(alloc);
+      } else {
+        free(tmp_ptr);
       }
     }
       return;
