@@ -241,6 +241,22 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
   void create_le_connection(AddressWithType address_with_type) {
     // TODO: Add white list handling.
     // TODO: Configure default LE connection parameters?
+    if (!address_manager_registered) {
+      auto policy = le_address_manager_->Register(this);
+      address_manager_registered = true;
+
+      // Pause connection, wait for set random address complete
+      if (policy == LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS ||
+          policy == LeAddressManager::AddressPolicy::USE_NON_RESOLVABLE_ADDRESS) {
+        pause_connection = true;
+      }
+    }
+
+    if (pause_connection) {
+      canceled_connections_.insert(address_with_type);
+      return;
+    }
+
     uint16_t le_scan_interval = 0x0060;
     uint16_t le_scan_window = 0x0030;
     InitiatorFilterPolicy initiator_filter_policy = InitiatorFilterPolicy::USE_PEER_ADDRESS;
@@ -251,16 +267,6 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     uint16_t conn_latency = 0x0000;
     uint16_t supervision_timeout = 0x001f4;
     ASSERT(le_client_callbacks_ != nullptr);
-
-    if (!address_manager_registered) {
-      le_address_manager_->Register(this);
-      address_manager_registered = true;
-    }
-
-    if (pause_connection) {
-      canceled_connections_.insert(address_with_type);
-      return;
-    }
 
     connecting_le_.insert(address_with_type);
 
