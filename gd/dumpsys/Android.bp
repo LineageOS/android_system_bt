@@ -1,0 +1,34 @@
+genrule {
+    name: "BluetoothFlatbufferTestData_h",
+    tools: [
+        "flatc",
+    ],
+    cmd: "$(location flatc) -I system/bt/gd -b --schema -o $(genDir) --cpp $(in) ",
+    srcs: [
+        "bluetooth_flatbuffer_test.fbs",
+    ],
+    out: [
+        "bluetooth_flatbuffer_test_generated.h", "bluetooth_flatbuffer_test.bfbs",
+    ],
+}
+
+cc_test {
+    name: "bluetooth_flatbuffer_tests",
+    test_suites: ["device-tests"],
+    host_supported: true,
+    static_libs: [
+        "libgmock",
+        "libflatbuffers-cpp",
+    ],
+    srcs: [
+        "bluetooth_flatbuffer_test.cc",
+    ],
+    generated_headers: [
+        "BluetoothFlatbufferTestData_h",
+    ],
+    cflags: [
+        "-Werror",
+        "-Wall",
+        "-Wextra",
+    ],
+}
