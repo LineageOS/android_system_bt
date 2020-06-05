@@ -189,8 +189,8 @@ class CertL2cap(Closable, IHasBehaviors):
         return self._control_behaviors
 
     def connect_acl(self, remote_addr):
-        self._acl = self._acl_manager.initiate_connection(remote_addr)
-        self._acl.wait_for_connection_complete()
+        self._acl_manager.initiate_connection(remote_addr)
+        self._acl = self._acl_manager.complete_outgoing_connection()
         self.control_channel = CertL2capChannel(
             self._device, 1, 1, self._get_acl_stream(), self._acl, control_channel=None)
         self._get_acl_stream().register_callback(self._handle_control_packet)
