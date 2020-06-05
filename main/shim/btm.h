@@ -24,13 +24,11 @@
 #include <vector>
 
 #include "main/shim/timer.h"
-#include "osi/include/alarm.h"
-#include "osi/include/future.h"
-#include "osi/include/log.h"
 #include "stack/include/btm_api_types.h"
 
 #include "hci/hci_packets.h"
-#include "hci/le_advertising_manager.h"
+
+#include "gd/hci/le_advertising_manager.h"
 
 //
 // NOTE: limited and general constants for inquiry and discoverable are swapped

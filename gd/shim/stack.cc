@@ -39,7 +39,7 @@
 #include "shim/dumpsys.h"
 #include "shim/l2cap.h"
 #include "stack_manager.h"
-#include "storage/legacy.h"
+#include "storage/storage_module.h"
 
 using ::bluetooth::os::Thread;
 
@@ -68,7 +68,7 @@ struct bluetooth::shim::Stack::impl {
     modules.add<::bluetooth::neighbor::PageModule>();
     modules.add<::bluetooth::neighbor::ScanModule>();
     modules.add<::bluetooth::security::SecurityModule>();
-    modules.add<::bluetooth::storage::LegacyModule>();
+    modules.add<::bluetooth::storage::StorageModule>();
     modules.add<::bluetooth::shim::Dumpsys>();
     modules.add<::bluetooth::shim::L2cap>();
 

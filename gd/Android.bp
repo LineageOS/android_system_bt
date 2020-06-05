@@ -232,6 +232,7 @@ cc_binary {
                 "android.hardware.bluetooth@1.0",
                 "libhidlbase",
                 "libutils",
+                "libcutils",
             ],
         },
         host: {

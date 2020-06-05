@@ -16,12 +16,47 @@
 
 #pragma once
 
-#include "btif/include/btif_config.h"
+#include <list>
+#include <optional>
+#include <string>
+#include <vector>
 
 namespace bluetooth {
 namespace shim {
 
-const storage_config_t* storage_config_get_interface();
+class BtifConfigInterface {
+ public:
+  ~BtifConfigInterface() = default;
+  static bool HasSection(const std::string& section);
+  static bool HasProperty(const std::string& section,
+                          const std::string& property);
+  static bool GetInt(const std::string& section, const std::string& key,
+                     int* value);
+  static bool SetInt(const std::string& section, const std::string& key,
+                     int value);
+  static bool GetUint64(const std::string& section, const std::string& key,
+                        uint64_t* value);
+  static bool SetUint64(const std::string& section, const std::string& key,
+                        uint64_t value);
+  static bool GetStr(const std::string& section, const std::string& key,
+                     char* value, int* size_bytes);
+  static std::optional<std::string> GetStr(const std::string& section,
+                                           const std::string& key);
+  static bool SetStr(const std::string& section, const std::string& key,
+                     const std::string& value);
+  static bool GetBin(const std::string& section, const std::string& key,
+                     uint8_t* value, size_t* length);
+  static size_t GetBinLength(const std::string& section,
+                             const std::string& key);
+  static bool SetBin(const std::string& section, const std::string& key,
+                     const uint8_t* value, size_t length);
+  static bool RemoveProperty(const std::string& section,
+                             const std::string& key);
+  static std::vector<std::string> GetPersistentDevices();
+  static void Save();
+  static void Flush();
+  static void Clear();
+};
 
 }  // namespace shim
 }  // namespace bluetooth
