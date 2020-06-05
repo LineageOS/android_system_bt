@@ -137,6 +137,12 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     return ::grpc::Status::OK;
   }
 
+  ::grpc::Status SetLeAuthReq(
+      ::grpc::ServerContext* context, const LeAuthReqMsg* request, ::google::protobuf::Empty* response) override {
+    security_module_->GetFacadeConfigurationApi()->SetLeAuthReq(request->auth_req());
+    return ::grpc::Status::OK;
+  }
+
   ::grpc::Status SetLeInitiatorAddress(
       ::grpc::ServerContext* context,
       const facade::BluetoothAddressWithType* request,

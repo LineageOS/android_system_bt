@@ -12,9 +12,10 @@ service SecurityModuleFacade {
   rpc CancelBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
   rpc RemoveBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
   rpc SetIoCapability(IoCapabilityMessage) returns (google.protobuf.Empty) {}
-  rpc SetLeIoCapability(LeIoCapabilityMessage) returns (google.protobuf.Empty) {}
   rpc SetAuthenticationRequirements(AuthenticationRequirementsMessage) returns (google.protobuf.Empty) {}
   rpc SetOobDataPresent(OobDataMessage) returns (google.protobuf.Empty) {}
+  rpc SetLeIoCapability(LeIoCapabilityMessage) returns (google.protobuf.Empty) {}
+  rpc SetLeAuthReq(LeAuthReqMsg) returns (google.protobuf.Empty) {}
   rpc SetLeInitiatorAddress(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
   rpc SendUiCallback(UiCallbackMsg) returns (google.protobuf.Empty) {}
   rpc FetchUiEvents(google.protobuf.Empty) returns (stream UiMsg) {}
@@ -96,6 +97,10 @@ enum AuthenticationRequirements {
 
 message AuthenticationRequirementsMessage {
   AuthenticationRequirements requirement = 1;
+}
+
+message LeAuthReqMsg {
+  uint32 auth_req = 1;
 }
 
 enum OobDataPresent {
