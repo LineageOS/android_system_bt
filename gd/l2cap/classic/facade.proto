@@ -101,3 +101,10 @@ message SetTrafficPausedRequest {
 message GetChannelQueueDepthResponse {
   uint32 size = 1;
 }
+
+enum ClassicSecurityPolicy {
+  ENCRYPTED_TRANSPORT = 0;
+  AUTHENTICATED_ENCRYPTED_TRANSPORT = 1;
+  BEST = 2;
+  _SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK = 3;
+}
