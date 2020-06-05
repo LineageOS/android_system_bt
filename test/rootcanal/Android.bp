@@ -15,6 +15,7 @@
 
 cc_binary {
     name: "android.hardware.bluetooth@1.1-service.sim",
+    defaults: ["gd_defaults"],
     proprietary: true,
     relative_install_path: "hw",
     srcs: [
@@ -50,7 +51,7 @@ cc_binary {
         "android.hardware.bluetooth-hci",
         "libbt-rootcanal",
         "libbt-rootcanal-types",
-	"libscriptedbeaconpayload-protos-lite",
+        "libscriptedbeaconpayload-protos-lite",
     ],
     include_dirs: [
         "system/bt",
@@ -64,6 +65,7 @@ cc_binary {
 
 cc_library_shared {
     name: "android.hardware.bluetooth@1.1-impl-sim",
+    defaults: ["gd_defaults"],
     proprietary: true,
     relative_install_path: "hw",
     srcs: [
