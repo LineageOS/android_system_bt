@@ -3,6 +3,7 @@ filegroup {
     srcs: [
         "link_key.cc",
         "init_flags.cc",
+        "strings.cc",
     ],
 }
 
@@ -16,5 +17,6 @@ filegroup {
         "init_flags_test.cc",
         "list_map_test.cc",
         "lru_cache_test.cc",
+        "strings_test.cc",
     ],
 }
