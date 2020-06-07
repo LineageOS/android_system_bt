@@ -87,6 +87,7 @@
     LOGWRAPPER(__VA_ARGS__);  \
     abort();                  \
   } while (false)
+#define android_errorWriteLog(tag, subTag) LOG_ERROR("ERROR tag: 0x%x, sub_tag: %s", tag, subTag)
 
 #endif /* LOG_VERBOE */
 

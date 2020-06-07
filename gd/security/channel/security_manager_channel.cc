@@ -41,8 +41,11 @@ SecurityManagerChannel::~SecurityManagerChannel() {
 
 void SecurityManagerChannel::Connect(hci::Address address) {
   ASSERT_LOG(l2cap_security_interface_ != nullptr, "L2cap Security Interface is null!");
-  if (link_map_.find(address) != link_map_.end()) {
+  auto entry = link_map_.find(address);
+  if (entry != link_map_.end()) {
     LOG_WARN("Already connected to '%s'", address.ToString().c_str());
+    entry->second->Hold();
+    entry->second->EnsureAuthenticated();
     return;
   }
   l2cap_security_interface_->InitiateConnectionForSecurity(address);
