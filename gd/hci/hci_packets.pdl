@@ -1795,7 +1795,7 @@ packet ReadLinkSupervisionTimeoutComplete : CommandComplete (command_op_code = R
 }
 
 packet WriteLinkSupervisionTimeout : ConnectionManagementCommand (op_code = WRITE_LINK_SUPERVISION_TIMEOUT) {
-  handle : 12,
+  connection_handle : 12,
   _reserved_ : 4,
   link_supervision_timeout : 16, // 0x001-0xFFFF (0.625ms-40.9s)
 }
