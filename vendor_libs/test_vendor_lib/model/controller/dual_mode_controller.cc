@@ -1081,7 +1081,7 @@ void DualModeController::WriteLinkSupervisionTimeout(
       gd_hci::ConnectionManagementCommandView::Create(command));
   ASSERT(command_view.IsValid());
 
-  uint16_t handle = command_view.GetHandle();
+  uint16_t handle = command_view.GetConnectionHandle();
   uint16_t timeout = command_view.GetLinkSupervisionTimeout();
 
   auto status =

@@ -194,6 +194,12 @@ class LeAclManagerTest(GdBaseTestClass):
                 address_policy=le_initiator_address_facade.AddressPolicy.USE_PUBLIC_ADDRESS))
         self.dut_connects(check_address=False)
 
+    def test_dut_connects_public_address_cancelled(self):
+        self.dut.hci_le_initiator_address.SetPrivacyPolicyForInitiatorAddress(
+            le_initiator_address_facade.PrivacyPolicy(
+                address_policy=le_initiator_address_facade.AddressPolicy.USE_PUBLIC_ADDRESS))
+        self.dut_connects(check_address=False)
+
     def test_cert_connects(self):
         self.set_privacy_policy_static()
         self.register_for_le_event(hci_packets.SubeventCode.CONNECTION_COMPLETE)
