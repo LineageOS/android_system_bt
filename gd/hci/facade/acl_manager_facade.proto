@@ -13,8 +13,7 @@ service AclManagerFacade {
   rpc ConnectionCommand(ConnectionCommandMsg) returns (google.protobuf.Empty) {}
   rpc SwitchRole(RoleMsg) returns (google.protobuf.Empty) {}
   rpc SendAclData(AclData) returns (google.protobuf.Empty) {}
-  // TODO: Take a HandleMsg to get AclData
-  rpc FetchAclData(google.protobuf.Empty) returns (stream AclData) {}
+  rpc FetchAclData(HandleMsg) returns (stream AclData) {}
   rpc FetchIncomingConnection(google.protobuf.Empty) returns (stream ConnectionEvent) {}
 }
 

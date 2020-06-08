@@ -45,7 +45,6 @@ class AclManagerTest(GdBaseTestClass):
 
     def teardown_test(self):
         self.cert_hci.close()
-        self.dut_acl_manager.close()
         super().teardown_test()
 
     def test_dut_connects(self):
@@ -67,16 +66,15 @@ class AclManagerTest(GdBaseTestClass):
 
         self.dut_acl_manager.listen_for_an_incoming_connection()
         self.cert_hci.initiate_connection(dut_address)
-        dut_acl = self.dut_acl_manager.complete_incoming_connection()
+        with self.dut_acl_manager.complete_incoming_connection() as dut_acl:
+            cert_acl = self.cert_hci.complete_connection()
 
-        cert_acl = self.cert_hci.complete_connection()
+            dut_acl.send(b'\x29\x00\x07\x00This is just SomeMoreAclData from the DUT')
 
-        dut_acl.send(b'\x29\x00\x07\x00This is just SomeMoreAclData from the DUT')
+            cert_acl.send_first(b'\x26\x00\x07\x00This is just SomeAclData from the Cert')
 
-        cert_acl.send_first(b'\x26\x00\x07\x00This is just SomeAclData from the Cert')
-
-        assertThat(cert_acl).emits(lambda packet: b'SomeMoreAclData' in packet.data)
-        assertThat(dut_acl).emits(lambda packet: b'SomeAclData' in packet.payload)
+            assertThat(cert_acl).emits(lambda packet: b'SomeMoreAclData' in packet.data)
+            assertThat(dut_acl).emits(lambda packet: b'SomeAclData' in packet.payload)
 
     def test_cert_connects_disconnects(self):
         dut_address = self.dut.hci_controller.GetMacAddressSimple()
@@ -84,19 +82,18 @@ class AclManagerTest(GdBaseTestClass):
 
         self.dut_acl_manager.listen_for_an_incoming_connection()
         self.cert_hci.initiate_connection(dut_address)
-        dut_acl = self.dut_acl_manager.complete_incoming_connection()
+        with self.dut_acl_manager.complete_incoming_connection() as dut_acl:
+            cert_acl = self.cert_hci.complete_connection()
 
-        cert_acl = self.cert_hci.complete_connection()
+            dut_acl.send(b'\x29\x00\x07\x00This is just SomeMoreAclData from the DUT')
 
-        dut_acl.send(b'\x29\x00\x07\x00This is just SomeMoreAclData from the DUT')
+            cert_acl.send_first(b'\x26\x00\x07\x00This is just SomeAclData from the Cert')
 
-        cert_acl.send_first(b'\x26\x00\x07\x00This is just SomeAclData from the Cert')
+            assertThat(cert_acl).emits(lambda packet: b'SomeMoreAclData' in packet.data)
+            assertThat(dut_acl).emits(lambda packet: b'SomeAclData' in packet.payload)
 
-        assertThat(cert_acl).emits(lambda packet: b'SomeMoreAclData' in packet.data)
-        assertThat(dut_acl).emits(lambda packet: b'SomeAclData' in packet.payload)
-
-        dut_acl.disconnect(hci_packets.DisconnectReason.REMOTE_USER_TERMINATED_CONNECTION)
-        dut_acl.wait_for_disconnection_complete()
+            dut_acl.disconnect(hci_packets.DisconnectReason.REMOTE_USER_TERMINATED_CONNECTION)
+            dut_acl.wait_for_disconnection_complete()
 
     def test_recombination_l2cap_packet(self):
         self.cert_hci.enable_inquiry_and_page_scan()
