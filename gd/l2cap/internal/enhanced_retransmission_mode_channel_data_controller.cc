@@ -966,7 +966,7 @@ std::unique_ptr<packet::BasePacketBuilder> ErtmController::GetNextPacket() {
 void ErtmController::stage_for_reassembly(SegmentationAndReassembly sar, uint16_t sdu_size,
                                           const packet::PacketView<kLittleEndian>& payload) {
   // If EnqueueBuffer has more than 1 packets, we claim LocalBusy, until queue is empty
-  constexpr size_t kEnqueueBufferBusyThreshold = 2;
+  constexpr size_t kEnqueueBufferBusyThreshold = 3;
   switch (sar) {
     case SegmentationAndReassembly::UNSEGMENTED:
       if (sar_state_ != SegmentationAndReassembly::END) {
