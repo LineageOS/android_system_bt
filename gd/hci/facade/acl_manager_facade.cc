@@ -488,16 +488,8 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
       LOG_DEBUG("OnReadClockComplete clock:%d, accuracy:%d", clock, accuracy);
     }
 
-    void on_incoming_acl() {
-      auto packet = connection_->GetAclQueueEnd()->TryDequeue();
-      LOG_INFO("Discarding packet of length %zu after disconnect", packet->size());
-    }
-
     void OnDisconnection(ErrorCode reason) override {
       LOG_DEBUG("OnDisconnection reason: %s", ErrorCodeText(reason).c_str());
-      connection_->GetAclQueueEnd()->UnregisterDequeue();
-      connection_->GetAclQueueEnd()->RegisterDequeue(
-          facade_handler_, common::Bind(&Connection::on_incoming_acl, common::Unretained(this)));
       std::unique_ptr<BasePacketBuilder> builder =
           DisconnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle_, reason);
       ConnectionEvent disconnection;
