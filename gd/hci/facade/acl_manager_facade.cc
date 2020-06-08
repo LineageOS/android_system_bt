@@ -51,7 +51,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
 
   ~AclManagerFacadeService() override {
     std::unique_lock<std::mutex> lock(acl_connections_mutex_);
-    for (auto connection : acl_connections_) {
+    for (auto& connection : acl_connections_) {
       connection.second.connection_->GetAclQueueEnd()->UnregisterDequeue();
     }
   }
@@ -276,18 +276,16 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
       std::unique_lock<std::mutex> lock(acl_connections_mutex_);
       auto connection = acl_connections_.find(request->handle());
       if (connection == acl_connections_.end()) {
-        LOG_ERROR("Invalid handle");
         return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Invalid handle");
-      } else {
-        // TODO: This is unsafe because connection may have gone
-        connection->second.connection_->GetAclQueueEnd()->RegisterEnqueue(
-            facade_handler_,
-            common::Bind(
-                &AclManagerFacadeService::enqueue_packet,
-                common::Unretained(this),
-                common::Unretained(request),
-                common::Passed(std::move(promise))));
       }
+      // TODO: This is unsafe because connection may have gone
+      connection->second.connection_->GetAclQueueEnd()->RegisterEnqueue(
+          facade_handler_,
+          common::Bind(
+              &AclManagerFacadeService::enqueue_packet,
+              common::Unretained(this),
+              common::Unretained(request),
+              common::Passed(std::move(promise))));
       auto status = future.wait_for(std::chrono::milliseconds(1000));
       if (status != std::future_status::ready) {
         return ::grpc::Status(::grpc::StatusCode::RESOURCE_EXHAUSTED, "Can't send packet");
@@ -307,10 +305,12 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
   }
 
   ::grpc::Status FetchAclData(
-      ::grpc::ServerContext* context,
-      const ::google::protobuf::Empty* request,
-      ::grpc::ServerWriter<AclData>* writer) override {
-    return pending_acl_data_.RunLoop(context, writer);
+      ::grpc::ServerContext* context, const HandleMsg* request, ::grpc::ServerWriter<AclData>* writer) override {
+    auto connection = acl_connections_.find(request->handle());
+    if (connection == acl_connections_.end()) {
+      return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Invalid handle");
+    }
+    return connection->second.pending_acl_data_.RunLoop(context, writer);
   }
 
   static inline uint16_t to_handle(uint32_t current_request) {
@@ -326,26 +326,29 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
 
   void on_incoming_acl(std::shared_ptr<ClassicAclConnection> connection, uint16_t handle) {
     auto packet = connection->GetAclQueueEnd()->TryDequeue();
+    auto connection_tracker = acl_connections_.find(handle);
+    ASSERT_LOG(connection_tracker != acl_connections_.end(), "handle %d", handle);
     AclData acl_data;
     acl_data.set_handle(handle);
     acl_data.set_payload(std::string(packet->begin(), packet->end()));
-    pending_acl_data_.OnIncomingEvent(acl_data);
+    connection_tracker->second.pending_acl_data_.OnIncomingEvent(acl_data);
   }
 
   void OnConnectSuccess(std::unique_ptr<ClassicAclConnection> connection) override {
     std::unique_lock<std::mutex> lock(acl_connections_mutex_);
-    auto addr = connection->GetAddress();
     std::shared_ptr<ClassicAclConnection> shared_connection = std::move(connection);
     uint16_t handle = to_handle(current_connection_request_);
-    acl_connections_.emplace(std::pair(
-        handle,
-        Connection(handle, shared_connection, per_connection_events_[current_connection_request_], facade_handler_)));
-    auto remote_address = shared_connection->GetAddress().ToString();
+    acl_connections_.emplace(
+        std::piecewise_construct,
+        std::forward_as_tuple(handle),
+        std::forward_as_tuple(
+            handle, shared_connection, per_connection_events_[current_connection_request_], facade_handler_));
     shared_connection->GetAclQueueEnd()->RegisterDequeue(
         facade_handler_,
         common::Bind(&AclManagerFacadeService::on_incoming_acl, common::Unretained(this), shared_connection, handle));
     auto callbacks = acl_connections_.find(handle)->second.GetCallbacks();
     shared_connection->RegisterCallbacks(callbacks, facade_handler_);
+    auto addr = shared_connection->GetAddress();
     std::unique_ptr<BasePacketBuilder> builder =
         ConnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle, addr, LinkType::ACL, Enable::DISABLED);
     ConnectionEvent success;
@@ -499,6 +502,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
     uint16_t handle_;
     std::shared_ptr<ClassicAclConnection> connection_;
     std::shared_ptr<::bluetooth::grpc::GrpcEventQueue<ConnectionEvent>> event_stream_;
+    ::bluetooth::grpc::GrpcEventQueue<AclData> pending_acl_data_{"FetchAclData"};
     ::bluetooth::os::Handler* facade_handler_;
   };
 
@@ -507,7 +511,6 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
   ::bluetooth::os::Handler* facade_handler_;
   mutable std::mutex acl_connections_mutex_;
   std::map<uint16_t, Connection> acl_connections_;
-  ::bluetooth::grpc::GrpcEventQueue<AclData> pending_acl_data_{"FetchAclData"};
   std::vector<std::shared_ptr<::bluetooth::grpc::GrpcEventQueue<ConnectionEvent>>> per_connection_events_;
   uint32_t current_connection_request_{0};
 };
