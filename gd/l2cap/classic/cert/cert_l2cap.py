@@ -189,11 +189,11 @@ class CertL2cap(Closable, IHasBehaviors):
         return self._control_behaviors
 
     def connect_acl(self, remote_addr):
-        self._acl = self._acl_manager.initiate_connection(remote_addr)
-        self._acl.wait_for_connection_complete()
+        self._acl_manager.initiate_connection(remote_addr)
+        self._acl = self._acl_manager.complete_outgoing_connection()
         self.control_channel = CertL2capChannel(
-            self._device, 1, 1, self._get_acl_stream(), self._acl, control_channel=None)
-        self._get_acl_stream().register_callback(self._handle_control_packet)
+            self._device, 1, 1, self._acl.acl_stream, self._acl, control_channel=None)
+        self._acl.acl_stream.register_callback(self._handle_control_packet)
 
     def open_channel(self, signal_id, psm, scid, fcs=None):
         self.control_channel.send(l2cap_packets.ConnectionRequestBuilder(signal_id, psm, scid))
@@ -201,7 +201,7 @@ class CertL2cap(Closable, IHasBehaviors):
         response = L2capCaptures.ConnectionResponse(scid)
         assertThat(self.control_channel).emits(response)
         channel = CertL2capChannel(self._device, scid,
-                                   response.get().GetDestinationCid(), self._get_acl_stream(), self._acl,
+                                   response.get().GetDestinationCid(), self._acl.acl_stream, self._acl,
                                    self.control_channel, fcs)
         self.scid_to_channel[scid] = channel
 
@@ -216,8 +216,7 @@ class CertL2cap(Closable, IHasBehaviors):
         dcid = request.get().GetSourceCid()
         if scid is None or scid in self.scid_to_channel:
             scid = dcid
-        channel = CertL2capChannel(self._device, scid, dcid, self._get_acl_stream(), self._acl, self.control_channel,
-                                   fcs)
+        channel = CertL2capChannel(self._device, scid, dcid, self._acl.acl_stream, self._acl, self.control_channel, fcs)
         self.scid_to_channel[scid] = channel
 
         connection_response = l2cap_packets.ConnectionResponseBuilder(
@@ -237,7 +236,7 @@ class CertL2cap(Closable, IHasBehaviors):
         sid = request.get().GetIdentifier()
         dcid = request.get().GetSourceCid()
         scid = dcid
-        channel = CertL2capChannel(self._device, scid, dcid, self._get_acl_stream(), self._acl, self.control_channel)
+        channel = CertL2capChannel(self._device, scid, dcid, self._acl.acl_stream, self._acl, self.control_channel)
         self.scid_to_channel[scid] = channel
 
         # Connection response and config request combo packet
@@ -255,9 +254,6 @@ class CertL2cap(Closable, IHasBehaviors):
 
     def get_control_channel(self):
         return self.control_channel
-
-    def _get_acl_stream(self):
-        return self._acl_manager.get_acl_stream()
 
     # Disable ERTM when exchange extened feature
     def claim_ertm_unsupported(self):
