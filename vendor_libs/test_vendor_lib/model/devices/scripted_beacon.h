@@ -18,9 +18,13 @@
 
 #include <cstdint>
 #include <vector>
+#include <fstream>
 
 #include "model/devices/scripted_beacon_ble_payload.pb.h"
 #include "beacon.h"
+
+using android::bluetooth::test_vendor_lib::model::devices::ScriptedBeaconBleAdProto::PlaybackEvent;
+using android::bluetooth::test_vendor_lib::model::devices::ScriptedBeaconBleAdProto::PlaybackEvents;
 
 namespace test_vendor_lib {
 // Pretend to be a lot of beacons by advertising from a file.
@@ -55,15 +59,22 @@ class ScriptedBeacon : public Beacon {
   std::chrono::steady_clock::duration elapsed_time_{};
   std::chrono::steady_clock::time_point last_timer_tick_{};
   std::string config_file_{};
+  std::string events_file_{};
+  std::ofstream events_ostream_;
+  PlaybackEvent::PlaybackEventType prev_event_type_{PlaybackEvent::NOT_READY};
   struct Advertisement {
     std::vector<uint8_t> ad;
     Address address;
     std::chrono::steady_clock::time_point ad_time;
   };
 
+  void populate_event(PlaybackEvent * event, PlaybackEvent::PlaybackEventType type);
+
   void get_next_advertisement();
 
   bool is_config_file_ready();
+
+  void add_event(android::bluetooth::test_vendor_lib::model::devices::ScriptedBeaconBleAdProto::PlaybackEvent::PlaybackEventType type);
 
   Advertisement next_ad_{};
 
