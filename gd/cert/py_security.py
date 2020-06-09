@@ -148,7 +148,10 @@ class PySecurity(Closable):
         """
             Call to enforce classic security policy
         """
-        pass
+        self._device.security.EnforceSecurityPolicy(
+            SecurityPolicyMessage(
+                address=common.BluetoothAddressWithType(address=common.BluetoothAddress(address=address), type=type),
+                policy=policy))
 
     def close(self):
         if self._ui_event_stream is not None:
