@@ -17,6 +17,7 @@
 
 #include "grpc/grpc_event_queue.h"
 #include "hci/address_with_type.h"
+#include "l2cap/classic/security_policy.h"
 #include "os/handler.h"
 #include "security/facade.grpc.pb.h"
 #include "security/security_manager_listener.h"
@@ -144,6 +145,17 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     ASSERT(hci::Address::FromString(request->address().address(), peer));
     hci::AddressType peer_type = static_cast<hci::AddressType>(request->type());
     security_module_->GetSecurityManager()->SetLeInitiatorAddress(hci::AddressWithType(peer, peer_type));
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status EnforceSecurityPolicy(
+      ::grpc::ServerContext* context,
+      const SecurityPolicyMessage* request,
+      ::google::protobuf::Empty* response) override {
+    hci::Address peer;
+    ASSERT(hci::Address::FromString(request->address().address().address(), peer));
+    hci::AddressType peer_type = static_cast<hci::AddressType>(request->address().type());
+    hci::AddressWithType peer_with_type(peer, peer_type);
     return ::grpc::Status::OK;
   }
 
