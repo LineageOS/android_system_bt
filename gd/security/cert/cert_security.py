@@ -192,5 +192,11 @@ class CertSecurity(PySecurity):
         """
         pass
 
+    def enforce_security_policy(self, address, type, policy):
+        """
+            Pass for now
+        """
+        pass
+
     def close(self):
         safeClose(self._hci)
