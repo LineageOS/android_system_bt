@@ -79,6 +79,7 @@ bool ScriptedBeacon::is_config_file_ready() {
      LOG_INFO("%s: playback file %s not available",
               __func__,
               config_file_.c_str());
+     add_event(PlaybackEvent::WAITING_FOR_FILE);
      file_absence_logged = true;
    }
    return false;
@@ -88,6 +89,7 @@ bool ScriptedBeacon::is_config_file_ready() {
    LOG_ERROR("%s: playback file %s is not readable",
             __func__,
             config_file_.c_str());
+   add_event(PlaybackEvent::FILE_NOT_READABLE);
    return false;
  }
  LOG_INFO("%s: playback file %s is available and readable",
@@ -112,9 +114,53 @@ void ScriptedBeacon::Initialize(const vector<std::string>& args) {
   Address addr{};
   if (Address::FromString(args[1], addr)) properties_.SetLeAddress(addr);
 
-  if (args.size() < 3) return;
+  if (args.size() < 4) return;
 
   config_file_ = args[2];
+  events_file_ = args[3];
+
+}
+
+void ScriptedBeacon::populate_event(PlaybackEvent * event, PlaybackEvent::PlaybackEventType type) {
+  struct timespec ts_now = {};
+  clock_gettime(CLOCK_REALTIME, &ts_now);
+  uint64_t timestamp_sec = (uint64_t) ts_now.tv_sec;
+
+  LOG_INFO("%s: adding event: %d", __func__, type);
+  event->set_type(type);
+  event->set_secs_since_epoch(timestamp_sec);
+}
+
+// Adds events to events file; we won't be able to post anything to the file
+// until we set to permissive mode in tests. We set permissive mode in tests
+// when we copy playback file. Until then we capture all the events in write
+// it to the events file when it becomes available. There after we should be
+// able to write events to file as soon as they are posted.
+void ScriptedBeacon::add_event(PlaybackEvent::PlaybackEventType type) {
+  static PlaybackEvents playback_events;
+  PlaybackEvent event;
+  if (prev_event_type_ == type) {
+   return;
+  }
+  if (!events_ostream_.is_open()) {
+    events_ostream_.open(events_file_, std::ios::out | std::ios::binary | std::ios::trunc);
+    // Check if we have successfully opened;
+    if (!events_ostream_.is_open()) {
+      LOG_INFO("%s: Events file not opened yet, for event: %d", __func__, type);
+      populate_event(playback_events.add_events(), type);
+      prev_event_type_ = type;
+      return;
+    } else {
+      // write all events until now
+      for (const PlaybackEvent& event : playback_events.events()) {
+        event.SerializeToOstream(&events_ostream_);
+      }
+    }
+  }
+  prev_event_type_ = type;
+  populate_event(&event, type);
+  event.SerializeToOstream(&events_ostream_);
+  events_ostream_.flush();
 }
 
 void ScriptedBeacon::TimerTick() {
@@ -147,7 +193,9 @@ void ScriptedBeacon::TimerTick() {
         LOG_ERROR("%s: Cannot parse playback file %s", __func__, config_file_.c_str());
         return;
       }
+      input.close();
       LOG_INFO("%s: Starting Ble advertisement playback from file: %s", __func__, config_file_.c_str());
+      add_event(PlaybackEvent::PLAYBACK_STARTED);
       play_back_on_ = true;
       get_next_advertisement();
     }
@@ -208,6 +256,8 @@ void ScriptedBeacon::get_next_advertisement() {
     packet_num++;
   } else {
     play_back_complete_ = true;
+    add_event(PlaybackEvent::PLAYBACK_ENDED);
+    events_ostream_.close();
     LOG_INFO("%s: Completed Ble advertisement playback from file: %s", __func__, config_file_.c_str());
   }
 }
