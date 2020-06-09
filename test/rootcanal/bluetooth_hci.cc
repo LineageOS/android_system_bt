@@ -41,7 +41,7 @@ namespace {
 
 bool BtTestConsoleEnabled() {
   // Assume enabled by default.
-  return property_get_bool("bt.rootcanal_test_console", true);
+  return property_get_bool("vendor.bt.rootcanal_test_console", true);
 }
 
 }  // namespace
@@ -104,7 +104,7 @@ Return<void> BluetoothHci::initialize_impl(
   controller_ = std::make_shared<DualModeController>();
 
   char mac_property[PROPERTY_VALUE_MAX] = "";
-  property_get("bt.rootcanal_mac_address", mac_property, "3C:5A:B4:01:02:03");
+  property_get("vendor.bt.rootcanal_mac_address", mac_property, "3C:5A:B4:01:02:03");
   controller_->Initialize({"dmc", std::string(mac_property)});
 
   controller_->RegisterEventChannel(
