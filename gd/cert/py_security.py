@@ -25,6 +25,7 @@ from google.protobuf import empty_pb2 as empty_proto
 from hci.facade import facade_pb2 as hci_facade
 from security.facade_pb2 import IoCapabilityMessage
 from security.facade_pb2 import AuthenticationRequirementsMessage
+from security.facade_pb2 import SecurityPolicyMessage
 from security.facade_pb2 import OobDataMessage
 from security.facade_pb2 import UiCallbackMsg
 from security.facade_pb2 import UiCallbackType
@@ -142,6 +143,12 @@ class PySecurity(Closable):
             for Cert it isn't needed.
         """
         self._bond_event_stream.assert_event_occurs(lambda event: event.message_type == expected_bond_event)
+
+    def enforce_security_policy(self, address, type, policy):
+        """
+            Call to enforce classic security policy
+        """
+        pass
 
     def close(self):
         if self._ui_event_stream is not None:
