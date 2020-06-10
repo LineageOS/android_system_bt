@@ -121,6 +121,7 @@ cc_defaults {
         host: {
             srcs: [
                 ":BluetoothHalSources_hci_rootcanal",
+                ":BluetoothOsSources_host",
             ],
             shared_libs: [
                 "libprotobuf-cpp-full",
@@ -129,11 +130,13 @@ cc_defaults {
         android: {
             srcs: [
                 ":BluetoothHalSources_hci_android_hidl",
+                ":BluetoothOsSources_android",
             ],
             shared_libs: [
                 "android.hardware.bluetooth@1.0",
                 "libhidlbase",
                 "libutils",
+                "libcutils",
             ],
         },
     },
@@ -265,11 +268,13 @@ cc_test {
         android: {
             srcs: [
                 ":BluetoothHalTestSources_hci_android_hidl",
+                ":BluetoothOsTestSources_android",
             ],
             shared_libs: [
                 "android.hardware.bluetooth@1.0",
                 "libhidlbase",
                 "libutils",
+                "libcutils",
             ],
         },
     },
