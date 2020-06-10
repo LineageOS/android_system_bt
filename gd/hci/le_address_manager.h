@@ -21,6 +21,7 @@
 
 #include "common/callback.h"
 #include "hci/address_with_type.h"
+#include "hci/hci_layer.h"
 #include "os/alarm.h"
 
 namespace bluetooth {
@@ -36,7 +37,11 @@ class LeAddressManagerCallback {
 class LeAddressManager {
  public:
   LeAddressManager(
-      common::Callback<void(Address address)> set_random_address, os::Handler* handler, Address pulic_address);
+      common::Callback<void(std::unique_ptr<CommandPacketBuilder>)> enqueue_command,
+      os::Handler* handler,
+      Address public_address,
+      uint8_t white_list_size,
+      uint8_t resolving_list_size);
   virtual ~LeAddressManager();
 
   enum AddressPolicy {
@@ -58,9 +63,22 @@ class LeAddressManager {
   void AckResume(LeAddressManagerCallback* callback);
   virtual AddressPolicy Register(LeAddressManagerCallback* callback);
   virtual void Unregister(LeAddressManagerCallback* callback);
-  void OnLeSetRandomAddressComplete(bool success);
   AddressWithType GetCurrentAddress();          // What was set in SetRandomAddress()
   virtual AddressWithType GetAnotherAddress();  // A new random address without rotating.
+
+  uint8_t GetWhiteListSize();
+  uint8_t GetResolvingListSize();
+  void AddDeviceToWhiteList(WhiteListAddressType white_list_address_type, Address address);
+  void AddDeviceToResolvingList(
+      PeerAddressType peer_identity_address_type,
+      Address peer_identity_address,
+      const std::array<uint8_t, 16>& peer_irk,
+      const std::array<uint8_t, 16>& local_irk);
+  void RemoveDeviceFromWhiteList(WhiteListAddressType white_list_address_type, Address address);
+  void RemoveDeviceFromResolvingList(PeerAddressType peer_identity_address_type, Address peer_identity_address);
+  void ClearWhiteList();
+  void ClearResolvingList();
+  void OnCommandComplete(CommandCompleteView view);
 
  private:
   void pause_registered_clients();
@@ -69,11 +87,13 @@ class LeAddressManager {
   void ack_resume(LeAddressManagerCallback* callback);
   void register_client(LeAddressManagerCallback* callback);
   void unregister_client(LeAddressManagerCallback* callback);
+  void prepare_to_rotate();
   void rotate_random_address();
+  void on_le_set_random_address_complete(CommandCompleteView view);
   hci::Address generate_rpa();
   hci::Address generate_nrpa();
   std::chrono::milliseconds get_next_private_address_interval_ms();
-  common::Callback<void(Address address)> set_random_address_;
+  void handle_next_command();
 
   enum ClientState {
     WAITING_FOR_PAUSE,
@@ -82,6 +102,22 @@ class LeAddressManager {
     RESUMED,
   };
 
+  enum CommandType {
+    ROTATE_RANDOM_ADDRESS,
+    ADD_DEVICE_TO_WHITE_LIST,
+    REMOVE_DEVICE_FROM_WHITE_LIST,
+    CLEAR_WHITE_LIST,
+    ADD_DEVICE_TO_RESOLVING_LIST,
+    REMOVE_DEVICE_FROM_RESOLVING_LIST,
+    CLEAR_RESOLVING_LIST
+  };
+
+  struct Command {
+    CommandType command_type;
+    std::unique_ptr<CommandPacketBuilder> command_packet;
+  };
+
+  common::Callback<void(std::unique_ptr<CommandPacketBuilder>)> enqueue_command_;
   os::Handler* handler_;
   std::map<LeAddressManagerCallback*, ClientState> registered_clients_;
 
@@ -92,6 +128,9 @@ class LeAddressManager {
   crypto_toolbox::Octet16 rotation_irk_;
   std::chrono::milliseconds minimum_rotation_time_;
   std::chrono::milliseconds maximum_rotation_time_;
+  uint8_t white_list_size_;
+  uint8_t resolving_list_size_;
+  std::queue<Command> cached_commands_;
 };
 
 }  // namespace hci
