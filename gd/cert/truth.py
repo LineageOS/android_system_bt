@@ -130,10 +130,21 @@ class BooleanSubject(ObjectSubject):
         assert_false(self._value, "")
 
 
+class TimeDeltaSubject(ObjectSubject):
+
+    def __init__(self, value):
+        super().__init__(value)
+
+    def isWithin(self, time_bound):
+        assert_true(self._value < time_bound, "")
+
+
 def assertThat(subject):
     if type(subject) is bool:
         return BooleanSubject(subject)
     elif isinstance(subject, IEventStream):
         return EventStreamSubject(subject)
+    elif isinstance(subject, timedelta):
+        return TimeDeltaSubject(subject)
     else:
         return ObjectSubject(subject)
