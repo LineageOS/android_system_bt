@@ -95,6 +95,10 @@ class Controller : public Module {
 
   virtual uint64_t GetControllerLeSupportedStates() const;
 
+  virtual uint8_t GetControllerLeWhiteListSize() const;
+
+  virtual uint8_t GetControllerLeResolvingListSize() const;
+
   virtual LeMaximumDataLength GetControllerLeMaximumDataLength() const;
 
   virtual uint16_t GetControllerLeMaximumAdvertisingDataLength() const;

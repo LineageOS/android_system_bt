@@ -53,9 +53,11 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     le_acl_connection_interface_ = hci_layer_->GetLeAclConnectionInterface(
         handler_->BindOn(this, &le_impl::on_le_event), handler_->BindOn(this, &le_impl::on_le_disconnect));
     le_address_manager_ = new LeAddressManager(
-        common::Bind(&le_impl::SetRandomAddress, common::Unretained(this)),
+        common::Bind(&le_impl::enqueue_command, common::Unretained(this)),
         handler_,
-        controller->GetControllerMacAddress());
+        controller->GetControllerMacAddress(),
+        controller->GetControllerLeWhiteListSize(),
+        controller->GetControllerLeResolvingListSize());
   }
 
   ~le_impl() {
@@ -216,26 +218,10 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
         complete_view.GetConnInterval(), complete_view.GetConnLatency(), complete_view.GetSupervisionTimeout());
   }
 
-  void on_le_set_random_address_complete(CommandCompleteView view) {
-    auto complete_view = LeSetRandomAddressCompleteView::Create(view);
-    if (!complete_view.IsValid()) {
-      LOG_ERROR("Received on_le_set_random_address_complete with invalid packet");
-      le_address_manager_->OnLeSetRandomAddressComplete(false);
-      return;
-    } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-      auto status = complete_view.GetStatus();
-      std::string error_code = ErrorCodeText(status);
-      LOG_ERROR("Received on_le_set_random_address_complete with error code %s", error_code.c_str());
-      le_address_manager_->OnLeSetRandomAddressComplete(false);
-      return;
-    }
-    le_address_manager_->OnLeSetRandomAddressComplete(true);
-  }
-
-  void SetRandomAddress(Address address) {
+  void enqueue_command(std::unique_ptr<CommandPacketBuilder> command_packet) {
     hci_layer_->EnqueueCommand(
-        hci::LeSetRandomAddressBuilder::Create(address),
-        handler_->BindOnce(&le_impl::on_le_set_random_address_complete, common::Unretained(this)));
+        std::move(command_packet),
+        handler_->BindOnce(&LeAddressManager::OnCommandComplete, common::Unretained(le_address_manager_)));
   }
 
   void create_le_connection(AddressWithType address_with_type) {

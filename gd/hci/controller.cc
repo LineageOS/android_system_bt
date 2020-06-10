@@ -66,6 +66,14 @@ struct Controller::impl {
     hci_->EnqueueCommand(LeReadSupportedStatesBuilder::Create(),
                          handler->BindOnceOn(this, &Controller::impl::le_read_supported_states_handler));
 
+    hci_->EnqueueCommand(
+        LeReadWhiteListSizeBuilder::Create(),
+        handler->BindOnceOn(this, &Controller::impl::le_read_white_list_size_handler));
+
+    hci_->EnqueueCommand(
+        LeReadResolvingListSizeBuilder::Create(),
+        handler->BindOnceOn(this, &Controller::impl::le_read_resolving_list_size_handler));
+
     if (is_supported(OpCode::LE_READ_MAXIMUM_DATA_LENGTH)) {
       hci_->EnqueueCommand(LeReadMaximumDataLengthBuilder::Create(),
                            handler->BindOnceOn(this, &Controller::impl::le_read_maximum_data_length_handler));
@@ -231,6 +239,22 @@ struct Controller::impl {
     ErrorCode status = complete_view.GetStatus();
     ASSERT_LOG(status == ErrorCode::SUCCESS, "Status 0x%02hhx, %s", status, ErrorCodeText(status).c_str());
     le_supported_states_ = complete_view.GetLeStates();
+  }
+
+  void le_read_white_list_size_handler(CommandCompleteView view) {
+    auto complete_view = LeReadWhiteListSizeCompleteView::Create(view);
+    ASSERT(complete_view.IsValid());
+    ErrorCode status = complete_view.GetStatus();
+    ASSERT_LOG(status == ErrorCode::SUCCESS, "Status 0x%02hhx, %s", status, ErrorCodeText(status).c_str());
+    le_white_list_size_ = complete_view.GetWhiteListSize();
+  }
+
+  void le_read_resolving_list_size_handler(CommandCompleteView view) {
+    auto complete_view = LeReadResolvingListSizeCompleteView::Create(view);
+    ASSERT(complete_view.IsValid());
+    ErrorCode status = complete_view.GetStatus();
+    ASSERT_LOG(status == ErrorCode::SUCCESS, "Status 0x%02hhx, %s", status, ErrorCodeText(status).c_str());
+    le_resolving_list_size_ = complete_view.GetResolvingListSize();
   }
 
   void le_read_maximum_data_length_handler(CommandCompleteView view) {
@@ -695,6 +719,8 @@ struct Controller::impl {
   LeBufferSize le_buffer_size_;
   uint64_t le_local_supported_features_;
   uint64_t le_supported_states_;
+  uint8_t le_white_list_size_;
+  uint8_t le_resolving_list_size_;
   LeMaximumDataLength le_maximum_data_length_;
   uint16_t le_maximum_advertising_data_length_;
   uint8_t le_number_supported_advertising_sets_;
@@ -844,6 +870,14 @@ uint64_t Controller::GetControllerLeLocalSupportedFeatures() const {
 
 uint64_t Controller::GetControllerLeSupportedStates() const {
   return impl_->le_supported_states_;
+}
+
+uint8_t Controller::GetControllerLeWhiteListSize() const {
+  return impl_->le_white_list_size_;
+}
+
+uint8_t Controller::GetControllerLeResolvingListSize() const {
+  return impl_->le_resolving_list_size_;
 }
 
 LeMaximumDataLength Controller::GetControllerLeMaximumDataLength() const {
