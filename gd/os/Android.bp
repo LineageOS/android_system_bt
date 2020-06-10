@@ -1,4 +1,25 @@
 filegroup {
+    name: "BluetoothOsSources_android",
+    srcs: [
+        "android/system_properties.cc",
+    ],
+}
+
+filegroup {
+    name: "BluetoothOsTestSources_android",
+    srcs: [
+        "android/system_properties_test.cc",
+    ],
+}
+
+filegroup {
+    name: "BluetoothOsSources_host",
+    srcs: [
+        "host/system_properties.cc",
+    ],
+}
+
+filegroup {
     name: "BluetoothOsSources_linux_generic",
     srcs: [
         "linux_generic/alarm.cc",
