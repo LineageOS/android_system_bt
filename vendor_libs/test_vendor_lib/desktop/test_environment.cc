@@ -149,7 +149,7 @@ void TestEnvironment::SetUpTestChannel() {
   int socket_fd = test_channel_transport_.SetUp(test_port_);
   test_channel_.AddPhy({"BR_EDR"});
   test_channel_.AddPhy({"LOW_ENERGY"});
-  test_channel_.SetTimerPeriod({"10"});
+  test_channel_.SetTimerPeriod({"5"});
   test_channel_.StartTimer({});
 
   test_channel_.RegisterSendResponse(
