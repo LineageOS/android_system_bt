@@ -58,7 +58,7 @@ class PerformanceTestLogger(object):
         intervals = []
         for i in range(len(self.start_interval_points[label])):
             interval = self.end_interval_points[label][i] - self.start_interval_points[label][i]
-            intervals.append(interval.seconds * 1000 + interval.microseconds / 1000)
+            intervals.append(interval)
         return intervals
 
     def dump_intervals(self):
