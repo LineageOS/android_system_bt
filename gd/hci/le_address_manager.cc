@@ -8,8 +8,16 @@ namespace hci {
 static constexpr uint8_t BLE_ADDR_MASK = 0xc0u;
 
 LeAddressManager::LeAddressManager(
-    common::Callback<void(Address address)> set_random_address, os::Handler* handler, Address public_address)
-    : set_random_address_(set_random_address), handler_(handler), public_address_(public_address){};
+    common::Callback<void(std::unique_ptr<CommandPacketBuilder>)> enqueue_command,
+    os::Handler* handler,
+    Address public_address,
+    uint8_t white_list_size,
+    uint8_t resolving_list_size)
+    : enqueue_command_(enqueue_command),
+      handler_(handler),
+      public_address_(public_address),
+      white_list_size_(white_list_size),
+      resolving_list_size_(resolving_list_size){};
 
 LeAddressManager::~LeAddressManager() {
   if (address_rotation_alarm_ != nullptr) {
@@ -47,7 +55,8 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
         LOG_ALWAYS_FATAL("Bits of the random part of the address shall not be all 1 or all 0");
       }
       le_address_ = fixed_address;
-      handler_->Post(common::Bind(set_random_address_, le_address_.GetAddress()));
+      auto packet = hci::LeSetRandomAddressBuilder::Create(le_address_.GetAddress());
+      handler_->Post(common::BindOnce(enqueue_command_, std::move(packet)));
     } break;
     case AddressPolicy::USE_NON_RESOLVABLE_ADDRESS:
     case AddressPolicy::USE_RESOLVABLE_ADDRESS:
@@ -62,7 +71,7 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
 }
 
 LeAddressManager::AddressPolicy LeAddressManager::Register(LeAddressManagerCallback* callback) {
-  handler_->Post(common::BindOnce(&LeAddressManager::register_client, common::Unretained(this), callback));
+  handler_->BindOnceOn(this, &LeAddressManager::register_client, callback).Invoke();
   return address_policy_;
 }
 
@@ -70,12 +79,12 @@ void LeAddressManager::register_client(LeAddressManagerCallback* callback) {
   registered_clients_.insert(std::pair<LeAddressManagerCallback*, ClientState>(callback, ClientState::RESUMED));
   if (address_policy_ == AddressPolicy::POLICY_NOT_SET || address_policy_ == AddressPolicy::USE_RESOLVABLE_ADDRESS ||
       address_policy_ == AddressPolicy::USE_NON_RESOLVABLE_ADDRESS) {
-    pause_registered_clients();
+    prepare_to_rotate();
   }
 }
 
 void LeAddressManager::Unregister(LeAddressManagerCallback* callback) {
-  handler_->Post(common::BindOnce(&LeAddressManager::unregister_client, common::Unretained(this), callback));
+  handler_->BindOnceOn(this, &LeAddressManager::unregister_client, callback).Invoke();
 }
 
 void LeAddressManager::unregister_client(LeAddressManagerCallback* callback) {
@@ -87,16 +96,11 @@ void LeAddressManager::unregister_client(LeAddressManagerCallback* callback) {
 }
 
 void LeAddressManager::AckPause(LeAddressManagerCallback* callback) {
-  handler_->Post(common::BindOnce(&LeAddressManager::ack_pause, common::Unretained(this), callback));
+  handler_->BindOnceOn(this, &LeAddressManager::ack_pause, callback).Invoke();
 }
 
 void LeAddressManager::AckResume(LeAddressManagerCallback* callback) {
-  handler_->Post(common::BindOnce(&LeAddressManager::ack_resume, common::Unretained(this), callback));
-}
-
-void LeAddressManager::OnLeSetRandomAddressComplete(bool success) {
-  ASSERT(success);
-  resume_registered_clients();
+  handler_->BindOnceOn(this, &LeAddressManager::ack_resume, callback).Invoke();
 }
 
 AddressWithType LeAddressManager::GetCurrentAddress() {
@@ -131,10 +135,16 @@ void LeAddressManager::ack_pause(LeAddressManagerCallback* callback) {
       return;
     }
   }
-  rotate_random_address();
+  handle_next_command();
 }
 
 void LeAddressManager::resume_registered_clients() {
+  // Do not resume clients if cached command is not empty
+  if (!cached_commands_.empty()) {
+    handle_next_command();
+    return;
+  }
+
   for (auto client : registered_clients_) {
     client.second = ClientState::WAITING_FOR_RESUME;
     client.first->OnResume();
@@ -146,6 +156,12 @@ void LeAddressManager::ack_resume(LeAddressManagerCallback* callback) {
   registered_clients_.find(callback)->second = ClientState::RESUMED;
 }
 
+void LeAddressManager::prepare_to_rotate() {
+  Command command = {CommandType::ROTATE_RANDOM_ADDRESS, nullptr};
+  cached_commands_.push(std::move(command));
+  pause_registered_clients();
+}
+
 void LeAddressManager::rotate_random_address() {
   if (address_policy_ != AddressPolicy::USE_RESOLVABLE_ADDRESS &&
       address_policy_ != AddressPolicy::USE_NON_RESOLVABLE_ADDRESS) {
@@ -153,7 +169,7 @@ void LeAddressManager::rotate_random_address() {
   }
 
   address_rotation_alarm_->Schedule(
-      common::BindOnce(&LeAddressManager::pause_registered_clients, common::Unretained(this)),
+      common::BindOnce(&LeAddressManager::prepare_to_rotate, common::Unretained(this)),
       get_next_private_address_interval_ms());
 
   hci::Address address;
@@ -162,8 +178,25 @@ void LeAddressManager::rotate_random_address() {
   } else {
     address = generate_nrpa();
   }
-  handler_->Post(common::Bind(set_random_address_, address));
+  auto packet = hci::LeSetRandomAddressBuilder::Create(address);
+  enqueue_command_.Run(std::move(packet));
   le_address_ = AddressWithType(address, AddressType::RANDOM_DEVICE_ADDRESS);
+}
+
+void LeAddressManager::on_le_set_random_address_complete(CommandCompleteView view) {
+  auto complete_view = LeSetRandomAddressCompleteView::Create(view);
+  if (!complete_view.IsValid()) {
+    LOG_ALWAYS_FATAL("Received on_le_set_random_address_complete with invalid packet");
+  } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
+    auto status = complete_view.GetStatus();
+    std::string error_code = ErrorCodeText(status);
+    LOG_ALWAYS_FATAL("Received on_le_set_random_address_complete with error code %s", error_code.c_str());
+  }
+  if (cached_commands_.empty()) {
+    handler_->BindOnceOn(this, &LeAddressManager::resume_registered_clients).Invoke();
+  } else {
+    handler_->BindOnceOn(this, &LeAddressManager::handle_next_command).Invoke();
+  }
 }
 
 /* This function generates Resolvable Private Address (RPA) from Identity
@@ -223,6 +256,92 @@ std::chrono::milliseconds LeAddressManager::get_next_private_address_interval_ms
   auto interval_random_part_max_ms = maximum_rotation_time_ - minimum_rotation_time_;
   auto random_ms = std::chrono::milliseconds(os::GenerateRandom()) % (interval_random_part_max_ms);
   return minimum_rotation_time_ + random_ms;
+}
+
+uint8_t LeAddressManager::GetWhiteListSize() {
+  return white_list_size_;
+}
+
+uint8_t LeAddressManager::GetResolvingListSize() {
+  return resolving_list_size_;
+}
+
+void LeAddressManager::handle_next_command() {
+  ASSERT(!cached_commands_.empty());
+  auto command = std::move(cached_commands_.front());
+  cached_commands_.pop();
+
+  if (command.command_type == CommandType::ROTATE_RANDOM_ADDRESS) {
+    rotate_random_address();
+  } else {
+    enqueue_command_.Run(std::move(command.command_packet));
+  }
+}
+
+void LeAddressManager::AddDeviceToWhiteList(
+    WhiteListAddressType white_list_address_type, bluetooth::hci::Address address) {
+  auto packet_builder = hci::LeAddDeviceToWhiteListBuilder::Create(white_list_address_type, address);
+  Command command = {CommandType::ADD_DEVICE_TO_WHITE_LIST, std::move(packet_builder)};
+  handler_->BindOnceOn(this, &LeAddressManager::pause_registered_clients).Invoke();
+  cached_commands_.push(std::move(command));
+}
+
+void LeAddressManager::AddDeviceToResolvingList(
+    PeerAddressType peer_identity_address_type,
+    Address peer_identity_address,
+    const std::array<uint8_t, 16>& peer_irk,
+    const std::array<uint8_t, 16>& local_irk) {
+  auto packet_builder = hci::LeAddDeviceToResolvingListBuilder::Create(
+      peer_identity_address_type, peer_identity_address, peer_irk, local_irk);
+  Command command = {CommandType::ADD_DEVICE_TO_RESOLVING_LIST, std::move(packet_builder)};
+  handler_->BindOnceOn(this, &LeAddressManager::pause_registered_clients).Invoke();
+  cached_commands_.push(std::move(command));
+}
+
+void LeAddressManager::RemoveDeviceFromWhiteList(
+    WhiteListAddressType white_list_address_type, bluetooth::hci::Address address) {
+  auto packet_builder = hci::LeRemoveDeviceFromWhiteListBuilder::Create(white_list_address_type, address);
+  Command command = {CommandType::REMOVE_DEVICE_FROM_WHITE_LIST, std::move(packet_builder)};
+  handler_->BindOnceOn(this, &LeAddressManager::pause_registered_clients).Invoke();
+  cached_commands_.push(std::move(command));
+}
+
+void LeAddressManager::RemoveDeviceFromResolvingList(
+    PeerAddressType peer_identity_address_type, Address peer_identity_address) {
+  auto packet_builder =
+      hci::LeRemoveDeviceFromResolvingListBuilder::Create(peer_identity_address_type, peer_identity_address);
+  Command command = {CommandType::REMOVE_DEVICE_FROM_RESOLVING_LIST, std::move(packet_builder)};
+  handler_->BindOnceOn(this, &LeAddressManager::pause_registered_clients).Invoke();
+  cached_commands_.push(std::move(command));
+}
+
+void LeAddressManager::ClearWhiteList() {
+  auto packet_builder = hci::LeClearWhiteListBuilder::Create();
+  Command command = {CommandType::CLEAR_WHITE_LIST, std::move(packet_builder)};
+  handler_->BindOnceOn(this, &LeAddressManager::pause_registered_clients).Invoke();
+  cached_commands_.push(std::move(command));
+}
+
+void LeAddressManager::ClearResolvingList() {
+  auto packet_builder = hci::LeClearResolvingListBuilder::Create();
+  Command command = {CommandType::CLEAR_RESOLVING_LIST, std::move(packet_builder)};
+  handler_->BindOnceOn(this, &LeAddressManager::pause_registered_clients).Invoke();
+  cached_commands_.push(std::move(command));
+}
+
+void LeAddressManager::OnCommandComplete(bluetooth::hci::CommandCompleteView view) {
+  if (!view.IsValid()) {
+    LOG_ERROR("Received command complete with invalid packet");
+    return;
+  }
+  std::string op_code = OpCodeText(view.GetCommandOpCode());
+  LOG_ERROR("Received command complete with op_code %s", op_code.c_str());
+
+  if (cached_commands_.empty()) {
+    handler_->BindOnceOn(this, &LeAddressManager::resume_registered_clients).Invoke();
+  } else {
+    handler_->BindOnceOn(this, &LeAddressManager::handle_next_command).Invoke();
+  }
 }
 
 }  // namespace hci

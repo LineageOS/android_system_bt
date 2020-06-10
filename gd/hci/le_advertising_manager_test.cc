@@ -208,8 +208,12 @@ class TestHciLayer : public HciLayer {
 class TestLeAddressManager : public LeAddressManager {
  public:
   TestLeAddressManager(
-      common::Callback<void(Address address)> set_random_address, os::Handler* handler, Address public_address)
-      : LeAddressManager(set_random_address, handler, public_address) {}
+      common::Callback<void(std::unique_ptr<CommandPacketBuilder>)> enqueue_command,
+      os::Handler* handler,
+      Address public_address,
+      uint8_t white_list_size,
+      uint8_t resolving_list_size)
+      : LeAddressManager(enqueue_command, handler, public_address, white_list_size, resolving_list_size) {}
 
   AddressPolicy Register(LeAddressManagerCallback* callback) override {
     return AddressPolicy::USE_STATIC_ADDRESS;
@@ -237,7 +241,7 @@ class TestAclManager : public AclManager {
     handler_ = new os::Handler(thread_);
     Address address({0x01, 0x02, 0x03, 0x04, 0x05, 0x06});
     test_le_address_manager_ = new TestLeAddressManager(
-        common::Bind(&TestAclManager::SetRandomAddress, common::Unretained(this)), handler_, address);
+        common::Bind(&TestAclManager::enqueue_command, common::Unretained(this)), handler_, address, 0x3F, 0x3F);
   }
 
   void Stop() override {
@@ -250,6 +254,8 @@ class TestAclManager : public AclManager {
   void ListDependencies(ModuleList* list) override {}
 
   void SetRandomAddress(Address address) {}
+
+  void enqueue_command(std::unique_ptr<CommandPacketBuilder> command_packet){};
 
   os::Thread* thread_;
   os::Handler* handler_;
