@@ -119,11 +119,7 @@ ErrorCode LinkLayerController::SendAclToRemote(
   AddressWithType destination = connections_.GetAddress(handle);
   Phy::Type phy = connections_.GetPhyType(handle);
 
-  LOG_INFO("%s(%s): handle 0x%x size %d", __func__,
-           properties_.GetAddress().ToString().c_str(), handle,
-           static_cast<int>(acl_packet.size()));
-
-  ScheduleTask(milliseconds(5), [this, handle]() {
+  ScheduleTask(milliseconds(1), [this, handle]() {
     std::vector<bluetooth::hci::CompletedPackets> completed_packets;
     bluetooth::hci::CompletedPackets cp;
     cp.connection_handle_ = handle;
