@@ -2583,7 +2583,7 @@ packet LeCreateConnectionCancelComplete : CommandComplete (command_op_code = LE_
   status : ErrorCode,
 }
 
-packet LeReadWhiteListSize : LeConnectionManagementCommand (op_code = LE_READ_WHITE_LIST_SIZE) {
+packet LeReadWhiteListSize : CommandPacket (op_code = LE_READ_WHITE_LIST_SIZE) {
 }
 
 packet LeReadWhiteListSizeComplete : CommandComplete (command_op_code = LE_READ_WHITE_LIST_SIZE) {
@@ -2826,11 +2826,12 @@ packet LeClearResolvingListComplete : CommandComplete (command_op_code = LE_CLEA
   status : ErrorCode,
 }
 
-packet LeReadResolvingListSize : LeSecurityCommand (op_code = LE_READ_RESOLVING_LIST_SIZE) {
+packet LeReadResolvingListSize : CommandPacket (op_code = LE_READ_RESOLVING_LIST_SIZE) {
 }
 
 packet LeReadResolvingListSizeComplete : CommandComplete (command_op_code = LE_READ_RESOLVING_LIST_SIZE) {
   status : ErrorCode,
+  resolving_list_size : 8,
 }
 
 packet LeReadPeerResolvableAddress : LeSecurityCommand (op_code = LE_READ_PEER_RESOLVABLE_ADDRESS) {
