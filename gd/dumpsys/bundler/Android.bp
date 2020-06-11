@@ -1,0 +1,77 @@
+filegroup {
+    name: "BluetoothFlatbufferBundlerSources",
+    srcs: [
+        "bundler.cc",
+        "main.cc",
+    ],
+}
+
+filegroup {
+    name: "BluetoothFlatbufferBundlerTestSources",
+    srcs: [
+        "bundler.cc",
+        "test.cc",
+    ],
+}
+
+genrule {
+    name: "BluetoothGeneratedBundler_h",
+    tools: [
+        "flatc",
+    ],
+    cmd: "$(location flatc) -I system/bt/gd -b --schema -o $(genDir) --cpp $(in) ",
+    srcs: [
+        "bundler.fbs",
+    ],
+    out: [
+        "bundler_generated.h", "bundler.bfbs",
+    ],
+}
+
+cc_binary {
+    name: "bluetooth_flatbuffer_bundler",
+    host_supported: true,
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wno-unused-parameter",
+        "-Wno-unused-variable",
+    ],
+    srcs: [
+        ":BluetoothFlatbufferBundlerSources",
+    ],
+    generated_headers: [
+        "BluetoothGeneratedBundler_h",
+    ],
+    shared_libs: [
+        "libflatbuffers-cpp",
+    ],
+    sanitize: {
+        address: true,
+    },
+}
+
+cc_test {
+    name: "bluetooth_flatbuffer_bundler_test",
+    host_supported: true,
+    cflags: [
+        "-Wall",
+        "-Werror",
+        "-Wno-unused-parameter",
+        "-Wno-unused-variable",
+        "-DUSE_TEST_GENERATED",
+    ],
+    srcs: [
+        ":BluetoothFlatbufferBundlerTestSources",
+    ],
+    shared_libs: [
+        "libflatbuffers-cpp",
+    ],
+    sanitize: {
+        address: true,
+    },
+    data: [
+        "test.bfbs",
+    ],
+}
+
