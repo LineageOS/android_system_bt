@@ -439,6 +439,9 @@ class DualModeController : public Device {
   // 7.8.40
   void LeClearResolvingList(CommandPacketView args);
 
+  // 7.8.41
+  void LeReadResolvingListSize(CommandPacketView args);
+
   // 7.8.52
   void LeSetExtendedAdvertisingRandomAddress(CommandPacketView args);
 
