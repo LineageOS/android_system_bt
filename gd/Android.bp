@@ -206,8 +206,8 @@ cc_binary {
         ":BluetoothFacade_security_layer",
     ],
     generated_headers: [
-        "BluetoothGeneratedPackets_h",
         "BluetoothFacadeGeneratedStub_h",
+        "BluetoothGeneratedPackets_h",
         // Needed here to guarantee that generated zip file is created before
         // bluetooth_cert_tests.zip is packaged
         "BluetoothFacadeAndCertGeneratedStub_py",
@@ -221,11 +221,11 @@ cc_binary {
         "breakpad_client",
     ],
     shared_libs: [
+        "libbacktrace",
         "libchrome",
         "libcrypto",
         "libgrpc++_unsecure",
         "libprotobuf-cpp-full",
-        "libbacktrace",
     ],
     target: {
         android: {
