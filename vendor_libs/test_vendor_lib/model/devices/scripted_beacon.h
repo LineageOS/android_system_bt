@@ -77,6 +77,12 @@ class ScriptedBeacon : public Beacon {
   void add_event(android::bluetooth::test_vendor_lib::model::devices::ScriptedBeaconBleAdProto::PlaybackEvent::PlaybackEventType type);
 
   Advertisement next_ad_{};
+  int packet_num_{0};
+  bool file_absence_logged_{false};
+  PlaybackEvents playback_events_{};
+  std::chrono::steady_clock::time_point next_check_time_{};
+  std::chrono::steady_clock::time_point write_delay_next_check_time_{};
+
 
   android::bluetooth::test_vendor_lib::model::devices::ScriptedBeaconBleAdProto::BleAdvertisementList ble_ad_list_;
 

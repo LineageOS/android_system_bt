@@ -196,7 +196,8 @@ Return<void> BluetoothHci::initialize_impl(
     test_model_.AddDeviceToPhy(controller_index + 2, low_energy_phy_index);
     test_channel_.Add(
         {"scripted_beacon", "5b:ea:c1:00:00:03",
-         "/data/vendor/bluetooth/bluetooth_sim_ble_playback_file"});
+         "/data/vendor/bluetooth/bluetooth_sim_ble_playback_file",
+         "/data/vendor/bluetooth/bluetooth_sim_ble_playback_events"});
     test_model_.AddDeviceToPhy(controller_index + 3, low_energy_phy_index);
     test_channel_.List({});
   }
