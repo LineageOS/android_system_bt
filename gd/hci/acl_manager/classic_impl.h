@@ -506,8 +506,8 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
       return;
     }
     uint16_t handle = encryption_change_view.GetConnectionHandle();
-    auto acl_connection = classic_impl_->acl_connections_.find(handle);
-    if (acl_connection == classic_impl_->acl_connections_.end()) {
+    auto acl_connection = acl_connections_.find(handle);
+    if (acl_connection == acl_connections_.end()) {
       LOG_INFO("Invalid handle (already closed?) %d", handle);
       return;
     }
@@ -524,7 +524,6 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
   Controller* controller_ = nullptr;
   RoundRobinScheduler* round_robin_scheduler_ = nullptr;
   AclConnectionInterface* acl_connection_interface_ = nullptr;
-  classic_impl* classic_impl_ = nullptr;
   os::Handler* handler_ = nullptr;
   ConnectionCallbacks* client_callbacks_ = nullptr;
   os::Handler* client_handler_ = nullptr;
