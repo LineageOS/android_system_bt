@@ -1666,7 +1666,7 @@ void btm_process_inq_results(uint8_t* p, uint8_t hci_evt_len,
       if (p_i->inq_count != p_inq->inq_counter)
         p_inq->inq_cmpl_info.num_resp++; /* A new response was found */
 
-      p_cur->inq_result_type = BTM_INQ_RESULT_BR;
+      p_cur->inq_result_type |= BTM_INQ_RESULT_BR;
       if (p_i->inq_count != p_inq->inq_counter) {
         p_cur->device_type = BT_DEVICE_TYPE_BREDR;
         p_i->scan_rsp = false;
@@ -1891,7 +1891,7 @@ tBTM_STATUS btm_initiate_rem_name(const RawAddress& remote_bda, uint8_t origin,
 
       /* If the database entry exists for the device, use its clock offset */
       tINQ_DB_ENT* p_i = btm_inq_db_find(remote_bda);
-      if (p_i) {
+      if (p_i && (p_i->inq_info.results.inq_result_type & BTM_INQ_RESULT_BR)) {
         tBTM_INQ_INFO* p_cur = &p_i->inq_info;
         btsnd_hcic_rmt_name_req(
             remote_bda, p_cur->results.page_scan_rep_mode,
