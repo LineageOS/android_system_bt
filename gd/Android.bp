@@ -299,6 +299,7 @@ cc_test {
         "libbluetooth-protos",
         "libbluetooth_gd",
         "libgmock",
+        "libc++fs",
     ],
     shared_libs: [
         "libchrome",
