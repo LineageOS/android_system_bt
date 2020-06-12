@@ -17,7 +17,6 @@
 #include "storage/config_cache.h"
 
 #include <ios>
-#include <sstream>
 
 #include "storage/mutation.h"
 
@@ -128,6 +127,15 @@ void ConfigCache::SetProperty(std::string section, std::string property, std::st
     return;
   }
   auto section_iter = persistent_devices_.find(section);
+  if (section_iter == persistent_devices_.end() && IsLinkKeyProperty(property)) {
+    // move paired devices or create new paired device when a link key is set
+    auto section_properties = temporary_devices_.extract(section);
+    if (section_properties) {
+      section_iter = persistent_devices_.try_emplace_back(section, std::move(section_properties->second)).first;
+    } else {
+      section_iter = persistent_devices_.try_emplace_back(section, common::ListMap<std::string, std::string>{}).first;
+    }
+  }
   if (section_iter != persistent_devices_.end()) {
     section_iter->second.insert_or_assign(property, std::move(value));
     return;
@@ -138,11 +146,6 @@ void ConfigCache::SetProperty(std::string section, std::string property, std::st
     section_iter = std::get<0>(triple);
   }
   section_iter->second.insert_or_assign(property, std::move(value));
-  if (IsLinkKeyProperty(property)) {
-    // move paired devices
-    auto section_properties = temporary_devices_.extract(section);
-    persistent_devices_.insert_or_assign(section, std::move(section_properties->second));
-  }
 }
 
 bool ConfigCache::RemoveSection(const std::string& section) {
