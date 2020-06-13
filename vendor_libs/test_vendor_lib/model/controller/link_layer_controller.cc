@@ -212,6 +212,12 @@ void LinkLayerController::IncomingPacket(
     case model::packets::PacketType::LE_CONNECT_COMPLETE:
       IncomingLeConnectCompletePacket(incoming);
       break;
+    case model::packets::PacketType::LE_ENCRYPT_CONNECTION:
+      IncomingLeEncryptConnection(incoming);
+      break;
+    case model::packets::PacketType::LE_ENCRYPT_CONNECTION_RESPONSE:
+      IncomingLeEncryptConnectionResponse(incoming);
+      break;
     case model::packets::PacketType::LE_SCAN:
       // TODO: Check Advertising flags and see if we are scannable.
       IncomingLeScanPacket(incoming);
@@ -895,6 +901,61 @@ void LinkLayerController::IncomingLeConnectCompletePacket(
       static_cast<uint8_t>(bluetooth::hci::Role::MASTER),
       complete.GetLeConnectionInterval(), complete.GetLeConnectionLatency(),
       complete.GetLeConnectionSupervisionTimeout());
+}
+
+void LinkLayerController::IncomingLeEncryptConnection(
+    model::packets::LinkLayerPacketView incoming) {
+  LOG_INFO();
+
+  // TODO: Check keys
+  Address peer = incoming.GetSourceAddress();
+  uint16_t handle = connections_.GetHandleOnlyAddress(peer);
+  if (handle == acl::kReservedHandle) {
+    LOG_INFO("@%s: Unknown connection @%s",
+             incoming.GetDestinationAddress().ToString().c_str(),
+             peer.ToString().c_str());
+    return;
+  }
+  ErrorCode status = ErrorCode::SUCCESS;
+  auto le_encrypt = model::packets::LeEncryptConnectionView::Create(incoming);
+  ASSERT(le_encrypt.IsValid());
+
+  if (connections_.IsEncrypted(handle)) {
+    send_event_(bluetooth::hci::EncryptionKeyRefreshCompleteBuilder::Create(
+        status, handle));
+  } else {
+    connections_.Encrypt(handle);
+    send_event_(bluetooth::hci::EncryptionChangeBuilder::Create(
+        status, handle, bluetooth::hci::EncryptionEnabled::ON));
+  }
+  SendLeLinkLayerPacket(
+      model::packets::LeEncryptConnectionResponseBuilder::Create(
+          connections_.GetOwnAddress(handle).GetAddress(), peer,
+          le_encrypt.GetRand(), le_encrypt.GetEdiv(), le_encrypt.GetLtk()));
+}
+
+void LinkLayerController::IncomingLeEncryptConnectionResponse(
+    model::packets::LinkLayerPacketView incoming) {
+  LOG_INFO();
+  // TODO: Check keys
+  uint16_t handle =
+      connections_.GetHandleOnlyAddress(incoming.GetSourceAddress());
+  if (handle == acl::kReservedHandle) {
+    LOG_INFO("@%s: Unknown connection @%s",
+             incoming.GetDestinationAddress().ToString().c_str(),
+             incoming.GetSourceAddress().ToString().c_str());
+    return;
+  }
+  ErrorCode status = ErrorCode::SUCCESS;
+
+  if (connections_.IsEncrypted(handle)) {
+    send_event_(bluetooth::hci::EncryptionKeyRefreshCompleteBuilder::Create(
+        status, handle));
+  } else {
+    connections_.Encrypt(handle);
+    send_event_(bluetooth::hci::EncryptionChangeBuilder::Create(
+        status, handle, bluetooth::hci::EncryptionEnabled::ON));
+  }
 }
 
 void LinkLayerController::IncomingLeScanPacket(
@@ -1720,6 +1781,34 @@ void LinkLayerController::LeSetPrivacyMode(uint8_t address_type, Address addr,
   LOG_INFO("address type = %d ", address_type);
   LOG_INFO("address = %s ", addr.ToString().c_str());
   LOG_INFO("mode = %d ", mode);
+}
+
+void LinkLayerController::HandleLeEnableEncryption(
+    uint16_t handle, std::array<uint8_t, 8> rand, uint16_t ediv,
+    std::array<uint8_t, 16> ltk) {
+  // TODO: Check keys
+  // TODO: Block ACL traffic or at least guard against it
+  if (!connections_.HasHandle(handle)) {
+    return;
+  }
+  SendLeLinkLayerPacket(model::packets::LeEncryptConnectionBuilder::Create(
+      connections_.GetOwnAddress(handle).GetAddress(),
+      connections_.GetAddress(handle).GetAddress(), rand, ediv, ltk));
+}
+
+ErrorCode LinkLayerController::LeEnableEncryption(uint16_t handle,
+                                                  std::array<uint8_t, 8> rand,
+                                                  uint16_t ediv,
+                                                  std::array<uint8_t, 16> ltk) {
+  if (!connections_.HasHandle(handle)) {
+    LOG_INFO("Unknown handle %04x", handle);
+    return ErrorCode::UNKNOWN_CONNECTION;
+  }
+
+  ScheduleTask(milliseconds(5), [this, handle, rand, ediv, ltk]() {
+    HandleLeEnableEncryption(handle, rand, ediv, ltk);
+  });
+  return ErrorCode::SUCCESS;
 }
 
 void LinkLayerController::LeWhiteListRemoveDevice(Address addr,
