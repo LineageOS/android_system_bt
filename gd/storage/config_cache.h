@@ -49,8 +49,16 @@ class ConfigCache {
   ConfigCache(ConfigCache&& other) noexcept;
   ConfigCache& operator=(ConfigCache&& other) noexcept;
 
-  // observers
+  // comparison operators
+  bool operator==(const ConfigCache& rhs) const {
+    return information_sections_ == rhs.information_sections_ && persistent_devices_ == rhs.persistent_devices_ &&
+           temporary_devices_ == rhs.temporary_devices_;
+  }
+  bool operator!=(const ConfigCache& rhs) const {
+    return !(*this == rhs);
+  }
 
+  // observers
   virtual bool HasSection(const std::string& section) const;
   virtual bool HasProperty(const std::string& section, const std::string& property) const;
   // Get property, return std::nullopt if section or property does not exist
