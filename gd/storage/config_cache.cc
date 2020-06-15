@@ -17,6 +17,8 @@
 #include "storage/config_cache.h"
 
 #include <ios>
+#include <sstream>
+#include <utility>
 
 #include "storage/mutation.h"
 
@@ -40,28 +42,63 @@ namespace storage {
 const std::unordered_set<std::string_view> kLinkKeyPropertyNames = {
     "LinkKey", "LE_KEY_PENC", "LE_KEY_PID", "LE_KEY_PCSRK", "LE_KEY_LENC", "LE_KEY_LCSRK"};
 
+const std::string ConfigCache::kDefaultSectionName = "Global";
+
 ConfigCache::ConfigCache(size_t temp_device_capacity)
     : information_sections_(), persistent_devices_(), temporary_devices_(temp_device_capacity) {}
 
+void ConfigCache::SetPersistentConfigChangedCallback(std::function<void()> persistent_config_changed_callback) {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  persistent_config_changed_callback_ = std::move(persistent_config_changed_callback);
+}
+
 ConfigCache::ConfigCache(ConfigCache&& other) noexcept
-    : information_sections_(std::move(other.information_sections_)),
+    : persistent_config_changed_callback_(std::move(other.persistent_config_changed_callback_)),
+      information_sections_(std::move(other.information_sections_)),
       persistent_devices_(std::move(other.persistent_devices_)),
-      temporary_devices_(std::move(other.temporary_devices_)) {}
+      temporary_devices_(std::move(other.temporary_devices_)) {
+  // std::function will be in a valid but unspecified state after std::move(), hence resetting it
+  other.persistent_config_changed_callback_ = {};
+}
 
 ConfigCache& ConfigCache::operator=(ConfigCache&& other) noexcept {
   if (&other == this) {
     return *this;
   }
+  std::lock_guard<std::recursive_mutex> my_lock(mutex_);
+  std::lock_guard<std::recursive_mutex> others_lock(other.mutex_);
+  persistent_config_changed_callback_.swap(other.persistent_config_changed_callback_);
+  other.persistent_config_changed_callback_ = {};
   information_sections_ = std::move(other.information_sections_);
   persistent_devices_ = std::move(other.persistent_devices_);
   temporary_devices_ = std::move(other.temporary_devices_);
   return *this;
 }
 
+bool ConfigCache::operator==(const ConfigCache& rhs) const {
+  std::lock_guard<std::recursive_mutex> my_lock(mutex_);
+  std::lock_guard<std::recursive_mutex> others_lock(rhs.mutex_);
+  return information_sections_ == rhs.information_sections_ && persistent_devices_ == rhs.persistent_devices_ &&
+         temporary_devices_ == rhs.temporary_devices_;
+}
+
+bool ConfigCache::operator!=(const ConfigCache& rhs) const {
+  return !(*this == rhs);
+}
+
 void ConfigCache::Clear() {
-  information_sections_.clear();
-  persistent_devices_.clear();
-  temporary_devices_.clear();
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  if (information_sections_.size() > 0) {
+    information_sections_.clear();
+    PersistentConfigChangedCallback();
+  }
+  if (persistent_devices_.size() > 0) {
+    persistent_devices_.clear();
+    PersistentConfigChangedCallback();
+  }
+  if (temporary_devices_.size() > 0) {
+    temporary_devices_.clear();
+  }
 }
 
 bool ConfigCache::HasSection(const std::string& section) const {
@@ -124,6 +161,7 @@ void ConfigCache::SetProperty(std::string section, std::string property, std::st
       section_iter = information_sections_.try_emplace_back(section, common::ListMap<std::string, std::string>{}).first;
     }
     section_iter->second.insert_or_assign(property, std::move(value));
+    PersistentConfigChangedCallback();
     return;
   }
   auto section_iter = persistent_devices_.find(section);
@@ -138,6 +176,7 @@ void ConfigCache::SetProperty(std::string section, std::string property, std::st
   }
   if (section_iter != persistent_devices_.end()) {
     section_iter->second.insert_or_assign(property, std::move(value));
+    PersistentConfigChangedCallback();
     return;
   }
   section_iter = temporary_devices_.find(section);
@@ -151,8 +190,12 @@ void ConfigCache::SetProperty(std::string section, std::string property, std::st
 bool ConfigCache::RemoveSection(const std::string& section) {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   // sections are unique among all three maps, hence removing from one of them is enough
-  return information_sections_.extract(section) || persistent_devices_.extract(section) ||
-         temporary_devices_.extract(section);
+  if (information_sections_.extract(section) || persistent_devices_.extract(section)) {
+    PersistentConfigChangedCallback();
+    return true;
+  } else {
+    return temporary_devices_.extract(section).has_value();
+  }
 }
 
 bool ConfigCache::RemoveProperty(const std::string& section, const std::string& property) {
@@ -169,7 +212,12 @@ bool ConfigCache::RemoveProperty(const std::string& section, const std::string& 
       auto section_properties = persistent_devices_.extract(section);
       temporary_devices_.insert_or_assign(section, std::move(section_properties->second));
     }
-    return value.has_value();
+    if (value.has_value()) {
+      PersistentConfigChangedCallback();
+      return true;
+    } else {
+      return false;
+    }
   }
   section_iter = temporary_devices_.find(section);
   if (section_iter != temporary_devices_.end()) {
@@ -186,13 +234,30 @@ bool ConfigCache::IsLinkKeyProperty(const std::string& property) {
   return kLinkKeyPropertyNames.find(property) != kLinkKeyPropertyNames.end();
 }
 
-void ConfigCache::RemoveRestricted() {
+void ConfigCache::RemoveSectionWithProperty(const std::string& property) {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
-  for (auto& section : persistent_devices_) {
-    if (section.second.contains("Restricted")) {
-      LOG_DEBUG("Removing restricted device %s", section.first.c_str());
-      persistent_devices_.extract(section.first);
+  size_t num_persistent_removed = 0;
+  for (auto* config_section : {&information_sections_, &persistent_devices_}) {
+    for (auto it = config_section->begin(); it != config_section->end();) {
+      if (it->second.contains(property)) {
+        LOG_DEBUG("Removing persistent section %s with property %s", it->first.c_str(), property.c_str());
+        it = config_section->erase(it);
+        num_persistent_removed++;
+        continue;
+      }
+      it++;
     }
+  }
+  for (auto it = temporary_devices_.begin(); it != temporary_devices_.end();) {
+    if (it->second.contains(property)) {
+      LOG_DEBUG("Removing temporary section %s with property %s", it->first.c_str(), property.c_str());
+      it = temporary_devices_.erase(it);
+      continue;
+    }
+    it++;
+  }
+  if (num_persistent_removed > 0) {
+    PersistentConfigChangedCallback();
   }
 }
 
@@ -222,6 +287,21 @@ void ConfigCache::Commit(Mutation& mutation) {
       }
     }
   }
+}
+
+std::string ConfigCache::SerializeToLegacyFormat() const {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  std::stringstream serialized;
+  for (const auto* config_section : {&information_sections_, &persistent_devices_}) {
+    for (const auto& section : *config_section) {
+      serialized << "[" << section.first << "]" << std::endl;
+      for (const auto& property : section.second) {
+        serialized << property.first << " = " << property.second << std::endl;
+      }
+      serialized << std::endl;
+    }
+  }
+  return serialized.str();
 }
 
 }  // namespace storage
