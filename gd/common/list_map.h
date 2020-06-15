@@ -25,8 +25,6 @@
 #include <type_traits>
 #include <unordered_map>
 
-#include "os/log.h"
-
 namespace bluetooth {
 namespace common {
 
@@ -79,6 +77,14 @@ class ListMap {
       key_map_.emplace(iter->first, iter);
     }
     return *this;
+  }
+
+  // comparison operators
+  bool operator==(const ListMap& rhs) const {
+    return node_list_ == rhs.node_list_;
+  }
+  bool operator!=(const ListMap& rhs) const {
+    return !(*this == rhs);
   }
 
   ~ListMap() {
