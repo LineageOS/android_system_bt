@@ -174,7 +174,7 @@ void WriteHeaderFile(FILE* fp, const uint8_t* data, size_t data_len) {
       "const std::string string_data_(data_, data_ + sizeof(data_));\n"
       "}  // namespace\n");
   fprintf(fp, "const unsigned char* %s::data = data_;\n", opts.ns_name);
-  fprintf(fp, "const size_t %s::data_size = %zd;\n", opts.ns_name, data_len);
+  fprintf(fp, "const size_t %s::data_size = %zu;\n", opts.ns_name, data_len);
   fprintf(fp, "const std::string& %s::GetBundledSchemaData() { return string_data_; }\n", opts.ns_name);
 }
 
@@ -240,7 +240,7 @@ int WriteBundledSchema() {
     return EXIT_FAILURE;
   }
   fprintf(
-      stdout, "Successfully bundled %zd bfbs files into filename:%s\n", bfbs_filenames.size(), final_filename.c_str());
+      stdout, "Successfully bundled %zu bfbs files into filename:%s\n", bfbs_filenames.size(), final_filename.c_str());
 
   std::string header(opts.gen);
   header += ("/" + std::string(opts.filename) + ".h");
