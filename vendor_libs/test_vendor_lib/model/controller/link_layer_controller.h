@@ -153,6 +153,12 @@ class LinkLayerController {
   bool LeResolvingListFull();
   void LeSetPrivacyMode(uint8_t address_type, Address addr, uint8_t mode);
 
+  void HandleLeEnableEncryption(uint16_t handle, std::array<uint8_t, 8> rand,
+                                uint16_t ediv, std::array<uint8_t, 16> ltk);
+
+  ErrorCode LeEnableEncryption(uint16_t handle, std::array<uint8_t, 8> rand,
+                               uint16_t ediv, std::array<uint8_t, 16> ltk);
+
   ErrorCode SetLeAdvertisingEnable(uint8_t le_advertising_enable) {
     le_advertising_enable_ = le_advertising_enable;
     // TODO: Check properties and return errors
@@ -272,6 +278,9 @@ class LinkLayerController {
       model::packets::LinkLayerPacketView packet);
   void IncomingLeConnectPacket(model::packets::LinkLayerPacketView packet);
   void IncomingLeConnectCompletePacket(
+      model::packets::LinkLayerPacketView packet);
+  void IncomingLeEncryptConnection(model::packets::LinkLayerPacketView packet);
+  void IncomingLeEncryptConnectionResponse(
       model::packets::LinkLayerPacketView packet);
   void IncomingLeScanPacket(model::packets::LinkLayerPacketView packet);
   void IncomingLeScanResponsePacket(model::packets::LinkLayerPacketView packet);
