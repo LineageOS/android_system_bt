@@ -96,14 +96,7 @@ bool btm_sec_are_all_trusted(uint32_t p_mask[]);
 static tBTM_STATUS btm_sec_send_hci_disconnect(tBTM_SEC_DEV_REC* p_dev_rec,
                                                uint8_t reason,
                                                uint16_t conn_handle);
-uint8_t btm_sec_start_role_switch(tBTM_SEC_DEV_REC* p_dev_rec);
 tBTM_SEC_DEV_REC* btm_sec_find_dev_by_sec_state(uint8_t state);
-
-static bool btm_sec_set_security_level(CONNECTION_TYPE conn_type,
-                                       const char* p_name, uint8_t service_id,
-                                       uint16_t sec_level, uint16_t psm,
-                                       uint32_t mx_proto_id,
-                                       uint32_t mx_chan_id);
 
 static bool btm_dev_authenticated(tBTM_SEC_DEV_REC* p_dev_rec);
 static bool btm_dev_encrypted(tBTM_SEC_DEV_REC* p_dev_rec);
@@ -428,41 +421,10 @@ void BTM_SetPairableMode(bool allow_pairing, bool connect_only_paired) {
 bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
                           uint8_t service_id, uint16_t sec_level, uint16_t psm,
                           uint32_t mx_proto_id, uint32_t mx_chan_id) {
-  return (btm_sec_set_security_level(is_originator, p_name, service_id,
-                                     sec_level, psm, mx_proto_id, mx_chan_id));
-}
-
-/*******************************************************************************
- *
- * Function         btm_sec_set_security_level
- *
- * Description      Register service security level with Security Manager
- *
- * Parameters:      conn_type   - true if originating the connection
- *                  p_name      - Name of the service relevant only if
- *                                authorization will show this name to user.
- *                                Ignored if BTM_SEC_SERVICE_NAME_LEN is 0.
- *                  service_id  - service ID for the service passed to
- *                                authorization callback
- *                  sec_level   - bit mask of the security features
- *                  psm         - L2CAP PSM
- *                  mx_proto_id - protocol ID of multiplexing proto below
- *                  mx_chan_id  - channel ID of multiplexing proto below
- *
- * Returns          true if registered OK, else false
- *
- ******************************************************************************/
-static bool btm_sec_set_security_level(CONNECTION_TYPE conn_type,
-                                       const char* p_name, uint8_t service_id,
-                                       uint16_t sec_level, uint16_t psm,
-                                       uint32_t mx_proto_id,
-                                       uint32_t mx_chan_id) {
   tBTM_SEC_SERV_REC* p_srec;
   uint16_t index;
   uint16_t first_unused_record = BTM_NO_AVAIL_SEC_SERVICES;
   bool record_allocated = false;
-  bool is_originator;
-  is_originator = conn_type;
 
   BTM_TRACE_API("%s : sec: 0x%x", __func__, sec_level);
 
