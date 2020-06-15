@@ -36,8 +36,8 @@ enum PacketType : 8 {
     REMOTE_NAME_REQUEST = 0x1D,
     REMOTE_NAME_REQUEST_RESPONSE = 0x1E,
     SCO = 0x1F,
-    COMMAND = 0x23, // Remove
-    RESPONSE = 0x24, // Remove
+    LE_ENCRYPT_CONNECTION = 0x20,
+    LE_ENCRYPT_CONNECTION_RESPONSE = 0x21,
 }
 
 packet LinkLayerPacket {
@@ -45,15 +45,6 @@ packet LinkLayerPacket {
   source_address : Address,
   destination_address : Address,
   _body_,
-}
-
-packet Command : LinkLayerPacket (type = COMMAND) {
-  _payload_,
-}
-
-packet Response : LinkLayerPacket (type = RESPONSE) {
-  opcode : 16,
-  _payload_,
 }
 
 packet AclPacket : LinkLayerPacket (type = ACL) {
@@ -232,5 +223,17 @@ packet RemoteNameRequestResponse : LinkLayerPacket (type = REMOTE_NAME_REQUEST_R
 
 packet ScoPacket : LinkLayerPacket (type = SCO) {
   _payload_,
+}
+
+packet LeEncryptConnection : LinkLayerPacket (type = LE_ENCRYPT_CONNECTION) {
+  rand : 8[8],
+  ediv : 16,
+  ltk : 8[16],
+}
+
+packet LeEncryptConnectionResponse : LinkLayerPacket (type = LE_ENCRYPT_CONNECTION_RESPONSE) {
+  rand : 8[8],
+  ediv : 16,
+  ltk : 8[16],
 }
 
