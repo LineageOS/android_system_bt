@@ -24,7 +24,6 @@
 #include "beacon.h"
 
 using android::bluetooth::test_vendor_lib::model::devices::ScriptedBeaconBleAdProto::PlaybackEvent;
-using android::bluetooth::test_vendor_lib::model::devices::ScriptedBeaconBleAdProto::PlaybackEvents;
 
 namespace test_vendor_lib {
 // Pretend to be a lot of beacons by advertising from a file.
@@ -55,13 +54,9 @@ class ScriptedBeacon : public Beacon {
 
  private:
   static bool registered_;
-  bool scanned_once_{false};
-  std::chrono::steady_clock::duration elapsed_time_{};
-  std::chrono::steady_clock::time_point last_timer_tick_{};
   std::string config_file_{};
   std::string events_file_{};
   std::ofstream events_ostream_;
-  PlaybackEvent::PlaybackEventType prev_event_type_{PlaybackEvent::NOT_READY};
   struct Advertisement {
     std::vector<uint8_t> ad;
     Address address;
@@ -72,22 +67,14 @@ class ScriptedBeacon : public Beacon {
 
   void get_next_advertisement();
 
-  bool is_config_file_ready();
-
-  void add_event(android::bluetooth::test_vendor_lib::model::devices::ScriptedBeaconBleAdProto::PlaybackEvent::PlaybackEventType type);
+  void set_state(
+      android::bluetooth::test_vendor_lib::model::devices::
+          ScriptedBeaconBleAdProto::PlaybackEvent::PlaybackEventType type);
 
   Advertisement next_ad_{};
   int packet_num_{0};
-  bool file_absence_logged_{false};
-  PlaybackEvents playback_events_{};
+  PlaybackEvent::PlaybackEventType current_state_{PlaybackEvent::UNKNOWN};
   std::chrono::steady_clock::time_point next_check_time_{};
-  std::chrono::steady_clock::time_point write_delay_next_check_time_{};
-
-
   android::bluetooth::test_vendor_lib::model::devices::ScriptedBeaconBleAdProto::BleAdvertisementList ble_ad_list_;
-
-  bool play_back_on_{false};
-
-  bool play_back_complete_{false};
 };
 }  // namespace test_vendor_lib
