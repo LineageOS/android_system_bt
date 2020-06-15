@@ -36,6 +36,30 @@ TEST(ListMapTest, empty_test) {
   EXPECT_FALSE(list_map.extract(42));
 }
 
+TEST(ListMapTest, comparison_test) {
+  ListMap<int, int> list_map_1;
+  list_map_1.insert_or_assign(1, 10);
+  list_map_1.insert_or_assign(2, 20);
+  ListMap<int, int> list_map_2;
+  list_map_2.insert_or_assign(1, 10);
+  list_map_2.insert_or_assign(2, 20);
+  EXPECT_EQ(list_map_1, list_map_2);
+  // List map with different value should be different
+  list_map_2.insert_or_assign(1, 11);
+  EXPECT_NE(list_map_1, list_map_2);
+  // List maps with different order should not be equal
+  ListMap<int, int> list_map_3;
+  list_map_3.insert_or_assign(2, 20);
+  list_map_3.insert_or_assign(1, 10);
+  EXPECT_NE(list_map_1, list_map_3);
+  // Empty list map should not be equal to non-empty ones
+  ListMap<int, int> list_map_4;
+  EXPECT_NE(list_map_1, list_map_4);
+  // Empty list maps should be equal
+  ListMap<int, int> list_map_5;
+  EXPECT_EQ(list_map_4, list_map_5);
+}
+
 TEST(ListMapTest, copy_test) {
   ListMap<int, std::shared_ptr<int>> list_map;
   list_map.insert_or_assign(1, std::make_shared<int>(100));
