@@ -42,6 +42,57 @@ TEST(ConfigCacheTest, simple_set_get_test) {
   EXPECT_EQ(*value, "C");
 }
 
+TEST(ConfigCacheTest, insert_boundary_device_with_linkkey_test) {
+  ConfigCache config(2);
+  config.SetProperty("A", "B", "C");
+  config.SetProperty("CC:DD:EE:FF:00:10", "Name", "Hello");
+  config.SetProperty("CC:DD:EE:FF:00:09", "Name", "Hello 2");
+  config.SetProperty("CC:DD:EE:FF:00:11", "LinkKey", "AABBAABBCCDDEE");
+  EXPECT_TRUE(config.GetProperty("CC:DD:EE:FF:00:10", "Name"));
+}
+
+TEST(ConfigCacheTest, comparison_test) {
+  ConfigCache config_1(2);
+  config_1.SetProperty("A", "B", "C");
+  config_1.SetProperty("CC:DD:EE:FF:00:10", "Name", "Hello");
+  config_1.SetProperty("CC:DD:EE:FF:00:09", "Name", "Hello 2");
+  config_1.SetProperty("CC:DD:EE:FF:00:11", "LinkKey", "AABBAABBCCDDEE");
+  ConfigCache config_2(2);
+  config_2.SetProperty("A", "B", "C");
+  config_2.SetProperty("CC:DD:EE:FF:00:10", "Name", "Hello");
+  config_2.SetProperty("CC:DD:EE:FF:00:09", "Name", "Hello 2");
+  config_2.SetProperty("CC:DD:EE:FF:00:11", "LinkKey", "AABBAABBCCDDEE");
+  EXPECT_EQ(config_1, config_2);
+  // Config with different temp device order should not be equal
+  EXPECT_TRUE(config_2.GetProperty("CC:DD:EE:FF:00:10", "Name"));
+  EXPECT_NE(config_1, config_2);
+  EXPECT_TRUE(config_1.GetProperty("CC:DD:EE:FF:00:10", "Name"));
+  EXPECT_EQ(config_1, config_2);
+  // Config with different persistent device order should not be equal
+  config_1.SetProperty("CC:DD:EE:FF:00:12", "LinkKey", "AABBAABBCCDDEE");
+  config_2.RemoveSection("CC:DD:EE:FF:00:11");
+  config_2.SetProperty("CC:DD:EE:FF:00:12", "LinkKey", "AABBAABBCCDDEE");
+  config_2.SetProperty("CC:DD:EE:FF:00:11", "LinkKey", "AABBAABBCCDDEE");
+  EXPECT_NE(config_1, config_2);
+  // Config with different capacity should not be equal
+  ConfigCache config_3(3);
+  config_3.SetProperty("A", "B", "C");
+  config_3.SetProperty("CC:DD:EE:FF:00:10", "Name", "Hello");
+  config_3.SetProperty("CC:DD:EE:FF:00:09", "Name", "Hello 2");
+  config_3.SetProperty("CC:DD:EE:FF:00:11", "LinkKey", "AABBAABBCCDDEE");
+  config_3.SetProperty("CC:DD:EE:FF:00:12", "LinkKey", "AABBAABBCCDDEE");
+  EXPECT_NE(config_1, config_3);
+  // Empty config should not be equal to non-empty ones
+  ConfigCache config_4(2);
+  EXPECT_NE(config_1, config_4);
+  // Empty configs should be equal
+  ConfigCache config_5(2);
+  EXPECT_EQ(config_4, config_5);
+  // Empty configs with different capacity should not be equal
+  ConfigCache config_6(3);
+  EXPECT_NE(config_4, config_6);
+}
+
 TEST(ConfigCacheTest, empty_string_test) {
   ConfigCache config(100);
   config.SetProperty("A", "B", "");
@@ -150,7 +201,7 @@ TEST(ConfigCacheTest, get_persistent_devices_test) {
   EXPECT_THAT(config.GetPersistentDevices(), ElementsAre("AA:BB:CC:DD:EE:FF"));
 }
 
-TEST(ConfigCacheTest, appoaching_temporary_cache_limit_test) {
+TEST(ConfigCacheTest, appoaching_temporary_config_limit_test) {
   ConfigCache config(2);
   for (int i = 0; i < 10; ++i) {
     config.SetProperty(GetTestAddress(i), "Name", "Hello" + std::to_string(i));
@@ -173,6 +224,39 @@ TEST(ConfigCacheTest, appoaching_temporary_cache_limit_test) {
   EXPECT_THAT(
       config.GetPersistentDevices(),
       ElementsAre(GetTestAddress(0), GetTestAddress(2), GetTestAddress(4), GetTestAddress(6), GetTestAddress(8)));
+}
+
+TEST(ConfigCacheTest, remove_section_with_property_test) {
+  ConfigCache config(100);
+  config.SetProperty("A", "B", "C");
+  config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
+  config.SetProperty("AA:BB:CC:DD:EE:FF", "C", "D");
+  config.SetProperty("CC:DD:EE:FF:00:11", "B", "AABBAABBCCDDEE");
+  config.SetProperty("CC:DD:EE:FF:00:11", "LinkKey", "AABBAABBCCDDEE");
+  config.RemoveSectionWithProperty("B");
+  EXPECT_FALSE(config.HasSection("A"));
+  EXPECT_FALSE(config.HasSection("AA:BB:CC:DD:EE:FF"));
+  EXPECT_FALSE(config.HasSection("CC:DD:EE:FF:00:11"));
+}
+
+TEST(ConfigCacheTest, persistent_config_changed_callback_test) {
+  ConfigCache config(100);
+  int num_change = 0;
+  config.SetPersistentConfigChangedCallback([&num_change] { num_change++; });
+  config.SetProperty("A", "B", "C");
+  EXPECT_EQ(num_change, 1);
+  config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
+  EXPECT_EQ(num_change, 1);
+  config.SetProperty("AA:BB:CC:DD:EE:FF", "C", "D");
+  EXPECT_EQ(num_change, 1);
+  config.SetProperty("CC:DD:EE:FF:00:11", "B", "AABBAABBCCDDEE");
+  EXPECT_EQ(num_change, 1);
+  config.SetProperty("CC:DD:EE:FF:00:11", "LinkKey", "AABBAABBCCDDEE");
+  EXPECT_EQ(num_change, 2);
+  config.RemoveProperty("CC:DD:EE:FF:00:11", "LinkKey");
+  EXPECT_EQ(num_change, 3);
+  config.RemoveSectionWithProperty("B");
+  EXPECT_EQ(num_change, 4);
 }
 
 }  // namespace testing
