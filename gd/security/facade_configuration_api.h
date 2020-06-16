@@ -43,6 +43,7 @@ class FacadeConfigurationApi {
   void SetOobData(hci::OobDataPresent oob_present);
 
   void SetLeIoCapability(security::IoCapability io_capability);
+  void SetLeAuthReq(uint8_t auth_req);
 
  protected:
   FacadeConfigurationApi(os::Handler* security_handler, internal::SecurityManagerImpl* security_manager_impl)
