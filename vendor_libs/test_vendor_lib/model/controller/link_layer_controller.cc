@@ -1260,14 +1260,14 @@ ErrorCode LinkLayerController::UserConfirmationRequestReply(
 
   security_manager_.AuthenticationRequestFinished();
 
-  ScheduleTask(milliseconds(5), [this, peer, key_vec]() {
-    send_event_(bluetooth::hci::LinkKeyNotificationBuilder::Create(
-        peer, key_vec, bluetooth::hci::KeyType::AUTHENTICATED_P256));
-  });
-
   ScheduleTask(milliseconds(5), [this, peer]() {
     send_event_(bluetooth::hci::SimplePairingCompleteBuilder::Create(
         ErrorCode::SUCCESS, peer));
+  });
+
+  ScheduleTask(milliseconds(5), [this, peer, key_vec]() {
+    send_event_(bluetooth::hci::LinkKeyNotificationBuilder::Create(
+        peer, key_vec, bluetooth::hci::KeyType::AUTHENTICATED_P256));
   });
 
   ScheduleTask(milliseconds(15),
@@ -1280,6 +1280,12 @@ ErrorCode LinkLayerController::UserConfirmationRequestNegativeReply(
   if (security_manager_.GetAuthenticationAddress() != peer) {
     return ErrorCode::AUTHENTICATION_FAILURE;
   }
+
+  ScheduleTask(milliseconds(5), [this, peer]() {
+    send_event_(bluetooth::hci::SimplePairingCompleteBuilder::Create(
+        ErrorCode::AUTHENTICATION_FAILURE, peer));
+  });
+
   return ErrorCode::SUCCESS;
 }
 
