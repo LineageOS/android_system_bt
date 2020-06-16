@@ -4,6 +4,7 @@ filegroup {
             "config_cache.cc",
             "config_cache_helper.cc",
             "legacy.cc",
+            "legacy_config_file.cc",
             "legacy_osi_config.cc",
             "mutation_entry.cc",
     ],
@@ -14,6 +15,7 @@ filegroup {
     srcs: [
             "config_cache_test.cc",
             "config_cache_helper_test.cc",
+            "legacy_config_file_test.cc",
             "legacy_test.cc",
             "legacy_osi_config.cc",
             "mutation_test.cc",

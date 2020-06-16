@@ -226,4 +226,37 @@ TEST(ConfigCacheTest, appoaching_temporary_config_limit_test) {
       ElementsAre(GetTestAddress(0), GetTestAddress(2), GetTestAddress(4), GetTestAddress(6), GetTestAddress(8)));
 }
 
+TEST(ConfigCacheTest, remove_section_with_property_test) {
+  ConfigCache config(100);
+  config.SetProperty("A", "B", "C");
+  config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
+  config.SetProperty("AA:BB:CC:DD:EE:FF", "C", "D");
+  config.SetProperty("CC:DD:EE:FF:00:11", "B", "AABBAABBCCDDEE");
+  config.SetProperty("CC:DD:EE:FF:00:11", "LinkKey", "AABBAABBCCDDEE");
+  config.RemoveSectionWithProperty("B");
+  EXPECT_FALSE(config.HasSection("A"));
+  EXPECT_FALSE(config.HasSection("AA:BB:CC:DD:EE:FF"));
+  EXPECT_FALSE(config.HasSection("CC:DD:EE:FF:00:11"));
+}
+
+TEST(ConfigCacheTest, persistent_config_changed_callback_test) {
+  ConfigCache config(100);
+  int num_change = 0;
+  config.SetPersistentConfigChangedCallback([&num_change] { num_change++; });
+  config.SetProperty("A", "B", "C");
+  EXPECT_EQ(num_change, 1);
+  config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
+  EXPECT_EQ(num_change, 1);
+  config.SetProperty("AA:BB:CC:DD:EE:FF", "C", "D");
+  EXPECT_EQ(num_change, 1);
+  config.SetProperty("CC:DD:EE:FF:00:11", "B", "AABBAABBCCDDEE");
+  EXPECT_EQ(num_change, 1);
+  config.SetProperty("CC:DD:EE:FF:00:11", "LinkKey", "AABBAABBCCDDEE");
+  EXPECT_EQ(num_change, 2);
+  config.RemoveProperty("CC:DD:EE:FF:00:11", "LinkKey");
+  EXPECT_EQ(num_change, 3);
+  config.RemoveSectionWithProperty("B");
+  EXPECT_EQ(num_change, 4);
+}
+
 }  // namespace testing
