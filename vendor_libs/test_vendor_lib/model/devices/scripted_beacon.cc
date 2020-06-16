@@ -68,7 +68,7 @@ ScriptedBeacon::ScriptedBeacon() {
   properties_.SetLeScanResponse({0x05,  // Length
                                  0x08,  // TYPE_NAME_SHORT
                                  'g', 'b', 'e', 'a'});
-  LOG_INFO("%s scripted_beacon registered %s", __func__, registered_ ? "true" : "false");
+  LOG_INFO("Scripted_beacon registered %s", registered_ ? "true" : "false");
 }
 
 bool has_time_elapsed(steady_clock::time_point time_point) {
@@ -77,7 +77,9 @@ bool has_time_elapsed(steady_clock::time_point time_point) {
 
 void ScriptedBeacon::Initialize(const vector<std::string>& args) {
   if (args.size() < 2) {
-    LOG_ERROR("Initialization failed, need mac address, playback and playback events file arguments %s", __func__);
+    LOG_ERROR(
+        "Initialization failed, need mac address, playback and playback events "
+        "file arguments");
     return;
   }
 
@@ -85,7 +87,9 @@ void ScriptedBeacon::Initialize(const vector<std::string>& args) {
   if (Address::FromString(args[1], addr)) properties_.SetLeAddress(addr);
 
   if (args.size() < 4) {
-    LOG_ERROR("Initialization failed, need playback and playback events file arguments %s", __func__);
+    LOG_ERROR(
+        "Initialization failed, need playback and playback events file "
+        "arguments");
   }
   config_file_ = args[2];
   events_file_ = args[3];
@@ -93,24 +97,20 @@ void ScriptedBeacon::Initialize(const vector<std::string>& args) {
 }
 
 void ScriptedBeacon::populate_event(PlaybackEvent * event, PlaybackEvent::PlaybackEventType type) {
-  LOG_INFO("%s: adding event: %d", __func__, type);
+  LOG_INFO("Adding event: %d", type);
   event->set_type(type);
   event->set_secs_since_epoch(system_clock::now().time_since_epoch().count());
 }
 
 // Adds events to events file; we won't be able to post anything to the file
-// until we set to permissive mode in tests. We set permissive mode in tests
-// when we copy playback file. Until then we capture all the events in write
-// it to the events file when it becomes available. There after we should be
-// able to write events to file as soon as they are posted.
+// until we set to permissive mode in tests. No events are posted until then.
 void ScriptedBeacon::set_state(PlaybackEvent::PlaybackEventType state) {
   PlaybackEvent event;
   current_state_ = state;
   if (!events_ostream_.is_open()) {
     events_ostream_.open(events_file_, std::ios::out | std::ios::binary | std::ios::trunc);
     if (!events_ostream_.is_open()) {
-      LOG_INFO("%s: Events file not opened yet, for event: %d", __func__,
-               state);
+      LOG_INFO("Events file not opened yet, for event: %d", state);
       return;
     }
   }
@@ -152,14 +152,13 @@ void ScriptedBeacon::TimerTick() {
       }
       std::fstream input(config_file_, std::ios::in | std::ios::binary);
       if (!ble_ad_list_.ParseFromIstream(&input)) {
-        LOG_ERROR("%s: Cannot parse playback file %s", __func__,
-                  config_file_.c_str());
+        LOG_ERROR("Cannot parse playback file %s", config_file_.c_str());
         set_state(PlaybackEvent::FILE_PARSING_FAILED);
         return;
       } else {
         set_state(PlaybackEvent::PLAYBACK_STARTED);
-        LOG_INFO("%s: Starting Ble advertisement playback from file: %s",
-                 __func__, config_file_.c_str());
+        LOG_INFO("Starting Ble advertisement playback from file: %s",
+                 config_file_.c_str());
         next_ad_.ad_time = steady_clock::now();
         get_next_advertisement();
         input.close();
@@ -183,8 +182,10 @@ void ScriptedBeacon::TimerTick() {
           if (events_ostream_.is_open()) {
             events_ostream_.close();
           }
-          LOG_INFO("%s: Completed Ble advertisement playback from file: %s",
-                   __func__, config_file_.c_str());
+          LOG_INFO(
+              "Completed Ble advertisement playback from file: %s with %d "
+              "packets",
+              config_file_.c_str(), packet_num_);
           break;
         }
       }
