@@ -142,6 +142,7 @@ class PySecurity(Closable):
             is complete.  For the DUT we need to wait for it,
             for Cert it isn't needed.
         """
+        logging.info("DUT: Waiting for Bond Event")
         self._bond_event_stream.assert_event_occurs(lambda event: event.message_type == expected_bond_event)
 
     def enforce_security_policy(self, address, type, policy):
