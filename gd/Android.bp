@@ -1,6 +1,5 @@
 cc_defaults {
     name: "gd_defaults",
-    include_dirs: ["external/protobuf/src"],
     target: {
         android: {
             test_config_template: "AndroidTestTemplate.xml",
@@ -114,17 +113,11 @@ cc_defaults {
             srcs: [
                 ":BluetoothOsSources_linux_generic",
             ],
-            shared_libs: [
-                "libprotobuf-cpp-full",
-            ],
         },
         host: {
             srcs: [
                 ":BluetoothHalSources_hci_rootcanal",
                 ":BluetoothOsSources_host",
-            ],
-            shared_libs: [
-                "libprotobuf-cpp-full",
             ],
         },
         android: {
@@ -225,7 +218,6 @@ cc_binary {
         "libchrome",
         "libcrypto",
         "libgrpc++_unsecure",
-        "libprotobuf-cpp-full",
     ],
     target: {
         android: {
@@ -304,7 +296,6 @@ cc_test {
     shared_libs: [
         "libchrome",
         "libcrypto",
-        "libprotobuf-cpp-full",
     ],
     sanitize: {
         address: true,
@@ -352,7 +343,6 @@ cc_defaults {
     ],
     shared_libs: [
         "libcrypto",
-        "libprotobuf-cpp-full",
     ],
     cflags: [
         "-DFUZZ_TARGET",
