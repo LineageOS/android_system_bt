@@ -397,7 +397,7 @@ void SecurityManagerImpl::OnSmpCommandLe(hci::AddressWithType device) {
         /*TODO: properly obtain capabilities from device-specific storage*/
         .myPairingCapabilities = {.io_capability = local_le_io_capability_,
                                   .oob_data_flag = OobDataFlag::NOT_PRESENT,
-                                  .auth_req = AuthReqMaskBondingFlag | AuthReqMaskMitm | AuthReqMaskSc,
+                                  .auth_req = local_le_auth_req_,
                                   .maximum_encryption_key_size = 16,
                                   .initiator_key_distribution = 0x07,
                                   .responder_key_distribution = 0x07},
@@ -454,7 +454,7 @@ void SecurityManagerImpl::OnConnectionOpenLe(std::unique_ptr<l2cap::le::FixedCha
       /*TODO: properly obtain capabilities from device-specific storage*/
       .myPairingCapabilities = {.io_capability = local_le_io_capability_,
                                 .oob_data_flag = OobDataFlag::NOT_PRESENT,
-                                .auth_req = AuthReqMaskBondingFlag | AuthReqMaskMitm | AuthReqMaskSc,
+                                .auth_req = local_le_auth_req_,
                                 .maximum_encryption_key_size = 16,
                                 .initiator_key_distribution = 0x07,
                                 .responder_key_distribution = 0x07},
@@ -538,8 +538,9 @@ void SecurityManagerImpl::OnPairingFinished(security::PairingResultOrFailure pai
     return;
   }
 
-  LOG_INFO("Pairing with %s was successfull",
-           std::get<PairingResult>(pairing_result).connection_address.ToString().c_str());
+  auto result = std::get<PairingResult>(pairing_result);
+  LOG_INFO("Pairing with %s was successful", result.connection_address.ToString().c_str());
+  NotifyDeviceBonded(result.connection_address);
 }
 
 // Facade Configuration API functions
@@ -549,6 +550,10 @@ void SecurityManagerImpl::SetIoCapability(hci::IoCapability io_capability) {
 
 void SecurityManagerImpl::SetLeIoCapability(security::IoCapability io_capability) {
   this->local_le_io_capability_ = io_capability;
+}
+
+void SecurityManagerImpl::SetLeAuthReq(uint8_t auth_req) {
+  this->local_le_auth_req_ = auth_req;
 }
 
 void SecurityManagerImpl::SetAuthenticationRequirements(hci::AuthenticationRequirements authentication_requirements) {
