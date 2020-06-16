@@ -190,6 +190,27 @@ class SecurityTest(GdBaseTestClass):
             expected_init_bond_event=BondMsgType.DEVICE_BONDED,
             expected_resp_bond_event=None)
 
+    # display_yes_no + display_yes_no is JustWorks no confirmation
+    def test_dut_initiated_display_yes_no_display_yes_no_init_reject(self):
+        # Arrange
+        self.dut_security.set_io_capabilities(IoCapabilities.DISPLAY_YES_NO_IO_CAP)
+        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
+        self.cert_security.set_io_capabilities(IoCapabilities.DISPLAY_YES_NO_IO_CAP)
+        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
+
+        # Act and Assert
+        self._run_ssp_numeric_comparison(
+            initiator=self.dut_security,
+            responder=self.cert_security,
+            init_ui_response=False,
+            resp_ui_response=True,
+            expected_init_ui_event=UiMsgType.DISPLAY_YES_NO_WITH_VALUE,
+            expected_resp_ui_event=None,
+            expected_init_bond_event=BondMsgType.DEVICE_BOND_FAILED,
+            expected_resp_bond_event=None)
+
     # no_input_no_output + display_yes_no is JustWorks no confirmation
     def test_dut_initiated_no_input_no_output_display_yes_no(self):
         # Arrange
