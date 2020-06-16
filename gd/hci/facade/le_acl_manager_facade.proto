@@ -3,7 +3,6 @@ syntax = "proto3";
 package bluetooth.hci;
 
 import "google/protobuf/empty.proto";
-import "facade/common.proto";
 
 service LeAclManagerFacade {
   rpc CreateConnection(LeConnectionMsg) returns (stream LeConnectionEvent) {}
