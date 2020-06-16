@@ -194,3 +194,38 @@ class LeSecurityTest(GdBaseTestClass):
 
         # 3. IUT and Lower Tester perform phase 2 of the just works pairing procedure and establish an encrypted link with the key generated in phase 2.
         self.dut_security.wait_for_bond_event(expected_bond_event=BondMsgType.DEVICE_BONDED)
+
+    @metadata(pts_test_id="SM/SLA/JW/BV-02-C", pts_test_name="Just Works IUT Responder – Success")
+    def test_just_works_iut_responder(self):
+        """
+            Verify that the IUT is able to perform the Just Works pairing procedure correctly when acting as slave, responder.
+        """
+        self._prepare_dut_for_connection()
+
+        self.dut.security.SetLeIoCapability(
+            LeIoCapabilityMessage(capabilities=LeIoCapabilityMessage.LeIoCapabilities.KEYBOARD_ONLY))
+        self.dut.security.SetOobDataPresent(OobDataMessage(data_present=OobDataPresent.NOT_PRESENT))
+        self.dut.security.SetLeAuthReq(LeAuthReqMsg(auth_req=0x00))
+
+        self.cert.security.SetLeIoCapability(
+            LeIoCapabilityMessage(capabilities=LeIoCapabilityMessage.LeIoCapabilities.NO_INPUT_NO_OUTPUT))
+        self.cert.security.SetOobDataPresent(OobDataMessage(data_present=OobDataPresent.NOT_PRESENT))
+        self.cert.security.SetLeAuthReq(LeAuthReqMsg(auth_req=0x00))
+
+        # 1. Lower Tester transmits Pairing Request command with:
+        # a. IO capability set to “NoInputNoOutput”
+        # b. OOB data flag set to 0x00 (OOB Authentication data not present)
+        # c. MITM flag set to ‘0’ and all reserved bits are set to ‘0’
+        self.cert.security.CreateBondLe(self.dut_address)
+
+        self.dut_security.wait_for_ui_event(expected_ui_event=UiMsgType.DISPLAY_PAIRING_PROMPT)
+
+        # 2. IUT responds with a Pairing Response command, with:
+        # a. IO capability set to any IO capability
+        # b. OOB data flag set to 0x00 (OOB Authentication data not present)
+        self.dut.security.SendUiCallback(
+            UiCallbackMsg(
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.dut_address))
+
+        # IUT and Lower Tester perform phase 2 of the just works pairing and establish an encrypted link with the generated STK.
+        self.dut_security.wait_for_bond_event(expected_bond_event=BondMsgType.DEVICE_BONDED)
