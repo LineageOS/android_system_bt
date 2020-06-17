@@ -83,7 +83,9 @@ class LruCache {
     node_list_.erase(list_iterator);
     node_list_.push_front(node);
     map_iterator->second = node_list_.begin();
-    *value = node.second;
+    if (value != nullptr) {
+      *value = node.second;
+    }
     return true;
   }
 
