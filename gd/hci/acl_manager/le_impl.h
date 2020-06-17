@@ -289,6 +289,12 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     }
   }
 
+  void cancel_connect(AddressWithType /* TODO: use this parameter for whitelist management */) {
+    le_acl_connection_interface_->EnqueueCommand(
+        LeCreateConnectionCancelBuilder::Create(),
+        handler_->BindOnce(&check_command_complete<LeCreateConnectionCancelCompleteView>));
+  }
+
   void set_privacy_policy_for_initiator_address(
       LeAddressManager::AddressPolicy address_policy,
       AddressWithType fixed_address,
