@@ -335,7 +335,14 @@ void LeAddressManager::OnCommandComplete(bluetooth::hci::CommandCompleteView vie
     return;
   }
   std::string op_code = OpCodeText(view.GetCommandOpCode());
-  LOG_ERROR("Received command complete with op_code %s", op_code.c_str());
+  LOG_DEBUG("Received command complete with op_code %s", op_code.c_str());
+
+  // The command was sent before any client registered, we can make sure all the clients paused when command complete.
+  if (view.GetCommandOpCode() == OpCode::LE_SET_RANDOM_ADDRESS &&
+      address_policy_ == AddressPolicy::USE_STATIC_ADDRESS) {
+    LOG_DEBUG("Received LE_SET_RANDOM_ADDRESS complete and Address policy is USE_STATIC_ADDRESS, return");
+    return;
+  }
 
   if (cached_commands_.empty()) {
     handler_->BindOnceOn(this, &LeAddressManager::resume_registered_clients).Invoke();
