@@ -162,9 +162,10 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
 
   // Facade Configuration API functions
   void SetIoCapability(hci::IoCapability io_capability);
-  void SetLeIoCapability(security::IoCapability io_capability);
   void SetAuthenticationRequirements(hci::AuthenticationRequirements authentication_requirements);
   void SetOobDataPresent(hci::OobDataPresent data_present);
+  void SetLeIoCapability(security::IoCapability io_capability);
+  void SetLeAuthReq(uint8_t auth_req);
 
   void EnforceSecurityPolicy(hci::AddressWithType remote, l2cap::classic::SecurityPolicy policy,
                              l2cap::classic::SecurityEnforcementInterface::ResultCallback result_callback);
@@ -208,6 +209,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   hci::AuthenticationRequirements local_authentication_requirements_ = kDefaultAuthenticationRequirements;
   hci::OobDataPresent local_oob_data_present_ = kDefaultOobDataPresent;
   security::IoCapability local_le_io_capability_ = security::IoCapability::NO_INPUT_NO_OUTPUT;
+  uint8_t local_le_auth_req_ = AuthReqMaskBondingFlag | AuthReqMaskMitm | AuthReqMaskSc;
 
   struct {
     hci::AddressWithType address_;
