@@ -43,13 +43,7 @@ class PyLeAclManagerAclConnection(IEventStream, Closable):
         self.our_acl_stream = acl_stream
 
         if remote_addr:
-            remote_addr_bytes = bytes(remote_addr.address.address,
-                                      'utf8') if type(remote_addr.address.address) is str else bytes(
-                                          remote_addr.address.address)
-            self.connection_event_stream = EventStream(
-                self.device.hci_le_acl_manager.CreateConnection(
-                    le_acl_manager_facade.LeConnectionMsg(
-                        address_type=int(remote_addr.type), address=remote_addr_bytes)))
+            self.connection_event_stream = EventStream(self.device.hci_le_acl_manager.CreateConnection(remote_addr))
         else:
             self.connection_event_stream = None
 
