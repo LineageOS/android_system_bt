@@ -103,6 +103,18 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       LOG_WARN("No prior connection request for %s", address_with_type.ToString().c_str());
     } else {
       connecting_le_.erase(connecting_addr_with_type);
+      AddressType address_type = address_with_type.GetAddressType();
+      pause_connection = true;
+      switch (address_type) {
+        case AddressType::PUBLIC_DEVICE_ADDRESS:
+        case AddressType::PUBLIC_IDENTITY_ADDRESS: {
+          le_address_manager_->RemoveDeviceFromWhiteList(WhiteListAddressType::PUBLIC, address_with_type.GetAddress());
+        } break;
+        case AddressType::RANDOM_DEVICE_ADDRESS:
+        case AddressType::RANDOM_IDENTITY_ADDRESS: {
+          le_address_manager_->RemoveDeviceFromWhiteList(WhiteListAddressType::RANDOM, address_with_type.GetAddress());
+        }
+      }
     }
   }
 
@@ -224,9 +236,33 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
         handler_->BindOnce(&LeAddressManager::OnCommandComplete, common::Unretained(le_address_manager_)));
   }
 
-  void create_le_connection(AddressWithType address_with_type) {
+  void add_device_to_white_list(AddressWithType address_with_type) {
+    AddressType address_type = address_with_type.GetAddressType();
+    if (!address_manager_registered) {
+      le_address_manager_->Register(this);
+      address_manager_registered = true;
+    }
+    pause_connection = true;
+    switch (address_type) {
+      case AddressType::PUBLIC_DEVICE_ADDRESS:
+      case AddressType::PUBLIC_IDENTITY_ADDRESS: {
+        le_address_manager_->AddDeviceToWhiteList(WhiteListAddressType::PUBLIC, address_with_type.GetAddress());
+      } break;
+      case AddressType::RANDOM_DEVICE_ADDRESS:
+      case AddressType::RANDOM_IDENTITY_ADDRESS: {
+        le_address_manager_->AddDeviceToWhiteList(WhiteListAddressType::RANDOM, address_with_type.GetAddress());
+      }
+    }
+  }
+
+  void create_le_connection(AddressWithType address_with_type, bool add_to_white_list) {
     // TODO: Add white list handling.
     // TODO: Configure default LE connection parameters?
+
+    if (add_to_white_list) {
+      add_device_to_white_list(address_with_type);
+    }
+
     if (!address_manager_registered) {
       auto policy = le_address_manager_->Register(this);
       address_manager_registered = true;
@@ -245,7 +281,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
 
     uint16_t le_scan_interval = 0x0060;
     uint16_t le_scan_window = 0x0030;
-    InitiatorFilterPolicy initiator_filter_policy = InitiatorFilterPolicy::USE_PEER_ADDRESS;
+    InitiatorFilterPolicy initiator_filter_policy = InitiatorFilterPolicy::USE_WHITE_LIST;
     OwnAddressType own_address_type =
         static_cast<OwnAddressType>(le_address_manager_->GetCurrentAddress().GetAddressType());
     uint16_t conn_interval_min = 0x0018;
@@ -348,8 +384,8 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
 
   void OnResume() override {
     pause_connection = false;
-    for (auto address_with_type : canceled_connections_) {
-      create_le_connection(address_with_type);
+    if (!canceled_connections_.empty()) {
+      create_le_connection(*canceled_connections_.begin(), false);
     }
     canceled_connections_.clear();
     le_address_manager_->AckResume(this);
