@@ -266,3 +266,40 @@ class LeSecurityTest(GdBaseTestClass):
 
         # 3. IUT and Lower Tester perform phase 2 of the just works pairing and establish an encrypted link with the generated STK.
         self.dut_security.wait_for_bond_event(expected_bond_event=BondMsgType.DEVICE_BONDED)
+
+    @metadata(
+        pts_test_id="SM/MAS/JW/BI-04-C", pts_test_name="Just Works IUT Initiator – Handle AuthReq flag RFU correctly")
+    def test_just_works_iut_initiator_auth_req_rfu(self):
+        """
+            Verify that the IUT is able to perform the Just Works pairing procedure when receiving additional bits set in the AuthReq flag. Reserved For Future Use bits are correctly handled when acting as master, initiator.
+        """
+        self._prepare_cert_for_connection()
+
+        self.dut.security.SetLeIoCapability(
+            LeIoCapabilityMessage(capabilities=LeIoCapabilityMessage.LeIoCapabilities.KEYBOARD_DISPLAY))
+        self.dut.security.SetOobDataPresent(OobDataMessage(data_present=OobDataPresent.NOT_PRESENT))
+        self.dut.security.SetLeAuthReq(LeAuthReqMsg(auth_req=0x00))
+
+        self.cert.security.SetLeIoCapability(
+            LeIoCapabilityMessage(capabilities=LeIoCapabilityMessage.LeIoCapabilities.NO_INPUT_NO_OUTPUT))
+        self.cert.security.SetOobDataPresent(OobDataMessage(data_present=OobDataPresent.NOT_PRESENT))
+        self.cert.security.SetLeAuthReq(LeAuthReqMsg(auth_req=0x0C))
+
+        # 1. IUT transmits a Pairing Request command with:
+        # a. IO Capability set to any IO Capability
+        # b. OOB data flag set to 0x00 (OOB Authentication data not present)
+        # c. All reserved bits are set to ‘0’. For the purposes of this test the Secure Connections bit and the Keypress bits in the AuthReq bonding flag set by the IUT are ignored by the Lower Tester.
+        self.dut.security.CreateBondLe(self.cert_address)
+
+        self.cert_security.wait_for_ui_event(expected_ui_event=UiMsgType.DISPLAY_PAIRING_PROMPT)
+
+        # 2. Lower Tester responds with a Pairing Response command, with:
+        # a. IO Capability set to “NoInputNoOutput”
+        # b. OOB data flag set to 0x00 (OOB Authentication data not present)
+        # c. AuthReq bonding flag set to the value indicated in the IXIT [7] for ‘Bonding Flags’ and the MITM flag set to ‘0’ and all reserved bits are set to ‘1’. The SC and Keypress bits in the AuthReq bonding flag are set to 0 by the Lower Tester for this test.
+        self.cert.security.SendUiCallback(
+            UiCallbackMsg(
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.cert_address))
+
+        # 3. IUT and Lower Tester perform phase 2 of the just works pairing and establish an encrypted link with the generated STK.
+        self.cert_security.wait_for_bond_event(expected_bond_event=BondMsgType.DEVICE_BONDED)
