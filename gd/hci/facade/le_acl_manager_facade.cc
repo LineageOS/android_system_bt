@@ -59,11 +59,13 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
     }
   }
 
-  ::grpc::Status CreateConnection(::grpc::ServerContext* context, const LeConnectionMsg* request,
-                                  ::grpc::ServerWriter<LeConnectionEvent>* writer) override {
+  ::grpc::Status CreateConnection(
+      ::grpc::ServerContext* context,
+      const ::bluetooth::facade::BluetoothAddressWithType* request,
+      ::grpc::ServerWriter<LeConnectionEvent>* writer) override {
     Address peer_address;
-    ASSERT(Address::FromString(request->address(), peer_address));
-    AddressWithType peer(peer_address, static_cast<AddressType>(request->address_type()));
+    ASSERT(Address::FromString(request->address().address(), peer_address));
+    AddressWithType peer(peer_address, static_cast<AddressType>(request->type()));
     acl_manager_->CreateLeConnection(peer);
     if (per_connection_events_.size() > current_connection_request_) {
       return ::grpc::Status(::grpc::StatusCode::RESOURCE_EXHAUSTED, "Only one outstanding request is supported");
@@ -71,6 +73,21 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
     per_connection_events_.emplace_back(std::make_unique<::bluetooth::grpc::GrpcEventQueue<LeConnectionEvent>>(
         std::string("connection attempt ") + std::to_string(current_connection_request_)));
     return per_connection_events_[current_connection_request_]->RunLoop(context, writer);
+  }
+
+  ::grpc::Status CancelConnection(
+      ::grpc::ServerContext* context,
+      const ::bluetooth::facade::BluetoothAddressWithType* request,
+      google::protobuf::Empty* response) override {
+    Address peer_address;
+    ASSERT(Address::FromString(request->address().address(), peer_address));
+    AddressWithType peer(peer_address, static_cast<AddressType>(request->type()));
+    if (per_connection_events_.size() == current_connection_request_) {
+      // Todo: Check that the address matches an outstanding connection request
+      return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "No matching outstanding connection");
+    }
+    acl_manager_->CancelLeConnect(peer);
+    return ::grpc::Status::OK;
   }
 
   ::grpc::Status Disconnect(::grpc::ServerContext* context, const LeHandleMsg* request,

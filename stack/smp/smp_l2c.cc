@@ -57,12 +57,6 @@ static void smp_br_data_received(uint16_t channel, const RawAddress& bd_addr,
 void smp_l2cap_if_init(void) {
   tL2CAP_FIXED_CHNL_REG fixed_reg;
   SMP_TRACE_EVENT("SMDBG l2c %s", __func__);
-  fixed_reg.fixed_chnl_opts.mode = L2CAP_FCR_BASIC_MODE;
-  fixed_reg.fixed_chnl_opts.max_transmit = 0;
-  fixed_reg.fixed_chnl_opts.rtrans_tout = 0;
-  fixed_reg.fixed_chnl_opts.mon_tout = 0;
-  fixed_reg.fixed_chnl_opts.mps = 0;
-  fixed_reg.fixed_chnl_opts.tx_win_sz = 0;
 
   fixed_reg.pL2CA_FixedConn_Cb = smp_connect_callback;
   fixed_reg.pL2CA_FixedData_Cb = smp_data_received;

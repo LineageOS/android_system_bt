@@ -557,7 +557,9 @@ class AclManagerWithLeConnectionTest : public AclManagerTest {
     remote_with_type_ = AddressWithType(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
     test_hci_layer_->SetCommandFuture();
     acl_manager_->CreateLeConnection(remote_with_type_);
-
+    test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_WHITE_LIST);
+    test_hci_layer_->IncomingEvent(LeAddDeviceToWhiteListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+    test_hci_layer_->SetCommandFuture();
     auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
     auto le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
     auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);
@@ -572,6 +574,10 @@ class AclManagerWithLeConnectionTest : public AclManagerTest {
     test_hci_layer_->IncomingLeMetaEvent(LeConnectionCompleteBuilder::Create(
         ErrorCode::SUCCESS, handle_, Role::SLAVE, AddressType::PUBLIC_DEVICE_ADDRESS, remote, 0x0100, 0x0010, 0x0011,
         ClockAccuracy::PPM_30));
+
+    test_hci_layer_->SetCommandFuture();
+    test_hci_layer_->GetCommandPacket(OpCode::LE_REMOVE_DEVICE_FROM_WHITE_LIST);
+    test_hci_layer_->IncomingEvent(LeRemoveDeviceFromWhiteListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
 
     auto first_connection_status = first_connection.wait_for(kTimeout);
     ASSERT_EQ(first_connection_status, std::future_status::ready);
@@ -616,6 +622,9 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_fail) {
   AddressWithType remote_with_type(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
   test_hci_layer_->SetCommandFuture();
   acl_manager_->CreateLeConnection(remote_with_type);
+  test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_WHITE_LIST);
+  test_hci_layer_->IncomingEvent(LeAddDeviceToWhiteListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  test_hci_layer_->SetCommandFuture();
   auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
   auto le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
   auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);

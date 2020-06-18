@@ -73,7 +73,7 @@ class Connection(object):
         self._socket.close()
 
     def send(self, data):
-        self._socket.sendall(data)
+        self._socket.sendall(data.encode())
 
     def receive(self, size):
         return self._socket.recv(size)
@@ -106,7 +106,7 @@ class TestChannel(object):
             return
         self._connection.send(command)
         if name != 'CLOSE_TEST_CHANNEL':
-            print self.receive_response()
+            print(self.receive_response().decode())
 
     def receive_response(self):
         if self._closed:
@@ -114,22 +114,22 @@ class TestChannel(object):
         size_chars = self._connection.receive(4)
         size_bytes = bytearray(size_chars)
         if not size_chars:
-            print 'No response, assuming that the connection is broken'
+            print('No response, assuming that the connection is broken')
             return False
         response_size = 0
         for i in range(0, len(size_chars) - 1):
-            response_size |= ord(size_chars[i]) << (8 * i)
+            response_size |= (size_chars[i] << (8 * i))
         response = self._connection.receive(response_size)
         return response
 
     def lint_command(self, name, args, name_size, args_size):
         assert name_size == len(name) and args_size == len(args)
         try:
-            name.encode('utf-8')
+            name.encode()
             for arg in args:
-                arg.encode('utf-8')
+                arg.encode()
         except UnicodeError:
-            print 'Unrecognized characters.'
+            print('Unrecognized characters.')
             raise
         if name_size > 255 or args_size > 255:
             raise ValueError  # Size must be encodable in one octet.
@@ -227,7 +227,7 @@ class TestChannelShell(cmd.Cmd):
     """
         self._test_channel.send_command('CLOSE_TEST_CHANNEL', [])
         self._test_channel.close()
-        print 'Goodbye.'
+        print('Goodbye.')
         return True
 
     def do_help(self, args):
@@ -263,19 +263,19 @@ class TestChannelShell(cmd.Cmd):
 
 def main(argv):
     if len(argv) != 2:
-        print 'Usage: python test_channel.py [port]'
+        print('Usage: python test_channel.py [port]')
         return
     try:
         port = int(argv[1])
     except ValueError:
-        print 'Error parsing port.'
+        print('Error parsing port.')
     else:
         try:
             test_channel = TestChannel(port)
-        except socket.error, e:
-            print 'Error connecting to socket: %s' % e
+        except socket.error as e:
+            print('Error connecting to socket: %s' % e)
         except:
-            print 'Error creating test channel (check argument).'
+            print('Error creating test channel (check argument).')
         else:
             test_channel_shell = TestChannelShell(test_channel)
             test_channel_shell.prompt = '$ '

@@ -137,7 +137,7 @@ void AclManager::CreateConnection(Address address) {
 
 void AclManager::CreateLeConnection(AddressWithType address_with_type) {
   GetHandler()->Post(
-      common::BindOnce(&le_impl::create_le_connection, common::Unretained(pimpl_->le_impl_), address_with_type));
+      common::BindOnce(&le_impl::create_le_connection, common::Unretained(pimpl_->le_impl_), address_with_type, true));
 }
 
 void AclManager::SetPrivacyPolicyForInitiatorAddress(
@@ -153,6 +153,10 @@ void AclManager::SetPrivacyPolicyForInitiatorAddress(
 
 void AclManager::CancelConnect(Address address) {
   GetHandler()->Post(BindOnce(&classic_impl::cancel_connect, common::Unretained(pimpl_->classic_impl_), address));
+}
+
+void AclManager::CancelLeConnect(AddressWithType address_with_type) {
+  GetHandler()->Post(BindOnce(&le_impl::cancel_connect, common::Unretained(pimpl_->le_impl_), address_with_type));
 }
 
 void AclManager::MasterLinkKey(KeyFlag key_flag) {

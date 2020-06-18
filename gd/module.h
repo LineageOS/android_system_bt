@@ -16,7 +16,6 @@
 
 #pragma once
 
-#include <google/protobuf/message.h>
 #include <functional>
 #include <future>
 #include <map>
@@ -85,9 +84,6 @@ class Module {
 
   // Release all resources, you're about to be deleted
   virtual void Stop() = 0;
-
-  // Get relevant state data from the module
-  virtual std::unique_ptr<google::protobuf::Message> DumpState() const;
 
   virtual std::string ToString() const;
 
@@ -158,10 +154,9 @@ class ModuleRegistry {
 class ModuleDumper {
  public:
   ModuleDumper(ModuleRegistry& module_registry) : module_registry_(module_registry) {}
-  void DumpState() const;
 
  private:
-  ModuleRegistry& module_registry_;
+  [[maybe_unused]] ModuleRegistry& module_registry_;
 };
 
 class TestModuleRegistry : public ModuleRegistry {

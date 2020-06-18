@@ -117,9 +117,9 @@ class LeAclManagerTest(GdBaseTestClass):
 
             with EventStream(
                     self.dut.hci_le_acl_manager.CreateConnection(
-                        le_acl_manager_facade.LeConnectionMsg(
-                            address_type=int(hci_packets.AddressType.RANDOM_DEVICE_ADDRESS),
-                            address=bytes('0C:05:04:03:02:01', 'utf8')))) as connection_event_stream:
+                        common.BluetoothAddressWithType(
+                            address=common.BluetoothAddress(address=bytes('0C:05:04:03:02:01', 'utf8')),
+                            type=int(hci_packets.AddressType.RANDOM_DEVICE_ADDRESS)))) as connection_event_stream:
 
                 # Cert gets ConnectionComplete with a handle and sends ACL data
                 handle = 0xfff
@@ -338,9 +338,9 @@ class LeAclManagerTest(GdBaseTestClass):
 
             with EventStream(
                     self.dut.hci_le_acl_manager.CreateConnection(
-                        le_acl_manager_facade.LeConnectionMsg(
-                            address_type=int(hci_packets.AddressType.RANDOM_DEVICE_ADDRESS),
-                            address=bytes('0C:05:04:03:02:01', 'utf8')))) as connection_event_stream:
+                        common.BluetoothAddressWithType(
+                            address=common.BluetoothAddress(address=bytes('0C:05:04:03:02:01', 'utf8')),
+                            type=int(hci_packets.AddressType.RANDOM_DEVICE_ADDRESS)))) as connection_event_stream:
 
                 # Cert gets ConnectionComplete with a handle and sends ACL data
                 handle = 0xfff

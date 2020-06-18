@@ -279,10 +279,7 @@ void l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
       LOG(ERROR) << __func__ << "failed to allocate LCB";
       return;
     } else {
-      if (!l2cu_initialize_fixed_ccb(
-              p_lcb, L2CAP_ATT_CID,
-              &l2cb.fixed_reg[L2CAP_ATT_CID - L2CAP_FIRST_FIXED_CHNL]
-                   .fixed_chnl_opts)) {
+      if (!l2cu_initialize_fixed_ccb(p_lcb, L2CAP_ATT_CID)) {
         btm_sec_disconnect(handle, HCI_ERR_NO_CONNECTION);
         LOG(WARNING) << __func__ << "LCB but no CCB";
         return;
