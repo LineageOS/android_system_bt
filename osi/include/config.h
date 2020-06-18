@@ -33,10 +33,15 @@ struct entry_t {
 struct section_t {
   std::string name;
   std::list<entry_t> entries;
+  void Set(std::string key, std::string value);
+  std::list<entry_t>::iterator Find(const std::string& key);
+  bool Has(const std::string& key);
 };
 
 struct config_t {
   std::list<section_t> sections;
+  std::list<section_t>::iterator Find(const std::string& section);
+  bool Has(const std::string& section);
 };
 
 // Creates a new config object with no entries (i.e. not backed by a file).
