@@ -153,6 +153,9 @@ static const interop_addr_entry_t interop_addr_database[] = {
 
     // Toyota Car Audio
     {{{0x00, 0x17, 0x53, 0, 0, 0}}, 3, INTEROP_AVRCP_1_4_ONLY},
+
+    // Honda High End Carkit
+    {{{0x9c, 0x8d, 0x7c, 0, 0, 0}}, 3, INTEROP_AVRCP_1_4_ONLY},
 };
 
 typedef struct {
