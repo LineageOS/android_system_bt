@@ -62,6 +62,8 @@ BOOLEAN (APPL_AUTH_WRITE_EXCEPTION)(BD_ADDR bd_addr);
 #define RNR_MAX_RETRY_ATTEMPTS 1
 #define CC_MAX_RETRY_ATTEMPTS 1
 
+extern void bta_dm_process_remove_device(BD_ADDR bd_addr);
+
 /********************************************************************************
 **              L O C A L    F U N C T I O N     P R O T O T Y P E S            *
 *********************************************************************************/
@@ -3391,6 +3393,14 @@ void btm_io_capabilities_req (UINT8 *p)
     evt_data.auth_req = BTM_DEFAULT_AUTH_REQ;
 
     BTM_TRACE_EVENT("%s: State: %s", __FUNCTION__, btm_pair_state_descr(btm_cb.pairing_state));
+
+
+    if (btm_sec_is_a_bonded_dev(evt_data.bd_addr)) {
+        BTM_TRACE_WARNING(
+            "%s: Incoming bond request, but device is already bonded (removing)",
+            __func__);
+        bta_dm_process_remove_device(evt_data.bd_addr);
+    }
 
     p_dev_rec = btm_find_or_alloc_dev (evt_data.bd_addr);
 
