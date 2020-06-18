@@ -189,8 +189,8 @@ BT_HDR* attp_build_read_by_type_value_cmd(uint16_t payload_size,
  * Returns          None.
  *
  ******************************************************************************/
-BT_HDR* attp_build_read_multi_cmd(uint16_t payload_size, uint16_t num_handle,
-                                  uint16_t* p_handle) {
+BT_HDR* attp_build_read_multi_cmd(uint8_t op_code, uint16_t payload_size,
+                                  uint16_t num_handle, uint16_t* p_handle) {
   uint8_t *p, i = 0;
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(sizeof(BT_HDR) + num_handle * 2 + 1 +
                                       L2CAP_MIN_OFFSET);
@@ -199,7 +199,7 @@ BT_HDR* attp_build_read_multi_cmd(uint16_t payload_size, uint16_t num_handle,
   p_buf->offset = L2CAP_MIN_OFFSET;
   p_buf->len = 1;
 
-  UINT8_TO_STREAM(p, GATT_REQ_READ_MULTI);
+  UINT8_TO_STREAM(p, op_code);
 
   for (i = 0; i < num_handle && p_buf->len + 2 <= payload_size; i++) {
     UINT16_TO_STREAM(p, *(p_handle + i));
@@ -570,9 +570,10 @@ tGATT_STATUS attp_send_cl_msg(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
       break;
 
     case GATT_REQ_READ_MULTI:
-      p_cmd =
-          attp_build_read_multi_cmd(payload_size, p_msg->read_multi.num_handles,
-                                    p_msg->read_multi.handles);
+    case GATT_REQ_READ_MULTI_VAR:
+      p_cmd = attp_build_read_multi_cmd(op_code, payload_size,
+                                        p_msg->read_multi.num_handles,
+                                        p_msg->read_multi.handles);
       break;
 
     default:
