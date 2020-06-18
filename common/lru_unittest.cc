@@ -139,6 +139,20 @@ TEST(BluetoothLruCacheTest, LruCacheMainTest2) {
   EXPECT_EQ(*value, 50);
 }
 
+TEST(BluetoothLruCacheTest, LruCacheGetTest) {
+  LruCache<int, int> cache(10, "testing", [](int a, int b) {});
+  cache.Put(1, 10);
+  cache.Put(2, 20);
+  int value = 0;
+  EXPECT_TRUE(cache.Get(1, &value));
+  EXPECT_EQ(value, 10);
+  EXPECT_TRUE(cache.Get(1, nullptr));
+  EXPECT_TRUE(cache.Get(2, nullptr));
+  EXPECT_FALSE(cache.Get(3, nullptr));
+  EXPECT_FALSE(cache.Get(3, &value));
+  EXPECT_EQ(value, 10);
+}
+
 TEST(BluetoothLruCacheTest, LruCacheRemoveTest) {
   LruCache<int, int> cache(10, "testing", [](int a, int b) {});
   for (int key = 0; key <= 30; key++) {
