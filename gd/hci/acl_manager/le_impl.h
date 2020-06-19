@@ -103,18 +103,6 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       LOG_WARN("No prior connection request for %s", address_with_type.ToString().c_str());
     } else {
       connecting_le_.erase(connecting_addr_with_type);
-      AddressType address_type = address_with_type.GetAddressType();
-      pause_connection = true;
-      switch (address_type) {
-        case AddressType::PUBLIC_DEVICE_ADDRESS:
-        case AddressType::PUBLIC_IDENTITY_ADDRESS: {
-          le_address_manager_->RemoveDeviceFromWhiteList(WhiteListAddressType::PUBLIC, address_with_type.GetAddress());
-        } break;
-        case AddressType::RANDOM_DEVICE_ADDRESS:
-        case AddressType::RANDOM_IDENTITY_ADDRESS: {
-          le_address_manager_->RemoveDeviceFromWhiteList(WhiteListAddressType::RANDOM, address_with_type.GetAddress());
-        }
-      }
     }
   }
 
@@ -134,6 +122,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       return;
     } else {
       canceled_connections_.erase(remote_address);
+      remove_device_from_white_list(remote_address);
     }
 
     if (status != ErrorCode::SUCCESS) {
@@ -181,6 +170,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       return;
     } else {
       canceled_connections_.erase(remote_address);
+      remove_device_from_white_list(remote_address);
     }
 
     if (status != ErrorCode::SUCCESS) {
@@ -256,7 +246,6 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
   }
 
   void create_le_connection(AddressWithType address_with_type, bool add_to_white_list) {
-    // TODO: Add white list handling.
     // TODO: Configure default LE connection parameters?
 
     if (add_to_white_list) {
@@ -325,10 +314,23 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     }
   }
 
-  void cancel_connect(AddressWithType /* TODO: use this parameter for whitelist management */) {
-    le_acl_connection_interface_->EnqueueCommand(
-        LeCreateConnectionCancelBuilder::Create(),
-        handler_->BindOnce(&check_command_complete<LeCreateConnectionCancelCompleteView>));
+  void cancel_connect(AddressWithType address_with_type) {
+    // the connection will be canceled by LeAddressManager.OnPause()
+    remove_device_from_white_list(address_with_type);
+  }
+
+  void remove_device_from_white_list(AddressWithType address_with_type) {
+    AddressType address_type = address_with_type.GetAddressType();
+    switch (address_type) {
+      case AddressType::PUBLIC_DEVICE_ADDRESS:
+      case AddressType::PUBLIC_IDENTITY_ADDRESS: {
+        le_address_manager_->RemoveDeviceFromWhiteList(WhiteListAddressType::PUBLIC, address_with_type.GetAddress());
+      } break;
+      case AddressType::RANDOM_DEVICE_ADDRESS:
+      case AddressType::RANDOM_IDENTITY_ADDRESS: {
+        le_address_manager_->RemoveDeviceFromWhiteList(WhiteListAddressType::RANDOM, address_with_type.GetAddress());
+      }
+    }
   }
 
   void set_privacy_policy_for_initiator_address(

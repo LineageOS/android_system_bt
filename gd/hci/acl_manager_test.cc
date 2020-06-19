@@ -641,6 +641,43 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_fail) {
       0x0100, 0x0010, 0x0011, ClockAccuracy::PPM_30));
 }
 
+TEST_F(AclManagerTest, cancel_le_connection) {
+  AddressWithType remote_with_type(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
+  test_hci_layer_->SetCommandFuture();
+  acl_manager_->CreateLeConnection(remote_with_type);
+  test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_WHITE_LIST);
+  test_hci_layer_->IncomingEvent(LeAddDeviceToWhiteListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  test_hci_layer_->SetCommandFuture();
+  test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
+
+  test_hci_layer_->SetCommandFuture();
+  acl_manager_->CancelLeConnect(remote_with_type);
+  auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION_CANCEL);
+  auto le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
+  auto command_view = LeCreateConnectionCancelView::Create(le_connection_management_command_view);
+  ASSERT_TRUE(command_view.IsValid());
+
+  test_hci_layer_->IncomingEvent(LeCreateConnectionCancelCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  test_hci_layer_->IncomingLeMetaEvent(LeConnectionCompleteBuilder::Create(
+      ErrorCode::UNKNOWN_CONNECTION,
+      0x123,
+      Role::SLAVE,
+      AddressType::PUBLIC_DEVICE_ADDRESS,
+      remote,
+      0x0100,
+      0x0010,
+      0x0011,
+      ClockAccuracy::PPM_30));
+
+  test_hci_layer_->SetCommandFuture();
+  packet = test_hci_layer_->GetCommandPacket(OpCode::LE_REMOVE_DEVICE_FROM_WHITE_LIST);
+  le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
+  auto remove_command_view = LeRemoveDeviceFromWhiteListView::Create(le_connection_management_command_view);
+  ASSERT_TRUE(remove_command_view.IsValid());
+
+  test_hci_layer_->IncomingEvent(LeRemoveDeviceFromWhiteListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+}
+
 TEST_F(AclManagerWithLeConnectionTest, acl_send_data_one_le_connection) {
   ASSERT_EQ(connection_->GetRemoteAddress(), remote_with_type_);
   ASSERT_EQ(connection_->GetHandle(), handle_);
