@@ -35,6 +35,11 @@ Handler* Module::GetHandler() const {
   return handler_;
 }
 
+DumpsysDataFinisher EmptyDumpsysDataFinisher = [](DumpsysDataBuilder* dumpsys_data_builder) {};
+DumpsysDataFinisher Module::GetTable(flatbuffers::FlatBufferBuilder* builder) const {
+  return EmptyDumpsysDataFinisher;
+}
+
 const ModuleRegistry* Module::GetModuleRegistry() const {
   return registry_;
 }
@@ -119,6 +124,11 @@ os::Handler* ModuleRegistry::GetModuleHandler(const ModuleFactory* module) const
     return started_instance->second->GetHandler();
   }
   return nullptr;
+}
+
+void ModuleDumper::DumpState(std::string* output) const {
+  // TODO(cmanton)
+  *output = std::string("TBD");
 }
 
 }  // namespace bluetooth
