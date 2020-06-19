@@ -218,18 +218,14 @@ static void init_metric_id_allocator() {
   // version of android without a metric id.
   std::vector<RawAddress> addresses_without_id;
 
-  for (auto& section : btif_config_sections()) {
-    auto& section_name = section.name;
-    RawAddress mac_address;
-    if (!RawAddress::FromString(section_name, mac_address)) {
-      continue;
-    }
+  for (const auto& mac_address : btif_config_get_paired_devices()) {
+    auto addr_str = mac_address.ToString();
     // if the section name is a mac address
     bool is_valid_id_found = false;
-    if (btif_config_exist(section_name, BT_CONFIG_METRICS_ID_KEY)) {
+    if (btif_config_exist(addr_str, BT_CONFIG_METRICS_ID_KEY)) {
       // there is one metric id under this mac_address
       int id = 0;
-      btif_config_get_int(section_name, BT_CONFIG_METRICS_ID_KEY, &id);
+      btif_config_get_int(addr_str, BT_CONFIG_METRICS_ID_KEY, &id);
       if (MetricIdAllocator::IsValidId(id)) {
         paired_device_map[mac_address] = id;
         is_valid_id_found = true;
@@ -581,8 +577,23 @@ bool btif_config_set_bin(const std::string& section, const std::string& key,
   return true;
 }
 
-const std::list<section_t>& btif_config_sections() {
-  return btif_config_cache.GetPersistentSections();
+std::vector<RawAddress> btif_config_get_paired_devices() {
+  std::vector<std::string> names;
+  {
+    std::unique_lock<std::recursive_mutex> lock(config_lock);
+    names = btif_config_cache.GetPersistentSectionNames();
+  }
+  std::vector<RawAddress> result;
+  result.reserve(names.size());
+  for (const auto& name : names) {
+    RawAddress addr = {};
+    if (!RawAddress::FromString(name, addr)) {
+      LOG(WARNING) << __func__ << ": " << name << " is not a valid address";
+      continue;
+    }
+    result.emplace_back(addr);
+  }
+  return result;
 }
 
 bool btif_config_remove(const std::string& section, const std::string& key) {
@@ -672,9 +683,8 @@ void btif_debug_config_dump(int fd) {
   if (!file_source) {
     file_source.emplace("Original");
   }
-
-  dprintf(fd, "  Devices loaded: %zu\n",
-          btif_config_cache.GetPersistentSections().size());
+  auto devices = btif_config_cache.GetPersistentSectionNames();
+  dprintf(fd, "  Devices loaded: %zu\n", devices.size());
   dprintf(fd, "  File created/tagged: %s\n", btif_config_time_created);
   dprintf(fd, "  File source: %s\n", file_source->c_str());
 }

@@ -483,8 +483,9 @@ TEST(BtifConfigCacheTest, test_PersistentSectionCopy_Init) {
 
   // check GetPersistentSections
   int num_of_paired_devices = 0;
-  for (const section_t& sec : test_btif_config_cache.GetPersistentSections()) {
-    EXPECT_TRUE(test_btif_config_cache.HasPersistentSection(sec.name));
+  for (const auto& sec_name :
+       test_btif_config_cache.GetPersistentSectionNames()) {
+    EXPECT_TRUE(test_btif_config_cache.HasPersistentSection(sec_name));
     num_of_paired_devices++;
   }
   EXPECT_EQ(num_of_paired_devices, 3);
