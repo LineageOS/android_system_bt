@@ -14,19 +14,9 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import os
-import sys
-import logging
-
 from cert.gd_base_test import GdBaseTestClass
-from cert.event_stream import EventStream
 from cert.truth import assertThat
-from google.protobuf import empty_pb2 as empty_proto
-from hci.facade import acl_manager_facade_pb2 as acl_manager_facade
 from neighbor.facade import facade_pb2 as neighbor_facade
-from hci.facade import controller_facade_pb2 as controller_facade
-from hci.facade import facade_pb2 as hci_facade
-import bluetooth_packets_python3 as bt_packets
 from bluetooth_packets_python3 import hci_packets
 from cert.py_hci import PyHci
 from cert.py_acl_manager import PyAclManager
