@@ -23,17 +23,17 @@
 namespace bluetooth {
 namespace shim {
 
-using DumpsysFunction = std::function<void(int fd)>;
+using DumpsysFunction = std::function<void(int fd)>;  // OBSOLETE
 
 class Dumpsys : public bluetooth::Module {
  public:
   void Dump(int fd, const char** args);
 
-  void RegisterDumpsysFunction(const void* token, DumpsysFunction func);
-  void UnregisterDumpsysFunction(const void* token);
+  void RegisterDumpsysFunction(const void* token, DumpsysFunction func);  // OBSOLETE
+  void UnregisterDumpsysFunction(const void* token);                      // OBSOLETE
 
   /* This is not a dumpsys-specific method, we just must grab thread from of one modules */
-  os::Handler* GetGdShimHandler();
+  os::Handler* GetGdShimHandler();  // OBSOLETE
 
   Dumpsys() = default;
   ~Dumpsys() = default;
