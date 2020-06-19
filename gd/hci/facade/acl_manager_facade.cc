@@ -253,7 +253,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
       default:
         return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Invalid command packet");
     }
-  };
+  }
 #undef GET_CONNECTION
 
   ::grpc::Status FetchIncomingConnection(
@@ -341,8 +341,7 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
     acl_connections_.emplace(
         std::piecewise_construct,
         std::forward_as_tuple(handle),
-        std::forward_as_tuple(
-            handle, shared_connection, per_connection_events_[current_connection_request_], facade_handler_));
+        std::forward_as_tuple(handle, shared_connection, per_connection_events_[current_connection_request_]));
     shared_connection->GetAclQueueEnd()->RegisterDequeue(
         facade_handler_,
         common::Bind(&AclManagerFacadeService::on_incoming_acl, common::Unretained(this), shared_connection, handle));
@@ -371,12 +370,8 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
     Connection(
         uint16_t handle,
         std::shared_ptr<ClassicAclConnection> connection,
-        std::shared_ptr<::bluetooth::grpc::GrpcEventQueue<ConnectionEvent>> event_stream,
-        os::Handler* facade_handler)
-        : handle_(handle),
-          connection_(std::move(connection)),
-          event_stream_(event_stream),
-          facade_handler_(facade_handler) {}
+        std::shared_ptr<::bluetooth::grpc::GrpcEventQueue<ConnectionEvent>> event_stream)
+        : handle_(handle), connection_(std::move(connection)), event_stream_(std::move(event_stream)) {}
 
     ConnectionManagementCallbacks* GetCallbacks() {
       return this;
@@ -502,8 +497,8 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
     uint16_t handle_;
     std::shared_ptr<ClassicAclConnection> connection_;
     std::shared_ptr<::bluetooth::grpc::GrpcEventQueue<ConnectionEvent>> event_stream_;
-    ::bluetooth::grpc::GrpcEventQueue<AclData> pending_acl_data_{"FetchAclData"};
-    ::bluetooth::os::Handler* facade_handler_;
+    ::bluetooth::grpc::GrpcEventQueue<AclData> pending_acl_data_{std::string("PendingAclData") +
+                                                                 std::to_string(handle_)};
   };
 
  private:
