@@ -74,4 +74,3 @@ cc_test {
         "test.bfbs",
     ],
 }
-
