@@ -43,7 +43,11 @@ cc_library_static {
         "system/security/keystore/include",
         "hardware/interfaces/keymaster/4.0/support/include",
     ],
+    shared_libs: [
+            "libflatbuffers-cpp",
+    ],
     generated_headers: [
+        "BluetoothGeneratedDumpsysData_h",
         "BluetoothGeneratedPackets_h",
     ],
     host_supported: true,
@@ -86,6 +90,7 @@ cc_library_shared {
         "libaaudio",
         "libcutils",
         "libdl",
+        "libflatbuffers-cpp",
         "libfmq",
         "libhidlbase",
         "liblog",
@@ -159,9 +164,13 @@ cc_library_static {
     ],
     generated_headers: [
         "BluetoothGeneratedPackets_h",
+        "BluetoothGeneratedDumpsysData_h",
     ],
     cflags: [
         "-DBUILDCFG",
+    ],
+    shared_libs: [
+        "libflatbuffers-cpp",
     ],
     whole_static_libs: [
         "libbluetooth_gd", // Gabeldorsche
