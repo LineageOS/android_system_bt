@@ -22,6 +22,7 @@
 #include <iterator>
 #include <list>
 #include <mutex>
+#include <optional>
 #include <thread>
 #include <unordered_map>
 
@@ -35,23 +36,23 @@ template <typename K, typename V>
 class LruCache {
  public:
   using Node = std::pair<K, V>;
-  using LruEvictionCallback = std::function<void(K, V)>;
   /**
    * Constructor of the cache
    *
    * @param capacity maximum size of the cache
    * @param log_tag, keyword to put at the head of log.
-   * @param lru_eviction_callback a call back will be called when the cache is
-   * full and Put() is called
    */
-  LruCache(const size_t& capacity, const std::string& log_tag,
-           LruEvictionCallback lru_eviction_callback)
-      : capacity_(capacity), lru_eviction_callback_(lru_eviction_callback) {
+  LruCache(const size_t& capacity, const std::string& log_tag)
+      : capacity_(capacity) {
     if (capacity_ == 0) {
       // don't allow invalid capacity
       LOG(FATAL) << log_tag << " unable to have 0 LRU Cache capacity";
     }
   }
+
+  // delete copy constructor
+  LruCache(LruCache const&) = delete;
+  LruCache& operator=(LruCache const&) = delete;
 
   ~LruCache() { Clear(); }
 
@@ -59,9 +60,28 @@ class LruCache {
    * Clear the cache
    */
   void Clear() {
-    std::lock_guard<std::mutex> lock(lru_mutex_);
+    std::lock_guard<std::recursive_mutex> lock(lru_mutex_);
     lru_map_.clear();
     node_list_.clear();
+  }
+
+  /**
+   * Same as Get, but return an iterator to the accessed element
+   *
+   * Modifying the returned iterator does not warm up the cache
+   *
+   * @param key
+   * @return pointer to the underlying value to allow in-place modification
+   * nullptr when not found, will be invalidated when the key is evicted
+   */
+  V* Find(const K& key) {
+    std::lock_guard<std::recursive_mutex> lock(lru_mutex_);
+    auto map_iterator = lru_map_.find(key);
+    if (map_iterator == lru_map_.end()) {
+      return nullptr;
+    }
+    node_list_.splice(node_list_.begin(), node_list_, map_iterator->second);
+    return &(map_iterator->second->second);
   }
 
   /**
@@ -73,17 +93,13 @@ class LruCache {
    * @return true if the cache has the key
    */
   bool Get(const K& key, V* value) {
-    std::lock_guard<std::mutex> lock(lru_mutex_);
-    auto map_iterator = lru_map_.find(key);
-    if (map_iterator == lru_map_.end()) {
+    CHECK(value != nullptr);
+    std::lock_guard<std::recursive_mutex> lock(lru_mutex_);
+    auto value_ptr = Find(key);
+    if (value_ptr == nullptr) {
       return false;
     }
-    auto& list_iterator = map_iterator->second;
-    auto node = *list_iterator;
-    node_list_.erase(list_iterator);
-    node_list_.push_front(node);
-    map_iterator->second = node_list_.begin();
-    *value = node.second;
+    *value = *value_ptr;
     return true;
   }
 
@@ -95,8 +111,8 @@ class LruCache {
    * @return true if the cache has the key
    */
   bool HasKey(const K& key) {
-    V dummy_value;
-    return Get(key, &dummy_value);
+    std::lock_guard<std::recursive_mutex> lock(lru_mutex_);
+    return Find(key) != nullptr;
   }
 
   /**
@@ -104,52 +120,49 @@ class LruCache {
    *
    * @param key
    * @param value
-   * @return true if tail value is popped
+   * @return evicted node if tail value is popped, std::nullopt if no value
+   * is popped. std::optional can be treated as a boolean as well
    */
-  bool Put(const K& key, const V& value) {
-    if (HasKey(key)) {
+  std::optional<Node> Put(const K& key, V value) {
+    std::lock_guard<std::recursive_mutex> lock(lru_mutex_);
+    auto value_ptr = Find(key);
+    if (value_ptr != nullptr) {
       // hasKey() calls get(), therefore already move the node to the head
-      std::lock_guard<std::mutex> lock(lru_mutex_);
-      lru_map_[key]->second = value;
-      return false;
+      *value_ptr = std::move(value);
+      return std::nullopt;
     }
 
-    bool value_popped = false;
-    std::lock_guard<std::mutex> lock(lru_mutex_);
     // remove tail
+    std::optional<Node> ret = std::nullopt;
     if (lru_map_.size() == capacity_) {
       lru_map_.erase(node_list_.back().first);
-      K key_evicted = node_list_.back().first;
-      V value_evicted = node_list_.back().second;
+      ret = std::move(node_list_.back());
       node_list_.pop_back();
-      lru_eviction_callback_(key_evicted, value_evicted);
-      value_popped = true;
     }
     // insert to dummy next;
-    Node add(key, value);
-    node_list_.push_front(add);
-    lru_map_[key] = node_list_.begin();
-    return value_popped;
+    node_list_.emplace_front(key, std::move(value));
+    lru_map_.emplace(key, node_list_.begin());
+    return ret;
   }
 
   /**
    * Delete a key from cache
    *
    * @param key
-   * @return true if delete successfully
+   * @return true if deleted successfully
    */
   bool Remove(const K& key) {
-    std::lock_guard<std::mutex> lock(lru_mutex_);
-    if (lru_map_.count(key) == 0) {
+    std::lock_guard<std::recursive_mutex> lock(lru_mutex_);
+    auto map_iterator = lru_map_.find(key);
+    if (map_iterator == lru_map_.end()) {
       return false;
     }
 
     // remove from the list
-    auto& iterator = lru_map_[key];
-    node_list_.erase(iterator);
+    node_list_.erase(map_iterator->second);
 
     // delete key from map
-    lru_map_.erase(key);
+    lru_map_.erase(map_iterator);
 
     return true;
   }
@@ -160,7 +173,7 @@ class LruCache {
    * @return size of the cache
    */
   int Size() const {
-    std::lock_guard<std::mutex> lock(lru_mutex_);
+    std::lock_guard<std::recursive_mutex> lock(lru_mutex_);
     return lru_map_.size();
   }
 
@@ -168,12 +181,7 @@ class LruCache {
   std::list<Node> node_list_;
   size_t capacity_;
   std::unordered_map<K, typename std::list<Node>::iterator> lru_map_;
-  LruEvictionCallback lru_eviction_callback_;
-  mutable std::mutex lru_mutex_;
-
-  // delete copy constructor
-  LruCache(LruCache const&) = delete;
-  LruCache& operator=(LruCache const&) = delete;
+  mutable std::recursive_mutex lru_mutex_;
 };
 
 }  // namespace common

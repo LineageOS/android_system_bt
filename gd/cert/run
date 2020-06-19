@@ -22,6 +22,8 @@ fi
 TEST_CONFIG="$ANDROID_BUILD_TOP/system/bt/gd/cert/android_devices_config.json"
 TEST_FILTER="-tf $ANDROID_BUILD_TOP/system/bt/gd/cert/all_cert_testcases"
 CLEAN_VENV=false
+GOTTA_GO_FAST=true
+SPEED_HAX=false
 NUM_REPETITIONS="1"
 VERBOSE_MODE=false
 
@@ -62,6 +64,16 @@ case $key in
     VERBOSE_MODE=true
     shift # past argument
     ;;
+    # This will cause the bluetooth_venv to be created in ashmem
+    # Increases --clean build times by 40% (~21 seconds on my machine)
+    --gotta-go-slow)
+    GOTTA_GO_FAST=false
+    shift # past argument
+    ;;
+    --speed-hax)
+    SPEED_HAX=true
+    shift # past argument
+    ;;
     *)    # unknown option
     POSITIONAL+=("$1") # save it in an array for later
     shift # past argument
@@ -78,15 +90,103 @@ CERT_TEST_VENV=$ANDROID_BUILD_TOP/out/dist/bluetooth_venv
 
 YELLOW="\033[1;33m"
 NOCOLOR="\033[0m"
+BLUE="\033[1;34m"
+RED="\033[1;91m"
 
 INSTALL_ARGS="--reuse-acts"
 if [ "$CLEAN_VENV" == true ] ; then
   echo -e "${YELLOW}Cleaning up existing virtualenv${NOCOLOR}"
   rm -rf $CERT_TEST_VENV
+  mkdir -p ${CERT_TEST_VENV}
   INSTALL_ARGS=""
 else
   echo -e "${YELLOW}Try to reuse existing virtualenv at ${CERT_TEST_VENV}${NOCOLOR}"
 fi
+
+# Make venv in memory, decreases --clean build times by 40%
+# Caveat is you lose the venv if the computer reboots
+if [ "${GOTTA_GO_FAST}" == true ] ; then
+    if [[ ! -L ${CERT_TEST_VENV} ]] ; then
+        echo -e "\t${BLUE}"
+        echo -e "\t       ___------__"
+        echo -e "\t |\__-- /\       _-"
+        echo -e "\t |/_   __      -"
+        echo -e "\t // \ /  \    /__"
+        echo -e "\t | 0 |  0 |__     --_        Gotta go fast!"
+        echo -e "\t \\____-- __ \   ___-"
+        echo -e "\t ( @    __/  / /_"
+        echo -e "\t    -_____---   --_"
+        echo -e "\t     //  \ \\   ___-"
+        echo -e "\t   //|\__/  \\  \\"
+        echo -e "\t   \_-\_____/  \-\\"
+        echo -e "\t        // \\--\|"
+        echo -e "\t   ${RED}____${BLUE}//  ||${RED}_"
+        echo -e "\t${RED}  /_____\ /___\\"
+        echo
+        echo
+        echo -ne "Making ashmem dist folder..."
+        mkdir -p /dev/shm/dist
+        rm -rf /dev/shm/bluetooth_venv
+        echo -e "Done"
+        echo -ne "Moving existing data to memory..."
+        mv ${CERT_TEST_VENV} /dev/shm/dist/bluetooth_venv
+        echo -e "Done"
+        # Ensure the directory doesn't exist
+        rm -rf ${CERT_TEST_VENV}
+        echo -ne "Sym linking..."
+        ln -s /dev/shm/dist/bluetooth_venv ${CERT_TEST_VENV}
+        echo -e "Done"
+        echo -e "${NOCOLOR}"
+    fi
+else
+    if [[ -L ${CERT_TEST_VENV} ]] ; then
+        echo -e "\t${BLUE}"
+        echo -e "\t       ___------__"
+        echo -e "\t |\__-- /\       _-"
+        echo -e "\t |/_    __      -"
+        echo -e "\t // \  /  \    /__"
+        echo -e "\t | 0 |  0 |__     --_        Gotta go sllloowwww!"
+        echo -e "\t \\____-- __ \   ___-"
+        echo -e "\t ( @    __   / /_"
+        echo -e "\t    -_____---   --_"
+        echo -e "\t     //  \ \\   ___-"
+        echo -e "\t   //|\__/  \\  \\"
+        echo -e "\t   \_-\_____/  \-\\"
+        echo -e "\t        // \\--\|"
+        echo -e "\t  ${RED} ____${BLUE}//  ||${RED}_"
+        echo -e "\t${RED}  /_____\ /___\\"
+        echo
+        echo
+        echo -en "Removing sym link..."
+        rm ${CERT_TEST_VENV}
+        echo -e "Done"
+        echo -en "Moving venv from memory to disk..."
+        mv /dev/shm/dist/bluetooth_venv ${CERT_TEST_VENV}
+        echo -e "Done"
+        echo -en "Cleaning up memory..."
+        rm -rf /dev/shm/dist/
+        echo -e "Done"
+        echo -e "${NOCOLOR}"
+    fi
+fi
+
+if [ "${SPEED_HAX}" == true ] ; then
+    if [[ ! -L /tmp/logs/HostOnlyCert ]] ; then
+        echo -e "${RED}Speed H4x Enabled${NOCOLOR}"
+        echo -e "${RED}I have the need for speed! ${NOCOLOR}"
+        mv /tmp/logs/HostOnlyCert /dev/shm/
+        rm -f /tmp/logs/HostOnlyCert
+        ln -s /dev/shm/HostOnlyCert /tmp/logs/HostOnlyCert
+    fi
+else
+    if [[ -L /tmp/logs/HostOnlyCert ]] ; then
+        echo -e "${RED}Speed H4x Disabled${NOCOLOR}"
+        echo -e "${RED}I don't like going fast! ${NOCOLOR}"
+        rm -f /tmp/logs/HostOnlyCert
+        mv /dev/shm/HostOnlyCert /tmp/logs/
+    fi
+fi
+
 
 python3.8 -m virtualenv --python `which python3.8` $CERT_TEST_VENV
 if [[ $? -ne 0 ]] ; then

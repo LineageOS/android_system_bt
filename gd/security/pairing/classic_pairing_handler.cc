@@ -131,6 +131,7 @@ void ClassicPairingHandler::OnReceive(hci::LinkKeyNotificationView packet) {
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
   ASSERT_LOG(GetRecord()->GetPseudoAddress().GetAddress() == packet.GetBdAddr(), "Address mismatch");
   GetRecord()->SetLinkKey(packet.GetLinkKey(), packet.GetKeyType());
+  Cancel();
 }
 
 void ClassicPairingHandler::OnReceive(hci::IoCapabilityRequestView packet) {
@@ -193,8 +194,8 @@ void ClassicPairingHandler::OnReceive(hci::SimplePairingCompleteView packet) {
   if (last_status_ != hci::ErrorCode::SUCCESS) {
     LOG_INFO("Failed SimplePairingComplete: %s", hci::ErrorCodeText(last_status_).c_str());
     // Cancel here since we won't get LinkKeyNotification
+    Cancel();
   }
-  Cancel();
 }
 
 void ClassicPairingHandler::OnReceive(hci::ReturnLinkKeysView packet) {

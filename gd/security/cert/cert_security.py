@@ -166,10 +166,10 @@ class CertSecurity(PySecurity):
         if reply_boolean:
             logging.info("Cert: Sending USER_CONFIRMATION_REQUEST_REPLY")
             self._enqueue_hci_command(hci_packets.UserConfirmationRequestReplyBuilder(dut_address.decode('utf8')), True)
-            logging.info("Cert: Waiting for LINK_KEY_NOTIFICATION")
-            assertThat(self._hci_event_stream).emits(HciMatchers.LinkKeyNotification())
             logging.info("Cert: Waiting for SIMPLE_PAIRING_COMPLETE")
             assertThat(self._hci_event_stream).emits(HciMatchers.SimplePairingComplete())
+            logging.info("Cert: Waiting for LINK_KEY_NOTIFICATION")
+            assertThat(self._hci_event_stream).emits(HciMatchers.LinkKeyNotification())
         else:
             logging.info("Cert: Sending USER_CONFIRMATION_REQUEST_NEGATIVE_REPLY")
             self._enqueue_hci_command(
