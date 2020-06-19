@@ -1,0 +1,11 @@
+// Top level module dumpsys data schema
+
+namespace bluetooth;
+
+attribute "privacy";
+
+table DumpsysData {
+    title:string;
+}
+
+root_type DumpsysData;
