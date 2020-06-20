@@ -5,6 +5,7 @@ package bluetooth.security;
 import "google/protobuf/empty.proto";
 import "facade/common.proto";
 import "l2cap/classic/facade.proto";
+import "hci/facade/le_initiator_address_facade.proto";
 
 service SecurityModuleFacade {
   rpc CreateBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
@@ -16,7 +17,7 @@ service SecurityModuleFacade {
   rpc SetOobDataPresent(OobDataMessage) returns (google.protobuf.Empty) {}
   rpc SetLeIoCapability(LeIoCapabilityMessage) returns (google.protobuf.Empty) {}
   rpc SetLeAuthReq(LeAuthReqMsg) returns (google.protobuf.Empty) {}
-  rpc SetLeInitiatorAddress(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
+  rpc SetLeInitiatorAddressPolicy(hci.PrivacyPolicy) returns (google.protobuf.Empty) {}
   rpc SendUiCallback(UiCallbackMsg) returns (google.protobuf.Empty) {}
   rpc FetchUiEvents(google.protobuf.Empty) returns (stream UiMsg) {}
   rpc FetchBondEvents(google.protobuf.Empty) returns (stream BondMsg) {}

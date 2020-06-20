@@ -115,9 +115,14 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   void SetUserInterfaceHandler(UI* user_interface, os::Handler* handler);
 
   /**
-   * Specify the initiator address used for LE transport, used for tests only.
+   * Specify the initiator address policy used for LE transport. Can only be called once.
    */
-  void SetLeInitiatorAddress(hci::AddressWithType address);
+  void SetLeInitiatorAddressPolicy(
+      hci::LeAddressManager::AddressPolicy address_policy,
+      hci::AddressWithType fixed_address,
+      crypto_toolbox::Octet16 rotation_irk,
+      std::chrono::milliseconds minimum_rotation_time,
+      std::chrono::milliseconds maximum_rotation_time);
 
   /**
    * Register to listen for callback events from SecurityManager
