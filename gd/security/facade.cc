@@ -17,6 +17,7 @@
 
 #include "grpc/grpc_event_queue.h"
 #include "hci/address_with_type.h"
+#include "hci/le_address_manager.h"
 #include "l2cap/classic/security_policy.h"
 #include "os/handler.h"
 #include "security/facade.grpc.pb.h"
@@ -143,14 +144,27 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status SetLeInitiatorAddress(
-      ::grpc::ServerContext* context,
-      const facade::BluetoothAddressWithType* request,
-      ::google::protobuf::Empty* response) override {
-    hci::Address peer;
-    ASSERT(hci::Address::FromString(request->address().address(), peer));
-    hci::AddressType peer_type = static_cast<hci::AddressType>(request->type());
-    security_module_->GetSecurityManager()->SetLeInitiatorAddress(hci::AddressWithType(peer, peer_type));
+  ::grpc::Status SetLeInitiatorAddressPolicy(
+      ::grpc::ServerContext* context, const hci::PrivacyPolicy* request, ::google::protobuf::Empty* response) override {
+    Address address = Address::kEmpty;
+    hci::LeAddressManager::AddressPolicy address_policy =
+        static_cast<hci::LeAddressManager::AddressPolicy>(request->address_policy());
+    if (address_policy == hci::LeAddressManager::AddressPolicy::USE_STATIC_ADDRESS) {
+      ASSERT(Address::FromString(request->address_with_type().address().address(), address));
+    }
+    hci::AddressWithType address_with_type(address, static_cast<hci::AddressType>(request->address_with_type().type()));
+    crypto_toolbox::Octet16 irk = {};
+    auto request_irk_length = request->rotation_irk().end() - request->rotation_irk().begin();
+    if (request_irk_length == crypto_toolbox::OCTET16_LEN) {
+      std::vector<uint8_t> irk_data(request->rotation_irk().begin(), request->rotation_irk().end());
+      std::copy_n(irk_data.begin(), crypto_toolbox::OCTET16_LEN, irk.begin());
+    } else {
+      ASSERT(request_irk_length == 0);
+    }
+    auto minimum_rotation_time = std::chrono::milliseconds(request->minimum_rotation_time());
+    auto maximum_rotation_time = std::chrono::milliseconds(request->maximum_rotation_time());
+    security_module_->GetSecurityManager()->SetLeInitiatorAddressPolicy(
+        address_policy, address_with_type, irk, minimum_rotation_time, maximum_rotation_time);
     return ::grpc::Status::OK;
   }
 
