@@ -27,6 +27,7 @@ from datetime import timedelta
 from facade import common_pb2 as common
 from hci.facade import controller_facade_pb2 as controller_facade
 from hci.facade import le_advertising_manager_facade_pb2 as le_advertising_facade
+from hci.facade import le_initiator_address_facade_pb2 as le_initiator_address_facade
 from google.protobuf import empty_pb2 as empty_proto
 from neighbor.facade import facade_pb2 as neighbor_facade
 from security.cert.cert_security import CertSecurity
@@ -60,10 +61,16 @@ class LeSecurityTest(GdBaseTestClass):
 
         self.dut_address = common.BluetoothAddressWithType(
             address=common.BluetoothAddress(address=bytes(b'DD:05:04:03:02:01')), type=common.RANDOM_DEVICE_ADDRESS)
-        self.dut.security.SetLeInitiatorAddress(self.dut_address)
+        privacy_policy = le_initiator_address_facade.PrivacyPolicy(
+            address_policy=le_initiator_address_facade.AddressPolicy.USE_STATIC_ADDRESS,
+            address_with_type=self.dut_address)
+        self.dut.security.SetLeInitiatorAddressPolicy(privacy_policy)
         self.cert_address = common.BluetoothAddressWithType(
             address=common.BluetoothAddress(address=bytes(b'C5:11:FF:AA:33:22')), type=common.RANDOM_DEVICE_ADDRESS)
-        self.cert.security.SetLeInitiatorAddress(self.cert_address)
+        cert_privacy_policy = le_initiator_address_facade.PrivacyPolicy(
+            address_policy=le_initiator_address_facade.AddressPolicy.USE_STATIC_ADDRESS,
+            address_with_type=self.cert_address)
+        self.cert.security.SetLeInitiatorAddressPolicy(cert_privacy_policy)
 
     def teardown_test(self):
         self.dut_hci.close()
