@@ -1056,6 +1056,14 @@ bool A2dpCodecConfigAacBase::setCodecConfig(const uint8_t* p_peer_codec_info,
   result_config_cie.variableBitRateSupport =
       p_a2dp_aac_caps->variableBitRateSupport &
       peer_info_cie.variableBitRateSupport;
+  if (result_config_cie.variableBitRateSupport !=
+      A2DP_AAC_VARIABLE_BIT_RATE_DISABLED) {
+    codec_config_.codec_specific_1 =
+        static_cast<int64_t>(AacEncoderBitrateMode::AACENC_BR_MODE_VBR_5);
+  } else {
+    codec_config_.codec_specific_1 =
+        static_cast<int64_t>(AacEncoderBitrateMode::AACENC_BR_MODE_CBR);
+  }
 
   // Set the bit rate as follows:
   // 1. If the remote device reports a bogus bit rate
@@ -1327,22 +1335,52 @@ bool A2dpCodecConfigAacBase::setCodecConfig(const uint8_t* p_peer_codec_info,
     goto fail;
   }
 
-  if (A2DP_BuildInfoAac(AVDT_MEDIA_TYPE_AUDIO, &result_config_cie,
-                        p_result_codec_config) != A2DP_SUCCESS) {
-    goto fail;
-  }
-
   //
   // Copy the codec-specific fields if they are not zero
   //
-  if (codec_user_config_.codec_specific_1 != 0)
-    codec_config_.codec_specific_1 = codec_user_config_.codec_specific_1;
+  if (codec_user_config_.codec_specific_1 != 0) {
+    if (result_config_cie.variableBitRateSupport !=
+        A2DP_AAC_VARIABLE_BIT_RATE_DISABLED) {
+      auto user_bitrate_mode = codec_user_config_.codec_specific_1;
+      switch (static_cast<AacEncoderBitrateMode>(user_bitrate_mode)) {
+        case AacEncoderBitrateMode::AACENC_BR_MODE_VBR_C:
+          // VBR is supported, and is disabled by the user preference
+          result_config_cie.variableBitRateSupport =
+              A2DP_AAC_VARIABLE_BIT_RATE_DISABLED;
+          [[fallthrough]];
+        case AacEncoderBitrateMode::AACENC_BR_MODE_VBR_1:
+          [[fallthrough]];
+        case AacEncoderBitrateMode::AACENC_BR_MODE_VBR_2:
+          [[fallthrough]];
+        case AacEncoderBitrateMode::AACENC_BR_MODE_VBR_3:
+          [[fallthrough]];
+        case AacEncoderBitrateMode::AACENC_BR_MODE_VBR_4:
+          [[fallthrough]];
+        case AacEncoderBitrateMode::AACENC_BR_MODE_VBR_5:
+          codec_config_.codec_specific_1 = codec_user_config_.codec_specific_1;
+          break;
+        default:
+          codec_config_.codec_specific_1 =
+              static_cast<int64_t>(AacEncoderBitrateMode::AACENC_BR_MODE_VBR_5);
+      }
+    } else {
+      // It is no needed to check the user preference when Variable Bitrate
+      // unsupported by one of source or sink
+      codec_config_.codec_specific_1 =
+          static_cast<int64_t>(AacEncoderBitrateMode::AACENC_BR_MODE_CBR);
+    }
+  }
   if (codec_user_config_.codec_specific_2 != 0)
     codec_config_.codec_specific_2 = codec_user_config_.codec_specific_2;
   if (codec_user_config_.codec_specific_3 != 0)
     codec_config_.codec_specific_3 = codec_user_config_.codec_specific_3;
   if (codec_user_config_.codec_specific_4 != 0)
     codec_config_.codec_specific_4 = codec_user_config_.codec_specific_4;
+
+  if (A2DP_BuildInfoAac(AVDT_MEDIA_TYPE_AUDIO, &result_config_cie,
+                        p_result_codec_config) != A2DP_SUCCESS) {
+    goto fail;
+  }
 
   // Create a local copy of the peer codec capability/config, and the
   // result codec config.
@@ -1380,6 +1418,7 @@ bool A2dpCodecConfigAacBase::setPeerCodecCapabilities(
   tA2DP_AAC_CIE peer_info_cie;
   uint8_t channelMode;
   uint16_t sampleRate;
+  uint8_t variableBitRateSupport;
   const tA2DP_AAC_CIE* p_a2dp_aac_caps =
       (is_source_) ? &a2dp_aac_source_caps : &a2dp_aac_sink_caps;
 
@@ -1430,6 +1469,17 @@ bool A2dpCodecConfigAacBase::setPeerCodecCapabilities(
   if (channelMode & A2DP_AAC_CHANNEL_MODE_STEREO) {
     codec_selectable_capability_.channel_mode |=
         BTAV_A2DP_CODEC_CHANNEL_MODE_STEREO;
+  }
+
+  // Compute the selectable capability - variable bitrate mode
+  variableBitRateSupport = p_a2dp_aac_caps->variableBitRateSupport &
+                           peer_info_cie.variableBitRateSupport;
+  if (variableBitRateSupport != A2DP_AAC_VARIABLE_BIT_RATE_DISABLED) {
+    codec_selectable_capability_.codec_specific_1 =
+        static_cast<int64_t>(AacEncoderBitrateMode::AACENC_BR_MODE_VBR_5);
+  } else {
+    codec_selectable_capability_.codec_specific_1 =
+        static_cast<int64_t>(AacEncoderBitrateMode::AACENC_BR_MODE_CBR);
   }
 
   status = A2DP_BuildInfoAac(AVDT_MEDIA_TYPE_AUDIO, &peer_info_cie,
