@@ -125,7 +125,7 @@ class DirectHciTest(GdBaseTestClass):
             hci_packets.LeSetExtendedAdvertisingRandomAddressBuilder(advertising_handle, '0C:05:04:03:02:01'))
         gap_name = hci_packets.GapData()
         gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
-        gap_name.data = list(bytes(b'Im_A_Cert!'))  # TODO: Fix and remove !
+        gap_name.data = list(bytes(b'Im_A_Cert'))
 
         self.send_hal_hci_command(
             hci_packets.LeSetExtendedAdvertisingDataBuilder(
@@ -288,7 +288,7 @@ class DirectHciTest(GdBaseTestClass):
 
         gap_name = hci_packets.GapData()
         gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
-        gap_name.data = list(bytes(b'Im_A_Cert!'))  # TODO: Fix and remove !
+        gap_name.data = list(bytes(b'Im_A_Cert'))
 
         self.send_hal_hci_command(
             hci_packets.LeSetExtendedAdvertisingDataBuilder(
