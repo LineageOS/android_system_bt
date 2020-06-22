@@ -43,7 +43,7 @@ cc_binary {
     generated_headers: [
         "BluetoothGeneratedBundler_h",
     ],
-    shared_libs: [
+    static_libs: [
         "libflatbuffers-cpp",
     ],
     sanitize: {
@@ -64,7 +64,7 @@ cc_test {
     srcs: [
         ":BluetoothFlatbufferBundlerTestSources",
     ],
-    shared_libs: [
+    static_libs: [
         "libflatbuffers-cpp",
     ],
     sanitize: {

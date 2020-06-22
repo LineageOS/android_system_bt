@@ -150,6 +150,7 @@ cc_defaults {
     ],
     generated_headers: [
         "BluetoothGeneratedBundler_h",
+        "BluetoothGeneratedFlatbuffers_h",
         "BluetoothGeneratedPackets_h",
         "BluetoothGeneratedDumpsysData_h",
     ],
@@ -437,6 +438,23 @@ genrule {
     ],
 }
 
+// Generates binary schema data to be bundled and source file generated
+genrule {
+    name: "BluetoothGeneratedModuleSchemaData_h",
+    tools: [
+        "flatc",
+    ],
+    cmd: "$(location flatc) -I system/bt/gd -b --schema -o $(genDir) $(in) ",
+    srcs: [
+        "dumpsys_data.fbs",
+        "shim/dumpsys.fbs",
+    ],
+    out: [
+        "dumpsys_data.bfbs",
+        "dumpsys.bfbs",
+    ],
+}
+
 genrule {
     name: "BluetoothGeneratedDumpsysData_h",
     tools: [
@@ -445,9 +463,27 @@ genrule {
     cmd: "$(location flatc) -I system/bt/gd -o $(genDir) --cpp $(in) ",
     srcs: [
         "dumpsys_data.fbs",
+        "shim/dumpsys.fbs",
     ],
     out: [
         "dumpsys_data_generated.h",
+        "dumpsys_generated.h",
+    ],
+}
+
+// Generates binary bundled source file for inclusion into library
+genrule {
+    name: "BluetoothGeneratedFlatbuffers_h",
+    tools: [
+            "bluetooth_flatbuffer_bundler",
+    ],
+    cmd: "$(location bluetooth_flatbuffer_bundler) -w -m DumpsysData -f module_schema_data -n bluetooth::dumpsys -g $(genDir) $(locations :BluetoothGeneratedModuleSchemaData_h)",
+    srcs: [
+        "*.bfbs",
+        ":BluetoothGeneratedModuleSchemaData_h",
+    ],
+    out: [
+         "module_schema_data.h",
     ],
 }
 
