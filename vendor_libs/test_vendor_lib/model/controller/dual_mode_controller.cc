@@ -1445,8 +1445,9 @@ void DualModeController::LeSetAdvertisingData(CommandPacketView command) {
   auto command_view = gd_hci::LeSetAdvertisingDataView::Create(
       gd_hci::LeAdvertisingCommandView::Create(command));
   auto payload = command.GetPayload();
-  std::vector<uint8_t> payload_bytes{payload.begin() + 1,
-                                     payload.begin() + *payload.begin()};
+  auto data_size = *payload.begin();
+  auto first_data = payload.begin() + 1;
+  std::vector<uint8_t> payload_bytes{first_data, first_data + data_size};
   ASSERT_LOG(command_view.IsValid(), "%s command.size() = %zu",
              gd_hci::OpCodeText(command.GetOpCode()).c_str(), command.size());
   ASSERT(command_view.GetPayload().size() == 32);
