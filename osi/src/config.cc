@@ -30,11 +30,41 @@
 #include <string.h>
 #include <sys/stat.h>
 #include <unistd.h>
+
 #include <sstream>
 #include <type_traits>
 
-// Empty definition; this type is aliased to list_node_t.
-struct config_section_iter_t {};
+void section_t::Set(std::string key, std::string value) {
+  for (entry_t& entry : entries) {
+    if (entry.key == key) {
+      entry.value = value;
+      return;
+    }
+  }
+  // add a new key to the section
+  entries.emplace_back(
+      entry_t{.key = std::move(key), .value = std::move(value)});
+}
+
+std::list<entry_t>::iterator section_t::Find(const std::string& key) {
+  return std::find_if(
+      entries.begin(), entries.end(),
+      [&key](const entry_t& entry) { return entry.key == key; });
+}
+
+bool section_t::Has(const std::string& key) {
+  return Find(key) != entries.end();
+}
+
+std::list<section_t>::iterator config_t::Find(const std::string& section) {
+  return std::find_if(
+      sections.begin(), sections.end(),
+      [&section](const section_t& sec) { return sec.name == section; });
+}
+
+bool config_t::Has(const std::string& key) {
+  return Find(key) != sections.end();
+}
 
 static bool config_parse(FILE* fp, config_t* config);
 
