@@ -140,7 +140,7 @@ class SimpleHalTest(GdBaseTestClass):
 
             gap_name = hci_packets.GapData()
             gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
-            gap_name.data = list(bytes(b'Im_A_Cert!'))  # TODO: Fix and remove !
+            gap_name.data = list(bytes(b'Im_A_Cert'))
 
             self.send_cert_hci_command(
                 hci_packets.LeSetExtendedAdvertisingDataBuilder(
@@ -210,7 +210,7 @@ class SimpleHalTest(GdBaseTestClass):
 
             gap_name = hci_packets.GapData()
             gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
-            gap_name.data = list(bytes(b'Im_The_DUT!'))  # TODO: Fix and remove !
+            gap_name.data = list(bytes(b'Im_The_DUT'))
 
             self.send_dut_hci_command(
                 hci_packets.LeSetExtendedAdvertisingDataBuilder(
@@ -306,7 +306,7 @@ class SimpleHalTest(GdBaseTestClass):
 
             gap_name = hci_packets.GapData()
             gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
-            gap_name.data = list(bytes(b'Im_A_Cert!'))  # TODO: Fix and remove !
+            gap_name.data = list(bytes(b'Im_A_Cert'))
 
             self.send_cert_hci_command(
                 hci_packets.LeSetExtendedAdvertisingDataBuilder(
