@@ -1,4 +1,5 @@
 // Top level module dumpsys data schema
+include "module_unittest.fbs";
 
 namespace bluetooth;
 
@@ -6,6 +7,7 @@ attribute "privacy";
 
 table DumpsysData {
     title:string;
+    module_unittest_data:bluetooth.ModuleUnitTestData; // private
 }
 
 root_type DumpsysData;
