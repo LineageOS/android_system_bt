@@ -37,6 +37,7 @@ namespace shim {
 
 namespace {
 constexpr char kModuleName[] = "shim::Dumpsys";
+constexpr char kDumpsysTitle[] = "----- Gd Dumpsys ------";
 }  // namespace
 
 constexpr char kArgumentDeveloper[] = "--dev";
@@ -116,7 +117,7 @@ void Dumpsys::impl::DumpWithArgs(int fd, const char** args, std::promise<void> p
   ParsedDumpsysArgs parsed_dumpsys_args(args);
   const auto registry = dumpsys_module_.GetModuleRegistry();
 
-  ModuleDumper dumper(*registry);
+  ModuleDumper dumper(*registry, kDumpsysTitle);
   std::string output;
   // Get the dumpstate into out string
   dumper.DumpState(&output);
