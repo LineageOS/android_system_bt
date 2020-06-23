@@ -546,24 +546,6 @@ void BTA_DmSetBlePrefConnParams(const RawAddress& bd_addr,
 
 /*******************************************************************************
  *
- * Function         BTA_DmSetBleConnScanParams
- *
- * Description      This function is called to set scan parameters used in
- *                  BLE connection request
- *
- * Parameters:      scan_interval    - scan interval
- *                  scan_window      - scan window
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmSetBleConnScanParams(uint32_t scan_interval, uint32_t scan_window) {
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_ble_set_conn_scan_params,
-                                          scan_interval, scan_window));
-}
-
-/*******************************************************************************
- *
  * Function         bta_dm_discover_send_msg
  *
  * Description      This function send discover message to BTA task.
@@ -622,77 +604,6 @@ void BTA_DmDiscoverByTransport(const RawAddress& bd_addr,
                                tBTA_DM_SEARCH_CBACK* p_cback, bool sdp_search,
                                tBTA_TRANSPORT transport) {
   bta_dm_discover_send_msg(bd_addr, p_services, p_cback, sdp_search, transport);
-}
-
-/*******************************************************************************
- *
- * Function         BTA_DmDiscoverExt
- *
- * Description      This function does service discovery for services of a
- *                  peer device. When services.num_uuid is 0, it indicates all
- *                  GATT based services are to be searched; other wise a list of
- *                  UUID of interested services should be provided through
- *                  p_services->p_uuid.
- *
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmDiscoverExt(const RawAddress& bd_addr,
-                       tBTA_SERVICE_MASK_EXT* p_services,
-                       tBTA_DM_SEARCH_CBACK* p_cback, bool sdp_search) {
-  bta_dm_discover_send_msg(bd_addr, p_services, p_cback, sdp_search,
-                           BTA_TRANSPORT_UNKNOWN);
-}
-
-/*******************************************************************************
- *
- * Function         BTA_DmSearchExt
- *
- * Description      This function searches for peer Bluetooth devices. It
- *                  performs an inquiry and gets the remote name for devices.
- *                  Service discovery is done if services is non zero
- *
- * Parameters       p_dm_inq: inquiry conditions
- *                  p_services: if service is not empty, service discovery will
- *                              be done. For all GATT based service conditions,
- *                              put num_uuid, and p_uuid is the pointer to the
- *                              list of UUID values.
- *                  p_cback: callback function when search is completed.
- *
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmSearchExt(tBTA_DM_INQ* p_dm_inq, tBTA_SERVICE_MASK_EXT* p_services,
-                     tBTA_DM_SEARCH_CBACK* p_cback) {
-  const size_t len =
-      p_services
-          ? (sizeof(tBTA_DM_API_SEARCH) + sizeof(Uuid) * p_services->num_uuid)
-          : sizeof(tBTA_DM_API_SEARCH);
-  tBTA_DM_API_SEARCH* p_msg = (tBTA_DM_API_SEARCH*)osi_calloc(len);
-
-  p_msg->hdr.event = BTA_DM_API_SEARCH_EVT;
-  memcpy(&p_msg->inq_params, p_dm_inq, sizeof(tBTA_DM_INQ));
-  p_msg->p_cback = p_cback;
-  p_msg->rs_res = BTA_DM_RS_NONE;
-
-  if (p_services != NULL) {
-    p_msg->services = p_services->srvc_mask;
-    p_msg->num_uuid = p_services->num_uuid;
-
-    if (p_services->num_uuid != 0) {
-      p_msg->p_uuid = (Uuid*)(p_msg + 1);
-      memcpy(p_msg->p_uuid, p_services->p_uuid,
-             sizeof(Uuid) * p_services->num_uuid);
-    } else {
-      p_msg->p_uuid = NULL;
-    }
-  }
-
-  bta_sys_sendmsg(p_msg);
 }
 
 /*******************************************************************************
