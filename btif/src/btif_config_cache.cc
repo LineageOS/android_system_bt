@@ -148,14 +148,19 @@ bool BtifConfigCache::RemoveKey(const std::string& section_name,
   }
 }
 
+std::vector<std::string> BtifConfigCache::GetPersistentSectionNames() {
+  std::vector<std::string> result;
+  result.reserve(paired_devices_list_.sections.size());
+  for (const auto& section : paired_devices_list_.sections) {
+    result.emplace_back(section.name);
+  }
+  return result;
+}
+
 /* clone persistent sections (Local Adapter sections, remote paired devices
  * section,..) */
 config_t BtifConfigCache::PersistentSectionCopy() {
   return paired_devices_list_;
-}
-
-const std::list<section_t>& BtifConfigCache::GetPersistentSections() {
-  return paired_devices_list_.sections;
 }
 
 void BtifConfigCache::SetString(std::string section_name, std::string key,
