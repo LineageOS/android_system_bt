@@ -90,7 +90,7 @@ class Module {
   virtual void Stop() = 0;
 
   // Get relevant state data from the module
-  virtual DumpsysDataFinisher GetTable(flatbuffers::FlatBufferBuilder* builder) const;
+  virtual DumpsysDataFinisher GetDumpsysData(flatbuffers::FlatBufferBuilder* builder) const;
 
   virtual std::string ToString() const;
 
@@ -160,11 +160,13 @@ class ModuleRegistry {
 
 class ModuleDumper {
  public:
-  ModuleDumper(const ModuleRegistry& module_registry) : module_registry_(module_registry) {}
+  ModuleDumper(const ModuleRegistry& module_registry, const char* title)
+      : module_registry_(module_registry), title_(title) {}
   void DumpState(std::string* output) const;
 
  private:
-  [[maybe_unused]] const ModuleRegistry& module_registry_;
+  const ModuleRegistry& module_registry_;
+  const std::string title_;
 };
 
 class TestModuleRegistry : public ModuleRegistry {
