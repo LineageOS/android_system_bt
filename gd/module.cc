@@ -36,7 +36,7 @@ Handler* Module::GetHandler() const {
 }
 
 DumpsysDataFinisher EmptyDumpsysDataFinisher = [](DumpsysDataBuilder* dumpsys_data_builder) {};
-DumpsysDataFinisher Module::GetTable(flatbuffers::FlatBufferBuilder* builder) const {
+DumpsysDataFinisher Module::GetDumpsysData(flatbuffers::FlatBufferBuilder* builder) const {
   return EmptyDumpsysDataFinisher;
 }
 
@@ -127,8 +127,28 @@ os::Handler* ModuleRegistry::GetModuleHandler(const ModuleFactory* module) const
 }
 
 void ModuleDumper::DumpState(std::string* output) const {
-  // TODO(cmanton)
-  *output = std::string("TBD");
+  ASSERT(output != nullptr);
+
+  flatbuffers::FlatBufferBuilder builder(1024);
+  auto title = builder.CreateString(title_);
+
+  std::queue<DumpsysDataFinisher> queue;
+  for (auto it = module_registry_.start_order_.rbegin(); it != module_registry_.start_order_.rend(); it++) {
+    auto instance = module_registry_.started_modules_.find(*it);
+    ASSERT(instance != module_registry_.started_modules_.end());
+    queue.push(instance->second->GetDumpsysData(&builder));
+  }
+
+  DumpsysDataBuilder data_builder(builder);
+  data_builder.add_title(title);
+
+  while (!queue.empty()) {
+    queue.front()(&data_builder);
+    queue.pop();
+  }
+
+  builder.Finish(data_builder.Finish());
+  *output = std::string(builder.GetBufferPointer(), builder.GetBufferPointer() + builder.GetSize());
 }
 
 }  // namespace bluetooth
