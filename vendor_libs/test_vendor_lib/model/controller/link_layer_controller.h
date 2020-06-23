@@ -125,8 +125,6 @@ class LinkLayerController {
   void RegisterTaskCancel(std::function<void(AsyncTaskId)> cancel);
   void Reset();
 
-  void Connections();
-
   void LeAdvertising();
 
   void LeConnectionUpdateComplete(
