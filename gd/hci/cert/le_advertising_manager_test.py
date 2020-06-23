@@ -72,7 +72,7 @@ class LeAdvertisingManagerTest(GdBaseTestClass):
             # DUT Advertises
             gap_name = hci_packets.GapData()
             gap_name.data_type = hci_packets.GapDataType.COMPLETE_LOCAL_NAME
-            gap_name.data = list(bytes(b'Im_The_DUT!'))
+            gap_name.data = list(bytes(b'Im_The_DUT'))
             gap_data = le_advertising_facade.GapDataMsg(data=bytes(gap_name.Serialize()))
             config = le_advertising_facade.AdvertisingConfig(
                 advertisement=[gap_data],
