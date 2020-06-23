@@ -64,7 +64,7 @@ bool btif_config_remove(const std::string& section, const std::string& key);
 size_t btif_config_get_bin_length(const std::string& section,
                                   const std::string& key);
 
-const std::list<section_t>& btif_config_sections();
+std::vector<RawAddress> btif_config_get_paired_devices();
 
 void btif_config_save(void);
 void btif_config_flush(void);

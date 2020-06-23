@@ -31,7 +31,7 @@ class BtifConfigCache {
 
   void Clear();
   void Init(std::unique_ptr<config_t> source);
-  const std::list<section_t>& GetPersistentSections();
+  std::vector<std::string> GetPersistentSectionNames();
   config_t PersistentSectionCopy();
   bool HasSection(const std::string& section_name);
   bool HasUnpairedSection(const std::string& section_name);
