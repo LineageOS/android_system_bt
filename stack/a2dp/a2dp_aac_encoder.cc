@@ -414,7 +414,29 @@ static void a2dp_aac_encoder_update(uint16_t peer_mtu,
               "invalid codec bit rate mode",
               __func__);
     return;  // TODO: Return an error?
+  } else if (aac_param_value == A2DP_AAC_VARIABLE_BIT_RATE_ENABLED) {
+    // VBR has 5 modes defined in external/aac/libAACenc/src/aacenc.h
+    // A2DP_AAC_VARIABLE_BIT_RATE_DISABLED is equal to AACENC_BR_MODE_CBR
+    auto bitrate_mode = a2dp_codec_config->getCodecConfig().codec_specific_1;
+    switch (static_cast<AacEncoderBitrateMode>(bitrate_mode)) {
+      case AacEncoderBitrateMode::AACENC_BR_MODE_VBR_1:
+        [[fallthrough]];
+      case AacEncoderBitrateMode::AACENC_BR_MODE_VBR_2:
+        [[fallthrough]];
+      case AacEncoderBitrateMode::AACENC_BR_MODE_VBR_3:
+        [[fallthrough]];
+      case AacEncoderBitrateMode::AACENC_BR_MODE_VBR_4:
+        [[fallthrough]];
+      case AacEncoderBitrateMode::AACENC_BR_MODE_VBR_5:
+        break;
+      default:
+        bitrate_mode =
+            static_cast<int64_t>(AacEncoderBitrateMode::AACENC_BR_MODE_VBR_5);
+    }
+    aac_param_value =
+        static_cast<uint8_t>(bitrate_mode) & ~A2DP_AAC_VARIABLE_BIT_RATE_MASK;
   }
+  LOG_INFO(LOG_TAG, "%s: AACENC_BITRATEMODE: %d", __func__, aac_param_value);
   aac_error = aacEncoder_SetParam(a2dp_aac_encoder_cb.aac_handle,
                                   AACENC_BITRATEMODE, aac_param_value);
   if (aac_error != AACENC_OK) {
@@ -740,6 +762,14 @@ void A2dpCodecConfigAacSource::debug_codec_dump(int fd) {
 
   A2dpCodecConfig::debug_codec_dump(fd);
 
+  auto codec_specific_1 = getCodecConfig().codec_specific_1;
+  dprintf(
+      fd,
+      "  AAC bitrate mode                                        : %s "
+      "(0x%" PRIx64 ")\n",
+      ((codec_specific_1 & ~A2DP_AAC_VARIABLE_BIT_RATE_MASK) == 0 ? "Constant"
+                                                                  : "Variable"),
+      codec_specific_1);
   dprintf(fd,
           "  Packet counts (expected/dropped)                        : %zu / "
           "%zu\n",
