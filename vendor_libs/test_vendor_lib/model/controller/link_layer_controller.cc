@@ -776,7 +776,8 @@ void LinkLayerController::IncomingLeAdvertisementPacket(
     raw_builder_ptr->AddOctets1(static_cast<uint8_t>(
         bluetooth::hci::SubeventCode::EXTENDED_ADVERTISING_REPORT));
     raw_builder_ptr->AddOctets1(0x01);  // num reports
-    raw_builder_ptr->AddOctets1(static_cast<uint8_t>(adv_type));
+    raw_builder_ptr->AddOctets1(0x01);  // Connectable
+    raw_builder_ptr->AddOctets1(0x00);  // Reserved
     raw_builder_ptr->AddOctets1(static_cast<uint8_t>(address_type));
     raw_builder_ptr->AddAddress(address);
     raw_builder_ptr->AddOctets1(1);     // Primary_PHY
@@ -784,14 +785,13 @@ void LinkLayerController::IncomingLeAdvertisementPacket(
     raw_builder_ptr->AddOctets1(0xFF);  // Advertising_SID - not provided
     raw_builder_ptr->AddOctets1(0x7F);  // Tx_Power - Not available
     raw_builder_ptr->AddOctets1(GetRssi());
-    raw_builder_ptr->AddOctets1(0);  // Periodic_Advertising_Interval - None
+    raw_builder_ptr->AddOctets2(0);  // Periodic_Advertising_Interval - None
     raw_builder_ptr->AddOctets1(0);  // Direct_Address_Type - PUBLIC
     raw_builder_ptr->AddAddress(Address::kEmpty);  // Direct_Address
     raw_builder_ptr->AddOctets1(ad.size());
     raw_builder_ptr->AddOctets(ad);
-    auto packet = bluetooth::hci::EventPacketBuilder::Create(
-        bluetooth::hci::EventCode::LE_META_EVENT, std::move(raw_builder_ptr));
-    send_event_(std::move(packet));
+    send_event_(bluetooth::hci::EventPacketBuilder::Create(
+        bluetooth::hci::EventCode::LE_META_EVENT, std::move(raw_builder_ptr)));
   }
 
   // Active scanning
@@ -1084,19 +1084,18 @@ void LinkLayerController::IncomingPageResponsePacket(
 void LinkLayerController::TimerTick() {
   if (inquiry_timer_task_id_ != kInvalidTaskId) Inquiry();
   LeAdvertising();
-  Connections();
 }
 
 void LinkLayerController::LeAdvertising() {
   if (!le_advertising_enable_) {
     return;
   }
-  steady_clock::time_point now = steady_clock::now();
-  if (duration_cast<milliseconds>(now - last_le_advertisement_) <
+  steady_clock::time_point right_now = steady_clock::now();
+  if (duration_cast<milliseconds>(right_now - last_le_advertisement_) <
       milliseconds(200)) {
     return;
   }
-  last_le_advertisement_ = now;
+  last_le_advertisement_ = right_now;
 
   auto own_address_type = static_cast<model::packets::AddressType>(
       properties_.GetLeAdvertisingOwnAddressType());
@@ -1111,11 +1110,8 @@ void LinkLayerController::LeAdvertising() {
       advertising_address, Address::kEmpty, own_address_type,
       static_cast<model::packets::AdvertisementType>(own_address_type),
       properties_.GetLeAdvertisement());
+  LOG_INFO("%zu length", properties_.GetLeAdvertisement().size());
   SendLeLinkLayerPacket(std::move(to_send));
-}
-
-void LinkLayerController::Connections() {
-  // TODO: Keep connections alive?
 }
 
 void LinkLayerController::RegisterEventChannel(
