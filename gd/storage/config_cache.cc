@@ -155,6 +155,8 @@ void ConfigCache::SetProperty(std::string section, std::string property, std::st
   if (TrimAfterNewLine(section) || TrimAfterNewLine(property) || TrimAfterNewLine(value)) {
     android_errorWriteLog(0x534e4554, "70808273");
   }
+  ASSERT_LOG(!section.empty(), "Empty section name not allowed");
+  ASSERT_LOG(!property.empty(), "Empty property name not allowed");
   if (!IsDeviceSection(section)) {
     auto section_iter = information_sections_.find(section);
     if (section_iter == information_sections_.end()) {
