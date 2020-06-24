@@ -112,3 +112,40 @@ cc_test {
         misc_undefined: ["bounds"],
     },
 }
+
+cc_test {
+    name: "net_test_hci_fragmenter_native",
+    test_suites: ["device-tests"],
+    defaults: ["fluoride_defaults"],
+    host_supported: true,
+    local_include_dirs: [
+        "include",
+    ],
+    include_dirs: [
+        "system/bt",
+        "system/bt/stack/include",
+        "system/bt/btcore/include",
+        "system/bt/osi/test",
+    ],
+    srcs: [
+        "src/buffer_allocator.cc",
+        "test/packet_fragmenter_host_test.cc",
+    ],
+    shared_libs: [
+        "libcrypto",
+        "liblog",
+        "libprotobuf-cpp-lite",
+    ],
+    static_libs: [
+        "libbt-common",
+        "libbt-protos-lite",
+        "libosi",
+        "libosi-AllocationTestHarness",
+    ],
+    sanitize: {
+        address: true,
+        cfi: true,
+        misc_undefined: ["bounds"],
+    },
+}
+
