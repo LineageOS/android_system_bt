@@ -22,6 +22,12 @@
 namespace bluetooth {
 namespace os {
 
+// Return true if |path| exists on disk
+bool FileExists(const std::string& path);
+
+// Rename file from |from| to |to|
+bool RenameFile(const std::string& from, const std::string& to);
+
 // Implement ability to read a whole file from |path| into a C++ string, return std::nullopt on failure
 //
 // Do not use this with large files
