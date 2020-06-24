@@ -520,6 +520,15 @@ struct classic_impl : public DisconnectorForLe, public security::ISecurityManage
     security_manager_->RegisterCallbackListener(this, handler_);
   }
 
+  uint16_t HACK_get_handle(Address address) {
+    for (auto it = acl_connections_.begin(); it != acl_connections_.end(); it++) {
+      if (it->second.address_with_type_.GetAddress() == address) {
+        return it->first;
+      }
+    }
+    return 0xFFFF;
+  }
+
   HciLayer* hci_layer_ = nullptr;
   Controller* controller_ = nullptr;
   RoundRobinScheduler* round_robin_scheduler_ = nullptr;
