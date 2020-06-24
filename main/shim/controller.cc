@@ -250,8 +250,7 @@ static uint16_t get_ble_maximum_tx_data_length(void) {
 }
 
 static uint16_t get_ble_maxium_advertising_data_length(void) {
-  LOG_WARN("%s TODO Unimplemented", __func__);
-  return 0;
+  return GetController()->GetControllerLeMaximumAdvertisingDataLength();
 }
 
 static uint8_t get_ble_number_of_supported_advertising_sets(void) {
@@ -268,13 +267,11 @@ static uint8_t get_acl_buffer_count_ble(void) {
 }
 
 static uint8_t get_ble_white_list_size(void) {
-  LOG_WARN("%s TODO Unimplemented", __func__);
-  return 0;
+  return GetController()->GetControllerLeWhiteListSize();
 }
 
 static uint8_t get_ble_resolving_list_max_size(void) {
-  LOG_WARN("%s TODO Unimplemented", __func__);
-  return 0;
+  return GetController()->GetControllerLeResolvingListSize();
 }
 
 static void set_ble_resolving_list_max_size(int resolving_list_max_size) {
