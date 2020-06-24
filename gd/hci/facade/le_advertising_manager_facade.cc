@@ -59,8 +59,6 @@ bool AdvertisingConfigFromProto(const AdvertisingConfig& config_proto, hci::Adve
     config->scan_response.push_back(GapDataFromProto(elem));
   }
 
-  hci::Address::FromString(config_proto.random_address().address(), config->random_address);
-
   if (config_proto.interval_min() > UINT16_MAX || config_proto.interval_min() < 0) {
     LOG_WARN("Bad interval_min: %d", config_proto.interval_min());
     return false;
