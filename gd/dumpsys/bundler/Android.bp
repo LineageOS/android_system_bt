@@ -46,9 +46,6 @@ cc_binary {
     static_libs: [
         "libflatbuffers-cpp",
     ],
-    sanitize: {
-        address: true,
-    },
 }
 
 cc_test {
@@ -67,9 +64,6 @@ cc_test {
     static_libs: [
         "libflatbuffers-cpp",
     ],
-    sanitize: {
-        address: true,
-    },
     data: [
         "test.bfbs",
     ],
