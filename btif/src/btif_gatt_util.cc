@@ -76,7 +76,7 @@ void btif_gatt_check_encrypted_link(RawAddress bd_addr,
                                     tGATT_TRANSPORT transport_link) {
   tBTM_LE_PENC_KEYS key;
   if ((btif_storage_get_ble_bonding_key(
-           &bd_addr, BTIF_DM_LE_KEY_PENC, (uint8_t*)&key,
+           bd_addr, BTIF_DM_LE_KEY_PENC, (uint8_t*)&key,
            sizeof(tBTM_LE_PENC_KEYS)) == BT_STATUS_SUCCESS) &&
       !btif_gatt_is_link_encrypted(bd_addr)) {
     BTIF_TRACE_DEBUG("%s: transport = %d", __func__, transport_link);
