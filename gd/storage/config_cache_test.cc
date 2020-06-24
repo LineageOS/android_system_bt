@@ -42,6 +42,17 @@ TEST(ConfigCacheTest, simple_set_get_test) {
   EXPECT_EQ(*value, "C");
 }
 
+TEST(ConfigCacheTest, empty_values_test) {
+  ConfigCache config(100);
+  EXPECT_DEATH({ config.SetProperty("", "B", "C"); }, "Empty section name not allowed");
+  EXPECT_DEATH({ config.SetProperty("A", "", "C"); }, "Empty property name not allowed");
+  // empty value is allowed
+  config.SetProperty("A", "B", "");
+  auto value = config.GetProperty("A", "B");
+  EXPECT_TRUE(value);
+  EXPECT_EQ(*value, "");
+}
+
 TEST(ConfigCacheTest, insert_boundary_device_with_linkkey_test) {
   ConfigCache config(2);
   config.SetProperty("A", "B", "C");

@@ -16,104 +16,151 @@
 
 #define LOG_TAG "bt_shim_storage"
 
+#include <algorithm>
 #include <cstdint>
 #include <cstring>
-#include <future>
 #include <memory>
 
-#include "btif/include/btif_config.h"
+#include "gd/os/log.h"
+#include "gd/storage/config_cache_helper.h"
+#include "gd/storage/storage_module.h"
 #include "main/shim/config.h"
 #include "main/shim/entry.h"
 
-#include "storage/legacy.h"
-
 using ::bluetooth::shim::GetStorage;
+using ::bluetooth::storage::ConfigCacheHelper;
 
 namespace bluetooth {
 namespace shim {
 
-std::string checksum_read(const char* filename) {
-  CHECK(filename != nullptr);
-
-  std::promise<std::string> promise;
-  auto future = promise.get_future();
-  GetStorage()->ChecksumRead(
-      std::string(filename),
-      common::BindOnce(
-          [](std::promise<std::string>* promise, std::string,
-             std::string hash_value) { promise->set_value(hash_value); },
-          &promise),
-      bluetooth::shim::GetGdShimHandler());
-  return future.get();
+bool BtifConfigInterface::HasSection(const std::string& section) {
+  return GetStorage()->GetConfigCache()->HasSection(section);
 }
 
-bool checksum_save(const std::string& checksum, const std::string& filename) {
-  std::promise<bool> promise;
-  auto future = promise.get_future();
-  GetStorage()->ChecksumWrite(
-      filename, checksum,
-      common::BindOnce([](std::promise<bool>* promise, std::string,
-                          bool success) { promise->set_value(success); },
-                       &promise),
-      bluetooth::shim::GetGdShimHandler());
-  return future.get();
+bool BtifConfigInterface::HasProperty(const std::string& section,
+                                      const std::string& property) {
+  return GetStorage()->GetConfigCache()->HasProperty(section, property);
 }
 
-std::unique_ptr<config_t> config_new(const char* filename) {
-  CHECK(filename != nullptr);
-
-  std::promise<std::unique_ptr<config_t>> promise;
-  auto future = promise.get_future();
-  GetStorage()->ConfigRead(
-      std::string(filename),
-      common::BindOnce(
-          [](std::promise<std::unique_ptr<config_t>>* promise, std::string,
-             std::unique_ptr<config_t> config) {
-            promise->set_value(std::move(config));
-          },
-          &promise),
-      bluetooth::shim::GetGdShimHandler());
-  return future.get();
+bool BtifConfigInterface::GetInt(const std::string& section,
+                                 const std::string& property, int* value) {
+  ASSERT(value != nullptr);
+  auto ret = ConfigCacheHelper::FromConfigCache(*GetStorage()->GetConfigCache())
+                 .GetInt(section, property);
+  if (ret) {
+    *value = *ret;
+  }
+  return ret.has_value();
 }
 
-bool config_save(const config_t& config, const std::string& filename) {
-  std::promise<bool> promise;
-  auto future = promise.get_future();
-  GetStorage()->ConfigWrite(
-      filename, config,
-      common::BindOnce([](std::promise<bool>* promise, std::string,
-                          bool success) { promise->set_value(success); },
-                       &promise),
-      bluetooth::shim::GetGdShimHandler());
-  return future.get();
+bool BtifConfigInterface::SetInt(const std::string& section,
+                                 const std::string& property, int value) {
+  ConfigCacheHelper::FromConfigCache(*GetStorage()->GetConfigCache())
+      .SetInt(section, property, value);
+  return true;
 }
+
+bool BtifConfigInterface::GetUint64(const std::string& section,
+                                    const std::string& property,
+                                    uint64_t* value) {
+  ASSERT(value != nullptr);
+  auto ret = ConfigCacheHelper::FromConfigCache(*GetStorage()->GetConfigCache())
+                 .GetUint64(section, property);
+  if (ret) {
+    *value = *ret;
+  }
+  return ret.has_value();
+}
+
+bool BtifConfigInterface::SetUint64(const std::string& section,
+                                    const std::string& property,
+                                    uint64_t value) {
+  ConfigCacheHelper::FromConfigCache(*GetStorage()->GetConfigCache())
+      .SetUint64(section, property, value);
+  return true;
+}
+
+bool BtifConfigInterface::GetStr(const std::string& section,
+                                 const std::string& property, char* value,
+                                 int* size_bytes) {
+  ASSERT(value != nullptr);
+  ASSERT(size_bytes != nullptr);
+  auto str = GetStorage()->GetConfigCache()->GetProperty(section, property);
+  if (!str) {
+    return false;
+  }
+  if (*size_bytes == 0) {
+    return true;
+  }
+  // std::string::copy does not null-terminate resultant string by default
+  // avoided using strlcpy to prevent extra dependency
+  *size_bytes = str->copy(value, (*size_bytes - 1));
+  value[*size_bytes] = '\0';
+  *size_bytes += 1;
+  return true;
+}
+
+std::optional<std::string> BtifConfigInterface::GetStr(
+    const std::string& section, const std::string& property) {
+  return GetStorage()->GetConfigCache()->GetProperty(section, property);
+}
+
+bool BtifConfigInterface::SetStr(const std::string& section,
+                                 const std::string& property,
+                                 const std::string& value) {
+  GetStorage()->GetConfigCache()->SetProperty(section, property, value);
+  return true;
+}
+
+// TODO: implement encrypted read
+bool BtifConfigInterface::GetBin(const std::string& section,
+                                 const std::string& property, uint8_t* value,
+                                 size_t* length) {
+  ASSERT(value != nullptr);
+  ASSERT(length != nullptr);
+  auto value_vec =
+      ConfigCacheHelper::FromConfigCache(*GetStorage()->GetConfigCache())
+          .GetBin(section, property);
+  if (!value_vec) {
+    return false;
+  }
+  *length = std::min(value_vec->size(), *length);
+  std::memcpy(value, value_vec->data(), *length);
+  return true;
+}
+size_t BtifConfigInterface::GetBinLength(const std::string& section,
+                                         const std::string& property) {
+  auto value_vec =
+      ConfigCacheHelper::FromConfigCache(*GetStorage()->GetConfigCache())
+          .GetBin(section, property);
+  if (!value_vec) {
+    return 0;
+  }
+  return value_vec->size();
+}
+bool BtifConfigInterface::SetBin(const std::string& section,
+                                 const std::string& property,
+                                 const uint8_t* value, size_t length) {
+  ASSERT(value != nullptr);
+  std::vector<uint8_t> value_vec(value, value + length);
+  ConfigCacheHelper::FromConfigCache(*GetStorage()->GetConfigCache())
+      .SetBin(section, property, value_vec);
+  return true;
+}
+bool BtifConfigInterface::RemoveProperty(const std::string& section,
+                                         const std::string& property) {
+  return GetStorage()->GetConfigCache()->RemoveProperty(section, property);
+}
+
+std::vector<std::string> BtifConfigInterface::GetPersistentDevices() {
+  return GetStorage()->GetConfigCache()->GetPersistentDevices();
+}
+
+void BtifConfigInterface::Save() { GetStorage()->SaveDelayed(); }
+
+void BtifConfigInterface::Flush() { GetStorage()->SaveImmediately(); }
+
+void BtifConfigInterface::Clear() { GetStorage()->GetConfigCache()->Clear(); }
 
 }  // namespace shim
 }  // namespace bluetooth
-
-namespace {
-const storage_config_t interface = {
-    bluetooth::shim::checksum_read,
-    bluetooth::shim::checksum_save,
-    config_get_bool,
-    config_get_int,
-    config_get_string,
-    config_get_uint64,
-    config_has_key,
-    config_has_section,
-    bluetooth::shim::config_new,
-    config_new_clone,
-    config_new_empty,
-    config_remove_key,
-    config_remove_section,
-    bluetooth::shim::config_save,
-    config_set_bool,
-    config_set_int,
-    config_set_string,
-    config_set_uint64,
-};
-}
-
-const storage_config_t* bluetooth::shim::storage_config_get_interface() {
-  return &interface;
-}

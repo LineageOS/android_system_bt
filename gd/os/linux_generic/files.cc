@@ -50,6 +50,19 @@ void HandleError(const std::string& temp_path, int* dir_fd, FILE** fp) {
 namespace bluetooth {
 namespace os {
 
+bool FileExists(const std::string& path) {
+  std::ifstream input(path, std::ios::binary | std::ios::ate);
+  return input.good();
+}
+
+bool RenameFile(const std::string& from, const std::string& to) {
+  if (std::rename(from.c_str(), to.c_str()) != 0) {
+    LOG_ERROR("unable to rename file from '%s' to '%s', error: %s", from.c_str(), to.c_str(), strerror(errno));
+    return false;
+  }
+  return true;
+}
+
 std::optional<std::string> ReadSmallFile(const std::string& path) {
   std::ifstream input(path, std::ios::binary | std::ios::ate);
   if (!input) {
@@ -155,7 +168,7 @@ bool WriteToFile(const std::string& path, const std::string& data) {
   }
 
   // Rename written temp file to the actual config file.
-  if (std::rename(temp_path.c_str(), path.c_str()) == -1) {
+  if (std::rename(temp_path.c_str(), path.c_str()) != 0) {
     LOG_ERROR("unable to commit file from '%s' to '%s', error: %s", temp_path.c_str(), path.c_str(), strerror(errno));
     HandleError(temp_path, &dir_fd, &fp);
     return false;
