@@ -2446,7 +2446,7 @@ enum PeerAddressType : 8 {
   RANDOM_DEVICE_OR_IDENTITY_ADDRESS = 0x01,
 }
 
-enum AdvertisingEventType : 8 {
+enum AdvertisingType : 8 {
   ADV_IND = 0x00,
   ADV_DIRECT_IND = 0x01,
   ADV_SCAN_IND = 0x02,
@@ -2464,7 +2464,7 @@ enum AddressType : 8 {
 packet LeSetAdvertisingParameters : LeAdvertisingCommand (op_code = LE_SET_ADVERTISING_PARAMETERS) {
   interval_min : 16,
   interval_max : 16,
-  type : AdvertisingEventType,
+  type : AdvertisingType,
   own_address_type : AddressType,
   peer_address_type : PeerAddressType,
   peer_address : Address,
@@ -3726,7 +3726,7 @@ packet LeMultiAdvtComplete : CommandComplete (command_op_code = LE_MULTI_ADVT) {
 packet LeMultiAdvtParam : LeMultiAdvt (sub_cmd = SET_PARAM) {
   interval_min : 16,
   interval_max : 16,
-  type : AdvertisingEventType,
+  type : AdvertisingType,
   own_address_type : AddressType,
   peer_address_type : PeerAddressType,
   peer_address : Address,
@@ -4225,6 +4225,14 @@ packet LeConnectionComplete : LeMetaEvent (subevent_code = CONNECTION_COMPLETE) 
   conn_latency : 16,  // Number of connection events
   supervision_timeout : 16,  // 0x000A to 0x0C80 (100ms to 32s)
   master_clock_accuracy : ClockAccuracy,
+}
+
+enum AdvertisingEventType : 8 {
+  ADV_IND = 0x00,
+  ADV_DIRECT_IND = 0x01,
+  ADV_SCAN_IND = 0x02,
+  ADV_NONCONN_IND = 0x03,
+  SCAN_RESPONSE = 0x04,
 }
 
 struct LeAdvertisingReport {

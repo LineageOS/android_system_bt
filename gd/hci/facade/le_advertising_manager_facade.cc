@@ -71,7 +71,7 @@ bool AdvertisingConfigFromProto(const AdvertisingConfig& config_proto, hci::Adve
   }
   config->interval_max = static_cast<uint16_t>(config_proto.interval_max());
 
-  config->event_type = static_cast<hci::AdvertisingEventType>(config_proto.event_type());
+  config->event_type = static_cast<hci::AdvertisingType>(config_proto.event_type());
 
   config->address_type = static_cast<::bluetooth::hci::AddressType>(config_proto.address_type());
 
