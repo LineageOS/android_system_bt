@@ -17,6 +17,7 @@
 
 namespace {
 constexpr char kDefaultBundleDataFile[] = "bundle_bfbs.bin";
+constexpr char kDefaultGeneratedOutputPath[] = ".";
 constexpr char kDefaultNamespace[] = "";
 constexpr char kDefaultNamespaceDelim[] = "::";
 }  // namespace
@@ -26,7 +27,7 @@ struct Opts {
   bool read{false};
   bool write{false};
   const char* filename{kDefaultBundleDataFile};
-  const char* gen{nullptr};
+  const char* gen{kDefaultGeneratedOutputPath};
   const char* main_root{nullptr};
   const char* ns_name{kDefaultNamespace};
   struct {
