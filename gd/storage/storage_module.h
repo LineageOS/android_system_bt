@@ -30,6 +30,10 @@
 
 namespace bluetooth {
 
+namespace shim {
+class BtifConfigInterface;
+}
+
 namespace storage {
 
 class StorageModule : public bluetooth::Module {
@@ -65,6 +69,7 @@ class StorageModule : public bluetooth::Module {
   void Stop() override;
   std::string ToString() const override;
 
+  friend shim::BtifConfigInterface;
   // For shim layer only
   ConfigCache* GetConfigCache();
   // Normally, underlying config will be saved at most 3 seconds after the first config change in a series of changes

@@ -14,27 +14,24 @@
  * limitations under the License.
  */
 
-#include "main/shim/entry.h"
-#include "osi/include/future.h"
-#include "osi/include/log.h"
+#include "gd/hci/controller.h"
+#include "gd/hci/hci_layer.h"
+#include "gd/hci/le_advertising_manager.h"
+#include "gd/hci/le_scanning_manager.h"
+#include "gd/neighbor/connectability.h"
+#include "gd/neighbor/discoverability.h"
+#include "gd/neighbor/inquiry.h"
+#include "gd/neighbor/name.h"
+#include "gd/neighbor/page.h"
+#include "gd/os/handler.h"
+#include "gd/security/security_module.h"
+#include "gd/shim/dumpsys.h"
+#include "gd/shim/l2cap.h"
+#include "gd/shim/stack.h"
+#include "gd/storage/storage_module.h"
 
-#include "hci/controller.h"
-#include "hci/hci_layer.h"
-#include "hci/le_advertising_manager.h"
-#include "hci/le_scanning_manager.h"
 #include "main/shim/btm.h"
-#include "neighbor/connectability.h"
-#include "neighbor/discoverability.h"
-#include "neighbor/inquiry.h"
-#include "neighbor/name.h"
-#include "neighbor/page.h"
-#include "os/handler.h"
-#include "security/security_module.h"
-#include "shim/dumpsys.h"
-#include "shim/l2cap.h"
-#include "shim/stack.h"
-#include "stack_manager.h"
-#include "storage/legacy.h"
+#include "main/shim/entry.h"
 
 using bluetooth::shim::GetGabeldorscheStack;
 
@@ -129,8 +126,8 @@ bluetooth::security::SecurityModule* bluetooth::shim::GetSecurityModule() {
       ->GetInstance<bluetooth::security::SecurityModule>();
 }
 
-bluetooth::storage::LegacyModule* bluetooth::shim::GetStorage() {
+bluetooth::storage::StorageModule* bluetooth::shim::GetStorage() {
   return GetGabeldorscheStack()
       ->GetStackManager()
-      ->GetInstance<bluetooth::storage::LegacyModule>();
+      ->GetInstance<bluetooth::storage::StorageModule>();
 }
