@@ -35,10 +35,14 @@ namespace bluetooth {
 namespace security {
 class SecurityModule;
 }
+namespace shim {
+class Btm;
+}
 
 namespace hci {
 
 class AclManager : public Module {
+ friend class bluetooth::shim::Btm;
  public:
   AclManager();
   // NOTE: It is necessary to forward declare a default destructor that overrides the base class one, because
@@ -95,6 +99,9 @@ class AclManager : public Module {
   std::string ToString() const override;
 
  private:
+  virtual uint16_t HACK_GetHandle(const Address address);
+  virtual uint16_t HACK_GetLeHandle(const Address address);
+
   struct impl;
   std::unique_ptr<impl> pimpl_;
 
