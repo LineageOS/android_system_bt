@@ -27,9 +27,7 @@
 #include "main/shim/controller.h"
 #include "main/shim/shim.h"
 #include "main/shim/timer.h"
-#include "osi/include/log.h"
 #include "stack/btm/btm_int_types.h"
-#include "types/class_of_device.h"
 #include "types/raw_address.h"
 
 bluetooth::shim::Btm shim_btm;

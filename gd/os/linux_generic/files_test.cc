@@ -23,8 +23,34 @@
 
 namespace testing {
 
+using bluetooth::os::FileExists;
 using bluetooth::os::ReadSmallFile;
+using bluetooth::os::RenameFile;
 using bluetooth::os::WriteToFile;
+
+TEST(FilesTest, exist_test) {
+  auto temp_dir = std::filesystem::temp_directory_path();
+  auto temp_file = temp_dir / "file_1.txt";
+  std::string text = "Hello world!\n";
+  ASSERT_TRUE(WriteToFile(temp_file.string(), text));
+  EXPECT_TRUE(FileExists(temp_file.string()));
+  auto none_file = temp_dir / "file_nope.txt";
+  EXPECT_FALSE(FileExists(none_file.string()));
+}
+
+TEST(FilesTest, rename_test) {
+  auto temp_dir = std::filesystem::temp_directory_path();
+  auto temp_file = temp_dir / "file_1.txt";
+  std::string text = "Hello world!\n";
+  ASSERT_TRUE(WriteToFile(temp_file.string(), text));
+  EXPECT_THAT(ReadSmallFile(temp_file.string()), Optional(StrEq(text)));
+  auto to_file = temp_dir / "file_2.txt";
+  ASSERT_TRUE(RenameFile(temp_file.string(), to_file.string()));
+  EXPECT_FALSE(std::filesystem::exists(temp_file));
+  EXPECT_THAT(ReadSmallFile(to_file.string()), Optional(StrEq(text)));
+  // rename files that do not exist should return false
+  ASSERT_FALSE(RenameFile(temp_file.string(), to_file.string()));
+}
 
 TEST(FilesTest, write_read_loopback_test) {
   auto temp_dir = std::filesystem::temp_directory_path();
