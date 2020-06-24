@@ -27,7 +27,6 @@
 #include "shim/dumpsys.h"
 #include "shim/l2cap.h"
 #include "stack_manager.h"
-#include "storage/legacy.h"
 
 /**
  * The shim layer implementation on the Gd stack side.

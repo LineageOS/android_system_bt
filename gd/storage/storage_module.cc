@@ -23,7 +23,9 @@
 
 #include "common/bind.h"
 #include "os/alarm.h"
+#include "os/files.h"
 #include "os/handler.h"
+#include "os/parameter_provider.h"
 #include "os/system_properties.h"
 #include "storage/config_cache.h"
 #include "storage/legacy_config_file.h"
@@ -39,7 +41,6 @@ using os::Handler;
 
 static const std::string kFactoryResetProperty = "persist.bluetooth.factoryreset";
 
-static const std::string kConfigFilePath = "/data/misc/bluedroid/bt_config.conf";
 static const size_t kDefaultTempDeviceCapacity = 10000;
 // Save config whenever there is a change, but delay it by this value so that burst config change won't overwhelm disk
 static const std::chrono::milliseconds kDefaultConfigSaveDelay = std::chrono::milliseconds(3000);
@@ -80,7 +81,8 @@ StorageModule::~StorageModule() {
 }
 
 const ModuleFactory StorageModule::Factory = ModuleFactory([]() {
-  return new StorageModule(kConfigFilePath, kDefaultConfigSaveDelay, kDefaultTempDeviceCapacity, false, false);
+  return new StorageModule(
+      os::ParameterProvider::ConfigFilePath(), kDefaultConfigSaveDelay, kDefaultTempDeviceCapacity, false, false);
 });
 
 struct StorageModule::impl {
@@ -116,7 +118,13 @@ void StorageModule::SaveImmediately() {
     pimpl_->config_save_alarm_.Cancel();
     pimpl_->has_pending_config_save_ = false;
   }
+  // 1. rename old config to backup name
+  if (os::FileExists(config_file_path_)) {
+    ASSERT(os::RenameFile(config_file_path_, config_backup_path_));
+  }
+  // 2. write in-memory config to disk, if failed, backup can still be used
   ASSERT(LegacyConfigFile::FromPath(config_file_path_).Write(pimpl_->cache_));
+  // 3. now write back up to disk as well
   ASSERT(LegacyConfigFile::FromPath(config_backup_path_).Write(pimpl_->cache_));
 }
 
