@@ -28,10 +28,6 @@
 
 #include <log/log.h>
 
-/* When including headers from legacy stack, this log definitions collide with existing logging system. Remove once we
- * get rid of legacy stack. */
-#ifndef LOG_VERBOSE
-
 #ifdef FUZZ_TARGET
 #define LOG_VERBOSE(...)
 #define LOG_DEBUG(...)
@@ -45,18 +41,12 @@
 #endif /* FUZZ_TARGET */
 #define LOG_ERROR(fmt, args...) ALOGE("%s:%d %s: " fmt, __FILE__, __LINE__, __func__, ##args)
 
-#endif /* LOG_VERBOSE*/
-
 #else
 
 /* syslog didn't work well here since we would be redefining LOG_DEBUG. */
 #include <chrono>
 #include <cstdio>
 #include <ctime>
-
-/* When including headers from legacy stack, this log definitions collide with existing logging system. Remove once we
- * get rid of legacy stack. */
-#ifndef LOG_VERBOSE
 
 #define LOGWRAPPER(fmt, args...)                                                                                      \
   do {                                                                                                                \
@@ -88,8 +78,7 @@
     abort();                  \
   } while (false)
 #define android_errorWriteLog(tag, subTag) LOG_ERROR("ERROR tag: 0x%x, sub_tag: %s", tag, subTag)
-
-#endif /* LOG_VERBOE */
+#define LOG_EVENT_INT(...)
 
 #endif /* defined(OS_ANDROID) */
 
