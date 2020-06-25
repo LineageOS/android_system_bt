@@ -27,10 +27,9 @@ class AdvertisingConfig {
  public:
   std::vector<GapData> advertisement;
   std::vector<GapData> scan_response;
-  Address random_address;
   uint16_t interval_min;
   uint16_t interval_max;
-  AdvertisingEventType event_type;
+  AdvertisingType event_type;
   AddressType address_type;
   PeerAddressType peer_address_type;
   Address peer_address;

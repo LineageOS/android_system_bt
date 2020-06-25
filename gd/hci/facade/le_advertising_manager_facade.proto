@@ -34,7 +34,6 @@ enum AdvertisingFilterPolicy {
 message AdvertisingConfig {
   repeated GapDataMsg advertisement = 1;
   repeated GapDataMsg scan_response = 2;
-  bluetooth.facade.BluetoothAddress random_address = 3;
   // Unit: number of Bluetooth slots in 0.125 ms increment
   int32 interval_min = 4;
   // Unit: number of Bluetooth slots in 0.125 ms increment
