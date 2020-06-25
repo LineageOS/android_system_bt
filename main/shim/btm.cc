@@ -818,3 +818,13 @@ bool bluetooth::shim::Btm::RemoveBond(const RawAddress& bd_addr) {
   security_manager->RemoveBond(ToAddressWithType(bd_addr, BLE_ADDR_PUBLIC));
   return true;
 }
+
+uint16_t bluetooth::shim::Btm::GetAclHandle(const RawAddress& remote_bda,
+                                            tBT_TRANSPORT transport) {
+  auto acl_manager = bluetooth::shim::GetAclManager();
+  if (transport == BT_TRANSPORT_BR_EDR) {
+    return acl_manager->HACK_GetHandle(ToGdAddress(remote_bda));
+  } else {
+    return acl_manager->HACK_GetLeHandle(ToGdAddress(remote_bda));
+  }
+}
