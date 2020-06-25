@@ -34,11 +34,12 @@ namespace acl_manager {
 using common::BindOnce;
 
 struct le_acl_connection {
-  le_acl_connection(AddressWithType address_with_type, AclConnection::QueueDownEnd* queue_down_end,
-                    os::Handler* handler)
-      : assembler_(address_with_type, queue_down_end, handler) {}
+  le_acl_connection(
+      AddressWithType address_with_type, AclConnection::QueueDownEnd* queue_down_end, os::Handler* handler)
+      : assembler_(address_with_type, queue_down_end, handler), address_with_type_(address_with_type) {}
   ~le_acl_connection() = default;
   struct acl_manager::assembler assembler_;
+  AddressWithType address_with_type_;
   LeConnectionManagementCallbacks* le_connection_management_callbacks_ = nullptr;
 };
 
@@ -391,6 +392,15 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     }
     canceled_connections_.clear();
     le_address_manager_->AckResume(this);
+  }
+
+  uint16_t HACK_get_handle(Address address) {
+    for (auto it = le_acl_connections_.begin(); it != le_acl_connections_.end(); it++) {
+      if (it->second.address_with_type_.GetAddress() == address) {
+        return it->first;
+      }
+    }
+    return 0xFFFF;
   }
 
   static constexpr uint16_t kMinimumCeLength = 0x0002;
