@@ -27,9 +27,7 @@
 #include "main/shim/controller.h"
 #include "main/shim/shim.h"
 #include "main/shim/timer.h"
-#include "osi/include/log.h"
 #include "stack/btm/btm_int_types.h"
-#include "types/class_of_device.h"
 #include "types/raw_address.h"
 
 bluetooth::shim::Btm shim_btm;
@@ -1110,4 +1108,9 @@ tBTM_STATUS bluetooth::shim::BTM_SecBondCancel(const RawAddress& bd_addr) {
 
 bool bluetooth::shim::BTM_SecDeleteDevice(const RawAddress& bd_addr) {
   return shim_btm.RemoveBond(bd_addr);
+}
+
+uint16_t bluetooth::shim::BTM_GetHCIConnHandle(const RawAddress& remote_bda,
+                                               tBT_TRANSPORT transport) {
+  return shim_btm.GetAclHandle(remote_bda, transport);
 }

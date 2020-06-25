@@ -51,6 +51,8 @@
 #include "hcidefs.h"
 #include "hcimsgs.h"
 #include "l2c_int.h"
+#include "main/shim/btm_api.h"
+#include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 
@@ -1382,6 +1384,10 @@ uint16_t btm_get_acl_disc_reason_code(void) {
  ******************************************************************************/
 uint16_t BTM_GetHCIConnHandle(const RawAddress& remote_bda,
                               tBT_TRANSPORT transport) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::BTM_GetHCIConnHandle(remote_bda, transport);
+  }
+
   tACL_CONN* p;
   BTM_TRACE_DEBUG("BTM_GetHCIConnHandle");
   p = btm_bda_to_acl(remote_bda, transport);

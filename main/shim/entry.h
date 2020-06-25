@@ -46,6 +46,7 @@ class PageModule;
 namespace hci {
 class Controller;
 class HciLayer;
+class AclManager;
 class LeAdvertisingManager;
 class LeScanningManager;
 }
@@ -54,7 +55,7 @@ namespace security {
 class SecurityModule;
 }
 namespace storage {
-class LegacyModule;
+class StorageModule;
 }
 
 namespace shim {
@@ -76,7 +77,8 @@ neighbor::NameModule* GetName();
 neighbor::PageModule* GetPage();
 hci::LeScanningManager* GetScanning();
 bluetooth::security::SecurityModule* GetSecurityModule();
-storage::LegacyModule* GetStorage();
+storage::StorageModule* GetStorage();
+hci::AclManager* GetAclManager();
 
 }  // namespace shim
 }  // namespace bluetooth

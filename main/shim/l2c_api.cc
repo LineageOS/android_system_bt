@@ -262,8 +262,7 @@ bool bluetooth::shim::L2CA_RemoveFixedChnl(uint16_t fixed_cid,
 /**
  * Channel hygiene APIs
  */
-bool bluetooth::shim::L2CA_GetIdentifiers(uint16_t lcid, uint16_t* rcid,
-                                          uint16_t* handle) {
+bool bluetooth::shim::L2CA_GetRemoteCid(uint16_t lcid, uint16_t* rcid) {
   LOG_INFO("UNIMPLEMENTED %s", __func__);
   return false;
 }

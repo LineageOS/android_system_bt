@@ -27,7 +27,6 @@
 #include "main/shim/controller.h"
 #include "main/shim/entry.h"
 #include "main/shim/shim.h"
-#include "osi/include/log.h"
 #include "stack/btm/btm_int_types.h"
 #include "types/class_of_device.h"
 #include "types/raw_address.h"
@@ -818,4 +817,14 @@ bool bluetooth::shim::Btm::RemoveBond(const RawAddress& bd_addr) {
       bluetooth::shim::GetSecurityModule()->GetSecurityManager();
   security_manager->RemoveBond(ToAddressWithType(bd_addr, BLE_ADDR_PUBLIC));
   return true;
+}
+
+uint16_t bluetooth::shim::Btm::GetAclHandle(const RawAddress& remote_bda,
+                                            tBT_TRANSPORT transport) {
+  auto acl_manager = bluetooth::shim::GetAclManager();
+  if (transport == BT_TRANSPORT_BR_EDR) {
+    return acl_manager->HACK_GetHandle(ToGdAddress(remote_bda));
+  } else {
+    return acl_manager->HACK_GetLeHandle(ToGdAddress(remote_bda));
+  }
 }
