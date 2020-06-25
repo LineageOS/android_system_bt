@@ -252,3 +252,25 @@ cc_test {
     ],
     cflags: ["-DBUILDCFG"],
 }
+
+// btif hf client service tests for target
+// ========================================================
+cc_test {
+    name: "net_test_btif_hf_client_service",
+    defaults: ["fluoride_defaults"],
+    test_suites: ["device-tests"],
+    include_dirs: btifCommonIncludes,
+    srcs: [
+        "test/btif_hf_client_service_test.cc",
+    ],
+    header_libs: ["libbluetooth_headers"],
+    shared_libs: [
+        "libcutils",
+        "liblog",
+    ],
+    static_libs: [
+        "libbluetooth-types",
+        "libosi",
+    ],
+    cflags: ["-DBUILDCFG"],
+}
