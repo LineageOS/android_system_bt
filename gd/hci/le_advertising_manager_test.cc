@@ -354,7 +354,7 @@ TEST_F(LeExtendedAdvertisingManagerTest, startup_teardown) {}
 
 TEST_F(LeAdvertisingManagerTest, create_advertiser_test) {
   AdvertisingConfig advertising_config{};
-  advertising_config.event_type = AdvertisingEventType::ADV_IND;
+  advertising_config.event_type = AdvertisingType::ADV_IND;
   advertising_config.address_type = AddressType::PUBLIC_DEVICE_ADDRESS;
   std::vector<GapData> gap_data{};
   GapData data_item{};
@@ -397,7 +397,7 @@ TEST_F(LeAdvertisingManagerTest, create_advertiser_test) {
 
 TEST_F(LeAndroidHciAdvertisingManagerTest, create_advertiser_test) {
   AdvertisingConfig advertising_config{};
-  advertising_config.event_type = AdvertisingEventType::ADV_IND;
+  advertising_config.event_type = AdvertisingType::ADV_IND;
   advertising_config.address_type = AddressType::PUBLIC_DEVICE_ADDRESS;
   std::vector<GapData> gap_data{};
   GapData data_item{};
@@ -438,7 +438,7 @@ TEST_F(LeAndroidHciAdvertisingManagerTest, create_advertiser_test) {
 
 TEST_F(LeExtendedAdvertisingManagerTest, create_advertiser_test) {
   ExtendedAdvertisingConfig advertising_config{};
-  advertising_config.event_type = AdvertisingEventType::ADV_IND;
+  advertising_config.event_type = AdvertisingType::ADV_IND;
   advertising_config.address_type = AddressType::PUBLIC_DEVICE_ADDRESS;
   std::vector<GapData> gap_data{};
   GapData data_item{};

@@ -45,21 +45,21 @@ struct Advertiser {
 
 ExtendedAdvertisingConfig::ExtendedAdvertisingConfig(const AdvertisingConfig& config) : AdvertisingConfig(config) {
   switch (config.event_type) {
-    case AdvertisingEventType::ADV_IND:
+    case AdvertisingType::ADV_IND:
       connectable = true;
       scannable = true;
       break;
-    case AdvertisingEventType::ADV_DIRECT_IND:
+    case AdvertisingType::ADV_DIRECT_IND:
       connectable = true;
       directed = true;
       high_duty_directed_connectable = true;
       break;
-    case AdvertisingEventType::ADV_SCAN_IND:
+    case AdvertisingType::ADV_SCAN_IND:
       scannable = true;
       break;
-    case AdvertisingEventType::ADV_NONCONN_IND:
+    case AdvertisingType::ADV_NONCONN_IND:
       break;
-    case AdvertisingEventType::ADV_DIRECT_IND_LOW:
+    case AdvertisingType::ADV_DIRECT_IND_LOW:
       connectable = true;
       directed = true;
       break;
@@ -509,8 +509,8 @@ AdvertiserId LeAdvertisingManager::CreateAdvertiser(
       LOG_WARN("Peer address can not be empty");
       return kInvalidId;
     }
-    if (config.event_type == hci::AdvertisingEventType::ADV_DIRECT_IND ||
-        config.event_type == hci::AdvertisingEventType::ADV_DIRECT_IND_LOW) {
+    if (config.event_type == hci::AdvertisingType::ADV_DIRECT_IND ||
+        config.event_type == hci::AdvertisingType::ADV_DIRECT_IND_LOW) {
       LOG_WARN("Peer address can not be empty for directed advertising");
       return kInvalidId;
     }
