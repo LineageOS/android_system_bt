@@ -30,6 +30,12 @@
 #include "gd/shim/stack.h"
 #include "gd/storage/storage_module.h"
 
+#include "hci/acl_manager.h"
+#include "hci/controller.h"
+#include "hci/hci_layer.h"
+#include "hci/le_advertising_manager.h"
+#include "hci/le_scanning_manager.h"
+
 #include "main/shim/btm.h"
 #include "main/shim/entry.h"
 
@@ -130,4 +136,10 @@ bluetooth::storage::StorageModule* bluetooth::shim::GetStorage() {
   return GetGabeldorscheStack()
       ->GetStackManager()
       ->GetInstance<bluetooth::storage::StorageModule>();
+}
+
+bluetooth::hci::AclManager* bluetooth::shim::GetAclManager() {
+  return GetGabeldorscheStack()
+      ->GetStackManager()
+      ->GetInstance<bluetooth::hci::AclManager>();
 }
