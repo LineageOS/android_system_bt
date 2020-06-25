@@ -171,22 +171,53 @@ else
 fi
 
 if [ "${SPEED_HAX}" == true ] ; then
+    echo -e "${RED}Speed H4x Enabled${NOCOLOR}"
+    echo -e "${RED}I have the need for speed! ${NOCOLOR}"
     if [[ ! -L /tmp/logs/HostOnlyCert ]] ; then
-        echo -e "${RED}Speed H4x Enabled${NOCOLOR}"
-        echo -e "${RED}I have the need for speed! ${NOCOLOR}"
         mv /tmp/logs/HostOnlyCert /dev/shm/
-        rm -f /tmp/logs/HostOnlyCert
         ln -s /dev/shm/HostOnlyCert /tmp/logs/HostOnlyCert
     fi
+
+    if [[ ! -L ${ANDROID_BUILD_TOP}/out/soong/.intermediates/system/bt ]] ; then
+        mkdir -p /dev/shm/soong/.intermediates/system
+        mv ${ANDROID_BUILD_TOP}/out/soong/.intermediates/system/bt /dev/shm/soong/.intermediates/system/
+        ln -s /dev/shm/soong/.intermediates/system/bt ${ANDROID_BUILD_TOP}/out/soong/.intermediates/system/bt
+    fi
+
+    if [[ ! -L ${ANDROID_BUILD_TOP}/out/target ]] ; then
+        mv ${ANDROID_BUILD_TOP}/out/target /dev/shm/
+        ln -s /dev/shm/target ${ANDROID_BUILD_TOP}/out/target
+    fi
+
+    if [[ ! -L ${ANDROID_BUILD_TOP}/out/soong/build.ninja ]] ; then
+        mkdir -p /dev/shm/soong
+        mv ${ANDROID_BUILD_TOP}/out/soong/build.ninja /dev/shm/soong/
+        ln -s /dev/shm/soong/build.ninja ${ANDROID_BUILD_TOP}/out/soong/build.ninja
+    fi
+
 else
+    echo -e "${RED}Speed H4x Disabled${NOCOLOR}"
+    echo -e "${RED}I don't like going fast! ${NOCOLOR}"
     if [[ -L /tmp/logs/HostOnlyCert ]] ; then
-        echo -e "${RED}Speed H4x Disabled${NOCOLOR}"
-        echo -e "${RED}I don't like going fast! ${NOCOLOR}"
-        rm -f /tmp/logs/HostOnlyCert
+        rm -rf /tmp/logs/HostOnlyCert
         mv /dev/shm/HostOnlyCert /tmp/logs/
     fi
-fi
 
+    if [[ -L ${ANDROID_BUILD_TOP}/out/soong/.intermediates/system/bt ]] ; then
+        rm -f ${ANDROID_BUILD_TOP}/out/soong/.intermediates/system/bt
+        mv /dev/shm/soong/.intermediates/system/bt ${ANDROID_BUILD_TOP}/out/soong/.intermediates/system/bt
+    fi
+
+    if [[ -L ${ANDROID_BUILD_TOP}/out/target ]] ; then
+        rm -f ${ANDROID_BUILD_TOP}/out/target
+        mv /dev/shm/target ${ANDROID_BUILD_TOP}/out/target
+    fi
+
+    if [[ ! -L ${ANDROID_BUILD_TOP}/out/soong/build.ninja ]] ; then
+        rm ${ANDROID_BUILD_TOP}/out/soong/build.ninja
+        mv /dev/shm/soong/build.ninja ${ANDROID_BUILD_TOP}/out/soong/build.ninja
+    fi
+fi
 
 python3.8 -m virtualenv --python `which python3.8` $CERT_TEST_VENV
 if [[ $? -ne 0 ]] ; then
