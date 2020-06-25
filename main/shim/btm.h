@@ -241,6 +241,8 @@ class Btm {
   bool CancelBond(const RawAddress& bd_addr);
   bool RemoveBond(const RawAddress& bd_addr);
 
+  uint16_t GetAclHandle(const RawAddress& remote_bda, tBT_TRANSPORT transport);
+
  private:
   ReadRemoteName le_read_remote_name_;
   ReadRemoteName classic_read_remote_name_;

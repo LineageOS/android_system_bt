@@ -187,6 +187,14 @@ LeAddressManager* AclManager::GetLeAddressManager() {
   return pimpl_->le_impl_->le_address_manager_;
 }
 
+uint16_t AclManager::HACK_GetHandle(Address address) {
+  return pimpl_->classic_impl_->HACK_get_handle(address);
+}
+
+uint16_t AclManager::HACK_GetLeHandle(Address address) {
+  return pimpl_->le_impl_->HACK_get_handle(address);
+}
+
 void AclManager::ListDependencies(ModuleList* list) {
   list->add<HciLayer>();
   list->add<Controller>();
