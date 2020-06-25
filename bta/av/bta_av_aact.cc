@@ -3297,8 +3297,7 @@ static void bta_av_offload_codec_builder(tBTA_AV_SCB* p_scb,
       p_a2dp_offload->sample_rate = BTAV_A2DP_CODEC_SAMPLE_RATE_96000;
       break;
   }
-  if (L2CA_GetIdentifiers(p_scb->l2c_cid, &p_a2dp_offload->l2c_rcid, NULL) ==
-      false) {
+  if (L2CA_GetRemoteCid(p_scb->l2c_cid, &p_a2dp_offload->l2c_rcid) == false) {
     APPL_TRACE_ERROR("%s: Failed to fetch l2c rcid", __func__);
     return;
   }
