@@ -28,9 +28,8 @@ genrule {
     ],
 }
 
-cc_binary {
+cc_binary_host {
     name: "bluetooth_flatbuffer_bundler",
-    host_supported: true,
     cflags: [
         "-Wall",
         "-Werror",
@@ -60,6 +59,9 @@ cc_test {
     ],
     srcs: [
         ":BluetoothFlatbufferBundlerTestSources",
+    ],
+    generated_headers: [
+        "BluetoothGeneratedBundler_h",
     ],
     static_libs: [
         "libflatbuffers-cpp",
