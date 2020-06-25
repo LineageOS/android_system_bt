@@ -111,7 +111,7 @@ class SimpleHalTest(GdBaseTestClass):
 
             self.send_dut_hci_command(
                 hci_packets.LeSetExtendedScanParametersBuilder(hci_packets.AddressType.RANDOM_DEVICE_ADDRESS,
-                                                               hci_packets.LeSetScanningFilterPolicy.ACCEPT_ALL, 1,
+                                                               hci_packets.LeScanningFilterPolicy.ACCEPT_ALL, 1,
                                                                [phy_scan_params]))
             self.send_dut_hci_command(
                 hci_packets.LeSetExtendedScanEnableBuilder(hci_packets.Enable.ENABLED,

@@ -63,7 +63,7 @@ class LeAdvertisingManagerTest(GdBaseTestClass):
             scan_parameters.le_scan_window = 20
             self.enqueue_hci_command(
                 hci_packets.LeSetExtendedScanParametersBuilder(hci_packets.AddressType.RANDOM_DEVICE_ADDRESS,
-                                                               hci_packets.LeSetScanningFilterPolicy.ACCEPT_ALL, 1,
+                                                               hci_packets.LeScanningFilterPolicy.ACCEPT_ALL, 1,
                                                                [scan_parameters]), True)
             self.enqueue_hci_command(
                 hci_packets.LeSetExtendedScanEnableBuilder(hci_packets.Enable.ENABLED,
@@ -76,13 +76,10 @@ class LeAdvertisingManagerTest(GdBaseTestClass):
             gap_data = le_advertising_facade.GapDataMsg(data=bytes(gap_name.Serialize()))
             config = le_advertising_facade.AdvertisingConfig(
                 advertisement=[gap_data],
-                random_address=common.BluetoothAddress(address=bytes(b'0D:05:04:03:02:01')),
                 interval_min=512,
                 interval_max=768,
                 event_type=le_advertising_facade.AdvertisingEventType.ADV_IND,
                 address_type=common.RANDOM_DEVICE_ADDRESS,
-                peer_address_type=common.PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
-                peer_address=common.BluetoothAddress(address=bytes(b'A6:A5:A4:A3:A2:A1')),
                 channel_map=7,
                 filter_policy=le_advertising_facade.AdvertisingFilterPolicy.ALL_DEVICES)
             request = le_advertising_facade.CreateAdvertiserRequest(config=config)
