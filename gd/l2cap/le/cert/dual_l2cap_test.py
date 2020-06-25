@@ -87,13 +87,10 @@ class DualL2capTest(GdBaseTestClass):
         gap_data = le_advertising_facade.GapDataMsg(data=bytes(gap_name.Serialize()))
         config = le_advertising_facade.AdvertisingConfig(
             advertisement=[gap_data],
-            random_address=self.dut_le_address.address,
             interval_min=512,
             interval_max=768,
             event_type=le_advertising_facade.AdvertisingEventType.ADV_IND,
             address_type=common.RANDOM_DEVICE_ADDRESS,
-            peer_address_type=common.PUBLIC_DEVICE_OR_IDENTITY_ADDRESS,
-            peer_address=common.BluetoothAddress(address=bytes(b'00:00:00:00:00:00')),
             channel_map=7,
             filter_policy=le_advertising_facade.AdvertisingFilterPolicy.ALL_DEVICES)
         request = le_advertising_facade.CreateAdvertiserRequest(config=config)
