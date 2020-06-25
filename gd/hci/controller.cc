@@ -80,16 +80,25 @@ struct Controller::impl {
     if (is_supported(OpCode::LE_READ_MAXIMUM_DATA_LENGTH)) {
       hci_->EnqueueCommand(LeReadMaximumDataLengthBuilder::Create(),
                            handler->BindOnceOn(this, &Controller::impl::le_read_maximum_data_length_handler));
+    } else {
+      le_maximum_data_length_.supported_max_rx_octets_ = 0;
+      le_maximum_data_length_.supported_max_rx_time_ = 0;
+      le_maximum_data_length_.supported_max_tx_octets_ = 0;
+      le_maximum_data_length_.supported_max_tx_time_ = 0;
     }
     if (is_supported(OpCode::LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH)) {
       hci_->EnqueueCommand(
           LeReadMaximumAdvertisingDataLengthBuilder::Create(),
           handler->BindOnceOn(this, &Controller::impl::le_read_maximum_advertising_data_length_handler));
+    } else {
+      le_maximum_advertising_data_length_ = 31;
     }
     if (is_supported(OpCode::LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS)) {
       hci_->EnqueueCommand(
           LeReadNumberOfSupportedAdvertisingSetsBuilder::Create(),
           handler->BindOnceOn(this, &Controller::impl::le_read_number_of_supported_advertising_sets_handler));
+    } else {
+      le_number_supported_advertising_sets_ = 1;
     }
 
     hci_->EnqueueCommand(LeGetVendorCapabilitiesBuilder::Create(),

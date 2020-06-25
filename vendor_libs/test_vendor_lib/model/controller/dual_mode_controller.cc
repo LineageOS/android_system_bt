@@ -1937,7 +1937,7 @@ void DualModeController::LeSetExtendedAdvertisingParameters(
   properties_.SetLeAdvertisingParameters(
       command_view.GetPrimaryAdvertisingIntervalMin(),
       command_view.GetPrimaryAdvertisingIntervalMax(),
-      static_cast<uint8_t>(bluetooth::hci::AdvertisingEventType::ADV_IND),
+      static_cast<uint8_t>(bluetooth::hci::AdvertisingType::ADV_IND),
       static_cast<uint8_t>(command_view.GetOwnAddressType()),
       static_cast<uint8_t>(command_view.GetPeerAddressType()),
       command_view.GetPeerAddress(),
