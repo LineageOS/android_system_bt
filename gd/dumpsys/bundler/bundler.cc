@@ -22,14 +22,9 @@
 #include <vector>
 
 #include "bundler.h"
+#include "bundler_generated.h"
 #include "flatbuffers/idl.h"
 #include "flatbuffers/util.h"
-
-#ifdef USE_TEST_GENERATED
-#include "test_generated.h"
-#else
-#include "bundler_generated.h"  // Production
-#endif
 
 using namespace bluetooth;
 using namespace dumpsys;
@@ -192,7 +187,7 @@ int ReadBundledSchema() {
   const flatbuffers::Vector<flatbuffers::Offset<BundleSchemaMap>>* map = bundle_schema->map();
 
   fprintf(stdout, "Bundle schema title:%s\n", bundle_schema->title()->c_str());
-  fprintf(stdout, "Bundle schema root:%s\n", bundle_schema->root()->c_str());
+  fprintf(stdout, "Bundle schema root_name:%s\n", bundle_schema->root_name()->c_str());
   int cnt = 0;
   for (auto it = map->cbegin(); it != map->cend(); ++it, cnt++) {
     fprintf(stdout, "   %d name:%s schema:%s\n", cnt, it->name()->c_str(), "schema");
@@ -204,9 +199,9 @@ int WriteBundledSchema() {
   const char* filename = opts.filename;
   assert(filename != nullptr);
 
-  const char* main_root = opts.main_root;
-  if (main_root == nullptr) {
-    fprintf(stderr, "Must specify the name of the main root for this bundle\n");
+  const char* main_root_name = opts.main_root_name;
+  if (main_root_name == nullptr) {
+    fprintf(stderr, "Must specify the name of the main root name for this bundle\n");
     return EXIT_FAILURE;
   }
 
@@ -228,7 +223,7 @@ int WriteBundledSchema() {
   }
 
   auto title = "Bundled schema tables";
-  auto schema_offset = CreateBundleSchemaDirect(builder, title, main_root, &vector_map);
+  auto schema_offset = CreateBundleSchemaDirect(builder, title, main_root_name, &vector_map);
   builder.Finish(schema_offset);
 
   std::string final_filename(opts.gen);
@@ -257,7 +252,8 @@ int WriteBundledSchema() {
 int Usage(int argc, char** argv) {
   fprintf(
       stderr,
-      "Usage: %s [-r | -w] [-f <filename>] [-g <gen_out_path>] [-n <namespace> ] [-v] -m <main_root> <file.bfbs ...>\n",
+      "Usage: %s [-r | -w] [-f <filename>] [-g <gen_out_path>] [-n <namespace> ] [-v] -m <main_root_name> <file.bfbs "
+      "...>\n",
       argv[0]);
   fprintf(stderr, " -r|-w : Read or write a dumpsys file\n");
   fprintf(stderr, " -f : Filename bundled schema to read or write (default:%s)\n", kDefaultBundleDataFile);
@@ -283,7 +279,7 @@ void ParseArgs(int argc, char** argv) {
         parsed_cnt++;
         break;
       case 'm':
-        opts.main_root = optarg;
+        opts.main_root_name = optarg;
         parsed_cnt++;
         break;
       case 'n':

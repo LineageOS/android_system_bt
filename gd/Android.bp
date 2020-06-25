@@ -478,7 +478,7 @@ genrule {
     tools: [
             "bluetooth_flatbuffer_bundler",
     ],
-    cmd: "$(location bluetooth_flatbuffer_bundler) -w -m DumpsysData -f module_schema_data -n bluetooth::dumpsys -g $(genDir) $(locations :BluetoothGeneratedModuleSchemaData_h)",
+    cmd: "$(location bluetooth_flatbuffer_bundler) -w -m bluetooth.DumpsysData -f module_schema_data -n bluetooth::dumpsys -g $(genDir) $(locations :BluetoothGeneratedModuleSchemaData_h)",
     srcs: [
         "*.bfbs",
         ":BluetoothGeneratedModuleSchemaData_h",
