@@ -2156,9 +2156,13 @@ static void btif_dm_upstreams_evt(UINT16 event, char* p_param)
                     break;
             }
             break;
+        case BTA_DM_BLE_CONSENT_REQ_EVT:
+            BTIF_TRACE_DEBUG("BTA_DM_BLE_CONSENT_REQ_EVT. ");
+            btif_dm_ble_sec_req_evt(&p_data->ble_req, TRUE);
+        break;
         case BTA_DM_BLE_SEC_REQ_EVT:
             BTIF_TRACE_DEBUG("BTA_DM_BLE_SEC_REQ_EVT. ");
-            btif_dm_ble_sec_req_evt(&p_data->ble_req);
+            btif_dm_ble_sec_req_evt(&p_data->ble_req, FALSE);
             break;
         case BTA_DM_BLE_PASSKEY_NOTIF_EVT:
             BTIF_TRACE_DEBUG("BTA_DM_BLE_PASSKEY_NOTIF_EVT. ");
@@ -3560,7 +3564,7 @@ void btif_dm_remove_ble_bonding_keys(void)
 ** Returns          void
 **
 *******************************************************************************/
-void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ *p_ble_req)
+void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req, bool is_consent)
 {
     bt_bdaddr_t bd_addr;
     bt_bdname_t bd_name;
@@ -3569,7 +3573,7 @@ void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ *p_ble_req)
 
     BTIF_TRACE_DEBUG("%s", __FUNCTION__);
 
-    if (pairing_cb.state == BT_BOND_STATE_BONDING)
+    if (!is_consent && pairing_cb.state == BT_BOND_STATE_BONDING)
     {
         BTIF_TRACE_DEBUG("%s Discard security request", __FUNCTION__);
         return;

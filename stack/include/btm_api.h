@@ -1591,6 +1591,7 @@ typedef void (tBTM_BOND_CANCEL_CMPL_CALLBACK) (tBTM_STATUS result);
 #define BTM_LE_COMPLT_EVT       SMP_COMPLT_EVT         /* SMP complete event */
 #define BTM_LE_LAST_FROM_SMP    BTM_LE_BR_KEYS_REQ_EVT
 #define BTM_LE_KEY_EVT          BTM_LE_LAST_FROM_SMP + 1 /* KEY update event */
+#define BTM_LE_CONSENT_REQ_EVT  SMP_CONSENT_REQ_EVT
 typedef UINT8 tBTM_LE_EVT;
 
 #define BTM_LE_KEY_NONE           0
