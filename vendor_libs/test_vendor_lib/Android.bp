@@ -12,6 +12,7 @@ cc_library_static {
         "model/controller/acl_connection.cc",
         "model/controller/acl_connection_handler.cc",
         "model/controller/dual_mode_controller.cc",
+        "model/controller/le_advertiser.cc",
         "model/controller/link_layer_controller.cc",
         "model/controller/security_manager.cc",
         "model/devices/beacon.cc",
