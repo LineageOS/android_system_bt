@@ -151,11 +151,11 @@ class LinkLayerController {
                           uint16_t connection_latency,
                           uint16_t supervision_timeout);
 
-  void LeWhiteListClear();
-  void LeWhiteListAddDevice(Address addr, uint8_t addr_type);
-  void LeWhiteListRemoveDevice(Address addr, uint8_t addr_type);
-  bool LeWhiteListContainsDevice(Address addr, uint8_t addr_type);
-  bool LeWhiteListFull();
+  void LeConnectListClear();
+  void LeConnectListAddDevice(Address addr, uint8_t addr_type);
+  void LeConnectListRemoveDevice(Address addr, uint8_t addr_type);
+  bool LeConnectListContainsDevice(Address addr, uint8_t addr_type);
+  bool LeConnectListFull();
   void LeResolvingListClear();
   void LeResolvingListAddDevice(Address addr, uint8_t addr_type,
                                 std::array<uint8_t, kIrk_size> peerIrk,
@@ -356,7 +356,7 @@ class LinkLayerController {
   // LE state
   std::vector<uint8_t> le_event_mask_;
 
-  std::vector<std::tuple<Address, uint8_t>> le_white_list_;
+  std::vector<std::tuple<Address, uint8_t>> le_connect_list_;
   std::vector<std::tuple<Address, uint8_t, std::array<uint8_t, kIrk_size>,
                          std::array<uint8_t, kIrk_size>>>
       le_resolving_list_;
