@@ -557,8 +557,8 @@ class AclManagerWithLeConnectionTest : public AclManagerTest {
     remote_with_type_ = AddressWithType(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
     test_hci_layer_->SetCommandFuture();
     acl_manager_->CreateLeConnection(remote_with_type_);
-    test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_WHITE_LIST);
-    test_hci_layer_->IncomingEvent(LeAddDeviceToWhiteListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+    test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST);
+    test_hci_layer_->IncomingEvent(LeAddDeviceToConnectListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
     test_hci_layer_->SetCommandFuture();
     auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
     auto le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
@@ -576,8 +576,8 @@ class AclManagerWithLeConnectionTest : public AclManagerTest {
         ClockAccuracy::PPM_30));
 
     test_hci_layer_->SetCommandFuture();
-    test_hci_layer_->GetCommandPacket(OpCode::LE_REMOVE_DEVICE_FROM_WHITE_LIST);
-    test_hci_layer_->IncomingEvent(LeRemoveDeviceFromWhiteListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+    test_hci_layer_->GetCommandPacket(OpCode::LE_REMOVE_DEVICE_FROM_CONNECT_LIST);
+    test_hci_layer_->IncomingEvent(LeRemoveDeviceFromConnectListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
 
     auto first_connection_status = first_connection.wait_for(kTimeout);
     ASSERT_EQ(first_connection_status, std::future_status::ready);
@@ -622,8 +622,8 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_fail) {
   AddressWithType remote_with_type(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
   test_hci_layer_->SetCommandFuture();
   acl_manager_->CreateLeConnection(remote_with_type);
-  test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_WHITE_LIST);
-  test_hci_layer_->IncomingEvent(LeAddDeviceToWhiteListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST);
+  test_hci_layer_->IncomingEvent(LeAddDeviceToConnectListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   test_hci_layer_->SetCommandFuture();
   auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
   auto le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
@@ -645,8 +645,8 @@ TEST_F(AclManagerTest, cancel_le_connection) {
   AddressWithType remote_with_type(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
   test_hci_layer_->SetCommandFuture();
   acl_manager_->CreateLeConnection(remote_with_type);
-  test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_WHITE_LIST);
-  test_hci_layer_->IncomingEvent(LeAddDeviceToWhiteListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST);
+  test_hci_layer_->IncomingEvent(LeAddDeviceToConnectListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   test_hci_layer_->SetCommandFuture();
   test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
 
@@ -670,12 +670,12 @@ TEST_F(AclManagerTest, cancel_le_connection) {
       ClockAccuracy::PPM_30));
 
   test_hci_layer_->SetCommandFuture();
-  packet = test_hci_layer_->GetCommandPacket(OpCode::LE_REMOVE_DEVICE_FROM_WHITE_LIST);
+  packet = test_hci_layer_->GetCommandPacket(OpCode::LE_REMOVE_DEVICE_FROM_CONNECT_LIST);
   le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
-  auto remove_command_view = LeRemoveDeviceFromWhiteListView::Create(le_connection_management_command_view);
+  auto remove_command_view = LeRemoveDeviceFromConnectListView::Create(le_connection_management_command_view);
   ASSERT_TRUE(remove_command_view.IsValid());
 
-  test_hci_layer_->IncomingEvent(LeRemoveDeviceFromWhiteListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  test_hci_layer_->IncomingEvent(LeRemoveDeviceFromConnectListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
 }
 
 TEST_F(AclManagerWithLeConnectionTest, acl_send_data_one_le_connection) {

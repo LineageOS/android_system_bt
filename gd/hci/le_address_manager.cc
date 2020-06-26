@@ -11,12 +11,12 @@ LeAddressManager::LeAddressManager(
     common::Callback<void(std::unique_ptr<CommandPacketBuilder>)> enqueue_command,
     os::Handler* handler,
     Address public_address,
-    uint8_t white_list_size,
+    uint8_t connect_list_size,
     uint8_t resolving_list_size)
     : enqueue_command_(enqueue_command),
       handler_(handler),
       public_address_(public_address),
-      white_list_size_(white_list_size),
+      connect_list_size_(connect_list_size),
       resolving_list_size_(resolving_list_size){};
 
 LeAddressManager::~LeAddressManager() {
@@ -258,8 +258,8 @@ std::chrono::milliseconds LeAddressManager::get_next_private_address_interval_ms
   return minimum_rotation_time_ + random_ms;
 }
 
-uint8_t LeAddressManager::GetWhiteListSize() {
-  return white_list_size_;
+uint8_t LeAddressManager::GetConnectListSize() {
+  return connect_list_size_;
 }
 
 uint8_t LeAddressManager::GetResolvingListSize() {
@@ -278,10 +278,10 @@ void LeAddressManager::handle_next_command() {
   }
 }
 
-void LeAddressManager::AddDeviceToWhiteList(
-    WhiteListAddressType white_list_address_type, bluetooth::hci::Address address) {
-  auto packet_builder = hci::LeAddDeviceToWhiteListBuilder::Create(white_list_address_type, address);
-  Command command = {CommandType::ADD_DEVICE_TO_WHITE_LIST, std::move(packet_builder)};
+void LeAddressManager::AddDeviceToConnectList(
+    ConnectListAddressType connect_list_address_type, bluetooth::hci::Address address) {
+  auto packet_builder = hci::LeAddDeviceToConnectListBuilder::Create(connect_list_address_type, address);
+  Command command = {CommandType::ADD_DEVICE_TO_CONNECT_LIST, std::move(packet_builder)};
   handler_->BindOnceOn(this, &LeAddressManager::pause_registered_clients).Invoke();
   cached_commands_.push(std::move(command));
 }
@@ -298,10 +298,10 @@ void LeAddressManager::AddDeviceToResolvingList(
   cached_commands_.push(std::move(command));
 }
 
-void LeAddressManager::RemoveDeviceFromWhiteList(
-    WhiteListAddressType white_list_address_type, bluetooth::hci::Address address) {
-  auto packet_builder = hci::LeRemoveDeviceFromWhiteListBuilder::Create(white_list_address_type, address);
-  Command command = {CommandType::REMOVE_DEVICE_FROM_WHITE_LIST, std::move(packet_builder)};
+void LeAddressManager::RemoveDeviceFromConnectList(
+    ConnectListAddressType connect_list_address_type, bluetooth::hci::Address address) {
+  auto packet_builder = hci::LeRemoveDeviceFromConnectListBuilder::Create(connect_list_address_type, address);
+  Command command = {CommandType::REMOVE_DEVICE_FROM_CONNECT_LIST, std::move(packet_builder)};
   handler_->BindOnceOn(this, &LeAddressManager::pause_registered_clients).Invoke();
   cached_commands_.push(std::move(command));
 }
@@ -315,9 +315,9 @@ void LeAddressManager::RemoveDeviceFromResolvingList(
   cached_commands_.push(std::move(command));
 }
 
-void LeAddressManager::ClearWhiteList() {
-  auto packet_builder = hci::LeClearWhiteListBuilder::Create();
-  Command command = {CommandType::CLEAR_WHITE_LIST, std::move(packet_builder)};
+void LeAddressManager::ClearConnectList() {
+  auto packet_builder = hci::LeClearConnectListBuilder::Create();
+  Command command = {CommandType::CLEAR_CONNECT_LIST, std::move(packet_builder)};
   handler_->BindOnceOn(this, &LeAddressManager::pause_registered_clients).Invoke();
   cached_commands_.push(std::move(command));
 }

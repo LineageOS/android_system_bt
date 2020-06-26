@@ -840,8 +840,8 @@ void LinkLayerController::IncomingLeAdvertisementPacket(
        le_peer_address_type_ == static_cast<uint8_t>(address_type) &&
        (adv_type == model::packets::AdvertisementType::ADV_IND ||
         adv_type == model::packets::AdvertisementType::ADV_DIRECT_IND)) ||
-      (LeWhiteListContainsDevice(address,
-                                 static_cast<uint8_t>(address_type)))) {
+      (LeConnectListContainsDevice(address,
+                                   static_cast<uint8_t>(address_type)))) {
     if (!connections_.CreatePendingLeConnection(AddressWithType(
             address, static_cast<bluetooth::hci::AddressType>(address_type)))) {
       LOG_WARN(
@@ -1816,17 +1816,17 @@ ErrorCode LinkLayerController::SetLeExtendedAdvertisingParameters(
       scanning_filter_policy =
           bluetooth::hci::LeScanningFilterPolicy::ACCEPT_ALL;
       break;
-    case bluetooth::hci::AdvertisingFilterPolicy::WHITELISTED_SCAN:
+    case bluetooth::hci::AdvertisingFilterPolicy::LISTED_SCAN:
       scanning_filter_policy =
-          bluetooth::hci::LeScanningFilterPolicy::WHITE_LIST_ONLY;
+          bluetooth::hci::LeScanningFilterPolicy::CONNECT_LIST_ONLY;
       break;
-    case bluetooth::hci::AdvertisingFilterPolicy::WHITELISTED_CONNECT:
+    case bluetooth::hci::AdvertisingFilterPolicy::LISTED_CONNECT:
       scanning_filter_policy =
           bluetooth::hci::LeScanningFilterPolicy::CHECK_INITIATORS_IDENTITY;
       break;
-    case bluetooth::hci::AdvertisingFilterPolicy::WHITELISTED_SCAN_AND_CONNECT:
+    case bluetooth::hci::AdvertisingFilterPolicy::LISTED_SCAN_AND_CONNECT:
       scanning_filter_policy = bluetooth::hci::LeScanningFilterPolicy::
-          WHITE_LIST_AND_INITIATORS_IDENTITY;
+          CONNECT_LIST_AND_INITIATORS_IDENTITY;
       break;
   }
 
@@ -1897,19 +1897,19 @@ ErrorCode LinkLayerController::LeConnectionUpdate(
   return ErrorCode::SUCCESS;
 }
 
-void LinkLayerController::LeWhiteListClear() { le_white_list_.clear(); }
+void LinkLayerController::LeConnectListClear() { le_connect_list_.clear(); }
 
 void LinkLayerController::LeResolvingListClear() { le_resolving_list_.clear(); }
 
-void LinkLayerController::LeWhiteListAddDevice(Address addr,
-                                               uint8_t addr_type) {
+void LinkLayerController::LeConnectListAddDevice(Address addr,
+                                                 uint8_t addr_type) {
   std::tuple<Address, uint8_t> new_tuple = std::make_tuple(addr, addr_type);
-  for (auto dev : le_white_list_) {
+  for (auto dev : le_connect_list_) {
     if (dev == new_tuple) {
       return;
     }
   }
-  le_white_list_.emplace_back(new_tuple);
+  le_connect_list_.emplace_back(new_tuple);
 }
 
 void LinkLayerController::LeResolvingListAddDevice(
@@ -1918,8 +1918,8 @@ void LinkLayerController::LeResolvingListAddDevice(
   std::tuple<Address, uint8_t, std::array<uint8_t, kIrk_size>,
              std::array<uint8_t, kIrk_size>>
       new_tuple = std::make_tuple(addr, addr_type, peerIrk, localIrk);
-  for (size_t i = 0; i < le_white_list_.size(); i++) {
-    auto curr = le_white_list_[i];
+  for (size_t i = 0; i < le_connect_list_.size(); i++) {
+    auto curr = le_connect_list_[i];
     if (std::get<0>(curr) == addr && std::get<1>(curr) == addr_type) {
       le_resolving_list_[i] = new_tuple;
       return;
@@ -2039,14 +2039,14 @@ ErrorCode LinkLayerController::SetLeExtendedAdvertisingEnable(
   return ErrorCode::SUCCESS;
 }
 
-void LinkLayerController::LeWhiteListRemoveDevice(Address addr,
-                                                  uint8_t addr_type) {
+void LinkLayerController::LeConnectListRemoveDevice(Address addr,
+                                                    uint8_t addr_type) {
   // TODO: Add checks to see if advertising, scanning, or a connection request
-  // with the white list is ongoing.
+  // with the connect list is ongoing.
   std::tuple<Address, uint8_t> erase_tuple = std::make_tuple(addr, addr_type);
-  for (size_t i = 0; i < le_white_list_.size(); i++) {
-    if (le_white_list_[i] == erase_tuple) {
-      le_white_list_.erase(le_white_list_.begin() + i);
+  for (size_t i = 0; i < le_connect_list_.size(); i++) {
+    if (le_connect_list_[i] == erase_tuple) {
+      le_connect_list_.erase(le_connect_list_.begin() + i);
     }
   }
 }
@@ -2054,20 +2054,20 @@ void LinkLayerController::LeWhiteListRemoveDevice(Address addr,
 void LinkLayerController::LeResolvingListRemoveDevice(Address addr,
                                                       uint8_t addr_type) {
   // TODO: Add checks to see if advertising, scanning, or a connection request
-  // with the white list is ongoing.
-  for (size_t i = 0; i < le_white_list_.size(); i++) {
-    auto curr = le_white_list_[i];
+  // with the connect list is ongoing.
+  for (size_t i = 0; i < le_connect_list_.size(); i++) {
+    auto curr = le_connect_list_[i];
     if (std::get<0>(curr) == addr && std::get<1>(curr) == addr_type) {
       le_resolving_list_.erase(le_resolving_list_.begin() + i);
     }
   }
 }
 
-bool LinkLayerController::LeWhiteListContainsDevice(Address addr,
-                                                    uint8_t addr_type) {
+bool LinkLayerController::LeConnectListContainsDevice(Address addr,
+                                                      uint8_t addr_type) {
   std::tuple<Address, uint8_t> sought_tuple = std::make_tuple(addr, addr_type);
-  for (size_t i = 0; i < le_white_list_.size(); i++) {
-    if (le_white_list_[i] == sought_tuple) {
+  for (size_t i = 0; i < le_connect_list_.size(); i++) {
+    if (le_connect_list_[i] == sought_tuple) {
       return true;
     }
   }
@@ -2076,8 +2076,8 @@ bool LinkLayerController::LeWhiteListContainsDevice(Address addr,
 
 bool LinkLayerController::LeResolvingListContainsDevice(Address addr,
                                                         uint8_t addr_type) {
-  for (size_t i = 0; i < le_white_list_.size(); i++) {
-    auto curr = le_white_list_[i];
+  for (size_t i = 0; i < le_connect_list_.size(); i++) {
+    auto curr = le_connect_list_[i];
     if (std::get<0>(curr) == addr && std::get<1>(curr) == addr_type) {
       return true;
     }
@@ -2085,8 +2085,8 @@ bool LinkLayerController::LeResolvingListContainsDevice(Address addr,
   return false;
 }
 
-bool LinkLayerController::LeWhiteListFull() {
-  return le_white_list_.size() >= properties_.GetLeWhiteListSize();
+bool LinkLayerController::LeConnectListFull() {
+  return le_connect_list_.size() >= properties_.GetLeConnectListSize();
 }
 
 bool LinkLayerController::LeResolvingListFull() {

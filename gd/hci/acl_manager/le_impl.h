@@ -57,7 +57,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
         common::Bind(&le_impl::enqueue_command, common::Unretained(this)),
         handler_,
         controller->GetControllerMacAddress(),
-        controller->GetControllerLeWhiteListSize(),
+        controller->GetControllerLeConnectListSize(),
         controller->GetControllerLeResolvingListSize());
   }
 
@@ -123,7 +123,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       return;
     } else {
       canceled_connections_.erase(remote_address);
-      remove_device_from_white_list(remote_address);
+      remove_device_from_connect_list(remote_address);
     }
 
     if (status != ErrorCode::SUCCESS) {
@@ -171,7 +171,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       return;
     } else {
       canceled_connections_.erase(remote_address);
-      remove_device_from_white_list(remote_address);
+      remove_device_from_connect_list(remote_address);
     }
 
     if (status != ErrorCode::SUCCESS) {
@@ -227,7 +227,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
         handler_->BindOnce(&LeAddressManager::OnCommandComplete, common::Unretained(le_address_manager_)));
   }
 
-  void add_device_to_white_list(AddressWithType address_with_type) {
+  void add_device_to_connect_list(AddressWithType address_with_type) {
     AddressType address_type = address_with_type.GetAddressType();
     if (!address_manager_registered) {
       le_address_manager_->Register(this);
@@ -237,20 +237,20 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     switch (address_type) {
       case AddressType::PUBLIC_DEVICE_ADDRESS:
       case AddressType::PUBLIC_IDENTITY_ADDRESS: {
-        le_address_manager_->AddDeviceToWhiteList(WhiteListAddressType::PUBLIC, address_with_type.GetAddress());
+        le_address_manager_->AddDeviceToConnectList(ConnectListAddressType::PUBLIC, address_with_type.GetAddress());
       } break;
       case AddressType::RANDOM_DEVICE_ADDRESS:
       case AddressType::RANDOM_IDENTITY_ADDRESS: {
-        le_address_manager_->AddDeviceToWhiteList(WhiteListAddressType::RANDOM, address_with_type.GetAddress());
+        le_address_manager_->AddDeviceToConnectList(ConnectListAddressType::RANDOM, address_with_type.GetAddress());
       }
     }
   }
 
-  void create_le_connection(AddressWithType address_with_type, bool add_to_white_list) {
+  void create_le_connection(AddressWithType address_with_type, bool add_to_connect_list) {
     // TODO: Configure default LE connection parameters?
 
-    if (add_to_white_list) {
-      add_device_to_white_list(address_with_type);
+    if (add_to_connect_list) {
+      add_device_to_connect_list(address_with_type);
     }
 
     if (!address_manager_registered) {
@@ -271,7 +271,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
 
     uint16_t le_scan_interval = 0x0060;
     uint16_t le_scan_window = 0x0030;
-    InitiatorFilterPolicy initiator_filter_policy = InitiatorFilterPolicy::USE_WHITE_LIST;
+    InitiatorFilterPolicy initiator_filter_policy = InitiatorFilterPolicy::USE_CONNECT_LIST;
     OwnAddressType own_address_type =
         static_cast<OwnAddressType>(le_address_manager_->GetCurrentAddress().GetAddressType());
     uint16_t conn_interval_min = 0x0018;
@@ -317,19 +317,21 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
 
   void cancel_connect(AddressWithType address_with_type) {
     // the connection will be canceled by LeAddressManager.OnPause()
-    remove_device_from_white_list(address_with_type);
+    remove_device_from_connect_list(address_with_type);
   }
 
-  void remove_device_from_white_list(AddressWithType address_with_type) {
+  void remove_device_from_connect_list(AddressWithType address_with_type) {
     AddressType address_type = address_with_type.GetAddressType();
     switch (address_type) {
       case AddressType::PUBLIC_DEVICE_ADDRESS:
       case AddressType::PUBLIC_IDENTITY_ADDRESS: {
-        le_address_manager_->RemoveDeviceFromWhiteList(WhiteListAddressType::PUBLIC, address_with_type.GetAddress());
+        le_address_manager_->RemoveDeviceFromConnectList(
+            ConnectListAddressType::PUBLIC, address_with_type.GetAddress());
       } break;
       case AddressType::RANDOM_DEVICE_ADDRESS:
       case AddressType::RANDOM_IDENTITY_ADDRESS: {
-        le_address_manager_->RemoveDeviceFromWhiteList(WhiteListAddressType::RANDOM, address_with_type.GetAddress());
+        le_address_manager_->RemoveDeviceFromConnectList(
+            ConnectListAddressType::RANDOM, address_with_type.GetAddress());
       }
     }
   }

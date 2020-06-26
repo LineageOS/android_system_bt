@@ -317,52 +317,52 @@ class LeAddressManagerWithSingleClientTest : public LeAddressManagerTest {
   }
 };
 
-TEST_F(LeAddressManagerWithSingleClientTest, add_device_to_white_list) {
+TEST_F(LeAddressManagerWithSingleClientTest, add_device_to_connect_list) {
   Address address;
   Address::FromString("01:02:03:04:05:06", address);
   test_hci_layer_->SetCommandFuture();
-  le_address_manager_->AddDeviceToWhiteList(WhiteListAddressType::RANDOM, address);
-  auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_WHITE_LIST);
-  auto packet_view = LeAddDeviceToWhiteListView::Create(LeConnectionManagementCommandView::Create(packet));
+  le_address_manager_->AddDeviceToConnectList(ConnectListAddressType::RANDOM, address);
+  auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST);
+  auto packet_view = LeAddDeviceToConnectListView::Create(LeConnectionManagementCommandView::Create(packet));
   ASSERT_TRUE(packet_view.IsValid());
-  ASSERT_EQ(WhiteListAddressType::RANDOM, packet_view.GetAddressType());
+  ASSERT_EQ(ConnectListAddressType::RANDOM, packet_view.GetAddressType());
   ASSERT_EQ(address, packet_view.GetAddress());
 
-  test_hci_layer_->IncomingEvent(LeAddDeviceToWhiteListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  test_hci_layer_->IncomingEvent(LeAddDeviceToConnectListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   clients[0].get()->WaitForResume();
 }
 
-TEST_F(LeAddressManagerWithSingleClientTest, remove_device_from_white_list) {
+TEST_F(LeAddressManagerWithSingleClientTest, remove_device_from_connect_list) {
   Address address;
   Address::FromString("01:02:03:04:05:06", address);
   test_hci_layer_->SetCommandFuture();
-  le_address_manager_->AddDeviceToWhiteList(WhiteListAddressType::RANDOM, address);
-  test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_WHITE_LIST);
-  test_hci_layer_->IncomingEvent(LeAddDeviceToWhiteListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  le_address_manager_->AddDeviceToConnectList(ConnectListAddressType::RANDOM, address);
+  test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST);
+  test_hci_layer_->IncomingEvent(LeAddDeviceToConnectListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
 
   test_hci_layer_->SetCommandFuture();
-  le_address_manager_->RemoveDeviceFromWhiteList(WhiteListAddressType::RANDOM, address);
-  auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_REMOVE_DEVICE_FROM_WHITE_LIST);
-  auto packet_view = LeRemoveDeviceFromWhiteListView::Create(LeConnectionManagementCommandView::Create(packet));
+  le_address_manager_->RemoveDeviceFromConnectList(ConnectListAddressType::RANDOM, address);
+  auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_REMOVE_DEVICE_FROM_CONNECT_LIST);
+  auto packet_view = LeRemoveDeviceFromConnectListView::Create(LeConnectionManagementCommandView::Create(packet));
   ASSERT_TRUE(packet_view.IsValid());
-  ASSERT_EQ(WhiteListAddressType::RANDOM, packet_view.GetAddressType());
+  ASSERT_EQ(ConnectListAddressType::RANDOM, packet_view.GetAddressType());
   ASSERT_EQ(address, packet_view.GetAddress());
-  test_hci_layer_->IncomingEvent(LeRemoveDeviceFromWhiteListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  test_hci_layer_->IncomingEvent(LeRemoveDeviceFromConnectListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   clients[0].get()->WaitForResume();
 }
 
-TEST_F(LeAddressManagerWithSingleClientTest, clear_white_list) {
+TEST_F(LeAddressManagerWithSingleClientTest, clear_connect_list) {
   Address address;
   Address::FromString("01:02:03:04:05:06", address);
   test_hci_layer_->SetCommandFuture();
-  le_address_manager_->AddDeviceToWhiteList(WhiteListAddressType::RANDOM, address);
-  test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_WHITE_LIST);
-  test_hci_layer_->IncomingEvent(LeAddDeviceToWhiteListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  le_address_manager_->AddDeviceToConnectList(ConnectListAddressType::RANDOM, address);
+  test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST);
+  test_hci_layer_->IncomingEvent(LeAddDeviceToConnectListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
 
   test_hci_layer_->SetCommandFuture();
-  le_address_manager_->ClearWhiteList();
-  test_hci_layer_->GetCommandPacket(OpCode::LE_CLEAR_WHITE_LIST);
-  test_hci_layer_->IncomingEvent(LeClearWhiteListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  le_address_manager_->ClearConnectList();
+  test_hci_layer_->GetCommandPacket(OpCode::LE_CLEAR_CONNECT_LIST);
+  test_hci_layer_->IncomingEvent(LeClearConnectListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   clients[0].get()->WaitForResume();
 }
 

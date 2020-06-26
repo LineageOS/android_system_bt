@@ -70,8 +70,8 @@ struct Controller::impl {
                          handler->BindOnceOn(this, &Controller::impl::le_read_supported_states_handler));
 
     hci_->EnqueueCommand(
-        LeReadWhiteListSizeBuilder::Create(),
-        handler->BindOnceOn(this, &Controller::impl::le_read_white_list_size_handler));
+        LeReadConnectListSizeBuilder::Create(),
+        handler->BindOnceOn(this, &Controller::impl::le_read_connect_list_size_handler));
 
     hci_->EnqueueCommand(
         LeReadResolvingListSizeBuilder::Create(),
@@ -253,12 +253,12 @@ struct Controller::impl {
     le_supported_states_ = complete_view.GetLeStates();
   }
 
-  void le_read_white_list_size_handler(CommandCompleteView view) {
-    auto complete_view = LeReadWhiteListSizeCompleteView::Create(view);
+  void le_read_connect_list_size_handler(CommandCompleteView view) {
+    auto complete_view = LeReadConnectListSizeCompleteView::Create(view);
     ASSERT(complete_view.IsValid());
     ErrorCode status = complete_view.GetStatus();
     ASSERT_LOG(status == ErrorCode::SUCCESS, "Status 0x%02hhx, %s", status, ErrorCodeText(status).c_str());
-    le_white_list_size_ = complete_view.GetWhiteListSize();
+    le_connect_list_size_ = complete_view.GetConnectListSize();
   }
 
   void le_read_resolving_list_size_handler(CommandCompleteView view) {
@@ -589,10 +589,10 @@ struct Controller::impl {
       OP_CODE_MAPPING(LE_SET_SCAN_ENABLE)
       OP_CODE_MAPPING(LE_CREATE_CONNECTION)
       OP_CODE_MAPPING(LE_CREATE_CONNECTION_CANCEL)
-      OP_CODE_MAPPING(LE_READ_WHITE_LIST_SIZE)
-      OP_CODE_MAPPING(LE_CLEAR_WHITE_LIST)
-      OP_CODE_MAPPING(LE_ADD_DEVICE_TO_WHITE_LIST)
-      OP_CODE_MAPPING(LE_REMOVE_DEVICE_FROM_WHITE_LIST)
+      OP_CODE_MAPPING(LE_READ_CONNECT_LIST_SIZE)
+      OP_CODE_MAPPING(LE_CLEAR_CONNECT_LIST)
+      OP_CODE_MAPPING(LE_ADD_DEVICE_TO_CONNECT_LIST)
+      OP_CODE_MAPPING(LE_REMOVE_DEVICE_FROM_CONNECT_LIST)
       OP_CODE_MAPPING(LE_CONNECTION_UPDATE)
       OP_CODE_MAPPING(LE_SET_HOST_CHANNEL_CLASSIFICATION)
       OP_CODE_MAPPING(LE_READ_CHANNEL_MAP)
@@ -745,7 +745,7 @@ struct Controller::impl {
   LeBufferSize le_buffer_size_;
   uint64_t le_local_supported_features_;
   uint64_t le_supported_states_;
-  uint8_t le_white_list_size_;
+  uint8_t le_connect_list_size_;
   uint8_t le_resolving_list_size_;
   LeMaximumDataLength le_maximum_data_length_;
   uint16_t le_maximum_advertising_data_length_;
@@ -898,8 +898,8 @@ uint64_t Controller::GetControllerLeSupportedStates() const {
   return impl_->le_supported_states_;
 }
 
-uint8_t Controller::GetControllerLeWhiteListSize() const {
-  return impl_->le_white_list_size_;
+uint8_t Controller::GetControllerLeConnectListSize() const {
+  return impl_->le_connect_list_size_;
 }
 
 uint8_t Controller::GetControllerLeResolvingListSize() const {
