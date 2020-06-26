@@ -59,6 +59,7 @@
 /* SC OOB local data set is created (as result of SMP_CrLocScOobData(...)) */
 #define SMP_SC_LOC_OOB_DATA_UP_EVT 10
 #define SMP_BR_KEYS_REQ_EVT 12 /* SMP over BR keys request event */
+#define SMP_CONSENT_REQ_EVT 14 /* Consent request event */
 typedef uint8_t tSMP_EVT;
 
 /* pairing failure reason code */
