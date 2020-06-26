@@ -13,7 +13,7 @@ genrule {
 }
 
 cc_test {
-    name: "bluetooth_flatbuffer_tests",
+    name: "bluetooth_flatbuffer_test",
     test_suites: ["device-tests"],
     host_supported: true,
     static_libs: [
