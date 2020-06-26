@@ -33,29 +33,33 @@ namespace bluetooth {
 namespace security {
 namespace internal {
 
-void SecurityManagerImpl::DispatchPairingHandler(record::SecurityRecord& record, bool locally_initiated) {
+void SecurityManagerImpl::DispatchPairingHandler(
+    std::shared_ptr<record::SecurityRecord> record, bool locally_initiated) {
   common::OnceCallback<void(hci::Address, PairingResultOrFailure)> callback =
       common::BindOnce(&SecurityManagerImpl::OnPairingHandlerComplete, common::Unretained(this));
-  auto entry = pairing_handler_map_.find(record.GetPseudoAddress().GetAddress());
+  auto entry = pairing_handler_map_.find(record->GetPseudoAddress().GetAddress());
   if (entry != pairing_handler_map_.end()) {
     LOG_WARN("Device already has a pairing handler, and is in the middle of pairing!");
     return;
   }
   std::shared_ptr<pairing::PairingHandler> pairing_handler = nullptr;
-  switch (record.GetPseudoAddress().GetAddressType()) {
+  switch (record->GetPseudoAddress().GetAddressType()) {
     case hci::AddressType::PUBLIC_DEVICE_ADDRESS: {
-      std::shared_ptr<record::SecurityRecord> record_copy =
-          std::make_shared<record::SecurityRecord>(record.GetPseudoAddress());
       pairing_handler = std::make_shared<security::pairing::ClassicPairingHandler>(
-          security_manager_channel_, record_copy, security_handler_, std::move(callback), user_interface_,
-          user_interface_handler_, "TODO: grab device name properly");
+          security_manager_channel_,
+          record,
+          security_handler_,
+          std::move(callback),
+          user_interface_,
+          user_interface_handler_,
+          "TODO: grab device name properly");
       break;
     }
     default:
-      ASSERT_LOG(false, "Pairing type %hhu not implemented!", record.GetPseudoAddress().GetAddressType());
+      ASSERT_LOG(false, "Pairing type %hhu not implemented!", record->GetPseudoAddress().GetAddressType());
   }
   auto new_entry = std::pair<hci::Address, std::shared_ptr<pairing::PairingHandler>>(
-      record.GetPseudoAddress().GetAddress(), pairing_handler);
+      record->GetPseudoAddress().GetAddress(), pairing_handler);
   pairing_handler_map_.insert(std::move(new_entry));
   pairing_handler->Initiate(locally_initiated, this->local_io_capability_, this->local_oob_data_present_,
                             this->local_authentication_requirements_);
@@ -69,8 +73,8 @@ void SecurityManagerImpl::Init() {
 }
 
 void SecurityManagerImpl::CreateBond(hci::AddressWithType device) {
-  record::SecurityRecord& record = security_database_.FindOrCreate(device);
-  if (record.IsBonded()) {
+  auto record = security_database_.FindOrCreate(device);
+  if (record->IsBonded()) {
     NotifyDeviceBonded(device);
   } else {
     // Dispatch pairing handler, if we are calling create we are the initiator
@@ -79,8 +83,8 @@ void SecurityManagerImpl::CreateBond(hci::AddressWithType device) {
 }
 
 void SecurityManagerImpl::CreateBondLe(hci::AddressWithType address) {
-  record::SecurityRecord& record = security_database_.FindOrCreate(address);
-  if (record.IsBonded()) {
+  auto record = security_database_.FindOrCreate(address);
+  if (record->IsBonded()) {
     NotifyDeviceBondFailed(address, PairingFailure("Already bonded"));
     return;
   }
@@ -581,10 +585,10 @@ void SecurityManagerImpl::InternalEnforceSecurityPolicy(
   switch (policy) {
     case l2cap::classic::SecurityPolicy::BEST:
     case l2cap::classic::SecurityPolicy::AUTHENTICATED_ENCRYPTED_TRANSPORT:
-      result = record.IsAuthenticated() && record.RequiresMitmProtection() && record.IsEncryptionRequired();
+      result = record->IsAuthenticated() && record->RequiresMitmProtection() && record->IsEncryptionRequired();
       break;
     case l2cap::classic::SecurityPolicy::ENCRYPTED_TRANSPORT:
-      result = record.IsAuthenticated() && record.IsEncryptionRequired();
+      result = record->IsAuthenticated() && record->IsEncryptionRequired();
       break;
     case l2cap::classic::SecurityPolicy::_SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK:
       result = true;
