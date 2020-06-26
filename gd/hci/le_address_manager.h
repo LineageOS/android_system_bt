@@ -40,7 +40,7 @@ class LeAddressManager {
       common::Callback<void(std::unique_ptr<CommandPacketBuilder>)> enqueue_command,
       os::Handler* handler,
       Address public_address,
-      uint8_t white_list_size,
+      uint8_t connect_list_size,
       uint8_t resolving_list_size);
   virtual ~LeAddressManager();
 
@@ -66,17 +66,17 @@ class LeAddressManager {
   AddressWithType GetCurrentAddress();          // What was set in SetRandomAddress()
   virtual AddressWithType GetAnotherAddress();  // A new random address without rotating.
 
-  uint8_t GetWhiteListSize();
+  uint8_t GetConnectListSize();
   uint8_t GetResolvingListSize();
-  void AddDeviceToWhiteList(WhiteListAddressType white_list_address_type, Address address);
+  void AddDeviceToConnectList(ConnectListAddressType connect_list_address_type, Address address);
   void AddDeviceToResolvingList(
       PeerAddressType peer_identity_address_type,
       Address peer_identity_address,
       const std::array<uint8_t, 16>& peer_irk,
       const std::array<uint8_t, 16>& local_irk);
-  void RemoveDeviceFromWhiteList(WhiteListAddressType white_list_address_type, Address address);
+  void RemoveDeviceFromConnectList(ConnectListAddressType connect_list_address_type, Address address);
   void RemoveDeviceFromResolvingList(PeerAddressType peer_identity_address_type, Address peer_identity_address);
-  void ClearWhiteList();
+  void ClearConnectList();
   void ClearResolvingList();
   void OnCommandComplete(CommandCompleteView view);
 
@@ -104,9 +104,9 @@ class LeAddressManager {
 
   enum CommandType {
     ROTATE_RANDOM_ADDRESS,
-    ADD_DEVICE_TO_WHITE_LIST,
-    REMOVE_DEVICE_FROM_WHITE_LIST,
-    CLEAR_WHITE_LIST,
+    ADD_DEVICE_TO_CONNECT_LIST,
+    REMOVE_DEVICE_FROM_CONNECT_LIST,
+    CLEAR_CONNECT_LIST,
     ADD_DEVICE_TO_RESOLVING_LIST,
     REMOVE_DEVICE_FROM_RESOLVING_LIST,
     CLEAR_RESOLVING_LIST
@@ -128,7 +128,7 @@ class LeAddressManager {
   crypto_toolbox::Octet16 rotation_irk_;
   std::chrono::milliseconds minimum_rotation_time_;
   std::chrono::milliseconds maximum_rotation_time_;
-  uint8_t white_list_size_;
+  uint8_t connect_list_size_;
   uint8_t resolving_list_size_;
   std::queue<Command> cached_commands_;
 };

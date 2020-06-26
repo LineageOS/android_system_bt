@@ -249,10 +249,10 @@ enum OpCode : 16 {
   LE_SET_SCAN_ENABLE = 0x200C,
   LE_CREATE_CONNECTION = 0x200D,
   LE_CREATE_CONNECTION_CANCEL = 0x200E,
-  LE_READ_WHITE_LIST_SIZE = 0x200F,
-  LE_CLEAR_WHITE_LIST = 0x2010,
-  LE_ADD_DEVICE_TO_WHITE_LIST = 0x2011,
-  LE_REMOVE_DEVICE_FROM_WHITE_LIST = 0x2012,
+  LE_READ_CONNECT_LIST_SIZE = 0x200F,
+  LE_CLEAR_CONNECT_LIST = 0x2010,
+  LE_ADD_DEVICE_TO_CONNECT_LIST = 0x2011,
+  LE_REMOVE_DEVICE_FROM_CONNECT_LIST = 0x2012,
   LE_CONNECTION_UPDATE = 0x2013,
   LE_SET_HOST_CHANNEL_CLASSIFICATION = 0x2014,
   LE_READ_CHANNEL_MAP = 0x2015,
@@ -501,10 +501,10 @@ enum OpCodeIndex : 16 {
   LE_SET_SCAN_ENABLE = 263,
   LE_CREATE_CONNECTION = 264,
   LE_CREATE_CONNECTION_CANCEL = 265,
-  LE_READ_WHITE_LIST_SIZE = 266,
-  LE_CLEAR_WHITE_LIST = 267,
-  LE_ADD_DEVICE_TO_WHITE_LIST = 270,
-  LE_REMOVE_DEVICE_FROM_WHITE_LIST = 271,
+  LE_READ_CONNECT_LIST_SIZE = 266,
+  LE_CLEAR_CONNECT_LIST = 267,
+  LE_ADD_DEVICE_TO_CONNECT_LIST = 270,
+  LE_REMOVE_DEVICE_FROM_CONNECT_LIST = 271,
   LE_CONNECTION_UPDATE = 272,
   LE_SET_HOST_CHANNEL_CLASSIFICATION = 273,
   LE_READ_CHANNEL_MAP = 274,
@@ -2436,9 +2436,9 @@ packet LeSetRandomAddressComplete : CommandComplete (command_op_code = LE_SET_RA
 
 enum AdvertisingFilterPolicy : 2 {
   ALL_DEVICES = 0, // Default
-  WHITELISTED_SCAN = 1,
-  WHITELISTED_CONNECT = 2,
-  WHITELISTED_SCAN_AND_CONNECT = 3,
+  LISTED_SCAN = 1,
+  LISTED_CONNECT = 2,
+  LISTED_SCAN_AND_CONNECT = 3,
 }
 
 enum PeerAddressType : 8 {
@@ -2520,9 +2520,9 @@ enum LeScanType : 8 {
 
 enum LeScanningFilterPolicy : 8 {
   ACCEPT_ALL = 0x00, // Default
-  WHITE_LIST_ONLY = 0x01,
+  CONNECT_LIST_ONLY = 0x01,
   CHECK_INITIATORS_IDENTITY = 0x02,
-  WHITE_LIST_AND_INITIATORS_IDENTITY = 0x03,
+  CONNECT_LIST_AND_INITIATORS_IDENTITY = 0x03,
 }
 
 packet LeSetScanParameters : LeScanningCommand (op_code = LE_SET_SCAN_PARAMETERS) {
@@ -2548,7 +2548,7 @@ packet LeSetScanEnableComplete : CommandComplete (command_op_code = LE_SET_SCAN_
 
 enum InitiatorFilterPolicy : 8 {
   USE_PEER_ADDRESS = 0x00,
-  USE_WHITE_LIST = 0x01,
+  USE_CONNECT_LIST = 0x01,
 }
 
 enum OwnAddressType : 8 {
@@ -2583,42 +2583,42 @@ packet LeCreateConnectionCancelComplete : CommandComplete (command_op_code = LE_
   status : ErrorCode,
 }
 
-packet LeReadWhiteListSize : CommandPacket (op_code = LE_READ_WHITE_LIST_SIZE) {
+packet LeReadConnectListSize : CommandPacket (op_code = LE_READ_CONNECT_LIST_SIZE) {
 }
 
-packet LeReadWhiteListSizeComplete : CommandComplete (command_op_code = LE_READ_WHITE_LIST_SIZE) {
+packet LeReadConnectListSizeComplete : CommandComplete (command_op_code = LE_READ_CONNECT_LIST_SIZE) {
   status : ErrorCode,
-  white_list_size : 8,
+  connect_list_size : 8,
 }
 
-packet LeClearWhiteList : LeConnectionManagementCommand (op_code = LE_CLEAR_WHITE_LIST) {
+packet LeClearConnectList : LeConnectionManagementCommand (op_code = LE_CLEAR_CONNECT_LIST) {
 }
 
-packet LeClearWhiteListComplete : CommandComplete (command_op_code = LE_CLEAR_WHITE_LIST) {
+packet LeClearConnectListComplete : CommandComplete (command_op_code = LE_CLEAR_CONNECT_LIST) {
   status : ErrorCode,
 }
 
-enum WhiteListAddressType : 8 {
+enum ConnectListAddressType : 8 {
   PUBLIC = 0x00,
   RANDOM = 0x01,
   ANONYMOUS_ADVERTISERS = 0xFF,
 }
 
-packet LeAddDeviceToWhiteList : LeConnectionManagementCommand (op_code = LE_ADD_DEVICE_TO_WHITE_LIST) {
-  address_type : WhiteListAddressType,
+packet LeAddDeviceToConnectList : LeConnectionManagementCommand (op_code = LE_ADD_DEVICE_TO_CONNECT_LIST) {
+  address_type : ConnectListAddressType,
   address : Address,
 }
 
-packet LeAddDeviceToWhiteListComplete : CommandComplete (command_op_code = LE_ADD_DEVICE_TO_WHITE_LIST) {
+packet LeAddDeviceToConnectListComplete : CommandComplete (command_op_code = LE_ADD_DEVICE_TO_CONNECT_LIST) {
   status : ErrorCode,
 }
 
-packet LeRemoveDeviceFromWhiteList : LeConnectionManagementCommand (op_code = LE_REMOVE_DEVICE_FROM_WHITE_LIST) {
-  address_type : WhiteListAddressType,
+packet LeRemoveDeviceFromConnectList : LeConnectionManagementCommand (op_code = LE_REMOVE_DEVICE_FROM_CONNECT_LIST) {
+  address_type : ConnectListAddressType,
   address : Address,
 }
 
-packet LeRemoveDeviceFromWhiteListComplete : CommandComplete (command_op_code = LE_REMOVE_DEVICE_FROM_WHITE_LIST) {
+packet LeRemoveDeviceFromConnectListComplete : CommandComplete (command_op_code = LE_REMOVE_DEVICE_FROM_CONNECT_LIST) {
   status : ErrorCode,
 }
 

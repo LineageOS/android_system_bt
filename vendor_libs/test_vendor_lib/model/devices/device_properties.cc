@@ -55,7 +55,7 @@ DeviceProperties::DeviceProperties(const std::string& file_name)
       lmp_pal_subversion_(0),
       le_data_packet_length_(27),
       num_le_data_packets_(15),
-      le_white_list_size_(15),
+      le_connect_list_size_(15),
       le_resolving_list_size_(15) {
   std::string properties_raw;
 
