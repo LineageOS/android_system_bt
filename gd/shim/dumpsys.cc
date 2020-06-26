@@ -71,9 +71,6 @@ struct Dumpsys::impl {
  public:
   void DumpWithArgs(int fd, const char** args, std::promise<void> promise);
 
-  void RegisterDumpsysFunction(const void* token, DumpsysFunction func);  // OBSOLETE
-  void UnregisterDumpsysFunction(const void* token);                      // OBSOLETE
-
   impl(const Dumpsys& dumpsys_module);
   ~impl() = default;
 
@@ -83,7 +80,6 @@ struct Dumpsys::impl {
   std::string PrintAsJson(std::string* output) const;
 
  private:
-  std::unordered_map<const void*, DumpsysFunction> dumpsys_functions_;  // OBSOLETE
   const reflection::Schema* FindBundledSchema(
       const dumpsys::BundleSchema& bundle_schema, const std::string& name) const;
   const Dumpsys& dumpsys_module_;
@@ -132,31 +128,11 @@ void Dumpsys::impl::DumpWithArgs(int fd, const char** args, std::promise<void> p
   promise.set_value();
 }
 
-void Dumpsys::impl::RegisterDumpsysFunction(const void* token, DumpsysFunction func) {  // OBSOLETE
-  ASSERT(dumpsys_functions_.find(token) == dumpsys_functions_.end());
-  dumpsys_functions_[token] = func;
-}
-
-void Dumpsys::impl::UnregisterDumpsysFunction(const void* token) {  // OBSOLETE
-  ASSERT(dumpsys_functions_.find(token) != dumpsys_functions_.end());
-  dumpsys_functions_.erase(token);
-}
-
 void Dumpsys::Dump(int fd, const char** args) {
   std::promise<void> promise;
   auto future = promise.get_future();
   CallOn(pimpl_.get(), &Dumpsys::impl::DumpWithArgs, fd, args, std::move(promise));
   future.get();
-}
-
-void Dumpsys::RegisterDumpsysFunction(const void* token, DumpsysFunction func) {  // OBSOLETE
-  GetHandler()->Post(
-      common::BindOnce(&Dumpsys::impl::RegisterDumpsysFunction, common::Unretained(pimpl_.get()), token, func));
-}
-
-void Dumpsys::UnregisterDumpsysFunction(const void* token) {  // OBSOLETE
-  GetHandler()->Post(
-      common::BindOnce(&Dumpsys::impl::UnregisterDumpsysFunction, common::Unretained(pimpl_.get()), token));
 }
 
 os::Handler* Dumpsys::GetGdShimHandler() {
