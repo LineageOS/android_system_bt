@@ -442,6 +442,9 @@ class DualModeController : public Device {
   // 7.8.41
   void LeReadResolvingListSize(CommandPacketView args);
 
+  // 7.8.46
+  void LeReadMaximumDataLength(CommandPacketView args);
+
   // 7.8.52
   void LeSetExtendedAdvertisingRandomAddress(CommandPacketView args);
 
@@ -456,6 +459,18 @@ class DualModeController : public Device {
 
   // 7.8.56
   void LeSetExtendedAdvertisingEnable(CommandPacketView args);
+
+  // 7.8.57
+  void LeReadMaximumAdvertisingDataLength(CommandPacketView args);
+
+  // 7.8.58
+  void LeReadNumberOfSupportedAdvertisingSets(CommandPacketView args);
+
+  // 7.8.59
+  void LeRemoveAdvertisingSet(CommandPacketView args);
+
+  // 7.8.60
+  void LeClearAdvertisingSets(CommandPacketView args);
 
   // 7.8.64
   void LeSetExtendedScanParameters(CommandPacketView args);
