@@ -201,6 +201,11 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   void OnHciLeEvent(hci::LeMetaEventView event);
   LeFixedChannelEntry* FindStoredLeChannel(const hci::AddressWithType& device);
   bool EraseStoredLeChannel(const hci::AddressWithType& device);
+  void InternalEnforceSecurityPolicy(
+      hci::AddressWithType remote,
+      l2cap::classic::SecurityPolicy policy,
+      l2cap::classic::SecurityEnforcementInterface::ResultCallback result_callback,
+      bool try_meet_requirements);
 
   os::Handler* security_handler_ __attribute__((unused));
   l2cap::le::L2capLeModule* l2cap_le_module_ __attribute__((unused));
@@ -215,6 +220,10 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   hci::OobDataPresent local_oob_data_present_ = kDefaultOobDataPresent;
   security::IoCapability local_le_io_capability_ = security::IoCapability::NO_INPUT_NO_OUTPUT;
   uint8_t local_le_auth_req_ = AuthReqMaskBondingFlag | AuthReqMaskMitm | AuthReqMaskSc;
+  std::unordered_map<
+      hci::AddressWithType,
+      std::pair<l2cap::classic::SecurityPolicy, l2cap::classic::SecurityEnforcementInterface::ResultCallback>>
+      enforce_security_policy_callback_map_;
 
   struct {
     hci::AddressWithType address_;
