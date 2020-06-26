@@ -97,7 +97,7 @@ class DirectHciTest(GdBaseTestClass):
 
         self.dut_hci.send_command_with_complete(
             hci_packets.LeSetExtendedScanParametersBuilder(hci_packets.AddressType.RANDOM_DEVICE_ADDRESS,
-                                                           hci_packets.LeSetScanningFilterPolicy.ACCEPT_ALL, 1,
+                                                           hci_packets.LeScanningFilterPolicy.ACCEPT_ALL, 1,
                                                            [phy_scan_params]))
         self.dut_hci.send_command_with_complete(
             hci_packets.LeSetExtendedScanEnableBuilder(hci_packets.Enable.ENABLED,

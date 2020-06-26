@@ -37,6 +37,9 @@ struct Controller::impl {
                                handler->BindOn(this, &Controller::impl::NumberOfCompletedPackets));
 
     set_event_mask(kDefaultEventMask);
+    write_simple_pairing_mode(Enable::ENABLED);
+    // TODO(b/159927452): Legacy stack set SimultaneousLeHost = 1. Revisit if this causes problem.
+    write_le_host_support(Enable::ENABLED, SimultaneousLeHost::DISABLED);
     hci_->EnqueueCommand(ReadLocalNameBuilder::Create(),
                          handler->BindOnceOn(this, &Controller::impl::read_local_name_complete_handler));
     hci_->EnqueueCommand(ReadLocalVersionInformationBuilder::Create(),
@@ -77,16 +80,25 @@ struct Controller::impl {
     if (is_supported(OpCode::LE_READ_MAXIMUM_DATA_LENGTH)) {
       hci_->EnqueueCommand(LeReadMaximumDataLengthBuilder::Create(),
                            handler->BindOnceOn(this, &Controller::impl::le_read_maximum_data_length_handler));
+    } else {
+      le_maximum_data_length_.supported_max_rx_octets_ = 0;
+      le_maximum_data_length_.supported_max_rx_time_ = 0;
+      le_maximum_data_length_.supported_max_tx_octets_ = 0;
+      le_maximum_data_length_.supported_max_tx_time_ = 0;
     }
     if (is_supported(OpCode::LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH)) {
       hci_->EnqueueCommand(
           LeReadMaximumAdvertisingDataLengthBuilder::Create(),
           handler->BindOnceOn(this, &Controller::impl::le_read_maximum_advertising_data_length_handler));
+    } else {
+      le_maximum_advertising_data_length_ = 31;
     }
     if (is_supported(OpCode::LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS)) {
       hci_->EnqueueCommand(
           LeReadNumberOfSupportedAdvertisingSetsBuilder::Create(),
           handler->BindOnceOn(this, &Controller::impl::le_read_number_of_supported_advertising_sets_handler));
+    } else {
+      le_number_supported_advertising_sets_ = 1;
     }
 
     hci_->EnqueueCommand(LeGetVendorCapabilitiesBuilder::Create(),
@@ -359,6 +371,20 @@ struct Controller::impl {
     std::unique_ptr<SetEventMaskBuilder> packet = SetEventMaskBuilder::Create(event_mask);
     hci_->EnqueueCommand(std::move(packet), module_.GetHandler()->BindOnceOn(
                                                 this, &Controller::impl::check_status<SetEventMaskCompleteView>));
+  }
+
+  void write_simple_pairing_mode(Enable enable) {
+    std::unique_ptr<WriteSimplePairingModeBuilder> packet = WriteSimplePairingModeBuilder::Create(enable);
+    hci_->EnqueueCommand(
+        std::move(packet),
+        module_.GetHandler()->BindOnceOn(this, &Controller::impl::check_status<WriteSimplePairingModeCompleteView>));
+  }
+
+  void write_le_host_support(Enable enable, SimultaneousLeHost simultaneous_le_host) {
+    std::unique_ptr<WriteLeHostSupportBuilder> packet = WriteLeHostSupportBuilder::Create(enable, simultaneous_le_host);
+    hci_->EnqueueCommand(
+        std::move(packet),
+        module_.GetHandler()->BindOnceOn(this, &Controller::impl::check_status<WriteLeHostSupportCompleteView>));
   }
 
   void reset() {

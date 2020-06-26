@@ -12,7 +12,7 @@ table BundleSchemaMap {
 
 table BundleSchema {
     title:string;
-    root:string;
+    root_name:string;
     map:[BundleSchemaMap];
 }
 

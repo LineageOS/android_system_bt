@@ -28,7 +28,7 @@ struct Opts {
   bool write{false};
   const char* filename{kDefaultBundleDataFile};
   const char* gen{kDefaultGeneratedOutputPath};
-  const char* main_root{nullptr};
+  const char* main_root_name{nullptr};
   const char* ns_name{kDefaultNamespace};
   struct {
     int c{0};
