@@ -115,11 +115,11 @@ std::vector<uint8_t> write_secure_connections_host_support_complete = {0x0e, 0x0
 DEFINE_AND_INSTANTIATE_WriteSecureConnectionsHostSupportCompleteReflectionTest(
     write_secure_connections_host_support_complete);
 
-std::vector<uint8_t> le_read_white_list_size = {0x0f, 0x20, 0x00};
-DEFINE_AND_INSTANTIATE_LeReadWhiteListSizeReflectionTest(le_read_white_list_size);
+std::vector<uint8_t> le_read_connect_list_size = {0x0f, 0x20, 0x00};
+DEFINE_AND_INSTANTIATE_LeReadConnectListSizeReflectionTest(le_read_connect_list_size);
 
-std::vector<uint8_t> le_read_white_list_size_complete = {0x0e, 0x05, 0x01, 0x0f, 0x20, 0x00, 0x80};
-DEFINE_AND_INSTANTIATE_LeReadWhiteListSizeCompleteReflectionTest(le_read_white_list_size_complete);
+std::vector<uint8_t> le_read_connect_list_size_complete = {0x0e, 0x05, 0x01, 0x0f, 0x20, 0x00, 0x80};
+DEFINE_AND_INSTANTIATE_LeReadConnectListSizeCompleteReflectionTest(le_read_connect_list_size_complete);
 
 std::vector<uint8_t> le_read_buffer_size = {0x02, 0x20, 0x00};
 DEFINE_AND_INSTANTIATE_LeReadBufferSizeV1ReflectionTest(le_read_buffer_size);

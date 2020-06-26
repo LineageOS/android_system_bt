@@ -199,11 +199,11 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   SET_HANDLER(OpCode::CREATE_CONNECTION, CreateConnection);
   SET_HANDLER(OpCode::DISCONNECT, Disconnect);
   SET_HANDLER(OpCode::LE_CREATE_CONNECTION_CANCEL, LeConnectionCancel);
-  SET_HANDLER(OpCode::LE_READ_WHITE_LIST_SIZE, LeReadWhiteListSize);
-  SET_HANDLER(OpCode::LE_CLEAR_WHITE_LIST, LeClearWhiteList);
-  SET_HANDLER(OpCode::LE_ADD_DEVICE_TO_WHITE_LIST, LeAddDeviceToWhiteList);
-  SET_HANDLER(OpCode::LE_REMOVE_DEVICE_FROM_WHITE_LIST,
-              LeRemoveDeviceFromWhiteList);
+  SET_HANDLER(OpCode::LE_READ_CONNECT_LIST_SIZE, LeReadConnectListSize);
+  SET_HANDLER(OpCode::LE_CLEAR_CONNECT_LIST, LeClearConnectList);
+  SET_HANDLER(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST, LeAddDeviceToConnectList);
+  SET_HANDLER(OpCode::LE_REMOVE_DEVICE_FROM_CONNECT_LIST,
+              LeRemoveDeviceFromConnectList);
   SET_HANDLER(OpCode::LE_RAND, LeRand);
   SET_HANDLER(OpCode::LE_READ_SUPPORTED_STATES, LeReadSupportedStates);
   SET_HANDLER(OpCode::LE_GET_VENDOR_CAPABILITIES, LeVendorCap);
@@ -1538,7 +1538,7 @@ void DualModeController::LeCreateConnection(CommandPacketView command) {
       static_cast<uint8_t>(command_view.GetInitiatorFilterPolicy());
   link_layer_controller_.SetLeInitiatorFilterPolicy(initiator_filter_policy);
 
-  if (initiator_filter_policy == 0) {  // White list not used
+  if (initiator_filter_policy == 0) {  // Connect list not used
     uint8_t peer_address_type =
         static_cast<uint8_t>(command_view.GetPeerAddressType());
     Address peer_address = command_view.GetPeerAddress();
@@ -1632,55 +1632,57 @@ void DualModeController::LeConnectionCancel(CommandPacketView command) {
   */
 }
 
-void DualModeController::LeReadWhiteListSize(CommandPacketView command) {
-  auto command_view = gd_hci::LeReadWhiteListSizeView::Create(
+void DualModeController::LeReadConnectListSize(CommandPacketView command) {
+  auto command_view = gd_hci::LeReadConnectListSizeView::Create(
       gd_hci::LeConnectionManagementCommandView::Create(command));
   ASSERT(command_view.IsValid());
-  auto packet = bluetooth::hci::LeReadWhiteListSizeCompleteBuilder::Create(
-      kNumCommandPackets, ErrorCode::SUCCESS, properties_.GetLeWhiteListSize());
+  auto packet = bluetooth::hci::LeReadConnectListSizeCompleteBuilder::Create(
+      kNumCommandPackets, ErrorCode::SUCCESS,
+      properties_.GetLeConnectListSize());
   send_event_(std::move(packet));
 }
 
-void DualModeController::LeClearWhiteList(CommandPacketView command) {
-  auto command_view = gd_hci::LeClearWhiteListView::Create(
+void DualModeController::LeClearConnectList(CommandPacketView command) {
+  auto command_view = gd_hci::LeClearConnectListView::Create(
       gd_hci::LeConnectionManagementCommandView::Create(command));
   ASSERT(command_view.IsValid());
-  link_layer_controller_.LeWhiteListClear();
-  auto packet = bluetooth::hci::LeClearWhiteListCompleteBuilder::Create(
+  link_layer_controller_.LeConnectListClear();
+  auto packet = bluetooth::hci::LeClearConnectListCompleteBuilder::Create(
       kNumCommandPackets, ErrorCode::SUCCESS);
   send_event_(std::move(packet));
 }
 
-void DualModeController::LeAddDeviceToWhiteList(CommandPacketView command) {
-  auto command_view = gd_hci::LeAddDeviceToWhiteListView::Create(
+void DualModeController::LeAddDeviceToConnectList(CommandPacketView command) {
+  auto command_view = gd_hci::LeAddDeviceToConnectListView::Create(
       gd_hci::LeConnectionManagementCommandView::Create(command));
   ASSERT(command_view.IsValid());
 
-  if (link_layer_controller_.LeWhiteListFull()) {
-    auto packet = bluetooth::hci::LeAddDeviceToWhiteListCompleteBuilder::Create(
-        kNumCommandPackets, ErrorCode::MEMORY_CAPACITY_EXCEEDED);
+  if (link_layer_controller_.LeConnectListFull()) {
+    auto packet =
+        bluetooth::hci::LeAddDeviceToConnectListCompleteBuilder::Create(
+            kNumCommandPackets, ErrorCode::MEMORY_CAPACITY_EXCEEDED);
     send_event_(std::move(packet));
     return;
   }
   uint8_t addr_type = static_cast<uint8_t>(command_view.GetAddressType());
   Address address = command_view.GetAddress();
-  link_layer_controller_.LeWhiteListAddDevice(address, addr_type);
-  auto packet = bluetooth::hci::LeAddDeviceToWhiteListCompleteBuilder::Create(
+  link_layer_controller_.LeConnectListAddDevice(address, addr_type);
+  auto packet = bluetooth::hci::LeAddDeviceToConnectListCompleteBuilder::Create(
       kNumCommandPackets, ErrorCode::SUCCESS);
   send_event_(std::move(packet));
 }
 
-void DualModeController::LeRemoveDeviceFromWhiteList(
+void DualModeController::LeRemoveDeviceFromConnectList(
     CommandPacketView command) {
-  auto command_view = gd_hci::LeRemoveDeviceFromWhiteListView::Create(
+  auto command_view = gd_hci::LeRemoveDeviceFromConnectListView::Create(
       gd_hci::LeConnectionManagementCommandView::Create(command));
   ASSERT(command_view.IsValid());
 
   uint8_t addr_type = static_cast<uint8_t>(command_view.GetAddressType());
   Address address = command_view.GetAddress();
-  link_layer_controller_.LeWhiteListRemoveDevice(address, addr_type);
+  link_layer_controller_.LeConnectListRemoveDevice(address, addr_type);
   auto packet =
-      bluetooth::hci::LeRemoveDeviceFromWhiteListCompleteBuilder::Create(
+      bluetooth::hci::LeRemoveDeviceFromConnectListCompleteBuilder::Create(
           kNumCommandPackets, ErrorCode::SUCCESS);
   send_event_(std::move(packet));
 }

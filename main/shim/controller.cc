@@ -266,8 +266,8 @@ static uint8_t get_acl_buffer_count_ble(void) {
   return 0;
 }
 
-static uint8_t get_ble_white_list_size(void) {
-  return GetController()->GetControllerLeWhiteListSize();
+static uint8_t get_ble_connect_list_size(void) {
+  return GetController()->GetControllerLeConnectListSize();
 }
 
 static uint8_t get_ble_resolving_list_max_size(void) {
@@ -326,7 +326,7 @@ static const controller_t interface = {
     get_acl_buffer_count_classic,
     get_acl_buffer_count_ble,
 
-    get_ble_white_list_size,
+    get_ble_connect_list_size,
 
     get_ble_resolving_list_max_size,
     set_ble_resolving_list_max_size,
