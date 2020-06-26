@@ -279,9 +279,7 @@ class DeviceProperties {
   }
 
   // Specification Version 4.2, Volume 2, Part E, Section 7.8.14
-  uint8_t GetLeWhiteListSize() const {
-    return le_white_list_size_;
-  }
+  uint8_t GetLeConnectListSize() const { return le_connect_list_size_; }
 
   // Specification Version 4.2, Volume 2, Part E, Section 7.8.27
   uint64_t GetLeSupportedStates() const {
@@ -326,7 +324,7 @@ class DeviceProperties {
   // Low Energy
   uint16_t le_data_packet_length_;
   uint8_t num_le_data_packets_;
-  uint8_t le_white_list_size_;
+  uint8_t le_connect_list_size_;
   uint8_t le_resolving_list_size_;
   uint64_t le_supported_features_{0x075b3fd8fe8ffeff};
   uint64_t le_supported_states_;

@@ -26,9 +26,9 @@ enum AdvertisingEventType {
 
 enum AdvertisingFilterPolicy {
   ALL_DEVICES = 0x0;
-  WHITELISTED_SCAN = 0x1;
-  WHITELISTED_CONNECT = 0x2;
-  WHITELISTED_SCAN_AND_CONNECT = 0x3;
+  LISTED_SCAN = 0x1;
+  LISTED_CONNECT = 0x2;
+  LISTED_SCAN_AND_CONNECT = 0x3;
 };
 
 message AdvertisingConfig {
