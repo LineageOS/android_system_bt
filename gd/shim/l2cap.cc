@@ -405,8 +405,6 @@ struct L2cap::impl {
 
   void SendLoopbackResponse(std::function<void()> function);
 
-  void Dump(int fd);
-
   impl(L2cap& module, l2cap::classic::L2capClassicModule* l2cap_module);
 
  private:
@@ -441,28 +439,6 @@ L2cap::impl::impl(L2cap& module, l2cap::classic::L2capClassicModule* l2cap_modul
       handler_(module_.GetHandler()),
       connection_interface_manager_(handler_) {
   dynamic_channel_manager_ = l2cap_module_->GetDynamicChannelManager();
-}
-
-void L2cap::impl::Dump(int fd) {
-  if (psm_to_service_interface_map_.empty()) {
-    dprintf(fd, "%s no psms registered\n", kModuleName);
-  } else {
-    for (auto& service : psm_to_service_interface_map_) {
-      dprintf(fd, "%s psm registered:%hd\n", kModuleName, service.first);
-    }
-  }
-
-  if (pending_connection_map_.empty()) {
-    dprintf(fd, "%s no pending classic connections\n", kModuleName);
-  } else {
-    for (auto& pending : pending_connection_map_) {
-      if (pending.second != nullptr) {
-        dprintf(fd, "%s pending connection:%s\n", kModuleName, pending.second->ToString().c_str());
-      } else {
-        dprintf(fd, "%s old pending connection:%d\n", kModuleName, pending.first);
-      }
-    }
-  }
 }
 
 l2cap::classic::SecurityPolicy L2cap::impl::GetSecurityPolicy(l2cap::Psm psm) const {
@@ -697,18 +673,14 @@ void L2cap::SendLoopbackResponse(std::function<void()> function) {
  * Module methods
  */
 void L2cap::ListDependencies(ModuleList* list) {
-  list->add<shim::Dumpsys>();
   list->add<l2cap::classic::L2capClassicModule>();
 }
 
 void L2cap::Start() {
   pimpl_ = std::make_unique<impl>(*this, GetDependency<l2cap::classic::L2capClassicModule>());
-  GetDependency<shim::Dumpsys>()->RegisterDumpsysFunction(
-      static_cast<void*>(this), [this](int fd) { pimpl_->Dump(fd); });
 }
 
 void L2cap::Stop() {
-  GetDependency<shim::Dumpsys>()->UnregisterDumpsysFunction(static_cast<void*>(this));
   pimpl_.reset();
 }
 
