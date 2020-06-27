@@ -76,7 +76,7 @@ bool VerifyBinarySchema(const std::vector<const uint8_t>& raw_schema) {
 bool CreateBinarySchemaBundle(
     flatbuffers::FlatBufferBuilder* builder,
     const std::vector<std::string>& filenames,
-    std::vector<flatbuffers::Offset<BundleSchemaMap>>* vector_map) {
+    std::vector<flatbuffers::Offset<BundledSchemaMap>>* vector_map) {
   assert(builder != nullptr);
   assert(vector_map != nullptr);
 
@@ -100,7 +100,7 @@ bool CreateBinarySchemaBundle(
 
     auto name = builder->CreateString(schema->root_table()->name()->str());
     auto data = builder->CreateVector<uint8_t>(raw_schema.data(), raw_schema.size());
-    vector_map->push_back(CreateBundleSchemaMap(*builder, name, data));
+    vector_map->push_back(CreateBundledSchemaMap(*builder, name, data));
 
     if (opts.verbose) {
       fprintf(stdout, "Bundled binary schema file:%s\n", schema->root_table()->name()->c_str());
@@ -183,8 +183,8 @@ int ReadBundledSchema() {
     return -5;
   }
 
-  auto bundle_schema = flatbuffers::GetRoot<BundleSchema>(flatfile_data.c_str());
-  const flatbuffers::Vector<flatbuffers::Offset<BundleSchemaMap>>* map = bundle_schema->map();
+  auto bundle_schema = flatbuffers::GetRoot<BundledSchema>(flatfile_data.c_str());
+  const flatbuffers::Vector<flatbuffers::Offset<BundledSchemaMap>>* map = bundle_schema->map();
 
   fprintf(stdout, "Bundle schema title:%s\n", bundle_schema->title()->c_str());
   fprintf(stdout, "Bundle schema root_name:%s\n", bundle_schema->root_name()->c_str());
@@ -216,14 +216,14 @@ int WriteBundledSchema() {
 
   flatbuffers::FlatBufferBuilder builder(1024);
 
-  std::vector<flatbuffers::Offset<BundleSchemaMap>> vector_map;
+  std::vector<flatbuffers::Offset<BundledSchemaMap>> vector_map;
   if (!CreateBinarySchemaBundle(&builder, bfbs_filenames, &vector_map)) {
     fprintf(stderr, "Unable to bundle schema bfbs files\n");
     return EXIT_FAILURE;
   }
 
   auto title = "Bundled schema tables";
-  auto schema_offset = CreateBundleSchemaDirect(builder, title, main_root_name, &vector_map);
+  auto schema_offset = CreateBundledSchemaDirect(builder, title, main_root_name, &vector_map);
   builder.Finish(schema_offset);
 
   std::string final_filename(opts.gen);
