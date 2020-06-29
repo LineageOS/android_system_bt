@@ -25,7 +25,7 @@ bool VerifyBinarySchema(const std::vector<const uint8_t>& raw_schema);
 bool CreateBinarySchemaBundle(
     flatbuffers::FlatBufferBuilder* builder,
     const std::vector<std::string>& filenames,
-    std::vector<flatbuffers::Offset<bluetooth::dumpsys::BundleSchemaMap>>* vector_map);
+    std::vector<flatbuffers::Offset<bluetooth::dumpsys::BundledSchemaMap>>* vector_map);
 int WriteHeaderFile(FILE* fp, const uint8_t* data, size_t data_len);
 
 class BundlerTest : public ::testing::Test {
@@ -56,7 +56,7 @@ TEST_F(BundlerTest, VerifyBinarySchema) {
 TEST_F(BundlerTest, CreateBinarySchemaBundle) {
   flatbuffers::FlatBufferBuilder builder;
   std::vector<std::string> filenames;
-  std::vector<flatbuffers::Offset<bluetooth::dumpsys::BundleSchemaMap>> vector_map;
+  std::vector<flatbuffers::Offset<bluetooth::dumpsys::BundledSchemaMap>> vector_map;
   ASSERT_TRUE(CreateBinarySchemaBundle(&builder, filenames, &vector_map));
   ASSERT_EQ(0, vector_map.size());
 }
