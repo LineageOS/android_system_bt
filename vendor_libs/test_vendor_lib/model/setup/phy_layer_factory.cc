@@ -51,6 +51,12 @@ void PhyLayerFactory::UnregisterPhyLayer(uint32_t id) {
   }
 }
 
+void PhyLayerFactory::UnregisterAllPhyLayers() {
+  for (const auto& phy : phy_layers_) {
+    UnregisterPhyLayer(phy->GetId());
+  }
+}
+
 void PhyLayerFactory::Send(
     const std::shared_ptr<model::packets::LinkLayerPacketBuilder> packet,
     uint32_t id) {
