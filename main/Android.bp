@@ -47,7 +47,7 @@ cc_library_static {
             "libflatbuffers-cpp",
     ],
     generated_headers: [
-        "BluetoothGeneratedDumpsysData_h",
+        "BluetoothGeneratedDumpsysDataSchema_h",
         "BluetoothGeneratedPackets_h",
     ],
     host_supported: true,
@@ -164,7 +164,7 @@ cc_library_static {
     ],
     generated_headers: [
         "BluetoothGeneratedPackets_h",
-        "BluetoothGeneratedDumpsysData_h",
+        "BluetoothGeneratedDumpsysDataSchema_h",
     ],
     cflags: [
         "-DBUILDCFG",
