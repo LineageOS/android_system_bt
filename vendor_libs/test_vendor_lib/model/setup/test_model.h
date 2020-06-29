@@ -85,10 +85,8 @@ class TestModel {
   void Reset();
 
  private:
-  std::map<size_t, std::shared_ptr<PhyLayerFactory>> phys_;
-  size_t phys_counter_ = 0;
-  std::map<size_t, std::shared_ptr<Device>> devices_;
-  size_t devices_counter_ = 0;
+  std::vector<PhyLayerFactory> phys_;
+  std::vector<std::shared_ptr<Device>> devices_;
   std::string list_string_;
 
   // Callbacks to schedule tasks.

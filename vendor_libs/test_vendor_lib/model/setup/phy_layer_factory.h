@@ -44,6 +44,8 @@ class PhyLayerFactory {
 
   void UnregisterPhyLayer(uint32_t id);
 
+  void UnregisterAllPhyLayers();
+
   virtual void TimerTick();
 
   virtual std::string ToString() const;
