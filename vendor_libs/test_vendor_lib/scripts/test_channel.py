@@ -42,6 +42,7 @@ import socket
 import string
 import struct
 import sys
+import time
 
 DEVICE_NAME_LENGTH = 6
 DEVICE_ADDRESS_LENGTH = 6
@@ -110,12 +111,11 @@ class TestChannel(object):
 
     def receive_response(self):
         if self._closed:
-            return
+            return b'Closed'
         size_chars = self._connection.receive(4)
         size_bytes = bytearray(size_chars)
         if not size_chars:
-            print('No response, assuming that the connection is broken')
-            return False
+            return b'No response, assuming that the connection is broken'
         response_size = 0
         for i in range(0, len(size_chars) - 1):
             response_size |= (size_chars[i] << (8 * i))
@@ -219,6 +219,27 @@ class TestChannelShell(cmd.Cmd):
 
     """
         self._test_channel.send_command('list', args.split())
+
+    def do_set_timer_period(self, args):
+        """Arguments: period_ms Set the timer to fire every period_ms milliseconds
+    """
+        self._test_channel.send_command('set_timer_period', args.split())
+
+    def do_start_timer(self, args):
+        """Arguments: None. Start the timer.
+    """
+        self._test_channel.send_command('start_timer', args.split())
+
+    def do_stop_timer(self, args):
+        """Arguments: None. Stop the timer.
+    """
+        self._test_channel.send_command('stop_timer', args.split())
+
+    def do_wait(self, args):
+        """Arguments: time in seconds (float).
+    """
+        sleep_time = float(args.split()[0])
+        time.sleep(sleep_time)
 
     def do_quit(self, args):
         """Arguments: None.
