@@ -34,6 +34,7 @@ cc_test {
         "libbtdevice",
         "libbte",
         "libbtif",
+        "libflatbuffers-cpp",
         "libg722codec",
         "libosi",
         "libprotobuf-cpp-lite",
