@@ -38,6 +38,9 @@ class TestModel {
             std::function<void(AsyncTaskId)> cancel, std::function<int(const std::string&, int)> connect_to_remote);
   ~TestModel() = default;
 
+  TestModel(TestModel& model) = delete;
+  TestModel& operator=(const TestModel& model) = delete;
+
   // Commands:
 
   // Add a device, return its index
@@ -98,9 +101,6 @@ class TestModel {
 
   AsyncTaskId timer_tick_task_{kInvalidTaskId};
   std::chrono::milliseconds timer_period_{};
-
-  TestModel(TestModel& model) = delete;
-  TestModel& operator=(const TestModel& model) = delete;
 
   std::vector<std::shared_ptr<Device>> example_devices_;
 };

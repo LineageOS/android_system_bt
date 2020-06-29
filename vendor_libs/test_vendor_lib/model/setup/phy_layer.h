@@ -33,7 +33,7 @@ class PhyLayer {
         transmit_to_device_(device_receive) {}
 
   virtual void Send(
-      const std::shared_ptr<model::packets::LinkLayerPacketBuilder> packet) = 0;
+      std::shared_ptr<model::packets::LinkLayerPacketBuilder> packet) = 0;
   virtual void Send(model::packets::LinkLayerPacketView packet) = 0;
 
   virtual void Receive(model::packets::LinkLayerPacketView packet) = 0;

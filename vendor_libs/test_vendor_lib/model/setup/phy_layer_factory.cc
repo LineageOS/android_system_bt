@@ -52,8 +52,8 @@ void PhyLayerFactory::UnregisterPhyLayer(uint32_t id) {
 }
 
 void PhyLayerFactory::UnregisterAllPhyLayers() {
-  for (auto phy_layer : phy_layers_) {
-    UnregisterPhyLayer(phy_layer->GetId());
+  for (const auto& phy : phy_layers_) {
+    UnregisterPhyLayer(phy->GetId());
   }
 }
 
