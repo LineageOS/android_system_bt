@@ -218,8 +218,9 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
 
   void OnResume() override {
     if (cached_registered_callback_ != nullptr) {
-      start_scan(cached_registered_callback_);
+      auto cached_registered_callback = cached_registered_callback_;
       cached_registered_callback_ = nullptr;
+      start_scan(cached_registered_callback);
     }
     le_address_manager_->AckResume(this);
   }
