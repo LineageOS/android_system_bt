@@ -70,7 +70,7 @@ void Beacon::TimerTick() {
     std::shared_ptr<model::packets::LinkLayerPacketBuilder> to_send =
         std::move(ad);
 
-    for (auto phy : phy_layers_[Phy::Type::LOW_ENERGY]) {
+    for (const auto& phy : phy_layers_[Phy::Type::LOW_ENERGY]) {
       phy->Send(to_send);
     }
   }
@@ -87,7 +87,7 @@ void Beacon::IncomingPacket(model::packets::LinkLayerPacketView packet) {
     std::shared_ptr<model::packets::LinkLayerPacketBuilder> to_send =
         std::move(scan_response);
 
-    for (auto phy : phy_layers_[Phy::Type::LOW_ENERGY]) {
+    for (const auto& phy : phy_layers_[Phy::Type::LOW_ENERGY]) {
       phy->Send(to_send);
     }
   }
