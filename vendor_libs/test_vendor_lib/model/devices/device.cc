@@ -58,14 +58,14 @@ bool Device::IsAdvertisementAvailable() const {
 void Device::SendLinkLayerPacket(
     std::shared_ptr<model::packets::LinkLayerPacketBuilder> to_send,
     Phy::Type phy_type) {
-  for (auto phy : phy_layers_[phy_type]) {
+  for (const auto& phy : phy_layers_[phy_type]) {
     phy->Send(to_send);
   }
 }
 
 void Device::SendLinkLayerPacket(model::packets::LinkLayerPacketView to_send,
                                  Phy::Type phy_type) {
-  for (auto phy : phy_layers_[phy_type]) {
+  for (const auto& phy : phy_layers_[phy_type]) {
     phy->Send(to_send);
   }
 }
