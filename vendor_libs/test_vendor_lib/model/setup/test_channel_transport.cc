@@ -74,17 +74,17 @@ void TestChannelTransport::CleanUp() {
   listen_fd_ = -1;
 }
 
-int TestChannelTransport::Accept(int listen_fd_) {
-  int accept_fd = -1;
+int TestChannelTransport::Accept(int listen_fd) {
+  int accept_fd;
 
-  OSI_NO_INTR(accept_fd = accept(listen_fd_, NULL, NULL));
+  OSI_NO_INTR(accept_fd = accept(listen_fd, NULL, NULL));
 
   if (accept_fd < 0) {
     LOG_INFO("Error accepting test channel connection errno=%d (%s).", errno, strerror(errno));
 
     if (errno != EAGAIN && errno != EWOULDBLOCK) {
-      LOG_ERROR("Closing listen_fd_ (won't try again).");
-      close(listen_fd_);
+      LOG_ERROR("Closing listen_fd (won't try again).");
+      close(listen_fd);
       return -1;
     }
   }
