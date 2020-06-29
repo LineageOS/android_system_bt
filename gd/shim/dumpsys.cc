@@ -81,7 +81,7 @@ struct Dumpsys::impl {
 
  private:
   const reflection::Schema* FindBundledSchema(
-      const dumpsys::BundleSchema& bundle_schema, const std::string& name) const;
+      const dumpsys::BundledSchema& bundled_schema, const std::string& name) const;
   const Dumpsys& dumpsys_module_;
 };
 
@@ -100,7 +100,7 @@ void Dumpsys::impl::FilterAsUser(std::string* output) {
 }
 
 const reflection::Schema* Dumpsys::impl::FindBundledSchema(
-    const dumpsys::BundleSchema& bundle_schema, const std::string& name) const {
+    const dumpsys::BundledSchema& bundled_schema, const std::string& name) const {
   // TODO(cmanton) Return proper schema given schema container and name to index
   return nullptr;
 }
