@@ -1,19 +1,19 @@
-// Bundle Schema
+// Bundled Schema
 //
 // Describes a collection of binary flatbuffer schema.
 //
 
 namespace bluetooth.dumpsys;
 
-table BundleSchemaMap {
+table BundledSchemaMap {
     name:string;
     data:[ubyte];
 }
 
-table BundleSchema {
+table BundledSchema {
     title:string;
     root_name:string;
-    map:[BundleSchemaMap];
+    map:[BundledSchemaMap];
 }
 
-root_type BundleSchema;
+root_type BundledSchema;
