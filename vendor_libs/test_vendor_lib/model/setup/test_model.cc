@@ -91,75 +91,69 @@ void TestModel::StopTimer() {
 }
 
 size_t TestModel::Add(std::shared_ptr<Device> new_dev) {
-  devices_counter_++;
-  devices_[devices_counter_] = new_dev;
-  return devices_counter_;
+  devices_.push_back(new_dev);
+  return devices_.size() - 1;
 }
 
 void TestModel::Del(size_t dev_index) {
-  auto device = devices_.find(dev_index);
-  if (device == devices_.end()) {
-    LOG_WARN("Del: can't find device!");
+  if (dev_index >= devices_.size() || devices_[dev_index] == nullptr) {
+    LOG_WARN("Unknown device %zu", dev_index);
     return;
   }
-  devices_.erase(dev_index);
+  devices_[dev_index]->UnregisterPhyLayers();
+  devices_[dev_index] = nullptr;
 }
 
 size_t TestModel::AddPhy(Phy::Type phy_type) {
-  phys_counter_++;
-  std::shared_ptr<PhyLayerFactory> new_phy = std::make_shared<PhyLayerFactory>(phy_type, phys_counter_);
-  phys_[phys_counter_] = new_phy;
-  return phys_counter_;
+  size_t factory_id = phys_.size();
+  phys_.emplace_back(phy_type, factory_id);
+  return factory_id;
 }
 
 void TestModel::DelPhy(size_t phy_index) {
-  auto phy = phys_.find(phy_index);
-  if (phy == phys_.end()) {
-    LOG_WARN("DelPhy: can't find device!");
+  if (phy_index >= phys_.size()) {
+    LOG_WARN("Unknown phy at index %zu", phy_index);
     return;
   }
-  phys_.erase(phy_index);
+  phys_[phy_index].UnregisterAllPhyLayers();
 }
 
 void TestModel::AddDeviceToPhy(size_t dev_index, size_t phy_index) {
-  auto device = devices_.find(dev_index);
-  if (device == devices_.end()) {
-    LOG_WARN("%s: can't find device!", __func__);
+  if (dev_index >= devices_.size() || devices_[dev_index] == nullptr) {
+    LOG_WARN("Unknown device %zu", dev_index);
     return;
   }
-  auto phy = phys_.find(phy_index);
-  if (phy == phys_.end()) {
-    LOG_WARN("%s: can't find phy!", __func__);
+  if (phy_index >= phys_.size()) {
+    LOG_WARN("Can't find phy %zu", phy_index);
     return;
   }
-  auto dev = device->second;
-  dev->RegisterPhyLayer(phy->second->GetPhyLayer(
+  auto dev = devices_[dev_index];
+  dev->RegisterPhyLayer(phys_[phy_index].GetPhyLayer(
       [dev](model::packets::LinkLayerPacketView packet) {
         dev->IncomingPacket(packet);
       },
-      device->first));
+      dev_index));
 }
 
 void TestModel::DelDeviceFromPhy(size_t dev_index, size_t phy_index) {
-  auto device = devices_.find(dev_index);
-  if (device == devices_.end()) {
-    LOG_WARN("%s: can't find device!", __func__);
+  if (dev_index >= devices_.size() || devices_[dev_index] == nullptr) {
+    LOG_WARN("Unknown device %zu", dev_index);
     return;
   }
-  auto phy = phys_.find(phy_index);
-  if (phy == phys_.end()) {
-    LOG_WARN("%s: can't find phy!", __func__);
+  if (phy_index >= phys_.size()) {
+    LOG_WARN("Can't find phy %zu", phy_index);
     return;
   }
-  device->second->UnregisterPhyLayer(phy->second->GetType(), phy->second->GetFactoryId());
+  devices_[dev_index]->UnregisterPhyLayer(phys_[phy_index].GetType(),
+                                          phys_[phy_index].GetFactoryId());
 }
 
 void TestModel::AddLinkLayerConnection(int socket_fd, Phy::Type phy_type) {
   std::shared_ptr<Device> dev = LinkLayerSocketDevice::Create(socket_fd, phy_type);
   int index = Add(dev);
-  for (auto& phy : phys_) {
-    if (phy_type == phy.second->GetType()) {
-      AddDeviceToPhy(index, phy.first);
+  for (size_t i = 0; i < phys_.size(); i++) {
+    if (phy_type == phys_[i].GetType()) {
+      AddDeviceToPhy(index, i);
     }
   }
 }
@@ -187,8 +181,8 @@ void TestModel::IncomingHciConnection(int socket_fd) {
 
   dev->Initialize({"IgnoredTypeName", addr});
   LOG_INFO("initialized %s", addr.c_str());
-  for (auto& phy : phys_) {
-    AddDeviceToPhy(index, phy.first);
+  for (size_t i = 0; i < phys_.size(); i++) {
+    AddDeviceToPhy(index, i);
   }
   dev->RegisterTaskScheduler(schedule_task_);
   dev->RegisterTaskCancel(cancel_task_);
@@ -196,51 +190,58 @@ void TestModel::IncomingHciConnection(int socket_fd) {
 }
 
 void TestModel::OnHciConnectionClosed(int socket_fd, size_t index) {
-  auto device = devices_.find(index);
-  if (device == devices_.end()) {
-    LOG_WARN("OnHciConnectionClosed: can't find device!");
+  if (index >= devices_.size() || devices_[index] == nullptr) {
+    LOG_WARN("Unknown device %zu", index);
     return;
   }
   int close_result = close(socket_fd);
   ASSERT_LOG(close_result == 0, "can't close: %s", strerror(errno));
-  device->second->UnregisterPhyLayers();
-  devices_.erase(index);
+  devices_[index]->UnregisterPhyLayers();
+  devices_[index] = nullptr;
 }
 
 void TestModel::SetDeviceAddress(size_t index, Address address) {
-  auto device = devices_.find(index);
-  if (device == devices_.end()) {
-    LOG_WARN("SetDeviceAddress can't find device!");
+  if (index >= devices_.size() || devices_[index] == nullptr) {
+    LOG_WARN("Can't find device %zu", index);
     return;
   }
-  device->second->SetAddress(address);
+  devices_[index]->SetAddress(address);
 }
 
 const std::string& TestModel::List() {
   list_string_ = "";
   list_string_ += " Devices: \r\n";
-  for (auto& dev : devices_) {
-    list_string_ += "  " + std::to_string(dev.first) + ":";
-    list_string_ += dev.second->ToString() + " \r\n";
+  for (size_t i = 0; i < devices_.size(); i++) {
+    list_string_ += "  " + std::to_string(i) + ":";
+    if (devices_[i] == nullptr) {
+      list_string_ += " deleted \r\n";
+    } else {
+      list_string_ += devices_[i]->ToString() + " \r\n";
+    }
   }
   list_string_ += " Phys: \r\n";
-  for (auto& phy : phys_) {
-    list_string_ += "  " + std::to_string(phy.first) + ":";
-    list_string_ += phy.second->ToString() + " \r\n";
+  for (size_t i = 0; i < phys_.size(); i++) {
+    list_string_ += "  " + std::to_string(i) + ":";
+    list_string_ += phys_[i].ToString() + " \r\n";
   }
   return list_string_;
 }
 
 void TestModel::TimerTick() {
-  for (auto dev = devices_.begin(); dev != devices_.end();) {
-    auto tmp = dev;
-    dev++;
-    tmp->second->TimerTick();
+  for (const auto& dev : devices_) {
+    if (dev != nullptr) {
+      dev->TimerTick();
+    }
   }
 }
 
 void TestModel::Reset() {
   StopTimer();
+  for (const auto& dev : devices_) {
+    if (dev != nullptr) {
+      dev->UnregisterPhyLayers();
+    }
+  }
   devices_.clear();
   phys_.clear();
 }
