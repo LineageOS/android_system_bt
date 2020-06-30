@@ -3,8 +3,23 @@ namespace bluetooth.shim;
 
 attribute "privacy";
 
+table ExamplePiecemealTable {
+    example_string:string (privacy:"Any");
+    example_int:int (privacy:"Any");
+    example_float:float (privacy:"Any");
+}
+
+table ExampleInstantTable {
+    example_string:string (privacy:"Any");
+    example_int:int (privacy:"Any");
+    example_float:float (privacy:"Any");
+}
+
 table DumpsysModuleData {
     title:string (privacy:"Any");
+    number_of_bundled_schemas:int (privacy:"Any");
+    example_piecemeal_table:ExamplePiecemealTable (privacy:"Any");
+    example_instant_table:ExampleInstantTable (privacy:"Any");
 }
 
 root_type DumpsysModuleData;
