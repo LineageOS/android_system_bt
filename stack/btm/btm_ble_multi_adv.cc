@@ -693,13 +693,17 @@ class BleAdvertisingManagerImpl
     p_inst->advertising_interval = p_params->adv_int_min;
     const RawAddress& peer_address = RawAddress::kEmpty;
 
+    // sid must be in range 0x00 to 0x0F. Since no controller supports more than
+    // 16 advertisers, it's safe to make sid equal to inst_id.
+    uint8_t sid = p_inst->inst_id % 0x0F;
+
     GetHciInterface()->SetParameters(
         p_inst->inst_id, p_params->advertising_event_properties,
         p_params->adv_int_min, p_params->adv_int_max, p_params->channel_map,
         p_inst->own_address_type, p_inst->own_address, 0x00, peer_address,
         p_params->adv_filter_policy, p_inst->tx_power,
         p_params->primary_advertising_phy, 0x00,
-        p_params->secondary_advertising_phy, 0x01 /* TODO: proper SID */,
+        p_params->secondary_advertising_phy, sid,
         p_params->scan_request_notification_enable, cb);
 
     // TODO: re-enable only if it was enabled, properly call
