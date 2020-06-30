@@ -34,7 +34,7 @@ from cert.os_utils import read_crash_snippet_and_log_tail
 from cert.os_utils import is_subprocess_alive
 from cert.os_utils import make_ports_available
 from cert.os_utils import TerminalColor
-from cert.gd_device import ACTS_CONTROLLER_CONFIG_NAME as CONTROLLER_CONFIG_NAME
+from cert.gd_device import MOBLY_CONTROLLER_CONFIG_NAME as CONTROLLER_CONFIG_NAME
 from facade import rootservice_pb2 as facade_rootservice
 
 
