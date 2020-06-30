@@ -59,6 +59,7 @@ void TestEnvironment::initialize(std::promise<void> barrier) {
 
 void TestEnvironment::close() {
   LOG_INFO("%s", __func__);
+  test_model_.Reset();
 }
 
 void TestEnvironment::SetUpHciServer(const std::function<void(int)>& connection_callback) {
