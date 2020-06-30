@@ -41,6 +41,10 @@ class FacadeConfigurationApi {
   void SetIoCapability(hci::IoCapability io_capability);
   void SetAuthenticationRequirements(hci::AuthenticationRequirements authentication_requirement);
   void SetOobData(hci::OobDataPresent oob_present);
+  void EnforceSecurityPolicy(
+      hci::AddressWithType remote,
+      l2cap::classic::SecurityPolicy policy,
+      l2cap::classic::SecurityEnforcementInterface::ResultCallback callback);
 
   void SetLeIoCapability(security::IoCapability io_capability);
   void SetLeAuthReq(uint8_t auth_req);

@@ -22,6 +22,7 @@ service SecurityModuleFacade {
   rpc FetchUiEvents(google.protobuf.Empty) returns (stream UiMsg) {}
   rpc FetchBondEvents(google.protobuf.Empty) returns (stream BondMsg) {}
   rpc EnforceSecurityPolicy(SecurityPolicyMessage) returns (google.protobuf.Empty) {}
+  rpc FetchEnforceSecurityPolicyEvents(google.protobuf.Empty) returns (stream EnforceSecurityPolicyMsg) {}
 }
 
 enum UiMsgType {
@@ -118,4 +119,8 @@ message OobDataMessage {
 message SecurityPolicyMessage {
   facade.BluetoothAddressWithType address = 1;
   l2cap.classic.ClassicSecurityPolicy policy = 2;
+}
+
+message EnforceSecurityPolicyMsg {
+  bool result = 1;
 }
