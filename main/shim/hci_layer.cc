@@ -37,15 +37,12 @@
  * Upon completion a token for a corresponding command transmit.
  * request is returned from the Gd layer.
  */
-using CommandCallbackData = struct {
-  void* context;
-};
+using CommandCallbackData = struct { void* context; };
 
 constexpr size_t kBtHdrSize = sizeof(BT_HDR);
 constexpr size_t kCommandLengthSize = sizeof(uint8_t);
 constexpr size_t kCommandOpcodeSize = sizeof(uint16_t);
 
-static hci_t interface;
 static base::Callback<void(const base::Location&, BT_HDR*)> send_data_upwards;
 
 namespace {
@@ -190,14 +187,9 @@ static void transmit_command(BT_HDR* command,
   }
 }
 
-const hci_t* bluetooth::shim::hci_layer_get_interface() {
-  static bool loaded = false;
-  if (!loaded) {
-    loaded = true;
-    interface.set_data_cb = set_data_cb;
-    interface.transmit_command = transmit_command;
-    interface.transmit_command_futured = nullptr;
-    interface.transmit_downward = nullptr;
-  }
-  return &interface;
-}
+static hci_t interface = {.set_data_cb = set_data_cb,
+                          .transmit_command = transmit_command,
+                          .transmit_command_futured = nullptr,
+                          .transmit_downward = nullptr};
+
+const hci_t* bluetooth::shim::hci_layer_get_interface() { return &interface; }
