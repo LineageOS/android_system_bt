@@ -16,43 +16,41 @@
 
 #pragma once
 
-#include <memory>
+#include "main/shim/btm.h"
 
-#include "neighbor/connectability.h"
-#include "neighbor/discoverability.h"
-#include "neighbor/inquiry.h"
-#include "neighbor/name.h"
-#include "neighbor/page.h"
-#include "security/security_module.h"
-#include "shim/dumpsys.h"
-#include "shim/l2cap.h"
-#include "stack_manager.h"
+#include "gd/os/handler.h"
+#include "gd/os/thread.h"
+#include "gd/os/utils.h"
+#include "gd/stack_manager.h"
 
-/**
- * The shim layer implementation on the Gd stack side.
- */
+// The shim layer implementation on the Gd stack side.
 namespace bluetooth {
 namespace shim {
 
 class Stack {
  public:
-  Stack();
+  static Stack* GetInstance();
+
+  Stack() = default;
   ~Stack() = default;
 
   void Start();
   void Stop();
+  bool IsRunning();
 
   StackManager* GetStackManager();
+  Btm* GetBtm();
+  os::Handler* GetHandler();
+
+  DISALLOW_COPY_AND_ASSIGN(Stack);
 
  private:
-  struct impl;
-  std::unique_ptr<impl> pimpl_;
-
-  Stack(const Stack&) = delete;
-  void operator=(const Stack&) = delete;
+  StackManager stack_manager_;
+  bool is_running_ = false;
+  os::Thread* stack_thread_ = nullptr;
+  os::Handler* stack_handler_ = nullptr;
+  Btm* btm_ = nullptr;
 };
-
-Stack* GetGabeldorscheStack();
 
 }  // namespace shim
 }  // namespace bluetooth
