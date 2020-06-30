@@ -26,11 +26,9 @@
 #include "main/shim/btm_api.h"
 #include "main/shim/controller.h"
 #include "main/shim/shim.h"
-#include "main/shim/timer.h"
+#include "main/shim/stack.h"
 #include "stack/btm/btm_int_types.h"
 #include "types/raw_address.h"
-
-bluetooth::shim::Btm shim_btm;
 
 /**
  * Legacy bluetooth module global control block state
@@ -56,24 +54,6 @@ extern void btm_clr_inq_result_flt(void);
 extern void btm_set_eir_uuid(uint8_t* p_eir, tBTM_INQ_RESULTS* p_results);
 extern void btm_sort_inq_result(void);
 extern void btm_process_inq_complete(uint8_t status, uint8_t result_type);
-
-static future_t* btm_module_start_up(void) {
-  bluetooth::shim::Btm::StartUp(&shim_btm);
-  return kReturnImmediate;
-}
-
-static future_t* btm_module_shut_down(void) {
-  bluetooth::shim::Btm::ShutDown(&shim_btm);
-  return kReturnImmediate;
-}
-
-EXPORT_SYMBOL extern const module_t gd_shim_btm_module = {
-    .name = GD_SHIM_BTM_MODULE,
-    .init = kUnusedModuleApi,
-    .start_up = btm_module_start_up,
-    .shut_down = btm_module_shut_down,
-    .clean_up = kUnusedModuleApi,
-    .dependencies = {kUnusedModuleDependencies}};
 
 static bool max_responses_reached() {
   return (btm_cb.btm_inq_vars.inqparms.max_resps &&
@@ -307,25 +287,27 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
   btm_cb.btm_inq_vars.inq_cmpl_info.num_resp = 0;
   btm_cb.btm_inq_vars.scan_type = INQ_GENERAL;
 
-  shim_btm.StartActiveScanning();
+  Stack::GetInstance()->GetBtm()->StartActiveScanning();
   if (p_inqparms->duration != 0) {
-    shim_btm.SetScanningTimer(p_inqparms->duration * 1000, []() {
-      LOG_INFO("%s scanning timeout popped", __func__);
-      std::lock_guard<std::mutex> lock(btm_cb_mutex_);
-      shim_btm.StopActiveScanning();
-    });
+    Stack::GetInstance()->GetBtm()->SetScanningTimer(
+        p_inqparms->duration * 1000, common::BindOnce([]() {
+          LOG_INFO("%s scanning timeout popped", __func__);
+          std::lock_guard<std::mutex> lock(btm_cb_mutex_);
+          Stack::GetInstance()->GetBtm()->StopActiveScanning();
+        }));
   }
 
-  shim_btm.StartActiveScanning();
+  Stack::GetInstance()->GetBtm()->StartActiveScanning();
 
   uint8_t classic_mode = p_inqparms->mode & 0x0f;
-  if (!shim_btm.SetInquiryFilter(classic_mode, p_inqparms->filter_cond_type,
-                                 p_inqparms->filter_cond)) {
+  if (!Stack::GetInstance()->GetBtm()->SetInquiryFilter(
+          classic_mode, p_inqparms->filter_cond_type,
+          p_inqparms->filter_cond)) {
     LOG_WARN("%s Unable to set inquiry filter", __func__);
     return BTM_ERR_PROCESSING;
   }
 
-  if (!shim_btm.StartInquiry(
+  if (!Stack::GetInstance()->GetBtm()->StartInquiry(
           classic_mode, p_inqparms->duration, p_inqparms->max_resps,
           [](uint16_t status, uint8_t inquiry_mode) {
             LOG_DEBUG("%s Inquiry is complete status:%hd inquiry_mode:%hhd",
@@ -391,11 +373,11 @@ tBTM_STATUS bluetooth::shim::BTM_SetDiscoverability(uint16_t discoverable_mode,
 
   switch (le_discoverable_mode) {
     case kDiscoverableModeOff:
-      shim_btm.StopAdvertising();
+      Stack::GetInstance()->GetBtm()->StopAdvertising();
       break;
     case kLimitedDiscoverableMode:
     case kGeneralDiscoverableMode:
-      shim_btm.StartAdvertising();
+      Stack::GetInstance()->GetBtm()->StartAdvertising();
       break;
     default:
       LOG_WARN("%s Unexpected le discoverability mode:%d", __func__,
@@ -404,13 +386,15 @@ tBTM_STATUS bluetooth::shim::BTM_SetDiscoverability(uint16_t discoverable_mode,
 
   switch (classic_discoverable_mode) {
     case kDiscoverableModeOff:
-      shim_btm.SetClassicDiscoverabilityOff();
+      Stack::GetInstance()->GetBtm()->SetClassicDiscoverabilityOff();
       break;
     case kLimitedDiscoverableMode:
-      shim_btm.SetClassicLimitedDiscoverability(window, interval);
+      Stack::GetInstance()->GetBtm()->SetClassicLimitedDiscoverability(
+          window, interval);
       break;
     case kGeneralDiscoverableMode:
-      shim_btm.SetClassicGeneralDiscoverability(window, interval);
+      Stack::GetInstance()->GetBtm()->SetClassicGeneralDiscoverability(
+          window, interval);
       break;
     default:
       LOG_WARN("%s Unexpected classic discoverability mode:%d", __func__,
@@ -422,11 +406,11 @@ tBTM_STATUS bluetooth::shim::BTM_SetDiscoverability(uint16_t discoverable_mode,
 tBTM_STATUS bluetooth::shim::BTM_SetInquiryScanType(uint16_t scan_type) {
   switch (scan_type) {
     case kInterlacedScanType:
-      shim_btm.SetInterlacedInquiryScan();
+      Stack::GetInstance()->GetBtm()->SetInterlacedInquiryScan();
       return BTM_SUCCESS;
       break;
     case kStandardScanType:
-      shim_btm.SetStandardInquiryScan();
+      Stack::GetInstance()->GetBtm()->SetStandardInquiryScan();
       return BTM_SUCCESS;
       break;
     default:
@@ -451,47 +435,49 @@ tBTM_STATUS bluetooth::shim::BTM_BleObserve(bool start, uint8_t duration_sec,
 
     btm_cb.ble_ctr_cb.p_obs_results_cb = p_results_cb;
     btm_cb.ble_ctr_cb.p_obs_cmpl_cb = p_cmpl_cb;
-    shim_btm.StartObserving();
+    Stack::GetInstance()->GetBtm()->StartObserving();
     btm_cb.ble_ctr_cb.scan_activity |= BTM_LE_OBSERVE_ACTIVE;
 
     if (duration_sec != 0) {
-      shim_btm.SetObservingTimer(duration_sec * 1000, []() {
-        LOG_DEBUG("%s observing timeout popped", __func__);
+      Stack::GetInstance()->GetBtm()->SetObservingTimer(
+          duration_sec * 1000, common::BindOnce([]() {
+            LOG_DEBUG("%s observing timeout popped", __func__);
 
-        shim_btm.CancelObservingTimer();
-        shim_btm.StopObserving();
+            Stack::GetInstance()->GetBtm()->CancelObservingTimer();
+            Stack::GetInstance()->GetBtm()->StopObserving();
 
-        std::lock_guard<std::mutex> lock(btm_cb_mutex_);
-        btm_cb.ble_ctr_cb.scan_activity &= ~BTM_LE_OBSERVE_ACTIVE;
+            std::lock_guard<std::mutex> lock(btm_cb_mutex_);
+            btm_cb.ble_ctr_cb.scan_activity &= ~BTM_LE_OBSERVE_ACTIVE;
 
-        if (btm_cb.ble_ctr_cb.p_obs_cmpl_cb) {
-          (btm_cb.ble_ctr_cb.p_obs_cmpl_cb)(&btm_cb.btm_inq_vars.inq_cmpl_info);
-        }
-        btm_cb.ble_ctr_cb.p_obs_results_cb = nullptr;
-        btm_cb.ble_ctr_cb.p_obs_cmpl_cb = nullptr;
+            if (btm_cb.ble_ctr_cb.p_obs_cmpl_cb) {
+              (btm_cb.ble_ctr_cb.p_obs_cmpl_cb)(
+                  &btm_cb.btm_inq_vars.inq_cmpl_info);
+            }
+            btm_cb.ble_ctr_cb.p_obs_results_cb = nullptr;
+            btm_cb.ble_ctr_cb.p_obs_cmpl_cb = nullptr;
 
-        btm_cb.btm_inq_vars.inqparms.mode &= ~(BTM_BLE_INQUIRY_MASK);
-        btm_cb.btm_inq_vars.scan_type = INQ_NONE;
+            btm_cb.btm_inq_vars.inqparms.mode &= ~(BTM_BLE_INQUIRY_MASK);
+            btm_cb.btm_inq_vars.scan_type = INQ_NONE;
 
-        btm_acl_update_busy_level(BTM_BLI_INQ_DONE_EVT);
+            btm_acl_update_busy_level(BTM_BLI_INQ_DONE_EVT);
 
-        btm_clear_all_pending_le_entry();
-        btm_cb.btm_inq_vars.state = BTM_INQ_INACTIVE_STATE;
+            btm_clear_all_pending_le_entry();
+            btm_cb.btm_inq_vars.state = BTM_INQ_INACTIVE_STATE;
 
-        btm_cb.btm_inq_vars.inq_counter++;
-        btm_clr_inq_result_flt();
-        btm_sort_inq_result();
+            btm_cb.btm_inq_vars.inq_counter++;
+            btm_clr_inq_result_flt();
+            btm_sort_inq_result();
 
-        btm_cb.btm_inq_vars.inq_active = BTM_INQUIRY_INACTIVE;
-        btm_cb.btm_inq_vars.p_inq_results_cb = NULL;
-        btm_cb.btm_inq_vars.p_inq_cmpl_cb = NULL;
+            btm_cb.btm_inq_vars.inq_active = BTM_INQUIRY_INACTIVE;
+            btm_cb.btm_inq_vars.p_inq_results_cb = NULL;
+            btm_cb.btm_inq_vars.p_inq_cmpl_cb = NULL;
 
-        if (btm_cb.btm_inq_vars.p_inq_cmpl_cb) {
-          (btm_cb.btm_inq_vars.p_inq_cmpl_cb)(
-              (tBTM_INQUIRY_CMPL*)&btm_cb.btm_inq_vars.inq_cmpl_info);
-          btm_cb.btm_inq_vars.p_inq_cmpl_cb = nullptr;
-        }
-      });
+            if (btm_cb.btm_inq_vars.p_inq_cmpl_cb) {
+              (btm_cb.btm_inq_vars.p_inq_cmpl_cb)(
+                  (tBTM_INQUIRY_CMPL*)&btm_cb.btm_inq_vars.inq_cmpl_info);
+              btm_cb.btm_inq_vars.p_inq_cmpl_cb = nullptr;
+            }
+          }));
     }
   } else {
     std::lock_guard<std::mutex> lock(btm_cb_mutex_);
@@ -499,10 +485,10 @@ tBTM_STATUS bluetooth::shim::BTM_BleObserve(bool start, uint8_t duration_sec,
     if (!(btm_cb.ble_ctr_cb.scan_activity & BTM_LE_OBSERVE_ACTIVE)) {
       LOG_WARN("%s Observing already inactive", __func__);
     }
-    shim_btm.CancelObservingTimer();
-    shim_btm.StopObserving();
+    Stack::GetInstance()->GetBtm()->CancelObservingTimer();
+    Stack::GetInstance()->GetBtm()->StopObserving();
     btm_cb.ble_ctr_cb.scan_activity &= ~BTM_LE_OBSERVE_ACTIVE;
-    shim_btm.StopObserving();
+    Stack::GetInstance()->GetBtm()->StopObserving();
     if (btm_cb.ble_ctr_cb.p_obs_cmpl_cb) {
       (btm_cb.ble_ctr_cb.p_obs_cmpl_cb)(&btm_cb.btm_inq_vars.inq_cmpl_info);
     }
@@ -515,14 +501,14 @@ tBTM_STATUS bluetooth::shim::BTM_BleObserve(bool start, uint8_t duration_sec,
 tBTM_STATUS bluetooth::shim::BTM_SetPageScanType(uint16_t scan_type) {
   switch (scan_type) {
     case kInterlacedScanType:
-      if (!shim_btm.IsInterlacedScanSupported()) {
+      if (!Stack::GetInstance()->GetBtm()->IsInterlacedScanSupported()) {
         return BTM_MODE_UNSUPPORTED;
       }
-      shim_btm.SetInterlacedPageScan();
+      Stack::GetInstance()->GetBtm()->SetInterlacedPageScan();
       return BTM_SUCCESS;
       break;
     case kStandardScanType:
-      shim_btm.SetStandardPageScan();
+      Stack::GetInstance()->GetBtm()->SetStandardPageScan();
       return BTM_SUCCESS;
       break;
     default:
@@ -534,13 +520,13 @@ tBTM_STATUS bluetooth::shim::BTM_SetPageScanType(uint16_t scan_type) {
 tBTM_STATUS bluetooth::shim::BTM_SetInquiryMode(uint8_t inquiry_mode) {
   switch (inquiry_mode) {
     case kStandardInquiryResult:
-      shim_btm.SetStandardInquiryResultMode();
+      Stack::GetInstance()->GetBtm()->SetStandardInquiryResultMode();
       break;
     case kInquiryResultWithRssi:
-      shim_btm.SetInquiryWithRssiResultMode();
+      Stack::GetInstance()->GetBtm()->SetInquiryWithRssiResultMode();
       break;
     case kExtendedInquiryResult:
-      shim_btm.SetExtendedInquiryResultMode();
+      Stack::GetInstance()->GetBtm()->SetExtendedInquiryResultMode();
       break;
     default:
       return BTM_ILLEGAL_VALUE;
@@ -550,7 +536,8 @@ tBTM_STATUS bluetooth::shim::BTM_SetInquiryMode(uint8_t inquiry_mode) {
 
 uint16_t bluetooth::shim::BTM_ReadDiscoverability(uint16_t* p_window,
                                                   uint16_t* p_interval) {
-  DiscoverabilityState state = shim_btm.GetClassicDiscoverabilityState();
+  DiscoverabilityState state =
+      Stack::GetInstance()->GetBtm()->GetClassicDiscoverabilityState();
 
   if (p_interval) *p_interval = state.interval;
   if (p_window) *p_window = state.window;
@@ -559,7 +546,7 @@ uint16_t bluetooth::shim::BTM_ReadDiscoverability(uint16_t* p_window,
 }
 
 tBTM_STATUS bluetooth::shim::BTM_CancelPeriodicInquiry(void) {
-  shim_btm.CancelPeriodicInquiry();
+  Stack::GetInstance()->GetBtm()->CancelPeriodicInquiry();
   return BTM_SUCCESS;
 }
 
@@ -574,10 +561,10 @@ tBTM_STATUS bluetooth::shim::BTM_SetConnectability(uint16_t page_mode,
 
   switch (le_connectible_mode) {
     case kConnectibleModeOff:
-      shim_btm.StopConnectability();
+      Stack::GetInstance()->GetBtm()->StopConnectability();
       break;
     case kConnectibleModeOn:
-      shim_btm.StartConnectability();
+      Stack::GetInstance()->GetBtm()->StartConnectability();
       break;
     default:
       return BTM_ILLEGAL_VALUE;
@@ -586,10 +573,10 @@ tBTM_STATUS bluetooth::shim::BTM_SetConnectability(uint16_t page_mode,
 
   switch (classic_connectible_mode) {
     case kConnectibleModeOff:
-      shim_btm.SetClassicConnectibleOff();
+      Stack::GetInstance()->GetBtm()->SetClassicConnectibleOff();
       break;
     case kConnectibleModeOn:
-      shim_btm.SetClassicConnectibleOn();
+      Stack::GetInstance()->GetBtm()->SetClassicConnectibleOn();
       break;
     default:
       return BTM_ILLEGAL_VALUE;
@@ -600,7 +587,8 @@ tBTM_STATUS bluetooth::shim::BTM_SetConnectability(uint16_t page_mode,
 
 uint16_t bluetooth::shim::BTM_ReadConnectability(uint16_t* p_window,
                                                  uint16_t* p_interval) {
-  ConnectabilityState state = shim_btm.GetClassicConnectabilityState();
+  ConnectabilityState state =
+      Stack::GetInstance()->GetBtm()->GetClassicConnectabilityState();
 
   if (p_window) *p_window = state.window;
   if (p_interval) *p_interval = state.interval;
@@ -609,12 +597,12 @@ uint16_t bluetooth::shim::BTM_ReadConnectability(uint16_t* p_window,
 }
 
 uint16_t bluetooth::shim::BTM_IsInquiryActive(void) {
-  if (shim_btm.IsLimitedInquiryActive()) {
+  if (Stack::GetInstance()->GetBtm()->IsLimitedInquiryActive()) {
     return BTM_LIMITED_INQUIRY_ACTIVE;
-  } else if (shim_btm.IsGeneralInquiryActive()) {
+  } else if (Stack::GetInstance()->GetBtm()->IsGeneralInquiryActive()) {
     return BTM_GENERAL_INQUIRY_ACTIVE;
-  } else if (shim_btm.IsGeneralPeriodicInquiryActive() ||
-             shim_btm.IsLimitedPeriodicInquiryActive()) {
+  } else if (Stack::GetInstance()->GetBtm()->IsGeneralPeriodicInquiryActive() ||
+             Stack::GetInstance()->GetBtm()->IsLimitedPeriodicInquiryActive()) {
     return BTM_PERIODIC_INQUIRY_ACTIVE;
   }
   return BTM_INQUIRY_INACTIVE;
@@ -622,13 +610,13 @@ uint16_t bluetooth::shim::BTM_IsInquiryActive(void) {
 
 tBTM_STATUS bluetooth::shim::BTM_CancelInquiry(void) {
   LOG_DEBUG("%s Cancel inquiry", __func__);
-  shim_btm.CancelInquiry();
+  Stack::GetInstance()->GetBtm()->CancelInquiry();
 
   btm_cb.btm_inq_vars.state = BTM_INQ_INACTIVE_STATE;
   btm_clr_inq_result_flt();
 
-  shim_btm.CancelScanningTimer();
-  shim_btm.StopActiveScanning();
+  Stack::GetInstance()->GetBtm()->CancelScanningTimer();
+  Stack::GetInstance()->GetBtm()->StopActiveScanning();
 
   btm_cb.ble_ctr_cb.scan_activity &= ~BTM_BLE_INQUIRY_MASK;
 
@@ -673,10 +661,12 @@ tBTM_STATUS bluetooth::shim::BTM_ReadRemoteDeviceName(
 
   switch (transport) {
     case BT_TRANSPORT_LE:
-      status = shim_btm.ReadLeRemoteDeviceName(raw_address, callback);
+      status = Stack::GetInstance()->GetBtm()->ReadLeRemoteDeviceName(
+          raw_address, callback);
       break;
     case BT_TRANSPORT_BR_EDR:
-      status = shim_btm.ReadClassicRemoteDeviceName(raw_address, callback);
+      status = Stack::GetInstance()->GetBtm()->ReadClassicRemoteDeviceName(
+          raw_address, callback);
       break;
     default:
       LOG_WARN("%s Unspecified transport:%d", __func__, transport);
@@ -686,7 +676,7 @@ tBTM_STATUS bluetooth::shim::BTM_ReadRemoteDeviceName(
 }
 
 tBTM_STATUS bluetooth::shim::BTM_CancelRemoteDeviceName(void) {
-  return shim_btm.CancelAllReadRemoteDeviceName();
+  return Stack::GetInstance()->GetBtm()->CancelAllReadRemoteDeviceName();
 }
 
 tBTM_INQ_INFO* bluetooth::shim::BTM_InqDbRead(const RawAddress& p_bda) {
@@ -909,7 +899,7 @@ void bluetooth::shim::BTM_BleTestEnd(tBTM_CMPL_CB* p_cmd_cmpl_cback) {
 }
 
 bool bluetooth::shim::BTM_UseLeLink(const RawAddress& raw_address) {
-  return shim_btm.IsLeAclConnected(raw_address);
+  return Stack::GetInstance()->GetBtm()->IsLeAclConnected(raw_address);
 }
 
 tBTM_STATUS bluetooth::shim::BTM_SetBleDataLength(const RawAddress& bd_addr,
@@ -1049,7 +1039,7 @@ void bluetooth::shim::BTM_BleEnableDisableFilterFeature(
 }
 
 uint8_t bluetooth::shim::BTM_BleMaxMultiAdvInstanceCount() {
-  return shim_btm.GetNumberOfAdvertisingInstances();
+  return Stack::GetInstance()->GetBtm()->GetNumberOfAdvertisingInstances();
 }
 
 bool bluetooth::shim::BTM_BleLocalPrivacyEnabled(void) {
@@ -1060,7 +1050,8 @@ tBTM_STATUS bluetooth::shim::BTM_SecBond(const RawAddress& bd_addr,
                                          tBLE_ADDR_TYPE addr_type,
                                          tBT_TRANSPORT transport,
                                          int device_type) {
-  return shim_btm.CreateBond(bd_addr, addr_type, transport, device_type);
+  return Stack::GetInstance()->GetBtm()->CreateBond(bd_addr, addr_type,
+                                                    transport, device_type);
 }
 
 bool bluetooth::shim::BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info) {
@@ -1099,7 +1090,7 @@ bool bluetooth::shim::BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info) {
 }
 
 tBTM_STATUS bluetooth::shim::BTM_SecBondCancel(const RawAddress& bd_addr) {
-  if (shim_btm.CancelBond(bd_addr)) {
+  if (Stack::GetInstance()->GetBtm()->CancelBond(bd_addr)) {
     return BTM_SUCCESS;
   } else {
     return BTM_UNKNOWN_ADDR;
@@ -1107,10 +1098,10 @@ tBTM_STATUS bluetooth::shim::BTM_SecBondCancel(const RawAddress& bd_addr) {
 }
 
 bool bluetooth::shim::BTM_SecDeleteDevice(const RawAddress& bd_addr) {
-  return shim_btm.RemoveBond(bd_addr);
+  return Stack::GetInstance()->GetBtm()->RemoveBond(bd_addr);
 }
 
 uint16_t bluetooth::shim::BTM_GetHCIConnHandle(const RawAddress& remote_bda,
                                                tBT_TRANSPORT transport) {
-  return shim_btm.GetAclHandle(remote_bda, transport);
+  return Stack::GetInstance()->GetBtm()->GetAclHandle(remote_bda, transport);
 }
