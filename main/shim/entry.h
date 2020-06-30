@@ -59,8 +59,6 @@ class StorageModule;
 }
 
 namespace shim {
-future_t* StartGabeldorscheStack();
-future_t* StopGabeldorscheStack();
 
 /* This returns a handler that might be used in shim to receive callbacks from
  * within the stack. */
