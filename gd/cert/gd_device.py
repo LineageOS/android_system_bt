@@ -58,7 +58,7 @@ from l2cap.le import facade_pb2_grpc as l2cap_le_facade_pb2_grpc
 from neighbor.facade import facade_pb2_grpc as neighbor_facade_pb2_grpc
 from security import facade_pb2_grpc as security_facade_pb2_grpc
 
-ACTS_CONTROLLER_CONFIG_NAME = "GdDevice"
+MOBLY_CONTROLLER_CONFIG_NAME = "GdDevice"
 ACTS_CONTROLLER_REFERENCE_NAME = "gd_devices"
 
 
@@ -93,11 +93,11 @@ def get_instances_with_configs(configs):
         verbose_mode = bool(config.get('verbose_mode', False))
         if config.get("serial_number"):
             device = GdAndroidDevice(config["grpc_port"], config["grpc_root_server_port"], config["signal_port"],
-                                     resolved_cmd, config["label"], ACTS_CONTROLLER_CONFIG_NAME, config["name"],
+                                     resolved_cmd, config["label"], MOBLY_CONTROLLER_CONFIG_NAME, config["name"],
                                      config["serial_number"], verbose_mode)
         else:
             device = GdHostOnlyDevice(config["grpc_port"], config["grpc_root_server_port"], config["signal_port"],
-                                      resolved_cmd, config["label"], ACTS_CONTROLLER_CONFIG_NAME, config["name"],
+                                      resolved_cmd, config["label"], MOBLY_CONTROLLER_CONFIG_NAME, config["name"],
                                       verbose_mode)
         device.setup()
         devices.append(device)
@@ -288,7 +288,7 @@ class GdHostOnlyDevice(GdDeviceBase):
 
     def __init__(self, grpc_port: str, grpc_root_server_port: str, signal_port: str, cmd: List[str], label: str,
                  type_identifier: str, name: str, verbose_mode: bool):
-        super().__init__(grpc_port, grpc_root_server_port, signal_port, cmd, label, ACTS_CONTROLLER_CONFIG_NAME, name,
+        super().__init__(grpc_port, grpc_root_server_port, signal_port, cmd, label, MOBLY_CONTROLLER_CONFIG_NAME, name,
                          verbose_mode)
         # Enable LLVM code coverage output for host only tests
         self.backing_process_profraw_path = pathlib.Path(self.log_path_base).joinpath(
