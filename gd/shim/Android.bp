@@ -3,7 +3,6 @@ filegroup {
     srcs: [
             "dumpsys.cc",
             "l2cap.cc",
-            "stack.cc",
     ]
 }
 
