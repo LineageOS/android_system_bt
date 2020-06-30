@@ -234,7 +234,15 @@ void TestCommandHandler::SetTimerPeriod(const vector<std::string>& args) {
     LOG_INFO("SetTimerPeriod takes 1 argument");
   }
   size_t period = std::stoi(args[0]);
-  model_.SetTimerPeriod(std::chrono::milliseconds(period));
+  if (period != 0) {
+    response_string_ = "set timer period to ";
+    response_string_ += args[0];
+    model_.SetTimerPeriod(std::chrono::milliseconds(period));
+  } else {
+    response_string_ = "invalid timer period ";
+    response_string_ += args[0];
+  }
+  send_response_(response_string_);
 }
 
 void TestCommandHandler::StartTimer(const vector<std::string>& args) {
@@ -242,6 +250,8 @@ void TestCommandHandler::StartTimer(const vector<std::string>& args) {
     LOG_INFO("Unused args: arg[0] = %s", args[0].c_str());
   }
   model_.StartTimer();
+  response_string_ = "timer started";
+  send_response_(response_string_);
 }
 
 void TestCommandHandler::StopTimer(const vector<std::string>& args) {
@@ -249,6 +259,8 @@ void TestCommandHandler::StopTimer(const vector<std::string>& args) {
     LOG_INFO("Unused args: arg[0] = %s", args[0].c_str());
   }
   model_.StopTimer();
+  response_string_ = "timer stopped";
+  send_response_(response_string_);
 }
 
 }  // namespace test_vendor_lib
