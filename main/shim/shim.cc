@@ -14,36 +14,20 @@
  * limitations under the License.
  */
 
-#include <cstdint>
-
 #define LOG_TAG "bt_shim"
 
-#include "common/message_loop_thread.h"
+#include "main/shim/shim.h"
 #include "gd/common/init_flags.h"
 #include "main/shim/entry.h"
-#include "main/shim/shim.h"
-#include "osi/include/log.h"
-#include "osi/include/properties.h"
-
-static bluetooth::common::MessageLoopThread bt_shim_thread("bt_shim_thread");
-
-static bool gd_stack_started_up_ = false;
+#include "main/shim/stack.h"
 
 future_t* ShimModuleStartUp() {
-  bt_shim_thread.StartUp();
-  CHECK(bt_shim_thread.IsRunning())
-      << "Unable to start bt shim message loop thread.";
-  module_start_up(get_module(GD_SHIM_BTM_MODULE));
-  bluetooth::shim::StartGabeldorscheStack();
-  gd_stack_started_up_ = true;
+  bluetooth::shim::Stack::GetInstance()->Start();
   return kReturnImmediate;
 }
 
 future_t* ShimModuleShutDown() {
-  gd_stack_started_up_ = false;
-  bluetooth::shim::StopGabeldorscheStack();
-  module_shut_down(get_module(GD_SHIM_BTM_MODULE));
-  bt_shim_thread.ShutDown();
+  bluetooth::shim::Stack::GetInstance()->Stop();
   return kReturnImmediate;
 }
 
@@ -55,12 +39,10 @@ EXPORT_SYMBOL extern const module_t gd_shim_module = {
     .clean_up = kUnusedModuleApi,
     .dependencies = {kUnusedModuleDependencies}};
 
-void bluetooth::shim::Post(base::OnceClosure task) {
-  bt_shim_thread.DoInThread(FROM_HERE, std::move(task));
-}
-
 bool bluetooth::shim::is_gd_shim_enabled() {
   return common::InitFlags::GdCoreEnabled();
 }
 
-bool bluetooth::shim::is_gd_stack_started_up() { return gd_stack_started_up_; }
+bool bluetooth::shim::is_gd_stack_started_up() {
+  return bluetooth::shim::Stack::GetInstance()->IsRunning();
+}
