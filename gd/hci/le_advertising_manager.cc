@@ -248,6 +248,11 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
       case (AdvertisingApiType::LE_5_0): {
         ExtendedAdvertisingConfig new_config = config;
         new_config.legacy_pdus = true;
+
+        // sid must be in range 0x00 to 0x0F. Since no controller supports more than
+        // 16 advertisers, it's safe to make sid equal to id.
+        new_config.sid = id % 0x0F;
+
         create_extended_advertiser(id, new_config, scan_callback, set_terminated_callback, handler);
       } break;
     }
