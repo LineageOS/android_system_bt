@@ -304,3 +304,152 @@ class LeSecurityTest(GdBaseTestClass):
 
         # 3. IUT and Lower Tester perform phase 2 of the just works pairing and establish an encrypted link with the generated STK.
         self.cert_security.wait_for_bond_event(expected_bond_event=BondMsgType.DEVICE_BONDED)
+
+    @metadata(
+        pts_test_id="SM/MAS/SCJW/BV-01-C", pts_test_name="Just Works, IUT Initiator, Secure Connections – Success")
+    def test_just_works_iut_initiator_secure_connections(self):
+        """
+            Verify that the IUT supporting LE Secure Connections performs the Just Works or Numeric Comparison pairing procedure correctly as initiator.
+        """
+        self._prepare_cert_for_connection()
+
+        self.dut.security.SetLeIoCapability(
+            LeIoCapabilityMessage(capabilities=LeIoCapabilityMessage.LeIoCapabilities.KEYBOARD_ONLY))
+        self.dut.security.SetOobDataPresent(OobDataMessage(data_present=OobDataPresent.NOT_PRESENT))
+        self.dut.security.SetLeAuthReq(LeAuthReqMsg(auth_req=0x08))
+
+        self.cert.security.SetLeIoCapability(
+            LeIoCapabilityMessage(capabilities=LeIoCapabilityMessage.LeIoCapabilities.DISPLAY_ONLY))
+        self.cert.security.SetOobDataPresent(OobDataMessage(data_present=OobDataPresent.NOT_PRESENT))
+        self.cert.security.SetLeAuthReq(LeAuthReqMsg(auth_req=0x08))
+
+        # 1. IUT transmits Pairing Request command with:
+        # a. IO capability set to any IO capability
+        # b. OOB data flag set to 0x00 (OOB Authentication data not present)
+        # c. AuthReq Bonding Flags set to ‘00’, the MITM flag set to either ‘0’ for Just Works or '1' for Numeric Comparison, Secure Connections flag set to '1' and all the reserved bits are set to ‘0’
+        self.dut.security.CreateBondLe(self.cert_address)
+
+        self.cert_security.wait_for_ui_event(expected_ui_event=UiMsgType.DISPLAY_PAIRING_PROMPT)
+
+        # 2. Lower Tester responds with a Pairing Response command, with:
+        # a. IO capability set to “KeyboardDisplay”
+        # b. OOB data flag set to 0x00 (OOB Authentication data not present)
+        # c. AuthReq Bonding Flags set to ‘00’, the MITM flag set to ‘0’, Secure Connections flag set to '1' and all the reserved bits are set to ‘0’
+        self.cert.security.SendUiCallback(
+            UiCallbackMsg(
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.cert_address))
+
+        # 3. IUT and Lower Tester perform phase 2 of the Just Works or Numeric Comparison pairing procedure according to the MITM flag and IO capabilities, and establish an encrypted link with the LTK generated in phase 2.
+        self.dut_security.wait_for_bond_event(expected_bond_event=BondMsgType.DEVICE_BONDED)
+
+    @metadata(
+        pts_test_id="SM/SLA/SCJW/BV-02-C", pts_test_name="Just Works, IUT Responder, Secure Connections – Success")
+    def test_just_works_iut_responder_secure_connections(self):
+        """
+            Verify that the IUT supporting LE Secure Connections is able to perform the Just Works or Numeric Comparison pairing procedure correctly when acting as responder.
+        """
+        self._prepare_dut_for_connection()
+
+        self.dut.security.SetLeIoCapability(
+            LeIoCapabilityMessage(capabilities=LeIoCapabilityMessage.LeIoCapabilities.KEYBOARD_ONLY))
+        self.dut.security.SetOobDataPresent(OobDataMessage(data_present=OobDataPresent.NOT_PRESENT))
+        self.dut.security.SetLeAuthReq(LeAuthReqMsg(auth_req=0x08))
+
+        self.cert.security.SetLeIoCapability(
+            LeIoCapabilityMessage(capabilities=LeIoCapabilityMessage.LeIoCapabilities.NO_INPUT_NO_OUTPUT))
+        self.cert.security.SetOobDataPresent(OobDataMessage(data_present=OobDataPresent.NOT_PRESENT))
+        self.cert.security.SetLeAuthReq(LeAuthReqMsg(auth_req=0x08))
+
+        # 1. Lower Tester transmits Pairing Request command with:
+        # a. IO capability set to “NoInputNoOutput”
+        # b. OOB data flag set to 0x00 (OOB Authentication data not present)
+        # c. AuthReq Bonding Flags set to ‘00’, MITM flag set to ‘0’, Secure Connections flag set to '1' and all reserved bits are set to ‘0’
+        self.cert.security.CreateBondLe(self.dut_address)
+
+        self.dut_security.wait_for_ui_event(expected_ui_event=UiMsgType.DISPLAY_PAIRING_PROMPT)
+
+        # 2. IUT responds with a Pairing Response command, with:
+        # a. IO capability set to any IO capability
+        # b. AuthReq Bonding Flags set to ‘00’, MITM flag set to either ‘0’ for Just Works or '1' for Numeric Comparison, Secure Connections flag set to '1' and all reserved bits are set to ‘0’
+        self.dut.security.SendUiCallback(
+            UiCallbackMsg(
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.dut_address))
+
+        # 3. UT and Lower Tester perform phase 2 of the Just Works or Numeric Comparison pairing procedure according to the MITM flag and IO capabilities, and establish an encrypted link with the LTK generated in phase 2.
+        self.dut_security.wait_for_bond_event(expected_bond_event=BondMsgType.DEVICE_BONDED)
+
+    @metadata(
+        pts_test_id="SM/SLA/SCJW/BV-03-C",
+        pts_test_name="Just Works, IUT Responder, Secure Connections – Handle AuthReq Flag RFU Correctly")
+    def test_just_works_iut_responder_secure_connections_auth_req_rfu(self):
+        """
+            Verify that the IUT is able to perform the Just Works pairing procedure when receiving additional bits set in the AuthReq flag. Reserved For Future Use bits are correctly handled when acting as slave, responder.
+        """
+        self._prepare_dut_for_connection()
+
+        self.dut.security.SetLeIoCapability(
+            LeIoCapabilityMessage(capabilities=LeIoCapabilityMessage.LeIoCapabilities.KEYBOARD_DISPLAY))
+        self.dut.security.SetOobDataPresent(OobDataMessage(data_present=OobDataPresent.NOT_PRESENT))
+        self.dut.security.SetLeAuthReq(LeAuthReqMsg(auth_req=0x08))
+
+        self.cert.security.SetLeIoCapability(
+            LeIoCapabilityMessage(capabilities=LeIoCapabilityMessage.LeIoCapabilities.NO_INPUT_NO_OUTPUT))
+        self.cert.security.SetOobDataPresent(OobDataMessage(data_present=OobDataPresent.NOT_PRESENT))
+        self.cert.security.SetLeAuthReq(LeAuthReqMsg(auth_req=0x0C))
+
+        # 1. Lower Tester transmits Pairing Request command with:
+        # a. IO Capability set to ”NoInputNoOutput”
+        # b. OOB data flag set to 0x00 (OOB Authentication data not present)
+        # c. MITM set to ‘0’ and all reserved bits are set to a random value.
+        self.cert.security.CreateBondLe(self.dut_address)
+
+        self.dut_security.wait_for_ui_event(expected_ui_event=UiMsgType.DISPLAY_PAIRING_PROMPT)
+
+        # 2. IUT responds with a Pairing Response command, with:
+        # a. IO capability set to any IO capability
+        # b. OOB data flag set to 0x00 (OOB Authentication data not present)
+        # c. All reserved bits are set to ‘0’
+        self.dut.security.SendUiCallback(
+            UiCallbackMsg(
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.dut_address))
+
+        # 3. IUT and Lower Tester perform phase 2 of the Just Works pairing and establish an encrypted link with the generated LTK.
+        self.dut_security.wait_for_bond_event(expected_bond_event=BondMsgType.DEVICE_BONDED)
+
+    @metadata(
+        pts_test_id="SM/MAS/SCJW/BV-04-C",
+        pts_test_name="Just Works, IUT Initiator, Secure Connections – Handle AuthReq Flag RFU Correctly")
+    def test_just_works_iut_initiator_secure_connections_auth_req_rfu(self):
+        """
+            Verify that the IUT is able to perform the Just Works pairing procedure when receiving additional bits set in the AuthReq flag. Reserved For Future Use bits are correctly handled when acting as master, initiator.
+        """
+        self._prepare_cert_for_connection()
+
+        self.dut.security.SetLeIoCapability(
+            LeIoCapabilityMessage(capabilities=LeIoCapabilityMessage.LeIoCapabilities.KEYBOARD_DISPLAY))
+        self.dut.security.SetOobDataPresent(OobDataMessage(data_present=OobDataPresent.NOT_PRESENT))
+        self.dut.security.SetLeAuthReq(LeAuthReqMsg(auth_req=0x08))
+
+        self.cert.security.SetLeIoCapability(
+            LeIoCapabilityMessage(capabilities=LeIoCapabilityMessage.LeIoCapabilities.NO_INPUT_NO_OUTPUT))
+        self.cert.security.SetOobDataPresent(OobDataMessage(data_present=OobDataPresent.NOT_PRESENT))
+        self.cert.security.SetLeAuthReq(LeAuthReqMsg(auth_req=0x0C))
+
+        # 1. IUT transmits a Pairing Request command with:
+        # a. IO Capability set to any IO Capability
+        # b. OOB data flag set to 0x00 (OOB Authentication data not present)
+        # c. All reserved bits are set to ‘0’.
+        self.dut.security.CreateBondLe(self.cert_address)
+
+        self.cert_security.wait_for_ui_event(expected_ui_event=UiMsgType.DISPLAY_PAIRING_PROMPT)
+
+        # 2. Lower Tester responds with a Pairing Response command, with:
+        # a. IO Capability set to “NoInputNoOutput”
+        # b. OOB data flag set to 0x00 (OOB Authentication data not present)
+        # c. AuthReq bonding flag set to the value indicated in the IXIT [7] for ‘Bonding Flags’ and the MITM flag set to ‘0’ and all reserved bits are set to a random value.
+        self.cert.security.SendUiCallback(
+            UiCallbackMsg(
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.cert_address))
+
+        # 3. IUT and Lower Tester perform phase 2 of the Just Works pairing and establish an encrypted link with the generated LTK.
+        self.cert_security.wait_for_bond_event(expected_bond_event=BondMsgType.DEVICE_BONDED)
