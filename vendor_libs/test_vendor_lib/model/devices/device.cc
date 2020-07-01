@@ -29,23 +29,22 @@ std::string Device::ToString() const {
 }
 
 void Device::RegisterPhyLayer(std::shared_ptr<PhyLayer> phy) {
-  phy_layers_[phy->GetType()].push_back(phy);
+  phy_layers_.push_back(std::move(phy));
 }
 
 void Device::UnregisterPhyLayers() {
-  for (auto phy_pair : phy_layers_) {
-    auto phy_list = std::get<1>(phy_pair);
-    for (auto phy : phy_list) {
-      phy->Unregister();
-    }
+  for (const auto& phy : phy_layers_) {
+    phy->Unregister();
   }
+  phy_layers_.clear();
 }
 
 void Device::UnregisterPhyLayer(Phy::Type phy_type, uint32_t factory_id) {
-  for (const auto phy_layer : phy_layers_[phy_type]) {
-    if (phy_layer->IsFactoryId(factory_id)) {
-      phy_layer->Unregister();
-      phy_layers_[phy_type].remove(phy_layer);
+  for (const auto& phy : phy_layers_) {
+    if (phy->GetType() == phy_type && phy->IsFactoryId(factory_id)) {
+      phy->Unregister();
+      phy_layers_.remove(phy);
+      break;
     }
   }
 }
@@ -58,15 +57,19 @@ bool Device::IsAdvertisementAvailable() const {
 void Device::SendLinkLayerPacket(
     std::shared_ptr<model::packets::LinkLayerPacketBuilder> to_send,
     Phy::Type phy_type) {
-  for (const auto& phy : phy_layers_[phy_type]) {
-    phy->Send(to_send);
+  for (const auto& phy : phy_layers_) {
+    if (phy->GetType() == phy_type) {
+      phy->Send(to_send);
+    }
   }
 }
 
 void Device::SendLinkLayerPacket(model::packets::LinkLayerPacketView to_send,
                                  Phy::Type phy_type) {
-  for (const auto& phy : phy_layers_[phy_type]) {
-    phy->Send(to_send);
+  for (const auto& phy : phy_layers_) {
+    if (phy->GetType() == phy_type) {
+      phy->Send(to_send);
+    }
   }
 }
 
