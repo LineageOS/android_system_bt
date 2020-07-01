@@ -172,7 +172,7 @@ void ScriptedBeacon::TimerTick() {
             model::packets::AddressType::RANDOM,
             model::packets::AdvertisementType::ADV_NONCONN_IND, next_ad_.ad);
         to_send = std::move(ad);
-        for (const auto& phy : phy_layers_[Phy::Type::LOW_ENERGY]) {
+        for (const auto& phy : phy_layers_) {
           phy->Send(to_send);
         }
         if (packet_num_ < ble_ad_list_.advertisements().size()) {
@@ -211,7 +211,7 @@ void ScriptedBeacon::IncomingPacket(
       std::shared_ptr<model::packets::LinkLayerPacketBuilder> to_send =
           std::move(scan_response);
       set_state(PlaybackEvent::SCANNED_ONCE);
-      for (const auto& phy : phy_layers_[Phy::Type::LOW_ENERGY]) {
+      for (const auto& phy : phy_layers_) {
         phy->Send(to_send);
       }
     }
