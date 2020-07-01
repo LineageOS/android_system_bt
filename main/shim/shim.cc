@@ -17,25 +17,40 @@
 #define LOG_TAG "bt_shim"
 
 #include "main/shim/shim.h"
-#include "gd/common/init_flags.h"
 #include "main/shim/entry.h"
 #include "main/shim/stack.h"
 
-future_t* ShimModuleStartUp() {
-  bluetooth::shim::Stack::GetInstance()->Start();
+#include "gd/common/init_flags.h"
+#include "gd/os/log.h"
+
+future_t* IdleModuleStartUp() {
+  bluetooth::shim::Stack::GetInstance()->StartIdleMode();
   return kReturnImmediate;
 }
 
-future_t* ShimModuleShutDown() {
+future_t* ShimModuleStartUp() {
+  bluetooth::shim::Stack::GetInstance()->StartEverything();
+  return kReturnImmediate;
+}
+
+future_t* GeneralShutDown() {
   bluetooth::shim::Stack::GetInstance()->Stop();
   return kReturnImmediate;
 }
+
+EXPORT_SYMBOL extern const module_t gd_idle_module = {
+    .name = GD_IDLE_MODULE,
+    .init = kUnusedModuleApi,
+    .start_up = IdleModuleStartUp,
+    .shut_down = GeneralShutDown,
+    .clean_up = kUnusedModuleApi,
+    .dependencies = {kUnusedModuleDependencies}};
 
 EXPORT_SYMBOL extern const module_t gd_shim_module = {
     .name = GD_SHIM_MODULE,
     .init = kUnusedModuleApi,
     .start_up = ShimModuleStartUp,
-    .shut_down = ShimModuleShutDown,
+    .shut_down = GeneralShutDown,
     .clean_up = kUnusedModuleApi,
     .dependencies = {kUnusedModuleDependencies}};
 
