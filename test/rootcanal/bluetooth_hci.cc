@@ -224,6 +224,7 @@ Return<void> BluetoothHci::initialize_impl(
 
 Return<void> BluetoothHci::close() {
   LOG_INFO("%s", __func__);
+  test_model_.Reset();
   return Void();
 }
 
