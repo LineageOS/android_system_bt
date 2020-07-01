@@ -21,8 +21,6 @@
 
 #include "hci/include/hci_layer.h"
 
-static const char GD_HCI_MODULE[] = "gd_hci_module";
-
 namespace bluetooth {
 namespace shim {
 
