@@ -25,7 +25,7 @@ namespace fuzz {
 std::vector<std::vector<uint8_t>> SplitInput(
     const uint8_t* data, size_t size, const uint8_t* separator, size_t separatorSize) {
   std::vector<std::vector<uint8_t>> result;
-  assert(SeparatorSize > 0);
+  assert(separatorSize > 0);
   auto beg = data;
   auto end = data + size;
   while (const uint8_t* pos = (const uint8_t*)memmem(beg, end - beg, separator, separatorSize)) {
