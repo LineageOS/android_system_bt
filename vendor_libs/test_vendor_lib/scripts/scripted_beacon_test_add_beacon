@@ -1,5 +1,0 @@
-add scripted_beacon be:ac:01:55:00:01 scripts/scripted_beacon_test_events_no_permission.pb /tmp/logs/scripted_beacon_test.log
-add_device_to_phy 1 2
-list
-add sniffer 00:00:00:00:00:00
-add_device_to_phy 2 2
