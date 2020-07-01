@@ -131,4 +131,8 @@
 #define GATT_UUID_SCAN_INT_WINDOW 0x2A4F
 #define GATT_UUID_SCAN_REFRESH 0x2A31
 
+/* GATT Service characteristics */
+#define GATT_UUID_SERVER_SUP_FEAT 0x2B3A
+#define GATT_UUID_CLIENT_SUP_FEAT 0x2B29
+
 #endif

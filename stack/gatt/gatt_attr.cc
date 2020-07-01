@@ -33,6 +33,11 @@
 using base::StringPrintf;
 using bluetooth::Uuid;
 
+#define BLE_GATT_SVR_SUP_FEAT_EATT_BITMASK 0x01
+
+#define BLE_GATT_CL_SUP_FEAT_CACHING_BITMASK 0x01
+#define BLE_GATT_CL_SUP_FEAT_EATT_BITMASK 0x02
+
 static void gatt_request_cback(uint16_t conn_id, uint32_t trans_id,
                                uint8_t op_code, tGATTS_DATA* p_data);
 static void gatt_connect_cback(UNUSED_ATTR tGATT_IF gatt_if,
@@ -171,6 +176,50 @@ void gatt_profile_clcb_dealloc(tGATT_PROFILE_CLCB* p_clcb) {
   memset(p_clcb, 0, sizeof(tGATT_PROFILE_CLCB));
 }
 
+/** GAP Attributes Database Request callback */
+tGATT_STATUS read_attr_value(uint16_t handle, tGATT_VALUE* p_value,
+                             bool is_long) {
+  uint8_t* p = p_value->value;
+
+  if (handle == gatt_cb.handle_sr_supported_feat) {
+    /* GATT_UUID_SERVER_SUP_FEAT*/
+    if (is_long) return GATT_NOT_LONG;
+
+    UINT8_TO_STREAM(p, gatt_cb.gatt_svr_supported_feat_mask);
+    p_value->len = sizeof(gatt_cb.gatt_svr_supported_feat_mask);
+    return GATT_SUCCESS;
+  }
+
+  if (handle == gatt_cb.handle_of_h_r) {
+    /* GATT_UUID_GATT_SRV_CHGD */
+    return GATT_READ_NOT_PERMIT;
+  }
+
+  return GATT_NOT_FOUND;
+}
+
+/** GAP Attributes Database Read/Read Blob Request process */
+tGATT_STATUS proc_read_req(tGATTS_REQ_TYPE, tGATT_READ_REQ* p_data,
+                           tGATTS_RSP* p_rsp) {
+  if (p_data->is_long) p_rsp->attr_value.offset = p_data->offset;
+
+  p_rsp->attr_value.handle = p_data->handle;
+
+  return read_attr_value(p_data->handle, &p_rsp->attr_value, p_data->is_long);
+}
+
+/** GAP ATT server process a write request */
+uint8_t proc_write_req(tGATTS_REQ_TYPE, tGATT_WRITE_REQ* p_data) {
+  /* GATT_UUID_SERVER_SUP_FEAT*/
+  if (p_data->handle == gatt_cb.handle_sr_supported_feat)
+    return GATT_WRITE_NOT_PERMIT;
+
+  /* GATT_UUID_GATT_SRV_CHGD */
+  if (p_data->handle == gatt_cb.handle_of_h_r) return GATT_WRITE_NOT_PERMIT;
+
+  return GATT_NOT_FOUND;
+}
+
 /*******************************************************************************
  *
  * Function         gatt_request_cback
@@ -184,30 +233,28 @@ static void gatt_request_cback(uint16_t conn_id, uint32_t trans_id,
                                tGATTS_REQ_TYPE type, tGATTS_DATA* p_data) {
   uint8_t status = GATT_INVALID_PDU;
   tGATTS_RSP rsp_msg;
-  bool ignore = false;
+  bool rsp_needed = true;
 
   memset(&rsp_msg, 0, sizeof(tGATTS_RSP));
 
   switch (type) {
     case GATTS_REQ_TYPE_READ_CHARACTERISTIC:
     case GATTS_REQ_TYPE_READ_DESCRIPTOR:
-      status = GATT_READ_NOT_PERMIT;
+      status = proc_read_req(type, &p_data->read_req, &rsp_msg);
       break;
 
     case GATTS_REQ_TYPE_WRITE_CHARACTERISTIC:
     case GATTS_REQ_TYPE_WRITE_DESCRIPTOR:
-      status = GATT_WRITE_NOT_PERMIT;
-      break;
-
     case GATTS_REQ_TYPE_WRITE_EXEC:
     case GATT_CMD_WRITE:
-      ignore = true;
-      VLOG(1) << "Ignore GATT_REQ_EXEC_WRITE/WRITE_CMD";
+      if (!p_data->write_req.need_rsp) rsp_needed = false;
+
+      status = proc_write_req(type, &p_data->write_req);
       break;
 
     case GATTS_REQ_TYPE_MTU:
       VLOG(1) << "Get MTU exchange new mtu size: " << +p_data->mtu;
-      ignore = true;
+      rsp_needed = false;
       break;
 
     default:
@@ -215,7 +262,7 @@ static void gatt_request_cback(uint16_t conn_id, uint32_t trans_id,
       break;
   }
 
-  if (!ignore) GATTS_SendRsp(conn_id, trans_id, status, &rsp_msg);
+  if (rsp_needed) GATTS_SendRsp(conn_id, trans_id, status, &rsp_msg);
 }
 
 /*******************************************************************************
@@ -271,7 +318,8 @@ void gatt_profile_db_init(void) {
 
   Uuid service_uuid = Uuid::From16Bit(UUID_SERVCLASS_GATT_SERVER);
 
-  Uuid char_uuid = Uuid::From16Bit(GATT_UUID_GATT_SRV_CHGD);
+  Uuid srv_changed_char_uuid = Uuid::From16Bit(GATT_UUID_GATT_SRV_CHGD);
+  Uuid svr_sup_feat_uuid = Uuid::From16Bit(GATT_UUID_SERVER_SUP_FEAT);
 
   btgatt_db_element_t service[] = {
       {
@@ -279,10 +327,16 @@ void gatt_profile_db_init(void) {
           .type = BTGATT_DB_PRIMARY_SERVICE,
       },
       {
-          .uuid = char_uuid,
+          .uuid = srv_changed_char_uuid,
           .type = BTGATT_DB_CHARACTERISTIC,
           .properties = GATT_CHAR_PROP_BIT_INDICATE,
           .permissions = 0,
+      },
+      {
+          .type = BTGATT_DB_CHARACTERISTIC,
+          .uuid = svr_sup_feat_uuid,
+          .properties = GATT_CHAR_PROP_BIT_READ,
+          .permissions = GATT_PERM_READ,
       }};
 
   GATTS_AddService(gatt_cb.gatt_if, service,
@@ -290,8 +344,12 @@ void gatt_profile_db_init(void) {
 
   service_handle = service[0].attribute_handle;
   gatt_cb.handle_of_h_r = service[1].attribute_handle;
+  gatt_cb.handle_sr_supported_feat = service[2].attribute_handle;
 
-  VLOG(1) << __func__ << ": gatt_if=" << +gatt_cb.gatt_if;
+  gatt_cb.gatt_svr_supported_feat_mask |= BLE_GATT_SVR_SUP_FEAT_EATT_BITMASK;
+  gatt_cb.gatt_cl_supported_feat_mask |= BLE_GATT_CL_SUP_FEAT_EATT_BITMASK;
+
+  VLOG(1) << __func__ << ": gatt_if=" << gatt_cb.gatt_if << " EATT supported";
 }
 
 /*******************************************************************************
