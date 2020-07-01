@@ -69,6 +69,7 @@ import string
 import struct
 import sys
 from scapy.all import *
+import time
 """ Add some more SCAPY stuff"""
 
 
@@ -361,6 +362,9 @@ class HCIShell(cmd.Cmd):
         split_args = args.split()
         enable = int(split_args[0]) if len(split_args) > 0 else 1
         filter_dups = int(split_args[1]) if len(split_args) > 1 else 1
+        set_scan_parameters = HCI_Hdr(type=1) / HCI_Command_Hdr(opcode=0x200b) / HCI_Cmd_LE_Set_Scan_Parameters(type=1)
+        print('Tx: ' + set_scan_parameters.__repr__())
+        self._hci.send(set_scan_parameters)
         set_scan_enable = HCI_Hdr(type=1) / HCI_Command_Hdr(opcode=0x200c) / HCI_Cmd_LE_Set_Scan_Enable(
             enable=enable, filter_dups=filter_dups)
         print('Tx: ' + set_scan_enable.__repr__())
@@ -378,6 +382,12 @@ class HCIShell(cmd.Cmd):
             length=scan_time, max_responses=max_responses)
         print('Tx: ' + inquiry.__repr__())
         self._hci.send(inquiry)
+
+    def do_wait(self, args):
+        """Arguments: time in seconds (float).
+    """
+        sleep_time = float(args.split()[0])
+        time.sleep(sleep_time)
 
     def do_quit(self, args):
         """Arguments: None.
