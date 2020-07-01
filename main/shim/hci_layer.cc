@@ -101,25 +101,6 @@ std::unique_ptr<bluetooth::packet::RawBuilder> MakeUniquePacket(
 }
 }  // namespace
 
-static future_t* hci_module_shut_down(void);
-static future_t* hci_module_start_up(void);
-
-EXPORT_SYMBOL extern const module_t gd_hci_module = {
-    .name = GD_HCI_MODULE,
-    .init = nullptr,
-    .start_up = hci_module_start_up,
-    .shut_down = hci_module_shut_down,
-    .clean_up = nullptr,
-    .dependencies = {GD_SHIM_MODULE, nullptr}};
-
-static future_t* hci_module_start_up(void) {
-  return nullptr;
-}
-
-static future_t* hci_module_shut_down(void) {
-  return nullptr;
-}
-
 static void set_data_cb(
     base::Callback<void(const base::Location&, BT_HDR*)> send_data_cb) {
   send_data_upwards = std::move(send_data_cb);

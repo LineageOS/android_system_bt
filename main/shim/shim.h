@@ -23,6 +23,7 @@
 #include "main/shim/entry.h"
 #include "osi/include/future.h"
 
+static const char GD_IDLE_MODULE[] = "gd_idle_module";
 static const char GD_SHIM_MODULE[] = "gd_shim_module";
 
 constexpr future_t* kReturnImmediate = nullptr;
