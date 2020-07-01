@@ -159,6 +159,16 @@ void AclManager::CancelLeConnect(AddressWithType address_with_type) {
   GetHandler()->Post(BindOnce(&le_impl::cancel_connect, common::Unretained(pimpl_->le_impl_), address_with_type));
 }
 
+void AclManager::AddDeviceToConnectList(AddressWithType address_with_type) {
+  GetHandler()->Post(
+      BindOnce(&le_impl::add_device_to_connect_list, common::Unretained(pimpl_->le_impl_), address_with_type));
+}
+
+void AclManager::RemoveDeviceFromConnectList(AddressWithType address_with_type) {
+  GetHandler()->Post(
+      BindOnce(&le_impl::remove_device_from_connect_list, common::Unretained(pimpl_->le_impl_), address_with_type));
+}
+
 void AclManager::MasterLinkKey(KeyFlag key_flag) {
   GetHandler()->Post(BindOnce(&classic_impl::master_link_key, common::Unretained(pimpl_->classic_impl_), key_flag));
 }
