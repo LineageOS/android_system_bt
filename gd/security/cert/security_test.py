@@ -22,6 +22,7 @@ from cert.py_security import PySecurity
 from facade import common_pb2 as common
 from google.protobuf import empty_pb2 as empty_proto
 from hci.facade import controller_facade_pb2 as controller_facade
+from hci.facade import le_initiator_address_facade_pb2 as le_initiator_address_facade
 from l2cap.classic.facade_pb2 import ClassicSecurityPolicy
 from neighbor.facade import facade_pb2 as neighbor_facade
 from security.cert.cert_security import CertSecurity
@@ -58,6 +59,13 @@ class SecurityTest(GdBaseTestClass):
 
         self.dut_security = PySecurity(self.dut)
         self.cert_security = CertSecurity(self.cert)
+
+        self.dut_address = common.BluetoothAddressWithType(
+            address=common.BluetoothAddress(address=bytes(b'DD:05:04:03:02:01')), type=common.RANDOM_DEVICE_ADDRESS)
+        privacy_policy = le_initiator_address_facade.PrivacyPolicy(
+            address_policy=le_initiator_address_facade.AddressPolicy.USE_STATIC_ADDRESS,
+            address_with_type=self.dut_address)
+        self.dut.security.SetLeInitiatorAddressPolicy(privacy_policy)
 
     def teardown_test(self):
         self.dut_security.close()
