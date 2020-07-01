@@ -451,6 +451,7 @@ TEST_F(LeExtendedAdvertisingManagerTest, create_advertiser_test) {
   advertising_config.advertisement = gap_data;
   advertising_config.scan_response = gap_data;
   advertising_config.channel_map = 1;
+  advertising_config.sid = 0x01;
 
   auto last_command_future = test_hci_layer_->GetCommandFuture(OpCode::LE_SET_EXTENDED_ADVERTISING_ENABLE);
   auto id = le_advertising_manager_->ExtendedCreateAdvertiser(advertising_config, scan_callback,

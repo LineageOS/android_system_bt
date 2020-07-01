@@ -3,13 +3,13 @@ filegroup {
     srcs: [
             "dumpsys.cc",
             "l2cap.cc",
-            "stack.cc",
     ]
 }
 
 filegroup {
     name: "BluetoothShimTestSources",
     srcs: [
+            "dumpsys_test.cc",
             "l2cap_test.cc",
     ],
 }

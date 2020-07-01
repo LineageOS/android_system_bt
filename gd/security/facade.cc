@@ -168,6 +168,13 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     return ::grpc::Status::OK;
   }
 
+  ::grpc::Status FetchEnforceSecurityPolicyEvents(
+      ::grpc::ServerContext* context,
+      const ::google::protobuf::Empty* request,
+      ::grpc::ServerWriter<EnforceSecurityPolicyMsg>* writer) override {
+    return enforce_security_policy_events_.RunLoop(context, writer);
+  }
+
   ::grpc::Status EnforceSecurityPolicy(
       ::grpc::ServerContext* context,
       const SecurityPolicyMessage* request,
@@ -176,6 +183,10 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     ASSERT(hci::Address::FromString(request->address().address().address(), peer));
     hci::AddressType peer_type = static_cast<hci::AddressType>(request->address().type());
     hci::AddressWithType peer_with_type(peer, peer_type);
+    l2cap::classic::SecurityEnforcementInterface::ResultCallback callback =
+        security_handler_->BindOnceOn(this, &SecurityModuleFacadeService::EnforceSecurityPolicyEvent);
+    security_module_->GetFacadeConfigurationApi()->EnforceSecurityPolicy(
+        peer_with_type, static_cast<l2cap::classic::SecurityPolicy>(request->policy()), std::move(callback));
     return ::grpc::Status::OK;
   }
 
@@ -272,11 +283,19 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     bond_events_.OnIncomingEvent(bond_failed);
   }
 
+  void EnforceSecurityPolicyEvent(bool result) {
+    EnforceSecurityPolicyMsg msg;
+    msg.set_result(result);
+    enforce_security_policy_events_.OnIncomingEvent(msg);
+  }
+
  private:
   SecurityModule* security_module_;
   ::bluetooth::os::Handler* security_handler_;
   ::bluetooth::grpc::GrpcEventQueue<UiMsg> ui_events_{"UI events"};
   ::bluetooth::grpc::GrpcEventQueue<BondMsg> bond_events_{"Bond events"};
+  ::bluetooth::grpc::GrpcEventQueue<EnforceSecurityPolicyMsg> enforce_security_policy_events_{
+      "Enforce Security Policy Events"};
   uint32_t unique_id{1};
   std::map<uint32_t, common::OnceCallback<void(bool)>> user_yes_no_callbacks_;
   std::map<uint32_t, common::OnceCallback<void(uint32_t)>> user_passkey_callbacks_;
