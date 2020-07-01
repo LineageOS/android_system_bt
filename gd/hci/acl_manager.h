@@ -76,6 +76,8 @@ class AclManager : public Module {
   virtual void CancelConnect(Address address);
 
   virtual void CancelLeConnect(AddressWithType address_with_type);
+  virtual void AddDeviceToConnectList(AddressWithType address_with_type);
+  virtual void RemoveDeviceFromConnectList(AddressWithType address_with_type);
 
   virtual void MasterLinkKey(KeyFlag key_flag);
   virtual void SwitchRole(Address address, Role role);
