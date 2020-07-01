@@ -680,7 +680,7 @@ void Btm::StartAdvertising() {
     return;
   }
 
-  hci::AdvertisingConfig config;
+  hci::AdvertisingConfig config = {};
   advertiser_id_ = GetAdvertising()->CreateAdvertiser(
       config, common::Bind([](hci::Address, hci::AddressType) { /*OnScan*/ }),
       common::Bind([](hci::ErrorCode, uint8_t, uint8_t) { /*OnTerminated*/ }),

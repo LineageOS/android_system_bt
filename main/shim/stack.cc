@@ -32,11 +32,9 @@
 #include "gd/neighbor/page.h"
 #include "gd/neighbor/scan.h"
 #include "gd/os/log.h"
-#include "gd/os/thread.h"
 #include "gd/security/security_module.h"
 #include "gd/shim/dumpsys.h"
 #include "gd/shim/l2cap.h"
-#include "gd/stack_manager.h"
 #include "gd/storage/storage_module.h"
 
 #include "main/shim/stack.h"
@@ -49,12 +47,21 @@ Stack* Stack::GetInstance() {
   return &instance;
 }
 
-void Stack::Start() {
-  if (is_running_) {
-    LOG_ERROR("%s Gd stack already running", __func__);
-    return;
-  }
+void Stack::StartIdleMode() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  ASSERT_LOG(!is_running_, "%s Gd stack already running", __func__);
+  LOG_INFO("%s Starting Gd stack", __func__);
+  ModuleList modules;
+  modules.add<storage::StorageModule>();
+  Start(&modules);
+  // Make sure the leaf modules are started
+  ASSERT(stack_manager_.GetInstance<storage::StorageModule>() != nullptr);
+  is_running_ = true;
+}
 
+void Stack::StartEverything() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  ASSERT_LOG(!is_running_, "%s Gd stack already running", __func__);
   LOG_INFO("%s Starting Gd stack", __func__);
   ModuleList modules;
   modules.add<att::AttModule>();
@@ -76,29 +83,33 @@ void Stack::Start() {
   modules.add<storage::StorageModule>();
   modules.add<shim::Dumpsys>();
   modules.add<shim::L2cap>();
+  Start(&modules);
+  // Make sure the leaf modules are started
+  ASSERT(stack_manager_.GetInstance<storage::StorageModule>() != nullptr);
+  ASSERT(stack_manager_.GetInstance<shim::L2cap>() != nullptr);
+  ASSERT(stack_manager_.GetInstance<shim::Dumpsys>() != nullptr);
+  btm_ = new Btm(stack_handler_,
+                 stack_manager_.GetInstance<neighbor::InquiryModule>());
+  is_running_ = true;
+}
+
+void Stack::Start(ModuleList* modules) {
+  ASSERT_LOG(!is_running_, "%s Gd stack already running", __func__);
+  LOG_DEBUG("%s Starting Gd stack", __func__);
 
   stack_thread_ =
       new os::Thread("gd_stack_thread", os::Thread::Priority::NORMAL);
-  stack_manager_.StartUp(&modules, stack_thread_);
-  // Make sure the leaf modules are started
-  ASSERT(stack_manager_.GetInstance<shim::L2cap>() != nullptr);
-  ASSERT(stack_manager_.GetInstance<shim::Dumpsys>() != nullptr);
+  stack_manager_.StartUp(modules, stack_thread_);
 
   stack_handler_ = new os::Handler(stack_thread_);
-
-  btm_ = new Btm(stack_handler_,
-                 stack_manager_.GetInstance<neighbor::InquiryModule>());
-
-  is_running_ = true;
 
   LOG_INFO("%s Successfully toggled Gd stack", __func__);
 }
 
 void Stack::Stop() {
-  if (!is_running_) {
-    LOG_ERROR("%s Gd stack not running", __func__);
-    return;
-  }
+  std::lock_guard<std::mutex> lock(mutex_);
+  ASSERT_LOG(is_running_, "%s Gd stack not running", __func__);
+  is_running_ = false;
 
   delete btm_;
   btm_ = nullptr;
@@ -112,23 +123,28 @@ void Stack::Stop() {
   delete stack_thread_;
   stack_thread_ = nullptr;
 
-  is_running_ = false;
   LOG_INFO("%s Successfully shut down Gd stack", __func__);
 }
 
-bool Stack::IsRunning() { return is_running_; }
+bool Stack::IsRunning() {
+  std::lock_guard<std::mutex> lock(mutex_);
+  return is_running_;
+}
 
 StackManager* Stack::GetStackManager() {
+  std::lock_guard<std::mutex> lock(mutex_);
   ASSERT(is_running_);
   return &stack_manager_;
 }
 
 Btm* Stack::GetBtm() {
+  std::lock_guard<std::mutex> lock(mutex_);
   ASSERT(is_running_);
   return btm_;
 }
 
 os::Handler* Stack::GetHandler() {
+  std::lock_guard<std::mutex> lock(mutex_);
   ASSERT(is_running_);
   return stack_handler_;
 }
