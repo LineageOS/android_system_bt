@@ -1,249 +1,248 @@
 #! /bin/bash
 
-if [[ -z "${ANDROID_BUILD_TOP}" ]]; then
-  echo "ANDROID_BUILD_TOP is not set"
-fi
-
-if [[ -z "${ANDROID_HOST_OUT}" ]]; then
-  echo "ANDROID_HOST_OUT is not set for host run"
-fi
-
-if ! [ -x "$(command -v python3.8)" ] ; then
-    echo "You must have python 3.8 installed"
-    exit 1
-fi
-
-$ANDROID_BUILD_TOP/build/soong/soong_ui.bash --build-mode --"all-modules" --dir="$(pwd)" dist bluetooth_stack_with_facade
-if [[ $? -ne 0 ]] ; then
-    echo "Failed to build bluetooth_stack_with_facade"
-    exit 1
-fi
-
-TEST_CONFIG="$ANDROID_BUILD_TOP/system/bt/gd/cert/android_devices_config.json"
-TEST_FILTER="-tf $ANDROID_BUILD_TOP/system/bt/gd/cert/all_cert_testcases"
-CLEAN_VENV=false
-GOTTA_GO_FAST=true
-SPEED_HAX=false
-NUM_REPETITIONS="1"
-VERBOSE_MODE=false
-
-POSITIONAL=()
-while [[ $# -gt 0 ]]
-do
-key="$1"
-case $key in
-    --test_filter=*)
-    TEST_FILTER="-tc ${key#*=}"
-    shift # past argument=value
-    ;;
-    --host)
-    TEST_CONFIG=$ANDROID_BUILD_TOP/system/bt/gd/cert/host_config.json
-    shift # past argument
-    ;;
-    --test_file=*)
-    TEST_FILTER="-tc ${key#*=}"
-    shift # past argument
-    ;;
-    --test_config=*)
-    TEST_CONFIG="${key#*=}"
-    shift # past argument
-    ;;
-    # This will delete the existing venv before running the test
-    # If you updated external libraries such as ACTS, you need to add this flag
-    --clean)
-    CLEAN_VENV=true
-    shift # past argument
-    ;;
-    # Repeat running the specified test cases by N times in one single setup
-    --repeat=*)
-    NUM_REPETITIONS="${key#*=}"
-    shift # past argument
-    ;;
-    # This will log everything to both log file and stdout
-    --verbose)
-    VERBOSE_MODE=true
-    shift # past argument
-    ;;
-    # This will cause the bluetooth_venv to be created in ashmem
-    # Increases --clean build times by 40% (~21 seconds on my machine)
-    --gotta-go-slow)
-    GOTTA_GO_FAST=false
-    shift # past argument
-    ;;
-    --speed-hax)
-    SPEED_HAX=true
-    shift # past argument
-    ;;
-    *)    # unknown option
-    POSITIONAL+=("$1") # save it in an array for later
-    shift # past argument
-    ;;
-esac
-done
-set -- "${POSITIONAL[@]}" # restore positional parameters
-
-if [[ -n "$1" ]] ; then
-  TEST_FILTER="-tc $1"
-fi
-
-CERT_TEST_VENV=$ANDROID_BUILD_TOP/out/dist/bluetooth_venv
-
 YELLOW="\033[1;33m"
 NOCOLOR="\033[0m"
 BLUE="\033[1;34m"
 RED="\033[1;91m"
 
-INSTALL_ARGS="--reuse-acts"
-if [ "$CLEAN_VENV" == true ] ; then
-  echo -e "${YELLOW}Cleaning up existing virtualenv${NOCOLOR}"
-  rm -rf $CERT_TEST_VENV
-  mkdir -p ${CERT_TEST_VENV}
-  INSTALL_ARGS=""
-else
-  echo -e "${YELLOW}Try to reuse existing virtualenv at ${CERT_TEST_VENV}${NOCOLOR}"
-fi
+function happy_hedgehog {
+    echo -e "\t${BLUE}"
+    echo -e "\t       ___------__"
+    echo -e "\t |\__-- /\       _-"
+    echo -e "\t |/_   __      -"
+    echo -e "\t // \ /  \    /__"
+    echo -e "\t | 0 |  0 |__     --_        Gotta go fast!"
+    echo -e "\t \\____-- __ \   ___-"
+    echo -e "\t ( @    __/  / /_"
+    echo -e "\t    -_____---   --_"
+    echo -e "\t     //  \ \\   ___-"
+    echo -e "\t   //|\__/  \\  \\"
+    echo -e "\t   \_-\_____/  \-\\"
+    echo -e "\t        // \\--\|"
+    echo -e "\t   ${RED}____${BLUE}//  ||${RED}_"
+    echo -e "\t${RED}  /_____\ /___\\"
+    echo -e "${NOCOLOR}"
+}
 
-# Make venv in memory, decreases --clean build times by 40%
-# Caveat is you lose the venv if the computer reboots
-if [ "${GOTTA_GO_FAST}" == true ] ; then
-    if [[ ! -L ${CERT_TEST_VENV} ]] ; then
-        echo -e "\t${BLUE}"
-        echo -e "\t       ___------__"
-        echo -e "\t |\__-- /\       _-"
-        echo -e "\t |/_   __      -"
-        echo -e "\t // \ /  \    /__"
-        echo -e "\t | 0 |  0 |__     --_        Gotta go fast!"
-        echo -e "\t \\____-- __ \   ___-"
-        echo -e "\t ( @    __/  / /_"
-        echo -e "\t    -_____---   --_"
-        echo -e "\t     //  \ \\   ___-"
-        echo -e "\t   //|\__/  \\  \\"
-        echo -e "\t   \_-\_____/  \-\\"
-        echo -e "\t        // \\--\|"
-        echo -e "\t   ${RED}____${BLUE}//  ||${RED}_"
-        echo -e "\t${RED}  /_____\ /___\\"
+function sad_hedgehog {
+    echo -e "\t${BLUE}"
+    echo -e "\t       ___------__"
+    echo -e "\t |\__-- /\       _-"
+    echo -e "\t |/_    __      -"
+    echo -e "\t // \  /  \    /__"
+    echo -e "\t | 0 |  0 |__     --_        Gotta go sllloowwww!"
+    echo -e "\t \\____-- __ \   ___-"
+    echo -e "\t ( @    __   / /_"
+    echo -e "\t    -_____---   --_"
+    echo -e "\t     //  \ \\   ___-"
+    echo -e "\t   //|\__/  \\  \\"
+    echo -e "\t   \_-\_____/  \-\\"
+    echo -e "\t        // \\--\|"
+    echo -e "\t  ${RED} ____${BLUE}//  ||${RED}_"
+    echo -e "\t${RED}  /_____\ /___\\"
+    echo -e "{$NOCOLOR}"
+}
+
+function check_environment {
+    if [[ -z "${ANDROID_BUILD_TOP}" ]] || [[ -z "${ANDROID_HOST_OUT}" ]] ; then
+      echo -e "${RED}ANDROID_BUILD_TOP${NOCOLOR} or ${RED}ANDROID_HOST_OUT${NOCOLOR} is not set for host run"
+      echo -e "Navigate to android root and run:"
+      echo -e "${YELLOW}"
+      echo -e ". build/envsetup.sh"
+      echo -e "lunch <fish>"
+      echo -e "${NOCOLOR}"
+      echo
+      exit 1
+    fi
+    if ! [ -x "$(command -v python3.8)" ] ; then
+      echo -e "${RED}You must have python 3.8 installed${NOCOLOR}"
+      exit 1
+    fi
+}
+
+ASHMEM_OUT="/dev/shm/out"
+ASHMEM_DIST="${ASHMEM_OUT}/dist"
+ASHMEM_VENV="${ASHMEM_DIST}/bluetooth_venv"
+ASHMEM_GOTTA_GO_FAST="/dev/shm/gottagofast"
+ASHMEM_HOST_LOGS="${ASHMEM_GOTTA_GO_FAST}/logs"
+ASHMEM_OUT_TARGET="${ASHMEM_GOTTA_GO_FAST}/target"
+ASHMEM_SOONG="${ASHMEM_GOTTA_GO_FAST}/out/soong"
+CERT_HOST_LOGS="/tmp/logs/HostOnlyCert"
+CERT_DEVICE_LOGS="TODO: Add this"
+CERT_TEST_VENV=${ANDROID_BUILD_TOP}/out/dist/bluetooth_venv
+OUT_TARGET="${ANDROID_BUILD_TOP}/out/target"
+TEST_CONFIG="${ANDROID_BUILD_TOP}/system/bt/gd/cert/android_devices_config.json"
+TEST_FILTER="-tf ${ANDROID_BUILD_TOP}/system/bt/gd/cert/all_cert_testcases"
+
+CLEAN_VENV=false
+GOTTA_GO_FAST=false
+NUM_REPETITIONS="1"
+SKIP_SOONG_BUILD=false
+USE_ASHMEM_VENV=true
+VERBOSE_MODE=false
+
+# Used for position arguments needed for later
+POSITIONAL=()
+function parse_options {
+    while [[ $# -gt 0 ]]
+    do
+    key="$1"
+    case $key in
+        # This will delete the existing venv before running the test
+        # If you updated external libraries such as ACTS, you need to add this flag
+        --clean)
+        CLEAN_VENV=true
+        shift # past argument
+        ;;
+        --help)
         echo
+        echo -e "${YELLOW}Help menu${NOCOLOR}"
+        echo -e "==================================="
+        echo -e "${BLUE}  --clean${NOCOLOR}" 
+        echo -e "    Clean the virtul environment; use if ACTS has been updated." 
+        echo -e "${BLUE}  --disable-ashmem-venv${NOCOLOR}" 
+        echo -e "    Places the virtual environment on disk rather than in ashmem which is default." 
+        echo -e "${BLUE}  --gotta-go-fast${NOCOLOR}" 
+        echo -e "    Makes use of ashmem as best as possible for targeted speed increases." 
+        echo -e "${BLUE}  --host${NOCOLOR}" 
+        echo -e "    Run the test on the host machine [i.e. simulated]." 
+        echo -e "${BLUE}  --repeat=<N>${NOCOLOR}" 
+        echo -e "    Repeat the test sequence N (int) number of times." 
+        echo -e "${BLUE}  --skip-soong-build${NOCOLOR}" 
+        echo -e "    Skips building soong targets. Use when you are just modifying simple python files." 
+        echo -e "${BLUE}  --test_config=<configfile>${NOCOLOR}" 
+        echo -e "    Override default test configuration." 
+        echo -e "${BLUE}  --verbose${NOCOLOR}"
+        echo -e "    Displays device logs and test logs to output." 
         echo
-        echo -ne "Making ashmem dist folder..."
-        mkdir -p /dev/shm/dist
-        rm -rf /dev/shm/bluetooth_venv
-        echo -e "Done"
-        echo -ne "Moving existing data to memory..."
-        mv ${CERT_TEST_VENV} /dev/shm/dist/bluetooth_venv
-        echo -e "Done"
-        # Ensure the directory doesn't exist
-        rm -rf ${CERT_TEST_VENV}
-        echo -ne "Sym linking..."
-        ln -s /dev/shm/dist/bluetooth_venv ${CERT_TEST_VENV}
-        echo -e "Done"
-        echo -e "${NOCOLOR}"
-    fi
-else
-    if [[ -L ${CERT_TEST_VENV} ]] ; then
-        echo -e "\t${BLUE}"
-        echo -e "\t       ___------__"
-        echo -e "\t |\__-- /\       _-"
-        echo -e "\t |/_    __      -"
-        echo -e "\t // \  /  \    /__"
-        echo -e "\t | 0 |  0 |__     --_        Gotta go sllloowwww!"
-        echo -e "\t \\____-- __ \   ___-"
-        echo -e "\t ( @    __   / /_"
-        echo -e "\t    -_____---   --_"
-        echo -e "\t     //  \ \\   ___-"
-        echo -e "\t   //|\__/  \\  \\"
-        echo -e "\t   \_-\_____/  \-\\"
-        echo -e "\t        // \\--\|"
-        echo -e "\t  ${RED} ____${BLUE}//  ||${RED}_"
-        echo -e "\t${RED}  /_____\ /___\\"
+        echo -e "Usage: $0 [--clean|--host|--repeat=<N>|--test_config=<config>] [TestGroupName[:IndividualTestName]]"
+        echo -e "        ${YELLOW}e.g."
+        echo -e "         $0 --host --clean SecurityTest"
+        echo -e "         $0 --host --verbose SecurityTest:test_dut_initiated_display_only_display_only ${NOCOLOR}"
         echo
-        echo
-        echo -en "Removing sym link..."
-        rm ${CERT_TEST_VENV}
-        echo -e "Done"
-        echo -en "Moving venv from memory to disk..."
-        mv /dev/shm/dist/bluetooth_venv ${CERT_TEST_VENV}
-        echo -e "Done"
-        echo -en "Cleaning up memory..."
-        rm -rf /dev/shm/dist/
-        echo -e "Done"
-        echo -e "${NOCOLOR}"
+        shift
+        exit 0
+        ;;
+        # This will cause the bluetooth_venv to be created in ashmem
+        # Increases --clean build times by 40% (~21 seconds on my machine)
+        --disable-ashmem-venv)
+        USE_ASHMEM_VENV=false
+        shift # past argument
+        ;;
+        --gotta-go-fast)
+        GOTTA_GO_FAST=true
+        shift # past argument
+        ;;
+        --host)
+        TEST_CONFIG=$ANDROID_BUILD_TOP/system/bt/gd/cert/host_config.json
+        shift # past argument
+        ;;
+        # Repeat running the specified test cases by N times in one single setup
+        --repeat=*)
+        NUM_REPETITIONS="${key#*=}"
+        shift # past argument
+        ;;
+        --skip-soong-build)
+        SKIP_SOONG_BUILD=true
+        shift
+        ;;
+        --test_config=*)
+        TEST_CONFIG="${key#*=}"
+        shift # past argument
+        ;;
+        # This will log everything to both log file and stdout
+        --verbose)
+        VERBOSE_MODE=true
+        shift # past argument
+        ;;
+        *)    # unknown option
+        POSITIONAL+=("$1") # save it in an array for later
+        shift # past argument
+        ;;
+    esac
+    done
+    set -- "${POSITIONAL[@]}" # restore positional parameters
+
+    # Set the test filter
+    if [[ -n "$1" ]] ; then
+      TEST_FILTER="-tc $1"
     fi
-fi
-
-if [ "${SPEED_HAX}" == true ] ; then
-    echo -e "${RED}Speed H4x Enabled${NOCOLOR}"
-    echo -e "${RED}I have the need for speed! ${NOCOLOR}"
-    if [[ ! -L /tmp/logs/HostOnlyCert ]] ; then
-        mv /tmp/logs/HostOnlyCert /dev/shm/
-        ln -s /dev/shm/HostOnlyCert /tmp/logs/HostOnlyCert
+    
+    INSTALL_ARGS="--reuse-acts"
+    if [ "$CLEAN_VENV" == true ] ; then
+      echo -e "${YELLOW}Cleaning up existing virtualenv${NOCOLOR}"
+      rm -rf $CERT_TEST_VENV
+      mkdir -p ${CERT_TEST_VENV}
+      INSTALL_ARGS=""
+    else
+      echo -e "${YELLOW}Try to reuse existing virtualenv at ${CERT_TEST_VENV}${NOCOLOR}"
     fi
 
-    if [[ ! -L ${ANDROID_BUILD_TOP}/out/soong/.intermediates/system/bt ]] ; then
-        mkdir -p /dev/shm/soong/.intermediates/system
-        mv ${ANDROID_BUILD_TOP}/out/soong/.intermediates/system/bt /dev/shm/soong/.intermediates/system/
-        ln -s /dev/shm/soong/.intermediates/system/bt ${ANDROID_BUILD_TOP}/out/soong/.intermediates/system/bt
+}
+
+function soong_build {
+    $ANDROID_BUILD_TOP/build/soong/soong_ui.bash --build-mode --"all-modules" --dir="${ANDROID_BUILD_TOP}/system/bt/gd" dist bluetooth_stack_with_facade
+    if [[ $? -ne 0 ]] ; then
+        echo "Failed to build bluetooth_stack_with_facade"
+        exit 1
+    fi
+}
+
+function setup_venv {
+    # Make venv in memory, decreases --clean build times by 40%
+    # Caveat is you lose the venv if the computer reboots
+    if [ "${USE_ASHMEM_VENV}" == true ] ; then
+        echo -e "${BLUE}Using ashmem virtual environment.${NOCOLOR}"
+        if [[ ! -L ${CERT_TEST_VENV} ]] ; then
+            echo -e "${BLUE}"
+            echo -ne "Creating ashmem dist folder..."
+            mkdir -p "${ASHMEM_VENV}"
+            # Ensure the directory doesn't exist
+            rm -rf "${CERT_TEST_VENV}"
+            echo -e "Done"
+            echo -ne "Sym linking ${ASHMEM_VENV} to ${CERT_TEST_VENV}..."
+            ln -s "${ASHMEM_VENV}" "${CERT_TEST_VENV}"
+            echo -e "Done"
+            echo -e "${NOCOLOR}"
+        fi
+    else
+        echo -e "${RED}Not using ashmem virtual environment.${NOCOLOR}"
+        if [[ -L ${CERT_TEST_VENV} ]] ; then
+            echo -e "${RED}"
+            echo -en "Removing sym link from ${ASHMEM_VENV} to ${CERT_TEST_VENV}..."
+            rm -rf ""${ASHMEM_VENV} "${CERT_TEST_VENV}"
+            echo -e "Done"
+            echo -en "Cleaning up memory..."
+            rm -rf "${ASHMEM_VENV}" 
+            echo -e "Done"
+            echo -e "${NOCOLOR}"
+        fi
+    fi
+    python3.8 -m virtualenv --python `which python3.8` "${CERT_TEST_VENV}"
+    if [[ $? -ne 0 ]] ; then
+        echo "Error setting up virtualenv"
+        exit 1
+    fi
+    
+    unzip -o -q "${ANDROID_BUILD_TOP}/out/dist/bluetooth_cert_tests.zip" -d "${CERT_TEST_VENV}/acts"
+    if [[ $? -ne 0 ]] ; then
+        echo "Error unzipping bluetooth_cert_tests.zip"
+        exit 1
+    fi
+    
+    $(echo "${CERT_TEST_VENV}/bin/python" "${CERT_TEST_VENV}/acts/setup.py" --quiet build --force)
+    if [[ $? -ne 0 ]] ; then
+        echo "Error building GD Python libraries"
+        exit 1
+    fi
+    
+    $(echo "${CERT_TEST_VENV}/bin/python" "${CERT_TEST_VENV}/acts/setup.py" --quiet install --skip-build --force "${INSTALL_ARGS}")
+    if [[ $? -ne 0 ]] ; then
+        echo "Error installing GD Python libraries"
+        exit 1
     fi
 
-    if [[ ! -L ${ANDROID_BUILD_TOP}/out/target ]] ; then
-        mv ${ANDROID_BUILD_TOP}/out/target /dev/shm/
-        ln -s /dev/shm/target ${ANDROID_BUILD_TOP}/out/target
-    fi
-
-    if [[ ! -L ${ANDROID_BUILD_TOP}/out/soong/build.ninja ]] ; then
-        mkdir -p /dev/shm/soong
-        mv ${ANDROID_BUILD_TOP}/out/soong/build.ninja /dev/shm/soong/
-        ln -s /dev/shm/soong/build.ninja ${ANDROID_BUILD_TOP}/out/soong/build.ninja
-    fi
-
-else
-    echo -e "${RED}Speed H4x Disabled${NOCOLOR}"
-    echo -e "${RED}I don't like going fast! ${NOCOLOR}"
-    if [[ -L /tmp/logs/HostOnlyCert ]] ; then
-        rm -rf /tmp/logs/HostOnlyCert
-        mv /dev/shm/HostOnlyCert /tmp/logs/
-    fi
-
-    if [[ -L ${ANDROID_BUILD_TOP}/out/soong/.intermediates/system/bt ]] ; then
-        rm -f ${ANDROID_BUILD_TOP}/out/soong/.intermediates/system/bt
-        mv /dev/shm/soong/.intermediates/system/bt ${ANDROID_BUILD_TOP}/out/soong/.intermediates/system/bt
-    fi
-
-    if [[ -L ${ANDROID_BUILD_TOP}/out/target ]] ; then
-        rm -f ${ANDROID_BUILD_TOP}/out/target
-        mv /dev/shm/target ${ANDROID_BUILD_TOP}/out/target
-    fi
-
-    if [[ ! -L ${ANDROID_BUILD_TOP}/out/soong/build.ninja ]] ; then
-        rm ${ANDROID_BUILD_TOP}/out/soong/build.ninja
-        mv /dev/shm/soong/build.ninja ${ANDROID_BUILD_TOP}/out/soong/build.ninja
-    fi
-fi
-
-python3.8 -m virtualenv --python `which python3.8` $CERT_TEST_VENV
-if [[ $? -ne 0 ]] ; then
-    echo "Error setting up virtualenv"
-    exit 1
-fi
-
-unzip -o -q $ANDROID_BUILD_TOP/out/dist/bluetooth_cert_tests.zip -d $CERT_TEST_VENV/acts
-if [[ $? -ne 0 ]] ; then
-    echo "Error unzipping bluetooth_cert_tests.zip"
-    exit 1
-fi
-
-$CERT_TEST_VENV/bin/python $CERT_TEST_VENV/acts/setup.py --quiet build --force
-if [[ $? -ne 0 ]] ; then
-    echo "Error building GD Python libraries"
-    exit 1
-fi
-
-$CERT_TEST_VENV/bin/python $CERT_TEST_VENV/acts/setup.py --quiet install --skip-build --force $INSTALL_ARGS
-if [[ $? -ne 0 ]] ; then
-    echo "Error installing GD Python libraries"
-    exit 1
-fi
-
-$CERT_TEST_VENV/bin/python -c "
+"${CERT_TEST_VENV}/bin/python" -c "
 import bluetooth_packets_python3 as bp3
 bp3.BaseStruct
 "
@@ -252,31 +251,78 @@ if [[ $? -ne 0 ]] ; then
   exit 1
 fi
 
-if [ "$VERBOSE_MODE" == true ] ; then
+if [ "${VERBOSE_MODE}" == true ] ; then
   TEMP_CONFIG=/tmp/temp_acts_config.json
-  cat $TEST_CONFIG | $CERT_TEST_VENV/bin/python -c "
+  cat "${TEST_CONFIG}" | "${CERT_TEST_VENV}/bin/python" -c "
 import sys
 import json
 from acts import keys
 config = json.load(sys.stdin)
 config['verbose_mode'] = True
 print(json.dumps(config))
-  " > $TEMP_CONFIG
-  TEST_CONFIG=$TEMP_CONFIG
+  " > "${TEMP_CONFIG}"
+  TEST_CONFIG="${TEMP_CONFIG}"
   if [[ $? -ne 0 ]] ; then
     echo "Setup failed as verbose mode is chosen but cannot be enabled"
     exit 1
   fi
 fi
 
-for n in $(seq $NUM_REPETITIONS); do
-  $CERT_TEST_VENV/bin/python $CERT_TEST_VENV/bin/act.py \
-      -c $TEST_CONFIG \
-      $TEST_FILTER \
-      -tp $CERT_TEST_VENV/acts
-done
+}
 
-if [ "$CLEAN_VENV" != true ] ; then
-  echo -e "${YELLOW}NOTE:${NOCOLOR} Completed tests using existing external libraries in virtualenv."
-  echo -e "${YELLOW}NOTE:${NOCOLOR} To update external libraries, please add --clean option."
-fi
+function gotta_go_fast {
+    if [ "${GOTTA_GO_FAST}" == true ] ; then
+        # Call here to explicitly note the flag is in use
+        happy_hedgehog
+        if [[ ! -L "${CERT_HOST_LOGS}" ]] ; then
+            rm -rf "${CERT_HOST_LOGS}"
+            mkdir -p "${ASHMEM_HOST_LOGS}"
+            ln -s "${ASHMEM_HOST_LOGS}" "${CERT_HOST_LOGS}" 
+        fi
+
+        if [[ ! -L "${OUT_TARGET}" ]] ; then
+            rm -rf "${OUT_TARGET}"
+            mkdir -p "${ASHMEM_OUT_TARGET}"
+            ln -s  "${ASHMEM_OUT_TARGET}" "${OUT_TARGET}"
+        fi
+    else
+        if [[ -L "${CERT_HOST_LOGS}" ]] ; then
+            # Call here so we don't spam anyone not using the flag
+            sad_hedgehog
+            rm -rf "${CERT_HOST_LOGS}"
+            rm -rf "${ASHMEM_HOST_LOGS}"
+        fi
+
+        if [[ -L "${OUT_TARGET}" ]] ; then
+            rm -rf "${OUT_TARGET}"
+            rm -rf "${ASHMEM_OUT_TARGET}"
+        fi
+    fi
+}
+
+function run_tests {
+    for n in $(seq "${NUM_REPETITIONS}"); do
+      $(echo "${CERT_TEST_VENV}/bin/python" "${CERT_TEST_VENV}/bin/act.py" \
+          -c "${TEST_CONFIG}" \
+          "${TEST_FILTER}" \
+          -tp "${CERT_TEST_VENV}"/acts)
+    done
+    
+    if [ "${CLEAN_VENV}" != true ] ; then
+      echo -e "${YELLOW}NOTE:${NOCOLOR} Completed tests using existing external libraries in virtualenv."
+      echo -e "${YELLOW}NOTE:${NOCOLOR} To update external libraries, please add --clean option."
+    fi
+}
+
+function main {
+    check_environment
+    parse_options $@
+    if [[ "${SKIP_SOONG_BUILD}" != true ]] ; then
+        soong_build
+    fi
+    setup_venv
+    gotta_go_fast
+    run_tests
+}
+
+main $@
