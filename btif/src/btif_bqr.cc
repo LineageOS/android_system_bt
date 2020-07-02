@@ -51,7 +51,7 @@ void BqrVseSubEvt::ParseBqrLinkQualityEvt(uint8_t length,
   STREAM_TO_UINT8(bqr_link_quality_event_.packet_types, p_param_buf);
   STREAM_TO_UINT16(bqr_link_quality_event_.connection_handle, p_param_buf);
   STREAM_TO_UINT8(bqr_link_quality_event_.connection_role, p_param_buf);
-  STREAM_TO_UINT8(bqr_link_quality_event_.tx_power_level, p_param_buf);
+  STREAM_TO_INT8(bqr_link_quality_event_.tx_power_level, p_param_buf);
   STREAM_TO_INT8(bqr_link_quality_event_.rssi, p_param_buf);
   STREAM_TO_UINT8(bqr_link_quality_event_.snr, p_param_buf);
   STREAM_TO_UINT8(bqr_link_quality_event_.unused_afh_channel_count,
@@ -124,7 +124,7 @@ std::string BqrVseSubEvt::ToString() const {
      << ", Handle: " << loghex(bqr_link_quality_event_.connection_handle)
      << ", " << PacketTypeToString(bqr_link_quality_event_.packet_types) << ", "
      << ((bqr_link_quality_event_.connection_role == 0) ? "Master" : "Slave ")
-     << ", PwLv: " << loghex(bqr_link_quality_event_.tx_power_level)
+     << ", PwLv: " << std::to_string(bqr_link_quality_event_.tx_power_level)
      << ", RSSI: " << std::to_string(bqr_link_quality_event_.rssi)
      << ", SNR: " << std::to_string(bqr_link_quality_event_.snr)
      << ", UnusedCh: "
