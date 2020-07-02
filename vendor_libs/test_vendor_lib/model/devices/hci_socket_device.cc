@@ -88,8 +88,8 @@ HciSocketDevice::HciSocketDevice(int file_descriptor) : socket_file_descriptor_(
       },
       [this]() {
         LOG_INFO("HCI socket device disconnected");
-        socket_file_descriptor_ = -1;
         close_callback_();
+        socket_file_descriptor_ = -1;
       });
 
   RegisterEventChannel([this](std::shared_ptr<std::vector<uint8_t>> packet) {

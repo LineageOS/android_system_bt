@@ -35,14 +35,25 @@ std::shared_ptr<PhyLayer> PhyLayerFactory::GetPhyLayer(
         device_receive,
     uint32_t device_id) {
   std::shared_ptr<PhyLayer> new_phy = std::make_shared<PhyLayerImpl>(
-      phy_type_, next_id_++, device_receive, device_id, this);
+      phy_type_, next_id_++, device_receive, device_id,
+      std::shared_ptr<PhyLayerFactory>(this));
   phy_layers_.push_back(new_phy);
   return new_phy;
 }
 
+void PhyLayerFactory::UnregisterPhyLayer(uint32_t id) {
+  for (auto it = phy_layers_.begin(); it != phy_layers_.end();) {
+    if ((*it)->GetId() == id) {
+      it = phy_layers_.erase(it);
+    } else {
+      it++;
+    }
+  }
+}
+
 void PhyLayerFactory::UnregisterAllPhyLayers() {
-  for (auto& phy : phy_layers_) {
-    phy->Unregister();
+  for (const auto& phy : phy_layers_) {
+    UnregisterPhyLayer(phy->GetId());
   }
 }
 
@@ -102,8 +113,12 @@ PhyLayerImpl::PhyLayerImpl(
     Phy::Type phy_type, uint32_t id,
     const std::function<void(model::packets::LinkLayerPacketView)>&
         device_receive,
-    uint32_t device_id, PhyLayerFactory* factory)
+    uint32_t device_id, const std::shared_ptr<PhyLayerFactory> factory)
     : PhyLayer(phy_type, id, device_receive, device_id), factory_(factory) {}
+
+PhyLayerImpl::~PhyLayerImpl() {
+  Unregister();
+}
 
 void PhyLayerImpl::Send(
     const std::shared_ptr<model::packets::LinkLayerPacketBuilder> packet) {
@@ -115,8 +130,7 @@ void PhyLayerImpl::Send(model::packets::LinkLayerPacketView packet) {
 }
 
 void PhyLayerImpl::Unregister() {
-  // Ignore incoming packets
-  transmit_to_device_ = [](model::packets::LinkLayerPacketView) {};
+  factory_->UnregisterPhyLayer(GetId());
 }
 
 bool PhyLayerImpl::IsFactoryId(uint32_t id) {
