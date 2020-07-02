@@ -171,6 +171,7 @@ function parse_options {
     INSTALL_ARGS="--reuse-acts"
     if [ "$CLEAN_VENV" == true ] ; then
       echo -e "${YELLOW}Cleaning up existing virtualenv${NOCOLOR}"
+      rm -rf $CERT_TEST_VENV/*
       rm -rf $CERT_TEST_VENV
       mkdir -p ${CERT_TEST_VENV}
       INSTALL_ARGS=""
