@@ -20,8 +20,10 @@ from cert.event_stream import EventStream
 from cert.gd_base_test import GdBaseTestClass
 from cert.py_security import PySecurity
 from facade import common_pb2 as common
-from hci.facade import controller_facade_pb2 as controller_facade
 from google.protobuf import empty_pb2 as empty_proto
+from hci.facade import controller_facade_pb2 as controller_facade
+from hci.facade import le_initiator_address_facade_pb2 as le_initiator_address_facade
+from l2cap.classic.facade_pb2 import ClassicSecurityPolicy
 from neighbor.facade import facade_pb2 as neighbor_facade
 from security.cert.cert_security import CertSecurity
 from security.facade_pb2 import AuthenticationRequirements
@@ -58,18 +60,33 @@ class SecurityTest(GdBaseTestClass):
         self.dut_security = PySecurity(self.dut)
         self.cert_security = CertSecurity(self.cert)
 
+        self.dut_address = common.BluetoothAddressWithType(
+            address=common.BluetoothAddress(address=bytes(b'DD:05:04:03:02:01')), type=common.RANDOM_DEVICE_ADDRESS)
+        privacy_policy = le_initiator_address_facade.PrivacyPolicy(
+            address_policy=le_initiator_address_facade.AddressPolicy.USE_STATIC_ADDRESS,
+            address_with_type=self.dut_address)
+        self.dut.security.SetLeInitiatorAddressPolicy(privacy_policy)
+
     def teardown_test(self):
         self.dut_security.close()
         self.cert_security.close()
         super().teardown_test()
 
-    # SSP Numeric Comparison test cases
+    # Initiates the numeric comparison test
     def _run_ssp_numeric_comparison(self, initiator, responder, init_ui_response, resp_ui_response,
                                     expected_init_ui_event, expected_resp_ui_event, expected_init_bond_event,
                                     expected_resp_bond_event):
         initiator.enable_secure_simple_pairing()
         responder.enable_secure_simple_pairing()
         initiator.create_bond(responder.get_address(), common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
+        self._verify_ssp_numeric_comparison(initiator, responder, init_ui_response, resp_ui_response,
+                                            expected_init_ui_event, expected_resp_ui_event, expected_init_bond_event,
+                                            expected_resp_bond_event)
+
+    # Verifies the events for the numeric comparion test
+    def _verify_ssp_numeric_comparison(self, initiator, responder, init_ui_response, resp_ui_response,
+                                       expected_init_ui_event, expected_resp_ui_event, expected_init_bond_event,
+                                       expected_resp_bond_event):
         responder.accept_pairing(initiator.get_address(), resp_ui_response)
         initiator.on_user_input(responder.get_address(), init_ui_response, expected_init_ui_event)
         initiator.wait_for_bond_event(expected_init_bond_event)
@@ -296,7 +313,42 @@ class SecurityTest(GdBaseTestClass):
             expected_resp_bond_event=None)
 
     # no_input_no_output + no_input_no_output is JustWorks no confirmation
-    def test_dut_initiated_no_input_no_output_no_input_no_output_twice(self):
+    def test_dut_initiated_no_input_no_output_no_input_no_output_twice_same_acl(self):
+        # Arrange
+        self.dut_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
+        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
+        self.cert_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
+        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
+
+        # Act and Assert
+        self._run_ssp_numeric_comparison(
+            initiator=self.dut_security,
+            responder=self.cert_security,
+            init_ui_response=True,
+            resp_ui_response=True,
+            expected_init_ui_event=None,
+            expected_resp_ui_event=None,
+            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
+            expected_resp_bond_event=None)
+
+        self.dut_security.enforce_security_policy(self.cert.address,
+                                                  common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS,
+                                                  ClassicSecurityPolicy.AUTHENTICATED_ENCRYPTED_TRANSPORT)
+
+        self._verify_ssp_numeric_comparison(
+            initiator=self.dut_security,
+            responder=self.cert_security,
+            init_ui_response=True,
+            resp_ui_response=True,
+            expected_init_ui_event=None,
+            expected_resp_ui_event=None,
+            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
+            expected_resp_bond_event=None)
+
+    # no_input_no_output + no_input_no_output is JustWorks no confirmation
+    def test_dut_initiated_no_input_no_output_no_input_no_output_twice_with_remove_bond(self):
         # Arrange
         self.dut_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
         self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)

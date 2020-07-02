@@ -28,6 +28,7 @@
 #include "btif_common.h"
 #include "common/message_loop_thread.h"
 #include "device/include/controller.h"
+#include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "osi/include/semaphore.h"
@@ -112,6 +113,9 @@ static void event_init_stack(void* context) {
 
     module_init(get_module(OSI_MODULE));
     module_init(get_module(BT_UTILS_MODULE));
+    if (bluetooth::shim::is_gd_shim_enabled()) {
+      module_start_up(get_module(GD_IDLE_MODULE));
+    }
     module_init(get_module(BTIF_CONFIG_MODULE));
     btif_init_bluetooth();
 
@@ -147,7 +151,6 @@ static void event_start_up_stack(UNUSED_ATTR void* context) {
   hack_future = local_hack_future;
 
   // Include this for now to put btif config into a shutdown-able state
-  module_start_up(get_module(BTIF_CONFIG_MODULE));
   bte_main_enable();
 
   if (future_await(local_hack_future) != FUTURE_SUCCESS) {
@@ -212,6 +215,7 @@ static void event_clean_up_stack(void* context) {
   module_clean_up(get_module(BTIF_CONFIG_MODULE));
   module_clean_up(get_module(BT_UTILS_MODULE));
   module_clean_up(get_module(OSI_MODULE));
+  module_shut_down(get_module(GD_IDLE_MODULE));
   module_management_stop();
   LOG_INFO("%s finished", __func__);
 
