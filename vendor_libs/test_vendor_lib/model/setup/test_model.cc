@@ -79,11 +79,13 @@ void TestModel::SetTimerPeriod(std::chrono::milliseconds new_period) {
 }
 
 void TestModel::StartTimer() {
+  LOG_INFO("StartTimer()");
   timer_tick_task_ =
       schedule_periodic_task_(std::chrono::milliseconds(0), timer_period_, [this]() { TestModel::TimerTick(); });
 }
 
 void TestModel::StopTimer() {
+  LOG_INFO("StopTimer()");
   cancel_task_(timer_tick_task_);
   timer_tick_task_ = kInvalidTaskId;
 }
@@ -235,12 +237,13 @@ void TestModel::TimerTick() {
 
 void TestModel::Reset() {
   StopTimer();
-  for (auto& phy : phys_) {
-    phy.UnregisterAllPhyLayers();
+  for (const auto& dev : devices_) {
+    if (dev != nullptr) {
+      dev->UnregisterPhyLayers();
+    }
   }
-  for (size_t i = 0; i < devices_.size(); i++) {
-    Del(i);
-  }
+  devices_.clear();
+  phys_.clear();
 }
 
 }  // namespace test_vendor_lib
