@@ -87,7 +87,7 @@ class Device {
                                    Phy::Type phy_type);
 
  protected:
-  std::list<std::shared_ptr<PhyLayer>> phy_layers_;
+  std::map<Phy::Type, std::list<std::shared_ptr<PhyLayer>>> phy_layers_;
 
   std::chrono::steady_clock::time_point last_advertisement_;
 
