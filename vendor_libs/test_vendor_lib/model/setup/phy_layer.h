@@ -62,7 +62,8 @@ class PhyLayer {
   uint32_t device_id_;
 
  protected:
-  std::function<void(model::packets::LinkLayerPacketView)> transmit_to_device_;
+  const std::function<void(model::packets::LinkLayerPacketView)>
+      transmit_to_device_;
 };
 
 }  // namespace test_vendor_lib
