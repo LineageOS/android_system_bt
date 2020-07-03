@@ -43,8 +43,8 @@ void FacadeConfigurationApi::SetLeIoCapability(security::IoCapability io_capabil
   security_handler_->CallOn(security_manager_impl_, &internal::SecurityManagerImpl::SetLeIoCapability, io_capability);
 }
 
-void FacadeConfigurationApi::SetLeAuthReq(uint8_t auth_req) {
-  security_handler_->CallOn(security_manager_impl_, &internal::SecurityManagerImpl::SetLeAuthReq, auth_req);
+void FacadeConfigurationApi::SetLeAuthRequirements(uint8_t auth_req) {
+  security_handler_->CallOn(security_manager_impl_, &internal::SecurityManagerImpl::SetLeAuthRequirements, auth_req);
 }
 
 void FacadeConfigurationApi::EnforceSecurityPolicy(
