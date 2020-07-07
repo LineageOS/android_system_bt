@@ -54,13 +54,6 @@ class PyLeSecurity(Closable):
     def get_bond_stream(self):
         return self._bond_event_stream
 
-    def wait_for_bond_event(self, expected_bond_event, timeout=timedelta(seconds=3)):
-        assertThat(self._bond_event_stream).emits(
-            lambda event: event.message_type == expected_bond_event, timeout=timeout)
-
-    def wait_for_ui_event(self, expected_ui_event, timeout=timedelta(seconds=3)):
-        assertThat(self._ui_event_stream).emits(lambda event: event.message_type == expected_ui_event, timeout=timeout)
-
     def wait_for_ui_event_passkey(self, timeout=timedelta(seconds=3)):
         display_passkey_capture = SecurityCaptures.DisplayPasskey()
         assertThat(self._ui_event_stream).emits(display_passkey_capture, timeout=timeout)
