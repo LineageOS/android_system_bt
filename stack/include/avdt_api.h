@@ -931,19 +931,6 @@ extern uint16_t AVDT_GetL2CapChannel(uint8_t handle);
 
 /*******************************************************************************
  *
- * Function         AVDT_GetSignalChannel
- *
- * Description      Get the L2CAP CID used by the signal channel of the given
- *                  handle.
- *
- * Returns          CID if successful, otherwise 0.
- *
- ******************************************************************************/
-extern uint16_t AVDT_GetSignalChannel(uint8_t handle,
-                                      const RawAddress& bd_addr);
-
-/*******************************************************************************
- *
  * Function         AVDT_SendReport
  *
  * Description
