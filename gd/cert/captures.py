@@ -20,6 +20,8 @@ from bluetooth_packets_python3 import l2cap_packets
 from bluetooth_packets_python3.l2cap_packets import CommandCode, LeCommandCode
 from cert.capture import Capture
 from cert.matchers import L2capMatchers
+from cert.matchers import SecurityMatchers
+from security.facade_pb2 import UiMsgType
 
 
 class HalCaptures(object):
@@ -142,3 +144,16 @@ class L2capCaptures(object):
     def _extract_credit_based_connection_response(packet):
         frame = L2capMatchers.le_control_frame_with_code(packet, LeCommandCode.LE_CREDIT_BASED_CONNECTION_RESPONSE)
         return l2cap_packets.LeCreditBasedConnectionResponseView(frame)
+
+
+class SecurityCaptures(object):
+
+    @staticmethod
+    def DisplayPasskey():
+        return Capture(SecurityMatchers.UiMsg(UiMsgType.DISPLAY_PASSKEY), SecurityCaptures._extract_passkey)
+
+    @staticmethod
+    def _extract_passkey(event):
+        if event is None:
+            return None
+        return event.numeric_value
