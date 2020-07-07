@@ -19,6 +19,7 @@ from bluetooth_packets_python3 import hci_packets
 from cert.event_stream import EventStream
 from cert.gd_base_test import GdBaseTestClass
 from cert.matchers import HciMatchers
+from cert.matchers import SecurityMatchers
 from cert.metadata import metadata
 from cert.py_hci import PyHci
 from cert.py_le_security import PyLeSecurity
@@ -453,3 +454,154 @@ class LeSecurityTest(GdBaseTestClass):
 
         # 3. IUT and Lower Tester perform phase 2 of the Just Works pairing and establish an encrypted link with the generated LTK.
         self.cert_security.wait_for_bond_event(expected_bond_event=BondMsgType.DEVICE_BONDED)
+
+    @metadata(
+        pts_test_id="SM/MAS/SCPK/BV-01-C", pts_test_name="Passkey Entry, IUT Initiator, Secure Connections – Success")
+    def test_passkey_entry_iut_initiator_secure_connections(self):
+        """
+            Verify that the IUT supporting LE Secure Connections performs the Passkey Entry pairing procedure correctly as master, initiator.
+        """
+        self._prepare_cert_for_connection()
+
+        self.dut.security.SetLeIoCapability(
+            LeIoCapabilityMessage(capabilities=LeIoCapabilityMessage.LeIoCapabilities.DISPLAY_ONLY))
+        self.dut.security.SetOobDataPresent(OobDataMessage(data_present=OobDataPresent.NOT_PRESENT))
+        self.dut.security.SetLeAuthReq(LeAuthReqMsg(auth_req=0x08))
+
+        self.cert.security.SetLeIoCapability(
+            LeIoCapabilityMessage(capabilities=LeIoCapabilityMessage.LeIoCapabilities.KEYBOARD_ONLY))
+        self.cert.security.SetOobDataPresent(OobDataMessage(data_present=OobDataPresent.NOT_PRESENT))
+        self.cert.security.SetLeAuthReq(LeAuthReqMsg(auth_req=0x0C))
+
+        # 1. IUT transmits Pairing Request command with:
+        # a. IO capability set to “DisplayOnly” or “KeyboardOnly”
+        # b. OOB data flag set to 0x00 (OOB Authentication data not present)
+        # c. AuthReq bonding flag set to ‘00’, the MITM flag set to ‘0’ and Secure Connections flag set to '1'. Keypress bit is set to '1' if supported
+        self.dut.security.CreateBondLe(self.cert_address)
+
+        assertThat(self.cert_security.get_ui_stream()).emits(SecurityMatchers.UiMsg(UiMsgType.DISPLAY_PAIRING_PROMPT))
+
+        # 2. Lower Tester responds with a Pairing Response command, with:
+        # a. IO capability set to “KeyboardOnly”
+        # b. OOB data flag set to 0x00 (OOB Authentication data not present)
+        # c. AuthReq bonding flag set to ‘00’, the MITM flag set to ‘1’, Secure Connections flag set to '1' and all reserved bits are set to ‘0’. Keypress bit is set to '1' if supported by the IUT.
+        self.cert.security.SendUiCallback(
+            UiCallbackMsg(
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.cert_address))
+
+        assertThat(self.cert_security.get_ui_stream()).emits(SecurityMatchers.UiMsg(UiMsgType.DISPLAY_PASSKEY_ENTRY))
+
+        # 3. During the phase 2 pairing, the IUT displays the 6-digit passkey while the Lower Tester prompts user to enter the 6-digit passkey. If the IUT’s IO capabilities are “KeyboardOnly” the passkey is not displayed and both IUT and Lower Tester enter the same 6-digit passkey. If Keypress bit is set, pairing keypress notifications are sent by the Lower Tester.
+        passkey = self.dut_security.wait_for_ui_event_passkey()
+
+        if passkey == 0:
+            print("Passkey did not arrive into test")
+
+        # 4. IUT and Lower Tester use the same 6-digit passkey.
+        self.cert.security.SendUiCallback(
+            UiCallbackMsg(
+                message_type=UiCallbackType.PASSKEY, numeric_value=passkey, unique_id=1, address=self.dut_address))
+
+        # 5. IUT and Lower Tester perform phase 2 of the Passkey Entry pairing procedure and establish an encrypted link with the LTK generated in phase 2.
+        assertThat(self.dut_security.get_bond_stream()).emits(
+            SecurityMatchers.BondMsg(BondMsgType.DEVICE_BONDED), timeout=timedelta(seconds=10))
+
+    @metadata(
+        pts_test_id="SM/SLA/SCPK/BV-02-C", pts_test_name="Passkey Entry, IUT Responder, Secure Connections – Success")
+    def test_passkey_entry_iut_responder_secure_connections(self):
+        """
+            Verify that the IUT supporting LE Secure Connections is able to perform the Passkey Entry pairing procedure correctly when acting as slave, responder.
+        """
+        self._prepare_dut_for_connection()
+
+        self.dut.security.SetLeIoCapability(
+            LeIoCapabilityMessage(capabilities=LeIoCapabilityMessage.LeIoCapabilities.DISPLAY_ONLY))
+        self.dut.security.SetOobDataPresent(OobDataMessage(data_present=OobDataPresent.NOT_PRESENT))
+        self.dut.security.SetLeAuthReq(LeAuthReqMsg(auth_req=0x08))
+
+        self.cert.security.SetLeIoCapability(
+            LeIoCapabilityMessage(capabilities=LeIoCapabilityMessage.LeIoCapabilities.KEYBOARD_DISPLAY))
+        self.cert.security.SetOobDataPresent(OobDataMessage(data_present=OobDataPresent.NOT_PRESENT))
+        self.cert.security.SetLeAuthReq(LeAuthReqMsg(auth_req=0x0D))
+
+        # 1. Lower Tester transmits Pairing Request command with:
+        # a. IO capability set to “KeyboardDisplay”
+        # b. OOB data flag set to 0x00 (OOB Authentication data not present)
+        # c. AuthReq bonding flag set to the value indicated in the IXIT [7] for ‘Bonding Flags’, and the MITM flag set to ‘1’ Secure Connections flag set to '1' and all reserved bits are set to ‘0’
+        self.cert.security.CreateBondLe(self.dut_address)
+
+        assertThat(self.dut_security.get_ui_stream()).emits(SecurityMatchers.UiMsg(UiMsgType.DISPLAY_PAIRING_PROMPT))
+
+        # 2. IUT responds with a Pairing Response command, with:
+        # a. IO capability set to “KeyboardOnly” or “KeyboardDisplay” or “DisplayYesNo” or “DisplayOnly”
+        # b. Secure Connections flag set to '1'. Keypress bit is set to '1' if supported by IUT
+        self.dut.security.SendUiCallback(
+            UiCallbackMsg(
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.dut_address))
+
+        # 3. During the phase 2 passkey pairing process, Lower Tester displays the 6-digit passkey while the IUT prompts user to enter the 6-digit passkey. If the IO capabilities of the IUT are “DisplayYesNo” or “DisplayOnly” the IUT displays the 6-digit passkey while the Lower Tester enters the 6-digit passkey. If Keypress bit is set, pairing keypress notifications are send by the IUT
+        passkey = self.dut_security.wait_for_ui_event_passkey()
+
+        if passkey == 0:
+            print("Passkey did not arrive into test")
+
+        assertThat(self.cert_security.get_ui_stream()).emits(SecurityMatchers.UiMsg(UiMsgType.DISPLAY_PASSKEY_ENTRY))
+
+        # 4. IUT and Lower Tester use the same pre-defined 6-digit passkey.
+        self.cert.security.SendUiCallback(
+            UiCallbackMsg(
+                message_type=UiCallbackType.PASSKEY, numeric_value=passkey, unique_id=1, address=self.dut_address))
+
+        # 5. IUT and Lower Tester perform phase 2 of the LE pairing and establish an encrypted link with the LTK generated in phase 2.
+        assertThat(self.dut_security.get_bond_stream()).emits(
+            SecurityMatchers.BondMsg(BondMsgType.DEVICE_BONDED), timeout=timedelta(seconds=10))
+
+    @metadata(
+        pts_test_id="SM/SLA/SCPK/BV-03-C",
+        pts_test_name="Passkey Entry, IUT Responder, Secure Connections – Handle AuthReq Flag RFU Correctly")
+    def test_passkey_entry_iut_responder_secure_connections_auth_req_rfu(self):
+        """
+            Verify that the IUT supporting LE Secure Connections is able to perform the Passkey Entry pairing procedure when receiving additional bits set in the AuthReq flag. Reserved For Future Use bits are correctly handled when acting as slave, responder.
+        """
+        self._prepare_dut_for_connection()
+
+        self.dut.security.SetLeIoCapability(
+            LeIoCapabilityMessage(capabilities=LeIoCapabilityMessage.LeIoCapabilities.KEYBOARD_ONLY))
+        self.dut.security.SetOobDataPresent(OobDataMessage(data_present=OobDataPresent.NOT_PRESENT))
+        self.dut.security.SetLeAuthReq(LeAuthReqMsg(auth_req=0x08))
+
+        self.cert.security.SetLeIoCapability(
+            LeIoCapabilityMessage(capabilities=LeIoCapabilityMessage.LeIoCapabilities.DISPLAY_ONLY))
+        self.cert.security.SetOobDataPresent(OobDataMessage(data_present=OobDataPresent.NOT_PRESENT))
+        self.cert.security.SetLeAuthReq(LeAuthReqMsg(auth_req=0x0C))
+
+        # 1. Lower Tester transmits Pairing Request command with:
+        # a. IO Capability set to ”KeyboardOnly”
+        # b. OOB data flag set to 0x00 (OOB Authentication data not present)
+        # c. MITM set to ‘1’ and all reserved bits are set to a random value
+        self.cert.security.CreateBondLe(self.dut_address)
+
+        assertThat(self.dut_security.get_ui_stream()).emits(SecurityMatchers.UiMsg(UiMsgType.DISPLAY_PAIRING_PROMPT))
+
+        # 2. IUT responds with a Pairing Response command, with:
+        # a. IO Capability set to “KeyboardOnly” or “DisplayOnly”
+        # b. OOB data flag set to 0x00 (OOB Authentication data not present)
+        # c. All reserved bits are set to ‘0’
+        self.dut.security.SendUiCallback(
+            UiCallbackMsg(
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.dut_address))
+
+        passkey = self.cert_security.wait_for_ui_event_passkey()
+
+        if passkey == 0:
+            print("Passkey did not arrive into test")
+
+        assertThat(self.dut_security.get_ui_stream()).emits(SecurityMatchers.UiMsg(UiMsgType.DISPLAY_PASSKEY_ENTRY))
+
+        self.dut.security.SendUiCallback(
+            UiCallbackMsg(
+                message_type=UiCallbackType.PASSKEY, numeric_value=passkey, unique_id=1, address=self.cert_address))
+
+        # 3. IUT and Lower Tester perform phase 2 of the Passkey Entry pairing and establish an encrypted link with the generated LTK.
+        assertThat(self.dut_security.get_bond_stream()).emits(
+            SecurityMatchers.BondMsg(BondMsgType.DEVICE_BONDED), timeout=timedelta(seconds=10))
