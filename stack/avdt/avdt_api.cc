@@ -1097,36 +1097,6 @@ uint16_t AVDT_GetL2CapChannel(uint8_t handle) {
 
 /*******************************************************************************
  *
- * Function         AVDT_GetSignalChannel
- *
- * Description      Get the L2CAP CID used by the signal channel of the given
- *                  handle.
- *
- * Returns          CID if successful, otherwise 0.
- *
- ******************************************************************************/
-uint16_t AVDT_GetSignalChannel(uint8_t handle, const RawAddress& bd_addr) {
-  AvdtpScb* p_scb;
-  AvdtpCcb* p_ccb;
-  uint8_t tcid = 0; /* tcid is always 0 for signal channel */
-  uint16_t lcid = 0;
-
-  /* map handle to scb */
-  if (((p_scb = avdt_scb_by_hdl(handle)) != NULL) &&
-      ((p_ccb = p_scb->p_ccb) != NULL)) {
-    lcid = avdtp_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][tcid].lcid;
-  } else {
-    p_ccb = avdt_ccb_by_bd(bd_addr);
-    if (p_ccb != NULL) {
-      lcid = avdtp_cb.ad.rt_tbl[avdt_ccb_to_idx(p_ccb)][tcid].lcid;
-    }
-  }
-
-  return (lcid);
-}
-
-/*******************************************************************************
- *
  * Function         AVDT_SendReport
  *
  * Description
