@@ -38,5 +38,9 @@ common::BidiQueueEnd<packet::BasePacketBuilder, packet::PacketView<packet::kLitt
 DynamicChannel::GetQueueUpEnd() const {
   return impl_->GetQueueUpEnd();
 }
+
+Cid DynamicChannel::HACK_GetRemoteCid() {
+  return impl_->GetRemoteCid();
+}
 }  // namespace l2cap
 }  // namespace bluetooth
