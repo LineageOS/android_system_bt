@@ -132,13 +132,21 @@ class LeSignallingManager {
   void OnCredit(Cid remote_cid, uint16_t credits);
 
  private:
+  struct PendingConnection {
+    Cid remote_cid;
+    Mtu mtu;
+    uint16_t max_pdu_size;
+    uint16_t initial_credits;
+    SignalId incoming_signal_id;
+  };
+
   void on_incoming_packet();
   void send_connection_response(SignalId signal_id, Cid local_cid, Mtu mtu, uint16_t mps, uint16_t initial_credit,
                                 LeCreditBasedConnectionResponseResult result);
   void on_command_timeout();
   void handle_send_next_command();
-  void on_security_result_for_incoming(Psm psm, bool result);
-  void on_security_result_for_outgoing(Psm psm, bool result);
+  void on_security_result_for_incoming(Psm psm, PendingConnection request, bool result);
+  void on_security_result_for_outgoing(Psm psm, Cid local_cid, Mtu mtu, bool result);
 
   os::Handler* handler_;
   Link* link_;
@@ -151,16 +159,6 @@ class LeSignallingManager {
   PendingCommand command_just_sent_;
   os::Alarm alarm_;
   SignalId next_signal_id_ = kInitialSignalId;
-
-  struct PendingConnection {
-    Cid local_cid;
-    Cid remote_cid;
-    Mtu mtu;
-    uint16_t max_pdu_size;
-    uint16_t initial_credits;
-    SignalId incoming_signal_id;
-  };
-  std::unordered_map<Psm, PendingConnection> pending_security_requests_;
 };
 
 }  // namespace internal
