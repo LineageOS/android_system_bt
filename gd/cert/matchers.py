@@ -583,3 +583,14 @@ class L2capMatchers(object):
         response = l2cap_packets.LeCreditBasedConnectionResponseView(frame)
         return response.GetResult() == result and (result != LeCreditBasedConnectionResponseResult.SUCCESS or
                                                    response.GetDestinationCid() != 0)
+
+
+class SecurityMatchers(object):
+
+    @staticmethod
+    def UiMsg(type):
+        return lambda event: True if event.message_type == type else False
+
+    @staticmethod
+    def BondMsg(type):
+        return lambda event: True if event.message_type == type else False

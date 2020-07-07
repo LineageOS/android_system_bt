@@ -20,6 +20,7 @@ from bluetooth_packets_python3 import hci_packets
 from cert.closable import Closable
 from cert.closable import safeClose
 from cert.event_stream import EventStream
+from cert.truth import assertThat
 from facade import common_pb2 as common
 from google.protobuf import empty_pb2 as empty_proto
 from hci.facade import facade_pb2 as hci_facade
@@ -129,7 +130,7 @@ class PySecurity(Closable):
             return False
 
         logging.info("DUT: Waiting for expected UI event")
-        self._ui_event_stream.assert_event_occurs(get_unique_id)
+        assertThat(self._ui_event_stream).emits(get_unique_id)
         # TODO(optedoblivion): Make UiCallbackType dynamic for PASSKEY when added
         self.send_ui_callback(cert_address, UiCallbackType.YES_NO, reply_boolean, ui_id)
 
@@ -143,7 +144,7 @@ class PySecurity(Closable):
             for Cert it isn't needed.
         """
         logging.info("DUT: Waiting for Bond Event")
-        self._bond_event_stream.assert_event_occurs(lambda event: event.message_type == expected_bond_event)
+        assertThat(self._bond_event_stream).emits(lambda event: event.message_type == expected_bond_event)
 
     def enforce_security_policy(self, address, type, policy):
         """
