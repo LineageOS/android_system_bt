@@ -18,6 +18,7 @@
 #include "common/bidi_queue.h"
 #include "common/callback.h"
 #include "hci/acl_manager.h"
+#include "l2cap/cid.h"
 #include "os/handler.h"
 #include "packet/base_packet_builder.h"
 #include "packet/packet_view.h"
@@ -68,6 +69,8 @@ class DynamicChannel {
    * @return The upper end of a bi-directional queue.
    */
   common::BidiQueueEnd<packet::BasePacketBuilder, packet::PacketView<packet::kLittleEndian>>* GetQueueUpEnd() const;
+
+  Cid HACK_GetRemoteCid();
 
  private:
   std::shared_ptr<l2cap::internal::DynamicChannelImpl> impl_;
