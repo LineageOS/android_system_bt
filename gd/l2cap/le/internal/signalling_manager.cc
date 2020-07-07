@@ -57,30 +57,20 @@ LeSignallingManager::~LeSignallingManager() {
 }
 
 void LeSignallingManager::SendConnectionRequest(Psm psm, Cid local_cid, Mtu mtu) {
-  PendingConnection pending{
-      .local_cid = local_cid,
-      .mtu = mtu,
-  };
-  pending_security_requests_[psm] = pending;
   dynamic_service_manager_->GetSecurityEnforcementInterface()->Enforce(
-      link_->GetDevice(), dynamic_service_manager_->GetService(psm)->GetSecurityPolicy(),
-      handler_->BindOnceOn(this, &LeSignallingManager::on_security_result_for_outgoing, psm));
+      link_->GetDevice(),
+      dynamic_service_manager_->GetService(psm)->GetSecurityPolicy(),
+      handler_->BindOnceOn(this, &LeSignallingManager::on_security_result_for_outgoing, psm, local_cid, mtu));
 }
 
-void LeSignallingManager::on_security_result_for_outgoing(Psm psm, bool result) {
-  ASSERT_LOG(pending_security_requests_.find(psm) != pending_security_requests_.end(),
-             "Received security result without pending request");
-
-  auto request = pending_security_requests_[psm];
-  pending_security_requests_.erase(psm);
-
+void LeSignallingManager::on_security_result_for_outgoing(Psm psm, Cid local_cid, Mtu mtu, bool result) {
   if (!result) {
     LOG_WARN("Security requirement can't be satisfied. Dropping connection request");
     return;
   }
 
   PendingCommand pending_command = PendingCommand::CreditBasedConnectionRequest(
-      next_signal_id_, psm, request.local_cid, request.mtu, link_->GetMps(), link_->GetInitialCredit());
+      next_signal_id_, psm, local_cid, mtu, link_->GetMps(), link_->GetInitialCredit());
   next_signal_id_++;
   pending_commands_.push(pending_command);
   if (pending_commands_.size() == 1) {
@@ -214,18 +204,13 @@ void LeSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, Cid r
       .max_pdu_size = mps,
       .mtu = mtu,
   };
-  pending_security_requests_[psm] = pending;
   dynamic_service_manager_->GetSecurityEnforcementInterface()->Enforce(
-      link_->GetDevice(), dynamic_service_manager_->GetService(psm)->GetSecurityPolicy(),
-      handler_->BindOnceOn(this, &LeSignallingManager::on_security_result_for_incoming, psm));
+      link_->GetDevice(),
+      dynamic_service_manager_->GetService(psm)->GetSecurityPolicy(),
+      handler_->BindOnceOn(this, &LeSignallingManager::on_security_result_for_incoming, psm, pending));
 }
 
-void LeSignallingManager::on_security_result_for_incoming(Psm psm, bool result) {
-  ASSERT_LOG(pending_security_requests_.find(psm) != pending_security_requests_.end(),
-             "Received security result without pending request");
-
-  auto request = pending_security_requests_[psm];
-  pending_security_requests_.erase(psm);
+void LeSignallingManager::on_security_result_for_incoming(Psm psm, PendingConnection request, bool result) {
   auto signal_id = request.incoming_signal_id;
   auto* service = dynamic_service_manager_->GetService(psm);
   if (!result) {
