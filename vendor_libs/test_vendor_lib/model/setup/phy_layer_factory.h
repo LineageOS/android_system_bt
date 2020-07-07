@@ -68,7 +68,7 @@ class PhyLayerImpl : public PhyLayer {
   PhyLayerImpl(Phy::Type phy_type, uint32_t id,
                const std::function<void(model::packets::LinkLayerPacketView)>&
                    device_receive,
-               uint32_t device_id, std::shared_ptr<PhyLayerFactory> factory);
+               uint32_t device_id, PhyLayerFactory* factory);
   ~PhyLayerImpl() override;
 
   void Send(
@@ -81,6 +81,6 @@ class PhyLayerImpl : public PhyLayer {
 
 
  private:
-  std::shared_ptr<PhyLayerFactory> factory_;
+  PhyLayerFactory* factory_;
 };
 }  // namespace test_vendor_lib

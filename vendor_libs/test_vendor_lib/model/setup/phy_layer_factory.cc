@@ -35,8 +35,7 @@ std::shared_ptr<PhyLayer> PhyLayerFactory::GetPhyLayer(
         device_receive,
     uint32_t device_id) {
   std::shared_ptr<PhyLayer> new_phy = std::make_shared<PhyLayerImpl>(
-      phy_type_, next_id_++, device_receive, device_id,
-      std::shared_ptr<PhyLayerFactory>(this));
+      phy_type_, next_id_++, device_receive, device_id, this);
   phy_layers_.push_back(new_phy);
   return new_phy;
 }
@@ -113,7 +112,7 @@ PhyLayerImpl::PhyLayerImpl(
     Phy::Type phy_type, uint32_t id,
     const std::function<void(model::packets::LinkLayerPacketView)>&
         device_receive,
-    uint32_t device_id, const std::shared_ptr<PhyLayerFactory> factory)
+    uint32_t device_id, PhyLayerFactory* factory)
     : PhyLayer(phy_type, id, device_receive, device_id), factory_(factory) {}
 
 PhyLayerImpl::~PhyLayerImpl() {
