@@ -28,7 +28,7 @@ namespace shim {
 
 using ConnectionClosedCallback = std::function<void(uint16_t cid, int error_code)>;
 using ConnectionCompleteCallback =
-    std::function<void(std::string string_address, uint16_t psm, uint16_t cid, bool is_connected)>;
+    std::function<void(std::string string_address, uint16_t psm, uint16_t cid, uint16_t remote_cid, bool is_connected)>;
 using ReadDataReadyCallback = std::function<void(uint16_t cid, std::vector<const uint8_t> data)>;
 
 using RegisterServicePromise = std::promise<uint16_t>;
