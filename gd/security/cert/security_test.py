@@ -366,6 +366,8 @@ class SecurityTest(GdBaseTestClass):
             expected_init_bond_event=BondMsgType.DEVICE_BONDED,
             expected_resp_bond_event=None)
 
+        self.dut_security.wait_for_enforce_security_event(expected_enforce_security_event=False)
+
     # no_input_no_output + no_input_no_output is JustWorks no confirmation
     def test_dut_initiated_no_input_no_output_no_input_no_output_twice_with_remove_bond(self):
         # Arrange
