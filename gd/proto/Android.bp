@@ -32,7 +32,6 @@ cc_library_static {
         include_dirs: ["external/protobuf/src"],
     },
     srcs: [
-        "bluetooth/dumpmod.proto",
         "bluetooth/metrics/bluetooth.proto",
         "bluetooth/bluetoothKeystore/keystore.proto",
     ],
