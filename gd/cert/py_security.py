@@ -151,6 +151,9 @@ class PySecurity(Closable):
     def wait_for_enforce_security_event(self, expected_enforce_security_event):
         """
             We expect a 'True' or 'False' from the enforce security call
+
+            This interface will allow the caller to wait for a callback
+            result from enforcing security policy over the facade.
         """
         logging.info("DUT: Waiting for enforce security event")
         assertThat(self._enforce_security_policy_stream).emits(
