@@ -88,8 +88,8 @@ HciSocketDevice::HciSocketDevice(int file_descriptor) : socket_file_descriptor_(
       },
       [this]() {
         LOG_INFO("HCI socket device disconnected");
-        close_callback_();
         socket_file_descriptor_ = -1;
+        close_callback_();
       });
 
   RegisterEventChannel([this](std::shared_ptr<std::vector<uint8_t>> packet) {
@@ -123,7 +123,9 @@ void HciSocketDevice::SendHci(hci::PacketType packet_type, const std::shared_ptr
 }
 
 void HciSocketDevice::RegisterCloseCallback(std::function<void()> close_callback) {
-  close_callback_ = close_callback;
+  if (socket_file_descriptor_ != -1) {
+    close_callback_ = close_callback;
+  }
 }
 
 }  // namespace test_vendor_lib
