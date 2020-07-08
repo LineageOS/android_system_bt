@@ -1,0 +1,13 @@
+filegroup {
+    name: "BluetoothSecurityRecordSources",
+    srcs: [
+      "security_record_storage.cc"
+    ],
+}
+
+filegroup {
+    name: "BluetoothSecurityRecordTestSources",
+    srcs: [
+      "security_record_storage_test.cc"
+    ],
+}
