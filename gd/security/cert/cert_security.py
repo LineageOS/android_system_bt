@@ -102,7 +102,7 @@ class CertSecurity(PySecurity):
         logging.info("Cert: Creating bond to '%s' from '%s'" % (str(address), str(self._device.address)))
         # TODO(optedoblivion): Trigger connection to Send AuthenticationRequested
 
-    def remove_bond(self, address):
+    def remove_bond(self, address, type):
         """
             We store the link key locally in the test and pretend
             So to remove_bond we need to Remove the "stored" data
@@ -113,14 +113,16 @@ class CertSecurity(PySecurity):
         """
             Set the IO Capabilities used for the cert
         """
-        logging.info("Cert: setting IO Capabilities data to '%s'" % io_capabilities)
+        logging.info("Cert: setting IO Capabilities data to '%s'" % self._io_capabilities_name_lookup.get(
+            io_capabilities, "ERROR"))
         self._io_caps = self._io_cap_lookup.get(io_capabilities, hci_packets.IoCapability.DISPLAY_YES_NO)
 
     def set_authentication_requirements(self, auth_reqs):
         """
             Establish authentication requirements for the stack
         """
-        logging.info("Cert: setting Authentication Requirements data to '%s'" % auth_reqs)
+        logging.info("Cert: setting Authentication Requirements data to '%s'" % self._auth_reqs_name_lookup.get(
+            auth_reqs, "ERROR"))
         self._auth_reqs = self._auth_req_lookup.get(auth_reqs, hci_packets.AuthenticationRequirements.GENERAL_BONDING)
 
     def set_oob_data(self, data):
