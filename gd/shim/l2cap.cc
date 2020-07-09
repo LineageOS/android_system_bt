@@ -204,16 +204,25 @@ class ConnectionInterfaceManager {
     return cid_to_interface_map_.size();
   }
 
-  void ConnectionOpened(ConnectionCompleteCallback on_complete, l2cap::Psm psm, ConnectionInterfaceDescriptor cid) {
+  void ConnectionOpened(
+      ConnectionCompleteCallback on_complete,
+      l2cap::Psm psm,
+      ConnectionInterfaceDescriptor cid,
+      l2cap::Cid remote_cid) {
     hci::Address address = cid_to_interface_map_[cid]->GetRemoteAddress();
     LOG_DEBUG("Connection opened address:%s psm:%hd cid:%hd", address.ToString().c_str(), psm, cid);
-    on_complete(address.ToString(), static_cast<uint16_t>(psm), static_cast<uint16_t>(cid), kConnectionOpened);
+    on_complete(
+        address.ToString(),
+        static_cast<uint16_t>(psm),
+        static_cast<uint16_t>(cid),
+        static_cast<uint16_t>(remote_cid),
+        kConnectionOpened);
   }
 
   void ConnectionFailed(
       ConnectionCompleteCallback on_complete, hci::Address address, l2cap::Psm psm, ConnectionInterfaceDescriptor cid) {
     LOG_DEBUG("Connection failed address:%s psm:%hd", address.ToString().c_str(), psm);
-    on_complete(address.ToString(), static_cast<uint16_t>(psm), static_cast<uint16_t>(cid), kConnectionFailed);
+    on_complete(address.ToString(), static_cast<uint16_t>(psm), static_cast<uint16_t>(cid), 0, kConnectionFailed);
   }
 
   ConnectionInterfaceManager(os::Handler* handler);
@@ -493,8 +502,9 @@ void L2cap::impl::RegisterService(
             LOG_DEBUG("Remote initiated connection is open from device:%s", channel->GetDevice().ToString().c_str());
 
             ConnectionInterfaceDescriptor cid = connection_interface_manager_->AllocateConnectionInterfaceDescriptor();
+            uint16_t remote_cid = channel->HACK_GetRemoteCid();
             connection_interface_manager_->AddConnection(cid, std::move(channel));
-            connection_interface_manager_->ConnectionOpened(on_complete, psm, cid);
+            connection_interface_manager_->ConnectionOpened(on_complete, psm, cid, remote_cid);
             LOG_DEBUG("connection open");
           },
           psm,
@@ -522,9 +532,10 @@ void L2cap::impl::PendingConnectionOpen(
     PendingConnectionId id,
     std::unique_ptr<PendingConnection> connection,
     std::unique_ptr<l2cap::classic::DynamicChannel> channel) {
+  uint16_t remote_cid = channel->HACK_GetRemoteCid();
   connection_interface_manager_.AddConnection(connection->cid_, std::move(channel));
   connection_interface_manager_.ConnectionOpened(
-      std::move(connection->on_complete_), connection->psm_, connection->cid_);
+      std::move(connection->on_complete_), connection->psm_, connection->cid_, remote_cid);
   pending_connection_map_.erase(id);
 }
 

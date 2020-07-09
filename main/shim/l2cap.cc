@@ -187,7 +187,7 @@ uint16_t bluetooth::shim::legacy::L2cap::RegisterService(
       std::bind(
           &bluetooth::shim::legacy::L2cap::OnRemoteInitiatedConnectionCreated,
           this, std::placeholders::_1, std::placeholders::_2,
-          std::placeholders::_3),
+          std::placeholders::_3, std::placeholders::_4),
       std::move(register_promise));
 
   uint16_t registered_psm = service_registered.get();
@@ -238,7 +238,7 @@ uint16_t bluetooth::shim::legacy::L2cap::CreateConnection(
       std::bind(
           &bluetooth::shim::legacy::L2cap::OnLocalInitiatedConnectionCreated,
           this, std::placeholders::_1, std::placeholders::_2,
-          std::placeholders::_3, std::placeholders::_4),
+          std::placeholders::_3, std::placeholders::_4, std::placeholders::_5),
       std::move(create_promise));
 
   uint16_t cid = created.get();
@@ -257,7 +257,9 @@ uint16_t bluetooth::shim::legacy::L2cap::CreateConnection(
 }
 
 void bluetooth::shim::legacy::L2cap::OnLocalInitiatedConnectionCreated(
-    std::string string_address, uint16_t psm, uint16_t cid, bool connected) {
+    std::string string_address, uint16_t psm, uint16_t cid, uint16_t remote_cid,
+    bool connected) {
+  cid_to_remote_cid_map_[cid] = remote_cid;
   if (cid_closing_set_.count(cid) == 0) {
     if (connected) {
       SetDownstreamCallbacks(cid);
@@ -279,7 +281,8 @@ void bluetooth::shim::legacy::L2cap::OnLocalInitiatedConnectionCreated(
 }
 
 void bluetooth::shim::legacy::L2cap::OnRemoteInitiatedConnectionCreated(
-    std::string string_address, uint16_t psm, uint16_t cid) {
+    std::string string_address, uint16_t psm, uint16_t cid,
+    uint16_t remote_cid) {
   RawAddress raw_address;
   RawAddress::FromString(string_address, raw_address);
 
@@ -290,6 +293,7 @@ void bluetooth::shim::legacy::L2cap::OnRemoteInitiatedConnectionCreated(
 
   CHECK(!ConnectionExists(cid));
   cid_to_psm_map_[cid] = psm;
+  cid_to_remote_cid_map_[cid] = remote_cid;
   SetDownstreamCallbacks(cid);
   Classic().Callbacks(psm)->pL2CA_ConnectInd_Cb(raw_address, cid, psm,
                                                 kUnusedId);
@@ -334,6 +338,7 @@ void bluetooth::shim::legacy::L2cap::SetDownstreamCallbacks(uint16_t cid) {
               ->pL2CA_DisconnectInd_Cb(cid, kDisconnectResponseRequired);
         }
         cid_to_psm_map_.erase(cid);
+        cid_to_remote_cid_map_.erase(cid);
       });
 }
 
@@ -410,4 +415,15 @@ void bluetooth::shim::legacy::L2cap::Dump(int fd) {
               connection.first, connection.second);
     }
   }
+}
+
+bool bluetooth::shim::legacy::L2cap::GetRemoteCid(uint16_t cid,
+                                                  uint16_t* remote_cid) {
+  auto it = cid_to_remote_cid_map_.find(cid);
+  if (it == cid_to_remote_cid_map_.end()) {
+    return false;
+  }
+
+  *remote_cid = it->second;
+  return true;
 }

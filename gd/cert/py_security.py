@@ -46,6 +46,8 @@ class PySecurity(Closable):
         self._device.wait_channel_ready()
         self._ui_event_stream = EventStream(self._device.security.FetchUiEvents(empty_proto.Empty()))
         self._bond_event_stream = EventStream(self._device.security.FetchBondEvents(empty_proto.Empty()))
+        self._enforce_security_policy_stream = EventStream(
+            self._device.security.FetchEnforceSecurityPolicyEvents(empty_proto.Empty()))
 
     def create_bond(self, address, type):
         """
@@ -146,6 +148,17 @@ class PySecurity(Closable):
         logging.info("DUT: Waiting for Bond Event")
         assertThat(self._bond_event_stream).emits(lambda event: event.message_type == expected_bond_event)
 
+    def wait_for_enforce_security_event(self, expected_enforce_security_event):
+        """
+            We expect a 'True' or 'False' from the enforce security call
+
+            This interface will allow the caller to wait for a callback
+            result from enforcing security policy over the facade.
+        """
+        logging.info("DUT: Waiting for enforce security event")
+        assertThat(self._enforce_security_policy_stream).emits(
+            lambda event: event.result == expected_enforce_security_event or logging.info(event.result))
+
     def enforce_security_policy(self, address, type, policy):
         """
             Call to enforce classic security policy
@@ -156,12 +169,6 @@ class PySecurity(Closable):
                 policy=policy))
 
     def close(self):
-        if self._ui_event_stream is not None:
-            safeClose(self._ui_event_stream)
-        else:
-            logging.info("DUT: UI Event Stream is None!")
-
-        if self._bond_event_stream is not None:
-            safeClose(self._bond_event_stream)
-        else:
-            logging.info("DUT: Bond Event Stream is None!")
+        safeClose(self._ui_event_stream)
+        safeClose(self._bond_event_stream)
+        safeClose(self._enforce_security_policy_stream)
