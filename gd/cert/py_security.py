@@ -24,10 +24,14 @@ from cert.truth import assertThat
 from facade import common_pb2 as common
 from google.protobuf import empty_pb2 as empty_proto
 from hci.facade import facade_pb2 as hci_facade
-from security.facade_pb2 import IoCapabilityMessage
+
+from security.facade_pb2 import AuthenticationRequirements
 from security.facade_pb2 import AuthenticationRequirementsMessage
 from security.facade_pb2 import SecurityPolicyMessage
+from security.facade_pb2 import IoCapabilities
+from security.facade_pb2 import IoCapabilityMessage
 from security.facade_pb2 import OobDataMessage
+from security.facade_pb2 import OobDataPresent
 from security.facade_pb2 import UiCallbackMsg
 from security.facade_pb2 import UiCallbackType
 
@@ -37,11 +41,27 @@ class PySecurity(Closable):
         Abstraction for security tasks and GRPC calls
     """
 
+    _io_capabilities_name_lookup = {
+        IoCapabilities.DISPLAY_ONLY: "DISPLAY_ONLY",
+        IoCapabilities.DISPLAY_YES_NO_IO_CAP: "DISPLAY_YES_NO_IO_CAP",
+        #IoCapabilities.KEYBOARD_ONLY:"KEYBOARD_ONLY",
+        IoCapabilities.NO_INPUT_NO_OUTPUT: "NO_INPUT_NO_OUTPUT",
+    }
+
+    _auth_reqs_name_lookup = {
+        AuthenticationRequirements.NO_BONDING: "NO_BONDING",
+        AuthenticationRequirements.NO_BONDING_MITM_PROTECTION: "NO_BONDING_MITM_PROTECTION",
+        AuthenticationRequirements.DEDICATED_BONDING: "DEDICATED_BONDING",
+        AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION: "DEDICATED_BONDING_MITM_PROTECTION",
+        AuthenticationRequirements.GENERAL_BONDING: "GENERAL_BONDING",
+        AuthenticationRequirements.GENERAL_BONDING_MITM_PROTECTION: "GENERAL_BONDING_MITM_PROTECTION",
+    }
+
     _ui_event_stream = None
     _bond_event_stream = None
 
     def __init__(self, device):
-        logging.info("DUT: Init")
+        logging.debug("DUT: Init")
         self._device = device
         self._device.wait_channel_ready()
         self._ui_event_stream = EventStream(self._device.security.FetchUiEvents(empty_proto.Empty()))
@@ -53,7 +73,7 @@ class PySecurity(Closable):
         """
             Triggers stack under test to create bond
         """
-        logging.info("DUT: Creating bond to '%s' from '%s'" % (str(address), str(self._device.address)))
+        logging.debug("DUT: Creating bond to '%s' from '%s'" % (str(address), str(self._device.address)))
         self._device.security.CreateBond(
             common.BluetoothAddressWithType(address=common.BluetoothAddress(address=address), type=type))
 
@@ -68,28 +88,30 @@ class PySecurity(Closable):
         """
             Set the IO Capabilities used for the DUT
         """
-        logging.info("DUT: setting IO Capabilities data to '%s'" % io_capabilities)
+        logging.debug("DUT: setting IO Capabilities data to '%s'" % self._io_capabilities_name_lookup.get(
+            io_capabilities, "ERROR"))
         self._device.security.SetIoCapability(IoCapabilityMessage(capability=io_capabilities))
 
     def set_authentication_requirements(self, auth_reqs):
         """
             Establish authentication requirements for the stack
         """
-        logging.info("DUT: setting Authentication Requirements data to '%s'" % auth_reqs)
+        logging.debug("DUT: setting Authentication Requirements data to '%s'" % self._auth_reqs_name_lookup.get(
+            auth_reqs, "ERROR"))
         self._device.security.SetAuthenticationRequirements(AuthenticationRequirementsMessage(requirement=auth_reqs))
 
     def set_oob_data(self, data_present):
         """
             Set the Out-of-band data present flag for SSP pairing
         """
-        logging.info("DUT: setting OOB data present to '%s'" % data_present)
+        logging.debug("DUT: setting OOB data present to '%s'" % data_present)
         self._device.security.SetOobDataPresent(OobDataMessage(data_present=data_present))
 
     def send_ui_callback(self, address, callback_type, b, uid):
         """
             Send a callback from the UI as if the user pressed a button on the dialog
         """
-        logging.info("DUT: Sending user input response uid: %d; response: %s" % (uid, b))
+        logging.debug("DUT: Sending user input response uid: %d; response: %s" % (uid, b))
         self._device.security.SendUiCallback(
             UiCallbackMsg(
                 message_type=callback_type,
@@ -131,7 +153,7 @@ class PySecurity(Closable):
                 return True
             return False
 
-        logging.info("DUT: Waiting for expected UI event")
+        logging.debug("DUT: Waiting for expected UI event")
         assertThat(self._ui_event_stream).emits(get_unique_id)
         # TODO(optedoblivion): Make UiCallbackType dynamic for PASSKEY when added
         self.send_ui_callback(cert_address, UiCallbackType.YES_NO, reply_boolean, ui_id)
@@ -145,7 +167,7 @@ class PySecurity(Closable):
             is complete.  For the DUT we need to wait for it,
             for Cert it isn't needed.
         """
-        logging.info("DUT: Waiting for Bond Event")
+        logging.debug("DUT: Waiting for Bond Event")
         assertThat(self._bond_event_stream).emits(lambda event: event.message_type == expected_bond_event)
 
     def wait_for_enforce_security_event(self, expected_enforce_security_event):
