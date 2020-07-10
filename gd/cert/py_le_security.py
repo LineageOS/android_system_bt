@@ -28,6 +28,7 @@ from google.protobuf import empty_pb2 as empty_proto
 from hci.facade import facade_pb2 as hci_facade
 from security.facade_pb2 import IoCapabilityMessage
 from security.facade_pb2 import AuthenticationRequirementsMessage
+from security.facade_pb2 import LeAuthRequirementsMessage
 from security.facade_pb2 import OobDataMessage
 from security.facade_pb2 import UiCallbackMsg
 from security.facade_pb2 import UiCallbackType
@@ -58,6 +59,9 @@ class PyLeSecurity(Closable):
         display_passkey_capture = SecurityCaptures.DisplayPasskey()
         assertThat(self._ui_event_stream).emits(display_passkey_capture, timeout=timeout)
         return display_passkey_capture.get()
+
+    def SetLeAuthRequirements(self, *args, **kwargs):
+        return self._device.security.SetLeAuthRequirements(LeAuthRequirementsMessage(*args, **kwargs))
 
     def close(self):
         if self._ui_event_stream is not None:
