@@ -28,6 +28,16 @@
 namespace bluetooth {
 namespace security {
 
+namespace {
+constexpr uint8_t AUTH_REQ_NO_BOND = 0x01;
+constexpr uint8_t AUTH_REQ_BOND = 0x01;
+constexpr uint8_t AUTH_REQ_MITM_MASK = 0x04;
+constexpr uint8_t AUTH_REQ_SECURE_CONNECTIONS_MASK = 0x08;
+constexpr uint8_t AUTH_REQ_KEYPRESS_MASK = 0x10;
+constexpr uint8_t AUTH_REQ_CT2_MASK = 0x20;
+constexpr uint8_t AUTH_REQ_RFU_MASK = 0xC0;
+}  // namespace
+
 class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public ISecurityManagerListener, public UI {
  public:
   SecurityModuleFacadeService(SecurityModule* security_module, ::bluetooth::os::Handler* security_handler)
@@ -139,9 +149,19 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status SetLeAuthReq(
-      ::grpc::ServerContext* context, const LeAuthReqMsg* request, ::google::protobuf::Empty* response) override {
-    security_module_->GetFacadeConfigurationApi()->SetLeAuthReq(request->auth_req());
+  ::grpc::Status SetLeAuthRequirements(
+      ::grpc::ServerContext* context,
+      const LeAuthRequirementsMessage* request,
+      ::google::protobuf::Empty* response) override {
+    uint8_t auth_req = request->bond() ? AUTH_REQ_BOND : AUTH_REQ_NO_BOND;
+
+    if (request->mitm()) auth_req |= AUTH_REQ_MITM_MASK;
+    if (request->secure_connections()) auth_req |= AUTH_REQ_SECURE_CONNECTIONS_MASK;
+    if (request->keypress()) auth_req |= AUTH_REQ_KEYPRESS_MASK;
+    if (request->ct2()) auth_req |= AUTH_REQ_CT2_MASK;
+    if (request->reserved_bits()) auth_req |= (((request->reserved_bits()) << 6) & AUTH_REQ_RFU_MASK);
+
+    security_module_->GetFacadeConfigurationApi()->SetLeAuthRequirements(auth_req);
     return ::grpc::Status::OK;
   }
 
