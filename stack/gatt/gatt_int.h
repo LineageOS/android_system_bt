@@ -26,6 +26,7 @@
 #include "gatt_api.h"
 #include "osi/include/fixed_queue.h"
 
+#include <base/bind.h>
 #include <base/strings/stringprintf.h>
 #include <string.h>
 #include <list>
@@ -427,6 +428,10 @@ extern void gatt_add_a_bonded_dev_for_srv_chg(const RawAddress& bda);
 
 /* from gatt_attr.cc */
 extern uint16_t gatt_profile_find_conn_id_by_bd_addr(const RawAddress& bda);
+
+extern bool gatt_profile_get_eatt_support(
+    const RawAddress& remote_bda,
+    base::OnceCallback<void(const RawAddress&, bool)> cb);
 
 /* Functions provided by att_protocol.cc */
 extern tGATT_STATUS attp_send_cl_msg(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
