@@ -231,6 +231,13 @@ void btif_storage_remove_hearing_aid(const RawAddress& address);
 void btif_storage_set_hearing_aid_white_list(const RawAddress& address,
                                              bool add_to_whitelist);
 
+/** Stores information about GATT Client supported features support */
+void btif_storage_set_gatt_cl_supp_feat(const RawAddress& bd_addr,
+                                        uint8_t feat);
+
+/** Get client supported features */
+uint8_t btif_storage_get_gatt_cl_supp_feat(const RawAddress& bd_addr);
+
 /** Get the hearing aid device properties. */
 bool btif_storage_get_hearing_aid_prop(
     const RawAddress& address, uint8_t* capabilities, uint64_t* hi_sync_id,
