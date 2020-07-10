@@ -379,6 +379,7 @@ typedef struct {
   tGATT_PROFILE_CLCB profile_clcb[GATT_MAX_APPS];
   uint16_t
       handle_of_h_r; /* Handle of the handles reused characteristic value */
+  uint16_t handle_cl_supported_feat;
   uint16_t handle_sr_supported_feat;
   uint8_t
       gatt_svr_supported_feat_mask; /* Local supported features as a server */
