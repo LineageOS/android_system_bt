@@ -13,6 +13,7 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
+import logging
 import time
 
 from bluetooth_packets_python3 import hci_packets
@@ -38,6 +39,33 @@ class SecurityTest(GdBaseTestClass):
         Collection of tests that each sample results from 
         different (unique) combinations of io capabilities, authentication requirements, and oob data.
     """
+
+    # Possible IO Capabilities
+    io_capabilities = (
+        IoCapabilities.DISPLAY_ONLY,
+        IoCapabilities.DISPLAY_YES_NO_IO_CAP,
+        # TODO(optedoblivion): Uncomment when Passkey Entry is implemented in ClassicPairingHandler
+        #IoCapabilities.KEYBOARD_ONLY,
+        IoCapabilities.NO_INPUT_NO_OUTPUT)
+
+    # Possible Authentication Requirements
+    auth_reqs = (
+        AuthenticationRequirements.NO_BONDING,
+        # TODO(optedoblivion): Figure out MITM cases
+        AuthenticationRequirements.NO_BONDING_MITM_PROTECTION,
+        AuthenticationRequirements.DEDICATED_BONDING,
+        AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION,
+        AuthenticationRequirements.GENERAL_BONDING,
+        AuthenticationRequirements.GENERAL_BONDING_MITM_PROTECTION)
+
+    # Possible Out-of-Band data options
+    oob_present = (
+        OobDataPresent.NOT_PRESENT,
+        # TODO(optedoblivion): Uncomment when OOB is implemented in root canal
+        #"P192_PRESENT",
+        #"P256_PRESENT",
+        #"P192_AND_256_PRESENT"
+    )
 
     def setup_class(self):
         super().setup_class(dut_module='SECURITY', cert_module='L2CAP')
@@ -97,239 +125,6 @@ class SecurityTest(GdBaseTestClass):
             Make sure our setup and teardown is sane
         """
         pass
-
-###### JustWorks (Numeric Comparison w/ no UI) ######
-## Needs dialog as per security a bug unless pairing is temporary
-
-# display_only + display_only is JustWorks no confirmation
-
-    def test_dut_initiated_display_only_display_only(self):
-        # Arrange
-        self.dut_security.set_io_capabilities(IoCapabilities.DISPLAY_ONLY)
-        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(IoCapabilities.DISPLAY_ONLY)
-        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-
-        # Act and Assert
-        self._run_ssp_numeric_comparison(
-            initiator=self.dut_security,
-            responder=self.cert_security,
-            init_ui_response=True,
-            resp_ui_response=True,
-            expected_init_ui_event=None,
-            expected_resp_ui_event=None,
-            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
-            expected_resp_bond_event=None)
-
-    # display_yes_no + display_only is JustWorks no confirmation
-    def test_dut_initiated_display_yes_no_display_only(self):
-        # Arrange
-        self.dut_security.set_io_capabilities(IoCapabilities.DISPLAY_YES_NO_IO_CAP)
-        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(IoCapabilities.DISPLAY_ONLY)
-        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-
-        # Act and Assert
-        self._run_ssp_numeric_comparison(
-            initiator=self.dut_security,
-            responder=self.cert_security,
-            init_ui_response=True,
-            resp_ui_response=True,
-            expected_init_ui_event=UiMsgType.DISPLAY_YES_NO_WITH_VALUE,
-            expected_resp_ui_event=None,
-            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
-            expected_resp_bond_event=None)
-
-    # no_input_no_output + display_only is JustWorks no confirmation
-    def test_dut_initiated_no_input_no_output_display_only(self):
-        # Arrange
-        self.dut_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
-        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(IoCapabilities.DISPLAY_ONLY)
-        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-
-        # Act and Assert
-        self._run_ssp_numeric_comparison(
-            initiator=self.dut_security,
-            responder=self.cert_security,
-            init_ui_response=True,
-            resp_ui_response=True,
-            expected_init_ui_event=None,
-            expected_resp_ui_event=None,
-            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
-            expected_resp_bond_event=None)
-
-    # display_only + display_yes_no is JustWorks no confirmation
-    def test_dut_initiated_display_only_display_yes_no(self):
-        # Arrange
-        self.dut_security.set_io_capabilities(IoCapabilities.DISPLAY_ONLY)
-        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(IoCapabilities.DISPLAY_YES_NO_IO_CAP)
-        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-
-        # Act and Assert
-        self._run_ssp_numeric_comparison(
-            initiator=self.dut_security,
-            responder=self.cert_security,
-            init_ui_response=True,
-            resp_ui_response=True,
-            expected_init_ui_event=None,
-            expected_resp_ui_event=None,
-            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
-            expected_resp_bond_event=None)
-
-    # display_yes_no + display_yes_no is JustWorks no confirmation
-    def test_dut_initiated_display_yes_no_display_yes_no(self):
-        # Arrange
-        self.dut_security.set_io_capabilities(IoCapabilities.DISPLAY_YES_NO_IO_CAP)
-        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(IoCapabilities.DISPLAY_YES_NO_IO_CAP)
-        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-
-        # Act and Assert
-        self._run_ssp_numeric_comparison(
-            initiator=self.dut_security,
-            responder=self.cert_security,
-            init_ui_response=True,
-            resp_ui_response=True,
-            expected_init_ui_event=UiMsgType.DISPLAY_YES_NO_WITH_VALUE,
-            expected_resp_ui_event=None,
-            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
-            expected_resp_bond_event=None)
-
-    def test_dut_initiated_display_yes_no_display_yes_no_init_reject(self):
-        # Arrange
-        self.dut_security.set_io_capabilities(IoCapabilities.DISPLAY_YES_NO_IO_CAP)
-        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(IoCapabilities.DISPLAY_YES_NO_IO_CAP)
-        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-
-        # Act and Assert
-        self._run_ssp_numeric_comparison(
-            initiator=self.dut_security,
-            responder=self.cert_security,
-            init_ui_response=False,
-            resp_ui_response=True,
-            expected_init_ui_event=UiMsgType.DISPLAY_YES_NO_WITH_VALUE,
-            expected_resp_ui_event=None,
-            expected_init_bond_event=BondMsgType.DEVICE_BOND_FAILED,
-            expected_resp_bond_event=None)
-
-    def test_dut_initiated_display_yes_no_display_yes_no_resp_reject(self):
-        # Arrange
-        self.dut_security.set_io_capabilities(IoCapabilities.DISPLAY_YES_NO_IO_CAP)
-        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(IoCapabilities.DISPLAY_YES_NO_IO_CAP)
-        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-
-        # Act and Assert
-        self._run_ssp_numeric_comparison(
-            initiator=self.dut_security,
-            responder=self.cert_security,
-            init_ui_response=True,
-            resp_ui_response=False,
-            expected_init_ui_event=UiMsgType.DISPLAY_YES_NO_WITH_VALUE,
-            expected_resp_ui_event=None,
-            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
-            expected_resp_bond_event=None)
-
-    # no_input_no_output + display_yes_no is JustWorks no confirmation
-    def test_dut_initiated_no_input_no_output_display_yes_no(self):
-        # Arrange
-        self.dut_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
-        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(IoCapabilities.DISPLAY_YES_NO_IO_CAP)
-        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-
-        # Act and Assert
-        self._run_ssp_numeric_comparison(
-            initiator=self.dut_security,
-            responder=self.cert_security,
-            init_ui_response=True,
-            resp_ui_response=True,
-            expected_init_ui_event=None,
-            expected_resp_ui_event=None,
-            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
-            expected_resp_bond_event=None)
-
-    # no_input_no_output + keyboard_only is JustWorks no confirmation
-    def test_dut_initiated_no_input_no_output_keyboard_only(self):
-        # Arrange
-        self.dut_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
-        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(IoCapabilities.DISPLAY_YES_NO_IO_CAP)
-        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-
-        # Act and Assert
-        self._run_ssp_numeric_comparison(
-            initiator=self.dut_security,
-            responder=self.cert_security,
-            init_ui_response=True,
-            resp_ui_response=True,
-            expected_init_ui_event=None,
-            expected_resp_ui_event=None,
-            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
-            expected_resp_bond_event=None)
-
-    # keyboard_only + display_yes_no is JustWorks no confirmation
-    def test_dut_initiated_keyboard_only_no_input_no_output(self):
-        # Arrange
-        self.dut_security.set_io_capabilities(IoCapabilities.KEYBOARD_ONLY)
-        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
-        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-
-        # Act and Assert
-        self._run_ssp_numeric_comparison(
-            initiator=self.dut_security,
-            responder=self.cert_security,
-            init_ui_response=True,
-            resp_ui_response=True,
-            expected_init_ui_event=None,
-            expected_resp_ui_event=None,
-            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
-            expected_resp_bond_event=None)
-
-    # no_input_no_output + no_input_no_output is JustWorks no confirmation
-    def test_dut_initiated_no_input_no_output_no_input_no_output(self):
-        # Arrange
-        self.dut_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
-        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-        self.cert_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
-        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
-        self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
-
-        # Act and Assert
-        self._run_ssp_numeric_comparison(
-            initiator=self.dut_security,
-            responder=self.cert_security,
-            init_ui_response=True,
-            resp_ui_response=True,
-            expected_init_ui_event=None,
-            expected_resp_ui_event=None,
-            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
-            expected_resp_bond_event=None)
 
     # no_input_no_output + no_input_no_output is JustWorks no confirmation
     def test_dut_initiated_no_input_no_output_no_input_no_output_twice_same_acl(self):
@@ -405,14 +200,78 @@ class SecurityTest(GdBaseTestClass):
             expected_init_bond_event=BondMsgType.DEVICE_BONDED,
             expected_resp_bond_event=None)
 
+    def test_successful_dut_initiated_ssp_numeric_comparison(self):
+        test_count = len(self.io_capabilities) * len(self.auth_reqs) * len(self.oob_present) * len(
+            self.io_capabilities) * len(self.auth_reqs) * len(self.oob_present)
+        logging.info("Loading %d test combinations" % test_count)
+        i = 0
+        for init_io_capability in self.io_capabilities:
+            for init_auth_reqs in self.auth_reqs:
+                for init_oob_present in self.oob_present:
+                    for resp_io_capability in self.io_capabilities:
+                        for cert_auth_reqs in self.auth_reqs:
+                            for cert_oob_present in self.oob_present:
+                                i = i + 1
+                                logging.info("")
+                                logging.info("===================================================")
+                                logging.info("Running test %d of %d" % (i, test_count))
+                                logging.info("DUT Test Config: %d ; %d ; %d " % (init_io_capability, init_auth_reqs,
+                                                                                 init_oob_present))
+                                logging.info("CERT Test Config: %d ; %d ; %d " % (resp_io_capability, cert_auth_reqs,
+                                                                                  cert_oob_present))
+                                logging.info("===================================================")
+                                logging.info("")
+                                self.dut_security.set_io_capabilities(init_io_capability)
+                                self.dut_security.set_authentication_requirements(init_auth_reqs)
+                                self.dut_security.set_oob_data(init_oob_present)
+                                self.cert_security.set_io_capabilities(resp_io_capability)
+                                self.cert_security.set_authentication_requirements(cert_auth_reqs)
+                                self.cert_security.set_oob_data(cert_oob_present)
+                                init_ui_response = True
+                                resp_ui_response = True
+                                expected_init_ui_event = None  # None is auto accept
+                                expected_resp_ui_event = None  # None is auto accept
+                                expected_init_bond_event = BondMsgType.DEVICE_BONDED
+                                expected_resp_bond_event = None
+                                if init_io_capability == IoCapabilities.DISPLAY_ONLY:
+                                    if resp_io_capability == IoCapabilities.DISPLAY_YES_NO_IO_CAP:
+                                        expected_resp_ui_event = UiMsgType.DISPLAY_YES_NO_WITH_VALUE
+                                    elif resp_io_capability == IoCapabilities.KEYBOARD_ONLY:
+                                        expected_resp_ui_event = UiMsgType.DISPLAY_PASSKEY_ENTRY
+                                elif init_io_capability == IoCapabilities.DISPLAY_YES_NO_IO_CAP:
+                                    expected_init_ui_event = UiMsgType.DISPLAY_YES_NO_WITH_VALUE
+                                    if resp_io_capability == IoCapabilities.DISPLAY_YES_NO_IO_CAP:
+                                        expected_resp_ui_event = UiMsgType.DISPLAY_YES_NO_WITH_VALUE
+                                    elif resp_io_capability == IoCapabilities.KEYBOARD_ONLY:
+                                        expected_init_ui_event = UiMsgType.DISPLAY_PASSKEY
+                                        expected_resp_ui_event = UiMsgType.DISPLAY_PASSKEY_ENTRY
+                                    elif resp_io_capability == IoCapabilities.NO_INPUT_NO_OUTPUT:
+                                        expected_init_ui_event = UiMsgType.DISPLAY_YES_NO  # No value
+                                elif init_io_capability == IoCapabilities.KEYBOARD_ONLY:
+                                    expected_init_ui_event = UiMsgType.DISPLAY_PASSKEY_ENTRY
+                                    if resp_io_capability == IoCapabilities.DISPLAY_ONLY:
+                                        expected_resp_ui_event = UiMsgType.DISPLAY_PASSKEY
+                                    elif resp_io_capability == IoCapabilities.DISPLAY_YES_NO_IO_CAP:
+                                        expected_resp_ui_event = UiMsgType.DISPLAY_PASSKEY_ENTRY
+                                    elif resp_io_capability == IoCapabilities.KEYBOARD_ONLY:
+                                        expected_resp_ui_event = UiMsgType.DISPLAY_PASSKEY_ENTRY
+                                elif init_io_capability == IoCapabilities.NO_INPUT_NO_OUTPUT:
+                                    if resp_io_capability == IoCapabilities.DISPLAY_YES_NO_IO_CAP:
+                                        expected_resp_ui_event = UiMsgType.DISPLAY_YES_NO  # No value
 
-## Other permutations
-#def xtest_dut_initiated_display_only_display_only_local_user_deny(self)
-#def xtest_dut_initiated_display_only_display_only_remote_user_deny(self)
-#def xtest_dut_initiated_display_only_display_only_local_bonded(self)
-#def xtest_dut_initiated_display_only_display_only_remote_bonded(self)
-#def xtest_cert_initiated_display_only_display_only(self):
-#def xtest_cert_initiated_display_only_display_only_local_user_deny(self)
-#def xtest_cert_initiated_display_only_display_only_remote_user_deny(self)
-#def xtest_cert_initiated_display_only_display_only_local_bonded(self)
-#def xtest_cert_initiated_display_only_display_only_remote_bonded(self)
+                                self._run_ssp_numeric_comparison(
+                                    initiator=self.dut_security,
+                                    responder=self.cert_security,
+                                    init_ui_response=init_ui_response,
+                                    resp_ui_response=resp_ui_response,
+                                    expected_init_ui_event=expected_init_ui_event,
+                                    expected_resp_ui_event=expected_resp_ui_event,
+                                    expected_init_bond_event=expected_init_bond_event,
+                                    expected_resp_bond_event=expected_resp_bond_event)
+
+                                self.dut_security.remove_bond(self.cert_security.get_address(),
+                                                              common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
+                                self.cert_security.remove_bond(self.dut_security.get_address(),
+                                                               common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
+
+                                time.sleep(.1)
