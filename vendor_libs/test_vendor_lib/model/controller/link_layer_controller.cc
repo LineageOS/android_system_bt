@@ -330,6 +330,11 @@ void LinkLayerController::IncomingAclPacket(
       (payload_data.size() + acl_buffer_size - 1) / acl_buffer_size;
 
   auto pb_flag_controller_to_host = acl_view.GetPacketBoundaryFlag();
+  if (pb_flag_controller_to_host ==
+      bluetooth::hci::PacketBoundaryFlag::FIRST_NON_AUTOMATICALLY_FLUSHABLE) {
+    pb_flag_controller_to_host =
+        bluetooth::hci::PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE;
+  }
   for (int i = 0; i < num_packets; i++) {
     size_t start_index = acl_buffer_size * i;
     size_t end_index =
