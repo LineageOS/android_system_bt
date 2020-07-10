@@ -16,7 +16,7 @@ service SecurityModuleFacade {
   rpc SetAuthenticationRequirements(AuthenticationRequirementsMessage) returns (google.protobuf.Empty) {}
   rpc SetOobDataPresent(OobDataMessage) returns (google.protobuf.Empty) {}
   rpc SetLeIoCapability(LeIoCapabilityMessage) returns (google.protobuf.Empty) {}
-  rpc SetLeAuthReq(LeAuthReqMsg) returns (google.protobuf.Empty) {}
+  rpc SetLeAuthRequirements(LeAuthRequirementsMessage) returns (google.protobuf.Empty) {}
   rpc SetLeInitiatorAddressPolicy(hci.PrivacyPolicy) returns (google.protobuf.Empty) {}
   rpc SendUiCallback(UiCallbackMsg) returns (google.protobuf.Empty) {}
   rpc FetchUiEvents(google.protobuf.Empty) returns (stream UiMsg) {}
@@ -101,8 +101,13 @@ message AuthenticationRequirementsMessage {
   AuthenticationRequirements requirement = 1;
 }
 
-message LeAuthReqMsg {
-  uint32 auth_req = 1;
+message LeAuthRequirementsMessage {
+  bool bond = 1;
+  bool mitm = 2;
+  bool secure_connections = 3;
+  bool keypress = 4;
+  bool ct2 = 5;
+  uint32 reserved_bits = 6;
 }
 
 enum OobDataPresent {
