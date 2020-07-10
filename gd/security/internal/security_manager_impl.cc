@@ -564,7 +564,7 @@ void SecurityManagerImpl::SetLeIoCapability(security::IoCapability io_capability
   this->local_le_io_capability_ = io_capability;
 }
 
-void SecurityManagerImpl::SetLeAuthReq(uint8_t auth_req) {
+void SecurityManagerImpl::SetLeAuthRequirements(uint8_t auth_req) {
   this->local_le_auth_req_ = auth_req;
 }
 
