@@ -82,6 +82,7 @@ using bluetooth::Uuid;
 #define BTIF_STORAGE_KEY_LOCAL_IO_CAPS "LocalIOCaps"
 #define BTIF_STORAGE_KEY_LOCAL_IO_CAPS_BLE "LocalIOCapsBLE"
 #define BTIF_STORAGE_KEY_ADAPTER_DISC_TIMEOUT "DiscoveryTimeout"
+#define BTIF_STORAGE_KEY_GATT_CLIENT_SUPPORTED "GattClientSupportedFeatures"
 
 /* This is a local property to add a device found */
 #define BT_PROPERTY_REMOTE_DEVICE_TIMESTAMP 0xFF
@@ -853,6 +854,10 @@ bt_status_t btif_storage_remove_bonded_device(
   if (btif_config_exist(bdstr, BTIF_STORAGE_PATH_REMOTE_ALIASE)) {
     ret &= btif_config_remove(bdstr, BTIF_STORAGE_PATH_REMOTE_ALIASE);
   }
+  if (btif_config_exist(bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_SUPPORTED)) {
+    ret &= btif_config_remove(bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_SUPPORTED);
+  }
+
   /* write bonded info immediately */
   btif_config_flush();
   return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
@@ -1753,4 +1758,32 @@ bool btif_storage_get_stored_remote_name(const RawAddress& bd_addr,
 
   return (btif_storage_get_remote_device_property(&bd_addr, &property) ==
           BT_STATUS_SUCCESS);
+}
+
+/** Stores information about GATT Client supported features support */
+void btif_storage_set_gatt_cl_supp_feat(const RawAddress& bd_addr,
+                                        uint8_t feat) {
+  do_in_jni_thread(
+      FROM_HERE, Bind(
+                     [](const RawAddress& bd_addr, uint8_t feat) {
+                       std::string bdstr = bd_addr.ToString();
+                       VLOG(2)
+                           << "saving gatt client supported feat: " << bdstr;
+                       btif_config_set_int(
+                           bdstr, BTIF_STORAGE_KEY_GATT_CLIENT_SUPPORTED, feat);
+                       btif_config_save();
+                     },
+                     bd_addr, feat));
+}
+
+/** Get client supported features */
+uint8_t btif_storage_get_gatt_cl_supp_feat(const RawAddress& bd_addr) {
+  auto name = bd_addr.ToString();
+
+  int value = 0;
+  btif_config_get_int(name, BTIF_STORAGE_KEY_GATT_CLIENT_SUPPORTED, &value);
+  BTIF_TRACE_DEBUG("Remote device: %s GATT client supported features 0x%02x",
+                   name.c_str(), value);
+
+  return value;
 }
