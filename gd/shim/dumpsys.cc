@@ -155,7 +155,17 @@ std::string Dumpsys::impl::PrintAsJson(std::string* dumpsys_data) const {
     snprintf(buf, sizeof(buf), "ERROR: Unable to find schema root name:%s\n", root_name->c_str());
     return std::string(buf);
   }
-  return std::string("UNIMPLEMENTED\n");
+
+  flatbuffers::Parser parser;
+  if (!parser.Deserialize(schema)) {
+    char buf[255];
+    snprintf(buf, sizeof(buf), "ERROR: Unable to deserialize bundle root name:%s\n", root_name->c_str());
+    return std::string(buf);
+  }
+
+  std::string jsongen;
+  flatbuffers::GenerateText(parser, dumpsys_data->data(), &jsongen);
+  return jsongen;
 }
 
 void Dumpsys::impl::DumpWithArgs(int fd, const char** args, std::promise<void> promise) {
