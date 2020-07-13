@@ -9,8 +9,9 @@ service LeAclManagerFacade {
   rpc CreateConnection(bluetooth.facade.BluetoothAddressWithType) returns (stream LeConnectionEvent) {}
   rpc CancelConnection(bluetooth.facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
   rpc Disconnect(LeHandleMsg) returns (google.protobuf.Empty) {}
+  rpc ConnectionCommand(LeConnectionCommandMsg) returns (google.protobuf.Empty) {}
   rpc SendAclData(LeAclData) returns (google.protobuf.Empty) {}
-  rpc FetchAclData(google.protobuf.Empty) returns (stream LeAclData) {}
+  rpc FetchAclData(LeHandleMsg) returns (stream LeAclData) {}
   rpc FetchIncomingConnection(google.protobuf.Empty) returns (stream LeConnectionEvent) {}
 }
 
@@ -20,6 +21,10 @@ message LeHandleMsg {
 
 message LeConnectionEvent {
   bytes event = 1;
+}
+
+message LeConnectionCommandMsg {
+  bytes packet = 1;
 }
 
 message LeAclData {

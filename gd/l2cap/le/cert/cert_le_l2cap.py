@@ -90,15 +90,13 @@ class CertLeL2cap(Closable):
         safeClose(self._le_acl)
 
     def connect_le_acl(self, remote_addr):
-        self._le_acl = self._le_acl_manager.initiate_connection(remote_addr)
-        self._le_acl.wait_for_connection_complete()
+        self._le_acl = self._le_acl_manager.connect_to_remote(remote_addr)
         self.control_channel = CertLeL2capChannel(
             self._device, 5, 5, self._get_acl_stream(), self._le_acl, control_channel=None)
         self._get_acl_stream().register_callback(self._handle_control_packet)
 
     def wait_for_connection(self):
-        self._le_acl_manager.listen_for_incoming_connections()
-        self._le_acl = self._le_acl_manager.accept_connection()
+        self._le_acl = self._le_acl_manager.wait_for_connection()
         self.control_channel = CertLeL2capChannel(
             self._device, 5, 5, self._get_acl_stream(), self._le_acl, control_channel=None)
         self._get_acl_stream().register_callback(self._handle_control_packet)
@@ -171,7 +169,7 @@ class CertLeL2cap(Closable):
         return self.control_channel
 
     def _get_acl_stream(self):
-        return self._le_acl_manager.get_le_acl_stream()
+        return self._le_acl.acl_stream
 
     def _on_disconnection_request_default(self, request):
         disconnection_request = l2cap_packets.LeDisconnectionRequestView(request)
