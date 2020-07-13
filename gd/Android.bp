@@ -204,9 +204,7 @@ cc_binary {
     ],
     generated_headers: [
         "BluetoothFacadeGeneratedStub_h",
-        "BluetoothGeneratedBundlerSchema_h_bfbs",
         "BluetoothGeneratedDumpsysDataSchema_h",
-        "BluetoothGeneratedDumpsysModuleSchema_h",
         "BluetoothGeneratedPackets_h",
         // Needed here to guarantee that generated zip file is created before
         // bluetooth_cert_tests.zip is packaged
@@ -350,9 +348,7 @@ cc_defaults {
     ],
     host_supported: true,
     generated_headers: [
-        "BluetoothGeneratedBundlerSchema_h_bfbs",
         "BluetoothGeneratedDumpsysDataSchema_h",
-        "BluetoothGeneratedDumpsysModuleSchema_h",
         "BluetoothGeneratedPackets_h",
     ],
     shared_libs: [
