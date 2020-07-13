@@ -45,6 +45,7 @@
 #include "security/facade.h"
 #include "security/security_module.h"
 #include "shim/dumpsys.h"
+#include "shim/facade/facade.h"
 #include "shim/l2cap.h"
 #include "stack_manager.h"
 #include "storage/storage_module.h"
@@ -113,18 +114,8 @@ class RootFacadeService : public ::bluetooth::facade::RootFacade::Service {
         modules.add<::bluetooth::hci::facade::LeScanningManagerFacadeModule>();
         break;
       case BluetoothModule::SHIM:
-        modules.add<::bluetooth::neighbor::ConnectabilityModule>();
-        modules.add<::bluetooth::neighbor::DiscoverabilityModule>();
-        modules.add<::bluetooth::neighbor::InquiryModule>();
-        modules.add<::bluetooth::neighbor::NameModule>();
-        modules.add<::bluetooth::shim::Dumpsys>();
+        modules.add<::bluetooth::shim::facade::ShimFacadeModule>();
         modules.add<::bluetooth::shim::L2cap>();
-        modules.add<::bluetooth::neighbor::PageModule>();
-        modules.add<::bluetooth::hci::HciLayer>();
-        modules.add<::bluetooth::hci::LeAdvertisingManager>();
-        modules.add<::bluetooth::hci::LeScanningManager>();
-        modules.add<::bluetooth::security::SecurityModule>();
-        modules.add<::bluetooth::storage::StorageModule>();
         break;
       default:
         return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "invalid module under test");
