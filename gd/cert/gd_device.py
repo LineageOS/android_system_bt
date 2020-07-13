@@ -57,6 +57,7 @@ from l2cap.classic import facade_pb2_grpc as l2cap_facade_pb2_grpc
 from l2cap.le import facade_pb2_grpc as l2cap_le_facade_pb2_grpc
 from neighbor.facade import facade_pb2_grpc as neighbor_facade_pb2_grpc
 from security import facade_pb2_grpc as security_facade_pb2_grpc
+from shim.facade import facade_pb2_grpc as shim_facade_pb2_grpc
 
 MOBLY_CONTROLLER_CONFIG_NAME = "GdDevice"
 ACTS_CONTROLLER_REFERENCE_NAME = "gd_devices"
@@ -241,6 +242,7 @@ class GdDeviceBase(ABC):
             self.grpc_channel)
         self.neighbor = neighbor_facade_pb2_grpc.NeighborFacadeStub(self.grpc_channel)
         self.security = security_facade_pb2_grpc.SecurityModuleFacadeStub(self.grpc_channel)
+        self.shim = shim_facade_pb2_grpc.ShimFacadeStub(self.grpc_channel)
 
     def get_crash_snippet_and_log_tail(self):
         if is_subprocess_alive(self.backing_process):
