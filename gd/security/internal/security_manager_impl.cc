@@ -69,6 +69,7 @@ void SecurityManagerImpl::Init() {
   security_manager_channel_->SetChannelListener(this);
   security_manager_channel_->SendCommand(hci::WriteSimplePairingModeBuilder::Create(hci::Enable::ENABLED));
   security_manager_channel_->SendCommand(hci::WriteSecureConnectionsHostSupportBuilder::Create(hci::Enable::ENABLED));
+  ASSERT_LOG(storage_module_ != nullptr, "Storage module must not be null!");
   // TODO(optedoblivion): Populate security record memory map from disk
 
   // TODO(b/161543441): read the privacy policy from device-specific configuration, and IRK from config file.
@@ -577,14 +578,16 @@ SecurityManagerImpl::SecurityManagerImpl(
     l2cap::le::L2capLeModule* l2cap_le_module,
     channel::SecurityManagerChannel* security_manager_channel,
     hci::HciLayer* hci_layer,
-    hci::AclManager* acl_manager)
+    hci::AclManager* acl_manager,
+    storage::StorageModule* storage_module)
     : security_handler_(security_handler),
       l2cap_le_module_(l2cap_le_module),
       l2cap_manager_le_(l2cap_le_module_->GetFixedChannelManager()),
       hci_security_interface_le_(
           hci_layer->GetLeSecurityInterface(security_handler_->BindOn(this, &SecurityManagerImpl::OnHciLeEvent))),
       security_manager_channel_(security_manager_channel),
-      acl_manager_(acl_manager) {
+      acl_manager_(acl_manager),
+      storage_module_(storage_module) {
   Init();
 
   l2cap_manager_le_->RegisterService(
