@@ -14,4 +14,9 @@ filegroup {
     ],
 }
 
-
+filegroup {
+    name: "BluetoothFacade_shim_layer",
+    srcs: [
+        "facade/facade.cc",
+    ],
+}
