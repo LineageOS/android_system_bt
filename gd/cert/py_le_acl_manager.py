@@ -28,39 +28,40 @@ from hci.facade import le_acl_manager_facade_pb2 as le_acl_manager_facade
 
 class PyLeAclManagerAclConnection(IEventStream, Closable):
 
-    def __init__(self, device, acl_stream, remote_addr, handle):
+    def __init__(self, le_acl_manager, address, remote_addr, handle, event_stream):
         """
         An abstract representation for an LE ACL connection in GD certification test
-        :param device: The GD device
-        :param acl_stream: The ACL stream for this connection
+        :param le_acl_manager: The LeAclManager from this GD device
+        :param address: The local device address
         :param remote_addr: Remote device address
         :param handle: Connection handle
+        :param event_stream: The connection event stream for this connection
         """
-        self.device = device
-        self.handle = handle
+        self.le_acl_manager = le_acl_manager
         # todo enable filtering after sorting out handles
-        #self.our_acl_stream = FilteringEventStream(acl_stream, None)
-        self.our_acl_stream = acl_stream
-
-        if remote_addr:
-            self.connection_event_stream = EventStream(self.device.hci_le_acl_manager.CreateConnection(remote_addr))
-        else:
-            self.connection_event_stream = None
+        # self.our_acl_stream = FilteringEventStream(acl_stream, None)
+        self.handle = handle
+        self.connection_event_stream = event_stream
+        self.acl_stream = EventStream(
+            self.le_acl_manager.FetchAclData(le_acl_manager_facade.LeHandleMsg(handle=self.handle)))
+        self.remote_address = remote_addr
+        self.own_address = address
+        self.disconnect_reason = None
 
     def close(self):
         safeClose(self.connection_event_stream)
+        safeClose(self.acl_stream)
 
-    def wait_for_connection_complete(self):
-        connection_complete = HciCaptures.LeConnectionCompleteCapture()
-        assertThat(self.connection_event_stream).emits(connection_complete)
-        self.handle = connection_complete.get().GetConnectionHandle()
+    def wait_for_disconnection_complete(self):
+        disconnection_complete = HciCaptures.DisconnectionCompleteCapture()
+        assertThat(self.connection_event_stream).emits(disconnection_complete)
+        self.disconnect_reason = disconnection_complete.get().GetReason()
 
     def send(self, data):
-        self.device.hci_le_acl_manager.SendAclData(
-            le_acl_manager_facade.LeAclData(handle=self.handle, payload=bytes(data)))
+        self.le_acl_manager.SendAclData(le_acl_manager_facade.LeAclData(handle=self.handle, payload=bytes(data)))
 
     def get_event_queue(self):
-        return self.our_acl_stream.get_event_queue()
+        return self.acl_stream.get_event_queue()
 
 
 class PyLeAclManager(Closable):
@@ -70,28 +71,62 @@ class PyLeAclManager(Closable):
         LE ACL Manager for GD Certification test
         :param device: The GD device
         """
-        self.device = device
+        self.le_acl_manager = device.hci_le_acl_manager
 
-        self.le_acl_stream = EventStream(self.device.hci_le_acl_manager.FetchAclData(empty_proto.Empty()))
-        self.incoming_connection_stream = None
+        self.incoming_connection_event_stream = None
+        self.outgoing_connection_event_streams = {}
+        self.active_connections = []
+        self.next_token = 1
 
     def close(self):
-        safeClose(self.le_acl_stream)
-        safeClose(self.incoming_connection_stream)
-
-    # temporary, until everyone is migrated
-    def get_le_acl_stream(self):
-        return self.le_acl_stream
+        safeClose(self.incoming_connection_event_stream)
+        for v in self.outgoing_connection_event_streams.values():
+            safeClose(v)
+        for connection in self.active_connections:
+            safeClose(connection)
 
     def listen_for_incoming_connections(self):
-        self.incoming_connection_stream = EventStream(
-            self.device.hci_le_acl_manager.FetchIncomingConnection(empty_proto.Empty()))
+        assertThat(self.incoming_connection_event_stream).isNone()
+        self.incoming_connection_event_stream = EventStream(
+            self.le_acl_manager.FetchIncomingConnection(empty_proto.Empty()))
+
+    def connect_to_remote(self, remote_addr):
+        token = self.initiate_connection(remote_addr)
+        return self.complete_outgoing_connection(token)
+
+    def wait_for_connection(self):
+        self.listen_for_incoming_connections()
+        return self.complete_incoming_connection()
 
     def initiate_connection(self, remote_addr):
-        return PyLeAclManagerAclConnection(self.device, self.le_acl_stream, remote_addr, None)
+        assertThat(self.next_token in self.outgoing_connection_event_streams).isFalse()
+        self.outgoing_connection_event_streams[self.next_token] = EventStream(
+            self.le_acl_manager.CreateConnection(remote_addr))
+        token = self.next_token
+        self.next_token += 1
+        return token
 
-    def accept_connection(self):
+    def complete_connection(self, event_stream):
         connection_complete = HciCaptures.LeConnectionCompleteCapture()
-        assertThat(self.incoming_connection_stream).emits(connection_complete)
-        handle = connection_complete.get().GetConnectionHandle()
-        return PyLeAclManagerAclConnection(self.device, self.le_acl_stream, None, handle)
+        assertThat(event_stream).emits(connection_complete)
+        complete = connection_complete.get()
+        handle = complete.GetConnectionHandle()
+        remote = complete.GetPeerAddress()
+        if complete.GetSubeventCode() == hci_packets.SubeventCode.ENHANCED_CONNECTION_COMPLETE:
+            address = complete.GetLocalResolvablePrivateAddress()
+        else:
+            address = None
+        connection = PyLeAclManagerAclConnection(self.le_acl_manager, address, remote, handle, event_stream)
+        self.active_connections.append(connection)
+        return connection
+
+    def complete_incoming_connection(self):
+        assertThat(self.incoming_connection_event_stream).isNotNone()
+        event_stream = self.incoming_connection_event_stream
+        self.incoming_connection_event_stream = None
+        return self.complete_connection(event_stream)
+
+    def complete_outgoing_connection(self, token):
+        assertThat(self.outgoing_connection_event_streams[token]).isNotNone()
+        event_stream = self.outgoing_connection_event_streams.pop(token)
+        return self.complete_connection(event_stream)
