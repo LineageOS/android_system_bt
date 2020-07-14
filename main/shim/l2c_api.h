@@ -615,5 +615,10 @@ void L2CA_AdjustConnectionIntervals(uint16_t* min_interval,
                                     uint16_t* max_interval,
                                     uint16_t floor_interval);
 
+/**
+ * Check whether an ACL or LE link to the remote device is established
+ */
+bool L2CA_IsLinkEstablished(const RawAddress& bd_addr, tBT_TRANSPORT transport);
+
 }  // namespace shim
 }  // namespace bluetooth

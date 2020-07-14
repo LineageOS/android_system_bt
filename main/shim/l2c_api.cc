@@ -296,3 +296,9 @@ uint16_t bluetooth::shim::L2CA_FlushChannel(uint16_t lcid,
   LOG_INFO("UNIMPLEMENTED %s", __func__);
   return 0;
 }
+
+bool bluetooth::shim::L2CA_IsLinkEstablished(const RawAddress& bd_addr,
+                                             tBT_TRANSPORT transport) {
+  LOG_INFO("UNIMPLEMENTED %s", __func__);
+  return true;
+}
