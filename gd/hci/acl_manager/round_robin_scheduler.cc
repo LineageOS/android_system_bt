@@ -118,13 +118,14 @@ void RoundRobinScheduler::buffer_packet(std::map<uint16_t, acl_queue_handler>::i
 
   ConnectionType connection_type = acl_queue_handler->second.connection_type_;
   size_t mtu = connection_type == ConnectionType::CLASSIC ? hci_mtu_ : le_hci_mtu_;
+  PacketBoundaryFlag packet_boundary_flag =
+      (connection_type == ConnectionType::CLASSIC ? PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE
+                                                  : PacketBoundaryFlag::FIRST_NON_AUTOMATICALLY_FLUSHABLE);
   if (packet->size() <= mtu) {
     fragments_to_send_.push(std::make_pair(
-        connection_type, AclPacketBuilder::Create(handle, PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE,
-                                                  broadcast_flag, std::move(packet))));
+        connection_type, AclPacketBuilder::Create(handle, packet_boundary_flag, broadcast_flag, std::move(packet))));
   } else {
     auto fragments = AclFragmenter(mtu, std::move(packet)).GetFragments();
-    PacketBoundaryFlag packet_boundary_flag = PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE;
     for (size_t i = 0; i < fragments.size(); i++) {
       fragments_to_send_.push(std::make_pair(
           connection_type,
