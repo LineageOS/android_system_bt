@@ -126,18 +126,19 @@ void AclManager::RegisterCallbacks(ConnectionCallbacks* callbacks, os::Handler* 
 
 void AclManager::RegisterLeCallbacks(LeConnectionCallbacks* callbacks, os::Handler* handler) {
   ASSERT(callbacks != nullptr && handler != nullptr);
-  GetHandler()->Post(common::BindOnce(&le_impl::handle_register_le_callbacks, common::Unretained(pimpl_->le_impl_),
-                                      common::Unretained(callbacks), common::Unretained(handler)));
+  CallOn(
+      pimpl_->le_impl_,
+      &le_impl::handle_register_le_callbacks,
+      common::Unretained(callbacks),
+      common::Unretained(handler));
 }
 
 void AclManager::CreateConnection(Address address) {
-  GetHandler()->Post(
-      common::BindOnce(&classic_impl::create_connection, common::Unretained(pimpl_->classic_impl_), address));
+  CallOn(pimpl_->classic_impl_, &classic_impl::create_connection, address);
 }
 
 void AclManager::CreateLeConnection(AddressWithType address_with_type) {
-  GetHandler()->Post(
-      common::BindOnce(&le_impl::create_le_connection, common::Unretained(pimpl_->le_impl_), address_with_type, true));
+  CallOn(pimpl_->le_impl_, &le_impl::create_le_connection, address_with_type, true);
 }
 
 void AclManager::SetPrivacyPolicyForInitiatorAddress(
@@ -146,35 +147,55 @@ void AclManager::SetPrivacyPolicyForInitiatorAddress(
     crypto_toolbox::Octet16 rotation_irk,
     std::chrono::milliseconds minimum_rotation_time,
     std::chrono::milliseconds maximum_rotation_time) {
-  GetHandler()->Post(common::BindOnce(&le_impl::set_privacy_policy_for_initiator_address,
-                                      common::Unretained(pimpl_->le_impl_), address_policy, fixed_address, rotation_irk,
-                                      minimum_rotation_time, maximum_rotation_time));
+  CallOn(
+      pimpl_->le_impl_,
+      &le_impl::set_privacy_policy_for_initiator_address,
+      address_policy,
+      fixed_address,
+      rotation_irk,
+      minimum_rotation_time,
+      maximum_rotation_time);
+}
+
+// TODO(jpawlowski): remove once we have config file abstraction in cert tests
+void AclManager::SetPrivacyPolicyForInitiatorAddressForTest(
+    LeAddressManager::AddressPolicy address_policy,
+    AddressWithType fixed_address,
+    crypto_toolbox::Octet16 rotation_irk,
+    std::chrono::milliseconds minimum_rotation_time,
+    std::chrono::milliseconds maximum_rotation_time) {
+  CallOn(
+      pimpl_->le_impl_,
+      &le_impl::set_privacy_policy_for_initiator_address_for_test,
+      address_policy,
+      fixed_address,
+      rotation_irk,
+      minimum_rotation_time,
+      maximum_rotation_time);
 }
 
 void AclManager::CancelConnect(Address address) {
-  GetHandler()->Post(BindOnce(&classic_impl::cancel_connect, common::Unretained(pimpl_->classic_impl_), address));
+  CallOn(pimpl_->classic_impl_, &classic_impl::cancel_connect, address);
 }
 
 void AclManager::CancelLeConnect(AddressWithType address_with_type) {
-  GetHandler()->Post(BindOnce(&le_impl::cancel_connect, common::Unretained(pimpl_->le_impl_), address_with_type));
+  CallOn(pimpl_->le_impl_, &le_impl::cancel_connect, address_with_type);
 }
 
 void AclManager::AddDeviceToConnectList(AddressWithType address_with_type) {
-  GetHandler()->Post(
-      BindOnce(&le_impl::add_device_to_connect_list, common::Unretained(pimpl_->le_impl_), address_with_type));
+  CallOn(pimpl_->le_impl_, &le_impl::add_device_to_connect_list, address_with_type);
 }
 
 void AclManager::RemoveDeviceFromConnectList(AddressWithType address_with_type) {
-  GetHandler()->Post(
-      BindOnce(&le_impl::remove_device_from_connect_list, common::Unretained(pimpl_->le_impl_), address_with_type));
+  CallOn(pimpl_->le_impl_, &le_impl::remove_device_from_connect_list, address_with_type);
 }
 
 void AclManager::MasterLinkKey(KeyFlag key_flag) {
-  GetHandler()->Post(BindOnce(&classic_impl::master_link_key, common::Unretained(pimpl_->classic_impl_), key_flag));
+  CallOn(pimpl_->classic_impl_, &classic_impl::master_link_key, key_flag);
 }
 
 void AclManager::SwitchRole(Address address, Role role) {
-  GetHandler()->Post(BindOnce(&classic_impl::switch_role, common::Unretained(pimpl_->classic_impl_), address, role));
+  CallOn(pimpl_->classic_impl_, &classic_impl::switch_role, address, role);
 }
 
 uint16_t AclManager::ReadDefaultLinkPolicySettings() {
@@ -184,13 +205,11 @@ uint16_t AclManager::ReadDefaultLinkPolicySettings() {
 
 void AclManager::WriteDefaultLinkPolicySettings(uint16_t default_link_policy_settings) {
   pimpl_->default_link_policy_settings_ = default_link_policy_settings;
-  GetHandler()->Post(BindOnce(&classic_impl::write_default_link_policy_settings,
-                              common::Unretained(pimpl_->classic_impl_), default_link_policy_settings));
+  CallOn(pimpl_->classic_impl_, &classic_impl::write_default_link_policy_settings, default_link_policy_settings);
 }
 
 void AclManager::SetSecurityModule(security::SecurityModule* security_module) {
-  GetHandler()->Post(
-      BindOnce(&classic_impl::set_security_module, common::Unretained(pimpl_->classic_impl_), security_module));
+  CallOn(pimpl_->classic_impl_, &classic_impl::set_security_module, security_module);
 }
 
 LeAddressManager* AclManager::GetLeAddressManager() {
