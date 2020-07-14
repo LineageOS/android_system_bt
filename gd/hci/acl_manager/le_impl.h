@@ -132,7 +132,15 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
                                                 common::Unretained(le_client_callbacks_), remote_address, status));
       return;
     }
-    // TODO: Check and save other connection parameters
+
+    uint16_t conn_interval = connection_complete.GetConnInterval();
+    uint16_t conn_latency = connection_complete.GetConnLatency();
+    uint16_t supervision_timeout = connection_complete.GetSupervisionTimeout();
+    if (!check_connection_parameters(conn_interval, conn_interval, conn_latency, supervision_timeout)) {
+      LOG_ERROR("Receive connection complete with invalid connection parameters");
+      return;
+    }
+
     auto role = connection_complete.GetRole();
     uint16_t handle = connection_complete.GetConnectionHandle();
     ASSERT(le_acl_connections_.count(handle) == 0);
@@ -180,7 +188,13 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
                                                 common::Unretained(le_client_callbacks_), remote_address, status));
       return;
     }
-    // TODO: Check and save other connection parameters
+    uint16_t conn_interval = connection_complete.GetConnInterval();
+    uint16_t conn_latency = connection_complete.GetConnLatency();
+    uint16_t supervision_timeout = connection_complete.GetSupervisionTimeout();
+    if (!check_connection_parameters(conn_interval, conn_interval, conn_latency, supervision_timeout)) {
+      LOG_ERROR("Receive enhenced connection complete with invalid connection parameters");
+      return;
+    }
     uint16_t handle = connection_complete.GetConnectionHandle();
     ASSERT(le_acl_connections_.count(handle) == 0);
     auto queue = std::make_shared<AclConnection::Queue>(10);
@@ -279,6 +293,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     uint16_t conn_latency = 0x0000;
     uint16_t supervision_timeout = 0x001f4;
     ASSERT(le_client_callbacks_ != nullptr);
+    ASSERT(check_connection_parameters(conn_interval_min, conn_interval_max, conn_latency, supervision_timeout));
 
     connecting_le_.insert(address_with_type);
 
@@ -357,6 +372,28 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     auto connection = le_acl_connections_.find(handle);
     ASSERT(connection != le_acl_connections_.end());
     return connection->second;
+  }
+
+  bool check_connection_parameters(
+      uint16_t conn_interval_min, uint16_t conn_interval_max, uint16_t conn_latency, uint16_t supervision_timeout) {
+    if (conn_interval_min < 0x0006 || conn_interval_min > 0x0C80 || conn_interval_max < 0x0006 ||
+        conn_interval_max > 0x0C80 || conn_latency > 0x01F3 || supervision_timeout < 0x000A ||
+        supervision_timeout > 0x0C80) {
+      LOG_ERROR("Invalid parameter");
+      return false;
+    }
+
+    // The Maximum interval in milliseconds will be conn_interval_max * 1.25 ms
+    // The Timeout in milliseconds will be expected_supervision_timeout * 10 ms
+    // The Timeout in milliseconds shall be larger than (1 + Latency) * Interval_Max * 2, where Interval_Max is given in
+    // milliseconds.
+    uint32_t supervision_timeout_min = (uint32_t)(1 + conn_latency) * conn_interval_max * 2 + 1;
+    if (supervision_timeout * 8 < supervision_timeout_min || conn_interval_max < conn_interval_min) {
+      LOG_ERROR("Invalid parameter");
+      return false;
+    }
+
+    return true;
   }
 
   void OnPause() override {
