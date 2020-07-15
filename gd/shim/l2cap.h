@@ -37,20 +37,20 @@ using CreateConnectionPromise = std::promise<uint16_t>;
 
 class L2cap : public bluetooth::Module {
  public:
-  void RegisterService(
+  void RegisterClassicService(
       uint16_t psm,
       bool use_ertm,
       uint16_t mtu,
       ConnectionCompleteCallback on_complete,
       RegisterServicePromise register_promise);
-  void UnregisterService(uint16_t psm, UnregisterServicePromise unregister_promise);
+  void UnregisterClassicService(uint16_t psm, UnregisterServicePromise unregister_promise);
 
-  void CreateConnection(
+  void CreateClassicConnection(
       uint16_t psm,
       const std::string address_string,
       ConnectionCompleteCallback on_complete,
       CreateConnectionPromise create_promise);
-  void CloseConnection(uint16_t cid);
+  void CloseClassicConnection(uint16_t cid);
 
   void SetReadDataReadyCallback(uint16_t cid, ReadDataReadyCallback on_data_ready);
   void SetConnectionClosedCallback(uint16_t cid, ConnectionClosedCallback on_closed);
