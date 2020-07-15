@@ -201,7 +201,7 @@ class ShimL2capTest : public ::testing::Test {
     std::promise<uint16_t> promise;
     auto future = promise.get_future();
 
-    shim_l2cap_->CreateConnection(
+    shim_l2cap_->CreateClassicConnection(
         psm,
         device_address,
         std::bind(
@@ -285,7 +285,7 @@ TEST_F(ShimL2capTest, CreateThenDisconnectBeforeCompletion) {
   WaitConnectionFuture();
   ASSERT_EQ(NumberOfConnections(), 1);
 
-  shim_l2cap_->CloseConnection(cid);
+  shim_l2cap_->CloseClassicConnection(cid);
 }
 
 TEST_F(ShimL2capTest, MaxCreatedConnections) {
@@ -348,7 +348,7 @@ TEST_F(ShimL2capTest, ConnectFail) {
 
   ASSERT_EQ(connection_connected_, false);
 
-  shim_l2cap_->CloseConnection(cid);
+  shim_l2cap_->CloseClassicConnection(cid);
 }
 
 TEST_F(ShimL2capTest, ConnectOpen) {
@@ -388,7 +388,7 @@ TEST_F(ShimL2capTest, ConnectOpen) {
   ASSERT_EQ(connection_connected_, true);
 
   auto future = test_link_.connection_closed_promise_.get_future();
-  shim_l2cap_->CloseConnection(cid);
+  shim_l2cap_->CloseClassicConnection(cid);
   future.wait();
 }
 
@@ -397,7 +397,7 @@ TEST_F(ShimL2capTest, RegisterService_Success) {
   auto registration_pending = registration_promise.get_future();
 
   SetRegistrationFuture();
-  shim_l2cap_->RegisterService(
+  shim_l2cap_->RegisterClassicService(
       kPsm,
       kNoUseErtm,
       kMtu,
@@ -428,7 +428,7 @@ TEST_F(ShimL2capTest, RegisterService_Duplicate) {
   auto future = promise.get_future();
 
   SetRegistrationFuture();
-  shim_l2cap_->RegisterService(
+  shim_l2cap_->RegisterClassicService(
       kPsm,
       kNoUseErtm,
       kMtu,
@@ -460,7 +460,7 @@ TEST_F(ShimL2capTest, RegisterService_Invalid) {
 
   SetRegistrationFuture();
 
-  shim_l2cap_->RegisterService(
+  shim_l2cap_->RegisterClassicService(
       kPsm,
       kNoUseErtm,
       kMtu,
