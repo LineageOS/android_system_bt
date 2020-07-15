@@ -117,6 +117,9 @@ base::MessageLoop* get_main_message_loop() { return nullptr; }
 void l2cble_set_fixed_channel_tx_data_length(const RawAddress& remote_bda,
                                              uint16_t fix_cid,
                                              uint16_t tx_mtu) {}
+void L2CA_SetLeFixedChannelTxDataLength(const RawAddress& remote_bda,
+                                        uint16_t fix_cid,
+                                        uint16_t tx_mtu) {}
 bool SDP_AddAttribute(uint32_t handle, uint16_t attr_id, uint8_t attr_type,
                       uint32_t attr_len, uint8_t* p_val) {
   return false;
