@@ -1169,6 +1169,89 @@ TEST_F(AclManagerWithConnectionTest, send_read_clock) {
       ReadClockCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, handle_, 0x00002e6a, 0x0000));
 }
 
+class AclManagerWithResolvableAddressTest : public AclManagerNoCallbacksTest {
+ protected:
+  void SetUp() override {
+    test_hci_layer_ = new TestHciLayer;  // Ownership is transferred to registry
+    test_controller_ = new TestController;
+    fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
+    fake_registry_.InjectTestModule(&Controller::Factory, test_controller_);
+    client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
+    ASSERT_NE(client_handler_, nullptr);
+    fake_registry_.Start<AclManager>(&thread_);
+    acl_manager_ = static_cast<AclManager*>(fake_registry_.GetModuleUnderTest(&AclManager::Factory));
+    Address::FromString("A1:A2:A3:A4:A5:A6", remote);
+
+    // Verify LE Set Random Address was sent during setup
+    hci::Address address;
+    Address::FromString("D0:05:04:03:02:01", address);
+    hci::AddressWithType address_with_type(address, hci::AddressType::RANDOM_DEVICE_ADDRESS);
+    crypto_toolbox::Octet16 irk = {};
+    auto minimum_rotation_time = std::chrono::milliseconds(7 * 60 * 1000);
+    auto maximum_rotation_time = std::chrono::milliseconds(15 * 60 * 1000);
+    acl_manager_->SetPrivacyPolicyForInitiatorAddress(
+        LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS,
+        address_with_type,
+        irk,
+        minimum_rotation_time,
+        maximum_rotation_time);
+    acl_manager_->RegisterCallbacks(&mock_connection_callback_, client_handler_);
+    acl_manager_->RegisterLeCallbacks(&mock_le_connection_callbacks_, client_handler_);
+  }
+};
+
+TEST_F(AclManagerWithResolvableAddressTest, create_connection_cancel_fail) {
+  auto remote_with_type_ = AddressWithType(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
+  test_hci_layer_->SetCommandFuture();
+  acl_manager_->CreateLeConnection(remote_with_type_);
+
+  // Add device to connect list
+  test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST);
+  test_hci_layer_->SetCommandFuture();
+  test_hci_layer_->IncomingEvent(LeAddDeviceToConnectListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+
+  // Set random address
+  test_hci_layer_->GetCommandPacket(OpCode::LE_SET_RANDOM_ADDRESS);
+  test_hci_layer_->SetCommandFuture();
+  test_hci_layer_->IncomingEvent(LeSetRandomAddressCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+
+  // send create connection command
+  test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
+  test_hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
+
+  Address remote2;
+  Address::FromString("A1:A2:A3:A4:A5:A7", remote2);
+  auto remote_with_type2 = AddressWithType(remote2, AddressType::PUBLIC_DEVICE_ADDRESS);
+
+  // create another connection
+  test_hci_layer_->SetCommandFuture();
+  acl_manager_->CreateLeConnection(remote_with_type2);
+
+  // cancel previous connection
+  test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION_CANCEL);
+
+  // receive connection complete of first device
+  test_hci_layer_->IncomingLeMetaEvent(LeConnectionCompleteBuilder::Create(
+      ErrorCode::SUCCESS,
+      0x123,
+      Role::SLAVE,
+      AddressType::PUBLIC_DEVICE_ADDRESS,
+      remote,
+      0x0100,
+      0x0010,
+      0x0011,
+      ClockAccuracy::PPM_30));
+
+  // receive create connection cancel complete with ErrorCode::CONNECTION_ALREADY_EXISTS
+  test_hci_layer_->SetCommandFuture();
+  test_hci_layer_->IncomingEvent(
+      LeCreateConnectionCancelCompleteBuilder::Create(0x01, ErrorCode::CONNECTION_ALREADY_EXISTS));
+
+  // Add another device to connect list
+  test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST);
+  test_hci_layer_->IncomingEvent(LeAddDeviceToConnectListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+}
+
 }  // namespace
 }  // namespace acl_manager
 }  // namespace hci
