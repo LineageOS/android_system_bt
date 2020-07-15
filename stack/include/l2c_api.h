@@ -941,4 +941,18 @@ extern uint16_t L2CA_GetDisconnectReason(const RawAddress& remote_bda,
 extern void L2CA_AdjustConnectionIntervals(uint16_t* min_interval,
                                            uint16_t* max_interval,
                                            uint16_t floor_interval);
+
+/**
+ * Update max fixed channel tx data length if applicable
+ */
+extern void L2CA_SetLeFixedChannelTxDataLength(const RawAddress& remote_bda,
+                                               uint16_t fix_cid,
+                                               uint16_t tx_mtu);
+
+/**
+ * Check whether an ACL or LE link to the remote device is established
+ */
+extern bool L2CA_IsLinkEstablished(const RawAddress& bd_addr,
+                                   tBT_TRANSPORT transport);
+
 #endif /* L2C_API_H */
