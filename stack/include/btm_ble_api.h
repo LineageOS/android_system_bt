@@ -75,19 +75,6 @@ extern bool BTM_SecAddBleKey(const RawAddress& bd_addr,
                              tBTM_LE_KEY_VALUE* p_le_key,
                              tBTM_LE_KEY_TYPE key_type);
 
-/*******************************************************************************
- *
- * Function         BTM_BleObtainVendorCapabilities
- *
- * Description      This function is called to obatin vendor capabilties
- *
- * Parameters       p_cmn_vsc_cb - Returns the vednor capabilities
- *
- * Returns          void
- *
- ******************************************************************************/
-extern void BTM_BleObtainVendorCapabilities(tBTM_BLE_VSC_CB* p_cmn_vsc_cb);
-
 /**
  * This function is called to set scan parameters. |cb| is called with operation
  * status
@@ -149,20 +136,6 @@ extern void BTM_BleReadScanReports(tBLE_SCAN_MODE scan_mode,
 /* This function is called to setup the callback for tracking */
 extern void BTM_BleTrackAdvertiser(tBTM_BLE_TRACK_ADV_CBACK* p_track_cback,
                                    tBTM_BLE_REF_VALUE ref_value);
-
-/*******************************************************************************
- *
- * Function         BTM_BleWriteScanRsp
- *
- * Description      This function is called to write LE scan response.
- *
- * Parameters:      p_scan_rsp: scan response.
- *
- * Returns          status
- *
- ******************************************************************************/
-extern void BTM_BleWriteScanRsp(uint8_t* data, uint8_t length,
-                                tBTM_BLE_ADV_DATA_CMPL_CBACK* p_adv_data_cback);
 
 /*******************************************************************************
  *
@@ -501,20 +474,6 @@ extern bool BTM_BleLocalPrivacyEnabled(void);
 
 /*******************************************************************************
  *
- * Function         BTM_BleEnableMixedPrivacyMode
- *
- * Description      This function is called to enabled Mixed mode if privacy 1.2
- *                  is applicable in controller.
- *
- * Parameters       mixed_on:  mixed mode to be used or not.
- *
- * Returns          void
- *
- ******************************************************************************/
-extern void BTM_BleEnableMixedPrivacyMode(bool mixed_on);
-
-/*******************************************************************************
- *
  * Function          BTM_BleMaxMultiAdvInstanceCount
  *
  * Description      Returns the maximum number of multi adv instances supported
@@ -524,54 +483,6 @@ extern void BTM_BleEnableMixedPrivacyMode(bool mixed_on);
  *
  ******************************************************************************/
 extern uint8_t BTM_BleMaxMultiAdvInstanceCount();
-
-/*******************************************************************************
- *
- * Function         BTM_BleSetConnectableMode
- *
- * Description      This function is called to set BLE connectable mode for a
- *                  peripheral device.
- *
- * Parameters       connectable_mode:  directed connectable mode, or
- *                                     non-directed. It can be
- *                                     BTM_BLE_CONNECT_EVT,
- *                                     BTM_BLE_CONNECT_DIR_EVT or
- *                                     BTM_BLE_CONNECT_LO_DUTY_DIR_EVT
- *
- * Returns          BTM_ILLEGAL_VALUE if controller does not support BLE.
- *                  BTM_SUCCESS is status set successfully; otherwise failure.
- *
- ******************************************************************************/
-extern tBTM_STATUS BTM_BleSetConnectableMode(
-    tBTM_BLE_CONN_MODE connectable_mode);
-
-/*******************************************************************************
- *
- * Function         BTM_BleTurnOnPrivacyOnRemote
- *
- * Description      This function is called to enable or disable the privacy on
- *                  the remote device.
- *
- * Parameters       bd_addr: remote device address.
- *                  privacy_on: true to enable it; false to disable it.
- *
- * Returns          void
- *
- ******************************************************************************/
-extern void BTM_BleTurnOnPrivacyOnRemote(const RawAddress& bd_addr,
-                                         bool privacy_on);
-
-/*******************************************************************************
- *
- * Function         BTM_BleUpdateAdvFilterPolicy
- *
- * Description      This function update the filter policy of advertiser.
- *
- * Parameter        adv_policy: advertising filter policy
- *
- * Return           void
- ******************************************************************************/
-extern void BTM_BleUpdateAdvFilterPolicy(tBTM_BLE_AFP adv_policy);
 
 /*******************************************************************************
  *
@@ -623,59 +534,6 @@ void BTM_BleTestEnd(tBTM_CMPL_CB* p_cmd_cmpl_cback);
  *
  ******************************************************************************/
 extern bool BTM_UseLeLink(const RawAddress& bd_addr);
-
-/*******************************************************************************
- *
- * Function         BTM_BleStackEnable
- *
- * Description      Enable/Disable BLE functionality on stack regardless of
- *                  controller capability.
- *
- * Parameters:      enable: true to enable, false to disable.
- *
- * Returns          true if added OK, else false
- *
- ******************************************************************************/
-extern tBTM_STATUS BTM_BleStackEnable(bool enable);
-
-/*******************************************************************************
- *
- * Function         BTM_GetLeSecurityState
- *
- * Description      This function is called to get security mode 1 flags and
- *                  encryption key size for LE peer.
- *
- * Returns          bool    true if LE device is found, false otherwise.
- *
- ******************************************************************************/
-extern bool BTM_GetLeSecurityState(const RawAddress& bd_addr,
-                                   uint8_t* p_le_dev_sec_flags,
-                                   uint8_t* p_le_key_size);
-
-/*******************************************************************************
- *
- * Function         BTM_BleSecurityProcedureIsRunning
- *
- * Description      This function indicates if LE security procedure is
- *                  currently running with the peer.
- *
- * Returns          bool true if security procedure is running, false otherwise.
- *
- ******************************************************************************/
-extern bool BTM_BleSecurityProcedureIsRunning(const RawAddress& bd_addr);
-
-/*******************************************************************************
- *
- * Function         BTM_BleGetSupportedKeySize
- *
- * Description      This function gets the maximum encryption key size in bytes
- *                  the local device can suport.
- *                  record.
- *
- * Returns          the key size or 0 if the size can't be retrieved.
- *
- ******************************************************************************/
-extern uint8_t BTM_BleGetSupportedKeySize(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
@@ -750,19 +608,6 @@ extern tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
 extern void BTM_BleReadPhy(
     const RawAddress& bd_addr,
     base::Callback<void(uint8_t tx_phy, uint8_t rx_phy, uint8_t status)> cb);
-
-/*******************************************************************************
- *
- * Function         BTM_BleSetDefaultPhy
- *
- * Description      To set preferred PHY for ensuing LE connections
- *
- *
- * Returns          BTM_SUCCESS if success; otherwise failed.
- *
- ******************************************************************************/
-extern tBTM_STATUS BTM_BleSetDefaultPhy(uint8_t all_phys, uint8_t tx_phys,
-                                        uint8_t rx_phys);
 
 /*******************************************************************************
  *
