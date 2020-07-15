@@ -1286,3 +1286,8 @@ void L2CA_AdjustConnectionIntervals(uint16_t* min_interval,
     *max_interval = phone_min_interval;
   }
 }
+
+void L2CA_SetLeFixedChannelTxDataLength(const RawAddress& remote_bda,
+                                        uint16_t fix_cid, uint16_t tx_mtu) {
+  l2cble_set_fixed_channel_tx_data_length(remote_bda, fix_cid, tx_mtu);
+}
