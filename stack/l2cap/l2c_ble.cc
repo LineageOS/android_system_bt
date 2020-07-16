@@ -36,6 +36,7 @@
 #include "l2c_int.h"
 #include "l2cdefs.h"
 #include "log/log.h"
+#include "main/shim/shim.h"
 #include "osi/include/osi.h"
 #include "stack/gatt/connection_manager.h"
 #include "stack_config.h"
@@ -147,6 +148,11 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
  *
  ******************************************************************************/
 bool L2CA_EnableUpdateBleConnParams(const RawAddress& rem_bda, bool enable) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    LOG(ERROR) << "NOT IMPLEMENTED";
+    return true;
+  }
+
   if (stack_config_get_interface()->get_pts_conn_updates_disabled())
     return false;
 
