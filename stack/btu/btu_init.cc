@@ -19,8 +19,6 @@
 #define LOG_TAG "bt_task"
 
 #include <base/logging.h>
-#include <pthread.h>
-#include <string.h>
 
 #include "bt_target.h"
 #include "btm_int.h"
@@ -28,13 +26,8 @@
 #include "common/message_loop_thread.h"
 #include "device/include/controller.h"
 #include "gatt_api.h"
-#include "gatt_int.h"
 #include "l2c_int.h"
-#include "osi/include/alarm.h"
-#include "osi/include/fixed_queue.h"
-#include "osi/include/log.h"
 #include "sdpint.h"
-#include "smp_int.h"
 
 using bluetooth::common::MessageLoopThread;
 
