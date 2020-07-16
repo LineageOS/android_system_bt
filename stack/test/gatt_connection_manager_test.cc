@@ -59,6 +59,16 @@ void BTM_SetLeConnectionModeToSlow() {
   localWhiteListMock->SetLeConnectionModeToSlow();
 }
 
+namespace bluetooth {
+namespace shim {
+bool is_gd_shim_enabled() { return false; }
+}  // namespace shim
+}  // namespace bluetooth
+
+bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& bd_addr) {
+  return false;
+}
+
 namespace connection_manager {
 class BleConnectionManager : public testing::Test {
   void SetUp() override {
