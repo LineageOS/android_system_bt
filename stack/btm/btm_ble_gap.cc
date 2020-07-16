@@ -367,52 +367,6 @@ inline bool BTM_LE_STATES_SUPPORTED(const uint8_t* x, uint8_t bit_num) {
 
 /*******************************************************************************
  *
- * Function         BTM_BleUpdateAdvFilterPolicy
- *
- * Description      This function update the filter policy of advertiser.
- *
- * Parameter        adv_policy: advertising filter policy
- *
- * Return           void
- ******************************************************************************/
-void BTM_BleUpdateAdvFilterPolicy(tBTM_BLE_AFP adv_policy) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_BleUpdateAdvFilterPolicy(adv_policy);
-  }
-
-  tBTM_BLE_INQ_CB* p_cb = &btm_cb.ble_ctr_cb.inq_var;
-  tBLE_ADDR_TYPE init_addr_type = BLE_ADDR_PUBLIC;
-  RawAddress adv_address = RawAddress::kEmpty;
-  uint8_t adv_mode = p_cb->adv_mode;
-
-  BTM_TRACE_EVENT("BTM_BleUpdateAdvFilterPolicy");
-
-  if (!controller_get_interface()->supports_ble()) return;
-
-  if (p_cb->afp != adv_policy) {
-    p_cb->afp = adv_policy;
-
-    /* if adv active, stop and restart */
-    btm_ble_stop_adv();
-
-    if (p_cb->connectable_mode & BTM_BLE_CONNECTABLE)
-      p_cb->evt_type = btm_set_conn_mode_adv_init_addr(
-          p_cb, adv_address, &init_addr_type, &p_cb->adv_addr_type);
-
-    btsnd_hcic_ble_write_adv_params(
-        (uint16_t)(p_cb->adv_interval_min ? p_cb->adv_interval_min
-                                          : BTM_BLE_GAP_ADV_SLOW_INT),
-        (uint16_t)(p_cb->adv_interval_max ? p_cb->adv_interval_max
-                                          : BTM_BLE_GAP_ADV_SLOW_INT),
-        p_cb->evt_type, p_cb->adv_addr_type, init_addr_type, adv_address,
-        p_cb->adv_chnl_map, p_cb->afp);
-
-    if (adv_mode == BTM_BLE_ADV_ENABLE) btm_ble_start_adv();
-  }
-}
-
-/*******************************************************************************
- *
  * Function         BTM_BleObserve
  *
  * Description      This procedure keep the device listening for advertising
@@ -624,26 +578,6 @@ extern void BTM_BleReadControllerFeatures(
 
 /*******************************************************************************
  *
- * Function         BTM_BleEnableMixedPrivacyMode
- *
- * Description      This function is called to enabled Mixed mode if privacy 1.2
- *                  is applicable in controller.
- *
- * Parameters       mixed_on:  mixed mode to be used or not.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_BleEnableMixedPrivacyMode(bool mixed_on) {
-#if (BLE_PRIVACY_SPT == TRUE)
-  btm_cb.ble_ctr_cb.mixed_mode = mixed_on;
-
-/* TODO: send VSC to enabled mixed mode */
-#endif
-}
-
-/*******************************************************************************
- *
  * Function         BTM_BleConfigPrivacy
  *
  * Description      This function is called to enable or disable the privacy in
@@ -732,32 +666,6 @@ bool BTM_BleLocalPrivacyEnabled(void) {
 #else
   return false;
 #endif
-}
-
-/*******************************************************************************
- *
- * Function         BTM_BleSetConnectableMode
- *
- * Description      This function is called to set BLE connectable mode for a
- *                  peripheral device.
- *
- * Parameters       conn_mode:  directed connectable mode, or non-directed. It
- *                              can be BTM_BLE_CONNECT_EVT,
- *                              BTM_BLE_CONNECT_DIR_EVT or
- *                              BTM_BLE_CONNECT_LO_DUTY_DIR_EVT
- *
- * Returns          BTM_ILLEGAL_VALUE if controller does not support BLE.
- *                  BTM_SUCCESS is status set successfully; otherwise failure.
- *
- ******************************************************************************/
-tBTM_STATUS BTM_BleSetConnectableMode(tBTM_BLE_CONN_MODE connectable_mode) {
-  tBTM_BLE_INQ_CB* p_cb = &btm_cb.ble_ctr_cb.inq_var;
-
-  BTM_TRACE_EVENT("%s connectable_mode = %d ", __func__, connectable_mode);
-  if (!controller_get_interface()->supports_ble()) return BTM_ILLEGAL_VALUE;
-
-  p_cb->directed_conn = connectable_mode;
-  return btm_ble_set_connectability(p_cb->connectable_mode);
 }
 
 #if (BLE_PRIVACY_SPT == TRUE)
@@ -903,35 +811,6 @@ void BTM_BleSetScanParams(uint32_t scan_interval, uint32_t scan_window,
     BTM_TRACE_ERROR("Illegal params: scan_interval = %d scan_window = %d",
                     scan_interval, scan_window);
   }
-}
-
-/*******************************************************************************
- *
- * Function         BTM_BleWriteScanRsp
- *
- * Description      This function is called to write LE scan response.
- *
- * Parameters:      p_scan_rsp: scan response information.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_BleWriteScanRsp(uint8_t* data, uint8_t length,
-                         tBTM_BLE_ADV_DATA_CMPL_CBACK* p_adv_data_cback) {
-  BTM_TRACE_EVENT("%s: length: %d", __func__, length);
-  if (!controller_get_interface()->supports_ble()) {
-    p_adv_data_cback(BTM_ILLEGAL_VALUE);
-    return;
-  }
-
-  btsnd_hcic_ble_set_scan_rsp_data(length, data);
-
-  if (length != 0)
-    btm_cb.ble_ctr_cb.inq_var.scan_rsp = true;
-  else
-    btm_cb.ble_ctr_cb.inq_var.scan_rsp = false;
-
-  p_adv_data_cback(BTM_SUCCESS);
 }
 
 /*******************************************************************************
