@@ -1402,7 +1402,6 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::L2CA_ConnectFixedChnl(fixed_cid, rem_bda);
   }
-
   uint8_t phy = controller_get_interface()->get_le_all_initiating_phys();
   return L2CA_ConnectFixedChnl(fixed_cid, rem_bda, phy);
 }
