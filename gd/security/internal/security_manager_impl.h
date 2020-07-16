@@ -20,7 +20,6 @@
 #include <utility>
 
 #include "hci/acl_manager.h"
-#include "hci/classic_device.h"
 #include "l2cap/classic/security_enforcement_interface.h"
 #include "l2cap/le/l2cap_le_module.h"
 #include "l2cap/le/security_enforcement_interface.h"

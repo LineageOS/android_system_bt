@@ -182,7 +182,7 @@ uint16_t bluetooth::shim::legacy::L2cap::RegisterService(
     use_ertm = true;
   }
   constexpr auto mtu = 1000;  // TODO: Let client decide
-  bluetooth::shim::GetL2cap()->RegisterService(
+  bluetooth::shim::GetL2cap()->RegisterClassicService(
       psm, use_ertm, mtu,
       std::bind(
           &bluetooth::shim::legacy::L2cap::OnRemoteInitiatedConnectionCreated,
@@ -215,8 +215,8 @@ void bluetooth::shim::legacy::L2cap::UnregisterService(uint16_t psm) {
   LOG_DEBUG("Unregistering service on psm:%hd", psm);
   UnregisterServicePromise unregister_promise;
   auto service_unregistered = unregister_promise.get_future();
-  bluetooth::shim::GetL2cap()->UnregisterService(psm,
-                                                 std::move(unregister_promise));
+  bluetooth::shim::GetL2cap()->UnregisterClassicService(
+      psm, std::move(unregister_promise));
   service_unregistered.wait();
   Classic().UnregisterPsm(psm);
 }
@@ -233,7 +233,7 @@ uint16_t bluetooth::shim::legacy::L2cap::CreateConnection(
   LOG_DEBUG("Initiating local connection to psm:%hd address:%s", psm,
             raw_address.ToString().c_str());
 
-  bluetooth::shim::GetL2cap()->CreateConnection(
+  bluetooth::shim::GetL2cap()->CreateClassicConnection(
       psm, raw_address.ToString(),
       std::bind(
           &bluetooth::shim::legacy::L2cap::OnLocalInitiatedConnectionCreated,
@@ -273,7 +273,7 @@ void bluetooth::shim::legacy::L2cap::OnLocalInitiatedConnectionCreated(
     LOG_DEBUG("Connection Closed before presentation to upper layer");
     if (connected) {
       SetDownstreamCallbacks(cid);
-      bluetooth::shim::GetL2cap()->CloseConnection(cid);
+      bluetooth::shim::GetL2cap()->CloseClassicConnection(cid);
     } else {
       LOG_DEBUG("Connection failed after initiator closed");
     }
@@ -394,7 +394,7 @@ bool bluetooth::shim::legacy::L2cap::DisconnectRequest(uint16_t cid) {
   }
   LOG_DEBUG("%s initiated locally cid:%hu", __func__, cid);
   cid_closing_set_.insert(cid);
-  bluetooth::shim::GetL2cap()->CloseConnection(cid);
+  bluetooth::shim::GetL2cap()->CloseClassicConnection(cid);
   return true;
 }
 

@@ -607,7 +607,7 @@ void L2cap::impl::SendLoopbackResponse(std::function<void()> function) {
   function();
 }
 
-void L2cap::RegisterService(
+void L2cap::RegisterClassicService(
     uint16_t raw_psm,
     bool use_ertm,
     uint16_t mtu,
@@ -629,13 +629,13 @@ void L2cap::RegisterService(
       std::move(register_promise)));
 }
 
-void L2cap::UnregisterService(uint16_t raw_psm, UnregisterServicePromise unregister_promise) {
+void L2cap::UnregisterClassicService(uint16_t raw_psm, UnregisterServicePromise unregister_promise) {
   l2cap::Psm psm{raw_psm};
   GetHandler()->Post(common::BindOnce(
       &L2cap::impl::UnregisterService, common::Unretained(pimpl_.get()), psm, std::move(unregister_promise)));
 }
 
-void L2cap::CreateConnection(
+void L2cap::CreateClassicConnection(
     uint16_t raw_psm,
     const std::string address_string,
     ConnectionCompleteCallback on_complete,
@@ -653,7 +653,7 @@ void L2cap::CreateConnection(
       std::move(create_promise)));
 }
 
-void L2cap::CloseConnection(uint16_t raw_cid) {
+void L2cap::CloseClassicConnection(uint16_t raw_cid) {
   ConnectionInterfaceDescriptor cid(raw_cid);
   GetHandler()->Post(common::Bind(&L2cap::impl::CloseConnection, common::Unretained(pimpl_.get()), cid));
 }
