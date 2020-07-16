@@ -23,63 +23,141 @@
 
 namespace testing {
 
+using bluetooth::common::BoolFromString;
 using bluetooth::common::FromHexString;
+using bluetooth::common::Int64FromString;
+using bluetooth::common::StringJoin;
 using bluetooth::common::StringSplit;
 using bluetooth::common::StringTrim;
 using bluetooth::common::ToHexString;
+using bluetooth::common::ToString;
+using bluetooth::common::Uint64FromString;
 
 TEST(StringsTest, trim_string_test) {
-  EXPECT_EQ(StringTrim("  aa bb"), "aa bb");
-  EXPECT_EQ(StringTrim("aa bb "), "aa bb");
-  EXPECT_EQ(StringTrim("  aa bb "), "aa bb");
-  EXPECT_EQ(StringTrim("  aa bb \n"), "aa bb");
-  EXPECT_EQ(StringTrim("  \raa bb\t \n"), "aa bb");
+  ASSERT_EQ(StringTrim("  aa bb"), "aa bb");
+  ASSERT_EQ(StringTrim("aa bb "), "aa bb");
+  ASSERT_EQ(StringTrim("  aa bb "), "aa bb");
+  ASSERT_EQ(StringTrim("  aa bb \n"), "aa bb");
+  ASSERT_EQ(StringTrim("  \raa bb\t \n"), "aa bb");
 }
 
 TEST(StringsTest, split_string_test) {
-  EXPECT_THAT(StringSplit("", ","), ElementsAre(""));
-  EXPECT_THAT(StringSplit("1,2,3", ","), ElementsAre("1", "2", "3"));
-  EXPECT_THAT(StringSplit("1,2,3", "!"), ElementsAre("1,2,3"));
-  EXPECT_THAT(StringSplit("1,2,3", ",", 2), ElementsAre("1", "2,3"));
-  EXPECT_THAT(StringSplit("a,b,", ","), ElementsAre("a", "b", ""));
-  EXPECT_THAT(StringSplit("ab,", ",", 2), ElementsAre("ab", ""));
-  EXPECT_THAT(StringSplit("ab,,", ",", 2), ElementsAre("ab", ","));
-  EXPECT_THAT(StringSplit("ab,,", ",", 1), ElementsAre("ab,,"));
-  EXPECT_THAT(StringSplit("1,,2,,3", ",,"), ElementsAre("1", "2", "3"));
-  EXPECT_THAT(StringSplit("1,,2,,3,,", ",,"), ElementsAre("1", "2", "3", ""));
-  EXPECT_THAT(StringSplit("1,,2,,3,,", ",,", 2), ElementsAre("1", "2,,3,,"));
-  EXPECT_THAT(StringSplit("1", ",,", 2), ElementsAre("1"));
-  EXPECT_DEATH({ StringSplit("1,2,3", ""); }, "delim cannot be empty");
+  ASSERT_THAT(StringSplit("", ","), ElementsAre(""));
+  ASSERT_THAT(StringSplit("1,2,3", ","), ElementsAre("1", "2", "3"));
+  ASSERT_THAT(StringSplit("1,2,3", "!"), ElementsAre("1,2,3"));
+  ASSERT_THAT(StringSplit("1,2,3", ",", 2), ElementsAre("1", "2,3"));
+  ASSERT_THAT(StringSplit("a,b,", ","), ElementsAre("a", "b", ""));
+  ASSERT_THAT(StringSplit("ab,", ",", 2), ElementsAre("ab", ""));
+  ASSERT_THAT(StringSplit("ab,,", ",", 2), ElementsAre("ab", ","));
+  ASSERT_THAT(StringSplit("ab,,", ",", 1), ElementsAre("ab,,"));
+  ASSERT_THAT(StringSplit("1,,2,,3", ",,"), ElementsAre("1", "2", "3"));
+  ASSERT_THAT(StringSplit("1,,2,,3,,", ",,"), ElementsAre("1", "2", "3", ""));
+  ASSERT_THAT(StringSplit("1,,2,,3,,", ",,", 2), ElementsAre("1", "2,,3,,"));
+  ASSERT_THAT(StringSplit("1", ",,", 2), ElementsAre("1"));
+  ASSERT_DEATH({ StringSplit("1,2,3", ""); }, "delim cannot be empty");
+}
+
+TEST(StringsTest, join_string_test) {
+  ASSERT_THAT(StringJoin({{"1", "2", "3"}}, ","), StrEq("1,2,3"));
+  ASSERT_THAT(StringJoin({{}}, ","), StrEq(""));
+  ASSERT_THAT(StringJoin({{"1"}}, ","), StrEq("1"));
+  ASSERT_THAT(StringJoin({{"1", "2", "3"}}, ",,"), StrEq("1,,2,,3"));
+  ASSERT_THAT(StringJoin({{"1", ",", "3"}}, ",,"), StrEq("1,,,,,3"));
 }
 
 TEST(StringsTest, to_hex_string_test) {
   // normal
-  EXPECT_THAT(ToHexString({0x12, 0x34, 0x56, 0xab}), Eq("123456ab"));
+  ASSERT_THAT(ToHexString({0x12, 0x34, 0x56, 0xab}), Eq("123456ab"));
   // empty
-  EXPECT_THAT(ToHexString({}), Eq(""));
+  ASSERT_THAT(ToHexString({}), Eq(""));
   // unary
-  EXPECT_THAT(ToHexString({0x12}), Eq("12"));
+  ASSERT_THAT(ToHexString({0x12}), Eq("12"));
   // half
-  EXPECT_THAT(ToHexString({0x6, 0x5, 0x56, 0xb}), Eq("0605560b"));
+  ASSERT_THAT(ToHexString({0x6, 0x5, 0x56, 0xb}), Eq("0605560b"));
 }
 
 TEST(StringsTest, from_hex_string_test) {
   // normal
-  EXPECT_THAT(FromHexString("aabbccdd1122"), Optional(ElementsAre(0xaa, 0xbb, 0xcc, 0xdd, 0x11, 0x22)));
+  ASSERT_THAT(FromHexString("aabbccdd1122"), Optional(ElementsAre(0xaa, 0xbb, 0xcc, 0xdd, 0x11, 0x22)));
   // empty
-  EXPECT_THAT(FromHexString(""), Optional(IsEmpty()));
+  ASSERT_THAT(FromHexString(""), Optional(IsEmpty()));
   // unary
-  EXPECT_THAT(FromHexString("aa"), Optional(ElementsAre(0xaa)));
+  ASSERT_THAT(FromHexString("aa"), Optional(ElementsAre(0xaa)));
   // half
-  EXPECT_THAT(FromHexString("0605560b"), Optional(ElementsAre(0x6, 0x5, 0x56, 0xb)));
+  ASSERT_THAT(FromHexString("0605560b"), Optional(ElementsAre(0x6, 0x5, 0x56, 0xb)));
   // upper case letter
-  EXPECT_THAT(FromHexString("AABBCC"), Optional(ElementsAre(0xaa, 0xbb, 0xcc)));
+  ASSERT_THAT(FromHexString("AABBCC"), Optional(ElementsAre(0xaa, 0xbb, 0xcc)));
   // upper and lower case letter mixed
-  EXPECT_THAT(FromHexString("aAbbCC"), Optional(ElementsAre(0xaa, 0xbb, 0xcc)));
+  ASSERT_THAT(FromHexString("aAbbCC"), Optional(ElementsAre(0xaa, 0xbb, 0xcc)));
   // Error: odd length
-  EXPECT_FALSE(FromHexString("0605560"));
+  ASSERT_FALSE(FromHexString("0605560"));
   // Error: non hex char
-  EXPECT_FALSE(FromHexString("060u560b"));
+  ASSERT_FALSE(FromHexString("060u560b"));
+}
+
+TEST(StringsTest, int64_from_and_to_string_test) {
+  ASSERT_THAT(Int64FromString("42"), Optional(Eq(int64_t(42))));
+  ASSERT_THAT(Int64FromString("-42"), Optional(Eq(int64_t(-42))));
+  ASSERT_THAT(Int64FromString("0"), Optional(Eq(int64_t(0))));
+  ASSERT_FALSE(Int64FromString(""));
+  // only base 10 is supported
+  ASSERT_FALSE(Int64FromString("0x42ab"));
+  ASSERT_FALSE(Int64FromString("-0x42"));
+  // floating point not supported
+  ASSERT_FALSE(Int64FromString("42.0"));
+  ASSERT_FALSE(Int64FromString("-42.0"));
+  ASSERT_FALSE(Int64FromString("42abc"));
+  ASSERT_FALSE(Int64FromString(""));
+  // INT32_MAX + 1
+  ASSERT_THAT(Int64FromString("2147483648"), Optional(Eq(int64_t(2147483648))));
+  ASSERT_THAT(ToString(int64_t(2147483648)), StrEq("2147483648"));
+  // INT32_MIN - 1
+  ASSERT_THAT(Int64FromString("-2147483649"), Optional(Eq(int64_t(-2147483649))));
+  ASSERT_THAT(ToString(int64_t(-2147483649)), StrEq("-2147483649"));
+  // INT64_MAX
+  ASSERT_THAT(Int64FromString("9223372036854775807"), Optional(Eq(int64_t(9223372036854775807))));
+  ASSERT_THAT(ToString(int64_t(9223372036854775807)), StrEq("9223372036854775807"));
+  // INT64_MAX+1
+  ASSERT_FALSE(Int64FromString("9223372036854775808"));
+  // INT64_MIN
+  ASSERT_THAT(Int64FromString("-9223372036854775808"), Optional(Eq(int64_t(-9223372036854775807LL - 1))));
+  ASSERT_THAT(ToString(int64_t(-9223372036854775807LL - 1)), StrEq("-9223372036854775808"));
+  // INT64_MIN-1
+  ASSERT_FALSE(Int64FromString("-9223372036854775809"));
+}
+
+TEST(StringsTest, uint64_from_and_to_string_test) {
+  ASSERT_THAT(Uint64FromString("42"), Optional(Eq(uint64_t(42))));
+  ASSERT_THAT(Uint64FromString("0"), Optional(Eq(uint64_t(0))));
+  ASSERT_FALSE(Uint64FromString(""));
+  // only base 10 is supported
+  ASSERT_FALSE(Uint64FromString("0x42ab"));
+  // only positive number is supported
+  ASSERT_FALSE(Uint64FromString("-42"));
+  // floating point not supported
+  ASSERT_FALSE(Uint64FromString("42.0"));
+  ASSERT_FALSE(Uint64FromString("-42.0"));
+  ASSERT_FALSE(Uint64FromString("42abc"));
+  ASSERT_FALSE(Uint64FromString(""));
+  // UINT32_MAX + 1
+  ASSERT_THAT(Uint64FromString("4294967295"), Optional(Eq(uint64_t(4294967295))));
+  ASSERT_THAT(ToString(uint64_t(4294967295)), StrEq("4294967295"));
+  // UINT64_MAX
+  ASSERT_THAT(Uint64FromString("18446744073709551615"), Optional(Eq(uint64_t(18446744073709551615ULL))));
+  ASSERT_THAT(ToString(uint64_t(18446744073709551615ULL)), StrEq("18446744073709551615"));
+  // UINT64_MAX+1
+  ASSERT_FALSE(Uint64FromString("18446744073709551616"));
+}
+
+TEST(StringsTest, bool_from_and_to_string_test) {
+  ASSERT_THAT(BoolFromString("true"), Optional(IsTrue()));
+  ASSERT_THAT(BoolFromString("false"), Optional(IsFalse()));
+  ASSERT_FALSE(BoolFromString("abc"));
+  ASSERT_FALSE(BoolFromString("FALSE"));
+  ASSERT_FALSE(BoolFromString("TRUE"));
+  ASSERT_FALSE(BoolFromString(""));
+  ASSERT_THAT(ToString(true), StrEq("true"));
+  ASSERT_THAT(ToString(false), StrEq("false"));
 }
 
 }  // namespace testing

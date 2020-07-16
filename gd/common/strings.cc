@@ -17,8 +17,10 @@
 #include "common/strings.h"
 
 #include <charconv>
+#include <cstdlib>
 #include <functional>
 #include <iomanip>
+#include <iterator>
 #include <sstream>
 #include <system_error>
 
@@ -96,6 +98,82 @@ std::vector<std::string> StringSplit(const std::string& str, const std::string& 
     tokens.push_back(str.substr(starting_index));
   }
   return tokens;
+}
+
+std::string StringJoin(const std::vector<std::string>& strings, const std::string& delim) {
+  std::stringstream ss;
+  for (auto it = strings.begin(); it != strings.end(); it++) {
+    ss << *it;
+    if (std::next(it) != strings.end()) {
+      ss << delim;
+    }
+  }
+  return ss.str();
+}
+
+std::optional<int64_t> Int64FromString(const std::string& str) {
+  char* ptr = nullptr;
+  errno = 0;
+  int64_t value = std::strtoll(str.c_str(), &ptr, 10);
+  if (errno != 0) {
+    LOG_DEBUG("cannot parse string '%s' with error '%s'", str.c_str(), strerror(errno));
+    return std::nullopt;
+  }
+  if (ptr == str.c_str()) {
+    LOG_DEBUG("string '%s' is empty or has wrong format", str.c_str());
+    return std::nullopt;
+  }
+  if (ptr != (str.c_str() + str.size())) {
+    LOG_DEBUG("cannot parse whole string '%s'", str.c_str());
+    return std::nullopt;
+  }
+  return value;
+}
+
+std::string ToString(int64_t value) {
+  return std::to_string(value);
+}
+
+std::optional<uint64_t> Uint64FromString(const std::string& str) {
+  if (str.find('-') != std::string::npos) {
+    LOG_DEBUG("string '%s' contains minus sign, this function is for unsigned", str.c_str());
+    return std::nullopt;
+  }
+  char* ptr = nullptr;
+  errno = 0;
+  uint64_t value = std::strtoull(str.c_str(), &ptr, 10);
+  if (errno != 0) {
+    LOG_DEBUG("cannot parse string '%s' with error '%s'", str.c_str(), strerror(errno));
+    return std::nullopt;
+  }
+  if (ptr == str.c_str()) {
+    LOG_DEBUG("string '%s' is empty or has wrong format", str.c_str());
+    return std::nullopt;
+  }
+  if (ptr != (str.c_str() + str.size())) {
+    LOG_DEBUG("cannot parse whole string '%s'", str.c_str());
+    return std::nullopt;
+  }
+  return value;
+}
+
+std::string ToString(uint64_t value) {
+  return std::to_string(value);
+}
+
+std::optional<bool> BoolFromString(const std::string& str) {
+  if (str == "true") {
+    return true;
+  } else if (str == "false") {
+    return false;
+  } else {
+    LOG_DEBUG("string '%s' is neither true nor false", str.c_str());
+    return std::nullopt;
+  }
+}
+
+std::string ToString(bool value) {
+  return value ? "true" : "false";
 }
 
 }  // namespace common
