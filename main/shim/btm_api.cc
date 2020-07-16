@@ -914,13 +914,6 @@ void bluetooth::shim::BTM_BleReadPhy(
   LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
-tBTM_STATUS bluetooth::shim::BTM_BleSetDefaultPhy(uint8_t all_phys,
-                                                  uint8_t tx_phys,
-                                                  uint8_t rx_phys) {
-  LOG_INFO("UNIMPLEMENTED %s", __func__);
-  return BTM_NO_RESOURCES;
-}
-
 void bluetooth::shim::BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys,
                                     uint8_t rx_phys, uint16_t phy_options) {
   LOG_INFO("UNIMPLEMENTED %s", __func__);
