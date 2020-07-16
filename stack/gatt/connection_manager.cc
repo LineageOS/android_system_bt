@@ -27,8 +27,10 @@
 #include <set>
 
 #include "internal_include/bt_trace.h"
+#include "main/shim/shim.h"
 #include "osi/include/alarm.h"
 #include "stack/btm/btm_ble_bgconn.h"
+#include "stack/include/l2c_api.h"
 
 #define DIRECT_CONNECT_TIMEOUT (30 * 1000) /* 30 seconds */
 
@@ -89,6 +91,10 @@ std::set<tAPP_ID> get_apps_connecting_to(const RawAddress& address) {
 /** Add a device from the background connection list.  Returns true if device
  * added to the list, or already in list, false otherwise */
 bool background_connect_add(uint8_t app_id, const RawAddress& address) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return L2CA_ConnectFixedChnl(L2CAP_ATT_CID, address);
+  }
+
   auto it = bgconn_dev.find(address);
   bool in_white_list = false;
   if (it != bgconn_dev.end()) {
@@ -193,6 +199,9 @@ void wl_direct_connect_timeout_cb(uint8_t app_id, const RawAddress& address) {
 /** Add a device to the direcgt connection list.  Returns true if device
  * added to the list, false otherwise */
 bool direct_connect_add(uint8_t app_id, const RawAddress& address) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return L2CA_ConnectFixedChnl(L2CAP_ATT_CID, address);
+  }
   auto it = bgconn_dev.find(address);
   bool in_white_list = false;
 
