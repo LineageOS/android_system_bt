@@ -141,6 +141,14 @@ std::string Btm::ReadRemoteName::AddressString() const {
   return raw_address_.ToString();
 }
 
+static std::unordered_map<RawAddress, tBLE_ADDR_TYPE> le_address_type_cache_;
+
+static void store_le_address_type(RawAddress address, tBLE_ADDR_TYPE type) {
+  if (le_address_type_cache_.count(address) == 0) {
+    le_address_type_cache_[address] = type;
+  }
+}
+
 void Btm::ScanningCallbacks::on_advertisements(
     std::vector<std::shared_ptr<hci::LeReport>> reports) {
   for (auto le_report : reports) {
@@ -209,6 +217,7 @@ void Btm::ScanningCallbacks::on_advertisements(
             kPhyConnectionNone, kAdvDataInfoNotPresent,
             kTxPowerInformationNotPresent, le_report->rssi_,
             kNotPeriodicAdvertisement, report_len, report_data);
+        store_le_address_type(raw_address, address_type);
       } break;
 
       case hci::LeReport::ReportType::DIRECTED_ADVERTISING_EVENT:
@@ -237,7 +246,7 @@ void Btm::ScanningCallbacks::on_advertisements(
             kPhyConnectionNone, kAdvDataInfoNotPresent,
             kTxPowerInformationNotPresent, le_report->rssi_,
             kNotPeriodicAdvertisement, report_len, report_data);
-
+        store_le_address_type(raw_address, address_type);
       } break;
     }
   }
@@ -786,6 +795,18 @@ uint16_t Btm::GetAclHandle(const RawAddress& remote_bda,
   } else {
     return acl_manager->HACK_GetLeHandle(ToGdAddress(remote_bda));
   }
+}
+
+tBLE_ADDR_TYPE Btm::GetAddressType(const RawAddress& bd_addr) {
+  if (le_address_type_cache_.count(bd_addr) == 0) {
+    LOG(ERROR) << "Unknown bd_addr. Use public address";
+    return BLE_ADDR_PUBLIC;
+  }
+  return le_address_type_cache_[bd_addr];
+}
+
+void Btm::StoreAddressType(const RawAddress& bd_addr, tBLE_ADDR_TYPE type) {
+  store_le_address_type(bd_addr, type);
 }
 
 }  // namespace shim
