@@ -215,6 +215,13 @@ class Btm {
 
   uint16_t GetAclHandle(const RawAddress& remote_bda, tBT_TRANSPORT transport);
 
+  static tBLE_ADDR_TYPE GetAddressType(const RawAddress& bd_addr);
+
+  // Store the address type from advertising report or connection complete
+  // packet.
+  // TODO(b/161319293): Obtain from storage
+  static void StoreAddressType(const RawAddress& bd_addr, tBLE_ADDR_TYPE type);
+
  private:
   os::Alarm scanning_timer_;
   os::Alarm observing_timer_;
