@@ -234,9 +234,9 @@ TEST_F(PairingHandlerUnitTest, test_secure_connections_just_works) {
   // Start of authentication stage 2
   uint8_t a[7];
   uint8_t b[7];
-  memcpy(b, initial_informations.remote_connection_address.GetAddress().address, 6);
+  memcpy(b, initial_informations.remote_connection_address.GetAddress().data(), hci::Address::kLength);
   b[6] = (uint8_t)initial_informations.remote_connection_address.GetAddressType();
-  memcpy(a, initial_informations.my_connection_address.GetAddress().address, 6);
+  memcpy(a, initial_informations.my_connection_address.GetAddress().data(), hci::Address::kLength);
   a[6] = (uint8_t)initial_informations.my_connection_address.GetAddressType();
 
   Octet16 ltk, mac_key;

@@ -23,8 +23,6 @@ namespace packet {
 namespace parser {
 namespace test {
 
-static_assert(sizeof(SixBytes) == 6, "SixBytes must be 6 bytes long!");
-
 SixBytes::SixBytes(const uint8_t (&six)[6]) {
   std::copy(six, six + kLength, six_bytes);
 };

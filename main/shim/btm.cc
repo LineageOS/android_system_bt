@@ -279,7 +279,7 @@ void Btm::OnInquiryResult(bluetooth::hci::InquiryResultView view) {
     btm_api_process_inquiry_result(
         ToRawAddress(response.bd_addr_),
         static_cast<uint8_t>(response.page_scan_repetition_mode_),
-        response.class_of_device_.cod, response.clock_offset_);
+        response.class_of_device_.data(), response.clock_offset_);
   }
 }
 
@@ -289,7 +289,8 @@ void Btm::OnInquiryResultWithRssi(
     btm_api_process_inquiry_result_with_rssi(
         ToRawAddress(response.address_),
         static_cast<uint8_t>(response.page_scan_repetition_mode_),
-        response.class_of_device_.cod, response.clock_offset_, response.rssi_);
+        response.class_of_device_.data(), response.clock_offset_,
+        response.rssi_);
   }
 }
 
@@ -316,8 +317,8 @@ void Btm::OnExtendedInquiryResult(
   btm_api_process_extended_inquiry_result(
       ToRawAddress(view.GetAddress()),
       static_cast<uint8_t>(view.GetPageScanRepetitionMode()),
-      view.GetClassOfDevice().cod, view.GetClockOffset(), view.GetRssi(), data,
-      data_len);
+      view.GetClassOfDevice().data(), view.GetClockOffset(), view.GetRssi(),
+      data, data_len);
 }
 
 void Btm::OnInquiryComplete(bluetooth::hci::ErrorCode status) {

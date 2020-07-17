@@ -31,7 +31,8 @@ namespace hci {
 
 class AddressWithType final {
  public:
-  AddressWithType(Address address, AddressType address_type) : address_(address), address_type_(address_type) {}
+  AddressWithType(Address address, AddressType address_type)
+      : address_(std::move(address)), address_type_(address_type) {}
 
   explicit AddressWithType() : address_(Address::kEmpty), address_type_(AddressType::PUBLIC_DEVICE_ADDRESS) {}
 
@@ -45,7 +46,7 @@ class AddressWithType final {
 
   /* Is this an Resolvable Private Address ? */
   inline bool IsRpa() const {
-    return address_type_ == hci::AddressType::RANDOM_DEVICE_ADDRESS && ((address_.address)[0] & 0xc0) == 0x40;
+    return address_type_ == hci::AddressType::RANDOM_DEVICE_ADDRESS && ((address_.data())[0] & 0xc0) == 0x40;
   }
 
   /* Is this an Resolvable Private Address, that was generated from given irk ? */
@@ -113,12 +114,12 @@ namespace std {
 template <>
 struct hash<bluetooth::hci::AddressWithType> {
   std::size_t operator()(const bluetooth::hci::AddressWithType& val) const {
-    static_assert(sizeof(uint64_t) >= (sizeof(bluetooth::hci::Address) + sizeof(bluetooth::hci::AddressType)));
+    static_assert(sizeof(uint64_t) >= (bluetooth::hci::Address::kLength + sizeof(bluetooth::hci::AddressType)));
     uint64_t int_addr = 0;
-    memcpy(reinterpret_cast<uint8_t*>(&int_addr), val.GetAddress().address, sizeof(bluetooth::hci::Address));
+    memcpy(reinterpret_cast<uint8_t*>(&int_addr), val.GetAddress().data(), bluetooth::hci::Address::kLength);
     bluetooth::hci::AddressType address_type = val.GetAddressType();
-    memcpy(reinterpret_cast<uint8_t*>(&int_addr) + sizeof(bluetooth::hci::Address), &address_type,
-           sizeof(address_type));
+    memcpy(
+        reinterpret_cast<uint8_t*>(&int_addr) + bluetooth::hci::Address::kLength, &address_type, sizeof(address_type));
     return std::hash<uint64_t>{}(int_addr);
   }
 };

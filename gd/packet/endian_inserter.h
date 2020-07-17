@@ -24,6 +24,7 @@
 
 #include "os/log.h"
 #include "packet/bit_inserter.h"
+#include "packet/custom_field_fixed_size_interface.h"
 
 namespace bluetooth {
 namespace packet {
@@ -37,7 +38,7 @@ class EndianInserter {
   virtual ~EndianInserter() = default;
 
  protected:
-  // Write sizeof(FixedWidthIntegerType) bytes using the iterator
+  // Write sizeof(FixedWidthPODType) bytes using the iterator
   template <typename FixedWidthPODType, typename std::enable_if<std::is_pod<FixedWidthPODType>::value, int>::type = 0>
   void insert(FixedWidthPODType value, BitInserter& it) const {
     uint8_t* raw_bytes = (uint8_t*)&value;
@@ -46,6 +47,21 @@ class EndianInserter {
         it.insert_byte(raw_bytes[i]);
       } else {
         it.insert_byte(raw_bytes[sizeof(FixedWidthPODType) - i - 1]);
+      }
+    }
+  }
+
+  // Write sizeof(FixedWidthCustomType) bytes using the iterator
+  template <
+      typename T,
+      typename std::enable_if<std::is_base_of<CustomFieldFixedSizeInterface<T>, T>::value, int>::type = 0>
+  void insert(const T& value, BitInserter& it) const {
+    auto* raw_bytes = value.data();
+    for (size_t i = 0; i < CustomFieldFixedSizeInterface<T>::length(); i++) {
+      if (little_endian == true) {
+        it.insert_byte(raw_bytes[i]);
+      } else {
+        it.insert_byte(raw_bytes[CustomFieldFixedSizeInterface<T>::length() - i - 1]);
       }
     }
   }
