@@ -78,7 +78,7 @@ class SecurityManager : public UICallbacks {
   /**
    * Specify the initiator address policy used for LE transport. Can only be called once.
    */
-  void SetLeInitiatorAddressPolicy(
+  void SetLeInitiatorAddressPolicyForTest(
       hci::LeAddressManager::AddressPolicy address_policy,
       hci::AddressWithType fixed_address,
       crypto_toolbox::Octet16 rotation_irk,
