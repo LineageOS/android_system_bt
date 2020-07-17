@@ -31,8 +31,9 @@
 
 #include "btm_int.h"
 #include "hcimsgs.h"
-#include "l2c_int.h"
+#include "l2c_api.h"
 #include "l2cdefs.h"
+#include "main/shim/shim.h"
 #include "smp_api.h"
 #include "smp_int.h"
 
@@ -49,6 +50,11 @@
  *
  ******************************************************************************/
 void SMP_Init(void) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    LOG(INFO) << "Skipping legacy SMP_Init because GD is enabled";
+    return;
+  }
+
   memset(&smp_cb, 0, sizeof(tSMP_CB));
   smp_cb.smp_rsp_timer_ent = alarm_new("smp.smp_rsp_timer_ent");
   smp_cb.delayed_auth_timer_ent = alarm_new("smp.delayed_auth_timer_ent");
@@ -108,6 +114,9 @@ extern uint8_t SMP_SetTraceLevel(uint8_t new_level) {
  *
  ******************************************************************************/
 bool SMP_Register(tSMP_CALLBACK* p_cback) {
+  LOG_ASSERT(!bluetooth::shim::is_gd_shim_enabled())
+      << "Legacy SMP API should not be invoked when GD Security is used";
+
   SMP_TRACE_EVENT("SMP_Register state=%d", smp_cb.state);
 
   if (smp_cb.p_callback != NULL) {
@@ -131,6 +140,8 @@ bool SMP_Register(tSMP_CALLBACK* p_cback) {
  *
  ******************************************************************************/
 tSMP_STATUS SMP_Pair(const RawAddress& bd_addr) {
+  LOG_ASSERT(!bluetooth::shim::is_gd_shim_enabled())
+      << "Legacy SMP API should not be invoked when GD Security is used";
   tSMP_CB* p_cb = &smp_cb;
 
   SMP_TRACE_EVENT("%s: state=%d br_state=%d flag=0x%x, bd_addr=%s", __func__,
@@ -172,6 +183,9 @@ tSMP_STATUS SMP_Pair(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 tSMP_STATUS SMP_BR_PairWith(const RawAddress& bd_addr) {
+  LOG_ASSERT(!bluetooth::shim::is_gd_shim_enabled())
+      << "Legacy SMP API should not be invoked when GD Security is used";
+
   tSMP_CB* p_cb = &smp_cb;
 
   SMP_TRACE_EVENT("%s: state=%d br_state=%d flag=0x%x, bd_addr=%s", __func__,
@@ -213,6 +227,9 @@ tSMP_STATUS SMP_BR_PairWith(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 bool SMP_PairCancel(const RawAddress& bd_addr) {
+  LOG_ASSERT(!bluetooth::shim::is_gd_shim_enabled())
+      << "Legacy SMP API should not be invoked when GD Security is used";
+
   tSMP_CB* p_cb = &smp_cb;
   uint8_t err_code = SMP_PAIR_FAIL_UNKNOWN;
 
@@ -249,6 +266,9 @@ bool SMP_PairCancel(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 void SMP_SecurityGrant(const RawAddress& bd_addr, uint8_t res) {
+  LOG_ASSERT(!bluetooth::shim::is_gd_shim_enabled())
+      << "Legacy SMP API should not be invoked when GD Security is used";
+
   SMP_TRACE_EVENT("SMP_SecurityGrant ");
 
   if (smp_cb.smp_over_br) {
@@ -295,6 +315,9 @@ void SMP_SecurityGrant(const RawAddress& bd_addr, uint8_t res) {
  ******************************************************************************/
 void SMP_PasskeyReply(const RawAddress& bd_addr, uint8_t res,
                       uint32_t passkey) {
+  LOG_ASSERT(!bluetooth::shim::is_gd_shim_enabled())
+      << "Legacy SMP API should not be invoked when GD Security is used";
+
   tSMP_CB* p_cb = &smp_cb;
 
   SMP_TRACE_EVENT("SMP_PasskeyReply: Key: %d  Result:%d", passkey, res);
@@ -349,6 +372,9 @@ void SMP_PasskeyReply(const RawAddress& bd_addr, uint8_t res,
  *
  ******************************************************************************/
 void SMP_ConfirmReply(const RawAddress& bd_addr, uint8_t res) {
+  LOG_ASSERT(!bluetooth::shim::is_gd_shim_enabled())
+      << "Legacy SMP API should not be invoked when GD Security is used";
+
   tSMP_CB* p_cb = &smp_cb;
 
   SMP_TRACE_EVENT("%s: Result:%d", __func__, res);
@@ -394,6 +420,9 @@ void SMP_ConfirmReply(const RawAddress& bd_addr, uint8_t res) {
  ******************************************************************************/
 void SMP_OobDataReply(const RawAddress& bd_addr, tSMP_STATUS res, uint8_t len,
                       uint8_t* p_data) {
+  LOG_ASSERT(!bluetooth::shim::is_gd_shim_enabled())
+      << "Legacy SMP API should not be invoked when GD Security is used";
+
   tSMP_CB* p_cb = &smp_cb;
   tSMP_KEY key;
 
@@ -432,6 +461,9 @@ void SMP_OobDataReply(const RawAddress& bd_addr, tSMP_STATUS res, uint8_t len,
  *
  ******************************************************************************/
 void SMP_SecureConnectionOobDataReply(uint8_t* p_data) {
+  LOG_ASSERT(!bluetooth::shim::is_gd_shim_enabled())
+      << "Legacy SMP API should not be invoked when GD Security is used";
+
   tSMP_CB* p_cb = &smp_cb;
 
   tSMP_SC_OOB_DATA* p_oob = (tSMP_SC_OOB_DATA*)p_data;

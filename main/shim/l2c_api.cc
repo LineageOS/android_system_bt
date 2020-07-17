@@ -234,8 +234,6 @@ using bluetooth::l2cap::le::FixedChannelManager;
 using bluetooth::l2cap::le::FixedChannelService;
 
 static constexpr uint16_t kAttCid = 4;
-// TODO(b/161316477): Use real Security Module when GD is enabled.
-static constexpr uint16_t kSmpCid = 6;
 
 struct LeFixedChannelHelper {
   LeFixedChannelHelper(uint16_t cid) : cid_(cid) {}
@@ -329,11 +327,9 @@ struct LeFixedChannelHelper {
 };
 
 static LeFixedChannelHelper att_helper{4};
-static LeFixedChannelHelper smp_helper{6};
 static std::unordered_map<uint16_t, LeFixedChannelHelper&>
     le_fixed_channel_helper_{
         {4, att_helper},
-        {6, smp_helper},
     };
 
 /**
@@ -342,7 +338,7 @@ static std::unordered_map<uint16_t, LeFixedChannelHelper&>
  */
 bool bluetooth::shim::L2CA_RegisterFixedChannel(uint16_t cid,
                                                 tL2CAP_FIXED_CHNL_REG* p_freg) {
-  if (cid != kAttCid && cid != kSmpCid) {
+  if (cid != kAttCid) {
     LOG(ERROR) << "Invalid cid: " << cid;
     return false;
   }
@@ -400,7 +396,7 @@ static std::unique_ptr<bluetooth::packet::RawBuilder> MakeUniquePacket(
 uint16_t bluetooth::shim::L2CA_SendFixedChnlData(uint16_t cid,
                                                  const RawAddress& rem_bda,
                                                  BT_HDR* p_buf) {
-  if (cid != kAttCid && cid != kSmpCid) {
+  if (cid != kAttCid) {
     LOG(ERROR) << "Invalid cid " << cid;
     return false;
   }
@@ -414,7 +410,7 @@ uint16_t bluetooth::shim::L2CA_SendFixedChnlData(uint16_t cid,
 
 bool bluetooth::shim::L2CA_RemoveFixedChnl(uint16_t cid,
                                            const RawAddress& rem_bda) {
-  if (cid != kAttCid && cid != kSmpCid) {
+  if (cid != kAttCid) {
     LOG(ERROR) << "Invalid cid " << cid;
     return false;
   }
