@@ -71,6 +71,14 @@ class AclManager : public Module {
       std::chrono::milliseconds minimum_rotation_time,
       std::chrono::milliseconds maximum_rotation_time);
 
+  // TODO(jpawlowski): remove once we have config file abstraction in cert tests
+  virtual void SetPrivacyPolicyForInitiatorAddressForTest(
+      LeAddressManager::AddressPolicy address_policy,
+      AddressWithType fixed_address,
+      crypto_toolbox::Octet16 rotation_irk,
+      std::chrono::milliseconds minimum_rotation_time,
+      std::chrono::milliseconds maximum_rotation_time);
+
   // Generates OnConnectFail with error code "terminated by local host 0x16" if cancelled, or OnConnectSuccess if not
   // successfully cancelled and already connected
   virtual void CancelConnect(Address address);
