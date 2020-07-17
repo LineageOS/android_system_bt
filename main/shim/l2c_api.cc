@@ -17,9 +17,14 @@
 #define LOG_TAG "bt_shim_l2cap"
 
 #include "main/shim/l2c_api.h"
+#include "gd/l2cap/le/l2cap_le_module.h"
+#include "gd/os/log.h"
+#include "gd/os/queue.h"
+#include "gd/packet/raw_builder.h"
+#include "main/shim/btm.h"
+#include "main/shim/entry.h"
+#include "main/shim/helpers.h"
 #include "main/shim/l2cap.h"
-#include "main/shim/shim.h"
-#include "osi/include/log.h"
 
 static bluetooth::shim::legacy::L2cap shim_l2cap;
 
@@ -223,40 +228,205 @@ bool bluetooth::shim::L2CA_GetPeerFeatures(const RawAddress& bd_addr,
   return false;
 }
 
+using bluetooth::hci::AddressWithType;
+using bluetooth::l2cap::le::FixedChannel;
+using bluetooth::l2cap::le::FixedChannelManager;
+using bluetooth::l2cap::le::FixedChannelService;
+
+static constexpr uint16_t kAttCid = 4;
+// TODO(b/161316477): Use real Security Module when GD is enabled.
+static constexpr uint16_t kSmpCid = 6;
+
+struct LeFixedChannelHelper {
+  LeFixedChannelHelper(uint16_t cid) : cid_(cid) {}
+
+  uint16_t cid_;
+
+  void on_registration_complete(FixedChannelManager::RegistrationResult result,
+                                std::unique_ptr<FixedChannelService> service) {
+    if (result != FixedChannelManager::RegistrationResult::SUCCESS) {
+      LOG(ERROR) << "Channel is not registered. cid=" << +cid_;
+      return;
+    }
+    channel_service_ = std::move(service);
+  }
+
+  std::unique_ptr<FixedChannelService> channel_service_ = nullptr;
+
+  void on_channel_close(bluetooth::hci::AddressWithType device,
+                        bluetooth::hci::ErrorCode error_code) {
+    auto address = bluetooth::ToRawAddress(device.GetAddress());
+    channel_enqueue_buffer_[device] = nullptr;
+    channels_[device]->GetQueueUpEnd()->UnregisterDequeue();
+    channels_[device] = nullptr;
+    (freg_.pL2CA_FixedConn_Cb)(cid_, address, true, 0, 2);
+  }
+
+  void on_channel_open(std::unique_ptr<FixedChannel> channel) {
+    auto device = channel->GetDevice();
+    channel->RegisterOnCloseCallback(
+        bluetooth::shim::GetGdShimHandler(),
+        bluetooth::common::BindOnce(&LeFixedChannelHelper::on_channel_close,
+                                    bluetooth::common::Unretained(this),
+                                    device));
+    channel->Acquire();
+    channel_enqueue_buffer_[device] = std::make_unique<
+        bluetooth::os::EnqueueBuffer<bluetooth::packet::BasePacketBuilder>>(
+        channel->GetQueueUpEnd());
+    channel->GetQueueUpEnd()->RegisterDequeue(
+        bluetooth::shim::GetGdShimHandler(),
+        bluetooth::common::Bind(&LeFixedChannelHelper::on_incoming_data,
+                                bluetooth::common::Unretained(this), device));
+    channels_[device] = std::move(channel);
+
+    auto address = bluetooth::ToRawAddress(device.GetAddress());
+
+    (freg_.pL2CA_FixedConn_Cb)(cid_, address, true, 0, BT_TRANSPORT_LE);
+    bluetooth::shim::Btm::StoreAddressType(
+        address, static_cast<uint8_t>(device.GetAddressType()));
+  }
+
+  void on_incoming_data(bluetooth::hci::AddressWithType remote) {
+    auto channel = channels_.find(remote);
+    if (channel == channels_.end()) {
+      LOG_ERROR("Channel is not open");
+      return;
+    }
+    auto packet = channel->second->GetQueueUpEnd()->TryDequeue();
+    std::vector<uint8_t> packet_vector(packet->begin(), packet->end());
+    BT_HDR* buffer =
+        static_cast<BT_HDR*>(osi_calloc(packet_vector.size() + sizeof(BT_HDR)));
+    std::copy(packet_vector.begin(), packet_vector.end(), buffer->data);
+    buffer->len = packet_vector.size();
+    auto address = bluetooth::ToRawAddress(remote.GetAddress());
+    freg_.pL2CA_FixedData_Cb(cid_, address, buffer);
+  }
+
+  void on_outgoing_connection_fail(
+      RawAddress remote, FixedChannelManager::ConnectionResult result) {
+    LOG(ERROR) << "Outgoing connection failed";
+    freg_.pL2CA_FixedConn_Cb(cid_, remote, true, 0, BT_TRANSPORT_LE);
+  }
+
+  bool send(AddressWithType remote,
+            std::unique_ptr<bluetooth::packet::BasePacketBuilder> packet) {
+    auto buffer = channel_enqueue_buffer_.find(remote);
+    if (buffer == channel_enqueue_buffer_.end() || buffer->second == nullptr) {
+      LOG(ERROR) << "Channel is not open";
+      return false;
+    }
+    buffer->second->Enqueue(std::move(packet),
+                            bluetooth::shim::GetGdShimHandler());
+    return true;
+  }
+
+  std::unordered_map<AddressWithType, std::unique_ptr<FixedChannel>> channels_;
+  std::unordered_map<AddressWithType,
+                     std::unique_ptr<bluetooth::os::EnqueueBuffer<
+                         bluetooth::packet::BasePacketBuilder>>>
+      channel_enqueue_buffer_;
+  tL2CAP_FIXED_CHNL_REG freg_;
+};
+
+static LeFixedChannelHelper att_helper{4};
+static LeFixedChannelHelper smp_helper{6};
+static std::unordered_map<uint16_t, LeFixedChannelHelper&>
+    le_fixed_channel_helper_{
+        {4, att_helper},
+        {6, smp_helper},
+    };
+
 /**
  * Fixed Channel APIs. Note: Classic fixed channel (connectionless and BR SMP)
  * is not supported
  */
-bool bluetooth::shim::L2CA_RegisterFixedChannel(uint16_t fixed_cid,
+bool bluetooth::shim::L2CA_RegisterFixedChannel(uint16_t cid,
                                                 tL2CAP_FIXED_CHNL_REG* p_freg) {
-  LOG_INFO("UNIMPLEMENTED %s", __func__);
-  return false;
+  if (cid != kAttCid && cid != kSmpCid) {
+    LOG(ERROR) << "Invalid cid: " << cid;
+    return false;
+  }
+  auto* helper = &le_fixed_channel_helper_.find(cid)->second;
+  if (helper == nullptr) {
+    LOG(ERROR) << "Can't register cid " << cid;
+    return false;
+  }
+  bluetooth::shim::GetL2capLeModule()
+      ->GetFixedChannelManager()
+      ->RegisterService(
+          cid,
+          common::BindOnce(&LeFixedChannelHelper::on_registration_complete,
+                           common::Unretained(helper)),
+          common::Bind(&LeFixedChannelHelper::on_channel_open,
+                       common::Unretained(helper)),
+          GetGdShimHandler());
+  helper->freg_ = *p_freg;
+  return true;
 }
 
-bool bluetooth::shim::L2CA_ConnectFixedChnl(uint16_t fixed_cid,
+bool bluetooth::shim::L2CA_ConnectFixedChnl(uint16_t cid,
                                             const RawAddress& rem_bda) {
-  LOG_INFO("UNIMPLEMENTED %s", __func__);
-  return false;
+  if (cid != kAttCid) {
+    LOG(ERROR) << "Invalid cid " << cid;
+    return false;
+  }
+
+  auto* helper = &le_fixed_channel_helper_.find(cid)->second;
+  auto remote = ToAddressWithType(rem_bda, Btm::GetAddressType(rem_bda));
+  auto manager = bluetooth::shim::GetL2capLeModule()->GetFixedChannelManager();
+  manager->ConnectServices(
+      remote,
+      common::BindOnce(&LeFixedChannelHelper::on_outgoing_connection_fail,
+                       common::Unretained(helper), rem_bda),
+      GetGdShimHandler());
+  return true;
 }
 
-bool bluetooth::shim::L2CA_ConnectFixedChnl(uint16_t fixed_cid,
+bool bluetooth::shim::L2CA_ConnectFixedChnl(uint16_t cid,
                                             const RawAddress& rem_bda,
                                             uint8_t initiating_phys) {
-  LOG_INFO("UNIMPLEMENTED %s", __func__);
-  return false;
+  return bluetooth::shim::L2CA_ConnectFixedChnl(cid, rem_bda);
 }
 
-uint16_t bluetooth::shim::L2CA_SendFixedChnlData(uint16_t fixed_cid,
+static std::unique_ptr<bluetooth::packet::RawBuilder> MakeUniquePacket(
+    const uint8_t* data, size_t len) {
+  bluetooth::packet::RawBuilder builder;
+  std::vector<uint8_t> bytes(data, data + len);
+  auto payload = std::make_unique<bluetooth::packet::RawBuilder>();
+  payload->AddOctets(bytes);
+  return payload;
+}
+
+uint16_t bluetooth::shim::L2CA_SendFixedChnlData(uint16_t cid,
                                                  const RawAddress& rem_bda,
                                                  BT_HDR* p_buf) {
-  LOG_INFO("UNIMPLEMENTED %s", __func__);
-  return 0;
+  if (cid != kAttCid && cid != kSmpCid) {
+    LOG(ERROR) << "Invalid cid " << cid;
+    return false;
+  }
+  auto* helper = &le_fixed_channel_helper_.find(cid)->second;
+  auto remote = ToAddressWithType(rem_bda, Btm::GetAddressType(rem_bda));
+  auto len = p_buf->len;
+  auto* data = p_buf->data + p_buf->offset;
+  bool sent = helper->send(remote, MakeUniquePacket(data, len));
+  return sent ? len : 0;
 }
 
-bool bluetooth::shim::L2CA_RemoveFixedChnl(uint16_t fixed_cid,
+bool bluetooth::shim::L2CA_RemoveFixedChnl(uint16_t cid,
                                            const RawAddress& rem_bda) {
-  LOG_INFO("UNIMPLEMENTED %s", __func__);
-  return false;
+  if (cid != kAttCid && cid != kSmpCid) {
+    LOG(ERROR) << "Invalid cid " << cid;
+    return false;
+  }
+  auto* helper = &le_fixed_channel_helper_.find(cid)->second;
+  auto remote = ToAddressWithType(rem_bda, Btm::GetAddressType(rem_bda));
+  auto channel = helper->channels_.find(remote);
+  if (channel == helper->channels_.end() || channel->second == nullptr) {
+    LOG(ERROR) << "Channel is not open";
+    return false;
+  }
+  channel->second->Release();
+  return true;
 }
 
 /**
