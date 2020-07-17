@@ -3,6 +3,7 @@ SimpleHalTest
 DirectHciTest
 LeAdvertisingManagerTest
 LeScanningManagerTest
+LeScanningWithSecurityTest
 NeighborTest
 ControllerTest
 AclManagerTest
