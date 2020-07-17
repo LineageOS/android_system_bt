@@ -202,6 +202,7 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
   std::list<Link::PendingDynamicChannelConnection> pending_dynamic_channel_callback_list_;
   std::list<uint16_t> pending_outgoing_configuration_request_list_;
   bool used_by_security_module_ = false;
+  bool has_requested_authentication_ = false;
   DISALLOW_COPY_AND_ASSIGN(Link);
 };
 
