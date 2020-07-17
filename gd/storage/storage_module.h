@@ -26,6 +26,7 @@
 #include "hci/address.h"
 #include "module.h"
 #include "storage/config_cache.h"
+#include "storage/device.h"
 #include "storage/mutation.h"
 
 namespace bluetooth {
@@ -59,6 +60,51 @@ class StorageModule : public bluetooth::Module {
   ~StorageModule() override;
   static const ModuleFactory Factory;
 
+  // Methods to access the storage layer via Device abstraction
+  // - Devices will be lazily created when methods below are called. Hence, no std::optional<> nor nullptr is used in
+  //   the return type. User of the API can use the Device object's API to find out if the device has existed before
+  // - Devices with no config values will not be saved to config cache
+  // - Devices that are not paired will also be discarded when stack shutdown
+
+  // Concept:
+  //
+  // BR/EDR Address:
+  //  -> Public static address only, begin with 3 byte IEEE assigned OUI number
+  //
+  // BLE Addresses
+  //  -> Public Address: begin with IEEE assigned OUI number
+  //     -> Static: static public address do not change
+  //     -> Private/Variable: We haven't seen private/variable public address yet
+  //  -> Random Address: randomly generated, does not begin with IEEE assigned OUI number
+  //     -> Static: static random address do not change
+  //     -> Private/Variable: private random address changes once so often
+  //        -> Resolvable: this address can be resolved into a static address using identity resolving key (IRK)
+  //        -> Non-resolvable: this address is for temporary use only, do not save this address
+  //
+  // MAC addresses are six bytes only and hence are only regionally unique
+
+  // Get a device object using the |legacy_key_address|. In legacy config, each device's config is stored in a config
+  // section keyed by a single MAC address. For BR/EDR device, this is straightforward as a BR/EDR device has only a
+  // single public static MAC address. However, for LE devices using private addresses, we only learn its real static
+  // address after pairing. Since we still need to store that device's information prior to pairing, we use the
+  // first-seen address of that device, no matter random private or static public, as a "key" to store that device's
+  // config. This method gives you a device object using this legacy key. If the key does not exist, the device will
+  // be lazily created in the config
+  Device GetDeviceByLegacyKey(hci::Address legacy_key_address);
+
+  // A classic (BR/EDR) or dual mode device can be uniquely located by its classic (BR/EDR) MAC address
+  Device GetDeviceByClassicMacAddress(hci::Address classic_address);
+
+  // A LE or dual mode device can be uniquely located by its identity address that is either:
+  //   -> Public static address
+  //   -> Random static address
+  // If remote device uses LE random private resolvable address, user of this API must resolve its identity address
+  // before calling this method to get the device object
+  //
+  // Note: A dual mode device's identity address is normally the same as its BR/EDR address, but they can also be
+  // different. Hence, please don't make such assumption and don't use GetDeviceByBrEdrMacAddress() interchangeably
+  Device GetDeviceByLeIdentityAddress(hci::Address le_identity_address);
+
   // Modify the underlying config by starting a mutation. All entries in the mutation will be applied atomically when
   // Commit() is called. User should never touch ConfigCache() directly.
   Mutation Modify();
@@ -81,7 +127,7 @@ class StorageModule : public bluetooth::Module {
 
  private:
   struct impl;
-  mutable std::mutex mutex_;
+  mutable std::recursive_mutex mutex_;
   std::unique_ptr<impl> pimpl_;
   std::string config_file_path_;
   std::string config_backup_path_;
