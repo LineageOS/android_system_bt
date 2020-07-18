@@ -33,6 +33,10 @@ RawAddress::RawAddress(const uint8_t (&addr)[6]) {
   std::copy(addr, addr + kLength, address);
 };
 
+RawAddress::RawAddress(const std::array<uint8_t, kLength>& addr) {
+  std::copy(addr.data(), addr.data() + kLength, address);
+}
+
 std::string RawAddress::ToString() const {
   return base::StringPrintf("%02x:%02x:%02x:%02x:%02x:%02x", address[0],
                             address[1], address[2], address[3], address[4],

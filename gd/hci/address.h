@@ -18,26 +18,39 @@
 
 #pragma once
 
+#include <array>
 #include <cstring>
+#include <initializer_list>
 #include <string>
+
+#include "packet/custom_field_fixed_size_interface.h"
 
 namespace bluetooth {
 namespace hci {
 
-class Address final {
+class Address final : public packet::CustomFieldFixedSizeInterface<Address> {
  public:
-  static constexpr unsigned int kLength = 6;
+  static constexpr size_t kLength = 6;
 
-  uint8_t address[kLength];
+  std::array<uint8_t, kLength> address = {};
 
   Address() = default;
-  Address(const uint8_t (&addr)[6]);
+  Address(const uint8_t (&addr)[kLength]);
+  Address(std::initializer_list<uint8_t> l);
+
+  // CustomFieldFixedSizeInterface methods
+  inline uint8_t* data() override {
+    return address.data();
+  }
+  inline const uint8_t* data() const override {
+    return address.data();
+  }
 
   bool operator<(const Address& rhs) const {
-    return (std::memcmp(address, rhs.address, sizeof(address)) < 0);
+    return address < rhs.address;
   }
   bool operator==(const Address& rhs) const {
-    return (std::memcmp(address, rhs.address, sizeof(address)) == 0);
+    return address == rhs.address;
   }
   bool operator>(const Address& rhs) const {
     return (rhs < *this);
@@ -87,7 +100,7 @@ struct hash<bluetooth::hci::Address> {
   std::size_t operator()(const bluetooth::hci::Address& val) const {
     static_assert(sizeof(uint64_t) >= bluetooth::hci::Address::kLength);
     uint64_t int_addr = 0;
-    memcpy(reinterpret_cast<uint8_t*>(&int_addr), val.address, bluetooth::hci::Address::kLength);
+    memcpy(reinterpret_cast<uint8_t*>(&int_addr), val.data(), bluetooth::hci::Address::kLength);
     return std::hash<uint64_t>{}(int_addr);
   }
 };
