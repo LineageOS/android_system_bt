@@ -139,14 +139,14 @@ Stage2ResultOrFailure PairingHandlerLe::DoSecureConnectionsStage2(const InitialI
   uint8_t b[7];
 
   if (IAmMaster(i)) {
-    memcpy(a, i.my_connection_address.GetAddress().address, 6);
+    memcpy(a, i.my_connection_address.GetAddress().data(), hci::Address::kLength);
     a[6] = (uint8_t)i.my_connection_address.GetAddressType();
-    memcpy(b, i.remote_connection_address.GetAddress().address, 6);
+    memcpy(b, i.remote_connection_address.GetAddress().data(), hci::Address::kLength);
     b[6] = (uint8_t)i.remote_connection_address.GetAddressType();
   } else {
-    memcpy(a, i.remote_connection_address.GetAddress().address, 6);
+    memcpy(a, i.remote_connection_address.GetAddress().data(), hci::Address::kLength);
     a[6] = (uint8_t)i.remote_connection_address.GetAddressType();
-    memcpy(b, i.my_connection_address.GetAddress().address, 6);
+    memcpy(b, i.my_connection_address.GetAddress().data(), hci::Address::kLength);
     b[6] = (uint8_t)i.my_connection_address.GetAddressType();
   }
 

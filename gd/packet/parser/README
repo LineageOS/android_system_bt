@@ -51,9 +51,12 @@ One pdl file will result in one header file with all the packets
 
 Things to cover -
   Constraints
-  Inheritence vs Contains
+  Inheritance vs Contains
 
-Custom fields need the folowing functions:
+Custom fields with fixed size must extend and implement:
+  packet::CustomFieldFixedSizeInterface
+
+Custom fields with variable size need the following functions:
   static void Serialize(const Type&, MutableView&);
   static std::optional<size_t> Size(Iterator);
   static Type Parse(Iterator);
