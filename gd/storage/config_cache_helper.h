@@ -15,6 +15,10 @@
  */
 #pragma once
 
+#include <cstdint>
+#include <limits>
+#include <optional>
+
 #include "storage/config_cache.h"
 
 namespace bluetooth {
@@ -35,6 +39,10 @@ class ConfigCacheHelper {
   virtual std::optional<bool> GetBool(const std::string& section, const std::string& property) const;
   virtual void SetUint64(const std::string& section, const std::string& property, uint64_t value);
   virtual std::optional<uint64_t> GetUint64(const std::string& section, const std::string& property) const;
+  virtual void SetUint32(const std::string& section, const std::string& property, uint32_t value);
+  virtual std::optional<uint32_t> GetUint32(const std::string& section, const std::string& property) const;
+  virtual void SetInt64(const std::string& section, const std::string& property, int64_t value);
+  virtual std::optional<int64_t> GetInt64(const std::string& section, const std::string& property) const;
   virtual void SetInt(const std::string& section, const std::string& property, int value);
   virtual std::optional<int> GetInt(const std::string& section, const std::string& property) const;
   virtual void SetBin(const std::string& section, const std::string& property, const std::vector<uint8_t>& value);

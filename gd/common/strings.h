@@ -35,5 +35,16 @@ std::string StringTrim(std::string str);
 // Split |str| into at most |max_token| tokens delimited by |delim|, unlimited tokens when |max_token| is 0
 std::vector<std::string> StringSplit(const std::string& str, const std::string& delim, size_t max_token = 0);
 
+// Join |strings| into a single string using |delim|
+std::string StringJoin(const std::vector<std::string>& strings, const std::string& delim);
+
+// Various number comparison functions, only base 10 is supported
+std::optional<int64_t> Int64FromString(const std::string& str);
+std::string ToString(int64_t value);
+std::optional<uint64_t> Uint64FromString(const std::string& str);
+std::string ToString(uint64_t value);
+std::optional<bool> BoolFromString(const std::string& str);
+std::string ToString(bool value);
+
 }  // namespace common
 }  // namespace bluetooth
