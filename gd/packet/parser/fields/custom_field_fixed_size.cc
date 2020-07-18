@@ -15,6 +15,7 @@
  */
 
 #include "fields/custom_field_fixed_size.h"
+
 #include "util.h"
 
 const std::string CustomFieldFixedSize::kFieldType = "CustomField";
