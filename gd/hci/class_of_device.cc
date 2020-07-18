@@ -16,10 +16,12 @@
  *
  ******************************************************************************/
 
-#include "class_of_device.h"
+#include "hci/class_of_device.h"
 
-#include <stdint.h>
 #include <algorithm>
+#include <cstdint>
+#include <cstdio>
+#include <cstdlib>
 #include <sstream>
 #include <vector>
 
@@ -28,12 +30,10 @@
 namespace bluetooth {
 namespace hci {
 
-static_assert(sizeof(ClassOfDevice) == ClassOfDevice::kLength, "ClassOfDevice must be 3 bytes long!");
-
 // ClassOfDevice cannot initialize member variables as it is a POD type
 // NOLINTNEXTLINE(cppcoreguidelines-pro-type-member-init)
 ClassOfDevice::ClassOfDevice(const uint8_t (&class_of_device)[kLength]) {
-  std::copy(class_of_device, class_of_device + kLength, cod);
+  std::copy(class_of_device, class_of_device + kLength, cod.data());
 };
 
 std::string ClassOfDevice::ToString() const {
@@ -66,7 +66,7 @@ bool ClassOfDevice::FromString(const std::string& from, ClassOfDevice& to) {
       return false;
     }
     char* temp = nullptr;
-    values[index] = strtol(token.c_str(), &temp, 16);
+    values[index] = std::strtol(token.c_str(), &temp, 16);
     if (*temp != '\0') {
       return false;
     }
@@ -87,7 +87,7 @@ bool ClassOfDevice::FromString(const std::string& from, ClassOfDevice& to) {
 }
 
 size_t ClassOfDevice::FromOctets(const uint8_t* from) {
-  std::copy(from, from + kLength, cod);
+  std::copy(from, from + kLength, data());
   return kLength;
 };
 
