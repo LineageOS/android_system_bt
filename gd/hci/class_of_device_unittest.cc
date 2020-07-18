@@ -90,9 +90,9 @@ TEST(ClassOfDeviceTest, classOfDeviceFromString) {
 
   EXPECT_TRUE(ClassOfDevice::FromString("000-0-00", cod));
   const ClassOfDevice result0 = {{0x00, 0x00, 0x00}};
-  EXPECT_EQ(0, memcmp(&cod, &result0, sizeof(cod)));
+  EXPECT_EQ(0, memcmp(cod.data(), result0.data(), ClassOfDevice::kLength));
 
   EXPECT_TRUE(ClassOfDevice::FromString("ab2-1-4C", cod));
   const ClassOfDevice result1 = {{0x4c, 0x21, 0xab}};
-  EXPECT_EQ(0, memcmp(&cod, &result1, sizeof(cod)));
+  EXPECT_EQ(0, memcmp(cod.data(), result1.data(), ClassOfDevice::kLength));
 }

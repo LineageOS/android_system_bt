@@ -18,25 +18,48 @@
 
 #pragma once
 
+#include <array>
 #include <string>
+
+#include "packet/custom_field_fixed_size_interface.h"
 
 namespace bluetooth {
 namespace hci {
 
-class ClassOfDevice final {
+class ClassOfDevice final : public packet::CustomFieldFixedSizeInterface<ClassOfDevice> {
  public:
-  static constexpr unsigned int kLength = 3;
+  static constexpr size_t kLength = 3;
 
-  uint8_t cod[kLength];
+  std::array<uint8_t, kLength> cod = {};
 
   ClassOfDevice() = default;
   ClassOfDevice(const uint8_t (&class_of_device)[kLength]);
-  bool operator==(const ClassOfDevice& rhs) const {
-    return (std::memcmp(cod, rhs.cod, sizeof(cod)) == 0);
+
+  // packet::CustomFieldFixedSizeInterface methods
+  inline uint8_t* data() override {
+    return cod.data();
+  }
+  inline const uint8_t* data() const override {
+    return cod.data();
   }
 
+  bool operator<(const ClassOfDevice& rhs) const {
+    return cod < rhs.cod;
+  }
+  bool operator==(const ClassOfDevice& rhs) const {
+    return cod == rhs.cod;
+  }
+  bool operator>(const ClassOfDevice& rhs) const {
+    return (rhs < *this);
+  }
+  bool operator<=(const ClassOfDevice& rhs) const {
+    return !(*this > rhs);
+  }
+  bool operator>=(const ClassOfDevice& rhs) const {
+    return !(*this < rhs);
+  }
   bool operator!=(const ClassOfDevice& rhs) const {
-    return std::memcmp(cod, rhs.cod, sizeof(cod)) != 0;
+    return !(*this == rhs);
   }
 
   std::string ToString() const;
