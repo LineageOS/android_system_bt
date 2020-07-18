@@ -14,13 +14,13 @@
  * limitations under the License.
  */
 
-#include <limits>
-#include <vector>
+#include "storage/config_cache_helper.h"
 
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "storage/config_cache_helper.h"
+#include <limits>
+#include <vector>
 
 namespace testing {
 
@@ -31,50 +31,89 @@ TEST(ConfigCacheHelperTest, set_get_bool_test) {
   ConfigCache config(100);
   // true
   ConfigCacheHelper(config).SetBool("A", "B", true);
-  EXPECT_EQ(*config.GetProperty("A", "B"), "true");
-  auto res = ConfigCacheHelper(config).GetBool("A", "B");
-  EXPECT_TRUE(res);
-  EXPECT_TRUE(*res);
+  ASSERT_THAT(config.GetProperty("A", "B"), Optional(StrEq("true")));
+  ASSERT_THAT(ConfigCacheHelper(config).GetBool("A", "B"), Optional(IsTrue()));
   // false
   ConfigCacheHelper(config).SetBool("A", "B", false);
-  EXPECT_EQ(*config.GetProperty("A", "B"), "false");
-  res = ConfigCacheHelper(config).GetBool("A", "B");
-  EXPECT_TRUE(res);
-  EXPECT_FALSE(*res);
+  ASSERT_THAT(config.GetProperty("A", "B"), Optional(StrEq("false")));
+  ASSERT_THAT(ConfigCacheHelper(config).GetBool("A", "B"), Optional(IsFalse()));
 }
 
 TEST(ConfigCacheHelperTest, set_get_uint64_test) {
   ConfigCache config(100);
   // small
   ConfigCacheHelper(config).SetUint64("A", "B", 123);
-  EXPECT_EQ(*config.GetProperty("A", "B"), "123");
-  EXPECT_EQ(*ConfigCacheHelper(config).GetUint64("A", "B"), uint64_t(123));
+  ASSERT_THAT(config.GetProperty("A", "B"), Optional(StrEq("123")));
+  ASSERT_THAT(ConfigCacheHelper(config).GetUint64("A", "B"), Optional(Eq(uint64_t(123))));
   // big
   uint64_t num = std::numeric_limits<int>::max();
   num = num * 10;
   ConfigCacheHelper(config).SetUint64("A", "B", num);
-  EXPECT_EQ(*config.GetProperty("A", "B"), std::to_string(std::numeric_limits<int>::max()) + "0");
-  EXPECT_EQ(*ConfigCacheHelper(config).GetUint64("A", "B"), num);
+  ASSERT_THAT(config.GetProperty("A", "B"), Optional(StrEq(std::to_string(std::numeric_limits<int>::max()) + "0")));
+  ASSERT_THAT(ConfigCacheHelper(config).GetUint64("A", "B"), Optional(Eq(num)));
   // zero
   ConfigCacheHelper(config).SetUint64("A", "B", 0);
-  EXPECT_EQ(*config.GetProperty("A", "B"), "0");
-  EXPECT_EQ(*ConfigCacheHelper(config).GetUint64("A", "B"), 0);
+  ASSERT_THAT(config.GetProperty("A", "B"), Optional(StrEq("0")));
+  ASSERT_THAT(ConfigCacheHelper(config).GetUint64("A", "B"), Optional(Eq(0)));
+}
+
+TEST(ConfigCacheHelperTest, set_get_uint32_test) {
+  ConfigCache config(100);
+  // small
+  ConfigCacheHelper(config).SetUint32("A", "B", 123);
+  ASSERT_THAT(config.GetProperty("A", "B"), Optional(StrEq("123")));
+  ASSERT_THAT(ConfigCacheHelper(config).GetUint64("A", "B"), Optional(Eq(uint32_t(123))));
+  // big
+  uint64_t num = std::numeric_limits<uint32_t>::max();
+  num *= 10;
+  ConfigCacheHelper(config).SetUint64("A", "B", num);
+  ASSERT_THAT(
+      config.GetProperty("A", "B"), Optional(StrEq(std::to_string(std::numeric_limits<uint32_t>::max()) + "0")));
+  ASSERT_FALSE(ConfigCacheHelper(config).GetUint32("A", "B"));
+  // zero
+  ConfigCacheHelper(config).SetUint32("A", "B", 0);
+  ASSERT_THAT(config.GetProperty("A", "B"), Optional(StrEq("0")));
+  ASSERT_THAT(ConfigCacheHelper(config).GetUint32("A", "B"), Optional(Eq(0)));
+}
+
+TEST(ConfigCacheHelperTest, set_get_int64_test) {
+  ConfigCache config(100);
+  // positive
+  int64_t num = std::numeric_limits<int32_t>::max();
+  num *= 10;
+  ConfigCacheHelper(config).SetInt64("A", "B", num);
+  ASSERT_THAT(config.GetProperty("A", "B"), Optional(StrEq(std::to_string(std::numeric_limits<int32_t>::max()) + "0")));
+  ASSERT_THAT(ConfigCacheHelper(config).GetInt64("A", "B"), Optional(Eq(int64_t(num))));
+  // negative
+  ConfigCacheHelper(config).SetInt64("A", "B", -1 * num);
+  ASSERT_THAT(
+      config.GetProperty("A", "B"), Optional(StrEq("-" + std::to_string(std::numeric_limits<int32_t>::max()) + "0")));
+  ASSERT_THAT(ConfigCacheHelper(config).GetInt64("A", "B"), Optional(Eq(-1 * num)));
+  // zero
+  ConfigCacheHelper(config).SetInt("A", "B", 0);
+  ASSERT_THAT(config.GetProperty("A", "B"), Optional(StrEq("0")));
+  ASSERT_THAT(ConfigCacheHelper(config).GetInt64("A", "B"), Optional(Eq(int64_t(0))));
 }
 
 TEST(ConfigCacheHelperTest, set_get_int_test) {
   ConfigCache config(100);
   // positive
   ConfigCacheHelper(config).SetInt("A", "B", 123);
-  EXPECT_EQ(*config.GetProperty("A", "B"), "123");
-  EXPECT_EQ(*ConfigCacheHelper(config).GetInt("A", "B"), int(123));
+  ASSERT_THAT(config.GetProperty("A", "B"), Optional(StrEq("123")));
+  ASSERT_THAT(ConfigCacheHelper(config).GetInt("A", "B"), Optional(Eq(int(123))));
   // negative
   ConfigCacheHelper(config).SetInt("A", "B", -123);
-  EXPECT_EQ(*config.GetProperty("A", "B"), "-123");
-  EXPECT_EQ(*ConfigCacheHelper(config).GetInt("A", "B"), int(-123));
+  ASSERT_THAT(config.GetProperty("A", "B"), Optional(StrEq("-123")));
+  ASSERT_THAT(ConfigCacheHelper(config).GetInt("A", "B"), Optional(Eq(int(-123))));
   // zero
   ConfigCacheHelper(config).SetInt("A", "B", 0);
-  EXPECT_EQ(*config.GetProperty("A", "B"), "0");
-  EXPECT_EQ(*ConfigCacheHelper(config).GetInt("A", "B"), int(0));
+  ASSERT_THAT(config.GetProperty("A", "B"), Optional(StrEq("0")));
+  ASSERT_THAT(ConfigCacheHelper(config).GetInt("A", "B"), Optional(Eq(int(0))));
+  // big
+  int64_t num = std::numeric_limits<int32_t>::max();
+  num *= 10;
+  ConfigCacheHelper(config).SetInt64("A", "B", num);
+  ASSERT_FALSE(ConfigCacheHelper(config).GetInt("A", "B"));
 }
 
 TEST(ConfigCacheHelperTest, set_get_bin_test) {
@@ -82,13 +121,13 @@ TEST(ConfigCacheHelperTest, set_get_bin_test) {
   // empty
   std::vector<uint8_t> data;
   ConfigCacheHelper(config).SetBin("A", "B", data);
-  EXPECT_EQ(*config.GetProperty("A", "B"), "");
-  EXPECT_THAT(*ConfigCacheHelper(config).GetBin("A", "B"), ContainerEq(data));
+  ASSERT_THAT(config.GetProperty("A", "B"), Optional(StrEq("")));
+  ASSERT_THAT(ConfigCacheHelper(config).GetBin("A", "B"), Optional(ContainerEq(data)));
   // non-empty
   std::vector<uint8_t> data2 = {0xAB, 0x5D, 0x42};
   ConfigCacheHelper(config).SetBin("A", "B", data2);
-  EXPECT_EQ(*config.GetProperty("A", "B"), "ab5d42");
-  EXPECT_THAT(*ConfigCacheHelper(config).GetBin("A", "B"), ContainerEq(data2));
+  ASSERT_THAT(config.GetProperty("A", "B"), Optional(StrEq("ab5d42")));
+  ASSERT_THAT(ConfigCacheHelper(config).GetBin("A", "B"), Optional(ContainerEq(data2)));
 }
 
 }  // namespace testing
