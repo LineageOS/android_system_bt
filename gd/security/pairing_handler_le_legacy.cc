@@ -135,9 +135,14 @@ StkOrFailure PairingHandlerLe::DoLegacyStage2(const InitialInformations& i, cons
     // LOG(INFO) << +(IAmMaster(i)) << " preq = " << base::HexEncode(preq.data(), preq.size());
 
     Octet16 mconfirm = crypto_toolbox::c1(
-        tk, mrand, preq.data(), pres.data(), (uint8_t)i.my_connection_address.GetAddressType(),
-        i.my_connection_address.GetAddress().address, (uint8_t)i.remote_connection_address.GetAddressType(),
-        i.remote_connection_address.GetAddress().address);
+        tk,
+        mrand,
+        preq.data(),
+        pres.data(),
+        (uint8_t)i.my_connection_address.GetAddressType(),
+        i.my_connection_address.GetAddress().data(),
+        (uint8_t)i.remote_connection_address.GetAddressType(),
+        i.remote_connection_address.GetAddress().data());
 
     // LOG(INFO) << +(IAmMaster(i)) << " mconfirm = " << base::HexEncode(mconfirm.data(), mconfirm.size());
 
@@ -164,9 +169,14 @@ StkOrFailure PairingHandlerLe::DoLegacyStage2(const InitialInformations& i, cons
     // LOG(INFO) << +(IAmMaster(i)) << " srand = " << base::HexEncode(srand.data(), srand.size());
 
     Octet16 sconfirm_generated = crypto_toolbox::c1(
-        tk, srand, preq.data(), pres.data(), (uint8_t)i.my_connection_address.GetAddressType(),
-        i.my_connection_address.GetAddress().address, (uint8_t)i.remote_connection_address.GetAddressType(),
-        i.remote_connection_address.GetAddress().address);
+        tk,
+        srand,
+        preq.data(),
+        pres.data(),
+        (uint8_t)i.my_connection_address.GetAddressType(),
+        i.my_connection_address.GetAddress().data(),
+        (uint8_t)i.remote_connection_address.GetAddressType(),
+        i.remote_connection_address.GetAddress().data());
 
     if (sconfirm != sconfirm_generated) {
       LOG_INFO("sconfirm does not match generated value");
@@ -181,9 +191,14 @@ StkOrFailure PairingHandlerLe::DoLegacyStage2(const InitialInformations& i, cons
     std::vector<uint8_t> pres(pairing_response.begin(), pairing_response.end());
 
     Octet16 sconfirm = crypto_toolbox::c1(
-        tk, srand, preq.data(), pres.data(), (uint8_t)i.remote_connection_address.GetAddressType(),
-        i.remote_connection_address.GetAddress().address, (uint8_t)i.my_connection_address.GetAddressType(),
-        i.my_connection_address.GetAddress().address);
+        tk,
+        srand,
+        preq.data(),
+        pres.data(),
+        (uint8_t)i.remote_connection_address.GetAddressType(),
+        i.remote_connection_address.GetAddress().data(),
+        (uint8_t)i.my_connection_address.GetAddressType(),
+        i.my_connection_address.GetAddress().data());
 
     LOG_INFO("Slave waits for the Mconfirm");
     auto mconfirm_pkt = WaitPairingConfirm();
@@ -203,9 +218,14 @@ StkOrFailure PairingHandlerLe::DoLegacyStage2(const InitialInformations& i, cons
     mrand = std::get<PairingRandomView>(random_pkt).GetRandomValue();
 
     Octet16 mconfirm_generated = crypto_toolbox::c1(
-        tk, mrand, preq.data(), pres.data(), (uint8_t)i.remote_connection_address.GetAddressType(),
-        i.remote_connection_address.GetAddress().address, (uint8_t)i.my_connection_address.GetAddressType(),
-        i.my_connection_address.GetAddress().address);
+        tk,
+        mrand,
+        preq.data(),
+        pres.data(),
+        (uint8_t)i.remote_connection_address.GetAddressType(),
+        i.remote_connection_address.GetAddress().data(),
+        (uint8_t)i.my_connection_address.GetAddressType(),
+        i.my_connection_address.GetAddress().data());
 
     if (mconfirm != mconfirm_generated) {
       LOG_INFO("mconfirm does not match generated value");
