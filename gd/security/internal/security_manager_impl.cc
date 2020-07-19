@@ -70,6 +70,18 @@ void SecurityManagerImpl::Init() {
   security_manager_channel_->SendCommand(hci::WriteSimplePairingModeBuilder::Create(hci::Enable::ENABLED));
   security_manager_channel_->SendCommand(hci::WriteSecureConnectionsHostSupportBuilder::Create(hci::Enable::ENABLED));
   // TODO(optedoblivion): Populate security record memory map from disk
+
+  // TODO(b/161543441): read the privacy policy from device-specific configuration, and IRK from config file.
+  hci::LeAddressManager::AddressPolicy address_policy = hci::LeAddressManager::AddressPolicy::USE_RESOLVABLE_ADDRESS;
+  hci::AddressWithType address_with_type(hci::Address{}, hci::AddressType::RANDOM_DEVICE_ADDRESS);
+  crypto_toolbox::Octet16 irk = {
+      0x44, 0xfb, 0x4b, 0x8d, 0x6c, 0x58, 0x21, 0x0c, 0xf9, 0x3d, 0xda, 0xf1, 0x64, 0xa3, 0xbb, 0x7f};
+  /* 7 minutes minimum, 15 minutes maximum for random address refreshing */
+  auto minimum_rotation_time = std::chrono::minutes(7);
+  auto maximum_rotation_time = std::chrono::minutes(15);
+
+  acl_manager_->SetPrivacyPolicyForInitiatorAddress(
+      address_policy, address_with_type, irk, minimum_rotation_time, maximum_rotation_time);
 }
 
 void SecurityManagerImpl::CreateBond(hci::AddressWithType device) {
@@ -122,13 +134,14 @@ void SecurityManagerImpl::SetUserInterfaceHandler(UI* user_interface, os::Handle
   user_interface_handler_ = handler;
 }
 
-void SecurityManagerImpl::SetLeInitiatorAddressPolicy(
+// TODO(jpawlowski): remove once we have config file abstraction in cert tests
+void SecurityManagerImpl::SetLeInitiatorAddressPolicyForTest(
     hci::LeAddressManager::AddressPolicy address_policy,
     hci::AddressWithType fixed_address,
     crypto_toolbox::Octet16 rotation_irk,
     std::chrono::milliseconds minimum_rotation_time,
     std::chrono::milliseconds maximum_rotation_time) {
-  acl_manager_->SetPrivacyPolicyForInitiatorAddress(
+  acl_manager_->SetPrivacyPolicyForInitiatorAddressForTest(
       address_policy, fixed_address, rotation_irk, minimum_rotation_time, maximum_rotation_time);
 }
 

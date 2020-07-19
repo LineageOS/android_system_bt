@@ -70,6 +70,49 @@ void LeAddressManager::SetPrivacyPolicyForInitiatorAddress(
   }
 }
 
+// TODO(jpawlowski): remove once we have config file abstraction in cert tests
+void LeAddressManager::SetPrivacyPolicyForInitiatorAddressForTest(
+    AddressPolicy address_policy,
+    AddressWithType fixed_address,
+    crypto_toolbox::Octet16 rotation_irk,
+    std::chrono::milliseconds minimum_rotation_time,
+    std::chrono::milliseconds maximum_rotation_time) {
+  ASSERT(address_policy != AddressPolicy::POLICY_NOT_SET);
+  ASSERT_LOG(registered_clients_.empty(), "Policy must be set before clients are registered.");
+  address_policy_ = address_policy;
+
+  switch (address_policy_) {
+    case AddressPolicy::USE_PUBLIC_ADDRESS:
+      le_address_ = fixed_address;
+      break;
+    case AddressPolicy::USE_STATIC_ADDRESS: {
+      auto addr = fixed_address.GetAddress();
+      auto address = addr.address;
+      // The two most significant bits of the static address shall be equal to 1
+      ASSERT_LOG((address[5] & BLE_ADDR_MASK) == BLE_ADDR_MASK, "The two most significant bits shall be equal to 1");
+      // Bits of the random part of the address shall not be all 1 or all 0
+      if ((address[0] == 0x00 && address[1] == 0x00 && address[2] == 0x00 && address[3] == 0x00 && address[4] == 0x00 &&
+           address[5] == BLE_ADDR_MASK) ||
+          (address[0] == 0xFF && address[1] == 0xFF && address[2] == 0xFF && address[3] == 0xFF && address[4] == 0xFF &&
+           address[5] == 0xFF)) {
+        LOG_ALWAYS_FATAL("Bits of the random part of the address shall not be all 1 or all 0");
+      }
+      le_address_ = fixed_address;
+      auto packet = hci::LeSetRandomAddressBuilder::Create(le_address_.GetAddress());
+      handler_->Call(enqueue_command_, std::move(packet));
+    } break;
+    case AddressPolicy::USE_NON_RESOLVABLE_ADDRESS:
+    case AddressPolicy::USE_RESOLVABLE_ADDRESS:
+      rotation_irk_ = rotation_irk;
+      minimum_rotation_time_ = minimum_rotation_time;
+      maximum_rotation_time_ = maximum_rotation_time;
+      address_rotation_alarm_ = std::make_unique<os::Alarm>(handler_);
+      break;
+    case AddressPolicy::POLICY_NOT_SET:
+      LOG_ALWAYS_FATAL("invalid parameters");
+  }
+}
+
 LeAddressManager::AddressPolicy LeAddressManager::Register(LeAddressManagerCallback* callback) {
   handler_->BindOnceOn(this, &LeAddressManager::register_client, callback).Invoke();
   return address_policy_;

@@ -61,6 +61,14 @@ void CustomFieldDef::GenUsing(std::ostream& s) const {
   s << GetTypeName() << ";";
 }
 
+void CustomFieldDef::GenFixedSizeCustomFieldCheck(std::ostream& s) const {
+  s << "static_assert(std::is_base_of_v<CustomFieldFixedSizeInterface<" << name_ << ">, " << name_ << ">, \"";
+  s << name_ << " is not a valid fixed size custom field type. Please see README for more details.\");";
+  s << "static_assert(CustomFieldFixedSizeInterface<" << name_ << ">::length() * 8 == " << size_
+    << ", \"CustomFieldFixedSizeInterface<" << name_ << ">::length * 8 should match PDL defined size (in bits) "
+    << size_ << "\");";
+}
+
 void CustomFieldDef::GenCustomFieldCheck(std::ostream& s, bool little_endian) const {
   s << "static_assert(CustomTypeChecker<" << name_ << ", ";
   s << (little_endian ? "" : "!") << "kLittleEndian>::value, \"";
