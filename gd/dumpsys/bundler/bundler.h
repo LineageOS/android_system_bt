@@ -20,6 +20,7 @@ constexpr char kDefaultBundleDataFile[] = "bundle_bfbs.bin";
 constexpr char kDefaultGeneratedOutputPath[] = ".";
 constexpr char kDefaultNamespace[] = "";
 constexpr char kDefaultNamespaceDelim[] = "::";
+constexpr char kDefaultTitle[] = "Bundled schema tables";
 }  // namespace
 
 struct Opts {
@@ -30,6 +31,7 @@ struct Opts {
   const char* gen{kDefaultGeneratedOutputPath};
   const char* main_root_name{nullptr};
   const char* ns_name{kDefaultNamespace};
+  const char* title{kDefaultTitle};
   struct {
     int c{0};
     char** v{nullptr};

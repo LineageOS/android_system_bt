@@ -139,6 +139,7 @@ cc_defaults {
         ":BluetoothAttSources",
         ":BluetoothCommonSources",
         ":BluetoothCryptoToolboxSources",
+        ":BluetoothDumpsysSources",
         ":BluetoothHalSources",
         ":BluetoothHciSources",
         ":BluetoothL2capSources",
@@ -151,7 +152,7 @@ cc_defaults {
     generated_headers: [
         "BluetoothGeneratedBundlerSchema_h_bfbs",
         "BluetoothGeneratedDumpsysDataSchema_h",
-        "BluetoothGeneratedDumpsysModuleSchema_h",
+        "BluetoothGeneratedDumpsysBundledSchema_h",
         "BluetoothGeneratedPackets_h",
     ],
     shared_libs: [
@@ -282,6 +283,7 @@ cc_test {
         ":BluetoothAttTestSources",
         ":BluetoothCommonTestSources",
         ":BluetoothCryptoToolboxTestSources",
+        ":BluetoothDumpsysTestSources",
         ":BluetoothHciTestSources",
         ":BluetoothL2capTestSources",
         ":BluetoothNeighborTestSources",
@@ -293,7 +295,7 @@ cc_test {
     generated_headers: [
         "BluetoothGeneratedBundlerSchema_h_bfbs",
         "BluetoothGeneratedDumpsysDataSchema_h",
-        "BluetoothGeneratedDumpsysModuleSchema_h",
+        "BluetoothGeneratedDumpsysBundledSchema_h",
         "BluetoothGeneratedPackets_h",
     ],
     static_libs: [
@@ -469,20 +471,6 @@ genrule {
     out: [
         "dumpsys_data_generated.h",
         "dumpsys_generated.h",
-    ],
-}
-
-genrule {
-    name: "BluetoothGeneratedDumpsysModuleSchema_h",
-    tools: [
-            "bluetooth_flatbuffer_bundler",
-    ],
-    cmd: "$(location bluetooth_flatbuffer_bundler) -w -m bluetooth.DumpsysData -f dumpsys_module_schema_data -n bluetooth::dumpsys -g $(genDir) $(locations :BluetoothGeneratedDumpsysBinarySchema_bfbs)",
-    srcs: [
-        ":BluetoothGeneratedDumpsysBinarySchema_bfbs",
-    ],
-    out: [
-         "dumpsys_module_schema_data.h",
     ],
 }
 
