@@ -1,3 +1,43 @@
+filegroup {
+    name: "BluetoothDumpsysSources",
+    srcs: [
+    ],
+}
+
+filegroup {
+    name: "BluetoothDumpsysTestSources",
+    srcs: [
+    ],
+}
+
+genrule {
+    name: "BluetoothGeneratedDumpsysTestSchema_h",
+    tools: [
+        "bluetooth_flatbuffer_bundler",
+    ],
+    cmd: "$(location bluetooth_flatbuffer_bundler) -w -m bluetooth.DumpsysData -f dumpsys_module_schema_data -n testing -g $(genDir) $(locations :BluetoothGeneratedDumpsysBinarySchema_bfbs)",
+    srcs: [
+        ":BluetoothGeneratedDumpsysBinarySchema_bfbs",
+    ],
+    out: [
+         "dumpsys_module_schema_data.h",
+    ],
+}
+
+genrule {
+    name: "BluetoothGeneratedDumpsysBundledSchema_h",
+    tools: [
+            "bluetooth_flatbuffer_bundler",
+    ],
+    cmd: "$(location bluetooth_flatbuffer_bundler) -w -m bluetooth.DumpsysData -f generated_dumpsys_bundled_schema -n bluetooth::dumpsys -g $(genDir) $(locations :BluetoothGeneratedDumpsysBinarySchema_bfbs)",
+    srcs: [
+        ":BluetoothGeneratedDumpsysBinarySchema_bfbs",
+    ],
+    out: [
+         "generated_dumpsys_bundled_schema.h",
+    ],
+}
+
 genrule {
     name: "BluetoothFlatbufferTestData_h",
     tools: [
