@@ -3934,7 +3934,7 @@ static void btm_sec_pairing_timeout(UNUSED_ATTR void* data) {
   tBTM_AUTH_REQ auth_req = (btm_cb.devcb.loc_io_caps == BTM_IO_CAP_NONE)
                                ? BTM_AUTH_AP_NO
                                : BTM_AUTH_AP_YES;
-  uint8_t name[2];
+  BD_NAME name;
 
   p_dev_rec = btm_find_dev(p_cb->pairing_bda);
 
