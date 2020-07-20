@@ -27,9 +27,9 @@
 
 #include "bundler_generated.h"
 #include "dumpsys_generated.h"
-#include "dumpsys_module_schema_data.h"
 #include "flatbuffers/idl.h"
 #include "flatbuffers/reflection_generated.h"
+#include "generated_dumpsys_bundled_schema.h"
 #include "module.h"
 #include "os/handler.h"
 #include "os/log.h"
