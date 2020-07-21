@@ -30,8 +30,7 @@ from security.facade_pb2 import AuthenticationRequirementsMessage
 from security.facade_pb2 import SecurityPolicyMessage
 from security.facade_pb2 import IoCapabilities
 from security.facade_pb2 import IoCapabilityMessage
-from security.facade_pb2 import OobDataMessage
-from security.facade_pb2 import OobDataPresent
+from security.facade_pb2 import OobDataPresentMessage
 from security.facade_pb2 import UiCallbackMsg
 from security.facade_pb2 import UiCallbackType
 
@@ -104,8 +103,8 @@ class PySecurity(Closable):
         """
             Set the Out-of-band data present flag for SSP pairing
         """
-        logging.debug("DUT: setting OOB data present to '%s'" % data_present)
-        self._device.security.SetOobDataPresent(OobDataMessage(data_present=data_present))
+        logging.info("DUT: setting OOB data present to '%s'" % data_present)
+        self._device.security.SetOobDataPresent(OobDataPresentMessage(data_present=data_present))
 
     def send_ui_callback(self, address, callback_type, b, uid):
         """

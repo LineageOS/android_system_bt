@@ -29,7 +29,7 @@ from hci.facade import facade_pb2 as hci_facade
 from security.facade_pb2 import IoCapabilityMessage
 from security.facade_pb2 import AuthenticationRequirementsMessage
 from security.facade_pb2 import LeAuthRequirementsMessage
-from security.facade_pb2 import OobDataMessage
+from security.facade_pb2 import OobDataPresentMessage
 from security.facade_pb2 import UiCallbackMsg
 from security.facade_pb2 import UiCallbackType
 
