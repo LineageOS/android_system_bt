@@ -294,8 +294,9 @@ cc_test {
     ],
     generated_headers: [
         "BluetoothGeneratedBundlerSchema_h_bfbs",
-        "BluetoothGeneratedDumpsysDataSchema_h",
         "BluetoothGeneratedDumpsysBundledSchema_h",
+        "BluetoothGeneratedDumpsysBundledTestSchema_h",
+        "BluetoothGeneratedDumpsysDataSchema_h",
         "BluetoothGeneratedPackets_h",
     ],
     static_libs: [
