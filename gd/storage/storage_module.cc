@@ -70,13 +70,13 @@ StorageModule::StorageModule(
   config_backup_path_ = config_file_path_.substr(0, config_file_path_.find_last_of('.')) + ".bak";
   ASSERT_LOG(
       config_save_delay > kMinConfigSaveDelay,
-      "Config save delay of %lld ms is not enought, must be at least %lld ms to avoid overwhelming the disk",
+      "Config save delay of %lld ms is not enough, must be at least %lld ms to avoid overwhelming the disk",
       config_save_delay_.count(),
       kMinConfigSaveDelay.count());
 };
 
 StorageModule::~StorageModule() {
-  std::lock_guard<std::mutex> lock(mutex_);
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
   pimpl_.reset();
 }
 
@@ -93,17 +93,17 @@ struct StorageModule::impl {
 };
 
 Mutation StorageModule::Modify() {
-  std::lock_guard<std::mutex> lock(mutex_);
-  return Mutation(pimpl_->cache_);
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  return Mutation(&pimpl_->cache_);
 }
 
 ConfigCache* StorageModule::GetConfigCache() {
-  std::lock_guard<std::mutex> lock(mutex_);
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
   return &pimpl_->cache_;
 }
 
 void StorageModule::SaveDelayed() {
-  std::lock_guard<std::mutex> lock(mutex_);
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
   if (pimpl_->has_pending_config_save_) {
     return;
   }
@@ -113,7 +113,7 @@ void StorageModule::SaveDelayed() {
 }
 
 void StorageModule::SaveImmediately() {
-  std::lock_guard<std::mutex> lock(mutex_);
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
   if (pimpl_->has_pending_config_save_) {
     pimpl_->config_save_alarm_.Cancel();
     pimpl_->has_pending_config_save_ = false;
@@ -133,7 +133,7 @@ void StorageModule::ListDependencies(ModuleList* list) {
 }
 
 void StorageModule::Start() {
-  std::lock_guard<std::mutex> lock(mutex_);
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
   std::string file_source;
   if (os::GetSystemProperty(kFactoryResetProperty) == "true") {
     LegacyConfigFile::FromPath(config_file_path_).Delete();
@@ -166,19 +166,33 @@ void StorageModule::Start() {
     ss << std::put_time(std::localtime(&now_time_t), kTimeCreatedFormat.c_str());
     config->SetProperty(kInfoSection, kTimeCreatedProperty, ss.str());
   }
+  config->FixDeviceTypeInconsistencies();
   config->SetPersistentConfigChangedCallback([this] { this->SaveDelayed(); });
   // TODO (b/158035889) Migrate metrics module to GD
   pimpl_ = std::make_unique<impl>(GetHandler(), std::move(config.value()));
+  SaveDelayed();
 }
 
 void StorageModule::Stop() {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
   SaveImmediately();
-  std::lock_guard<std::mutex> lock(mutex_);
   pimpl_.reset();
 }
 
 std::string StorageModule::ToString() const {
   return "Storage Module";
+}
+
+Device StorageModule::GetDeviceByLegacyKey(hci::Address legacy_key_address) {
+  return Device(GetConfigCache(), legacy_key_address, Device::ConfigKeyAddressType::LEGACY_KEY_ADDRESS);
+}
+
+Device StorageModule::GetDeviceByClassicMacAddress(hci::Address classic_address) {
+  return Device(GetConfigCache(), classic_address, Device::ConfigKeyAddressType::CLASSIC_ADDRESS);
+}
+
+Device StorageModule::GetDeviceByLeIdentityAddress(hci::Address le_identity_address) {
+  return Device(GetConfigCache(), le_identity_address, Device::ConfigKeyAddressType::LE_IDENTITY_ADDRESS);
 }
 
 }  // namespace storage
