@@ -86,11 +86,15 @@ void SecurityManagerImpl::Init() {
 
 void SecurityManagerImpl::CreateBond(hci::AddressWithType device) {
   auto record = security_database_.FindOrCreate(device);
-  if (record->IsBonded()) {
+  if (record->IsPaired()) {
+    // Bonded means we saved it, but the caller doesn't care
+    // Bonded will always mean paired
     NotifyDeviceBonded(device);
   } else {
-    // Dispatch pairing handler, if we are calling create we are the initiator
-    DispatchPairingHandler(record, true);
+    if (!record->IsPairing()) {
+      // Dispatch pairing handler, if we are calling create we are the initiator
+      DispatchPairingHandler(record, true);
+    }
   }
 }
 
@@ -115,6 +119,8 @@ void SecurityManagerImpl::CancelBond(hci::AddressWithType device) {
     pairing_handler_map_.erase(entry);
     cancel_me->Cancel();
   }
+  auto record = security_database_.FindOrCreate(device);
+  record->CancelPairing();
 }
 
 void SecurityManagerImpl::RemoveBond(hci::AddressWithType device) {
@@ -342,6 +348,8 @@ void SecurityManagerImpl::OnPairingHandlerComplete(hci::Address address, Pairing
   } else {
     NotifyDeviceBondFailed(remote, status);
   }
+  auto record = this->security_database_.FindOrCreate(remote);
+  record->CancelPairing();
 }
 
 void SecurityManagerImpl::OnL2capRegistrationCompleteLe(
@@ -617,7 +625,9 @@ void SecurityManagerImpl::InternalEnforceSecurityPolicy(
           remote,
           std::pair<l2cap::classic::SecurityPolicy, l2cap::classic::SecurityEnforcementInterface::ResultCallback>(
               policy, std::move(result_callback)));
-      DispatchPairingHandler(record, true);
+      if (!record->IsPairing()) {
+        DispatchPairingHandler(record, true);
+      }
     }
     return;
   }
