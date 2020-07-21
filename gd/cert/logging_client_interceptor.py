@@ -14,9 +14,8 @@
 #   See the License for the specific language governing permissions and
 #   limitations under the License.
 
-import logging
-
 import grpc
+import re
 
 from google.protobuf import text_format
 
