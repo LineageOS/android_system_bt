@@ -14,15 +14,24 @@ service SecurityModuleFacade {
   rpc RemoveBond(facade.BluetoothAddressWithType) returns (google.protobuf.Empty) {}
   rpc SetIoCapability(IoCapabilityMessage) returns (google.protobuf.Empty) {}
   rpc SetAuthenticationRequirements(AuthenticationRequirementsMessage) returns (google.protobuf.Empty) {}
-  rpc SetOobDataPresent(OobDataMessage) returns (google.protobuf.Empty) {}
+  rpc SetOobDataPresent(OobDataPresentMessage) returns (google.protobuf.Empty) {}
   rpc SetLeIoCapability(LeIoCapabilityMessage) returns (google.protobuf.Empty) {}
   rpc SetLeAuthRequirements(LeAuthRequirementsMessage) returns (google.protobuf.Empty) {}
+  rpc GetOutOfBandData(google.protobuf.Empty) returns (OobDataMessage) {}
+  rpc SetOutOfBandData(OobDataMessage) returns (google.protobuf.Empty) {}
+  rpc SetLeOobDataPresent(LeOobDataPresentMessage) returns (google.protobuf.Empty) {}
   rpc SetLeInitiatorAddressPolicy(hci.PrivacyPolicy) returns (google.protobuf.Empty) {}
   rpc SendUiCallback(UiCallbackMsg) returns (google.protobuf.Empty) {}
   rpc FetchUiEvents(google.protobuf.Empty) returns (stream UiMsg) {}
   rpc FetchBondEvents(google.protobuf.Empty) returns (stream BondMsg) {}
   rpc EnforceSecurityPolicy(SecurityPolicyMessage) returns (google.protobuf.Empty) {}
   rpc FetchEnforceSecurityPolicyEvents(google.protobuf.Empty) returns (stream EnforceSecurityPolicyMsg) {}
+}
+
+message OobDataMessage {
+  facade.BluetoothAddressWithType address = 1;
+  bytes le_sc_confirmation_value = 2;
+  bytes le_sc_random_value = 3;
 }
 
 enum UiMsgType {
@@ -110,6 +119,15 @@ message LeAuthRequirementsMessage {
   uint32 reserved_bits = 6;
 }
 
+message LeOobDataPresentMessage {
+  enum LeOobDataFlag {
+    NOT_PRESENT = 0;
+    PRESENT = 1;
+  }
+
+  LeOobDataFlag data_present = 1;
+}
+
 enum OobDataPresent {
   NOT_PRESENT = 0;
   P192_PRESENT = 1;
@@ -117,7 +135,7 @@ enum OobDataPresent {
   P192_AND_256_PRESENT = 3;
 }
 
-message OobDataMessage {
+message OobDataPresentMessage {
   OobDataPresent data_present = 1;
 }
 
