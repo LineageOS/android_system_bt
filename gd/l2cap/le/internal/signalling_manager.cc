@@ -139,8 +139,8 @@ void LeSignallingManager::OnConnectionParameterUpdateRequest(SignalId signal_id,
     enqueue_buffer_->Enqueue(std::move(builder), handler_);
     return;
   }
-  if (interval_min < 6 || interval_min > 3200 || interval_max < 6 || interval_max > 3200 || slave_latency >= 500 ||
-      timeout_multiplier < 10 || timeout_multiplier > 3200) {
+
+  if (!link_->CheckConnectionParameters(interval_min, interval_max, slave_latency, timeout_multiplier)) {
     LOG_WARN("Received invalid connection parameter update request from LL master");
     auto builder = ConnectionParameterUpdateResponseBuilder::Create(signal_id.Value(),
                                                                     ConnectionParameterUpdateResponseResult::REJECTED);

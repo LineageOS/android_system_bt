@@ -51,11 +51,17 @@ class LeAclConnection : public AclConnection {
 
   virtual bool LeConnectionUpdate(uint16_t conn_interval_min, uint16_t conn_interval_max, uint16_t conn_latency,
                                   uint16_t supervision_timeout, uint16_t min_ce_length, uint16_t max_ce_length);
+  // TODO implement LeRemoteConnectionParameterRequestReply, LeRemoteConnectionParameterRequestNegativeReply
 
   // Called once before passing the connection to the client
   virtual LeConnectionManagementCallbacks* GetEventCallbacks();
 
  private:
+  virtual bool check_connection_parameters(
+      uint16_t conn_interval_min,
+      uint16_t conn_interval_max,
+      uint16_t expected_conn_latency,
+      uint16_t expected_supervision_timeout);
   struct impl;
   struct impl* pimpl_ = nullptr;
   AddressWithType local_address_;
