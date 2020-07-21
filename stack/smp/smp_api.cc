@@ -271,6 +271,24 @@ void SMP_SecurityGrant(const RawAddress& bd_addr, uint8_t res) {
 
   SMP_TRACE_EVENT("SMP_SecurityGrant ");
 
+  // If JUSTWORKS, this is used to display the consent dialog
+  if (smp_cb.selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS) {
+    if (res == SMP_SUCCESS) {
+      smp_sm_event(&smp_cb, SMP_SC_NC_OK_EVT, NULL);
+    }
+  } else if (smp_cb.selected_association_model == SMP_MODEL_ENCRYPTION_ONLY) {
+    smp_cb.sec_level = SMP_SEC_UNAUTHENTICATE;
+
+    tSMP_KEY key;
+    tSMP_INT_DATA smp_int_data;
+    key.key_type = SMP_KEY_TYPE_TK;
+    key.p_data = smp_cb.tk.data();
+    smp_int_data.key = key;
+
+    smp_cb.tk = {0};
+    smp_sm_event(&smp_cb, SMP_KEY_READY_EVT, &smp_int_data);
+  }
+
   if (smp_cb.smp_over_br) {
     if (smp_cb.br_state != SMP_BR_STATE_WAIT_APP_RSP ||
         smp_cb.cb_evt != SMP_SEC_REQUEST_EVT || smp_cb.pairing_bda != bd_addr) {
