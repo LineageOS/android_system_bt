@@ -18,6 +18,7 @@
 #include <stdlib.h>
 #include <unistd.h>
 #include <cassert>
+#include <list>
 #include <map>
 #include <vector>
 
@@ -76,9 +77,11 @@ bool VerifyBinarySchema(const std::vector<const uint8_t>& raw_schema) {
 bool CreateBinarySchemaBundle(
     flatbuffers::FlatBufferBuilder* builder,
     const std::vector<std::string>& filenames,
-    std::vector<flatbuffers::Offset<BundledSchemaMap>>* vector_map) {
+    std::vector<flatbuffers::Offset<BundledSchemaMap>>* vector_map,
+    std::list<std::string>* bundled_names) {
   assert(builder != nullptr);
   assert(vector_map != nullptr);
+  assert(bundled_names != nullptr);
 
   for (auto filename : filenames) {
     std::string string_schema;
@@ -98,6 +101,7 @@ bool CreateBinarySchemaBundle(
       return false;
     }
 
+    bundled_names->push_back(schema->root_table()->name()->str());
     auto name = builder->CreateString(schema->root_table()->name()->str());
     auto data = builder->CreateVector<uint8_t>(raw_schema.data(), raw_schema.size());
     vector_map->push_back(CreateBundledSchemaMap(*builder, name, data));
@@ -131,7 +135,12 @@ void WriteHeaderFile(FILE* fp, const uint8_t* data, size_t data_len) {
   }
   if (start != 0 && start != std::string::npos) {
     namespaces.push_back(ns_string.substr(start));
+  } else if (!ns_string.empty()) {
+    namespaces.push_back(ns_string);
   }
+
+  std::string namespace_prefix;
+  for (const auto& name : namespaces) namespace_prefix += (name + '_');
 
   fprintf(
       fp,
@@ -152,7 +161,8 @@ void WriteHeaderFile(FILE* fp, const uint8_t* data, size_t data_len) {
   fprintf(
       fp,
       "namespace {\n"
-      "const unsigned char data_[] = {\n");
+      "const unsigned char %sdata_[] = {\n",
+      namespace_prefix.c_str());
 
   for (auto i = 0; i < data_len; i++) {
     fprintf(fp, " 0x%02x", data[i]);
@@ -166,11 +176,19 @@ void WriteHeaderFile(FILE* fp, const uint8_t* data, size_t data_len) {
   fprintf(fp, " };\n");
   fprintf(
       fp,
-      "const std::string string_data_(data_, data_ + sizeof(data_));\n"
-      "}  // namespace\n");
-  fprintf(fp, "const unsigned char* %s::data = data_;\n", opts.ns_name);
+      "const std::string %sstring_data_(%sdata_, %sdata_ + sizeof(%sdata_));\n",
+      namespace_prefix.c_str(),
+      namespace_prefix.c_str(),
+      namespace_prefix.c_str(),
+      namespace_prefix.c_str());
+  fprintf(fp, "}  // namespace\n");
+  fprintf(fp, "const unsigned char* %s::data = %sdata_;\n", opts.ns_name, namespace_prefix.c_str());
   fprintf(fp, "const size_t %s::data_size = %zu;\n", opts.ns_name, data_len);
-  fprintf(fp, "const std::string& %s::GetBundledSchemaData() { return string_data_; }\n", opts.ns_name);
+  fprintf(
+      fp,
+      "const std::string& %s::GetBundledSchemaData() { return %sstring_data_; }\n",
+      opts.ns_name,
+      namespace_prefix.c_str());
 }
 
 int ReadBundledSchema() {
@@ -216,13 +234,23 @@ int WriteBundledSchema() {
 
   flatbuffers::FlatBufferBuilder builder(1024);
 
+  std::list<std::string> bundled_names;
   std::vector<flatbuffers::Offset<BundledSchemaMap>> vector_map;
-  if (!CreateBinarySchemaBundle(&builder, bfbs_filenames, &vector_map)) {
+  if (!CreateBinarySchemaBundle(&builder, bfbs_filenames, &vector_map, &bundled_names)) {
     fprintf(stderr, "Unable to bundle schema bfbs files\n");
     return EXIT_FAILURE;
   }
 
-  auto title = "Bundled schema tables";
+  if (std::find(bundled_names.begin(), bundled_names.end(), main_root_name) == bundled_names.end()) {
+    fprintf(stderr, "The main root name must match one of the bundled schema names\n");
+    fprintf(stderr, "  main root name:%s\n", main_root_name);
+    for (auto name : bundled_names) {
+      fprintf(stderr, "  bundled schema name:%s\n", name.c_str());
+    }
+    return EXIT_FAILURE;
+  }
+
+  const char* title = opts.title;
   auto schema_offset = CreateBundledSchemaDirect(builder, title, main_root_name, &vector_map);
   builder.Finish(schema_offset);
 
@@ -265,7 +293,7 @@ int Usage(int argc, char** argv) {
 void ParseArgs(int argc, char** argv) {
   int opt;
   int parsed_cnt = 1;
-  while ((opt = getopt(argc, argv, "f:g:m:n:rvw")) != -1) {
+  while ((opt = getopt(argc, argv, "f:g:m:n:rt:vw")) != -1) {
     parsed_cnt++;
     switch (opt) {
       case 'f':
@@ -289,6 +317,10 @@ void ParseArgs(int argc, char** argv) {
         break;
       case 'w':
         opts.write = true;
+        break;
+      case 't':
+        opts.title = optarg;
+        parsed_cnt++;
         break;
       case 'v':
         opts.verbose = true;

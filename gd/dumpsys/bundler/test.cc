@@ -14,6 +14,7 @@
  * limitations under the License.
  */
 #include <gtest/gtest.h>
+#include <list>
 #include <vector>
 
 #include "bundler.h"
@@ -25,7 +26,8 @@ bool VerifyBinarySchema(const std::vector<const uint8_t>& raw_schema);
 bool CreateBinarySchemaBundle(
     flatbuffers::FlatBufferBuilder* builder,
     const std::vector<std::string>& filenames,
-    std::vector<flatbuffers::Offset<bluetooth::dumpsys::BundledSchemaMap>>* vector_map);
+    std::vector<flatbuffers::Offset<bluetooth::dumpsys::BundledSchemaMap>>* vector_map,
+    std::list<std::string>* bundled_names);
 int WriteHeaderFile(FILE* fp, const uint8_t* data, size_t data_len);
 
 class BundlerTest : public ::testing::Test {
@@ -57,7 +59,8 @@ TEST_F(BundlerTest, CreateBinarySchemaBundle) {
   flatbuffers::FlatBufferBuilder builder;
   std::vector<std::string> filenames;
   std::vector<flatbuffers::Offset<bluetooth::dumpsys::BundledSchemaMap>> vector_map;
-  ASSERT_TRUE(CreateBinarySchemaBundle(&builder, filenames, &vector_map));
+  std::list<std::string> bundled_names;
+  ASSERT_TRUE(CreateBinarySchemaBundle(&builder, filenames, &vector_map, &bundled_names));
   ASSERT_EQ(0, vector_map.size());
 }
 
