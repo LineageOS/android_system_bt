@@ -40,7 +40,7 @@ class FacadeConfigurationApi {
 
   void SetIoCapability(hci::IoCapability io_capability);
   void SetAuthenticationRequirements(hci::AuthenticationRequirements authentication_requirement);
-  void SetOobData(hci::OobDataPresent oob_present);
+  void SetOobDataPresent(hci::OobDataPresent oob_present);
   void EnforceSecurityPolicy(
       hci::AddressWithType remote,
       l2cap::classic::SecurityPolicy policy,
@@ -48,6 +48,12 @@ class FacadeConfigurationApi {
 
   void SetLeIoCapability(security::IoCapability io_capability);
   void SetLeAuthRequirements(uint8_t auth_req);
+  void SetLeOobDataPresent(OobDataFlag oob_present);
+  void GetOutOfBandData(std::array<uint8_t, 16>* le_sc_confirmation_value, std::array<uint8_t, 16>* le_sc_random_value);
+  void SetOutOfBandData(
+      hci::AddressWithType remote_address,
+      std::array<uint8_t, 16> le_sc_confirmation_value,
+      std::array<uint8_t, 16> le_sc_random_value);
 
  protected:
   FacadeConfigurationApi(os::Handler* security_handler, internal::SecurityManagerImpl* security_manager_impl)
