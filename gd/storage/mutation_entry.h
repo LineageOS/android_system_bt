@@ -16,12 +16,60 @@
 #pragma once
 
 #include <string>
+#include <type_traits>
+
+#include "common/strings.h"
+#include "common/type_helper.h"
+#include "storage/serializable.h"
 
 namespace bluetooth {
 namespace storage {
 
 class MutationEntry {
  public:
+  template <typename T, typename std::enable_if<std::is_integral_v<T>, int>::type = 0>
+  static MutationEntry Set(std::string section_param, std::string property_param, T value_param) {
+    return MutationEntry(true, std::move(section_param), std::move(property_param), std::to_string(value_param));
+  }
+
+  template <typename T, typename std::enable_if<std::is_enum_v<T>, int>::type = 0>
+  static MutationEntry Set(std::string section_param, std::string property_param, T value_param) {
+    using EnumUnderlyingType = typename std::underlying_type_t<T>;
+    return MutationEntry::Set<EnumUnderlyingType>(
+        std::move(section_param), std::move(property_param), static_cast<EnumUnderlyingType>(value_param));
+  }
+
+  template <typename T, typename std::enable_if<std::is_same_v<T, bool>, int>::type = 0>
+  static MutationEntry Set(std::string section_param, std::string property_param, T value_param) {
+    return MutationEntry(true, std::move(section_param), std::move(property_param), common::ToString(value_param));
+  }
+
+  template <typename T, typename std::enable_if<std::is_same_v<T, std::string>, int>::type = 0>
+  static MutationEntry Set(std::string section_param, std::string property_param, T value_param) {
+    return MutationEntry(true, std::move(section_param), std::move(property_param), std::move(value_param));
+  }
+
+  template <typename T, typename std::enable_if<std::is_base_of_v<Serializable<T>, T>, int>::type = 0>
+  static MutationEntry Set(std::string section_param, std::string property_param, const T& value_param) {
+    return MutationEntry(true, std::move(section_param), std::move(property_param), value_param.ToLegacyConfigString());
+  }
+
+  template <
+      typename T,
+      typename std::enable_if<
+          bluetooth::common::is_specialization_of<T, std::vector>::value &&
+              std::is_base_of_v<Serializable<typename T::value_type>, typename T::value_type>,
+          int>::type = 0>
+  static MutationEntry Set(std::string section_param, std::string property_param, const T& value_param) {
+    std::vector<std::string> str_values;
+    str_values.reserve(value_param.size());
+    for (const auto& v : value_param) {
+      str_values.push_back(v.ToLegacyConfigString());
+    }
+    return MutationEntry(
+        true, std::move(section_param), std::move(property_param), common::StringJoin(str_values, " "));
+  }
+
   static MutationEntry Set(std::string section_param, std::string property_param, std::string value_param) {
     return MutationEntry(true, std::move(section_param), std::move(property_param), std::move(value_param));
   }

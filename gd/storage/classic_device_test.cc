@@ -1,0 +1,64 @@
+/*
+ * Copyright 2020 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include "storage/device.h"
+
+#include <gmock/gmock.h>
+#include <gtest/gtest.h>
+
+#include "storage/classic_device.h"
+#include "storage/mutation.h"
+
+namespace testing {
+
+using bluetooth::hci::Address;
+using bluetooth::hci::DeviceType;
+using bluetooth::hci::LinkKey;
+using bluetooth::storage::ClassicDevice;
+using bluetooth::storage::ConfigCache;
+using bluetooth::storage::Device;
+using bluetooth::storage::Mutation;
+
+TEST(ClassicDeviceTest, create_new_le_device) {
+  ConfigCache config(10);
+  bluetooth::hci::Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
+  ClassicDevice device(&config, address.ToString());
+  ASSERT_FALSE(device.GetLinkKey());
+}
+
+TEST(ClassicDeviceTest, set_property) {
+  ConfigCache config(10);
+  Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
+  ClassicDevice device(&config, address.ToString());
+  ASSERT_FALSE(device.GetLinkKey());
+  Mutation mutation(&config);
+  mutation.Add(device.SetLinkKey(LinkKey::kExample));
+  mutation.Commit();
+  ASSERT_THAT(device.GetLinkKey(), Optional(Eq(LinkKey::kExample)));
+}
+
+TEST(ClassicDeviceTest, equality_test) {
+  ConfigCache config(10);
+  bluetooth::hci::Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
+  ClassicDevice device1(&config, address.ToString());
+  ClassicDevice device2(&config, address.ToString());
+  ASSERT_EQ(device1, device2);
+  bluetooth::hci::Address address3 = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x07}};
+  ClassicDevice device3(&config, address3.ToString());
+  ASSERT_NE(device1, device3);
+}
+
+}  // namespace testing

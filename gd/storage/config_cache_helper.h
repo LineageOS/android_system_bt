@@ -18,8 +18,15 @@
 #include <cstdint>
 #include <limits>
 #include <optional>
+#include <type_traits>
 
+#include "common/numbers.h"
+#include "common/strings.h"
+#include "common/type_helper.h"
+#include "hci/enum_helper.h"
 #include "storage/config_cache.h"
+#include "storage/mutation_entry.h"
+#include "storage/serializable.h"
 
 namespace bluetooth {
 namespace storage {
@@ -47,6 +54,87 @@ class ConfigCacheHelper {
   virtual std::optional<int> GetInt(const std::string& section, const std::string& property) const;
   virtual void SetBin(const std::string& section, const std::string& property, const std::vector<uint8_t>& value);
   virtual std::optional<std::vector<uint8_t>> GetBin(const std::string& section, const std::string& property) const;
+
+  template <typename T, typename std::enable_if<std::is_signed_v<T> && std::is_integral_v<T>, int>::type = 0>
+  std::optional<T> Get(const std::string& section, const std::string& property) {
+    auto value = GetInt64(section, property);
+    if (!value) {
+      return std::nullopt;
+    }
+    if (!common::IsNumberInNumericLimits<T>(*value)) {
+      return std::nullopt;
+    }
+    return static_cast<T>(*value);
+  }
+
+  template <typename T, typename std::enable_if<std::is_unsigned_v<T> && std::is_integral_v<T>, int>::type = 0>
+  std::optional<T> Get(const std::string& section, const std::string& property) {
+    auto value = GetUint64(section, property);
+    if (!value) {
+      return std::nullopt;
+    }
+    if (!common::IsNumberInNumericLimits<T>(*value)) {
+      return std::nullopt;
+    }
+    return static_cast<T>(*value);
+  }
+
+  template <typename T, typename std::enable_if<std::is_same_v<T, std::string>, int>::type = 0>
+  std::optional<T> Get(const std::string& section, const std::string& property) {
+    return config_cache_.GetProperty(section, property);
+  }
+
+  template <typename T, typename std::enable_if<std::is_same_v<T, std::vector<uint8_t>>, int>::type = 0>
+  std::optional<T> Get(const std::string& section, const std::string& property) {
+    return GetBin(section, property);
+  }
+
+  template <typename T, typename std::enable_if<std::is_same_v<T, bool>, int>::type = 0>
+  std::optional<T> Get(const std::string& section, const std::string& property) {
+    return GetBool(section, property);
+  }
+
+  template <typename T, typename std::enable_if<std::is_base_of_v<Serializable<T>, T>, int>::type = 0>
+  std::optional<T> Get(const std::string& section, const std::string& property) {
+    auto value = config_cache_.GetProperty(section, property);
+    if (!value) {
+      return std::nullopt;
+    }
+    return T::FromLegacyConfigString(*value);
+  }
+
+  template <typename T, typename std::enable_if<std::is_enum_v<T>, int>::type = 0>
+  std::optional<T> Get(const std::string& section, const std::string& property) {
+    auto value = config_cache_.GetProperty(section, property);
+    if (!value) {
+      return std::nullopt;
+    }
+    return bluetooth::FromLegacyConfigString<T>(*value);
+  }
+
+  template <
+      typename T,
+      typename std::enable_if<
+          bluetooth::common::is_specialization_of<T, std::vector>::value &&
+              std::is_base_of_v<Serializable<typename T::value_type>, typename T::value_type>,
+          int>::type = 0>
+  std::optional<T> Get(const std::string& section, const std::string& property) {
+    auto value = config_cache_.GetProperty(section, property);
+    if (!value) {
+      return std::nullopt;
+    }
+    auto values = common::StringSplit(*value, " ");
+    T result;
+    result.reserve(values.size());
+    for (const auto& str : values) {
+      auto v = T::value_type::FromLegacyConfigString(str);
+      if (!v) {
+        return std::nullopt;
+      }
+      result.push_back(*v);
+    }
+    return result;
+  }
 
  private:
   ConfigCache& config_cache_;

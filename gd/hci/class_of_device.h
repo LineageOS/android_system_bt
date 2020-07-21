@@ -78,7 +78,7 @@ class ClassOfDevice final : public packet::CustomFieldFixedSizeInterface<ClassOf
 
   // Converts uint32_t encoded class of device to ClassOfDevice object
   // uint32_t encoding:
-  //     uint8_t(cod[0]) | uint8_t(cod[1]) | uint8_t(cod[2])
+  //     <high> uint8_t(cod[0]) | uint8_t(cod[1]) | uint8_t(cod[2]) <low>
   // Only used in legacy stack device config
   static std::optional<ClassOfDevice> FromUint32Legacy(uint32_t cod_int);
   uint32_t ToUint32Legacy() const;

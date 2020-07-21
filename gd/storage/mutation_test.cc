@@ -33,15 +33,25 @@ TEST(MutationTest, simple_sequence_test) {
   config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "C", "D");
   config.SetProperty("CC:DD:EE:FF:00:11", "LinkKey", "AABBAABBCCDDEE");
-  Mutation mutation(config);
+  Mutation mutation(&config);
   mutation.Add(MutationEntry::Set("AA:BB:CC:DD:EE:FF", "LinkKey", "CCDDEEFFGG"));
   mutation.Add(MutationEntry::Remove("AA:BB:CC:DD:EE:FF", "LinkKey"));
   mutation.Commit();
-  EXPECT_THAT(config.GetPersistentDevices(), ElementsAre("CC:DD:EE:FF:00:11"));
-  Mutation mutation2(config);
+  ASSERT_THAT(config.GetPersistentDevices(), ElementsAre("CC:DD:EE:FF:00:11"));
+  Mutation mutation2(&config);
   mutation2.Add(MutationEntry::Set("AA:BB:CC:DD:EE:FF", "LinkKey", "CCDDEEFFGG"));
   mutation2.Commit();
-  EXPECT_THAT(config.GetPersistentDevices(), ElementsAre("CC:DD:EE:FF:00:11", "AA:BB:CC:DD:EE:FF"));
+  ASSERT_THAT(config.GetPersistentDevices(), ElementsAre("CC:DD:EE:FF:00:11", "AA:BB:CC:DD:EE:FF"));
+}
+
+TEST(MutationTest, add_and_remove_cancel_each_other) {
+  ConfigCache config(100);
+  ASSERT_FALSE(config.HasSection("A"));
+  Mutation mutation(&config);
+  mutation.Add(MutationEntry::Set("A", "B", "C"));
+  mutation.Add(MutationEntry::Remove("A", "B"));
+  mutation.Commit();
+  ASSERT_FALSE(config.HasSection("A"));
 }
 
 }  // namespace testing
