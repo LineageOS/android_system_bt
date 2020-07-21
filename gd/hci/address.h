@@ -21,14 +21,16 @@
 #include <array>
 #include <cstring>
 #include <initializer_list>
+#include <optional>
 #include <string>
 
 #include "packet/custom_field_fixed_size_interface.h"
+#include "storage/serializable.h"
 
 namespace bluetooth {
 namespace hci {
 
-class Address final : public packet::CustomFieldFixedSizeInterface<Address> {
+class Address final : public packet::CustomFieldFixedSizeInterface<Address>, public storage::Serializable<Address> {
  public:
   static constexpr size_t kLength = 6;
 
@@ -45,6 +47,12 @@ class Address final : public packet::CustomFieldFixedSizeInterface<Address> {
   inline const uint8_t* data() const override {
     return address.data();
   }
+
+  // storage::Serializable methods
+  std::string ToString() const override;
+  static std::optional<Address> FromString(const std::string& from);
+  std::string ToLegacyConfigString() const override;
+  static std::optional<Address> FromLegacyConfigString(const std::string& str);
 
   bool operator<(const Address& rhs) const {
     return address < rhs.address;
@@ -68,8 +76,6 @@ class Address final : public packet::CustomFieldFixedSizeInterface<Address> {
   bool IsEmpty() const {
     return *this == kEmpty;
   }
-
-  std::string ToString() const;
 
   // Converts |string| to Address and places it in |to|. If |from| does
   // not represent a Bluetooth address, |to| is not modified and this function

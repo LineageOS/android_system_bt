@@ -16,13 +16,12 @@
  *
  ******************************************************************************/
 
-#include "common/link_key.h"
-
 #include <gtest/gtest.h>
 
+#include "hci/link_key.h"
 #include "os/log.h"
 
-using bluetooth::common::LinkKey;
+using bluetooth::hci::LinkKey;
 
 static const char* test_link_key = "4c68384139f574d836bcf34e9dfb01bf\0";
 
@@ -38,11 +37,11 @@ TEST(LinkKeyUnittest, test_constructor_array) {
 }
 
 TEST(LinkKeyUnittest, test_from_str) {
-  LinkKey link_key;
-  LinkKey::FromString(test_link_key, link_key);
+  auto link_key = LinkKey::FromString(test_link_key);
+  ASSERT_TRUE(link_key);
 
   for (int i = 0; i < LinkKey::kLength; i++) {
-    ASSERT_EQ(LinkKey::kExample.link_key[i], link_key.link_key[i]);
+    ASSERT_EQ(LinkKey::kExample.link_key[i], link_key->link_key[i]);
   }
 }
 
