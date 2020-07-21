@@ -23,13 +23,16 @@ namespace hci {
 const LinkKey LinkKey::kExample{
     {0x4C, 0x68, 0x38, 0x41, 0x39, 0xf5, 0x74, 0xd8, 0x36, 0xbc, 0xf3, 0x4e, 0x9d, 0xfb, 0x01, 0xbf}};
 
-LinkKey::LinkKey(const uint8_t (&data)[kLength]) {
-  std::copy(data, data + kLength, link_key);
+LinkKey::LinkKey(const uint8_t (&d)[kLength]) {
+  std::copy(d, d + kLength, data());
+}
+
+LinkKey::LinkKey(std::initializer_list<uint8_t> l) {
+  std::copy(l.begin(), std::min(l.begin() + kLength, l.end()), data());
 }
 
 std::string LinkKey::ToString() const {
-  std::vector<uint8_t> vec;
-  vec.assign(link_key, link_key + sizeof(link_key));
+  std::vector<uint8_t> vec(link_key.begin(), link_key.end());
   return common::ToHexString(vec);
 }
 
@@ -42,7 +45,7 @@ std::optional<LinkKey> LinkKey::FromString(const std::string& from) {
     return std::nullopt;
   }
   LinkKey new_link_key = {};
-  std::copy(vec->data(), vec->data() + vec->size(), new_link_key.link_key);
+  std::copy(vec->data(), vec->data() + vec->size(), new_link_key.data());
   return new_link_key;
 }
 

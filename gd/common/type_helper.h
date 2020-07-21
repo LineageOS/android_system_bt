@@ -13,37 +13,19 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
+
 #pragma once
 
-#include <queue>
-
-#include "os/log.h"
-#include "storage/config_cache.h"
-#include "storage/mutation_entry.h"
+#include <type_traits>
 
 namespace bluetooth {
-namespace storage {
+namespace common {
 
-class Mutation {
- public:
-  explicit Mutation(ConfigCache* config_cache) : config_cache_(config_cache) {
-    ASSERT(config_cache_ != nullptr);
-  }
+// Check whether T is a specialization of TemplateType
+template <typename T, template <typename...> class TemplateType>
+struct is_specialization_of : std::false_type {};
+template <template <typename...> class TemplateType, typename... Args>
+struct is_specialization_of<TemplateType<Args...>, TemplateType> : std::true_type {};
 
-  void Add(MutationEntry entry) {
-    entries_.emplace(std::move(entry));
-  }
-
-  void Commit() {
-    config_cache_->Commit(*this);
-  }
-
-  friend ConfigCache;
-
- private:
-  ConfigCache* config_cache_;
-  std::queue<MutationEntry> entries_;
-};
-
-}  // namespace storage
+}  // namespace common
 }  // namespace bluetooth
