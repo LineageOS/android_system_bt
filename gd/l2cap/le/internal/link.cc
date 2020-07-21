@@ -71,8 +71,13 @@ void Link::OnConnectionUpdate(uint16_t connection_interval, uint16_t connection_
     hci::ErrorCode result = hci::ErrorCode::SUCCESS;
     if (connection_interval > update_request_interval_max_ || connection_interval < update_request_interval_min_ ||
         connection_latency != update_request_latency_ || supervision_timeout != update_request_supervision_timeout_) {
+      LOG_INFO("Received connection update complete with different parameters that provided by the Host");
+    }
+
+    if (!CheckConnectionParameters(connection_interval, connection_interval, connection_latency, supervision_timeout)) {
       result = hci::ErrorCode::UNSPECIFIED_ERROR;
     }
+
     on_connection_update_complete(update_request_signal_id_, result);
     update_request_signal_id_ = kInvalidSignalId;
   }
@@ -92,6 +97,28 @@ void Link::UpdateConnectionParameterFromRemote(SignalId signal_id, uint16_t conn
   update_request_interval_max_ = conn_interval_max;
   update_request_latency_ = conn_latency;
   update_request_supervision_timeout_ = supervision_timeout;
+}
+
+bool Link::CheckConnectionParameters(
+    uint16_t conn_interval_min, uint16_t conn_interval_max, uint16_t conn_latency, uint16_t supervision_timeout) {
+  if (conn_interval_min < 0x0006 || conn_interval_min > 0x0C80 || conn_interval_max < 0x0006 ||
+      conn_interval_max > 0x0C80 || conn_latency > 0x01F3 || supervision_timeout < 0x000A ||
+      supervision_timeout > 0x0C80) {
+    LOG_ERROR("Invalid parameter");
+    return false;
+  }
+
+  // The Maximum interval in milliseconds will be conn_interval_max * 1.25 ms
+  // The Timeout in milliseconds will be expected_supervision_timeout * 10 ms
+  // The Timeout in milliseconds shall be larger than (1 + Latency) * Interval_Max * 2, where Interval_Max is given in
+  // milliseconds.
+  uint32_t supervision_timeout_min = (uint32_t)(1 + conn_latency) * conn_interval_max * 2 + 1;
+  if (supervision_timeout * 8 < supervision_timeout_min || conn_interval_max < conn_interval_min) {
+    LOG_ERROR("Invalid parameter");
+    return false;
+  }
+
+  return true;
 }
 
 void Link::SendConnectionParameterUpdate(uint16_t conn_interval_min, uint16_t conn_interval_max, uint16_t conn_latency,
