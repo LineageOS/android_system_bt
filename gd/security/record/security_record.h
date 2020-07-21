@@ -30,7 +30,7 @@ namespace record {
 
 class SecurityRecord {
  public:
-  explicit SecurityRecord(hci::AddressWithType address) : pseudo_address_(address), pairing_(true) {}
+  explicit SecurityRecord(hci::AddressWithType address) : pseudo_address_(address) {}
 
   SecurityRecord& operator=(const SecurityRecord& other) = default;
 
