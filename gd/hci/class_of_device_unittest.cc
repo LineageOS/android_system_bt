@@ -16,6 +16,7 @@
  *
  ******************************************************************************/
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
 #include "hci/class_of_device.h"
@@ -76,23 +77,37 @@ TEST(ClassOfDeviceTest, test_copy) {
 }
 
 TEST(ClassOfDeviceTest, IsValid) {
-  EXPECT_FALSE(ClassOfDevice::IsValid(""));
-  EXPECT_FALSE(ClassOfDevice::IsValid("000000"));
-  EXPECT_FALSE(ClassOfDevice::IsValid("00-00-00"));
-  EXPECT_FALSE(ClassOfDevice::IsValid("000-0-0"));
-  EXPECT_TRUE(ClassOfDevice::IsValid("000-0-00"));
-  EXPECT_TRUE(ClassOfDevice::IsValid("ABc-d-00"));
-  EXPECT_TRUE(ClassOfDevice::IsValid("aBc-D-eF"));
+  ASSERT_FALSE(ClassOfDevice::IsValid(""));
+  ASSERT_FALSE(ClassOfDevice::IsValid("000000"));
+  ASSERT_FALSE(ClassOfDevice::IsValid("00-00-00"));
+  ASSERT_FALSE(ClassOfDevice::IsValid("000-0-0"));
+  ASSERT_TRUE(ClassOfDevice::IsValid("000-0-00"));
+  ASSERT_TRUE(ClassOfDevice::IsValid("ABc-d-00"));
+  ASSERT_TRUE(ClassOfDevice::IsValid("aBc-D-eF"));
 }
 
 TEST(ClassOfDeviceTest, classOfDeviceFromString) {
   ClassOfDevice cod;
 
-  EXPECT_TRUE(ClassOfDevice::FromString("000-0-00", cod));
+  ASSERT_TRUE(ClassOfDevice::FromString("000-0-00", cod));
   const ClassOfDevice result0 = {{0x00, 0x00, 0x00}};
-  EXPECT_EQ(0, memcmp(cod.data(), result0.data(), ClassOfDevice::kLength));
+  ASSERT_EQ(0, memcmp(cod.data(), result0.data(), ClassOfDevice::kLength));
 
-  EXPECT_TRUE(ClassOfDevice::FromString("ab2-1-4C", cod));
+  ASSERT_TRUE(ClassOfDevice::FromString("ab2-1-4C", cod));
   const ClassOfDevice result1 = {{0x4c, 0x21, 0xab}};
-  EXPECT_EQ(0, memcmp(cod.data(), result1.data(), ClassOfDevice::kLength));
+  ASSERT_EQ(0, memcmp(cod.data(), result1.data(), ClassOfDevice::kLength));
+}
+
+TEST(ClassOfDeviceTest, classOfDeviceFromUint32Legacy) {
+  auto cod = ClassOfDevice::FromUint32Legacy(0);
+  ASSERT_TRUE(cod);
+  ASSERT_THAT(cod->cod, testing::ElementsAre(0x00, 0x00, 0x00));
+  ASSERT_EQ(cod->ToUint32Legacy(), 0);
+
+  cod = ClassOfDevice::FromUint32Legacy(0xab214c);
+  ASSERT_TRUE(cod);
+  ASSERT_THAT(cod->cod, testing::ElementsAre(0xab, 0x21, 0x4c));
+  ASSERT_EQ(cod->ToUint32Legacy(), 0xab214c);
+
+  ASSERT_FALSE(ClassOfDevice::FromUint32Legacy(0x1ab214c));
 }

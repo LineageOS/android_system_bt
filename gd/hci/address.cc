@@ -53,43 +53,60 @@ std::string Address::ToString() const {
   return ss.str();
 }
 
-bool Address::FromString(const std::string& from, Address& to) {
-  Address new_addr{};
+std::string Address::ToLegacyConfigString() const {
+  return ToString();
+}
+
+std::optional<Address> Address::FromLegacyConfigString(const std::string& str) {
+  return FromString(str);
+}
+
+std::optional<Address> Address::FromString(const std::string& from) {
   if (from.length() != 17) {
-    return false;
+    return std::nullopt;
   }
 
+  Address addr{};
   std::istringstream stream(from);
   std::string token;
   int index = 0;
   while (getline(stream, token, ':')) {
     if (index >= 6) {
-      return false;
+      return std::nullopt;
     }
 
     if (token.length() != 2) {
-      return false;
+      return std::nullopt;
     }
 
     char* temp = nullptr;
-    new_addr.address.at(5 - index) = std::strtol(token.c_str(), &temp, 16);
+    addr.address.at(5 - index) = std::strtol(token.c_str(), &temp, 16);
     if (temp == token.c_str()) {
       // string token is empty or has wrong format
-      return false;
+      return std::nullopt;
     }
     if (temp != (token.c_str() + token.size())) {
       // cannot parse whole string
-      return false;
+      return std::nullopt;
     }
 
     index++;
   }
 
   if (index != 6) {
-    return false;
+    return std::nullopt;
   }
 
-  to = new_addr;
+  return addr;
+}
+
+bool Address::FromString(const std::string& from, Address& to) {
+  auto addr = FromString(from);
+  if (!addr) {
+    to = {};
+    return false;
+  }
+  to = std::move(*addr);
   return true;
 }
 
@@ -99,8 +116,7 @@ size_t Address::FromOctets(const uint8_t* from) {
 };
 
 bool Address::IsValidAddress(const std::string& address) {
-  Address tmp{};
-  return Address::FromString(address, tmp);
+  return Address::FromString(address).has_value();
 }
 
 }  // namespace hci
