@@ -142,9 +142,11 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status SetOobDataPresent(::grpc::ServerContext* context, const OobDataMessage* request,
-                                   ::google::protobuf::Empty* response) override {
-    security_module_->GetFacadeConfigurationApi()->SetOobData(
+  ::grpc::Status SetOobDataPresent(
+      ::grpc::ServerContext* context,
+      const OobDataPresentMessage* request,
+      ::google::protobuf::Empty* response) override {
+    security_module_->GetFacadeConfigurationApi()->SetOobDataPresent(
         static_cast<hci::OobDataPresent>(request->data_present()));
     return ::grpc::Status::OK;
   }
@@ -162,6 +164,15 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     if (request->reserved_bits()) auth_req |= (((request->reserved_bits()) << 6) & AUTH_REQ_RFU_MASK);
 
     security_module_->GetFacadeConfigurationApi()->SetLeAuthRequirements(auth_req);
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status SetLeOobDataPresent(
+      ::grpc::ServerContext* context,
+      const LeOobDataPresentMessage* request,
+      ::google::protobuf::Empty* response) override {
+    security_module_->GetFacadeConfigurationApi()->SetLeOobDataPresent(
+        static_cast<OobDataFlag>(request->data_present()));
     return ::grpc::Status::OK;
   }
 
@@ -208,6 +219,48 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
         security_handler_->BindOnceOn(this, &SecurityModuleFacadeService::EnforceSecurityPolicyEvent);
     security_module_->GetFacadeConfigurationApi()->EnforceSecurityPolicy(
         peer_with_type, static_cast<l2cap::classic::SecurityPolicy>(request->policy()), std::move(callback));
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status GetOutOfBandData(
+      ::grpc::ServerContext* context,
+      const ::google::protobuf::Empty* request,
+      ::bluetooth::security::OobDataMessage* response) override {
+    std::array<uint8_t, 16> le_sc_c;
+    std::array<uint8_t, 16> le_sc_r;
+    security_module_->GetFacadeConfigurationApi()->GetOutOfBandData(&le_sc_c, &le_sc_r);
+
+    std::string le_sc_c_str(17, '\0');
+    std::copy(le_sc_c.begin(), le_sc_c.end(), le_sc_c_str.data());
+    response->set_le_sc_confirmation_value(le_sc_c_str);
+
+    std::string le_sc_r_str(17, '\0');
+    std::copy(le_sc_r.begin(), le_sc_r.end(), le_sc_r_str.data());
+    response->set_le_sc_random_value(le_sc_r_str);
+
+    return ::grpc::Status::OK;
+  }
+
+  ::grpc::Status SetOutOfBandData(
+      ::grpc::ServerContext* context,
+      const ::bluetooth::security::OobDataMessage* request,
+      ::google::protobuf::Empty* response) override {
+    hci::Address peer;
+    ASSERT(hci::Address::FromString(request->address().address().address(), peer));
+    hci::AddressType peer_type = static_cast<hci::AddressType>(request->address().type());
+    hci::AddressWithType peer_with_type(peer, peer_type);
+
+    // We can't simply iterate till end of string, because we have an empty byte added at the end. We know confirm and
+    // random are fixed size, 16 bytes
+    std::array<uint8_t, 16> le_sc_c;
+    auto req_le_sc_c = request->le_sc_confirmation_value();
+    std::copy(req_le_sc_c.begin(), req_le_sc_c.begin() + 16, le_sc_c.data());
+
+    std::array<uint8_t, 16> le_sc_r;
+    auto req_le_sc_r = request->le_sc_random_value();
+    std::copy(req_le_sc_r.begin(), req_le_sc_r.begin() + 16, le_sc_r.data());
+
+    security_module_->GetFacadeConfigurationApi()->SetOutOfBandData(peer_with_type, le_sc_c, le_sc_r);
     return ::grpc::Status::OK;
   }
 
