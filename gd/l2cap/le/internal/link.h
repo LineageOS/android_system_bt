@@ -84,6 +84,8 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::LeConnectio
   virtual void UpdateConnectionParameterFromRemote(SignalId signal_id, uint16_t conn_interval_min,
                                                    uint16_t conn_interval_max, uint16_t conn_latency,
                                                    uint16_t supervision_timeout);
+  virtual bool CheckConnectionParameters(
+      uint16_t conn_interval_min, uint16_t conn_interval_max, uint16_t conn_latency, uint16_t supervision_timeout);
 
   virtual void SendConnectionParameterUpdate(uint16_t conn_interval_min, uint16_t conn_interval_max,
                                              uint16_t conn_latency, uint16_t supervision_timeout,

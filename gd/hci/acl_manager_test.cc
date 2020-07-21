@@ -572,7 +572,14 @@ class AclManagerWithLeConnectionTest : public AclManagerTest {
     auto first_connection = GetLeConnectionFuture();
 
     test_hci_layer_->IncomingLeMetaEvent(LeConnectionCompleteBuilder::Create(
-        ErrorCode::SUCCESS, handle_, Role::SLAVE, AddressType::PUBLIC_DEVICE_ADDRESS, remote, 0x0100, 0x0010, 0x0011,
+        ErrorCode::SUCCESS,
+        handle_,
+        Role::SLAVE,
+        AddressType::PUBLIC_DEVICE_ADDRESS,
+        remote,
+        0x0100,
+        0x0010,
+        0x0C80,
         ClockAccuracy::PPM_30));
 
     test_hci_layer_->SetCommandFuture();
@@ -715,7 +722,7 @@ TEST_F(AclManagerWithLeConnectionTest, invoke_registered_callback_le_connection_
   uint16_t connection_interval_max = 0x0080;
   uint16_t connection_interval = (connection_interval_max + connection_interval_min) / 2;
   uint16_t connection_latency = 0x0001;
-  uint16_t supervision_timeout = 0x000A;
+  uint16_t supervision_timeout = 0x0A00;
   test_hci_layer_->SetCommandFuture();
   connection_->LeConnectionUpdate(connection_interval_min, connection_interval_max, connection_latency,
                                   supervision_timeout, 0x10, 0x20);
