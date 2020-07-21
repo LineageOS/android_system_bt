@@ -25,6 +25,8 @@
 #include <sstream>
 #include <vector>
 
+#include "common/numbers.h"
+#include "common/strings.h"
 #include "os/log.h"
 
 namespace bluetooth {
@@ -44,46 +46,87 @@ std::string ClassOfDevice::ToString() const {
   return str;
 }
 
-bool ClassOfDevice::FromString(const std::string& from, ClassOfDevice& to) {
-  ClassOfDevice new_cod{};
-  if (from.length() != 8) return false;
+std::string ClassOfDevice::ToLegacyConfigString() const {
+  return std::to_string(ToUint32Legacy());
+}
 
-  std::istringstream stream(from);
+std::optional<ClassOfDevice> ClassOfDevice::FromString(const std::string& str) {
+  if (str.length() != 8) {
+    return std::nullopt;
+  }
+
+  std::istringstream stream(str);
   std::string token;
   int index = 0;
   uint16_t values[3];
 
+  ClassOfDevice new_cod{};
   while (getline(stream, token, '-')) {
     if (index >= 3) {
-      return false;
+      return std::nullopt;
     }
 
     if (index == 0 && token.length() != 3) {
-      return false;
+      return std::nullopt;
     } else if (index == 1 && token.length() != 1) {
-      return false;
+      return std::nullopt;
     } else if (index == 2 && token.length() != 2) {
-      return false;
+      return std::nullopt;
     }
     char* temp = nullptr;
     values[index] = std::strtol(token.c_str(), &temp, 16);
     if (*temp != '\0') {
-      return false;
+      return std::nullopt;
     }
 
     index++;
   }
 
   if (index != 3) {
-    return false;
+    return std::nullopt;
   }
 
   new_cod.cod[0] = values[2];
   new_cod.cod[1] = values[1] | ((values[0] & 0xf) << 4);
   new_cod.cod[2] = values[0] >> 4;
 
-  to = new_cod;
+  return new_cod;
+}
+
+bool ClassOfDevice::FromString(const std::string& from, ClassOfDevice& to) {
+  auto new_cod = FromString(from);
+  if (!new_cod) {
+    to = {};
+    return false;
+  }
+  to = std::move(*new_cod);
   return true;
+}
+
+std::optional<ClassOfDevice> ClassOfDevice::FromUint32Legacy(uint32_t cod_int) {
+  if (cod_int != 0 && (cod_int >> 24) != 0) {
+    return std::nullopt;
+  }
+  ClassOfDevice result = {};
+  result.cod[2] = static_cast<uint8_t>(cod_int);
+  result.cod[1] = static_cast<uint8_t>(cod_int >> 8);
+  result.cod[0] = static_cast<uint8_t>(cod_int >> 16);
+  return result;
+}
+
+std::optional<ClassOfDevice> ClassOfDevice::FromLegacyConfigString(const std::string& str) {
+  auto num_64bit = common::Uint64FromString(str);
+  if (!num_64bit) {
+    return std::nullopt;
+  }
+  if (!common::IsNumberInNumericLimits<uint32_t>(*num_64bit)) {
+    return std::nullopt;
+  }
+  return FromUint32Legacy(static_cast<uint32_t>(*num_64bit));
+}
+
+uint32_t ClassOfDevice::ToUint32Legacy() const {
+  return (cod[2]) | (cod[1] << 8) | (cod[0] << 16);
 }
 
 size_t ClassOfDevice::FromOctets(const uint8_t* from) {
@@ -92,8 +135,7 @@ size_t ClassOfDevice::FromOctets(const uint8_t* from) {
 };
 
 bool ClassOfDevice::IsValid(const std::string& cod) {
-  ClassOfDevice tmp{};
-  return ClassOfDevice::FromString(cod, tmp);
+  return ClassOfDevice::FromString(cod).has_value();
 }
 }  // namespace hci
 }  // namespace bluetooth
