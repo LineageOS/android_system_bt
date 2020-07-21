@@ -17,6 +17,7 @@
 from contextlib import ExitStack
 import concurrent.futures
 import logging
+import re
 import subprocess
 from cert.os_utils import TerminalColor
 
