@@ -20,6 +20,7 @@
 #include <sstream>
 #include <utility>
 
+#include "hci/enum_helper.h"
 #include "storage/mutation.h"
 
 namespace {
@@ -41,6 +42,12 @@ namespace storage {
 
 const std::unordered_set<std::string_view> kLinkKeyPropertyNames = {
     "LinkKey", "LE_KEY_PENC", "LE_KEY_PID", "LE_KEY_PCSRK", "LE_KEY_LENC", "LE_KEY_LCSRK"};
+
+const std::unordered_set<std::string_view> kLePropertyNames = {
+    "LE_KEY_PENC", "LE_KEY_PID", "LE_KEY_PCSRK", "LE_KEY_LENC", "LE_KEY_LCSRK"};
+
+const std::unordered_set<std::string_view> kClassicPropertyNames = {
+    "LinkKey", "SdpDiMaufacturer", "SdpDiModel", "SdpDiHardwareVersion", "SdpDiVendorSource"};
 
 const std::string ConfigCache::kDefaultSectionName = "Global";
 
@@ -304,6 +311,93 @@ std::string ConfigCache::SerializeToLegacyFormat() const {
     }
   }
   return serialized.str();
+}
+
+std::vector<ConfigCache::SectionAndPropertyValue> ConfigCache::GetSectionNamesWithProperty(
+    const std::string& property) const {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  std::vector<SectionAndPropertyValue> result;
+  for (auto* config_section : {&information_sections_, &persistent_devices_}) {
+    for (const auto& elem : *config_section) {
+      auto it = elem.second.find(property);
+      if (it != elem.second.end()) {
+        result.emplace_back(SectionAndPropertyValue{.section = elem.first, .property = it->second});
+        continue;
+      }
+    }
+  }
+  for (const auto& elem : temporary_devices_) {
+    auto it = elem.second.find(property);
+    if (it != elem.second.end()) {
+      result.emplace_back(SectionAndPropertyValue{.section = elem.first, .property = it->second});
+      continue;
+    }
+  }
+  return result;
+}
+
+namespace {
+
+bool FixDeviceTypeInconsistencyInSection(
+    const std::string& section_name, common::ListMap<std::string, std::string>& device_section_entries) {
+  if (!hci::Address::IsValidAddress(section_name)) {
+    return false;
+  }
+  bool is_le = false;
+  bool is_classic = false;
+  // default
+  hci::DeviceType device_type = hci::DeviceType::BR_EDR;
+  for (const auto& entry : device_section_entries) {
+    if (kLePropertyNames.find(entry.first) != kLePropertyNames.end()) {
+      is_le = true;
+    }
+    if (kClassicPropertyNames.find(entry.first) != kClassicPropertyNames.end()) {
+      is_classic = true;
+    }
+  }
+  if (is_classic && is_le) {
+    device_type = hci::DeviceType::DUAL;
+  } else if (is_classic) {
+    device_type = hci::DeviceType::BR_EDR;
+  } else if (is_le) {
+    device_type = hci::DeviceType::LE;
+  }
+  bool inconsistent = true;
+  std::string device_type_str = std::to_string(device_type);
+  auto it = device_section_entries.find("DevType");
+  if (it != device_section_entries.end()) {
+    inconsistent = device_type_str != it->second;
+    if (inconsistent) {
+      it->second = std::move(device_type_str);
+    }
+  } else {
+    device_section_entries.insert_or_assign("DevType", std::move(device_type_str));
+  }
+  return inconsistent;
+}
+
+}  // namespace
+
+bool ConfigCache::FixDeviceTypeInconsistencies() {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  bool persistent_device_changed = false;
+  for (auto* config_section : {&information_sections_, &persistent_devices_}) {
+    for (auto& elem : *config_section) {
+      if (FixDeviceTypeInconsistencyInSection(elem.first, elem.second)) {
+        persistent_device_changed = true;
+      }
+    }
+  }
+  bool temp_device_changed = false;
+  for (auto& elem : temporary_devices_) {
+    if (FixDeviceTypeInconsistencyInSection(elem.first, elem.second)) {
+      temp_device_changed = true;
+    }
+  }
+  if (persistent_device_changed) {
+    PersistentConfigChangedCallback();
+  }
+  return persistent_device_changed || temp_device_changed;
 }
 
 }  // namespace storage
