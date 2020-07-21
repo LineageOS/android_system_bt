@@ -1,12 +1,14 @@
 filegroup {
     name: "BluetoothDumpsysSources",
     srcs: [
+        "internal/filter_internal.cc",
     ],
 }
 
 filegroup {
     name: "BluetoothDumpsysTestSources",
     srcs: [
+        "internal/filter_internal_test.cc",
     ],
 }
 
