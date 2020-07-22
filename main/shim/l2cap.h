@@ -60,7 +60,8 @@ class PsmManager {
 class L2cap {
  public:
   uint16_t RegisterService(uint16_t psm, const tL2CAP_APPL_INFO* callbacks,
-                           bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info);
+                           bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
+                           uint16_t required_mtu);
   void UnregisterService(uint16_t psm);
 
   uint16_t CreateConnection(uint16_t psm, const RawAddress& raw_address);
