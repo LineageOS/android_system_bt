@@ -40,7 +40,6 @@ extern void btm_ble_refresh_raddr_timer_timeout(void* data);
 extern void btm_ble_process_adv_pkt(uint8_t len, uint8_t* p);
 extern void btm_ble_process_phy_update_pkt(uint8_t len, uint8_t* p);
 extern void btm_ble_process_ext_adv_pkt(uint8_t len, uint8_t* p);
-extern void btm_ble_proc_scan_rsp_rpt(uint8_t* p);
 extern tBTM_STATUS btm_ble_read_remote_name(const RawAddress& remote_bda,
                                             tBTM_CMPL_CB* p_cb);
 extern bool btm_ble_cancel_remote_name(const RawAddress& remote_bda);
@@ -65,8 +64,6 @@ extern void btm_ble_connected(const RawAddress& bda, uint16_t handle,
 extern void btm_ble_read_remote_features_complete(uint8_t* p);
 extern void btm_ble_write_adv_enable_complete(uint8_t* p);
 extern void btm_ble_conn_complete(uint8_t* p, uint16_t evt_len, bool enhanced);
-extern void btm_read_ble_local_supported_states_complete(uint8_t* p,
-                                                         uint16_t evt_len);
 extern tBTM_BLE_CONN_ST btm_ble_get_conn_st(void);
 extern tBTM_STATUS btm_ble_start_adv(void);
 extern tBTM_STATUS btm_ble_stop_adv(void);
@@ -116,7 +113,6 @@ extern uint8_t btm_ble_read_sec_key_size(const RawAddress& bd_addr);
 
 /* white list function */
 extern void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy);
-extern void btm_update_adv_filter_policy(tBTM_BLE_AFP adv_policy);
 extern void btm_ble_white_list_init(uint8_t white_list_size);
 
 /* background connection function */
@@ -134,8 +130,7 @@ extern void btm_ble_bgconn_cancel_if_disconnected(const RawAddress& bd_addr);
 /* BLE address management */
 extern void btm_gen_resolvable_private_addr(
     base::Callback<void(const RawAddress& rpa)> cb);
-extern void btm_gen_non_resolvable_private_addr(tBTM_BLE_ADDR_CBACK* p_cback,
-                                                void* p);
+
 extern tBTM_SEC_DEV_REC* btm_ble_resolve_random_addr(
     const RawAddress& random_bda);
 extern void btm_gen_resolve_paddr_low(const RawAddress& address);
@@ -160,8 +155,6 @@ extern void btm_ble_remove_resolving_list_entry_complete(uint8_t* p,
 extern void btm_ble_add_resolving_list_entry_complete(uint8_t* p,
                                                       uint16_t evt_len);
 extern void btm_ble_clear_resolving_list_complete(uint8_t* p, uint16_t evt_len);
-extern void btm_read_ble_resolving_list_size_complete(uint8_t* p,
-                                                      uint16_t evt_len);
 extern void btm_ble_enable_resolving_list(uint8_t);
 extern bool btm_ble_disable_resolving_list(uint8_t rl_mask, bool to_resume);
 extern void btm_ble_enable_resolving_list_for_platform(uint8_t rl_mask);
@@ -170,7 +163,6 @@ extern void btm_ble_resolving_list_cleanup(void);
 #endif
 
 extern void btm_ble_adv_init(void);
-extern void* btm_ble_multi_adv_get_ref(uint8_t inst_id);
 extern void btm_ble_multi_adv_cleanup(void);
 extern void btm_ble_batchscan_init(void);
 extern void btm_ble_batchscan_cleanup(void);
