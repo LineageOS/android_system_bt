@@ -182,7 +182,7 @@ function parse_options {
 }
 
 function soong_build {
-    $ANDROID_BUILD_TOP/build/soong/soong_ui.bash --build-mode --"all-modules" --dir="${ANDROID_BUILD_TOP}/system/bt/gd" dist bluetooth_stack_with_facade
+    $ANDROID_BUILD_TOP/build/soong/soong_ui.bash --build-mode --"modules-in-a-dir" --dir="${ANDROID_BUILD_TOP}/system/bt/gd" dist bluetooth_stack_with_facade
     if [[ $? -ne 0 ]] ; then
         echo "Failed to build bluetooth_stack_with_facade"
         exit 1
