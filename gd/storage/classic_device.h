@@ -63,6 +63,12 @@ class ClassicDevice {
   // Get the parent device
   Device Parent();
 
+  // For logging purpose only, you can't get a ClassicDevice object from parsing a std::string
+  std::string ToLogString();
+
+  // Get address of this classic device, it must exist
+  hci::Address GetAddress();
+
  private:
   ConfigCache* config_;
   std::string section_;
