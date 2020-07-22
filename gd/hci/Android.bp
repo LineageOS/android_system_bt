@@ -34,7 +34,6 @@ filegroup {
         "le_address_manager_test.cc",
         "le_advertising_manager_test.cc",
         "le_scanning_manager_test.cc",
-        "link_key_unittest.cc",
         "uuid_unittest.cc",
     ],
 }
