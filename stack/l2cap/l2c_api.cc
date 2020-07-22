@@ -1881,7 +1881,7 @@ uint16_t L2CA_FlushChannel(uint16_t lcid, uint16_t num_to_flush) {
     num_flushed2++;
   }
 
-  /* If app needs to track all packets, call him */
+  /* If app needs to track all packets, call it */
   if ((p_ccb->p_rcb) && (p_ccb->p_rcb->api.pL2CA_TxComplete_Cb) &&
       (num_flushed2))
     (*p_ccb->p_rcb->api.pL2CA_TxComplete_Cb)(p_ccb->local_cid, num_flushed2);

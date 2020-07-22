@@ -3611,7 +3611,7 @@ void btm_sec_auth_complete(uint16_t handle, uint8_t status) {
   }
 
   /* Currently we do not notify user if it is a keyboard which connects */
-  /* User probably Disabled the keyboard while it was asleap.  Let her try */
+  /* User probably Disabled the keyboard while it was asleap.  Let them try */
   if (btm_cb.api.p_auth_complete_callback) {
     /* report the suthentication status */
     if ((old_state != BTM_PAIR_STATE_IDLE) || (status != HCI_SUCCESS))

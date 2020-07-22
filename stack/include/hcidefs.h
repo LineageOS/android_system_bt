@@ -1006,7 +1006,7 @@ constexpr uint8_t HCI_LE_STATES_INIT_MASTER_SLAVE_BIT = 41;
 #define HCI_ENABLE_PARK_MODE 0x0008
 
 /* By default allow switch, because host can not allow that */
-/* that until he created the connection */
+/* that until it created the connection */
 #define HCI_DEFAULT_POLICY_SETTINGS HCI_DISABLE_ALL_LM_MODES
 
 /* Filters that are sent in set filter command */
