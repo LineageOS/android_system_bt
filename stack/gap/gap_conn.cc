@@ -868,7 +868,7 @@ static void gap_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
       gap_checks_con_flags(p_ccb);
     }
   } else {
-    /* Tell the user if he has a callback */
+    /* Tell the user if there is a callback */
     if (p_ccb->p_callback)
       (*p_ccb->p_callback)(p_ccb->gap_handle, GAP_EVT_CONN_CLOSED, nullptr);
 

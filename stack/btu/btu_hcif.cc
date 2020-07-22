@@ -1711,7 +1711,7 @@ static void btu_hcif_hardware_error_evt(uint8_t* p) {
     return;
   }
 
-  /* If anyone wants device status notifications, give him one. */
+  /* If anyone wants device status notifications, give them one. */
   btm_report_device_status(BTM_DEV_STATUS_DOWN);
 
   /* Reset the controller */
