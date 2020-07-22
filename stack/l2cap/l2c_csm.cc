@@ -763,7 +763,7 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
         /* Disconnect if channels are incompatible */
         L2CAP_TRACE_EVENT("L2CAP - incompatible configurations disconnect");
         l2cu_disconnect_chnl(p_ccb);
-      } else /* Return error to peer so he can renegotiate if possible */
+      } else /* Return error to peer so it can renegotiate if possible */
       {
         L2CAP_TRACE_EVENT(
             "L2CAP - incompatible configurations trying reconfig");
