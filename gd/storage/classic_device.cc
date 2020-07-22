@@ -30,5 +30,16 @@ Device ClassicDevice::Parent() {
   return Device(config_, section_);
 }
 
+std::string ClassicDevice::ToLogString() {
+  return section_;
+}
+
+hci::Address ClassicDevice::GetAddress() {
+  // section name of a classic device is its MAC address
+  auto addr = hci::Address::FromString(section_);
+  ASSERT(addr.has_value());
+  return std::move(addr.value());
+}
+
 }  // namespace storage
 }  // namespace bluetooth
