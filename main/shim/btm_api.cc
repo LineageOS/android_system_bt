@@ -809,11 +809,6 @@ void bluetooth::shim::BTM_ReadConnectionAddr(const RawAddress& remote_bda,
   CHECK(p_addr_type != nullptr);
 }
 
-bool bluetooth::shim::BTM_IsBleConnection(uint16_t conn_handle) {
-  LOG_INFO("UNIMPLEMENTED %s", __func__);
-  return false;
-}
-
 bool bluetooth::shim::BTM_ReadRemoteConnectionAddr(
     const RawAddress& pseudo_addr, RawAddress& conn_addr,
     tBLE_ADDR_TYPE* p_addr_type) {
@@ -824,16 +819,6 @@ bool bluetooth::shim::BTM_ReadRemoteConnectionAddr(
 
 void bluetooth::shim::BTM_SecurityGrant(const RawAddress& bd_addr,
                                         uint8_t res) {
-  LOG_INFO("UNIMPLEMENTED %s", __func__);
-}
-
-void bluetooth::shim::BTM_BlePasskeyReply(const RawAddress& bd_addr,
-                                          uint8_t res, uint32_t passkey) {
-  LOG_INFO("UNIMPLEMENTED %s", __func__);
-}
-
-void bluetooth::shim::BTM_BleConfirmReply(const RawAddress& bd_addr,
-                                          uint8_t res) {
   LOG_INFO("UNIMPLEMENTED %s", __func__);
 }
 
