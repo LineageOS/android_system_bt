@@ -2396,7 +2396,7 @@ static uint16_t btm_convert_uuid_to_uuid16(const uint8_t* p_uuid,
       if (uuid32 < 0x10000) uuid16 = (uint16_t)uuid32;
       break;
     case Uuid::kNumBytes128:
-      /* See if we can compress his UUID down to 16 or 32bit UUIDs */
+      /* See if we can compress the UUID down to 16 or 32bit UUIDs */
       is_base_uuid = true;
       for (xx = 0; xx < Uuid::kNumBytes128 - 4; xx++) {
         if (p_uuid[xx] != base_uuid[xx]) {

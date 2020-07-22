@@ -902,7 +902,7 @@ static uint8_t* add_attr(uint8_t* p, uint8_t* p_end, tSDP_DISCOVERY_DB* p_db,
           }
           break;
         case 16:
-          /* See if we can compress his UUID down to 16 or 32bit UUIDs */
+          /* See if we can compress the UUID down to 16 or 32bit UUIDs */
           if (sdpu_is_base_uuid(p)) {
             if ((p[0] == 0) && (p[1] == 0)) {
               p_attr->attr_len_type =

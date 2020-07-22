@@ -182,7 +182,7 @@ void RFCOMM_ConnectCnf(uint16_t lcid, uint16_t result) {
       RFCOMM_TRACE_DEBUG("RFCOMM_ConnectCnf peer gave up pending LCID(0x%x)",
                          p_mcb->pending_lcid);
 
-      /* Peer gave up his connection request, make sure cleaning up L2CAP
+      /* Peer gave up its connection request, make sure cleaning up L2CAP
        * channel */
       L2CA_ConnectRsp(p_mcb->bd_addr, p_mcb->pending_id, p_mcb->pending_lcid,
                       L2CAP_CONN_NO_RESOURCES, 0);
