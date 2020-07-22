@@ -65,7 +65,7 @@ static_assert(false, "GENERATE_PROPERTY_GETTER_SETTER_REMOVER() must be uniquely
 // After that, Classic() or Le() will return interfaces that allows access to deeper layer properties
 class Device {
  public:
-  enum ConfigKeyAddressType { LEGACY_KEY_ADDRESS, CLASSIC_ADDRESS, LE_IDENTITY_ADDRESS };
+  enum ConfigKeyAddressType { LEGACY_KEY_ADDRESS, CLASSIC_ADDRESS, LE_IDENTITY_ADDRESS, LE_LEGACY_PSEUDO_ADDRESS };
 
   Device(ConfigCache* config, hci::Address key_address, ConfigKeyAddressType key_address_type);
   Device(ConfigCache* config, std::string section);
@@ -112,6 +112,9 @@ class Device {
   // Only works when GetDeviceType() returns LE or DUAL, will crash otherwise
   // For first time use, please SetDeviceType() to the right value
   LeDevice Le();
+
+  // For logging purpose only, you can't get a Device object from parsing a std::string
+  std::string ToLogString();
 
  private:
   ConfigCache* config_;

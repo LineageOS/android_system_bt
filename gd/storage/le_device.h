@@ -61,6 +61,9 @@ class LeDevice {
   // Get the parent device
   Device Parent();
 
+  // For logging purpose only, you can't get a LeDevice object from parsing a std::string
+  std::string ToLogString();
+
  private:
   ConfigCache* config_;
   std::string section_;
@@ -70,6 +73,7 @@ class LeDevice {
   // Get LE address type of the key address
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(AddressType, hci::AddressType, "AddrType");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(IdentityAddress, hci::Address, "LeIdentityAddr");
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(LegacyPseudoAddress, hci::AddressType, "LeLegacyPseudoAddr");
 };
 
 }  // namespace storage
