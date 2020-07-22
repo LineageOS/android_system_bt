@@ -361,21 +361,6 @@ extern void BTM_BleSetPrefConnParams(const RawAddress& bd_addr,
 
 /******************************************************************************
  *
- * Function         BTM_BleSetConnScanParams
- *
- * Description      Set scan parameters used in BLE connection request
- *
- * Parameters:      scan_interval    - scan interval
- *                  scan_window      - scan window
- *
- * Returns          void
- *
- ******************************************************************************/
-extern void BTM_BleSetConnScanParams(uint32_t scan_interval,
-                                     uint32_t scan_window);
-
-/******************************************************************************
- *
  * Function         BTM_BleReadControllerFeatures
  *
  * Description      Reads BLE specific controller features
