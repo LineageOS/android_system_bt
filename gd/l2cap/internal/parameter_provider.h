@@ -34,7 +34,7 @@ class ParameterProvider {
     return std::chrono::seconds(20);
   }
   virtual std::chrono::milliseconds GetLeLinkIdleDisconnectTimeout() {
-    return std::chrono::seconds(20);
+    return std::chrono::seconds(1);
   }
   virtual uint16_t GetLeMps() {
     return 251;
