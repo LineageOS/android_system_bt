@@ -107,6 +107,13 @@ void SecurityManagerImpl::CreateBondLe(hci::AddressWithType address) {
 
   pending_le_pairing_.address_ = address;
 
+  LeFixedChannelEntry* stored_chan = FindStoredLeChannel(address);
+  if (stored_chan) {
+    // We are already connected
+    ConnectionIsReadyStartPairing(stored_chan);
+    return;
+  }
+
   l2cap_manager_le_->ConnectServices(
       address, common::BindOnce(&SecurityManagerImpl::OnConnectionFailureLe, common::Unretained(this)),
       security_handler_);
@@ -119,8 +126,11 @@ void SecurityManagerImpl::CancelBond(hci::AddressWithType device) {
     pairing_handler_map_.erase(entry);
     cancel_me->Cancel();
   }
+
   auto record = security_database_.FindOrCreate(device);
   record->CancelPairing();
+
+  WipeLePairingHandler();
 }
 
 void SecurityManagerImpl::RemoveBond(hci::AddressWithType device) {
@@ -130,6 +140,8 @@ void SecurityManagerImpl::RemoveBond(hci::AddressWithType device) {
   // Signal disconnect
   // Remove security record
   // Signal Remove from database
+
+  NotifyDeviceUnbonded(device);
 }
 
 void SecurityManagerImpl::SetUserInterfaceHandler(UI* user_interface, os::Handler* handler) {
@@ -418,6 +430,8 @@ void SecurityManagerImpl::OnSmpCommandLe(hci::AddressWithType device) {
 
     LOG_INFO("start of security request handling!");
 
+    stored_chan->channel_->Acquire();
+
     PairingRequestView pairing_request = PairingRequestView::Create(temp_cmd_view);
     auto& enqueue_buffer = stored_chan->enqueue_buffer_;
 
@@ -471,7 +485,6 @@ void SecurityManagerImpl::OnConnectionOpenLe(std::unique_ptr<l2cap::le::FixedCha
   all_channels_.push_back({std::move(channel_param), std::move(enqueue_buffer_temp)});
   auto& stored_channel = all_channels_.back();
   auto& channel = stored_channel.channel_;
-  auto& enqueue_buffer = stored_channel.enqueue_buffer_;
 
   channel->RegisterOnCloseCallback(
       security_handler_,
@@ -483,6 +496,15 @@ void SecurityManagerImpl::OnConnectionOpenLe(std::unique_ptr<l2cap::le::FixedCha
   if (pending_le_pairing_.address_ != channel->GetDevice()) {
     return;
   }
+
+  ConnectionIsReadyStartPairing(&stored_channel);
+}
+
+void SecurityManagerImpl::ConnectionIsReadyStartPairing(LeFixedChannelEntry* stored_channel) {
+  auto& channel = stored_channel->channel_;
+  auto& enqueue_buffer = stored_channel->enqueue_buffer_;
+
+  stored_channel->channel_->Acquire();
 
   std::optional<InitialInformations::out_of_band_data> remote_oob_data = std::nullopt;
   if (remote_oob_data_address_.has_value() && remote_oob_data_address_.value() == channel->GetDevice())
@@ -574,6 +596,11 @@ SecurityManagerImpl::SecurityManagerImpl(
 void SecurityManagerImpl::OnPairingFinished(security::PairingResultOrFailure pairing_result) {
   LOG_INFO(" ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ Received pairing result");
 
+  LeFixedChannelEntry* stored_chan = FindStoredLeChannel(pending_le_pairing_.address_);
+  if (stored_chan) {
+    stored_chan->channel_->Release();
+  }
+
   if (std::holds_alternative<PairingFailure>(pairing_result)) {
     PairingFailure failure = std::get<PairingFailure>(pairing_result);
     LOG_INFO(" ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ failure message: %s",
@@ -584,6 +611,14 @@ void SecurityManagerImpl::OnPairingFinished(security::PairingResultOrFailure pai
   auto result = std::get<PairingResult>(pairing_result);
   LOG_INFO("Pairing with %s was successful", result.connection_address.ToString().c_str());
   NotifyDeviceBonded(result.connection_address);
+
+  security_handler_->CallOn(this, &SecurityManagerImpl::WipeLePairingHandler);
+}
+
+void SecurityManagerImpl::WipeLePairingHandler() {
+  pending_le_pairing_.handler_.reset();
+  pending_le_pairing_.connection_handle_ = 0;
+  pending_le_pairing_.address_ = hci::AddressWithType();
 }
 
 // Facade Configuration API functions
