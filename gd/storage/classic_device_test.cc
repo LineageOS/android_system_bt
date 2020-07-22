@@ -14,19 +14,20 @@
  * limitations under the License.
  */
 
-#include "storage/device.h"
-
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include "common/byte_array.h"
+#include "hci/link_key.h"
 #include "storage/classic_device.h"
 #include "storage/mutation.h"
 
 namespace testing {
 
+using bluetooth::common::ByteArray;
 using bluetooth::hci::Address;
 using bluetooth::hci::DeviceType;
-using bluetooth::hci::LinkKey;
+using bluetooth::hci::kExampleLinkKey;
 using bluetooth::storage::ClassicDevice;
 using bluetooth::storage::ConfigCache;
 using bluetooth::storage::Device;
@@ -45,9 +46,9 @@ TEST(ClassicDeviceTest, set_property) {
   ClassicDevice device(&config, address.ToString());
   ASSERT_FALSE(device.GetLinkKey());
   Mutation mutation(&config);
-  mutation.Add(device.SetLinkKey(LinkKey::kExample));
+  mutation.Add(device.SetLinkKey(kExampleLinkKey));
   mutation.Commit();
-  ASSERT_THAT(device.GetLinkKey(), Optional(Eq(LinkKey::kExample)));
+  ASSERT_THAT(device.GetLinkKey(), Optional(Eq(kExampleLinkKey)));
 }
 
 TEST(ClassicDeviceTest, equality_test) {
