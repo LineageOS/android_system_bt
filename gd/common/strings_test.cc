@@ -19,6 +19,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
+#include <array>
 #include <memory>
 
 namespace testing {
@@ -74,6 +75,11 @@ TEST(StringsTest, to_hex_string_test) {
   ASSERT_THAT(ToHexString({0x12}), Eq("12"));
   // half
   ASSERT_THAT(ToHexString({0x6, 0x5, 0x56, 0xb}), Eq("0605560b"));
+  // other types
+  std::array<uint8_t, 2> a = {0x12, 0x56};
+  ASSERT_THAT(ToHexString(a.begin(), a.end()), Eq("1256"));
+  std::vector<uint8_t> b = {0x34, 0x78};
+  ASSERT_THAT(ToHexString(b.begin(), b.end()), Eq("3478"));
 }
 
 TEST(StringsTest, from_hex_string_test) {
