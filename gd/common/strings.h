@@ -16,17 +16,41 @@
 
 #pragma once
 
+#include <charconv>
+#include <iomanip>
+#include <iterator>
+#include <limits>
 #include <optional>
+#include <sstream>
 #include <string>
+#include <type_traits>
 #include <vector>
+
+#include "common/type_helper.h"
+#include "os/log.h"
 
 namespace bluetooth {
 namespace common {
 
-// Convert value into a hex decimal formatted string in lower case
+// Convert value into a hex decimal formatted string in lower case, prefixed with 0s
+template <class InputIt>
+std::string ToHexString(InputIt first, InputIt last) {
+  static_assert(
+      std::is_same_v<typename std::iterator_traits<InputIt>::value_type, uint8_t>, "Must use uint8_t iterator");
+  std::stringstream ss;
+  for (InputIt it = first; it != last; ++it) {
+    // +(byte) to prevent an uint8_t to be interpreted as a char
+    ss << std::hex << std::setw(2) << std::setfill('0') << +(*it);
+  }
+  return ss.str();
+}
+// Convenience method for normal cases and initializer list, e.g. ToHexString({0x12, 0x34, 0x56, 0xab})
 std::string ToHexString(const std::vector<uint8_t>& value);
 
-// Parse |str| into a std::vector<uint8_t>, |str| must contains only hex decimal
+// Return true if |str| is a valid hex demical strings contains only hex decimal chars [0-9a-fA-F]
+bool IsValidHexString(const std::string& str);
+
+// Parse |str| into a vector of uint8_t, |str| must contains only hex decimal
 std::optional<std::vector<uint8_t>> FromHexString(const std::string& str);
 
 // Remove whitespace from both ends of the |str|, returning a copy
