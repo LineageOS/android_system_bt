@@ -707,8 +707,8 @@ void l2c_fcr_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
          * saw */
         /* that if the other side sends us a poll when we are waiting for a
          * final,  */
-        /* then it speeds up recovery significantly if we poll him back soon
-         * after his poll. */
+        /* then it speeds up recovery significantly if we poll it back soon
+         * after its poll. */
         alarm_set_on_mloop(p_ccb->fcrb.mon_retrans_timer, BT_1SEC_TIMEOUT_MS,
                            l2c_ccb_timer_timeout, p_ccb);
       }

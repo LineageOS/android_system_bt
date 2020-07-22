@@ -1227,7 +1227,7 @@ void btm_establish_continue(tACL_CONN* p_acl_cb) {
   }
   p_acl_cb->link_up_issued = true;
 
-  /* If anyone cares, tell him database changed */
+  /* If anyone cares, tell them that the database changed */
   if (btm_cb.p_bl_changed_cb) {
     evt_data.event = BTM_BL_CONN_EVT;
     evt_data.conn.p_bda = &p_acl_cb->remote_addr;
