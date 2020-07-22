@@ -19,14 +19,17 @@
 #pragma once
 
 #include <array>
+#include <optional>
 #include <string>
 
 #include "packet/custom_field_fixed_size_interface.h"
+#include "storage/serializable.h"
 
 namespace bluetooth {
 namespace hci {
 
-class ClassOfDevice final : public packet::CustomFieldFixedSizeInterface<ClassOfDevice> {
+class ClassOfDevice final : public packet::CustomFieldFixedSizeInterface<ClassOfDevice>,
+                            public storage::Serializable<ClassOfDevice> {
  public:
   static constexpr size_t kLength = 3;
 
@@ -42,6 +45,12 @@ class ClassOfDevice final : public packet::CustomFieldFixedSizeInterface<ClassOf
   inline const uint8_t* data() const override {
     return cod.data();
   }
+
+  // storage::Serializable methods
+  std::string ToString() const;
+  static std::optional<ClassOfDevice> FromString(const std::string& str);
+  std::string ToLegacyConfigString() const override;
+  static std::optional<ClassOfDevice> FromLegacyConfigString(const std::string& str);
 
   bool operator<(const ClassOfDevice& rhs) const {
     return cod < rhs.cod;
@@ -62,12 +71,17 @@ class ClassOfDevice final : public packet::CustomFieldFixedSizeInterface<ClassOf
     return !(*this == rhs);
   }
 
-  std::string ToString() const;
-
   // Converts |string| to ClassOfDevice and places it in |to|. If |from| does
   // not represent a Class of Device, |to| is not modified and this function
   // returns false. Otherwise, it returns true.
   static bool FromString(const std::string& from, ClassOfDevice& to);
+
+  // Converts uint32_t encoded class of device to ClassOfDevice object
+  // uint32_t encoding:
+  //     <high> uint8_t(cod[0]) | uint8_t(cod[1]) | uint8_t(cod[2]) <low>
+  // Only used in legacy stack device config
+  static std::optional<ClassOfDevice> FromUint32Legacy(uint32_t cod_int);
+  uint32_t ToUint32Legacy() const;
 
   // Copies |from| raw Class of Device octets to the local object.
   // Returns the number of copied octets (always ClassOfDevice::kLength)

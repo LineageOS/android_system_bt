@@ -294,8 +294,9 @@ cc_test {
     ],
     generated_headers: [
         "BluetoothGeneratedBundlerSchema_h_bfbs",
-        "BluetoothGeneratedDumpsysDataSchema_h",
         "BluetoothGeneratedDumpsysBundledSchema_h",
+        "BluetoothGeneratedDumpsysBundledTestSchema_h",
+        "BluetoothGeneratedDumpsysDataSchema_h",
         "BluetoothGeneratedPackets_h",
     ],
     static_libs: [
@@ -710,11 +711,13 @@ cc_library_host_shared {
         "bluetooth_py3_native_extension_defaults",
     ],
     srcs: [
+        "common/strings.cc",
         "packet/python3_module.cc",
         "l2cap/fcs.cc",
         ":BluetoothPacketSources",
         "hci/address.cc",
         "hci/class_of_device.cc",
+
     ],
     generated_headers: [
         "BluetoothGeneratedPackets_h",

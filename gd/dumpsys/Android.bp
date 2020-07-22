@@ -1,12 +1,60 @@
 filegroup {
     name: "BluetoothDumpsysSources",
     srcs: [
+        "internal/filter_internal.cc",
+        "reflection_schema.cc",
     ],
 }
 
 filegroup {
     name: "BluetoothDumpsysTestSources",
     srcs: [
+        "internal/filter_internal_test.cc",
+        "reflection_schema_test.cc",
+    ],
+}
+
+genrule {
+    name: "BluetoothGeneratedDumpsysTestData_h",
+    tools: [
+        "flatc",
+    ],
+    cmd: "$(location flatc) -I system/bt/gd -b --schema -o $(genDir) --cpp $(in) ",
+    srcs: [
+            "test_data/root.fbs",
+            "test_data/bar.fbs",
+            "test_data/baz.fbs",
+            "test_data/foo.fbs",
+            "test_data/qux.fbs",
+    ],
+    out: [
+        "root_generated.h",
+        "bar_generated.h",
+        "baz_generated.h",
+        "foo_generated.h",
+        "qux_generated.h",
+    ],
+}
+
+genrule {
+    name: "BluetoothGeneratedDumpsysTestData_bfbs",
+    tools: [
+        "flatc",
+    ],
+    cmd: "$(location flatc) -I system/bt/gd -b --schema -o $(genDir) --cpp $(in) ",
+    srcs: [
+            "test_data/root.fbs",
+            "test_data/bar.fbs",
+            "test_data/baz.fbs",
+            "test_data/foo.fbs",
+            "test_data/qux.fbs",
+    ],
+    out: [
+        "root.bfbs",
+        "bar.bfbs",
+        "baz.bfbs",
+        "foo.bfbs",
+        "qux.bfbs",
     ],
 }
 
@@ -35,6 +83,20 @@ genrule {
     ],
     out: [
          "generated_dumpsys_bundled_schema.h",
+    ],
+}
+
+genrule {
+    name: "BluetoothGeneratedDumpsysBundledTestSchema_h",
+    tools: [
+            "bluetooth_flatbuffer_bundler",
+    ],
+    cmd: "$(location bluetooth_flatbuffer_bundler) -w -m testing.DumpsysTestDataRoot  -f generated_dumpsys_bundled_test_schema -n testing -g $(genDir) $(locations :BluetoothGeneratedDumpsysTestData_bfbs)",
+    srcs: [
+        ":BluetoothGeneratedDumpsysTestData_bfbs",
+    ],
+    out: [
+         "generated_dumpsys_bundled_test_schema.h",
     ],
 }
 

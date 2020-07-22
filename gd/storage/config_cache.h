@@ -63,6 +63,18 @@ class ConfigCache {
   virtual std::vector<std::string> GetPersistentDevices() const;
   // Serialize to legacy config format
   virtual std::string SerializeToLegacyFormat() const;
+  // Return a copy of pair<section_name, property_value> with property
+  struct SectionAndPropertyValue {
+    std::string section;
+    std::string property;
+    bool operator==(const SectionAndPropertyValue& rhs) const {
+      return section == rhs.section && property == rhs.property;
+    }
+    bool operator!=(const SectionAndPropertyValue& rhs) const {
+      return !(*this == rhs);
+    }
+  };
+  virtual std::vector<SectionAndPropertyValue> GetSectionNamesWithProperty(const std::string& property) const;
 
   // modifiers
   // Commit all mutation entries in sequence while holding the config mutex
@@ -77,6 +89,8 @@ class ConfigCache {
   virtual void Clear();
   // Set a callback to notify interested party that a persistent config change has just happened
   virtual void SetPersistentConfigChangedCallback(std::function<void()> persistent_config_changed_callback);
+  // Legacy stack has device type inconsistencies, this method is trying to fix it
+  virtual bool FixDeviceTypeInconsistencies();
 
   // static methods
   // Check if section is formatted as a MAC address

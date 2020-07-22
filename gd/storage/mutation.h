@@ -17,6 +17,7 @@
 
 #include <queue>
 
+#include "os/log.h"
 #include "storage/config_cache.h"
 #include "storage/mutation_entry.h"
 
@@ -25,20 +26,22 @@ namespace storage {
 
 class Mutation {
  public:
-  explicit Mutation(ConfigCache& storage_module) : config_cache_(storage_module) {}
+  explicit Mutation(ConfigCache* config_cache) : config_cache_(config_cache) {
+    ASSERT(config_cache_ != nullptr);
+  }
 
   void Add(MutationEntry entry) {
     entries_.emplace(std::move(entry));
   }
 
   void Commit() {
-    config_cache_.Commit(*this);
+    config_cache_->Commit(*this);
   }
 
   friend ConfigCache;
 
  private:
-  ConfigCache& config_cache_;
+  ConfigCache* config_cache_;
   std::queue<MutationEntry> entries_;
 };
 

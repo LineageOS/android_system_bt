@@ -170,6 +170,12 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   void SetOobDataPresent(hci::OobDataPresent data_present);
   void SetLeIoCapability(security::IoCapability io_capability);
   void SetLeAuthRequirements(uint8_t auth_req);
+  void SetLeOobDataPresent(OobDataFlag data_present);
+  void GetOutOfBandData(std::array<uint8_t, 16>* le_sc_confirmation_value, std::array<uint8_t, 16>* le_sc_random_value);
+  void SetOutOfBandData(
+      hci::AddressWithType remote_address,
+      std::array<uint8_t, 16> le_sc_confirmation_value,
+      std::array<uint8_t, 16> le_sc_random_value);
 
   void EnforceSecurityPolicy(hci::AddressWithType remote, l2cap::classic::SecurityPolicy policy,
                              l2cap::classic::SecurityEnforcementInterface::ResultCallback result_callback);
@@ -219,6 +225,12 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   hci::OobDataPresent local_oob_data_present_ = kDefaultOobDataPresent;
   security::IoCapability local_le_io_capability_ = security::IoCapability::NO_INPUT_NO_OUTPUT;
   uint8_t local_le_auth_req_ = AuthReqMaskBondingFlag | AuthReqMaskMitm | AuthReqMaskSc;
+  OobDataFlag local_le_oob_data_present_ = OobDataFlag::NOT_PRESENT;
+  std::optional<MyOobData> local_le_oob_data_;
+  std::optional<hci::AddressWithType> remote_oob_data_address_;
+  std::optional<crypto_toolbox::Octet16> remote_oob_data_le_sc_c_;
+  std::optional<crypto_toolbox::Octet16> remote_oob_data_le_sc_r_;
+
   std::unordered_map<
       hci::AddressWithType,
       std::pair<l2cap::classic::SecurityPolicy, l2cap::classic::SecurityEnforcementInterface::ResultCallback>>
