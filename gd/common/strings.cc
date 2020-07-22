@@ -24,8 +24,6 @@
 #include <sstream>
 #include <system_error>
 
-#include "os/log.h"
-
 namespace {
 
 struct IsSpace : std::unary_function<std::string::value_type, bool> {
@@ -46,11 +44,11 @@ namespace bluetooth {
 namespace common {
 
 std::string ToHexString(const std::vector<uint8_t>& value) {
-  std::stringstream ss;
-  for (const auto& byte : value) {
-    ss << std::hex << std::setw(2) << std::setfill('0') << +byte;
-  }
-  return ss.str();
+  return ToHexString(value.begin(), value.end());
+}
+
+bool IsValidHexString(const std::string& str) {
+  return std::find_if_not(str.begin(), str.end(), IsHexDigit{}) == str.end();
 }
 
 std::optional<std::vector<uint8_t>> FromHexString(const std::string& str) {
