@@ -685,7 +685,7 @@ void bnep_process_setup_conn_responce(tBNEP_CONN* p_bcb, uint8_t* p_setup) {
       alarm_cancel(p_bcb->conn_timer);
       p_bcb->re_transmits = 0;
 
-      /* Tell the user if he has a callback */
+      /* Tell the user if there is a callback */
       if (bnep_cb.p_conn_state_cb)
         (*bnep_cb.p_conn_state_cb)(p_bcb->handle, p_bcb->rem_bda, resp, true);
 
@@ -695,7 +695,7 @@ void bnep_process_setup_conn_responce(tBNEP_CONN* p_bcb, uint8_t* p_setup) {
 
       L2CA_DisconnectReq(p_bcb->l2cap_cid);
 
-      /* Tell the user if he has a callback */
+      /* Tell the user if there is a callback */
       if ((p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) && (bnep_cb.p_conn_state_cb))
         (*bnep_cb.p_conn_state_cb)(p_bcb->handle, p_bcb->rem_bda, resp, false);
 
@@ -1194,7 +1194,7 @@ void bnep_sec_check_complete(UNUSED_ATTR const RawAddress* bd_addr,
 
       L2CA_DisconnectReq(p_bcb->l2cap_cid);
 
-      /* Tell the user if he has a callback */
+      /* Tell the user if there is a callback */
       if (bnep_cb.p_conn_state_cb)
         (*bnep_cb.p_conn_state_cb)(p_bcb->handle, p_bcb->rem_bda,
                                    BNEP_SECURITY_FAIL, is_role_change);

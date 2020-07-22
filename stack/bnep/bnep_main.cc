@@ -185,7 +185,7 @@ static void bnep_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
     BNEP_TRACE_WARNING("BNEP - Rcvd conn cnf with error: 0x%x  CID 0x%x",
                        result, p_bcb->l2cap_cid);
 
-    /* Tell the upper layer, if he has a callback */
+    /* Tell the upper layer, if there is a callback */
     if (bnep_cb.p_conn_state_cb && p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) {
       (*bnep_cb.p_conn_state_cb)(p_bcb->handle, p_bcb->rem_bda,
                                  BNEP_CONN_FAILED, false);
@@ -305,7 +305,7 @@ static void bnep_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
       }
     }
   } else {
-    /* Tell the upper layer, if he has a callback */
+    /* Tell the upper layer, if there is a callback */
     if ((p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) && (bnep_cb.p_conn_state_cb)) {
       (*bnep_cb.p_conn_state_cb)(p_bcb->handle, p_bcb->rem_bda,
                                  BNEP_CONN_FAILED_CFG, false);
@@ -341,7 +341,7 @@ static void bnep_disconnect_ind(uint16_t l2cap_cid, bool ack_needed) {
 
   BNEP_TRACE_EVENT("BNEP - Rcvd L2CAP disc, CID: 0x%x", l2cap_cid);
 
-  /* Tell the user if he has a callback */
+  /* Tell the user if there is a callback */
   if (p_bcb->con_state == BNEP_STATE_CONNECTED) {
     if (bnep_cb.p_conn_state_cb)
       (*bnep_cb.p_conn_state_cb)(p_bcb->handle, p_bcb->rem_bda,
@@ -680,7 +680,7 @@ void bnep_conn_timer_timeout(void* data) {
 
     L2CA_DisconnectReq(p_bcb->l2cap_cid);
 
-    /* Tell the user if he has a callback */
+    /* Tell the user if there is a callback */
     if ((p_bcb->con_flags & BNEP_FLAGS_IS_ORIG) && (bnep_cb.p_conn_state_cb))
       (*bnep_cb.p_conn_state_cb)(p_bcb->handle, p_bcb->rem_bda,
                                  BNEP_CONN_FAILED, false);
@@ -694,7 +694,7 @@ void bnep_conn_timer_timeout(void* data) {
     } else {
       L2CA_DisconnectReq(p_bcb->l2cap_cid);
 
-      /* Tell the user if he has a callback */
+      /* Tell the user if there is a callback */
       if (bnep_cb.p_conn_state_cb)
         (*bnep_cb.p_conn_state_cb)(p_bcb->handle, p_bcb->rem_bda,
                                    BNEP_SET_FILTER_FAIL, false);
@@ -710,7 +710,7 @@ void bnep_conn_timer_timeout(void* data) {
     } else {
       L2CA_DisconnectReq(p_bcb->l2cap_cid);
 
-      /* Tell the user if he has a callback */
+      /* Tell the user if there is a callback */
       if (bnep_cb.p_conn_state_cb)
         (*bnep_cb.p_conn_state_cb)(p_bcb->handle, p_bcb->rem_bda,
                                    BNEP_SET_FILTER_FAIL, false);
@@ -747,7 +747,7 @@ void bnep_connected(tBNEP_CONN* p_bcb) {
   alarm_cancel(p_bcb->conn_timer);
   p_bcb->re_transmits = 0;
 
-  /* Tell the upper layer, if he has a callback */
+  /* Tell the upper layer, if there is a callback */
   if (bnep_cb.p_conn_state_cb)
     (*bnep_cb.p_conn_state_cb)(p_bcb->handle, p_bcb->rem_bda, BNEP_SUCCESS,
                                is_role_change);

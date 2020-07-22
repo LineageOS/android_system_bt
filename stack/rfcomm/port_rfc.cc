@@ -820,7 +820,7 @@ void PORT_DataInd(tRFC_MCB* p_mcb, uint8_t dlci, BT_HDR* p_buf) {
   /* perform flow control procedures if necessary */
   port_flow_control_peer(p_port, false, 0);
 
-  /* If user indicated flow control can not deliver any notifications to him */
+  /* If user indicated flow control can not deliver any notifications to them */
   if (p_port->rx.user_fc) {
     if (events & PORT_EV_RXFLAG) {
       p_port->rx_flag_ev_pending = true;
