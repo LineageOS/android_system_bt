@@ -30,6 +30,7 @@
 #include "bt_target.h"
 #include "btm_int.h"
 #include "btu.h"
+#include "osi/include/fixed_queue.h"
 
 /* BNEP frame types
 */

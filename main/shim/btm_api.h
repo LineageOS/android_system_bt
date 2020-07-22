@@ -540,18 +540,6 @@ void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
 
 /*******************************************************************************
  *
- * Function         BTM_IsBleConnection
- *
- * Description      This function is called to check if the connection handle
- *                  for an LE link
- *
- * Returns          true if connection is LE link, otherwise false.
- *
- ******************************************************************************/
-bool BTM_IsBleConnection(uint16_t conn_handle);
-
-/*******************************************************************************
- *
  * Function         BTM_ReadRemoteConnectionAddr
  *
  * Description      Read the remote device address currently used.
@@ -578,38 +566,6 @@ bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
  *
  ******************************************************************************/
 void BTM_SecurityGrant(const RawAddress& bd_addr, uint8_t res);
-
-/*******************************************************************************
- *
- * Function         BTM_BlePasskeyReply
- *
- * Description      This function is called after Security Manager submitted
- *                  passkey request to the application.
- *
- * Parameters:      bd_addr - Address of the device for which passkey was
- *                            requested
- *                  res     - result of the operation SMP_SUCCESS if success
- *                  passkey - numeric value in the range of
- *                               BTM_MIN_PASSKEY_VAL(0) -
- *                               BTM_MAX_PASSKEY_VAL(999999(0xF423F)).
- *
- ******************************************************************************/
-void BTM_BlePasskeyReply(const RawAddress& bd_addr, uint8_t res,
-                         uint32_t passkey);
-
-/*******************************************************************************
- *
- * Function         BTM_BleConfirmReply
- *
- * Description      This function is called after Security Manager submitted
- *                  numeric comparison request to the application.
- *
- * Parameters:      bd_addr      - Address of the device with which numeric
- *                                 comparison was requested
- *                  res          - comparison result BTM_SUCCESS if success
- *
- ******************************************************************************/
-void BTM_BleConfirmReply(const RawAddress& bd_addr, uint8_t res);
 
 /*******************************************************************************
  *
