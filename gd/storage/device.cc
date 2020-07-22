@@ -32,6 +32,7 @@ namespace {
 const std::string kDeviceTypeKey = "DevType";
 // TODO(siyuanh): also defined in storage/le_device.cc
 const std::string kLeIdentityAddressKey = "LeIdentityAddr";
+const std::string kLeLegacyPseudoAddr = "LeLegacyPseudoAddr";
 
 std::string GetConfigSection(
     ConfigCache* config, hci::Address key_address, Device::ConfigKeyAddressType key_address_type) {
@@ -50,6 +51,14 @@ std::string GetConfigSection(
         }
       }
       return key_address_string;
+    case Device::ConfigKeyAddressType::LE_LEGACY_PSEUDO_ADDRESS:
+      for (const auto& section_and_property : config->GetSectionNamesWithProperty(kLeLegacyPseudoAddr)) {
+        if (section_and_property.property == key_address_string) {
+          return section_and_property.section;
+        }
+      }
+      // One cannot create a new device just using LE legacy pseudo address
+      [[fallthrough]];
     default:
       LOG_ALWAYS_FATAL("Unknown key_address_type %d", static_cast<int>(key_address_type));
       return "";
@@ -83,6 +92,10 @@ ClassicDevice Device::Classic() {
   ASSERT(device_type);
   ASSERT(device_type == DeviceType::BR_EDR || device_type == DeviceType::DUAL);
   return ClassicDevice(config_, section_);
+}
+
+std::string Device::ToLogString() {
+  return section_;
 }
 
 }  // namespace storage
