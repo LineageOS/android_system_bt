@@ -698,7 +698,7 @@ void btm_sco_conn_req(const RawAddress& bda, DEV_CLASS dev_class,
     if (((p->state == SCO_ST_CONNECTING) && rem_bd_matches) ||
         ((p->state == SCO_ST_LISTENING) &&
          (rem_bd_matches || !p->rem_bd_known))) {
-      /* If this guy was a wildcard, he is not one any more */
+      /* If this was a wildcard, it is not one any more */
       p->rem_bd_known = true;
       p->esco.data.link_type = link_type;
       p->state = SCO_ST_W4_CONN_RSP;
