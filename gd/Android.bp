@@ -366,6 +366,7 @@ cc_defaults {
         android: {
             shared_libs: [
                 "android.hardware.bluetooth@1.0",
+                "libcutils",
                 "libhidlbase",
                 "libutils",
             ],
