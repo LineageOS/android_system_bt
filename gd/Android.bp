@@ -298,6 +298,7 @@ cc_test {
         "BluetoothGeneratedDumpsysBundledSchema_h",
         "BluetoothGeneratedDumpsysBundledTestSchema_h",
         "BluetoothGeneratedDumpsysDataSchema_h",
+        "BluetoothGeneratedDumpsysTestData_h",
         "BluetoothGeneratedPackets_h",
     ],
     static_libs: [
