@@ -47,6 +47,7 @@ cc_library_static {
             "libflatbuffers-cpp",
     ],
     generated_headers: [
+        "BluetoothGeneratedBundlerSchema_h_bfbs",
         "BluetoothGeneratedDumpsysDataSchema_h",
         "BluetoothGeneratedPackets_h",
     ],
@@ -163,6 +164,7 @@ cc_library_static {
         "system/bt/utils/include",
     ],
     generated_headers: [
+        "BluetoothGeneratedBundlerSchema_h_bfbs",
         "BluetoothGeneratedPackets_h",
         "BluetoothGeneratedDumpsysDataSchema_h",
     ],
