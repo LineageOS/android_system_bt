@@ -4019,12 +4019,6 @@ void bta_dm_ble_set_conn_params(const RawAddress& bd_addr,
                            supervision_tout);
 }
 
-/** This function set the preferred connection scan parameters */
-void bta_dm_ble_set_conn_scan_params(uint32_t scan_interval,
-                                     uint32_t scan_window) {
-  BTM_BleSetConnScanParams(scan_interval, scan_window);
-}
-
 /** This function update LE connection parameters */
 void bta_dm_ble_update_conn_params(const RawAddress& bd_addr, uint16_t min_int,
                                    uint16_t max_int, uint16_t latency,
