@@ -95,7 +95,7 @@ tBNEP_RESULT bnep_register_with_l2cap(void) {
 
   /* Now, register with L2CAP */
   if (!L2CA_Register(BT_PSM_BNEP, &bnep_cb.reg_info, false /* enable_snoop */,
-                     nullptr)) {
+                     nullptr, bnep_cb.l2cap_my_cfg.mtu)) {
     BNEP_TRACE_ERROR("BNEP - Registration failed");
     return BNEP_SECURITY_FAIL;
   }

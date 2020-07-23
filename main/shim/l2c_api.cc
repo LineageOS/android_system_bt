@@ -34,7 +34,8 @@ static bluetooth::shim::legacy::L2cap shim_l2cap;
 uint16_t bluetooth::shim::L2CA_Register(uint16_t client_psm,
                                         tL2CAP_APPL_INFO* callbacks,
                                         bool enable_snoop,
-                                        tL2CAP_ERTM_INFO* p_ertm_info) {
+                                        tL2CAP_ERTM_INFO* p_ertm_info,
+                                        uint16_t required_mtu) {
   CHECK(callbacks != nullptr);
 
   if (L2C_INVALID_PSM(client_psm)) {
@@ -64,7 +65,8 @@ uint16_t bluetooth::shim::L2CA_Register(uint16_t client_psm,
   }
   LOG_INFO("%s classic client_psm:%hd psm:%hd", __func__, client_psm, psm);
 
-  return shim_l2cap.RegisterService(psm, callbacks, enable_snoop, p_ertm_info);
+  return shim_l2cap.RegisterService(psm, callbacks, enable_snoop, p_ertm_info,
+                                    required_mtu);
 }
 
 void bluetooth::shim::L2CA_Deregister(uint16_t client_psm) {
