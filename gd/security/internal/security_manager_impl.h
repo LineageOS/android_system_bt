@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <storage/storage_module.h>
 #include <unordered_map>
 #include <utility>
 
@@ -55,7 +56,8 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
       l2cap::le::L2capLeModule* l2cap_le_module,
       channel::SecurityManagerChannel* security_manager_channel,
       hci::HciLayer* hci_layer,
-      hci::AclManager* acl_manager);
+      hci::AclManager* acl_manager,
+      storage::StorageModule* storage_module);
 
   ~SecurityManagerImpl() {
     /* L2CAP layer doesn't guarantee to send the registered OnCloseCallback during shutdown. Cleanup the remaining
@@ -220,6 +222,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   hci::LeSecurityInterface* hci_security_interface_le_ __attribute__((unused));
   channel::SecurityManagerChannel* security_manager_channel_;
   hci::AclManager* acl_manager_;
+  storage::StorageModule* storage_module_ __attribute__((unused));
   record::SecurityRecordDatabase security_database_;
   std::unordered_map<hci::Address, std::shared_ptr<pairing::PairingHandler>> pairing_handler_map_;
   hci::IoCapability local_io_capability_ = kDefaultIoCapability;
