@@ -249,7 +249,7 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
   /* Register the PSM with L2CAP */
   if (transport == BT_TRANSPORT_BR_EDR) {
     p_ccb->psm = L2CA_Register(psm, &conn.reg_info, false /* enable_snoop */,
-                               &p_ccb->ertm_info);
+                               &p_ccb->ertm_info, L2CAP_MTU_SIZE);
     if (p_ccb->psm == 0) {
       LOG(ERROR) << StringPrintf("%s: Failure registering PSM 0x%04x", __func__,
                                  psm);
