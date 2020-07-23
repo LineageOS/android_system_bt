@@ -271,7 +271,7 @@ void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
  ******************************************************************************/
 bool BTM_IsBleConnection(uint16_t conn_handle) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_IsBleConnection(conn_handle);
+    ASSERT_LOG(false, "This should not be invoked from code path");
   }
   uint8_t xx;
   tACL_CONN* p;
@@ -373,7 +373,7 @@ void BTM_SecurityGrant(const RawAddress& bd_addr, uint8_t res) {
 void BTM_BlePasskeyReply(const RawAddress& bd_addr, uint8_t res,
                          uint32_t passkey) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_BlePasskeyReply(bd_addr, res, passkey);
+    ASSERT_LOG(false, "This should not be invoked from code path");
   }
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
   tSMP_STATUS res_smp =
@@ -403,7 +403,7 @@ void BTM_BlePasskeyReply(const RawAddress& bd_addr, uint8_t res,
  ******************************************************************************/
 void BTM_BleConfirmReply(const RawAddress& bd_addr, uint8_t res) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_BleConfirmReply(bd_addr, res);
+    ASSERT_LOG(false, "This should not be invoked from code path");
   }
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
   tSMP_STATUS res_smp =
@@ -493,48 +493,6 @@ void BTM_BleSecureConnectionOobDataReply(const RawAddress& bd_addr,
   oob.peer_oob_data.addr_rcvd_from.bda = bd_addr;
 
   SMP_SecureConnectionOobDataReply((uint8_t*)&oob);
-}
-
-/******************************************************************************
- *
- * Function         BTM_BleSetConnScanParams
- *
- * Description      Set scan parameter used in BLE connection request
- *
- * Parameters:      scan_interval: scan interval
- *                  scan_window: scan window
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_BleSetConnScanParams(uint32_t scan_interval, uint32_t scan_window) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_BleSetConnScanParams(scan_interval,
-                                                     scan_window);
-  }
-  tBTM_BLE_CB* p_ble_cb = &btm_cb.ble_ctr_cb;
-  bool new_param = false;
-
-  if (BTM_BLE_ISVALID_PARAM(scan_interval, BTM_BLE_SCAN_INT_MIN,
-                            BTM_BLE_SCAN_INT_MAX) &&
-      BTM_BLE_ISVALID_PARAM(scan_window, BTM_BLE_SCAN_WIN_MIN,
-                            BTM_BLE_SCAN_WIN_MAX)) {
-    if (p_ble_cb->scan_int != scan_interval) {
-      p_ble_cb->scan_int = scan_interval;
-      new_param = true;
-    }
-
-    if (p_ble_cb->scan_win != scan_window) {
-      p_ble_cb->scan_win = scan_window;
-      new_param = true;
-    }
-
-    if (new_param && btm_ble_get_conn_st() == BLE_CONNECTING) {
-      btm_ble_suspend_bg_conn();
-    }
-  } else {
-    BTM_TRACE_ERROR("Illegal Connection Scan Parameters");
-  }
 }
 
 /********************************************************
