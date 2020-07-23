@@ -28,9 +28,12 @@ using namespace bluetooth;
 using namespace dumpsys;
 
 constexpr flatbuffers::voffset_t kErasedFromTable = 0;
+constexpr bool kFieldIsNotPopulated = true;
+constexpr bool kFieldHasBeenFiltered = true;
+constexpr bool kFieldContinueFiltering = false;
 
 void internal::ScrubFromTable(flatbuffers::Table* table, flatbuffers::voffset_t field_offset) {
-  assert(table != nullptr);
+  ASSERT(table != nullptr);
   uint8_t* vtable = const_cast<uint8_t*>(table->GetVTable());
   vtable[field_offset] = kErasedFromTable;
 }
@@ -92,8 +95,8 @@ internal::PrivacyLevel internal::FindFieldPrivacyLevel(const reflection::Field& 
 
 const reflection::Object* internal::FindReflectionObject(
     const flatbuffers::Vector<flatbuffers::Offset<reflection::Object>>* objects, const flatbuffers::String* name) {
-  assert(objects != nullptr);
-  assert(name != nullptr);
+  ASSERT(objects != nullptr);
+  ASSERT(name != nullptr);
   for (auto it = objects->cbegin(); it != objects->cend(); ++it) {
     if (it->name()->str() == name->str()) {
       return *it;
@@ -104,8 +107,8 @@ const reflection::Object* internal::FindReflectionObject(
 
 bool internal::FilterTypeInteger(
     const reflection::Field& field, flatbuffers::Table* table, PrivacyLevel privacy_level) {
-  assert(table != nullptr);
-  assert(field.type()->base_type() == reflection::BaseType::Int);
+  ASSERT(table != nullptr);
+  ASSERT(flatbuffers::IsInteger(field.type()->base_type()));
 
   int32_t default_val = flatbuffers::GetFieldDefaultI<int32_t>(field);
   flatbuffers::voffset_t field_offset = field.offset();
@@ -138,12 +141,12 @@ bool internal::FilterTypeInteger(
         val,
         table->GetField<int32_t>(field_offset, default_val));
   }
-  return true;
+  return kFieldHasBeenFiltered;
 }
 
 bool internal::FilterTypeFloat(const reflection::Field& field, flatbuffers::Table* table, PrivacyLevel privacy_level) {
-  assert(table != nullptr);
-  assert(field.type()->base_type() == reflection::BaseType::Float);
+  ASSERT(table != nullptr);
+  ASSERT(flatbuffers::IsFloat(field.type()->base_type()));
 
   float default_val = flatbuffers::GetFieldDefaultI<float>(field);
   flatbuffers::voffset_t field_offset = field.offset();
@@ -173,17 +176,21 @@ bool internal::FilterTypeFloat(const reflection::Field& field, flatbuffers::Tabl
         val,
         table->GetField<float>(field_offset, default_val));
   }
-  return true;
+  return kFieldHasBeenFiltered;
 }
 
 bool internal::FilterTypeString(const reflection::Field& field, flatbuffers::Table* table, PrivacyLevel privacy_level) {
-  assert(table != nullptr);
-  assert(field.type()->base_type() == reflection::BaseType::String);
+  ASSERT(table != nullptr);
+  ASSERT(field.type()->base_type() == reflection::BaseType::String);
 
   flatbuffers::voffset_t field_offset = field.offset();
 
   const flatbuffers::String* string = flatbuffers::GetFieldS(*table, field);
-  assert(string != nullptr);
+  if (string == nullptr) {
+    return kFieldIsNotPopulated;
+    // Field is not populated
+  }
+  ASSERT(string != nullptr);
   flatbuffers::String* mutable_string = const_cast<flatbuffers::String*>(string);
 
   [[maybe_unused]] std::string old_string(string->str());
@@ -212,22 +219,22 @@ bool internal::FilterTypeString(const reflection::Field& field, flatbuffers::Tab
         old_string.c_str(),
         string->c_str());
   }
-  return true;
+  return kFieldHasBeenFiltered;
 }
 
 bool internal::FilterTypeStruct(const reflection::Field& field, flatbuffers::Table* table, PrivacyLevel privacy_level) {
-  assert(table != nullptr);
-  assert(field.type()->base_type() == reflection::BaseType::Struct);
+  ASSERT(table != nullptr);
+  ASSERT(!flatbuffers::IsScalar(field.type()->base_type()));
 
   flatbuffers::voffset_t field_offset = field.offset();
 
   if (privacy_level != kAny) {
-    //    flatbuffers::SetFieldT(table, field, nullptr);
+    flatbuffers::SetFieldT(table, field, nullptr);
     internal::ScrubFromTable(table, field_offset);
     if (DBG) {
       LOG_DEBUG(
           " Table Removing field name:%s privacy_level:%s", field.name()->c_str(), PrivacyLevelName(privacy_level));
     }
   }
-  return false;
+  return kFieldContinueFiltering;
 }
