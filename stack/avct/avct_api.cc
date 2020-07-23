@@ -55,18 +55,22 @@ void AVCT_Register(uint16_t mtu, UNUSED_ATTR uint16_t mtu_br,
                    uint8_t sec_mask) {
   AVCT_TRACE_API("AVCT_Register");
 
+  /* initialize AVCTP data structures */
+  memset(&avct_cb, 0, sizeof(tAVCT_CB));
+
+  if (mtu < AVCT_MIN_CONTROL_MTU) mtu = AVCT_MIN_CONTROL_MTU;
+  /* store mtu */
+  avct_cb.mtu = mtu;
+
   /* register PSM with L2CAP */
   L2CA_Register(AVCT_PSM, (tL2CAP_APPL_INFO*)&avct_l2c_appl,
-                true /* enable_snoop */, nullptr);
+                true /* enable_snoop */, nullptr, avct_cb.mtu);
 
   /* set security level */
   BTM_SetSecurityLevel(true, "", BTM_SEC_SERVICE_AVCTP, sec_mask, AVCT_PSM, 0,
                        0);
   BTM_SetSecurityLevel(false, "", BTM_SEC_SERVICE_AVCTP, sec_mask, AVCT_PSM, 0,
                        0);
-
-  /* initialize AVCTP data structures */
-  memset(&avct_cb, 0, sizeof(tAVCT_CB));
 
   /* Include the browsing channel which uses eFCR */
   tL2CAP_ERTM_INFO ertm_info;
@@ -76,8 +80,12 @@ void AVCT_Register(uint16_t mtu, UNUSED_ATTR uint16_t mtu_br,
   ertm_info.user_tx_buf_size = BT_DEFAULT_BUFFER_SIZE;
   ertm_info.fcr_rx_buf_size = BT_DEFAULT_BUFFER_SIZE;
   ertm_info.fcr_tx_buf_size = BT_DEFAULT_BUFFER_SIZE;
+
+  if (mtu_br < AVCT_MIN_BROWSE_MTU) mtu_br = AVCT_MIN_BROWSE_MTU;
+  avct_cb.mtu_br = mtu_br;
+
   L2CA_Register(AVCT_BR_PSM, (tL2CAP_APPL_INFO*)&avct_l2c_br_appl,
-                true /*enable_snoop*/, &ertm_info);
+                true /*enable_snoop*/, &ertm_info, avct_cb.mtu_br);
 
   /* AVCTP browsing channel uses the same security service as AVCTP control
    * channel */
@@ -86,18 +94,11 @@ void AVCT_Register(uint16_t mtu, UNUSED_ATTR uint16_t mtu_br,
   BTM_SetSecurityLevel(false, "", BTM_SEC_SERVICE_AVCTP, sec_mask, AVCT_BR_PSM,
                        0, 0);
 
-  if (mtu_br < AVCT_MIN_BROWSE_MTU) mtu_br = AVCT_MIN_BROWSE_MTU;
-  avct_cb.mtu_br = mtu_br;
-
 #if defined(AVCT_INITIAL_TRACE_LEVEL)
   avct_cb.trace_level = AVCT_INITIAL_TRACE_LEVEL;
 #else
   avct_cb.trace_level = BT_TRACE_LEVEL_NONE;
 #endif
-
-  if (mtu < AVCT_MIN_CONTROL_MTU) mtu = AVCT_MIN_CONTROL_MTU;
-  /* store mtu */
-  avct_cb.mtu = mtu;
 }
 
 /*******************************************************************************
