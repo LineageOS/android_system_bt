@@ -3,33 +3,33 @@ namespace testing;
 attribute "privacy";
 
 table BazSubTablePrivate {
-    subtable_value:int (privacy:"Any");
-    subtable_string:string (privacy:"Any");
+    subtable_int_any:int (privacy:"Any");
+    subtable_string_any:string (privacy:"Any");
 }
 
 table BazSubTableOpaque {
-    subtable_value:int (privacy:"Any");
-    subtable_string:string (privacy:"Any");
+    subtable_int_any:int (privacy:"Any");
+    subtable_string_any:string (privacy:"Any");
 }
 
 table BazSubTableAnonymized {
-    subtable_value:int (privacy:"Any");
-    subtable_string:string (privacy:"Any");
+    subtable_int_any:int (privacy:"Any");
+    subtable_string_any:string (privacy:"Any");
 }
 
 table BazSubTableAny {
-    subtable_any_value:int (privacy:"Any");
-    subtable_opaque_value:int (privacy:"Opaque");
-    subtable_anonymized_value:int (privacy:"Anonymized");
-    subtable_private_value:int (privacy:"Private");
-    subtable_string:string (privacy:"Any");
+    subtable_int_private:int (privacy:"Private");
+    subtable_int_opaque:int (privacy:"Opaque");
+    subtable_int_anonymized:int (privacy:"Anonymized");
+    subtable_int_any:int (privacy:"Any");
+    subtable_string_any:string (privacy:"Any");
 }
 
 table BazTestSchema {
-    sub_table_any:BazSubTableAny (privacy:"Any");
-    sub_table_anonymized:BazSubTableAnonymized (privacy:"Anonymized");
+    sub_table_private:BazSubTablePrivate; // private by default
     sub_table_opaque:BazSubTableOpaque (privacy:"Opaque");
-    sub_table_private:BazSubTablePrivate;
+    sub_table_anonymized:BazSubTableAnonymized (privacy:"Anonymized");
+    sub_table_any:BazSubTableAny (privacy:"Any");
 }
 
 root_type BazTestSchema;
