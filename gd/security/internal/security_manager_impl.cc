@@ -318,7 +318,9 @@ void SecurityManagerImpl::OnPairingPromptAccepted(const bluetooth::hci::AddressW
   if (entry != pairing_handler_map_.end()) {
     entry->second->OnPairingPromptAccepted(address, confirmed);
   } else {
-    pending_le_pairing_.handler_->OnUiAction(PairingEvent::UI_ACTION_TYPE::PAIRING_ACCEPTED, confirmed);
+    if (pending_le_pairing_.address_ == address) {
+      pending_le_pairing_.handler_->OnUiAction(PairingEvent::UI_ACTION_TYPE::PAIRING_ACCEPTED, confirmed);
+    }
   }
 }
 
