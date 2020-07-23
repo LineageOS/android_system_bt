@@ -211,6 +211,8 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
       l2cap::classic::SecurityPolicy policy,
       l2cap::classic::SecurityEnforcementInterface::ResultCallback result_callback,
       bool try_meet_requirements);
+  void ConnectionIsReadyStartPairing(LeFixedChannelEntry* stored_channel);
+  void WipeLePairingHandler();
 
   os::Handler* security_handler_ __attribute__((unused));
   l2cap::le::L2capLeModule* l2cap_le_module_ __attribute__((unused));

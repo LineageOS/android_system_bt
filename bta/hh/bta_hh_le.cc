@@ -1650,7 +1650,7 @@ void bta_hh_le_open_fail(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
  *
  * Function         bta_hh_gatt_close
  *
- * Description      action function to process the GATT close int he state
+ * Description      action function to process the GATT close in the state
  *                  machine.
  *
  * Returns          void
