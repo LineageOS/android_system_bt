@@ -74,7 +74,8 @@ void rfcomm_l2cap_if_init(void) {
   p_l2c->pL2CA_CongestionStatus_Cb = RFCOMM_CongestionStatusInd;
   p_l2c->pL2CA_TxComplete_Cb = NULL;
 
-  L2CA_Register(BT_PSM_RFCOMM, p_l2c, true /* enable_snoop */, nullptr);
+  L2CA_Register(BT_PSM_RFCOMM, p_l2c, true /* enable_snoop */, nullptr,
+                RFCOMM_DEFAULT_MTU);
 }
 
 /*******************************************************************************
