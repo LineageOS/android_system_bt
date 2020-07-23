@@ -15,24 +15,15 @@
  */
 #define LOG_TAG "bt_gd_shim"
 
-#include "shim/dumpsys.h"
-
-#include <algorithm>
-#include <functional>
 #include <future>
-#include <memory>
 #include <string>
-#include <unordered_map>
-#include <utility>
 
-#include "bundler_generated.h"
-#include "dumpsys_generated.h"
-#include "flatbuffers/idl.h"
-#include "flatbuffers/reflection_generated.h"
+#include "dumpsys/filter.h"
 #include "generated_dumpsys_bundled_schema.h"
 #include "module.h"
-#include "os/handler.h"
 #include "os/log.h"
+#include "shim/dumpsys.h"
+#include "shim/dumpsys_args.h"
 
 namespace bluetooth {
 namespace shim {
@@ -42,41 +33,13 @@ constexpr char kModuleName[] = "shim::Dumpsys";
 constexpr char kDumpsysTitle[] = "----- Gd Dumpsys ------";
 }  // namespace
 
-constexpr char kArgumentDeveloper[] = "--dev";
-
-class ParsedDumpsysArgs {
- public:
-  ParsedDumpsysArgs(const char** args) {
-    if (args == nullptr) return;
-    const char* p = *args;
-    while (p != nullptr) {
-      num_args_++;
-      if (!strcmp(p, kArgumentDeveloper)) {
-        dev_arg_ = true;
-      } else {
-        // silently ignore unexpected option
-      }
-      if (++args == nullptr) break;
-      p = *args;
-    }
-  }
-  bool IsDeveloper() const {
-    return dev_arg_;
-  }
-
- private:
-  unsigned num_args_{0};
-  bool dev_arg_{false};
-};
-
 struct Dumpsys::impl {
  public:
-  void DumpWithArgs(int fd, const char** args, std::promise<void> promise);
-
-  impl(const Dumpsys& dumpsys_module, const std::string& bundled_schema_data);
-  ~impl() = default;
-
+  void DumpWithArgsSync(int fd, const char** args, std::promise<void> promise);
   int GetNumberOfBundledSchemas() const;
+
+  impl(const Dumpsys& dumpsys_module, const dumpsys::ReflectionSchema& reflection_schema);
+  ~impl() = default;
 
  protected:
   void FilterAsUser(std::string* dumpsys_data);
@@ -84,82 +47,56 @@ struct Dumpsys::impl {
   std::string PrintAsJson(std::string* dumpsys_data) const;
 
  private:
-  const reflection::Schema* FindInBundledSchema(const std::string& name) const;
-  const dumpsys::BundledSchema* GetBundledSchema() const;
+  void DumpWithArgsAsync(int fd, const char** args);
+
   const Dumpsys& dumpsys_module_;
-  const std::string pre_bundled_schema_;
+  const dumpsys::ReflectionSchema reflection_schema_;
 };
 
 const ModuleFactory Dumpsys::Factory =
     ModuleFactory([]() { return new Dumpsys(bluetooth::dumpsys::GetBundledSchemaData()); });
 
-Dumpsys::impl::impl(const Dumpsys& dumpsys_module, const std::string& pre_bundled_schema)
-    : dumpsys_module_(dumpsys_module), pre_bundled_schema_(pre_bundled_schema) {}
+Dumpsys::impl::impl(const Dumpsys& dumpsys_module, const dumpsys::ReflectionSchema& reflection_schema)
+    : dumpsys_module_(dumpsys_module), reflection_schema_(std::move(reflection_schema)) {}
 
 int Dumpsys::impl::GetNumberOfBundledSchemas() const {
-  return GetBundledSchema()->map()->size();
-}
-
-const dumpsys::BundledSchema* Dumpsys::impl::GetBundledSchema() const {
-  const dumpsys::BundledSchema* bundled_schema =
-      flatbuffers::GetRoot<dumpsys::BundledSchema>(pre_bundled_schema_.data());
-  ASSERT(bundled_schema != nullptr);
-  return bundled_schema;
-}
-
-const reflection::Schema* Dumpsys::impl::FindInBundledSchema(const std::string& name) const {
-  const flatbuffers::Vector<flatbuffers::Offset<dumpsys::BundledSchemaMap>>* map = GetBundledSchema()->map();
-
-  for (auto it = map->cbegin(); it != map->cend(); ++it) {
-    if (it->name()->str() == name) {
-      flatbuffers::Verifier verifier(reinterpret_cast<const uint8_t*>(it->data()->Data()), it->data()->size());
-      if (!reflection::VerifySchemaBuffer(verifier)) {
-        LOG_WARN("Unable to verify schema buffer name:%s", name.c_str());
-        return nullptr;
-      }
-      return reflection::GetSchema(it->data()->Data());
-    }
-  }
-
-  LOG_WARN("Unable to find bundled schema name:%s", name.c_str());
-  LOG_WARN("  title:%s root_name:%s", GetBundledSchema()->title()->c_str(), GetBundledSchema()->root_name()->c_str());
-  for (auto it = map->cbegin(); it != map->cend(); ++it) {
-    LOG_WARN("    schema:%s", it->name()->c_str());
-  }
-  return nullptr;
+  return reflection_schema_.GetNumberOfBundledSchemas();
 }
 
 void Dumpsys::impl::FilterAsDeveloper(std::string* dumpsys_data) {
   ASSERT(dumpsys_data != nullptr);
-  LOG_INFO("%s UNIMPLEMENTED", __func__);
+  dumpsys::FilterInPlace(dumpsys::FilterType::AS_DEVELOPER, reflection_schema_, dumpsys_data);
 }
 
 void Dumpsys::impl::FilterAsUser(std::string* dumpsys_data) {
   ASSERT(dumpsys_data != nullptr);
-  LOG_INFO("%s UNIMPLEMENTED", __func__);
+  dumpsys::FilterInPlace(dumpsys::FilterType::AS_USER, reflection_schema_, dumpsys_data);
 }
 
 std::string Dumpsys::impl::PrintAsJson(std::string* dumpsys_data) const {
   ASSERT(dumpsys_data != nullptr);
 
-  const flatbuffers::String* root_name = GetBundledSchema()->root_name();
-  if (root_name == nullptr) {
+  const std::string root_name = reflection_schema_.GetRootName();
+  if (root_name.empty()) {
     char buf[255];
-    snprintf(buf, sizeof(buf), "ERROR: Unable to find root name in prebundled schema\n");
+    snprintf(buf, sizeof(buf), "ERROR: Unable to find root name in prebundled reflection schema\n");
+    LOG_WARN("%s", buf);
     return std::string(buf);
   }
 
-  const reflection::Schema* schema = FindInBundledSchema(root_name->str());
+  const reflection::Schema* schema = reflection_schema_.FindInReflectionSchema(root_name);
   if (schema == nullptr) {
     char buf[255];
-    snprintf(buf, sizeof(buf), "ERROR: Unable to find schema root name:%s\n", root_name->c_str());
+    snprintf(buf, sizeof(buf), "ERROR: Unable to find schema root name:%s\n", root_name.c_str());
+    LOG_WARN("%s", buf);
     return std::string(buf);
   }
 
   flatbuffers::Parser parser;
   if (!parser.Deserialize(schema)) {
     char buf[255];
-    snprintf(buf, sizeof(buf), "ERROR: Unable to deserialize bundle root name:%s\n", root_name->c_str());
+    snprintf(buf, sizeof(buf), "ERROR: Unable to deserialize bundle root name:%s\n", root_name.c_str());
+    LOG_WARN("%s", buf);
     return std::string(buf);
   }
 
@@ -168,7 +105,7 @@ std::string Dumpsys::impl::PrintAsJson(std::string* dumpsys_data) const {
   return jsongen;
 }
 
-void Dumpsys::impl::DumpWithArgs(int fd, const char** args, std::promise<void> promise) {
+void Dumpsys::impl::DumpWithArgsAsync(int fd, const char** args) {
   ParsedDumpsysArgs parsed_dumpsys_args(args);
   const auto registry = dumpsys_module_.GetModuleRegistry();
 
@@ -185,16 +122,25 @@ void Dumpsys::impl::DumpWithArgs(int fd, const char** args, std::promise<void> p
   }
 
   dprintf(fd, "%s", PrintAsJson(&dumpsys_data).c_str());
+}
+
+void Dumpsys::impl::DumpWithArgsSync(int fd, const char** args, std::promise<void> promise) {
+  DumpWithArgsAsync(fd, args);
   promise.set_value();
 }
 
-Dumpsys::Dumpsys(const std::string& pre_bundled_schema) : pre_bundled_schema_(pre_bundled_schema) {}
+Dumpsys::Dumpsys(const std::string& pre_bundled_schema)
+    : reflection_schema_(dumpsys::ReflectionSchema(pre_bundled_schema)) {}
 
 void Dumpsys::Dump(int fd, const char** args) {
   std::promise<void> promise;
   auto future = promise.get_future();
-  CallOn(pimpl_.get(), &Dumpsys::impl::DumpWithArgs, fd, args, std::move(promise));
+  CallOn(pimpl_.get(), &Dumpsys::impl::DumpWithArgsSync, fd, args, std::move(promise));
   future.get();
+}
+
+void Dumpsys::Dump(int fd, const char** args, std::promise<void> promise) {
+  CallOn(pimpl_.get(), &Dumpsys::impl::DumpWithArgsSync, fd, args, std::move(promise));
 }
 
 os::Handler* Dumpsys::GetGdShimHandler() {
@@ -207,7 +153,7 @@ os::Handler* Dumpsys::GetGdShimHandler() {
 void Dumpsys::ListDependencies(ModuleList* list) {}
 
 void Dumpsys::Start() {
-  pimpl_ = std::make_unique<impl>(*this, pre_bundled_schema_);
+  pimpl_ = std::make_unique<impl>(*this, reflection_schema_);
 }
 
 void Dumpsys::Stop() {
