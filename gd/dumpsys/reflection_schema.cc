@@ -41,6 +41,10 @@ std::string dumpsys::ReflectionSchema::GetRootName() const {
   return bundled_schema_->root_name()->str();
 }
 
+const reflection::Schema* dumpsys::ReflectionSchema::GetRootReflectionSchema() const {
+  return FindInReflectionSchema(GetRootName());
+}
+
 const reflection::Schema* dumpsys::ReflectionSchema::FindInReflectionSchema(const std::string& name) const {
   const flatbuffers::Vector<flatbuffers::Offset<bluetooth::dumpsys::BundledSchemaMap>>* map = bundled_schema_->map();
 
@@ -54,13 +58,18 @@ const reflection::Schema* dumpsys::ReflectionSchema::FindInReflectionSchema(cons
       return reflection::GetSchema(it->data()->Data());
     }
   }
-
-  LOG_WARN("Unable to find bundled schema name:%s", name.c_str());
-  LOG_WARN("  title:%s root_name:%s", bundled_schema_->title()->c_str(), bundled_schema_->root_name()->c_str());
-  for (auto it = map->cbegin(); it != map->cend(); ++it) {
-    LOG_WARN("    schema:%s", it->name()->c_str());
-  }
   return nullptr;
+}
+
+void dumpsys::ReflectionSchema::PrintReflectionSchema() const {
+  const flatbuffers::Vector<flatbuffers::Offset<bluetooth::dumpsys::BundledSchemaMap>>* map = bundled_schema_->map();
+  LOG_INFO(
+      "  Bundled schema title:%s root_name:%s",
+      bundled_schema_->title()->c_str(),
+      bundled_schema_->root_name()->c_str());
+  for (auto it = map->cbegin(); it != map->cend(); ++it) {
+    LOG_INFO("    schema:%s", it->name()->c_str());
+  }
 }
 
 bool dumpsys::ReflectionSchema::VerifyReflectionSchema() const {
