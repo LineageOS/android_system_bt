@@ -93,8 +93,8 @@ class UserPrivacyFilter : public Filter {
 };
 
 bool UserPrivacyFilter::FilterField(const reflection::Field* field, flatbuffers::Table* table) {
-  assert(field != nullptr);
-  assert(table != nullptr);
+  ASSERT(field != nullptr);
+  ASSERT(table != nullptr);
   internal::PrivacyLevel privacy_level = internal::FindFieldPrivacyLevel(*field);
 
   switch (field->type()->base_type()) {
@@ -118,8 +118,10 @@ bool UserPrivacyFilter::FilterField(const reflection::Field* field, flatbuffers:
 }
 
 void UserPrivacyFilter::FilterObject(const reflection::Object* object, flatbuffers::Table* table) {
-  assert(object != nullptr);
-  assert(table != nullptr);
+  ASSERT(object != nullptr);
+  if (table == nullptr) {
+    return;  // table data is not populated
+  }
   for (auto it = object->fields()->cbegin(); it != object->fields()->cend(); ++it) {
     if (!FilterField(*it, table)) {
       LOG_ERROR("%s Unable to filter field from an object when it's expected it will work", __func__);
@@ -129,27 +131,45 @@ void UserPrivacyFilter::FilterObject(const reflection::Object* object, flatbuffe
 
 void UserPrivacyFilter::FilterTable(const reflection::Schema* schema, flatbuffers::Table* table) {
   if (schema == nullptr) {
-    LOG_INFO("%s schema is nullptr...probably ok", __func__);
+    LOG_WARN("%s schema is nullptr...probably ok", __func__);
     return;
   }
 
   const reflection::Object* object = schema->root_table();
   if (object == nullptr) {
-    LOG_ERROR("%s reflection object is nullptr...is ok ?", __func__);
+    LOG_WARN("%s reflection object is nullptr...is ok ?", __func__);
     return;
   }
 
   if (table == nullptr) {
-    LOG_DEBUG("Table:%s is not populated...returning", object->name()->c_str());
-    return;
+    return;  // table not populated
   }
 
-  // Filter each field in the reflection object
   for (auto it = object->fields()->cbegin(); it != object->fields()->cend(); ++it) {
     if (FilterField(*it, table)) {
-      continue;
+      continue;  // Field successfully filtered
     }
-    LOG_WARN("Field is complex non-string...skipping for now:%s", it->name()->c_str());
+    // Get the index of this complex non-string object from the schema which is
+    // also the same index into the data table.
+    int32_t index = it->type()->index();
+    ASSERT(index != -1);
+
+    flatbuffers::Table* sub_table = table->GetPointer<flatbuffers::Table*>(it->offset());
+    const reflection::Schema* sub_schema =
+        reflection_schema_.FindInReflectionSchema(schema->objects()->Get(index)->name()->str());
+
+    if (sub_schema != nullptr) {
+      FilterTable(sub_schema, sub_table);  // Top level schema
+    } else {
+      // Leaf node schema
+      const flatbuffers::String* name = schema->objects()->Get(index)->name();
+      const reflection::Object* sub_object = internal::FindReflectionObject(schema->objects(), name);
+      if (sub_object != nullptr) {
+        FilterObject(sub_object, sub_table);
+      } else {
+        LOG_ERROR("Unable to find reflection sub object:%s\n", name->c_str());
+      }
+    }
   }
 }
 

@@ -7,17 +7,17 @@ namespace testing {
 
 class QuxTestDataClass : public DumpsysTestDataClass {
  public:
-  TableAddFunction GetTable(flatbuffers::FlatBufferBuilder& builder) override {
-    auto name = builder.CreateString("Qux Module String");
+  TableAddFunction GetTable(flatbuffers::FlatBufferBuilder& fb_builder) override {
+    auto name = fb_builder.CreateString("Qux Module String");
 
-    QuxTestSchemaBuilder qux_builder(builder);
-    qux_builder.add_qux_private(123);
-    qux_builder.add_qux_opaque(456);
-    qux_builder.add_qux_anonymized(789);
-    qux_builder.add_qux_any(0xabc);
-    qux_builder.add_another_field(name);
+    QuxTestSchemaBuilder builder(fb_builder);
+    builder.add_qux_int_private(123);
+    builder.add_qux_int_opaque(456);
+    builder.add_qux_int_anonymized(789);
+    builder.add_qux_int_any(0xabc);
+    builder.add_qux_string_name(name);
 
-    auto qux_table = qux_builder.Finish();
+    auto qux_table = builder.Finish();
 
     return [qux_table](DumpsysTestDataRootBuilder* builder) { builder->add_qux_module_data(qux_table); };
   }

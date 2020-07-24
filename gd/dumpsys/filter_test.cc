@@ -19,7 +19,9 @@
 
 #include "dumpsys/filter.h"
 
+#include <gmock/gmock.h>
 #include <gtest/gtest.h>
+
 #include "test_data/bar.h"
 #include "test_data/baz.h"
 #include "test_data/foo.h"
@@ -105,6 +107,22 @@ TEST_F(DumpsysFilterTest, filter_as_developer) {
   ASSERT_TRUE(data_root->int_opaque() == 456);
   ASSERT_TRUE(data_root->int_anonymized() == 789);
   ASSERT_TRUE(data_root->int_any() == 0xabc);
+
+  ASSERT_EQ(nullptr, data_root->bar_module_data());
+
+  const testing::FooTestSchema* foo = data_root->foo_module_data();
+
+  ASSERT_EQ(123, foo->foo_int_private());
+  ASSERT_EQ(123, foo->foo_int_opaque());
+  ASSERT_EQ(123, foo->foo_int_anonymized());
+  ASSERT_EQ(123, foo->foo_int_any());
+  ASSERT_STREQ("123", foo->foo_int_string()->c_str());
+
+  ASSERT_FLOAT_EQ(123.456, foo->foo_float_private());
+  ASSERT_FLOAT_EQ(123.456, foo->foo_float_opaque());
+  ASSERT_FLOAT_EQ(123.456, foo->foo_float_anonymized());
+  ASSERT_FLOAT_EQ(123.456, foo->foo_float_any());
+  ASSERT_STREQ("123.456", foo->foo_float_string()->c_str());
 }
 
 TEST_F(DumpsysFilterTest, filter_as_user) {
@@ -124,6 +142,46 @@ TEST_F(DumpsysFilterTest, filter_as_user) {
   ASSERT_TRUE(data_root->int_opaque() == 0);
   ASSERT_TRUE(data_root->int_anonymized() != 789);
   ASSERT_TRUE(data_root->int_any() == 0xabc);
+
+  // bar
+  ASSERT_EQ(nullptr, data_root->bar_module_data());
+
+  // baz
+  const testing::BazTestSchema* baz = data_root->baz_module_data();
+  ASSERT_NE(nullptr, baz);
+
+  const testing::BazSubTableAny* baz_any = baz->sub_table_any();
+  ASSERT_NE(nullptr, baz_any);
+  ASSERT_EQ(nullptr, baz->sub_table_anonymized());
+  ASSERT_EQ(nullptr, baz->sub_table_opaque());
+  ASSERT_EQ(nullptr, baz->sub_table_private());
+
+  ASSERT_EQ(0, baz_any->subtable_int_private());     // 1
+  ASSERT_EQ(0, baz_any->subtable_int_opaque());      // 2
+  ASSERT_NE(3, baz_any->subtable_int_anonymized());  // 3
+  ASSERT_EQ(4, baz_any->subtable_int_any());         // 4
+  ASSERT_STREQ("Baz Subtable Any", baz_any->subtable_string_any()->c_str());
+
+  // foo
+  const testing::FooTestSchema* foo = data_root->foo_module_data();
+  ASSERT_EQ(0, foo->foo_int_private());
+  ASSERT_EQ(0, foo->foo_int_opaque());
+  ASSERT_NE(123, foo->foo_int_anonymized());
+  ASSERT_EQ(123, foo->foo_int_any());
+  ASSERT_STREQ("123", foo->foo_int_string()->c_str());
+  ASSERT_FLOAT_EQ(0.0, foo->foo_float_private());
+  ASSERT_FLOAT_EQ(0.0, foo->foo_float_opaque());
+  ASSERT_THAT(foo->foo_float_anonymized(), Not(FloatEq(123.456)));
+  ASSERT_FLOAT_EQ(123.456, foo->foo_float_any());
+  ASSERT_STREQ("123.456", foo->foo_float_string()->c_str());
+
+  // qux
+  const testing::QuxTestSchema* qux = data_root->qux_module_data();
+  ASSERT_EQ(0, qux->qux_int_private());
+  ASSERT_EQ(0, qux->qux_int_opaque());
+  ASSERT_NE(789, qux->qux_int_anonymized());
+  ASSERT_EQ(0xabc, qux->qux_int_any());
+  ASSERT_STREQ("Qux Module String", qux->qux_string_name()->c_str());
 }
 
 }  // namespace testing
