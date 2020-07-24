@@ -400,7 +400,7 @@ class AsyncManager::AsyncTaskManager {
   }
 
   void ThreadRoutine() {
-    while (1) {
+    while (running_) {
       TaskCallback callback;
       bool run_it = false;
       {
@@ -426,15 +426,14 @@ class AsyncManager::AsyncTaskManager {
       }
       {
         std::unique_lock<std::mutex> guard(internal_mutex_);
-        // wait on condition variable with timeout just in time for next task if
-        // any
+        // check for termination right before waiting
+        if (!running_) break;
+        // wait until time for the next task (if any)
         if (task_queue_.size() > 0) {
           internal_cond_var_.wait_until(guard, (*task_queue_.begin())->time);
         } else {
           internal_cond_var_.wait(guard);
         }
-        // check for termination right after being notified (and maybe before?)
-        if (!running_) break;
       }
     }
   }
