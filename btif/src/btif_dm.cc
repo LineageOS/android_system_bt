@@ -2494,6 +2494,7 @@ bt_status_t btif_dm_ssp_reply(const RawAddress* bd_addr,
     do_in_main_thread(
     FROM_HERE,
       base::Bind(&bluetooth::shim::BTIF_DM_ssp_reply, *bd_addr, tmp_addr_type, variant, accept));
+    return BT_STATUS_SUCCESS;
   }
 
   if (variant == BT_SSP_VARIANT_PASSKEY_ENTRY) {
