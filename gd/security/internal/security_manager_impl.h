@@ -228,7 +228,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   hci::IoCapability local_io_capability_ = kDefaultIoCapability;
   hci::AuthenticationRequirements local_authentication_requirements_ = kDefaultAuthenticationRequirements;
   hci::OobDataPresent local_oob_data_present_ = kDefaultOobDataPresent;
-  security::IoCapability local_le_io_capability_ = security::IoCapability::NO_INPUT_NO_OUTPUT;
+  security::IoCapability local_le_io_capability_ = security::IoCapability::KEYBOARD_DISPLAY;
   uint8_t local_le_auth_req_ = AuthReqMaskBondingFlag | AuthReqMaskMitm | AuthReqMaskSc;
   OobDataFlag local_le_oob_data_present_ = OobDataFlag::NOT_PRESENT;
   std::optional<MyOobData> local_le_oob_data_;
