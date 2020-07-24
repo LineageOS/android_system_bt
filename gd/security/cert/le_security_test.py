@@ -200,7 +200,7 @@ class LeSecurityTest(GdBaseTestClass):
         # c. AuthReq Bonding Flags set to ‘00’, and the MITM flag set to ‘0’ and all the reserved bits are set to ‘0’
         self.cert.security.SendUiCallback(
             UiCallbackMsg(
-                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.cert_address))
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.dut_address))
 
         # 3. IUT and Lower Tester perform phase 2 of the just works pairing procedure and establish an encrypted link with the key generated in phase 2.
         assertThat(self.dut_security.get_bond_stream()).emits(SecurityMatchers.BondMsg(BondMsgType.DEVICE_BONDED))
@@ -233,7 +233,7 @@ class LeSecurityTest(GdBaseTestClass):
         # b. OOB data flag set to 0x00 (OOB Authentication data not present)
         self.dut.security.SendUiCallback(
             UiCallbackMsg(
-                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.dut_address))
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.cert_address))
 
         # IUT and Lower Tester perform phase 2 of the just works pairing and establish an encrypted link with the generated STK.
         assertThat(self.dut_security.get_bond_stream()).emits(SecurityMatchers.BondMsg(BondMsgType.DEVICE_BONDED))
@@ -268,7 +268,7 @@ class LeSecurityTest(GdBaseTestClass):
         # c. All reserved bits are set to ‘0’
         self.dut.security.SendUiCallback(
             UiCallbackMsg(
-                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.dut_address))
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.cert_address))
 
         # 3. IUT and Lower Tester perform phase 2 of the just works pairing and establish an encrypted link with the generated STK.
         assertThat(self.dut_security.get_bond_stream()).emits(SecurityMatchers.BondMsg(BondMsgType.DEVICE_BONDED))
@@ -303,7 +303,7 @@ class LeSecurityTest(GdBaseTestClass):
         # c. AuthReq bonding flag set to the value indicated in the IXIT [7] for ‘Bonding Flags’ and the MITM flag set to ‘0’ and all reserved bits are set to ‘1’. The SC and Keypress bits in the AuthReq bonding flag are set to 0 by the Lower Tester for this test.
         self.cert.security.SendUiCallback(
             UiCallbackMsg(
-                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.cert_address))
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.dut_address))
 
         # 3. IUT and Lower Tester perform phase 2 of the just works pairing and establish an encrypted link with the generated STK.
         assertThat(self.dut_security.get_bond_stream()).emits(SecurityMatchers.BondMsg(BondMsgType.DEVICE_BONDED))
@@ -338,7 +338,7 @@ class LeSecurityTest(GdBaseTestClass):
         # c. AuthReq Bonding Flags set to ‘00’, the MITM flag set to ‘0’, Secure Connections flag set to '1' and all the reserved bits are set to ‘0’
         self.cert.security.SendUiCallback(
             UiCallbackMsg(
-                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.cert_address))
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.dut_address))
 
         # 3. IUT and Lower Tester perform phase 2 of the Just Works or Numeric Comparison pairing procedure according to the MITM flag and IO capabilities, and establish an encrypted link with the LTK generated in phase 2.
         assertThat(self.dut_security.get_bond_stream()).emits(SecurityMatchers.BondMsg(BondMsgType.DEVICE_BONDED))
@@ -372,7 +372,7 @@ class LeSecurityTest(GdBaseTestClass):
         # b. AuthReq Bonding Flags set to ‘00’, MITM flag set to either ‘0’ for Just Works or '1' for Numeric Comparison, Secure Connections flag set to '1' and all reserved bits are set to ‘0’
         self.dut.security.SendUiCallback(
             UiCallbackMsg(
-                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.dut_address))
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.cert_address))
 
         # 3. UT and Lower Tester perform phase 2 of the Just Works or Numeric Comparison pairing procedure according to the MITM flag and IO capabilities, and establish an encrypted link with the LTK generated in phase 2.
         assertThat(self.dut_security.get_bond_stream()).emits(SecurityMatchers.BondMsg(BondMsgType.DEVICE_BONDED))
@@ -408,7 +408,7 @@ class LeSecurityTest(GdBaseTestClass):
         # c. All reserved bits are set to ‘0’
         self.dut.security.SendUiCallback(
             UiCallbackMsg(
-                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.dut_address))
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.cert_address))
 
         # 3. IUT and Lower Tester perform phase 2 of the Just Works pairing and establish an encrypted link with the generated LTK.
         assertThat(self.dut_security.get_bond_stream()).emits(SecurityMatchers.BondMsg(BondMsgType.DEVICE_BONDED))
@@ -444,7 +444,7 @@ class LeSecurityTest(GdBaseTestClass):
         # c. AuthReq bonding flag set to the value indicated in the IXIT [7] for ‘Bonding Flags’ and the MITM flag set to ‘0’ and all reserved bits are set to a random value.
         self.cert.security.SendUiCallback(
             UiCallbackMsg(
-                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.cert_address))
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.dut_address))
 
         # 3. IUT and Lower Tester perform phase 2 of the Just Works pairing and establish an encrypted link with the generated LTK.
         assertThat(self.dut_security.get_bond_stream()).emits(SecurityMatchers.BondMsg(BondMsgType.DEVICE_BONDED))
@@ -479,7 +479,7 @@ class LeSecurityTest(GdBaseTestClass):
         # c. AuthReq bonding flag set to ‘00’, the MITM flag set to ‘1’, Secure Connections flag set to '1' and all reserved bits are set to ‘0’. Keypress bit is set to '1' if supported by the IUT.
         self.cert.security.SendUiCallback(
             UiCallbackMsg(
-                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.cert_address))
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.dut_address))
 
         assertThat(self.cert_security.get_ui_stream()).emits(SecurityMatchers.UiMsg(UiMsgType.DISPLAY_PASSKEY_ENTRY))
 
@@ -527,7 +527,7 @@ class LeSecurityTest(GdBaseTestClass):
         # b. Secure Connections flag set to '1'. Keypress bit is set to '1' if supported by IUT
         self.dut.security.SendUiCallback(
             UiCallbackMsg(
-                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.dut_address))
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.cert_address))
 
         # 3. During the phase 2 passkey pairing process, Lower Tester displays the 6-digit passkey while the IUT prompts user to enter the 6-digit passkey. If the IO capabilities of the IUT are “DisplayYesNo” or “DisplayOnly” the IUT displays the 6-digit passkey while the Lower Tester enters the 6-digit passkey. If Keypress bit is set, pairing keypress notifications are send by the IUT
         passkey = self.dut_security.wait_for_ui_event_passkey()
@@ -577,7 +577,7 @@ class LeSecurityTest(GdBaseTestClass):
         # c. All reserved bits are set to ‘0’
         self.dut.security.SendUiCallback(
             UiCallbackMsg(
-                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.dut_address))
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.cert_address))
 
         passkey = self.cert_security.wait_for_ui_event_passkey()
 
@@ -625,7 +625,7 @@ class LeSecurityTest(GdBaseTestClass):
         # c. AuthReq bonding flag set to the value indicated in the IXIT [7] for ‘Bonding Flags’ and the MITM flag set to ‘1’ and all reserved bits are set to a random value.
         self.cert.security.SendUiCallback(
             UiCallbackMsg(
-                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.cert_address))
+                message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.dut_address))
 
         assertThat(self.cert_security.get_ui_stream()).emits(SecurityMatchers.UiMsg(UiMsgType.DISPLAY_PASSKEY_ENTRY))
 
@@ -686,7 +686,7 @@ class LeSecurityTest(GdBaseTestClass):
             # 2. Lower Tester responds with a Pairing Response command with Secure Connections flag set to '1' and OOB data flag set to either 0x00 or 0x01.
             self.cert.security.SendUiCallback(
                 UiCallbackMsg(
-                    message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.cert_address))
+                    message_type=UiCallbackType.PAIRING_PROMPT, boolean=True, unique_id=1, address=self.dut_address))
 
             # 3. IUT uses the 128-bit value generated by the Lower Tester as the confirm value. Similarly, the Lower Tester uses the 128-bit value generated by the IUT as the confirm value.
 
