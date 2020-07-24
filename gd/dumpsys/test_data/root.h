@@ -10,7 +10,7 @@ using TableAddFunction = std::function<void(testing::DumpsysTestDataRootBuilder*
 namespace testing {
 
 struct DumpsysTestDataClass {
-  virtual TableAddFunction GetTable(flatbuffers::FlatBufferBuilder& builder) = 0;
+  virtual TableAddFunction GetTable(flatbuffers::FlatBufferBuilder& fb_builder) = 0;
   virtual ~DumpsysTestDataClass() = default;
 };
 
