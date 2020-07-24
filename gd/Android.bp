@@ -206,6 +206,7 @@ cc_binary {
     ],
     generated_headers: [
         "BluetoothFacadeGeneratedStub_h",
+        "BluetoothGeneratedBundlerSchema_h_bfbs",
         "BluetoothGeneratedDumpsysDataSchema_h",
         "BluetoothGeneratedPackets_h",
         // Needed here to guarantee that generated zip file is created before
@@ -297,6 +298,7 @@ cc_test {
         "BluetoothGeneratedDumpsysBundledSchema_h",
         "BluetoothGeneratedDumpsysBundledTestSchema_h",
         "BluetoothGeneratedDumpsysDataSchema_h",
+        "BluetoothGeneratedDumpsysTestData_h",
         "BluetoothGeneratedPackets_h",
     ],
     static_libs: [
@@ -366,6 +368,7 @@ cc_defaults {
         android: {
             shared_libs: [
                 "android.hardware.bluetooth@1.0",
+                "libcutils",
                 "libhidlbase",
                 "libutils",
             ],

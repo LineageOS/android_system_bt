@@ -31,10 +31,6 @@ const RawAddress RawAddress::kEmpty{{0x00, 0x00, 0x00, 0x00, 0x00, 0x00}};
 
 RawAddress::RawAddress(const uint8_t (&addr)[6]) {
   std::copy(addr, addr + kLength, address);
-};
-
-RawAddress::RawAddress(const std::array<uint8_t, kLength>& addr) {
-  std::copy(addr.data(), addr.data() + kLength, address);
 }
 
 std::string RawAddress::ToString() const {

@@ -167,6 +167,26 @@ class TestHciLayer : public HciLayer {
     return command;
   }
 
+  ConnectionManagementCommandView GetLastCommandPacket(OpCode op_code) {
+    if (!command_queue_.empty() && command_future_ != nullptr) {
+      command_promise_.reset();
+      command_future_.reset();
+    } else if (command_future_ != nullptr) {
+      auto result = command_future_->wait_for(std::chrono::milliseconds(1000));
+      EXPECT_NE(std::future_status::timeout, result);
+    }
+    if (command_queue_.empty()) {
+      return ConnectionManagementCommandView::Create(
+          CommandPacketView::Create(std::make_shared<std::vector<uint8_t>>()));
+    }
+    CommandPacketView command_packet_view = GetLastCommand();
+    ConnectionManagementCommandView command = ConnectionManagementCommandView::Create(command_packet_view);
+    EXPECT_TRUE(command.IsValid());
+    EXPECT_EQ(command.GetOpCode(), op_code);
+
+    return command;
+  }
+
   void RegisterEventHandler(EventCode event_code,
                             common::ContextualCallback<void(EventPacketView)> event_handler) override {
     registered_events_[event_code] = event_handler;
@@ -652,14 +672,14 @@ TEST_F(AclManagerTest, cancel_le_connection) {
   AddressWithType remote_with_type(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
   test_hci_layer_->SetCommandFuture();
   acl_manager_->CreateLeConnection(remote_with_type);
-  test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST);
+  test_hci_layer_->GetLastCommandPacket(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST);
   test_hci_layer_->IncomingEvent(LeAddDeviceToConnectListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   test_hci_layer_->SetCommandFuture();
-  test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
+  test_hci_layer_->GetLastCommandPacket(OpCode::LE_CREATE_CONNECTION);
 
   test_hci_layer_->SetCommandFuture();
   acl_manager_->CancelLeConnect(remote_with_type);
-  auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION_CANCEL);
+  auto packet = test_hci_layer_->GetLastCommandPacket(OpCode::LE_CREATE_CONNECTION_CANCEL);
   auto le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
   auto command_view = LeCreateConnectionCancelView::Create(le_connection_management_command_view);
   ASSERT_TRUE(command_view.IsValid());
@@ -677,7 +697,7 @@ TEST_F(AclManagerTest, cancel_le_connection) {
       ClockAccuracy::PPM_30));
 
   test_hci_layer_->SetCommandFuture();
-  packet = test_hci_layer_->GetCommandPacket(OpCode::LE_REMOVE_DEVICE_FROM_CONNECT_LIST);
+  packet = test_hci_layer_->GetLastCommandPacket(OpCode::LE_REMOVE_DEVICE_FROM_CONNECT_LIST);
   le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
   auto remove_command_view = LeRemoveDeviceFromConnectListView::Create(le_connection_management_command_view);
   ASSERT_TRUE(remove_command_view.IsValid());
@@ -1213,18 +1233,21 @@ TEST_F(AclManagerWithResolvableAddressTest, create_connection_cancel_fail) {
   acl_manager_->CreateLeConnection(remote_with_type_);
 
   // Add device to connect list
-  test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST);
+  test_hci_layer_->GetLastCommandPacket(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST);
   test_hci_layer_->SetCommandFuture();
   test_hci_layer_->IncomingEvent(LeAddDeviceToConnectListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
 
   // Set random address
-  test_hci_layer_->GetCommandPacket(OpCode::LE_SET_RANDOM_ADDRESS);
+  test_hci_layer_->GetLastCommandPacket(OpCode::LE_SET_RANDOM_ADDRESS);
   test_hci_layer_->SetCommandFuture();
   test_hci_layer_->IncomingEvent(LeSetRandomAddressCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
 
   // send create connection command
-  test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
+  test_hci_layer_->GetLastCommandPacket(OpCode::LE_CREATE_CONNECTION);
   test_hci_layer_->IncomingEvent(LeCreateConnectionStatusBuilder::Create(ErrorCode::SUCCESS, 0x01));
+
+  fake_registry_.SynchronizeModuleHandler(&HciLayer::Factory, std::chrono::milliseconds(20));
+  fake_registry_.SynchronizeModuleHandler(&AclManager::Factory, std::chrono::milliseconds(20));
 
   Address remote2;
   Address::FromString("A1:A2:A3:A4:A5:A7", remote2);
@@ -1235,7 +1258,7 @@ TEST_F(AclManagerWithResolvableAddressTest, create_connection_cancel_fail) {
   acl_manager_->CreateLeConnection(remote_with_type2);
 
   // cancel previous connection
-  test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION_CANCEL);
+  test_hci_layer_->GetLastCommandPacket(OpCode::LE_CREATE_CONNECTION_CANCEL);
 
   // receive connection complete of first device
   test_hci_layer_->IncomingLeMetaEvent(LeConnectionCompleteBuilder::Create(
@@ -1255,7 +1278,7 @@ TEST_F(AclManagerWithResolvableAddressTest, create_connection_cancel_fail) {
       LeCreateConnectionCancelCompleteBuilder::Create(0x01, ErrorCode::CONNECTION_ALREADY_EXISTS));
 
   // Add another device to connect list
-  test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST);
+  test_hci_layer_->GetLastCommandPacket(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST);
   test_hci_layer_->IncomingEvent(LeAddDeviceToConnectListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
 }
 

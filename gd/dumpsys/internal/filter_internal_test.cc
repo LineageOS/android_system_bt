@@ -192,7 +192,7 @@ TEST_F(DumpsysFilterInternalFloatTest, filter_type_float_any) {
   ASSERT_TRUE(object != nullptr);
 
   for (auto it = object->fields()->cbegin(); it != object->fields()->cend(); ++it) {
-    bluetooth::dumpsys::internal::FilterTypeInteger(**it, table, bluetooth::dumpsys::internal::PrivacyLevel::kAny);
+    bluetooth::dumpsys::internal::FilterTypeFloat(**it, table, bluetooth::dumpsys::internal::PrivacyLevel::kAny);
   }
   ASSERT_FLOAT_EQ(1.23, test_table->test_float());
 }
@@ -207,8 +207,7 @@ TEST_F(DumpsysFilterInternalFloatTest, filter_type_float_anonymized) {
   ASSERT_TRUE(object != nullptr);
 
   for (auto it = object->fields()->cbegin(); it != object->fields()->cend(); ++it) {
-    bluetooth::dumpsys::internal::FilterTypeInteger(
-        **it, table, bluetooth::dumpsys::internal::PrivacyLevel::kAnonymized);
+    bluetooth::dumpsys::internal::FilterTypeFloat(**it, table, bluetooth::dumpsys::internal::PrivacyLevel::kAnonymized);
   }
   ASSERT_THAT(test_table->test_float(), Not(FloatEq(1.23)));
 }
@@ -223,7 +222,7 @@ TEST_F(DumpsysFilterInternalFloatTest, filter_type_float_opaque) {
   ASSERT_TRUE(object != nullptr);
 
   for (auto it = object->fields()->cbegin(); it != object->fields()->cend(); ++it) {
-    bluetooth::dumpsys::internal::FilterTypeInteger(**it, table, bluetooth::dumpsys::internal::PrivacyLevel::kOpaque);
+    bluetooth::dumpsys::internal::FilterTypeFloat(**it, table, bluetooth::dumpsys::internal::PrivacyLevel::kOpaque);
   }
   ASSERT_FLOAT_EQ(0.0, test_table->test_float());
 }
@@ -238,7 +237,7 @@ TEST_F(DumpsysFilterInternalFloatTest, filter_type_float_private) {
   ASSERT_TRUE(object != nullptr);
 
   for (auto it = object->fields()->cbegin(); it != object->fields()->cend(); ++it) {
-    bluetooth::dumpsys::internal::FilterTypeInteger(**it, table, bluetooth::dumpsys::internal::PrivacyLevel::kPrivate);
+    bluetooth::dumpsys::internal::FilterTypeFloat(**it, table, bluetooth::dumpsys::internal::PrivacyLevel::kPrivate);
   }
   ASSERT_FLOAT_EQ(0.0, test_table->test_float());
 }

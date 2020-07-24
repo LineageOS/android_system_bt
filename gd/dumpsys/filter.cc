@@ -1,0 +1,177 @@
+/*
+ * Copyright 2020 The Android Open Source Project
+ *
+ * Licensed under the Apache License, Version 2.0 (the "License");
+ * you may not use this file except in compliance with the License.
+ * You may obtain a copy of the License at
+ *
+ *      http://www.apache.org/licenses/LICENSE-2.0
+ *
+ * Unless required by applicable law or agreed to in writing, software
+ * distributed under the License is distributed on an "AS IS" BASIS,
+ * WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+ * See the License for the specific language governing permissions and
+ * limitations under the License.
+ */
+
+#include <memory>
+
+#include "dumpsys/filter.h"
+#include "dumpsys/internal/filter_internal.h"
+#include "os/log.h"
+
+using namespace bluetooth;
+using namespace dumpsys;
+
+class Filter {
+ public:
+  Filter(const dumpsys::ReflectionSchema& reflection_schema) : reflection_schema_(reflection_schema) {}
+
+  virtual ~Filter() = default;
+
+  virtual void FilterInPlace(char* dumpsys_data) = 0;
+
+  static std::unique_ptr<Filter> Factory(
+      dumpsys::FilterType filter_type, const dumpsys::ReflectionSchema& reflection_schema);
+
+ protected:
+  /**
+   * Given both reflection field data and the populated flatbuffer table data, if any,
+   * filter the contents of the field based upon the filtering privacy level.
+   *
+   * Primitives and composite strings may be successfully processed at this point.
+   * Other composite types (e.g. structs or tables) must be expanded into the
+   * respective grouping of subfields.
+   *
+   * @param field The reflection field information from the bundled schema
+   * @param table The populated field data, if any
+   *
+   * @return true if field was filtered successfully, false otherwise.
+   */
+  virtual bool FilterField(const reflection::Field* field, flatbuffers::Table* table) {
+    return false;
+  }
+
+  /**
+   * Given both reflection object data and the populated flatbuffer table data, if any,
+   * filter the object fields based upon the filtering privacy level.
+   *
+   * @param object The reflection object information from the bundled schema
+   * @param table The populated field data, if any
+   *
+   */
+  virtual void FilterObject(const reflection::Object* object, flatbuffers::Table* table){};
+
+  /**
+   * Given both reflection field data and the populated table data, if any,
+   * filter the contents of the table based upon the filtering privacy level.
+   *
+   * @param schema The reflection schema information from the bundled schema
+   * @param table The populated field data, if any
+   *
+   */
+  virtual void FilterTable(const reflection::Schema* schema, flatbuffers::Table* table){};
+
+  const dumpsys::ReflectionSchema& reflection_schema_;
+};
+
+class DeveloperPrivacyFilter : public Filter {
+ public:
+  DeveloperPrivacyFilter(const dumpsys::ReflectionSchema& reflection_schema) : Filter(reflection_schema) {}
+  void FilterInPlace(char* dumpsys_data) override {}
+};
+
+class UserPrivacyFilter : public Filter {
+ public:
+  UserPrivacyFilter(const dumpsys::ReflectionSchema& reflection_schema) : Filter(reflection_schema) {}
+  void FilterInPlace(char* dumpsys_data) override;
+
+ protected:
+  bool FilterField(const reflection::Field* field, flatbuffers::Table* table) override;
+  void FilterObject(const reflection::Object* object, flatbuffers::Table* table) override;
+  void FilterTable(const reflection::Schema* schema, flatbuffers::Table* table) override;
+};
+
+bool UserPrivacyFilter::FilterField(const reflection::Field* field, flatbuffers::Table* table) {
+  assert(field != nullptr);
+  assert(table != nullptr);
+  internal::PrivacyLevel privacy_level = internal::FindFieldPrivacyLevel(*field);
+
+  switch (field->type()->base_type()) {
+    case flatbuffers::BASE_TYPE_INT:
+      return internal::FilterTypeInteger(*field, table, privacy_level);
+      break;
+    case flatbuffers::BASE_TYPE_FLOAT:
+      return internal::FilterTypeFloat(*field, table, privacy_level);
+      break;
+    case flatbuffers::BASE_TYPE_STRING:
+      return internal::FilterTypeString(*field, table, privacy_level);
+      break;
+    case flatbuffers::BASE_TYPE_STRUCT:
+      return internal::FilterTypeStruct(*field, table, privacy_level);
+      break;
+    default:
+      LOG_WARN("%s WARN Unsupported base type\n", __func__);
+      break;
+  }
+  return false;
+}
+
+void UserPrivacyFilter::FilterObject(const reflection::Object* object, flatbuffers::Table* table) {
+  assert(object != nullptr);
+  assert(table != nullptr);
+  for (auto it = object->fields()->cbegin(); it != object->fields()->cend(); ++it) {
+    if (!FilterField(*it, table)) {
+      LOG_ERROR("%s Unable to filter field from an object when it's expected it will work", __func__);
+    };
+  }
+}
+
+void UserPrivacyFilter::FilterTable(const reflection::Schema* schema, flatbuffers::Table* table) {
+  if (schema == nullptr) {
+    LOG_INFO("%s schema is nullptr...probably ok", __func__);
+    return;
+  }
+
+  const reflection::Object* object = schema->root_table();
+  if (object == nullptr) {
+    LOG_ERROR("%s reflection object is nullptr...is ok ?", __func__);
+    return;
+  }
+
+  if (table == nullptr) {
+    LOG_DEBUG("Table:%s is not populated...returning", object->name()->c_str());
+    return;
+  }
+
+  // Filter each field in the reflection object
+  for (auto it = object->fields()->cbegin(); it != object->fields()->cend(); ++it) {
+    if (FilterField(*it, table)) {
+      continue;
+    }
+    LOG_WARN("Field is complex non-string...skipping for now:%s", it->name()->c_str());
+  }
+}
+
+void UserPrivacyFilter::FilterInPlace(char* dumpsys_data) {
+  ASSERT(dumpsys_data != nullptr);
+  const reflection::Schema* root_schema = reflection_schema_.FindInReflectionSchema(reflection_schema_.GetRootName());
+  flatbuffers::Table* table = const_cast<flatbuffers::Table*>(flatbuffers::GetRoot<flatbuffers::Table>(dumpsys_data));
+  FilterTable(root_schema, table);
+}
+
+std::unique_ptr<Filter> Filter::Factory(
+    dumpsys::FilterType filter_type, const dumpsys::ReflectionSchema& reflection_schema) {
+  switch (filter_type) {
+    case dumpsys::FilterType::AS_DEVELOPER:
+      return std::make_unique<DeveloperPrivacyFilter>(reflection_schema);
+    default:
+      return std::make_unique<UserPrivacyFilter>(reflection_schema);
+  }
+}
+
+void bluetooth::dumpsys::FilterInPlace(
+    FilterType filter_type, const ReflectionSchema& reflection_schema, std::string* dumpsys_data) {
+  auto filter = Filter::Factory(filter_type, reflection_schema);
+  filter->FilterInPlace(dumpsys_data->data());
+}

@@ -118,7 +118,7 @@ void gatt_init(void) {
 
   /* Now, register with L2CAP for ATT PSM over BR/EDR */
   if (!L2CA_Register(BT_PSM_ATT, (tL2CAP_APPL_INFO*)&dyn_info,
-                     false /* enable_snoop */, nullptr)) {
+                     false /* enable_snoop */, nullptr, gatt_cb.def_mtu_size)) {
     LOG(ERROR) << "ATT Dynamic Registration failed";
   }
 
