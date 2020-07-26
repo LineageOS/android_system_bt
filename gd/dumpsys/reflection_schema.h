@@ -33,7 +33,9 @@ class ReflectionSchema {
   int GetNumberOfBundledSchemas() const;
 
   bool VerifyReflectionSchema() const;
+  const reflection::Schema* GetRootReflectionSchema() const;
   const reflection::Schema* FindInReflectionSchema(const std::string& name) const;
+  void PrintReflectionSchema() const;
 
  private:
   const BundledSchema* bundled_schema_;

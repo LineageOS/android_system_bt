@@ -8,12 +8,12 @@ table FooTestSchema {
     foo_int_anonymized:int (privacy:"Anonymized");
     foo_int_any:int (privacy:"Any");
     foo_int_string:string (privacy:"Any");
+
     foo_float_private:float;
     foo_float_opaque:float (privacy:"Opaque");
     foo_float_anonymized:float (privacy:"Anonymized");
     foo_float_any:float (privacy:"Any");
     foo_float_string:string (privacy:"Any");
-    another_field:string (privacy: "Any");
 }
 
 root_type FooTestSchema;
