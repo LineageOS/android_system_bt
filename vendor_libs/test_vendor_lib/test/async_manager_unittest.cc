@@ -176,25 +176,28 @@ class AsyncManagerTest : public ::testing::Test {
 TEST_F(AsyncManagerTest, TestSetupTeardown) {}
 
 TEST_F(AsyncManagerTest, TestCancelTask) {
+  AsyncUserId user1 = async_manager_.GetNextUserId();
   bool task1_ran = false;
   bool* task1_ran_ptr = &task1_ran;
   AsyncTaskId task1_id =
-      async_manager_.ExecAsync(std::chrono::milliseconds(2),
+      async_manager_.ExecAsync(user1, std::chrono::milliseconds(2),
                                [task1_ran_ptr]() { *task1_ran_ptr = true; });
   ASSERT_TRUE(async_manager_.CancelAsyncTask(task1_id));
   ASSERT_FALSE(task1_ran);
 }
 
 TEST_F(AsyncManagerTest, TestCancelLongTask) {
+  AsyncUserId user1 = async_manager_.GetNextUserId();
   bool task1_ran = false;
   bool* task1_ran_ptr = &task1_ran;
   AsyncTaskId task1_id =
-      async_manager_.ExecAsync(std::chrono::milliseconds(2),
+      async_manager_.ExecAsync(user1, std::chrono::milliseconds(2),
                                [task1_ran_ptr]() { *task1_ran_ptr = true; });
   bool task2_ran = false;
   bool* task2_ran_ptr = &task2_ran;
-  AsyncTaskId task2_id = async_manager_.ExecAsync(
-      std::chrono::seconds(2), [task2_ran_ptr]() { *task2_ran_ptr = true; });
+  AsyncTaskId task2_id =
+      async_manager_.ExecAsync(user1, std::chrono::seconds(2),
+                               [task2_ran_ptr]() { *task2_ran_ptr = true; });
   ASSERT_FALSE(task1_ran);
   ASSERT_FALSE(task2_ran);
   while (!task1_ran)
@@ -202,6 +205,50 @@ TEST_F(AsyncManagerTest, TestCancelLongTask) {
   ASSERT_FALSE(async_manager_.CancelAsyncTask(task1_id));
   ASSERT_FALSE(task2_ran);
   ASSERT_TRUE(async_manager_.CancelAsyncTask(task2_id));
+}
+
+TEST_F(AsyncManagerTest, TestCancelAsyncTasksFromUser) {
+  AsyncUserId user1 = async_manager_.GetNextUserId();
+  AsyncUserId user2 = async_manager_.GetNextUserId();
+  bool task1_ran = false;
+  bool* task1_ran_ptr = &task1_ran;
+  bool task2_ran = false;
+  bool* task2_ran_ptr = &task2_ran;
+  bool task3_ran = false;
+  bool* task3_ran_ptr = &task3_ran;
+  bool task4_ran = false;
+  bool* task4_ran_ptr = &task4_ran;
+  bool task5_ran = false;
+  bool* task5_ran_ptr = &task5_ran;
+  AsyncTaskId task1_id =
+      async_manager_.ExecAsync(user1, std::chrono::milliseconds(2),
+                               [task1_ran_ptr]() { *task1_ran_ptr = true; });
+  AsyncTaskId task2_id =
+      async_manager_.ExecAsync(user1, std::chrono::seconds(2),
+                               [task2_ran_ptr]() { *task2_ran_ptr = true; });
+  AsyncTaskId task3_id =
+      async_manager_.ExecAsync(user1, std::chrono::milliseconds(2),
+                               [task3_ran_ptr]() { *task3_ran_ptr = true; });
+  AsyncTaskId task4_id =
+      async_manager_.ExecAsync(user1, std::chrono::seconds(2),
+                               [task4_ran_ptr]() { *task4_ran_ptr = true; });
+  AsyncTaskId task5_id =
+      async_manager_.ExecAsync(user2, std::chrono::milliseconds(2),
+                               [task5_ran_ptr]() { *task5_ran_ptr = true; });
+  ASSERT_FALSE(task1_ran);
+  while (!task1_ran || !task3_ran || !task5_ran)
+    ;
+  ASSERT_TRUE(task1_ran);
+  ASSERT_FALSE(task2_ran);
+  ASSERT_TRUE(task3_ran);
+  ASSERT_FALSE(task4_ran);
+  ASSERT_TRUE(task5_ran);
+  async_manager_.CancelAsyncTasksFromUser(user1);
+  ASSERT_FALSE(async_manager_.CancelAsyncTask(task1_id));
+  ASSERT_FALSE(async_manager_.CancelAsyncTask(task2_id));
+  ASSERT_FALSE(async_manager_.CancelAsyncTask(task3_id));
+  ASSERT_FALSE(async_manager_.CancelAsyncTask(task4_id));
+  ASSERT_FALSE(async_manager_.CancelAsyncTask(task5_id));
 }
 
 }  // namespace test_vendor_lib

@@ -49,14 +49,25 @@ using std::vector;
 namespace test_vendor_lib {
 
 TestModel::TestModel(
-    std::function<AsyncTaskId(std::chrono::milliseconds, const TaskCallback&)> event_scheduler,
+    std::function<AsyncUserId()> get_user_id,
+    std::function<AsyncTaskId(AsyncUserId, std::chrono::milliseconds,
+                              const TaskCallback&)>
+        event_scheduler,
 
-    std::function<AsyncTaskId(std::chrono::milliseconds, std::chrono::milliseconds, const TaskCallback&)>
+    std::function<AsyncTaskId(AsyncUserId, std::chrono::milliseconds,
+                              std::chrono::milliseconds, const TaskCallback&)>
         periodic_event_scheduler,
 
-    std::function<void(AsyncTaskId)> cancel, std::function<int(const std::string&, int)> connect_to_remote)
-    : schedule_task_(event_scheduler), schedule_periodic_task_(periodic_event_scheduler), cancel_task_(cancel),
-      connect_to_remote_(connect_to_remote) {
+    std::function<void(AsyncUserId)> cancel_tasks_from_user,
+    std::function<void(AsyncTaskId)> cancel,
+    std::function<int(const std::string&, int)> connect_to_remote)
+    : get_user_id_(std::move(get_user_id)),
+      schedule_task_(std::move(event_scheduler)),
+      schedule_periodic_task_(std::move(periodic_event_scheduler)),
+      cancel_task_(std::move(cancel)),
+      cancel_tasks_from_user_(std::move(cancel_tasks_from_user)),
+      connect_to_remote_(std::move(connect_to_remote)) {
+  model_user_id_ = get_user_id_();
   // TODO: Remove when registration works!
   example_devices_.push_back(std::make_shared<Beacon>());
   example_devices_.push_back(std::make_shared<BeaconSwarm>());
@@ -80,8 +91,9 @@ void TestModel::SetTimerPeriod(std::chrono::milliseconds new_period) {
 
 void TestModel::StartTimer() {
   LOG_INFO("StartTimer()");
-  timer_tick_task_ =
-      schedule_periodic_task_(std::chrono::milliseconds(0), timer_period_, [this]() { TestModel::TimerTick(); });
+  timer_tick_task_ = schedule_periodic_task_(
+      model_user_id_, std::chrono::milliseconds(0), timer_period_,
+      [this]() { TestModel::TimerTick(); });
 }
 
 void TestModel::StopTimer() {
@@ -184,18 +196,28 @@ void TestModel::IncomingHciConnection(int socket_fd) {
   for (size_t i = 0; i < phys_.size(); i++) {
     AddDeviceToPhy(index, i);
   }
-  dev->RegisterTaskScheduler(schedule_task_);
+  AsyncUserId user_id = get_user_id_();
+  dev->RegisterTaskScheduler(
+      [user_id, this](std::chrono::milliseconds delay,
+                      const TaskCallback& task_callback) {
+        return schedule_task_(user_id, delay, std::move(task_callback));
+      });
   dev->RegisterTaskCancel(cancel_task_);
-  dev->RegisterCloseCallback([this, socket_fd, index] { OnHciConnectionClosed(socket_fd, index); });
+  dev->RegisterCloseCallback([this, socket_fd, index, user_id] {
+    OnHciConnectionClosed(socket_fd, index, user_id);
+  });
 }
 
-void TestModel::OnHciConnectionClosed(int socket_fd, size_t index) {
+void TestModel::OnHciConnectionClosed(int socket_fd, size_t index,
+                                      AsyncUserId user_id) {
   if (index >= devices_.size() || devices_[index] == nullptr) {
     LOG_WARN("Unknown device %zu", index);
     return;
   }
   int close_result = close(socket_fd);
   ASSERT_LOG(close_result == 0, "can't close: %s", strerror(errno));
+
+  cancel_tasks_from_user_(user_id);
   devices_[index]->UnregisterPhyLayers();
   devices_[index] = nullptr;
 }
