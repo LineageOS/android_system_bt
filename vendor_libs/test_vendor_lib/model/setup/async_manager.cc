@@ -119,6 +119,8 @@ class AsyncManager::AsyncFdWatcher {
   }
 
   AsyncFdWatcher() = default;
+  AsyncFdWatcher(const AsyncFdWatcher&) = delete;
+  AsyncFdWatcher& operator=(const AsyncFdWatcher&) = delete;
 
   ~AsyncFdWatcher() = default;
 
@@ -144,9 +146,6 @@ class AsyncManager::AsyncFdWatcher {
   }
 
  private:
-  AsyncFdWatcher(const AsyncFdWatcher&) = delete;
-  AsyncFdWatcher& operator=(const AsyncFdWatcher&) = delete;
-
   // Make sure to call this with at least one file descriptor ready to be
   // watched upon or the thread routine will return immediately
   int tryStartThread() {
@@ -281,22 +280,24 @@ class AsyncManager::AsyncTaskManager {
   bool CancelAsyncTask(AsyncTaskId async_task_id) {
     // remove task from queue (and task id asociation) while holding lock
     std::unique_lock<std::mutex> guard(internal_mutex_);
-    if (tasks_by_id.count(async_task_id) == 0) {
+    if (tasks_by_id_.count(async_task_id) == 0) {
       return false;
     }
-    task_queue_.erase(tasks_by_id[async_task_id]);
-    tasks_by_id.erase(async_task_id);
+    task_queue_.erase(tasks_by_id_[async_task_id]);
+    tasks_by_id_.erase(async_task_id);
     return true;
   }
 
   AsyncTaskManager() = default;
+  AsyncTaskManager(const AsyncTaskManager&) = delete;
+  AsyncTaskManager& operator=(const AsyncTaskManager&) = delete;
 
   ~AsyncTaskManager() = default;
 
   int stopThread() {
     {
       std::unique_lock<std::mutex> guard(internal_mutex_);
-      tasks_by_id.clear();
+      tasks_by_id_.clear();
       task_queue_.clear();
       if (!running_) {
         return 0;
@@ -347,22 +348,19 @@ class AsyncManager::AsyncTaskManager {
     }
   };
 
-  AsyncTaskManager(const AsyncTaskManager&) = delete;
-  AsyncTaskManager& operator=(const AsyncTaskManager&) = delete;
-
   AsyncTaskId scheduleTask(const std::shared_ptr<Task>& task) {
     AsyncTaskId task_id = kInvalidTaskId;
     {
       std::unique_lock<std::mutex> guard(internal_mutex_);
       // no more room for new tasks, we need a larger type for IDs
-      if (tasks_by_id.size() == kMaxTaskId)  // TODO potentially type unsafe
+      if (tasks_by_id_.size() == kMaxTaskId)  // TODO potentially type unsafe
         return kInvalidTaskId;
       do {
         lastTaskId_ = NextAsyncTaskId(lastTaskId_);
       } while (isTaskIdInUse(lastTaskId_));
       task->task_id = lastTaskId_;
       // add task to the queue and map
-      tasks_by_id[lastTaskId_] = task;
+      tasks_by_id_[lastTaskId_] = task;
       task_queue_.insert(task);
       task_id = lastTaskId_;
     }
@@ -379,7 +377,7 @@ class AsyncManager::AsyncTaskManager {
   }
 
   bool isTaskIdInUse(const AsyncTaskId& task_id) const {
-    return tasks_by_id.count(task_id) != 0;
+    return tasks_by_id_.count(task_id) != 0;
   }
 
   int tryStartThread() {
@@ -416,7 +414,7 @@ class AsyncManager::AsyncTaskManager {
               task_p->time += task_p->period;
               task_queue_.insert(task_p);
             } else {
-              tasks_by_id.erase(task_p->task_id);
+              tasks_by_id_.erase(task_p->task_id);
             }
           }
         }
@@ -444,7 +442,7 @@ class AsyncManager::AsyncTaskManager {
   std::condition_variable internal_cond_var_;
 
   AsyncTaskId lastTaskId_ = kInvalidTaskId;
-  std::map<AsyncTaskId, std::shared_ptr<Task> > tasks_by_id;
+  std::map<AsyncTaskId, std::shared_ptr<Task> > tasks_by_id_;
   std::set<std::shared_ptr<Task>, task_p_comparator> task_queue_;
 };
 
