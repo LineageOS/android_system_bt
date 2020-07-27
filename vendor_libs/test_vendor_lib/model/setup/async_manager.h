@@ -20,6 +20,7 @@ using TaskCallback = std::function<void(void)>;
 using ReadCallback = std::function<void(int)>;
 using CriticalCallback = std::function<void(void)>;
 using AsyncTaskId = uint16_t;
+using AsyncUserId = uint16_t;
 constexpr uint16_t kInvalidTaskId = 0;
 
 // Manages tasks that should be done in the future. It can watch file
@@ -57,15 +58,21 @@ class AsyncManager {
   // If the fd was not being watched before the call will be ignored.
   void StopWatchingFileDescriptor(int file_descriptor);
 
+  // Get an identifier for the scheduler so that tasks can be cancelled per user
+  AsyncUserId GetNextUserId();
+
   // Schedules an action to occur in the future. Even if the delay given is not
   // positive the callback will be called asynchronously.
-  AsyncTaskId ExecAsync(std::chrono::milliseconds delay, const TaskCallback& callback);
+  AsyncTaskId ExecAsync(AsyncUserId user_id, std::chrono::milliseconds delay,
+                        const TaskCallback& callback);
 
   // Schedules an action to occur periodically in the future. If the delay given
   // is not positive the callback will be asynchronously called once for each
   // time in the past that it should have been called and then scheduled for
   // future times.
-  AsyncTaskId ExecAsyncPeriodically(std::chrono::milliseconds delay, std::chrono::milliseconds period,
+  AsyncTaskId ExecAsyncPeriodically(AsyncUserId user_id,
+                                    std::chrono::milliseconds delay,
+                                    std::chrono::milliseconds period,
                                     const TaskCallback& callback);
 
   // Cancels the/every future occurrence of the action specified by this id. It
@@ -74,6 +81,13 @@ class AsyncManager {
   // The calling thread may block until the scheduling thread acknowledges the
   // cancellation.
   bool CancelAsyncTask(AsyncTaskId async_task_id);
+
+  // Cancels the/every future occurrence of the action specified by this id. It
+  // is guaranteed that the associated callback will not be called after this
+  // method returns (it could be called during the execution of the method).
+  // The calling thread may block until the scheduling thread acknowledges the
+  // cancellation.
+  bool CancelAsyncTasksFromUser(AsyncUserId user_id);
 
   // Execs the given code in a synchronized manner. It is guaranteed that code
   // given on (possibly)concurrent calls to this member function on the same
