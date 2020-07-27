@@ -22,11 +22,14 @@
 #include "generated_dumpsys_bundled_schema.h"
 #include "module.h"
 #include "os/log.h"
+#include "os/system_properties.h"
 #include "shim/dumpsys.h"
 #include "shim/dumpsys_args.h"
 
 namespace bluetooth {
 namespace shim {
+
+static const std::string kReadOnlyDebuggableProperty = "ro.debuggable";
 
 namespace {
 constexpr char kModuleName[] = "shim::Dumpsys";
@@ -46,6 +49,8 @@ struct Dumpsys::impl {
   void FilterAsDeveloper(std::string* dumpsys_data);
   std::string PrintAsJson(std::string* dumpsys_data) const;
 
+  bool IsDebuggable() const;
+
  private:
   void DumpWithArgsAsync(int fd, const char** args);
 
@@ -61,6 +66,10 @@ Dumpsys::impl::impl(const Dumpsys& dumpsys_module, const dumpsys::ReflectionSche
 
 int Dumpsys::impl::GetNumberOfBundledSchemas() const {
   return reflection_schema_.GetNumberOfBundledSchemas();
+}
+
+bool Dumpsys::impl::IsDebuggable() const {
+  return (os::GetSystemProperty(kReadOnlyDebuggableProperty) == "1");
 }
 
 void Dumpsys::impl::FilterAsDeveloper(std::string* dumpsys_data) {
@@ -113,7 +122,7 @@ void Dumpsys::impl::DumpWithArgsAsync(int fd, const char** args) {
   std::string dumpsys_data;
   dumper.DumpState(&dumpsys_data);
 
-  if (parsed_dumpsys_args.IsDeveloper()) {
+  if (parsed_dumpsys_args.IsDeveloper() || IsDebuggable()) {
     dprintf(fd, " ----- Filtering as Developer -----\n");
     FilterAsDeveloper(&dumpsys_data);
   } else {
