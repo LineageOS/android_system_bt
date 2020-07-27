@@ -93,7 +93,7 @@ void LeCreditBasedDataController::OnPdu(packet::PacketView<true> pdu) {
     enqueue_buffer_.Enqueue(std::make_unique<PacketView<kLittleEndian>>(reassembly_stage_), handler_);
   } else if (remaining_sdu_continuation_packet_size_ < 0 || reassembly_stage_.size() > mtu_) {
     LOG_WARN("Received larger SDU size than expected");
-    reassembly_stage_ = PacketViewForReassembly(std::make_shared<std::vector<uint8_t>>());
+    reassembly_stage_ = PacketViewForReassembly(PacketView<kLittleEndian>(std::make_shared<std::vector<uint8_t>>()));
     remaining_sdu_continuation_packet_size_ = 0;
     link_->SendDisconnectionRequest(cid_, remote_cid_);
   }
