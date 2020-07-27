@@ -38,10 +38,14 @@ void TestEnvironment::initialize(std::promise<void> barrier) {
 
   barrier_ = std::move(barrier);
 
-  test_channel_transport_.RegisterCommandHandler([this](const std::string& name, const std::vector<std::string>& args) {
-    async_manager_.ExecAsync(std::chrono::milliseconds(0),
-                             [this, name, args]() { test_channel_.HandleCommand(name, args); });
-  });
+  auto user_id = async_manager_.GetNextUserId();
+  test_channel_transport_.RegisterCommandHandler(
+      [this, user_id](const std::string& name,
+                      const std::vector<std::string>& args) {
+        async_manager_.ExecAsync(
+            user_id, std::chrono::milliseconds(0),
+            [this, name, args]() { test_channel_.HandleCommand(name, args); });
+      });
 
   test_model_.Reset();
 
