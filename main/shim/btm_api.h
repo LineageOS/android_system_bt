@@ -2188,5 +2188,10 @@ bool BTM_BleLocalPrivacyEnabled(void);
  ******************************************************************************/
 tBTM_STATUS BTM_BleGetEnergyInfo(tBTM_BLE_ENERGY_INFO_CBACK* p_ener_cback);
 
+/**
+ * Send remote name request to GD shim Name module
+ */
+void SendRemoteNameRequest(const RawAddress& raw_address);
+
 }  // namespace shim
 }  // namespace bluetooth
