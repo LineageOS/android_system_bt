@@ -30,14 +30,25 @@ const std::string kLeIdentityAddressKey = "LeIdentityAddr";
 // const std::string kLeLidKey = "LE_KEY_PENC";
 }  // namespace
 
+const std::unordered_set<std::string_view> LeDevice::kLinkKeyProperties = {
+    "LE_KEY_PENC", "LE_KEY_PID", "LE_KEY_PCSRK", "LE_KEY_LENC", "LE_KEY_LCSRK"};
+
 LeDevice::LeDevice(ConfigCache* config, std::string section) : config_(config), section_(std::move(section)) {}
 
 Device LeDevice::Parent() {
   return Device(config_, section_);
 }
 
-std::string LeDevice::ToLogString() {
+std::string LeDevice::ToLogString() const {
   return section_;
+}
+
+bool LeDevice::IsPaired() const {
+  // This first check is here only to speed up the checking process
+  if (!config_->IsPersistentSection(section_)) {
+    return false;
+  }
+  return config_->HasAtLeastOneMatchingPropertiesInSection(section_, kLinkKeyProperties);
 }
 
 }  // namespace storage

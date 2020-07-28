@@ -22,13 +22,16 @@
 #include <limits>
 #include <vector>
 
+#include "storage/device.h"
+
 namespace testing {
 
 using bluetooth::storage::ConfigCache;
 using bluetooth::storage::ConfigCacheHelper;
+using bluetooth::storage::Device;
 
 TEST(ConfigCacheHelperTest, set_get_bool_test) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   // true
   ConfigCacheHelper(config).SetBool("A", "B", true);
   ASSERT_THAT(config.GetProperty("A", "B"), Optional(StrEq("true")));
@@ -40,7 +43,7 @@ TEST(ConfigCacheHelperTest, set_get_bool_test) {
 }
 
 TEST(ConfigCacheHelperTest, set_get_uint64_test) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   // small
   ConfigCacheHelper(config).SetUint64("A", "B", 123);
   ASSERT_THAT(config.GetProperty("A", "B"), Optional(StrEq("123")));
@@ -58,7 +61,7 @@ TEST(ConfigCacheHelperTest, set_get_uint64_test) {
 }
 
 TEST(ConfigCacheHelperTest, set_get_uint32_test) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   // small
   ConfigCacheHelper(config).SetUint32("A", "B", 123);
   ASSERT_THAT(config.GetProperty("A", "B"), Optional(StrEq("123")));
@@ -77,7 +80,7 @@ TEST(ConfigCacheHelperTest, set_get_uint32_test) {
 }
 
 TEST(ConfigCacheHelperTest, set_get_int64_test) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   // positive
   int64_t num = std::numeric_limits<int32_t>::max();
   num *= 10;
@@ -96,7 +99,7 @@ TEST(ConfigCacheHelperTest, set_get_int64_test) {
 }
 
 TEST(ConfigCacheHelperTest, set_get_int_test) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   // positive
   ConfigCacheHelper(config).SetInt("A", "B", 123);
   ASSERT_THAT(config.GetProperty("A", "B"), Optional(StrEq("123")));
@@ -117,7 +120,7 @@ TEST(ConfigCacheHelperTest, set_get_int_test) {
 }
 
 TEST(ConfigCacheHelperTest, set_get_bin_test) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   // empty
   std::vector<uint8_t> data;
   ConfigCacheHelper(config).SetBin("A", "B", data);
