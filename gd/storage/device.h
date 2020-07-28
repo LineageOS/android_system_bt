@@ -20,6 +20,7 @@
 #include <optional>
 #include <string>
 #include <type_traits>
+#include <unordered_set>
 #include <utility>
 
 #include "hci/address.h"
@@ -114,7 +115,10 @@ class Device {
   LeDevice Le();
 
   // For logging purpose only, you can't get a Device object from parsing a std::string
-  std::string ToLogString();
+  std::string ToLogString() const;
+
+  // Property names that correspond to a link key used in Bluetooth Classic and LE device
+  static const std::unordered_set<std::string_view> kLinkKeyProperties;
 
  private:
   ConfigCache* config_;
