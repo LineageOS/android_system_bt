@@ -176,7 +176,7 @@ class Btm {
   void SetLeConnectibleOff();
   ConnectabilityState GetLeConnectabilityState() const;
 
-  bool IsLeAclConnected(const RawAddress& raw_address) const;
+  bool UseLeLink(const RawAddress& raw_address) const;
 
   // Remote device name API
   BtmStatus ReadClassicRemoteDeviceName(const RawAddress& raw_address,
