@@ -4427,8 +4427,7 @@ void btm_sec_link_key_notification(const RawAddress& p_bda,
     /* If it is for bonding nothing else will follow, so we need to start name
      * resolution */
     if (we_are_bonding) {
-      btsnd_hcic_rmt_name_req(p_bda, HCI_PAGE_SCAN_REP_MODE_R1,
-                              HCI_MANDATARY_PAGE_SCAN_MODE, 0);
+      SendRemoteNameRequest(p_bda);
     }
 
     BTM_TRACE_EVENT("rmt_io_caps:%d, sec_flags:x%x, dev_class[1]:x%02x",
@@ -4745,8 +4744,7 @@ void btm_sec_pin_code_request(const RawAddress& p_bda) {
       /* We received PIN code request for the device with unknown name */
       /* it is not user friendly just to ask for the PIN without name */
       /* try to get name at first */
-      btsnd_hcic_rmt_name_req(p_dev_rec->bd_addr, HCI_PAGE_SCAN_REP_MODE_R1,
-                              HCI_MANDATARY_PAGE_SCAN_MODE, 0);
+      SendRemoteNameRequest(p_dev_rec->bd_addr);
     }
   }
 
@@ -4925,19 +4923,14 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
  *
  ******************************************************************************/
 static bool btm_sec_start_get_name(tBTM_SEC_DEV_REC* p_dev_rec) {
-  uint8_t tempstate = p_dev_rec->sec_state;
+  if (!BTM_IsDeviceUp()) return false;
 
   p_dev_rec->sec_state = BTM_SEC_STATE_GETTING_NAME;
 
   /* 0 and NULL are as timeout and callback params because they are not used in
    * security get name case */
-  if ((btm_initiate_rem_name(p_dev_rec->bd_addr, BTM_RMT_NAME_SEC, 0, NULL)) !=
-      BTM_CMD_STARTED) {
-    p_dev_rec->sec_state = tempstate;
-    return (false);
-  }
-
-  return (true);
+  SendRemoteNameRequest(p_dev_rec->bd_addr);
+  return true;
 }
 
 /*******************************************************************************

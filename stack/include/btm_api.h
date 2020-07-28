@@ -1631,4 +1631,9 @@ extern uint8_t BTM_GetEirUuidList(uint8_t* p_eir, size_t eir_len,
  ******************************************************************************/
 extern tBTM_CONTRL_STATE BTM_PM_ReadControllerState(void);
 
+/**
+ * Send remote name request, either to legacy HCI, or to GD shim Name module
+ */
+extern void SendRemoteNameRequest(const RawAddress& raw_address);
+
 #endif /* BTM_API_H */
