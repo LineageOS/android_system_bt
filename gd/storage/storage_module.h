@@ -105,6 +105,9 @@ class StorageModule : public bluetooth::Module {
   // different. Hence, please don't make such assumption and don't use GetDeviceByBrEdrMacAddress() interchangeably
   Device GetDeviceByLeIdentityAddress(hci::Address le_identity_address);
 
+  // Get a list of paired devices from config
+  std::vector<Device> GetPairedDevices();
+
   // Modify the underlying config by starting a mutation. All entries in the mutation will be applied atomically when
   // Commit() is called. User should never touch ConfigCache() directly.
   Mutation Modify();

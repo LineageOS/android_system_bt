@@ -147,7 +147,7 @@ void StorageModule::Start() {
   }
   if (!config || !config->HasSection(kAdapterSection)) {
     LOG_WARN("cannot load backup config at %s; creating new empty ones", config_backup_path_.c_str());
-    config.emplace(temp_devices_capacity_);
+    config.emplace(temp_devices_capacity_, Device::kLinkKeyProperties);
     file_source = "Empty";
   }
   if (!file_source.empty()) {
@@ -193,6 +193,17 @@ Device StorageModule::GetDeviceByClassicMacAddress(hci::Address classic_address)
 
 Device StorageModule::GetDeviceByLeIdentityAddress(hci::Address le_identity_address) {
   return Device(GetConfigCache(), le_identity_address, Device::ConfigKeyAddressType::LE_IDENTITY_ADDRESS);
+}
+
+std::vector<Device> StorageModule::GetPairedDevices() {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  auto persistent_sections = GetConfigCache()->GetPersistentSections();
+  std::vector<Device> result;
+  result.reserve(persistent_sections.size());
+  for (const auto& section : persistent_sections) {
+    result.emplace_back(GetConfigCache(), section);
+  }
+  return result;
 }
 
 }  // namespace storage
