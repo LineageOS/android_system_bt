@@ -86,19 +86,33 @@ class BluetoothHci : public IBluetoothHci {
   test_vendor_lib::TestChannelTransport remote_hci_transport_;
   test_vendor_lib::TestChannelTransport remote_link_layer_transport_;
 
+  test_vendor_lib::AsyncUserId user_id_ = async_manager_.GetNextUserId();
   test_vendor_lib::TestModel test_model_{
-      [this](std::chrono::milliseconds delay, const test_vendor_lib::TaskCallback& task) {
-        return async_manager_.ExecAsync(delay, task);
-      },
-
-      [this](std::chrono::milliseconds delay, std::chrono::milliseconds period,
+      [this]() { return async_manager_.GetNextUserId(); },
+      [this](test_vendor_lib::AsyncUserId user_id,
+             std::chrono::milliseconds delay,
              const test_vendor_lib::TaskCallback& task) {
-        return async_manager_.ExecAsyncPeriodically(delay, period, task);
+        return async_manager_.ExecAsync(user_id, delay, task);
       },
 
-      [this](test_vendor_lib::AsyncTaskId task) { async_manager_.CancelAsyncTask(task); },
+      [this](test_vendor_lib::AsyncUserId user_id,
+             std::chrono::milliseconds delay, std::chrono::milliseconds period,
+             const test_vendor_lib::TaskCallback& task) {
+        return async_manager_.ExecAsyncPeriodically(user_id, delay, period,
+                                                    task);
+      },
 
-      [this](const std::string& server, int port) { return ConnectToRemoteServer(server, port); }};
+      [this](test_vendor_lib::AsyncUserId user_id) {
+        async_manager_.CancelAsyncTasksFromUser(user_id);
+      },
+
+      [this](test_vendor_lib::AsyncTaskId task) {
+        async_manager_.CancelAsyncTask(task);
+      },
+
+      [this](const std::string& server, int port) {
+        return ConnectToRemoteServer(server, port);
+      }};
 
   test_vendor_lib::TestCommandHandler test_channel_{test_model_};
 };

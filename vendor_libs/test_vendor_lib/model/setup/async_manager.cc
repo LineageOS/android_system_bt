@@ -119,6 +119,8 @@ class AsyncManager::AsyncFdWatcher {
   }
 
   AsyncFdWatcher() = default;
+  AsyncFdWatcher(const AsyncFdWatcher&) = delete;
+  AsyncFdWatcher& operator=(const AsyncFdWatcher&) = delete;
 
   ~AsyncFdWatcher() = default;
 
@@ -144,9 +146,6 @@ class AsyncManager::AsyncFdWatcher {
   }
 
  private:
-  AsyncFdWatcher(const AsyncFdWatcher&) = delete;
-  AsyncFdWatcher& operator=(const AsyncFdWatcher&) = delete;
-
   // Make sure to call this with at least one file descriptor ready to be
   // watched upon or the thread routine will return immediately
   int tryStartThread() {
@@ -269,34 +268,57 @@ class AsyncManager::AsyncFdWatcher {
 // Async task manager implementation
 class AsyncManager::AsyncTaskManager {
  public:
-  AsyncTaskId ExecAsync(std::chrono::milliseconds delay, const TaskCallback& callback) {
-    return scheduleTask(std::make_shared<Task>(std::chrono::steady_clock::now() + delay, callback));
+  AsyncUserId GetNextUserId() { return lastUserId_++; }
+
+  AsyncTaskId ExecAsync(AsyncUserId user_id, std::chrono::milliseconds delay,
+                        const TaskCallback& callback) {
+    return scheduleTask(std::make_shared<Task>(
+        std::chrono::steady_clock::now() + delay, callback, user_id));
   }
 
-  AsyncTaskId ExecAsyncPeriodically(std::chrono::milliseconds delay, std::chrono::milliseconds period,
+  AsyncTaskId ExecAsyncPeriodically(AsyncUserId user_id,
+                                    std::chrono::milliseconds delay,
+                                    std::chrono::milliseconds period,
                                     const TaskCallback& callback) {
-    return scheduleTask(std::make_shared<Task>(std::chrono::steady_clock::now() + delay, period, callback));
+    return scheduleTask(std::make_shared<Task>(
+        std::chrono::steady_clock::now() + delay, period, callback, user_id));
   }
 
   bool CancelAsyncTask(AsyncTaskId async_task_id) {
-    // remove task from queue (and task id asociation) while holding lock
+    // remove task from queue (and task id association) while holding lock
     std::unique_lock<std::mutex> guard(internal_mutex_);
-    if (tasks_by_id.count(async_task_id) == 0) {
+    if (tasks_by_id_.count(async_task_id) == 0) {
       return false;
     }
-    task_queue_.erase(tasks_by_id[async_task_id]);
-    tasks_by_id.erase(async_task_id);
+    task_queue_.erase(tasks_by_id_[async_task_id]);
+    tasks_by_id_.erase(async_task_id);
+    return true;
+  }
+
+  bool CancelAsyncTasksFromUser(AsyncUserId user_id) {
+    // remove task from queue (and task id association) while holding lock
+    std::unique_lock<std::mutex> guard(internal_mutex_);
+    if (tasks_by_user_id_.count(user_id) == 0) {
+      return false;
+    }
+    for (auto task : tasks_by_user_id_[user_id]) {
+      if (tasks_by_id_.count(task) != 0) {
+        tasks_by_id_.erase(task);
+      }
+    }
     return true;
   }
 
   AsyncTaskManager() = default;
+  AsyncTaskManager(const AsyncTaskManager&) = delete;
+  AsyncTaskManager& operator=(const AsyncTaskManager&) = delete;
 
   ~AsyncTaskManager() = default;
 
   int stopThread() {
     {
       std::unique_lock<std::mutex> guard(internal_mutex_);
-      tasks_by_id.clear();
+      tasks_by_id_.clear();
       task_queue_.clear();
       if (!running_) {
         return 0;
@@ -317,10 +339,22 @@ class AsyncManager::AsyncTaskManager {
   // Holds the data for each task
   class Task {
    public:
-    Task(std::chrono::steady_clock::time_point time, std::chrono::milliseconds period, const TaskCallback& callback)
-        : time(time), periodic(true), period(period), callback(callback), task_id(kInvalidTaskId) {}
-    Task(std::chrono::steady_clock::time_point time, const TaskCallback& callback)
-        : time(time), periodic(false), callback(callback), task_id(kInvalidTaskId) {}
+    Task(std::chrono::steady_clock::time_point time,
+         std::chrono::milliseconds period, const TaskCallback& callback,
+         AsyncUserId user)
+        : time(time),
+          periodic(true),
+          period(period),
+          callback(callback),
+          task_id(kInvalidTaskId),
+          user_id(user) {}
+    Task(std::chrono::steady_clock::time_point time,
+         const TaskCallback& callback, AsyncUserId user)
+        : time(time),
+          periodic(false),
+          callback(callback),
+          task_id(kInvalidTaskId),
+          user_id(user) {}
 
     // Operators needed to be in a collection
     bool operator<(const Task& another) const {
@@ -338,6 +372,7 @@ class AsyncManager::AsyncTaskManager {
     std::chrono::milliseconds period{};
     TaskCallback callback;
     AsyncTaskId task_id;
+    AsyncUserId user_id;
   };
 
   // A comparator class to put shared pointers to tasks in an ordered set
@@ -347,24 +382,20 @@ class AsyncManager::AsyncTaskManager {
     }
   };
 
-  AsyncTaskManager(const AsyncTaskManager&) = delete;
-  AsyncTaskManager& operator=(const AsyncTaskManager&) = delete;
-
   AsyncTaskId scheduleTask(const std::shared_ptr<Task>& task) {
-    AsyncTaskId task_id = kInvalidTaskId;
     {
       std::unique_lock<std::mutex> guard(internal_mutex_);
       // no more room for new tasks, we need a larger type for IDs
-      if (tasks_by_id.size() == kMaxTaskId)  // TODO potentially type unsafe
+      if (tasks_by_id_.size() == kMaxTaskId)  // TODO potentially type unsafe
         return kInvalidTaskId;
       do {
         lastTaskId_ = NextAsyncTaskId(lastTaskId_);
       } while (isTaskIdInUse(lastTaskId_));
       task->task_id = lastTaskId_;
       // add task to the queue and map
-      tasks_by_id[lastTaskId_] = task;
+      tasks_by_id_[lastTaskId_] = task;
+      tasks_by_user_id_[task->user_id].insert(task->task_id);
       task_queue_.insert(task);
-      task_id = lastTaskId_;
     }
     // start thread if necessary
     int started = tryStartThread();
@@ -375,11 +406,11 @@ class AsyncManager::AsyncTaskManager {
     // notify the thread so that it knows of the new task
     internal_cond_var_.notify_one();
     // return task id
-    return task_id;
+    return task->task_id;
   }
 
   bool isTaskIdInUse(const AsyncTaskId& task_id) const {
-    return tasks_by_id.count(task_id) != 0;
+    return tasks_by_id_.count(task_id) != 0;
   }
 
   int tryStartThread() {
@@ -416,7 +447,8 @@ class AsyncManager::AsyncTaskManager {
               task_p->time += task_p->period;
               task_queue_.insert(task_p);
             } else {
-              tasks_by_id.erase(task_p->task_id);
+              tasks_by_user_id_[task_p->user_id].erase(task_p->task_id);
+              tasks_by_id_.erase(task_p->task_id);
             }
           }
         }
@@ -444,7 +476,9 @@ class AsyncManager::AsyncTaskManager {
   std::condition_variable internal_cond_var_;
 
   AsyncTaskId lastTaskId_ = kInvalidTaskId;
-  std::map<AsyncTaskId, std::shared_ptr<Task> > tasks_by_id;
+  AsyncUserId lastUserId_{1};
+  std::map<AsyncTaskId, std::shared_ptr<Task> > tasks_by_id_;
+  std::map<AsyncUserId, std::set<AsyncTaskId>> tasks_by_user_id_;
   std::set<std::shared_ptr<Task>, task_p_comparator> task_queue_;
 };
 
@@ -470,17 +504,30 @@ void AsyncManager::StopWatchingFileDescriptor(int file_descriptor) {
   fdWatcher_p_->StopWatchingFileDescriptor(file_descriptor);
 }
 
-AsyncTaskId AsyncManager::ExecAsync(std::chrono::milliseconds delay, const TaskCallback& callback) {
-  return taskManager_p_->ExecAsync(delay, callback);
+AsyncUserId AsyncManager::GetNextUserId() {
+  return taskManager_p_->GetNextUserId();
 }
 
-AsyncTaskId AsyncManager::ExecAsyncPeriodically(std::chrono::milliseconds delay, std::chrono::milliseconds period,
-                                                const TaskCallback& callback) {
-  return taskManager_p_->ExecAsyncPeriodically(delay, period, callback);
+AsyncTaskId AsyncManager::ExecAsync(AsyncUserId user_id,
+                                    std::chrono::milliseconds delay,
+                                    const TaskCallback& callback) {
+  return taskManager_p_->ExecAsync(user_id, delay, callback);
+}
+
+AsyncTaskId AsyncManager::ExecAsyncPeriodically(
+    AsyncUserId user_id, std::chrono::milliseconds delay,
+    std::chrono::milliseconds period, const TaskCallback& callback) {
+  return taskManager_p_->ExecAsyncPeriodically(user_id, delay, period,
+                                               callback);
 }
 
 bool AsyncManager::CancelAsyncTask(AsyncTaskId async_task_id) {
   return taskManager_p_->CancelAsyncTask(async_task_id);
+}
+
+bool AsyncManager::CancelAsyncTasksFromUser(
+    test_vendor_lib::AsyncUserId user_id) {
+  return taskManager_p_->CancelAsyncTasksFromUser(user_id);
 }
 
 void AsyncManager::Synchronize(const CriticalCallback& critical) {
