@@ -1288,6 +1288,8 @@ static tBTM_STATUS btm_sec_send_hci_disconnect(tBTM_SEC_DEV_REC* p_dev_rec,
  *
  ******************************************************************************/
 void BTM_ConfirmReqReply(tBTM_STATUS res, const RawAddress& bd_addr) {
+  ASSERT_LOG(!bluetooth::shim::is_gd_shim_enabled(), "Unreachable code path");
+
   tBTM_SEC_DEV_REC* p_dev_rec;
 
   BTM_TRACE_EVENT("BTM_ConfirmReqReply() State: %s  Res: %u",
@@ -1336,6 +1338,8 @@ void BTM_ConfirmReqReply(tBTM_STATUS res, const RawAddress& bd_addr) {
  ******************************************************************************/
 void BTM_PasskeyReqReply(tBTM_STATUS res, const RawAddress& bd_addr,
                          uint32_t passkey) {
+  ASSERT_LOG(!bluetooth::shim::is_gd_shim_enabled(), "Unreachable code path");
+
   BTM_TRACE_API("BTM_PasskeyReqReply: State: %s  res:%d",
                 btm_pair_state_descr(btm_cb.pairing_state), res);
 
@@ -1379,26 +1383,6 @@ void BTM_PasskeyReqReply(tBTM_STATUS res, const RawAddress& bd_addr,
     btm_cb.acl_disc_reason = HCI_SUCCESS;
     btsnd_hcic_user_passkey_reply(bd_addr, passkey);
   }
-}
-
-/*******************************************************************************
- *
- * Function         BTM_SendKeypressNotif
- *
- * Description      This function is used during the passkey entry model
- *                  by a device with KeyboardOnly IO capabilities
- *                  (very likely to be a HID Device).
- *                  It is called by a HID Device to inform the remote device
- *                  when a key has been entered or erased.
- *
- * Parameters:      bd_addr - Address of the peer device
- *                  type - notification type
- *
- ******************************************************************************/
-void BTM_SendKeypressNotif(const RawAddress& bd_addr, tBTM_SP_KEY_TYPE type) {
-  /* This API only make sense between PASSKEY_REQ and SP complete */
-  if (btm_cb.pairing_state == BTM_PAIR_STATE_KEY_ENTRY)
-    btsnd_hcic_send_keypress_notif(bd_addr, type);
 }
 
 /*******************************************************************************
