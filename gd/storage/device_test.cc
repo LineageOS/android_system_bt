@@ -114,6 +114,26 @@ TEST(DeviceTest, set_property) {
   ASSERT_THAT(device.GetName(), Optional(StrEq("hello world!")));
 }
 
+TEST(DeviceTest, set_device_type) {
+  ConfigCache config(10, Device::kLinkKeyProperties);
+  Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
+  Device device(&config, address, Device::ConfigKeyAddressType::LEGACY_KEY_ADDRESS);
+  ASSERT_FALSE(device.Exists());
+  ASSERT_FALSE(device.GetName());
+  {
+    Mutation mutation(&config);
+    mutation.Add(device.SetDeviceType(DeviceType::BR_EDR));
+    mutation.Commit();
+  }
+  ASSERT_THAT(device.GetDeviceType(), Optional(Eq(DeviceType::BR_EDR)));
+  {
+    Mutation mutation(&config);
+    mutation.Add(device.SetDeviceType(DeviceType::LE));
+    mutation.Commit();
+  }
+  ASSERT_THAT(device.GetDeviceType(), Optional(Eq(DeviceType::DUAL)));
+}
+
 TEST(DeviceTest, get_le_and_bredr) {
   ConfigCache config(10, Device::kLinkKeyProperties);
   Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};

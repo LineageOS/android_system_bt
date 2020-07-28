@@ -55,6 +55,21 @@ static_assert(false, "GENERATE_PROPERTY_GETTER_SETTER_REMOVER() must be uniquely
     return MutationEntry::Remove(section_, PROPERTY_KEY);                        \
   }
 
+// FUNC is bracketed function definition that takes a const RETURN_TYPE& value and return RETURN_TYPE
+// e.g. { return value + 1; }
+#define GENERATE_PROPERTY_GETTER_SETTER_REMOVER_WITH_CUSTOM_SETTER(NAME, RETURN_TYPE, PROPERTY_KEY, FUNC) \
+ public:                                                                                                  \
+  std::optional<RETURN_TYPE> Get##NAME() const {                                                          \
+    return ConfigCacheHelper(*config_).Get<RETURN_TYPE>(section_, PROPERTY_KEY);                          \
+  }                                                                                                       \
+  MutationEntry Set##NAME(const RETURN_TYPE& value) {                                                     \
+    auto new_value = [this](const RETURN_TYPE& value) -> RETURN_TYPE FUNC(value);                         \
+    return MutationEntry::Set<RETURN_TYPE>(section_, PROPERTY_KEY, new_value);                            \
+  }                                                                                                       \
+  MutationEntry Remove##NAME() {                                                                          \
+    return MutationEntry::Remove(section_, PROPERTY_KEY);                                                 \
+  }
+
 // A think wrapper of device in ConfigCache, allowing easy access to various predefined properties of a Bluetooth device
 //
 // Device, LeDevice, and Classic device objects are fully copyable, comparable hashable
@@ -129,7 +144,9 @@ class Device {
   // Macro generate getters, setters and removers
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(Name, std::string, "Name");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(ClassOfDevice, hci::ClassOfDevice, "DevClass");
-  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(DeviceType, hci::DeviceType, "DevType");
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER_WITH_CUSTOM_SETTER(DeviceType, hci::DeviceType, "DevType", {
+    return static_cast<hci::DeviceType>(value | GetDeviceType().value_or(hci::DeviceType::UNKNOWN));
+  });
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(ManufacturerCode, uint16_t, "Manufacturer");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(LmpVersion, uint8_t, "LmpVer");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(LmpSubVersion, uint16_t, "LmpSubVer");
