@@ -20,15 +20,17 @@
 #include <gtest/gtest.h>
 
 #include "storage/config_cache.h"
+#include "storage/device.h"
 
 namespace testing {
 
 using bluetooth::storage::ConfigCache;
+using bluetooth::storage::Device;
 using bluetooth::storage::Mutation;
 using bluetooth::storage::MutationEntry;
 
 TEST(MutationTest, simple_sequence_test) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   config.SetProperty("A", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "C", "D");
@@ -37,15 +39,15 @@ TEST(MutationTest, simple_sequence_test) {
   mutation.Add(MutationEntry::Set("AA:BB:CC:DD:EE:FF", "LinkKey", "CCDDEEFFGG"));
   mutation.Add(MutationEntry::Remove("AA:BB:CC:DD:EE:FF", "LinkKey"));
   mutation.Commit();
-  ASSERT_THAT(config.GetPersistentDevices(), ElementsAre("CC:DD:EE:FF:00:11"));
+  ASSERT_THAT(config.GetPersistentSections(), ElementsAre("CC:DD:EE:FF:00:11"));
   Mutation mutation2(&config);
   mutation2.Add(MutationEntry::Set("AA:BB:CC:DD:EE:FF", "LinkKey", "CCDDEEFFGG"));
   mutation2.Commit();
-  ASSERT_THAT(config.GetPersistentDevices(), ElementsAre("CC:DD:EE:FF:00:11", "AA:BB:CC:DD:EE:FF"));
+  ASSERT_THAT(config.GetPersistentSections(), ElementsAre("CC:DD:EE:FF:00:11", "AA:BB:CC:DD:EE:FF"));
 }
 
 TEST(MutationTest, add_and_remove_cancel_each_other) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   ASSERT_FALSE(config.HasSection("A"));
   Mutation mutation(&config);
   mutation.Add(MutationEntry::Set("A", "B", "C"));

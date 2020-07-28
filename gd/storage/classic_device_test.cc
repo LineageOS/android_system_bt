@@ -34,14 +34,14 @@ using bluetooth::storage::Device;
 using bluetooth::storage::Mutation;
 
 TEST(ClassicDeviceTest, create_new_le_device) {
-  ConfigCache config(10);
+  ConfigCache config(10, Device::kLinkKeyProperties);
   bluetooth::hci::Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
   ClassicDevice device(&config, address.ToString());
   ASSERT_FALSE(device.GetLinkKey());
 }
 
 TEST(ClassicDeviceTest, set_property) {
-  ConfigCache config(10);
+  ConfigCache config(10, Device::kLinkKeyProperties);
   Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
   ClassicDevice device(&config, address.ToString());
   ASSERT_FALSE(device.GetLinkKey());
@@ -52,7 +52,7 @@ TEST(ClassicDeviceTest, set_property) {
 }
 
 TEST(ClassicDeviceTest, equality_test) {
-  ConfigCache config(10);
+  ConfigCache config(10, Device::kLinkKeyProperties);
   bluetooth::hci::Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
   ClassicDevice device1(&config, address.ToString());
   ClassicDevice device2(&config, address.ToString());
