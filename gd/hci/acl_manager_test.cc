@@ -649,10 +649,10 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_fail) {
   AddressWithType remote_with_type(remote, AddressType::PUBLIC_DEVICE_ADDRESS);
   test_hci_layer_->SetCommandFuture();
   acl_manager_->CreateLeConnection(remote_with_type);
-  test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST);
+  test_hci_layer_->GetLastCommandPacket(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST);
   test_hci_layer_->IncomingEvent(LeAddDeviceToConnectListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   test_hci_layer_->SetCommandFuture();
-  auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_CREATE_CONNECTION);
+  auto packet = test_hci_layer_->GetLastCommandPacket(OpCode::LE_CREATE_CONNECTION);
   auto le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
   auto command_view = LeCreateConnectionView::Create(le_connection_management_command_view);
   ASSERT_TRUE(command_view.IsValid());
@@ -666,6 +666,13 @@ TEST_F(AclManagerTest, invoke_registered_callback_le_connection_complete_fail) {
   test_hci_layer_->IncomingLeMetaEvent(LeConnectionCompleteBuilder::Create(
       ErrorCode::CONNECTION_REJECTED_LIMITED_RESOURCES, 0x123, Role::SLAVE, AddressType::PUBLIC_DEVICE_ADDRESS, remote,
       0x0100, 0x0010, 0x0011, ClockAccuracy::PPM_30));
+
+  test_hci_layer_->SetCommandFuture();
+  packet = test_hci_layer_->GetLastCommandPacket(OpCode::LE_REMOVE_DEVICE_FROM_CONNECT_LIST);
+  le_connection_management_command_view = LeConnectionManagementCommandView::Create(packet);
+  auto remove_command_view = LeRemoveDeviceFromConnectListView::Create(le_connection_management_command_view);
+  ASSERT_TRUE(remove_command_view.IsValid());
+  test_hci_layer_->IncomingEvent(LeRemoveDeviceFromConnectListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
 }
 
 TEST_F(AclManagerTest, cancel_le_connection) {
