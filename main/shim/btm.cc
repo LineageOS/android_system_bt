@@ -592,11 +592,16 @@ ConnectabilityState Btm::GetLeConnectabilityState() const {
   return state;
 }
 
-bool Btm::IsLeAclConnected(const RawAddress& raw_address) const {
-  // TODO(cmanton) Check current acl's for this address and indicate if there is
-  // an LE option.  For now ignore and default to classic.
-  LOG_INFO("%s Le acl connection check is temporarily unsupported", __func__);
-  return false;
+bool Btm::UseLeLink(const RawAddress& raw_address) const {
+  if (GetAclManager()->HACK_GetHandle(ToGdAddress(raw_address)) != 0xFFFF) {
+    return false;
+  }
+  if (GetAclManager()->HACK_GetLeHandle(ToGdAddress(raw_address)) != 0xFFFF) {
+    return true;
+  }
+  // TODO(hsz): use correct transport by using storage records.  For now assume
+  // LE for GATT and HID.
+  return true;
 }
 
 BtmStatus Btm::ReadClassicRemoteDeviceName(const RawAddress& raw_address,
