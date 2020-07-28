@@ -887,7 +887,7 @@ void bluetooth::shim::BTM_BleTestEnd(tBTM_CMPL_CB* p_cmd_cmpl_cback) {
 }
 
 bool bluetooth::shim::BTM_UseLeLink(const RawAddress& raw_address) {
-  return Stack::GetInstance()->GetBtm()->IsLeAclConnected(raw_address);
+  return Stack::GetInstance()->GetBtm()->UseLeLink(raw_address);
 }
 
 tBTM_STATUS bluetooth::shim::BTM_SetBleDataLength(const RawAddress& bd_addr,
