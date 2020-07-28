@@ -17,6 +17,7 @@
 
 #include <optional>
 #include <string>
+#include <unordered_set>
 
 #include "hci/hci_packets.h"
 #include "storage/config_cache.h"
@@ -62,7 +63,13 @@ class LeDevice {
   Device Parent();
 
   // For logging purpose only, you can't get a LeDevice object from parsing a std::string
-  std::string ToLogString();
+  std::string ToLogString() const;
+
+  // Return true if device has a link key in one of |kLinkKeyProperties|
+  bool IsPaired() const;
+
+  // Property names that correspond to a link key used in Bluetooth LE device
+  static const std::unordered_set<std::string_view> kLinkKeyProperties;
 
  private:
   ConfigCache* config_;

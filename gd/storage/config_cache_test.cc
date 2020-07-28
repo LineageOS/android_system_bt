@@ -22,6 +22,7 @@
 #include <cstdio>
 
 #include "hci/enum_helper.h"
+#include "storage/device.h"
 
 namespace testing {
 
@@ -35,10 +36,11 @@ std::string GetTestAddress(int i) {
 }  // namespace
 
 using bluetooth::storage::ConfigCache;
+using bluetooth::storage::Device;
 using SectionAndPropertyValue = bluetooth::storage::ConfigCache::SectionAndPropertyValue;
 
 TEST(ConfigCacheTest, simple_set_get_test) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   config.SetProperty("A", "B", "C");
   auto value = config.GetProperty("A", "B");
   ASSERT_TRUE(value);
@@ -46,7 +48,7 @@ TEST(ConfigCacheTest, simple_set_get_test) {
 }
 
 TEST(ConfigCacheTest, empty_values_test) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   ASSERT_DEATH({ config.SetProperty("", "B", "C"); }, "Empty section name not allowed");
   ASSERT_DEATH({ config.SetProperty("A", "", "C"); }, "Empty property name not allowed");
   // empty value is allowed
@@ -57,7 +59,7 @@ TEST(ConfigCacheTest, empty_values_test) {
 }
 
 TEST(ConfigCacheTest, insert_boundary_device_with_linkkey_test) {
-  ConfigCache config(2);
+  ConfigCache config(2, Device::kLinkKeyProperties);
   config.SetProperty("A", "B", "C");
   config.SetProperty("CC:DD:EE:FF:00:10", "Name", "Hello");
   config.SetProperty("CC:DD:EE:FF:00:09", "Name", "Hello 2");
@@ -66,12 +68,12 @@ TEST(ConfigCacheTest, insert_boundary_device_with_linkkey_test) {
 }
 
 TEST(ConfigCacheTest, comparison_test) {
-  ConfigCache config_1(2);
+  ConfigCache config_1(2, Device::kLinkKeyProperties);
   config_1.SetProperty("A", "B", "C");
   config_1.SetProperty("CC:DD:EE:FF:00:10", "Name", "Hello");
   config_1.SetProperty("CC:DD:EE:FF:00:09", "Name", "Hello 2");
   config_1.SetProperty("CC:DD:EE:FF:00:11", "LinkKey", "AABBAABBCCDDEE");
-  ConfigCache config_2(2);
+  ConfigCache config_2(2, Device::kLinkKeyProperties);
   config_2.SetProperty("A", "B", "C");
   config_2.SetProperty("CC:DD:EE:FF:00:10", "Name", "Hello");
   config_2.SetProperty("CC:DD:EE:FF:00:09", "Name", "Hello 2");
@@ -89,7 +91,7 @@ TEST(ConfigCacheTest, comparison_test) {
   config_2.SetProperty("CC:DD:EE:FF:00:11", "LinkKey", "AABBAABBCCDDEE");
   ASSERT_NE(config_1, config_2);
   // Config with different capacity should not be equal
-  ConfigCache config_3(3);
+  ConfigCache config_3(3, Device::kLinkKeyProperties);
   config_3.SetProperty("A", "B", "C");
   config_3.SetProperty("CC:DD:EE:FF:00:10", "Name", "Hello");
   config_3.SetProperty("CC:DD:EE:FF:00:09", "Name", "Hello 2");
@@ -97,18 +99,18 @@ TEST(ConfigCacheTest, comparison_test) {
   config_3.SetProperty("CC:DD:EE:FF:00:12", "LinkKey", "AABBAABBCCDDEE");
   ASSERT_NE(config_1, config_3);
   // Empty config should not be equal to non-empty ones
-  ConfigCache config_4(2);
+  ConfigCache config_4(2, Device::kLinkKeyProperties);
   ASSERT_NE(config_1, config_4);
   // Empty configs should be equal
-  ConfigCache config_5(2);
+  ConfigCache config_5(2, Device::kLinkKeyProperties);
   ASSERT_EQ(config_4, config_5);
   // Empty configs with different capacity should not be equal
-  ConfigCache config_6(3);
+  ConfigCache config_6(3, Device::kLinkKeyProperties);
   ASSERT_NE(config_4, config_6);
 }
 
 TEST(ConfigCacheTest, empty_string_test) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   config.SetProperty("A", "B", "");
   auto value = config.GetProperty("A", "B");
   ASSERT_TRUE(value);
@@ -116,7 +118,7 @@ TEST(ConfigCacheTest, empty_string_test) {
 }
 
 TEST(ConfigCacheTest, mac_address_set_get_test) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   config.SetProperty("A", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
   auto value = config.GetProperty("A", "B");
@@ -130,7 +132,7 @@ TEST(ConfigCacheTest, mac_address_set_get_test) {
 }
 
 TEST(ConfigCacheTest, has_section_and_property_test) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   config.SetProperty("A", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "C", "D");
@@ -156,7 +158,7 @@ TEST(ConfigCacheTest, has_section_and_property_test) {
 }
 
 TEST(ConfigCacheTest, remove_section_test) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   config.SetProperty("A", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "C", "D");
@@ -171,7 +173,7 @@ TEST(ConfigCacheTest, remove_section_test) {
 }
 
 TEST(ConfigCacheTest, remove_property_test) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   config.SetProperty("A", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "C", "D");
@@ -186,7 +188,7 @@ TEST(ConfigCacheTest, remove_property_test) {
 }
 
 TEST(ConfigCacheTest, remove_all_properties_from_section_test) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   config.SetProperty("A", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "C", "D");
@@ -202,21 +204,21 @@ TEST(ConfigCacheTest, remove_all_properties_from_section_test) {
 }
 
 TEST(ConfigCacheTest, get_persistent_devices_test) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   config.SetProperty("A", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "C", "D");
   config.SetProperty("CC:DD:EE:FF:00:11", "LinkKey", "AABBAABBCCDDEE");
   ASSERT_TRUE(config.HasProperty("CC:DD:EE:FF:00:11", "LinkKey"));
-  ASSERT_THAT(config.GetPersistentDevices(), ElementsAre("CC:DD:EE:FF:00:11"));
+  ASSERT_THAT(config.GetPersistentSections(), ElementsAre("CC:DD:EE:FF:00:11"));
   config.SetProperty("AA:BB:CC:DD:EE:FF", "LinkKey", "DEERDEERDEER");
-  ASSERT_THAT(config.GetPersistentDevices(), ElementsAre("CC:DD:EE:FF:00:11", "AA:BB:CC:DD:EE:FF"));
+  ASSERT_THAT(config.GetPersistentSections(), ElementsAre("CC:DD:EE:FF:00:11", "AA:BB:CC:DD:EE:FF"));
   ASSERT_TRUE(config.RemoveProperty("CC:DD:EE:FF:00:11", "LinkKey"));
-  ASSERT_THAT(config.GetPersistentDevices(), ElementsAre("AA:BB:CC:DD:EE:FF"));
+  ASSERT_THAT(config.GetPersistentSections(), ElementsAre("AA:BB:CC:DD:EE:FF"));
 }
 
 TEST(ConfigCacheTest, appoaching_temporary_config_limit_test) {
-  ConfigCache config(2);
+  ConfigCache config(2, Device::kLinkKeyProperties);
   for (int i = 0; i < 10; ++i) {
     config.SetProperty(GetTestAddress(i), "Name", "Hello" + std::to_string(i));
     if (i % 2 == 0) {
@@ -236,12 +238,12 @@ TEST(ConfigCacheTest, appoaching_temporary_config_limit_test) {
     }
   }
   ASSERT_THAT(
-      config.GetPersistentDevices(),
+      config.GetPersistentSections(),
       ElementsAre(GetTestAddress(0), GetTestAddress(2), GetTestAddress(4), GetTestAddress(6), GetTestAddress(8)));
 }
 
 TEST(ConfigCacheTest, remove_section_with_property_test) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   config.SetProperty("A", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "C", "D");
@@ -254,7 +256,7 @@ TEST(ConfigCacheTest, remove_section_with_property_test) {
 }
 
 TEST(ConfigCacheTest, persistent_config_changed_callback_test) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   int num_change = 0;
   config.SetPersistentConfigChangedCallback([&num_change] { num_change++; });
   config.SetProperty("A", "B", "C");
@@ -274,7 +276,7 @@ TEST(ConfigCacheTest, persistent_config_changed_callback_test) {
 }
 
 TEST(ConfigCacheTest, fix_device_type_inconsistency_test) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   config.SetProperty("A", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "C", "D");
@@ -302,7 +304,7 @@ TEST(ConfigCacheTest, fix_device_type_inconsistency_test) {
 }
 
 TEST(ConfigCacheTest, test_get_section_with_property) {
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   config.SetProperty("A", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:EF", "C", "D");
@@ -311,6 +313,28 @@ TEST(ConfigCacheTest, test_get_section_with_property) {
       ElementsAre(
           SectionAndPropertyValue{.section = "A", .property = "C"},
           SectionAndPropertyValue{.section = "AA:BB:CC:DD:EE:FF", .property = "C"}));
+}
+
+TEST(ConfigCacheTest, test_get_sections_matching_at_least_one_property) {
+  ConfigCache config(100, Device::kLinkKeyProperties);
+  config.SetProperty("A", "B", "C");
+  config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
+  config.SetProperty("AA:BB:CC:DD:EE:EF", "C", "D");
+  ASSERT_TRUE(config.HasAtLeastOneMatchingPropertiesInSection("AA:BB:CC:DD:EE:FF", {"B", "C", "D"}));
+  ASSERT_TRUE(config.HasAtLeastOneMatchingPropertiesInSection("A", {"B", "C", "D"}));
+  ASSERT_FALSE(config.HasAtLeastOneMatchingPropertiesInSection("AA:BB:CC:DD:EE:FF", {"BC", "D"}));
+}
+
+TEST(ConfigCacheTest, test_empty_persistent_properties) {
+  ConfigCache config(100, {});
+  config.SetProperty("A", "B", "C");
+  config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
+  config.SetProperty("AA:BB:CC:DD:EE:EF", "C", "D");
+  config.SetProperty("AA:BB:CC:DD:EE:EF", "LinkKey", "D");
+  ASSERT_TRUE(config.HasAtLeastOneMatchingPropertiesInSection("AA:BB:CC:DD:EE:FF", {"B", "C", "D"}));
+  ASSERT_TRUE(config.HasAtLeastOneMatchingPropertiesInSection("A", {"B", "C", "D"}));
+  ASSERT_FALSE(config.HasAtLeastOneMatchingPropertiesInSection("AA:BB:CC:DD:EE:FF", {"BC", "D"}));
+  ASSERT_THAT(config.GetPersistentSections(), ElementsAre());
 }
 
 }  // namespace testing

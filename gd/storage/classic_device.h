@@ -18,6 +18,7 @@
 #include <array>
 #include <optional>
 #include <string>
+#include <unordered_set>
 
 #include "hci/link_key.h"
 #include "hci/uuid.h"
@@ -64,10 +65,16 @@ class ClassicDevice {
   Device Parent();
 
   // For logging purpose only, you can't get a ClassicDevice object from parsing a std::string
-  std::string ToLogString();
+  std::string ToLogString() const;
 
   // Get address of this classic device, it must exist
-  hci::Address GetAddress();
+  hci::Address GetAddress() const;
+
+  // Return true if device has a link key in one of |kLinkKeyProperties|
+  bool IsPaired() const;
+
+  // Property names that correspond to a link key used in Bluetooth classic device
+  static const std::unordered_set<std::string_view> kLinkKeyProperties;
 
  private:
   ConfigCache* config_;

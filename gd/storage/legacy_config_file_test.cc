@@ -22,25 +22,27 @@
 #include <filesystem>
 
 #include "os/files.h"
+#include "storage/device.h"
 
 namespace testing {
 
 using bluetooth::os::ReadSmallFile;
 using bluetooth::os::WriteToFile;
 using bluetooth::storage::ConfigCache;
+using bluetooth::storage::Device;
 using bluetooth::storage::LegacyConfigFile;
 
 TEST(LegacyConfigFileTest, write_and_read_loop_back_test) {
   auto temp_dir = std::filesystem::temp_directory_path();
   auto temp_config = temp_dir / "temp_config.txt";
 
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   config.SetProperty("A", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "B", "C");
   config.SetProperty("AA:BB:CC:DD:EE:FF", "C", "D");
   config.SetProperty("CC:DD:EE:FF:00:11", "LinkKey", "AABBAABBCCDDEE");
   EXPECT_TRUE(config.HasProperty("CC:DD:EE:FF:00:11", "LinkKey"));
-  EXPECT_THAT(config.GetPersistentDevices(), ElementsAre("CC:DD:EE:FF:00:11"));
+  EXPECT_THAT(config.GetPersistentSections(), ElementsAre("CC:DD:EE:FF:00:11"));
 
   EXPECT_TRUE(LegacyConfigFile::FromPath(temp_config.string()).Write(config));
   auto config_read = LegacyConfigFile::FromPath(temp_config.string()).Read(100);
@@ -48,7 +50,7 @@ TEST(LegacyConfigFileTest, write_and_read_loop_back_test) {
   // Unpaired devices do not exist in persistent config file
   config.RemoveSection("AA:BB:CC:DD:EE:FF");
   EXPECT_EQ(config, *config_read);
-  EXPECT_THAT(config_read->GetPersistentDevices(), ElementsAre("CC:DD:EE:FF:00:11"));
+  EXPECT_THAT(config_read->GetPersistentSections(), ElementsAre("CC:DD:EE:FF:00:11"));
   EXPECT_THAT(config_read->GetProperty("A", "B"), Optional(StrEq("C")));
   EXPECT_THAT(config_read->GetProperty("CC:DD:EE:FF:00:11", "LinkKey"), Optional(StrEq("AABBAABBCCDDEE")));
 
@@ -83,7 +85,7 @@ TEST(LegacyConfigFileTest, read_test) {
 
   auto config_read = LegacyConfigFile::FromPath(temp_config.string()).Read(100);
   EXPECT_TRUE(config_read);
-  EXPECT_THAT(config_read->GetPersistentDevices(), ElementsAre("01:02:03:ab:cd:ea"));
+  EXPECT_THAT(config_read->GetPersistentSections(), ElementsAre("01:02:03:ab:cd:ea"));
   EXPECT_THAT(config_read->GetProperty("Info", "FileSource"), Optional(StrEq("Empty")));
   EXPECT_THAT(config_read->GetProperty("Info", "FileSource"), Optional(StrEq("Empty")));
   EXPECT_THAT(
@@ -109,7 +111,7 @@ TEST(LegacyConfigFileTest, write_test) {
   auto temp_dir = std::filesystem::temp_directory_path();
   auto temp_config = temp_dir / "temp_config.txt";
 
-  ConfigCache config(100);
+  ConfigCache config(100, Device::kLinkKeyProperties);
   config.SetProperty("Info", "FileSource", "Empty");
   config.SetProperty("Info", "TimeCreated", "");
   config.SetProperty("Adapter", "Address", "01:02:03:ab:cd:ef");
