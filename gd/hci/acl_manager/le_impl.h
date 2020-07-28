@@ -123,11 +123,11 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       return;
     } else {
       canceled_connections_.erase(remote_address);
+      ready_to_unregister = true;
       remove_device_from_connect_list(remote_address);
     }
 
     if (status != ErrorCode::SUCCESS) {
-      check_for_unregister();
       le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectFail,
                                                 common::Unretained(le_client_callbacks_), remote_address, status));
       return;
@@ -179,11 +179,11 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       return;
     } else {
       canceled_connections_.erase(remote_address);
+      ready_to_unregister = true;
       remove_device_from_connect_list(remote_address);
     }
 
     if (status != ErrorCode::SUCCESS) {
-      check_for_unregister();
       le_client_handler_->Post(common::BindOnce(&LeConnectionCallbacks::OnLeConnectFail,
                                                 common::Unretained(le_client_callbacks_), remote_address, status));
       return;
@@ -432,10 +432,11 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
 
   void check_for_unregister() {
     if (le_acl_connections_.empty() && connecting_le_.empty() && canceled_connections_.empty() &&
-        address_manager_registered) {
+        address_manager_registered && ready_to_unregister) {
       le_address_manager_->Unregister(this);
       address_manager_registered = false;
       pause_connection = false;
+      ready_to_unregister = false;
     }
   }
 
@@ -446,6 +447,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     }
     canceled_connections_.clear();
     le_address_manager_->AckResume(this);
+    check_for_unregister();
   }
 
   uint16_t HACK_get_handle(Address address) {
@@ -472,6 +474,7 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
   std::set<AddressWithType> canceled_connections_;
   DisconnectorForLe* disconnector_;
   bool address_manager_registered = false;
+  bool ready_to_unregister = false;
   bool pause_connection = false;
 };
 
