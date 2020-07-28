@@ -24,6 +24,7 @@
 namespace bluetooth {
 namespace hci {
 
+// Must be 0b00, 0b01, 0b10, and 0b11 as this is a bit mask
 enum DeviceType { UNKNOWN = 0, BR_EDR = 1, LE = 2, DUAL = 3 };
 
 }
