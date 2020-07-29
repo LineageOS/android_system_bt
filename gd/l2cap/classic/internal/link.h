@@ -41,6 +41,7 @@ namespace classic {
 namespace internal {
 
 class LinkManager;
+class DumpsysHelper;
 
 class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionManagementCallbacks {
  public:
@@ -177,6 +178,7 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
   void OnDisconnection(hci::ErrorCode reason) override;
 
  private:
+  friend class DumpsysHelper;
   void connect_to_pending_dynamic_channels();
   void send_pending_configuration_requests();
 
