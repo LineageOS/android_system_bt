@@ -36,6 +36,7 @@
 namespace testing {
 
 using bluetooth::TestModuleRegistry;
+using bluetooth::hci::Address;
 using bluetooth::storage::ConfigCache;
 using bluetooth::storage::Device;
 using bluetooth::storage::LegacyConfigFile;
@@ -295,6 +296,23 @@ TEST_F(StorageModuleTest, get_paired_devices_test) {
       storage->GetPairedDevices(),
       ElementsAre(
           Device(storage->GetConfigCachePublic(), storage->GetMemoryOnlyConfigCachePublic(), "01:02:03:ab:cd:ea")));
+
+  // Tear down
+  test_registry.StopAll();
+}
+
+TEST_F(StorageModuleTest, get_adapter_config_test) {
+  // Prepare config file
+  ASSERT_TRUE(bluetooth::os::WriteToFile(temp_config_.string(), kReadTestConfig));
+
+  // Set up
+  auto* storage = new TestStorageModule(temp_config_.string(), kTestConfigSaveDelay, 10, false, false);
+  TestModuleRegistry test_registry;
+  test_registry.InjectTestModule(&StorageModule::Factory, storage);
+
+  auto address = Address::FromString("01:02:03:ab:cd:ef");
+  ASSERT_TRUE(address);
+  ASSERT_THAT(storage->GetAdapterConfig().GetAddress(), Optional(Eq(address)));
 
   // Tear down
   test_registry.StopAll();
