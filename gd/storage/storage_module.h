@@ -121,6 +121,8 @@ class StorageModule : public bluetooth::Module {
   friend shim::BtifConfigInterface;
   // For shim layer only
   ConfigCache* GetConfigCache();
+  // For unit test only
+  ConfigCache* GetMemoryOnlyConfigCache();
   // Normally, underlying config will be saved at most 3 seconds after the first config change in a series of changes
   // This method triggers the delayed saving automatically, the delay is equal to |config_save_delay_|
   void SaveDelayed();
