@@ -113,15 +113,21 @@ void ClassicPairingHandler::OnReceive(hci::PinCodeRequestView packet) {
 
 void ClassicPairingHandler::OnReceive(hci::LinkKeyRequestView packet) {
   ASSERT(packet.IsValid());
+  if (already_link_key_replied_) return;
+  already_link_key_replied_ = true;
   // TODO(optedoblivion): Add collision detection here
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
   ASSERT_LOG(GetRecord()->GetPseudoAddress().GetAddress() == packet.GetBdAddr(), "Address mismatch");
   if (GetRecord()->IsBonded() || GetRecord()->IsPaired()) {
     auto packet = hci::LinkKeyRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress(),
                                                           GetRecord()->GetLinkKey());
+    LOG_INFO("Sending: LINK_KEY_REQUEST_REPLY");
     this->GetChannel()->SendCommand(std::move(packet));
+    last_status_ = hci::ErrorCode::SUCCESS;
+    Cancel();
   } else {
     auto packet = hci::LinkKeyRequestNegativeReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress());
+    LOG_INFO("Sending: LINK_KEY_REQUEST_NEGATIVE_REPLY");
     this->GetChannel()->SendCommand(std::move(packet));
   }
 }
