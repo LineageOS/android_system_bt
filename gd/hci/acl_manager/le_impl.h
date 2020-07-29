@@ -260,6 +260,30 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     }
   }
 
+  void add_device_to_resolving_list(
+      AddressWithType address_with_type,
+      const std::array<uint8_t, 16>& peer_irk,
+      const std::array<uint8_t, 16>& local_irk) {
+    AddressType address_type = address_with_type.GetAddressType();
+    if (!address_manager_registered) {
+      le_address_manager_->Register(this);
+      address_manager_registered = true;
+    }
+    pause_connection = true;
+    switch (address_type) {
+      case AddressType::PUBLIC_DEVICE_ADDRESS:
+      case AddressType::PUBLIC_IDENTITY_ADDRESS: {
+        le_address_manager_->AddDeviceToResolvingList(
+            PeerAddressType::PUBLIC_DEVICE_OR_IDENTITY_ADDRESS, address_with_type.GetAddress(), peer_irk, local_irk);
+      } break;
+      case AddressType::RANDOM_DEVICE_ADDRESS:
+      case AddressType::RANDOM_IDENTITY_ADDRESS: {
+        le_address_manager_->AddDeviceToResolvingList(
+            PeerAddressType::RANDOM_DEVICE_OR_IDENTITY_ADDRESS, address_with_type.GetAddress(), peer_irk, local_irk);
+      }
+    }
+  }
+
   void create_le_connection(AddressWithType address_with_type, bool add_to_connect_list) {
     // TODO: Configure default LE connection parameters?
 
@@ -337,6 +361,11 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
 
   void remove_device_from_connect_list(AddressWithType address_with_type) {
     AddressType address_type = address_with_type.GetAddressType();
+    if (!address_manager_registered) {
+      le_address_manager_->Register(this);
+      address_manager_registered = true;
+    }
+    pause_connection = true;
     switch (address_type) {
       case AddressType::PUBLIC_DEVICE_ADDRESS:
       case AddressType::PUBLIC_IDENTITY_ADDRESS: {
@@ -347,6 +376,27 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       case AddressType::RANDOM_IDENTITY_ADDRESS: {
         le_address_manager_->RemoveDeviceFromConnectList(
             ConnectListAddressType::RANDOM, address_with_type.GetAddress());
+      }
+    }
+  }
+
+  void remove_device_from_resolving_list(AddressWithType address_with_type) {
+    AddressType address_type = address_with_type.GetAddressType();
+    if (!address_manager_registered) {
+      le_address_manager_->Register(this);
+      address_manager_registered = true;
+    }
+    pause_connection = true;
+    switch (address_type) {
+      case AddressType::PUBLIC_DEVICE_ADDRESS:
+      case AddressType::PUBLIC_IDENTITY_ADDRESS: {
+        le_address_manager_->RemoveDeviceFromResolvingList(
+            PeerAddressType::PUBLIC_DEVICE_OR_IDENTITY_ADDRESS, address_with_type.GetAddress());
+      } break;
+      case AddressType::RANDOM_DEVICE_ADDRESS:
+      case AddressType::RANDOM_IDENTITY_ADDRESS: {
+        le_address_manager_->RemoveDeviceFromResolvingList(
+            PeerAddressType::RANDOM_DEVICE_OR_IDENTITY_ADDRESS, address_with_type.GetAddress());
       }
     }
   }
