@@ -43,31 +43,57 @@ class ClassicDevice;
 static_assert(false, "GENERATE_PROPERTY_GETTER_SETTER_REMOVER() must be uniquely defined once in this file");
 #endif
 
-#define GENERATE_PROPERTY_GETTER_SETTER_REMOVER(NAME, RETURN_TYPE, PROPERTY_KEY) \
- public:                                                                         \
-  std::optional<RETURN_TYPE> Get##NAME() const {                                 \
-    return ConfigCacheHelper(*config_).Get<RETURN_TYPE>(section_, PROPERTY_KEY); \
-  }                                                                              \
-  MutationEntry Set##NAME(const RETURN_TYPE& value) {                            \
-    return MutationEntry::Set<RETURN_TYPE>(section_, PROPERTY_KEY, value);       \
-  }                                                                              \
-  MutationEntry Remove##NAME() {                                                 \
-    return MutationEntry::Remove(section_, PROPERTY_KEY);                        \
+#define GENERATE_PROPERTY_GETTER_SETTER_REMOVER(NAME, RETURN_TYPE, PROPERTY_KEY)                                \
+ public:                                                                                                        \
+  std::optional<RETURN_TYPE> Get##NAME() const {                                                                \
+    return ConfigCacheHelper(*config_).Get<RETURN_TYPE>(section_, PROPERTY_KEY);                                \
+  }                                                                                                             \
+  MutationEntry Set##NAME(const RETURN_TYPE& value) {                                                           \
+    return MutationEntry::Set<RETURN_TYPE>(MutationEntry::PropertyType::NORMAL, section_, PROPERTY_KEY, value); \
+  }                                                                                                             \
+  MutationEntry Remove##NAME() {                                                                                \
+    return MutationEntry::Remove(MutationEntry::PropertyType::NORMAL, section_, PROPERTY_KEY);                  \
   }
+
+// Make sure our macro is used
+#ifdef GENERATE_PROPERTY_GETTER_SETTER_REMOVER_WITH_CUSTOM_SETTER
+static_assert(
+    false, "GENERATE_PROPERTY_GETTER_SETTER_REMOVER_WITH_CUSTOM_SETTER() must be uniquely defined once in this file");
+#endif
 
 // FUNC is bracketed function definition that takes a const RETURN_TYPE& value and return RETURN_TYPE
 // e.g. { return value + 1; }
-#define GENERATE_PROPERTY_GETTER_SETTER_REMOVER_WITH_CUSTOM_SETTER(NAME, RETURN_TYPE, PROPERTY_KEY, FUNC) \
- public:                                                                                                  \
-  std::optional<RETURN_TYPE> Get##NAME() const {                                                          \
-    return ConfigCacheHelper(*config_).Get<RETURN_TYPE>(section_, PROPERTY_KEY);                          \
-  }                                                                                                       \
-  MutationEntry Set##NAME(const RETURN_TYPE& value) {                                                     \
-    auto new_value = [this](const RETURN_TYPE& value) -> RETURN_TYPE FUNC(value);                         \
-    return MutationEntry::Set<RETURN_TYPE>(section_, PROPERTY_KEY, new_value);                            \
-  }                                                                                                       \
-  MutationEntry Remove##NAME() {                                                                          \
-    return MutationEntry::Remove(section_, PROPERTY_KEY);                                                 \
+#define GENERATE_PROPERTY_GETTER_SETTER_REMOVER_WITH_CUSTOM_SETTER(NAME, RETURN_TYPE, PROPERTY_KEY, FUNC)           \
+ public:                                                                                                            \
+  std::optional<RETURN_TYPE> Get##NAME() const {                                                                    \
+    return ConfigCacheHelper(*config_).Get<RETURN_TYPE>(section_, PROPERTY_KEY);                                    \
+  }                                                                                                                 \
+  MutationEntry Set##NAME(const RETURN_TYPE& value) {                                                               \
+    auto new_value = [this](const RETURN_TYPE& value) -> RETURN_TYPE FUNC(value);                                   \
+    return MutationEntry::Set<RETURN_TYPE>(MutationEntry::PropertyType::NORMAL, section_, PROPERTY_KEY, new_value); \
+  }                                                                                                                 \
+  MutationEntry Remove##NAME() {                                                                                    \
+    return MutationEntry::Remove(MutationEntry::PropertyType::NORMAL, section_, PROPERTY_KEY);                      \
+  }
+
+// Make sure our macro is used
+#ifdef GENERATE_TEMP_PROPERTY_GETTER_SETTER_REMOVER
+static_assert(false, "GENERATE_TEMP_PROPERTY_GETTER_SETTER_REMOVER() must be uniquely defined once in this file");
+#endif
+
+// Macro to generate tempoarary property that exists in memory only
+// It is subjected to a limit of 10,000 devices
+// It will be cleared when the stack is restarted
+#define GENERATE_TEMP_PROPERTY_GETTER_SETTER_REMOVER(NAME, RETURN_TYPE, PROPERTY_KEY)                                \
+ public:                                                                                                             \
+  std::optional<RETURN_TYPE> GetTemp##NAME() const {                                                                 \
+    return ConfigCacheHelper(*memory_only_config_).Get<RETURN_TYPE>(section_, PROPERTY_KEY);                         \
+  }                                                                                                                  \
+  MutationEntry SetTemp##NAME(const RETURN_TYPE& value) {                                                            \
+    return MutationEntry::Set<RETURN_TYPE>(MutationEntry::PropertyType::MEMORY_ONLY, section_, PROPERTY_KEY, value); \
+  }                                                                                                                  \
+  MutationEntry RemoveTemp##NAME() {                                                                                 \
+    return MutationEntry::Remove(MutationEntry::PropertyType::MEMORY_ONLY, section_, PROPERTY_KEY);                  \
   }
 
 // A think wrapper of device in ConfigCache, allowing easy access to various predefined properties of a Bluetooth device
@@ -83,8 +109,12 @@ class Device {
  public:
   enum ConfigKeyAddressType { LEGACY_KEY_ADDRESS, CLASSIC_ADDRESS, LE_IDENTITY_ADDRESS, LE_LEGACY_PSEUDO_ADDRESS };
 
-  Device(ConfigCache* config, hci::Address key_address, ConfigKeyAddressType key_address_type);
-  Device(ConfigCache* config, std::string section);
+  Device(
+      ConfigCache* config,
+      ConfigCache* memory_only_config,
+      const hci::Address& key_address,
+      ConfigKeyAddressType key_address_type);
+  Device(ConfigCache* config, ConfigCache* memory_only_config, std::string section);
 
   // for move
   Device(Device&& other) noexcept = default;
@@ -96,13 +126,13 @@ class Device {
 
   // operators
   bool operator==(const Device& other) const {
-    return config_ == other.config_ && section_ == other.section_;
+    return config_ == other.config_ && memory_only_config_ == other.memory_only_config_ && section_ == other.section_;
   }
   bool operator!=(const Device& other) const {
     return !(*this == other);
   }
   bool operator<(const Device& other) const {
-    return config_ < other.config_ && section_ < other.section_;
+    return config_ < other.config_ && memory_only_config_ < other.memory_only_config_ && section_ < other.section_;
   }
   bool operator>(const Device& rhs) const {
     return (rhs < *this);
@@ -118,8 +148,10 @@ class Device {
   // false. As soon as a property value is added to the device. Exists() will become true.
   bool Exists();
 
-  // Remove device and all its properties from config
+  // Remove device and all its properties from config and memory-only temp config
   MutationEntry RemoveFromConfig();
+  // Remove device and all its properties from memory-only temp config, but keep items in normal config
+  MutationEntry RemoveFromTempConfig();
 
   // Only works when GetDeviceType() returns BR_EDR or DUAL, will crash otherwise
   // For first time use, please SetDeviceType() to the right value
@@ -137,6 +169,7 @@ class Device {
 
  private:
   ConfigCache* config_;
+  ConfigCache* memory_only_config_;
   std::string section_;
   friend std::hash<Device>;
 
@@ -163,9 +196,10 @@ namespace std {
 template <>
 struct hash<bluetooth::storage::Device> {
   std::size_t operator()(const bluetooth::storage::Device& val) const noexcept {
-    std::size_t pointer_hash = std::hash<bluetooth::storage::ConfigCache*>{}(val.config_);
+    std::size_t pointer_hash_1 = std::hash<bluetooth::storage::ConfigCache*>{}(val.config_);
+    std::size_t pointer_hash_2 = std::hash<bluetooth::storage::ConfigCache*>{}(val.config_);
     std::size_t addr_hash = std::hash<std::string>{}(val.section_);
-    return addr_hash ^ (pointer_hash << 1);
+    return addr_hash ^ (pointer_hash_1 << 1) ^ (pointer_hash_2 << 2);
   }
 };
 }  // namespace std
