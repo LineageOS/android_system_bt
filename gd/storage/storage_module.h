@@ -25,6 +25,7 @@
 
 #include "hci/address.h"
 #include "module.h"
+#include "storage/adapter_config.h"
 #include "storage/config_cache.h"
 #include "storage/device.h"
 #include "storage/mutation.h"
@@ -104,6 +105,9 @@ class StorageModule : public bluetooth::Module {
   // Note: A dual mode device's identity address is normally the same as its BR/EDR address, but they can also be
   // different. Hence, please don't make such assumption and don't use GetDeviceByBrEdrMacAddress() interchangeably
   Device GetDeviceByLeIdentityAddress(hci::Address le_identity_address);
+
+  // A think copyable, movable, comparable object that is used to access adapter level information
+  AdapterConfig GetAdapterConfig();
 
   // Get a list of paired devices from config
   std::vector<Device> GetPairedDevices();
