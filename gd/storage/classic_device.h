@@ -31,7 +31,7 @@ namespace storage {
 
 class ClassicDevice {
  public:
-  ClassicDevice(ConfigCache* config, std::string section);
+  ClassicDevice(ConfigCache* config, ConfigCache* memory_only_config, std::string section);
 
   // for move
   ClassicDevice(ClassicDevice&& other) noexcept = default;
@@ -43,13 +43,13 @@ class ClassicDevice {
 
   // operators
   bool operator==(const ClassicDevice& other) const {
-    return config_ == other.config_ && section_ == other.section_;
+    return config_ == other.config_ && memory_only_config_ == other.memory_only_config_ && section_ == other.section_;
   }
   bool operator!=(const ClassicDevice& other) const {
     return !(*this == other);
   }
   bool operator<(const ClassicDevice& other) const {
-    return config_ < other.config_ && section_ < other.section_;
+    return config_ < other.config_ && memory_only_config_ < other.memory_only_config_ && section_ < other.section_;
   }
   bool operator>(const ClassicDevice& rhs) const {
     return (rhs < *this);
@@ -78,6 +78,7 @@ class ClassicDevice {
 
  private:
   ConfigCache* config_;
+  ConfigCache* memory_only_config_;
   std::string section_;
   friend std::hash<ClassicDevice>;
 
@@ -98,9 +99,10 @@ namespace std {
 template <>
 struct hash<bluetooth::storage::ClassicDevice> {
   std::size_t operator()(const bluetooth::storage::ClassicDevice& val) const noexcept {
-    std::size_t pointer_hash = std::hash<bluetooth::storage::ConfigCache*>{}(val.config_);
-    std::size_t section_hash = std::hash<std::string>{}(val.section_);
-    return section_hash ^ (pointer_hash << 1);
+    std::size_t pointer_hash_1 = std::hash<bluetooth::storage::ConfigCache*>{}(val.config_);
+    std::size_t pointer_hash_2 = std::hash<bluetooth::storage::ConfigCache*>{}(val.config_);
+    std::size_t addr_hash = std::hash<std::string>{}(val.section_);
+    return addr_hash ^ (pointer_hash_1 << 1) ^ (pointer_hash_2 << 2);
   }
 };
 }  // namespace std

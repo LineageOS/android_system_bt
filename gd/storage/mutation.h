@@ -26,23 +26,16 @@ namespace storage {
 
 class Mutation {
  public:
-  explicit Mutation(ConfigCache* config_cache) : config_cache_(config_cache) {
-    ASSERT(config_cache_ != nullptr);
-  }
-
-  void Add(MutationEntry entry) {
-    entries_.emplace(std::move(entry));
-  }
-
-  void Commit() {
-    config_cache_->Commit(*this);
-  }
-
+  Mutation(ConfigCache* config, ConfigCache* memory_only_config);
+  void Add(MutationEntry entry);
+  void Commit();
   friend ConfigCache;
 
  private:
-  ConfigCache* config_cache_;
-  std::queue<MutationEntry> entries_;
+  ConfigCache* config_;
+  ConfigCache* memory_only_config_;
+  std::queue<MutationEntry> normal_config_entries_;
+  std::queue<MutationEntry> memory_only_config_entries_;
 };
 
 }  // namespace storage

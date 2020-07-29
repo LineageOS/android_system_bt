@@ -33,10 +33,11 @@ const std::string kLeIdentityAddressKey = "LeIdentityAddr";
 const std::unordered_set<std::string_view> LeDevice::kLinkKeyProperties = {
     "LE_KEY_PENC", "LE_KEY_PID", "LE_KEY_PCSRK", "LE_KEY_LENC", "LE_KEY_LCSRK"};
 
-LeDevice::LeDevice(ConfigCache* config, std::string section) : config_(config), section_(std::move(section)) {}
+LeDevice::LeDevice(ConfigCache* config, ConfigCache* memory_only_config, std::string section)
+    : config_(config), memory_only_config_(memory_only_config), section_(std::move(section)) {}
 
 Device LeDevice::Parent() {
-  return Device(config_, section_);
+  return Device(config_, memory_only_config_, section_);
 }
 
 std::string LeDevice::ToLogString() const {

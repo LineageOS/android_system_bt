@@ -19,6 +19,7 @@
 #include <list>
 #include <mutex>
 #include <optional>
+#include <queue>
 #include <string>
 #include <string_view>
 #include <unordered_set>
@@ -29,6 +30,7 @@
 #include "common/lru_cache.h"
 #include "hci/address.h"
 #include "os/utils.h"
+#include "storage/mutation_entry.h"
 
 namespace bluetooth {
 namespace storage {
@@ -94,7 +96,7 @@ class ConfigCache {
 
   // modifiers
   // Commit all mutation entries in sequence while holding the config mutex
-  virtual void Commit(Mutation& mutation);
+  virtual void Commit(std::queue<MutationEntry>& mutation);
   virtual void SetProperty(std::string section, std::string property, std::string value);
   virtual bool RemoveSection(const std::string& section);
   virtual bool RemoveProperty(const std::string& section, const std::string& property);
