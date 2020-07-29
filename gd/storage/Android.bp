@@ -7,6 +7,7 @@ filegroup {
             "device.cc",
             "le_device.cc",
             "legacy_config_file.cc",
+            "mutation.cc",
             "mutation_entry.cc",
             "storage_module.cc",
     ],

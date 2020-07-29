@@ -214,12 +214,25 @@ bool ConfigCache::RemoveProperty(const std::string& section, const std::string& 
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   auto section_iter = information_sections_.find(section);
   if (section_iter != information_sections_.end()) {
-    return section_iter->second.extract(property).has_value();
+    auto value = section_iter->second.extract(property);
+    // if section is empty after removal, remove the whole section as empty section is not allowed
+    if (section_iter->second.size() == 0) {
+      information_sections_.erase(section_iter);
+    }
+    if (value.has_value()) {
+      PersistentConfigChangedCallback();
+      return true;
+    } else {
+      return false;
+    }
   }
   section_iter = persistent_devices_.find(section);
   if (section_iter != persistent_devices_.end()) {
     auto value = section_iter->second.extract(property);
-    if (value && IsPersistentProperty(property)) {
+    // if section is empty after removal, remove the whole section as empty section is not allowed
+    if (section_iter->second.size() == 0) {
+      persistent_devices_.erase(section_iter);
+    } else if (value && IsPersistentProperty(property)) {
       // move unpaired device
       auto section_properties = persistent_devices_.extract(section);
       temporary_devices_.insert_or_assign(section, std::move(section_properties->second));
@@ -233,7 +246,11 @@ bool ConfigCache::RemoveProperty(const std::string& section, const std::string& 
   }
   section_iter = temporary_devices_.find(section);
   if (section_iter != temporary_devices_.end()) {
-    return section_iter->second.extract(property).has_value();
+    auto value = section_iter->second.extract(property);
+    if (section_iter->second.size() == 0) {
+      temporary_devices_.erase(section_iter);
+    }
+    return value.has_value();
   }
   return false;
 }
@@ -283,20 +300,22 @@ std::vector<std::string> ConfigCache::GetPersistentSections() const {
   return paired_devices;
 }
 
-void ConfigCache::Commit(Mutation& mutation) {
+void ConfigCache::Commit(std::queue<MutationEntry>& mutation_entries) {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
-  auto& entries = mutation.entries_;
-  while (!entries.empty()) {
-    auto entry = std::move(entries.front());
-    entries.pop();
-    if (entry.is_add) {
-      SetProperty(std::move(entry.section), std::move(entry.property), std::move(entry.value));
-    } else {
-      if (entry.value.empty()) {
-        RemoveSection(entry.section);
-      } else {
+  while (!mutation_entries.empty()) {
+    auto entry = std::move(mutation_entries.front());
+    mutation_entries.pop();
+    switch (entry.entry_type) {
+      case MutationEntry::EntryType::SET:
+        SetProperty(std::move(entry.section), std::move(entry.property), std::move(entry.value));
+        break;
+      case MutationEntry::EntryType::REMOVE_PROPERTY:
         RemoveProperty(entry.section, entry.property);
-      }
+        break;
+      case MutationEntry::EntryType::REMOVE_SECTION:
+        RemoveSection(entry.section);
+        break;
+        // do not write a default case so that when a new enum is defined, compilation would fail automatically
     }
   }
 }
