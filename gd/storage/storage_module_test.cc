@@ -92,6 +92,10 @@ class TestStorageModule : public StorageModule {
     return StorageModule::GetConfigCache();
   }
 
+  ConfigCache* GetMemoryOnlyConfigCachePublic() {
+    return StorageModule::GetMemoryOnlyConfigCache();
+  }
+
   void SaveImmediatelyPublic() {
     StorageModule::SaveImmediately();
   }
@@ -287,7 +291,10 @@ TEST_F(StorageModuleTest, get_paired_devices_test) {
   TestModuleRegistry test_registry;
   test_registry.InjectTestModule(&StorageModule::Factory, storage);
 
-  ASSERT_THAT(storage->GetPairedDevices(), ElementsAre(Device(storage->GetConfigCachePublic(), "01:02:03:ab:cd:ea")));
+  ASSERT_THAT(
+      storage->GetPairedDevices(),
+      ElementsAre(
+          Device(storage->GetConfigCachePublic(), storage->GetMemoryOnlyConfigCachePublic(), "01:02:03:ab:cd:ea")));
 
   // Tear down
   test_registry.StopAll();

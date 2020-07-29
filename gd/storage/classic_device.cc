@@ -25,11 +25,11 @@ namespace storage {
 
 const std::unordered_set<std::string_view> ClassicDevice::kLinkKeyProperties = {"LinkKey"};
 
-ClassicDevice::ClassicDevice(ConfigCache* config, std::string section)
-    : config_(config), section_(std::move(section)) {}
+ClassicDevice::ClassicDevice(ConfigCache* config, ConfigCache* memory_only_config, std::string section)
+    : config_(config), memory_only_config_(memory_only_config), section_(std::move(section)) {}
 
 Device ClassicDevice::Parent() {
-  return Device(config_, section_);
+  return Device(config_, memory_only_config_, section_);
 }
 
 std::string ClassicDevice::ToLogString() const {
