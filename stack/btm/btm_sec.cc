@@ -2013,6 +2013,11 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
   uint16_t security_required;
   bool transport = false; /* should check PSM range in LE connection oriented
                              L2CAP connection */
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::btm_sec_mx_access_request(
+        bd_addr, psm, is_originator, mx_proto_id, mx_chan_id, p_callback,
+        p_ref_data);
+  }
 
   BTM_TRACE_DEBUG("%s() is_originator: %d", __func__, is_originator);
   /* Find or get oldest record */
