@@ -33,7 +33,7 @@ using bluetooth::storage::Device;
 using bluetooth::storage::Mutation;
 
 TEST(DeviceTest, create_new_device_using_legacy_key_address) {
-  ConfigCache config(10);
+  ConfigCache config(10, Device::kLinkKeyProperties);
 
   // A new device
   Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
@@ -57,7 +57,7 @@ TEST(DeviceTest, create_new_device_using_legacy_key_address) {
 }
 
 TEST(DeviceTest, create_new_device_using_classic_address) {
-  ConfigCache config(10);
+  ConfigCache config(10, Device::kLinkKeyProperties);
 
   // A new device
   Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
@@ -81,7 +81,7 @@ TEST(DeviceTest, create_new_device_using_classic_address) {
 }
 
 TEST(DeviceTest, create_new_device_using_le_identity_address) {
-  ConfigCache config(10);
+  ConfigCache config(10, Device::kLinkKeyProperties);
 
   // A new device
   Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
@@ -102,7 +102,7 @@ TEST(DeviceTest, create_new_device_using_le_identity_address) {
 }
 
 TEST(DeviceTest, set_property) {
-  ConfigCache config(10);
+  ConfigCache config(10, Device::kLinkKeyProperties);
   Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
   Device device(&config, address, Device::ConfigKeyAddressType::LEGACY_KEY_ADDRESS);
   ASSERT_FALSE(device.Exists());
@@ -114,8 +114,28 @@ TEST(DeviceTest, set_property) {
   ASSERT_THAT(device.GetName(), Optional(StrEq("hello world!")));
 }
 
+TEST(DeviceTest, set_device_type) {
+  ConfigCache config(10, Device::kLinkKeyProperties);
+  Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
+  Device device(&config, address, Device::ConfigKeyAddressType::LEGACY_KEY_ADDRESS);
+  ASSERT_FALSE(device.Exists());
+  ASSERT_FALSE(device.GetName());
+  {
+    Mutation mutation(&config);
+    mutation.Add(device.SetDeviceType(DeviceType::BR_EDR));
+    mutation.Commit();
+  }
+  ASSERT_THAT(device.GetDeviceType(), Optional(Eq(DeviceType::BR_EDR)));
+  {
+    Mutation mutation(&config);
+    mutation.Add(device.SetDeviceType(DeviceType::LE));
+    mutation.Commit();
+  }
+  ASSERT_THAT(device.GetDeviceType(), Optional(Eq(DeviceType::DUAL)));
+}
+
 TEST(DeviceTest, get_le_and_bredr) {
-  ConfigCache config(10);
+  ConfigCache config(10, Device::kLinkKeyProperties);
   Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
   Device device(&config, address, Device::ConfigKeyAddressType::LEGACY_KEY_ADDRESS);
   ASSERT_FALSE(device.GetDeviceType());
@@ -168,14 +188,14 @@ TEST(DeviceTest, get_le_and_bredr) {
 }
 
 TEST(DeviceTest, equality_test) {
-  ConfigCache config(10);
+  ConfigCache config(10, Device::kLinkKeyProperties);
   Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
   Device device1(&config, address, Device::ConfigKeyAddressType::LEGACY_KEY_ADDRESS);
   Device device2(&config, address, Device::ConfigKeyAddressType::LEGACY_KEY_ADDRESS);
   ASSERT_EQ(device1, device2);
 
   // different config cache
-  ConfigCache config_alt(10);
+  ConfigCache config_alt(10, Device::kLinkKeyProperties);
   Device device3(&config_alt, address, Device::ConfigKeyAddressType::LEGACY_KEY_ADDRESS);
   ASSERT_NE(device1, device3);
 
@@ -193,7 +213,7 @@ TEST(DeviceTest, equality_test) {
 }
 
 TEST(DeviceTest, remove_config_test) {
-  ConfigCache config(10);
+  ConfigCache config(10, Device::kLinkKeyProperties);
   Address address = {{0xaa, 0xbb, 0xcc, 0xdd, 0xee, 0xff}};
   config.SetProperty(address.ToString(), "Name", "hello");
   Device device(&config, address, Device::ConfigKeyAddressType::LEGACY_KEY_ADDRESS);

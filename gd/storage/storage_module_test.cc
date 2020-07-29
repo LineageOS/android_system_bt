@@ -30,12 +30,14 @@
 #include "module.h"
 #include "os/files.h"
 #include "storage/config_cache.h"
+#include "storage/device.h"
 #include "storage/legacy_config_file.h"
 
 namespace testing {
 
 using bluetooth::TestModuleRegistry;
 using bluetooth::storage::ConfigCache;
+using bluetooth::storage::Device;
 using bluetooth::storage::LegacyConfigFile;
 using bluetooth::storage::StorageModule;
 
@@ -209,7 +211,7 @@ TEST_F(StorageModuleTest, read_existing_config_test) {
   // Test
   ASSERT_NE(storage->GetConfigCachePublic(), nullptr);
   ASSERT_TRUE(storage->GetConfigCachePublic()->HasSection("Metrics"));
-  ASSERT_THAT(storage->GetConfigCachePublic()->GetPersistentDevices(), ElementsAre("01:02:03:ab:cd:ea"));
+  ASSERT_THAT(storage->GetConfigCachePublic()->GetPersistentSections(), ElementsAre("01:02:03:ab:cd:ea"));
   ASSERT_THAT(
       storage->GetConfigCachePublic()->GetProperty(StorageModule::kAdapterSection, "Address"),
       Optional(StrEq("01:02:03:ab:cd:ef")));
@@ -274,6 +276,21 @@ TEST_F(StorageModuleTest, save_config_test) {
 
   // Verify states after test
   ASSERT_TRUE(std::filesystem::exists(temp_config_));
+}
+
+TEST_F(StorageModuleTest, get_paired_devices_test) {
+  // Prepare config file
+  ASSERT_TRUE(bluetooth::os::WriteToFile(temp_config_.string(), kReadTestConfig));
+
+  // Set up
+  auto* storage = new TestStorageModule(temp_config_.string(), kTestConfigSaveDelay, 10, false, false);
+  TestModuleRegistry test_registry;
+  test_registry.InjectTestModule(&StorageModule::Factory, storage);
+
+  ASSERT_THAT(storage->GetPairedDevices(), ElementsAre(Device(storage->GetConfigCachePublic(), "01:02:03:ab:cd:ea")));
+
+  // Tear down
+  test_registry.StopAll();
 }
 
 }  // namespace testing

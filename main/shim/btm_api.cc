@@ -22,9 +22,12 @@
 
 #include "common/time_util.h"
 #include "device/include/controller.h"
+#include "gd/common/callback.h"
+#include "gd/neighbor/name.h"
 #include "main/shim/btm.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/controller.h"
+#include "main/shim/helpers.h"
 #include "main/shim/shim.h"
 #include "main/shim/stack.h"
 #include "stack/btm/btm_int_types.h"
@@ -884,7 +887,7 @@ void bluetooth::shim::BTM_BleTestEnd(tBTM_CMPL_CB* p_cmd_cmpl_cback) {
 }
 
 bool bluetooth::shim::BTM_UseLeLink(const RawAddress& raw_address) {
-  return Stack::GetInstance()->GetBtm()->IsLeAclConnected(raw_address);
+  return Stack::GetInstance()->GetBtm()->UseLeLink(raw_address);
 }
 
 tBTM_STATUS bluetooth::shim::BTM_SetBleDataLength(const RawAddress& bd_addr,
@@ -1082,4 +1085,13 @@ bool bluetooth::shim::BTM_SecDeleteDevice(const RawAddress& bd_addr) {
 uint16_t bluetooth::shim::BTM_GetHCIConnHandle(const RawAddress& remote_bda,
                                                tBT_TRANSPORT transport) {
   return Stack::GetInstance()->GetBtm()->GetAclHandle(remote_bda, transport);
+}
+
+static void remote_name_request_complete_noop(void* p_name){
+    // Should notify BTM_Sec, but we should use GD SMP.
+};
+
+void bluetooth::shim::SendRemoteNameRequest(const RawAddress& raw_address) {
+  Stack::GetInstance()->GetBtm()->ReadClassicRemoteDeviceName(
+      raw_address, remote_name_request_complete_noop);
 }
