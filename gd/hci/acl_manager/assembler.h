@@ -51,7 +51,7 @@ struct assembler {
   AddressWithType address_with_type_;
   AclConnection::QueueDownEnd* down_end_;
   os::Handler* handler_;
-  PacketViewForRecombination recombination_stage_{std::make_shared<std::vector<uint8_t>>()};
+  PacketViewForRecombination recombination_stage_{PacketView<kLittleEndian>(std::make_shared<std::vector<uint8_t>>())};
   int remaining_sdu_continuation_packet_size_ = 0;
   std::shared_ptr<std::atomic_bool> enqueue_registered_ = std::make_shared<std::atomic_bool>(false);
   std::queue<packet::PacketView<kLittleEndian>> incoming_queue_;
@@ -83,7 +83,8 @@ struct assembler {
     if (packet_boundary_flag == PacketBoundaryFlag::CONTINUING_FRAGMENT) {
       if (remaining_sdu_continuation_packet_size_ < payload_size) {
         LOG_WARN("Remote sent unexpected L2CAP PDU. Drop the entire L2CAP PDU");
-        recombination_stage_ = PacketViewForRecombination(std::make_shared<std::vector<uint8_t>>());
+        recombination_stage_ =
+            PacketViewForRecombination(PacketView<kLittleEndian>(std::make_shared<std::vector<uint8_t>>()));
         remaining_sdu_continuation_packet_size_ = 0;
         return;
       }
@@ -93,7 +94,8 @@ struct assembler {
         return;
       } else {
         payload = recombination_stage_;
-        recombination_stage_ = PacketViewForRecombination(std::make_shared<std::vector<uint8_t>>());
+        recombination_stage_ =
+            PacketViewForRecombination(PacketView<kLittleEndian>(std::make_shared<std::vector<uint8_t>>()));
       }
     } else if (packet_boundary_flag == PacketBoundaryFlag::FIRST_AUTOMATICALLY_FLUSHABLE) {
       if (recombination_stage_.size() > 0) {

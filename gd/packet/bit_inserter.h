@@ -28,7 +28,7 @@ namespace packet {
 
 class BitInserter : public ByteInserter {
  public:
-  BitInserter(std::vector<uint8_t>& vector);
+  explicit BitInserter(std::vector<uint8_t>& vector);
   ~BitInserter() override;
 
   virtual void insert_bits(uint8_t byte, size_t num_bits);
