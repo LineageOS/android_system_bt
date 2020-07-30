@@ -33,9 +33,10 @@ static const bool kLittleEndian = true;
 template <bool little_endian>
 class PacketView {
  public:
-  PacketView(const std::forward_list<class View> fragments);
+  explicit PacketView(std::forward_list<View> fragments);
   PacketView(const PacketView& PacketView) = default;
-  PacketView(std::shared_ptr<std::vector<uint8_t>> packet);
+  explicit PacketView(std::shared_ptr<std::vector<uint8_t>> packet);
+  PacketView<little_endian>() = delete;
   virtual ~PacketView() = default;
 
   virtual Iterator<little_endian> begin() const;
@@ -58,7 +59,6 @@ class PacketView {
  private:
   std::forward_list<View> fragments_;
   size_t length_;
-  PacketView<little_endian>() = delete;
   std::forward_list<View> GetSubviewList(size_t begin, size_t end) const;
 };
 

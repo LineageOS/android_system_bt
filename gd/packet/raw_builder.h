@@ -29,8 +29,8 @@ namespace packet {
 class RawBuilder : public PacketBuilder<true> {
  public:
   RawBuilder() = default;
-  RawBuilder(size_t max_bytes);
-  RawBuilder(std::vector<uint8_t> vec);
+  explicit RawBuilder(size_t max_bytes);
+  explicit RawBuilder(std::vector<uint8_t> vec);
   virtual ~RawBuilder() = default;
 
   virtual size_t size() const override;

@@ -131,9 +131,10 @@ TEST(GeneratedPacketTest, testValidateWayTooSmall) {
   std::vector<uint8_t> too_small_bytes = {0x34};
   auto too_small = std::make_shared<std::vector<uint8_t>>(too_small_bytes.begin(), too_small_bytes.end());
 
-  ParentWithSixBytesView invalid_parent = ParentWithSixBytesView::Create(too_small);
+  ParentWithSixBytesView invalid_parent = ParentWithSixBytesView::Create(PacketView<kLittleEndian>(too_small));
   ASSERT_FALSE(invalid_parent.IsValid());
-  ChildWithSixBytesView invalid = ChildWithSixBytesView::Create(ParentWithSixBytesView::Create(too_small));
+  ChildWithSixBytesView invalid =
+      ChildWithSixBytesView::Create(ParentWithSixBytesView::Create(PacketView<kLittleEndian>(too_small)));
   ASSERT_FALSE(invalid.IsValid());
 }
 
@@ -141,9 +142,10 @@ TEST(GeneratedPacketTest, testValidateTooSmall) {
   std::vector<uint8_t> too_small_bytes = {0x34, 0x12, 0x01, 0x02, 0x03, 0x04, 0x05, 0x06, 0x11};
   auto too_small = std::make_shared<std::vector<uint8_t>>(too_small_bytes.begin(), too_small_bytes.end());
 
-  ParentWithSixBytesView valid_parent = ParentWithSixBytesView::Create(too_small);
+  ParentWithSixBytesView valid_parent = ParentWithSixBytesView::Create(PacketView<kLittleEndian>(too_small));
   ASSERT_TRUE(valid_parent.IsValid());
-  ChildWithSixBytesView invalid = ChildWithSixBytesView::Create(ParentWithSixBytesView::Create(too_small));
+  ChildWithSixBytesView invalid =
+      ChildWithSixBytesView::Create(ParentWithSixBytesView::Create(PacketView<kLittleEndian>(too_small)));
   ASSERT_FALSE(invalid.IsValid());
 }
 
@@ -152,7 +154,8 @@ TEST(GeneratedPacketTest, testValidateJustRight) {
                                            0x06, 0x11, 0x12, 0x13, 0x14, 0x15, 0x16};
   auto just_right = std::make_shared<std::vector<uint8_t>>(just_right_bytes.begin(), just_right_bytes.end());
 
-  ChildWithSixBytesView valid = ChildWithSixBytesView::Create(ParentWithSixBytesView::Create(just_right));
+  ChildWithSixBytesView valid =
+      ChildWithSixBytesView::Create(ParentWithSixBytesView::Create(PacketView<kLittleEndian>(just_right)));
   ASSERT_TRUE(valid.IsValid());
 }
 
@@ -161,7 +164,8 @@ TEST(GeneratedPacketTest, testValidateTooBig) {
                                         0x11, 0x12, 0x13, 0x14, 0x15, 0x16, 0x20};
   auto too_big = std::make_shared<std::vector<uint8_t>>(too_big_bytes.begin(), too_big_bytes.end());
 
-  ChildWithSixBytesView lenient = ChildWithSixBytesView::Create(ParentWithSixBytesView::Create(too_big));
+  ChildWithSixBytesView lenient =
+      ChildWithSixBytesView::Create(ParentWithSixBytesView::Create(PacketView<kLittleEndian>(too_big)));
   ASSERT_TRUE(lenient.IsValid());
 }
 
@@ -1879,13 +1883,13 @@ DEFINE_AND_INSTANTIATE_ByteSizedFieldsReflectionTest(byte_sized);
 
 TEST(GeneratedPacketTest, testOneGenericStructArrayNoZeroEmpty) {
   auto too_few_bytes = std::make_shared<std::vector<uint8_t>>(0);
-  auto view = OneGenericStructArrayNoZeroView::Create(too_few_bytes);
+  auto view = OneGenericStructArrayNoZeroView::Create(PacketView<kLittleEndian>(too_few_bytes));
   for (size_t i = 0; i < 10; i++) {
     if (view.IsValid()) {
       view.GetAnArray().size();
     }
     too_few_bytes->push_back(0);
-    view = OneGenericStructArrayNoZeroView::Create(too_few_bytes);
+    view = OneGenericStructArrayNoZeroView::Create(PacketView<kLittleEndian>(too_few_bytes));
   }
 
   std::vector<uint8_t> a_two_byte_struct = {
@@ -1894,7 +1898,7 @@ TEST(GeneratedPacketTest, testOneGenericStructArrayNoZeroEmpty) {
       0x02,
   };
   too_few_bytes = std::make_shared<std::vector<uint8_t>>(a_two_byte_struct);
-  view = OneGenericStructArrayNoZeroView::Create(too_few_bytes);
+  view = OneGenericStructArrayNoZeroView::Create(PacketView<kLittleEndian>(too_few_bytes));
   ASSERT_TRUE(view.IsValid());
   ASSERT_EQ(1, view.GetAnArray().size());
 }

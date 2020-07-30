@@ -78,7 +78,7 @@ class LeCreditBasedDataController : public DataController {
       Append(to_append);
     }
   };
-  PacketViewForReassembly reassembly_stage_{std::make_shared<std::vector<uint8_t>>()};
+  PacketViewForReassembly reassembly_stage_{PacketView<kLittleEndian>(std::make_shared<std::vector<uint8_t>>())};
   uint16_t remaining_sdu_continuation_packet_size_ = 0;
 };
 
