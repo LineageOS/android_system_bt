@@ -1109,3 +1109,16 @@ tBTM_STATUS bluetooth::shim::btm_sec_mx_access_request(
   }
   return BTM_SUCCESS;
 }
+
+tBTM_STATUS bluetooth::shim::BTM_SetEncryption(const RawAddress& bd_addr,
+                                               tBT_TRANSPORT transport,
+                                               tBTM_SEC_CBACK* p_callback,
+                                               void* p_ref_data,
+                                               tBTM_BLE_SEC_ACT sec_act) {
+  // When we just bond a device, encryption is already done
+  (*p_callback)(&bd_addr, transport, p_ref_data, BTM_SUCCESS);
+
+  // TODO(hsz): Re-encrypt the link after first bonded
+
+  return BTM_SUCCESS;
+}
