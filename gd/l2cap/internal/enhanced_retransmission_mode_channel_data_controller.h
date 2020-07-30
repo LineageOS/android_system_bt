@@ -92,7 +92,7 @@ class ErtmController : public DataController {
     std::shared_ptr<packet::RawBuilder> builder_;
   };
 
-  PacketViewForReassembly reassembly_stage_{std::make_shared<std::vector<uint8_t>>()};
+  PacketViewForReassembly reassembly_stage_{PacketView<kLittleEndian>(std::make_shared<std::vector<uint8_t>>())};
   SegmentationAndReassembly sar_state_ = SegmentationAndReassembly::END;
   uint16_t remaining_sdu_continuation_packet_size_ = 0;
 
