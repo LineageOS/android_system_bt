@@ -159,7 +159,7 @@ struct HciLayer::impl {
     command_queue_.front().command->Serialize(bi);
     hal_->sendHciCommand(*bytes);
 
-    auto cmd_view = CommandPacketView::Create(bytes);
+    auto cmd_view = CommandPacketView::Create(PacketView<kLittleEndian>(bytes));
     ASSERT(cmd_view.IsValid());
     OpCode op_code = cmd_view.GetOpCode();
     waiting_command_ = op_code;
