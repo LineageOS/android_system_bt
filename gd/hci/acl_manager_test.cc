@@ -143,7 +143,7 @@ class TestHciLayer : public HciLayer {
 
   CommandPacketView GetLastCommand() {
     if (command_queue_.size() == 0) {
-      return CommandPacketView::Create(std::make_shared<std::vector<uint8_t>>());
+      return CommandPacketView::Create(PacketView<kLittleEndian>(std::make_shared<std::vector<uint8_t>>()));
     }
     auto last = std::move(command_queue_.front());
     command_queue_.pop();
@@ -157,7 +157,7 @@ class TestHciLayer : public HciLayer {
     }
     if (command_queue_.empty()) {
       return ConnectionManagementCommandView::Create(
-          CommandPacketView::Create(std::make_shared<std::vector<uint8_t>>()));
+          CommandPacketView::Create(PacketView<kLittleEndian>(std::make_shared<std::vector<uint8_t>>())));
     }
     CommandPacketView command_packet_view = GetLastCommand();
     ConnectionManagementCommandView command = ConnectionManagementCommandView::Create(command_packet_view);
@@ -177,7 +177,7 @@ class TestHciLayer : public HciLayer {
     }
     if (command_queue_.empty()) {
       return ConnectionManagementCommandView::Create(
-          CommandPacketView::Create(std::make_shared<std::vector<uint8_t>>()));
+          CommandPacketView::Create(PacketView<kLittleEndian>(std::make_shared<std::vector<uint8_t>>())));
     }
     CommandPacketView command_packet_view = GetLastCommand();
     ConnectionManagementCommandView command = ConnectionManagementCommandView::Create(command_packet_view);

@@ -1011,7 +1011,8 @@ void ErtmController::stage_for_reassembly(SegmentationAndReassembly sar, uint16_
       remaining_sdu_continuation_packet_size_ -= payload.size();
       if (remaining_sdu_continuation_packet_size_ != 0) {
         LOG_WARN("Received invalid END I-Frame");
-        reassembly_stage_ = PacketViewForReassembly(std::make_shared<std::vector<uint8_t>>());
+        reassembly_stage_ =
+            PacketViewForReassembly(PacketView<kLittleEndian>(std::make_shared<std::vector<uint8_t>>()));
         remaining_sdu_continuation_packet_size_ = 0;
         close_channel();
         return;
