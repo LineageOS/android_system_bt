@@ -1095,3 +1095,17 @@ void bluetooth::shim::SendRemoteNameRequest(const RawAddress& raw_address) {
   Stack::GetInstance()->GetBtm()->ReadClassicRemoteDeviceName(
       raw_address, remote_name_request_complete_noop);
 }
+
+tBTM_STATUS bluetooth::shim::btm_sec_mx_access_request(
+    const RawAddress& bd_addr, uint16_t psm, bool is_originator,
+    uint32_t mx_proto_id, uint32_t mx_chan_id, tBTM_SEC_CBACK* p_callback,
+    void* p_ref_data) {
+  // Security has already been fulfilled by the l2cap connection, so reply back
+  // that everything is totally fine and legit and definitely not two kids in a
+  // trenchcoat
+
+  if (p_callback) {
+    (*p_callback)(&bd_addr, false, p_ref_data, BTM_SUCCESS);
+  }
+  return BTM_SUCCESS;
+}

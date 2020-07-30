@@ -25,6 +25,7 @@
 
 #include "hci/address.h"
 #include "module.h"
+#include "storage/adapter_config.h"
 #include "storage/config_cache.h"
 #include "storage/device.h"
 #include "storage/mutation.h"
@@ -105,6 +106,9 @@ class StorageModule : public bluetooth::Module {
   // different. Hence, please don't make such assumption and don't use GetDeviceByBrEdrMacAddress() interchangeably
   Device GetDeviceByLeIdentityAddress(hci::Address le_identity_address);
 
+  // A think copyable, movable, comparable object that is used to access adapter level information
+  AdapterConfig GetAdapterConfig();
+
   // Get a list of paired devices from config
   std::vector<Device> GetPairedDevices();
 
@@ -121,6 +125,8 @@ class StorageModule : public bluetooth::Module {
   friend shim::BtifConfigInterface;
   // For shim layer only
   ConfigCache* GetConfigCache();
+  // For unit test only
+  ConfigCache* GetMemoryOnlyConfigCache();
   // Normally, underlying config will be saved at most 3 seconds after the first config change in a series of changes
   // This method triggers the delayed saving automatically, the delay is equal to |config_save_delay_|
   void SaveDelayed();

@@ -13,30 +13,14 @@
  * See the License for the specific language governing permissions and
  * limitations under the License.
  */
-#pragma once
 
-#include <queue>
-
-#include "os/log.h"
-#include "storage/config_cache.h"
-#include "storage/mutation_entry.h"
+#include "storage/adapter_config.h"
 
 namespace bluetooth {
 namespace storage {
 
-class Mutation {
- public:
-  Mutation(ConfigCache* config, ConfigCache* memory_only_config);
-  void Add(MutationEntry entry);
-  void Commit();
-  friend ConfigCache;
-
- private:
-  ConfigCache* config_;
-  ConfigCache* memory_only_config_;
-  std::queue<MutationEntry> normal_config_entries_;
-  std::queue<MutationEntry> memory_only_config_entries_;
-};
+AdapterConfig::AdapterConfig(ConfigCache* config, ConfigCache* memory_only_config, std::string section)
+    : config_(config), memory_only_config_(memory_only_config), section_(std::move(section)) {}
 
 }  // namespace storage
 }  // namespace bluetooth

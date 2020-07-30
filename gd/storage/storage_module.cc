@@ -20,6 +20,7 @@
 #include <ctime>
 #include <iomanip>
 #include <memory>
+#include <utility>
 
 #include "common/bind.h"
 #include "os/alarm.h"
@@ -86,20 +87,27 @@ const ModuleFactory StorageModule::Factory = ModuleFactory([]() {
 });
 
 struct StorageModule::impl {
-  explicit impl(Handler* handler, ConfigCache cache) : config_save_alarm_(handler), cache_(std::move(cache)) {}
+  explicit impl(Handler* handler, ConfigCache cache, size_t in_memory_cache_size_limit)
+      : config_save_alarm_(handler), cache_(std::move(cache)), memory_only_cache_(in_memory_cache_size_limit, {}) {}
   Alarm config_save_alarm_;
   ConfigCache cache_;
+  ConfigCache memory_only_cache_;
   bool has_pending_config_save_ = false;
 };
 
 Mutation StorageModule::Modify() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
-  return Mutation(&pimpl_->cache_);
+  return Mutation(&pimpl_->cache_, &pimpl_->memory_only_cache_);
 }
 
 ConfigCache* StorageModule::GetConfigCache() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   return &pimpl_->cache_;
+}
+
+ConfigCache* StorageModule::GetMemoryOnlyConfigCache() {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  return &pimpl_->memory_only_cache_;
 }
 
 void StorageModule::SaveDelayed() {
@@ -169,7 +177,7 @@ void StorageModule::Start() {
   config->FixDeviceTypeInconsistencies();
   config->SetPersistentConfigChangedCallback([this] { this->SaveDelayed(); });
   // TODO (b/158035889) Migrate metrics module to GD
-  pimpl_ = std::make_unique<impl>(GetHandler(), std::move(config.value()));
+  pimpl_ = std::make_unique<impl>(GetHandler(), std::move(config.value()), temp_devices_capacity_);
   SaveDelayed();
 }
 
@@ -184,15 +192,35 @@ std::string StorageModule::ToString() const {
 }
 
 Device StorageModule::GetDeviceByLegacyKey(hci::Address legacy_key_address) {
-  return Device(GetConfigCache(), legacy_key_address, Device::ConfigKeyAddressType::LEGACY_KEY_ADDRESS);
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  return Device(
+      &pimpl_->cache_,
+      &pimpl_->memory_only_cache_,
+      std::move(legacy_key_address),
+      Device::ConfigKeyAddressType::LEGACY_KEY_ADDRESS);
 }
 
 Device StorageModule::GetDeviceByClassicMacAddress(hci::Address classic_address) {
-  return Device(GetConfigCache(), classic_address, Device::ConfigKeyAddressType::CLASSIC_ADDRESS);
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  return Device(
+      &pimpl_->cache_,
+      &pimpl_->memory_only_cache_,
+      std::move(classic_address),
+      Device::ConfigKeyAddressType::CLASSIC_ADDRESS);
 }
 
 Device StorageModule::GetDeviceByLeIdentityAddress(hci::Address le_identity_address) {
-  return Device(GetConfigCache(), le_identity_address, Device::ConfigKeyAddressType::LE_IDENTITY_ADDRESS);
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  return Device(
+      &pimpl_->cache_,
+      &pimpl_->memory_only_cache_,
+      std::move(le_identity_address),
+      Device::ConfigKeyAddressType::LE_IDENTITY_ADDRESS);
+}
+
+AdapterConfig StorageModule::GetAdapterConfig() {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  return AdapterConfig(&pimpl_->cache_, &pimpl_->memory_only_cache_, kAdapterSection);
 }
 
 std::vector<Device> StorageModule::GetPairedDevices() {
@@ -201,7 +229,7 @@ std::vector<Device> StorageModule::GetPairedDevices() {
   std::vector<Device> result;
   result.reserve(persistent_sections.size());
   for (const auto& section : persistent_sections) {
-    result.emplace_back(GetConfigCache(), section);
+    result.emplace_back(&pimpl_->cache_, &pimpl_->memory_only_cache_, section);
   }
   return result;
 }

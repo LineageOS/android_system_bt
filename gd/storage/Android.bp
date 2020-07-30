@@ -1,12 +1,14 @@
 filegroup {
     name: "BluetoothStorageSources",
     srcs: [
+            "adapter_config.cc",
             "classic_device.cc",
             "config_cache.cc",
             "config_cache_helper.cc",
             "device.cc",
             "le_device.cc",
             "legacy_config_file.cc",
+            "mutation.cc",
             "mutation_entry.cc",
             "storage_module.cc",
     ],
@@ -15,6 +17,7 @@ filegroup {
 filegroup {
     name: "BluetoothStorageTestSources",
     srcs: [
+            "adapter_config_test.cc",
             "classic_device_test.cc",
             "config_cache_test.cc",
             "config_cache_helper_test.cc",

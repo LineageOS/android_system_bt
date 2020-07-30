@@ -17,9 +17,7 @@
 #include <gmock/gmock.h>
 #include <gtest/gtest.h>
 
-#include "common/byte_array.h"
-#include "hci/link_key.h"
-#include "storage/classic_device.h"
+#include "storage/adapter_config.h"
 #include "storage/mutation.h"
 
 namespace testing {
@@ -27,42 +25,40 @@ namespace testing {
 using bluetooth::common::ByteArray;
 using bluetooth::hci::Address;
 using bluetooth::hci::DeviceType;
-using bluetooth::hci::kExampleLinkKey;
-using bluetooth::storage::ClassicDevice;
+using bluetooth::storage::AdapterConfig;
 using bluetooth::storage::ConfigCache;
 using bluetooth::storage::Device;
 using bluetooth::storage::Mutation;
 
-TEST(ClassicDeviceTest, create_new_le_device) {
+TEST(AdapterConfigTest, create_new_adapter_config) {
   ConfigCache config(10, Device::kLinkKeyProperties);
   ConfigCache memory_only_config(10, {});
-  bluetooth::hci::Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
-  ClassicDevice device(&config, &memory_only_config, address.ToString());
-  ASSERT_FALSE(device.GetLinkKey());
+  AdapterConfig adapter_config(&config, &memory_only_config, "Adapter");
+  ASSERT_FALSE(adapter_config.GetAddress());
 }
 
-TEST(ClassicDeviceTest, set_property) {
+TEST(AdapterConfigTest, set_property) {
   ConfigCache config(10, Device::kLinkKeyProperties);
   ConfigCache memory_only_config(10, {});
   Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
-  ClassicDevice device(&config, &memory_only_config, address.ToString());
-  ASSERT_FALSE(device.GetLinkKey());
+  AdapterConfig adapter_config(&config, &memory_only_config, "Adapter");
+  ASSERT_FALSE(adapter_config.GetAddress());
   Mutation mutation(&config, &memory_only_config);
-  mutation.Add(device.SetLinkKey(kExampleLinkKey));
+  mutation.Add(adapter_config.SetAddress(address));
   mutation.Commit();
-  ASSERT_THAT(device.GetLinkKey(), Optional(Eq(kExampleLinkKey)));
+  ASSERT_THAT(adapter_config.GetAddress(), Optional(Eq(address)));
 }
 
-TEST(ClassicDeviceTest, equality_test) {
+TEST(AdapterConfigTest, equality_test) {
   ConfigCache config(10, Device::kLinkKeyProperties);
   ConfigCache memory_only_config(10, {});
   bluetooth::hci::Address address = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}};
-  ClassicDevice device1(&config, &memory_only_config, address.ToString());
-  ClassicDevice device2(&config, &memory_only_config, address.ToString());
-  ASSERT_EQ(device1, device2);
-  bluetooth::hci::Address address3 = {{0x01, 0x02, 0x03, 0x04, 0x05, 0x07}};
-  ClassicDevice device3(&config, &memory_only_config, address3.ToString());
-  ASSERT_NE(device1, device3);
+  AdapterConfig adapter_config_1(&config, &memory_only_config, "Adapter");
+  AdapterConfig adapter_config_2(&config, &memory_only_config, "Adapter");
+  ASSERT_EQ(adapter_config_1, adapter_config_2);
+  ConfigCache memory_only_config_2(10, {});
+  AdapterConfig adapter_config_3(&config, &memory_only_config_2, "Adapter");
+  ASSERT_NE(adapter_config_1, adapter_config_3);
 }
 
 }  // namespace testing
