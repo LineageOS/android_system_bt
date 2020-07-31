@@ -101,6 +101,7 @@ class ClassicPairingHandler : public PairingHandler {
   hci::ErrorCode last_status_ = hci::ErrorCode::UNKNOWN_HCI_COMMAND;
   bool locally_initiated_ = false;
   uint32_t passkey_ = 0;
+  bool already_link_key_replied_ = false;
 };
 
 }  // namespace pairing
