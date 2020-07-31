@@ -75,7 +75,8 @@ typedef enum {
   kCommandPacket = 1,
   kAclPacket = 2,
   kScoPacket = 3,
-  kEventPacket = 4
+  kEventPacket = 4,
+  kIsoPacket = 5,
 } packet_type_t;
 
 // Epoch in microseconds since 01/01/0000.
@@ -282,6 +283,10 @@ static void capture(const BT_HDR* buffer, bool is_received) {
     case MSG_STACK_TO_HC_HCI_CMD:
       btsnoop_write_packet(kCommandPacket, p, true, timestamp_us);
       break;
+    case MSG_HC_TO_STACK_HCI_ISO:
+    case MSG_STACK_TO_HC_HCI_ISO:
+      btsnoop_write_packet(kIsoPacket, p, is_received, timestamp_us);
+      break;
   }
 }
 
@@ -461,6 +466,10 @@ static void btsnoop_write_packet(packet_type_t type, uint8_t* packet,
     case kEventPacket:
       length_he = packet[1] + 3;
       flags = 3;
+      break;
+    case kIsoPacket:
+      length_he = ((packet[3] & 0x3f) << 8) + packet[2] + 5;
+      flags = is_received;
       break;
   }
 
