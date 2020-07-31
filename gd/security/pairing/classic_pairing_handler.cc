@@ -278,7 +278,7 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
               hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress()));
           LOG_INFO("Numeric Comparison: A auto confirm");
           // Unauthenticated
-          GetRecord()->SetAuthenticated(false);
+          GetRecord()->SetAuthenticated(true);
           break;
         case hci::IoCapability::KEYBOARD_ONLY:
           // PassKey Entry, Initiator display, Responder input
@@ -293,7 +293,7 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
           GetChannel()->SendCommand(
               hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress()));
           // Unauthenticated
-          GetRecord()->SetAuthenticated(false);
+          GetRecord()->SetAuthenticated(true);
           break;
       }
       break;
@@ -304,7 +304,7 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
           LOG_INFO("Numeric Comparison: A DisplayYesNo, B auto confirm");
           NotifyUiDisplayYesNo(packet.GetNumericValue());
           // Unauthenticated
-          GetRecord()->SetAuthenticated(false);
+          GetRecord()->SetAuthenticated(true);
           break;
         case hci::IoCapability::DISPLAY_YES_NO:
           // NumericComparison Both Display, Both confirm
@@ -325,7 +325,7 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
           NotifyUiDisplayYesNo();
           LOG_INFO("Numeric Comparison: A DisplayYesNo, B auto confirm, no show value");
           // Unauthenticated
-          GetRecord()->SetAuthenticated(false);
+          GetRecord()->SetAuthenticated(true);
           break;
       }
       break;
