@@ -171,12 +171,14 @@ void ClassicSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, 
                              ConnectionResponseStatus::NO_FURTHER_INFORMATION_AVAILABLE);
     return;
   }
+  /* TODO(zachoverflow): add back in with policy
   if (channel_allocator_->IsPsmUsed(psm)) {
     LOG_WARN("Psm already exists");
     send_connection_response(signal_id, remote_cid, kInvalidCid, ConnectionResponseResult::PSM_NOT_SUPPORTED,
                              ConnectionResponseStatus::NO_FURTHER_INFORMATION_AVAILABLE);
     return;
   }
+  */
 
   if (!dynamic_service_manager_->IsServiceRegistered(psm)) {
     LOG_INFO("Service for this psm (%d) is not registered", psm);
