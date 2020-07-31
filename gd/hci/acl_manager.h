@@ -85,7 +85,12 @@ class AclManager : public Module {
 
   virtual void CancelLeConnect(AddressWithType address_with_type);
   virtual void AddDeviceToConnectList(AddressWithType address_with_type);
+  virtual void AddDeviceToResolvingList(
+      AddressWithType address_with_type,
+      const std::array<uint8_t, 16>& peer_irk,
+      const std::array<uint8_t, 16>& local_irk);
   virtual void RemoveDeviceFromConnectList(AddressWithType address_with_type);
+  virtual void RemoveDeviceFromResolvingList(AddressWithType address_with_type);
 
   virtual void MasterLinkKey(KeyFlag key_flag);
   virtual void SwitchRole(Address address, Role role);
