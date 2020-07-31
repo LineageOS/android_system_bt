@@ -38,6 +38,13 @@ cc_library_static {
         "system/bt/btif/include",
         "system/libhwbinder/include",
     ],
+    product_variables: {
+        debuggable: {
+            cflags: [
+                "-DBT_NET_DEBUG=true",
+            ],
+        },
+    },
 }
 
 // HCI unit tests for target
