@@ -94,6 +94,7 @@ void SecurityManagerImpl::CreateBond(hci::AddressWithType device) {
   } else {
     if (!record->IsPairing()) {
       // Dispatch pairing handler, if we are calling create we are the initiator
+      LOG_WARN("Dispatch #1");
       DispatchPairingHandler(record, true);
     }
   }
@@ -230,6 +231,7 @@ void SecurityManagerImpl::HandleEvent(T packet) {
 
     auto record =
         security_database_.FindOrCreate(hci::AddressWithType{bd_addr, hci::AddressType::PUBLIC_DEVICE_ADDRESS});
+    LOG_WARN("Dispatch #2");
     DispatchPairingHandler(record, true);
     entry = pairing_handler_map_.find(bd_addr);
   }
@@ -696,6 +698,7 @@ void SecurityManagerImpl::InternalEnforceSecurityPolicy(
           std::pair<l2cap::classic::SecurityPolicy, l2cap::classic::SecurityEnforcementInterface::ResultCallback>(
               policy, std::move(result_callback)));
       if (!record->IsPairing()) {
+        LOG_WARN("Dispatch #3");
         DispatchPairingHandler(record, true);
       }
     }
