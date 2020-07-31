@@ -777,7 +777,7 @@ tBTM_STATUS Btm::CreateBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
     default:
       return BTM_ILLEGAL_VALUE;
   }
-  return BTM_SUCCESS;
+  return BTM_CMD_STARTED;
 }
 
 bool Btm::CancelBond(const RawAddress& bd_addr) {
