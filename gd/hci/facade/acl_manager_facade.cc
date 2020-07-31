@@ -114,8 +114,8 @@ class AclManagerFacadeService : public AclManagerFacade::Service, public Connect
       ::grpc::ServerContext* context,
       const ConnectionCommandMsg* request,
       ::google::protobuf::Empty* response) override {
-    auto command_view = ConnectionManagementCommandView::Create(CommandPacketView::Create(
-        std::make_shared<std::vector<uint8_t>>(request->packet().begin(), request->packet().end())));
+    auto command_view = ConnectionManagementCommandView::Create(CommandPacketView::Create(PacketView<kLittleEndian>(
+        std::make_shared<std::vector<uint8_t>>(request->packet().begin(), request->packet().end()))));
     if (!command_view.IsValid()) {
       return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Invalid command packet");
     }
