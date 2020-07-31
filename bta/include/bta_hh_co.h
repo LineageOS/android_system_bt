@@ -31,7 +31,7 @@ typedef struct {
   uint8_t rpt_id;
   tBTA_HH_RPT_TYPE rpt_type;
   uint8_t srvc_inst_id;
-  uint8_t char_inst_id;
+  uint16_t char_inst_id;
 } tBTA_HH_RPT_CACHE_ENTRY;
 
 /*******************************************************************************
