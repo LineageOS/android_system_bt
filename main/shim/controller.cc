@@ -113,10 +113,6 @@ static uint8_t* get_local_supported_codecs(uint8_t* number_of_codecs) {
   return (uint8_t*)nullptr;
 }
 
-static const bt_device_features_t* get_features_ble(void) {
-  return (const bt_device_features_t*)&data_.le_feature[0];
-}
-
 static const uint8_t* get_ble_supported_states(void) {
   return (const uint8_t*)&data_.le_supported_states;
 }
@@ -251,6 +247,12 @@ static bool supports_ble_periodic_advertising(void) {
   return GetController()->GetControllerLeLocalSupportedFeatures() & BIT(13);
 }
 
+static bool supports_ble_peripheral_initiated_feature_exchange(void) {
+  return false;
+}
+
+static bool supports_ble_connection_parameter_request(void) { return false; }
+
 static uint16_t get_acl_data_size_classic(void) {
   return GetController()->GetControllerAclPacketLength();
 }
@@ -317,7 +319,6 @@ static const controller_t interface = {
     get_address,
     get_bt_version,
 
-    get_features_ble,
     get_ble_supported_states,
 
     supports_simple_pairing,
@@ -362,6 +363,8 @@ static const controller_t interface = {
     supports_ble_coded_phy,
     supports_ble_extended_advertising,
     supports_ble_periodic_advertising,
+    supports_ble_peripheral_initiated_feature_exchange,
+    supports_ble_connection_parameter_request,
 
     get_acl_data_size_classic,
     get_acl_data_size_ble,
