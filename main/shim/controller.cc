@@ -112,11 +112,6 @@ static const bt_device_features_t* get_features_classic(int index) {
   return (const bt_device_features_t*)&data_.feature[index];
 }
 
-static uint8_t get_last_features_classic_index(void) {
-  return bluetooth::shim::GetController()
-      ->GetControllerLocalExtendedFeaturesMaxPageNumber();
-}
-
 static uint8_t* get_local_supported_codecs(uint8_t* number_of_codecs) {
   CHECK(number_of_codecs != nullptr);
   if (data_.number_of_local_supported_codecs != 0) {
@@ -182,6 +177,46 @@ static bool supports_enhanced_accept_synchronous_connection(void) {
   return GetController()->IsSupported(
       (bluetooth::hci::OpCode)kEnhancedAcceptSynchronousConnection);
 }
+
+static bool supports_3_slot_packets(void) { return false; }
+
+static bool supports_5_slot_packets(void) { return false; }
+
+static bool supports_classic_2m_phy(void) { return false; }
+
+static bool supports_classic_3m_phy(void) { return false; }
+
+static bool supports_3_slot_edr_packets(void) { return false; }
+
+static bool supports_5_slot_edr_packets(void) { return false; }
+
+static bool supports_sco(void) { return false; }
+
+static bool supports_hv2_packets(void) { return false; }
+
+static bool supports_hv3_packets(void) { return false; }
+
+static bool supports_ev3_packets(void) { return false; }
+
+static bool supports_ev4_packets(void) { return false; }
+
+static bool supports_ev5_packets(void) { return false; }
+
+static bool supports_esco_2m_phy(void) { return false; }
+
+static bool supports_esco_3m_phy(void) { return false; }
+
+static bool supports_3_slot_esco_edr_packets(void) { return false; }
+
+static bool supports_role_switch(void) { return false; }
+
+static bool supports_hold_mode(void) { return false; }
+
+static bool supports_sniff_mode(void) { return false; }
+
+static bool supports_park_mode(void) { return false; }
+
+static bool supports_non_flushable_pb(void) { return false; }
 
 static bool supports_ble(void) {
   return GetController()->GetControllerLocalExtendedFeatures(kPageOne) & BIT(1);
@@ -287,7 +322,6 @@ static const controller_t interface = {
     get_bt_version,
 
     get_features_classic,
-    get_last_features_classic_index,
 
     get_features_ble,
     get_ble_supported_states,
@@ -302,6 +336,26 @@ static const controller_t interface = {
     supports_master_slave_role_switch,
     supports_enhanced_setup_synchronous_connection,
     supports_enhanced_accept_synchronous_connection,
+    supports_3_slot_packets,
+    supports_5_slot_packets,
+    supports_classic_2m_phy,
+    supports_classic_3m_phy,
+    supports_3_slot_edr_packets,
+    supports_5_slot_edr_packets,
+    supports_sco,
+    supports_hv2_packets,
+    supports_hv3_packets,
+    supports_ev3_packets,
+    supports_ev4_packets,
+    supports_ev5_packets,
+    supports_esco_2m_phy,
+    supports_esco_3m_phy,
+    supports_3_slot_esco_edr_packets,
+    supports_role_switch,
+    supports_hold_mode,
+    supports_sniff_mode,
+    supports_park_mode,
+    supports_non_flushable_pb,
 
     supports_ble,
     supports_ble_packet_extension,
