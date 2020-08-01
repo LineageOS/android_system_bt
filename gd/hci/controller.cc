@@ -763,10 +763,6 @@ LocalVersionInformation Controller::GetLocalVersionInformation() const {
   return impl_->local_version_information_;
 }
 
-std::array<uint8_t, 64> Controller::GetLocalSupportedCommands() const {
-  return impl_->local_supported_commands_;
-}
-
 #define BIT(x) (0x1ULL << (x))
 
 #define LOCAL_FEATURE_ACCESSOR(name, page, bit) \

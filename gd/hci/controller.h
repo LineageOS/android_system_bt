@@ -41,8 +41,6 @@ class Controller : public Module {
 
   virtual LocalVersionInformation GetLocalVersionInformation() const;
 
-  virtual std::array<uint8_t, 64> GetLocalSupportedCommands() const;
-
   virtual bool SupportsSimplePairing() const;
   virtual bool SupportsSecureConnections() const;
   virtual bool SupportsSimultaneousLeBrEdr() const;
