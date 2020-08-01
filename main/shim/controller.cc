@@ -218,6 +218,8 @@ static bool supports_park_mode(void) { return false; }
 
 static bool supports_non_flushable_pb(void) { return false; }
 
+static bool supports_sniff_subrating(void) { return false; }
+
 static bool supports_ble(void) {
   return GetController()->GetControllerLocalExtendedFeatures(kPageOne) & BIT(1);
 }
@@ -356,6 +358,7 @@ static const controller_t interface = {
     supports_sniff_mode,
     supports_park_mode,
     supports_non_flushable_pb,
+    supports_sniff_subrating,
 
     supports_ble,
     supports_ble_packet_extension,
