@@ -67,10 +67,6 @@ extern void smp_cancel_start_encryption_attempt();
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
 static void btu_hcif_inquiry_comp_evt(uint8_t* p);
-static void btu_hcif_inquiry_result_evt(uint8_t* p, uint8_t hci_evt_len);
-static void btu_hcif_inquiry_rssi_result_evt(uint8_t* p, uint8_t hci_evt_len);
-static void btu_hcif_extended_inquiry_result_evt(uint8_t* p,
-                                                 uint8_t hci_evt_len);
 
 static void btu_hcif_connection_comp_evt(uint8_t* p, uint8_t evt_len);
 static void btu_hcif_connection_request_evt(uint8_t* p);
@@ -78,18 +74,14 @@ static void btu_hcif_disconnection_comp_evt(uint8_t* p);
 static void btu_hcif_authentication_comp_evt(uint8_t* p);
 static void btu_hcif_rmt_name_request_comp_evt(uint8_t* p, uint16_t evt_len);
 static void btu_hcif_encryption_change_evt(uint8_t* p);
-static void btu_hcif_read_rmt_features_comp_evt(uint8_t* p);
 static void btu_hcif_read_rmt_ext_features_comp_evt(uint8_t* p,
                                                     uint8_t evt_len);
-static void btu_hcif_read_rmt_version_comp_evt(uint8_t* p);
 static void btu_hcif_qos_setup_comp_evt(uint8_t* p);
 static void btu_hcif_command_complete_evt(BT_HDR* response, void* context);
 static void btu_hcif_command_status_evt(uint8_t status, BT_HDR* command,
                                         void* context);
 static void btu_hcif_hardware_error_evt(uint8_t* p);
-static void btu_hcif_flush_occured_evt(void);
 static void btu_hcif_role_change_evt(uint8_t* p);
-static void btu_hcif_num_compl_data_pkts_evt(uint8_t* p, uint8_t evt_len);
 static void btu_hcif_mode_change_evt(uint8_t* p);
 static void btu_hcif_pin_code_request_evt(uint8_t* p);
 static void btu_hcif_link_key_request_evt(uint8_t* p);
@@ -100,32 +92,14 @@ static void btu_hcif_esco_connection_comp_evt(uint8_t* p);
 static void btu_hcif_esco_connection_chg_evt(uint8_t* p);
 
 /* Simple Pairing Events */
-static void btu_hcif_host_support_evt(uint8_t* p);
 static void btu_hcif_io_cap_request_evt(uint8_t* p);
-static void btu_hcif_io_cap_response_evt(uint8_t* p);
-static void btu_hcif_user_conf_request_evt(uint8_t* p);
-static void btu_hcif_user_passkey_request_evt(uint8_t* p);
-static void btu_hcif_user_passkey_notif_evt(uint8_t* p);
-static void btu_hcif_keypress_notif_evt(uint8_t* p);
-static void btu_hcif_rem_oob_request_evt(uint8_t* p);
 
-static void btu_hcif_simple_pair_complete_evt(uint8_t* p);
-
-#if (BTM_SSR_INCLUDED == TRUE)
-static void btu_hcif_ssr_evt(uint8_t* p, uint16_t evt_len);
-#endif /* BTM_SSR_INCLUDED == TRUE */
-
-static void btu_ble_ll_conn_complete_evt(uint8_t* p, uint16_t evt_len);
-static void btu_ble_read_remote_feat_evt(uint8_t* p);
 static void btu_ble_ll_conn_param_upd_evt(uint8_t* p, uint16_t evt_len);
 static void btu_ble_proc_ltk_req(uint8_t* p);
 static void btu_hcif_encryption_key_refresh_cmpl_evt(uint8_t* p);
 static void btu_ble_data_length_change_evt(uint8_t* p, uint16_t evt_len);
 #if (BLE_LLT_INCLUDED == TRUE)
 static void btu_ble_rc_param_req_evt(uint8_t* p);
-#endif
-#if (BLE_PRIVACY_SPT == TRUE)
-static void btu_ble_proc_enhanced_conn_cmpl(uint8_t* p, uint16_t evt_len);
 #endif
 
 /**
@@ -303,13 +277,13 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
       btu_hcif_inquiry_comp_evt(p);
       break;
     case HCI_INQUIRY_RESULT_EVT:
-      btu_hcif_inquiry_result_evt(p, hci_evt_len);
+      btm_process_inq_results(p, hci_evt_len, BTM_INQ_RESULT_STANDARD);
       break;
     case HCI_INQUIRY_RSSI_RESULT_EVT:
-      btu_hcif_inquiry_rssi_result_evt(p, hci_evt_len);
+      btm_process_inq_results(p, hci_evt_len, BTM_INQ_RESULT_WITH_RSSI);
       break;
     case HCI_EXTENDED_INQUIRY_RESULT_EVT:
-      btu_hcif_extended_inquiry_result_evt(p, hci_evt_len);
+      btm_process_inq_results(p, hci_evt_len, BTM_INQ_RESULT_EXTENDED);
       break;
     case HCI_CONNECTION_COMP_EVT:
       btu_hcif_connection_comp_evt(p, hci_evt_len);
@@ -333,13 +307,13 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
       btu_hcif_encryption_key_refresh_cmpl_evt(p);
       break;
     case HCI_READ_RMT_FEATURES_COMP_EVT:
-      btu_hcif_read_rmt_features_comp_evt(p);
+      btm_read_remote_features_complete(p);
       break;
     case HCI_READ_RMT_EXT_FEATURES_COMP_EVT:
       btu_hcif_read_rmt_ext_features_comp_evt(p, hci_evt_len);
       break;
     case HCI_READ_RMT_VERSION_COMP_EVT:
-      btu_hcif_read_rmt_version_comp_evt(p);
+      btm_read_remote_version_complete(p);
       break;
     case HCI_QOS_SETUP_COMP_EVT:
       btu_hcif_qos_setup_comp_evt(p);
@@ -359,14 +333,11 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
     case HCI_HARDWARE_ERROR_EVT:
       btu_hcif_hardware_error_evt(p);
       break;
-    case HCI_FLUSH_OCCURED_EVT:
-      btu_hcif_flush_occured_evt();
-      break;
     case HCI_ROLE_CHANGE_EVT:
       btu_hcif_role_change_evt(p);
       break;
     case HCI_NUM_COMPL_DATA_PKTS_EVT:
-      btu_hcif_num_compl_data_pkts_evt(p, hci_evt_len);
+      l2c_link_process_num_completed_pkts(p, hci_evt_len);
       break;
     case HCI_MODE_CHANGE_EVT:
       btu_hcif_mode_change_evt(p);
@@ -394,35 +365,35 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
       break;
 #if (BTM_SSR_INCLUDED == TRUE)
     case HCI_SNIFF_SUB_RATE_EVT:
-      btu_hcif_ssr_evt(p, hci_evt_len);
+      btm_pm_proc_ssr_evt(p, hci_evt_len);
       break;
 #endif /* BTM_SSR_INCLUDED == TRUE */
     case HCI_RMT_HOST_SUP_FEAT_NOTIFY_EVT:
-      btu_hcif_host_support_evt(p);
+      btm_sec_rmt_host_support_feat_evt(p);
       break;
     case HCI_IO_CAPABILITY_REQUEST_EVT:
       btu_hcif_io_cap_request_evt(p);
       break;
     case HCI_IO_CAPABILITY_RESPONSE_EVT:
-      btu_hcif_io_cap_response_evt(p);
+      btm_io_capabilities_rsp(p);
       break;
     case HCI_USER_CONFIRMATION_REQUEST_EVT:
-      btu_hcif_user_conf_request_evt(p);
+      btm_proc_sp_req_evt(BTM_SP_CFM_REQ_EVT, p);
       break;
     case HCI_USER_PASSKEY_REQUEST_EVT:
-      btu_hcif_user_passkey_request_evt(p);
+      btm_proc_sp_req_evt(BTM_SP_KEY_REQ_EVT, p);
       break;
     case HCI_REMOTE_OOB_DATA_REQUEST_EVT:
-      btu_hcif_rem_oob_request_evt(p);
+      btm_rem_oob_req(p);
       break;
     case HCI_SIMPLE_PAIRING_COMPLETE_EVT:
-      btu_hcif_simple_pair_complete_evt(p);
+      btm_simple_pair_complete(p);
       break;
     case HCI_USER_PASSKEY_NOTIFY_EVT:
-      btu_hcif_user_passkey_notif_evt(p);
+      btm_proc_sp_req_evt(BTM_SP_KEY_NOTIF_EVT, p);
       break;
     case HCI_KEYPRESS_NOTIFY_EVT:
-      btu_hcif_keypress_notif_evt(p);
+      btm_keypress_notif_evt(p);
       break;
 
     case HCI_BLE_EVENT: {
@@ -438,20 +409,20 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
           btm_ble_process_adv_pkt(ble_evt_len, p);
           break;
         case HCI_BLE_CONN_COMPLETE_EVT:
-          btu_ble_ll_conn_complete_evt(p, hci_evt_len);
+          btm_ble_conn_complete(p, hci_evt_len, false);
           break;
         case HCI_BLE_LL_CONN_PARAM_UPD_EVT:
           btu_ble_ll_conn_param_upd_evt(p, hci_evt_len);
           break;
         case HCI_BLE_READ_REMOTE_FEAT_CMPL_EVT:
-          btu_ble_read_remote_feat_evt(p);
+          btm_ble_read_remote_features_complete(p);
           break;
         case HCI_BLE_LTK_REQ_EVT: /* received only at slave device */
           btu_ble_proc_ltk_req(p);
           break;
 #if (BLE_PRIVACY_SPT == TRUE)
         case HCI_BLE_ENHANCED_CONN_COMPLETE_EVT:
-          btu_ble_proc_enhanced_conn_cmpl(p, hci_evt_len);
+          btm_ble_conn_complete(p, hci_evt_len, true);
           break;
 #endif
 #if (BLE_LLT_INCLUDED == TRUE)
@@ -958,49 +929,6 @@ static void btu_hcif_inquiry_comp_evt(uint8_t* p) {
 
 /*******************************************************************************
  *
- * Function         btu_hcif_inquiry_result_evt
- *
- * Description      Process event HCI_INQUIRY_RESULT_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_inquiry_result_evt(uint8_t* p, uint8_t hci_evt_len) {
-  /* Store results in the cache */
-  btm_process_inq_results(p, hci_evt_len, BTM_INQ_RESULT_STANDARD);
-}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_inquiry_rssi_result_evt
- *
- * Description      Process event HCI_INQUIRY_RSSI_RESULT_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_inquiry_rssi_result_evt(uint8_t* p, uint8_t hci_evt_len) {
-  /* Store results in the cache */
-  btm_process_inq_results(p, hci_evt_len, BTM_INQ_RESULT_WITH_RSSI);
-}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_extended_inquiry_result_evt
- *
- * Description      Process event HCI_EXTENDED_INQUIRY_RESULT_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_extended_inquiry_result_evt(uint8_t* p,
-                                                 uint8_t hci_evt_len) {
-  /* Store results in the cache */
-  btm_process_inq_results(p, hci_evt_len, BTM_INQ_RESULT_EXTENDED);
-}
-
-/*******************************************************************************
- *
  * Function         btu_hcif_connection_comp_evt
  *
  * Description      Process event HCI_CONNECTION_COMP_EVT
@@ -1216,19 +1144,6 @@ static void btu_hcif_encryption_change_evt(uint8_t* p) {
 
 /*******************************************************************************
  *
- * Function         btu_hcif_read_rmt_features_comp_evt
- *
- * Description      Process event HCI_READ_RMT_FEATURES_COMP_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_read_rmt_features_comp_evt(uint8_t* p) {
-  btm_read_remote_features_complete(p);
-}
-
-/*******************************************************************************
- *
  * Function         btu_hcif_read_rmt_ext_features_comp_evt
  *
  * Description      Process event HCI_READ_RMT_EXT_FEATURES_COMP_EVT
@@ -1250,19 +1165,6 @@ static void btu_hcif_read_rmt_ext_features_comp_evt(uint8_t* p,
     STREAM_TO_UINT16(handle, p_cur);
     btm_read_remote_ext_features_failed(status, handle);
   }
-}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_read_rmt_version_comp_evt
- *
- * Description      Process event HCI_READ_RMT_VERSION_COMP_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_read_rmt_version_comp_evt(uint8_t* p) {
-  btm_read_remote_version_complete(p);
 }
 
 /*******************************************************************************
@@ -1688,17 +1590,6 @@ static void btu_hcif_hardware_error_evt(uint8_t* p) {
 
 /*******************************************************************************
  *
- * Function         btu_hcif_flush_occured_evt
- *
- * Description      Process event HCI_FLUSH_OCCURED_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_flush_occured_evt(void) {}
-
-/*******************************************************************************
- *
  * Function         btu_hcif_role_change_evt
  *
  * Description      Process event HCI_ROLE_CHANGE_EVT
@@ -1718,23 +1609,6 @@ static void btu_hcif_role_change_evt(uint8_t* p) {
   btm_blacklist_role_change_device(bda, status);
   l2c_link_role_changed(&bda, role, status);
   btm_acl_role_changed(status, &bda, role);
-}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_num_compl_data_pkts_evt
- *
- * Description      Process event HCI_NUM_COMPL_DATA_PKTS_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_num_compl_data_pkts_evt(uint8_t* p, uint8_t evt_len) {
-  /* Process for L2CAP and SCO */
-  l2c_link_process_num_completed_pkts(p, evt_len);
-
-  /* Send on to SCO */
-  /*?? No SCO for now */
 }
 
 /*******************************************************************************
@@ -1764,21 +1638,6 @@ static void btu_hcif_mode_change_evt(uint8_t* p) {
   hidd_pm_proc_mode_change(status, current_mode, interval);
 #endif
 }
-
-/*******************************************************************************
- *
- * Function         btu_hcif_ssr_evt
- *
- * Description      Process event HCI_SNIFF_SUB_RATE_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-#if (BTM_SSR_INCLUDED == TRUE)
-static void btu_hcif_ssr_evt(uint8_t* p, uint16_t evt_len) {
-  btm_pm_proc_ssr_evt(p, evt_len);
-}
-#endif
 
 /*******************************************************************************
  *
@@ -1891,19 +1750,6 @@ static void btu_hcif_qos_violation_evt(uint8_t* p) {
 
 /*******************************************************************************
  *
- * Function         btu_hcif_host_support_evt
- *
- * Description      Process event HCI_RMT_HOST_SUP_FEAT_NOTIFY_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_host_support_evt(uint8_t* p) {
-  btm_sec_rmt_host_support_feat_evt(p);
-}
-
-/*******************************************************************************
- *
  * Function         btu_hcif_io_cap_request_evt
  *
  * Description      Process event HCI_IO_CAPABILITY_REQUEST_EVT
@@ -1915,95 +1761,6 @@ static void btu_hcif_io_cap_request_evt(uint8_t* p) {
   RawAddress bda;
   STREAM_TO_BDADDR(bda, p);
   btm_io_capabilities_req(bda);
-}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_io_cap_response_evt
- *
- * Description      Process event HCI_IO_CAPABILITY_RESPONSE_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_io_cap_response_evt(uint8_t* p) {
-  btm_io_capabilities_rsp(p);
-}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_user_conf_request_evt
- *
- * Description      Process event HCI_USER_CONFIRMATION_REQUEST_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_user_conf_request_evt(uint8_t* p) {
-  btm_proc_sp_req_evt(BTM_SP_CFM_REQ_EVT, p);
-}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_user_passkey_request_evt
- *
- * Description      Process event HCI_USER_PASSKEY_REQUEST_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_user_passkey_request_evt(uint8_t* p) {
-  btm_proc_sp_req_evt(BTM_SP_KEY_REQ_EVT, p);
-}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_user_passkey_notif_evt
- *
- * Description      Process event HCI_USER_PASSKEY_NOTIFY_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_user_passkey_notif_evt(uint8_t* p) {
-  btm_proc_sp_req_evt(BTM_SP_KEY_NOTIF_EVT, p);
-}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_keypress_notif_evt
- *
- * Description      Process event HCI_KEYPRESS_NOTIFY_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_keypress_notif_evt(uint8_t* p) {
-  btm_keypress_notif_evt(p);
-}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_rem_oob_request_evt
- *
- * Description      Process event HCI_REMOTE_OOB_DATA_REQUEST_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_rem_oob_request_evt(uint8_t* p) { btm_rem_oob_req(p); }
-
-/*******************************************************************************
- *
- * Function         btu_hcif_simple_pair_complete_evt
- *
- * Description      Process event HCI_SIMPLE_PAIRING_COMPLETE_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_simple_pair_complete_evt(uint8_t* p) {
-  btm_simple_pair_complete(p);
 }
 
 /**********************************************
@@ -2055,15 +1812,6 @@ static void btu_hcif_encryption_key_refresh_cmpl_evt(uint8_t* p) {
  * BLE Events
  **********************************************/
 
-static void btu_ble_ll_conn_complete_evt(uint8_t* p, uint16_t evt_len) {
-  btm_ble_conn_complete(p, evt_len, false);
-}
-#if (BLE_PRIVACY_SPT == TRUE)
-static void btu_ble_proc_enhanced_conn_cmpl(uint8_t* p, uint16_t evt_len) {
-  btm_ble_conn_complete(p, evt_len, true);
-}
-#endif
-
 extern void gatt_notify_conn_update(uint16_t handle, uint16_t interval,
                                     uint16_t latency, uint16_t timeout,
                                     uint8_t status);
@@ -2087,10 +1835,6 @@ static void btu_ble_ll_conn_param_upd_evt(uint8_t* p, uint16_t evt_len) {
   l2cble_process_conn_update_evt(handle, status, interval, latency, timeout);
 
   gatt_notify_conn_update(handle & 0x0FFF, interval, latency, timeout, status);
-}
-
-static void btu_ble_read_remote_feat_evt(uint8_t* p) {
-  btm_ble_read_remote_features_complete(p);
 }
 
 static void btu_ble_proc_ltk_req(uint8_t* p) {
