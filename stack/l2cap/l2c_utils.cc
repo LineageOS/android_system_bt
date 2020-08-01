@@ -747,9 +747,11 @@ void l2cu_send_peer_config_rej(tL2C_CCB* p_ccb, uint8_t* p_data,
   p_buf->offset = L2CAP_SEND_CMD_OFFSET;
   p = (uint8_t*)(p_buf + 1) + L2CAP_SEND_CMD_OFFSET;
 
+  const controller_t* controller = controller_get_interface();
+
 /* Put in HCI header - handle + pkt boundary */
 #if (L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE)
-  if (HCI_NON_FLUSHABLE_PB_SUPPORTED(BTM_ReadLocalFeatures())) {
+  if (controller->supports_non_flushable_pb()) {
     UINT16_TO_STREAM(p, (p_ccb->p_lcb->handle | (L2CAP_PKT_START_NON_FLUSHABLE
                                                  << L2CAP_PKT_TYPE_SHIFT)));
   } else
@@ -2134,6 +2136,7 @@ bool l2cu_create_conn_br_edr(tL2C_LCB* p_lcb) {
   int xx;
   tL2C_LCB* p_lcb_cur = &l2cb.lcb_pool[0];
   bool is_sco_active;
+  const controller_t* controller = controller_get_interface();
 
   /* If there is a connection where we perform as a slave, try to switch roles
      for this connection */
@@ -2156,7 +2159,7 @@ bool l2cu_create_conn_br_edr(tL2C_LCB* p_lcb) {
       if (is_sco_active)
         continue; /* No Master Slave switch not allowed when SCO Active */
       /*4_1_TODO check  if btm_cb.devcb.local_features to be used instead */
-      if (HCI_SWITCH_SUPPORTED(BTM_ReadLocalFeatures())) {
+      if (controller->supports_role_switch()) {
         /* mark this lcb waiting for switch to be completed and
            start switch on the other one */
         p_lcb->link_state = LST_CONNECTING_WAIT_SWITCH;
@@ -2217,12 +2220,10 @@ bool l2cu_create_conn_after_switch(tL2C_LCB* p_lcb) {
   uint8_t page_scan_rep_mode;
   uint8_t page_scan_mode;
   uint16_t clock_offset;
-  uint8_t* p_features;
   uint16_t num_acl = BTM_GetNumAclLinks();
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(p_lcb->remote_bd_addr);
   uint8_t no_hi_prio_chs = l2cu_get_num_hi_priority();
-
-  p_features = BTM_ReadLocalFeatures();
+  const controller_t* controller = controller_get_interface();
 
   L2CAP_TRACE_DEBUG(
       "l2cu_create_conn_after_switch :%d num_acl:%d no_hi: %d is_bonding:%d",
@@ -2232,7 +2233,7 @@ bool l2cu_create_conn_after_switch(tL2C_LCB* p_lcb) {
    * We can enhance the code to count the number of piconets later. */
   if (((!l2cb.disallow_switch && (num_acl < 3)) ||
        (p_lcb->is_bonding && (no_hi_prio_chs == 0))) &&
-      HCI_SWITCH_SUPPORTED(p_features))
+      controller->supports_role_switch())
     allow_switch = HCI_CR_CONN_ALLOW_SWITCH;
   else
     allow_switch = HCI_CR_CONN_NOT_ALLOW_SWITCH;
