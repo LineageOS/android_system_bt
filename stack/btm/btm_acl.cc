@@ -282,8 +282,8 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
                                     &p->active_remote_addr_type);
 #endif
 
-        if (HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(
-                controller_get_interface()->get_features_ble()->as_array) ||
+        if (controller_get_interface()
+                ->supports_ble_peripheral_initiated_feature_exchange() ||
             link_role == HCI_ROLE_MASTER) {
           btsnd_hcic_ble_read_remote_feat(p->hci_handle);
         } else {
