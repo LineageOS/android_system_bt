@@ -76,7 +76,6 @@ static void btu_hcif_rmt_name_request_comp_evt(uint8_t* p, uint16_t evt_len);
 static void btu_hcif_encryption_change_evt(uint8_t* p);
 static void btu_hcif_read_rmt_ext_features_comp_evt(uint8_t* p,
                                                     uint8_t evt_len);
-static void btu_hcif_qos_setup_comp_evt(uint8_t* p);
 static void btu_hcif_command_complete_evt(BT_HDR* response, void* context);
 static void btu_hcif_command_status_evt(uint8_t status, BT_HDR* command,
                                         void* context);
@@ -313,9 +312,6 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
       break;
     case HCI_READ_RMT_VERSION_COMP_EVT:
       btm_read_remote_version_complete(p);
-      break;
-    case HCI_QOS_SETUP_COMP_EVT:
-      btu_hcif_qos_setup_comp_evt(p);
       break;
     case HCI_COMMAND_COMPLETE_EVT:
       LOG_ERROR(
@@ -1165,32 +1161,6 @@ static void btu_hcif_read_rmt_ext_features_comp_evt(uint8_t* p,
 
 /*******************************************************************************
  *
- * Function         btu_hcif_qos_setup_comp_evt
- *
- * Description      Process event HCI_QOS_SETUP_COMP_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_qos_setup_comp_evt(uint8_t* p) {
-  uint8_t status;
-  uint16_t handle;
-  FLOW_SPEC flow;
-
-  STREAM_TO_UINT8(status, p);
-  STREAM_TO_UINT16(handle, p);
-  STREAM_TO_UINT8(flow.qos_flags, p);
-  STREAM_TO_UINT8(flow.service_type, p);
-  STREAM_TO_UINT32(flow.token_rate, p);
-  STREAM_TO_UINT32(flow.peak_bandwidth, p);
-  STREAM_TO_UINT32(flow.latency, p);
-  STREAM_TO_UINT32(flow.delay_variation, p);
-
-  btm_qos_setup_complete(status, handle, &flow);
-}
-
-/*******************************************************************************
- *
  * Function         btu_hcif_esco_connection_comp_evt
  *
  * Description      Process event HCI_ESCO_CONNECTION_COMP_EVT
@@ -1427,12 +1397,6 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
       if (status != HCI_SUCCESS) {
         // Tell inquiry processing that we are done
         btm_process_inq_complete(status, BTM_BR_INQUIRY_MASK);
-      }
-      break;
-    case HCI_QOS_SETUP:
-      if (status != HCI_SUCCESS) {
-        // Tell qos setup that we are done
-        btm_qos_setup_complete(status, 0, nullptr);
       }
       break;
     case HCI_SWITCH_ROLE:

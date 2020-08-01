@@ -147,10 +147,6 @@ typedef struct {
       p_inq_tx_power_cmpl_cb; /* Callback function to be called when  */
                               /* read inq tx power function completes  */
 
-  alarm_t* qos_setup_timer;          /* QoS setup timer */
-  tBTM_CMPL_CB* p_qos_setup_cmpl_cb; /* Callback function to be called when  */
-                                     /* qos setup function completes         */
-
   tBTM_ROLE_SWITCH_CMPL switch_role_ref_data;
   tBTM_CMPL_CB* p_switch_role_cb; /* Callback function to be called when  */
                                   /* requested switch role is completed   */

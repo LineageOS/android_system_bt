@@ -143,8 +143,6 @@ extern void btm_pm_proc_ssr_evt(uint8_t* p, uint16_t evt_len);
 extern tBTM_STATUS btm_read_power_mode_state(const RawAddress& remote_bda,
                                              tBTM_PM_STATE* pmState);
 extern void btm_sco_chk_pend_unpark(uint8_t hci_status, uint16_t hci_handle);
-extern void btm_qos_setup_complete(uint8_t status, uint16_t handle,
-                                   FLOW_SPEC* p_flow);
 
 /* Internal functions provided by btm_sco.cc
  *******************************************

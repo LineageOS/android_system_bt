@@ -1773,59 +1773,6 @@ tBTM_STATUS BTM_RegBusyLevelNotif(tBTM_BL_CHANGE_CB* p_cb, uint8_t* p_level,
 
 /*******************************************************************************
  *
- * Function         btm_qos_setup_timeout
- *
- * Description      Callback when QoS setup times out.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_qos_setup_timeout(UNUSED_ATTR void* data) {
-  tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_qos_setup_cmpl_cb;
-  btm_cb.devcb.p_qos_setup_cmpl_cb = NULL;
-  if (p_cb) (*p_cb)((void*)NULL);
-}
-
-/*******************************************************************************
- *
- * Function         btm_qos_setup_complete
- *
- * Description      This function is called when the command complete message
- *                  is received from the HCI for the qos setup request.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_qos_setup_complete(uint8_t status, uint16_t handle,
-                            FLOW_SPEC* p_flow) {
-  tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_qos_setup_cmpl_cb;
-  tBTM_QOS_SETUP_CMPL qossu;
-
-  BTM_TRACE_DEBUG("%s", __func__);
-  alarm_cancel(btm_cb.devcb.qos_setup_timer);
-  btm_cb.devcb.p_qos_setup_cmpl_cb = NULL;
-
-  /* If there was a registered callback, call it */
-  if (p_cb) {
-    memset(&qossu, 0, sizeof(tBTM_QOS_SETUP_CMPL));
-    qossu.status = status;
-    qossu.handle = handle;
-    if (p_flow != NULL) {
-      qossu.flow.qos_flags = p_flow->qos_flags;
-      qossu.flow.service_type = p_flow->service_type;
-      qossu.flow.token_rate = p_flow->token_rate;
-      qossu.flow.peak_bandwidth = p_flow->peak_bandwidth;
-      qossu.flow.latency = p_flow->latency;
-      qossu.flow.delay_variation = p_flow->delay_variation;
-    }
-    BTM_TRACE_DEBUG("BTM: p_flow->delay_variation: 0x%02x",
-                    qossu.flow.delay_variation);
-    (*p_cb)(&qossu);
-  }
-}
-
-/*******************************************************************************
- *
  * Function         BTM_ReadRSSI
  *
  * Description      This function is called to read the link policy settings.
