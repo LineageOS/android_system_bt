@@ -37,7 +37,7 @@ class MockLink : public Link {
                     std::unique_ptr<MockLeAclConnection> mock_acl_connection, LinkManager* link_manager)
       : Link(handler, std::move(mock_acl_connection), parameter_provider, nullptr, nullptr, link_manager) {}
 
-  MOCK_METHOD(hci::AddressWithType, GetDevice, (), (override));
+  MOCK_METHOD(hci::AddressWithType, GetDevice, (), (const, override));
   MOCK_METHOD(hci::Role, GetRole, (), (override));
   MOCK_METHOD(void, OnAclDisconnected, (hci::ErrorCode status), (override));
   MOCK_METHOD(void, Disconnect, (), (override));
