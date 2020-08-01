@@ -56,25 +56,8 @@ enum {
 
 typedef uint8_t tBTM_STATUS;
 
-/*************************
- *  Device Control Types
- *************************/
-#define BTM_DEVICE_ROLE_BR 0x01
-#define BTM_DEVICE_ROLE_DUAL 0x02
-#define BTM_MAX_DEVICE_ROLE BTM_DEVICE_ROLE_DUAL
-typedef uint8_t tBTM_DEVICE_ROLE;
-
 /* Device name of peer (may be truncated to save space in BTM database) */
 typedef uint8_t tBTM_BD_NAME[BTM_MAX_REM_BD_NAME_LEN + 1];
-
-/* Structure returned with local version information */
-typedef struct {
-  uint8_t hci_version;
-  uint16_t hci_revision;
-  uint8_t lmp_version;
-  uint16_t manufacturer;
-  uint16_t lmp_subversion;
-} tBTM_VERSION_INFO;
 
 /* Structure returned with Vendor Specific Command complete callback */
 typedef struct {
@@ -83,8 +66,6 @@ typedef struct {
   uint8_t* p_param_buf;
 } tBTM_VSC_CMPL;
 
-#define BTM_VSC_CMPL_DATA_SIZE \
-  (BTM_MAX_VENDOR_SPECIFIC_LEN + sizeof(tBTM_VSC_CMPL))
 /**************************************************
  *  Device Control and General Callback Functions
  **************************************************/
@@ -116,12 +97,6 @@ typedef void(tBTM_CMPL_CB)(void* p1);
  * data.
  */
 typedef void(tBTM_VSC_CMPL_CB)(tBTM_VSC_CMPL* p1);
-
-/* Callback for apps to check connection and inquiry filters.
- * Parameters are the BD Address of remote and the Dev Class of remote. If the
- * app returns none zero, the connection or inquiry result will be dropped.
-*/
-typedef uint8_t(tBTM_FILTER_CB)(const RawAddress& bd_addr, DEV_CLASS dc);
 
 /*****************************************************************************
  *  DEVICE DISCOVERY - Inquiry, Remote Name, Discovery, Class of Device
@@ -220,119 +195,38 @@ typedef uint8_t(tBTM_FILTER_CB)(const RawAddress& bd_addr, DEV_CLASS dc);
 /* Filter on device addr */
 #define BTM_FILTER_COND_BD_ADDR HCI_FILTER_COND_BD_ADDR
 
-/* State of the remote name retrieval during inquiry operations.
- * Used in the tBTM_INQ_INFO structure, and returned in the
- * BTM_InqDbRead, BTM_InqDbFirst, and BTM_InqDbNext functions.
- * The name field is valid when the state returned is
- * BTM_INQ_RMT_NAME_DONE */
-#define BTM_INQ_RMT_NAME_EMPTY 0
-#define BTM_INQ_RMT_NAME_PENDING 1
-#define BTM_INQ_RMT_NAME_DONE 2
-#define BTM_INQ_RMT_NAME_FAILED 3
-
-/*********************************
- *** Class of Device constants ***
- *********************************/
-#define BTM_FORMAT_TYPE_1 0x00
-
 /****************************
  * minor device class field
  ****************************/
 
 /* 0x00 is used as unclassified for all minor device classes */
 #define BTM_COD_MINOR_UNCLASSIFIED 0x00
-
-/* minor device class field for Computer Major Class */
-/* #define BTM_COD_MINOR_UNCLASSIFIED       0x00    */
-#define BTM_COD_MINOR_DESKTOP_WORKSTATION 0x04
-#define BTM_COD_MINOR_SERVER_COMPUTER 0x08
-#define BTM_COD_MINOR_LAPTOP 0x0C
-#define BTM_COD_MINOR_HANDHELD_PC_PDA 0x10 /* clam shell */
-#define BTM_COD_MINOR_PALM_SIZE_PC_PDA 0x14
-#define BTM_COD_MINOR_WEARABLE_COMPUTER 0x18 /* watch sized */
-
-/* minor device class field for Phone Major Class */
-/* #define BTM_COD_MINOR_UNCLASSIFIED       0x00    */
-#define BTM_COD_MINOR_CELLULAR 0x04
-#define BTM_COD_MINOR_CORDLESS 0x08
-#define BTM_COD_MINOR_SMART_PHONE 0x0C
-/* wired modem or voice gatway */
-#define BTM_COD_MINOR_WIRED_MDM_V_GTWY 0x10
-#define BTM_COD_MINOR_ISDN_ACCESS 0x14
-
-/* minor device class field for LAN Access Point Major Class */
-/* Load Factor Field bit 5-7 */
-#define BTM_COD_MINOR_FULLY_AVAILABLE 0x00
-#define BTM_COD_MINOR_1_17_UTILIZED 0x20
-#define BTM_COD_MINOR_17_33_UTILIZED 0x40
-#define BTM_COD_MINOR_33_50_UTILIZED 0x60
-#define BTM_COD_MINOR_50_67_UTILIZED 0x80
-#define BTM_COD_MINOR_67_83_UTILIZED 0xA0
-#define BTM_COD_MINOR_83_99_UTILIZED 0xC0
-#define BTM_COD_MINOR_NO_SERVICE_AVAILABLE 0xE0
-/* sub-Field bit 2-4 */
-/* #define BTM_COD_MINOR_UNCLASSIFIED       0x00    */
-
-/* minor device class field for Audio/Video Major Class */
-/* #define BTM_COD_MINOR_UNCLASSIFIED       0x00    */
-#define BTM_COD_MINOR_CONFM_HEADSET 0x04
 #define BTM_COD_MINOR_CONFM_HANDSFREE 0x08
-#define BTM_COD_MINOR_MICROPHONE 0x10
-#define BTM_COD_MINOR_LOUDSPEAKER 0x14
-#define BTM_COD_MINOR_HEADPHONES 0x18
-#define BTM_COD_MINOR_PORTABLE_AUDIO 0x1C
 #define BTM_COD_MINOR_CAR_AUDIO 0x20
-#define BTM_COD_MINOR_SET_TOP_BOX 0x24
-#define BTM_COD_MINOR_HIFI_AUDIO 0x28
-#define BTM_COD_MINOR_VCR 0x2C
-#define BTM_COD_MINOR_VIDEO_CAMERA 0x30
-#define BTM_COD_MINOR_CAMCORDER 0x34
-#define BTM_COD_MINOR_VIDEO_MONITOR 0x38
-#define BTM_COD_MINOR_VIDDISP_LDSPKR 0x3C
-#define BTM_COD_MINOR_VIDEO_CONFERENCING 0x40
-#define BTM_COD_MINOR_GAMING_TOY 0x48
 
 /* minor device class field for Peripheral Major Class */
 /* Bits 6-7 independently specify mouse, keyboard, or combo mouse/keyboard */
 #define BTM_COD_MINOR_KEYBOARD 0x40
 #define BTM_COD_MINOR_POINTING 0x80
-#define BTM_COD_MINOR_COMBO 0xC0
 /* Bits 2-5 OR'd with selection from bits 6-7 */
 /* #define BTM_COD_MINOR_UNCLASSIFIED       0x00    */
 #define BTM_COD_MINOR_JOYSTICK 0x04
 #define BTM_COD_MINOR_GAMEPAD 0x08
 #define BTM_COD_MINOR_REMOTE_CONTROL 0x0C
-#define BTM_COD_MINOR_SENSING_DEVICE 0x10
 #define BTM_COD_MINOR_DIGITIZING_TABLET 0x14
 #define BTM_COD_MINOR_CARD_READER 0x18 /* e.g. SIM card reader */
 #define BTM_COD_MINOR_DIGITAL_PAN 0x1C
-#define BTM_COD_MINOR_HAND_SCANNER 0x20
-#define BTM_COD_MINOR_HAND_GESTURAL_INPUT 0x24
 
 /* minor device class field for Imaging Major Class */
 /* Bits 5-7 independently specify display, camera, scanner, or printer */
 #define BTM_COD_MINOR_DISPLAY 0x10
-#define BTM_COD_MINOR_CAMERA 0x20
-#define BTM_COD_MINOR_SCANNER 0x40
-#define BTM_COD_MINOR_PRINTER 0x80
 /* Bits 2-3 Reserved */
 /* #define BTM_COD_MINOR_UNCLASSIFIED       0x00    */
 
 /* minor device class field for Wearable Major Class */
 /* Bits 2-7 meaningful    */
 #define BTM_COD_MINOR_WRIST_WATCH 0x04
-#define BTM_COD_MINOR_PAGER 0x08
-#define BTM_COD_MINOR_JACKET 0x0C
-#define BTM_COD_MINOR_HELMET 0x10
 #define BTM_COD_MINOR_GLASSES 0x14
-
-/* minor device class field for Toy Major Class */
-/* Bits 2-7 meaningful    */
-#define BTM_COD_MINOR_ROBOT 0x04
-#define BTM_COD_MINOR_VEHICLE 0x08
-#define BTM_COD_MINOR_DOLL_ACTION_FIGURE 0x0C
-#define BTM_COD_MINOR_CONTROLLER 0x10
-#define BTM_COD_MINOR_GAME 0x14
 
 /* minor device class field for Health Major Class */
 /* Bits 2-7 meaningful    */
@@ -342,26 +236,17 @@ typedef uint8_t(tBTM_FILTER_CB)(const RawAddress& bd_addr, DEV_CLASS dc);
 #define BTM_COD_MINOR_GLUCOSE_METER 0x10
 #define BTM_COD_MINOR_PULSE_OXIMETER 0x14
 #define BTM_COD_MINOR_HEART_PULSE_MONITOR 0x18
-#define BTM_COD_MINOR_HEALTH_DATA_DISPLAY 0x1C
 #define BTM_COD_MINOR_STEP_COUNTER 0x20
-#define BTM_COD_MINOR_BODY_COM_ANALYZER 0x24
-#define BTM_COD_MINOR_PEAK_FLOW_MONITOR 0x28
-#define BTM_COD_MINOR_MEDICATION_MONITOR 0x2C
-#define BTM_COD_MINOR_KNEE_PROSTHESIS 0x30
-#define BTM_COD_MINOR_ANKLE_PROSTHESIS 0x34
 
 /***************************
  * major device class field
  ***************************/
-#define BTM_COD_MAJOR_MISCELLANEOUS 0x00
 #define BTM_COD_MAJOR_COMPUTER 0x01
 #define BTM_COD_MAJOR_PHONE 0x02
-#define BTM_COD_MAJOR_LAN_ACCESS_PT 0x03
 #define BTM_COD_MAJOR_AUDIO 0x04
 #define BTM_COD_MAJOR_PERIPHERAL 0x05
 #define BTM_COD_MAJOR_IMAGING 0x06
 #define BTM_COD_MAJOR_WEARABLE 0x07
-#define BTM_COD_MAJOR_TOY 0x08
 #define BTM_COD_MAJOR_HEALTH 0x09
 #define BTM_COD_MAJOR_UNCLASSIFIED 0x1F
 
@@ -379,8 +264,6 @@ typedef uint8_t(tBTM_FILTER_CB)(const RawAddress& bd_addr, DEV_CLASS dc);
 #define BTM_COD_SERVICE_INFORMATION 0x8000
 
 /* class of device field macros */
-#define BTM_COD_FORMAT_TYPE(u8, pd) \
-  { (u8) = (pd)[2] & 0x03; }
 #define BTM_COD_MINOR_CLASS(u8, pd) \
   { (u8) = (pd)[2] & 0xFC; }
 #define BTM_COD_MAJOR_CLASS(u8, pd) \
@@ -401,7 +284,6 @@ typedef uint8_t(tBTM_FILTER_CB)(const RawAddress& bd_addr, DEV_CLASS dc);
   }
 
 /* the COD masks */
-#define BTM_COD_FORMAT_TYPE_MASK 0x03
 #define BTM_COD_MINOR_CLASS_MASK 0xFC
 #define BTM_COD_MAJOR_CLASS_MASK 0x1F
 #define BTM_COD_SERVICE_CLASS_LO_B 0x00E0
@@ -515,24 +397,6 @@ typedef uint8_t tBTM_EIR_SEARCH_RESULT;
 #define BTM_EIR_TX_POWER_LEVEL_TYPE HCI_EIR_TX_POWER_LEVEL_TYPE
 /* 0xFF */
 #define BTM_EIR_MANUFACTURER_SPECIFIC_TYPE HCI_EIR_MANUFACTURER_SPECIFIC_TYPE
-
-/* the following EIR tags are defined to OOB, not regular EIR data */
-/* 6 bytes */
-#define BTM_EIR_OOB_BD_ADDR_TYPE HCI_EIR_OOB_BD_ADDR_TYPE
-/* 3 bytes */
-#define BTM_EIR_OOB_COD_TYPE HCI_EIR_OOB_COD_TYPE
-/* 16 bytes */
-#define BTM_EIR_OOB_SSP_HASH_C_TYPE HCI_EIR_OOB_SSP_HASH_C_TYPE
-/* 16 bytes */
-#define BTM_EIR_OOB_SSP_RAND_R_TYPE HCI_EIR_OOB_SSP_RAND_R_TYPE
-
-/* include 2 bytes length & 6 bytes bd_addr */
-#define BTM_OOB_MANDATORY_SIZE 8
-#define BTM_OOB_DATA_LEN_SIZE 2
-#define BTM_OOB_BD_ADDR_SIZE 6
-#define BTM_OOB_COD_SIZE BT_OOB_COD_SIZE
-#define BTM_OOB_HASH_C_SIZE BT_OOB_HASH_C_SIZE
-#define BTM_OOB_RAND_R_SIZE BT_OOB_RAND_R_SIZE
 
 #define BTM_BLE_SEC_NONE 0
 /* encrypt the link using current key */
@@ -686,12 +550,6 @@ typedef struct {
 /****************************************
  *  Device Discovery Callback Functions
  ****************************************/
-/* Callback function for asynchronous notifications when the BTM inquiry DB
- * changes. First param is inquiry database, second is if added to or removed
- * from the inquiry database.
-*/
-typedef void(tBTM_INQ_DB_CHANGE_CB)(void* p1, bool is_new);
-
 /* Callback function for notifications when the BTM gets inquiry response.
  * First param is inquiry results database, second is pointer of EIR.
 */
@@ -704,12 +562,6 @@ typedef void(tBTM_INQ_RESULTS_CB)(tBTM_INQ_RESULTS* p_inq_results,
 /******************
  *  ACL Constants
  ******************/
-
-/* ACL modes */
-#define BTM_ACL_MODE_NORMAL HCI_MODE_ACTIVE
-#define BTM_ACL_MODE_HOLD HCI_MODE_HOLD
-#define BTM_ACL_MODE_SNIFF HCI_MODE_SNIFF
-#define BTM_ACL_MODE_PARK HCI_MODE_PARK
 
 /* Returned with structure in role switch callback (tBTM_ROLE_SWITCH_CMPL) */
 #define BTM_ROLE_MASTER HCI_ROLE_MASTER
@@ -823,8 +675,6 @@ enum {
 typedef uint8_t tBTM_BL_EVENT;
 typedef uint16_t tBTM_BL_EVENT_MASK;
 
-#define BTM_BL_CONN_MASK 0x0001
-#define BTM_BL_DISCN_MASK 0x0002
 #define BTM_BL_UPDATE_MASK 0x0004
 #define BTM_BL_ROLE_CHG_MASK 0x0008
 
@@ -890,17 +740,6 @@ typedef union {
 */
 typedef void(tBTM_BL_CHANGE_CB)(tBTM_BL_EVENT_DATA* p_data);
 
-/***************************
- *  ACL Callback Functions
- ***************************/
-/* Callback function for notifications when the BTM ACL connection DB
- * changes. First param is BD address, second is if added or removed.
- * Registered through BTM_AclRegisterForChanges call.
-*/
-typedef void(tBTM_ACL_DB_CHANGE_CB)(const RawAddress& p_bda, DEV_CLASS p_dc,
-                                    BD_NAME p_bdn, uint8_t* features,
-                                    bool is_new, uint16_t handle,
-                                    tBT_TRANSPORT transport);
 /*****************************************************************************
  *  SCO CHANNEL MANAGEMENT
  ****************************************************************************/
@@ -915,19 +754,11 @@ typedef void(tBTM_ACL_DB_CHANGE_CB)(const RawAddress& p_bda, DEV_CLASS p_dc,
 /* Define an invalid SCO disconnect reason */
 #define BTM_INVALID_SCO_DISC_REASON 0xFFFF
 
-/* Define first active SCO index */
-#define BTM_FIRST_ACTIVE_SCO_INDEX BTM_MAX_SCO_LINKS
-
 #define BTM_SCO_LINK_ONLY_MASK \
   (ESCO_PKT_TYPES_MASK_HV1 | ESCO_PKT_TYPES_MASK_HV2 | ESCO_PKT_TYPES_MASK_HV3)
 
 #define BTM_ESCO_LINK_ONLY_MASK \
   (ESCO_PKT_TYPES_MASK_EV3 | ESCO_PKT_TYPES_MASK_EV4 | ESCO_PKT_TYPES_MASK_EV5)
-
-#define BTM_SCO_LINK_ALL_PKT_MASK \
-  (BTM_SCO_LINK_ONLY_MASK | BTM_ESCO_LINK_ONLY_MASK)
-
-#define BTM_VALID_SCO_ALL_PKT_TYPE HCI_VALID_SCO_ALL_PKT_TYPE
 
 /***************
  *  SCO Types
@@ -959,20 +790,12 @@ typedef uint16_t tBTM_SCO_CODEC_TYPE;
 /*******************
  * SCO Data Status
  *******************/
-enum {
-  BTM_SCO_DATA_CORRECT,
-  BTM_SCO_DATA_PAR_ERR,
-  BTM_SCO_DATA_NONE,
-  BTM_SCO_DATA_PAR_LOST
-};
 typedef uint8_t tBTM_SCO_DATA_FLAG;
 
 /***************************
  *  SCO Callback Functions
  ***************************/
 typedef void(tBTM_SCO_CB)(uint16_t sco_inx);
-typedef void(tBTM_SCO_DATA_CB)(uint16_t sco_inx, BT_HDR* p_data,
-                               tBTM_SCO_DATA_FLAG status);
 
 /***************
  *  eSCO Types
@@ -1087,17 +910,11 @@ typedef void(tBTM_ESCO_CBACK)(tBTM_ESCO_EVT event, tBTM_ESCO_EVT_DATA* p_data);
 #define BTM_SEC_FLAG_LKEY_KNOWN 0x10
 #define BTM_SEC_FLAG_LKEY_AUTHED 0x20
 
-/* PIN types */
-#define BTM_PIN_TYPE_VARIABLE HCI_PIN_TYPE_VARIABLE
-#define BTM_PIN_TYPE_FIXED HCI_PIN_TYPE_FIXED
-
 /* Link Key types used to generate the new link key.
  * returned in link key notification callback function
 */
 #define BTM_LKEY_TYPE_COMBINATION HCI_LKEY_TYPE_COMBINATION
-#define BTM_LKEY_TYPE_LOCAL_UNIT HCI_LKEY_TYPE_LOCAL_UNIT
 #define BTM_LKEY_TYPE_REMOTE_UNIT HCI_LKEY_TYPE_REMOTE_UNIT
-#define BTM_LKEY_TYPE_DEBUG_COMB HCI_LKEY_TYPE_DEBUG_COMB
 #define BTM_LKEY_TYPE_UNAUTH_COMB HCI_LKEY_TYPE_UNAUTH_COMB
 #define BTM_LKEY_TYPE_AUTH_COMB HCI_LKEY_TYPE_AUTH_COMB
 #define BTM_LKEY_TYPE_CHANGED_COMB HCI_LKEY_TYPE_CHANGED_COMB
@@ -1133,39 +950,23 @@ typedef uint8_t tBTM_LINK_KEY_TYPE;
 #define BTM_SEC_SERVICE_LAN_ACCESS 2
 #define BTM_SEC_SERVICE_DUN 3
 #define BTM_SEC_SERVICE_IRMC_SYNC 4
-#define BTM_SEC_SERVICE_IRMC_SYNC_CMD 5
 #define BTM_SEC_SERVICE_OBEX 6
 #define BTM_SEC_SERVICE_OBEX_FTP 7
 #define BTM_SEC_SERVICE_HEADSET 8
 #define BTM_SEC_SERVICE_CORDLESS 9
 #define BTM_SEC_SERVICE_INTERCOM 10
-#define BTM_SEC_SERVICE_FAX 11
 #define BTM_SEC_SERVICE_HEADSET_AG 12
-#define BTM_SEC_SERVICE_PNP_INFO 13
-#define BTM_SEC_SERVICE_GEN_NET 14
-#define BTM_SEC_SERVICE_GEN_FILE 15
-#define BTM_SEC_SERVICE_GEN_AUDIO 16
-#define BTM_SEC_SERVICE_GEN_TEL 17
-#define BTM_SEC_SERVICE_CTP_DATA 18
-#define BTM_SEC_SERVICE_HCRP_CTRL 19
-#define BTM_SEC_SERVICE_HCRP_DATA 20
-#define BTM_SEC_SERVICE_HCRP_NOTIF 21
 #define BTM_SEC_SERVICE_BPP_JOB 22
-#define BTM_SEC_SERVICE_BPP_STATUS 23
-#define BTM_SEC_SERVICE_BPP_REF 24
 #define BTM_SEC_SERVICE_BNEP_PANU 25
 #define BTM_SEC_SERVICE_BNEP_GN 26
 #define BTM_SEC_SERVICE_BNEP_NAP 27
 #define BTM_SEC_SERVICE_HF_HANDSFREE 28
 #define BTM_SEC_SERVICE_AG_HANDSFREE 29
-#define BTM_SEC_SERVICE_TE_PHONE_ACCESS 30
-#define BTM_SEC_SERVICE_ME_PHONE_ACCESS 31
 
 #define BTM_SEC_SERVICE_HIDH_SEC_CTRL 32
 #define BTM_SEC_SERVICE_HIDH_NOSEC_CTRL 33
 #define BTM_SEC_SERVICE_HIDH_INTR 34
 #define BTM_SEC_SERVICE_BIP 35
-#define BTM_SEC_SERVICE_BIP_REF 36
 #define BTM_SEC_SERVICE_AVDTP 37
 #define BTM_SEC_SERVICE_AVDTP_NOSEC 38
 #define BTM_SEC_SERVICE_AVCTP 39
@@ -1174,11 +975,7 @@ typedef uint8_t tBTM_LINK_KEY_TYPE;
 #define BTM_SEC_SERVICE_RFC_MUX 42
 #define BTM_SEC_SERVICE_AVCTP_BROWSE 43
 #define BTM_SEC_SERVICE_MAP 44
-#define BTM_SEC_SERVICE_MAP_NOTIF 45
-#define BTM_SEC_SERVICE_MCAP_CTRL 46
-#define BTM_SEC_SERVICE_MCAP_DATA 47
 #define BTM_SEC_SERVICE_HDP_SNK 48
-#define BTM_SEC_SERVICE_HDP_SRC 49
 #define BTM_SEC_SERVICE_ATT 50
 #define BTM_SEC_SERVICE_HIDD_SEC_CTRL 51
 #define BTM_SEC_SERVICE_HIDD_NOSEC_CTRL 52
@@ -1197,15 +994,6 @@ typedef uint8_t tBTM_LINK_KEY_TYPE;
  * Security Services MACROS handle array of uint32_t bits for more than 32
  * trusted services
  ******************************************************************************/
-/* MACRO to set the security service bit mask in a bit stream */
-#define BTM_SEC_SET_SERVICE(p, service)                              \
-  (((uint32_t*)(p))[(((uint32_t)(service)) / BTM_SEC_ARRAY_BITS)] |= \
-   ((uint32_t)1 << (((uint32_t)(service)) % BTM_SEC_ARRAY_BITS)))
-
-/* MACRO to clear the security service bit mask in a bit stream */
-#define BTM_SEC_CLR_SERVICE(p, service)                              \
-  (((uint32_t*)(p))[(((uint32_t)(service)) / BTM_SEC_ARRAY_BITS)] &= \
-   ~((uint32_t)1 << (((uint32_t)(service)) % BTM_SEC_ARRAY_BITS)))
 
 /* MACRO to check the security service bit mask in a bit stream (Returns true or
  * false) */
@@ -1313,7 +1101,6 @@ typedef uint8_t tBTM_SP_EVT;
 typedef uint8_t tBTM_IO_CAP;
 
 #define BTM_MAX_PASSKEY_VAL (999999)
-#define BTM_MIN_PASSKEY_VAL (0)
 
 /* MITM Protection Not Required - Single Profile/non-bonding Numeric comparison
  * with automatic accept allowed */
@@ -1336,7 +1123,6 @@ typedef uint8_t tBTM_IO_CAP;
 
 /* this bit is ORed with BTM_AUTH_SP_* when IO exchange for dedicated bonding */
 #define BTM_AUTH_DD_BOND 2
-#define BTM_AUTH_GB_BIT 4 /* the genernal bonding bit */
 #define BTM_AUTH_BONDS 6  /* the general/dedicated bonding bits  */
 #define BTM_AUTH_YN_BIT 1 /* this is the Yes or No bit  */
 
