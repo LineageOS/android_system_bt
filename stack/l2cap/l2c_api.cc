@@ -1843,10 +1843,11 @@ uint16_t L2CA_FlushChannel(uint16_t lcid, uint16_t num_to_flush) {
   /* Cannot flush eRTM buffers once they have a sequence number */
   if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_ERTM_MODE) {
 #if (L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE)
+    const controller_t* controller = controller_get_interface();
     if (num_to_flush != L2CAP_FLUSH_CHANS_GET) {
       /* If the controller supports enhanced flush, flush the data queued at the
        * controller */
-      if ((HCI_NON_FLUSHABLE_PB_SUPPORTED(BTM_ReadLocalFeatures())) &&
+      if (controller->supports_non_flushable_pb() &&
           (BTM_GetNumScoLinks() == 0)) {
         if (!l2cb.is_flush_active) {
           l2cb.is_flush_active = true;
