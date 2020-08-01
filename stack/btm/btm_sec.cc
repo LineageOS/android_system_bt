@@ -4464,7 +4464,10 @@ void btm_sec_link_key_notification(const RawAddress& p_bda,
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-void btm_sec_link_key_request(const RawAddress& bda) {
+void btm_sec_link_key_request(uint8_t* p_event) {
+  RawAddress bda;
+
+  STREAM_TO_BDADDR(bda, p_event);
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(bda);
 
   VLOG(2) << __func__ << " bda: " << bda;
