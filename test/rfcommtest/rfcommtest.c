@@ -671,7 +671,7 @@ void bdt_rfcomm_disc_from_server(void)
 void bdt_init(void)
 {
     bdt_log("INIT BT ");
-    status = sBtInterface->init(&bt_callbacks);
+    status = sBtInterface->init(&bt_callbacks, false);
     if (status == BT_STATUS_SUCCESS) {
         status = sBtInterface->set_os_callouts(&callouts);
     }
