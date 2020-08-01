@@ -23,11 +23,21 @@ class InitFlags final {
  public:
   static void Load(const char** flags);
 
+  static bool GdHciEnabled() {
+    return gd_hci_enabled;
+  }
+
+  static bool GdControllerEnabled() {
+    return gd_controller_enabled;
+  }
+
   static bool GdCoreEnabled() {
     return gd_core_enabled;
   }
 
  private:
+  static bool gd_hci_enabled;
+  static bool gd_controller_enabled;
   static bool gd_core_enabled;
 };
 
