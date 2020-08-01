@@ -487,6 +487,11 @@ static bool supports_non_flushable_pb(void) {
   return HCI_NON_FLUSHABLE_PB_SUPPORTED(features_classic[0].as_array);
 }
 
+static bool supports_sniff_subrating(void) {
+  CHECK(readable);
+  return HCI_SNIFF_SUB_RATE_SUPPORTED(features_classic[0].as_array);
+}
+
 static bool supports_ble(void) {
   CHECK(readable);
   return ble_supported;
@@ -668,6 +673,7 @@ static const controller_t interface = {
     supports_sniff_mode,
     supports_park_mode,
     supports_non_flushable_pb,
+    supports_sniff_subrating,
 
     supports_ble,
     supports_ble_packet_extension,

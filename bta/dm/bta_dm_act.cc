@@ -42,6 +42,7 @@
 #include "btm_api.h"
 #include "btm_int.h"
 #include "btu.h"
+#include "device/include/controller.h"
 #include "device/include/interop.h"
 #include "gap_api.h" /* For GAP_BleReadPeerPrefConnParams */
 #include "l2c_api.h"
@@ -2747,9 +2748,9 @@ static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
     conn.link_up.link_type = transport;
     bta_dm_cb.device_list.peer_device[i].transport = transport;
 
+    const controller_t* controller = controller_get_interface();
     uint8_t* p;
-    if (((NULL != (p = BTM_ReadLocalFeatures())) &&
-         HCI_SNIFF_SUB_RATE_SUPPORTED(p)) &&
+    if (controller->supports_sniff_subrating() &&
         ((NULL != (p = BTM_ReadRemoteFeatures(bd_addr))) &&
          HCI_SNIFF_SUB_RATE_SUPPORTED(p))) {
       /* both local and remote devices support SSR */
