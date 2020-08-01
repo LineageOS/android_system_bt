@@ -110,9 +110,6 @@ typedef enum {
 #define L2CEVT_LP_CONNECT_CFM_NEG 1   /* connect confirm (failed) */
 #define L2CEVT_LP_CONNECT_IND 2       /* connect indication */
 #define L2CEVT_LP_DISCONNECT_IND 3    /* disconnect indication */
-#define L2CEVT_LP_QOS_CFM 4           /* QOS confirmation */
-#define L2CEVT_LP_QOS_CFM_NEG 5       /* QOS confirmation (failed)*/
-#define L2CEVT_LP_QOS_VIOLATION_IND 6 /* QOS violation indication */
 
 /* Security */
 #define L2CEVT_SEC_COMP 7     /* cleared successfully */
@@ -699,7 +696,6 @@ extern bool l2c_link_hci_conn_req(const RawAddress& bd_addr);
 extern bool l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
                                    const RawAddress& p_bda);
 extern bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason);
-extern bool l2c_link_hci_qos_violation(uint16_t handle);
 extern void l2c_link_timeout(tL2C_LCB* p_lcb);
 extern void l2c_info_resp_timer_timeout(void* data);
 extern void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, tL2C_CCB* p_ccb,

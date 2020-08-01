@@ -87,7 +87,6 @@ static void btu_hcif_pin_code_request_evt(uint8_t* p);
 static void btu_hcif_link_key_request_evt(uint8_t* p);
 static void btu_hcif_link_key_notification_evt(uint8_t* p);
 static void btu_hcif_read_clock_off_comp_evt(uint8_t* p);
-static void btu_hcif_qos_violation_evt(uint8_t* p);
 static void btu_hcif_esco_connection_comp_evt(uint8_t* p);
 static void btu_hcif_esco_connection_chg_evt(uint8_t* p);
 
@@ -353,9 +352,6 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
       break;
     case HCI_READ_CLOCK_OFF_COMP_EVT:
       btu_hcif_read_clock_off_comp_evt(p);
-      break;
-    case HCI_QOS_VIOLATION_EVT:
-      btu_hcif_qos_violation_evt(p);
       break;
     case HCI_ESCO_CONNECTION_COMP_EVT:
       btu_hcif_esco_connection_comp_evt(p);
@@ -1723,25 +1719,6 @@ static void btu_hcif_read_clock_off_comp_evt(uint8_t* p) {
 
   btm_process_clk_off_comp_evt(handle, clock_offset);
   btm_sec_update_clock_offset(handle, clock_offset);
-}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_qos_violation_evt
- *
- * Description      Process event HCI_QOS_VIOLATION_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_qos_violation_evt(uint8_t* p) {
-  uint16_t handle;
-
-  STREAM_TO_UINT16(handle, p);
-
-  handle = HCID_GET_HANDLE(handle);
-
-  l2c_link_hci_qos_violation(handle);
 }
 
 /**********************************************
