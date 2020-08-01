@@ -316,11 +316,6 @@ static const bt_device_features_t* get_features_classic(int index) {
   return &features_classic[index];
 }
 
-static uint8_t get_last_features_classic_index(void) {
-  CHECK(readable);
-  return last_features_classic_page_index;
-}
-
 static uint8_t* get_local_supported_codecs(uint8_t* number_of_codecs) {
   CHECK(readable);
   if (number_of_local_supported_codecs) {
@@ -390,6 +385,106 @@ static bool supports_enhanced_setup_synchronous_connection(void) {
 static bool supports_enhanced_accept_synchronous_connection(void) {
   assert(readable);
   return HCI_ENH_ACCEPT_SYNCH_CONN_SUPPORTED(supported_commands);
+}
+
+static bool supports_3_slot_packets(void) {
+  CHECK(readable);
+  return HCI_3_SLOT_PACKETS_SUPPORTED(features_classic[0].as_array);
+}
+
+static bool supports_5_slot_packets(void) {
+  CHECK(readable);
+  return HCI_5_SLOT_PACKETS_SUPPORTED(features_classic[0].as_array);
+}
+
+static bool supports_classic_2m_phy(void) {
+  CHECK(readable);
+  return HCI_EDR_ACL_2MPS_SUPPORTED(features_classic[0].as_array);
+}
+
+static bool supports_classic_3m_phy(void) {
+  CHECK(readable);
+  return HCI_EDR_ACL_3MPS_SUPPORTED(features_classic[0].as_array);
+}
+
+static bool supports_3_slot_edr_packets(void) {
+  CHECK(readable);
+  return HCI_3_SLOT_EDR_ACL_SUPPORTED(features_classic[0].as_array);
+}
+
+static bool supports_5_slot_edr_packets(void) {
+  CHECK(readable);
+  return HCI_5_SLOT_EDR_ACL_SUPPORTED(features_classic[0].as_array);
+}
+
+static bool supports_sco(void) {
+  CHECK(readable);
+  return HCI_SCO_LINK_SUPPORTED(features_classic[0].as_array);
+}
+
+static bool supports_hv2_packets(void) {
+  CHECK(readable);
+  return HCI_HV2_PACKETS_SUPPORTED(features_classic[0].as_array);
+}
+
+static bool supports_hv3_packets(void) {
+  CHECK(readable);
+  return HCI_HV3_PACKETS_SUPPORTED(features_classic[0].as_array);
+}
+
+static bool supports_ev3_packets(void) {
+  CHECK(readable);
+  return HCI_ESCO_EV3_SUPPORTED(features_classic[0].as_array);
+}
+
+static bool supports_ev4_packets(void) {
+  CHECK(readable);
+  return HCI_ESCO_EV4_SUPPORTED(features_classic[0].as_array);
+}
+
+static bool supports_ev5_packets(void) {
+  CHECK(readable);
+  return HCI_ESCO_EV5_SUPPORTED(features_classic[0].as_array);
+}
+
+static bool supports_esco_2m_phy(void) {
+  CHECK(readable);
+  return HCI_EDR_ESCO_2MPS_SUPPORTED(features_classic[0].as_array);
+}
+
+static bool supports_esco_3m_phy(void) {
+  CHECK(readable);
+  return HCI_EDR_ESCO_3MPS_SUPPORTED(features_classic[0].as_array);
+}
+
+static bool supports_3_slot_esco_edr_packets(void) {
+  CHECK(readable);
+  return HCI_3_SLOT_EDR_ESCO_SUPPORTED(features_classic[0].as_array);
+}
+
+static bool supports_role_switch(void) {
+  CHECK(readable);
+  return HCI_SWITCH_SUPPORTED(features_classic[0].as_array);
+}
+
+static bool supports_hold_mode(void) {
+  CHECK(readable);
+  return HCI_HOLD_MODE_SUPPORTED(features_classic[0].as_array);
+}
+
+static bool supports_sniff_mode(void) {
+  CHECK(readable);
+  return HCI_SNIFF_MODE_SUPPORTED(features_classic[0].as_array);
+}
+
+static bool supports_park_mode(void) {
+  CHECK(readable);
+  return HCI_PARK_MODE_SUPPORTED(features_classic[0].as_array);
+}
+
+static bool supports_non_flushable_pb(void) {
+  CHECK(readable);
+  return HCI_NON_FLUSHABLE_PB_SUPPORTED(features_classic[0].as_array);
 }
 
 static bool supports_ble(void) {
@@ -539,7 +634,6 @@ static const controller_t interface = {
     get_bt_version,
 
     get_features_classic,
-    get_last_features_classic_index,
 
     get_features_ble,
     get_ble_supported_states,
@@ -554,6 +648,26 @@ static const controller_t interface = {
     supports_master_slave_role_switch,
     supports_enhanced_setup_synchronous_connection,
     supports_enhanced_accept_synchronous_connection,
+    supports_3_slot_packets,
+    supports_5_slot_packets,
+    supports_classic_2m_phy,
+    supports_classic_3m_phy,
+    supports_3_slot_edr_packets,
+    supports_5_slot_edr_packets,
+    supports_sco,
+    supports_hv2_packets,
+    supports_hv3_packets,
+    supports_ev3_packets,
+    supports_ev4_packets,
+    supports_ev5_packets,
+    supports_esco_2m_phy,
+    supports_esco_3m_phy,
+    supports_3_slot_esco_edr_packets,
+    supports_role_switch,
+    supports_hold_mode,
+    supports_sniff_mode,
+    supports_park_mode,
+    supports_non_flushable_pb,
 
     supports_ble,
     supports_ble_packet_extension,
