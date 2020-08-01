@@ -4613,9 +4613,16 @@ static void btm_sec_pairing_timeout(UNUSED_ATTR void* data) {
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-void btm_sec_pin_code_request(const RawAddress& p_bda) {
+void btm_sec_pin_code_request(uint8_t* p_event) {
   tBTM_SEC_DEV_REC* p_dev_rec;
   tBTM_CB* p_cb = &btm_cb;
+  RawAddress p_bda;
+
+  STREAM_TO_BDADDR(p_bda, p_event);
+
+  /* Tell L2CAP that there was a PIN code request,  */
+  /* it may need to stretch timeouts                */
+  l2c_pin_code_request(p_bda);
 
   VLOG(2) << __func__ << " BDA: " << p_bda
           << " state: " << btm_pair_state_descr(btm_cb.pairing_state);

@@ -82,7 +82,6 @@ static void btu_hcif_command_status_evt(uint8_t status, BT_HDR* command,
 static void btu_hcif_hardware_error_evt(uint8_t* p);
 static void btu_hcif_role_change_evt(uint8_t* p);
 static void btu_hcif_mode_change_evt(uint8_t* p);
-static void btu_hcif_pin_code_request_evt(uint8_t* p);
 static void btu_hcif_link_key_request_evt(uint8_t* p);
 static void btu_hcif_link_key_notification_evt(uint8_t* p);
 static void btu_hcif_read_clock_off_comp_evt(uint8_t* p);
@@ -338,7 +337,7 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
       btu_hcif_mode_change_evt(p);
       break;
     case HCI_PIN_CODE_REQUEST_EVT:
-      btu_hcif_pin_code_request_evt(p);
+      btm_sec_pin_code_request(p);
       break;
     case HCI_LINK_KEY_REQUEST_EVT:
       btu_hcif_link_key_request_evt(p);
@@ -1597,27 +1596,6 @@ static void btu_hcif_mode_change_evt(uint8_t* p) {
 #if (HID_DEV_INCLUDED == TRUE && HID_DEV_PM_INCLUDED == TRUE)
   hidd_pm_proc_mode_change(status, current_mode, interval);
 #endif
-}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_pin_code_request_evt
- *
- * Description      Process event HCI_PIN_CODE_REQUEST_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_pin_code_request_evt(uint8_t* p) {
-  RawAddress bda;
-
-  STREAM_TO_BDADDR(bda, p);
-
-  /* Tell L2CAP that there was a PIN code request,  */
-  /* it may need to stretch timeouts                */
-  l2c_pin_code_request(bda);
-
-  btm_sec_pin_code_request(bda);
 }
 
 /*******************************************************************************
