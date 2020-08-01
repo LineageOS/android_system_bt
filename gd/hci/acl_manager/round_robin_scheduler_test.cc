@@ -38,15 +38,15 @@ namespace acl_manager {
 
 class TestController : public Controller {
  public:
-  uint16_t GetControllerNumAclPacketBuffers() const {
+  uint16_t GetNumAclPacketBuffers() const {
     return max_acl_packet_credits_;
   }
 
-  uint16_t GetControllerAclPacketLength() const {
+  uint16_t GetAclPacketLength() const {
     return hci_mtu_;
   }
 
-  LeBufferSize GetControllerLeBufferSize() const {
+  LeBufferSize GetLeBufferSize() const {
     LeBufferSize le_buffer_size;
     le_buffer_size.le_data_packet_length_ = le_hci_mtu_;
     le_buffer_size.total_num_le_packets_ = le_max_acl_packet_credits_;

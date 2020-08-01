@@ -93,7 +93,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     le_address_manager_ = acl_manager->GetLeAddressManager();
     le_advertising_interface_ =
         hci_layer_->GetLeAdvertisingInterface(module_handler_->BindOn(this, &LeAdvertisingManager::impl::handle_event));
-    num_instances_ = controller_->GetControllerLeNumberOfSupportedAdverisingSets();
+    num_instances_ = controller_->GetLeNumberOfSupportedAdverisingSets();
     enabled_sets_ = std::vector<EnabledSet>(num_instances_);
     if (controller_->IsSupported(hci::OpCode::LE_SET_EXTENDED_ADVERTISING_PARAMETERS)) {
       advertising_api_type_ = AdvertisingApiType::LE_5_0;
