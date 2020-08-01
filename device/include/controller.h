@@ -35,7 +35,6 @@ typedef struct controller_t {
   const bt_version_t* (*get_bt_version)(void);
 
   const bt_device_features_t* (*get_features_classic)(int index);
-  uint8_t (*get_last_features_classic_index)(void);
 
   const bt_device_features_t* (*get_features_ble)(void);
   const uint8_t* (*get_ble_supported_states)(void);
@@ -50,6 +49,26 @@ typedef struct controller_t {
   bool (*supports_master_slave_role_switch)(void);
   bool (*supports_enhanced_setup_synchronous_connection)(void);
   bool (*supports_enhanced_accept_synchronous_connection)(void);
+  bool (*supports_3_slot_packets)(void);
+  bool (*supports_5_slot_packets)(void);
+  bool (*supports_classic_2m_phy)(void);
+  bool (*supports_classic_3m_phy)(void);
+  bool (*supports_3_slot_edr_packets)(void);
+  bool (*supports_5_slot_edr_packets)(void);
+  bool (*supports_sco)(void);
+  bool (*supports_hv2_packets)(void);
+  bool (*supports_hv3_packets)(void);
+  bool (*supports_ev3_packets)(void);
+  bool (*supports_ev4_packets)(void);
+  bool (*supports_ev5_packets)(void);
+  bool (*supports_esco_2m_phy)(void);
+  bool (*supports_esco_3m_phy)(void);
+  bool (*supports_3_slot_esco_edr_packets)(void);
+  bool (*supports_role_switch)(void);
+  bool (*supports_hold_mode)(void);
+  bool (*supports_sniff_mode)(void);
+  bool (*supports_park_mode)(void);
+  bool (*supports_non_flushable_pb)(void);
 
   bool (*supports_ble)(void);
   bool (*supports_ble_packet_extension)(void);
