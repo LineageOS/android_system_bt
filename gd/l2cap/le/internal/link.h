@@ -50,7 +50,7 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::LeConnectio
 
   ~Link() override = default;
 
-  inline hci::AddressWithType GetDevice() override {
+  inline hci::AddressWithType GetDevice() const override {
     return acl_connection_->GetRemoteAddress();
   }
 
