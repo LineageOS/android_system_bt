@@ -34,8 +34,6 @@ typedef struct controller_t {
   const RawAddress* (*get_address)(void);
   const bt_version_t* (*get_bt_version)(void);
 
-  const bt_device_features_t* (*get_features_classic)(int index);
-
   const bt_device_features_t* (*get_features_ble)(void);
   const uint8_t* (*get_ble_supported_states)(void);
 
@@ -70,6 +68,7 @@ typedef struct controller_t {
   bool (*supports_park_mode)(void);
   bool (*supports_non_flushable_pb)(void);
   bool (*supports_sniff_subrating)(void);
+  bool (*supports_encryption_pause)(void);
 
   bool (*supports_ble)(void);
   bool (*supports_ble_packet_extension)(void);

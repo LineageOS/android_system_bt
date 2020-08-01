@@ -309,13 +309,6 @@ static const bt_version_t* get_bt_version(void) {
   return &bt_version;
 }
 
-// TODO(zachoverflow): hide inside, move decoder inside too
-static const bt_device_features_t* get_features_classic(int index) {
-  CHECK(readable);
-  CHECK(index < MAX_FEATURES_CLASSIC_PAGE_COUNT);
-  return &features_classic[index];
-}
-
 static uint8_t* get_local_supported_codecs(uint8_t* number_of_codecs) {
   CHECK(readable);
   if (number_of_local_supported_codecs) {
@@ -492,6 +485,11 @@ static bool supports_sniff_subrating(void) {
   return HCI_SNIFF_SUB_RATE_SUPPORTED(features_classic[0].as_array);
 }
 
+static bool supports_encryption_pause(void) {
+  CHECK(readable);
+  return HCI_ATOMIC_ENCRYPT_SUPPORTED(features_classic[0].as_array);
+}
+
 static bool supports_ble(void) {
   CHECK(readable);
   return ble_supported;
@@ -638,8 +636,6 @@ static const controller_t interface = {
     get_address,
     get_bt_version,
 
-    get_features_classic,
-
     get_features_ble,
     get_ble_supported_states,
 
@@ -674,6 +670,7 @@ static const controller_t interface = {
     supports_park_mode,
     supports_non_flushable_pb,
     supports_sniff_subrating,
+    supports_encryption_pause,
 
     supports_ble,
     supports_ble_packet_extension,
