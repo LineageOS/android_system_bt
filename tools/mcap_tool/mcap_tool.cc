@@ -544,7 +544,7 @@ static bt_os_callouts_t callouts = {
 
 void adapter_init(void) {
   LOG(INFO) << __func__;
-  global_status = (bt_status_t)sBtInterface->init(&bt_callbacks);
+  global_status = (bt_status_t)sBtInterface->init(&bt_callbacks, false);
   if (global_status == BT_STATUS_SUCCESS) {
     global_status = (bt_status_t)sBtInterface->set_os_callouts(&callouts);
   }
