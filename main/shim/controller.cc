@@ -198,8 +198,7 @@ static uint16_t get_acl_packet_size_ble(void) {
 }
 
 static uint16_t get_ble_suggested_default_data_length(void) {
-  LOG_WARN("%s TODO Unimplemented", __func__);
-  return 0;
+  return GetController()->GetLeSuggestedDefaultDataLength();
 }
 
 static uint16_t get_ble_maximum_tx_data_length(void) {
