@@ -42,6 +42,7 @@
 #include "btm_int.h"
 #include "btm_int_types.h"
 #include "btu.h"
+#include "device/include/controller.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
 #include "l2c_int.h"
@@ -53,12 +54,6 @@
 /*****************************************************************************/
 #define BTM_PM_STORED_MASK 0x80 /* set this mask if the command is stored */
 #define BTM_PM_NUM_SET_MODES 3  /* only hold, sniff & park */
-
-/* Usage:  (ptr_features[ offset ] & mask )?true:false */
-/* offset to supported feature */
-const uint8_t btm_pm_mode_off[BTM_PM_NUM_SET_MODES] = {0, 0, 1};
-/* mask to supported feature */
-const uint8_t btm_pm_mode_msk[BTM_PM_NUM_SET_MODES] = {0x40, 0x80, 0x01};
 
 #define BTM_PM_GET_MD1 1
 #define BTM_PM_GET_MD2 2
@@ -146,8 +141,7 @@ tBTM_STATUS BTM_PmRegister(uint8_t mask, uint8_t* p_pm_id,
  ******************************************************************************/
 tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
                              const tBTM_PM_PWR_MD* p_mode) {
-  uint8_t* p_features;
-  int ind, acl_ind;
+  int acl_ind;
   tBTM_PM_MCB* p_cb = nullptr; /* per ACL link */
   tBTM_PM_MODE mode;
   int temp_pm_id;
@@ -174,10 +168,10 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
   p_cb = &(btm_cb.pm_mode_db[acl_ind]);
 
   if (mode != BTM_PM_MD_ACTIVE) {
-    /* check if the requested mode is supported */
-    ind = mode - BTM_PM_MD_HOLD; /* make it base 0 */
-    p_features = BTM_ReadLocalFeatures();
-    if (!(p_features[btm_pm_mode_off[ind]] & btm_pm_mode_msk[ind])) {
+    const controller_t* controller = controller_get_interface();
+    if ((mode == BTM_PM_MD_HOLD && !controller->supports_hold_mode()) ||
+        (mode == BTM_PM_MD_SNIFF && !controller->supports_sniff_mode()) ||
+        (mode == BTM_PM_MD_PARK && !controller->supports_park_mode())) {
       LOG(ERROR) << __func__ << ": pm_id " << unsigned(pm_id) << " mode "
                  << unsigned(mode) << " is not supported for " << remote_bda;
       return BTM_MODE_UNSUPPORTED;
