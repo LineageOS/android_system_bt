@@ -642,7 +642,7 @@ static bt_os_callouts_t callouts = {
 void bdt_init(void)
 {
     printf("INIT BT \n");
-    status = sBtInterface->init(&bt_callbacks);
+    status = sBtInterface->init(&bt_callbacks, false);
     if (status == BT_STATUS_SUCCESS) {
         status = sBtInterface->set_os_callouts(&callouts);
     }

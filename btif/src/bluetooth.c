@@ -83,6 +83,7 @@
 
 bt_callbacks_t *bt_hal_cbacks = NULL;
 bool restricted_mode = FALSE;
+bool is_local_device_atv = FALSE;
 
 /************************************************************************************
 **  Externs
@@ -150,7 +151,7 @@ static bool is_profile(const char *p1, const char *p2) {
 **
 *****************************************************************************/
 
-static int init(bt_callbacks_t *callbacks) {
+static int init(bt_callbacks_t* callbacks, bool is_atv) {
   LOG_INFO(LOG_TAG, "%s", __func__);
 
   if (interface_ready())
@@ -161,6 +162,7 @@ static int init(bt_callbacks_t *callbacks) {
 #endif
 
   bt_hal_cbacks = callbacks;
+  is_local_device_atv = is_atv;
   stack_manager_get_interface()->init_stack();
   btif_debug_init();
   return BT_STATUS_SUCCESS;
@@ -192,6 +194,10 @@ static void cleanup(void) {
 
 bool is_restricted_mode() {
   return restricted_mode;
+}
+
+bool is_atv_device() {
+  return is_local_device_atv;
 }
 
 static int get_adapter_properties(void)

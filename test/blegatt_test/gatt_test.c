@@ -1137,7 +1137,7 @@ static tL2CAP_APPL_INFO l2test_l2c_appl = {
 void bdt_init(void)
 {
     bdt_log("INIT BT ");
-    status = sBtInterface->init(&bt_callbacks);
+    status = sBtInterface->init(&bt_callbacks, false);
     status = sBtInterface->set_os_callouts(&bt_os_callbacks);
     check_return_status(status);
 }
