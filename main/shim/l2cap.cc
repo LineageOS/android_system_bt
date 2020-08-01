@@ -23,6 +23,7 @@
 #include "main/shim/shim.h"
 #include "osi/include/allocator.h"
 #include "osi/include/log.h"
+#include "stack/include/btu.h"
 
 #include "shim/l2cap.h"
 
@@ -318,7 +319,10 @@ void bluetooth::shim::legacy::L2cap::SetDownstreamCallbacks(uint16_t cid) {
             static_cast<BT_HDR*>(osi_calloc(data.size() + kBtHdrSize));
         std::copy(data.begin(), data.end(), bt_hdr->data);
         bt_hdr->len = data.size();
-        classic_.Callbacks(CidToPsm(cid))->pL2CA_DataInd_Cb(cid, bt_hdr);
+        do_in_main_thread(
+            FROM_HERE,
+            base::Bind(classic_.Callbacks(CidToPsm(cid))->pL2CA_DataInd_Cb, cid,
+                       base::Unretained(bt_hdr)));
       });
 
   bluetooth::shim::GetL2cap()->SetConnectionClosedCallback(
