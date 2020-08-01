@@ -47,11 +47,10 @@ typedef char tBTM_LOC_BD_NAME[BTM_MAX_LOC_BD_NAME_LEN + 1];
    HCI_PKT_TYPES_MASK_NO_2_DH3 | HCI_PKT_TYPES_MASK_NO_3_DH3 | \
    HCI_PKT_TYPES_MASK_NO_2_DH5 | HCI_PKT_TYPES_MASK_NO_3_DH5)
 
-#define BTM_EPR_AVAILABLE(p)                                            \
-  ((HCI_ATOMIC_ENCRYPT_SUPPORTED((p)->peer_lmp_feature_pages[0]) &&     \
-    HCI_ATOMIC_ENCRYPT_SUPPORTED(                                       \
-        controller_get_interface()->get_features_classic(0)->as_array)) \
-       ? true                                                           \
+#define BTM_EPR_AVAILABLE(p)                                        \
+  ((HCI_ATOMIC_ENCRYPT_SUPPORTED((p)->peer_lmp_feature_pages[0]) && \
+    controller_get_interface()->supports_encryption_pause())        \
+       ? true                                                       \
        : false)
 
 #define BTM_IS_BRCM_CONTROLLER()                                 \

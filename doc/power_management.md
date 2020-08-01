@@ -136,7 +136,7 @@ seems to be used in the `bta_dm_act.cc` file, and only for reinitialization.
        request to enable PARK for the given peer and connection.
      - If the action chosen is `BTA_DM_PM_SNIFF`, the peer device's link policy
        is checked to see if it's allowed. If so, then `bta_dm_pm_sniff` is
-       called, which makes various calls to `BTM_ReadLocalFeatures`,
+       called, which makes various calls to the local controller,
        `BTM_ReadRemoteFeatures` and `BTM_SetPowerMode` to ensure SNIFF mode is
        enabled.
      - If the action chosen is `BTA_DM_PM_ACTIVE`, a call to `bta_dm_pm_active`
