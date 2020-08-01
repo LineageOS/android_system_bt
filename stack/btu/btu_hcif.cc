@@ -116,9 +116,6 @@ static void btu_hcif_keypress_notif_evt(uint8_t* p);
 static void btu_hcif_rem_oob_request_evt(uint8_t* p);
 
 static void btu_hcif_simple_pair_complete_evt(uint8_t* p);
-#if L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE
-static void btu_hcif_enhanced_flush_complete_evt(void);
-#endif
 
 #if (BTM_SSR_INCLUDED == TRUE)
 static void btu_hcif_ssr_evt(uint8_t* p, uint16_t evt_len);
@@ -451,11 +448,6 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
     case HCI_KEYPRESS_NOTIFY_EVT:
       btu_hcif_keypress_notif_evt(p);
       break;
-#if (L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE)
-    case HCI_ENHANCED_FLUSH_COMPLETE_EVT:
-      btu_hcif_enhanced_flush_complete_evt();
-      break;
-#endif
 
     case HCI_BLE_EVENT: {
       STREAM_TO_UINT8(ble_sub_code, p);
@@ -2104,20 +2096,6 @@ static void btu_hcif_simple_pair_complete_evt(uint8_t* p) {
   btm_simple_pair_complete(p);
 }
 
-/*******************************************************************************
- *
- * Function         btu_hcif_enhanced_flush_complete_evt
- *
- * Description      Process event HCI_ENHANCED_FLUSH_COMPLETE_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-#if (L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE)
-static void btu_hcif_enhanced_flush_complete_evt(void) {
-  /* This is empty until an upper layer cares about returning event */
-}
-#endif
 /**********************************************
  * End of Simple Pairing Events
  **********************************************/
