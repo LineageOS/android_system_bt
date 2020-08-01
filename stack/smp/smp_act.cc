@@ -19,6 +19,7 @@
 #include <cutils/log.h>
 #include <log/log.h>
 #include <string.h>
+#include "btif_api.h"
 #include "btif_common.h"
 #include "btif_storage.h"
 #include "device/include/interop.h"
@@ -1301,8 +1302,9 @@ void smp_decide_association_model(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
         smp_int_data.status = SMP_PAIR_AUTH_FAIL;
         int_evt = SMP_AUTH_CMPL_EVT;
       } else {
-        if (p_cb->local_io_capability != SMP_IO_CAP_NONE &&
-            p_cb->local_io_capability != SMP_IO_CAP_IN) {
+        if (!is_atv_device() &&
+            (p_cb->local_io_capability == SMP_IO_CAP_IO ||
+             p_cb->local_io_capability == SMP_IO_CAP_KBDISP)) {
           /* display consent dialog if this device has a display */
           SMP_TRACE_DEBUG("ENCRYPTION_ONLY showing Consent Dialog");
           p_cb->cb_evt = SMP_CONSENT_REQ_EVT;
@@ -1656,8 +1658,9 @@ void smp_process_peer_nonce(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
       }
 
       if (p_cb->selected_association_model == SMP_MODEL_SEC_CONN_JUSTWORKS) {
-        if (p_cb->local_io_capability != SMP_IO_CAP_NONE &&
-            p_cb->local_io_capability != SMP_IO_CAP_IN) {
+        if (!is_atv_device() &&
+            (p_cb->local_io_capability == SMP_IO_CAP_IO ||
+             p_cb->local_io_capability == SMP_IO_CAP_KBDISP)) {
           /* display consent dialog */
           SMP_TRACE_DEBUG("JUST WORKS showing Consent Dialog");
           p_cb->cb_evt = SMP_CONSENT_REQ_EVT;
