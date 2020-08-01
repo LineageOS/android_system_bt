@@ -94,14 +94,8 @@ static void btu_hcif_mode_change_evt(uint8_t* p);
 static void btu_hcif_pin_code_request_evt(uint8_t* p);
 static void btu_hcif_link_key_request_evt(uint8_t* p);
 static void btu_hcif_link_key_notification_evt(uint8_t* p);
-static void btu_hcif_loopback_command_evt(void);
-static void btu_hcif_data_buf_overflow_evt(void);
-static void btu_hcif_max_slots_changed_evt(void);
 static void btu_hcif_read_clock_off_comp_evt(uint8_t* p);
-static void btu_hcif_conn_pkt_type_change_evt(void);
 static void btu_hcif_qos_violation_evt(uint8_t* p);
-static void btu_hcif_page_scan_mode_change_evt(void);
-static void btu_hcif_page_scan_rep_mode_chng_evt(void);
 static void btu_hcif_esco_connection_comp_evt(uint8_t* p);
 static void btu_hcif_esco_connection_chg_evt(uint8_t* p);
 
@@ -386,29 +380,11 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
     case HCI_LINK_KEY_NOTIFICATION_EVT:
       btu_hcif_link_key_notification_evt(p);
       break;
-    case HCI_LOOPBACK_COMMAND_EVT:
-      btu_hcif_loopback_command_evt();
-      break;
-    case HCI_DATA_BUF_OVERFLOW_EVT:
-      btu_hcif_data_buf_overflow_evt();
-      break;
-    case HCI_MAX_SLOTS_CHANGED_EVT:
-      btu_hcif_max_slots_changed_evt();
-      break;
     case HCI_READ_CLOCK_OFF_COMP_EVT:
       btu_hcif_read_clock_off_comp_evt(p);
       break;
-    case HCI_CONN_PKT_TYPE_CHANGE_EVT:
-      btu_hcif_conn_pkt_type_change_evt();
-      break;
     case HCI_QOS_VIOLATION_EVT:
       btu_hcif_qos_violation_evt(p);
-      break;
-    case HCI_PAGE_SCAN_MODE_CHANGE_EVT:
-      btu_hcif_page_scan_mode_change_evt();
-      break;
-    case HCI_PAGE_SCAN_REP_MODE_CHNG_EVT:
-      btu_hcif_page_scan_rep_mode_chng_evt();
       break;
     case HCI_ESCO_CONNECTION_COMP_EVT:
       btu_hcif_esco_connection_comp_evt(p);
@@ -1864,39 +1840,6 @@ static void btu_hcif_link_key_notification_evt(uint8_t* p) {
 
 /*******************************************************************************
  *
- * Function         btu_hcif_loopback_command_evt
- *
- * Description      Process event HCI_LOOPBACK_COMMAND_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_loopback_command_evt(void) {}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_data_buf_overflow_evt
- *
- * Description      Process event HCI_DATA_BUF_OVERFLOW_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_data_buf_overflow_evt(void) {}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_max_slots_changed_evt
- *
- * Description      Process event HCI_MAX_SLOTS_CHANGED_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_max_slots_changed_evt(void) {}
-
-/*******************************************************************************
- *
  * Function         btu_hcif_read_clock_off_comp_evt
  *
  * Description      Process event HCI_READ_CLOCK_OFF_COMP_EVT
@@ -1925,17 +1868,6 @@ static void btu_hcif_read_clock_off_comp_evt(uint8_t* p) {
 
 /*******************************************************************************
  *
- * Function         btu_hcif_conn_pkt_type_change_evt
- *
- * Description      Process event HCI_CONN_PKT_TYPE_CHANGE_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_conn_pkt_type_change_evt(void) {}
-
-/*******************************************************************************
- *
  * Function         btu_hcif_qos_violation_evt
  *
  * Description      Process event HCI_QOS_VIOLATION_EVT
@@ -1952,28 +1884,6 @@ static void btu_hcif_qos_violation_evt(uint8_t* p) {
 
   l2c_link_hci_qos_violation(handle);
 }
-
-/*******************************************************************************
- *
- * Function         btu_hcif_page_scan_mode_change_evt
- *
- * Description      Process event HCI_PAGE_SCAN_MODE_CHANGE_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_page_scan_mode_change_evt(void) {}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_page_scan_rep_mode_chng_evt
- *
- * Description      Process event HCI_PAGE_SCAN_REP_MODE_CHNG_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_page_scan_rep_mode_chng_evt(void) {}
 
 /**********************************************
  * Simple Pairing Events
