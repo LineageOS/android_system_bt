@@ -532,23 +532,6 @@ uint8_t* BTM_ReadDeviceClass(void) {
 
 /*******************************************************************************
  *
- * Function         BTM_ReadLocalFeatures
- *
- * Description      This function is called to read the local features
- *
- * Returns          pointer to the local features string
- *
- ******************************************************************************/
-// TODO(zachoverflow): get rid of this function
-uint8_t* BTM_ReadLocalFeatures(void) {
-  // Discarding const modifier for now, until this function dies
-  return (uint8_t*)controller_get_interface()
-      ->get_features_classic(0)
-      ->as_array;
-}
-
-/*******************************************************************************
- *
  * Function         BTM_RegisterForDeviceStatusNotif
  *
  * Description      This function is called to register for device status

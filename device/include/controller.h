@@ -34,9 +34,6 @@ typedef struct controller_t {
   const RawAddress* (*get_address)(void);
   const bt_version_t* (*get_bt_version)(void);
 
-  const bt_device_features_t* (*get_features_classic)(int index);
-
-  const bt_device_features_t* (*get_features_ble)(void);
   const uint8_t* (*get_ble_supported_states)(void);
 
   bool (*supports_simple_pairing)(void);
@@ -70,6 +67,7 @@ typedef struct controller_t {
   bool (*supports_park_mode)(void);
   bool (*supports_non_flushable_pb)(void);
   bool (*supports_sniff_subrating)(void);
+  bool (*supports_encryption_pause)(void);
 
   bool (*supports_ble)(void);
   bool (*supports_ble_packet_extension)(void);
@@ -80,6 +78,8 @@ typedef struct controller_t {
   bool (*supports_ble_coded_phy)(void);
   bool (*supports_ble_extended_advertising)(void);
   bool (*supports_ble_periodic_advertising)(void);
+  bool (*supports_ble_peripheral_initiated_feature_exchange)(void);
+  bool (*supports_ble_connection_parameter_request)(void);
 
   // Get the cached acl data sizes for the controller.
   uint16_t (*get_acl_data_size_classic)(void);
