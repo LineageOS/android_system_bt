@@ -28,7 +28,7 @@ class ReadOnlyPropertyService : public ReadOnlyProperty::Service {
       ::grpc::ServerContext* context,
       const ::google::protobuf::Empty* request,
       ::bluetooth::facade::BluetoothAddress* response) override {
-    auto address = controller_->GetControllerMacAddress().ToString();
+    auto address = controller_->GetMacAddress().ToString();
     response->set_address(address);
     return ::grpc::Status::OK;
   }
