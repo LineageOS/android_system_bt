@@ -8,7 +8,6 @@ service ControllerFacade {
   rpc GetMacAddress(google.protobuf.Empty) returns (AddressMsg) {}
   rpc WriteLocalName(NameMsg) returns (google.protobuf.Empty) {}
   rpc GetLocalName(google.protobuf.Empty) returns (NameMsg) {}
-  rpc GetLocalExtendedFeatures(PageNumberMsg) returns (FeaturesMsg) {}
 }
 
 message AddressMsg {
@@ -17,12 +16,4 @@ message AddressMsg {
 
 message NameMsg {
   bytes name = 1;
-}
-
-message PageNumberMsg {
-  uint32 page_number = 1;
-}
-
-message FeaturesMsg {
-  uint64 page = 1;
 }
