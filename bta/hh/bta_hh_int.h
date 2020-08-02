@@ -175,7 +175,7 @@ typedef struct {
   uint8_t index;
   bool in_use;
   uint8_t srvc_inst_id;
-  uint8_t char_inst_id;
+  uint16_t char_inst_id;
   tBTA_HH_RPT_TYPE rpt_type;
   uint16_t uuid;
   uint8_t rpt_id;

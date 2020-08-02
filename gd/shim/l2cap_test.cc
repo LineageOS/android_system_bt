@@ -55,7 +55,7 @@ class TestDynamicChannelService : public l2cap::classic::DynamicChannelService {
 
 class TestLink : public l2cap::internal::ILink {
  public:
-  hci::AddressWithType GetDevice() {
+  hci::AddressWithType GetDevice() const {
     return device_with_type_;
   }
   hci::AddressWithType device_with_type_;

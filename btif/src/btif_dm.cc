@@ -306,6 +306,7 @@ static void btif_dm_send_bond_state_changed(RawAddress address, bt_bond_state_t 
     }
     HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, BT_STATUS_SUCCESS, &address, bond_state);
   }, address, bond_state));
+  btif_dm_get_remote_services_by_transport(&address, BTA_TRANSPORT_UNKNOWN);
 }
 
 void btif_dm_init(uid_set_t* set) {

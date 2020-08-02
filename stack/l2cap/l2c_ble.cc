@@ -327,8 +327,8 @@ void l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
 #endif
 
   if (role == HCI_ROLE_SLAVE) {
-    if (!HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(
-            controller_get_interface()->get_features_ble()->as_array)) {
+    if (!controller_get_interface()
+             ->supports_ble_peripheral_initiated_feature_exchange()) {
       p_lcb->link_state = LST_CONNECTED;
       l2cu_process_fixed_chnl_resp(p_lcb);
     }
@@ -381,11 +381,11 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
       /* if both side 4.1, or we are master device, send HCI command */
       if (p_lcb->link_role == HCI_ROLE_MASTER
 #if (BLE_LLT_INCLUDED == TRUE)
-          || (HCI_LE_CONN_PARAM_REQ_SUPPORTED(
-                  controller_get_interface()->get_features_ble()->as_array) &&
+          || (controller_get_interface()
+                  ->supports_ble_connection_parameter_request() &&
               HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl_cb->peer_le_features))
 #endif
-              ) {
+      ) {
         btsnd_hcic_ble_upd_ll_conn_params(p_lcb->handle, min_conn_int,
                                           max_conn_int, slave_latency,
                                           supervision_tout, 0, 0);
@@ -403,11 +403,11 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
       /* if both side 4.1, or we are master device, send HCI command */
       if (p_lcb->link_role == HCI_ROLE_MASTER
 #if (BLE_LLT_INCLUDED == TRUE)
-          || (HCI_LE_CONN_PARAM_REQ_SUPPORTED(
-                  controller_get_interface()->get_features_ble()->as_array) &&
+          || (controller_get_interface()
+                  ->supports_ble_connection_parameter_request() &&
               HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl_cb->peer_le_features))
 #endif
-              ) {
+      ) {
         btsnd_hcic_ble_upd_ll_conn_params(p_lcb->handle, p_lcb->min_interval,
                                           p_lcb->max_interval, p_lcb->latency,
                                           p_lcb->timeout, p_lcb->min_ce_len,

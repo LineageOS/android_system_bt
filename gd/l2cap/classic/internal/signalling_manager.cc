@@ -96,6 +96,10 @@ void ClassicSignallingManager::SendConnectionRequest(Psm psm, Cid local_cid) {
 }
 
 void ClassicSignallingManager::on_security_result_for_outgoing(Psm psm, Cid local_cid, bool result) {
+  if (enqueue_buffer_.get() == nullptr) {
+    LOG_ERROR("Got security result callback after deletion");
+    return;
+  }
   if (!result) {
     LOG_WARN("Security requirement can't be satisfied. Dropping connection request");
     DynamicChannelManager::ConnectionResult connection_result{
@@ -167,12 +171,14 @@ void ClassicSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, 
                              ConnectionResponseStatus::NO_FURTHER_INFORMATION_AVAILABLE);
     return;
   }
+  /* TODO(zachoverflow): add back in with policy
   if (channel_allocator_->IsPsmUsed(psm)) {
     LOG_WARN("Psm already exists");
     send_connection_response(signal_id, remote_cid, kInvalidCid, ConnectionResponseResult::PSM_NOT_SUPPORTED,
                              ConnectionResponseStatus::NO_FURTHER_INFORMATION_AVAILABLE);
     return;
   }
+  */
 
   if (!dynamic_service_manager_->IsServiceRegistered(psm)) {
     LOG_INFO("Service for this psm (%d) is not registered", psm);
@@ -190,6 +196,10 @@ void ClassicSignallingManager::OnConnectionRequest(SignalId signal_id, Psm psm, 
 
 void ClassicSignallingManager::on_security_result_for_incoming(
     Psm psm, Cid remote_cid, SignalId signal_id, bool result) {
+  if (enqueue_buffer_.get() == nullptr) {
+    LOG_ERROR("Got security result callback after deletion");
+    return;
+  }
   if (!result) {
     send_connection_response(
         signal_id,

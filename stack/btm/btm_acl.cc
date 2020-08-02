@@ -282,8 +282,8 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
                                     &p->active_remote_addr_type);
 #endif
 
-        if (HCI_LE_SLAVE_INIT_FEAT_EXC_SUPPORTED(
-                controller_get_interface()->get_features_ble()->as_array) ||
+        if (controller_get_interface()
+                ->supports_ble_peripheral_initiated_feature_exchange() ||
             link_role == HCI_ROLE_MASTER) {
           btsnd_hcic_ble_read_remote_feat(p->hci_handle);
         } else {
@@ -717,6 +717,31 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
 #endif
   }
 }
+
+void check_link_policy(uint16_t* settings) {
+  const controller_t* controller = controller_get_interface();
+
+  if ((*settings & HCI_ENABLE_MASTER_SLAVE_SWITCH) &&
+      (!controller->supports_role_switch())) {
+    *settings &= (~HCI_ENABLE_MASTER_SLAVE_SWITCH);
+    BTM_TRACE_API("switch not supported (settings: 0x%04x)", *settings);
+  }
+  if ((*settings & HCI_ENABLE_HOLD_MODE) &&
+      (!controller->supports_hold_mode())) {
+    *settings &= (~HCI_ENABLE_HOLD_MODE);
+    BTM_TRACE_API("hold not supported (settings: 0x%04x)", *settings);
+  }
+  if ((*settings & HCI_ENABLE_SNIFF_MODE) &&
+      (!controller->supports_sniff_mode())) {
+    *settings &= (~HCI_ENABLE_SNIFF_MODE);
+    BTM_TRACE_API("sniff not supported (settings: 0x%04x)", *settings);
+  }
+  if ((*settings & HCI_ENABLE_PARK_MODE) &&
+      (!controller->supports_park_mode())) {
+    *settings &= (~HCI_ENABLE_PARK_MODE);
+    BTM_TRACE_API("park not supported (settings: 0x%04x)", *settings);
+  }
+}
 /*******************************************************************************
  *
  * Function         BTM_SetLinkPolicy
@@ -729,36 +754,11 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
 tBTM_STATUS BTM_SetLinkPolicy(const RawAddress& remote_bda,
                               uint16_t* settings) {
   tACL_CONN* p;
-  uint8_t* localFeatures = BTM_ReadLocalFeatures();
   BTM_TRACE_DEBUG("%s", __func__);
-  /*  BTM_TRACE_API ("%s: requested settings: 0x%04x", __func__, *settings ); */
 
   /* First, check if hold mode is supported */
   if (*settings != HCI_DISABLE_ALL_LM_MODES) {
-    if ((*settings & HCI_ENABLE_MASTER_SLAVE_SWITCH) &&
-        (!HCI_SWITCH_SUPPORTED(localFeatures))) {
-      *settings &= (~HCI_ENABLE_MASTER_SLAVE_SWITCH);
-      BTM_TRACE_API("BTM_SetLinkPolicy switch not supported (settings: 0x%04x)",
-                    *settings);
-    }
-    if ((*settings & HCI_ENABLE_HOLD_MODE) &&
-        (!HCI_HOLD_MODE_SUPPORTED(localFeatures))) {
-      *settings &= (~HCI_ENABLE_HOLD_MODE);
-      BTM_TRACE_API("BTM_SetLinkPolicy hold not supported (settings: 0x%04x)",
-                    *settings);
-    }
-    if ((*settings & HCI_ENABLE_SNIFF_MODE) &&
-        (!HCI_SNIFF_MODE_SUPPORTED(localFeatures))) {
-      *settings &= (~HCI_ENABLE_SNIFF_MODE);
-      BTM_TRACE_API("BTM_SetLinkPolicy sniff not supported (settings: 0x%04x)",
-                    *settings);
-    }
-    if ((*settings & HCI_ENABLE_PARK_MODE) &&
-        (!HCI_PARK_MODE_SUPPORTED(localFeatures))) {
-      *settings &= (~HCI_ENABLE_PARK_MODE);
-      BTM_TRACE_API("BTM_SetLinkPolicy park not supported (settings: 0x%04x)",
-                    *settings);
-    }
+    check_link_policy(settings);
   }
 
   p = btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
@@ -782,41 +782,11 @@ tBTM_STATUS BTM_SetLinkPolicy(const RawAddress& remote_bda,
  *
  ******************************************************************************/
 void BTM_SetDefaultLinkPolicy(uint16_t settings) {
-  uint8_t* localFeatures = BTM_ReadLocalFeatures();
-
   BTM_TRACE_DEBUG("BTM_SetDefaultLinkPolicy setting:0x%04x", settings);
 
-  if ((settings & HCI_ENABLE_MASTER_SLAVE_SWITCH) &&
-      (!HCI_SWITCH_SUPPORTED(localFeatures))) {
-    settings &= ~HCI_ENABLE_MASTER_SLAVE_SWITCH;
-    BTM_TRACE_DEBUG(
-        "BTM_SetDefaultLinkPolicy switch not supported (settings: 0x%04x)",
-        settings);
-  }
-  if ((settings & HCI_ENABLE_HOLD_MODE) &&
-      (!HCI_HOLD_MODE_SUPPORTED(localFeatures))) {
-    settings &= ~HCI_ENABLE_HOLD_MODE;
-    BTM_TRACE_DEBUG(
-        "BTM_SetDefaultLinkPolicy hold not supported (settings: 0x%04x)",
-        settings);
-  }
-  if ((settings & HCI_ENABLE_SNIFF_MODE) &&
-      (!HCI_SNIFF_MODE_SUPPORTED(localFeatures))) {
-    settings &= ~HCI_ENABLE_SNIFF_MODE;
-    BTM_TRACE_DEBUG(
-        "BTM_SetDefaultLinkPolicy sniff not supported (settings: 0x%04x)",
-        settings);
-  }
-  if ((settings & HCI_ENABLE_PARK_MODE) &&
-      (!HCI_PARK_MODE_SUPPORTED(localFeatures))) {
-    settings &= ~HCI_ENABLE_PARK_MODE;
-    BTM_TRACE_DEBUG(
-        "BTM_SetDefaultLinkPolicy park not supported (settings: 0x%04x)",
-        settings);
-  }
-  BTM_TRACE_DEBUG("Set DefaultLinkPolicy:0x%04x", settings);
-
+  check_link_policy(&settings);
   btm_cb.btm_def_link_policy = settings;
+  BTM_TRACE_DEBUG("Set DefaultLinkPolicy:0x%04x", settings);
 
   /* Set the default Link Policy of the controller */
   btsnd_hcic_write_def_policy_set(settings);

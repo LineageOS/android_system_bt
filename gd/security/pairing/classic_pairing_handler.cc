@@ -113,15 +113,21 @@ void ClassicPairingHandler::OnReceive(hci::PinCodeRequestView packet) {
 
 void ClassicPairingHandler::OnReceive(hci::LinkKeyRequestView packet) {
   ASSERT(packet.IsValid());
+  if (already_link_key_replied_) return;
+  already_link_key_replied_ = true;
   // TODO(optedoblivion): Add collision detection here
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
   ASSERT_LOG(GetRecord()->GetPseudoAddress().GetAddress() == packet.GetBdAddr(), "Address mismatch");
   if (GetRecord()->IsBonded() || GetRecord()->IsPaired()) {
     auto packet = hci::LinkKeyRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress(),
                                                           GetRecord()->GetLinkKey());
+    LOG_INFO("Sending: LINK_KEY_REQUEST_REPLY");
     this->GetChannel()->SendCommand(std::move(packet));
+    last_status_ = hci::ErrorCode::SUCCESS;
+    Cancel();
   } else {
     auto packet = hci::LinkKeyRequestNegativeReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress());
+    LOG_INFO("Sending: LINK_KEY_REQUEST_NEGATIVE_REPLY");
     this->GetChannel()->SendCommand(std::move(packet));
   }
 }
@@ -278,7 +284,7 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
               hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress()));
           LOG_INFO("Numeric Comparison: A auto confirm");
           // Unauthenticated
-          GetRecord()->SetAuthenticated(false);
+          GetRecord()->SetAuthenticated(true);
           break;
         case hci::IoCapability::KEYBOARD_ONLY:
           // PassKey Entry, Initiator display, Responder input
@@ -293,7 +299,7 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
           GetChannel()->SendCommand(
               hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress().GetAddress()));
           // Unauthenticated
-          GetRecord()->SetAuthenticated(false);
+          GetRecord()->SetAuthenticated(true);
           break;
       }
       break;
@@ -304,7 +310,7 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
           LOG_INFO("Numeric Comparison: A DisplayYesNo, B auto confirm");
           NotifyUiDisplayYesNo(packet.GetNumericValue());
           // Unauthenticated
-          GetRecord()->SetAuthenticated(false);
+          GetRecord()->SetAuthenticated(true);
           break;
         case hci::IoCapability::DISPLAY_YES_NO:
           // NumericComparison Both Display, Both confirm
@@ -325,7 +331,7 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
           NotifyUiDisplayYesNo();
           LOG_INFO("Numeric Comparison: A DisplayYesNo, B auto confirm, no show value");
           // Unauthenticated
-          GetRecord()->SetAuthenticated(false);
+          GetRecord()->SetAuthenticated(true);
           break;
       }
       break;
