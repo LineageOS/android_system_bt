@@ -15,6 +15,7 @@
  */
 #define LOG_TAG "l2cap2"
 
+#include <future>
 #include <memory>
 
 #include "common/bidi_queue.h"
@@ -22,15 +23,16 @@
 #include "hci/address.h"
 #include "hci/hci_layer.h"
 #include "hci/hci_packets.h"
+#include "l2cap/classic/internal/dumpsys_helper.h"
 #include "l2cap/classic/internal/dynamic_channel_service_manager_impl.h"
 #include "l2cap/classic/internal/fixed_channel_service_manager_impl.h"
 #include "l2cap/classic/internal/link_manager.h"
+#include "l2cap/classic/l2cap_classic_module.h"
 #include "l2cap/internal/parameter_provider.h"
+#include "l2cap_classic_module_generated.h"
 #include "module.h"
 #include "os/handler.h"
 #include "os/log.h"
-
-#include "l2cap/classic/l2cap_classic_module.h"
 
 namespace bluetooth {
 namespace l2cap {
@@ -44,6 +46,7 @@ struct L2capClassicModule::impl {
   impl(os::Handler* l2cap_handler, hci::AclManager* acl_manager)
       : l2cap_handler_(l2cap_handler), acl_manager_(acl_manager) {
     dynamic_channel_service_manager_impl_.SetSecurityEnforcementInterface(&default_security_module_impl_);
+    dumpsys_helper_ = std::make_unique<internal::DumpsysHelper>(link_manager_);
   }
   os::Handler* l2cap_handler_;
   hci::AclManager* acl_manager_;
@@ -52,6 +55,7 @@ struct L2capClassicModule::impl {
   internal::DynamicChannelServiceManagerImpl dynamic_channel_service_manager_impl_{l2cap_handler_};
   internal::LinkManager link_manager_{l2cap_handler_, acl_manager_, &fixed_channel_service_manager_impl_,
                                       &dynamic_channel_service_manager_impl_, &parameter_provider_};
+  std::unique_ptr<internal::DumpsysHelper> dumpsys_helper_;
 
   struct SecurityInterfaceImpl : public SecurityInterface {
     SecurityInterfaceImpl(impl* module_impl) : module_impl_(module_impl) {}
@@ -75,6 +79,10 @@ struct L2capClassicModule::impl {
     impl* module_impl_;
     bool registered_ = false;
   } security_interface_impl_{this};
+
+  void Dump(
+      std::promise<flatbuffers::Offset<L2capClassicModuleData>> promise,
+      flatbuffers::FlatBufferBuilder* fb_builder) const;
 };
 
 L2capClassicModule::L2capClassicModule() {}
@@ -120,6 +128,38 @@ SecurityInterface* L2capClassicModule::GetSecurityInterface(
     os::Handler* handler, LinkSecurityInterfaceListener* listener) {
   pimpl_->security_interface_impl_.RegisterLinkSecurityInterfaceListener(handler, listener);
   return &pimpl_->security_interface_impl_;
+}
+
+void L2capClassicModule::impl::Dump(
+    std::promise<flatbuffers::Offset<L2capClassicModuleData>> promise,
+    flatbuffers::FlatBufferBuilder* fb_builder) const {
+  auto title = fb_builder->CreateString("----- L2cap Classic Dumpsys -----");
+
+  std::vector<flatbuffers::Offset<bluetooth::l2cap::classic::LinkData>> link_offsets =
+      dumpsys_helper_->DumpActiveLinks(fb_builder);
+
+  auto active_links = fb_builder->CreateVector(link_offsets);
+
+  L2capClassicModuleDataBuilder builder(*fb_builder);
+  builder.add_title(title);
+  builder.add_active_links(active_links);
+  flatbuffers::Offset<L2capClassicModuleData> dumpsys_data = builder.Finish();
+
+  promise.set_value(dumpsys_data);
+}
+
+DumpsysDataFinisher L2capClassicModule::GetDumpsysData(flatbuffers::FlatBufferBuilder* fb_builder) const {
+  ASSERT(fb_builder != nullptr);
+
+  std::promise<flatbuffers::Offset<L2capClassicModuleData>> promise;
+  auto future = promise.get_future();
+  pimpl_->Dump(std::move(promise), fb_builder);
+
+  auto dumpsys_data = future.get();
+
+  return [dumpsys_data](DumpsysDataBuilder* dumpsys_builder) {
+    dumpsys_builder->add_l2cap_classic_dumpsys_data(dumpsys_data);
+  };
 }
 
 }  // namespace classic
