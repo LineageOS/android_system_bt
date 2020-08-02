@@ -13,6 +13,7 @@ filegroup {
         "classic/internal/link.cc",
         "classic/internal/link_manager.cc",
         "classic/internal/signalling_manager.cc",
+        "classic/internal/dumpsys_helper.cc",
         "classic/l2cap_classic_module.cc",
         "dynamic_channel.cc",
         "internal/basic_mode_channel_data_controller.cc",
