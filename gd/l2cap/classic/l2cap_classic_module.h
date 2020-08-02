@@ -58,6 +58,8 @@ class L2capClassicModule : public bluetooth::Module {
 
   std::string ToString() const override;
 
+  DumpsysDataFinisher GetDumpsysData(flatbuffers::FlatBufferBuilder* builder) const override;  // Module
+
  private:
   struct impl;
   std::unique_ptr<impl> pimpl_;
