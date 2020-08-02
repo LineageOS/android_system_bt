@@ -223,7 +223,7 @@ AdapterConfig StorageModule::GetAdapterConfig() {
   return AdapterConfig(&pimpl_->cache_, &pimpl_->memory_only_cache_, kAdapterSection);
 }
 
-std::vector<Device> StorageModule::GetPairedDevices() {
+std::vector<Device> StorageModule::GetBondedDevices() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   auto persistent_sections = GetConfigCache()->GetPersistentSections();
   std::vector<Device> result;
