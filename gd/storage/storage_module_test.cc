@@ -283,7 +283,7 @@ TEST_F(StorageModuleTest, save_config_test) {
   ASSERT_TRUE(std::filesystem::exists(temp_config_));
 }
 
-TEST_F(StorageModuleTest, get_paired_devices_test) {
+TEST_F(StorageModuleTest, get_bonded_devices_test) {
   // Prepare config file
   ASSERT_TRUE(bluetooth::os::WriteToFile(temp_config_.string(), kReadTestConfig));
 
@@ -293,7 +293,7 @@ TEST_F(StorageModuleTest, get_paired_devices_test) {
   test_registry.InjectTestModule(&StorageModule::Factory, storage);
 
   ASSERT_THAT(
-      storage->GetPairedDevices(),
+      storage->GetBondedDevices(),
       ElementsAre(
           Device(storage->GetConfigCachePublic(), storage->GetMemoryOnlyConfigCachePublic(), "01:02:03:ab:cd:ea")));
 
