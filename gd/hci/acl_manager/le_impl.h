@@ -56,9 +56,9 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     le_address_manager_ = new LeAddressManager(
         common::Bind(&le_impl::enqueue_command, common::Unretained(this)),
         handler_,
-        controller->GetControllerMacAddress(),
-        controller->GetControllerLeConnectListSize(),
-        controller->GetControllerLeResolvingListSize());
+        controller->GetMacAddress(),
+        controller->GetLeConnectListSize(),
+        controller->GetLeResolvingListSize());
   }
 
   ~le_impl() {

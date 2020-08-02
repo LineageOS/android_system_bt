@@ -755,15 +755,15 @@ void Controller::UnregisterCompletedAclPacketsCallback() {
   CallOn(impl_.get(), &impl::unregister_completed_acl_packets_callback);
 }
 
-std::string Controller::GetControllerLocalName() const {
+std::string Controller::GetLocalName() const {
   return impl_->local_name_;
 }
 
-LocalVersionInformation Controller::GetControllerLocalVersionInformation() const {
+LocalVersionInformation Controller::GetLocalVersionInformation() const {
   return impl_->local_version_information_;
 }
 
-std::array<uint8_t, 64> Controller::GetControllerLocalSupportedCommands() const {
+std::array<uint8_t, 64> Controller::GetLocalSupportedCommands() const {
   return impl_->local_supported_commands_;
 }
 
@@ -826,23 +826,23 @@ uint64_t Controller::GetLocalFeatures(uint8_t page_number) const {
   return 0x00;
 }
 
-uint16_t Controller::GetControllerAclPacketLength() const {
+uint16_t Controller::GetAclPacketLength() const {
   return impl_->acl_buffer_length_;
 }
 
-uint16_t Controller::GetControllerNumAclPacketBuffers() const {
+uint16_t Controller::GetNumAclPacketBuffers() const {
   return impl_->acl_buffers_;
 }
 
-uint8_t Controller::GetControllerScoPacketLength() const {
+uint8_t Controller::GetScoPacketLength() const {
   return impl_->sco_buffer_length_;
 }
 
-uint16_t Controller::GetControllerNumScoPacketBuffers() const {
+uint16_t Controller::GetNumScoPacketBuffers() const {
   return impl_->sco_buffers_;
 }
 
-Address Controller::GetControllerMacAddress() const {
+Address Controller::GetMacAddress() const {
   return impl_->mac_address_;
 }
 
@@ -920,7 +920,7 @@ void Controller::LeSetEventMask(uint64_t le_event_mask) {
   CallOn(impl_.get(), &impl::le_set_event_mask, le_event_mask);
 }
 
-LeBufferSize Controller::GetControllerLeBufferSize() const {
+LeBufferSize Controller::GetLeBufferSize() const {
   return impl_->le_buffer_size_;
 }
 
@@ -928,31 +928,31 @@ uint64_t Controller::GetLocalLeFeatures() const {
   return impl_->le_local_supported_features_;
 }
 
-uint64_t Controller::GetControllerLeSupportedStates() const {
+uint64_t Controller::GetLeSupportedStates() const {
   return impl_->le_supported_states_;
 }
 
-uint8_t Controller::GetControllerLeConnectListSize() const {
+uint8_t Controller::GetLeConnectListSize() const {
   return impl_->le_connect_list_size_;
 }
 
-uint8_t Controller::GetControllerLeResolvingListSize() const {
+uint8_t Controller::GetLeResolvingListSize() const {
   return impl_->le_resolving_list_size_;
 }
 
-LeMaximumDataLength Controller::GetControllerLeMaximumDataLength() const {
+LeMaximumDataLength Controller::GetLeMaximumDataLength() const {
   return impl_->le_maximum_data_length_;
 }
 
-uint16_t Controller::GetControllerLeMaximumAdvertisingDataLength() const {
+uint16_t Controller::GetLeMaximumAdvertisingDataLength() const {
   return impl_->le_maximum_advertising_data_length_;
 }
 
-uint8_t Controller::GetControllerLeNumberOfSupportedAdverisingSets() const {
+uint8_t Controller::GetLeNumberOfSupportedAdverisingSets() const {
   return impl_->le_number_supported_advertising_sets_;
 }
 
-VendorCapabilities Controller::GetControllerVendorCapabilities() const {
+VendorCapabilities Controller::GetVendorCapabilities() const {
   return impl_->vendor_capabilities_;
 }
 

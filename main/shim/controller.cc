@@ -71,12 +71,11 @@ static future_t* start_up(void) {
   LOG_INFO("%s Starting up", __func__);
   data_.ready = true;
 
-  std::string string_address =
-      GetController()->GetControllerMacAddress().ToString();
+  std::string string_address = GetController()->GetMacAddress().ToString();
   RawAddress::FromString(string_address, data_.raw_address);
 
   data_.le_supported_states =
-      bluetooth::shim::GetController()->GetControllerLeSupportedStates();
+      bluetooth::shim::GetController()->GetLeSupportedStates();
 
   LOG_INFO("Mac address:%s", string_address.c_str());
 
@@ -181,12 +180,12 @@ static bool supports_ble_set_privacy_mode() {
 }
 
 static uint16_t get_acl_data_size_classic(void) {
-  return GetController()->GetControllerAclPacketLength();
+  return GetController()->GetAclPacketLength();
 }
 
 static uint16_t get_acl_data_size_ble(void) {
   ::bluetooth::hci::LeBufferSize le_buffer_size =
-      GetController()->GetControllerLeBufferSize();
+      GetController()->GetLeBufferSize();
   return le_buffer_size.le_data_packet_length_;
 }
 
@@ -205,20 +204,20 @@ static uint16_t get_ble_suggested_default_data_length(void) {
 
 static uint16_t get_ble_maximum_tx_data_length(void) {
   ::bluetooth::hci::LeMaximumDataLength le_maximum_data_length =
-      GetController()->GetControllerLeMaximumDataLength();
+      GetController()->GetLeMaximumDataLength();
   return le_maximum_data_length.supported_max_tx_octets_;
 }
 
 static uint16_t get_ble_maxium_advertising_data_length(void) {
-  return GetController()->GetControllerLeMaximumAdvertisingDataLength();
+  return GetController()->GetLeMaximumAdvertisingDataLength();
 }
 
 static uint8_t get_ble_number_of_supported_advertising_sets(void) {
-  return GetController()->GetControllerLeNumberOfSupportedAdverisingSets();
+  return GetController()->GetLeNumberOfSupportedAdverisingSets();
 }
 
 static uint16_t get_acl_buffer_count_classic(void) {
-  return GetController()->GetControllerNumAclPacketBuffers();
+  return GetController()->GetNumAclPacketBuffers();
 }
 
 static uint8_t get_acl_buffer_count_ble(void) {
@@ -227,11 +226,11 @@ static uint8_t get_acl_buffer_count_ble(void) {
 }
 
 static uint8_t get_ble_connect_list_size(void) {
-  return GetController()->GetControllerLeConnectListSize();
+  return GetController()->GetLeConnectListSize();
 }
 
 static uint8_t get_ble_resolving_list_max_size(void) {
-  return GetController()->GetControllerLeResolvingListSize();
+  return GetController()->GetLeResolvingListSize();
 }
 
 static void set_ble_resolving_list_max_size(int resolving_list_max_size) {
