@@ -109,8 +109,8 @@ class StorageModule : public bluetooth::Module {
   // A think copyable, movable, comparable object that is used to access adapter level information
   AdapterConfig GetAdapterConfig();
 
-  // Get a list of paired devices from config
-  std::vector<Device> GetPairedDevices();
+  // Get a list of bonded devices from config
+  std::vector<Device> GetBondedDevices();
 
   // Modify the underlying config by starting a mutation. All entries in the mutation will be applied atomically when
   // Commit() is called. User should never touch ConfigCache() directly.
