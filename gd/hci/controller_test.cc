@@ -101,11 +101,6 @@ class TestHciLayer : public HciLayer {
         event_builder =
             ReadLocalSupportedCommandsCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, supported_commands);
       } break;
-      case (OpCode::READ_LOCAL_SUPPORTED_FEATURES): {
-        uint64_t lmp_features = 0x012345678abcdef;
-        event_builder =
-            ReadLocalSupportedFeaturesCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS, lmp_features);
-      } break;
       case (OpCode::READ_LOCAL_EXTENDED_FEATURES): {
         ReadLocalExtendedFeaturesView read_command = ReadLocalExtendedFeaturesView::Create(command);
         ASSERT_TRUE(read_command.IsValid());
@@ -305,15 +300,8 @@ TEST_F(ControllerTest, read_controller_info) {
     supported_commands[i] = 0x00;
   }
   ASSERT_EQ(controller_->GetControllerLocalSupportedCommands(), supported_commands);
-  ASSERT_EQ(controller_->GetControllerLocalSupportedFeatures(), 0x012345678abcdef);
-  ASSERT_EQ(controller_->GetControllerLocalExtendedFeaturesMaxPageNumber(), 0x02);
-  ASSERT_EQ(controller_->GetControllerLocalExtendedFeatures(0), 0x012345678abcdef);
-  ASSERT_EQ(controller_->GetControllerLocalExtendedFeatures(1), 0x012345678abcdf0);
-  ASSERT_EQ(controller_->GetControllerLocalExtendedFeatures(2), 0x012345678abcdf1);
-  ASSERT_EQ(controller_->GetControllerLocalExtendedFeatures(100), 0x00);
   ASSERT_EQ(controller_->GetControllerLeBufferSize().le_data_packet_length_, 0x16);
   ASSERT_EQ(controller_->GetControllerLeBufferSize().total_num_le_packets_, 0x08);
-  ASSERT_EQ(controller_->GetControllerLeLocalSupportedFeatures(), 0x001f123456789abc);
   ASSERT_EQ(controller_->GetControllerLeSupportedStates(), 0x001f123456789abe);
   ASSERT_EQ(controller_->GetControllerLeMaximumDataLength().supported_max_tx_octets_, 0x12);
   ASSERT_EQ(controller_->GetControllerLeMaximumDataLength().supported_max_rx_octets_, 0x56);

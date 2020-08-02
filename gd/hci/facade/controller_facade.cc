@@ -60,15 +60,6 @@ class ControllerFacadeService : public ControllerFacade::Service {
     return ::grpc::Status::OK;
   }
 
-  ::grpc::Status GetLocalExtendedFeatures(::grpc::ServerContext* context, const PageNumberMsg* request,
-                                          FeaturesMsg* response) override {
-    if (request->page_number() > controller_->GetControllerLocalExtendedFeaturesMaxPageNumber()) {
-      return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Local Extended Features page number out of range");
-    }
-    response->set_page(controller_->GetControllerLocalExtendedFeatures(request->page_number()));
-    return ::grpc::Status::OK;
-  }
-
  private:
   Controller* controller_;
 };
