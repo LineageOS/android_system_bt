@@ -43,11 +43,45 @@ class Controller : public Module {
 
   virtual std::array<uint8_t, 64> GetControllerLocalSupportedCommands() const;
 
-  virtual uint64_t GetControllerLocalSupportedFeatures() const;
+  virtual bool SupportsSimplePairing() const;
+  virtual bool SupportsSecureConnections() const;
+  virtual bool SupportsSimultaneousLeBrEdr() const;
+  virtual bool SupportsInterlacedInquiryScan() const;
+  virtual bool SupportsRssiWithInquiryResults() const;
+  virtual bool SupportsExtendedInquiryResponse() const;
+  virtual bool SupportsRoleSwitch() const;
+  virtual bool Supports3SlotPackets() const;
+  virtual bool Supports5SlotPackets() const;
+  virtual bool SupportsClassic2mPhy() const;
+  virtual bool SupportsClassic3mPhy() const;
+  virtual bool Supports3SlotEdrPackets() const;
+  virtual bool Supports5SlotEdrPackets() const;
+  virtual bool SupportsSco() const;
+  virtual bool SupportsHv2Packets() const;
+  virtual bool SupportsHv3Packets() const;
+  virtual bool SupportsEv3Packets() const;
+  virtual bool SupportsEv4Packets() const;
+  virtual bool SupportsEv5Packets() const;
+  virtual bool SupportsEsco2mPhy() const;
+  virtual bool SupportsEsco3mPhy() const;
+  virtual bool Supports3SlotEscoEdrPackets() const;
+  virtual bool SupportsHoldMode() const;
+  virtual bool SupportsSniffMode() const;
+  virtual bool SupportsParkMode() const;
+  virtual bool SupportsNonFlushablePb() const;
+  virtual bool SupportsSniffSubrating() const;
+  virtual bool SupportsEncryptionPause() const;
 
-  virtual uint8_t GetControllerLocalExtendedFeaturesMaxPageNumber() const;
-
-  virtual uint64_t GetControllerLocalExtendedFeatures(uint8_t page_number) const;
+  virtual bool SupportsBle() const;
+  virtual bool SupportsBlePrivacy() const;
+  virtual bool SupportsBlePacketExtension() const;
+  virtual bool SupportsBleConnectionParametersRequest() const;
+  virtual bool SupportsBle2mPhy() const;
+  virtual bool SupportsBleCodedPhy() const;
+  virtual bool SupportsBleExtendedAdvertising() const;
+  virtual bool SupportsBlePeriodicAdvertising() const;
+  virtual bool SupportsBlePeripheralInitiatedFeatureExchange() const;
+  virtual bool SupportsBleConnectionParameterRequest() const;
 
   virtual uint16_t GetControllerAclPacketLength() const;
 
@@ -91,8 +125,6 @@ class Controller : public Module {
 
   virtual LeBufferSize GetControllerLeBufferSize() const;
 
-  virtual uint64_t GetControllerLeLocalSupportedFeatures() const;
-
   virtual uint64_t GetControllerLeSupportedStates() const;
 
   virtual uint8_t GetControllerLeConnectListSize() const;
@@ -123,6 +155,9 @@ class Controller : public Module {
   std::string ToString() const override;
 
  private:
+  virtual uint64_t GetLocalFeatures(uint8_t page_number) const;
+  virtual uint64_t GetLocalLeFeatures() const;
+
   struct impl;
   std::unique_ptr<impl> impl_;
 };
