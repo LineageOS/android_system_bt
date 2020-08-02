@@ -292,14 +292,6 @@ TEST_F(ControllerTest, read_controller_info) {
   ASSERT_EQ(local_version_information.lmp_version_, LmpVersion::V_4_2);
   ASSERT_EQ(local_version_information.manufacturer_name_, 0xBAD);
   ASSERT_EQ(local_version_information.lmp_subversion_, 0x5678);
-  std::array<uint8_t, 64> supported_commands;
-  for (int i = 0; i < 37; i++) {
-    supported_commands[i] = 0xff;
-  }
-  for (int i = 37; i < 64; i++) {
-    supported_commands[i] = 0x00;
-  }
-  ASSERT_EQ(controller_->GetLocalSupportedCommands(), supported_commands);
   ASSERT_EQ(controller_->GetLeBufferSize().le_data_packet_length_, 0x16);
   ASSERT_EQ(controller_->GetLeBufferSize().total_num_le_packets_, 0x08);
   ASSERT_EQ(controller_->GetLeSupportedStates(), 0x001f123456789abe);
