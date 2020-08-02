@@ -58,7 +58,7 @@ class TestController : public Controller {
     supported_opcodes_.insert(op_code);
   }
 
-  uint8_t GetControllerLeNumberOfSupportedAdverisingSets() const override {
+  uint8_t GetLeNumberOfSupportedAdverisingSets() const override {
     return num_advertisers;
   }
 
