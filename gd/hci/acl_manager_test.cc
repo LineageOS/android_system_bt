@@ -87,15 +87,15 @@ class TestController : public Controller {
     return total_acl_buffers_;
   }
 
+  bool IsSupported(bluetooth::hci::OpCode op_code) const override {
+    return false;
+  }
+
   LeBufferSize GetControllerLeBufferSize() const override {
     LeBufferSize le_buffer_size;
     le_buffer_size.total_num_le_packets_ = 2;
     le_buffer_size.le_data_packet_length_ = 32;
     return le_buffer_size;
-  }
-
-  uint64_t GetControllerLeLocalSupportedFeatures() const override {
-    return le_local_supported_features_;
   }
 
   void CompletePackets(uint16_t handle, uint16_t packets) {
@@ -104,7 +104,6 @@ class TestController : public Controller {
 
   uint16_t acl_buffer_length_ = 1024;
   uint16_t total_acl_buffers_ = 2;
-  uint64_t le_local_supported_features_ = 0;
   common::ContextualCallback<void(uint16_t /* handle */, uint16_t /* packets */)> acl_cb_;
 
  protected:
