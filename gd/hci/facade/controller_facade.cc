@@ -42,14 +42,14 @@ class ControllerFacadeService : public ControllerFacade::Service {
 
   ::grpc::Status GetMacAddress(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
                                AddressMsg* response) override {
-    Address local_address = controller_->GetControllerMacAddress();
+    Address local_address = controller_->GetMacAddress();
     response->set_address(local_address.ToString());
     return ::grpc::Status::OK;
   }
 
   ::grpc::Status GetLocalName(::grpc::ServerContext* context, const ::google::protobuf::Empty* request,
                               NameMsg* response) override {
-    std::string local_name = controller_->GetControllerLocalName();
+    std::string local_name = controller_->GetLocalName();
     response->set_name(local_name);
     return ::grpc::Status::OK;
   }
@@ -57,15 +57,6 @@ class ControllerFacadeService : public ControllerFacade::Service {
   ::grpc::Status WriteLocalName(::grpc::ServerContext* context, const NameMsg* request,
                                 ::google::protobuf::Empty* response) override {
     controller_->WriteLocalName(request->name());
-    return ::grpc::Status::OK;
-  }
-
-  ::grpc::Status GetLocalExtendedFeatures(::grpc::ServerContext* context, const PageNumberMsg* request,
-                                          FeaturesMsg* response) override {
-    if (request->page_number() > controller_->GetControllerLocalExtendedFeaturesMaxPageNumber()) {
-      return ::grpc::Status(::grpc::StatusCode::INVALID_ARGUMENT, "Local Extended Features page number out of range");
-    }
-    response->set_page(controller_->GetControllerLocalExtendedFeatures(request->page_number()));
     return ::grpc::Status::OK;
   }
 

@@ -37,27 +37,59 @@ class Controller : public Module {
 
   virtual void UnregisterCompletedAclPacketsCallback();
 
-  virtual std::string GetControllerLocalName() const;
+  virtual std::string GetLocalName() const;
 
-  virtual LocalVersionInformation GetControllerLocalVersionInformation() const;
+  virtual LocalVersionInformation GetLocalVersionInformation() const;
 
-  virtual std::array<uint8_t, 64> GetControllerLocalSupportedCommands() const;
+  virtual bool SupportsSimplePairing() const;
+  virtual bool SupportsSecureConnections() const;
+  virtual bool SupportsSimultaneousLeBrEdr() const;
+  virtual bool SupportsInterlacedInquiryScan() const;
+  virtual bool SupportsRssiWithInquiryResults() const;
+  virtual bool SupportsExtendedInquiryResponse() const;
+  virtual bool SupportsRoleSwitch() const;
+  virtual bool Supports3SlotPackets() const;
+  virtual bool Supports5SlotPackets() const;
+  virtual bool SupportsClassic2mPhy() const;
+  virtual bool SupportsClassic3mPhy() const;
+  virtual bool Supports3SlotEdrPackets() const;
+  virtual bool Supports5SlotEdrPackets() const;
+  virtual bool SupportsSco() const;
+  virtual bool SupportsHv2Packets() const;
+  virtual bool SupportsHv3Packets() const;
+  virtual bool SupportsEv3Packets() const;
+  virtual bool SupportsEv4Packets() const;
+  virtual bool SupportsEv5Packets() const;
+  virtual bool SupportsEsco2mPhy() const;
+  virtual bool SupportsEsco3mPhy() const;
+  virtual bool Supports3SlotEscoEdrPackets() const;
+  virtual bool SupportsHoldMode() const;
+  virtual bool SupportsSniffMode() const;
+  virtual bool SupportsParkMode() const;
+  virtual bool SupportsNonFlushablePb() const;
+  virtual bool SupportsSniffSubrating() const;
+  virtual bool SupportsEncryptionPause() const;
 
-  virtual uint64_t GetControllerLocalSupportedFeatures() const;
+  virtual bool SupportsBle() const;
+  virtual bool SupportsBlePrivacy() const;
+  virtual bool SupportsBlePacketExtension() const;
+  virtual bool SupportsBleConnectionParametersRequest() const;
+  virtual bool SupportsBle2mPhy() const;
+  virtual bool SupportsBleCodedPhy() const;
+  virtual bool SupportsBleExtendedAdvertising() const;
+  virtual bool SupportsBlePeriodicAdvertising() const;
+  virtual bool SupportsBlePeripheralInitiatedFeatureExchange() const;
+  virtual bool SupportsBleConnectionParameterRequest() const;
 
-  virtual uint8_t GetControllerLocalExtendedFeaturesMaxPageNumber() const;
+  virtual uint16_t GetAclPacketLength() const;
 
-  virtual uint64_t GetControllerLocalExtendedFeatures(uint8_t page_number) const;
+  virtual uint16_t GetNumAclPacketBuffers() const;
 
-  virtual uint16_t GetControllerAclPacketLength() const;
+  virtual uint8_t GetScoPacketLength() const;
 
-  virtual uint16_t GetControllerNumAclPacketBuffers() const;
+  virtual uint16_t GetNumScoPacketBuffers() const;
 
-  virtual uint8_t GetControllerScoPacketLength() const;
-
-  virtual uint16_t GetControllerNumScoPacketBuffers() const;
-
-  virtual Address GetControllerMacAddress() const;
+  virtual Address GetMacAddress() const;
 
   virtual void SetEventMask(uint64_t event_mask);
 
@@ -89,23 +121,21 @@ class Controller : public Module {
   // LE controller commands
   virtual void LeSetEventMask(uint64_t le_event_mask);
 
-  virtual LeBufferSize GetControllerLeBufferSize() const;
+  virtual LeBufferSize GetLeBufferSize() const;
 
-  virtual uint64_t GetControllerLeLocalSupportedFeatures() const;
+  virtual uint64_t GetLeSupportedStates() const;
 
-  virtual uint64_t GetControllerLeSupportedStates() const;
+  virtual uint8_t GetLeConnectListSize() const;
 
-  virtual uint8_t GetControllerLeConnectListSize() const;
+  virtual uint8_t GetLeResolvingListSize() const;
 
-  virtual uint8_t GetControllerLeResolvingListSize() const;
+  virtual LeMaximumDataLength GetLeMaximumDataLength() const;
 
-  virtual LeMaximumDataLength GetControllerLeMaximumDataLength() const;
+  virtual uint16_t GetLeMaximumAdvertisingDataLength() const;
 
-  virtual uint16_t GetControllerLeMaximumAdvertisingDataLength() const;
+  virtual uint8_t GetLeNumberOfSupportedAdverisingSets() const;
 
-  virtual uint8_t GetControllerLeNumberOfSupportedAdverisingSets() const;
-
-  virtual VendorCapabilities GetControllerVendorCapabilities() const;
+  virtual VendorCapabilities GetVendorCapabilities() const;
 
   virtual bool IsSupported(OpCode op_code) const;
 
@@ -123,6 +153,9 @@ class Controller : public Module {
   std::string ToString() const override;
 
  private:
+  virtual uint64_t GetLocalFeatures(uint8_t page_number) const;
+  virtual uint64_t GetLocalLeFeatures() const;
+
   struct impl;
   std::unique_ptr<impl> impl_;
 };

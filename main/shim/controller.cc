@@ -27,9 +27,6 @@
 
 using ::bluetooth::shim::GetController;
 
-constexpr uint8_t kPageZero = 0;
-constexpr uint8_t kPageOne = 1;
-constexpr uint8_t kPageTwo = 2;
 constexpr uint8_t kMaxFeaturePage = 3;
 
 constexpr int kMaxSupportedCodecs = 8;  // MAX_LOCAL_SUPPORTED_CODECS_SIZE
@@ -74,12 +71,11 @@ static future_t* start_up(void) {
   LOG_INFO("%s Starting up", __func__);
   data_.ready = true;
 
-  std::string string_address =
-      GetController()->GetControllerMacAddress().ToString();
+  std::string string_address = GetController()->GetMacAddress().ToString();
   RawAddress::FromString(string_address, data_.raw_address);
 
   data_.le_supported_states =
-      bluetooth::shim::GetController()->GetControllerLeSupportedStates();
+      bluetooth::shim::GetController()->GetLeSupportedStates();
 
   LOG_INFO("Mac address:%s", string_address.c_str());
 
@@ -96,7 +92,6 @@ static future_t* shut_down(void) {
 /**
  * Module methods
  */
-#define BIT(x) (0x1ULL << (x))
 
 static bool get_is_ready(void) { return data_.ready; }
 
@@ -117,43 +112,56 @@ static const uint8_t* get_ble_supported_states(void) {
   return (const uint8_t*)&data_.le_supported_states;
 }
 
-static bool supports_simple_pairing(void) {
-  return GetController()->GetControllerLocalExtendedFeatures(kPageOne) &
-         BIT(51);
-}
+#define MAP_TO_GD(legacy, gd) \
+  static bool legacy(void) { return GetController()->gd(); }
 
-static bool supports_secure_connections(void) {
-  return GetController()->GetControllerLocalExtendedFeatures(kPageTwo) & BIT(8);
-}
+MAP_TO_GD(supports_simple_pairing, SupportsSimplePairing)
+MAP_TO_GD(supports_secure_connections, SupportsSecureConnections)
+MAP_TO_GD(supports_simultaneous_le_bredr, SupportsSimultaneousLeBrEdr)
+MAP_TO_GD(supports_interlaced_inquiry_scan, SupportsInterlacedInquiryScan)
+MAP_TO_GD(supports_rssi_with_inquiry_results, SupportsRssiWithInquiryResults)
+MAP_TO_GD(supports_extended_inquiry_response, SupportsExtendedInquiryResponse)
+MAP_TO_GD(supports_master_slave_role_switch, SupportsRoleSwitch)
+MAP_TO_GD(supports_3_slot_packets, Supports3SlotPackets)
+MAP_TO_GD(supports_5_slot_packets, Supports5SlotPackets)
+MAP_TO_GD(supports_classic_2m_phy, SupportsClassic2mPhy)
+MAP_TO_GD(supports_classic_3m_phy, SupportsClassic3mPhy)
+MAP_TO_GD(supports_3_slot_edr_packets, Supports3SlotEdrPackets)
+MAP_TO_GD(supports_5_slot_edr_packets, Supports5SlotEdrPackets)
+MAP_TO_GD(supports_sco, SupportsSco)
+MAP_TO_GD(supports_hv2_packets, SupportsHv2Packets)
+MAP_TO_GD(supports_hv3_packets, SupportsHv3Packets)
+MAP_TO_GD(supports_ev3_packets, SupportsEv3Packets)
+MAP_TO_GD(supports_ev4_packets, SupportsEv4Packets)
+MAP_TO_GD(supports_ev5_packets, SupportsEv5Packets)
+MAP_TO_GD(supports_esco_2m_phy, SupportsEsco2mPhy)
+MAP_TO_GD(supports_esco_3m_phy, SupportsEsco3mPhy)
+MAP_TO_GD(supports_3_slot_esco_edr_packets, Supports3SlotEscoEdrPackets)
+MAP_TO_GD(supports_role_switch, SupportsRoleSwitch)
+MAP_TO_GD(supports_hold_mode, SupportsHoldMode)
+MAP_TO_GD(supports_sniff_mode, SupportsSniffMode)
+MAP_TO_GD(supports_park_mode, SupportsParkMode)
+MAP_TO_GD(supports_non_flushable_pb, SupportsNonFlushablePb)
+MAP_TO_GD(supports_sniff_subrating, SupportsSniffSubrating)
+MAP_TO_GD(supports_encryption_pause, SupportsEncryptionPause)
 
-static bool supports_simultaneous_le_bredr(void) {
-  return GetController()->GetControllerLocalExtendedFeatures(kPageZero) &
-         BIT(49);
-}
+MAP_TO_GD(supports_ble, SupportsBle)
+MAP_TO_GD(supports_ble_privacy, SupportsBlePrivacy)
+MAP_TO_GD(supports_ble_packet_extension, SupportsBlePacketExtension)
+MAP_TO_GD(supports_ble_connection_parameters_request,
+          SupportsBleConnectionParametersRequest)
+MAP_TO_GD(supports_ble_2m_phy, SupportsBle2mPhy)
+MAP_TO_GD(supports_ble_coded_phy, SupportsBleCodedPhy)
+MAP_TO_GD(supports_ble_extended_advertising, SupportsBleExtendedAdvertising)
+MAP_TO_GD(supports_ble_periodic_advertising, SupportsBlePeriodicAdvertising)
+MAP_TO_GD(supports_ble_peripheral_initiated_feature_exchange,
+          SupportsBlePeripheralInitiatedFeatureExchange)
+MAP_TO_GD(supports_ble_connection_parameter_request,
+          SupportsBleConnectionParameterRequest)
 
 static bool supports_reading_remote_extended_features(void) {
   return GetController()->IsSupported(
       (bluetooth::hci::OpCode)kReadRemoteExtendedFeatures);
-}
-
-static bool supports_interlaced_inquiry_scan(void) {
-  return GetController()->GetControllerLocalExtendedFeatures(kPageZero) &
-         BIT(28);
-}
-
-static bool supports_rssi_with_inquiry_results(void) {
-  return GetController()->GetControllerLocalExtendedFeatures(kPageZero) &
-         BIT(28);
-}
-
-static bool supports_extended_inquiry_response(void) {
-  return GetController()->GetControllerLocalExtendedFeatures(kPageZero) &
-         BIT(48);
-}
-
-static bool supports_master_slave_role_switch(void) {
-  return GetController()->GetControllerLocalExtendedFeatures(kPageZero) &
-         BIT(5);
 }
 
 static bool supports_enhanced_setup_synchronous_connection(void) {
@@ -166,100 +174,18 @@ static bool supports_enhanced_accept_synchronous_connection(void) {
       (bluetooth::hci::OpCode)kEnhancedAcceptSynchronousConnection);
 }
 
-static bool supports_3_slot_packets(void) { return false; }
-
-static bool supports_5_slot_packets(void) { return false; }
-
-static bool supports_classic_2m_phy(void) { return false; }
-
-static bool supports_classic_3m_phy(void) { return false; }
-
-static bool supports_3_slot_edr_packets(void) { return false; }
-
-static bool supports_5_slot_edr_packets(void) { return false; }
-
-static bool supports_sco(void) { return false; }
-
-static bool supports_hv2_packets(void) { return false; }
-
-static bool supports_hv3_packets(void) { return false; }
-
-static bool supports_ev3_packets(void) { return false; }
-
-static bool supports_ev4_packets(void) { return false; }
-
-static bool supports_ev5_packets(void) { return false; }
-
-static bool supports_esco_2m_phy(void) { return false; }
-
-static bool supports_esco_3m_phy(void) { return false; }
-
-static bool supports_3_slot_esco_edr_packets(void) { return false; }
-
-static bool supports_role_switch(void) { return false; }
-
-static bool supports_hold_mode(void) { return false; }
-
-static bool supports_sniff_mode(void) { return false; }
-
-static bool supports_park_mode(void) { return false; }
-
-static bool supports_non_flushable_pb(void) { return false; }
-
-static bool supports_sniff_subrating(void) { return false; }
-
-static bool supports_encryption_pause(void) { return false; }
-
-static bool supports_ble(void) {
-  return GetController()->GetControllerLocalExtendedFeatures(kPageOne) & BIT(1);
-}
-
-static bool supports_ble_privacy(void) {
-  return GetController()->GetControllerLeLocalSupportedFeatures() & BIT(6);
-}
-
 static bool supports_ble_set_privacy_mode() {
   return GetController()->IsSupported(
       (bluetooth::hci::OpCode)kLeSetPrivacyMode);
 }
 
-static bool supports_ble_packet_extension(void) {
-  return GetController()->GetControllerLeLocalSupportedFeatures() & BIT(5);
-}
-
-static bool supports_ble_connection_parameters_request(void) {
-  return GetController()->GetControllerLeLocalSupportedFeatures() & BIT(2);
-}
-
-static bool supports_ble_2m_phy(void) {
-  return GetController()->GetControllerLeLocalSupportedFeatures() & BIT(8);
-}
-
-static bool supports_ble_coded_phy(void) {
-  return GetController()->GetControllerLeLocalSupportedFeatures() & BIT(11);
-}
-
-static bool supports_ble_extended_advertising(void) {
-  return GetController()->GetControllerLeLocalSupportedFeatures() & BIT(12);
-}
-
-static bool supports_ble_periodic_advertising(void) {
-  return GetController()->GetControllerLeLocalSupportedFeatures() & BIT(13);
-}
-
-static bool supports_ble_peripheral_initiated_feature_exchange(void) {
-  return false;
-}
-
-static bool supports_ble_connection_parameter_request(void) { return false; }
-
 static uint16_t get_acl_data_size_classic(void) {
-  return GetController()->GetControllerAclPacketLength();
+  return GetController()->GetAclPacketLength();
 }
 
 static uint16_t get_acl_data_size_ble(void) {
   ::bluetooth::hci::LeBufferSize le_buffer_size =
-      GetController()->GetControllerLeBufferSize();
+      GetController()->GetLeBufferSize();
   return le_buffer_size.le_data_packet_length_;
 }
 
@@ -278,20 +204,20 @@ static uint16_t get_ble_suggested_default_data_length(void) {
 
 static uint16_t get_ble_maximum_tx_data_length(void) {
   ::bluetooth::hci::LeMaximumDataLength le_maximum_data_length =
-      GetController()->GetControllerLeMaximumDataLength();
+      GetController()->GetLeMaximumDataLength();
   return le_maximum_data_length.supported_max_tx_octets_;
 }
 
 static uint16_t get_ble_maxium_advertising_data_length(void) {
-  return GetController()->GetControllerLeMaximumAdvertisingDataLength();
+  return GetController()->GetLeMaximumAdvertisingDataLength();
 }
 
 static uint8_t get_ble_number_of_supported_advertising_sets(void) {
-  return GetController()->GetControllerLeNumberOfSupportedAdverisingSets();
+  return GetController()->GetLeNumberOfSupportedAdverisingSets();
 }
 
 static uint16_t get_acl_buffer_count_classic(void) {
-  return GetController()->GetControllerNumAclPacketBuffers();
+  return GetController()->GetNumAclPacketBuffers();
 }
 
 static uint8_t get_acl_buffer_count_ble(void) {
@@ -300,11 +226,11 @@ static uint8_t get_acl_buffer_count_ble(void) {
 }
 
 static uint8_t get_ble_connect_list_size(void) {
-  return GetController()->GetControllerLeConnectListSize();
+  return GetController()->GetLeConnectListSize();
 }
 
 static uint8_t get_ble_resolving_list_max_size(void) {
-  return GetController()->GetControllerLeResolvingListSize();
+  return GetController()->GetLeResolvingListSize();
 }
 
 static void set_ble_resolving_list_max_size(int resolving_list_max_size) {

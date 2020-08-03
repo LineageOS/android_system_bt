@@ -79,23 +79,23 @@ class TestController : public Controller {
     acl_cb_ = {};
   }
 
-  uint16_t GetControllerAclPacketLength() const override {
+  uint16_t GetAclPacketLength() const override {
     return acl_buffer_length_;
   }
 
-  uint16_t GetControllerNumAclPacketBuffers() const override {
+  uint16_t GetNumAclPacketBuffers() const override {
     return total_acl_buffers_;
   }
 
-  LeBufferSize GetControllerLeBufferSize() const override {
+  bool IsSupported(bluetooth::hci::OpCode op_code) const override {
+    return false;
+  }
+
+  LeBufferSize GetLeBufferSize() const override {
     LeBufferSize le_buffer_size;
     le_buffer_size.total_num_le_packets_ = 2;
     le_buffer_size.le_data_packet_length_ = 32;
     return le_buffer_size;
-  }
-
-  uint64_t GetControllerLeLocalSupportedFeatures() const override {
-    return le_local_supported_features_;
   }
 
   void CompletePackets(uint16_t handle, uint16_t packets) {
@@ -104,7 +104,6 @@ class TestController : public Controller {
 
   uint16_t acl_buffer_length_ = 1024;
   uint16_t total_acl_buffers_ = 2;
-  uint64_t le_local_supported_features_ = 0;
   common::ContextualCallback<void(uint16_t /* handle */, uint16_t /* packets */)> acl_cb_;
 
  protected:
@@ -639,7 +638,7 @@ class AclManagerWithLeConnectionTest : public AclManagerTest {
 };
 
 // TODO: implement version of this test where controller supports Extended Advertising Feature in
-// GetControllerLeLocalSupportedFeatures, and LE Extended Create Connection is used
+// GetLeLocalSupportedFeatures, and LE Extended Create Connection is used
 TEST_F(AclManagerWithLeConnectionTest, invoke_registered_callback_le_connection_complete_success) {
   ASSERT_EQ(connection_->GetLocalAddress(), my_initiating_address);
   ASSERT_EQ(connection_->GetRemoteAddress(), remote_with_type_);
