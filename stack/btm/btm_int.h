@@ -90,6 +90,7 @@ extern void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec,
                              uint8_t hci_status);
 
 extern uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
+extern void btm_read_link_policy_complete(uint8_t* p);
 
 extern void btm_read_rssi_timeout(void* data);
 extern void btm_read_rssi_complete(uint8_t* p);
@@ -103,6 +104,7 @@ extern void btm_read_automatic_flush_timeout_complete(uint8_t* p);
 extern void btm_read_tx_power_timeout(void* data);
 extern void btm_read_tx_power_complete(uint8_t* p, bool is_ble);
 
+extern void btm_read_link_quality_timeout(void* data);
 extern void btm_read_link_quality_complete(uint8_t* p);
 
 extern tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
@@ -143,6 +145,7 @@ extern void btm_pm_proc_ssr_evt(uint8_t* p, uint16_t evt_len);
 extern tBTM_STATUS btm_read_power_mode_state(const RawAddress& remote_bda,
                                              tBTM_PM_STATE* pmState);
 extern void btm_sco_chk_pend_unpark(uint8_t hci_status, uint16_t hci_handle);
+extern void btm_qos_setup_timeout(void* data);
 extern void btm_qos_setup_complete(uint8_t status, uint16_t handle,
                                    FLOW_SPEC* p_flow);
 
@@ -226,6 +229,7 @@ extern tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
 extern void btm_sec_conn_req(const RawAddress& bda, uint8_t* dc);
 extern void btm_create_conn_cancel_complete(uint8_t* p);
 
+extern void btm_read_inq_tx_power_timeout(void* data);
 extern void btm_read_inq_tx_power_complete(uint8_t* p);
 
 extern void btm_sec_init(uint8_t sec_mode);
@@ -260,6 +264,7 @@ extern void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
 extern void btm_sec_clear_ble_keys(tBTM_SEC_DEV_REC* p_dev_rec);
 extern bool btm_sec_is_a_bonded_dev(const RawAddress& bda);
 extern void btm_consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec);
+extern bool btm_sec_is_le_capable_dev(const RawAddress& bda);
 extern bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec,
                                      const RawAddress& new_pseudo_addr);
 extern tBTM_SEC_SERV_REC* btm_sec_find_first_serv(CONNECTION_TYPE conn_type,
@@ -274,6 +279,7 @@ extern void btm_rem_oob_req(uint8_t* p);
 extern void btm_read_local_oob_complete(uint8_t* p);
 
 extern void btm_acl_resubmit_page(void);
+extern void btm_acl_reset_paging(void);
 extern void btm_acl_paging(BT_HDR* p, const RawAddress& dest);
 extern uint8_t btm_sec_clr_service_by_psm(uint16_t psm);
 extern void btm_sec_clr_temp_auth_service(const RawAddress& bda);
