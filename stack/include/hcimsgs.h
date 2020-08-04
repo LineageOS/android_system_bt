@@ -452,11 +452,9 @@ extern void btsnd_hcic_read_default_erroneous_data_rpt(void);
 
 #define HCIC_PARAM_SIZE_R_ERR_DATA_RPT 0
 
-#if (L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE)
 extern void btsnd_hcic_enhanced_flush(uint16_t handle, uint8_t packet_type);
 
 #define HCIC_PARAM_SIZE_ENHANCED_FLUSH 3
-#endif
 
 extern void btsnd_hcic_send_keypress_notif(const RawAddress& bd_addr,
                                            uint8_t notif);
