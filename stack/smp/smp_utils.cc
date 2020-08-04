@@ -33,7 +33,6 @@
 #include "device/include/controller.h"
 #include "hcidefs.h"
 #include "l2c_api.h"
-#include "l2c_int.h"
 #include "osi/include/osi.h"
 #include "smp_int.h"
 
