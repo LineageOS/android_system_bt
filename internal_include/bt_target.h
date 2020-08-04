@@ -299,11 +299,6 @@
 #define BTM_INQ_DB_SIZE 40
 #endif
 
-/* The default scan mode */
-#ifndef BTM_DEFAULT_SCAN_TYPE
-#define BTM_DEFAULT_SCAN_TYPE BTM_SCAN_TYPE_INTERLACED
-#endif
-
 /* Should connections to unknown devices be allowed when not discoverable? */
 #ifndef BTM_ALLOW_CONN_IF_NONDISCOVER
 #define BTM_ALLOW_CONN_IF_NONDISCOVER TRUE

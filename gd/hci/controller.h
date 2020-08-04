@@ -133,6 +133,8 @@ class Controller : public Module {
 
   virtual uint16_t GetLeMaximumAdvertisingDataLength() const;
 
+  virtual uint16_t GetLeSuggestedDefaultDataLength() const;
+
   virtual uint8_t GetLeNumberOfSupportedAdverisingSets() const;
 
   virtual VendorCapabilities GetVendorCapabilities() const;
