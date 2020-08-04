@@ -27,11 +27,6 @@
 #define LOG_TAG "bt_btif"
 
 #include <base/logging.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-#include <unistd.h>
-
 #include <hardware/bluetooth.h>
 #include <hardware/bluetooth_headset_interface.h>
 #include <hardware/bt_av.h>
@@ -45,6 +40,10 @@
 #include <hardware/bt_rc.h>
 #include <hardware/bt_sdp.h>
 #include <hardware/bt_sock.h>
+#include <stdio.h>
+#include <stdlib.h>
+#include <string.h>
+#include <unistd.h>
 
 #include "bt_utils.h"
 #include "bta/include/bta_hearing_aid_api.h"
@@ -342,7 +341,7 @@ static void dump(int fd, const char** arguments) {
   HearingAid::DebugDump(fd);
   connection_manager::dump(fd);
   bluetooth::bqr::DebugDump(fd);
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     bluetooth::shim::Dump(fd, arguments);
   } else {
 #if (BTSNOOP_MEM == TRUE)

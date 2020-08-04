@@ -35,8 +35,7 @@ const std::string kGdCoreFlag = "INIT_gd_core";
 bool InitFlags::gd_core_enabled = false;
 
 void InitFlags::Load(const char** flags) {
-  gd_core_enabled = false;
-  gd_hci_enabled = false;
+  SetAll(false);
   while (flags != nullptr && *flags != nullptr) {
     if (kGdCoreFlag == *flags) {
       gd_core_enabled = true;
@@ -60,6 +59,16 @@ void InitFlags::Load(const char** flags) {
       gd_hci_enabled ? "true" : "false",
       gd_controller_enabled ? "true" : "false",
       gd_core_enabled ? "true" : "false");
+}
+
+void InitFlags::SetAll(bool value) {
+  gd_core_enabled = value;
+  gd_controller_enabled = value;
+  gd_hci_enabled = value;
+}
+
+void InitFlags::SetAllForTesting() {
+  SetAll(true);
 }
 
 }  // namespace common
