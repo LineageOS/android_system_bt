@@ -453,8 +453,8 @@ TEST(LruCacheTest, pressure_test) {
   // test execution time
   auto done = std::chrono::high_resolution_clock::now();
   int execution_time = std::chrono::duration_cast<std::chrono::microseconds>(done - started).count();
-  // Shouldn't be more than 1000ms
-  int execution_time_per_cycle_us = 15;
+  // Shouldn't be more than 1120ms
+  int execution_time_per_cycle_us = 17;
   EXPECT_LT(execution_time, execution_time_per_cycle_us * capacity);
 }
 
