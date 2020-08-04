@@ -682,11 +682,14 @@ TEST_F(HciTest, receiveMultipleAclPackets) {
   auto incoming_acl_future = upper->GetReceivedAclFuture();
   uint16_t received_packets = 0;
   while (received_packets < num_packets - 1) {
-    auto incoming_acl_status = incoming_acl_future.wait_for(kAclTimeout);
-    // Get the next future.
-    incoming_acl_future = upper->GetReceivedAclFuture();
-    ASSERT_EQ(incoming_acl_status, std::future_status::ready);
     size_t num_packets = upper->GetNumReceivedAclPackets();
+    if (num_packets == 0) {
+      auto incoming_acl_status = incoming_acl_future.wait_for(kAclTimeout);
+      // Get the next future.
+      ASSERT_EQ(incoming_acl_status, std::future_status::ready);
+      incoming_acl_future = upper->GetReceivedAclFuture();
+      num_packets = upper->GetNumReceivedAclPackets();
+    }
     for (size_t i = 0; i < num_packets; i++) {
       auto acl_view = upper->GetReceivedAcl();
       ASSERT_TRUE(acl_view.IsValid());
