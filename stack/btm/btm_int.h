@@ -143,8 +143,6 @@ extern void btm_pm_proc_ssr_evt(uint8_t* p, uint16_t evt_len);
 extern tBTM_STATUS btm_read_power_mode_state(const RawAddress& remote_bda,
                                              tBTM_PM_STATE* pmState);
 extern void btm_sco_chk_pend_unpark(uint8_t hci_status, uint16_t hci_handle);
-extern void btm_qos_setup_complete(uint8_t status, uint16_t handle,
-                                   FLOW_SPEC* p_flow);
 
 /* Internal functions provided by btm_sco.cc
  *******************************************
@@ -249,8 +247,8 @@ extern void btm_simple_pair_complete(uint8_t* p);
 extern void btm_sec_link_key_notification(const RawAddress& p_bda,
                                           const Octet16& link_key,
                                           uint8_t key_type);
-extern void btm_sec_link_key_request(const RawAddress& p_bda);
-extern void btm_sec_pin_code_request(const RawAddress& p_bda);
+extern void btm_sec_link_key_request(uint8_t* p_event);
+extern void btm_sec_pin_code_request(uint8_t* p_event);
 extern void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset);
 extern void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec,
                                         uint8_t res, bool is_le_trasnport);
