@@ -808,25 +808,6 @@ void l2c_link_processs_num_bufs(uint16_t num_lm_acl_bufs) {
 
 /*******************************************************************************
  *
- * Function         l2c_link_pkts_rcvd
- *
- * Description      This function is called from the HCI transport when it is
- *                  time to send a "Host ready for packets" command. This is
- *                  only when host to controller flow control is used. It fills
- *                  in the arrays of numbers of packets and handles.
- *
- * Returns          count of number of entries filled in
- *
- ******************************************************************************/
-uint8_t l2c_link_pkts_rcvd(UNUSED_ATTR uint16_t* num_pkts,
-                           UNUSED_ATTR uint16_t* handles) {
-  uint8_t num_found = 0;
-
-  return (num_found);
-}
-
-/*******************************************************************************
- *
  * Function         l2c_link_role_changed
  *
  * Description      This function is called whan a link's master/slave role
