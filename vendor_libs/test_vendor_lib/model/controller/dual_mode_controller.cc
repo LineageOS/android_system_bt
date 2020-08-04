@@ -244,6 +244,7 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   SET_HANDLER(OpCode::LE_EXTENDED_CREATE_CONNECTION,
               LeExtendedCreateConnection);
   SET_HANDLER(OpCode::LE_SET_PRIVACY_MODE, LeSetPrivacyMode);
+  SET_HANDLER(OpCode::LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH, LeReadSuggestedDefaultDataLength);
   // Testing Commands
   SET_HANDLER(OpCode::READ_LOOPBACK_MODE, ReadLoopbackMode);
   SET_HANDLER(OpCode::WRITE_LOOPBACK_MODE, WriteLoopbackMode);
@@ -1719,6 +1720,15 @@ void DualModeController::LeReadMaximumDataLength(CommandPacketView command) {
   send_event_(bluetooth::hci::LeReadMaximumDataLengthCompleteBuilder::Create(
       kNumCommandPackets, ErrorCode::SUCCESS, data_length));
 }
+
+void DualModeController::LeReadSuggestedDefaultDataLength(CommandPacketView command) {
+  auto command_view = gd_hci::LeReadSuggestedDefaultDataLengthView::Create(
+      gd_hci::LeConnectionManagementCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+  send_event_(bluetooth::hci::LeReadSuggestedDefaultDataLengthCompleteBuilder::Create(
+      kNumCommandPackets, ErrorCode::SUCCESS, kLeMaximumDataLength, kLeMaximumDataTime));
+}
+
 
 void DualModeController::LeAddDeviceToResolvingList(CommandPacketView command) {
   auto command_view = gd_hci::LeAddDeviceToResolvingListView::Create(
