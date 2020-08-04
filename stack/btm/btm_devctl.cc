@@ -94,7 +94,6 @@ void btm_dev_init() {
       alarm_new("btm.read_link_quality_timer");
   btm_cb.devcb.read_inq_tx_power_timer =
       alarm_new("btm.read_inq_tx_power_timer");
-  btm_cb.devcb.qos_setup_timer = alarm_new("btm.qos_setup_timer");
   btm_cb.devcb.read_tx_power_timer = alarm_new("btm.read_tx_power_timer");
 
   btm_cb.btm_acl_pkt_types_supported =
