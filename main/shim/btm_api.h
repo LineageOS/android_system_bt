@@ -83,22 +83,6 @@ tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode, uint16_t window,
 
 /*******************************************************************************
  *
- * Function         BTM_SetInquiryScanType
- *
- * Description      This function is called to set the iquiry scan-type to
- *                  standard or interlaced.
- *
- * Input Params:    BTM_SCAN_TYPE_STANDARD or BTM_SCAN_TYPE_INTERLACED
- *
- * Returns          BTM_SUCCESS if successful
- *                  BTM_MODE_UNSUPPORTED if not a 1.2 device
- *                  BTM_WRONG_MODE if the device is not up.
- *
- ******************************************************************************/
-tBTM_STATUS BTM_SetInquiryScanType(uint16_t scan_type);
-
-/*******************************************************************************
- *
  * Function         BTM_BleObserve
  *
  * Description      This procedure keep the device listening for advertising
@@ -113,21 +97,9 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
                            tBTM_INQ_RESULTS_CB* p_results_cb,
                            tBTM_CMPL_CB* p_cmpl_cb);
 
-/*******************************************************************************
- *
- * Function         BTM_SetPageScanType
- *
- * Description      This function is called to set the page scan-type to
- *                  standard or interlaced.
- *
- * Input Params:    BTM_SCAN_TYPE_STANDARD or BTM_SCAN_TYPE_INTERLACED
- *
- * Returns          BTM_SUCCESS if successful
- *                  BTM_MODE_UNSUPPORTED if not a 1.2 device
- *                  BTM_WRONG_MODE if the device is not up.
- *
- ******************************************************************************/
-tBTM_STATUS BTM_SetPageScanType(uint16_t scan_type);
+void BTM_EnableInterlacedInquiryScan();
+
+void BTM_EnableInterlacedPageScan();
 
 /*******************************************************************************
  *

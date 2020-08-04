@@ -430,6 +430,9 @@ class DualModeController : public Device {
   // 7.8.27
   void LeReadSupportedStates(CommandPacketView args);
 
+  // 7.8.34
+  void LeReadSuggestedDefaultDataLength(CommandPacketView args);
+
   // 7.8.38
   void LeAddDeviceToResolvingList(CommandPacketView args);
 
