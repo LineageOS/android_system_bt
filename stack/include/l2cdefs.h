@@ -100,10 +100,8 @@
 
 /* Define the packet boundary flags
 */
-#if (L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE)
 #define L2CAP_PKT_START_FLUSHABLE 2
 #define L2CAP_PKT_START_NON_FLUSHABLE 0
-#endif
 #define L2CAP_COMPLETE_AMP_PKT 3 /* complete L2CAP packet on AMP HCI */
 #define L2CAP_PKT_START 2
 #define L2CAP_PKT_CONTINUE 1
