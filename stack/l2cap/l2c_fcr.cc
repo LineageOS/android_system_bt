@@ -96,10 +96,6 @@ static void process_stream_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf);
 static bool do_sar_reassembly(tL2C_CCB* p_ccb, BT_HDR* p_buf,
                               uint16_t ctrl_word);
 
-#if (L2CAP_ERTM_STATS == TRUE)
-static void l2c_fcr_collect_ack_delay(tL2C_CCB* p_ccb, uint8_t num_bufs_acked);
-#endif
-
 /*******************************************************************************
  *
  * Function         l2c_fcr_updcrc
@@ -227,104 +223,6 @@ void l2c_fcr_cleanup(tL2C_CCB* p_ccb) {
   fixed_queue_free(p_fcrb->retrans_q, osi_free);
   p_fcrb->retrans_q = NULL;
 
-#if (L2CAP_ERTM_STATS == TRUE)
-  if ((p_ccb->local_cid >= L2CAP_BASE_APPL_CID) &&
-      (p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_ERTM_MODE)) {
-    uint64_t dur = bluetooth::common::time_get_os_boottime_ms() -
-                   p_ccb->fcrb.connect_tick_count;
-    size_t p_str_size = 120;
-    char* p_str = (char*)osi_malloc(p_str_size);
-    uint16_t i;
-    uint32_t throughput_avg, ack_delay_avg, ack_q_count_avg;
-
-    BT_TRACE(TRACE_CTRL_GENERAL | TRACE_LAYER_GKI | TRACE_ORG_GKI,
-             TRACE_TYPE_GENERIC,
-             "---  L2CAP ERTM  Stats for CID: 0x%04x   Duration: %08ums",
-             p_ccb->local_cid, dur);
-    BT_TRACE(TRACE_CTRL_GENERAL | TRACE_LAYER_GKI | TRACE_ORG_GKI,
-             TRACE_TYPE_GENERIC,
-             "Retransmissions:%08u Times Flow Controlled:%08u Retrans "
-             "Touts:%08u Ack Touts:%08u",
-             p_ccb->fcrb.pkts_retransmitted, p_ccb->fcrb.xmit_window_closed,
-             p_ccb->fcrb.retrans_touts, p_ccb->fcrb.xmit_ack_touts);
-    BT_TRACE(TRACE_CTRL_GENERAL | TRACE_LAYER_GKI | TRACE_ORG_GKI,
-             TRACE_TYPE_GENERIC,
-             "Times there is less than 2 packets in controller when flow "
-             "controlled:%08u",
-             p_ccb->fcrb.controller_idle);
-    BT_TRACE(TRACE_CTRL_GENERAL | TRACE_LAYER_GKI | TRACE_ORG_GKI,
-             TRACE_TYPE_GENERIC,
-             "max_held_acks:%08u, in_cfg.fcr.tx_win_sz:%08u",
-             p_ccb->fcrb.max_held_acks, p_ccb->peer_cfg.fcr.tx_win_sz);
-
-    snprintf(
-        p_str, p_str_size,
-        "Sent Pkts:%08u Bytes:%10u(%06u/sec) RR:%08u REJ:%08u RNR:%08u "
-        "SREJ:%08u",
-        p_ccb->fcrb.ertm_pkt_counts[0], p_ccb->fcrb.ertm_byte_counts[0],
-        (dur >= 10 ? (p_ccb->fcrb.ertm_byte_counts[0] * 100) / (dur / 10) : 0),
-        p_ccb->fcrb.s_frames_sent[0], p_ccb->fcrb.s_frames_sent[1],
-        p_ccb->fcrb.s_frames_sent[2], p_ccb->fcrb.s_frames_sent[3]);
-
-    BT_TRACE(TRACE_CTRL_GENERAL | TRACE_LAYER_GKI | TRACE_ORG_GKI,
-             TRACE_TYPE_GENERIC, "%s", p_str);
-
-    snprintf(
-        p_str, p_str_size,
-        "Rcvd Pkts:%08u Bytes:%10u(%06u/sec) RR:%08u REJ:%08u RNR:%08u "
-        "SREJ:%08u",
-        p_ccb->fcrb.ertm_pkt_counts[1], p_ccb->fcrb.ertm_byte_counts[1],
-        (dur >= 10 ? (p_ccb->fcrb.ertm_byte_counts[1] * 100) / (dur / 10) : 0),
-        p_ccb->fcrb.s_frames_rcvd[0], p_ccb->fcrb.s_frames_rcvd[1],
-        p_ccb->fcrb.s_frames_rcvd[2], p_ccb->fcrb.s_frames_rcvd[3]);
-
-    BT_TRACE(TRACE_CTRL_GENERAL | TRACE_LAYER_GKI | TRACE_ORG_GKI,
-             TRACE_TYPE_GENERIC, "%s", p_str);
-
-    throughput_avg = 0;
-    ack_delay_avg = 0;
-    ack_q_count_avg = 0;
-
-    for (i = 0; i < L2CAP_ERTM_STATS_NUM_AVG; i++) {
-      if (i == p_ccb->fcrb.ack_delay_avg_index) {
-        BT_TRACE(TRACE_CTRL_GENERAL | TRACE_LAYER_GKI | TRACE_ORG_GKI,
-                 TRACE_TYPE_GENERIC, "[%02u] collecting data ...", i);
-        continue;
-      }
-
-      snprintf(p_str, p_str_size,
-               "[%02u] throughput: %5u, ack_delay avg:%3u, min:%3u, max:%3u, "
-               "ack_q_count avg:%3u, min:%3u, max:%3u",
-               i, p_ccb->fcrb.throughput[i], p_ccb->fcrb.ack_delay_avg[i],
-               p_ccb->fcrb.ack_delay_min[i], p_ccb->fcrb.ack_delay_max[i],
-               p_ccb->fcrb.ack_q_count_avg[i], p_ccb->fcrb.ack_q_count_min[i],
-               p_ccb->fcrb.ack_q_count_max[i]);
-
-      BT_TRACE(TRACE_CTRL_GENERAL | TRACE_LAYER_GKI | TRACE_ORG_GKI,
-               TRACE_TYPE_GENERIC, "%s", p_str);
-
-      throughput_avg += p_ccb->fcrb.throughput[i];
-      ack_delay_avg += p_ccb->fcrb.ack_delay_avg[i];
-      ack_q_count_avg += p_ccb->fcrb.ack_q_count_avg[i];
-    }
-
-    throughput_avg /= (L2CAP_ERTM_STATS_NUM_AVG - 1);
-    ack_delay_avg /= (L2CAP_ERTM_STATS_NUM_AVG - 1);
-    ack_q_count_avg /= (L2CAP_ERTM_STATS_NUM_AVG - 1);
-
-    BT_TRACE(TRACE_CTRL_GENERAL | TRACE_LAYER_GKI | TRACE_ORG_GKI,
-             TRACE_TYPE_GENERIC,
-             "throughput_avg: %8u (kbytes/sec), ack_delay_avg: %8u ms, "
-             "ack_q_count_avg: %8u",
-             throughput_avg, ack_delay_avg, ack_q_count_avg);
-
-    osi_free(p_str);
-
-    BT_TRACE(TRACE_CTRL_GENERAL | TRACE_LAYER_GKI | TRACE_ORG_GKI,
-             TRACE_TYPE_GENERIC, "---");
-  }
-#endif
-
   memset(p_fcrb, 0, sizeof(tL2C_FCRB));
 }
 
@@ -346,13 +244,6 @@ BT_HDR* l2c_fcr_clone_buf(BT_HDR* p_buf, uint16_t new_offset,
    * the FCS (Frame Check Sequence) at the end of the buffer.
    */
   uint16_t buf_size = no_of_bytes + sizeof(BT_HDR) + new_offset + L2CAP_FCS_LEN;
-#if (L2CAP_ERTM_STATS == TRUE)
-  /*
-   * NOTE: If L2CAP_ERTM_STATS is enabled, we need 4 extra octets at the
-   * end for a timestamp at the end of an I-frame.
-   */
-  buf_size += sizeof(uint32_t);
-#endif
   BT_HDR* p_buf2 = (BT_HDR*)osi_malloc(buf_size);
 
   p_buf2->offset = new_offset;
@@ -379,15 +270,6 @@ bool l2c_fcr_is_flow_controlled(tL2C_CCB* p_ccb) {
     if ((p_ccb->fcrb.remote_busy) ||
         (fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q) >=
          p_ccb->peer_cfg.fcr.tx_win_sz)) {
-#if (L2CAP_ERTM_STATS == TRUE)
-      if (!fixed_queue_is_empty(p_ccb->xmit_hold_q)) {
-        p_ccb->fcrb.xmit_window_closed++;
-
-        if ((p_ccb->p_lcb->sent_not_acked < 2) &&
-            (l2cb.controller_xmit_window > 0))
-          p_ccb->fcrb.controller_idle++;
-      }
-#endif
       return (true);
     }
   }
@@ -511,10 +393,6 @@ void l2c_fcr_send_S_frame(tL2C_CCB* p_ccb, uint16_t function_code,
   uint16_t fcs;
 
   if ((!p_ccb->in_use) || (p_ccb->chnl_state != CST_OPEN)) return;
-
-#if (L2CAP_ERTM_STATS == TRUE)
-  p_ccb->fcrb.s_frames_sent[function_code]++;
-#endif
 
   if (pf_bit == L2CAP_FCR_P_BIT) {
     p_ccb->fcrb.wait_ack = true;
@@ -922,10 +800,6 @@ void l2c_fcr_proc_tout(tL2C_CCB* p_ccb) {
       p_ccb->local_cid, p_ccb->fcrb.num_tries, p_ccb->peer_cfg.fcr.max_transmit,
       p_ccb->fcrb.wait_ack, fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q));
 
-#if (L2CAP_ERTM_STATS == TRUE)
-  p_ccb->fcrb.retrans_touts++;
-#endif
-
   if ((p_ccb->peer_cfg.fcr.max_transmit != 0) &&
       (++p_ccb->fcrb.num_tries > p_ccb->peer_cfg.fcr.max_transmit)) {
     l2cu_disconnect_chnl(p_ccb);
@@ -954,9 +828,6 @@ void l2c_fcr_proc_ack_tout(tL2C_CCB* p_ccb) {
 
   if ((p_ccb->chnl_state == CST_OPEN) && (!p_ccb->fcrb.wait_ack) &&
       (p_ccb->fcrb.last_ack_sent != p_ccb->fcrb.next_seq_expected)) {
-#if (L2CAP_ERTM_STATS == TRUE)
-    p_ccb->fcrb.xmit_ack_touts++;
-#endif
     l2c_fcr_send_S_frame(p_ccb, L2CAP_FCR_SUP_RR, 0);
   }
 }
@@ -1016,10 +887,6 @@ static bool process_reqseq(tL2C_CCB* p_ccb, uint16_t ctrl_word) {
   if (num_bufs_acked != 0) {
     p_fcrb->num_tries = 0;
     full_sdus_xmitted = 0;
-
-#if (L2CAP_ERTM_STATS == TRUE)
-    l2c_fcr_collect_ack_delay(p_ccb, num_bufs_acked);
-#endif
 
     for (xx = 0; xx < num_bufs_acked; xx++) {
       BT_HDR* p_tmp =
@@ -1081,10 +948,6 @@ static void process_s_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf,
 
   L2CAP_TRACE_DEBUG("process_s_frame ctrl_word 0x%04x fcrb_remote_busy:%d",
                     ctrl_word, p_fcrb->remote_busy);
-
-#if (L2CAP_ERTM_STATS == TRUE)
-  p_ccb->fcrb.s_frames_rcvd[s_frame_type]++;
-#endif
 
   if (ctrl_word & L2CAP_FCR_P_BIT) {
     p_fcrb->rej_sent = false;  /* After checkpoint, we can send anoher REJ */
@@ -1161,11 +1024,6 @@ static void process_i_frame(tL2C_CCB* p_ccb, BT_HDR* p_buf, uint16_t ctrl_word,
       return;
     }
   }
-
-#if (L2CAP_ERTM_STATS == TRUE)
-  p_ccb->fcrb.ertm_pkt_counts[1]++;
-  p_ccb->fcrb.ertm_byte_counts[1] += p_buf->len;
-#endif
 
   /* Extract the sequence number */
   tx_seq = (ctrl_word & L2CAP_FCR_TX_SEQ_BITS) >> L2CAP_FCR_TX_SEQ_BITS_SHIFT;
@@ -1662,11 +1520,6 @@ BT_HDR* l2c_fcr_get_next_xmit_sdu_seg(tL2C_CCB* p_ccb,
 
     p_buf->event = p_ccb->local_cid;
 
-#if (L2CAP_ERTM_STATS == TRUE)
-    p_ccb->fcrb.pkts_retransmitted++;
-    p_ccb->fcrb.ertm_pkt_counts[0]++;
-    p_ccb->fcrb.ertm_byte_counts[0] += (p_buf->len - 8);
-#endif
     return (p_buf);
   }
 
@@ -1772,17 +1625,6 @@ BT_HDR* l2c_fcr_get_next_xmit_sdu_seg(tL2C_CCB* p_ccb,
       fixed_queue_enqueue(p_ccb->fcrb.waiting_for_ack_q, p_xmit);
       return (NULL);
     } else {
-#if (L2CAP_ERTM_STATS == TRUE)
-      /* set timestamp at the end of tx I-frame to get acking delay */
-      /*
-       * NOTE: Here we assume the allocate buffer is large enough
-       * to include extra 4 octets at the end.
-       */
-      p = ((uint8_t*)(p_wack + 1)) + p_wack->offset + p_wack->len;
-      // Have to cast to uint32_t which wraps in 49.7 days
-      UINT32_TO_STREAM(p, static_cast<uint32_t>(
-                              bluetooth::common::time_get_os_boottime_ms()));
-#endif
       /* We will not save the FCS in case we reconfigure and change options */
       if (p_ccb->bypass_fcs != L2CAP_BYPASS_FCS) p_wack->len -= L2CAP_FCS_LEN;
 
@@ -1790,10 +1632,6 @@ BT_HDR* l2c_fcr_get_next_xmit_sdu_seg(tL2C_CCB* p_ccb,
       fixed_queue_enqueue(p_ccb->fcrb.waiting_for_ack_q, p_wack);
     }
 
-#if (L2CAP_ERTM_STATS == TRUE)
-    p_ccb->fcrb.ertm_pkt_counts[0]++;
-    p_ccb->fcrb.ertm_byte_counts[0] += (p_xmit->len - 8);
-#endif
   }
 
   return (p_xmit);
@@ -2315,118 +2153,3 @@ uint8_t l2c_fcr_process_peer_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
 
   return (fcr_ok);
 }
-
-#if (L2CAP_ERTM_STATS == TRUE)
-/*******************************************************************************
- *
- * Function         l2c_fcr_collect_ack_delay
- *
- * Description      collect throughput, delay, queue size of waiting ack
- *
- * Parameters
- *                  tL2C_CCB
- *
- * Returns          void
- *
- ******************************************************************************/
-static void l2c_fcr_collect_ack_delay(tL2C_CCB* p_ccb, uint8_t num_bufs_acked) {
-  uint32_t index;
-  BT_HDR* p_buf;
-  uint8_t* p;
-  uint32_t timestamp, delay;
-  uint8_t xx;
-  uint8_t str[120];
-
-  index = p_ccb->fcrb.ack_delay_avg_index;
-
-  /* update sum, max and min of waiting for ack queue size */
-  p_ccb->fcrb.ack_q_count_avg[index] +=
-      fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q);
-
-  if (fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q) >
-      p_ccb->fcrb.ack_q_count_max[index])
-    p_ccb->fcrb.ack_q_count_max[index] =
-        fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q);
-
-  if (fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q) <
-      p_ccb->fcrb.ack_q_count_min[index])
-    p_ccb->fcrb.ack_q_count_min[index] =
-        fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q);
-
-  /* update sum, max and min of round trip delay of acking */
-  list_t* list = NULL;
-  if (!fixed_queue_is_empty(p_ccb->fcrb.waiting_for_ack_q))
-    list = fixed_queue_get_list(p_ccb->fcrb.waiting_for_ack_q);
-  if (list != NULL) {
-    for (const list_node_t *node = list_begin(list), xx = 0;
-         (node != list_end(list)) && (xx < num_bufs_acked);
-         node = list_next(node), xx++) {
-      p_buf = list_node(node);
-      /* adding up length of acked I-frames to get throughput */
-      p_ccb->fcrb.throughput[index] += p_buf->len - 8;
-
-      if (xx == num_bufs_acked - 1) {
-        /* get timestamp from tx I-frame that receiver is acking */
-        p = ((uint8_t*)(p_buf + 1)) + p_buf->offset + p_buf->len;
-        if (p_ccb->bypass_fcs != L2CAP_BYPASS_FCS) {
-          p += L2CAP_FCS_LEN;
-        }
-
-        STREAM_TO_UINT32(timestamp, p);
-        delay = static_cast<uint32_t>(
-                    bluetooth::common::time_get_os_boottime_ms()) -
-                timestamp;
-
-        p_ccb->fcrb.ack_delay_avg[index] += delay;
-        if (delay > p_ccb->fcrb.ack_delay_max[index])
-          p_ccb->fcrb.ack_delay_max[index] = delay;
-        if (delay < p_ccb->fcrb.ack_delay_min[index])
-          p_ccb->fcrb.ack_delay_min[index] = delay;
-      }
-    }
-  }
-
-  p_ccb->fcrb.ack_delay_avg_count++;
-
-  /* calculate average and initialize next avg, min and max */
-  if (p_ccb->fcrb.ack_delay_avg_count > L2CAP_ERTM_STATS_AVG_NUM_SAMPLES) {
-    p_ccb->fcrb.ack_delay_avg_count = 0;
-
-    p_ccb->fcrb.ack_q_count_avg[index] /= L2CAP_ERTM_STATS_AVG_NUM_SAMPLES;
-    p_ccb->fcrb.ack_delay_avg[index] /= L2CAP_ERTM_STATS_AVG_NUM_SAMPLES;
-
-    /* calculate throughput */
-    timestamp = bluetooth::common::time_get_os_boottime_ms();
-    if (timestamp - p_ccb->fcrb.throughput_start > 0)
-      p_ccb->fcrb.throughput[index] /=
-          (timestamp - p_ccb->fcrb.throughput_start);
-
-    p_ccb->fcrb.throughput_start = timestamp;
-
-    snprintf(
-        str, sizeof(str),
-        "[%02u] throughput: %5u, ack_delay avg:%3u, min:%3u, max:%3u, "
-        "ack_q_count avg:%3u, min:%3u, max:%3u",
-        index, p_ccb->fcrb.throughput[index], p_ccb->fcrb.ack_delay_avg[index],
-        p_ccb->fcrb.ack_delay_min[index], p_ccb->fcrb.ack_delay_max[index],
-        p_ccb->fcrb.ack_q_count_avg[index], p_ccb->fcrb.ack_q_count_min[index],
-        p_ccb->fcrb.ack_q_count_max[index]);
-
-    BT_TRACE(TRACE_CTRL_GENERAL | TRACE_LAYER_GKI | TRACE_ORG_GKI,
-             TRACE_TYPE_GENERIC, "%s", str);
-
-    index = (index + 1) % L2CAP_ERTM_STATS_NUM_AVG;
-    p_ccb->fcrb.ack_delay_avg_index = index;
-
-    p_ccb->fcrb.ack_q_count_max[index] = 0;
-    p_ccb->fcrb.ack_q_count_min[index] = 0xFFFFFFFF;
-    p_ccb->fcrb.ack_q_count_avg[index] = 0;
-
-    p_ccb->fcrb.ack_delay_max[index] = 0;
-    p_ccb->fcrb.ack_delay_min[index] = 0xFFFFFFFF;
-    p_ccb->fcrb.ack_delay_avg[index] = 0;
-
-    p_ccb->fcrb.throughput[index] = 0;
-  }
-}
-#endif
