@@ -393,8 +393,8 @@ static void decode_controller_support() {
   else
     l2cu_set_non_flushable_pbf(false);
 #endif
-  BTM_SetPageScanType(BTM_DEFAULT_SCAN_TYPE);
-  BTM_SetInquiryScanType(BTM_DEFAULT_SCAN_TYPE);
+  BTM_EnableInterlacedPageScan();
+  BTM_EnableInterlacedInquiryScan();
 }
 
 /*******************************************************************************

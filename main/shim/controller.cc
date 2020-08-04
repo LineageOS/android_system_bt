@@ -184,9 +184,7 @@ static uint16_t get_acl_data_size_classic(void) {
 }
 
 static uint16_t get_acl_data_size_ble(void) {
-  ::bluetooth::hci::LeBufferSize le_buffer_size =
-      GetController()->GetLeBufferSize();
-  return le_buffer_size.le_data_packet_length_;
+  return GetController()->GetLeBufferSize().le_data_packet_length_;
 }
 
 static uint16_t get_acl_packet_size_classic(void) {
@@ -198,8 +196,7 @@ static uint16_t get_acl_packet_size_ble(void) {
 }
 
 static uint16_t get_ble_suggested_default_data_length(void) {
-  LOG_WARN("%s TODO Unimplemented", __func__);
-  return 0;
+  return GetController()->GetLeSuggestedDefaultDataLength();
 }
 
 static uint16_t get_ble_maximum_tx_data_length(void) {
@@ -221,8 +218,7 @@ static uint16_t get_acl_buffer_count_classic(void) {
 }
 
 static uint8_t get_acl_buffer_count_ble(void) {
-  LOG_WARN("%s TODO Unimplemented", __func__);
-  return 0;
+  return GetController()->GetLeBufferSize().total_num_le_packets_;
 }
 
 static uint8_t get_ble_connect_list_size(void) {
