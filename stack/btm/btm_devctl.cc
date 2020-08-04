@@ -387,12 +387,10 @@ static void decode_controller_support() {
       BTM_SetInquiryMode(BTM_INQ_RESULT_WITH_RSSI);
   }
 
-#if (L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE)
   if (controller->supports_non_flushable_pb())
     l2cu_set_non_flushable_pbf(true);
   else
     l2cu_set_non_flushable_pbf(false);
-#endif
   BTM_EnableInterlacedPageScan();
   BTM_EnableInterlacedInquiryScan();
 }

@@ -110,7 +110,6 @@ void sdp_init(void) {
   sdp_cb.reg_info.pL2CA_ConfigCfm_Cb = sdp_config_cfm;
   sdp_cb.reg_info.pL2CA_DisconnectInd_Cb = sdp_disconnect_ind;
   sdp_cb.reg_info.pL2CA_DisconnectCfm_Cb = sdp_disconnect_cfm;
-  sdp_cb.reg_info.pL2CA_QoSViolationInd_Cb = NULL;
   sdp_cb.reg_info.pL2CA_DataInd_Cb = sdp_data_ind;
   sdp_cb.reg_info.pL2CA_CongestionStatus_Cb = NULL;
   sdp_cb.reg_info.pL2CA_TxComplete_Cb = NULL;
