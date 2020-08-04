@@ -966,9 +966,7 @@ uint8_t l2c_data_write(uint16_t cid, BT_HDR* p_data, uint16_t flags) {
     return (L2CAP_DW_FAILED);
   }
 
-#ifndef TESTER
-  /* Tester may send any amount of data. otherwise sending message bigger than
-   * mtu size of peer is a violation of protocol */
+  /* Sending message bigger than mtu size of peer is a violation of protocol */
   uint16_t mtu;
 
   if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE)
@@ -984,7 +982,6 @@ uint8_t l2c_data_write(uint16_t cid, BT_HDR* p_data, uint16_t flags) {
     osi_free(p_data);
     return (L2CAP_DW_FAILED);
   }
-#endif
 
   /* channel based, packet based flushable or non-flushable */
   p_data->layer_specific = flags;
