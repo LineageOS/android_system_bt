@@ -564,11 +564,6 @@
 #define L2CAP_ROUND_ROBIN_CHANNEL_SERVICE TRUE
 #endif
 
-/* used for monitoring eL2CAP data flow */
-#ifndef L2CAP_ERTM_STATS
-#define L2CAP_ERTM_STATS FALSE
-#endif
-
 /* Used for conformance testing ONLY:  When TRUE lets scriptwrapper overwrite
  * info response */
 #ifndef L2CAP_CONFORMANCE_TESTING
