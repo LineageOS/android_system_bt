@@ -81,5 +81,6 @@ cc_test {
         "libcutils",
         "libbtcore",
         "libbt-protos-lite",
+        "libbluetooth-for-tests",
     ],
 }
