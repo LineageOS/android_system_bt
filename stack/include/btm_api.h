@@ -427,38 +427,9 @@ extern uint16_t BTM_ReadConnectability(uint16_t* p_window,
  ******************************************************************************/
 extern tBTM_STATUS BTM_SetInquiryMode(uint8_t mode);
 
-/*******************************************************************************
- *
- * Function         BTM_SetInquiryScanType
- *
- * Description      This function is called to set the iquiry scan-type to
- *                  standard or interlaced.
- *
- * Input Params:    BTM_SCAN_TYPE_STANDARD or BTM_SCAN_TYPE_INTERLACED
- *
- * Returns          BTM_SUCCESS if successful
- *                  BTM_MODE_UNSUPPORTED if not a 1.2 device
- *                  BTM_WRONG_MODE if the device is not up.
- *
- ******************************************************************************/
-extern tBTM_STATUS BTM_SetInquiryScanType(uint16_t scan_type);
+extern void BTM_EnableInterlacedInquiryScan();
 
-/*******************************************************************************
- *
- * Function         BTM_SetPageScanType
- *
- * Description      This function is called to set the page scan-type to
- *                  standard or interlaced.
- *
- * Input Params:    BTM_SCAN_TYPE_STANDARD or BTM_SCAN_TYPE_INTERLACED
- *
- * Returns          BTM_SUCCESS if successful
- *                  BTM_MODE_UNSUPPORTED if not a 1.2 device
- *                  BTM_WRONG_MODE if the device is not up.
- *
- ******************************************************************************/
-
-extern tBTM_STATUS BTM_SetPageScanType(uint16_t scan_type);
+extern void BTM_EnableInterlacedPageScan();
 
 /*******************************************************************************
  *

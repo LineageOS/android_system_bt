@@ -406,20 +406,8 @@ tBTM_STATUS bluetooth::shim::BTM_SetDiscoverability(uint16_t discoverable_mode,
   return BTM_SUCCESS;
 }
 
-tBTM_STATUS bluetooth::shim::BTM_SetInquiryScanType(uint16_t scan_type) {
-  switch (scan_type) {
-    case kInterlacedScanType:
-      Stack::GetInstance()->GetBtm()->SetInterlacedInquiryScan();
-      return BTM_SUCCESS;
-      break;
-    case kStandardScanType:
-      Stack::GetInstance()->GetBtm()->SetStandardInquiryScan();
-      return BTM_SUCCESS;
-      break;
-    default:
-      return BTM_ILLEGAL_VALUE;
-  }
-  return BTM_WRONG_MODE;
+void bluetooth::shim::BTM_EnableInterlacedInquiryScan() {
+  Stack::GetInstance()->GetBtm()->SetInterlacedInquiryScan();
 }
 
 tBTM_STATUS bluetooth::shim::BTM_BleObserve(bool start, uint8_t duration_sec,
@@ -501,23 +489,8 @@ tBTM_STATUS bluetooth::shim::BTM_BleObserve(bool start, uint8_t duration_sec,
   return BTM_CMD_STARTED;
 }
 
-tBTM_STATUS bluetooth::shim::BTM_SetPageScanType(uint16_t scan_type) {
-  switch (scan_type) {
-    case kInterlacedScanType:
-      if (!Stack::GetInstance()->GetBtm()->IsInterlacedScanSupported()) {
-        return BTM_MODE_UNSUPPORTED;
-      }
-      Stack::GetInstance()->GetBtm()->SetInterlacedPageScan();
-      return BTM_SUCCESS;
-      break;
-    case kStandardScanType:
-      Stack::GetInstance()->GetBtm()->SetStandardPageScan();
-      return BTM_SUCCESS;
-      break;
-    default:
-      return BTM_ILLEGAL_VALUE;
-  }
-  return BTM_WRONG_MODE;
+void bluetooth::shim::BTM_EnableInterlacedPageScan() {
+  Stack::GetInstance()->GetBtm()->SetInterlacedPageScan();
 }
 
 tBTM_STATUS bluetooth::shim::BTM_SetInquiryMode(uint8_t inquiry_mode) {
