@@ -1001,13 +1001,6 @@ static void l2c_csm_open(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
         (*p_ccb->p_rcb->api.pL2CA_DisconnectInd_Cb)(local_cid, false);
       break;
 
-    case L2CEVT_LP_QOS_VIOLATION_IND: /* QOS violation         */
-      /* Tell upper layer. If service guaranteed, then clear the channel   */
-      if (p_ccb->p_rcb->api.pL2CA_QoSViolationInd_Cb)
-        (*p_ccb->p_rcb->api.pL2CA_QoSViolationInd_Cb)(
-            p_ccb->p_lcb->remote_bd_addr);
-      break;
-
     case L2CEVT_L2CAP_CONFIG_REQ: /* Peer config request   */
       p_cfg = (tL2CAP_CFG_INFO*)p_data;
 
@@ -1272,12 +1265,6 @@ static const char* l2c_csm_get_event_name(uint16_t event) {
       return ("LOWER_LAYER_CONNECT_IND");
     case L2CEVT_LP_DISCONNECT_IND: /* Lower layer disconnect indication    */
       return ("LOWER_LAYER_DISCONNECT_IND");
-    case L2CEVT_LP_QOS_CFM: /* Lower layer QOS confirmation         */
-      return ("LOWER_LAYER_QOS_CFM");
-    case L2CEVT_LP_QOS_CFM_NEG: /* Lower layer QOS confirmation (failed)*/
-      return ("LOWER_LAYER_QOS_CFM_NEG");
-    case L2CEVT_LP_QOS_VIOLATION_IND: /* Lower layer QOS violation indication */
-      return ("LOWER_LAYER_QOS_VIOLATION_IND");
 
     case L2CEVT_SEC_COMP: /* Security cleared successfully        */
       return ("SECURITY_COMPLETE");

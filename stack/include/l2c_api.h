@@ -284,7 +284,6 @@ typedef struct {
   tL2CA_CONFIG_CFM_CB* pL2CA_ConfigCfm_Cb;
   tL2CA_DISCONNECT_IND_CB* pL2CA_DisconnectInd_Cb;
   tL2CA_DISCONNECT_CFM_CB* pL2CA_DisconnectCfm_Cb;
-  tL2CA_QOS_VIOLATION_IND_CB* pL2CA_QoSViolationInd_Cb;
   tL2CA_DATA_IND_CB* pL2CA_DataInd_Cb;
   tL2CA_CONGESTION_STATUS_CB* pL2CA_CongestionStatus_Cb;
   tL2CA_TX_COMPLETE_CB* pL2CA_TxComplete_Cb;
