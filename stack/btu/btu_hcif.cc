@@ -989,6 +989,7 @@ static void btu_hcif_connection_request_evt(uint8_t* p) {
   /* passing request to l2cap */
   if (link_type == HCI_LINK_TYPE_ACL) {
     btm_sec_conn_req(bda, dc);
+    l2c_link_hci_conn_req(bda);
   } else {
     btm_sco_conn_req(bda, dc, link_type);
   }
