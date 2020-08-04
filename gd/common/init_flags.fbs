@@ -1,0 +1,12 @@
+namespace bluetooth.common;
+
+attribute "privacy";
+
+table InitFlagsData {
+    title:string;
+    gd_hci_enabled:bool;
+    gd_controller_enabled:bool;
+    gd_core_enabled:bool;
+}
+
+root_type InitFlagsData;
