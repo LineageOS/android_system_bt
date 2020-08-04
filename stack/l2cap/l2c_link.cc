@@ -476,35 +476,6 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
 
 /*******************************************************************************
  *
- * Function         l2c_link_hci_qos_violation
- *
- * Description      This function is called when an HCI QOS Violation
- *                  event is received.
- *
- * Returns          true if the link is known about, else false
- *
- ******************************************************************************/
-bool l2c_link_hci_qos_violation(uint16_t handle) {
-  tL2C_LCB* p_lcb;
-  tL2C_CCB* p_ccb;
-
-  /* See if we have a link control block for the connection */
-  p_lcb = l2cu_find_lcb_by_handle(handle);
-
-  /* If we don't have one, maybe an SCO link. */
-  if (!p_lcb) return (false);
-
-  /* For all channels, tell the upper layer about it */
-  for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; p_ccb = p_ccb->p_next_ccb) {
-    if (p_ccb->p_rcb->api.pL2CA_QoSViolationInd_Cb)
-      l2c_csm_execute(p_ccb, L2CEVT_LP_QOS_VIOLATION_IND, NULL);
-  }
-
-  return (true);
-}
-
-/*******************************************************************************
- *
  * Function         l2c_link_timeout
  *
  * Description      This function is called when a link timer expires
