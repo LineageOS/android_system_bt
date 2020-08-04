@@ -816,10 +816,6 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
             l2c_fcr_adj_monitor_retran_timeout(p_ccb);
           }
 
-#if (L2CAP_ERTM_STATS == TRUE)
-          p_ccb->fcrb.connect_tick_count =
-              bluetooth::common::time_get_os_boottime_ms();
-#endif
           /* See if we can forward anything on the hold queue */
           if (!fixed_queue_is_empty(p_ccb->xmit_hold_q)) {
             l2c_link_check_send_pkts(p_ccb->p_lcb, NULL, NULL);
@@ -904,11 +900,6 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
 
       /* If using eRTM and waiting for an ACK, restart the ACK timer */
       if (p_ccb->fcrb.wait_ack) l2c_fcr_start_timer(p_ccb);
-
-#if (L2CAP_ERTM_STATS == TRUE)
-      p_ccb->fcrb.connect_tick_count =
-          bluetooth::common::time_get_os_boottime_ms();
-#endif
 
       /* See if we can forward anything on the hold queue */
       if ((p_ccb->chnl_state == CST_OPEN) &&

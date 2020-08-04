@@ -206,32 +206,6 @@ typedef struct {
   alarm_t* ack_timer;         /* Timer delaying RR */
   alarm_t* mon_retrans_timer; /* Timer Monitor or Retransmission */
 
-#if (L2CAP_ERTM_STATS == TRUE)
-  uint64_t connect_tick_count;  /* Time channel was established */
-  uint32_t ertm_pkt_counts[2];  /* Packets sent and received */
-  uint32_t ertm_byte_counts[2]; /* Bytes   sent and received */
-  uint32_t s_frames_sent[4];    /* S-frames sent (RR, REJ, RNR, SREJ) */
-  uint32_t s_frames_rcvd[4];    /* S-frames rcvd (RR, REJ, RNR, SREJ) */
-  uint32_t xmit_window_closed;  /* # of times the xmit window was closed */
-  uint32_t controller_idle; /* # of times less than 2 packets in controller */
-                            /* when the xmit window was closed */
-  uint32_t pkts_retransmitted; /* # of packets that were retransmitted */
-  uint32_t retrans_touts;      /* # of retransmission timouts */
-  uint32_t xmit_ack_touts;     /* # of xmit ack timouts */
-
-#define L2CAP_ERTM_STATS_NUM_AVG 10
-#define L2CAP_ERTM_STATS_AVG_NUM_SAMPLES 100
-  uint32_t ack_delay_avg_count;
-  uint32_t ack_delay_avg_index;
-  uint32_t throughput_start;
-  uint32_t throughput[L2CAP_ERTM_STATS_NUM_AVG];
-  uint32_t ack_delay_avg[L2CAP_ERTM_STATS_NUM_AVG];
-  uint32_t ack_delay_min[L2CAP_ERTM_STATS_NUM_AVG];
-  uint32_t ack_delay_max[L2CAP_ERTM_STATS_NUM_AVG];
-  uint32_t ack_q_count_avg[L2CAP_ERTM_STATS_NUM_AVG];
-  uint32_t ack_q_count_min[L2CAP_ERTM_STATS_NUM_AVG];
-  uint32_t ack_q_count_max[L2CAP_ERTM_STATS_NUM_AVG];
-#endif
 } tL2C_FCRB;
 
 typedef struct {
