@@ -142,7 +142,6 @@ typedef enum {
 #define L2CEVT_L2CA_DISCONNECT_RSP 28  /* disconnect response */
 #define L2CEVT_L2CA_DATA_READ 29       /* data read */
 #define L2CEVT_L2CA_DATA_WRITE 30      /* data write */
-#define L2CEVT_L2CA_FLUSH_REQ 31       /* flush */
 
 #define L2CEVT_TIMEOUT 32         /* Timeout */
 #define L2CEVT_SEC_RE_SEND_CMD 33 /* btm_sec has enough info to proceed */
@@ -702,10 +701,9 @@ extern void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, tL2C_CCB* p_ccb,
                                      BT_HDR* p_buf);
 extern void l2c_link_adjust_allocation(void);
 extern void l2c_link_process_num_completed_pkts(uint8_t* p, uint8_t evt_len);
-extern void l2c_link_process_num_completed_blocks(uint8_t controller_id,
-                                                  uint8_t* p, uint16_t evt_len);
+
 extern void l2c_link_processs_num_bufs(uint16_t num_lm_acl_bufs);
-extern uint8_t l2c_link_pkts_rcvd(uint16_t* num_pkts, uint16_t* handles);
+
 extern void l2c_link_role_changed(const RawAddress* bd_addr, uint8_t new_role,
                                   uint8_t hci_status);
 extern void l2c_link_sec_comp(const RawAddress* p_bda, tBT_TRANSPORT trasnport,
