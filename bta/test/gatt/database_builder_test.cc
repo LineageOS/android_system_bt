@@ -29,7 +29,7 @@ using bluetooth::Uuid;
 namespace gatt {
 
 namespace {
-/* make_pair doesn't work well with EXPECT_EQ, have own helper instead */
+/* make_pair doesn't work well with ASSERT_EQ, have own helper instead */
 inline std::pair<uint16_t, uint16_t> make_pair_u16(uint16_t first,
                                                    uint16_t second) {
   return std::make_pair(first, second);
@@ -61,10 +61,10 @@ TEST(DatabaseBuilderTest, EmptyServiceAddTest) {
 
   // verify that the returned database matches what was discovered
   auto service = result.Services().begin();
-  EXPECT_EQ(service->handle, 0x0001);
-  EXPECT_EQ(service->end_handle, 0x0001);
-  EXPECT_EQ(service->is_primary, true);
-  EXPECT_EQ(service->uuid, SERVICE_1_UUID);
+  ASSERT_EQ(service->handle, 0x0001);
+  ASSERT_EQ(service->end_handle, 0x0001);
+  ASSERT_EQ(service->is_primary, true);
+  ASSERT_EQ(service->uuid, SERVICE_1_UUID);
 }
 
 /* Verify adding service, characteristic and descriptor work */
@@ -82,19 +82,19 @@ TEST(DatabaseBuilderTest, DescriptorAddTest) {
 
   // verify that the returned database matches what was discovered
   auto service = result.Services().begin();
-  EXPECT_EQ(service->handle, 0x0001);
-  EXPECT_EQ(service->end_handle, 0x000f);
-  EXPECT_EQ(service->is_primary, true);
-  EXPECT_EQ(service->uuid, SERVICE_1_UUID);
+  ASSERT_EQ(service->handle, 0x0001);
+  ASSERT_EQ(service->end_handle, 0x000f);
+  ASSERT_EQ(service->is_primary, true);
+  ASSERT_EQ(service->uuid, SERVICE_1_UUID);
 
-  EXPECT_EQ(service->characteristics[0].uuid, SERVICE_1_CHAR_1_UUID);
-  EXPECT_EQ(service->characteristics[0].declaration_handle, 0x0002);
-  EXPECT_EQ(service->characteristics[0].value_handle, 0x0003);
-  EXPECT_EQ(service->characteristics[0].properties, 0x02);
+  ASSERT_EQ(service->characteristics[0].uuid, SERVICE_1_CHAR_1_UUID);
+  ASSERT_EQ(service->characteristics[0].declaration_handle, 0x0002);
+  ASSERT_EQ(service->characteristics[0].value_handle, 0x0003);
+  ASSERT_EQ(service->characteristics[0].properties, 0x02);
 
-  EXPECT_EQ(service->characteristics[0].descriptors[0].uuid,
+  ASSERT_EQ(service->characteristics[0].descriptors[0].uuid,
             SERVICE_1_CHAR_1_DESC_1_UUID);
-  EXPECT_EQ(service->characteristics[0].descriptors[0].handle, 0x0004);
+  ASSERT_EQ(service->characteristics[0].descriptors[0].handle, 0x0004);
 }
 
 /* This test verifies that DatabaseBuilder properly handle discovery of
@@ -113,59 +113,64 @@ TEST(DatabaseBuilderTest, SecondaryServiceOutOfOrderTest) {
 
   // First service skipped, no place for handles
   EXPECT_TRUE(builder.StartNextServiceExploration());
-  EXPECT_EQ(builder.CurrentlyExploredService(), make_pair_u16(0x0001, 0x000f));
+  ASSERT_EQ(builder.CurrentlyExploredService(), make_pair_u16(0x0001, 0x000f));
 
   // For this test, content of first service is irrevelant
 
   EXPECT_TRUE(builder.StartNextServiceExploration());
   // Grabbing first service, to start Included Service and Characteristic
   // discovery
-  EXPECT_EQ(builder.CurrentlyExploredService(), make_pair_u16(0x0030, 0x003f));
+  ASSERT_EQ(builder.CurrentlyExploredService(), make_pair_u16(0x0030, 0x003f));
 
   builder.AddIncludedService(0x0031, SERVICE_4_UUID, 0x0040, 0x004f);
   builder.AddIncludedService(0x0032, SERVICE_2_UUID, 0x0020, 0x002f);
 
   /* Secondary service exploration */
   EXPECT_TRUE(builder.StartNextServiceExploration());
-  EXPECT_EQ(builder.CurrentlyExploredService(), make_pair_u16(0x0020, 0x002f));
+  ASSERT_EQ(builder.CurrentlyExploredService(), make_pair_u16(0x0020, 0x002f));
 
   /* Secondary service exploration */
   EXPECT_TRUE(builder.StartNextServiceExploration());
-  EXPECT_EQ(builder.CurrentlyExploredService(), make_pair_u16(0x0040, 0x004f));
+  ASSERT_EQ(builder.CurrentlyExploredService(), make_pair_u16(0x0040, 0x004f));
 
   /* Back to primary service exploration */
   EXPECT_TRUE(builder.StartNextServiceExploration());
-  EXPECT_EQ(builder.CurrentlyExploredService(), make_pair_u16(0x0050, 0x005f));
+  ASSERT_EQ(builder.CurrentlyExploredService(), make_pair_u16(0x0050, 0x005f));
 
   Database result = builder.Build();
 
   // verify that the returned database matches what was discovered
   auto service = result.Services().begin();
-  EXPECT_EQ(service->handle, 0x0001);
-  EXPECT_EQ(service->is_primary, true);
-  EXPECT_EQ(service->uuid, SERVICE_1_UUID);
+  ASSERT_EQ(service->handle, 0x0001);
+  ASSERT_EQ(service->is_primary, true);
+  ASSERT_EQ(service->uuid, SERVICE_1_UUID);
 
   service++;
-  EXPECT_EQ(service->handle, 0x0020);
-  EXPECT_EQ(service->end_handle, 0x002f);
-  EXPECT_EQ(service->uuid, SERVICE_2_UUID);
-  EXPECT_EQ(service->is_primary, false);
+  ASSERT_EQ(service->handle, 0x0020);
+  ASSERT_EQ(service->end_handle, 0x002f);
+  ASSERT_EQ(service->uuid, SERVICE_2_UUID);
+  ASSERT_EQ(service->is_primary, false);
 
   service++;
-  EXPECT_EQ(service->handle, 0x0030);
-  EXPECT_EQ(service->end_handle, 0x003f);
-  EXPECT_EQ(service->uuid, SERVICE_3_UUID);
-  EXPECT_EQ(service->is_primary, true);
+  ASSERT_EQ(service->handle, 0x0030);
+  ASSERT_EQ(service->end_handle, 0x003f);
+  ASSERT_EQ(service->uuid, SERVICE_3_UUID);
+  ASSERT_EQ(service->is_primary, true);
+  ASSERT_EQ(service->included_services.size(), (size_t)2);
+  ASSERT_EQ(service->included_services[0].start_handle, 0x0040);
+  ASSERT_EQ(service->included_services[0].end_handle, 0x004f);
+  ASSERT_EQ(service->included_services[1].start_handle, 0x0020);
+  ASSERT_EQ(service->included_services[1].end_handle, 0x002f);
 
   service++;
-  EXPECT_EQ(service->handle, 0x0040);
-  EXPECT_EQ(service->uuid, SERVICE_4_UUID);
-  EXPECT_EQ(service->is_primary, false);
+  ASSERT_EQ(service->handle, 0x0040);
+  ASSERT_EQ(service->uuid, SERVICE_4_UUID);
+  ASSERT_EQ(service->is_primary, false);
 
   service++;
-  EXPECT_EQ(service->handle, 0x0050);
-  EXPECT_EQ(service->uuid, SERVICE_5_UUID);
-  EXPECT_EQ(service->is_primary, true);
+  ASSERT_EQ(service->handle, 0x0050);
+  ASSERT_EQ(service->uuid, SERVICE_5_UUID);
+  ASSERT_EQ(service->is_primary, true);
 
   service++;
   ASSERT_EQ(service, result.Services().end());
