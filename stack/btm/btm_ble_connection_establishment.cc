@@ -23,9 +23,9 @@
 #include "btm_int.h"
 #include "common/metrics.h"
 #include "device/include/controller.h"
-#include "l2c_int.h"
 #include "stack/gatt/connection_manager.h"
 #include "stack/include/hcimsgs.h"
+#include "stack/include/l2cap_hci_link_interface.h"
 
 extern void btm_ble_advertiser_notify_terminated_legacy(
     uint8_t status, uint16_t connection_handle);
