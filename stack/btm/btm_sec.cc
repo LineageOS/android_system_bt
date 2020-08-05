@@ -2264,18 +2264,6 @@ void btm_sec_conn_req(const RawAddress& bda, uint8_t* dc) {
     }
   }
 
-#if (BTM_ALLOW_CONN_IF_NONDISCOVER == FALSE)
-  /* If non-discoverable, only allow known devices to connect */
-  if (btm_cb.btm_inq_vars.discoverable_mode == BTM_NON_DISCOVERABLE) {
-    if (!p_dev_rec) {
-      BTM_TRACE_EVENT(
-          "Security Manager: connect request from not paired device");
-      btsnd_hcic_reject_conn(bda, HCI_ERR_HOST_REJECT_DEVICE);
-      return;
-    }
-  }
-#endif
-
   if ((btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
       (btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) &&
       (btm_cb.pairing_bda == bda)) {
