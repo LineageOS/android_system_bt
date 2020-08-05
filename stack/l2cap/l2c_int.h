@@ -538,8 +538,6 @@ extern tL2C_CB l2cb;
 /* Functions provided by l2c_main.cc
  ***********************************
 */
-void l2c_init(void);
-void l2c_free(void);
 
 extern void l2c_receive_hold_timer_timeout(void* data);
 extern void l2c_ccb_timer_timeout(void* data);
