@@ -31,23 +31,18 @@
 #define LOG_TAG "bt_btm_pm"
 
 #include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "bt_common.h"
 #include "bt_types.h"
-#include "bt_utils.h"
 #include "btm_api.h"
 #include "btm_int.h"
 #include "btm_int_types.h"
-#include "btu.h"
 #include "device/include/controller.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
-#include "l2c_int.h"
-#include "osi/include/log.h"
 #include "osi/include/osi.h"
+#include "stack/include/l2cap_hci_link_interface.h"
 
 /*****************************************************************************/
 /*      to handle different modes                                            */
@@ -747,7 +742,6 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
   tBTM_PM_MCB* p_cb = NULL;
   int xx, yy, zz;
   tBTM_PM_STATE old_state;
-  tL2C_LCB* p_lcb;
 
   /* get the index to acl_db */
   xx = btm_handle_to_acl_index(hci_handle);
@@ -764,15 +758,8 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
   BTM_TRACE_DEBUG("%s switched from %s to %s.", __func__,
                   mode_to_string(old_state), mode_to_string(p_cb->state));
 
-  p_lcb = l2cu_find_lcb_by_bd_addr(p->remote_addr, BT_TRANSPORT_BR_EDR);
-  if (p_lcb != NULL) {
-    if ((p_cb->state == BTM_PM_ST_ACTIVE) || (p_cb->state == BTM_PM_ST_SNIFF)) {
-      /* There might be any pending packets due to SNIFF or PENDING state */
-      /* Trigger L2C to start transmission of the pending packets. */
-      BTM_TRACE_DEBUG(
-          "btm mode change to active; check l2c_link for outgoing packets");
-      l2c_link_check_send_pkts(p_lcb, NULL, NULL);
-    }
+  if ((p_cb->state == BTM_PM_ST_ACTIVE) || (p_cb->state == BTM_PM_ST_SNIFF)) {
+    l2c_OnHciModeChangeSendPendingPackets(p->remote_addr);
   }
 
   /* notify registered parties */
