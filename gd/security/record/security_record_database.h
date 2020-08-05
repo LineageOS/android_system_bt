@@ -20,6 +20,7 @@
 
 #include "hci/address_with_type.h"
 #include "security/record/security_record.h"
+#include "security/record/security_record_storage.h"
 
 namespace bluetooth {
 namespace security {
@@ -27,6 +28,9 @@ namespace record {
 
 class SecurityRecordDatabase {
  public:
+  SecurityRecordDatabase(record::SecurityRecordStorage security_record_storage)
+      : security_record_storage_(security_record_storage) {}
+
   using iterator = std::set<std::shared_ptr<SecurityRecord>>::iterator;
 
   std::shared_ptr<SecurityRecord> FindOrCreate(hci::AddressWithType address) {
@@ -47,6 +51,7 @@ class SecurityRecordDatabase {
     if (it == records_.end()) return;
 
     records_.erase(it);
+    security_record_storage_.RemoveDevice(address);
   }
 
   iterator Find(hci::AddressWithType address) {
@@ -59,7 +64,16 @@ class SecurityRecordDatabase {
     return records_.end();
   }
 
+  void LoadRecordsFromStorage() {
+    security_record_storage_.LoadSecurityRecords(&records_);
+  }
+
+  void SaveRecordsToStorage() {
+    security_record_storage_.SaveSecurityRecords(&records_);
+  }
+
   std::set<std::shared_ptr<SecurityRecord>> records_;
+  record::SecurityRecordStorage security_record_storage_;
 };
 
 }  // namespace record
