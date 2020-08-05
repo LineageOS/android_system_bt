@@ -14,6 +14,7 @@ filegroup {
         "security_module.cc",
         ":BluetoothSecurityChannelSources",
         ":BluetoothSecurityPairingSources",
+        ":BluetoothSecurityRecordSources",
     ],
 }
 
@@ -27,6 +28,7 @@ filegroup {
         "test/pairing_handler_le_pair_test.cc",
         ":BluetoothSecurityChannelTestSources",
         ":BluetoothSecurityPairingTestSources",
+        ":BluetoothSecurityRecordTestSources",
     ],
 }
 

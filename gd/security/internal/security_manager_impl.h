@@ -223,6 +223,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   channel::SecurityManagerChannel* security_manager_channel_;
   hci::AclManager* acl_manager_;
   storage::StorageModule* storage_module_ __attribute__((unused));
+  record::SecurityRecordStorage security_record_storage_;
   record::SecurityRecordDatabase security_database_;
   std::unordered_map<hci::Address, std::shared_ptr<pairing::PairingHandler>> pairing_handler_map_;
   hci::IoCapability local_io_capability_ = kDefaultIoCapability;
