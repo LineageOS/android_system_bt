@@ -298,6 +298,12 @@ typedef struct {
 
 } tL2CAP_ERTM_INFO;
 
+/**
+ * Stack management declarations
+ */
+void l2c_init();
+void l2c_free();
+
 /*****************************************************************************
  *  External Function Declarations
  ****************************************************************************/
