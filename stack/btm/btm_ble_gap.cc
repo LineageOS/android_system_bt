@@ -2277,7 +2277,8 @@ void btm_ble_read_remote_features_complete(uint8_t* p) {
   }
 
   if (status == HCI_SUCCESS) {
-    STREAM_TO_ARRAY(btm_cb.acl_db[idx].peer_le_features, p, BD_FEATURES_LEN);
+    STREAM_TO_ARRAY(btm_cb.acl_cb_.acl_db[idx].peer_le_features, p,
+                    BD_FEATURES_LEN);
   }
 
   btsnd_hcic_rmt_ver_req(handle);

@@ -281,7 +281,7 @@ bool BTM_IsBleConnection(uint16_t conn_handle) {
   xx = btm_handle_to_acl_index(conn_handle);
   if (xx >= MAX_L2CAP_LINKS) return false;
 
-  p = &btm_cb.acl_db[xx];
+  p = &btm_cb.acl_cb_.acl_db[xx];
 
   return (p->transport == BT_TRANSPORT_LE);
 }
