@@ -117,7 +117,6 @@ void gap_conn_init(void) {
   memset(&conn, 0, sizeof(tGAP_CONN));
   conn.reg_info.pL2CA_ConnectInd_Cb = gap_connect_ind;
   conn.reg_info.pL2CA_ConnectCfm_Cb = gap_connect_cfm;
-  conn.reg_info.pL2CA_ConnectPnd_Cb = NULL;
   conn.reg_info.pL2CA_ConfigInd_Cb = gap_config_ind;
   conn.reg_info.pL2CA_ConfigCfm_Cb = gap_config_cfm;
   conn.reg_info.pL2CA_DisconnectInd_Cb = gap_disconnect_ind;

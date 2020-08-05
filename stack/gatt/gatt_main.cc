@@ -73,7 +73,6 @@ static void gatt_l2cif_congest_cback(uint16_t cid, bool congested);
 
 static const tL2CAP_APPL_INFO dyn_info = {gatt_l2cif_connect_ind_cback,
                                           gatt_l2cif_connect_cfm_cback,
-                                          NULL,
                                           gatt_l2cif_config_ind_cback,
                                           gatt_l2cif_config_cfm_cback,
                                           gatt_l2cif_disconnect_ind_cback,
