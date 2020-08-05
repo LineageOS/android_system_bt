@@ -40,12 +40,6 @@
 
 #define L2CAP_MIN_MTU 48 /* Minimum acceptable MTU is 48 bytes */
 
-/* LE credit based L2CAP connection parameters */
-constexpr uint16_t L2CAP_LE_MIN_MTU = 23;  // Minimum SDU size
-constexpr uint16_t L2CAP_LE_MIN_MPS = 23;
-constexpr uint16_t L2CAP_LE_MAX_MPS = 65533;
-constexpr uint16_t L2CAP_LE_CREDIT_MAX = 65535;
-
 #define L2CAP_NO_IDLE_TIMEOUT 0xFFFF
 
 /*

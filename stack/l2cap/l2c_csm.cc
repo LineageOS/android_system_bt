@@ -972,7 +972,7 @@ static void l2c_csm_open(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
   tL2C_CHNL_STATE tempstate;
   uint8_t tempcfgdone;
   uint8_t cfg_result;
-  uint16_t* credit;
+  uint16_t credit = 0;
 
   L2CAP_TRACE_EVENT("L2CAP - LCID: 0x%04x  st: OPEN  evt: %s", p_ccb->local_cid,
                     l2c_csm_get_event_name(event));
@@ -1095,25 +1095,25 @@ static void l2c_csm_open(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
 
     case L2CEVT_L2CA_SEND_FLOW_CONTROL_CREDIT:
       L2CAP_TRACE_DEBUG("%s Sending credit", __func__);
-      credit = (uint16_t*)p_data;
-      l2cble_send_flow_control_credit(p_ccb, *credit);
+      credit = *(uint16_t*)p_data;
+      l2cble_send_flow_control_credit(p_ccb, credit);
       break;
 
     case L2CEVT_L2CAP_RECV_FLOW_CONTROL_CREDIT:
-      credit = (uint16_t*)p_data;
-      L2CAP_TRACE_DEBUG("%s Credits received %d", __func__, *credit);
-      if ((p_ccb->peer_conn_cfg.credits + *credit) > L2CAP_LE_CREDIT_MAX) {
+      credit = *(uint16_t*)p_data;
+      L2CAP_TRACE_DEBUG("%s Credits received %d", __func__, credit);
+      if ((p_ccb->peer_conn_cfg.credits + credit) > L2CAP_LE_CREDIT_MAX) {
         /* we have received credits more than max coc credits,
          * so disconnecting the Le Coc Channel
          */
         l2cble_send_peer_disc_req(p_ccb);
       } else {
-        p_ccb->peer_conn_cfg.credits += *credit;
+        p_ccb->peer_conn_cfg.credits += credit;
 
         tL2CA_CREDITS_RECEIVED_CB* cr_cb =
             p_ccb->p_rcb->api.pL2CA_CreditsReceived_Cb;
         if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE && (cr_cb)) {
-          (*cr_cb)(p_ccb->local_cid, *credit, p_ccb->peer_conn_cfg.credits);
+          (*cr_cb)(p_ccb->local_cid, credit, p_ccb->peer_conn_cfg.credits);
         }
         l2c_link_check_send_pkts(p_ccb->p_lcb, NULL, NULL);
       }

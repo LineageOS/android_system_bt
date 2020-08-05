@@ -143,6 +143,12 @@ typedef struct {
   uint16_t flags; /* bit 0: 0-no continuation, 1-continuation */
 } tL2CAP_CFG_INFO;
 
+/* LE credit based L2CAP connection parameters */
+constexpr uint16_t L2CAP_LE_MIN_MTU = 23;  // Minimum SDU size
+constexpr uint16_t L2CAP_LE_MIN_MPS = 23;
+constexpr uint16_t L2CAP_LE_MAX_MPS = 65533;
+constexpr uint16_t L2CAP_LE_CREDIT_MAX = 65535;
+
 // This is initial amout of credits we send, and amount to which we increase
 // credits once they fall below threshold
 constexpr uint16_t L2CAP_LE_CREDIT_DEFAULT = 0xffff;
