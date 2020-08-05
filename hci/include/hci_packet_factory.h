@@ -37,6 +37,7 @@ typedef struct {
                                          uint8_t simultaneous_host);
   BT_HDR* (*make_ble_read_white_list_size)(void);
   BT_HDR* (*make_ble_read_buffer_size)(void);
+  BT_HDR* (*make_ble_read_buffer_size_v2)(void);
   BT_HDR* (*make_ble_read_supported_states)(void);
   BT_HDR* (*make_ble_read_local_supported_features)(void);
   BT_HDR* (*make_ble_read_resolving_list_size)(void);
@@ -44,7 +45,9 @@ typedef struct {
   BT_HDR* (*make_ble_read_maximum_data_length)(void);
   BT_HDR* (*make_ble_read_maximum_advertising_data_length)(void);
   BT_HDR* (*make_ble_read_number_of_supported_advertising_sets)(void);
+  BT_HDR* (*make_ble_read_periodic_advertiser_list_size)(void);
   BT_HDR* (*make_ble_set_event_mask)(const bt_event_mask_t* event_mask);
+  BT_HDR* (*make_ble_set_host_features)(uint8_t bit_number, uint8_t bit_value);
   BT_HDR* (*make_read_local_supported_codecs)(void);
 } hci_packet_factory_t;
 
