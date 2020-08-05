@@ -628,10 +628,10 @@ extern void l2cu_process_our_cfg_rsp(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg);
 extern tL2C_LCB* l2cu_find_lcb_by_state(tL2C_LINK_STATE state);
 extern bool l2cu_lcb_disconnecting(void);
 
-extern bool l2cu_create_conn_br_edr(tL2C_LCB* p_lcb);
+extern void l2cu_create_conn_br_edr(tL2C_LCB* p_lcb);
 extern bool l2cu_create_conn_le(tL2C_LCB* p_lcb);
 extern bool l2cu_create_conn_le(tL2C_LCB* p_lcb, uint8_t initiating_phys);
-extern bool l2cu_create_conn_after_switch(tL2C_LCB* p_lcb);
+extern void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb);
 extern BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb,
                                             tL2C_TX_COMPLETE_CB_INFO* p_cbi);
 extern void l2cu_resubmit_pending_sec_req(const RawAddress* p_bda);

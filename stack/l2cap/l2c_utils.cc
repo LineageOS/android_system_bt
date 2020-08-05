@@ -2107,7 +2107,7 @@ bool l2cu_create_conn_le(tL2C_LCB* p_lcb, uint8_t initiating_phys) {
 
 /* This function initiates an acl connection to a Classic device via HCI.
  * Returns true on success, false otherwise. */
-bool l2cu_create_conn_br_edr(tL2C_LCB* p_lcb) {
+void l2cu_create_conn_br_edr(tL2C_LCB* p_lcb) {
   int xx;
   tL2C_LCB* p_lcb_cur = &l2cb.lcb_pool[0];
   bool is_sco_active;
@@ -2145,7 +2145,7 @@ bool l2cu_create_conn_br_edr(tL2C_LCB* p_lcb) {
           alarm_set_on_mloop(p_lcb->l2c_lcb_timer,
                              L2CAP_LINK_ROLE_SWITCH_TIMEOUT_MS,
                              l2c_lcb_timer_timeout, p_lcb);
-          return (true);
+          return;
         }
       }
     }
@@ -2153,7 +2153,7 @@ bool l2cu_create_conn_br_edr(tL2C_LCB* p_lcb) {
 
   p_lcb->link_state = LST_CONNECTING;
 
-  return (l2cu_create_conn_after_switch(p_lcb));
+  l2cu_create_conn_after_switch(p_lcb);
 }
 
 /*******************************************************************************
@@ -2189,7 +2189,7 @@ uint8_t l2cu_get_num_hi_priority(void) {
  *
  ******************************************************************************/
 
-bool l2cu_create_conn_after_switch(tL2C_LCB* p_lcb) {
+void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb) {
   uint8_t allow_switch = HCI_CR_CONN_ALLOW_SWITCH;
   tBTM_INQ_INFO* p_inq_info;
   uint8_t page_scan_rep_mode;
@@ -2240,8 +2240,6 @@ bool l2cu_create_conn_after_switch(tL2C_LCB* p_lcb) {
 
   alarm_set_on_mloop(p_lcb->l2c_lcb_timer, L2CAP_LINK_CONNECT_TIMEOUT_MS,
                      l2c_lcb_timer_timeout, p_lcb);
-
-  return (true);
 }
 
 /*******************************************************************************
