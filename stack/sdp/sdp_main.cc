@@ -105,7 +105,6 @@ void sdp_init(void) {
 
   sdp_cb.reg_info.pL2CA_ConnectInd_Cb = sdp_connect_ind;
   sdp_cb.reg_info.pL2CA_ConnectCfm_Cb = sdp_connect_cfm;
-  sdp_cb.reg_info.pL2CA_ConnectPnd_Cb = NULL;
   sdp_cb.reg_info.pL2CA_ConfigInd_Cb = sdp_config_ind;
   sdp_cb.reg_info.pL2CA_ConfigCfm_Cb = sdp_config_cfm;
   sdp_cb.reg_info.pL2CA_DisconnectInd_Cb = sdp_disconnect_ind;
