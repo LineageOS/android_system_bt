@@ -19,12 +19,10 @@
 #include <base/strings/stringprintf.h>
 #include <string.h>
 #include "bt_target.h"
-#include "bt_utils.h"
 #include "btm_int.h"
-#include "btu.h"
 #include "device/include/controller.h"
 #include "gap_api.h"
-#include "l2c_int.h"
+#include "l2c_api.h"
 #include "l2cdefs.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/mutex.h"
