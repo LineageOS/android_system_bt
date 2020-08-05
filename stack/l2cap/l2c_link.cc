@@ -453,8 +453,8 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
         if (l2cu_create_conn_le(p_lcb))
           lcb_is_free = false; /* still using this lcb */
       } else {
-        if (l2cu_create_conn_br_edr(p_lcb))
-          lcb_is_free = false; /* still using this lcb */
+        l2cu_create_conn_br_edr(p_lcb);
+        lcb_is_free = false; /* still using this lcb */
       }
     }
 
