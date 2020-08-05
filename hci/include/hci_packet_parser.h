@@ -53,6 +53,11 @@ typedef struct {
   void (*parse_ble_read_buffer_size_response)(BT_HDR* response,
                                               uint16_t* data_size_ptr,
                                               uint8_t* acl_buffer_count_ptr);
+  void (*parse_ble_read_buffer_size_v2_response)(BT_HDR* response,
+                                                 uint16_t* acl_data_size_ptr,
+                                                 uint8_t* acl_buffer_count_ptr,
+                                                 uint16_t* iso_data_size_ptr,
+                                                 uint8_t* iso_buffer_count_ptr);
 
   void (*parse_ble_read_supported_states_response)(
       BT_HDR* response, uint8_t* supported_states,
@@ -78,6 +83,9 @@ typedef struct {
 
   void (*parse_ble_read_number_of_supported_advertising_sets)(
       BT_HDR* response, uint8_t* ble_number_of_supported_advertising_sets_ptr);
+
+  void (*parse_ble_read_size_of_advertiser_list)(
+      BT_HDR* response, uint8_t* ble_size_of_advertiser_list_ptr);
 
   void (*parse_read_local_supported_codecs_response)(
       BT_HDR* response, uint8_t* number_of_local_supported_codecs,
