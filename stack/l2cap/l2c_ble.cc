@@ -793,7 +793,8 @@ void l2c_link_processs_ble_num_bufs(uint16_t num_lm_ble_bufs) {
     l2cb.num_lm_acl_bufs -= L2C_DEF_NUM_BLE_BUF_SHARED;
   }
 
-  l2cb.num_lm_ble_bufs = l2cb.controller_le_xmit_window = num_lm_ble_bufs;
+  l2cb.num_lm_ble_bufs = num_lm_ble_bufs;
+  l2cb.controller_le_xmit_window = num_lm_ble_bufs;
 }
 
 /*******************************************************************************
