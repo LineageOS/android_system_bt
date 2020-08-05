@@ -15,6 +15,7 @@
  */
 
 #include "module.h"
+#include "dumpsys/init_flags.h"
 
 using ::bluetooth::os::Handler;
 using ::bluetooth::os::Thread;
@@ -132,6 +133,8 @@ void ModuleDumper::DumpState(std::string* output) const {
   flatbuffers::FlatBufferBuilder builder(1024);
   auto title = builder.CreateString(title_);
 
+  auto init_flags_offset = dumpsys::InitFlags::Dump(&builder);
+
   std::queue<DumpsysDataFinisher> queue;
   for (auto it = module_registry_.start_order_.rbegin(); it != module_registry_.start_order_.rend(); it++) {
     auto instance = module_registry_.started_modules_.find(*it);
@@ -141,6 +144,7 @@ void ModuleDumper::DumpState(std::string* output) const {
 
   DumpsysDataBuilder data_builder(builder);
   data_builder.add_title(title);
+  data_builder.add_init_flags(init_flags_offset);
 
   while (!queue.empty()) {
     queue.front()(&data_builder);
