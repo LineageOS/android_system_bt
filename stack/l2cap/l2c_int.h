@@ -548,10 +548,6 @@ extern void l2c_fcrb_ack_timer_timeout(void* data);
 extern uint8_t l2c_data_write(uint16_t cid, BT_HDR* p_data, uint16_t flag);
 extern void l2c_process_held_packets(bool timed_out);
 
-/* Functions provided by l2c_utils.cc
- ***********************************
-*/
-extern bool l2cu_can_allocate_lcb(void);
 extern tL2C_LCB* l2cu_allocate_lcb(const RawAddress& p_bd_addr, bool is_bonding,
                                    tBT_TRANSPORT transport);
 extern bool l2cu_start_post_bond_timer(uint16_t handle);
