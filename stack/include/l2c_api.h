@@ -143,14 +143,25 @@ typedef struct {
   uint16_t flags; /* bit 0: 0-no continuation, 1-continuation */
 } tL2CAP_CFG_INFO;
 
+// This is initial amout of credits we send, and amount to which we increase
+// credits once they fall below threshold
+constexpr uint16_t L2CAP_LE_CREDIT_DEFAULT = 0xffff;
+
+// If credit count on remote fall below this value, we send back credits to
+// reach default value.
+constexpr uint16_t L2CAP_LE_CREDIT_THRESHOLD = 0x0040;
+
+static_assert(L2CAP_LE_CREDIT_THRESHOLD < L2CAP_LE_CREDIT_DEFAULT,
+              "Threshold must be smaller than default credits");
+
 /* Define a structure to hold the configuration parameter for LE L2CAP
  * connection oriented channels.
  */
-typedef struct {
+struct tL2CAP_LE_CFG_INFO {
   uint16_t mtu;
   uint16_t mps;
-  uint16_t credits;
-} tL2CAP_LE_CFG_INFO;
+  uint16_t credits = L2CAP_LE_CREDIT_DEFAULT;
+};
 
 /* L2CAP channel configured field bitmap */
 #define L2CAP_CH_CFG_MASK_MTU 0x0001

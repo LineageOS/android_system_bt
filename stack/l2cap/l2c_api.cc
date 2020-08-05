@@ -596,7 +596,7 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
 
   /* Save the configuration */
   if (p_cfg) {
-    memcpy(&p_ccb->local_conn_cfg, p_cfg, sizeof(tL2CAP_LE_CFG_INFO));
+    p_ccb->local_conn_cfg = *p_cfg;
     p_ccb->remote_credit_count = p_cfg->credits;
   }
 
@@ -674,7 +674,7 @@ bool L2CA_ConnectLECocRsp(const RawAddress& p_bd_addr, uint8_t id,
   }
 
   if (p_cfg) {
-    memcpy(&p_ccb->local_conn_cfg, p_cfg, sizeof(tL2CAP_LE_CFG_INFO));
+    p_ccb->local_conn_cfg = *p_cfg;
     p_ccb->remote_credit_count = p_cfg->credits;
   }
 
