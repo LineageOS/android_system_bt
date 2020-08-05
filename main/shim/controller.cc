@@ -159,6 +159,18 @@ MAP_TO_GD(supports_ble_peripheral_initiated_feature_exchange,
 MAP_TO_GD(supports_ble_connection_parameter_request,
           SupportsBleConnectionParameterRequest)
 
+MAP_TO_GD(supports_ble_periodic_advertising_sync_transfer_sender,
+          SupportsBlePeriodicAdvertisingSyncTransferSender)
+MAP_TO_GD(supports_ble_periodic_advertising_sync_transfer_recipient,
+          SupportsBlePeriodicAdvertisingSyncTransferRecipient)
+MAP_TO_GD(supports_ble_connected_isochronous_stream_master,
+          SupportsBleConnectedIsochronousStreamMaster)
+MAP_TO_GD(supports_ble_connected_isochronous_stream_slave,
+          SupportsBleConnectedIsochronousStreamSlave)
+MAP_TO_GD(supports_ble_isochronous_broadcaster,
+          SupportsBleIsochronousBroadcaster)
+MAP_TO_GD(supports_ble_synchronized_receiver, SupportsBleSynchronizedReceiver)
+
 static bool supports_reading_remote_extended_features(void) {
   return GetController()->IsSupported(
       (bluetooth::hci::OpCode)kReadRemoteExtendedFeatures);
@@ -187,12 +199,20 @@ static uint16_t get_acl_data_size_ble(void) {
   return GetController()->GetLeBufferSize().le_data_packet_length_;
 }
 
+static uint16_t get_iso_data_size(void) {
+  return GetController()->GetControllerIsoBufferSize().le_data_packet_length_;
+}
+
 static uint16_t get_acl_packet_size_classic(void) {
   return get_acl_data_size_classic() + kHciDataPreambleSize;
 }
 
 static uint16_t get_acl_packet_size_ble(void) {
   return get_acl_data_size_ble() + kHciDataPreambleSize;
+}
+
+static uint16_t get_iso_packet_size(void) {
+  return get_iso_data_size() + kHciDataPreambleSize;
 }
 
 static uint16_t get_ble_suggested_default_data_length(void) {
@@ -213,12 +233,20 @@ static uint8_t get_ble_number_of_supported_advertising_sets(void) {
   return GetController()->GetLeNumberOfSupportedAdverisingSets();
 }
 
+static uint8_t get_ble_periodic_advertiser_list_size(void) {
+  return GetController()->GetLePeriodicAdvertiserListSize();
+}
+
 static uint16_t get_acl_buffer_count_classic(void) {
   return GetController()->GetNumAclPacketBuffers();
 }
 
 static uint8_t get_acl_buffer_count_ble(void) {
   return GetController()->GetLeBufferSize().total_num_le_packets_;
+}
+
+static uint8_t get_iso_buffer_count(void) {
+  return GetController()->GetControllerIsoBufferSize().total_num_le_packets_;
 }
 
 static uint8_t get_ble_connect_list_size(void) {
@@ -287,19 +315,29 @@ static const controller_t interface = {
     supports_ble_periodic_advertising,
     supports_ble_peripheral_initiated_feature_exchange,
     supports_ble_connection_parameter_request,
+    supports_ble_periodic_advertising_sync_transfer_sender,
+    supports_ble_periodic_advertising_sync_transfer_recipient,
+    supports_ble_connected_isochronous_stream_master,
+    supports_ble_connected_isochronous_stream_slave,
+    supports_ble_isochronous_broadcaster,
+    supports_ble_synchronized_receiver,
 
     get_acl_data_size_classic,
     get_acl_data_size_ble,
+    get_iso_data_size,
 
     get_acl_packet_size_classic,
     get_acl_packet_size_ble,
+    get_iso_packet_size,
     get_ble_suggested_default_data_length,
     get_ble_maximum_tx_data_length,
     get_ble_maxium_advertising_data_length,
     get_ble_number_of_supported_advertising_sets,
+    get_ble_periodic_advertiser_list_size,
 
     get_acl_buffer_count_classic,
     get_acl_buffer_count_ble,
+    get_iso_buffer_count,
 
     get_ble_connect_list_size,
 
