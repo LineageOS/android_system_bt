@@ -803,7 +803,8 @@ void l2c_link_adjust_chnl_allocation(void) {
  *
  ******************************************************************************/
 void l2c_link_processs_num_bufs(uint16_t num_lm_acl_bufs) {
-  l2cb.num_lm_acl_bufs = l2cb.controller_xmit_window = num_lm_acl_bufs;
+  l2cb.num_lm_acl_bufs = num_lm_acl_bufs;
+  l2cb.controller_xmit_window = num_lm_acl_bufs;
 }
 
 /*******************************************************************************
