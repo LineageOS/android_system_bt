@@ -112,6 +112,7 @@ const reflection::Object* FindReflectionObject(
  *
  * @return true if successfully filtered, false otherwise.
  */
+bool FilterTypeBool(const reflection::Field& field, flatbuffers::Table* table, PrivacyLevel privacy_level);
 bool FilterTypeInteger(const reflection::Field& field, flatbuffers::Table* table, PrivacyLevel privacy_level);
 bool FilterTypeFloat(const reflection::Field& field, flatbuffers::Table* table, PrivacyLevel privacy_level);
 bool FilterTypeString(const reflection::Field& field, flatbuffers::Table* table, PrivacyLevel privacy_level);
