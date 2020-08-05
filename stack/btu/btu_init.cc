@@ -26,7 +26,7 @@
 #include "common/message_loop_thread.h"
 #include "device/include/controller.h"
 #include "gatt_api.h"
-#include "l2c_int.h"
+#include "l2c_api.h"
 #include "sdpint.h"
 
 using bluetooth::common::MessageLoopThread;
