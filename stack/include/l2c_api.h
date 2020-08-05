@@ -275,7 +275,6 @@ typedef void(tL2CA_CREDITS_RECEIVED_CB)(uint16_t local_cid,
 typedef struct {
   tL2CA_CONNECT_IND_CB* pL2CA_ConnectInd_Cb;
   tL2CA_CONNECT_CFM_CB* pL2CA_ConnectCfm_Cb;
-  tL2CA_CONNECT_PND_CB* pL2CA_ConnectPnd_Cb;
   tL2CA_CONFIG_IND_CB* pL2CA_ConfigInd_Cb;
   tL2CA_CONFIG_CFM_CB* pL2CA_ConfigCfm_Cb;
   tL2CA_DISCONNECT_IND_CB* pL2CA_DisconnectInd_Cb;
