@@ -16,8 +16,9 @@
 
 #include "h4_packetizer.h"
 
+#include <cerrno>
+
 #include <dlfcn.h>
-#include <errno.h>
 #include <fcntl.h>
 #include <sys/uio.h>
 #include <unistd.h>
@@ -26,18 +27,8 @@
 
 namespace test_vendor_lib {
 namespace hci {
-constexpr size_t H4Packetizer::COMMAND_PREAMBLE_SIZE;
-constexpr size_t H4Packetizer::COMMAND_LENGTH_OFFSET;
-constexpr size_t H4Packetizer::ACL_PREAMBLE_SIZE;
-constexpr size_t H4Packetizer::ACL_LENGTH_OFFSET;
-constexpr size_t H4Packetizer::SCO_PREAMBLE_SIZE;
-constexpr size_t H4Packetizer::SCO_LENGTH_OFFSET;
-constexpr size_t H4Packetizer::EVENT_PREAMBLE_SIZE;
-constexpr size_t H4Packetizer::EVENT_LENGTH_OFFSET;
-
-constexpr size_t H4Packetizer::PREAMBLE_SIZE_MAX;
-
-size_t H4Packetizer::HciGetPacketLengthForType(hci::PacketType type, const uint8_t* preamble) {
+size_t HciGetPacketLengthForType(hci::PacketType type,
+                                 const uint8_t* preamble) {
   static const size_t packet_length_offset[static_cast<size_t>(hci::PacketType::EVENT) + 1] = {
       0,
       H4Packetizer::COMMAND_LENGTH_OFFSET,
@@ -47,14 +38,23 @@ size_t H4Packetizer::HciGetPacketLengthForType(hci::PacketType type, const uint8
   };
 
   size_t offset = packet_length_offset[static_cast<size_t>(type)];
-  if (type != hci::PacketType::ACL) return preamble[offset];
-  return (((preamble[offset + 1]) << 8) | preamble[offset]);
+  size_t size = preamble[offset];
+  if (type == hci::PacketType::ACL) {
+    size |= ((size_t)preamble[offset + 1]) << 8u;
+  }
+  return size;
 }
 
-H4Packetizer::H4Packetizer(int fd, PacketReadCallback command_cb, PacketReadCallback event_cb,
-                           PacketReadCallback acl_cb, PacketReadCallback sco_cb, ClientDisconnectCallback disconnect_cb)
-    : uart_fd_(fd), command_cb_(command_cb), event_cb_(event_cb), acl_cb_(acl_cb), sco_cb_(sco_cb),
-      disconnect_cb_(disconnect_cb) {}
+H4Packetizer::H4Packetizer(int fd, PacketReadCallback command_cb,
+                           PacketReadCallback event_cb,
+                           PacketReadCallback acl_cb, PacketReadCallback sco_cb,
+                           ClientDisconnectCallback disconnect_cb)
+    : uart_fd_(fd),
+      command_cb_(std::move(command_cb)),
+      event_cb_(std::move(event_cb)),
+      acl_cb_(std::move(acl_cb)),
+      sco_cb_(std::move(sco_cb)),
+      disconnect_cb_(std::move(disconnect_cb)) {}
 
 size_t H4Packetizer::Send(uint8_t type, const uint8_t* data, size_t length) {
   struct iovec iov[] = {{&type, sizeof(type)}, {const_cast<uint8_t*>(data), length}};
@@ -64,10 +64,10 @@ size_t H4Packetizer::Send(uint8_t type, const uint8_t* data, size_t length) {
   } while (-1 == ret && EAGAIN == errno);
 
   if (ret == -1) {
-    LOG_ERROR("%s error writing to UART (%s)", __func__, strerror(errno));
+    LOG_ERROR("Error writing to UART (%s)", strerror(errno));
   } else if (ret < static_cast<ssize_t>(length + 1)) {
-    LOG_ERROR("%s: %d / %d bytes written - something went wrong...", __func__, static_cast<int>(ret),
-              static_cast<int>(length + 1));
+    LOG_ERROR("%d / %d bytes written - something went wrong...",
+              static_cast<int>(ret), static_cast<int>(length + 1));
   }
   return ret;
 }
@@ -87,105 +87,102 @@ void H4Packetizer::OnPacketReady() {
       event_cb_(packet_);
       break;
     default:
-      LOG_ALWAYS_FATAL("%s: Unimplemented packet type %d", __func__, static_cast<int>(hci_packet_type_));
+      LOG_ALWAYS_FATAL("Unimplemented packet type %d",
+                       static_cast<int>(hci_packet_type_));
   }
   // Get ready for the next type byte.
   hci_packet_type_ = hci::PacketType::UNKNOWN;
 }
 
 void H4Packetizer::OnDataReady(int fd) {
-  if (hci_packet_type_ == hci::PacketType::UNKNOWN) {
-    uint8_t buffer[1] = {0};
-    ssize_t bytes_read = TEMP_FAILURE_RETRY(read(fd, buffer, 1));
-    if (bytes_read == 0) {
-      LOG_INFO("%s: remote disconnected!", __func__);
+  if (disconnected_) return;
+  ssize_t bytes_to_read = 0;
+  uint8_t* buffer_pointer = nullptr;
+
+  static const size_t
+      preamble_size[static_cast<size_t>(hci::PacketType::EVENT) + 1] = {
+          0,
+          H4Packetizer::COMMAND_PREAMBLE_SIZE,
+          H4Packetizer::ACL_PREAMBLE_SIZE,
+          H4Packetizer::SCO_PREAMBLE_SIZE,
+          H4Packetizer::EVENT_PREAMBLE_SIZE,
+      };
+  switch (state_) {
+    case HCI_TYPE:
+      bytes_to_read = 1;
+      buffer_pointer = &packet_type_;
+      break;
+    case HCI_PREAMBLE:
+    case HCI_PAYLOAD:
+      bytes_to_read = packet_.size() - bytes_read_;
+      buffer_pointer = packet_.data() + bytes_read_;
+      break;
+  }
+
+  ssize_t bytes_read =
+      TEMP_FAILURE_RETRY(read(fd, buffer_pointer, bytes_to_read));
+  if (bytes_read == 0) {
+    LOG_INFO("remote disconnected!");
+    disconnected_ = true;
+    disconnect_cb_();
+    return;
+  } else if (bytes_read < 0) {
+    if (errno == EAGAIN) {
+      // No data, try again later.
+      return;
+    } else if (errno == ECONNRESET) {
+      // They probably rejected our packet
+      disconnected_ = true;
       disconnect_cb_();
       return;
-    } else if (bytes_read < 0) {
-      if (errno == EAGAIN) {
-        // No data, try again later.
-        return;
-      } else if (errno == ECONNRESET) {
-        // They probably rejected our packet
-        return;
-      } else {
-        LOG_ALWAYS_FATAL("%s: Read packet type error: %s", __func__, strerror(errno));
-      }
-    } else if (bytes_read > 1) {
-      LOG_ALWAYS_FATAL("%s: More bytes read than expected (%u)!", __func__, static_cast<unsigned int>(bytes_read));
+    } else {
+      LOG_ALWAYS_FATAL(
+          "Read error in %s: %s",
+          state_ == HCI_TYPE
+              ? "HCI_TYPE"
+              : state_ == HCI_PREAMBLE ? "HCI_PREAMBLE" : "HCI_PAYLOAD",
+          strerror(errno));
     }
-    hci_packet_type_ = static_cast<hci::PacketType>(buffer[0]);
-    if (hci_packet_type_ != hci::PacketType::ACL && hci_packet_type_ != hci::PacketType::SCO &&
-        hci_packet_type_ != hci::PacketType::COMMAND && hci_packet_type_ != hci::PacketType::EVENT) {
-      LOG_ALWAYS_FATAL("%s: Unimplemented packet type %d", __func__, static_cast<int>(hci_packet_type_));
-    }
-  } else {
-    static const size_t preamble_size[static_cast<size_t>(hci::PacketType::EVENT) + 1] = {
-        0,
-        H4Packetizer::COMMAND_PREAMBLE_SIZE,
-        H4Packetizer::ACL_PREAMBLE_SIZE,
-        H4Packetizer::SCO_PREAMBLE_SIZE,
-        H4Packetizer::EVENT_PREAMBLE_SIZE,
-    };
+  } else if (bytes_read > bytes_to_read) {
+    LOG_ALWAYS_FATAL("More bytes read (%u) than expected (%u)!",
+                     static_cast<int>(bytes_read),
+                     static_cast<int>(bytes_to_read));
+  }
 
-    switch (state_) {
-      case HCI_PREAMBLE: {
-        size_t preamble_bytes = preamble_size[static_cast<size_t>(hci_packet_type_)];
-        ssize_t bytes_read = TEMP_FAILURE_RETRY(read(fd, preamble_ + bytes_read_, preamble_bytes - bytes_read_));
-        if (bytes_read == 0) {
-          LOG_ERROR("%s: Will try again to read the header!", __func__);
-          return;
-        }
-        if (bytes_read < 0) {
-          // Ignore temporary failures.
-          if (errno == EAGAIN) {
-            return;
-          }
-          LOG_ALWAYS_FATAL("%s: Read header error: %s", __func__, strerror(errno));
-        }
-        bytes_read_ += bytes_read;
-        if (bytes_read_ == preamble_bytes) {
-          size_t packet_length = HciGetPacketLengthForType(hci_packet_type_, preamble_);
-          packet_.resize(preamble_bytes + packet_length);
-          memcpy(packet_.data(), preamble_, preamble_bytes);
-          bytes_remaining_ = packet_length;
-          if (bytes_remaining_ == 0) {
-            OnPacketReady();
-            state_ = HCI_PREAMBLE;
-            bytes_read_ = 0;
-          } else {
-            state_ = HCI_PAYLOAD;
-            bytes_read_ = 0;
-          }
-        }
-        break;
+  switch (state_) {
+    case HCI_TYPE:
+      hci_packet_type_ = static_cast<hci::PacketType>(packet_type_);
+      if (hci_packet_type_ != hci::PacketType::ACL &&
+          hci_packet_type_ != hci::PacketType::SCO &&
+          hci_packet_type_ != hci::PacketType::COMMAND &&
+          hci_packet_type_ != hci::PacketType::EVENT) {
+        LOG_ALWAYS_FATAL("Unimplemented packet type %hhd", packet_type_);
       }
-
-      case HCI_PAYLOAD: {
-        size_t preamble_bytes = preamble_size[static_cast<size_t>(hci_packet_type_)];
-        ssize_t bytes_read =
-            TEMP_FAILURE_RETRY(read(fd, packet_.data() + preamble_bytes + bytes_read_, bytes_remaining_));
-        if (bytes_read == 0) {
-          LOG_INFO("%s: Will try again to read the payload!", __func__);
-          return;
-        }
-        if (bytes_read < 0) {
-          // Ignore temporary failures.
-          if (errno == EAGAIN) {
-            return;
-          }
-          LOG_ALWAYS_FATAL("%s: Read payload error: %s", __func__, strerror(errno));
-        }
-        bytes_remaining_ -= bytes_read;
-        bytes_read_ += bytes_read;
-        if (bytes_remaining_ == 0) {
+      state_ = HCI_PREAMBLE;
+      bytes_read_ = 0;
+      packet_.resize(preamble_size[static_cast<size_t>(hci_packet_type_)]);
+      break;
+    case HCI_PREAMBLE:
+      bytes_read_ += bytes_read;
+      if (bytes_read_ == packet_.size()) {
+        size_t payload_size =
+            HciGetPacketLengthForType(hci_packet_type_, packet_.data());
+        if (payload_size == 0) {
           OnPacketReady();
-          state_ = HCI_PREAMBLE;
-          bytes_read_ = 0;
+          state_ = HCI_TYPE;
+        } else {
+          packet_.resize(packet_.size() + payload_size);
+          state_ = HCI_PAYLOAD;
         }
-        break;
       }
-    }
+      break;
+    case HCI_PAYLOAD:
+      bytes_read_ += bytes_read;
+      if (bytes_read_ == packet_.size()) {
+        OnPacketReady();
+        state_ = HCI_TYPE;
+      }
+      break;
   }
 }
 
