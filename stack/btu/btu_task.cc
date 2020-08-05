@@ -31,7 +31,7 @@
 #include "osi/include/osi.h"
 #include "stack/btm/btm_int.h"
 #include "stack/include/btu.h"
-#include "stack/l2cap/l2c_int.h"
+#include "stack/include/l2cap_acl_interface.h"
 
 #include <base/bind.h>
 #include <base/logging.h>

@@ -30,6 +30,7 @@
 #include "btm_api.h"
 #include "btm_ble_api.h"
 #include "l2c_api.h"
+#include "l2cap_acl_interface.h"
 #include "l2cdefs.h"
 #include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
@@ -545,7 +546,6 @@ extern void l2c_ccb_timer_timeout(void* data);
 extern void l2c_lcb_timer_timeout(void* data);
 extern void l2c_fcrb_ack_timer_timeout(void* data);
 extern uint8_t l2c_data_write(uint16_t cid, BT_HDR* p_data, uint16_t flag);
-extern void l2c_rcv_acl_data(BT_HDR* p_msg);
 extern void l2c_process_held_packets(bool timed_out);
 
 /* Functions provided by l2c_utils.cc
@@ -684,7 +684,6 @@ extern void l2c_link_sec_comp(const RawAddress* p_bda, tBT_TRANSPORT trasnport,
                               void* p_ref_data, uint8_t status);
 extern void l2c_link_sec_comp2(const RawAddress& p_bda, tBT_TRANSPORT trasnport,
                                void* p_ref_data, uint8_t status);
-extern void l2c_link_segments_xmitted(BT_HDR* p_msg);
 extern void l2c_pin_code_request(const RawAddress& bd_addr);
 extern void l2c_link_adjust_chnl_allocation(void);
 
