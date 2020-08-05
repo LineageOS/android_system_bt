@@ -187,6 +187,9 @@ class Device {
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(PinLength, int, "PinLength");
   // unix timestamp in seconds from epoch
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(CreationUnixTimestamp, int, "DevClass");
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(IsAuthenticated, int, "IsAuthenticated");
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(RequiresMitmProtection, int, "RequiresMitmProtection");
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(IsEncryptionRequired, int, "IsEncryptionRequired");
 };
 
 }  // namespace storage
