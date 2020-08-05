@@ -93,7 +93,7 @@ void btm_dev_init() {
       alarm_new("btm.read_inq_tx_power_timer");
   btm_cb.devcb.read_tx_power_timer = alarm_new("btm.read_tx_power_timer");
 
-  btm_cb.btm_acl_pkt_types_supported =
+  btm_cb.acl_cb_.btm_acl_pkt_types_supported =
       BTM_ACL_PKT_TYPES_MASK_DH1 + BTM_ACL_PKT_TYPES_MASK_DM1 +
       BTM_ACL_PKT_TYPES_MASK_DH3 + BTM_ACL_PKT_TYPES_MASK_DM3 +
       BTM_ACL_PKT_TYPES_MASK_DH5 + BTM_ACL_PKT_TYPES_MASK_DM5;
@@ -268,26 +268,26 @@ static void decode_controller_support() {
   const controller_t* controller = controller_get_interface();
 
   /* Create ACL supported packet types mask */
-  btm_cb.btm_acl_pkt_types_supported =
+  btm_cb.acl_cb_.btm_acl_pkt_types_supported =
       (BTM_ACL_PKT_TYPES_MASK_DH1 + BTM_ACL_PKT_TYPES_MASK_DM1);
 
   if (controller->supports_3_slot_packets())
-    btm_cb.btm_acl_pkt_types_supported |=
+    btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
         (BTM_ACL_PKT_TYPES_MASK_DH3 + BTM_ACL_PKT_TYPES_MASK_DM3);
 
   if (controller->supports_5_slot_packets())
-    btm_cb.btm_acl_pkt_types_supported |=
+    btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
         (BTM_ACL_PKT_TYPES_MASK_DH5 + BTM_ACL_PKT_TYPES_MASK_DM5);
 
   /* Add in EDR related ACL types */
   if (!controller->supports_classic_2m_phy()) {
-    btm_cb.btm_acl_pkt_types_supported |=
+    btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
         (BTM_ACL_PKT_TYPES_MASK_NO_2_DH1 + BTM_ACL_PKT_TYPES_MASK_NO_2_DH3 +
          BTM_ACL_PKT_TYPES_MASK_NO_2_DH5);
   }
 
   if (!controller->supports_classic_3m_phy()) {
-    btm_cb.btm_acl_pkt_types_supported |=
+    btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
         (BTM_ACL_PKT_TYPES_MASK_NO_3_DH1 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH3 +
          BTM_ACL_PKT_TYPES_MASK_NO_3_DH5);
   }
@@ -296,16 +296,16 @@ static void decode_controller_support() {
   if (controller->supports_classic_2m_phy() ||
       controller->supports_classic_3m_phy()) {
     if (!controller->supports_3_slot_edr_packets())
-      btm_cb.btm_acl_pkt_types_supported |=
+      btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
           (BTM_ACL_PKT_TYPES_MASK_NO_2_DH3 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH3);
 
     if (!controller->supports_5_slot_edr_packets())
-      btm_cb.btm_acl_pkt_types_supported |=
+      btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
           (BTM_ACL_PKT_TYPES_MASK_NO_2_DH5 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH5);
   }
 
   BTM_TRACE_DEBUG("Local supported ACL packet types: 0x%04x",
-                  btm_cb.btm_acl_pkt_types_supported);
+                  btm_cb.acl_cb_.btm_acl_pkt_types_supported);
 
   /* Create (e)SCO supported packet types mask */
   btm_cb.btm_sco_pkt_types_supported = 0;
@@ -355,24 +355,24 @@ static void decode_controller_support() {
 
   /* Create Default Policy Settings */
   if (controller->supports_role_switch())
-    btm_cb.btm_def_link_policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
+    btm_cb.acl_cb_.btm_def_link_policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
   else
-    btm_cb.btm_def_link_policy &= ~HCI_ENABLE_MASTER_SLAVE_SWITCH;
+    btm_cb.acl_cb_.btm_def_link_policy &= ~HCI_ENABLE_MASTER_SLAVE_SWITCH;
 
   if (controller->supports_hold_mode())
-    btm_cb.btm_def_link_policy |= HCI_ENABLE_HOLD_MODE;
+    btm_cb.acl_cb_.btm_def_link_policy |= HCI_ENABLE_HOLD_MODE;
   else
-    btm_cb.btm_def_link_policy &= ~HCI_ENABLE_HOLD_MODE;
+    btm_cb.acl_cb_.btm_def_link_policy &= ~HCI_ENABLE_HOLD_MODE;
 
   if (controller->supports_sniff_mode())
-    btm_cb.btm_def_link_policy |= HCI_ENABLE_SNIFF_MODE;
+    btm_cb.acl_cb_.btm_def_link_policy |= HCI_ENABLE_SNIFF_MODE;
   else
-    btm_cb.btm_def_link_policy &= ~HCI_ENABLE_SNIFF_MODE;
+    btm_cb.acl_cb_.btm_def_link_policy &= ~HCI_ENABLE_SNIFF_MODE;
 
   if (controller->supports_park_mode())
-    btm_cb.btm_def_link_policy |= HCI_ENABLE_PARK_MODE;
+    btm_cb.acl_cb_.btm_def_link_policy |= HCI_ENABLE_PARK_MODE;
   else
-    btm_cb.btm_def_link_policy &= ~HCI_ENABLE_PARK_MODE;
+    btm_cb.acl_cb_.btm_def_link_policy &= ~HCI_ENABLE_PARK_MODE;
 
   btm_sec_dev_reset();
 
