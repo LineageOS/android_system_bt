@@ -205,7 +205,7 @@ bool l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
       btm_acl_created(ci.bd_addr, NULL, NULL, handle, p_lcb->link_role,
                       BT_TRANSPORT_BR_EDR);
 
-    BTM_SetLinkSuperTout(ci.bd_addr, btm_cb.btm_def_link_super_tout);
+    BTM_SetLinkSuperTout(ci.bd_addr, btm_cb.acl_cb_.btm_def_link_super_tout);
 
     /* If dedicated bonding do not process any further */
     if (p_lcb->is_bonding) {
@@ -366,10 +366,10 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
   } else {
     /* There can be a case when we rejected PIN code authentication */
     /* otherwise save a new reason */
-    if (btm_cb.acl_disc_reason != HCI_ERR_HOST_REJECT_SECURITY)
-      btm_cb.acl_disc_reason = reason;
+    if (btm_cb.acl_cb_.acl_disc_reason != HCI_ERR_HOST_REJECT_SECURITY)
+      btm_cb.acl_cb_.acl_disc_reason = reason;
 
-    p_lcb->disc_reason = btm_cb.acl_disc_reason;
+    p_lcb->disc_reason = btm_cb.acl_cb_.acl_disc_reason;
 
     /* Just in case app decides to try again in the callback context */
     p_lcb->link_state = LST_DISCONNECTING;
