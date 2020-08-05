@@ -9,6 +9,7 @@ table ChannelData {
 table LinkData {
   address:string;
   dynamic_channels:[ChannelData];
+  fixed_channels:[ChannelData];
 }
 
 table L2capClassicModuleData {
