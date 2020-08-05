@@ -264,7 +264,7 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle,
     btm_handle_to_acl_index(acl_handle);
     uint8_t acl_index = btm_handle_to_acl_index(acl_handle);
     if (acl_index < MAX_L2CAP_LINKS) {
-      p_acl = &btm_cb.acl_db[acl_index];
+      p_acl = &btm_cb.acl_cb_.acl_db[acl_index];
       if (!HCI_EDR_ESCO_2MPS_SUPPORTED(p_acl->peer_lmp_feature_pages[0])) {
         BTM_TRACE_DEBUG("BTM Remote does not support 2-EDR eSCO");
         temp_packet_types |=
