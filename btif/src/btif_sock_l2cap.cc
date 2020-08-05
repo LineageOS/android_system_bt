@@ -19,7 +19,6 @@
 
 #include <base/logging.h>
 #include <errno.h>
-#include <stdlib.h>
 #include <sys/ioctl.h>
 #include <sys/socket.h>
 #include <sys/types.h>
@@ -33,27 +32,17 @@
 
 #include "osi/include/allocator.h"
 
-#include "bt_common.h"
 #include "bt_target.h"
-#include "bta_api.h"
 #include "bta_jv_api.h"
-#include "bta_jv_co.h"
-#include "btif_common.h"
-#include "btif_sock_sdp.h"
 #include "btif_sock_thread.h"
 #include "btif_sock_util.h"
 #include "btif_uid.h"
 #include "btif_util.h"
 #include "btm_api.h"
 #include "btm_int.h"
-#include "btu.h"
 #include "common/metrics.h"
-#include "hcimsgs.h"
 #include "l2c_api.h"
-#include "l2c_int.h"
 #include "l2cdefs.h"
-#include "port_api.h"
-#include "sdp_api.h"
 
 struct packet {
   struct packet *next, *prev;
