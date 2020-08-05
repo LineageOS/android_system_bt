@@ -197,7 +197,7 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
   if (((pm_id != BTM_PM_SET_ONLY_ID) &&
        (btm_cb.pm_reg_db[pm_id].mask & BTM_PM_REG_SET)) ||
       ((pm_id == BTM_PM_SET_ONLY_ID) &&
-       (btm_cb.pm_pend_link != MAX_L2CAP_LINKS))) {
+       (btm_cb.acl_cb_.pm_pend_link != MAX_L2CAP_LINKS))) {
 #if (BTM_PM_DEBUG == TRUE)
     BTM_TRACE_DEBUG("BTM_SetPowerMode: Saving cmd acl_ind %d temp_pm_id %d",
                     acl_ind, temp_pm_id);
@@ -210,13 +210,13 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
 
 #if (BTM_PM_DEBUG == TRUE)
   BTM_TRACE_DEBUG("btm_pm state:0x%x, pm_pend_link: %d", p_cb->state,
-                  btm_cb.pm_pend_link);
+                  btm_cb.acl_cb_.pm_pend_link);
 #endif  // BTM_PM_DEBUG
   /* if mode == hold or pending, return */
   if ((p_cb->state == BTM_PM_STS_HOLD) || (p_cb->state == BTM_PM_STS_PENDING) ||
-      (btm_cb.pm_pend_link != MAX_L2CAP_LINKS)) {
+      (btm_cb.acl_cb_.pm_pend_link != MAX_L2CAP_LINKS)) {
     /* command pending */
-    if (acl_ind != btm_cb.pm_pend_link) {
+    if (acl_ind != btm_cb.acl_cb_.pm_pend_link) {
       /* set the stored mask */
       p_cb->state |= BTM_PM_STORED_MASK;
       BTM_TRACE_DEBUG("%s: btm_pm state stored:%d", __func__, acl_ind);
@@ -318,8 +318,8 @@ tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat,
 
   if (BTM_PM_STS_ACTIVE == btm_cb.pm_mode_db[acl_ind].state ||
       BTM_PM_STS_SNIFF == btm_cb.pm_mode_db[acl_ind].state) {
-    btsnd_hcic_sniff_sub_rate(btm_cb.acl_db[acl_ind].hci_handle, max_lat,
-                              min_rmt_to, min_loc_to);
+    btsnd_hcic_sniff_sub_rate(btm_cb.acl_cb_.acl_db[acl_ind].hci_handle,
+                              max_lat, min_rmt_to, min_loc_to);
     return BTM_SUCCESS;
   }
   p_cb = &btm_cb.pm_mode_db[acl_ind];
@@ -356,12 +356,12 @@ void btm_pm_reset(void) {
     btm_cb.pm_reg_db[xx].mask = BTM_PM_REC_NOT_USED;
   }
 
-  if (cb != NULL && btm_cb.pm_pend_link < MAX_L2CAP_LINKS)
-    (*cb)(btm_cb.acl_db[btm_cb.pm_pend_link].remote_addr, BTM_PM_STS_ERROR,
-          BTM_DEV_RESET, 0);
+  if (cb != NULL && btm_cb.acl_cb_.pm_pend_link < MAX_L2CAP_LINKS)
+    (*cb)(btm_cb.acl_cb_.acl_db[btm_cb.acl_cb_.pm_pend_link].remote_addr,
+          BTM_PM_STS_ERROR, BTM_DEV_RESET, 0);
 
   /* no command pending */
-  btm_cb.pm_pend_link = MAX_L2CAP_LINKS;
+  btm_cb.acl_cb_.pm_pend_link = MAX_L2CAP_LINKS;
 }
 
 /*******************************************************************************
@@ -394,7 +394,7 @@ void btm_pm_sm_alloc(uint8_t ind) {
  *
  ******************************************************************************/
 static int btm_pm_find_acl_ind(const RawAddress& remote_bda) {
-  tACL_CONN* p = &btm_cb.acl_db[0];
+  tACL_CONN* p = &btm_cb.acl_cb_.acl_db[0];
   uint8_t xx;
 
   for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p++) {
@@ -579,13 +579,14 @@ static tBTM_STATUS btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
     md_res.mode = BTM_PM_MD_ACTIVE;
 #if (BTM_SSR_INCLUDED == TRUE)
   else if (BTM_PM_MD_SNIFF == md_res.mode && p_cb->max_lat) {
-    btsnd_hcic_sniff_sub_rate(btm_cb.acl_db[link_ind].hci_handle, p_cb->max_lat,
-                              p_cb->min_rmt_to, p_cb->min_loc_to);
+    btsnd_hcic_sniff_sub_rate(btm_cb.acl_cb_.acl_db[link_ind].hci_handle,
+                              p_cb->max_lat, p_cb->min_rmt_to,
+                              p_cb->min_loc_to);
     p_cb->max_lat = 0;
   }
 #endif  // BTM_SSR_INCLUDED
   /* Default is failure */
-  btm_cb.pm_pend_link = MAX_L2CAP_LINKS;
+  btm_cb.acl_cb_.pm_pend_link = MAX_L2CAP_LINKS;
 
   /* send the appropriate HCI command */
   btm_cb.pm_pend_id = pm_id;
@@ -601,45 +602,47 @@ static tBTM_STATUS btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
     case BTM_PM_MD_ACTIVE:
       switch (p_cb->state) {
         case BTM_PM_MD_SNIFF:
-          btsnd_hcic_exit_sniff_mode(btm_cb.acl_db[link_ind].hci_handle);
-          btm_cb.pm_pend_link = link_ind;
+          btsnd_hcic_exit_sniff_mode(
+              btm_cb.acl_cb_.acl_db[link_ind].hci_handle);
+          btm_cb.acl_cb_.pm_pend_link = link_ind;
           break;
         case BTM_PM_MD_PARK:
-          btsnd_hcic_exit_park_mode(btm_cb.acl_db[link_ind].hci_handle);
-          btm_cb.pm_pend_link = link_ind;
+          btsnd_hcic_exit_park_mode(btm_cb.acl_cb_.acl_db[link_ind].hci_handle);
+          btm_cb.acl_cb_.pm_pend_link = link_ind;
           break;
         default:
-          /* Failure btm_cb.pm_pend_link = MAX_L2CAP_LINKS */
+          /* Failure btm_cb.acl_cb_.pm_pend_link = MAX_L2CAP_LINKS */
           break;
       }
       break;
 
     case BTM_PM_MD_HOLD:
-      btsnd_hcic_hold_mode(btm_cb.acl_db[link_ind].hci_handle, md_res.max,
-                           md_res.min);
-      btm_cb.pm_pend_link = link_ind;
+      btsnd_hcic_hold_mode(btm_cb.acl_cb_.acl_db[link_ind].hci_handle,
+                           md_res.max, md_res.min);
+      btm_cb.acl_cb_.pm_pend_link = link_ind;
       break;
 
     case BTM_PM_MD_SNIFF:
-      btsnd_hcic_sniff_mode(btm_cb.acl_db[link_ind].hci_handle, md_res.max,
-                            md_res.min, md_res.attempt, md_res.timeout);
-      btm_cb.pm_pend_link = link_ind;
+      btsnd_hcic_sniff_mode(btm_cb.acl_cb_.acl_db[link_ind].hci_handle,
+                            md_res.max, md_res.min, md_res.attempt,
+                            md_res.timeout);
+      btm_cb.acl_cb_.pm_pend_link = link_ind;
       break;
 
     case BTM_PM_MD_PARK:
-      btsnd_hcic_park_mode(btm_cb.acl_db[link_ind].hci_handle, md_res.max,
-                           md_res.min);
-      btm_cb.pm_pend_link = link_ind;
+      btsnd_hcic_park_mode(btm_cb.acl_cb_.acl_db[link_ind].hci_handle,
+                           md_res.max, md_res.min);
+      btm_cb.acl_cb_.pm_pend_link = link_ind;
       break;
     default:
-      /* Failure btm_cb.pm_pend_link = MAX_L2CAP_LINKS */
+      /* Failure btm_cb.acl_cb_.pm_pend_link = MAX_L2CAP_LINKS */
       break;
   }
 
-  if (btm_cb.pm_pend_link == MAX_L2CAP_LINKS) {
+  if (btm_cb.acl_cb_.pm_pend_link == MAX_L2CAP_LINKS) {
 /* the command was not sent */
 #if (BTM_PM_DEBUG == TRUE)
-    BTM_TRACE_DEBUG("pm_pend_link: %d", btm_cb.pm_pend_link);
+    BTM_TRACE_DEBUG("pm_pend_link: %d", btm_cb.acl_cb_.pm_pend_link);
 #endif  // BTM_PM_DEBUG
     return (BTM_NO_RESOURCES);
   }
@@ -686,9 +689,9 @@ void btm_pm_proc_cmd_status(uint8_t status) {
   tBTM_PM_MCB* p_cb;
   tBTM_PM_STATUS pm_status;
 
-  if (btm_cb.pm_pend_link >= MAX_L2CAP_LINKS) return;
+  if (btm_cb.acl_cb_.pm_pend_link >= MAX_L2CAP_LINKS) return;
 
-  p_cb = &btm_cb.pm_mode_db[btm_cb.pm_pend_link];
+  p_cb = &btm_cb.pm_mode_db[btm_cb.acl_cb_.pm_pend_link];
 
   if (status == HCI_SUCCESS) {
     p_cb->state = BTM_PM_ST_PENDING;
@@ -705,16 +708,17 @@ void btm_pm_proc_cmd_status(uint8_t status) {
   if ((btm_cb.pm_pend_id != BTM_PM_SET_ONLY_ID) &&
       (btm_cb.pm_reg_db[btm_cb.pm_pend_id].mask & BTM_PM_REG_NOTIF)) {
     (*btm_cb.pm_reg_db[btm_cb.pm_pend_id].cback)(
-        btm_cb.acl_db[btm_cb.pm_pend_link].remote_addr, pm_status, 0, status);
+        btm_cb.acl_cb_.acl_db[btm_cb.acl_cb_.pm_pend_link].remote_addr,
+        pm_status, 0, status);
   }
 
 /* no pending cmd now */
 #if (BTM_PM_DEBUG == TRUE)
   BTM_TRACE_DEBUG(
       "btm_pm_proc_cmd_status state:0x%x, pm_pend_link: %d(new: %d)",
-      p_cb->state, btm_cb.pm_pend_link, MAX_L2CAP_LINKS);
+      p_cb->state, btm_cb.acl_cb_.pm_pend_link, MAX_L2CAP_LINKS);
 #endif  // BTM_PM_DEBUG
-  btm_cb.pm_pend_link = MAX_L2CAP_LINKS;
+  btm_cb.acl_cb_.pm_pend_link = MAX_L2CAP_LINKS;
 
   btm_pm_check_stored();
 }
@@ -747,7 +751,7 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
   xx = btm_handle_to_acl_index(hci_handle);
   if (xx >= MAX_L2CAP_LINKS) return;
 
-  p = &btm_cb.acl_db[xx];
+  p = &btm_cb.acl_cb_.acl_db[xx];
 
   /* update control block */
   p_cb = &(btm_cb.pm_mode_db[xx]);
@@ -832,7 +836,7 @@ void btm_pm_proc_ssr_evt(uint8_t* p, UNUSED_ATTR uint16_t evt_len) {
   STREAM_TO_UINT16(max_rx_lat, p);
   p_cb = &(btm_cb.pm_mode_db[xx]);
 
-  p_acl = &btm_cb.acl_db[xx];
+  p_acl = &btm_cb.acl_cb_.acl_db[xx];
   if (p_cb->interval == max_rx_lat) {
     /* using legacy sniff */
     use_ssr = false;
