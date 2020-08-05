@@ -299,11 +299,6 @@
 #define BTM_INQ_DB_SIZE 40
 #endif
 
-/* Should connections to unknown devices be allowed when not discoverable? */
-#ifndef BTM_ALLOW_CONN_IF_NONDISCOVER
-#define BTM_ALLOW_CONN_IF_NONDISCOVER TRUE
-#endif
-
 /* Sets the Page_Scan_Window:  the length of time that the device is performing
  * a page scan. */
 #ifndef BTM_DEFAULT_CONN_WINDOW
