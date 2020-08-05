@@ -1057,6 +1057,17 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, tL2C_CCB* p_ccb, BT_HDR* p_buf) {
   }
 }
 
+void l2c_OnHciModeChangeSendPendingPackets(RawAddress remote) {
+  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(remote, BT_TRANSPORT_BR_EDR);
+  if (p_lcb != NULL) {
+    /* There might be any pending packets due to SNIFF or PENDING state */
+    /* Trigger L2C to start transmission of the pending packets. */
+    BTM_TRACE_DEBUG(
+        "btm mode change to active; check l2c_link for outgoing packets");
+    l2c_link_check_send_pkts(p_lcb, NULL, NULL);
+  }
+}
+
 /*******************************************************************************
  *
  * Function         l2c_link_send_to_lower
