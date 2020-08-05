@@ -38,16 +38,12 @@
 #include "bta_jv_int.h"
 #include "bta_sys.h"
 #include "btm_api.h"
-#include "btm_int.h"
-#include "device/include/controller.h"
 #include "gap_api.h"
 #include "l2c_api.h"
 #include "osi/include/allocator.h"
 #include "port_api.h"
 #include "rfcdefs.h"
 #include "sdp_api.h"
-#include "stack/l2cap/l2c_int.h"
-#include "utl.h"
 
 #include "osi/include/osi.h"
 
