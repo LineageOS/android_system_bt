@@ -52,9 +52,9 @@
 #include "hci_evt_length.h"
 #include "hci_layer.h"
 #include "hcimsgs.h"
-#include "l2c_int.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
+#include "stack/include/l2cap_hci_link_interface.h"
 
 using base::Location;
 
