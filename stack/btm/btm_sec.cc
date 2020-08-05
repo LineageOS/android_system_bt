@@ -2534,13 +2534,7 @@ static tBTM_STATUS btm_sec_dd_create_conn(tBTM_SEC_DEV_REC* p_dev_rec) {
   /* set up the control block to indicated dedicated bonding */
   btm_cb.pairing_flags |= BTM_PAIR_FLAGS_DISC_WHEN_DONE;
 
-  if (!l2cu_create_conn_br_edr(p_lcb)) {
-    LOG(WARNING) << "Security Manager: failed create allocate LCB "
-                 << p_dev_rec->bd_addr;
-
-    l2cu_release_lcb(p_lcb);
-    return (BTM_NO_RESOURCES);
-  }
+  l2cu_create_conn_br_edr(p_lcb);
 
   btm_acl_update_busy_level(BTM_BLI_PAGE_EVT);
 
