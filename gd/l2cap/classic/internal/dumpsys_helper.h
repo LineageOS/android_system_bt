@@ -16,8 +16,11 @@
 
 #pragma once
 
+#include "l2cap/classic/internal/fixed_channel_impl.h"
+#include "l2cap/classic/internal/link.h"
 #include "l2cap/classic/internal/link_manager.h"
 #include "l2cap/internal/dynamic_channel_allocator.h"
+#include "l2cap/internal/fixed_channel_allocator.h"
 #include "l2cap_classic_module_generated.h"
 
 namespace bluetooth {
@@ -32,6 +35,9 @@ class DumpsysHelper {
   std::vector<flatbuffers::Offset<ChannelData>> DumpActiveDynamicChannels(
       flatbuffers::FlatBufferBuilder* fb_builder,
       const l2cap::internal::DynamicChannelAllocator& channel_allocator) const;
+  std::vector<flatbuffers::Offset<ChannelData>> DumpActiveFixedChannels(
+      flatbuffers::FlatBufferBuilder* fb_builder,
+      const l2cap::internal::FixedChannelAllocator<FixedChannelImpl, Link>& channel_allocator) const;
   std::vector<flatbuffers::Offset<LinkData>> DumpActiveLinks(flatbuffers::FlatBufferBuilder* fb_builder) const;
 
  private:
