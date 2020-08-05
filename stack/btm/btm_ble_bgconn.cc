@@ -370,7 +370,7 @@ bool btm_ble_start_auto_conn() {
   }
 
   if (btm_ble_get_conn_st() != BLE_CONN_IDLE ||
-      !background_connections_pending() || !l2cu_can_allocate_lcb()) {
+      !background_connections_pending()) {
     return false;
   }
 
