@@ -46,17 +46,6 @@ constexpr uint16_t L2CAP_LE_MIN_MPS = 23;
 constexpr uint16_t L2CAP_LE_MAX_MPS = 65533;
 constexpr uint16_t L2CAP_LE_CREDIT_MAX = 65535;
 
-// This is initial amout of credits we send, and amount to which we increase
-// credits once they fall below threshold
-constexpr uint16_t L2CAP_LE_CREDIT_DEFAULT = 0xffff;
-
-// If credit count on remote fall below this value, we send back credits to
-// reach default value.
-constexpr uint16_t L2CAP_LE_CREDIT_THRESHOLD = 0x0040;
-
-static_assert(L2CAP_LE_CREDIT_THRESHOLD < L2CAP_LE_CREDIT_DEFAULT,
-              "Threshold must be smaller then default credits");
-
 #define L2CAP_NO_IDLE_TIMEOUT 0xFFFF
 
 /*
