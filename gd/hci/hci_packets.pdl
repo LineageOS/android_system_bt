@@ -3222,11 +3222,14 @@ packet LeRemoveDeviceFromPeriodicAdvertisingList : LeAdvertisingCommand (op_code
 }
 
 packet LeClearPeriodicAdvertisingList : LeAdvertisingCommand (op_code = LE_CLEAR_PERIODIC_ADVERTISING_LIST) {
-  _payload_,  // placeholder (unimplemented)
 }
 
-packet LeReadPeriodicAdvertisingListSize : LeAdvertisingCommand (op_code = LE_READ_PERIODIC_ADVERTISING_LIST_SIZE) {
-  _payload_,  // placeholder (unimplemented)
+packet LeReadPeriodicAdvertiserListSize : CommandPacket (op_code = LE_READ_PERIODIC_ADVERTISING_LIST_SIZE) {
+}
+
+packet LeReadPeriodicAdvertiserListSizeComplete : CommandComplete (command_op_code = LE_READ_PERIODIC_ADVERTISING_LIST_SIZE) {
+  status : ErrorCode,
+  periodic_advertiser_list_size : 8,
 }
 
 packet LeReadTransmitPower : LeAdvertisingCommand (op_code = LE_READ_TRANSMIT_POWER) {

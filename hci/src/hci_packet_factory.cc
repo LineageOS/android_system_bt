@@ -126,6 +126,10 @@ static BT_HDR* make_ble_read_buffer_size(void) {
   return make_command_no_params(HCI_BLE_READ_BUFFER_SIZE);
 }
 
+static BT_HDR* make_ble_read_buffer_size_v2(void) {
+  return make_command_no_params(HCI_BLE_READ_BUFFER_SIZE_V2);
+}
+
 static BT_HDR* make_ble_read_supported_states(void) {
   return make_command_no_params(HCI_BLE_READ_SUPPORTED_STATES);
 }
@@ -155,6 +159,10 @@ static BT_HDR* make_ble_read_number_of_supported_advertising_sets(void) {
       HCI_LE_READ_NUMBER_OF_SUPPORTED_ADVERTISING_SETS);
 }
 
+static BT_HDR* make_ble_read_periodic_advertiser_list_size(void) {
+  return make_command_no_params(HCI_BLE_READ_PERIODIC_ADVERTISER_LIST_SIZE);
+}
+
 static BT_HDR* make_read_local_supported_codecs(void) {
   return make_command_no_params(HCI_READ_LOCAL_SUPPORTED_CODECS);
 }
@@ -166,6 +174,19 @@ static BT_HDR* make_ble_set_event_mask(const bt_event_mask_t* event_mask) {
       make_command(HCI_BLE_SET_EVENT_MASK, parameter_size, &stream);
 
   ARRAY8_TO_STREAM(stream, event_mask->as_array);
+  return packet;
+}
+
+static BT_HDR* make_ble_set_host_features(uint8_t bit_number,
+                                          uint8_t bit_value) {
+  uint8_t* stream;
+  uint8_t parameter_size = sizeof(bit_number) + sizeof(bit_value);
+  BT_HDR* packet =
+      make_command(HCI_LE_SET_HOST_FEATURE, parameter_size, &stream);
+
+  UINT8_TO_STREAM(stream, bit_number);
+  UINT8_TO_STREAM(stream, bit_value);
+
   return packet;
 }
 
@@ -212,6 +233,7 @@ static const hci_packet_factory_t interface = {
     make_ble_write_host_support,
     make_ble_read_white_list_size,
     make_ble_read_buffer_size,
+    make_ble_read_buffer_size_v2,
     make_ble_read_supported_states,
     make_ble_read_local_supported_features,
     make_ble_read_resolving_list_size,
@@ -219,7 +241,9 @@ static const hci_packet_factory_t interface = {
     make_ble_read_maximum_data_length,
     make_ble_read_maximum_advertising_data_length,
     make_ble_read_number_of_supported_advertising_sets,
+    make_ble_read_periodic_advertiser_list_size,
     make_ble_set_event_mask,
+    make_ble_set_host_features,
     make_read_local_supported_codecs};
 
 const hci_packet_factory_t* hci_packet_factory_get_interface() {

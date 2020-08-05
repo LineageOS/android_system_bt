@@ -80,6 +80,12 @@ class Controller : public Module {
   virtual bool SupportsBlePeriodicAdvertising() const;
   virtual bool SupportsBlePeripheralInitiatedFeatureExchange() const;
   virtual bool SupportsBleConnectionParameterRequest() const;
+  virtual bool SupportsBlePeriodicAdvertisingSyncTransferSender() const;
+  virtual bool SupportsBlePeriodicAdvertisingSyncTransferRecipient() const;
+  virtual bool SupportsBleConnectedIsochronousStreamMaster() const;
+  virtual bool SupportsBleConnectedIsochronousStreamSlave() const;
+  virtual bool SupportsBleIsochronousBroadcaster() const;
+  virtual bool SupportsBleSynchronizedReceiver() const;
 
   virtual uint16_t GetAclPacketLength() const;
 
@@ -125,6 +131,10 @@ class Controller : public Module {
 
   virtual uint64_t GetLeSupportedStates() const;
 
+  virtual LeBufferSize GetControllerIsoBufferSize() const;
+
+  virtual uint64_t GetControllerLeLocalSupportedFeatures() const;
+
   virtual uint8_t GetLeConnectListSize() const;
 
   virtual uint8_t GetLeResolvingListSize() const;
@@ -136,6 +146,8 @@ class Controller : public Module {
   virtual uint16_t GetLeSuggestedDefaultDataLength() const;
 
   virtual uint8_t GetLeNumberOfSupportedAdverisingSets() const;
+
+  virtual uint8_t GetLePeriodicAdvertiserListSize() const;
 
   virtual VendorCapabilities GetVendorCapabilities() const;
 

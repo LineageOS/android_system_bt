@@ -30,15 +30,16 @@
 #include "main/shim/controller.h"
 #include "main/shim/shim.h"
 #include "osi/include/future.h"
+#include "osi/include/properties.h"
 #include "stack/include/btm_ble_api.h"
 
-const bt_event_mask_t BLE_EVENT_MASK = {{0x00, 0x00, 0x00, 0x00, 0x00, 0x02,
+const bt_event_mask_t BLE_EVENT_MASK = {{0x00, 0x00, 0x00, 0x00, 0x7F, 0x02,
 #if (BLE_PRIVACY_SPT == TRUE)
-                                         0x1E,
+                                         0xFE,
 #else
                                          /* Disable "LE Enhanced Connection
                                             Complete" when privacy is off */
-                                         0x1C,
+                                         0xFC,
 #endif
                                          0x7f}};
 
@@ -52,6 +53,7 @@ const uint8_t SCO_HOST_BUFFER_SIZE = 0xff;
 #define BLE_SUPPORTED_STATES_SIZE 8
 #define BLE_SUPPORTED_FEATURES_SIZE 8
 #define MAX_LOCAL_SUPPORTED_CODECS_SIZE 8
+#define LL_FEATURE_BIT_ISO_HOST_SUPPORT 32
 
 static const hci_t* local_hci;
 static const hci_packet_factory_t* packet_factory;
@@ -66,8 +68,11 @@ static uint8_t last_features_classic_page_index;
 
 static uint16_t acl_data_size_classic;
 static uint16_t acl_data_size_ble;
+static uint16_t iso_data_size;
+
 static uint16_t acl_buffer_count_classic;
 static uint8_t acl_buffer_count_ble;
+static uint8_t iso_buffer_count;
 
 static uint8_t ble_white_list_size;
 static uint8_t ble_resolving_list_max_size;
@@ -81,11 +86,13 @@ static uint16_t ble_supported_max_rx_time;
 
 static uint16_t ble_maxium_advertising_data_length;
 static uint8_t ble_number_of_supported_advertising_sets;
+static uint8_t ble_periodic_advertiser_list_size;
 static uint8_t local_supported_codecs[MAX_LOCAL_SUPPORTED_CODECS_SIZE];
 static uint8_t number_of_local_supported_codecs = 0;
 
 static bool readable;
 static bool ble_supported;
+static bool iso_supported;
 static bool simple_pairing_supported;
 static bool secure_connections_supported;
 
@@ -200,10 +207,29 @@ static future_t* start_up(void) {
     packet_parser->parse_ble_read_white_list_size_response(
         response, &ble_white_list_size);
 
-    // Request the ble buffer size next
-    response = AWAIT_COMMAND(packet_factory->make_ble_read_buffer_size());
-    packet_parser->parse_ble_read_buffer_size_response(
-        response, &acl_data_size_ble, &acl_buffer_count_ble);
+    // Request the ble supported features next
+    response =
+        AWAIT_COMMAND(packet_factory->make_ble_read_local_supported_features());
+    packet_parser->parse_ble_read_local_supported_features_response(
+        response, &features_ble);
+
+    iso_supported = HCI_LE_CIS_MASTER(features_ble.as_array) ||
+                    HCI_LE_CIS_SLAVE(features_ble.as_array) ||
+                    HCI_LE_ISO_BROADCASTER(features_ble.as_array);
+
+    if (iso_supported) {
+      // Request the ble buffer size next
+      response = AWAIT_COMMAND(packet_factory->make_ble_read_buffer_size_v2());
+      packet_parser->parse_ble_read_buffer_size_v2_response(
+          response, &acl_data_size_ble, &acl_buffer_count_ble, &iso_data_size,
+          &iso_buffer_count);
+
+    } else {
+      // Request the ble buffer size next
+      response = AWAIT_COMMAND(packet_factory->make_ble_read_buffer_size());
+      packet_parser->parse_ble_read_buffer_size_response(
+          response, &acl_data_size_ble, &acl_buffer_count_ble);
+    }
 
     // Response of 0 indicates ble has the same buffer size as classic
     if (acl_data_size_ble == 0) acl_data_size_ble = acl_data_size_classic;
@@ -212,12 +238,6 @@ static future_t* start_up(void) {
     response = AWAIT_COMMAND(packet_factory->make_ble_read_supported_states());
     packet_parser->parse_ble_read_supported_states_response(
         response, ble_supported_states, sizeof(ble_supported_states));
-
-    // Request the ble supported features next
-    response =
-        AWAIT_COMMAND(packet_factory->make_ble_read_local_supported_features());
-    packet_parser->parse_ble_read_local_supported_features_response(
-        response, &features_ble);
 
     if (HCI_LE_ENHANCED_PRIVACY_SUPPORTED(features_ble.as_array)) {
       response =
@@ -254,10 +274,24 @@ static future_t* start_up(void) {
       ble_maxium_advertising_data_length = 31;
     }
 
+    if (HCI_LE_PERIODIC_ADVERTISING_SUPPORTED(features_ble.as_array)) {
+      response = AWAIT_COMMAND(
+          packet_factory->make_ble_read_periodic_advertiser_list_size());
+
+      packet_parser->parse_ble_read_size_of_advertiser_list(
+          response, &ble_periodic_advertiser_list_size);
+    }
+
     // Set the ble event mask next
     response =
         AWAIT_COMMAND(packet_factory->make_ble_set_event_mask(&BLE_EVENT_MASK));
     packet_parser->parse_generic_command_complete(response);
+
+    if (HCI_LE_SET_HOST_FEATURE_SUPPORTED(supported_commands)) {
+      response = AWAIT_COMMAND(packet_factory->make_ble_set_host_features(
+          LL_FEATURE_BIT_ISO_HOST_SUPPORT, 0x01));
+      packet_parser->parse_generic_command_complete(response);
+    }
   }
 
   if (simple_pairing_supported) {
@@ -550,6 +584,44 @@ static bool supports_ble_connection_parameter_request(void) {
   return HCI_LE_CONN_PARAM_REQ_SUPPORTED(features_ble.as_array);
 }
 
+static bool supports_ble_periodic_advertising_sync_transfer_sender(void) {
+  CHECK(readable);
+  CHECK(ble_supported);
+  return HCI_LE_PERIODIC_ADVERTISING_SYNC_TRANSFER_SENDER(
+      features_ble.as_array);
+}
+
+static bool supports_ble_periodic_advertising_sync_transfer_recipient(void) {
+  CHECK(readable);
+  CHECK(ble_supported);
+  return HCI_LE_PERIODIC_ADVERTISING_SYNC_TRANSFER_RECIPIENT(
+      features_ble.as_array);
+}
+
+static bool supports_ble_connected_isochronous_stream_master(void) {
+  CHECK(readable);
+  CHECK(ble_supported);
+  return HCI_LE_CIS_MASTER(features_ble.as_array);
+}
+
+static bool supports_ble_connected_isochronous_stream_slave(void) {
+  CHECK(readable);
+  CHECK(ble_supported);
+  return HCI_LE_CIS_SLAVE(features_ble.as_array);
+}
+
+static bool supports_ble_isochronous_broadcaster(void) {
+  CHECK(readable);
+  CHECK(ble_supported);
+  return HCI_LE_ISO_BROADCASTER(features_ble.as_array);
+}
+
+static bool supports_ble_synchronized_receiver(void) {
+  CHECK(readable);
+  CHECK(ble_supported);
+  return HCI_LE_SYNCHRONIZED_RECEIVER(features_ble.as_array);
+}
+
 static uint16_t get_acl_data_size_classic(void) {
   CHECK(readable);
   return acl_data_size_classic;
@@ -561,6 +633,11 @@ static uint16_t get_acl_data_size_ble(void) {
   return acl_data_size_ble;
 }
 
+static uint16_t get_iso_data_size(void) {
+  CHECK(readable);
+  return iso_data_size;
+}
+
 static uint16_t get_acl_packet_size_classic(void) {
   CHECK(readable);
   return acl_data_size_classic + HCI_DATA_PREAMBLE_SIZE;
@@ -569,6 +646,11 @@ static uint16_t get_acl_packet_size_classic(void) {
 static uint16_t get_acl_packet_size_ble(void) {
   CHECK(readable);
   return acl_data_size_ble + HCI_DATA_PREAMBLE_SIZE;
+}
+
+static uint16_t get_iso_packet_size(void) {
+  CHECK(readable);
+  return iso_data_size + HCI_DATA_PREAMBLE_SIZE;
 }
 
 static uint16_t get_ble_suggested_default_data_length(void) {
@@ -595,6 +677,12 @@ static uint8_t get_ble_number_of_supported_advertising_sets(void) {
   return ble_number_of_supported_advertising_sets;
 }
 
+static uint8_t get_ble_periodic_advertiser_list_size(void) {
+  CHECK(readable);
+  CHECK(ble_supported);
+  return ble_periodic_advertiser_list_size;
+}
+
 static uint16_t get_acl_buffer_count_classic(void) {
   CHECK(readable);
   return acl_buffer_count_classic;
@@ -604,6 +692,12 @@ static uint8_t get_acl_buffer_count_ble(void) {
   CHECK(readable);
   CHECK(ble_supported);
   return acl_buffer_count_ble;
+}
+
+static uint8_t get_iso_buffer_count(void) {
+  CHECK(readable);
+  CHECK(ble_supported);
+  return iso_buffer_count;
 }
 
 static uint8_t get_ble_white_list_size(void) {
@@ -688,19 +782,30 @@ static const controller_t interface = {
     supports_ble_periodic_advertising,
     supports_ble_peripheral_initiated_feature_exchange,
     supports_ble_connection_parameter_request,
+    supports_ble_periodic_advertising_sync_transfer_sender,
+    supports_ble_periodic_advertising_sync_transfer_recipient,
+    supports_ble_connected_isochronous_stream_master,
+    supports_ble_connected_isochronous_stream_slave,
+    supports_ble_isochronous_broadcaster,
+    supports_ble_synchronized_receiver,
 
     get_acl_data_size_classic,
     get_acl_data_size_ble,
+    get_iso_data_size,
 
     get_acl_packet_size_classic,
     get_acl_packet_size_ble,
+    get_iso_packet_size,
+
     get_ble_suggested_default_data_length,
     get_ble_maximum_tx_data_length,
     get_ble_maxium_advertising_data_length,
     get_ble_number_of_supported_advertising_sets,
+    get_ble_periodic_advertiser_list_size,
 
     get_acl_buffer_count_classic,
     get_acl_buffer_count_ble,
+    get_iso_buffer_count,
 
     get_ble_white_list_size,
 
