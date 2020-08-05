@@ -231,7 +231,7 @@ void BTA_GATTC_ConfigureMTU(uint16_t conn_id, uint16_t mtu) {
  * Returns          None
  *
  ******************************************************************************/
-void BTA_GATTC_ServiceSearchRequest(uint16_t conn_id, Uuid* p_srvc_uuid) {
+void BTA_GATTC_ServiceSearchRequest(uint16_t conn_id, const Uuid* p_srvc_uuid) {
   const size_t len = sizeof(tBTA_GATTC_API_SEARCH) + sizeof(Uuid);
   tBTA_GATTC_API_SEARCH* p_buf = (tBTA_GATTC_API_SEARCH*)osi_calloc(len);
 
