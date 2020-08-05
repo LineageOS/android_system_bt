@@ -875,10 +875,8 @@ void l2c_init(void) {
     l2cb.ccb_pool[xx].p_next_ccb = &l2cb.ccb_pool[xx + 1];
   }
 
-#if (L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE)
   /* it will be set to L2CAP_PKT_START_NON_FLUSHABLE if controller supports */
   l2cb.non_flushable_pbf = L2CAP_PKT_START << L2CAP_PKT_TYPE_SHIFT;
-#endif
 
   l2cb.p_free_ccb_first = &l2cb.ccb_pool[0];
   l2cb.p_free_ccb_last = &l2cb.ccb_pool[MAX_L2CAP_CHANNELS - 1];
@@ -968,9 +966,7 @@ uint8_t l2c_data_write(uint16_t cid, BT_HDR* p_data, uint16_t flags) {
     return (L2CAP_DW_FAILED);
   }
 
-#ifndef TESTER
-  /* Tester may send any amount of data. otherwise sending message bigger than
-   * mtu size of peer is a violation of protocol */
+  /* Sending message bigger than mtu size of peer is a violation of protocol */
   uint16_t mtu;
 
   if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE)
@@ -986,7 +982,6 @@ uint8_t l2c_data_write(uint16_t cid, BT_HDR* p_data, uint16_t flags) {
     osi_free(p_data);
     return (L2CAP_DW_FAILED);
   }
-#endif
 
   /* channel based, packet based flushable or non-flushable */
   p_data->layer_specific = flags;

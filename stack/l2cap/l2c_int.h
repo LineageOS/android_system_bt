@@ -110,9 +110,6 @@ typedef enum {
 #define L2CEVT_LP_CONNECT_CFM_NEG 1   /* connect confirm (failed) */
 #define L2CEVT_LP_CONNECT_IND 2       /* connect indication */
 #define L2CEVT_LP_DISCONNECT_IND 3    /* disconnect indication */
-#define L2CEVT_LP_QOS_CFM 4           /* QOS confirmation */
-#define L2CEVT_LP_QOS_CFM_NEG 5       /* QOS confirmation (failed)*/
-#define L2CEVT_LP_QOS_VIOLATION_IND 6 /* QOS violation indication */
 
 /* Security */
 #define L2CEVT_SEC_COMP 7     /* cleared successfully */
@@ -145,7 +142,6 @@ typedef enum {
 #define L2CEVT_L2CA_DISCONNECT_RSP 28  /* disconnect response */
 #define L2CEVT_L2CA_DATA_READ 29       /* data read */
 #define L2CEVT_L2CA_DATA_WRITE 30      /* data write */
-#define L2CEVT_L2CA_FLUSH_REQ 31       /* flush */
 
 #define L2CEVT_TIMEOUT 32         /* Timeout */
 #define L2CEVT_SEC_RE_SEND_CMD 33 /* btm_sec has enough info to proceed */
@@ -210,32 +206,6 @@ typedef struct {
   alarm_t* ack_timer;         /* Timer delaying RR */
   alarm_t* mon_retrans_timer; /* Timer Monitor or Retransmission */
 
-#if (L2CAP_ERTM_STATS == TRUE)
-  uint64_t connect_tick_count;  /* Time channel was established */
-  uint32_t ertm_pkt_counts[2];  /* Packets sent and received */
-  uint32_t ertm_byte_counts[2]; /* Bytes   sent and received */
-  uint32_t s_frames_sent[4];    /* S-frames sent (RR, REJ, RNR, SREJ) */
-  uint32_t s_frames_rcvd[4];    /* S-frames rcvd (RR, REJ, RNR, SREJ) */
-  uint32_t xmit_window_closed;  /* # of times the xmit window was closed */
-  uint32_t controller_idle; /* # of times less than 2 packets in controller */
-                            /* when the xmit window was closed */
-  uint32_t pkts_retransmitted; /* # of packets that were retransmitted */
-  uint32_t retrans_touts;      /* # of retransmission timouts */
-  uint32_t xmit_ack_touts;     /* # of xmit ack timouts */
-
-#define L2CAP_ERTM_STATS_NUM_AVG 10
-#define L2CAP_ERTM_STATS_AVG_NUM_SAMPLES 100
-  uint32_t ack_delay_avg_count;
-  uint32_t ack_delay_avg_index;
-  uint32_t throughput_start;
-  uint32_t throughput[L2CAP_ERTM_STATS_NUM_AVG];
-  uint32_t ack_delay_avg[L2CAP_ERTM_STATS_NUM_AVG];
-  uint32_t ack_delay_min[L2CAP_ERTM_STATS_NUM_AVG];
-  uint32_t ack_delay_max[L2CAP_ERTM_STATS_NUM_AVG];
-  uint32_t ack_q_count_avg[L2CAP_ERTM_STATS_NUM_AVG];
-  uint32_t ack_q_count_min[L2CAP_ERTM_STATS_NUM_AVG];
-  uint32_t ack_q_count_max[L2CAP_ERTM_STATS_NUM_AVG];
-#endif
 } tL2C_FCRB;
 
 typedef struct {
@@ -331,9 +301,7 @@ typedef struct t_l2c_ccb {
 #define L2CAP_BYPASS_FCS (L2CAP_CFG_FCS_OUR | L2CAP_CFG_FCS_PEER)
   uint8_t bypass_fcs;
 
-#if (L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE)
   bool is_flushable; /* true if channel is flushable */
-#endif
 
 #if (L2CAP_NUM_FIXED_CHNLS > 0)
   uint16_t fixed_chnl_idle_tout; /* Idle timeout to use for the fixed channel */
@@ -489,12 +457,10 @@ typedef struct {
   tL2C_LCB* p_cur_hcit_lcb;  /* Current HCI Transport buffer */
   uint16_t num_links_active; /* Number of links active */
 
-#if (L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE)
   uint16_t non_flushable_pbf; /* L2CAP_PKT_START_NON_FLUSHABLE if controller
                                  supports */
   /* Otherwise, L2CAP_PKT_START */
   bool is_flush_active; /* true if an HCI_Enhanced_Flush has been sent */
-#endif
 
 #if (L2CAP_CONFORMANCE_TESTING == TRUE)
   uint32_t test_info_resp; /* Conformance testing needs a dynamic response */
@@ -639,9 +605,7 @@ extern void l2cu_disconnect_chnl(tL2C_CCB* p_ccb);
 
 extern void l2cu_tx_complete(tL2C_TX_COMPLETE_CB_INFO* p_cbi);
 
-#if (L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE)
 extern void l2cu_set_non_flushable_pbf(bool);
-#endif
 
 extern void l2cu_send_peer_ble_par_req(tL2C_LCB* p_lcb, uint16_t min_int,
                                        uint16_t max_int, uint16_t latency,
@@ -705,17 +669,15 @@ extern bool l2c_link_hci_conn_req(const RawAddress& bd_addr);
 extern bool l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
                                    const RawAddress& p_bda);
 extern bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason);
-extern bool l2c_link_hci_qos_violation(uint16_t handle);
 extern void l2c_link_timeout(tL2C_LCB* p_lcb);
 extern void l2c_info_resp_timer_timeout(void* data);
 extern void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, tL2C_CCB* p_ccb,
                                      BT_HDR* p_buf);
 extern void l2c_link_adjust_allocation(void);
 extern void l2c_link_process_num_completed_pkts(uint8_t* p, uint8_t evt_len);
-extern void l2c_link_process_num_completed_blocks(uint8_t controller_id,
-                                                  uint8_t* p, uint16_t evt_len);
+
 extern void l2c_link_processs_num_bufs(uint16_t num_lm_acl_bufs);
-extern uint8_t l2c_link_pkts_rcvd(uint16_t* num_pkts, uint16_t* handles);
+
 extern void l2c_link_role_changed(const RawAddress* bd_addr, uint8_t new_role,
                                   uint8_t hci_status);
 extern void l2c_link_sec_comp(const RawAddress* p_bda, tBT_TRANSPORT trasnport,

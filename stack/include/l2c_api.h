@@ -61,16 +61,12 @@
 
 /* Values for priority parameter to L2CA_SetTxPriority */
 #define L2CAP_CHNL_PRIORITY_HIGH 0
-#define L2CAP_CHNL_PRIORITY_MEDIUM 1
 #define L2CAP_CHNL_PRIORITY_LOW 2
 
 typedef uint8_t tL2CAP_CHNL_PRIORITY;
 
 /* Values for Tx/Rx data rate parameter to L2CA_SetChnlDataRate */
-#define L2CAP_CHNL_DATA_RATE_HIGH 3
-#define L2CAP_CHNL_DATA_RATE_MEDIUM 2
 #define L2CAP_CHNL_DATA_RATE_LOW 1
-#define L2CAP_CHNL_DATA_RATE_NO_TRAFFIC 0
 
 typedef uint8_t tL2CAP_CHNL_DATA_RATE;
 
@@ -284,7 +280,6 @@ typedef struct {
   tL2CA_CONFIG_CFM_CB* pL2CA_ConfigCfm_Cb;
   tL2CA_DISCONNECT_IND_CB* pL2CA_DisconnectInd_Cb;
   tL2CA_DISCONNECT_CFM_CB* pL2CA_DisconnectCfm_Cb;
-  tL2CA_QOS_VIOLATION_IND_CB* pL2CA_QoSViolationInd_Cb;
   tL2CA_DATA_IND_CB* pL2CA_DataInd_Cb;
   tL2CA_CONGESTION_STATUS_CB* pL2CA_CongestionStatus_Cb;
   tL2CA_TX_COMPLETE_CB* pL2CA_TxComplete_Cb;

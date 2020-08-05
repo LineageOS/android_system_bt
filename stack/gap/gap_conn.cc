@@ -122,7 +122,6 @@ void gap_conn_init(void) {
   conn.reg_info.pL2CA_ConfigCfm_Cb = gap_config_cfm;
   conn.reg_info.pL2CA_DisconnectInd_Cb = gap_disconnect_ind;
   conn.reg_info.pL2CA_DisconnectCfm_Cb = NULL;
-  conn.reg_info.pL2CA_QoSViolationInd_Cb = NULL;
   conn.reg_info.pL2CA_DataInd_Cb = gap_data_ind;
   conn.reg_info.pL2CA_CongestionStatus_Cb = gap_congestion_ind;
   conn.reg_info.pL2CA_TxComplete_Cb = gap_tx_complete_ind;

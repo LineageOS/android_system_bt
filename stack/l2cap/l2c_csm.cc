@@ -816,10 +816,6 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
             l2c_fcr_adj_monitor_retran_timeout(p_ccb);
           }
 
-#if (L2CAP_ERTM_STATS == TRUE)
-          p_ccb->fcrb.connect_tick_count =
-              bluetooth::common::time_get_os_boottime_ms();
-#endif
           /* See if we can forward anything on the hold queue */
           if (!fixed_queue_is_empty(p_ccb->xmit_hold_q)) {
             l2c_link_check_send_pkts(p_ccb->p_lcb, NULL, NULL);
@@ -904,11 +900,6 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
 
       /* If using eRTM and waiting for an ACK, restart the ACK timer */
       if (p_ccb->fcrb.wait_ack) l2c_fcr_start_timer(p_ccb);
-
-#if (L2CAP_ERTM_STATS == TRUE)
-      p_ccb->fcrb.connect_tick_count =
-          bluetooth::common::time_get_os_boottime_ms();
-#endif
 
       /* See if we can forward anything on the hold queue */
       if ((p_ccb->chnl_state == CST_OPEN) &&
@@ -999,13 +990,6 @@ static void l2c_csm_open(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
       l2cu_release_ccb(p_ccb);
       if (p_ccb->p_rcb)
         (*p_ccb->p_rcb->api.pL2CA_DisconnectInd_Cb)(local_cid, false);
-      break;
-
-    case L2CEVT_LP_QOS_VIOLATION_IND: /* QOS violation         */
-      /* Tell upper layer. If service guaranteed, then clear the channel   */
-      if (p_ccb->p_rcb->api.pL2CA_QoSViolationInd_Cb)
-        (*p_ccb->p_rcb->api.pL2CA_QoSViolationInd_Cb)(
-            p_ccb->p_lcb->remote_bd_addr);
       break;
 
     case L2CEVT_L2CAP_CONFIG_REQ: /* Peer config request   */
@@ -1272,12 +1256,6 @@ static const char* l2c_csm_get_event_name(uint16_t event) {
       return ("LOWER_LAYER_CONNECT_IND");
     case L2CEVT_LP_DISCONNECT_IND: /* Lower layer disconnect indication    */
       return ("LOWER_LAYER_DISCONNECT_IND");
-    case L2CEVT_LP_QOS_CFM: /* Lower layer QOS confirmation         */
-      return ("LOWER_LAYER_QOS_CFM");
-    case L2CEVT_LP_QOS_CFM_NEG: /* Lower layer QOS confirmation (failed)*/
-      return ("LOWER_LAYER_QOS_CFM_NEG");
-    case L2CEVT_LP_QOS_VIOLATION_IND: /* Lower layer QOS violation indication */
-      return ("LOWER_LAYER_QOS_VIOLATION_IND");
 
     case L2CEVT_SEC_COMP: /* Security cleared successfully        */
       return ("SECURITY_COMPLETE");

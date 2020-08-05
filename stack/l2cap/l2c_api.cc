@@ -1777,7 +1777,6 @@ bool L2CA_SetChnlFlushability(uint16_t cid, bool is_flushable) {
     return bluetooth::shim::L2CA_SetChnlFlushability(cid, is_flushable);
   }
 
-#if (L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE)
   tL2C_CCB* p_ccb;
 
   /* Find the channel control block. We don't know the link it is on. */
@@ -1792,8 +1791,6 @@ bool L2CA_SetChnlFlushability(uint16_t cid, bool is_flushable) {
 
   L2CAP_TRACE_API("L2CA_SetChnlFlushability()  CID: 0x%04x  is_flushable: %d",
                   cid, is_flushable);
-
-#endif
 
   return (true);
 }
@@ -1842,7 +1839,6 @@ uint16_t L2CA_FlushChannel(uint16_t lcid, uint16_t num_to_flush) {
 
   /* Cannot flush eRTM buffers once they have a sequence number */
   if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_ERTM_MODE) {
-#if (L2CAP_NON_FLUSHABLE_PB_INCLUDED == TRUE)
     const controller_t* controller = controller_get_interface();
     if (num_to_flush != L2CAP_FLUSH_CHANS_GET) {
       /* If the controller supports enhanced flush, flush the data queued at the
@@ -1857,7 +1853,6 @@ uint16_t L2CA_FlushChannel(uint16_t lcid, uint16_t num_to_flush) {
         }
       }
     }
-#endif
 
     // Iterate though list and flush the amount requested from
     // the transmit data queue that satisfy the layer and event conditions.

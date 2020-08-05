@@ -254,78 +254,35 @@ tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode, uint16_t window,
   return (BTM_SUCCESS);
 }
 
-/*******************************************************************************
- *
- * Function         BTM_SetInquiryScanType
- *
- * Description      This function is called to set the iquiry scan-type to
- *                  standard or interlaced.
- *
- * Returns          BTM_SUCCESS if successful
- *                  BTM_MODE_UNSUPPORTED if not a 1.2 device
- *                  BTM_WRONG_MODE if the device is not up.
- *
- ******************************************************************************/
-tBTM_STATUS BTM_SetInquiryScanType(uint16_t scan_type) {
+void BTM_EnableInterlacedInquiryScan() {
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_SetInquiryScanType(scan_type);
+    bluetooth::shim::BTM_EnableInterlacedInquiryScan();
   }
 
-  BTM_TRACE_API("BTM_SetInquiryScanType");
-  if (scan_type != BTM_SCAN_TYPE_STANDARD &&
-      scan_type != BTM_SCAN_TYPE_INTERLACED)
-    return (BTM_ILLEGAL_VALUE);
-
-  /* whatever app wants if device is not 1.2 scan type should be STANDARD */
-  if (!controller_get_interface()->supports_interlaced_inquiry_scan())
-    return (BTM_MODE_UNSUPPORTED);
-
-  /* Check for scan type if configuration has been changed */
-  if (scan_type != btm_cb.btm_inq_vars.inq_scan_type) {
-    if (BTM_IsDeviceUp()) {
-      btsnd_hcic_write_inqscan_type((uint8_t)scan_type);
-      btm_cb.btm_inq_vars.inq_scan_type = scan_type;
-    } else
-      return (BTM_WRONG_MODE);
+  BTM_TRACE_API("BTM_EnableInterlacedInquiryScan");
+  if (!controller_get_interface()->supports_interlaced_inquiry_scan() ||
+      btm_cb.btm_inq_vars.inq_scan_type == BTM_SCAN_TYPE_INTERLACED) {
+    return;
   }
-  return (BTM_SUCCESS);
+
+  btsnd_hcic_write_inqscan_type(BTM_SCAN_TYPE_INTERLACED);
+  btm_cb.btm_inq_vars.inq_scan_type = BTM_SCAN_TYPE_INTERLACED;
 }
 
-/*******************************************************************************
- *
- * Function         BTM_SetPageScanType
- *
- * Description      This function is called to set the page scan-type to
- *                  standard or interlaced.
- *
- * Returns          BTM_SUCCESS if successful
- *                  BTM_MODE_UNSUPPORTED if not a 1.2 device
- *                  BTM_WRONG_MODE if the device is not up.
- *
- ******************************************************************************/
-tBTM_STATUS BTM_SetPageScanType(uint16_t scan_type) {
+void BTM_EnableInterlacedPageScan() {
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_SetPageScanType(scan_type);
+    bluetooth::shim::BTM_EnableInterlacedPageScan();
+    return;
   }
 
-  BTM_TRACE_API("BTM_SetPageScanType");
-  if (scan_type != BTM_SCAN_TYPE_STANDARD &&
-      scan_type != BTM_SCAN_TYPE_INTERLACED)
-    return (BTM_ILLEGAL_VALUE);
-
-  /* whatever app wants if device is not 1.2 scan type should be STANDARD */
-  if (!controller_get_interface()->supports_interlaced_inquiry_scan())
-    return (BTM_MODE_UNSUPPORTED);
-
-  /* Check for scan type if configuration has been changed */
-  if (scan_type != btm_cb.btm_inq_vars.page_scan_type) {
-    if (BTM_IsDeviceUp()) {
-      btsnd_hcic_write_pagescan_type((uint8_t)scan_type);
-      btm_cb.btm_inq_vars.page_scan_type = scan_type;
-    } else
-      return (BTM_WRONG_MODE);
+  BTM_TRACE_API("BTM_EnableInterlacedPageScan");
+  if (!controller_get_interface()->supports_interlaced_inquiry_scan() ||
+      btm_cb.btm_inq_vars.page_scan_type == BTM_SCAN_TYPE_INTERLACED) {
+    return;
   }
-  return (BTM_SUCCESS);
+
+  btsnd_hcic_write_pagescan_type(BTM_SCAN_TYPE_INTERLACED);
+  btm_cb.btm_inq_vars.page_scan_type = BTM_SCAN_TYPE_INTERLACED;
 }
 
 /*******************************************************************************

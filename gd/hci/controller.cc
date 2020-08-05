@@ -85,6 +85,11 @@ struct Controller::impl {
       le_maximum_data_length_.supported_max_tx_octets_ = 0;
       le_maximum_data_length_.supported_max_tx_time_ = 0;
     }
+    if (is_supported(OpCode::LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH)) {
+      hci_->EnqueueCommand(
+          LeReadSuggestedDefaultDataLengthBuilder::Create(),
+          handler->BindOnceOn(this, &Controller::impl::le_read_suggested_default_data_length_handler));
+    }
     if (is_supported(OpCode::LE_READ_MAXIMUM_ADVERTISING_DATA_LENGTH)) {
       hci_->EnqueueCommand(
           LeReadMaximumAdvertisingDataLengthBuilder::Create(),
@@ -266,6 +271,14 @@ struct Controller::impl {
     ErrorCode status = complete_view.GetStatus();
     ASSERT_LOG(status == ErrorCode::SUCCESS, "Status 0x%02hhx, %s", status, ErrorCodeText(status).c_str());
     le_maximum_data_length_ = complete_view.GetLeMaximumDataLength();
+  }
+
+  void le_read_suggested_default_data_length_handler(CommandCompleteView view) {
+    auto complete_view = LeReadSuggestedDefaultDataLengthCompleteView::Create(view);
+    ASSERT(complete_view.IsValid());
+    ErrorCode status = complete_view.GetStatus();
+    ASSERT_LOG(status == ErrorCode::SUCCESS, "Status 0x%02hhx, %s", status, ErrorCodeText(status).c_str());
+    le_suggested_default_data_length_ = complete_view.GetTxOctets();
   }
 
   void le_read_maximum_advertising_data_length_handler(CommandCompleteView view) {
@@ -739,6 +752,7 @@ struct Controller::impl {
   uint8_t le_resolving_list_size_;
   LeMaximumDataLength le_maximum_data_length_;
   uint16_t le_maximum_advertising_data_length_;
+  uint16_t le_suggested_default_data_length_;
   uint8_t le_number_supported_advertising_sets_;
   VendorCapabilities vendor_capabilities_;
 };  // namespace hci
@@ -942,6 +956,10 @@ LeMaximumDataLength Controller::GetLeMaximumDataLength() const {
 
 uint16_t Controller::GetLeMaximumAdvertisingDataLength() const {
   return impl_->le_maximum_advertising_data_length_;
+}
+
+uint16_t Controller::GetLeSuggestedDefaultDataLength() const {
+  return impl_->le_suggested_default_data_length_;
 }
 
 uint8_t Controller::GetLeNumberOfSupportedAdverisingSets() const {
