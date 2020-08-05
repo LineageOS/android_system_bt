@@ -34,14 +34,11 @@
 #define LOG_TAG "btm_acl"
 
 #include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "bt_common.h"
 #include "bt_target.h"
 #include "bt_types.h"
-#include "bt_utils.h"
 #include "btm_api.h"
 #include "btm_int.h"
 #include "btu.h"
