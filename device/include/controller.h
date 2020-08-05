@@ -80,25 +80,35 @@ typedef struct controller_t {
   bool (*supports_ble_periodic_advertising)(void);
   bool (*supports_ble_peripheral_initiated_feature_exchange)(void);
   bool (*supports_ble_connection_parameter_request)(void);
+  bool (*supports_ble_periodic_advertising_sync_transfer_sender)(void);
+  bool (*supports_ble_periodic_advertising_sync_transfer_recipient)(void);
+  bool (*supports_ble_connected_isochronous_stream_master)(void);
+  bool (*supports_ble_connected_isochronous_stream_slave)(void);
+  bool (*supports_ble_isochronous_broadcaster)(void);
+  bool (*supports_ble_synchronized_receiver)(void);
 
   // Get the cached acl data sizes for the controller.
   uint16_t (*get_acl_data_size_classic)(void);
   uint16_t (*get_acl_data_size_ble)(void);
+  uint16_t (*get_iso_data_size)(void);
 
   // Get the cached acl packet sizes for the controller.
   // This is a convenience function for the respective
   // acl data size + size of the acl header.
   uint16_t (*get_acl_packet_size_classic)(void);
   uint16_t (*get_acl_packet_size_ble)(void);
+  uint16_t (*get_iso_packet_size)(void);
 
   uint16_t (*get_ble_default_data_packet_length)(void);
   uint16_t (*get_ble_maximum_tx_data_length)(void);
   uint16_t (*get_ble_maxium_advertising_data_length)(void);
   uint8_t (*get_ble_number_of_supported_advertising_sets)(void);
+  uint8_t (*get_ble_periodic_advertiser_list_size)(void);
 
   // Get the number of acl packets the controller can buffer.
   uint16_t (*get_acl_buffer_count_classic)(void);
   uint8_t (*get_acl_buffer_count_ble)(void);
+  uint8_t (*get_iso_buffer_count)(void);
 
   uint8_t (*get_ble_white_list_size)(void);
 
