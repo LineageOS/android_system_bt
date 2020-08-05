@@ -19,6 +19,7 @@
 #include <string>
 #include <unordered_set>
 
+#include "crypto_toolbox/crypto_toolbox.h"
 #include "hci/hci_packets.h"
 #include "storage/config_cache.h"
 #include "storage/config_cache_helper.h"
@@ -81,7 +82,12 @@ class LeDevice {
   // Get LE address type of the key address
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(AddressType, hci::AddressType, "AddrType");
   GENERATE_PROPERTY_GETTER_SETTER_REMOVER(IdentityAddress, hci::Address, "LeIdentityAddr");
-  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(LegacyPseudoAddress, hci::AddressType, "LeLegacyPseudoAddr");
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(LegacyPseudoAddress, hci::Address, "LeLegacyPseudoAddr");
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(Ltk, std::string, "Ltk");
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(Ediv, uint16_t, "Ediv");
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(Irk, std::string, "Irk");
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(Rand, std::string, "Rand");
+  GENERATE_PROPERTY_GETTER_SETTER_REMOVER(SignatureKey, std::string, "SignatureKey");
 };
 
 }  // namespace storage
