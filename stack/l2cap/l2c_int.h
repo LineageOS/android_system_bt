@@ -31,6 +31,7 @@
 #include "btm_ble_api.h"
 #include "l2c_api.h"
 #include "l2cap_acl_interface.h"
+#include "l2cap_controller_interface.h"
 #include "l2cap_hci_link_interface.h"
 #include "l2cdefs.h"
 #include "osi/include/alarm.h"
@@ -604,8 +605,6 @@ extern void l2cu_disconnect_chnl(tL2C_CCB* p_ccb);
 
 extern void l2cu_tx_complete(tL2C_TX_COMPLETE_CB_INFO* p_cbi);
 
-extern void l2cu_set_non_flushable_pbf(bool);
-
 extern void l2cu_send_peer_ble_par_req(tL2C_LCB* p_lcb, uint16_t min_int,
                                        uint16_t max_int, uint16_t latency,
                                        uint16_t timeout);
@@ -647,7 +646,6 @@ extern void l2cu_process_peer_cfg_rsp(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg);
 extern void l2cu_process_our_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg);
 extern void l2cu_process_our_cfg_rsp(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg);
 
-extern void l2cu_device_reset(void);
 extern tL2C_LCB* l2cu_find_lcb_by_state(tL2C_LINK_STATE state);
 extern bool l2cu_lcb_disconnecting(void);
 
@@ -658,7 +656,6 @@ extern bool l2cu_create_conn_after_switch(tL2C_LCB* p_lcb);
 extern BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb,
                                             tL2C_TX_COMPLETE_CB_INFO* p_cbi);
 extern void l2cu_resubmit_pending_sec_req(const RawAddress* p_bda);
-extern void l2cu_initialize_amp_ccb(tL2C_LCB* p_lcb);
 extern void l2cu_adjust_out_mps(tL2C_CCB* p_ccb);
 
 /* Functions provided by l2c_link.cc
@@ -671,15 +668,11 @@ extern void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, tL2C_CCB* p_ccb,
                                      BT_HDR* p_buf);
 extern void l2c_link_adjust_allocation(void);
 
-extern void l2c_link_processs_num_bufs(uint16_t num_lm_acl_bufs);
-
 extern void l2c_link_sec_comp(const RawAddress* p_bda, tBT_TRANSPORT trasnport,
                               void* p_ref_data, uint8_t status);
 extern void l2c_link_sec_comp2(const RawAddress& p_bda, tBT_TRANSPORT trasnport,
                                void* p_ref_data, uint8_t status);
 extern void l2c_link_adjust_chnl_allocation(void);
-
-extern void l2c_link_processs_ble_num_bufs(uint16_t num_lm_acl_bufs);
 
 #if (L2CAP_WAKE_PARKED_LINK == TRUE)
 extern bool l2c_link_check_power_mode(tL2C_LCB* p_lcb);
