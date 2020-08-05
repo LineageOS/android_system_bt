@@ -25,6 +25,7 @@
 #include "main/shim/entry.h"
 #include "main/shim/helpers.h"
 #include "main/shim/l2cap.h"
+#include "osi/include/allocator.h"
 
 static bluetooth::shim::legacy::L2cap shim_l2cap;
 

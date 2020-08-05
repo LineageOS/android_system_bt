@@ -47,18 +47,11 @@
 #include "btm_ble_int.h"
 #include "gatt_int.h"
 #include "gattdefs.h"
-#include "l2c_int.h"
 #include "osi/include/log.h"
 #include "common/time_util.h"
 
 #include "main/shim/btm_api.h"
 #include "main/shim/shim.h"
-
-#define BTM_BLE_NAME_SHORT 0x01
-#define BTM_BLE_NAME_CMPL 0x02
-
-#define BTM_BLE_FILTER_TARGET_UNKNOWN 0xff
-#define BTM_BLE_POLICY_UNKNOWN 0xff
 
 #define BTM_EXT_BLE_RMT_NAME_TIMEOUT_MS (30 * 1000)
 #define MIN_ADV_LENGTH 2
