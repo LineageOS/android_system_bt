@@ -33,6 +33,11 @@ extern void l2c_link_role_changed(const RawAddress* bd_addr, uint8_t new_role,
 
 extern void l2c_pin_code_request(const RawAddress& bd_addr);
 
+extern void l2cble_conn_comp(uint16_t handle, uint8_t role,
+                             const RawAddress& bda, tBLE_ADDR_TYPE type,
+                             uint16_t conn_interval, uint16_t conn_latency,
+                             uint16_t conn_timeout);
+
 extern void l2cble_process_conn_update_evt(uint16_t handle, uint8_t status,
                                            uint16_t interval, uint16_t latency,
                                            uint16_t timeout);
