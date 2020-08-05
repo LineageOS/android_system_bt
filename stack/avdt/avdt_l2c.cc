@@ -198,8 +198,9 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
         tACL_CONN* p_acl_cb = btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
         btm_set_packet_types(
             p_acl_cb,
-            (btm_cb.btm_acl_pkt_types_supported | HCI_PKT_TYPES_MASK_NO_3_DH1 |
-             HCI_PKT_TYPES_MASK_NO_3_DH3 | HCI_PKT_TYPES_MASK_NO_3_DH5));
+            (btm_cb.acl_cb_.btm_acl_pkt_types_supported |
+             HCI_PKT_TYPES_MASK_NO_3_DH1 | HCI_PKT_TYPES_MASK_NO_3_DH3 |
+             HCI_PKT_TYPES_MASK_NO_3_DH5));
       }
 
       /* Check the security */
@@ -317,7 +318,7 @@ void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
                   btm_bda_to_acl(p_ccb->peer_addr, BT_TRANSPORT_BR_EDR);
               btm_set_packet_types(
                   p_acl_cb,
-                  (btm_cb.btm_acl_pkt_types_supported |
+                  (btm_cb.acl_cb_.btm_acl_pkt_types_supported |
                    HCI_PKT_TYPES_MASK_NO_3_DH1 | HCI_PKT_TYPES_MASK_NO_3_DH3 |
                    HCI_PKT_TYPES_MASK_NO_3_DH5));
             }
