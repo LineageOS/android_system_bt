@@ -50,7 +50,6 @@ void avct_l2c_data_ind_cback(uint16_t lcid, BT_HDR* p_buf);
 /* L2CAP callback function structure */
 const tL2CAP_APPL_INFO avct_l2c_appl = {avct_l2c_connect_ind_cback,
                                         avct_l2c_connect_cfm_cback,
-                                        NULL,
                                         avct_l2c_config_ind_cback,
                                         avct_l2c_config_cfm_cback,
                                         avct_l2c_disconnect_ind_cback,

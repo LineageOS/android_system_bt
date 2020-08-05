@@ -556,11 +556,6 @@ static void l2c_csm_w4_l2cap_connect_rsp(tL2C_CCB* p_ccb, uint16_t event,
       alarm_set_on_mloop(p_ccb->l2c_ccb_timer,
                          L2CAP_CHNL_CONNECT_EXT_TIMEOUT_MS,
                          l2c_ccb_timer_timeout, p_ccb);
-      if (p_ccb->p_rcb->api.pL2CA_ConnectPnd_Cb) {
-        L2CAP_TRACE_API("L2CAP - Calling Connect_Pnd_Cb(), CID: 0x%04x",
-                        p_ccb->local_cid);
-        (*p_ccb->p_rcb->api.pL2CA_ConnectPnd_Cb)(p_ccb->local_cid);
-      }
       break;
 
     case L2CEVT_L2CAP_CONNECT_RSP_NEG: /* Peer rejected connection */
