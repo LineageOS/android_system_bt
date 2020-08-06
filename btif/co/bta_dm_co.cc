@@ -109,22 +109,6 @@ void bta_dm_co_io_rsp(const RawAddress& bd_addr, tBTA_IO_CAP io_cap,
 
 /*******************************************************************************
  *
- * Function         bta_dm_co_lk_upgrade
- *
- * Description      This callout function is executed by DM to check if the
- *                  platform wants allow link key upgrade
- *
- * Parameters       bd_addr  - The peer device
- *                  *p_upgrade - true, if link key upgrade is desired.
- *
- * Returns          void.
- *
- ******************************************************************************/
-void bta_dm_co_lk_upgrade(UNUSED_ATTR const RawAddress& bd_addr,
-                          UNUSED_ATTR bool* p_upgrade) {}
-
-/*******************************************************************************
- *
  * Function         bta_dm_co_loc_oob
  *
  * Description      This callout function is executed by DM to report the OOB
