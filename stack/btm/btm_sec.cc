@@ -27,27 +27,22 @@
 #include <frameworks/base/core/proto/android/bluetooth/enums.pb.h>
 #include <frameworks/base/core/proto/android/bluetooth/hci/enums.pb.h>
 #include <log/log.h>
-#include <stdarg.h>
-#include <stdio.h>
 #include <string.h>
 
 #include "common/metrics.h"
 #include "common/time_util.h"
 #include "device/include/controller.h"
+#include "l2c_api.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
+#include "stack/include/l2cap_security_interface.h"
 
 #include "bt_types.h"
-#include "bt_utils.h"
 #include "btif_storage.h"
 #include "btm_int.h"
-#include "btu.h"
 #include "hcimsgs.h"
-#include "l2c_int.h"
-
-#include "gatt_int.h"
 
 #define BTM_SEC_MAX_COLLISION_DELAY (5000)
 
@@ -2282,15 +2277,11 @@ void btm_sec_conn_req(const RawAddress& bda, uint8_t* dc) {
   btm_cb.connecting_bda = bda;
   memcpy(btm_cb.connecting_dc, dc, DEV_CLASS_LEN);
 
-  if (l2c_link_hci_conn_req(bda)) {
-    if (!p_dev_rec) {
-      /* accept the connection -> allocate a device record */
-      p_dev_rec = btm_sec_alloc_dev(bda);
-    }
-    if (p_dev_rec) {
-      p_dev_rec->sm4 |= BTM_SM4_CONN_PEND;
-    }
+  if (!p_dev_rec) {
+    /* accept the connection -> allocate a device record */
+    p_dev_rec = btm_sec_alloc_dev(bda);
   }
+  p_dev_rec->sm4 |= BTM_SM4_CONN_PEND;
 }
 
 /*******************************************************************************
@@ -2513,28 +2504,16 @@ void btm_sec_abort_access_req(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 static tBTM_STATUS btm_sec_dd_create_conn(tBTM_SEC_DEV_REC* p_dev_rec) {
-  tL2C_LCB* p_lcb =
-      l2cu_find_lcb_by_bd_addr(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR);
-  if (p_lcb && (p_lcb->link_state == LST_CONNECTED ||
-                p_lcb->link_state == LST_CONNECTING)) {
-    BTM_TRACE_WARNING("%s Connection already exists", __func__);
+  tBTM_STATUS status = l2cu_ConnectAclForSecurity(p_dev_rec->bd_addr);
+  if (status == BTM_CMD_STARTED) {
     btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_PIN_REQ);
     return BTM_CMD_STARTED;
-  }
-
-  /* Make sure an L2cap link control block is available */
-  if (!p_lcb && (p_lcb = l2cu_allocate_lcb(p_dev_rec->bd_addr, true,
-                                           BT_TRANSPORT_BR_EDR)) == NULL) {
-    LOG(WARNING) << "Security Manager: failed allocate LCB "
-                 << p_dev_rec->bd_addr;
-
-    return (BTM_NO_RESOURCES);
+  } else if (status == BTM_NO_RESOURCES) {
+    return BTM_NO_RESOURCES;
   }
 
   /* set up the control block to indicated dedicated bonding */
   btm_cb.pairing_flags |= BTM_PAIR_FLAGS_DISC_WHEN_DONE;
-
-  l2cu_create_conn_br_edr(p_lcb);
 
   btm_acl_update_busy_level(BTM_BLI_PAGE_EVT);
 
