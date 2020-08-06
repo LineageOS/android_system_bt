@@ -338,10 +338,9 @@ void btm_acl_report_role_change(uint8_t hci_status, const RawAddress* bda) {
  *
  ******************************************************************************/
 void btm_acl_removed(const RawAddress& bda, tBT_TRANSPORT transport) {
-  tACL_CONN* p;
   tBTM_SEC_DEV_REC* p_dev_rec = NULL;
   BTM_TRACE_DEBUG("btm_acl_removed");
-  p = btm_bda_to_acl(bda, transport);
+  tACL_CONN* p = btm_bda_to_acl(bda, transport);
   if (p != (tACL_CONN*)NULL) {
     p->in_use = false;
 
@@ -567,7 +566,7 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role,
     return BTM_DEV_BLACKLISTED;
 
   /* Check if there is any SCO Active on this BD Address */
-  is_sco_active = btm_is_sco_active_by_bdaddr(remote_bd_addr);
+  is_sco_active = BTM_IsScoActiveByBdaddr(remote_bd_addr);
 
   if (is_sco_active) return (BTM_NO_RESOURCES);
 
