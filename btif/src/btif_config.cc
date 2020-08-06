@@ -20,7 +20,11 @@
 
 #include "btif_config.h"
 
+#include <base/logging.h>
+#include <openssl/rand.h>
+#include <private/android_filesystem_config.h>
 #include <unistd.h>
+
 #include <cctype>
 #include <cstdio>
 #include <cstring>
@@ -30,12 +34,6 @@
 #include <sstream>
 #include <string>
 #include <unordered_map>
-
-#include <private/android_filesystem_config.h>
-
-#include <openssl/rand.h>
-
-#include <base/logging.h>
 
 #include "btcore/include/module.h"
 #include "btif_api.h"
@@ -251,7 +249,7 @@ static BtifConfigCache btif_config_cache(TEMPORARY_SECTION_CAPACITY);
 // Module lifecycle functions
 
 static future_t* init(void) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     CHECK(bluetooth::shim::is_gd_stack_started_up());
     // TODO (b/158035889) Migrate metrics module to GD
     read_or_set_metrics_salt();
@@ -364,7 +362,7 @@ static future_t* shut_down(void) {
 }
 
 static future_t* clean_up(void) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     CHECK(bluetooth::shim::is_gd_stack_started_up());
     // GD storage module cleanup by itself
     std::unique_lock<std::recursive_mutex> lock(config_lock);
@@ -390,7 +388,7 @@ EXPORT_SYMBOL module_t btif_config_module = {.name = BTIF_CONFIG_MODULE,
                                              .clean_up = clean_up};
 
 bool btif_config_exist(const std::string& section, const std::string& key) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     CHECK(bluetooth::shim::is_gd_stack_started_up());
     return bluetooth::shim::BtifConfigInterface::HasProperty(section, key);
   }
@@ -400,7 +398,7 @@ bool btif_config_exist(const std::string& section, const std::string& key) {
 
 bool btif_config_get_int(const std::string& section, const std::string& key,
                          int* value) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     CHECK(bluetooth::shim::is_gd_stack_started_up());
     return bluetooth::shim::BtifConfigInterface::GetInt(section, key, value);
   }
@@ -416,7 +414,7 @@ bool btif_config_get_int(const std::string& section, const std::string& key,
 
 bool btif_config_set_int(const std::string& section, const std::string& key,
                          int value) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     CHECK(bluetooth::shim::is_gd_stack_started_up());
     return bluetooth::shim::BtifConfigInterface::SetInt(section, key, value);
   }
@@ -427,7 +425,7 @@ bool btif_config_set_int(const std::string& section, const std::string& key,
 
 bool btif_config_get_uint64(const std::string& section, const std::string& key,
                             uint64_t* value) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     CHECK(bluetooth::shim::is_gd_stack_started_up());
     return bluetooth::shim::BtifConfigInterface::GetUint64(section, key, value);
   }
@@ -443,7 +441,7 @@ bool btif_config_get_uint64(const std::string& section, const std::string& key,
 
 bool btif_config_set_uint64(const std::string& section, const std::string& key,
                             uint64_t value) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     CHECK(bluetooth::shim::is_gd_stack_started_up());
     return bluetooth::shim::BtifConfigInterface::SetUint64(section, key, value);
   }
@@ -454,7 +452,7 @@ bool btif_config_set_uint64(const std::string& section, const std::string& key,
 
 bool btif_config_get_str(const std::string& section, const std::string& key,
                          char* value, int* size_bytes) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     CHECK(bluetooth::shim::is_gd_stack_started_up());
     return bluetooth::shim::BtifConfigInterface::GetStr(section, key, value,
                                                         size_bytes);
@@ -474,7 +472,7 @@ bool btif_config_get_str(const std::string& section, const std::string& key,
 
 bool btif_config_set_str(const std::string& section, const std::string& key,
                          const std::string& value) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     CHECK(bluetooth::shim::is_gd_stack_started_up());
     return bluetooth::shim::BtifConfigInterface::SetStr(section, key, value);
   }
@@ -491,7 +489,7 @@ static bool btif_in_encrypt_key_name_list(std::string key) {
 
 bool btif_config_get_bin(const std::string& section, const std::string& key,
                          uint8_t* value, size_t* length) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     CHECK(bluetooth::shim::is_gd_stack_started_up());
     return bluetooth::shim::BtifConfigInterface::GetBin(section, key, value,
                                                         length);
@@ -556,7 +554,7 @@ bool btif_config_get_bin(const std::string& section, const std::string& key,
 
 size_t btif_config_get_bin_length(const std::string& section,
                                   const std::string& key) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     CHECK(bluetooth::shim::is_gd_stack_started_up());
     return bluetooth::shim::BtifConfigInterface::GetBinLength(section, key);
   }
@@ -569,7 +567,7 @@ size_t btif_config_get_bin_length(const std::string& section,
 
 bool btif_config_set_bin(const std::string& section, const std::string& key,
                          const uint8_t* value, size_t length) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     CHECK(bluetooth::shim::is_gd_stack_started_up());
     return bluetooth::shim::BtifConfigInterface::SetBin(section, key, value,
                                                         length);
@@ -611,7 +609,7 @@ bool btif_config_set_bin(const std::string& section, const std::string& key,
 
 std::vector<RawAddress> btif_config_get_paired_devices() {
   std::vector<std::string> names;
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     CHECK(bluetooth::shim::is_gd_stack_started_up());
     names = bluetooth::shim::BtifConfigInterface::GetPersistentDevices();
   } else {
@@ -632,7 +630,7 @@ std::vector<RawAddress> btif_config_get_paired_devices() {
 }
 
 bool btif_config_remove(const std::string& section, const std::string& key) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     CHECK(bluetooth::shim::is_gd_stack_started_up());
     return bluetooth::shim::BtifConfigInterface::RemoveProperty(section, key);
   }
@@ -645,7 +643,7 @@ bool btif_config_remove(const std::string& section, const std::string& key) {
 }
 
 void btif_config_save(void) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     CHECK(bluetooth::shim::is_gd_stack_started_up());
     bluetooth::shim::BtifConfigInterface::Save();
     return;
@@ -656,7 +654,7 @@ void btif_config_save(void) {
 }
 
 void btif_config_flush(void) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     CHECK(bluetooth::shim::is_gd_stack_started_up());
     bluetooth::shim::BtifConfigInterface::Flush();
     return;
@@ -668,7 +666,7 @@ void btif_config_flush(void) {
 }
 
 bool btif_config_clear(void) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     CHECK(bluetooth::shim::is_gd_stack_started_up());
     bluetooth::shim::BtifConfigInterface::Clear();
     bluetooth::shim::BtifConfigInterface::Save();
@@ -735,7 +733,7 @@ void btif_debug_config_dump(int fd) {
 
   std::optional<std::string> file_source;
   if (bluetooth::shim::is_gd_stack_started_up()) {
-    CHECK(bluetooth::shim::is_gd_shim_enabled());
+    CHECK(bluetooth::shim::is_any_gd_enabled());
     file_source =
         bluetooth::shim::BtifConfigInterface::GetStr(INFO_SECTION, FILE_SOURCE);
   } else {
