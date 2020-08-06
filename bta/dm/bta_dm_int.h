@@ -159,7 +159,7 @@ typedef struct {
   bool dc_known;
   BD_NAME bd_name;
   uint8_t
-      features[BTA_FEATURE_BYTES_PER_PAGE * (BTA_EXT_FEATURES_PAGE_MAX + 1)];
+      features[BTM_FEATURE_BYTES_PER_PAGE * (BTM_EXT_FEATURES_PAGE_MAX + 1)];
   uint8_t pin_length;
 } tBTA_DM_API_ADD_DEVICE;
 
