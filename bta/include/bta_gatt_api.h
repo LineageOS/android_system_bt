@@ -470,7 +470,7 @@ extern void BTA_GATTC_Close(uint16_t conn_id);
  *
  ******************************************************************************/
 extern void BTA_GATTC_ServiceSearchRequest(uint16_t conn_id,
-                                           bluetooth::Uuid* p_srvc_uuid);
+                                           const bluetooth::Uuid* p_srvc_uuid);
 
 /**
  * This function is called to send "Find service by UUID" request. Used only for
