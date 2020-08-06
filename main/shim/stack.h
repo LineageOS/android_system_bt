@@ -53,7 +53,7 @@ class Stack {
   DISALLOW_COPY_AND_ASSIGN(Stack);
 
  private:
-  std::mutex mutex_;
+  std::recursive_mutex mutex_;
   StackManager stack_manager_;
   bool is_running_ = false;
   os::Thread* stack_thread_ = nullptr;

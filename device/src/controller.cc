@@ -814,7 +814,7 @@ static const controller_t interface = {
     get_local_supported_codecs,
     get_le_all_initiating_phys};
 
-const controller_t* bluetooth::legacy::controller_get_interface() {
+static const controller_t* controller_get_interface_legacy() {
   static bool loaded = false;
   if (!loaded) {
     loaded = true;
@@ -831,7 +831,7 @@ const controller_t* controller_get_interface() {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::controller_get_interface();
   } else {
-    return bluetooth::legacy::controller_get_interface();
+    return controller_get_interface_legacy();
   }
 }
 
