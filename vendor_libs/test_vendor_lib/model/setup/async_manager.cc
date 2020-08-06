@@ -287,12 +287,7 @@ class AsyncManager::AsyncTaskManager {
   bool CancelAsyncTask(AsyncTaskId async_task_id) {
     // remove task from queue (and task id association) while holding lock
     std::unique_lock<std::mutex> guard(internal_mutex_);
-    if (tasks_by_id_.count(async_task_id) == 0) {
-      return false;
-    }
-    task_queue_.erase(tasks_by_id_[async_task_id]);
-    tasks_by_id_.erase(async_task_id);
-    return true;
+    return cancel_task_with_lock_held(async_task_id);
   }
 
   bool CancelAsyncTasksFromUser(AsyncUserId user_id) {
@@ -302,10 +297,9 @@ class AsyncManager::AsyncTaskManager {
       return false;
     }
     for (auto task : tasks_by_user_id_[user_id]) {
-      if (tasks_by_id_.count(task) != 0) {
-        tasks_by_id_.erase(task);
-      }
+      cancel_task_with_lock_held(task);
     }
+    tasks_by_user_id_.erase(user_id);
     return true;
   }
 
@@ -381,6 +375,15 @@ class AsyncManager::AsyncTaskManager {
       return *t1 < *t2;
     }
   };
+
+  bool cancel_task_with_lock_held(AsyncTaskId async_task_id) {
+    if (tasks_by_id_.count(async_task_id) == 0) {
+      return false;
+    }
+    task_queue_.erase(tasks_by_id_[async_task_id]);
+    tasks_by_id_.erase(async_task_id);
+    return true;
+  }
 
   AsyncTaskId scheduleTask(const std::shared_ptr<Task>& task) {
     {
