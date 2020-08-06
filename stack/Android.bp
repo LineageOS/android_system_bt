@@ -92,7 +92,7 @@ cc_library_static {
         "bnep/bnep_main.cc",
         "bnep/bnep_utils.cc",
         "btm/ble_advertiser_hci_interface.cc",
-        "btm/btm_acl.cc",
+        "acl/btm_acl.cc",
         "btm/btm_ble.cc",
         "btm/btm_ble_addr.cc",
         "btm/btm_ble_adv_filter.cc",
