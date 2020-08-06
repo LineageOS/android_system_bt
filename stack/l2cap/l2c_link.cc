@@ -1325,3 +1325,22 @@ void l2c_link_segments_xmitted(BT_HDR* p_msg) {
   } else
     osi_free(p_msg);
 }
+
+tBTM_STATUS l2cu_ConnectAclForSecurity(const RawAddress& bd_addr) {
+  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_BR_EDR);
+  if (p_lcb && (p_lcb->link_state == LST_CONNECTED ||
+                p_lcb->link_state == LST_CONNECTING)) {
+    BTM_TRACE_WARNING("%s Connection already exists", __func__);
+    return BTM_CMD_STARTED;
+  }
+
+  /* Make sure an L2cap link control block is available */
+  if (!p_lcb &&
+      (p_lcb = l2cu_allocate_lcb(bd_addr, true, BT_TRANSPORT_BR_EDR)) == NULL) {
+    LOG(WARNING) << "failed allocate LCB " << bd_addr;
+    return BTM_NO_RESOURCES;
+  }
+
+  l2cu_create_conn_br_edr(p_lcb);
+  return BTM_SUCCESS;
+}
