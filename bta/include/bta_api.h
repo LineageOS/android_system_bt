@@ -1006,9 +1006,6 @@ typedef tSDP_DISCOVERY_DB tBTA_DISCOVERY_DB;
 #define BTA_DI_NUM_MAX 3
 #endif
 
-/* Device features mask definitions */
-#define BTA_FEATURE_BYTES_PER_PAGE BTM_FEATURE_BYTES_PER_PAGE
-#define BTA_EXT_FEATURES_PAGE_MAX BTM_EXT_FEATURES_PAGE_MAX
 /* ACL type
 */
 #define BTA_DM_LINK_TYPE_BR_EDR 0x01
