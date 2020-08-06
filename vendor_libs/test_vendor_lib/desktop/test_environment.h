@@ -71,12 +71,12 @@ class TestEnvironment {
                                                     task);
       },
 
-      [this](test_vendor_lib::AsyncTaskId task) {
-        async_manager_.CancelAsyncTask(task);
-      },
-
       [this](test_vendor_lib::AsyncUserId user) {
         async_manager_.CancelAsyncTasksFromUser(user);
+      },
+
+      [this](test_vendor_lib::AsyncTaskId task) {
+        async_manager_.CancelAsyncTask(task);
       },
 
       [this](const std::string& server, int port) {

@@ -79,6 +79,8 @@ class TestCommandHandler {
 
   void StopTimer(const std::vector<std::string>& args);
 
+  void Reset(const std::vector<std::string>& args);
+
   // For manual testing
   void AddDefaults();
 

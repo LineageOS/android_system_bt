@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include <list>
 #include <memory>
 #include <vector>
 
@@ -58,7 +59,7 @@ class PhyLayerFactory {
 
  private:
   Phy::Type phy_type_;
-  std::vector<std::shared_ptr<PhyLayer>> phy_layers_;
+  std::list<std::shared_ptr<PhyLayer>> phy_layers_;
   uint32_t next_id_{1};
   const uint32_t factory_id_;
 };

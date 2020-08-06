@@ -263,4 +263,13 @@ void TestCommandHandler::StopTimer(const vector<std::string>& args) {
   send_response_(response_string_);
 }
 
+void TestCommandHandler::Reset(const std::vector<std::string>& args) {
+  if (args.size() > 0) {
+    LOG_INFO("Unused args: arg[0] = %s", args[0].c_str());
+  }
+  model_.Reset();
+  response_string_ = "model reset";
+  send_response_(response_string_);
+}
+
 }  // namespace test_vendor_lib
