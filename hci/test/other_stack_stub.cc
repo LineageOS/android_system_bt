@@ -36,6 +36,7 @@ void DumpBtScheduling(unsigned char, unsigned char*) {}
 
 namespace shim {
 
+bool is_gd_hci_enabled() { return false; }
 bool is_gd_shim_enabled() { return false; }
 bool is_gd_stack_started_up() { return false; }
 void Post(base::OnceClosure task) {}

@@ -295,7 +295,7 @@ static void whitelist_l2c_channel(uint16_t conn_handle, uint16_t local_cid,
   LOG(INFO) << __func__
             << ": Whitelisting l2cap channel. conn_handle=" << conn_handle
             << " cid=" << loghex(local_cid) << ":" << loghex(remote_cid);
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     return;
   }
   std::lock_guard lock(filter_list_mutex);
@@ -309,7 +309,7 @@ static void whitelist_rfc_dlci(uint16_t local_cid, uint8_t dlci) {
   LOG(INFO) << __func__
             << ": Whitelisting rfcomm channel. L2CAP CID=" << loghex(local_cid)
             << " DLCI=" << loghex(dlci);
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     return;
   }
   std::lock_guard lock(filter_list_mutex);
@@ -324,7 +324,7 @@ static void add_rfc_l2c_channel(uint16_t conn_handle, uint16_t local_cid,
             << ": rfcomm data going over l2cap channel. conn_handle="
             << conn_handle << " cid=" << loghex(local_cid) << ":"
             << loghex(remote_cid);
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     return;
   }
   std::lock_guard lock(filter_list_mutex);
@@ -339,7 +339,7 @@ static void clear_l2cap_whitelist(uint16_t conn_handle, uint16_t local_cid,
             << ": Clearing whitelist from l2cap channel. conn_handle="
             << conn_handle << " cid=" << local_cid << ":" << remote_cid;
 
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     return;
   }
   std::lock_guard lock(filter_list_mutex);

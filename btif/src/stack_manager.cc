@@ -113,7 +113,7 @@ static void event_init_stack(void* context) {
 
     module_init(get_module(OSI_MODULE));
     module_init(get_module(BT_UTILS_MODULE));
-    if (bluetooth::shim::is_gd_shim_enabled()) {
+    if (bluetooth::shim::is_any_gd_enabled()) {
       module_start_up(get_module(GD_IDLE_MODULE));
     }
     module_init(get_module(BTIF_CONFIG_MODULE));

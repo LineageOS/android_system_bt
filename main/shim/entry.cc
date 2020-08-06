@@ -37,7 +37,7 @@
 namespace bluetooth {
 namespace shim {
 
-os::Handler* GetGdShimHandler() { return GetDumpsys()->GetGdShimHandler(); }
+os::Handler* GetGdShimHandler() { return Stack::GetInstance()->GetHandler(); }
 
 hci::LeAdvertisingManager* GetAdvertising() {
   return Stack::GetInstance()
