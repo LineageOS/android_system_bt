@@ -705,7 +705,6 @@ extern void l2c_fcr_stop_timer(tL2C_CCB* p_ccb);
 extern bool l2cble_create_conn(tL2C_LCB* p_lcb);
 extern void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p,
                                    uint16_t pkt_len);
-extern void l2cble_notify_le_connection(const RawAddress& bda);
 extern void l2c_ble_link_adjust_allocation(void);
 
 extern void l2cble_credit_based_conn_req(tL2C_CCB* p_ccb);

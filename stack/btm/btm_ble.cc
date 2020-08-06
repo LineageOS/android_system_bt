@@ -39,13 +39,13 @@
 #include "gap_api.h"
 #include "gatt_api.h"
 #include "hcimsgs.h"
-#include "l2c_int.h"
 #include "log/log.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/crypto_toolbox/crypto_toolbox.h"
+#include "stack/include/l2cap_security_interface.h"
 
 extern void gatt_notify_phy_updated(uint8_t status, uint16_t handle,
                                     uint8_t tx_phy, uint8_t rx_phy);
@@ -1134,8 +1134,7 @@ tL2CAP_LE_RESULT_CODE btm_ble_start_sec_check(const RawAddress& bd_addr,
 
   if (ble_sec_act == BTM_BLE_SEC_NONE) return result;
 
-  tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_LE);
-  p_lcb->sec_act = sec_act;
+  l2cble_update_sec_act(bd_addr, sec_act);
   BTM_SetEncryption(bd_addr, BT_TRANSPORT_LE, p_callback, p_ref_data,
                     ble_sec_act);
 
