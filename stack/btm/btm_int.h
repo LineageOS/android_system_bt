@@ -126,8 +126,6 @@ extern void btm_establish_continue(tACL_CONN* p_acl_cb);
 
 extern void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
                                               uint16_t* p_pkt_type);
-/* Read maximum data packet that can be sent over current connection */
-extern uint16_t btm_get_max_packet_size(const RawAddress& addr);
 extern tACL_CONN* btm_bda_to_acl(const RawAddress& bda,
                                  tBT_TRANSPORT transport);
 extern bool btm_acl_notif_conn_collision(const RawAddress& bda);
