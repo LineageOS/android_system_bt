@@ -33,6 +33,7 @@
 #include "l2cap_acl_interface.h"
 #include "l2cap_controller_interface.h"
 #include "l2cap_hci_link_interface.h"
+#include "l2cap_security_interface.h"
 #include "l2cdefs.h"
 #include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
@@ -533,13 +534,10 @@ extern void l2c_process_held_packets(bool timed_out);
 
 extern tL2C_LCB* l2cu_allocate_lcb(const RawAddress& p_bd_addr, bool is_bonding,
                                    tBT_TRANSPORT transport);
-extern bool l2cu_start_post_bond_timer(uint16_t handle);
 extern void l2cu_release_lcb(tL2C_LCB* p_lcb);
 extern tL2C_LCB* l2cu_find_lcb_by_bd_addr(const RawAddress& p_bd_addr,
                                           tBT_TRANSPORT transport);
 extern tL2C_LCB* l2cu_find_lcb_by_handle(uint16_t handle);
-extern void l2cu_update_lcb_4_bonding(const RawAddress& p_bd_addr,
-                                      bool is_bonding);
 
 extern uint8_t l2cu_get_conn_role(tL2C_LCB* p_this_lcb);
 extern bool l2cu_set_acl_priority(const RawAddress& bd_addr, uint8_t priority,
@@ -634,13 +632,11 @@ extern bool l2cu_create_conn_le(tL2C_LCB* p_lcb, uint8_t initiating_phys);
 extern void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb);
 extern BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb,
                                             tL2C_TX_COMPLETE_CB_INFO* p_cbi);
-extern void l2cu_resubmit_pending_sec_req(const RawAddress* p_bda);
 extern void l2cu_adjust_out_mps(tL2C_CCB* p_ccb);
 
 /* Functions provided by l2c_link.cc
  ***********************************
 */
-extern bool l2c_link_hci_conn_req(const RawAddress& bd_addr);
 extern void l2c_link_timeout(tL2C_LCB* p_lcb);
 extern void l2c_info_resp_timer_timeout(void* data);
 extern void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, tL2C_CCB* p_ccb,
