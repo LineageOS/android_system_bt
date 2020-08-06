@@ -1101,7 +1101,8 @@ void btm_read_remote_ext_features_complete(uint8_t* p, uint8_t evt_len) {
   if (page_num > max_page) {
     BTM_TRACE_WARNING(
         "btm_read_remote_ext_features_complete num_page=%d, max_page=%d "
-        "invalid", page_num, max_page);
+        "invalid",
+        page_num, max_page);
   }
 
   p_acl_cb = &btm_cb.acl_cb_.acl_db[acl_idx];
@@ -1391,19 +1392,19 @@ void btm_process_clk_off_comp_evt(uint16_t hci_handle, uint16_t clock_offset) {
 }
 
 /*******************************************************************************
-*
-* Function         btm_blacklist_role_change_device
-*
-* Description      This function is used to blacklist the device if the role
-*                  switch fails for maximum number of times. It also removes
-*                  the device from the black list if the role switch succeeds.
-*
-* Input Parms      bd_addr - remote BD addr
-*                  hci_status - role switch status
-*
-* Returns          void
-*
-*******************************************************************************/
+ *
+ * Function         btm_blacklist_role_change_device
+ *
+ * Description      This function is used to blacklist the device if the role
+ *                  switch fails for maximum number of times. It also removes
+ *                  the device from the black list if the role switch succeeds.
+ *
+ * Input Parms      bd_addr - remote BD addr
+ *                  hci_status - role switch status
+ *
+ * Returns          void
+ *
+ *******************************************************************************/
 void btm_blacklist_role_change_device(const RawAddress& bd_addr,
                                       uint8_t hci_status) {
   tACL_CONN* p = btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
