@@ -679,10 +679,6 @@ typedef uint16_t tBTM_BL_EVENT_MASK;
 #define BTM_BL_UPDATE_MASK 0x0004
 #define BTM_BL_ROLE_CHG_MASK 0x0008
 
-/* Device features mask definitions */
-#define BTM_FEATURE_BYTES_PER_PAGE HCI_FEATURE_BYTES_PER_PAGE
-#define BTM_EXT_FEATURES_PAGE_MAX HCI_EXT_FEATURES_PAGE_MAX
-
 /* the data type associated with BTM_BL_CONN_EVT */
 typedef struct {
   tBTM_BL_EVENT event;     /* The event reported. */
