@@ -34,3 +34,5 @@ extern void l2cu_resubmit_pending_sec_req(const RawAddress* p_bda);
 // Returns BTM_CMD_STARTED if already connecting, BTM_NO_RESOURCES if can't
 // allocate lcb, BTM_SUCCESS if initiated the connection
 tBTM_STATUS l2cu_ConnectAclForSecurity(const RawAddress& bd_addr);
+
+extern void l2cble_update_sec_act(const RawAddress& bd_addr, uint16_t sec_act);
