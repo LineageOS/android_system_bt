@@ -162,8 +162,6 @@ extern bool btm_is_sco_active(uint16_t handle);
 extern void btm_remove_sco_links(const RawAddress& bda);
 extern bool btm_is_sco_active_by_bdaddr(const RawAddress& remote_bda);
 
-extern void btm_read_def_esco_mode(enh_esco_params_t* p_parms);
-extern uint16_t btm_find_scb_by_handle(uint16_t handle);
 extern void btm_sco_flush_sco_data(uint16_t sco_inx);
 
 /* Internal functions provided by btm_devctl.cc
