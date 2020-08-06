@@ -39,10 +39,10 @@
 #include "btif_uid.h"
 #include "btif_util.h"
 #include "btm_api.h"
-#include "btm_int.h"
 #include "common/metrics.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
+#include "osi/include/osi.h"
 
 struct packet {
   struct packet *next, *prev;
