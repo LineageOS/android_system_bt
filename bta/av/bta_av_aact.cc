@@ -1870,7 +1870,7 @@ void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
    * i.e. allow role switch, if we are slave.
    * It would not hurt us, if the peer device wants us to be master */
   if ((BTM_GetRole(p_scb->PeerAddress(), &cur_role) == BTM_SUCCESS) &&
-      (cur_role == BTM_ROLE_MASTER)) {
+      (cur_role == HCI_ROLE_MASTER)) {
     clear_policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
   }
 
@@ -2380,7 +2380,7 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
        * Because it would not hurt source, if the peer device wants source to be
        * master */
       if ((BTM_GetRole(p_scb->PeerAddress(), &cur_role) == BTM_SUCCESS) &&
-          (cur_role == BTM_ROLE_MASTER)) {
+          (cur_role == HCI_ROLE_MASTER)) {
         clear_policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
       }
 
