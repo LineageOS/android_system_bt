@@ -47,18 +47,11 @@
 #include "btm_ble_int.h"
 #include "gatt_int.h"
 #include "gattdefs.h"
-#include "l2c_int.h"
 #include "osi/include/log.h"
 #include "common/time_util.h"
 
 #include "main/shim/btm_api.h"
 #include "main/shim/shim.h"
-
-#define BTM_BLE_NAME_SHORT 0x01
-#define BTM_BLE_NAME_CMPL 0x02
-
-#define BTM_BLE_FILTER_TARGET_UNKNOWN 0xff
-#define BTM_BLE_POLICY_UNKNOWN 0xff
 
 #define BTM_EXT_BLE_RMT_NAME_TIMEOUT_MS (30 * 1000)
 #define MIN_ADV_LENGTH 2
@@ -2277,7 +2270,8 @@ void btm_ble_read_remote_features_complete(uint8_t* p) {
   }
 
   if (status == HCI_SUCCESS) {
-    STREAM_TO_ARRAY(btm_cb.acl_db[idx].peer_le_features, p, BD_FEATURES_LEN);
+    STREAM_TO_ARRAY(btm_cb.acl_cb_.acl_db[idx].peer_le_features, p,
+                    BD_FEATURES_LEN);
   }
 
   btsnd_hcic_rmt_ver_req(handle);

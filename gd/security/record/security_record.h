@@ -18,11 +18,13 @@
 
 #pragma once
 
+#include <storage/device.h>
 #include <memory>
 #include <utility>
 
 #include "crypto_toolbox/crypto_toolbox.h"
 #include "hci/address_with_type.h"
+#include "storage/device.h"
 
 namespace bluetooth {
 namespace security {
@@ -46,20 +48,6 @@ class SecurityRecord {
     return IsClassicLinkKeyValid();
   }
 
-  /**
-   * Returns true if Link Keys are stored persistently
-   */
-  bool IsBonded() const {
-    return IsPaired() && persisted_;
-  }
-
-  /**
-   * Called by storage manager once record has persisted
-   */
-  void SetPersisted(bool persisted) {
-    persisted_ = persisted;
-  }
-
   void SetLinkKey(std::array<uint8_t, 16> link_key, hci::KeyType key_type) {
     link_key_ = link_key;
     key_type_ = key_type;
@@ -80,7 +68,7 @@ class SecurityRecord {
     return key_type_;
   }
 
-  hci::AddressWithType GetPseudoAddress() {
+  std::optional<hci::AddressWithType> GetPseudoAddress() {
     return pseudo_address_;
   }
 
@@ -108,23 +96,33 @@ class SecurityRecord {
     return this->is_encryption_required_;
   }
 
+  bool IsClassicLinkKeyValid() const {
+    return !std::all_of(link_key_.begin(), link_key_.end(), [](uint8_t b) { return b == 0; });
+  }
+
+  void SetIsTemporary(bool is_temp) {
+    this->is_temporary_ = is_temp;
+  }
+
+  bool IsTemporary() {
+    return this->is_temporary_;
+  }
+
  private:
-  /* First address we have ever seen this device with, that we used to create bond */
-  hci::AddressWithType pseudo_address_;
 
   std::array<uint8_t, 16> link_key_ = {0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0};
   hci::KeyType key_type_ = hci::KeyType::DEBUG_COMBINATION;
 
-  bool IsClassicLinkKeyValid() const {
-    return !std::all_of(link_key_.begin(), link_key_.end(), [](uint8_t b) { return b == 0; });
-  }
-  bool persisted_ = false;
+  bool is_temporary_ = false;
   bool pairing_ = false;
   bool is_authenticated_ = false;
   bool requires_mitm_protection_ = false;
   bool is_encryption_required_ = false;
 
  public:
+  /* First address we have ever seen this device with, that we used to create bond */
+  std::optional<hci::AddressWithType> pseudo_address_;
+
   /* Identity Address */
   std::optional<hci::AddressWithType> identity_address_;
 

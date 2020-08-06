@@ -30,29 +30,15 @@
 #include "btm_api.h"
 #include "btm_ble_api.h"
 #include "l2c_api.h"
+#include "l2cap_acl_interface.h"
+#include "l2cap_controller_interface.h"
+#include "l2cap_hci_link_interface.h"
 #include "l2cdefs.h"
 #include "osi/include/alarm.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/list.h"
 
 #define L2CAP_MIN_MTU 48 /* Minimum acceptable MTU is 48 bytes */
-
-/* LE credit based L2CAP connection parameters */
-constexpr uint16_t L2CAP_LE_MIN_MTU = 23;  // Minimum SDU size
-constexpr uint16_t L2CAP_LE_MIN_MPS = 23;
-constexpr uint16_t L2CAP_LE_MAX_MPS = 65533;
-constexpr uint16_t L2CAP_LE_CREDIT_MAX = 65535;
-
-// This is initial amout of credits we send, and amount to which we increase
-// credits once they fall below threshold
-constexpr uint16_t L2CAP_LE_CREDIT_DEFAULT = 0xffff;
-
-// If credit count on remote fall below this value, we send back credits to
-// reach default value.
-constexpr uint16_t L2CAP_LE_CREDIT_THRESHOLD = 0x0040;
-
-static_assert(L2CAP_LE_CREDIT_THRESHOLD < L2CAP_LE_CREDIT_DEFAULT,
-              "Threshold must be smaller then default credits");
 
 #define L2CAP_NO_IDLE_TIMEOUT 0xFFFF
 
@@ -537,21 +523,14 @@ extern tL2C_CB l2cb;
 /* Functions provided by l2c_main.cc
  ***********************************
 */
-void l2c_init(void);
-void l2c_free(void);
 
 extern void l2c_receive_hold_timer_timeout(void* data);
 extern void l2c_ccb_timer_timeout(void* data);
 extern void l2c_lcb_timer_timeout(void* data);
 extern void l2c_fcrb_ack_timer_timeout(void* data);
 extern uint8_t l2c_data_write(uint16_t cid, BT_HDR* p_data, uint16_t flag);
-extern void l2c_rcv_acl_data(BT_HDR* p_msg);
 extern void l2c_process_held_packets(bool timed_out);
 
-/* Functions provided by l2c_utils.cc
- ***********************************
-*/
-extern bool l2cu_can_allocate_lcb(void);
 extern tL2C_LCB* l2cu_allocate_lcb(const RawAddress& p_bd_addr, bool is_bonding,
                                    tBT_TRANSPORT transport);
 extern bool l2cu_start_post_bond_timer(uint16_t handle);
@@ -605,8 +584,6 @@ extern void l2cu_disconnect_chnl(tL2C_CCB* p_ccb);
 
 extern void l2cu_tx_complete(tL2C_TX_COMPLETE_CB_INFO* p_cbi);
 
-extern void l2cu_set_non_flushable_pbf(bool);
-
 extern void l2cu_send_peer_ble_par_req(tL2C_LCB* p_lcb, uint16_t min_int,
                                        uint16_t max_int, uint16_t latency,
                                        uint16_t timeout);
@@ -648,47 +625,33 @@ extern void l2cu_process_peer_cfg_rsp(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg);
 extern void l2cu_process_our_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg);
 extern void l2cu_process_our_cfg_rsp(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg);
 
-extern void l2cu_device_reset(void);
 extern tL2C_LCB* l2cu_find_lcb_by_state(tL2C_LINK_STATE state);
 extern bool l2cu_lcb_disconnecting(void);
 
-extern bool l2cu_create_conn_br_edr(tL2C_LCB* p_lcb);
+extern void l2cu_create_conn_br_edr(tL2C_LCB* p_lcb);
 extern bool l2cu_create_conn_le(tL2C_LCB* p_lcb);
 extern bool l2cu_create_conn_le(tL2C_LCB* p_lcb, uint8_t initiating_phys);
-extern bool l2cu_create_conn_after_switch(tL2C_LCB* p_lcb);
+extern void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb);
 extern BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb,
                                             tL2C_TX_COMPLETE_CB_INFO* p_cbi);
 extern void l2cu_resubmit_pending_sec_req(const RawAddress* p_bda);
-extern void l2cu_initialize_amp_ccb(tL2C_LCB* p_lcb);
 extern void l2cu_adjust_out_mps(tL2C_CCB* p_ccb);
 
 /* Functions provided by l2c_link.cc
  ***********************************
 */
 extern bool l2c_link_hci_conn_req(const RawAddress& bd_addr);
-extern bool l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
-                                   const RawAddress& p_bda);
-extern bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason);
 extern void l2c_link_timeout(tL2C_LCB* p_lcb);
 extern void l2c_info_resp_timer_timeout(void* data);
 extern void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, tL2C_CCB* p_ccb,
                                      BT_HDR* p_buf);
 extern void l2c_link_adjust_allocation(void);
-extern void l2c_link_process_num_completed_pkts(uint8_t* p, uint8_t evt_len);
 
-extern void l2c_link_processs_num_bufs(uint16_t num_lm_acl_bufs);
-
-extern void l2c_link_role_changed(const RawAddress* bd_addr, uint8_t new_role,
-                                  uint8_t hci_status);
 extern void l2c_link_sec_comp(const RawAddress* p_bda, tBT_TRANSPORT trasnport,
                               void* p_ref_data, uint8_t status);
 extern void l2c_link_sec_comp2(const RawAddress& p_bda, tBT_TRANSPORT trasnport,
                                void* p_ref_data, uint8_t status);
-extern void l2c_link_segments_xmitted(BT_HDR* p_msg);
-extern void l2c_pin_code_request(const RawAddress& bd_addr);
 extern void l2c_link_adjust_chnl_allocation(void);
-
-extern void l2c_link_processs_ble_num_bufs(uint16_t num_lm_acl_bufs);
 
 #if (L2CAP_WAKE_PARKED_LINK == TRUE)
 extern bool l2c_link_check_power_mode(tL2C_LCB* p_lcb);
@@ -746,15 +709,8 @@ extern void l2c_fcr_stop_timer(tL2C_CCB* p_ccb);
 extern bool l2cble_create_conn(tL2C_LCB* p_lcb);
 extern void l2cble_process_sig_cmd(tL2C_LCB* p_lcb, uint8_t* p,
                                    uint16_t pkt_len);
-extern void l2cble_conn_comp(uint16_t handle, uint8_t role,
-                             const RawAddress& bda, tBLE_ADDR_TYPE type,
-                             uint16_t conn_interval, uint16_t conn_latency,
-                             uint16_t conn_timeout);
 extern void l2cble_notify_le_connection(const RawAddress& bda);
 extern void l2c_ble_link_adjust_allocation(void);
-extern void l2cble_process_conn_update_evt(uint16_t handle, uint8_t status,
-                                           uint16_t interval, uint16_t latency,
-                                           uint16_t timeout);
 
 extern void l2cble_credit_based_conn_req(tL2C_CCB* p_ccb);
 extern void l2cble_credit_based_conn_res(tL2C_CCB* p_ccb, uint16_t result);
@@ -767,20 +723,9 @@ extern tL2CAP_LE_RESULT_CODE l2ble_sec_access_req(const RawAddress& bd_addr,
                                                   tL2CAP_SEC_CBACK* p_callback,
                                                   void* p_ref_data);
 
-#if (BLE_LLT_INCLUDED == TRUE)
-extern void l2cble_process_rc_param_request_evt(uint16_t handle,
-                                                uint16_t int_min,
-                                                uint16_t int_max,
-                                                uint16_t latency,
-                                                uint16_t timeout);
-#endif
-
 extern void l2cble_update_data_length(tL2C_LCB* p_lcb);
 extern void l2cble_set_fixed_channel_tx_data_length(
     const RawAddress& remote_bda, uint16_t fix_cid, uint16_t tx_mtu);
-extern void l2cble_process_data_length_change_event(uint16_t handle,
-                                                    uint16_t tx_data_len,
-                                                    uint16_t rx_data_len);
 
 extern void l2cu_process_fixed_disc_cback(tL2C_LCB* p_lcb);
 

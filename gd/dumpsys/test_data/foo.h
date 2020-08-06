@@ -10,6 +10,7 @@ class FooTestDataClass : public DumpsysTestDataClass {
   TableAddFunction GetTable(flatbuffers::FlatBufferBuilder& fb_builder) override {
     auto int_string = fb_builder.CreateString("123");
     auto float_string = fb_builder.CreateString("123.456");
+    auto bool_string = fb_builder.CreateString("true");
 
     FooTestSchemaBuilder builder(fb_builder);
     builder.add_foo_int_private(123);
@@ -23,6 +24,12 @@ class FooTestDataClass : public DumpsysTestDataClass {
     builder.add_foo_float_anonymized(123.456);
     builder.add_foo_float_any(123.456);
     builder.add_foo_float_string(float_string);
+
+    builder.add_foo_bool_private(true);
+    builder.add_foo_bool_opaque(true);
+    builder.add_foo_bool_anonymized(true);
+    builder.add_foo_bool_any(true);
+    builder.add_foo_bool_string(bool_string);
 
     auto foo_table = builder.Finish();
 

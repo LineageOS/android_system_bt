@@ -51,7 +51,6 @@ void avdt_l2c_data_ind_cback(uint16_t lcid, BT_HDR* p_buf);
 /* L2CAP callback function structure */
 const tL2CAP_APPL_INFO avdt_l2c_appl = {avdt_l2c_connect_ind_cback,
                                         avdt_l2c_connect_cfm_cback,
-                                        NULL,
                                         avdt_l2c_config_ind_cback,
                                         avdt_l2c_config_cfm_cback,
                                         avdt_l2c_disconnect_ind_cback,
@@ -199,8 +198,9 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
         tACL_CONN* p_acl_cb = btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
         btm_set_packet_types(
             p_acl_cb,
-            (btm_cb.btm_acl_pkt_types_supported | HCI_PKT_TYPES_MASK_NO_3_DH1 |
-             HCI_PKT_TYPES_MASK_NO_3_DH3 | HCI_PKT_TYPES_MASK_NO_3_DH5));
+            (btm_cb.acl_cb_.btm_acl_pkt_types_supported |
+             HCI_PKT_TYPES_MASK_NO_3_DH1 | HCI_PKT_TYPES_MASK_NO_3_DH3 |
+             HCI_PKT_TYPES_MASK_NO_3_DH5));
       }
 
       /* Check the security */
@@ -318,7 +318,7 @@ void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
                   btm_bda_to_acl(p_ccb->peer_addr, BT_TRANSPORT_BR_EDR);
               btm_set_packet_types(
                   p_acl_cb,
-                  (btm_cb.btm_acl_pkt_types_supported |
+                  (btm_cb.acl_cb_.btm_acl_pkt_types_supported |
                    HCI_PKT_TYPES_MASK_NO_3_DH1 | HCI_PKT_TYPES_MASK_NO_3_DH3 |
                    HCI_PKT_TYPES_MASK_NO_3_DH5));
             }

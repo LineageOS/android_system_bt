@@ -52,9 +52,9 @@
 #include "hci_evt_length.h"
 #include "hci_layer.h"
 #include "hcimsgs.h"
-#include "l2c_int.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
+#include "stack/include/l2cap_hci_link_interface.h"
 
 using base::Location;
 
@@ -76,15 +76,12 @@ static void btu_hcif_rmt_name_request_comp_evt(uint8_t* p, uint16_t evt_len);
 static void btu_hcif_encryption_change_evt(uint8_t* p);
 static void btu_hcif_read_rmt_ext_features_comp_evt(uint8_t* p,
                                                     uint8_t evt_len);
-static void btu_hcif_qos_setup_comp_evt(uint8_t* p);
 static void btu_hcif_command_complete_evt(BT_HDR* response, void* context);
 static void btu_hcif_command_status_evt(uint8_t status, BT_HDR* command,
                                         void* context);
 static void btu_hcif_hardware_error_evt(uint8_t* p);
 static void btu_hcif_role_change_evt(uint8_t* p);
 static void btu_hcif_mode_change_evt(uint8_t* p);
-static void btu_hcif_pin_code_request_evt(uint8_t* p);
-static void btu_hcif_link_key_request_evt(uint8_t* p);
 static void btu_hcif_link_key_notification_evt(uint8_t* p);
 static void btu_hcif_read_clock_off_comp_evt(uint8_t* p);
 static void btu_hcif_esco_connection_comp_evt(uint8_t* p);
@@ -314,9 +311,6 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
     case HCI_READ_RMT_VERSION_COMP_EVT:
       btm_read_remote_version_complete(p);
       break;
-    case HCI_QOS_SETUP_COMP_EVT:
-      btu_hcif_qos_setup_comp_evt(p);
-      break;
     case HCI_COMMAND_COMPLETE_EVT:
       LOG_ERROR(
           "%s should not have received a command complete event. "
@@ -342,10 +336,10 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
       btu_hcif_mode_change_evt(p);
       break;
     case HCI_PIN_CODE_REQUEST_EVT:
-      btu_hcif_pin_code_request_evt(p);
+      btm_sec_pin_code_request(p);
       break;
     case HCI_LINK_KEY_REQUEST_EVT:
-      btu_hcif_link_key_request_evt(p);
+      btm_sec_link_key_request(p);
       break;
     case HCI_LINK_KEY_NOTIFICATION_EVT:
       btu_hcif_link_key_notification_evt(p);
@@ -1165,32 +1159,6 @@ static void btu_hcif_read_rmt_ext_features_comp_evt(uint8_t* p,
 
 /*******************************************************************************
  *
- * Function         btu_hcif_qos_setup_comp_evt
- *
- * Description      Process event HCI_QOS_SETUP_COMP_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_qos_setup_comp_evt(uint8_t* p) {
-  uint8_t status;
-  uint16_t handle;
-  FLOW_SPEC flow;
-
-  STREAM_TO_UINT8(status, p);
-  STREAM_TO_UINT16(handle, p);
-  STREAM_TO_UINT8(flow.qos_flags, p);
-  STREAM_TO_UINT8(flow.service_type, p);
-  STREAM_TO_UINT32(flow.token_rate, p);
-  STREAM_TO_UINT32(flow.peak_bandwidth, p);
-  STREAM_TO_UINT32(flow.latency, p);
-  STREAM_TO_UINT32(flow.delay_variation, p);
-
-  btm_qos_setup_complete(status, handle, &flow);
-}
-
-/*******************************************************************************
- *
  * Function         btu_hcif_esco_connection_comp_evt
  *
  * Description      Process event HCI_ESCO_CONNECTION_COMP_EVT
@@ -1429,12 +1397,6 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
         btm_process_inq_complete(status, BTM_BR_INQUIRY_MASK);
       }
       break;
-    case HCI_QOS_SETUP:
-      if (status != HCI_SUCCESS) {
-        // Tell qos setup that we are done
-        btm_qos_setup_complete(status, 0, nullptr);
-      }
-      break;
     case HCI_SWITCH_ROLE:
       if (status != HCI_SUCCESS) {
         // Tell BTM that the command failed
@@ -1633,43 +1595,6 @@ static void btu_hcif_mode_change_evt(uint8_t* p) {
 #if (HID_DEV_INCLUDED == TRUE && HID_DEV_PM_INCLUDED == TRUE)
   hidd_pm_proc_mode_change(status, current_mode, interval);
 #endif
-}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_pin_code_request_evt
- *
- * Description      Process event HCI_PIN_CODE_REQUEST_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_pin_code_request_evt(uint8_t* p) {
-  RawAddress bda;
-
-  STREAM_TO_BDADDR(bda, p);
-
-  /* Tell L2CAP that there was a PIN code request,  */
-  /* it may need to stretch timeouts                */
-  l2c_pin_code_request(bda);
-
-  btm_sec_pin_code_request(bda);
-}
-
-/*******************************************************************************
- *
- * Function         btu_hcif_link_key_request_evt
- *
- * Description      Process event HCI_LINK_KEY_REQUEST_EVT
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btu_hcif_link_key_request_evt(uint8_t* p) {
-  RawAddress bda;
-
-  STREAM_TO_BDADDR(bda, p);
-  btm_sec_link_key_request(bda);
 }
 
 /*******************************************************************************

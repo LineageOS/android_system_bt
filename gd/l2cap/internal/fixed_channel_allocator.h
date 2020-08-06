@@ -26,6 +26,13 @@
 
 namespace bluetooth {
 namespace l2cap {
+
+namespace classic {
+namespace internal {
+class DumpsysHelper;
+}  // namespace internal
+}  // namespace classic
+
 namespace internal {
 
 // Helper class for keeping channels in a Link. It allocates and frees Channel object, and supports querying whether a
@@ -87,6 +94,7 @@ class FixedChannelAllocator {
   }
 
  private:
+  friend class bluetooth::l2cap::classic::internal::DumpsysHelper;
   LinkType* link_;
   os::Handler* l2cap_handler_;
   std::unordered_map<Cid, std::shared_ptr<FixedChannelImplType>> channels_;

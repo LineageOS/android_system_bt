@@ -19,12 +19,10 @@
 #include <base/strings/stringprintf.h>
 #include <string.h>
 #include "bt_target.h"
-#include "bt_utils.h"
 #include "btm_int.h"
-#include "btu.h"
 #include "device/include/controller.h"
 #include "gap_api.h"
-#include "l2c_int.h"
+#include "l2c_api.h"
 #include "l2cdefs.h"
 #include "osi/include/fixed_queue.h"
 #include "osi/include/mutex.h"
@@ -117,7 +115,6 @@ void gap_conn_init(void) {
   memset(&conn, 0, sizeof(tGAP_CONN));
   conn.reg_info.pL2CA_ConnectInd_Cb = gap_connect_ind;
   conn.reg_info.pL2CA_ConnectCfm_Cb = gap_connect_cfm;
-  conn.reg_info.pL2CA_ConnectPnd_Cb = NULL;
   conn.reg_info.pL2CA_ConfigInd_Cb = gap_config_ind;
   conn.reg_info.pL2CA_ConfigCfm_Cb = gap_config_cfm;
   conn.reg_info.pL2CA_DisconnectInd_Cb = gap_disconnect_ind;

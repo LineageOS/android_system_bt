@@ -355,12 +355,13 @@ uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
     /* No link. Get an LCB and start link establishment */
     p_lcb = l2cu_allocate_lcb(p_bd_addr, false, BT_TRANSPORT_BR_EDR);
     /* currently use BR/EDR for ERTM mode l2cap connection */
-    if ((p_lcb == nullptr) || (!l2cu_create_conn_br_edr(p_lcb))) {
+    if (p_lcb == nullptr) {
       LOG(WARNING) << __func__
                    << ": connection not started for PSM=" << loghex(psm)
                    << ", p_lcb=" << p_lcb;
       return 0;
     }
+    l2cu_create_conn_br_edr(p_lcb);
   }
 
   /* Allocate a channel control block */
@@ -596,7 +597,7 @@ uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
 
   /* Save the configuration */
   if (p_cfg) {
-    memcpy(&p_ccb->local_conn_cfg, p_cfg, sizeof(tL2CAP_LE_CFG_INFO));
+    p_ccb->local_conn_cfg = *p_cfg;
     p_ccb->remote_credit_count = p_cfg->credits;
   }
 
@@ -674,7 +675,7 @@ bool L2CA_ConnectLECocRsp(const RawAddress& p_bd_addr, uint8_t id,
   }
 
   if (p_cfg) {
-    memcpy(&p_ccb->local_conn_cfg, p_cfg, sizeof(tL2CAP_LE_CFG_INFO));
+    p_ccb->local_conn_cfg = *p_cfg;
     p_ccb->remote_credit_count = p_cfg->credits;
   }
 
@@ -1493,16 +1494,17 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda,
     return false;
   }
 
-  bool ret = ((transport == BT_TRANSPORT_LE)
-                  ? l2cu_create_conn_le(p_lcb, initiating_phys)
-                  : l2cu_create_conn_br_edr(p_lcb));
-
-  if (!ret) {
-    L2CAP_TRACE_WARNING("%s() - create connection failed", __func__);
-    l2cu_release_lcb(p_lcb);
+  if (transport == BT_TRANSPORT_LE) {
+    bool ret = l2cu_create_conn_le(p_lcb, initiating_phys);
+    if (!ret) {
+      L2CAP_TRACE_WARNING("%s() - create connection failed", __func__);
+      l2cu_release_lcb(p_lcb);
+      return false;
+    }
+  } else {
+    l2cu_create_conn_br_edr(p_lcb);
   }
-
-  return ret;
+  return true;
 }
 
 /*******************************************************************************

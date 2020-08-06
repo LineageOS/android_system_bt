@@ -718,7 +718,7 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
       /* use BTM_PAIR_STATE_WAIT_AUTH_COMPLETE to report authentication failed
        * event */
       btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_AUTH_COMPLETE);
-      btm_cb.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
+      btm_cb.acl_cb_.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
 
       btsnd_hcic_pin_code_neg_reply(bd_addr);
     } else {
@@ -748,7 +748,7 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
 #endif
       btsnd_hcic_write_auth_enable(true);
 
-    btm_cb.acl_disc_reason = 0xff;
+    btm_cb.acl_cb_.acl_disc_reason = 0xff;
 
     /* if we rejected incoming connection request, we have to wait
      * HCI_Connection_Complete event */
@@ -781,7 +781,7 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
   }
 
   btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_AUTH_COMPLETE);
-  btm_cb.acl_disc_reason = HCI_SUCCESS;
+  btm_cb.acl_cb_.acl_disc_reason = HCI_SUCCESS;
 
   btsnd_hcic_pin_code_req_reply(bd_addr, pin_len, p_pin);
 }
@@ -1309,7 +1309,7 @@ void BTM_ConfirmReqReply(tBTM_STATUS res, const RawAddress& bd_addr) {
   btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_AUTH_COMPLETE);
 
   if ((res == BTM_SUCCESS) || (res == BTM_SUCCESS_NO_SECURITY)) {
-    btm_cb.acl_disc_reason = HCI_SUCCESS;
+    btm_cb.acl_cb_.acl_disc_reason = HCI_SUCCESS;
 
     if (res == BTM_SUCCESS) {
       p_dev_rec = btm_find_dev(bd_addr);
@@ -1323,7 +1323,7 @@ void BTM_ConfirmReqReply(tBTM_STATUS res, const RawAddress& bd_addr) {
   } else {
     /* Report authentication failed event from state
      * BTM_PAIR_STATE_WAIT_AUTH_COMPLETE */
-    btm_cb.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
+    btm_cb.acl_cb_.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
     btsnd_hcic_user_conf_reply(bd_addr, false);
   }
 }
@@ -1359,7 +1359,7 @@ void BTM_PasskeyReqReply(tBTM_STATUS res, const RawAddress& bd_addr,
       (res != BTM_SUCCESS)) {
     tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
     if (p_dev_rec != NULL) {
-      btm_cb.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
+      btm_cb.acl_cb_.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
 
       if (p_dev_rec->hci_handle != BTM_SEC_INVALID_HANDLE)
         btm_sec_send_hci_disconnect(p_dev_rec, HCI_ERR_AUTH_FAILURE,
@@ -1383,10 +1383,10 @@ void BTM_PasskeyReqReply(tBTM_STATUS res, const RawAddress& bd_addr,
   if (res != BTM_SUCCESS) {
     /* use BTM_PAIR_STATE_WAIT_AUTH_COMPLETE to report authentication failed
      * event */
-    btm_cb.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
+    btm_cb.acl_cb_.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
     btsnd_hcic_user_passkey_neg_reply(bd_addr);
   } else {
-    btm_cb.acl_disc_reason = HCI_SUCCESS;
+    btm_cb.acl_cb_.acl_disc_reason = HCI_SUCCESS;
     btsnd_hcic_user_passkey_reply(bd_addr, passkey);
   }
 }
@@ -1461,10 +1461,10 @@ void BTM_RemoteOobDataReply(tBTM_STATUS res, const RawAddress& bd_addr,
   if (res != BTM_SUCCESS) {
     /* use BTM_PAIR_STATE_WAIT_AUTH_COMPLETE to report authentication failed
      * event */
-    btm_cb.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
+    btm_cb.acl_cb_.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
     btsnd_hcic_rem_oob_neg_reply(bd_addr);
   } else {
-    btm_cb.acl_disc_reason = HCI_SUCCESS;
+    btm_cb.acl_cb_.acl_disc_reason = HCI_SUCCESS;
     btsnd_hcic_rem_oob_reply(bd_addr, c, r);
   }
 }
@@ -2265,18 +2265,6 @@ void btm_sec_conn_req(const RawAddress& bda, uint8_t* dc) {
     }
   }
 
-#if (BTM_ALLOW_CONN_IF_NONDISCOVER == FALSE)
-  /* If non-discoverable, only allow known devices to connect */
-  if (btm_cb.btm_inq_vars.discoverable_mode == BTM_NON_DISCOVERABLE) {
-    if (!p_dev_rec) {
-      BTM_TRACE_EVENT(
-          "Security Manager: connect request from not paired device");
-      btsnd_hcic_reject_conn(bda, HCI_ERR_HOST_REJECT_DEVICE);
-      return;
-    }
-  }
-#endif
-
   if ((btm_cb.pairing_state != BTM_PAIR_STATE_IDLE) &&
       (btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD) &&
       (btm_cb.pairing_bda == bda)) {
@@ -2546,13 +2534,7 @@ static tBTM_STATUS btm_sec_dd_create_conn(tBTM_SEC_DEV_REC* p_dev_rec) {
   /* set up the control block to indicated dedicated bonding */
   btm_cb.pairing_flags |= BTM_PAIR_FLAGS_DISC_WHEN_DONE;
 
-  if (!l2cu_create_conn_br_edr(p_lcb)) {
-    LOG(WARNING) << "Security Manager: failed create allocate LCB "
-                 << p_dev_rec->bd_addr;
-
-    l2cu_release_lcb(p_lcb);
-    return (BTM_NO_RESOURCES);
-  }
+  l2cu_create_conn_br_edr(p_lcb);
 
   btm_acl_update_busy_level(BTM_BLI_PAGE_EVT);
 
@@ -3235,7 +3217,7 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, uint8_t* p) {
   }
 
   /* Something bad. we can only fail this connection */
-  btm_cb.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
+  btm_cb.acl_cb_.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
 
   if (BTM_SP_CFM_REQ_EVT == event) {
     btsnd_hcic_user_conf_reply(p_bda, false);
@@ -3393,7 +3375,7 @@ void btm_rem_oob_req(uint8_t* p) {
   }
 
   /* something bad. we can only fail this connection */
-  btm_cb.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
+  btm_cb.acl_cb_.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
   btsnd_hcic_rem_oob_neg_reply(p_bda);
 }
 
@@ -3734,7 +3716,7 @@ void btm_sec_encrypt_change(uint16_t handle, uint8_t status,
   BTM_TRACE_DEBUG("after update p_dev_rec->sec_flags=0x%x",
                   p_dev_rec->sec_flags);
 
-  if (acl_idx != MAX_L2CAP_LINKS) p_acl = &btm_cb.acl_db[acl_idx];
+  if (acl_idx != MAX_L2CAP_LINKS) p_acl = &btm_cb.acl_cb_.acl_db[acl_idx];
 
   if (p_acl != NULL)
     btm_sec_check_pending_enc_req(p_dev_rec, p_acl->transport, encr_enable);
@@ -4048,7 +4030,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
 
 #ifdef BRCM_NOT_4_BTE
       /* If we rejected pairing, pass this special result code */
-      if (btm_cb.acl_disc_reason == HCI_ERR_HOST_REJECT_SECURITY) {
+      if (btm_cb.acl_cb_.acl_disc_reason == HCI_ERR_HOST_REJECT_SECURITY) {
         status = HCI_ERR_HOST_REJECT_SECURITY;
       }
 #endif
@@ -4129,10 +4111,11 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
     /* For now there are a some devices that do not like sending */
     /* commands events and data at the same time. */
     /* Set the packet types to the default allowed by the device */
-    btm_set_packet_types(p_acl_cb, btm_cb.btm_acl_pkt_types_supported);
+    btm_set_packet_types(p_acl_cb, btm_cb.acl_cb_.btm_acl_pkt_types_supported);
 
-    if (btm_cb.btm_def_link_policy)
-      BTM_SetLinkPolicy(p_acl_cb->remote_addr, &btm_cb.btm_def_link_policy);
+    if (btm_cb.acl_cb_.btm_def_link_policy)
+      BTM_SetLinkPolicy(p_acl_cb->remote_addr,
+                        &btm_cb.acl_cb_.btm_def_link_policy);
 #endif
   }
   btm_acl_created(bda, p_dev_rec->dev_class, p_dev_rec->sec_bd_name, handle,
@@ -4473,7 +4456,10 @@ void btm_sec_link_key_notification(const RawAddress& p_bda,
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-void btm_sec_link_key_request(const RawAddress& bda) {
+void btm_sec_link_key_request(uint8_t* p_event) {
+  RawAddress bda;
+
+  STREAM_TO_BDADDR(bda, p_event);
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(bda);
 
   VLOG(2) << __func__ << " bda: " << bda;
@@ -4622,9 +4608,16 @@ static void btm_sec_pairing_timeout(UNUSED_ATTR void* data) {
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-void btm_sec_pin_code_request(const RawAddress& p_bda) {
+void btm_sec_pin_code_request(uint8_t* p_event) {
   tBTM_SEC_DEV_REC* p_dev_rec;
   tBTM_CB* p_cb = &btm_cb;
+  RawAddress p_bda;
+
+  STREAM_TO_BDADDR(p_bda, p_event);
+
+  /* Tell L2CAP that there was a PIN code request,  */
+  /* it may need to stretch timeouts                */
+  l2c_pin_code_request(p_bda);
 
   VLOG(2) << __func__ << " BDA: " << p_bda
           << " state: " << btm_pair_state_descr(btm_cb.pairing_state);

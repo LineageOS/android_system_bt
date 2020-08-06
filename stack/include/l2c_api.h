@@ -143,14 +143,31 @@ typedef struct {
   uint16_t flags; /* bit 0: 0-no continuation, 1-continuation */
 } tL2CAP_CFG_INFO;
 
+/* LE credit based L2CAP connection parameters */
+constexpr uint16_t L2CAP_LE_MIN_MTU = 23;  // Minimum SDU size
+constexpr uint16_t L2CAP_LE_MIN_MPS = 23;
+constexpr uint16_t L2CAP_LE_MAX_MPS = 65533;
+constexpr uint16_t L2CAP_LE_CREDIT_MAX = 65535;
+
+// This is initial amout of credits we send, and amount to which we increase
+// credits once they fall below threshold
+constexpr uint16_t L2CAP_LE_CREDIT_DEFAULT = 0xffff;
+
+// If credit count on remote fall below this value, we send back credits to
+// reach default value.
+constexpr uint16_t L2CAP_LE_CREDIT_THRESHOLD = 0x0040;
+
+static_assert(L2CAP_LE_CREDIT_THRESHOLD < L2CAP_LE_CREDIT_DEFAULT,
+              "Threshold must be smaller than default credits");
+
 /* Define a structure to hold the configuration parameter for LE L2CAP
  * connection oriented channels.
  */
-typedef struct {
+struct tL2CAP_LE_CFG_INFO {
   uint16_t mtu;
   uint16_t mps;
-  uint16_t credits;
-} tL2CAP_LE_CFG_INFO;
+  uint16_t credits = L2CAP_LE_CREDIT_DEFAULT;
+};
 
 /* L2CAP channel configured field bitmap */
 #define L2CAP_CH_CFG_MASK_MTU 0x0001
@@ -275,7 +292,6 @@ typedef void(tL2CA_CREDITS_RECEIVED_CB)(uint16_t local_cid,
 typedef struct {
   tL2CA_CONNECT_IND_CB* pL2CA_ConnectInd_Cb;
   tL2CA_CONNECT_CFM_CB* pL2CA_ConnectCfm_Cb;
-  tL2CA_CONNECT_PND_CB* pL2CA_ConnectPnd_Cb;
   tL2CA_CONFIG_IND_CB* pL2CA_ConfigInd_Cb;
   tL2CA_CONFIG_CFM_CB* pL2CA_ConfigCfm_Cb;
   tL2CA_DISCONNECT_IND_CB* pL2CA_DisconnectInd_Cb;
@@ -298,6 +314,12 @@ typedef struct {
   uint16_t fcr_tx_buf_size;
 
 } tL2CAP_ERTM_INFO;
+
+/**
+ * Stack management declarations
+ */
+void l2c_init();
+void l2c_free();
 
 /*****************************************************************************
  *  External Function Declarations

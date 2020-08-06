@@ -24,19 +24,16 @@
 
 #define LOG_TAG "bt_l2c_main"
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "bt_common.h"
 #include "bt_target.h"
-#include "btu.h"
-#include "device/include/controller.h"
 #include "hci/include/btsnoop.h"
 #include "hcimsgs.h"
 #include "l2c_api.h"
 #include "l2c_int.h"
 #include "l2cdefs.h"
+#include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 
@@ -861,6 +858,11 @@ void l2c_process_held_packets(bool timed_out) {
  *
  ******************************************************************************/
 void l2c_init(void) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    // L2CAP init should be handled by GD stack manager
+    return;
+  }
+
   int16_t xx;
 
   memset(&l2cb, 0, sizeof(tL2C_CB));
@@ -917,6 +919,11 @@ void l2c_init(void) {
 }
 
 void l2c_free(void) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    // L2CAP cleanup should be handled by GD stack manager
+    return;
+  }
+
   list_free(l2cb.rcv_pending_q);
   l2cb.rcv_pending_q = NULL;
 }
