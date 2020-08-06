@@ -1344,3 +1344,8 @@ tBTM_STATUS l2cu_ConnectAclForSecurity(const RawAddress& bd_addr) {
   l2cu_create_conn_br_edr(p_lcb);
   return BTM_SUCCESS;
 }
+
+void l2cble_update_sec_act(const RawAddress& bd_addr, uint16_t sec_act) {
+  tL2C_LCB* lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_LE);
+  lcb->sec_act = sec_act;
+}
