@@ -17,6 +17,7 @@
 #pragma once
 
 #include <stdint.h>
+#include "stack/include/acl_api_types.h"
 #include "stack/include/bt_types.h"
 #include "types/raw_address.h"
 

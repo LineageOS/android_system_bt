@@ -44,6 +44,7 @@
 
 #include "log/log.h"
 #include "osi/include/osi.h"
+#include "stack/include/acl_api.h"
 
 static uint8_t find_conn_by_cid(uint16_t cid);
 static void hidh_conn_retry(uint8_t dhandle);
