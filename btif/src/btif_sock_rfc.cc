@@ -36,26 +36,18 @@
 
 #include "bt_common.h"
 #include "bt_target.h"
-#include "bta_api.h"
 #include "bta_jv_api.h"
-#include "bta_jv_co.h"
-#include "btif_common.h"
 #include "btif_sock_sdp.h"
 #include "btif_sock_thread.h"
 #include "btif_sock_util.h"
 #include "btif_uid.h"
 #include "btif_util.h"
 #include "btm_api.h"
-#include "btm_int.h"
-#include "btu.h"
 #include "common/metrics.h"
-#include "hcimsgs.h"
-#include "osi/include/compat.h"
 #include "osi/include/list.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "port_api.h"
-#include "sdp_api.h"
 
 /* The JV interface can have only one user, hence we need to call a few
  * L2CAP functions from this file. */

@@ -20,23 +20,16 @@
  *  This file contains action functions for SDP search.
  ******************************************************************************/
 
-#include <arpa/inet.h>
 #include <hardware/bluetooth.h>
 #include <hardware/bt_sdp.h>
-#include <stdlib.h>
 #include <string.h>
 
-#include "bt_common.h"
 #include "bt_types.h"
-#include "bta_api.h"
 #include "bta_sdp_api.h"
 #include "bta_sdp_int.h"
 #include "bta_sys.h"
-#include "btm_api.h"
-#include "btm_int.h"
 #include "osi/include/allocator.h"
 #include "sdp_api.h"
-#include "utl.h"
 
 /*****************************************************************************
  *  Constants
