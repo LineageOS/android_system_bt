@@ -229,7 +229,7 @@ void BTM_DeviceReset(UNUSED_ATTR tBTM_CMPL_CB* p_cb) {
   /* Clear the callback, so application would not hang on reset */
   btm_db_reset();
 
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_controller_enabled()) {
     module_start_up_callbacked_wrapper(get_module(GD_CONTROLLER_MODULE),
                                        &bt_startup_thread, reset_complete);
   } else {

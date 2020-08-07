@@ -58,6 +58,10 @@ bool bluetooth::shim::is_gd_hci_enabled() {
   return bluetooth::common::InitFlags::GdHciEnabled();
 }
 
+bool bluetooth::shim::is_gd_controller_enabled() {
+  return bluetooth::common::InitFlags::GdControllerEnabled();
+}
+
 bool bluetooth::shim::is_gd_shim_enabled() {
   return bluetooth::common::InitFlags::GdCoreEnabled();
 }
