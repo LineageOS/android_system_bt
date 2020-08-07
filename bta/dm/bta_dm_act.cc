@@ -50,6 +50,7 @@
 #include "osi/include/osi.h"
 #include "sdp_api.h"
 #include "stack/gatt/connection_manager.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/gatt_api.h"
 #include "utl.h"
 
