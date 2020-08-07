@@ -51,6 +51,8 @@
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
+#include "stack/include/acl_api.h"
+#include "stack/include/acl_api_types.h"  // From: stack/btm_api_types.h
 #include "stack/include/l2cap_hci_link_interface.h"
 
 static void btm_read_remote_features(uint16_t handle);

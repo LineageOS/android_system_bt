@@ -36,6 +36,7 @@
 #include "l2c_int.h"
 #include "l2cdefs.h"
 #include "osi/include/allocator.h"
+#include "stack/include/acl_api.h"
 
 /*******************************************************************************
  *

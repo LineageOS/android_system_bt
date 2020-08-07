@@ -38,6 +38,7 @@
 #include "btif/include/btif_config.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
+#include "stack/include/acl_api.h"
 #include "utl.h"
 
 #if (BTA_AR_INCLUDED == TRUE)
