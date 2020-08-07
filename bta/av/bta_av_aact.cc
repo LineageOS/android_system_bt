@@ -48,6 +48,7 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
+#include "stack/include/acl_api.h"
 #include "utl.h"
 #if (BTA_AR_INCLUDED == TRUE)
 #include "bta_ar_api.h"
