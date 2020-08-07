@@ -48,6 +48,8 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "osi/include/wakelock.h"
+#include "stack/include/acl_api.h"
+#include "stack/include/acl_api_types.h"
 #include "uipc.h"
 
 using bluetooth::common::A2dpSessionMetrics;
