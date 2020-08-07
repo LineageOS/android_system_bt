@@ -506,7 +506,7 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
   BTM_TRACE_DEBUG("BTM_GetRole");
   p = btm_bda_to_acl(remote_bd_addr, BT_TRANSPORT_BR_EDR);
   if (p == NULL) {
-    *p_role = BTM_ROLE_UNDEFINED;
+    *p_role = HCI_ROLE_UNKNOWN;
     return (BTM_UNKNOWN_ADDR);
   }
 
@@ -1230,7 +1230,7 @@ tBTM_STATUS BTM_SetLinkSuperTout(const RawAddress& remote_bda,
     p->link_super_tout = timeout;
 
     /* Only send if current role is Master; 2.0 spec requires this */
-    if (p->link_role == BTM_ROLE_MASTER) {
+    if (p->link_role == HCI_ROLE_MASTER) {
       btsnd_hcic_write_link_super_tout(LOCAL_BR_EDR_CONTROLLER_ID,
                                        p->hci_handle, timeout);
       return (BTM_CMD_STARTED);
@@ -1444,7 +1444,7 @@ void btm_acl_role_changed(uint8_t hci_status, const RawAddress* bd_addr,
 
     /* Reload LSTO: link supervision timeout is reset in the LM after a role
      * switch */
-    if (new_role == BTM_ROLE_MASTER) {
+    if (new_role == HCI_ROLE_MASTER) {
       BTM_SetLinkSuperTout(p->remote_addr, p->link_super_tout);
     }
   } else {
