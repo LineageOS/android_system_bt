@@ -216,11 +216,7 @@ void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
       l2c_csm_execute(p_ccb, L2CEVT_LP_CONNECT_CFM, &ci);
     }
 
-    if (p_lcb->p_echo_rsp_cb) {
-      l2cu_send_peer_echo_req(p_lcb, NULL, 0);
-      alarm_set_on_mloop(p_lcb->l2c_lcb_timer, L2CAP_ECHO_RSP_TIMEOUT_MS,
-                         l2c_lcb_timer_timeout, p_lcb);
-    } else if (!p_lcb->ccb_queue.p_first_ccb) {
+    if (!p_lcb->ccb_queue.p_first_ccb) {
       uint64_t timeout_ms = L2CAP_LINK_STARTUP_TOUT * 1000;
       alarm_set_on_mloop(p_lcb->l2c_lcb_timer, timeout_ms,
                          l2c_lcb_timer_timeout, p_lcb);
@@ -508,28 +504,6 @@ void l2c_link_timeout(tL2C_LCB* p_lcb) {
 
   /* If link is connected, check for inactivity timeout */
   if (p_lcb->link_state == LST_CONNECTED) {
-    /* Check for ping outstanding */
-    if (p_lcb->p_echo_rsp_cb) {
-      tL2CA_ECHO_RSP_CB* p_cb = p_lcb->p_echo_rsp_cb;
-
-      /* Zero out the callback in case app immediately calls us again */
-      p_lcb->p_echo_rsp_cb = NULL;
-
-      (*p_cb)(L2CAP_PING_RESULT_NO_RESP);
-
-      L2CAP_TRACE_WARNING("L2CAP - ping timeout");
-
-      /* For all channels, send a disconnect indication event through */
-      /* their FSMs. The CCBs should remove themselves from the LCB   */
-      for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb;) {
-        tL2C_CCB* pn = p_ccb->p_next_ccb;
-
-        l2c_csm_execute(p_ccb, L2CEVT_LP_DISCONNECT_IND, NULL);
-
-        p_ccb = pn;
-      }
-    }
-
     /* If no channels in use, drop the link. */
     if (!p_lcb->ccb_queue.p_first_ccb) {
       uint64_t timeout_ms;
