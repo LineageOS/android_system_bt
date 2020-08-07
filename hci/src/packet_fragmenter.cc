@@ -120,7 +120,7 @@ static void fragment_and_dispatch_acl(BT_HDR* packet) {
       packet->layer_specific--;
 
       if (packet->layer_specific == 0) {
-        packet->event = MSG_HC_TO_STACK_L2C_SEG_XMIT;
+        packet->event = BT_EVT_TO_BTU_L2C_SEG_XMIT;
         callbacks->transmit_finished(packet, false);
         return;
       }
