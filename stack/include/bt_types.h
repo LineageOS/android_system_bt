@@ -215,6 +215,10 @@
 #define BT_EVT_BTIF 0xA000
 #define BT_EVT_CONTEXT_SWITCH_EVT (0x0001 | BT_EVT_BTIF)
 
+/* ISO Layer specific */
+#define BT_ISO_HDR_CONTAINS_TS (0x0001)
+#define BT_ISO_HDR_OFFSET_POINTS_DATA (0x0002)
+
 /* Define the header of each buffer used in the Bluetooth stack.
  */
 typedef struct {
@@ -417,6 +421,10 @@ typedef struct {
 #define STREAM_SKIP_UINT16(p) \
   do {                        \
     (p) += 2;                 \
+  } while (0)
+#define STREAM_SKIP_UINT32(p) \
+  do {                        \
+    (p) += 4;                 \
   } while (0)
 
 /*******************************************************************************
