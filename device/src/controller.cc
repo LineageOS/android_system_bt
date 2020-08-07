@@ -828,7 +828,7 @@ static const controller_t* controller_get_interface_legacy() {
 }
 
 const controller_t* controller_get_interface() {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_gd_controller_enabled()) {
     return bluetooth::shim::controller_get_interface();
   } else {
     return controller_get_interface_legacy();

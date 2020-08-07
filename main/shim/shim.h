@@ -46,6 +46,7 @@ namespace shim {
  * @return true if using gd shim core, false if using legacy.
  */
 bool is_gd_hci_enabled();
+bool is_gd_controller_enabled();
 bool is_gd_shim_enabled();
 bool is_any_gd_enabled();
 
