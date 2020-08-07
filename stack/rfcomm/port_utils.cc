@@ -143,7 +143,7 @@ void port_select_mtu(tPORT* p_port) {
   /* Will select MTU only if application did not setup something */
   if (p_port->mtu == 0) {
     /* find packet size which connection supports */
-    packet_size = btm_get_max_packet_size(p_port->bd_addr);
+    packet_size = BTM_GetMaxPacketSize(p_port->bd_addr);
     if (packet_size == 0) {
       /* something is very wrong */
       LOG(WARNING) << __func__ << ": bad packet size 0 for" << p_port->bd_addr;

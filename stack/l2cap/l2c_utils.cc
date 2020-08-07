@@ -2194,7 +2194,6 @@ void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb) {
   uint8_t page_scan_mode;
   uint16_t clock_offset;
   uint16_t num_acl = BTM_GetNumAclLinks();
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(p_lcb->remote_bd_addr);
   uint8_t no_hi_prio_chs = l2cu_get_num_hi_priority();
   const controller_t* controller = controller_get_interface();
 
@@ -2224,8 +2223,7 @@ void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb) {
     /* No info known. Use default settings */
     page_scan_rep_mode = HCI_PAGE_SCAN_REP_MODE_R1;
     page_scan_mode = HCI_MANDATARY_PAGE_SCAN_MODE;
-
-    clock_offset = (p_dev_rec) ? p_dev_rec->clock_offset : 0;
+    clock_offset = BTM_GetClockOffset(p_lcb->remote_bd_addr);
   }
 
   btsnd_hcic_create_conn(
@@ -2454,7 +2452,7 @@ void l2cu_adjust_out_mps(tL2C_CCB* p_ccb) {
   uint16_t packet_size;
 
   /* on the tx side MTU is selected based on packet size of the controller */
-  packet_size = btm_get_max_packet_size(p_ccb->p_lcb->remote_bd_addr);
+  packet_size = BTM_GetMaxPacketSize(p_ccb->p_lcb->remote_bd_addr);
 
   if (packet_size <= (L2CAP_PKT_OVERHEAD + L2CAP_FCR_OVERHEAD +
                       L2CAP_SDU_LEN_OVERHEAD + L2CAP_FCS_LEN)) {
