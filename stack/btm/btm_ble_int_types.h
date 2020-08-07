@@ -174,13 +174,6 @@ typedef struct {
 
 } tBTM_LE_CONN_PRAMS;
 
-typedef struct {
-  RawAddress bd_addr;
-  uint8_t attr;
-  bool is_connected;
-  bool in_use;
-} tBTM_LE_BG_CONN_DEV;
-
 /* white list using state as a bit mask */
 constexpr uint8_t BTM_BLE_WL_IDLE = 0;
 constexpr uint8_t BTM_BLE_WL_INIT = 1;
