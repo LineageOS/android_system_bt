@@ -18,6 +18,8 @@
 
 #define LOG_TAG "bt_core_module"
 
+#include "btcore/include/module.h"
+
 #include <base/logging.h>
 #include <dlfcn.h>
 #include <string.h>
@@ -25,7 +27,6 @@
 #include <mutex>
 #include <unordered_map>
 
-#include "btcore/include/module.h"
 #include "common/message_loop_thread.h"
 #include "osi/include/allocator.h"
 #include "osi/include/log.h"
@@ -50,9 +51,7 @@ static void set_module_state(const module_t* module, module_state_t state);
 
 void module_management_start(void) {}
 
-void module_management_stop(void) {
-  metadata.clear();
-}
+void module_management_stop(void) { metadata.clear(); }
 
 const module_t* get_module(const char* name) {
   module_t* module = (module_t*)dlsym(RTLD_DEFAULT, name);
@@ -163,7 +162,9 @@ class CallbackWrapper {
                            MessageLoopThread* callback_thread,
                            thread_fn callback)
       : module(module),
-        lifecycle_thread("bt_module_lifecycle_thread"),
+        lifecycle_thread(std::string("bt_module_lifecycle_thread[") +
+                         (module->name != nullptr ? module->name : "unknown") +
+                         "]"),
         callback_thread(callback_thread),
         callback(callback),
         success(false) {}

@@ -27,7 +27,6 @@
 #define LOG_TAG "bt_main"
 
 #include <base/logging.h>
-
 #include <hardware/bluetooth.h>
 
 #include "bt_common.h"
@@ -144,7 +143,7 @@ void bte_main_cleanup() {
 void bte_main_enable() {
   APPL_TRACE_DEBUG("%s", __func__);
 
-  if (bluetooth::shim::is_gd_shim_enabled()) {
+  if (bluetooth::shim::is_any_gd_enabled()) {
     LOG_INFO("%s Gd shim module enabled", __func__);
     module_shut_down(get_module(GD_IDLE_MODULE));
     module_start_up(get_module(GD_SHIM_MODULE));
@@ -171,8 +170,8 @@ void bte_main_enable() {
 void bte_main_disable(void) {
   APPL_TRACE_DEBUG("%s", __func__);
 
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    LOG_INFO("%s Gd shim module enabled", __func__);
+  if (bluetooth::shim::is_any_gd_enabled()) {
+    LOG_INFO("%s Gd shim module disabled", __func__);
     module_shut_down(get_module(GD_SHIM_MODULE));
     module_start_up(get_module(GD_IDLE_MODULE));
   } else {
