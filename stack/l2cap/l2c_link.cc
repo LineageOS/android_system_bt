@@ -130,6 +130,13 @@ bool l2c_link_hci_conn_req(const RawAddress& bd_addr) {
   return (false);
 }
 
+void btm_acl_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
+                       uint8_t enc_mode) {
+  btm_sec_connected(bda, handle, status, enc_mode);
+
+  l2c_link_hci_conn_comp(status, handle, bda);
+}
+
 /*******************************************************************************
  *
  * Function         l2c_link_hci_conn_comp
