@@ -36,22 +36,10 @@
 #include <hardware/bluetooth.h>
 #include <hardware/bt_sock.h>
 
-#include "bt_common.h"
 #include "bt_target.h"
-#include "bta_api.h"
-#include "bta_jv_api.h"
-#include "bta_jv_co.h"
-#include "btif_common.h"
-#include "btif_sock_sdp.h"
-#include "btif_sock_thread.h"
 #include "btif_util.h"
 #include "btm_api.h"
-#include "btm_int.h"
-#include "btu.h"
-#include "hcimsgs.h"
-#include "osi/include/log.h"
-#include "port_api.h"
-#include "sdp_api.h"
+#include "osi/include/osi.h"
 
 #define asrt(s)                                                              \
   do {                                                                       \

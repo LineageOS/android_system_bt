@@ -20,26 +20,13 @@
 
 #include "btif_sock_sdp.h"
 
-#include <errno.h>
-#include <sys/socket.h>
-#include <sys/types.h>
-
-#include <hardware/bluetooth.h>
-#include <hardware/bt_sock.h>
-
-#include "../bta/pb/bta_pbs_int.h"
-#include "../include/bta_op_api.h"
-#include "bt_common.h"
 #include "bt_target.h"
-#include "bta_api.h"
+#include "bta/pb/bta_pbs_int.h"
 #include "bta_jv_api.h"
-#include "btif_common.h"
+#include "bta_op_api.h"
 #include "btif_sock_util.h"
 #include "btif_util.h"
 #include "btm_api.h"
-#include "btm_int.h"
-#include "btu.h"
-#include "hcimsgs.h"
 #include "sdp_api.h"
 #include "utl.h"
 
