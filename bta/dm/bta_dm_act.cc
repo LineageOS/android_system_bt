@@ -2625,10 +2625,6 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
       bta_dm_cb.p_sec_cback(BTA_DM_SP_KEYPRESS_EVT, &sec_event);
       break;
 
-    case BTM_SP_UPGRADE_EVT:
-      bta_dm_co_lk_upgrade(p_data->upgrade.bd_addr, &p_data->upgrade.upgrade);
-      break;
-
     default:
       status = BTM_NOT_AUTHORIZED;
       break;
