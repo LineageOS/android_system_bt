@@ -2682,7 +2682,7 @@ static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
       /* more than one connections and the AV connection is role switched
        * to slave
        * switch it back to master and remove the switch policy */
-      BTM_SwitchRole(bd_addr, BTM_ROLE_MASTER, NULL);
+      BTM_SwitchRole(bd_addr, HCI_ROLE_MASTER, NULL);
       need_policy_change = true;
     } else if (p_bta_dm_cfg->avoid_scatter && (new_role == HCI_ROLE_MASTER)) {
       /* if the link updated to be master include AV activities, remove
