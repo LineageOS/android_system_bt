@@ -52,8 +52,10 @@ class LinkLayerSocketDevice : public Device {
  private:
   net::PolledSocket socket_;
   Phy::Type phy_type_;
-  size_t bytes_left_{0};
-  size_t offset_{};
+  bool receiving_size_{true};
+  size_t bytes_left_{kSizeBytes};
+  size_t offset_{0};
+  std::shared_ptr<std::vector<uint8_t>> size_bytes_;
   std::shared_ptr<std::vector<uint8_t>> received_;
   std::vector<model::packets::LinkLayerPacketView> packet_queue_;
 };
