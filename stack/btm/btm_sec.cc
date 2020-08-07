@@ -591,7 +591,7 @@ uint8_t BTM_SecClrService(uint8_t service_id) {
 
 /*******************************************************************************
  *
- * Function         btm_sec_clr_service_by_psm
+ * Function         BTM_SecClrServiceByPsm
  *
  * Description      Removes specified service record from the security database.
  *                  All service records with the specified psm are removed.
@@ -605,7 +605,7 @@ uint8_t BTM_SecClrService(uint8_t service_id) {
  * Returns          Number of records that were freed.
  *
  ******************************************************************************/
-uint8_t btm_sec_clr_service_by_psm(uint16_t psm) {
+uint8_t BTM_SecClrServiceByPsm(uint16_t psm) {
   tBTM_SEC_SERV_REC* p_srec = &btm_cb.sec_serv_rec[0];
   uint8_t num_freed = 0;
   int i;
@@ -618,15 +618,14 @@ uint8_t btm_sec_clr_service_by_psm(uint16_t psm) {
       num_freed++;
     }
   }
-  BTM_TRACE_API("btm_sec_clr_service_by_psm psm:0x%x num_freed:%d", psm,
-                num_freed);
+  BTM_TRACE_API("BTM_SecClrServiceByPsm psm:0x%x num_freed:%d", psm, num_freed);
 
   return (num_freed);
 }
 
 /*******************************************************************************
  *
- * Function         btm_sec_clr_temp_auth_service
+ * Function         BTM_SecClrTempAuthService
  *
  * Description      Removes specified device record's temporary authorization
  *                  flag from the security database.
@@ -636,12 +635,12 @@ uint8_t btm_sec_clr_service_by_psm(uint16_t psm) {
  * Returns          void.
  *
  ******************************************************************************/
-void btm_sec_clr_temp_auth_service(const RawAddress& bda) {
+void BTM_SecClrTempAuthService(const RawAddress& bda) {
   tBTM_SEC_DEV_REC* p_dev_rec;
 
   p_dev_rec = btm_find_dev(bda);
   if (p_dev_rec == NULL) {
-    BTM_TRACE_WARNING("btm_sec_clr_temp_auth_service() - no dev CB");
+    BTM_TRACE_WARNING("BTM_SecClrTempAuthService() - no dev CB");
     return;
   }
 

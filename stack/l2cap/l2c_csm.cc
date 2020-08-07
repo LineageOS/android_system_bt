@@ -22,14 +22,11 @@
  *
  ******************************************************************************/
 
-#include <stdio.h>
-#include <stdlib.h>
 #include <string.h>
 
 #include "bt_common.h"
 #include "bt_target.h"
 #include "btm_int.h"
-#include "btu.h"
 #include "common/time_util.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
