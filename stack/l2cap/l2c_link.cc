@@ -134,27 +134,17 @@ void btm_acl_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
                        uint8_t enc_mode) {
   btm_sec_connected(bda, handle, status, enc_mode);
 
+  btm_acl_update_busy_level(BTM_BLI_PAGE_DONE_EVT);
+
   l2c_link_hci_conn_comp(status, handle, bda);
 }
 
-/*******************************************************************************
- *
- * Function         l2c_link_hci_conn_comp
- *
- * Description      This function is called when an HCI Connection Complete
- *                  event is received.
- *
- * Returns          void
- *
- ******************************************************************************/
 void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
                             const RawAddress& p_bda) {
   tL2C_CONN_INFO ci;
   tL2C_LCB* p_lcb;
   tL2C_CCB* p_ccb;
   tBTM_SEC_DEV_REC* p_dev_info = NULL;
-
-  btm_acl_update_busy_level(BTM_BLI_PAGE_DONE_EVT);
 
   /* Save the parameters */
   ci.status = status;
