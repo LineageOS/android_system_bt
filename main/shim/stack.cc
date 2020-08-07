@@ -73,6 +73,9 @@ void Stack::StartEverything() {
     modules.add<storage::StorageModule>();
     modules.add<shim::Dumpsys>();
   }
+  if (common::InitFlags::GdControllerEnabled()) {
+    modules.add<hci::Controller>();
+  }
   if (common::InitFlags::GdCoreEnabled()) {
     modules.add<att::AttModule>();
     modules.add<hci::AclManager>();
