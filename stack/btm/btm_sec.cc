@@ -1219,6 +1219,12 @@ tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr,
   return (rc);
 }
 
+bool BTM_SecIsSecurityPending(const RawAddress& bd_addr) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
+  return p_dev_rec && (p_dev_rec->sec_state == BTM_SEC_STATE_ENCRYPTING ||
+                       p_dev_rec->sec_state == BTM_SEC_STATE_AUTHENTICATING);
+}
+
 /*******************************************************************************
  * disconnect the ACL link, if it's not done yet.
  ******************************************************************************/

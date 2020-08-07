@@ -22,10 +22,9 @@
 #include <sys/stat.h>
 
 #include "btif_bqr.h"
-#include "btif_dm.h"
+#include "btm_api.h"
 #include "common/leaky_bonded_queue.h"
 #include "osi/include/properties.h"
-#include "stack/btm/btm_int.h"
 
 namespace bluetooth {
 namespace bqr {

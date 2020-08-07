@@ -944,6 +944,17 @@ tBTM_STATUS BTM_SecBondCancel(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
+ * Function         btm_sec_is_a_bonded_dev
+ *
+ * Description       Is the specified device is a bonded device
+ *
+ * Returns          true - dev is bonded
+ *
+ ******************************************************************************/
+extern bool btm_sec_is_a_bonded_dev(const RawAddress& bda);
+
+/*******************************************************************************
+ *
  * Function         BTM_SetEncryption
  *
  * Description      This function is called to ensure that connection is
@@ -974,6 +985,11 @@ tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr,
                               tBT_TRANSPORT transport,
                               tBTM_SEC_CBACK* p_callback, void* p_ref_data,
                               tBTM_BLE_SEC_ACT sec_act);
+
+/**
+ * Return true if the device has a pending encryption or authentication
+ */
+extern bool BTM_SecIsSecurityPending(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
@@ -1348,6 +1364,11 @@ uint16_t BTM_GetClockOffset(const RawAddress& remote_bda);
 
 /* Read maximum data packet that can be sent over current connection */
 uint16_t BTM_GetMaxPacketSize(const RawAddress& addr);
+
+extern tBTM_STATUS BTM_BT_Quality_Report_VSE_Register(
+    bool is_register, tBTM_BT_QUALITY_REPORT_RECEIVER* p_bqr_report_receiver);
+
+extern void BTM_VendorCleanup();
 
 extern tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
                                              uint16_t psm, bool is_originator,
