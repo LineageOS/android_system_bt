@@ -49,7 +49,6 @@
 #define L2CAP_LINK_ROLE_SWITCH_TIMEOUT_MS (10 * 1000)  /* 10 seconds */
 #define L2CAP_LINK_CONNECT_TIMEOUT_MS (60 * 1000)      /* 30 seconds */
 #define L2CAP_LINK_CONNECT_EXT_TIMEOUT_MS (120 * 1000) /* 120 seconds */
-#define L2CAP_ECHO_RSP_TIMEOUT_MS (30 * 1000)          /* 30 seconds */
 #define L2CAP_LINK_FLOW_CONTROL_TIMEOUT_MS (2 * 1000)  /* 2 seconds */
 #define L2CAP_LINK_DISCONNECT_TIMEOUT_MS (30 * 1000)   /* 30 seconds */
 #define L2CAP_CHNL_CONNECT_TIMEOUT_MS (60 * 1000)      /* 60 seconds */
@@ -352,7 +351,6 @@ typedef struct t_l2c_linkcb {
   uint8_t link_role; /* Master or slave */
   uint8_t id;
   uint8_t cur_echo_id;              /* Current id value for echo request */
-  tL2CA_ECHO_RSP_CB* p_echo_rsp_cb; /* Echo response callback */
   uint16_t idle_timeout;            /* Idle timeout */
   bool is_bonding;                  /* True - link active only for bonding */
 
@@ -567,8 +565,6 @@ extern void l2cu_send_peer_config_rej(tL2C_CCB* p_ccb, uint8_t* p_data,
 extern void l2cu_send_peer_disc_req(tL2C_CCB* p_ccb);
 extern void l2cu_send_peer_disc_rsp(tL2C_LCB* p_lcb, uint8_t remote_id,
                                     uint16_t local_cid, uint16_t remote_cid);
-extern void l2cu_send_peer_echo_req(tL2C_LCB* p_lcb, uint8_t* p_data,
-                                    uint16_t data_len);
 extern void l2cu_send_peer_echo_rsp(tL2C_LCB* p_lcb, uint8_t id,
                                     uint8_t* p_data, uint16_t data_len);
 extern void l2cu_send_peer_info_rsp(tL2C_LCB* p_lcb, uint8_t id,
