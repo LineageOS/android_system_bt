@@ -35,7 +35,10 @@ class InitFlags final {
     return gd_core_enabled;
   }
 
+  static void SetAllForTesting();
+
  private:
+  static void SetAll(bool value);
   static bool gd_hci_enabled;
   static bool gd_controller_enabled;
   static bool gd_core_enabled;

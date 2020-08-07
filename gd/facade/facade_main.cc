@@ -31,6 +31,7 @@
 #include <backtrace/Backtrace.h>
 #include <backtrace/backtrace_constants.h>
 
+#include "common/init_flags.h"
 #include "facade/grpc_root_server.h"
 #include "hal/hci_hal_host_rootcanal.h"
 #include "hal/snoop_logger.h"
@@ -92,6 +93,8 @@ int main(int argc, const char** argv) {
   int root_server_port = 8897;
   int grpc_port = 8899;
   int signal_port = 8895;
+
+  bluetooth::common::InitFlags::SetAllForTesting();
 
   const std::string arg_grpc_root_server_port = "--root-server-port=";
   const std::string arg_grpc_server_port = "--grpc-port=";
