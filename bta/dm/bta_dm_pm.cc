@@ -36,6 +36,7 @@
 #include "bta_sys.h"
 #include "btm_api.h"
 #include "device/include/controller.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/btu.h"
 
 static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
