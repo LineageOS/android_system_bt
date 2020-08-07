@@ -159,8 +159,6 @@ extern void btm_sco_removed(uint16_t hci_handle, uint8_t reason);
 extern void btm_sco_acl_removed(const RawAddress* bda);
 extern void btm_route_sco_data(BT_HDR* p_msg);
 extern bool btm_is_sco_active(uint16_t handle);
-extern void btm_remove_sco_links(const RawAddress& bda);
-extern bool btm_is_sco_active_by_bdaddr(const RawAddress& remote_bda);
 
 extern void btm_sco_flush_sco_data(uint16_t sco_inx);
 
@@ -271,8 +269,6 @@ extern void btm_read_local_oob_complete(uint8_t* p);
 
 extern void btm_acl_resubmit_page(void);
 extern void btm_acl_paging(BT_HDR* p, const RawAddress& dest);
-extern uint8_t btm_sec_clr_service_by_psm(uint16_t psm);
-extern void btm_sec_clr_temp_auth_service(const RawAddress& bda);
 extern tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec);
 
 #endif

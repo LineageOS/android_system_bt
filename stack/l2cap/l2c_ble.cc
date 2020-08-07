@@ -24,12 +24,9 @@
 
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
-#include <string.h>
 #include "bt_target.h"
-#include "bt_utils.h"
 #include "bta_hearing_aid_api.h"
 #include "btm_int.h"
-#include "btu.h"
 #include "device/include/controller.h"
 #include "hcimsgs.h"
 #include "l2c_api.h"
