@@ -808,6 +808,7 @@ extern tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
  *
  ******************************************************************************/
 extern tBTM_STATUS BTM_RemoveSco(uint16_t sco_inx);
+extern void BTM_RemoveSco(const RawAddress& bda);
 
 /*******************************************************************************
  *
@@ -1578,5 +1579,11 @@ extern tBTM_CONTRL_STATE BTM_PM_ReadControllerState(void);
  * Send remote name request, either to legacy HCI, or to GD shim Name module
  */
 extern void SendRemoteNameRequest(const RawAddress& raw_address);
+
+extern uint8_t BTM_SecClrServiceByPsm(uint16_t psm);
+
+extern void BTM_SecClrTempAuthService(const RawAddress& bda);
+
+extern bool BTM_IsScoActiveByBdaddr(const RawAddress& remote_bda);
 
 #endif /* BTM_API_H */
