@@ -426,7 +426,7 @@ static void bta_dm_sys_hw_cback(tBTA_SYS_HW_EVT status) {
     BTM_WritePageTimeout(p_bta_dm_cfg->page_timeout);
     bta_dm_cb.cur_policy = p_bta_dm_cfg->policy_settings;
     BTM_SetDefaultLinkPolicy(bta_dm_cb.cur_policy);
-    BTM_RegBusyLevelNotif(bta_dm_bl_change_cback, NULL,
+    BTM_RegBusyLevelNotif(bta_dm_bl_change_cback,
                           BTM_BL_UPDATE_MASK | BTM_BL_ROLE_CHG_MASK);
 
 #if (BLE_VND_INCLUDED == TRUE)
