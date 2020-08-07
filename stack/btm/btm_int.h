@@ -131,7 +131,6 @@ extern void btm_acl_update_conn_addr(uint16_t conn_handle,
                                      const RawAddress& address);
 
 extern void btm_pm_reset(void);
-extern void btm_pm_sm_alloc(uint8_t ind);
 extern void btm_pm_proc_cmd_status(uint8_t status);
 extern void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
                                     uint8_t mode, uint16_t interval);
