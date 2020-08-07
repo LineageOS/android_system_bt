@@ -24,6 +24,7 @@
 #include "btif/include/btif_storage.h"
 #include "device/include/interop.h"
 #include "osi/include/osi.h"
+#include "stack/include/acl_api.h"
 
 /* if SSR max latency is not defined by remote device, set the default value
    as half of the link supervision timeout */

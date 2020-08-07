@@ -48,6 +48,8 @@
 #include "btif_gatt_util.h"
 #include "btif_storage.h"
 #include "osi/include/log.h"
+#include "stack/include/acl_api.h"
+#include "stack/include/acl_api_types.h"
 #include "stack/include/btu.h"
 #include "vendor_api.h"
 
