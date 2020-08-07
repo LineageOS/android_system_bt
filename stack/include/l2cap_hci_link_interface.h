@@ -25,7 +25,7 @@ extern bool l2c_link_hci_conn_req(const RawAddress& bd_addr);
 
 extern void l2c_link_process_num_completed_pkts(uint8_t* p, uint8_t evt_len);
 
-extern bool l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
+extern void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
                                    const RawAddress& p_bda);
 
 extern bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason);
