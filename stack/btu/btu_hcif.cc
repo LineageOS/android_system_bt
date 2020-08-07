@@ -1402,8 +1402,8 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
       if (status != HCI_SUCCESS) {
         // Tell BTM that the command failed
         STREAM_TO_BDADDR(bd_addr, p_cmd);
-        btm_acl_role_changed(status, &bd_addr, BTM_ROLE_UNDEFINED);
-        l2c_link_role_changed(nullptr, BTM_ROLE_UNDEFINED,
+        btm_acl_role_changed(status, &bd_addr, HCI_ROLE_UNKNOWN);
+        l2c_link_role_changed(nullptr, HCI_ROLE_UNKNOWN,
                               HCI_ERR_COMMAND_DISALLOWED);
       }
       break;
