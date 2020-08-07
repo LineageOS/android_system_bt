@@ -5654,5 +5654,5 @@ static bool btm_sec_use_smp_br_chnl(tBTM_SEC_DEV_REC* p_dev_rec) {
  ******************************************************************************/
 static bool btm_sec_is_master(tBTM_SEC_DEV_REC* p_dev_rec) {
   tACL_CONN* p = btm_bda_to_acl(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR);
-  return (p && (p->link_role == BTM_ROLE_MASTER));
+  return (p && (p->link_role == HCI_ROLE_MASTER));
 }
