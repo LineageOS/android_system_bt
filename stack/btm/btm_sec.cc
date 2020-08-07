@@ -4726,6 +4726,11 @@ void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset) {
   p_inq_info->results.clock_offset = clock_offset | BTM_CLOCK_OFFSET_VALID;
 }
 
+uint16_t BTM_GetClockOffset(const RawAddress& remote_bda) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(remote_bda);
+  return (p_dev_rec) ? p_dev_rec->clock_offset : 0;
+}
+
 /******************************************************************
  * S T A T I C     F U N C T I O N S
  ******************************************************************/
