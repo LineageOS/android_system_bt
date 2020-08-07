@@ -27,38 +27,40 @@ using std::vector;
 namespace test_vendor_lib {
 
 LinkLayerSocketDevice::LinkLayerSocketDevice(int socket_fd, Phy::Type phy_type)
-    : socket_(socket_fd), phy_type_(phy_type) {}
+    : socket_(socket_fd),
+      phy_type_(phy_type),
+      size_bytes_(std::make_shared<std::vector<uint8_t>>(kSizeBytes)) {}
 
 void LinkLayerSocketDevice::TimerTick() {
-  if (bytes_left_ == 0) {
-    auto packet_size = std::make_shared<std::vector<uint8_t>>(kSizeBytes);
-
-    size_t bytes_received = socket_.TryReceive(kSizeBytes, packet_size->data());
-    if (bytes_received == 0) {
+  if (receiving_size_) {
+    size_t bytes_received =
+        socket_.TryReceive(kSizeBytes, size_bytes_->data() + offset_);
+    if (bytes_received < bytes_left_) {
+      bytes_left_ -= bytes_received;
+      offset_ += bytes_received;
       return;
     }
-    ASSERT_LOG(bytes_received == kSizeBytes, "bytes_received == %d", static_cast<int>(bytes_received));
     bluetooth::packet::PacketView<bluetooth::packet::kLittleEndian> size(
-        {bluetooth::packet::View(packet_size, 0, kSizeBytes)});
+        {bluetooth::packet::View(size_bytes_, 0, kSizeBytes)});
     bytes_left_ = size.begin().extract<uint32_t>();
     received_ = std::make_shared<std::vector<uint8_t>>(bytes_left_);
     offset_ = 0;
+    receiving_size_ = false;
   }
   size_t bytes_received = socket_.TryReceive(bytes_left_, received_->data() + offset_);
-  if (bytes_received == 0) {
+  if (bytes_received < bytes_left_) {
+    bytes_left_ -= bytes_received;
+    offset_ += bytes_received;
     return;
   }
-  bytes_left_ -= bytes_received;
-  offset_ += bytes_received;
-  if (bytes_left_ == 0) {
-    bluetooth::packet::PacketView<bluetooth::packet::kLittleEndian> packet_view(
-        received_);
-    auto packet = model::packets::LinkLayerPacketView::Create(packet_view);
-    ASSERT(packet.IsValid());
-    SendLinkLayerPacket(packet, phy_type_);
-    offset_ = 0;
-    received_.reset();
-  }
+  bytes_left_ = kSizeBytes;
+  offset_ = 0;
+  receiving_size_ = true;
+  auto packet = model::packets::LinkLayerPacketView::Create(
+      bluetooth::packet::PacketView<bluetooth::packet::kLittleEndian>(
+          received_));
+  ASSERT(packet.IsValid());
+  SendLinkLayerPacket(packet, phy_type_);
 }
 
 void LinkLayerSocketDevice::IncomingPacket(
