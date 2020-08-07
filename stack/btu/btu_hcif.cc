@@ -956,9 +956,7 @@ static void btu_hcif_connection_comp_evt(uint8_t* p, uint8_t evt_len) {
   }
 
   if (link_type == HCI_LINK_TYPE_ACL) {
-    btm_sec_connected(bda, handle, status, enc_mode);
-
-    l2c_link_hci_conn_comp(status, handle, bda);
+    btm_acl_connected(bda, handle, status, enc_mode);
   } else {
     memset(&esco_data, 0, sizeof(tBTM_ESCO_DATA));
     /* esco_data.link_type = HCI_LINK_TYPE_SCO; already zero */
@@ -1410,8 +1408,7 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
     case HCI_CREATE_CONNECTION:
       if (status != HCI_SUCCESS) {
         STREAM_TO_BDADDR(bd_addr, p_cmd);
-        btm_sec_connected(bd_addr, HCI_INVALID_HANDLE, status, 0);
-        l2c_link_hci_conn_comp(status, HCI_INVALID_HANDLE, bd_addr);
+        btm_acl_connected(bd_addr, HCI_INVALID_HANDLE, status, 0);
       }
       break;
     case HCI_AUTHENTICATION_REQUESTED:
