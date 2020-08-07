@@ -195,6 +195,7 @@ enum OpCode : 16 {
   READ_LOCAL_OOB_DATA = 0x0C57,
   READ_INQUIRY_RESPONSE_TRANSMIT_POWER_LEVEL = 0x0C58,
   WRITE_INQUIRY_TRANSMIT_POWER_LEVEL = 0x0C59,
+  ENHANCED_FLUSH = 0x0C5F,
   SEND_KEYPRESS_NOTIFICATION = 0x0C60,
 
   READ_LE_HOST_SUPPORT = 0x0C6C,
@@ -481,6 +482,7 @@ enum OpCodeIndex : 16 {
   USER_PASSKEY_REQUEST_NEGATIVE_REPLY = 193,
   REMOTE_OOB_DATA_REQUEST_REPLY = 194,
   WRITE_SIMPLE_PAIRING_DEBUG_MODE = 195,
+  ENHANCED_FLUSH = 196,
   REMOTE_OOB_DATA_REQUEST_NEGATIVE_REPLY = 197,
   SEND_KEYPRESS_NOTIFICATION = 202,
   IO_CAPABILITY_REQUEST_NEGATIVE_REPLY = 203,
@@ -4184,6 +4186,19 @@ packet LinkSupervisionTimeoutChanged : EventPacket (event_code = LINK_SUPERVISIO
   connection_handle : 12,
   _reserved_ : 4,
   link_supervision_timeout : 16, // 0x001-0xFFFF (0.625ms-40.9s)
+}
+
+enum FlushablePacketType : 8 {
+  AUTOMATICALLY_FLUSHABLE_ONLY = 0,
+}
+
+packet EnhancedFlush : CommandPacket (op_code = ENHANCED_FLUSH){
+  connection_handle : 12,
+  _reserved_ : 4,
+  packet_type : FlushablePacketType,
+}
+
+packet EnhancedFlushStatus : CommandStatus (command_op_code = ENHANCED_FLUSH){
 }
 
 packet EnhancedFlushComplete : EventPacket (event_code = ENHANCED_FLUSH_COMPLETE){
