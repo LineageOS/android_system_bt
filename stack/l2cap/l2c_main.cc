@@ -728,17 +728,6 @@ static void process_l2cap_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
         l2cu_send_peer_echo_rsp(p_lcb, id, p, cmd_len);
         break;
 
-      case L2CAP_CMD_ECHO_RSP:
-        if (p_lcb->p_echo_rsp_cb) {
-          tL2CA_ECHO_RSP_CB* p_cb = p_lcb->p_echo_rsp_cb;
-
-          /* Zero out the callback in case app immediately calls us again */
-          p_lcb->p_echo_rsp_cb = NULL;
-
-          (*p_cb)(L2CAP_PING_RESULT_OK);
-        }
-        break;
-
       case L2CAP_CMD_INFO_REQ: {
         uint16_t info_type;
         if (p + 2 > p_next_cmd) return;
