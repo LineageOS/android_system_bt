@@ -86,7 +86,6 @@ typedef struct {
   uint16_t btm_def_link_policy;
   uint16_t btm_def_link_super_tout;
 
-  tBTM_BL_EVENT_MASK bl_evt_mask;
   tBTM_BL_CHANGE_CB* p_bl_changed_cb; /* Callback for when Busy Level changed */
 
   uint8_t pm_pend_link; /* the index of acl_db, which has a pending PM cmd */

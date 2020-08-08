@@ -136,10 +136,6 @@ enum {
   BTM_BL_COLLISION_EVT
 };
 typedef uint8_t tBTM_BL_EVENT;
-typedef uint16_t tBTM_BL_EVENT_MASK;
-
-#define BTM_BL_UPDATE_MASK 0x0004
-#define BTM_BL_ROLE_CHG_MASK 0x0008
 
 /* Device features mask definitions */
 #define BTM_FEATURE_BYTES_PER_PAGE HCI_FEATURE_BYTES_PER_PAGE
