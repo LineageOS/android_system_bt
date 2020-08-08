@@ -1941,7 +1941,7 @@ void btm_ble_process_adv_pkt_cont(uint16_t evt_type, uint8_t addr_type,
 
       btm_ble_stop_inquiry();
 
-      btm_acl_update_busy_level(BTM_BLI_INQ_DONE_EVT);
+      btm_acl_update_inquiry_status(BTM_INQUIRY_COMPLETE);
     }
   }
 

@@ -56,7 +56,6 @@ tBTM_SEC_DEV_REC* btm_find_dev_by_handle(uint16_t handle);
 tBTM_SEC_DEV_REC* btm_find_or_alloc_dev(const RawAddress& bd_addr);
 tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec);
 tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
-void btm_acl_update_busy_level(tBTM_BLI_EVENT event);
 void btm_ble_refresh_local_resolvable_private_addr(
     const RawAddress& pseudo_addr, const RawAddress& local_rpa);
 void btm_establish_continue(tACL_CONN* p_acl_cb);
@@ -77,7 +76,7 @@ static void btm_read_tx_power_timeout(void* data);
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                             uint8_t num_read_pages);
 
-void BTIF_dm_report_busy_level_change(uint8_t busy_level_flags);
+void BTIF_dm_report_inquiry_status_change(uint8_t busy_level_flags);
 /* 3 seconds timeout waiting for responses */
 #define BTM_DEV_REPLY_TIMEOUT_MS (3 * 1000)
 
@@ -441,34 +440,9 @@ void btm_acl_device_down(void) {
 
 void btm_acl_set_paging(bool value) { btm_cb.is_paging = value; }
 
-/*******************************************************************************
- *
- * Function         btm_acl_update_busy_level
- *
- * Description      This function is called to update the busy level of the
- *                  system.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_acl_update_busy_level(tBTM_BLI_EVENT event) {
-  switch (event) {
-    case BTM_BLI_INQ_EVT:
-      BTM_TRACE_DEBUG("BTM_BLI_INQ_EVT");
-      btm_cb.is_inquiry = true;
-      BTIF_dm_report_busy_level_change(BTM_BL_INQUIRY_STARTED);
-      break;
-    case BTM_BLI_INQ_CANCEL_EVT:
-      BTM_TRACE_DEBUG("BTM_BLI_INQ_CANCEL_EVT");
-      btm_cb.is_inquiry = false;
-      BTIF_dm_report_busy_level_change(BTM_BL_INQUIRY_CANCELLED);
-      break;
-    case BTM_BLI_INQ_DONE_EVT:
-      BTM_TRACE_DEBUG("BTM_BLI_INQ_DONE_EVT");
-      btm_cb.is_inquiry = false;
-      BTIF_dm_report_busy_level_change(BTM_BL_INQUIRY_COMPLETE);
-      break;
-  }
+void btm_acl_update_inquiry_status(uint8_t status) {
+  btm_cb.is_inquiry = status == BTM_INQUIRY_STARTED;
+  BTIF_dm_report_inquiry_status_change(status);
 }
 
 /*******************************************************************************
