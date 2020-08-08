@@ -92,16 +92,12 @@ extern void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec,
 
 extern uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
 
-extern void btm_read_rssi_timeout(void* data);
 extern void btm_read_rssi_complete(uint8_t* p);
 
-extern void btm_read_failed_contact_counter_timeout(void* data);
 extern void btm_read_failed_contact_counter_complete(uint8_t* p);
 
-extern void btm_read_automatic_flush_timeout_timeout(void* data);
 extern void btm_read_automatic_flush_timeout_complete(uint8_t* p);
 
-extern void btm_read_tx_power_timeout(void* data);
 extern void btm_read_tx_power_complete(uint8_t* p, bool is_ble);
 
 extern void btm_read_link_quality_complete(uint8_t* p);
@@ -123,8 +119,6 @@ extern void btm_read_remote_ext_features_failed(uint8_t status,
 extern void btm_read_remote_version_complete(uint8_t* p);
 extern void btm_establish_continue(tACL_CONN* p_acl_cb);
 
-extern void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
-                                              uint16_t* p_pkt_type);
 extern tACL_CONN* btm_bda_to_acl(const RawAddress& bda,
                                  tBT_TRANSPORT transport);
 extern bool btm_acl_notif_conn_collision(const RawAddress& bda);
