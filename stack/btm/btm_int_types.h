@@ -703,7 +703,6 @@ typedef struct {
   RawAddress connecting_bda;
   DEV_CLASS connecting_dc;
   uint8_t trace_level;
-  uint8_t busy_level; /* the current busy level */
   bool is_paging;     /* true, if paging is in progess */
   bool is_inquiry;    /* true, if inquiry is in progess */
   fixed_queue_t* page_queue;
