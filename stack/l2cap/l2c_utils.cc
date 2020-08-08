@@ -2186,7 +2186,7 @@ void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb) {
                               HCI_PKT_TYPES_MASK_DM5 | HCI_PKT_TYPES_MASK_DH5),
       page_scan_rep_mode, page_scan_mode, clock_offset, allow_switch);
 
-  btm_acl_update_busy_level(BTM_BLI_PAGE_EVT);
+  btm_acl_set_paging(true);
 
   alarm_set_on_mloop(p_lcb->l2c_lcb_timer, L2CAP_LINK_CONNECT_TIMEOUT_MS,
                      l2c_lcb_timer_timeout, p_lcb);
