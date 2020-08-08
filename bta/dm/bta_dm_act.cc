@@ -2652,13 +2652,11 @@ static void bta_dm_local_name_cback(UNUSED_ATTR void* p_name) {
     bta_dm_cb.p_sec_cback(BTA_DM_ENABLE_EVT, &sec_event);
 }
 
-static void send_busy_level_update(uint8_t busy_level,
-                                   uint8_t busy_level_flags) {
+static void send_busy_level_update(uint8_t busy_level_flags) {
   if (!bta_dm_cb.p_sec_cback) return;
 
   tBTA_DM_SEC conn;
   memset(&conn, 0, sizeof(tBTA_DM_SEC));
-  conn.busy_level.level = busy_level;
   conn.busy_level.level_flags = busy_level_flags;
   bta_dm_cb.p_sec_cback(BTA_DM_BUSY_LEVEL_EVT, &conn);
 }
@@ -2859,7 +2857,6 @@ static void bta_dm_bl_change_cback(tBTM_BL_EVENT_DATA* p_data) {
     case BTM_BL_UPDATE_EVT: {
       /* busy level update */
       do_in_main_thread(FROM_HERE, base::Bind(send_busy_level_update,
-                                              p_data->update.busy_level,
                                               p_data->update.busy_level_flags));
       return;
     }
