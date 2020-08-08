@@ -455,12 +455,10 @@ void btm_acl_update_busy_level(tBTM_BLI_EVENT event) {
     case BTM_BLI_PAGE_EVT:
       BTM_TRACE_DEBUG("BTM_BLI_PAGE_EVT");
       btm_cb.is_paging = true;
-      evt.busy_level_flags = BTM_BL_PAGING_STARTED;
       break;
     case BTM_BLI_PAGE_DONE_EVT:
       BTM_TRACE_DEBUG("BTM_BLI_PAGE_DONE_EVT");
       btm_cb.is_paging = false;
-      evt.busy_level_flags = BTM_BL_PAGING_COMPLETE;
       break;
     case BTM_BLI_INQ_EVT:
       BTM_TRACE_DEBUG("BTM_BLI_INQ_EVT");
