@@ -562,8 +562,6 @@ typedef struct {
 } tBTM_PM_RCB;
 
 enum {
-  BTM_BLI_ACL_UP_EVT,
-  BTM_BLI_ACL_DOWN_EVT,
   BTM_BLI_PAGE_EVT,
   BTM_BLI_PAGE_DONE_EVT,
   BTM_BLI_INQ_EVT,
