@@ -108,8 +108,6 @@ extern void btm_read_link_quality_complete(uint8_t* p);
 extern tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
 extern void btm_process_clk_off_comp_evt(uint16_t hci_handle,
                                          uint16_t clock_offset);
-extern void btm_acl_role_changed(uint8_t hci_status, const RawAddress* bd_addr,
-                                 uint8_t new_role);
 extern void btm_blacklist_role_change_device(const RawAddress& bd_addr,
                                              uint8_t hci_status);
 extern void btm_acl_encrypt_change(uint16_t handle, uint8_t status,

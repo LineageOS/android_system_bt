@@ -54,6 +54,7 @@
 #include "hcimsgs.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/l2cap_hci_link_interface.h"
 
 using base::Location;
