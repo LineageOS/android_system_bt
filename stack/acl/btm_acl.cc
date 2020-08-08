@@ -61,7 +61,6 @@ void btm_acl_update_busy_level(tBTM_BLI_EVENT event);
 void btm_ble_refresh_local_resolvable_private_addr(
     const RawAddress& pseudo_addr, const RawAddress& local_rpa);
 void btm_establish_continue(tACL_CONN* p_acl_cb);
-void btm_pm_sm_alloc(uint8_t ind);
 void btm_read_automatic_flush_timeout_timeout(void* data);
 void btm_read_failed_contact_counter_timeout(void* data);
 void btm_read_rssi_timeout(void* data);
@@ -71,6 +70,7 @@ void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec, uint8_t res,
 void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
                                tBTM_SEC_DEV_REC* p_dev_rec);
 
+static void btm_pm_sm_alloc(uint8_t ind);
 static void btm_read_remote_features(uint16_t handle);
 static void btm_read_remote_ext_features(uint16_t handle, uint8_t page_number);
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
@@ -2449,4 +2449,23 @@ void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p, uint16_t* p_pkt_type) {
       *p_pkt_type |=
           (BTM_ACL_PKT_TYPES_MASK_NO_2_DH5 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH5);
   }
+}
+
+/*******************************************************************************
+ *
+ * Function         btm_pm_sm_alloc
+ *
+ * Description      This function initializes the control block of an ACL link.
+ *                  It is called when an ACL connection is created.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void btm_pm_sm_alloc(uint8_t ind) {
+  tBTM_PM_MCB* p_db = &btm_cb.pm_mode_db[ind]; /* per ACL link */
+  memset(p_db, 0, sizeof(tBTM_PM_MCB));
+  p_db->state = BTM_PM_ST_ACTIVE;
+#if (BTM_PM_DEBUG == TRUE)
+  BTM_TRACE_DEBUG("btm_pm_sm_alloc ind:%d st:%d", ind, p_db->state);
+#endif  // BTM_PM_DEBUG
 }
