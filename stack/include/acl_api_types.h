@@ -172,8 +172,6 @@ typedef struct {
 /* the data type associated with BTM_BL_UPDATE_EVT */
 typedef struct {
   tBTM_BL_EVENT event;      /* The event reported. */
-  uint8_t busy_level;       /* when paging or inquiring, level is 10.
-                             * Otherwise, the number of ACL links. */
   uint8_t busy_level_flags; /* Notifies actual inquiry/page activities */
 } tBTM_BL_UPDATE_DATA;
 

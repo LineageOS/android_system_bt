@@ -496,7 +496,6 @@ void btm_acl_update_busy_level(tBTM_BLI_EVENT event) {
   if ((busy_level != btm_cb.busy_level) ||
       (old_inquiry_state != btm_cb.is_inquiry)) {
     evt.event = BTM_BL_UPDATE_EVT;
-    evt.busy_level = busy_level;
     btm_cb.busy_level = busy_level;
     if (btm_cb.acl_cb_.p_bl_changed_cb) {
       tBTM_BL_EVENT_DATA btm_bl_event_data;
