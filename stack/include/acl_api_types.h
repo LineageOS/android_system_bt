@@ -167,8 +167,6 @@ typedef struct {
 #define BTM_BL_INQUIRY_STARTED (BTM_BL_INQUIRY_PAGING_MASK | 0x1)
 #define BTM_BL_INQUIRY_CANCELLED (BTM_BL_INQUIRY_PAGING_MASK | 0x2)
 #define BTM_BL_INQUIRY_COMPLETE (BTM_BL_INQUIRY_PAGING_MASK | 0x3)
-#define BTM_BL_PAGING_STARTED (BTM_BL_INQUIRY_PAGING_MASK | 0x4)
-#define BTM_BL_PAGING_COMPLETE (BTM_BL_INQUIRY_PAGING_MASK | 0x5)
 /* the data type associated with BTM_BL_UPDATE_EVT */
 typedef struct {
   tBTM_BL_EVENT event;      /* The event reported. */
