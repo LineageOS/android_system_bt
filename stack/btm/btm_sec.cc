@@ -2499,8 +2499,6 @@ static tBTM_STATUS btm_sec_dd_create_conn(tBTM_SEC_DEV_REC* p_dev_rec) {
   /* set up the control block to indicated dedicated bonding */
   btm_cb.pairing_flags |= BTM_PAIR_FLAGS_DISC_WHEN_DONE;
 
-  btm_acl_update_busy_level(BTM_BLI_PAGE_EVT);
-
   VLOG(1) << "Security Manager: " << p_dev_rec->bd_addr;
 
   btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_PIN_REQ);
