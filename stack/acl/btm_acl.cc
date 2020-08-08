@@ -1732,24 +1732,12 @@ uint8_t* BTM_ReadRemoteFeatures(const RawAddress& addr) {
  * Description      This function is called to register a callback to receive
  *                  busy level change events.
  *
- * Returns          BTM_SUCCESS if successfully registered, otherwise error
- *
  ******************************************************************************/
-tBTM_STATUS BTM_RegBusyLevelNotif(tBTM_BL_CHANGE_CB* p_cb, uint8_t* p_level,
-                                  tBTM_BL_EVENT_MASK evt_mask) {
+void BTM_RegBusyLevelNotif(tBTM_BL_CHANGE_CB* p_cb,
+                           tBTM_BL_EVENT_MASK evt_mask) {
   BTM_TRACE_DEBUG("BTM_RegBusyLevelNotif");
-  if (p_level) *p_level = btm_cb.busy_level;
-
   btm_cb.acl_cb_.bl_evt_mask = evt_mask;
-
-  if (!p_cb)
-    btm_cb.acl_cb_.p_bl_changed_cb = NULL;
-  else if (btm_cb.acl_cb_.p_bl_changed_cb)
-    return (BTM_BUSY);
-  else
-    btm_cb.acl_cb_.p_bl_changed_cb = p_cb;
-
-  return (BTM_SUCCESS);
+  btm_cb.acl_cb_.p_bl_changed_cb = p_cb;
 }
 
 /*******************************************************************************
