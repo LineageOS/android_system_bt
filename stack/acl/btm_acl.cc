@@ -437,6 +437,8 @@ void btm_acl_device_down(void) {
   }
 }
 
+void btm_acl_set_paging(bool value) { btm_cb.is_paging = value; }
+
 /*******************************************************************************
  *
  * Function         btm_acl_update_busy_level
@@ -452,14 +454,6 @@ void btm_acl_update_busy_level(tBTM_BLI_EVENT event) {
   tBTM_BL_UPDATE_DATA evt;
   evt.busy_level_flags = 0;
   switch (event) {
-    case BTM_BLI_PAGE_EVT:
-      BTM_TRACE_DEBUG("BTM_BLI_PAGE_EVT");
-      btm_cb.is_paging = true;
-      break;
-    case BTM_BLI_PAGE_DONE_EVT:
-      BTM_TRACE_DEBUG("BTM_BLI_PAGE_DONE_EVT");
-      btm_cb.is_paging = false;
-      break;
     case BTM_BLI_INQ_EVT:
       BTM_TRACE_DEBUG("BTM_BLI_INQ_EVT");
       btm_cb.is_inquiry = true;
