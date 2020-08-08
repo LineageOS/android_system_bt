@@ -378,8 +378,6 @@ void btm_acl_removed(const RawAddress& bda, tBT_TRANSPORT transport) {
         evt_data.discn.transport = p->transport;
         (*btm_cb.acl_cb_.p_bl_changed_cb)(&evt_data);
       }
-
-      btm_acl_update_busy_level(BTM_BLI_ACL_DOWN_EVT);
     }
 
     BTM_TRACE_DEBUG(
@@ -454,12 +452,6 @@ void btm_acl_update_busy_level(tBTM_BLI_EVENT event) {
   tBTM_BL_UPDATE_DATA evt;
   evt.busy_level_flags = 0;
   switch (event) {
-    case BTM_BLI_ACL_UP_EVT:
-      BTM_TRACE_DEBUG("BTM_BLI_ACL_UP_EVT");
-      break;
-    case BTM_BLI_ACL_DOWN_EVT:
-      BTM_TRACE_DEBUG("BTM_BLI_ACL_DOWN_EVT");
-      break;
     case BTM_BLI_PAGE_EVT:
       BTM_TRACE_DEBUG("BTM_BLI_PAGE_EVT");
       btm_cb.is_paging = true;
@@ -1185,7 +1177,6 @@ void btm_establish_continue(tACL_CONN* p_acl_cb) {
 
     (*btm_cb.acl_cb_.p_bl_changed_cb)(&evt_data);
   }
-  btm_acl_update_busy_level(BTM_BLI_ACL_UP_EVT);
 }
 
 /*******************************************************************************
