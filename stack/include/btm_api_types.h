@@ -19,11 +19,13 @@
 #ifndef BTM_API_TYPES_H
 #define BTM_API_TYPES_H
 
-#include "bt_target.h"
+#include <cstdint>
+
 #include "device/include/esco_parameters.h"
-#include "hcidefs.h"
-#include "smp_api_types.h"
+#include "internal_include/bt_target.h"
 #include "stack/include/btm_status.h"
+#include "stack/include/hcidefs.h"
+#include "stack/include/smp_api_types.h"
 
 /* Maximum number of bytes allowed for vendor specific command parameters */
 #define BTM_MAX_VENDOR_SPECIFIC_LEN HCI_COMMAND_SIZE
