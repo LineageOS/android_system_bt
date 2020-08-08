@@ -367,25 +367,6 @@ void btm_pm_reset(void) {
 
 /*******************************************************************************
  *
- * Function         btm_pm_sm_alloc
- *
- * Description      This function initializes the control block of an ACL link.
- *                  It is called when an ACL connection is created.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_pm_sm_alloc(uint8_t ind) {
-  tBTM_PM_MCB* p_db = &btm_cb.pm_mode_db[ind]; /* per ACL link */
-  memset(p_db, 0, sizeof(tBTM_PM_MCB));
-  p_db->state = BTM_PM_ST_ACTIVE;
-#if (BTM_PM_DEBUG == TRUE)
-  BTM_TRACE_DEBUG("btm_pm_sm_alloc ind:%d st:%d", ind, p_db->state);
-#endif  // BTM_PM_DEBUG
-}
-
-/*******************************************************************************
- *
  * Function         btm_pm_find_acl_ind
  *
  * Description      This function initializes the control block of an ACL link.
