@@ -17,8 +17,10 @@
 #pragma once
 
 #include <stdint.h>
+#include "internal_include/bt_target.h"
 #include "stack/include/acl_api_types.h"
 #include "stack/include/bt_types.h"
+#include "stack/include/hcidefs.h"
 #include "types/raw_address.h"
 
 #define BTM_MAX_SCN_ 31  // PORT_MAX_RFC_PORTS system/bt/stack/include/rfcdefs.h
