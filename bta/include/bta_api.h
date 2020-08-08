@@ -353,7 +353,6 @@ typedef uint8_t tBTA_SIG_STRENGTH_MASK;
 #define BTA_DM_SIG_STRENGTH_EVT                                             \
   7                             /* Signal strength for bluetooth connection \
                                    */
-#define BTA_DM_BUSY_LEVEL_EVT 8 /* System busy level */
 #define BTA_DM_BOND_CANCEL_CMPL_EVT 9 /* Bond cancel complete indication */
 #define BTA_DM_SP_CFM_REQ_EVT                     \
   10 /* Simple Pairing User Confirmation request. \
@@ -539,13 +538,6 @@ typedef struct {
   uint8_t new_role; /* the new connection role */
 } tBTA_DM_ROLE_CHG;
 
-/* Structure associated with BTA_DM_BUSY_LEVEL_EVT */
-typedef struct {
-  uint8_t level;       /* when paging or inquiring, level is 10.
-                          Otherwise, the number of ACL links */
-  uint8_t level_flags; /* indicates individual flags */
-} tBTA_DM_BUSY_LEVEL;
-
 #define BTA_IO_CAP_OUT BTM_IO_CAP_OUT       /* 0 DisplayOnly */
 #define BTA_IO_CAP_IO BTM_IO_CAP_IO         /* 1 DisplayYesNo */
 #define BTA_IO_CAP_IN BTM_IO_CAP_IN         /* 2 KeyboardOnly */
@@ -669,7 +661,6 @@ typedef union {
   tBTA_DM_AUTHORIZE authorize;    /* Authorization request. */
   tBTA_DM_LINK_UP link_up;        /* ACL connection down event */
   tBTA_DM_LINK_DOWN link_down;    /* ACL connection down event */
-  tBTA_DM_BUSY_LEVEL busy_level;  /* System busy level */
   tBTA_DM_SP_CFM_REQ cfm_req;     /* user confirm request */
   tBTA_DM_SP_KEY_NOTIF key_notif; /* passkey notification */
   tBTA_DM_SP_RMT_OOB rmt_oob;     /* remote oob */

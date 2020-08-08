@@ -2652,15 +2652,6 @@ static void bta_dm_local_name_cback(UNUSED_ATTR void* p_name) {
     bta_dm_cb.p_sec_cback(BTA_DM_ENABLE_EVT, &sec_event);
 }
 
-static void send_busy_level_update(uint8_t busy_level_flags) {
-  if (!bta_dm_cb.p_sec_cback) return;
-
-  tBTA_DM_SEC conn;
-  memset(&conn, 0, sizeof(tBTA_DM_SEC));
-  conn.busy_level.level_flags = busy_level_flags;
-  bta_dm_cb.p_sec_cback(BTA_DM_BUSY_LEVEL_EVT, &conn);
-}
-
 static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
                                uint8_t hci_status) {
   tBTA_DM_SEC conn;
@@ -2854,12 +2845,6 @@ static void bta_dm_bl_change_cback(tBTM_BL_EVENT_DATA* p_data) {
                                 p_data->discn.transport, p_data->discn.handle));
       break;
 
-    case BTM_BL_UPDATE_EVT: {
-      /* busy level update */
-      do_in_main_thread(FROM_HERE, base::Bind(send_busy_level_update,
-                                              p_data->update.busy_level_flags));
-      return;
-    }
     case BTM_BL_ROLE_CHG_EVT: {
       const auto& tmp = p_data->role_chg;
       do_in_main_thread(FROM_HERE, base::Bind(handle_role_change, *tmp.p_bda,
