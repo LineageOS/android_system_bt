@@ -33,27 +33,43 @@
 
 #define LOG_TAG "btm_acl"
 
-#include <stddef.h>
-#include <string.h>
-
-#include "bt_common.h"
-#include "bt_target.h"
-#include "bt_types.h"
-#include "btm_api.h"
-#include "btm_int.h"
-#include "btu.h"
+#include <cstdint>
 #include "common/metrics.h"
 #include "device/include/controller.h"
 #include "device/include/interop.h"
-#include "hcidefs.h"
-#include "hcimsgs.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
-#include "osi/include/osi.h"
+#include "stack/acl/acl.h"
+#include "stack/btm/btm_int_types.h"
 #include "stack/include/acl_api.h"
-#include "stack/include/acl_api_types.h"  // From: stack/btm_api_types.h
+#include "stack/include/btm_api.h"
+#include "stack/include/btu.h"
+#include "stack/include/hcimsgs.h"
 #include "stack/include/l2cap_hci_link_interface.h"
+#include "types/raw_address.h"
+
+extern tBTM_CB btm_cb;
+
+tBTM_SEC_DEV_REC* btm_find_dev(const RawAddress& bd_addr);
+tBTM_SEC_DEV_REC* btm_find_dev_by_handle(uint16_t handle);
+tBTM_SEC_DEV_REC* btm_find_or_alloc_dev(const RawAddress& bd_addr);
+tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec);
+tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
+void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p, uint16_t* p_pkt_type);
+void btm_acl_update_busy_level(tBTM_BLI_EVENT event);
+void btm_ble_refresh_local_resolvable_private_addr(
+    const RawAddress& pseudo_addr, const RawAddress& local_rpa);
+void btm_establish_continue(tACL_CONN* p_acl_cb);
+void btm_pm_sm_alloc(uint8_t ind);
+void btm_read_automatic_flush_timeout_timeout(void* data);
+void btm_read_failed_contact_counter_timeout(void* data);
+void btm_read_rssi_timeout(void* data);
+void btm_read_tx_power_timeout(void* data);
+void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec, uint8_t res,
+                                 bool is_le_trasnport);
+void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
+                               tBTM_SEC_DEV_REC* p_dev_rec);
 
 static void btm_read_remote_features(uint16_t handle);
 static void btm_read_remote_ext_features(uint16_t handle, uint8_t page_number);
