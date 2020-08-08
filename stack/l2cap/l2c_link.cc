@@ -133,9 +133,7 @@ bool l2c_link_hci_conn_req(const RawAddress& bd_addr) {
 void btm_acl_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
                        uint8_t enc_mode) {
   btm_sec_connected(bda, handle, status, enc_mode);
-
-  btm_acl_update_busy_level(BTM_BLI_PAGE_DONE_EVT);
-
+  btm_acl_set_paging(false);
   l2c_link_hci_conn_comp(status, handle, bda);
 }
 
@@ -1309,7 +1307,7 @@ tBTM_STATUS l2cu_ConnectAclForSecurity(const RawAddress& bd_addr) {
   }
 
   l2cu_create_conn_br_edr(p_lcb);
-  btm_acl_update_busy_level(BTM_BLI_PAGE_EVT);
+  btm_acl_set_paging(true);
   return BTM_SUCCESS;
 }
 
