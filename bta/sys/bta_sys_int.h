@@ -54,7 +54,6 @@ typedef struct {
   tBTA_SYS_REG* reg[BTA_ID_MAX]; /* registration structures */
   bool is_reg[BTA_ID_MAX];       /* registration structures */
   tBTA_SYS_HW_STATE state;
-  tBTA_SYS_HW_CBACK* sys_hw_cback;
   bool bluetooth_active;
   uint16_t sys_features;         /* Bitmask of sys features */
 

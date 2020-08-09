@@ -338,103 +338,87 @@ void BTA_dm_on_hw_off() {
   /* notify BTA DM is now unactive */
   bta_dm_cb.is_bta_dm_active = false;
 }
-/*******************************************************************************
- *
- * Function         bta_dm_sys_hw_cback
- *
- * Description     callback register to SYS to get HW status updates
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_dm_sys_hw_cback(tBTA_SYS_HW_EVT status) {
+
+void BTA_dm_on_hw_on() {
   DEV_CLASS dev_class;
   tBTA_DM_SEC_CBACK* temp_cback;
   uint8_t key_mask = 0;
   tBTA_BLE_LOCAL_ID_KEYS id_key;
 
-  APPL_TRACE_DEBUG("%s with event: %i", __func__, status);
+  /* save security callback */
+  temp_cback = bta_dm_cb.p_sec_cback;
+  /* make sure the control block is properly initialized */
+  bta_dm_init_cb();
+  /* and retrieve the callback */
+  bta_dm_cb.p_sec_cback = temp_cback;
+  bta_dm_cb.is_bta_dm_active = true;
 
-  if (status == BTA_SYS_HW_ON_EVT) {
-    /* save security callback */
-    temp_cback = bta_dm_cb.p_sec_cback;
-    /* make sure the control block is properly initialized */
-    bta_dm_init_cb();
-    /* and retrieve the callback */
-    bta_dm_cb.p_sec_cback = temp_cback;
-    bta_dm_cb.is_bta_dm_active = true;
+  /* hw is ready, go on with BTA DM initialization */
+  alarm_free(bta_dm_search_cb.search_timer);
+  alarm_free(bta_dm_search_cb.gatt_close_timer);
+  memset(&bta_dm_search_cb, 0, sizeof(bta_dm_search_cb));
+  /*
+   * TODO: Should alarm_free() the bta_dm_search_cb timers during
+   * graceful shutdown.
+   */
+  bta_dm_search_cb.search_timer = alarm_new("bta_dm_search.search_timer");
+  bta_dm_search_cb.gatt_close_timer =
+      alarm_new("bta_dm_search.gatt_close_timer");
 
-    /* hw is ready, go on with BTA DM initialization */
-    alarm_free(bta_dm_search_cb.search_timer);
-    alarm_free(bta_dm_search_cb.gatt_close_timer);
-    memset(&bta_dm_search_cb, 0, sizeof(bta_dm_search_cb));
-    /*
-     * TODO: Should alarm_free() the bta_dm_search_cb timers during
-     * graceful shutdown.
-     */
-    bta_dm_search_cb.search_timer = alarm_new("bta_dm_search.search_timer");
-    bta_dm_search_cb.gatt_close_timer =
-        alarm_new("bta_dm_search.gatt_close_timer");
+  memset(&bta_dm_conn_srvcs, 0, sizeof(bta_dm_conn_srvcs));
+  memset(&bta_dm_di_cb, 0, sizeof(tBTA_DM_DI_CB));
 
-    memset(&bta_dm_conn_srvcs, 0, sizeof(bta_dm_conn_srvcs));
-    memset(&bta_dm_di_cb, 0, sizeof(tBTA_DM_DI_CB));
+  memcpy(dev_class, p_bta_dm_cfg->dev_class, sizeof(dev_class));
+  BTM_SetDeviceClass(dev_class);
 
-    memcpy(dev_class, p_bta_dm_cfg->dev_class, sizeof(dev_class));
-    BTM_SetDeviceClass(dev_class);
+  /* load BLE local information: ID keys, ER if available */
+  Octet16 er;
+  bta_dm_co_ble_load_local_keys(&key_mask, &er, &id_key);
 
-    /* load BLE local information: ID keys, ER if available */
-    Octet16 er;
-    bta_dm_co_ble_load_local_keys(&key_mask, &er, &id_key);
+  if (key_mask & BTA_BLE_LOCAL_KEY_TYPE_ER) {
+    BTM_BleLoadLocalKeys(BTA_BLE_LOCAL_KEY_TYPE_ER, (tBTM_BLE_LOCAL_KEYS*)&er);
+  }
+  if (key_mask & BTA_BLE_LOCAL_KEY_TYPE_ID) {
+    BTM_BleLoadLocalKeys(BTA_BLE_LOCAL_KEY_TYPE_ID,
+                         (tBTM_BLE_LOCAL_KEYS*)&id_key);
+  }
+  bta_dm_search_cb.conn_id = GATT_INVALID_CONN_ID;
 
-    if (key_mask & BTA_BLE_LOCAL_KEY_TYPE_ER) {
-      BTM_BleLoadLocalKeys(BTA_BLE_LOCAL_KEY_TYPE_ER,
-                           (tBTM_BLE_LOCAL_KEYS*)&er);
-    }
-    if (key_mask & BTA_BLE_LOCAL_KEY_TYPE_ID) {
-      BTM_BleLoadLocalKeys(BTA_BLE_LOCAL_KEY_TYPE_ID,
-                           (tBTM_BLE_LOCAL_KEYS*)&id_key);
-    }
-    bta_dm_search_cb.conn_id = GATT_INVALID_CONN_ID;
-
-    BTM_SecRegister(&bta_security);
-    BTM_SetDefaultLinkSuperTout(p_bta_dm_cfg->link_timeout);
-    BTM_WritePageTimeout(p_bta_dm_cfg->page_timeout);
-    bta_dm_cb.cur_policy = p_bta_dm_cfg->policy_settings;
-    BTM_SetDefaultLinkPolicy(bta_dm_cb.cur_policy);
+  BTM_SecRegister(&bta_security);
+  BTM_SetDefaultLinkSuperTout(p_bta_dm_cfg->link_timeout);
+  BTM_WritePageTimeout(p_bta_dm_cfg->page_timeout);
+  bta_dm_cb.cur_policy = p_bta_dm_cfg->policy_settings;
+  BTM_SetDefaultLinkPolicy(bta_dm_cb.cur_policy);
 
 #if (BLE_VND_INCLUDED == TRUE)
-    BTM_BleReadControllerFeatures(bta_dm_ctrl_features_rd_cmpl_cback);
+  BTM_BleReadControllerFeatures(bta_dm_ctrl_features_rd_cmpl_cback);
 #else
-    /* If VSC multi adv commands are available, advertising will be initialized
-     * when capabilities are read. If they are not avaliable, initialize
-     * advertising here */
-    btm_ble_adv_init();
+  /* If VSC multi adv commands are available, advertising will be initialized
+   * when capabilities are read. If they are not available, initialize
+   * advertising here */
+  btm_ble_adv_init();
 #endif
 
-    /* Earlier, we used to invoke BTM_ReadLocalAddr which was just copying the
-       bd_addr
-       from the control block and invoking the callback which was sending the
-       DM_ENABLE_EVT.
-       But then we have a few HCI commands being invoked above which were still
-       in progress
-       when the ENABLE_EVT was sent. So modified this to fetch the local name
-       which forces
-       the DM_ENABLE_EVT to be sent only after all the init steps are complete
-       */
-    BTM_ReadLocalDeviceNameFromController(bta_dm_local_name_cback);
+  /* Earlier, we used to invoke BTM_ReadLocalAddr which was just copying the
+     bd_addr
+     from the control block and invoking the callback which was sending the
+     DM_ENABLE_EVT.
+     But then we have a few HCI commands being invoked above which were still
+     in progress
+     when the ENABLE_EVT was sent. So modified this to fetch the local name
+     which forces
+     the DM_ENABLE_EVT to be sent only after all the init steps are complete
+     */
+  BTM_ReadLocalDeviceNameFromController(bta_dm_local_name_cback);
 
-    bta_sys_rm_register(bta_dm_rm_cback);
+  bta_sys_rm_register(bta_dm_rm_cback);
 
-    /* initialize bluetooth low power manager */
-    bta_dm_init_pm();
+  /* initialize bluetooth low power manager */
+  bta_dm_init_pm();
 
-    bta_sys_policy_register(bta_dm_policy_cback);
+  bta_sys_policy_register(bta_dm_policy_cback);
 
-    bta_dm_gattc_register();
-
-  } else
-    APPL_TRACE_DEBUG(" --- ignored event");
+  bta_dm_gattc_register();
 }
 
 /** Disables the BT device manager */

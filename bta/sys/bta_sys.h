@@ -177,17 +177,7 @@ enum {
 
   BTA_SYS_MAX_EVT
 };
-
-/* SYS HW status events - returned by SYS HW manager to other modules. */
-enum {
-  BTA_SYS_HW_ON_EVT,
-  BTA_SYS_HW_STARTING_EVT,
-  BTA_SYS_HW_STOPPING_EVT,
-};
 typedef uint8_t tBTA_SYS_HW_EVT;
-
-/* HW enable callback type */
-typedef void(tBTA_SYS_HW_CBACK)(tBTA_SYS_HW_EVT status);
 
 /*****************************************************************************
  *  Function declarations

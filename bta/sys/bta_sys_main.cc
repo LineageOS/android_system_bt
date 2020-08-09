@@ -44,7 +44,7 @@
 #include "bta_ar_api.h"
 #endif
 
-void BTA_dm_sys_hw_cback(tBTA_SYS_HW_EVT status);
+void BTA_dm_on_hw_on();
 void BTA_dm_on_hw_error();
 void BTA_dm_on_hw_off();
 
@@ -115,7 +115,7 @@ static void bta_sys_sm_execute(tBTA_SYS_HW_EVT event) {
       switch (event) {
         case BTA_SYS_EVT_STACK_ENABLED_EVT:
           bta_sys_set_state(BTA_SYS_HW_ON);
-          BTA_dm_sys_hw_cback(BTA_SYS_HW_ON_EVT);
+          BTA_dm_on_hw_on();
           break;
         case BTA_SYS_API_DISABLE_EVT:
           bta_sys_set_state(BTA_SYS_HW_STOPPING);
@@ -155,7 +155,7 @@ static void bta_sys_sm_execute(tBTA_SYS_HW_EVT event) {
           bta_sys_set_state(BTA_SYS_HW_STARTING);
           break;
         case BTA_SYS_EVT_STACK_ENABLED_EVT:
-          BTA_dm_sys_hw_cback(BTA_SYS_HW_ON_EVT);
+          BTA_dm_on_hw_on();
           bta_sys_hw_api_disable();
           break;
         case BTA_SYS_EVT_DISABLED_EVT:
@@ -216,7 +216,7 @@ void bta_sys_hw_api_enable() {
     BTM_DeviceReset();
   } else {
     bta_sys_cb.bluetooth_active = true;
-    BTA_dm_sys_hw_cback(BTA_SYS_HW_ON_EVT);
+    BTA_dm_on_hw_on();
   }
 }
 
