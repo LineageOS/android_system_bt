@@ -2406,3 +2406,7 @@ bool acl_is_role_master(const RawAddress& bda, tBT_TRANSPORT transport) {
   }
   return (p->link_role == HCI_ROLE_MASTER);
 }
+
+bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x) {
+  return ((x.address)[0] & BLE_RESOLVE_ADDR_MASK) == BLE_RESOLVE_ADDR_MSB;
+}
