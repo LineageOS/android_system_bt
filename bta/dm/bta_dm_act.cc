@@ -69,10 +69,7 @@ static void bta_dm_remname_cback(void* p);
 static void bta_dm_find_services(const RawAddress& bd_addr);
 static void bta_dm_discover_next_device(void);
 static void bta_dm_sdp_callback(uint16_t sdp_status);
-static uint8_t bta_dm_authorize_cback(const RawAddress& bd_addr,
-                                      DEV_CLASS dev_class, BD_NAME bd_name,
-                                      uint8_t* service_name, uint8_t service_id,
-                                      bool is_originator);
+static uint8_t bta_dm_authorize_cback(uint8_t service_id);
 static uint8_t bta_dm_pin_cback(const RawAddress& bd_addr, DEV_CLASS dev_class,
                                 BD_NAME bd_name, bool min_16_digit);
 static uint8_t bta_dm_new_link_key_cback(const RawAddress& bd_addr,
@@ -2216,11 +2213,7 @@ static void bta_dm_remname_cback(void* p) {
  * Returns          void
  *
  ******************************************************************************/
-static uint8_t bta_dm_authorize_cback(const RawAddress& bd_addr,
-                                      DEV_CLASS dev_class, BD_NAME bd_name,
-                                      UNUSED_ATTR uint8_t* service_name,
-                                      uint8_t service_id,
-                                      UNUSED_ATTR bool is_originator) {
+static uint8_t bta_dm_authorize_cback(uint8_t service_id) {
   uint8_t index = 1;
   while (index < BTA_MAX_SERVICE_ID) {
     /* get the BTA service id corresponding to BTM id */

@@ -821,18 +821,10 @@ typedef uint8_t tBTM_LINK_KEY_TYPE;
  *  Security Manager Callback Functions
  ****************************************/
 /* Authorize device for service.  Parameters are
- *              BD Address of remote
- *              Device Class of remote
- *              BD Name of remote
- *              Service name
  *              Service Id (NULL - unknown service or unused
  *                                 [BTM_SEC_SERVICE_NAME_LEN set to 0])
- *              Is originator of the connection
- *              Result of the operation
 */
-typedef uint8_t(tBTM_AUTHORIZE_CALLBACK)(
-    const RawAddress& bd_addr, DEV_CLASS dev_class, tBTM_BD_NAME bd_name,
-    uint8_t* service_name, uint8_t service_id, bool is_originator);
+typedef uint8_t(tBTM_AUTHORIZE_CALLBACK)(uint8_t service_id);
 
 /* Get PIN for the connection.  Parameters are
  *              BD Address of remote

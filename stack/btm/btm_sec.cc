@@ -4910,32 +4910,21 @@ static void btm_sec_start_encryption(tBTM_SEC_DEV_REC* p_dev_rec) {
  ******************************************************************************/
 static uint8_t btm_sec_start_authorization(tBTM_SEC_DEV_REC* p_dev_rec) {
   uint8_t result;
-  uint8_t* p_service_name = NULL;
   uint8_t service_id;
 
   if ((p_dev_rec->sec_flags & BTM_SEC_NAME_KNOWN) ||
       (p_dev_rec->hci_handle == BTM_SEC_INVALID_HANDLE)) {
     if (!btm_cb.api.p_authorize_callback) return (BTM_MODE_UNSUPPORTED);
 
-    if (p_dev_rec->p_cur_service) {
-#if BTM_SEC_SERVICE_NAME_LEN > 0
-      if (p_dev_rec->is_originator)
-        p_service_name = p_dev_rec->p_cur_service->orig_service_name;
-      else
-        p_service_name = p_dev_rec->p_cur_service->term_service_name;
-#endif
-      service_id = p_dev_rec->p_cur_service->service_id;
-    } else
-      service_id = 0;
+    service_id =
+        p_dev_rec->p_cur_service ? p_dev_rec->p_cur_service->service_id : 0;
 
     /* Send authorization request if not already sent during this service
      * connection */
     if (p_dev_rec->last_author_service_id == BTM_SEC_NO_LAST_SERVICE_ID ||
         p_dev_rec->last_author_service_id != service_id) {
       p_dev_rec->sec_state = BTM_SEC_STATE_AUTHORIZING;
-      result = (*btm_cb.api.p_authorize_callback)(
-          p_dev_rec->bd_addr, p_dev_rec->dev_class, p_dev_rec->sec_bd_name,
-          p_service_name, service_id, p_dev_rec->is_originator);
+      result = (*btm_cb.api.p_authorize_callback)(service_id);
     }
 
     else /* Already authorized once for this L2CAP bringup */
