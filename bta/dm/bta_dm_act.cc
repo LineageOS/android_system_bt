@@ -2746,14 +2746,14 @@ static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
     if (bta_dm_cb.p_sec_cback) bta_dm_cb.p_sec_cback(BTA_DM_LINK_UP_EVT, &conn);
   } else {
     for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
-      if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr != bd_addr ||
-          bta_dm_cb.device_list.peer_device[i].transport != transport)
+      auto device = &bta_dm_cb.device_list.peer_device[i];
+      if (device->peer_bdaddr != bd_addr || device->transport != transport)
         continue;
 
-      if (bta_dm_cb.device_list.peer_device[i].conn_state == BTA_DM_UNPAIRING) {
-        if (BTM_SecDeleteDevice(
-                bta_dm_cb.device_list.peer_device[i].peer_bdaddr))
+      if (device->conn_state == BTA_DM_UNPAIRING) {
+        if (BTM_SecDeleteDevice(device->peer_bdaddr)) {
           issue_unpair_cb = true;
+        }
 
         /* remove all cached GATT information */
         BTA_GATTC_Refresh(bd_addr);
@@ -2762,8 +2762,7 @@ static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
                          issue_unpair_cb);
       }
 
-      conn.link_down.is_removed =
-          bta_dm_cb.device_list.peer_device[i].remove_dev_pending;
+      conn.link_down.is_removed = device->remove_dev_pending;
 
       // Iterate to the one before the last when shrinking the list,
       // otherwise we memcpy garbage data into the record.
