@@ -335,28 +335,13 @@ void btm_ble_refresh_peer_resolvable_private_addr(const RawAddress& pseudo_bda,
                   p_sec_rec->ble.active_addr_type);
 
   /* connection refresh remote address */
-  tACL_CONN* p_acl = btm_bda_to_acl(p_sec_rec->bd_addr, BT_TRANSPORT_LE);
-  if (p_acl == NULL)
-    p_acl = btm_bda_to_acl(p_sec_rec->ble.pseudo_addr, BT_TRANSPORT_LE);
-
-  if (p_acl != NULL) {
-    if (rra_type == BTM_BLE_ADDR_PSEUDO) {
-      /* use identity address, resolvable_private_addr is empty */
-      if (rpa.IsEmpty()) {
-        p_acl->active_remote_addr_type = p_sec_rec->ble.identity_addr_type;
-        p_acl->active_remote_addr = p_sec_rec->ble.identity_addr;
-      } else {
-        p_acl->active_remote_addr_type = BLE_ADDR_RANDOM;
-        p_acl->active_remote_addr = rpa;
-      }
-    } else {
-      p_acl->active_remote_addr_type = rra_type;
-      p_acl->active_remote_addr = rpa;
+  if (!acl_refresh_remote_address(p_sec_rec, p_sec_rec->bd_addr,
+                                  BT_TRANSPORT_LE, rra_type, rpa)) {
+    // Try looking up the pseudo random address
+    if (!acl_refresh_remote_address(p_sec_rec, p_sec_rec->ble.pseudo_addr,
+                                    BT_TRANSPORT_LE, rra_type, rpa)) {
+      BTM_TRACE_ERROR("%s Unknown device to refresh remote device", __func__);
     }
-
-    BTM_TRACE_DEBUG("p_acl->active_remote_addr_type: %d ",
-                    p_acl->active_remote_addr_type);
-    VLOG(1) << __func__ << " conn_addr: " << p_acl->active_remote_addr;
   }
 #endif
 }

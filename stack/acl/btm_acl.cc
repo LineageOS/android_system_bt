@@ -2410,3 +2410,30 @@ bool acl_is_role_master(const RawAddress& bda, tBT_TRANSPORT transport) {
 bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x) {
   return ((x.address)[0] & BLE_RESOLVE_ADDR_MASK) == BLE_RESOLVE_ADDR_MSB;
 }
+
+bool acl_refresh_remote_address(const tBTM_SEC_DEV_REC* p_sec_rec,
+                                const RawAddress& bda, tBT_TRANSPORT transport,
+                                uint8_t rra_type, const RawAddress& rpa) {
+  tACL_CONN* p_acl = btm_bda_to_acl(bda, transport);
+  if (p_acl == nullptr) {
+    return false;
+  }
+
+  if (rra_type == BTM_BLE_ADDR_PSEUDO) {
+    /* use identity address, resolvable_private_addr is empty */
+    if (rpa.IsEmpty()) {
+      p_acl->active_remote_addr_type = p_sec_rec->ble.identity_addr_type;
+      p_acl->active_remote_addr = p_sec_rec->ble.identity_addr;
+    } else {
+      p_acl->active_remote_addr_type = BLE_ADDR_RANDOM;
+      p_acl->active_remote_addr = rpa;
+    }
+  } else {
+    p_acl->active_remote_addr_type = rra_type;
+    p_acl->active_remote_addr = rpa;
+  }
+
+  BTM_TRACE_DEBUG("%s active_remote_addr_type: %d ", __func__,
+                  p_acl->active_remote_addr_type);
+  return true;
+}
