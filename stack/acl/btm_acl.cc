@@ -55,7 +55,6 @@ tBTM_SEC_DEV_REC* btm_find_dev(const RawAddress& bd_addr);
 tBTM_SEC_DEV_REC* btm_find_dev_by_handle(uint16_t handle);
 tBTM_SEC_DEV_REC* btm_find_or_alloc_dev(const RawAddress& bd_addr);
 tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec);
-tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
 void btm_ble_refresh_local_resolvable_private_addr(
     const RawAddress& pseudo_addr, const RawAddress& local_rpa);
 void btm_establish_continue(tACL_CONN* p_acl_cb);
@@ -75,6 +74,7 @@ static void btm_read_rssi_timeout(void* data);
 static void btm_read_tx_power_timeout(void* data);
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                             uint8_t num_read_pages);
+static tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
 
 void BTIF_dm_report_inquiry_status_change(uint8_t busy_level_flags);
 void BTA_dm_acl_up(const RawAddress bd_addr, tBT_TRANSPORT transport,
@@ -1557,6 +1557,20 @@ tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types) {
   p->pkt_types_mask = temp_pkt_types;
 
   return (BTM_CMD_STARTED);
+}
+
+void btm_set_packet_types_from_address(const RawAddress& bd_addr,
+                                       tBT_TRANSPORT transport,
+                                       uint16_t pkt_types) {
+  tACL_CONN* p_acl_cb = btm_bda_to_acl(bd_addr, transport);
+  if (p_acl_cb == nullptr) {
+    BTM_TRACE_ERROR("%s Unable to find acl for address", __func__);
+    return;
+  }
+  tBTM_STATUS status = btm_set_packet_types(p_acl_cb, pkt_types);
+  if (status != BTM_CMD_STARTED) {
+    BTM_TRACE_ERROR("%s unable to set packet types from address", __func__);
+  }
 }
 
 /*******************************************************************************

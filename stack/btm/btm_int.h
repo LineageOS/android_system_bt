@@ -102,7 +102,6 @@ extern void btm_read_tx_power_complete(uint8_t* p, bool is_ble);
 
 extern void btm_read_link_quality_complete(uint8_t* p);
 
-extern tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
 extern void btm_process_clk_off_comp_evt(uint16_t hci_handle,
                                          uint16_t clock_offset);
 extern void btm_blacklist_role_change_device(const RawAddress& bd_addr,
