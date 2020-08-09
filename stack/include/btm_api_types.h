@@ -869,7 +869,6 @@ enum {
   BTM_SP_CFM_REQ_EVT,   /* received USER_CONFIRMATION_REQUEST event */
   BTM_SP_KEY_NOTIF_EVT, /* received USER_PASSKEY_NOTIFY event */
   BTM_SP_KEY_REQ_EVT,   /* received USER_PASSKEY_REQUEST event */
-  BTM_SP_KEYPRESS_EVT,  /* received KEYPRESS_NOTIFY event */
   BTM_SP_LOC_OOB_EVT,   /* received result for READ_LOCAL_OOB_DATA command */
   BTM_SP_RMT_OOB_EVT,   /* received REMOTE_OOB_DATA_REQUEST event */
   BTM_SP_COMPLT_EVT,    /* received SIMPLE_PAIRING_COMPLETE event */
@@ -968,22 +967,6 @@ typedef struct {
   uint32_t passkey;     /* passkey */
 } tBTM_SP_KEY_NOTIF;
 
-enum {
-  BTM_SP_KEY_STARTED,     /* 0 - passkey entry started */
-  BTM_SP_KEY_ENTERED,     /* 1 - passkey digit entered */
-  BTM_SP_KEY_ERASED,      /* 2 - passkey digit erased */
-  BTM_SP_KEY_CLEARED,     /* 3 - passkey cleared */
-  BTM_SP_KEY_COMPLT,      /* 4 - passkey entry completed */
-  BTM_SP_KEY_OUT_OF_RANGE /* 5 - out of range */
-};
-typedef uint8_t tBTM_SP_KEY_TYPE;
-
-/* data type for BTM_SP_KEYPRESS_EVT */
-typedef struct {
-  RawAddress bd_addr; /* peer address */
-  tBTM_SP_KEY_TYPE notif_type;
-} tBTM_SP_KEYPRESS;
-
 /* data type for BTM_SP_LOC_OOB_EVT */
 typedef struct {
   tBTM_STATUS status; /* */
@@ -1012,7 +995,6 @@ typedef union {
   tBTM_SP_CFM_REQ cfm_req;     /* BTM_SP_CFM_REQ_EVT     */
   tBTM_SP_KEY_NOTIF key_notif; /* BTM_SP_KEY_NOTIF_EVT   */
   tBTM_SP_KEY_REQ key_req;     /* BTM_SP_KEY_REQ_EVT     */
-  tBTM_SP_KEYPRESS key_press;  /* BTM_SP_KEYPRESS_EVT    */
   tBTM_SP_LOC_OOB loc_oob;     /* BTM_SP_LOC_OOB_EVT     */
   tBTM_SP_RMT_OOB rmt_oob;     /* BTM_SP_RMT_OOB_EVT     */
   tBTM_SP_COMPLT complt;       /* BTM_SP_COMPLT_EVT      */
