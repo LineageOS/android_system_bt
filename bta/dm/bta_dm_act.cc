@@ -923,7 +923,7 @@ void bta_dm_confirm(const RawAddress& bd_addr, bool accept) {
 
 /** respond to the IO capabilities request from BTM */
 void bta_dm_ci_io_req_act(const RawAddress& bd_addr, tBTM_IO_CAP io_cap,
-                          tBTA_OOB_DATA oob_data, tBTM_AUTH_REQ auth_req) {
+                          tBTM_OOB_DATA oob_data, tBTM_AUTH_REQ auth_req) {
   BTM_IoCapRsp(bd_addr, io_cap, oob_data,
                auth_req ? BTM_AUTH_AP_YES : BTM_AUTH_AP_NO);
 }

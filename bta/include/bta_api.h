@@ -558,8 +558,6 @@ typedef struct {
 #define BTA_OOB_PRESENT BTM_OOB_PRESENT
 #define BTA_OOB_UNKNOWN BTM_OOB_UNKNOWN
 
-typedef tBTM_OOB_DATA tBTA_OOB_DATA;
-
 /* Structure associated with BTA_DM_SP_CFM_REQ_EVT */
 typedef struct {
   /* Note: First 3 data members must be, bd_addr, dev_class, and bd_name in

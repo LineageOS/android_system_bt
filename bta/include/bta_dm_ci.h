@@ -41,7 +41,7 @@
  *
  ******************************************************************************/
 extern void bta_dm_ci_io_req(const RawAddress& bd_addr, tBTM_IO_CAP io_cap,
-                             tBTA_OOB_DATA oob_data, tBTM_AUTH_REQ auth_req);
+                             tBTM_OOB_DATA oob_data, tBTM_AUTH_REQ auth_req);
 
 /*******************************************************************************
  *

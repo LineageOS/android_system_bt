@@ -2662,7 +2662,7 @@ void btif_dm_execute_service_request(uint16_t event, char* p_param) {
 
 void btif_dm_proc_io_req(UNUSED_ATTR const RawAddress& bd_addr,
                          UNUSED_ATTR tBTM_IO_CAP* p_io_cap,
-                         UNUSED_ATTR tBTA_OOB_DATA* p_oob_data,
+                         UNUSED_ATTR tBTM_OOB_DATA* p_oob_data,
                          tBTM_AUTH_REQ* p_auth_req, bool is_orig) {
   uint8_t yes_no_bit = BTA_AUTH_SP_YES & *p_auth_req;
   /* if local initiated:
@@ -2698,7 +2698,7 @@ void btif_dm_proc_io_req(UNUSED_ATTR const RawAddress& bd_addr,
 }
 
 void btif_dm_proc_io_rsp(UNUSED_ATTR const RawAddress& bd_addr,
-                         tBTM_IO_CAP io_cap, UNUSED_ATTR tBTA_OOB_DATA oob_data,
+                         tBTM_IO_CAP io_cap, UNUSED_ATTR tBTM_OOB_DATA oob_data,
                          tBTM_AUTH_REQ auth_req) {
   if (auth_req & BTA_AUTH_BONDS) {
     BTIF_TRACE_DEBUG("%s auth_req:%d", __func__, auth_req);
@@ -2707,7 +2707,7 @@ void btif_dm_proc_io_rsp(UNUSED_ATTR const RawAddress& bd_addr,
   }
 }
 
-void btif_dm_set_oob_for_io_req(tBTA_OOB_DATA* p_has_oob_data) {
+void btif_dm_set_oob_for_io_req(tBTM_OOB_DATA* p_has_oob_data) {
   if (is_empty_128bit(oob_cb.oob_data.c192)) {
     *p_has_oob_data = false;
   } else {
@@ -2717,7 +2717,7 @@ void btif_dm_set_oob_for_io_req(tBTA_OOB_DATA* p_has_oob_data) {
 }
 
 void btif_dm_set_oob_for_le_io_req(const RawAddress& bd_addr,
-                                   tBTA_OOB_DATA* p_has_oob_data,
+                                   tBTM_OOB_DATA* p_has_oob_data,
                                    tBTM_LE_AUTH_REQ* p_auth_req) {
   if (!is_empty_128bit(oob_cb.oob_data.le_sc_c) &&
       !is_empty_128bit(oob_cb.oob_data.le_sc_r)) {
