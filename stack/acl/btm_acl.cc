@@ -2452,3 +2452,11 @@ bool lmp_version_below(const RawAddress& bda, uint8_t version) {
                     version);
   return acl->lmp_version < version;
 }
+
+bool acl_is_role_master(const RawAddress& bda, tBT_TRANSPORT transport) {
+  tACL_CONN* p = btm_bda_to_acl(bda, transport);
+  if (p == nullptr) {
+    return false;
+  }
+  return (p->link_role == HCI_ROLE_MASTER);
+}
