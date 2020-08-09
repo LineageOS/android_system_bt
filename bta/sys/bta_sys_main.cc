@@ -103,7 +103,7 @@ static void bta_sys_sm_execute(tBTA_SYS_HW_EVT event) {
           bta_sys_set_state(BTA_SYS_HW_ON);
           break;
         case BTA_SYS_API_DISABLE_EVT:
-          bta_sys_hw_evt_disabled();
+          BTA_dm_sys_hw_cback(BTA_SYS_HW_OFF_EVT);
           break;
         default:
           break;
@@ -120,7 +120,7 @@ static void bta_sys_sm_execute(tBTA_SYS_HW_EVT event) {
           break;
         case BTA_SYS_EVT_DISABLED_EVT:
           bta_sys_set_state(BTA_SYS_HW_STARTING);
-          bta_sys_hw_evt_disabled();
+          BTA_dm_sys_hw_cback(BTA_SYS_HW_OFF_EVT);
           bta_sys_hw_api_enable();
           break;
         case BTA_SYS_ERROR_EVT:
@@ -158,7 +158,7 @@ static void bta_sys_sm_execute(tBTA_SYS_HW_EVT event) {
           break;
         case BTA_SYS_EVT_DISABLED_EVT:
           bta_sys_set_state(BTA_SYS_HW_OFF);
-          bta_sys_hw_evt_disabled();
+          BTA_dm_sys_hw_cback(BTA_SYS_HW_OFF_EVT);
           break;
         case BTA_SYS_ERROR_EVT:
           bta_sys_hw_api_disable();
@@ -241,18 +241,6 @@ void bta_sys_hw_api_disable() {
 
   send_bta_sys_hw_event(BTA_SYS_EVT_DISABLED_EVT);
 }
-
-/*******************************************************************************
- *
- * Function         bta_sys_hw_event_disabled
- *
- * Description
- *
- *
- * Returns          success or failure
- *
- ******************************************************************************/
-void bta_sys_hw_evt_disabled() { BTA_dm_sys_hw_cback(BTA_SYS_HW_OFF_EVT); }
 
 /*******************************************************************************
  *

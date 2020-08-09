@@ -90,7 +90,6 @@ void bta_sys_hw_error();
 void bta_sys_hw_api_enable();
 void bta_sys_hw_api_disable();
 void bta_sys_hw_evt_enabled();
-void bta_sys_hw_evt_disabled();
 void bta_sys_hw_evt_stack_enabled();
 
 #endif /* BTA_SYS_INT_H */
