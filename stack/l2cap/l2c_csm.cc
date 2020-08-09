@@ -165,9 +165,9 @@ static void l2c_csm_closed(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
       break;
 
     case L2CEVT_LP_CONNECT_CFM_NEG: /* Link failed          */
-      /* Disconnect unless ACL collision and upper layer wants to handle it */
-      if (p_ci->status != HCI_ERR_CONNECTION_EXISTS ||
-          !btm_acl_notif_conn_collision(p_ccb->p_lcb->remote_bd_addr)) {
+      if (p_ci->status == HCI_ERR_CONNECTION_EXISTS) {
+        btm_acl_notif_conn_collision(p_ccb->p_lcb->remote_bd_addr);
+      } else {
         L2CAP_TRACE_API(
             "L2CAP - Calling ConnectCfm_Cb(), CID: 0x%04x  Status: %d",
             p_ccb->local_cid, p_ci->status);

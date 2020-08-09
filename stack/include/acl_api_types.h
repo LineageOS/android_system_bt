@@ -128,26 +128,11 @@ typedef struct {
   int8_t tx_power;
 } tBTM_INQ_TXPWR_RESULT;
 
-enum {
-  BTM_BL_COLLISION_EVT
-};
 typedef uint8_t tBTM_BL_EVENT;
 
 /* Device features mask definitions */
 #define BTM_FEATURE_BYTES_PER_PAGE HCI_FEATURE_BYTES_PER_PAGE
 #define BTM_EXT_FEATURES_PAGE_MAX HCI_EXT_FEATURES_PAGE_MAX
-
-/* the data type associated with BTM_BL_CONN_EVT */
-typedef struct {
-  tBTM_BL_EVENT event;     /* The event reported. */
-  const RawAddress* p_bda; /* The address of the newly connected device */
-  DEV_CLASS_PTR p_dc;      /* The device class */
-  BD_NAME_PTR p_bdn;       /* The device name */
-  uint8_t* p_features;     /* pointer to the remote device's features page[0]
-                              (supported features page) */
-  uint16_t handle;         /* connection handle */
-  tBT_TRANSPORT transport; /* link is LE or not */
-} tBTM_BL_CONN_DATA;
 
 #define BTM_INQUIRY_STARTED 1
 #define BTM_INQUIRY_CANCELLED 2
@@ -155,7 +140,6 @@ typedef struct {
 
 typedef union {
   tBTM_BL_EVENT event;        /* The event reported. */
-  tBTM_BL_CONN_DATA conn;     /* The data associated with BTM_BL_CONN_EVT */
 } tBTM_BL_EVENT_DATA;
 
 /* Callback function for notifications when the BTM busy level
