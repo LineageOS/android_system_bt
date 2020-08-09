@@ -871,7 +871,6 @@ enum {
   BTM_SP_KEY_REQ_EVT,   /* received USER_PASSKEY_REQUEST event */
   BTM_SP_LOC_OOB_EVT,   /* received result for READ_LOCAL_OOB_DATA command */
   BTM_SP_RMT_OOB_EVT,   /* received REMOTE_OOB_DATA_REQUEST event */
-  BTM_SP_COMPLT_EVT,    /* received SIMPLE_PAIRING_COMPLETE event */
 };
 typedef uint8_t tBTM_SP_EVT;
 
@@ -981,14 +980,6 @@ typedef struct {
   tBTM_BD_NAME bd_name; /* peer device name */
 } tBTM_SP_RMT_OOB;
 
-/* data type for BTM_SP_COMPLT_EVT */
-typedef struct {
-  RawAddress bd_addr;   /* peer address */
-  DEV_CLASS dev_class;  /* peer CoD */
-  tBTM_BD_NAME bd_name; /* peer device name */
-  tBTM_STATUS status;   /* status of the simple pairing process */
-} tBTM_SP_COMPLT;
-
 typedef union {
   tBTM_SP_IO_REQ io_req;       /* BTM_SP_IO_REQ_EVT      */
   tBTM_SP_IO_RSP io_rsp;       /* BTM_SP_IO_RSP_EVT      */
@@ -997,7 +988,6 @@ typedef union {
   tBTM_SP_KEY_REQ key_req;     /* BTM_SP_KEY_REQ_EVT     */
   tBTM_SP_LOC_OOB loc_oob;     /* BTM_SP_LOC_OOB_EVT     */
   tBTM_SP_RMT_OOB rmt_oob;     /* BTM_SP_RMT_OOB_EVT     */
-  tBTM_SP_COMPLT complt;       /* BTM_SP_COMPLT_EVT      */
 } tBTM_SP_EVT_DATA;
 
 /* Simple Pairing Events.  Called by the stack when Simple Pairing related
