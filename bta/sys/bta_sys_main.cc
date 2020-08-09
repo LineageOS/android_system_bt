@@ -113,7 +113,7 @@ static void bta_sys_sm_execute(tBTA_SYS_HW_EVT event) {
       switch (event) {
         case BTA_SYS_EVT_STACK_ENABLED_EVT:
           bta_sys_set_state(BTA_SYS_HW_ON);
-          bta_sys_hw_evt_stack_enabled();
+          BTA_dm_sys_hw_cback(BTA_SYS_HW_ON_EVT);
           break;
         case BTA_SYS_API_DISABLE_EVT:
           bta_sys_set_state(BTA_SYS_HW_STOPPING);
@@ -153,7 +153,7 @@ static void bta_sys_sm_execute(tBTA_SYS_HW_EVT event) {
           bta_sys_set_state(BTA_SYS_HW_STARTING);
           break;
         case BTA_SYS_EVT_STACK_ENABLED_EVT:
-          bta_sys_hw_evt_stack_enabled();
+          BTA_dm_sys_hw_cback(BTA_SYS_HW_ON_EVT);
           bta_sys_hw_api_disable();
           break;
         case BTA_SYS_EVT_DISABLED_EVT:
@@ -241,19 +241,6 @@ void bta_sys_hw_api_disable() {
 
   send_bta_sys_hw_event(BTA_SYS_EVT_DISABLED_EVT);
 }
-
-/*******************************************************************************
- *
- * Function         bta_sys_hw_event_stack_enabled
- *
- * Description     we receive this event once the SW side is ready (stack, FW
- *                 download,... ), i.e. we can really start using the device. So
- *                 notify the app.
- *
- * Returns          success or failure
- *
- ******************************************************************************/
-void bta_sys_hw_evt_stack_enabled() { BTA_dm_sys_hw_cback(BTA_SYS_HW_ON_EVT); }
 
 /*******************************************************************************
  *
