@@ -355,7 +355,6 @@ typedef uint8_t tBTA_SIG_STRENGTH_MASK;
   10 /* Simple Pairing User Confirmation request. \
         */
 #define BTA_DM_SP_KEY_NOTIF_EVT 11 /* Simple Pairing Passkey Notification */
-#define BTA_DM_SP_RMT_OOB_EVT 12   /* Simple Pairing Remote OOB Data request. */
 #define BTA_DM_SP_KEYPRESS_EVT 13  /* Key press notification event. */
 #define BTA_DM_BLE_KEY_EVT 15      /* BLE SMP key event for peer device keys */
 #define BTA_DM_BLE_SEC_REQ_EVT 16  /* BLE SMP security request */
