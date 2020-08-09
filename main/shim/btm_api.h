@@ -1312,16 +1312,6 @@ tBTM_STATUS BTM_ReadTxPower(const RawAddress& remote_bda,
 
 /*******************************************************************************
  *
- * Function         BTM_RegBusyLevelNotif
- *
- * Description      This function is called to register a callback to receive
- *                  busy level change events.
- *
- ******************************************************************************/
-void BTM_RegBusyLevelNotif(tBTM_BL_CHANGE_CB* p_cb);
-
-/*******************************************************************************
- *
  * Function         BTM_GetNumAclLinks
  *
  * Description      This function is called to count the number of
