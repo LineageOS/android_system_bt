@@ -2695,6 +2695,31 @@ static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
   if (bta_dm_cb.p_sec_cback) bta_dm_cb.p_sec_cback(BTA_DM_ROLE_CHG_EVT, &conn);
 }
 
+static tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
+                                                tBT_TRANSPORT transport,
+                                                uint16_t handle) {
+  for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
+    auto device = &bta_dm_cb.device_list.peer_device[i];
+    if (device->peer_bdaddr == bd_addr && device->conn_handle == handle) {
+      return device;
+    }
+  }
+
+  if (bta_dm_cb.device_list.count < BTA_DM_NUM_PEER_DEVICE) {
+    auto device =
+        &bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count];
+    device->peer_bdaddr = bd_addr;
+    device->link_policy = bta_dm_cb.cur_policy;
+    bta_dm_cb.device_list.count++;
+    device->conn_handle = handle;
+    if (transport == BT_TRANSPORT_LE) {
+      bta_dm_cb.device_list.le_count++;
+    }
+    return device;
+  }
+  return nullptr;
+}
+
 static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
                               tBT_TRANSPORT transport, uint16_t handle) {
   bool issue_unpair_cb = false;
@@ -2703,28 +2728,12 @@ static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
   memset(&conn, 0, sizeof(tBTA_DM_SEC));
 
   if (is_new) {
-    uint8_t i;
-    tBTA_DM_PEER_DEVICE* device = nullptr;
-    for (i = 0; i < bta_dm_cb.device_list.count; i++) {
-      device = &bta_dm_cb.device_list.peer_device[i];
-      if (device->peer_bdaddr == bd_addr && device->conn_handle == handle)
-        break;
+    auto device = allocate_device_for(bd_addr, transport, handle);
+    if (device == nullptr) {
+      APPL_TRACE_ERROR("%s max active connection reached, no resources",
+                       __func__);
+      return;
     }
-
-    if (i == bta_dm_cb.device_list.count) {
-      if (bta_dm_cb.device_list.count < BTA_DM_NUM_PEER_DEVICE) {
-        device->peer_bdaddr = bd_addr;
-        device->link_policy = bta_dm_cb.cur_policy;
-        bta_dm_cb.device_list.count++;
-        device->conn_handle = handle;
-        if (transport == BT_TRANSPORT_LE) bta_dm_cb.device_list.le_count++;
-      } else {
-        APPL_TRACE_ERROR("%s max active connection reached, no resources",
-                         __func__);
-        return;
-      }
-    }
-
     device->conn_state = BTA_DM_CONNECTED;
     device->pref_role = BTA_ANY_ROLE;
     conn.link_up.bd_addr = bd_addr;
@@ -2740,8 +2749,7 @@ static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
       /* both local and remote devices support SSR */
       device->info = BTA_DM_DI_USE_SSR;
     }
-    APPL_TRACE_WARNING("%s info: 0x%x", __func__,
-                       bta_dm_cb.device_list.peer_device[i].info);
+    APPL_TRACE_WARNING("%s info: 0x%x", __func__, device->info);
 
     if (bta_dm_cb.p_sec_cback) bta_dm_cb.p_sec_cback(BTA_DM_LINK_UP_EVT, &conn);
   } else {
