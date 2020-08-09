@@ -117,7 +117,6 @@ static void btm_dm_start_gatt_discovery(const RawAddress& bd_addr);
 static void bta_dm_cancel_gatt_discovery(const RawAddress& bd_addr);
 static void bta_dm_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data);
 extern tBTA_DM_CONTRL_STATE bta_dm_pm_obtain_controller_state(void);
-
 #if (BLE_VND_INCLUDED == TRUE)
 static void bta_dm_ctrl_features_rd_cmpl_cback(tBTM_STATUS result);
 #endif
@@ -318,6 +317,11 @@ void bta_dm_deinit_cb(void) {
   memset(&bta_dm_cb, 0, sizeof(bta_dm_cb));
 }
 
+void BTA_dm_on_hw_error() {
+  if (bta_dm_cb.p_sec_cback != NULL) {
+    bta_dm_cb.p_sec_cback(BTA_DM_HW_ERROR_EVT, NULL);
+  }
+}
 /*******************************************************************************
  *
  * Function         bta_dm_sys_hw_cback
@@ -335,13 +339,6 @@ void BTA_dm_sys_hw_cback(tBTA_SYS_HW_EVT status) {
   tBTA_BLE_LOCAL_ID_KEYS id_key;
 
   APPL_TRACE_DEBUG("%s with event: %i", __func__, status);
-
-  /* On H/W error evt, report to the registered DM application callback */
-  if (status == BTA_SYS_HW_ERROR_EVT) {
-    if (bta_dm_cb.p_sec_cback != NULL)
-      bta_dm_cb.p_sec_cback(BTA_DM_HW_ERROR_EVT, NULL);
-    return;
-  }
 
   if (status == BTA_SYS_HW_OFF_EVT) {
     if (bta_dm_cb.p_sec_cback != NULL)

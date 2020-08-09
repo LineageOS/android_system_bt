@@ -44,7 +44,8 @@
 #include "bta_ar_api.h"
 #endif
 
-extern void BTA_dm_sys_hw_cback(tBTA_SYS_HW_EVT status);
+void BTA_dm_sys_hw_cback(tBTA_SYS_HW_EVT status);
+void BTA_dm_on_hw_error();
 
 /* system manager control block definition */
 tBTA_SYS_CB bta_sys_cb;
@@ -190,7 +191,7 @@ void send_bta_sys_hw_event(tBTA_SYS_HW_EVT event) {
 void bta_sys_hw_error() {
   APPL_TRACE_DEBUG("%s", __func__);
   if (bta_sys_cb.bluetooth_active) {
-    BTA_dm_sys_hw_cback(BTA_SYS_HW_ERROR_EVT);
+    BTA_dm_on_hw_error();
   }
 }
 
