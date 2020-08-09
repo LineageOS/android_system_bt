@@ -2643,9 +2643,6 @@ static void bta_dm_local_name_cback(UNUSED_ATTR void* p_name) {
 
 static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
                                uint8_t hci_status) {
-  tBTA_DM_SEC conn;
-  memset(&conn, 0, sizeof(tBTA_DM_SEC));
-
   tBTA_DM_PEER_DEVICE* p_dev = bta_dm_find_peer_device(bd_addr);
   if (!p_dev) return;
   LOG_INFO("%s: peer %s info:0x%x new_role:0x%x dev count:%d hci_status=%d",
@@ -2679,9 +2676,6 @@ static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
     bta_dm_check_av(0);
   }
   bta_sys_notify_role_chg(bd_addr, new_role, hci_status);
-  conn.role_chg.bd_addr = bd_addr;
-  conn.role_chg.new_role = (uint8_t)new_role;
-  if (bta_dm_cb.p_sec_cback) bta_dm_cb.p_sec_cback(BTA_DM_ROLE_CHG_EVT, &conn);
 }
 
 static tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
