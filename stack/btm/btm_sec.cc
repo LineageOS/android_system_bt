@@ -3203,17 +3203,17 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, uint8_t* p) {
  *
  ******************************************************************************/
 void btm_simple_pair_complete(uint8_t* p) {
-  tBTM_SP_COMPLT evt_data;
+  RawAddress bd_addr;
   tBTM_SEC_DEV_REC* p_dev_rec;
   uint8_t status;
   bool disc = false;
 
   status = *p++;
-  STREAM_TO_BDADDR(evt_data.bd_addr, p);
+  STREAM_TO_BDADDR(bd_addr, p);
 
-  p_dev_rec = btm_find_dev(evt_data.bd_addr);
+  p_dev_rec = btm_find_dev(bd_addr);
   if (p_dev_rec == NULL) {
-    LOG(ERROR) << __func__ << " with unknown BDA: " << evt_data.bd_addr;
+    LOG(ERROR) << __func__ << " with unknown BDA: " << bd_addr;
     return;
   }
 
@@ -3221,9 +3221,7 @@ void btm_simple_pair_complete(uint8_t* p) {
       "btm_simple_pair_complete()  Pair State: %s  Status:%d  sec_state: %u",
       btm_pair_state_descr(btm_cb.pairing_state), status, p_dev_rec->sec_state);
 
-  evt_data.status = BTM_ERR_PROCESSING;
   if (status == HCI_SUCCESS) {
-    evt_data.status = BTM_SUCCESS;
     p_dev_rec->sec_flags |= BTM_SEC_AUTHENTICATED;
   } else {
     if (status == HCI_ERR_PAIRING_NOT_ALLOWED) {
@@ -3233,7 +3231,7 @@ void btm_simple_pair_complete(uint8_t* p) {
       /* Change the timer to 1 second */
       alarm_set_on_mloop(btm_cb.pairing_timer, BT_1SEC_TIMEOUT_MS,
                          btm_sec_pairing_timeout, NULL);
-    } else if (btm_cb.pairing_bda == evt_data.bd_addr) {
+    } else if (btm_cb.pairing_bda == bd_addr) {
       /* stop the timer */
       alarm_cancel(btm_cb.pairing_timer);
 
@@ -3245,15 +3243,6 @@ void btm_simple_pair_complete(uint8_t* p) {
     } else
       disc = true;
   }
-
-  /* Let the pairing state stay active, p_auth_complete_callback will report the
-   * failure */
-  evt_data.bd_addr = p_dev_rec->bd_addr;
-  memcpy(evt_data.dev_class, p_dev_rec->dev_class, DEV_CLASS_LEN);
-
-  if (btm_cb.api.p_sp_callback)
-    (*btm_cb.api.p_sp_callback)(BTM_SP_COMPLT_EVT,
-                                (tBTM_SP_EVT_DATA*)&evt_data);
 
   if (disc) {
     /* simple pairing failed */
