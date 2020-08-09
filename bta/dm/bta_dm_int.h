@@ -515,7 +515,7 @@ extern void bta_dm_ble_set_data_length(const RawAddress&, uint16_t);
 extern void bta_dm_ble_get_energy_info(tBTA_BLE_ENERGY_INFO_CBACK*);
 
 extern void bta_dm_set_encryption(const RawAddress&, tBTA_TRANSPORT,
-                                  tBTA_DM_ENCRYPT_CBACK*, tBTA_DM_BLE_SEC_ACT);
+                                  tBTA_DM_ENCRYPT_CBACK*, tBTM_BLE_SEC_ACT);
 extern void bta_dm_confirm(const RawAddress&, bool);
 extern void bta_dm_ci_io_req_act(const RawAddress& bd_addr, tBTM_IO_CAP io_cap,
                                  tBTM_OOB_DATA oob_data,

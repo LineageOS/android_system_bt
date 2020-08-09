@@ -700,7 +700,7 @@ void BTA_DmBleSetDataLength(const RawAddress& remote_device,
  ******************************************************************************/
 void BTA_DmSetEncryption(const RawAddress& bd_addr, tBTA_TRANSPORT transport,
                          tBTA_DM_ENCRYPT_CBACK* p_callback,
-                         tBTA_DM_BLE_SEC_ACT sec_act) {
+                         tBTM_BLE_SEC_ACT sec_act) {
   APPL_TRACE_API("%s", __func__);
   do_in_main_thread(FROM_HERE, base::Bind(bta_dm_set_encryption, bd_addr,
                                           transport, p_callback, sec_act));

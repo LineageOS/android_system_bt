@@ -730,7 +730,6 @@ typedef void(tBTA_DM_ENCRYPT_CBACK)(const RawAddress& bd_addr,
 #define BTA_DM_BLE_SEC_ENCRYPT BTM_BLE_SEC_ENCRYPT
 #define BTA_DM_BLE_SEC_NO_MITM BTM_BLE_SEC_ENCRYPT_NO_MITM
 #define BTA_DM_BLE_SEC_MITM BTM_BLE_SEC_ENCRYPT_MITM
-typedef tBTM_BLE_SEC_ACT tBTA_DM_BLE_SEC_ACT;
 
 typedef tBTM_BLE_TX_TIME_MS tBTA_DM_BLE_TX_TIME_MS;
 typedef tBTM_BLE_RX_TIME_MS tBTA_DM_BLE_RX_TIME_MS;
@@ -1441,7 +1440,7 @@ extern void BTA_DmDiscoverByTransport(const RawAddress& bd_addr,
 extern void BTA_DmSetEncryption(const RawAddress& bd_addr,
                                 tBTA_TRANSPORT transport,
                                 tBTA_DM_ENCRYPT_CBACK* p_callback,
-                                tBTA_DM_BLE_SEC_ACT sec_act);
+                                tBTM_BLE_SEC_ACT sec_act);
 
 /*******************************************************************************
  *

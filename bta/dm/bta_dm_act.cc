@@ -3544,7 +3544,7 @@ void bta_dm_encrypt_cback(const RawAddress* bd_addr, tBT_TRANSPORT transport,
 /**This function to encrypt the link */
 void bta_dm_set_encryption(const RawAddress& bd_addr, tBTA_TRANSPORT transport,
                            tBTA_DM_ENCRYPT_CBACK* p_callback,
-                           tBTA_DM_BLE_SEC_ACT sec_act) {
+                           tBTM_BLE_SEC_ACT sec_act) {
   uint8_t i;
 
   APPL_TRACE_DEBUG("bta_dm_set_encryption");  // todo
