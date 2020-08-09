@@ -1641,19 +1641,6 @@ uint8_t* BTM_ReadRemoteFeatures(const RawAddress& addr) {
 
 /*******************************************************************************
  *
- * Function         BTM_RegBusyLevelNotif
- *
- * Description      This function is called to register a callback to receive
- *                  busy level change events.
- *
- ******************************************************************************/
-void BTM_RegBusyLevelNotif(tBTM_BL_CHANGE_CB* p_cb) {
-  BTM_TRACE_DEBUG("BTM_RegBusyLevelNotif");
-  btm_cb.acl_cb_.p_bl_changed_cb = p_cb;
-}
-
-/*******************************************************************************
- *
  * Function         BTM_ReadRSSI
  *
  * Description      This function is called to read the link policy settings.
