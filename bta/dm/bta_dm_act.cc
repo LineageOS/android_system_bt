@@ -603,14 +603,8 @@ void bta_dm_set_visibility(tBTA_DM_DISC disc_mode_param,
                         bta_dm_cb.conn_paired_only);
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_process_remove_device
- *
- * Description      Removes device, Disconnects ACL link if required.
- ***
- ******************************************************************************/
-void bta_dm_process_remove_device(const RawAddress& bd_addr) {
+static void bta_dm_process_remove_device_no_callback(
+    const RawAddress& bd_addr) {
   /* need to remove all pending background connection before unpair */
   BTA_GATTC_CancelOpen(0, bd_addr, false);
 
@@ -618,6 +612,10 @@ void bta_dm_process_remove_device(const RawAddress& bd_addr) {
 
   /* remove all cached GATT information */
   BTA_GATTC_Refresh(bd_addr);
+}
+
+void bta_dm_process_remove_device(const RawAddress& bd_addr) {
+  bta_dm_process_remove_device_no_callback(bd_addr);
 
   if (bta_dm_cb.p_sec_cback) {
     tBTA_DM_SEC sec_event;
@@ -778,13 +776,7 @@ void bta_dm_close_acl(const RawAddress& bd_addr, bool remove_dev,
   }
   /* if to remove the device from security database ? do it now */
   else if (remove_dev) {
-    if (!BTM_SecDeleteDevice(bd_addr)) {
-      APPL_TRACE_ERROR("delete device from security database failed.");
-    }
-    /* need to remove all pending background connection if any */
-    BTA_GATTC_CancelOpen(0, bd_addr, false);
-    /* remove all cached GATT information */
-    BTA_GATTC_Refresh(bd_addr);
+    bta_dm_process_remove_device_no_callback(bd_addr);
   }
   /* otherwise, no action needed */
 }
@@ -2814,11 +2806,7 @@ static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
       }
     }
     if (remove_device) {
-      BTM_SecDeleteDevice(bd_addr);
-      /* need to remove all pending background connection */
-      BTA_GATTC_CancelOpen(0, bd_addr, false);
-      /* remove all cached GATT information */
-      BTA_GATTC_Refresh(bd_addr);
+      bta_dm_process_remove_device_no_callback(bd_addr);
     }
 
     conn.link_down.bd_addr = bd_addr;
@@ -3088,11 +3076,7 @@ static void bta_dm_remove_sec_dev_entry(const RawAddress& remote_bd_addr) {
     // remote_bd_addr comes from security record, which is removed in
     // BTM_SecDeleteDevice.
     RawAddress addr_copy = remote_bd_addr;
-    BTM_SecDeleteDevice(addr_copy);
-    /* need to remove all pending background connection */
-    BTA_GATTC_CancelOpen(0, addr_copy, false);
-    /* remove all cached GATT information */
-    BTA_GATTC_Refresh(addr_copy);
+    bta_dm_process_remove_device_no_callback(addr_copy);
   }
 }
 
