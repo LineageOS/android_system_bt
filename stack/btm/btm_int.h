@@ -85,7 +85,7 @@ extern void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
 extern void btm_acl_removed(const RawAddress& bda, tBT_TRANSPORT transport);
 extern void btm_acl_device_down(void);
 extern void btm_acl_set_paging(bool value);
-extern void btm_acl_update_busy_level(tBTM_BLI_EVENT event);
+extern void btm_acl_update_inquiry_status(uint8_t state);
 
 extern void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec,
                              uint8_t hci_status);
