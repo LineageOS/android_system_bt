@@ -315,9 +315,6 @@ void btm_ble_refresh_peer_resolvable_private_addr(const RawAddress& pseudo_bda,
                                                   const RawAddress& rpa,
                                                   uint8_t rra_type) {
 #if (BLE_PRIVACY_SPT == TRUE)
-  uint8_t rra_dummy = false;
-  if (rpa.IsEmpty()) rra_dummy = true;
-
   /* update security record here, in adv event or connection complete process */
   tBTM_SEC_DEV_REC* p_sec_rec = btm_find_dev(pseudo_bda);
   if (p_sec_rec != NULL) {
@@ -326,7 +323,7 @@ void btm_ble_refresh_peer_resolvable_private_addr(const RawAddress& pseudo_bda,
     /* unknown, if dummy address, set to static */
     if (rra_type == BTM_BLE_ADDR_PSEUDO)
       p_sec_rec->ble.active_addr_type =
-          rra_dummy ? BTM_BLE_ADDR_STATIC : BTM_BLE_ADDR_RRA;
+          rpa.IsEmpty() ? BTM_BLE_ADDR_STATIC : BTM_BLE_ADDR_RRA;
     else
       p_sec_rec->ble.active_addr_type = rra_type;
   } else {
@@ -345,7 +342,7 @@ void btm_ble_refresh_peer_resolvable_private_addr(const RawAddress& pseudo_bda,
   if (p_acl != NULL) {
     if (rra_type == BTM_BLE_ADDR_PSEUDO) {
       /* use identity address, resolvable_private_addr is empty */
-      if (rra_dummy) {
+      if (rpa.IsEmpty()) {
         p_acl->active_remote_addr_type = p_sec_rec->ble.identity_addr_type;
         p_acl->active_remote_addr = p_sec_rec->ble.identity_addr;
       } else {
