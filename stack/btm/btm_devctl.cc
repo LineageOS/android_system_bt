@@ -192,7 +192,7 @@ static void reset_complete(void* result) {
 
   btm_pm_reset();
 
-  l2c_link_processs_num_bufs(controller->get_acl_buffer_count_classic());
+  l2c_link_init();
 
   // setup the random number generator
   std::srand(std::time(nullptr));

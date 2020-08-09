@@ -23,7 +23,7 @@
 
 extern void l2cu_set_non_flushable_pbf(bool is_supported);
 
-extern void l2c_link_processs_num_bufs(uint16_t num_lm_acl_bufs);
+extern void l2c_link_init();
 
 extern void l2c_link_processs_ble_num_bufs(uint16_t num_lm_acl_bufs);
 
