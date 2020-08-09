@@ -622,9 +622,6 @@ void bta_dm_process_remove_device(const RawAddress& bd_addr) {
   if (bta_dm_cb.p_sec_cback) {
     tBTA_DM_SEC sec_event;
     sec_event.link_down.bd_addr = bd_addr;
-    ;
-    /* No connection, set status to success (acl disc code not valid) */
-    sec_event.link_down.status = HCI_SUCCESS;
     bta_dm_cb.p_sec_cback(BTA_DM_DEV_UNPAIRED_EVT, &sec_event);
   }
 }
@@ -2723,6 +2720,7 @@ static tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
 static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
                               tBT_TRANSPORT transport, uint16_t handle) {
   bool issue_unpair_cb = false;
+  bool remove_device = false;
 
   tBTA_DM_SEC conn;
   memset(&conn, 0, sizeof(tBTA_DM_SEC));
@@ -2770,7 +2768,7 @@ static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
                          issue_unpair_cb);
       }
 
-      conn.link_down.is_removed = device->remove_dev_pending;
+      remove_device = device->remove_dev_pending;
 
       // Iterate to the one before the last when shrinking the list,
       // otherwise we memcpy garbage data into the record.
@@ -2788,9 +2786,9 @@ static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
       break;
     }
     if (bta_dm_cb.device_list.count) bta_dm_cb.device_list.count--;
-    if ((transport == BT_TRANSPORT_LE) && (bta_dm_cb.device_list.le_count))
+    if ((transport == BT_TRANSPORT_LE) && (bta_dm_cb.device_list.le_count)) {
       bta_dm_cb.device_list.le_count--;
-    conn.link_down.link_type = transport;
+    }
 
     if ((transport == BT_TRANSPORT_BR_EDR) &&
         (bta_dm_search_cb.wait_disc &&
@@ -2815,7 +2813,7 @@ static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
                            bta_dm_disable_conn_down_timer_cback, NULL);
       }
     }
-    if (conn.link_down.is_removed) {
+    if (remove_device) {
       BTM_SecDeleteDevice(bd_addr);
       /* need to remove all pending background connection */
       BTA_GATTC_CancelOpen(0, bd_addr, false);
@@ -2824,7 +2822,6 @@ static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
     }
 
     conn.link_down.bd_addr = bd_addr;
-    conn.link_down.status = (uint8_t)btm_get_acl_disc_reason_code();
     if (bta_dm_cb.p_sec_cback) {
       bta_dm_cb.p_sec_cback(BTA_DM_LINK_DOWN_EVT, &conn);
       if (issue_unpair_cb)
