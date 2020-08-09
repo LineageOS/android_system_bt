@@ -2564,9 +2564,6 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
        * auth_complete_callback */
       break;
 
-    case BTM_SP_KEYPRESS_EVT:
-      break;
-
     default:
       status = BTM_NOT_AUTHORIZED;
       break;
