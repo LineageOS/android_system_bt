@@ -129,8 +129,6 @@ typedef struct {
 } tBTM_INQ_TXPWR_RESULT;
 
 enum {
-  BTM_BL_CONN_EVT,
-  BTM_BL_DISCN_EVT,
   BTM_BL_ROLE_CHG_EVT,
   BTM_BL_COLLISION_EVT
 };
@@ -152,14 +150,6 @@ typedef struct {
   tBT_TRANSPORT transport; /* link is LE or not */
 } tBTM_BL_CONN_DATA;
 
-/* the data type associated with BTM_BL_DISCN_EVT */
-typedef struct {
-  tBTM_BL_EVENT event;     /* The event reported. */
-  const RawAddress* p_bda; /* The address of the disconnected device */
-  uint16_t handle;         /* disconnected connection handle */
-  tBT_TRANSPORT transport; /* link is LE link or not */
-} tBTM_BL_DISCN_DATA;
-
 #define BTM_INQUIRY_STARTED 1
 #define BTM_INQUIRY_CANCELLED 2
 #define BTM_INQUIRY_COMPLETE 3
@@ -174,7 +164,6 @@ typedef struct {
 typedef union {
   tBTM_BL_EVENT event;        /* The event reported. */
   tBTM_BL_CONN_DATA conn;     /* The data associated with BTM_BL_CONN_EVT */
-  tBTM_BL_DISCN_DATA discn;   /* The data associated with BTM_BL_DISCN_EVT */
   tBTM_BL_ROLE_CHG_DATA
       role_chg; /*The data associated with BTM_BL_ROLE_CHG_EVT */
 } tBTM_BL_EVENT_DATA;
