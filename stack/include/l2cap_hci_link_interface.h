@@ -21,7 +21,7 @@
 
 // This header contains functions for HCI-LinkManagement to invoke
 
-extern bool l2c_link_hci_conn_req(const RawAddress& bd_addr);
+extern void l2c_link_hci_conn_req(const RawAddress& bd_addr);
 
 extern void l2c_link_process_num_completed_pkts(uint8_t* p, uint8_t evt_len);
 
