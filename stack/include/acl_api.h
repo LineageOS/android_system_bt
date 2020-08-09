@@ -247,3 +247,5 @@ void btm_set_packet_types_from_address(const RawAddress& bda,
                                        uint16_t pkt_types);
 
 bool lmp_version_below(const RawAddress& bda, uint8_t version);
+
+bool acl_is_role_master(const RawAddress& remote_bda, tBT_TRANSPORT transport);
