@@ -2678,6 +2678,12 @@ static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
   bta_sys_notify_role_chg(bd_addr, new_role, hci_status);
 }
 
+void BTA_dm_report_role_change(const RawAddress bd_addr, uint8_t new_role,
+                               uint8_t hci_status) {
+  do_in_main_thread(
+      FROM_HERE, base::Bind(handle_role_change, bd_addr, new_role, hci_status));
+}
+
 static tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
                                                 tBT_TRANSPORT transport,
                                                 uint16_t handle) {
@@ -2832,13 +2838,6 @@ void BTA_dm_acl_down(const RawAddress bd_addr, tBT_TRANSPORT transport) {
 /** Callback from btm when acl connection goes up or down */
 static void bta_dm_bl_change_cback(tBTM_BL_EVENT_DATA* p_data) {
   switch (p_data->event) {
-    case BTM_BL_ROLE_CHG_EVT: {
-      const auto& tmp = p_data->role_chg;
-      do_in_main_thread(FROM_HERE, base::Bind(handle_role_change, *tmp.p_bda,
-                                              tmp.new_role, tmp.hci_status));
-      return;
-    }
-
     case BTM_BL_COLLISION_EVT:
       /* Collision report from Stack: Notify profiles */
       do_in_main_thread(
