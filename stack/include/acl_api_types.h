@@ -131,7 +131,6 @@ typedef struct {
 enum {
   BTM_BL_CONN_EVT,
   BTM_BL_DISCN_EVT,
-  BTM_BL_UPDATE_EVT,
   BTM_BL_ROLE_CHG_EVT,
   BTM_BL_COLLISION_EVT
 };
@@ -161,18 +160,9 @@ typedef struct {
   tBT_TRANSPORT transport; /* link is LE link or not */
 } tBTM_BL_DISCN_DATA;
 
-/* Busy-Level shall have the inquiry_paging mask set when
- * inquiry/paging is in progress, Else the number of ACL links */
-#define BTM_BL_INQUIRY_PAGING_MASK 0x10
-#define BTM_BL_INQUIRY_STARTED (BTM_BL_INQUIRY_PAGING_MASK | 0x1)
-#define BTM_BL_INQUIRY_CANCELLED (BTM_BL_INQUIRY_PAGING_MASK | 0x2)
-#define BTM_BL_INQUIRY_COMPLETE (BTM_BL_INQUIRY_PAGING_MASK | 0x3)
-/* the data type associated with BTM_BL_UPDATE_EVT */
-typedef struct {
-  tBTM_BL_EVENT event;      /* The event reported. */
-  uint8_t busy_level_flags; /* Notifies actual inquiry/page activities */
-} tBTM_BL_UPDATE_DATA;
-
+#define BTM_BL_INQUIRY_STARTED 1
+#define BTM_BL_INQUIRY_CANCELLED 2
+#define BTM_BL_INQUIRY_COMPLETE 3
 /* the data type associated with BTM_BL_ROLE_CHG_EVT */
 typedef struct {
   tBTM_BL_EVENT event;     /* The event reported. */
@@ -185,7 +175,6 @@ typedef union {
   tBTM_BL_EVENT event;        /* The event reported. */
   tBTM_BL_CONN_DATA conn;     /* The data associated with BTM_BL_CONN_EVT */
   tBTM_BL_DISCN_DATA discn;   /* The data associated with BTM_BL_DISCN_EVT */
-  tBTM_BL_UPDATE_DATA update; /* The data associated with BTM_BL_UPDATE_EVT */
   tBTM_BL_ROLE_CHG_DATA
       role_chg; /*The data associated with BTM_BL_ROLE_CHG_EVT */
 } tBTM_BL_EVENT_DATA;
