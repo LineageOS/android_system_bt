@@ -2709,113 +2709,117 @@ static tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
   return nullptr;
 }
 
-static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
-                              tBT_TRANSPORT transport, uint16_t handle) {
+static void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport,
+                          uint16_t handle) {
+  tBTA_DM_SEC conn;
+  memset(&conn, 0, sizeof(tBTA_DM_SEC));
+
+  auto device = allocate_device_for(bd_addr, transport, handle);
+  if (device == nullptr) {
+    APPL_TRACE_ERROR("%s max active connection reached, no resources",
+                     __func__);
+    return;
+  }
+  device->conn_state = BTA_DM_CONNECTED;
+  device->pref_role = BTA_ANY_ROLE;
+  conn.link_up.bd_addr = bd_addr;
+  device->info = BTA_DM_DI_NONE;
+  device->transport = transport;
+
+  const controller_t* controller = controller_get_interface();
+  uint8_t* p;
+  if (controller->supports_sniff_subrating() &&
+      ((NULL != (p = BTM_ReadRemoteFeatures(bd_addr))) &&
+       HCI_SNIFF_SUB_RATE_SUPPORTED(p))) {
+    /* both local and remote devices support SSR */
+    device->info = BTA_DM_DI_USE_SSR;
+  }
+  APPL_TRACE_WARNING("%s info: 0x%x", __func__, device->info);
+
+  if (bta_dm_cb.p_sec_cback) {
+    bta_dm_cb.p_sec_cback(BTA_DM_LINK_UP_EVT, &conn);
+  }
+
+  bta_dm_adjust_roles(true);
+}
+
+static void bta_dm_acl_down(const RawAddress& bd_addr, tBT_TRANSPORT transport,
+                            uint16_t handle) {
   bool issue_unpair_cb = false;
   bool remove_device = false;
 
   tBTA_DM_SEC conn;
   memset(&conn, 0, sizeof(tBTA_DM_SEC));
 
-  if (is_new) {
-    auto device = allocate_device_for(bd_addr, transport, handle);
-    if (device == nullptr) {
-      APPL_TRACE_ERROR("%s max active connection reached, no resources",
-                       __func__);
-      return;
-    }
-    device->conn_state = BTA_DM_CONNECTED;
-    device->pref_role = BTA_ANY_ROLE;
-    conn.link_up.bd_addr = bd_addr;
-    device->info = BTA_DM_DI_NONE;
-    device->transport = transport;
+  for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
+    auto device = &bta_dm_cb.device_list.peer_device[i];
+    if (device->peer_bdaddr != bd_addr || device->transport != transport)
+      continue;
 
-    const controller_t* controller = controller_get_interface();
-    uint8_t* p;
-    if (controller->supports_sniff_subrating() &&
-        ((NULL != (p = BTM_ReadRemoteFeatures(bd_addr))) &&
-         HCI_SNIFF_SUB_RATE_SUPPORTED(p))) {
-      /* both local and remote devices support SSR */
-      device->info = BTA_DM_DI_USE_SSR;
-    }
-    APPL_TRACE_WARNING("%s info: 0x%x", __func__, device->info);
-
-    if (bta_dm_cb.p_sec_cback) {
-      bta_dm_cb.p_sec_cback(BTA_DM_LINK_UP_EVT, &conn);
-    }
-  } else {
-    for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
-      auto device = &bta_dm_cb.device_list.peer_device[i];
-      if (device->peer_bdaddr != bd_addr || device->transport != transport)
-        continue;
-
-      if (device->conn_state == BTA_DM_UNPAIRING) {
-        if (BTM_SecDeleteDevice(device->peer_bdaddr)) {
-          issue_unpair_cb = true;
-        }
-
-        /* remove all cached GATT information */
-        BTA_GATTC_Refresh(bd_addr);
-
-        APPL_TRACE_DEBUG("%s: Unpairing: issue unpair CB = %d ", __func__,
-                         issue_unpair_cb);
+    if (device->conn_state == BTA_DM_UNPAIRING) {
+      if (BTM_SecDeleteDevice(device->peer_bdaddr)) {
+        issue_unpair_cb = true;
       }
 
-      remove_device = device->remove_dev_pending;
+      /* remove all cached GATT information */
+      BTA_GATTC_Refresh(bd_addr);
 
-      // Iterate to the one before the last when shrinking the list,
-      // otherwise we memcpy garbage data into the record.
-      // Then clear out the last item in the list since we are shrinking.
-      for (; i < bta_dm_cb.device_list.count - 1; i++) {
-        memcpy(&bta_dm_cb.device_list.peer_device[i],
-               &bta_dm_cb.device_list.peer_device[i + 1],
-               sizeof(bta_dm_cb.device_list.peer_device[i]));
-      }
-      if (bta_dm_cb.device_list.count > 0) {
-        int clear_index = bta_dm_cb.device_list.count - 1;
-        memset(&bta_dm_cb.device_list.peer_device[clear_index], 0,
-               sizeof(bta_dm_cb.device_list.peer_device[clear_index]));
-      }
-      break;
-    }
-    if (bta_dm_cb.device_list.count) bta_dm_cb.device_list.count--;
-    if ((transport == BT_TRANSPORT_LE) && (bta_dm_cb.device_list.le_count)) {
-      bta_dm_cb.device_list.le_count--;
+      APPL_TRACE_DEBUG("%s: Unpairing: issue unpair CB = %d ", __func__,
+                       issue_unpair_cb);
     }
 
-    if ((transport == BT_TRANSPORT_BR_EDR) &&
-        (bta_dm_search_cb.wait_disc &&
-         bta_dm_search_cb.peer_bdaddr == bd_addr)) {
-      bta_dm_search_cb.wait_disc = false;
+    remove_device = device->remove_dev_pending;
 
-      if (bta_dm_search_cb.sdp_results) {
-        APPL_TRACE_EVENT(" timer stopped  ");
-        alarm_cancel(bta_dm_search_cb.search_timer);
-        bta_dm_discover_next_device();
-      }
+    // Iterate to the one before the last when shrinking the list,
+    // otherwise we memcpy garbage data into the record.
+    // Then clear out the last item in the list since we are shrinking.
+    for (; i < bta_dm_cb.device_list.count - 1; i++) {
+      memcpy(&bta_dm_cb.device_list.peer_device[i],
+             &bta_dm_cb.device_list.peer_device[i + 1],
+             sizeof(bta_dm_cb.device_list.peer_device[i]));
     }
+    if (bta_dm_cb.device_list.count > 0) {
+      int clear_index = bta_dm_cb.device_list.count - 1;
+      memset(&bta_dm_cb.device_list.peer_device[clear_index], 0,
+             sizeof(bta_dm_cb.device_list.peer_device[clear_index]));
+    }
+    break;
+  }
+  if (bta_dm_cb.device_list.count) bta_dm_cb.device_list.count--;
+  if ((transport == BT_TRANSPORT_LE) && (bta_dm_cb.device_list.le_count)) {
+    bta_dm_cb.device_list.le_count--;
+  }
 
-    if (bta_dm_cb.disabling) {
-      if (!BTM_GetNumAclLinks()) {
-        /*
-         * Start a timer to make sure that the profiles
-         * get the disconnect event.
-         */
-        alarm_set_on_mloop(bta_dm_cb.disable_timer,
-                           BTA_DM_DISABLE_CONN_DOWN_TIMER_MS,
-                           bta_dm_disable_conn_down_timer_cback, NULL);
-      }
-    }
-    if (remove_device) {
-      bta_dm_process_remove_device_no_callback(bd_addr);
-    }
+  if ((transport == BT_TRANSPORT_BR_EDR) &&
+      (bta_dm_search_cb.wait_disc && bta_dm_search_cb.peer_bdaddr == bd_addr)) {
+    bta_dm_search_cb.wait_disc = false;
 
-    conn.link_down.bd_addr = bd_addr;
-    if (bta_dm_cb.p_sec_cback) {
-      bta_dm_cb.p_sec_cback(BTA_DM_LINK_DOWN_EVT, &conn);
-      if (issue_unpair_cb)
-        bta_dm_cb.p_sec_cback(BTA_DM_DEV_UNPAIRED_EVT, &conn);
+    if (bta_dm_search_cb.sdp_results) {
+      APPL_TRACE_EVENT(" timer stopped  ");
+      alarm_cancel(bta_dm_search_cb.search_timer);
+      bta_dm_discover_next_device();
     }
+  }
+
+  if (bta_dm_cb.disabling) {
+    if (!BTM_GetNumAclLinks()) {
+      /*
+       * Start a timer to make sure that the profiles
+       * get the disconnect event.
+       */
+      alarm_set_on_mloop(bta_dm_cb.disable_timer,
+                         BTA_DM_DISABLE_CONN_DOWN_TIMER_MS,
+                         bta_dm_disable_conn_down_timer_cback, NULL);
+    }
+  }
+  if (remove_device) {
+    bta_dm_process_remove_device_no_callback(bd_addr);
+  }
+
+  conn.link_down.bd_addr = bd_addr;
+  if (bta_dm_cb.p_sec_cback) {
+    bta_dm_cb.p_sec_cback(BTA_DM_LINK_DOWN_EVT, &conn);
+    if (issue_unpair_cb) bta_dm_cb.p_sec_cback(BTA_DM_DEV_UNPAIRED_EVT, &conn);
   }
 
   bta_dm_adjust_roles(true);
@@ -2827,13 +2831,13 @@ static void bta_dm_bl_change_cback(tBTM_BL_EVENT_DATA* p_data) {
     case BTM_BL_CONN_EVT:
       /* connection up */
       do_in_main_thread(
-          FROM_HERE, base::Bind(bta_dm_acl_change, true, *p_data->conn.p_bda,
+          FROM_HERE, base::Bind(bta_dm_acl_up, *p_data->conn.p_bda,
                                 p_data->conn.transport, p_data->conn.handle));
       break;
     case BTM_BL_DISCN_EVT:
       /* connection down */
       do_in_main_thread(
-          FROM_HERE, base::Bind(bta_dm_acl_change, false, *p_data->discn.p_bda,
+          FROM_HERE, base::Bind(bta_dm_acl_down, *p_data->discn.p_bda,
                                 p_data->discn.transport, p_data->discn.handle));
       break;
 
