@@ -561,13 +561,6 @@ typedef struct {
   uint8_t mask; /* registered request mask. 0, if this entry is not used */
 } tBTM_PM_RCB;
 
-enum {
-  BTM_BLI_INQ_EVT,
-  BTM_BLI_INQ_CANCEL_EVT,
-  BTM_BLI_INQ_DONE_EVT
-};
-typedef uint8_t tBTM_BLI_EVENT;
-
 /* Pairing State */
 enum {
   BTM_PAIR_STATE_IDLE, /* Idle                                         */
