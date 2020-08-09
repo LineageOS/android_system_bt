@@ -748,20 +748,11 @@ void l2c_link_adjust_chnl_allocation(void) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         l2c_link_processs_num_bufs
- *
- * Description      This function is called when a "controller buffer size"
- *                  event is first received from the controller. It updates
- *                  the L2CAP values.
- *
- * Returns          void
- *
- ******************************************************************************/
-void l2c_link_processs_num_bufs(uint16_t num_lm_acl_bufs) {
-  l2cb.num_lm_acl_bufs = num_lm_acl_bufs;
-  l2cb.controller_xmit_window = num_lm_acl_bufs;
+void l2c_link_init() {
+  const controller_t* controller = controller_get_interface();
+
+  l2cb.num_lm_acl_bufs = controller->get_acl_buffer_count_classic();
+  l2cb.controller_xmit_window = controller->get_acl_buffer_count_classic();
 }
 
 /*******************************************************************************
