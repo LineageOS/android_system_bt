@@ -67,9 +67,6 @@ void bta_sys_init(void) {
 
   appl_trace_level = APPL_INITIAL_TRACE_LEVEL;
 
-  /* register for BTM notifications */
-  BTM_RegisterForDeviceStatusNotif(&bta_sys_hw_btm_cback);
-
 #if (defined BTA_AR_INCLUDED) && (BTA_AR_INCLUDED == TRUE)
   bta_ar_init();
 #endif
@@ -182,26 +179,6 @@ void bta_sys_hw_register(tBTA_SYS_HW_CBACK* cback) {
 }
 
 void bta_sys_hw_unregister() { bta_sys_cb.sys_hw_cback = NULL; }
-
-/*******************************************************************************
- *
- * Function         bta_sys_hw_btm_cback
- *
- * Description     This function is registered by BTA SYS to BTM in order to get
- *                 status notifications
- *
- *
- * Returns
- *
- ******************************************************************************/
-void bta_sys_hw_btm_cback(tBTM_DEV_STATUS status) {
-  APPL_TRACE_DEBUG("%s was called with parameter: %i", __func__, status);
-  if (status == BTM_DEV_STATUS_UP) {
-    send_bta_sys_hw_event(BTA_SYS_EVT_STACK_ENABLED_EVT);
-  } else if (status == BTM_DEV_STATUS_DOWN) {
-    send_bta_sys_hw_event(BTA_SYS_ERROR_EVT);
-  }
-}
 
 /*******************************************************************************
  *

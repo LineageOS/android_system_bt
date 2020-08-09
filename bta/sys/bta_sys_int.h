@@ -86,7 +86,6 @@ typedef struct {
 extern tBTA_SYS_CB bta_sys_cb;
 
 /* functions used for BTA SYS HW state machine */
-void bta_sys_hw_btm_cback(tBTM_DEV_STATUS status);
 void bta_sys_hw_error();
 void bta_sys_hw_api_enable();
 void bta_sys_hw_api_disable();
