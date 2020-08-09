@@ -271,12 +271,7 @@ void bta_dm_enable(tBTA_DM_SEC_CBACK* p_sec_cback) {
   /* notify BTA DM is now active */
   bta_dm_cb.is_bta_dm_active = true;
 
-  /* send a message to BTA SYS */
-  tBTA_SYS_HW_MSG* sys_enable_event =
-      (tBTA_SYS_HW_MSG*)osi_malloc(sizeof(tBTA_SYS_HW_MSG));
-  sys_enable_event->hdr.event = BTA_SYS_API_ENABLE_EVT;
-
-  bta_sys_sendmsg(sys_enable_event);
+  send_bta_sys_hw_event(BTA_SYS_API_ENABLE_EVT);
 
   btm_local_io_caps = btif_storage_get_local_io_caps();
 }
@@ -2853,18 +2848,12 @@ static bool bta_dm_check_av(uint16_t event) {
  *
  ******************************************************************************/
 static void bta_dm_disable_conn_down_timer_cback(UNUSED_ATTR void* data) {
-  tBTA_SYS_HW_MSG* sys_enable_event =
-      (tBTA_SYS_HW_MSG*)osi_malloc(sizeof(tBTA_SYS_HW_MSG));
-
   /* disable the power managment module */
   bta_dm_disable_pm();
 
   /* register our callback to SYS HW manager */
   bta_sys_hw_register(bta_dm_sys_hw_cback);
-
-  /* send a message to BTA SYS */
-  sys_enable_event->hdr.event = BTA_SYS_API_DISABLE_EVT;
-  bta_sys_sendmsg(sys_enable_event);
+  send_bta_sys_hw_event(BTA_SYS_API_DISABLE_EVT);
 
   bta_dm_cb.disabling = false;
 }

@@ -145,11 +145,6 @@ typedef struct {
   tBTA_SYS_DISABLE* disable;
 } tBTA_SYS_REG;
 
-/* data type to send events to BTA SYS HW manager */
-typedef struct {
-  BT_HDR hdr;
-} tBTA_SYS_HW_MSG;
-
 typedef void (*tBTA_SYS_REGISTER)(uint8_t id, const tBTA_SYS_REG* p_reg);
 
 /*****************************************************************************
@@ -208,6 +203,7 @@ extern void bta_sys_set_trace_level(uint8_t level);
 extern void bta_sys_register(uint8_t id, const tBTA_SYS_REG* p_reg);
 extern void bta_sys_deregister(uint8_t id);
 extern bool bta_sys_is_register(uint8_t id);
+extern void send_bta_sys_hw_event(tBTA_SYS_HW_EVT event);
 extern void bta_sys_sendmsg(void* p_msg);
 extern void bta_sys_sendmsg_delayed(void* p_msg, const base::TimeDelta& delay);
 extern void bta_sys_start_timer(alarm_t* alarm, uint64_t interval_ms,

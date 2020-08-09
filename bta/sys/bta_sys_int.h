@@ -94,6 +94,4 @@ void bta_sys_hw_evt_enabled();
 void bta_sys_hw_evt_disabled();
 void bta_sys_hw_evt_stack_enabled();
 
-bool bta_sys_sm_execute(BT_HDR* p_msg);
-
 #endif /* BTA_SYS_INT_H */
