@@ -137,12 +137,3 @@ typedef uint8_t tBTM_BL_EVENT;
 #define BTM_INQUIRY_STARTED 1
 #define BTM_INQUIRY_CANCELLED 2
 #define BTM_INQUIRY_COMPLETE 3
-
-typedef union {
-  tBTM_BL_EVENT event;        /* The event reported. */
-} tBTM_BL_EVENT_DATA;
-
-/* Callback function for notifications when the BTM busy level
- * changes.
- */
-typedef void(tBTM_BL_CHANGE_CB)(tBTM_BL_EVENT_DATA* p_data);
