@@ -305,10 +305,10 @@ tGATT_STATUS gatts_db_read_attr_value_by_type(
         (type.As16Bit() == GATT_UUID_GAP_DEVICE_NAME)) {
       if ((flag & (BTM_SEC_LINK_KEY_KNOWN | BTM_SEC_FLAG_ENCRYPTED)) ==
           BTM_SEC_LINK_KEY_KNOWN) {
-        tACL_CONN* p = btm_bda_to_acl(tcb.peer_bda, BT_TRANSPORT_LE);
-        if ((p != NULL) && (p->link_role == HCI_ROLE_MASTER))
+        if (acl_is_role_master(tcb.peer_bda, BT_TRANSPORT_LE)) {
           btm_ble_set_encryption(tcb.peer_bda, BTM_BLE_SEC_ENCRYPT,
-                                 p->link_role);
+                                 HCI_ROLE_MASTER);
+        }
       }
     }
   }
