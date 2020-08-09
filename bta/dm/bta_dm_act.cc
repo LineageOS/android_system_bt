@@ -2556,29 +2556,6 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
       break;
 
     case BTM_SP_RMT_OOB_EVT:
-      /* If the device name is not known, save bdaddr and devclass and initiate
-       * a name request */
-      if (p_data->rmt_oob.bd_name[0] == 0) {
-        bta_dm_cb.pin_evt = BTA_DM_SP_RMT_OOB_EVT;
-        bta_dm_cb.pin_bd_addr = p_data->rmt_oob.bd_addr;
-        BTA_COPY_DEVICE_CLASS(bta_dm_cb.pin_dev_class,
-                              p_data->rmt_oob.dev_class);
-        if ((BTM_ReadRemoteDeviceName(p_data->rmt_oob.bd_addr,
-                                      bta_dm_pinname_cback,
-                                      BT_TRANSPORT_BR_EDR)) == BTM_CMD_STARTED)
-          return BTM_CMD_STARTED;
-        APPL_TRACE_WARNING(
-            " bta_dm_sp_cback() -> Failed to start Remote Name Request  ");
-      }
-
-      sec_event.rmt_oob.bd_addr = p_data->rmt_oob.bd_addr;
-      BTA_COPY_DEVICE_CLASS(sec_event.rmt_oob.dev_class,
-                            p_data->rmt_oob.dev_class);
-      strlcpy((char*)sec_event.rmt_oob.bd_name, (char*)p_data->rmt_oob.bd_name,
-              BD_NAME_LEN);
-
-      bta_dm_cb.p_sec_cback(BTA_DM_SP_RMT_OOB_EVT, &sec_event);
-
       bta_dm_co_rmt_oob(p_data->rmt_oob.bd_addr);
       break;
 
