@@ -350,9 +350,6 @@ typedef uint8_t tBTA_SIG_STRENGTH_MASK;
 #define BTA_DM_AUTHORIZE_EVT 4 /* Authorization request. */
 #define BTA_DM_LINK_UP_EVT 5   /* Connection UP event */
 #define BTA_DM_LINK_DOWN_EVT 6 /* Connection DOWN event */
-#define BTA_DM_SIG_STRENGTH_EVT                                             \
-  7                             /* Signal strength for bluetooth connection \
-                                   */
 #define BTA_DM_BOND_CANCEL_CMPL_EVT 9 /* Bond cancel complete indication */
 #define BTA_DM_SP_CFM_REQ_EVT                     \
   10 /* Simple Pairing User Confirmation request. \
