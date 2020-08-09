@@ -51,7 +51,7 @@ extern tINQ_DB_ENT* btm_inq_db_new(const RawAddress& p_bda);
 /**
  * Legacy bluetooth btm stack entry points
  */
-extern void btm_acl_update_busy_level(tBTM_BLI_EVENT event);
+extern void btm_acl_update_inquiry_status(uint8_t status);
 extern void btm_clear_all_pending_le_entry(void);
 extern void btm_clr_inq_result_flt(void);
 extern void btm_set_eir_uuid(uint8_t* p_eir, tBTM_INQ_RESULTS* p_results);
@@ -317,7 +317,7 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
                       __func__, status, inquiry_mode);
             btm_cb.btm_inq_vars.inqparms.mode &= ~(inquiry_mode);
 
-            btm_acl_update_busy_level(BTM_BLI_INQ_DONE_EVT);
+            btm_acl_update_inquiry_status(BTM_INQUIRY_COMPLETE);
             if (btm_cb.btm_inq_vars.inq_active) {
               btm_cb.btm_inq_vars.inq_cmpl_info.status = status;
               btm_clear_all_pending_le_entry();
@@ -360,7 +360,7 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
   btm_cb.btm_inq_vars.p_inq_results_cb = p_results_cb;
   btm_cb.btm_inq_vars.inq_active = p_inqparms->mode;
 
-  btm_acl_update_busy_level(BTM_BLI_INQ_EVT);
+  btm_acl_update_inquiry_status(BTM_INQUIRY_STARTED);
 
   return BTM_CMD_STARTED;
 }
@@ -450,7 +450,7 @@ tBTM_STATUS bluetooth::shim::BTM_BleObserve(bool start, uint8_t duration_sec,
             btm_cb.btm_inq_vars.inqparms.mode &= ~(BTM_BLE_INQUIRY_MASK);
             btm_cb.btm_inq_vars.scan_type = INQ_NONE;
 
-            btm_acl_update_busy_level(BTM_BLI_INQ_DONE_EVT);
+            btm_acl_update_inquiry_status(BTM_INQUIRY_COMPLETE);
 
             btm_clear_all_pending_le_entry();
             btm_cb.btm_inq_vars.state = BTM_INQ_INACTIVE_STATE;
@@ -599,7 +599,7 @@ tBTM_STATUS bluetooth::shim::BTM_CancelInquiry(void) {
   btm_cb.btm_inq_vars.inqparms.mode &=
       ~(btm_cb.btm_inq_vars.inqparms.mode & BTM_BLE_INQUIRY_MASK);
 
-  btm_acl_update_busy_level(BTM_BLI_INQ_DONE_EVT);
+  btm_acl_update_inquiry_status(BTM_INQUIRY_COMPLETE);
   /* Ignore any stray or late complete messages if the inquiry is not active */
   if (btm_cb.btm_inq_vars.inq_active) {
     btm_cb.btm_inq_vars.inq_cmpl_info.status = BTM_SUCCESS;
