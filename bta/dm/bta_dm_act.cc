@@ -2837,13 +2837,6 @@ void BTA_dm_acl_down(const RawAddress bd_addr, tBT_TRANSPORT transport) {
 
 /** Callback from btm when acl connection goes up or down */
 static void bta_dm_bl_change_cback(tBTM_BL_EVENT_DATA* p_data) {
-  switch (p_data->event) {
-    case BTM_BL_COLLISION_EVT:
-      /* Collision report from Stack: Notify profiles */
-      do_in_main_thread(
-          FROM_HERE, base::Bind(bta_sys_notify_collision, *p_data->conn.p_bda));
-      return;
-  }
 }
 
 /*******************************************************************************

@@ -34,6 +34,7 @@
 #define LOG_TAG "btm_acl"
 
 #include <cstdint>
+#include "bta/sys/bta_sys.h"
 #include "common/metrics.h"
 #include "device/include/controller.h"
 #include "device/include/interop.h"
@@ -2330,25 +2331,10 @@ void btm_acl_paging(BT_HDR* p, const RawAddress& bda) {
  *
  * Description      Send connection collision event to upper layer if registered
  *
- * Returns          true if sent out to upper layer,
- *                  false if no one needs the notification.
  *
  ******************************************************************************/
-bool btm_acl_notif_conn_collision(const RawAddress& bda) {
-  /* Report possible collision to the upper layer. */
-  if (btm_cb.acl_cb_.p_bl_changed_cb) {
-    VLOG(1) << __func__ << " RemBdAddr: " << bda;
-
-    tBTM_BL_EVENT_DATA evt_data;
-    evt_data.event = BTM_BL_COLLISION_EVT;
-    evt_data.conn.p_bda = &bda;
-    evt_data.conn.transport = BT_TRANSPORT_BR_EDR;
-    evt_data.conn.handle = BTM_INVALID_HCI_HANDLE;
-    (*btm_cb.acl_cb_.p_bl_changed_cb)(&evt_data);
-    return true;
-  } else {
-    return false;
-  }
+void btm_acl_notif_conn_collision(const RawAddress& bda) {
+  do_in_main_thread(FROM_HERE, base::Bind(bta_sys_notify_collision, bda));
 }
 
 /*******************************************************************************
