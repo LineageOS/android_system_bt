@@ -2559,11 +2559,6 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
       bta_dm_co_rmt_oob(p_data->rmt_oob.bd_addr);
       break;
 
-    case BTM_SP_COMPLT_EVT:
-      /* do not report this event - handled by link_key_callback or
-       * auth_complete_callback */
-      break;
-
     default:
       status = BTM_NOT_AUTHORIZED;
       break;
