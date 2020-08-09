@@ -3202,19 +3202,6 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, uint8_t* p) {
 
 /*******************************************************************************
  *
- * Function         btm_keypress_notif_evt
- *
- * Description      This function is called when a key press notification is
- *                  received
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_keypress_notif_evt(uint8_t* p) {
-}
-
-/*******************************************************************************
- *
  * Function         btm_simple_pair_complete
  *
  * Description      This function is called when simple pairing process is
