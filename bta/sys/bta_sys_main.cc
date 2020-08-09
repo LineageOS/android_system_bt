@@ -515,14 +515,3 @@ void bta_sys_disable() {
  *
  ******************************************************************************/
 void bta_sys_set_trace_level(uint8_t level) { appl_trace_level = level; }
-
-/*******************************************************************************
- *
- * Function         bta_sys_get_sys_features
- *
- * Description      Returns sys_features to other BTA modules.
- *
- * Returns          sys_features
- *
- ******************************************************************************/
-uint16_t bta_sys_get_sys_features(void) { return bta_sys_cb.sys_features; }
