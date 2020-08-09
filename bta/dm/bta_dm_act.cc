@@ -2728,7 +2728,6 @@ static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
     device->pref_role = BTA_ANY_ROLE;
     conn.link_up.bd_addr = bd_addr;
     device->info = BTA_DM_DI_NONE;
-    conn.link_up.link_type = transport;
     device->transport = transport;
 
     const controller_t* controller = controller_get_interface();
@@ -2741,7 +2740,9 @@ static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
     }
     APPL_TRACE_WARNING("%s info: 0x%x", __func__, device->info);
 
-    if (bta_dm_cb.p_sec_cback) bta_dm_cb.p_sec_cback(BTA_DM_LINK_UP_EVT, &conn);
+    if (bta_dm_cb.p_sec_cback) {
+      bta_dm_cb.p_sec_cback(BTA_DM_LINK_UP_EVT, &conn);
+    }
   } else {
     for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
       auto device = &bta_dm_cb.device_list.peer_device[i];
