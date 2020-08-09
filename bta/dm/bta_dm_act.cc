@@ -2831,16 +2831,13 @@ static void bta_dm_acl_down(const RawAddress& bd_addr,
   bta_dm_adjust_roles(true);
 }
 
+void BTA_dm_acl_down(const RawAddress bd_addr, tBT_TRANSPORT transport) {
+  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_acl_down, bd_addr, transport));
+}
+
 /** Callback from btm when acl connection goes up or down */
 static void bta_dm_bl_change_cback(tBTM_BL_EVENT_DATA* p_data) {
   switch (p_data->event) {
-    case BTM_BL_DISCN_EVT:
-      /* connection down */
-      do_in_main_thread(FROM_HERE,
-                        base::Bind(bta_dm_acl_down, *p_data->discn.p_bda,
-                                   p_data->discn.transport));
-      break;
-
     case BTM_BL_ROLE_CHG_EVT: {
       const auto& tmp = p_data->role_chg;
       do_in_main_thread(FROM_HERE, base::Bind(handle_role_change, *tmp.p_bda,
