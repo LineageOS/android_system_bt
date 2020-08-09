@@ -1641,6 +1641,22 @@ static void btif_dm_remote_service_record_evt(uint16_t event, char* p_param) {
   }
 }
 
+static void report_busy_level_change(uint8_t busy_level_flags) {
+  if (busy_level_flags == BTM_BL_INQUIRY_STARTED) {
+    HAL_CBACK(bt_hal_cbacks, discovery_state_changed_cb, BT_DISCOVERY_STARTED);
+    btif_dm_inquiry_in_progress = true;
+  } else if (busy_level_flags == BTM_BL_INQUIRY_CANCELLED) {
+    HAL_CBACK(bt_hal_cbacks, discovery_state_changed_cb, BT_DISCOVERY_STOPPED);
+    btif_dm_inquiry_in_progress = false;
+  } else if (busy_level_flags == BTM_BL_INQUIRY_COMPLETE) {
+    btif_dm_inquiry_in_progress = false;
+  }
+}
+
+void BTIF_dm_report_busy_level_change(uint8_t busy_level_flags) {
+  do_in_jni_thread(base::Bind(report_busy_level_change, busy_level_flags));
+}
+
 /*******************************************************************************
  *
  * Function         btif_dm_upstreams_cback
@@ -1755,22 +1771,6 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
       btif_storage_remove_bonded_device(&bd_addr);
       bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_NONE);
       break;
-
-    case BTA_DM_BUSY_LEVEL_EVT: {
-      if (p_data->busy_level.level_flags & BTM_BL_INQUIRY_PAGING_MASK) {
-        if (p_data->busy_level.level_flags == BTM_BL_INQUIRY_STARTED) {
-          HAL_CBACK(bt_hal_cbacks, discovery_state_changed_cb,
-                    BT_DISCOVERY_STARTED);
-          btif_dm_inquiry_in_progress = true;
-        } else if (p_data->busy_level.level_flags == BTM_BL_INQUIRY_CANCELLED) {
-          HAL_CBACK(bt_hal_cbacks, discovery_state_changed_cb,
-                    BT_DISCOVERY_STOPPED);
-          btif_dm_inquiry_in_progress = false;
-        } else if (p_data->busy_level.level_flags == BTM_BL_INQUIRY_COMPLETE) {
-          btif_dm_inquiry_in_progress = false;
-        }
-      }
-    } break;
 
     case BTA_DM_LINK_UP_EVT:
       bd_addr = p_data->link_up.bd_addr;
