@@ -79,6 +79,7 @@ static tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
 void BTIF_dm_report_inquiry_status_change(uint8_t busy_level_flags);
 void BTA_dm_acl_up(const RawAddress bd_addr, tBT_TRANSPORT transport,
                    uint16_t handle);
+void BTA_dm_acl_down(const RawAddress bd_addr, tBT_TRANSPORT transport);
 /* 3 seconds timeout waiting for responses */
 #define BTM_DEV_REPLY_TIMEOUT_MS (3 * 1000)
 
@@ -371,16 +372,7 @@ void btm_acl_removed(const RawAddress& bda, tBT_TRANSPORT transport) {
     /* Only notify if link up has had a chance to be issued */
     if (p->link_up_issued) {
       p->link_up_issued = false;
-
-      /* If anyone cares, indicate the database changed */
-      if (btm_cb.acl_cb_.p_bl_changed_cb) {
-        tBTM_BL_EVENT_DATA evt_data;
-        evt_data.event = BTM_BL_DISCN_EVT;
-        evt_data.discn.p_bda = &bda;
-        evt_data.discn.handle = p->hci_handle;
-        evt_data.discn.transport = p->transport;
-        (*btm_cb.acl_cb_.p_bl_changed_cb)(&evt_data);
-      }
+      BTA_dm_acl_down(bda, transport);
     }
 
     BTM_TRACE_DEBUG(
