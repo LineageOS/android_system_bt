@@ -2441,3 +2441,14 @@ void btm_pm_sm_alloc(uint8_t ind) {
   BTM_TRACE_DEBUG("btm_pm_sm_alloc ind:%d st:%d", ind, p_db->state);
 #endif  // BTM_PM_DEBUG
 }
+
+bool lmp_version_below(const RawAddress& bda, uint8_t version) {
+  tACL_CONN* acl = btm_bda_to_acl(bda, BT_TRANSPORT_LE);
+  if (acl == NULL || acl->lmp_version == 0) {
+    BTM_TRACE_WARNING("%s cannot retrieve LMP version...", __func__);
+    return false;
+  }
+  BTM_TRACE_WARNING("%s LMP version %d < %d", __func__, acl->lmp_version,
+                    version);
+  return acl->lmp_version < version;
+}
