@@ -94,6 +94,7 @@ bool IsCommandStatusOpcode(bluetooth::hci::OpCode op_code) {
     case bluetooth::hci::OpCode::LE_SET_PHY:
     case bluetooth::hci::OpCode::LE_EXTENDED_CREATE_CONNECTION:
     case bluetooth::hci::OpCode::LE_PERIODIC_ADVERTISING_CREATE_SYNC:
+    case bluetooth::hci::OpCode::ENHANCED_FLUSH:
       return true;
     default:
       return false;

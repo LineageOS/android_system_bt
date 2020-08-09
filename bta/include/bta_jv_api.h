@@ -76,8 +76,6 @@ typedef uint8_t tBTA_JV_STATUS;
 enum { BTA_JV_DISC_NONE, BTA_JV_DISC_LIMITED, BTA_JV_DISC_GENERAL };
 typedef uint16_t tBTA_JV_DISC;
 
-#define BTA_JV_ROLE_SLAVE BTM_ROLE_SLAVE
-#define BTA_JV_ROLE_MASTER BTM_ROLE_MASTER
 typedef uint32_t tBTA_JV_ROLE;
 
 #define BTA_JV_SERVICE_LMTD_DISCOVER                                       \

@@ -42,6 +42,7 @@
 #include "hcidefs.h"
 #include "hcimsgs.h"
 #include "osi/include/osi.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/l2cap_hci_link_interface.h"
 
 /*****************************************************************************/
@@ -362,25 +363,6 @@ void btm_pm_reset(void) {
 
   /* no command pending */
   btm_cb.acl_cb_.pm_pend_link = MAX_L2CAP_LINKS;
-}
-
-/*******************************************************************************
- *
- * Function         btm_pm_sm_alloc
- *
- * Description      This function initializes the control block of an ACL link.
- *                  It is called when an ACL connection is created.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_pm_sm_alloc(uint8_t ind) {
-  tBTM_PM_MCB* p_db = &btm_cb.pm_mode_db[ind]; /* per ACL link */
-  memset(p_db, 0, sizeof(tBTM_PM_MCB));
-  p_db->state = BTM_PM_ST_ACTIVE;
-#if (BTM_PM_DEBUG == TRUE)
-  BTM_TRACE_DEBUG("btm_pm_sm_alloc ind:%d st:%d", ind, p_db->state);
-#endif  // BTM_PM_DEBUG
 }
 
 /*******************************************************************************
@@ -896,8 +878,7 @@ bool btm_pm_device_in_scan_state(void) {
   /* Scan state-paging, inquiry, and trying to connect */
 
   /* Check for paging */
-  if (btm_cb.is_paging || (!fixed_queue_is_empty(btm_cb.page_queue)) ||
-      BTM_BL_PAGING_STARTED == btm_cb.busy_level) {
+  if (btm_cb.is_paging || !fixed_queue_is_empty(btm_cb.page_queue)) {
     BTM_TRACE_DEBUG("btm_pm_device_in_scan_state- paging");
     return true;
   }

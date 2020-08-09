@@ -37,6 +37,7 @@
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/l2cap_security_interface.h"
 
 #include "bt_types.h"
@@ -592,7 +593,7 @@ uint8_t BTM_SecClrService(uint8_t service_id) {
 
 /*******************************************************************************
  *
- * Function         btm_sec_clr_service_by_psm
+ * Function         BTM_SecClrServiceByPsm
  *
  * Description      Removes specified service record from the security database.
  *                  All service records with the specified psm are removed.
@@ -606,7 +607,7 @@ uint8_t BTM_SecClrService(uint8_t service_id) {
  * Returns          Number of records that were freed.
  *
  ******************************************************************************/
-uint8_t btm_sec_clr_service_by_psm(uint16_t psm) {
+uint8_t BTM_SecClrServiceByPsm(uint16_t psm) {
   tBTM_SEC_SERV_REC* p_srec = &btm_cb.sec_serv_rec[0];
   uint8_t num_freed = 0;
   int i;
@@ -619,15 +620,14 @@ uint8_t btm_sec_clr_service_by_psm(uint16_t psm) {
       num_freed++;
     }
   }
-  BTM_TRACE_API("btm_sec_clr_service_by_psm psm:0x%x num_freed:%d", psm,
-                num_freed);
+  BTM_TRACE_API("BTM_SecClrServiceByPsm psm:0x%x num_freed:%d", psm, num_freed);
 
   return (num_freed);
 }
 
 /*******************************************************************************
  *
- * Function         btm_sec_clr_temp_auth_service
+ * Function         BTM_SecClrTempAuthService
  *
  * Description      Removes specified device record's temporary authorization
  *                  flag from the security database.
@@ -637,12 +637,12 @@ uint8_t btm_sec_clr_service_by_psm(uint16_t psm) {
  * Returns          void.
  *
  ******************************************************************************/
-void btm_sec_clr_temp_auth_service(const RawAddress& bda) {
+void BTM_SecClrTempAuthService(const RawAddress& bda) {
   tBTM_SEC_DEV_REC* p_dev_rec;
 
   p_dev_rec = btm_find_dev(bda);
   if (p_dev_rec == NULL) {
-    BTM_TRACE_WARNING("btm_sec_clr_temp_auth_service() - no dev CB");
+    BTM_TRACE_WARNING("BTM_SecClrTempAuthService() - no dev CB");
     return;
   }
 
@@ -1623,28 +1623,13 @@ static void btm_sec_check_upgrade(tBTM_SEC_DEV_REC* p_dev_rec,
 
   if (btm_sec_is_upgrade_possible(p_dev_rec, is_originator)) {
     BTM_TRACE_DEBUG("need upgrade!! sec_flags:0x%x", p_dev_rec->sec_flags);
-    /* upgrade is possible: check if the application wants the upgrade.
-     * If the application is configured to use a global MITM flag,
-     * it probably would not want to upgrade the link key based on the security
-     * level database */
-    tBTM_SP_UPGRADE evt_data;
-    evt_data.bd_addr = p_dev_rec->bd_addr;
-    evt_data.upgrade = true;
-    if (btm_cb.api.p_sp_callback)
-      (*btm_cb.api.p_sp_callback)(BTM_SP_UPGRADE_EVT,
-                                  (tBTM_SP_EVT_DATA*)&evt_data);
+    /* if the application confirms the upgrade, set the upgrade bit */
+    p_dev_rec->sm4 |= BTM_SM4_UPGRADE;
 
-    BTM_TRACE_DEBUG("evt_data.upgrade:0x%x", evt_data.upgrade);
-    if (evt_data.upgrade) {
-      /* if the application confirms the upgrade, set the upgrade bit */
-      p_dev_rec->sm4 |= BTM_SM4_UPGRADE;
-
-      /* Clear the link key known to go through authentication/pairing again */
-      p_dev_rec->sec_flags &=
-          ~(BTM_SEC_LINK_KEY_KNOWN | BTM_SEC_LINK_KEY_AUTHED);
-      p_dev_rec->sec_flags &= ~BTM_SEC_AUTHENTICATED;
-      BTM_TRACE_DEBUG("sec_flags:0x%x", p_dev_rec->sec_flags);
-    }
+    /* Clear the link key known to go through authentication/pairing again */
+    p_dev_rec->sec_flags &= ~(BTM_SEC_LINK_KEY_KNOWN | BTM_SEC_LINK_KEY_AUTHED);
+    p_dev_rec->sec_flags &= ~BTM_SEC_AUTHENTICATED;
+    BTM_TRACE_DEBUG("sec_flags:0x%x", p_dev_rec->sec_flags);
   }
 }
 
@@ -2514,8 +2499,6 @@ static tBTM_STATUS btm_sec_dd_create_conn(tBTM_SEC_DEV_REC* p_dev_rec) {
 
   /* set up the control block to indicated dedicated bonding */
   btm_cb.pairing_flags |= BTM_PAIR_FLAGS_DISC_WHEN_DONE;
-
-  btm_acl_update_busy_level(BTM_BLI_PAGE_EVT);
 
   VLOG(1) << "Security Manager: " << p_dev_rec->bd_addr;
 
@@ -4741,6 +4724,11 @@ void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset) {
   p_inq_info->results.clock_offset = clock_offset | BTM_CLOCK_OFFSET_VALID;
 }
 
+uint16_t BTM_GetClockOffset(const RawAddress& remote_bda) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(remote_bda);
+  return (p_dev_rec) ? p_dev_rec->clock_offset : 0;
+}
+
 /******************************************************************
  * S T A T I C     F U N C T I O N S
  ******************************************************************/
@@ -5669,5 +5657,5 @@ static bool btm_sec_use_smp_br_chnl(tBTM_SEC_DEV_REC* p_dev_rec) {
  ******************************************************************************/
 static bool btm_sec_is_master(tBTM_SEC_DEV_REC* p_dev_rec) {
   tACL_CONN* p = btm_bda_to_acl(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR);
-  return (p && (p->link_role == BTM_ROLE_MASTER));
+  return (p && (p->link_role == HCI_ROLE_MASTER));
 }

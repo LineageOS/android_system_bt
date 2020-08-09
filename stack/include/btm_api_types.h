@@ -19,42 +19,16 @@
 #ifndef BTM_API_TYPES_H
 #define BTM_API_TYPES_H
 
-#include "bt_target.h"
+#include <cstdint>
+
 #include "device/include/esco_parameters.h"
-#include "hcidefs.h"
-#include "smp_api_types.h"
+#include "internal_include/bt_target.h"
+#include "stack/include/btm_status.h"
+#include "stack/include/hcidefs.h"
+#include "stack/include/smp_api_types.h"
 
 /* Maximum number of bytes allowed for vendor specific command parameters */
 #define BTM_MAX_VENDOR_SPECIFIC_LEN HCI_COMMAND_SIZE
-
-/* BTM application return status codes */
-enum {
-  BTM_SUCCESS = 0,         /* 0  Command succeeded                 */
-  BTM_CMD_STARTED,         /* 1  Command started OK.               */
-  BTM_BUSY,                /* 2  Device busy with another command  */
-  BTM_NO_RESOURCES,        /* 3  No resources to issue command     */
-  BTM_MODE_UNSUPPORTED,    /* 4  Request for 1 or more unsupported modes */
-  BTM_ILLEGAL_VALUE,       /* 5  Illegal parameter value           */
-  BTM_WRONG_MODE,          /* 6  Device in wrong mode for request  */
-  BTM_UNKNOWN_ADDR,        /* 7  Unknown remote BD address         */
-  BTM_DEVICE_TIMEOUT,      /* 8  Device timeout                    */
-  BTM_BAD_VALUE_RET,       /* 9  A bad value was received from HCI */
-  BTM_ERR_PROCESSING,      /* 10 Generic error                     */
-  BTM_NOT_AUTHORIZED,      /* 11 Authorization failed              */
-  BTM_DEV_RESET,           /* 12 Device has been reset             */
-  BTM_CMD_STORED,          /* 13 request is stored in control block */
-  BTM_ILLEGAL_ACTION,      /* 14 state machine gets illegal command */
-  BTM_DELAY_CHECK,         /* 15 delay the check on encryption */
-  BTM_SCO_BAD_LENGTH,      /* 16 Bad SCO over HCI data length */
-  BTM_SUCCESS_NO_SECURITY, /* 17 security passed, no security set  */
-  BTM_FAILED_ON_SECURITY,  /* 18 security failed                   */
-  BTM_REPEATED_ATTEMPTS,   /* 19 repeated attempts for LE security requests */
-  BTM_MODE4_LEVEL4_NOT_SUPPORTED, /* 20 Secure Connections Only Mode can't be
-                                     supported */
-  BTM_DEV_BLACKLISTED             /* 21 The device is Blacklisted */
-};
-
-typedef uint8_t tBTM_STATUS;
 
 /* Device name of peer (may be truncated to save space in BTM database) */
 typedef uint8_t tBTM_BD_NAME[BTM_MAX_REM_BD_NAME_LEN + 1];
@@ -560,182 +534,7 @@ typedef void(tBTM_INQ_RESULTS_CB)(tBTM_INQ_RESULTS* p_inq_results,
 /*****************************************************************************
  *  ACL CHANNEL MANAGEMENT
  ****************************************************************************/
-/******************
- *  ACL Constants
- ******************/
-
-/* Returned with structure in role switch callback (tBTM_ROLE_SWITCH_CMPL) */
-#define BTM_ROLE_MASTER HCI_ROLE_MASTER
-#define BTM_ROLE_SLAVE HCI_ROLE_SLAVE
-#define BTM_ROLE_UNDEFINED 0xff /* undefined value (error status) */
-
-/* ACL Packet Types */
-#define BTM_ACL_PKT_TYPES_MASK_DM1 HCI_PKT_TYPES_MASK_DM1
-#define BTM_ACL_PKT_TYPES_MASK_DH1 HCI_PKT_TYPES_MASK_DH1
-#define BTM_ACL_PKT_TYPES_MASK_DM3 HCI_PKT_TYPES_MASK_DM3
-#define BTM_ACL_PKT_TYPES_MASK_DH3 HCI_PKT_TYPES_MASK_DH3
-#define BTM_ACL_PKT_TYPES_MASK_DM5 HCI_PKT_TYPES_MASK_DM5
-#define BTM_ACL_PKT_TYPES_MASK_DH5 HCI_PKT_TYPES_MASK_DH5
-#define BTM_ACL_PKT_TYPES_MASK_NO_2_DH1 HCI_PKT_TYPES_MASK_NO_2_DH1
-#define BTM_ACL_PKT_TYPES_MASK_NO_3_DH1 HCI_PKT_TYPES_MASK_NO_3_DH1
-#define BTM_ACL_PKT_TYPES_MASK_NO_2_DH3 HCI_PKT_TYPES_MASK_NO_2_DH3
-#define BTM_ACL_PKT_TYPES_MASK_NO_3_DH3 HCI_PKT_TYPES_MASK_NO_3_DH3
-#define BTM_ACL_PKT_TYPES_MASK_NO_2_DH5 HCI_PKT_TYPES_MASK_NO_2_DH5
-#define BTM_ACL_PKT_TYPES_MASK_NO_3_DH5 HCI_PKT_TYPES_MASK_NO_3_DH5
-
-/***************
- *  ACL Types
- ***************/
-
-/* Structure returned with Role Switch information (in tBTM_CMPL_CB callback
- * function) in response to BTM_SwitchRole call.
-*/
-typedef struct {
-  uint8_t hci_status;     /* HCI status returned with the event */
-  uint8_t role;           /* BTM_ROLE_MASTER or BTM_ROLE_SLAVE */
-  RawAddress remote_bd_addr; /* Remote BD addr involved with the switch */
-} tBTM_ROLE_SWITCH_CMPL;
-
-/* Structure returned with QoS information (in tBTM_CMPL_CB callback function)
- * in response to BTM_SetQoS call.
-*/
-typedef struct {
-  FLOW_SPEC flow;
-  uint16_t handle;
-  uint8_t status;
-} tBTM_QOS_SETUP_CMPL;
-
-/* Structure returned with read RSSI event (in tBTM_CMPL_CB callback function)
- * in response to BTM_ReadRSSI call.
-*/
-typedef struct {
-  tBTM_STATUS status;
-  uint8_t hci_status;
-  int8_t rssi;
-  RawAddress rem_bda;
-} tBTM_RSSI_RESULT;
-
-/* Structure returned with read failed contact counter event
- * (in tBTM_CMPL_CB callback function) in response to
- * BTM_ReadFailedContactCounter call.
- */
-typedef struct {
-  tBTM_STATUS status;
-  uint8_t hci_status;
-  uint16_t failed_contact_counter;
-  RawAddress rem_bda;
-} tBTM_FAILED_CONTACT_COUNTER_RESULT;
-
-/* Structure returned with read automatic flush timeout event
- * (in tBTM_CMPL_CB callback function) in response to
- * BTM_ReadAutomaticFlushTimeout call.
- */
-typedef struct {
-  tBTM_STATUS status;
-  uint8_t hci_status;
-  uint16_t automatic_flush_timeout;
-  RawAddress rem_bda;
-} tBTM_AUTOMATIC_FLUSH_TIMEOUT_RESULT;
-
-/* Structure returned with read current TX power event (in tBTM_CMPL_CB callback
- * function) in response to BTM_ReadTxPower call.
-*/
-typedef struct {
-  tBTM_STATUS status;
-  uint8_t hci_status;
-  int8_t tx_power;
-  RawAddress rem_bda;
-} tBTM_TX_POWER_RESULT;
-
-/* Structure returned with read link quality event (in tBTM_CMPL_CB callback
- * function) in response to BTM_ReadLinkQuality call.
-*/
-typedef struct {
-  tBTM_STATUS status;
-  uint8_t hci_status;
-  uint8_t link_quality;
-  RawAddress rem_bda;
-} tBTM_LINK_QUALITY_RESULT;
-
-/* Structure returned with read inq tx power quality event (in tBTM_CMPL_CB
- * callback function) in response to BTM_ReadInquiryRspTxPower call.
-*/
-typedef struct {
-  tBTM_STATUS status;
-  uint8_t hci_status;
-  int8_t tx_power;
-} tBTM_INQ_TXPWR_RESULT;
-
-enum {
-  BTM_BL_CONN_EVT,
-  BTM_BL_DISCN_EVT,
-  BTM_BL_UPDATE_EVT,
-  BTM_BL_ROLE_CHG_EVT,
-  BTM_BL_COLLISION_EVT
-};
-typedef uint8_t tBTM_BL_EVENT;
-typedef uint16_t tBTM_BL_EVENT_MASK;
-
-#define BTM_BL_UPDATE_MASK 0x0004
-#define BTM_BL_ROLE_CHG_MASK 0x0008
-
-/* the data type associated with BTM_BL_CONN_EVT */
-typedef struct {
-  tBTM_BL_EVENT event;     /* The event reported. */
-  const RawAddress* p_bda; /* The address of the newly connected device */
-  DEV_CLASS_PTR p_dc;      /* The device class */
-  BD_NAME_PTR p_bdn;       /* The device name */
-  uint8_t* p_features;     /* pointer to the remote device's features page[0]
-                              (supported features page) */
-  uint16_t handle;         /* connection handle */
-  tBT_TRANSPORT transport; /* link is LE or not */
-} tBTM_BL_CONN_DATA;
-
-/* the data type associated with BTM_BL_DISCN_EVT */
-typedef struct {
-  tBTM_BL_EVENT event;     /* The event reported. */
-  const RawAddress* p_bda; /* The address of the disconnected device */
-  uint16_t handle;         /* disconnected connection handle */
-  tBT_TRANSPORT transport; /* link is LE link or not */
-} tBTM_BL_DISCN_DATA;
-
-/* Busy-Level shall have the inquiry_paging mask set when
- * inquiry/paging is in progress, Else the number of ACL links */
-#define BTM_BL_INQUIRY_PAGING_MASK 0x10
-#define BTM_BL_INQUIRY_STARTED (BTM_BL_INQUIRY_PAGING_MASK | 0x1)
-#define BTM_BL_INQUIRY_CANCELLED (BTM_BL_INQUIRY_PAGING_MASK | 0x2)
-#define BTM_BL_INQUIRY_COMPLETE (BTM_BL_INQUIRY_PAGING_MASK | 0x3)
-#define BTM_BL_PAGING_STARTED (BTM_BL_INQUIRY_PAGING_MASK | 0x4)
-#define BTM_BL_PAGING_COMPLETE (BTM_BL_INQUIRY_PAGING_MASK | 0x5)
-/* the data type associated with BTM_BL_UPDATE_EVT */
-typedef struct {
-  tBTM_BL_EVENT event;      /* The event reported. */
-  uint8_t busy_level;       /* when paging or inquiring, level is 10.
-                             * Otherwise, the number of ACL links. */
-  uint8_t busy_level_flags; /* Notifies actual inquiry/page activities */
-} tBTM_BL_UPDATE_DATA;
-
-/* the data type associated with BTM_BL_ROLE_CHG_EVT */
-typedef struct {
-  tBTM_BL_EVENT event; /* The event reported. */
-  const RawAddress* p_bda; /* The address of the peer connected device */
-  uint8_t new_role;
-  uint8_t hci_status; /* HCI status returned with the event */
-} tBTM_BL_ROLE_CHG_DATA;
-
-typedef union {
-  tBTM_BL_EVENT event;        /* The event reported. */
-  tBTM_BL_CONN_DATA conn;     /* The data associated with BTM_BL_CONN_EVT */
-  tBTM_BL_DISCN_DATA discn;   /* The data associated with BTM_BL_DISCN_EVT */
-  tBTM_BL_UPDATE_DATA update; /* The data associated with BTM_BL_UPDATE_EVT */
-  tBTM_BL_ROLE_CHG_DATA
-      role_chg; /*The data associated with BTM_BL_ROLE_CHG_EVT */
-} tBTM_BL_EVENT_DATA;
-
-/* Callback function for notifications when the BTM busy level
- * changes.
-*/
-typedef void(tBTM_BL_CHANGE_CB)(tBTM_BL_EVENT_DATA* p_data);
+// NOTE: Moved to stack/include/acl_api_types.h
 
 /*****************************************************************************
  *  SCO CHANNEL MANAGEMENT
@@ -1082,8 +881,6 @@ enum {
   BTM_SP_LOC_OOB_EVT,   /* received result for READ_LOCAL_OOB_DATA command */
   BTM_SP_RMT_OOB_EVT,   /* received REMOTE_OOB_DATA_REQUEST event */
   BTM_SP_COMPLT_EVT,    /* received SIMPLE_PAIRING_COMPLETE event */
-  BTM_SP_UPGRADE_EVT /* check if the application wants to upgrade the link key
-                        */
 };
 typedef uint8_t tBTM_SP_EVT;
 
@@ -1217,12 +1014,6 @@ typedef struct {
   tBTM_STATUS status;   /* status of the simple pairing process */
 } tBTM_SP_COMPLT;
 
-/* data type for BTM_SP_UPGRADE_EVT */
-typedef struct {
-  RawAddress bd_addr; /* peer address */
-  bool upgrade;    /* true, to upgrade the link key */
-} tBTM_SP_UPGRADE;
-
 typedef union {
   tBTM_SP_IO_REQ io_req;       /* BTM_SP_IO_REQ_EVT      */
   tBTM_SP_IO_RSP io_rsp;       /* BTM_SP_IO_RSP_EVT      */
@@ -1233,7 +1024,6 @@ typedef union {
   tBTM_SP_LOC_OOB loc_oob;     /* BTM_SP_LOC_OOB_EVT     */
   tBTM_SP_RMT_OOB rmt_oob;     /* BTM_SP_RMT_OOB_EVT     */
   tBTM_SP_COMPLT complt;       /* BTM_SP_COMPLT_EVT      */
-  tBTM_SP_UPGRADE upgrade;     /* BTM_SP_UPGRADE_EVT      */
 } tBTM_SP_EVT_DATA;
 
 /* Simple Pairing Events.  Called by the stack when Simple Pairing related

@@ -16,6 +16,7 @@
 
 #pragma once
 
+#include "stack/include/acl_api_types.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_ble_api_types.h"
 
@@ -1316,11 +1317,8 @@ tBTM_STATUS BTM_ReadTxPower(const RawAddress& remote_bda,
  * Description      This function is called to register a callback to receive
  *                  busy level change events.
  *
- * Returns          BTM_SUCCESS if successfully registered, otherwise error
- *
  ******************************************************************************/
-tBTM_STATUS BTM_RegBusyLevelNotif(tBTM_BL_CHANGE_CB* p_cb, uint8_t* p_level,
-                                  tBTM_BL_EVENT_MASK evt_mask);
+void BTM_RegBusyLevelNotif(tBTM_BL_CHANGE_CB* p_cb);
 
 /*******************************************************************************
  *

@@ -38,6 +38,7 @@
 #include "btif/include/btif_config.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
+#include "stack/include/acl_api.h"
 #include "utl.h"
 
 #if (BTA_AR_INCLUDED == TRUE)
@@ -963,7 +964,7 @@ static void bta_av_sys_rs_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status,
           "%s: peer %s found: new_role:%d, hci_status:0x%x bta_handle:0x%x",
           __func__, peer_addr.ToString().c_str(), id, app_id, p_scb->hndl);
       /*
-      if ((id != BTM_ROLE_MASTER) && (app_id != HCI_SUCCESS))
+      if ((id != HCI_ROLE_MASTER) && (app_id != HCI_SUCCESS))
       {
           bta_sys_set_policy(BTA_ID_AV, set_policy, p_scb->PeerAddress());
       }
@@ -981,7 +982,7 @@ static void bta_av_sys_rs_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status,
   /* restore role switch policy, if role switch failed */
   if ((HCI_SUCCESS != app_id) &&
       (BTM_GetRole(peer_addr, &cur_role) == BTM_SUCCESS) &&
-      (cur_role == BTM_ROLE_SLAVE)) {
+      (cur_role == HCI_ROLE_SLAVE)) {
     bta_sys_set_policy(BTA_ID_AV, set_policy, peer_addr);
   }
 
@@ -1106,12 +1107,12 @@ bool bta_av_switch_if_needed(tBTA_AV_SCB* p_scb) {
       BTM_GetRole(p_scbi->PeerAddress(), &role);
       /* this channel is open - clear the role switch link policy for this link
        */
-      if (BTM_ROLE_MASTER != role) {
+      if (HCI_ROLE_MASTER != role) {
         if (bta_av_cb.features & BTA_AV_FEAT_MASTER)
           bta_sys_clear_policy(BTA_ID_AV, HCI_ENABLE_MASTER_SLAVE_SWITCH,
                                p_scbi->PeerAddress());
         if (BTM_CMD_STARTED !=
-            BTM_SwitchRole(p_scbi->PeerAddress(), BTM_ROLE_MASTER, NULL)) {
+            BTM_SwitchRole(p_scbi->PeerAddress(), HCI_ROLE_MASTER, NULL)) {
           /* can not switch role on SCBI
            * start the timer on SCB - because this function is ONLY called when
            * SCB gets API_OPEN */
@@ -1149,7 +1150,7 @@ bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits) {
         "features:0x%x",
         __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->hndl, role,
         bta_av_cb.conn_audio, bits, bta_av_cb.features);
-    if (BTM_ROLE_MASTER != role &&
+    if (HCI_ROLE_MASTER != role &&
         (A2DP_BitsSet(bta_av_cb.conn_audio) > bits ||
          (bta_av_cb.features & BTA_AV_FEAT_MASTER))) {
       if (bta_av_cb.features & BTA_AV_FEAT_MASTER)
@@ -1157,10 +1158,10 @@ bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits) {
                              p_scb->PeerAddress());
 
       tBTM_STATUS status =
-          BTM_SwitchRole(p_scb->PeerAddress(), BTM_ROLE_MASTER, NULL);
+          BTM_SwitchRole(p_scb->PeerAddress(), HCI_ROLE_MASTER, NULL);
       if (status != BTM_CMD_STARTED) {
         /* can not switch role on SCB - start the timer on SCB */
-        LOG_ERROR("%s: peer %s BTM_SwitchRole(BTM_ROLE_MASTER) error: %d",
+        LOG_ERROR("%s: peer %s BTM_SwitchRole(HCI_ROLE_MASTER) error: %d",
                   __func__, p_scb->PeerAddress().ToString().c_str(), status);
       }
       if (status != BTM_MODE_UNSUPPORTED && status != BTM_DEV_BLACKLISTED) {

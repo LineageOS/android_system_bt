@@ -26,6 +26,7 @@
 #include "gap_api.h"
 #include "gatt_api.h"
 #include "osi/include/properties.h"
+#include "stack/include/acl_api.h"
 
 #include <base/bind.h>
 #include <base/logging.h>

@@ -33,28 +33,47 @@
 
 #define LOG_TAG "btm_acl"
 
-#include <stddef.h>
-#include <string.h>
-
-#include "bt_common.h"
-#include "bt_target.h"
-#include "bt_types.h"
-#include "btm_api.h"
-#include "btm_int.h"
-#include "btu.h"
+#include <cstdint>
 #include "common/metrics.h"
 #include "device/include/controller.h"
 #include "device/include/interop.h"
-#include "hcidefs.h"
-#include "hcimsgs.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
-#include "osi/include/osi.h"
+#include "stack/acl/acl.h"
+#include "stack/btm/btm_int_types.h"
+#include "stack/include/acl_api.h"
+#include "stack/include/btm_api.h"
+#include "stack/include/btu.h"
+#include "stack/include/hcimsgs.h"
 #include "stack/include/l2cap_hci_link_interface.h"
+#include "types/raw_address.h"
 
+extern tBTM_CB btm_cb;
+
+tBTM_SEC_DEV_REC* btm_find_dev(const RawAddress& bd_addr);
+tBTM_SEC_DEV_REC* btm_find_dev_by_handle(uint16_t handle);
+tBTM_SEC_DEV_REC* btm_find_or_alloc_dev(const RawAddress& bd_addr);
+tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec);
+tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
+void btm_acl_update_busy_level(tBTM_BLI_EVENT event);
+void btm_ble_refresh_local_resolvable_private_addr(
+    const RawAddress& pseudo_addr, const RawAddress& local_rpa);
+void btm_establish_continue(tACL_CONN* p_acl_cb);
+void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec, uint8_t res,
+                                 bool is_le_trasnport);
+void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
+                               tBTM_SEC_DEV_REC* p_dev_rec);
+
+static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
+                                              uint16_t* p_pkt_type);
+static void btm_pm_sm_alloc(uint8_t ind);
+static void btm_read_automatic_flush_timeout_timeout(void* data);
+static void btm_read_failed_contact_counter_timeout(void* data);
 static void btm_read_remote_features(uint16_t handle);
 static void btm_read_remote_ext_features(uint16_t handle, uint8_t page_number);
+static void btm_read_rssi_timeout(void* data);
+static void btm_read_tx_power_timeout(void* data);
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                             uint8_t num_read_pages);
 
@@ -338,10 +357,9 @@ void btm_acl_report_role_change(uint8_t hci_status, const RawAddress* bda) {
  *
  ******************************************************************************/
 void btm_acl_removed(const RawAddress& bda, tBT_TRANSPORT transport) {
-  tACL_CONN* p;
   tBTM_SEC_DEV_REC* p_dev_rec = NULL;
   BTM_TRACE_DEBUG("btm_acl_removed");
-  p = btm_bda_to_acl(bda, transport);
+  tACL_CONN* p = btm_bda_to_acl(bda, transport);
   if (p != (tACL_CONN*)NULL) {
     p->in_use = false;
 
@@ -361,8 +379,6 @@ void btm_acl_removed(const RawAddress& bda, tBT_TRANSPORT transport) {
         evt_data.discn.transport = p->transport;
         (*btm_cb.acl_cb_.p_bl_changed_cb)(&evt_data);
       }
-
-      btm_acl_update_busy_level(BTM_BLI_ACL_DOWN_EVT);
     }
 
     BTM_TRACE_DEBUG(
@@ -422,6 +438,8 @@ void btm_acl_device_down(void) {
   }
 }
 
+void btm_acl_set_paging(bool value) { btm_cb.is_paging = value; }
+
 /*******************************************************************************
  *
  * Function         btm_acl_update_busy_level
@@ -433,26 +451,9 @@ void btm_acl_device_down(void) {
  *
  ******************************************************************************/
 void btm_acl_update_busy_level(tBTM_BLI_EVENT event) {
-  bool old_inquiry_state = btm_cb.is_inquiry;
   tBTM_BL_UPDATE_DATA evt;
   evt.busy_level_flags = 0;
   switch (event) {
-    case BTM_BLI_ACL_UP_EVT:
-      BTM_TRACE_DEBUG("BTM_BLI_ACL_UP_EVT");
-      break;
-    case BTM_BLI_ACL_DOWN_EVT:
-      BTM_TRACE_DEBUG("BTM_BLI_ACL_DOWN_EVT");
-      break;
-    case BTM_BLI_PAGE_EVT:
-      BTM_TRACE_DEBUG("BTM_BLI_PAGE_EVT");
-      btm_cb.is_paging = true;
-      evt.busy_level_flags = BTM_BL_PAGING_STARTED;
-      break;
-    case BTM_BLI_PAGE_DONE_EVT:
-      BTM_TRACE_DEBUG("BTM_BLI_PAGE_DONE_EVT");
-      btm_cb.is_paging = false;
-      evt.busy_level_flags = BTM_BL_PAGING_COMPLETE;
-      break;
     case BTM_BLI_INQ_EVT:
       BTM_TRACE_DEBUG("BTM_BLI_INQ_EVT");
       btm_cb.is_inquiry = true;
@@ -470,23 +471,11 @@ void btm_acl_update_busy_level(tBTM_BLI_EVENT event) {
       break;
   }
 
-  uint8_t busy_level;
-  if (btm_cb.is_paging || btm_cb.is_inquiry)
-    busy_level = 10;
-  else
-    busy_level = BTM_GetNumAclLinks();
-
-  if ((busy_level != btm_cb.busy_level) ||
-      (old_inquiry_state != btm_cb.is_inquiry)) {
-    evt.event = BTM_BL_UPDATE_EVT;
-    evt.busy_level = busy_level;
-    btm_cb.busy_level = busy_level;
-    if (btm_cb.acl_cb_.p_bl_changed_cb &&
-        (btm_cb.acl_cb_.bl_evt_mask & BTM_BL_UPDATE_MASK)) {
-      tBTM_BL_EVENT_DATA btm_bl_event_data;
-      btm_bl_event_data.update = evt;
-      (*btm_cb.acl_cb_.p_bl_changed_cb)(&btm_bl_event_data);
-    }
+  evt.event = BTM_BL_UPDATE_EVT;
+  if (btm_cb.acl_cb_.p_bl_changed_cb) {
+    tBTM_BL_EVENT_DATA btm_bl_event_data;
+    btm_bl_event_data.update = evt;
+    (*btm_cb.acl_cb_.p_bl_changed_cb)(&btm_bl_event_data);
   }
 }
 
@@ -506,7 +495,7 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
   BTM_TRACE_DEBUG("BTM_GetRole");
   p = btm_bda_to_acl(remote_bd_addr, BT_TRANSPORT_BR_EDR);
   if (p == NULL) {
-    *p_role = BTM_ROLE_UNDEFINED;
+    *p_role = HCI_ROLE_UNKNOWN;
     return (BTM_UNKNOWN_ADDR);
   }
 
@@ -567,7 +556,7 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role,
     return BTM_DEV_BLACKLISTED;
 
   /* Check if there is any SCO Active on this BD Address */
-  is_sco_active = btm_is_sco_active_by_bdaddr(remote_bd_addr);
+  is_sco_active = BTM_IsScoActiveByBdaddr(remote_bd_addr);
 
   if (is_sco_active) return (BTM_NO_RESOURCES);
 
@@ -682,8 +671,7 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
                                &p->remote_addr);
 
     /* if role change event is registered, report it now */
-    if (btm_cb.acl_cb_.p_bl_changed_cb &&
-        (btm_cb.acl_cb_.bl_evt_mask & BTM_BL_ROLE_CHG_MASK)) {
+    if (btm_cb.acl_cb_.p_bl_changed_cb) {
       tBTM_BL_ROLE_CHG_DATA evt;
       evt.event = BTM_BL_ROLE_CHG_EVT;
       evt.new_role = btm_cb.devcb.switch_role_ref_data.role;
@@ -1171,7 +1159,6 @@ void btm_establish_continue(tACL_CONN* p_acl_cb) {
 
     (*btm_cb.acl_cb_.p_bl_changed_cb)(&evt_data);
   }
-  btm_acl_update_busy_level(BTM_BLI_ACL_UP_EVT);
 }
 
 /*******************************************************************************
@@ -1230,7 +1217,7 @@ tBTM_STATUS BTM_SetLinkSuperTout(const RawAddress& remote_bda,
     p->link_super_tout = timeout;
 
     /* Only send if current role is Master; 2.0 spec requires this */
-    if (p->link_role == BTM_ROLE_MASTER) {
+    if (p->link_role == HCI_ROLE_MASTER) {
       btsnd_hcic_write_link_super_tout(LOCAL_BR_EDR_CONTROLLER_ID,
                                        p->hci_handle, timeout);
       return (BTM_CMD_STARTED);
@@ -1444,7 +1431,7 @@ void btm_acl_role_changed(uint8_t hci_status, const RawAddress* bd_addr,
 
     /* Reload LSTO: link supervision timeout is reset in the LM after a role
      * switch */
-    if (new_role == BTM_ROLE_MASTER) {
+    if (new_role == HCI_ROLE_MASTER) {
       BTM_SetLinkSuperTout(p->remote_addr, p->link_super_tout);
     }
   } else {
@@ -1475,8 +1462,7 @@ void btm_acl_role_changed(uint8_t hci_status, const RawAddress* bd_addr,
   btm_acl_report_role_change(hci_status, bd_addr);
 
   /* if role change event is registered, report it now */
-  if (btm_cb.acl_cb_.p_bl_changed_cb &&
-      (btm_cb.acl_cb_.bl_evt_mask & BTM_BL_ROLE_CHG_MASK)) {
+  if (btm_cb.acl_cb_.p_bl_changed_cb) {
     tBTM_BL_ROLE_CHG_DATA evt;
     evt.event = BTM_BL_ROLE_CHG_EVT;
     evt.new_role = new_role;
@@ -1618,17 +1604,17 @@ tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types) {
 
 /*******************************************************************************
  *
- * Function         btm_get_max_packet_size
+ * Function         BTM_GetMaxPacketSize
  *
  * Returns          Returns maximum packet size that can be used for current
  *                  connection, 0 if connection is not established
  *
  ******************************************************************************/
-uint16_t btm_get_max_packet_size(const RawAddress& addr) {
+uint16_t BTM_GetMaxPacketSize(const RawAddress& addr) {
   tACL_CONN* p = btm_bda_to_acl(addr, BT_TRANSPORT_BR_EDR);
   uint16_t pkt_types = 0;
   uint16_t pkt_size = 0;
-  BTM_TRACE_DEBUG("btm_get_max_packet_size");
+  BTM_TRACE_DEBUG("BTM_GetMaxPacketSize");
   if (p != NULL) {
     pkt_types = p->pkt_types_mask;
   } else {
@@ -1715,24 +1701,10 @@ uint8_t* BTM_ReadRemoteFeatures(const RawAddress& addr) {
  * Description      This function is called to register a callback to receive
  *                  busy level change events.
  *
- * Returns          BTM_SUCCESS if successfully registered, otherwise error
- *
  ******************************************************************************/
-tBTM_STATUS BTM_RegBusyLevelNotif(tBTM_BL_CHANGE_CB* p_cb, uint8_t* p_level,
-                                  tBTM_BL_EVENT_MASK evt_mask) {
+void BTM_RegBusyLevelNotif(tBTM_BL_CHANGE_CB* p_cb) {
   BTM_TRACE_DEBUG("BTM_RegBusyLevelNotif");
-  if (p_level) *p_level = btm_cb.busy_level;
-
-  btm_cb.acl_cb_.bl_evt_mask = evt_mask;
-
-  if (!p_cb)
-    btm_cb.acl_cb_.p_bl_changed_cb = NULL;
-  else if (btm_cb.acl_cb_.p_bl_changed_cb)
-    return (BTM_BUSY);
-  else
-    btm_cb.acl_cb_.p_bl_changed_cb = p_cb;
-
-  return (BTM_SUCCESS);
+  btm_cb.acl_cb_.p_bl_changed_cb = p_cb;
 }
 
 /*******************************************************************************
@@ -2478,4 +2450,23 @@ void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p, uint16_t* p_pkt_type) {
       *p_pkt_type |=
           (BTM_ACL_PKT_TYPES_MASK_NO_2_DH5 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH5);
   }
+}
+
+/*******************************************************************************
+ *
+ * Function         btm_pm_sm_alloc
+ *
+ * Description      This function initializes the control block of an ACL link.
+ *                  It is called when an ACL connection is created.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void btm_pm_sm_alloc(uint8_t ind) {
+  tBTM_PM_MCB* p_db = &btm_cb.pm_mode_db[ind]; /* per ACL link */
+  memset(p_db, 0, sizeof(tBTM_PM_MCB));
+  p_db->state = BTM_PM_ST_ACTIVE;
+#if (BTM_PM_DEBUG == TRUE)
+  BTM_TRACE_DEBUG("btm_pm_sm_alloc ind:%d st:%d", ind, p_db->state);
+#endif  // BTM_PM_DEBUG
 }

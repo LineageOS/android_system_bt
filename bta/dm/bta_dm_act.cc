@@ -50,6 +50,7 @@
 #include "osi/include/osi.h"
 #include "sdp_api.h"
 #include "stack/gatt/connection_manager.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/gatt_api.h"
 #include "utl.h"
 
@@ -425,8 +426,7 @@ static void bta_dm_sys_hw_cback(tBTA_SYS_HW_EVT status) {
     BTM_WritePageTimeout(p_bta_dm_cfg->page_timeout);
     bta_dm_cb.cur_policy = p_bta_dm_cfg->policy_settings;
     BTM_SetDefaultLinkPolicy(bta_dm_cb.cur_policy);
-    BTM_RegBusyLevelNotif(bta_dm_bl_change_cback, NULL,
-                          BTM_BL_UPDATE_MASK | BTM_BL_ROLE_CHG_MASK);
+    BTM_RegBusyLevelNotif(bta_dm_bl_change_cback);
 
 #if (BLE_VND_INCLUDED == TRUE)
     BTM_BleReadControllerFeatures(bta_dm_ctrl_features_rd_cmpl_cback);
@@ -2625,10 +2625,6 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
       bta_dm_cb.p_sec_cback(BTA_DM_SP_KEYPRESS_EVT, &sec_event);
       break;
 
-    case BTM_SP_UPGRADE_EVT:
-      bta_dm_co_lk_upgrade(p_data->upgrade.bd_addr, &p_data->upgrade.upgrade);
-      break;
-
     default:
       status = BTM_NOT_AUTHORIZED;
       break;
@@ -2656,13 +2652,11 @@ static void bta_dm_local_name_cback(UNUSED_ATTR void* p_name) {
     bta_dm_cb.p_sec_cback(BTA_DM_ENABLE_EVT, &sec_event);
 }
 
-static void send_busy_level_update(uint8_t busy_level,
-                                   uint8_t busy_level_flags) {
+static void send_busy_level_update(uint8_t busy_level_flags) {
   if (!bta_dm_cb.p_sec_cback) return;
 
   tBTA_DM_SEC conn;
   memset(&conn, 0, sizeof(tBTA_DM_SEC));
-  conn.busy_level.level = busy_level;
   conn.busy_level.level_flags = busy_level_flags;
   bta_dm_cb.p_sec_cback(BTA_DM_BUSY_LEVEL_EVT, &conn);
 }
@@ -2686,7 +2680,7 @@ static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
       /* more than one connections and the AV connection is role switched
        * to slave
        * switch it back to master and remove the switch policy */
-      BTM_SwitchRole(bd_addr, BTM_ROLE_MASTER, NULL);
+      BTM_SwitchRole(bd_addr, HCI_ROLE_MASTER, NULL);
       need_policy_change = true;
     } else if (p_bta_dm_cfg->avoid_scatter && (new_role == HCI_ROLE_MASTER)) {
       /* if the link updated to be master include AV activities, remove
@@ -2863,7 +2857,6 @@ static void bta_dm_bl_change_cback(tBTM_BL_EVENT_DATA* p_data) {
     case BTM_BL_UPDATE_EVT: {
       /* busy level update */
       do_in_main_thread(FROM_HERE, base::Bind(send_busy_level_update,
-                                              p_data->update.busy_level,
                                               p_data->update.busy_level_flags));
       return;
     }
