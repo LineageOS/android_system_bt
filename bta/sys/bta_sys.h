@@ -210,9 +210,6 @@ extern void bta_sys_start_timer(alarm_t* alarm, uint64_t interval_ms,
                                 uint16_t event, uint16_t layer_specific);
 extern void bta_sys_disable();
 
-extern void bta_sys_hw_register(tBTA_SYS_HW_CBACK* cback);
-extern void bta_sys_hw_unregister();
-
 extern void bta_sys_rm_register(tBTA_SYS_CONN_CBACK* p_cback);
 extern void bta_sys_pm_register(tBTA_SYS_CONN_CBACK* p_cback);
 

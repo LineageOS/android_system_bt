@@ -44,6 +44,8 @@
 #include "bta_ar_api.h"
 #endif
 
+extern void BTA_dm_sys_hw_cback(tBTA_SYS_HW_EVT status);
+
 /* system manager control block definition */
 tBTA_SYS_CB bta_sys_cb;
 
@@ -174,12 +176,6 @@ void send_bta_sys_hw_event(tBTA_SYS_HW_EVT event) {
   do_in_main_thread(FROM_HERE, base::Bind(bta_sys_sm_execute, event));
 }
 
-void bta_sys_hw_register(tBTA_SYS_HW_CBACK* cback) {
-  bta_sys_cb.sys_hw_cback = cback;
-}
-
-void bta_sys_hw_unregister() { bta_sys_cb.sys_hw_cback = NULL; }
-
 /*******************************************************************************
  *
  * Function         bta_sys_hw_error
@@ -193,8 +189,8 @@ void bta_sys_hw_unregister() { bta_sys_cb.sys_hw_cback = NULL; }
  ******************************************************************************/
 void bta_sys_hw_error() {
   APPL_TRACE_DEBUG("%s", __func__);
-  if (bta_sys_cb.bluetooth_active && bta_sys_cb.sys_hw_cback != NULL) {
-    bta_sys_cb.sys_hw_cback(BTA_SYS_HW_ERROR_EVT);
+  if (bta_sys_cb.bluetooth_active) {
+    BTA_dm_sys_hw_cback(BTA_SYS_HW_ERROR_EVT);
   }
 }
 
@@ -218,10 +214,7 @@ void bta_sys_hw_api_enable() {
     BTM_DeviceReset();
   } else {
     bta_sys_cb.bluetooth_active = true;
-
-    /* HW already in use, so directly notify the caller */
-    if (bta_sys_cb.sys_hw_cback != NULL)
-      bta_sys_cb.sys_hw_cback(BTA_SYS_HW_ON_EVT);
+    BTA_dm_sys_hw_cback(BTA_SYS_HW_ON_EVT);
   }
 }
 
@@ -259,11 +252,7 @@ void bta_sys_hw_api_disable() {
  * Returns          success or failure
  *
  ******************************************************************************/
-void bta_sys_hw_evt_disabled() {
-  if (bta_sys_cb.sys_hw_cback != NULL) {
-    bta_sys_cb.sys_hw_cback(BTA_SYS_HW_OFF_EVT);
-  }
-}
+void bta_sys_hw_evt_disabled() { BTA_dm_sys_hw_cback(BTA_SYS_HW_OFF_EVT); }
 
 /*******************************************************************************
  *
@@ -276,11 +265,7 @@ void bta_sys_hw_evt_disabled() {
  * Returns          success or failure
  *
  ******************************************************************************/
-void bta_sys_hw_evt_stack_enabled() {
-  if (bta_sys_cb.sys_hw_cback != NULL) {
-    bta_sys_cb.sys_hw_cback(BTA_SYS_HW_ON_EVT);
-  }
-}
+void bta_sys_hw_evt_stack_enabled() { BTA_dm_sys_hw_cback(BTA_SYS_HW_ON_EVT); }
 
 /*******************************************************************************
  *

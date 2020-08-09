@@ -106,7 +106,6 @@ static bool bta_dm_read_remote_device_name(const RawAddress& bd_addr,
                                            tBT_TRANSPORT transport);
 static void bta_dm_discover_device(const RawAddress& remote_bd_addr);
 
-static void bta_dm_sys_hw_cback(tBTA_SYS_HW_EVT status);
 static void bta_dm_disable_search_and_disc(void);
 
 static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
@@ -261,9 +260,6 @@ void bta_dm_enable(tBTA_DM_SEC_CBACK* p_sec_cback) {
     return;
   }
 
-  /* first, register our callback to SYS HW manager */
-  bta_sys_hw_register(bta_dm_sys_hw_cback);
-
   /* make sure security callback is saved - if no callback, do not erase the
   previous one,
   it could be an error recovery mechanism */
@@ -332,7 +328,7 @@ void bta_dm_deinit_cb(void) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_sys_hw_cback(tBTA_SYS_HW_EVT status) {
+void BTA_dm_sys_hw_cback(tBTA_SYS_HW_EVT status) {
   DEV_CLASS dev_class;
   tBTA_DM_SEC_CBACK* temp_cback;
   uint8_t key_mask = 0;
@@ -359,8 +355,6 @@ static void bta_dm_sys_hw_cback(tBTA_SYS_HW_EVT status) {
     alarm_free(bta_dm_search_cb.gatt_close_timer);
     memset(&bta_dm_search_cb, 0, sizeof(bta_dm_search_cb));
 
-    /* unregister from SYS */
-    bta_sys_hw_unregister();
     /* notify BTA DM is now unactive */
     bta_dm_cb.is_bta_dm_active = false;
   } else if (status == BTA_SYS_HW_ON_EVT) {
@@ -2852,7 +2846,6 @@ static void bta_dm_disable_conn_down_timer_cback(UNUSED_ATTR void* data) {
   bta_dm_disable_pm();
 
   /* register our callback to SYS HW manager */
-  bta_sys_hw_register(bta_dm_sys_hw_cback);
   send_bta_sys_hw_event(BTA_SYS_API_DISABLE_EVT);
 
   bta_dm_cb.disabling = false;
