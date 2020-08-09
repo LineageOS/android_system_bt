@@ -25,9 +25,11 @@
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
 #include "stack/btm/btm_int.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/l2c_api.h"
 #include "stack/smp/p_256_ecc_pp.h"
 #include "stack/smp/smp_int.h"
+#include "types/raw_address.h"
 #include "utils/include/bt_utils.h"
 
 #define SMP_KEY_DIST_TYPE_MAX 4
@@ -38,17 +40,6 @@ const tSMP_ACT smp_distribute_act[] = {
     smp_generate_csrk,      /* SMP_SEC_KEY_TYPE_CSRK - '1' bit index */
     smp_set_derive_link_key /* SMP_SEC_KEY_TYPE_LK - '1' bit index */
 };
-
-static bool lmp_version_below(const RawAddress& bda, uint8_t version) {
-  tACL_CONN* acl = btm_bda_to_acl(bda, BT_TRANSPORT_LE);
-  if (acl == NULL || acl->lmp_version == 0) {
-    SMP_TRACE_WARNING("%s cannot retrieve LMP version...", __func__);
-    return false;
-  }
-  SMP_TRACE_WARNING("%s LMP version %d < %d", __func__, acl->lmp_version,
-                    version);
-  return acl->lmp_version < version;
-}
 
 static bool pts_test_send_authentication_complete_failure(tSMP_CB* p_cb) {
   uint8_t reason = p_cb->cert_failure;
