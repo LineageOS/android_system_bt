@@ -120,7 +120,7 @@ extern void btm_establish_continue(tACL_CONN* p_acl_cb);
 
 extern tACL_CONN* btm_bda_to_acl(const RawAddress& bda,
                                  tBT_TRANSPORT transport);
-extern bool btm_acl_notif_conn_collision(const RawAddress& bda);
+extern void btm_acl_notif_conn_collision(const RawAddress& bda);
 extern void btm_acl_update_conn_addr(uint16_t conn_handle,
                                      const RawAddress& address);
 
