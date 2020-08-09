@@ -111,7 +111,7 @@ typedef struct {
 typedef struct {
   BT_HDR hdr;
   RawAddress bd_addr;
-  tBTA_IO_CAP io_cap;
+  tBTM_IO_CAP io_cap;
   tBTA_OOB_DATA oob_data;
   tBTA_AUTH_REQ auth_req;
 } tBTA_DM_CI_IO_REQ;
@@ -154,7 +154,7 @@ typedef struct {
   tBTA_SERVICE_MASK tm;
   bool is_trusted;
   uint8_t key_type;
-  tBTA_IO_CAP io_cap;
+  tBTM_IO_CAP io_cap;
   bool link_key_known;
   bool dc_known;
   BD_NAME bd_name;
@@ -314,8 +314,8 @@ typedef struct {
   RawAddress pin_bd_addr;
   DEV_CLASS pin_dev_class;
   tBTA_DM_SEC_EVT pin_evt;
-  tBTA_IO_CAP loc_io_caps;    /* IO Capabilities of local device */
-  tBTA_IO_CAP rmt_io_caps;    /* IO Capabilities of remote device */
+  tBTM_IO_CAP loc_io_caps;    /* IO Capabilities of local device */
+  tBTM_IO_CAP rmt_io_caps;    /* IO Capabilities of remote device */
   tBTA_AUTH_REQ loc_auth_req; /* Authentication required for local device */
   tBTA_AUTH_REQ rmt_auth_req;
   uint32_t num_val; /* the numeric value for comparison. If just_works, do not
@@ -517,7 +517,7 @@ extern void bta_dm_ble_get_energy_info(tBTA_BLE_ENERGY_INFO_CBACK*);
 extern void bta_dm_set_encryption(const RawAddress&, tBTA_TRANSPORT,
                                   tBTA_DM_ENCRYPT_CBACK*, tBTA_DM_BLE_SEC_ACT);
 extern void bta_dm_confirm(const RawAddress&, bool);
-extern void bta_dm_ci_io_req_act(const RawAddress& bd_addr, tBTA_IO_CAP io_cap,
+extern void bta_dm_ci_io_req_act(const RawAddress& bd_addr, tBTM_IO_CAP io_cap,
                                  tBTA_OOB_DATA oob_data,
                                  tBTA_AUTH_REQ auth_req);
 extern void bta_dm_ci_rmt_oob_act(std::unique_ptr<tBTA_DM_CI_RMT_OOB> msg);

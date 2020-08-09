@@ -510,7 +510,6 @@ typedef struct {
 #define BTA_IO_CAP_IN BTM_IO_CAP_IN         /* 2 KeyboardOnly */
 #define BTA_IO_CAP_NONE BTM_IO_CAP_NONE     /* 3 NoInputNoOutput */
 #define BTA_IO_CAP_KBDISP BTM_IO_CAP_KBDISP /* 4 Keyboard display */
-typedef tBTM_IO_CAP tBTA_IO_CAP;
 
 #define BTA_AUTH_SP_NO                                      \
   BTM_AUTH_SP_NO /* 0 MITM Protection Not Required - Single \
@@ -576,7 +575,7 @@ typedef struct {
   bool just_works;  /* true, if "Just Works" association model */
   tBTA_AUTH_REQ loc_auth_req; /* Authentication required for local device */
   tBTA_AUTH_REQ rmt_auth_req; /* Authentication required for peer device */
-  tBTA_IO_CAP loc_io_caps;    /* IO Capabilities of local device */
+  tBTM_IO_CAP loc_io_caps;    /* IO Capabilities of local device */
   tBTA_AUTH_REQ rmt_io_caps;  /* IO Capabilities of remote device */
 } tBTA_DM_SP_CFM_REQ;
 
@@ -1214,7 +1213,7 @@ extern void BTA_DmConfirm(const RawAddress& bd_addr, bool accept);
 extern void BTA_DmAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
                             const LinkKey& link_key,
                             tBTA_SERVICE_MASK trusted_mask, bool is_trusted,
-                            uint8_t key_type, tBTA_IO_CAP io_cap,
+                            uint8_t key_type, tBTM_IO_CAP io_cap,
                             uint8_t pin_length);
 
 /*******************************************************************************

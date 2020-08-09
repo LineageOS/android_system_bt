@@ -52,7 +52,7 @@
  * Returns          void.
  *
  ******************************************************************************/
-extern void bta_dm_co_io_req(const RawAddress& bd_addr, tBTA_IO_CAP* p_io_cap,
+extern void bta_dm_co_io_req(const RawAddress& bd_addr, tBTM_IO_CAP* p_io_cap,
                              tBTA_OOB_DATA* p_oob_data,
                              tBTA_AUTH_REQ* p_auth_req, bool is_orig);
 
@@ -73,7 +73,7 @@ extern void bta_dm_co_io_req(const RawAddress& bd_addr, tBTA_IO_CAP* p_io_cap,
  * Returns          void.
  *
  ******************************************************************************/
-extern void bta_dm_co_io_rsp(const RawAddress& bd_addr, tBTA_IO_CAP io_cap,
+extern void bta_dm_co_io_rsp(const RawAddress& bd_addr, tBTM_IO_CAP io_cap,
                              tBTA_OOB_DATA oob_data, tBTA_AUTH_REQ auth_req);
 
 /*******************************************************************************
@@ -175,7 +175,7 @@ extern void bta_dm_sco_co_in_data(BT_HDR* p_buf, tBTM_SCO_DATA_FLAG status);
  *
  ******************************************************************************/
 extern void bta_dm_co_ble_io_req(
-    const RawAddress& bd_addr, tBTA_IO_CAP* p_io_cap, tBTA_OOB_DATA* p_oob_data,
+    const RawAddress& bd_addr, tBTM_IO_CAP* p_io_cap, tBTA_OOB_DATA* p_oob_data,
     tBTA_LE_AUTH_REQ* p_auth_req, uint8_t* p_max_key_size,
     tBTA_LE_KEY_TYPE* p_init_key, tBTA_LE_KEY_TYPE* p_resp_key);
 
