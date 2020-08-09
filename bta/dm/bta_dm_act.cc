@@ -2221,21 +2221,10 @@ static uint8_t bta_dm_authorize_cback(const RawAddress& bd_addr,
                                       UNUSED_ATTR uint8_t* service_name,
                                       uint8_t service_id,
                                       UNUSED_ATTR bool is_originator) {
-  tBTA_DM_SEC sec_event;
   uint8_t index = 1;
-
-  sec_event.authorize.bd_addr = bd_addr;
-  memcpy(sec_event.authorize.dev_class, dev_class, DEV_CLASS_LEN);
-  strlcpy((char*)sec_event.authorize.bd_name, (char*)bd_name, BD_NAME_LEN);
-
-#if (BTA_JV_INCLUDED == TRUE)
-  sec_event.authorize.service = service_id;
-#endif
-
   while (index < BTA_MAX_SERVICE_ID) {
     /* get the BTA service id corresponding to BTM id */
     if (bta_service_id_to_btm_srv_id_lkup_tbl[index] == service_id) {
-      sec_event.authorize.service = index;
       break;
     }
     index++;
@@ -2249,7 +2238,6 @@ static uint8_t bta_dm_authorize_cback(const RawAddress& bd_addr,
                                     service_id <= BTA_LAST_JV_SERVICE_ID)
 #endif
                                     )) {
-    bta_dm_cb.p_sec_cback(BTA_DM_AUTHORIZE_EVT, &sec_event);
     return BTM_CMD_STARTED;
   } else {
     return BTM_NOT_AUTHORIZED;
