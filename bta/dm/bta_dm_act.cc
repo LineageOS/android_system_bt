@@ -2704,20 +2704,19 @@ static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
 
   if (is_new) {
     uint8_t i;
+    tBTA_DM_PEER_DEVICE* device = nullptr;
     for (i = 0; i < bta_dm_cb.device_list.count; i++) {
-      if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr == bd_addr &&
-          bta_dm_cb.device_list.peer_device[i].conn_handle == handle)
+      device = &bta_dm_cb.device_list.peer_device[i];
+      if (device->peer_bdaddr == bd_addr && device->conn_handle == handle)
         break;
     }
 
     if (i == bta_dm_cb.device_list.count) {
       if (bta_dm_cb.device_list.count < BTA_DM_NUM_PEER_DEVICE) {
-        bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count]
-            .peer_bdaddr = bd_addr;
-        bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count]
-            .link_policy = bta_dm_cb.cur_policy;
+        device->peer_bdaddr = bd_addr;
+        device->link_policy = bta_dm_cb.cur_policy;
         bta_dm_cb.device_list.count++;
-        bta_dm_cb.device_list.peer_device[i].conn_handle = handle;
+        device->conn_handle = handle;
         if (transport == BT_TRANSPORT_LE) bta_dm_cb.device_list.le_count++;
       } else {
         APPL_TRACE_ERROR("%s max active connection reached, no resources",
@@ -2726,12 +2725,12 @@ static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
       }
     }
 
-    bta_dm_cb.device_list.peer_device[i].conn_state = BTA_DM_CONNECTED;
-    bta_dm_cb.device_list.peer_device[i].pref_role = BTA_ANY_ROLE;
+    device->conn_state = BTA_DM_CONNECTED;
+    device->pref_role = BTA_ANY_ROLE;
     conn.link_up.bd_addr = bd_addr;
-    bta_dm_cb.device_list.peer_device[i].info = BTA_DM_DI_NONE;
+    device->info = BTA_DM_DI_NONE;
     conn.link_up.link_type = transport;
-    bta_dm_cb.device_list.peer_device[i].transport = transport;
+    device->transport = transport;
 
     const controller_t* controller = controller_get_interface();
     uint8_t* p;
@@ -2739,7 +2738,7 @@ static void bta_dm_acl_change(bool is_new, const RawAddress& bd_addr,
         ((NULL != (p = BTM_ReadRemoteFeatures(bd_addr))) &&
          HCI_SNIFF_SUB_RATE_SUPPORTED(p))) {
       /* both local and remote devices support SSR */
-      bta_dm_cb.device_list.peer_device[i].info = BTA_DM_DI_USE_SSR;
+      device->info = BTA_DM_DI_USE_SSR;
     }
     APPL_TRACE_WARNING("%s info: 0x%x", __func__,
                        bta_dm_cb.device_list.peer_device[i].info);
