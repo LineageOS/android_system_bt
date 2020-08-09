@@ -80,6 +80,8 @@ void BTIF_dm_report_inquiry_status_change(uint8_t busy_level_flags);
 void BTA_dm_acl_up(const RawAddress bd_addr, tBT_TRANSPORT transport,
                    uint16_t handle);
 void BTA_dm_acl_down(const RawAddress bd_addr, tBT_TRANSPORT transport);
+void BTA_dm_report_role_change(const RawAddress bd_addr, uint8_t new_role,
+                               uint8_t hci_status);
 /* 3 seconds timeout waiting for responses */
 #define BTM_DEV_REPLY_TIMEOUT_MS (3 * 1000)
 
@@ -627,24 +629,15 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
   else if (p->switch_role_state == BTM_ACL_SWKEY_STATE_ENCRYPTION_ON) {
     p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
     p->encrypt_state = BTM_ACL_ENCRYPT_STATE_IDLE;
-    btm_acl_report_role_change(btm_cb.devcb.switch_role_ref_data.hci_status,
-                               &p->remote_addr);
+    auto new_role = btm_cb.devcb.switch_role_ref_data.role;
+    auto hci_status = btm_cb.devcb.switch_role_ref_data.hci_status;
+    btm_acl_report_role_change(hci_status, &p->remote_addr);
+    BTA_dm_report_role_change(btm_cb.devcb.switch_role_ref_data.remote_bd_addr,
+                              new_role, hci_status);
 
-    /* if role change event is registered, report it now */
-    if (btm_cb.acl_cb_.p_bl_changed_cb) {
-      tBTM_BL_ROLE_CHG_DATA evt;
-      evt.event = BTM_BL_ROLE_CHG_EVT;
-      evt.new_role = btm_cb.devcb.switch_role_ref_data.role;
-      evt.p_bda = &btm_cb.devcb.switch_role_ref_data.remote_bd_addr;
-      evt.hci_status = btm_cb.devcb.switch_role_ref_data.hci_status;
-      tBTM_BL_EVENT_DATA btm_bl_event_data;
-      btm_bl_event_data.role_chg = evt;
-      (*btm_cb.acl_cb_.p_bl_changed_cb)(&btm_bl_event_data);
-
-      BTM_TRACE_DEBUG(
-          "%s: Role Switch Event: new_role 0x%02x, HCI Status 0x%02x, rs_st:%d",
-          __func__, evt.new_role, evt.hci_status, p->switch_role_state);
-    }
+    BTM_TRACE_DEBUG(
+        "%s: Role Switch Event: new_role 0x%02x, HCI Status 0x%02x, rs_st:%d",
+        __func__, new_role, hci_status, p->switch_role_state);
 
 #if (BTM_DISC_DURING_RS == TRUE)
     /* If a disconnect is pending, issue it now that role switch has completed
@@ -1384,7 +1377,6 @@ void btm_acl_role_changed(uint8_t hci_status, const RawAddress* bd_addr,
       BTM_SetLinkSuperTout(p->remote_addr, p->link_super_tout);
     }
   } else {
-    /* so the BTM_BL_ROLE_CHG_EVT uses the old role */
     new_role = p->link_role;
   }
 
@@ -1409,18 +1401,7 @@ void btm_acl_role_changed(uint8_t hci_status, const RawAddress* bd_addr,
 
   /* if role switch complete is needed, report it now */
   btm_acl_report_role_change(hci_status, bd_addr);
-
-  /* if role change event is registered, report it now */
-  if (btm_cb.acl_cb_.p_bl_changed_cb) {
-    tBTM_BL_ROLE_CHG_DATA evt;
-    evt.event = BTM_BL_ROLE_CHG_EVT;
-    evt.new_role = new_role;
-    evt.p_bda = p_bda;
-    evt.hci_status = hci_status;
-    tBTM_BL_EVENT_DATA btm_bl_event_data;
-    btm_bl_event_data.role_chg = evt;
-    (*btm_cb.acl_cb_.p_bl_changed_cb)(&btm_bl_event_data);
-  }
+  BTA_dm_report_role_change(*p_bda, new_role, hci_status);
 
   BTM_TRACE_DEBUG(
       "%s: peer %s Role Switch Event: new_role 0x%02x, HCI Status 0x%02x, "

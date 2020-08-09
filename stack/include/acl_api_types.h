@@ -129,7 +129,6 @@ typedef struct {
 } tBTM_INQ_TXPWR_RESULT;
 
 enum {
-  BTM_BL_ROLE_CHG_EVT,
   BTM_BL_COLLISION_EVT
 };
 typedef uint8_t tBTM_BL_EVENT;
@@ -153,19 +152,10 @@ typedef struct {
 #define BTM_INQUIRY_STARTED 1
 #define BTM_INQUIRY_CANCELLED 2
 #define BTM_INQUIRY_COMPLETE 3
-/* the data type associated with BTM_BL_ROLE_CHG_EVT */
-typedef struct {
-  tBTM_BL_EVENT event;     /* The event reported. */
-  const RawAddress* p_bda; /* The address of the peer connected device */
-  uint8_t new_role;
-  uint8_t hci_status; /* HCI status returned with the event */
-} tBTM_BL_ROLE_CHG_DATA;
 
 typedef union {
   tBTM_BL_EVENT event;        /* The event reported. */
   tBTM_BL_CONN_DATA conn;     /* The data associated with BTM_BL_CONN_EVT */
-  tBTM_BL_ROLE_CHG_DATA
-      role_chg; /*The data associated with BTM_BL_ROLE_CHG_EVT */
 } tBTM_BL_EVENT_DATA;
 
 /* Callback function for notifications when the BTM busy level
