@@ -2169,7 +2169,7 @@ static void bte_dm_remote_service_record_evt(tBTA_DM_SEARCH_EVT event,
 static void bta_energy_info_cb(tBTA_DM_BLE_TX_TIME_MS tx_time,
                                tBTA_DM_BLE_RX_TIME_MS rx_time,
                                tBTA_DM_BLE_IDLE_TIME_MS idle_time,
-                               tBTA_DM_BLE_ENERGY_USED energy_used,
+                               tBTM_BLE_ENERGY_USED energy_used,
                                tBTA_DM_CONTRL_STATE ctrl_state,
                                tBTA_STATUS status) {
   BTIF_TRACE_DEBUG(

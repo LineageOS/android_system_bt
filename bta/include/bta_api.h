@@ -739,7 +739,6 @@ typedef tBTM_BLE_SEC_ACT tBTA_DM_BLE_SEC_ACT;
 typedef tBTM_BLE_TX_TIME_MS tBTA_DM_BLE_TX_TIME_MS;
 typedef tBTM_BLE_RX_TIME_MS tBTA_DM_BLE_RX_TIME_MS;
 typedef tBTM_BLE_IDLE_TIME_MS tBTA_DM_BLE_IDLE_TIME_MS;
-typedef tBTM_BLE_ENERGY_USED tBTA_DM_BLE_ENERGY_USED;
 
 #define BTA_DM_CONTRL_UNKNOWN 0 /* Unknown state */
 #define BTA_DM_CONTRL_ACTIVE 1  /* ACL link on, SCO link ongoing, sniff mode */
@@ -760,7 +759,7 @@ typedef uint16_t tBTA_DM_BLE_ADV_INFO_TIMESTAMP;
 typedef void(tBTA_BLE_ENERGY_INFO_CBACK)(tBTA_DM_BLE_TX_TIME_MS tx_time,
                                          tBTA_DM_BLE_RX_TIME_MS rx_time,
                                          tBTA_DM_BLE_IDLE_TIME_MS idle_time,
-                                         tBTA_DM_BLE_ENERGY_USED energy_used,
+                                         tBTM_BLE_ENERGY_USED energy_used,
                                          tBTA_DM_CONTRL_STATE ctrl_state,
                                          tBTA_STATUS status);
 
