@@ -120,11 +120,6 @@ static void bta_sys_sm_execute(tBTA_SYS_HW_EVT event) {
         case BTA_SYS_API_DISABLE_EVT:
           bta_sys_set_state(BTA_SYS_HW_STOPPING);
           break;
-        case BTA_SYS_EVT_DISABLED_EVT:
-          bta_sys_set_state(BTA_SYS_HW_STARTING);
-          BTA_dm_on_hw_off();
-          bta_sys_hw_api_enable();
-          break;
         case BTA_SYS_ERROR_EVT:
           bta_sys_set_state(BTA_SYS_HW_ON);
           bta_sys_hw_error();
@@ -142,7 +137,6 @@ static void bta_sys_sm_execute(tBTA_SYS_HW_EVT event) {
           bta_sys_hw_api_disable();
           break;
         case BTA_SYS_ERROR_EVT:
-        case BTA_SYS_EVT_DISABLED_EVT:
           bta_sys_hw_error();
           break;
         default:
@@ -157,10 +151,6 @@ static void bta_sys_sm_execute(tBTA_SYS_HW_EVT event) {
         case BTA_SYS_EVT_STACK_ENABLED_EVT:
           BTA_dm_on_hw_on();
           bta_sys_hw_api_disable();
-          break;
-        case BTA_SYS_EVT_DISABLED_EVT:
-          bta_sys_set_state(BTA_SYS_HW_OFF);
-          BTA_dm_on_hw_off();
           break;
         case BTA_SYS_ERROR_EVT:
           bta_sys_hw_api_disable();
@@ -238,10 +228,8 @@ void bta_sys_hw_api_disable() {
   /* register which module we turn off */
   bta_sys_cb.bluetooth_active = false;
 
-  /* manually update the state of our system */
-  bta_sys_cb.state = BTA_SYS_HW_STOPPING;
-
-  send_bta_sys_hw_event(BTA_SYS_EVT_DISABLED_EVT);
+  bta_sys_set_state(BTA_SYS_HW_OFF);
+  BTA_dm_on_hw_off();
 }
 
 /*******************************************************************************
