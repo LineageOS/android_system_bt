@@ -360,7 +360,6 @@ typedef uint8_t tBTA_SIG_STRENGTH_MASK;
 #define BTA_DM_SP_KEY_NOTIF_EVT 11 /* Simple Pairing Passkey Notification */
 #define BTA_DM_SP_RMT_OOB_EVT 12   /* Simple Pairing Remote OOB Data request. */
 #define BTA_DM_SP_KEYPRESS_EVT 13  /* Key press notification event. */
-#define BTA_DM_ROLE_CHG_EVT 14     /* Role Change event. */
 #define BTA_DM_BLE_KEY_EVT 15      /* BLE SMP key event for peer device keys */
 #define BTA_DM_BLE_SEC_REQ_EVT 16  /* BLE SMP security request */
 #define BTA_DM_BLE_PASSKEY_NOTIF_EVT 17 /* SMP passkey notification event */
@@ -528,12 +527,6 @@ typedef struct {
   RawAddress bd_addr; /* BD address peer device. */
 } tBTA_DM_LINK_DOWN;
 
-/* Structure associated with BTA_DM_ROLE_CHG_EVT */
-typedef struct {
-  RawAddress bd_addr; /* BD address peer device. */
-  uint8_t new_role; /* the new connection role */
-} tBTA_DM_ROLE_CHG;
-
 #define BTA_IO_CAP_OUT BTM_IO_CAP_OUT       /* 0 DisplayOnly */
 #define BTA_IO_CAP_IO BTM_IO_CAP_IO         /* 1 DisplayYesNo */
 #define BTA_IO_CAP_IN BTM_IO_CAP_IN         /* 2 KeyboardOnly */
@@ -663,7 +656,6 @@ typedef union {
   tBTA_DM_BOND_CANCEL_CMPL
       bond_cancel_cmpl;               /* Bond Cancel Complete indication */
   tBTA_DM_SP_KEY_PRESS key_press;     /* key press notification event */
-  tBTA_DM_ROLE_CHG role_chg;          /* role change event */
   tBTA_DM_BLE_SEC_REQ ble_req;        /* BLE SMP related request */
   tBTA_DM_BLE_KEY ble_key;            /* BLE SMP keys used when pairing */
   tBTA_BLE_LOCAL_ID_KEYS ble_id_keys; /* IR event */
