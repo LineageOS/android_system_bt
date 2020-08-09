@@ -758,7 +758,7 @@ void smp_process_keypress_notification(tSMP_CB* p_cb, tSMP_INT_DATA* p_data) {
   if (p != NULL) {
     STREAM_TO_UINT8(p_cb->peer_keypress_notification, p);
   } else {
-    p_cb->peer_keypress_notification = BTM_SP_KEY_OUT_OF_RANGE;
+    p_cb->peer_keypress_notification = SMP_SC_KEY_OUT_OF_RANGE;
   }
   p_cb->cb_evt = SMP_PEER_KEYPR_NOT_EVT;
 }
