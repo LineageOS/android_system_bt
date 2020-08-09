@@ -303,9 +303,6 @@ typedef struct {
   uint8_t* bta_dm_eir_additional;      /* additional data */
 } tBTA_DM_EIR_CONF;
 
-/* advertising filter policy */
-typedef tBTM_BLE_AFP tBTA_BLE_AFP;
-
 enum {
   BTA_BLE_BATCH_SCAN_MODE_PASS = 1,
   BTA_BLE_BATCH_SCAN_MODE_ACTI = 2,
@@ -448,20 +445,14 @@ typedef struct {
   BTM_LE_KEY_LCSRK                /* local CSRK has been deliver to peer */
 typedef uint8_t tBTA_LE_KEY_TYPE; /* can be used as a bit mask */
 
-typedef tBTM_LE_PENC_KEYS tBTA_LE_PENC_KEYS;
-typedef tBTM_LE_PCSRK_KEYS tBTA_LE_PCSRK_KEYS;
-typedef tBTM_LE_LENC_KEYS tBTA_LE_LENC_KEYS;
-typedef tBTM_LE_LCSRK_KEYS tBTA_LE_LCSRK_KEYS;
-typedef tBTM_LE_PID_KEYS tBTA_LE_PID_KEYS;
-
 typedef union {
-  tBTA_LE_PENC_KEYS penc_key;  /* received peer encryption key */
-  tBTA_LE_PCSRK_KEYS psrk_key; /* received peer device SRK */
-  tBTA_LE_PID_KEYS pid_key;    /* peer device ID key */
-  tBTA_LE_LENC_KEYS
+  tBTM_LE_PENC_KEYS penc_key;  /* received peer encryption key */
+  tBTM_LE_PCSRK_KEYS psrk_key; /* received peer device SRK */
+  tBTM_LE_PID_KEYS pid_key;    /* peer device ID key */
+  tBTM_LE_LENC_KEYS
       lenc_key; /* local encryption reproduction keys LTK = = d1(ER,DIV,0)*/
-  tBTA_LE_LCSRK_KEYS lcsrk_key; /* local device CSRK = d1(ER,DIV,1)*/
-  tBTA_LE_PID_KEYS lid_key; /* local device ID key for the particular remote */
+  tBTM_LE_LCSRK_KEYS lcsrk_key; /* local device CSRK = d1(ER,DIV,1)*/
+  tBTM_LE_PID_KEYS lid_key; /* local device ID key for the particular remote */
 } tBTA_LE_KEY_VALUE;
 
 #define BTA_BLE_LOCAL_KEY_TYPE_ID 1
