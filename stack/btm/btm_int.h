@@ -227,7 +227,6 @@ extern void btm_sec_rmt_host_support_feat_evt(uint8_t* p);
 extern void btm_io_capabilities_req(const RawAddress& p);
 extern void btm_io_capabilities_rsp(uint8_t* p);
 extern void btm_proc_sp_req_evt(tBTM_SP_EVT event, uint8_t* p);
-extern void btm_keypress_notif_evt(uint8_t* p);
 extern void btm_simple_pair_complete(uint8_t* p);
 extern void btm_sec_link_key_notification(const RawAddress& p_bda,
                                           const Octet16& link_key,
