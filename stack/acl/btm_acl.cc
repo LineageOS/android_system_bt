@@ -77,6 +77,7 @@ static void btm_read_tx_power_timeout(void* data);
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                             uint8_t num_read_pages);
 
+void BTIF_dm_report_busy_level_change(uint8_t busy_level_flags);
 /* 3 seconds timeout waiting for responses */
 #define BTM_DEV_REPLY_TIMEOUT_MS (3 * 1000)
 
@@ -451,31 +452,22 @@ void btm_acl_set_paging(bool value) { btm_cb.is_paging = value; }
  *
  ******************************************************************************/
 void btm_acl_update_busy_level(tBTM_BLI_EVENT event) {
-  tBTM_BL_UPDATE_DATA evt;
-  evt.busy_level_flags = 0;
   switch (event) {
     case BTM_BLI_INQ_EVT:
       BTM_TRACE_DEBUG("BTM_BLI_INQ_EVT");
       btm_cb.is_inquiry = true;
-      evt.busy_level_flags = BTM_BL_INQUIRY_STARTED;
+      BTIF_dm_report_busy_level_change(BTM_BL_INQUIRY_STARTED);
       break;
     case BTM_BLI_INQ_CANCEL_EVT:
       BTM_TRACE_DEBUG("BTM_BLI_INQ_CANCEL_EVT");
       btm_cb.is_inquiry = false;
-      evt.busy_level_flags = BTM_BL_INQUIRY_CANCELLED;
+      BTIF_dm_report_busy_level_change(BTM_BL_INQUIRY_CANCELLED);
       break;
     case BTM_BLI_INQ_DONE_EVT:
       BTM_TRACE_DEBUG("BTM_BLI_INQ_DONE_EVT");
       btm_cb.is_inquiry = false;
-      evt.busy_level_flags = BTM_BL_INQUIRY_COMPLETE;
+      BTIF_dm_report_busy_level_change(BTM_BL_INQUIRY_COMPLETE);
       break;
-  }
-
-  evt.event = BTM_BL_UPDATE_EVT;
-  if (btm_cb.acl_cb_.p_bl_changed_cb) {
-    tBTM_BL_EVENT_DATA btm_bl_event_data;
-    btm_bl_event_data.update = evt;
-    (*btm_cb.acl_cb_.p_bl_changed_cb)(&btm_bl_event_data);
   }
 }
 
