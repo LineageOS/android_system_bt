@@ -180,7 +180,6 @@ enum {
 
 /* SYS HW status events - returned by SYS HW manager to other modules. */
 enum {
-  BTA_SYS_HW_OFF_EVT,
   BTA_SYS_HW_ON_EVT,
   BTA_SYS_HW_STARTING_EVT,
   BTA_SYS_HW_STOPPING_EVT,

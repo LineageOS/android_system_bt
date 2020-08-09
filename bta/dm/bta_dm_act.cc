@@ -322,6 +322,22 @@ void BTA_dm_on_hw_error() {
     bta_dm_cb.p_sec_cback(BTA_DM_HW_ERROR_EVT, NULL);
   }
 }
+
+void BTA_dm_on_hw_off() {
+  if (bta_dm_cb.p_sec_cback != NULL)
+    bta_dm_cb.p_sec_cback(BTA_DM_DISABLE_EVT, NULL);
+
+  /* reinitialize the control block */
+  bta_dm_deinit_cb();
+
+  /* hw is ready, go on with BTA DM initialization */
+  alarm_free(bta_dm_search_cb.search_timer);
+  alarm_free(bta_dm_search_cb.gatt_close_timer);
+  memset(&bta_dm_search_cb, 0, sizeof(bta_dm_search_cb));
+
+  /* notify BTA DM is now unactive */
+  bta_dm_cb.is_bta_dm_active = false;
+}
 /*******************************************************************************
  *
  * Function         bta_dm_sys_hw_cback
@@ -340,21 +356,7 @@ void BTA_dm_sys_hw_cback(tBTA_SYS_HW_EVT status) {
 
   APPL_TRACE_DEBUG("%s with event: %i", __func__, status);
 
-  if (status == BTA_SYS_HW_OFF_EVT) {
-    if (bta_dm_cb.p_sec_cback != NULL)
-      bta_dm_cb.p_sec_cback(BTA_DM_DISABLE_EVT, NULL);
-
-    /* reinitialize the control block */
-    bta_dm_deinit_cb();
-
-    /* hw is ready, go on with BTA DM initialization */
-    alarm_free(bta_dm_search_cb.search_timer);
-    alarm_free(bta_dm_search_cb.gatt_close_timer);
-    memset(&bta_dm_search_cb, 0, sizeof(bta_dm_search_cb));
-
-    /* notify BTA DM is now unactive */
-    bta_dm_cb.is_bta_dm_active = false;
-  } else if (status == BTA_SYS_HW_ON_EVT) {
+  if (status == BTA_SYS_HW_ON_EVT) {
     /* save security callback */
     temp_cback = bta_dm_cb.p_sec_cback;
     /* make sure the control block is properly initialized */
