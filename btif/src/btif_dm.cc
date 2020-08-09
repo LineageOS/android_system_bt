@@ -1983,7 +1983,6 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
       break;
     }
 
-    case BTA_DM_SP_KEYPRESS_EVT:
     default:
       BTIF_TRACE_WARNING("%s: unhandled event (%d)", __func__, event);
       break;
