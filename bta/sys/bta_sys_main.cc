@@ -287,7 +287,7 @@ void bta_sys_hw_api_enable(tBTA_SYS_HW_MSG* p_sys_hw_msg) {
     /* register which HW module was turned on */
     bta_sys_cb.bluetooth_active = true;
 
-    BTM_DeviceReset(NULL);
+    BTM_DeviceReset();
   } else {
     bta_sys_cb.bluetooth_active = true;
 
