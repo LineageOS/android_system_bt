@@ -227,7 +227,7 @@ void bta_dm_co_ble_load_local_keys(tBTA_DM_BLE_LOCAL_KEY_MASK* p_key_mask,
  ******************************************************************************/
 void bta_dm_co_ble_io_req(const RawAddress& bd_addr, tBTM_IO_CAP* p_io_cap,
                           tBTA_OOB_DATA* p_oob_data,
-                          tBTA_LE_AUTH_REQ* p_auth_req, uint8_t* p_max_key_size,
+                          tBTM_LE_AUTH_REQ* p_auth_req, uint8_t* p_max_key_size,
                           tBTA_LE_KEY_TYPE* p_init_key,
                           tBTA_LE_KEY_TYPE* p_resp_key) {
   bte_appl_cfg.ble_io_cap = btif_storage_get_local_io_caps_ble();

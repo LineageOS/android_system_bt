@@ -553,8 +553,6 @@ typedef struct {
 #define BTA_LE_AUTH_REQ_SC_BOND BTM_LE_AUTH_REQ_SC_BOND           /* 1001 */
 #define BTA_LE_AUTH_REQ_SC_MITM BTM_LE_AUTH_REQ_SC_MITM           /* 1100 */
 #define BTA_LE_AUTH_REQ_SC_MITM_BOND BTM_LE_AUTH_REQ_SC_MITM_BOND /* 1101 */
-typedef tBTM_LE_AUTH_REQ
-    tBTA_LE_AUTH_REQ; /* combination of the above bit pattern */
 
 #define BTA_OOB_NONE BTM_OOB_NONE
 #define BTA_OOB_PRESENT BTM_OOB_PRESENT

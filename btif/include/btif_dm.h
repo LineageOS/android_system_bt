@@ -58,7 +58,7 @@ void btif_dm_proc_io_rsp(const RawAddress& bd_addr, tBTM_IO_CAP io_cap,
 void btif_dm_set_oob_for_io_req(tBTA_OOB_DATA* p_oob_data);
 void btif_dm_set_oob_for_le_io_req(const RawAddress& bd_addr,
                                    tBTA_OOB_DATA* p_oob_data,
-                                   tBTA_LE_AUTH_REQ* p_auth_req);
+                                   tBTM_LE_AUTH_REQ* p_auth_req);
 #ifdef BTIF_DM_OOB_TEST
 void btif_dm_load_local_oob(void);
 void btif_dm_proc_loc_oob(bool valid, const Octet16& c, const Octet16& r);
