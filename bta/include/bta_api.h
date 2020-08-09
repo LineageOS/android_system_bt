@@ -509,14 +509,6 @@ typedef struct {
   tBT_DEVICE_TYPE dev_type;
 } tBTA_DM_AUTH_CMPL;
 
-/* Structure associated with BTA_DM_AUTHORIZE_EVT */
-typedef struct {
-  RawAddress bd_addr;      /* BD address peer device. */
-  BD_NAME bd_name;         /* Name of peer device. */
-  tBTA_SERVICE_ID service; /* Service ID to authorize. */
-  DEV_CLASS dev_class;
-} tBTA_DM_AUTHORIZE;
-
 /* Structure associated with BTA_DM_LINK_UP_EVT */
 typedef struct {
   RawAddress bd_addr; /* BD address peer device. */
@@ -647,7 +639,6 @@ typedef union {
   tBTA_DM_ENABLE enable;          /* BTA enabled */
   tBTA_DM_PIN_REQ pin_req;        /* PIN request. */
   tBTA_DM_AUTH_CMPL auth_cmpl;    /* Authentication complete indication. */
-  tBTA_DM_AUTHORIZE authorize;    /* Authorization request. */
   tBTA_DM_LINK_UP link_up;        /* ACL connection down event */
   tBTA_DM_LINK_DOWN link_down;    /* ACL connection down event */
   tBTA_DM_SP_CFM_REQ cfm_req;     /* user confirm request */
