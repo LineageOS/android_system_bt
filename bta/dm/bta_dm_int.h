@@ -113,7 +113,7 @@ typedef struct {
   RawAddress bd_addr;
   tBTM_IO_CAP io_cap;
   tBTA_OOB_DATA oob_data;
-  tBTA_AUTH_REQ auth_req;
+  tBTM_AUTH_REQ auth_req;
 } tBTA_DM_CI_IO_REQ;
 
 typedef struct {
@@ -316,8 +316,8 @@ typedef struct {
   tBTA_DM_SEC_EVT pin_evt;
   tBTM_IO_CAP loc_io_caps;    /* IO Capabilities of local device */
   tBTM_IO_CAP rmt_io_caps;    /* IO Capabilities of remote device */
-  tBTA_AUTH_REQ loc_auth_req; /* Authentication required for local device */
-  tBTA_AUTH_REQ rmt_auth_req;
+  tBTM_AUTH_REQ loc_auth_req; /* Authentication required for local device */
+  tBTM_AUTH_REQ rmt_auth_req;
   uint32_t num_val; /* the numeric value for comparison. If just_works, do not
                        show this number to UI */
   bool just_works;  /* true, if "Just Works" association model */
@@ -519,7 +519,7 @@ extern void bta_dm_set_encryption(const RawAddress&, tBTA_TRANSPORT,
 extern void bta_dm_confirm(const RawAddress&, bool);
 extern void bta_dm_ci_io_req_act(const RawAddress& bd_addr, tBTM_IO_CAP io_cap,
                                  tBTA_OOB_DATA oob_data,
-                                 tBTA_AUTH_REQ auth_req);
+                                 tBTM_AUTH_REQ auth_req);
 extern void bta_dm_ci_rmt_oob_act(std::unique_ptr<tBTA_DM_CI_RMT_OOB> msg);
 
 extern void bta_dm_init_pm(void);

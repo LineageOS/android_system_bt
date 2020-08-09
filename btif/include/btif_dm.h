@@ -44,13 +44,13 @@ void btif_dm_on_disable(void);
  * Callout for handling io_capabilities request
  */
 void btif_dm_proc_io_req(const RawAddress& bd_addr, tBTM_IO_CAP* p_io_cap,
-                         tBTA_OOB_DATA* p_oob_data, tBTA_AUTH_REQ* p_auth_req,
+                         tBTA_OOB_DATA* p_oob_data, tBTM_AUTH_REQ* p_auth_req,
                          bool is_orig);
 /**
  * Callout for handling io_capabilities response
  */
 void btif_dm_proc_io_rsp(const RawAddress& bd_addr, tBTM_IO_CAP io_cap,
-                         tBTA_OOB_DATA oob_data, tBTA_AUTH_REQ auth_req);
+                         tBTA_OOB_DATA oob_data, tBTM_AUTH_REQ auth_req);
 
 /**
  * Out-of-band functions

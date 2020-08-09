@@ -76,7 +76,7 @@ bool bta_dm_co_get_compress_memory(UNUSED_ATTR tBTA_SYS_ID id,
  ******************************************************************************/
 void bta_dm_co_io_req(UNUSED_ATTR const RawAddress& bd_addr,
                       tBTM_IO_CAP* p_io_cap, tBTA_OOB_DATA* p_oob_data,
-                      tBTA_AUTH_REQ* p_auth_req, bool is_orig) {
+                      tBTM_AUTH_REQ* p_auth_req, bool is_orig) {
   btif_dm_set_oob_for_io_req(p_oob_data);
   btif_dm_proc_io_req(bd_addr, p_io_cap, p_oob_data, p_auth_req, is_orig);
   BTIF_TRACE_DEBUG("bta_dm_co_io_req *p_oob_data = %d", *p_oob_data);
@@ -103,7 +103,7 @@ void bta_dm_co_io_req(UNUSED_ATTR const RawAddress& bd_addr,
  *
  ******************************************************************************/
 void bta_dm_co_io_rsp(const RawAddress& bd_addr, tBTM_IO_CAP io_cap,
-                      tBTA_OOB_DATA oob_data, tBTA_AUTH_REQ auth_req) {
+                      tBTA_OOB_DATA oob_data, tBTM_AUTH_REQ auth_req) {
   btif_dm_proc_io_rsp(bd_addr, io_cap, oob_data, auth_req);
 }
 

@@ -537,7 +537,6 @@ typedef struct {
                       bonding                                               \
                       Use IO Capabilities to determine authentication       \
                       procedure */
-typedef tBTM_AUTH_REQ tBTA_AUTH_REQ;
 
 #define BTA_AUTH_DD_BOND \
   BTM_AUTH_DD_BOND /* 2 this bit is set for dedicated bonding */
@@ -573,10 +572,10 @@ typedef struct {
   uint32_t num_val; /* the numeric value for comparison. If just_works, do not
                        show this number to UI */
   bool just_works;  /* true, if "Just Works" association model */
-  tBTA_AUTH_REQ loc_auth_req; /* Authentication required for local device */
-  tBTA_AUTH_REQ rmt_auth_req; /* Authentication required for peer device */
+  tBTM_AUTH_REQ loc_auth_req; /* Authentication required for local device */
+  tBTM_AUTH_REQ rmt_auth_req; /* Authentication required for peer device */
   tBTM_IO_CAP loc_io_caps;    /* IO Capabilities of local device */
-  tBTA_AUTH_REQ rmt_io_caps;  /* IO Capabilities of remote device */
+  tBTM_AUTH_REQ rmt_io_caps;  /* IO Capabilities of remote device */
 } tBTA_DM_SP_CFM_REQ;
 
 enum {

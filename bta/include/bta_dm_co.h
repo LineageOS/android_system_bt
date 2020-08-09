@@ -54,7 +54,7 @@
  ******************************************************************************/
 extern void bta_dm_co_io_req(const RawAddress& bd_addr, tBTM_IO_CAP* p_io_cap,
                              tBTA_OOB_DATA* p_oob_data,
-                             tBTA_AUTH_REQ* p_auth_req, bool is_orig);
+                             tBTM_AUTH_REQ* p_auth_req, bool is_orig);
 
 /*******************************************************************************
  *
@@ -74,7 +74,7 @@ extern void bta_dm_co_io_req(const RawAddress& bd_addr, tBTM_IO_CAP* p_io_cap,
  *
  ******************************************************************************/
 extern void bta_dm_co_io_rsp(const RawAddress& bd_addr, tBTM_IO_CAP io_cap,
-                             tBTA_OOB_DATA oob_data, tBTA_AUTH_REQ auth_req);
+                             tBTA_OOB_DATA oob_data, tBTM_AUTH_REQ auth_req);
 
 /*******************************************************************************
  *
