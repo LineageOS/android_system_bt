@@ -87,12 +87,12 @@ extern tBTA_SYS_CB bta_sys_cb;
 
 /* functions used for BTA SYS HW state machine */
 void bta_sys_hw_btm_cback(tBTM_DEV_STATUS status);
-void bta_sys_hw_error(tBTA_SYS_HW_MSG* p_sys_hw_msg);
-void bta_sys_hw_api_enable(tBTA_SYS_HW_MSG* p_sys_hw_msg);
-void bta_sys_hw_api_disable(tBTA_SYS_HW_MSG* p_sys_hw_msg);
-void bta_sys_hw_evt_enabled(tBTA_SYS_HW_MSG* p_sys_hw_msg);
-void bta_sys_hw_evt_disabled(tBTA_SYS_HW_MSG* p_sys_hw_msg);
-void bta_sys_hw_evt_stack_enabled(tBTA_SYS_HW_MSG* p_sys_hw_msg);
+void bta_sys_hw_error();
+void bta_sys_hw_api_enable();
+void bta_sys_hw_api_disable();
+void bta_sys_hw_evt_enabled();
+void bta_sys_hw_evt_disabled();
+void bta_sys_hw_evt_stack_enabled();
 
 bool bta_sys_sm_execute(BT_HDR* p_msg);
 

@@ -55,7 +55,7 @@ uint8_t btif_trace_level = BT_TRACE_LEVEL_WARNING;
 static const tBTA_SYS_REG bta_sys_hw_reg = {bta_sys_sm_execute, NULL};
 
 /* type for action functions */
-typedef void (*tBTA_SYS_ACTION)(tBTA_SYS_HW_MSG* p_data);
+typedef void (*tBTA_SYS_ACTION)();
 
 /* action function list */
 const tBTA_SYS_ACTION bta_sys_action[] = {
@@ -208,7 +208,7 @@ bool bta_sys_sm_execute(BT_HDR* p_msg) {
   for (i = 0; i < BTA_SYS_ACTIONS; i++) {
     action = state_table[p_msg->event & 0x00ff][i];
     if (action != BTA_SYS_IGNORE) {
-      (*bta_sys_action[action])((tBTA_SYS_HW_MSG*)p_msg);
+      (*bta_sys_action[action])();
     } else {
       break;
     }
@@ -263,7 +263,7 @@ void bta_sys_hw_btm_cback(tBTM_DEV_STATUS status) {
  * Returns          success or failure
  *
  ******************************************************************************/
-void bta_sys_hw_error(UNUSED_ATTR tBTA_SYS_HW_MSG* p_sys_hw_msg) {
+void bta_sys_hw_error() {
   APPL_TRACE_DEBUG("%s", __func__);
   if (bta_sys_cb.bluetooth_active && bta_sys_cb.sys_hw_cback != NULL) {
     bta_sys_cb.sys_hw_cback(BTA_SYS_HW_ERROR_EVT);
@@ -282,7 +282,7 @@ void bta_sys_hw_error(UNUSED_ATTR tBTA_SYS_HW_MSG* p_sys_hw_msg) {
  *
  ******************************************************************************/
 
-void bta_sys_hw_api_enable(tBTA_SYS_HW_MSG* p_sys_hw_msg) {
+void bta_sys_hw_api_enable() {
   if (!bta_sys_cb.bluetooth_active && bta_sys_cb.state != BTA_SYS_HW_ON) {
     /* register which HW module was turned on */
     bta_sys_cb.bluetooth_active = true;
@@ -308,7 +308,7 @@ void bta_sys_hw_api_enable(tBTA_SYS_HW_MSG* p_sys_hw_msg) {
  * Returns          success or failure
  *
  ******************************************************************************/
-void bta_sys_hw_api_disable(tBTA_SYS_HW_MSG* p_sys_hw_msg) {
+void bta_sys_hw_api_disable() {
   /* make sure the related SW blocks were stopped */
   bta_sys_disable();
 
@@ -335,7 +335,7 @@ void bta_sys_hw_api_disable(tBTA_SYS_HW_MSG* p_sys_hw_msg) {
  * Returns          success or failure
  *
  ******************************************************************************/
-void bta_sys_hw_evt_disabled(tBTA_SYS_HW_MSG* p_sys_hw_msg) {
+void bta_sys_hw_evt_disabled() {
   if (bta_sys_cb.sys_hw_cback != NULL) {
     bta_sys_cb.sys_hw_cback(BTA_SYS_HW_OFF_EVT);
   }
@@ -352,7 +352,7 @@ void bta_sys_hw_evt_disabled(tBTA_SYS_HW_MSG* p_sys_hw_msg) {
  * Returns          success or failure
  *
  ******************************************************************************/
-void bta_sys_hw_evt_stack_enabled(UNUSED_ATTR tBTA_SYS_HW_MSG* p_sys_hw_msg) {
+void bta_sys_hw_evt_stack_enabled() {
   if (bta_sys_cb.sys_hw_cback != NULL) {
     bta_sys_cb.sys_hw_cback(BTA_SYS_HW_ON_EVT);
   }
