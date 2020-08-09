@@ -2565,9 +2565,6 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
       break;
 
     case BTM_SP_KEYPRESS_EVT:
-      memcpy(&sec_event.key_press, &p_data->key_press,
-             sizeof(tBTM_SP_KEYPRESS));
-      bta_dm_cb.p_sec_cback(BTA_DM_SP_KEYPRESS_EVT, &sec_event);
       break;
 
     default:
