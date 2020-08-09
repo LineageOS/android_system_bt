@@ -2743,6 +2743,12 @@ static void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport,
   bta_dm_adjust_roles(true);
 }
 
+void BTA_dm_acl_up(const RawAddress bd_addr, tBT_TRANSPORT transport,
+                   uint16_t handle) {
+  do_in_main_thread(FROM_HERE,
+                    base::Bind(bta_dm_acl_up, bd_addr, transport, handle));
+}
+
 static void bta_dm_acl_down(const RawAddress& bd_addr,
                             tBT_TRANSPORT transport) {
   bool issue_unpair_cb = false;
@@ -2828,12 +2834,6 @@ static void bta_dm_acl_down(const RawAddress& bd_addr,
 /** Callback from btm when acl connection goes up or down */
 static void bta_dm_bl_change_cback(tBTM_BL_EVENT_DATA* p_data) {
   switch (p_data->event) {
-    case BTM_BL_CONN_EVT:
-      /* connection up */
-      do_in_main_thread(
-          FROM_HERE, base::Bind(bta_dm_acl_up, *p_data->conn.p_bda,
-                                p_data->conn.transport, p_data->conn.handle));
-      break;
     case BTM_BL_DISCN_EVT:
       /* connection down */
       do_in_main_thread(FROM_HERE,
