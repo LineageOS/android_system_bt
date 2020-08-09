@@ -2743,8 +2743,8 @@ static void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport,
   bta_dm_adjust_roles(true);
 }
 
-static void bta_dm_acl_down(const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                            uint16_t handle) {
+static void bta_dm_acl_down(const RawAddress& bd_addr,
+                            tBT_TRANSPORT transport) {
   bool issue_unpair_cb = false;
   bool remove_device = false;
 
@@ -2836,9 +2836,9 @@ static void bta_dm_bl_change_cback(tBTM_BL_EVENT_DATA* p_data) {
       break;
     case BTM_BL_DISCN_EVT:
       /* connection down */
-      do_in_main_thread(
-          FROM_HERE, base::Bind(bta_dm_acl_down, *p_data->discn.p_bda,
-                                p_data->discn.transport, p_data->discn.handle));
+      do_in_main_thread(FROM_HERE,
+                        base::Bind(bta_dm_acl_down, *p_data->discn.p_bda,
+                                   p_data->discn.transport));
       break;
 
     case BTM_BL_ROLE_CHG_EVT: {
