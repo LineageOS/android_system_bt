@@ -54,10 +54,8 @@ typedef struct {
   tBTA_SYS_REG* reg[BTA_ID_MAX]; /* registration structures */
   bool is_reg[BTA_ID_MAX];       /* registration structures */
   tBTA_SYS_HW_STATE state;
-  tBTA_SYS_HW_CBACK* sys_hw_cback[BTA_SYS_MAX_HW_MODULES]; /* enable callback
-                                                              for each HW
-                                                              modules */
-  uint32_t sys_hw_module_active; /* bitmask of all active modules */
+  tBTA_SYS_HW_CBACK* sys_hw_cback;
+  bool bluetooth_active;
   uint16_t sys_features;         /* Bitmask of sys features */
 
   tBTA_SYS_CONN_CBACK* prm_cb; /* role management callback registered by DM */
