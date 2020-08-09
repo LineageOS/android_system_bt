@@ -1641,20 +1641,20 @@ static void btif_dm_remote_service_record_evt(uint16_t event, char* p_param) {
   }
 }
 
-static void report_busy_level_change(uint8_t busy_level_flags) {
-  if (busy_level_flags == BTM_BL_INQUIRY_STARTED) {
+static void report_inquiry_status_change(uint8_t status) {
+  if (status == BTM_INQUIRY_STARTED) {
     HAL_CBACK(bt_hal_cbacks, discovery_state_changed_cb, BT_DISCOVERY_STARTED);
     btif_dm_inquiry_in_progress = true;
-  } else if (busy_level_flags == BTM_BL_INQUIRY_CANCELLED) {
+  } else if (status == BTM_INQUIRY_CANCELLED) {
     HAL_CBACK(bt_hal_cbacks, discovery_state_changed_cb, BT_DISCOVERY_STOPPED);
     btif_dm_inquiry_in_progress = false;
-  } else if (busy_level_flags == BTM_BL_INQUIRY_COMPLETE) {
+  } else if (status == BTM_INQUIRY_COMPLETE) {
     btif_dm_inquiry_in_progress = false;
   }
 }
 
-void BTIF_dm_report_busy_level_change(uint8_t busy_level_flags) {
-  do_in_jni_thread(base::Bind(report_busy_level_change, busy_level_flags));
+void BTIF_dm_report_inquiry_status_change(uint8_t status) {
+  do_in_jni_thread(base::Bind(report_inquiry_status_change, status));
 }
 
 /*******************************************************************************

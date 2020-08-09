@@ -160,9 +160,9 @@ typedef struct {
   tBT_TRANSPORT transport; /* link is LE link or not */
 } tBTM_BL_DISCN_DATA;
 
-#define BTM_BL_INQUIRY_STARTED 1
-#define BTM_BL_INQUIRY_CANCELLED 2
-#define BTM_BL_INQUIRY_COMPLETE 3
+#define BTM_INQUIRY_STARTED 1
+#define BTM_INQUIRY_CANCELLED 2
+#define BTM_INQUIRY_COMPLETE 3
 /* the data type associated with BTM_BL_ROLE_CHG_EVT */
 typedef struct {
   tBTM_BL_EVENT event;     /* The event reported. */
