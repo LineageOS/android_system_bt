@@ -84,7 +84,6 @@ static uint8_t bta_dm_authentication_complete_cback(const RawAddress& bd_addr,
                                                     int result);
 static void bta_dm_local_name_cback(void* p_name);
 static bool bta_dm_check_av(uint16_t event);
-static void bta_dm_bl_change_cback(tBTM_BL_EVENT_DATA* p_data);
 
 static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
                                 uint8_t app_id, const RawAddress& peer_addr);
@@ -426,7 +425,6 @@ static void bta_dm_sys_hw_cback(tBTA_SYS_HW_EVT status) {
     BTM_WritePageTimeout(p_bta_dm_cfg->page_timeout);
     bta_dm_cb.cur_policy = p_bta_dm_cfg->policy_settings;
     BTM_SetDefaultLinkPolicy(bta_dm_cb.cur_policy);
-    BTM_RegBusyLevelNotif(bta_dm_bl_change_cback);
 
 #if (BLE_VND_INCLUDED == TRUE)
     BTM_BleReadControllerFeatures(bta_dm_ctrl_features_rd_cmpl_cback);
@@ -2833,10 +2831,6 @@ static void bta_dm_acl_down(const RawAddress& bd_addr,
 
 void BTA_dm_acl_down(const RawAddress bd_addr, tBT_TRANSPORT transport) {
   do_in_main_thread(FROM_HERE, base::Bind(bta_dm_acl_down, bd_addr, transport));
-}
-
-/** Callback from btm when acl connection goes up or down */
-static void bta_dm_bl_change_cback(tBTM_BL_EVENT_DATA* p_data) {
 }
 
 /*******************************************************************************
