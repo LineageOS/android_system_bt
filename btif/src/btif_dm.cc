@@ -1987,7 +1987,6 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
       break;
     }
 
-    case BTA_DM_SIG_STRENGTH_EVT:
     case BTA_DM_SP_RMT_OOB_EVT:
     case BTA_DM_SP_KEYPRESS_EVT:
     default:
