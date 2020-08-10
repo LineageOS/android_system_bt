@@ -55,8 +55,6 @@ static bool bta_dm_pm_is_sco_active();
 static int bta_dm_get_sco_index();
 #endif
 static void bta_dm_pm_hid_check(bool bScoActive);
-static void bta_dm_pm_set_sniff_policy(tBTA_DM_PEER_DEVICE* p_dev,
-                                       bool bDisable);
 static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER* p_timer,
                                           uint8_t timer_idx);
 
@@ -1072,40 +1070,16 @@ static void bta_dm_pm_hid_check(bool bScoActive) {
       APPL_TRACE_DEBUG(
           "SCO status change(Active: %d), modify HID link policy. state: %d",
           bScoActive, bta_dm_conn_srvcs.conn_srvc[j].state);
-      bta_dm_pm_set_sniff_policy(
-          bta_dm_find_peer_device(bta_dm_conn_srvcs.conn_srvc[j].peer_bdaddr),
-          bScoActive);
-
-      /* if we had disabled link policy, seems like the hid device stop retrying
-       * SNIFF after a few tries. force sniff if needed */
-      if (!bScoActive)
-        bta_dm_pm_set_mode(bta_dm_conn_srvcs.conn_srvc[j].peer_bdaddr,
-                           BTA_DM_PM_NO_ACTION, BTA_DM_PM_RESTART);
+      auto peer_addr = bta_dm_conn_srvcs.conn_srvc[j].peer_bdaddr;
+      if (bScoActive) {
+        BTA_dm_block_sniff_mode_for(peer_addr);
+        bta_dm_pm_active(peer_addr);
+      } else {
+        BTA_dm_unblock_sniff_mode_for(peer_addr);
+        bta_dm_pm_set_mode(peer_addr, BTA_DM_PM_NO_ACTION, BTA_DM_PM_RESTART);
+      }
     }
   }
-}
-
-/*******************************************************************************
- *
- * Function         bta_dm_pm_set_sniff_policy
- *
- * Description      Disables/Enables sniff in link policy for the give device
- *
- * Returns          None
- *
- ******************************************************************************/
-static void bta_dm_pm_set_sniff_policy(tBTA_DM_PEER_DEVICE* p_dev,
-                                       bool bDisable) {
-  if (!p_dev) return;
-
-  if (bDisable) {
-    p_dev->link_policy &= ~HCI_ENABLE_SNIFF_MODE;
-    bta_dm_pm_active(p_dev->peer_bdaddr);
-  } else {
-    p_dev->link_policy |= HCI_ENABLE_SNIFF_MODE;
-  }
-
-  BTM_SetLinkPolicy(p_dev->peer_bdaddr, &p_dev->link_policy);
 }
 
 /*******************************************************************************

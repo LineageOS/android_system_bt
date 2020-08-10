@@ -241,6 +241,8 @@ extern void bta_sys_remove_uuid(uint16_t uuid16);
 #define bta_sys_remove_uuid(ut)
 #endif
 
+void BTA_dm_unblock_sniff_mode_for(const RawAddress& peer_addr);
+void BTA_dm_block_sniff_mode_for(const RawAddress& peer_addr);
 void BTA_dm_unblock_role_switch_for(const RawAddress& peer_addr);
 void BTA_dm_block_role_switch_for(const RawAddress& peer_addr);
 void BTA_dm_unblock_role_switch();
