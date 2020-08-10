@@ -222,7 +222,7 @@ static void reset_complete(void* result) {
 }
 
 // TODO(zachoverflow): remove this function
-void BTM_DeviceReset(UNUSED_ATTR tBTM_CMPL_CB* p_cb) {
+void BTM_DeviceReset() {
   /* Flush all ACL connections */
   btm_acl_device_down();
 
