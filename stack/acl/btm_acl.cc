@@ -1102,6 +1102,17 @@ void btm_establish_continue(tACL_CONN* p_acl_cb) {
                 p_acl_cb->hci_handle);
 }
 
+void btm_establish_continue_from_address(const RawAddress& bda,
+                                         tBT_TRANSPORT transport) {
+  tACL_CONN* p_acl = btm_bda_to_acl(bda, transport);
+  if (p_acl == nullptr) {
+    BTM_TRACE_ERROR("%s Unable to find acl control block to continue",
+                    __func__);
+    return;
+  }
+  btm_establish_continue(p_acl);
+}
+
 /*******************************************************************************
  *
  * Function         BTM_SetDefaultLinkSuperTout

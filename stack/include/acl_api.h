@@ -250,3 +250,6 @@ bool acl_refresh_remote_address(const tBTM_SEC_DEV_REC* p_dev_rec,
                                 const RawAddress& remote_bda,
                                 tBT_TRANSPORT transport, uint8_t rra_type,
                                 const RawAddress& rpa);
+
+void btm_establish_continue_from_address(const RawAddress& remote_bda,
+                                         tBT_TRANSPORT transport);
