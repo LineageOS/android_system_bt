@@ -44,6 +44,10 @@
 #include "bta_ar_api.h"
 #endif
 
+void BTA_dm_on_hw_on();
+void BTA_dm_on_hw_error();
+void BTA_dm_on_hw_off();
+
 /* system manager control block definition */
 tBTA_SYS_CB bta_sys_cb;
 
@@ -51,8 +55,6 @@ tBTA_SYS_CB bta_sys_cb;
 /* TODO Hard-coded trace levels -  Needs to be configurable */
 uint8_t appl_trace_level = BT_TRACE_LEVEL_WARNING;  // APPL_INITIAL_TRACE_LEVEL;
 uint8_t btif_trace_level = BT_TRACE_LEVEL_WARNING;
-
-static const tBTA_SYS_REG bta_sys_hw_reg = {bta_sys_sm_execute, NULL};
 
 /*******************************************************************************
  *
@@ -68,12 +70,6 @@ void bta_sys_init(void) {
   memset(&bta_sys_cb, 0, sizeof(tBTA_SYS_CB));
 
   appl_trace_level = APPL_INITIAL_TRACE_LEVEL;
-
-  /* register BTA SYS message handler */
-  bta_sys_register(BTA_ID_SYS, &bta_sys_hw_reg);
-
-  /* register for BTM notifications */
-  BTM_RegisterForDeviceStatusNotif(&bta_sys_hw_btm_cback);
 
 #if (defined BTA_AR_INCLUDED) && (BTA_AR_INCLUDED == TRUE)
   bta_ar_init();
@@ -95,13 +91,12 @@ void bta_sys_set_state(tBTA_SYS_HW_STATE value) { bta_sys_cb.state = value; }
  * Returns          void
  *
  ******************************************************************************/
-bool bta_sys_sm_execute(BT_HDR* p_msg) {
-  APPL_TRACE_EVENT("bta_sys_sm_execute state:%d, event:0x%x", bta_sys_cb.state,
-                   p_msg->event);
+static void bta_sys_sm_execute(tBTA_SYS_HW_EVT event) {
+  APPL_TRACE_EVENT("bta_sys_sm_execute state:%d, event:0x%x", bta_sys_cb.state);
 
   switch (bta_sys_cb.state) {
     case BTA_SYS_HW_OFF:
-      switch (p_msg->event) {
+      switch (event) {
         case BTA_SYS_API_ENABLE_EVT:
           bta_sys_set_state(BTA_SYS_HW_STARTING);
           bta_sys_hw_api_enable();
@@ -110,25 +105,20 @@ bool bta_sys_sm_execute(BT_HDR* p_msg) {
           bta_sys_set_state(BTA_SYS_HW_ON);
           break;
         case BTA_SYS_API_DISABLE_EVT:
-          bta_sys_hw_evt_disabled();
+          BTA_dm_on_hw_off();
           break;
         default:
           break;
       }
       break;
     case BTA_SYS_HW_STARTING:
-      switch (p_msg->event) {
+      switch (event) {
         case BTA_SYS_EVT_STACK_ENABLED_EVT:
           bta_sys_set_state(BTA_SYS_HW_ON);
-          bta_sys_hw_evt_stack_enabled();
+          BTA_dm_on_hw_on();
           break;
         case BTA_SYS_API_DISABLE_EVT:
           bta_sys_set_state(BTA_SYS_HW_STOPPING);
-          break;
-        case BTA_SYS_EVT_DISABLED_EVT:
-          bta_sys_set_state(BTA_SYS_HW_STARTING);
-          bta_sys_hw_evt_disabled();
-          bta_sys_hw_api_enable();
           break;
         case BTA_SYS_ERROR_EVT:
           bta_sys_set_state(BTA_SYS_HW_ON);
@@ -139,7 +129,7 @@ bool bta_sys_sm_execute(BT_HDR* p_msg) {
       }
       break;
     case BTA_SYS_HW_ON:
-      switch (p_msg->event) {
+      switch (event) {
         case BTA_SYS_API_ENABLE_EVT:
           bta_sys_hw_api_enable();
           break;
@@ -147,7 +137,6 @@ bool bta_sys_sm_execute(BT_HDR* p_msg) {
           bta_sys_hw_api_disable();
           break;
         case BTA_SYS_ERROR_EVT:
-        case BTA_SYS_EVT_DISABLED_EVT:
           bta_sys_hw_error();
           break;
         default:
@@ -155,17 +144,13 @@ bool bta_sys_sm_execute(BT_HDR* p_msg) {
       }
       break;
     case BTA_SYS_HW_STOPPING:
-      switch (p_msg->event) {
+      switch (event) {
         case BTA_SYS_API_ENABLE_EVT:
           bta_sys_set_state(BTA_SYS_HW_STARTING);
           break;
         case BTA_SYS_EVT_STACK_ENABLED_EVT:
-          bta_sys_hw_evt_stack_enabled();
+          BTA_dm_on_hw_on();
           bta_sys_hw_api_disable();
-          break;
-        case BTA_SYS_EVT_DISABLED_EVT:
-          bta_sys_set_state(BTA_SYS_HW_OFF);
-          bta_sys_hw_evt_disabled();
           break;
         case BTA_SYS_ERROR_EVT:
           bta_sys_hw_api_disable();
@@ -177,43 +162,10 @@ bool bta_sys_sm_execute(BT_HDR* p_msg) {
     default:
       break;
   }
-  return true;
 }
 
-void bta_sys_hw_register(tBTA_SYS_HW_CBACK* cback) {
-  bta_sys_cb.sys_hw_cback = cback;
-}
-
-void bta_sys_hw_unregister() { bta_sys_cb.sys_hw_cback = NULL; }
-
-/*******************************************************************************
- *
- * Function         bta_sys_hw_btm_cback
- *
- * Description     This function is registered by BTA SYS to BTM in order to get
- *                 status notifications
- *
- *
- * Returns
- *
- ******************************************************************************/
-void bta_sys_hw_btm_cback(tBTM_DEV_STATUS status) {
-  tBTA_SYS_HW_MSG* sys_event =
-      (tBTA_SYS_HW_MSG*)osi_malloc(sizeof(tBTA_SYS_HW_MSG));
-
-  APPL_TRACE_DEBUG("%s was called with parameter: %i", __func__, status);
-
-  /* send a message to BTA SYS */
-  if (status == BTM_DEV_STATUS_UP) {
-    sys_event->hdr.event = BTA_SYS_EVT_STACK_ENABLED_EVT;
-  } else if (status == BTM_DEV_STATUS_DOWN) {
-    sys_event->hdr.event = BTA_SYS_ERROR_EVT;
-  } else {
-    /* BTM_DEV_STATUS_CMD_TOUT is ignored for now. */
-    osi_free_and_reset((void**)&sys_event);
-  }
-
-  if (sys_event) bta_sys_sendmsg(sys_event);
+void send_bta_sys_hw_event(tBTA_SYS_HW_EVT event) {
+  do_in_main_thread(FROM_HERE, base::Bind(bta_sys_sm_execute, event));
 }
 
 /*******************************************************************************
@@ -229,8 +181,8 @@ void bta_sys_hw_btm_cback(tBTM_DEV_STATUS status) {
  ******************************************************************************/
 void bta_sys_hw_error() {
   APPL_TRACE_DEBUG("%s", __func__);
-  if (bta_sys_cb.bluetooth_active && bta_sys_cb.sys_hw_cback != NULL) {
-    bta_sys_cb.sys_hw_cback(BTA_SYS_HW_ERROR_EVT);
+  if (bta_sys_cb.bluetooth_active) {
+    BTA_dm_on_hw_error();
   }
 }
 
@@ -254,10 +206,7 @@ void bta_sys_hw_api_enable() {
     BTM_DeviceReset();
   } else {
     bta_sys_cb.bluetooth_active = true;
-
-    /* HW already in use, so directly notify the caller */
-    if (bta_sys_cb.sys_hw_cback != NULL)
-      bta_sys_cb.sys_hw_cback(BTA_SYS_HW_ON_EVT);
+    BTA_dm_on_hw_on();
   }
 }
 
@@ -279,47 +228,8 @@ void bta_sys_hw_api_disable() {
   /* register which module we turn off */
   bta_sys_cb.bluetooth_active = false;
 
-  /* manually update the state of our system */
-  bta_sys_cb.state = BTA_SYS_HW_STOPPING;
-
-  tBTA_SYS_HW_MSG* p_msg =
-      (tBTA_SYS_HW_MSG*)osi_malloc(sizeof(tBTA_SYS_HW_MSG));
-  p_msg->hdr.event = BTA_SYS_EVT_DISABLED_EVT;
-
-  bta_sys_sendmsg(p_msg);
-}
-
-/*******************************************************************************
- *
- * Function         bta_sys_hw_event_disabled
- *
- * Description
- *
- *
- * Returns          success or failure
- *
- ******************************************************************************/
-void bta_sys_hw_evt_disabled() {
-  if (bta_sys_cb.sys_hw_cback != NULL) {
-    bta_sys_cb.sys_hw_cback(BTA_SYS_HW_OFF_EVT);
-  }
-}
-
-/*******************************************************************************
- *
- * Function         bta_sys_hw_event_stack_enabled
- *
- * Description     we receive this event once the SW side is ready (stack, FW
- *                 download,... ), i.e. we can really start using the device. So
- *                 notify the app.
- *
- * Returns          success or failure
- *
- ******************************************************************************/
-void bta_sys_hw_evt_stack_enabled() {
-  if (bta_sys_cb.sys_hw_cback != NULL) {
-    bta_sys_cb.sys_hw_cback(BTA_SYS_HW_ON_EVT);
-  }
+  bta_sys_set_state(BTA_SYS_HW_OFF);
+  BTA_dm_on_hw_off();
 }
 
 /*******************************************************************************
