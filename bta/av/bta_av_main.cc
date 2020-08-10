@@ -921,8 +921,7 @@ void bta_av_restore_switch(void) {
     mask = BTA_AV_HNDL_TO_MSK(i);
     if (p_cb->conn_audio == mask) {
       if (p_cb->p_scb[i]) {
-        BTA_dm_set_policy(HCI_ENABLE_MASTER_SLAVE_SWITCH,
-                          p_cb->p_scb[i]->PeerAddress());
+        BTA_dm_unblock_role_switch_for(p_cb->p_scb[i]->PeerAddress());
       }
       break;
     }
@@ -975,7 +974,7 @@ static void bta_av_sys_rs_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status,
   if ((HCI_SUCCESS != app_id) &&
       (BTM_GetRole(peer_addr, &cur_role) == BTM_SUCCESS) &&
       (cur_role == HCI_ROLE_SLAVE)) {
-    BTA_dm_set_policy(HCI_ENABLE_MASTER_SLAVE_SWITCH, peer_addr);
+    BTA_dm_unblock_role_switch_for(peer_addr);
   }
 
   /* if BTA_AvOpen() was called for other device, which caused the role switch
@@ -1101,8 +1100,7 @@ bool bta_av_switch_if_needed(tBTA_AV_SCB* p_scb) {
        */
       if (HCI_ROLE_MASTER != role) {
         if (bta_av_cb.features & BTA_AV_FEAT_MASTER)
-          BTA_dm_clear_policy(HCI_ENABLE_MASTER_SLAVE_SWITCH,
-                               p_scbi->PeerAddress());
+          BTA_dm_block_role_switch_for(p_scbi->PeerAddress());
         if (BTM_CMD_STARTED !=
             BTM_SwitchRole(p_scbi->PeerAddress(), HCI_ROLE_MASTER, NULL)) {
           /* can not switch role on SCBI
@@ -1146,8 +1144,7 @@ bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits) {
         (A2DP_BitsSet(bta_av_cb.conn_audio) > bits ||
          (bta_av_cb.features & BTA_AV_FEAT_MASTER))) {
       if (bta_av_cb.features & BTA_AV_FEAT_MASTER)
-        BTA_dm_clear_policy(HCI_ENABLE_MASTER_SLAVE_SWITCH,
-                            p_scb->PeerAddress());
+        BTA_dm_block_role_switch_for(p_scb->PeerAddress());
 
       tBTM_STATUS status =
           BTM_SwitchRole(p_scb->PeerAddress(), HCI_ROLE_MASTER, NULL);
