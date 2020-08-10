@@ -872,8 +872,6 @@ void l2c_init(void) {
   l2cb.p_free_ccb_first = &l2cb.ccb_pool[0];
   l2cb.p_free_ccb_last = &l2cb.ccb_pool[MAX_L2CAP_CHANNELS - 1];
 
-  l2cb.desire_role = HCI_ROLE_MASTER;
-
   /* Set the default idle timeout */
   l2cb.idle_timeout = L2CAP_LINK_INACTIVITY_TOUT;
 

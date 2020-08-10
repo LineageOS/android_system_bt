@@ -232,20 +232,6 @@ tL2C_LCB* l2cu_find_lcb_by_bd_addr(const RawAddress& p_bd_addr,
 
 /*******************************************************************************
  *
- * Function         l2cu_get_conn_role
- *
- * Description      Determine the desired role (master or slave) of a link.
- *                  If already got a slave link, this one must be a master. If
- *                  already got at least 1 link where we are the master, make
- *                  this also a master.
- *
- * Returns          HCI_ROLE_MASTER or HCI_ROLE_SLAVE
- *
- ******************************************************************************/
-uint8_t l2cu_get_conn_role(tL2C_LCB* p_this_lcb) { return l2cb.desire_role; }
-
-/*******************************************************************************
- *
  * Function         l2c_is_cmd_rejected
  *
  * Description      Checks if cmd_code is command or response
