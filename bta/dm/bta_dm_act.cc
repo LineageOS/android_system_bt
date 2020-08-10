@@ -922,8 +922,8 @@ void bta_dm_confirm(const RawAddress& bd_addr, bool accept) {
 }
 
 /** respond to the IO capabilities request from BTM */
-void bta_dm_ci_io_req_act(const RawAddress& bd_addr, tBTA_IO_CAP io_cap,
-                          tBTA_OOB_DATA oob_data, tBTA_AUTH_REQ auth_req) {
+void bta_dm_ci_io_req_act(const RawAddress& bd_addr, tBTM_IO_CAP io_cap,
+                          tBTM_OOB_DATA oob_data, tBTM_AUTH_REQ auth_req) {
   BTM_IoCapRsp(bd_addr, io_cap, oob_data,
                auth_req ? BTM_AUTH_AP_YES : BTM_AUTH_AP_NO);
 }
@@ -3544,7 +3544,7 @@ void bta_dm_encrypt_cback(const RawAddress* bd_addr, tBT_TRANSPORT transport,
 /**This function to encrypt the link */
 void bta_dm_set_encryption(const RawAddress& bd_addr, tBTA_TRANSPORT transport,
                            tBTA_DM_ENCRYPT_CBACK* p_callback,
-                           tBTA_DM_BLE_SEC_ACT sec_act) {
+                           tBTM_BLE_SEC_ACT sec_act) {
   uint8_t i;
 
   APPL_TRACE_DEBUG("bta_dm_set_encryption");  // todo
