@@ -61,7 +61,6 @@ typedef void (*tBTA_SYS_ACTION)(tBTA_SYS_HW_MSG* p_data);
 const tBTA_SYS_ACTION bta_sys_action[] = {
     /* device manager local device API events - cf bta_sys.h for events */
     bta_sys_hw_api_enable,        /* 0  BTA_SYS_HW_API_ENABLE_EVT    */
-    bta_sys_hw_evt_enabled,       /* 1  BTA_SYS_HW_EVT_ENABLED_EVT */
     bta_sys_hw_evt_stack_enabled, /* 2  BTA_SYS_HW_EVT_STACK_ENABLED_EVT */
     bta_sys_hw_api_disable,       /* 3  BTA_SYS_HW_API_DISABLE_EVT     */
     bta_sys_hw_evt_disabled,      /* 4  BTA_SYS_HW_EVT_DISABLED_EVT  */
@@ -72,7 +71,6 @@ const tBTA_SYS_ACTION bta_sys_action[] = {
 enum {
   /* device manager local device API events */
   BTA_SYS_HW_API_ENABLE,
-  BTA_SYS_HW_EVT_ENABLED,
   BTA_SYS_HW_EVT_STACK_ENABLED,
   BTA_SYS_HW_API_DISABLE,
   BTA_SYS_HW_EVT_DISABLED,
@@ -93,7 +91,6 @@ const uint8_t bta_sys_hw_off[][BTA_SYS_NUM_COLS] = {
        Next State */
     /* API_ENABLE    */ {BTA_SYS_HW_API_ENABLE, BTA_SYS_IGNORE,
                          BTA_SYS_HW_STARTING},
-    /* EVT_ENABLED   */ {BTA_SYS_IGNORE, BTA_SYS_IGNORE, BTA_SYS_HW_STARTING},
     /* STACK_ENABLED */ {BTA_SYS_IGNORE, BTA_SYS_IGNORE, BTA_SYS_HW_ON},
     /* API_DISABLE   */ {BTA_SYS_HW_EVT_DISABLED, BTA_SYS_IGNORE,
                          BTA_SYS_HW_OFF},
@@ -105,8 +102,6 @@ const uint8_t bta_sys_hw_starting[][BTA_SYS_NUM_COLS] = {
        Next State */
     /* API_ENABLE    */ {BTA_SYS_IGNORE, BTA_SYS_IGNORE,
                          BTA_SYS_HW_STARTING}, /* wait for completion event */
-    /* EVT_ENABLED   */ {BTA_SYS_HW_EVT_ENABLED, BTA_SYS_IGNORE,
-                         BTA_SYS_HW_STARTING},
     /* STACK_ENABLED */ {BTA_SYS_HW_EVT_STACK_ENABLED, BTA_SYS_IGNORE,
                          BTA_SYS_HW_ON},
     /* API_DISABLE   */ {BTA_SYS_IGNORE, BTA_SYS_IGNORE,
@@ -122,7 +117,6 @@ const uint8_t bta_sys_hw_on[][BTA_SYS_NUM_COLS] = {
     /* Event                    Action 1                   Action 2
        Next State */
     /* API_ENABLE    */ {BTA_SYS_HW_API_ENABLE, BTA_SYS_IGNORE, BTA_SYS_HW_ON},
-    /* EVT_ENABLED   */ {BTA_SYS_IGNORE, BTA_SYS_IGNORE, BTA_SYS_HW_ON},
     /* STACK_ENABLED */ {BTA_SYS_IGNORE, BTA_SYS_IGNORE, BTA_SYS_HW_ON},
     /* API_DISABLE   */
     {BTA_SYS_HW_API_DISABLE, BTA_SYS_IGNORE,
@@ -137,10 +131,6 @@ const uint8_t bta_sys_hw_stopping[][BTA_SYS_NUM_COLS] = {
     /* API_ENABLE    */ {BTA_SYS_IGNORE, BTA_SYS_IGNORE,
                          BTA_SYS_HW_STARTING}, /* change state, and wait for
                                                   completion event to enable */
-    /* EVT_ENABLED   */ {BTA_SYS_HW_EVT_ENABLED, BTA_SYS_IGNORE,
-                         BTA_SYS_HW_STOPPING}, /* successive enable/disable:
-                                                  finish the enable before
-                                                  disabling */
     /* STACK_ENABLED */ {BTA_SYS_HW_EVT_STACK_ENABLED, BTA_SYS_HW_API_DISABLE,
                          BTA_SYS_HW_STOPPING}, /* successive enable/disable:
                                                   notify, then stop */
@@ -297,11 +287,7 @@ void bta_sys_hw_api_enable(tBTA_SYS_HW_MSG* p_sys_hw_msg) {
     /* register which HW module was turned on */
     bta_sys_cb.bluetooth_active = true;
 
-    tBTA_SYS_HW_MSG* p_msg =
-        (tBTA_SYS_HW_MSG*)osi_malloc(sizeof(tBTA_SYS_HW_MSG));
-    p_msg->hdr.event = BTA_SYS_EVT_ENABLED_EVT;
-
-    bta_sys_sendmsg(p_msg);
+    BTM_DeviceReset(NULL);
   } else {
     bta_sys_cb.bluetooth_active = true;
 
@@ -337,20 +323,6 @@ void bta_sys_hw_api_disable(tBTA_SYS_HW_MSG* p_sys_hw_msg) {
   p_msg->hdr.event = BTA_SYS_EVT_DISABLED_EVT;
 
   bta_sys_sendmsg(p_msg);
-}
-
-/*******************************************************************************
- *
- * Function         bta_sys_hw_event_enabled
- *
- * Description
- *
- *
- * Returns          success or failure
- *
- ******************************************************************************/
-void bta_sys_hw_evt_enabled(tBTA_SYS_HW_MSG* p_sys_hw_msg) {
-  BTM_DeviceReset(NULL);
 }
 
 /*******************************************************************************

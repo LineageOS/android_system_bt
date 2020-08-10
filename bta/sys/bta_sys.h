@@ -175,7 +175,6 @@ extern uint8_t appl_trace_level;
 enum {
   /* device manager local device API events */
   BTA_SYS_API_ENABLE_EVT = BTA_SYS_EVT_START(BTA_ID_SYS),
-  BTA_SYS_EVT_ENABLED_EVT,
   BTA_SYS_EVT_STACK_ENABLED_EVT,
   BTA_SYS_API_DISABLE_EVT,
   BTA_SYS_EVT_DISABLED_EVT,
