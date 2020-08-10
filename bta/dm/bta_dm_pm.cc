@@ -1096,26 +1096,16 @@ static void bta_dm_pm_hid_check(bool bScoActive) {
  ******************************************************************************/
 static void bta_dm_pm_set_sniff_policy(tBTA_DM_PEER_DEVICE* p_dev,
                                        bool bDisable) {
-  uint16_t policy_setting;
-
   if (!p_dev) return;
 
   if (bDisable) {
-    policy_setting =
-        bta_dm_cb.cur_policy & (HCI_ENABLE_MASTER_SLAVE_SWITCH |
-                                HCI_ENABLE_HOLD_MODE | HCI_ENABLE_PARK_MODE);
-
+    p_dev->link_policy &= ~HCI_ENABLE_SNIFF_MODE;
+    bta_dm_pm_active(p_dev->peer_bdaddr);
   } else {
-    /*  allow sniff after sco is closed */
-    policy_setting = bta_dm_cb.cur_policy;
+    p_dev->link_policy |= HCI_ENABLE_SNIFF_MODE;
   }
 
-  /* if disabling SNIFF, make sure link is Active */
-  if (bDisable) bta_dm_pm_active(p_dev->peer_bdaddr);
-
-  /* update device record and set link policy */
-  p_dev->link_policy = policy_setting;
-  BTM_SetLinkPolicy(p_dev->peer_bdaddr, &policy_setting);
+  BTM_SetLinkPolicy(p_dev->peer_bdaddr, &p_dev->link_policy);
 }
 
 /*******************************************************************************
