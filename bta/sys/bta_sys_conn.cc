@@ -33,8 +33,8 @@
 
 void BTA_dm_set_policy(uint8_t policy, const RawAddress& peer_addr);
 void BTA_dm_clear_policy(uint8_t policy, const RawAddress& peer_addr);
-void BTA_dm_set_default_policy(uint8_t app_id);
-void BTA_dm_clear_default_policy(uint8_t app_id);
+void BTA_dm_unblock_role_switch(uint8_t app_id);
+void BTA_dm_block_role_switch(uint8_t app_id);
 
 /*******************************************************************************
  *
@@ -393,7 +393,7 @@ void bta_sys_clear_policy(uint8_t id, uint8_t policy,
  ******************************************************************************/
 void bta_sys_set_default_policy(uint8_t id, uint8_t policy) {
   APPL_TRACE_DEBUG("%s: id:%d policy:0x%x", __func__, id, policy);
-  BTA_dm_set_default_policy(id);
+  BTA_dm_unblock_role_switch(id);
 }
 
 /*******************************************************************************
@@ -408,7 +408,7 @@ void bta_sys_set_default_policy(uint8_t id, uint8_t policy) {
  ******************************************************************************/
 void bta_sys_clear_default_policy(uint8_t id, uint8_t policy) {
   APPL_TRACE_DEBUG("%s: id:%d policy:0x%x", __func__, id, policy);
-  BTA_dm_clear_default_policy(id);
+  BTA_dm_block_role_switch(id);
 }
 
 /*******************************************************************************

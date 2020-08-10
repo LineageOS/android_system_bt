@@ -851,7 +851,7 @@ void BTA_dm_clear_policy(uint8_t policy, const RawAddress& peer_addr) {
   }
 }
 
-void BTA_dm_set_default_policy(uint8_t app_id) {
+void BTA_dm_unblock_role_switch(uint8_t app_id) {
   uint32_t mask = (uint32_t)(1 << app_id);
   bta_dm_cb.role_policy_mask &= ~mask;
   if (0 == bta_dm_cb.role_policy_mask) {
@@ -861,7 +861,7 @@ void BTA_dm_set_default_policy(uint8_t app_id) {
   }
 }
 
-void BTA_dm_clear_default_policy(uint8_t app_id) {
+void BTA_dm_block_role_switch(uint8_t app_id) {
   uint32_t mask = (uint32_t)(1 << app_id);
   bta_dm_cb.role_policy_mask |= mask;
   bta_dm_cb.cur_policy &= ~HCI_ENABLE_MASTER_SLAVE_SWITCH;
