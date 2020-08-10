@@ -827,6 +827,15 @@ void bta_dm_pin_reply(std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg) {
   }
 }
 
+void BTA_dm_set_policy(uint8_t policy, const RawAddress& peer_addr) {
+  auto p_dev = bta_dm_find_peer_device(peer_addr);
+  if (!p_dev) {
+    return;
+  }
+  p_dev->link_policy |= policy;
+  BTM_SetLinkPolicy(p_dev->peer_bdaddr, &(p_dev->link_policy));
+}
+
 /*******************************************************************************
  *
  * Function         bta_dm_policy_cback
@@ -848,13 +857,6 @@ void BTA_dm_update_policy(tBTA_SYS_CONN_STATUS status, uint8_t id,
 
   APPL_TRACE_DEBUG(" cmd:%d, policy:0x%x", status, policy);
   switch (status) {
-    case BTA_SYS_PLCY_SET:
-      if (!p_dev) return;
-      /* restore the default link policy */
-      p_dev->link_policy |= policy;
-      BTM_SetLinkPolicy(p_dev->peer_bdaddr, &(p_dev->link_policy));
-      break;
-
     case BTA_SYS_PLCY_CLR:
       if (!p_dev) return;
       /* clear the policy from the default link policy */

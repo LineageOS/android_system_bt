@@ -33,6 +33,7 @@
 
 void BTA_dm_update_policy(tBTA_SYS_CONN_STATUS status, uint8_t id,
                           uint8_t app_id, const RawAddress& peer_addr);
+void BTA_dm_set_policy(uint8_t policy, const RawAddress& peer_addr);
 
 /*******************************************************************************
  *
@@ -359,7 +360,7 @@ void bta_sys_set_policy(uint8_t id, uint8_t policy,
                         const RawAddress& peer_addr) {
   APPL_TRACE_DEBUG("%s: peer %s id:%d policy:0x%x", __func__,
                    peer_addr.ToString().c_str(), id, policy);
-  BTA_dm_update_policy(BTA_SYS_PLCY_SET, id, policy, peer_addr);
+  BTA_dm_set_policy(policy, peer_addr);
 }
 
 /*******************************************************************************
