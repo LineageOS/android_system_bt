@@ -303,9 +303,6 @@ typedef struct {
   uint8_t* bta_dm_eir_additional;      /* additional data */
 } tBTA_DM_EIR_CONF;
 
-/* advertising filter policy */
-typedef tBTM_BLE_AFP tBTA_BLE_AFP;
-
 enum {
   BTA_BLE_BATCH_SCAN_MODE_PASS = 1,
   BTA_BLE_BATCH_SCAN_MODE_ACTI = 2,
@@ -448,20 +445,14 @@ typedef struct {
   BTM_LE_KEY_LCSRK                /* local CSRK has been deliver to peer */
 typedef uint8_t tBTA_LE_KEY_TYPE; /* can be used as a bit mask */
 
-typedef tBTM_LE_PENC_KEYS tBTA_LE_PENC_KEYS;
-typedef tBTM_LE_PCSRK_KEYS tBTA_LE_PCSRK_KEYS;
-typedef tBTM_LE_LENC_KEYS tBTA_LE_LENC_KEYS;
-typedef tBTM_LE_LCSRK_KEYS tBTA_LE_LCSRK_KEYS;
-typedef tBTM_LE_PID_KEYS tBTA_LE_PID_KEYS;
-
 typedef union {
-  tBTA_LE_PENC_KEYS penc_key;  /* received peer encryption key */
-  tBTA_LE_PCSRK_KEYS psrk_key; /* received peer device SRK */
-  tBTA_LE_PID_KEYS pid_key;    /* peer device ID key */
-  tBTA_LE_LENC_KEYS
+  tBTM_LE_PENC_KEYS penc_key;  /* received peer encryption key */
+  tBTM_LE_PCSRK_KEYS psrk_key; /* received peer device SRK */
+  tBTM_LE_PID_KEYS pid_key;    /* peer device ID key */
+  tBTM_LE_LENC_KEYS
       lenc_key; /* local encryption reproduction keys LTK = = d1(ER,DIV,0)*/
-  tBTA_LE_LCSRK_KEYS lcsrk_key; /* local device CSRK = d1(ER,DIV,1)*/
-  tBTA_LE_PID_KEYS lid_key; /* local device ID key for the particular remote */
+  tBTM_LE_LCSRK_KEYS lcsrk_key; /* local device CSRK = d1(ER,DIV,1)*/
+  tBTM_LE_PID_KEYS lid_key; /* local device ID key for the particular remote */
 } tBTA_LE_KEY_VALUE;
 
 #define BTA_BLE_LOCAL_KEY_TYPE_ID 1
@@ -519,7 +510,6 @@ typedef struct {
 #define BTA_IO_CAP_IN BTM_IO_CAP_IN         /* 2 KeyboardOnly */
 #define BTA_IO_CAP_NONE BTM_IO_CAP_NONE     /* 3 NoInputNoOutput */
 #define BTA_IO_CAP_KBDISP BTM_IO_CAP_KBDISP /* 4 Keyboard display */
-typedef tBTM_IO_CAP tBTA_IO_CAP;
 
 #define BTA_AUTH_SP_NO                                      \
   BTM_AUTH_SP_NO /* 0 MITM Protection Not Required - Single \
@@ -547,7 +537,6 @@ typedef tBTM_IO_CAP tBTA_IO_CAP;
                       bonding                                               \
                       Use IO Capabilities to determine authentication       \
                       procedure */
-typedef tBTM_AUTH_REQ tBTA_AUTH_REQ;
 
 #define BTA_AUTH_DD_BOND \
   BTM_AUTH_DD_BOND /* 2 this bit is set for dedicated bonding */
@@ -564,14 +553,10 @@ typedef tBTM_AUTH_REQ tBTA_AUTH_REQ;
 #define BTA_LE_AUTH_REQ_SC_BOND BTM_LE_AUTH_REQ_SC_BOND           /* 1001 */
 #define BTA_LE_AUTH_REQ_SC_MITM BTM_LE_AUTH_REQ_SC_MITM           /* 1100 */
 #define BTA_LE_AUTH_REQ_SC_MITM_BOND BTM_LE_AUTH_REQ_SC_MITM_BOND /* 1101 */
-typedef tBTM_LE_AUTH_REQ
-    tBTA_LE_AUTH_REQ; /* combination of the above bit pattern */
 
 #define BTA_OOB_NONE BTM_OOB_NONE
 #define BTA_OOB_PRESENT BTM_OOB_PRESENT
 #define BTA_OOB_UNKNOWN BTM_OOB_UNKNOWN
-
-typedef tBTM_OOB_DATA tBTA_OOB_DATA;
 
 /* Structure associated with BTA_DM_SP_CFM_REQ_EVT */
 typedef struct {
@@ -583,10 +568,10 @@ typedef struct {
   uint32_t num_val; /* the numeric value for comparison. If just_works, do not
                        show this number to UI */
   bool just_works;  /* true, if "Just Works" association model */
-  tBTA_AUTH_REQ loc_auth_req; /* Authentication required for local device */
-  tBTA_AUTH_REQ rmt_auth_req; /* Authentication required for peer device */
-  tBTA_IO_CAP loc_io_caps;    /* IO Capabilities of local device */
-  tBTA_AUTH_REQ rmt_io_caps;  /* IO Capabilities of remote device */
+  tBTM_AUTH_REQ loc_auth_req; /* Authentication required for local device */
+  tBTM_AUTH_REQ rmt_auth_req; /* Authentication required for peer device */
+  tBTM_IO_CAP loc_io_caps;    /* IO Capabilities of local device */
+  tBTM_AUTH_REQ rmt_io_caps;  /* IO Capabilities of remote device */
 } tBTA_DM_SP_CFM_REQ;
 
 enum {
@@ -745,12 +730,6 @@ typedef void(tBTA_DM_ENCRYPT_CBACK)(const RawAddress& bd_addr,
 #define BTA_DM_BLE_SEC_ENCRYPT BTM_BLE_SEC_ENCRYPT
 #define BTA_DM_BLE_SEC_NO_MITM BTM_BLE_SEC_ENCRYPT_NO_MITM
 #define BTA_DM_BLE_SEC_MITM BTM_BLE_SEC_ENCRYPT_MITM
-typedef tBTM_BLE_SEC_ACT tBTA_DM_BLE_SEC_ACT;
-
-typedef tBTM_BLE_TX_TIME_MS tBTA_DM_BLE_TX_TIME_MS;
-typedef tBTM_BLE_RX_TIME_MS tBTA_DM_BLE_RX_TIME_MS;
-typedef tBTM_BLE_IDLE_TIME_MS tBTA_DM_BLE_IDLE_TIME_MS;
-typedef tBTM_BLE_ENERGY_USED tBTA_DM_BLE_ENERGY_USED;
 
 #define BTA_DM_CONTRL_UNKNOWN 0 /* Unknown state */
 #define BTA_DM_CONTRL_ACTIVE 1  /* ACL link on, SCO link ongoing, sniff mode */
@@ -768,10 +747,10 @@ typedef uint8_t tBTA_DM_BLE_ADV_INFO_PRESENT;
 typedef uint8_t tBTA_DM_BLE_RSSI_VALUE;
 typedef uint16_t tBTA_DM_BLE_ADV_INFO_TIMESTAMP;
 
-typedef void(tBTA_BLE_ENERGY_INFO_CBACK)(tBTA_DM_BLE_TX_TIME_MS tx_time,
-                                         tBTA_DM_BLE_RX_TIME_MS rx_time,
-                                         tBTA_DM_BLE_IDLE_TIME_MS idle_time,
-                                         tBTA_DM_BLE_ENERGY_USED energy_used,
+typedef void(tBTA_BLE_ENERGY_INFO_CBACK)(tBTM_BLE_TX_TIME_MS tx_time,
+                                         tBTM_BLE_RX_TIME_MS rx_time,
+                                         tBTM_BLE_IDLE_TIME_MS idle_time,
+                                         tBTM_BLE_ENERGY_USED energy_used,
                                          tBTA_DM_CONTRL_STATE ctrl_state,
                                          tBTA_STATUS status);
 
@@ -1223,7 +1202,7 @@ extern void BTA_DmConfirm(const RawAddress& bd_addr, bool accept);
 extern void BTA_DmAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
                             const LinkKey& link_key,
                             tBTA_SERVICE_MASK trusted_mask, bool is_trusted,
-                            uint8_t key_type, tBTA_IO_CAP io_cap,
+                            uint8_t key_type, tBTM_IO_CAP io_cap,
                             uint8_t pin_length);
 
 /*******************************************************************************
@@ -1457,7 +1436,7 @@ extern void BTA_DmDiscoverByTransport(const RawAddress& bd_addr,
 extern void BTA_DmSetEncryption(const RawAddress& bd_addr,
                                 tBTA_TRANSPORT transport,
                                 tBTA_DM_ENCRYPT_CBACK* p_callback,
-                                tBTA_DM_BLE_SEC_ACT sec_act);
+                                tBTM_BLE_SEC_ACT sec_act);
 
 /*******************************************************************************
  *

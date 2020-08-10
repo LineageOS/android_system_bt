@@ -293,7 +293,7 @@ void BTA_DmConfirm(const RawAddress& bd_addr, bool accept) {
  ******************************************************************************/
 void BTA_DmAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
                      const LinkKey& link_key, tBTA_SERVICE_MASK trusted_mask,
-                     bool is_trusted, uint8_t key_type, tBTA_IO_CAP io_cap,
+                     bool is_trusted, uint8_t key_type, tBTM_IO_CAP io_cap,
                      uint8_t pin_length) {
   std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg =
       std::make_unique<tBTA_DM_API_ADD_DEVICE>();
@@ -700,7 +700,7 @@ void BTA_DmBleSetDataLength(const RawAddress& remote_device,
  ******************************************************************************/
 void BTA_DmSetEncryption(const RawAddress& bd_addr, tBTA_TRANSPORT transport,
                          tBTA_DM_ENCRYPT_CBACK* p_callback,
-                         tBTA_DM_BLE_SEC_ACT sec_act) {
+                         tBTM_BLE_SEC_ACT sec_act) {
   APPL_TRACE_API("%s", __func__);
   do_in_main_thread(FROM_HERE, base::Bind(bta_dm_set_encryption, bd_addr,
                                           transport, p_callback, sec_act));
