@@ -35,9 +35,11 @@
 #include "bt_types.h"
 #include "bta_api.h"
 #include "bta_dm_api.h"
+#include "bta_dm_ci.h"
 #include "bta_dm_co.h"
 #include "bta_dm_int.h"
 #include "bta_sys.h"
+#include "btif_dm.h"
 #include "btif_storage.h"
 #include "btm_api.h"
 #include "btm_int.h"
@@ -2380,22 +2382,24 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
   APPL_TRACE_EVENT("bta_dm_sp_cback: %d", event);
   if (!bta_dm_cb.p_sec_cback) return BTM_NOT_AUTHORIZED;
 
+  bool sp_rmt_result = false;
   /* TODO_SP */
   switch (event) {
     case BTM_SP_IO_REQ_EVT:
       if (btm_local_io_caps != BTM_IO_CAP_NONE) {
         /* translate auth_req */
-        bta_dm_co_io_req(p_data->io_req.bd_addr, &p_data->io_req.io_cap,
-                         &p_data->io_req.oob_data, &p_data->io_req.auth_req,
-                         p_data->io_req.is_orig);
+        btif_dm_set_oob_for_io_req(&p_data->io_req.oob_data);
+        btif_dm_proc_io_req(p_data->io_req.bd_addr, &p_data->io_req.io_cap,
+                            &p_data->io_req.oob_data, &p_data->io_req.auth_req,
+                            p_data->io_req.is_orig);
       }
       APPL_TRACE_EVENT("io mitm: %d oob_data:%d", p_data->io_req.auth_req,
                        p_data->io_req.oob_data);
       break;
     case BTM_SP_IO_RSP_EVT:
       if (btm_local_io_caps != BTM_IO_CAP_NONE) {
-        bta_dm_co_io_rsp(p_data->io_rsp.bd_addr, p_data->io_rsp.io_cap,
-                         p_data->io_rsp.oob_data, p_data->io_rsp.auth_req);
+        btif_dm_proc_io_rsp(p_data->io_rsp.bd_addr, p_data->io_rsp.io_cap,
+                            p_data->io_rsp.oob_data, p_data->io_rsp.auth_req);
       }
       break;
 
@@ -2482,13 +2486,23 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
       break;
 
     case BTM_SP_LOC_OOB_EVT:
-      bta_dm_co_loc_oob((bool)(p_data->loc_oob.status == BTM_SUCCESS),
-                        p_data->loc_oob.c, p_data->loc_oob.r);
+#ifdef BTIF_DM_OOB_TEST
+      btif_dm_proc_loc_oob((bool)(p_data->loc_oob.status == BTM_SUCCESS),
+                           p_data->loc_oob.c, p_data->loc_oob.r);
+#endif
       break;
 
-    case BTM_SP_RMT_OOB_EVT:
-      bta_dm_co_rmt_oob(p_data->rmt_oob.bd_addr);
+    case BTM_SP_RMT_OOB_EVT: {
+      Octet16 c;
+      Octet16 r;
+      sp_rmt_result = false;
+#ifdef BTIF_DM_OOB_TEST
+      sp_rmt_result = btif_dm_proc_rmt_oob(p_data->rmt_oob.bd_addr, &c, &r);
+#endif
+      BTIF_TRACE_DEBUG("bta_dm_co_rmt_oob: result=%d", sp_rmt_result);
+      bta_dm_ci_rmt_oob(sp_rmt_result, p_data->rmt_oob.bd_addr, c, r);
       break;
+    }
 
     default:
       status = BTM_NOT_AUTHORIZED;
