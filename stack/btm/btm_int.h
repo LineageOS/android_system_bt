@@ -85,7 +85,7 @@ extern void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
 extern void btm_acl_removed(const RawAddress& bda, tBT_TRANSPORT transport);
 extern void btm_acl_device_down(void);
 extern void btm_acl_set_paging(bool value);
-extern void btm_acl_update_busy_level(tBTM_BLI_EVENT event);
+extern void btm_acl_update_inquiry_status(uint8_t state);
 
 extern void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec,
                              uint8_t hci_status);
@@ -102,7 +102,6 @@ extern void btm_read_tx_power_complete(uint8_t* p, bool is_ble);
 
 extern void btm_read_link_quality_complete(uint8_t* p);
 
-extern tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
 extern void btm_process_clk_off_comp_evt(uint16_t hci_handle,
                                          uint16_t clock_offset);
 extern void btm_blacklist_role_change_device(const RawAddress& bd_addr,
@@ -121,7 +120,7 @@ extern void btm_establish_continue(tACL_CONN* p_acl_cb);
 
 extern tACL_CONN* btm_bda_to_acl(const RawAddress& bda,
                                  tBT_TRANSPORT transport);
-extern bool btm_acl_notif_conn_collision(const RawAddress& bda);
+extern void btm_acl_notif_conn_collision(const RawAddress& bda);
 extern void btm_acl_update_conn_addr(uint16_t conn_handle,
                                      const RawAddress& address);
 
@@ -228,7 +227,6 @@ extern void btm_sec_rmt_host_support_feat_evt(uint8_t* p);
 extern void btm_io_capabilities_req(const RawAddress& p);
 extern void btm_io_capabilities_rsp(uint8_t* p);
 extern void btm_proc_sp_req_evt(tBTM_SP_EVT event, uint8_t* p);
-extern void btm_keypress_notif_evt(uint8_t* p);
 extern void btm_simple_pair_complete(uint8_t* p);
 extern void btm_sec_link_key_notification(const RawAddress& p_bda,
                                           const Octet16& link_key,

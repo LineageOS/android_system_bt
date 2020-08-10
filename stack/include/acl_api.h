@@ -25,16 +25,6 @@
 
 // Note: From stack/include/btm_api.h
 
-/*******************************************************************************
- *
- * Function         BTM_RegBusyLevelNotif
- *
- * Description      This function is called to register a callback to receive
- *                  busy level change events.
- *
- ******************************************************************************/
-void BTM_RegBusyLevelNotif(tBTM_BL_CHANGE_CB* p_cb);
-
 /*****************************************************************************
  *  ACL CHANNEL MANAGEMENT FUNCTIONS
  ****************************************************************************/
@@ -241,3 +231,11 @@ uint16_t BTM_GetNumAclLinks(void);
  ******************************************************************************/
 void btm_acl_role_changed(uint8_t hci_status, const RawAddress* bd_addr,
                           uint8_t new_role);
+
+void btm_set_packet_types_from_address(const RawAddress& bda,
+                                       tBT_TRANSPORT transport,
+                                       uint16_t pkt_types);
+
+bool lmp_version_below(const RawAddress& bda, uint8_t version);
+
+bool acl_is_role_master(const RawAddress& remote_bda, tBT_TRANSPORT transport);

@@ -821,18 +821,10 @@ typedef uint8_t tBTM_LINK_KEY_TYPE;
  *  Security Manager Callback Functions
  ****************************************/
 /* Authorize device for service.  Parameters are
- *              BD Address of remote
- *              Device Class of remote
- *              BD Name of remote
- *              Service name
  *              Service Id (NULL - unknown service or unused
  *                                 [BTM_SEC_SERVICE_NAME_LEN set to 0])
- *              Is originator of the connection
- *              Result of the operation
 */
-typedef uint8_t(tBTM_AUTHORIZE_CALLBACK)(
-    const RawAddress& bd_addr, DEV_CLASS dev_class, tBTM_BD_NAME bd_name,
-    uint8_t* service_name, uint8_t service_id, bool is_originator);
+typedef uint8_t(tBTM_AUTHORIZE_CALLBACK)(uint8_t service_id);
 
 /* Get PIN for the connection.  Parameters are
  *              BD Address of remote
@@ -877,10 +869,8 @@ enum {
   BTM_SP_CFM_REQ_EVT,   /* received USER_CONFIRMATION_REQUEST event */
   BTM_SP_KEY_NOTIF_EVT, /* received USER_PASSKEY_NOTIFY event */
   BTM_SP_KEY_REQ_EVT,   /* received USER_PASSKEY_REQUEST event */
-  BTM_SP_KEYPRESS_EVT,  /* received KEYPRESS_NOTIFY event */
   BTM_SP_LOC_OOB_EVT,   /* received result for READ_LOCAL_OOB_DATA command */
   BTM_SP_RMT_OOB_EVT,   /* received REMOTE_OOB_DATA_REQUEST event */
-  BTM_SP_COMPLT_EVT,    /* received SIMPLE_PAIRING_COMPLETE event */
 };
 typedef uint8_t tBTM_SP_EVT;
 
@@ -976,22 +966,6 @@ typedef struct {
   uint32_t passkey;     /* passkey */
 } tBTM_SP_KEY_NOTIF;
 
-enum {
-  BTM_SP_KEY_STARTED,     /* 0 - passkey entry started */
-  BTM_SP_KEY_ENTERED,     /* 1 - passkey digit entered */
-  BTM_SP_KEY_ERASED,      /* 2 - passkey digit erased */
-  BTM_SP_KEY_CLEARED,     /* 3 - passkey cleared */
-  BTM_SP_KEY_COMPLT,      /* 4 - passkey entry completed */
-  BTM_SP_KEY_OUT_OF_RANGE /* 5 - out of range */
-};
-typedef uint8_t tBTM_SP_KEY_TYPE;
-
-/* data type for BTM_SP_KEYPRESS_EVT */
-typedef struct {
-  RawAddress bd_addr; /* peer address */
-  tBTM_SP_KEY_TYPE notif_type;
-} tBTM_SP_KEYPRESS;
-
 /* data type for BTM_SP_LOC_OOB_EVT */
 typedef struct {
   tBTM_STATUS status; /* */
@@ -1006,24 +980,14 @@ typedef struct {
   tBTM_BD_NAME bd_name; /* peer device name */
 } tBTM_SP_RMT_OOB;
 
-/* data type for BTM_SP_COMPLT_EVT */
-typedef struct {
-  RawAddress bd_addr;   /* peer address */
-  DEV_CLASS dev_class;  /* peer CoD */
-  tBTM_BD_NAME bd_name; /* peer device name */
-  tBTM_STATUS status;   /* status of the simple pairing process */
-} tBTM_SP_COMPLT;
-
 typedef union {
   tBTM_SP_IO_REQ io_req;       /* BTM_SP_IO_REQ_EVT      */
   tBTM_SP_IO_RSP io_rsp;       /* BTM_SP_IO_RSP_EVT      */
   tBTM_SP_CFM_REQ cfm_req;     /* BTM_SP_CFM_REQ_EVT     */
   tBTM_SP_KEY_NOTIF key_notif; /* BTM_SP_KEY_NOTIF_EVT   */
   tBTM_SP_KEY_REQ key_req;     /* BTM_SP_KEY_REQ_EVT     */
-  tBTM_SP_KEYPRESS key_press;  /* BTM_SP_KEYPRESS_EVT    */
   tBTM_SP_LOC_OOB loc_oob;     /* BTM_SP_LOC_OOB_EVT     */
   tBTM_SP_RMT_OOB rmt_oob;     /* BTM_SP_RMT_OOB_EVT     */
-  tBTM_SP_COMPLT complt;       /* BTM_SP_COMPLT_EVT      */
 } tBTM_SP_EVT_DATA;
 
 /* Simple Pairing Events.  Called by the stack when Simple Pairing related

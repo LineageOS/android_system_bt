@@ -3202,31 +3202,6 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, uint8_t* p) {
 
 /*******************************************************************************
  *
- * Function         btm_keypress_notif_evt
- *
- * Description      This function is called when a key press notification is
- *                  received
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_keypress_notif_evt(uint8_t* p) {
-  tBTM_SP_KEYPRESS evt_data;
-
-  /* parse & report BTM_SP_KEYPRESS_EVT */
-  if (btm_cb.api.p_sp_callback) {
-    RawAddress& p_bda = evt_data.bd_addr;
-
-    STREAM_TO_BDADDR(p_bda, p);
-    evt_data.notif_type = *p;
-
-    (*btm_cb.api.p_sp_callback)(BTM_SP_KEYPRESS_EVT,
-                                (tBTM_SP_EVT_DATA*)&evt_data);
-  }
-}
-
-/*******************************************************************************
- *
  * Function         btm_simple_pair_complete
  *
  * Description      This function is called when simple pairing process is
@@ -3236,17 +3211,17 @@ void btm_keypress_notif_evt(uint8_t* p) {
  *
  ******************************************************************************/
 void btm_simple_pair_complete(uint8_t* p) {
-  tBTM_SP_COMPLT evt_data;
+  RawAddress bd_addr;
   tBTM_SEC_DEV_REC* p_dev_rec;
   uint8_t status;
   bool disc = false;
 
   status = *p++;
-  STREAM_TO_BDADDR(evt_data.bd_addr, p);
+  STREAM_TO_BDADDR(bd_addr, p);
 
-  p_dev_rec = btm_find_dev(evt_data.bd_addr);
+  p_dev_rec = btm_find_dev(bd_addr);
   if (p_dev_rec == NULL) {
-    LOG(ERROR) << __func__ << " with unknown BDA: " << evt_data.bd_addr;
+    LOG(ERROR) << __func__ << " with unknown BDA: " << bd_addr;
     return;
   }
 
@@ -3254,9 +3229,7 @@ void btm_simple_pair_complete(uint8_t* p) {
       "btm_simple_pair_complete()  Pair State: %s  Status:%d  sec_state: %u",
       btm_pair_state_descr(btm_cb.pairing_state), status, p_dev_rec->sec_state);
 
-  evt_data.status = BTM_ERR_PROCESSING;
   if (status == HCI_SUCCESS) {
-    evt_data.status = BTM_SUCCESS;
     p_dev_rec->sec_flags |= BTM_SEC_AUTHENTICATED;
   } else {
     if (status == HCI_ERR_PAIRING_NOT_ALLOWED) {
@@ -3266,7 +3239,7 @@ void btm_simple_pair_complete(uint8_t* p) {
       /* Change the timer to 1 second */
       alarm_set_on_mloop(btm_cb.pairing_timer, BT_1SEC_TIMEOUT_MS,
                          btm_sec_pairing_timeout, NULL);
-    } else if (btm_cb.pairing_bda == evt_data.bd_addr) {
+    } else if (btm_cb.pairing_bda == bd_addr) {
       /* stop the timer */
       alarm_cancel(btm_cb.pairing_timer);
 
@@ -3278,15 +3251,6 @@ void btm_simple_pair_complete(uint8_t* p) {
     } else
       disc = true;
   }
-
-  /* Let the pairing state stay active, p_auth_complete_callback will report the
-   * failure */
-  evt_data.bd_addr = p_dev_rec->bd_addr;
-  memcpy(evt_data.dev_class, p_dev_rec->dev_class, DEV_CLASS_LEN);
-
-  if (btm_cb.api.p_sp_callback)
-    (*btm_cb.api.p_sp_callback)(BTM_SP_COMPLT_EVT,
-                                (tBTM_SP_EVT_DATA*)&evt_data);
 
   if (disc) {
     /* simple pairing failed */
@@ -3818,7 +3782,6 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
   uint8_t res;
   bool is_pairing_device = false;
   bool addr_matched;
-  tACL_CONN* p_acl_cb;
   uint8_t bit_shift = 0;
 
   btm_acl_resubmit_page();
@@ -4065,21 +4028,19 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
    */
   /* notify btm_acl that link is up, so starting of rmt name request will not */
   /* set paging flag up */
-  p_acl_cb = btm_bda_to_acl(bda, BT_TRANSPORT_BR_EDR);
-  if (p_acl_cb) {
 /* whatever is in btm_establish_continue() without reporting the BTM_BL_CONN_EVT
  * event */
 #if (BTM_BYPASS_EXTRA_ACL_SETUP == FALSE)
     /* For now there are a some devices that do not like sending */
     /* commands events and data at the same time. */
     /* Set the packet types to the default allowed by the device */
-    btm_set_packet_types(p_acl_cb, btm_cb.acl_cb_.btm_acl_pkt_types_supported);
+    btm_set_packet_types_from_address(
+        bda, BT_TRANSPORT_BR_EDR, btm_cb.acl_cb_.btm_acl_pkt_types_supported);
 
     if (btm_cb.acl_cb_.btm_def_link_policy)
-      BTM_SetLinkPolicy(p_acl_cb->remote_addr,
-                        &btm_cb.acl_cb_.btm_def_link_policy);
+      BTM_SetLinkPolicy(bda, &btm_cb.acl_cb_.btm_def_link_policy);
 #endif
-  }
+
   btm_acl_created(bda, p_dev_rec->dev_class, p_dev_rec->sec_bd_name, handle,
                   HCI_ROLE_SLAVE, BT_TRANSPORT_BR_EDR);
 
@@ -4922,32 +4883,21 @@ static void btm_sec_start_encryption(tBTM_SEC_DEV_REC* p_dev_rec) {
  ******************************************************************************/
 static uint8_t btm_sec_start_authorization(tBTM_SEC_DEV_REC* p_dev_rec) {
   uint8_t result;
-  uint8_t* p_service_name = NULL;
   uint8_t service_id;
 
   if ((p_dev_rec->sec_flags & BTM_SEC_NAME_KNOWN) ||
       (p_dev_rec->hci_handle == BTM_SEC_INVALID_HANDLE)) {
     if (!btm_cb.api.p_authorize_callback) return (BTM_MODE_UNSUPPORTED);
 
-    if (p_dev_rec->p_cur_service) {
-#if BTM_SEC_SERVICE_NAME_LEN > 0
-      if (p_dev_rec->is_originator)
-        p_service_name = p_dev_rec->p_cur_service->orig_service_name;
-      else
-        p_service_name = p_dev_rec->p_cur_service->term_service_name;
-#endif
-      service_id = p_dev_rec->p_cur_service->service_id;
-    } else
-      service_id = 0;
+    service_id =
+        p_dev_rec->p_cur_service ? p_dev_rec->p_cur_service->service_id : 0;
 
     /* Send authorization request if not already sent during this service
      * connection */
     if (p_dev_rec->last_author_service_id == BTM_SEC_NO_LAST_SERVICE_ID ||
         p_dev_rec->last_author_service_id != service_id) {
       p_dev_rec->sec_state = BTM_SEC_STATE_AUTHORIZING;
-      result = (*btm_cb.api.p_authorize_callback)(
-          p_dev_rec->bd_addr, p_dev_rec->dev_class, p_dev_rec->sec_bd_name,
-          p_service_name, service_id, p_dev_rec->is_originator);
+      result = (*btm_cb.api.p_authorize_callback)(service_id);
     }
 
     else /* Already authorized once for this L2CAP bringup */

@@ -383,9 +383,6 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
     case HCI_USER_PASSKEY_NOTIFY_EVT:
       btm_proc_sp_req_evt(BTM_SP_KEY_NOTIF_EVT, p);
       break;
-    case HCI_KEYPRESS_NOTIFY_EVT:
-      btm_keypress_notif_evt(p);
-      break;
 
     case HCI_BLE_EVENT: {
       STREAM_TO_UINT8(ble_sub_code, p);

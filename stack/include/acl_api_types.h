@@ -128,69 +128,12 @@ typedef struct {
   int8_t tx_power;
 } tBTM_INQ_TXPWR_RESULT;
 
-enum {
-  BTM_BL_CONN_EVT,
-  BTM_BL_DISCN_EVT,
-  BTM_BL_UPDATE_EVT,
-  BTM_BL_ROLE_CHG_EVT,
-  BTM_BL_COLLISION_EVT
-};
 typedef uint8_t tBTM_BL_EVENT;
 
 /* Device features mask definitions */
 #define BTM_FEATURE_BYTES_PER_PAGE HCI_FEATURE_BYTES_PER_PAGE
 #define BTM_EXT_FEATURES_PAGE_MAX HCI_EXT_FEATURES_PAGE_MAX
 
-/* the data type associated with BTM_BL_CONN_EVT */
-typedef struct {
-  tBTM_BL_EVENT event;     /* The event reported. */
-  const RawAddress* p_bda; /* The address of the newly connected device */
-  DEV_CLASS_PTR p_dc;      /* The device class */
-  BD_NAME_PTR p_bdn;       /* The device name */
-  uint8_t* p_features;     /* pointer to the remote device's features page[0]
-                              (supported features page) */
-  uint16_t handle;         /* connection handle */
-  tBT_TRANSPORT transport; /* link is LE or not */
-} tBTM_BL_CONN_DATA;
-
-/* the data type associated with BTM_BL_DISCN_EVT */
-typedef struct {
-  tBTM_BL_EVENT event;     /* The event reported. */
-  const RawAddress* p_bda; /* The address of the disconnected device */
-  uint16_t handle;         /* disconnected connection handle */
-  tBT_TRANSPORT transport; /* link is LE link or not */
-} tBTM_BL_DISCN_DATA;
-
-/* Busy-Level shall have the inquiry_paging mask set when
- * inquiry/paging is in progress, Else the number of ACL links */
-#define BTM_BL_INQUIRY_PAGING_MASK 0x10
-#define BTM_BL_INQUIRY_STARTED (BTM_BL_INQUIRY_PAGING_MASK | 0x1)
-#define BTM_BL_INQUIRY_CANCELLED (BTM_BL_INQUIRY_PAGING_MASK | 0x2)
-#define BTM_BL_INQUIRY_COMPLETE (BTM_BL_INQUIRY_PAGING_MASK | 0x3)
-/* the data type associated with BTM_BL_UPDATE_EVT */
-typedef struct {
-  tBTM_BL_EVENT event;      /* The event reported. */
-  uint8_t busy_level_flags; /* Notifies actual inquiry/page activities */
-} tBTM_BL_UPDATE_DATA;
-
-/* the data type associated with BTM_BL_ROLE_CHG_EVT */
-typedef struct {
-  tBTM_BL_EVENT event;     /* The event reported. */
-  const RawAddress* p_bda; /* The address of the peer connected device */
-  uint8_t new_role;
-  uint8_t hci_status; /* HCI status returned with the event */
-} tBTM_BL_ROLE_CHG_DATA;
-
-typedef union {
-  tBTM_BL_EVENT event;        /* The event reported. */
-  tBTM_BL_CONN_DATA conn;     /* The data associated with BTM_BL_CONN_EVT */
-  tBTM_BL_DISCN_DATA discn;   /* The data associated with BTM_BL_DISCN_EVT */
-  tBTM_BL_UPDATE_DATA update; /* The data associated with BTM_BL_UPDATE_EVT */
-  tBTM_BL_ROLE_CHG_DATA
-      role_chg; /*The data associated with BTM_BL_ROLE_CHG_EVT */
-} tBTM_BL_EVENT_DATA;
-
-/* Callback function for notifications when the BTM busy level
- * changes.
- */
-typedef void(tBTM_BL_CHANGE_CB)(tBTM_BL_EVENT_DATA* p_data);
+#define BTM_INQUIRY_STARTED 1
+#define BTM_INQUIRY_CANCELLED 2
+#define BTM_INQUIRY_COMPLETE 3

@@ -44,16 +44,6 @@ typedef bool(tBTA_SYS_EVT_HDLR)(BT_HDR* p_msg);
 /* disable function type */
 typedef void(tBTA_SYS_DISABLE)(void);
 
-/* HW modules */
-enum {
-  BTA_SYS_HW_BLUETOOTH,
-  BTA_SYS_HW_RT,
-
-  BTA_SYS_MAX_HW_MODULES
-};
-
-typedef uint16_t tBTA_SYS_HW_MODULE;
-
 #ifndef BTA_DM_NUM_JV_ID
 #define BTA_DM_NUM_JV_ID 2
 #endif
@@ -158,7 +148,6 @@ typedef struct {
 /* data type to send events to BTA SYS HW manager */
 typedef struct {
   BT_HDR hdr;
-  tBTA_SYS_HW_MODULE hw_module;
 } tBTA_SYS_HW_MSG;
 
 typedef void (*tBTA_SYS_REGISTER)(uint8_t id, const tBTA_SYS_REG* p_reg);
@@ -225,11 +214,10 @@ extern void bta_sys_sendmsg(void* p_msg);
 extern void bta_sys_sendmsg_delayed(void* p_msg, const base::TimeDelta& delay);
 extern void bta_sys_start_timer(alarm_t* alarm, uint64_t interval_ms,
                                 uint16_t event, uint16_t layer_specific);
-extern void bta_sys_disable(tBTA_SYS_HW_MODULE module);
+extern void bta_sys_disable();
 
-extern void bta_sys_hw_register(tBTA_SYS_HW_MODULE module,
-                                tBTA_SYS_HW_CBACK* cback);
-extern void bta_sys_hw_unregister(tBTA_SYS_HW_MODULE module);
+extern void bta_sys_hw_register(tBTA_SYS_HW_CBACK* cback);
+extern void bta_sys_hw_unregister();
 
 extern void bta_sys_rm_register(tBTA_SYS_CONN_CBACK* p_cback);
 extern void bta_sys_pm_register(tBTA_SYS_CONN_CBACK* p_cback);
