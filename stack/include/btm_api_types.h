@@ -43,17 +43,6 @@ typedef struct {
 /**************************************************
  *  Device Control and General Callback Functions
  **************************************************/
-/* Callback function for when device status changes. Appl must poll for
- * what the new state is (BTM_IsDeviceUp). The event occurs whenever the stack
- * has detected that the controller status has changed. This asynchronous event
- * is enabled/disabled by calling BTM_RegisterForDeviceStatusNotif().
-*/
-enum { BTM_DEV_STATUS_UP, BTM_DEV_STATUS_DOWN, BTM_DEV_STATUS_CMD_TOUT };
-
-typedef uint8_t tBTM_DEV_STATUS;
-
-typedef void(tBTM_DEV_STATUS_CB)(tBTM_DEV_STATUS status);
-
 /* Callback function for when a vendor specific event occurs. The length and
  * array of returned parameter bytes are included. This asynchronous event
  * is enabled/disabled by calling BTM_RegisterForVSEvents().

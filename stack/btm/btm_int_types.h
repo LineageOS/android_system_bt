@@ -61,7 +61,6 @@ typedef char tBTM_LOC_BD_NAME[BTM_MAX_LOC_BD_NAME_LEN + 1];
 /* Define the Device Management control structure
 */
 typedef struct {
-  tBTM_DEV_STATUS_CB* p_dev_status_cb; /* Device status change callback */
   tBTM_VS_EVT_CB* p_vend_spec_cb
       [BTM_MAX_VSE_CALLBACKS]; /* Register for vendor specific events  */
 
