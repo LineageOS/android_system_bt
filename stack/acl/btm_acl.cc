@@ -340,16 +340,6 @@ void btm_acl_update_conn_addr(uint16_t conn_handle, const RawAddress& address) {
 void btm_acl_report_role_change(uint8_t hci_status, const RawAddress* bda) {
   tBTM_ROLE_SWITCH_CMPL ref_data;
   BTM_TRACE_DEBUG("btm_acl_report_role_change");
-  if (btm_cb.devcb.p_switch_role_cb &&
-      (bda && btm_cb.devcb.switch_role_ref_data.remote_bd_addr == *bda)) {
-    memcpy(&ref_data, &btm_cb.devcb.switch_role_ref_data,
-           sizeof(tBTM_ROLE_SWITCH_CMPL));
-    ref_data.hci_status = hci_status;
-    (*btm_cb.devcb.p_switch_role_cb)(&ref_data);
-    memset(&btm_cb.devcb.switch_role_ref_data, 0,
-           sizeof(tBTM_ROLE_SWITCH_CMPL));
-    btm_cb.devcb.p_switch_role_cb = NULL;
-  }
 }
 
 /*******************************************************************************
@@ -493,9 +483,8 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
   tBTM_PM_MODE pwr_mode;
   tBTM_PM_PWR_MD settings;
 
-  LOG_INFO("%s: peer %s new_role=0x%x p_switch_role_cb=%p", __func__,
-           remote_bd_addr.ToString().c_str(), new_role,
-           btm_cb.devcb.p_switch_role_cb);
+  LOG_INFO("%s: peer %s new_role=0x%x", __func__,
+           remote_bd_addr.ToString().c_str(), new_role);
 
   /* Make sure the local device supports switching */
   if (!controller_get_interface()->supports_master_slave_role_switch())

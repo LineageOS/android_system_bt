@@ -96,8 +96,6 @@ typedef struct {
                               /* read inq tx power function completes  */
 
   tBTM_ROLE_SWITCH_CMPL switch_role_ref_data;
-  tBTM_CMPL_CB* p_switch_role_cb; /* Callback function to be called when  */
-                                  /* requested switch role is completed   */
 
   alarm_t* read_tx_power_timer;     /* Read tx power timer */
   tBTM_CMPL_CB* p_tx_power_cmpl_cb; /* Callback function to be called       */
