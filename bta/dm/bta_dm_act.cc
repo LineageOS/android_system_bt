@@ -869,14 +869,6 @@ void bta_dm_search_start(tBTA_DM_MSG* p_data) {
   APPL_TRACE_DEBUG("%s avoid_scatter=%d", __func__,
                    p_bta_dm_cfg->avoid_scatter);
 
-  if (p_bta_dm_cfg->avoid_scatter &&
-      (p_data->search.rs_res == BTA_DM_RS_NONE) &&
-      bta_dm_check_av(BTA_DM_API_SEARCH_EVT)) {
-    LOG(INFO) << __func__ << ": delay search to avoid scatter";
-    memcpy(&bta_dm_cb.search_msg, &p_data->search, sizeof(tBTA_DM_API_SEARCH));
-    return;
-  }
-
   BTM_ClearInqDb(nullptr);
   /* save search params */
   bta_dm_search_cb.p_search_cback = p_data->search.p_cback;
