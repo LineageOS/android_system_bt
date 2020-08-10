@@ -35,9 +35,11 @@
 #include "bt_types.h"
 #include "bta_api.h"
 #include "bta_dm_api.h"
+#include "bta_dm_ci.h"
 #include "bta_dm_co.h"
 #include "bta_dm_int.h"
 #include "bta_sys.h"
+#include "btif_dm.h"
 #include "btif_storage.h"
 #include "btm_api.h"
 #include "btm_int.h"
@@ -373,7 +375,7 @@ void BTA_dm_on_hw_on() {
 
   /* load BLE local information: ID keys, ER if available */
   Octet16 er;
-  bta_dm_co_ble_load_local_keys(&key_mask, &er, &id_key);
+  btif_dm_get_ble_local_keys(&key_mask, &er, &id_key);
 
   if (key_mask & BTA_BLE_LOCAL_KEY_TYPE_ER) {
     BTM_BleLoadLocalKeys(BTA_BLE_LOCAL_KEY_TYPE_ER, (tBTM_BLE_LOCAL_KEYS*)&er);
@@ -2357,22 +2359,24 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
   APPL_TRACE_EVENT("bta_dm_sp_cback: %d", event);
   if (!bta_dm_cb.p_sec_cback) return BTM_NOT_AUTHORIZED;
 
+  bool sp_rmt_result = false;
   /* TODO_SP */
   switch (event) {
     case BTM_SP_IO_REQ_EVT:
       if (btm_local_io_caps != BTM_IO_CAP_NONE) {
         /* translate auth_req */
-        bta_dm_co_io_req(p_data->io_req.bd_addr, &p_data->io_req.io_cap,
-                         &p_data->io_req.oob_data, &p_data->io_req.auth_req,
-                         p_data->io_req.is_orig);
+        btif_dm_set_oob_for_io_req(&p_data->io_req.oob_data);
+        btif_dm_proc_io_req(p_data->io_req.bd_addr, &p_data->io_req.io_cap,
+                            &p_data->io_req.oob_data, &p_data->io_req.auth_req,
+                            p_data->io_req.is_orig);
       }
       APPL_TRACE_EVENT("io mitm: %d oob_data:%d", p_data->io_req.auth_req,
                        p_data->io_req.oob_data);
       break;
     case BTM_SP_IO_RSP_EVT:
       if (btm_local_io_caps != BTM_IO_CAP_NONE) {
-        bta_dm_co_io_rsp(p_data->io_rsp.bd_addr, p_data->io_rsp.io_cap,
-                         p_data->io_rsp.oob_data, p_data->io_rsp.auth_req);
+        btif_dm_proc_io_rsp(p_data->io_rsp.bd_addr, p_data->io_rsp.io_cap,
+                            p_data->io_rsp.oob_data, p_data->io_rsp.auth_req);
       }
       break;
 
@@ -2459,13 +2463,23 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
       break;
 
     case BTM_SP_LOC_OOB_EVT:
-      bta_dm_co_loc_oob((bool)(p_data->loc_oob.status == BTM_SUCCESS),
-                        p_data->loc_oob.c, p_data->loc_oob.r);
+#ifdef BTIF_DM_OOB_TEST
+      btif_dm_proc_loc_oob((bool)(p_data->loc_oob.status == BTM_SUCCESS),
+                           p_data->loc_oob.c, p_data->loc_oob.r);
+#endif
       break;
 
-    case BTM_SP_RMT_OOB_EVT:
-      bta_dm_co_rmt_oob(p_data->rmt_oob.bd_addr);
+    case BTM_SP_RMT_OOB_EVT: {
+      Octet16 c;
+      Octet16 r;
+      sp_rmt_result = false;
+#ifdef BTIF_DM_OOB_TEST
+      sp_rmt_result = btif_dm_proc_rmt_oob(p_data->rmt_oob.bd_addr, &c, &r);
+#endif
+      BTIF_TRACE_DEBUG("bta_dm_ci_rmt_oob: result=%d", sp_rmt_result);
+      bta_dm_ci_rmt_oob(sp_rmt_result, p_data->rmt_oob.bd_addr, c, r);
       break;
+    }
 
     default:
       status = BTM_NOT_AUTHORIZED;
@@ -3566,6 +3580,46 @@ static void bta_dm_observe_cmpl_cb(void* p_result) {
   }
 }
 
+static void ble_io_req(const RawAddress& bd_addr, tBTM_IO_CAP* p_io_cap,
+                       tBTM_OOB_DATA* p_oob_data, tBTM_LE_AUTH_REQ* p_auth_req,
+                       uint8_t* p_max_key_size, tBTA_LE_KEY_TYPE* p_init_key,
+                       tBTA_LE_KEY_TYPE* p_resp_key) {
+  bte_appl_cfg.ble_io_cap = btif_storage_get_local_io_caps_ble();
+
+  /* Retrieve the properties from file system if possible */
+  tBTE_APPL_CFG nv_config;
+  if (btif_dm_get_smp_config(&nv_config)) bte_appl_cfg = nv_config;
+
+  /* *p_auth_req by default is false for devices with NoInputNoOutput; true for
+   * other devices. */
+
+  if (bte_appl_cfg.ble_auth_req)
+    *p_auth_req = bte_appl_cfg.ble_auth_req |
+                  (bte_appl_cfg.ble_auth_req & 0x04) | ((*p_auth_req) & 0x04);
+
+  /* if OOB is not supported, this call-out function does not need to do
+   * anything
+   * otherwise, look for the OOB data associated with the address and set
+   * *p_oob_data accordingly.
+   * If the answer can not be obtained right away,
+   * set *p_oob_data to BTA_OOB_UNKNOWN and call bta_dm_ci_io_req() when the
+   * answer is available.
+   */
+
+  btif_dm_set_oob_for_le_io_req(bd_addr, p_oob_data, p_auth_req);
+
+  if (bte_appl_cfg.ble_io_cap <= 4) *p_io_cap = bte_appl_cfg.ble_io_cap;
+
+  if (bte_appl_cfg.ble_init_key <= BTM_BLE_INITIATOR_KEY_SIZE)
+    *p_init_key = bte_appl_cfg.ble_init_key;
+
+  if (bte_appl_cfg.ble_resp_key <= BTM_BLE_RESPONDER_KEY_SIZE)
+    *p_resp_key = bte_appl_cfg.ble_resp_key;
+
+  if (bte_appl_cfg.ble_max_key_size > 7 && bte_appl_cfg.ble_max_key_size <= 16)
+    *p_max_key_size = bte_appl_cfg.ble_max_key_size;
+}
+
 /*******************************************************************************
  *
  * Function         bta_dm_ble_smp_cback
@@ -3587,13 +3641,11 @@ static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
   memset(&sec_event, 0, sizeof(tBTA_DM_SEC));
   switch (event) {
     case BTM_LE_IO_REQ_EVT:
-      bta_dm_co_ble_io_req(
-          bda, &p_data->io_req.io_cap, &p_data->io_req.oob_data,
-          &p_data->io_req.auth_req, &p_data->io_req.max_key_size,
-          &p_data->io_req.init_keys, &p_data->io_req.resp_keys);
+      ble_io_req(bda, &p_data->io_req.io_cap, &p_data->io_req.oob_data,
+                 &p_data->io_req.auth_req, &p_data->io_req.max_key_size,
+                 &p_data->io_req.init_keys, &p_data->io_req.resp_keys);
       APPL_TRACE_EVENT("io mitm: %d oob_data:%d", p_data->io_req.auth_req,
                        p_data->io_req.oob_data);
-
       break;
 
     case BTM_LE_CONSENT_REQ_EVT:
