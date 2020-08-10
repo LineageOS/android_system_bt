@@ -40,6 +40,7 @@
 #include "stack/gatt/connection_manager.h"
 #include "stack/include/l2cap_controller_interface.h"
 
+#include "bta/sys/bta_sys.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/controller.h"
 #include "main/shim/shim.h"
@@ -217,8 +218,7 @@ static void reset_complete(void* result) {
                  btm_cb.cfg.pin_code_len);
 
   decode_controller_support();
-
-  btm_report_device_status(BTM_DEV_STATUS_UP);
+  send_bta_sys_hw_event(BTA_SYS_EVT_STACK_ENABLED_EVT);
 }
 
 // TODO(zachoverflow): remove this function
@@ -523,27 +523,6 @@ uint8_t* BTM_ReadDeviceClass(void) {
 
 /*******************************************************************************
  *
- * Function         BTM_RegisterForDeviceStatusNotif
- *
- * Description      This function is called to register for device status
- *                  change notifications.
- *
- *                  If one registration is already there calling function should
- *                  save the pointer to the function that is return and
- *                  call it when processing of the event is complete
- *
- * Returns          status of the operation
- *
- ******************************************************************************/
-tBTM_DEV_STATUS_CB* BTM_RegisterForDeviceStatusNotif(tBTM_DEV_STATUS_CB* p_cb) {
-  tBTM_DEV_STATUS_CB* p_prev = btm_cb.devcb.p_dev_status_cb;
-
-  btm_cb.devcb.p_dev_status_cb = p_cb;
-  return (p_prev);
-}
-
-/*******************************************************************************
- *
  * Function         BTM_VendorSpecificCommand
  *
  * Description      Send a vendor specific HCI command to the controller.
@@ -807,24 +786,6 @@ void btm_delete_stored_link_key_complete(uint8_t* p) {
     /* Call the call back and pass the result */
     (*p_cb)(&result);
   }
-}
-
-/*******************************************************************************
- *
- * Function         btm_report_device_status
- *
- * Description      This function is called when there is a change in the device
- *                  status. This function will report the new device status to
- *                  the application
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_report_device_status(tBTM_DEV_STATUS status) {
-  tBTM_DEV_STATUS_CB* p_cb = btm_cb.devcb.p_dev_status_cb;
-
-  /* Call the call back to pass the device status to application */
-  if (p_cb) (*p_cb)(status);
 }
 
 /*******************************************************************************
