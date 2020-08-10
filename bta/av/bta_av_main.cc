@@ -1102,7 +1102,7 @@ bool bta_av_switch_if_needed(tBTA_AV_SCB* p_scb) {
         if (bta_av_cb.features & BTA_AV_FEAT_MASTER)
           BTA_dm_block_role_switch_for(p_scbi->PeerAddress());
         if (BTM_CMD_STARTED !=
-            BTM_SwitchRole(p_scbi->PeerAddress(), HCI_ROLE_MASTER, NULL)) {
+            BTM_SwitchRole(p_scbi->PeerAddress(), HCI_ROLE_MASTER)) {
           /* can not switch role on SCBI
            * start the timer on SCB - because this function is ONLY called when
            * SCB gets API_OPEN */
@@ -1147,7 +1147,7 @@ bool bta_av_link_role_ok(tBTA_AV_SCB* p_scb, uint8_t bits) {
         BTA_dm_block_role_switch_for(p_scb->PeerAddress());
 
       tBTM_STATUS status =
-          BTM_SwitchRole(p_scb->PeerAddress(), HCI_ROLE_MASTER, NULL);
+          BTM_SwitchRole(p_scb->PeerAddress(), HCI_ROLE_MASTER);
       if (status != BTM_CMD_STARTED) {
         /* can not switch role on SCB - start the timer on SCB */
         LOG_ERROR("%s: peer %s BTM_SwitchRole(HCI_ROLE_MASTER) error: %d",

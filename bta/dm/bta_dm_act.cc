@@ -2502,7 +2502,7 @@ static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
       /* more than one connections and the AV connection is role switched
        * to slave
        * switch it back to master and remove the switch policy */
-      BTM_SwitchRole(bd_addr, HCI_ROLE_MASTER, NULL);
+      BTM_SwitchRole(bd_addr, HCI_ROLE_MASTER);
       need_policy_change = true;
     } else if (p_bta_dm_cfg->avoid_scatter && (new_role == HCI_ROLE_MASTER)) {
       /* if the link updated to be master include AV activities, remove
@@ -2700,7 +2700,7 @@ static void bta_dm_check_av() {
       if ((p_dev->conn_state == BTA_DM_CONNECTED) &&
           (p_dev->info & BTA_DM_DI_AV_ACTIVE)) {
         /* make master and take away the role switch policy */
-        BTM_SwitchRole(p_dev->peer_bdaddr, HCI_ROLE_MASTER, nullptr);
+        BTM_SwitchRole(p_dev->peer_bdaddr, HCI_ROLE_MASTER);
         /* else either already master or can not switch for some reasons */
         BTA_dm_block_role_switch_for(p_dev->peer_bdaddr);
         break;
@@ -2911,7 +2911,7 @@ static void bta_dm_adjust_roles(bool delay_role_switch) {
                   BTA_SLAVE_ROLE_ONLY &&
               !delay_role_switch) {
             BTM_SwitchRole(bta_dm_cb.device_list.peer_device[i].peer_bdaddr,
-                           HCI_ROLE_MASTER, NULL);
+                           HCI_ROLE_MASTER);
           } else {
             alarm_set_on_mloop(bta_dm_cb.switch_delay_timer,
                                BTA_DM_SWITCH_DELAY_TIMER_MS,

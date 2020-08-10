@@ -473,9 +473,7 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
  * Function         BTM_SwitchRole
  *
  * Description      This function is called to switch role between master and
- *                  slave.  If role is already set it will do nothing.  If the
- *                  command was initiated, the callback function is called upon
- *                  completion.
+ *                  slave.  If role is already set it will do nothing.
  *
  * Returns          BTM_SUCCESS if already in specified role.
  *                  BTM_CMD_STARTED if command issued to controller.
@@ -487,8 +485,7 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
  *                  BTM_BUSY if the previous command is not completed
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role,
-                           tBTM_CMPL_CB* p_cb) {
+tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
   tACL_CONN* p;
   tBTM_SEC_DEV_REC* p_dev_rec = NULL;
   bool is_sco_active;
@@ -496,19 +493,13 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role,
   tBTM_PM_MODE pwr_mode;
   tBTM_PM_PWR_MD settings;
 
-  LOG_INFO("%s: peer %s new_role=0x%x p_cb=%p p_switch_role_cb=%p", __func__,
-           remote_bd_addr.ToString().c_str(), new_role, p_cb,
+  LOG_INFO("%s: peer %s new_role=0x%x p_switch_role_cb=%p", __func__,
+           remote_bd_addr.ToString().c_str(), new_role,
            btm_cb.devcb.p_switch_role_cb);
 
   /* Make sure the local device supports switching */
   if (!controller_get_interface()->supports_master_slave_role_switch())
     return (BTM_MODE_UNSUPPORTED);
-
-  if (btm_cb.devcb.p_switch_role_cb && p_cb) {
-    VLOG(2) << "Role switch on other device is in progress "
-            << btm_cb.devcb.switch_role_ref_data.remote_bd_addr;
-    return (BTM_BUSY);
-  }
 
   p = btm_bda_to_acl(remote_bd_addr, BT_TRANSPORT_BR_EDR);
   if (p == NULL) return (BTM_UNKNOWN_ADDR);
@@ -571,14 +562,6 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role,
     }
   }
 
-  /* Initialize return structure in case request fails */
-  if (p_cb) {
-    btm_cb.devcb.switch_role_ref_data.remote_bd_addr = remote_bd_addr;
-    btm_cb.devcb.switch_role_ref_data.role = new_role;
-    /* initialized to an error code */
-    btm_cb.devcb.switch_role_ref_data.hci_status = HCI_ERR_UNSUPPORTED_VALUE;
-    btm_cb.devcb.p_switch_role_cb = p_cb;
-  }
   return (BTM_CMD_STARTED);
 }
 
