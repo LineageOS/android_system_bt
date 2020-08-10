@@ -222,6 +222,8 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
   BTM_TRACE_DEBUG("%s: peer %s hci_handle=%d link_role=%d  transport=%d",
                   __func__, bda.ToString().c_str(), hci_handle, link_role,
                   transport);
+
+  BTM_SetLinkPolicy(bda, &btm_cb.acl_cb_.btm_def_link_policy);
   /* Ensure we don't have duplicates */
   p = btm_bda_to_acl(bda, transport);
   if (p != (tACL_CONN*)NULL) {
@@ -229,7 +231,6 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
     p->link_role = link_role;
     p->transport = transport;
     VLOG(1) << "Duplicate btm_acl_created: RemBdAddr: " << bda;
-    BTM_SetLinkPolicy(p->remote_addr, &btm_cb.acl_cb_.btm_def_link_policy);
     return;
   }
 
