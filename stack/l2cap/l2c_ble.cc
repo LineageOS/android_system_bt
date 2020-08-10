@@ -36,6 +36,7 @@
 #include "main/shim/shim.h"
 #include "osi/include/osi.h"
 #include "stack/gatt/connection_manager.h"
+#include "stack/include/acl_api.h"
 #include "stack_config.h"
 
 using base::StringPrintf;
@@ -56,8 +57,7 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb);
 bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda) {
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, BT_TRANSPORT_LE);
 
-  tACL_CONN* p_acl = btm_bda_to_acl(rem_bda, BT_TRANSPORT_LE);
-  if (p_acl) {
+  if (BTM_IsAclConnectionUp(rem_bda, BT_TRANSPORT_LE)) {
     if (p_lcb != NULL && p_lcb->link_state == LST_CONNECTING) {
       L2CAP_TRACE_WARNING("%s - disconnecting the LE link", __func__);
       L2CA_RemoveFixedChnl(L2CAP_ATT_CID, rem_bda);
@@ -93,13 +93,12 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
                               uint16_t timeout, uint16_t min_ce_len,
                               uint16_t max_ce_len) {
   tL2C_LCB* p_lcb;
-  tACL_CONN* p_acl_cb = btm_bda_to_acl(rem_bda, BT_TRANSPORT_LE);
 
   /* See if we have a link control block for the remote device */
   p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, BT_TRANSPORT_LE);
 
   /* If we don't have one, create one and accept the connection. */
-  if (!p_lcb || !p_acl_cb) {
+  if (!p_lcb || !BTM_IsAclConnectionUp(rem_bda, BT_TRANSPORT_LE)) {
     LOG(WARNING) << __func__ << " - unknown BD_ADDR " << rem_bda;
     return (false);
   }
