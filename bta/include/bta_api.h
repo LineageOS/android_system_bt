@@ -759,13 +759,6 @@ typedef void(tBTA_BLE_ENERGY_INFO_CBACK)(tBTM_BLE_TX_TIME_MS tx_time,
 #define BTA_SERVICE_DESP_LEN BTA_SERVICE_NAME_LEN
 #define BTA_PROVIDER_NAME_LEN BTA_SERVICE_NAME_LEN
 
-/* link policy masks  */
-#define BTA_DM_LP_SWITCH HCI_ENABLE_MASTER_SLAVE_SWITCH
-#define BTA_DM_LP_HOLD HCI_ENABLE_HOLD_MODE
-#define BTA_DM_LP_SNIFF HCI_ENABLE_SNIFF_MODE
-#define BTA_DM_LP_PARK HCI_ENABLE_PARK_MODE
-typedef uint16_t tBTA_DM_LP_MASK;
-
 /* power mode actions  */
 #define BTA_DM_PM_NO_ACTION 0x00 /* no change to the current pm setting */
 #define BTA_DM_PM_PARK 0x10      /* prefers park mode */
