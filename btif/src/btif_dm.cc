@@ -2170,10 +2170,10 @@ static void bte_dm_remote_service_record_evt(tBTA_DM_SEARCH_EVT event,
  * Returns          void
  *
  ******************************************************************************/
-static void bta_energy_info_cb(tBTA_DM_BLE_TX_TIME_MS tx_time,
-                               tBTA_DM_BLE_RX_TIME_MS rx_time,
-                               tBTA_DM_BLE_IDLE_TIME_MS idle_time,
-                               tBTA_DM_BLE_ENERGY_USED energy_used,
+static void bta_energy_info_cb(tBTM_BLE_TX_TIME_MS tx_time,
+                               tBTM_BLE_RX_TIME_MS rx_time,
+                               tBTM_BLE_IDLE_TIME_MS idle_time,
+                               tBTM_BLE_ENERGY_USED energy_used,
                                tBTA_DM_CONTRL_STATE ctrl_state,
                                tBTA_STATUS status) {
   BTIF_TRACE_DEBUG(
@@ -2665,9 +2665,9 @@ void btif_dm_execute_service_request(uint16_t event, char* p_param) {
 }
 
 void btif_dm_proc_io_req(UNUSED_ATTR const RawAddress& bd_addr,
-                         UNUSED_ATTR tBTA_IO_CAP* p_io_cap,
-                         UNUSED_ATTR tBTA_OOB_DATA* p_oob_data,
-                         tBTA_AUTH_REQ* p_auth_req, bool is_orig) {
+                         UNUSED_ATTR tBTM_IO_CAP* p_io_cap,
+                         UNUSED_ATTR tBTM_OOB_DATA* p_oob_data,
+                         tBTM_AUTH_REQ* p_auth_req, bool is_orig) {
   uint8_t yes_no_bit = BTA_AUTH_SP_YES & *p_auth_req;
   /* if local initiated:
   **      1. set DD + MITM
@@ -2702,8 +2702,8 @@ void btif_dm_proc_io_req(UNUSED_ATTR const RawAddress& bd_addr,
 }
 
 void btif_dm_proc_io_rsp(UNUSED_ATTR const RawAddress& bd_addr,
-                         tBTA_IO_CAP io_cap, UNUSED_ATTR tBTA_OOB_DATA oob_data,
-                         tBTA_AUTH_REQ auth_req) {
+                         tBTM_IO_CAP io_cap, UNUSED_ATTR tBTM_OOB_DATA oob_data,
+                         tBTM_AUTH_REQ auth_req) {
   if (auth_req & BTA_AUTH_BONDS) {
     BTIF_TRACE_DEBUG("%s auth_req:%d", __func__, auth_req);
     pairing_cb.auth_req = auth_req;
@@ -2711,7 +2711,7 @@ void btif_dm_proc_io_rsp(UNUSED_ATTR const RawAddress& bd_addr,
   }
 }
 
-void btif_dm_set_oob_for_io_req(tBTA_OOB_DATA* p_has_oob_data) {
+void btif_dm_set_oob_for_io_req(tBTM_OOB_DATA* p_has_oob_data) {
   if (is_empty_128bit(oob_cb.oob_data.c192)) {
     *p_has_oob_data = false;
   } else {
@@ -2721,8 +2721,8 @@ void btif_dm_set_oob_for_io_req(tBTA_OOB_DATA* p_has_oob_data) {
 }
 
 void btif_dm_set_oob_for_le_io_req(const RawAddress& bd_addr,
-                                   tBTA_OOB_DATA* p_has_oob_data,
-                                   tBTA_LE_AUTH_REQ* p_auth_req) {
+                                   tBTM_OOB_DATA* p_has_oob_data,
+                                   tBTM_LE_AUTH_REQ* p_auth_req) {
   if (!is_empty_128bit(oob_cb.oob_data.le_sc_c) &&
       !is_empty_128bit(oob_cb.oob_data.le_sc_r)) {
     /* We have LE SC OOB data */
@@ -2742,7 +2742,7 @@ void btif_dm_set_oob_for_le_io_req(const RawAddress& bd_addr,
     /* make sure OOB data is for this particular device */
     if (bd_addr == oob_cb.bdaddr) {
       // When using OOB with TK, SC Secure Connections bit must be disabled.
-      tBTA_LE_AUTH_REQ mask = ~BTM_LE_AUTH_REQ_SC_ONLY;
+      tBTM_LE_AUTH_REQ mask = ~BTM_LE_AUTH_REQ_SC_ONLY;
       *p_auth_req = ((*p_auth_req) & mask);
 
       *p_has_oob_data = true;
