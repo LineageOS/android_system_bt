@@ -42,8 +42,8 @@
  * Returns          void
  *
  ******************************************************************************/
-void bta_dm_ci_io_req(const RawAddress& bd_addr, tBTA_IO_CAP io_cap,
-                      tBTA_OOB_DATA oob_data, tBTA_AUTH_REQ auth_req)
+void bta_dm_ci_io_req(const RawAddress& bd_addr, tBTM_IO_CAP io_cap,
+                      tBTM_OOB_DATA oob_data, tBTM_AUTH_REQ auth_req)
 
 {
   do_in_main_thread(FROM_HERE, base::Bind(bta_dm_ci_io_req_act, bd_addr, io_cap,
