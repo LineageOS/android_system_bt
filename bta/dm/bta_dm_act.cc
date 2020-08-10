@@ -2872,28 +2872,13 @@ static void bta_dm_remove_sec_dev_entry(const RawAddress& remote_bd_addr) {
  ******************************************************************************/
 static void bta_dm_adjust_roles(bool delay_role_switch) {
   uint8_t i;
-  bool set_master_role = false;
   uint8_t br_count =
       bta_dm_cb.device_list.count - bta_dm_cb.device_list.le_count;
   if (br_count) {
-    /* the configuration is no scatternet
-     * or AV connection exists and there are more than one ACL link */
-    if ((p_bta_dm_rm_cfg[0].cfg == BTA_DM_NO_SCATTERNET) ||
-        (bta_dm_cb.cur_av_count && br_count > 1)) {
-      L2CA_SetDesireRole(HCI_ROLE_MASTER);
-      set_master_role = true;
-    }
-
     for (i = 0; i < bta_dm_cb.device_list.count; i++) {
       if (bta_dm_cb.device_list.peer_device[i].conn_state == BTA_DM_CONNECTED &&
           bta_dm_cb.device_list.peer_device[i].transport ==
               BT_TRANSPORT_BR_EDR) {
-        if (!set_master_role &&
-            (bta_dm_cb.device_list.peer_device[i].pref_role != BTA_ANY_ROLE) &&
-            (p_bta_dm_rm_cfg[0].cfg == BTA_DM_PARTIAL_SCATTERNET)) {
-          L2CA_SetDesireRole(HCI_ROLE_MASTER);
-          set_master_role = true;
-        }
 
         if ((bta_dm_cb.device_list.peer_device[i].pref_role ==
              BTA_MASTER_ROLE_ONLY) ||
@@ -2920,13 +2905,6 @@ static void bta_dm_adjust_roles(bool delay_role_switch) {
         }
       }
     }
-
-    if (!set_master_role) {
-      L2CA_SetDesireRole(HCI_ROLE_MASTER);
-    }
-
-  } else {
-    L2CA_SetDesireRole(HCI_ROLE_MASTER);
   }
 }
 

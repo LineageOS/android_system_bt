@@ -1126,31 +1126,6 @@ uint8_t L2CA_SetTraceLevel(uint8_t new_level) {
 
 /*******************************************************************************
  *
- * Function     L2CA_SetDesireRole
- *
- * Description  This function sets the desire role for L2CAP.
- *
- *              If the new role is a valid role (HCI_ROLE_MASTER or
- *              HCI_ROLE_SLAVE), the desire role is set to the new value.
- *              Otherwise, it is not changed.
- *
- * Returns      the new (current) role
- *
- ******************************************************************************/
-uint8_t L2CA_SetDesireRole(uint8_t new_role) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_SetDesireRole(new_role);
-  }
-
-  L2CAP_TRACE_API("L2CA_SetDesireRole() new:x%x", new_role);
-
-  l2cb.desire_role = new_role;
-
-  return (l2cb.desire_role);
-}
-
-/*******************************************************************************
- *
  * Function         L2CA_SetAclPriority
  *
  * Description      Sets the transmission priority for a channel.
