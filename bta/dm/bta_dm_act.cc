@@ -2922,11 +2922,11 @@ static void bta_dm_adjust_roles(bool delay_role_switch) {
     }
 
     if (!set_master_role) {
-      L2CA_SetDesireRole(L2CAP_DESIRED_LINK_ROLE);
+      L2CA_SetDesireRole(HCI_ROLE_MASTER);
     }
 
   } else {
-    L2CA_SetDesireRole(L2CAP_DESIRED_LINK_ROLE);
+    L2CA_SetDesireRole(HCI_ROLE_MASTER);
   }
 }
 
