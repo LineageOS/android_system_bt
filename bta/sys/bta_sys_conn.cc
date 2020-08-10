@@ -31,6 +31,9 @@
 #include "osi/include/osi.h"
 #include "utl.h"
 
+void BTA_dm_update_policy(tBTA_SYS_CONN_STATUS status, uint8_t id,
+                          uint8_t app_id, const RawAddress& peer_addr);
+
 /*******************************************************************************
  *
  * Function         bta_sys_rm_register
@@ -43,20 +46,6 @@
  ******************************************************************************/
 void bta_sys_rm_register(tBTA_SYS_CONN_CBACK* p_cback) {
   bta_sys_cb.prm_cb = p_cback;
-}
-
-/*******************************************************************************
- *
- * Function         bta_sys_policy_register
- *
- * Description      Called by BTA DM to register link policy change callbacks
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_sys_policy_register(tBTA_SYS_CONN_CBACK* p_cback) {
-  bta_sys_cb.p_policy_cb = p_cback;
 }
 
 /*******************************************************************************
@@ -370,9 +359,7 @@ void bta_sys_set_policy(uint8_t id, uint8_t policy,
                         const RawAddress& peer_addr) {
   APPL_TRACE_DEBUG("%s: peer %s id:%d policy:0x%x", __func__,
                    peer_addr.ToString().c_str(), id, policy);
-  if (bta_sys_cb.p_policy_cb) {
-    bta_sys_cb.p_policy_cb(BTA_SYS_PLCY_SET, id, policy, peer_addr);
-  }
+  BTA_dm_update_policy(BTA_SYS_PLCY_SET, id, policy, peer_addr);
 }
 
 /*******************************************************************************
@@ -389,9 +376,7 @@ void bta_sys_clear_policy(uint8_t id, uint8_t policy,
                           const RawAddress& peer_addr) {
   APPL_TRACE_DEBUG("%s: peer %s id:%d policy:0x%x", __func__,
                    peer_addr.ToString().c_str(), id, policy);
-  if (bta_sys_cb.p_policy_cb) {
-    bta_sys_cb.p_policy_cb(BTA_SYS_PLCY_CLR, id, policy, peer_addr);
-  }
+  BTA_dm_update_policy(BTA_SYS_PLCY_CLR, id, policy, peer_addr);
 }
 
 /*******************************************************************************
@@ -406,10 +391,7 @@ void bta_sys_clear_policy(uint8_t id, uint8_t policy,
  ******************************************************************************/
 void bta_sys_set_default_policy(uint8_t id, uint8_t policy) {
   APPL_TRACE_DEBUG("%s: id:%d policy:0x%x", __func__, id, policy);
-  if (bta_sys_cb.p_policy_cb) {
-    bta_sys_cb.p_policy_cb(BTA_SYS_PLCY_DEF_SET, id, policy,
-                           RawAddress::kEmpty);
-  }
+  BTA_dm_update_policy(BTA_SYS_PLCY_DEF_SET, id, policy, RawAddress::kEmpty);
 }
 
 /*******************************************************************************
@@ -424,10 +406,7 @@ void bta_sys_set_default_policy(uint8_t id, uint8_t policy) {
  ******************************************************************************/
 void bta_sys_clear_default_policy(uint8_t id, uint8_t policy) {
   APPL_TRACE_DEBUG("%s: id:%d policy:0x%x", __func__, id, policy);
-  if (bta_sys_cb.p_policy_cb) {
-    bta_sys_cb.p_policy_cb(BTA_SYS_PLCY_DEF_CLR, id, policy,
-                           RawAddress::kEmpty);
-  }
+  BTA_dm_update_policy(BTA_SYS_PLCY_DEF_CLR, id, policy, RawAddress::kEmpty);
 }
 
 /*******************************************************************************

@@ -82,8 +82,8 @@ static uint8_t bta_dm_authentication_complete_cback(const RawAddress& bd_addr,
 static void bta_dm_local_name_cback(void* p_name);
 static bool bta_dm_check_av(uint16_t event);
 
-static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
-                                uint8_t app_id, const RawAddress& peer_addr);
+void BTA_dm_update_policy(tBTA_SYS_CONN_STATUS status, uint8_t id,
+                          uint8_t app_id, const RawAddress& peer_addr);
 
 /* Extended Inquiry Response */
 static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data);
@@ -415,8 +415,6 @@ void BTA_dm_on_hw_on() {
 
   /* initialize bluetooth low power manager */
   bta_dm_init_pm();
-
-  bta_sys_policy_register(bta_dm_policy_cback);
 
   bta_dm_gattc_register();
 }
@@ -838,8 +836,8 @@ void bta_dm_pin_reply(std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
-                                uint8_t app_id, const RawAddress& peer_addr) {
+void BTA_dm_update_policy(tBTA_SYS_CONN_STATUS status, uint8_t id,
+                          uint8_t app_id, const RawAddress& peer_addr) {
   tBTA_DM_PEER_DEVICE* p_dev = NULL;
   uint16_t policy = app_id;
   uint32_t mask = (uint32_t)(1 << id);
@@ -848,7 +846,7 @@ static void bta_dm_policy_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
     p_dev = bta_dm_find_peer_device(peer_addr);
   }
 
-  APPL_TRACE_DEBUG(" bta_dm_policy_cback cmd:%d, policy:0x%x", status, policy);
+  APPL_TRACE_DEBUG(" cmd:%d, policy:0x%x", status, policy);
   switch (status) {
     case BTA_SYS_PLCY_SET:
       if (!p_dev) return;
@@ -2575,8 +2573,8 @@ static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
     }
 
     if (need_policy_change) {
-      bta_dm_policy_cback(BTA_SYS_PLCY_CLR, 0, HCI_ENABLE_MASTER_SLAVE_SWITCH,
-                          p_dev->peer_bdaddr);
+      BTA_dm_update_policy(BTA_SYS_PLCY_CLR, 0, HCI_ENABLE_MASTER_SLAVE_SWITCH,
+                           p_dev->peer_bdaddr);
     }
   } else {
     /* there's AV no activity on this link and role switch happened
@@ -2805,8 +2803,9 @@ static bool bta_dm_check_av(uint16_t event) {
           switching = true;
         }
         /* else either already master or can not switch for some reasons */
-        bta_dm_policy_cback(BTA_SYS_PLCY_CLR, 0, HCI_ENABLE_MASTER_SLAVE_SWITCH,
-                            p_dev->peer_bdaddr);
+        BTA_dm_update_policy(BTA_SYS_PLCY_CLR, 0,
+                             HCI_ENABLE_MASTER_SLAVE_SWITCH,
+                             p_dev->peer_bdaddr);
         break;
       }
     }

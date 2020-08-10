@@ -61,8 +61,6 @@ typedef struct {
   tBTA_SYS_CONN_CBACK*
       ppm_cb; /* low power management callback registered by DM */
   tBTA_SYS_CONN_CBACK*
-      p_policy_cb; /* link policy change callback registered by DM */
-  tBTA_SYS_CONN_CBACK*
       p_sco_cb; /* SCO connection change callback registered by AV */
   tBTA_SYS_CONN_CBACK* p_role_cb; /* role change callback registered by AV */
   tBTA_SYS_COLLISION colli_reg;   /* collision handling module */
