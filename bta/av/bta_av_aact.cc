@@ -1855,7 +1855,6 @@ void bta_av_conn_failed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
  *
  ******************************************************************************/
 void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
-  uint8_t clear_policy = 0;
   uint8_t cur_role;
 
   LOG_INFO("%s: peer %s sco_occupied:%s role:0x%x started:%s wait:0x%x",
@@ -1872,10 +1871,8 @@ void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
    * It would not hurt us, if the peer device wants us to be master */
   if ((BTM_GetRole(p_scb->PeerAddress(), &cur_role) == BTM_SUCCESS) &&
       (cur_role == HCI_ROLE_MASTER)) {
-    clear_policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
+    BTA_dm_clear_policy(HCI_ENABLE_MASTER_SLAVE_SWITCH, p_scb->PeerAddress());
   }
-
-  bta_sys_clear_policy(BTA_ID_AV, clear_policy, p_scb->PeerAddress());
 
   if (p_scb->started) {
     p_scb->role |= BTA_AV_ROLE_START_INT;
@@ -2243,7 +2240,6 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   uint16_t flush_to;
   uint8_t new_role = p_scb->role;
   BT_HDR hdr;
-  uint8_t clear_policy = 0;
   uint8_t cur_role;
   uint8_t local_tsep = p_scb->seps[p_scb->sep_idx].tsep;
 
@@ -2380,10 +2376,9 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
        * master */
       if ((BTM_GetRole(p_scb->PeerAddress(), &cur_role) == BTM_SUCCESS) &&
           (cur_role == HCI_ROLE_MASTER)) {
-        clear_policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
+        BTA_dm_clear_policy(HCI_ENABLE_MASTER_SLAVE_SWITCH,
+                            p_scb->PeerAddress());
       }
-
-      bta_sys_clear_policy(BTA_ID_AV, clear_policy, p_scb->PeerAddress());
     }
 
     p_scb->role = new_role;
