@@ -1129,10 +1129,6 @@ uint8_t L2CA_SetTraceLevel(uint8_t new_level) {
  * Function     L2CA_SetDesireRole
  *
  * Description  This function sets the desire role for L2CAP.
- *              If the new role is L2CAP_ROLE_ALLOW_SWITCH, allow switch on
- *              HciCreateConnection.
- *              If the new role is L2CAP_ROLE_DISALLOW_SWITCH, do not allow
- *              switch on HciCreateConnection.
  *
  *              If the new role is a valid role (HCI_ROLE_MASTER or
  *              HCI_ROLE_SLAVE), the desire role is set to the new value.
@@ -1146,21 +1142,9 @@ uint8_t L2CA_SetDesireRole(uint8_t new_role) {
     return bluetooth::shim::L2CA_SetDesireRole(new_role);
   }
 
-  L2CAP_TRACE_API("L2CA_SetDesireRole() new:x%x, disallow_switch:%d", new_role,
-                  l2cb.disallow_switch);
+  L2CAP_TRACE_API("L2CA_SetDesireRole() new:x%x", new_role);
 
-  if (L2CAP_ROLE_CHECK_SWITCH != (L2CAP_ROLE_CHECK_SWITCH & new_role)) {
-    /* do not process the allow_switch when both bits are set */
-    if (new_role & L2CAP_ROLE_ALLOW_SWITCH) {
-      l2cb.disallow_switch = false;
-    }
-    if (new_role & L2CAP_ROLE_DISALLOW_SWITCH) {
-      l2cb.disallow_switch = true;
-    }
-  }
-
-  if (new_role == HCI_ROLE_MASTER || new_role == HCI_ROLE_SLAVE)
-    l2cb.desire_role = new_role;
+  l2cb.desire_role = new_role;
 
   return (l2cb.desire_role);
 }

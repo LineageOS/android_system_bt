@@ -81,12 +81,6 @@ typedef uint8_t tL2CAP_CHNL_DATA_RATE;
 #define L2CAP_FLUSH_CHANS_ALL 0xffff
 #define L2CAP_FLUSH_CHANS_GET 0x0000
 
-/* set this bit to allow switch at create conn */
-#define L2CAP_ROLE_ALLOW_SWITCH 0x80
-/* set this bit to disallow switch at create conn */
-#define L2CAP_ROLE_DISALLOW_SWITCH 0x40
-#define L2CAP_ROLE_CHECK_SWITCH 0xC0
-
 /* Values for 'allowed_modes' field passed in structure tL2CAP_ERTM_INFO
  */
 #define L2CAP_FCR_CHAN_OPT_BASIC (1 << L2CAP_FCR_BASIC_MODE)
@@ -637,10 +631,6 @@ extern uint8_t L2CA_SetTraceLevel(uint8_t trace_level);
  * Function     L2CA_SetDesireRole
  *
  * Description  This function sets the desire role for L2CAP.
- *              If the new role is L2CAP_ROLE_ALLOW_SWITCH, allow switch on
- *              HciCreateConnection.
- *              If the new role is L2CAP_ROLE_DISALLOW_SWITCH, do not allow
- *              switch on HciCreateConnection.
  *
  *              If the new role is a valid role (HCI_ROLE_MASTER or
  *              HCI_ROLE_SLAVE), the desire role is set to the new value.

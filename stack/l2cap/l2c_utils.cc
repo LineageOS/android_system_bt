@@ -2151,13 +2151,15 @@ void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb) {
   uint8_t no_hi_prio_chs = l2cu_get_num_hi_priority();
   const controller_t* controller = controller_get_interface();
 
+  bool disallow_switch = (btm_cb.acl_cb_.btm_def_link_policy &
+                          HCI_ENABLE_MASTER_SLAVE_SWITCH) == 0;
   L2CAP_TRACE_DEBUG(
       "l2cu_create_conn_after_switch :%d num_acl:%d no_hi: %d is_bonding:%d",
-      l2cb.disallow_switch, num_acl, no_hi_prio_chs, p_lcb->is_bonding);
+      disallow_switch, num_acl, no_hi_prio_chs, p_lcb->is_bonding);
   /* FW team says that we can participant in 4 piconets
    * typically 3 piconet + 1 for scanning.
    * We can enhance the code to count the number of piconets later. */
-  if (((!l2cb.disallow_switch && (num_acl < 3)) ||
+  if (((!disallow_switch && (num_acl < 3)) ||
        (p_lcb->is_bonding && (no_hi_prio_chs == 0))) &&
       controller->supports_role_switch())
     allow_switch = HCI_CR_CONN_ALLOW_SWITCH;
