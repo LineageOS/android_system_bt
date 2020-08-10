@@ -24,6 +24,7 @@
 #include "common/metrics.h"
 #include "device/include/controller.h"
 #include "stack/gatt/connection_manager.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/hcimsgs.h"
 #include "stack/include/l2cap_hci_link_interface.h"
 
