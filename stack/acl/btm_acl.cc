@@ -2471,6 +2471,36 @@ bool acl_peer_supports_ble_connection_parameters_request(
 
 /*******************************************************************************
  *
+ * Function         BTM_ReadConnectionAddr
+ *
+ * Description      This function is called to get the local device address
+ *                  information.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
+                            RawAddress& local_conn_addr,
+                            tBLE_ADDR_TYPE* p_addr_type) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::BTM_ReadConnectionAddr(remote_bda, local_conn_addr,
+                                                   p_addr_type);
+  }
+  tACL_CONN* p_acl = btm_bda_to_acl(remote_bda, BT_TRANSPORT_LE);
+
+  if (p_acl == NULL) {
+    BTM_TRACE_ERROR("No connection exist!");
+    return;
+  }
+  local_conn_addr = p_acl->conn_addr;
+  *p_addr_type = p_acl->conn_addr_type;
+
+  BTM_TRACE_DEBUG("BTM_ReadConnectionAddr address type: %d addr: 0x%02x",
+                  p_acl->conn_addr_type, p_acl->conn_addr.address[0]);
+}
+
+/*******************************************************************************
+ *
  * Function         BTM_IsBleConnection
  *
  * Description      This function is called to check if the connection handle
