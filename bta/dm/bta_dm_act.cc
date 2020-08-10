@@ -851,19 +851,12 @@ void BTA_dm_clear_policy(uint8_t policy, const RawAddress& peer_addr) {
   }
 }
 
-void BTA_dm_unblock_role_switch(uint8_t app_id) {
-  uint32_t mask = (uint32_t)(1 << app_id);
-  bta_dm_cb.role_policy_mask &= ~mask;
-  if (0 == bta_dm_cb.role_policy_mask) {
-    /* if nobody wants to insist on the role */
-    bta_dm_cb.cur_policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
-    BTM_SetDefaultLinkPolicy(bta_dm_cb.cur_policy);
-  }
+void BTA_dm_unblock_role_switch() {
+  bta_dm_cb.cur_policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
+  BTM_SetDefaultLinkPolicy(bta_dm_cb.cur_policy);
 }
 
-void BTA_dm_block_role_switch(uint8_t app_id) {
-  uint32_t mask = (uint32_t)(1 << app_id);
-  bta_dm_cb.role_policy_mask |= mask;
+void BTA_dm_block_role_switch() {
   bta_dm_cb.cur_policy &= ~HCI_ENABLE_MASTER_SLAVE_SWITCH;
   BTM_SetDefaultLinkPolicy(bta_dm_cb.cur_policy);
 }

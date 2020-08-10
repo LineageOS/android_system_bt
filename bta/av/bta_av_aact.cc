@@ -849,7 +849,7 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
     if (bta_av_cb.audio_open_cnt == 1) {
       /* there's already an A2DP connection. do not allow switch */
-      BTA_dm_block_role_switch(BTA_ID_AV);
+      BTA_dm_block_role_switch();
     }
   }
   /* store peer addr other parameters */

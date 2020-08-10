@@ -246,7 +246,7 @@ extern void bta_sys_set_policy(uint8_t id, uint8_t policy,
 extern void bta_sys_clear_policy(uint8_t id, uint8_t policy,
                                  const RawAddress& peer_addr);
 
-void BTA_dm_unblock_role_switch(uint8_t app_id);
-void BTA_dm_block_role_switch(uint8_t app_id);
+void BTA_dm_unblock_role_switch();
+void BTA_dm_block_role_switch();
 
 #endif /* BTA_SYS_H */
