@@ -1539,7 +1539,7 @@ static void btu_hcif_hardware_error_evt(uint8_t* p) {
   btm_report_device_status(BTM_DEV_STATUS_DOWN);
 
   /* Reset the controller */
-  if (BTM_IsDeviceUp()) BTM_DeviceReset(NULL);
+  if (BTM_IsDeviceUp()) BTM_DeviceReset();
 }
 
 /*******************************************************************************
