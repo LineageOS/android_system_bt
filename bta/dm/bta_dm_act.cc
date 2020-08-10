@@ -387,8 +387,6 @@ void BTA_dm_on_hw_on() {
   BTM_SecRegister(&bta_security);
   BTM_SetDefaultLinkSuperTout(p_bta_dm_cfg->link_timeout);
   BTM_WritePageTimeout(p_bta_dm_cfg->page_timeout);
-  bta_dm_cb.cur_policy = p_bta_dm_cfg->policy_settings;
-  BTM_SetDefaultLinkPolicy(bta_dm_cb.cur_policy);
 
 #if (BLE_VND_INCLUDED == TRUE)
   BTM_BleReadControllerFeatures(bta_dm_ctrl_features_rd_cmpl_cback);
@@ -846,13 +844,13 @@ void BTA_dm_block_role_switch_for(const RawAddress& peer_addr) {
 }
 
 void BTA_dm_unblock_role_switch() {
-  bta_dm_cb.cur_policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
-  BTM_SetDefaultLinkPolicy(bta_dm_cb.cur_policy);
+  BTM_SetDefaultLinkPolicy(btm_cb.acl_cb_.btm_def_link_policy |
+                           HCI_ENABLE_MASTER_SLAVE_SWITCH);
 }
 
 void BTA_dm_block_role_switch() {
-  bta_dm_cb.cur_policy &= ~HCI_ENABLE_MASTER_SLAVE_SWITCH;
-  BTM_SetDefaultLinkPolicy(bta_dm_cb.cur_policy);
+  BTM_SetDefaultLinkPolicy(btm_cb.acl_cb_.btm_def_link_policy &
+                           ~HCI_ENABLE_MASTER_SLAVE_SWITCH);
 }
 
 /** Send the user confirm request reply in response to a request from BTM */
@@ -2573,7 +2571,7 @@ static tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
     auto device =
         &bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count];
     device->peer_bdaddr = bd_addr;
-    device->link_policy = bta_dm_cb.cur_policy;
+    device->link_policy = btm_cb.acl_cb_.btm_def_link_policy;
     bta_dm_cb.device_list.count++;
     device->conn_handle = handle;
     if (transport == BT_TRANSPORT_LE) {
