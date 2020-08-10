@@ -54,15 +54,12 @@ typedef struct {
   tBTA_SYS_REG* reg[BTA_ID_MAX]; /* registration structures */
   bool is_reg[BTA_ID_MAX];       /* registration structures */
   tBTA_SYS_HW_STATE state;
-  tBTA_SYS_HW_CBACK* sys_hw_cback;
   bool bluetooth_active;
   uint16_t sys_features;         /* Bitmask of sys features */
 
   tBTA_SYS_CONN_CBACK* prm_cb; /* role management callback registered by DM */
   tBTA_SYS_CONN_CBACK*
       ppm_cb; /* low power management callback registered by DM */
-  tBTA_SYS_CONN_CBACK*
-      p_policy_cb; /* link policy change callback registered by DM */
   tBTA_SYS_CONN_CBACK*
       p_sco_cb; /* SCO connection change callback registered by AV */
   tBTA_SYS_CONN_CBACK* p_role_cb; /* role change callback registered by AV */
@@ -86,14 +83,9 @@ typedef struct {
 extern tBTA_SYS_CB bta_sys_cb;
 
 /* functions used for BTA SYS HW state machine */
-void bta_sys_hw_btm_cback(tBTM_DEV_STATUS status);
 void bta_sys_hw_error();
 void bta_sys_hw_api_enable();
 void bta_sys_hw_api_disable();
 void bta_sys_hw_evt_enabled();
-void bta_sys_hw_evt_disabled();
-void bta_sys_hw_evt_stack_enabled();
-
-bool bta_sys_sm_execute(BT_HDR* p_msg);
 
 #endif /* BTA_SYS_INT_H */
