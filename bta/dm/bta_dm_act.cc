@@ -827,28 +827,22 @@ void bta_dm_pin_reply(std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg) {
   }
 }
 
-void BTA_dm_set_policy(uint8_t policy, const RawAddress& peer_addr) {
+void BTA_dm_unblock_role_switch_for(const RawAddress& peer_addr) {
   auto p_dev = bta_dm_find_peer_device(peer_addr);
   if (!p_dev) {
     return;
   }
-  p_dev->link_policy |= policy;
+  p_dev->link_policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
   BTM_SetLinkPolicy(p_dev->peer_bdaddr, &(p_dev->link_policy));
 }
 
-void BTA_dm_clear_policy(uint8_t policy, const RawAddress& peer_addr) {
+void BTA_dm_block_role_switch_for(const RawAddress& peer_addr) {
   auto p_dev = bta_dm_find_peer_device(peer_addr);
   if (!p_dev) {
     return;
   }
-  /* clear the policy from the default link policy */
-  p_dev->link_policy &= (~policy);
+  p_dev->link_policy &= (~HCI_ENABLE_MASTER_SLAVE_SWITCH);
   BTM_SetLinkPolicy(p_dev->peer_bdaddr, &(p_dev->link_policy));
-
-  if (policy & (HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_PARK_MODE)) {
-    /* if clearing sniff/park, wake the link */
-    bta_dm_pm_active(p_dev->peer_bdaddr);
-  }
 }
 
 void BTA_dm_unblock_role_switch() {
@@ -2548,7 +2542,7 @@ static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
     }
 
     if (need_policy_change) {
-      BTA_dm_clear_policy(HCI_ENABLE_MASTER_SLAVE_SWITCH, p_dev->peer_bdaddr);
+      BTA_dm_block_role_switch_for(p_dev->peer_bdaddr);
     }
   } else {
     /* there's AV no activity on this link and role switch happened
@@ -2777,7 +2771,7 @@ static bool bta_dm_check_av(uint16_t event) {
           switching = true;
         }
         /* else either already master or can not switch for some reasons */
-        BTA_dm_clear_policy(HCI_ENABLE_MASTER_SLAVE_SWITCH, p_dev->peer_bdaddr);
+        BTA_dm_block_role_switch_for(p_dev->peer_bdaddr);
         break;
       }
     }
