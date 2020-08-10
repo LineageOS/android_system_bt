@@ -241,11 +241,10 @@ extern void bta_sys_remove_uuid(uint16_t uuid16);
 #define bta_sys_remove_uuid(ut)
 #endif
 
-extern void bta_sys_set_policy(uint8_t id, uint8_t policy,
-                               const RawAddress& peer_addr);
 extern void bta_sys_clear_policy(uint8_t id, uint8_t policy,
                                  const RawAddress& peer_addr);
 
+void BTA_dm_set_policy(uint8_t policy, const RawAddress& peer_addr);
 void BTA_dm_unblock_role_switch();
 void BTA_dm_block_role_switch();
 

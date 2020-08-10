@@ -1945,8 +1945,7 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->PeerAddress());
   if ((bta_av_cb.features & BTA_AV_FEAT_MASTER) == 0 ||
       bta_av_cb.audio_open_cnt == 1) {
-    bta_sys_set_policy(BTA_ID_AV, HCI_ENABLE_MASTER_SLAVE_SWITCH,
-                       p_scb->PeerAddress());
+    BTA_dm_set_policy(HCI_ENABLE_MASTER_SLAVE_SWITCH, p_scb->PeerAddress());
   }
 
   if (p_scb->co_started) {
@@ -2446,8 +2445,7 @@ void bta_av_start_failed(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
     notify_start_failed(p_scb);
   }
 
-  bta_sys_set_policy(BTA_ID_AV, HCI_ENABLE_MASTER_SLAVE_SWITCH,
-                     p_scb->PeerAddress());
+  BTA_dm_set_policy(HCI_ENABLE_MASTER_SLAVE_SWITCH, p_scb->PeerAddress());
   p_scb->sco_suspend = false;
 }
 
@@ -2471,8 +2469,7 @@ void bta_av_str_closed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   if ((bta_av_cb.features & BTA_AV_FEAT_MASTER) == 0 ||
       bta_av_cb.audio_open_cnt == 1) {
-    bta_sys_set_policy(BTA_ID_AV, HCI_ENABLE_MASTER_SLAVE_SWITCH,
-                       p_scb->PeerAddress());
+    BTA_dm_set_policy(HCI_ENABLE_MASTER_SLAVE_SWITCH, p_scb->PeerAddress());
   }
   if (bta_av_cb.audio_open_cnt <= 1) {
     /* last connection - restore the allow switch flag */
@@ -2584,8 +2581,7 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->PeerAddress());
   if ((bta_av_cb.features & BTA_AV_FEAT_MASTER) == 0 ||
       bta_av_cb.audio_open_cnt == 1) {
-    bta_sys_set_policy(BTA_ID_AV, HCI_ENABLE_MASTER_SLAVE_SWITCH,
-                       p_scb->PeerAddress());
+    BTA_dm_set_policy(HCI_ENABLE_MASTER_SLAVE_SWITCH, p_scb->PeerAddress());
   }
 
   /* in case that we received suspend_ind, we may need to call co_stop here */

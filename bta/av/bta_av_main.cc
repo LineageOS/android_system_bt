@@ -921,8 +921,8 @@ void bta_av_restore_switch(void) {
     mask = BTA_AV_HNDL_TO_MSK(i);
     if (p_cb->conn_audio == mask) {
       if (p_cb->p_scb[i]) {
-        bta_sys_set_policy(BTA_ID_AV, HCI_ENABLE_MASTER_SLAVE_SWITCH,
-                           p_cb->p_scb[i]->PeerAddress());
+        BTA_dm_set_policy(HCI_ENABLE_MASTER_SLAVE_SWITCH,
+                          p_cb->p_scb[i]->PeerAddress());
       }
       break;
     }
@@ -975,7 +975,7 @@ static void bta_av_sys_rs_cback(UNUSED_ATTR tBTA_SYS_CONN_STATUS status,
   if ((HCI_SUCCESS != app_id) &&
       (BTM_GetRole(peer_addr, &cur_role) == BTM_SUCCESS) &&
       (cur_role == HCI_ROLE_SLAVE)) {
-    bta_sys_set_policy(BTA_ID_AV, HCI_ENABLE_MASTER_SLAVE_SWITCH, peer_addr);
+    BTA_dm_set_policy(HCI_ENABLE_MASTER_SLAVE_SWITCH, peer_addr);
   }
 
   /* if BTA_AvOpen() was called for other device, which caused the role switch
