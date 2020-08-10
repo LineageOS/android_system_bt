@@ -234,12 +234,12 @@ uint16_t L2CA_GetDisconnectReason(const RawAddress& remote_bda,
  ******************************************************************************/
 void l2cble_notify_le_connection(const RawAddress& bda) {
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
-  tACL_CONN* p_acl = btm_bda_to_acl(bda, BT_TRANSPORT_LE);
   tL2C_CCB* p_ccb;
 
-  if (p_lcb != NULL && p_acl != NULL && p_lcb->link_state != LST_CONNECTED) {
+  if (p_lcb != NULL && BTM_IsAclConnectionUp(bda, BT_TRANSPORT_LE) &&
+      p_lcb->link_state != LST_CONNECTED) {
     /* update link status */
-    btm_establish_continue(p_acl);
+    btm_establish_continue_from_address(bda, BT_TRANSPORT_LE);
     /* update l2cap link status and send callback */
     p_lcb->link_state = LST_CONNECTED;
     l2cu_process_fixed_chnl_resp(p_lcb);
