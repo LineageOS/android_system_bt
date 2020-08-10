@@ -851,6 +851,16 @@ void BTA_dm_clear_policy(uint8_t policy, const RawAddress& peer_addr) {
   }
 }
 
+void BTA_dm_set_default_policy(uint8_t app_id) {
+  uint32_t mask = (uint32_t)(1 << app_id);
+  bta_dm_cb.role_policy_mask &= ~mask;
+  if (0 == bta_dm_cb.role_policy_mask) {
+    /* if nobody wants to insist on the role */
+    bta_dm_cb.cur_policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
+    BTM_SetDefaultLinkPolicy(bta_dm_cb.cur_policy);
+  }
+}
+
 /*******************************************************************************
  *
  * Function         bta_dm_policy_cback
@@ -872,16 +882,6 @@ void BTA_dm_update_policy(tBTA_SYS_CONN_STATUS status, uint8_t id,
 
   APPL_TRACE_DEBUG(" cmd:%d, policy:0x%x", status, policy);
   switch (status) {
-    case BTA_SYS_PLCY_DEF_SET:
-      /* want to restore/set the role switch policy */
-      bta_dm_cb.role_policy_mask &= ~mask;
-      if (0 == bta_dm_cb.role_policy_mask) {
-        /* if nobody wants to insist on the role */
-        bta_dm_cb.cur_policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
-        BTM_SetDefaultLinkPolicy(bta_dm_cb.cur_policy);
-      }
-      break;
-
     case BTA_SYS_PLCY_DEF_CLR:
       /* want to remove the role switch policy */
       bta_dm_cb.role_policy_mask |= mask;
