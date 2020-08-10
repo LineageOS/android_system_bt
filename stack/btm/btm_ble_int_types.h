@@ -76,15 +76,6 @@
 #define BTM_BLE_SEC_REQ_ACT_DISCARD 3
 typedef uint8_t tBTM_BLE_SEC_REQ_ACT;
 
-#define BLE_STATIC_PRIVATE_MSB_MASK 0x3f
-/*  most significant bit, bit7, bit6 is 01 to be resolvable random */
-#define BLE_RESOLVE_ADDR_MSB 0x40
-/* bit 6, and bit7 */
-#define BLE_RESOLVE_ADDR_MASK 0xc0
-inline bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x) {
-  return ((x.address)[0] & BLE_RESOLVE_ADDR_MASK) == BLE_RESOLVE_ADDR_MSB;
-}
-
 /* LE scan activity bit mask, continue with LE inquiry bits */
 /* observe is in progress */
 #define BTM_LE_OBSERVE_ACTIVE 0x80
