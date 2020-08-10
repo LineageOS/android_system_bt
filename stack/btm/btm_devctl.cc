@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include "bt_types.h"
+#include "bta/dm/bta_dm_int.h"
 #include "btcore/include/module.h"
 #include "btm_int.h"
 #include "btu.h"
@@ -38,6 +39,7 @@
 #include "hcimsgs.h"
 #include "osi/include/osi.h"
 #include "stack/gatt/connection_manager.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/l2cap_controller_interface.h"
 
 #include "bta/sys/bta_sys.h"
@@ -353,26 +355,7 @@ static void decode_controller_support() {
   BTM_TRACE_DEBUG("Local supported SCO packet types: 0x%04x",
                   btm_cb.btm_sco_pkt_types_supported);
 
-  /* Create Default Policy Settings */
-  if (controller->supports_role_switch())
-    btm_cb.acl_cb_.btm_def_link_policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
-  else
-    btm_cb.acl_cb_.btm_def_link_policy &= ~HCI_ENABLE_MASTER_SLAVE_SWITCH;
-
-  if (controller->supports_hold_mode())
-    btm_cb.acl_cb_.btm_def_link_policy |= HCI_ENABLE_HOLD_MODE;
-  else
-    btm_cb.acl_cb_.btm_def_link_policy &= ~HCI_ENABLE_HOLD_MODE;
-
-  if (controller->supports_sniff_mode())
-    btm_cb.acl_cb_.btm_def_link_policy |= HCI_ENABLE_SNIFF_MODE;
-  else
-    btm_cb.acl_cb_.btm_def_link_policy &= ~HCI_ENABLE_SNIFF_MODE;
-
-  if (controller->supports_park_mode())
-    btm_cb.acl_cb_.btm_def_link_policy |= HCI_ENABLE_PARK_MODE;
-  else
-    btm_cb.acl_cb_.btm_def_link_policy &= ~HCI_ENABLE_PARK_MODE;
+  BTM_SetDefaultLinkPolicy(p_bta_dm_cfg->policy_settings);
 
   btm_sec_dev_reset();
 
