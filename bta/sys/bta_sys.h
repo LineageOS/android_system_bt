@@ -110,9 +110,6 @@ typedef uint8_t tBTA_SYS_ID;
 #define BTA_SYS_CONN_IDLE 0x06
 #define BTA_SYS_CONN_BUSY 0x07
 
-/* for link policy */
-#define BTA_SYS_PLCY_DEF_SET 0x12 /* set the default link policy */
-#define BTA_SYS_PLCY_DEF_CLR 0x13 /* clear the default link policy */
 #define BTA_SYS_ROLE_CHANGE 0x14  /* role change */
 
 typedef uint8_t tBTA_SYS_CONN_STATUS;

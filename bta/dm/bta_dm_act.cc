@@ -861,34 +861,11 @@ void BTA_dm_set_default_policy(uint8_t app_id) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_policy_cback
- *
- * Description      process the link policy changes
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_dm_update_policy(tBTA_SYS_CONN_STATUS status, uint8_t id,
-                          uint8_t app_id, const RawAddress& peer_addr) {
-  tBTA_DM_PEER_DEVICE* p_dev = NULL;
-  uint16_t policy = app_id;
-  uint32_t mask = (uint32_t)(1 << id);
-
-  if (peer_addr != RawAddress::kEmpty) {
-    p_dev = bta_dm_find_peer_device(peer_addr);
-  }
-
-  APPL_TRACE_DEBUG(" cmd:%d, policy:0x%x", status, policy);
-  switch (status) {
-    case BTA_SYS_PLCY_DEF_CLR:
-      /* want to remove the role switch policy */
-      bta_dm_cb.role_policy_mask |= mask;
-      bta_dm_cb.cur_policy &= ~HCI_ENABLE_MASTER_SLAVE_SWITCH;
-      BTM_SetDefaultLinkPolicy(bta_dm_cb.cur_policy);
-      break;
-  }
+void BTA_dm_clear_default_policy(uint8_t app_id) {
+  uint32_t mask = (uint32_t)(1 << app_id);
+  bta_dm_cb.role_policy_mask |= mask;
+  bta_dm_cb.cur_policy &= ~HCI_ENABLE_MASTER_SLAVE_SWITCH;
+  BTM_SetDefaultLinkPolicy(bta_dm_cb.cur_policy);
 }
 
 /** Send the user confirm request reply in response to a request from BTM */
