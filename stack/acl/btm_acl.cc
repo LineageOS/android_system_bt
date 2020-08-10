@@ -329,21 +329,6 @@ void btm_acl_update_conn_addr(uint16_t conn_handle, const RawAddress& address) {
 
 /*******************************************************************************
  *
- * Function         btm_acl_report_role_change
- *
- * Description      This function is called when the local device is deemed
- *                  to be down. It notifies L2CAP of the failure.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_acl_report_role_change(uint8_t hci_status, const RawAddress* bda) {
-  tBTM_ROLE_SWITCH_CMPL ref_data;
-  BTM_TRACE_DEBUG("btm_acl_report_role_change");
-}
-
-/*******************************************************************************
- *
  * Function         btm_acl_removed
  *
  * Description      This function is called by L2CAP when an ACL connection
@@ -359,9 +344,6 @@ void btm_acl_removed(const RawAddress& bda, tBT_TRANSPORT transport) {
   tACL_CONN* p = btm_bda_to_acl(bda, transport);
   if (p != (tACL_CONN*)NULL) {
     p->in_use = false;
-
-    /* if the disconnected channel has a pending role switch, clear it now */
-    btm_acl_report_role_change(HCI_ERR_NO_CONNECTION, &bda);
 
     /* Only notify if link up has had a chance to be issued */
     if (p->link_up_issued) {
@@ -605,7 +587,6 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
     p->encrypt_state = BTM_ACL_ENCRYPT_STATE_IDLE;
     auto new_role = btm_cb.devcb.switch_role_ref_data.role;
     auto hci_status = btm_cb.devcb.switch_role_ref_data.hci_status;
-    btm_acl_report_role_change(hci_status, &p->remote_addr);
     BTA_dm_report_role_change(btm_cb.devcb.switch_role_ref_data.remote_bd_addr,
                               new_role, hci_status);
 
@@ -1328,9 +1309,6 @@ void btm_acl_role_changed(uint8_t hci_status, const RawAddress* bd_addr,
                   hci_status, new_role);
   /* Ignore any stray events */
   if (p == NULL) {
-    /* it could be a failure */
-    if (hci_status != HCI_SUCCESS)
-      btm_acl_report_role_change(hci_status, bd_addr);
     return;
   }
 
@@ -1371,8 +1349,6 @@ void btm_acl_role_changed(uint8_t hci_status, const RawAddress* bd_addr,
     p->encrypt_state = BTM_ACL_ENCRYPT_STATE_IDLE;
   }
 
-  /* if role switch complete is needed, report it now */
-  btm_acl_report_role_change(hci_status, bd_addr);
   BTA_dm_report_role_change(*p_bda, new_role, hci_status);
 
   BTM_TRACE_DEBUG(
