@@ -906,7 +906,7 @@ uint8_t BTM_BleMaxMultiAdvInstanceCount();
  * Returns          void
  *
  ******************************************************************************/
-void BTM_DeviceReset(tBTM_CMPL_CB* p_cb);
+void BTM_DeviceReset();
 
 /*******************************************************************************
  *
