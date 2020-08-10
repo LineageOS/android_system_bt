@@ -2722,14 +2722,11 @@ static bool bta_dm_check_av(uint16_t event) {
   uint8_t i;
   tBTA_DM_PEER_DEVICE* p_dev;
 
-#if (BTA_DM_AVOID_A2DP_ROLESWITCH_ON_INQUIRY == TRUE)
-
   /* avoid role switch upon inquiry if a2dp is actively streaming as it
      introduces an audioglitch due to FW scheduling delays (unavoidable) */
   if (event == BTA_DM_API_SEARCH_EVT) {
     avoid_roleswitch = true;
   }
-#endif
 
   APPL_TRACE_WARNING("bta_dm_check_av:%d", bta_dm_cb.cur_av_count);
   if (bta_dm_cb.cur_av_count) {
