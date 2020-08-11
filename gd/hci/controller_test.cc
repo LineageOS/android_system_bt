@@ -25,6 +25,7 @@
 
 #include "common/bind.h"
 #include "common/callback.h"
+#include "common/init_flags.h"
 #include "hci/address.h"
 #include "hci/hci_layer.h"
 #include "os/thread.h"
@@ -267,6 +268,7 @@ class TestHciLayer : public HciLayer {
 class ControllerTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    bluetooth::common::InitFlags::SetAllForTesting();
     test_hci_layer_ = new TestHciLayer;
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
