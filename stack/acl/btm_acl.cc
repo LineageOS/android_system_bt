@@ -58,7 +58,6 @@ tBTM_SEC_DEV_REC* btm_find_or_alloc_dev(const RawAddress& bd_addr);
 tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec);
 void btm_ble_refresh_local_resolvable_private_addr(
     const RawAddress& pseudo_addr, const RawAddress& local_rpa);
-void btm_establish_continue(tACL_CONN* p_acl_cb);
 void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec, uint8_t res,
                                  bool is_le_trasnport);
 void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
@@ -66,6 +65,7 @@ void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
 
 static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
                                               uint16_t* p_pkt_type);
+static void btm_establish_continue(tACL_CONN* p_acl_cb);
 static void btm_pm_sm_alloc(uint8_t ind);
 static void btm_read_automatic_flush_timeout_timeout(void* data);
 static void btm_read_failed_contact_counter_timeout(void* data);

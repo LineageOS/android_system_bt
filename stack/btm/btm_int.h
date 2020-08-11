@@ -116,7 +116,6 @@ extern void btm_read_remote_ext_features_complete(uint8_t* p, uint8_t evt_len);
 extern void btm_read_remote_ext_features_failed(uint8_t status,
                                                 uint16_t handle);
 extern void btm_read_remote_version_complete(uint8_t* p);
-extern void btm_establish_continue(tACL_CONN* p_acl_cb);
 
 extern tACL_CONN* btm_bda_to_acl(const RawAddress& bda,
                                  tBT_TRANSPORT transport);
