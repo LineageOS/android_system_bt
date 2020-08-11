@@ -60,7 +60,7 @@ class TimeoutHelper {
 TimeoutHelper helper;
 
 // External function definitions
-void btu_task_start_up(void* context);
+void btu_task_start_up();
 void btu_task_shut_down();
 
 /* Below are methods and variables that must be implemented if we don't want to
@@ -95,7 +95,7 @@ class BtuMessageLoopTest : public testing::Test {
     bt_startup_thread.StartUp();
     // btu_task_start_up calls btif_transfer_context to let the stack know
     // start up is finished
-    btu_task_start_up(nullptr);
+    btu_task_start_up();
     helper.wait(5, base::Bind(&BtuMessageLoopTest::Fail, base::Unretained(this),
                               "BTU startup timed out"));
   }

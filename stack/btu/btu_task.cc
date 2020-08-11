@@ -108,7 +108,7 @@ bt_status_t do_in_main_thread_delayed(const base::Location& from_here,
   return BT_STATUS_SUCCESS;
 }
 
-void btu_task_start_up(UNUSED_ATTR void* context) {
+void btu_task_start_up() {
   LOG(INFO) << "Bluetooth chip preload is complete";
 
   /* Initialize the mandatory core stack control blocks

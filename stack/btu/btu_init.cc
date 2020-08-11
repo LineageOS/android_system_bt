@@ -33,7 +33,7 @@ using bluetooth::common::MessageLoopThread;
 
 MessageLoopThread bt_startup_thread("bt_startup_thread");
 
-void btu_task_start_up(void* context);
+void btu_task_start_up();
 void btu_task_shut_down();
 
 /*****************************************************************************
@@ -103,8 +103,7 @@ void BTU_StartUp() {
     BTU_ShutDown();
     return;
   }
-  if (!bt_startup_thread.DoInThread(FROM_HERE,
-                                    base::Bind(btu_task_start_up, nullptr))) {
+  if (!bt_startup_thread.DoInThread(FROM_HERE, base::Bind(btu_task_start_up))) {
     LOG(ERROR) << __func__ << ": Unable to continue start-up on "
                << bt_startup_thread;
     BTU_ShutDown();
