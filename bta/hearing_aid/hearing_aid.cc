@@ -20,7 +20,7 @@
 
 #include "bta_gatt_api.h"
 #include "bta_gatt_queue.h"
-#include "btm_int.h"
+#include "btm_api.h"
 #include "device/include/controller.h"
 #include "embdrv/g722/g722_enc_dec.h"
 #include "gap_api.h"
@@ -391,9 +391,7 @@ class HearingAidImpl : public HearingAid {
       hearingDevice->connection_update_status = AWAITING;
     }
 
-    tACL_CONN* p_acl = btm_bda_to_acl(address, BT_TRANSPORT_LE);
-    if (p_acl != nullptr && controller_get_interface()->supports_ble_2m_phy() &&
-        HCI_LE_2M_PHY_SUPPORTED(p_acl->peer_le_features)) {
+    if (controller_get_interface()->supports_ble_2m_phy()) {
       LOG(INFO) << address << " set preferred PHY to 2M";
       BTM_BleSetPhy(address, PHY_LE_2M, PHY_LE_2M, 0);
     }
@@ -402,14 +400,10 @@ class HearingAidImpl : public HearingAid {
     // TODO(jpawlowski: for 16khz only 87 is required, optimize
     BTM_SetBleDataLength(address, 167);
 
-    tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(address);
-    if (p_dev_rec) {
-      if (p_dev_rec->sec_state == BTM_SEC_STATE_ENCRYPTING ||
-          p_dev_rec->sec_state == BTM_SEC_STATE_AUTHENTICATING) {
-        /* if security collision happened, wait for encryption done
-         * (BTA_GATTC_ENC_CMPL_CB_EVT) */
-        return;
-      }
+    if (BTM_SecIsSecurityPending(address)) {
+      /* if security collision happened, wait for encryption done
+       * (BTA_GATTC_ENC_CMPL_CB_EVT) */
+      return;
     }
 
     /* verify bond */

@@ -38,7 +38,6 @@
 
 #include "bt_target.h"
 #include "btif_util.h"
-#include "btm_api.h"
 #include "osi/include/osi.h"
 
 #define asrt(s)                                                              \
