@@ -72,8 +72,4 @@ typedef struct {
 /* system manager control block */
 extern tBTA_SYS_CB bta_sys_cb;
 
-/* functions used for BTA SYS HW state machine */
-void bta_sys_hw_error();
-void bta_sys_hw_evt_enabled();
-
 #endif /* BTA_SYS_INT_H */

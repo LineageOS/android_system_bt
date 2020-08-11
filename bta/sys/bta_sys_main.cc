@@ -72,22 +72,6 @@ void bta_set_forward_hw_failures(bool value) {
 }
 
 void BTA_sys_signal_hw_error() {
-  do_in_main_thread(FROM_HERE, base::Bind(bta_sys_hw_error));
-}
-
-/*******************************************************************************
- *
- * Function         bta_sys_hw_error
- *
- * Description     In case the HW device stops answering... Try to turn it off,
- *                 then re-enable all
- *                      previously active SW modules.
- *
- * Returns          success or failure
- *
- ******************************************************************************/
-void bta_sys_hw_error() {
-  APPL_TRACE_DEBUG("%s", __func__);
   if (bta_sys_cb.forward_hw_failures) {
     BTIF_dm_on_hw_error();
   }
