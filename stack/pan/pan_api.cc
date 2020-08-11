@@ -137,8 +137,7 @@ tPAN_RESULT PAN_SetRole(uint8_t role, uint8_t* sec_mask,
   }
 
   const char* p_desc;
-  uint8_t security[3] = {0, 0, 0};
-  uint8_t* p_sec;
+  uint8_t* p_sec = sec_mask;
 
   /* If the role is not a valid combination reject it */
   if ((!(role &
@@ -153,11 +152,6 @@ tPAN_RESULT PAN_SetRole(uint8_t role, uint8_t* sec_mask,
     PAN_TRACE_EVENT("PAN role already was set to: %d", role);
     return PAN_SUCCESS;
   }
-
-  if (!sec_mask)
-    p_sec = security;
-  else
-    p_sec = sec_mask;
 
   /* Register all the roles with SDP */
   PAN_TRACE_API("PAN_SetRole() called with role 0x%x", role);
