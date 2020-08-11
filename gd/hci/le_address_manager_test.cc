@@ -69,7 +69,10 @@ class TestHciLayer : public HciLayer {
   }
 
   CommandPacketView GetCommandPacket(OpCode op_code) {
-    if (command_future_ != nullptr) {
+    if (!command_queue_.empty() && command_future_ != nullptr) {
+      command_promise_.reset();
+      command_future_.reset();
+    } else if (command_future_ != nullptr) {
       auto result = command_future_->wait_for(std::chrono::milliseconds(1000));
       EXPECT_NE(std::future_status::timeout, result);
     }
@@ -426,6 +429,27 @@ TEST_F(LeAddressManagerWithSingleClientTest, clear_resolving_list) {
   ASSERT_TRUE(packet_view.IsValid());
   test_hci_layer_->IncomingEvent(LeClearResolvingListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
   clients[0].get()->WaitForResume();
+}
+
+TEST_F(LeAddressManagerWithSingleClientTest, register_during_command_complete) {
+  Address address;
+  Address::FromString("01:02:03:04:05:06", address);
+  test_hci_layer_->SetCommandFuture();
+  le_address_manager_->AddDeviceToConnectList(ConnectListAddressType::RANDOM, address);
+  auto packet = test_hci_layer_->GetCommandPacket(OpCode::LE_ADD_DEVICE_TO_CONNECT_LIST);
+  auto packet_view = LeAddDeviceToConnectListView::Create(LeConnectionManagementCommandView::Create(packet));
+  ASSERT_TRUE(packet_view.IsValid());
+  ASSERT_EQ(ConnectListAddressType::RANDOM, packet_view.GetAddressType());
+  ASSERT_EQ(address, packet_view.GetAddress());
+  test_hci_layer_->IncomingEvent(LeAddDeviceToConnectListCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+
+  AllocateClients(1);
+  test_hci_layer_->SetCommandFuture();
+  le_address_manager_->Register(clients[1].get());
+  test_hci_layer_->GetCommandPacket(OpCode::LE_SET_RANDOM_ADDRESS);
+  test_hci_layer_->IncomingEvent(LeSetRandomAddressCompleteBuilder::Create(0x01, ErrorCode::SUCCESS));
+  clients[0].get()->WaitForResume();
+  clients[1].get()->WaitForResume();
 }
 
 }  // namespace hci
