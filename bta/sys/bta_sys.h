@@ -177,6 +177,7 @@ typedef uint8_t tBTA_SYS_HW_EVT;
  *  Function declarations
  ****************************************************************************/
 void bta_set_forward_hw_failures(bool value);
+void BTA_sys_signal_hw_error();
 
 extern void bta_sys_init(void);
 extern void bta_sys_free(void);
@@ -185,7 +186,6 @@ extern void bta_sys_set_trace_level(uint8_t level);
 extern void bta_sys_register(uint8_t id, const tBTA_SYS_REG* p_reg);
 extern void bta_sys_deregister(uint8_t id);
 extern bool bta_sys_is_register(uint8_t id);
-extern void send_bta_sys_hw_event(tBTA_SYS_HW_EVT event);
 extern void bta_sys_sendmsg(void* p_msg);
 extern void bta_sys_sendmsg_delayed(void* p_msg, const base::TimeDelta& delay);
 extern void bta_sys_start_timer(alarm_t* alarm, uint64_t interval_ms,

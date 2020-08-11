@@ -72,28 +72,8 @@ void bta_set_forward_hw_failures(bool value) {
   bta_sys_cb.forward_hw_failures = value;
 }
 
-/*******************************************************************************
- *
- * Function         bta_dm_sm_execute
- *
- * Description      State machine event handling function for DM
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-static void bta_sys_sm_execute(tBTA_SYS_HW_EVT event) {
-  switch (event) {
-    case BTA_SYS_ERROR_EVT:
-      bta_sys_hw_error();
-      break;
-    default:
-      break;
-  }
-}
-
-void send_bta_sys_hw_event(tBTA_SYS_HW_EVT event) {
-  do_in_main_thread(FROM_HERE, base::Bind(bta_sys_sm_execute, event));
+void BTA_sys_signal_hw_error() {
+  do_in_main_thread(FROM_HERE, base::Bind(bta_sys_hw_error));
 }
 
 /*******************************************************************************
