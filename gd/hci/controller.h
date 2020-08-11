@@ -156,6 +156,7 @@ class Controller : public Module {
   static const ModuleFactory Factory;
 
   static constexpr uint64_t kDefaultEventMask = 0x3dbfffffffffffff;
+  static constexpr uint64_t kDefaultLeEventMask = 0x0000000000021e7f;
 
  protected:
   void ListDependencies(ModuleList* list) override;
