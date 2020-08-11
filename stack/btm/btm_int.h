@@ -87,9 +87,6 @@ extern void btm_acl_device_down(void);
 extern void btm_acl_set_paging(bool value);
 extern void btm_acl_update_inquiry_status(uint8_t state);
 
-extern void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec,
-                             uint8_t hci_status);
-
 extern uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
 
 extern void btm_read_rssi_complete(uint8_t* p);
