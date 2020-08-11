@@ -65,6 +65,7 @@
 #endif
 #include "bta/sys/bta_sys_int.h"
 #include "bta_dm_int.h"
+#include "main/shim/controller.h"
 
 using bluetooth::common::MessageLoopThread;
 
@@ -227,7 +228,14 @@ static void event_start_up_stack(UNUSED_ATTR void* context) {
   bta_dm_enable(bte_dm_evt);
 
   bta_sys_set_state(BTA_SYS_HW_STARTING);
-  BTM_DeviceReset();
+  btm_acl_device_down();
+  BTM_db_reset();
+  if (bluetooth::shim::is_gd_controller_enabled()) {
+    CHECK(module_start_up(get_module(GD_CONTROLLER_MODULE)));
+  } else {
+    CHECK(module_start_up(get_module(CONTROLLER_MODULE)));
+  }
+  BTM_reset_complete();
 
   if (future_await(local_hack_future) != FUTURE_SUCCESS) {
     LOG_ERROR("%s failed to start up the stack", __func__);
