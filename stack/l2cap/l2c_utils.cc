@@ -232,20 +232,6 @@ tL2C_LCB* l2cu_find_lcb_by_bd_addr(const RawAddress& p_bd_addr,
 
 /*******************************************************************************
  *
- * Function         l2cu_get_conn_role
- *
- * Description      Determine the desired role (master or slave) of a link.
- *                  If already got a slave link, this one must be a master. If
- *                  already got at least 1 link where we are the master, make
- *                  this also a master.
- *
- * Returns          HCI_ROLE_MASTER or HCI_ROLE_SLAVE
- *
- ******************************************************************************/
-uint8_t l2cu_get_conn_role(tL2C_LCB* p_this_lcb) { return l2cb.desire_role; }
-
-/*******************************************************************************
- *
  * Function         l2c_is_cmd_rejected
  *
  * Description      Checks if cmd_code is command or response
@@ -2151,13 +2137,15 @@ void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb) {
   uint8_t no_hi_prio_chs = l2cu_get_num_hi_priority();
   const controller_t* controller = controller_get_interface();
 
+  bool disallow_switch = (btm_cb.acl_cb_.btm_def_link_policy &
+                          HCI_ENABLE_MASTER_SLAVE_SWITCH) == 0;
   L2CAP_TRACE_DEBUG(
       "l2cu_create_conn_after_switch :%d num_acl:%d no_hi: %d is_bonding:%d",
-      l2cb.disallow_switch, num_acl, no_hi_prio_chs, p_lcb->is_bonding);
+      disallow_switch, num_acl, no_hi_prio_chs, p_lcb->is_bonding);
   /* FW team says that we can participant in 4 piconets
    * typically 3 piconet + 1 for scanning.
    * We can enhance the code to count the number of piconets later. */
-  if (((!l2cb.disallow_switch && (num_acl < 3)) ||
+  if (((!disallow_switch && (num_acl < 3)) ||
        (p_lcb->is_bonding && (no_hi_prio_chs == 0))) &&
       controller->supports_role_switch())
     allow_switch = HCI_CR_CONN_ALLOW_SWITCH;
