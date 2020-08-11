@@ -67,6 +67,8 @@
 #include "bta_dm_int.h"
 #include "main/shim/controller.h"
 
+void BTA_dm_on_hw_on();
+
 using bluetooth::common::MessageLoopThread;
 
 static MessageLoopThread management_thread("bt_stack_manager_thread");
@@ -237,7 +239,8 @@ static void event_start_up_stack(UNUSED_ATTR void* context) {
   }
   BTM_reset_complete();
 
-  send_bta_sys_hw_event(BTA_SYS_EVT_STACK_ENABLED_EVT);
+  bta_sys_set_state(BTA_SYS_HW_ON);
+  BTA_dm_on_hw_on();
 
   if (future_await(local_hack_future) != FUTURE_SUCCESS) {
     LOG_ERROR("%s failed to start up the stack", __func__);
