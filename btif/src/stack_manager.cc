@@ -196,8 +196,6 @@ static void event_start_up_stack(UNUSED_ATTR void* context) {
     module_start_up(get_module(HCI_MODULE));
   }
 
-  BTU_StartUp();
-
   btm_init();
   l2c_init();
   sdp_init();

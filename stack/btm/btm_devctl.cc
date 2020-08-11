@@ -47,8 +47,6 @@
 #include "main/shim/controller.h"
 #include "main/shim/shim.h"
 
-extern bluetooth::common::MessageLoopThread bt_startup_thread;
-
 /******************************************************************************/
 /*               L O C A L    D A T A    D E F I N I T I O N S                */
 /******************************************************************************/
