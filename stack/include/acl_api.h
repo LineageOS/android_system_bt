@@ -242,3 +242,28 @@ void btm_establish_continue_from_address(const RawAddress& remote_bda,
 
 bool acl_peer_supports_ble_connection_parameters_request(
     const RawAddress& remote_bda);
+
+/*******************************************************************************
+ *
+ * Function         BTM_ReadConnectionAddr
+ *
+ * Description      Read the local device random address.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
+                            RawAddress& local_conn_addr,
+                            tBLE_ADDR_TYPE* p_addr_type);
+
+/*******************************************************************************
+ *
+ * Function         BTM_IsBleConnection
+ *
+ * Description      This function is called to check if the connection handle
+ *                  for an LE link
+ *
+ * Returns          true if connection is LE link, otherwise false.
+ *
+ ******************************************************************************/
+bool BTM_IsBleConnection(uint16_t hci_handle);

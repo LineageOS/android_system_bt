@@ -261,33 +261,6 @@ void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
 
 /*******************************************************************************
  *
- * Function         BTM_IsBleConnection
- *
- * Description      This function is called to check if the connection handle
- *                  for an LE link
- *
- * Returns          true if connection is LE link, otherwise false.
- *
- ******************************************************************************/
-bool BTM_IsBleConnection(uint16_t conn_handle) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    ASSERT_LOG(false, "This should not be invoked from code path");
-  }
-  uint8_t xx;
-  tACL_CONN* p;
-
-  BTM_TRACE_API("BTM_IsBleConnection: conn_handle: %d", conn_handle);
-
-  xx = btm_handle_to_acl_index(conn_handle);
-  if (xx >= MAX_L2CAP_LINKS) return false;
-
-  p = &btm_cb.acl_cb_.acl_db[xx];
-
-  return (p->transport == BT_TRANSPORT_LE);
-}
-
-/*******************************************************************************
- *
  * Function       BTM_ReadRemoteConnectionAddr
  *
  * Description    This function is read the remote device address currently used
