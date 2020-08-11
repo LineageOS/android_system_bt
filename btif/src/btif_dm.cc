@@ -1657,6 +1657,16 @@ void BTIF_dm_report_inquiry_status_change(uint8_t status) {
   do_in_jni_thread(base::Bind(report_inquiry_status_change, status));
 }
 
+static void on_hw_error() {
+  BTIF_TRACE_ERROR("Received H/W Error. ");
+  /* Flush storage data */
+  btif_config_flush();
+  usleep(100000); /* 100milliseconds */
+  /* Killing the process to force a restart as part of fault tolerance */
+  kill(getpid(), SIGKILL);
+}
+
+void BTIF_dm_on_hw_error() { do_in_jni_thread(base::Bind(on_hw_error)); }
 /*******************************************************************************
  *
  * Function         btif_dm_upstreams_cback
@@ -1790,15 +1800,6 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
           "BTA_DM_LINK_DOWN_EVT. Sending BT_ACL_STATE_DISCONNECTED");
       HAL_CBACK(bt_hal_cbacks, acl_state_changed_cb, BT_STATUS_SUCCESS,
                 &bd_addr, BT_ACL_STATE_DISCONNECTED);
-      break;
-
-    case BTA_DM_HW_ERROR_EVT:
-      BTIF_TRACE_ERROR("Received H/W Error. ");
-      /* Flush storage data */
-      btif_config_flush();
-      usleep(100000); /* 100milliseconds */
-      /* Killing the process to force a restart as part of fault tolerance */
-      kill(getpid(), SIGKILL);
       break;
 
     case BTA_DM_BLE_KEY_EVT:

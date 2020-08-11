@@ -40,8 +40,7 @@
 #include "osi/include/osi.h"
 #include "utl.h"
 
-
-void BTA_dm_on_hw_error();
+void BTIF_dm_on_hw_error();
 
 /* system manager control block definition */
 tBTA_SYS_CB bta_sys_cb;
@@ -90,7 +89,7 @@ void BTA_sys_signal_hw_error() {
 void bta_sys_hw_error() {
   APPL_TRACE_DEBUG("%s", __func__);
   if (bta_sys_cb.forward_hw_failures) {
-    BTA_dm_on_hw_error();
+    BTIF_dm_on_hw_error();
   }
 }
 

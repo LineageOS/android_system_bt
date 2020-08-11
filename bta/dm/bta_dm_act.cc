@@ -305,12 +305,6 @@ void bta_dm_deinit_cb(void) {
   memset(&bta_dm_cb, 0, sizeof(bta_dm_cb));
 }
 
-void BTA_dm_on_hw_error() {
-  if (bta_dm_cb.p_sec_cback != NULL) {
-    bta_dm_cb.p_sec_cback(BTA_DM_HW_ERROR_EVT, NULL);
-  }
-}
-
 void BTA_dm_on_hw_off() {
   if (bta_dm_cb.p_sec_cback != NULL)
     bta_dm_cb.p_sec_cback(BTA_DM_DISABLE_EVT, NULL);

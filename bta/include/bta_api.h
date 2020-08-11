@@ -364,7 +364,6 @@ typedef uint8_t tBTA_SIG_STRENGTH_MASK;
   23 /* Simple Pairing Remote OOB Extended Data request. */
 #define BTA_DM_BLE_AUTH_CMPL_EVT 24 /* BLE Auth complete */
 #define BTA_DM_DEV_UNPAIRED_EVT 25
-#define BTA_DM_HW_ERROR_EVT 26 /* BT Chip H/W error */
 #define BTA_DM_LE_FEATURES_READ                                             \
   27                             /* Cotroller specific LE features are read \
                                     */
