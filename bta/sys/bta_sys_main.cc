@@ -42,7 +42,6 @@
 
 
 void BTA_dm_on_hw_error();
-void BTA_dm_on_hw_off();
 
 /* system manager control block definition */
 tBTA_SYS_CB bta_sys_cb;
@@ -112,9 +111,6 @@ static void bta_sys_sm_execute(tBTA_SYS_HW_EVT event) {
       break;
     case BTA_SYS_HW_STOPPING:
       switch (event) {
-        case BTA_SYS_ERROR_EVT:
-          bta_sys_hw_api_disable();
-          break;
         default:
           break;
       }
@@ -144,28 +140,6 @@ void bta_sys_hw_error() {
   if (bta_sys_cb.bluetooth_active) {
     BTA_dm_on_hw_error();
   }
-}
-
-/*******************************************************************************
- *
- * Function         bta_sys_hw_disable
- *
- * Description     if no other module is using the HW, this function will call
- *                 (if defined) a user-macro to turn off the HW
- *
- *
- * Returns          success or failure
- *
- ******************************************************************************/
-void bta_sys_hw_api_disable() {
-  /* make sure the related SW blocks were stopped */
-  bta_sys_disable();
-
-  /* register which module we turn off */
-  bta_sys_cb.bluetooth_active = false;
-
-  bta_sys_set_state(BTA_SYS_HW_OFF);
-  BTA_dm_on_hw_off();
 }
 
 /*******************************************************************************
