@@ -840,16 +840,6 @@ void BTA_dm_block_role_switch_for(const RawAddress& peer_addr) {
   BTM_SetLinkPolicy(p_dev->peer_bdaddr, &(p_dev->link_policy));
 }
 
-void BTA_dm_unblock_role_switch() {
-  BTM_SetDefaultLinkPolicy(btm_cb.acl_cb_.btm_def_link_policy |
-                           HCI_ENABLE_MASTER_SLAVE_SWITCH);
-}
-
-void BTA_dm_block_role_switch() {
-  BTM_SetDefaultLinkPolicy(btm_cb.acl_cb_.btm_def_link_policy &
-                           ~HCI_ENABLE_MASTER_SLAVE_SWITCH);
-}
-
 /** Send the user confirm request reply in response to a request from BTM */
 void bta_dm_confirm(const RawAddress& bd_addr, bool accept) {
   BTM_ConfirmReqReply(accept ? BTM_SUCCESS : BTM_NOT_AUTHORIZED, bd_addr);

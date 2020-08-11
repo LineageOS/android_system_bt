@@ -55,6 +55,7 @@
 #endif
 #include "btif/include/btif_av.h"
 #include "btif/include/btif_hf.h"
+#include "stack/include/acl_api.h"
 
 /*****************************************************************************
  *  Constants
@@ -845,12 +846,7 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   }
 
   if (bta_av_cb.features & BTA_AV_FEAT_MASTER) {
-    BTA_dm_block_role_switch();
-
-    if (bta_av_cb.audio_open_cnt == 1) {
-      /* there's already an A2DP connection. do not allow switch */
-      BTA_dm_block_role_switch();
-    }
+    BTM_default_block_role_switch();
   }
   /* store peer addr other parameters */
   bta_av_save_addr(p_scb, p_data->api_open.bd_addr);
@@ -2466,7 +2462,7 @@ void bta_av_str_closed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
     BTA_dm_unblock_role_switch_for(p_scb->PeerAddress());
   }
   if (bta_av_cb.audio_open_cnt <= 1) {
-    BTA_dm_unblock_role_switch();
+    BTM_default_unblock_role_switch();
   }
 
   if (p_scb->open_status != BTA_AV_SUCCESS) {

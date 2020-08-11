@@ -1131,17 +1131,8 @@ uint8_t* BTM_ReadRemoteFeatures(const RawAddress& addr);
  ******************************************************************************/
 tBTM_STATUS BTM_SetLinkPolicy(const RawAddress& remote_bda, uint16_t* settings);
 
-/*******************************************************************************
- *
- * Function         BTM_SetDefaultLinkPolicy
- *
- * Description      Set the default value for HCI "Write Policy Set" command
- *                  to use when an ACL link is created.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_SetDefaultLinkPolicy(uint16_t settings);
+void BTM_default_unblock_role_switch();
+void BTM_default_block_role_switch();
 
 /*******************************************************************************
  *

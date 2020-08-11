@@ -245,7 +245,5 @@ void BTA_dm_unblock_sniff_mode_for(const RawAddress& peer_addr);
 void BTA_dm_block_sniff_mode_for(const RawAddress& peer_addr);
 void BTA_dm_unblock_role_switch_for(const RawAddress& peer_addr);
 void BTA_dm_block_role_switch_for(const RawAddress& peer_addr);
-void BTA_dm_unblock_role_switch();
-void BTA_dm_block_role_switch();
 
 #endif /* BTA_SYS_H */

@@ -355,8 +355,7 @@ static void decode_controller_support() {
   BTM_TRACE_DEBUG("Local supported SCO packet types: 0x%04x",
                   btm_cb.btm_sco_pkt_types_supported);
 
-  BTM_SetDefaultLinkPolicy(p_bta_dm_cfg->policy_settings);
-
+  BTM_acl_after_controller_started();
   btm_sec_dev_reset();
 
   if (controller->supports_rssi_with_inquiry_results()) {

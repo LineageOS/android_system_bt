@@ -34,6 +34,7 @@
 #define LOG_TAG "btm_acl"
 
 #include <cstdint>
+#include "bta/dm/bta_dm_int.h"
 #include "bta/sys/bta_sys.h"
 #include "common/metrics.h"
 #include "device/include/controller.h"
@@ -83,6 +84,8 @@ void BTA_dm_acl_up(const RawAddress bd_addr, tBT_TRANSPORT transport,
 void BTA_dm_acl_down(const RawAddress bd_addr, tBT_TRANSPORT transport);
 void BTA_dm_report_role_change(const RawAddress bd_addr, uint8_t new_role,
                                uint8_t hci_status);
+
+static void btm_set_default_link_policy(uint16_t settings);
 /* 3 seconds timeout waiting for responses */
 #define BTM_DEV_REPLY_TIMEOUT_MS (3 * 1000)
 
@@ -100,6 +103,10 @@ void btm_acl_init(void) {
   /* Initialize nonzero defaults */
   btm_cb.acl_cb_.btm_def_link_super_tout = HCI_DEFAULT_INACT_TOUT;
   btm_cb.acl_cb_.acl_disc_reason = 0xff;
+}
+
+void BTM_acl_after_controller_started() {
+  btm_set_default_link_policy(p_bta_dm_cfg->policy_settings);
 }
 
 /*******************************************************************************
@@ -637,6 +644,7 @@ void check_link_policy(uint16_t* settings) {
     BTM_TRACE_API("park not supported (settings: 0x%04x)", *settings);
   }
 }
+
 /*******************************************************************************
  *
  * Function         BTM_SetLinkPolicy
@@ -666,25 +674,20 @@ tBTM_STATUS BTM_SetLinkPolicy(const RawAddress& remote_bda,
   return (BTM_UNKNOWN_ADDR);
 }
 
-/*******************************************************************************
- *
- * Function         BTM_SetDefaultLinkPolicy
- *
- * Description      Set the default value for HCI "Write Policy Set" command
- *                  to use when an ACL link is created.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_SetDefaultLinkPolicy(uint16_t settings) {
-  BTM_TRACE_DEBUG("BTM_SetDefaultLinkPolicy setting:0x%04x", settings);
-
+static void btm_set_default_link_policy(uint16_t settings) {
   check_link_policy(&settings);
   btm_cb.acl_cb_.btm_def_link_policy = settings;
-  BTM_TRACE_DEBUG("Set DefaultLinkPolicy:0x%04x", settings);
-
-  /* Set the default Link Policy of the controller */
   btsnd_hcic_write_def_policy_set(settings);
+}
+
+void BTM_default_unblock_role_switch() {
+  btm_set_default_link_policy(btm_cb.acl_cb_.btm_def_link_policy |
+                              HCI_ENABLE_MASTER_SLAVE_SWITCH);
+}
+
+void BTM_default_block_role_switch() {
+  btm_set_default_link_policy(btm_cb.acl_cb_.btm_def_link_policy &
+                              ~HCI_ENABLE_MASTER_SLAVE_SWITCH);
 }
 
 /*******************************************************************************
