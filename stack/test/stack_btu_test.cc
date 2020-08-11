@@ -61,7 +61,7 @@ TimeoutHelper helper;
 
 // External function definitions
 void btu_task_start_up(void* context);
-void btu_task_shut_down(void* context);
+void btu_task_shut_down();
 
 /* Below are methods and variables that must be implemented if we don't want to
  * compile the whole stack. They will be removed, or changed into mocks one by
@@ -101,7 +101,7 @@ class BtuMessageLoopTest : public testing::Test {
   }
 
   void TearDown() override {
-    btu_task_shut_down(nullptr);
+    btu_task_shut_down();
     alarm_cleanup();
     bt_startup_thread.ShutDown();
   }

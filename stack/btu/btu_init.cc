@@ -34,7 +34,7 @@ using bluetooth::common::MessageLoopThread;
 MessageLoopThread bt_startup_thread("bt_startup_thread");
 
 void btu_task_start_up(void* context);
-void btu_task_shut_down(void* context);
+void btu_task_shut_down();
 
 /*****************************************************************************
  *
@@ -113,6 +113,6 @@ void BTU_StartUp() {
 }
 
 void BTU_ShutDown() {
-  btu_task_shut_down(nullptr);
+  btu_task_shut_down();
   bt_startup_thread.ShutDown();
 }

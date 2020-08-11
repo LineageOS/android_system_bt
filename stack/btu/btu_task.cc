@@ -141,7 +141,7 @@ void btu_task_start_up(UNUSED_ATTR void* context) {
   }
 }
 
-void btu_task_shut_down(UNUSED_ATTR void* context) {
+void btu_task_shut_down() {
   // Shutdown message loop on task completed
   main_thread.ShutDown();
 
