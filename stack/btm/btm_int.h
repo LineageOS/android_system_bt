@@ -87,9 +87,6 @@ extern void btm_acl_device_down(void);
 extern void btm_acl_set_paging(bool value);
 extern void btm_acl_update_inquiry_status(uint8_t state);
 
-extern void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec,
-                             uint8_t hci_status);
-
 extern uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
 
 extern void btm_read_rssi_complete(uint8_t* p);
@@ -116,7 +113,6 @@ extern void btm_read_remote_ext_features_complete(uint8_t* p, uint8_t evt_len);
 extern void btm_read_remote_ext_features_failed(uint8_t status,
                                                 uint16_t handle);
 extern void btm_read_remote_version_complete(uint8_t* p);
-extern void btm_establish_continue(tACL_CONN* p_acl_cb);
 
 extern tACL_CONN* btm_bda_to_acl(const RawAddress& bda,
                                  tBT_TRANSPORT transport);
