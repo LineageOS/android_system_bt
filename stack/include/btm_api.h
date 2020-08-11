@@ -1349,4 +1349,17 @@ uint16_t BTM_GetClockOffset(const RawAddress& remote_bda);
 /* Read maximum data packet that can be sent over current connection */
 uint16_t BTM_GetMaxPacketSize(const RawAddress& addr);
 
+extern tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
+                                             uint16_t psm, bool is_originator,
+                                             uint32_t mx_proto_id,
+                                             uint32_t mx_chan_id,
+                                             tBTM_SEC_CALLBACK* p_callback,
+                                             void* p_ref_data);
+
+extern tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr,
+                                            uint16_t psm, uint16_t handle,
+                                            bool is_originator,
+                                            tBTM_SEC_CALLBACK* p_callback,
+                                            void* p_ref_data);
+
 #endif /* BTM_API_H */

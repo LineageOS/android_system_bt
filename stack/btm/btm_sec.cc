@@ -1652,7 +1652,7 @@ static void btm_sec_check_upgrade(tBTM_SEC_DEV_REC* p_dev_rec,
  *
  ******************************************************************************/
 tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
-                                     uint16_t handle, CONNECTION_TYPE conn_type,
+                                     uint16_t handle, bool is_originator,
                                      tBTM_SEC_CALLBACK* p_callback,
                                      void* p_ref_data) {
   tBTM_SEC_DEV_REC* p_dev_rec;
@@ -1662,7 +1662,6 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
   bool old_is_originator;
   tBTM_STATUS rc = BTM_SUCCESS;
   bool chk_acp_auth_done = false;
-  const bool is_originator = conn_type;
   constexpr tBT_TRANSPORT transport =
       BT_TRANSPORT_BR_EDR; /* should check PSM range in LE connection oriented
                               L2CAP connection */
@@ -1676,7 +1675,7 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
   p_dev_rec->hci_handle = handle;
 
   /* Find the service record for the PSM */
-  p_serv_rec = btm_sec_find_first_serv(conn_type, psm);
+  p_serv_rec = btm_sec_find_first_serv(is_originator, psm);
 
   /* If there is no application registered with this PSM do not allow connection
    */
@@ -4949,11 +4948,9 @@ bool btm_sec_are_all_trusted(uint32_t p_mask[]) {
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-tBTM_SEC_SERV_REC* btm_sec_find_first_serv(CONNECTION_TYPE conn_type,
-                                           uint16_t psm) {
+tBTM_SEC_SERV_REC* btm_sec_find_first_serv(bool is_originator, uint16_t psm) {
   tBTM_SEC_SERV_REC* p_serv_rec = &btm_cb.sec_serv_rec[0];
   int i;
-  bool is_originator = conn_type;
 
   if (is_originator && btm_cb.p_out_serv && btm_cb.p_out_serv->psm == psm) {
     /* If this is outgoing connection and the PSM matches p_out_serv,
