@@ -23,20 +23,14 @@
  *
  ******************************************************************************/
 
-#include <arpa/inet.h>
 #include <hardware/bluetooth.h>
 
 #include <string.h>
-#include "bt_common.h"
 #include "bt_types.h"
-#include "bta_api.h"
 #include "bta_mce_api.h"
 #include "bta_mce_int.h"
 #include "bta_sys.h"
-#include "btm_api.h"
-#include "btm_int.h"
 #include "sdp_api.h"
-#include "utl.h"
 
 using bluetooth::Uuid;
 
