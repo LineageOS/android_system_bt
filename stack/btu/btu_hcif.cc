@@ -1537,9 +1537,6 @@ static void btu_hcif_hardware_error_evt(uint8_t* p) {
   }
 
   send_bta_sys_hw_event(BTA_SYS_ERROR_EVT);
-
-  /* Reset the controller */
-  if (BTM_IsDeviceUp()) BTM_DeviceReset();
 }
 
 /*******************************************************************************
