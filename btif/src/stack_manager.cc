@@ -278,7 +278,7 @@ static void event_shut_down_stack(UNUSED_ATTR void* context) {
   local_hack_future = future_new();
   hack_future = local_hack_future;
 
-  send_bta_sys_hw_event(BTA_SYS_API_DISABLE_EVT);
+  bta_sys_hw_api_disable();
 
   module_shut_down(get_module(BTIF_CONFIG_MODULE));
 
