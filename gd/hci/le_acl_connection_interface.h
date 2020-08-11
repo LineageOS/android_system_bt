@@ -26,6 +26,7 @@ constexpr SubeventCode LeConnectionManagementEvents[] = {
     SubeventCode::CONNECTION_COMPLETE,
     SubeventCode::ENHANCED_CONNECTION_COMPLETE,
     SubeventCode::CONNECTION_UPDATE_COMPLETE,
+    SubeventCode::PHY_UPDATE_COMPLETE,
 };
 
 typedef CommandInterface<LeConnectionManagementCommandBuilder> LeAclConnectionInterface;
