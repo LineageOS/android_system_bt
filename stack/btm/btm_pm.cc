@@ -704,7 +704,7 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
   xx = btm_handle_to_acl_index(hci_handle);
   if (xx >= MAX_L2CAP_LINKS) return;
 
-  tACL_CONN* p_acl = &btm_cb.acl_cb_.acl_db[xx];
+  const RawAddress bd_addr = acl_address_from_handle(hci_handle);
 
   /* update control block */
   p_cb = &(btm_cb.pm_mode_db[xx]);
@@ -716,7 +716,7 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
                   mode_to_string(old_state), mode_to_string(p_cb->state));
 
   if ((p_cb->state == BTM_PM_ST_ACTIVE) || (p_cb->state == BTM_PM_ST_SNIFF)) {
-    l2c_OnHciModeChangeSendPendingPackets(p_acl->remote_addr);
+    l2c_OnHciModeChangeSendPendingPackets(bd_addr);
   }
 
   /* notify registered parties */
@@ -748,15 +748,14 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
   /* notify registered parties */
   for (yy = 0; yy < BTM_MAX_PM_RECORDS; yy++) {
     if (btm_cb.pm_reg_db[yy].mask & BTM_PM_REG_NOTIF) {
-      (*btm_cb.pm_reg_db[yy].cback)(p_acl->remote_addr, mode, interval,
-                                    hci_status);
+      (*btm_cb.pm_reg_db[yy].cback)(bd_addr, mode, interval, hci_status);
     }
   }
   /*check if sco disconnect  is waiting for the mode change */
   btm_sco_disc_chk_pend_for_modechange(hci_handle);
 
   /* If mode change was because of an active role switch or change link key */
-  btm_cont_rswitch(p_acl, btm_find_dev(p_acl->remote_addr), hci_status);
+  btm_cont_rswitch_from_handle(hci_handle);
 }
 
 /*******************************************************************************
