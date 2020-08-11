@@ -234,7 +234,7 @@ void Btm::ScanningCallbacks::on_advertisements(
              .scannable = extended_le_report->scannable_,
              .directed = extended_le_report->directed_,
              .scan_response = extended_le_report->scan_response_,
-             .legacy = false,
+             .legacy = extended_le_report->legacy_,
              .continuing = !extended_le_report->complete_,
              .truncated = extended_le_report->truncated_});
         RawAddress raw_address = ToRawAddress(le_report->address_);
@@ -242,9 +242,10 @@ void Btm::ScanningCallbacks::on_advertisements(
           btm_ble_process_adv_addr(raw_address, &address_type);
         }
         btm_ble_process_adv_pkt_cont(
-            extended_event_type, address_type, raw_address, kPhyConnectionLe1M,
-            kPhyConnectionNone, kAdvDataInfoNotPresent,
-            kTxPowerInformationNotPresent, le_report->rssi_,
+            extended_event_type, address_type, raw_address,
+            extended_le_report->primary_phy_,
+            extended_le_report->secondary_phy_, kAdvDataInfoNotPresent,
+            extended_le_report->tx_power_, extended_le_report->rssi_,
             kNotPeriodicAdvertisement, report_len, report_data);
         store_le_address_type(raw_address, address_type);
       } break;
