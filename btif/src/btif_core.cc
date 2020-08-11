@@ -266,8 +266,7 @@ int btif_is_enabled(void) {
           (stack_manager_get_interface()->get_stack_is_running()));
 }
 
-void btif_init_ok(UNUSED_ATTR uint16_t event, UNUSED_ATTR char* p_param) {
-  BTIF_TRACE_DEBUG("btif_task: received trigger stack init event");
+void btif_init_ok() {
   btif_dm_load_ble_local_keys();
   BTA_EnableBluetooth(bte_dm_evt);
 }

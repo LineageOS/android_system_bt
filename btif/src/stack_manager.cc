@@ -220,10 +220,7 @@ static void event_start_up_stack(UNUSED_ATTR void* context) {
 
   main_thread_start_up();
 
-  if (do_in_jni_thread(FROM_HERE, base::Bind(btif_init_ok, 0, nullptr)) !=
-      BT_STATUS_SUCCESS) {
-    LOG(FATAL) << __func__ << ": unable to continue starting Bluetooth";
-  }
+  btif_init_ok();
 
   if (future_await(local_hack_future) != FUTURE_SUCCESS) {
     LOG_ERROR("%s failed to start up the stack", __func__);
