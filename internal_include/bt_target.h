@@ -1055,21 +1055,6 @@
 #define PAN_PANU_DEFAULT_DESCRIPTION "PANU"
 #endif
 
-/* Default Security level for PANU role. */
-#ifndef PAN_PANU_SECURITY_LEVEL
-#define PAN_PANU_SECURITY_LEVEL 0
-#endif
-
-/* Default Security level for GN role. */
-#ifndef PAN_GN_SECURITY_LEVEL
-#define PAN_GN_SECURITY_LEVEL 0
-#endif
-
-/* Default Security level for NAP role. */
-#ifndef PAN_NAP_SECURITY_LEVEL
-#define PAN_NAP_SECURITY_LEVEL 0
-#endif
-
 /******************************************************************************
  *
  * GAP

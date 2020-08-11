@@ -129,9 +129,15 @@ void PAN_Deregister(void) {
 tPAN_RESULT PAN_SetRole(uint8_t role, uint8_t* sec_mask,
                         const char* p_user_name, const char* p_gn_name,
                         const char* p_nap_name) {
+  /* Check if it is a shutdown request */
+  if (role == PAN_ROLE_INACTIVE) {
+    pan_close_all_connections();
+    pan_cb.role = role;
+    return PAN_SUCCESS;
+  }
+
   const char* p_desc;
-  uint8_t security[3] = {PAN_PANU_SECURITY_LEVEL, PAN_GN_SECURITY_LEVEL,
-                         PAN_NAP_SECURITY_LEVEL};
+  uint8_t security[3] = {0, 0, 0};
   uint8_t* p_sec;
 
   /* If the role is not a valid combination reject it */
@@ -233,9 +239,6 @@ tPAN_RESULT PAN_SetRole(uint8_t role, uint8_t* sec_mask,
     }
   }
 #endif
-
-  /* Check if it is a shutdown request */
-  if (role == PAN_ROLE_INACTIVE) pan_close_all_connections();
 
   pan_cb.role = role;
   PAN_TRACE_EVENT("PAN role set to: %d", role);
