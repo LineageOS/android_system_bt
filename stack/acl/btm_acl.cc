@@ -2468,3 +2468,25 @@ bool acl_peer_supports_ble_connection_parameters_request(
   }
   return HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl->peer_le_features);
 }
+
+/*******************************************************************************
+ *
+ * Function         BTM_IsBleConnection
+ *
+ * Description      This function is called to check if the connection handle
+ *                  for an LE link
+ *
+ * Returns          true if connection is LE link, otherwise false.
+ *
+ ******************************************************************************/
+bool BTM_IsBleConnection(uint16_t hci_handle) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    ASSERT_LOG(false, "This should not be invoked from code path");
+  }
+
+  uint8_t index = btm_handle_to_acl_index(hci_handle);
+  if (index >= MAX_L2CAP_LINKS) return false;
+
+  tACL_CONN* p = &btm_cb.acl_cb_.acl_db[index];
+  return (p->transport == BT_TRANSPORT_LE);
+}
