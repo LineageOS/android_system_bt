@@ -557,7 +557,6 @@ static bool btm_sec_set_security_level(CONNECTION_TYPE conn_type,
           BTM_SEC_IN_MITM | BTM_SEC_IN_MIN_16_DIGIT_PIN);
 
     if (btm_cb.security_mode == BTM_SEC_MODE_SP ||
-        btm_cb.security_mode == BTM_SEC_MODE_SP_DEBUG ||
         btm_cb.security_mode == BTM_SEC_MODE_SC) {
       if (sec_level & BTM_SEC_OUT_AUTHENTICATE) sec_level |= BTM_SEC_OUT_MITM;
     }
@@ -590,7 +589,6 @@ static bool btm_sec_set_security_level(CONNECTION_TYPE conn_type,
                    BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_MITM);
 
     if (btm_cb.security_mode == BTM_SEC_MODE_SP ||
-        btm_cb.security_mode == BTM_SEC_MODE_SP_DEBUG ||
         btm_cb.security_mode == BTM_SEC_MODE_SC) {
       if (sec_level & BTM_SEC_IN_AUTHENTICATE) sec_level |= BTM_SEC_IN_MITM;
     }
@@ -984,7 +982,6 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
     if (btm_sec_check_prefetch_pin(p_dev_rec)) return (BTM_CMD_STARTED);
   }
   if ((btm_cb.security_mode == BTM_SEC_MODE_SP ||
-       btm_cb.security_mode == BTM_SEC_MODE_SP_DEBUG ||
        btm_cb.security_mode == BTM_SEC_MODE_SC) &&
       BTM_SEC_IS_SM4_UNKNOWN(p_dev_rec->sm4)) {
     /* local is 2.1 and peer is unknown */
@@ -1819,10 +1816,7 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
     BTM_TRACE_EVENT("security_flags:x%x, sec_flags:x%x", security_required,
                     p_dev_rec->sec_flags);
     rc = BTM_CMD_STARTED;
-    if ((btm_cb.security_mode == BTM_SEC_MODE_UNDEFINED ||
-         btm_cb.security_mode == BTM_SEC_MODE_NONE ||
-         btm_cb.security_mode == BTM_SEC_MODE_SERVICE ||
-         btm_cb.security_mode == BTM_SEC_MODE_LINK) ||
+    if ((btm_cb.security_mode == BTM_SEC_MODE_SERVICE) ||
         (BTM_SM4_KNOWN == p_dev_rec->sm4) ||
         (BTM_SEC_IS_SM4(p_dev_rec->sm4) &&
          (!btm_sec_is_upgrade_possible(p_dev_rec, is_originator)))) {
@@ -1900,7 +1894,6 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
 
   /* Modify security_required in btm_sec_l2cap_access_req for Lisbon */
   if (btm_cb.security_mode == BTM_SEC_MODE_SP ||
-      btm_cb.security_mode == BTM_SEC_MODE_SP_DEBUG ||
       btm_cb.security_mode == BTM_SEC_MODE_SC) {
     if (BTM_SEC_IS_SM4(p_dev_rec->sm4)) {
       if (is_originator) {
@@ -1961,10 +1954,7 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
    * L2CAP connect
    * response is received */
   if (is_originator &&
-      ((btm_cb.security_mode == BTM_SEC_MODE_UNDEFINED ||
-        btm_cb.security_mode == BTM_SEC_MODE_NONE ||
-        btm_cb.security_mode == BTM_SEC_MODE_SERVICE ||
-        btm_cb.security_mode == BTM_SEC_MODE_LINK) ||
+      ((btm_cb.security_mode == BTM_SEC_MODE_SERVICE) ||
        !BTM_SEC_IS_SM4(p_dev_rec->sm4)) &&
       (psm >= 0x1001)) {
     BTM_TRACE_EVENT(
@@ -2128,10 +2118,7 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
 
     rc = BTM_CMD_STARTED;
 
-    if ((btm_cb.security_mode == BTM_SEC_MODE_UNDEFINED ||
-         btm_cb.security_mode == BTM_SEC_MODE_NONE ||
-         btm_cb.security_mode == BTM_SEC_MODE_SERVICE ||
-         btm_cb.security_mode == BTM_SEC_MODE_LINK) ||
+    if ((btm_cb.security_mode == BTM_SEC_MODE_SERVICE) ||
         (BTM_SM4_KNOWN == p_dev_rec->sm4) ||
         (BTM_SEC_IS_SM4(p_dev_rec->sm4) &&
          (!btm_sec_is_upgrade_possible(p_dev_rec, is_originator)))) {
@@ -2251,7 +2238,6 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
   p_dev_rec->security_required = security_required;
 
   if (btm_cb.security_mode == BTM_SEC_MODE_SP ||
-      btm_cb.security_mode == BTM_SEC_MODE_SP_DEBUG ||
       btm_cb.security_mode == BTM_SEC_MODE_SC) {
     if (BTM_SEC_IS_SM4(p_dev_rec->sm4)) {
       if ((p_dev_rec->security_required & BTM_SEC_MODE4_LEVEL4) &&
@@ -4203,9 +4189,6 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
     p_dev_rec->sec_flags |=
         ((BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED) << bit_shift);
 
-  if (btm_cb.security_mode == BTM_SEC_MODE_LINK)
-    p_dev_rec->sec_flags |= (BTM_SEC_AUTHENTICATED << bit_shift);
-
   if (p_dev_rec->pin_code_length >= 16 ||
       p_dev_rec->link_key_type == BTM_LKEY_TYPE_AUTH_COMB ||
       p_dev_rec->link_key_type == BTM_LKEY_TYPE_AUTH_COMB_P_256) {
@@ -5297,10 +5280,7 @@ uint32_t* BTM_ReadTrustedMask(const RawAddress& bd_addr) {
 static void btm_restore_mode(void) {
   if (btm_cb.security_mode_changed) {
     btm_cb.security_mode_changed = false;
-    BTM_TRACE_DEBUG("%s() Auth enable -> %d", __func__,
-                    (btm_cb.security_mode == BTM_SEC_MODE_LINK));
-    btsnd_hcic_write_auth_enable(
-        (uint8_t)(btm_cb.security_mode == BTM_SEC_MODE_LINK));
+    btsnd_hcic_write_auth_enable(false);
   }
 
   if (btm_cb.pin_type_changed) {
@@ -5589,7 +5569,6 @@ static bool btm_sec_queue_encrypt_request(const RawAddress& bd_addr,
 void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
                                tBTM_SEC_DEV_REC* p_dev_rec) {
   if ((btm_cb.security_mode == BTM_SEC_MODE_SP ||
-       btm_cb.security_mode == BTM_SEC_MODE_SP_DEBUG ||
        btm_cb.security_mode == BTM_SEC_MODE_SC) &&
       HCI_SSP_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1])) {
     p_dev_rec->sm4 = BTM_SM4_TRUE;
