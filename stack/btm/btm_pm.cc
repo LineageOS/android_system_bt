@@ -64,7 +64,6 @@ const uint8_t
         BTM_PM_GET_MD1,  BTM_PM_GET_MD2,  BTM_PM_GET_COMP};
 
 /* function prototype */
-static int btm_pm_find_acl_ind(const RawAddress& remote_bda);
 static tBTM_STATUS btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
                                      const tBTM_PM_PWR_MD* p_mode);
 static const char* mode_to_string(const tBTM_PM_MODE mode);
@@ -363,33 +362,6 @@ void btm_pm_reset(void) {
 
   /* no command pending */
   btm_cb.acl_cb_.pm_pend_link = MAX_L2CAP_LINKS;
-}
-
-/*******************************************************************************
- *
- * Function         btm_pm_find_acl_ind
- *
- * Description      This function initializes the control block of an ACL link.
- *                  It is called when an ACL connection is created.
- *
- * Returns          void
- *
- ******************************************************************************/
-static int btm_pm_find_acl_ind(const RawAddress& remote_bda) {
-  tACL_CONN* p = &btm_cb.acl_cb_.acl_db[0];
-  uint8_t xx;
-
-  for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p++) {
-    if (p->in_use && p->remote_addr == remote_bda &&
-        p->transport == BT_TRANSPORT_BR_EDR) {
-#if (BTM_PM_DEBUG == TRUE)
-      BTM_TRACE_DEBUG("btm_pm_find_acl_ind ind:%d, st:%d", xx,
-                      btm_cb.pm_mode_db[xx].state);
-#endif  // BTM_PM_DEBUG
-      break;
-    }
-  }
-  return xx;
 }
 
 /*******************************************************************************
@@ -724,7 +696,6 @@ void btm_pm_proc_cmd_status(uint8_t status) {
  ******************************************************************************/
 void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
                              uint8_t mode, uint16_t interval) {
-  tACL_CONN* p;
   tBTM_PM_MCB* p_cb = NULL;
   int xx, yy, zz;
   tBTM_PM_STATE old_state;
@@ -733,7 +704,7 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
   xx = btm_handle_to_acl_index(hci_handle);
   if (xx >= MAX_L2CAP_LINKS) return;
 
-  p = &btm_cb.acl_cb_.acl_db[xx];
+  tACL_CONN* p_acl = &btm_cb.acl_cb_.acl_db[xx];
 
   /* update control block */
   p_cb = &(btm_cb.pm_mode_db[xx]);
@@ -745,7 +716,7 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
                   mode_to_string(old_state), mode_to_string(p_cb->state));
 
   if ((p_cb->state == BTM_PM_ST_ACTIVE) || (p_cb->state == BTM_PM_ST_SNIFF)) {
-    l2c_OnHciModeChangeSendPendingPackets(p->remote_addr);
+    l2c_OnHciModeChangeSendPendingPackets(p_acl->remote_addr);
   }
 
   /* notify registered parties */
@@ -777,14 +748,15 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
   /* notify registered parties */
   for (yy = 0; yy < BTM_MAX_PM_RECORDS; yy++) {
     if (btm_cb.pm_reg_db[yy].mask & BTM_PM_REG_NOTIF) {
-      (*btm_cb.pm_reg_db[yy].cback)(p->remote_addr, mode, interval, hci_status);
+      (*btm_cb.pm_reg_db[yy].cback)(p_acl->remote_addr, mode, interval,
+                                    hci_status);
     }
   }
   /*check if sco disconnect  is waiting for the mode change */
   btm_sco_disc_chk_pend_for_modechange(hci_handle);
 
   /* If mode change was because of an active role switch or change link key */
-  btm_cont_rswitch(p, btm_find_dev(p->remote_addr), hci_status);
+  btm_cont_rswitch(p_acl, btm_find_dev(p_acl->remote_addr), hci_status);
 }
 
 /*******************************************************************************
@@ -804,7 +776,6 @@ void btm_pm_proc_ssr_evt(uint8_t* p, UNUSED_ATTR uint16_t evt_len) {
   uint16_t max_rx_lat;
   int xx, yy;
   tBTM_PM_MCB* p_cb;
-  tACL_CONN* p_acl = NULL;
   uint16_t use_ssr = true;
 
   STREAM_TO_UINT8(status, p);
@@ -818,7 +789,7 @@ void btm_pm_proc_ssr_evt(uint8_t* p, UNUSED_ATTR uint16_t evt_len) {
   STREAM_TO_UINT16(max_rx_lat, p);
   p_cb = &(btm_cb.pm_mode_db[xx]);
 
-  p_acl = &btm_cb.acl_cb_.acl_db[xx];
+  tACL_CONN* p_acl = &btm_cb.acl_cb_.acl_db[xx];
   if (p_cb->interval == max_rx_lat) {
     /* using legacy sniff */
     use_ssr = false;
