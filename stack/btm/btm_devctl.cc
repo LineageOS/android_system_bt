@@ -797,3 +797,19 @@ tBTM_STATUS BTM_BT_Quality_Report_VSE_Register(
             << " is_register: " << logbool(is_register);
   return retval;
 }
+
+void BTM_VendorCleanup() {
+  tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
+  BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);
+
+  if (cmn_ble_vsc_cb.max_filter > 0) {
+    btm_ble_adv_filter_cleanup();
+#if (BLE_PRIVACY_SPT == TRUE)
+    btm_ble_resolving_list_cleanup();
+#endif
+  }
+
+  if (cmn_ble_vsc_cb.tot_scan_results_strg > 0) btm_ble_batchscan_cleanup();
+
+  if (cmn_ble_vsc_cb.adv_inst_max > 0) btm_ble_multi_adv_cleanup();
+}
