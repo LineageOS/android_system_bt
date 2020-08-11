@@ -430,8 +430,6 @@ typedef struct {
   tL2C_CCB* p_free_ccb_first; /* Pointer to first free CCB */
   tL2C_CCB* p_free_ccb_last;  /* Pointer to last  free CCB */
 
-  uint8_t
-      desire_role; /* desire to be master/slave when accepting a connection */
   bool disallow_switch;     /* false, to allow switch at create conn */
   uint16_t num_lm_acl_bufs; /* # of ACL buffers on controller */
   uint16_t idle_timeout;    /* Idle timeout */
@@ -537,7 +535,6 @@ extern tL2C_LCB* l2cu_find_lcb_by_bd_addr(const RawAddress& p_bd_addr,
                                           tBT_TRANSPORT transport);
 extern tL2C_LCB* l2cu_find_lcb_by_handle(uint16_t handle);
 
-extern uint8_t l2cu_get_conn_role(tL2C_LCB* p_this_lcb);
 extern bool l2cu_set_acl_priority(const RawAddress& bd_addr, uint8_t priority,
                                   bool reset_after_rs);
 
