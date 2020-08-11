@@ -44,28 +44,10 @@ using bluetooth::Uuid;
 static const tBTA_SYS_REG bta_dm_search_reg = {bta_dm_search_sm_execute,
                                                bta_dm_search_sm_disable};
 
-/*******************************************************************************
- *
- * Function         BTA_EnableBluetooth
- *
- * Description      Enables bluetooth service.  This function must be
- *                  called before any other functions in the BTA API are called.
- *
- *
- * Returns          tBTA_STATUS
- *
- ******************************************************************************/
-tBTA_STATUS BTA_EnableBluetooth(tBTA_DM_SEC_CBACK* p_cback) {
-  /* Bluetooth disabling is in progress */
-  if (bta_dm_cb.disabling) return BTA_FAILURE;
-
+void BTA_dm_init() {
   bta_sys_register(BTA_ID_DM_SEARCH, &bta_dm_search_reg);
-
   /* if UUID list is not provided as static data */
   bta_sys_eir_register(bta_dm_eir_update_uuid);
-
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_enable, p_cback));
-  return BTA_SUCCESS;
 }
 
 /*******************************************************************************
