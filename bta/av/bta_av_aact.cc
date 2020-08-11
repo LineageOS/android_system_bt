@@ -35,13 +35,10 @@
 #include "a2dp_sbc.h"
 #include "avdt_api.h"
 #include "avrcp_service.h"
-#include "bt_utils.h"
 #include "bta_av_int.h"
 #include "btif/include/btif_av_co.h"
 #include "btif/include/btif_config.h"
 #include "btif/include/btif_storage.h"
-#include "btm_int.h"
-#include "device/include/controller.h"
 #include "device/include/interop.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
@@ -53,9 +50,6 @@
 #if (BTA_AR_INCLUDED == TRUE)
 #include "bta_ar_api.h"
 #endif
-#include "btif/include/btif_av.h"
-#include "btif/include/btif_hf.h"
-#include "stack/include/acl_api.h"
 
 /*****************************************************************************
  *  Constants

@@ -37,7 +37,6 @@
 #include "smp_api.h"
 #include "smp_int.h"
 
-#include "btu.h"
 #include "p_256_ecc_pp.h"
 
 /*******************************************************************************
@@ -238,7 +237,7 @@ bool SMP_PairCancel(const RawAddress& bd_addr) {
       p_cb->cert_failure == SMP_NUMERIC_COMPAR_FAIL)
     err_code = p_cb->cert_failure;
 
-  BTM_TRACE_EVENT("SMP_CancelPair state=%d flag=0x%x ", p_cb->state,
+  SMP_TRACE_EVENT("SMP_CancelPair state=%d flag=0x%x ", p_cb->state,
                   p_cb->flags);
   if (p_cb->state != SMP_STATE_IDLE && p_cb->pairing_bda == bd_addr) {
     p_cb->is_pair_cancel = true;
