@@ -157,19 +157,6 @@ void bte_main_disable(void) {
 
 /******************************************************************************
  *
- * Function         bte_main_postload_cfg
- *
- * Description      BTE MAIN API - Stack postload configuration
- *
- * Returns          None
- *
- *****************************************************************************/
-void bte_main_postload_cfg(void) {
-  // TODO(eisenbach): [HIDL] DEPRECATE?
-}
-
-/******************************************************************************
- *
  * Function         bte_main_hci_send
  *
  * Description      BTE MAIN API - This function is called by the upper stack to
