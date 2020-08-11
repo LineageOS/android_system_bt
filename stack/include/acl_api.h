@@ -29,28 +29,17 @@
 /*****************************************************************************
  *  ACL CHANNEL MANAGEMENT FUNCTIONS
  ****************************************************************************/
-/*******************************************************************************
- *
- * Function         BTM_SetLinkPolicy
- *
- * Description      Create and send HCI "Write Policy Set" command
- *
- * Returns          BTM_CMD_STARTED if successfully initiated, otherwise error
- *
- ******************************************************************************/
-tBTM_STATUS BTM_SetLinkPolicy(const RawAddress& remote_bda, uint16_t* settings);
+bool BTM_is_sniff_allowed_for(const RawAddress& peer_addr);
 
-/*******************************************************************************
- *
- * Function         BTM_SetDefaultLinkPolicy
- *
- * Description      Set the default value for HCI "Write Policy Set" command
- *                  to use when an ACL link is created.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_SetDefaultLinkPolicy(uint16_t settings);
+void BTM_unblock_sniff_mode_for(const RawAddress& peer_addr);
+void BTM_block_sniff_mode_for(const RawAddress& peer_addr);
+void BTM_unblock_role_switch_for(const RawAddress& peer_addr);
+void BTM_block_role_switch_for(const RawAddress& peer_addr);
+
+void BTM_default_unblock_role_switch();
+void BTM_default_block_role_switch();
+
+void BTM_acl_after_controller_started();
 
 /*******************************************************************************
  *
