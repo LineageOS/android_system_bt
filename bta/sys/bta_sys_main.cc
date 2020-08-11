@@ -64,9 +64,6 @@ void bta_sys_init(void) {
   memset(&bta_sys_cb, 0, sizeof(tBTA_SYS_CB));
 }
 
-void bta_sys_free(void) {
-}
-
 void bta_set_forward_hw_failures(bool value) {
   bta_sys_cb.forward_hw_failures = value;
 }
