@@ -2439,8 +2439,6 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
 static void bta_dm_local_name_cback(UNUSED_ATTR void* p_name) {
   tBTA_DM_SEC sec_event;
 
-  sec_event.enable.status = BTA_SUCCESS;
-
   if (bta_dm_cb.p_sec_cback)
     bta_dm_cb.p_sec_cback(BTA_DM_ENABLE_EVT, &sec_event);
 }

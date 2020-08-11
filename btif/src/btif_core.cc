@@ -340,9 +340,7 @@ bt_status_t btif_init_bluetooth() {
  *
  ******************************************************************************/
 
-void btif_enable_bluetooth_evt(tBTA_STATUS status) {
-  LOG_INFO("%s entered: status %d", __func__, status);
-
+void btif_enable_bluetooth_evt() {
   /* Fetch the local BD ADDR */
   RawAddress local_bd_addr = *controller_get_interface()->get_address();
 
@@ -367,34 +365,24 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status) {
   }
 
   /* callback to HAL */
-  if (status == BTA_SUCCESS) {
-    uid_set = uid_set_create();
+  uid_set = uid_set_create();
 
-    btif_dm_init(uid_set);
+  btif_dm_init(uid_set);
 
-    /* init rfcomm & l2cap api */
-    btif_sock_init(uid_set);
+  /* init rfcomm & l2cap api */
+  btif_sock_init(uid_set);
 
-    /* init pan */
-    btif_pan_init();
+  /* init pan */
+  btif_pan_init();
 
-    /* load did configuration */
-    bte_load_did_conf(BTE_DID_CONF_FILE);
+  /* load did configuration */
+  bte_load_did_conf(BTE_DID_CONF_FILE);
 
 #ifdef BTIF_DM_OOB_TEST
-    btif_dm_load_local_oob();
+  btif_dm_load_local_oob();
 #endif
 
-    future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
-  } else {
-    /* cleanup rfcomm & l2cap api */
-    btif_sock_cleanup();
-
-    btif_pan_cleanup();
-
-    future_ready(stack_manager_get_hack_future(), FUTURE_FAIL);
-  }
-
+  future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
   LOG_INFO("%s finished", __func__);
 }
 

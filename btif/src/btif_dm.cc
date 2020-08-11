@@ -1715,7 +1715,7 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
       */
       btif_storage_load_bonded_devices();
       bluetooth::bqr::EnableBtQualityReport(true);
-      btif_enable_bluetooth_evt(p_data->enable.status);
+      btif_enable_bluetooth_evt();
     } break;
 
     case BTA_DM_DISABLE_EVT:

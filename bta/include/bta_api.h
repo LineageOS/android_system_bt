@@ -372,9 +372,6 @@ typedef uint8_t tBTA_SIG_STRENGTH_MASK;
 #define BTA_DM_BLE_SC_OOB_REQ_EVT 29 /* SMP SC OOB request event */
 typedef uint8_t tBTA_DM_SEC_EVT;
 
-/* Structure associated with BTA_DM_ENABLE_EVT */
-typedef struct { tBTA_STATUS status; } tBTA_DM_ENABLE;
-
 /* Structure associated with BTA_DM_PIN_REQ_EVT */
 typedef struct {
   /* Note: First 3 data members must be, bd_addr, dev_class, and bd_name in
@@ -610,7 +607,6 @@ typedef struct {
 
 /* Union of all security callback structures */
 typedef union {
-  tBTA_DM_ENABLE enable;          /* BTA enabled */
   tBTA_DM_PIN_REQ pin_req;        /* PIN request. */
   tBTA_DM_AUTH_CMPL auth_cmpl;    /* Authentication complete indication. */
   tBTA_DM_LINK_UP link_up;        /* ACL connection down event */
