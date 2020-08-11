@@ -146,7 +146,6 @@ extern void BTA_PanDisable(void);
  *
  ******************************************************************************/
 void BTA_PanSetRole(tBTA_PAN_ROLE role, tBTA_PAN_ROLE_INFO* p_user_info,
-                    tBTA_PAN_ROLE_INFO* p_gn_info,
                     tBTA_PAN_ROLE_INFO* p_nap_info);
 
 /*******************************************************************************

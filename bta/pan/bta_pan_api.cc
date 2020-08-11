@@ -95,7 +95,6 @@ void BTA_PanDisable(void) {
  *
  ******************************************************************************/
 void BTA_PanSetRole(tBTA_PAN_ROLE role, tBTA_PAN_ROLE_INFO* p_user_info,
-                    tBTA_PAN_ROLE_INFO* p_gn_info,
                     tBTA_PAN_ROLE_INFO* p_nap_info) {
   tBTA_PAN_API_SET_ROLE* p_buf =
       (tBTA_PAN_API_SET_ROLE*)osi_calloc(sizeof(tBTA_PAN_API_SET_ROLE));
@@ -109,14 +108,6 @@ void BTA_PanSetRole(tBTA_PAN_ROLE role, tBTA_PAN_ROLE_INFO* p_user_info,
 
     p_buf->user_app_id = p_user_info->app_id;
     p_buf->user_sec_mask = p_user_info->sec_mask;
-  }
-
-  if (p_gn_info && (role & BTA_PAN_ROLE_GN)) {
-    if (p_gn_info->p_srv_name)
-      strlcpy(p_buf->gn_name, p_gn_info->p_srv_name, BTA_SERVICE_NAME_LEN);
-
-    p_buf->gn_app_id = p_gn_info->app_id;
-    p_buf->gn_sec_mask = p_gn_info->sec_mask;
   }
 
   if (p_nap_info && (role & BTA_PAN_ROLE_NAP)) {
