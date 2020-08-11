@@ -2536,3 +2536,30 @@ tBTM_PM_MCB* acl_power_mode_from_handle(uint16_t hci_handle) {
   }
   return &btm_cb.pm_mode_db[index];
 }
+
+/*******************************************************************************
+ *
+ * Function         btm_pm_find_acl_ind
+ *
+ * Description      This function initializes the control block of an ACL link.
+ *                  It is called when an ACL connection is created.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+int btm_pm_find_acl_ind(const RawAddress& remote_bda) {
+  tACL_CONN* p = &btm_cb.acl_cb_.acl_db[0];
+  uint8_t xx;
+
+  for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p++) {
+    if (p->in_use && p->remote_addr == remote_bda &&
+        p->transport == BT_TRANSPORT_BR_EDR) {
+#if (BTM_PM_DEBUG == TRUE)
+      BTM_TRACE_DEBUG("btm_pm_find_acl_ind ind:%d, st:%d", xx,
+                      btm_cb.pm_mode_db[xx].state);
+#endif  // BTM_PM_DEBUG
+      break;
+    }
+  }
+  return xx;
+}

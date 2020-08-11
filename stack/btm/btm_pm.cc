@@ -64,7 +64,6 @@ const uint8_t
         BTM_PM_GET_MD1,  BTM_PM_GET_MD2,  BTM_PM_GET_COMP};
 
 /* function prototype */
-static int btm_pm_find_acl_ind(const RawAddress& remote_bda);
 static tBTM_STATUS btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
                                      const tBTM_PM_PWR_MD* p_mode);
 static const char* mode_to_string(const tBTM_PM_MODE mode);
@@ -363,33 +362,6 @@ void btm_pm_reset(void) {
 
   /* no command pending */
   btm_cb.acl_cb_.pm_pend_link = MAX_L2CAP_LINKS;
-}
-
-/*******************************************************************************
- *
- * Function         btm_pm_find_acl_ind
- *
- * Description      This function initializes the control block of an ACL link.
- *                  It is called when an ACL connection is created.
- *
- * Returns          void
- *
- ******************************************************************************/
-static int btm_pm_find_acl_ind(const RawAddress& remote_bda) {
-  tACL_CONN* p = &btm_cb.acl_cb_.acl_db[0];
-  uint8_t xx;
-
-  for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p++) {
-    if (p->in_use && p->remote_addr == remote_bda &&
-        p->transport == BT_TRANSPORT_BR_EDR) {
-#if (BTM_PM_DEBUG == TRUE)
-      BTM_TRACE_DEBUG("btm_pm_find_acl_ind ind:%d, st:%d", xx,
-                      btm_cb.pm_mode_db[xx].state);
-#endif  // BTM_PM_DEBUG
-      break;
-    }
-  }
-  return xx;
 }
 
 /*******************************************************************************
