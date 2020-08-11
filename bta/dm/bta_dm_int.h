@@ -111,9 +111,9 @@ typedef struct {
 typedef struct {
   BT_HDR hdr;
   RawAddress bd_addr;
-  tBTA_IO_CAP io_cap;
-  tBTA_OOB_DATA oob_data;
-  tBTA_AUTH_REQ auth_req;
+  tBTM_IO_CAP io_cap;
+  tBTM_OOB_DATA oob_data;
+  tBTM_AUTH_REQ auth_req;
 } tBTA_DM_CI_IO_REQ;
 
 typedef struct {
@@ -154,7 +154,7 @@ typedef struct {
   tBTA_SERVICE_MASK tm;
   bool is_trusted;
   uint8_t key_type;
-  tBTA_IO_CAP io_cap;
+  tBTM_IO_CAP io_cap;
   bool link_key_known;
   bool dc_known;
   BD_NAME bd_name;
@@ -296,10 +296,6 @@ typedef struct {
   uint8_t num_master_only;
   uint8_t pm_id;
   tBTA_PM_TIMER pm_timer[BTA_DM_NUM_PM_TIMER];
-  uint32_t
-      role_policy_mask;   /* the bits set indicates the modules that wants to
-                             remove role switch from the default link policy */
-  uint16_t cur_policy;    /* current default link policy */
   uint16_t rs_event;      /* the event waiting for role switch */
   uint8_t cur_av_count;   /* current AV connecions */
   bool disable_pair_mode; /* disable pair mode or not */
@@ -314,10 +310,10 @@ typedef struct {
   RawAddress pin_bd_addr;
   DEV_CLASS pin_dev_class;
   tBTA_DM_SEC_EVT pin_evt;
-  tBTA_IO_CAP loc_io_caps;    /* IO Capabilities of local device */
-  tBTA_IO_CAP rmt_io_caps;    /* IO Capabilities of remote device */
-  tBTA_AUTH_REQ loc_auth_req; /* Authentication required for local device */
-  tBTA_AUTH_REQ rmt_auth_req;
+  tBTM_IO_CAP loc_io_caps;    /* IO Capabilities of local device */
+  tBTM_IO_CAP rmt_io_caps;    /* IO Capabilities of remote device */
+  tBTM_AUTH_REQ loc_auth_req; /* Authentication required for local device */
+  tBTM_AUTH_REQ rmt_auth_req;
   uint32_t num_val; /* the numeric value for comparison. If just_works, do not
                        show this number to UI */
   bool just_works;  /* true, if "Just Works" association model */
@@ -515,11 +511,11 @@ extern void bta_dm_ble_set_data_length(const RawAddress&, uint16_t);
 extern void bta_dm_ble_get_energy_info(tBTA_BLE_ENERGY_INFO_CBACK*);
 
 extern void bta_dm_set_encryption(const RawAddress&, tBTA_TRANSPORT,
-                                  tBTA_DM_ENCRYPT_CBACK*, tBTA_DM_BLE_SEC_ACT);
+                                  tBTA_DM_ENCRYPT_CBACK*, tBTM_BLE_SEC_ACT);
 extern void bta_dm_confirm(const RawAddress&, bool);
-extern void bta_dm_ci_io_req_act(const RawAddress& bd_addr, tBTA_IO_CAP io_cap,
-                                 tBTA_OOB_DATA oob_data,
-                                 tBTA_AUTH_REQ auth_req);
+extern void bta_dm_ci_io_req_act(const RawAddress& bd_addr, tBTM_IO_CAP io_cap,
+                                 tBTM_OOB_DATA oob_data,
+                                 tBTM_AUTH_REQ auth_req);
 extern void bta_dm_ci_rmt_oob_act(std::unique_ptr<tBTA_DM_CI_RMT_OOB> msg);
 
 extern void bta_dm_init_pm(void);
@@ -549,6 +545,4 @@ extern tBTA_DM_PEER_DEVICE* bta_dm_find_peer_device(
     const RawAddress& peer_addr);
 
 void bta_dm_eir_update_uuid(uint16_t uuid16, bool adding);
-
-extern void bta_dm_remove_all_acl(const tBTA_DM_LINK_TYPE);
 #endif /* BTA_DM_INT_H */

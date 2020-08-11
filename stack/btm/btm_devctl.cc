@@ -29,6 +29,7 @@
 #include <string.h>
 
 #include "bt_types.h"
+#include "bta/dm/bta_dm_int.h"
 #include "btcore/include/module.h"
 #include "btm_int.h"
 #include "btu.h"
@@ -38,8 +39,10 @@
 #include "hcimsgs.h"
 #include "osi/include/osi.h"
 #include "stack/gatt/connection_manager.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/l2cap_controller_interface.h"
 
+#include "bta/sys/bta_sys.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/controller.h"
 #include "main/shim/shim.h"
@@ -217,12 +220,11 @@ static void reset_complete(void* result) {
                  btm_cb.cfg.pin_code_len);
 
   decode_controller_support();
-
-  btm_report_device_status(BTM_DEV_STATUS_UP);
+  send_bta_sys_hw_event(BTA_SYS_EVT_STACK_ENABLED_EVT);
 }
 
 // TODO(zachoverflow): remove this function
-void BTM_DeviceReset(UNUSED_ATTR tBTM_CMPL_CB* p_cb) {
+void BTM_DeviceReset() {
   /* Flush all ACL connections */
   btm_acl_device_down();
 
@@ -353,26 +355,7 @@ static void decode_controller_support() {
   BTM_TRACE_DEBUG("Local supported SCO packet types: 0x%04x",
                   btm_cb.btm_sco_pkt_types_supported);
 
-  /* Create Default Policy Settings */
-  if (controller->supports_role_switch())
-    btm_cb.acl_cb_.btm_def_link_policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
-  else
-    btm_cb.acl_cb_.btm_def_link_policy &= ~HCI_ENABLE_MASTER_SLAVE_SWITCH;
-
-  if (controller->supports_hold_mode())
-    btm_cb.acl_cb_.btm_def_link_policy |= HCI_ENABLE_HOLD_MODE;
-  else
-    btm_cb.acl_cb_.btm_def_link_policy &= ~HCI_ENABLE_HOLD_MODE;
-
-  if (controller->supports_sniff_mode())
-    btm_cb.acl_cb_.btm_def_link_policy |= HCI_ENABLE_SNIFF_MODE;
-  else
-    btm_cb.acl_cb_.btm_def_link_policy &= ~HCI_ENABLE_SNIFF_MODE;
-
-  if (controller->supports_park_mode())
-    btm_cb.acl_cb_.btm_def_link_policy |= HCI_ENABLE_PARK_MODE;
-  else
-    btm_cb.acl_cb_.btm_def_link_policy &= ~HCI_ENABLE_PARK_MODE;
+  BTM_SetDefaultLinkPolicy(p_bta_dm_cfg->policy_settings);
 
   btm_sec_dev_reset();
 
@@ -519,27 +502,6 @@ tBTM_STATUS BTM_SetDeviceClass(DEV_CLASS dev_class) {
  ******************************************************************************/
 uint8_t* BTM_ReadDeviceClass(void) {
   return ((uint8_t*)btm_cb.devcb.dev_class);
-}
-
-/*******************************************************************************
- *
- * Function         BTM_RegisterForDeviceStatusNotif
- *
- * Description      This function is called to register for device status
- *                  change notifications.
- *
- *                  If one registration is already there calling function should
- *                  save the pointer to the function that is return and
- *                  call it when processing of the event is complete
- *
- * Returns          status of the operation
- *
- ******************************************************************************/
-tBTM_DEV_STATUS_CB* BTM_RegisterForDeviceStatusNotif(tBTM_DEV_STATUS_CB* p_cb) {
-  tBTM_DEV_STATUS_CB* p_prev = btm_cb.devcb.p_dev_status_cb;
-
-  btm_cb.devcb.p_dev_status_cb = p_cb;
-  return (p_prev);
 }
 
 /*******************************************************************************
@@ -807,24 +769,6 @@ void btm_delete_stored_link_key_complete(uint8_t* p) {
     /* Call the call back and pass the result */
     (*p_cb)(&result);
   }
-}
-
-/*******************************************************************************
- *
- * Function         btm_report_device_status
- *
- * Description      This function is called when there is a change in the device
- *                  status. This function will report the new device status to
- *                  the application
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_report_device_status(tBTM_DEV_STATUS status) {
-  tBTM_DEV_STATUS_CB* p_cb = btm_cb.devcb.p_dev_status_cb;
-
-  /* Call the call back to pass the device status to application */
-  if (p_cb) (*p_cb)(status);
 }
 
 /*******************************************************************************

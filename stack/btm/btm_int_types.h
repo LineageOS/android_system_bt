@@ -61,7 +61,6 @@ typedef char tBTM_LOC_BD_NAME[BTM_MAX_LOC_BD_NAME_LEN + 1];
 /* Define the Device Management control structure
 */
 typedef struct {
-  tBTM_DEV_STATUS_CB* p_dev_status_cb; /* Device status change callback */
   tBTM_VS_EVT_CB* p_vend_spec_cb
       [BTM_MAX_VSE_CALLBACKS]; /* Register for vendor specific events  */
 
@@ -372,12 +371,11 @@ typedef struct {
   uint8_t resolving_list_index;
 #if (BLE_PRIVACY_SPT == TRUE)
   RawAddress cur_rand_addr; /* current random address */
-
+  uint8_t active_addr_type;
+#endif
 #define BTM_BLE_ADDR_PSEUDO 0 /* address index device record */
 #define BTM_BLE_ADDR_RRA 1    /* cur_rand_addr */
 #define BTM_BLE_ADDR_STATIC 2 /* static_addr  */
-  uint8_t active_addr_type;
-#endif
 
   tBTM_LE_KEY_TYPE key_type; /* bit mask of valid key types in record */
   tBTM_SEC_BLE_KEYS keys;    /* LE device security info in slave rode */

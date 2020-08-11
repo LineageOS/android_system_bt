@@ -86,13 +86,6 @@ extern const btgatt_callbacks_t* bt_gatt_callbacks;
     }                                                   \
   } while (0)
 
-#define BLE_RESOLVE_ADDR_MSB                                                   \
-  0x40                             /* bit7, bit6 is 01 to be resolvable random \
-                                      */
-#define BLE_RESOLVE_ADDR_MASK 0xc0 /* bit 6, and bit7 */
-inline bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x) {
-  return ((x.address)[0] & BLE_RESOLVE_ADDR_MASK) == BLE_RESOLVE_ADDR_MSB;
-}
 namespace {
 
 uint8_t rssi_request_client_if;

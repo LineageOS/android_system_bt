@@ -55,7 +55,7 @@
  * Returns          void
  *
  ******************************************************************************/
-void BTM_DeviceReset(tBTM_CMPL_CB* p_cb);
+void BTM_DeviceReset();
 
 /*******************************************************************************
  *
@@ -128,19 +128,6 @@ tBTM_STATUS BTM_ReadLocalDeviceNameFromController(
  *
  ******************************************************************************/
 uint8_t* BTM_ReadDeviceClass(void);
-
-/*******************************************************************************
- *
- * Function         BTM_RegisterForDeviceStatusNotif
- *
- * Description      This function is called to register for device status
- *                  change notifications.
- *
- * Returns          pointer to previous caller's callback function or NULL if
- *                  first registration.
- *
- ******************************************************************************/
-tBTM_DEV_STATUS_CB* BTM_RegisterForDeviceStatusNotif(tBTM_DEV_STATUS_CB* p_cb);
 
 /*******************************************************************************
  *
