@@ -34,7 +34,6 @@
 #define LOG_TAG "btm_acl"
 
 #include <cstdint>
-#include "bta/dm/bta_dm_int.h"
 #include "bta/sys/bta_sys.h"
 #include "common/metrics.h"
 #include "device/include/controller.h"
@@ -106,7 +105,9 @@ void btm_acl_init(void) {
 }
 
 void BTM_acl_after_controller_started() {
-  btm_set_default_link_policy(p_bta_dm_cfg->policy_settings);
+  btm_set_default_link_policy(HCI_ENABLE_MASTER_SLAVE_SWITCH |
+                              HCI_ENABLE_HOLD_MODE | HCI_ENABLE_SNIFF_MODE |
+                              HCI_ENABLE_PARK_MODE);
 }
 
 /*******************************************************************************
