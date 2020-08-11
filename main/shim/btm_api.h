@@ -1209,9 +1209,7 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role);
  * Function         BTM_SwitchRole
  *
  * Description      This function is called to switch role between master and
- *                  slave.  If role is already set it will do nothing.  If the
- *                  command was initiated, the callback function is called upon
- *                  completion.
+ *                  slave.  If role is already set it will do nothing.
  *
  * Returns          BTM_SUCCESS if already in specified role.
  *                  BTM_CMD_STARTED if command issued to controller.
@@ -1222,8 +1220,7 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role);
  *                                       role switching
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role,
-                           tBTM_CMPL_CB* p_cb);
+tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role);
 
 /*******************************************************************************
  *
