@@ -4028,9 +4028,6 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
     btm_set_packet_types_from_address(
         bda, BT_TRANSPORT_BR_EDR, btm_cb.acl_cb_.btm_acl_pkt_types_supported);
 
-    if (btm_cb.acl_cb_.btm_def_link_policy)
-      BTM_SetLinkPolicy(bda, &btm_cb.acl_cb_.btm_def_link_policy);
-
   btm_acl_created(bda, p_dev_rec->dev_class, p_dev_rec->sec_bd_name, handle,
                   HCI_ROLE_SLAVE, BT_TRANSPORT_BR_EDR);
 
