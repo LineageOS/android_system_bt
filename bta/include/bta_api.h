@@ -950,19 +950,6 @@ typedef uint8_t tBTA_DM_LINK_TYPE;
  ****************************************************************************/
 
 void BTA_dm_init();
-/*******************************************************************************
- *
- * Function         BTA_DisableBluetooth
- *
- * Description      This function disables BTA and the Bluetooth protocol
- *                  stack.  It is called when BTA is no longer being used
- *                  by any application in the system.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-extern tBTA_STATUS BTA_DisableBluetooth(void);
 
 /*******************************************************************************
  *

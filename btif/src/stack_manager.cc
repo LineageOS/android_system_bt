@@ -271,7 +271,8 @@ static void event_shut_down_stack(UNUSED_ATTR void* context) {
   btif_dm_on_disable();
   btif_sock_cleanup();
   btif_pan_cleanup();
-  BTA_DisableBluetooth();
+
+  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_disable));
 
   module_shut_down(get_module(BTIF_CONFIG_MODULE));
 

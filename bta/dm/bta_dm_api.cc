@@ -50,21 +50,6 @@ void BTA_dm_init() {
   bta_sys_eir_register(bta_dm_eir_update_uuid);
 }
 
-/*******************************************************************************
- *
- * Function         BTA_DisableBluetooth
- *
- * Description      Disables bluetooth service.  This function is called when
- *                  the application no longer needs bluetooth service
- *
- * Returns          void
- *
- ******************************************************************************/
-tBTA_STATUS BTA_DisableBluetooth(void) {
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_disable));
-  return BTA_SUCCESS;
-}
-
 /** Enables bluetooth device under test mode */
 void BTA_EnableTestMode(void) {
   do_in_main_thread(FROM_HERE,
