@@ -84,6 +84,9 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       case SubeventCode::CONNECTION_UPDATE_COMPLETE:
         on_le_connection_update_complete(event_packet);
         break;
+      case SubeventCode::PHY_UPDATE_COMPLETE:
+        LOG_INFO("PHY_UPDATE_COMPLETE");
+        break;
       default:
         LOG_ALWAYS_FATAL("Unhandled event code %s", SubeventCodeText(code).c_str());
     }
