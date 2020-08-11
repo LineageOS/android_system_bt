@@ -924,10 +924,6 @@ void bta_jv_l2cap_connect(int32_t type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
   cfg.mtu_present = true;
   cfg.mtu = rx_mtu;
 
-  /* TODO: DM role manager
-  L2CA_SetDesireRole(role);
-  */
-
   uint8_t sec_id = bta_jv_alloc_sec_id();
   tBTA_JV_L2CAP_CL_INIT evt_data;
   evt_data.sec_id = sec_id;
@@ -1080,10 +1076,6 @@ void bta_jv_l2cap_start_server(int32_t type, tBTA_SEC sec_mask,
     cfg.mtu_present = false;
     cfg.mtu = 0;
   }
-
-  /* TODO DM role manager
-  L2CA_SetDesireRole(role);
-  */
 
   uint8_t sec_id = bta_jv_alloc_sec_id();
   uint16_t max_mps = 0xffff;  // Let GAP_ConnOpen set the max_mps.
@@ -1330,10 +1322,6 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
   uint16_t handle = 0;
   uint32_t event_mask = BTA_JV_RFC_EV_MASK;
   tPORT_STATE port_state;
-
-  /* TODO DM role manager
-  L2CA_SetDesireRole(role);
-  */
 
   uint8_t sec_id = bta_jv_alloc_sec_id();
 
@@ -1645,9 +1633,6 @@ void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
   tBTA_JV_PCB* p_pcb;
   tBTA_JV_RFCOMM_START evt_data;
 
-  /* TODO DM role manager
-  L2CA_SetDesireRole(role);
-  */
   memset(&evt_data, 0, sizeof(evt_data));
   evt_data.status = BTA_JV_FAILURE;
   VLOG(2) << __func__ << ": sec id in use=" << get_sec_id_used()
