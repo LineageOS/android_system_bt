@@ -53,7 +53,7 @@ tBTA_SYS_CB bta_sys_cb;
 
 /* trace level */
 /* TODO Hard-coded trace levels -  Needs to be configurable */
-uint8_t appl_trace_level = BT_TRACE_LEVEL_WARNING;  // APPL_INITIAL_TRACE_LEVEL;
+uint8_t appl_trace_level = APPL_INITIAL_TRACE_LEVEL;
 uint8_t btif_trace_level = BT_TRACE_LEVEL_WARNING;
 
 /*******************************************************************************
@@ -68,8 +68,6 @@ uint8_t btif_trace_level = BT_TRACE_LEVEL_WARNING;
  ******************************************************************************/
 void bta_sys_init(void) {
   memset(&bta_sys_cb, 0, sizeof(tBTA_SYS_CB));
-
-  appl_trace_level = APPL_INITIAL_TRACE_LEVEL;
 
 #if (defined BTA_AR_INCLUDED) && (BTA_AR_INCLUDED == TRUE)
   bta_ar_init();
