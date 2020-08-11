@@ -41,6 +41,10 @@
 #include "btif_config.h"
 #include "btif_profile_queue.h"
 #include "internal_include/bte.h"
+#include "stack/btm/btm_int.h"
+#include "stack/include/gatt_api.h"
+#include "stack/include/l2c_api.h"
+#include "stack/sdp/sdpint.h"
 
 using bluetooth::common::MessageLoopThread;
 
@@ -169,7 +173,13 @@ static void event_start_up_stack(UNUSED_ATTR void* context) {
 
   BTU_StartUp();
 
-  btu_init_core();
+  btm_init();
+  l2c_init();
+  sdp_init();
+  gatt_init();
+  SMP_Init();
+  btm_ble_init();
+
   BTE_InitStack();
   bta_sys_init();
   module_init(get_module(BTE_LOGMSG_MODULE));

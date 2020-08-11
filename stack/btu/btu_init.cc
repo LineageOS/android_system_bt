@@ -37,31 +37,6 @@ void btu_task_shut_down();
 
 /*****************************************************************************
  *
- * Function         btu_init_core
- *
- * Description      Initialize control block memory for each core component.
- *
- *
- * Returns          void
- *
- *****************************************************************************/
-void btu_init_core() {
-  /* Initialize the mandatory core stack components */
-  btm_init();
-
-  l2c_init();
-
-  sdp_init();
-
-  gatt_init();
-
-  SMP_Init();
-
-  btm_ble_init();
-}
-
-/*****************************************************************************
- *
  * Function         btu_free_core
  *
  * Description      Releases control block memory for each core component.
