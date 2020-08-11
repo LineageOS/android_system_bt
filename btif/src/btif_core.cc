@@ -649,7 +649,7 @@ void btif_set_adapter_property(bt_property_t* property) {
 
       BTIF_TRACE_EVENT("set property scan mode : %x", mode);
 
-      BTA_DmSetVisibility(disc_mode, conn_mode, BTA_DM_IGNORE, BTA_DM_IGNORE);
+      BTA_DmSetVisibility(disc_mode, conn_mode);
 
       btif_core_storage_adapter_write(property);
     } break;

@@ -460,7 +460,7 @@ extern void bta_dm_enable(tBTA_DM_SEC_CBACK*);
 extern void bta_dm_disable();
 extern void bta_dm_init_cb(void);
 extern void bta_dm_set_dev_name(const std::vector<uint8_t>&);
-extern void bta_dm_set_visibility(tBTA_DM_DISC, tBTA_DM_CONN, uint8_t, uint8_t);
+extern void bta_dm_set_visibility(tBTA_DM_DISC, tBTA_DM_CONN);
 extern void bta_dm_set_scan_config(tBTA_DM_MSG* p_data);
 extern void bta_dm_vendor_spec_command(tBTA_DM_MSG* p_data);
 extern void bta_dm_bond(const RawAddress&, tBLE_ADDR_TYPE, tBT_TRANSPORT, int);
