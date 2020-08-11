@@ -227,7 +227,7 @@ static void event_start_up_stack(UNUSED_ATTR void* context) {
   bta_dm_enable(bte_dm_evt);
 
   bta_sys_set_state(BTA_SYS_HW_STARTING);
-  bta_sys_hw_api_enable();
+  BTM_DeviceReset();
 
   if (future_await(local_hack_future) != FUTURE_SUCCESS) {
     LOG_ERROR("%s failed to start up the stack", __func__);

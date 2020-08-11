@@ -169,30 +169,6 @@ void bta_sys_hw_error() {
 
 /*******************************************************************************
  *
- * Function         bta_sys_hw_enable
- *
- * Description     this function is called after API enable and HW has been
- *                 turned on
- *
- *
- * Returns          success or failure
- *
- ******************************************************************************/
-
-void bta_sys_hw_api_enable() {
-  if (!bta_sys_cb.bluetooth_active && bta_sys_cb.state != BTA_SYS_HW_ON) {
-    /* register which HW module was turned on */
-    bta_sys_cb.bluetooth_active = true;
-
-    BTM_DeviceReset();
-  } else {
-    bta_sys_cb.bluetooth_active = true;
-    BTA_dm_on_hw_on();
-  }
-}
-
-/*******************************************************************************
- *
  * Function         bta_sys_hw_disable
  *
  * Description     if no other module is using the HW, this function will call
