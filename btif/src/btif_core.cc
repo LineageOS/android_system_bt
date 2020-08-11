@@ -268,7 +268,6 @@ int btif_is_enabled(void) {
 
 void btif_init_ok() {
   btif_dm_load_ble_local_keys();
-  BTA_EnableBluetooth(bte_dm_evt);
 }
 
 /*******************************************************************************
