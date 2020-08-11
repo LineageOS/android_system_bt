@@ -19,7 +19,6 @@
 #include <base/strings/stringprintf.h>
 #include <string.h>
 #include "bt_target.h"
-#include "btm_int.h"
 #include "device/include/controller.h"
 #include "gap_api.h"
 #include "l2c_api.h"
