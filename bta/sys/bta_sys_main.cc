@@ -40,9 +40,6 @@
 #include "osi/include/osi.h"
 #include "utl.h"
 
-#if (defined BTA_AR_INCLUDED) && (BTA_AR_INCLUDED == TRUE)
-#include "bta_ar_api.h"
-#endif
 
 void BTA_dm_on_hw_on();
 void BTA_dm_on_hw_error();
@@ -68,10 +65,6 @@ uint8_t btif_trace_level = BT_TRACE_LEVEL_WARNING;
  ******************************************************************************/
 void bta_sys_init(void) {
   memset(&bta_sys_cb, 0, sizeof(tBTA_SYS_CB));
-
-#if (defined BTA_AR_INCLUDED) && (BTA_AR_INCLUDED == TRUE)
-  bta_ar_init();
-#endif
 }
 
 void bta_sys_free(void) {
