@@ -998,18 +998,6 @@ extern void BTA_EnableTestMode(void);
 
 /*******************************************************************************
  *
- * Function         BTA_DisableTestMode
- *
- * Description      Disable bluetooth device under test mode
- *
- *
- * Returns          None
- *
- ******************************************************************************/
-extern void BTA_DisableTestMode(void);
-
-/*******************************************************************************
- *
  * Function         BTA_DmSetDeviceName
  *
  * Description      This function sets the Bluetooth name of the local device.
