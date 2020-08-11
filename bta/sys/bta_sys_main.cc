@@ -68,7 +68,9 @@ void bta_sys_init(void) {
 void bta_sys_free(void) {
 }
 
-void bta_sys_set_state(tBTA_SYS_HW_STATE value) { bta_sys_cb.state = value; }
+void bta_set_forward_hw_failures(bool value) {
+  bta_sys_cb.forward_hw_failures = value;
+}
 
 /*******************************************************************************
  *
@@ -81,39 +83,9 @@ void bta_sys_set_state(tBTA_SYS_HW_STATE value) { bta_sys_cb.state = value; }
  *
  ******************************************************************************/
 static void bta_sys_sm_execute(tBTA_SYS_HW_EVT event) {
-  APPL_TRACE_EVENT("bta_sys_sm_execute state:%d, event:0x%x", bta_sys_cb.state);
-
-  switch (bta_sys_cb.state) {
-    case BTA_SYS_HW_OFF:
-      switch (event) {
-        default:
-          break;
-      }
-      break;
-    case BTA_SYS_HW_STARTING:
-      switch (event) {
-        case BTA_SYS_ERROR_EVT:
-          bta_sys_set_state(BTA_SYS_HW_ON);
-          bta_sys_hw_error();
-          break;
-        default:
-          break;
-      }
-      break;
-    case BTA_SYS_HW_ON:
-      switch (event) {
-        case BTA_SYS_ERROR_EVT:
-          bta_sys_hw_error();
-          break;
-        default:
-          break;
-      }
-      break;
-    case BTA_SYS_HW_STOPPING:
-      switch (event) {
-        default:
-          break;
-      }
+  switch (event) {
+    case BTA_SYS_ERROR_EVT:
+      bta_sys_hw_error();
       break;
     default:
       break;
@@ -137,7 +109,7 @@ void send_bta_sys_hw_event(tBTA_SYS_HW_EVT event) {
  ******************************************************************************/
 void bta_sys_hw_error() {
   APPL_TRACE_DEBUG("%s", __func__);
-  if (bta_sys_cb.bluetooth_active) {
+  if (bta_sys_cb.forward_hw_failures) {
     BTA_dm_on_hw_error();
   }
 }

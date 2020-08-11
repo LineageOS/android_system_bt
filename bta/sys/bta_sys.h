@@ -173,19 +173,10 @@ enum {
 };
 typedef uint8_t tBTA_SYS_HW_EVT;
 
-/* SYS HW state */
-enum {
-  BTA_SYS_HW_OFF,
-  BTA_SYS_HW_STARTING,
-  BTA_SYS_HW_ON,
-  BTA_SYS_HW_STOPPING
-};
-typedef uint8_t tBTA_SYS_HW_STATE;
-
 /*****************************************************************************
  *  Function declarations
  ****************************************************************************/
-void bta_sys_set_state(tBTA_SYS_HW_STATE value);
+void bta_set_forward_hw_failures(bool value);
 
 extern void bta_sys_init(void);
 extern void bta_sys_free(void);

@@ -230,7 +230,7 @@ static void event_start_up_stack(UNUSED_ATTR void* context) {
   BTA_dm_init();
   bta_dm_enable(bte_dm_evt);
 
-  bta_sys_set_state(BTA_SYS_HW_STARTING);
+  bta_set_forward_hw_failures(true);
   btm_acl_device_down();
   BTM_db_reset();
   if (bluetooth::shim::is_gd_controller_enabled()) {
@@ -240,7 +240,6 @@ static void event_start_up_stack(UNUSED_ATTR void* context) {
   }
   BTM_reset_complete();
 
-  bta_sys_set_state(BTA_SYS_HW_ON);
   BTA_dm_on_hw_on();
 
   if (future_await(local_hack_future) != FUTURE_SUCCESS) {
@@ -280,7 +279,7 @@ static void event_shut_down_stack(UNUSED_ATTR void* context) {
   hack_future = local_hack_future;
 
   bta_sys_disable();
-  bta_sys_set_state(BTA_SYS_HW_OFF);
+  bta_set_forward_hw_failures(false);
   BTA_dm_on_hw_off();
 
   module_shut_down(get_module(BTIF_CONFIG_MODULE));
