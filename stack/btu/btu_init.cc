@@ -95,7 +95,6 @@ void btu_free_core() {
  *
  *****************************************************************************/
 void BTU_StartUp() {
-  btu_trace_level = HCI_INITIAL_TRACE_LEVEL;
   bt_startup_thread.StartUp();
   if (!bt_startup_thread.EnableRealTimeScheduling()) {
     LOG(ERROR) << __func__ << ": Unable to set real time scheduling policy for "
