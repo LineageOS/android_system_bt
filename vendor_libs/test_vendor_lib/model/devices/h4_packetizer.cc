@@ -29,18 +29,23 @@ namespace test_vendor_lib {
 namespace hci {
 size_t HciGetPacketLengthForType(hci::PacketType type,
                                  const uint8_t* preamble) {
-  static const size_t packet_length_offset[static_cast<size_t>(hci::PacketType::EVENT) + 1] = {
-      0,
-      H4Packetizer::COMMAND_LENGTH_OFFSET,
-      H4Packetizer::ACL_LENGTH_OFFSET,
-      H4Packetizer::SCO_LENGTH_OFFSET,
-      H4Packetizer::EVENT_LENGTH_OFFSET,
-  };
+  static const size_t
+      packet_length_offset[static_cast<size_t>(hci::PacketType::ISO) + 1] = {
+          0,
+          H4Packetizer::COMMAND_LENGTH_OFFSET,
+          H4Packetizer::ACL_LENGTH_OFFSET,
+          H4Packetizer::SCO_LENGTH_OFFSET,
+          H4Packetizer::EVENT_LENGTH_OFFSET,
+          H4Packetizer::ISO_LENGTH_OFFSET,
+      };
 
   size_t offset = packet_length_offset[static_cast<size_t>(type)];
   size_t size = preamble[offset];
   if (type == hci::PacketType::ACL) {
     size |= ((size_t)preamble[offset + 1]) << 8u;
+  }
+  if (type == hci::PacketType::ISO) {
+    size |= ((size_t)preamble[offset + 1] & 0x0fu) << 8u;
   }
   return size;
 }
@@ -100,12 +105,13 @@ void H4Packetizer::OnDataReady(int fd) {
   uint8_t* buffer_pointer = nullptr;
 
   static const size_t
-      preamble_size[static_cast<size_t>(hci::PacketType::EVENT) + 1] = {
+      preamble_size[static_cast<size_t>(hci::PacketType::ISO) + 1] = {
           0,
           H4Packetizer::COMMAND_PREAMBLE_SIZE,
           H4Packetizer::ACL_PREAMBLE_SIZE,
           H4Packetizer::SCO_PREAMBLE_SIZE,
           H4Packetizer::EVENT_PREAMBLE_SIZE,
+          H4Packetizer::ISO_PREAMBLE_SIZE,
       };
   switch (state_) {
     case HCI_TYPE:
@@ -155,7 +161,8 @@ void H4Packetizer::OnDataReady(int fd) {
       if (hci_packet_type_ != hci::PacketType::ACL &&
           hci_packet_type_ != hci::PacketType::SCO &&
           hci_packet_type_ != hci::PacketType::COMMAND &&
-          hci_packet_type_ != hci::PacketType::EVENT) {
+          hci_packet_type_ != hci::PacketType::EVENT &&
+          hci_packet_type_ != hci::PacketType::ISO) {
         LOG_ALWAYS_FATAL("Unimplemented packet type %hhd", packet_type_);
       }
       state_ = HCI_PREAMBLE;
