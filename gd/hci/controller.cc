@@ -40,6 +40,7 @@ struct Controller::impl {
           EventCode::NUMBER_OF_COMPLETED_PACKETS, handler->BindOn(this, &Controller::impl::NumberOfCompletedPackets));
     }
 
+    le_set_event_mask(kDefaultLeEventMask);
     set_event_mask(kDefaultEventMask);
     write_simple_pairing_mode(Enable::ENABLED);
     // TODO(b/159927452): Legacy stack set SimultaneousLeHost = 1. Revisit if this causes problem.
