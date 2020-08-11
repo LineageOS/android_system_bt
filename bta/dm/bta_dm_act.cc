@@ -248,17 +248,6 @@ static uint8_t btm_local_io_caps;
 
 /** Initialises the BT device manager */
 void bta_dm_enable(tBTA_DM_SEC_CBACK* p_sec_cback) {
-  /* if already in use, return an error */
-  if (bta_dm_cb.is_bta_dm_active) {
-    tBTA_DM_SEC enable_event;
-    APPL_TRACE_WARNING("%s Device already started by another application",
-                       __func__);
-    memset(&enable_event, 0, sizeof(tBTA_DM_SEC));
-    enable_event.enable.status = BTA_FAILURE;
-    if (p_sec_cback != NULL) p_sec_cback(BTA_DM_ENABLE_EVT, &enable_event);
-    return;
-  }
-
   /* make sure security callback is saved - if no callback, do not erase the
   previous one,
   it could be an error recovery mechanism */
