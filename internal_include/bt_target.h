@@ -1230,10 +1230,6 @@
   "5)),(\"roam\",(0,1)),(\"battchg\",(0-5)),(\"callheld\",(0-2))"
 #endif
 
-#ifndef BTA_DM_AVOID_A2DP_ROLESWITCH_ON_INQUIRY
-#define BTA_DM_AVOID_A2DP_ROLESWITCH_ON_INQUIRY TRUE
-#endif
-
 /******************************************************************************
  *
  * Tracing:  Include trace header file here.
