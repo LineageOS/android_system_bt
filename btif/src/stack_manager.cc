@@ -28,10 +28,12 @@
 #include "btif_common.h"
 #include "common/message_loop_thread.h"
 #include "device/include/controller.h"
+#include "hci/include/btsnoop.h"
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "osi/include/semaphore.h"
+#include "stack/include/btu.h"
 
 // Temp includes
 #include "bt_utils.h"
@@ -150,8 +152,18 @@ static void event_start_up_stack(UNUSED_ATTR void* context) {
   future_t* local_hack_future = future_new();
   hack_future = local_hack_future;
 
-  // Include this for now to put btif config into a shutdown-able state
-  bte_main_enable();
+  if (bluetooth::shim::is_any_gd_enabled()) {
+    LOG_INFO("%s Gd shim module enabled", __func__);
+    module_shut_down(get_module(GD_IDLE_MODULE));
+    module_start_up(get_module(GD_SHIM_MODULE));
+    module_start_up(get_module(BTIF_CONFIG_MODULE));
+  } else {
+    module_start_up(get_module(BTIF_CONFIG_MODULE));
+    module_start_up(get_module(BTSNOOP_MODULE));
+    module_start_up(get_module(HCI_MODULE));
+  }
+
+  BTU_StartUp();
 
   if (future_await(local_hack_future) != FUTURE_SUCCESS) {
     LOG_ERROR("%s failed to start up the stack", __func__);
