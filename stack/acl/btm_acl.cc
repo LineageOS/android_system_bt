@@ -58,7 +58,6 @@ tBTM_SEC_DEV_REC* btm_find_or_alloc_dev(const RawAddress& bd_addr);
 tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec);
 void btm_ble_refresh_local_resolvable_private_addr(
     const RawAddress& pseudo_addr, const RawAddress& local_rpa);
-void btm_establish_continue(tACL_CONN* p_acl_cb);
 void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec, uint8_t res,
                                  bool is_le_trasnport);
 void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
@@ -66,6 +65,7 @@ void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
 
 static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
                                               uint16_t* p_pkt_type);
+static void btm_establish_continue(tACL_CONN* p_acl_cb);
 static void btm_pm_sm_alloc(uint8_t ind);
 static void btm_read_automatic_flush_timeout_timeout(void* data);
 static void btm_read_failed_contact_counter_timeout(void* data);
@@ -2471,6 +2471,36 @@ bool acl_peer_supports_ble_connection_parameters_request(
 
 /*******************************************************************************
  *
+ * Function         BTM_ReadConnectionAddr
+ *
+ * Description      This function is called to get the local device address
+ *                  information.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
+                            RawAddress& local_conn_addr,
+                            tBLE_ADDR_TYPE* p_addr_type) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::BTM_ReadConnectionAddr(remote_bda, local_conn_addr,
+                                                   p_addr_type);
+  }
+  tACL_CONN* p_acl = btm_bda_to_acl(remote_bda, BT_TRANSPORT_LE);
+
+  if (p_acl == NULL) {
+    BTM_TRACE_ERROR("No connection exist!");
+    return;
+  }
+  local_conn_addr = p_acl->conn_addr;
+  *p_addr_type = p_acl->conn_addr_type;
+
+  BTM_TRACE_DEBUG("BTM_ReadConnectionAddr address type: %d addr: 0x%02x",
+                  p_acl->conn_addr_type, p_acl->conn_addr.address[0]);
+}
+
+/*******************************************************************************
+ *
  * Function         BTM_IsBleConnection
  *
  * Description      This function is called to check if the connection handle
@@ -2489,4 +2519,47 @@ bool BTM_IsBleConnection(uint16_t hci_handle) {
 
   tACL_CONN* p = &btm_cb.acl_cb_.acl_db[index];
   return (p->transport == BT_TRANSPORT_LE);
+}
+
+const RawAddress acl_address_from_handle(uint16_t hci_handle) {
+  uint8_t index = btm_handle_to_acl_index(hci_handle);
+  if (index >= MAX_L2CAP_LINKS) {
+    return RawAddress::kEmpty;
+  }
+  return btm_cb.acl_cb_.acl_db[index].remote_addr;
+}
+
+tBTM_PM_MCB* acl_power_mode_from_handle(uint16_t hci_handle) {
+  uint8_t index = btm_handle_to_acl_index(hci_handle);
+  if (index >= MAX_L2CAP_LINKS) {
+    return nullptr;
+  }
+  return &btm_cb.pm_mode_db[index];
+}
+
+/*******************************************************************************
+ *
+ * Function         btm_pm_find_acl_ind
+ *
+ * Description      This function initializes the control block of an ACL link.
+ *                  It is called when an ACL connection is created.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+int btm_pm_find_acl_ind(const RawAddress& remote_bda) {
+  tACL_CONN* p = &btm_cb.acl_cb_.acl_db[0];
+  uint8_t xx;
+
+  for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p++) {
+    if (p->in_use && p->remote_addr == remote_bda &&
+        p->transport == BT_TRANSPORT_BR_EDR) {
+#if (BTM_PM_DEBUG == TRUE)
+      BTM_TRACE_DEBUG("btm_pm_find_acl_ind ind:%d, st:%d", xx,
+                      btm_cb.pm_mode_db[xx].state);
+#endif  // BTM_PM_DEBUG
+      break;
+    }
+  }
+  return xx;
 }
