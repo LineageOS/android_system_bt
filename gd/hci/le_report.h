@@ -70,17 +70,28 @@ class DirectedLeReport : public LeReport {
 class ExtendedLeReport : public DirectedLeReport {
  public:
   explicit ExtendedLeReport(const LeExtendedAdvertisingReport& advertisement)
-      : DirectedLeReport(advertisement), connectable_(advertisement.connectable_), scannable_(advertisement.scannable_),
-        directed_(advertisement.directed_), scan_response_(advertisement.scan_response_),
+      : DirectedLeReport(advertisement),
+        connectable_(advertisement.connectable_),
+        scannable_(advertisement.scannable_),
+        directed_(advertisement.directed_),
+        scan_response_(advertisement.scan_response_),
+        legacy_(advertisement.legacy_),
         complete_(advertisement.data_status_ == DataStatus::COMPLETE),
-        truncated_(advertisement.data_status_ == DataStatus::TRUNCATED) {}
+        truncated_(advertisement.data_status_ == DataStatus::TRUNCATED),
+        primary_phy_(static_cast<uint8_t>(advertisement.primary_phy_)),
+        secondary_phy_(static_cast<uint8_t>(advertisement.secondary_phy_)),
+        tx_power_(advertisement.tx_power_) {}
 
   // Extended
   bool connectable_;
   bool scannable_;
   bool directed_;
   bool scan_response_;
+  bool legacy_;
   bool complete_;
   bool truncated_;
+  uint8_t primary_phy_;
+  uint8_t secondary_phy_;
+  int8_t tx_power_;
 };
 }  // namespace bluetooth::hci
