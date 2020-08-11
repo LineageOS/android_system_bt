@@ -522,11 +522,6 @@
 #define L2CAP_WAKE_PARKED_LINK TRUE
 #endif
 
-/* Whether link wants to be the master or the slave. */
-#ifndef L2CAP_DESIRED_LINK_ROLE
-#define L2CAP_DESIRED_LINK_ROLE HCI_ROLE_MASTER
-#endif
-
 /* Minimum number of ACL credit for high priority link */
 #ifndef L2CAP_HIGH_PRI_MIN_XMIT_QUOTA
 #define L2CAP_HIGH_PRI_MIN_XMIT_QUOTA 5

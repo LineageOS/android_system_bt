@@ -806,34 +806,6 @@ void bta_dm_pin_reply(std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg) {
   }
 }
 
-void BTA_dm_unblock_role_switch_for(const RawAddress& peer_addr) {
-  auto p_dev = bta_dm_find_peer_device(peer_addr);
-  if (!p_dev) {
-    return;
-  }
-  p_dev->link_policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
-  BTM_SetLinkPolicy(p_dev->peer_bdaddr, &(p_dev->link_policy));
-}
-
-void BTA_dm_block_role_switch_for(const RawAddress& peer_addr) {
-  auto p_dev = bta_dm_find_peer_device(peer_addr);
-  if (!p_dev) {
-    return;
-  }
-  p_dev->link_policy &= (~HCI_ENABLE_MASTER_SLAVE_SWITCH);
-  BTM_SetLinkPolicy(p_dev->peer_bdaddr, &(p_dev->link_policy));
-}
-
-void BTA_dm_unblock_role_switch() {
-  BTM_SetDefaultLinkPolicy(btm_cb.acl_cb_.btm_def_link_policy |
-                           HCI_ENABLE_MASTER_SLAVE_SWITCH);
-}
-
-void BTA_dm_block_role_switch() {
-  BTM_SetDefaultLinkPolicy(btm_cb.acl_cb_.btm_def_link_policy &
-                           ~HCI_ENABLE_MASTER_SLAVE_SWITCH);
-}
-
 /** Send the user confirm request reply in response to a request from BTM */
 void bta_dm_confirm(const RawAddress& bd_addr, bool accept) {
   BTM_ConfirmReqReply(accept ? BTM_SUCCESS : BTM_NOT_AUTHORIZED, bd_addr);
@@ -2525,7 +2497,7 @@ static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
     }
 
     if (need_policy_change) {
-      BTA_dm_block_role_switch_for(p_dev->peer_bdaddr);
+      BTM_block_role_switch_for(p_dev->peer_bdaddr);
     }
   } else {
     /* there's AV no activity on this link and role switch happened
@@ -2556,7 +2528,6 @@ static tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
     auto device =
         &bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count];
     device->peer_bdaddr = bd_addr;
-    device->link_policy = btm_cb.acl_cb_.btm_def_link_policy;
     bta_dm_cb.device_list.count++;
     device->conn_handle = handle;
     if (transport == BT_TRANSPORT_LE) {
@@ -2716,7 +2687,7 @@ static void bta_dm_check_av() {
         /* make master and take away the role switch policy */
         BTM_SwitchRole(p_dev->peer_bdaddr, HCI_ROLE_MASTER);
         /* else either already master or can not switch for some reasons */
-        BTA_dm_block_role_switch_for(p_dev->peer_bdaddr);
+        BTM_block_role_switch_for(p_dev->peer_bdaddr);
         break;
       }
     }
@@ -2886,28 +2857,13 @@ static void bta_dm_remove_sec_dev_entry(const RawAddress& remote_bd_addr) {
  ******************************************************************************/
 static void bta_dm_adjust_roles(bool delay_role_switch) {
   uint8_t i;
-  bool set_master_role = false;
   uint8_t br_count =
       bta_dm_cb.device_list.count - bta_dm_cb.device_list.le_count;
   if (br_count) {
-    /* the configuration is no scatternet
-     * or AV connection exists and there are more than one ACL link */
-    if ((p_bta_dm_rm_cfg[0].cfg == BTA_DM_NO_SCATTERNET) ||
-        (bta_dm_cb.cur_av_count && br_count > 1)) {
-      L2CA_SetDesireRole(HCI_ROLE_MASTER);
-      set_master_role = true;
-    }
-
     for (i = 0; i < bta_dm_cb.device_list.count; i++) {
       if (bta_dm_cb.device_list.peer_device[i].conn_state == BTA_DM_CONNECTED &&
           bta_dm_cb.device_list.peer_device[i].transport ==
               BT_TRANSPORT_BR_EDR) {
-        if (!set_master_role &&
-            (bta_dm_cb.device_list.peer_device[i].pref_role != BTA_ANY_ROLE) &&
-            (p_bta_dm_rm_cfg[0].cfg == BTA_DM_PARTIAL_SCATTERNET)) {
-          L2CA_SetDesireRole(HCI_ROLE_MASTER);
-          set_master_role = true;
-        }
 
         if ((bta_dm_cb.device_list.peer_device[i].pref_role ==
              BTA_MASTER_ROLE_ONLY) ||
@@ -2934,13 +2890,6 @@ static void bta_dm_adjust_roles(bool delay_role_switch) {
         }
       }
     }
-
-    if (!set_master_role) {
-      L2CA_SetDesireRole(L2CAP_DESIRED_LINK_ROLE);
-    }
-
-  } else {
-    L2CA_SetDesireRole(L2CAP_DESIRED_LINK_ROLE);
   }
 }
 
