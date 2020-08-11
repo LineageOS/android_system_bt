@@ -45,11 +45,6 @@
 
 #define L2CAP_FCS_LENGTH 2
 
-/* ping result codes */
-#define L2CAP_PING_RESULT_OK 0      /* Ping reply received OK     */
-#define L2CAP_PING_RESULT_NO_LINK 1 /* Link could not be setup    */
-#define L2CAP_PING_RESULT_NO_RESP 2 /* Remote L2CAP did not reply */
-
 /* result code for L2CA_DataWrite() */
 #define L2CAP_DW_FAILED false
 #define L2CAP_DW_SUCCESS true
@@ -169,7 +164,6 @@ struct tL2CAP_LE_CFG_INFO {
 #define L2CAP_CH_CFG_MASK_FLUSH_TO 0x0004
 #define L2CAP_CH_CFG_MASK_FCR 0x0008
 #define L2CAP_CH_CFG_MASK_FCS 0x0010
-#define L2CAP_CH_CFG_MASK_EXT_FLOW_SPEC 0x0020
 
 typedef uint16_t tL2CAP_CH_CFG_BITS;
 
@@ -191,11 +185,6 @@ typedef void(tL2CA_CONNECT_IND_CB)(const RawAddress&, uint16_t, uint16_t,
  *              Result - 0 = connected, non-zero means failure reason
  */
 typedef void(tL2CA_CONNECT_CFM_CB)(uint16_t, uint16_t);
-
-/* Connection pending callback prototype. Parameters are
- *              Local CID
- */
-typedef void(tL2CA_CONNECT_PND_CB)(uint16_t);
 
 /* Configuration indication callback prototype. Parameters are
  *              Local CID assigned to the connection
@@ -220,11 +209,6 @@ typedef void(tL2CA_DISCONNECT_IND_CB)(uint16_t, bool);
  *              Result
  */
 typedef void(tL2CA_DISCONNECT_CFM_CB)(uint16_t, uint16_t);
-
-/* QOS Violation indication callback prototype. Parameters are
- *              BD Address of violating device
- */
-typedef void(tL2CA_QOS_VIOLATION_IND_CB)(const RawAddress&);
 
 /* Data received indication callback prototype. Parameters are
  *              Local CID
@@ -299,7 +283,6 @@ typedef struct {
   uint16_t user_tx_buf_size;
   uint16_t fcr_rx_buf_size;
   uint16_t fcr_tx_buf_size;
-
 } tL2CAP_ERTM_INFO;
 
 /**
