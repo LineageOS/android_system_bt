@@ -888,6 +888,9 @@ extern void btsnd_hcic_read_authenticated_payload_tout(uint16_t handle);
 extern void btsnd_hcic_write_authenticated_payload_tout(uint16_t handle,
                                                         uint16_t timeout);
 
+extern void btsnd_hcic_read_iso_tx_sync(
+    uint16_t iso_handle, base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
 struct EXT_CIS_CFG {
   uint8_t cis_id;
   uint16_t max_sdu_size_mtos;
@@ -927,6 +930,12 @@ extern void btsnd_hcic_create_cis(uint8_t num_cis,
 
 extern void btsnd_hcic_remove_cig(
     uint8_t cig_id, base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
+extern void btsnd_hcic_accept_cis_req(uint16_t conn_handle);
+
+extern void btsnd_hcic_rej_cis_req(
+    uint16_t conn_handle, uint8_t reason,
+    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
 extern void btsnd_hcic_req_peer_sca(uint16_t conn_handle);
 

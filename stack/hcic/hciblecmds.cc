@@ -820,6 +820,18 @@ void btsnd_hcic_ble_ext_create_conn(uint8_t init_filter_policy,
   btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
 }
 
+void btsnd_hcic_read_iso_tx_sync(
+    uint16_t iso_handle, base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+  const int params_len = 2;
+  uint8_t param[params_len];
+  uint8_t* pp = param;
+
+  UINT16_TO_STREAM(pp, iso_handle);
+
+  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_LE_READ_ISO_TX_SYNC, param,
+                            params_len, std::move(cb));
+}
+
 void btsnd_hcic_set_cig_params(
     uint8_t cig_id, uint32_t sdu_itv_mtos, uint32_t sdu_itv_stom, uint8_t sca,
     uint8_t packing, uint8_t framing, uint16_t max_trans_lat_stom,
@@ -882,6 +894,35 @@ void btsnd_hcic_remove_cig(uint8_t cig_id,
   UINT8_TO_STREAM(pp, cig_id);
 
   btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_LE_REMOVE_CIG, param, params_len,
+                            std::move(cb));
+}
+
+void btsnd_hcic_accept_cis_req(uint16_t conn_handle) {
+  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
+  uint8_t* pp = (uint8_t*)(p + 1);
+
+  const int param_len = 2;
+  p->len = HCIC_PREAMBLE_SIZE + param_len;
+  p->offset = 0;
+
+  UINT16_TO_STREAM(pp, HCI_LE_ACCEPT_CIS_REQ);
+  UINT8_TO_STREAM(pp, param_len);
+
+  UINT16_TO_STREAM(pp, conn_handle);
+
+  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
+void btsnd_hcic_rej_cis_req(uint16_t conn_handle, uint8_t reason,
+                            base::OnceCallback<void(uint8_t*, uint16_t)> cb) {
+  const int params_len = 3;
+  uint8_t param[params_len];
+  uint8_t* pp = param;
+
+  UINT16_TO_STREAM(pp, conn_handle);
+  UINT8_TO_STREAM(pp, reason);
+
+  btu_hcif_send_cmd_with_cb(FROM_HERE, HCI_LE_REJ_CIS_REQ, param, params_len,
                             std::move(cb));
 }
 
