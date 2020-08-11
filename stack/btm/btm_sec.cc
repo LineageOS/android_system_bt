@@ -4030,7 +4030,6 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
   /* set paging flag up */
 /* whatever is in btm_establish_continue() without reporting the BTM_BL_CONN_EVT
  * event */
-#if (BTM_BYPASS_EXTRA_ACL_SETUP == FALSE)
     /* For now there are a some devices that do not like sending */
     /* commands events and data at the same time. */
     /* Set the packet types to the default allowed by the device */
@@ -4039,7 +4038,6 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
 
     if (btm_cb.acl_cb_.btm_def_link_policy)
       BTM_SetLinkPolicy(bda, &btm_cb.acl_cb_.btm_def_link_policy);
-#endif
 
   btm_acl_created(bda, p_dev_rec->dev_class, p_dev_rec->sec_bd_name, handle,
                   HCI_ROLE_SLAVE, BT_TRANSPORT_BR_EDR);

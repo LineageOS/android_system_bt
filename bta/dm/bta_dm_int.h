@@ -545,6 +545,4 @@ extern tBTA_DM_PEER_DEVICE* bta_dm_find_peer_device(
     const RawAddress& peer_addr);
 
 void bta_dm_eir_update_uuid(uint16_t uuid16, bool adding);
-
-extern void bta_dm_remove_all_acl(const tBTA_DM_LINK_TYPE);
 #endif /* BTA_DM_INT_H */
