@@ -40,11 +40,26 @@
 #include "bta/sys/bta_sys.h"
 #include "btif_config.h"
 #include "btif_profile_queue.h"
+#include "internal_include/bt_target.h"
 #include "internal_include/bte.h"
 #include "stack/btm/btm_int.h"
 #include "stack/include/gatt_api.h"
 #include "stack/include/l2c_api.h"
+#include "stack/include/port_api.h"
 #include "stack/sdp/sdpint.h"
+#if (BNEP_INCLUDED == TRUE)
+#include "stack/include/bnep_api.h"
+#endif
+#include "stack/include/gap_api.h"
+#if (PAN_INCLUDED == TRUE)
+#include "stack/include/pan_api.h"
+#endif
+#include "stack/include/a2dp_api.h"
+#include "stack/include/avrc_api.h"
+#if (HID_HOST_INCLUDED == TRUE)
+#include "stack/include/hidh_api.h"
+#endif
+#include "stack/include/smp_api.h"
 
 using bluetooth::common::MessageLoopThread;
 
@@ -180,7 +195,20 @@ static void event_start_up_stack(UNUSED_ATTR void* context) {
   SMP_Init();
   btm_ble_init();
 
-  BTE_InitStack();
+  RFCOMM_Init();
+#if (BNEP_INCLUDED == TRUE)
+  BNEP_Init();
+#if (PAN_INCLUDED == TRUE)
+  PAN_Init();
+#endif /* PAN */
+#endif /* BNEP Included */
+  A2DP_Init();
+  AVRC_Init();
+  GAP_Init();
+#if (HID_HOST_INCLUDED == TRUE)
+  HID_HostInit();
+#endif
+
   bta_sys_init();
   module_init(get_module(BTE_LOGMSG_MODULE));
 
