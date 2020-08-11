@@ -47,6 +47,9 @@ constexpr uint8_t kIsoEventCigOnCreateCmpl = 0x00;
 constexpr uint8_t kIsoEventCigOnReconfigureCmpl = 0x01;
 constexpr uint8_t kIsoEventCigOnRemoveCmpl = 0x02;
 
+constexpr uint8_t kIsoEventBigOnCreateCmpl = 0x00;
+constexpr uint8_t kIsoEventBigOnTerminateCmpl = 0x01;
+
 struct cig_create_params {
   uint32_t sdu_itv_mtos;
   uint32_t sdu_itv_stom;
@@ -105,6 +108,40 @@ struct cis_disconnected_evt {
   uint8_t reason;
   uint8_t cig_id;
   uint16_t cis_conn_hdl;
+};
+
+struct big_create_params {
+  uint8_t adv_handle;
+  uint8_t num_bis;
+  uint32_t sdu_itv;
+  uint16_t max_sdu_size;
+  uint16_t max_transport_latency;
+  uint8_t rtn;
+  uint8_t phy;
+  uint8_t packing;
+  uint8_t framing;
+  uint8_t enc;
+  std::array<uint8_t, 16> enc_code;
+};
+
+struct big_create_cmpl_evt {
+  uint8_t status;
+  uint8_t big_id;
+  uint32_t big_sync_delay;
+  uint32_t transport_latency_big;
+  uint8_t phy;
+  uint8_t nse;
+  uint8_t bn;
+  uint8_t pto;
+  uint8_t irc;
+  uint16_t max_pdu;
+  uint16_t iso_interval;
+  std::vector<uint16_t> conn_handles;
+};
+
+struct big_terminate_cmpl_evt {
+  uint8_t big_id;
+  uint8_t reason;
 };
 
 struct iso_data_path_params {
