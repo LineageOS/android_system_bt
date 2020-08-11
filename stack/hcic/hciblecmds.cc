@@ -885,6 +885,21 @@ void btsnd_hcic_remove_cig(uint8_t cig_id,
                             std::move(cb));
 }
 
+void btsnd_hcic_req_peer_sca(uint16_t conn_handle) {
+  BT_HDR* p = (BT_HDR*)osi_malloc(HCI_CMD_BUF_SIZE);
+  uint8_t* pp = (uint8_t*)(p + 1);
+
+  const int param_len = 2;
+  p->len = HCIC_PREAMBLE_SIZE + param_len;
+  p->offset = 0;
+
+  UINT16_TO_STREAM(pp, HCI_LE_REQ_PEER_SCA);
+  UINT8_TO_STREAM(pp, param_len);
+  UINT16_TO_STREAM(pp, conn_handle);
+
+  btu_hcif_send_cmd(LOCAL_BR_EDR_CONTROLLER_ID, p);
+}
+
 void btsnd_hcic_setup_iso_data_path(
     uint16_t iso_handle, uint8_t data_path_dir, uint8_t data_path_id,
     uint8_t codec_id_format, uint16_t codec_id_company,
