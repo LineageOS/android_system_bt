@@ -267,3 +267,10 @@ void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
  *
  ******************************************************************************/
 bool BTM_IsBleConnection(uint16_t hci_handle);
+
+const RawAddress acl_address_from_handle(uint16_t hci_handle);
+tBTM_PM_MCB* acl_power_mode_from_handle(uint16_t hci_handle);
+int btm_pm_find_acl_ind(const RawAddress& remote_bda);
+
+void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec,
+                      uint8_t hci_status);
