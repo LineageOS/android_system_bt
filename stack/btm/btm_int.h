@@ -219,8 +219,6 @@ extern void btm_sec_pin_code_request(uint8_t* p_event);
 extern void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset);
 extern void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec,
                                         uint8_t res, bool is_le_trasnport);
-extern void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
-                                      tBTM_SEC_DEV_REC* p_dev_rec);
 
 extern void btm_sec_clear_ble_keys(tBTM_SEC_DEV_REC* p_dev_rec);
 extern void btm_consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec);
