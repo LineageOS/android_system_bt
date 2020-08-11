@@ -52,6 +52,7 @@
 #include "stack/gatt/connection_manager.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/gatt_api.h"
+#include "stack_manager.h"
 #include "utl.h"
 
 #if (GAP_INCLUDED == TRUE)
@@ -2679,10 +2680,8 @@ static void bta_dm_disable_conn_down_timer_cback(UNUSED_ATTR void* data) {
   /* disable the power managment module */
   bta_dm_disable_pm();
 
-  /* register our callback to SYS HW manager */
-  send_bta_sys_hw_event(BTA_SYS_API_DISABLE_EVT);
-
   bta_dm_cb.disabling = false;
+  future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
 }
 
 /*******************************************************************************

@@ -274,6 +274,12 @@ static void event_shut_down_stack(UNUSED_ATTR void* context) {
 
   do_in_main_thread(FROM_HERE, base::Bind(bta_dm_disable));
 
+  future_await(local_hack_future);
+  local_hack_future = future_new();
+  hack_future = local_hack_future;
+
+  send_bta_sys_hw_event(BTA_SYS_API_DISABLE_EVT);
+
   module_shut_down(get_module(BTIF_CONFIG_MODULE));
 
   future_await(local_hack_future);
