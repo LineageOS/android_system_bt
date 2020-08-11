@@ -365,29 +365,6 @@ void BTM_SetPinType(uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len) {
   memcpy(btm_cb.cfg.pin_code, pin_code, pin_code_len);
 }
 
-/*******************************************************************************
- *
- * Function         BTM_SetPairableMode
- *
- * Description      Enable or disable pairing
- *
- * Parameters       allow_pairing - (true or false) whether or not the device
- *                      allows pairing.
- *                  connect_only_paired - (true or false) whether or not to
- *                      only allow paired devices to connect.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_SetPairableMode(bool allow_pairing, bool connect_only_paired) {
-  BTM_TRACE_API(
-      "BTM_SetPairableMode()  allow_pairing: %u   connect_only_paired: %u",
-      allow_pairing, connect_only_paired);
-
-  btm_cb.pairing_disabled = !allow_pairing;
-  btm_cb.connect_only_paired = connect_only_paired;
-}
-
 #define BTM_NO_AVAIL_SEC_SERVICES ((uint16_t)0xffff)
 
 /*******************************************************************************
