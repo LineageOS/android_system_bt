@@ -309,6 +309,14 @@ uint8_t LeAddressManager::GetResolvingListSize() {
 }
 
 void LeAddressManager::handle_next_command() {
+  for (auto client : registered_clients_) {
+    if (client.second != ClientState::PAUSED) {
+      // make sure all client paused, if not, this function will be trigger again by ack_pause
+      LOG_DEBUG("waiting for ack_pause, return");
+      return;
+    }
+  }
+
   ASSERT(!cached_commands_.empty());
   auto command = std::move(cached_commands_.front());
   cached_commands_.pop();
