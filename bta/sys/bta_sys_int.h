@@ -32,15 +32,6 @@
  *  state table
  ****************************************************************************/
 
-/* SYS HW state */
-enum {
-  BTA_SYS_HW_OFF,
-  BTA_SYS_HW_STARTING,
-  BTA_SYS_HW_ON,
-  BTA_SYS_HW_STOPPING
-};
-typedef uint8_t tBTA_SYS_HW_STATE;
-
 /* Collision callback */
 #define MAX_COLLISION_REG 5
 

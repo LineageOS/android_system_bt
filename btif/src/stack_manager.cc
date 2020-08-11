@@ -63,6 +63,7 @@
 #if (defined BTA_AR_INCLUDED) && (BTA_AR_INCLUDED == TRUE)
 #include "bta_ar_api.h"
 #endif
+#include "bta/sys/bta_sys_int.h"
 #include "bta_dm_int.h"
 
 using bluetooth::common::MessageLoopThread;
@@ -225,7 +226,8 @@ static void event_start_up_stack(UNUSED_ATTR void* context) {
   BTA_dm_init();
   bta_dm_enable(bte_dm_evt);
 
-  send_bta_sys_hw_event(BTA_SYS_API_ENABLE_EVT);
+  bta_sys_set_state(BTA_SYS_HW_STARTING);
+  bta_sys_hw_api_enable();
 
   if (future_await(local_hack_future) != FUTURE_SUCCESS) {
     LOG_ERROR("%s failed to start up the stack", __func__);
