@@ -195,14 +195,6 @@ uint8_t bluetooth::shim::L2CA_DataWrite(uint16_t cid, BT_HDR* p_data) {
 }
 
 /**
- * L2cap Layer APIs
- */
-uint8_t bluetooth::shim::L2CA_SetDesireRole(uint8_t new_role) {
-  LOG_INFO("UNIMPLEMENTED %s", __func__);
-  return 0;
-}
-
-/**
  * Link APIs
  */
 bool bluetooth::shim::L2CA_SetIdleTimeoutByBdAddr(const RawAddress& bd_addr,

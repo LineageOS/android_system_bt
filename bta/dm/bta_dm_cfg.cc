@@ -32,12 +32,6 @@
 #include "bta_jv_api.h"
 #include "bta_sys.h"
 
-#ifndef BTA_DM_LINK_POLICY_SETTINGS
-#define BTA_DM_LINK_POLICY_SETTINGS                        \
-  (HCI_ENABLE_MASTER_SLAVE_SWITCH | HCI_ENABLE_HOLD_MODE | \
-   HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_PARK_MODE)
-#endif
-
 /* page timeout in 625uS */
 #ifndef BTA_DM_PAGE_TIMEOUT
 #define BTA_DM_PAGE_TIMEOUT 8192
@@ -64,8 +58,6 @@
 const tBTA_DM_CFG bta_dm_cfg = {
     /* mobile phone COD */
     BTA_DM_COD,
-    /* link policy settings */
-    BTA_DM_LINK_POLICY_SETTINGS,
     /* page timeout in 625uS */
     BTA_DM_PAGE_TIMEOUT,
     /* link supervision timeout in 625uS*/

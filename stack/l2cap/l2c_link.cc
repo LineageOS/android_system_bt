@@ -86,7 +86,7 @@ void l2c_link_hci_conn_req(const RawAddress& bd_addr) {
       if (!btm_dev_support_switch(bd_addr))
         p_lcb->link_role = HCI_ROLE_SLAVE;
       else
-        p_lcb->link_role = l2cu_get_conn_role(p_lcb);
+        p_lcb->link_role = HCI_ROLE_MASTER;
     }
 
     /* Tell the other side we accept the connection */
@@ -107,7 +107,7 @@ void l2c_link_hci_conn_req(const RawAddress& bd_addr) {
     if (!btm_dev_support_switch(bd_addr))
       p_lcb->link_role = HCI_ROLE_SLAVE;
     else
-      p_lcb->link_role = l2cu_get_conn_role(p_lcb);
+      p_lcb->link_role = HCI_ROLE_MASTER;
 
     btsnd_hcic_accept_conn(bd_addr, p_lcb->link_role);
 
