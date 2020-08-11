@@ -89,11 +89,6 @@ void BTA_EnableTestMode(void) {
                     base::Bind(base::IgnoreResult(BTM_EnableTestMode)));
 }
 
-/** Disable bluetooth device under test mode */
-void BTA_DisableTestMode(void) {
-  do_in_main_thread(FROM_HERE, base::Bind(BTM_DeviceReset));
-}
-
 /** This function sets the Bluetooth name of local device */
 void BTA_DmSetDeviceName(char* p_name) {
   std::vector<uint8_t> name(BD_NAME_LEN);
