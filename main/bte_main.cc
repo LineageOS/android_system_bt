@@ -132,33 +132,6 @@ void bte_main_cleanup() {
 
 /******************************************************************************
  *
- * Function         bte_main_enable
- *
- * Description      BTE MAIN API - Creates all the BTE tasks. Should be called
- *                  part of the Bluetooth stack enable sequence
- *
- * Returns          None
- *
- *****************************************************************************/
-void bte_main_enable() {
-  APPL_TRACE_DEBUG("%s", __func__);
-
-  if (bluetooth::shim::is_any_gd_enabled()) {
-    LOG_INFO("%s Gd shim module enabled", __func__);
-    module_shut_down(get_module(GD_IDLE_MODULE));
-    module_start_up(get_module(GD_SHIM_MODULE));
-    module_start_up(get_module(BTIF_CONFIG_MODULE));
-  } else {
-    module_start_up(get_module(BTIF_CONFIG_MODULE));
-    module_start_up(get_module(BTSNOOP_MODULE));
-    module_start_up(get_module(HCI_MODULE));
-  }
-
-  BTU_StartUp();
-}
-
-/******************************************************************************
- *
  * Function         bte_main_disable
  *
  * Description      BTE MAIN API - Destroys all the BTE tasks. Should be called
