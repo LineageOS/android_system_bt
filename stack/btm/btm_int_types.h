@@ -124,9 +124,6 @@ typedef struct {
 
   tBTM_IO_CAP loc_io_caps;      /* IO capability of the local device */
   tBTM_AUTH_REQ loc_auth_req;   /* the auth_req flag  */
-  bool secure_connections_only; /* Rejects service level 0 connections if */
-                                /* itself or peer device doesn't support */
-                                /* secure connections */
 } tBTM_DEVCB;
 
 /* Define the structures and constants used for inquiry

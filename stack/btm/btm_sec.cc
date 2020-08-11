@@ -99,7 +99,6 @@ static bool btm_dev_encrypted(tBTM_SEC_DEV_REC* p_dev_rec);
 static bool btm_dev_authorized(tBTM_SEC_DEV_REC* p_dev_rec);
 static bool btm_serv_trusted(tBTM_SEC_DEV_REC* p_dev_rec,
                              tBTM_SEC_SERV_REC* p_serv_rec);
-static bool btm_sec_is_serv_level0(uint16_t psm);
 static uint16_t btm_sec_set_serv_level4_flags(uint16_t cur_security,
                                               bool is_originator);
 
@@ -1686,8 +1685,7 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
   }
 
   /* Services level0 by default have no security */
-  if ((btm_sec_is_serv_level0(psm)) &&
-      (!btm_cb.devcb.secure_connections_only)) {
+  if (psm == BT_PSM_SDP) {
     (*p_callback)(&bd_addr, transport, p_ref_data, BTM_SUCCESS_NO_SECURITY);
     return (BTM_SUCCESS);
   }
@@ -2023,8 +2021,7 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
     return BTM_NO_RESOURCES;
   }
 
-  if ((btm_cb.security_mode == BTM_SEC_MODE_SC) &&
-      (!btm_sec_is_serv_level0(psm))) {
+  if ((btm_cb.security_mode == BTM_SEC_MODE_SC) && (psm == BT_PSM_SDP)) {
     security_required = btm_sec_set_serv_level4_flags(
         p_serv_rec->security_flags, is_originator);
   } else {
@@ -5410,24 +5407,6 @@ void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
     btm_io_capabilities_req(p_dev_rec->bd_addr);
     p_dev_rec->remote_features_needed = false;
   }
-}
-
-/*******************************************************************************
- *
- * Function         btm_sec_is_serv_level0
- *
- * Description      This function is called to check if the service
- *                  corresponding to PSM is security mode 4 level 0 service.
- *
- * Returns          true if the service is security mode 4 level 0 service
- *
- ******************************************************************************/
-static bool btm_sec_is_serv_level0(uint16_t psm) {
-  if (psm == BT_PSM_SDP) {
-    BTM_TRACE_DEBUG("%s: PSM: 0x%04x -> mode 4 level 0 service", __func__, psm);
-    return true;
-  }
-  return false;
 }
 
 /*******************************************************************************
