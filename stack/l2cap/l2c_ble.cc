@@ -345,8 +345,7 @@ void l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
  ******************************************************************************/
 static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
   uint16_t min_conn_int, max_conn_int, slave_latency, supervision_tout;
-  tACL_CONN* p_acl_cb = btm_bda_to_acl(p_lcb->remote_bd_addr, BT_TRANSPORT_LE);
-  if (!p_acl_cb) {
+  if (!BTM_IsAclConnectionUp(p_lcb->remote_bd_addr, BT_TRANSPORT_LE)) {
     LOG(ERROR) << "No known connection ACL for " << p_lcb->remote_bd_addr;
     return;
   }
@@ -379,7 +378,8 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
 #if (BLE_LLT_INCLUDED == TRUE)
           || (controller_get_interface()
                   ->supports_ble_connection_parameter_request() &&
-              HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl_cb->peer_le_features))
+              acl_peer_supports_ble_connection_parameters_request(
+                  p_lcb->remote_bd_addr))
 #endif
       ) {
         btsnd_hcic_ble_upd_ll_conn_params(p_lcb->handle, min_conn_int,
@@ -401,7 +401,8 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
 #if (BLE_LLT_INCLUDED == TRUE)
           || (controller_get_interface()
                   ->supports_ble_connection_parameter_request() &&
-              HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl_cb->peer_le_features))
+              acl_peer_supports_ble_connection_parameters_request(
+                  p_lcb->remote_bd_addr))
 #endif
       ) {
         btsnd_hcic_ble_upd_ll_conn_params(p_lcb->handle, p_lcb->min_interval,
