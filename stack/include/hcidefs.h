@@ -1026,11 +1026,6 @@ constexpr uint8_t HCI_LE_STATES_INIT_MASTER_SLAVE_BIT = 41;
 /* role switch enabled (1.1 errata 1115) */
 #define HCI_DO_AUTO_ACCEPT_CONNECT_RS 3
 
-/* Auto accept flags */
-#define HCI_AUTO_ACCEPT_OFF 0x00
-#define HCI_AUTO_ACCEPT_ACL_CONNECTIONS 0x01
-#define HCI_AUTO_ACCEPT_SCO_CONNECTIONS 0x02
-
 /* PIN type */
 #define HCI_PIN_TYPE_VARIABLE 0
 #define HCI_PIN_TYPE_FIXED 1
