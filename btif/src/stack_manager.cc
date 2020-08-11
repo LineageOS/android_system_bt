@@ -37,8 +37,10 @@
 
 // Temp includes
 #include "bt_utils.h"
+#include "bta/sys/bta_sys.h"
 #include "btif_config.h"
 #include "btif_profile_queue.h"
+#include "internal_include/bte.h"
 
 using bluetooth::common::MessageLoopThread;
 
@@ -58,7 +60,7 @@ static void event_clean_up_stack(void* context);
 static void event_signal_stack_up(void* context);
 static void event_signal_stack_down(void* context);
 
-void btu_task_start_up();
+void main_thread_start_up();
 
 // Unvetted includes/imports, etc which should be removed or vetted in the
 // future
@@ -166,7 +168,18 @@ static void event_start_up_stack(UNUSED_ATTR void* context) {
   }
 
   BTU_StartUp();
-  btu_task_start_up();
+
+  btu_init_core();
+  BTE_InitStack();
+  bta_sys_init();
+  module_init(get_module(BTE_LOGMSG_MODULE));
+
+  main_thread_start_up();
+
+  if (do_in_jni_thread(FROM_HERE, base::Bind(btif_init_ok, 0, nullptr)) !=
+      BT_STATUS_SUCCESS) {
+    LOG(FATAL) << __func__ << ": unable to continue starting Bluetooth";
+  }
 
   if (future_await(local_hack_future) != FUTURE_SUCCESS) {
     LOG_ERROR("%s failed to start up the stack", __func__);
