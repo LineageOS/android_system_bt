@@ -736,27 +736,6 @@ void bta_dm_close_acl(const RawAddress& bd_addr, bool remove_dev,
   /* otherwise, no action needed */
 }
 
-// TODO: this is unused. remove?
-/** This function forces to close all the ACL links specified by link type */
-void bta_dm_remove_all_acl(const tBTA_DM_LINK_TYPE link_type) {
-  tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
-
-  APPL_TRACE_DEBUG("%s link type = %d", __func__, link_type);
-
-  for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
-    transport = bta_dm_cb.device_list.peer_device[i].transport;
-    if ((link_type == BTA_DM_LINK_TYPE_ALL) ||
-        ((link_type == BTA_DM_LINK_TYPE_LE) &&
-         (transport == BT_TRANSPORT_LE)) ||
-        ((link_type == BTA_DM_LINK_TYPE_BR_EDR) &&
-         (transport == BT_TRANSPORT_BR_EDR))) {
-      /* Disconnect the ACL link */
-      btm_remove_acl(bta_dm_cb.device_list.peer_device[i].peer_bdaddr,
-                     transport);
-    }
-  }
-}
-
 /** Bonds with peer device */
 void bta_dm_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                  tBTA_TRANSPORT transport, int device_type) {
