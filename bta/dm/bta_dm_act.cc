@@ -2514,7 +2514,6 @@ static tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
     auto device =
         &bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count];
     device->peer_bdaddr = bd_addr;
-    device->link_policy = btm_cb.acl_cb_.btm_def_link_policy;
     bta_dm_cb.device_list.count++;
     device->conn_handle = handle;
     if (transport == BT_TRANSPORT_LE) {

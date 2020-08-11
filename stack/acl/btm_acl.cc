@@ -672,6 +672,14 @@ static void btm_toggle_policy_off_for(const RawAddress& peer_addr,
   btm_set_link_policy(conn, conn->link_policy & ~flag);
 }
 
+bool BTM_is_sniff_allowed_for(const RawAddress& peer_addr) {
+  auto conn = btm_bda_to_acl(peer_addr, BT_TRANSPORT_BR_EDR);
+  if (!conn) {
+    return false;
+  }
+  return conn->link_policy & HCI_ENABLE_SNIFF_MODE;
+}
+
 void BTM_unblock_sniff_mode_for(const RawAddress& peer_addr) {
   btm_toggle_policy_on_for(peer_addr, HCI_ENABLE_SNIFF_MODE);
 }

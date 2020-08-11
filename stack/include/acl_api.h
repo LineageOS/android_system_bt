@@ -29,6 +29,8 @@
 /*****************************************************************************
  *  ACL CHANNEL MANAGEMENT FUNCTIONS
  ****************************************************************************/
+bool BTM_is_sniff_allowed_for(const RawAddress& peer_addr);
+
 void BTM_unblock_sniff_mode_for(const RawAddress& peer_addr);
 void BTM_block_sniff_mode_for(const RawAddress& peer_addr);
 void BTM_unblock_role_switch_for(const RawAddress& peer_addr);

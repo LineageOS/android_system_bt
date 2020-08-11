@@ -216,7 +216,6 @@ typedef uint8_t tBTA_DM_PM_REQ;
 
 typedef struct {
   RawAddress peer_bdaddr;
-  uint16_t link_policy;
   tBTA_DM_CONN_STATE conn_state;
   tBTA_PREF_ROLES pref_role;
   bool in_use;

@@ -652,7 +652,7 @@ static void bta_dm_pm_set_mode(const RawAddress& peer_addr,
     bta_dm_pm_park(peer_addr);
   } else if (pm_action & BTA_DM_PM_SNIFF) {
     /* dont initiate SNIFF, if link_policy has it disabled */
-    if (p_peer_device->link_policy & HCI_ENABLE_SNIFF_MODE) {
+    if (BTM_is_sniff_allowed_for(peer_addr)) {
       p_peer_device->pm_mode_attempted = BTA_DM_PM_SNIFF;
       bta_dm_pm_sniff(p_peer_device, (uint8_t)(pm_action & 0x0F));
     } else {
