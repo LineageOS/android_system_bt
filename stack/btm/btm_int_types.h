@@ -235,13 +235,6 @@ typedef struct {
 
 #define BTM_SEC_INVALID_HANDLE 0xFFFF
 
-/* Security callback is called by this unit when security
- *   procedures are completed.  Parameters are
- *              BD Address of remote
- *              Result of the operation
-*/
-typedef tBTM_SEC_CBACK tBTM_SEC_CALLBACK;
-
 typedef void(tBTM_SCO_IND_CBACK)(uint16_t sco_inx);
 
 /* MACROs to convert from SCO packet types mask to ESCO and back */
@@ -606,8 +599,6 @@ typedef struct {
   tBT_TRANSPORT transport;
   tBTM_BLE_SEC_ACT sec_act;
 } tBTM_SEC_QUEUE_ENTRY;
-
-typedef bool CONNECTION_TYPE;
 
 // Bluetooth Quality Report - Report receiver
 typedef void(tBTM_BT_QUALITY_REPORT_RECEIVER)(uint8_t len, uint8_t* p_stream);
