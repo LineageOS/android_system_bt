@@ -215,7 +215,6 @@ void BTM_reset_complete() {
                  btm_cb.cfg.pin_code_len);
 
   decode_controller_support();
-  send_bta_sys_hw_event(BTA_SYS_EVT_STACK_ENABLED_EVT);
 }
 
 /*******************************************************************************

@@ -237,6 +237,8 @@ static void event_start_up_stack(UNUSED_ATTR void* context) {
   }
   BTM_reset_complete();
 
+  send_bta_sys_hw_event(BTA_SYS_EVT_STACK_ENABLED_EVT);
+
   if (future_await(local_hack_future) != FUTURE_SUCCESS) {
     LOG_ERROR("%s failed to start up the stack", __func__);
     stack_is_running = true;  // So stack shutdown actually happens
