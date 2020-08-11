@@ -1056,6 +1056,17 @@ void btm_establish_continue(tACL_CONN* p_acl_cb) {
                 p_acl_cb->hci_handle);
 }
 
+void btm_establish_continue_from_address(const RawAddress& bda,
+                                         tBT_TRANSPORT transport) {
+  tACL_CONN* p_acl = btm_bda_to_acl(bda, transport);
+  if (p_acl == nullptr) {
+    BTM_TRACE_ERROR("%s Unable to find acl control block to continue",
+                    __func__);
+    return;
+  }
+  btm_establish_continue(p_acl);
+}
+
 /*******************************************************************************
  *
  * Function         BTM_SetDefaultLinkSuperTout
@@ -2383,4 +2394,13 @@ bool acl_refresh_remote_address(const tBTM_SEC_DEV_REC* p_sec_rec,
   BTM_TRACE_DEBUG("%s active_remote_addr_type: %d ", __func__,
                   p_acl->active_remote_addr_type);
   return true;
+}
+
+bool acl_peer_supports_ble_connection_parameters_request(
+    const RawAddress& remote_bda) {
+  tACL_CONN* p_acl = btm_bda_to_acl(remote_bda, BT_TRANSPORT_LE);
+  if (p_acl == nullptr) {
+    return false;
+  }
+  return HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl->peer_le_features);
 }
