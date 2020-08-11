@@ -804,42 +804,6 @@ void bta_dm_pin_reply(std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg) {
   }
 }
 
-void BTA_dm_unblock_sniff_mode_for(const RawAddress& peer_addr) {
-  auto p_dev = bta_dm_find_peer_device(peer_addr);
-  if (!p_dev) {
-    return;
-  }
-  p_dev->link_policy |= HCI_ENABLE_SNIFF_MODE;
-  BTM_SetLinkPolicy(p_dev->peer_bdaddr, &(p_dev->link_policy));
-}
-
-void BTA_dm_block_sniff_mode_for(const RawAddress& peer_addr) {
-  auto p_dev = bta_dm_find_peer_device(peer_addr);
-  if (!p_dev) {
-    return;
-  }
-  p_dev->link_policy &= ~HCI_ENABLE_SNIFF_MODE;
-  BTM_SetLinkPolicy(p_dev->peer_bdaddr, &(p_dev->link_policy));
-}
-
-void BTA_dm_unblock_role_switch_for(const RawAddress& peer_addr) {
-  auto p_dev = bta_dm_find_peer_device(peer_addr);
-  if (!p_dev) {
-    return;
-  }
-  p_dev->link_policy |= HCI_ENABLE_MASTER_SLAVE_SWITCH;
-  BTM_SetLinkPolicy(p_dev->peer_bdaddr, &(p_dev->link_policy));
-}
-
-void BTA_dm_block_role_switch_for(const RawAddress& peer_addr) {
-  auto p_dev = bta_dm_find_peer_device(peer_addr);
-  if (!p_dev) {
-    return;
-  }
-  p_dev->link_policy &= ~HCI_ENABLE_MASTER_SLAVE_SWITCH;
-  BTM_SetLinkPolicy(p_dev->peer_bdaddr, &(p_dev->link_policy));
-}
-
 /** Send the user confirm request reply in response to a request from BTM */
 void bta_dm_confirm(const RawAddress& bd_addr, bool accept) {
   BTM_ConfirmReqReply(accept ? BTM_SUCCESS : BTM_NOT_AUTHORIZED, bd_addr);
@@ -2519,7 +2483,7 @@ static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
     }
 
     if (need_policy_change) {
-      BTA_dm_block_role_switch_for(p_dev->peer_bdaddr);
+      BTM_block_role_switch_for(p_dev->peer_bdaddr);
     }
   } else {
     /* there's AV no activity on this link and role switch happened
@@ -2710,7 +2674,7 @@ static void bta_dm_check_av() {
         /* make master and take away the role switch policy */
         BTM_SwitchRole(p_dev->peer_bdaddr, HCI_ROLE_MASTER);
         /* else either already master or can not switch for some reasons */
-        BTA_dm_block_role_switch_for(p_dev->peer_bdaddr);
+        BTM_block_role_switch_for(p_dev->peer_bdaddr);
         break;
       }
     }

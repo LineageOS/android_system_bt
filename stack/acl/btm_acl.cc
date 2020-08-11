@@ -84,6 +84,7 @@ void BTA_dm_acl_down(const RawAddress bd_addr, tBT_TRANSPORT transport);
 void BTA_dm_report_role_change(const RawAddress bd_addr, uint8_t new_role,
                                uint8_t hci_status);
 
+static void btm_set_link_policy(tACL_CONN* conn, uint16_t policy);
 static void btm_set_default_link_policy(uint16_t settings);
 /* 3 seconds timeout waiting for responses */
 #define BTM_DEV_REPLY_TIMEOUT_MS (3 * 1000)
@@ -231,13 +232,13 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
                   __func__, bda.ToString().c_str(), hci_handle, link_role,
                   transport);
 
-  BTM_SetLinkPolicy(bda, &btm_cb.acl_cb_.btm_def_link_policy);
   /* Ensure we don't have duplicates */
   p = btm_bda_to_acl(bda, transport);
   if (p != (tACL_CONN*)NULL) {
     p->hci_handle = hci_handle;
     p->link_role = link_role;
     p->transport = transport;
+    btm_set_link_policy(p, btm_cb.acl_cb_.btm_def_link_policy);
     VLOG(1) << "Duplicate btm_acl_created: RemBdAddr: " << bda;
     return;
   }
@@ -250,6 +251,7 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
       p->link_role = link_role;
       p->link_up_issued = false;
       p->remote_addr = bda;
+      btm_set_link_policy(p, btm_cb.acl_cb_.btm_def_link_policy);
 
       p->transport = transport;
 #if (BLE_PRIVACY_SPT == TRUE)
@@ -646,33 +648,44 @@ void check_link_policy(uint16_t* settings) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         BTM_SetLinkPolicy
- *
- * Description      Create and send HCI "Write Policy Set" command
- *
- * Returns          status of the operation
- *
- ******************************************************************************/
-tBTM_STATUS BTM_SetLinkPolicy(const RawAddress& remote_bda,
-                              uint16_t* settings) {
-  tACL_CONN* p;
-  BTM_TRACE_DEBUG("%s", __func__);
+static void btm_set_link_policy(tACL_CONN* conn, uint16_t policy) {
+  conn->link_policy = policy;
+  check_link_policy(&conn->link_policy);
+  btsnd_hcic_write_policy_set(conn->hci_handle, conn->link_policy);
+}
 
-  /* First, check if hold mode is supported */
-  if (*settings != HCI_DISABLE_ALL_LM_MODES) {
-    check_link_policy(settings);
+static void btm_toggle_policy_on_for(const RawAddress& peer_addr,
+                                     uint16_t flag) {
+  auto conn = btm_bda_to_acl(peer_addr, BT_TRANSPORT_BR_EDR);
+  if (!conn) {
+    return;
   }
+  btm_set_link_policy(conn, conn->link_policy | flag);
+}
 
-  p = btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
-  if (p != NULL) {
-    btsnd_hcic_write_policy_set(p->hci_handle, *settings);
-    return BTM_CMD_STARTED;
+static void btm_toggle_policy_off_for(const RawAddress& peer_addr,
+                                      uint16_t flag) {
+  auto conn = btm_bda_to_acl(peer_addr, BT_TRANSPORT_BR_EDR);
+  if (!conn) {
+    return;
   }
+  btm_set_link_policy(conn, conn->link_policy & ~flag);
+}
 
-  /* If here, no BD Addr found */
-  return (BTM_UNKNOWN_ADDR);
+void BTM_unblock_sniff_mode_for(const RawAddress& peer_addr) {
+  btm_toggle_policy_on_for(peer_addr, HCI_ENABLE_SNIFF_MODE);
+}
+
+void BTM_block_sniff_mode_for(const RawAddress& peer_addr) {
+  btm_toggle_policy_off_for(peer_addr, HCI_ENABLE_SNIFF_MODE);
+}
+
+void BTM_unblock_role_switch_for(const RawAddress& peer_addr) {
+  btm_toggle_policy_on_for(peer_addr, HCI_ENABLE_MASTER_SLAVE_SWITCH);
+}
+
+void BTM_block_role_switch_for(const RawAddress& peer_addr) {
+  btm_toggle_policy_off_for(peer_addr, HCI_ENABLE_MASTER_SLAVE_SWITCH);
 }
 
 static void btm_set_default_link_policy(uint16_t settings) {
@@ -1045,10 +1058,7 @@ void btm_establish_continue(tACL_CONN* p_acl_cb) {
     /* commands events and data at the same time. */
     /* Set the packet types to the default allowed by the device */
     btm_set_packet_types(p_acl_cb, btm_cb.acl_cb_.btm_acl_pkt_types_supported);
-
-    if (btm_cb.acl_cb_.btm_def_link_policy)
-      BTM_SetLinkPolicy(p_acl_cb->remote_addr,
-                        &btm_cb.acl_cb_.btm_def_link_policy);
+    btm_set_link_policy(p_acl_cb, btm_cb.acl_cb_.btm_def_link_policy);
   }
   if (p_acl_cb->link_up_issued) {
     BTM_TRACE_ERROR("%s: Already link is up ", __func__);

@@ -1072,10 +1072,10 @@ static void bta_dm_pm_hid_check(bool bScoActive) {
           bScoActive, bta_dm_conn_srvcs.conn_srvc[j].state);
       auto peer_addr = bta_dm_conn_srvcs.conn_srvc[j].peer_bdaddr;
       if (bScoActive) {
-        BTA_dm_block_sniff_mode_for(peer_addr);
+        BTM_block_sniff_mode_for(peer_addr);
         bta_dm_pm_active(peer_addr);
       } else {
-        BTA_dm_unblock_sniff_mode_for(peer_addr);
+        BTM_unblock_sniff_mode_for(peer_addr);
         bta_dm_pm_set_mode(peer_addr, BTA_DM_PM_NO_ACTION, BTA_DM_PM_RESTART);
       }
     }
