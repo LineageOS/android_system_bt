@@ -195,7 +195,6 @@ extern void btm_create_conn_cancel_complete(uint8_t* p);
 
 extern void btm_read_inq_tx_power_complete(uint8_t* p);
 
-extern void btm_sec_init(uint8_t sec_mode);
 extern void btm_sec_dev_reset(void);
 extern void btm_sec_abort_access_req(const RawAddress& bd_addr);
 extern void btm_sec_auth_complete(uint16_t handle, uint8_t status);
