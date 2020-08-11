@@ -20,7 +20,6 @@ known_tests=(
   net_test_stack_ad_parser
   net_test_stack_smp
   net_test_types
-  net_test_btu_message_loop
   net_test_osi
   net_test_performance
   net_test_stack_rfcomm
