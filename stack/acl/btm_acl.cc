@@ -2520,3 +2520,19 @@ bool BTM_IsBleConnection(uint16_t hci_handle) {
   tACL_CONN* p = &btm_cb.acl_cb_.acl_db[index];
   return (p->transport == BT_TRANSPORT_LE);
 }
+
+const RawAddress acl_address_from_handle(uint16_t hci_handle) {
+  uint8_t index = btm_handle_to_acl_index(hci_handle);
+  if (index >= MAX_L2CAP_LINKS) {
+    return RawAddress::kEmpty;
+  }
+  return btm_cb.acl_cb_.acl_db[index].remote_addr;
+}
+
+tBTM_PM_MCB* acl_power_mode_from_handle(uint16_t hci_handle) {
+  uint8_t index = btm_handle_to_acl_index(hci_handle);
+  if (index >= MAX_L2CAP_LINKS) {
+    return nullptr;
+  }
+  return &btm_cb.pm_mode_db[index];
+}
