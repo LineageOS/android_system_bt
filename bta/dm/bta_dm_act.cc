@@ -266,8 +266,6 @@ void bta_dm_enable(tBTA_DM_SEC_CBACK* p_sec_cback) {
   /* notify BTA DM is now active */
   bta_dm_cb.is_bta_dm_active = true;
 
-  send_bta_sys_hw_event(BTA_SYS_API_ENABLE_EVT);
-
   btm_local_io_caps = btif_storage_get_local_io_caps();
 }
 
