@@ -2225,7 +2225,7 @@ uint8_t BTM_SetTraceLevel(uint8_t new_level) {
  *
  ******************************************************************************/
 void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec,
-                      uint8_t hci_status) {
+                      UNUSED_ATTR uint8_t hci_status) {
   BTM_TRACE_DEBUG("btm_cont_rswitch");
   /* Check to see if encryption needs to be turned off if pending
      change of link key or role switch */
@@ -2252,6 +2252,16 @@ void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec,
       }
     }
   }
+}
+
+void btm_cont_rswitch_from_handle(uint16_t hci_handle) {
+  BTM_TRACE_DEBUG("%s", __func__);
+  tACL_CONN* p_acl = acl_get_connection_from_handle(hci_handle);
+  if (p_acl == nullptr) {
+    BTM_TRACE_ERROR("%s role switch received but with no active ACL", __func__);
+    return;
+  }
+  btm_cont_rswitch(p_acl, btm_find_dev(p_acl->remote_addr), 0);
 }
 
 /*******************************************************************************
