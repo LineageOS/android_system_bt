@@ -269,46 +269,6 @@ void btm_read_local_name_timeout(UNUSED_ATTR void* data) {
 static void decode_controller_support() {
   const controller_t* controller = controller_get_interface();
 
-  /* Create ACL supported packet types mask */
-  btm_cb.acl_cb_.btm_acl_pkt_types_supported =
-      (BTM_ACL_PKT_TYPES_MASK_DH1 + BTM_ACL_PKT_TYPES_MASK_DM1);
-
-  if (controller->supports_3_slot_packets())
-    btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
-        (BTM_ACL_PKT_TYPES_MASK_DH3 + BTM_ACL_PKT_TYPES_MASK_DM3);
-
-  if (controller->supports_5_slot_packets())
-    btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
-        (BTM_ACL_PKT_TYPES_MASK_DH5 + BTM_ACL_PKT_TYPES_MASK_DM5);
-
-  /* Add in EDR related ACL types */
-  if (!controller->supports_classic_2m_phy()) {
-    btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
-        (BTM_ACL_PKT_TYPES_MASK_NO_2_DH1 + BTM_ACL_PKT_TYPES_MASK_NO_2_DH3 +
-         BTM_ACL_PKT_TYPES_MASK_NO_2_DH5);
-  }
-
-  if (!controller->supports_classic_3m_phy()) {
-    btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
-        (BTM_ACL_PKT_TYPES_MASK_NO_3_DH1 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH3 +
-         BTM_ACL_PKT_TYPES_MASK_NO_3_DH5);
-  }
-
-  /* Check to see if 3 and 5 slot packets are available */
-  if (controller->supports_classic_2m_phy() ||
-      controller->supports_classic_3m_phy()) {
-    if (!controller->supports_3_slot_edr_packets())
-      btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
-          (BTM_ACL_PKT_TYPES_MASK_NO_2_DH3 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH3);
-
-    if (!controller->supports_5_slot_edr_packets())
-      btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
-          (BTM_ACL_PKT_TYPES_MASK_NO_2_DH5 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH5);
-  }
-
-  BTM_TRACE_DEBUG("Local supported ACL packet types: 0x%04x",
-                  btm_cb.acl_cb_.btm_acl_pkt_types_supported);
-
   /* Create (e)SCO supported packet types mask */
   btm_cb.btm_sco_pkt_types_supported = 0;
   btm_cb.sco_cb.esco_supported = false;
@@ -355,8 +315,7 @@ static void decode_controller_support() {
   BTM_TRACE_DEBUG("Local supported SCO packet types: 0x%04x",
                   btm_cb.btm_sco_pkt_types_supported);
 
-  BTM_SetDefaultLinkPolicy(p_bta_dm_cfg->policy_settings);
-
+  BTM_acl_after_controller_started();
   btm_sec_dev_reset();
 
   if (controller->supports_rssi_with_inquiry_results()) {
