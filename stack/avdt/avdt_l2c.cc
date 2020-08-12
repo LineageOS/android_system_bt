@@ -165,7 +165,6 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
   AvdtpTransportChannel* p_tbl = NULL;
   uint16_t result;
   tL2CAP_CFG_INFO cfg;
-  tBTM_STATUS rc;
 
   /* do we already have a control channel for this peer? */
   p_ccb = avdt_ccb_by_bd(bd_addr);
@@ -200,14 +199,9 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
              HCI_PKT_TYPES_MASK_NO_3_DH1 | HCI_PKT_TYPES_MASK_NO_3_DH3 |
              HCI_PKT_TYPES_MASK_NO_3_DH5));
       }
-      /* Check the security */
-      rc = btm_sec_mx_access_request(bd_addr, AVDT_PSM, false,
-                                     BTM_SEC_PROTO_AVDT, AVDT_CHAN_SIG,
-                                     &avdt_sec_check_complete_term, NULL);
-      if (rc == BTM_CMD_STARTED) {
-        L2CA_ConnectRsp(p_ccb->peer_addr, p_tbl->id, lcid, L2CAP_CONN_PENDING,
-                        L2CAP_CONN_OK);
-      }
+      /* Assume security check is complete */
+      avdt_sec_check_complete_term(&p_ccb->peer_addr, BT_TRANSPORT_BR_EDR,
+                                   nullptr, BTM_SUCCESS);
       return;
     }
   } else {
@@ -318,10 +312,9 @@ void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
                    HCI_PKT_TYPES_MASK_NO_3_DH5));
             }
 
-            /* Check the security */
-            btm_sec_mx_access_request(p_ccb->peer_addr, AVDT_PSM, true,
-                                      BTM_SEC_PROTO_AVDT, AVDT_CHAN_SIG,
-                                      &avdt_sec_check_complete_orig, NULL);
+            /* Assume security check is complete */
+            avdt_sec_check_complete_orig(&p_ccb->peer_addr, BT_TRANSPORT_BR_EDR,
+                                         nullptr, BTM_SUCCESS);
           }
         }
       }
