@@ -137,14 +137,6 @@ enum {
 };
 typedef uint8_t tBTA_HH_STATUS;
 
-#define BTA_HH_VIRTUAL_CABLE HID_VIRTUAL_CABLE
-#define BTA_HH_NORMALLY_CONNECTABLE HID_NORMALLY_CONNECTABLE
-#define BTA_HH_RECONN_INIT HID_RECONN_INIT
-#define BTA_HH_SDP_DISABLE HID_SDP_DISABLE
-#define BTA_HH_BATTERY_POWER HID_BATTERY_POWER
-#define BTA_HH_REMOTE_WAKE HID_REMOTE_WAKE
-#define BTA_HH_SUP_TOUT_AVLBL HID_SUP_TOUT_AVLBL
-#define BTA_HH_SEC_REQUIRED HID_SEC_REQUIRED
 typedef uint16_t tBTA_HH_ATTR_MASK;
 
 /* supported type of device and corresponding application ID */
@@ -335,8 +327,7 @@ extern void BTA_HhDisable(void);
  * Returns          void
  *
  ******************************************************************************/
-extern void BTA_HhOpen(const RawAddress& dev_bda, tBTA_HH_PROTO_MODE mode,
-                       tBTA_SEC sec_mask);
+extern void BTA_HhOpen(const RawAddress& dev_bda);
 
 /*******************************************************************************
  *
