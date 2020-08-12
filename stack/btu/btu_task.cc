@@ -108,36 +108,13 @@ bt_status_t do_in_main_thread_delayed(const base::Location& from_here,
   return BT_STATUS_SUCCESS;
 }
 
-void btu_task_start_up() {
-  LOG(INFO) << "Bluetooth chip preload is complete";
-
-  /* Initialize the mandatory core stack control blocks
-     (BTU, BTM, L2CAP, and SDP)
-   */
-  btu_init_core();
-
-  /* Initialize any optional stack components */
-  BTE_InitStack();
-
-  bta_sys_init();
-
-  /* Initialise platform trace levels at this point as BTE_InitStack() and
-   * bta_sys_init()
-   * reset the control blocks and preset the trace level with
-   * XXX_INITIAL_TRACE_LEVEL
-   */
-  module_init(get_module(BTE_LOGMSG_MODULE));
-
+void main_thread_start_up() {
   main_thread.StartUp();
   if (!main_thread.IsRunning()) {
     LOG(FATAL) << __func__ << ": unable to start btu message loop thread.";
   }
   if (!main_thread.EnableRealTimeScheduling()) {
     LOG(FATAL) << __func__ << ": unable to enable real time scheduling";
-  }
-  if (do_in_jni_thread(FROM_HERE, base::Bind(btif_init_ok, 0, nullptr)) !=
-      BT_STATUS_SUCCESS) {
-    LOG(FATAL) << __func__ << ": unable to continue starting Bluetooth";
   }
 }
 

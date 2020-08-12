@@ -52,7 +52,6 @@ void btu_hcif_send_cmd_with_cb(const base::Location& posted_from,
 /* Functions provided by btu_init.cc
  ***********************************
 */
-void btu_init_core(void);
 void btu_free_core(void);
 
 /* Functions provided by btu_task.cc

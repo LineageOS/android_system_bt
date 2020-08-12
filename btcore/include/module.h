@@ -57,13 +57,3 @@ void module_shut_down(const module_t* module);
 // Clean up the provided module. |module| may not be NULL.
 // If not initialized, does nothing.
 void module_clean_up(const module_t* module);
-
-// Temporary callbacked wrapper for module start up, so real modules can be
-// spliced into the current janky startup sequence. Runs on a separate thread,
-// which terminates when the module start up has finished. When module startup
-// has finished, |callback| is called within the context of |callback_thread|
-// with |FUTURE_SUCCESS| or |FUTURE_FAIL| depending on whether startup succeeded
-// or not.
-void module_start_up_callbacked_wrapper(
-    const module_t* module,
-    bluetooth::common::MessageLoopThread* callback_thread, thread_fn callback);
