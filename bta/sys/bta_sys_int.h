@@ -44,8 +44,7 @@ typedef struct {
 typedef struct {
   tBTA_SYS_REG* reg[BTA_ID_MAX]; /* registration structures */
   bool is_reg[BTA_ID_MAX];       /* registration structures */
-  tBTA_SYS_HW_STATE state;
-  bool bluetooth_active;
+  bool forward_hw_failures;
   uint16_t sys_features;         /* Bitmask of sys features */
 
   tBTA_SYS_CONN_CBACK* prm_cb; /* role management callback registered by DM */
@@ -72,10 +71,5 @@ typedef struct {
 
 /* system manager control block */
 extern tBTA_SYS_CB bta_sys_cb;
-
-/* functions used for BTA SYS HW state machine */
-void bta_sys_hw_error();
-void bta_sys_hw_api_disable();
-void bta_sys_hw_evt_enabled();
 
 #endif /* BTA_SYS_INT_H */
