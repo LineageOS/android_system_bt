@@ -364,16 +364,12 @@ typedef uint8_t tBTA_SIG_STRENGTH_MASK;
   23 /* Simple Pairing Remote OOB Extended Data request. */
 #define BTA_DM_BLE_AUTH_CMPL_EVT 24 /* BLE Auth complete */
 #define BTA_DM_DEV_UNPAIRED_EVT 25
-#define BTA_DM_HW_ERROR_EVT 26 /* BT Chip H/W error */
 #define BTA_DM_LE_FEATURES_READ                                             \
   27                             /* Cotroller specific LE features are read \
                                     */
 #define BTA_DM_ENER_INFO_READ 28 /* Energy info read */
 #define BTA_DM_BLE_SC_OOB_REQ_EVT 29 /* SMP SC OOB request event */
 typedef uint8_t tBTA_DM_SEC_EVT;
-
-/* Structure associated with BTA_DM_ENABLE_EVT */
-typedef struct { tBTA_STATUS status; } tBTA_DM_ENABLE;
 
 /* Structure associated with BTA_DM_PIN_REQ_EVT */
 typedef struct {
@@ -610,7 +606,6 @@ typedef struct {
 
 /* Union of all security callback structures */
 typedef union {
-  tBTA_DM_ENABLE enable;          /* BTA enabled */
   tBTA_DM_PIN_REQ pin_req;        /* PIN request. */
   tBTA_DM_AUTH_CMPL auth_cmpl;    /* Authentication complete indication. */
   tBTA_DM_LINK_UP link_up;        /* ACL connection down event */
@@ -954,19 +949,6 @@ typedef uint8_t tBTA_DM_LINK_TYPE;
  ****************************************************************************/
 
 void BTA_dm_init();
-/*******************************************************************************
- *
- * Function         BTA_DisableBluetooth
- *
- * Description      This function disables BTA and the Bluetooth protocol
- *                  stack.  It is called when BTA is no longer being used
- *                  by any application in the system.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-extern tBTA_STATUS BTA_DisableBluetooth(void);
 
 /*******************************************************************************
  *

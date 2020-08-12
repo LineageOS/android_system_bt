@@ -340,9 +340,7 @@ bt_status_t btif_init_bluetooth() {
  *
  ******************************************************************************/
 
-void btif_enable_bluetooth_evt(tBTA_STATUS status) {
-  LOG_INFO("%s entered: status %d", __func__, status);
-
+void btif_enable_bluetooth_evt() {
   /* Fetch the local BD ADDR */
   RawAddress local_bd_addr = *controller_get_interface()->get_address();
 
@@ -367,64 +365,25 @@ void btif_enable_bluetooth_evt(tBTA_STATUS status) {
   }
 
   /* callback to HAL */
-  if (status == BTA_SUCCESS) {
-    uid_set = uid_set_create();
+  uid_set = uid_set_create();
 
-    btif_dm_init(uid_set);
+  btif_dm_init(uid_set);
 
-    /* init rfcomm & l2cap api */
-    btif_sock_init(uid_set);
+  /* init rfcomm & l2cap api */
+  btif_sock_init(uid_set);
 
-    /* init pan */
-    btif_pan_init();
+  /* init pan */
+  btif_pan_init();
 
-    /* load did configuration */
-    bte_load_did_conf(BTE_DID_CONF_FILE);
+  /* load did configuration */
+  bte_load_did_conf(BTE_DID_CONF_FILE);
 
 #ifdef BTIF_DM_OOB_TEST
-    btif_dm_load_local_oob();
+  btif_dm_load_local_oob();
 #endif
 
-    future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
-  } else {
-    /* cleanup rfcomm & l2cap api */
-    btif_sock_cleanup();
-
-    btif_pan_cleanup();
-
-    future_ready(stack_manager_get_hack_future(), FUTURE_FAIL);
-  }
-
+  future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
   LOG_INFO("%s finished", __func__);
-}
-
-/*******************************************************************************
- *
- * Function         btif_disable_bluetooth
- *
- * Description      Inititates shutdown of Bluetooth system.
- *                  Any active links will be dropped and device entering
- *                  non connectable/discoverable mode
- *
- * Returns          void
- *
- ******************************************************************************/
-bt_status_t btif_disable_bluetooth() {
-  LOG_INFO("%s entered", __func__);
-
-  do_in_main_thread(FROM_HERE, base::Bind(&btm_ble_multi_adv_cleanup));
-  // TODO(jpawlowski): this should do whole BTA_VendorCleanup(), but it would
-  // kill the stack now.
-
-  btif_dm_on_disable();
-  /* cleanup rfcomm & l2cap api */
-  btif_sock_cleanup();
-  btif_pan_cleanup();
-  BTA_DisableBluetooth();
-
-  LOG_INFO("%s finished", __func__);
-
-  return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************

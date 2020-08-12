@@ -1536,7 +1536,7 @@ static void btu_hcif_hardware_error_evt(uint8_t* p) {
     return;
   }
 
-  send_bta_sys_hw_event(BTA_SYS_ERROR_EVT);
+  BTA_sys_signal_hw_error();
 }
 
 /*******************************************************************************
