@@ -44,18 +44,9 @@
  *  DEVICE CONTROL and COMMON FUNCTIONS
  ****************************************************************************/
 
-/*******************************************************************************
- *
- * Function         BTM_DeviceReset
- *
- * Description      This function is called to reset the controller.  The
- *                  Callback function if provided is called when startup of the
- *                  device has completed.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_DeviceReset();
+void BTM_db_reset(void);
+
+void BTM_reset_complete();
 
 /*******************************************************************************
  *

@@ -219,6 +219,6 @@ bt_status_t btif_transfer_context(tBTIF_CBACK* p_cback, uint16_t event,
                                   char* p_params, int param_len,
                                   tBTIF_COPY_CBACK* p_copy_cback);
 
-void btif_init_ok(UNUSED_ATTR uint16_t event, UNUSED_ATTR char* p_param);
+void btif_init_ok();
 
 #endif /* BTIF_COMMON_H */
