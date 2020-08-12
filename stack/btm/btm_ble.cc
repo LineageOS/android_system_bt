@@ -252,17 +252,17 @@ bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
   }
   bool st = true;
 #if (BLE_PRIVACY_SPT == TRUE)
-  tACL_CONN* p = btm_bda_to_acl(pseudo_addr, BT_TRANSPORT_LE);
+  tACL_CONN* p_acl = btm_bda_to_acl(pseudo_addr, BT_TRANSPORT_LE);
 
-  if (p == NULL) {
+  if (p_acl == NULL) {
     BTM_TRACE_ERROR(
         "BTM_ReadRemoteConnectionAddr can not find connection"
         " with matching address");
     return false;
   }
 
-  conn_addr = p->active_remote_addr;
-  *p_addr_type = p->active_remote_addr_type;
+  conn_addr = p_acl->active_remote_addr;
+  *p_addr_type = p_acl->active_remote_addr_type;
 #else
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(pseudo_addr);
 
@@ -701,17 +701,17 @@ bool BTM_UseLeLink(const RawAddress& bd_addr) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::BTM_UseLeLink(bd_addr);
   }
-  tACL_CONN* p;
+  tACL_CONN* p_acl;
   tBT_DEVICE_TYPE dev_type;
   tBLE_ADDR_TYPE addr_type;
   bool use_le = false;
 
-  p = btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
-  if (p != NULL) {
+  p_acl = btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
+  if (p_acl != NULL) {
     return use_le;
   } else {
-    p = btm_bda_to_acl(bd_addr, BT_TRANSPORT_LE);
-    if (p != NULL) {
+    p_acl = btm_bda_to_acl(bd_addr, BT_TRANSPORT_LE);
+    if (p_acl != NULL) {
       use_le = true;
     } else {
       BTM_ReadDevInfo(bd_addr, &dev_type, &addr_type);

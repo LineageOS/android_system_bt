@@ -798,7 +798,6 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
   tBTM_STATUS status;
   uint8_t* p_features;
   uint8_t ii;
-  tACL_CONN* p = btm_bda_to_acl(bd_addr, transport);
   VLOG(1) << __func__ << " BDA: " << bd_addr;
 
   BTM_TRACE_DEBUG("%s: Transport used %d, bd_addr=%s", __func__, transport,
@@ -903,7 +902,8 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
 #endif
 
   /* If connection already exists... */
-  if (p && p->hci_handle != BTM_SEC_INVALID_HANDLE) {
+  tACL_CONN* p_acl = btm_bda_to_acl(bd_addr, transport);
+  if (p_acl && p_acl->hci_handle != BTM_SEC_INVALID_HANDLE) {
     btm_sec_start_authentication(p_dev_rec);
 
     btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_PIN_REQ);
@@ -1189,9 +1189,9 @@ tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr,
       p_dev_rec->security_required, p_dev_rec, p_callback);
 
   if (transport == BT_TRANSPORT_LE) {
-    tACL_CONN* p = btm_bda_to_acl(bd_addr, transport);
-    if (p) {
-      rc = btm_ble_set_encryption(bd_addr, sec_act, p->link_role);
+    tACL_CONN* p_acl = btm_bda_to_acl(bd_addr, transport);
+    if (p_acl) {
+      rc = btm_ble_set_encryption(bd_addr, sec_act, p_acl->link_role);
     } else {
       rc = BTM_WRONG_MODE;
       BTM_TRACE_WARNING("%s: cannot call btm_ble_set_encryption, p is NULL",
@@ -3542,8 +3542,6 @@ void btm_sec_auth_complete(uint16_t handle, uint8_t status) {
 void btm_sec_encrypt_change(uint16_t handle, uint8_t status,
                             uint8_t encr_enable) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev_by_handle(handle);
-  tACL_CONN* p_acl = NULL;
-  uint8_t acl_idx = btm_handle_to_acl_index(handle);
   BTM_TRACE_EVENT(
       "Security Manager: encrypt_change status:%d State:%d, encr_enable = %d",
       status, (p_dev_rec) ? p_dev_rec->sec_state : 0, encr_enable);
@@ -3587,6 +3585,8 @@ void btm_sec_encrypt_change(uint16_t handle, uint8_t status,
   BTM_TRACE_DEBUG("after update p_dev_rec->sec_flags=0x%x",
                   p_dev_rec->sec_flags);
 
+  uint8_t acl_idx = btm_handle_to_acl_index(handle);
+  tACL_CONN* p_acl = NULL;
   if (acl_idx != MAX_L2CAP_LINKS) p_acl = &btm_cb.acl_cb_.acl_db[acl_idx];
 
   if (p_acl != NULL)
@@ -5482,6 +5482,6 @@ static bool btm_sec_use_smp_br_chnl(tBTM_SEC_DEV_REC* p_dev_rec) {
  *
  ******************************************************************************/
 static bool btm_sec_is_master(tBTM_SEC_DEV_REC* p_dev_rec) {
-  tACL_CONN* p = btm_bda_to_acl(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR);
-  return (p && (p->link_role == HCI_ROLE_MASTER));
+  tACL_CONN* p_acl = btm_bda_to_acl(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR);
+  return (p_acl && (p_acl->link_role == HCI_ROLE_MASTER));
 }
