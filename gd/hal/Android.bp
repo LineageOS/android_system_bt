@@ -6,6 +6,13 @@ filegroup {
 }
 
 filegroup {
+    name: "BluetoothHalTestSources",
+    srcs: [
+        "snoop_logger_test.cc",
+    ],
+}
+
+filegroup {
     name: "BluetoothHalSources_hci_rootcanal",
     srcs: [
         "hci_hal_host_rootcanal.cc",
