@@ -2724,3 +2724,11 @@ bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
 #endif
   return st;
 }
+
+uint8_t acl_link_role(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+  tACL_CONN* p_acl = btm_bda_to_acl(bd_addr, transport);
+  if (p_acl == nullptr) {
+    return HCI_ROLE_UNKNOWN;
+  }
+  return p_acl->link_role;
+}
