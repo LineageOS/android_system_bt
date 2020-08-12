@@ -112,7 +112,6 @@ static void btm_sec_check_pending_enc_req(tBTM_SEC_DEV_REC* p_dev_rec,
                                           uint8_t encr_enable);
 
 static bool btm_sec_use_smp_br_chnl(tBTM_SEC_DEV_REC* p_dev_rec);
-static bool btm_sec_is_master(tBTM_SEC_DEV_REC* p_dev_rec);
 
 /* true - authenticated link key is possible */
 static const bool btm_sec_io_map[BTM_IO_CAP_MAX][BTM_IO_CAP_MAX] = {
@@ -3487,7 +3486,7 @@ void btm_sec_auth_complete(uint16_t handle, uint8_t status) {
         BTM_TRACE_DEBUG(
             "link encrypted afer dedic bonding can use SMP_BR_CHNL");
 
-        if (btm_sec_is_master(p_dev_rec)) {
+        if (acl_is_role_master(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR)) {
           // Encryption is required to start SM over BR/EDR
           // indicate that this is encryption after authentication
           BTM_SetEncryption(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR, NULL, NULL,
@@ -3617,7 +3616,8 @@ void btm_sec_encrypt_change(uint16_t handle, uint8_t status,
                       __func__);
     }
     if (p_dev_rec->new_encryption_key_is_p256) {
-      if (btm_sec_use_smp_br_chnl(p_dev_rec) && btm_sec_is_master(p_dev_rec) &&
+      if (btm_sec_use_smp_br_chnl(p_dev_rec) &&
+          acl_is_role_master(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR) &&
           /* if LE key is not known, do deriving */
           (!(p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_KNOWN) ||
            /* or BR key is higher security than existing LE keys */
@@ -5468,17 +5468,3 @@ static bool btm_sec_use_smp_br_chnl(tBTM_SEC_DEV_REC* p_dev_rec) {
   return true;
 }
 
-/*******************************************************************************
- *
- * Function         btm_sec_is_master
- *
- * Description      The function checks if the device is BR/EDR master after
- *                  pairing is completed.
- *
- * Returns          true - if the device is master.
- *
- ******************************************************************************/
-static bool btm_sec_is_master(tBTM_SEC_DEV_REC* p_dev_rec) {
-  tACL_CONN* p_acl = btm_bda_to_acl(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR);
-  return (p_acl && (p_acl->link_role == HCI_ROLE_MASTER));
-}
