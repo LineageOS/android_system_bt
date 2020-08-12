@@ -888,6 +888,57 @@ extern void btsnd_hcic_read_authenticated_payload_tout(uint16_t handle);
 extern void btsnd_hcic_write_authenticated_payload_tout(uint16_t handle,
                                                         uint16_t timeout);
 
+struct EXT_CIS_CFG {
+  uint8_t cis_id;
+  uint16_t max_sdu_size_mtos;
+  uint16_t max_sdu_size_stom;
+  uint8_t phy_mtos;
+  uint8_t phy_stom;
+  uint8_t rtn_mtos;
+  uint8_t rtn_stom;
+};
+
+extern void btsnd_hcic_set_cig_params(
+    uint8_t cig_id, uint32_t sdu_itv_mtos, uint32_t sdu_itv_stom, uint8_t sca,
+    uint8_t packing, uint8_t framing, uint16_t max_trans_lat_stom,
+    uint16_t max_trans_lat_mtos, uint8_t cis_cnt, const EXT_CIS_CFG* cis_cfg,
+    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
+struct EXT_CIS_TEST_CFG {
+  uint8_t cis_id;
+  uint8_t nse;
+  uint16_t max_sdu_size_mtos;
+  uint16_t max_sdu_size_stom;
+  uint8_t max_pdu_mtos;
+  uint8_t max_pdu_stom;
+  uint8_t phy_mtos;
+  uint8_t phy_stom;
+  uint8_t bn_mtos;
+  uint8_t bn_stom;
+};
+
+struct EXT_CIS_CREATE_CFG {
+  uint16_t cis_conn_handle;
+  uint16_t acl_conn_handle;
+};
+
+extern void btsnd_hcic_create_cis(uint8_t num_cis,
+                                  const EXT_CIS_CREATE_CFG* cis_create_cfg);
+
+extern void btsnd_hcic_remove_cig(
+    uint8_t cig_id, base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
+extern void btsnd_hcic_setup_iso_data_path(
+    uint16_t iso_handle, uint8_t data_path_dir, uint8_t data_path_id,
+    uint8_t codec_id_format, uint16_t codec_id_company,
+    uint16_t codec_id_vendor, uint32_t controller_delay,
+    std::vector<uint8_t> codec_conf,
+    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
+extern void btsnd_hcic_remove_iso_data_path(
+    uint16_t iso_handle, uint8_t data_path_dir,
+    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
 #define HCIC_PARAM_SIZE_WRITE_AUTHENT_PAYLOAD_TOUT 4
 
 #define HCI__WRITE_AUTHENT_PAYLOAD_TOUT_HANDLE_OFF 0
