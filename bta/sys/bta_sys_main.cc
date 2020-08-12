@@ -40,9 +40,6 @@
 #include "osi/include/osi.h"
 #include "utl.h"
 
-#if (defined BTA_AR_INCLUDED) && (BTA_AR_INCLUDED == TRUE)
-#include "bta_ar_api.h"
-#endif
 
 void BTA_dm_on_hw_on();
 void BTA_dm_on_hw_error();
@@ -53,7 +50,7 @@ tBTA_SYS_CB bta_sys_cb;
 
 /* trace level */
 /* TODO Hard-coded trace levels -  Needs to be configurable */
-uint8_t appl_trace_level = BT_TRACE_LEVEL_WARNING;  // APPL_INITIAL_TRACE_LEVEL;
+uint8_t appl_trace_level = APPL_INITIAL_TRACE_LEVEL;
 uint8_t btif_trace_level = BT_TRACE_LEVEL_WARNING;
 
 /*******************************************************************************
@@ -68,12 +65,6 @@ uint8_t btif_trace_level = BT_TRACE_LEVEL_WARNING;
  ******************************************************************************/
 void bta_sys_init(void) {
   memset(&bta_sys_cb, 0, sizeof(tBTA_SYS_CB));
-
-  appl_trace_level = APPL_INITIAL_TRACE_LEVEL;
-
-#if (defined BTA_AR_INCLUDED) && (BTA_AR_INCLUDED == TRUE)
-  bta_ar_init();
-#endif
 }
 
 void bta_sys_free(void) {
@@ -97,10 +88,6 @@ static void bta_sys_sm_execute(tBTA_SYS_HW_EVT event) {
   switch (bta_sys_cb.state) {
     case BTA_SYS_HW_OFF:
       switch (event) {
-        case BTA_SYS_API_ENABLE_EVT:
-          bta_sys_set_state(BTA_SYS_HW_STARTING);
-          bta_sys_hw_api_enable();
-          break;
         case BTA_SYS_EVT_STACK_ENABLED_EVT:
           bta_sys_set_state(BTA_SYS_HW_ON);
           break;
@@ -130,9 +117,6 @@ static void bta_sys_sm_execute(tBTA_SYS_HW_EVT event) {
       break;
     case BTA_SYS_HW_ON:
       switch (event) {
-        case BTA_SYS_API_ENABLE_EVT:
-          bta_sys_hw_api_enable();
-          break;
         case BTA_SYS_API_DISABLE_EVT:
           bta_sys_hw_api_disable();
           break;
@@ -145,9 +129,6 @@ static void bta_sys_sm_execute(tBTA_SYS_HW_EVT event) {
       break;
     case BTA_SYS_HW_STOPPING:
       switch (event) {
-        case BTA_SYS_API_ENABLE_EVT:
-          bta_sys_set_state(BTA_SYS_HW_STARTING);
-          break;
         case BTA_SYS_EVT_STACK_ENABLED_EVT:
           BTA_dm_on_hw_on();
           bta_sys_hw_api_disable();
@@ -183,30 +164,6 @@ void bta_sys_hw_error() {
   APPL_TRACE_DEBUG("%s", __func__);
   if (bta_sys_cb.bluetooth_active) {
     BTA_dm_on_hw_error();
-  }
-}
-
-/*******************************************************************************
- *
- * Function         bta_sys_hw_enable
- *
- * Description     this function is called after API enable and HW has been
- *                 turned on
- *
- *
- * Returns          success or failure
- *
- ******************************************************************************/
-
-void bta_sys_hw_api_enable() {
-  if (!bta_sys_cb.bluetooth_active && bta_sys_cb.state != BTA_SYS_HW_ON) {
-    /* register which HW module was turned on */
-    bta_sys_cb.bluetooth_active = true;
-
-    BTM_DeviceReset();
-  } else {
-    bta_sys_cb.bluetooth_active = true;
-    BTA_dm_on_hw_on();
   }
 }
 
