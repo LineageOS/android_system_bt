@@ -398,42 +398,6 @@ cc_test {
     ],
 }
 
-// Bluetooth stack message loop tests for target
-// ========================================================
-cc_test {
-    name: "net_test_btu_message_loop",
-    defaults: ["fluoride_defaults"],
-    local_include_dirs: [
-        "include",
-        "btm",
-    ],
-    include_dirs: [
-        "system/bt/",
-        "system/bt/internal_include",
-        "system/bt/btcore/include",
-        "system/bt/bta/include",
-    ],
-    srcs: [
-        "btu/btu_task.cc",
-        "test/stack_btu_test.cc",
-    ],
-    shared_libs: [
-        "liblog",
-        "libcutils",
-        "libprotobuf-cpp-lite",
-    ],
-    static_libs: [
-        "libbt-common",
-        "libbluetooth-types",
-        "libgmock",
-        "libosi",
-        "libbt-protos-lite",
-    ],
-    sanitize: {
-        cfi: false,
-    },
-}
-
 // Bluetooth stack connection multiplexing
 // ========================================================
 cc_test {
