@@ -29,10 +29,6 @@
 #include "l2c_api.h"
 #include "sdpint.h"
 
-using bluetooth::common::MessageLoopThread;
-
-MessageLoopThread bt_startup_thread("bt_startup_thread");
-
 void btu_task_shut_down();
 
 /*****************************************************************************
@@ -56,29 +52,6 @@ void btu_free_core() {
   btm_free();
 }
 
-/*****************************************************************************
- *
- * Function         BTU_StartUp
- *
- * Description      Initializes the BTU control block.
- *
- *                  NOTE: Must be called before creating any tasks
- *                      (RPC, BTU, HCIT, APPL, etc.)
- *
- * Returns          void
- *
- *****************************************************************************/
-void BTU_StartUp() {
-  bt_startup_thread.StartUp();
-  if (!bt_startup_thread.EnableRealTimeScheduling()) {
-    LOG(ERROR) << __func__ << ": Unable to set real time scheduling policy for "
-               << bt_startup_thread;
-    BTU_ShutDown();
-    return;
-  }
-}
-
 void BTU_ShutDown() {
   btu_task_shut_down();
-  bt_startup_thread.ShutDown();
 }
