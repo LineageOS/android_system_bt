@@ -58,7 +58,6 @@ tBTM_SEC_DEV_REC* btm_find_or_alloc_dev(const RawAddress& bd_addr);
 tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec);
 void btm_ble_refresh_local_resolvable_private_addr(
     const RawAddress& pseudo_addr, const RawAddress& local_rpa);
-void btm_establish_continue(tACL_CONN* p_acl_cb);
 void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec, uint8_t res,
                                  bool is_le_trasnport);
 void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
@@ -66,6 +65,7 @@ void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
 
 static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
                                               uint16_t* p_pkt_type);
+static void btm_establish_continue(tACL_CONN* p_acl_cb);
 static void btm_pm_sm_alloc(uint8_t ind);
 static void btm_read_automatic_flush_timeout_timeout(void* data);
 static void btm_read_failed_contact_counter_timeout(void* data);
@@ -83,6 +83,9 @@ void BTA_dm_acl_up(const RawAddress bd_addr, tBT_TRANSPORT transport,
 void BTA_dm_acl_down(const RawAddress bd_addr, tBT_TRANSPORT transport);
 void BTA_dm_report_role_change(const RawAddress bd_addr, uint8_t new_role,
                                uint8_t hci_status);
+
+static void btm_set_link_policy(tACL_CONN* conn, uint16_t policy);
+static void btm_set_default_link_policy(uint16_t settings);
 /* 3 seconds timeout waiting for responses */
 #define BTM_DEV_REPLY_TIMEOUT_MS (3 * 1000)
 
@@ -100,6 +103,54 @@ void btm_acl_init(void) {
   /* Initialize nonzero defaults */
   btm_cb.acl_cb_.btm_def_link_super_tout = HCI_DEFAULT_INACT_TOUT;
   btm_cb.acl_cb_.acl_disc_reason = 0xff;
+}
+
+void BTM_acl_after_controller_started() {
+  btm_set_default_link_policy(HCI_ENABLE_MASTER_SLAVE_SWITCH |
+                              HCI_ENABLE_HOLD_MODE | HCI_ENABLE_SNIFF_MODE |
+                              HCI_ENABLE_PARK_MODE);
+
+  const controller_t* controller = controller_get_interface();
+
+  /* Create ACL supported packet types mask */
+  btm_cb.acl_cb_.btm_acl_pkt_types_supported =
+      (BTM_ACL_PKT_TYPES_MASK_DH1 + BTM_ACL_PKT_TYPES_MASK_DM1);
+
+  if (controller->supports_3_slot_packets())
+    btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
+        (BTM_ACL_PKT_TYPES_MASK_DH3 + BTM_ACL_PKT_TYPES_MASK_DM3);
+
+  if (controller->supports_5_slot_packets())
+    btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
+        (BTM_ACL_PKT_TYPES_MASK_DH5 + BTM_ACL_PKT_TYPES_MASK_DM5);
+
+  /* Add in EDR related ACL types */
+  if (!controller->supports_classic_2m_phy()) {
+    btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
+        (BTM_ACL_PKT_TYPES_MASK_NO_2_DH1 + BTM_ACL_PKT_TYPES_MASK_NO_2_DH3 +
+         BTM_ACL_PKT_TYPES_MASK_NO_2_DH5);
+  }
+
+  if (!controller->supports_classic_3m_phy()) {
+    btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
+        (BTM_ACL_PKT_TYPES_MASK_NO_3_DH1 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH3 +
+         BTM_ACL_PKT_TYPES_MASK_NO_3_DH5);
+  }
+
+  /* Check to see if 3 and 5 slot packets are available */
+  if (controller->supports_classic_2m_phy() ||
+      controller->supports_classic_3m_phy()) {
+    if (!controller->supports_3_slot_edr_packets())
+      btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
+          (BTM_ACL_PKT_TYPES_MASK_NO_2_DH3 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH3);
+
+    if (!controller->supports_5_slot_edr_packets())
+      btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
+          (BTM_ACL_PKT_TYPES_MASK_NO_2_DH5 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH5);
+  }
+
+  BTM_TRACE_DEBUG("Local supported ACL packet types: 0x%04x",
+                  btm_cb.acl_cb_.btm_acl_pkt_types_supported);
 }
 
 /*******************************************************************************
@@ -222,14 +273,15 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
   BTM_TRACE_DEBUG("%s: peer %s hci_handle=%d link_role=%d  transport=%d",
                   __func__, bda.ToString().c_str(), hci_handle, link_role,
                   transport);
+
   /* Ensure we don't have duplicates */
   p = btm_bda_to_acl(bda, transport);
   if (p != (tACL_CONN*)NULL) {
     p->hci_handle = hci_handle;
     p->link_role = link_role;
     p->transport = transport;
+    btm_set_link_policy(p, btm_cb.acl_cb_.btm_def_link_policy);
     VLOG(1) << "Duplicate btm_acl_created: RemBdAddr: " << bda;
-    BTM_SetLinkPolicy(p->remote_addr, &btm_cb.acl_cb_.btm_def_link_policy);
     return;
   }
 
@@ -241,6 +293,7 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
       p->link_role = link_role;
       p->link_up_issued = false;
       p->remote_addr = bda;
+      btm_set_link_policy(p, btm_cb.acl_cb_.btm_def_link_policy);
 
       p->transport = transport;
 #if (BLE_PRIVACY_SPT == TRUE)
@@ -328,31 +381,6 @@ void btm_acl_update_conn_addr(uint16_t conn_handle, const RawAddress& address) {
 
 /*******************************************************************************
  *
- * Function         btm_acl_report_role_change
- *
- * Description      This function is called when the local device is deemed
- *                  to be down. It notifies L2CAP of the failure.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_acl_report_role_change(uint8_t hci_status, const RawAddress* bda) {
-  tBTM_ROLE_SWITCH_CMPL ref_data;
-  BTM_TRACE_DEBUG("btm_acl_report_role_change");
-  if (btm_cb.devcb.p_switch_role_cb &&
-      (bda && btm_cb.devcb.switch_role_ref_data.remote_bd_addr == *bda)) {
-    memcpy(&ref_data, &btm_cb.devcb.switch_role_ref_data,
-           sizeof(tBTM_ROLE_SWITCH_CMPL));
-    ref_data.hci_status = hci_status;
-    (*btm_cb.devcb.p_switch_role_cb)(&ref_data);
-    memset(&btm_cb.devcb.switch_role_ref_data, 0,
-           sizeof(tBTM_ROLE_SWITCH_CMPL));
-    btm_cb.devcb.p_switch_role_cb = NULL;
-  }
-}
-
-/*******************************************************************************
- *
  * Function         btm_acl_removed
  *
  * Description      This function is called by L2CAP when an ACL connection
@@ -368,9 +396,6 @@ void btm_acl_removed(const RawAddress& bda, tBT_TRANSPORT transport) {
   tACL_CONN* p = btm_bda_to_acl(bda, transport);
   if (p != (tACL_CONN*)NULL) {
     p->in_use = false;
-
-    /* if the disconnected channel has a pending role switch, clear it now */
-    btm_acl_report_role_change(HCI_ERR_NO_CONNECTION, &bda);
 
     /* Only notify if link up has had a chance to be issued */
     if (p->link_up_issued) {
@@ -472,9 +497,7 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
  * Function         BTM_SwitchRole
  *
  * Description      This function is called to switch role between master and
- *                  slave.  If role is already set it will do nothing.  If the
- *                  command was initiated, the callback function is called upon
- *                  completion.
+ *                  slave.  If role is already set it will do nothing.
  *
  * Returns          BTM_SUCCESS if already in specified role.
  *                  BTM_CMD_STARTED if command issued to controller.
@@ -486,8 +509,7 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
  *                  BTM_BUSY if the previous command is not completed
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role,
-                           tBTM_CMPL_CB* p_cb) {
+tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
   tACL_CONN* p;
   tBTM_SEC_DEV_REC* p_dev_rec = NULL;
   bool is_sco_active;
@@ -495,19 +517,12 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role,
   tBTM_PM_MODE pwr_mode;
   tBTM_PM_PWR_MD settings;
 
-  LOG_INFO("%s: peer %s new_role=0x%x p_cb=%p p_switch_role_cb=%p", __func__,
-           remote_bd_addr.ToString().c_str(), new_role, p_cb,
-           btm_cb.devcb.p_switch_role_cb);
+  LOG_INFO("%s: peer %s new_role=0x%x", __func__,
+           remote_bd_addr.ToString().c_str(), new_role);
 
   /* Make sure the local device supports switching */
   if (!controller_get_interface()->supports_master_slave_role_switch())
     return (BTM_MODE_UNSUPPORTED);
-
-  if (btm_cb.devcb.p_switch_role_cb && p_cb) {
-    VLOG(2) << "Role switch on other device is in progress "
-            << btm_cb.devcb.switch_role_ref_data.remote_bd_addr;
-    return (BTM_BUSY);
-  }
 
   p = btm_bda_to_acl(remote_bd_addr, BT_TRANSPORT_BR_EDR);
   if (p == NULL) return (BTM_UNKNOWN_ADDR);
@@ -570,14 +585,6 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role,
     }
   }
 
-  /* Initialize return structure in case request fails */
-  if (p_cb) {
-    btm_cb.devcb.switch_role_ref_data.remote_bd_addr = remote_bd_addr;
-    btm_cb.devcb.switch_role_ref_data.role = new_role;
-    /* initialized to an error code */
-    btm_cb.devcb.switch_role_ref_data.hci_status = HCI_ERR_UNSUPPORTED_VALUE;
-    btm_cb.devcb.p_switch_role_cb = p_cb;
-  }
   return (BTM_CMD_STARTED);
 }
 
@@ -632,7 +639,6 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
     p->encrypt_state = BTM_ACL_ENCRYPT_STATE_IDLE;
     auto new_role = btm_cb.devcb.switch_role_ref_data.role;
     auto hci_status = btm_cb.devcb.switch_role_ref_data.hci_status;
-    btm_acl_report_role_change(hci_status, &p->remote_addr);
     BTA_dm_report_role_change(btm_cb.devcb.switch_role_ref_data.remote_bd_addr,
                               new_role, hci_status);
 
@@ -683,54 +689,69 @@ void check_link_policy(uint16_t* settings) {
     BTM_TRACE_API("park not supported (settings: 0x%04x)", *settings);
   }
 }
-/*******************************************************************************
- *
- * Function         BTM_SetLinkPolicy
- *
- * Description      Create and send HCI "Write Policy Set" command
- *
- * Returns          status of the operation
- *
- ******************************************************************************/
-tBTM_STATUS BTM_SetLinkPolicy(const RawAddress& remote_bda,
-                              uint16_t* settings) {
-  tACL_CONN* p;
-  BTM_TRACE_DEBUG("%s", __func__);
 
-  /* First, check if hold mode is supported */
-  if (*settings != HCI_DISABLE_ALL_LM_MODES) {
-    check_link_policy(settings);
-  }
-
-  p = btm_bda_to_acl(remote_bda, BT_TRANSPORT_BR_EDR);
-  if (p != NULL) {
-    btsnd_hcic_write_policy_set(p->hci_handle, *settings);
-    return BTM_CMD_STARTED;
-  }
-
-  /* If here, no BD Addr found */
-  return (BTM_UNKNOWN_ADDR);
+static void btm_set_link_policy(tACL_CONN* conn, uint16_t policy) {
+  conn->link_policy = policy;
+  check_link_policy(&conn->link_policy);
+  btsnd_hcic_write_policy_set(conn->hci_handle, conn->link_policy);
 }
 
-/*******************************************************************************
- *
- * Function         BTM_SetDefaultLinkPolicy
- *
- * Description      Set the default value for HCI "Write Policy Set" command
- *                  to use when an ACL link is created.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_SetDefaultLinkPolicy(uint16_t settings) {
-  BTM_TRACE_DEBUG("BTM_SetDefaultLinkPolicy setting:0x%04x", settings);
+static void btm_toggle_policy_on_for(const RawAddress& peer_addr,
+                                     uint16_t flag) {
+  auto conn = btm_bda_to_acl(peer_addr, BT_TRANSPORT_BR_EDR);
+  if (!conn) {
+    return;
+  }
+  btm_set_link_policy(conn, conn->link_policy | flag);
+}
 
+static void btm_toggle_policy_off_for(const RawAddress& peer_addr,
+                                      uint16_t flag) {
+  auto conn = btm_bda_to_acl(peer_addr, BT_TRANSPORT_BR_EDR);
+  if (!conn) {
+    return;
+  }
+  btm_set_link_policy(conn, conn->link_policy & ~flag);
+}
+
+bool BTM_is_sniff_allowed_for(const RawAddress& peer_addr) {
+  auto conn = btm_bda_to_acl(peer_addr, BT_TRANSPORT_BR_EDR);
+  if (!conn) {
+    return false;
+  }
+  return conn->link_policy & HCI_ENABLE_SNIFF_MODE;
+}
+
+void BTM_unblock_sniff_mode_for(const RawAddress& peer_addr) {
+  btm_toggle_policy_on_for(peer_addr, HCI_ENABLE_SNIFF_MODE);
+}
+
+void BTM_block_sniff_mode_for(const RawAddress& peer_addr) {
+  btm_toggle_policy_off_for(peer_addr, HCI_ENABLE_SNIFF_MODE);
+}
+
+void BTM_unblock_role_switch_for(const RawAddress& peer_addr) {
+  btm_toggle_policy_on_for(peer_addr, HCI_ENABLE_MASTER_SLAVE_SWITCH);
+}
+
+void BTM_block_role_switch_for(const RawAddress& peer_addr) {
+  btm_toggle_policy_off_for(peer_addr, HCI_ENABLE_MASTER_SLAVE_SWITCH);
+}
+
+static void btm_set_default_link_policy(uint16_t settings) {
   check_link_policy(&settings);
   btm_cb.acl_cb_.btm_def_link_policy = settings;
-  BTM_TRACE_DEBUG("Set DefaultLinkPolicy:0x%04x", settings);
-
-  /* Set the default Link Policy of the controller */
   btsnd_hcic_write_def_policy_set(settings);
+}
+
+void BTM_default_unblock_role_switch() {
+  btm_set_default_link_policy(btm_cb.acl_cb_.btm_def_link_policy |
+                              HCI_ENABLE_MASTER_SLAVE_SWITCH);
+}
+
+void BTM_default_block_role_switch() {
+  btm_set_default_link_policy(btm_cb.acl_cb_.btm_def_link_policy &
+                              ~HCI_ENABLE_MASTER_SLAVE_SWITCH);
 }
 
 /*******************************************************************************
@@ -1087,10 +1108,7 @@ void btm_establish_continue(tACL_CONN* p_acl_cb) {
     /* commands events and data at the same time. */
     /* Set the packet types to the default allowed by the device */
     btm_set_packet_types(p_acl_cb, btm_cb.acl_cb_.btm_acl_pkt_types_supported);
-
-    if (btm_cb.acl_cb_.btm_def_link_policy)
-      BTM_SetLinkPolicy(p_acl_cb->remote_addr,
-                        &btm_cb.acl_cb_.btm_def_link_policy);
+    btm_set_link_policy(p_acl_cb, btm_cb.acl_cb_.btm_def_link_policy);
   }
   if (p_acl_cb->link_up_issued) {
     BTM_TRACE_ERROR("%s: Already link is up ", __func__);
@@ -1100,6 +1118,17 @@ void btm_establish_continue(tACL_CONN* p_acl_cb) {
 
   BTA_dm_acl_up(p_acl_cb->remote_addr, p_acl_cb->transport,
                 p_acl_cb->hci_handle);
+}
+
+void btm_establish_continue_from_address(const RawAddress& bda,
+                                         tBT_TRANSPORT transport) {
+  tACL_CONN* p_acl = btm_bda_to_acl(bda, transport);
+  if (p_acl == nullptr) {
+    BTM_TRACE_ERROR("%s Unable to find acl control block to continue",
+                    __func__);
+    return;
+  }
+  btm_establish_continue(p_acl);
 }
 
 /*******************************************************************************
@@ -1355,9 +1384,6 @@ void btm_acl_role_changed(uint8_t hci_status, const RawAddress* bd_addr,
                   hci_status, new_role);
   /* Ignore any stray events */
   if (p == NULL) {
-    /* it could be a failure */
-    if (hci_status != HCI_SUCCESS)
-      btm_acl_report_role_change(hci_status, bd_addr);
     return;
   }
 
@@ -1398,8 +1424,6 @@ void btm_acl_role_changed(uint8_t hci_status, const RawAddress* bd_addr,
     p->encrypt_state = BTM_ACL_ENCRYPT_STATE_IDLE;
   }
 
-  /* if role switch complete is needed, report it now */
-  btm_acl_report_role_change(hci_status, bd_addr);
   BTA_dm_report_role_change(*p_bda, new_role, hci_status);
 
   BTM_TRACE_DEBUG(
@@ -2434,4 +2458,108 @@ bool acl_refresh_remote_address(const tBTM_SEC_DEV_REC* p_sec_rec,
   BTM_TRACE_DEBUG("%s active_remote_addr_type: %d ", __func__,
                   p_acl->active_remote_addr_type);
   return true;
+}
+
+bool acl_peer_supports_ble_connection_parameters_request(
+    const RawAddress& remote_bda) {
+  tACL_CONN* p_acl = btm_bda_to_acl(remote_bda, BT_TRANSPORT_LE);
+  if (p_acl == nullptr) {
+    return false;
+  }
+  return HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl->peer_le_features);
+}
+
+/*******************************************************************************
+ *
+ * Function         BTM_ReadConnectionAddr
+ *
+ * Description      This function is called to get the local device address
+ *                  information.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
+                            RawAddress& local_conn_addr,
+                            tBLE_ADDR_TYPE* p_addr_type) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    return bluetooth::shim::BTM_ReadConnectionAddr(remote_bda, local_conn_addr,
+                                                   p_addr_type);
+  }
+  tACL_CONN* p_acl = btm_bda_to_acl(remote_bda, BT_TRANSPORT_LE);
+
+  if (p_acl == NULL) {
+    BTM_TRACE_ERROR("No connection exist!");
+    return;
+  }
+  local_conn_addr = p_acl->conn_addr;
+  *p_addr_type = p_acl->conn_addr_type;
+
+  BTM_TRACE_DEBUG("BTM_ReadConnectionAddr address type: %d addr: 0x%02x",
+                  p_acl->conn_addr_type, p_acl->conn_addr.address[0]);
+}
+
+/*******************************************************************************
+ *
+ * Function         BTM_IsBleConnection
+ *
+ * Description      This function is called to check if the connection handle
+ *                  for an LE link
+ *
+ * Returns          true if connection is LE link, otherwise false.
+ *
+ ******************************************************************************/
+bool BTM_IsBleConnection(uint16_t hci_handle) {
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    ASSERT_LOG(false, "This should not be invoked from code path");
+  }
+
+  uint8_t index = btm_handle_to_acl_index(hci_handle);
+  if (index >= MAX_L2CAP_LINKS) return false;
+
+  tACL_CONN* p = &btm_cb.acl_cb_.acl_db[index];
+  return (p->transport == BT_TRANSPORT_LE);
+}
+
+const RawAddress acl_address_from_handle(uint16_t hci_handle) {
+  uint8_t index = btm_handle_to_acl_index(hci_handle);
+  if (index >= MAX_L2CAP_LINKS) {
+    return RawAddress::kEmpty;
+  }
+  return btm_cb.acl_cb_.acl_db[index].remote_addr;
+}
+
+tBTM_PM_MCB* acl_power_mode_from_handle(uint16_t hci_handle) {
+  uint8_t index = btm_handle_to_acl_index(hci_handle);
+  if (index >= MAX_L2CAP_LINKS) {
+    return nullptr;
+  }
+  return &btm_cb.pm_mode_db[index];
+}
+
+/*******************************************************************************
+ *
+ * Function         btm_pm_find_acl_ind
+ *
+ * Description      This function initializes the control block of an ACL link.
+ *                  It is called when an ACL connection is created.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+int btm_pm_find_acl_ind(const RawAddress& remote_bda) {
+  tACL_CONN* p = &btm_cb.acl_cb_.acl_db[0];
+  uint8_t xx;
+
+  for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p++) {
+    if (p->in_use && p->remote_addr == remote_bda &&
+        p->transport == BT_TRANSPORT_BR_EDR) {
+#if (BTM_PM_DEBUG == TRUE)
+      BTM_TRACE_DEBUG("btm_pm_find_acl_ind ind:%d, st:%d", xx,
+                      btm_cb.pm_mode_db[xx].state);
+#endif  // BTM_PM_DEBUG
+      break;
+    }
+  }
+  return xx;
 }

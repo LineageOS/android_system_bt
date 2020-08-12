@@ -38,6 +38,7 @@
 #include "p_256_ecc_pp.h"
 #include "smp_int.h"
 #include "stack/crypto_toolbox/crypto_toolbox.h"
+#include "stack/include/acl_api.h"
 
 #include <algorithm>
 

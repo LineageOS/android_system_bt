@@ -216,7 +216,6 @@ typedef uint8_t tBTA_DM_PM_REQ;
 
 typedef struct {
   RawAddress peer_bdaddr;
-  uint16_t link_policy;
   tBTA_DM_CONN_STATE conn_state;
   tBTA_PREF_ROLES pref_role;
   bool in_use;
@@ -296,7 +295,6 @@ typedef struct {
   uint8_t num_master_only;
   uint8_t pm_id;
   tBTA_PM_TIMER pm_timer[BTA_DM_NUM_PM_TIMER];
-  uint16_t rs_event;      /* the event waiting for role switch */
   uint8_t cur_av_count;   /* current AV connecions */
   bool disable_pair_mode; /* disable pair mode or not */
   bool conn_paired_only;  /* allow connectable to paired device only or not */
@@ -389,8 +387,6 @@ enum {
 
 typedef struct {
   DEV_CLASS dev_class; /* local device class */
-  uint16_t
-      policy_settings;   /* link policy setting hold, sniff, park, MS switch */
   uint16_t page_timeout; /* timeout for page in slots */
   uint16_t link_timeout; /* link supervision timeout in slots */
   bool avoid_scatter; /* true to avoid scatternet when av is streaming (be the

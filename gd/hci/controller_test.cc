@@ -25,6 +25,7 @@
 
 #include "common/bind.h"
 #include "common/callback.h"
+#include "common/init_flags.h"
 #include "hci/address.h"
 #include "hci/hci_layer.h"
 #include "os/thread.h"
@@ -174,10 +175,16 @@ class TestHciLayer : public HciLayer {
         event_mask = view.GetEventMask();
         event_builder = SetEventMaskCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS);
       } break;
+      case (OpCode::LE_SET_EVENT_MASK): {
+        auto view = LeSetEventMaskView::Create(command);
+        ASSERT_TRUE(view.IsValid());
+        le_event_mask = view.GetLeEventMask();
+        event_builder = LeSetEventMaskCompleteBuilder::Create(num_packets, ErrorCode::SUCCESS);
+      } break;
+
       case (OpCode::RESET):
       case (OpCode::SET_EVENT_FILTER):
       case (OpCode::HOST_BUFFER_SIZE):
-      case (OpCode::LE_SET_EVENT_MASK):
         command_queue_.push(command);
         not_empty_.notify_all();
         return;
@@ -249,6 +256,7 @@ class TestHciLayer : public HciLayer {
   constexpr static uint16_t total_num_acl_data_packets = 10;
   constexpr static uint16_t total_num_synchronous_data_packets = 12;
   uint64_t event_mask = 0;
+  uint64_t le_event_mask = 0;
 
  private:
   common::ContextualCallback<void(EventPacketView)> number_of_completed_packets_callback_;
@@ -260,6 +268,7 @@ class TestHciLayer : public HciLayer {
 class ControllerTest : public ::testing::Test {
  protected:
   void SetUp() override {
+    bluetooth::common::InitFlags::SetAllForTesting();
     test_hci_layer_ = new TestHciLayer;
     fake_registry_.InjectTestModule(&HciLayer::Factory, test_hci_layer_);
     client_handler_ = fake_registry_.GetTestModuleHandler(&HciLayer::Factory);
@@ -363,11 +372,12 @@ TEST_F(ControllerTest, send_host_buffer_size_command) {
 }
 
 TEST_F(ControllerTest, send_le_set_event_mask_command) {
-  controller_->LeSetEventMask(0x000000000000001F);
-  auto packet = test_hci_layer_->GetCommand(OpCode::LE_SET_EVENT_MASK);
-  auto command = LeSetEventMaskView::Create(packet);
-  ASSERT_TRUE(command.IsValid());
-  ASSERT_EQ(command.GetLeEventMask(), 0x000000000000001F);
+  uint64_t new_le_event_mask = test_hci_layer_->event_mask - 1;
+  controller_->LeSetEventMask(new_le_event_mask);
+  // Send another command to make sure it was applied
+  controller_->Reset();
+  auto packet = test_hci_layer_->GetCommand(OpCode::RESET);
+  ASSERT_EQ(new_le_event_mask, test_hci_layer_->le_event_mask);
 }
 
 TEST_F(ControllerTest, is_supported_test) {

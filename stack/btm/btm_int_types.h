@@ -96,8 +96,6 @@ typedef struct {
                               /* read inq tx power function completes  */
 
   tBTM_ROLE_SWITCH_CMPL switch_role_ref_data;
-  tBTM_CMPL_CB* p_switch_role_cb; /* Callback function to be called when  */
-                                  /* requested switch role is completed   */
 
   alarm_t* read_tx_power_timer;     /* Read tx power timer */
   tBTM_CMPL_CB* p_tx_power_cmpl_cb; /* Callback function to be called       */
@@ -126,9 +124,6 @@ typedef struct {
 
   tBTM_IO_CAP loc_io_caps;      /* IO capability of the local device */
   tBTM_AUTH_REQ loc_auth_req;   /* the auth_req flag  */
-  bool secure_connections_only; /* Rejects service level 0 connections if */
-                                /* itself or peer device doesn't support */
-                                /* secure connections */
 } tBTM_DEVCB;
 
 /* Define the structures and constants used for inquiry
@@ -236,13 +231,6 @@ typedef struct {
 */
 
 #define BTM_SEC_INVALID_HANDLE 0xFFFF
-
-/* Security callback is called by this unit when security
- *   procedures are completed.  Parameters are
- *              BD Address of remote
- *              Result of the operation
-*/
-typedef tBTM_SEC_CBACK tBTM_SEC_CALLBACK;
 
 typedef void(tBTM_SCO_IND_CBACK)(uint16_t sco_inx);
 
@@ -608,8 +596,6 @@ typedef struct {
   tBT_TRANSPORT transport;
   tBTM_BLE_SEC_ACT sec_act;
 } tBTM_SEC_QUEUE_ENTRY;
-
-typedef bool CONNECTION_TYPE;
 
 // Bluetooth Quality Report - Report receiver
 typedef void(tBTM_BT_QUALITY_REPORT_RECEIVER)(uint8_t len, uint8_t* p_stream);

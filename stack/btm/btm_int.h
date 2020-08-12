@@ -87,9 +87,6 @@ extern void btm_acl_device_down(void);
 extern void btm_acl_set_paging(bool value);
 extern void btm_acl_update_inquiry_status(uint8_t state);
 
-extern void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec,
-                             uint8_t hci_status);
-
 extern uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
 
 extern void btm_read_rssi_complete(uint8_t* p);
@@ -116,7 +113,6 @@ extern void btm_read_remote_ext_features_complete(uint8_t* p, uint8_t evt_len);
 extern void btm_read_remote_ext_features_failed(uint8_t status,
                                                 uint16_t handle);
 extern void btm_read_remote_version_complete(uint8_t* p);
-extern void btm_establish_continue(tACL_CONN* p_acl_cb);
 
 extern tACL_CONN* btm_bda_to_acl(const RawAddress& bda,
                                  tBT_TRANSPORT transport);
@@ -194,17 +190,6 @@ extern bool btm_set_bond_type_dev(const RawAddress& bd_addr,
  *********************************************
 */
 extern bool btm_dev_support_switch(const RawAddress& bd_addr);
-extern tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr,
-                                            uint16_t psm, uint16_t handle,
-                                            CONNECTION_TYPE conn_type,
-                                            tBTM_SEC_CALLBACK* p_callback,
-                                            void* p_ref_data);
-extern tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
-                                             uint16_t psm, bool is_originator,
-                                             uint32_t mx_proto_id,
-                                             uint32_t mx_chan_id,
-                                             tBTM_SEC_CALLBACK* p_callback,
-                                             void* p_ref_data);
 extern void btm_sec_conn_req(const RawAddress& bda, uint8_t* dc);
 extern void btm_create_conn_cancel_complete(uint8_t* p);
 
@@ -239,11 +224,10 @@ extern void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
                                       tBTM_SEC_DEV_REC* p_dev_rec);
 
 extern void btm_sec_clear_ble_keys(tBTM_SEC_DEV_REC* p_dev_rec);
-extern bool btm_sec_is_a_bonded_dev(const RawAddress& bda);
 extern void btm_consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec);
 extern bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec,
                                      const RawAddress& new_pseudo_addr);
-extern tBTM_SEC_SERV_REC* btm_sec_find_first_serv(CONNECTION_TYPE conn_type,
+extern tBTM_SEC_SERV_REC* btm_sec_find_first_serv(bool is_originator,
                                                   uint16_t psm);
 extern tL2CAP_LE_RESULT_CODE btm_ble_start_sec_check(
     const RawAddress& bd_addr, uint16_t psm, bool is_originator,

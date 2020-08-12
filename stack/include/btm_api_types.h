@@ -996,6 +996,7 @@ typedef void(tBTM_MKEY_CALLBACK)(const RawAddress& bd_addr, uint8_t status,
 */
 typedef void(tBTM_SEC_CBACK)(const RawAddress* bd_addr, tBT_TRANSPORT trasnport,
                              void* p_ref_data, tBTM_STATUS result);
+typedef tBTM_SEC_CBACK tBTM_SEC_CALLBACK;
 
 /* Bond Cancel complete. Parameters are
  *              Result of the cancel operation
@@ -1278,5 +1279,8 @@ typedef struct {
 #define BTM_CONTRL_IDLE 3
 
 typedef uint8_t tBTM_CONTRL_STATE;
+
+// Bluetooth Quality Report - Report receiver
+typedef void(tBTM_BT_QUALITY_REPORT_RECEIVER)(uint8_t len, uint8_t* p_stream);
 
 #endif  // BTM_API_TYPES_H

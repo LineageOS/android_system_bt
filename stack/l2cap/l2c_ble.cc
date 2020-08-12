@@ -36,6 +36,7 @@
 #include "main/shim/shim.h"
 #include "osi/include/osi.h"
 #include "stack/gatt/connection_manager.h"
+#include "stack/include/acl_api.h"
 #include "stack_config.h"
 
 using base::StringPrintf;
@@ -56,8 +57,7 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb);
 bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda) {
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, BT_TRANSPORT_LE);
 
-  tACL_CONN* p_acl = btm_bda_to_acl(rem_bda, BT_TRANSPORT_LE);
-  if (p_acl) {
+  if (BTM_IsAclConnectionUp(rem_bda, BT_TRANSPORT_LE)) {
     if (p_lcb != NULL && p_lcb->link_state == LST_CONNECTING) {
       L2CAP_TRACE_WARNING("%s - disconnecting the LE link", __func__);
       L2CA_RemoveFixedChnl(L2CAP_ATT_CID, rem_bda);
@@ -93,13 +93,12 @@ bool L2CA_UpdateBleConnParams(const RawAddress& rem_bda, uint16_t min_int,
                               uint16_t timeout, uint16_t min_ce_len,
                               uint16_t max_ce_len) {
   tL2C_LCB* p_lcb;
-  tACL_CONN* p_acl_cb = btm_bda_to_acl(rem_bda, BT_TRANSPORT_LE);
 
   /* See if we have a link control block for the remote device */
   p_lcb = l2cu_find_lcb_by_bd_addr(rem_bda, BT_TRANSPORT_LE);
 
   /* If we don't have one, create one and accept the connection. */
-  if (!p_lcb || !p_acl_cb) {
+  if (!p_lcb || !BTM_IsAclConnectionUp(rem_bda, BT_TRANSPORT_LE)) {
     LOG(WARNING) << __func__ << " - unknown BD_ADDR " << rem_bda;
     return (false);
   }
@@ -235,12 +234,12 @@ uint16_t L2CA_GetDisconnectReason(const RawAddress& remote_bda,
  ******************************************************************************/
 void l2cble_notify_le_connection(const RawAddress& bda) {
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bda, BT_TRANSPORT_LE);
-  tACL_CONN* p_acl = btm_bda_to_acl(bda, BT_TRANSPORT_LE);
   tL2C_CCB* p_ccb;
 
-  if (p_lcb != NULL && p_acl != NULL && p_lcb->link_state != LST_CONNECTED) {
+  if (p_lcb != NULL && BTM_IsAclConnectionUp(bda, BT_TRANSPORT_LE) &&
+      p_lcb->link_state != LST_CONNECTED) {
     /* update link status */
-    btm_establish_continue(p_acl);
+    btm_establish_continue_from_address(bda, BT_TRANSPORT_LE);
     /* update l2cap link status and send callback */
     p_lcb->link_state = LST_CONNECTED;
     l2cu_process_fixed_chnl_resp(p_lcb);
@@ -346,8 +345,7 @@ void l2cble_conn_comp(uint16_t handle, uint8_t role, const RawAddress& bda,
  ******************************************************************************/
 static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
   uint16_t min_conn_int, max_conn_int, slave_latency, supervision_tout;
-  tACL_CONN* p_acl_cb = btm_bda_to_acl(p_lcb->remote_bd_addr, BT_TRANSPORT_LE);
-  if (!p_acl_cb) {
+  if (!BTM_IsAclConnectionUp(p_lcb->remote_bd_addr, BT_TRANSPORT_LE)) {
     LOG(ERROR) << "No known connection ACL for " << p_lcb->remote_bd_addr;
     return;
   }
@@ -380,7 +378,8 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
 #if (BLE_LLT_INCLUDED == TRUE)
           || (controller_get_interface()
                   ->supports_ble_connection_parameter_request() &&
-              HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl_cb->peer_le_features))
+              acl_peer_supports_ble_connection_parameters_request(
+                  p_lcb->remote_bd_addr))
 #endif
       ) {
         btsnd_hcic_ble_upd_ll_conn_params(p_lcb->handle, min_conn_int,
@@ -402,7 +401,8 @@ static void l2cble_start_conn_update(tL2C_LCB* p_lcb) {
 #if (BLE_LLT_INCLUDED == TRUE)
           || (controller_get_interface()
                   ->supports_ble_connection_parameter_request() &&
-              HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl_cb->peer_le_features))
+              acl_peer_supports_ble_connection_parameters_request(
+                  p_lcb->remote_bd_addr))
 #endif
       ) {
         btsnd_hcic_ble_upd_ll_conn_params(p_lcb->handle, p_lcb->min_interval,

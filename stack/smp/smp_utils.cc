@@ -35,6 +35,7 @@
 #include "l2c_api.h"
 #include "osi/include/osi.h"
 #include "smp_int.h"
+#include "stack/include/acl_api.h"
 
 #define SMP_PAIRING_REQ_SIZE 7
 #define SMP_CONFIRM_CMD_SIZE (OCTET16_LEN + 1)

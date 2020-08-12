@@ -522,11 +522,6 @@
 #define L2CAP_WAKE_PARKED_LINK TRUE
 #endif
 
-/* Whether link wants to be the master or the slave. */
-#ifndef L2CAP_DESIRED_LINK_ROLE
-#define L2CAP_DESIRED_LINK_ROLE HCI_ROLE_MASTER
-#endif
-
 /* Minimum number of ACL credit for high priority link */
 #ifndef L2CAP_HIGH_PRI_MIN_XMIT_QUOTA
 #define L2CAP_HIGH_PRI_MIN_XMIT_QUOTA 5
@@ -1228,10 +1223,6 @@
 #define BTA_AG_CIND_INFO                                                       \
   "(\"call\",(0,1)),(\"callsetup\",(0-3)),(\"service\",(0-1)),(\"signal\",(0-" \
   "5)),(\"roam\",(0,1)),(\"battchg\",(0-5)),(\"callheld\",(0-2))"
-#endif
-
-#ifndef BTA_DM_AVOID_A2DP_ROLESWITCH_ON_INQUIRY
-#define BTA_DM_AVOID_A2DP_ROLESWITCH_ON_INQUIRY TRUE
 #endif
 
 /******************************************************************************

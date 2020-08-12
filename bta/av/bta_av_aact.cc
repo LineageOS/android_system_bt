@@ -35,13 +35,10 @@
 #include "a2dp_sbc.h"
 #include "avdt_api.h"
 #include "avrcp_service.h"
-#include "bt_utils.h"
 #include "bta_av_int.h"
 #include "btif/include/btif_av_co.h"
 #include "btif/include/btif_config.h"
 #include "btif/include/btif_storage.h"
-#include "btm_int.h"
-#include "device/include/controller.h"
 #include "device/include/interop.h"
 #include "l2c_api.h"
 #include "l2cdefs.h"
@@ -53,8 +50,6 @@
 #if (BTA_AR_INCLUDED == TRUE)
 #include "bta_ar_api.h"
 #endif
-#include "btif/include/btif_av.h"
-#include "btif/include/btif_hf.h"
 
 /*****************************************************************************
  *  Constants
@@ -845,12 +840,7 @@ void bta_av_do_disc_a2dp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   }
 
   if (bta_av_cb.features & BTA_AV_FEAT_MASTER) {
-    L2CA_SetDesireRole(L2CAP_ROLE_DISALLOW_SWITCH);
-
-    if (bta_av_cb.audio_open_cnt == 1) {
-      /* there's already an A2DP connection. do not allow switch */
-      BTA_dm_block_role_switch();
-    }
+    BTM_default_block_role_switch();
   }
   /* store peer addr other parameters */
   bta_av_save_addr(p_scb, p_data->api_open.bd_addr);
@@ -1871,7 +1861,7 @@ void bta_av_do_start(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
    * It would not hurt us, if the peer device wants us to be master */
   if ((BTM_GetRole(p_scb->PeerAddress(), &cur_role) == BTM_SUCCESS) &&
       (cur_role == HCI_ROLE_MASTER)) {
-    BTA_dm_block_role_switch_for(p_scb->PeerAddress());
+    BTM_block_role_switch_for(p_scb->PeerAddress());
   }
 
   if (p_scb->started) {
@@ -1942,7 +1932,7 @@ void bta_av_str_stopped(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->PeerAddress());
   if ((bta_av_cb.features & BTA_AV_FEAT_MASTER) == 0 ||
       bta_av_cb.audio_open_cnt == 1) {
-    BTA_dm_unblock_role_switch_for(p_scb->PeerAddress());
+    BTM_unblock_role_switch_for(p_scb->PeerAddress());
   }
 
   if (p_scb->co_started) {
@@ -2376,7 +2366,7 @@ void bta_av_start_ok(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
        * master */
       if ((BTM_GetRole(p_scb->PeerAddress(), &cur_role) == BTM_SUCCESS) &&
           (cur_role == HCI_ROLE_MASTER)) {
-        BTA_dm_block_role_switch_for(p_scb->PeerAddress());
+        BTM_block_role_switch_for(p_scb->PeerAddress());
       }
     }
 
@@ -2439,7 +2429,7 @@ void bta_av_start_failed(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
     notify_start_failed(p_scb);
   }
 
-  BTA_dm_unblock_role_switch_for(p_scb->PeerAddress());
+  BTM_unblock_role_switch_for(p_scb->PeerAddress());
   p_scb->sco_suspend = false;
 }
 
@@ -2463,11 +2453,10 @@ void bta_av_str_closed(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
 
   if ((bta_av_cb.features & BTA_AV_FEAT_MASTER) == 0 ||
       bta_av_cb.audio_open_cnt == 1) {
-    BTA_dm_unblock_role_switch_for(p_scb->PeerAddress());
+    BTM_unblock_role_switch_for(p_scb->PeerAddress());
   }
   if (bta_av_cb.audio_open_cnt <= 1) {
-    /* last connection - restore the allow switch flag */
-    L2CA_SetDesireRole(L2CAP_ROLE_ALLOW_SWITCH);
+    BTM_default_unblock_role_switch();
   }
 
   if (p_scb->open_status != BTA_AV_SUCCESS) {
@@ -2575,7 +2564,7 @@ void bta_av_suspend_cfm(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
   bta_sys_idle(BTA_ID_AV, bta_av_cb.audio_open_cnt, p_scb->PeerAddress());
   if ((bta_av_cb.features & BTA_AV_FEAT_MASTER) == 0 ||
       bta_av_cb.audio_open_cnt == 1) {
-    BTA_dm_unblock_role_switch_for(p_scb->PeerAddress());
+    BTM_unblock_role_switch_for(p_scb->PeerAddress());
   }
 
   /* in case that we received suspend_ind, we may need to call co_stop here */

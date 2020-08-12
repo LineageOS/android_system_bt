@@ -33,8 +33,8 @@ using bluetooth::common::MessageLoopThread;
 
 MessageLoopThread bt_startup_thread("bt_startup_thread");
 
-void btu_task_start_up(void* context);
-void btu_task_shut_down(void* context);
+void btu_task_start_up();
+void btu_task_shut_down();
 
 /*****************************************************************************
  *
@@ -95,7 +95,6 @@ void btu_free_core() {
  *
  *****************************************************************************/
 void BTU_StartUp() {
-  btu_trace_level = HCI_INITIAL_TRACE_LEVEL;
   bt_startup_thread.StartUp();
   if (!bt_startup_thread.EnableRealTimeScheduling()) {
     LOG(ERROR) << __func__ << ": Unable to set real time scheduling policy for "
@@ -103,8 +102,7 @@ void BTU_StartUp() {
     BTU_ShutDown();
     return;
   }
-  if (!bt_startup_thread.DoInThread(FROM_HERE,
-                                    base::Bind(btu_task_start_up, nullptr))) {
+  if (!bt_startup_thread.DoInThread(FROM_HERE, base::Bind(btu_task_start_up))) {
     LOG(ERROR) << __func__ << ": Unable to continue start-up on "
                << bt_startup_thread;
     BTU_ShutDown();
@@ -113,6 +111,6 @@ void BTU_StartUp() {
 }
 
 void BTU_ShutDown() {
-  btu_task_shut_down(nullptr);
+  btu_task_shut_down();
   bt_startup_thread.ShutDown();
 }

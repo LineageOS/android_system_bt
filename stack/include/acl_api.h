@@ -29,28 +29,17 @@
 /*****************************************************************************
  *  ACL CHANNEL MANAGEMENT FUNCTIONS
  ****************************************************************************/
-/*******************************************************************************
- *
- * Function         BTM_SetLinkPolicy
- *
- * Description      Create and send HCI "Write Policy Set" command
- *
- * Returns          BTM_CMD_STARTED if successfully initiated, otherwise error
- *
- ******************************************************************************/
-tBTM_STATUS BTM_SetLinkPolicy(const RawAddress& remote_bda, uint16_t* settings);
+bool BTM_is_sniff_allowed_for(const RawAddress& peer_addr);
 
-/*******************************************************************************
- *
- * Function         BTM_SetDefaultLinkPolicy
- *
- * Description      Set the default value for HCI "Write Policy Set" command
- *                  to use when an ACL link is created.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_SetDefaultLinkPolicy(uint16_t settings);
+void BTM_unblock_sniff_mode_for(const RawAddress& peer_addr);
+void BTM_block_sniff_mode_for(const RawAddress& peer_addr);
+void BTM_unblock_role_switch_for(const RawAddress& peer_addr);
+void BTM_block_role_switch_for(const RawAddress& peer_addr);
+
+void BTM_default_unblock_role_switch();
+void BTM_default_block_role_switch();
+
+void BTM_acl_after_controller_started();
 
 /*******************************************************************************
  *
@@ -118,9 +107,7 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role);
  * Function         BTM_SwitchRole
  *
  * Description      This function is called to switch role between master and
- *                  slave.  If role is already set it will do nothing.  If the
- *                  command was initiated, the callback function is called upon
- *                  completion.
+ *                  slave.  If role is already set it will do nothing.
  *
  * Returns          BTM_SUCCESS if already in specified role.
  *                  BTM_CMD_STARTED if command issued to controller.
@@ -131,8 +118,7 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role);
  *                                       role switching
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role,
-                           tBTM_CMPL_CB* p_cb);
+tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role);
 
 /*******************************************************************************
  *
@@ -250,3 +236,41 @@ bool acl_refresh_remote_address(const tBTM_SEC_DEV_REC* p_dev_rec,
                                 const RawAddress& remote_bda,
                                 tBT_TRANSPORT transport, uint8_t rra_type,
                                 const RawAddress& rpa);
+
+void btm_establish_continue_from_address(const RawAddress& remote_bda,
+                                         tBT_TRANSPORT transport);
+
+bool acl_peer_supports_ble_connection_parameters_request(
+    const RawAddress& remote_bda);
+
+/*******************************************************************************
+ *
+ * Function         BTM_ReadConnectionAddr
+ *
+ * Description      Read the local device random address.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void BTM_ReadConnectionAddr(const RawAddress& remote_bda,
+                            RawAddress& local_conn_addr,
+                            tBLE_ADDR_TYPE* p_addr_type);
+
+/*******************************************************************************
+ *
+ * Function         BTM_IsBleConnection
+ *
+ * Description      This function is called to check if the connection handle
+ *                  for an LE link
+ *
+ * Returns          true if connection is LE link, otherwise false.
+ *
+ ******************************************************************************/
+bool BTM_IsBleConnection(uint16_t hci_handle);
+
+const RawAddress acl_address_from_handle(uint16_t hci_handle);
+tBTM_PM_MCB* acl_power_mode_from_handle(uint16_t hci_handle);
+int btm_pm_find_acl_ind(const RawAddress& remote_bda);
+
+void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec,
+                      uint8_t hci_status);

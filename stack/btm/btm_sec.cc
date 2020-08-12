@@ -100,7 +100,6 @@ static bool btm_dev_encrypted(tBTM_SEC_DEV_REC* p_dev_rec);
 static bool btm_dev_authorized(tBTM_SEC_DEV_REC* p_dev_rec);
 static bool btm_serv_trusted(tBTM_SEC_DEV_REC* p_dev_rec,
                              tBTM_SEC_SERV_REC* p_serv_rec);
-static bool btm_sec_is_serv_level0(uint16_t psm);
 static uint16_t btm_sec_set_serv_level4_flags(uint16_t cur_security,
                                               bool is_originator);
 
@@ -1221,6 +1220,12 @@ tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr,
   return (rc);
 }
 
+bool BTM_SecIsSecurityPending(const RawAddress& bd_addr) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
+  return p_dev_rec && (p_dev_rec->sec_state == BTM_SEC_STATE_ENCRYPTING ||
+                       p_dev_rec->sec_state == BTM_SEC_STATE_AUTHENTICATING);
+}
+
 /*******************************************************************************
  * disconnect the ACL link, if it's not done yet.
  ******************************************************************************/
@@ -1652,7 +1657,7 @@ static void btm_sec_check_upgrade(tBTM_SEC_DEV_REC* p_dev_rec,
  *
  ******************************************************************************/
 tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
-                                     uint16_t handle, CONNECTION_TYPE conn_type,
+                                     uint16_t handle, bool is_originator,
                                      tBTM_SEC_CALLBACK* p_callback,
                                      void* p_ref_data) {
   tBTM_SEC_DEV_REC* p_dev_rec;
@@ -1662,7 +1667,6 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
   bool old_is_originator;
   tBTM_STATUS rc = BTM_SUCCESS;
   bool chk_acp_auth_done = false;
-  const bool is_originator = conn_type;
   constexpr tBT_TRANSPORT transport =
       BT_TRANSPORT_BR_EDR; /* should check PSM range in LE connection oriented
                               L2CAP connection */
@@ -1676,7 +1680,7 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
   p_dev_rec->hci_handle = handle;
 
   /* Find the service record for the PSM */
-  p_serv_rec = btm_sec_find_first_serv(conn_type, psm);
+  p_serv_rec = btm_sec_find_first_serv(is_originator, psm);
 
   /* If there is no application registered with this PSM do not allow connection
    */
@@ -1687,8 +1691,7 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
   }
 
   /* Services level0 by default have no security */
-  if ((btm_sec_is_serv_level0(psm)) &&
-      (!btm_cb.devcb.secure_connections_only)) {
+  if (psm == BT_PSM_SDP) {
     (*p_callback)(&bd_addr, transport, p_ref_data, BTM_SUCCESS_NO_SECURITY);
     return (BTM_SUCCESS);
   }
@@ -2024,8 +2027,7 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
     return BTM_NO_RESOURCES;
   }
 
-  if ((btm_cb.security_mode == BTM_SEC_MODE_SC) &&
-      (!btm_sec_is_serv_level0(psm))) {
+  if ((btm_cb.security_mode == BTM_SEC_MODE_SC) && (psm == BT_PSM_SDP)) {
     security_required = btm_sec_set_serv_level4_flags(
         p_serv_rec->security_flags, is_originator);
   } else {
@@ -4036,9 +4038,6 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
     btm_set_packet_types_from_address(
         bda, BT_TRANSPORT_BR_EDR, btm_cb.acl_cb_.btm_acl_pkt_types_supported);
 
-    if (btm_cb.acl_cb_.btm_def_link_policy)
-      BTM_SetLinkPolicy(bda, &btm_cb.acl_cb_.btm_def_link_policy);
-
   btm_acl_created(bda, p_dev_rec->dev_class, p_dev_rec->sec_bd_name, handle,
                   HCI_ROLE_SLAVE, BT_TRANSPORT_BR_EDR);
 
@@ -4952,11 +4951,9 @@ bool btm_sec_are_all_trusted(uint32_t p_mask[]) {
  * Returns          Pointer to the record or NULL
  *
  ******************************************************************************/
-tBTM_SEC_SERV_REC* btm_sec_find_first_serv(CONNECTION_TYPE conn_type,
-                                           uint16_t psm) {
+tBTM_SEC_SERV_REC* btm_sec_find_first_serv(bool is_originator, uint16_t psm) {
   tBTM_SEC_SERV_REC* p_serv_rec = &btm_cb.sec_serv_rec[0];
   int i;
-  bool is_originator = conn_type;
 
   if (is_originator && btm_cb.p_out_serv && btm_cb.p_out_serv->psm == psm) {
     /* If this is outgoing connection and the PSM matches p_out_serv,
@@ -5422,24 +5419,6 @@ void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
     btm_io_capabilities_req(p_dev_rec->bd_addr);
     p_dev_rec->remote_features_needed = false;
   }
-}
-
-/*******************************************************************************
- *
- * Function         btm_sec_is_serv_level0
- *
- * Description      This function is called to check if the service
- *                  corresponding to PSM is security mode 4 level 0 service.
- *
- * Returns          true if the service is security mode 4 level 0 service
- *
- ******************************************************************************/
-static bool btm_sec_is_serv_level0(uint16_t psm) {
-  if (psm == BT_PSM_SDP) {
-    BTM_TRACE_DEBUG("%s: PSM: 0x%04x -> mode 4 level 0 service", __func__, psm);
-    return true;
-  }
-  return false;
 }
 
 /*******************************************************************************

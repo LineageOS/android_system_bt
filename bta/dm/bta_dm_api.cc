@@ -30,7 +30,6 @@
 #include "bta_sys.h"
 #include "bta_sys_int.h"
 #include "btm_api.h"
-#include "btm_int.h"
 #include "osi/include/osi.h"
 #include "stack/include/btu.h"
 #include "utl.h"
@@ -87,11 +86,6 @@ tBTA_STATUS BTA_DisableBluetooth(void) {
 void BTA_EnableTestMode(void) {
   do_in_main_thread(FROM_HERE,
                     base::Bind(base::IgnoreResult(BTM_EnableTestMode)));
-}
-
-/** Disable bluetooth device under test mode */
-void BTA_DisableTestMode(void) {
-  do_in_main_thread(FROM_HERE, base::Bind(BTM_DeviceReset));
 }
 
 /** This function sets the Bluetooth name of local device */
@@ -768,18 +762,4 @@ void BTA_VendorInit(void) { APPL_TRACE_API("BTA_VendorInit"); }
  * Returns          void
  *
  ******************************************************************************/
-void BTA_VendorCleanup(void) {
-  tBTM_BLE_VSC_CB cmn_ble_vsc_cb;
-  BTM_BleGetVendorCapabilities(&cmn_ble_vsc_cb);
-
-  if (cmn_ble_vsc_cb.max_filter > 0) {
-    btm_ble_adv_filter_cleanup();
-#if (BLE_PRIVACY_SPT == TRUE)
-    btm_ble_resolving_list_cleanup();
-#endif
-  }
-
-  if (cmn_ble_vsc_cb.tot_scan_results_strg > 0) btm_ble_batchscan_cleanup();
-
-  if (cmn_ble_vsc_cb.adv_inst_max > 0) btm_ble_multi_adv_cleanup();
-}
+void BTA_VendorCleanup(void) { BTM_VendorCleanup(); }
