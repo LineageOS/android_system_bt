@@ -836,8 +836,8 @@ static void gap_connect_cfm(uint16_t l2cap_cid, uint16_t result) {
   /* initiate security process, if needed */
   if ((p_ccb->con_flags & GAP_CCB_FLAGS_SEC_DONE) == 0 &&
       p_ccb->transport != BT_TRANSPORT_LE) {
-    btm_sec_mx_access_request(p_ccb->rem_dev_address, p_ccb->psm, true, 0, 0,
-                              &gap_sec_check_complete, p_ccb);
+    // Assume security check is done by L2cap
+    gap_sec_check_complete(nullptr, BT_TRANSPORT_BR_EDR, p_ccb, BTM_SUCCESS);
   }
 
   /* If the connection response contains success status, then */
