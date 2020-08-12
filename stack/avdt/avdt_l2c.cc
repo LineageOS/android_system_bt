@@ -195,9 +195,8 @@ void avdt_l2c_connect_ind_cback(const RawAddress& bd_addr, uint16_t lcid,
         // Disable 3DH packets for AVDT ACL to improve sensitivity on HS
         btm_set_packet_types_from_address(
             bd_addr, BT_TRANSPORT_BR_EDR,
-            (btm_cb.acl_cb_.btm_acl_pkt_types_supported |
-             HCI_PKT_TYPES_MASK_NO_3_DH1 | HCI_PKT_TYPES_MASK_NO_3_DH3 |
-             HCI_PKT_TYPES_MASK_NO_3_DH5));
+            (acl_get_supported_packet_types() | HCI_PKT_TYPES_MASK_NO_3_DH1 |
+             HCI_PKT_TYPES_MASK_NO_3_DH3 | HCI_PKT_TYPES_MASK_NO_3_DH5));
       }
       /* Assume security check is complete */
       avdt_sec_check_complete_term(&p_ccb->peer_addr, BT_TRANSPORT_BR_EDR,
@@ -307,7 +306,7 @@ void avdt_l2c_connect_cfm_cback(uint16_t lcid, uint16_t result) {
               // Disable 3DH packets for AVDT ACL to improve sensitivity on HS
               btm_set_packet_types_from_address(
                   p_ccb->peer_addr, BT_TRANSPORT_BR_EDR,
-                  (btm_cb.acl_cb_.btm_acl_pkt_types_supported |
+                  (acl_get_supported_packet_types() |
                    HCI_PKT_TYPES_MASK_NO_3_DH1 | HCI_PKT_TYPES_MASK_NO_3_DH3 |
                    HCI_PKT_TYPES_MASK_NO_3_DH5));
             }
