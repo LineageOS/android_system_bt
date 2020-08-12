@@ -918,14 +918,6 @@
 #define BNEP_SUPPORTS_STATUS_API TRUE
 #endif
 
-/*
- * When BNEP connection changes roles after the connection is established
- * we will do an authentication check again on the new role
-*/
-#ifndef BNEP_DO_AUTH_FOR_ROLE_SWITCH
-#define BNEP_DO_AUTH_FOR_ROLE_SWITCH TRUE
-#endif
-
 /* Maximum number of protocol filters supported. */
 #ifndef BNEP_MAX_PROT_FILTERS
 #define BNEP_MAX_PROT_FILTERS 5
@@ -1053,21 +1045,6 @@
 /* Default description for PANU role service */
 #ifndef PAN_PANU_DEFAULT_DESCRIPTION
 #define PAN_PANU_DEFAULT_DESCRIPTION "PANU"
-#endif
-
-/* Default Security level for PANU role. */
-#ifndef PAN_PANU_SECURITY_LEVEL
-#define PAN_PANU_SECURITY_LEVEL 0
-#endif
-
-/* Default Security level for GN role. */
-#ifndef PAN_GN_SECURITY_LEVEL
-#define PAN_GN_SECURITY_LEVEL 0
-#endif
-
-/* Default Security level for NAP role. */
-#ifndef PAN_NAP_SECURITY_LEVEL
-#define PAN_NAP_SECURITY_LEVEL 0
 #endif
 
 /******************************************************************************
