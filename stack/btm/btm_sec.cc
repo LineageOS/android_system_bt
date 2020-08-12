@@ -3584,14 +3584,12 @@ void btm_sec_encrypt_change(uint16_t handle, uint8_t status,
   BTM_TRACE_DEBUG("after update p_dev_rec->sec_flags=0x%x",
                   p_dev_rec->sec_flags);
 
-  uint8_t acl_idx = btm_handle_to_acl_index(handle);
-  tACL_CONN* p_acl = NULL;
-  if (acl_idx != MAX_L2CAP_LINKS) p_acl = &btm_cb.acl_cb_.acl_db[acl_idx];
-
-  if (p_acl != NULL)
+  if (BTM_IsAclConnectionUpFromHandle(handle)) {
     btm_sec_check_pending_enc_req(p_dev_rec, p_acl->transport, encr_enable);
+  }
 
-  if (p_acl && p_acl->transport == BT_TRANSPORT_LE) {
+  if (BTM_IsAclConnectionUpFromHandle(handle) &&
+      acl_is_transport_le_from_handle(handle)) {
     if (status == HCI_ERR_KEY_MISSING || status == HCI_ERR_AUTH_FAILURE ||
         status == HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE) {
       p_dev_rec->sec_flags &= ~(BTM_SEC_LE_LINK_KEY_KNOWN);
