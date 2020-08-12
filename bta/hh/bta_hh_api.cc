@@ -122,10 +122,11 @@ void BTA_HhClose(uint8_t dev_handle) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HhOpen(const RawAddress& dev_bda, tBTA_HH_PROTO_MODE mode,
-                tBTA_SEC sec_mask) {
+void BTA_HhOpen(const RawAddress& dev_bda) {
   tBTA_HH_API_CONN* p_buf =
       (tBTA_HH_API_CONN*)osi_calloc(sizeof(tBTA_HH_API_CONN));
+  tBTA_HH_PROTO_MODE mode = BTA_HH_PROTO_RPT_MODE;
+  tBTA_SEC sec_mask = BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT;
 
   p_buf->hdr.event = BTA_HH_API_OPEN_EVT;
   p_buf->hdr.layer_specific = BTA_HH_INVALID_HANDLE;
