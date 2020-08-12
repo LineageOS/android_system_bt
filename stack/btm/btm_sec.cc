@@ -2401,22 +2401,6 @@ void btm_sec_init(uint8_t sec_mode) {
 
 /*******************************************************************************
  *
- * Function         btm_sec_device_down
- *
- * Description      This function should be called when device is disabled or
- *                  turned off
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_sec_device_down(void) {
-  BTM_TRACE_EVENT("%s() State: %s", __func__,
-                  btm_pair_state_descr(btm_cb.pairing_state));
-  btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
-}
-
-/*******************************************************************************
- *
  * Function         btm_sec_dev_reset
  *
  * Description      This function should be called after device reset
