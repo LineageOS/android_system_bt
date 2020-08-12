@@ -2435,7 +2435,7 @@ void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p, uint16_t* p_pkt_type) {
  *
  ******************************************************************************/
 void btm_pm_sm_alloc(uint8_t ind) {
-  tBTM_PM_MCB* p_db = &btm_cb.pm_mode_db[ind]; /* per ACL link */
+  tBTM_PM_MCB* p_db = &btm_cb.acl_cb_.pm_mode_db[ind]; /* per ACL link */
   memset(p_db, 0, sizeof(tBTM_PM_MCB));
   p_db->state = BTM_PM_ST_ACTIVE;
 #if (BTM_PM_DEBUG == TRUE)
@@ -2567,7 +2567,7 @@ tBTM_PM_MCB* acl_power_mode_from_handle(uint16_t hci_handle) {
   if (index >= MAX_L2CAP_LINKS) {
     return nullptr;
   }
-  return &btm_cb.pm_mode_db[index];
+  return &btm_cb.acl_cb_.pm_mode_db[index];
 }
 
 /*******************************************************************************
