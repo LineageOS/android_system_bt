@@ -38,13 +38,7 @@
 #define PANU_SERVICE_NAME "Android Network User"
 #define TAP_IF_NAME "bt-pan"
 #define TAP_MAX_PKT_WRITE_LEN 2000
-#ifndef PAN_SECURITY
-#define PAN_SECURITY                                                         \
-  (BTM_SEC_IN_AUTHENTICATE | BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_IN_ENCRYPT | \
-   BTM_SEC_OUT_ENCRYPT)
-#endif
 
-#define PAN_STATE_UNKNOWN 0
 #define PAN_STATE_OPEN 1
 #define PAN_STATE_CLOSE 2
 #ifndef PAN_ROLE_INACTIVE

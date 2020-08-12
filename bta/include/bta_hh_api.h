@@ -303,7 +303,7 @@ typedef void(tBTA_HH_CBACK)(tBTA_HH_EVT event, tBTA_HH* p_data);
  * Returns          void
  *
  ******************************************************************************/
-extern void BTA_HhEnable(tBTA_SEC sec_mask, tBTA_HH_CBACK* p_cback);
+extern void BTA_HhEnable(tBTA_HH_CBACK* p_cback);
 
 /*******************************************************************************
  *
