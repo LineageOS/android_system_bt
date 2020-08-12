@@ -676,7 +676,7 @@ void btif_hh_service_registration(bool enable) {
       btif_hd_service_registration();
     }
   } else if (enable) {
-    BTA_HhEnable(BTA_SEC_ENCRYPT, bte_hh_evt);
+    BTA_HhEnable(bte_hh_evt);
   } else {
     btif_hh_cb.service_dereg_active = TRUE;
     BTA_HhDisable();
@@ -1688,7 +1688,7 @@ static const bthh_interface_t bthhInterface = {
 bt_status_t btif_hh_execute_service(bool b_enable) {
   if (b_enable) {
     /* Enable and register with BTA-HH */
-    BTA_HhEnable(BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT, bte_hh_evt);
+    BTA_HhEnable(bte_hh_evt);
   } else {
     /* Disable HH */
     BTA_HhDisable();

@@ -159,14 +159,8 @@ tBNEP_RESULT BNEP_Connect(const RawAddress& p_rem_bda, const Uuid& src_uuid,
     BNEP_TRACE_API("BNEP initiating security procedures for src uuid %s",
                    p_bcb->src_uuid.ToString().c_str());
 
-#if (BNEP_DO_AUTH_FOR_ROLE_SWITCH == TRUE)
-    btm_sec_mx_access_request(p_bcb->rem_bda, BT_PSM_BNEP, true,
-                              BTM_SEC_PROTO_BNEP, src_uuid.As32Bit(),
-                              &bnep_sec_check_complete, p_bcb);
-#else
-    bnep_sec_check_complete(p_bcb->rem_bda, p_bcb, BTM_SUCCESS);
-#endif
-
+    bnep_sec_check_complete(&p_bcb->rem_bda, BT_TRANSPORT_BR_EDR, p_bcb,
+                            BTM_SUCCESS);
   } else {
     /* Transition to the next appropriate state, waiting for connection confirm.
      */
