@@ -2356,7 +2356,7 @@ void btm_sec_check_pending_reqs(void) {
     tBTM_SEC_QUEUE_ENTRY* p_e;
     while ((p_e = (tBTM_SEC_QUEUE_ENTRY*)fixed_queue_try_dequeue(bq)) != NULL) {
       /* Check that the ACL is still up before starting security procedures */
-      if (btm_bda_to_acl(p_e->bd_addr, p_e->transport) != NULL) {
+      if (BTM_IsAclConnectionUp(p_e->bd_addr, p_e->transport)) {
         if (p_e->psm != 0) {
           BTM_TRACE_EVENT(
               "%s PSM:0x%04x Is_Orig:%u mx_proto_id:%u mx_chan_id:%u", __func__,
@@ -5251,7 +5251,7 @@ static bool btm_sec_check_prefetch_pin(tBTM_SEC_DEV_REC* p_dev_rec) {
       if (btm_cb.api.p_pin_callback &&
           ((btm_cb.pairing_flags & BTM_PAIR_FLAGS_PIN_REQD) == 0)) {
         BTM_TRACE_DEBUG("%s() PIN code callback called", __func__);
-        if (btm_bda_to_acl(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR) == NULL)
+        if (BTM_IsAclConnectionUp(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR))
           btm_cb.pairing_flags |= BTM_PAIR_FLAGS_PIN_REQD;
         (btm_cb.api.p_pin_callback)(
             p_dev_rec->bd_addr, p_dev_rec->dev_class, p_dev_rec->sec_bd_name,

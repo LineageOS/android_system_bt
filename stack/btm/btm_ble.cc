@@ -549,7 +549,7 @@ bool BTM_ReadConnectedTransportAddress(RawAddress* remote_bda,
   if (p_dev_rec == NULL) return false;
 
   if (transport == BT_TRANSPORT_BR_EDR) {
-    if (btm_bda_to_acl(p_dev_rec->bd_addr, transport) != NULL) {
+    if (BTM_IsAclConnectionUp(p_dev_rec->bd_addr, transport)) {
       *remote_bda = p_dev_rec->bd_addr;
       return true;
     } else if (p_dev_rec->device_type & BT_DEVICE_TYPE_BREDR) {
@@ -561,7 +561,7 @@ bool BTM_ReadConnectedTransportAddress(RawAddress* remote_bda,
 
   if (transport == BT_TRANSPORT_LE) {
     *remote_bda = p_dev_rec->ble.pseudo_addr;
-    if (btm_bda_to_acl(p_dev_rec->ble.pseudo_addr, transport) != NULL)
+    if (BTM_IsAclConnectionUp(p_dev_rec->ble.pseudo_addr, transport))
       return true;
     else
       return false;
