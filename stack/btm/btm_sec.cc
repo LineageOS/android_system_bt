@@ -2387,20 +2387,6 @@ void btm_sec_check_pending_reqs(void) {
 
 /*******************************************************************************
  *
- * Function         btm_sec_init
- *
- * Description      This function is on the SEC startup
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_sec_init(uint8_t sec_mode) {
-  btm_cb.security_mode = sec_mode;
-  btm_cb.pairing_bda = RawAddress::kAny;
-}
-
-/*******************************************************************************
- *
  * Function         btm_sec_dev_reset
  *
  * Description      This function should be called after device reset
