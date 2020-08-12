@@ -2264,15 +2264,12 @@ void btm_ble_read_remote_features_complete(uint8_t* p) {
     if (status != HCI_ERR_UNSUPPORTED_REM_FEATURE) return;
   }
 
-  int idx = btm_handle_to_acl_index(handle);
-  if (idx == MAX_L2CAP_LINKS) {
-    BTM_TRACE_ERROR("%s: can't find acl for handle: 0x%04d", __func__, handle);
-    return;
-  }
-
   if (status == HCI_SUCCESS) {
-    STREAM_TO_ARRAY(btm_cb.acl_cb_.acl_db[idx].peer_le_features, p,
-                    BD_FEATURES_LEN);
+    if (!acl_set_peer_le_features_from_handle(handle, p)) {
+      BTM_TRACE_ERROR("%s: can't find acl for handle: 0x%04d", __func__,
+                      handle);
+      return;
+    }
   }
 
   btsnd_hcic_rmt_ver_req(handle);
