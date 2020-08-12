@@ -95,9 +95,9 @@ void AVDT_Register(AvdtpRcb* p_reg, tAVDT_CTRL_CBACK* p_cback) {
 
   /* set security level */
   BTM_SetSecurityLevel(true, "", BTM_SEC_SERVICE_AVDTP, p_reg->sec_mask,
-                       AVDT_PSM, BTM_SEC_PROTO_AVDT, AVDT_CHAN_SIG);
+                       AVDT_PSM, 0, 0);
   BTM_SetSecurityLevel(false, "", BTM_SEC_SERVICE_AVDTP, p_reg->sec_mask,
-                       AVDT_PSM, BTM_SEC_PROTO_AVDT, AVDT_CHAN_SIG);
+                       AVDT_PSM, 0, 0);
 
   /* initialize AVDTP data structures */
   avdt_scb_init();
