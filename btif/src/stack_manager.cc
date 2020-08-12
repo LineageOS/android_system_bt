@@ -58,6 +58,8 @@ static void event_clean_up_stack(void* context);
 static void event_signal_stack_up(void* context);
 static void event_signal_stack_down(void* context);
 
+void btu_task_start_up();
+
 // Unvetted includes/imports, etc which should be removed or vetted in the
 // future
 static future_t* hack_future;
@@ -164,6 +166,7 @@ static void event_start_up_stack(UNUSED_ATTR void* context) {
   }
 
   BTU_StartUp();
+  btu_task_start_up();
 
   if (future_await(local_hack_future) != FUTURE_SUCCESS) {
     LOG_ERROR("%s failed to start up the stack", __func__);
