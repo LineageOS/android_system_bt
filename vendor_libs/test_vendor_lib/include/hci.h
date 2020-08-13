@@ -26,6 +26,7 @@ enum class PacketType : uint8_t {
   ACL = 2,
   SCO = 3,
   EVENT = 4,
+  ISO = 5,
 };
 
 }  // namespace hci
