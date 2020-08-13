@@ -903,8 +903,7 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
 #endif
 
   /* If connection already exists... */
-  tACL_CONN* p_acl = btm_bda_to_acl(bd_addr, transport);
-  if (p_acl && p_acl->hci_handle != HCI_INVALID_HANDLE) {
+  if (BTM_IsAclConnectionUpAndHandleValid(bd_addr, transport)) {
     btm_sec_start_authentication(p_dev_rec);
 
     btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_PIN_REQ);
