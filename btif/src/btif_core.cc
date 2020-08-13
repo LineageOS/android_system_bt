@@ -322,7 +322,6 @@ void btif_sendmsg(void* p_msg) {
 bt_status_t btif_init_bluetooth() {
   LOG_INFO("%s entered", __func__);
   exit_manager = new base::AtExitManager();
-  bte_main_boot_entry();
   jni_thread.StartUp();
   jni_thread.DoInThread(FROM_HERE, base::Bind(btif_jni_associate));
   LOG_INFO("%s finished", __func__);
