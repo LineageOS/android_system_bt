@@ -1189,9 +1189,9 @@ tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr,
       p_dev_rec->security_required, p_dev_rec, p_callback);
 
   if (transport == BT_TRANSPORT_LE) {
-    tACL_CONN* p_acl = btm_bda_to_acl(bd_addr, transport);
-    if (p_acl) {
-      rc = btm_ble_set_encryption(bd_addr, sec_act, p_acl->link_role);
+    if (BTM_IsAclConnectionUp(bd_addr, transport)) {
+      rc = btm_ble_set_encryption(bd_addr, sec_act,
+                                  acl_link_role(bd_addr, transport));
     } else {
       rc = BTM_WRONG_MODE;
       BTM_TRACE_WARNING("%s: cannot call btm_ble_set_encryption, p is NULL",
