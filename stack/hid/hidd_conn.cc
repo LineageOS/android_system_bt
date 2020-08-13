@@ -242,13 +242,9 @@ static void hidd_l2cif_connect_ind(const RawAddress& bd_addr, uint16_t cid,
     p_hcon->disc_reason = HID_L2CAP_CONN_FAIL;
 
     p_hcon->conn_state = HID_CONN_STATE_SECURITY;
-    if (btm_sec_mx_access_request(p_dev->addr, HID_PSM_CONTROL, FALSE,
-                                  BTM_SEC_PROTO_HID, HIDD_NOSEC_CHN,
-                                  &hidd_sec_check_complete,
-                                  p_dev) == BTM_CMD_STARTED) {
-      L2CA_ConnectRsp(bd_addr, id, cid, L2CAP_CONN_PENDING, L2CAP_CONN_OK);
-    }
 
+    // Assume security check ok
+    hidd_sec_check_complete(nullptr, BT_TRANSPORT_BR_EDR, p_dev, BTM_SUCCESS);
     return;
   }
 
@@ -310,9 +306,10 @@ static void hidd_l2cif_connect_cfm(uint16_t cid, uint16_t result) {
     p_hcon->disc_reason =
         HID_L2CAP_CONN_FAIL; /* in case disconnected before sec completed */
 
-    btm_sec_mx_access_request(p_dev->addr, HID_PSM_CONTROL, TRUE,
-                              BTM_SEC_PROTO_HID, HIDD_SEC_CHN,
-                              &hidd_sec_check_complete_orig, p_dev);
+    // Assume security check ok
+    hidd_sec_check_complete_orig(nullptr, BT_TRANSPORT_BR_EDR, p_dev,
+                                 BTM_SUCCESS);
+
   } else {
     p_hcon->conn_state = HID_CONN_STATE_CONFIG;
     L2CA_ConfigReq(cid, &hd_cb.l2cap_intr_cfg);
