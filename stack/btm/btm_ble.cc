@@ -229,50 +229,7 @@ const Octet16& BTM_GetDeviceDHK() {
   return btm_cb.devcb.id_keys.dhk;
 }
 
-/*******************************************************************************
- *
- * Function       BTM_ReadRemoteConnectionAddr
- *
- * Description    This function is read the remote device address currently used
- *
- * Parameters     pseudo_addr: pseudo random address available
- *                conn_addr:connection address used
- *                p_addr_type : BD Address type, Public or Random of the address
- *                              used
- *
- * Returns        bool, true if connection to remote device exists, else false
- *
- ******************************************************************************/
-bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
-                                  RawAddress& conn_addr,
-                                  tBLE_ADDR_TYPE* p_addr_type) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_ReadRemoteConnectionAddr(pseudo_addr, conn_addr,
-                                                         p_addr_type);
-  }
-  bool st = true;
-#if (BLE_PRIVACY_SPT == TRUE)
-  tACL_CONN* p_acl = btm_bda_to_acl(pseudo_addr, BT_TRANSPORT_LE);
 
-  if (p_acl == NULL) {
-    BTM_TRACE_ERROR(
-        "BTM_ReadRemoteConnectionAddr can not find connection"
-        " with matching address");
-    return false;
-  }
-
-  conn_addr = p_acl->active_remote_addr;
-  *p_addr_type = p_acl->active_remote_addr_type;
-#else
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(pseudo_addr);
-
-  conn_addr = pseudo_addr;
-  if (p_dev_rec != NULL) {
-    *p_addr_type = p_dev_rec->ble.ble_addr_type;
-  }
-#endif
-  return st;
-}
 /*******************************************************************************
  *
  * Function         BTM_SecurityGrant
