@@ -93,6 +93,13 @@ class HciHalFacadeService : public HciHalFacade::Service, public ::bluetooth::ha
     return pending_sco_events_.RunLoop(context, writer);
   };
 
+  ::grpc::Status FetchHciIso(
+      ::grpc::ServerContext* context,
+      const ::google::protobuf::Empty* request,
+      ::grpc::ServerWriter<HciIsoPacket>* writer) override {
+    return pending_iso_events_.RunLoop(context, writer);
+  };
+
   void hciEventReceived(bluetooth::hal::HciPacket event) override {
     {
       HciEventPacket response;
@@ -115,6 +122,12 @@ class HciHalFacadeService : public HciHalFacade::Service, public ::bluetooth::ha
     pending_sco_events_.OnIncomingEvent(std::move(response));
   }
 
+  void isoDataReceived(bluetooth::hal::HciPacket data) override {
+    HciIsoPacket response;
+    response.set_payload(std::string(data.begin(), data.end()));
+    pending_iso_events_.OnIncomingEvent(std::move(response));
+  }
+
  private:
   HciHal* hal_;
   bool can_send_hci_command_ = true;
@@ -123,6 +136,7 @@ class HciHalFacadeService : public HciHalFacade::Service, public ::bluetooth::ha
   ::bluetooth::grpc::GrpcEventQueue<HciEventPacket> pending_hci_events_{"FetchHciEvent"};
   ::bluetooth::grpc::GrpcEventQueue<HciAclPacket> pending_acl_events_{"FetchHciAcl"};
   ::bluetooth::grpc::GrpcEventQueue<HciScoPacket> pending_sco_events_{"FetchHciSco"};
+  ::bluetooth::grpc::GrpcEventQueue<HciIsoPacket> pending_iso_events_{"FetchHciIso"};
 };
 
 void HciHalFacadeModule::ListDependencies(ModuleList* list) {
