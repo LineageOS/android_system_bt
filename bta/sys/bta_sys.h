@@ -152,26 +152,8 @@ extern uint8_t appl_trace_level;
 /*****************************************************************************
  *  Macros
  ****************************************************************************/
-
 /* Calculate start of event enumeration; id is top 8 bits of event */
 #define BTA_SYS_EVT_START(id) ((id) << 8)
-
-/*****************************************************************************
- *  events for BTA SYS HW manager
- ****************************************************************************/
-
-/* events sent to SYS HW manager - must be kept synchronized with tables in
- * bta_sys_main.cc */
-enum {
-  /* device manager local device API events */
-  BTA_SYS_API_ENABLE_EVT = BTA_SYS_EVT_START(BTA_ID_SYS),
-  BTA_SYS_EVT_STACK_ENABLED_EVT,
-  BTA_SYS_API_DISABLE_EVT,
-  BTA_SYS_ERROR_EVT,
-
-  BTA_SYS_MAX_EVT
-};
-typedef uint8_t tBTA_SYS_HW_EVT;
 
 /*****************************************************************************
  *  Function declarations
