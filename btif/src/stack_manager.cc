@@ -341,6 +341,7 @@ static void event_clean_up_stack(void* context) {
   stack_is_initialized = false;
 
   btif_cleanup_bluetooth();
+  bte_main_cleanup();
   module_clean_up(get_module(BTIF_CONFIG_MODULE));
   module_clean_up(get_module(BT_UTILS_MODULE));
   module_clean_up(get_module(OSI_MODULE));

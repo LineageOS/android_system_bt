@@ -402,7 +402,6 @@ bt_status_t btif_cleanup_bluetooth() {
   jni_thread.DoInThread(FROM_HERE, base::BindOnce(btif_jni_disassociate));
   btif_queue_release();
   jni_thread.ShutDown();
-  bte_main_cleanup();
   delete exit_manager;
   exit_manager = nullptr;
   btif_dut_mode = 0;
