@@ -114,8 +114,6 @@ extern void btm_read_remote_ext_features_failed(uint8_t status,
                                                 uint16_t handle);
 extern void btm_read_remote_version_complete(uint8_t* p);
 
-extern tACL_CONN* btm_bda_to_acl(const RawAddress& bda,
-                                 tBT_TRANSPORT transport);
 extern void btm_acl_notif_conn_collision(const RawAddress& bda);
 extern void btm_acl_update_conn_addr(uint16_t conn_handle,
                                      const RawAddress& address);
