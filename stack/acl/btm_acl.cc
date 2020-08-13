@@ -108,6 +108,11 @@ void btm_acl_init(void) {
   /* Initialize nonzero defaults */
   btm_cb.acl_cb_.btm_def_link_super_tout = HCI_DEFAULT_INACT_TOUT;
   btm_cb.acl_cb_.acl_disc_reason = 0xff;
+
+  btm_cb.acl_cb_.btm_acl_pkt_types_supported =
+      BTM_ACL_PKT_TYPES_MASK_DH1 + BTM_ACL_PKT_TYPES_MASK_DM1 +
+      BTM_ACL_PKT_TYPES_MASK_DH3 + BTM_ACL_PKT_TYPES_MASK_DM3 +
+      BTM_ACL_PKT_TYPES_MASK_DH5 + BTM_ACL_PKT_TYPES_MASK_DM5;
 }
 
 void BTM_acl_after_controller_started() {
