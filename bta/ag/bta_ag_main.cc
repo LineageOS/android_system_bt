@@ -564,8 +564,7 @@ void bta_ag_resume_open(tBTA_AG_SCB* p_scb) {
   if (p_scb->state == BTA_AG_INIT_ST) {
     LOG(INFO) << __func__ << ": Resume connection to " << p_scb->peer_addr
               << ", handle" << bta_ag_scb_to_idx(p_scb);
-    tBTA_AG_DATA open_data = {.api_open = {.bd_addr = p_scb->peer_addr,
-                                           .sec_mask = p_scb->cli_sec_mask}};
+    tBTA_AG_DATA open_data = {.api_open = {.bd_addr = p_scb->peer_addr}};
     bta_ag_sm_execute(p_scb, BTA_AG_API_OPEN_EVT, open_data);
   } else {
     VLOG(1) << __func__ << ": device " << p_scb->peer_addr
@@ -653,8 +652,7 @@ void bta_ag_api_disable() {
  * Returns          void
  *
  ******************************************************************************/
-void bta_ag_api_register(tBTA_SERVICE_MASK services, tBTA_SEC sec_mask,
-                         tBTA_AG_FEAT features,
+void bta_ag_api_register(tBTA_SERVICE_MASK services, tBTA_AG_FEAT features,
                          const std::vector<std::string>& service_names,
                          uint8_t app_id) {
   tBTA_AG_SCB* p_scb = bta_ag_scb_alloc();
@@ -662,7 +660,6 @@ void bta_ag_api_register(tBTA_SERVICE_MASK services, tBTA_SEC sec_mask,
     APPL_TRACE_DEBUG("bta_ag_api_register: p_scb 0x%08x ", p_scb);
     tBTA_AG_DATA data = {};
     data.api_register.features = features;
-    data.api_register.sec_mask = sec_mask;
     data.api_register.services = services;
     data.api_register.app_id = app_id;
     for (int i = 0; i < BTA_AG_NUM_IDX; i++) {

@@ -102,7 +102,7 @@ static void bta_ag_cback_open(tBTA_AG_SCB* p_scb, const RawAddress& bd_addr,
 void bta_ag_register(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   /* initialize control block */
   p_scb->reg_services = data.api_register.services;
-  p_scb->serv_sec_mask = data.api_register.sec_mask;
+  p_scb->serv_sec_mask = BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT;
   p_scb->features = data.api_register.features;
   p_scb->app_id = data.api_register.app_id;
 
@@ -175,7 +175,7 @@ void bta_ag_start_dereg(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
  ******************************************************************************/
 void bta_ag_start_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
   p_scb->peer_addr = data.api_open.bd_addr;
-  p_scb->cli_sec_mask = data.api_open.sec_mask;
+  p_scb->cli_sec_mask = BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT;
   p_scb->open_services = p_scb->reg_services;
 
   /* Check if RFCOMM has any incoming connection to avoid collision. */
