@@ -718,15 +718,3 @@ extern void BTA_DmBleObserve(bool start, uint8_t duration,
  *
  ******************************************************************************/
 void BTA_VendorInit(void) { APPL_TRACE_API("BTA_VendorInit"); }
-
-/*******************************************************************************
- *
- * Function         BTA_VendorCleanup
- *
- * Description      This function frees up Broadcom specific VS specific dynamic
- *                  memory
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_VendorCleanup(void) { BTM_VendorCleanup(); }
