@@ -2661,3 +2661,12 @@ bool sco_peer_supports_esco_3m_phy(uint16_t hci_handle) {
   }
   return HCI_EDR_ESCO_3MPS_SUPPORTED(p_acl->peer_lmp_feature_pages[0]);
 }
+
+bool acl_is_switch_role_idle(const RawAddress& bd_addr,
+                             tBT_TRANSPORT transport) {
+  tACL_CONN* p_acl = btm_bda_to_acl(bd_addr, transport);
+  if (p_acl == nullptr) {
+    return false;
+  }
+  return p_acl->switch_role_state == BTM_ACL_SWKEY_STATE_IDLE;
+}
