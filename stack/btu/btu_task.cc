@@ -124,6 +124,5 @@ void btu_task_shut_down() {
 
   module_clean_up(get_module(BTE_LOGMSG_MODULE));
 
-  bta_sys_free();
   btu_free_core();
 }
