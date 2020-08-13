@@ -1451,16 +1451,4 @@ extern void BTA_DmBleGetEnergyInfo(tBTA_BLE_ENERGY_INFO_CBACK* p_cmpl_cback);
  ******************************************************************************/
 extern void BTA_VendorInit(void);
 
-/*******************************************************************************
- *
- * Function         BTA_BrcmCleanup
- *
- * Description      This function frees up Broadcom specific VS specific dynamic
- *                  memory
- *
- * Returns          void
- *
- ******************************************************************************/
-extern void BTA_VendorCleanup(void);
-
 #endif /* BTA_API_H */

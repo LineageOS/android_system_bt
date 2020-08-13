@@ -1341,8 +1341,6 @@ uint16_t BTM_GetMaxPacketSize(const RawAddress& addr);
 extern tBTM_STATUS BTM_BT_Quality_Report_VSE_Register(
     bool is_register, tBTM_BT_QUALITY_REPORT_RECEIVER* p_bqr_report_receiver);
 
-extern void BTM_VendorCleanup();
-
 extern tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
                                              uint16_t psm, bool is_originator,
                                              uint32_t mx_proto_id,

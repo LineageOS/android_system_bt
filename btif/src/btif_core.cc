@@ -397,12 +397,10 @@ void btif_enable_bluetooth_evt() {
 
 bt_status_t btif_cleanup_bluetooth() {
   LOG_INFO("%s entered", __func__);
-  do_in_main_thread(FROM_HERE, base::Bind(&BTA_VendorCleanup));
   btif_dm_cleanup();
   jni_thread.DoInThread(FROM_HERE, base::BindOnce(btif_jni_disassociate));
   btif_queue_release();
   jni_thread.ShutDown();
-  bte_main_cleanup();
   delete exit_manager;
   exit_manager = nullptr;
   btif_dut_mode = 0;

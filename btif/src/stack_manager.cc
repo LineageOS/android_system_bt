@@ -67,6 +67,8 @@
 #include "bta_dm_int.h"
 #include "btif/include/btif_pan.h"
 #include "btif/include/btif_sock.h"
+#include "device/include/interop.h"
+#include "internal_include/stack_config.h"
 #include "main/shim/controller.h"
 
 void main_thread_shut_down();
@@ -154,7 +156,10 @@ static void event_init_stack(void* context) {
     }
     module_init(get_module(BTIF_CONFIG_MODULE));
     btif_init_bluetooth();
-    bte_main_boot_entry();
+
+    module_init(get_module(INTEROP_MODULE));
+    bte_main_init();
+    module_init(get_module(STACK_CONFIG_MODULE));
 
     // stack init is synchronous, so no waiting necessary here
     stack_is_initialized = true;
@@ -336,6 +341,10 @@ static void event_clean_up_stack(void* context) {
   stack_is_initialized = false;
 
   btif_cleanup_bluetooth();
+
+  module_clean_up(get_module(STACK_CONFIG_MODULE));
+  module_clean_up(get_module(INTEROP_MODULE));
+
   module_clean_up(get_module(BTIF_CONFIG_MODULE));
   module_clean_up(get_module(BT_UTILS_MODULE));
   module_clean_up(get_module(OSI_MODULE));
