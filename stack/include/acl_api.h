@@ -274,3 +274,5 @@ int btm_pm_find_acl_ind(const RawAddress& remote_bda);
 
 void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec,
                       uint8_t hci_status);
+void btm_ble_refresh_local_resolvable_private_addr(
+    const RawAddress& pseudo_addr, const RawAddress& local_rpa);
