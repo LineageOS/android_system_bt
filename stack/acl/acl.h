@@ -158,6 +158,16 @@ typedef struct {
   /* Packet types supported by the local device */
   uint16_t btm_acl_pkt_types_supported;
 
+ private:
+  friend tBTM_PM_MCB* acl_power_mode_from_handle(uint16_t hci_handle);
+  friend uint16_t btm_get_acl_disc_reason_code(void);
+  friend uint8_t acl_get_disconnect_reason();
+  friend void acl_set_disconnect_reason(uint8_t acl_disc_reason);
+  friend void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
+                                      uint8_t mode, uint16_t interval);
+  friend void btm_pm_proc_ssr_evt(uint8_t* p, uint16_t evt_len);
+  friend void btm_pm_sm_alloc(uint8_t ind);
+
   uint8_t acl_disc_reason;
 
  private:
