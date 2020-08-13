@@ -159,11 +159,6 @@ typedef struct {
 } btif_dm_oob_cb_t;
 
 typedef struct {
-  RawAddress bdaddr;
-  uint8_t transport; /* 0=Unknown, 1=BR/EDR, 2=LE */
-} btif_dm_create_bond_cb_t;
-
-typedef struct {
   uint8_t status;
   uint8_t ctrl_state;
   uint64_t tx_time;
@@ -220,7 +215,7 @@ static size_t btif_events_end_index = 0;
 static btif_dm_pairing_cb_t pairing_cb;
 static btif_dm_oob_cb_t oob_cb;
 static void btif_dm_generic_evt(uint16_t event, char* p_param);
-static void btif_dm_cb_create_bond(const RawAddress& bd_addr,
+static void btif_dm_cb_create_bond(const RawAddress bd_addr,
                                    tBTA_TRANSPORT transport);
 static void btif_update_remote_properties(const RawAddress& bd_addr,
                                           BD_NAME bd_name, DEV_CLASS dev_class,
@@ -696,7 +691,7 @@ static void btif_update_remote_properties(const RawAddress& bdaddr,
  * Returns          void
  *
  ******************************************************************************/
-static void btif_dm_cb_create_bond(const RawAddress& bd_addr,
+static void btif_dm_cb_create_bond(const RawAddress bd_addr,
                                    tBTA_TRANSPORT transport) {
   bool is_hid = check_cod(&bd_addr, COD_HID_POINTING);
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
@@ -1981,13 +1976,6 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
 static void btif_dm_generic_evt(uint16_t event, char* p_param) {
   BTIF_TRACE_EVENT("%s: event=%d", __func__, event);
   switch (event) {
-    case BTIF_DM_CB_CREATE_BOND: {
-      pairing_cb.timeout_retries = NUM_TIMEOUT_RETRIES;
-      btif_dm_create_bond_cb_t* create_bond_cb =
-          (btif_dm_create_bond_cb_t*)p_param;
-      btif_dm_cb_create_bond(create_bond_cb->bdaddr, create_bond_cb->transport);
-    } break;
-
     case BTIF_DM_CB_REMOVE_BOND: {
       btif_dm_cb_remove_bond((RawAddress*)p_param);
     } break;
@@ -2256,10 +2244,6 @@ bt_status_t btif_dm_cancel_discovery(void) {
  *
  ******************************************************************************/
 bt_status_t btif_dm_create_bond(const RawAddress* bd_addr, int transport) {
-  btif_dm_create_bond_cb_t create_bond_cb;
-  create_bond_cb.transport = transport;
-  create_bond_cb.bdaddr = *bd_addr;
-
   BTIF_TRACE_EVENT("%s: bd_addr=%s, transport=%d", __func__,
                    bd_addr->ToString().c_str(), transport);
   if (pairing_cb.state != BT_BOND_STATE_NONE) return BT_STATUS_BUSY;
@@ -2267,10 +2251,9 @@ bt_status_t btif_dm_create_bond(const RawAddress* bd_addr, int transport) {
   btif_stats_add_bond_event(*bd_addr, BTIF_DM_FUNC_CREATE_BOND,
                             pairing_cb.state);
 
-  btif_transfer_context(btif_dm_generic_evt, BTIF_DM_CB_CREATE_BOND,
-                        (char*)&create_bond_cb,
-                        sizeof(btif_dm_create_bond_cb_t), NULL);
-
+  pairing_cb.timeout_retries = NUM_TIMEOUT_RETRIES;
+  do_in_jni_thread(FROM_HERE,
+                   base::BindOnce(btif_dm_cb_create_bond, *bd_addr, transport));
   return BT_STATUS_SUCCESS;
 }
 

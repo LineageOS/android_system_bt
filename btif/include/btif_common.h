@@ -127,7 +127,6 @@ enum {
   /* add here */
 
   BTIF_DM_CB_START = BTIF_SIG_CB_START(BTIF_DM),
-  BTIF_DM_CB_CREATE_BOND,       /* Create bond */
   BTIF_DM_CB_REMOVE_BOND,       /*Remove bond */
   BTIF_DM_CB_BOND_STATE_BONDING,
   BTIF_DM_CB_LE_TX_TEST,  /* BLE Tx Test command complete callback */
