@@ -690,10 +690,9 @@ tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::BTM_SetBleDataLength(bd_addr, tx_pdu_length);
   }
-  tACL_CONN* p_acl = btm_bda_to_acl(bd_addr, BT_TRANSPORT_LE);
   uint16_t tx_time = BTM_BLE_DATA_TX_TIME_MAX_LEGACY;
 
-  if (p_acl == NULL) {
+  if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
     BTM_TRACE_ERROR("%s: Wrong mode: no LE link exist or LE not supported",
                     __func__);
     return BTM_WRONG_MODE;
@@ -706,7 +705,9 @@ tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
     return BTM_ILLEGAL_VALUE;
   }
 
-  if (!HCI_LE_DATA_LEN_EXT_SUPPORTED(p_acl->peer_le_features)) {
+  uint16_t hci_handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
+
+  if (!acl_peer_supports_ble_packet_extension(hci_handle)) {
     BTM_TRACE_ERROR("%s failed, peer does not support request", __func__);
     return BTM_ILLEGAL_VALUE;
   }
@@ -719,7 +720,7 @@ tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
   if (controller_get_interface()->get_bt_version()->hci_version >= HCI_PROTO_VERSION_5_0)
     tx_time = BTM_BLE_DATA_TX_TIME_MAX;
 
-  btsnd_hcic_ble_set_data_length(p_acl->hci_handle, tx_pdu_length, tx_time);
+  btsnd_hcic_ble_set_data_length(hci_handle, tx_pdu_length, tx_time);
 
   return BTM_SUCCESS;
 }
@@ -779,7 +780,7 @@ void BTM_BleReadPhy(
     return;
   }
 
-  uint16_t handle = get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
+  uint16_t handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
 
   const uint8_t len = HCIC_PARAM_SIZE_BLE_READ_PHY;
   uint8_t data[len];
