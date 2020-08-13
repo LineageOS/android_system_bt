@@ -244,10 +244,6 @@ struct HciLayer::hal_callbacks : public hal::HciHalCallbacks {
     // Not implemented yet
   }
 
-  void isoDataReceived(hal::HciPacket data_bytes) override {
-    // Not implemented yet
-  }
-
   HciLayer& module_;
 };
 
