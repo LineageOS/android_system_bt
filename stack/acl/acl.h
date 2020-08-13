@@ -159,5 +159,19 @@ typedef struct {
   uint16_t btm_acl_pkt_types_supported;
 
   uint8_t acl_disc_reason;
+
+ private:
+  friend tBTM_PM_MCB* acl_power_mode_from_handle(uint16_t hci_handle);
+  friend tBTM_STATUS BTM_ReadPowerMode(const RawAddress& remote_bda,
+                                       tBTM_PM_MODE* p_mode);
+  friend tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id,
+                                      const RawAddress& remote_bda,
+                                      const tBTM_PM_PWR_MD* p_mode);
+  friend tBTM_STATUS btm_read_power_mode_state(const RawAddress& remote_bda,
+                                               tBTM_PM_STATE* pmState);
+  friend void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
+                                      uint8_t mode, uint16_t interval);
+  friend void btm_pm_proc_ssr_evt(uint8_t* p, UNUSED_ATTR uint16_t evt_len);
+
   tBTM_PM_MCB pm_mode_db[MAX_L2CAP_LINKS]; /* per ACL link */
 } tACL_CB;  // NEW
