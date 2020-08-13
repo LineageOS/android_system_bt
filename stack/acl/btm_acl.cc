@@ -2801,3 +2801,7 @@ void acl_set_disconnect_reason(uint8_t acl_disc_reason) {
 bool acl_is_role_switch_allowed() {
   return btm_cb.acl_cb_.btm_def_link_policy & HCI_ENABLE_MASTER_SLAVE_SWITCH;
 }
+
+uint16_t acl_get_supported_packet_types() {
+  return btm_cb.acl_cb_.btm_acl_pkt_types_supported;
+}

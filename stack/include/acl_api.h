@@ -309,3 +309,5 @@ uint8_t acl_get_disconnect_reason();
 void acl_set_disconnect_reason(uint8_t acl_disc_reason);
 
 bool acl_is_role_switch_allowed();
+
+uint16_t acl_get_supported_packet_types();
