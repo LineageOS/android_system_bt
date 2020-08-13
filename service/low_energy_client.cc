@@ -218,7 +218,7 @@ bool LowEnergyClientFactory::RegisterInstance(
   const btgatt_client_interface_t* hal_iface =
       hal::BluetoothGattInterface::Get()->GetClientHALInterface();
 
-  if (hal_iface->register_client(uuid) != BT_STATUS_SUCCESS) return false;
+  if (hal_iface->register_client(uuid, false) != BT_STATUS_SUCCESS) return false;
 
   pending_calls_[uuid] = callback;
 

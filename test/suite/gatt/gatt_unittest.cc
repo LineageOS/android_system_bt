@@ -27,7 +27,7 @@ namespace bttest {
 TEST_F(GattTest, GattClientRegister) {
   // Registers gatt client.
   bluetooth::Uuid gatt_client_uuid = bluetooth::Uuid::GetRandom();
-  gatt_client_interface()->register_client(gatt_client_uuid);
+  gatt_client_interface()->register_client(gatt_client_uuid, false);
   semaphore_wait(register_client_callback_sem_);
   EXPECT_TRUE(status() == BT_STATUS_SUCCESS)
       << "Error registering GATT client app callback.";
@@ -39,7 +39,7 @@ TEST_F(GattTest, GattClientRegister) {
 TEST_F(GattTest, GattServerRegister) {
   // Registers gatt server.
   bluetooth::Uuid gatt_server_uuid = bluetooth::Uuid::GetRandom();
-  gatt_server_interface()->register_server(gatt_server_uuid);
+  gatt_server_interface()->register_server(gatt_server_uuid, false);
   semaphore_wait(register_server_callback_sem_);
   EXPECT_TRUE(status() == BT_STATUS_SUCCESS)
       << "Error registering GATT server app callback.";
@@ -51,7 +51,7 @@ TEST_F(GattTest, GattServerRegister) {
 TEST_F(GattTest, GattServerBuild) {
   // Registers gatt server.
   bluetooth::Uuid gatt_server_uuid = bluetooth::Uuid::GetRandom();
-  gatt_server_interface()->register_server(gatt_server_uuid);
+  gatt_server_interface()->register_server(gatt_server_uuid, false);
   semaphore_wait(register_server_callback_sem_);
   EXPECT_TRUE(status() == BT_STATUS_SUCCESS)
       << "Error registering GATT server app callback.";
