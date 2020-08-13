@@ -2736,3 +2736,11 @@ uint8_t acl_link_role(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   }
   return p_acl->link_role;
 }
+
+bool acl_is_transport_le_from_handle(uint16_t handle) {
+  tACL_CONN* p_acl = acl_get_connection_from_handle(handle);
+  if (p_acl == nullptr) {
+    return false;
+  }
+  return p_acl->transport == BT_TRANSPORT_LE;
+}
