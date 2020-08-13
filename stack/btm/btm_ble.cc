@@ -763,9 +763,7 @@ void BTM_BleReadPhy(
   }
   BTM_TRACE_DEBUG("%s", __func__);
 
-  tACL_CONN* p_acl = btm_bda_to_acl(bd_addr, BT_TRANSPORT_LE);
-
-  if (p_acl == NULL) {
+  if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
     BTM_TRACE_ERROR("%s: Wrong mode: no LE link exist or LE not supported",
                     __func__);
     cb.Run(0, 0, HCI_ERR_NO_CONNECTION);
@@ -781,7 +779,7 @@ void BTM_BleReadPhy(
     return;
   }
 
-  uint16_t handle = p_acl->hci_handle;
+  uint16_t handle = get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
 
   const uint8_t len = HCIC_PARAM_SIZE_BLE_READ_PHY;
   uint8_t data[len];
