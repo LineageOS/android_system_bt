@@ -17,7 +17,6 @@
 
 #include <cstdint>
 
-#include "stack/acl/acl.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/include/acl_api_types.h"
 #include "stack/include/bt_types.h"
