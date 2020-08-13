@@ -90,13 +90,11 @@ void BTA_AgDisable() {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AgRegister(tBTA_SERVICE_MASK services, tBTA_SEC sec_mask,
-                    tBTA_AG_FEAT features,
+void BTA_AgRegister(tBTA_SERVICE_MASK services, tBTA_AG_FEAT features,
                     const std::vector<std::string>& service_names,
                     uint8_t app_id) {
-  do_in_main_thread(
-      FROM_HERE, base::Bind(&bta_ag_api_register, services, sec_mask, features,
-                            service_names, app_id));
+  do_in_main_thread(FROM_HERE, base::Bind(&bta_ag_api_register, services,
+                                          features, service_names, app_id));
 }
 
 /*******************************************************************************
@@ -128,10 +126,9 @@ void BTA_AgDeregister(uint16_t handle) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AgOpen(uint16_t handle, const RawAddress& bd_addr, tBTA_SEC sec_mask) {
+void BTA_AgOpen(uint16_t handle, const RawAddress& bd_addr) {
   tBTA_AG_DATA data = {};
   data.api_open.bd_addr = bd_addr;
-  data.api_open.sec_mask = sec_mask;
   do_in_main_thread(FROM_HERE, base::Bind(&bta_ag_sm_execute_by_handle, handle,
                                           BTA_AG_API_OPEN_EVT, data));
 }
