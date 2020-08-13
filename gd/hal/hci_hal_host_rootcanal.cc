@@ -39,13 +39,11 @@ constexpr uint8_t kH4Command = 0x01;
 constexpr uint8_t kH4Acl = 0x02;
 constexpr uint8_t kH4Sco = 0x03;
 constexpr uint8_t kH4Event = 0x04;
-constexpr uint8_t kH4Iso = 0x05;
 
 constexpr uint8_t kH4HeaderSize = 1;
 constexpr uint8_t kHciAclHeaderSize = 4;
 constexpr uint8_t kHciScoHeaderSize = 3;
 constexpr uint8_t kHciEvtHeaderSize = 2;
-constexpr uint8_t kHciIsoHeaderSize = 4;
 constexpr int kBufSize = 1024 + 4 + 1;  // DeviceProperties::acl_data_packet_size_ + ACL header + H4 header
 
 int ConnectToRootCanal(const std::string& server, int port) {
@@ -320,30 +318,6 @@ class HciHalHostRootcanal : public HciHal {
           return;
         }
         incoming_packet_callback_->scoDataReceived(receivedHciPacket);
-      }
-    }
-
-    if (buf[0] == kH4Iso) {
-      RUN_NO_INTR(received_size = recv(sock_fd_, buf + kH4HeaderSize, kHciIsoHeaderSize, 0));
-      ASSERT_LOG(received_size != -1, "Can't receive from socket: %s", strerror(errno));
-      ASSERT_LOG(received_size == kHciIsoHeaderSize, "malformed ISO header received");
-
-      uint8_t hci_iso_data_total_length = buf[3];
-      int payload_size;
-      RUN_NO_INTR(payload_size = recv(sock_fd_, buf + kH4HeaderSize + kHciIsoHeaderSize, hci_iso_data_total_length, 0));
-      ASSERT_LOG(payload_size != -1, "Can't receive from socket: %s", strerror(errno));
-      ASSERT_LOG(payload_size == hci_iso_data_total_length, "malformed ISO packet received: size mismatch");
-
-      HciPacket receivedHciPacket;
-      receivedHciPacket.assign(buf + kH4HeaderSize, buf + kH4HeaderSize + kHciIsoHeaderSize + payload_size);
-      btsnoop_logger_->capture(receivedHciPacket, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::ISO);
-      {
-        std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);
-        if (incoming_packet_callback_ == nullptr) {
-          LOG_INFO("Dropping a ISO packet after processing");
-          return;
-        }
-        incoming_packet_callback_->isoDataReceived(receivedHciPacket);
       }
     }
     memset(buf, 0, kBufSize);

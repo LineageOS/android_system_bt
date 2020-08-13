@@ -110,10 +110,6 @@ void SnoopLogger::capture(const HciPacket& packet, Direction direction, PacketTy
       flags.set(0, true);
       flags.set(1, true);
       break;
-    case PacketType::ISO:
-      flags.set(0, direction == Direction::INCOMING);
-      flags.set(1, true);
-      break;
   }
   uint32_t length = packet.size() + /* type byte */ 1;
   btsnoop_packet_header_t header = {.length_original = htonl(length),
