@@ -132,31 +132,6 @@ void bte_main_cleanup() {
 
 /******************************************************************************
  *
- * Function         bte_main_disable
- *
- * Description      BTE MAIN API - Destroys all the BTE tasks. Should be called
- *                  part of the Bluetooth stack disable sequence
- *
- * Returns          None
- *
- *****************************************************************************/
-void bte_main_disable(void) {
-  APPL_TRACE_DEBUG("%s", __func__);
-
-  if (bluetooth::shim::is_any_gd_enabled()) {
-    LOG_INFO("%s Gd shim module disabled", __func__);
-    module_shut_down(get_module(GD_SHIM_MODULE));
-    module_start_up(get_module(GD_IDLE_MODULE));
-  } else {
-    module_shut_down(get_module(HCI_MODULE));
-    module_shut_down(get_module(BTSNOOP_MODULE));
-  }
-
-  BTU_ShutDown();
-}
-
-/******************************************************************************
- *
  * Function         bte_main_hci_send
  *
  * Description      BTE MAIN API - This function is called by the upper stack to
