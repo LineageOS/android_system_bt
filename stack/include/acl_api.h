@@ -93,6 +93,8 @@ bool BTM_IsAclConnectionUp(const RawAddress& remote_bda,
 bool BTM_IsAclConnectionUpAndHandleValid(const RawAddress& remote_bda,
                                          tBT_TRANSPORT transport);
 
+bool BTM_IsAclConnectionUpFromHandle(uint16_t hci_handle);
+
 /*******************************************************************************
  *
  * Function         BTM_GetRole
