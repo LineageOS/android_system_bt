@@ -2345,7 +2345,7 @@ void btm_acl_paging(BT_HDR* p, const RawAddress& bda) {
     btm_cb.paging = true;
     fixed_queue_enqueue(btm_cb.page_queue, p);
   } else {
-    if (!BTM_ACL_IS_CONNECTED(bda)) {
+    if (!BTM_IsAclConnectionUp(bda, BT_TRANSPORT_BR_EDR)) {
       VLOG(1) << "connecting_bda: " << btm_cb.connecting_bda;
       if (btm_cb.paging && bda == btm_cb.connecting_bda) {
         fixed_queue_enqueue(btm_cb.page_queue, p);
