@@ -2645,3 +2645,19 @@ void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
     p_dev_rec->remote_features_needed = false;
   }
 }
+
+bool sco_peer_supports_esco_2m_phy(uint16_t hci_handle) {
+  tACL_CONN* p_acl = acl_get_connection_from_handle(hci_handle);
+  if (p_acl == nullptr) {
+    return false;
+  }
+  return HCI_EDR_ESCO_2MPS_SUPPORTED(p_acl->peer_lmp_feature_pages[0]);
+}
+
+bool sco_peer_supports_esco_3m_phy(uint16_t hci_handle) {
+  tACL_CONN* p_acl = acl_get_connection_from_handle(hci_handle);
+  if (p_acl == nullptr) {
+    return false;
+  }
+  return HCI_EDR_ESCO_3MPS_SUPPORTED(p_acl->peer_lmp_feature_pages[0]);
+}
