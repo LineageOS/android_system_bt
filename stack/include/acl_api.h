@@ -311,3 +311,6 @@ void acl_set_disconnect_reason(uint8_t acl_disc_reason);
 bool acl_is_role_switch_allowed();
 
 uint16_t acl_get_supported_packet_types();
+
+bool acl_set_peer_le_features_from_handle(uint16_t hci_handle,
+                                          const uint8_t* p);
