@@ -230,8 +230,6 @@ typedef struct {
 /* Define the structures needed by security management
 */
 
-#define BTM_SEC_INVALID_HANDLE 0xFFFF
-
 typedef void(tBTM_SCO_IND_CBACK)(uint16_t sco_inx);
 
 /* MACROs to convert from SCO packet types mask to ESCO and back */
