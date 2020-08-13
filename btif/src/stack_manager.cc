@@ -69,7 +69,7 @@
 #include "btif/include/btif_sock.h"
 #include "main/shim/controller.h"
 
-void BTU_ShutDown(void);
+void btu_task_shut_down();
 void BTA_dm_on_hw_on();
 void BTA_dm_on_hw_off();
 
@@ -296,7 +296,7 @@ static void event_shut_down_stack(UNUSED_ATTR void* context) {
     module_shut_down(get_module(BTSNOOP_MODULE));
   }
 
-  BTU_ShutDown();
+  btu_task_shut_down();
 
   module_shut_down(get_module(CONTROLLER_MODULE));  // Doesn't do any work, just
                                                     // puts it in a restartable
