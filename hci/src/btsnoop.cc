@@ -79,7 +79,7 @@ typedef enum {
   kIsoPacket = 5,
 } packet_type_t;
 
-// Epoch in microseconds since 01/01/0000.
+// Epoch in microseconds since 01/01/0000
 static const uint64_t BTSNOOP_EPOCH_DELTA = 0x00dcddb30f2f8000ULL;
 
 // Number of bytes into a packet where you can find the value for a channel.

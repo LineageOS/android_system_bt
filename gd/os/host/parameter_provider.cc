@@ -35,5 +35,18 @@ std::string ParameterProvider::ConfigFilePath() {
   return std::string(cwd) + "/bt_config.conf";
 }
 
+std::string ParameterProvider::SnoopLogFilePath() {
+  char cwd[PATH_MAX] = {};
+  if (getcwd(cwd, sizeof(cwd)) == nullptr) {
+    LOG_ERROR("Failed to get current working directory due to \"%s\", returning default", strerror(errno));
+    return "bt_config.conf";
+  }
+  return std::string(cwd) + "/btsnoop_hci.log";
+}
+
+bool ParameterProvider::SnoopLogAlwaysFlush() {
+  return true;
+}
+
 }  // namespace os
 }  // namespace bluetooth

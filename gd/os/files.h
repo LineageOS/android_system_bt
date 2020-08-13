@@ -40,5 +40,10 @@ std::optional<std::string> ReadSmallFile(const std::string& path);
 // Return true on success, false on failure
 bool WriteToFile(const std::string& path, const std::string& data);
 
+// Remove file and print error message if failed
+// Print error log when file is failed to be removed, hence user should make sure file exists before calling this
+// Return true on success, false on failure (e.g. file not exist, failed to remove, etc)
+bool RemoveFile(const std::string& path);
+
 }  // namespace os
 }  // namespace bluetooth
