@@ -76,6 +76,7 @@ static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                             uint8_t num_read_pages);
 static void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
                                       tBTM_SEC_DEV_REC* p_dev_rec);
+static tACL_CONN* acl_get_connection_from_handle(uint16_t handle);
 static tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
 
 void BTIF_dm_report_inquiry_status_change(uint8_t busy_level_flags);
@@ -205,6 +206,12 @@ uint8_t btm_handle_to_acl_index(uint16_t hci_handle) {
 
   /* If here, no BD Addr found */
   return (xx);
+}
+
+tACL_CONN* acl_get_connection_from_handle(uint16_t hci_handle) {
+  uint8_t index = btm_handle_to_acl_index(hci_handle);
+  if (index >= MAX_L2CAP_LINKS) return nullptr;
+  return &btm_cb.acl_cb_.acl_db[index];
 }
 
 #if (BLE_PRIVACY_SPT == TRUE)
