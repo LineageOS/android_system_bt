@@ -3487,7 +3487,7 @@ void btm_sec_auth_complete(uint16_t handle, uint8_t status) {
         BTM_TRACE_DEBUG(
             "link encrypted afer dedic bonding can use SMP_BR_CHNL");
 
-        if (acl_is_role_master(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR)) {
+        if (acl_br_edr_is_role_master(p_dev_rec->bd_addr)) {
           // Encryption is required to start SM over BR/EDR
           // indicate that this is encryption after authentication
           BTM_SetEncryption(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR, NULL, NULL,
@@ -3618,7 +3618,7 @@ void btm_sec_encrypt_change(uint16_t handle, uint8_t status,
     }
     if (p_dev_rec->new_encryption_key_is_p256) {
       if (btm_sec_use_smp_br_chnl(p_dev_rec) &&
-          acl_is_role_master(p_dev_rec->bd_addr, BT_TRANSPORT_BR_EDR) &&
+          acl_br_edr_is_role_master(p_dev_rec->bd_addr) &&
           /* if LE key is not known, do deriving */
           (!(p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_KNOWN) ||
            /* or BR key is higher security than existing LE keys */
