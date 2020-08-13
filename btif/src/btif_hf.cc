@@ -69,10 +69,6 @@ namespace headset {
   { BTIF_HSAG_SERVICE_NAME, BTIF_HFAG_SERVICE_NAME }
 #endif
 
-#ifndef BTIF_HF_SECURITY
-#define BTIF_HF_SECURITY (BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)
-#endif
-
 #ifndef BTIF_HF_FEATURES
 #define BTIF_HF_FEATURES                                       \
   (BTA_AG_FEAT_3WAY | BTA_AG_FEAT_ECNR | BTA_AG_FEAT_REJECT |  \
@@ -667,7 +663,7 @@ static bt_status_t connect_int(RawAddress* bd_addr, uint16_t uuid) {
   hf_cb->connected_bda = *bd_addr;
   hf_cb->is_initiator = true;
   hf_cb->peer_feat = 0;
-  BTA_AgOpen(hf_cb->handle, hf_cb->connected_bda, BTIF_HF_SECURITY);
+  BTA_AgOpen(hf_cb->handle, hf_cb->connected_bda);
   return BT_STATUS_SUCCESS;
 }
 
@@ -1427,8 +1423,7 @@ bt_status_t ExecuteService(bool b_enable) {
     /* Enable and register with BTA-AG */
     BTA_AgEnable(bte_hf_evt);
     for (uint8_t app_id = 0; app_id < btif_max_hf_clients; app_id++) {
-      BTA_AgRegister(BTIF_HF_SERVICES, BTIF_HF_SECURITY, btif_hf_features,
-                     service_names, app_id);
+      BTA_AgRegister(BTIF_HF_SERVICES, btif_hf_features, service_names, app_id);
     }
   } else {
     /* De-register AG */
