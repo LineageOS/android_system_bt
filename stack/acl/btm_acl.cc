@@ -64,6 +64,7 @@ void btm_io_capabilities_req(const RawAddress& p);
 
 static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
                                               uint16_t* p_pkt_type);
+static void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec);
 static void btm_establish_continue(tACL_CONN* p_acl_cb);
 static void btm_pm_sm_alloc(uint8_t ind);
 static void btm_read_automatic_flush_timeout_timeout(void* data);
@@ -2224,8 +2225,7 @@ uint8_t BTM_SetTraceLevel(uint8_t new_level) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec,
-                      UNUSED_ATTR uint8_t hci_status) {
+void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec) {
   BTM_TRACE_DEBUG("btm_cont_rswitch");
   /* Check to see if encryption needs to be turned off if pending
      change of link key or role switch */
@@ -2261,7 +2261,7 @@ void btm_cont_rswitch_from_handle(uint16_t hci_handle) {
     BTM_TRACE_ERROR("%s role switch received but with no active ACL", __func__);
     return;
   }
-  btm_cont_rswitch(p_acl, btm_find_dev(p_acl->remote_addr), 0);
+  btm_cont_rswitch(p_acl, btm_find_dev(p_acl->remote_addr));
 }
 
 /*******************************************************************************
