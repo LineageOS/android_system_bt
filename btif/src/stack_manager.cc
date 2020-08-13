@@ -299,7 +299,10 @@ static void event_shut_down_stack(UNUSED_ATTR void* context) {
 
   module_clean_up(get_module(BTE_LOGMSG_MODULE));
 
-  btu_free_core();
+  gatt_free();
+  l2c_free();
+  sdp_free();
+  btm_free();
 
   module_shut_down(get_module(CONTROLLER_MODULE));  // Doesn't do any work, just
                                                     // puts it in a restartable
