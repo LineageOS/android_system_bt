@@ -79,6 +79,23 @@ typedef struct {
 
 } tACL_CONN;
 
+typedef uint8_t tBTM_PM_STATE;
+typedef struct {
+  tBTM_PM_PWR_MD req_mode[BTM_MAX_PM_RECORDS + 1]; /* the desired mode and
+                                                      parameters of the
+                                                      connection*/
+  tBTM_PM_PWR_MD
+      set_mode; /* the mode and parameters sent down to the host controller. */
+  uint16_t interval; /* the interval from last mode change event. */
+#if (BTM_SSR_INCLUDED == TRUE)
+  uint16_t max_lat;    /* stored SSR maximum latency */
+  uint16_t min_rmt_to; /* stored SSR minimum remote timeout */
+  uint16_t min_loc_to; /* stored SSR minimum local timeout */
+#endif
+  tBTM_PM_STATE state; /* contains the current mode of the connection */
+  bool chg_ind;        /* a request change indication */
+} tBTM_PM_MCB;
+
 typedef struct {
   /****************************************************
    **      ACL Management
@@ -94,4 +111,5 @@ typedef struct {
   uint16_t btm_acl_pkt_types_supported;
 
   uint8_t acl_disc_reason;
+  tBTM_PM_MCB pm_mode_db[MAX_L2CAP_LINKS]; /* per ACL link */
 } tACL_CB;  // NEW
