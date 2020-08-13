@@ -8,10 +8,12 @@ service HciHalFacade {
   rpc SendHciCommand(HciCommandPacket) returns (google.protobuf.Empty) {}
   rpc SendHciAcl(HciAclPacket) returns (google.protobuf.Empty) {}
   rpc SendHciSco(HciScoPacket) returns (google.protobuf.Empty) {}
+  rpc SendHciIso(HciIsoPacket) returns (google.protobuf.Empty) {}
 
   rpc FetchHciEvent(google.protobuf.Empty) returns (stream HciEventPacket) {}
   rpc FetchHciAcl(google.protobuf.Empty) returns (stream HciAclPacket) {}
   rpc FetchHciSco(google.protobuf.Empty) returns (stream HciScoPacket) {}
+  rpc FetchHciIso(google.protobuf.Empty) returns (stream HciIsoPacket) {}
 }
 
 message HciEventPacket {
@@ -27,5 +29,9 @@ message HciAclPacket {
 }
 
 message HciScoPacket {
+  bytes payload = 1;
+}
+
+message HciIsoPacket {
   bytes payload = 1;
 }
