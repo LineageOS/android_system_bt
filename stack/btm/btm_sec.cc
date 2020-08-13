@@ -708,7 +708,7 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
       /* use BTM_PAIR_STATE_WAIT_AUTH_COMPLETE to report authentication failed
        * event */
       btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_AUTH_COMPLETE);
-      btm_cb.acl_cb_.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
+      acl_set_disconnect_reason(HCI_ERR_HOST_REJECT_SECURITY);
 
       btsnd_hcic_pin_code_neg_reply(bd_addr);
     } else {
@@ -738,7 +738,7 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
 #endif
       btsnd_hcic_write_auth_enable(true);
 
-    btm_cb.acl_cb_.acl_disc_reason = 0xff;
+    acl_set_disconnect_reason(0xff);
 
     /* if we rejected incoming connection request, we have to wait
      * HCI_Connection_Complete event */
@@ -771,7 +771,7 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
   }
 
   btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_AUTH_COMPLETE);
-  btm_cb.acl_cb_.acl_disc_reason = HCI_SUCCESS;
+  acl_set_disconnect_reason(HCI_SUCCESS);
 
   btsnd_hcic_pin_code_req_reply(bd_addr, pin_len, p_pin);
 }
@@ -1303,7 +1303,7 @@ void BTM_ConfirmReqReply(tBTM_STATUS res, const RawAddress& bd_addr) {
   btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_AUTH_COMPLETE);
 
   if ((res == BTM_SUCCESS) || (res == BTM_SUCCESS_NO_SECURITY)) {
-    btm_cb.acl_cb_.acl_disc_reason = HCI_SUCCESS;
+    acl_set_disconnect_reason(HCI_SUCCESS);
 
     if (res == BTM_SUCCESS) {
       p_dev_rec = btm_find_dev(bd_addr);
@@ -1317,7 +1317,7 @@ void BTM_ConfirmReqReply(tBTM_STATUS res, const RawAddress& bd_addr) {
   } else {
     /* Report authentication failed event from state
      * BTM_PAIR_STATE_WAIT_AUTH_COMPLETE */
-    btm_cb.acl_cb_.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
+    acl_set_disconnect_reason(HCI_ERR_HOST_REJECT_SECURITY);
     btsnd_hcic_user_conf_reply(bd_addr, false);
   }
 }
@@ -1353,7 +1353,7 @@ void BTM_PasskeyReqReply(tBTM_STATUS res, const RawAddress& bd_addr,
       (res != BTM_SUCCESS)) {
     tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
     if (p_dev_rec != NULL) {
-      btm_cb.acl_cb_.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
+      acl_set_disconnect_reason(HCI_ERR_HOST_REJECT_SECURITY);
 
       if (p_dev_rec->hci_handle != HCI_INVALID_HANDLE)
         btm_sec_send_hci_disconnect(p_dev_rec, HCI_ERR_AUTH_FAILURE,
@@ -1377,10 +1377,10 @@ void BTM_PasskeyReqReply(tBTM_STATUS res, const RawAddress& bd_addr,
   if (res != BTM_SUCCESS) {
     /* use BTM_PAIR_STATE_WAIT_AUTH_COMPLETE to report authentication failed
      * event */
-    btm_cb.acl_cb_.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
+    acl_set_disconnect_reason(HCI_ERR_HOST_REJECT_SECURITY);
     btsnd_hcic_user_passkey_neg_reply(bd_addr);
   } else {
-    btm_cb.acl_cb_.acl_disc_reason = HCI_SUCCESS;
+    acl_set_disconnect_reason(HCI_SUCCESS);
     btsnd_hcic_user_passkey_reply(bd_addr, passkey);
   }
 }
@@ -1455,10 +1455,10 @@ void BTM_RemoteOobDataReply(tBTM_STATUS res, const RawAddress& bd_addr,
   if (res != BTM_SUCCESS) {
     /* use BTM_PAIR_STATE_WAIT_AUTH_COMPLETE to report authentication failed
      * event */
-    btm_cb.acl_cb_.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
+    acl_set_disconnect_reason(HCI_ERR_HOST_REJECT_SECURITY);
     btsnd_hcic_rem_oob_neg_reply(bd_addr);
   } else {
-    btm_cb.acl_cb_.acl_disc_reason = HCI_SUCCESS;
+    acl_set_disconnect_reason(HCI_SUCCESS);
     btsnd_hcic_rem_oob_reply(bd_addr, c, r);
   }
 }
@@ -3123,7 +3123,7 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, uint8_t* p) {
   }
 
   /* Something bad. we can only fail this connection */
-  btm_cb.acl_cb_.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
+  acl_set_disconnect_reason(HCI_ERR_HOST_REJECT_SECURITY);
 
   if (BTM_SP_CFM_REQ_EVT == event) {
     btsnd_hcic_user_conf_reply(p_bda, false);
@@ -3245,7 +3245,7 @@ void btm_rem_oob_req(uint8_t* p) {
   }
 
   /* something bad. we can only fail this connection */
-  btm_cb.acl_cb_.acl_disc_reason = HCI_ERR_HOST_REJECT_SECURITY;
+  acl_set_disconnect_reason(HCI_ERR_HOST_REJECT_SECURITY);
   btsnd_hcic_rem_oob_neg_reply(p_bda);
 }
 
@@ -3899,7 +3899,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
 
 #ifdef BRCM_NOT_4_BTE
       /* If we rejected pairing, pass this special result code */
-      if (btm_cb.acl_cb_.acl_disc_reason == HCI_ERR_HOST_REJECT_SECURITY) {
+      if (acl_set_disconnect_reason(HCI_ERR_HOST_REJECT_SECURITY)) {
         status = HCI_ERR_HOST_REJECT_SECURITY;
       }
 #endif
@@ -3977,8 +3977,8 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
     /* For now there are a some devices that do not like sending */
     /* commands events and data at the same time. */
     /* Set the packet types to the default allowed by the device */
-    btm_set_packet_types_from_address(
-        bda, BT_TRANSPORT_BR_EDR, btm_cb.acl_cb_.btm_acl_pkt_types_supported);
+  btm_set_packet_types_from_address(bda, BT_TRANSPORT_BR_EDR,
+                                    acl_get_supported_packet_types());
 
   btm_acl_created(bda, p_dev_rec->dev_class, p_dev_rec->sec_bd_name, handle,
                   HCI_ROLE_SLAVE, BT_TRANSPORT_BR_EDR);
