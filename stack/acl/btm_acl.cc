@@ -81,6 +81,7 @@ static tACL_CONN* acl_get_connection_from_handle(uint16_t handle);
 static tACL_CONN* btm_bda_to_acl(const RawAddress& bda,
                                  tBT_TRANSPORT transport);
 static tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
+static bool acl_is_role_master(const RawAddress& bda, tBT_TRANSPORT transport);
 
 void BTIF_dm_report_inquiry_status_change(uint8_t busy_level_flags);
 void BTA_dm_acl_up(const RawAddress bd_addr, tBT_TRANSPORT transport,
@@ -2459,12 +2460,20 @@ bool lmp_version_below(const RawAddress& bda, uint8_t version) {
   return acl->lmp_version < version;
 }
 
-bool acl_br_edr_is_role_master(const RawAddress& bda) {
+bool acl_is_role_master(const RawAddress& bda, tBT_TRANSPORT transport) {
   tACL_CONN* p = btm_bda_to_acl(bda, BT_TRANSPORT_BR_EDR);
   if (p == nullptr) {
     return false;
   }
   return (p->link_role == HCI_ROLE_MASTER);
+}
+
+bool acl_br_edr_is_role_master(const RawAddress& bda) {
+  return acl_is_role_master(bda, BT_TRANSPORT_BR_EDR);
+}
+
+bool acl_ble_is_role_master(const RawAddress& bda) {
+  return acl_is_role_master(bda, BT_TRANSPORT_LE);
 }
 
 bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x) {
