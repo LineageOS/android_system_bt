@@ -251,8 +251,11 @@ bool acl_peer_supports_ble_connection_parameters_request(
 
 bool sco_peer_supports_esco_2m_phy(uint16_t hci_handle);
 bool sco_peer_supports_esco_3m_phy(uint16_t hci_handle);
+
 bool acl_is_switch_role_idle(const RawAddress& bd_addr,
                              tBT_TRANSPORT transport);
+
+bool acl_peer_supports_ble_packet_extension(uint16_t hci_handle);
 
 /*******************************************************************************
  *
