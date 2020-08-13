@@ -590,7 +590,7 @@ bool GattServerFactory::RegisterInstance(const Uuid& uuid,
   const btgatt_server_interface_t* hal_iface =
       hal::BluetoothGattInterface::Get()->GetServerHALInterface();
 
-  if (hal_iface->register_server(uuid) != BT_STATUS_SUCCESS) return false;
+  if (hal_iface->register_server(uuid, false) != BT_STATUS_SUCCESS) return false;
 
   pending_calls_[uuid] = callback;
 

@@ -35,7 +35,7 @@ class FakeBluetoothGattInterface : public BluetoothGattInterface {
    public:
     virtual ~TestClientHandler() = default;
 
-    virtual bt_status_t RegisterClient(const bluetooth::Uuid& app_uuid) = 0;
+    virtual bt_status_t RegisterClient(const bluetooth::Uuid& app_uuid, bool eatt_support) = 0;
     virtual bt_status_t UnregisterClient(int client_if) = 0;
 
     virtual bt_status_t Connect(int client_if, const RawAddress& bd_addr,
@@ -51,7 +51,7 @@ class FakeBluetoothGattInterface : public BluetoothGattInterface {
    public:
     virtual ~TestServerHandler() = default;
 
-    virtual bt_status_t RegisterServer(const bluetooth::Uuid& app_uuid) = 0;
+    virtual bt_status_t RegisterServer(const bluetooth::Uuid& app_uuid, bool eatt_support) = 0;
     virtual bt_status_t UnregisterServer(int server_if) = 0;
     virtual bt_status_t AddService(
         int server_if, std::vector<btgatt_db_element_t> service) = 0;

@@ -200,7 +200,7 @@ void ServiceAddedCallback(int status, int server_if,
   // It must be different than any other registered Uuid.
   bluetooth::Uuid client_id = bluetooth::Uuid::GetRandom();
 
-  bt_status_t btstat = g_internal->gatt->client->register_client(client_id);
+  bt_status_t btstat = g_internal->gatt->client->register_client(client_id, false);
   if (btstat != BT_STATUS_SUCCESS) {
     LOG_ERROR(LOG_TAG, "%s: Failed to register client", __func__);
   }
@@ -546,7 +546,7 @@ bool Server::Initialize(const Uuid& service_id, int* gatt_pipe) {
     return false;
   }
 
-  bt_status_t btstat = internal_->gatt->server->register_server(service_id);
+  bt_status_t btstat = internal_->gatt->server->register_server(service_id, false);
   if (btstat != BT_STATUS_SUCCESS) {
     LOG_ERROR(LOG_TAG, "Failed to register server");
     return false;

@@ -28,8 +28,8 @@ std::shared_ptr<BleScannerInterface> g_scanner_handler;
 std::shared_ptr<FakeBluetoothGattInterface::TestClientHandler> g_client_handler;
 std::shared_ptr<FakeBluetoothGattInterface::TestServerHandler> g_server_handler;
 
-bt_status_t FakeRegisterClient(const bluetooth::Uuid& app_uuid) {
-  if (g_client_handler) return g_client_handler->RegisterClient(app_uuid);
+bt_status_t FakeRegisterClient(const bluetooth::Uuid& app_uuid, bool eatt_support) {
+  if (g_client_handler) return g_client_handler->RegisterClient(app_uuid, eatt_support);
 
   return BT_STATUS_FAIL;
 }
@@ -57,8 +57,8 @@ bt_status_t FakeDisconnect(int client_if, const RawAddress& bd_addr,
   return BT_STATUS_FAIL;
 }
 
-bt_status_t FakeRegisterServer(const bluetooth::Uuid& app_uuid) {
-  if (g_server_handler) return g_server_handler->RegisterServer(app_uuid);
+bt_status_t FakeRegisterServer(const bluetooth::Uuid& app_uuid, bool eatt_support) {
+  if (g_server_handler) return g_server_handler->RegisterServer(app_uuid, eatt_support);
 
   return BT_STATUS_FAIL;
 }

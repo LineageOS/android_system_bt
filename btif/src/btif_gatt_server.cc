@@ -266,7 +266,7 @@ static void btapp_gatts_cback(tBTA_GATTS_EVT event, tBTA_GATTS* p_data) {
 /*******************************************************************************
  *  Server API Functions
  ******************************************************************************/
-static bt_status_t btif_gatts_register_app(const Uuid& bt_uuid) {
+static bt_status_t btif_gatts_register_app(const Uuid& bt_uuid, bool eatt_support) {
   CHECK_BTGATT_INIT();
 
   return do_in_jni_thread(
