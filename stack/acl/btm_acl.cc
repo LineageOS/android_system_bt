@@ -2810,3 +2810,13 @@ bool acl_is_role_switch_allowed() {
 uint16_t acl_get_supported_packet_types() {
   return btm_cb.acl_cb_.btm_acl_pkt_types_supported;
 }
+
+bool acl_set_peer_le_features_from_handle(uint16_t hci_handle,
+                                          const uint8_t* p) {
+  tACL_CONN* p_acl = acl_get_connection_from_handle(hci_handle);
+  if (p_acl == nullptr) {
+    return false;
+  }
+  STREAM_TO_ARRAY(p_acl->peer_le_features, p, BD_FEATURES_LEN);
+  return true;
+}
