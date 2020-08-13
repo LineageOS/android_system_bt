@@ -68,9 +68,8 @@ bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda) {
   connection_manager::direct_connect_remove(CONN_MGR_ID_L2CAP, rem_bda);
 
   /* Do not remove lcb if an LE link is already up as a peripheral */
-  if (p_lcb != NULL &&
-      !(p_lcb->link_role == HCI_ROLE_SLAVE &&
-        btm_bda_to_acl(rem_bda, BT_TRANSPORT_LE) != NULL)) {
+  if (p_lcb != NULL && !(p_lcb->link_role == HCI_ROLE_SLAVE &&
+                         BTM_IsAclConnectionUp(rem_bda, BT_TRANSPORT_LE))) {
     p_lcb->disc_reason = L2CAP_CONN_CANCEL;
     l2cu_release_lcb(p_lcb);
   }
