@@ -104,21 +104,6 @@ void bte_main_init(void) {
 
 /******************************************************************************
  *
- * Function         bte_main_cleanup
- *
- * Description      BTE MAIN API - Cleanup code for BTE chip/stack
- *
- * Returns          None
- *
- *****************************************************************************/
-void bte_main_cleanup() {
-  module_clean_up(get_module(STACK_CONFIG_MODULE));
-
-  module_clean_up(get_module(INTEROP_MODULE));
-}
-
-/******************************************************************************
- *
  * Function         bte_main_hci_send
  *
  * Description      BTE MAIN API - This function is called by the upper stack to
