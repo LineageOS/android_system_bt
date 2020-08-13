@@ -2797,3 +2797,7 @@ uint8_t acl_get_disconnect_reason() { return btm_cb.acl_cb_.acl_disc_reason; }
 void acl_set_disconnect_reason(uint8_t acl_disc_reason) {
   btm_cb.acl_cb_.acl_disc_reason = acl_disc_reason;
 }
+
+bool acl_is_role_switch_allowed() {
+  return btm_cb.acl_cb_.btm_def_link_policy & HCI_ENABLE_MASTER_SLAVE_SWITCH;
+}
