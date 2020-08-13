@@ -94,11 +94,6 @@ void btm_dev_init() {
       alarm_new("btm.read_inq_tx_power_timer");
   btm_cb.devcb.read_tx_power_timer = alarm_new("btm.read_tx_power_timer");
 
-  btm_cb.acl_cb_.btm_acl_pkt_types_supported =
-      BTM_ACL_PKT_TYPES_MASK_DH1 + BTM_ACL_PKT_TYPES_MASK_DM1 +
-      BTM_ACL_PKT_TYPES_MASK_DH3 + BTM_ACL_PKT_TYPES_MASK_DM3 +
-      BTM_ACL_PKT_TYPES_MASK_DH5 + BTM_ACL_PKT_TYPES_MASK_DM5;
-
   btm_cb.btm_sco_pkt_types_supported =
       ESCO_PKT_TYPES_MASK_HV1 + ESCO_PKT_TYPES_MASK_HV2 +
       ESCO_PKT_TYPES_MASK_HV3 + ESCO_PKT_TYPES_MASK_EV3 +
