@@ -33,25 +33,6 @@
 
 /*******************************************************************************
  *
- * Function         bta_dm_ci_io_req
- *
- * Description      This function must be called in response to function
- *                  bta_dm_co_io_req(), if *p_oob_data to BTA_OOB_UNKNOWN
- *                  by bta_dm_co_io_req().
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_dm_ci_io_req(const RawAddress& bd_addr, tBTM_IO_CAP io_cap,
-                      tBTM_OOB_DATA oob_data, tBTM_AUTH_REQ auth_req)
-
-{
-  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_ci_io_req_act, bd_addr, io_cap,
-                                          oob_data, auth_req));
-}
-
-/*******************************************************************************
- *
  * Function         bta_dm_ci_rmt_oob
  *
  * Description      This function must be called in response to function
