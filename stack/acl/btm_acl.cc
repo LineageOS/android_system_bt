@@ -56,6 +56,7 @@ struct StackAclBtmAcl {
   tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
   void btm_establish_continue(tACL_CONN* p_acl_cb);
   void btm_read_remote_features(uint16_t handle);
+  void btm_set_default_link_policy(uint16_t settings);
 };
 
 namespace {
@@ -96,7 +97,6 @@ void BTA_dm_report_role_change(const RawAddress bd_addr, uint8_t new_role,
                                uint8_t hci_status);
 
 static void btm_set_link_policy(tACL_CONN* conn, uint16_t policy);
-static void btm_set_default_link_policy(uint16_t settings);
 /* 3 seconds timeout waiting for responses */
 #define BTM_DEV_REPLY_TIMEOUT_MS (3 * 1000)
 
@@ -122,9 +122,9 @@ void btm_acl_init(void) {
 }
 
 void BTM_acl_after_controller_started() {
-  btm_set_default_link_policy(HCI_ENABLE_MASTER_SLAVE_SWITCH |
-                              HCI_ENABLE_HOLD_MODE | HCI_ENABLE_SNIFF_MODE |
-                              HCI_ENABLE_PARK_MODE);
+  internal_.btm_set_default_link_policy(
+      HCI_ENABLE_MASTER_SLAVE_SWITCH | HCI_ENABLE_HOLD_MODE |
+      HCI_ENABLE_SNIFF_MODE | HCI_ENABLE_PARK_MODE);
 
   const controller_t* controller = controller_get_interface();
 
@@ -776,20 +776,20 @@ void BTM_block_role_switch_for(const RawAddress& peer_addr) {
   btm_toggle_policy_off_for(peer_addr, HCI_ENABLE_MASTER_SLAVE_SWITCH);
 }
 
-static void btm_set_default_link_policy(uint16_t settings) {
+void StackAclBtmAcl::btm_set_default_link_policy(uint16_t settings) {
   check_link_policy(&settings);
   btm_cb.acl_cb_.btm_def_link_policy = settings;
   btsnd_hcic_write_def_policy_set(settings);
 }
 
 void BTM_default_unblock_role_switch() {
-  btm_set_default_link_policy(btm_cb.acl_cb_.btm_def_link_policy |
-                              HCI_ENABLE_MASTER_SLAVE_SWITCH);
+  internal_.btm_set_default_link_policy(btm_cb.acl_cb_.btm_def_link_policy |
+                                        HCI_ENABLE_MASTER_SLAVE_SWITCH);
 }
 
 void BTM_default_block_role_switch() {
-  btm_set_default_link_policy(btm_cb.acl_cb_.btm_def_link_policy &
-                              ~HCI_ENABLE_MASTER_SLAVE_SWITCH);
+  internal_.btm_set_default_link_policy(btm_cb.acl_cb_.btm_def_link_policy &
+                                        ~HCI_ENABLE_MASTER_SLAVE_SWITCH);
 }
 
 /*******************************************************************************
