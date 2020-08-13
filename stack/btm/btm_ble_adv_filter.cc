@@ -902,18 +902,3 @@ void btm_ble_adv_filter_init(void) {
         sizeof(tBTM_BLE_PF_COUNT) * cmn_ble_vsc_cb.max_filter);
   }
 }
-
-/*******************************************************************************
- *
- * Function         btm_ble_adv_filter_cleanup
- *
- * Description      This function de-initializes the adv filter control block
- *
- * Parameters
- *
- * Returns          status
- *
- ******************************************************************************/
-void btm_ble_adv_filter_cleanup(void) {
-  osi_free_and_reset((void**)&btm_ble_adv_filt_cb.p_addr_filter_count);
-}
