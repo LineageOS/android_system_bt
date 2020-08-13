@@ -2752,3 +2752,12 @@ tBT_TRANSPORT acl_get_transport_from_handle(uint16_t handle) {
   }
   return p_acl->transport;
 }
+
+uint16_t acl_get_hci_handle_for_hcif(const RawAddress& bd_addr,
+                                     tBT_TRANSPORT transport) {
+  tACL_CONN* p_acl = btm_bda_to_acl(bd_addr, transport);
+  if (p_acl == nullptr) {
+    return HCI_INVALID_HANDLE;
+  }
+  return p_acl->hci_handle;
+}
