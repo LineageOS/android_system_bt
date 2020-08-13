@@ -542,13 +542,3 @@ void btm_ble_batchscan_init(void) {
   memset(&ble_advtrack_cb, 0, sizeof(tBTM_BLE_ADV_TRACK_CB));
   BTM_RegisterForVSEvents(btm_ble_batchscan_filter_track_adv_vse_cback, true);
 }
-
-/**
- * This function cleans the batch scan control block.
- **/
-void btm_ble_batchscan_cleanup(void) {
-  BTM_TRACE_EVENT("%s", __func__);
-
-  memset(&ble_batchscan_cb, 0, sizeof(tBTM_BLE_BATCH_SCAN_CB));
-  memset(&ble_advtrack_cb, 0, sizeof(tBTM_BLE_ADV_TRACK_CB));
-}
