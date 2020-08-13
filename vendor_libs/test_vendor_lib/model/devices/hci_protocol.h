@@ -16,8 +16,10 @@
 
 #pragma once
 
+#include <functional>
+#include <vector>
+
 #include "hci.h"
-#include "hci_packetizer.h"
 
 namespace test_vendor_lib {
 namespace hci {
