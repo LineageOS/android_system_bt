@@ -1234,6 +1234,15 @@ bool BTM_IsAclConnectionUp(const RawAddress& remote_bda,
   return (false);
 }
 
+bool BTM_IsAclConnectionUpAndHandleValid(const RawAddress& remote_bda,
+                                         tBT_TRANSPORT transport) {
+  tACL_CONN* p_acl = btm_bda_to_acl(remote_bda, transport);
+  if (p_acl == nullptr) {
+    return false;
+  }
+  return p_acl->hci_handle != HCI_INVALID_HANDLE;
+}
+
 /*******************************************************************************
  *
  * Function         BTM_GetNumAclLinks
