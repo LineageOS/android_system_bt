@@ -814,9 +814,7 @@ void BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
     return bluetooth::shim::BTM_BleSetPhy(bd_addr, tx_phys, rx_phys,
                                           phy_options);
   }
-  tACL_CONN* p_acl = btm_bda_to_acl(bd_addr, BT_TRANSPORT_LE);
-
-  if (p_acl == NULL) {
+  if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_BR_EDR)) {
     BTM_TRACE_ERROR("%s: Wrong mode: no LE link exist or LE not supported",
                     __func__);
     return;
@@ -831,7 +829,7 @@ void BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
       "= 0x%04x",
       __func__, all_phys, tx_phys, rx_phys, phy_options);
 
-  uint16_t handle = p_acl->hci_handle;
+  uint16_t handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_BR_EDR);
 
   // checking if local controller supports it!
   if (!controller_get_interface()->supports_ble_2m_phy() &&
@@ -842,8 +840,8 @@ void BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
     return;
   }
 
-  if (!HCI_LE_2M_PHY_SUPPORTED(p_acl->peer_le_features) &&
-      !HCI_LE_CODED_PHY_SUPPORTED(p_acl->peer_le_features)) {
+  if (!acl_peer_supports_ble_2m_phy(handle) &&
+      !acl_peer_supports_ble_coded_phy(handle)) {
     BTM_TRACE_ERROR("%s failed, peer does not support request", __func__);
     gatt_notify_phy_updated(GATT_REQ_NOT_SUPPORTED, handle, tx_phys, rx_phys);
     return;
