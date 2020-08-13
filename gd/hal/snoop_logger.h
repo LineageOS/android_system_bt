@@ -77,7 +77,6 @@ class SnoopLogger : public ::bluetooth::Module {
     ACL = 2,
     SCO = 3,
     EVT = 4,
-    ISO = 5,
   };
 
   enum Direction {
