@@ -31,14 +31,48 @@ class SnoopLogger : public ::bluetooth::Module {
  public:
   static const ModuleFactory Factory;
 
-  // Each transport using SnoopLogger should define its own DefaultFilepath
-  static const std::string DefaultFilePath;
-  // Set File Path before module is started to ensure all packets are written to the right file
-  static void SetFilePath(const std::string& filename);
-  // Flag to allow flush into persistent memory on every packet captured. This is enabled on host for debugging.
-  static const bool AlwaysFlush;
+  static const std::string kBtSnoopLogModeDisabled;
+  static const std::string kBtSnoopLogModeFiltered;
+  static const std::string kBtSnoopLogModeFull;
 
-  enum class PacketType {
+  static const std::string kBtSnoopMaxPacketsPerFileProperty;
+  static const std::string kIsDebuggableProperty;
+  static const std::string kBtSnoopLogModeProperty;
+  static const std::string kBtSnoopDefaultLogModeProperty;
+
+  // Put in header for test
+  struct PacketHeaderType {
+    uint32_t length_original;
+    uint32_t length_captured;
+    uint32_t flags;
+    uint32_t dropped_packets;
+    uint64_t timestamp;
+    uint8_t type;
+  } __attribute__((__packed__));
+
+  // Put in header for test
+  struct FileHeaderType {
+    uint8_t identification_pattern[8];
+    uint32_t version_number;
+    uint32_t datalink_type;
+  } __attribute__((__packed__));
+
+  // Set File Path before module is started to ensure all packets are written to the right file
+  static void SetFilePath(std::string filename);
+
+  // Returns the maximum number of packets per file
+  // Changes to this value is only effective after restarting Bluetooth
+  static size_t GetMaxPacketsPerFile();
+
+  // Get snoop logger mode based on current system setup
+  // Changes to this values is only effective after restarting Bluetooth
+  static std::string GetBtSnoopMode();
+
+  // Get snoop log path based on current system configuration
+  static std::string GetLogPath();
+
+  // Has to be defined from 1 to 4 per btsnoop format
+  enum PacketType {
     CMD = 1,
     ACL = 2,
     SCO = 3,
@@ -46,23 +80,32 @@ class SnoopLogger : public ::bluetooth::Module {
     ISO = 5,
   };
 
-  enum class Direction {
+  enum Direction {
     INCOMING,
     OUTGOING,
   };
 
-  void capture(const HciPacket& packet, Direction direction, PacketType type);
+  void Capture(const HciPacket& packet, Direction direction, PacketType type);
 
  protected:
   void ListDependencies(ModuleList* list) override;
   void Start() override;
   void Stop() override;
 
+  // Visible for testing
+  SnoopLogger(std::string log_path, size_t max_packets_per_file, const std::string& btsnoop_mode);
+  void CloseCurrentSnoopLogFile();
+  void OpenNextSnoopLogFile();
+
  private:
-  SnoopLogger();
-  static std::string file_path;
+  static std::string user_file_path_;
+  std::string file_path_;
   std::ofstream btsnoop_ostream_;
-  std::mutex file_mutex_;
+  bool is_enabled_ = false;
+  bool is_filtered_ = false;
+  size_t max_packets_per_file_;
+  size_t packet_counter_ = 0;
+  std::recursive_mutex file_mutex_;
 };
 
 }  // namespace hal

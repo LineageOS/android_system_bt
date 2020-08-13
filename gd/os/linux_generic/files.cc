@@ -187,5 +187,13 @@ bool WriteToFile(const std::string& path, const std::string& data) {
   return true;
 }
 
+bool RemoveFile(const std::string& path) {
+  if (remove(path.c_str()) != 0) {
+    LOG_ERROR("unable to remove file '%s', error: %s", path.c_str(), strerror(errno));
+    return false;
+  }
+  return true;
+}
+
 }  // namespace os
 }  // namespace bluetooth
