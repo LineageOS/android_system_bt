@@ -790,6 +790,12 @@ void btm_pm_proc_ssr_evt(uint8_t* p, UNUSED_ATTR uint16_t evt_len) {
   p_cb = &(btm_cb.pm_mode_db[xx]);
 
   tACL_CONN* p_acl = &btm_cb.acl_cb_.acl_db[xx];
+  if (p_acl == nullptr) {
+    BTM_TRACE_EVENT("%s Received sniff subrating event with no active ACL",
+                    __func__);
+    return;
+  }
+
   if (p_cb->interval == max_rx_lat) {
     /* using legacy sniff */
     use_ssr = false;
@@ -798,10 +804,8 @@ void btm_pm_proc_ssr_evt(uint8_t* p, UNUSED_ATTR uint16_t evt_len) {
   /* notify registered parties */
   for (yy = 0; yy < BTM_MAX_PM_RECORDS; yy++) {
     if (btm_cb.pm_reg_db[yy].mask & BTM_PM_REG_NOTIF) {
-      if (p_acl) {
-        (*btm_cb.pm_reg_db[yy].cback)(p_acl->remote_addr, BTM_PM_STS_SSR,
-                                      use_ssr, status);
-      }
+      (*btm_cb.pm_reg_db[yy].cback)(p_acl->remote_addr, BTM_PM_STS_SSR, use_ssr,
+                                    status);
     }
   }
 }
