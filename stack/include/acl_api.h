@@ -293,3 +293,6 @@ uint8_t acl_link_role(const RawAddress& remote_bda, tBT_TRANSPORT transport);
 bool acl_is_transport_le_from_handle(uint16_t handle);
 
 tBT_TRANSPORT acl_get_transport_from_handle(uint16_t handle);
+
+uint16_t acl_get_hci_handle_for_hcif(const RawAddress& bd_addr,
+                                     tBT_TRANSPORT transport);
