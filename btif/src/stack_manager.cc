@@ -69,7 +69,8 @@
 #include "btif/include/btif_sock.h"
 #include "main/shim/controller.h"
 
-void btu_task_shut_down();
+void main_thread_shut_down();
+void main_thread_start_up();
 void BTA_dm_on_hw_on();
 void BTA_dm_on_hw_off();
 
@@ -90,8 +91,6 @@ static void event_clean_up_stack(void* context);
 
 static void event_signal_stack_up(void* context);
 static void event_signal_stack_down(void* context);
-
-void main_thread_start_up();
 
 // Unvetted includes/imports, etc which should be removed or vetted in the
 // future
@@ -296,7 +295,11 @@ static void event_shut_down_stack(UNUSED_ATTR void* context) {
     module_shut_down(get_module(BTSNOOP_MODULE));
   }
 
-  btu_task_shut_down();
+  main_thread_shut_down();
+
+  module_clean_up(get_module(BTE_LOGMSG_MODULE));
+
+  btu_free_core();
 
   module_shut_down(get_module(CONTROLLER_MODULE));  // Doesn't do any work, just
                                                     // puts it in a restartable
