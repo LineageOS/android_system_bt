@@ -242,8 +242,6 @@ tBTM_STATUS BTM_WriteScoData(UNUSED_ATTR uint16_t sco_inx,
  ******************************************************************************/
 static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle,
                                             enh_esco_params_t* p_setup) {
-  tACL_CONN* p_acl;
-
   /* Send connect request depending on version of spec */
   if (!btm_cb.sco_cb.esco_supported) {
     LOG(INFO) << __func__ << ": sending non-eSCO request for handle="
@@ -262,10 +260,8 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle,
 
     /* Finally, remove EDR eSCO if the remote device doesn't support it */
     /* UPF25:  Only SCO was brought up in this case */
-    btm_handle_to_acl_index(acl_handle);
-    uint8_t acl_index = btm_handle_to_acl_index(acl_handle);
-    if (acl_index < MAX_L2CAP_LINKS) {
-      p_acl = &btm_cb.acl_cb_.acl_db[acl_index];
+    const RawAddress bd_addr = acl_address_from_handle(acl_handle);
+    if (bd_addr != RawAddress::kEmpty) {
       if (!sco_peer_supports_esco_2m_phy(acl_handle)) {
         BTM_TRACE_DEBUG("BTM Remote does not support 2-EDR eSCO");
         temp_packet_types |=
@@ -280,7 +276,7 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle,
       /* Check to see if BR/EDR Secure Connections is being used
       ** If so, we cannot use SCO-only packet types (HFP 1.7)
       */
-      if (BTM_BothEndsSupportSecureConnections(p_acl->remote_addr)) {
+      if (BTM_BothEndsSupportSecureConnections(bd_addr)) {
         temp_packet_types &= ~(BTM_SCO_PKT_TYPE_MASK);
         BTM_TRACE_DEBUG("%s: SCO Conn: pkt_types after removing SCO (0x%04x)",
                         __func__, temp_packet_types);
@@ -300,8 +296,7 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle,
                      << unsigned(acl_handle);
       }
     } else {
-      LOG(ERROR) << __func__ << ": acl_index " << unsigned(acl_index)
-                 << " out of range for acl_handle " << unsigned(acl_handle);
+      BTM_TRACE_ERROR("%s Received SCO connect from unknown peer", __func__);
     }
 
     /* Save the previous types in case command fails */
