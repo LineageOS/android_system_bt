@@ -230,7 +230,7 @@ void btm_set_packet_types_from_address(const RawAddress& bda,
 
 bool lmp_version_below(const RawAddress& bda, uint8_t version);
 
-bool acl_is_role_master(const RawAddress& remote_bda, tBT_TRANSPORT transport);
+bool acl_br_edr_is_role_master(const RawAddress& bda);
 
 #define BLE_RESOLVE_ADDR_MASK 0xc0
 #define BLE_RESOLVE_ADDR_MSB 0x40
