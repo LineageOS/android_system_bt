@@ -2016,12 +2016,7 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
     return BTM_NO_RESOURCES;
   }
 
-  if ((btm_cb.security_mode == BTM_SEC_MODE_SC) && (psm == BT_PSM_SDP)) {
-    security_required = btm_sec_set_serv_level4_flags(
-        p_serv_rec->security_flags, is_originator);
-  } else {
-    security_required = p_serv_rec->security_flags;
-  }
+  security_required = p_serv_rec->security_flags;
 
   /* there are some devices (moto phone) which connects to several services at
    * the same time */
