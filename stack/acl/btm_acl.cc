@@ -2459,8 +2459,8 @@ bool lmp_version_below(const RawAddress& bda, uint8_t version) {
   return acl->lmp_version < version;
 }
 
-bool acl_is_role_master(const RawAddress& bda, tBT_TRANSPORT transport) {
-  tACL_CONN* p = btm_bda_to_acl(bda, transport);
+bool acl_br_edr_is_role_master(const RawAddress& bda) {
+  tACL_CONN* p = btm_bda_to_acl(bda, BT_TRANSPORT_BR_EDR);
   if (p == nullptr) {
     return false;
   }
