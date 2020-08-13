@@ -388,29 +388,6 @@ void btif_enable_bluetooth_evt() {
 
 /*******************************************************************************
  *
- * Function         btif_disable_bluetooth_evt
- *
- * Description      Event notifying BT disable is now complete.
- *                  Terminates main stack tasks and notifies HAL
- *                  user with updated BT state.
- *
- * Returns          void
- *
- ******************************************************************************/
-
-void btif_disable_bluetooth_evt() {
-  LOG_INFO("%s entered", __func__);
-
-  bte_main_disable();
-
-  /* callback to HAL */
-  future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
-
-  LOG_INFO("%s finished", __func__);
-}
-
-/*******************************************************************************
- *
  * Function         btif_cleanup_bluetooth
  *
  * Description      Cleanup BTIF state.
