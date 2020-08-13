@@ -50,6 +50,7 @@ constexpr uint8_t kH4Command = 0x01;
 constexpr uint8_t kH4Acl = 0x02;
 constexpr uint8_t kH4Sco = 0x03;
 constexpr uint8_t kH4Event = 0x04;
+constexpr uint8_t kH4Iso = 0x05;
 
 using H4Packet = std::vector<uint8_t>;
 
@@ -67,6 +68,10 @@ class TestHciHalCallbacks : public HciHalCallbacks {
 
   void scoDataReceived(HciPacket packet) override {
     incoming_packets_queue_.emplace(kH4Sco, packet);
+  }
+
+  void isoDataReceived(HciPacket packet) override {
+    incoming_packets_queue_.emplace(kH4Iso, packet);
   }
 };
 
@@ -223,6 +228,15 @@ HciPacket make_sample_h4_sco_pkt(uint8_t payload_size) {
   return pkt;
 }
 
+HciPacket make_sample_h4_iso_pkt(uint8_t payload_size) {
+  HciPacket pkt;
+  pkt.assign(1 + 4 + payload_size, 0x01);
+  pkt[0] = kH4Iso;
+  pkt[3] = payload_size;
+  pkt[4] = 0;
+  return pkt;
+}
+
 size_t read_with_retry(int socket, uint8_t* data, size_t length) {
   size_t bytes_read = 0;
   ssize_t bytes_read_current = 0;
@@ -257,6 +271,16 @@ TEST_F(HciHalRootcanalTest, receive_hci_acl) {
 
 TEST_F(HciHalRootcanalTest, receive_hci_sco) {
   H4Packet incoming_packet = make_sample_h4_sco_pkt(3);
+  write(fake_server_socket_, incoming_packet.data(), incoming_packet.size());
+  while (incoming_packets_queue_.size() != 1) {
+  }
+  auto packet = incoming_packets_queue_.front();
+  incoming_packets_queue_.pop();
+  check_packet_equal(packet, incoming_packet);
+}
+
+TEST_F(HciHalRootcanalTest, receive_hci_iso) {
+  H4Packet incoming_packet = make_sample_h4_iso_pkt(3);
   write(fake_server_socket_, incoming_packet.data(), incoming_packet.size());
   while (incoming_packets_queue_.size() != 1) {
   }
