@@ -45,6 +45,7 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/crypto_toolbox/crypto_toolbox.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/l2cap_security_interface.h"
 
 extern void gatt_notify_phy_updated(uint8_t status, uint16_t handle,
@@ -658,17 +659,14 @@ bool BTM_UseLeLink(const RawAddress& bd_addr) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::BTM_UseLeLink(bd_addr);
   }
-  tACL_CONN* p_acl;
   tBT_DEVICE_TYPE dev_type;
   tBLE_ADDR_TYPE addr_type;
   bool use_le = false;
 
-  p_acl = btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
-  if (p_acl != NULL) {
+  if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_BR_EDR)) {
     return use_le;
   } else {
-    p_acl = btm_bda_to_acl(bd_addr, BT_TRANSPORT_LE);
-    if (p_acl != NULL) {
+    if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
       use_le = true;
     } else {
       BTM_ReadDevInfo(bd_addr, &dev_type, &addr_type);
