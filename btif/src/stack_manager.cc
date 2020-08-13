@@ -69,6 +69,7 @@
 #include "btif/include/btif_sock.h"
 #include "main/shim/controller.h"
 
+void BTU_ShutDown(void);
 void BTA_dm_on_hw_on();
 void BTA_dm_on_hw_off();
 
@@ -285,7 +286,18 @@ static void event_shut_down_stack(UNUSED_ATTR void* context) {
   module_shut_down(get_module(BTIF_CONFIG_MODULE));
 
   future_await(local_hack_future);
-  bte_main_disable();
+
+  if (bluetooth::shim::is_any_gd_enabled()) {
+    LOG_INFO("%s Gd shim module disabled", __func__);
+    module_shut_down(get_module(GD_SHIM_MODULE));
+    module_start_up(get_module(GD_IDLE_MODULE));
+  } else {
+    module_shut_down(get_module(HCI_MODULE));
+    module_shut_down(get_module(BTSNOOP_MODULE));
+  }
+
+  BTU_ShutDown();
+
   module_shut_down(get_module(CONTROLLER_MODULE));  // Doesn't do any work, just
                                                     // puts it in a restartable
                                                     // state
