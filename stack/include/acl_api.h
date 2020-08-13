@@ -285,3 +285,5 @@ void btm_ble_refresh_local_resolvable_private_addr(
     const RawAddress& pseudo_addr, const RawAddress& local_rpa);
 
 void btm_cont_rswitch_from_handle(uint16_t hci_handle);
+
+uint8_t acl_link_role(const RawAddress& remote_bda, tBT_TRANSPORT transport);
