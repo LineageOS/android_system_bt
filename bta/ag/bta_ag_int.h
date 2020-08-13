@@ -118,7 +118,6 @@ enum {
 typedef struct {
   char p_name[2][BTA_SERVICE_NAME_LEN + 1];
   tBTA_SERVICE_MASK services;
-  tBTA_SEC sec_mask;
   tBTA_AG_FEAT features;
   uint8_t app_id;
 } tBTA_AG_API_REGISTER;
@@ -126,7 +125,6 @@ typedef struct {
 /* data type for BTA_AG_API_OPEN_EVT */
 typedef struct {
   RawAddress bd_addr;
-  tBTA_SEC sec_mask;
 } tBTA_AG_API_OPEN;
 
 /* data type for BTA_AG_API_RESULT_EVT */
@@ -293,7 +291,7 @@ bool bta_ag_hdl_event(BT_HDR* p_msg);
 extern void bta_ag_api_enable(tBTA_AG_CBACK* p_cback);
 extern void bta_ag_api_disable();
 extern void bta_ag_api_set_active_device(const RawAddress& new_active_device);
-extern void bta_ag_api_register(tBTA_SERVICE_MASK services, tBTA_SEC sec_mask,
+extern void bta_ag_api_register(tBTA_SERVICE_MASK services,
                                 tBTA_AG_FEAT features,
                                 const std::vector<std::string>& service_names,
                                 uint8_t app_id);
