@@ -92,18 +92,7 @@ void post_to_main_message_loop(const base::Location& from_here, BT_HDR* p_msg) {
   }
 }
 
-/******************************************************************************
- *
- * Function         bte_main_boot_entry
- *
- * Description      BTE MAIN API - Entry point for BTE chip/stack initialization
- *
- * Returns          None
- *
- *****************************************************************************/
-void bte_main_boot_entry(void) {
-  module_init(get_module(INTEROP_MODULE));
-
+void bte_main_init(void) {
   hci = hci_layer_get_interface();
   if (!hci) {
     LOG_ERROR("%s could not get hci layer interface.", __func__);
@@ -111,8 +100,6 @@ void bte_main_boot_entry(void) {
   }
 
   hci->set_data_cb(base::Bind(&post_to_main_message_loop));
-
-  module_init(get_module(STACK_CONFIG_MODULE));
 }
 
 /******************************************************************************
