@@ -432,7 +432,6 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
   tSCO_CONN* p = &btm_cb.sco_cb.sco_db[0];
   uint16_t xx;
   uint16_t acl_handle = 0;
-  tACL_CONN* p_acl;
   *p_sco_inx = BTM_INVALID_SCO_INDEX;
 
   /* If originating, ensure that there is an ACL connection to the BD Address */
@@ -525,8 +524,7 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
         if (is_orig) {
           /* If role change is in progress, do not proceed with SCO setup
            * Wait till role change is complete */
-          p_acl = btm_bda_to_acl(*remote_bda, BT_TRANSPORT_BR_EDR);
-          if (p_acl && p_acl->switch_role_state != BTM_ACL_SWKEY_STATE_IDLE) {
+          if (!acl_is_switch_role_idle(*remote_bda, BT_TRANSPORT_BR_EDR)) {
             BTM_TRACE_API("Role Change is in progress for ACL handle 0x%04x",
                           acl_handle);
             p->state = SCO_ST_PEND_ROLECHANGE;
