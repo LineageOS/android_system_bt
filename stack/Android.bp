@@ -111,7 +111,6 @@ cc_library_static {
         "btm/btm_sco.cc",
         "btm/btm_sec.cc",
         "btu/btu_hcif.cc",
-        "btu/btu_init.cc",
         "btu/btu_task.cc",
         "gap/gap_ble.cc",
         "gap/gap_conn.cc",
