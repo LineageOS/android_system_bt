@@ -307,3 +307,5 @@ uint16_t acl_get_hci_handle_for_hcif(const RawAddress& bd_addr,
 uint16_t acl_get_link_supervision_timeout();
 uint8_t acl_get_disconnect_reason();
 void acl_set_disconnect_reason(uint8_t acl_disc_reason);
+
+bool acl_is_role_switch_allowed();
