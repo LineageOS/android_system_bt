@@ -1414,14 +1414,14 @@ static void btu_hcif_hdl_command_status(uint16_t opcode, uint8_t status,
       if (status != HCI_SUCCESS) {
         // Device refused to start authentication
         // This is treated as an authentication failure
-        btm_sec_auth_complete(BTM_INVALID_HCI_HANDLE, status);
+        btm_sec_auth_complete(HCI_INVALID_HANDLE, status);
       }
       break;
     case HCI_SET_CONN_ENCRYPTION:
       if (status != HCI_SUCCESS) {
         // Device refused to start encryption
         // This is treated as an encryption failure
-        btm_sec_encrypt_change(BTM_INVALID_HCI_HANDLE, status, false);
+        btm_sec_encrypt_change(HCI_INVALID_HANDLE, status, false);
       }
       break;
     case HCI_RMT_NAME_REQUEST:

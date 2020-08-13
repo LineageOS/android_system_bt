@@ -442,7 +442,7 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
       return BTM_ILLEGAL_VALUE;
     }
     acl_handle = BTM_GetHCIConnHandle(*remote_bda, BT_TRANSPORT_BR_EDR);
-    if (acl_handle == 0xFFFF) {
+    if (acl_handle == HCI_INVALID_HANDLE) {
       LOG(ERROR) << __func__ << ": cannot find ACL handle for remote device "
                  << remote_bda;
       return BTM_UNKNOWN_ADDR;
@@ -517,7 +517,7 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
 
       p->p_conn_cb = p_conn_cb;
       p->p_disc_cb = p_disc_cb;
-      p->hci_handle = BTM_INVALID_HCI_HANDLE;
+      p->hci_handle = HCI_INVALID_HANDLE;
       p->is_orig = is_orig;
 
       if (p->state != SCO_ST_PEND_UNPARK) {
@@ -863,9 +863,8 @@ tBTM_STATUS BTM_RemoveSco(uint16_t sco_inx) {
     return (BTM_UNKNOWN_ADDR);
 
   /* If no HCI handle, simply drop the connection and return */
-  if (p->hci_handle == BTM_INVALID_HCI_HANDLE ||
-      p->state == SCO_ST_PEND_UNPARK) {
-    p->hci_handle = BTM_INVALID_HCI_HANDLE;
+  if (p->hci_handle == HCI_INVALID_HANDLE || p->state == SCO_ST_PEND_UNPARK) {
+    p->hci_handle = HCI_INVALID_HANDLE;
     p->state = SCO_ST_UNUSED;
     p->esco.p_esco_cback = NULL; /* Deregister the eSCO event callback */
     return (BTM_SUCCESS);
@@ -930,7 +929,7 @@ void btm_sco_removed(uint16_t hci_handle, uint8_t reason) {
       btm_sco_flush_sco_data(xx);
 
       p->state = SCO_ST_UNUSED;
-      p->hci_handle = BTM_INVALID_HCI_HANDLE;
+      p->hci_handle = HCI_INVALID_HANDLE;
       p->rem_bd_known = false;
       p->esco.p_esco_cback = NULL; /* Deregister eSCO callback */
       (*p->p_disc_cb)(xx);

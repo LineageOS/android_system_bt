@@ -1277,7 +1277,7 @@ uint16_t btm_get_acl_disc_reason_code(void) {
  * Description      This function is called to get the handle for an ACL
  *                  connection to a specific remote BD Address.
  *
- * Returns          the handle of the connection, or 0xFFFF if none.
+ * Returns          the handle of the connection, or HCI_INVALID_HANDLE if none.
  *
  ******************************************************************************/
 uint16_t BTM_GetHCIConnHandle(const RawAddress& remote_bda,
@@ -1294,7 +1294,7 @@ uint16_t BTM_GetHCIConnHandle(const RawAddress& remote_bda,
   }
 
   /* If here, no BD Addr found */
-  return (0xFFFF);
+  return HCI_INVALID_HANDLE;
 }
 
 /*******************************************************************************
@@ -2186,7 +2186,7 @@ tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   } else /* otherwise can disconnect right away */
 #endif
   {
-    if (hci_handle != 0xFFFF && p_dev_rec &&
+    if (hci_handle != HCI_INVALID_HANDLE && p_dev_rec &&
         p_dev_rec->sec_state != BTM_SEC_STATE_DISCONNECTING) {
       btsnd_hcic_disconnect(hci_handle, HCI_ERR_PEER_USER);
     } else {
