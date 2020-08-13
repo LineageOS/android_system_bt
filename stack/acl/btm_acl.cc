@@ -2787,3 +2787,13 @@ bool acl_peer_supports_ble_coded_phy(uint16_t hci_handle) {
   }
   return HCI_LE_CODED_PHY_SUPPORTED(p_acl->peer_le_features);
 }
+
+uint16_t acl_get_link_supervision_timeout() {
+  return btm_cb.acl_cb_.btm_def_link_super_tout;
+}
+
+uint8_t acl_get_disconnect_reason() { return btm_cb.acl_cb_.acl_disc_reason; }
+
+void acl_set_disconnect_reason(uint8_t acl_disc_reason) {
+  btm_cb.acl_cb_.acl_disc_reason = acl_disc_reason;
+}
