@@ -154,6 +154,7 @@ static void event_init_stack(void* context) {
     }
     module_init(get_module(BTIF_CONFIG_MODULE));
     btif_init_bluetooth();
+    bte_main_boot_entry();
 
     // stack init is synchronous, so no waiting necessary here
     stack_is_initialized = true;
