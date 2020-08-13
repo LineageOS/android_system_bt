@@ -1015,24 +1015,6 @@ void BTM_PasskeyReqReply(tBTM_STATUS res, const RawAddress& bd_addr,
 
 /*******************************************************************************
  *
- * Function         BTM_IoCapRsp
- *
- * Description      This function is called in response to BTM_SP_IO_REQ_EVT
- *                  When the event data io_req.oob_data is set to
- *                  BTM_OOB_UNKNOWN by the tBTM_SP_CALLBACK implementation, this
- *                  function is called to provide the actual response
- *
- * Parameters:      bd_addr - Address of the peer device
- *                  io_cap  - The IO capability of local device.
- *                  oob     - BTM_OOB_NONE or BTM_OOB_PRESENT.
- *                  auth_req- MITM protection required or not.
- *
- ******************************************************************************/
-void BTM_IoCapRsp(const RawAddress& bd_addr, tBTM_IO_CAP io_cap,
-                  tBTM_OOB_DATA oob, tBTM_AUTH_REQ auth_req);
-
-/*******************************************************************************
- *
  * Function         BTM_ReadLocalOobData
  *
  * Description      This function is called to read the local OOB data from
