@@ -203,7 +203,7 @@ int btif_is_enabled(void);
 /**
  * BTIF_Events
  */
-void btif_enable_bluetooth_evt(tBTA_STATUS status);
+void btif_enable_bluetooth_evt();
 void btif_disable_bluetooth_evt(void);
 void btif_adapter_properties_evt(bt_status_t status, uint32_t num_props,
                                  bt_property_t* p_props);
@@ -219,6 +219,6 @@ bt_status_t btif_transfer_context(tBTIF_CBACK* p_cback, uint16_t event,
                                   char* p_params, int param_len,
                                   tBTIF_COPY_CBACK* p_copy_cback);
 
-void btif_init_ok(UNUSED_ATTR uint16_t event, UNUSED_ATTR char* p_param);
+void btif_init_ok();
 
 #endif /* BTIF_COMMON_H */

@@ -197,16 +197,15 @@ static inline int btpan_role_to_bta(int btpan_role) {
 
 static volatile int btpan_dev_local_role;
 #if (BTA_PAN_INCLUDED == TRUE)
-static tBTA_PAN_ROLE_INFO bta_panu_info = {PANU_SERVICE_NAME, 0, PAN_SECURITY};
-static tBTA_PAN_ROLE_INFO bta_pan_nap_info = {PAN_NAP_SERVICE_NAME, 1,
-                                              PAN_SECURITY};
+static tBTA_PAN_ROLE_INFO bta_panu_info = {PANU_SERVICE_NAME, 0};
+static tBTA_PAN_ROLE_INFO bta_pan_nap_info = {PAN_NAP_SERVICE_NAME, 1};
 #endif
 
 static bt_status_t btpan_enable(int local_role) {
 #if (BTA_PAN_INCLUDED == TRUE)
   BTIF_TRACE_DEBUG("%s - local_role: %d", __func__, local_role);
   int bta_pan_role = btpan_role_to_bta(local_role);
-  BTA_PanSetRole(bta_pan_role, &bta_panu_info, NULL, &bta_pan_nap_info);
+  BTA_PanSetRole(bta_pan_role, &bta_panu_info, &bta_pan_nap_info);
   btpan_dev_local_role = local_role;
   return BT_STATUS_SUCCESS;
 #else

@@ -59,18 +59,16 @@ static const tBTA_SYS_REG bta_hh_reg = {bta_hh_hdl_event, BTA_HhDisable};
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HhEnable(tBTA_SEC sec_mask, tBTA_HH_CBACK* p_cback) {
+void BTA_HhEnable(tBTA_HH_CBACK* p_cback) {
   tBTA_HH_API_ENABLE* p_buf =
       (tBTA_HH_API_ENABLE*)osi_calloc(sizeof(tBTA_HH_API_ENABLE));
-
-  LOG_INFO("%s sec_mask:0x%x p_cback:%p", __func__, sec_mask, p_cback);
 
   /* register with BTA system manager */
   bta_sys_register(BTA_ID_HH, &bta_hh_reg);
 
   p_buf->hdr.event = BTA_HH_API_ENABLE_EVT;
   p_buf->p_cback = p_cback;
-  p_buf->sec_mask = sec_mask;
+  p_buf->sec_mask = BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT;
 
   bta_sys_sendmsg(p_buf);
 }
@@ -122,14 +120,14 @@ void BTA_HhClose(uint8_t dev_handle) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HhOpen(const RawAddress& dev_bda, tBTA_HH_PROTO_MODE mode,
-                tBTA_SEC sec_mask) {
+void BTA_HhOpen(const RawAddress& dev_bda) {
   tBTA_HH_API_CONN* p_buf =
       (tBTA_HH_API_CONN*)osi_calloc(sizeof(tBTA_HH_API_CONN));
+  tBTA_HH_PROTO_MODE mode = BTA_HH_PROTO_RPT_MODE;
 
   p_buf->hdr.event = BTA_HH_API_OPEN_EVT;
   p_buf->hdr.layer_specific = BTA_HH_INVALID_HANDLE;
-  p_buf->sec_mask = sec_mask;
+  p_buf->sec_mask = BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT;
   p_buf->mode = mode;
   p_buf->bd_addr = dev_bda;
 

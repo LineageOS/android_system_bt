@@ -607,16 +607,8 @@ void bnep_process_setup_conn_req(tBNEP_CONN* p_bcb, uint8_t* p_setup,
   BNEP_TRACE_EVENT(
       "BNEP initiating security check for incoming call for uuid %s",
       p_bcb->src_uuid.ToString().c_str());
-#if (BNEP_DO_AUTH_FOR_ROLE_SWITCH == FALSE)
-  if (p_bcb->con_flags & BNEP_FLAGS_CONN_COMPLETED)
-    bnep_sec_check_complete(p_bcb->rem_bda, p_bcb, BTM_SUCCESS);
-  else
-#endif
-    btm_sec_mx_access_request(p_bcb->rem_bda, BT_PSM_BNEP, false,
-                              BTM_SEC_PROTO_BNEP, p_bcb->src_uuid.As32Bit(),
-                              &bnep_sec_check_complete, p_bcb);
-
-  return;
+  bnep_sec_check_complete(&p_bcb->rem_bda, BT_TRANSPORT_BR_EDR, p_bcb,
+                          BTM_SUCCESS);
 }
 
 /*******************************************************************************

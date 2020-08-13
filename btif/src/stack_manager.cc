@@ -37,8 +37,40 @@
 
 // Temp includes
 #include "bt_utils.h"
+#include "bta/sys/bta_sys.h"
 #include "btif_config.h"
 #include "btif_profile_queue.h"
+#include "internal_include/bt_target.h"
+#include "internal_include/bte.h"
+#include "stack/btm/btm_int.h"
+#include "stack/include/gatt_api.h"
+#include "stack/include/l2c_api.h"
+#include "stack/include/port_api.h"
+#include "stack/sdp/sdpint.h"
+#if (BNEP_INCLUDED == TRUE)
+#include "stack/include/bnep_api.h"
+#endif
+#include "stack/include/gap_api.h"
+#if (PAN_INCLUDED == TRUE)
+#include "stack/include/pan_api.h"
+#endif
+#include "stack/include/a2dp_api.h"
+#include "stack/include/avrc_api.h"
+#if (HID_HOST_INCLUDED == TRUE)
+#include "stack/include/hidh_api.h"
+#endif
+#include "stack/include/smp_api.h"
+#if (defined BTA_AR_INCLUDED) && (BTA_AR_INCLUDED == TRUE)
+#include "bta_ar_api.h"
+#endif
+#include "bta/sys/bta_sys_int.h"
+#include "bta_dm_int.h"
+#include "btif/include/btif_pan.h"
+#include "btif/include/btif_sock.h"
+#include "main/shim/controller.h"
+
+void BTA_dm_on_hw_on();
+void BTA_dm_on_hw_off();
 
 using bluetooth::common::MessageLoopThread;
 
@@ -57,6 +89,8 @@ static void event_clean_up_stack(void* context);
 
 static void event_signal_stack_up(void* context);
 static void event_signal_stack_down(void* context);
+
+void main_thread_start_up();
 
 // Unvetted includes/imports, etc which should be removed or vetted in the
 // future
@@ -163,7 +197,50 @@ static void event_start_up_stack(UNUSED_ATTR void* context) {
     module_start_up(get_module(HCI_MODULE));
   }
 
-  BTU_StartUp();
+  btm_init();
+  l2c_init();
+  sdp_init();
+  gatt_init();
+  SMP_Init();
+  btm_ble_init();
+
+  RFCOMM_Init();
+#if (BNEP_INCLUDED == TRUE)
+  BNEP_Init();
+#if (PAN_INCLUDED == TRUE)
+  PAN_Init();
+#endif /* PAN */
+#endif /* BNEP Included */
+  A2DP_Init();
+  AVRC_Init();
+  GAP_Init();
+#if (HID_HOST_INCLUDED == TRUE)
+  HID_HostInit();
+#endif
+
+  bta_sys_init();
+#if (defined BTA_AR_INCLUDED) && (BTA_AR_INCLUDED == TRUE)
+  bta_ar_init();
+#endif
+  module_init(get_module(BTE_LOGMSG_MODULE));
+
+  main_thread_start_up();
+
+  btif_init_ok();
+  BTA_dm_init();
+  bta_dm_enable(bte_dm_evt);
+
+  bta_set_forward_hw_failures(true);
+  btm_acl_device_down();
+  BTM_db_reset();
+  if (bluetooth::shim::is_gd_controller_enabled()) {
+    CHECK(module_start_up(get_module(GD_CONTROLLER_MODULE)));
+  } else {
+    CHECK(module_start_up(get_module(CONTROLLER_MODULE)));
+  }
+  BTM_reset_complete();
+
+  BTA_dm_on_hw_on();
 
   if (future_await(local_hack_future) != FUTURE_SUCCESS) {
     LOG_ERROR("%s failed to start up the stack", __func__);
@@ -189,7 +266,22 @@ static void event_shut_down_stack(UNUSED_ATTR void* context) {
   hack_future = local_hack_future;
   stack_is_running = false;
 
-  btif_disable_bluetooth();
+  do_in_main_thread(FROM_HERE, base::Bind(&btm_ble_multi_adv_cleanup));
+
+  btif_dm_on_disable();
+  btif_sock_cleanup();
+  btif_pan_cleanup();
+
+  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_disable));
+
+  future_await(local_hack_future);
+  local_hack_future = future_new();
+  hack_future = local_hack_future;
+
+  bta_sys_disable();
+  bta_set_forward_hw_failures(false);
+  BTA_dm_on_hw_off();
+
   module_shut_down(get_module(BTIF_CONFIG_MODULE));
 
   future_await(local_hack_future);

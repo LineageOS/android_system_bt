@@ -47,8 +47,6 @@
 #include "main/shim/controller.h"
 #include "main/shim/shim.h"
 
-extern bluetooth::common::MessageLoopThread bt_startup_thread;
-
 /******************************************************************************/
 /*               L O C A L    D A T A    D E F I N I T I O N S                */
 /******************************************************************************/
@@ -111,14 +109,10 @@ void btm_dev_init() {
  *
  * Function         btm_db_reset
  *
- * Description      This function is called by BTM_DeviceReset and clears out
- *                  any pending callbacks for inquiries, discoveries, other
- *                  pending functions that may be in progress.
- *
  * Returns          void
  *
  ******************************************************************************/
-static void btm_db_reset(void) {
+void BTM_db_reset(void) {
   tBTM_CMPL_CB* p_cb;
 
   btm_inq_db_reset();
@@ -170,8 +164,7 @@ bool set_sec_state_idle(void* data, void* context) {
   return true;
 }
 
-static void reset_complete(void* result) {
-  CHECK(result == FUTURE_SUCCESS);
+void BTM_reset_complete() {
   const controller_t* controller = controller_get_interface();
 
   /* Tell L2CAP that all connections are gone */
@@ -220,24 +213,6 @@ static void reset_complete(void* result) {
                  btm_cb.cfg.pin_code_len);
 
   decode_controller_support();
-  send_bta_sys_hw_event(BTA_SYS_EVT_STACK_ENABLED_EVT);
-}
-
-// TODO(zachoverflow): remove this function
-void BTM_DeviceReset() {
-  /* Flush all ACL connections */
-  btm_acl_device_down();
-
-  /* Clear the callback, so application would not hang on reset */
-  btm_db_reset();
-
-  if (bluetooth::shim::is_gd_controller_enabled()) {
-    module_start_up_callbacked_wrapper(get_module(GD_CONTROLLER_MODULE),
-                                       &bt_startup_thread, reset_complete);
-  } else {
-    module_start_up_callbacked_wrapper(get_module(CONTROLLER_MODULE),
-                                       &bt_startup_thread, reset_complete);
-  }
 }
 
 /*******************************************************************************

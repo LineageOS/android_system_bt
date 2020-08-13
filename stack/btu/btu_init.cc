@@ -29,37 +29,7 @@
 #include "l2c_api.h"
 #include "sdpint.h"
 
-using bluetooth::common::MessageLoopThread;
-
-MessageLoopThread bt_startup_thread("bt_startup_thread");
-
-void btu_task_start_up();
 void btu_task_shut_down();
-
-/*****************************************************************************
- *
- * Function         btu_init_core
- *
- * Description      Initialize control block memory for each core component.
- *
- *
- * Returns          void
- *
- *****************************************************************************/
-void btu_init_core() {
-  /* Initialize the mandatory core stack components */
-  btm_init();
-
-  l2c_init();
-
-  sdp_init();
-
-  gatt_init();
-
-  SMP_Init();
-
-  btm_ble_init();
-}
 
 /*****************************************************************************
  *
@@ -82,35 +52,6 @@ void btu_free_core() {
   btm_free();
 }
 
-/*****************************************************************************
- *
- * Function         BTU_StartUp
- *
- * Description      Initializes the BTU control block.
- *
- *                  NOTE: Must be called before creating any tasks
- *                      (RPC, BTU, HCIT, APPL, etc.)
- *
- * Returns          void
- *
- *****************************************************************************/
-void BTU_StartUp() {
-  bt_startup_thread.StartUp();
-  if (!bt_startup_thread.EnableRealTimeScheduling()) {
-    LOG(ERROR) << __func__ << ": Unable to set real time scheduling policy for "
-               << bt_startup_thread;
-    BTU_ShutDown();
-    return;
-  }
-  if (!bt_startup_thread.DoInThread(FROM_HERE, base::Bind(btu_task_start_up))) {
-    LOG(ERROR) << __func__ << ": Unable to continue start-up on "
-               << bt_startup_thread;
-    BTU_ShutDown();
-    return;
-  }
-}
-
 void BTU_ShutDown() {
   btu_task_shut_down();
-  bt_startup_thread.ShutDown();
 }

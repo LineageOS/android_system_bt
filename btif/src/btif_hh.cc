@@ -75,10 +75,6 @@ static int btif_hh_keylockstates = 0;  // The current key state of each key
 
 #define BTIF_TIMEOUT_VUP_MS (3 * 1000)
 
-#ifndef BTUI_HH_SECURITY
-#define BTUI_HH_SECURITY (BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)
-#endif
-
 /* HH request events */
 typedef enum {
   BTIF_HH_CONNECT_REQ_EVT = 0,
@@ -611,7 +607,7 @@ bt_status_t btif_hh_connect(const RawAddress* bd_addr) {
    pagescan mode, we will do 2 retries to connect before giving up */
   btif_hh_cb.status = BTIF_HH_DEV_CONNECTING;
   btif_hh_cb.pending_conn_address = *bd_addr;
-  BTA_HhOpen(*bd_addr, BTA_HH_PROTO_RPT_MODE, BTUI_HH_SECURITY);
+  BTA_HhOpen(*bd_addr);
 
   // TODO(jpawlowski); make cback accept const and remove tmp!
   auto tmp = *bd_addr;
@@ -680,7 +676,7 @@ void btif_hh_service_registration(bool enable) {
       btif_hd_service_registration();
     }
   } else if (enable) {
-    BTA_HhEnable(BTA_SEC_ENCRYPT, bte_hh_evt);
+    BTA_HhEnable(bte_hh_evt);
   } else {
     btif_hh_cb.service_dereg_active = TRUE;
     BTA_HhDisable();
@@ -1692,7 +1688,7 @@ static const bthh_interface_t bthhInterface = {
 bt_status_t btif_hh_execute_service(bool b_enable) {
   if (b_enable) {
     /* Enable and register with BTA-HH */
-    BTA_HhEnable(BTUI_HH_SECURITY, bte_hh_evt);
+    BTA_HhEnable(bte_hh_evt);
   } else {
     /* Disable HH */
     BTA_HhDisable();
