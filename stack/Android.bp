@@ -107,7 +107,7 @@ cc_library_static {
         "btm/btm_devctl.cc",
         "btm/btm_inq.cc",
         "btm/btm_main.cc",
-        "btm/btm_pm.cc",
+        "acl/btm_pm.cc",
         "btm/btm_sco.cc",
         "btm/btm_sec.cc",
         "btu/btu_hcif.cc",
