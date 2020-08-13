@@ -3439,3 +3439,7 @@ bool btif_av_is_a2dp_offload_running() {
 bool btif_av_is_peer_silenced(const RawAddress& peer_address) {
   return btif_av_source.IsPeerSilenced(peer_address);
 }
+
+void btif_av_set_dynamic_audio_buffer_size(uint8_t dynamic_audio_buffer_size) {
+  btif_a2dp_source_set_dynamic_audio_buffer_size(dynamic_audio_buffer_size);
+}

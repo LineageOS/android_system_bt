@@ -19,6 +19,7 @@ package android.bluetooth;
 import android.bluetooth.BluetoothCodecConfig;
 import android.bluetooth.BluetoothCodecStatus;
 import android.bluetooth.BluetoothDevice;
+import android.bluetooth.BufferConstraints;
 
 /**
  * APIs for Bluetooth A2DP service
@@ -52,5 +53,8 @@ interface IBluetoothA2dp {
     int supportsOptionalCodecs(in BluetoothDevice device);
     int getOptionalCodecsEnabled(in BluetoothDevice device);
     oneway void setOptionalCodecsEnabled(in BluetoothDevice device, int value);
+    int getDynamicBufferSupport();
+    BufferConstraints getBufferConstraints();
+    boolean setBufferMillis(int codec, int size);
     int getPriority(in BluetoothDevice device);
 }

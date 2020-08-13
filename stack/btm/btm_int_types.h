@@ -290,6 +290,10 @@ typedef struct {
   // BQR Receiver
   tBTM_BT_QUALITY_REPORT_RECEIVER* p_bqr_report_receiver{nullptr};
 
+#define BTM_CODEC_TYPE_MAX_RECORDS 32
+  tBTM_BT_DYNAMIC_AUDIO_BUFFER_CB
+      dynamic_audio_buffer_cb[BTM_CODEC_TYPE_MAX_RECORDS];
+
   tACL_CB acl_cb_;
 
   std::shared_ptr<TimestampedStringCircularBuffer> history_{nullptr};
