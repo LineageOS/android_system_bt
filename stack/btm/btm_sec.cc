@@ -2484,8 +2484,9 @@ void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr,
   uint8_t old_sec_state;
 
   BTM_TRACE_EVENT("btm_sec_rmt_name_request_complete");
-  if ((!p_bd_addr && !BTM_ACL_IS_CONNECTED(btm_cb.connecting_bda)) ||
-      (p_bd_addr && !BTM_ACL_IS_CONNECTED(*p_bd_addr))) {
+  if ((!p_bd_addr &&
+       !BTM_IsAclConnectionUp(btm_cb.connecting_bda, BT_TRANSPORT_BR_EDR)) ||
+      (p_bd_addr && !BTM_IsAclConnectionUp(*p_bd_addr, BT_TRANSPORT_BR_EDR))) {
     btm_acl_resubmit_page();
   }
 
