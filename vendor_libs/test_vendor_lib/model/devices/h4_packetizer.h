@@ -56,6 +56,10 @@ class H4Packetizer : public HciProtocol {
   static constexpr size_t EVENT_PREAMBLE_SIZE = 2;
   static constexpr size_t EVENT_LENGTH_OFFSET = 1;
 
+  // 2 bytes for handle and flags, 12 bits for length (Volume 2, Part E, 5.4.5)
+  static constexpr size_t ISO_PREAMBLE_SIZE = 4;
+  static constexpr size_t ISO_LENGTH_OFFSET = 2;
+
  private:
   int uart_fd_;
 
