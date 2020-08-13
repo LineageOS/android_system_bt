@@ -81,13 +81,17 @@ tBTM_STATUS BTM_GetLinkSuperTout(const RawAddress& remote_bda,
  * Function         BTM_IsAclConnectionUp
  *
  * Description      This function is called to check if an ACL connection exists
- *                  to a specific remote BD Address.
+ *                  to a specific remote BD Address.  The second version ensures
+ *                  the hci handle is valid (Unsure if needed)
  *
  * Returns          true if connection is up, else false.
  *
  ******************************************************************************/
 bool BTM_IsAclConnectionUp(const RawAddress& remote_bda,
                            tBT_TRANSPORT transport);
+
+bool BTM_IsAclConnectionUpAndHandleValid(const RawAddress& remote_bda,
+                                         tBT_TRANSPORT transport);
 
 /*******************************************************************************
  *
