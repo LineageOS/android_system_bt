@@ -291,3 +291,5 @@ void btm_cont_rswitch_from_handle(uint16_t hci_handle);
 uint8_t acl_link_role(const RawAddress& remote_bda, tBT_TRANSPORT transport);
 
 bool acl_is_transport_le_from_handle(uint16_t handle);
+
+tBT_TRANSPORT acl_get_transport_from_handle(uint16_t handle);
