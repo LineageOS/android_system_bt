@@ -26,10 +26,6 @@ namespace bluetooth {
 namespace os {
 
 std::optional<std::string> GetSystemProperty(const std::string& property) {
-  if (property.size() >= PROP_NAME_MAX) {
-    LOG_ERROR("Property name's maximum size is %d, but %zu chars were given", PROP_NAME_MAX - 1, property.size());
-    return std::nullopt;
-  }
   std::array<char, PROPERTY_VALUE_MAX> value_array{0};
   auto value_len = property_get(property.c_str(), value_array.data(), nullptr);
   if (value_len <= 0) {
@@ -39,10 +35,6 @@ std::optional<std::string> GetSystemProperty(const std::string& property) {
 }
 
 bool SetSystemProperty(const std::string& property, const std::string& value) {
-  if (property.size() >= PROP_NAME_MAX) {
-    LOG_ERROR("Property name's maximum size is %d, but %zu chars were given", PROP_NAME_MAX - 1, property.size());
-    return false;
-  }
   if (value.size() >= PROPERTY_VALUE_MAX) {
     LOG_ERROR("Property value's maximum size is %d, but %zu chars were given", PROPERTY_VALUE_MAX - 1, value.size());
     return false;

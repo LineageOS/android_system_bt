@@ -40,14 +40,15 @@ TEST(SystemPropertiesTest, set_and_get_test) {
   ASSERT_FALSE(ret);
 }
 
+// From Android O and above, there is no limit on property key sizesss
 TEST(SystemPropertiesTest, max_length_test) {
   std::string property(PROP_NAME_MAX, 'a');
   std::string value(PROP_VALUE_MAX, '1');
   ASSERT_TRUE(SetSystemProperty("persist.bluetooth.factoryreset", "false"));
-  ASSERT_FALSE(SetSystemProperty(property, "true"));
+  ASSERT_TRUE(SetSystemProperty(property, "true"));
   ASSERT_FALSE(SetSystemProperty("persist.bluetooth.factoryreset", value));
   ASSERT_FALSE(SetSystemProperty(property, value));
-  ASSERT_FALSE(GetSystemProperty(property));
+  ASSERT_TRUE(GetSystemProperty(property));
   // make sure no actual operations on system property happened
   auto ret = GetSystemProperty("persist.bluetooth.factoryreset");
   ASSERT_TRUE(ret);

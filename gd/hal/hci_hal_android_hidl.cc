@@ -74,7 +74,7 @@ class InternalHciCallbacks : public IBluetoothHciCallbacks {
 
   Return<void> hciEventReceived(const hidl_vec<uint8_t>& event) {
     std::vector<uint8_t> received_hci_packet(event.begin(), event.end());
-    btsnoop_logger_->capture(received_hci_packet, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::EVT);
+    btsnoop_logger_->Capture(received_hci_packet, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::EVT);
     if (callback_ != nullptr) {
       callback_->hciEventReceived(std::move(received_hci_packet));
     }
@@ -83,7 +83,7 @@ class InternalHciCallbacks : public IBluetoothHciCallbacks {
 
   Return<void> aclDataReceived(const hidl_vec<uint8_t>& data) {
     std::vector<uint8_t> received_hci_packet(data.begin(), data.end());
-    btsnoop_logger_->capture(received_hci_packet, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::ACL);
+    btsnoop_logger_->Capture(received_hci_packet, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::ACL);
     if (callback_ != nullptr) {
       callback_->aclDataReceived(std::move(received_hci_packet));
     }
@@ -92,7 +92,7 @@ class InternalHciCallbacks : public IBluetoothHciCallbacks {
 
   Return<void> scoDataReceived(const hidl_vec<uint8_t>& data) {
     std::vector<uint8_t> received_hci_packet(data.begin(), data.end());
-    btsnoop_logger_->capture(received_hci_packet, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::SCO);
+    btsnoop_logger_->Capture(received_hci_packet, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::SCO);
     if (callback_ != nullptr) {
       callback_->scoDataReceived(std::move(received_hci_packet));
     }
@@ -107,9 +107,6 @@ class InternalHciCallbacks : public IBluetoothHciCallbacks {
 
 }  // namespace
 
-const std::string SnoopLogger::DefaultFilePath = "/data/misc/bluetooth/logs/btsnoop_hci.log";
-const bool SnoopLogger::AlwaysFlush = false;
-
 class HciHalHidl : public HciHal {
  public:
   void registerIncomingPacketCallback(HciHalCallbacks* callback) override {
@@ -121,17 +118,17 @@ class HciHalHidl : public HciHal {
   }
 
   void sendHciCommand(HciPacket command) override {
-    btsnoop_logger_->capture(command, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::CMD);
+    btsnoop_logger_->Capture(command, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::CMD);
     bt_hci_->sendHciCommand(command);
   }
 
   void sendAclData(HciPacket packet) override {
-    btsnoop_logger_->capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::ACL);
+    btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::ACL);
     bt_hci_->sendAclData(packet);
   }
 
   void sendScoData(HciPacket packet) override {
-    btsnoop_logger_->capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::SCO);
+    btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::SCO);
     bt_hci_->sendScoData(packet);
   }
 
