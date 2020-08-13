@@ -29,8 +29,6 @@
 #include "l2c_api.h"
 #include "sdpint.h"
 
-void btu_task_shut_down();
-
 /*****************************************************************************
  *
  * Function         btu_free_core
@@ -50,8 +48,4 @@ void btu_free_core() {
   sdp_free();
 
   btm_free();
-}
-
-void BTU_ShutDown() {
-  btu_task_shut_down();
 }
