@@ -509,9 +509,7 @@ extern void bta_dm_ble_get_energy_info(tBTA_BLE_ENERGY_INFO_CBACK*);
 extern void bta_dm_set_encryption(const RawAddress&, tBTA_TRANSPORT,
                                   tBTA_DM_ENCRYPT_CBACK*, tBTM_BLE_SEC_ACT);
 extern void bta_dm_confirm(const RawAddress&, bool);
-extern void bta_dm_ci_io_req_act(const RawAddress& bd_addr, tBTM_IO_CAP io_cap,
-                                 tBTM_OOB_DATA oob_data,
-                                 tBTM_AUTH_REQ auth_req);
+
 extern void bta_dm_ci_rmt_oob_act(std::unique_ptr<tBTA_DM_CI_RMT_OOB> msg);
 
 extern void bta_dm_init_pm(void);

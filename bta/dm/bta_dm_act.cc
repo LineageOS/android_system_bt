@@ -793,13 +793,6 @@ void bta_dm_confirm(const RawAddress& bd_addr, bool accept) {
   BTM_ConfirmReqReply(accept ? BTM_SUCCESS : BTM_NOT_AUTHORIZED, bd_addr);
 }
 
-/** respond to the IO capabilities request from BTM */
-void bta_dm_ci_io_req_act(const RawAddress& bd_addr, tBTM_IO_CAP io_cap,
-                          tBTM_OOB_DATA oob_data, tBTM_AUTH_REQ auth_req) {
-  BTM_IoCapRsp(bd_addr, io_cap, oob_data,
-               auth_req ? BTM_AUTH_AP_YES : BTM_AUTH_AP_NO);
-}
-
 /** respond to the OOB data request for the remote device from BTM */
 void bta_dm_ci_rmt_oob_act(std::unique_ptr<tBTA_DM_CI_RMT_OOB> msg) {
   BTM_RemoteOobDataReply(msg->accept ? BTM_SUCCESS : BTM_NOT_AUTHORIZED,
