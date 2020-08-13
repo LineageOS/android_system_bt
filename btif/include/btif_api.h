@@ -63,19 +63,6 @@ bt_status_t btif_enable_bluetooth(void);
 
 /*******************************************************************************
  *
- * Function         btif_disable_bluetooth
- *
- * Description      Inititates shutdown of Bluetooth system.
- *                  Any active links will be dropped and device entering
- *                  non connectable/discoverable mode
- *
- * Returns          void
- *
- ******************************************************************************/
-bt_status_t btif_disable_bluetooth(void);
-
-/*******************************************************************************
- *
  * Function         btif_cleanup_bluetooth
  *
  * Description      Cleanup BTIF state.
