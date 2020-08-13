@@ -23,8 +23,6 @@ cc_library_static {
         "model/devices/device.cc",
         "model/devices/device_properties.cc",
         "model/devices/h4_packetizer.cc",
-        "model/devices/h4_protocol.cc",
-        "model/devices/hci_packetizer.cc",
         "model/devices/hci_protocol.cc",
         "model/devices/hci_socket_device.cc",
         "model/devices/keyboard.cc",
