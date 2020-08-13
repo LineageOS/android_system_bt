@@ -60,8 +60,7 @@ void btm_ble_refresh_local_resolvable_private_addr(
     const RawAddress& pseudo_addr, const RawAddress& local_rpa);
 void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec, uint8_t res,
                                  bool is_le_trasnport);
-void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
-                               tBTM_SEC_DEV_REC* p_dev_rec);
+void btm_io_capabilities_req(const RawAddress& p);
 
 static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
                                               uint16_t* p_pkt_type);
@@ -75,6 +74,8 @@ static void btm_read_rssi_timeout(void* data);
 static void btm_read_tx_power_timeout(void* data);
 static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                             uint8_t num_read_pages);
+static void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
+                                      tBTM_SEC_DEV_REC* p_dev_rec);
 static tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
 
 void BTIF_dm_report_inquiry_status_change(uint8_t busy_level_flags);
@@ -2590,4 +2591,40 @@ void btm_ble_refresh_local_resolvable_private_addr(
     }
   }
 #endif
+}
+
+/*******************************************************************************
+ *
+ * Function         btm_sec_set_peer_sec_caps
+ *
+ * Description      This function is called to set sm4 and rmt_sec_caps fields
+ *                  based on the available peer device features.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
+                               tBTM_SEC_DEV_REC* p_dev_rec) {
+  if ((btm_cb.security_mode == BTM_SEC_MODE_SP ||
+       btm_cb.security_mode == BTM_SEC_MODE_SC) &&
+      HCI_SSP_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1])) {
+    p_dev_rec->sm4 = BTM_SM4_TRUE;
+    p_dev_rec->remote_supports_secure_connections =
+        (HCI_SC_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]));
+  } else {
+    p_dev_rec->sm4 = BTM_SM4_KNOWN;
+    p_dev_rec->remote_supports_secure_connections = false;
+  }
+
+  BTM_TRACE_API("%s: sm4: 0x%02x, rmt_support_for_secure_connections %d",
+                __func__, p_dev_rec->sm4,
+                p_dev_rec->remote_supports_secure_connections);
+
+  if (p_dev_rec->remote_features_needed) {
+    BTM_TRACE_EVENT(
+        "%s: Now device in SC Only mode, waiting for peer remote features!",
+        __func__);
+    btm_io_capabilities_req(p_dev_rec->bd_addr);
+    p_dev_rec->remote_features_needed = false;
+  }
 }

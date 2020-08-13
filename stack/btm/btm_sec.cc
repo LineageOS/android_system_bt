@@ -5331,42 +5331,6 @@ static bool btm_sec_queue_encrypt_request(const RawAddress& bd_addr,
 
 /*******************************************************************************
  *
- * Function         btm_sec_set_peer_sec_caps
- *
- * Description      This function is called to set sm4 and rmt_sec_caps fields
- *                  based on the available peer device features.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
-                               tBTM_SEC_DEV_REC* p_dev_rec) {
-  if ((btm_cb.security_mode == BTM_SEC_MODE_SP ||
-       btm_cb.security_mode == BTM_SEC_MODE_SC) &&
-      HCI_SSP_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1])) {
-    p_dev_rec->sm4 = BTM_SM4_TRUE;
-    p_dev_rec->remote_supports_secure_connections =
-        (HCI_SC_HOST_SUPPORTED(p_acl_cb->peer_lmp_feature_pages[1]));
-  } else {
-    p_dev_rec->sm4 = BTM_SM4_KNOWN;
-    p_dev_rec->remote_supports_secure_connections = false;
-  }
-
-  BTM_TRACE_API("%s: sm4: 0x%02x, rmt_support_for_secure_connections %d",
-                __func__, p_dev_rec->sm4,
-                p_dev_rec->remote_supports_secure_connections);
-
-  if (p_dev_rec->remote_features_needed) {
-    BTM_TRACE_EVENT(
-        "%s: Now device in SC Only mode, waiting for peer remote features!",
-        __func__);
-    btm_io_capabilities_req(p_dev_rec->bd_addr);
-    p_dev_rec->remote_features_needed = false;
-  }
-}
-
-/*******************************************************************************
- *
  * Function         btm_sec_check_pending_enc_req
  *
  * Description      This function is called to send pending encryption callback
