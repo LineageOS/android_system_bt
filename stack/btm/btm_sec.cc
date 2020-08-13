@@ -3592,7 +3592,8 @@ void btm_sec_encrypt_change(uint16_t handle, uint8_t status,
                   p_dev_rec->sec_flags);
 
   if (BTM_IsAclConnectionUpFromHandle(handle)) {
-    btm_sec_check_pending_enc_req(p_dev_rec, p_acl->transport, encr_enable);
+    btm_sec_check_pending_enc_req(
+        p_dev_rec, acl_get_transport_from_handle(handle), encr_enable);
   }
 
   if (BTM_IsAclConnectionUpFromHandle(handle) &&
