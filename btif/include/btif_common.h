@@ -204,7 +204,6 @@ int btif_is_enabled(void);
  * BTIF_Events
  */
 void btif_enable_bluetooth_evt();
-void btif_disable_bluetooth_evt(void);
 void btif_adapter_properties_evt(bt_status_t status, uint32_t num_props,
                                  bt_property_t* p_props);
 void btif_remote_properties_evt(bt_status_t status, RawAddress* remote_addr,

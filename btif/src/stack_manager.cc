@@ -285,6 +285,7 @@ static void event_shut_down_stack(UNUSED_ATTR void* context) {
   module_shut_down(get_module(BTIF_CONFIG_MODULE));
 
   future_await(local_hack_future);
+  bte_main_disable();
   module_shut_down(get_module(CONTROLLER_MODULE));  // Doesn't do any work, just
                                                     // puts it in a restartable
                                                     // state
