@@ -298,7 +298,7 @@ static void btif_dm_send_bond_state_changed(RawAddress address, bt_bond_state_t 
                    << address;
       }
     }
-    HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, BT_STATUS_SUCCESS, &address, bond_state);
+    invoke_bond_state_changed_cb(BT_STATUS_SUCCESS, address, bond_state);
   }, address, bond_state));
   btif_dm_get_remote_services_by_transport(&address, BTA_TRANSPORT_UNKNOWN);
 }
@@ -311,7 +311,8 @@ void btif_dm_init(uid_set_t* set) {
         LOG(ERROR) << __func__ << ": UI Callback fired!";
 
         //TODO: java BondStateMachine requires change into bonding state. If we ever send this event separately, consider removing this line
-        HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, BT_STATUS_SUCCESS, &address, BT_BOND_STATE_BONDING);
+        invoke_bond_state_changed_cb(BT_STATUS_SUCCESS, address,
+                                     BT_BOND_STATE_BONDING);
 
         if (pairing_variant == BT_SSP_VARIANT_PASSKEY_ENTRY) {
           // For passkey entry we must actually use pin request, due to BluetoothPairingController (in Settings)
@@ -540,8 +541,7 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
   if ((pairing_cb.state == state) && (state == BT_BOND_STATE_BONDING)) {
     // Cross key pairing so send callback for static address
     if (!pairing_cb.static_bdaddr.IsEmpty()) {
-      auto tmp = bd_addr;
-      HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, status, &tmp, state);
+      invoke_bond_state_changed_cb(status, bd_addr, state);
     }
     return;
   }
@@ -560,8 +560,7 @@ static void bond_state_changed(bt_status_t status, const RawAddress& bd_addr,
                  << bd_addr;
     }
   }
-  auto tmp = bd_addr;
-  HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, status, &tmp, state);
+  invoke_bond_state_changed_cb(status, bd_addr, state);
 
   int dev_type;
   if (!btif_get_device_type(bd_addr, &dev_type)) {

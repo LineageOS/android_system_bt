@@ -698,3 +698,15 @@ void invoke_ssp_request_cb(RawAddress bd_addr, bt_bdname_t bd_name,
                        },
                        bd_addr, bd_name, cod, pairing_variant, pass_key));
 }
+
+void invoke_bond_state_changed_cb(bt_status_t status, RawAddress bd_addr,
+                                  bt_bond_state_t state) {
+  do_in_jni_thread(
+      FROM_HERE,
+      base::BindOnce(
+          [](bt_status_t status, RawAddress bd_addr, bt_bond_state_t state) {
+            HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, status, &bd_addr,
+                      state);
+          },
+          status, bd_addr, state));
+}
