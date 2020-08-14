@@ -849,7 +849,7 @@ bool l2c_link_check_power_mode(tL2C_LCB* p_lcb) {
   /* if we have packets to send */
   if (need_to_active) {
     /* check power mode */
-    if (BTM_ReadPowerMode(p_lcb->remote_bd_addr, &mode) == BTM_SUCCESS) {
+    if (BTM_ReadPowerMode(p_lcb->remote_bd_addr, &mode)) {
       if (mode == BTM_PM_STS_PENDING) {
         L2CAP_TRACE_DEBUG("LCB(0x%x) is in PM pending state", p_lcb->handle);
 
