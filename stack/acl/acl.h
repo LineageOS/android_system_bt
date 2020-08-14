@@ -152,10 +152,8 @@ typedef struct {
 
   uint16_t btm_def_link_super_tout;
 
- public:
   uint8_t pm_pend_link; /* the index of acl_db, which has a pending PM cmd */
 
- private:
   friend void BTM_acl_after_controller_started();
   friend uint16_t BTM_GetMaxPacketSize(const RawAddress& addr);
   friend uint16_t acl_get_supported_packet_types();
