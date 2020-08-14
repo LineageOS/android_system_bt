@@ -1388,8 +1388,7 @@ static void btif_dm_search_devices_evt(uint16_t event, char* p_param) {
                      nullptr, base::Bind(&bte_scan_filt_param_cfg_evt, 0)));
     } break;
     case BTA_DM_DISC_CMPL_EVT: {
-      HAL_CBACK(bt_hal_cbacks, discovery_state_changed_cb,
-                BT_DISCOVERY_STOPPED);
+      invoke_discovery_state_changed_cb(BT_DISCOVERY_STOPPED);
     } break;
     case BTA_DM_SEARCH_CANCEL_CMPL_EVT: {
       /* if inquiry is not in progress and we get a cancel event, then
@@ -1408,8 +1407,7 @@ static void btif_dm_search_devices_evt(uint16_t event, char* p_param) {
             FROM_HERE,
             base::Bind(&BTM_BleAdvFilterParamSetup, BTM_BLE_SCAN_COND_DELETE, 0,
                        nullptr, base::Bind(&bte_scan_filt_param_cfg_evt, 0)));
-        HAL_CBACK(bt_hal_cbacks, discovery_state_changed_cb,
-                  BT_DISCOVERY_STOPPED);
+        invoke_discovery_state_changed_cb(BT_DISCOVERY_STOPPED);
       }
     } break;
   }
@@ -1608,10 +1606,10 @@ static void btif_dm_remote_service_record_evt(uint16_t event, char* p_param) {
 
 static void report_inquiry_status_change(uint8_t status) {
   if (status == BTM_INQUIRY_STARTED) {
-    HAL_CBACK(bt_hal_cbacks, discovery_state_changed_cb, BT_DISCOVERY_STARTED);
+    invoke_discovery_state_changed_cb(BT_DISCOVERY_STARTED);
     btif_dm_inquiry_in_progress = true;
   } else if (status == BTM_INQUIRY_CANCELLED) {
-    HAL_CBACK(bt_hal_cbacks, discovery_state_changed_cb, BT_DISCOVERY_STOPPED);
+    invoke_discovery_state_changed_cb(BT_DISCOVERY_STOPPED);
     btif_dm_inquiry_in_progress = false;
   } else if (status == BTM_INQUIRY_COMPLETE) {
     btif_dm_inquiry_in_progress = false;
