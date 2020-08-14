@@ -100,7 +100,48 @@ typedef struct {
   /****************************************************
    **      ACL Management
    ****************************************************/
+ private:
+  friend bool BTM_IsBleConnection(uint16_t hci_handle);
+  friend bool BTM_IsBleConnection(uint16_t hci_handle);
+  friend const RawAddress acl_address_from_handle(uint16_t hci_handle);
+  friend int btm_pm_find_acl_ind(const RawAddress& remote_bda);
+  friend tACL_CONN* btm_bda_to_acl(const RawAddress& bda,
+                                   tBT_TRANSPORT transport);
+  friend tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda,
+                                      uint16_t max_lat, uint16_t min_rmt_to,
+                                      uint16_t min_loc_to);
+  friend uint16_t BTM_GetNumAclLinks(void);
+  friend uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
+  friend void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
+                              uint16_t hci_handle, uint8_t link_role,
+                              tBT_TRANSPORT transport);
+  friend void btm_acl_device_down(void);
+  friend void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
+                                     uint8_t encr_enable);
+  friend void btm_acl_update_conn_addr(uint16_t conn_handle,
+                                       const RawAddress& address);
+  friend void btm_pm_proc_cmd_status(uint8_t status);
+  friend void btm_pm_reset(void);
+  friend void btm_process_clk_off_comp_evt(uint16_t hci_handle,
+                                           uint16_t clock_offset);
+  friend void btm_read_automatic_flush_timeout_complete(uint8_t* p);
+  friend void btm_read_failed_contact_counter_complete(uint8_t* p);
+  friend void btm_read_link_quality_complete(uint8_t* p);
+  friend void btm_read_remote_ext_features_complete(uint8_t* p,
+                                                    uint8_t evt_len);
+  friend void btm_read_remote_ext_features_failed(uint8_t status,
+                                                  uint16_t handle);
+  friend void btm_read_remote_features_complete(uint8_t* p);
+  friend void btm_read_remote_version_complete(uint8_t* p);
+  friend void btm_read_rssi_complete(uint8_t* p);
+  friend void btm_read_tx_power_complete(uint8_t* p, bool is_ble);
+
+  friend struct StackAclBtmPm;
+  friend struct StackAclBtmAcl;
+
   tACL_CONN acl_db[MAX_L2CAP_LINKS];
+
+ public:
   uint8_t btm_scn[BTM_MAX_SCN_]; /* current SCNs: true if SCN is in use */
   uint16_t btm_def_link_policy;
 
