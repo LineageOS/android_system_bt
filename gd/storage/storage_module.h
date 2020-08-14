@@ -47,17 +47,6 @@ class StorageModule : public bluetooth::Module {
 
   static const std::string kAdapterSection;
 
-  // Create the storage module where:
-  // - config_file_path is the path to the config file on disk, a .bak file will be created with the original
-  // - config_save_delay is the duration after which to dump config to disk after SaveDelayed() is called
-  // - temp_devices_capacity is the number of temporary, typically unpaired devices to hold in a memory based LRU
-  // - is_restricted_mode and is_single_user_mode are flags from upper layer
-  StorageModule(
-      std::string config_file_path,
-      std::chrono::milliseconds config_save_delay,
-      size_t temp_devices_capacity,
-      bool is_restricted_mode,
-      bool is_single_user_mode);
   ~StorageModule() override;
   static const ModuleFactory Factory;
 
@@ -133,6 +122,18 @@ class StorageModule : public bluetooth::Module {
   // In some cases, one may want to save the config immediately to disk. Call this method with caution as it runs
   // immediately on the calling thread
   void SaveImmediately();
+
+  // Create the storage module where:
+  // - config_file_path is the path to the config file on disk, a .bak file will be created with the original
+  // - config_save_delay is the duration after which to dump config to disk after SaveDelayed() is called
+  // - temp_devices_capacity is the number of temporary, typically unpaired devices to hold in a memory based LRU
+  // - is_restricted_mode and is_single_user_mode are flags from upper layer
+  StorageModule(
+      std::string config_file_path,
+      std::chrono::milliseconds config_save_delay,
+      size_t temp_devices_capacity,
+      bool is_restricted_mode,
+      bool is_single_user_mode);
 
  private:
   struct impl;
