@@ -305,15 +305,25 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
         case hci::IoCapability::DISPLAY_ONLY:
           // NumericComparison, Both auto confirm
           LOG_INFO("Numeric Comparison: A and B auto confirm");
-          GetChannel()->SendCommand(
-              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+          if (!GetRecord()->RequiresMitmProtection()) {
+            GetChannel()->SendCommand(
+                hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+          } else {
+            GetChannel()->SendCommand(hci::UserConfirmationRequestNegativeReplyBuilder::Create(
+                GetRecord()->GetPseudoAddress()->GetAddress()));
+          }
           // Unauthenticated
           GetRecord()->SetAuthenticated(false);
           break;
         case hci::IoCapability::DISPLAY_YES_NO:
           // NumericComparison, Initiator auto confirm, Responder display
-          GetChannel()->SendCommand(
-              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+          if (!GetRecord()->RequiresMitmProtection()) {
+            GetChannel()->SendCommand(
+                hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+          } else {
+            GetChannel()->SendCommand(hci::UserConfirmationRequestNegativeReplyBuilder::Create(
+                GetRecord()->GetPseudoAddress()->GetAddress()));
+          }
           LOG_INFO("Numeric Comparison: A auto confirm");
           // Unauthenticated
           GetRecord()->SetAuthenticated(true);
@@ -328,8 +338,13 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
         case hci::IoCapability::NO_INPUT_NO_OUTPUT:
           // NumericComparison, Both auto confirm
           LOG_INFO("Numeric Comparison: A and B auto confirm");
-          GetChannel()->SendCommand(
-              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+          if (!GetRecord()->RequiresMitmProtection()) {
+            GetChannel()->SendCommand(
+                hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+          } else {
+            GetChannel()->SendCommand(hci::UserConfirmationRequestNegativeReplyBuilder::Create(
+                GetRecord()->GetPseudoAddress()->GetAddress()));
+          }
           // Unauthenticated
           GetRecord()->SetAuthenticated(true);
           break;
@@ -393,8 +408,13 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
         case hci::IoCapability::NO_INPUT_NO_OUTPUT:
           // NumericComparison, both auto confirm
           LOG_INFO("Numeric Comparison: A and B auto confirm");
-          GetChannel()->SendCommand(
-              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+          if (!GetRecord()->RequiresMitmProtection()) {
+            GetChannel()->SendCommand(
+                hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+          } else {
+            GetChannel()->SendCommand(hci::UserConfirmationRequestNegativeReplyBuilder::Create(
+                GetRecord()->GetPseudoAddress()->GetAddress()));
+          }
           // Unauthenticated
           GetRecord()->SetAuthenticated(false);
           break;
@@ -405,32 +425,52 @@ void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
         case hci::IoCapability::DISPLAY_ONLY:
           // NumericComparison, both auto confirm
           LOG_INFO("Numeric Comparison: A and B auto confirm");
-          GetChannel()->SendCommand(
-              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+          if (!GetRecord()->RequiresMitmProtection()) {
+            GetChannel()->SendCommand(
+                hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+          } else {
+            GetChannel()->SendCommand(hci::UserConfirmationRequestNegativeReplyBuilder::Create(
+                GetRecord()->GetPseudoAddress()->GetAddress()));
+          }
           // Unauthenticated
           GetRecord()->SetAuthenticated(false);
           break;
         case hci::IoCapability::DISPLAY_YES_NO:
           // NumericComparison, Initiator auto confirm, Responder Yes/No confirm, no show conf val
           LOG_INFO("Numeric Comparison: A auto confirm");
-          GetChannel()->SendCommand(
-              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+          if (!GetRecord()->RequiresMitmProtection()) {
+            GetChannel()->SendCommand(
+                hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+          } else {
+            GetChannel()->SendCommand(hci::UserConfirmationRequestNegativeReplyBuilder::Create(
+                GetRecord()->GetPseudoAddress()->GetAddress()));
+          }
           // Unauthenticated
           GetRecord()->SetAuthenticated(false);
           break;
         case hci::IoCapability::KEYBOARD_ONLY:
           // NumericComparison, both auto confirm
           LOG_INFO("Numeric Comparison: A and B auto confirm");
-          GetChannel()->SendCommand(
-              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+          if (!GetRecord()->RequiresMitmProtection()) {
+            GetChannel()->SendCommand(
+                hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+          } else {
+            GetChannel()->SendCommand(hci::UserConfirmationRequestNegativeReplyBuilder::Create(
+                GetRecord()->GetPseudoAddress()->GetAddress()));
+          }
           // Unauthenticated
           GetRecord()->SetAuthenticated(false);
           break;
         case hci::IoCapability::NO_INPUT_NO_OUTPUT:
           // NumericComparison, both auto confirm
           LOG_INFO("Numeric Comparison: A and B auto confirm");
-          GetChannel()->SendCommand(
-              hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+          if (!GetRecord()->RequiresMitmProtection()) {
+            GetChannel()->SendCommand(
+                hci::UserConfirmationRequestReplyBuilder::Create(GetRecord()->GetPseudoAddress()->GetAddress()));
+          } else {
+            GetChannel()->SendCommand(hci::UserConfirmationRequestNegativeReplyBuilder::Create(
+                GetRecord()->GetPseudoAddress()->GetAddress()));
+          }
           // Unauthenticated
           GetRecord()->SetAuthenticated(false);
           break;

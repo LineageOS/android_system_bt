@@ -115,7 +115,7 @@ class CertSecurity(PySecurity):
         """
         logging.info("Cert: setting IO Capabilities data to '%s'" % self._io_capabilities_name_lookup.get(
             io_capabilities, "ERROR"))
-        self._io_caps = self._io_cap_lookup.get(io_capabilities, hci_packets.IoCapability.DISPLAY_YES_NO)
+        self._io_caps = self._io_cap_lookup.get(io_capabilities, hci_packets.IoCapability.DISPLAY_ONLY)
 
     def set_authentication_requirements(self, auth_reqs):
         """
@@ -210,8 +210,8 @@ class CertSecurity(PySecurity):
         """
             Cert side needs to pass
         """
+        logging.info("Cert: Waiting for DISCONNECT_COMPLETE")
         assertThat(self._hci_event_stream).emits(HciMatchers.DisconnectionComplete())
-        pass
 
     def close(self):
         safeClose(self._hci)
