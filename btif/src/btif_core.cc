@@ -668,10 +668,6 @@ static void execute_storage_request(uint16_t event, char* p_param) {
       HAL_CBACK(bt_hal_cbacks, adapter_properties_cb, status, 1, &prop);
     } break;
 
-    case BTIF_CORE_STORAGE_ADAPTER_READ_ALL: {
-      status = btif_in_get_adapter_properties();
-    } break;
-
     case BTIF_CORE_STORAGE_NOTIFY_STATUS: {
       HAL_CBACK(bt_hal_cbacks, adapter_properties_cb, status, 0, NULL);
     } break;
@@ -766,7 +762,7 @@ static void btif_in_storage_request_copy_cb(uint16_t event, char* p_new_buf,
 void btif_get_adapter_properties(void) {
   BTIF_TRACE_EVENT("%s", __func__);
 
-  execute_storage_request(BTIF_CORE_STORAGE_ADAPTER_READ_ALL, nullptr);
+  btif_in_get_adapter_properties();
 }
 
 /*******************************************************************************
