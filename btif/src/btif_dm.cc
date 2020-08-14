@@ -746,17 +746,17 @@ static void btif_dm_cb_create_bond(const RawAddress bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-void btif_dm_cb_remove_bond(const RawAddress* bd_addr) {
+void btif_dm_cb_remove_bond(const RawAddress bd_addr) {
 /*special handling for HID devices */
 /*  VUP needs to be sent if its a HID Device. The HID HOST module will check if
 there
 is a valid hid connection with this bd_addr. If yes VUP will be issued.*/
 #if (BTA_HH_INCLUDED == TRUE)
-  if (btif_hh_virtual_unplug(bd_addr) != BT_STATUS_SUCCESS)
+  if (btif_hh_virtual_unplug(&bd_addr) != BT_STATUS_SUCCESS)
 #endif
   {
     BTIF_TRACE_DEBUG("%s: Removing HH device", __func__);
-    BTA_DmRemoveDevice(*bd_addr);
+    BTA_DmRemoveDevice(bd_addr);
   }
 }
 
@@ -1976,10 +1976,6 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
 static void btif_dm_generic_evt(uint16_t event, char* p_param) {
   BTIF_TRACE_EVENT("%s: event=%d", __func__, event);
   switch (event) {
-    case BTIF_DM_CB_REMOVE_BOND: {
-      btif_dm_cb_remove_bond((RawAddress*)p_param);
-    } break;
-
     case BTIF_DM_CB_BOND_STATE_BONDING: {
       bond_state_changed(BT_STATUS_SUCCESS, *((RawAddress*)p_param),
                          BT_BOND_STATE_BONDING);
@@ -2368,8 +2364,7 @@ bt_status_t btif_dm_remove_bond(const RawAddress* bd_addr) {
   btif_stats_add_bond_event(*bd_addr, BTIF_DM_FUNC_REMOVE_BOND,
                             pairing_cb.state);
 
-  btif_transfer_context(btif_dm_generic_evt, BTIF_DM_CB_REMOVE_BOND,
-                        (char*)bd_addr, sizeof(RawAddress), NULL);
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_cb_remove_bond, *bd_addr));
 
   return BT_STATUS_SUCCESS;
 }
