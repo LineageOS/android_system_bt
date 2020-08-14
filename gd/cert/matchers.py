@@ -594,3 +594,7 @@ class SecurityMatchers(object):
     @staticmethod
     def BondMsg(type):
         return lambda event: True if event.message_type == type else False
+
+    @staticmethod
+    def HelperMsg(type):
+        return lambda event: True if event.message_type == type else False
