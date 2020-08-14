@@ -177,9 +177,9 @@ typedef struct {
   uint8_t acl_disc_reason;
 
  private:
+  friend bool BTM_ReadPowerMode(const RawAddress& remote_bda,
+                                tBTM_PM_MODE* p_mode);
   friend tBTM_PM_MCB* acl_power_mode_from_handle(uint16_t hci_handle);
-  friend tBTM_STATUS BTM_ReadPowerMode(const RawAddress& remote_bda,
-                                       tBTM_PM_MODE* p_mode);
   friend tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id,
                                       const RawAddress& remote_bda,
                                       const tBTM_PM_PWR_MD* p_mode);
