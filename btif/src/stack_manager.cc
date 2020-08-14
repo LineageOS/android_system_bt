@@ -154,6 +154,7 @@ static void event_init_stack(void* context) {
     }
     module_init(get_module(BTIF_CONFIG_MODULE));
     btif_init_bluetooth();
+    bte_main_boot_entry();
 
     // stack init is synchronous, so no waiting necessary here
     stack_is_initialized = true;
@@ -299,7 +300,10 @@ static void event_shut_down_stack(UNUSED_ATTR void* context) {
 
   module_clean_up(get_module(BTE_LOGMSG_MODULE));
 
-  btu_free_core();
+  gatt_free();
+  l2c_free();
+  sdp_free();
+  btm_free();
 
   module_shut_down(get_module(CONTROLLER_MODULE));  // Doesn't do any work, just
                                                     // puts it in a restartable
