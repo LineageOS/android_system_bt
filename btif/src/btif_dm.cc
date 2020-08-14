@@ -3110,29 +3110,18 @@ void btif_dm_update_ble_remote_properties(const RawAddress& bd_addr,
   btif_update_remote_properties(bd_addr, bd_name, NULL, dev_type);
 }
 
-static void btif_dm_report_test_mode_result(bt_status_t status,
-                                            uint16_t count) {
-  invoke_le_test_mode_cb(status, count);
-}
-
 static void btif_dm_ble_tx_test_cback(void* p) {
   char* p_param = (char*)p;
   uint8_t status;
   STREAM_TO_UINT8(status, p_param);
-  do_in_jni_thread(
-      FROM_HERE,
-      base::BindOnce(btif_dm_report_test_mode_result,
-                     (status == 0) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL, 0));
+  invoke_le_test_mode_cb((status == 0) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL, 0);
 }
 
 static void btif_dm_ble_rx_test_cback(void* p) {
   char* p_param = (char*)p;
   uint8_t status;
   STREAM_TO_UINT8(status, p_param);
-  do_in_jni_thread(
-      FROM_HERE,
-      base::BindOnce(btif_dm_report_test_mode_result,
-                     (status == 0) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL, 0));
+  invoke_le_test_mode_cb((status == 0) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL, 0);
 }
 
 static void btif_dm_ble_test_end_cback(void* p) {
@@ -3141,10 +3130,8 @@ static void btif_dm_ble_test_end_cback(void* p) {
   uint16_t count = 0;
   STREAM_TO_UINT8(status, p_param);
   if (status == 0) STREAM_TO_UINT16(count, p_param);
-  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_report_test_mode_result,
-                                             (status == 0) ? BT_STATUS_SUCCESS
-                                                           : BT_STATUS_FAIL,
-                                             count));
+  invoke_le_test_mode_cb((status == 0) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL,
+                         count);
 }
 
 void btif_ble_transmitter_test(uint8_t tx_freq, uint8_t test_data_len,
