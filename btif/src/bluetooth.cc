@@ -449,12 +449,20 @@ int dut_mode_configure(uint8_t enable) {
 }
 
 int dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len) {
-  LOG_INFO("%s", __func__);
-
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (!btif_is_dut_mode()) return BT_STATUS_FAIL;
 
-  return btif_dut_mode_send(opcode, buf, len);
+  uint8_t* copy = (uint8_t*)osi_calloc(len);
+  memcpy(copy, buf, len);
+
+  do_in_jni_thread(FROM_HERE,
+                   base::BindOnce(
+                       [](uint16_t opcode, uint8_t* buf, uint8_t len) {
+                         btif_dut_mode_send(opcode, buf, len);
+                         osi_free(buf);
+                       },
+                       opcode, copy, len));
+  return BT_STATUS_SUCCESS;
 }
 
 int le_test_mode(uint16_t opcode, uint8_t* buf, uint8_t len) {
