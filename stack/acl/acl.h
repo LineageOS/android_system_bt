@@ -143,9 +143,12 @@ typedef struct {
 
  public:
   uint8_t btm_scn[BTM_MAX_SCN_]; /* current SCNs: true if SCN is in use */
+ private:
+  friend bool acl_is_role_switch_allowed();
+  friend void BTM_default_block_role_switch();
+  friend void BTM_default_unblock_role_switch();
   uint16_t btm_def_link_policy;
 
- private:
   friend void btm_acl_init(void);
   friend void BTM_SetDefaultLinkSuperTout(uint16_t timeout);
   friend uint16_t acl_get_link_supervision_timeout();
