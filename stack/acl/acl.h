@@ -103,8 +103,15 @@ typedef struct {
   tACL_CONN acl_db[MAX_L2CAP_LINKS];
   uint8_t btm_scn[BTM_MAX_SCN_]; /* current SCNs: true if SCN is in use */
   uint16_t btm_def_link_policy;
+
+ private:
+  friend void btm_acl_init(void);
+  friend void BTM_SetDefaultLinkSuperTout(uint16_t timeout);
+  friend uint16_t acl_get_link_supervision_timeout();
+
   uint16_t btm_def_link_super_tout;
 
+ public:
   uint8_t pm_pend_link; /* the index of acl_db, which has a pending PM cmd */
 
   /* Packet types supported by the local device */
