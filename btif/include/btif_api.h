@@ -125,10 +125,8 @@ int get_niap_config_compare_result(void);
  *
  * Description      Fetches all local adapter properties
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_get_adapter_properties(void);
+void btif_get_adapter_properties(void);
 
 /*******************************************************************************
  *
