@@ -1976,10 +1976,6 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
 static void btif_dm_generic_evt(uint16_t event, char* p_param) {
   BTIF_TRACE_EVENT("%s: event=%d", __func__, event);
   switch (event) {
-    case BTIF_DM_CB_BOND_STATE_BONDING: {
-      bond_state_changed(BT_STATUS_SUCCESS, *((RawAddress*)p_param),
-                         BT_BOND_STATE_BONDING);
-    } break;
     case BTIF_DM_CB_LE_TX_TEST:
     case BTIF_DM_CB_LE_RX_TEST: {
       uint8_t status;
@@ -2837,9 +2833,9 @@ bool btif_dm_proc_rmt_oob(const RawAddress& bd_addr, Octet16* p_c,
   fread(p_r->data(), 1, OCTET16_LEN, fp);
   fclose(fp);
 
-  RawAddress bt_bd_addr = bd_addr;
-  btif_transfer_context(btif_dm_generic_evt, BTIF_DM_CB_BOND_STATE_BONDING,
-                        (char*)&bt_bd_addr, sizeof(RawAddress), NULL);
+  do_in_jni_thread(
+      FROM_HERE, base::BindOnce(bond_state_changed, BT_STATUS_SUCCESS, bd_addr,
+                                BT_BOND_STATE_BONDING));
   return true;
 }
 #endif /*  BTIF_DM_OOB_TEST */
