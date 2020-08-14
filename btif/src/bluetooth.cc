@@ -632,3 +632,20 @@ void invoke_adapter_properties_cb(bt_status_t status, int num_properties,
                        status, num_properties,
                        property_deep_copy_array(num_properties, properties)));
 }
+
+void invoke_remote_device_properties_cb(bt_status_t status, RawAddress bd_addr,
+                                        int num_properties,
+                                        bt_property_t* properties) {
+  do_in_jni_thread(
+      FROM_HERE, base::BindOnce(
+                     [](bt_status_t status, RawAddress bd_addr,
+                        int num_properties, bt_property_t* properties) {
+                       HAL_CBACK(bt_hal_cbacks, remote_device_properties_cb,
+                                 status, &bd_addr, num_properties, properties);
+                       if (properties) {
+                         osi_free(properties);
+                       }
+                     },
+                     status, bd_addr, num_properties,
+                     property_deep_copy_array(num_properties, properties)));
+}
