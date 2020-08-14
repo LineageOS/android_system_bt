@@ -269,7 +269,6 @@ int get_remote_service_record(const RawAddress& remote_addr,
 }
 
 int get_remote_services(RawAddress* remote_addr) {
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
   do_in_jni_thread(FROM_HERE,
@@ -278,10 +277,10 @@ int get_remote_services(RawAddress* remote_addr) {
 }
 
 static int start_discovery(void) {
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
-  return btif_dm_start_discovery();
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_start_discovery));
+  return BT_STATUS_SUCCESS;
 }
 
 static int cancel_discovery(void) {
