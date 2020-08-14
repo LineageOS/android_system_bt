@@ -1976,13 +1976,6 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
 static void btif_dm_generic_evt(uint16_t event, char* p_param) {
   BTIF_TRACE_EVENT("%s: event=%d", __func__, event);
   switch (event) {
-    case BTIF_DM_CB_LE_TX_TEST:
-    case BTIF_DM_CB_LE_RX_TEST: {
-      uint8_t status;
-      STREAM_TO_UINT8(status, p_param);
-      HAL_CBACK(bt_hal_cbacks, le_test_mode_cb,
-                (status == 0) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL, 0);
-    } break;
     case BTIF_DM_CB_LE_TEST_END: {
       uint8_t status;
       uint16_t count = 0;
@@ -3202,14 +3195,26 @@ void btif_dm_update_ble_remote_properties(const RawAddress& bd_addr,
   btif_update_remote_properties(bd_addr, bd_name, NULL, dev_type);
 }
 
+static void btif_dm_report_test_mode_result(bt_status_t status) {
+  HAL_CBACK(bt_hal_cbacks, le_test_mode_cb, status, 0);
+}
+
 static void btif_dm_ble_tx_test_cback(void* p) {
-  btif_transfer_context(btif_dm_generic_evt, BTIF_DM_CB_LE_TX_TEST, (char*)p, 1,
-                        NULL);
+  char* p_param = (char*)p;
+  uint8_t status;
+  STREAM_TO_UINT8(status, p_param);
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_report_test_mode_result,
+                                             (status == 0) ? BT_STATUS_SUCCESS
+                                                           : BT_STATUS_FAIL));
 }
 
 static void btif_dm_ble_rx_test_cback(void* p) {
-  btif_transfer_context(btif_dm_generic_evt, BTIF_DM_CB_LE_RX_TEST, (char*)p, 1,
-                        NULL);
+  char* p_param = (char*)p;
+  uint8_t status;
+  STREAM_TO_UINT8(status, p_param);
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_report_test_mode_result,
+                                             (status == 0) ? BT_STATUS_SUCCESS
+                                                           : BT_STATUS_FAIL));
 }
 
 static void btif_dm_ble_test_end_cback(void* p) {

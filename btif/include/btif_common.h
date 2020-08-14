@@ -127,8 +127,6 @@ enum {
   /* add here */
 
   BTIF_DM_CB_START = BTIF_SIG_CB_START(BTIF_DM),
-  BTIF_DM_CB_LE_TX_TEST,  /* BLE Tx Test command complete callback */
-  BTIF_DM_CB_LE_RX_TEST,  /* BLE Rx Test command complete callback */
   BTIF_DM_CB_LE_TEST_END, /* BLE Test mode end callback */
 
   BTIF_HFP_CB_START = BTIF_SIG_CB_START(BTIF_HFP),
