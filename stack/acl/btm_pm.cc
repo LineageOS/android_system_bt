@@ -55,6 +55,8 @@
 #define BTM_PM_GET_MD2 2
 #define BTM_PM_GET_COMP 3
 
+uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
+
 const uint8_t
     btm_pm_md_comp_matrix[BTM_PM_NUM_SET_MODES * BTM_PM_NUM_SET_MODES] = {
         BTM_PM_GET_COMP, BTM_PM_GET_MD2,  BTM_PM_GET_MD2,
