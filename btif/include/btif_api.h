@@ -137,10 +137,8 @@ bool is_atv_device(void);
  *
  * Description      Fetches all local adapter properties
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_get_adapter_properties(void);
+void btif_get_adapter_properties(void);
 
 /*******************************************************************************
  *
@@ -148,10 +146,8 @@ bt_status_t btif_get_adapter_properties(void);
  *
  * Description      Fetches property value from local cache
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_get_adapter_property(bt_property_type_t type);
+void btif_get_adapter_property(bt_property_type_t type);
 
 /*******************************************************************************
  *
