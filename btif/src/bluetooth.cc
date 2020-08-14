@@ -272,7 +272,9 @@ int get_remote_services(RawAddress* remote_addr) {
   /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
-  return btif_dm_get_remote_services(*remote_addr);
+  do_in_jni_thread(FROM_HERE,
+                   base::BindOnce(btif_dm_get_remote_services, *remote_addr));
+  return BT_STATUS_SUCCESS;
 }
 
 static int start_discovery(void) {
