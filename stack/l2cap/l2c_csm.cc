@@ -32,6 +32,7 @@
 #include "hcimsgs.h"
 #include "l2c_int.h"
 #include "l2cdefs.h"
+#include "stack/include/acl_api.h"
 
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */

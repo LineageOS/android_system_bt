@@ -314,3 +314,10 @@ uint16_t acl_get_supported_packet_types();
 
 bool acl_set_peer_le_features_from_handle(uint16_t hci_handle,
                                           const uint8_t* p);
+
+tBTM_STATUS btm_read_power_mode_state(const RawAddress& remote_bda,
+                                      tBTM_PM_STATE* pmState);
+
+void btm_acl_notif_conn_collision(const RawAddress& bda);
+
+void btm_acl_update_conn_addr(uint16_t conn_handle, const RawAddress& address);
