@@ -155,10 +155,13 @@ typedef struct {
  public:
   uint8_t pm_pend_link; /* the index of acl_db, which has a pending PM cmd */
 
+ private:
+  friend void BTM_acl_after_controller_started();
+  friend uint16_t BTM_GetMaxPacketSize(const RawAddress& addr);
+  friend uint16_t acl_get_supported_packet_types();
   /* Packet types supported by the local device */
   uint16_t btm_acl_pkt_types_supported;
 
- private:
   friend tBTM_PM_MCB* acl_power_mode_from_handle(uint16_t hci_handle);
   friend uint16_t btm_get_acl_disc_reason_code(void);
   friend uint8_t acl_get_disconnect_reason();
