@@ -19,11 +19,14 @@
 #include "hci/address_with_type.h"
 #include "hci/le_address_manager.h"
 #include "l2cap/classic/security_policy.h"
+#include "l2cap/le/l2cap_le_module.h"
 #include "os/handler.h"
 #include "security/facade.grpc.pb.h"
 #include "security/security_manager_listener.h"
 #include "security/security_module.h"
 #include "security/ui.h"
+
+using bluetooth::l2cap::le::L2capLeModule;
 
 namespace bluetooth {
 namespace security {
@@ -40,10 +43,41 @@ constexpr uint8_t AUTH_REQ_RFU_MASK = 0xC0;
 
 class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public ISecurityManagerListener, public UI {
  public:
-  SecurityModuleFacadeService(SecurityModule* security_module, ::bluetooth::os::Handler* security_handler)
-      : security_module_(security_module), security_handler_(security_handler) {
+  SecurityModuleFacadeService(
+      SecurityModule* security_module, L2capLeModule* l2cap_le_module, ::bluetooth::os::Handler* security_handler)
+      : security_module_(security_module), l2cap_le_module_(l2cap_le_module), security_handler_(security_handler) {
     security_module_->GetSecurityManager()->RegisterCallbackListener(this, security_handler_);
     security_module_->GetSecurityManager()->SetUserInterfaceHandler(this, security_handler_);
+
+    /* In order to receive connect/disconenct event, we must register service */
+    l2cap_le_module_->GetFixedChannelManager()->RegisterService(
+        bluetooth::l2cap::kLastFixedChannel - 2,
+        common::BindOnce(&SecurityModuleFacadeService::OnL2capRegistrationCompleteLe, common::Unretained(this)),
+        common::Bind(&SecurityModuleFacadeService::OnConnectionOpenLe, common::Unretained(this)),
+        security_handler_);
+  }
+
+  void OnL2capRegistrationCompleteLe(
+      l2cap::le::FixedChannelManager::RegistrationResult result,
+      std::unique_ptr<l2cap::le::FixedChannelService> le_smp_service) {
+    ASSERT_LOG(
+        result == bluetooth::l2cap::le::FixedChannelManager::RegistrationResult::SUCCESS,
+        "Failed to register to LE SMP Fixed Channel Service");
+  }
+
+  void OnConnectionOpenLe(std::unique_ptr<l2cap::le::FixedChannel> channel) {
+    channel->RegisterOnCloseCallback(
+        security_handler_,
+        common::BindOnce(
+            &SecurityModuleFacadeService::OnConnectionClosedLe, common::Unretained(this), channel->GetDevice()));
+  }
+
+  void OnConnectionClosedLe(hci::AddressWithType address, hci::ErrorCode error_code) {
+    SecurityHelperMsg disconnected;
+    disconnected.mutable_peer()->mutable_address()->set_address(address.ToString());
+    disconnected.mutable_peer()->set_type(static_cast<facade::BluetoothAddressTypeEnum>(address.GetAddressType()));
+    disconnected.set_message_type(HelperMsgType::DEVICE_DISCONNECTED);
+    helper_events_.OnIncomingEvent(disconnected);
   }
 
   ::grpc::Status CreateBond(::grpc::ServerContext* context, const facade::BluetoothAddressWithType* request,
@@ -118,6 +152,12 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     return bond_events_.RunLoop(context, writer);
   }
 
+  ::grpc::Status FetchHelperEvents(
+      ::grpc::ServerContext* context,
+      const ::google::protobuf::Empty* request,
+      ::grpc::ServerWriter<SecurityHelperMsg>* writer) override {
+    return helper_events_.RunLoop(context, writer);
+  }
   ::grpc::Status SetIoCapability(::grpc::ServerContext* context, const IoCapabilityMessage* request,
                                  ::google::protobuf::Empty* response) override {
     security_module_->GetFacadeConfigurationApi()->SetIoCapability(
@@ -365,9 +405,11 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
 
  private:
   SecurityModule* security_module_;
+  L2capLeModule* l2cap_le_module_;
   ::bluetooth::os::Handler* security_handler_;
   ::bluetooth::grpc::GrpcEventQueue<UiMsg> ui_events_{"UI events"};
   ::bluetooth::grpc::GrpcEventQueue<BondMsg> bond_events_{"Bond events"};
+  ::bluetooth::grpc::GrpcEventQueue<SecurityHelperMsg> helper_events_{"Events that don't fit any other category"};
   ::bluetooth::grpc::GrpcEventQueue<EnforceSecurityPolicyMsg> enforce_security_policy_events_{
       "Enforce Security Policy Events"};
   uint32_t unique_id{1};
@@ -378,11 +420,13 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
 void SecurityModuleFacadeModule::ListDependencies(ModuleList* list) {
   ::bluetooth::grpc::GrpcFacadeModule::ListDependencies(list);
   list->add<SecurityModule>();
+  list->add<L2capLeModule>();
 }
 
 void SecurityModuleFacadeModule::Start() {
   ::bluetooth::grpc::GrpcFacadeModule::Start();
-  service_ = new SecurityModuleFacadeService(GetDependency<SecurityModule>(), GetHandler());
+  service_ =
+      new SecurityModuleFacadeService(GetDependency<SecurityModule>(), GetDependency<L2capLeModule>(), GetHandler());
 }
 
 void SecurityModuleFacadeModule::Stop() {
