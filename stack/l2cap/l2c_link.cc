@@ -39,7 +39,7 @@
 #include "osi/include/osi.h"
 #include "stack/include/acl_api.h"
 
-static bool l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
+static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
                                    tL2C_TX_COMPLETE_CB_INFO* p_cbi);
 
 /*******************************************************************************
@@ -976,7 +976,7 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, tL2C_CCB* p_ccb, BT_HDR* p_buf) {
 
       p_buf = (BT_HDR*)list_front(p_lcb->link_xmit_data_q);
       list_remove(p_lcb->link_xmit_data_q, p_buf);
-      if (!l2c_link_send_to_lower(p_lcb, p_buf, NULL)) break;
+      l2c_link_send_to_lower(p_lcb, p_buf, NULL);
     }
 
     if (!single_write) {
@@ -990,7 +990,7 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, tL2C_CCB* p_ccb, BT_HDR* p_buf) {
         p_buf = l2cu_get_next_buffer_to_send(p_lcb, &cbi);
         if (p_buf == NULL) break;
 
-        if (!l2c_link_send_to_lower(p_lcb, p_buf, &cbi)) break;
+        l2c_link_send_to_lower(p_lcb, p_buf, &cbi);
       }
     }
 
@@ -1023,10 +1023,8 @@ void l2c_OnHciModeChangeSendPendingPackets(RawAddress remote) {
  *
  * Description      This function queues the buffer for HCI transmission
  *
- * Returns          true for success, false for fail
- *
  ******************************************************************************/
-static bool l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
+static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
                                    tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
   uint16_t num_segs;
   uint16_t xmit_window, acl_data_size;
@@ -1118,8 +1116,6 @@ static bool l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
 #endif
 
   if (p_cbi) l2cu_tx_complete(p_cbi);
-
-  return true;
 }
 
 /*******************************************************************************
