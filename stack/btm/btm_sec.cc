@@ -2731,9 +2731,10 @@ void btm_sec_rmt_host_support_feat_evt(uint8_t* p) {
  *
  ******************************************************************************/
 void btm_io_capabilities_req(const RawAddress& p) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_or_alloc_dev(p);
+
   tBTM_SP_IO_REQ evt_data;
   uint8_t err_code = 0;
-  tBTM_SEC_DEV_REC* p_dev_rec;
   bool is_orig = true;
   uint8_t callback_rc = BTM_SUCCESS;
 
@@ -2748,8 +2749,6 @@ void btm_io_capabilities_req(const RawAddress& p) {
 
   BTM_TRACE_EVENT("%s: State: %s", __func__,
                   btm_pair_state_descr(btm_cb.pairing_state));
-
-  p_dev_rec = btm_find_or_alloc_dev(evt_data.bd_addr);
 
   BTM_TRACE_DEBUG("%s:Security mode: %d, Num Read Remote Feat pages: %d",
                   __func__, btm_cb.security_mode, p_dev_rec->num_read_pages);
