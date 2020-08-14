@@ -2744,10 +2744,6 @@ void btm_io_capabilities_req(const RawAddress& p) {
   }
 
   tBTM_SP_IO_REQ evt_data;
-  uint8_t err_code = 0;
-  bool is_orig = true;
-  uint8_t callback_rc = BTM_SUCCESS;
-
   evt_data.bd_addr = p;
 
   /* setup the default response according to compile options */
@@ -2756,6 +2752,10 @@ void btm_io_capabilities_req(const RawAddress& p) {
   evt_data.io_cap = btm_cb.devcb.loc_io_caps;
   evt_data.oob_data = BTM_OOB_NONE;
   evt_data.auth_req = BTM_DEFAULT_AUTH_REQ;
+
+  uint8_t err_code = 0;
+  bool is_orig = true;
+  uint8_t callback_rc = BTM_SUCCESS;
 
   BTM_TRACE_EVENT("%s: State: %s", __func__,
                   btm_pair_state_descr(btm_cb.pairing_state));
