@@ -240,22 +240,6 @@ void LeAddressManager::rotate_random_address() {
   le_address_ = AddressWithType(address, AddressType::RANDOM_DEVICE_ADDRESS);
 }
 
-void LeAddressManager::on_le_set_random_address_complete(CommandCompleteView view) {
-  auto complete_view = LeSetRandomAddressCompleteView::Create(view);
-  if (!complete_view.IsValid()) {
-    LOG_ALWAYS_FATAL("Received on_le_set_random_address_complete with invalid packet");
-  } else if (complete_view.GetStatus() != ErrorCode::SUCCESS) {
-    auto status = complete_view.GetStatus();
-    std::string error_code = ErrorCodeText(status);
-    LOG_ALWAYS_FATAL("Received on_le_set_random_address_complete with error code %s", error_code.c_str());
-  }
-  if (cached_commands_.empty()) {
-    handler_->BindOnceOn(this, &LeAddressManager::resume_registered_clients).Invoke();
-  } else {
-    handler_->BindOnceOn(this, &LeAddressManager::handle_next_command).Invoke();
-  }
-}
-
 /* This function generates Resolvable Private Address (RPA) from Identity
  * Resolving Key |irk| and |prand|*/
 hci::Address LeAddressManager::generate_rpa() {
