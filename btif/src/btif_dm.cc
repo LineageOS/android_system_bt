@@ -2532,15 +2532,11 @@ bt_status_t btif_dm_get_remote_services_by_transport(RawAddress* remote_addr,
  *
  * Description      Start SDP to get remote service record
  *
- *
- * Returns          bt_status_t
  ******************************************************************************/
-bt_status_t btif_dm_get_remote_service_record(const RawAddress& remote_addr,
-                                              const Uuid& uuid) {
+void btif_dm_get_remote_service_record(const RawAddress remote_addr,
+                                       const Uuid uuid) {
   BTIF_TRACE_EVENT("%s: bd_addr=%s", __func__, remote_addr.ToString().c_str());
   BTA_DmDiscoverUUID(remote_addr, uuid, bte_dm_remote_service_record_evt, true);
-
-  return BT_STATUS_SUCCESS;
 }
 
 void btif_dm_execute_service_request(uint16_t event, char* p_param) {
