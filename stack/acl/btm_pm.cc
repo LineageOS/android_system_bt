@@ -160,7 +160,7 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
   acl_ind = btm_pm_find_acl_ind(remote_bda);
   if (acl_ind == MAX_L2CAP_LINKS) return (BTM_UNKNOWN_ADDR);
 
-  p_cb = &(btm_cb.pm_mode_db[acl_ind]);
+  p_cb = &(btm_cb.acl_cb_.pm_mode_db[acl_ind]);
 
   if (mode != BTM_PM_MD_ACTIVE) {
     const controller_t* controller = controller_get_interface();
@@ -254,7 +254,7 @@ tBTM_STATUS BTM_ReadPowerMode(const RawAddress& remote_bda,
   acl_ind = btm_pm_find_acl_ind(remote_bda);
   if (acl_ind == MAX_L2CAP_LINKS) return (BTM_UNKNOWN_ADDR);
 
-  *p_mode = btm_cb.pm_mode_db[acl_ind].state;
+  *p_mode = btm_cb.acl_cb_.pm_mode_db[acl_ind].state;
   return BTM_SUCCESS;
 }
 
@@ -285,7 +285,7 @@ tBTM_STATUS btm_read_power_mode_state(const RawAddress& remote_bda,
 
   if (acl_ind == MAX_L2CAP_LINKS) return (BTM_UNKNOWN_ADDR);
 
-  *pmState = btm_cb.pm_mode_db[acl_ind].state;
+  *pmState = btm_cb.acl_cb_.pm_mode_db[acl_ind].state;
   return BTM_SUCCESS;
 }
 
@@ -316,13 +316,13 @@ tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat,
   acl_ind = btm_pm_find_acl_ind(remote_bda);
   if (acl_ind == MAX_L2CAP_LINKS) return (BTM_UNKNOWN_ADDR);
 
-  if (BTM_PM_STS_ACTIVE == btm_cb.pm_mode_db[acl_ind].state ||
-      BTM_PM_STS_SNIFF == btm_cb.pm_mode_db[acl_ind].state) {
+  if (BTM_PM_STS_ACTIVE == btm_cb.acl_cb_.pm_mode_db[acl_ind].state ||
+      BTM_PM_STS_SNIFF == btm_cb.acl_cb_.pm_mode_db[acl_ind].state) {
     btsnd_hcic_sniff_sub_rate(btm_cb.acl_cb_.acl_db[acl_ind].hci_handle,
                               max_lat, min_rmt_to, min_loc_to);
     return BTM_SUCCESS;
   }
-  p_cb = &btm_cb.pm_mode_db[acl_ind];
+  p_cb = &btm_cb.acl_cb_.pm_mode_db[acl_ind];
   p_cb->max_lat = max_lat;
   p_cb->min_rmt_to = min_rmt_to;
   p_cb->min_loc_to = min_loc_to;
@@ -505,7 +505,7 @@ static tBTM_STATUS btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
                                      const tBTM_PM_PWR_MD* p_mode) {
   tBTM_PM_PWR_MD md_res;
   tBTM_PM_MODE mode;
-  tBTM_PM_MCB* p_cb = &btm_cb.pm_mode_db[link_ind];
+  tBTM_PM_MCB* p_cb = &btm_cb.acl_cb_.pm_mode_db[link_ind];
   bool chg_ind = false;
 
   mode = btm_pm_get_set_mode(pm_id, p_cb, p_mode, &md_res);
@@ -618,8 +618,8 @@ static tBTM_STATUS btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
 static void btm_pm_check_stored(void) {
   int xx;
   for (xx = 0; xx < MAX_L2CAP_LINKS; xx++) {
-    if (btm_cb.pm_mode_db[xx].state & BTM_PM_STORED_MASK) {
-      btm_cb.pm_mode_db[xx].state &= ~BTM_PM_STORED_MASK;
+    if (btm_cb.acl_cb_.pm_mode_db[xx].state & BTM_PM_STORED_MASK) {
+      btm_cb.acl_cb_.pm_mode_db[xx].state &= ~BTM_PM_STORED_MASK;
       BTM_TRACE_DEBUG("btm_pm_check_stored :%d", xx);
       btm_pm_snd_md_req(BTM_PM_SET_ONLY_ID, xx, NULL);
       break;
@@ -645,7 +645,7 @@ void btm_pm_proc_cmd_status(uint8_t status) {
 
   if (btm_cb.acl_cb_.pm_pend_link >= MAX_L2CAP_LINKS) return;
 
-  p_cb = &btm_cb.pm_mode_db[btm_cb.acl_cb_.pm_pend_link];
+  p_cb = &btm_cb.acl_cb_.pm_mode_db[btm_cb.acl_cb_.pm_pend_link];
 
   if (status == HCI_SUCCESS) {
     p_cb->state = BTM_PM_ST_PENDING;
@@ -704,10 +704,10 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
   xx = btm_handle_to_acl_index(hci_handle);
   if (xx >= MAX_L2CAP_LINKS) return;
 
-  tACL_CONN* p_acl = &btm_cb.acl_cb_.acl_db[xx];
+  const RawAddress bd_addr = acl_address_from_handle(hci_handle);
 
   /* update control block */
-  p_cb = &(btm_cb.pm_mode_db[xx]);
+  p_cb = &(btm_cb.acl_cb_.pm_mode_db[xx]);
   old_state = p_cb->state;
   p_cb->state = mode;
   p_cb->interval = interval;
@@ -716,7 +716,7 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
                   mode_to_string(old_state), mode_to_string(p_cb->state));
 
   if ((p_cb->state == BTM_PM_ST_ACTIVE) || (p_cb->state == BTM_PM_ST_SNIFF)) {
-    l2c_OnHciModeChangeSendPendingPackets(p_acl->remote_addr);
+    l2c_OnHciModeChangeSendPendingPackets(bd_addr);
   }
 
   /* notify registered parties */
@@ -735,7 +735,7 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
     btm_pm_snd_md_req(BTM_PM_SET_ONLY_ID, xx, NULL);
   } else {
     for (zz = 0; zz < MAX_L2CAP_LINKS; zz++) {
-      if (btm_cb.pm_mode_db[zz].chg_ind) {
+      if (btm_cb.acl_cb_.pm_mode_db[zz].chg_ind) {
 #if (BTM_PM_DEBUG == TRUE)
         BTM_TRACE_DEBUG("btm_pm_proc_mode_change: Sending PM req :%d", zz);
 #endif  // BTM_PM_DEBUG
@@ -748,15 +748,14 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
   /* notify registered parties */
   for (yy = 0; yy < BTM_MAX_PM_RECORDS; yy++) {
     if (btm_cb.pm_reg_db[yy].mask & BTM_PM_REG_NOTIF) {
-      (*btm_cb.pm_reg_db[yy].cback)(p_acl->remote_addr, mode, interval,
-                                    hci_status);
+      (*btm_cb.pm_reg_db[yy].cback)(bd_addr, mode, interval, hci_status);
     }
   }
   /*check if sco disconnect  is waiting for the mode change */
   btm_sco_disc_chk_pend_for_modechange(hci_handle);
 
   /* If mode change was because of an active role switch or change link key */
-  btm_cont_rswitch(p_acl, btm_find_dev(p_acl->remote_addr), hci_status);
+  btm_cont_rswitch_from_handle(hci_handle);
 }
 
 /*******************************************************************************
@@ -787,9 +786,15 @@ void btm_pm_proc_ssr_evt(uint8_t* p, UNUSED_ATTR uint16_t evt_len) {
 
   p += 2;
   STREAM_TO_UINT16(max_rx_lat, p);
-  p_cb = &(btm_cb.pm_mode_db[xx]);
+  p_cb = &(btm_cb.acl_cb_.pm_mode_db[xx]);
 
-  tACL_CONN* p_acl = &btm_cb.acl_cb_.acl_db[xx];
+  const RawAddress bd_addr = acl_address_from_handle(handle);
+  if (bd_addr == RawAddress::kEmpty) {
+    BTM_TRACE_EVENT("%s Received sniff subrating event with no active ACL",
+                    __func__);
+    return;
+  }
+
   if (p_cb->interval == max_rx_lat) {
     /* using legacy sniff */
     use_ssr = false;
@@ -798,10 +803,7 @@ void btm_pm_proc_ssr_evt(uint8_t* p, UNUSED_ATTR uint16_t evt_len) {
   /* notify registered parties */
   for (yy = 0; yy < BTM_MAX_PM_RECORDS; yy++) {
     if (btm_cb.pm_reg_db[yy].mask & BTM_PM_REG_NOTIF) {
-      if (p_acl) {
-        (*btm_cb.pm_reg_db[yy].cback)(p_acl->remote_addr, BTM_PM_STS_SSR,
-                                      use_ssr, status);
-      }
+      (*btm_cb.pm_reg_db[yy].cback)(bd_addr, BTM_PM_STS_SSR, use_ssr, status);
     }
   }
 }

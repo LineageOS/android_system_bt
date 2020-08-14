@@ -114,8 +114,6 @@ extern void btm_read_remote_ext_features_failed(uint8_t status,
                                                 uint16_t handle);
 extern void btm_read_remote_version_complete(uint8_t* p);
 
-extern tACL_CONN* btm_bda_to_acl(const RawAddress& bda,
-                                 tBT_TRANSPORT transport);
 extern void btm_acl_notif_conn_collision(const RawAddress& bda);
 extern void btm_acl_update_conn_addr(uint16_t conn_handle,
                                      const RawAddress& address);
@@ -219,8 +217,6 @@ extern void btm_sec_pin_code_request(uint8_t* p_event);
 extern void btm_sec_update_clock_offset(uint16_t handle, uint16_t clock_offset);
 extern void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec,
                                         uint8_t res, bool is_le_trasnport);
-extern void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
-                                      tBTM_SEC_DEV_REC* p_dev_rec);
 
 extern void btm_sec_clear_ble_keys(tBTM_SEC_DEV_REC* p_dev_rec);
 extern void btm_consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec);

@@ -88,9 +88,6 @@ int ConnectToRootCanal(const std::string& server, int port) {
 namespace bluetooth {
 namespace hal {
 
-const std::string SnoopLogger::DefaultFilePath = "/tmp/btsnoop_hci.log";
-const bool SnoopLogger::AlwaysFlush = true;
-
 class HciHalHostRootcanal : public HciHal {
  public:
   void registerIncomingPacketCallback(HciHalCallbacks* callback) override {
@@ -118,7 +115,7 @@ class HciHalHostRootcanal : public HciHal {
     std::lock_guard<std::mutex> lock(api_mutex_);
     ASSERT(sock_fd_ != INVALID_FD);
     std::vector<uint8_t> packet = std::move(command);
-    btsnoop_logger_->capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::CMD);
+    btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::CMD);
     packet.insert(packet.cbegin(), kH4Command);
     write_to_rootcanal_fd(packet);
   }
@@ -127,7 +124,7 @@ class HciHalHostRootcanal : public HciHal {
     std::lock_guard<std::mutex> lock(api_mutex_);
     ASSERT(sock_fd_ != INVALID_FD);
     std::vector<uint8_t> packet = std::move(data);
-    btsnoop_logger_->capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::ACL);
+    btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::ACL);
     packet.insert(packet.cbegin(), kH4Acl);
     write_to_rootcanal_fd(packet);
   }
@@ -136,7 +133,7 @@ class HciHalHostRootcanal : public HciHal {
     std::lock_guard<std::mutex> lock(api_mutex_);
     ASSERT(sock_fd_ != INVALID_FD);
     std::vector<uint8_t> packet = std::move(data);
-    btsnoop_logger_->capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::SCO);
+    btsnoop_logger_->Capture(packet, SnoopLogger::Direction::OUTGOING, SnoopLogger::PacketType::SCO);
     packet.insert(packet.cbegin(), kH4Sco);
     write_to_rootcanal_fd(packet);
   }
@@ -257,7 +254,7 @@ class HciHalHostRootcanal : public HciHal {
 
       HciPacket receivedHciPacket;
       receivedHciPacket.assign(buf + kH4HeaderSize, buf + kH4HeaderSize + kHciEvtHeaderSize + payload_size);
-      btsnoop_logger_->capture(receivedHciPacket, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::EVT);
+      btsnoop_logger_->Capture(receivedHciPacket, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::EVT);
       {
         std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);
         if (incoming_packet_callback_ == nullptr) {
@@ -286,7 +283,7 @@ class HciHalHostRootcanal : public HciHal {
 
       HciPacket receivedHciPacket;
       receivedHciPacket.assign(buf + kH4HeaderSize, buf + kH4HeaderSize + kHciAclHeaderSize + payload_size);
-      btsnoop_logger_->capture(receivedHciPacket, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::ACL);
+      btsnoop_logger_->Capture(receivedHciPacket, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::ACL);
       {
         std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);
         if (incoming_packet_callback_ == nullptr) {
@@ -310,7 +307,7 @@ class HciHalHostRootcanal : public HciHal {
 
       HciPacket receivedHciPacket;
       receivedHciPacket.assign(buf + kH4HeaderSize, buf + kH4HeaderSize + kHciScoHeaderSize + payload_size);
-      btsnoop_logger_->capture(receivedHciPacket, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::SCO);
+      btsnoop_logger_->Capture(receivedHciPacket, SnoopLogger::Direction::INCOMING, SnoopLogger::PacketType::SCO);
       {
         std::lock_guard<std::mutex> incoming_packet_callback_lock(incoming_packet_callback_mutex_);
         if (incoming_packet_callback_ == nullptr) {

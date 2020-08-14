@@ -45,6 +45,7 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/crypto_toolbox/crypto_toolbox.h"
+#include "stack/include/acl_api.h"
 #include "stack/include/l2cap_security_interface.h"
 
 extern void gatt_notify_phy_updated(uint8_t status, uint16_t handle,
@@ -229,50 +230,7 @@ const Octet16& BTM_GetDeviceDHK() {
   return btm_cb.devcb.id_keys.dhk;
 }
 
-/*******************************************************************************
- *
- * Function       BTM_ReadRemoteConnectionAddr
- *
- * Description    This function is read the remote device address currently used
- *
- * Parameters     pseudo_addr: pseudo random address available
- *                conn_addr:connection address used
- *                p_addr_type : BD Address type, Public or Random of the address
- *                              used
- *
- * Returns        bool, true if connection to remote device exists, else false
- *
- ******************************************************************************/
-bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
-                                  RawAddress& conn_addr,
-                                  tBLE_ADDR_TYPE* p_addr_type) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_ReadRemoteConnectionAddr(pseudo_addr, conn_addr,
-                                                         p_addr_type);
-  }
-  bool st = true;
-#if (BLE_PRIVACY_SPT == TRUE)
-  tACL_CONN* p = btm_bda_to_acl(pseudo_addr, BT_TRANSPORT_LE);
 
-  if (p == NULL) {
-    BTM_TRACE_ERROR(
-        "BTM_ReadRemoteConnectionAddr can not find connection"
-        " with matching address");
-    return false;
-  }
-
-  conn_addr = p->active_remote_addr;
-  *p_addr_type = p->active_remote_addr_type;
-#else
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(pseudo_addr);
-
-  conn_addr = pseudo_addr;
-  if (p_dev_rec != NULL) {
-    *p_addr_type = p_dev_rec->ble.ble_addr_type;
-  }
-#endif
-  return st;
-}
 /*******************************************************************************
  *
  * Function         BTM_SecurityGrant
@@ -591,7 +549,7 @@ bool BTM_ReadConnectedTransportAddress(RawAddress* remote_bda,
   if (p_dev_rec == NULL) return false;
 
   if (transport == BT_TRANSPORT_BR_EDR) {
-    if (btm_bda_to_acl(p_dev_rec->bd_addr, transport) != NULL) {
+    if (BTM_IsAclConnectionUp(p_dev_rec->bd_addr, transport)) {
       *remote_bda = p_dev_rec->bd_addr;
       return true;
     } else if (p_dev_rec->device_type & BT_DEVICE_TYPE_BREDR) {
@@ -603,7 +561,7 @@ bool BTM_ReadConnectedTransportAddress(RawAddress* remote_bda,
 
   if (transport == BT_TRANSPORT_LE) {
     *remote_bda = p_dev_rec->ble.pseudo_addr;
-    if (btm_bda_to_acl(p_dev_rec->ble.pseudo_addr, transport) != NULL)
+    if (BTM_IsAclConnectionUp(p_dev_rec->ble.pseudo_addr, transport))
       return true;
     else
       return false;
@@ -701,17 +659,14 @@ bool BTM_UseLeLink(const RawAddress& bd_addr) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::BTM_UseLeLink(bd_addr);
   }
-  tACL_CONN* p;
   tBT_DEVICE_TYPE dev_type;
   tBLE_ADDR_TYPE addr_type;
   bool use_le = false;
 
-  p = btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
-  if (p != NULL) {
+  if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_BR_EDR)) {
     return use_le;
   } else {
-    p = btm_bda_to_acl(bd_addr, BT_TRANSPORT_LE);
-    if (p != NULL) {
+    if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
       use_le = true;
     } else {
       BTM_ReadDevInfo(bd_addr, &dev_type, &addr_type);
@@ -735,10 +690,9 @@ tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::BTM_SetBleDataLength(bd_addr, tx_pdu_length);
   }
-  tACL_CONN* p_acl = btm_bda_to_acl(bd_addr, BT_TRANSPORT_LE);
   uint16_t tx_time = BTM_BLE_DATA_TX_TIME_MAX_LEGACY;
 
-  if (p_acl == NULL) {
+  if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
     BTM_TRACE_ERROR("%s: Wrong mode: no LE link exist or LE not supported",
                     __func__);
     return BTM_WRONG_MODE;
@@ -751,7 +705,9 @@ tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
     return BTM_ILLEGAL_VALUE;
   }
 
-  if (!HCI_LE_DATA_LEN_EXT_SUPPORTED(p_acl->peer_le_features)) {
+  uint16_t hci_handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
+
+  if (!acl_peer_supports_ble_packet_extension(hci_handle)) {
     BTM_TRACE_ERROR("%s failed, peer does not support request", __func__);
     return BTM_ILLEGAL_VALUE;
   }
@@ -764,7 +720,7 @@ tBTM_STATUS BTM_SetBleDataLength(const RawAddress& bd_addr,
   if (controller_get_interface()->get_bt_version()->hci_version >= HCI_PROTO_VERSION_5_0)
     tx_time = BTM_BLE_DATA_TX_TIME_MAX;
 
-  btsnd_hcic_ble_set_data_length(p_acl->hci_handle, tx_pdu_length, tx_time);
+  btsnd_hcic_ble_set_data_length(hci_handle, tx_pdu_length, tx_time);
 
   return BTM_SUCCESS;
 }
@@ -808,9 +764,7 @@ void BTM_BleReadPhy(
   }
   BTM_TRACE_DEBUG("%s", __func__);
 
-  tACL_CONN* p_acl = btm_bda_to_acl(bd_addr, BT_TRANSPORT_LE);
-
-  if (p_acl == NULL) {
+  if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
     BTM_TRACE_ERROR("%s: Wrong mode: no LE link exist or LE not supported",
                     __func__);
     cb.Run(0, 0, HCI_ERR_NO_CONNECTION);
@@ -826,7 +780,7 @@ void BTM_BleReadPhy(
     return;
   }
 
-  uint16_t handle = p_acl->hci_handle;
+  uint16_t handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_LE);
 
   const uint8_t len = HCIC_PARAM_SIZE_BLE_READ_PHY;
   uint8_t data[len];
@@ -860,9 +814,7 @@ void BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
     return bluetooth::shim::BTM_BleSetPhy(bd_addr, tx_phys, rx_phys,
                                           phy_options);
   }
-  tACL_CONN* p_acl = btm_bda_to_acl(bd_addr, BT_TRANSPORT_LE);
-
-  if (p_acl == NULL) {
+  if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_BR_EDR)) {
     BTM_TRACE_ERROR("%s: Wrong mode: no LE link exist or LE not supported",
                     __func__);
     return;
@@ -877,7 +829,7 @@ void BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
       "= 0x%04x",
       __func__, all_phys, tx_phys, rx_phys, phy_options);
 
-  uint16_t handle = p_acl->hci_handle;
+  uint16_t handle = acl_get_hci_handle_for_hcif(bd_addr, BT_TRANSPORT_BR_EDR);
 
   // checking if local controller supports it!
   if (!controller_get_interface()->supports_ble_2m_phy() &&
@@ -888,8 +840,8 @@ void BTM_BleSetPhy(const RawAddress& bd_addr, uint8_t tx_phys, uint8_t rx_phys,
     return;
   }
 
-  if (!HCI_LE_2M_PHY_SUPPORTED(p_acl->peer_le_features) &&
-      !HCI_LE_CODED_PHY_SUPPORTED(p_acl->peer_le_features)) {
+  if (!acl_peer_supports_ble_2m_phy(handle) &&
+      !acl_peer_supports_ble_coded_phy(handle)) {
     BTM_TRACE_ERROR("%s failed, peer does not support request", __func__);
     gatt_notify_phy_updated(GATT_REQ_NOT_SUPPORTED, handle, tx_phys, rx_phys);
     return;

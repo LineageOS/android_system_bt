@@ -38,6 +38,7 @@ enum PacketType : 8 {
     SCO = 0x1F,
     LE_ENCRYPT_CONNECTION = 0x20,
     LE_ENCRYPT_CONNECTION_RESPONSE = 0x21,
+    ISO = 0x22,
 }
 
 packet LinkLayerPacket {
@@ -237,3 +238,29 @@ packet LeEncryptConnectionResponse : LinkLayerPacket (type = LE_ENCRYPT_CONNECTI
   ltk : 8[16],
 }
 
+enum StartContinuation : 1 {
+  START = 0,
+  CONTINUATION = 1,
+}
+
+enum Complete : 1 {
+  INCOMPLETE = 0,
+  COMPLETE = 1,
+}
+
+packet IsoDataPacket : LinkLayerPacket (type = ISO) {
+  sc : StartContinuation,
+  cmplt : Complete,
+  _reserved_ : 6,
+  _size_(_payload_) : 8,
+  _payload_,
+}
+
+packet IsoStart : IsoDataPacket (sc = START) {
+  time_offset : 24,
+  _payload_,
+}
+
+packet IsoContinuation : IsoDataPacket (sc = CONTINUATION) {
+  _payload_,
+}

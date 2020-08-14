@@ -39,6 +39,7 @@
 #include "hcidefs.h"
 #include "hcimsgs.h"
 #include "osi/include/osi.h"
+#include "stack/include/acl_api.h"
 
 /******************************************************************************/
 /*               L O C A L    D A T A    D E F I N I T I O N S                */
@@ -241,8 +242,6 @@ tBTM_STATUS BTM_WriteScoData(UNUSED_ATTR uint16_t sco_inx,
  ******************************************************************************/
 static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle,
                                             enh_esco_params_t* p_setup) {
-  tACL_CONN* p_acl;
-
   /* Send connect request depending on version of spec */
   if (!btm_cb.sco_cb.esco_supported) {
     LOG(INFO) << __func__ << ": sending non-eSCO request for handle="
@@ -261,16 +260,14 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle,
 
     /* Finally, remove EDR eSCO if the remote device doesn't support it */
     /* UPF25:  Only SCO was brought up in this case */
-    btm_handle_to_acl_index(acl_handle);
-    uint8_t acl_index = btm_handle_to_acl_index(acl_handle);
-    if (acl_index < MAX_L2CAP_LINKS) {
-      p_acl = &btm_cb.acl_cb_.acl_db[acl_index];
-      if (!HCI_EDR_ESCO_2MPS_SUPPORTED(p_acl->peer_lmp_feature_pages[0])) {
+    const RawAddress bd_addr = acl_address_from_handle(acl_handle);
+    if (bd_addr != RawAddress::kEmpty) {
+      if (!sco_peer_supports_esco_2m_phy(acl_handle)) {
         BTM_TRACE_DEBUG("BTM Remote does not support 2-EDR eSCO");
         temp_packet_types |=
             (ESCO_PKT_TYPES_MASK_NO_2_EV3 | ESCO_PKT_TYPES_MASK_NO_2_EV5);
       }
-      if (!HCI_EDR_ESCO_3MPS_SUPPORTED(p_acl->peer_lmp_feature_pages[0])) {
+      if (!sco_peer_supports_esco_3m_phy(acl_handle)) {
         BTM_TRACE_DEBUG("BTM Remote does not support 3-EDR eSCO");
         temp_packet_types |=
             (ESCO_PKT_TYPES_MASK_NO_3_EV3 | ESCO_PKT_TYPES_MASK_NO_3_EV5);
@@ -279,7 +276,7 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle,
       /* Check to see if BR/EDR Secure Connections is being used
       ** If so, we cannot use SCO-only packet types (HFP 1.7)
       */
-      if (BTM_BothEndsSupportSecureConnections(p_acl->remote_addr)) {
+      if (BTM_BothEndsSupportSecureConnections(bd_addr)) {
         temp_packet_types &= ~(BTM_SCO_PKT_TYPE_MASK);
         BTM_TRACE_DEBUG("%s: SCO Conn: pkt_types after removing SCO (0x%04x)",
                         __func__, temp_packet_types);
@@ -299,8 +296,7 @@ static tBTM_STATUS btm_send_connect_request(uint16_t acl_handle,
                      << unsigned(acl_handle);
       }
     } else {
-      LOG(ERROR) << __func__ << ": acl_index " << unsigned(acl_index)
-                 << " out of range for acl_handle " << unsigned(acl_handle);
+      BTM_TRACE_ERROR("%s Received SCO connect from unknown peer", __func__);
     }
 
     /* Save the previous types in case command fails */
@@ -436,7 +432,6 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
   tSCO_CONN* p = &btm_cb.sco_cb.sco_db[0];
   uint16_t xx;
   uint16_t acl_handle = 0;
-  tACL_CONN* p_acl;
   *p_sco_inx = BTM_INVALID_SCO_INDEX;
 
   /* If originating, ensure that there is an ACL connection to the BD Address */
@@ -447,7 +442,7 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
       return BTM_ILLEGAL_VALUE;
     }
     acl_handle = BTM_GetHCIConnHandle(*remote_bda, BT_TRANSPORT_BR_EDR);
-    if (acl_handle == 0xFFFF) {
+    if (acl_handle == HCI_INVALID_HANDLE) {
       LOG(ERROR) << __func__ << ": cannot find ACL handle for remote device "
                  << remote_bda;
       return BTM_UNKNOWN_ADDR;
@@ -522,15 +517,14 @@ tBTM_STATUS BTM_CreateSco(const RawAddress* remote_bda, bool is_orig,
 
       p->p_conn_cb = p_conn_cb;
       p->p_disc_cb = p_disc_cb;
-      p->hci_handle = BTM_INVALID_HCI_HANDLE;
+      p->hci_handle = HCI_INVALID_HANDLE;
       p->is_orig = is_orig;
 
       if (p->state != SCO_ST_PEND_UNPARK) {
         if (is_orig) {
           /* If role change is in progress, do not proceed with SCO setup
            * Wait till role change is complete */
-          p_acl = btm_bda_to_acl(*remote_bda, BT_TRANSPORT_BR_EDR);
-          if (p_acl && p_acl->switch_role_state != BTM_ACL_SWKEY_STATE_IDLE) {
+          if (!acl_is_switch_role_idle(*remote_bda, BT_TRANSPORT_BR_EDR)) {
             BTM_TRACE_API("Role Change is in progress for ACL handle 0x%04x",
                           acl_handle);
             p->state = SCO_ST_PEND_ROLECHANGE;
@@ -869,9 +863,8 @@ tBTM_STATUS BTM_RemoveSco(uint16_t sco_inx) {
     return (BTM_UNKNOWN_ADDR);
 
   /* If no HCI handle, simply drop the connection and return */
-  if (p->hci_handle == BTM_INVALID_HCI_HANDLE ||
-      p->state == SCO_ST_PEND_UNPARK) {
-    p->hci_handle = BTM_INVALID_HCI_HANDLE;
+  if (p->hci_handle == HCI_INVALID_HANDLE || p->state == SCO_ST_PEND_UNPARK) {
+    p->hci_handle = HCI_INVALID_HANDLE;
     p->state = SCO_ST_UNUSED;
     p->esco.p_esco_cback = NULL; /* Deregister the eSCO event callback */
     return (BTM_SUCCESS);
@@ -936,7 +929,7 @@ void btm_sco_removed(uint16_t hci_handle, uint8_t reason) {
       btm_sco_flush_sco_data(xx);
 
       p->state = SCO_ST_UNUSED;
-      p->hci_handle = BTM_INVALID_HCI_HANDLE;
+      p->hci_handle = HCI_INVALID_HANDLE;
       p->rem_bd_known = false;
       p->esco.p_esco_cback = NULL; /* Deregister eSCO callback */
       (*p->p_disc_cb)(xx);

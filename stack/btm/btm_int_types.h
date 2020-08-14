@@ -30,9 +30,6 @@
 
 typedef char tBTM_LOC_BD_NAME[BTM_MAX_LOC_BD_NAME_LEN + 1];
 
-#define BTM_ACL_IS_CONNECTED(bda) \
-  (btm_bda_to_acl(bda, BT_TRANSPORT_BR_EDR) != NULL)
-
 /* Definitions for Server Channel Number (SCN) management
 */
 #define BTM_MAX_SCN PORT_MAX_RFC_PORTS
@@ -229,8 +226,6 @@ typedef struct {
 
 /* Define the structures needed by security management
 */
-
-#define BTM_SEC_INVALID_HANDLE 0xFFFF
 
 typedef void(tBTM_SCO_IND_CBACK)(uint16_t sco_inx);
 
@@ -522,23 +517,6 @@ enum {
   BTM_PM_ST_PENDING = BTM_PM_STS_PENDING,
   BTM_PM_ST_INVALID = 0xFF
 };
-typedef uint8_t tBTM_PM_STATE;
-
-typedef struct {
-  tBTM_PM_PWR_MD req_mode[BTM_MAX_PM_RECORDS + 1]; /* the desired mode and
-                                                      parameters of the
-                                                      connection*/
-  tBTM_PM_PWR_MD
-      set_mode; /* the mode and parameters sent down to the host controller. */
-  uint16_t interval; /* the interval from last mode change event. */
-#if (BTM_SSR_INCLUDED == TRUE)
-  uint16_t max_lat;    /* stored SSR maximum latency */
-  uint16_t min_rmt_to; /* stored SSR minimum remote timeout */
-  uint16_t min_loc_to; /* stored SSR minimum local timeout */
-#endif
-  tBTM_PM_STATE state; /* contains the current mode of the connection */
-  bool chg_ind;        /* a request change indication */
-} tBTM_PM_MCB;
 
 #define BTM_PM_REC_NOT_USED 0
 typedef struct {
@@ -611,7 +589,6 @@ typedef struct {
   /****************************************************
   **      Power Management
   ****************************************************/
-  tBTM_PM_MCB pm_mode_db[MAX_L2CAP_LINKS];       /* per ACL link */
   tBTM_PM_RCB pm_reg_db[BTM_MAX_PM_RECORDS + 1]; /* per application/module */
 
   uint8_t pm_pend_id;   /* the id pf the module, which has a pending PM cmd */

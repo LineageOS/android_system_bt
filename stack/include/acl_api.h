@@ -17,7 +17,6 @@
 
 #include <cstdint>
 
-#include "stack/acl/acl.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/include/acl_api_types.h"
 #include "stack/include/bt_types.h"
@@ -81,13 +80,19 @@ tBTM_STATUS BTM_GetLinkSuperTout(const RawAddress& remote_bda,
  * Function         BTM_IsAclConnectionUp
  *
  * Description      This function is called to check if an ACL connection exists
- *                  to a specific remote BD Address.
+ *                  to a specific remote BD Address.  The second version ensures
+ *                  the hci handle is valid (Unsure if needed)
  *
  * Returns          true if connection is up, else false.
  *
  ******************************************************************************/
 bool BTM_IsAclConnectionUp(const RawAddress& remote_bda,
                            tBT_TRANSPORT transport);
+
+bool BTM_IsAclConnectionUpAndHandleValid(const RawAddress& remote_bda,
+                                         tBT_TRANSPORT transport);
+
+bool BTM_IsAclConnectionUpFromHandle(uint16_t hci_handle);
 
 /*******************************************************************************
  *
@@ -225,7 +230,8 @@ void btm_set_packet_types_from_address(const RawAddress& bda,
 
 bool lmp_version_below(const RawAddress& bda, uint8_t version);
 
-bool acl_is_role_master(const RawAddress& remote_bda, tBT_TRANSPORT transport);
+bool acl_br_edr_is_role_master(const RawAddress& bda);
+bool acl_ble_is_role_master(const RawAddress& bda);
 
 #define BLE_RESOLVE_ADDR_MASK 0xc0
 #define BLE_RESOLVE_ADDR_MSB 0x40
@@ -242,6 +248,18 @@ void btm_establish_continue_from_address(const RawAddress& remote_bda,
 
 bool acl_peer_supports_ble_connection_parameters_request(
     const RawAddress& remote_bda);
+
+bool sco_peer_supports_esco_2m_phy(uint16_t hci_handle);
+bool sco_peer_supports_esco_3m_phy(uint16_t hci_handle);
+
+bool acl_peer_supports_ble_packet_extension(uint16_t hci_handle);
+bool acl_peer_supports_ble_2m_phy(uint16_t hci_handle);
+bool acl_peer_supports_ble_coded_phy(uint16_t hci_handle);
+
+bool acl_is_switch_role_idle(const RawAddress& bd_addr,
+                             tBT_TRANSPORT transport);
+
+bool acl_peer_supports_ble_packet_extension(uint16_t hci_handle);
 
 /*******************************************************************************
  *
@@ -272,5 +290,27 @@ const RawAddress acl_address_from_handle(uint16_t hci_handle);
 tBTM_PM_MCB* acl_power_mode_from_handle(uint16_t hci_handle);
 int btm_pm_find_acl_ind(const RawAddress& remote_bda);
 
-void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec,
-                      uint8_t hci_status);
+void btm_ble_refresh_local_resolvable_private_addr(
+    const RawAddress& pseudo_addr, const RawAddress& local_rpa);
+
+void btm_cont_rswitch_from_handle(uint16_t hci_handle);
+
+uint8_t acl_link_role(const RawAddress& remote_bda, tBT_TRANSPORT transport);
+
+bool acl_is_transport_le_from_handle(uint16_t handle);
+
+tBT_TRANSPORT acl_get_transport_from_handle(uint16_t handle);
+
+uint16_t acl_get_hci_handle_for_hcif(const RawAddress& bd_addr,
+                                     tBT_TRANSPORT transport);
+
+uint16_t acl_get_link_supervision_timeout();
+uint8_t acl_get_disconnect_reason();
+void acl_set_disconnect_reason(uint8_t acl_disc_reason);
+
+bool acl_is_role_switch_allowed();
+
+uint16_t acl_get_supported_packet_types();
+
+bool acl_set_peer_le_features_from_handle(uint16_t hci_handle,
+                                          const uint8_t* p);

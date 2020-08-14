@@ -2137,8 +2137,8 @@ void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb) {
   uint8_t no_hi_prio_chs = l2cu_get_num_hi_priority();
   const controller_t* controller = controller_get_interface();
 
-  bool disallow_switch = (btm_cb.acl_cb_.btm_def_link_policy &
-                          HCI_ENABLE_MASTER_SLAVE_SWITCH) == 0;
+  bool disallow_switch = !acl_is_role_switch_allowed();
+
   L2CAP_TRACE_DEBUG(
       "l2cu_create_conn_after_switch :%d num_acl:%d no_hi: %d is_bonding:%d",
       disallow_switch, num_acl, no_hi_prio_chs, p_lcb->is_bonding);
