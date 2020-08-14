@@ -40,13 +40,17 @@ class HciHalCallbacks {
   // @param event is the HCI event to be sent to the Bluetooth stack
   virtual void hciEventReceived(HciPacket event) = 0;
 
-  // Send an ACL data packet form the controller to the host
+  // Send an ACL data packet from the controller to the host
   // @param data the ACL HCI packet to be passed to the host stack
   virtual void aclDataReceived(HciPacket data) = 0;
 
-  // Send a SCO data packet form the controller to the host
+  // Send a SCO data packet from the controller to the host
   // @param data the SCO HCI packet to be passed to the host stack
   virtual void scoDataReceived(HciPacket data) = 0;
+
+  // Send an ISO data packet from the controller to the host
+  // @param data the ISO HCI packet to be passed to the host stack
+  virtual void isoDataReceived(HciPacket data) = 0;
 };
 
 // Mirrors hardware/interfaces/bluetooth/1.0/IBluetoothHci.hal in Android
