@@ -1932,8 +1932,7 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
           controller->get_ble_maxium_advertising_data_length();
 
       memcpy(prop.val, &local_le_features, prop.len);
-      HAL_CBACK(bt_hal_cbacks, adapter_properties_cb, BT_STATUS_SUCCESS, 1,
-                &prop);
+      invoke_adapter_properties_cb(BT_STATUS_SUCCESS, 1, &prop);
       break;
     }
 
@@ -2515,8 +2514,7 @@ void btif_dm_execute_service_request(uint16_t event, char* p_param) {
     BTIF_STORAGE_FILL_PROPERTY(&property, BT_PROPERTY_UUIDS,
                                sizeof(local_uuids), local_uuids);
     btif_storage_get_adapter_property(&property);
-    HAL_CBACK(bt_hal_cbacks, adapter_properties_cb, BT_STATUS_SUCCESS, 1,
-              &property);
+    invoke_adapter_properties_cb(BT_STATUS_SUCCESS, 1, &property);
   }
   return;
 }

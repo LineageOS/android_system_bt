@@ -574,3 +574,52 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
     obfuscate_address,
     get_metric_id,
 };
+
+// callback reporting helpers
+
+bt_property_t* property_deep_copy_array(int num_properties,
+                                        bt_property_t* properties) {
+  bt_property_t* copy = nullptr;
+  if (num_properties > 0) {
+    size_t content_len = 0;
+    for (int i = 0; i < num_properties; i++) {
+      auto len = properties[i].len;
+      if (len > 0) {
+        content_len += len;
+      }
+    }
+
+    copy = (bt_property_t*)osi_calloc((sizeof(bt_property_t) * num_properties) +
+                                      content_len);
+    uint8_t* content = (uint8_t*)(copy + num_properties);
+
+    for (int i = 0; i < num_properties; i++) {
+      auto len = properties[i].len;
+      copy[i].type = properties[i].type;
+      copy[i].len = len;
+      if (len <= 0) {
+        continue;
+      }
+      copy[i].val = content;
+      memcpy(content, properties[i].val, len);
+      content += len;
+    }
+  }
+  return copy;
+}
+
+void invoke_adapter_properties_cb(bt_status_t status, int num_properties,
+                                  bt_property_t* properties) {
+  do_in_jni_thread(FROM_HERE,
+                   base::BindOnce(
+                       [](bt_status_t status, int num_properties,
+                          bt_property_t* properties) {
+                         HAL_CBACK(bt_hal_cbacks, adapter_properties_cb, status,
+                                   num_properties, properties);
+                         if (properties) {
+                           osi_free(properties);
+                         }
+                       },
+                       status, num_properties,
+                       property_deep_copy_array(num_properties, properties)));
+}
