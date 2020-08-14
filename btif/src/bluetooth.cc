@@ -284,10 +284,10 @@ static int start_discovery(void) {
 }
 
 static int cancel_discovery(void) {
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
-  return btif_dm_cancel_discovery();
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_cancel_discovery));
+  return BT_STATUS_SUCCESS;
 }
 
 static int create_bond(const RawAddress* bd_addr, int transport) {

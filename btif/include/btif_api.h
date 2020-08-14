@@ -199,10 +199,8 @@ void btif_dm_start_discovery(void);
  *
  * Description      Cancels search
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_dm_cancel_discovery(void);
+void btif_dm_cancel_discovery(void);
 
 /*******************************************************************************
  *
