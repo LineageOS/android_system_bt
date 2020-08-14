@@ -202,16 +202,15 @@ void btif_dm_start_discovery(void);
  ******************************************************************************/
 void btif_dm_cancel_discovery(void);
 
+bool btif_dm_pairing_is_busy();
 /*******************************************************************************
  *
  * Function         btif_dm_create_bond
  *
  * Description      Initiate bonding with the specified device
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_dm_create_bond(const RawAddress* bd_addr, int transport);
+void btif_dm_create_bond(const RawAddress bd_addr, int transport);
 
 /*******************************************************************************
  *
