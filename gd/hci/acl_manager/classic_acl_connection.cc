@@ -31,13 +31,13 @@ class AclConnectionTracker : public ConnectionManagementCallbacks {
     ASSERT(client_callbacks_ == nullptr || queued_callbacks_.empty());
   }
   void RegisterCallbacks(ConnectionManagementCallbacks* callbacks, os::Handler* handler) {
+    client_handler_ = handler;
+    client_callbacks_ = callbacks;
     while (!queued_callbacks_.empty()) {
       auto iter = queued_callbacks_.begin();
       handler->Post(std::move(*iter));
       queued_callbacks_.erase(iter);
     }
-    client_handler_ = handler;
-    client_callbacks_ = callbacks;
   }
 
 #define SAVE_OR_CALL(f, ...)                                                                                        \
