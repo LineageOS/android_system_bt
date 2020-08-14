@@ -195,10 +195,13 @@ static int get_adapter_properties(void) {
 }
 
 static int get_adapter_property(bt_property_type_t type) {
-  /* sanity check */
-  if (!interface_ready()) return BT_STATUS_NOT_READY;
+  /* Allow get_adapter_property only for BDADDR and BDNAME if BT is disabled */
+  if (!btif_is_enabled() && (type != BT_PROPERTY_BDADDR) &&
+      (type != BT_PROPERTY_BDNAME) && (type != BT_PROPERTY_CLASS_OF_DEVICE))
+    return BT_STATUS_NOT_READY;
 
-  return btif_get_adapter_property(type);
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_get_adapter_property, type));
+  return BT_STATUS_SUCCESS;
 }
 
 static int set_adapter_property(const bt_property_t* property) {

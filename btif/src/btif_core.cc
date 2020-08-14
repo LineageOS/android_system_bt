@@ -771,26 +771,15 @@ void btif_get_adapter_properties(void) {
  *
  * Description      Fetches property value from local cache
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
 
-bt_status_t btif_get_adapter_property(bt_property_type_t type) {
-  btif_storage_req_t req;
-
+void btif_get_adapter_property(bt_property_type_t type) {
   BTIF_TRACE_EVENT("%s %d", __func__, type);
 
-  /* Allow get_adapter_property only for BDADDR and BDNAME if BT is disabled */
-  if (!btif_is_enabled() && (type != BT_PROPERTY_BDADDR) &&
-      (type != BT_PROPERTY_BDNAME) && (type != BT_PROPERTY_CLASS_OF_DEVICE))
-    return BT_STATUS_NOT_READY;
-
+  btif_storage_req_t req;
   req.read_req.bd_addr = RawAddress::kEmpty;
   req.read_req.type = type;
-
-  return btif_transfer_context(execute_storage_request,
-                               BTIF_CORE_STORAGE_ADAPTER_READ, (char*)&req,
-                               sizeof(btif_storage_req_t), NULL);
+  execute_storage_request(BTIF_CORE_STORAGE_ADAPTER_READ, (char*)&req);
 }
 
 /*******************************************************************************
