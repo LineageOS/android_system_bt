@@ -126,9 +126,6 @@ enum {
   BTIF_CORE_CB_START = BTIF_SIG_CB_START(BTIF_CORE),
   /* add here */
 
-  BTIF_DM_CB_START = BTIF_SIG_CB_START(BTIF_DM),
-  BTIF_DM_CB_LE_TEST_END, /* BLE Test mode end callback */
-
   BTIF_HFP_CB_START = BTIF_SIG_CB_START(BTIF_HFP),
   BTIF_HFP_CB_AUDIO_CONNECTING, /* HF AUDIO connect has been sent to BTA
                                    successfully */
