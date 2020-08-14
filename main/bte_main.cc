@@ -44,24 +44,6 @@
 #include "stack_config.h"
 
 /*******************************************************************************
- *  Constants & Macros
- ******************************************************************************/
-
-/* Run-time configuration file for BLE*/
-#ifndef BTE_BLE_STACK_CONF_FILE
-// TODO(armansito): Find a better way than searching by a hardcoded path.
-#if defined(OS_GENERIC)
-#define BTE_BLE_STACK_CONF_FILE "ble_stack.conf"
-#else  // !defined(OS_GENERIC)
-#define BTE_BLE_STACK_CONF_FILE "/etc/bluetooth/ble_stack.conf"
-#endif  // defined(OS_GENERIC)
-#endif  // BT_BLE_STACK_CONF_FILE
-
-/******************************************************************************
- *  Variables
- *****************************************************************************/
-
-/*******************************************************************************
  *  Static variables
  ******************************************************************************/
 static const hci_t* hci;

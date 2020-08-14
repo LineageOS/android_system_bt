@@ -2005,11 +2005,6 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
 static void btif_dm_generic_evt(uint16_t event, char* p_param) {
   BTIF_TRACE_EVENT("%s: event=%d", __func__, event);
   switch (event) {
-    case BTIF_DM_CB_DISCOVERY_STARTED: {
-      HAL_CBACK(bt_hal_cbacks, discovery_state_changed_cb,
-                BT_DISCOVERY_STARTED);
-    } break;
-
     case BTIF_DM_CB_CREATE_BOND: {
       pairing_cb.timeout_retries = NUM_TIMEOUT_RETRIES;
       btif_dm_create_bond_cb_t* create_bond_cb =
