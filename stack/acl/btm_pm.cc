@@ -41,6 +41,7 @@
 #include "device/include/controller.h"
 #include "hcidefs.h"
 #include "hcimsgs.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/l2cap_hci_link_interface.h"
@@ -250,19 +251,19 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
  *                          BTM_ACL_MODE_PARK
  *                          (valid only if return code is BTM_SUCCESS)
  *
- * Returns          BTM_SUCCESS if successful,
- *                  BTM_UNKNOWN_ADDR if bd addr is not active or bad
+ * Returns          true if successful, false otherwise
  *
  ******************************************************************************/
-tBTM_STATUS BTM_ReadPowerMode(const RawAddress& remote_bda,
-                              tBTM_PM_MODE* p_mode) {
-  int acl_ind;
-
-  acl_ind = btm_pm_find_acl_ind(remote_bda);
-  if (acl_ind == MAX_L2CAP_LINKS) return (BTM_UNKNOWN_ADDR);
+bool BTM_ReadPowerMode(const RawAddress& remote_bda, tBTM_PM_MODE* p_mode) {
+  if (p_mode == nullptr) {
+    LOG_ERROR("%s power mode is nullptr", __func__);
+    return false;
+  }
+  int acl_ind = btm_pm_find_acl_ind(remote_bda);
+  if (acl_ind == MAX_L2CAP_LINKS) return false;
 
   *p_mode = btm_cb.acl_cb_.pm_mode_db[acl_ind].state;
-  return BTM_SUCCESS;
+  return true;
 }
 
 /*******************************************************************************
