@@ -588,8 +588,9 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
     return BTM_DEV_BLACKLISTED;
   }
 
-  status = BTM_ReadPowerMode(p->remote_addr, &pwr_mode);
-  if (status != BTM_SUCCESS) return (status);
+  if (!BTM_ReadPowerMode(p->remote_addr, &pwr_mode)) {
+    return BTM_UNKNOWN_ADDR;
+  };
 
   /* Wake up the link if in sniff or park before attempting switch */
   if (pwr_mode == BTM_PM_MD_PARK || pwr_mode == BTM_PM_MD_SNIFF) {
