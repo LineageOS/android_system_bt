@@ -178,7 +178,7 @@ void btif_get_remote_device_properties(RawAddress remote_addr);
  *
  ******************************************************************************/
 void btif_set_remote_device_property(RawAddress* remote_addr,
-                                     const bt_property_t* property);
+                                     bt_property_t* property);
 
 /*******************************************************************************
  *
