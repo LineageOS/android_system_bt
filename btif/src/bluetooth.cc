@@ -205,10 +205,27 @@ static int get_adapter_property(bt_property_type_t type) {
 }
 
 static int set_adapter_property(const bt_property_t* property) {
-  /* sanity check */
-  if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  return btif_set_adapter_property(property);
+  switch (property->type) {
+    case BT_PROPERTY_BDNAME:
+    case BT_PROPERTY_ADAPTER_SCAN_MODE:
+    case BT_PROPERTY_ADAPTER_DISCOVERY_TIMEOUT:
+    case BT_PROPERTY_CLASS_OF_DEVICE:
+    case BT_PROPERTY_LOCAL_IO_CAPS:
+    case BT_PROPERTY_LOCAL_IO_CAPS_BLE:
+      break;
+    default:
+      return BT_STATUS_FAIL;
+  }
+
+  do_in_jni_thread(FROM_HERE, base::BindOnce(
+                                  [](bt_property_t* property) {
+                                    btif_set_adapter_property(property);
+                                    osi_free(property);
+                                  },
+                                  property_deep_copy(property)));
+  return BT_STATUS_SUCCESS;
 }
 
 int get_remote_device_properties(RawAddress* remote_addr) {
