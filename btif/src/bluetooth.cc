@@ -466,12 +466,26 @@ int dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len) {
 }
 
 int le_test_mode(uint16_t opcode, uint8_t* buf, uint8_t len) {
-  LOG_INFO("%s", __func__);
-
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
-  return btif_le_test_mode(opcode, buf, len);
+  switch (opcode) {
+    case HCI_BLE_TRANSMITTER_TEST:
+      if (len != 3) return BT_STATUS_PARM_INVALID;
+      do_in_jni_thread(FROM_HERE, base::BindOnce(btif_ble_transmitter_test,
+                                                 buf[0], buf[1], buf[2]));
+      break;
+    case HCI_BLE_RECEIVER_TEST:
+      if (len != 1) return BT_STATUS_PARM_INVALID;
+      do_in_jni_thread(FROM_HERE,
+                       base::BindOnce(btif_ble_receiver_test, buf[0]));
+      break;
+    case HCI_BLE_TEST_END:
+      do_in_jni_thread(FROM_HERE, base::BindOnce(btif_ble_test_end));
+      break;
+    default:
+      return BT_STATUS_UNSUPPORTED;
+  }
+  return BT_STATUS_SUCCESS;
 }
 
 static bt_os_callouts_t* wakelock_os_callouts_saved = nullptr;

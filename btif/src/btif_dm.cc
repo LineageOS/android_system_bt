@@ -3156,35 +3156,18 @@ static void btif_dm_ble_test_end_cback(void* p) {
                                                            : BT_STATUS_FAIL,
                                              count));
 }
-/*******************************************************************************
- *
- * Function         btif_le_test_mode
- *
- * Description     Sends a HCI BLE Test command to the Controller
- *
- * Returns          BT_STATUS_SUCCESS on success
- *
- ******************************************************************************/
-bt_status_t btif_le_test_mode(uint16_t opcode, uint8_t* buf, uint8_t len) {
-  switch (opcode) {
-    case HCI_BLE_TRANSMITTER_TEST:
-      if (len != 3) return BT_STATUS_PARM_INVALID;
-      BTM_BleTransmitterTest(buf[0], buf[1], buf[2], btif_dm_ble_tx_test_cback);
-      break;
-    case HCI_BLE_RECEIVER_TEST:
-      if (len != 1) return BT_STATUS_PARM_INVALID;
-      BTM_BleReceiverTest(buf[0], btif_dm_ble_rx_test_cback);
-      break;
-    case HCI_BLE_TEST_END:
-      BTM_BleTestEnd(btif_dm_ble_test_end_cback);
-      break;
-    default:
-      BTIF_TRACE_ERROR("%s: Unknown LE Test Mode Command 0x%x", __func__,
-                       opcode);
-      return BT_STATUS_UNSUPPORTED;
-  }
-  return BT_STATUS_SUCCESS;
+
+void btif_ble_transmitter_test(uint8_t tx_freq, uint8_t test_data_len,
+                               uint8_t packet_payload) {
+  BTM_BleTransmitterTest(tx_freq, test_data_len, packet_payload,
+                         btif_dm_ble_tx_test_cback);
 }
+
+void btif_ble_receiver_test(uint8_t rx_freq) {
+  BTM_BleReceiverTest(rx_freq, btif_dm_ble_rx_test_cback);
+}
+
+void btif_ble_test_end() { BTM_BleTestEnd(btif_dm_ble_test_end_cback); }
 
 void btif_dm_on_disable() {
   /* cancel any pending pairing requests */
