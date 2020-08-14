@@ -66,7 +66,6 @@ static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
                                               uint16_t* p_pkt_type);
 static void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec);
 static void btm_establish_continue(tACL_CONN* p_acl_cb);
-static void btm_pm_sm_alloc(uint8_t ind);
 static void btm_read_automatic_flush_timeout_timeout(void* data);
 static void btm_read_failed_contact_counter_timeout(void* data);
 static void btm_read_remote_features(uint16_t handle);
@@ -325,7 +324,22 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
       p->switch_role_failed_attempts = 0;
       p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
 
-      btm_pm_sm_alloc(xx);
+      /*******************************************************************************
+       *
+       * Function         btm_pm_sm_alloc
+       *
+       * Description      This function initializes the control block of an ACL
+       *link. It is called when an ACL connection is created.
+       *
+       * Returns          void
+       *
+       ******************************************************************************/
+      tBTM_PM_MCB* p_db = &btm_cb.acl_cb_.pm_mode_db[xx]; /* per ACL link */
+      memset(p_db, 0, sizeof(tBTM_PM_MCB));
+      p_db->state = BTM_PM_ST_ACTIVE;
+#if (BTM_PM_DEBUG == TRUE)
+      BTM_TRACE_DEBUG("btm_pm_sm_alloc ind:%d st:%d", xx, p_db->state);
+#endif  // BTM_PM_DEBUG
 
       if (dc) memcpy(p->remote_dc, dc, DEV_CLASS_LEN);
 
@@ -2428,25 +2442,6 @@ void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p, uint16_t* p_pkt_type) {
       *p_pkt_type |=
           (BTM_ACL_PKT_TYPES_MASK_NO_2_DH5 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH5);
   }
-}
-
-/*******************************************************************************
- *
- * Function         btm_pm_sm_alloc
- *
- * Description      This function initializes the control block of an ACL link.
- *                  It is called when an ACL connection is created.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_pm_sm_alloc(uint8_t ind) {
-  tBTM_PM_MCB* p_db = &btm_cb.acl_cb_.pm_mode_db[ind]; /* per ACL link */
-  memset(p_db, 0, sizeof(tBTM_PM_MCB));
-  p_db->state = BTM_PM_ST_ACTIVE;
-#if (BTM_PM_DEBUG == TRUE)
-  BTM_TRACE_DEBUG("btm_pm_sm_alloc ind:%d st:%d", ind, p_db->state);
-#endif  // BTM_PM_DEBUG
 }
 
 bool lmp_version_below(const RawAddress& bda, uint8_t version) {
