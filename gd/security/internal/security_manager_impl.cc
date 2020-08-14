@@ -235,7 +235,7 @@ void SecurityManagerImpl::HandleEvent(T packet) {
     auto record =
         security_database_.FindOrCreate(hci::AddressWithType{bd_addr, hci::AddressType::PUBLIC_DEVICE_ADDRESS});
     LOG_WARN("Dispatch #2");
-    DispatchPairingHandler(record, true);
+    DispatchPairingHandler(record, false);
     entry = pairing_handler_map_.find(bd_addr);
   }
   entry->second->OnReceive(packet);
