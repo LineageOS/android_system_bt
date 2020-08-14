@@ -53,6 +53,8 @@
 struct StackAclBtmAcl {
   tACL_CONN* acl_get_connection_from_handle(uint16_t handle);
   tACL_CONN* btm_bda_to_acl(const RawAddress& bda, tBT_TRANSPORT transport);
+  tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
+  void btm_establish_continue(tACL_CONN* p_acl_cb);
   void btm_read_remote_features(uint16_t handle);
 };
 
@@ -75,7 +77,6 @@ void btm_io_capabilities_req(const RawAddress& p);
 static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
                                               uint16_t* p_pkt_type);
 static void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec);
-static void btm_establish_continue(tACL_CONN* p_acl_cb);
 static void btm_read_automatic_flush_timeout_timeout(void* data);
 static void btm_read_failed_contact_counter_timeout(void* data);
 static void btm_read_remote_ext_features(uint16_t handle, uint8_t page_number);
@@ -85,7 +86,6 @@ static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
                                             uint8_t num_read_pages);
 static void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
                                       tBTM_SEC_DEV_REC* p_dev_rec);
-static tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types);
 static bool acl_is_role_master(const RawAddress& bda, tBT_TRANSPORT transport);
 
 void BTIF_dm_report_inquiry_status_change(uint8_t busy_level_flags);
@@ -383,7 +383,7 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
             /* Request for remaining Security Features (if any) */
             l2cu_resubmit_pending_sec_req(&p_dev_rec->bd_addr);
           }
-          btm_establish_continue(p);
+          internal_.btm_establish_continue(p);
           return;
         }
       }
@@ -400,7 +400,7 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
             link_role == HCI_ROLE_MASTER) {
           btsnd_hcic_ble_read_remote_feat(p->hci_handle);
         } else {
-          btm_establish_continue(p);
+          internal_.btm_establish_continue(p);
         }
       }
 
@@ -1005,7 +1005,7 @@ void btm_read_remote_features_complete(uint8_t* p) {
   btm_process_remote_ext_features(p_acl_cb, 1);
 
   /* Continue with HCI connection establishment */
-  btm_establish_continue(p_acl_cb);
+  internal_.btm_establish_continue(p_acl_cb);
 }
 
 /*******************************************************************************
@@ -1091,7 +1091,7 @@ void btm_read_remote_ext_features_complete(uint8_t* p, uint8_t evt_len) {
   btm_process_remote_ext_features(p_acl_cb, (uint8_t)(page_num + 1));
 
   /* Continue with HCI connection establishment */
-  btm_establish_continue(p_acl_cb);
+  internal_.btm_establish_continue(p_acl_cb);
 }
 
 /*******************************************************************************
@@ -1125,7 +1125,7 @@ void btm_read_remote_ext_features_failed(uint8_t status, uint16_t handle) {
   btm_process_remote_ext_features(p_acl_cb, 1);
 
   /* Continue HCI connection establishment */
-  btm_establish_continue(p_acl_cb);
+  internal_.btm_establish_continue(p_acl_cb);
 }
 
 /*******************************************************************************
@@ -1139,13 +1139,14 @@ void btm_read_remote_ext_features_failed(uint8_t status, uint16_t handle) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_establish_continue(tACL_CONN* p_acl_cb) {
+void StackAclBtmAcl::btm_establish_continue(tACL_CONN* p_acl_cb) {
   BTM_TRACE_DEBUG("btm_establish_continue");
   if (p_acl_cb->transport == BT_TRANSPORT_BR_EDR) {
     /* For now there are a some devices that do not like sending */
     /* commands events and data at the same time. */
     /* Set the packet types to the default allowed by the device */
-    btm_set_packet_types(p_acl_cb, btm_cb.acl_cb_.btm_acl_pkt_types_supported);
+    internal_.btm_set_packet_types(p_acl_cb,
+                                   btm_cb.acl_cb_.btm_acl_pkt_types_supported);
     btm_set_link_policy(p_acl_cb, btm_cb.acl_cb_.btm_def_link_policy);
   }
   if (p_acl_cb->link_up_issued) {
@@ -1166,7 +1167,7 @@ void btm_establish_continue_from_address(const RawAddress& bda,
                     __func__);
     return;
   }
-  btm_establish_continue(p_acl);
+  internal_.btm_establish_continue(p_acl);
 }
 
 /*******************************************************************************
@@ -1583,7 +1584,8 @@ bool BTM_FreeSCN(uint8_t scn) {
  * Returns          status of the operation
  *
  ******************************************************************************/
-tBTM_STATUS btm_set_packet_types(tACL_CONN* p, uint16_t pkt_types) {
+tBTM_STATUS StackAclBtmAcl::btm_set_packet_types(tACL_CONN* p,
+                                                 uint16_t pkt_types) {
   uint16_t temp_pkt_types;
   BTM_TRACE_DEBUG("btm_set_packet_types");
   /* Save in the ACL control blocks, types that we support */
@@ -1614,7 +1616,7 @@ void btm_set_packet_types_from_address(const RawAddress& bd_addr,
     BTM_TRACE_ERROR("%s Unable to find acl for address", __func__);
     return;
   }
-  tBTM_STATUS status = btm_set_packet_types(p_acl_cb, pkt_types);
+  tBTM_STATUS status = internal_.btm_set_packet_types(p_acl_cb, pkt_types);
   if (status != BTM_CMD_STARTED) {
     BTM_TRACE_ERROR("%s unable to set packet types from address", __func__);
   }
