@@ -214,7 +214,6 @@ static size_t btif_events_end_index = 0;
  *****************************************************************************/
 static btif_dm_pairing_cb_t pairing_cb;
 static btif_dm_oob_cb_t oob_cb;
-static void btif_dm_generic_evt(uint16_t event, char* p_param);
 static void btif_dm_cb_create_bond(const RawAddress bd_addr,
                                    tBTA_TRANSPORT transport);
 static void btif_update_remote_properties(const RawAddress& bd_addr,
@@ -746,17 +745,17 @@ static void btif_dm_cb_create_bond(const RawAddress bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-void btif_dm_cb_remove_bond(const RawAddress* bd_addr) {
+void btif_dm_cb_remove_bond(const RawAddress bd_addr) {
 /*special handling for HID devices */
 /*  VUP needs to be sent if its a HID Device. The HID HOST module will check if
 there
 is a valid hid connection with this bd_addr. If yes VUP will be issued.*/
 #if (BTA_HH_INCLUDED == TRUE)
-  if (btif_hh_virtual_unplug(bd_addr) != BT_STATUS_SUCCESS)
+  if (btif_hh_virtual_unplug(&bd_addr) != BT_STATUS_SUCCESS)
 #endif
   {
     BTIF_TRACE_DEBUG("%s: Removing HH device", __func__);
-    BTA_DmRemoveDevice(*bd_addr);
+    BTA_DmRemoveDevice(bd_addr);
   }
 }
 
@@ -1970,47 +1969,6 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
 
 /*******************************************************************************
  *
- * Function         btif_dm_generic_evt
- *
- * Description      Executes non-BTA upstream events in BTIF context
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btif_dm_generic_evt(uint16_t event, char* p_param) {
-  BTIF_TRACE_EVENT("%s: event=%d", __func__, event);
-  switch (event) {
-    case BTIF_DM_CB_REMOVE_BOND: {
-      btif_dm_cb_remove_bond((RawAddress*)p_param);
-    } break;
-
-    case BTIF_DM_CB_BOND_STATE_BONDING: {
-      bond_state_changed(BT_STATUS_SUCCESS, *((RawAddress*)p_param),
-                         BT_BOND_STATE_BONDING);
-    } break;
-    case BTIF_DM_CB_LE_TX_TEST:
-    case BTIF_DM_CB_LE_RX_TEST: {
-      uint8_t status;
-      STREAM_TO_UINT8(status, p_param);
-      HAL_CBACK(bt_hal_cbacks, le_test_mode_cb,
-                (status == 0) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL, 0);
-    } break;
-    case BTIF_DM_CB_LE_TEST_END: {
-      uint8_t status;
-      uint16_t count = 0;
-      STREAM_TO_UINT8(status, p_param);
-      if (status == 0) STREAM_TO_UINT16(count, p_param);
-      HAL_CBACK(bt_hal_cbacks, le_test_mode_cb,
-                (status == 0) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL, count);
-    } break;
-    default: {
-      BTIF_TRACE_WARNING("%s : Unknown event 0x%x", __func__, event);
-    } break;
-  }
-}
-
-/*******************************************************************************
- *
  * Function         bte_dm_evt
  *
  * Description      Switches context from BTE to BTIF for all DM events
@@ -2372,8 +2330,7 @@ bt_status_t btif_dm_remove_bond(const RawAddress* bd_addr) {
   btif_stats_add_bond_event(*bd_addr, BTIF_DM_FUNC_REMOVE_BOND,
                             pairing_cb.state);
 
-  btif_transfer_context(btif_dm_generic_evt, BTIF_DM_CB_REMOVE_BOND,
-                        (char*)bd_addr, sizeof(RawAddress), NULL);
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_cb_remove_bond, *bd_addr));
 
   return BT_STATUS_SUCCESS;
 }
@@ -2846,9 +2803,9 @@ bool btif_dm_proc_rmt_oob(const RawAddress& bd_addr, Octet16* p_c,
   fread(p_r->data(), 1, OCTET16_LEN, fp);
   fclose(fp);
 
-  RawAddress bt_bd_addr = bd_addr;
-  btif_transfer_context(btif_dm_generic_evt, BTIF_DM_CB_BOND_STATE_BONDING,
-                        (char*)&bt_bd_addr, sizeof(RawAddress), NULL);
+  do_in_jni_thread(
+      FROM_HERE, base::BindOnce(bond_state_changed, BT_STATUS_SUCCESS, bd_addr,
+                                BT_BOND_STATE_BONDING));
   return true;
 }
 #endif /*  BTIF_DM_OOB_TEST */
@@ -3215,19 +3172,41 @@ void btif_dm_update_ble_remote_properties(const RawAddress& bd_addr,
   btif_update_remote_properties(bd_addr, bd_name, NULL, dev_type);
 }
 
+static void btif_dm_report_test_mode_result(bt_status_t status,
+                                            uint16_t count) {
+  HAL_CBACK(bt_hal_cbacks, le_test_mode_cb, status, count);
+}
+
 static void btif_dm_ble_tx_test_cback(void* p) {
-  btif_transfer_context(btif_dm_generic_evt, BTIF_DM_CB_LE_TX_TEST, (char*)p, 1,
-                        NULL);
+  char* p_param = (char*)p;
+  uint8_t status;
+  STREAM_TO_UINT8(status, p_param);
+  do_in_jni_thread(
+      FROM_HERE,
+      base::BindOnce(btif_dm_report_test_mode_result,
+                     (status == 0) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL, 0));
 }
 
 static void btif_dm_ble_rx_test_cback(void* p) {
-  btif_transfer_context(btif_dm_generic_evt, BTIF_DM_CB_LE_RX_TEST, (char*)p, 1,
-                        NULL);
+  char* p_param = (char*)p;
+  uint8_t status;
+  STREAM_TO_UINT8(status, p_param);
+  do_in_jni_thread(
+      FROM_HERE,
+      base::BindOnce(btif_dm_report_test_mode_result,
+                     (status == 0) ? BT_STATUS_SUCCESS : BT_STATUS_FAIL, 0));
 }
 
 static void btif_dm_ble_test_end_cback(void* p) {
-  btif_transfer_context(btif_dm_generic_evt, BTIF_DM_CB_LE_TEST_END, (char*)p,
-                        3, NULL);
+  char* p_param = (char*)p;
+  uint8_t status;
+  uint16_t count = 0;
+  STREAM_TO_UINT8(status, p_param);
+  if (status == 0) STREAM_TO_UINT16(count, p_param);
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_report_test_mode_result,
+                                             (status == 0) ? BT_STATUS_SUCCESS
+                                                           : BT_STATUS_FAIL,
+                                             count));
 }
 /*******************************************************************************
  *
