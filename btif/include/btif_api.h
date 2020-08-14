@@ -335,10 +335,8 @@ bt_status_t btif_dm_get_remote_services_by_transport(RawAddress* remote_addr,
  * Description      Configure Test Mode - 'enable' to 1 puts the device in test
  *                  mode and 0 exits test mode
  *
- * Returns          BT_STATUS_SUCCESS on success
- *
  ******************************************************************************/
-bt_status_t btif_dut_mode_configure(uint8_t enable);
+void btif_dut_mode_configure(uint8_t enable);
 
 /*******************************************************************************
  *
