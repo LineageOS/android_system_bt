@@ -237,10 +237,8 @@ void btif_dm_cancel_bond(const RawAddress bd_addr);
  *
  * Description      Removes bonding with the specified device
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_dm_remove_bond(const RawAddress* bd_addr);
+void btif_dm_remove_bond(const RawAddress bd_addr);
 
 /*******************************************************************************
  *
