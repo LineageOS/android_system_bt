@@ -574,8 +574,8 @@ static bt_status_t btif_in_get_remote_device_properties(RawAddress* bd_addr) {
                                           &remote_properties[num_props]);
   num_props++;
 
-  HAL_CBACK(bt_hal_cbacks, remote_device_properties_cb, BT_STATUS_SUCCESS,
-            bd_addr, num_props, remote_properties);
+  invoke_remote_device_properties_cb(BT_STATUS_SUCCESS, *bd_addr, num_props,
+                                     remote_properties);
 
   return BT_STATUS_SUCCESS;
 }
@@ -596,8 +596,7 @@ void btif_adapter_properties_evt(bt_status_t status, uint32_t num_props,
 }
 void btif_remote_properties_evt(bt_status_t status, RawAddress* remote_addr,
                                 uint32_t num_props, bt_property_t* p_props) {
-  HAL_CBACK(bt_hal_cbacks, remote_device_properties_cb, status, remote_addr,
-            num_props, p_props);
+  invoke_remote_device_properties_cb(status, *remote_addr, num_props, p_props);
 }
 
 /*******************************************************************************
@@ -785,8 +784,7 @@ void btif_get_remote_device_property(RawAddress remote_addr,
 
   bt_status_t status =
       btif_storage_get_remote_device_property(&remote_addr, &prop);
-  HAL_CBACK(bt_hal_cbacks, remote_device_properties_cb, status, &remote_addr, 1,
-            &prop);
+  invoke_remote_device_properties_cb(status, remote_addr, 1, &prop);
 }
 
 /*******************************************************************************
