@@ -634,37 +634,6 @@ void btif_remote_properties_evt(bt_status_t status, RawAddress* remote_addr,
 
 /*******************************************************************************
  *
- * Function         btif_in_storage_request_copy_cb
- *
- * Description     Switch context callback function to perform the deep copy for
- *                 both the adapter and remote_device property API
- *
- * Returns          None
- *
- ******************************************************************************/
-static void btif_in_storage_request_copy_cb(uint16_t event, char* p_new_buf,
-                                            char* p_old_buf) {
-  btif_storage_req_t* new_req = (btif_storage_req_t*)p_new_buf;
-  btif_storage_req_t* old_req = (btif_storage_req_t*)p_old_buf;
-
-  BTIF_TRACE_EVENT("%s", __func__);
-  switch (event) {
-    case BTIF_CORE_STORAGE_REMOTE_WRITE: {
-      new_req->write_req.bd_addr = old_req->write_req.bd_addr;
-      /* Copy the member variables one at a time */
-      new_req->write_req.prop.type = old_req->write_req.prop.type;
-      new_req->write_req.prop.len = old_req->write_req.prop.len;
-
-      new_req->write_req.prop.val =
-          (uint8_t*)(p_new_buf + sizeof(btif_storage_req_t));
-      memcpy(new_req->write_req.prop.val, old_req->write_req.prop.val,
-             old_req->write_req.prop.len);
-    } break;
-  }
-}
-
-/*******************************************************************************
- *
  * Function         btif_get_adapter_properties
  *
  * Description      Fetch all available properties (local & remote)
@@ -871,22 +840,15 @@ void btif_get_remote_device_properties(RawAddress remote_addr) {
  *                  Currently, BT_PROPERTY_REMOTE_FRIENDLY_NAME is the only
  *                  remote device property that can be set
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_set_remote_device_property(RawAddress* remote_addr,
-                                            const bt_property_t* property) {
+void btif_set_remote_device_property(RawAddress* remote_addr,
+                                     const bt_property_t* property) {
   btif_storage_req_t req;
-
-  if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
   req.write_req.bd_addr = *remote_addr;
   memcpy(&(req.write_req.prop), property, sizeof(bt_property_t));
 
-  return btif_transfer_context(execute_storage_remote_request,
-                               BTIF_CORE_STORAGE_REMOTE_WRITE, (char*)&req,
-                               sizeof(btif_storage_req_t) + property->len,
-                               btif_in_storage_request_copy_cb);
+  execute_storage_remote_request(BTIF_CORE_STORAGE_REMOTE_WRITE, (char*)&req);
 }
 
 /*******************************************************************************
