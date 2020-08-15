@@ -24,6 +24,15 @@
 
 #define BTM_MAX_SCN_ 31  // PORT_MAX_RFC_PORTS system/bt/stack/include/rfcdefs.h
 
+/* Structure returned with Role Switch information (in tBTM_CMPL_CB callback
+ * function) in response to BTM_SwitchRole call.
+ */
+typedef struct {
+  RawAddress remote_bd_addr; /* Remote BD addr involved with the switch */
+  uint8_t hci_status;        /* HCI status returned with the event */
+  uint8_t role;              /* HCI_ROLE_MASTER or HCI_ROLE_SLAVE */
+} tBTM_ROLE_SWITCH_CMPL;
+
 typedef struct {
   BD_FEATURES peer_le_features;
   BD_FEATURES peer_lmp_feature_pages[HCI_EXT_FEATURES_PAGE_MAX + 1];
@@ -108,6 +117,8 @@ typedef struct {
   friend void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
                                      uint8_t encr_enable);
   friend void btm_acl_init(void);
+  friend void btm_acl_role_changed(uint8_t hci_status,
+                                   const RawAddress* bd_addr, uint8_t new_role);
   friend void btm_acl_update_conn_addr(uint16_t conn_handle,
                                        const RawAddress& address);
   friend void btm_pm_proc_cmd_status(uint8_t status);
@@ -135,6 +146,7 @@ typedef struct {
 
   tACL_CONN acl_db[MAX_L2CAP_LINKS];
   tBTM_PM_MCB pm_mode_db[MAX_L2CAP_LINKS];
+  tBTM_ROLE_SWITCH_CMPL switch_role_ref_data;
   uint16_t btm_acl_pkt_types_supported;
   uint16_t btm_def_link_policy;
   uint16_t btm_def_link_super_tout;

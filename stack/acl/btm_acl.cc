@@ -690,10 +690,11 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
   else if (p->switch_role_state == BTM_ACL_SWKEY_STATE_ENCRYPTION_ON) {
     p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
     p->encrypt_state = BTM_ACL_ENCRYPT_STATE_IDLE;
-    auto new_role = btm_cb.devcb.switch_role_ref_data.role;
-    auto hci_status = btm_cb.devcb.switch_role_ref_data.hci_status;
-    BTA_dm_report_role_change(btm_cb.devcb.switch_role_ref_data.remote_bd_addr,
-                              new_role, hci_status);
+    auto new_role = btm_cb.acl_cb_.switch_role_ref_data.role;
+    auto hci_status = btm_cb.acl_cb_.switch_role_ref_data.hci_status;
+    BTA_dm_report_role_change(
+        btm_cb.acl_cb_.switch_role_ref_data.remote_bd_addr, new_role,
+        hci_status);
 
     BTM_TRACE_DEBUG(
         "%s: Role Switch Event: new_role 0x%02x, HCI Status 0x%02x, rs_st:%d",
@@ -1441,9 +1442,9 @@ void btm_blacklist_role_change_device(const RawAddress& bd_addr,
 void btm_acl_role_changed(uint8_t hci_status, const RawAddress* bd_addr,
                           uint8_t new_role) {
   const RawAddress* p_bda =
-      (bd_addr) ? bd_addr : &btm_cb.devcb.switch_role_ref_data.remote_bd_addr;
+      (bd_addr) ? bd_addr : &btm_cb.acl_cb_.switch_role_ref_data.remote_bd_addr;
   tACL_CONN* p = internal_.btm_bda_to_acl(*p_bda, BT_TRANSPORT_BR_EDR);
-  tBTM_ROLE_SWITCH_CMPL* p_data = &btm_cb.devcb.switch_role_ref_data;
+  tBTM_ROLE_SWITCH_CMPL* p_data = &btm_cb.acl_cb_.switch_role_ref_data;
   tBTM_SEC_DEV_REC* p_dev_rec;
 
   BTM_TRACE_DEBUG("%s: peer %s hci_status:0x%x new_role:%d", __func__,
