@@ -63,6 +63,8 @@
 
 using bluetooth::Uuid;
 
+void BTIF_dm_enable();
+
 static void bta_dm_inq_results_cb(tBTM_INQ_RESULTS* p_inq, uint8_t* p_eir,
                                   uint16_t eir_len);
 static void bta_dm_inq_cmpl_cb(void* p_result);
@@ -2439,10 +2441,7 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
  *
  ******************************************************************************/
 static void bta_dm_local_name_cback(UNUSED_ATTR void* p_name) {
-  tBTA_DM_SEC sec_event;
-
-  if (bta_dm_cb.p_sec_cback)
-    bta_dm_cb.p_sec_cback(BTA_DM_ENABLE_EVT, &sec_event);
+  BTIF_dm_enable();
 }
 
 static void handle_role_change(const RawAddress& bd_addr, uint8_t new_role,
