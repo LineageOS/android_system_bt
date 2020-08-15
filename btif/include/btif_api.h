@@ -257,11 +257,9 @@ uint16_t btif_dm_get_connection_state(const RawAddress* bd_addr);
  *
  * Description      BT legacy pairing - PIN code reply
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_dm_pin_reply(const RawAddress* bd_addr, uint8_t accept,
-                              uint8_t pin_len, bt_pin_code_t* pin_code);
+void btif_dm_pin_reply(const RawAddress bd_addr, uint8_t accept,
+                       uint8_t pin_len, bt_pin_code_t pin_code);
 
 /*******************************************************************************
  *
