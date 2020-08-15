@@ -1142,13 +1142,12 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
  * Returns          void
  *
  *****************************************************************************/
-static void btif_dm_search_devices_evt(uint16_t event, char* p_param) {
-  tBTA_DM_SEARCH* p_search_data;
+static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
+                                       tBTA_DM_SEARCH* p_search_data) {
   BTIF_TRACE_EVENT("%s event=%s", __func__, dump_dm_search_event(event));
 
   switch (event) {
     case BTA_DM_DISC_RES_EVT: {
-      p_search_data = (tBTA_DM_SEARCH*)p_param;
       /* Remote name update */
       if (strlen((const char*)p_search_data->disc_res.bd_name)) {
         bt_property_t properties[1];
@@ -1174,7 +1173,6 @@ static void btif_dm_search_devices_evt(uint16_t event, char* p_param) {
       uint8_t remote_name_len;
       tBTA_SERVICE_MASK services = 0;
 
-      p_search_data = (tBTA_DM_SEARCH*)p_param;
       p_search_data->inq_res.remt_name_not_required =
           check_eir_remote_name(p_search_data, NULL, NULL);
       RawAddress& bdaddr = p_search_data->inq_res.bd_addr;
@@ -1824,20 +1822,6 @@ void bte_dm_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data) {
 
 /*******************************************************************************
  *
- * Function         bte_search_devices_evt
- *
- * Description      Switches context from BTE to BTIF for DM search events
- *
- * Returns          void
- *
- ******************************************************************************/
-static void bte_search_devices_evt(tBTA_DM_SEARCH_EVT event,
-                                   tBTA_DM_SEARCH* p_data) {
-  btif_dm_search_devices_evt(event, (char*)p_data);
-}
-
-/*******************************************************************************
- *
  * Function         bte_dm_search_services_evt
  *
  * Description      Switches context from BTE to BTIF for DM search services
@@ -1961,7 +1945,7 @@ void btif_dm_start_discovery(void) {
   /* Will be enabled to true once inquiry busy level has been received */
   btif_dm_inquiry_in_progress = false;
   /* find nearby devices */
-  BTA_DmSearch(&inq_params, services, bte_search_devices_evt);
+  BTA_DmSearch(&inq_params, services, btif_dm_search_devices_evt);
 }
 
 /*******************************************************************************
