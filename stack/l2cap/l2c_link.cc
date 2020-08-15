@@ -37,6 +37,7 @@
 #include "l2cdefs.h"
 #include "log/log.h"
 #include "osi/include/osi.h"
+#include "stack/btm/btm_dev.h"
 #include "stack/include/acl_api.h"
 
 static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,

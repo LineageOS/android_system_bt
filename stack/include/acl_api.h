@@ -221,7 +221,7 @@ uint16_t BTM_GetNumAclLinks(void);
  * Returns          void
  *
  ******************************************************************************/
-void btm_acl_role_changed(uint8_t hci_status, const RawAddress* bd_addr,
+void btm_acl_role_changed(uint8_t hci_status, const RawAddress& bd_addr,
                           uint8_t new_role);
 
 void btm_set_packet_types_from_address(const RawAddress& bda,
