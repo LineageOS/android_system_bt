@@ -2217,32 +2217,28 @@ void btif_dm_create_bond(const RawAddress bd_addr, int transport) {
  * Description      Initiate bonding with the specified device using out of band
  *                  data
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_dm_create_bond_out_of_band(
-    const RawAddress* bd_addr, int transport,
-    const bt_out_of_band_data_t* oob_data) {
-  oob_cb.bdaddr = *bd_addr;
-  memcpy(&oob_cb.oob_data, oob_data, sizeof(bt_out_of_band_data_t));
+void btif_dm_create_bond_out_of_band(const RawAddress bd_addr, int transport,
+                                     const bt_out_of_band_data_t oob_data) {
+  oob_cb.bdaddr = bd_addr;
+  memcpy(&oob_cb.oob_data, &oob_data, sizeof(bt_out_of_band_data_t));
 
   uint8_t empty[] = {0, 0, 0, 0, 0, 0, 0};
   // If LE Bluetooth Device Address is provided, use provided address type
   // value.
-  if (memcmp(oob_data->le_bt_dev_addr, empty, 7) != 0) {
+  if (memcmp(oob_data.le_bt_dev_addr, empty, 7) != 0) {
     /* byte no 7 is address type in LE Bluetooth Address OOB data */
-    uint8_t address_type = oob_data->le_bt_dev_addr[6];
+    uint8_t address_type = oob_data.le_bt_dev_addr[6];
     if (address_type == BLE_ADDR_PUBLIC || address_type == BLE_ADDR_RANDOM) {
       // bd_addr->address is already reversed, so use it instead of
       // oob_data->le_bt_dev_addr
-      BTM_SecAddBleDevice(*bd_addr, NULL, BT_DEVICE_TYPE_BLE, address_type);
+      BTM_SecAddBleDevice(bd_addr, NULL, BT_DEVICE_TYPE_BLE, address_type);
     }
   }
 
   BTIF_TRACE_EVENT("%s: bd_addr=%s, transport=%d", __func__,
-                   bd_addr->ToString().c_str(), transport);
-  btif_dm_create_bond(*bd_addr, transport);
-  return BT_STATUS_SUCCESS;
+                   bd_addr.ToString().c_str(), transport);
+  btif_dm_create_bond(bd_addr, transport);
 }
 
 /*******************************************************************************
