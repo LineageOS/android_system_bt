@@ -140,6 +140,8 @@ bool is_atv_device(void);
  ******************************************************************************/
 void btif_get_adapter_properties(void);
 
+bt_property_t* property_deep_copy(const bt_property_t* prop);
+
 /*******************************************************************************
  *
  * Function         btif_get_adapter_property
@@ -156,10 +158,8 @@ void btif_get_adapter_property(bt_property_type_t type);
  * Description      Updates core stack with property value and stores it in
  *                  local cache
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_set_adapter_property(const bt_property_t* property);
+void btif_set_adapter_property(const bt_property_t* property);
 
 /*******************************************************************************
  *
