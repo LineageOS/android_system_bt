@@ -177,10 +177,8 @@ void btif_get_remote_device_property(RawAddress remote_addr,
  *
  * Description      Fetches all the remote device properties from NVRAM
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_get_remote_device_properties(RawAddress* remote_addr);
+void btif_get_remote_device_properties(RawAddress remote_addr);
 
 /*******************************************************************************
  *
