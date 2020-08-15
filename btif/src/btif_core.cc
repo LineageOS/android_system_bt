@@ -619,10 +619,6 @@ static void execute_storage_remote_request(uint16_t event, char* p_param) {
       status = btif_storage_set_remote_device_property(
           &(p_req->write_req.bd_addr), &(p_req->write_req.prop));
     } break;
-    case BTIF_CORE_STORAGE_REMOTE_READ_ALL: {
-      btif_storage_req_t* p_req = (btif_storage_req_t*)p_param;
-      btif_in_get_remote_device_properties(&p_req->read_req.bd_addr);
-    } break;
   }
 }
 
@@ -864,11 +860,7 @@ void btif_get_remote_device_property(RawAddress remote_addr,
  *
  ******************************************************************************/
 void btif_get_remote_device_properties(RawAddress remote_addr) {
-  btif_storage_req_t req;
-
-  req.read_req.bd_addr = *remote_addr;
-  execute_storage_remote_request(BTIF_CORE_STORAGE_REMOTE_READ_ALL,
-                                 (char*)&req);
+  btif_in_get_remote_device_properties(&remote_addr);
 }
 
 /*******************************************************************************
