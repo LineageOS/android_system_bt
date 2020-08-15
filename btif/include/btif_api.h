@@ -202,11 +202,8 @@ void btif_set_remote_device_property(RawAddress* remote_addr,
  *
  * Description      Start device discovery/inquiry
  *
- *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_dm_start_discovery(void);
+void btif_dm_start_discovery(void);
 
 /*******************************************************************************
  *
