@@ -357,7 +357,7 @@ bt_status_t btif_dm_get_remote_service_record(const RawAddress& remote_addr,
  * Returns          bt_status_t
  *
  ******************************************************************************/
-bt_status_t btif_dm_get_remote_services(const RawAddress& remote_addr);
+void btif_dm_get_remote_services(const RawAddress remote_addr);
 
 /*******************************************************************************
  *
