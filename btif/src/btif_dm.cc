@@ -2133,10 +2133,8 @@ static void bte_scan_filt_param_cfg_evt(uint8_t ref_value, uint8_t avbl_space,
  *
  * Description      Start device discovery/inquiry
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_dm_start_discovery(void) {
+void btif_dm_start_discovery(void) {
   tBTA_DM_INQ inq_params;
   tBTA_SERVICE_MASK services = 0;
 
@@ -2177,8 +2175,6 @@ bt_status_t btif_dm_start_discovery(void) {
   btif_dm_inquiry_in_progress = false;
   /* find nearby devices */
   BTA_DmSearch(&inq_params, services, bte_search_devices_evt);
-
-  return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
