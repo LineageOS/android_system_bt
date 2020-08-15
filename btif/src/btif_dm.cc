@@ -315,7 +315,7 @@ void btif_dm_init(uid_set_t* set) {
 
         if (pairing_variant == BT_SSP_VARIANT_PASSKEY_ENTRY) {
           // For passkey entry we must actually use pin request, due to BluetoothPairingController (in Settings)
-          HAL_CBACK(bt_hal_cbacks, pin_request_cb, &address, &bd_name, cod, false);
+          invoke_pin_request_cb(address, bd_name, cod, false);
           return;
         }
 
@@ -938,10 +938,7 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
       }
     }
   }
-  // TODO: make cback accept const and get rid of tmp!
-  auto tmp = bd_addr;
-  HAL_CBACK(bt_hal_cbacks, pin_request_cb, &tmp, &bd_name, cod,
-            p_pin_req->min_16_digit);
+  invoke_pin_request_cb(bd_addr, bd_name, cod, p_pin_req->min_16_digit);
 }
 
 /*******************************************************************************
@@ -3018,7 +3015,7 @@ static void btif_dm_ble_passkey_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
 
   cod = COD_UNCLASSIFIED;
 
-  HAL_CBACK(bt_hal_cbacks, pin_request_cb, &bd_addr, &bd_name, cod, false);
+  invoke_pin_request_cb(bd_addr, bd_name, cod, false);
 }
 static void btif_dm_ble_key_nc_req_evt(tBTA_DM_SP_KEY_NOTIF* p_notif_req) {
   /* TODO implement key notification for numeric comparison */
