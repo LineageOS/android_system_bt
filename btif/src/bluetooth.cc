@@ -722,3 +722,15 @@ void invoke_acl_state_changed_cb(bt_status_t status, RawAddress bd_addr,
           },
           status, bd_addr, state));
 }
+
+void invoke_thread_evt_cb(bt_cb_thread_evt event) {
+  do_in_jni_thread(FROM_HERE, base::BindOnce(
+                                  [](bt_cb_thread_evt event) {
+                                    HAL_CBACK(bt_hal_cbacks, thread_evt_cb,
+                                              event);
+                                    if (event == DISASSOCIATE_JVM) {
+                                      bt_hal_cbacks = NULL;
+                                    }
+                                  },
+                                  event));
+}
