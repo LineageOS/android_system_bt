@@ -359,8 +359,7 @@ void btif_enable_bluetooth_evt() {
     prop.type = BT_PROPERTY_BDADDR;
     prop.val = (void*)&local_bd_addr;
     prop.len = sizeof(RawAddress);
-    HAL_CBACK(bt_hal_cbacks, adapter_properties_cb, BT_STATUS_SUCCESS, 1,
-              &prop);
+    invoke_adapter_properties_cb(BT_STATUS_SUCCESS, 1, &prop);
   }
 
   /* callback to HAL */
@@ -530,9 +529,7 @@ static bt_status_t btif_in_get_adapter_properties(void) {
   btif_storage_get_adapter_property(&properties[num_props]);
   num_props++;
 
-  HAL_CBACK(bt_hal_cbacks, adapter_properties_cb, BT_STATUS_SUCCESS, num_props,
-            properties);
-
+  invoke_adapter_properties_cb(BT_STATUS_SUCCESS, num_props, properties);
   return BT_STATUS_SUCCESS;
 }
 
@@ -584,18 +581,18 @@ static bt_status_t btif_in_get_remote_device_properties(RawAddress* bd_addr) {
 }
 
 static void btif_core_storage_adapter_notify_empty_success() {
-  HAL_CBACK(bt_hal_cbacks, adapter_properties_cb, BT_STATUS_SUCCESS, 0, NULL);
+  invoke_adapter_properties_cb(BT_STATUS_SUCCESS, 0, NULL);
 }
 
 static void btif_core_storage_adapter_write(bt_property_t* prop) {
   BTIF_TRACE_EVENT("type: %d, len %d, 0x%x", prop->type, prop->len, prop->val);
   bt_status_t status = btif_storage_set_adapter_property(prop);
-  HAL_CBACK(bt_hal_cbacks, adapter_properties_cb, status, 1, prop);
+  invoke_adapter_properties_cb(status, 1, prop);
 }
 
 void btif_adapter_properties_evt(bt_status_t status, uint32_t num_props,
                                  bt_property_t* p_props) {
-  HAL_CBACK(bt_hal_cbacks, adapter_properties_cb, status, num_props, p_props);
+  invoke_adapter_properties_cb(status, num_props, p_props);
 }
 void btif_remote_properties_evt(bt_status_t status, RawAddress* remote_addr,
                                 uint32_t num_props, bt_property_t* p_props) {
@@ -667,7 +664,7 @@ void btif_get_adapter_property(bt_property_type_t type) {
   } else {
     status = btif_storage_get_adapter_property(&prop);
   }
-  HAL_CBACK(bt_hal_cbacks, adapter_properties_cb, status, 1, &prop);
+  invoke_adapter_properties_cb(status, 1, &prop);
 }
 
 bt_property_t* property_deep_copy(const bt_property_t* prop) {
