@@ -887,7 +887,6 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
       bd_addr != pairing_cb.bd_addr) {
     BTIF_TRACE_WARNING("%s(): already in bonding state, reject request",
                        __FUNCTION__);
-    btif_dm_pin_reply(&bd_addr, 0, 0, NULL);
     return;
   }
 
@@ -2321,44 +2320,37 @@ void btif_dm_remove_bond(const RawAddress bd_addr) {
  *
  * Description      BT legacy pairing - PIN code reply
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
 
-bt_status_t btif_dm_pin_reply(const RawAddress* bd_addr, uint8_t accept,
-                              uint8_t pin_len, bt_pin_code_t* pin_code) {
+void btif_dm_pin_reply(const RawAddress bd_addr, uint8_t accept,
+                       uint8_t pin_len, bt_pin_code_t pin_code) {
   BTIF_TRACE_EVENT("%s: accept=%d", __func__, accept);
 
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    if (pin_code == nullptr) {
-      LOG_ERROR("Pin code must be not null with GD shim enabled");
-      return BT_STATUS_FAIL;
-    }
-
     uint8_t tmp_dev_type = 0;
     uint8_t tmp_addr_type = 0;
-    BTM_ReadDevInfo(*bd_addr, &tmp_dev_type, &tmp_addr_type);
+    BTM_ReadDevInfo(bd_addr, &tmp_dev_type, &tmp_addr_type);
 
-    do_in_main_thread(FROM_HERE, base::Bind(&bluetooth::shim::BTIF_DM_pin_reply, *bd_addr, tmp_addr_type, accept, pin_len, *pin_code));
-    return BT_STATUS_SUCCESS;
+    do_in_main_thread(FROM_HERE,
+                      base::Bind(&bluetooth::shim::BTIF_DM_pin_reply, bd_addr,
+                                 tmp_addr_type, accept, pin_len, pin_code));
+    return;
   }
 
-  if (pin_code == NULL || pin_len > PIN_CODE_LEN) return BT_STATUS_FAIL;
   if (pairing_cb.is_le_only) {
     int i;
     uint32_t passkey = 0;
     int multi[] = {100000, 10000, 1000, 100, 10, 1};
     for (i = 0; i < 6; i++) {
-      passkey += (multi[i] * (pin_code->pin[i] - '0'));
+      passkey += (multi[i] * (pin_code.pin[i] - '0'));
     }
     BTIF_TRACE_DEBUG("btif_dm_pin_reply: passkey: %d", passkey);
-    BTA_DmBlePasskeyReply(*bd_addr, accept, passkey);
+    BTA_DmBlePasskeyReply(bd_addr, accept, passkey);
 
   } else {
-    BTA_DmPinReply(*bd_addr, accept, pin_len, pin_code->pin);
+    BTA_DmPinReply(bd_addr, accept, pin_len, pin_code.pin);
     if (accept) pairing_cb.pin_code_len = pin_len;
   }
-  return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
