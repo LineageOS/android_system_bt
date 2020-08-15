@@ -76,8 +76,6 @@
 #define BTIF_PAN 4
 #define BTIF_HF_CLIENT 5
 
-extern bt_callbacks_t* bt_hal_cbacks;
-
 #define HAL_CBACK(P_CB, P_CBACK, ...)                              \
   do {                                                             \
     if ((P_CB) && (P_CB)->P_CBACK) {                               \

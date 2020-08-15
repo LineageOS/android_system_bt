@@ -83,7 +83,7 @@ using bluetooth::hearing_aid::HearingAidInterface;
  *  Static variables
  ******************************************************************************/
 
-bt_callbacks_t* bt_hal_cbacks = NULL;
+static bt_callbacks_t* bt_hal_cbacks = NULL;
 bool restricted_mode = false;
 bool niap_mode = false;
 const int CONFIG_COMPARE_ALL_PASS = 0b11;
