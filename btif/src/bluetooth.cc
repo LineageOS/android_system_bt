@@ -653,3 +653,17 @@ void invoke_remote_device_properties_cb(bt_status_t status, RawAddress bd_addr,
                      status, bd_addr, num_properties,
                      property_deep_copy_array(num_properties, properties)));
 }
+
+void invoke_device_found_cb(int num_properties, bt_property_t* properties) {
+  do_in_jni_thread(FROM_HERE,
+                   base::BindOnce(
+                       [](int num_properties, bt_property_t* properties) {
+                         HAL_CBACK(bt_hal_cbacks, device_found_cb,
+                                   num_properties, properties);
+                         if (properties) {
+                           osi_free(properties);
+                         }
+                       },
+                       num_properties,
+                       property_deep_copy_array(num_properties, properties)));
+}
