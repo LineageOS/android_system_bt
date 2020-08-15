@@ -2189,27 +2189,25 @@ void btif_dm_cancel_discovery(void) {
   BTA_DmSearchCancel();
 }
 
+bool btif_dm_pairing_is_busy() {
+  return pairing_cb.state != BT_BOND_STATE_NONE;
+}
+
 /*******************************************************************************
  *
  * Function         btif_dm_create_bond
  *
  * Description      Initiate bonding with the specified device
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_dm_create_bond(const RawAddress* bd_addr, int transport) {
+void btif_dm_create_bond(const RawAddress bd_addr, int transport) {
   BTIF_TRACE_EVENT("%s: bd_addr=%s, transport=%d", __func__,
-                   bd_addr->ToString().c_str(), transport);
-  if (pairing_cb.state != BT_BOND_STATE_NONE) return BT_STATUS_BUSY;
-
-  btif_stats_add_bond_event(*bd_addr, BTIF_DM_FUNC_CREATE_BOND,
+                   bd_addr.ToString().c_str(), transport);
+  btif_stats_add_bond_event(bd_addr, BTIF_DM_FUNC_CREATE_BOND,
                             pairing_cb.state);
 
   pairing_cb.timeout_retries = NUM_TIMEOUT_RETRIES;
-  do_in_jni_thread(FROM_HERE,
-                   base::BindOnce(btif_dm_cb_create_bond, *bd_addr, transport));
-  return BT_STATUS_SUCCESS;
+  btif_dm_cb_create_bond(bd_addr, transport);
 }
 
 /*******************************************************************************
@@ -2243,7 +2241,8 @@ bt_status_t btif_dm_create_bond_out_of_band(
 
   BTIF_TRACE_EVENT("%s: bd_addr=%s, transport=%d", __func__,
                    bd_addr->ToString().c_str(), transport);
-  return btif_dm_create_bond(bd_addr, transport);
+  btif_dm_create_bond(*bd_addr, transport);
+  return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
