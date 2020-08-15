@@ -251,10 +251,16 @@ int get_remote_device_property(RawAddress* remote_addr,
 
 int set_remote_device_property(RawAddress* remote_addr,
                                const bt_property_t* property) {
-  /* sanity check */
-  if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  return btif_set_remote_device_property(remote_addr, property);
+  do_in_jni_thread(
+      FROM_HERE, base::BindOnce(
+                     [](RawAddress remote_addr, bt_property_t* property) {
+                       btif_set_remote_device_property(&remote_addr, property);
+                       osi_free(property);
+                     },
+                     *remote_addr, property_deep_copy(property)));
+  return BT_STATUS_SUCCESS;
 }
 
 int get_remote_service_record(const RawAddress& remote_addr,

@@ -188,11 +188,9 @@ void btif_get_remote_device_properties(RawAddress remote_addr);
  *                  Currently, BT_PROPERTY_REMOTE_FRIENDLY_NAME is the only
  *                  remote device property that can be set
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_set_remote_device_property(RawAddress* remote_addr,
-                                            const bt_property_t* property);
+void btif_set_remote_device_property(RawAddress* remote_addr,
+                                     const bt_property_t* property);
 
 /*******************************************************************************
  *
