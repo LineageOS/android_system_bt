@@ -2247,14 +2247,12 @@ void btif_dm_create_bond_out_of_band(const RawAddress bd_addr, int transport,
  *
  * Description      Initiate bonding with the specified device
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
 
-bt_status_t btif_dm_cancel_bond(const RawAddress* bd_addr) {
-  BTIF_TRACE_EVENT("%s: bd_addr=%s", __func__, bd_addr->ToString().c_str());
+void btif_dm_cancel_bond(const RawAddress bd_addr) {
+  BTIF_TRACE_EVENT("%s: bd_addr=%s", __func__, bd_addr.ToString().c_str());
 
-  btif_stats_add_bond_event(*bd_addr, BTIF_DM_FUNC_CANCEL_BOND,
+  btif_stats_add_bond_event(bd_addr, BTIF_DM_FUNC_CANCEL_BOND,
                             pairing_cb.state);
 
   /* TODO:
@@ -2264,24 +2262,22 @@ bt_status_t btif_dm_cancel_bond(const RawAddress* bd_addr) {
   if (is_bonding_or_sdp()) {
     if (pairing_cb.is_ssp) {
       if (pairing_cb.is_le_only) {
-        BTA_DmBleSecurityGrant(*bd_addr, BTA_DM_SEC_PAIR_NOT_SPT);
+        BTA_DmBleSecurityGrant(bd_addr, BTA_DM_SEC_PAIR_NOT_SPT);
       } else {
-        BTA_DmConfirm(*bd_addr, false);
-        BTA_DmBondCancel(*bd_addr);
-        btif_storage_remove_bonded_device(bd_addr);
+        BTA_DmConfirm(bd_addr, false);
+        BTA_DmBondCancel(bd_addr);
+        btif_storage_remove_bonded_device(&bd_addr);
       }
     } else {
       if (pairing_cb.is_le_only) {
-        BTA_DmBondCancel(*bd_addr);
+        BTA_DmBondCancel(bd_addr);
       } else {
-        BTA_DmPinReply(*bd_addr, false, 0, NULL);
+        BTA_DmPinReply(bd_addr, false, 0, NULL);
       }
       /* Cancel bonding, in case it is in ACL connection setup state */
-      BTA_DmBondCancel(*bd_addr);
+      BTA_DmBondCancel(bd_addr);
     }
   }
-
-  return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
@@ -3222,7 +3218,7 @@ void btif_dm_on_disable() {
   /* cancel any pending pairing requests */
   if (is_bonding_or_sdp()) {
     BTIF_TRACE_DEBUG("%s: Cancel pending pairing request", __func__);
-    btif_dm_cancel_bond(&pairing_cb.bd_addr);
+    btif_dm_cancel_bond(pairing_cb.bd_addr);
   }
 }
 
