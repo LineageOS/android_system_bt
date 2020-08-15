@@ -667,3 +667,13 @@ void invoke_device_found_cb(int num_properties, bt_property_t* properties) {
                        num_properties,
                        property_deep_copy_array(num_properties, properties)));
 }
+
+void invoke_discovery_state_changed_cb(bt_discovery_state_t state) {
+  do_in_jni_thread(FROM_HERE, base::BindOnce(
+                                  [](bt_discovery_state_t state) {
+                                    HAL_CBACK(bt_hal_cbacks,
+                                              discovery_state_changed_cb,
+                                              state);
+                                  },
+                                  state));
+}
