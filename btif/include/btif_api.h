@@ -292,12 +292,9 @@ bt_status_t btif_dm_passkey_reply(const RawAddress* bd_addr, uint8_t accept,
  * Description      BT SSP Reply - Just Works, Numeric Comparison & Passkey
  *                  Entry
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_dm_ssp_reply(const RawAddress* bd_addr,
-                              bt_ssp_variant_t variant, uint8_t accept,
-                              uint32_t passkey);
+void btif_dm_ssp_reply(const RawAddress bd_addr, bt_ssp_variant_t variant,
+                       uint8_t accept);
 
 /*******************************************************************************
  *
