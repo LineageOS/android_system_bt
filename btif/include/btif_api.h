@@ -361,16 +361,11 @@ bool btif_is_dut_mode();
  ******************************************************************************/
 void btif_dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len);
 
-/*******************************************************************************
- *
- * Function         btif_le_test_mode
- *
- * Description     Sends a HCI BLE Test command to the Controller
- *
- * Returns          BT_STATUS_SUCCESS on success
- *
- ******************************************************************************/
-bt_status_t btif_le_test_mode(uint16_t opcode, uint8_t* buf, uint8_t len);
+void btif_ble_transmitter_test(uint8_t tx_freq, uint8_t test_data_len,
+                               uint8_t packet_payload);
+
+void btif_ble_receiver_test(uint8_t rx_freq);
+void btif_ble_test_end();
 
 /*******************************************************************************
  *
