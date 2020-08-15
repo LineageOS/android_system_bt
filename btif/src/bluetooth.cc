@@ -612,6 +612,15 @@ bt_property_t* property_deep_copy_array(int num_properties,
   return copy;
 }
 
+void invoke_adapter_state_changed_cb(bt_state_t state) {
+  do_in_jni_thread(FROM_HERE, base::BindOnce(
+                                  [](bt_state_t state) {
+                                    HAL_CBACK(bt_hal_cbacks,
+                                              adapter_state_changed_cb, state);
+                                  },
+                                  state));
+}
+
 void invoke_adapter_properties_cb(bt_status_t status, int num_properties,
                                   bt_property_t* properties) {
   do_in_jni_thread(FROM_HERE,
