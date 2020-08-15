@@ -2300,19 +2300,15 @@ void btif_dm_hh_open_failed(RawAddress* bdaddr) {
  *
  * Description      Removes bonding with the specified device
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
 
-bt_status_t btif_dm_remove_bond(const RawAddress* bd_addr) {
-  BTIF_TRACE_EVENT("%s: bd_addr=%s", __func__, bd_addr->ToString().c_str());
+void btif_dm_remove_bond(const RawAddress bd_addr) {
+  BTIF_TRACE_EVENT("%s: bd_addr=%s", __func__, bd_addr.ToString().c_str());
 
-  btif_stats_add_bond_event(*bd_addr, BTIF_DM_FUNC_REMOVE_BOND,
+  btif_stats_add_bond_event(bd_addr, BTIF_DM_FUNC_REMOVE_BOND,
                             pairing_cb.state);
 
-  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_cb_remove_bond, *bd_addr));
-
-  return BT_STATUS_SUCCESS;
+  btif_dm_cb_remove_bond(bd_addr);
 }
 
 /*******************************************************************************
