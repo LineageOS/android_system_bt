@@ -331,7 +331,6 @@ static int remove_bond(const RawAddress* bd_addr) {
 }
 
 static int get_connection_state(const RawAddress* bd_addr) {
-  /* sanity check */
   if (!interface_ready()) return 0;
 
   return btif_dm_get_connection_state(bd_addr);
@@ -339,10 +338,12 @@ static int get_connection_state(const RawAddress* bd_addr) {
 
 static int pin_reply(const RawAddress* bd_addr, uint8_t accept, uint8_t pin_len,
                      bt_pin_code_t* pin_code) {
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (pin_code == nullptr || pin_len > PIN_CODE_LEN) return BT_STATUS_FAIL;
 
-  return btif_dm_pin_reply(bd_addr, accept, pin_len, pin_code);
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_pin_reply, *bd_addr,
+                                             accept, pin_len, *pin_code));
+  return BT_STATUS_SUCCESS;
 }
 
 static int ssp_reply(const RawAddress* bd_addr, bt_ssp_variant_t variant,
