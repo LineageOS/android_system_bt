@@ -319,7 +319,7 @@ void btif_dm_init(uid_set_t* set) {
           return;
         }
 
-        HAL_CBACK(bt_hal_cbacks, ssp_request_cb, &address, &bd_name, cod, pairing_variant, pass_key);
+        invoke_ssp_request_cb(address, bd_name, cod, pairing_variant, pass_key);
       }, address, bd_name, cod, pairing_variant, pass_key));
     });
 
@@ -1019,10 +1019,11 @@ static void btif_dm_ssp_cfm_req_evt(tBTA_DM_SP_CFM_REQ* p_ssp_cfm_req) {
   }
 
   pairing_cb.sdp_attempts = 0;
-  HAL_CBACK(bt_hal_cbacks, ssp_request_cb, &bd_addr, &bd_name, cod,
-            (p_ssp_cfm_req->just_works ? BT_SSP_VARIANT_CONSENT
-                                       : BT_SSP_VARIANT_PASSKEY_CONFIRMATION),
-            p_ssp_cfm_req->num_val);
+  invoke_ssp_request_cb(
+      bd_addr, bd_name, cod,
+      (p_ssp_cfm_req->just_works ? BT_SSP_VARIANT_CONSENT
+                                 : BT_SSP_VARIANT_PASSKEY_CONFIRMATION),
+      p_ssp_cfm_req->num_val);
 }
 
 static void btif_dm_ssp_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
@@ -1052,8 +1053,9 @@ static void btif_dm_ssp_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
     cod = COD_UNCLASSIFIED;
   }
 
-  HAL_CBACK(bt_hal_cbacks, ssp_request_cb, &bd_addr, &bd_name, cod,
-            BT_SSP_VARIANT_PASSKEY_NOTIFICATION, p_ssp_key_notif->passkey);
+  invoke_ssp_request_cb(bd_addr, bd_name, cod,
+                        BT_SSP_VARIANT_PASSKEY_NOTIFICATION,
+                        p_ssp_key_notif->passkey);
 }
 /*******************************************************************************
  *
@@ -2772,8 +2774,9 @@ static void btif_dm_ble_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
   pairing_cb.is_ssp = false;
   cod = COD_UNCLASSIFIED;
 
-  HAL_CBACK(bt_hal_cbacks, ssp_request_cb, &bd_addr, &bd_name, cod,
-            BT_SSP_VARIANT_PASSKEY_NOTIFICATION, p_ssp_key_notif->passkey);
+  invoke_ssp_request_cb(bd_addr, bd_name, cod,
+                        BT_SSP_VARIANT_PASSKEY_NOTIFICATION,
+                        p_ssp_key_notif->passkey);
 }
 
 /*******************************************************************************
@@ -2982,8 +2985,7 @@ void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req, bool is_consent) {
 
   cod = COD_UNCLASSIFIED;
 
-  HAL_CBACK(bt_hal_cbacks, ssp_request_cb, &bd_addr, &bd_name, cod,
-            BT_SSP_VARIANT_CONSENT, 0);
+  invoke_ssp_request_cb(bd_addr, bd_name, cod, BT_SSP_VARIANT_CONSENT, 0);
 }
 
 /*******************************************************************************
@@ -3035,8 +3037,9 @@ static void btif_dm_ble_key_nc_req_evt(tBTA_DM_SP_KEY_NOTIF* p_notif_req) {
   pairing_cb.is_le_only = true;
   pairing_cb.is_le_nc = true;
 
-  HAL_CBACK(bt_hal_cbacks, ssp_request_cb, &bd_addr, &bd_name, COD_UNCLASSIFIED,
-            BT_SSP_VARIANT_PASSKEY_CONFIRMATION, p_notif_req->passkey);
+  invoke_ssp_request_cb(bd_addr, bd_name, COD_UNCLASSIFIED,
+                        BT_SSP_VARIANT_PASSKEY_CONFIRMATION,
+                        p_notif_req->passkey);
 }
 
 static void btif_dm_ble_oob_req_evt(tBTA_DM_SP_RMT_OOB* req_oob_type) {
