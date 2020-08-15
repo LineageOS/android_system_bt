@@ -2740,9 +2740,7 @@ bool btif_dm_proc_rmt_oob(const RawAddress& bd_addr, Octet16* p_c,
   fread(p_r->data(), 1, OCTET16_LEN, fp);
   fclose(fp);
 
-  do_in_jni_thread(
-      FROM_HERE, base::BindOnce(bond_state_changed, BT_STATUS_SUCCESS, bd_addr,
-                                BT_BOND_STATE_BONDING));
+  bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
   return true;
 }
 #endif /*  BTIF_DM_OOB_TEST */
