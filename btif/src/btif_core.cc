@@ -135,9 +135,6 @@ static uid_set_t* uid_set;
 /*******************************************************************************
  *  Static functions
  ******************************************************************************/
-static void btif_jni_associate();
-static void btif_jni_disassociate();
-
 /* sends message to btif task */
 static void btif_sendmsg(void* p_msg);
 
@@ -323,7 +320,7 @@ bt_status_t btif_init_bluetooth() {
   LOG_INFO("%s entered", __func__);
   exit_manager = new base::AtExitManager();
   jni_thread.StartUp();
-  jni_thread.DoInThread(FROM_HERE, base::Bind(btif_jni_associate));
+  invoke_thread_evt_cb(ASSOCIATE_JVM);
   LOG_INFO("%s finished", __func__);
   return BT_STATUS_SUCCESS;
 }
@@ -397,7 +394,7 @@ void btif_enable_bluetooth_evt() {
 bt_status_t btif_cleanup_bluetooth() {
   LOG_INFO("%s entered", __func__);
   btif_dm_cleanup();
-  jni_thread.DoInThread(FROM_HERE, base::BindOnce(btif_jni_disassociate));
+  invoke_thread_evt_cb(DISASSOCIATE_JVM);
   btif_queue_release();
   jni_thread.ShutDown();
   delete exit_manager;
@@ -890,15 +887,4 @@ bt_status_t btif_disable_service(tBTA_SERVICE_ID service_id) {
   }
 
   return BT_STATUS_SUCCESS;
-}
-
-static void btif_jni_associate() {
-  BTIF_TRACE_DEBUG("%s Associating thread to JVM", __func__);
-  HAL_CBACK(bt_hal_cbacks, thread_evt_cb, ASSOCIATE_JVM);
-}
-
-static void btif_jni_disassociate() {
-  BTIF_TRACE_DEBUG("%s Disassociating thread from JVM", __func__);
-  HAL_CBACK(bt_hal_cbacks, thread_evt_cb, DISASSOCIATE_JVM);
-  bt_hal_cbacks = NULL;
 }
