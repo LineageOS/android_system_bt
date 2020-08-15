@@ -196,6 +196,7 @@ bt_status_t btif_transfer_context(tBTIF_CBACK* p_cback, uint16_t event,
 
 void btif_init_ok();
 
+void invoke_adapter_state_changed_cb(bt_state_t state);
 void invoke_adapter_properties_cb(bt_status_t status, int num_properties,
                                   bt_property_t* properties);
 
