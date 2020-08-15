@@ -181,17 +181,6 @@ void btif_set_remote_device_property(RawAddress* remote_addr,
                                      bt_property_t* property);
 
 /*******************************************************************************
- *
- * Function         btif_get_remote_service_record
- *
- * Description      Looks up the service matching uuid on the remote device
- *                  and fetches the SCN and service_name if the UUID is found
- *
- ******************************************************************************/
-void btif_get_remote_service_record(const RawAddress remote_addr,
-                                    const bluetooth::Uuid uuid);
-
-/*******************************************************************************
  *  BTIF DM API
  ******************************************************************************/
 
@@ -330,11 +319,9 @@ bt_status_t btif_dm_get_adapter_property(bt_property_t* prop);
  *
  * Description      Start SDP to get remote services
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_dm_get_remote_service_record(const RawAddress& remote_addr,
-                                              const bluetooth::Uuid& uuid);
+void btif_dm_get_remote_service_record(const RawAddress remote_addr,
+                                       const bluetooth::Uuid uuid);
 
 /*******************************************************************************
  *
