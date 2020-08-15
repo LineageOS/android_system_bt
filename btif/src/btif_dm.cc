@@ -2488,14 +2488,8 @@ void btif_dm_get_remote_service_record(const RawAddress remote_addr,
   BTA_DmDiscoverUUID(remote_addr, uuid, bte_dm_remote_service_record_evt, true);
 }
 
-void btif_dm_execute_service_request(uint16_t event, char* p_param) {
-  bool b_enable = false;
-  bt_status_t status;
-  if (event == BTIF_DM_ENABLE_SERVICE) {
-    b_enable = true;
-  }
-  status =
-      btif_in_execute_service_request(*((tBTA_SERVICE_ID*)p_param), b_enable);
+void btif_dm_enable_service(tBTA_SERVICE_ID service_id, bool enable) {
+  bt_status_t status = btif_in_execute_service_request(service_id, enable);
   if (status == BT_STATUS_SUCCESS) {
     bt_property_t property;
     Uuid local_uuids[BT_MAX_NUM_UUIDS];
