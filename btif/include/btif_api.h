@@ -350,16 +350,16 @@ bt_status_t btif_dm_get_remote_services_by_transport(RawAddress* remote_addr,
  ******************************************************************************/
 void btif_dut_mode_configure(uint8_t enable);
 
+bool btif_is_dut_mode();
+
 /*******************************************************************************
  *
  * Function         btif_dut_mode_send
  *
  * Description     Sends a HCI Vendor specific command to the controller
  *
- * Returns          BT_STATUS_SUCCESS on success
- *
  ******************************************************************************/
-bt_status_t btif_dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len);
+void btif_dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len);
 
 /*******************************************************************************
  *
