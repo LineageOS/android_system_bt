@@ -70,6 +70,8 @@ using base::PlatformThread;
 using bluetooth::Uuid;
 using bluetooth::common::MessageLoopThread;
 
+static void bt_jni_msg_ready(void* context);
+
 /*******************************************************************************
  *  Constants & Macros
  ******************************************************************************/
@@ -131,12 +133,6 @@ static uint8_t btif_dut_mode = 0;
 static MessageLoopThread jni_thread("bt_jni_thread");
 static base::AtExitManager* exit_manager;
 static uid_set_t* uid_set;
-
-/*******************************************************************************
- *  Static functions
- ******************************************************************************/
-/* sends message to btif task */
-static void btif_sendmsg(void* p_msg);
 
 /*******************************************************************************
  *  Externs
@@ -208,8 +204,7 @@ bt_status_t btif_transfer_context(tBTIF_CBACK* p_cback, uint16_t event,
     memcpy(p_msg->p_param, p_params, param_len); /* callback parameter data */
   }
 
-  btif_sendmsg(p_msg);
-
+  do_in_jni_thread(base::Bind(&bt_jni_msg_ready, p_msg));
   return BT_STATUS_SUCCESS;
 }
 
@@ -291,20 +286,6 @@ static void bt_jni_msg_ready(void* context) {
       break;
   }
   osi_free(p_msg);
-}
-
-/*******************************************************************************
- *
- * Function         btif_sendmsg
- *
- * Description      Sends msg to BTIF task
- *
- * Returns          void
- *
- ******************************************************************************/
-
-void btif_sendmsg(void* p_msg) {
-  do_in_jni_thread(base::Bind(&bt_jni_msg_ready, p_msg));
 }
 
 /*******************************************************************************
