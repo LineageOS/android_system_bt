@@ -42,6 +42,7 @@
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "stack/acl/acl.h"
+#include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int_types.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/btm_api.h"
@@ -62,6 +63,20 @@ struct StackAclBtmAcl {
 namespace {
 StackAclBtmAcl internal_;
 }
+
+#define BTM_ACL_SWKEY_STATE_IDLE 0
+#define BTM_ACL_SWKEY_STATE_MODE_CHANGE 1
+#define BTM_ACL_SWKEY_STATE_ENCRYPTION_OFF 2
+#define BTM_ACL_SWKEY_STATE_SWITCHING 3
+#define BTM_ACL_SWKEY_STATE_ENCRYPTION_ON 4
+#define BTM_ACL_SWKEY_STATE_IN_PROGRESS 5
+
+#define BTM_MAX_SW_ROLE_FAILED_ATTEMPTS 3
+
+#define BTM_ACL_ENCRYPT_STATE_IDLE 0
+#define BTM_ACL_ENCRYPT_STATE_ENCRYPT_OFF 1
+#define BTM_ACL_ENCRYPT_STATE_TEMP_FUNC 2
+#define BTM_ACL_ENCRYPT_STATE_ENCRYPT_ON 3
 
 extern tBTM_CB btm_cb;
 
@@ -676,10 +691,11 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
   else if (p->switch_role_state == BTM_ACL_SWKEY_STATE_ENCRYPTION_ON) {
     p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
     p->encrypt_state = BTM_ACL_ENCRYPT_STATE_IDLE;
-    auto new_role = btm_cb.devcb.switch_role_ref_data.role;
-    auto hci_status = btm_cb.devcb.switch_role_ref_data.hci_status;
-    BTA_dm_report_role_change(btm_cb.devcb.switch_role_ref_data.remote_bd_addr,
-                              new_role, hci_status);
+    auto new_role = btm_cb.acl_cb_.switch_role_ref_data.role;
+    auto hci_status = btm_cb.acl_cb_.switch_role_ref_data.hci_status;
+    BTA_dm_report_role_change(
+        btm_cb.acl_cb_.switch_role_ref_data.remote_bd_addr, new_role,
+        hci_status);
 
     BTM_TRACE_DEBUG(
         "%s: Role Switch Event: new_role 0x%02x, HCI Status 0x%02x, rs_st:%d",
@@ -1424,84 +1440,74 @@ void btm_blacklist_role_change_device(const RawAddress& bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-void btm_acl_role_changed(uint8_t hci_status, const RawAddress* bd_addr,
+void btm_acl_role_changed(uint8_t hci_status, const RawAddress& bd_addr,
                           uint8_t new_role) {
-  const RawAddress* p_bda =
-      (bd_addr) ? bd_addr : &btm_cb.devcb.switch_role_ref_data.remote_bd_addr;
-  tACL_CONN* p = internal_.btm_bda_to_acl(*p_bda, BT_TRANSPORT_BR_EDR);
-  tBTM_ROLE_SWITCH_CMPL* p_data = &btm_cb.devcb.switch_role_ref_data;
-  tBTM_SEC_DEV_REC* p_dev_rec;
-
-  BTM_TRACE_DEBUG("%s: peer %s hci_status:0x%x new_role:%d", __func__,
-                  (p_bda != nullptr) ? bd_addr->ToString().c_str() : "nullptr",
-                  hci_status, new_role);
-  /* Ignore any stray events */
-  if (p == NULL) {
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
+  if (p_acl == nullptr) {
+    BTM_TRACE_WARNING("%s: Unsolicited role change for unknown ACL", __func__);
     return;
   }
 
-  p_data->hci_status = hci_status;
+  tBTM_ROLE_SWITCH_CMPL* p_switch_role = &btm_cb.acl_cb_.switch_role_ref_data;
+  BTM_TRACE_DEBUG("%s: peer %s hci_status:0x%x new_role:%d", __func__,
+                  bd_addr.ToString().c_str(), hci_status, new_role);
 
+  p_switch_role->hci_status = hci_status;
   if (hci_status == HCI_SUCCESS) {
-    p_data->role = new_role;
-    p_data->remote_bd_addr = *p_bda;
+    p_switch_role->role = new_role;
+    p_switch_role->remote_bd_addr = bd_addr;
 
     /* Update cached value */
-    p->link_role = new_role;
+    p_acl->link_role = new_role;
 
     /* Reload LSTO: link supervision timeout is reset in the LM after a role
      * switch */
     if (new_role == HCI_ROLE_MASTER) {
-      BTM_SetLinkSuperTout(p->remote_addr, p->link_super_tout);
+      BTM_SetLinkSuperTout(p_acl->remote_addr, p_acl->link_super_tout);
     }
   } else {
-    new_role = p->link_role;
+    new_role = p_acl->link_role;
   }
 
   /* Check if any SCO req is pending for role change */
-  btm_sco_chk_pend_rolechange(p->hci_handle);
+  btm_sco_chk_pend_rolechange(p_acl->hci_handle);
 
   /* if switching state is switching we need to turn encryption on */
   /* if idle, we did not change encryption */
-  if (p->switch_role_state == BTM_ACL_SWKEY_STATE_SWITCHING) {
-    btsnd_hcic_set_conn_encrypt(p->hci_handle, true);
-    p->encrypt_state = BTM_ACL_ENCRYPT_STATE_ENCRYPT_ON;
-    p->switch_role_state = BTM_ACL_SWKEY_STATE_ENCRYPTION_ON;
+  if (p_acl->switch_role_state == BTM_ACL_SWKEY_STATE_SWITCHING) {
+    btsnd_hcic_set_conn_encrypt(p_acl->hci_handle, true);
+    p_acl->encrypt_state = BTM_ACL_ENCRYPT_STATE_ENCRYPT_ON;
+    p_acl->switch_role_state = BTM_ACL_SWKEY_STATE_ENCRYPTION_ON;
     return;
   }
 
   /* Set the switch_role_state to IDLE since the reply received from HCI */
   /* regardless of its result either success or failed. */
-  if (p->switch_role_state == BTM_ACL_SWKEY_STATE_IN_PROGRESS) {
-    p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
-    p->encrypt_state = BTM_ACL_ENCRYPT_STATE_IDLE;
+  if (p_acl->switch_role_state == BTM_ACL_SWKEY_STATE_IN_PROGRESS) {
+    p_acl->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
+    p_acl->encrypt_state = BTM_ACL_ENCRYPT_STATE_IDLE;
   }
 
-  BTA_dm_report_role_change(*p_bda, new_role, hci_status);
-
+  BTA_dm_report_role_change(bd_addr, new_role, hci_status);
   BTM_TRACE_DEBUG(
       "%s: peer %s Role Switch Event: new_role 0x%02x, HCI Status 0x%02x, "
       "rs_st:%d",
-      __func__, (p_bda != nullptr) ? p_bda->ToString().c_str() : "nullptr",
-      p_data->role, p_data->hci_status, p->switch_role_state);
+      __func__, bd_addr.ToString().c_str(), p_switch_role->role,
+      p_switch_role->hci_status, p_acl->switch_role_state);
 
 #if (BTM_DISC_DURING_RS == TRUE)
   /* If a disconnect is pending, issue it now that role switch has completed */
-  p_dev_rec = btm_find_dev(*p_bda);
-  if (p_dev_rec != NULL) {
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
+  if (p_dev_rec != nullptr) {
     if (p_dev_rec->rs_disc_pending == BTM_SEC_DISC_PENDING) {
-      BTM_TRACE_WARNING(
-          "%s peer %s Issuing delayed HCI_Disconnect!!!", __func__,
-          (p_bda != nullptr) ? p_bda->ToString().c_str() : "nullptr");
+      BTM_TRACE_WARNING("%s peer %s Issuing delayed HCI_Disconnect!!!",
+                        __func__, bd_addr.ToString().c_str());
       btsnd_hcic_disconnect(p_dev_rec->hci_handle, HCI_ERR_PEER_USER);
     }
-    BTM_TRACE_ERROR("%s: peer %s tBTM_SEC_DEV:0x%x rs_disc_pending=%d",
-                    __func__,
-                    (p_bda != nullptr) ? p_bda->ToString().c_str() : "nullptr",
-                    PTR_TO_UINT(p_dev_rec), p_dev_rec->rs_disc_pending);
+    BTM_TRACE_ERROR("%s: peer %s rs_disc_pending=%d", __func__,
+                    bd_addr.ToString().c_str(), p_dev_rec->rs_disc_pending);
     p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
   }
-
 #endif
 }
 

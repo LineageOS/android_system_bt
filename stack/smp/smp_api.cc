@@ -36,6 +36,7 @@
 #include "main/shim/shim.h"
 #include "smp_api.h"
 #include "smp_int.h"
+#include "stack/btm/btm_dev.h"
 
 #include "p_256_ecc_pp.h"
 

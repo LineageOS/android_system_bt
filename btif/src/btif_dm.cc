@@ -72,6 +72,7 @@
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
+#include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int.h"
 #include "stack_config.h"
 
