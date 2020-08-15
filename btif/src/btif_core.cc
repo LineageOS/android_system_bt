@@ -775,6 +775,16 @@ void btif_get_adapter_property(bt_property_type_t type) {
   HAL_CBACK(bt_hal_cbacks, adapter_properties_cb, status, 1, &prop);
 }
 
+bt_property_t* property_deep_copy(const bt_property_t* prop) {
+  bt_property_t* copy =
+      (bt_property_t*)osi_calloc(sizeof(bt_property_t) + prop->len);
+  copy->type = prop->type;
+  copy->len = prop->len;
+  copy->val = (uint8_t*)(copy + 1);
+  memcpy(copy->val, prop->val, prop->len);
+  return copy;
+}
+
 /*******************************************************************************
  *
  * Function         btif_set_adapter_property
@@ -786,17 +796,14 @@ void btif_get_adapter_property(bt_property_type_t type) {
  *
  ******************************************************************************/
 
-bt_status_t btif_set_adapter_property(const bt_property_t* property) {
+void btif_set_adapter_property(const bt_property_t* property) {
   btif_storage_req_t req;
-  bt_status_t status = BT_STATUS_SUCCESS;
   int storage_req_id = BTIF_CORE_STORAGE_NOTIFY_STATUS; /* default */
   char bd_name[BTM_MAX_LOC_BD_NAME_LEN + 1];
   uint16_t name_len = 0;
 
   BTIF_TRACE_EVENT("btif_set_adapter_property type: %d, len %d, 0x%x",
                    property->type, property->len, property->val);
-
-  if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
   switch (property->type) {
     case BT_PROPERTY_BDNAME: {
@@ -836,7 +843,7 @@ bt_status_t btif_set_adapter_property(const bt_property_t* property) {
 
         default:
           BTIF_TRACE_ERROR("invalid scan mode (0x%x)", mode);
-          return BT_STATUS_PARM_INVALID;
+          return;
       }
 
       BTIF_TRACE_EVENT("set property scan mode : %x", mode);
@@ -860,14 +867,6 @@ bt_status_t btif_set_adapter_property(const bt_property_t* property) {
 
       BTM_SetDeviceClass(dev_class);
     } break;
-    case BT_PROPERTY_BDADDR:
-    case BT_PROPERTY_UUIDS:
-    case BT_PROPERTY_ADAPTER_BONDED_DEVICES:
-    case BT_PROPERTY_REMOTE_FRIENDLY_NAME:
-      /* no write support through HAL, these properties are only populated from
-       * BTA events */
-      status = BT_STATUS_FAIL;
-      break;
     case BT_PROPERTY_LOCAL_IO_CAPS:
     case BT_PROPERTY_LOCAL_IO_CAPS_BLE: {
       // Changing IO Capability of stack at run-time is not currently supported.
@@ -876,9 +875,6 @@ bt_status_t btif_set_adapter_property(const bt_property_t* property) {
       storage_req_id = BTIF_CORE_STORAGE_ADAPTER_WRITE;
     } break;
     default:
-      BTIF_TRACE_ERROR("btif_get_adapter_property : invalid type %d",
-                       property->type);
-      status = BT_STATUS_FAIL;
       break;
   }
 
@@ -887,14 +883,8 @@ bt_status_t btif_set_adapter_property(const bt_property_t* property) {
 
     req.write_req.bd_addr = RawAddress::kEmpty;
     memcpy(&(req.write_req.prop), property, sizeof(bt_property_t));
-
-    return btif_transfer_context(execute_storage_request, storage_req_id,
-                                 (char*)&req,
-                                 sizeof(btif_storage_req_t) + property->len,
-                                 btif_in_storage_request_copy_cb);
+    execute_storage_request(storage_req_id, (char*)&req);
   }
-
-  return status;
 }
 
 /*******************************************************************************
