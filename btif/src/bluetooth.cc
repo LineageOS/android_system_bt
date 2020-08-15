@@ -267,7 +267,7 @@ int get_remote_service_record(const RawAddress& remote_addr,
                               const bluetooth::Uuid& uuid) {
   if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_get_remote_service_record,
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_get_remote_service_record,
                                              remote_addr, uuid));
   return BT_STATUS_SUCCESS;
 }
