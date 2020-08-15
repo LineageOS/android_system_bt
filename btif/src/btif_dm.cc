@@ -977,7 +977,7 @@ static void btif_dm_ssp_cfm_req_evt(tBTA_DM_SP_CFM_REQ* p_ssp_cfm_req) {
       bd_addr != pairing_cb.bd_addr) {
     BTIF_TRACE_WARNING("%s(): already in bonding state, reject request",
                        __FUNCTION__);
-    btif_dm_ssp_reply(&bd_addr, BT_SSP_VARIANT_PASSKEY_CONFIRMATION, 0, 0);
+    btif_dm_ssp_reply(bd_addr, BT_SSP_VARIANT_PASSKEY_CONFIRMATION, 0);
     return;
   }
 
@@ -1010,7 +1010,7 @@ static void btif_dm_ssp_cfm_req_evt(tBTA_DM_SP_CFM_REQ* p_ssp_cfm_req) {
     if (is_incoming && pairing_cb.bond_type == BOND_TYPE_TEMPORARY) {
       BTIF_TRACE_EVENT(
           "%s: Auto-accept JustWorks pairing for temporary incoming", __func__);
-      btif_dm_ssp_reply(&bd_addr, BT_SSP_VARIANT_CONSENT, true, 0);
+      btif_dm_ssp_reply(bd_addr, BT_SSP_VARIANT_CONSENT, true);
       return;
     }
   }
@@ -2360,45 +2360,33 @@ void btif_dm_pin_reply(const RawAddress bd_addr, uint8_t accept,
  * Description      BT SSP Reply - Just Works, Numeric Comparison & Passkey
  *                  Entry
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_dm_ssp_reply(const RawAddress* bd_addr,
-                              bt_ssp_variant_t variant, uint8_t accept,
-                              UNUSED_ATTR uint32_t passkey) {
+void btif_dm_ssp_reply(const RawAddress bd_addr, bt_ssp_variant_t variant,
+                       uint8_t accept) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     uint8_t tmp_dev_type = 0;
     uint8_t tmp_addr_type = 0;
-    BTM_ReadDevInfo(*bd_addr, &tmp_dev_type, &tmp_addr_type);
+    BTM_ReadDevInfo(bd_addr, &tmp_dev_type, &tmp_addr_type);
 
-    do_in_main_thread(
-    FROM_HERE,
-      base::Bind(&bluetooth::shim::BTIF_DM_ssp_reply, *bd_addr, tmp_addr_type, variant, accept));
-    return BT_STATUS_SUCCESS;
+    do_in_main_thread(FROM_HERE,
+                      base::Bind(&bluetooth::shim::BTIF_DM_ssp_reply, bd_addr,
+                                 tmp_addr_type, variant, accept));
+    return;
   }
 
-  if (variant == BT_SSP_VARIANT_PASSKEY_ENTRY) {
-    /* This is not implemented in the stack.
-     * For devices with display, this is not needed
-    */
-    BTIF_TRACE_WARNING("%s: Not implemented", __func__);
-    return BT_STATUS_FAIL;
-  }
-  /* BT_SSP_VARIANT_CONSENT & BT_SSP_VARIANT_PASSKEY_CONFIRMATION supported */
   BTIF_TRACE_EVENT("%s: accept=%d", __func__, accept);
   if (pairing_cb.is_le_only) {
     if (pairing_cb.is_le_nc) {
-      BTA_DmBleConfirmReply(*bd_addr, accept);
+      BTA_DmBleConfirmReply(bd_addr, accept);
     } else {
       if (accept)
-        BTA_DmBleSecurityGrant(*bd_addr, BTA_DM_SEC_GRANTED);
+        BTA_DmBleSecurityGrant(bd_addr, BTA_DM_SEC_GRANTED);
       else
-        BTA_DmBleSecurityGrant(*bd_addr, BTA_DM_SEC_PAIR_NOT_SPT);
+        BTA_DmBleSecurityGrant(bd_addr, BTA_DM_SEC_PAIR_NOT_SPT);
     }
   } else {
-    BTA_DmConfirm(*bd_addr, accept);
+    BTA_DmConfirm(bd_addr, accept);
   }
-  return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
