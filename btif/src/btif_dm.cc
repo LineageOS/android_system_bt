@@ -3116,7 +3116,7 @@ void btif_dm_update_ble_remote_properties(const RawAddress& bd_addr,
 
 static void btif_dm_report_test_mode_result(bt_status_t status,
                                             uint16_t count) {
-  HAL_CBACK(bt_hal_cbacks, le_test_mode_cb, status, count);
+  invoke_le_test_mode_cb(status, count);
 }
 
 static void btif_dm_ble_tx_test_cback(void* p) {
