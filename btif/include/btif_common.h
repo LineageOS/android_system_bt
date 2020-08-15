@@ -93,11 +93,6 @@ extern bt_callbacks_t* bt_hal_cbacks;
  * on downstreams path
  */
 enum {
-  BTIF_CORE_API_START = BTIF_SIG_START(BTIF_CORE),
-  BTIF_CORE_STORAGE_NO_ACTION,
-  BTIF_CORE_STORAGE_REMOTE_WRITE,
-  /* add here */
-
   BTIF_DM_API_START = BTIF_SIG_START(BTIF_DM),
   BTIF_DM_ENABLE_SERVICE,
   BTIF_DM_DISABLE_SERVICE,
