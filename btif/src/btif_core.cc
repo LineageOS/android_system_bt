@@ -855,20 +855,14 @@ void btif_set_adapter_property(bt_property_t* property) {
  *
  * Description      Fetches the remote device property from the NVRAM
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_get_remote_device_property(RawAddress* remote_addr,
-                                            bt_property_type_t type) {
+void btif_get_remote_device_property(RawAddress remote_addr,
+                                     bt_property_type_t type) {
   btif_storage_req_t req;
 
-  if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
-
-  req.read_req.bd_addr = *remote_addr;
+  req.read_req.bd_addr = remote_addr;
   req.read_req.type = type;
-  return btif_transfer_context(execute_storage_remote_request,
-                               BTIF_CORE_STORAGE_REMOTE_READ, (char*)&req,
-                               sizeof(btif_storage_req_t), NULL);
+  execute_storage_remote_request(BTIF_CORE_STORAGE_REMOTE_READ, (char*)&req);
 }
 
 /*******************************************************************************

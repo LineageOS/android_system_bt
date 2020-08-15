@@ -155,11 +155,9 @@ void btif_set_adapter_property(bt_property_t* property);
  *
  * Description      Fetches the remote device property from the NVRAM
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_get_remote_device_property(RawAddress* remote_addr,
-                                            bt_property_type_t type);
+void btif_get_remote_device_property(RawAddress remote_addr,
+                                     bt_property_type_t type);
 
 /*******************************************************************************
  *
