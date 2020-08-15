@@ -747,3 +747,16 @@ void invoke_le_test_mode_cb(bt_status_t status, uint16_t count) {
                                   },
                                   status, count));
 }
+
+// takes ownership of |uid_data|
+void invoke_energy_info_cb(bt_activity_energy_info energy_info,
+                           bt_uid_traffic_t* uid_data) {
+  do_in_jni_thread(
+      FROM_HERE,
+      base::BindOnce(
+          [](bt_activity_energy_info energy_info, bt_uid_traffic_t* uid_data) {
+            HAL_CBACK(bt_hal_cbacks, energy_info_cb, &energy_info, uid_data);
+            osi_free(uid_data);
+          },
+          energy_info, uid_data));
+}
