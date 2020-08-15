@@ -324,10 +324,10 @@ static int remove_bond(const RawAddress* bd_addr) {
   if (is_restricted_mode() && !btif_storage_is_restricted_device(bd_addr))
     return BT_STATUS_SUCCESS;
 
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
-  return btif_dm_remove_bond(bd_addr);
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_remove_bond, *bd_addr));
+  return BT_STATUS_SUCCESS;
 }
 
 static int get_connection_state(const RawAddress* bd_addr) {
