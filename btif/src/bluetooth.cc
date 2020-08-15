@@ -348,10 +348,12 @@ static int pin_reply(const RawAddress* bd_addr, uint8_t accept, uint8_t pin_len,
 
 static int ssp_reply(const RawAddress* bd_addr, bt_ssp_variant_t variant,
                      uint8_t accept, uint32_t passkey) {
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (variant == BT_SSP_VARIANT_PASSKEY_ENTRY) return BT_STATUS_FAIL;
 
-  return btif_dm_ssp_reply(bd_addr, variant, accept, passkey);
+  do_in_jni_thread(
+      FROM_HERE, base::BindOnce(btif_dm_ssp_reply, *bd_addr, variant, accept));
+  return BT_STATUS_SUCCESS;
 }
 
 static int read_energy_info() {
