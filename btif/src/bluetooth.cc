@@ -314,10 +314,10 @@ static int create_bond_out_of_band(const RawAddress* bd_addr, int transport,
 }
 
 static int cancel_bond(const RawAddress* bd_addr) {
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
-  return btif_dm_cancel_bond(bd_addr);
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_cancel_bond, *bd_addr));
+  return BT_STATUS_SUCCESS;
 }
 
 static int remove_bond(const RawAddress* bd_addr) {

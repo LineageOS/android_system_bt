@@ -240,10 +240,8 @@ void btif_dm_create_bond_out_of_band(const RawAddress bd_addr, int transport,
  *
  * Description      Initiate bonding with the specified device
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_dm_cancel_bond(const RawAddress* bd_addr);
+void btif_dm_cancel_bond(const RawAddress bd_addr);
 
 /*******************************************************************************
  *
