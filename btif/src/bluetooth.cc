@@ -738,3 +738,12 @@ void invoke_thread_evt_cb(bt_cb_thread_evt event) {
                                   },
                                   event));
 }
+
+void invoke_le_test_mode_cb(bt_status_t status, uint16_t count) {
+  do_in_jni_thread(FROM_HERE, base::BindOnce(
+                                  [](bt_status_t status, uint16_t count) {
+                                    HAL_CBACK(bt_hal_cbacks, le_test_mode_cb,
+                                              status, count);
+                                  },
+                                  status, count));
+}
