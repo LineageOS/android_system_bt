@@ -677,3 +677,15 @@ void invoke_discovery_state_changed_cb(bt_discovery_state_t state) {
                                   },
                                   state));
 }
+
+void invoke_pin_request_cb(RawAddress bd_addr, bt_bdname_t bd_name,
+                           uint32_t cod, bool min_16_digit) {
+  do_in_jni_thread(FROM_HERE, base::BindOnce(
+                                  [](RawAddress bd_addr, bt_bdname_t bd_name,
+                                     uint32_t cod, bool min_16_digit) {
+                                    HAL_CBACK(bt_hal_cbacks, pin_request_cb,
+                                              &bd_addr, &bd_name, cod,
+                                              min_16_digit);
+                                  },
+                                  bd_addr, bd_name, cod, min_16_digit));
+}
