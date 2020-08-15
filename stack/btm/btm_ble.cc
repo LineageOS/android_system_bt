@@ -44,6 +44,7 @@
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
+#include "stack/btm/btm_dev.h"
 #include "stack/crypto_toolbox/crypto_toolbox.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/l2cap_security_interface.h"
@@ -659,21 +660,17 @@ bool BTM_UseLeLink(const RawAddress& bd_addr) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::BTM_UseLeLink(bd_addr);
   }
-  tBT_DEVICE_TYPE dev_type;
-  tBLE_ADDR_TYPE addr_type;
-  bool use_le = false;
 
   if (BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_BR_EDR)) {
-    return use_le;
-  } else {
-    if (BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
-      use_le = true;
-    } else {
-      BTM_ReadDevInfo(bd_addr, &dev_type, &addr_type);
-      use_le = (dev_type == BT_DEVICE_TYPE_BLE);
-    }
+    return false;
+  } else if (BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
+    return true;
   }
-  return use_le;
+
+  tBT_DEVICE_TYPE dev_type;
+  tBLE_ADDR_TYPE addr_type;
+  BTM_ReadDevInfo(bd_addr, &dev_type, &addr_type);
+  return (dev_type == BT_DEVICE_TYPE_BLE);
 }
 
 /*******************************************************************************
