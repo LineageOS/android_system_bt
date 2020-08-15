@@ -34,7 +34,11 @@ namespace security {
 namespace internal {
 
 void SecurityManagerImpl::DispatchPairingHandler(
-    std::shared_ptr<record::SecurityRecord> record, bool locally_initiated) {
+    std::shared_ptr<record::SecurityRecord> record,
+    bool locally_initiated,
+    hci::IoCapability io_capability,
+    hci::OobDataPresent oob_present,
+    hci::AuthenticationRequirements auth_requirements) {
   common::OnceCallback<void(hci::Address, PairingResultOrFailure)> callback =
       common::BindOnce(&SecurityManagerImpl::OnPairingHandlerComplete, common::Unretained(this));
   auto entry = pairing_handler_map_.find(record->GetPseudoAddress()->GetAddress());
@@ -61,8 +65,7 @@ void SecurityManagerImpl::DispatchPairingHandler(
   auto new_entry = std::pair<hci::Address, std::shared_ptr<pairing::PairingHandler>>(
       record->GetPseudoAddress()->GetAddress(), pairing_handler);
   pairing_handler_map_.insert(std::move(new_entry));
-  pairing_handler->Initiate(locally_initiated, this->local_io_capability_, this->local_oob_data_present_,
-                            this->local_authentication_requirements_);
+  pairing_handler->Initiate(locally_initiated, io_capability, oob_present, auth_requirements);
 }
 
 void SecurityManagerImpl::Init() {
@@ -96,7 +99,12 @@ void SecurityManagerImpl::CreateBond(hci::AddressWithType device) {
     if (!record->IsPairing()) {
       // Dispatch pairing handler, if we are calling create we are the initiator
       LOG_WARN("Dispatch #1");
-      DispatchPairingHandler(record, true);
+      DispatchPairingHandler(
+          record,
+          true,
+          this->local_io_capability_,
+          this->local_oob_data_present_,
+          this->local_authentication_requirements_);
     }
   }
 }
@@ -235,7 +243,12 @@ void SecurityManagerImpl::HandleEvent(T packet) {
     auto record =
         security_database_.FindOrCreate(hci::AddressWithType{bd_addr, hci::AddressType::PUBLIC_DEVICE_ADDRESS});
     LOG_WARN("Dispatch #2");
-    DispatchPairingHandler(record, false);
+    DispatchPairingHandler(
+        record,
+        false,
+        this->local_io_capability_,
+        this->local_oob_data_present_,
+        this->local_authentication_requirements_);
     entry = pairing_handler_map_.find(bd_addr);
   }
   entry->second->OnReceive(packet);
@@ -685,15 +698,19 @@ void SecurityManagerImpl::InternalEnforceSecurityPolicy(
     l2cap::classic::SecurityPolicy policy,
     l2cap::classic::SecurityEnforcementInterface::ResultCallback result_callback,
     bool try_meet_requirements) {
+  hci::AuthenticationRequirements authentication_requirements = kDefaultAuthenticationRequirements;
+
   bool result = false;
   auto record = this->security_database_.FindOrCreate(remote);
   switch (policy) {
     case l2cap::classic::SecurityPolicy::BEST:
     case l2cap::classic::SecurityPolicy::AUTHENTICATED_ENCRYPTED_TRANSPORT:
       result = record->IsAuthenticated() && record->RequiresMitmProtection() && record->IsEncryptionRequired();
+      authentication_requirements = hci::AuthenticationRequirements::GENERAL_BONDING_MITM_PROTECTION;
       break;
     case l2cap::classic::SecurityPolicy::ENCRYPTED_TRANSPORT:
       result = record->IsAuthenticated() && record->IsEncryptionRequired();
+      authentication_requirements = hci::AuthenticationRequirements::NO_BONDING;
       break;
     case l2cap::classic::SecurityPolicy::_SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK:
       result = true;
@@ -710,7 +727,12 @@ void SecurityManagerImpl::InternalEnforceSecurityPolicy(
               policy, std::move(result_callback)));
       if (!record->IsPairing()) {
         LOG_WARN("Dispatch #3");
-        DispatchPairingHandler(record, true);
+        DispatchPairingHandler(
+            record,
+            true,
+            this->local_io_capability_,
+            this->local_oob_data_present_,
+            std::as_const(authentication_requirements));
       }
     }
     return;
