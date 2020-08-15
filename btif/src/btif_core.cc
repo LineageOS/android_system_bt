@@ -599,40 +599,14 @@ static bt_status_t btif_in_get_remote_device_properties(RawAddress* bd_addr) {
   return BT_STATUS_SUCCESS;
 }
 
-/*******************************************************************************
- *
- * Function         execute_storage_request
- *
- * Description      Executes adapter storage request in BTIF context
- *
- * Returns          bt_status_t
- *
- ******************************************************************************/
+static void btif_core_storage_adapter_notify_empty_success() {
+  HAL_CBACK(bt_hal_cbacks, adapter_properties_cb, BT_STATUS_SUCCESS, 0, NULL);
+}
 
-static void execute_storage_request(uint16_t event, char* p_param) {
-  bt_status_t status = BT_STATUS_SUCCESS;
-
-  BTIF_TRACE_EVENT("execute storage request event : %d", event);
-
-  switch (event) {
-    case BTIF_CORE_STORAGE_ADAPTER_WRITE: {
-      btif_storage_req_t* p_req = (btif_storage_req_t*)p_param;
-      bt_property_t* p_prop = &(p_req->write_req.prop);
-      BTIF_TRACE_EVENT("type: %d, len %d, 0x%x", p_prop->type, p_prop->len,
-                       p_prop->val);
-
-      status = btif_storage_set_adapter_property(p_prop);
-      HAL_CBACK(bt_hal_cbacks, adapter_properties_cb, status, 1, p_prop);
-    } break;
-
-    case BTIF_CORE_STORAGE_NOTIFY_STATUS: {
-      HAL_CBACK(bt_hal_cbacks, adapter_properties_cb, status, 0, NULL);
-    } break;
-
-    default:
-      BTIF_TRACE_ERROR("%s invalid event id (%d)", __func__, event);
-      break;
-  }
+static void btif_core_storage_adapter_write(bt_property_t* prop) {
+  BTIF_TRACE_EVENT("type: %d, len %d, 0x%x", prop->type, prop->len, prop->val);
+  bt_status_t status = btif_storage_set_adapter_property(prop);
+  HAL_CBACK(bt_hal_cbacks, adapter_properties_cb, status, 1, prop);
 }
 
 static void execute_storage_remote_request(uint16_t event, char* p_param) {
@@ -693,8 +667,7 @@ static void btif_in_storage_request_copy_cb(uint16_t event, char* p_new_buf,
 
   BTIF_TRACE_EVENT("%s", __func__);
   switch (event) {
-    case BTIF_CORE_STORAGE_REMOTE_WRITE:
-    case BTIF_CORE_STORAGE_ADAPTER_WRITE: {
+    case BTIF_CORE_STORAGE_REMOTE_WRITE: {
       new_req->write_req.bd_addr = old_req->write_req.bd_addr;
       /* Copy the member variables one at a time */
       new_req->write_req.prop.type = old_req->write_req.prop.type;
@@ -796,20 +769,16 @@ bt_property_t* property_deep_copy(const bt_property_t* prop) {
  *
  ******************************************************************************/
 
-void btif_set_adapter_property(const bt_property_t* property) {
-  btif_storage_req_t req;
-  int storage_req_id = BTIF_CORE_STORAGE_NOTIFY_STATUS; /* default */
-  char bd_name[BTM_MAX_LOC_BD_NAME_LEN + 1];
-  uint16_t name_len = 0;
-
+void btif_set_adapter_property(bt_property_t* property) {
   BTIF_TRACE_EVENT("btif_set_adapter_property type: %d, len %d, 0x%x",
                    property->type, property->len, property->val);
 
   switch (property->type) {
     case BT_PROPERTY_BDNAME: {
-      name_len = property->len > BTM_MAX_LOC_BD_NAME_LEN
-                     ? BTM_MAX_LOC_BD_NAME_LEN
-                     : property->len;
+      char bd_name[BTM_MAX_LOC_BD_NAME_LEN + 1];
+      uint16_t name_len = property->len > BTM_MAX_LOC_BD_NAME_LEN
+                              ? BTM_MAX_LOC_BD_NAME_LEN
+                              : property->len;
       memcpy(bd_name, property->val, name_len);
       bd_name[name_len] = '\0';
 
@@ -817,7 +786,7 @@ void btif_set_adapter_property(const bt_property_t* property) {
 
       BTA_DmSetDeviceName((char*)bd_name);
 
-      storage_req_id = BTIF_CORE_STORAGE_ADAPTER_WRITE;
+      btif_core_storage_adapter_write(property);
     } break;
 
     case BT_PROPERTY_ADAPTER_SCAN_MODE: {
@@ -850,13 +819,13 @@ void btif_set_adapter_property(const bt_property_t* property) {
 
       BTA_DmSetVisibility(disc_mode, conn_mode, BTA_DM_IGNORE, BTA_DM_IGNORE);
 
-      storage_req_id = BTIF_CORE_STORAGE_ADAPTER_WRITE;
+      btif_core_storage_adapter_write(property);
     } break;
     case BT_PROPERTY_ADAPTER_DISCOVERY_TIMEOUT: {
       /* Nothing to do beside store the value in NV.  Java
          will change the SCAN_MODE property after setting timeout,
          if required */
-      storage_req_id = BTIF_CORE_STORAGE_ADAPTER_WRITE;
+      btif_core_storage_adapter_write(property);
     } break;
     case BT_PROPERTY_CLASS_OF_DEVICE: {
       DEV_CLASS dev_class;
@@ -866,24 +835,17 @@ void btif_set_adapter_property(const bt_property_t* property) {
                        dev_class[1], dev_class[2]);
 
       BTM_SetDeviceClass(dev_class);
+      btif_core_storage_adapter_notify_empty_success();
     } break;
     case BT_PROPERTY_LOCAL_IO_CAPS:
     case BT_PROPERTY_LOCAL_IO_CAPS_BLE: {
       // Changing IO Capability of stack at run-time is not currently supported.
       // This call changes the stored value which will affect the stack next
       // time it starts up.
-      storage_req_id = BTIF_CORE_STORAGE_ADAPTER_WRITE;
+      btif_core_storage_adapter_write(property);
     } break;
     default:
       break;
-  }
-
-  if (storage_req_id != BTIF_CORE_STORAGE_NO_ACTION) {
-    /* pass on to storage for updating local database */
-
-    req.write_req.bd_addr = RawAddress::kEmpty;
-    memcpy(&(req.write_req.prop), property, sizeof(bt_property_t));
-    execute_storage_request(storage_req_id, (char*)&req);
   }
 }
 

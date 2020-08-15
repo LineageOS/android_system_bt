@@ -147,7 +147,7 @@ void btif_get_adapter_property(bt_property_type_t type);
  *                  local cache
  *
  ******************************************************************************/
-void btif_set_adapter_property(const bt_property_t* property);
+void btif_set_adapter_property(bt_property_t* property);
 
 /*******************************************************************************
  *
