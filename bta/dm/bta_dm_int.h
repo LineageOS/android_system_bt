@@ -86,7 +86,7 @@ typedef struct {
   tBTA_SERVICE_MASK services;
   tBTA_DM_SEARCH_CBACK* p_cback;
   bool sdp_search;
-  tBTA_TRANSPORT transport;
+  tBT_TRANSPORT transport;
   uint8_t num_uuid;
   bluetooth::Uuid* p_uuid;
   bluetooth::Uuid uuid;
@@ -351,7 +351,7 @@ typedef struct {
   uint8_t peer_scn;
   bool sdp_search;
   bool cancel_pending; /* inquiry cancel is pending */
-  tBTA_TRANSPORT transport;
+  tBT_TRANSPORT transport;
   tBTA_DM_SEARCH_CBACK* p_scan_cback;
   tGATT_IF client_if;
   uint8_t num_uuid;
@@ -472,12 +472,12 @@ extern void bta_dm_set_dev_name(const std::vector<uint8_t>&);
 extern void bta_dm_set_visibility(tBTA_DM_DISC, tBTA_DM_CONN, uint8_t, uint8_t);
 extern void bta_dm_set_scan_config(tBTA_DM_MSG* p_data);
 extern void bta_dm_vendor_spec_command(tBTA_DM_MSG* p_data);
-extern void bta_dm_bond(const RawAddress&, tBLE_ADDR_TYPE, tBTA_TRANSPORT, int);
+extern void bta_dm_bond(const RawAddress&, tBLE_ADDR_TYPE, tBT_TRANSPORT, int);
 extern void bta_dm_bond_cancel(const RawAddress&);
 extern void bta_dm_pin_reply(std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg);
 extern void bta_dm_add_device(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg);
 extern void bta_dm_remove_device(const RawAddress& bd_addr);
-extern void bta_dm_close_acl(const RawAddress&, bool, tBTA_TRANSPORT);
+extern void bta_dm_close_acl(const RawAddress&, bool, tBT_TRANSPORT);
 
 extern void bta_dm_pm_btm_status(const RawAddress&, tBTM_PM_STATUS, uint16_t,
                                  uint8_t);
@@ -506,7 +506,7 @@ extern void bta_dm_ble_set_data_length(const RawAddress&, uint16_t);
 
 extern void bta_dm_ble_get_energy_info(tBTA_BLE_ENERGY_INFO_CBACK*);
 
-extern void bta_dm_set_encryption(const RawAddress&, tBTA_TRANSPORT,
+extern void bta_dm_set_encryption(const RawAddress&, tBT_TRANSPORT,
                                   tBTA_DM_ENCRYPT_CBACK*, tBTM_BLE_SEC_ACT);
 extern void bta_dm_confirm(const RawAddress&, bool);
 
