@@ -142,22 +142,11 @@ extern tBTM_STATUS BTM_BT_Quality_Report_VSE_Register(
 /* Internal functions provided by btm_dev.cc
  *********************************************
 */
-extern bool btm_dev_support_switch(const RawAddress& bd_addr);
-
-extern tBTM_SEC_DEV_REC* btm_sec_allocate_dev_rec(void);
-extern tBTM_SEC_DEV_REC* btm_sec_alloc_dev(const RawAddress& bd_addr);
 extern void wipe_secrets_and_remove(tBTM_SEC_DEV_REC* p_dev_rec);
-extern tBTM_SEC_DEV_REC* btm_find_dev(const RawAddress& bd_addr);
-extern tBTM_SEC_DEV_REC* btm_find_or_alloc_dev(const RawAddress& bd_addr);
-extern tBTM_SEC_DEV_REC* btm_find_dev_by_handle(uint16_t handle);
-extern tBTM_BOND_TYPE btm_get_bond_type_dev(const RawAddress& bd_addr);
-extern bool btm_set_bond_type_dev(const RawAddress& bd_addr,
-                                  tBTM_BOND_TYPE bond_type);
 
 /* Internal functions provided by btm_sec.cc
  *********************************************
 */
-extern bool btm_dev_support_switch(const RawAddress& bd_addr);
 extern void btm_sec_conn_req(const RawAddress& bda, uint8_t* dc);
 extern void btm_create_conn_cancel_complete(uint8_t* p);
 
@@ -189,7 +178,6 @@ extern void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec,
                                         uint8_t res, bool is_le_trasnport);
 
 extern void btm_sec_clear_ble_keys(tBTM_SEC_DEV_REC* p_dev_rec);
-extern void btm_consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec);
 extern bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec,
                                      const RawAddress& new_pseudo_addr);
 extern tBTM_SEC_SERV_REC* btm_sec_find_first_serv(bool is_originator,

@@ -49,15 +49,6 @@
  *  ACL Types
  ***************/
 
-/* Structure returned with Role Switch information (in tBTM_CMPL_CB callback
- * function) in response to BTM_SwitchRole call.
- */
-typedef struct {
-  uint8_t hci_status;        /* HCI status returned with the event */
-  uint8_t role;              /* HCI_ROLE_MASTER or HCI_ROLE_SLAVE */
-  RawAddress remote_bd_addr; /* Remote BD addr involved with the switch */
-} tBTM_ROLE_SWITCH_CMPL;
-
 /* Structure returned with QoS information (in tBTM_CMPL_CB callback function)
  * in response to BTM_SetQoS call.
  */
