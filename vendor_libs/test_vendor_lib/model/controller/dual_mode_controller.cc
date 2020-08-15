@@ -250,6 +250,20 @@ DualModeController::DualModeController(const std::string& properties_filename, u
               LeExtendedCreateConnection);
   SET_HANDLER(OpCode::LE_SET_PRIVACY_MODE, LeSetPrivacyMode);
   SET_HANDLER(OpCode::LE_READ_SUGGESTED_DEFAULT_DATA_LENGTH, LeReadSuggestedDefaultDataLength);
+  // ISO Commands
+  SET_HANDLER(OpCode::LE_READ_ISO_TX_SYNC, LeReadIsoTxSync);
+  SET_HANDLER(OpCode::LE_SET_CIG_PARAMETERS, LeSetCigParameters);
+  SET_HANDLER(OpCode::LE_CREATE_CIS, LeCreateCis);
+  SET_HANDLER(OpCode::LE_REMOVE_CIG, LeRemoveCig);
+  SET_HANDLER(OpCode::LE_ACCEPT_CIS_REQUEST, LeAcceptCisRequest);
+  SET_HANDLER(OpCode::LE_REJECT_CIS_REQUEST, LeRejectCisRequest);
+  SET_HANDLER(OpCode::LE_CREATE_BIG, LeCreateBig);
+  SET_HANDLER(OpCode::LE_TERMINATE_BIG, LeTerminateBig);
+  SET_HANDLER(OpCode::LE_BIG_CREATE_SYNC, LeBigCreateSync);
+  SET_HANDLER(OpCode::LE_BIG_TERMINATE_SYNC, LeBigTerminateSync);
+  SET_HANDLER(OpCode::LE_REQUEST_PEER_SCA, LeRequestPeerSca);
+  SET_HANDLER(OpCode::LE_SETUP_ISO_DATA_PATH, LeSetupIsoDataPath);
+  SET_HANDLER(OpCode::LE_REMOVE_ISO_DATA_PATH, LeRemoveIsoDataPath);
   // Testing Commands
   SET_HANDLER(OpCode::READ_LOOPBACK_MODE, ReadLoopbackMode);
   SET_HANDLER(OpCode::WRITE_LOOPBACK_MODE, WriteLoopbackMode);
@@ -1878,6 +1892,126 @@ void DualModeController::LeSetPrivacyMode(CommandPacketView command) {
   auto packet = bluetooth::hci::LeSetPrivacyModeCompleteBuilder::Create(
       kNumCommandPackets, ErrorCode::SUCCESS);
   send_event_(std::move(packet));
+}
+
+void DualModeController::LeReadIsoTxSync(CommandPacketView command) {
+  auto command_view = gd_hci::LeReadIsoTxSyncView::Create(std::move(command));
+  ASSERT(command_view.IsValid());
+  link_layer_controller_.LeReadIsoTxSync(command_view.GetConnectionHandle());
+}
+
+void DualModeController::LeSetCigParameters(CommandPacketView command) {
+  auto command_view =
+      gd_hci::LeSetCigParametersView::Create(std::move(command));
+  ASSERT(command_view.IsValid());
+  link_layer_controller_.LeSetCigParameters(
+      command_view.GetCigId(), command_view.GetSduIntervalMToS(),
+      command_view.GetSduIntervalSToM(), command_view.GetSlavesClockAccuracy(),
+      command_view.GetPacking(), command_view.GetFraming(),
+      command_view.GetMaxTransportLatencyMToS(),
+      command_view.GetMaxTransportLatencySToM(), command_view.GetCisConfig());
+}
+
+void DualModeController::LeCreateCis(CommandPacketView command) {
+  auto command_view = gd_hci::LeCreateCisView::Create(std::move(command));
+  ASSERT(command_view.IsValid());
+  ErrorCode status =
+      link_layer_controller_.LeCreateCis(command_view.GetCisConfig());
+  send_event_(bluetooth::hci::LeCreateCisStatusBuilder::Create(
+      status, kNumCommandPackets));
+}
+
+void DualModeController::LeRemoveCig(CommandPacketView command) {
+  auto command_view = gd_hci::LeRemoveCigView::Create(std::move(command));
+  ASSERT(command_view.IsValid());
+  link_layer_controller_.LeRemoveCig(command_view.GetCigId());
+}
+
+void DualModeController::LeAcceptCisRequest(CommandPacketView command) {
+  auto command_view =
+      gd_hci::LeAcceptCisRequestView::Create(std::move(command));
+  ASSERT(command_view.IsValid());
+  ErrorCode status = link_layer_controller_.LeAcceptCisRequest(
+      command_view.GetConnectionHandle());
+  send_event_(bluetooth::hci::LeAcceptCisRequestStatusBuilder::Create(
+      status, kNumCommandPackets));
+}
+
+void DualModeController::LeRejectCisRequest(CommandPacketView command) {
+  auto command_view =
+      gd_hci::LeRejectCisRequestView::Create(std::move(command));
+  ASSERT(command_view.IsValid());
+  link_layer_controller_.LeRejectCisRequest(command_view.GetConnectionHandle(),
+                                            command_view.GetReason());
+}
+
+void DualModeController::LeCreateBig(CommandPacketView command) {
+  auto command_view = gd_hci::LeCreateBigView::Create(std::move(command));
+  ASSERT(command_view.IsValid());
+  ErrorCode status = link_layer_controller_.LeCreateBig(
+      command_view.GetBigHandle(), command_view.GetAdvertisingHandle(),
+      command_view.GetNumBis(), command_view.GetSduInterval(),
+      command_view.GetMaxSdu(), command_view.GetMaxTransportLatency(),
+      command_view.GetRtn(), command_view.GetPhy(), command_view.GetPacking(),
+      command_view.GetFraming(), command_view.GetEncryption(),
+      command_view.GetBroadcastCode());
+  send_event_(bluetooth::hci::LeCreateBigStatusBuilder::Create(
+      status, kNumCommandPackets));
+}
+
+void DualModeController::LeTerminateBig(CommandPacketView command) {
+  auto command_view = gd_hci::LeTerminateBigView::Create(std::move(command));
+  ASSERT(command_view.IsValid());
+  ErrorCode status = link_layer_controller_.LeTerminateBig(
+      command_view.GetBigHandle(), command_view.GetReason());
+  send_event_(bluetooth::hci::LeTerminateBigStatusBuilder::Create(
+      status, kNumCommandPackets));
+}
+
+void DualModeController::LeBigCreateSync(CommandPacketView command) {
+  auto command_view = gd_hci::LeBigCreateSyncView::Create(std::move(command));
+  ASSERT(command_view.IsValid());
+  ErrorCode status = link_layer_controller_.LeBigCreateSync(
+      command_view.GetBigHandle(), command_view.GetSyncHandle(),
+      command_view.GetEncryption(), command_view.GetBroadcastCode(),
+      command_view.GetMse(), command_view.GetBigSyncTimeout(),
+      command_view.GetBis());
+  send_event_(bluetooth::hci::LeBigCreateSyncStatusBuilder::Create(
+      status, kNumCommandPackets));
+}
+
+void DualModeController::LeBigTerminateSync(CommandPacketView command) {
+  auto command_view =
+      gd_hci::LeBigTerminateSyncView::Create(std::move(command));
+  ASSERT(command_view.IsValid());
+  link_layer_controller_.LeBigTerminateSync(command_view.GetBigHandle());
+}
+
+void DualModeController::LeRequestPeerSca(CommandPacketView command) {
+  auto command_view = gd_hci::LeRequestPeerScaView::Create(std::move(command));
+  ASSERT(command_view.IsValid());
+  ErrorCode status = link_layer_controller_.LeRequestPeerSca(
+      command_view.GetConnectionHandle());
+  send_event_(bluetooth::hci::LeRequestPeerScaStatusBuilder::Create(
+      status, kNumCommandPackets));
+}
+
+void DualModeController::LeSetupIsoDataPath(CommandPacketView command) {
+  auto command_view =
+      gd_hci::LeSetupIsoDataPathView::Create(std::move(command));
+  ASSERT(command_view.IsValid());
+  link_layer_controller_.LeSetupIsoDataPath(
+      command_view.GetConnectionHandle(), command_view.GetDataPathDirection(),
+      command_view.GetDataPathId(), command_view.GetCodecId(),
+      command_view.GetControllerDelay(), command_view.GetCodecConfiguration());
+}
+
+void DualModeController::LeRemoveIsoDataPath(CommandPacketView command) {
+  auto command_view =
+      gd_hci::LeRemoveIsoDataPathView::Create(std::move(command));
+  ASSERT(command_view.IsValid());
+  link_layer_controller_.LeRemoveIsoDataPath(
+      command_view.GetConnectionHandle(), command_view.GetDataPathDirection());
 }
 
 void DualModeController::LeReadRemoteFeatures(CommandPacketView command) {
