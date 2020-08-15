@@ -38,6 +38,7 @@
 #include "l2c_api.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/shim.h"
+#include "stack/btm/btm_dev.h"
 #include "stack/include/acl_api.h"
 
 /*******************************************************************************
