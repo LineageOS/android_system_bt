@@ -118,7 +118,7 @@ typedef struct {
                                      uint8_t encr_enable);
   friend void btm_acl_init(void);
   friend void btm_acl_role_changed(uint8_t hci_status,
-                                   const RawAddress* bd_addr, uint8_t new_role);
+                                   const RawAddress& bd_addr, uint8_t new_role);
   friend void btm_acl_update_conn_addr(uint16_t conn_handle,
                                        const RawAddress& address);
   friend void btm_pm_proc_cmd_status(uint8_t status);
