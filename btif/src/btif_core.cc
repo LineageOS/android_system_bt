@@ -429,16 +429,9 @@ static void btif_dut_mode_cback(UNUSED_ATTR tBTM_VSC_CMPL* p) {
  * Description      Configure Test Mode - 'enable' to 1 puts the device in test
  *                       mode and 0 exits test mode
  *
- * Returns          BT_STATUS_SUCCESS on success
- *
  ******************************************************************************/
-bt_status_t btif_dut_mode_configure(uint8_t enable) {
+void btif_dut_mode_configure(uint8_t enable) {
   BTIF_TRACE_DEBUG("%s", __func__);
-
-  if (!stack_manager_get_interface()->get_stack_is_running()) {
-    BTIF_TRACE_ERROR("btif_dut_mode_configure : Bluetooth not enabled");
-    return BT_STATUS_NOT_READY;
-  }
 
   btif_dut_mode = enable;
   if (enable == 1) {
@@ -447,7 +440,6 @@ bt_status_t btif_dut_mode_configure(uint8_t enable) {
     // Can't do in process reset anyways - just quit
     kill(getpid(), SIGKILL);
   }
-  return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************

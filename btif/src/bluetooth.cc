@@ -444,12 +444,12 @@ static const void* get_profile_interface(const char* profile_id) {
 }
 
 int dut_mode_configure(uint8_t enable) {
-  LOG_INFO("%s", __func__);
-
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (!stack_manager_get_interface()->get_stack_is_running())
+    return BT_STATUS_NOT_READY;
 
-  return btif_dut_mode_configure(enable);
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dut_mode_configure, enable));
+  return BT_STATUS_SUCCESS;
 }
 
 int dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len) {
