@@ -835,19 +835,6 @@ void btif_set_remote_device_property(RawAddress* remote_addr,
 
 /*******************************************************************************
  *
- * Function         btif_get_remote_service_record
- *
- * Description      Looks up the service matching uuid on the remote device
- *                  and fetches the SCN and service_name if the UUID is found
- *
- ******************************************************************************/
-void btif_get_remote_service_record(const RawAddress remote_addr,
-                                    const Uuid uuid) {
-  btif_dm_get_remote_service_record(remote_addr, uuid);
-}
-
-/*******************************************************************************
- *
  * Function         btif_get_enabled_services_mask
  *
  * Description      Fetches currently enabled services
