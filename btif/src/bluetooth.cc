@@ -714,3 +714,15 @@ void invoke_bond_state_changed_cb(bt_status_t status, RawAddress bd_addr,
           },
           status, bd_addr, state));
 }
+
+void invoke_acl_state_changed_cb(bt_status_t status, RawAddress bd_addr,
+                                 bt_acl_state_t state) {
+  do_in_jni_thread(
+      FROM_HERE,
+      base::BindOnce(
+          [](bt_status_t status, RawAddress bd_addr, bt_acl_state_t state) {
+            HAL_CBACK(bt_hal_cbacks, acl_state_changed_cb, status, &bd_addr,
+                      state);
+          },
+          status, bd_addr, state));
+}
