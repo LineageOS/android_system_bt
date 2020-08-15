@@ -308,22 +308,25 @@ static void btif_dm_send_bond_state_changed(RawAddress address, bt_bond_state_t 
 void btif_dm_init(uid_set_t* set) {
   uid_set = set;
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    bluetooth::shim::BTIF_DM_SetUiCallback([](RawAddress address, bt_bdname_t bd_name, uint32_t cod, bt_ssp_variant_t pairing_variant, uint32_t pass_key) {
-      do_in_jni_thread(FROM_HERE, base::BindOnce([](RawAddress address, bt_bdname_t bd_name, uint32_t cod, bt_ssp_variant_t pairing_variant, uint32_t pass_key) {
-        LOG(ERROR) << __func__ << ": UI Callback fired!";
+    bluetooth::shim::BTIF_DM_SetUiCallback([](RawAddress address,
+                                              bt_bdname_t bd_name, uint32_t cod,
+                                              bt_ssp_variant_t pairing_variant,
+                                              uint32_t pass_key) {
+      LOG(ERROR) << __func__ << ": UI Callback fired!";
 
-        //TODO: java BondStateMachine requires change into bonding state. If we ever send this event separately, consider removing this line
-        invoke_bond_state_changed_cb(BT_STATUS_SUCCESS, address,
-                                     BT_BOND_STATE_BONDING);
+      // TODO: java BondStateMachine requires change into bonding state. If we
+      // ever send this event separately, consider removing this line
+      invoke_bond_state_changed_cb(BT_STATUS_SUCCESS, address,
+                                   BT_BOND_STATE_BONDING);
 
-        if (pairing_variant == BT_SSP_VARIANT_PASSKEY_ENTRY) {
-          // For passkey entry we must actually use pin request, due to BluetoothPairingController (in Settings)
-          invoke_pin_request_cb(address, bd_name, cod, false);
-          return;
-        }
+      if (pairing_variant == BT_SSP_VARIANT_PASSKEY_ENTRY) {
+        // For passkey entry we must actually use pin request, due to
+        // BluetoothPairingController (in Settings)
+        invoke_pin_request_cb(address, bd_name, cod, false);
+        return;
+      }
 
-        invoke_ssp_request_cb(address, bd_name, cod, pairing_variant, pass_key);
-      }, address, bd_name, cod, pairing_variant, pass_key));
+      invoke_ssp_request_cb(address, bd_name, cod, pairing_variant, pass_key);
     });
 
     bluetooth::shim::BTIF_RegisterBondStateChangeListener(
