@@ -663,10 +663,10 @@ bool BTM_UseLeLink(const RawAddress& bd_addr) {
   tBLE_ADDR_TYPE addr_type;
   bool use_le = false;
 
-  if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_BR_EDR)) {
+  if (BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_BR_EDR)) {
     return use_le;
   } else {
-    if (!BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
+    if (BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
       use_le = true;
     } else {
       BTM_ReadDevInfo(bd_addr, &dev_type, &addr_type);
