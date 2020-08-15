@@ -202,5 +202,6 @@ void invoke_adapter_properties_cb(bt_status_t status, int num_properties,
 void invoke_remote_device_properties_cb(bt_status_t status, RawAddress bd_addr,
                                         int num_properties,
                                         bt_property_t* properties);
+void invoke_device_found_cb(int num_properties, bt_property_t* properties);
 
 #endif /* BTIF_COMMON_H */
