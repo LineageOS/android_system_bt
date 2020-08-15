@@ -611,23 +611,9 @@ static void btif_core_storage_adapter_write(bt_property_t* prop) {
 
 static void execute_storage_remote_request(uint16_t event, char* p_param) {
   bt_status_t status = BT_STATUS_FAIL;
-  bt_property_t prop;
-
   BTIF_TRACE_EVENT("execute storage remote request event : %d", event);
 
   switch (event) {
-    case BTIF_CORE_STORAGE_REMOTE_READ: {
-      char buf[1024];
-      btif_storage_req_t* p_req = (btif_storage_req_t*)p_param;
-      prop.type = p_req->read_req.type;
-      prop.val = (void*)buf;
-      prop.len = sizeof(buf);
-
-      status = btif_storage_get_remote_device_property(
-          &(p_req->read_req.bd_addr), &prop);
-      HAL_CBACK(bt_hal_cbacks, remote_device_properties_cb, status,
-                &(p_req->read_req.bd_addr), 1, &prop);
-    } break;
     case BTIF_CORE_STORAGE_REMOTE_WRITE: {
       btif_storage_req_t* p_req = (btif_storage_req_t*)p_param;
       status = btif_storage_set_remote_device_property(
@@ -858,11 +844,16 @@ void btif_set_adapter_property(bt_property_t* property) {
  ******************************************************************************/
 void btif_get_remote_device_property(RawAddress remote_addr,
                                      bt_property_type_t type) {
-  btif_storage_req_t req;
+  char buf[1024];
+  bt_property_t prop;
+  prop.type = type;
+  prop.val = (void*)buf;
+  prop.len = sizeof(buf);
 
-  req.read_req.bd_addr = remote_addr;
-  req.read_req.type = type;
-  execute_storage_remote_request(BTIF_CORE_STORAGE_REMOTE_READ, (char*)&req);
+  bt_status_t status =
+      btif_storage_get_remote_device_property(&remote_addr, &prop);
+  HAL_CBACK(bt_hal_cbacks, remote_device_properties_cb, status, &remote_addr, 1,
+            &prop);
 }
 
 /*******************************************************************************
