@@ -354,7 +354,8 @@ static int ssp_reply(const RawAddress* bd_addr, bt_ssp_variant_t variant,
 
 static int read_energy_info() {
   if (!interface_ready()) return BT_STATUS_NOT_READY;
-  btif_dm_read_energy_info();
+
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_read_energy_info));
   return BT_STATUS_SUCCESS;
 }
 
