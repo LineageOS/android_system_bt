@@ -291,10 +291,12 @@ static int cancel_discovery(void) {
 }
 
 static int create_bond(const RawAddress* bd_addr, int transport) {
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (btif_dm_pairing_is_busy()) return BT_STATUS_BUSY;
 
-  return btif_dm_create_bond(bd_addr, transport);
+  do_in_jni_thread(FROM_HERE,
+                   base::BindOnce(btif_dm_create_bond, *bd_addr, transport));
+  return BT_STATUS_SUCCESS;
 }
 
 static int create_bond_out_of_band(const RawAddress* bd_addr, int transport,
