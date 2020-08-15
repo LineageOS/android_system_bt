@@ -2496,16 +2496,12 @@ bt_status_t btif_dm_get_adapter_property(bt_property_t* prop) {
  *
  * Description      Start SDP to get remote services
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_dm_get_remote_services(const RawAddress& remote_addr) {
+void btif_dm_get_remote_services(const RawAddress remote_addr) {
   BTIF_TRACE_EVENT("%s: bd_addr=%s", __func__, remote_addr.ToString().c_str());
 
   BTA_DmDiscover(remote_addr, BTA_ALL_SERVICE_MASK, bte_dm_search_services_evt,
                  true);
-
-  return BT_STATUS_SUCCESS;
 }
 
 /*******************************************************************************
