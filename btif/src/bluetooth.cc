@@ -261,10 +261,11 @@ int set_remote_device_property(RawAddress* remote_addr,
 
 int get_remote_service_record(const RawAddress& remote_addr,
                               const bluetooth::Uuid& uuid) {
-  /* sanity check */
-  if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  return btif_get_remote_service_record(remote_addr, uuid);
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_get_remote_service_record,
+                                             remote_addr, uuid));
+  return BT_STATUS_SUCCESS;
 }
 
 int get_remote_services(RawAddress* remote_addr) {

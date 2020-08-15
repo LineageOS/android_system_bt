@@ -840,14 +840,10 @@ void btif_set_remote_device_property(RawAddress* remote_addr,
  * Description      Looks up the service matching uuid on the remote device
  *                  and fetches the SCN and service_name if the UUID is found
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_get_remote_service_record(const RawAddress& remote_addr,
-                                           const Uuid& uuid) {
-  if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
-
-  return btif_dm_get_remote_service_record(remote_addr, uuid);
+void btif_get_remote_service_record(const RawAddress remote_addr,
+                                    const Uuid uuid) {
+  btif_dm_get_remote_service_record(remote_addr, uuid);
 }
 
 /*******************************************************************************
