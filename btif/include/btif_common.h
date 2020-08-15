@@ -209,5 +209,7 @@ void invoke_pin_request_cb(RawAddress bd_addr, bt_bdname_t bd_name,
 void invoke_ssp_request_cb(RawAddress bd_addr, bt_bdname_t bd_name,
                            uint32_t cod, bt_ssp_variant_t pairing_variant,
                            uint32_t pass_key);
+void invoke_bond_state_changed_cb(bt_status_t status, RawAddress bd_addr,
+                                  bt_bond_state_t state);
 
 #endif /* BTIF_COMMON_H */
