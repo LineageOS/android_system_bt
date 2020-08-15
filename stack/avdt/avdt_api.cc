@@ -32,6 +32,7 @@
 #include "btm_api.h"
 #include "btu.h"
 #include "l2c_api.h"
+#include "stack/btm/btm_sec.h"
 #include "stack/include/a2dp_codec_api.h"
 
 /* Control block for AVDTP */

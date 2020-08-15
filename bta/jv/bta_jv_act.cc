@@ -46,6 +46,7 @@
 #include "sdp_api.h"
 
 #include "osi/include/osi.h"
+#include "stack/btm/btm_sec.h"
 
 using bluetooth::Uuid;
 
