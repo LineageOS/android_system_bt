@@ -135,7 +135,6 @@ extern void bta_hh_co_send_hid_info(btif_hh_device_t* p_dev,
                                     uint8_t ctry_code, int dscp_len,
                                     uint8_t* p_dscp);
 extern bool check_cod(const RawAddress* remote_bdaddr, uint32_t cod);
-extern void btif_dm_cb_remove_bond(const RawAddress* bd_addr);
 extern bool check_cod_hid(const RawAddress* remote_bdaddr);
 extern int scru_ascii_2_hex(char* p_ascii, int len, uint8_t* p_hex);
 extern void btif_dm_hh_open_failed(RawAddress* bdaddr);
