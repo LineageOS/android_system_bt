@@ -862,18 +862,13 @@ void btif_get_remote_device_property(RawAddress remote_addr,
  *
  * Description      Fetches all the remote device properties from NVRAM
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_get_remote_device_properties(RawAddress* remote_addr) {
+void btif_get_remote_device_properties(RawAddress remote_addr) {
   btif_storage_req_t req;
 
-  if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
-
   req.read_req.bd_addr = *remote_addr;
-  return btif_transfer_context(execute_storage_remote_request,
-                               BTIF_CORE_STORAGE_REMOTE_READ_ALL, (char*)&req,
-                               sizeof(btif_storage_req_t), NULL);
+  execute_storage_remote_request(BTIF_CORE_STORAGE_REMOTE_READ_ALL,
+                                 (char*)&req);
 }
 
 /*******************************************************************************
