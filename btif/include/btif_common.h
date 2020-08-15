@@ -214,5 +214,6 @@ void invoke_bond_state_changed_cb(bt_status_t status, RawAddress bd_addr,
 void invoke_acl_state_changed_cb(bt_status_t status, RawAddress bd_addr,
                                  bt_acl_state_t state);
 void invoke_thread_evt_cb(bt_cb_thread_evt event);
+void invoke_le_test_mode_cb(bt_status_t status, uint16_t count);
 
 #endif /* BTIF_COMMON_H */
