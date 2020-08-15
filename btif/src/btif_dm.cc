@@ -1948,9 +1948,7 @@ static void bta_energy_info_cb(tBTM_BLE_TX_TIME_MS tx_time,
   btif_cb.rx_time = (uint64_t)rx_time;
   btif_cb.idle_time = (uint64_t)idle_time;
   btif_cb.energy_used = (uint64_t)energy_used;
-  btif_transfer_context(btif_dm_upstreams_evt, BTA_DM_ENER_INFO_READ,
-                        (char*)&btif_cb, sizeof(btif_activity_energy_info_cb_t),
-                        NULL);
+  btif_dm_upstreams_evt(BTA_DM_ENER_INFO_READ, (char*)&btif_cb);
 }
 
 /* Scan filter param config event */
