@@ -31,6 +31,7 @@
 #include "btu.h"
 #include "device/include/controller.h"
 #include "hcimsgs.h"
+#include "stack/btm/btm_dev.h"
 #include "vendor_hcidefs.h"
 
 /* RPA offload VSC specifics */
