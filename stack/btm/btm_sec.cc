@@ -44,6 +44,7 @@
 #include "btif_storage.h"
 #include "btm_int.h"
 #include "hcimsgs.h"
+#include "stack/btm/btm_dev.h"
 
 #define BTM_SEC_MAX_COLLISION_DELAY (5000)
 

@@ -52,6 +52,7 @@
 
 #include "main/shim/btm_api.h"
 #include "main/shim/shim.h"
+#include "stack/btm/btm_dev.h"
 #include "stack/include/acl_api.h"
 
 #define BTM_EXT_BLE_RMT_NAME_TIMEOUT_MS (30 * 1000)

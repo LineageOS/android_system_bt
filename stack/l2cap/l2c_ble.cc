@@ -35,6 +35,7 @@
 #include "log/log.h"
 #include "main/shim/shim.h"
 #include "osi/include/osi.h"
+#include "stack/btm/btm_dev.h"
 #include "stack/gatt/connection_manager.h"
 #include "stack/include/acl_api.h"
 #include "stack_config.h"
