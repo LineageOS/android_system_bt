@@ -1377,7 +1377,7 @@ static void btif_dm_search_devices_evt(uint16_t event, char* p_param) {
         ASSERTC(status == BT_STATUS_SUCCESS,
                 "failed to save remote addr type (inquiry)", status);
         /* Callback to notify upper layer of device */
-        HAL_CBACK(bt_hal_cbacks, device_found_cb, num_properties, properties);
+        invoke_device_found_cb(num_properties, properties);
       }
     } break;
 
