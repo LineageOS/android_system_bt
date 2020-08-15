@@ -204,5 +204,7 @@ void invoke_remote_device_properties_cb(bt_status_t status, RawAddress bd_addr,
                                         bt_property_t* properties);
 void invoke_device_found_cb(int num_properties, bt_property_t* properties);
 void invoke_discovery_state_changed_cb(bt_discovery_state_t state);
+void invoke_pin_request_cb(RawAddress bd_addr, bt_bdname_t bd_name,
+                           uint32_t cod, bool min_16_digit);
 
 #endif /* BTIF_COMMON_H */
