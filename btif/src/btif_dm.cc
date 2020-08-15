@@ -1943,8 +1943,7 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
       energy_info.energy_used = p_ener_data->energy_used;
 
       bt_uid_traffic_t* data = uid_set_read_and_clear(uid_set);
-      HAL_CBACK(bt_hal_cbacks, energy_info_cb, &energy_info, data);
-      osi_free(data);
+      invoke_energy_info_cb(energy_info, data);
       break;
     }
 
