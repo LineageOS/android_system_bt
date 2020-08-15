@@ -1918,10 +1918,7 @@ static void bte_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
  ******************************************************************************/
 static void bte_dm_remote_service_record_evt(tBTA_DM_SEARCH_EVT event,
                                              tBTA_DM_SEARCH* p_data) {
-  /* TODO: The only member that needs a deep copy is the p_raw_data. But not
-   * sure yet if this is needed. */
-  btif_transfer_context(btif_dm_remote_service_record_evt, event, (char*)p_data,
-                        sizeof(tBTA_DM_SEARCH), NULL);
+  btif_dm_remote_service_record_evt(event, (char*)p_data);
 }
 
 /*******************************************************************************
