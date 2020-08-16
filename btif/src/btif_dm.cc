@@ -2222,9 +2222,7 @@ void btif_dm_ssp_reply(const RawAddress bd_addr, bt_ssp_variant_t variant,
     uint8_t tmp_addr_type = 0;
     BTM_ReadDevInfo(bd_addr, &tmp_dev_type, &tmp_addr_type);
 
-    do_in_main_thread(FROM_HERE,
-                      base::Bind(&bluetooth::shim::BTIF_DM_ssp_reply, bd_addr,
-                                 tmp_addr_type, variant, accept));
+    bluetooth::shim::BTIF_DM_ssp_reply(bd_addr, tmp_addr_type, variant, accept);
     return;
   }
 
