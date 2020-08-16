@@ -1619,7 +1619,7 @@ void BTIF_dm_report_inquiry_status_change(uint8_t status) {
   }
 }
 
-static void on_hw_error() {
+void BTIF_dm_on_hw_error() {
   BTIF_TRACE_ERROR("Received H/W Error. ");
   /* Flush storage data */
   btif_config_flush();
@@ -1628,7 +1628,6 @@ static void on_hw_error() {
   kill(getpid(), SIGKILL);
 }
 
-void BTIF_dm_on_hw_error() { do_in_jni_thread(base::Bind(on_hw_error)); }
 /*******************************************************************************
  *
  * Function         btif_dm_upstreams_cback
