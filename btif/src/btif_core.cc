@@ -830,9 +830,7 @@ bt_status_t btif_enable_service(tBTA_SERVICE_ID service_id) {
                    btif_enabled_services);
 
   if (btif_is_enabled()) {
-    btif_transfer_context(btif_dm_execute_service_request,
-                          BTIF_DM_ENABLE_SERVICE, (char*)p_id,
-                          sizeof(tBTA_SERVICE_ID), NULL);
+    btif_dm_execute_service_request(BTIF_DM_ENABLE_SERVICE, (char*)p_id);
   }
 
   return BT_STATUS_SUCCESS;
@@ -862,9 +860,7 @@ bt_status_t btif_disable_service(tBTA_SERVICE_ID service_id) {
                    btif_enabled_services);
 
   if (btif_is_enabled()) {
-    btif_transfer_context(btif_dm_execute_service_request,
-                          BTIF_DM_DISABLE_SERVICE, (char*)p_id,
-                          sizeof(tBTA_SERVICE_ID), NULL);
+    btif_dm_execute_service_request(BTIF_DM_DISABLE_SERVICE, (char*)p_id);
   }
 
   return BT_STATUS_SUCCESS;
