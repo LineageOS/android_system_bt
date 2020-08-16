@@ -20,7 +20,6 @@
 #include <stdint.h>
 #include <vector>
 #include "bt_common_types.h"
-#include "bt_gatt_types.h"
 
 #include <bluetooth/uuid.h>
 
@@ -45,14 +44,6 @@ typedef struct {
   uint16_t value_type;
   uint8_t status;
 } btgatt_read_params_t;
-
-/** Parameters for GATT write operations */
-typedef struct {
-  btgatt_srvc_id_t srvc_id;
-  btgatt_gatt_id_t char_id;
-  btgatt_gatt_id_t descr_id;
-  uint8_t status;
-} btgatt_write_params_t;
 
 /** Attribute change notification parameters */
 typedef struct {
