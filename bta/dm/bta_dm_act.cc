@@ -844,17 +844,16 @@ void bta_dm_search_start(tBTA_DM_MSG* p_data) {
   }
 }
 
-static void on_inquiry_complete(tBTA_DM_MSG* message) {
+static void on_inquiry_complete(uint8_t num) {
   switch (bta_dm_search_get_state()) {
     case BTA_DM_SEARCH_ACTIVE:
-      bta_dm_inq_cmpl(message);
+      bta_dm_inq_cmpl(num);
       break;
     case BTA_DM_SEARCH_CANCELLING:
       bta_dm_search_set_state(BTA_DM_SEARCH_IDLE);
       bta_dm_search_cancel_cmpl();
       break;
   }
-  osi_free(message);
 }
 
 /*******************************************************************************
@@ -892,10 +891,7 @@ void bta_dm_search_cancel(UNUSED_ATTR tBTA_DM_MSG* p_data) {
     p_msg->hdr.layer_specific = BTA_DM_API_DISCOVER_EVT;
     bta_sys_sendmsg(p_msg);
   } else {
-    p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
-    p_msg->hdr.event = BTA_DM_INQUIRY_CMPL_EVT;
-    p_msg->hdr.layer_specific = BTA_DM_API_DISCOVER_EVT;
-    on_inquiry_complete(p_msg);
+    on_inquiry_complete(0);
   }
 
   if (bta_dm_search_cb.gatt_disc_active) {
@@ -1103,12 +1099,12 @@ static bool bta_dm_read_remote_device_name(const RawAddress& bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-void bta_dm_inq_cmpl(tBTA_DM_MSG* p_data) {
+void bta_dm_inq_cmpl(uint8_t num) {
   tBTA_DM_SEARCH data;
 
   APPL_TRACE_DEBUG("bta_dm_inq_cmpl");
 
-  data.inq_cmpl.num_resps = p_data->inq_cmpl.num;
+  data.inq_cmpl.num_resps = num;
   bta_dm_search_cb.p_search_cback(BTA_DM_INQ_CMPL_EVT, &data);
 
   bta_dm_search_cb.p_btm_inq_info = BTM_InqDbFirst();
@@ -1957,9 +1953,7 @@ static void bta_dm_inq_cmpl_cb(void* p_result) {
   APPL_TRACE_DEBUG("%s", __func__);
 
   if (!bta_dm_search_cb.cancel_pending) {
-    p_msg->inq_cmpl.hdr.event = BTA_DM_INQUIRY_CMPL_EVT;
-    p_msg->inq_cmpl.num = ((tBTM_INQUIRY_CMPL*)p_result)->num_resp;
-    on_inquiry_complete(p_msg);
+    on_inquiry_complete(((tBTM_INQUIRY_CMPL*)p_result)->num_resp);
   } else {
     bta_dm_search_cb.cancel_pending = false;
     bta_dm_search_cancel_notify();
