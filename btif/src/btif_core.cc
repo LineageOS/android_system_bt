@@ -139,7 +139,7 @@ static uid_set_t* uid_set;
  ******************************************************************************/
 extern fixed_queue_t* btu_hci_msg_queue;
 
-void btif_dm_execute_service_request(uint16_t event, char* p_param);
+void btif_dm_enable_service(tBTA_SERVICE_ID service_id, bool enable);
 #ifdef BTIF_DM_OOB_TEST
 void btif_dm_load_local_oob(void);
 #endif
@@ -816,23 +816,14 @@ tBTA_SERVICE_MASK btif_get_enabled_services_mask(void) {
  *
  ******************************************************************************/
 bt_status_t btif_enable_service(tBTA_SERVICE_ID service_id) {
-  tBTA_SERVICE_ID* p_id = &service_id;
-
-  /* If BT is enabled, we need to switch to BTIF context and trigger the
-   * enable for that profile
-   *
-   * Otherwise, we just set the flag. On BT_Enable, the DM will trigger
-   * enable for the profiles that have been enabled */
-
   btif_enabled_services |= (1 << service_id);
 
   BTIF_TRACE_DEBUG("%s: current services:0x%x", __func__,
                    btif_enabled_services);
 
   if (btif_is_enabled()) {
-    btif_dm_execute_service_request(BTIF_DM_ENABLE_SERVICE, (char*)p_id);
+    btif_dm_enable_service(service_id, true);
   }
-
   return BT_STATUS_SUCCESS;
 }
 /*******************************************************************************
@@ -847,21 +838,13 @@ bt_status_t btif_enable_service(tBTA_SERVICE_ID service_id) {
  *
  ******************************************************************************/
 bt_status_t btif_disable_service(tBTA_SERVICE_ID service_id) {
-  tBTA_SERVICE_ID* p_id = &service_id;
-
-  /* If BT is enabled, we need to switch to BTIF context and trigger the
-   * disable for that profile so that the appropriate uuid_property_changed will
-   * be triggerred. Otherwise, we just need to clear the service_id in the mask
-   */
-
   btif_enabled_services &= (tBTA_SERVICE_MASK)(~(1 << service_id));
 
   BTIF_TRACE_DEBUG("%s: Current Services:0x%x", __func__,
                    btif_enabled_services);
 
   if (btif_is_enabled()) {
-    btif_dm_execute_service_request(BTIF_DM_DISABLE_SERVICE, (char*)p_id);
+    btif_dm_enable_service(service_id, false);
   }
-
   return BT_STATUS_SUCCESS;
 }
