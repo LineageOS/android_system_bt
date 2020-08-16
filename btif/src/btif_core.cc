@@ -86,37 +86,6 @@ static void bt_jni_msg_ready(void* context);
 #endif  // BTE_DID_CONF_FILE
 
 /*******************************************************************************
- *  Local type definitions
- ******************************************************************************/
-
-/* These type definitions are used when passing data from the HAL to BTIF
- * context in the downstream path for the adapter and remote_device property
- * APIs
- */
-
-typedef struct {
-  RawAddress bd_addr;
-  bt_property_type_t type;
-} btif_storage_read_t;
-
-typedef struct {
-  RawAddress bd_addr;
-  bt_property_t prop;
-} btif_storage_write_t;
-
-typedef union {
-  btif_storage_read_t read_req;
-  btif_storage_write_t write_req;
-} btif_storage_req_t;
-
-typedef enum {
-  BTIF_CORE_STATE_DISABLED = 0,
-  BTIF_CORE_STATE_ENABLING,
-  BTIF_CORE_STATE_ENABLED,
-  BTIF_CORE_STATE_DISABLING
-} btif_core_state_t;
-
-/*******************************************************************************
  *  Static variables
  ******************************************************************************/
 
@@ -137,8 +106,6 @@ static uid_set_t* uid_set;
 /*******************************************************************************
  *  Externs
  ******************************************************************************/
-extern fixed_queue_t* btu_hci_msg_queue;
-
 void btif_dm_enable_service(tBTA_SERVICE_ID service_id, bool enable);
 #ifdef BTIF_DM_OOB_TEST
 void btif_dm_load_local_oob(void);
