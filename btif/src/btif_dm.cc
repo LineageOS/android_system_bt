@@ -264,29 +264,6 @@ static bool is_bonding_or_sdp() {
          (pairing_cb.state == BT_BOND_STATE_BONDED && pairing_cb.sdp_attempts);
 }
 
-static void btif_dm_data_copy(uint16_t event, char* dst, char* src) {
-  tBTA_DM_SEC* dst_dm_sec = (tBTA_DM_SEC*)dst;
-  tBTA_DM_SEC* src_dm_sec = (tBTA_DM_SEC*)src;
-
-  if (!src_dm_sec) return;
-
-  CHECK(dst_dm_sec);
-  maybe_non_aligned_memcpy(dst_dm_sec, src_dm_sec, sizeof(*src_dm_sec));
-
-  if (event == BTA_DM_BLE_KEY_EVT) {
-    dst_dm_sec->ble_key.p_key_value =
-        (tBTM_LE_KEY_VALUE*)osi_malloc(sizeof(tBTM_LE_KEY_VALUE));
-    CHECK(src_dm_sec->ble_key.p_key_value);
-    memcpy(dst_dm_sec->ble_key.p_key_value, src_dm_sec->ble_key.p_key_value,
-           sizeof(tBTM_LE_KEY_VALUE));
-  }
-}
-
-static void btif_dm_data_free(uint16_t event, tBTA_DM_SEC* dm_sec) {
-  if (event == BTA_DM_BLE_KEY_EVT)
-    osi_free_and_reset((void**)&dm_sec->ble_key.p_key_value);
-}
-
 static void btif_dm_send_bond_state_changed(RawAddress address, bt_bond_state_t bond_state) {
   btif_stats_add_bond_event(address, BTIF_DM_FUNC_BOND_STATE_CHANGED,
                             bond_state);
@@ -1864,8 +1841,6 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
       BTIF_TRACE_WARNING("%s: unhandled event (%d)", __func__, event);
       break;
   }
-
-  btif_dm_data_free(event, p_data);
 }
 
 /*******************************************************************************
@@ -1879,14 +1854,7 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
  ******************************************************************************/
 
 void bte_dm_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data) {
-  /* switch context to btif task context (copy full union size for convenience)
-   */
-  bt_status_t status = btif_transfer_context(
-      btif_dm_upstreams_evt, (uint16_t)event, (char*)p_data,
-      sizeof(tBTA_DM_SEC), btif_dm_data_copy);
-
-  /* catch any failed context transfers */
-  ASSERTC(status == BT_STATUS_SUCCESS, "context transfer failed", status);
+  btif_dm_upstreams_evt(event, (char*)p_data);
 }
 
 /*******************************************************************************
