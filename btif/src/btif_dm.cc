@@ -1505,6 +1505,48 @@ void BTIF_dm_on_hw_error() {
   kill(getpid(), SIGKILL);
 }
 
+void BTIF_dm_enable() {
+  BD_NAME bdname;
+  bt_status_t status;
+  bt_property_t prop;
+  prop.type = BT_PROPERTY_BDNAME;
+  prop.len = BD_NAME_LEN;
+  prop.val = (void*)bdname;
+
+  status = btif_storage_get_adapter_property(&prop);
+  if (status == BT_STATUS_SUCCESS) {
+    /* A name exists in the storage. Make this the device name */
+    BTA_DmSetDeviceName((char*)prop.val);
+  } else {
+    /* Storage does not have a name yet.
+     * Use the default name and write it to the chip
+     */
+    BTA_DmSetDeviceName(btif_get_default_local_name());
+  }
+
+  /* Enable local privacy */
+  BTA_DmBleConfigLocalPrivacy(BLE_LOCAL_PRIVACY_ENABLED);
+
+  /* for each of the enabled services in the mask, trigger the profile
+   * enable */
+  tBTA_SERVICE_MASK service_mask = btif_get_enabled_services_mask();
+  for (uint32_t i = 0; i <= BTA_MAX_SERVICE_ID; i++) {
+    if (service_mask & (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(i))) {
+      btif_in_execute_service_request(i, true);
+    }
+  }
+  /* clear control blocks */
+  memset(&pairing_cb, 0, sizeof(btif_dm_pairing_cb_t));
+  pairing_cb.bond_type = BOND_TYPE_PERSISTENT;
+
+  /* This function will also trigger the adapter_properties_cb
+  ** and bonded_devices_info_cb
+  */
+  btif_storage_load_bonded_devices();
+  bluetooth::bqr::EnableBtQualityReport(true);
+  btif_enable_bluetooth_evt();
+}
+
 /*******************************************************************************
  *
  * Function         btif_dm_upstreams_cback
@@ -1523,49 +1565,6 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
   BTIF_TRACE_EVENT("%s: ev: %s", __func__, dump_dm_event(event));
 
   switch (event) {
-    case BTA_DM_ENABLE_EVT: {
-      BD_NAME bdname;
-      bt_status_t status;
-      bt_property_t prop;
-      prop.type = BT_PROPERTY_BDNAME;
-      prop.len = BD_NAME_LEN;
-      prop.val = (void*)bdname;
-
-      status = btif_storage_get_adapter_property(&prop);
-      if (status == BT_STATUS_SUCCESS) {
-        /* A name exists in the storage. Make this the device name */
-        BTA_DmSetDeviceName((char*)prop.val);
-      } else {
-        /* Storage does not have a name yet.
-         * Use the default name and write it to the chip
-         */
-        BTA_DmSetDeviceName(btif_get_default_local_name());
-      }
-
-      /* Enable local privacy */
-      BTA_DmBleConfigLocalPrivacy(BLE_LOCAL_PRIVACY_ENABLED);
-
-      /* for each of the enabled services in the mask, trigger the profile
-       * enable */
-      service_mask = btif_get_enabled_services_mask();
-      for (i = 0; i <= BTA_MAX_SERVICE_ID; i++) {
-        if (service_mask &
-            (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(i))) {
-          btif_in_execute_service_request(i, true);
-        }
-      }
-      /* clear control blocks */
-      memset(&pairing_cb, 0, sizeof(btif_dm_pairing_cb_t));
-      pairing_cb.bond_type = BOND_TYPE_PERSISTENT;
-
-      /* This function will also trigger the adapter_properties_cb
-      ** and bonded_devices_info_cb
-      */
-      btif_storage_load_bonded_devices();
-      bluetooth::bqr::EnableBtQualityReport(true);
-      btif_enable_bluetooth_evt();
-    } break;
-
     case BTA_DM_DISABLE_EVT:
       /* for each of the enabled services in the mask, trigger the profile
        * disable */
