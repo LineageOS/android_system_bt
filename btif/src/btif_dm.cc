@@ -832,28 +832,6 @@ static void search_devices_copy_cb(uint16_t event, char* p_dest, char* p_src) {
   }
 }
 
-static void search_services_copy_cb(uint16_t event, char* p_dest, char* p_src) {
-  tBTA_DM_SEARCH* p_dest_data = (tBTA_DM_SEARCH*)p_dest;
-  tBTA_DM_SEARCH* p_src_data = (tBTA_DM_SEARCH*)p_src;
-
-  if (!p_src) return;
-  maybe_non_aligned_memcpy(p_dest_data, p_src_data, sizeof(*p_src_data));
-  switch (event) {
-    case BTA_DM_DISC_RES_EVT: {
-      if (p_src_data->disc_res.result == BTA_SUCCESS) {
-        if (p_src_data->disc_res.num_uuids > 0) {
-          p_dest_data->disc_res.p_uuid_list =
-              (Uuid*)(p_dest + sizeof(tBTA_DM_SEARCH));
-          memcpy(p_dest_data->disc_res.p_uuid_list,
-                 p_src_data->disc_res.p_uuid_list,
-                 p_src_data->disc_res.num_uuids * sizeof(Uuid));
-          osi_free_and_reset((void**)&p_src_data->disc_res.p_uuid_list);
-        }
-        osi_free_and_reset((void**)&p_src_data->disc_res.p_raw_data);
-      }
-    } break;
-  }
-}
 /******************************************************************************
  *
  *  BTIF DM callback events
@@ -2024,22 +2002,7 @@ static void bte_search_devices_evt(tBTA_DM_SEARCH_EVT event,
  ******************************************************************************/
 static void bte_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
                                        tBTA_DM_SEARCH* p_data) {
-  uint16_t param_len = 0;
-  if (p_data) param_len += sizeof(tBTA_DM_SEARCH);
-  switch (event) {
-    case BTA_DM_DISC_RES_EVT: {
-      if ((p_data->disc_res.result == BTA_SUCCESS) &&
-          (p_data->disc_res.num_uuids > 0)) {
-        param_len += (p_data->disc_res.num_uuids * Uuid::kNumBytes128);
-      }
-    } break;
-  }
-  /* TODO: The only other member that needs a deep copy is the p_raw_data. But
-   * not sure
-   * if raw_data is needed. */
-  btif_transfer_context(
-      btif_dm_search_services_evt, event, (char*)p_data, param_len,
-      (param_len > sizeof(tBTA_DM_SEARCH)) ? search_services_copy_cb : NULL);
+  btif_dm_search_services_evt(event, (char*)p_data);
 }
 
 /*******************************************************************************
