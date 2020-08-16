@@ -767,47 +767,6 @@ uint16_t btif_dm_get_connection_state(const RawAddress* bd_addr) {
   return rc;
 }
 
-/*******************************************************************************
- *
- * Function         search_devices_copy_cb
- *
- * Description      Deep copy callback for search devices event
- *
- * Returns          void
- *
- ******************************************************************************/
-static void search_devices_copy_cb(uint16_t event, char* p_dest, char* p_src) {
-  tBTA_DM_SEARCH* p_dest_data = (tBTA_DM_SEARCH*)p_dest;
-  tBTA_DM_SEARCH* p_src_data = (tBTA_DM_SEARCH*)p_src;
-
-  if (!p_src) return;
-
-  BTIF_TRACE_DEBUG("%s: event=%s", __func__, dump_dm_search_event(event));
-  maybe_non_aligned_memcpy(p_dest_data, p_src_data, sizeof(*p_src_data));
-  switch (event) {
-    case BTA_DM_INQ_RES_EVT: {
-      if (p_src_data->inq_res.p_eir) {
-        p_dest_data->inq_res.p_eir =
-            (uint8_t*)(p_dest + sizeof(tBTA_DM_SEARCH));
-        memcpy(p_dest_data->inq_res.p_eir, p_src_data->inq_res.p_eir,
-               p_src_data->inq_res.eir_len);
-        p_dest_data->inq_res.eir_len = p_src_data->inq_res.eir_len;
-      }
-    } break;
-
-    case BTA_DM_DISC_RES_EVT: {
-      if (p_src_data->disc_res.raw_data_size &&
-          p_src_data->disc_res.p_raw_data) {
-        p_dest_data->disc_res.p_raw_data =
-            (uint8_t*)(p_dest + sizeof(tBTA_DM_SEARCH));
-        memcpy(p_dest_data->disc_res.p_raw_data,
-               p_src_data->disc_res.p_raw_data,
-               p_src_data->disc_res.raw_data_size);
-      }
-    } break;
-  }
-}
-
 /******************************************************************************
  *
  *  BTIF DM callback events
@@ -1961,9 +1920,7 @@ static void bte_search_devices_evt(tBTA_DM_SEARCH_EVT event,
     p_data->inq_res.remt_name_not_required =
         check_eir_remote_name(p_data, NULL, NULL);
 
-  btif_transfer_context(
-      btif_dm_search_devices_evt, (uint16_t)event, (char*)p_data, param_len,
-      (param_len > sizeof(tBTA_DM_SEARCH)) ? search_devices_copy_cb : NULL);
+  btif_dm_search_devices_evt(event, (char*)p_data);
 }
 
 /*******************************************************************************
