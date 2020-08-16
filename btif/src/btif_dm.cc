@@ -2182,9 +2182,8 @@ void btif_dm_pin_reply(const RawAddress bd_addr, uint8_t accept,
     uint8_t tmp_addr_type = 0;
     BTM_ReadDevInfo(bd_addr, &tmp_dev_type, &tmp_addr_type);
 
-    do_in_main_thread(FROM_HERE,
-                      base::Bind(&bluetooth::shim::BTIF_DM_pin_reply, bd_addr,
-                                 tmp_addr_type, accept, pin_len, pin_code));
+    bluetooth::shim::BTIF_DM_pin_reply(bd_addr, tmp_addr_type, accept, pin_len,
+                                       pin_code);
     return;
   }
 
