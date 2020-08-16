@@ -1175,6 +1175,8 @@ static void btif_dm_search_devices_evt(uint16_t event, char* p_param) {
       tBTA_SERVICE_MASK services = 0;
 
       p_search_data = (tBTA_DM_SEARCH*)p_param;
+      p_search_data->inq_res.remt_name_not_required =
+          check_eir_remote_name(p_search_data, NULL, NULL);
       RawAddress& bdaddr = p_search_data->inq_res.bd_addr;
 
       BTIF_TRACE_DEBUG("%s() %s device_type = 0x%x\n", __func__,
@@ -1831,14 +1833,6 @@ void bte_dm_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data) {
  ******************************************************************************/
 static void bte_search_devices_evt(tBTA_DM_SEARCH_EVT event,
                                    tBTA_DM_SEARCH* p_data) {
-  BTIF_TRACE_DEBUG("%s event=%s", __func__, dump_dm_search_event(event));
-
-  /* if remote name is available in EIR, set teh flag so that stack doesnt
-   * trigger RNR */
-  if (event == BTA_DM_INQ_RES_EVT)
-    p_data->inq_res.remt_name_not_required =
-        check_eir_remote_name(p_data, NULL, NULL);
-
   btif_dm_search_devices_evt(event, (char*)p_data);
 }
 
