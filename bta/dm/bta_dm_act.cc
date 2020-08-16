@@ -64,6 +64,7 @@
 using bluetooth::Uuid;
 
 void BTIF_dm_enable();
+void BTIF_dm_disable();
 
 static void bta_dm_inq_results_cb(tBTM_INQ_RESULTS* p_inq, uint8_t* p_eir,
                                   uint16_t eir_len);
@@ -310,8 +311,7 @@ void bta_dm_deinit_cb(void) {
 }
 
 void BTA_dm_on_hw_off() {
-  if (bta_dm_cb.p_sec_cback != NULL)
-    bta_dm_cb.p_sec_cback(BTA_DM_DISABLE_EVT, NULL);
+  BTIF_dm_disable();
 
   /* reinitialize the control block */
   bta_dm_deinit_cb();
@@ -481,7 +481,7 @@ static void bta_dm_disable_timer_cback(void* data) {
     bta_dm_cb.disabling = false;
 
     bta_sys_remove_uuid(UUID_SERVCLASS_PNP_INFORMATION);
-    bta_dm_cb.p_sec_cback(BTA_DM_DISABLE_EVT, NULL);
+    BTIF_dm_disable();
   }
 }
 
