@@ -24,6 +24,7 @@
 #include "btif_storage.h"
 #include "device/include/interop.h"
 #include "internal_include/bt_target.h"
+#include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/l2c_api.h"

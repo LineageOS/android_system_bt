@@ -89,48 +89,18 @@ extern void btm_acl_update_inquiry_status(uint8_t state);
 
 extern uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
 
-extern void btm_read_rssi_complete(uint8_t* p);
-
-extern void btm_read_failed_contact_counter_complete(uint8_t* p);
-
-extern void btm_read_automatic_flush_timeout_complete(uint8_t* p);
-
-extern void btm_read_tx_power_complete(uint8_t* p, bool is_ble);
-
-extern void btm_read_link_quality_complete(uint8_t* p);
-
-extern void btm_process_clk_off_comp_evt(uint16_t hci_handle,
-                                         uint16_t clock_offset);
-extern void btm_blacklist_role_change_device(const RawAddress& bd_addr,
-                                             uint8_t hci_status);
-extern void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
-                                   uint8_t encr_enable);
 extern uint16_t btm_get_acl_disc_reason_code(void);
+
 extern tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr,
                                   tBT_TRANSPORT transport);
-extern void btm_read_remote_features_complete(uint8_t* p);
-extern void btm_read_remote_ext_features_complete(uint8_t* p, uint8_t evt_len);
-extern void btm_read_remote_ext_features_failed(uint8_t status,
-                                                uint16_t handle);
-extern void btm_read_remote_version_complete(uint8_t* p);
-
-extern void btm_acl_notif_conn_collision(const RawAddress& bda);
-extern void btm_acl_update_conn_addr(uint16_t conn_handle,
-                                     const RawAddress& address);
 
 extern void btm_pm_reset(void);
-extern void btm_pm_proc_cmd_status(uint8_t status);
-extern void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
-                                    uint8_t mode, uint16_t interval);
-extern void btm_pm_proc_ssr_evt(uint8_t* p, uint16_t evt_len);
-extern tBTM_STATUS btm_read_power_mode_state(const RawAddress& remote_bda,
-                                             tBTM_PM_STATE* pmState);
-extern void btm_sco_chk_pend_unpark(uint8_t hci_status, uint16_t hci_handle);
 
 /* Internal functions provided by btm_sco.cc
  *******************************************
 */
 extern void btm_sco_init(void);
+extern void btm_sco_chk_pend_unpark(uint8_t hci_status, uint16_t hci_handle);
 extern void btm_sco_connected(uint8_t hci_status, const RawAddress* bda,
                               uint16_t hci_handle, tBTM_ESCO_DATA* p_esco_data);
 extern void btm_esco_proc_conn_chg(uint8_t status, uint16_t handle,
@@ -172,22 +142,11 @@ extern tBTM_STATUS BTM_BT_Quality_Report_VSE_Register(
 /* Internal functions provided by btm_dev.cc
  *********************************************
 */
-extern bool btm_dev_support_switch(const RawAddress& bd_addr);
-
-extern tBTM_SEC_DEV_REC* btm_sec_allocate_dev_rec(void);
-extern tBTM_SEC_DEV_REC* btm_sec_alloc_dev(const RawAddress& bd_addr);
 extern void wipe_secrets_and_remove(tBTM_SEC_DEV_REC* p_dev_rec);
-extern tBTM_SEC_DEV_REC* btm_find_dev(const RawAddress& bd_addr);
-extern tBTM_SEC_DEV_REC* btm_find_or_alloc_dev(const RawAddress& bd_addr);
-extern tBTM_SEC_DEV_REC* btm_find_dev_by_handle(uint16_t handle);
-extern tBTM_BOND_TYPE btm_get_bond_type_dev(const RawAddress& bd_addr);
-extern bool btm_set_bond_type_dev(const RawAddress& bd_addr,
-                                  tBTM_BOND_TYPE bond_type);
 
 /* Internal functions provided by btm_sec.cc
  *********************************************
 */
-extern bool btm_dev_support_switch(const RawAddress& bd_addr);
 extern void btm_sec_conn_req(const RawAddress& bda, uint8_t* dc);
 extern void btm_create_conn_cancel_complete(uint8_t* p);
 
@@ -219,7 +178,6 @@ extern void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec,
                                         uint8_t res, bool is_le_trasnport);
 
 extern void btm_sec_clear_ble_keys(tBTM_SEC_DEV_REC* p_dev_rec);
-extern void btm_consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec);
 extern bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec,
                                      const RawAddress& new_pseudo_addr);
 extern tBTM_SEC_SERV_REC* btm_sec_find_first_serv(bool is_originator,

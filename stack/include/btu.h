@@ -49,11 +49,6 @@ void btu_hcif_send_cmd_with_cb(const base::Location& posted_from,
                                uint8_t params_len,
                                base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
-/* Functions provided by btu_init.cc
- ***********************************
-*/
-void btu_free_core(void);
-
 /* Functions provided by btu_task.cc
  ***********************************
 */

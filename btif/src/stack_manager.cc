@@ -67,6 +67,8 @@
 #include "bta_dm_int.h"
 #include "btif/include/btif_pan.h"
 #include "btif/include/btif_sock.h"
+#include "device/include/interop.h"
+#include "internal_include/stack_config.h"
 #include "main/shim/controller.h"
 
 void main_thread_shut_down();
@@ -154,6 +156,10 @@ static void event_init_stack(void* context) {
     }
     module_init(get_module(BTIF_CONFIG_MODULE));
     btif_init_bluetooth();
+
+    module_init(get_module(INTEROP_MODULE));
+    bte_main_init();
+    module_init(get_module(STACK_CONFIG_MODULE));
 
     // stack init is synchronous, so no waiting necessary here
     stack_is_initialized = true;
@@ -299,7 +305,10 @@ static void event_shut_down_stack(UNUSED_ATTR void* context) {
 
   module_clean_up(get_module(BTE_LOGMSG_MODULE));
 
-  btu_free_core();
+  gatt_free();
+  l2c_free();
+  sdp_free();
+  btm_free();
 
   module_shut_down(get_module(CONTROLLER_MODULE));  // Doesn't do any work, just
                                                     // puts it in a restartable
@@ -332,6 +341,10 @@ static void event_clean_up_stack(void* context) {
   stack_is_initialized = false;
 
   btif_cleanup_bluetooth();
+
+  module_clean_up(get_module(STACK_CONFIG_MODULE));
+  module_clean_up(get_module(INTEROP_MODULE));
+
   module_clean_up(get_module(BTIF_CONFIG_MODULE));
   module_clean_up(get_module(BT_UTILS_MODULE));
   module_clean_up(get_module(OSI_MODULE));
@@ -348,11 +361,11 @@ static void event_signal_stack_up(UNUSED_ATTR void* context) {
   // Notify BTIF connect queue that we've brought up the stack. It's
   // now time to dispatch all the pending profile connect requests.
   btif_queue_connect_next();
-  HAL_CBACK(bt_hal_cbacks, adapter_state_changed_cb, BT_STATE_ON);
+  invoke_adapter_state_changed_cb(BT_STATE_ON);
 }
 
 static void event_signal_stack_down(UNUSED_ATTR void* context) {
-  HAL_CBACK(bt_hal_cbacks, adapter_state_changed_cb, BT_STATE_OFF);
+  invoke_adapter_state_changed_cb(BT_STATE_OFF);
   future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
 }
 

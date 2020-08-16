@@ -1115,29 +1115,6 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
 
 /*******************************************************************************
  *
- * Function         BTM_ReadPowerMode
- *
- * Description      This returns the current mode for a specific
- *                  ACL connection.
- *
- * Input Param      remote_bda - device address of desired ACL connection
- *
- * Output Param     p_mode - address where the current mode is copied into.
- *                          BTM_ACL_MODE_NORMAL
- *                          BTM_ACL_MODE_HOLD
- *                          BTM_ACL_MODE_SNIFF
- *                          BTM_ACL_MODE_PARK
- *                          (valid only if return code is BTM_SUCCESS)
- *
- * Returns          BTM_SUCCESS if successful,
- *                  BTM_UNKNOWN_ADDR if bd addr is not active or bad
- *
- ******************************************************************************/
-tBTM_STATUS BTM_ReadPowerMode(const RawAddress& remote_bda,
-                              tBTM_PM_MODE* p_mode);
-
-/*******************************************************************************
- *
  * Function         BTM_SetSsrParams
  *
  * Description      This sends the given SSR parameters for the given ACL
@@ -1340,8 +1317,6 @@ uint16_t BTM_GetMaxPacketSize(const RawAddress& addr);
 
 extern tBTM_STATUS BTM_BT_Quality_Report_VSE_Register(
     bool is_register, tBTM_BT_QUALITY_REPORT_RECEIVER* p_bqr_report_receiver);
-
-extern void BTM_VendorCleanup();
 
 extern tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
                                              uint16_t psm, bool is_originator,

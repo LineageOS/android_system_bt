@@ -83,7 +83,7 @@ using bluetooth::hearing_aid::HearingAidInterface;
  *  Static variables
  ******************************************************************************/
 
-bt_callbacks_t* bt_hal_cbacks = NULL;
+static bt_callbacks_t* bt_hal_cbacks = NULL;
 bool restricted_mode = false;
 bool niap_mode = false;
 const int CONFIG_COMPARE_ALL_PASS = 0b11;
@@ -192,112 +192,145 @@ int get_niap_config_compare_result() {
 bool is_atv_device() { return is_local_device_atv; }
 
 static int get_adapter_properties(void) {
-  /* sanity check */
-  if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  return btif_get_adapter_properties();
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_get_adapter_properties));
+  return BT_STATUS_SUCCESS;
 }
 
 static int get_adapter_property(bt_property_type_t type) {
-  /* sanity check */
-  if (!interface_ready()) return BT_STATUS_NOT_READY;
+  /* Allow get_adapter_property only for BDADDR and BDNAME if BT is disabled */
+  if (!btif_is_enabled() && (type != BT_PROPERTY_BDADDR) &&
+      (type != BT_PROPERTY_BDNAME) && (type != BT_PROPERTY_CLASS_OF_DEVICE))
+    return BT_STATUS_NOT_READY;
 
-  return btif_get_adapter_property(type);
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_get_adapter_property, type));
+  return BT_STATUS_SUCCESS;
 }
 
 static int set_adapter_property(const bt_property_t* property) {
-  /* sanity check */
-  if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  return btif_set_adapter_property(property);
+  switch (property->type) {
+    case BT_PROPERTY_BDNAME:
+    case BT_PROPERTY_ADAPTER_SCAN_MODE:
+    case BT_PROPERTY_ADAPTER_DISCOVERY_TIMEOUT:
+    case BT_PROPERTY_CLASS_OF_DEVICE:
+    case BT_PROPERTY_LOCAL_IO_CAPS:
+    case BT_PROPERTY_LOCAL_IO_CAPS_BLE:
+      break;
+    default:
+      return BT_STATUS_FAIL;
+  }
+
+  do_in_jni_thread(FROM_HERE, base::BindOnce(
+                                  [](bt_property_t* property) {
+                                    btif_set_adapter_property(property);
+                                    osi_free(property);
+                                  },
+                                  property_deep_copy(property)));
+  return BT_STATUS_SUCCESS;
 }
 
 int get_remote_device_properties(RawAddress* remote_addr) {
-  /* sanity check */
-  if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  return btif_get_remote_device_properties(remote_addr);
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_get_remote_device_properties,
+                                             *remote_addr));
+  return BT_STATUS_SUCCESS;
 }
 
 int get_remote_device_property(RawAddress* remote_addr,
                                bt_property_type_t type) {
-  /* sanity check */
-  if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  return btif_get_remote_device_property(remote_addr, type);
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_get_remote_device_property,
+                                             *remote_addr, type));
+  return BT_STATUS_SUCCESS;
 }
 
 int set_remote_device_property(RawAddress* remote_addr,
                                const bt_property_t* property) {
-  /* sanity check */
-  if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  return btif_set_remote_device_property(remote_addr, property);
+  do_in_jni_thread(
+      FROM_HERE, base::BindOnce(
+                     [](RawAddress remote_addr, bt_property_t* property) {
+                       btif_set_remote_device_property(&remote_addr, property);
+                       osi_free(property);
+                     },
+                     *remote_addr, property_deep_copy(property)));
+  return BT_STATUS_SUCCESS;
 }
 
 int get_remote_service_record(const RawAddress& remote_addr,
                               const bluetooth::Uuid& uuid) {
-  /* sanity check */
-  if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  return btif_get_remote_service_record(remote_addr, uuid);
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_get_remote_service_record,
+                                             remote_addr, uuid));
+  return BT_STATUS_SUCCESS;
 }
 
 int get_remote_services(RawAddress* remote_addr) {
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
-  return btif_dm_get_remote_services(*remote_addr);
+  do_in_jni_thread(FROM_HERE,
+                   base::BindOnce(btif_dm_get_remote_services, *remote_addr));
+  return BT_STATUS_SUCCESS;
 }
 
 static int start_discovery(void) {
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
-  return btif_dm_start_discovery();
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_start_discovery));
+  return BT_STATUS_SUCCESS;
 }
 
 static int cancel_discovery(void) {
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
-  return btif_dm_cancel_discovery();
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_cancel_discovery));
+  return BT_STATUS_SUCCESS;
 }
 
 static int create_bond(const RawAddress* bd_addr, int transport) {
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (btif_dm_pairing_is_busy()) return BT_STATUS_BUSY;
 
-  return btif_dm_create_bond(bd_addr, transport);
+  do_in_jni_thread(FROM_HERE,
+                   base::BindOnce(btif_dm_create_bond, *bd_addr, transport));
+  return BT_STATUS_SUCCESS;
 }
 
 static int create_bond_out_of_band(const RawAddress* bd_addr, int transport,
                                    const bt_out_of_band_data_t* oob_data) {
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (btif_dm_pairing_is_busy()) return BT_STATUS_BUSY;
 
-  return btif_dm_create_bond_out_of_band(bd_addr, transport, oob_data);
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_create_bond_out_of_band,
+                                             *bd_addr, transport, *oob_data));
+  return BT_STATUS_SUCCESS;
 }
 
 static int cancel_bond(const RawAddress* bd_addr) {
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
-  return btif_dm_cancel_bond(bd_addr);
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_cancel_bond, *bd_addr));
+  return BT_STATUS_SUCCESS;
 }
 
 static int remove_bond(const RawAddress* bd_addr) {
   if (is_restricted_mode() && !btif_storage_is_restricted_device(bd_addr))
     return BT_STATUS_SUCCESS;
 
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
-  return btif_dm_remove_bond(bd_addr);
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_remove_bond, *bd_addr));
+  return BT_STATUS_SUCCESS;
 }
 
 static int get_connection_state(const RawAddress* bd_addr) {
-  /* sanity check */
   if (!interface_ready()) return 0;
 
   return btif_dm_get_connection_state(bd_addr);
@@ -305,23 +338,28 @@ static int get_connection_state(const RawAddress* bd_addr) {
 
 static int pin_reply(const RawAddress* bd_addr, uint8_t accept, uint8_t pin_len,
                      bt_pin_code_t* pin_code) {
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (pin_code == nullptr || pin_len > PIN_CODE_LEN) return BT_STATUS_FAIL;
 
-  return btif_dm_pin_reply(bd_addr, accept, pin_len, pin_code);
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_pin_reply, *bd_addr,
+                                             accept, pin_len, *pin_code));
+  return BT_STATUS_SUCCESS;
 }
 
 static int ssp_reply(const RawAddress* bd_addr, bt_ssp_variant_t variant,
                      uint8_t accept, uint32_t passkey) {
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (variant == BT_SSP_VARIANT_PASSKEY_ENTRY) return BT_STATUS_FAIL;
 
-  return btif_dm_ssp_reply(bd_addr, variant, accept, passkey);
+  do_in_jni_thread(
+      FROM_HERE, base::BindOnce(btif_dm_ssp_reply, *bd_addr, variant, accept));
+  return BT_STATUS_SUCCESS;
 }
 
 static int read_energy_info() {
   if (!interface_ready()) return BT_STATUS_NOT_READY;
-  btif_dm_read_energy_info();
+
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_read_energy_info));
   return BT_STATUS_SUCCESS;
 }
 
@@ -406,30 +444,52 @@ static const void* get_profile_interface(const char* profile_id) {
 }
 
 int dut_mode_configure(uint8_t enable) {
-  LOG_INFO("%s", __func__);
-
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (!stack_manager_get_interface()->get_stack_is_running())
+    return BT_STATUS_NOT_READY;
 
-  return btif_dut_mode_configure(enable);
+  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dut_mode_configure, enable));
+  return BT_STATUS_SUCCESS;
 }
 
 int dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len) {
-  LOG_INFO("%s", __func__);
-
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
+  if (!btif_is_dut_mode()) return BT_STATUS_FAIL;
 
-  return btif_dut_mode_send(opcode, buf, len);
+  uint8_t* copy = (uint8_t*)osi_calloc(len);
+  memcpy(copy, buf, len);
+
+  do_in_jni_thread(FROM_HERE,
+                   base::BindOnce(
+                       [](uint16_t opcode, uint8_t* buf, uint8_t len) {
+                         btif_dut_mode_send(opcode, buf, len);
+                         osi_free(buf);
+                       },
+                       opcode, copy, len));
+  return BT_STATUS_SUCCESS;
 }
 
 int le_test_mode(uint16_t opcode, uint8_t* buf, uint8_t len) {
-  LOG_INFO("%s", __func__);
-
-  /* sanity check */
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
-  return btif_le_test_mode(opcode, buf, len);
+  switch (opcode) {
+    case HCI_BLE_TRANSMITTER_TEST:
+      if (len != 3) return BT_STATUS_PARM_INVALID;
+      do_in_jni_thread(FROM_HERE, base::BindOnce(btif_ble_transmitter_test,
+                                                 buf[0], buf[1], buf[2]));
+      break;
+    case HCI_BLE_RECEIVER_TEST:
+      if (len != 1) return BT_STATUS_PARM_INVALID;
+      do_in_jni_thread(FROM_HERE,
+                       base::BindOnce(btif_ble_receiver_test, buf[0]));
+      break;
+    case HCI_BLE_TEST_END:
+      do_in_jni_thread(FROM_HERE, base::BindOnce(btif_ble_test_end));
+      break;
+    default:
+      return BT_STATUS_UNSUPPORTED;
+  }
+  return BT_STATUS_SUCCESS;
 }
 
 static bt_os_callouts_t* wakelock_os_callouts_saved = nullptr;
@@ -518,3 +578,185 @@ EXPORT_SYMBOL bt_interface_t bluetoothInterface = {
     obfuscate_address,
     get_metric_id,
 };
+
+// callback reporting helpers
+
+bt_property_t* property_deep_copy_array(int num_properties,
+                                        bt_property_t* properties) {
+  bt_property_t* copy = nullptr;
+  if (num_properties > 0) {
+    size_t content_len = 0;
+    for (int i = 0; i < num_properties; i++) {
+      auto len = properties[i].len;
+      if (len > 0) {
+        content_len += len;
+      }
+    }
+
+    copy = (bt_property_t*)osi_calloc((sizeof(bt_property_t) * num_properties) +
+                                      content_len);
+    uint8_t* content = (uint8_t*)(copy + num_properties);
+
+    for (int i = 0; i < num_properties; i++) {
+      auto len = properties[i].len;
+      copy[i].type = properties[i].type;
+      copy[i].len = len;
+      if (len <= 0) {
+        continue;
+      }
+      copy[i].val = content;
+      memcpy(content, properties[i].val, len);
+      content += len;
+    }
+  }
+  return copy;
+}
+
+void invoke_adapter_state_changed_cb(bt_state_t state) {
+  do_in_jni_thread(FROM_HERE, base::BindOnce(
+                                  [](bt_state_t state) {
+                                    HAL_CBACK(bt_hal_cbacks,
+                                              adapter_state_changed_cb, state);
+                                  },
+                                  state));
+}
+
+void invoke_adapter_properties_cb(bt_status_t status, int num_properties,
+                                  bt_property_t* properties) {
+  do_in_jni_thread(FROM_HERE,
+                   base::BindOnce(
+                       [](bt_status_t status, int num_properties,
+                          bt_property_t* properties) {
+                         HAL_CBACK(bt_hal_cbacks, adapter_properties_cb, status,
+                                   num_properties, properties);
+                         if (properties) {
+                           osi_free(properties);
+                         }
+                       },
+                       status, num_properties,
+                       property_deep_copy_array(num_properties, properties)));
+}
+
+void invoke_remote_device_properties_cb(bt_status_t status, RawAddress bd_addr,
+                                        int num_properties,
+                                        bt_property_t* properties) {
+  do_in_jni_thread(
+      FROM_HERE, base::BindOnce(
+                     [](bt_status_t status, RawAddress bd_addr,
+                        int num_properties, bt_property_t* properties) {
+                       HAL_CBACK(bt_hal_cbacks, remote_device_properties_cb,
+                                 status, &bd_addr, num_properties, properties);
+                       if (properties) {
+                         osi_free(properties);
+                       }
+                     },
+                     status, bd_addr, num_properties,
+                     property_deep_copy_array(num_properties, properties)));
+}
+
+void invoke_device_found_cb(int num_properties, bt_property_t* properties) {
+  do_in_jni_thread(FROM_HERE,
+                   base::BindOnce(
+                       [](int num_properties, bt_property_t* properties) {
+                         HAL_CBACK(bt_hal_cbacks, device_found_cb,
+                                   num_properties, properties);
+                         if (properties) {
+                           osi_free(properties);
+                         }
+                       },
+                       num_properties,
+                       property_deep_copy_array(num_properties, properties)));
+}
+
+void invoke_discovery_state_changed_cb(bt_discovery_state_t state) {
+  do_in_jni_thread(FROM_HERE, base::BindOnce(
+                                  [](bt_discovery_state_t state) {
+                                    HAL_CBACK(bt_hal_cbacks,
+                                              discovery_state_changed_cb,
+                                              state);
+                                  },
+                                  state));
+}
+
+void invoke_pin_request_cb(RawAddress bd_addr, bt_bdname_t bd_name,
+                           uint32_t cod, bool min_16_digit) {
+  do_in_jni_thread(FROM_HERE, base::BindOnce(
+                                  [](RawAddress bd_addr, bt_bdname_t bd_name,
+                                     uint32_t cod, bool min_16_digit) {
+                                    HAL_CBACK(bt_hal_cbacks, pin_request_cb,
+                                              &bd_addr, &bd_name, cod,
+                                              min_16_digit);
+                                  },
+                                  bd_addr, bd_name, cod, min_16_digit));
+}
+
+void invoke_ssp_request_cb(RawAddress bd_addr, bt_bdname_t bd_name,
+                           uint32_t cod, bt_ssp_variant_t pairing_variant,
+                           uint32_t pass_key) {
+  do_in_jni_thread(FROM_HERE,
+                   base::BindOnce(
+                       [](RawAddress bd_addr, bt_bdname_t bd_name, uint32_t cod,
+                          bt_ssp_variant_t pairing_variant, uint32_t pass_key) {
+                         HAL_CBACK(bt_hal_cbacks, ssp_request_cb, &bd_addr,
+                                   &bd_name, cod, pairing_variant, pass_key);
+                       },
+                       bd_addr, bd_name, cod, pairing_variant, pass_key));
+}
+
+void invoke_bond_state_changed_cb(bt_status_t status, RawAddress bd_addr,
+                                  bt_bond_state_t state) {
+  do_in_jni_thread(
+      FROM_HERE,
+      base::BindOnce(
+          [](bt_status_t status, RawAddress bd_addr, bt_bond_state_t state) {
+            HAL_CBACK(bt_hal_cbacks, bond_state_changed_cb, status, &bd_addr,
+                      state);
+          },
+          status, bd_addr, state));
+}
+
+void invoke_acl_state_changed_cb(bt_status_t status, RawAddress bd_addr,
+                                 bt_acl_state_t state) {
+  do_in_jni_thread(
+      FROM_HERE,
+      base::BindOnce(
+          [](bt_status_t status, RawAddress bd_addr, bt_acl_state_t state) {
+            HAL_CBACK(bt_hal_cbacks, acl_state_changed_cb, status, &bd_addr,
+                      state);
+          },
+          status, bd_addr, state));
+}
+
+void invoke_thread_evt_cb(bt_cb_thread_evt event) {
+  do_in_jni_thread(FROM_HERE, base::BindOnce(
+                                  [](bt_cb_thread_evt event) {
+                                    HAL_CBACK(bt_hal_cbacks, thread_evt_cb,
+                                              event);
+                                    if (event == DISASSOCIATE_JVM) {
+                                      bt_hal_cbacks = NULL;
+                                    }
+                                  },
+                                  event));
+}
+
+void invoke_le_test_mode_cb(bt_status_t status, uint16_t count) {
+  do_in_jni_thread(FROM_HERE, base::BindOnce(
+                                  [](bt_status_t status, uint16_t count) {
+                                    HAL_CBACK(bt_hal_cbacks, le_test_mode_cb,
+                                              status, count);
+                                  },
+                                  status, count));
+}
+
+// takes ownership of |uid_data|
+void invoke_energy_info_cb(bt_activity_energy_info energy_info,
+                           bt_uid_traffic_t* uid_data) {
+  do_in_jni_thread(
+      FROM_HERE,
+      base::BindOnce(
+          [](bt_activity_energy_info energy_info, bt_uid_traffic_t* uid_data) {
+            HAL_CBACK(bt_hal_cbacks, energy_info_cb, &energy_info, uid_data);
+            osi_free(uid_data);
+          },
+          energy_info, uid_data));
+}

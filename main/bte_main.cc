@@ -44,24 +44,6 @@
 #include "stack_config.h"
 
 /*******************************************************************************
- *  Constants & Macros
- ******************************************************************************/
-
-/* Run-time configuration file for BLE*/
-#ifndef BTE_BLE_STACK_CONF_FILE
-// TODO(armansito): Find a better way than searching by a hardcoded path.
-#if defined(OS_GENERIC)
-#define BTE_BLE_STACK_CONF_FILE "ble_stack.conf"
-#else  // !defined(OS_GENERIC)
-#define BTE_BLE_STACK_CONF_FILE "/etc/bluetooth/ble_stack.conf"
-#endif  // defined(OS_GENERIC)
-#endif  // BT_BLE_STACK_CONF_FILE
-
-/******************************************************************************
- *  Variables
- *****************************************************************************/
-
-/*******************************************************************************
  *  Static variables
  ******************************************************************************/
 static const hci_t* hci;
@@ -92,18 +74,7 @@ void post_to_main_message_loop(const base::Location& from_here, BT_HDR* p_msg) {
   }
 }
 
-/******************************************************************************
- *
- * Function         bte_main_boot_entry
- *
- * Description      BTE MAIN API - Entry point for BTE chip/stack initialization
- *
- * Returns          None
- *
- *****************************************************************************/
-void bte_main_boot_entry(void) {
-  module_init(get_module(INTEROP_MODULE));
-
+void bte_main_init(void) {
   hci = hci_layer_get_interface();
   if (!hci) {
     LOG_ERROR("%s could not get hci layer interface.", __func__);
@@ -111,23 +82,6 @@ void bte_main_boot_entry(void) {
   }
 
   hci->set_data_cb(base::Bind(&post_to_main_message_loop));
-
-  module_init(get_module(STACK_CONFIG_MODULE));
-}
-
-/******************************************************************************
- *
- * Function         bte_main_cleanup
- *
- * Description      BTE MAIN API - Cleanup code for BTE chip/stack
- *
- * Returns          None
- *
- *****************************************************************************/
-void bte_main_cleanup() {
-  module_clean_up(get_module(STACK_CONFIG_MODULE));
-
-  module_clean_up(get_module(INTEROP_MODULE));
 }
 
 /******************************************************************************

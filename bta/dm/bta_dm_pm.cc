@@ -49,7 +49,7 @@ static void bta_dm_pm_btm_cback(const RawAddress& bd_addr,
                                 tBTM_PM_STATUS status, uint16_t value,
                                 uint8_t hci_status);
 static bool bta_dm_pm_park(const RawAddress& peer_addr);
-static bool bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index);
+static void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index);
 static bool bta_dm_pm_is_sco_active();
 #if (BTM_SSR_INCLUDED == TRUE)
 static int bta_dm_get_sco_index();
@@ -696,7 +696,7 @@ static bool bta_dm_pm_park(const RawAddress& peer_addr) {
  * Returns          true if sniff attempted, false otherwise.
  *
  ******************************************************************************/
-static bool bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
+static void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
   tBTM_PM_MODE mode = BTM_PM_STS_ACTIVE;
   tBTM_PM_PWR_MD pwr_md;
   tBTM_STATUS status;
@@ -717,37 +717,36 @@ static bool bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
      * DUT supported range of Sniff intervals.*/
     if ((mode == BTM_PM_MD_SNIFF) && (p_peer_dev->info & BTA_DM_DI_ACP_SNIFF)) {
       APPL_TRACE_DEBUG("%s: already in remote initiate sniff", __func__);
-      return true;
-    }
-#else
-  APPL_TRACE_DEBUG("bta_dm_pm_sniff cur:%d, idx:%d", mode, index);
-  if (mode != BTM_PM_MD_SNIFF) {
-#endif
-    /* if the current mode is not sniff, issue the sniff command.
-     * If sniff, but SSR is not used in this link, still issue the command */
-    memcpy(&pwr_md, &p_bta_dm_pm_md[index], sizeof(tBTM_PM_PWR_MD));
-    if (p_peer_dev->info & BTA_DM_DI_INT_SNIFF) {
-      pwr_md.mode |= BTM_PM_MD_FORCE;
-    }
-    status =
-        BTM_SetPowerMode(bta_dm_cb.pm_id, p_peer_dev->peer_bdaddr, &pwr_md);
-    if (status == BTM_CMD_STORED || status == BTM_CMD_STARTED) {
-      p_peer_dev->info &= ~(BTA_DM_DI_INT_SNIFF | BTA_DM_DI_ACP_SNIFF);
-      p_peer_dev->info |= BTA_DM_DI_SET_SNIFF;
-    } else if (status == BTM_SUCCESS) {
-      APPL_TRACE_DEBUG(
-          "bta_dm_pm_sniff BTM_SetPowerMode() returns BTM_SUCCESS");
-      p_peer_dev->info &=
-          ~(BTA_DM_DI_INT_SNIFF | BTA_DM_DI_ACP_SNIFF | BTA_DM_DI_SET_SNIFF);
-    } else /* error */
-    {
-      APPL_TRACE_ERROR(
-          "bta_dm_pm_sniff BTM_SetPowerMode() returns ERROR status=%d", status);
-      p_peer_dev->info &=
-          ~(BTA_DM_DI_INT_SNIFF | BTA_DM_DI_ACP_SNIFF | BTA_DM_DI_SET_SNIFF);
+      return;
     }
   }
-  return true;
+#else
+  APPL_TRACE_DEBUG("bta_dm_pm_sniff cur:%d, idx:%d", mode, index);
+  if (mode == BTM_PM_MD_SNIFF) {
+    return;
+  }
+#endif
+  /* if the current mode is not sniff, issue the sniff command.
+   * If sniff, but SSR is not used in this link, still issue the command */
+  memcpy(&pwr_md, &p_bta_dm_pm_md[index], sizeof(tBTM_PM_PWR_MD));
+  if (p_peer_dev->info & BTA_DM_DI_INT_SNIFF) {
+    pwr_md.mode |= BTM_PM_MD_FORCE;
+  }
+  status = BTM_SetPowerMode(bta_dm_cb.pm_id, p_peer_dev->peer_bdaddr, &pwr_md);
+  if (status == BTM_CMD_STORED || status == BTM_CMD_STARTED) {
+    p_peer_dev->info &= ~(BTA_DM_DI_INT_SNIFF | BTA_DM_DI_ACP_SNIFF);
+    p_peer_dev->info |= BTA_DM_DI_SET_SNIFF;
+  } else if (status == BTM_SUCCESS) {
+    APPL_TRACE_DEBUG("bta_dm_pm_sniff BTM_SetPowerMode() returns BTM_SUCCESS");
+    p_peer_dev->info &=
+        ~(BTA_DM_DI_INT_SNIFF | BTA_DM_DI_ACP_SNIFF | BTA_DM_DI_SET_SNIFF);
+  } else /* error */
+  {
+    APPL_TRACE_ERROR(
+        "bta_dm_pm_sniff BTM_SetPowerMode() returns ERROR status=%d", status);
+    p_peer_dev->info &=
+        ~(BTA_DM_DI_INT_SNIFF | BTA_DM_DI_ACP_SNIFF | BTA_DM_DI_SET_SNIFF);
+  }
 }
 /*******************************************************************************
  *

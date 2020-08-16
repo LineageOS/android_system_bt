@@ -221,7 +221,7 @@ uint16_t BTM_GetNumAclLinks(void);
  * Returns          void
  *
  ******************************************************************************/
-void btm_acl_role_changed(uint8_t hci_status, const RawAddress* bd_addr,
+void btm_acl_role_changed(uint8_t hci_status, const RawAddress& bd_addr,
                           uint8_t new_role);
 
 void btm_set_packet_types_from_address(const RawAddress& bda,
@@ -314,3 +314,31 @@ uint16_t acl_get_supported_packet_types();
 
 bool acl_set_peer_le_features_from_handle(uint16_t hci_handle,
                                           const uint8_t* p);
+
+tBTM_STATUS btm_read_power_mode_state(const RawAddress& remote_bda,
+                                      tBTM_PM_STATE* pmState);
+
+void btm_acl_notif_conn_collision(const RawAddress& bda);
+
+void btm_acl_update_conn_addr(uint16_t conn_handle, const RawAddress& address);
+
+/*******************************************************************************
+ *
+ * Function         BTM_ReadPowerMode
+ *
+ * Description      This returns the current mode for a specific
+ *                  ACL connection.
+ *
+ * Input Param      remote_bda - device address of desired ACL connection
+ *
+ * Output Param     p_mode - address where the current mode is copied into.
+ *                          BTM_ACL_MODE_NORMAL
+ *                          BTM_ACL_MODE_HOLD
+ *                          BTM_ACL_MODE_SNIFF
+ *                          BTM_ACL_MODE_PARK
+ *                          (valid only if return code is BTM_SUCCESS)
+ *
+ * Returns          true if successful, false otherwise.
+ *
+ ******************************************************************************/
+bool BTM_ReadPowerMode(const RawAddress& remote_bda, tBTM_PM_MODE* p_mode);
