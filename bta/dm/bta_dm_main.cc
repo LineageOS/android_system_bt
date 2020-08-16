@@ -137,7 +137,8 @@ bool bta_dm_search_sm_execute(BT_HDR* p_msg) {
         case BTA_DM_SEARCH_CMPL_EVT:
         case BTA_DM_DISCOVERY_RESULT_EVT:
           bta_dm_search_set_state(BTA_DM_SEARCH_IDLE);
-          bta_dm_search_cancel_transac_cmpl(message);
+          osi_free_and_reset((void**)&bta_dm_search_cb.p_sdp_db);
+          bta_dm_search_cancel_notify(NULL);
           bta_dm_search_cancel_cmpl(message);
           break;
       }

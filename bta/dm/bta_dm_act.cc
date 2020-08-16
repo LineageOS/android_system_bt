@@ -1564,21 +1564,6 @@ void bta_dm_search_cancel_cmpl(UNUSED_ATTR tBTA_DM_MSG* p_data) {
 
 /*******************************************************************************
  *
- * Function         bta_dm_search_cancel_transac_cmpl
- *
- * Description      Current Service Discovery or remote name procedure is
- *                  completed after search cancellation
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_dm_search_cancel_transac_cmpl(UNUSED_ATTR tBTA_DM_MSG* p_data) {
-  osi_free_and_reset((void**)&bta_dm_search_cb.p_sdp_db);
-  bta_dm_search_cancel_notify(NULL);
-}
-
-/*******************************************************************************
- *
  * Function         bta_dm_search_cancel_notify
  *
  * Description      Notify application that search has been cancelled
