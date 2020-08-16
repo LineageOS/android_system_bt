@@ -1835,23 +1835,7 @@ void bte_dm_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data) {
  ******************************************************************************/
 static void bte_search_devices_evt(tBTA_DM_SEARCH_EVT event,
                                    tBTA_DM_SEARCH* p_data) {
-  uint16_t param_len = 0;
-
-  if (p_data) param_len += sizeof(tBTA_DM_SEARCH);
-  /* Allocate buffer to hold the pointers (deep copy). The pointers will point
-   * to the end of the tBTA_DM_SEARCH */
-  switch (event) {
-    case BTA_DM_INQ_RES_EVT: {
-      if (p_data->inq_res.p_eir) param_len += p_data->inq_res.eir_len;
-    } break;
-
-    case BTA_DM_DISC_RES_EVT: {
-      if (p_data->disc_res.raw_data_size && p_data->disc_res.p_raw_data)
-        param_len += p_data->disc_res.raw_data_size;
-    } break;
-  }
-  BTIF_TRACE_DEBUG("%s event=%s param_len=%d", __func__,
-                   dump_dm_search_event(event), param_len);
+  BTIF_TRACE_DEBUG("%s event=%s", __func__, dump_dm_search_event(event));
 
   /* if remote name is available in EIR, set teh flag so that stack doesnt
    * trigger RNR */
