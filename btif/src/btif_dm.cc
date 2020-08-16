@@ -1275,10 +1275,8 @@ static void btif_dm_search_devices_evt(uint16_t event, char* p_param) {
     } break;
 
     case BTA_DM_INQ_CMPL_EVT: {
-      do_in_main_thread(
-          FROM_HERE,
-          base::Bind(&BTM_BleAdvFilterParamSetup, BTM_BLE_SCAN_COND_DELETE, 0,
-                     nullptr, base::Bind(&bte_scan_filt_param_cfg_evt, 0)));
+      BTM_BleAdvFilterParamSetup(BTM_BLE_SCAN_COND_DELETE, 0, nullptr,
+                                 base::Bind(&bte_scan_filt_param_cfg_evt, 0));
     } break;
     case BTA_DM_DISC_CMPL_EVT: {
       invoke_discovery_state_changed_cb(BT_DISCOVERY_STOPPED);
@@ -1296,10 +1294,8 @@ static void btif_dm_search_devices_evt(uint16_t event, char* p_param) {
       if (!btif_dm_inquiry_in_progress) {
         btgatt_filt_param_setup_t adv_filt_param;
         memset(&adv_filt_param, 0, sizeof(btgatt_filt_param_setup_t));
-        do_in_main_thread(
-            FROM_HERE,
-            base::Bind(&BTM_BleAdvFilterParamSetup, BTM_BLE_SCAN_COND_DELETE, 0,
-                       nullptr, base::Bind(&bte_scan_filt_param_cfg_evt, 0)));
+        BTM_BleAdvFilterParamSetup(BTM_BLE_SCAN_COND_DELETE, 0, nullptr,
+                                   base::Bind(&bte_scan_filt_param_cfg_evt, 0));
         invoke_discovery_state_changed_cb(BT_DISCOVERY_STOPPED);
       }
     } break;
