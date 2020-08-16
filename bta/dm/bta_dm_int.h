@@ -529,5 +529,8 @@ extern void bta_dm_disc_rmt_name(tBTA_DM_MSG* p_data);
 extern tBTA_DM_PEER_DEVICE* bta_dm_find_peer_device(
     const RawAddress& peer_addr);
 
+uint8_t bta_dm_search_get_state();
+void bta_dm_search_set_state(uint8_t state);
+
 void bta_dm_eir_update_uuid(uint16_t uuid16, bool adding);
 #endif /* BTA_DM_INT_H */
