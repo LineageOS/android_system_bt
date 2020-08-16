@@ -740,30 +740,6 @@ static void btif_dm_cb_create_bond(const RawAddress bd_addr,
 
 /*******************************************************************************
  *
- * Function         btif_dm_cb_remove_bond
- *
- * Description      remove bond initiated from the BTIF thread context
- *                  Special handling for HID devices
- *
- * Returns          void
- *
- ******************************************************************************/
-void btif_dm_cb_remove_bond(const RawAddress bd_addr) {
-/*special handling for HID devices */
-/*  VUP needs to be sent if its a HID Device. The HID HOST module will check if
-there
-is a valid hid connection with this bd_addr. If yes VUP will be issued.*/
-#if (BTA_HH_INCLUDED == TRUE)
-  if (btif_hh_virtual_unplug(&bd_addr) != BT_STATUS_SUCCESS)
-#endif
-  {
-    BTIF_TRACE_DEBUG("%s: Removing HH device", __func__);
-    BTA_DmRemoveDevice(bd_addr);
-  }
-}
-
-/*******************************************************************************
- *
  * Function         btif_dm_get_connection_state
  *
  * Description      Returns whether the remote device is currently connected
@@ -2263,7 +2239,17 @@ void btif_dm_remove_bond(const RawAddress bd_addr) {
   btif_stats_add_bond_event(bd_addr, BTIF_DM_FUNC_REMOVE_BOND,
                             pairing_cb.state);
 
-  btif_dm_cb_remove_bond(bd_addr);
+  // special handling for HID devices
+  // VUP needs to be sent if its a HID Device. The HID HOST module will check if
+  // there is a valid hid connection with this bd_addr. If yes VUP will be
+  // issued.
+#if (BTA_HH_INCLUDED == TRUE)
+  if (btif_hh_virtual_unplug(&bd_addr) != BT_STATUS_SUCCESS)
+#endif
+  {
+    BTIF_TRACE_DEBUG("%s: Removing HH device", __func__);
+    BTA_DmRemoveDevice(bd_addr);
+  }
 }
 
 /*******************************************************************************
