@@ -61,20 +61,12 @@ enum {
 
 };
 
-enum {
-  BTA_DM_RS_NONE, /* straight API call */
-  BTA_DM_RS_OK,   /* the role switch result - successful */
-  BTA_DM_RS_FAIL  /* the role switch result - failed */
-};
-typedef uint8_t tBTA_DM_RS_RES;
-
 /* data type for BTA_DM_API_SEARCH_EVT */
 typedef struct {
   BT_HDR hdr;
   tBTA_DM_INQ inq_params;
   tBTA_SERVICE_MASK services;
   tBTA_DM_SEARCH_CBACK* p_cback;
-  tBTA_DM_RS_RES rs_res;
   uint8_t num_uuid;
   bluetooth::Uuid* p_uuid;
 } tBTA_DM_API_SEARCH;

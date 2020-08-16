@@ -94,7 +94,6 @@ void BTA_DmSearch(tBTA_DM_INQ* p_dm_inq, tBTA_SERVICE_MASK services,
   memcpy(&p_msg->inq_params, p_dm_inq, sizeof(tBTA_DM_INQ));
   p_msg->services = services;
   p_msg->p_cback = p_cback;
-  p_msg->rs_res = BTA_DM_RS_NONE;
 
   bta_sys_sendmsg(p_msg);
 }
