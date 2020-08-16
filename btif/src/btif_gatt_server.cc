@@ -48,6 +48,7 @@
 #include "btif_storage.h"
 #include "osi/include/log.h"
 #include "stack/include/btu.h"
+#include "types/bt_transport.h"
 
 using base::Bind;
 using base::Owned;

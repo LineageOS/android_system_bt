@@ -38,6 +38,7 @@
 #include "srvc_api.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/l2c_api.h"
+#include "types/bt_transport.h"
 #include "utl.h"
 
 using bluetooth::Uuid;
