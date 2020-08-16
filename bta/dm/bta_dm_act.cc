@@ -854,7 +854,7 @@ void bta_dm_search_start(tBTA_DM_MSG* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_dm_search_cancel(UNUSED_ATTR tBTA_DM_MSG* p_data) {
+void bta_dm_search_cancel() {
   tBTA_DM_MSG* p_msg;
 
   if (BTM_IsInquiryActive()) {
@@ -989,7 +989,7 @@ static void bta_dm_di_disc_callback(uint16_t result) {
 static void bta_dm_disable_search_and_disc(void) {
   tBTA_DM_DI_DISC_CMPL di_disc;
 
-  if (bta_dm_search_cb.state != BTA_DM_SEARCH_IDLE) bta_dm_search_cancel(NULL);
+  if (bta_dm_search_cb.state != BTA_DM_SEARCH_IDLE) bta_dm_search_cancel();
 
   if (bta_dm_di_cb.p_di_db != NULL) {
     memset(&di_disc, 0, sizeof(tBTA_DM_DI_DISC_CMPL));

@@ -509,7 +509,7 @@ extern void bta_dm_disable_pm(void);
 
 extern uint8_t bta_dm_get_av_count(void);
 extern void bta_dm_search_start(tBTA_DM_MSG* p_data);
-extern void bta_dm_search_cancel(tBTA_DM_MSG* p_data);
+extern void bta_dm_search_cancel();
 extern void bta_dm_discover(tBTA_DM_MSG* p_data);
 extern void bta_dm_di_disc(tBTA_DM_MSG* p_data);
 extern void bta_dm_inq_cmpl(uint8_t num);

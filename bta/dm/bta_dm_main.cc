@@ -94,7 +94,7 @@ bool bta_dm_search_sm_execute(BT_HDR* p_msg) {
       switch (p_msg->event) {
         case BTA_DM_API_SEARCH_CANCEL_EVT:
           bta_dm_search_set_state(BTA_DM_SEARCH_CANCELLING);
-          bta_dm_search_cancel(message);
+          bta_dm_search_cancel();
           break;
         case BTA_DM_REMT_NAME_EVT:
           bta_dm_rmt_name(message);
