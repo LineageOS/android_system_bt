@@ -144,7 +144,6 @@ const char* dump_property_type(bt_property_type_t type) {
 
 const char* dump_dm_event(uint16_t event) {
   switch (event) {
-    CASE_RETURN_STR(BTA_DM_DISABLE_EVT)
     CASE_RETURN_STR(BTA_DM_PIN_REQ_EVT)
     CASE_RETURN_STR(BTA_DM_AUTH_CMPL_EVT)
     CASE_RETURN_STR(BTA_DM_LINK_UP_EVT)
