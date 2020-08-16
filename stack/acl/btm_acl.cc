@@ -34,7 +34,9 @@
 #define LOG_TAG "btm_acl"
 
 #include <cstdint>
+#include "bta/include/bta_dm_acl.h"
 #include "bta/sys/bta_sys.h"
+#include "btif/include/btif_acl.h"
 #include "common/metrics.h"
 #include "device/include/controller.h"
 #include "device/include/interop.h"
@@ -100,15 +102,8 @@ static void btm_process_remote_ext_features(tACL_CONN* p_acl_cb,
 static void btm_sec_set_peer_sec_caps(tACL_CONN* p_acl_cb,
                                       tBTM_SEC_DEV_REC* p_dev_rec);
 static bool acl_is_role_master(const RawAddress& bda, tBT_TRANSPORT transport);
-
-void BTIF_dm_report_inquiry_status_change(uint8_t busy_level_flags);
-void BTA_dm_acl_up(const RawAddress bd_addr, tBT_TRANSPORT transport,
-                   uint16_t handle);
-void BTA_dm_acl_down(const RawAddress bd_addr, tBT_TRANSPORT transport);
-void BTA_dm_report_role_change(const RawAddress bd_addr, uint8_t new_role,
-                               uint8_t hci_status);
-
 static void btm_set_link_policy(tACL_CONN* conn, uint16_t policy);
+
 /* 3 seconds timeout waiting for responses */
 #define BTM_DEV_REPLY_TIMEOUT_MS (3 * 1000)
 
