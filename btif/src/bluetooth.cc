@@ -75,6 +75,7 @@
 #include "osi/include/osi.h"
 #include "osi/include/wakelock.h"
 #include "stack/gatt/connection_manager.h"
+#include "stack/include/btu.h"
 #include "stack_manager.h"
 
 using bluetooth::hearing_aid::HearingAidInterface;
@@ -190,7 +191,7 @@ int get_niap_config_compare_result() {
 static int get_adapter_properties(void) {
   if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_get_adapter_properties));
+  do_in_main_thread(FROM_HERE, base::BindOnce(btif_get_adapter_properties));
   return BT_STATUS_SUCCESS;
 }
 
@@ -200,7 +201,7 @@ static int get_adapter_property(bt_property_type_t type) {
       (type != BT_PROPERTY_BDNAME) && (type != BT_PROPERTY_CLASS_OF_DEVICE))
     return BT_STATUS_NOT_READY;
 
-  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_get_adapter_property, type));
+  do_in_main_thread(FROM_HERE, base::BindOnce(btif_get_adapter_property, type));
   return BT_STATUS_SUCCESS;
 }
 
@@ -219,20 +220,20 @@ static int set_adapter_property(const bt_property_t* property) {
       return BT_STATUS_FAIL;
   }
 
-  do_in_jni_thread(FROM_HERE, base::BindOnce(
-                                  [](bt_property_t* property) {
-                                    btif_set_adapter_property(property);
-                                    osi_free(property);
-                                  },
-                                  property_deep_copy(property)));
+  do_in_main_thread(FROM_HERE, base::BindOnce(
+                                   [](bt_property_t* property) {
+                                     btif_set_adapter_property(property);
+                                     osi_free(property);
+                                   },
+                                   property_deep_copy(property)));
   return BT_STATUS_SUCCESS;
 }
 
 int get_remote_device_properties(RawAddress* remote_addr) {
   if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_get_remote_device_properties,
-                                             *remote_addr));
+  do_in_main_thread(FROM_HERE, base::BindOnce(btif_get_remote_device_properties,
+                                              *remote_addr));
   return BT_STATUS_SUCCESS;
 }
 
@@ -240,8 +241,8 @@ int get_remote_device_property(RawAddress* remote_addr,
                                bt_property_type_t type) {
   if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_get_remote_device_property,
-                                             *remote_addr, type));
+  do_in_main_thread(FROM_HERE, base::BindOnce(btif_get_remote_device_property,
+                                              *remote_addr, type));
   return BT_STATUS_SUCCESS;
 }
 
@@ -249,7 +250,7 @@ int set_remote_device_property(RawAddress* remote_addr,
                                const bt_property_t* property) {
   if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  do_in_jni_thread(
+  do_in_main_thread(
       FROM_HERE, base::BindOnce(
                      [](RawAddress remote_addr, bt_property_t* property) {
                        btif_set_remote_device_property(&remote_addr, property);
@@ -263,30 +264,30 @@ int get_remote_service_record(const RawAddress& remote_addr,
                               const bluetooth::Uuid& uuid) {
   if (!btif_is_enabled()) return BT_STATUS_NOT_READY;
 
-  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_get_remote_service_record,
-                                             remote_addr, uuid));
+  do_in_main_thread(FROM_HERE, base::BindOnce(btif_dm_get_remote_service_record,
+                                              remote_addr, uuid));
   return BT_STATUS_SUCCESS;
 }
 
 int get_remote_services(RawAddress* remote_addr) {
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
-  do_in_jni_thread(FROM_HERE,
-                   base::BindOnce(btif_dm_get_remote_services, *remote_addr));
+  do_in_main_thread(FROM_HERE,
+                    base::BindOnce(btif_dm_get_remote_services, *remote_addr));
   return BT_STATUS_SUCCESS;
 }
 
 static int start_discovery(void) {
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
-  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_start_discovery));
+  do_in_main_thread(FROM_HERE, base::BindOnce(btif_dm_start_discovery));
   return BT_STATUS_SUCCESS;
 }
 
 static int cancel_discovery(void) {
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
-  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_cancel_discovery));
+  do_in_main_thread(FROM_HERE, base::BindOnce(btif_dm_cancel_discovery));
   return BT_STATUS_SUCCESS;
 }
 
@@ -294,8 +295,8 @@ static int create_bond(const RawAddress* bd_addr, int transport) {
   if (!interface_ready()) return BT_STATUS_NOT_READY;
   if (btif_dm_pairing_is_busy()) return BT_STATUS_BUSY;
 
-  do_in_jni_thread(FROM_HERE,
-                   base::BindOnce(btif_dm_create_bond, *bd_addr, transport));
+  do_in_main_thread(FROM_HERE,
+                    base::BindOnce(btif_dm_create_bond, *bd_addr, transport));
   return BT_STATUS_SUCCESS;
 }
 
@@ -304,15 +305,15 @@ static int create_bond_out_of_band(const RawAddress* bd_addr, int transport,
   if (!interface_ready()) return BT_STATUS_NOT_READY;
   if (btif_dm_pairing_is_busy()) return BT_STATUS_BUSY;
 
-  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_create_bond_out_of_band,
-                                             *bd_addr, transport, *oob_data));
+  do_in_main_thread(FROM_HERE, base::BindOnce(btif_dm_create_bond_out_of_band,
+                                              *bd_addr, transport, *oob_data));
   return BT_STATUS_SUCCESS;
 }
 
 static int cancel_bond(const RawAddress* bd_addr) {
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
-  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_cancel_bond, *bd_addr));
+  do_in_main_thread(FROM_HERE, base::BindOnce(btif_dm_cancel_bond, *bd_addr));
   return BT_STATUS_SUCCESS;
 }
 
@@ -322,7 +323,7 @@ static int remove_bond(const RawAddress* bd_addr) {
 
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
-  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_remove_bond, *bd_addr));
+  do_in_main_thread(FROM_HERE, base::BindOnce(btif_dm_remove_bond, *bd_addr));
   return BT_STATUS_SUCCESS;
 }
 
@@ -337,8 +338,8 @@ static int pin_reply(const RawAddress* bd_addr, uint8_t accept, uint8_t pin_len,
   if (!interface_ready()) return BT_STATUS_NOT_READY;
   if (pin_code == nullptr || pin_len > PIN_CODE_LEN) return BT_STATUS_FAIL;
 
-  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_pin_reply, *bd_addr,
-                                             accept, pin_len, *pin_code));
+  do_in_main_thread(FROM_HERE, base::BindOnce(btif_dm_pin_reply, *bd_addr,
+                                              accept, pin_len, *pin_code));
   return BT_STATUS_SUCCESS;
 }
 
@@ -347,7 +348,7 @@ static int ssp_reply(const RawAddress* bd_addr, bt_ssp_variant_t variant,
   if (!interface_ready()) return BT_STATUS_NOT_READY;
   if (variant == BT_SSP_VARIANT_PASSKEY_ENTRY) return BT_STATUS_FAIL;
 
-  do_in_jni_thread(
+  do_in_main_thread(
       FROM_HERE, base::BindOnce(btif_dm_ssp_reply, *bd_addr, variant, accept));
   return BT_STATUS_SUCCESS;
 }
@@ -355,7 +356,7 @@ static int ssp_reply(const RawAddress* bd_addr, bt_ssp_variant_t variant,
 static int read_energy_info() {
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
-  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dm_read_energy_info));
+  do_in_main_thread(FROM_HERE, base::BindOnce(btif_dm_read_energy_info));
   return BT_STATUS_SUCCESS;
 }
 
@@ -444,7 +445,7 @@ int dut_mode_configure(uint8_t enable) {
   if (!stack_manager_get_interface()->get_stack_is_running())
     return BT_STATUS_NOT_READY;
 
-  do_in_jni_thread(FROM_HERE, base::BindOnce(btif_dut_mode_configure, enable));
+  do_in_main_thread(FROM_HERE, base::BindOnce(btif_dut_mode_configure, enable));
   return BT_STATUS_SUCCESS;
 }
 
@@ -455,13 +456,13 @@ int dut_mode_send(uint16_t opcode, uint8_t* buf, uint8_t len) {
   uint8_t* copy = (uint8_t*)osi_calloc(len);
   memcpy(copy, buf, len);
 
-  do_in_jni_thread(FROM_HERE,
-                   base::BindOnce(
-                       [](uint16_t opcode, uint8_t* buf, uint8_t len) {
-                         btif_dut_mode_send(opcode, buf, len);
-                         osi_free(buf);
-                       },
-                       opcode, copy, len));
+  do_in_main_thread(FROM_HERE,
+                    base::BindOnce(
+                        [](uint16_t opcode, uint8_t* buf, uint8_t len) {
+                          btif_dut_mode_send(opcode, buf, len);
+                          osi_free(buf);
+                        },
+                        opcode, copy, len));
   return BT_STATUS_SUCCESS;
 }
 
@@ -471,16 +472,16 @@ int le_test_mode(uint16_t opcode, uint8_t* buf, uint8_t len) {
   switch (opcode) {
     case HCI_BLE_TRANSMITTER_TEST:
       if (len != 3) return BT_STATUS_PARM_INVALID;
-      do_in_jni_thread(FROM_HERE, base::BindOnce(btif_ble_transmitter_test,
-                                                 buf[0], buf[1], buf[2]));
+      do_in_main_thread(FROM_HERE, base::BindOnce(btif_ble_transmitter_test,
+                                                  buf[0], buf[1], buf[2]));
       break;
     case HCI_BLE_RECEIVER_TEST:
       if (len != 1) return BT_STATUS_PARM_INVALID;
-      do_in_jni_thread(FROM_HERE,
-                       base::BindOnce(btif_ble_receiver_test, buf[0]));
+      do_in_main_thread(FROM_HERE,
+                        base::BindOnce(btif_ble_receiver_test, buf[0]));
       break;
     case HCI_BLE_TEST_END:
-      do_in_jni_thread(FROM_HERE, base::BindOnce(btif_ble_test_end));
+      do_in_main_thread(FROM_HERE, base::BindOnce(btif_ble_test_end));
       break;
     default:
       return BT_STATUS_UNSUPPORTED;
@@ -491,14 +492,14 @@ int le_test_mode(uint16_t opcode, uint8_t* buf, uint8_t len) {
 static bt_os_callouts_t* wakelock_os_callouts_saved = nullptr;
 
 static int acquire_wake_lock_cb(const char* lock_name) {
-  return do_in_jni_thread(
+  return do_in_main_thread(
       FROM_HERE, base::Bind(base::IgnoreResult(
                                 wakelock_os_callouts_saved->acquire_wake_lock),
                             lock_name));
 }
 
 static int release_wake_lock_cb(const char* lock_name) {
-  return do_in_jni_thread(
+  return do_in_main_thread(
       FROM_HERE, base::Bind(base::IgnoreResult(
                                 wakelock_os_callouts_saved->release_wake_lock),
                             lock_name));
