@@ -113,27 +113,6 @@ void btif_dm_load_local_oob(void);
 
 /*******************************************************************************
  *
- * Function         btif_context_switched
- *
- * Description      Callback used to execute transferred context callback
- *
- *                  p_msg : message to be executed in btif context
- *
- * Returns          void
- *
- ******************************************************************************/
-
-static void btif_context_switched(void* p_msg) {
-  BTIF_TRACE_VERBOSE("btif_context_switched");
-
-  tBTIF_CONTEXT_SWITCH_CBACK* p = (tBTIF_CONTEXT_SWITCH_CBACK*)p_msg;
-
-  /* each callback knows how to parse the data */
-  if (p->p_cb) p->p_cb(p->event, p->p_param);
-}
-
-/*******************************************************************************
- *
  * Function         btif_transfer_context
  *
  * Description      This function switches context to btif task
@@ -240,9 +219,9 @@ void btif_init_ok() {
  *
  ******************************************************************************/
 static void bt_jni_msg_ready(void* context) {
-  BT_HDR* p_msg = (BT_HDR*)context;
-  btif_context_switched(p_msg);
-  osi_free(p_msg);
+  tBTIF_CONTEXT_SWITCH_CBACK* p = (tBTIF_CONTEXT_SWITCH_CBACK*)context;
+  if (p->p_cb) p->p_cb(p->event, p->p_param);
+  osi_free(p);
 }
 
 /*******************************************************************************
