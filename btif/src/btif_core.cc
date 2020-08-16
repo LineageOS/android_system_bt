@@ -812,10 +812,8 @@ tBTA_SERVICE_MASK btif_get_enabled_services_mask(void) {
  *                  Upon BT enable, BTIF core shall invoke the BTA APIs to
  *                  enable the profiles
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_enable_service(tBTA_SERVICE_ID service_id) {
+void btif_enable_service(tBTA_SERVICE_ID service_id) {
   btif_enabled_services |= (1 << service_id);
 
   BTIF_TRACE_DEBUG("%s: current services:0x%x", __func__,
@@ -824,7 +822,6 @@ bt_status_t btif_enable_service(tBTA_SERVICE_ID service_id) {
   if (btif_is_enabled()) {
     btif_dm_enable_service(service_id, true);
   }
-  return BT_STATUS_SUCCESS;
 }
 /*******************************************************************************
  *
@@ -834,10 +831,8 @@ bt_status_t btif_enable_service(tBTA_SERVICE_ID service_id) {
  *                  Upon BT disable, BTIF core shall invoke the BTA APIs to
  *                  disable the profiles
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_disable_service(tBTA_SERVICE_ID service_id) {
+void btif_disable_service(tBTA_SERVICE_ID service_id) {
   btif_enabled_services &= (tBTA_SERVICE_MASK)(~(1 << service_id));
 
   BTIF_TRACE_DEBUG("%s: Current Services:0x%x", __func__,
@@ -846,5 +841,4 @@ bt_status_t btif_disable_service(tBTA_SERVICE_ID service_id) {
   if (btif_is_enabled()) {
     btif_dm_enable_service(service_id, false);
   }
-  return BT_STATUS_SUCCESS;
 }
