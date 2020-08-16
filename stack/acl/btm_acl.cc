@@ -46,6 +46,7 @@
 #include "stack/acl/acl.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int_types.h"
+#include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/btm_api.h"
 #include "stack/include/btu.h"
@@ -81,13 +82,6 @@ StackAclBtmAcl internal_;
 #define BTM_ACL_ENCRYPT_STATE_ENCRYPT_ON 3
 
 extern tBTM_CB btm_cb;
-
-tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec);
-void btm_ble_refresh_local_resolvable_private_addr(
-    const RawAddress& pseudo_addr, const RawAddress& local_rpa);
-void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec, uint8_t res,
-                                 bool is_le_trasnport);
-void btm_io_capabilities_req(const RawAddress& p);
 
 static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
                                               uint16_t* p_pkt_type);
