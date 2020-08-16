@@ -1549,7 +1549,7 @@ void bta_dm_queue_disc(tBTA_DM_MSG* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_dm_search_clear_queue(UNUSED_ATTR tBTA_DM_MSG* p_data) {
+void bta_dm_search_clear_queue() {
   osi_free_and_reset((void**)&bta_dm_search_cb.p_search_queue);
 }
 

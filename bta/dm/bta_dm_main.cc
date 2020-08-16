@@ -120,7 +120,7 @@ bool bta_dm_search_sm_execute(BT_HDR* p_msg) {
           bta_dm_queue_search(message);
           break;
         case BTA_DM_API_SEARCH_CANCEL_EVT:
-          bta_dm_search_clear_queue(message);
+          bta_dm_search_clear_queue();
           bta_dm_search_cancel_notify();
           break;
         case BTA_DM_API_DISCOVER_EVT:
