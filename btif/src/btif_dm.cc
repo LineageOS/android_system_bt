@@ -288,19 +288,20 @@ static void btif_dm_data_free(uint16_t event, tBTA_DM_SEC* dm_sec) {
 }
 
 static void btif_dm_send_bond_state_changed(RawAddress address, bt_bond_state_t bond_state) {
-  do_in_jni_thread(FROM_HERE, base::BindOnce([](RawAddress address, bt_bond_state_t bond_state) {
-    btif_stats_add_bond_event(address, BTIF_DM_FUNC_BOND_STATE_CHANGED, bond_state);
-    if (bond_state == BT_BOND_STATE_NONE) {
-      MetricIdAllocator::GetInstance().ForgetDevice(address);
-    } else if (bond_state == BT_BOND_STATE_BONDED) {
-      MetricIdAllocator::GetInstance().AllocateId(address);
-      if (!MetricIdAllocator::GetInstance().SaveDevice(address)) {
-        LOG(FATAL) << __func__ << ": Fail to save metric id for device "
-                   << address;
-      }
+  btif_stats_add_bond_event(address, BTIF_DM_FUNC_BOND_STATE_CHANGED,
+                            bond_state);
+
+  if (bond_state == BT_BOND_STATE_NONE) {
+    MetricIdAllocator::GetInstance().ForgetDevice(address);
+  } else if (bond_state == BT_BOND_STATE_BONDED) {
+    MetricIdAllocator::GetInstance().AllocateId(address);
+    if (!MetricIdAllocator::GetInstance().SaveDevice(address)) {
+      LOG(FATAL) << __func__ << ": Fail to save metric id for device "
+                 << address;
     }
-    invoke_bond_state_changed_cb(BT_STATUS_SUCCESS, address, bond_state);
-  }, address, bond_state));
+  }
+
+  invoke_bond_state_changed_cb(BT_STATUS_SUCCESS, address, bond_state);
   btif_dm_get_remote_services_by_transport(&address, BTA_TRANSPORT_UNKNOWN);
 }
 
