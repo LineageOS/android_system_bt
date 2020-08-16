@@ -1547,6 +1547,19 @@ void BTIF_dm_enable() {
   btif_enable_bluetooth_evt();
 }
 
+void BTIF_dm_disable() {
+  /* for each of the enabled services in the mask, trigger the profile
+   * disable */
+  tBTA_SERVICE_MASK service_mask = btif_get_enabled_services_mask();
+  for (uint32_t i = 0; i <= BTA_MAX_SERVICE_ID; i++) {
+    if (service_mask & (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(i))) {
+      btif_in_execute_service_request(i, false);
+    }
+  }
+  bluetooth::bqr::EnableBtQualityReport(false);
+  future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
+}
+
 /*******************************************************************************
  *
  * Function         btif_dm_upstreams_cback
@@ -1558,27 +1571,11 @@ void BTIF_dm_enable() {
  ******************************************************************************/
 static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
   tBTA_DM_SEC* p_data = (tBTA_DM_SEC*)p_param;
-  tBTA_SERVICE_MASK service_mask;
-  uint32_t i;
   RawAddress bd_addr;
 
   BTIF_TRACE_EVENT("%s: ev: %s", __func__, dump_dm_event(event));
 
   switch (event) {
-    case BTA_DM_DISABLE_EVT:
-      /* for each of the enabled services in the mask, trigger the profile
-       * disable */
-      service_mask = btif_get_enabled_services_mask();
-      for (i = 0; i <= BTA_MAX_SERVICE_ID; i++) {
-        if (service_mask &
-            (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(i))) {
-          btif_in_execute_service_request(i, false);
-        }
-      }
-      bluetooth::bqr::EnableBtQualityReport(false);
-      future_ready(stack_manager_get_hack_future(), FUTURE_SUCCESS);
-      break;
-
     case BTA_DM_PIN_REQ_EVT:
       btif_dm_pin_req_evt(&p_data->pin_req);
       break;
