@@ -121,10 +121,6 @@ typedef struct {
 
 typedef uint8_t tBTM_BL_EVENT;
 
-/* Device features mask definitions */
-#define BTM_FEATURE_BYTES_PER_PAGE HCI_FEATURE_BYTES_PER_PAGE
-#define BTM_EXT_FEATURES_PAGE_MAX HCI_EXT_FEATURES_PAGE_MAX
-
 #define BTM_INQUIRY_STARTED 1
 #define BTM_INQUIRY_CANCELLED 2
 #define BTM_INQUIRY_COMPLETE 3
