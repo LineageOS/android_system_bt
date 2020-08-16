@@ -1555,7 +1555,7 @@ void bta_dm_search_clear_queue(UNUSED_ATTR tBTA_DM_MSG* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_dm_search_cancel_cmpl(UNUSED_ATTR tBTA_DM_MSG* p_data) {
+void bta_dm_search_cancel_cmpl() {
   if (bta_dm_search_cb.p_search_queue) {
     bta_sys_sendmsg(bta_dm_search_cb.p_search_queue);
     bta_dm_search_cb.p_search_queue = NULL;
