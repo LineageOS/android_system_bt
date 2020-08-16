@@ -159,15 +159,6 @@ typedef struct {
   bt_out_of_band_data_t oob_data;
 } btif_dm_oob_cb_t;
 
-typedef struct {
-  uint8_t status;
-  uint8_t ctrl_state;
-  uint64_t tx_time;
-  uint64_t rx_time;
-  uint64_t idle_time;
-  uint64_t energy_used;
-} btif_activity_energy_info_cb_t;
-
 typedef struct { unsigned int manufact_id; } skip_sdp_entry_t;
 
 typedef enum {
@@ -1817,22 +1808,6 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
       break;
     }
 
-    case BTA_DM_ENER_INFO_READ: {
-      btif_activity_energy_info_cb_t* p_ener_data =
-          (btif_activity_energy_info_cb_t*)p_param;
-      bt_activity_energy_info energy_info;
-      energy_info.status = p_ener_data->status;
-      energy_info.ctrl_state = p_ener_data->ctrl_state;
-      energy_info.rx_time = p_ener_data->rx_time;
-      energy_info.tx_time = p_ener_data->tx_time;
-      energy_info.idle_time = p_ener_data->idle_time;
-      energy_info.energy_used = p_ener_data->energy_used;
-
-      bt_uid_traffic_t* data = uid_set_read_and_clear(uid_set);
-      invoke_energy_info_cb(energy_info, data);
-      break;
-    }
-
     default:
       BTIF_TRACE_WARNING("%s: unhandled event (%d)", __func__, event);
       break;
@@ -1941,14 +1916,16 @@ static void bta_energy_info_cb(tBTM_BLE_TX_TIME_MS tx_time,
       "idle_time=%ld,used=%ld",
       status, ctrl_state, tx_time, rx_time, idle_time, energy_used);
 
-  btif_activity_energy_info_cb_t btif_cb;
-  btif_cb.status = status;
-  btif_cb.ctrl_state = ctrl_state;
-  btif_cb.tx_time = (uint64_t)tx_time;
-  btif_cb.rx_time = (uint64_t)rx_time;
-  btif_cb.idle_time = (uint64_t)idle_time;
-  btif_cb.energy_used = (uint64_t)energy_used;
-  btif_dm_upstreams_evt(BTA_DM_ENER_INFO_READ, (char*)&btif_cb);
+  bt_activity_energy_info energy_info;
+  energy_info.status = status;
+  energy_info.ctrl_state = ctrl_state;
+  energy_info.rx_time = rx_time;
+  energy_info.tx_time = tx_time;
+  energy_info.idle_time = idle_time;
+  energy_info.energy_used = energy_used;
+
+  bt_uid_traffic_t* data = uid_set_read_and_clear(uid_set);
+  invoke_energy_info_cb(energy_info, data);
 }
 
 /* Scan filter param config event */
