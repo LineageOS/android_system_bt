@@ -524,7 +524,7 @@ extern void bta_dm_queue_search(tBTA_DM_MSG* p_data);
 extern void bta_dm_queue_disc(tBTA_DM_MSG* p_data);
 extern void bta_dm_search_clear_queue(tBTA_DM_MSG* p_data);
 extern void bta_dm_search_cancel_cmpl(tBTA_DM_MSG* p_data);
-extern void bta_dm_search_cancel_notify(tBTA_DM_MSG* p_data);
+extern void bta_dm_search_cancel_notify();
 extern void bta_dm_disc_rmt_name(tBTA_DM_MSG* p_data);
 extern tBTA_DM_PEER_DEVICE* bta_dm_find_peer_device(
     const RawAddress& peer_addr);

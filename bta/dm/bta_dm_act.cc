@@ -859,7 +859,7 @@ void bta_dm_search_cancel(UNUSED_ATTR tBTA_DM_MSG* p_data) {
 
   if (BTM_IsInquiryActive()) {
     if (BTM_CancelInquiry() == BTM_SUCCESS) {
-      bta_dm_search_cancel_notify(NULL);
+      bta_dm_search_cancel_notify();
       p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
       p_msg->hdr.event = BTA_DM_SEARCH_CMPL_EVT;
       p_msg->hdr.layer_specific = BTA_DM_API_DISCOVER_EVT;
@@ -1571,7 +1571,7 @@ void bta_dm_search_cancel_cmpl(UNUSED_ATTR tBTA_DM_MSG* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_dm_search_cancel_notify(UNUSED_ATTR tBTA_DM_MSG* p_data) {
+void bta_dm_search_cancel_notify() {
   if (bta_dm_search_cb.p_search_cback) {
     bta_dm_search_cb.p_search_cback(BTA_DM_SEARCH_CANCEL_CMPL_EVT, NULL);
   }
@@ -1948,7 +1948,7 @@ static void bta_dm_inq_cmpl_cb(void* p_result) {
     p_msg->inq_cmpl.num = ((tBTM_INQUIRY_CMPL*)p_result)->num_resp;
   } else {
     bta_dm_search_cb.cancel_pending = false;
-    bta_dm_search_cancel_notify(NULL);
+    bta_dm_search_cancel_notify();
     p_msg->hdr.event = BTA_DM_SEARCH_CMPL_EVT;
     p_msg->hdr.layer_specific = BTA_DM_API_DISCOVER_EVT;
   }
