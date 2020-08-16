@@ -1752,17 +1752,15 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
     case BTA_DM_LE_FEATURES_READ: {
       tBTM_BLE_VSC_CB cmn_vsc_cb;
       bt_local_le_features_t local_le_features;
-      char buf[512];
       bt_property_t prop;
       prop.type = BT_PROPERTY_LOCAL_LE_FEATURES;
-      prop.val = (void*)buf;
-      prop.len = sizeof(buf);
+      prop.val = (void*)&local_le_features;
+      prop.len = sizeof(bt_local_le_features_t);
 
       /* LE features are not stored in storage. Should be retrived from stack */
       BTM_BleGetVendorCapabilities(&cmn_vsc_cb);
       local_le_features.local_privacy_enabled = BTM_BleLocalPrivacyEnabled();
 
-      prop.len = sizeof(bt_local_le_features_t);
       if (cmn_vsc_cb.filter_support == 1)
         local_le_features.max_adv_filter_supported = cmn_vsc_cb.max_filter;
       else
@@ -1795,7 +1793,6 @@ static void btif_dm_upstreams_evt(uint16_t event, char* p_param) {
       local_le_features.le_maximum_advertising_data_length =
           controller->get_ble_maxium_advertising_data_length();
 
-      memcpy(prop.val, &local_le_features, prop.len);
       invoke_adapter_properties_cb(BT_STATUS_SUCCESS, 1, &prop);
       break;
     }
