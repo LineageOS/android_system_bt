@@ -36,6 +36,7 @@
 
 #include "sdp_api.h"
 #include "sdpint.h"
+#include "stack/btm/btm_sec.h"
 
 /******************************************************************************/
 /*                     G L O B A L      S D P       D A T A                   */
