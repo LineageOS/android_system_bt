@@ -301,16 +301,6 @@ bt_status_t btif_dm_get_adapter_property(bt_property_t* prop);
  *
  * Description      Start SDP to get remote services
  *
- ******************************************************************************/
-void btif_dm_get_remote_service_record(const RawAddress remote_addr,
-                                       const bluetooth::Uuid uuid);
-
-/*******************************************************************************
- *
- * Function         btif_dm_get_remote_services
- *
- * Description      Start SDP to get remote services
- *
  * Returns          bt_status_t
  *
  ******************************************************************************/
