@@ -873,7 +873,6 @@ void bta_dm_search_cancel() {
  *
  ******************************************************************************/
 void bta_dm_discover(tBTA_DM_MSG* p_data) {
-  size_t len = sizeof(Uuid) * p_data->discover.num_uuid;
   APPL_TRACE_EVENT("%s services_to_search=0x%04X", __func__,
                    p_data->discover.services);
 
@@ -881,13 +880,6 @@ void bta_dm_discover(tBTA_DM_MSG* p_data) {
   bta_dm_search_cb.services = p_data->discover.services;
 
   bta_dm_gattc_register();
-  osi_free_and_reset((void**)&bta_dm_search_cb.p_srvc_uuid);
-  if ((bta_dm_search_cb.num_uuid = p_data->discover.num_uuid) != 0 &&
-      p_data->discover.p_uuid != NULL) {
-    bta_dm_search_cb.p_srvc_uuid = (Uuid*)osi_malloc(len);
-    *bta_dm_search_cb.p_srvc_uuid = *p_data->discover.p_uuid;
-  }
-  bta_dm_search_cb.uuid_to_search = bta_dm_search_cb.num_uuid;
 
   bta_dm_search_cb.p_search_cback = p_data->discover.p_cback;
   bta_dm_search_cb.services_to_search = bta_dm_search_cb.services;
@@ -898,7 +890,6 @@ void bta_dm_discover(tBTA_DM_MSG* p_data) {
   bta_dm_search_cb.transport = p_data->discover.transport;
 
   bta_dm_search_cb.name_discover_done = false;
-  bta_dm_search_cb.uuid = p_data->discover.uuid;
   bta_dm_discover_device(p_data->discover.bd_addr);
 }
 
