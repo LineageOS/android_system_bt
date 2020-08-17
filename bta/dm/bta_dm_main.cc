@@ -120,7 +120,7 @@ bool bta_dm_search_sm_execute(BT_HDR* p_msg) {
         case BTA_DM_SEARCH_CMPL_EVT:
         case BTA_DM_DISCOVERY_RESULT_EVT:
           bta_dm_search_set_state(BTA_DM_SEARCH_IDLE);
-          osi_free_and_reset((void**)&bta_dm_search_cb.p_sdp_db);
+          bta_dm_free_sdp_db(message);
           bta_dm_search_cancel_notify();
           bta_dm_search_cancel_cmpl();
           break;
@@ -129,7 +129,7 @@ bool bta_dm_search_sm_execute(BT_HDR* p_msg) {
     case BTA_DM_DISCOVER_ACTIVE:
       switch (p_msg->event) {
         case BTA_DM_REMT_NAME_EVT:
-          bta_dm_rmt_name(message);
+          bta_dm_disc_rmt_name(message);
           break;
         case BTA_DM_SDP_RESULT_EVT:
           bta_dm_sdp_result(message);
