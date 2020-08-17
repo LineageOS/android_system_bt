@@ -326,6 +326,10 @@ void SecurityManagerImpl::OnConnectionClosed(hci::Address address) {
   if (record->IsTemporary()) {
     security_database_.Remove(hci::AddressWithType(address, hci::AddressType::PUBLIC_DEVICE_ADDRESS));
   }
+  if (this->facade_disconnect_callback_) {
+    this->security_handler_->Call(
+        *this->facade_disconnect_callback_, hci::AddressWithType(address, hci::AddressType::PUBLIC_DEVICE_ADDRESS));
+  }
 }
 
 void SecurityManagerImpl::OnHciLeEvent(hci::LeMetaEventView event) {
@@ -653,6 +657,10 @@ void SecurityManagerImpl::WipeLePairingHandler() {
 }
 
 // Facade Configuration API functions
+void SecurityManagerImpl::SetDisconnectCallback(FacadeDisconnectCallback callback) {
+  this->facade_disconnect_callback_ = std::make_optional<FacadeDisconnectCallback>(callback);
+}
+
 void SecurityManagerImpl::SetIoCapability(hci::IoCapability io_capability) {
   this->local_io_capability_ = io_capability;
 }
