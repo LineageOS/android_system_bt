@@ -753,11 +753,6 @@ typedef struct {
 typedef uint8_t tBLE_ADDR_TYPE;
 #define BLE_ADDR_TYPE_MASK (BLE_ADDR_RANDOM | BLE_ADDR_PUBLIC)
 
-#define BT_TRANSPORT_INVALID 0
-#define BT_TRANSPORT_BR_EDR 1
-#define BT_TRANSPORT_LE 2
-typedef uint8_t tBT_TRANSPORT;
-
 #define PHY_LE_1M_MASK 1
 #define PHY_LE_2M_MASK 2
 #define PHY_LE_CODED_MASK 4
