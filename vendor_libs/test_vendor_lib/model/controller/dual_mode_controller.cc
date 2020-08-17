@@ -197,6 +197,7 @@ DualModeController::DualModeController(const std::string& properties_filename, u
   SET_HANDLER(OpCode::LE_SET_SCAN_ENABLE, LeSetScanEnable);
   SET_HANDLER(OpCode::LE_CREATE_CONNECTION, LeCreateConnection);
   SET_HANDLER(OpCode::CREATE_CONNECTION, CreateConnection);
+  SET_HANDLER(OpCode::CREATE_CONNECTION_CANCEL, CreateConnectionCancel);
   SET_HANDLER(OpCode::DISCONNECT, Disconnect);
   SET_HANDLER(OpCode::LE_CREATE_CONNECTION_CANCEL, LeConnectionCancel);
   SET_HANDLER(OpCode::LE_READ_CONNECT_LIST_SIZE, LeReadConnectListSize);
@@ -1604,6 +1605,20 @@ void DualModeController::CreateConnection(CommandPacketView command) {
   send_event_(std::move(packet));
 }
 
+void DualModeController::CreateConnectionCancel(CommandPacketView command) {
+  auto command_view = gd_hci::CreateConnectionCancelView::Create(
+      gd_hci::ConnectionManagementCommandView::Create(command));
+  ASSERT(command_view.IsValid());
+
+  Address address = command_view.GetBdAddr();
+
+  auto status = link_layer_controller_.CreateConnectionCancel(address);
+
+  auto packet = bluetooth::hci::CreateConnectionCancelCompleteBuilder::Create(
+      kNumCommandPackets, status, address);
+  send_event_(std::move(packet));
+}
+
 void DualModeController::Disconnect(CommandPacketView command) {
   auto command_view = gd_hci::DisconnectView::Create(
       gd_hci::ConnectionManagementCommandView::Create(command));
@@ -1623,16 +1638,9 @@ void DualModeController::LeConnectionCancel(CommandPacketView command) {
   auto command_view = gd_hci::LeCreateConnectionCancelView::Create(
       gd_hci::LeConnectionManagementCommandView::Create(command));
   ASSERT(command_view.IsValid());
-  link_layer_controller_.SetLeConnect(false);
-  auto packet = bluetooth::hci::LeCreateConnectionCancelCompleteBuilder::Create(
-      kNumCommandPackets, ErrorCode::SUCCESS);
-  send_event_(std::move(packet));
-  /* For testing Jakub's patch:  Figure out a neat way to call this without
-     recompiling.  I'm thinking about a bad device. */
-  /*
-  SendCommandCompleteOnlyStatus(OpCode::LE_CREATE_CONNECTION_CANCEL,
-                                ErrorCode::COMMAND_DISALLOWED);
-  */
+  ErrorCode status = link_layer_controller_.SetLeConnect(false);
+  send_event_(bluetooth::hci::LeCreateConnectionCancelCompleteBuilder::Create(
+      kNumCommandPackets, status));
 }
 
 void DualModeController::LeReadConnectListSize(CommandPacketView command) {

@@ -118,6 +118,9 @@ class DualModeController : public Device {
   // 7.1.6
   void Disconnect(CommandPacketView args);
 
+  // 7.1.7
+  void CreateConnectionCancel(CommandPacketView args);
+
   // 7.1.8
   void AcceptConnectionRequest(CommandPacketView args);
 

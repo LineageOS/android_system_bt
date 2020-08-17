@@ -208,6 +208,9 @@ class LinkLayerController {
     le_address_type_ = le_address_type;
   }
   ErrorCode SetLeConnect(bool le_connect) {
+    if (le_connect_ == le_connect) {
+      return ErrorCode::COMMAND_DISALLOWED;
+    }
     le_connect_ = le_connect;
     return ErrorCode::SUCCESS;
   }
