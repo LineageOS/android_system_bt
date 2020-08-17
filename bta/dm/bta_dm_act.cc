@@ -97,10 +97,6 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data);
 
 static void bta_dm_set_eir(char* local_name);
 
-static void bta_dm_eir_search_services(tBTM_INQ_RESULTS* p_result,
-                                       tBTA_SERVICE_MASK* p_services_to_search,
-                                       tBTA_SERVICE_MASK* p_services_found);
-
 static void bta_dm_search_timer_cback(void* data);
 static void bta_dm_disable_conn_down_timer_cback(void* data);
 static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
@@ -900,8 +896,8 @@ void bta_dm_search_cancel() {
  ******************************************************************************/
 void bta_dm_discover(tBTA_DM_MSG* p_data) {
   size_t len = sizeof(Uuid) * p_data->discover.num_uuid;
-  APPL_TRACE_EVENT("%s services_to_search=0x%04X, sdp_search=%d", __func__,
-                   p_data->discover.services, p_data->discover.sdp_search);
+  APPL_TRACE_EVENT("%s services_to_search=0x%04X", __func__,
+                   p_data->discover.services);
 
   /* save the search condition */
   bta_dm_search_cb.services = p_data->discover.services;
@@ -916,12 +912,10 @@ void bta_dm_discover(tBTA_DM_MSG* p_data) {
   bta_dm_search_cb.uuid_to_search = bta_dm_search_cb.num_uuid;
 
   bta_dm_search_cb.p_search_cback = p_data->discover.p_cback;
-  bta_dm_search_cb.sdp_search = p_data->discover.sdp_search;
   bta_dm_search_cb.services_to_search = bta_dm_search_cb.services;
   bta_dm_search_cb.service_index = 0;
   bta_dm_search_cb.services_found = 0;
   bta_dm_search_cb.peer_name[0] = 0;
-  bta_dm_search_cb.sdp_search = p_data->discover.sdp_search;
   bta_dm_search_cb.p_btm_inq_info = BTM_InqDbRead(p_data->discover.bd_addr);
   bta_dm_search_cb.transport = p_data->discover.transport;
 
@@ -1804,14 +1798,6 @@ static void bta_dm_discover_device(const RawAddress& remote_bd_addr) {
     bta_dm_search_cb.services_found = 0;
     bta_dm_search_cb.services_to_search = bta_dm_search_cb.services;
     bta_dm_search_cb.uuid_to_search = bta_dm_search_cb.num_uuid;
-    if ((bta_dm_search_cb.p_btm_inq_info != NULL) &&
-        bta_dm_search_cb.services != BTA_USER_SERVICE_MASK &&
-        (!bta_dm_search_cb.sdp_search)) {
-      /* check if EIR provides the information of supported services */
-      bta_dm_eir_search_services(&bta_dm_search_cb.p_btm_inq_info->results,
-                                 &bta_dm_search_cb.services_to_search,
-                                 &bta_dm_search_cb.services_found);
-    }
 
     /* if seaching with EIR is not completed */
     if (bta_dm_search_cb.services_to_search) {
@@ -3179,68 +3165,6 @@ static void bta_dm_set_eir(char* local_name) {
     UINT8_TO_STREAM(p, 0); /* terminator of significant part */
 
   BTM_WriteEIR(p_buf);
-}
-
-/*******************************************************************************
- *
- * Function         bta_dm_eir_search_services
- *
- * Description      This function searches services in received EIR
- *
- * Returns          None
- *
- ******************************************************************************/
-static void bta_dm_eir_search_services(tBTM_INQ_RESULTS* p_result,
-                                       tBTA_SERVICE_MASK* p_services_to_search,
-                                       tBTA_SERVICE_MASK* p_services_found) {
-  tBTA_SERVICE_MASK service_index = 0;
-  tBTM_EIR_SEARCH_RESULT result;
-
-  VLOG(1) << "BTA searching services in EIR of BDA:"
-          << p_result->remote_bd_addr;
-
-  APPL_TRACE_DEBUG("    with services_to_search=0x%08X", *p_services_to_search);
-
-  /* always do GATT based service discovery by SDP instead of from EIR    */
-  /* if GATT based service is also to be put in EIR, need to modify this  */
-  while (service_index < (BTA_MAX_SERVICE_ID - 1)) {
-    if (*p_services_to_search &
-        (tBTA_SERVICE_MASK)(BTA_SERVICE_ID_TO_SERVICE_MASK(service_index))) {
-      result = BTM_HasInquiryEirService(
-          p_result, bta_service_id_to_uuid_lkup_tbl[service_index]);
-
-      /* Searching for HSP v1.2 only device */
-      if ((result != BTM_EIR_FOUND) &&
-          (bta_service_id_to_uuid_lkup_tbl[service_index] ==
-           UUID_SERVCLASS_HEADSET)) {
-        result = BTM_HasInquiryEirService(p_result, UUID_SERVCLASS_HEADSET_HS);
-      }
-
-      if (result == BTM_EIR_FOUND) {
-        /* If Plug and Play service record, need to check to see if Broadcom
-         * stack */
-        /* However, EIR data doesn't have EXT_BRCM_VERSION so just skip it */
-        if (bta_service_id_to_uuid_lkup_tbl[service_index] !=
-            UUID_SERVCLASS_PNP_INFORMATION) {
-          *p_services_found |= (tBTA_SERVICE_MASK)(
-              BTA_SERVICE_ID_TO_SERVICE_MASK(service_index));
-          /* remove the service from services to be searched  */
-          *p_services_to_search &= (tBTA_SERVICE_MASK)(
-              ~(BTA_SERVICE_ID_TO_SERVICE_MASK(service_index)));
-        }
-      } else if (result == BTM_EIR_NOT_FOUND) {
-        /* remove the service from services to be searched  */
-        *p_services_to_search &= (tBTA_SERVICE_MASK)(
-            ~(BTA_SERVICE_ID_TO_SERVICE_MASK(service_index)));
-      }
-    }
-
-    service_index++;
-  }
-
-  APPL_TRACE_ERROR(
-      "BTA EIR search result, services_to_search=0x%08X, services_found=0x%08X",
-      *p_services_to_search, *p_services_found);
 }
 
 #if (BTA_EIR_CANNED_UUID_LIST != TRUE)
