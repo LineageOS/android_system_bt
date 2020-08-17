@@ -34,6 +34,7 @@
 #include "bta_sys.h"
 #include "osi/include/osi.h"
 #include "osi/include/properties.h"
+#include "stack/btm/btm_sec.h"
 
 using bluetooth::Uuid;
 

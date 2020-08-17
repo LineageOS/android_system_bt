@@ -36,6 +36,7 @@
 #include "gattdefs.h"
 #include "l2cdefs.h"
 #include "sdp_api.h"
+#include "stack/btm/btm_sec.h"
 #include "stack/gatt/connection_manager.h"
 
 using base::StringPrintf;

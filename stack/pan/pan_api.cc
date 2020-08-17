@@ -36,6 +36,7 @@
 #include "pan_int.h"
 #include "sdp_api.h"
 #include "sdpdefs.h"
+#include "stack/btm/btm_sec.h"
 
 using bluetooth::Uuid;
 

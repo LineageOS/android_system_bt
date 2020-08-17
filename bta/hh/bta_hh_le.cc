@@ -36,6 +36,7 @@
 #include "device/include/interop.h"
 #include "osi/include/log.h"
 #include "srvc_api.h"
+#include "stack/btm/btm_sec.h"
 #include "stack/include/l2c_api.h"
 #include "utl.h"
 
