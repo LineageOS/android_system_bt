@@ -81,7 +81,7 @@ uint8_t bta_gattc_num_reg_app(void) {
  ******************************************************************************/
 tBTA_GATTC_CLCB* bta_gattc_find_clcb_by_cif(uint8_t client_if,
                                             const RawAddress& remote_bda,
-                                            tBTA_TRANSPORT transport) {
+                                            tBT_TRANSPORT transport) {
   tBTA_GATTC_CLCB* p_clcb = &bta_gattc_cb.clcb[0];
   uint8_t i;
 
@@ -122,7 +122,7 @@ tBTA_GATTC_CLCB* bta_gattc_find_clcb_by_conn_id(uint16_t conn_id) {
  ******************************************************************************/
 tBTA_GATTC_CLCB* bta_gattc_clcb_alloc(tGATT_IF client_if,
                                       const RawAddress& remote_bda,
-                                      tBTA_TRANSPORT transport) {
+                                      tBT_TRANSPORT transport) {
   uint8_t i_clcb = 0;
   tBTA_GATTC_CLCB* p_clcb = NULL;
 
@@ -167,7 +167,7 @@ tBTA_GATTC_CLCB* bta_gattc_clcb_alloc(tGATT_IF client_if,
  ******************************************************************************/
 tBTA_GATTC_CLCB* bta_gattc_find_alloc_clcb(tGATT_IF client_if,
                                            const RawAddress& remote_bda,
-                                           tBTA_TRANSPORT transport) {
+                                           tBT_TRANSPORT transport) {
   tBTA_GATTC_CLCB* p_clcb;
 
   p_clcb = bta_gattc_find_clcb_by_cif(client_if, remote_bda, transport);
@@ -489,7 +489,7 @@ bool bta_gattc_check_bg_conn(tGATT_IF client_if, const RawAddress& remote_bda,
  ******************************************************************************/
 void bta_gattc_send_open_cback(tBTA_GATTC_RCB* p_clreg, tGATT_STATUS status,
                                const RawAddress& remote_bda, uint16_t conn_id,
-                               tBTA_TRANSPORT transport, uint16_t mtu) {
+                               tBT_TRANSPORT transport, uint16_t mtu) {
   tBTA_GATTC cb_data;
 
   if (p_clreg->p_cback) {

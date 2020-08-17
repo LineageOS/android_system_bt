@@ -208,7 +208,7 @@ static size_t btif_events_end_index = 0;
 static btif_dm_pairing_cb_t pairing_cb;
 static btif_dm_oob_cb_t oob_cb;
 static void btif_dm_cb_create_bond(const RawAddress bd_addr,
-                                   tBTA_TRANSPORT transport);
+                                   tBT_TRANSPORT transport);
 static void btif_update_remote_properties(const RawAddress& bd_addr,
                                           BD_NAME bd_name, DEV_CLASS dev_class,
                                           tBT_DEVICE_TYPE dev_type);
@@ -271,7 +271,7 @@ static void btif_dm_send_bond_state_changed(RawAddress address, bt_bond_state_t 
   }
 
   invoke_bond_state_changed_cb(BT_STATUS_SUCCESS, address, bond_state);
-  btif_dm_get_remote_services_by_transport(&address, BTA_TRANSPORT_UNKNOWN);
+  btif_dm_get_remote_services_by_transport(&address, BT_TRANSPORT_UNKNOWN);
 }
 
 void btif_dm_init(uid_set_t* set) {
@@ -663,7 +663,7 @@ static void btif_update_remote_properties(const RawAddress& bdaddr,
  *
  ******************************************************************************/
 static void btif_dm_cb_create_bond(const RawAddress bd_addr,
-                                   tBTA_TRANSPORT transport) {
+                                   tBT_TRANSPORT transport) {
   bool is_hid = check_cod(&bd_addr, COD_HID_POINTING);
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
 
@@ -1074,7 +1074,7 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
           BTIF_TRACE_WARNING("%s() - Pairing timeout; retrying (%d) ...",
                              __func__, pairing_cb.timeout_retries);
           --pairing_cb.timeout_retries;
-          btif_dm_cb_create_bond(bd_addr, BTA_TRANSPORT_UNKNOWN);
+          btif_dm_cb_create_bond(bd_addr, BT_TRANSPORT_UNKNOWN);
           return;
         }
         FALLTHROUGH_INTENDED; /* FALLTHROUGH */
@@ -1107,7 +1107,7 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
           /* Create the Bond once again */
           BTIF_TRACE_WARNING("%s() auto pair failed. Reinitiate Bond",
                              __func__);
-          btif_dm_cb_create_bond(bd_addr, BTA_TRANSPORT_UNKNOWN);
+          btif_dm_cb_create_bond(bd_addr, BT_TRANSPORT_UNKNOWN);
           return;
         } else {
           /* if autopair attempts are more than 1, or not attempted */
