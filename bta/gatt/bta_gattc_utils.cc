@@ -370,7 +370,7 @@ void bta_gattc_clear_notif_registration(tBTA_GATTC_SERV* p_srcb,
   tGATT_IF gatt_if;
   tBTA_GATTC_RCB* p_clrcb;
   uint8_t i;
-  tGATT_TRANSPORT transport;
+  tBT_TRANSPORT transport;
   uint16_t handle;
 
   if (GATT_GetConnectionInfor(conn_id, &gatt_if, remote_bda, &transport)) {
