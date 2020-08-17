@@ -1592,9 +1592,7 @@ static void bta_dm_find_services(const RawAddress& bd_addr) {
         bta_dm_search_cb.service_index = BTA_MAX_SERVICE_ID;
 
       } else {
-        if (bta_dm_search_cb.service_index == BTA_BLE_SERVICE_ID ||
-            bta_dm_search_cb.service_index != BTA_BLE_SERVICE_ID)
-          bta_dm_search_cb.service_index++;
+        bta_dm_search_cb.service_index++;
         return;
       }
     }
