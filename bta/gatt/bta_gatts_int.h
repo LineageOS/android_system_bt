@@ -31,6 +31,7 @@
 
 #include <base/strings/stringprintf.h>
 #include "bt_common.h"
+#include "types/bt_transport.h"
 
 /*****************************************************************************
  *  Constants and data types

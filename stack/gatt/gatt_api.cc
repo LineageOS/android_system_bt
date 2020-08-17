@@ -33,6 +33,7 @@
 #include "gatt_int.h"
 #include "l2c_api.h"
 #include "stack/gatt/connection_manager.h"
+#include "types/bt_transport.h"
 
 using bluetooth::Uuid;
 
