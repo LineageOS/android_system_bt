@@ -33,6 +33,7 @@
 #include "bta_gattc_int.h"
 #include "bta_sys.h"
 #include "l2c_api.h"
+#include "types/bt_transport.h"
 #include "utl.h"
 
 /*******************************************************************************

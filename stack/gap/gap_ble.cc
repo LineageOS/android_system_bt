@@ -24,6 +24,7 @@
 #include <queue>
 #include "gap_api.h"
 #include "gatt_api.h"
+#include "types/bt_transport.h"
 
 using base::StringPrintf;
 using bluetooth::Uuid;
