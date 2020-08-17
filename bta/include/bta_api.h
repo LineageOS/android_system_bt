@@ -193,11 +193,6 @@ typedef uint16_t
 
 typedef uint16_t tBTA_DM_CONN;
 
-#define BTA_TRANSPORT_UNKNOWN 0
-#define BTA_TRANSPORT_BR_EDR BT_TRANSPORT_BR_EDR
-#define BTA_TRANSPORT_LE BT_TRANSPORT_LE
-typedef tBT_TRANSPORT tBTA_TRANSPORT;
-
 /* Pairable Modes */
 #define BTA_DM_PAIRABLE 1
 #define BTA_DM_NON_PAIRABLE 0
