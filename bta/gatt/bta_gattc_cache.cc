@@ -135,7 +135,7 @@ tGATT_STATUS bta_gattc_discover_pri_service(uint16_t conn_id,
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
   if (!p_clcb) return GATT_ERROR;
 
-  if (p_clcb->transport == BTA_TRANSPORT_LE) {
+  if (p_clcb->transport == BT_TRANSPORT_LE) {
     return GATTC_Discover(conn_id, disc_type, 0x0001, 0xFFFF);
   }
 
