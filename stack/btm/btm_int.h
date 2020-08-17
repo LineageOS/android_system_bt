@@ -108,7 +108,7 @@ extern void btm_esco_proc_conn_chg(uint8_t status, uint16_t handle,
                                    uint16_t rx_pkt_len, uint16_t tx_pkt_len);
 extern void btm_sco_conn_req(const RawAddress& bda, DEV_CLASS dev_class,
                              uint8_t link_type);
-extern void btm_sco_removed(uint16_t hci_handle, uint8_t reason);
+extern bool btm_sco_removed(uint16_t hci_handle, uint8_t reason);
 extern void btm_sco_acl_removed(const RawAddress* bda);
 extern void btm_route_sco_data(BT_HDR* p_msg);
 extern bool btm_is_sco_active(uint16_t handle);
