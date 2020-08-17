@@ -76,7 +76,6 @@ typedef struct {
   RawAddress bd_addr;
   tBTA_SERVICE_MASK services;
   tBTA_DM_SEARCH_CBACK* p_cback;
-  bool sdp_search;
   tBT_TRANSPORT transport;
   uint8_t num_uuid;
   bluetooth::Uuid* p_uuid;
@@ -340,7 +339,6 @@ typedef struct {
   bool sdp_results;
   bluetooth::Uuid uuid;
   uint8_t peer_scn;
-  bool sdp_search;
   bool cancel_pending; /* inquiry cancel is pending */
   tBT_TRANSPORT transport;
   tBTA_DM_SEARCH_CBACK* p_scan_cback;
