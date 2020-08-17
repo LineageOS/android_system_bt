@@ -1059,7 +1059,7 @@ void GATT_StartIf(tGATT_IF gatt_if) {
   RawAddress bda;
   uint8_t start_idx, found_idx;
   uint16_t conn_id;
-  tGATT_TRANSPORT transport;
+  tBT_TRANSPORT transport;
 
   VLOG(1) << __func__ << " gatt_if=" << +gatt_if;
   p_reg = gatt_get_regcb(gatt_if);

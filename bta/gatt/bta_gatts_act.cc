@@ -48,7 +48,7 @@ static bool bta_gatts_nv_srv_chg_cback(tGATTS_SRV_CHG_CMD cmd,
 static void bta_gatts_conn_cback(tGATT_IF gatt_if, const RawAddress& bda,
                                  uint16_t conn_id, bool connected,
                                  tGATT_DISCONN_REASON reason,
-                                 tGATT_TRANSPORT transport);
+                                 tBT_TRANSPORT transport);
 static void bta_gatts_send_request_cback(uint16_t conn_id, uint32_t trans_id,
                                          tGATTS_REQ_TYPE req_type,
                                          tGATTS_DATA* p_data);
@@ -501,7 +501,7 @@ void bta_gatts_close(UNUSED_ATTR tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
   tGATT_STATUS status = GATT_ERROR;
   tGATT_IF gatt_if;
   RawAddress remote_bda;
-  tGATT_TRANSPORT transport;
+  tBT_TRANSPORT transport;
 
   if (GATT_GetConnectionInfor(p_msg->hdr.layer_specific, &gatt_if, remote_bda,
                               &transport)) {
@@ -542,7 +542,7 @@ static void bta_gatts_send_request_cback(uint16_t conn_id, uint32_t trans_id,
   tBTA_GATTS cb_data;
   tBTA_GATTS_RCB* p_rcb;
   tGATT_IF gatt_if;
-  tGATT_TRANSPORT transport;
+  tBT_TRANSPORT transport;
 
   memset(&cb_data, 0, sizeof(tBTA_GATTS));
 
@@ -586,7 +586,7 @@ static void bta_gatts_send_request_cback(uint16_t conn_id, uint32_t trans_id,
 static void bta_gatts_conn_cback(tGATT_IF gatt_if, const RawAddress& bdaddr,
                                  uint16_t conn_id, bool connected,
                                  tGATT_DISCONN_REASON reason,
-                                 tGATT_TRANSPORT transport) {
+                                 tBT_TRANSPORT transport) {
   tBTA_GATTS cb_data;
   uint8_t evt = connected ? BTA_GATTS_CONNECT_EVT : BTA_GATTS_DISCONNECT_EVT;
   tBTA_GATTS_RCB* p_reg;
@@ -671,7 +671,7 @@ static void bta_gatts_conn_update_cback(tGATT_IF gatt_if, uint16_t conn_id,
 static void bta_gatts_cong_cback(uint16_t conn_id, bool congested) {
   tBTA_GATTS_RCB* p_rcb;
   tGATT_IF gatt_if;
-  tGATT_TRANSPORT transport;
+  tBT_TRANSPORT transport;
   tBTA_GATTS cb_data;
 
   if (GATT_GetConnectionInfor(conn_id, &gatt_if, cb_data.req_data.remote_bda,
