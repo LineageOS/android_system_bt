@@ -2255,8 +2255,6 @@ bt_status_t btif_dm_get_remote_services_by_transport(RawAddress* remote_addr,
 
   /* Set the mask extension */
   tBTA_SERVICE_MASK_EXT mask_ext;
-  mask_ext.num_uuid = 0;
-  mask_ext.p_uuid = NULL;
   mask_ext.srvc_mask = BTA_ALL_SERVICE_MASK;
 
   BTA_DmDiscoverByTransport(*remote_addr, &mask_ext, bte_dm_search_services_evt,

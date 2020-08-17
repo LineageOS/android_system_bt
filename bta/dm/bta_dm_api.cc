@@ -529,10 +529,7 @@ static void bta_dm_discover_send_msg(const RawAddress& bd_addr,
                                      tBTA_SERVICE_MASK_EXT* p_services,
                                      tBTA_DM_SEARCH_CBACK* p_cback,
                                      tBT_TRANSPORT transport) {
-  const size_t len =
-      p_services
-          ? (sizeof(tBTA_DM_API_DISCOVER) + sizeof(Uuid) * p_services->num_uuid)
-          : sizeof(tBTA_DM_API_DISCOVER);
+  const size_t len = sizeof(tBTA_DM_API_DISCOVER);
   tBTA_DM_API_DISCOVER* p_msg = (tBTA_DM_API_DISCOVER*)osi_calloc(len);
 
   p_msg->hdr.event = BTA_DM_API_DISCOVER_EVT;
@@ -542,12 +539,6 @@ static void bta_dm_discover_send_msg(const RawAddress& bd_addr,
 
   if (p_services != NULL) {
     p_msg->services = p_services->srvc_mask;
-    p_msg->num_uuid = p_services->num_uuid;
-    if (p_services->num_uuid != 0) {
-      p_msg->p_uuid = (Uuid*)(p_msg + 1);
-      memcpy(p_msg->p_uuid, p_services->p_uuid,
-             sizeof(Uuid) * p_services->num_uuid);
-    }
   }
 
   bta_sys_sendmsg(p_msg);
