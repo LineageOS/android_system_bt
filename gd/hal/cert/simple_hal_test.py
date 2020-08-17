@@ -25,6 +25,8 @@ from hal import facade_pb2 as hal_facade_pb2
 from bluetooth_packets_python3 import hci_packets
 import bluetooth_packets_python3 as bt_packets
 
+_GRPC_TIMEOUT = 10
+
 
 class SimpleHalTest(GdBaseTestClass):
 
@@ -38,7 +40,9 @@ class SimpleHalTest(GdBaseTestClass):
         self.send_cert_hci_command(hci_packets.ResetBuilder())
 
     def send_cert_hci_command(self, command):
-        self.cert.hal.SendHciCommand(hal_facade_pb2.HciCommandPacket(payload=bytes(command.Serialize())))
+        self.cert.hal.SendHciCommand(
+            hal_facade_pb2.HciCommandPacket(payload=bytes(command.Serialize())),
+            timeout=_GRPC_TIMEOUT)
 
     def send_cert_acl_data(self, handle, pb_flag, b_flag, acl):
         lower = handle & 0xff
@@ -51,7 +55,9 @@ class SimpleHalTest(GdBaseTestClass):
         self.cert.hal.SendHciAcl(hal_facade_pb2.HciAclPacket(payload=concatenated))
 
     def send_dut_hci_command(self, command):
-        self.dut.hal.SendHciCommand(hal_facade_pb2.HciCommandPacket(payload=bytes(command.Serialize())))
+        self.dut.hal.SendHciCommand(
+            hal_facade_pb2.HciCommandPacket(payload=bytes(command.Serialize())),
+            timeout=_GRPC_TIMEOUT)
 
     def send_dut_acl_data(self, handle, pb_flag, b_flag, acl):
         lower = handle & 0xff
@@ -61,7 +67,9 @@ class SimpleHalTest(GdBaseTestClass):
         lower_length = len(acl) & 0xff
         upper_length = (len(acl) & 0xff00) >> 8
         concatenated = bytes([lower, upper, lower_length, upper_length] + list(acl))
-        self.dut.hal.SendHciAcl(hal_facade_pb2.HciAclPacket(payload=concatenated))
+        self.dut.hal.SendHciAcl(
+            hal_facade_pb2.HciAclPacket(payload=concatenated),
+            timeout=_GRPC_TIMEOUT)
 
     def test_none_event(self):
         with EventStream(self.dut.hal.FetchHciEvent(empty_pb2.Empty())) as hci_event_stream:

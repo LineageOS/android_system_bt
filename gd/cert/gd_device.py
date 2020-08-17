@@ -191,6 +191,7 @@ class GdDeviceBase(ABC):
             signal_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             signal_socket.bind(("localhost", self.signal_port))
             signal_socket.listen(1)
+            signal_socket.settimeout(300) # 5 minute timeout for blocking socket operations
 
             # Start backing process
             logging.debug("Running %s" % " ".join(self.cmd))
@@ -207,6 +208,7 @@ class GdDeviceBase(ABC):
                 msg="backing_process stopped immediately after running " + " ".join(self.cmd))
 
             # Wait for process to be ready
+            logging.debug("Waiting for backing_process accept.")
             signal_socket.accept()
 
         self.backing_process_logger = AsyncSubprocessLogger(
