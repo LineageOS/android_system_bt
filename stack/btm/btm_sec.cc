@@ -5394,25 +5394,6 @@ bool btm_sec_is_a_bonded_dev(const RawAddress& bda) {
 
 /*******************************************************************************
  *
- * Function         btm_sec_is_le_capable_dev
- *
- * Description       Is the specified device is dual mode or LE only device
- *
- * Returns          true - dev is a dual mode
- *
- ******************************************************************************/
-bool btm_sec_is_le_capable_dev(const RawAddress& bda) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bda);
-  bool le_capable = false;
-
-  if (p_dev_rec &&
-      (p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) == BT_DEVICE_TYPE_BLE)
-    le_capable = true;
-  return le_capable;
-}
-
-/*******************************************************************************
- *
  * Function         btm_sec_use_smp_br_chnl
  *
  * Description      The function checks if SMP BR connection can be used with
