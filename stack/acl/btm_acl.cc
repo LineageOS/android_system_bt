@@ -64,6 +64,8 @@ struct StackAclBtmAcl {
   void btm_establish_continue(tACL_CONN* p_acl_cb);
   void btm_read_remote_features(uint16_t handle);
   void btm_set_default_link_policy(uint16_t settings);
+  void btm_acl_role_changed(uint8_t hci_status, const RawAddress& bd_addr,
+                            uint8_t new_role);
 };
 
 namespace {
@@ -1482,8 +1484,9 @@ void btm_blacklist_role_change_device(const RawAddress& bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-void btm_acl_role_changed(uint8_t hci_status, const RawAddress& bd_addr,
-                          uint8_t new_role) {
+void StackAclBtmAcl::btm_acl_role_changed(uint8_t hci_status,
+                                          const RawAddress& bd_addr,
+                                          uint8_t new_role) {
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
   if (p_acl == nullptr) {
     BTM_TRACE_WARNING("%s: Unsolicited role change for unknown ACL", __func__);
@@ -1549,6 +1552,17 @@ void btm_acl_role_changed(uint8_t hci_status, const RawAddress& bd_addr,
                     bd_addr.ToString().c_str(), p_dev_rec->rs_disc_pending);
     p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
   }
+}
+
+void btm_acl_role_changed(uint8_t hci_status, const RawAddress& bd_addr,
+                          uint8_t new_role) {
+  if (hci_status == HCI_SUCCESS) {
+    l2c_link_role_changed(&bd_addr, new_role, hci_status);
+  } else {
+    l2c_link_role_changed(nullptr, HCI_ROLE_UNKNOWN,
+                          HCI_ERR_COMMAND_DISALLOWED);
+  }
+  internal_.btm_acl_role_changed(hci_status, bd_addr, new_role);
 }
 
 /*******************************************************************************
