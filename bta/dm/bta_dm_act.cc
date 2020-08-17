@@ -913,26 +913,6 @@ void bta_dm_di_disc_cmpl(tBTA_DM_MSG* p_data) {
 
 /*******************************************************************************
  *
- * Function         bta_dm_di_disc_callback
- *
- * Description      This function queries a remote device for DI information.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-static void bta_dm_di_disc_callback(uint16_t result) {
-  tBTA_DM_MSG* p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
-
-  p_msg->hdr.event = BTA_DM_SEARCH_CMPL_EVT;
-  p_msg->hdr.layer_specific = BTA_DM_API_DI_DISCOVER_EVT;
-  p_msg->hdr.offset = result;
-
-  bta_sys_sendmsg(p_msg);
-}
-
-/*******************************************************************************
- *
  * Function         bta_dm_disable_search_and_disc
  *
  * Description      Cancels an ongoing search or discovery for devices in case
@@ -954,41 +934,6 @@ static void bta_dm_disable_search_and_disc(void) {
 
     bta_dm_di_cb.p_di_db = NULL;
     bta_dm_search_cb.p_search_cback(BTA_DM_DI_DISC_CMPL_EVT, NULL);
-  }
-}
-
-/*******************************************************************************
- *
- * Function         bta_dm_di_disc
- *
- * Description      This function queries a remote device for DI information.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_dm_di_disc(tBTA_DM_MSG* p_data) {
-  uint16_t result = BTA_FAILURE;
-
-  bta_dm_search_cb.p_search_cback = p_data->di_disc.p_cback;
-  bta_dm_search_cb.peer_bdaddr = p_data->di_disc.bd_addr;
-  bta_dm_di_cb.p_di_db = p_data->di_disc.p_sdp_db;
-
-  bta_dm_search_cb.p_sdp_db =
-      (tSDP_DISCOVERY_DB*)osi_malloc(BTA_DM_SDP_DB_SIZE);
-  if (SDP_DiDiscover(bta_dm_search_cb.peer_bdaddr, p_data->di_disc.p_sdp_db,
-                     p_data->di_disc.len,
-                     bta_dm_di_disc_callback) == SDP_SUCCESS) {
-    result = BTA_SUCCESS;
-  }
-
-  if (result == BTA_FAILURE) {
-    tBTA_DM_MSG* p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
-
-    p_msg->hdr.event = BTA_DM_SEARCH_CMPL_EVT;
-    p_msg->hdr.layer_specific = BTA_DM_API_DI_DISCOVER_EVT;
-    p_data->hdr.offset = result;
-    bta_sys_sendmsg(p_msg);
   }
 }
 
