@@ -278,7 +278,7 @@ void btif_gattc_open_impl(int client_if, RawAddress address, bool is_direct,
   }
 
   // Determine transport
-  if (transport_p != GATT_TRANSPORT_AUTO) {
+  if (transport_p != BT_TRANSPORT_AUTO) {
     transport = transport_p;
   } else {
     switch (device_type) {
