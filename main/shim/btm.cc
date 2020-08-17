@@ -759,11 +759,11 @@ size_t Btm::GetNumberOfAdvertisingInstances() const {
 
 tBTM_STATUS Btm::CreateBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                             tBT_TRANSPORT transport, int device_type) {
-  if (transport == BTA_TRANSPORT_UNKNOWN) {
+  if (transport == BT_TRANSPORT_UNKNOWN) {
     if (device_type & BT_DEVICE_TYPE_BLE) {
-      transport = BTA_TRANSPORT_LE;
+      transport = BT_TRANSPORT_LE;
     } else if (device_type & BT_DEVICE_TYPE_BREDR) {
-      transport = BTA_TRANSPORT_BR_EDR;
+      transport = BT_TRANSPORT_BR_EDR;
     }
     LOG_DEBUG("%s guessing transport as %02x ", __func__, transport);
   }

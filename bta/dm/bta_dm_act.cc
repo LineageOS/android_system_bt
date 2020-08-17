@@ -693,7 +693,7 @@ void bta_dm_add_device(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg) {
 /** This function forces to close the connection to a remote device and
  * optionaly remove the device from security database if required. */
 void bta_dm_close_acl(const RawAddress& bd_addr, bool remove_dev,
-                      tBTA_TRANSPORT transport) {
+                      tBT_TRANSPORT transport) {
   uint8_t index;
 
   APPL_TRACE_DEBUG("bta_dm_close_acl");
@@ -725,7 +725,7 @@ void bta_dm_close_acl(const RawAddress& bd_addr, bool remove_dev,
 
 /** Bonds with peer device */
 void bta_dm_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                 tBTA_TRANSPORT transport, int device_type) {
+                 tBT_TRANSPORT transport, int device_type) {
   tBTA_DM_SEC sec_event;
   char* p_name;
 
@@ -1756,7 +1756,7 @@ static void bta_dm_discover_next_device(void) {
  ******************************************************************************/
 static void bta_dm_discover_device(const RawAddress& remote_bd_addr) {
   tBT_TRANSPORT transport = BT_TRANSPORT_BR_EDR;
-  if (bta_dm_search_cb.transport == BTA_TRANSPORT_UNKNOWN) {
+  if (bta_dm_search_cb.transport == BT_TRANSPORT_UNKNOWN) {
     tBT_DEVICE_TYPE dev_type;
     tBLE_ADDR_TYPE addr_type;
 
@@ -1768,7 +1768,7 @@ static void bta_dm_discover_device(const RawAddress& remote_bd_addr) {
   }
 
   /* Reset transport state for next discovery */
-  bta_dm_search_cb.transport = BTA_TRANSPORT_UNKNOWN;
+  bta_dm_search_cb.transport = BT_TRANSPORT_UNKNOWN;
 
   VLOG(1) << __func__ << " BDA: " << remote_bd_addr;
 
@@ -3336,7 +3336,7 @@ void bta_dm_encrypt_cback(const RawAddress* bd_addr, tBT_TRANSPORT transport,
 }
 
 /**This function to encrypt the link */
-void bta_dm_set_encryption(const RawAddress& bd_addr, tBTA_TRANSPORT transport,
+void bta_dm_set_encryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                            tBTA_DM_ENCRYPT_CBACK* p_callback,
                            tBTM_BLE_SEC_ACT sec_act) {
   uint8_t i;
