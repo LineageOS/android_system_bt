@@ -180,8 +180,6 @@ extern void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec,
 extern void btm_sec_clear_ble_keys(tBTM_SEC_DEV_REC* p_dev_rec);
 extern bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec,
                                      const RawAddress& new_pseudo_addr);
-extern tBTM_SEC_SERV_REC* btm_sec_find_first_serv(bool is_originator,
-                                                  uint16_t psm);
 extern tL2CAP_LE_RESULT_CODE btm_ble_start_sec_check(
     const RawAddress& bd_addr, uint16_t psm, bool is_originator,
     tBTM_SEC_CALLBACK* p_callback, void* p_ref_data);
