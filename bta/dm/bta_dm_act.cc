@@ -1346,8 +1346,6 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
 void bta_dm_search_cmpl(tBTA_DM_MSG* p_data) {
   APPL_TRACE_EVENT("%s", __func__);
 
-  osi_free_and_reset((void**)&bta_dm_search_cb.p_srvc_uuid);
-
   if (p_data->hdr.layer_specific == BTA_DM_API_DI_DISCOVER_EVT)
     bta_dm_di_disc_cmpl(p_data);
   else
@@ -3693,10 +3691,7 @@ static void bta_dm_gattc_register(void) {
  *
  ******************************************************************************/
 static void btm_dm_start_disc_gatt_services(uint16_t conn_id) {
-  Uuid* p_uuid = bta_dm_search_cb.p_srvc_uuid;
-
-  /* always search for all services */
-  BTA_GATTC_ServiceSearchRequest(conn_id, p_uuid);
+  BTA_GATTC_ServiceSearchRequest(conn_id, nullptr);
 }
 
 /*******************************************************************************
