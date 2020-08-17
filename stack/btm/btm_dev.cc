@@ -267,7 +267,7 @@ tBTM_SEC_DEV_REC* btm_sec_alloc_dev(const RawAddress& bd_addr) {
 
 /*******************************************************************************
  *
- * Function         btm_dev_support_switch
+ * Function         btm_dev_support_role_switch
  *
  * Description      This function is called by the L2CAP to check if remote
  *                  device supports role switch
@@ -278,7 +278,7 @@ tBTM_SEC_DEV_REC* btm_sec_alloc_dev(const RawAddress& bd_addr) {
  *                  for the link.
  *
  ******************************************************************************/
-bool btm_dev_support_switch(const RawAddress& bd_addr) {
+bool btm_dev_support_role_switch(const RawAddress& bd_addr) {
   if (BTM_IsScoActiveByBdaddr(bd_addr)) {
     BTM_TRACE_DEBUG("%s Role switch is not allowed if a SCO is up", __func__);
     return false;

@@ -78,7 +78,7 @@ void l2c_link_hci_conn_req(const RawAddress& bd_addr) {
     }
 
     if (no_links) {
-      if (!btm_dev_support_switch(bd_addr))
+      if (!btm_dev_support_role_switch(bd_addr))
         p_lcb->link_role = HCI_ROLE_SLAVE;
       else
         p_lcb->link_role = HCI_ROLE_MASTER;
@@ -99,7 +99,7 @@ void l2c_link_hci_conn_req(const RawAddress& bd_addr) {
    */
   if ((p_lcb->link_state == LST_CONNECTING) ||
       (p_lcb->link_state == LST_CONNECT_HOLDING)) {
-    if (!btm_dev_support_switch(bd_addr))
+    if (!btm_dev_support_role_switch(bd_addr))
       p_lcb->link_role = HCI_ROLE_SLAVE;
     else
       p_lcb->link_role = HCI_ROLE_MASTER;
