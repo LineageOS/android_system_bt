@@ -145,7 +145,7 @@ typedef struct {
   uint16_t conn_id;
   tGATT_IF client_if;
   RawAddress remote_bda;
-  tBTA_TRANSPORT transport;
+  tBT_TRANSPORT transport;
   uint16_t mtu;
 } tBTA_GATTC_OPEN;
 
