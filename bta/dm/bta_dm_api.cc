@@ -141,7 +141,7 @@ void BTA_DmSearchCancel(void) {
  *
  ******************************************************************************/
 void BTA_DmDiscover(const RawAddress& bd_addr, tBTA_SERVICE_MASK services,
-                    tBTA_DM_SEARCH_CBACK* p_cback, bool sdp_search) {
+                    tBTA_DM_SEARCH_CBACK* p_cback) {
   tBTA_DM_API_DISCOVER* p_msg =
       (tBTA_DM_API_DISCOVER*)osi_calloc(sizeof(tBTA_DM_API_DISCOVER));
 
@@ -149,7 +149,6 @@ void BTA_DmDiscover(const RawAddress& bd_addr, tBTA_SERVICE_MASK services,
   p_msg->bd_addr = bd_addr;
   p_msg->services = services;
   p_msg->p_cback = p_cback;
-  p_msg->sdp_search = sdp_search;
 
   bta_sys_sendmsg(p_msg);
 }
@@ -166,7 +165,7 @@ void BTA_DmDiscover(const RawAddress& bd_addr, tBTA_SERVICE_MASK services,
  *
  ******************************************************************************/
 void BTA_DmDiscoverUUID(const RawAddress& bd_addr, const Uuid& uuid,
-                        tBTA_DM_SEARCH_CBACK* p_cback, bool sdp_search) {
+                        tBTA_DM_SEARCH_CBACK* p_cback) {
   tBTA_DM_API_DISCOVER* p_msg =
       (tBTA_DM_API_DISCOVER*)osi_malloc(sizeof(tBTA_DM_API_DISCOVER));
 
@@ -174,7 +173,6 @@ void BTA_DmDiscoverUUID(const RawAddress& bd_addr, const Uuid& uuid,
   p_msg->bd_addr = bd_addr;
   p_msg->services = BTA_USER_SERVICE_MASK;  // Not exposed at API level
   p_msg->p_cback = p_cback;
-  p_msg->sdp_search = sdp_search;
 
   p_msg->num_uuid = 0;
   p_msg->p_uuid = NULL;
@@ -530,7 +528,7 @@ void BTA_DmSetBlePrefConnParams(const RawAddress& bd_addr,
 static void bta_dm_discover_send_msg(const RawAddress& bd_addr,
                                      tBTA_SERVICE_MASK_EXT* p_services,
                                      tBTA_DM_SEARCH_CBACK* p_cback,
-                                     bool sdp_search, tBT_TRANSPORT transport) {
+                                     tBT_TRANSPORT transport) {
   const size_t len =
       p_services
           ? (sizeof(tBTA_DM_API_DISCOVER) + sizeof(Uuid) * p_services->num_uuid)
@@ -540,7 +538,6 @@ static void bta_dm_discover_send_msg(const RawAddress& bd_addr,
   p_msg->hdr.event = BTA_DM_API_DISCOVER_EVT;
   p_msg->bd_addr = bd_addr;
   p_msg->p_cback = p_cback;
-  p_msg->sdp_search = sdp_search;
   p_msg->transport = transport;
 
   if (p_services != NULL) {
@@ -574,9 +571,9 @@ static void bta_dm_discover_send_msg(const RawAddress& bd_addr,
  ******************************************************************************/
 void BTA_DmDiscoverByTransport(const RawAddress& bd_addr,
                                tBTA_SERVICE_MASK_EXT* p_services,
-                               tBTA_DM_SEARCH_CBACK* p_cback, bool sdp_search,
+                               tBTA_DM_SEARCH_CBACK* p_cback,
                                tBT_TRANSPORT transport) {
-  bta_dm_discover_send_msg(bd_addr, p_services, p_cback, sdp_search, transport);
+  bta_dm_discover_send_msg(bd_addr, p_services, p_cback, transport);
 }
 
 /*******************************************************************************
