@@ -18,15 +18,11 @@
 #ifndef BTM_INT_TYPES_H
 #define BTM_INT_TYPES_H
 
-#include "btif/include/btif_bqr.h"
-#include "btm_api_types.h"
-#include "btm_ble_api_types.h"
-#include "btm_ble_int_types.h"
-#include "hcidefs.h"
-#include "osi/include/alarm.h"
+#include <cstdint>
+
 #include "osi/include/list.h"
-#include "rfcdefs.h"
 #include "stack/acl/acl.h"
+#include "stack/btm/btm_ble_int_types.h"
 #include "stack/btm/security_device_record.h"
 
 #define BTM_SEC_IS_SM4(sm) ((bool)(BTM_SM4_TRUE == ((sm)&BTM_SM4_TRUE)))
