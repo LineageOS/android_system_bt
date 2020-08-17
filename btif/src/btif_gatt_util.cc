@@ -39,6 +39,7 @@
 #include "btif_storage.h"
 #include "btif_util.h"
 #include "osi/include/osi.h"
+#include "types/bt_transport.h"
 
 using bluetooth::Uuid;
 
