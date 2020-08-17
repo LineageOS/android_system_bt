@@ -154,6 +154,12 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   void OnConnectionClosed(hci::Address address) override;
 
   /**
+   * When link encryption status change, we need to update the device record (temporary).
+   * @param encrypted
+   */
+  void OnEncryptionChange(hci::Address remote, bool encrypted) override;
+
+  /**
    * Pairing handler has finished or cancelled
    *
    * @param address address for pairing handler

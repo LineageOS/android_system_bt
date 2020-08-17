@@ -124,6 +124,8 @@ class SecurityManagerChannelCallback : public ISecurityManagerChannelListener {
     LOG_DEBUG("Called");
   }
 
+  void OnEncryptionChange(hci::Address address, bool encrypted) override {}
+
  private:
   pairing::ClassicPairingHandler* pairing_handler_ = nullptr;
 };
