@@ -22,29 +22,9 @@
  *
  ******************************************************************************/
 
-#define LOG_TAG "bt_btm_sec"
-
-#include <frameworks/base/core/proto/android/bluetooth/enums.pb.h>
-#include <frameworks/base/core/proto/android/bluetooth/hci/enums.pb.h>
-#include <log/log.h>
-#include <string.h>
-
-#include "common/metrics.h"
-#include "common/time_util.h"
-#include "device/include/controller.h"
-#include "l2c_api.h"
-#include "main/shim/btm_api.h"
-#include "main/shim/shim.h"
-#include "osi/include/log.h"
-#include "osi/include/osi.h"
-#include "stack/include/acl_api.h"
-#include "stack/include/l2cap_security_interface.h"
-
-#include "bt_types.h"
-#include "btif_storage.h"
-#include "btm_int.h"
-#include "hcimsgs.h"
-#include "stack/btm/btm_dev.h"
+#include <cstdint>
+#include "stack/btm/security_device_record.h"
+#include "stack/include/btm_api_types.h"
 
 #define BTM_SEC_MAX_COLLISION_DELAY (5000)
 
