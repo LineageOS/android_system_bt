@@ -283,7 +283,7 @@ void bta_gattc_process_api_open_cancel(tBTA_GATTC_DATA* p_msg) {
 
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_cif(
       p_msg->api_cancel_conn.client_if, p_msg->api_cancel_conn.remote_bda,
-      GATT_TRANSPORT_LE);
+      BT_TRANSPORT_LE);
   if (p_clcb != NULL) {
     bta_gattc_sm_execute(p_clcb, event, p_msg);
     return;
@@ -376,7 +376,7 @@ void bta_gattc_init_bk_conn(tBTA_GATTC_API_OPEN* p_data,
                             tBTA_GATTC_RCB* p_clreg) {
   if (!bta_gattc_mark_bg_conn(p_data->client_if, p_data->remote_bda, true)) {
     bta_gattc_send_open_cback(p_clreg, GATT_NO_RESOURCES, p_data->remote_bda,
-                              GATT_INVALID_CONN_ID, GATT_TRANSPORT_LE, 0);
+                              GATT_INVALID_CONN_ID, BT_TRANSPORT_LE, 0);
     return;
   }
 
@@ -386,7 +386,7 @@ void bta_gattc_init_bk_conn(tBTA_GATTC_API_OPEN* p_data,
     LOG(ERROR) << __func__
                << " unable to connect to remote bd_addr=" << p_data->remote_bda;
     bta_gattc_send_open_cback(p_clreg, GATT_ERROR, p_data->remote_bda,
-                              GATT_INVALID_CONN_ID, GATT_TRANSPORT_LE, 0);
+                              GATT_INVALID_CONN_ID, BT_TRANSPORT_LE, 0);
     return;
   }
 
@@ -398,7 +398,7 @@ void bta_gattc_init_bk_conn(tBTA_GATTC_API_OPEN* p_data,
   }
 
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_alloc_clcb(
-      p_data->client_if, p_data->remote_bda, GATT_TRANSPORT_LE);
+      p_data->client_if, p_data->remote_bda, BT_TRANSPORT_LE);
   if (!p_clcb) return;
 
   tBTA_GATTC_DATA gattc_data;
@@ -1066,7 +1066,7 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, const RawAddress& bdaddr,
 /** encryption complete callback function to GATT client stack */
 static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, const RawAddress& bda) {
   tBTA_GATTC_CLCB* p_clcb =
-      bta_gattc_find_clcb_by_cif(gattc_if, bda, GATT_TRANSPORT_LE);
+      bta_gattc_find_clcb_by_cif(gattc_if, bda, BT_TRANSPORT_LE);
 
   if (p_clcb == NULL) return;
 
