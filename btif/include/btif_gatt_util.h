@@ -28,7 +28,7 @@
 void btif_to_bta_response(tGATTS_RSP* p_dest, btgatt_response_t* p_src);
 
 void btif_gatt_check_encrypted_link(RawAddress bd_addr,
-                                    tGATT_TRANSPORT transport);
+                                    tBT_TRANSPORT transport);
 extern void btif_gatt_move_track_adv_data(btgatt_track_adv_info_t* p_dest,
                                           btgatt_track_adv_info_t* p_src);
 
