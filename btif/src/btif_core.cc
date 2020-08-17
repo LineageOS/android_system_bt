@@ -70,6 +70,8 @@ using base::PlatformThread;
 using bluetooth::Uuid;
 using bluetooth::common::MessageLoopThread;
 
+static void bt_jni_msg_ready(void* context);
+
 /*******************************************************************************
  *  Constants & Macros
  ******************************************************************************/
@@ -82,37 +84,6 @@ using bluetooth::common::MessageLoopThread;
 #define BTE_DID_CONF_FILE "/etc/bluetooth/bt_did.conf"
 #endif  // defined(OS_GENERIC)
 #endif  // BTE_DID_CONF_FILE
-
-/*******************************************************************************
- *  Local type definitions
- ******************************************************************************/
-
-/* These type definitions are used when passing data from the HAL to BTIF
- * context in the downstream path for the adapter and remote_device property
- * APIs
- */
-
-typedef struct {
-  RawAddress bd_addr;
-  bt_property_type_t type;
-} btif_storage_read_t;
-
-typedef struct {
-  RawAddress bd_addr;
-  bt_property_t prop;
-} btif_storage_write_t;
-
-typedef union {
-  btif_storage_read_t read_req;
-  btif_storage_write_t write_req;
-} btif_storage_req_t;
-
-typedef enum {
-  BTIF_CORE_STATE_DISABLED = 0,
-  BTIF_CORE_STATE_ENABLING,
-  BTIF_CORE_STATE_ENABLED,
-  BTIF_CORE_STATE_DISABLING
-} btif_core_state_t;
 
 /*******************************************************************************
  *  Static variables
@@ -133,41 +104,12 @@ static base::AtExitManager* exit_manager;
 static uid_set_t* uid_set;
 
 /*******************************************************************************
- *  Static functions
- ******************************************************************************/
-/* sends message to btif task */
-static void btif_sendmsg(void* p_msg);
-
-/*******************************************************************************
  *  Externs
  ******************************************************************************/
-extern fixed_queue_t* btu_hci_msg_queue;
-
-void btif_dm_execute_service_request(uint16_t event, char* p_param);
+void btif_dm_enable_service(tBTA_SERVICE_ID service_id, bool enable);
 #ifdef BTIF_DM_OOB_TEST
 void btif_dm_load_local_oob(void);
 #endif
-
-/*******************************************************************************
- *
- * Function         btif_context_switched
- *
- * Description      Callback used to execute transferred context callback
- *
- *                  p_msg : message to be executed in btif context
- *
- * Returns          void
- *
- ******************************************************************************/
-
-static void btif_context_switched(void* p_msg) {
-  BTIF_TRACE_VERBOSE("btif_context_switched");
-
-  tBTIF_CONTEXT_SWITCH_CBACK* p = (tBTIF_CONTEXT_SWITCH_CBACK*)p_msg;
-
-  /* each callback knows how to parse the data */
-  if (p->p_cb) p->p_cb(p->event, p->p_param);
-}
 
 /*******************************************************************************
  *
@@ -208,8 +150,7 @@ bt_status_t btif_transfer_context(tBTIF_CBACK* p_cback, uint16_t event,
     memcpy(p_msg->p_param, p_params, param_len); /* callback parameter data */
   }
 
-  btif_sendmsg(p_msg);
-
+  do_in_jni_thread(base::Bind(&bt_jni_msg_ready, p_msg));
   return BT_STATUS_SUCCESS;
 }
 
@@ -278,33 +219,9 @@ void btif_init_ok() {
  *
  ******************************************************************************/
 static void bt_jni_msg_ready(void* context) {
-  BT_HDR* p_msg = (BT_HDR*)context;
-
-  BTIF_TRACE_VERBOSE("btif task fetched event %x", p_msg->event);
-
-  switch (p_msg->event) {
-    case BT_EVT_CONTEXT_SWITCH_EVT:
-      btif_context_switched(p_msg);
-      break;
-    default:
-      BTIF_TRACE_ERROR("unhandled btif event (%d)", p_msg->event & BT_EVT_MASK);
-      break;
-  }
-  osi_free(p_msg);
-}
-
-/*******************************************************************************
- *
- * Function         btif_sendmsg
- *
- * Description      Sends msg to BTIF task
- *
- * Returns          void
- *
- ******************************************************************************/
-
-void btif_sendmsg(void* p_msg) {
-  do_in_jni_thread(base::Bind(&bt_jni_msg_ready, p_msg));
+  tBTIF_CONTEXT_SWITCH_CBACK* p = (tBTIF_CONTEXT_SWITCH_CBACK*)context;
+  if (p->p_cb) p->p_cb(p->event, p->p_param);
+  osi_free(p);
 }
 
 /*******************************************************************************
@@ -831,30 +748,16 @@ tBTA_SERVICE_MASK btif_get_enabled_services_mask(void) {
  *                  Upon BT enable, BTIF core shall invoke the BTA APIs to
  *                  enable the profiles
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_enable_service(tBTA_SERVICE_ID service_id) {
-  tBTA_SERVICE_ID* p_id = &service_id;
-
-  /* If BT is enabled, we need to switch to BTIF context and trigger the
-   * enable for that profile
-   *
-   * Otherwise, we just set the flag. On BT_Enable, the DM will trigger
-   * enable for the profiles that have been enabled */
-
+void btif_enable_service(tBTA_SERVICE_ID service_id) {
   btif_enabled_services |= (1 << service_id);
 
   BTIF_TRACE_DEBUG("%s: current services:0x%x", __func__,
                    btif_enabled_services);
 
   if (btif_is_enabled()) {
-    btif_transfer_context(btif_dm_execute_service_request,
-                          BTIF_DM_ENABLE_SERVICE, (char*)p_id,
-                          sizeof(tBTA_SERVICE_ID), NULL);
+    btif_dm_enable_service(service_id, true);
   }
-
-  return BT_STATUS_SUCCESS;
 }
 /*******************************************************************************
  *
@@ -864,27 +767,14 @@ bt_status_t btif_enable_service(tBTA_SERVICE_ID service_id) {
  *                  Upon BT disable, BTIF core shall invoke the BTA APIs to
  *                  disable the profiles
  *
- * Returns          bt_status_t
- *
  ******************************************************************************/
-bt_status_t btif_disable_service(tBTA_SERVICE_ID service_id) {
-  tBTA_SERVICE_ID* p_id = &service_id;
-
-  /* If BT is enabled, we need to switch to BTIF context and trigger the
-   * disable for that profile so that the appropriate uuid_property_changed will
-   * be triggerred. Otherwise, we just need to clear the service_id in the mask
-   */
-
+void btif_disable_service(tBTA_SERVICE_ID service_id) {
   btif_enabled_services &= (tBTA_SERVICE_MASK)(~(1 << service_id));
 
   BTIF_TRACE_DEBUG("%s: Current Services:0x%x", __func__,
                    btif_enabled_services);
 
   if (btif_is_enabled()) {
-    btif_transfer_context(btif_dm_execute_service_request,
-                          BTIF_DM_DISABLE_SERVICE, (char*)p_id,
-                          sizeof(tBTA_SERVICE_ID), NULL);
+    btif_dm_enable_service(service_id, false);
   }
-
-  return BT_STATUS_SUCCESS;
 }
