@@ -35,6 +35,7 @@
 #include "pan_int.h"
 #include "sdp_api.h"
 #include "sdpdefs.h"
+#include "stack/btm/btm_sec.h"
 
 static const uint8_t pan_proto_elem_data[] = {
     0x35, 0x18,       /* data element sequence of length 0x18 bytes */

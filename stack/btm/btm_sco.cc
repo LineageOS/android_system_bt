@@ -39,6 +39,7 @@
 #include "hcidefs.h"
 #include "hcimsgs.h"
 #include "osi/include/osi.h"
+#include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
 
 /******************************************************************************/
