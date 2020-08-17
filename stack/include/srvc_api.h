@@ -103,7 +103,7 @@ typedef uint8_t tBA_LEVEL_DESCR;
 typedef struct {
   bool is_pri;
   tBA_LEVEL_DESCR ba_level_descr;
-  tGATT_TRANSPORT transport;
+  tBT_TRANSPORT transport;
   tBA_CBACK* p_cback;
 
 } tBA_REG_INFO;
