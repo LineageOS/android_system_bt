@@ -138,13 +138,6 @@ typedef uint8_t tBTA_SERVICE_ID;
 
 typedef uint32_t tBTA_SERVICE_MASK;
 
-/* extended service mask, including mask with one or more GATT UUID */
-typedef struct {
-  tBTA_SERVICE_MASK srvc_mask;
-  uint8_t num_uuid;
-  bluetooth::Uuid* p_uuid;
-} tBTA_SERVICE_MASK_EXT;
-
 /* Security Setting Mask */
 #define BTA_SEC_NONE BTM_SEC_NONE /* No security. */
 #define BTA_SEC_AUTHORIZE                                               \
@@ -1307,7 +1300,7 @@ extern void BTA_DmSetBlePrefConnParams(const RawAddress& bd_addr,
  *
  ******************************************************************************/
 extern void BTA_DmDiscoverByTransport(const RawAddress& bd_addr,
-                                      tBTA_SERVICE_MASK_EXT* p_services,
+                                      tBTA_SERVICE_MASK p_services,
                                       tBTA_DM_SEARCH_CBACK* p_cback,
                                       tBT_TRANSPORT transport);
 

@@ -2253,12 +2253,8 @@ bt_status_t btif_dm_get_remote_services_by_transport(RawAddress* remote_addr,
   BTIF_TRACE_EVENT("%s: transport=%d, remote_addr=%s", __func__, transport,
                    remote_addr->ToString().c_str());
 
-  /* Set the mask extension */
-  tBTA_SERVICE_MASK_EXT mask_ext;
-  mask_ext.srvc_mask = BTA_ALL_SERVICE_MASK;
-
-  BTA_DmDiscoverByTransport(*remote_addr, &mask_ext, bte_dm_search_services_evt,
-                            transport);
+  BTA_DmDiscoverByTransport(*remote_addr, BTA_ALL_SERVICE_MASK,
+                            bte_dm_search_services_evt, transport);
 
   return BT_STATUS_SUCCESS;
 }

@@ -526,7 +526,7 @@ void BTA_DmSetBlePrefConnParams(const RawAddress& bd_addr,
  *
  ******************************************************************************/
 static void bta_dm_discover_send_msg(const RawAddress& bd_addr,
-                                     tBTA_SERVICE_MASK_EXT* p_services,
+                                     tBTA_SERVICE_MASK p_services,
                                      tBTA_DM_SEARCH_CBACK* p_cback,
                                      tBT_TRANSPORT transport) {
   const size_t len = sizeof(tBTA_DM_API_DISCOVER);
@@ -536,10 +536,7 @@ static void bta_dm_discover_send_msg(const RawAddress& bd_addr,
   p_msg->bd_addr = bd_addr;
   p_msg->p_cback = p_cback;
   p_msg->transport = transport;
-
-  if (p_services != NULL) {
-    p_msg->services = p_services->srvc_mask;
-  }
+  p_msg->services = p_services;
 
   bta_sys_sendmsg(p_msg);
 }
@@ -561,7 +558,7 @@ static void bta_dm_discover_send_msg(const RawAddress& bd_addr,
  *
  ******************************************************************************/
 void BTA_DmDiscoverByTransport(const RawAddress& bd_addr,
-                               tBTA_SERVICE_MASK_EXT* p_services,
+                               tBTA_SERVICE_MASK p_services,
                                tBTA_DM_SEARCH_CBACK* p_cback,
                                tBT_TRANSPORT transport) {
   bta_dm_discover_send_msg(bd_addr, p_services, p_cback, transport);
