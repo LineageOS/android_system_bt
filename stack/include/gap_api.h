@@ -22,6 +22,7 @@
 #include "btm_api.h"
 #include "l2c_api.h"
 #include "profiles_api.h"
+#include "types/bt_transport.h"
 
 /*****************************************************************************
  *  Constants

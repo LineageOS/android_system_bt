@@ -26,6 +26,7 @@
 #include "stack/include/btm_status.h"
 #include "stack/include/hcidefs.h"
 #include "stack/include/smp_api_types.h"
+#include "types/bt_transport.h"
 
 /* Maximum number of bytes allowed for vendor specific command parameters */
 #define BTM_MAX_VENDOR_SPECIFIC_LEN HCI_COMMAND_SIZE

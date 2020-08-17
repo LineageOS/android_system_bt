@@ -24,6 +24,7 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/hcidefs.h"
 #include "test/mock_adapter.h"
+#include "types/bt_transport.h"
 
 using ::testing::_;
 using ::testing::Return;
