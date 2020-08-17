@@ -30,6 +30,7 @@
 #include "main/shim/helpers.h"
 #include "main/shim/shim.h"
 #include "stack/btm/btm_int_types.h"
+#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 #include "gd/hci/le_advertising_manager.h"

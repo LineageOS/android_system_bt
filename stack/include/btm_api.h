@@ -29,6 +29,7 @@
 #include "stack/include/btm_api_types.h"
 #include "stack/include/btm_status.h"
 #include "stack/include/sdp_api.h"
+#include "types/bt_transport.h"
 #include "types/raw_address.h"
 
 /*****************************************************************************
