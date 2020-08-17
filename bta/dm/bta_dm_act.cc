@@ -1174,8 +1174,7 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
        * service UUID */
       if (bta_dm_search_cb.service_index == BTA_MAX_SERVICE_ID) {
         if (bta_dm_search_cb.uuid_to_search != 0 && p_uuid != NULL) {
-          p_uuid +=
-              (bta_dm_search_cb.num_uuid - bta_dm_search_cb.uuid_to_search);
+          p_uuid += bta_dm_search_cb.uuid_to_search;
           /* only support 16 bits UUID for now */
           service = p_uuid->As16Bit();
         }
@@ -1583,7 +1582,7 @@ static void bta_dm_find_services(const RawAddress& bd_addr) {
         if (bta_dm_search_cb.service_index == BTA_BLE_SERVICE_ID) {
           if (bta_dm_search_cb.uuid_to_search > 0 &&
               bta_dm_search_cb.p_srvc_uuid) {
-            uuid = *(bta_dm_search_cb.p_srvc_uuid + bta_dm_search_cb.num_uuid -
+            uuid = *(bta_dm_search_cb.p_srvc_uuid -
                      bta_dm_search_cb.uuid_to_search);
 
             bta_dm_search_cb.uuid_to_search--;
@@ -1758,7 +1757,7 @@ static void bta_dm_discover_device(const RawAddress& remote_bd_addr) {
     bta_dm_search_cb.service_index = 0;
     bta_dm_search_cb.services_found = 0;
     bta_dm_search_cb.services_to_search = bta_dm_search_cb.services;
-    bta_dm_search_cb.uuid_to_search = bta_dm_search_cb.num_uuid;
+    bta_dm_search_cb.uuid_to_search = 0;
 
     /* if seaching with EIR is not completed */
     if (bta_dm_search_cb.services_to_search) {
@@ -3724,8 +3723,7 @@ static void bta_dm_gattc_register(void) {
  *
  ******************************************************************************/
 static void btm_dm_start_disc_gatt_services(uint16_t conn_id) {
-  Uuid* p_uuid = bta_dm_search_cb.p_srvc_uuid + bta_dm_search_cb.num_uuid -
-                 bta_dm_search_cb.uuid_to_search;
+  Uuid* p_uuid = bta_dm_search_cb.p_srvc_uuid - bta_dm_search_cb.uuid_to_search;
 
   /* always search for all services */
   BTA_GATTC_ServiceSearchRequest(conn_id, p_uuid);
