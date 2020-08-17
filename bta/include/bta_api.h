@@ -986,21 +986,6 @@ extern void BTA_DmDiscover(const RawAddress& bd_addr,
 
 /*******************************************************************************
  *
- * Function         BTA_DmDiscoverUUID
- *
- * Description      This function performs service discovery for the services
- *                  of a particular peer device.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-extern void BTA_DmDiscoverUUID(const RawAddress& bd_addr,
-                               const bluetooth::Uuid& uuid,
-                               tBTA_DM_SEARCH_CBACK* p_cback);
-
-/*******************************************************************************
- *
  * Function         BTA_DmGetCachedRemoteName
  *
  * Description      Retieve cached remote name if available
