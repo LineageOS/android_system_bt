@@ -35,6 +35,7 @@
 
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
+#include "types/bt_transport.h"
 
 /*****************************************************************************
  *  Constants and data types
@@ -90,7 +91,7 @@ typedef struct {
   RawAddress remote_bda;
   tGATT_IF client_if;
   bool is_direct;
-  tBTA_TRANSPORT transport;
+  tBT_TRANSPORT transport;
   uint8_t initiating_phys;
   bool opportunistic;
 } tBTA_GATTC_API_OPEN;
@@ -244,7 +245,7 @@ typedef struct {
 typedef struct {
   uint16_t bta_conn_id; /* client channel ID, unique for clcb */
   RawAddress bda;
-  tBTA_TRANSPORT transport; /* channel transport */
+  tBT_TRANSPORT transport;  /* channel transport */
   tBTA_GATTC_RCB* p_rcb;    /* pointer to the registration CB */
   tBTA_GATTC_SERV* p_srcb;  /* server cache CB */
   tBTA_GATTC_DATA* p_q_cmd; /* command in queue waiting for execution */
@@ -372,8 +373,8 @@ extern void bta_gattc_cancel_bk_conn(tBTA_GATTC_API_CANCEL_OPEN* p_data);
 extern void bta_gattc_send_open_cback(tBTA_GATTC_RCB* p_clreg,
                                       tGATT_STATUS status,
                                       const RawAddress& remote_bda,
-                                      uint16_t conn_id,
-                                      tBTA_TRANSPORT transport, uint16_t mtu);
+                                      uint16_t conn_id, tBT_TRANSPORT transport,
+                                      uint16_t mtu);
 extern void bta_gattc_process_api_refresh(const RawAddress& remote_bda);
 extern void bta_gattc_cfg_mtu(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data);
 extern void bta_gattc_listen(tBTA_GATTC_DATA* p_msg);
@@ -382,15 +383,15 @@ extern void bta_gattc_broadcast(tBTA_GATTC_DATA* p_msg);
 /* utility functions */
 extern tBTA_GATTC_CLCB* bta_gattc_find_clcb_by_cif(uint8_t client_if,
                                                    const RawAddress& remote_bda,
-                                                   tBTA_TRANSPORT transport);
+                                                   tBT_TRANSPORT transport);
 extern tBTA_GATTC_CLCB* bta_gattc_find_clcb_by_conn_id(uint16_t conn_id);
 extern tBTA_GATTC_CLCB* bta_gattc_clcb_alloc(tGATT_IF client_if,
                                              const RawAddress& remote_bda,
-                                             tBTA_TRANSPORT transport);
+                                             tBT_TRANSPORT transport);
 extern void bta_gattc_clcb_dealloc(tBTA_GATTC_CLCB* p_clcb);
 extern tBTA_GATTC_CLCB* bta_gattc_find_alloc_clcb(tGATT_IF client_if,
                                                   const RawAddress& remote_bda,
-                                                  tBTA_TRANSPORT transport);
+                                                  tBT_TRANSPORT transport);
 extern tBTA_GATTC_RCB* bta_gattc_cl_get_regcb(uint8_t client_if);
 extern tBTA_GATTC_SERV* bta_gattc_find_srcb(const RawAddress& bda);
 extern tBTA_GATTC_SERV* bta_gattc_srcb_alloc(const RawAddress& bda);
