@@ -982,7 +982,8 @@ extern void BTA_DmSearchCancel(void);
  ******************************************************************************/
 extern void BTA_DmDiscover(const RawAddress& bd_addr,
                            tBTA_SERVICE_MASK services,
-                           tBTA_DM_SEARCH_CBACK* p_cback);
+                           tBTA_DM_SEARCH_CBACK* p_cback,
+                           tBT_TRANSPORT transport);
 
 /*******************************************************************************
  *
@@ -1282,27 +1283,6 @@ extern void BTA_DmSetBlePrefConnParams(const RawAddress& bd_addr,
                                        uint16_t max_conn_int,
                                        uint16_t slave_latency,
                                        uint16_t supervision_tout);
-
-/*******************************************************************************
- *
- * Function         BTA_DmDiscoverByTransport
- *
- * Description      This function does service discovery on particular transport
- *                  for services of a
- *                  peer device. When services.num_uuid is 0, it indicates all
- *                  GATT based services are to be searched; other wise a list of
- *                  UUID of interested services should be provided through
- *                  p_services->p_uuid.
- *
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-extern void BTA_DmDiscoverByTransport(const RawAddress& bd_addr,
-                                      tBTA_SERVICE_MASK p_services,
-                                      tBTA_DM_SEARCH_CBACK* p_cback,
-                                      tBT_TRANSPORT transport);
 
 /*******************************************************************************
  *

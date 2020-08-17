@@ -2236,7 +2236,8 @@ bt_status_t btif_dm_get_adapter_property(bt_property_t* prop) {
 void btif_dm_get_remote_services(const RawAddress remote_addr) {
   BTIF_TRACE_EVENT("%s: bd_addr=%s", __func__, remote_addr.ToString().c_str());
 
-  BTA_DmDiscover(remote_addr, BTA_ALL_SERVICE_MASK, bte_dm_search_services_evt);
+  BTA_DmDiscover(remote_addr, BTA_ALL_SERVICE_MASK, bte_dm_search_services_evt,
+                 BT_TRANSPORT_UNKNOWN);
 }
 
 /*******************************************************************************
@@ -2253,8 +2254,8 @@ bt_status_t btif_dm_get_remote_services_by_transport(RawAddress* remote_addr,
   BTIF_TRACE_EVENT("%s: transport=%d, remote_addr=%s", __func__, transport,
                    remote_addr->ToString().c_str());
 
-  BTA_DmDiscoverByTransport(*remote_addr, BTA_ALL_SERVICE_MASK,
-                            bte_dm_search_services_evt, transport);
+  BTA_DmDiscover(*remote_addr, BTA_ALL_SERVICE_MASK, bte_dm_search_services_evt,
+                 transport);
 
   return BT_STATUS_SUCCESS;
 }
