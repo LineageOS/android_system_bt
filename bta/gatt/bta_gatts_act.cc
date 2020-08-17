@@ -34,6 +34,7 @@
 #include "btif/include/btif_debug_conn.h"
 #include "btm_ble_api.h"
 #include "osi/include/osi.h"
+#include "types/bt_transport.h"
 #include "utl.h"
 
 using base::StringPrintf;
