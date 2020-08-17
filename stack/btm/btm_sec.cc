@@ -3141,25 +3141,24 @@ void btm_simple_pair_complete(uint8_t* p) {
 
   if (status == HCI_SUCCESS) {
     p_dev_rec->sec_flags |= BTM_SEC_AUTHENTICATED;
-  } else {
-    if (status == HCI_ERR_PAIRING_NOT_ALLOWED) {
-      /* The test spec wants the peer device to get this failure code. */
-      btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_DISCONNECT);
+  } else if (status == HCI_ERR_PAIRING_NOT_ALLOWED) {
+    /* The test spec wants the peer device to get this failure code. */
+    btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_DISCONNECT);
 
-      /* Change the timer to 1 second */
-      alarm_set_on_mloop(btm_cb.pairing_timer, BT_1SEC_TIMEOUT_MS,
-                         btm_sec_pairing_timeout, NULL);
-    } else if (btm_cb.pairing_bda == bd_addr) {
-      /* stop the timer */
-      alarm_cancel(btm_cb.pairing_timer);
+    /* Change the timer to 1 second */
+    alarm_set_on_mloop(btm_cb.pairing_timer, BT_1SEC_TIMEOUT_MS,
+                       btm_sec_pairing_timeout, NULL);
+  } else if (btm_cb.pairing_bda == bd_addr) {
+    /* stop the timer */
+    alarm_cancel(btm_cb.pairing_timer);
 
-      if (p_dev_rec->sec_state != BTM_SEC_STATE_AUTHENTICATING) {
-        /* the initiating side: will receive auth complete event. disconnect ACL
-         * at that time */
-        disc = true;
-      }
-    } else
+    if (p_dev_rec->sec_state != BTM_SEC_STATE_AUTHENTICATING) {
+      /* the initiating side: will receive auth complete event. disconnect ACL
+       * at that time */
       disc = true;
+    }
+  } else {
+    disc = true;
   }
 
   if (disc) {
