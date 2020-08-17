@@ -293,7 +293,7 @@ static void btif_gatts_open_impl(int server_if, const RawAddress& address,
   }
 
   // Determine transport
-  if (transport_param != GATT_TRANSPORT_AUTO) {
+  if (transport_param != BT_TRANSPORT_AUTO) {
     transport = transport_param;
   } else {
     switch (device_type) {
