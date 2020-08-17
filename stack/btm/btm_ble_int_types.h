@@ -157,14 +157,6 @@ typedef struct {
   alarm_t* refresh_raddr_timer;
 } tBTM_LE_RANDOM_CB;
 
-typedef struct {
-  uint16_t min_conn_int;
-  uint16_t max_conn_int;
-  uint16_t slave_latency;
-  uint16_t supervision_tout;
-
-} tBTM_LE_CONN_PRAMS;
-
 /* white list using state as a bit mask */
 constexpr uint8_t BTM_BLE_WL_IDLE = 0;
 constexpr uint8_t BTM_BLE_WL_INIT = 1;

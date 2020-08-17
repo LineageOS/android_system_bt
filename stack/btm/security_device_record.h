@@ -18,15 +18,12 @@
 
 #pragma once
 
-#include "btif/include/btif_bqr.h"
-#include "btm_api_types.h"
-#include "btm_ble_api_types.h"
-#include "btm_ble_int_types.h"
-#include "hcidefs.h"
+#include <cstdint>
+
+#include "gd/crypto_toolbox/crypto_toolbox.h"
 #include "osi/include/alarm.h"
-#include "osi/include/list.h"
-#include "rfcdefs.h"
-#include "stack/acl/acl.h"
+#include "stack/include/btm_api_types.h"
+#include "types/raw_address.h"
 
 typedef char tBTM_LOC_BD_NAME[BTM_MAX_LOC_BD_NAME_LEN + 1];
 
@@ -54,6 +51,14 @@ typedef char tBTM_LOC_BD_NAME[BTM_MAX_LOC_BD_NAME_LEN + 1];
 #define BTM_IS_BRCM_CONTROLLER()                                 \
   (controller_get_interface()->get_bt_version()->manufacturer == \
    LMP_COMPID_BROADCOM)
+
+typedef struct {
+  uint16_t min_conn_int;
+  uint16_t max_conn_int;
+  uint16_t slave_latency;
+  uint16_t supervision_tout;
+
+} tBTM_LE_CONN_PRAMS;
 
 /* Define the Device Management control structure
  */
