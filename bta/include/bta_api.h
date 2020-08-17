@@ -31,6 +31,7 @@
 #include "bt_types.h"
 #include "btm_api.h"
 #include "btm_ble_api.h"
+#include "types/bt_transport.h"
 
 /*****************************************************************************
  *  Constants and data types
