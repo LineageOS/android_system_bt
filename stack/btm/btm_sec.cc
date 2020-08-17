@@ -49,10 +49,6 @@
 
 #define BTM_SEC_MAX_COLLISION_DELAY (5000)
 
-#ifdef APPL_AUTH_WRITE_EXCEPTION
-bool(APPL_AUTH_WRITE_EXCEPTION)(const RawAddress& bd_addr);
-#endif
-
 extern void btm_ble_advertiser_notify_terminated_legacy(
     uint8_t status, uint16_t connection_handle);
 extern void bta_dm_remove_device(const RawAddress& bd_addr);
@@ -736,9 +732,6 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
     memcpy(btm_cb.pin_code, p_pin, pin_len);
 
     btm_cb.security_mode_changed = true;
-#ifdef APPL_AUTH_WRITE_EXCEPTION
-    if (!(APPL_AUTH_WRITE_EXCEPTION)(p_dev_rec->bd_addr))
-#endif
       btsnd_hcic_write_auth_enable(true);
 
     acl_set_disconnect_reason(0xff);
@@ -5211,9 +5204,6 @@ static bool btm_sec_check_prefetch_pin(tBTM_SEC_DEV_REC* p_dev_rec) {
 
     if (!btm_cb.security_mode_changed) {
       btm_cb.security_mode_changed = true;
-#ifdef APPL_AUTH_WRITE_EXCEPTION
-      if (!(APPL_AUTH_WRITE_EXCEPTION)(p_dev_rec->bd_addr))
-#endif
         btsnd_hcic_write_auth_enable(true);
     }
   } else {
