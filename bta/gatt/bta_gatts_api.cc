@@ -32,6 +32,7 @@
 #include "bta_gatts_int.h"
 #include "bta_sys.h"
 #include "stack/include/btu.h"
+#include "types/bt_transport.h"
 
 /*****************************************************************************
  *  Constants

@@ -22,6 +22,7 @@
 #include "bt_target.h"
 #include "gatt_api.h"
 #include "gattdefs.h"
+#include "types/bt_transport.h"
 
 #define DIS_SUCCESS GATT_SUCCESS
 #define DIS_ILLEGAL_PARAM GATT_ILLEGAL_PARAMETER
