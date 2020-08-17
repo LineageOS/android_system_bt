@@ -347,7 +347,7 @@ class HearingAidImpl : public HearingAid {
 
   void OnGattConnected(tGATT_STATUS status, uint16_t conn_id,
                        tGATT_IF client_if, RawAddress address,
-                       tBTA_TRANSPORT transport, uint16_t mtu) {
+                       tBT_TRANSPORT transport, uint16_t mtu) {
     VLOG(2) << __func__ << ": address=" << address << ", conn_id=" << conn_id;
 
     HearingDevice* hearingDevice = hearingDevices.FindByAddress(address);
@@ -420,7 +420,7 @@ class HearingAidImpl : public HearingAid {
     if (sec_flag & BTM_SEC_FLAG_LKEY_KNOWN) {
       /* if bonded and link not encrypted */
       sec_flag = BTM_BLE_SEC_ENCRYPT;
-      BTM_SetEncryption(address, BTA_TRANSPORT_LE, encryption_callback, nullptr,
+      BTM_SetEncryption(address, BT_TRANSPORT_LE, encryption_callback, nullptr,
                         sec_flag);
       return;
     }
