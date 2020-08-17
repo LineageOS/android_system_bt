@@ -80,9 +80,6 @@ StackAclBtmAcl internal_;
 
 extern tBTM_CB btm_cb;
 
-tBTM_SEC_DEV_REC* btm_find_dev(const RawAddress& bd_addr);
-tBTM_SEC_DEV_REC* btm_find_dev_by_handle(uint16_t handle);
-tBTM_SEC_DEV_REC* btm_find_or_alloc_dev(const RawAddress& bd_addr);
 tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec);
 void btm_ble_refresh_local_resolvable_private_addr(
     const RawAddress& pseudo_addr, const RawAddress& local_rpa);
