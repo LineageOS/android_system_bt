@@ -35,6 +35,7 @@
 #include "bta_sys.h"
 #include "device/include/controller.h"
 #include "stack/include/btu.h"
+#include "types/bt_transport.h"
 
 using bluetooth::Uuid;
 
