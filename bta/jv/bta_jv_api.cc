@@ -35,6 +35,7 @@
 #include "gap_api.h"
 #include "port_api.h"
 #include "sdp_api.h"
+#include "stack/btm/btm_sec.h"
 #include "stack/include/btu.h"
 #include "utl.h"
 
