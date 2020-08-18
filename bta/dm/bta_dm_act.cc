@@ -1142,7 +1142,6 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
   uint16_t service = 0xFFFF;
   tSDP_PROTOCOL_ELEM pe;
 
-  Uuid* p_uuid = bta_dm_search_cb.p_srvc_uuid;
   tBTA_DM_SEARCH result;
 
   std::vector<Uuid> uuid_list;
@@ -1173,11 +1172,6 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
       /* finished with BR/EDR services, now we check the result for GATT based
        * service UUID */
       if (bta_dm_search_cb.service_index == BTA_MAX_SERVICE_ID) {
-        if (bta_dm_search_cb.uuid_to_search != 0 && p_uuid != NULL) {
-          p_uuid += bta_dm_search_cb.uuid_to_search;
-          /* only support 16 bits UUID for now */
-          service = p_uuid->As16Bit();
-        }
         /* all GATT based services */
         do {
           /* find a service record, report it */
@@ -1195,9 +1189,6 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
               bta_dm_search_cb.p_search_cback(BTA_DM_DISC_BLE_RES_EVT, &result);
             }
           }
-
-          if (bta_dm_search_cb.uuid_to_search > 0) break;
-
         } while (p_sdp_rec);
       } else {
         /* SDP_DB_FULL means some records with the
@@ -1220,12 +1211,7 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
 
       if (bta_dm_search_cb.services == BTA_ALL_SERVICE_MASK &&
           bta_dm_search_cb.services_to_search == 0) {
-        if (bta_dm_search_cb.service_index == BTA_BLE_SERVICE_ID &&
-            bta_dm_search_cb.uuid_to_search > 0)
-          bta_dm_search_cb.uuid_to_search--;
-
-        if (bta_dm_search_cb.uuid_to_search == 0 ||
-            bta_dm_search_cb.service_index != BTA_BLE_SERVICE_ID)
+        if (bta_dm_search_cb.service_index != BTA_BLE_SERVICE_ID)
           bta_dm_search_cb.service_index++;
       } else /* regular one service per search or PNP search */
         break;
@@ -1580,25 +1566,11 @@ static void bta_dm_find_services(const RawAddress& bd_addr) {
       } else {
         /* for LE only profile */
         if (bta_dm_search_cb.service_index == BTA_BLE_SERVICE_ID) {
-          if (bta_dm_search_cb.uuid_to_search > 0 &&
-              bta_dm_search_cb.p_srvc_uuid) {
-            uuid = *(bta_dm_search_cb.p_srvc_uuid -
-                     bta_dm_search_cb.uuid_to_search);
+          uuid = Uuid::From16Bit(
+              bta_service_id_to_uuid_lkup_tbl[bta_dm_search_cb.service_index]);
 
-            bta_dm_search_cb.uuid_to_search--;
-          } else {
-            uuid = Uuid::From16Bit(
-                bta_service_id_to_uuid_lkup_tbl[bta_dm_search_cb
-                                                    .service_index]);
-          }
-
-          /* last one? clear the BLE service bit if all discovery has been done
-           */
-          if (bta_dm_search_cb.uuid_to_search == 0)
-            bta_dm_search_cb.services_to_search &=
-                (tBTA_SERVICE_MASK)(~(BTA_SERVICE_ID_TO_SERVICE_MASK(
-                    bta_dm_search_cb.service_index)));
-
+          bta_dm_search_cb.services_to_search &= (tBTA_SERVICE_MASK)(~(
+              BTA_SERVICE_ID_TO_SERVICE_MASK(bta_dm_search_cb.service_index)));
         } else {
           /* remove the service from services to be searched  */
           bta_dm_search_cb.services_to_search &= (tBTA_SERVICE_MASK)(~(
@@ -1631,8 +1603,7 @@ static void bta_dm_find_services(const RawAddress& bd_addr) {
         bta_dm_search_cb.service_index = BTA_MAX_SERVICE_ID;
 
       } else {
-        if ((bta_dm_search_cb.service_index == BTA_BLE_SERVICE_ID &&
-             bta_dm_search_cb.uuid_to_search == 0) ||
+        if (bta_dm_search_cb.service_index == BTA_BLE_SERVICE_ID ||
             bta_dm_search_cb.service_index != BTA_BLE_SERVICE_ID)
           bta_dm_search_cb.service_index++;
         return;
@@ -1757,7 +1728,6 @@ static void bta_dm_discover_device(const RawAddress& remote_bd_addr) {
     bta_dm_search_cb.service_index = 0;
     bta_dm_search_cb.services_found = 0;
     bta_dm_search_cb.services_to_search = bta_dm_search_cb.services;
-    bta_dm_search_cb.uuid_to_search = 0;
 
     /* if seaching with EIR is not completed */
     if (bta_dm_search_cb.services_to_search) {
@@ -3733,7 +3703,7 @@ static void bta_dm_gattc_register(void) {
  *
  ******************************************************************************/
 static void btm_dm_start_disc_gatt_services(uint16_t conn_id) {
-  Uuid* p_uuid = bta_dm_search_cb.p_srvc_uuid - bta_dm_search_cb.uuid_to_search;
+  Uuid* p_uuid = bta_dm_search_cb.p_srvc_uuid;
 
   /* always search for all services */
   BTA_GATTC_ServiceSearchRequest(conn_id, p_uuid);
@@ -3808,55 +3778,46 @@ static void bta_dm_gatt_disc_result(tBTA_GATT_ID service_id) {
 static void bta_dm_gatt_disc_complete(uint16_t conn_id, tGATT_STATUS status) {
   APPL_TRACE_DEBUG("%s conn_id = %d", __func__, conn_id);
 
-  if (bta_dm_search_cb.uuid_to_search > 0) bta_dm_search_cb.uuid_to_search--;
+  tBTA_DM_MSG* p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
 
-  if (status == GATT_SUCCESS && bta_dm_search_cb.uuid_to_search > 0) {
-    btm_dm_start_disc_gatt_services(conn_id);
+  /* no more services to be discovered */
+  p_msg->hdr.event = BTA_DM_DISCOVERY_RESULT_EVT;
+  p_msg->disc_result.result.disc_res.result =
+      (status == GATT_SUCCESS) ? BTA_SUCCESS : BTA_FAILURE;
+  APPL_TRACE_DEBUG("%s service found: 0x%08x", __func__,
+                   bta_dm_search_cb.services_found);
+  p_msg->disc_result.result.disc_res.services = bta_dm_search_cb.services_found;
+  p_msg->disc_result.result.disc_res.num_uuids = 0;
+  p_msg->disc_result.result.disc_res.p_uuid_list = NULL;
+  p_msg->disc_result.result.disc_res.bd_addr = bta_dm_search_cb.peer_bdaddr;
+  strlcpy((char*)p_msg->disc_result.result.disc_res.bd_name,
+          bta_dm_get_remname(), BD_NAME_LEN);
+
+  p_msg->disc_result.result.disc_res.device_type |= BT_DEVICE_TYPE_BLE;
+  if (bta_dm_search_cb.ble_raw_used > 0) {
+    p_msg->disc_result.result.disc_res.p_raw_data =
+        (uint8_t*)osi_malloc(bta_dm_search_cb.ble_raw_used);
+
+    memcpy(p_msg->disc_result.result.disc_res.p_raw_data,
+           bta_dm_search_cb.p_ble_rawdata, bta_dm_search_cb.ble_raw_used);
+
+    p_msg->disc_result.result.disc_res.raw_data_size =
+        bta_dm_search_cb.ble_raw_used;
   } else {
-    tBTA_DM_MSG* p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
-
-    bta_dm_search_cb.uuid_to_search = 0;
-
-    /* no more services to be discovered */
-    p_msg->hdr.event = BTA_DM_DISCOVERY_RESULT_EVT;
-    p_msg->disc_result.result.disc_res.result =
-        (status == GATT_SUCCESS) ? BTA_SUCCESS : BTA_FAILURE;
-    APPL_TRACE_DEBUG("%s service found: 0x%08x", __func__,
-                     bta_dm_search_cb.services_found);
-    p_msg->disc_result.result.disc_res.services =
-        bta_dm_search_cb.services_found;
-    p_msg->disc_result.result.disc_res.num_uuids = 0;
-    p_msg->disc_result.result.disc_res.p_uuid_list = NULL;
-    p_msg->disc_result.result.disc_res.bd_addr = bta_dm_search_cb.peer_bdaddr;
-    strlcpy((char*)p_msg->disc_result.result.disc_res.bd_name,
-            bta_dm_get_remname(), BD_NAME_LEN);
-
-    p_msg->disc_result.result.disc_res.device_type |= BT_DEVICE_TYPE_BLE;
-    if (bta_dm_search_cb.ble_raw_used > 0) {
-      p_msg->disc_result.result.disc_res.p_raw_data =
-          (uint8_t*)osi_malloc(bta_dm_search_cb.ble_raw_used);
-
-      memcpy(p_msg->disc_result.result.disc_res.p_raw_data,
-             bta_dm_search_cb.p_ble_rawdata, bta_dm_search_cb.ble_raw_used);
-
-      p_msg->disc_result.result.disc_res.raw_data_size =
-          bta_dm_search_cb.ble_raw_used;
-    } else {
-      p_msg->disc_result.result.disc_res.p_raw_data = NULL;
-      bta_dm_search_cb.p_ble_rawdata = 0;
-    }
-
-    bta_sys_sendmsg(p_msg);
-
-    if (conn_id != GATT_INVALID_CONN_ID) {
-      /* start a GATT channel close delay timer */
-      bta_sys_start_timer(bta_dm_search_cb.gatt_close_timer,
-                          BTA_DM_GATT_CLOSE_DELAY_TOUT,
-                          BTA_DM_DISC_CLOSE_TOUT_EVT, 0);
-      bta_dm_search_cb.pending_close_bda = bta_dm_search_cb.peer_bdaddr;
-    }
-    bta_dm_search_cb.gatt_disc_active = false;
+    p_msg->disc_result.result.disc_res.p_raw_data = NULL;
+    bta_dm_search_cb.p_ble_rawdata = 0;
   }
+
+  bta_sys_sendmsg(p_msg);
+
+  if (conn_id != GATT_INVALID_CONN_ID) {
+    /* start a GATT channel close delay timer */
+    bta_sys_start_timer(bta_dm_search_cb.gatt_close_timer,
+                        BTA_DM_GATT_CLOSE_DELAY_TOUT,
+                        BTA_DM_DISC_CLOSE_TOUT_EVT, 0);
+    bta_dm_search_cb.pending_close_bda = bta_dm_search_cb.peer_bdaddr;
+  }
+  bta_dm_search_cb.gatt_disc_active = false;
 }
 
 /*******************************************************************************
