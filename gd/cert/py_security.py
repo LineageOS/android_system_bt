@@ -67,6 +67,7 @@ class PySecurity(Closable):
         self._bond_event_stream = EventStream(self._device.security.FetchBondEvents(empty_proto.Empty()))
         self._enforce_security_policy_stream = EventStream(
             self._device.security.FetchEnforceSecurityPolicyEvents(empty_proto.Empty()))
+        self._disconnect_event_stream = EventStream(self._device.security.FetchDisconnectEvents(empty_proto.Empty()))
 
     def create_bond(self, address, type):
         """
@@ -180,6 +181,13 @@ class PySecurity(Closable):
         assertThat(self._enforce_security_policy_stream).emits(
             lambda event: event.result == expected_enforce_security_event or logging.info(event.result))
 
+    def wait_for_disconnect_event(self):
+        """
+            The Address is expected to be returned
+        """
+        logging.info("DUT: Waiting for Disconnect Event")
+        assertThat(self._disconnect_event_stream).emits(lambda event: 1 == 1)
+
     def enforce_security_policy(self, address, type, policy):
         """
             Call to enforce classic security policy
@@ -193,3 +201,4 @@ class PySecurity(Closable):
         safeClose(self._ui_event_stream)
         safeClose(self._bond_event_stream)
         safeClose(self._enforce_security_policy_stream)
+        safeClose(self._disconnect_event_stream)
