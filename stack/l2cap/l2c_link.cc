@@ -754,14 +754,11 @@ void l2c_link_init() {
  ******************************************************************************/
 void l2c_link_role_changed(const RawAddress* bd_addr, uint8_t new_role,
                            uint8_t hci_status) {
-  tL2C_LCB* p_lcb;
-  int xx;
-
   /* Make sure not called from HCI Command Status (bd_addr and new_role are
    * invalid) */
-  if (bd_addr) {
+  if (bd_addr != nullptr) {
     /* If here came form hci role change event */
-    p_lcb = l2cu_find_lcb_by_bd_addr(*bd_addr, BT_TRANSPORT_BR_EDR);
+    tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(*bd_addr, BT_TRANSPORT_BR_EDR);
     if (p_lcb) {
       if (new_role == HCI_ROLE_MASTER) {
         p_lcb->SetLinkRoleAsMaster();
@@ -776,7 +773,8 @@ void l2c_link_role_changed(const RawAddress* bd_addr, uint8_t new_role,
   }
 
   /* Check if any LCB was waiting for switch to be completed */
-  for (xx = 0, p_lcb = &l2cb.lcb_pool[0]; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
+  tL2C_LCB* p_lcb = &l2cb.lcb_pool[0];
+  for (uint8_t xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
     if ((p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTING_WAIT_SWITCH)) {
       l2cu_create_conn_after_switch(p_lcb);
     }
