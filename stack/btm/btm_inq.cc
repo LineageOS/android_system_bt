@@ -1196,7 +1196,6 @@ tINQ_DB_ENT* btm_inq_db_new(const RawAddress& p_bda) {
 static void btm_set_inq_event_filter() {
   btm_cb.btm_inq_vars.inqfilt_active = true;
 
-  uint8_t hci_status;
   tBTM_STATUS status;
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
   tBTM_CMPL_CB* p_cb = p_inq->p_inqfilter_cmpl_cb;
@@ -1217,17 +1216,7 @@ static void btm_set_inq_event_filter() {
   /* Only process the inquiry filter; Ignore the connection filter until it
      is used by the upper layers */
   if (p_inq->inqfilt_active) {
-    /* Extract the returned status from the buffer */
-    hci_status = HCI_SUCCESS;
-    if (hci_status != HCI_SUCCESS) {
-      /* If standalone operation, return the error status; if embedded in the
-       * inquiry, continue the inquiry */
-      BTM_TRACE_WARNING(
-          "BTM Warning: Set Event Filter Failed (HCI returned 0x%x)",
-          hci_status);
-      status = BTM_ERR_PROCESSING;
-    } else
-      status = BTM_SUCCESS;
+    status = BTM_SUCCESS;
 
     /* If the set filter was initiated externally (via BTM_SetInqEventFilter),
        call the
