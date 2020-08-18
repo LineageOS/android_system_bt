@@ -1836,7 +1836,7 @@ static void bte_scan_filt_param_cfg_evt(uint8_t ref_value, uint8_t avbl_space,
  *
  ******************************************************************************/
 void btif_dm_start_discovery(void) {
-  tBTA_DM_INQ inq_params;
+  tBTM_INQ_PARMS inq_params;
 
   BTIF_TRACE_EVENT("%s", __func__);
 
@@ -1859,13 +1859,13 @@ void btif_dm_start_discovery(void) {
   /* TODO: Do we need to handle multiple inquiries at the same time? */
 
   /* Set inquiry params and call API */
-  inq_params.mode = BTA_DM_GENERAL_INQUIRY | BTA_BLE_GENERAL_INQUIRY;
+  inq_params.mode = BTM_GENERAL_INQUIRY | BTM_BLE_GENERAL_INQUIRY;
   inq_params.duration = BTIF_DM_DEFAULT_INQ_MAX_DURATION;
 
   inq_params.max_resps = BTIF_DM_DEFAULT_INQ_MAX_RESULTS;
   inq_params.report_dup = true;
 
-  inq_params.filter_type = BTA_DM_INQ_CLR;
+  inq_params.filter_cond_type = BTM_CLR_INQUIRY_FILTER;
   /* TODO: Filter device by BDA needs to be implemented here */
 
   /* Will be enabled to true once inquiry busy level has been received */
