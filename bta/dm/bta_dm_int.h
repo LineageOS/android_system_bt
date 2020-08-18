@@ -319,16 +319,12 @@ typedef struct {
   bool sdp_results;
   bluetooth::Uuid uuid;
   uint8_t peer_scn;
-  bool cancel_pending; /* inquiry cancel is pending */
   tBT_TRANSPORT transport;
   tBTA_DM_SEARCH_CBACK* p_scan_cback;
   tGATT_IF client_if;
   uint8_t uuid_to_search;
   bool gatt_disc_active;
   uint16_t conn_id;
-  uint8_t* p_ble_rawdata;
-  uint32_t ble_raw_size;
-  uint32_t ble_raw_used;
   alarm_t* gatt_close_timer; /* GATT channel close delay timer */
   RawAddress pending_close_bda; /* pending GATT channel remote device address */
 
@@ -488,8 +484,8 @@ extern void bta_dm_discover(tBTA_DM_MSG* p_data);
 extern void bta_dm_inq_cmpl(uint8_t num);
 extern void bta_dm_rmt_name(tBTA_DM_MSG* p_data);
 extern void bta_dm_sdp_result(tBTA_DM_MSG* p_data);
-extern void bta_dm_search_cmpl(tBTA_DM_MSG* p_data);
-extern void bta_dm_free_sdp_db(tBTA_DM_MSG* p_data);
+extern void bta_dm_search_cmpl();
+extern void bta_dm_free_sdp_db();
 extern void bta_dm_disc_result(tBTA_DM_MSG* p_data);
 extern void bta_dm_search_result(tBTA_DM_MSG* p_data);
 extern void bta_dm_discovery_cmpl(tBTA_DM_MSG* p_data);

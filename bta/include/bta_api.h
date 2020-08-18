@@ -559,8 +559,6 @@ typedef struct {
   RawAddress bd_addr;          /* BD address peer device. */
   BD_NAME bd_name;             /* Name of peer device. */
   tBTA_SERVICE_MASK services;  /* Services found on peer device. */
-  uint8_t* p_raw_data;         /* Raw data for discovery DB */
-  uint32_t raw_data_size;      /* size of raw data */
   tBT_DEVICE_TYPE device_type; /* device type in case it is BLE device */
   uint32_t num_uuids;
   bluetooth::Uuid* p_uuid_list;
