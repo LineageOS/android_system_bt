@@ -3672,19 +3672,6 @@ static void bta_dm_gattc_register(void) {
 
 /*******************************************************************************
  *
- * Function         btm_dm_start_disc_gatt_services
- *
- * Description      This function starts a GATT service search request.
- *
- * Parameters:
- *
- ******************************************************************************/
-static void btm_dm_start_disc_gatt_services(uint16_t conn_id) {
-  BTA_GATTC_ServiceSearchRequest(conn_id, nullptr);
-}
-
-/*******************************************************************************
- *
  * Function         bta_dm_gatt_disc_result
  *
  * Description      This function process the GATT service search result.
@@ -3829,7 +3816,7 @@ void btm_dm_start_gatt_discovery(const RawAddress& bd_addr) {
       bta_dm_search_cb.conn_id != GATT_INVALID_CONN_ID) {
     bta_dm_search_cb.pending_close_bda = RawAddress::kEmpty;
     alarm_cancel(bta_dm_search_cb.gatt_close_timer);
-    btm_dm_start_disc_gatt_services(bta_dm_search_cb.conn_id);
+    BTA_GATTC_ServiceSearchRequest(bta_dm_search_cb.conn_id, nullptr);
   } else {
     if (BTM_IsAclConnectionUp(bd_addr, BT_TRANSPORT_LE)) {
       BTA_GATTC_Open(bta_dm_search_cb.client_if, bd_addr, true, BT_TRANSPORT_LE,
@@ -3878,7 +3865,7 @@ void bta_dm_proc_open_evt(tBTA_GATTC_OPEN* p_data) {
   bta_dm_search_cb.conn_id = p_data->conn_id;
 
   if (p_data->status == GATT_SUCCESS) {
-    btm_dm_start_disc_gatt_services(p_data->conn_id);
+    BTA_GATTC_ServiceSearchRequest(p_data->conn_id, nullptr);
   } else {
     bta_dm_gatt_disc_complete(GATT_INVALID_CONN_ID, p_data->status);
   }
