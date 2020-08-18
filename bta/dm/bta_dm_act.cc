@@ -799,8 +799,7 @@ void bta_dm_search_start(tBTA_DM_MSG* p_data) {
   bta_dm_search_cb.p_search_cback = p_data->search.p_cback;
   bta_dm_search_cb.services = p_data->search.services;
 
-  result.status = BTM_StartInquiry((tBTM_INQ_PARMS*)&p_data->search.inq_params,
-                                   bta_dm_inq_results_cb, bta_dm_inq_cmpl_cb);
+  result.status = BTM_StartInquiry(bta_dm_inq_results_cb, bta_dm_inq_cmpl_cb);
 
   APPL_TRACE_EVENT("%s status=%d", __func__, result.status);
   if (result.status != BTM_CMD_STARTED) {

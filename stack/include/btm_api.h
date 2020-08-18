@@ -304,8 +304,7 @@ uint16_t BTM_ReadDiscoverability(uint16_t* p_window, uint16_t* p_interval);
  *                  BTM_WRONG_MODE if the device is not up.
  *
  ******************************************************************************/
-tBTM_STATUS BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
-                             tBTM_INQ_RESULTS_CB* p_results_cb,
+tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
                              tBTM_CMPL_CB* p_cmpl_cb);
 
 /*******************************************************************************
