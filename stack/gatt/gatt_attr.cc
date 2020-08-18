@@ -28,6 +28,7 @@
 #include "base/callback.h"
 #include "bt_target.h"
 #include "bt_utils.h"
+#include "btif/include/btif_storage.h"
 
 #include "gatt_api.h"
 #include "gatt_int.h"
@@ -188,8 +189,8 @@ void gatt_profile_clcb_dealloc(tGATT_PROFILE_CLCB* p_clcb) {
 }
 
 /** GAP Attributes Database Request callback */
-tGATT_STATUS read_attr_value(uint16_t handle, tGATT_VALUE* p_value,
-                             bool is_long) {
+tGATT_STATUS read_attr_value(uint16_t conn_id, uint16_t handle,
+                             tGATT_VALUE* p_value, bool is_long) {
   uint8_t* p = p_value->value;
 
   if (handle == gatt_cb.handle_sr_supported_feat) {
@@ -205,11 +206,16 @@ tGATT_STATUS read_attr_value(uint16_t handle, tGATT_VALUE* p_value,
     /*GATT_UUID_CLIENT_SUP_FEAT */
     if (is_long) return GATT_NOT_LONG;
 
-    /* Here we need to have value per peer device, for now we can always
-     * return 0 and wait for the peer to write it back. We actually don't
-     * care too much as we are also server, so peer knows we do support eatt.
-     */
-    UINT8_TO_STREAM(p, 0);
+    tGATT_PROFILE_CLCB* p_clcb = gatt_profile_find_clcb_by_conn_id(conn_id);
+    if (!p_clcb) {
+      LOG(ERROR) << __func__ << " Context does not exist anymore for "
+                 << int(conn_id);
+      return GATT_ERR_UNLIKELY;
+    }
+
+    uint8_t cl_gatt_supp_feat = btif_storage_get_gatt_cl_supp_feat(p_clcb->bda);
+    UINT8_TO_STREAM(p, cl_gatt_supp_feat);
+
     p_value->len = 1;
     return GATT_SUCCESS;
   }
@@ -223,26 +229,41 @@ tGATT_STATUS read_attr_value(uint16_t handle, tGATT_VALUE* p_value,
 }
 
 /** GAP Attributes Database Read/Read Blob Request process */
-tGATT_STATUS proc_read_req(tGATTS_REQ_TYPE, tGATT_READ_REQ* p_data,
-                           tGATTS_RSP* p_rsp) {
+tGATT_STATUS proc_read_req(uint16_t conn_id, tGATTS_REQ_TYPE,
+                           tGATT_READ_REQ* p_data, tGATTS_RSP* p_rsp) {
   if (p_data->is_long) p_rsp->attr_value.offset = p_data->offset;
 
   p_rsp->attr_value.handle = p_data->handle;
 
-  return read_attr_value(p_data->handle, &p_rsp->attr_value, p_data->is_long);
+  return read_attr_value(conn_id, p_data->handle, &p_rsp->attr_value,
+                         p_data->is_long);
 }
 
 /** GAP ATT server process a write request */
-uint8_t proc_write_req(tGATTS_REQ_TYPE, tGATT_WRITE_REQ* p_data) {
+uint8_t proc_write_req(uint16_t conn_id, tGATTS_REQ_TYPE,
+                       tGATT_WRITE_REQ* p_data) {
   /* GATT_UUID_SERVER_SUP_FEAT*/
   if (p_data->handle == gatt_cb.handle_sr_supported_feat)
     return GATT_WRITE_NOT_PERMIT;
 
-  /* GATT_UUID_CLIENT_SUP_FEAT:
-   * TODO: We should store the value here, but we don't need it for now.
-   * Just acknowledge write success.
-   */
-  if (p_data->handle == gatt_cb.handle_cl_supported_feat) return GATT_SUCCESS;
+  /* GATT_UUID_CLIENT_SUP_FEAT*/
+  if (p_data->handle == gatt_cb.handle_cl_supported_feat) {
+    /* We store the value set by the peer but we don't use it */
+    tGATT_PROFILE_CLCB* p_clcb = gatt_profile_find_clcb_by_conn_id(conn_id);
+    if (!p_clcb) {
+      LOG(ERROR) << __func__ << " Context does not exist anymore for "
+                 << int(conn_id);
+      return GATT_ERR_UNLIKELY;
+    }
+
+    uint8_t* p = p_data->value;
+
+    uint8_t cl_gatt_supp_feat;
+    STREAM_TO_UINT8(cl_gatt_supp_feat, p);
+
+    btif_storage_set_gatt_cl_supp_feat(p_clcb->bda, cl_gatt_supp_feat);
+    return GATT_SUCCESS;
+  }
 
   /* GATT_UUID_GATT_SRV_CHGD */
   if (p_data->handle == gatt_cb.handle_of_h_r) return GATT_WRITE_NOT_PERMIT;
@@ -270,7 +291,7 @@ static void gatt_request_cback(uint16_t conn_id, uint32_t trans_id,
   switch (type) {
     case GATTS_REQ_TYPE_READ_CHARACTERISTIC:
     case GATTS_REQ_TYPE_READ_DESCRIPTOR:
-      status = proc_read_req(type, &p_data->read_req, &rsp_msg);
+      status = proc_read_req(conn_id, type, &p_data->read_req, &rsp_msg);
       break;
 
     case GATTS_REQ_TYPE_WRITE_CHARACTERISTIC:
@@ -279,7 +300,7 @@ static void gatt_request_cback(uint16_t conn_id, uint32_t trans_id,
     case GATT_CMD_WRITE:
       if (!p_data->write_req.need_rsp) rsp_needed = false;
 
-      status = proc_write_req(type, &p_data->write_req);
+      status = proc_write_req(conn_id, type, &p_data->write_req);
       break;
 
     case GATTS_REQ_TYPE_MTU:
