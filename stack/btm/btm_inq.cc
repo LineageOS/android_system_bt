@@ -1190,7 +1190,6 @@ tINQ_DB_ENT* btm_inq_db_new(const RawAddress& p_bda) {
 static void btm_set_inq_event_filter() {
   btm_cb.btm_inq_vars.inqfilt_active = true;
 
-  tBTM_STATUS status;
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
 
 #if (BTM_INQ_DEBUG == TRUE)
@@ -1209,8 +1208,6 @@ static void btm_set_inq_event_filter() {
   /* Only process the inquiry filter; Ignore the connection filter until it
      is used by the upper layers */
   if (p_inq->inqfilt_active) {
-    status = BTM_SUCCESS;
-
     /* If the set filter was initiated externally (via BTM_SetInqEventFilter),
        call the
        callback function to notify the initiator that it has completed */
@@ -1221,21 +1218,6 @@ static void btm_set_inq_event_filter() {
               process the next state of the process (Set a new filter or start
               the inquiry). */
     {
-      if (status != BTM_SUCCESS) {
-        /* Process the inquiry complete (Error Status) */
-        btm_process_inq_complete(
-            BTM_ERR_PROCESSING,
-            (uint8_t)(p_inq->inqparms.mode & BTM_BR_INQUIRY_MASK));
-
-        /* btm_process_inq_complete() does not restore the following settings on
-         * periodic inquiry */
-        p_inq->inqfilt_active = false;
-        p_inq->inq_active = BTM_INQUIRY_INACTIVE;
-        p_inq->state = BTM_INQ_INACTIVE_STATE;
-
-        return;
-      }
-
       /* Check to see if a new filter needs to be set up */
       if (p_inq->state == BTM_INQ_CLR_FILT_STATE) {
         btm_set_inq_event_filter();
