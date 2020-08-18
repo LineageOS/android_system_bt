@@ -20,8 +20,6 @@
 #include <stdint.h>
 #include <vector>
 
-#include "bt_gatt_types.h"
-
 __BEGIN_DECLS
 
 /** GATT value type used in response to remote read requests */
