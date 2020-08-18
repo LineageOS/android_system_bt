@@ -2582,7 +2582,8 @@ void btif_dm_save_ble_bonding_keys(RawAddress& bd_addr) {
   }
 
   if (pairing_cb.ble.is_lidk_key_rcvd) {
-    btif_storage_add_ble_bonding_key(&bd_addr, NULL, BTIF_DM_LE_KEY_LID, 0);
+    uint8_t empty[] = {};
+    btif_storage_add_ble_bonding_key(&bd_addr, empty, BTIF_DM_LE_KEY_LID, 0);
   }
 }
 
