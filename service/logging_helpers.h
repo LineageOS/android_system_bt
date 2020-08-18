@@ -21,10 +21,13 @@
 
 #include "hardware/bluetooth.h"
 #include "hardware/bt_av.h"
+#include "hardware/bt_gatt_types.h"
 
 const char* BtAvConnectionStateText(const btav_connection_state_t state);
 
 const char* BtAvAudioStateText(const btav_audio_state_t state);
+
+const char* BtTransportText(const btgatt_transport_t t);
 
 const char* BtStateText(const bt_state_t state);
 
