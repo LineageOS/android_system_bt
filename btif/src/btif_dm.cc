@@ -1055,7 +1055,7 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
         }
         bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDED);
 
-        btif_dm_get_remote_services(bd_addr);
+        btif_dm_get_remote_services(bd_addr, BT_TRANSPORT_UNKNOWN);
       }
     }
     // Do not call bond_state_changed_cb yet. Wait until remote service
@@ -1320,7 +1320,7 @@ static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
           BTIF_TRACE_WARNING("%s: SDP failed after bonding re-attempting",
                              __func__);
           pairing_cb.sdp_attempts++;
-          btif_dm_get_remote_services(bd_addr);
+          btif_dm_get_remote_services(bd_addr, BT_TRANSPORT_UNKNOWN);
         } else {
           BTIF_TRACE_WARNING("%s: SDP triggered by someone failed when bonding",
                              __func__);
@@ -2139,33 +2139,16 @@ bt_status_t btif_dm_get_adapter_property(bt_property_t* prop) {
  *
  * Function         btif_dm_get_remote_services
  *
- * Description      Start SDP to get remote services
- *
- ******************************************************************************/
-void btif_dm_get_remote_services(const RawAddress remote_addr) {
-  BTIF_TRACE_EVENT("%s: bd_addr=%s", __func__, remote_addr.ToString().c_str());
-
-  BTA_DmDiscover(remote_addr, btif_dm_search_services_evt,
-                 BT_TRANSPORT_UNKNOWN);
-}
-
-/*******************************************************************************
- *
- * Function         btif_dm_get_remote_services_by_transport
- *
  * Description      Start SDP to get remote services by transport
  *
  * Returns          bt_status_t
  *
  ******************************************************************************/
-bt_status_t btif_dm_get_remote_services_by_transport(RawAddress* remote_addr,
-                                                     const int transport) {
+void btif_dm_get_remote_services(RawAddress remote_addr, const int transport) {
   BTIF_TRACE_EVENT("%s: transport=%d, remote_addr=%s", __func__, transport,
-                   remote_addr->ToString().c_str());
+                   remote_addr.ToString().c_str());
 
-  BTA_DmDiscover(*remote_addr, btif_dm_search_services_evt, transport);
-
-  return BT_STATUS_SUCCESS;
+  BTA_DmDiscover(remote_addr, btif_dm_search_services_evt, transport);
 }
 
 void btif_dm_enable_service(tBTA_SERVICE_ID service_id, bool enable) {
@@ -2484,7 +2467,7 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
       state = BT_BOND_STATE_NONE;
     } else {
       btif_dm_save_ble_bonding_keys(bdaddr);
-      btif_dm_get_remote_services_by_transport(&bd_addr, BT_TRANSPORT_LE);
+      btif_dm_get_remote_services(bd_addr, BT_TRANSPORT_LE);
     }
   } else {
     /*Map the HCI fail reason  to  bt status  */

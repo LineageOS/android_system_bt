@@ -264,7 +264,8 @@ int get_remote_services(RawAddress* remote_addr) {
   if (!interface_ready()) return BT_STATUS_NOT_READY;
 
   do_in_main_thread(FROM_HERE,
-                    base::BindOnce(btif_dm_get_remote_services, *remote_addr));
+                    base::BindOnce(btif_dm_get_remote_services, *remote_addr,
+                                   BT_TRANSPORT_UNKNOWN));
   return BT_STATUS_SUCCESS;
 }
 
