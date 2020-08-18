@@ -1608,7 +1608,6 @@ static void bta_dm_discover_device(const RawAddress& remote_bd_addr) {
         if (bta_dm_search_cb.services_to_search & BTA_BLE_SERVICE_MASK) {
           // set the raw data buffer here
           memset(g_disc_raw_data_buf, 0, sizeof(g_disc_raw_data_buf));
-          bta_dm_search_cb.p_ble_rawdata = g_disc_raw_data_buf;
 
           bta_dm_search_cb.ble_raw_size = MAX_DISC_RAW_DATA_BUF;
           bta_dm_search_cb.ble_raw_used = 0;
@@ -3547,23 +3546,9 @@ static void bta_dm_gatt_disc_result(tBTA_GATT_ID service_id) {
 
   if (bta_dm_search_cb.ble_raw_used + sizeof(tBTA_GATT_ID) <
       bta_dm_search_cb.ble_raw_size) {
-    APPL_TRACE_DEBUG(
-        "ADDING BLE SERVICE uuid=%s, ble_ptr = 0x%x, ble_raw_used = 0x%x",
-        service_id.uuid.ToString().c_str(), bta_dm_search_cb.p_ble_rawdata,
-        bta_dm_search_cb.ble_raw_used);
-
-    if (bta_dm_search_cb.p_ble_rawdata) {
-      // TODO(jpawlowski): the p_ble_raw data is only sent to btif_dm.cc, but is
-      // never used there. Get rid of this code completly, or implement the
-      // TODOs from btif_dm.cc
-      memcpy((bta_dm_search_cb.p_ble_rawdata + bta_dm_search_cb.ble_raw_used),
-             &service_id, sizeof(service_id));
-
-      bta_dm_search_cb.ble_raw_used += sizeof(service_id);
-    } else {
-      APPL_TRACE_ERROR("p_ble_rawdata is NULL");
-    }
-
+    APPL_TRACE_DEBUG("ADDING BLE SERVICE uuid=%s, ble_raw_used = 0x%x",
+                     service_id.uuid.ToString().c_str(),
+                     bta_dm_search_cb.ble_raw_used);
   } else {
     APPL_TRACE_ERROR(
         "%s out of room to accomodate more service ids ble_raw_size = %d "
@@ -3612,9 +3597,6 @@ static void bta_dm_gatt_disc_complete(uint16_t conn_id, tGATT_STATUS status) {
           bta_dm_get_remname(), BD_NAME_LEN);
 
   p_msg->disc_result.result.disc_res.device_type |= BT_DEVICE_TYPE_BLE;
-  if (bta_dm_search_cb.ble_raw_used == 0) {
-    bta_dm_search_cb.p_ble_rawdata = 0;
-  }
 
   bta_sys_sendmsg(p_msg);
 
