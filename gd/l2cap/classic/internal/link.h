@@ -148,8 +148,6 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
 
   void SendLeCredit(Cid local_cid, uint16_t credit) override {}
 
-  void AddChannelPendingingAuthentication(PendingAuthenticateDynamicChannelConnection pending_channel);
-
   // ConnectionManagementCallbacks
   void OnConnectionPacketTypeChanged(uint16_t packet_type) override;
   void OnAuthenticationComplete() override;
@@ -199,7 +197,6 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::ConnectionM
   bool remote_supports_ertm_ = false;
   bool remote_supports_fcs_ = false;
   hci::EncryptionEnabled encryption_enabled_ = hci::EncryptionEnabled::OFF;
-  std::list<Link::PendingAuthenticateDynamicChannelConnection> pending_channel_list_;
   std::list<Psm> pending_dynamic_psm_list_;
   std::list<Link::PendingDynamicChannelConnection> pending_dynamic_channel_callback_list_;
   std::list<uint16_t> pending_outgoing_configuration_request_list_;
