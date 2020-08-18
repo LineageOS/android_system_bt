@@ -644,8 +644,6 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   p_inq->inqparms.max_resps = BTIF_DM_DEFAULT_INQ_MAX_RESULTS;
   p_inq->inqparms.report_dup = true;
 
-  p_inq->inqparms.filter_cond_type = BTM_CLR_INQUIRY_FILTER;
-
   /* Initialize the inquiry variables */
   p_inq->state = BTM_INQ_ACTIVE_STATE;
   p_inq->p_inq_cmpl_cb = p_cmpl_cb;
@@ -683,36 +681,11 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
     return status;
   }
 
-  /* BR/EDR inquiry portion */
-  /* If a filter is specified, then save it for later and clear the current
-     filter.
-     The setting of the filter is done upon completion of clearing of the
-     previous
-     filter.
-  */
-  switch (p_inq->inqparms.filter_cond_type) {
-    case BTM_CLR_INQUIRY_FILTER:
-      p_inq->state = BTM_INQ_SET_FILT_STATE;
-      break;
+  p_inq->state = BTM_INQ_SET_FILT_STATE;
 
-    case HCI_FILTER_COND_DEVICE_CLASS:
-    case HCI_FILTER_COND_BD_ADDR:
-      /* The filter is not being used so simply clear it;
-          the inquiry can start after this operation */
-      p_inq->state = BTM_INQ_CLR_FILT_STATE;
-      p_inq->inqparms.filter_cond_type = BTM_CLR_INQUIRY_FILTER;
-      /* =============>>>> adding LE filtering here ????? */
-      break;
-
-    default:
-      LOG(ERROR) << __func__ << ": invalid filter condition type "
-                 << std::to_string(p_inq->inqparms.filter_cond_type);
-      return (BTM_ILLEGAL_VALUE);
-  }
-
-    /* Before beginning the inquiry the current filter must be cleared, so
-     * initiate the command */
-  status = btm_set_inq_event_filter(p_inq->inqparms.filter_cond_type,
+  /* Before beginning the inquiry the current filter must be cleared, so
+   * initiate the command */
+  status = btm_set_inq_event_filter(BTM_CLR_INQUIRY_FILTER,
                                     &p_inq->inqparms.filter_cond);
   if (status != BTM_CMD_STARTED) {
     LOG(ERROR) << __func__ << ": failed to set inquiry event filter";
@@ -1348,7 +1321,7 @@ void btm_event_filter_complete(uint8_t* p) {
 
       /* Check to see if a new filter needs to be set up */
       if (p_inq->state == BTM_INQ_CLR_FILT_STATE) {
-        status = btm_set_inq_event_filter(p_inq->inqparms.filter_cond_type,
+        status = btm_set_inq_event_filter(BTM_CLR_INQUIRY_FILTER,
                                           &p_inq->inqparms.filter_cond);
         if (status == BTM_CMD_STARTED) {
           p_inq->state = BTM_INQ_SET_FILT_STATE;

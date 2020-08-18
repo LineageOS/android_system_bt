@@ -419,7 +419,6 @@ typedef struct /* contains the parameters passed to the inquiry functions */
   uint8_t max_resps; /* maximum number of responses to return */
   bool report_dup; /* report duplicated inquiry response with higher RSSI value
                       */
-  uint8_t filter_cond_type; /* new devices, BD ADDR, COD, or No filtering */
   tBTM_INQ_FILT_COND filter_cond; /* filter value based on filter cond type */
 } tBTM_INQ_PARMS;
 

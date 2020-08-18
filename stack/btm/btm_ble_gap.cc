@@ -1371,18 +1371,10 @@ uint8_t btm_ble_is_discoverable(const RawAddress& bda,
                                 std::vector<uint8_t> const& adv_data) {
   uint8_t flag = 0, rt = 0;
   uint8_t data_len;
-  tBTM_INQ_PARMS* p_cond = &btm_cb.btm_inq_vars.inqparms;
 
   /* for observer, always "discoverable */
   if (BTM_BLE_IS_OBS_ACTIVE(btm_cb.ble_ctr_cb.scan_activity))
     rt |= BTM_BLE_OBS_RESULT;
-
-  /* does not match filter condition */
-  if (p_cond->filter_cond_type == HCI_FILTER_COND_BD_ADDR &&
-      bda != p_cond->filter_cond.bdaddr_cond) {
-    BTM_TRACE_DEBUG("BD ADDR does not meet filter condition");
-    return rt;
-  }
 
   if (!adv_data.empty()) {
     const uint8_t* p_flag = AdvertiseDataParser::GetFieldByType(
