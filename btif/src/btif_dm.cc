@@ -99,8 +99,6 @@ const Uuid UUID_HEARING_AID = Uuid::FromString("FDF0");
 #define COD_AV_PORTABLE_AUDIO 0x041C
 #define COD_AV_HIFI_AUDIO 0x0428
 
-#define BTIF_DM_DEFAULT_INQ_MAX_RESULTS 0
-#define BTIF_DM_DEFAULT_INQ_MAX_DURATION 10
 #define BTIF_DM_MAX_SDP_ATTEMPTS_AFTER_PAIRING 2
 
 #define NUM_TIMEOUT_RETRIES 5
@@ -1832,8 +1830,6 @@ static void bte_scan_filt_param_cfg_evt(uint8_t ref_value, uint8_t avbl_space,
  *
  ******************************************************************************/
 void btif_dm_start_discovery(void) {
-  tBTM_INQ_PARMS inq_params;
-
   BTIF_TRACE_EVENT("%s", __func__);
 
   /* Cleanup anything remaining on index 0 */
@@ -1852,22 +1848,10 @@ void btif_dm_start_discovery(void) {
                              std::move(adv_filt_param),
                              base::Bind(&bte_scan_filt_param_cfg_evt, 0));
 
-  /* TODO: Do we need to handle multiple inquiries at the same time? */
-
-  /* Set inquiry params and call API */
-  inq_params.mode = BTM_GENERAL_INQUIRY | BTM_BLE_GENERAL_INQUIRY;
-  inq_params.duration = BTIF_DM_DEFAULT_INQ_MAX_DURATION;
-
-  inq_params.max_resps = BTIF_DM_DEFAULT_INQ_MAX_RESULTS;
-  inq_params.report_dup = true;
-
-  inq_params.filter_cond_type = BTM_CLR_INQUIRY_FILTER;
-  /* TODO: Filter device by BDA needs to be implemented here */
-
   /* Will be enabled to true once inquiry busy level has been received */
   btif_dm_inquiry_in_progress = false;
   /* find nearby devices */
-  BTA_DmSearch(&inq_params, btif_dm_search_devices_evt);
+  BTA_DmSearch(btif_dm_search_devices_evt);
 }
 
 /*******************************************************************************
