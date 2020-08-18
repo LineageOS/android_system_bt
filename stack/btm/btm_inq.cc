@@ -1205,27 +1205,9 @@ static void btm_set_inq_event_filter() {
     return;
   }
 
-  /* If the set filter was initiated externally (via BTM_SetInqEventFilter),
-     call the
-     callback function to notify the initiator that it has completed */
-  if (p_inq->state == BTM_INQ_INACTIVE_STATE) {
-    p_inq->inqfilt_active = false;
-  } else /* An inquiry is active (the set filter command was internally
-            generated),
-            process the next state of the process (Set a new filter or start
-            the inquiry). */
-  {
-    /* Check to see if a new filter needs to be set up */
-    if (p_inq->state == BTM_INQ_CLR_FILT_STATE) {
-      btm_set_inq_event_filter();
-      p_inq->state = BTM_INQ_SET_FILT_STATE;
-    } else /* Initiate the Inquiry or Periodic Inquiry */
-    {
-      p_inq->state = BTM_INQ_ACTIVE_STATE;
-      p_inq->inqfilt_active = false;
-      btm_initiate_inquiry(p_inq);
-    }
-  }
+  p_inq->state = BTM_INQ_ACTIVE_STATE;
+  p_inq->inqfilt_active = false;
+  btm_initiate_inquiry(p_inq);
 }
 
 /*******************************************************************************
