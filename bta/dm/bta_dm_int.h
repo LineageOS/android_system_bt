@@ -319,7 +319,6 @@ typedef struct {
   bool sdp_results;
   bluetooth::Uuid uuid;
   uint8_t peer_scn;
-  bool cancel_pending; /* inquiry cancel is pending */
   tBT_TRANSPORT transport;
   tBTA_DM_SEARCH_CBACK* p_scan_cback;
   tGATT_IF client_if;
