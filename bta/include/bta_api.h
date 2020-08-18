@@ -646,8 +646,6 @@ typedef union {
   tBTA_DM_DISC_RES disc_res; /* Discovery result for a peer device. */
   tBTA_DM_DISC_BLE_RES
       disc_ble_res;             /* discovery result for GATT based service */
-  tBTA_DM_DI_DISC_CMPL di_disc; /* DI discovery result for a peer device */
-
 } tBTA_DM_SEARCH;
 
 /* Search callback */
