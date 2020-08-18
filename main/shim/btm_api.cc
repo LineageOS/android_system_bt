@@ -293,8 +293,6 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   inqparms.max_resps = BTIF_DM_DEFAULT_INQ_MAX_RESULTS;
   inqparms.report_dup = true;
 
-  inqparms.filter_cond_type = BTM_CLR_INQUIRY_FILTER;
-
   std::lock_guard<std::mutex> lock(btm_cb_mutex_);
 
   btm_cb.btm_inq_vars.inq_cmpl_info.num_resp = 0;
@@ -314,7 +312,7 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
 
   uint8_t classic_mode = inqparms.mode & 0x0f;
   if (!Stack::GetInstance()->GetBtm()->SetInquiryFilter(
-          classic_mode, inqparms.filter_cond_type, inqparms.filter_cond)) {
+          classic_mode, BTM_CLR_INQUIRY_FILTER, inqparms.filter_cond)) {
     LOG_WARN("%s Unable to set inquiry filter", __func__);
     return BTM_ERR_PROCESSING;
   }
