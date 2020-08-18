@@ -119,8 +119,7 @@ const uint16_t BTM_EIR_UUID_LKUP_TBL[BTM_EIR_MAX_SERVICES] = {
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
 static void btm_initiate_inquiry(tBTM_INQUIRY_VAR_ST* p_inq);
-static tBTM_STATUS btm_set_inq_event_filter(uint8_t filter_cond_type,
-                                            tBTM_INQ_FILT_COND* p_filt_cond);
+static tBTM_STATUS btm_set_inq_event_filter();
 void btm_clr_inq_result_flt(void);
 
 static uint8_t btm_convert_uuid_to_eir_service(uint16_t uuid16);
@@ -644,8 +643,6 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   p_inq->inqparms.max_resps = BTIF_DM_DEFAULT_INQ_MAX_RESULTS;
   p_inq->inqparms.report_dup = true;
 
-  p_inq->inqparms.filter_cond_type = BTM_CLR_INQUIRY_FILTER;
-
   /* Initialize the inquiry variables */
   p_inq->state = BTM_INQ_ACTIVE_STATE;
   p_inq->p_inq_cmpl_cb = p_cmpl_cb;
@@ -683,37 +680,11 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
     return status;
   }
 
-  /* BR/EDR inquiry portion */
-  /* If a filter is specified, then save it for later and clear the current
-     filter.
-     The setting of the filter is done upon completion of clearing of the
-     previous
-     filter.
-  */
-  switch (p_inq->inqparms.filter_cond_type) {
-    case BTM_CLR_INQUIRY_FILTER:
-      p_inq->state = BTM_INQ_SET_FILT_STATE;
-      break;
+  p_inq->state = BTM_INQ_SET_FILT_STATE;
 
-    case BTM_FILTER_COND_DEVICE_CLASS:
-    case BTM_FILTER_COND_BD_ADDR:
-      /* The filter is not being used so simply clear it;
-          the inquiry can start after this operation */
-      p_inq->state = BTM_INQ_CLR_FILT_STATE;
-      p_inq->inqparms.filter_cond_type = BTM_CLR_INQUIRY_FILTER;
-      /* =============>>>> adding LE filtering here ????? */
-      break;
-
-    default:
-      LOG(ERROR) << __func__ << ": invalid filter condition type "
-                 << std::to_string(p_inq->inqparms.filter_cond_type);
-      return (BTM_ILLEGAL_VALUE);
-  }
-
-    /* Before beginning the inquiry the current filter must be cleared, so
-     * initiate the command */
-  status = btm_set_inq_event_filter(p_inq->inqparms.filter_cond_type,
-                                    &p_inq->inqparms.filter_cond);
+  /* Before beginning the inquiry the current filter must be cleared, so
+   * initiate the command */
+  status = btm_set_inq_event_filter();
   if (status != BTM_CMD_STARTED) {
     LOG(ERROR) << __func__ << ": failed to set inquiry event filter";
     p_inq->state = BTM_INQ_INACTIVE_STATE;
@@ -1227,49 +1198,15 @@ tINQ_DB_ENT* btm_inq_db_new(const RawAddress& p_bda) {
  *                  BTM_ILLEGAL_VALUE if a bad parameter was detected
  *
  ******************************************************************************/
-static tBTM_STATUS btm_set_inq_event_filter(uint8_t filter_cond_type,
-                                            tBTM_INQ_FILT_COND* p_filt_cond) {
-  uint8_t condition_length = DEV_CLASS_LEN * 2;
+static tBTM_STATUS btm_set_inq_event_filter() {
+  uint8_t condition_length = 0;
   uint8_t condition_buf[DEV_CLASS_LEN * 2];
   uint8_t* p_cond = condition_buf; /* points to the condition to pass to HCI */
-
-#if (BTM_INQ_DEBUG == TRUE)
-  BTM_TRACE_DEBUG(
-      "btm_set_inq_event_filter: filter type %d [Clear-0, COD-1, BDADDR-2]",
-      filter_cond_type);
-  VLOG(2) << "condition " << p_filt_cond->bdaddr_cond;
-#endif
-
-  /* Load the correct filter condition to pass to the lower layer */
-  switch (filter_cond_type) {
-    case BTM_FILTER_COND_DEVICE_CLASS:
-      /* copy the device class and device class fields into contiguous memory to
-       * send to HCI */
-      memcpy(condition_buf, p_filt_cond->cod_cond.dev_class, DEV_CLASS_LEN);
-      memcpy(&condition_buf[DEV_CLASS_LEN],
-             p_filt_cond->cod_cond.dev_class_mask, DEV_CLASS_LEN);
-
-      /* condition length should already be set as the default */
-      break;
-
-    case BTM_FILTER_COND_BD_ADDR:
-      p_cond = (uint8_t*)&p_filt_cond->bdaddr_cond;
-
-      /* condition length should already be set as the default */
-      break;
-
-    case BTM_CLR_INQUIRY_FILTER:
-      condition_length = 0;
-      break;
-
-    default:
-      return (BTM_ILLEGAL_VALUE); /* Bad parameter was passed in */
-  }
 
   btm_cb.btm_inq_vars.inqfilt_active = true;
 
   /* Filter the inquiry results for the specified condition type and value */
-  btsnd_hcic_set_event_filter(HCI_FILTER_INQUIRY_RESULT, filter_cond_type,
+  btsnd_hcic_set_event_filter(HCI_FILTER_INQUIRY_RESULT, BTM_CLR_INQUIRY_FILTER,
                               p_cond, condition_length);
   return (BTM_CMD_STARTED);
 }
@@ -1348,8 +1285,7 @@ void btm_event_filter_complete(uint8_t* p) {
 
       /* Check to see if a new filter needs to be set up */
       if (p_inq->state == BTM_INQ_CLR_FILT_STATE) {
-        status = btm_set_inq_event_filter(p_inq->inqparms.filter_cond_type,
-                                          &p_inq->inqparms.filter_cond);
+        status = btm_set_inq_event_filter();
         if (status == BTM_CMD_STARTED) {
           p_inq->state = BTM_INQ_SET_FILT_STATE;
         } else /* Error setting the filter: Call the initiator's callback
