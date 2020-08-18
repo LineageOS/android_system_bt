@@ -1134,7 +1134,7 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
     /* if there are more services to search for */
     if (bta_dm_search_cb.services_to_search) {
       /* Free up the p_sdp_db before checking the next one */
-      bta_dm_free_sdp_db(NULL);
+      bta_dm_free_sdp_db();
       bta_dm_find_services(bta_dm_search_cb.peer_bdaddr);
     } else {
       /* callbacks */
@@ -1183,7 +1183,7 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
                          __func__);
       }
       /* Done with p_sdp_db. Free it */
-      bta_dm_free_sdp_db(NULL);
+      bta_dm_free_sdp_db();
       p_msg->disc_result.result.disc_res.services =
           bta_dm_search_cb.services_found;
 
@@ -1332,7 +1332,7 @@ static void bta_dm_search_timer_cback(UNUSED_ATTR void* data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_dm_free_sdp_db(UNUSED_ATTR tBTA_DM_MSG* p_data) {
+void bta_dm_free_sdp_db() {
   osi_free_and_reset((void**)&bta_dm_search_cb.p_sdp_db);
 }
 
