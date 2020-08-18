@@ -93,7 +93,7 @@ bool bta_dm_search_sm_execute(BT_HDR* p_msg) {
           break;
         case BTA_DM_SEARCH_CMPL_EVT:
           bta_dm_search_set_state(BTA_DM_SEARCH_IDLE);
-          bta_dm_search_cmpl(message);
+          bta_dm_search_cmpl();
           break;
         case BTA_DM_DISCOVERY_RESULT_EVT:
           bta_dm_search_result(message);
@@ -132,7 +132,7 @@ bool bta_dm_search_sm_execute(BT_HDR* p_msg) {
           break;
         case BTA_DM_SEARCH_CMPL_EVT:
           bta_dm_search_set_state(BTA_DM_SEARCH_IDLE);
-          bta_dm_search_cmpl(message);
+          bta_dm_search_cmpl();
           break;
         case BTA_DM_DISCOVERY_RESULT_EVT:
           bta_dm_disc_result(message);

@@ -1237,9 +1237,7 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_dm_search_cmpl(tBTA_DM_MSG* p_data) {
-  APPL_TRACE_EVENT("%s", __func__);
-
+void bta_dm_search_cmpl() {
   bta_dm_search_cb.p_search_cback(BTA_DM_DISC_CMPL_EVT, NULL);
 }
 

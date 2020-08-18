@@ -488,7 +488,7 @@ extern void bta_dm_discover(tBTA_DM_MSG* p_data);
 extern void bta_dm_inq_cmpl(uint8_t num);
 extern void bta_dm_rmt_name(tBTA_DM_MSG* p_data);
 extern void bta_dm_sdp_result(tBTA_DM_MSG* p_data);
-extern void bta_dm_search_cmpl(tBTA_DM_MSG* p_data);
+extern void bta_dm_search_cmpl();
 extern void bta_dm_free_sdp_db(tBTA_DM_MSG* p_data);
 extern void bta_dm_disc_result(tBTA_DM_MSG* p_data);
 extern void bta_dm_search_result(tBTA_DM_MSG* p_data);
