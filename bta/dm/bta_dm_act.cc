@@ -897,18 +897,7 @@ void bta_dm_discover(tBTA_DM_MSG* p_data) {
  *
  ******************************************************************************/
 static void bta_dm_disable_search_and_disc(void) {
-  tBTA_DM_DI_DISC_CMPL di_disc;
-
   if (bta_dm_search_cb.state != BTA_DM_SEARCH_IDLE) bta_dm_search_cancel();
-
-  if (bta_dm_di_cb.p_di_db != NULL) {
-    memset(&di_disc, 0, sizeof(tBTA_DM_DI_DISC_CMPL));
-    di_disc.bd_addr = bta_dm_search_cb.peer_bdaddr;
-    di_disc.result = BTA_FAILURE;
-
-    bta_dm_di_cb.p_di_db = NULL;
-    bta_dm_search_cb.p_search_cback(BTA_DM_DI_DISC_CMPL_EVT, NULL);
-  }
 }
 
 /*******************************************************************************

@@ -349,7 +349,6 @@ typedef struct {
 
 /* DI control block */
 typedef struct {
-  tSDP_DISCOVERY_DB* p_di_db;         /* pointer to the DI discovery database */
   uint8_t di_num;                     /* total local DI record number */
   uint32_t di_handle[BTA_DI_NUM_MAX]; /* local DI record handle, the first one
                                          is primary record */
