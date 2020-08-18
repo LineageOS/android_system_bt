@@ -27,6 +27,7 @@ service SecurityModuleFacade {
   rpc FetchHelperEvents(google.protobuf.Empty) returns (stream SecurityHelperMsg) {}
   rpc EnforceSecurityPolicy(SecurityPolicyMessage) returns (google.protobuf.Empty) {}
   rpc FetchEnforceSecurityPolicyEvents(google.protobuf.Empty) returns (stream EnforceSecurityPolicyMsg) {}
+  rpc FetchDisconnectEvents(google.protobuf.Empty) returns (stream DisconnectMsg) {}
 }
 
 message OobDataMessage {
@@ -154,4 +155,8 @@ message SecurityPolicyMessage {
 
 message EnforceSecurityPolicyMsg {
   bool result = 1;
+}
+
+message DisconnectMsg {
+  facade.BluetoothAddressWithType address = 1;
 }

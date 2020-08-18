@@ -38,6 +38,7 @@ class FacadeConfigurationApi {
   friend class internal::SecurityManagerImpl;
   friend class SecurityModule;
 
+  void SetDisconnectCallback(internal::SecurityManagerImpl::FacadeDisconnectCallback callback);
   void SetIoCapability(hci::IoCapability io_capability);
   void SetAuthenticationRequirements(hci::AuthenticationRequirements authentication_requirement);
   void SetOobDataPresent(hci::OobDataPresent oob_present);
