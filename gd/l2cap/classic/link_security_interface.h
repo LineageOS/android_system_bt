@@ -19,6 +19,7 @@
 #include <memory>
 
 #include "hci/address.h"
+#include "hci/hci_packets.h"
 
 namespace bluetooth {
 namespace l2cap {
@@ -73,6 +74,11 @@ class LinkSecurityInterface {
    * Initiate pairing to HCI layer.
    */
   virtual void EnsureAuthenticated() = 0;
+
+  /**
+   * Start encryption on an authenticated link (not necessarily MITM link key).
+   */
+  virtual void EnsureEncrypted() = 0;
 };
 
 class LinkSecurityInterfaceListener {
@@ -91,6 +97,17 @@ class LinkSecurityInterfaceListener {
    * @param remote
    */
   virtual void OnLinkDisconnected(hci::Address remote) {}
+
+  /**
+   * Invoked when AuthenticationComplete event is received for a given link
+   */
+  virtual void OnAuthenticationComplete(hci::Address remote) {}
+
+  /**
+   * Invoked when EncryptionChange event is received for a given link
+   * @param encrypted
+   */
+  virtual void OnEncryptionChange(hci::Address remote, bool encrypted) {}
 };
 
 }  // namespace classic
