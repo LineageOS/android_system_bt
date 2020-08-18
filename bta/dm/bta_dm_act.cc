@@ -864,11 +864,8 @@ void bta_dm_search_cancel() {
  *
  ******************************************************************************/
 void bta_dm_discover(tBTA_DM_MSG* p_data) {
-  APPL_TRACE_EVENT("%s services_to_search=0x%04X", __func__,
-                   p_data->discover.services);
-
   /* save the search condition */
-  bta_dm_search_cb.services = p_data->discover.services;
+  bta_dm_search_cb.services = BTA_ALL_SERVICE_MASK;
 
   bta_dm_gattc_register();
 
