@@ -21,6 +21,7 @@
 #include <stdint.h>
 #include <vector>
 #include "bt_common_types.h"
+#include "bt_gatt_types.h"
 
 struct AdvertiseParameters {
   uint16_t advertising_event_properties;

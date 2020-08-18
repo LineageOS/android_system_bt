@@ -44,6 +44,16 @@ const char* BtAvAudioStateText(const btav_audio_state_t state) {
   }
 }
 
+const char* BtTransportText(const btgatt_transport_t t) {
+  switch (t) {
+    CASE_RETURN_TEXT(BT_TRANSPORT_AUTO);
+    CASE_RETURN_TEXT(BT_TRANSPORT_BR_EDR);
+    CASE_RETURN_TEXT(BT_TRANSPORT_LE);
+    default:
+      return "unknown transport";
+  }
+}
+
 const char* BtStateText(const bt_state_t state) {
   switch (state) {
     CASE_RETURN_TEXT(BT_STATE_OFF);
