@@ -1106,8 +1106,7 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
 
       if (bta_dm_search_cb.services == BTA_ALL_SERVICE_MASK &&
           bta_dm_search_cb.services_to_search == 0) {
-        if (bta_dm_search_cb.service_index != BTA_BLE_SERVICE_ID)
-          bta_dm_search_cb.service_index++;
+        bta_dm_search_cb.service_index++;
       } else /* regular one service per search or PNP search */
         break;
 
