@@ -890,7 +890,6 @@ void btm_inq_db_reset(void) {
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
   uint8_t num_responses;
   uint8_t temp_inq_active;
-  tBTM_STATUS status;
 
   /* If an inquiry or periodic inquiry is active, reset the mode to inactive */
   if (p_inq->inq_active != BTM_INQUIRY_INACTIVE) {
@@ -928,11 +927,6 @@ void btm_inq_db_reset(void) {
    * waiting) */
   if (p_inq->inqfilt_active) {
     p_inq->inqfilt_active = false;
-
-    if (p_inq->p_inqfilter_cmpl_cb) {
-      status = BTM_DEV_RESET;
-      (*p_inq->p_inqfilter_cmpl_cb)(&status);
-    }
   }
 
   p_inq->state = BTM_INQ_INACTIVE_STATE;
@@ -1198,7 +1192,6 @@ static void btm_set_inq_event_filter() {
 
   tBTM_STATUS status;
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
-  tBTM_CMPL_CB* p_cb = p_inq->p_inqfilter_cmpl_cb;
 
 #if (BTM_INQ_DEBUG == TRUE)
   BTM_TRACE_DEBUG(
@@ -1223,7 +1216,6 @@ static void btm_set_inq_event_filter() {
        callback function to notify the initiator that it has completed */
     if (p_inq->state == BTM_INQ_INACTIVE_STATE) {
       p_inq->inqfilt_active = false;
-      if (p_cb) (*p_cb)(&status);
     } else /* An inquiry is active (the set filter command was internally
               generated),
               process the next state of the process (Set a new filter or start
