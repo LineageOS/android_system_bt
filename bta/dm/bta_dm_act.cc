@@ -1251,7 +1251,6 @@ void bta_dm_disc_result(tBTA_DM_MSG* p_data) {
 
   /* send a message to change state */
   p_msg->hdr.event = BTA_DM_SEARCH_CMPL_EVT;
-  p_msg->hdr.layer_specific = BTA_DM_API_DISCOVER_EVT;
   bta_sys_sendmsg(p_msg);
 }
 
@@ -1528,8 +1527,6 @@ static void bta_dm_discover_next_device(void) {
     bta_dm_search_cb.services = 0;
 
     p_msg->hdr.event = BTA_DM_SEARCH_CMPL_EVT;
-    p_msg->hdr.layer_specific = BTA_DM_API_DISCOVER_EVT;
-
     bta_sys_sendmsg(p_msg);
   }
 }
