@@ -338,7 +338,6 @@ typedef struct {
   tBT_TRANSPORT transport;
   tBTA_DM_SEARCH_CBACK* p_scan_cback;
   tGATT_IF client_if;
-  bluetooth::Uuid* p_srvc_uuid;
   uint8_t uuid_to_search;
   bool gatt_disc_active;
   uint16_t conn_id;
