@@ -77,9 +77,6 @@ typedef struct {
   tBTA_SERVICE_MASK services;
   tBTA_DM_SEARCH_CBACK* p_cback;
   tBT_TRANSPORT transport;
-  uint8_t num_uuid;
-  bluetooth::Uuid* p_uuid;
-  bluetooth::Uuid uuid;
 } tBTA_DM_API_DISCOVER;
 
 /* data type for BTA_DM_API_DI_DISC_EVT */
