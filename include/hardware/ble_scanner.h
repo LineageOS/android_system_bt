@@ -21,7 +21,6 @@
 #include <vector>
 #include "bt_common_types.h"
 #include "bt_gatt_client.h"
-#include "bt_gatt_types.h"
 
 /** Callback invoked when batchscan reports are obtained */
 typedef void (*batchscan_reports_callback)(int client_if, int status,
