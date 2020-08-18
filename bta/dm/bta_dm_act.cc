@@ -1247,11 +1247,7 @@ void bta_dm_disc_result(tBTA_DM_MSG* p_data) {
     bta_dm_search_cb.p_search_cback(BTA_DM_DISC_RES_EVT,
                                     &p_data->disc_result.result);
 
-  tBTA_DM_MSG* p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
-
-  /* send a message to change state */
-  p_msg->hdr.event = BTA_DM_SEARCH_CMPL_EVT;
-  bta_sys_sendmsg(p_msg);
+  bta_dm_search_cmpl();
 }
 
 /*******************************************************************************
