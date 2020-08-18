@@ -142,7 +142,6 @@ void BTA_DmDiscover(const RawAddress& bd_addr, tBTA_DM_SEARCH_CBACK* p_cback,
 
   p_msg->hdr.event = BTA_DM_API_DISCOVER_EVT;
   p_msg->bd_addr = bd_addr;
-  p_msg->services = BTA_ALL_SERVICE_MASK;
   p_msg->transport = transport;
   p_msg->p_cback = p_cback;
 
