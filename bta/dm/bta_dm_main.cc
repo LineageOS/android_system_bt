@@ -78,10 +78,6 @@ bool bta_dm_search_sm_execute(BT_HDR* p_msg) {
         case BTA_DM_SDP_RESULT_EVT:
           bta_dm_free_sdp_db(message);
           break;
-        case BTA_DM_API_DI_DISCOVER_EVT:
-          bta_dm_search_set_state(BTA_DM_SEARCH_ACTIVE);
-          bta_dm_di_disc(message);
-          break;
         case BTA_DM_DISC_CLOSE_TOUT_EVT:
           bta_dm_close_gatt_conn(message);
           break;
