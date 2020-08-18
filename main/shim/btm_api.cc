@@ -33,6 +33,9 @@
 #include "stack/btm/btm_int_types.h"
 #include "types/raw_address.h"
 
+#define BTIF_DM_DEFAULT_INQ_MAX_RESULTS 0
+#define BTIF_DM_DEFAULT_INQ_MAX_DURATION 10
+
 /**
  * Legacy bluetooth module global control block state
  *
@@ -278,12 +281,19 @@ void btm_api_process_extended_inquiry_result(RawAddress raw_address,
   }
 }
 
-tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
-                                              tBTM_INQ_RESULTS_CB* p_results_cb,
+tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
                                               tBTM_CMPL_CB* p_cmpl_cb) {
-  CHECK(p_inqparms != nullptr);
   CHECK(p_results_cb != nullptr);
   CHECK(p_cmpl_cb != nullptr);
+
+  tBTM_INQ_PARMS inqparms = {};
+  inqparms.mode = BTM_GENERAL_INQUIRY | BTM_BLE_GENERAL_INQUIRY;
+  inqparms.duration = BTIF_DM_DEFAULT_INQ_MAX_DURATION;
+
+  inqparms.max_resps = BTIF_DM_DEFAULT_INQ_MAX_RESULTS;
+  inqparms.report_dup = true;
+
+  inqparms.filter_cond_type = BTM_CLR_INQUIRY_FILTER;
 
   std::lock_guard<std::mutex> lock(btm_cb_mutex_);
 
@@ -291,9 +301,9 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
   btm_cb.btm_inq_vars.scan_type = INQ_GENERAL;
 
   Stack::GetInstance()->GetBtm()->StartActiveScanning();
-  if (p_inqparms->duration != 0) {
+  if (inqparms.duration != 0) {
     Stack::GetInstance()->GetBtm()->SetScanningTimer(
-        p_inqparms->duration * 1000, common::BindOnce([]() {
+        inqparms.duration * 1000, common::BindOnce([]() {
           LOG_INFO("%s scanning timeout popped", __func__);
           std::lock_guard<std::mutex> lock(btm_cb_mutex_);
           Stack::GetInstance()->GetBtm()->StopActiveScanning();
@@ -302,16 +312,15 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
 
   Stack::GetInstance()->GetBtm()->StartActiveScanning();
 
-  uint8_t classic_mode = p_inqparms->mode & 0x0f;
+  uint8_t classic_mode = inqparms.mode & 0x0f;
   if (!Stack::GetInstance()->GetBtm()->SetInquiryFilter(
-          classic_mode, p_inqparms->filter_cond_type,
-          p_inqparms->filter_cond)) {
+          classic_mode, inqparms.filter_cond_type, inqparms.filter_cond)) {
     LOG_WARN("%s Unable to set inquiry filter", __func__);
     return BTM_ERR_PROCESSING;
   }
 
   if (!Stack::GetInstance()->GetBtm()->StartInquiry(
-          classic_mode, p_inqparms->duration, p_inqparms->max_resps,
+          classic_mode, inqparms.duration, inqparms.max_resps,
           [](uint16_t status, uint8_t inquiry_mode) {
             LOG_DEBUG("%s Inquiry is complete status:%hd inquiry_mode:%hhd",
                       __func__, status, inquiry_mode);
@@ -358,7 +367,7 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_PARMS* p_inqparms,
   btm_cb.btm_inq_vars.state = BTM_INQ_ACTIVE_STATE;
   btm_cb.btm_inq_vars.p_inq_cmpl_cb = p_cmpl_cb;
   btm_cb.btm_inq_vars.p_inq_results_cb = p_results_cb;
-  btm_cb.btm_inq_vars.inq_active = p_inqparms->mode;
+  btm_cb.btm_inq_vars.inq_active = inqparms.mode;
 
   btm_acl_update_inquiry_status(BTM_INQUIRY_STARTED);
 

@@ -878,8 +878,7 @@ extern void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode);
  * Returns          void
  *
  ******************************************************************************/
-extern void BTA_DmSearch(tBTM_INQ_PARMS* p_dm_inq,
-                         tBTA_DM_SEARCH_CBACK* p_cback);
+extern void BTA_DmSearch(tBTA_DM_SEARCH_CBACK* p_cback);
 
 /*******************************************************************************
  *
