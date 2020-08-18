@@ -971,8 +971,6 @@ void bta_dm_inq_cmpl(uint8_t num) {
         bta_dm_search_cb.p_btm_inq_info->results.remote_bd_addr);
   } else {
     bta_dm_search_cb.services = 0;
-
-    bta_dm_search_set_state(BTA_DM_SEARCH_IDLE);
     bta_dm_search_cmpl();
   }
 }
@@ -1234,6 +1232,7 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
  *
  ******************************************************************************/
 void bta_dm_search_cmpl() {
+  bta_dm_search_set_state(BTA_DM_SEARCH_IDLE);
   bta_dm_search_cb.p_search_cback(BTA_DM_DISC_CMPL_EVT, NULL);
 }
 
