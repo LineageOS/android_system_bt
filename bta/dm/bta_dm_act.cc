@@ -789,7 +789,6 @@ void bta_dm_ci_rmt_oob_act(std::unique_ptr<tBTA_DM_CI_RMT_OOB> msg) {
 void bta_dm_search_start(tBTA_DM_MSG* p_data) {
   tBTM_INQUIRY_CMPL result = {};
 
-  size_t len = sizeof(Uuid) * p_data->search.num_uuid;
   bta_dm_gattc_register();
 
   APPL_TRACE_DEBUG("%s avoid_scatter=%d", __func__,
@@ -800,13 +799,6 @@ void bta_dm_search_start(tBTA_DM_MSG* p_data) {
   bta_dm_search_cb.p_search_cback = p_data->search.p_cback;
   bta_dm_search_cb.services = p_data->search.services;
 
-  osi_free_and_reset((void**)&bta_dm_search_cb.p_srvc_uuid);
-
-  if ((bta_dm_search_cb.num_uuid = p_data->search.num_uuid) != 0 &&
-      p_data->search.p_uuid != nullptr) {
-    bta_dm_search_cb.p_srvc_uuid = (Uuid*)osi_malloc(len);
-    *bta_dm_search_cb.p_srvc_uuid = *p_data->search.p_uuid;
-  }
   result.status = BTM_StartInquiry((tBTM_INQ_PARMS*)&p_data->search.inq_params,
                                    bta_dm_inq_results_cb, bta_dm_inq_cmpl_cb);
 
