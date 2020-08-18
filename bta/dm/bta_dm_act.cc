@@ -1153,11 +1153,6 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
     do {
       p_sdp_rec = NULL;
       if (bta_dm_search_cb.service_index == (BTA_USER_SERVICE_ID + 1)) {
-        if (!bta_dm_search_cb.uuid.IsEmpty()) {
-          p_sdp_rec = SDP_FindServiceUUIDInDb(bta_dm_search_cb.p_sdp_db,
-                                              bta_dm_search_cb.uuid, p_sdp_rec);
-        }
-
         if (p_sdp_rec && SDP_FindProtocolListElemInRec(
                              p_sdp_rec, UUID_PROTOCOL_RFCOMM, &pe)) {
           bta_dm_search_cb.peer_scn = (uint8_t)pe.params[0];
@@ -1576,10 +1571,6 @@ static void bta_dm_find_services(const RawAddress& bd_addr) {
           uuid = Uuid::From16Bit(
               bta_service_id_to_uuid_lkup_tbl[bta_dm_search_cb.service_index]);
         }
-      }
-
-      if (bta_dm_search_cb.service_index == BTA_USER_SERVICE_ID) {
-        uuid = bta_dm_search_cb.uuid;
       }
 
       LOG_INFO("%s search UUID = %s", __func__, uuid.ToString().c_str());
