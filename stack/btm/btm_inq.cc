@@ -696,7 +696,7 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
       break;
 
     case HCI_FILTER_COND_DEVICE_CLASS:
-    case BTM_FILTER_COND_BD_ADDR:
+    case HCI_FILTER_COND_BD_ADDR:
       /* The filter is not being used so simply clear it;
           the inquiry can start after this operation */
       p_inq->state = BTM_INQ_CLR_FILT_STATE;
@@ -1252,7 +1252,7 @@ static tBTM_STATUS btm_set_inq_event_filter(uint8_t filter_cond_type,
       /* condition length should already be set as the default */
       break;
 
-    case BTM_FILTER_COND_BD_ADDR:
+    case HCI_FILTER_COND_BD_ADDR:
       p_cond = (uint8_t*)&p_filt_cond->bdaddr_cond;
 
       /* condition length should already be set as the default */

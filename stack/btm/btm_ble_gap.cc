@@ -1378,7 +1378,7 @@ uint8_t btm_ble_is_discoverable(const RawAddress& bda,
     rt |= BTM_BLE_OBS_RESULT;
 
   /* does not match filter condition */
-  if (p_cond->filter_cond_type == BTM_FILTER_COND_BD_ADDR &&
+  if (p_cond->filter_cond_type == HCI_FILTER_COND_BD_ADDR &&
       bda != p_cond->filter_cond.bdaddr_cond) {
     BTM_TRACE_DEBUG("BD ADDR does not meet filter condition");
     return rt;
