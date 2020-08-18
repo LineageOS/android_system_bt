@@ -1752,19 +1752,9 @@ static void bta_dm_inq_results_cb(tBTM_INQ_RESULTS* p_inq, uint8_t* p_eir,
  *
  ******************************************************************************/
 static void bta_dm_inq_cmpl_cb(void* p_result) {
-  tBTA_DM_MSG* p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
-
   APPL_TRACE_DEBUG("%s", __func__);
 
-  if (!bta_dm_search_cb.cancel_pending) {
-    bta_dm_inq_cmpl(((tBTM_INQUIRY_CMPL*)p_result)->num_resp);
-  } else {
-    bta_dm_search_cb.cancel_pending = false;
-    bta_dm_search_cancel_notify();
-    p_msg->hdr.event = BTA_DM_SEARCH_CMPL_EVT;
-    p_msg->hdr.layer_specific = BTA_DM_API_DISCOVER_EVT;
-    bta_sys_sendmsg(p_msg);
-  }
+  bta_dm_inq_cmpl(((tBTM_INQUIRY_CMPL*)p_result)->num_resp);
 }
 
 /*******************************************************************************
