@@ -119,7 +119,7 @@ const uint16_t BTM_EIR_UUID_LKUP_TBL[BTM_EIR_MAX_SERVICES] = {
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
 static void btm_initiate_inquiry(tBTM_INQUIRY_VAR_ST* p_inq);
-static tBTM_STATUS btm_set_inq_event_filter();
+static void btm_set_inq_event_filter();
 void btm_clr_inq_result_flt(void);
 
 static uint8_t btm_convert_uuid_to_eir_service(uint16_t uuid16);
@@ -684,13 +684,8 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
 
   /* Before beginning the inquiry the current filter must be cleared, so
    * initiate the command */
-  status = btm_set_inq_event_filter();
-  if (status != BTM_CMD_STARTED) {
-    LOG(ERROR) << __func__ << ": failed to set inquiry event filter";
-    p_inq->state = BTM_INQ_INACTIVE_STATE;
-  }
-
-    return (status);
+  btm_set_inq_event_filter();
+  return BTM_CMD_STARTED;
 }
 
 /*******************************************************************************
@@ -1198,7 +1193,7 @@ tINQ_DB_ENT* btm_inq_db_new(const RawAddress& p_bda) {
  *                  BTM_ILLEGAL_VALUE if a bad parameter was detected
  *
  ******************************************************************************/
-static tBTM_STATUS btm_set_inq_event_filter() {
+static void btm_set_inq_event_filter() {
   uint8_t condition_length = 0;
   uint8_t condition_buf[DEV_CLASS_LEN * 2];
   uint8_t* p_cond = condition_buf; /* points to the condition to pass to HCI */
@@ -1208,7 +1203,6 @@ static tBTM_STATUS btm_set_inq_event_filter() {
   /* Filter the inquiry results for the specified condition type and value */
   btsnd_hcic_set_event_filter(HCI_FILTER_INQUIRY_RESULT, BTM_CLR_INQUIRY_FILTER,
                               p_cond, condition_length);
-  return (BTM_CMD_STARTED);
 }
 
 /*******************************************************************************
@@ -1285,19 +1279,8 @@ void btm_event_filter_complete(uint8_t* p) {
 
       /* Check to see if a new filter needs to be set up */
       if (p_inq->state == BTM_INQ_CLR_FILT_STATE) {
-        status = btm_set_inq_event_filter();
-        if (status == BTM_CMD_STARTED) {
-          p_inq->state = BTM_INQ_SET_FILT_STATE;
-        } else /* Error setting the filter: Call the initiator's callback
-                  function to indicate a failure */
-        {
-          p_inq->inqfilt_active = false;
-
-          /* Process the inquiry complete (Error Status) */
-          btm_process_inq_complete(
-              BTM_ERR_PROCESSING,
-              (uint8_t)(p_inq->inqparms.mode & BTM_BR_INQUIRY_MASK));
-        }
+        btm_set_inq_event_filter();
+        p_inq->state = BTM_INQ_SET_FILT_STATE;
       } else /* Initiate the Inquiry or Periodic Inquiry */
       {
         p_inq->state = BTM_INQ_ACTIVE_STATE;
