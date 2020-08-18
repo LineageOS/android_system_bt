@@ -145,7 +145,7 @@ typedef struct {
   uint16_t conn_id;
   tGATT_IF client_if;
   RawAddress remote_bda;
-  tBTA_TRANSPORT transport;
+  tBT_TRANSPORT transport;
   uint16_t mtu;
 } tBTA_GATTC_OPEN;
 
@@ -306,7 +306,7 @@ typedef struct {
   RawAddress remote_bda;
   uint16_t conn_id;
   tBTA_GATT_REASON reason; /* report disconnect reason */
-  tGATT_TRANSPORT transport;
+  tBT_TRANSPORT transport;
 } tBTA_GATTS_CONN;
 
 typedef struct {
@@ -417,10 +417,10 @@ extern void BTA_GATTC_AppDeregister(tGATT_IF client_if);
  *
  ******************************************************************************/
 extern void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
-                           bool is_direct, tGATT_TRANSPORT transport,
+                           bool is_direct, tBT_TRANSPORT transport,
                            bool opportunistic);
 extern void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
-                           bool is_direct, tGATT_TRANSPORT transport,
+                           bool is_direct, tBT_TRANSPORT transport,
                            bool opportunistic, uint8_t initiating_phys);
 
 /*******************************************************************************
@@ -926,7 +926,7 @@ extern void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id,
  *
  ******************************************************************************/
 extern void BTA_GATTS_Open(tGATT_IF server_if, const RawAddress& remote_bda,
-                           bool is_direct, tGATT_TRANSPORT transport);
+                           bool is_direct, tBT_TRANSPORT transport);
 
 /*******************************************************************************
  *

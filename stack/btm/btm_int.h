@@ -108,7 +108,7 @@ extern void btm_esco_proc_conn_chg(uint8_t status, uint16_t handle,
                                    uint16_t rx_pkt_len, uint16_t tx_pkt_len);
 extern void btm_sco_conn_req(const RawAddress& bda, DEV_CLASS dev_class,
                              uint8_t link_type);
-extern void btm_sco_removed(uint16_t hci_handle, uint8_t reason);
+extern bool btm_sco_removed(uint16_t hci_handle, uint8_t reason);
 extern void btm_sco_acl_removed(const RawAddress* bda);
 extern void btm_route_sco_data(BT_HDR* p_msg);
 extern bool btm_is_sco_active(uint16_t handle);
@@ -180,8 +180,6 @@ extern void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec,
 extern void btm_sec_clear_ble_keys(tBTM_SEC_DEV_REC* p_dev_rec);
 extern bool btm_ble_init_pseudo_addr(tBTM_SEC_DEV_REC* p_dev_rec,
                                      const RawAddress& new_pseudo_addr);
-extern tBTM_SEC_SERV_REC* btm_sec_find_first_serv(bool is_originator,
-                                                  uint16_t psm);
 extern tL2CAP_LE_RESULT_CODE btm_ble_start_sec_check(
     const RawAddress& bd_addr, uint16_t psm, bool is_originator,
     tBTM_SEC_CALLBACK* p_callback, void* p_ref_data);

@@ -34,6 +34,7 @@
 #include "btif/include/btif_debug_conn.h"
 #include "btm_ble_api.h"
 #include "osi/include/osi.h"
+#include "types/bt_transport.h"
 #include "utl.h"
 
 using base::StringPrintf;
@@ -47,7 +48,7 @@ static bool bta_gatts_nv_srv_chg_cback(tGATTS_SRV_CHG_CMD cmd,
 static void bta_gatts_conn_cback(tGATT_IF gatt_if, const RawAddress& bda,
                                  uint16_t conn_id, bool connected,
                                  tGATT_DISCONN_REASON reason,
-                                 tGATT_TRANSPORT transport);
+                                 tBT_TRANSPORT transport);
 static void bta_gatts_send_request_cback(uint16_t conn_id, uint32_t trans_id,
                                          tGATTS_REQ_TYPE req_type,
                                          tGATTS_DATA* p_data);
@@ -372,7 +373,7 @@ void bta_gatts_indicate_handle(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
   tGATT_STATUS status = GATT_ILLEGAL_PARAMETER;
   tGATT_IF gatt_if;
   RawAddress remote_bda;
-  tBTA_TRANSPORT transport;
+  tBT_TRANSPORT transport;
   tBTA_GATTS cb_data;
 
   p_srvc_cb =
@@ -394,7 +395,7 @@ void bta_gatts_indicate_handle(tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
             p_msg->api_indicate.len, p_msg->api_indicate.value);
 
       /* if over BR_EDR, inform PM for mode change */
-      if (transport == BTA_TRANSPORT_BR_EDR) {
+      if (transport == BT_TRANSPORT_BR_EDR) {
         bta_sys_busy(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda);
         bta_sys_idle(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda);
       }
@@ -500,7 +501,7 @@ void bta_gatts_close(UNUSED_ATTR tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
   tGATT_STATUS status = GATT_ERROR;
   tGATT_IF gatt_if;
   RawAddress remote_bda;
-  tGATT_TRANSPORT transport;
+  tBT_TRANSPORT transport;
 
   if (GATT_GetConnectionInfor(p_msg->hdr.layer_specific, &gatt_if, remote_bda,
                               &transport)) {
@@ -514,7 +515,7 @@ void bta_gatts_close(UNUSED_ATTR tBTA_GATTS_CB* p_cb, tBTA_GATTS_DATA* p_msg) {
     p_rcb = bta_gatts_find_app_rcb_by_app_if(gatt_if);
 
     if (p_rcb && p_rcb->p_cback) {
-      if (transport == BTA_TRANSPORT_BR_EDR)
+      if (transport == BT_TRANSPORT_BR_EDR)
         bta_sys_conn_close(BTA_ID_GATTS, BTA_ALL_APP_ID, remote_bda);
 
       tBTA_GATTS bta_gatts;
@@ -541,7 +542,7 @@ static void bta_gatts_send_request_cback(uint16_t conn_id, uint32_t trans_id,
   tBTA_GATTS cb_data;
   tBTA_GATTS_RCB* p_rcb;
   tGATT_IF gatt_if;
-  tGATT_TRANSPORT transport;
+  tBT_TRANSPORT transport;
 
   memset(&cb_data, 0, sizeof(tBTA_GATTS));
 
@@ -554,7 +555,7 @@ static void bta_gatts_send_request_cback(uint16_t conn_id, uint32_t trans_id,
 
     if (p_rcb && p_rcb->p_cback) {
       /* if over BR_EDR, inform PM for mode change */
-      if (transport == BTA_TRANSPORT_BR_EDR) {
+      if (transport == BT_TRANSPORT_BR_EDR) {
         bta_sys_busy(BTA_ID_GATTS, BTA_ALL_APP_ID, cb_data.req_data.remote_bda);
         bta_sys_idle(BTA_ID_GATTS, BTA_ALL_APP_ID, cb_data.req_data.remote_bda);
       }
@@ -585,7 +586,7 @@ static void bta_gatts_send_request_cback(uint16_t conn_id, uint32_t trans_id,
 static void bta_gatts_conn_cback(tGATT_IF gatt_if, const RawAddress& bdaddr,
                                  uint16_t conn_id, bool connected,
                                  tGATT_DISCONN_REASON reason,
-                                 tGATT_TRANSPORT transport) {
+                                 tBT_TRANSPORT transport) {
   tBTA_GATTS cb_data;
   uint8_t evt = connected ? BTA_GATTS_CONNECT_EVT : BTA_GATTS_DISCONNECT_EVT;
   tBTA_GATTS_RCB* p_reg;
@@ -603,7 +604,7 @@ static void bta_gatts_conn_cback(tGATT_IF gatt_if, const RawAddress& bdaddr,
 
   if (p_reg && p_reg->p_cback) {
     /* there is no RM for GATT */
-    if (transport == BTA_TRANSPORT_BR_EDR) {
+    if (transport == BT_TRANSPORT_BR_EDR) {
       if (connected)
         bta_sys_conn_open(BTA_ID_GATTS, BTA_ALL_APP_ID, bdaddr);
       else
@@ -670,7 +671,7 @@ static void bta_gatts_conn_update_cback(tGATT_IF gatt_if, uint16_t conn_id,
 static void bta_gatts_cong_cback(uint16_t conn_id, bool congested) {
   tBTA_GATTS_RCB* p_rcb;
   tGATT_IF gatt_if;
-  tGATT_TRANSPORT transport;
+  tBT_TRANSPORT transport;
   tBTA_GATTS cb_data;
 
   if (GATT_GetConnectionInfor(conn_id, &gatt_if, cb_data.req_data.remote_bda,

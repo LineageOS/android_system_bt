@@ -74,6 +74,7 @@
 #include "osi/include/properties.h"
 #include "stack/btm/btm_dev.h"
 #include "stack/btm/btm_int.h"
+#include "stack/btm/btm_sec.h"
 #include "stack_config.h"
 
 using bluetooth::Uuid;
@@ -207,7 +208,7 @@ static size_t btif_events_end_index = 0;
 static btif_dm_pairing_cb_t pairing_cb;
 static btif_dm_oob_cb_t oob_cb;
 static void btif_dm_cb_create_bond(const RawAddress bd_addr,
-                                   tBTA_TRANSPORT transport);
+                                   tBT_TRANSPORT transport);
 static void btif_update_remote_properties(const RawAddress& bd_addr,
                                           BD_NAME bd_name, DEV_CLASS dev_class,
                                           tBT_DEVICE_TYPE dev_type);
@@ -270,7 +271,6 @@ static void btif_dm_send_bond_state_changed(RawAddress address, bt_bond_state_t 
   }
 
   invoke_bond_state_changed_cb(BT_STATUS_SUCCESS, address, bond_state);
-  btif_dm_get_remote_services_by_transport(&address, BTA_TRANSPORT_UNKNOWN);
 }
 
 void btif_dm_init(uid_set_t* set) {
@@ -662,7 +662,7 @@ static void btif_update_remote_properties(const RawAddress& bdaddr,
  *
  ******************************************************************************/
 static void btif_dm_cb_create_bond(const RawAddress bd_addr,
-                                   tBTA_TRANSPORT transport) {
+                                   tBT_TRANSPORT transport) {
   bool is_hid = check_cod(&bd_addr, COD_HID_POINTING);
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
 
@@ -1073,7 +1073,7 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
           BTIF_TRACE_WARNING("%s() - Pairing timeout; retrying (%d) ...",
                              __func__, pairing_cb.timeout_retries);
           --pairing_cb.timeout_retries;
-          btif_dm_cb_create_bond(bd_addr, BTA_TRANSPORT_UNKNOWN);
+          btif_dm_cb_create_bond(bd_addr, BT_TRANSPORT_UNKNOWN);
           return;
         }
         FALLTHROUGH_INTENDED; /* FALLTHROUGH */
@@ -1106,7 +1106,7 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
           /* Create the Bond once again */
           BTIF_TRACE_WARNING("%s() auto pair failed. Reinitiate Bond",
                              __func__);
-          btif_dm_cb_create_bond(bd_addr, BTA_TRANSPORT_UNKNOWN);
+          btif_dm_cb_create_bond(bd_addr, BT_TRANSPORT_UNKNOWN);
           return;
         } else {
           /* if autopair attempts are more than 1, or not attempted */
@@ -2241,7 +2241,7 @@ void btif_dm_get_remote_services(const RawAddress remote_addr) {
   BTIF_TRACE_EVENT("%s: bd_addr=%s", __func__, remote_addr.ToString().c_str());
 
   BTA_DmDiscover(remote_addr, BTA_ALL_SERVICE_MASK, bte_dm_search_services_evt,
-                 true);
+                 BT_TRANSPORT_UNKNOWN);
 }
 
 /*******************************************************************************
@@ -2258,14 +2258,8 @@ bt_status_t btif_dm_get_remote_services_by_transport(RawAddress* remote_addr,
   BTIF_TRACE_EVENT("%s: transport=%d, remote_addr=%s", __func__, transport,
                    remote_addr->ToString().c_str());
 
-  /* Set the mask extension */
-  tBTA_SERVICE_MASK_EXT mask_ext;
-  mask_ext.num_uuid = 0;
-  mask_ext.p_uuid = NULL;
-  mask_ext.srvc_mask = BTA_ALL_SERVICE_MASK;
-
-  BTA_DmDiscoverByTransport(*remote_addr, &mask_ext, bte_dm_search_services_evt,
-                            true, transport);
+  BTA_DmDiscover(*remote_addr, BTA_ALL_SERVICE_MASK, bte_dm_search_services_evt,
+                 transport);
 
   return BT_STATUS_SUCCESS;
 }
@@ -2280,7 +2274,7 @@ bt_status_t btif_dm_get_remote_services_by_transport(RawAddress* remote_addr,
 void btif_dm_get_remote_service_record(const RawAddress remote_addr,
                                        const Uuid uuid) {
   BTIF_TRACE_EVENT("%s: bd_addr=%s", __func__, remote_addr.ToString().c_str());
-  BTA_DmDiscoverUUID(remote_addr, uuid, bte_dm_remote_service_record_evt, true);
+  BTA_DmDiscoverUUID(remote_addr, uuid, bte_dm_remote_service_record_evt);
 }
 
 void btif_dm_enable_service(tBTA_SERVICE_ID service_id, bool enable) {
@@ -2599,7 +2593,7 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
       state = BT_BOND_STATE_NONE;
     } else {
       btif_dm_save_ble_bonding_keys(bdaddr);
-      btif_dm_get_remote_services_by_transport(&bd_addr, GATT_TRANSPORT_LE);
+      btif_dm_get_remote_services_by_transport(&bd_addr, BT_TRANSPORT_LE);
     }
   } else {
     /*Map the HCI fail reason  to  bt status  */

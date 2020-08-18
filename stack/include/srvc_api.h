@@ -22,6 +22,7 @@
 #include "bt_target.h"
 #include "gatt_api.h"
 #include "gattdefs.h"
+#include "types/bt_transport.h"
 
 #define DIS_SUCCESS GATT_SUCCESS
 #define DIS_ILLEGAL_PARAM GATT_ILLEGAL_PARAMETER
@@ -102,7 +103,7 @@ typedef uint8_t tBA_LEVEL_DESCR;
 typedef struct {
   bool is_pri;
   tBA_LEVEL_DESCR ba_level_descr;
-  tGATT_TRANSPORT transport;
+  tBT_TRANSPORT transport;
   tBA_CBACK* p_cback;
 
 } tBA_REG_INFO;

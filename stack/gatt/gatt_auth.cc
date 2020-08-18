@@ -31,6 +31,7 @@
 #include "gatt_api.h"
 #include "gatt_int.h"
 #include "osi/include/osi.h"
+#include "stack/btm/btm_sec.h"
 
 using base::StringPrintf;
 

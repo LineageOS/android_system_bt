@@ -632,7 +632,7 @@ static void gatt_l2cif_connect_cfm_cback(uint16_t lcid, uint16_t result) {
     }
     /* else initiating connection failure */
     else {
-      gatt_cleanup_upon_disc(p_tcb->peer_bda, result, GATT_TRANSPORT_BR_EDR);
+      gatt_cleanup_upon_disc(p_tcb->peer_bda, result, BT_TRANSPORT_BR_EDR);
     }
   } else /* wrong state, disconnect it */
   {
@@ -745,7 +745,7 @@ void gatt_l2cif_disconnect_ind_cback(uint16_t lcid, bool ack_needed) {
   if (reason == 0) reason = GATT_CONN_TERMINATE_PEER_USER;
 
   /* send disconnect callback */
-  gatt_cleanup_upon_disc(p_tcb->peer_bda, reason, GATT_TRANSPORT_BR_EDR);
+  gatt_cleanup_upon_disc(p_tcb->peer_bda, reason, BT_TRANSPORT_BR_EDR);
 }
 
 /** This is the L2CAP disconnect confirm callback function */
@@ -768,7 +768,7 @@ static void gatt_l2cif_disconnect_cfm_cback(uint16_t lcid,
   uint16_t reason = L2CA_GetDisconnectReason(p_tcb->peer_bda, p_tcb->transport);
   if (reason == 0) reason = GATT_CONN_TERMINATE_LOCAL_HOST;
 
-  gatt_cleanup_upon_disc(p_tcb->peer_bda, reason, GATT_TRANSPORT_BR_EDR);
+  gatt_cleanup_upon_disc(p_tcb->peer_bda, reason, BT_TRANSPORT_BR_EDR);
 }
 
 /** This is the L2CAP data indication callback function */

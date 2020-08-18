@@ -32,6 +32,7 @@
 #include "bta_hf_client_int.h"
 #include "osi/include/osi.h"
 #include "port_api.h"
+#include "stack/btm/btm_sec.h"
 
 /*******************************************************************************
  *

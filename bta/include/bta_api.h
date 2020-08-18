@@ -31,6 +31,7 @@
 #include "bt_types.h"
 #include "btm_api.h"
 #include "btm_ble_api.h"
+#include "types/bt_transport.h"
 
 /*****************************************************************************
  *  Constants and data types
@@ -137,13 +138,6 @@ typedef uint8_t tBTA_SERVICE_ID;
 
 typedef uint32_t tBTA_SERVICE_MASK;
 
-/* extended service mask, including mask with one or more GATT UUID */
-typedef struct {
-  tBTA_SERVICE_MASK srvc_mask;
-  uint8_t num_uuid;
-  bluetooth::Uuid* p_uuid;
-} tBTA_SERVICE_MASK_EXT;
-
 /* Security Setting Mask */
 #define BTA_SEC_NONE BTM_SEC_NONE /* No security. */
 #define BTA_SEC_AUTHORIZE                                               \
@@ -191,11 +185,6 @@ typedef uint16_t
   BTM_BLE_CONNECTABLE /* Device is LE connectable. */
 
 typedef uint16_t tBTA_DM_CONN;
-
-#define BTA_TRANSPORT_UNKNOWN 0
-#define BTA_TRANSPORT_BR_EDR BT_TRANSPORT_BR_EDR
-#define BTA_TRANSPORT_LE BT_TRANSPORT_LE
-typedef tBT_TRANSPORT tBTA_TRANSPORT;
 
 /* Pairable Modes */
 #define BTA_DM_PAIRABLE 1
@@ -678,7 +667,7 @@ typedef void(tBTA_DM_EXEC_CBACK)(void* p_param);
 
 /* Encryption callback*/
 typedef void(tBTA_DM_ENCRYPT_CBACK)(const RawAddress& bd_addr,
-                                    tBTA_TRANSPORT transport,
+                                    tBT_TRANSPORT transport,
                                     tBTA_STATUS result);
 
 #define BTA_DM_BLE_SEC_NONE BTM_BLE_SEC_NONE
@@ -948,8 +937,7 @@ extern void BTA_DmSetDeviceName(char* p_name);
  * Returns          void
  *
  ******************************************************************************/
-extern void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode,
-                                uint8_t pairable_mode, uint8_t conn_filter);
+extern void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode);
 
 /*******************************************************************************
  *
@@ -994,7 +982,8 @@ extern void BTA_DmSearchCancel(void);
  ******************************************************************************/
 extern void BTA_DmDiscover(const RawAddress& bd_addr,
                            tBTA_SERVICE_MASK services,
-                           tBTA_DM_SEARCH_CBACK* p_cback, bool sdp_search);
+                           tBTA_DM_SEARCH_CBACK* p_cback,
+                           tBT_TRANSPORT transport);
 
 /*******************************************************************************
  *
@@ -1009,7 +998,7 @@ extern void BTA_DmDiscover(const RawAddress& bd_addr,
  ******************************************************************************/
 extern void BTA_DmDiscoverUUID(const RawAddress& bd_addr,
                                const bluetooth::Uuid& uuid,
-                               tBTA_DM_SEARCH_CBACK* p_cback, bool sdp_search);
+                               tBTA_DM_SEARCH_CBACK* p_cback);
 
 /*******************************************************************************
  *
@@ -1038,7 +1027,7 @@ tBTA_STATUS BTA_DmGetCachedRemoteName(const RawAddress& remote_device,
  *
  ******************************************************************************/
 extern void BTA_DmBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                       tBTA_TRANSPORT transport, int device_type);
+                       tBT_TRANSPORT transport, int device_type);
 
 /*******************************************************************************
  *
@@ -1184,7 +1173,7 @@ extern tBTA_STATUS BTA_DmSetLocalDiRecord(tBTA_DI_RECORD* p_device_info,
  *
  ******************************************************************************/
 extern void BTA_DmCloseACL(const RawAddress& bd_addr, bool remove_dev,
-                           tBTA_TRANSPORT transport);
+                           tBT_TRANSPORT transport);
 
 /* BLE related API functions */
 /*******************************************************************************
@@ -1297,28 +1286,6 @@ extern void BTA_DmSetBlePrefConnParams(const RawAddress& bd_addr,
 
 /*******************************************************************************
  *
- * Function         BTA_DmDiscoverByTransport
- *
- * Description      This function does service discovery on particular transport
- *                  for services of a
- *                  peer device. When services.num_uuid is 0, it indicates all
- *                  GATT based services are to be searched; other wise a list of
- *                  UUID of interested services should be provided through
- *                  p_services->p_uuid.
- *
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-extern void BTA_DmDiscoverByTransport(const RawAddress& bd_addr,
-                                      tBTA_SERVICE_MASK_EXT* p_services,
-                                      tBTA_DM_SEARCH_CBACK* p_cback,
-                                      bool sdp_search,
-                                      tBTA_TRANSPORT transport);
-
-/*******************************************************************************
- *
  * Function         BTA_DmSetEncryption
  *
  * Description      This function is called to ensure that connection is
@@ -1341,7 +1308,7 @@ extern void BTA_DmDiscoverByTransport(const RawAddress& bd_addr,
  *
  ******************************************************************************/
 extern void BTA_DmSetEncryption(const RawAddress& bd_addr,
-                                tBTA_TRANSPORT transport,
+                                tBT_TRANSPORT transport,
                                 tBTA_DM_ENCRYPT_CBACK* p_callback,
                                 tBTM_BLE_SEC_ACT sec_act);
 

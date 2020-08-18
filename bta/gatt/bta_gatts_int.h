@@ -31,6 +31,7 @@
 
 #include <base/strings/stringprintf.h>
 #include "bt_common.h"
+#include "types/bt_transport.h"
 
 /*****************************************************************************
  *  Constants and data types
@@ -95,7 +96,7 @@ typedef struct {
 
 typedef struct {
   BT_HDR hdr;
-  tGATT_TRANSPORT transport;
+  tBT_TRANSPORT transport;
 } tBTA_GATTS_API_START;
 
 typedef struct {
@@ -103,7 +104,7 @@ typedef struct {
   RawAddress remote_bda;
   tGATT_IF server_if;
   bool is_direct;
-  tGATT_TRANSPORT transport;
+  tBT_TRANSPORT transport;
 
 } tBTA_GATTS_API_OPEN;
 

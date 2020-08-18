@@ -49,7 +49,6 @@
 enum {
   /* DM search API events */
   BTA_DM_API_SEARCH_EVT = BTA_SYS_EVT_START(BTA_ID_DM_SEARCH),
-  BTA_DM_API_SEARCH_CANCEL_EVT,
   BTA_DM_API_DISCOVER_EVT,
   BTA_DM_INQUIRY_CMPL_EVT,
   BTA_DM_REMT_NAME_EVT,
@@ -61,20 +60,12 @@ enum {
 
 };
 
-enum {
-  BTA_DM_RS_NONE, /* straight API call */
-  BTA_DM_RS_OK,   /* the role switch result - successful */
-  BTA_DM_RS_FAIL  /* the role switch result - failed */
-};
-typedef uint8_t tBTA_DM_RS_RES;
-
 /* data type for BTA_DM_API_SEARCH_EVT */
 typedef struct {
   BT_HDR hdr;
   tBTA_DM_INQ inq_params;
   tBTA_SERVICE_MASK services;
   tBTA_DM_SEARCH_CBACK* p_cback;
-  tBTA_DM_RS_RES rs_res;
   uint8_t num_uuid;
   bluetooth::Uuid* p_uuid;
 } tBTA_DM_API_SEARCH;
@@ -85,8 +76,7 @@ typedef struct {
   RawAddress bd_addr;
   tBTA_SERVICE_MASK services;
   tBTA_DM_SEARCH_CBACK* p_cback;
-  bool sdp_search;
-  tBTA_TRANSPORT transport;
+  tBT_TRANSPORT transport;
   uint8_t num_uuid;
   bluetooth::Uuid* p_uuid;
   bluetooth::Uuid uuid;
@@ -349,9 +339,8 @@ typedef struct {
   bool sdp_results;
   bluetooth::Uuid uuid;
   uint8_t peer_scn;
-  bool sdp_search;
   bool cancel_pending; /* inquiry cancel is pending */
-  tBTA_TRANSPORT transport;
+  tBT_TRANSPORT transport;
   tBTA_DM_SEARCH_CBACK* p_scan_cback;
   tGATT_IF client_if;
   uint8_t num_uuid;
@@ -469,15 +458,15 @@ extern void bta_dm_enable(tBTA_DM_SEC_CBACK*);
 extern void bta_dm_disable();
 extern void bta_dm_init_cb(void);
 extern void bta_dm_set_dev_name(const std::vector<uint8_t>&);
-extern void bta_dm_set_visibility(tBTA_DM_DISC, tBTA_DM_CONN, uint8_t, uint8_t);
+extern void bta_dm_set_visibility(tBTA_DM_DISC, tBTA_DM_CONN);
 extern void bta_dm_set_scan_config(tBTA_DM_MSG* p_data);
 extern void bta_dm_vendor_spec_command(tBTA_DM_MSG* p_data);
-extern void bta_dm_bond(const RawAddress&, tBLE_ADDR_TYPE, tBTA_TRANSPORT, int);
+extern void bta_dm_bond(const RawAddress&, tBLE_ADDR_TYPE, tBT_TRANSPORT, int);
 extern void bta_dm_bond_cancel(const RawAddress&);
 extern void bta_dm_pin_reply(std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg);
 extern void bta_dm_add_device(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg);
 extern void bta_dm_remove_device(const RawAddress& bd_addr);
-extern void bta_dm_close_acl(const RawAddress&, bool, tBTA_TRANSPORT);
+extern void bta_dm_close_acl(const RawAddress&, bool, tBT_TRANSPORT);
 
 extern void bta_dm_pm_btm_status(const RawAddress&, tBTM_PM_STATUS, uint16_t,
                                  uint8_t);
@@ -506,7 +495,7 @@ extern void bta_dm_ble_set_data_length(const RawAddress&, uint16_t);
 
 extern void bta_dm_ble_get_energy_info(tBTA_BLE_ENERGY_INFO_CBACK*);
 
-extern void bta_dm_set_encryption(const RawAddress&, tBTA_TRANSPORT,
+extern void bta_dm_set_encryption(const RawAddress&, tBT_TRANSPORT,
                                   tBTA_DM_ENCRYPT_CBACK*, tBTM_BLE_SEC_ACT);
 extern void bta_dm_confirm(const RawAddress&, bool);
 
@@ -517,10 +506,10 @@ extern void bta_dm_disable_pm(void);
 
 extern uint8_t bta_dm_get_av_count(void);
 extern void bta_dm_search_start(tBTA_DM_MSG* p_data);
-extern void bta_dm_search_cancel(tBTA_DM_MSG* p_data);
+extern void bta_dm_search_cancel();
 extern void bta_dm_discover(tBTA_DM_MSG* p_data);
 extern void bta_dm_di_disc(tBTA_DM_MSG* p_data);
-extern void bta_dm_inq_cmpl(tBTA_DM_MSG* p_data);
+extern void bta_dm_inq_cmpl(uint8_t num);
 extern void bta_dm_rmt_name(tBTA_DM_MSG* p_data);
 extern void bta_dm_sdp_result(tBTA_DM_MSG* p_data);
 extern void bta_dm_search_cmpl(tBTA_DM_MSG* p_data);
@@ -530,13 +519,15 @@ extern void bta_dm_search_result(tBTA_DM_MSG* p_data);
 extern void bta_dm_discovery_cmpl(tBTA_DM_MSG* p_data);
 extern void bta_dm_queue_search(tBTA_DM_MSG* p_data);
 extern void bta_dm_queue_disc(tBTA_DM_MSG* p_data);
-extern void bta_dm_search_clear_queue(tBTA_DM_MSG* p_data);
-extern void bta_dm_search_cancel_cmpl(tBTA_DM_MSG* p_data);
-extern void bta_dm_search_cancel_notify(tBTA_DM_MSG* p_data);
-extern void bta_dm_search_cancel_transac_cmpl(tBTA_DM_MSG* p_data);
+extern void bta_dm_search_clear_queue();
+extern void bta_dm_search_cancel_cmpl();
+extern void bta_dm_search_cancel_notify();
 extern void bta_dm_disc_rmt_name(tBTA_DM_MSG* p_data);
 extern tBTA_DM_PEER_DEVICE* bta_dm_find_peer_device(
     const RawAddress& peer_addr);
+
+uint8_t bta_dm_search_get_state();
+void bta_dm_search_set_state(uint8_t state);
 
 void bta_dm_eir_update_uuid(uint16_t uuid16, bool adding);
 #endif /* BTA_DM_INT_H */

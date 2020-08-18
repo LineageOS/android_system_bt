@@ -21,6 +21,7 @@
 #include "bt_target.h"
 #include "btm_ble_api.h"
 #include "gattdefs.h"
+#include "types/bt_transport.h"
 
 /*****************************************************************************
  *  Constants
@@ -342,8 +343,8 @@ typedef union {
 /* Transports for the primary service  */
 #define GATT_TRANSPORT_LE BT_TRANSPORT_LE
 #define GATT_TRANSPORT_BR_EDR BT_TRANSPORT_BR_EDR
-#define GATT_TRANSPORT_LE_BR_EDR (BT_TRANSPORT_LE | BT_TRANSPORT_BR_EDR)
-typedef uint8_t tGATT_TRANSPORT;
+#define GATT_TRANSPORT_LE_BR_EDR (GATT_TRANSPORT_LE | GATT_TRANSPORT_BR_EDR)
+typedef uint8_t tBT_TRANSPORT;
 
 #define GATT_PREP_WRITE_CANCEL 0x00
 #define GATT_PREP_WRITE_EXEC 0x01
@@ -911,7 +912,7 @@ extern tGATT_STATUS GATTC_SendHandleValueConfirm(uint16_t conn_id,
  *
  ******************************************************************************/
 extern void GATT_SetIdleTimeout(const RawAddress& bd_addr, uint16_t idle_tout,
-                                tGATT_TRANSPORT transport);
+                                tBT_TRANSPORT transport);
 
 /*******************************************************************************
  *

@@ -31,6 +31,7 @@
 #include "bta_sys_int.h"
 #include "btm_api.h"
 #include "osi/include/osi.h"
+#include "stack/btm/btm_sec.h"
 #include "stack/include/btu.h"
 #include "utl.h"
 
@@ -66,11 +67,9 @@ void BTA_DmSetDeviceName(char* p_name) {
 /** This function sets the Bluetooth connectable, discoverable, pairable and
  * conn paired only modes of local device
  */
-void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode,
-                         uint8_t pairable_mode, uint8_t conn_paired_only) {
+void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode) {
   do_in_main_thread(FROM_HERE,
-                    base::Bind(bta_dm_set_visibility, disc_mode, conn_mode,
-                               pairable_mode, conn_paired_only));
+                    base::Bind(bta_dm_set_visibility, disc_mode, conn_mode));
 }
 
 /*******************************************************************************
@@ -94,7 +93,6 @@ void BTA_DmSearch(tBTA_DM_INQ* p_dm_inq, tBTA_SERVICE_MASK services,
   memcpy(&p_msg->inq_params, p_dm_inq, sizeof(tBTA_DM_INQ));
   p_msg->services = services;
   p_msg->p_cback = p_cback;
-  p_msg->rs_res = BTA_DM_RS_NONE;
 
   bta_sys_sendmsg(p_msg);
 }
@@ -110,10 +108,23 @@ void BTA_DmSearch(tBTA_DM_INQ* p_dm_inq, tBTA_SERVICE_MASK services,
  *
  ******************************************************************************/
 void BTA_DmSearchCancel(void) {
-  BT_HDR* p_msg = (BT_HDR*)osi_malloc(sizeof(BT_HDR));
-
-  p_msg->event = BTA_DM_API_SEARCH_CANCEL_EVT;
-  bta_sys_sendmsg(p_msg);
+  switch (bta_dm_search_get_state()) {
+    case BTA_DM_SEARCH_IDLE:
+      bta_dm_search_cancel_notify();
+      break;
+    case BTA_DM_SEARCH_ACTIVE:
+      bta_dm_search_set_state(BTA_DM_SEARCH_CANCELLING);
+      bta_dm_search_cancel();
+      break;
+    case BTA_DM_SEARCH_CANCELLING:
+      bta_dm_search_clear_queue();
+      bta_dm_search_cancel_notify();
+      break;
+    case BTA_DM_DISCOVER_ACTIVE:
+      bta_dm_search_set_state(BTA_DM_SEARCH_CANCELLING);
+      bta_dm_search_cancel_notify();
+      break;
+  }
 }
 
 /*******************************************************************************
@@ -128,15 +139,15 @@ void BTA_DmSearchCancel(void) {
  *
  ******************************************************************************/
 void BTA_DmDiscover(const RawAddress& bd_addr, tBTA_SERVICE_MASK services,
-                    tBTA_DM_SEARCH_CBACK* p_cback, bool sdp_search) {
+                    tBTA_DM_SEARCH_CBACK* p_cback, tBT_TRANSPORT transport) {
   tBTA_DM_API_DISCOVER* p_msg =
       (tBTA_DM_API_DISCOVER*)osi_calloc(sizeof(tBTA_DM_API_DISCOVER));
 
   p_msg->hdr.event = BTA_DM_API_DISCOVER_EVT;
   p_msg->bd_addr = bd_addr;
   p_msg->services = services;
+  p_msg->transport = transport;
   p_msg->p_cback = p_cback;
-  p_msg->sdp_search = sdp_search;
 
   bta_sys_sendmsg(p_msg);
 }
@@ -153,7 +164,7 @@ void BTA_DmDiscover(const RawAddress& bd_addr, tBTA_SERVICE_MASK services,
  *
  ******************************************************************************/
 void BTA_DmDiscoverUUID(const RawAddress& bd_addr, const Uuid& uuid,
-                        tBTA_DM_SEARCH_CBACK* p_cback, bool sdp_search) {
+                        tBTA_DM_SEARCH_CBACK* p_cback) {
   tBTA_DM_API_DISCOVER* p_msg =
       (tBTA_DM_API_DISCOVER*)osi_malloc(sizeof(tBTA_DM_API_DISCOVER));
 
@@ -161,7 +172,6 @@ void BTA_DmDiscoverUUID(const RawAddress& bd_addr, const Uuid& uuid,
   p_msg->bd_addr = bd_addr;
   p_msg->services = BTA_USER_SERVICE_MASK;  // Not exposed at API level
   p_msg->p_cback = p_cback;
-  p_msg->sdp_search = sdp_search;
 
   p_msg->num_uuid = 0;
   p_msg->p_uuid = NULL;
@@ -172,7 +182,7 @@ void BTA_DmDiscoverUUID(const RawAddress& bd_addr, const Uuid& uuid,
 
 /** This function initiates a bonding procedure with a peer device */
 void BTA_DmBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
-                tBTA_TRANSPORT transport, int device_type) {
+                tBT_TRANSPORT transport, int device_type) {
   do_in_main_thread(FROM_HERE, base::Bind(bta_dm_bond, bd_addr, addr_type,
                                           transport, device_type));
 }
@@ -507,68 +517,6 @@ void BTA_DmSetBlePrefConnParams(const RawAddress& bd_addr,
 
 /*******************************************************************************
  *
- * Function         bta_dm_discover_send_msg
- *
- * Description      This function send discover message to BTA task.
- *
- * Returns          void
- *
- ******************************************************************************/
-static void bta_dm_discover_send_msg(const RawAddress& bd_addr,
-                                     tBTA_SERVICE_MASK_EXT* p_services,
-                                     tBTA_DM_SEARCH_CBACK* p_cback,
-                                     bool sdp_search,
-                                     tBTA_TRANSPORT transport) {
-  const size_t len =
-      p_services
-          ? (sizeof(tBTA_DM_API_DISCOVER) + sizeof(Uuid) * p_services->num_uuid)
-          : sizeof(tBTA_DM_API_DISCOVER);
-  tBTA_DM_API_DISCOVER* p_msg = (tBTA_DM_API_DISCOVER*)osi_calloc(len);
-
-  p_msg->hdr.event = BTA_DM_API_DISCOVER_EVT;
-  p_msg->bd_addr = bd_addr;
-  p_msg->p_cback = p_cback;
-  p_msg->sdp_search = sdp_search;
-  p_msg->transport = transport;
-
-  if (p_services != NULL) {
-    p_msg->services = p_services->srvc_mask;
-    p_msg->num_uuid = p_services->num_uuid;
-    if (p_services->num_uuid != 0) {
-      p_msg->p_uuid = (Uuid*)(p_msg + 1);
-      memcpy(p_msg->p_uuid, p_services->p_uuid,
-             sizeof(Uuid) * p_services->num_uuid);
-    }
-  }
-
-  bta_sys_sendmsg(p_msg);
-}
-
-/*******************************************************************************
- *
- * Function         BTA_DmDiscoverByTransport
- *
- * Description      This function does service discovery on particular transport
- *                  for services of a
- *                  peer device. When services.num_uuid is 0, it indicates all
- *                  GATT based services are to be searched; otherwise a list of
- *                  UUID of interested services should be provided through
- *                  p_services->p_uuid.
- *
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmDiscoverByTransport(const RawAddress& bd_addr,
-                               tBTA_SERVICE_MASK_EXT* p_services,
-                               tBTA_DM_SEARCH_CBACK* p_cback, bool sdp_search,
-                               tBTA_TRANSPORT transport) {
-  bta_dm_discover_send_msg(bd_addr, p_services, p_cback, sdp_search, transport);
-}
-
-/*******************************************************************************
- *
  * Function         BTA_DmBleUpdateConnectionParam
  *
  * Description      Update connection parameters, can only be used when
@@ -659,7 +607,7 @@ void BTA_DmBleSetDataLength(const RawAddress& remote_device,
  * Returns          void
  *
  ******************************************************************************/
-void BTA_DmSetEncryption(const RawAddress& bd_addr, tBTA_TRANSPORT transport,
+void BTA_DmSetEncryption(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                          tBTA_DM_ENCRYPT_CBACK* p_callback,
                          tBTM_BLE_SEC_ACT sec_act) {
   APPL_TRACE_API("%s", __func__);
@@ -681,7 +629,7 @@ void BTA_DmSetEncryption(const RawAddress& bd_addr, tBTA_TRANSPORT transport,
  *
  ******************************************************************************/
 void BTA_DmCloseACL(const RawAddress& bd_addr, bool remove_dev,
-                    tBTA_TRANSPORT transport) {
+                    tBT_TRANSPORT transport) {
   do_in_main_thread(
       FROM_HERE, base::Bind(bta_dm_close_acl, bd_addr, remove_dev, transport));
 }

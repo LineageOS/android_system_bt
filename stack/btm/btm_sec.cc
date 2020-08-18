@@ -37,6 +37,7 @@
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
+#include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
 #include "stack/include/l2cap_security_interface.h"
 
@@ -47,10 +48,6 @@
 #include "stack/btm/btm_dev.h"
 
 #define BTM_SEC_MAX_COLLISION_DELAY (5000)
-
-#ifdef APPL_AUTH_WRITE_EXCEPTION
-bool(APPL_AUTH_WRITE_EXCEPTION)(const RawAddress& bd_addr);
-#endif
 
 extern void btm_ble_advertiser_notify_terminated_legacy(
     uint8_t status, uint16_t connection_handle);
@@ -735,9 +732,6 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
     memcpy(btm_cb.pin_code, p_pin, pin_len);
 
     btm_cb.security_mode_changed = true;
-#ifdef APPL_AUTH_WRITE_EXCEPTION
-    if (!(APPL_AUTH_WRITE_EXCEPTION)(p_dev_rec->bd_addr))
-#endif
       btsnd_hcic_write_auth_enable(true);
 
     acl_set_disconnect_reason(0xff);
@@ -2762,10 +2756,6 @@ void btm_io_capabilities_req(const RawAddress& p) {
   evt_data.oob_data = BTM_OOB_NONE;
   evt_data.auth_req = BTM_DEFAULT_AUTH_REQ;
 
-  uint8_t err_code = 0;
-  bool is_orig = true;
-  uint8_t callback_rc = BTM_SUCCESS;
-
   BTM_TRACE_EVENT("%s: State: %s", __func__,
                   btm_pair_state_descr(btm_cb.pairing_state));
  
@@ -2784,6 +2774,8 @@ void btm_io_capabilities_req(const RawAddress& p) {
                     p_dev_rec->p_cur_service->security_flags);
   }
 
+  uint8_t err_code = 0;
+  bool is_orig = true;
   switch (btm_cb.pairing_state) {
     /* initiator connecting */
     case BTM_PAIR_STATE_IDLE:
@@ -2872,7 +2864,7 @@ void btm_io_capabilities_req(const RawAddress& p) {
 
   btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_LOCAL_IOCAPS);
 
-  callback_rc = BTM_SUCCESS;
+  uint8_t callback_rc = BTM_SUCCESS;
   if (p_dev_rec->sm4 & BTM_SM4_UPGRADE) {
     p_dev_rec->sm4 &= ~BTM_SM4_UPGRADE;
 
@@ -3149,25 +3141,24 @@ void btm_simple_pair_complete(uint8_t* p) {
 
   if (status == HCI_SUCCESS) {
     p_dev_rec->sec_flags |= BTM_SEC_AUTHENTICATED;
-  } else {
-    if (status == HCI_ERR_PAIRING_NOT_ALLOWED) {
-      /* The test spec wants the peer device to get this failure code. */
-      btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_DISCONNECT);
+  } else if (status == HCI_ERR_PAIRING_NOT_ALLOWED) {
+    /* The test spec wants the peer device to get this failure code. */
+    btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_DISCONNECT);
 
-      /* Change the timer to 1 second */
-      alarm_set_on_mloop(btm_cb.pairing_timer, BT_1SEC_TIMEOUT_MS,
-                         btm_sec_pairing_timeout, NULL);
-    } else if (btm_cb.pairing_bda == bd_addr) {
-      /* stop the timer */
-      alarm_cancel(btm_cb.pairing_timer);
+    /* Change the timer to 1 second */
+    alarm_set_on_mloop(btm_cb.pairing_timer, BT_1SEC_TIMEOUT_MS,
+                       btm_sec_pairing_timeout, NULL);
+  } else if (btm_cb.pairing_bda == bd_addr) {
+    /* stop the timer */
+    alarm_cancel(btm_cb.pairing_timer);
 
-      if (p_dev_rec->sec_state != BTM_SEC_STATE_AUTHENTICATING) {
-        /* the initiating side: will receive auth complete event. disconnect ACL
-         * at that time */
-        disc = true;
-      }
-    } else
+    if (p_dev_rec->sec_state != BTM_SEC_STATE_AUTHENTICATING) {
+      /* the initiating side: will receive auth complete event. disconnect ACL
+       * at that time */
       disc = true;
+    }
+  } else {
+    disc = true;
   }
 
   if (disc) {
@@ -5210,9 +5201,6 @@ static bool btm_sec_check_prefetch_pin(tBTM_SEC_DEV_REC* p_dev_rec) {
 
     if (!btm_cb.security_mode_changed) {
       btm_cb.security_mode_changed = true;
-#ifdef APPL_AUTH_WRITE_EXCEPTION
-      if (!(APPL_AUTH_WRITE_EXCEPTION)(p_dev_rec->bd_addr))
-#endif
         btsnd_hcic_write_auth_enable(true);
     }
   } else {
@@ -5390,25 +5378,6 @@ bool btm_sec_is_a_bonded_dev(const RawAddress& bda) {
   }
   BTM_TRACE_DEBUG("%s() is_bonded=%d", __func__, is_bonded);
   return (is_bonded);
-}
-
-/*******************************************************************************
- *
- * Function         btm_sec_is_le_capable_dev
- *
- * Description       Is the specified device is dual mode or LE only device
- *
- * Returns          true - dev is a dual mode
- *
- ******************************************************************************/
-bool btm_sec_is_le_capable_dev(const RawAddress& bda) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bda);
-  bool le_capable = false;
-
-  if (p_dev_rec &&
-      (p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) == BT_DEVICE_TYPE_BLE)
-    le_capable = true;
-  return le_capable;
 }
 
 /*******************************************************************************

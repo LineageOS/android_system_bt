@@ -35,6 +35,7 @@
 #include "bta_sys.h"
 #include "device/include/controller.h"
 #include "stack/include/btu.h"
+#include "types/bt_transport.h"
 
 using bluetooth::Uuid;
 
@@ -118,7 +119,7 @@ void BTA_GATTC_AppDeregister(tGATT_IF client_if) {
  *
  ******************************************************************************/
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
-                    bool is_direct, tGATT_TRANSPORT transport,
+                    bool is_direct, tBT_TRANSPORT transport,
                     bool opportunistic) {
   uint8_t phy = controller_get_interface()->get_le_all_initiating_phys();
   BTA_GATTC_Open(client_if, remote_bda, is_direct, transport, opportunistic,
@@ -126,8 +127,8 @@ void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
 }
 
 void BTA_GATTC_Open(tGATT_IF client_if, const RawAddress& remote_bda,
-                    bool is_direct, tGATT_TRANSPORT transport,
-                    bool opportunistic, uint8_t initiating_phys) {
+                    bool is_direct, tBT_TRANSPORT transport, bool opportunistic,
+                    uint8_t initiating_phys) {
   tBTA_GATTC_API_OPEN* p_buf =
       (tBTA_GATTC_API_OPEN*)osi_malloc(sizeof(tBTA_GATTC_API_OPEN));
 

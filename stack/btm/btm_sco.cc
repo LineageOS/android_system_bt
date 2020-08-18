@@ -39,6 +39,7 @@
 #include "hcidefs.h"
 #include "hcimsgs.h"
 #include "osi/include/osi.h"
+#include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
 
 /******************************************************************************/
@@ -910,18 +911,14 @@ void BTM_RemoveSco(const RawAddress& bda) {
  * Description      This function is called by BTIF when an SCO connection
  *                  is removed.
  *
- * Returns          void
+ * Returns          true if the link is known about, else false
  *
  ******************************************************************************/
-void btm_sco_removed(uint16_t hci_handle, uint8_t reason) {
+bool btm_sco_removed(uint16_t hci_handle, uint8_t reason) {
 #if (BTM_MAX_SCO_LINKS > 0)
   tSCO_CONN* p = &btm_cb.sco_cb.sco_db[0];
   uint16_t xx;
-#endif
 
-  btm_cb.sco_cb.sco_disc_reason = reason;
-
-#if (BTM_MAX_SCO_LINKS > 0)
   p = &btm_cb.sco_cb.sco_db[0];
   for (xx = 0; xx < BTM_MAX_SCO_LINKS; xx++, p++) {
     if ((p->state != SCO_ST_UNUSED) && (p->state != SCO_ST_LISTENING) &&
@@ -932,12 +929,14 @@ void btm_sco_removed(uint16_t hci_handle, uint8_t reason) {
       p->hci_handle = HCI_INVALID_HANDLE;
       p->rem_bd_known = false;
       p->esco.p_esco_cback = NULL; /* Deregister eSCO callback */
+      btm_cb.sco_cb.sco_disc_reason = reason;
       (*p->p_disc_cb)(xx);
 
-      return;
+      return true;
     }
   }
 #endif
+  return false;
 }
 
 /*******************************************************************************

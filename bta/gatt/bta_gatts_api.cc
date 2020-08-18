@@ -32,6 +32,7 @@
 #include "bta_gatts_int.h"
 #include "bta_sys.h"
 #include "stack/include/btu.h"
+#include "types/bt_transport.h"
 
 /*****************************************************************************
  *  Constants
@@ -297,7 +298,7 @@ void BTA_GATTS_SendRsp(uint16_t conn_id, uint32_t trans_id, tGATT_STATUS status,
  *
  ******************************************************************************/
 void BTA_GATTS_Open(tGATT_IF server_if, const RawAddress& remote_bda,
-                    bool is_direct, tGATT_TRANSPORT transport) {
+                    bool is_direct, tBT_TRANSPORT transport) {
   tBTA_GATTS_API_OPEN* p_buf =
       (tBTA_GATTS_API_OPEN*)osi_malloc(sizeof(tBTA_GATTS_API_OPEN));
 

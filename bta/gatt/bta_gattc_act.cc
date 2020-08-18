@@ -283,7 +283,7 @@ void bta_gattc_process_api_open_cancel(tBTA_GATTC_DATA* p_msg) {
 
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_cif(
       p_msg->api_cancel_conn.client_if, p_msg->api_cancel_conn.remote_bda,
-      GATT_TRANSPORT_LE);
+      BT_TRANSPORT_LE);
   if (p_clcb != NULL) {
     bta_gattc_sm_execute(p_clcb, event, p_msg);
     return;
@@ -376,7 +376,7 @@ void bta_gattc_init_bk_conn(tBTA_GATTC_API_OPEN* p_data,
                             tBTA_GATTC_RCB* p_clreg) {
   if (!bta_gattc_mark_bg_conn(p_data->client_if, p_data->remote_bda, true)) {
     bta_gattc_send_open_cback(p_clreg, GATT_NO_RESOURCES, p_data->remote_bda,
-                              GATT_INVALID_CONN_ID, GATT_TRANSPORT_LE, 0);
+                              GATT_INVALID_CONN_ID, BT_TRANSPORT_LE, 0);
     return;
   }
 
@@ -386,7 +386,7 @@ void bta_gattc_init_bk_conn(tBTA_GATTC_API_OPEN* p_data,
     LOG(ERROR) << __func__
                << " unable to connect to remote bd_addr=" << p_data->remote_bda;
     bta_gattc_send_open_cback(p_clreg, GATT_ERROR, p_data->remote_bda,
-                              GATT_INVALID_CONN_ID, GATT_TRANSPORT_LE, 0);
+                              GATT_INVALID_CONN_ID, BT_TRANSPORT_LE, 0);
     return;
   }
 
@@ -398,7 +398,7 @@ void bta_gattc_init_bk_conn(tBTA_GATTC_API_OPEN* p_data,
   }
 
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_alloc_clcb(
-      p_data->client_if, p_data->remote_bda, GATT_TRANSPORT_LE);
+      p_data->client_if, p_data->remote_bda, BT_TRANSPORT_LE);
   if (!p_clcb) return;
 
   tBTA_GATTC_DATA gattc_data;
@@ -500,7 +500,7 @@ void bta_gattc_conn(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
 
   if (p_clcb->p_rcb) {
     /* there is no RM for GATT */
-    if (p_clcb->transport == BTA_TRANSPORT_BR_EDR)
+    if (p_clcb->transport == BT_TRANSPORT_BR_EDR)
       bta_sys_conn_open(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
 
     bta_gattc_send_open_cback(p_clcb->p_rcb, GATT_SUCCESS, p_clcb->bda,
@@ -542,7 +542,7 @@ void bta_gattc_close(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
   cb_data.close.status = p_clcb->status;
   cb_data.close.remote_bda = p_clcb->bda;
 
-  if (p_clcb->transport == BTA_TRANSPORT_BR_EDR)
+  if (p_clcb->transport == BT_TRANSPORT_BR_EDR)
     bta_sys_conn_close(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
 
   bta_gattc_clcb_dealloc(p_clcb);
@@ -649,7 +649,7 @@ void bta_gattc_start_discover(tBTA_GATTC_CLCB* p_clcb,
       p_clcb->p_srcb->update_count = 0;
       p_clcb->p_srcb->state = BTA_GATTC_SERV_DISC_ACT;
 
-      if (p_clcb->transport == BTA_TRANSPORT_LE)
+      if (p_clcb->transport == BT_TRANSPORT_LE)
         L2CA_EnableUpdateBleConnParams(p_clcb->p_srcb->server_bda, false);
 
       /* set all srcb related clcb into discovery ST */
@@ -683,7 +683,7 @@ void bta_gattc_disc_cmpl(tBTA_GATTC_CLCB* p_clcb,
 
   VLOG(1) << __func__ << ": conn_id=" << loghex(p_clcb->bta_conn_id);
 
-  if (p_clcb->transport == BTA_TRANSPORT_LE)
+  if (p_clcb->transport == BT_TRANSPORT_LE)
     L2CA_EnableUpdateBleConnParams(p_clcb->p_srcb->server_bda, true);
   p_clcb->p_srcb->state = BTA_GATTC_SERV_IDLE;
   p_clcb->disc_active = false;
@@ -837,7 +837,7 @@ void bta_gattc_confirm(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
     LOG(ERROR) << __func__ << ": to handle=" << loghex(handle) << " failed";
   } else {
     /* if over BR_EDR, inform PM for mode change */
-    if (p_clcb->transport == BTA_TRANSPORT_BR_EDR) {
+    if (p_clcb->transport == BT_TRANSPORT_BR_EDR) {
       bta_sys_busy(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
       bta_sys_idle(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
     }
@@ -1066,7 +1066,7 @@ static void bta_gattc_conn_cback(tGATT_IF gattc_if, const RawAddress& bdaddr,
 /** encryption complete callback function to GATT client stack */
 static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, const RawAddress& bda) {
   tBTA_GATTC_CLCB* p_clcb =
-      bta_gattc_find_clcb_by_cif(gattc_if, bda, GATT_TRANSPORT_LE);
+      bta_gattc_find_clcb_by_cif(gattc_if, bda, BT_TRANSPORT_LE);
 
   if (p_clcb == NULL) return;
 
@@ -1216,7 +1216,7 @@ void bta_gattc_process_indicate(uint16_t conn_id, tGATTC_OPTYPE op,
   tBTA_GATTC_NOTIFY notify;
   RawAddress remote_bda;
   tGATT_IF gatt_if;
-  tBTA_TRANSPORT transport;
+  tBT_TRANSPORT transport;
 
   if (!GATT_GetConnectionInfor(conn_id, &gatt_if, remote_bda, &transport)) {
     LOG(ERROR) << __func__ << ": indication/notif for unknown app";
@@ -1298,7 +1298,7 @@ static void bta_gattc_cmpl_cback(uint16_t conn_id, tGATTC_OPTYPE op,
   }
 
   /* if over BR_EDR, inform PM for mode change */
-  if (p_clcb->transport == BTA_TRANSPORT_BR_EDR) {
+  if (p_clcb->transport == BT_TRANSPORT_BR_EDR) {
     bta_sys_busy(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
     bta_sys_idle(BTA_ID_GATTC, BTA_ALL_APP_ID, p_clcb->bda);
   }
