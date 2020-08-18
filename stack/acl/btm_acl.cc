@@ -386,10 +386,6 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
       BTM_TRACE_DEBUG("btm_pm_sm_alloc ind:%d st:%d", xx, p_db->state);
 #endif  // BTM_PM_DEBUG
 
-      if (dc) memcpy(p->remote_dc, dc, DEV_CLASS_LEN);
-
-      if (bdn) memcpy(p->remote_name, bdn, BTM_MAX_REM_BD_NAME_LEN);
-
       /* if BR/EDR do something more */
       if (transport == BT_TRANSPORT_BR_EDR) {
         btsnd_hcic_read_rmt_clk_offset(p->hci_handle);

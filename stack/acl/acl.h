@@ -39,8 +39,6 @@ typedef struct {
 typedef struct {
   BD_FEATURES peer_le_features;
   BD_FEATURES peer_lmp_feature_pages[HCI_EXT_FEATURES_PAGE_MAX + 1];
-  BD_NAME remote_name;
-  DEV_CLASS remote_dc;
   RawAddress active_remote_addr;
   RawAddress conn_addr;
   RawAddress remote_addr;
