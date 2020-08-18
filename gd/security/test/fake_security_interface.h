@@ -31,6 +31,9 @@ class FakeLinkSecurityInterface : public l2cap::classic::LinkSecurityInterface {
   }
   void Hold() override {}
   void EnsureAuthenticated() override{};
+
+  void EnsureEncrypted() override {}
+
   void Release() override {
     // TODO(optedoblivion): Simulate the delay
     listener_->OnLinkDisconnected(address_);
