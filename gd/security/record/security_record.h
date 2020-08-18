@@ -96,6 +96,14 @@ class SecurityRecord {
     return this->is_encryption_required_;
   }
 
+  void SetIsEncrypted(bool is_encrypted) {
+    this->is_encrypted_ = is_encrypted;
+  }
+
+  bool IsEncrypted() {
+    return this->is_encrypted_;
+  }
+
   bool IsClassicLinkKeyValid() const {
     return !std::all_of(link_key_.begin(), link_key_.end(), [](uint8_t b) { return b == 0; });
   }
@@ -118,6 +126,7 @@ class SecurityRecord {
   bool is_authenticated_ = false;
   bool requires_mitm_protection_ = false;
   bool is_encryption_required_ = false;
+  bool is_encrypted_ = false;
 
  public:
   /* First address we have ever seen this device with, that we used to create bond */

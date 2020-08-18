@@ -332,6 +332,17 @@ void SecurityManagerImpl::OnConnectionClosed(hci::Address address) {
   }
 }
 
+void SecurityManagerImpl::OnEncryptionChange(hci::Address address, bool encrypted) {
+  auto remote = hci::AddressWithType(address, hci::AddressType::PUBLIC_DEVICE_ADDRESS);
+  auto record = security_database_.FindOrCreate(remote);
+  record->SetIsEncrypted(encrypted);
+  auto cb_entry = enforce_security_policy_callback_map_.find(remote);
+  if (cb_entry != enforce_security_policy_callback_map_.end()) {
+    this->InternalEnforceSecurityPolicy(remote, cb_entry->second.first, std::move(cb_entry->second.second), false);
+    enforce_security_policy_callback_map_.erase(cb_entry);
+  }
+}
+
 void SecurityManagerImpl::OnHciLeEvent(hci::LeMetaEventView event) {
   // hci::SubeventCode::LONG_TERM_KEY_REQUEST,
   // hci::SubeventCode::READ_LOCAL_P256_PUBLIC_KEY_COMPLETE,
@@ -713,11 +724,11 @@ void SecurityManagerImpl::InternalEnforceSecurityPolicy(
   switch (policy) {
     case l2cap::classic::SecurityPolicy::BEST:
     case l2cap::classic::SecurityPolicy::AUTHENTICATED_ENCRYPTED_TRANSPORT:
-      result = record->IsAuthenticated() && record->RequiresMitmProtection() && record->IsEncryptionRequired();
+      result = record->IsAuthenticated() && record->RequiresMitmProtection() && record->IsEncrypted();
       authentication_requirements = hci::AuthenticationRequirements::GENERAL_BONDING_MITM_PROTECTION;
       break;
     case l2cap::classic::SecurityPolicy::ENCRYPTED_TRANSPORT:
-      result = record->IsAuthenticated() && record->IsEncryptionRequired();
+      result = record->IsEncrypted();
       authentication_requirements = hci::AuthenticationRequirements::NO_BONDING;
       break;
     case l2cap::classic::SecurityPolicy::_SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK:
