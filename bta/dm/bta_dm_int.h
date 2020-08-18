@@ -61,7 +61,7 @@ enum {
 /* data type for BTA_DM_API_SEARCH_EVT */
 typedef struct {
   BT_HDR hdr;
-  tBTA_DM_INQ inq_params;
+  tBTM_INQ_PARMS inq_params;
   tBTA_SERVICE_MASK services;
   tBTA_DM_SEARCH_CBACK* p_cback;
 } tBTA_DM_API_SEARCH;
