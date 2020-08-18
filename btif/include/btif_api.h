@@ -304,19 +304,7 @@ bt_status_t btif_dm_get_adapter_property(bt_property_t* prop);
  * Returns          bt_status_t
  *
  ******************************************************************************/
-void btif_dm_get_remote_services(const RawAddress remote_addr);
-
-/*******************************************************************************
- *
- * Function         btif_dm_get_remote_services_by_transport
- *
- * Description      Start SDP to get remote services by transport
- *
- * Returns          bt_status_t
- *
- ******************************************************************************/
-bt_status_t btif_dm_get_remote_services_by_transport(RawAddress* remote_addr,
-                                                     int transport);
+void btif_dm_get_remote_services(const RawAddress remote_addr, int transport);
 
 /*******************************************************************************
  *
