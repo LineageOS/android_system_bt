@@ -533,22 +533,17 @@ uint16_t BTM_IsInquiryActive(void) {
  *
  * Description      This function cancels an inquiry if active
  *
- * Returns          BTM_SUCCESS if successful
- *                  BTM_NO_RESOURCES if could not allocate a message buffer
- *                  BTM_WRONG_MODE if the device is not up.
- *
  ******************************************************************************/
-tBTM_STATUS BTM_CancelInquiry(void) {
+void BTM_CancelInquiry(void) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_CancelInquiry();
+    bluetooth::shim::BTM_CancelInquiry();
+    return;
   }
 
-  tBTM_STATUS status = BTM_SUCCESS;
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
   BTM_TRACE_API("BTM_CancelInquiry called");
 
-  /*** Make sure the device is ready ***/
-  if (!BTM_IsDeviceUp()) return (BTM_WRONG_MODE);
+  CHECK(BTM_IsDeviceUp());
 
   /* Only cancel if not in periodic mode, otherwise the caller should call
    * BTM_CancelPeriodicMode */
@@ -578,8 +573,6 @@ tBTM_STATUS BTM_CancelInquiry(void) {
     p_inq->inq_counter++;
     btm_clr_inq_result_flt();
   }
-
-  return (status);
 }
 
 /*******************************************************************************
