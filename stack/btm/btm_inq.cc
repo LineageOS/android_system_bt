@@ -1194,30 +1194,8 @@ tINQ_DB_ENT* btm_inq_db_new(const RawAddress& p_bda) {
  *
  ******************************************************************************/
 static void btm_set_inq_event_filter() {
-  uint8_t condition_length = 0;
-  uint8_t condition_buf[DEV_CLASS_LEN * 2];
-  uint8_t* p_cond = condition_buf; /* points to the condition to pass to HCI */
-
   btm_cb.btm_inq_vars.inqfilt_active = true;
 
-  /* Filter the inquiry results for the specified condition type and value */
-  btsnd_hcic_set_event_filter(HCI_FILTER_INQUIRY_RESULT, BTM_CLR_INQUIRY_FILTER,
-                              p_cond, condition_length);
-}
-
-/*******************************************************************************
- *
- * Function         btm_event_filter_complete
- *
- * Description      This function is called when a set event filter has
- *                  completed.
- *                  Note: This routine currently only handles inquiry filters.
- *                      Connection filters are ignored for now.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_event_filter_complete(uint8_t* p) {
   uint8_t hci_status;
   tBTM_STATUS status;
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
@@ -1240,7 +1218,7 @@ void btm_event_filter_complete(uint8_t* p) {
      is used by the upper layers */
   if (p_inq->inqfilt_active) {
     /* Extract the returned status from the buffer */
-    STREAM_TO_UINT8(hci_status, p);
+    hci_status = HCI_SUCCESS;
     if (hci_status != HCI_SUCCESS) {
       /* If standalone operation, return the error status; if embedded in the
        * inquiry, continue the inquiry */

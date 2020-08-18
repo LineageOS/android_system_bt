@@ -1237,7 +1237,6 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p,
       btm_process_cancel_complete(HCI_SUCCESS, BTM_BR_INQUIRY_MASK);
       break;
     case HCI_SET_EVENT_FILTER:
-      btm_event_filter_complete(p);
       break;
 
     case HCI_DELETE_STORED_LINK_KEY:
