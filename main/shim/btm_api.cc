@@ -593,7 +593,7 @@ uint16_t bluetooth::shim::BTM_IsInquiryActive(void) {
   return BTM_INQUIRY_INACTIVE;
 }
 
-tBTM_STATUS bluetooth::shim::BTM_CancelInquiry(void) {
+void bluetooth::shim::BTM_CancelInquiry(void) {
   LOG_DEBUG("%s Cancel inquiry", __func__);
   Stack::GetInstance()->GetBtm()->CancelInquiry();
 
@@ -635,7 +635,6 @@ tBTM_STATUS bluetooth::shim::BTM_CancelInquiry(void) {
       btm_cb.btm_inq_vars.scan_type == INQ_GENERAL) {
     btm_cb.btm_inq_vars.scan_type = INQ_NONE;
   }
-  return BTM_SUCCESS;
 }
 
 tBTM_STATUS bluetooth::shim::BTM_ReadRemoteDeviceName(

@@ -824,16 +824,12 @@ void bta_dm_search_cancel() {
   tBTA_DM_MSG* p_msg;
 
   if (BTM_IsInquiryActive()) {
-    if (BTM_CancelInquiry() == BTM_SUCCESS) {
-      bta_dm_search_cancel_notify();
-      p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
-      p_msg->hdr.event = BTA_DM_SEARCH_CMPL_EVT;
-      p_msg->hdr.layer_specific = BTA_DM_API_DISCOVER_EVT;
-      bta_sys_sendmsg(p_msg);
-    } else {
-      /* flag a search cancel is pending */
-      bta_dm_search_cb.cancel_pending = true;
-    }
+    BTM_CancelInquiry();
+    bta_dm_search_cancel_notify();
+    p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
+    p_msg->hdr.event = BTA_DM_SEARCH_CMPL_EVT;
+    p_msg->hdr.layer_specific = BTA_DM_API_DISCOVER_EVT;
+    bta_sys_sendmsg(p_msg);
   }
   /* If no Service Search going on then issue cancel remote name in case it is
      active */
