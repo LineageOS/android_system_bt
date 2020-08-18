@@ -340,12 +340,6 @@ typedef union {
 
 } tGATTS_RSP;
 
-/* Transports for the primary service  */
-#define GATT_TRANSPORT_LE BT_TRANSPORT_LE
-#define GATT_TRANSPORT_BR_EDR BT_TRANSPORT_BR_EDR
-#define GATT_TRANSPORT_LE_BR_EDR (GATT_TRANSPORT_LE | GATT_TRANSPORT_BR_EDR)
-typedef uint8_t tBT_TRANSPORT;
-
 #define GATT_PREP_WRITE_CANCEL 0x00
 #define GATT_PREP_WRITE_EXEC 0x01
 typedef uint8_t tGATT_EXEC_FLAG;
