@@ -1833,7 +1833,6 @@ static void bte_scan_filt_param_cfg_evt(uint8_t ref_value, uint8_t avbl_space,
  ******************************************************************************/
 void btif_dm_start_discovery(void) {
   tBTA_DM_INQ inq_params;
-  tBTA_SERVICE_MASK services = 0;
 
   BTIF_TRACE_EVENT("%s", __func__);
 
@@ -1868,7 +1867,7 @@ void btif_dm_start_discovery(void) {
   /* Will be enabled to true once inquiry busy level has been received */
   btif_dm_inquiry_in_progress = false;
   /* find nearby devices */
-  BTA_DmSearch(&inq_params, services, btif_dm_search_devices_evt);
+  BTA_DmSearch(&inq_params, btif_dm_search_devices_evt);
 }
 
 /*******************************************************************************
