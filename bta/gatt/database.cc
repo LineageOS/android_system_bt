@@ -18,6 +18,7 @@
 
 #include "database.h"
 #include "bt_trace.h"
+#include "stack/crypto_toolbox/crypto_toolbox.h"
 #include "stack/include/gattdefs.h"
 
 #include <base/logging.h>
@@ -39,6 +40,11 @@ bool HandleInRange(const Service& svc, uint16_t handle) {
   return handle >= svc.handle && handle <= svc.end_handle;
 }
 }  // namespace
+
+static size_t UuidSize(const Uuid& uuid) {
+  size_t len = uuid.GetShortestRepresentationSize();
+  return (len == Uuid::kNumBytes32) ? Uuid::kNumBytes128 : len;
+}
 
 Service* FindService(std::list<Service>& services, uint16_t handle) {
   for (Service& service : services) {
@@ -185,4 +191,99 @@ Database Database::Deserialize(const std::vector<StoredAttribute>& nv_attr,
   return result;
 }
 
+Octet16 Database::Hash() const {
+  int len = 0;
+  // Compute how much space we need to actually hold the data.
+  for (const Service& service : services) {
+    len += 4 + UuidSize(service.uuid);
+
+    for (const auto& is : service.included_services) {
+      len += 8 + UuidSize(is.uuid);
+    }
+
+    for (const Characteristic& c : service.characteristics) {
+      len += 7 + UuidSize(c.uuid);
+
+      for (const Descriptor& d : c.descriptors) {
+        if (UuidSize(d.uuid) != Uuid::kNumBytes16) {
+          continue;
+        }
+        uint16_t value = d.uuid.As16Bit();
+        if (value == GATT_UUID_CHAR_DESCRIPTION ||
+            value == GATT_UUID_CHAR_CLIENT_CONFIG ||
+            value == GATT_UUID_CHAR_SRVR_CONFIG ||
+            value == GATT_UUID_CHAR_PRESENT_FORMAT ||
+            value == GATT_UUID_CHAR_AGG_FORMAT) {
+          len += 2 + UuidSize(d.uuid);
+        } else if (value == GATT_UUID_CHAR_EXT_PROP) {
+          len += 4 + UuidSize(d.uuid);
+        }
+      }
+    }
+  }
+
+  std::vector<uint8_t> serialized(len);
+  uint8_t* p = serialized.data();
+  for (const Service& service : services) {
+    UINT16_TO_STREAM(p, service.handle);
+    if (service.is_primary) {
+      UINT16_TO_STREAM(p, GATT_UUID_PRI_SERVICE);
+    } else {
+      UINT16_TO_STREAM(p, GATT_UUID_SEC_SERVICE);
+    }
+
+    if (UuidSize(service.uuid) == Uuid::kNumBytes16) {
+      UINT16_TO_STREAM(p, service.uuid.As16Bit());
+    } else {
+      ARRAY_TO_STREAM(p, service.uuid.To128BitLE(), (int)Uuid::kNumBytes128);
+    }
+
+    for (const auto& is : service.included_services) {
+      UINT16_TO_STREAM(p, is.handle);
+      UINT16_TO_STREAM(p, GATT_UUID_INCLUDE_SERVICE);
+      UINT16_TO_STREAM(p, is.start_handle);
+      UINT16_TO_STREAM(p, is.end_handle);
+
+      if (UuidSize(is.uuid) == Uuid::kNumBytes16) {
+        UINT16_TO_STREAM(p, is.uuid.As16Bit());
+      } else {
+        ARRAY_TO_STREAM(p, is.uuid.To128BitLE(), (int)Uuid::kNumBytes128);
+      }
+    }
+
+    for (const Characteristic& c : service.characteristics) {
+      UINT16_TO_STREAM(p, c.declaration_handle);
+      UINT16_TO_STREAM(p, GATT_UUID_CHAR_DECLARE);
+      UINT8_TO_STREAM(p, c.properties);
+      UINT16_TO_STREAM(p, c.value_handle);
+
+      if (UuidSize(c.uuid) == Uuid::kNumBytes16) {
+        UINT16_TO_STREAM(p, c.uuid.As16Bit());
+      } else {
+        ARRAY_TO_STREAM(p, c.uuid.To128BitLE(), (int)Uuid::kNumBytes128);
+      }
+
+      for (const Descriptor& d : c.descriptors) {
+        if (UuidSize(d.uuid) != Uuid::kNumBytes16) continue;
+        uint16_t value = d.uuid.As16Bit();
+        if (value == GATT_UUID_CHAR_DESCRIPTION ||
+            value == GATT_UUID_CHAR_CLIENT_CONFIG ||
+            value == GATT_UUID_CHAR_SRVR_CONFIG ||
+            value == GATT_UUID_CHAR_PRESENT_FORMAT ||
+            value == GATT_UUID_CHAR_AGG_FORMAT) {
+          UINT16_TO_STREAM(p, d.handle);
+          UINT16_TO_STREAM(p, d.uuid.As16Bit());
+        } else if (value == GATT_UUID_CHAR_EXT_PROP) {
+          UINT16_TO_STREAM(p, d.handle);
+          UINT16_TO_STREAM(p, d.uuid.As16Bit());
+          UINT16_TO_STREAM(p, 0x0000);  // STORE!!!!! USE PROPER VALUE !!!
+        }
+      }
+    }
+  }
+
+  std::reverse(serialized.begin(), serialized.end());
+  return crypto_toolbox::aes_cmac(Octet16{0}, serialized.data(),
+                                  serialized.size());
+}
 }  // namespace gatt
