@@ -906,7 +906,6 @@ extern void BTA_DmSearchCancel(void);
  *
  ******************************************************************************/
 extern void BTA_DmDiscover(const RawAddress& bd_addr,
-                           tBTA_SERVICE_MASK services,
                            tBTA_DM_SEARCH_CBACK* p_cback,
                            tBT_TRANSPORT transport);
 

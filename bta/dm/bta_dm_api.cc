@@ -135,14 +135,14 @@ void BTA_DmSearchCancel(void) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_DmDiscover(const RawAddress& bd_addr, tBTA_SERVICE_MASK services,
-                    tBTA_DM_SEARCH_CBACK* p_cback, tBT_TRANSPORT transport) {
+void BTA_DmDiscover(const RawAddress& bd_addr, tBTA_DM_SEARCH_CBACK* p_cback,
+                    tBT_TRANSPORT transport) {
   tBTA_DM_API_DISCOVER* p_msg =
       (tBTA_DM_API_DISCOVER*)osi_calloc(sizeof(tBTA_DM_API_DISCOVER));
 
   p_msg->hdr.event = BTA_DM_API_DISCOVER_EVT;
   p_msg->bd_addr = bd_addr;
-  p_msg->services = services;
+  p_msg->services = BTA_ALL_SERVICE_MASK;
   p_msg->transport = transport;
   p_msg->p_cback = p_cback;
 
