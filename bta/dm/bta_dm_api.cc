@@ -84,14 +84,12 @@ void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_DmSearch(tBTA_DM_INQ* p_dm_inq, tBTA_SERVICE_MASK services,
-                  tBTA_DM_SEARCH_CBACK* p_cback) {
+void BTA_DmSearch(tBTA_DM_INQ* p_dm_inq, tBTA_DM_SEARCH_CBACK* p_cback) {
   tBTA_DM_API_SEARCH* p_msg =
       (tBTA_DM_API_SEARCH*)osi_calloc(sizeof(tBTA_DM_API_SEARCH));
 
   p_msg->hdr.event = BTA_DM_API_SEARCH_EVT;
   memcpy(&p_msg->inq_params, p_dm_inq, sizeof(tBTA_DM_INQ));
-  p_msg->services = services;
   p_msg->p_cback = p_cback;
 
   bta_sys_sendmsg(p_msg);
