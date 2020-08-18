@@ -66,8 +66,6 @@ typedef struct {
   tBTA_DM_INQ inq_params;
   tBTA_SERVICE_MASK services;
   tBTA_DM_SEARCH_CBACK* p_cback;
-  uint8_t num_uuid;
-  bluetooth::Uuid* p_uuid;
 } tBTA_DM_API_SEARCH;
 
 /* data type for BTA_DM_API_DISCOVER_EVT */
