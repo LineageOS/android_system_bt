@@ -24,6 +24,10 @@
 namespace bluetooth {
 namespace security {
 
+void FacadeConfigurationApi::SetDisconnectCallback(internal::SecurityManagerImpl::FacadeDisconnectCallback callback) {
+  security_handler_->CallOn(security_manager_impl_, &internal::SecurityManagerImpl::SetDisconnectCallback, callback);
+}
+
 void FacadeConfigurationApi::SetIoCapability(hci::IoCapability io_capability) {
   security_handler_->CallOn(security_manager_impl_, &internal::SecurityManagerImpl::SetIoCapability, io_capability);
 }
