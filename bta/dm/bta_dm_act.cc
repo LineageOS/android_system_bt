@@ -1608,10 +1608,6 @@ static void bta_dm_discover_device(const RawAddress& remote_bd_addr) {
         if (bta_dm_search_cb.services_to_search & BTA_BLE_SERVICE_MASK) {
           // set the raw data buffer here
           memset(g_disc_raw_data_buf, 0, sizeof(g_disc_raw_data_buf));
-
-          bta_dm_search_cb.ble_raw_size = MAX_DISC_RAW_DATA_BUF;
-          bta_dm_search_cb.ble_raw_used = 0;
-
           /* start GATT for service discovery */
           btm_dm_start_gatt_discovery(bta_dm_search_cb.peer_bdaddr);
           return;
@@ -3543,18 +3539,6 @@ static void bta_dm_gatt_disc_result(tBTA_GATT_ID service_id) {
    * bluetooth profiles here
    * just copy the GATTID in raw data field and send it across.
    */
-
-  if (bta_dm_search_cb.ble_raw_used + sizeof(tBTA_GATT_ID) <
-      bta_dm_search_cb.ble_raw_size) {
-    APPL_TRACE_DEBUG("ADDING BLE SERVICE uuid=%s, ble_raw_used = 0x%x",
-                     service_id.uuid.ToString().c_str(),
-                     bta_dm_search_cb.ble_raw_used);
-  } else {
-    APPL_TRACE_ERROR(
-        "%s out of room to accomodate more service ids ble_raw_size = %d "
-        "ble_raw_used = %d",
-        __func__, bta_dm_search_cb.ble_raw_size, bta_dm_search_cb.ble_raw_used);
-  }
 
   LOG_INFO("%s service_id_uuid_len=%zu", __func__,
            service_id.uuid.GetShortestRepresentationSize());

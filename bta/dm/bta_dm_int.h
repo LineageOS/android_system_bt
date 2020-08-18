@@ -326,8 +326,6 @@ typedef struct {
   uint8_t uuid_to_search;
   bool gatt_disc_active;
   uint16_t conn_id;
-  uint32_t ble_raw_size;
-  uint32_t ble_raw_used;
   alarm_t* gatt_close_timer; /* GATT channel close delay timer */
   RawAddress pending_close_bda; /* pending GATT channel remote device address */
 
