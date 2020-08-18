@@ -4,6 +4,15 @@ crypto_toolbox_srcs = [
     "crypto_toolbox/crypto_toolbox.cc",
 ]
 
+cc_test_library {
+    name: "crypto_toolbox_for_tests",
+    defaults: ["fluoride_defaults"],
+    include_dirs: [
+        "system/bt",
+    ],
+    srcs: crypto_toolbox_srcs
+}
+
 // Bluetooth stack static library for target
 // ========================================================
 cc_library_static {
