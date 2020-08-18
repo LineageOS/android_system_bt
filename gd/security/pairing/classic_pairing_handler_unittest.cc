@@ -59,6 +59,14 @@ class FakeSecurityManagerChannel : public channel::SecurityManagerChannel {
   void OnLinkDisconnected(hci::Address address) override {
     LOG_ERROR("CALLED");
   }
+
+  void OnEncryptionChange(hci::Address address, bool encrypted) override {
+    LOG_ERROR("CALLED");
+  }
+
+  void OnAuthenticationComplete(hci::Address remote) override {
+    LOG_ERROR("CALLED");
+  }
 };
 
 class SecurityManagerChannelCallback : public ISecurityManagerChannelListener {
@@ -115,6 +123,8 @@ class SecurityManagerChannelCallback : public ISecurityManagerChannelListener {
   void OnConnectionClosed(hci::Address address) override {
     LOG_DEBUG("Called");
   }
+
+  void OnEncryptionChange(hci::Address address, bool encrypted) override {}
 
  private:
   pairing::ClassicPairingHandler* pairing_handler_ = nullptr;
