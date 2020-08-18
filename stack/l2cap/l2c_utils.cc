@@ -2039,54 +2039,47 @@ bool l2cu_create_conn_le(tL2C_LCB* p_lcb, uint8_t initiating_phys) {
   return (l2cble_create_conn(p_lcb));
 }
 
-/* This function initiates an acl connection to a Classic device via HCI.
- * Returns true on success, false otherwise. */
+/* This function initiates an acl connection to a Classic device via HCI. */
 void l2cu_create_conn_br_edr(tL2C_LCB* p_lcb) {
-  int xx;
+  const bool controller_supports_role_switch =
+      controller_get_interface()->supports_role_switch();
+
+  /* While creating a new classic connection, check check all the other
+   * active connections where we are not SCO nor master.
+   * If our controller supports role switching, try switching
+   * roles back to MASTER on those connections.
+   */
   tL2C_LCB* p_lcb_cur = &l2cb.lcb_pool[0];
-  bool is_sco_active;
-  const controller_t* controller = controller_get_interface();
-
-  /* If there is a connection where we perform as a slave, try to switch roles
-     for this connection */
-  for (xx = 0, p_lcb_cur = &l2cb.lcb_pool[0]; xx < MAX_L2CAP_LINKS;
-       xx++, p_lcb_cur++) {
+  for (uint8_t xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb_cur++) {
     if (p_lcb_cur == p_lcb) continue;
+    if (!p_lcb_cur->in_use) continue;
+    if (BTM_IsScoActiveByBdaddr(p_lcb_cur->remote_bd_addr)) {
+      L2CAP_TRACE_DEBUG("%s Master slave switch not allowed when SCO active",
+                        __func__);
+      continue;
+    }
+    if (p_lcb->IsLinkRoleMaster()) continue;
+    /* The LMP_switch_req shall be sent only if the ACL logical transport
+       is in active mode, when encryption is disabled, and all synchronous
+       logical transports on the same physical link are disabled." */
 
-    if ((p_lcb_cur->in_use) && (p_lcb_cur->IsLinkRoleSlave())) {
-      /* The LMP_switch_req shall be sent only if the ACL logical transport
-      is in active mode, when encryption is disabled, and all synchronous
-      logical transports on the same physical link are disabled." */
+    /*4_1_TODO check  if btm_cb.devcb.local_features to be used instead */
+    if (controller_supports_role_switch) {
+      /* mark this lcb waiting for switch to be completed and
+         start switch on the other one */
+      p_lcb->link_state = LST_CONNECTING_WAIT_SWITCH;
+      p_lcb->SetLinkRoleAsMaster();
 
-      /* Check if there is any SCO Active on this BD Address */
-      is_sco_active = BTM_IsScoActiveByBdaddr(p_lcb_cur->remote_bd_addr);
-
-      L2CAP_TRACE_API(
-          "l2cu_create_conn - BTM_IsScoActiveByBdaddr() is_sco_active = %s",
-          (is_sco_active) ? "true" : "false");
-
-      if (is_sco_active)
-        continue; /* No Master Slave switch not allowed when SCO Active */
-      /*4_1_TODO check  if btm_cb.devcb.local_features to be used instead */
-      if (controller->supports_role_switch()) {
-        /* mark this lcb waiting for switch to be completed and
-           start switch on the other one */
-        p_lcb->link_state = LST_CONNECTING_WAIT_SWITCH;
-        p_lcb->SetLinkRoleAsMaster();
-
-        if (BTM_SwitchRole(p_lcb_cur->remote_bd_addr, HCI_ROLE_MASTER) ==
-            BTM_CMD_STARTED) {
-          alarm_set_on_mloop(p_lcb->l2c_lcb_timer,
-                             L2CAP_LINK_ROLE_SWITCH_TIMEOUT_MS,
-                             l2c_lcb_timer_timeout, p_lcb);
-          return;
-        }
+      if (BTM_SwitchRole(p_lcb_cur->remote_bd_addr, HCI_ROLE_MASTER) ==
+          BTM_CMD_STARTED) {
+        alarm_set_on_mloop(p_lcb->l2c_lcb_timer,
+                           L2CAP_LINK_ROLE_SWITCH_TIMEOUT_MS,
+                           l2c_lcb_timer_timeout, p_lcb);
+        return;
       }
     }
   }
-
   p_lcb->link_state = LST_CONNECTING;
-
   l2cu_create_conn_after_switch(p_lcb);
 }
 
