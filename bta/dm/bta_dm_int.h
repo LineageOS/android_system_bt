@@ -69,7 +69,6 @@ typedef struct {
 typedef struct {
   BT_HDR hdr;
   RawAddress bd_addr;
-  tBTA_SERVICE_MASK services;
   tBTA_DM_SEARCH_CBACK* p_cback;
   tBT_TRANSPORT transport;
 } tBTA_DM_API_DISCOVER;
