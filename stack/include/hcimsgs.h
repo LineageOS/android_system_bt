@@ -928,6 +928,8 @@ extern void btsnd_hcic_create_cis(uint8_t num_cis,
 extern void btsnd_hcic_remove_cig(
     uint8_t cig_id, base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
+extern void btsnd_hcic_req_peer_sca(uint16_t conn_handle);
+
 extern void btsnd_hcic_setup_iso_data_path(
     uint16_t iso_handle, uint8_t data_path_dir, uint8_t data_path_id,
     uint8_t codec_id_format, uint16_t codec_id_company,
