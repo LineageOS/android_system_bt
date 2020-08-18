@@ -583,7 +583,6 @@ typedef void(tBTA_DM_SEC_CBACK)(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data);
 #define BTA_DM_DISC_BLE_RES_EVT \
   3 /* Discovery result for BLE GATT based servoce on a peer device. */
 #define BTA_DM_DISC_CMPL_EVT 4          /* Discovery complete. */
-#define BTA_DM_DI_DISC_CMPL_EVT 5       /* Discovery complete. */
 #define BTA_DM_SEARCH_CANCEL_CMPL_EVT 6 /* Search cancelled */
 
 typedef uint8_t tBTA_DM_SEARCH_EVT;
@@ -619,13 +618,6 @@ typedef struct {
 typedef struct {
   uint8_t num_resps; /* Number of inquiry responses. */
 } tBTA_DM_INQ_CMPL;
-
-/* Structure associated with BTA_DM_DI_DISC_CMPL_EVT */
-typedef struct {
-  RawAddress bd_addr; /* BD address peer device. */
-  uint8_t num_record; /* Number of DI record */
-  tBTA_STATUS result;
-} tBTA_DM_DI_DISC_CMPL;
 
 /* Structure associated with BTA_DM_DISC_RES_EVT */
 typedef struct {
