@@ -1188,8 +1188,6 @@ tINQ_DB_ENT* btm_inq_db_new(const RawAddress& p_bda) {
  *
  ******************************************************************************/
 static void btm_set_inq_event_filter() {
-  btm_cb.btm_inq_vars.inqfilt_active = true;
-
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
 
 #if (BTM_INQ_DEBUG == TRUE)
