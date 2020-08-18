@@ -887,32 +887,6 @@ void bta_dm_discover(tBTA_DM_MSG* p_data) {
 
 /*******************************************************************************
  *
- * Function         bta_dm_di_disc_cmpl
- *
- * Description      Sends event to application when DI discovery complete
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_dm_di_disc_cmpl(tBTA_DM_MSG* p_data) {
-  tBTA_DM_DI_DISC_CMPL di_disc;
-
-  memset(&di_disc, 0, sizeof(tBTA_DM_DI_DISC_CMPL));
-  di_disc.bd_addr = bta_dm_search_cb.peer_bdaddr;
-
-  if ((p_data->hdr.offset == SDP_SUCCESS) ||
-      (p_data->hdr.offset == SDP_DB_FULL)) {
-    di_disc.num_record = SDP_GetNumDiRecords(bta_dm_di_cb.p_di_db);
-  } else
-    di_disc.result = BTA_FAILURE;
-
-  bta_dm_di_cb.p_di_db = NULL;
-  bta_dm_search_cb.p_search_cback(BTA_DM_DI_DISC_CMPL_EVT,
-                                  (tBTA_DM_SEARCH*)&di_disc);
-}
-
-/*******************************************************************************
- *
  * Function         bta_dm_disable_search_and_disc
  *
  * Description      Cancels an ongoing search or discovery for devices in case
@@ -1286,10 +1260,7 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
 void bta_dm_search_cmpl(tBTA_DM_MSG* p_data) {
   APPL_TRACE_EVENT("%s", __func__);
 
-  if (p_data->hdr.layer_specific == BTA_DM_API_DI_DISCOVER_EVT)
-    bta_dm_di_disc_cmpl(p_data);
-  else
-    bta_dm_search_cb.p_search_cback(BTA_DM_DISC_CMPL_EVT, NULL);
+  bta_dm_search_cb.p_search_cback(BTA_DM_DISC_CMPL_EVT, NULL);
 }
 
 /*******************************************************************************
