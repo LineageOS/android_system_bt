@@ -385,12 +385,6 @@ tBTM_STATUS BTM_CancelPeriodicInquiry(void) {
 
     btsnd_hcic_exit_per_inq();
 
-    /* If the event filter is in progress, mark it so that the processing of the
-       return
-       event will be ignored */
-    if (p_inq->inqfilt_active) p_inq->pending_filt_complete_event++;
-
-    p_inq->inqfilt_active = false;
     p_inq->inq_counter++;
   }
 
@@ -553,21 +547,11 @@ void BTM_CancelInquiry(void) {
     p_inq->p_inq_results_cb = NULL; /* Do not notify caller anymore */
     p_inq->p_inq_cmpl_cb = NULL;    /* Do not notify caller anymore */
 
-    /* If the event filter is in progress, mark it so that the processing of the
-       return
-        event will be ignored */
-    if (p_inq->inqfilt_active) {
-      p_inq->inqfilt_active = false;
-      p_inq->pending_filt_complete_event++;
+    if ((p_inq->inqparms.mode & BTM_BR_INQUIRY_MASK) != 0) {
+      btsnd_hcic_inq_cancel();
     }
-    /* Initiate the cancel inquiry */
-    else {
-      if ((p_inq->inqparms.mode & BTM_BR_INQUIRY_MASK) != 0) {
-        btsnd_hcic_inq_cancel();
-      }
-      if ((p_inq->inqparms.mode & BTM_BLE_INQUIRY_MASK) != 0)
-        btm_ble_stop_inquiry();
-    }
+    if ((p_inq->inqparms.mode & BTM_BLE_INQUIRY_MASK) != 0)
+      btm_ble_stop_inquiry();
 
     p_inq->inq_counter++;
     btm_clr_inq_result_flt();
@@ -621,7 +605,7 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
 
   /* Only one active inquiry is allowed in this implementation.
      Also do not allow an inquiry if the inquiry filter is being updated */
-  if (p_inq->inq_active || p_inq->inqfilt_active) {
+  if (p_inq->inq_active) {
     LOG(ERROR) << __func__ << ": BTM_BUSY";
     return (BTM_BUSY);
   } else {
@@ -860,8 +844,7 @@ tBTM_STATUS BTM_ClearInqDb(const RawAddress* p_bda) {
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
 
   /* If an inquiry or remote name is in progress return busy */
-  if (p_inq->inq_active != BTM_INQUIRY_INACTIVE || p_inq->inqfilt_active)
-    return (BTM_BUSY);
+  if (p_inq->inq_active != BTM_INQUIRY_INACTIVE) return (BTM_BUSY);
 
   btm_clr_inq_db(p_bda);
 
@@ -923,12 +906,6 @@ void btm_inq_db_reset(void) {
     }
   }
 
-  /* Cancel an inquiry filter request if active, and notify the caller (if
-   * waiting) */
-  if (p_inq->inqfilt_active) {
-    p_inq->inqfilt_active = false;
-  }
-
   p_inq->state = BTM_INQ_INACTIVE_STATE;
   p_inq->pending_filt_complete_event = 0;
   p_inq->p_inq_results_cb = NULL;
@@ -977,10 +954,9 @@ void btm_inq_stop_on_ssp(void) {
 
 #if (BTM_INQ_DEBUG == TRUE)
   BTM_TRACE_DEBUG(
-      "btm_inq_stop_on_ssp: no_inc_ssp=%d inq_active:0x%x state:%d "
-      "inqfilt_active:%d",
+      "btm_inq_stop_on_ssp: no_inc_ssp=%d inq_active:0x%x state:%d ",
       btm_cb.btm_inq_vars.no_inc_ssp, btm_cb.btm_inq_vars.inq_active,
-      btm_cb.btm_inq_vars.state, btm_cb.btm_inq_vars.inqfilt_active);
+      btm_cb.btm_inq_vars.state);
 #endif
   if (btm_cb.btm_inq_vars.no_inc_ssp) {
     if (btm_cb.btm_inq_vars.state == BTM_INQ_ACTIVE_STATE) {
@@ -1191,10 +1167,8 @@ static void btm_set_inq_event_filter() {
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
 
 #if (BTM_INQ_DEBUG == TRUE)
-  BTM_TRACE_DEBUG(
-      "btm_event_filter_complete: inq_active:0x%x state:%d inqfilt_active:%d",
-      btm_cb.btm_inq_vars.inq_active, btm_cb.btm_inq_vars.state,
-      btm_cb.btm_inq_vars.inqfilt_active);
+  BTM_TRACE_DEBUG("btm_event_filter_complete: inq_active:0x%x state:%d",
+                  btm_cb.btm_inq_vars.inq_active, btm_cb.btm_inq_vars.state);
 #endif
   /* If the filter complete event is from an old or cancelled request, ignore it
    */
@@ -1204,7 +1178,6 @@ static void btm_set_inq_event_filter() {
   }
 
   p_inq->state = BTM_INQ_ACTIVE_STATE;
-  p_inq->inqfilt_active = false;
   btm_initiate_inquiry(p_inq);
 }
 
@@ -1238,10 +1211,8 @@ static void btm_initiate_inquiry(tBTM_INQUIRY_VAR_ST* p_inq) {
   tBTM_INQ_PARMS* p_inqparms = &p_inq->inqparms;
 
 #if (BTM_INQ_DEBUG == TRUE)
-  BTM_TRACE_DEBUG(
-      "btm_initiate_inquiry: inq_active:0x%x state:%d inqfilt_active:%d",
-      btm_cb.btm_inq_vars.inq_active, btm_cb.btm_inq_vars.state,
-      btm_cb.btm_inq_vars.inqfilt_active);
+  BTM_TRACE_DEBUG("btm_initiate_inquiry: inq_active:0x%x state:%d",
+                  btm_cb.btm_inq_vars.inq_active, btm_cb.btm_inq_vars.state);
 #endif
   btm_acl_update_inquiry_status(BTM_INQUIRY_STARTED);
 
@@ -1310,10 +1281,8 @@ void btm_process_inq_results(uint8_t* p, uint8_t hci_evt_len,
   uint8_t* p_eir_data = NULL;
 
 #if (BTM_INQ_DEBUG == TRUE)
-  BTM_TRACE_DEBUG(
-      "btm_process_inq_results inq_active:0x%x state:%d inqfilt_active:%d",
-      btm_cb.btm_inq_vars.inq_active, btm_cb.btm_inq_vars.state,
-      btm_cb.btm_inq_vars.inqfilt_active);
+  BTM_TRACE_DEBUG("btm_process_inq_results inq_active:0x%x state:%d",
+                  btm_cb.btm_inq_vars.inq_active, btm_cb.btm_inq_vars.state);
 #endif
   /* Only process the results if the BR inquiry is still active */
   if (!(p_inq->inq_active & BTM_BR_INQ_ACTIVE_MASK)) return;
@@ -1557,10 +1526,8 @@ void btm_process_inq_complete(uint8_t status, uint8_t mode) {
   p_inq->inqparms.mode &= ~(mode);
 
 #if (BTM_INQ_DEBUG == TRUE)
-  BTM_TRACE_DEBUG(
-      "btm_process_inq_complete inq_active:0x%x state:%d inqfilt_active:%d",
-      btm_cb.btm_inq_vars.inq_active, btm_cb.btm_inq_vars.state,
-      btm_cb.btm_inq_vars.inqfilt_active);
+  BTM_TRACE_DEBUG("btm_process_inq_complete inq_active:0x%x state:%d",
+                  btm_cb.btm_inq_vars.inq_active, btm_cb.btm_inq_vars.state);
 #endif
   btm_acl_update_inquiry_status(BTM_INQUIRY_COMPLETE);
   /* Ignore any stray or late complete messages if the inquiry is not active */
@@ -1604,9 +1571,8 @@ void btm_process_inq_complete(uint8_t status, uint8_t mode) {
     p_inq->scan_type = INQ_NONE;
   }
 #if (BTM_INQ_DEBUG == TRUE)
-  BTM_TRACE_DEBUG("inq_active:0x%x state:%d inqfilt_active:%d",
-                  btm_cb.btm_inq_vars.inq_active, btm_cb.btm_inq_vars.state,
-                  btm_cb.btm_inq_vars.inqfilt_active);
+  BTM_TRACE_DEBUG("inq_active:0x%x state:%d", btm_cb.btm_inq_vars.inq_active,
+                  btm_cb.btm_inq_vars.state);
 #endif
 }
 
