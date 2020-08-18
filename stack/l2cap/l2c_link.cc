@@ -169,11 +169,10 @@ void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
     /* Tell BTM Acl management about the link */
     p_dev_info = btm_find_dev(p_bda);
     if (p_dev_info != NULL)
-      btm_acl_created(ci.bd_addr, p_dev_info->dev_class,
-                      p_dev_info->sec_bd_name, handle, p_lcb->LinkRole(),
+      btm_acl_created(ci.bd_addr, handle, p_lcb->LinkRole(),
                       BT_TRANSPORT_BR_EDR);
     else
-      btm_acl_created(ci.bd_addr, NULL, NULL, handle, p_lcb->LinkRole(),
+      btm_acl_created(ci.bd_addr, handle, p_lcb->LinkRole(),
                       BT_TRANSPORT_BR_EDR);
 
     BTM_SetLinkSuperTout(ci.bd_addr, acl_get_link_supervision_timeout());

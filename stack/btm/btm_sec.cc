@@ -3772,8 +3772,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
   btm_set_packet_types_from_address(bda, BT_TRANSPORT_BR_EDR,
                                     acl_get_supported_packet_types());
 
-  btm_acl_created(bda, p_dev_rec->dev_class, p_dev_rec->sec_bd_name, handle,
-                  HCI_ROLE_SLAVE, BT_TRANSPORT_BR_EDR);
+  btm_acl_created(bda, handle, HCI_ROLE_SLAVE, BT_TRANSPORT_BR_EDR);
 
   /* Initialize security flags.  We need to do that because some            */
   /* authorization complete could have come after the connection is dropped */

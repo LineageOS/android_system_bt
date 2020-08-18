@@ -323,9 +323,8 @@ void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
-                     uint16_t hci_handle, uint8_t link_role,
-                     tBT_TRANSPORT transport) {
+void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
+                     uint8_t link_role, tBT_TRANSPORT transport) {
   tBTM_SEC_DEV_REC* p_dev_rec = NULL;
   tACL_CONN* p;
   uint8_t xx;
