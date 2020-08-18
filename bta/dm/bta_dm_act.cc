@@ -1357,10 +1357,10 @@ void bta_dm_free_sdp_db(UNUSED_ATTR tBTA_DM_MSG* p_data) {
  *
  ******************************************************************************/
 void bta_dm_queue_search(tBTA_DM_MSG* p_data) {
-  osi_free(bta_dm_search_cb.p_search_queue);
-  bta_dm_search_cb.p_search_queue =
+  bta_dm_search_clear_queue();
+  bta_dm_search_cb.p_pending_search =
       (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_API_SEARCH));
-  memcpy(bta_dm_search_cb.p_search_queue, p_data, sizeof(tBTA_DM_API_SEARCH));
+  memcpy(bta_dm_search_cb.p_pending_search, p_data, sizeof(tBTA_DM_API_SEARCH));
 }
 
 /*******************************************************************************
@@ -1373,10 +1373,11 @@ void bta_dm_queue_search(tBTA_DM_MSG* p_data) {
  *
  ******************************************************************************/
 void bta_dm_queue_disc(tBTA_DM_MSG* p_data) {
-  osi_free(bta_dm_search_cb.p_search_queue);
-  bta_dm_search_cb.p_search_queue =
+  bta_dm_search_clear_queue();
+  bta_dm_search_cb.p_pending_discovery =
       (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_API_DISCOVER));
-  memcpy(bta_dm_search_cb.p_search_queue, p_data, sizeof(tBTA_DM_API_DISCOVER));
+  memcpy(bta_dm_search_cb.p_pending_discovery, p_data,
+         sizeof(tBTA_DM_API_DISCOVER));
 }
 
 /*******************************************************************************
@@ -1389,7 +1390,8 @@ void bta_dm_queue_disc(tBTA_DM_MSG* p_data) {
  *
  ******************************************************************************/
 void bta_dm_search_clear_queue() {
-  osi_free_and_reset((void**)&bta_dm_search_cb.p_search_queue);
+  osi_free_and_reset((void**)&bta_dm_search_cb.p_pending_search);
+  osi_free_and_reset((void**)&bta_dm_search_cb.p_pending_discovery);
 }
 
 /*******************************************************************************
@@ -1402,9 +1404,12 @@ void bta_dm_search_clear_queue() {
  *
  ******************************************************************************/
 void bta_dm_search_cancel_cmpl() {
-  if (bta_dm_search_cb.p_search_queue) {
-    bta_sys_sendmsg(bta_dm_search_cb.p_search_queue);
-    bta_dm_search_cb.p_search_queue = NULL;
+  if (bta_dm_search_cb.p_pending_search) {
+    bta_sys_sendmsg(bta_dm_search_cb.p_pending_search);
+    bta_dm_search_cb.p_pending_search = NULL;
+  } else if (bta_dm_search_cb.p_pending_discovery) {
+    bta_sys_sendmsg(bta_dm_search_cb.p_pending_discovery);
+    bta_dm_search_cb.p_pending_discovery = NULL;
   }
 }
 
