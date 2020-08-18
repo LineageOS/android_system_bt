@@ -970,14 +970,10 @@ void bta_dm_inq_cmpl(uint8_t num) {
     bta_dm_discover_device(
         bta_dm_search_cb.p_btm_inq_info->results.remote_bd_addr);
   } else {
-    tBTA_DM_MSG* p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
-
-    /* no devices, search complete */
     bta_dm_search_cb.services = 0;
 
-    p_msg->hdr.event = BTA_DM_SEARCH_CMPL_EVT;
-    p_msg->hdr.layer_specific = BTA_DM_API_DISCOVER_EVT;
-    bta_sys_sendmsg(p_msg);
+    bta_dm_search_set_state(BTA_DM_SEARCH_IDLE);
+    bta_dm_search_cmpl();
   }
 }
 
