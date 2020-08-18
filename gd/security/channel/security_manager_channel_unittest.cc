@@ -59,6 +59,10 @@ class FakeSecurityManagerChannel : public SecurityManagerChannel {
   void OnLinkDisconnected(hci::Address address) {
     on_link_disconnected_called = true;
   }
+
+  void OnAuthenticationComplete(hci::Address remote) override {}
+
+  void OnEncryptionChange(hci::Address address, bool encrypted) override {}
 };
 
 class SecurityManagerChannelCallback : public ISecurityManagerChannelListener {
@@ -208,6 +212,8 @@ class SecurityManagerChannelCallback : public ISecurityManagerChannelListener {
   void OnConnectionClosed(hci::Address address) override {
     LOG_DEBUG("Called");
   }
+
+  void OnEncryptionChange(hci::Address address, bool encrypted) override {}
 };
 
 class SecurityManagerChannelTest : public ::testing::Test {
