@@ -315,8 +315,8 @@ typedef struct {
   BD_NAME peer_name;
   alarm_t* search_timer;
   uint8_t service_index;
-  tBTA_DM_MSG* p_search_queue; /* search or discover commands during search
-                                  cancel stored here */
+  tBTA_DM_MSG* p_pending_search;
+  tBTA_DM_MSG* p_pending_discovery;
   bool wait_disc;
   bool sdp_results;
   bluetooth::Uuid uuid;
