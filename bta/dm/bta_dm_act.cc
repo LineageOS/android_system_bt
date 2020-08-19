@@ -640,7 +640,7 @@ void bta_dm_add_device(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg) {
   if (msg->link_key_known) p_lc = &msg->link_key;
 
   if (!BTM_SecAddDevice(msg->bd_addr, p_dc, msg->bd_name, msg->features,
-                        trusted_services_mask, p_lc, msg->key_type, 0,
+                        trusted_services_mask, p_lc, msg->key_type,
                         msg->pin_length)) {
     LOG(ERROR) << "BTA_DM: Error adding device " << msg->bd_addr;
   }
