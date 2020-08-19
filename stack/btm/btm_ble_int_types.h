@@ -20,6 +20,7 @@
 #define BTM_BLE_INT_TYPES_H
 
 #include "osi/include/alarm.h"
+#include "stack/include/btm_ble_api_types.h"
 
 /* scanning enable status */
 #define BTM_BLE_SCAN_ENABLE 0x01
