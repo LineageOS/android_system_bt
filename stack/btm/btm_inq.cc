@@ -589,14 +589,8 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   BTM_TRACE_DEBUG("BTM_StartInquiry: p_inq->inq_active = 0x%02x",
                   p_inq->inq_active);
 
-  tBTM_STATUS status = BTM_CMD_STARTED;
   if (controller_get_interface()->supports_ble()) {
-    /* BLE for now does not support filter condition for inquiry */
-    status = btm_ble_start_inquiry(BTM_BLE_GENERAL_INQUIRY,
-                                   p_inq->inqparms.duration);
-    if (status != BTM_CMD_STARTED) {
-      LOG(ERROR) << __func__ << ": Error Starting LE Inquiry";
-    }
+    btm_ble_start_inquiry(BTM_BLE_GENERAL_INQUIRY, p_inq->inqparms.duration);
   }
   p_inq->inqparms.mode &= ~BTM_BLE_INQUIRY_MASK;
 
