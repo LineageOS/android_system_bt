@@ -584,7 +584,7 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
                         bta_av_cb.sec_mask, BTA_ID_AV);
 #else
         bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
-                        (uint8_t)(bta_av_cb.sec_mask & (~BTA_SEC_AUTHORIZE)),
+                        (uint8_t)(bta_av_cb.sec_mask & (~BTM_SEC_IN_AUTHORIZE)),
                         BTA_ID_AV);
 #endif
 
@@ -740,9 +740,10 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
           bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
                           bta_av_cb.sec_mask, BTA_ID_AV);
 #else
-          bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
-                          (uint8_t)(bta_av_cb.sec_mask & (~BTA_SEC_AUTHORIZE)),
-                          BTA_ID_AV);
+          bta_ar_reg_avct(
+              p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
+              (uint8_t)(bta_av_cb.sec_mask & (~BTM_SEC_IN_AUTHORIZE)),
+              BTA_ID_AV);
 #endif
 #endif
           bta_av_rc_create(&bta_av_cb, AVCT_ACP, 0, BTA_AV_NUM_LINKS + 1);

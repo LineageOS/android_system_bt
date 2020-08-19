@@ -3151,10 +3151,6 @@ bt_status_t btif_av_source_execute_service(bool enable) {
                    (enable) ? "enable" : "disable");
 
   if (enable) {
-    // TODO: Removed BTA_SEC_AUTHORIZE since the Java/App does not
-    // handle this request in order to allow incoming connections to succeed.
-    // We need to put this back once support for this is added.
-
     // Added BTA_AV_FEAT_NO_SCO_SSPD - this ensures that the BTA does not
     // auto-suspend av streaming on AG events(SCO or Call). The suspend shall
     // be initiated by the app/audioflinger layers.
