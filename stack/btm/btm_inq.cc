@@ -1538,41 +1538,6 @@ void btm_inq_rmt_name_failed_cancelled(void) {
 
 /*******************************************************************************
  *
- * Function         btm_read_inq_tx_power_complete
- *
- * Description      read inquiry tx power level complete callback function.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_read_inq_tx_power_complete(uint8_t* p) {
-  tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_inq_tx_power_cmpl_cb;
-  tBTM_INQ_TXPWR_RESULT result;
-
-  BTM_TRACE_DEBUG("%s", __func__);
-  alarm_cancel(btm_cb.devcb.read_inq_tx_power_timer);
-  btm_cb.devcb.p_inq_tx_power_cmpl_cb = NULL;
-
-  /* If there was a registered callback, call it */
-  if (p_cb) {
-    STREAM_TO_UINT8(result.hci_status, p);
-
-    if (result.hci_status == HCI_SUCCESS) {
-      result.status = BTM_SUCCESS;
-
-      STREAM_TO_UINT8(result.tx_power, p);
-      BTM_TRACE_EVENT(
-          "BTM INQ TX POWER Complete: tx_power %d, hci status 0x%02x",
-          result.tx_power, result.hci_status);
-    } else {
-      result.status = BTM_ERR_PROCESSING;
-    }
-
-    (*p_cb)(&result);
-  }
-}
-/*******************************************************************************
- *
  * Function         BTM_WriteEIR
  *
  * Description      This function is called to write EIR data to controller.

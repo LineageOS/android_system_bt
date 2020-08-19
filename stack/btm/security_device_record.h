@@ -93,9 +93,6 @@ typedef struct {
                                      /* read link quality function completes */
 
   alarm_t* read_inq_tx_power_timer;
-  tBTM_CMPL_CB*
-      p_inq_tx_power_cmpl_cb; /* Callback function to be called when  */
-                              /* read inq tx power function completes  */
 
   alarm_t* read_tx_power_timer;     /* Read tx power timer */
   tBTM_CMPL_CB* p_tx_power_cmpl_cb; /* Callback function to be called       */
