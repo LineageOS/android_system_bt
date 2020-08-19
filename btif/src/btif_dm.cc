@@ -2152,10 +2152,7 @@ void btif_dm_enable_service(tBTA_SERVICE_ID service_id, bool enable) {
   return;
 }
 
-void btif_dm_proc_io_req(UNUSED_ATTR const RawAddress& bd_addr,
-                         UNUSED_ATTR tBTM_IO_CAP* p_io_cap,
-                         UNUSED_ATTR tBTM_OOB_DATA* p_oob_data,
-                         tBTM_AUTH_REQ* p_auth_req, bool is_orig) {
+void btif_dm_proc_io_req(tBTM_AUTH_REQ* p_auth_req, bool is_orig) {
   uint8_t yes_no_bit = BTA_AUTH_SP_YES & *p_auth_req;
   /* if local initiated:
   **      1. set DD + MITM
