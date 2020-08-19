@@ -93,7 +93,6 @@ tBTM_SEC_DEV_REC* btm_sec_find_dev_by_sec_state(uint8_t state);
 
 static bool btm_dev_authenticated(tBTM_SEC_DEV_REC* p_dev_rec);
 static bool btm_dev_encrypted(tBTM_SEC_DEV_REC* p_dev_rec);
-static bool btm_dev_authorized(tBTM_SEC_DEV_REC* p_dev_rec);
 static uint16_t btm_sec_set_serv_level4_flags(uint16_t cur_security,
                                               bool is_originator);
 
@@ -147,22 +146,6 @@ static bool btm_dev_authenticated(tBTM_SEC_DEV_REC* p_dev_rec) {
  ******************************************************************************/
 static bool btm_dev_encrypted(tBTM_SEC_DEV_REC* p_dev_rec) {
   if (p_dev_rec->sec_flags & BTM_SEC_ENCRYPTED) {
-    return (true);
-  }
-  return (false);
-}
-
-/*******************************************************************************
- *
- * Function         btm_dev_authorized
- *
- * Description      check device is authorized
- *
- * Returns          bool    true or false
- *
- ******************************************************************************/
-static bool btm_dev_authorized(tBTM_SEC_DEV_REC* p_dev_rec) {
-  if (p_dev_rec->sec_flags & BTM_SEC_AUTHORIZED) {
     return (true);
   }
   return (false);
@@ -1657,9 +1640,7 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
               btm_dev_authenticated(p_dev_rec))) ||
             ((((security_required & BTM_SEC_OUT_FLAGS) ==
                (BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT)) &&
-              btm_dev_encrypted(p_dev_rec))) ||
-            ((((security_required & BTM_SEC_OUT_FLAGS) == BTM_SEC_OUT_FLAGS) &&
-              btm_dev_authorized(p_dev_rec) && btm_dev_encrypted(p_dev_rec)))) {
+              btm_dev_encrypted(p_dev_rec)))) {
           rc = BTM_SUCCESS;
         }
       } else {
