@@ -187,8 +187,6 @@ typedef struct {
 
   tBTM_CMPL_CB* p_inq_cmpl_cb;
   tBTM_INQ_RESULTS_CB* p_inq_results_cb;
-  tBTM_CMPL_CB* p_inqfilter_cmpl_cb; /* Called (if not NULL) after inquiry
-                                        filter completed */
   uint32_t inq_counter; /* Counter incremented each time an inquiry completes */
   /* Used for determining whether or not duplicate devices */
   /* have responded to the same inquiry */
@@ -202,20 +200,11 @@ typedef struct {
 
   uint16_t per_min_delay; /* Current periodic minimum delay */
   uint16_t per_max_delay; /* Current periodic maximum delay */
-  bool inqfilt_active;
-  uint8_t pending_filt_complete_event; /* to take care of
-                                          btm_event_filter_complete
-                                          corresponding to */
   /* inquiry that has been cancelled*/
   uint8_t inqfilt_type; /* Contains the inquiry filter type (BD ADDR, COD, or
                            Clear) */
 
 #define BTM_INQ_INACTIVE_STATE 0
-#define BTM_INQ_CLR_FILT_STATE \
-  1 /* Currently clearing the inquiry filter preceding the inquiry request */
-    /* (bypassed if filtering is not used)                                  */
-#define BTM_INQ_SET_FILT_STATE \
-  2 /* Sets the new filter (or turns off filtering) in this state */
 #define BTM_INQ_ACTIVE_STATE \
   3 /* Actual inquiry or periodic inquiry is in progress */
 
