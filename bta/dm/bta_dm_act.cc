@@ -489,8 +489,30 @@ void bta_dm_set_dev_name(const std::vector<uint8_t>& name) {
 }
 
 /** Sets discoverability, connectability and pairability */
-void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode_param,
-                         tBTA_DM_CONN conn_mode_param) {
+bool BTA_DmSetVisibility(bt_scan_mode_t mode) {
+  tBTA_DM_DISC disc_mode_param;
+  tBTA_DM_CONN conn_mode_param;
+
+  switch (mode) {
+    case BT_SCAN_MODE_NONE:
+      disc_mode_param = BTA_DM_NON_DISC;
+      conn_mode_param = BTA_DM_NON_CONN;
+      break;
+
+    case BT_SCAN_MODE_CONNECTABLE:
+      disc_mode_param = BTA_DM_NON_DISC;
+      conn_mode_param = BTA_DM_CONN;
+      break;
+
+    case BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE:
+      disc_mode_param = BTA_DM_GENERAL_DISC;
+      conn_mode_param = BTA_DM_CONN;
+      break;
+
+    default:
+      return false;
+  }
+
   uint16_t window, interval;
   uint16_t le_disc_mode = BTM_BleReadDiscoverability();
   uint16_t le_conn_mode = BTM_BleReadConnectability();
@@ -517,6 +539,7 @@ void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode_param,
     BTM_SetConnectability(conn_mode_param, bta_dm_cb.page_scan_window,
                           bta_dm_cb.page_scan_interval);
   }
+  return true;
 }
 
 static void bta_dm_process_remove_device_no_callback(
