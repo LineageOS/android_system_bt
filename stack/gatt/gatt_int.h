@@ -194,6 +194,7 @@ typedef struct {
   tGATT_IF gatt_if; /* one based */
   bool in_use;
   uint8_t listening; /* if adv for all has been enabled */
+  bool eatt_support;
 } tGATT_REG;
 
 struct tGATT_CLCB;

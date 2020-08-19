@@ -220,7 +220,7 @@ bt_status_t btif_gattc_register_app(const Uuid& uuid) {
   CHECK_BTGATT_INIT();
 
   return do_in_jni_thread(Bind(
-      [](const Uuid& uuid) {
+      [](const Uuid& uuid, bool eatt_support) {
         BTA_GATTC_AppRegister(
             bta_gattc_cback,
             base::Bind(
@@ -232,9 +232,10 @@ bt_status_t btif_gattc_register_app(const Uuid& uuid) {
                       },
                       uuid, client_id, status));
                 },
-                uuid));
+                uuid),
+            eatt_support);
       },
-      uuid));
+      uuid, false));
 }
 
 void btif_gattc_unregister_app_impl(int client_if) {

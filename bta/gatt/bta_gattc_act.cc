@@ -167,7 +167,7 @@ void bta_gattc_start_if(uint8_t client_if) {
 
 /** Register a GATT client application with BTA */
 void bta_gattc_register(const Uuid& app_uuid, tBTA_GATTC_CBACK* p_cback,
-                        BtaAppRegisterCallback cb) {
+                        BtaAppRegisterCallback cb, bool eatt_suppport) {
   tGATT_STATUS status = GATT_NO_RESOURCES;
   uint8_t client_if = 0;
   VLOG(1) << __func__ << ": state:" << +bta_gattc_cb.state;
@@ -179,8 +179,8 @@ void bta_gattc_register(const Uuid& app_uuid, tBTA_GATTC_CBACK* p_cback,
   /* todo need to check duplicate uuid */
   for (uint8_t i = 0; i < BTA_GATTC_CL_MAX; i++) {
     if (!bta_gattc_cb.cl_rcb[i].in_use) {
-      if ((bta_gattc_cb.cl_rcb[i].client_if =
-               GATT_Register(app_uuid, &bta_gattc_cl_cback)) == 0) {
+      if ((bta_gattc_cb.cl_rcb[i].client_if = GATT_Register(
+               app_uuid, &bta_gattc_cl_cback, eatt_suppport)) == 0) {
         LOG(ERROR) << "Register with GATT stack failed.";
         status = GATT_ERROR;
       } else {
