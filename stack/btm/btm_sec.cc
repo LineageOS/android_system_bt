@@ -4651,9 +4651,7 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
 
   /* If connection is not authorized and authorization is required */
   /* start authorization and return PENDING to the caller */
-  if (!(p_dev_rec->sec_flags & BTM_SEC_AUTHORIZED) &&
-      ((p_dev_rec->is_originator && false) ||
-       (!p_dev_rec->is_originator && false))) {
+  if (!(p_dev_rec->sec_flags & BTM_SEC_AUTHORIZED) && (false || false)) {
     BTM_TRACE_EVENT(
         "service id:%d, is trusted:%d", p_dev_rec->p_cur_service->service_id,
         (BTM_SEC_IS_SERVICE_TRUSTED(p_dev_rec->trusted_mask,
