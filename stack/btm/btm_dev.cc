@@ -65,8 +65,7 @@
 bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
                       BD_NAME bd_name, uint8_t* features,
                       uint32_t trusted_mask[], LinkKey* p_link_key,
-                      uint8_t key_type, tBTM_IO_CAP io_cap,
-                      uint8_t pin_length) {
+                      uint8_t key_type, uint8_t pin_length) {
   BTM_TRACE_API("%s: link key type:%x", __func__, key_type);
 
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
@@ -147,7 +146,7 @@ bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
     p_dev_rec->sm4 = BTM_SM4_TRUE;
 #endif
 
-  p_dev_rec->rmt_io_caps = io_cap;
+  p_dev_rec->rmt_io_caps = BTM_IO_CAP_OUT;
   p_dev_rec->device_type |= BT_DEVICE_TYPE_BREDR;
 
   return true;
