@@ -200,9 +200,6 @@ typedef struct {
 
   uint16_t per_min_delay; /* Current periodic minimum delay */
   uint16_t per_max_delay; /* Current periodic maximum delay */
-  uint8_t pending_filt_complete_event; /* to take care of
-                                          btm_event_filter_complete
-                                          corresponding to */
   /* inquiry that has been cancelled*/
   uint8_t inqfilt_type; /* Contains the inquiry filter type (BD ADDR, COD, or
                            Clear) */

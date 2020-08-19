@@ -907,7 +907,6 @@ void btm_inq_db_reset(void) {
   }
 
   p_inq->state = BTM_INQ_INACTIVE_STATE;
-  p_inq->pending_filt_complete_event = 0;
   p_inq->p_inq_results_cb = NULL;
   btm_clr_inq_db(NULL); /* Clear out all the entries in the database */
   btm_clr_inq_result_flt();
@@ -1170,12 +1169,6 @@ static void btm_set_inq_event_filter() {
   BTM_TRACE_DEBUG("btm_event_filter_complete: inq_active:0x%x state:%d",
                   btm_cb.btm_inq_vars.inq_active, btm_cb.btm_inq_vars.state);
 #endif
-  /* If the filter complete event is from an old or cancelled request, ignore it
-   */
-  if (p_inq->pending_filt_complete_event) {
-    p_inq->pending_filt_complete_event--;
-    return;
-  }
 
   p_inq->state = BTM_INQ_ACTIVE_STATE;
   btm_initiate_inquiry(p_inq);
