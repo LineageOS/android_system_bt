@@ -641,13 +641,6 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   }
   p_inq->inqparms.mode &= ~BTM_BLE_INQUIRY_MASK;
 
-  BTM_TRACE_DEBUG("BTM_StartInquiry: mode = %02x", p_inq->inqparms.mode);
-
-  /* we're done with this routine if BR/EDR inquiry is not desired. */
-  if ((p_inq->inqparms.mode & BTM_BR_INQUIRY_MASK) == BTM_INQUIRY_NONE) {
-    return status;
-  }
-
   btm_initiate_inquiry();
   return BTM_CMD_STARTED;
 }
