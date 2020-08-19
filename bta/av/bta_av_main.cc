@@ -581,10 +581,8 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
         bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
                         BTA_SEC_AUTHENTICATE, BTA_ID_AV);
 #else
-        bta_ar_reg_avct(
-            p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
-            (uint8_t)(BTA_SEC_AUTHENTICATE & (~BTM_SEC_IN_AUTHORIZE)),
-            BTA_ID_AV);
+        bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
+                        BTA_SEC_AUTHENTICATE, BTA_ID_AV);
 #endif
 
         /* For the Audio Sink role we support additional TG to support
@@ -739,10 +737,8 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
           bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
                           BTA_SEC_AUTHENTICATE, BTA_ID_AV);
 #else
-          bta_ar_reg_avct(
-              p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
-              (uint8_t)(BTA_SEC_AUTHENTICATE & (~BTM_SEC_IN_AUTHORIZE)),
-              BTA_ID_AV);
+          bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
+                          BTA_SEC_AUTHENTICATE, BTA_ID_AV);
 #endif
 #endif
           bta_av_rc_create(&bta_av_cb, AVCT_ACP, 0, BTA_AV_NUM_LINKS + 1);
