@@ -2848,35 +2848,32 @@ void btm_io_capabilities_req(const RawAddress& p) {
                                               (tBTM_SP_EVT_DATA*)&evt_data);
   }
 
-  if ((callback_rc == BTM_SUCCESS) || (BTM_OOB_UNKNOWN != evt_data.oob_data)) {
-    if ((btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD)) {
-      evt_data.auth_req =
-          (BTM_AUTH_DD_BOND | (evt_data.auth_req & BTM_AUTH_YN_BIT));
-    }
-
-    if (btm_cb.security_mode == BTM_SEC_MODE_SC) {
-      /* At this moment we know that both sides are SC capable, device in */
-      /* SC only mode requires MITM for any service so let's set MITM bit */
-      evt_data.auth_req |= BTM_AUTH_YN_BIT;
-      BTM_TRACE_DEBUG(
-          "%s: for device in \"SC only\" mode set auth_req to 0x%02x", __func__,
-          evt_data.auth_req);
-    }
-
-    /* if the user does not indicate "reply later" by setting the oob_data to
-     * unknown */
-    /* send the response right now. Save the current IO capability in the
-     * control block */
-    btm_cb.devcb.loc_auth_req = evt_data.auth_req;
-    btm_cb.devcb.loc_io_caps = evt_data.io_cap;
-
-    BTM_TRACE_EVENT("%s: State: %s  IO_CAP:%d oob_data:%d auth_req:%d",
-                    __func__, btm_pair_state_descr(btm_cb.pairing_state),
-                    evt_data.io_cap, evt_data.oob_data, evt_data.auth_req);
-
-    btsnd_hcic_io_cap_req_reply(evt_data.bd_addr, evt_data.io_cap,
-                                evt_data.oob_data, evt_data.auth_req);
+  if ((btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD)) {
+    evt_data.auth_req =
+        (BTM_AUTH_DD_BOND | (evt_data.auth_req & BTM_AUTH_YN_BIT));
   }
+
+  if (btm_cb.security_mode == BTM_SEC_MODE_SC) {
+    /* At this moment we know that both sides are SC capable, device in */
+    /* SC only mode requires MITM for any service so let's set MITM bit */
+    evt_data.auth_req |= BTM_AUTH_YN_BIT;
+    BTM_TRACE_DEBUG("%s: for device in \"SC only\" mode set auth_req to 0x%02x",
+                    __func__, evt_data.auth_req);
+  }
+
+  /* if the user does not indicate "reply later" by setting the oob_data to
+   * unknown */
+  /* send the response right now. Save the current IO capability in the
+   * control block */
+  btm_cb.devcb.loc_auth_req = evt_data.auth_req;
+  btm_cb.devcb.loc_io_caps = evt_data.io_cap;
+
+  BTM_TRACE_EVENT("%s: State: %s  IO_CAP:%d oob_data:%d auth_req:%d", __func__,
+                  btm_pair_state_descr(btm_cb.pairing_state), evt_data.io_cap,
+                  evt_data.oob_data, evt_data.auth_req);
+
+  btsnd_hcic_io_cap_req_reply(evt_data.bd_addr, evt_data.io_cap,
+                              evt_data.oob_data, evt_data.auth_req);
 }
 
 /*******************************************************************************
@@ -4340,9 +4337,6 @@ static void btm_sec_pairing_timeout(UNUSED_ATTR void* data) {
       break;
 
     case BTM_PAIR_STATE_WAIT_LOCAL_IOCAPS:
-      if (btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD)
-        auth_req |= BTM_AUTH_DD_BOND;
-
       btsnd_hcic_io_cap_req_reply(p_cb->pairing_bda, btm_cb.devcb.loc_io_caps,
                                   BTM_OOB_NONE, auth_req);
       btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
