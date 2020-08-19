@@ -191,20 +191,6 @@ uint8_t BTM_SecClrServiceByPsm(uint16_t psm);
 
 /*******************************************************************************
  *
- * Function         BTM_SecClrTempAuthService
- *
- * Description      Removes specified device record's temporary authorization
- *                  flag from the security database.
- *
- * Parameters       Device address to be cleared
- *
- * Returns          void.
- *
- ******************************************************************************/
-void BTM_SecClrTempAuthService(const RawAddress& bda);
-
-/*******************************************************************************
- *
  * Function         BTM_PINCodeReply
  *
  * Description      This function is called after Security Manager submitted
