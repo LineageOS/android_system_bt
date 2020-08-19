@@ -150,10 +150,9 @@ void SendRemoteNameRequest(const RawAddress& raw_address) {
  *                  BTM_WRONG_MODE if the device is not up.
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode, uint16_t window,
-                                   uint16_t interval) {
+tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_SetDiscoverability(inq_mode, window, interval);
+    return bluetooth::shim::BTM_SetDiscoverability(inq_mode, 0, 0);
   }
 
   uint8_t scan_mode = 0;
@@ -164,6 +163,8 @@ tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode, uint16_t window,
   LAP temp_lap[2];
   bool is_limited;
   bool cod_limited;
+  uint16_t window = 0;
+  uint16_t interval = 0;
 
   BTM_TRACE_API("BTM_SetDiscoverability");
   if (controller_get_interface()->supports_ble()) {
@@ -365,13 +366,14 @@ uint16_t BTM_ReadDiscoverability(uint16_t* p_window, uint16_t* p_interval) {
  *                  BTM_WRONG_MODE if the device is not up.
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SetConnectability(uint16_t page_mode, uint16_t window,
-                                  uint16_t interval) {
+tBTM_STATUS BTM_SetConnectability(uint16_t page_mode) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_SetConnectability(page_mode, window, interval);
+    return bluetooth::shim::BTM_SetConnectability(page_mode, 0, 0);
   }
 
   uint8_t scan_mode = 0;
+  uint16_t window = 0;
+  uint16_t interval = 0;
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
 
   BTM_TRACE_API("BTM_SetConnectability");

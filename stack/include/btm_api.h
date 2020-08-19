@@ -249,8 +249,7 @@ tBTM_STATUS BTM_EnableTestMode(void);
  *                  BTM_WRONG_MODE if the device is not up.
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode, uint16_t window,
-                                   uint16_t interval);
+tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode);
 
 /*******************************************************************************
  *
@@ -340,8 +339,7 @@ void BTM_CancelInquiry(void);
  *                  BTM_WRONG_MODE if the device is not up.
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SetConnectability(uint16_t page_mode, uint16_t window,
-                                  uint16_t interval);
+tBTM_STATUS BTM_SetConnectability(uint16_t page_mode);
 
 /*******************************************************************************
  *
