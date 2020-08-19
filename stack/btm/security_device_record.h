@@ -205,11 +205,6 @@ typedef struct {
                            Clear) */
 
 #define BTM_INQ_INACTIVE_STATE 0
-#define BTM_INQ_CLR_FILT_STATE \
-  1 /* Currently clearing the inquiry filter preceding the inquiry request */
-    /* (bypassed if filtering is not used)                                  */
-#define BTM_INQ_SET_FILT_STATE \
-  2 /* Sets the new filter (or turns off filtering) in this state */
 #define BTM_INQ_ACTIVE_STATE \
   3 /* Actual inquiry or periodic inquiry is in progress */
 

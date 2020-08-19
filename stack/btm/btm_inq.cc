@@ -663,7 +663,6 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
     return status;
   }
 
-  p_inq->state = BTM_INQ_SET_FILT_STATE;
   btm_initiate_inquiry();
   return BTM_CMD_STARTED;
 }
