@@ -575,15 +575,6 @@ void BTM_SecClrTempAuthService(const RawAddress& bda) {
     BTM_TRACE_WARNING("BTM_SecClrTempAuthService() - no dev CB");
     return;
   }
-
-  /* Reset the temporary authorized flag so that next time (untrusted) service
-   * is accessed autorization will take place */
-  if (p_dev_rec->last_author_service_id != BTM_SEC_NO_LAST_SERVICE_ID &&
-      p_dev_rec->p_cur_service) {
-    VLOG(1) << __func__ << " clearing device: " << bda;
-
-    p_dev_rec->last_author_service_id = BTM_SEC_NO_LAST_SERVICE_ID;
-  }
 }
 
 /*******************************************************************************
