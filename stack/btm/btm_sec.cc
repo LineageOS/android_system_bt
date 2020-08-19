@@ -1786,17 +1786,6 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
 
   p_dev_rec->p_callback = p_callback;
 
-  if (p_dev_rec->last_author_service_id == BTM_SEC_NO_LAST_SERVICE_ID ||
-      p_dev_rec->last_author_service_id !=
-          p_dev_rec->p_cur_service->service_id) {
-    /* Although authentication and encryption are per connection
-    ** authorization is per access request.  For example when serial connection
-    ** is up and authorized and client requests to read file (access to other
-    ** scn), we need to request user's permission again.
-    */
-    p_dev_rec->sec_flags &= ~BTM_SEC_AUTHORIZED;
-  }
-
   if (BTM_SEC_IS_SM4(p_dev_rec->sm4)) {
     if ((p_dev_rec->security_required & BTM_SEC_MODE4_LEVEL4) &&
         (p_dev_rec->link_key_type != BTM_LKEY_TYPE_AUTH_COMB_P_256)) {
@@ -2018,12 +2007,6 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
   p_dev_rec->is_originator = is_originator;
   p_dev_rec->p_callback = p_callback;
   p_dev_rec->p_ref_data = p_ref_data;
-
-  /* Although authentication and encryption are per connection */
-  /* authorization is per access request.  For example when serial connection */
-  /* is up and authorized and client requests to read file (access to other */
-  /* scn, we need to request user's permission again. */
-  p_dev_rec->sec_flags &= ~(BTM_SEC_AUTHORIZED);
 
   BTM_TRACE_EVENT(
       "%s() proto_id:%d chan_id:%d State:%d Flags:0x%x Required:0x%x Service "
@@ -3836,9 +3819,9 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
   /* Initialize security flags.  We need to do that because some            */
   /* authorization complete could have come after the connection is dropped */
   /* and that would set wrong flag that link has been authorized already    */
-  p_dev_rec->sec_flags &= ~((BTM_SEC_AUTHORIZED | BTM_SEC_AUTHENTICATED |
-                             BTM_SEC_ENCRYPTED | BTM_SEC_ROLE_SWITCHED)
-                            << bit_shift);
+  p_dev_rec->sec_flags &=
+      ~((BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED | BTM_SEC_ROLE_SWITCHED)
+        << bit_shift);
 
   if (enc_mode != HCI_ENCRYPT_MODE_DISABLED)
     p_dev_rec->sec_flags |=
@@ -3989,8 +3972,8 @@ void btm_sec_disconnected(uint16_t handle, uint8_t reason) {
   } else {
     p_dev_rec->hci_handle = HCI_INVALID_HANDLE;
     p_dev_rec->sec_flags &=
-        ~(BTM_SEC_AUTHORIZED | BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED |
-          BTM_SEC_ROLE_SWITCHED | BTM_SEC_16_DIGIT_PIN_AUTHED);
+        ~(BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED | BTM_SEC_ROLE_SWITCHED |
+          BTM_SEC_16_DIGIT_PIN_AUTHED);
 
     // Remove temporary key.
     if (p_dev_rec->bond_type == BOND_TYPE_TEMPORARY)
