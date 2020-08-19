@@ -751,14 +751,6 @@ typedef uint8_t tBTM_LINK_KEY_TYPE;
  * trusted services
  ******************************************************************************/
 
-/* MACRO to check the security service bit mask in a bit stream (Returns true or
- * false) */
-#define BTM_SEC_IS_SERVICE_TRUSTED(p, service)                                 \
-  (((((uint32_t*)(p))[(((uint32_t)(service)) / BTM_SEC_ARRAY_BITS)]) &         \
-    (uint32_t)(((uint32_t)1 << (((uint32_t)(service)) % BTM_SEC_ARRAY_BITS)))) \
-       ? true                                                                  \
-       : false)
-
 /* MACRO to copy two trusted device bitmask */
 #define BTM_SEC_COPY_TRUSTED_DEVICE(p_src, p_dst)              \
   {                                                            \
