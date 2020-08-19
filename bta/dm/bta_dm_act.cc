@@ -489,8 +489,8 @@ void bta_dm_set_dev_name(const std::vector<uint8_t>& name) {
 }
 
 /** Sets discoverability, connectability and pairability */
-void bta_dm_set_visibility(tBTA_DM_DISC disc_mode_param,
-                           tBTA_DM_CONN conn_mode_param) {
+void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode_param,
+                         tBTA_DM_CONN conn_mode_param) {
   uint16_t window, interval;
   uint16_t le_disc_mode = BTM_BleReadDiscoverability();
   uint16_t le_conn_mode = BTM_BleReadConnectability();
