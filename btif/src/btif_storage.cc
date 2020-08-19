@@ -465,8 +465,8 @@ static bt_status_t btif_in_fetch_bonded_devices(
           if (btif_config_get_int(name, "DevClass", &cod))
             uint2devclass((uint32_t)cod, dev_class);
           btif_config_get_int(name, "PinLength", &pin_length);
-          BTA_DmAddDevice(bd_addr, dev_class, link_key, 0, 0,
-                          (uint8_t)linkkey_type, 0, pin_length);
+          BTA_DmAddDevice(bd_addr, dev_class, link_key, (uint8_t)linkkey_type,
+                          pin_length);
 
           if (btif_config_get_int(name, "DevType", &device_type) &&
               (device_type == BT_DEVICE_TYPE_DUMO)) {
