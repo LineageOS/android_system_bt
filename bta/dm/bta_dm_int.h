@@ -123,10 +123,7 @@ typedef struct {
   RawAddress bd_addr;
   DEV_CLASS dc;
   LinkKey link_key;
-  tBTA_SERVICE_MASK tm;
-  bool is_trusted;
   uint8_t key_type;
-  tBTM_IO_CAP io_cap;
   bool link_key_known;
   bool dc_known;
   BD_NAME bd_name;
