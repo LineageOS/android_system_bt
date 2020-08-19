@@ -64,14 +64,6 @@ void BTA_DmSetDeviceName(char* p_name) {
   do_in_main_thread(FROM_HERE, base::Bind(bta_dm_set_dev_name, name));
 }
 
-/** This function sets the Bluetooth connectable, discoverable, pairable and
- * conn paired only modes of local device
- */
-void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode) {
-  do_in_main_thread(FROM_HERE,
-                    base::Bind(bta_dm_set_visibility, disc_mode, conn_mode));
-}
-
 /*******************************************************************************
  *
  * Function         BTA_DmSearch
