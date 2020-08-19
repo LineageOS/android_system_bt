@@ -129,6 +129,7 @@ void SecurityRecordStorage::LoadSecurityRecords(std::set<std::shared_ptr<record:
       byte_array = common::ByteArray<16>::FromString(*device.Le().GetSignatureKey());
       record->signature_key = std::make_optional<std::array<uint8_t, 16>>(byte_array->bytes);
     }
+    record->SetIsEncrypted(false);
     record->SetIsEncryptionRequired(device.GetIsEncryptionRequired() == 1 ? true : false);
     record->SetAuthenticated(device.GetIsAuthenticated() == 1 ? true : false);
     record->SetRequiresMitmProtection(device.GetRequiresMitmProtection() == 1 ? true : false);
