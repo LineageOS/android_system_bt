@@ -513,11 +513,8 @@ bool BTA_DmSetVisibility(bt_scan_mode_t mode) {
       return false;
   }
 
-  BTM_SetDiscoverability(disc_mode_param, bta_dm_cb.inquiry_scan_window,
-                         bta_dm_cb.inquiry_scan_interval);
-
-  BTM_SetConnectability(conn_mode_param, bta_dm_cb.page_scan_window,
-                        bta_dm_cb.page_scan_interval);
+  BTM_SetDiscoverability(disc_mode_param, 0, 0);
+  BTM_SetConnectability(conn_mode_param, 0, 0);
   return true;
 }
 
