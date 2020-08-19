@@ -393,7 +393,6 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
       if (p_lcb->transport == BT_TRANSPORT_LE) {
         btm_acl_removed(p_lcb->remote_bd_addr, p_lcb->transport);
       } else {
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
         /* If we are going to re-use the LCB without dropping it, release all
         fixed channels
         here */
@@ -421,7 +420,6 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
             p_lcb->p_fixed_ccbs[xx] = NULL;
           }
         }
-#endif
       }
       if (p_lcb->transport == BT_TRANSPORT_LE) {
         if (l2cu_create_conn_le(p_lcb))

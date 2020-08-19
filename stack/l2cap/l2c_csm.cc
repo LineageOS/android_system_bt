@@ -918,7 +918,6 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
     case L2CEVT_L2CAP_DATA: /* Peer data packet rcvd    */
       L2CAP_TRACE_API("L2CAP - Calling DataInd_Cb(), CID: 0x%04x",
                       p_ccb->local_cid);
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
       if (p_ccb->local_cid >= L2CAP_FIRST_FIXED_CHNL &&
           p_ccb->local_cid <= L2CAP_LAST_FIXED_CHNL) {
         if (p_ccb->local_cid < L2CAP_BASE_APPL_CID) {
@@ -933,7 +932,6 @@ static void l2c_csm_config(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
           break;
         }
       }
-#endif
       (*p_ccb->p_rcb->api.pL2CA_DataInd_Cb)(p_ccb->local_cid, (BT_HDR*)p_data);
       break;
 

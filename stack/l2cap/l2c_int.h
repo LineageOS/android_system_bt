@@ -289,9 +289,7 @@ typedef struct t_l2c_ccb {
 
   bool is_flushable; /* true if channel is flushable */
 
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
   uint16_t fixed_chnl_idle_tout; /* Idle timeout to use for the fixed channel */
-#endif
   uint16_t tx_data_len;
 
   /* Number of LE frames that the remote can send to us (credit count in
@@ -373,10 +371,8 @@ typedef struct t_l2c_linkcb {
   uint8_t acl_priority;     /* L2C_PRIORITY_NORMAL or L2C_PRIORITY_HIGH */
   tL2CA_NOCP_CB* p_nocp_cb; /* Num Cmpl pkts callback */
 
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
   tL2C_CCB* p_fixed_ccbs[L2CAP_NUM_FIXED_CHNLS];
   uint16_t disc_reason;
-#endif
 
   tBT_TRANSPORT transport;
   uint8_t initiating_phys;  // LE PHY used for connection initiation
@@ -449,10 +445,8 @@ typedef struct {
   uint32_t test_info_resp; /* Conformance testing needs a dynamic response */
 #endif
 
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
   tL2CAP_FIXED_CHNL_REG
       fixed_reg[L2CAP_NUM_FIXED_CHNLS]; /* Reg info for fixed channels */
-#endif
 
   uint16_t num_ble_links_active; /* Number of LE links active */
   uint16_t controller_le_xmit_window; /* Total ACL window for all links */

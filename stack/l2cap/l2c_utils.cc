@@ -153,9 +153,7 @@ void l2cu_release_lcb(tL2C_LCB* p_lcb) {
     }
   }
 
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
   l2cu_process_fixed_disc_cback(p_lcb);
-#endif
 
   /* Ensure no CCBs left on this LCB */
   for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb;
@@ -1034,12 +1032,8 @@ void l2cu_send_peer_info_rsp(tL2C_LCB* p_lcb, uint8_t remote_id,
 #if (L2CAP_CONFORMANCE_TESTING == TRUE)
       UINT32_TO_STREAM(p, l2cb.test_info_resp);
 #else
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
       UINT32_TO_STREAM(p,
                        L2CAP_EXTFEA_SUPPORTED_MASK | L2CAP_EXTFEA_FIXED_CHNLS);
-#else
-      UINT32_TO_STREAM(p, L2CAP_EXTFEA_SUPPORTED_MASK);
-#endif
 #endif
     }
   } else if (info_type == L2CAP_FIXED_CHANNELS_INFO_TYPE) {
@@ -1051,7 +1045,6 @@ void l2cu_send_peer_info_rsp(tL2C_LCB* p_lcb, uint8_t remote_id,
     if (L2CAP_EXTFEA_SUPPORTED_MASK & L2CAP_EXTFEA_UCD_RECEPTION)
       p[0] |= L2CAP_FIXED_CHNL_CNCTLESS_BIT;
 
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
     {
       int xx;
 
@@ -1066,7 +1059,6 @@ void l2cu_send_peer_info_rsp(tL2C_LCB* p_lcb, uint8_t remote_id,
               1 << ((xx + L2CAP_FIRST_FIXED_CHNL) % 8);
       }
     }
-#endif
   } else if (info_type == L2CAP_CONNLESS_MTU_INFO_TYPE) {
     UINT16_TO_STREAM(p, L2CAP_INFO_RESP_RESULT_SUCCESS);
     UINT16_TO_STREAM(p, L2CAP_MTU_SIZE);
@@ -2395,7 +2387,6 @@ void l2cu_adjust_out_mps(tL2C_CCB* p_ccb) {
  *
  ******************************************************************************/
 bool l2cu_initialize_fixed_ccb(tL2C_LCB* p_lcb, uint16_t fixed_cid) {
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
   tL2C_CCB* p_ccb;
 
   /* If we already have a CCB, then simply return */
@@ -2429,7 +2420,6 @@ bool l2cu_initialize_fixed_ccb(tL2C_LCB* p_lcb, uint16_t fixed_cid) {
   /* Set the default idle timeout value to use */
   p_ccb->fixed_chnl_idle_tout =
       l2cb.fixed_reg[fixed_cid - L2CAP_FIRST_FIXED_CHNL].default_idle_tout;
-#endif
   return (true);
 }
 
@@ -2450,7 +2440,6 @@ void l2cu_no_dynamic_ccbs(tL2C_LCB* p_lcb) {
   uint64_t timeout_ms = p_lcb->idle_timeout * 1000;
   bool start_timeout = true;
 
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
   int xx;
 
   for (xx = 0; xx < L2CAP_NUM_FIXED_CHNLS; xx++) {
@@ -2465,7 +2454,6 @@ void l2cu_no_dynamic_ccbs(tL2C_LCB* p_lcb) {
       timeout_ms = p_lcb->p_fixed_ccbs[xx]->fixed_chnl_idle_tout * 1000;
     }
   }
-#endif
 
   /* If the link is pairing, do not mess with the timeouts */
   if (p_lcb->is_bonding) return;
@@ -2505,7 +2493,6 @@ void l2cu_no_dynamic_ccbs(tL2C_LCB* p_lcb) {
   }
 }
 
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
 /*******************************************************************************
  *
  * Function         l2cu_process_fixed_chnl_resp
@@ -2558,7 +2545,6 @@ void l2cu_process_fixed_chnl_resp(tL2C_LCB* p_lcb) {
     }
   }
 }
-#endif
 
 /*******************************************************************************
  *
@@ -2571,7 +2557,6 @@ void l2cu_process_fixed_chnl_resp(tL2C_LCB* p_lcb) {
  *
  ******************************************************************************/
 void l2cu_process_fixed_disc_cback(tL2C_LCB* p_lcb) {
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
 
   /* Select peer channels mask to use depending on transport */
   uint8_t peer_channel_mask = p_lcb->peer_chnl_mask[0];
@@ -2596,7 +2581,6 @@ void l2cu_process_fixed_disc_cback(tL2C_LCB* p_lcb) {
           xx + L2CAP_FIRST_FIXED_CHNL, p_lcb->remote_bd_addr, false,
           p_lcb->disc_reason, p_lcb->transport);
   }
-#endif
 }
 
 /*******************************************************************************
@@ -3095,7 +3079,6 @@ BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb,
   BT_HDR* p_buf;
 
 /* Highest priority are fixed channels */
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
   int xx;
 
   p_cbi->cb = NULL;
@@ -3143,7 +3126,6 @@ BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb,
       }
     }
   }
-#endif
 
 #if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
   /* get next serving channel in round-robin */
@@ -3266,7 +3248,6 @@ static void send_congestion_status_to_all_clients(tL2C_CCB* p_ccb,
 
     if (status == false) l2cb.is_cong_cback_context = false;
   }
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
   else {
     for (uint8_t xx = 0; xx < L2CAP_NUM_FIXED_CHNLS; xx++) {
       if (p_ccb->p_lcb->p_fixed_ccbs[xx] == p_ccb) {
@@ -3277,7 +3258,6 @@ static void send_congestion_status_to_all_clients(tL2C_CCB* p_ccb,
       }
     }
   }
-#endif
 }
 
 /* check if any change in congestion status */
