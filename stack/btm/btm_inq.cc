@@ -466,7 +466,6 @@ uint16_t BTM_ReadConnectability(uint16_t* p_window, uint16_t* p_interval) {
  *                  state
  *
  * Returns          BTM_INQUIRY_INACTIVE if inactive (0)
- *                  BTM_LIMITED_INQUIRY_ACTIVE if a limted inquiry is active
  *                  BTM_GENERAL_INQUIRY_ACTIVE if a general inquiry is active
  *
  ******************************************************************************/
@@ -816,8 +815,7 @@ void btm_inq_db_reset(void) {
 
     /* If not a periodic inquiry, the complete callback must be called to notify
      * caller */
-    if (temp_inq_active == BTM_LIMITED_INQUIRY_ACTIVE ||
-        temp_inq_active == BTM_GENERAL_INQUIRY_ACTIVE) {
+    if (temp_inq_active == BTM_GENERAL_INQUIRY_ACTIVE) {
       if (p_inq->p_inq_cmpl_cb) {
         num_responses = 0;
         (*p_inq->p_inq_cmpl_cb)(&num_responses);
@@ -882,8 +880,7 @@ void btm_inq_db_init(void) {
  *
  ******************************************************************************/
 void btm_inq_stop_on_ssp(void) {
-  uint8_t normal_active =
-      (BTM_GENERAL_INQUIRY_ACTIVE | BTM_LIMITED_INQUIRY_ACTIVE);
+  uint8_t normal_active = (BTM_GENERAL_INQUIRY_ACTIVE);
 
 #if (BTM_INQ_DEBUG == TRUE)
   BTM_TRACE_DEBUG(
@@ -1110,8 +1107,7 @@ static void btm_initiate_inquiry() {
     return;
   }
 
-  lap = (p_inq->inq_active & BTM_LIMITED_INQUIRY_ACTIVE) ? &limited_inq_lap
-                                                         : &general_inq_lap;
+  lap = &general_inq_lap;
 
   btm_clr_inq_result_flt();
 

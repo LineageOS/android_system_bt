@@ -172,7 +172,6 @@ uint16_t BTM_ReadConnectability(uint16_t* p_window, uint16_t* p_interval);
  * Description      Return a bit mask of the current inquiry state
  *
  * Returns          BTM_INQUIRY_INACTIVE if inactive (0)
- *                  BTM_LIMITED_INQUIRY_ACTIVE if a limted inquiry is active
  *                  BTM_GENERAL_INQUIRY_ACTIVE if a general inquiry is active
  *
  ******************************************************************************/

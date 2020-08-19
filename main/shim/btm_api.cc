@@ -515,9 +515,7 @@ uint16_t bluetooth::shim::BTM_ReadConnectability(uint16_t* p_window,
 }
 
 uint16_t bluetooth::shim::BTM_IsInquiryActive(void) {
-  if (Stack::GetInstance()->GetBtm()->IsLimitedInquiryActive()) {
-    return BTM_LIMITED_INQUIRY_ACTIVE;
-  } else if (Stack::GetInstance()->GetBtm()->IsGeneralInquiryActive()) {
+  if (Stack::GetInstance()->GetBtm()->IsGeneralInquiryActive()) {
     return BTM_GENERAL_INQUIRY_ACTIVE;
   }
   return BTM_INQUIRY_INACTIVE;

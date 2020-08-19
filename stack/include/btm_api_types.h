@@ -99,8 +99,7 @@ typedef void(tBTM_VSC_CMPL_CB)(tBTM_VSC_CMPL* p1);
  */
 #define BTM_INQUIRY_NONE 0
 #define BTM_GENERAL_INQUIRY 0x01
-#define BTM_LIMITED_INQUIRY 0x02
-#define BTM_BR_INQUIRY_MASK (BTM_GENERAL_INQUIRY | BTM_LIMITED_INQUIRY)
+#define BTM_BR_INQUIRY_MASK (BTM_GENERAL_INQUIRY)
 
 /* high byte of inquiry mode for BLE inquiry mode */
 #define BTM_BLE_INQUIRY_NONE 0x00
@@ -115,8 +114,6 @@ typedef void(tBTM_VSC_CMPL_CB)(tBTM_VSC_CMPL* p1);
 #define BTM_INQUIRY_INACTIVE 0x0
 /* a general inquiry is in progress */
 #define BTM_GENERAL_INQUIRY_ACTIVE BTM_GENERAL_INQUIRY
-/* a limited inquiry is in progress */
-#define BTM_LIMITED_INQUIRY_ACTIVE BTM_LIMITED_INQUIRY
 /* SSP is active, so inquiry is disallowed (work around for FW bug) */
 #define BTM_SSP_INQUIRY_ACTIVE 0x4
 /* a general inquiry is in progress */
@@ -126,8 +123,7 @@ typedef void(tBTM_VSC_CMPL_CB)(tBTM_VSC_CMPL* p1);
 
 /* inquiry activity mask */
 /* BR/EDR inquiry activity mask */
-#define BTM_BR_INQ_ACTIVE_MASK \
-  (BTM_GENERAL_INQUIRY_ACTIVE | BTM_LIMITED_INQUIRY_ACTIVE)
+#define BTM_BR_INQ_ACTIVE_MASK (BTM_GENERAL_INQUIRY_ACTIVE)
 /* LE scan activity mask */
 #define BTM_BLE_SCAN_ACTIVE_MASK 0xF0
 /* LE inquiry activity mask*/
