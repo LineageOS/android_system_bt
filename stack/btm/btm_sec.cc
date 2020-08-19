@@ -2003,17 +2003,6 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
       }
     }
 
-    if (rc == BTM_SUCCESS) {
-      BTM_TRACE_EVENT("%s: allow to bypass, checking authorization", __func__);
-      /* the security in BTM_SEC_IN_FLAGS is fullfilled so far, check the
-       * requirements in */
-      /* btm_sec_execute_procedure */
-      if ((is_originator && false) || (!is_originator && false)) {
-        BTM_TRACE_EVENT("%s: still need authorization", __func__);
-        rc = BTM_CMD_STARTED;
-      }
-    }
-
     /* Check whether there is a pending security procedure, if so we should
      * always queue */
     /* the new security request */
