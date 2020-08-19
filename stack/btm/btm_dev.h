@@ -45,17 +45,13 @@
  *                  bd_name          - Name of the peer device. NULL if unknown.
  *                  features         - Remote device's features (up to 3 pages).
  *                                     NULL if not known
- *                  trusted_mask     - Bitwise OR of services that do not
- *                                     require authorization.
- *                                     (array of uint32_t)
  *                  link_key         - Connection link key. NULL if unknown.
  *
  * Returns          true if added OK, else false
  *
  ******************************************************************************/
 bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
-                      BD_NAME bd_name, uint8_t* features,
-                      uint32_t trusted_mask[], LinkKey* p_link_key,
+                      BD_NAME bd_name, uint8_t* features, LinkKey* p_link_key,
                       uint8_t key_type, uint8_t pin_length);
 void wipe_secrets_and_remove(tBTM_SEC_DEV_REC* p_dev_rec);
 

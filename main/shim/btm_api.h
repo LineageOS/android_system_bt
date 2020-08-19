@@ -1512,8 +1512,7 @@ uint8_t BTM_SecClrService(uint8_t service_id);
  *
  ******************************************************************************/
 bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
-                      BD_NAME bd_name, uint8_t* features,
-                      uint32_t trusted_mask[], LinkKey* link_key,
+                      BD_NAME bd_name, uint8_t* features, LinkKey* link_key,
                       uint8_t key_type, tBTM_IO_CAP io_cap, uint8_t pin_length);
 
 /** Free resources associated with the device associated with |bd_addr| address.
