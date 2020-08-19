@@ -257,12 +257,6 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   Stack::GetInstance()->GetBtm()->StartActiveScanning();
 
   uint8_t classic_mode = inqparms.mode & 0x0f;
-  if (!Stack::GetInstance()->GetBtm()->SetInquiryFilter(
-          classic_mode, BTM_CLR_INQUIRY_FILTER, inqparms.filter_cond)) {
-    LOG_WARN("%s Unable to set inquiry filter", __func__);
-    return BTM_ERR_PROCESSING;
-  }
-
   if (!Stack::GetInstance()->GetBtm()->StartInquiry(
           classic_mode, inqparms.duration, 0,
           [](uint16_t status, uint8_t inquiry_mode) {
