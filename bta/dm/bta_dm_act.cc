@@ -3500,7 +3500,7 @@ static void bta_dm_gattc_register(void) {
                             else
                               bta_dm_search_cb.client_if = BTA_GATTS_INVALID_IF;
 
-                          }));
+                          }), false);
   }
 }
 
