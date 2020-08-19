@@ -64,6 +64,9 @@ class AclManager : public Module {
   // Generates OnLeConnectSuccess if connected, or OnLeConnectFail otherwise
   virtual void CreateLeConnection(AddressWithType address_with_type);
 
+  // Ask the controller for specific data parameters
+  virtual void SetLeSuggestedDefaultDataParameters(uint16_t octets, uint16_t time);
+
   virtual void SetPrivacyPolicyForInitiatorAddress(
       LeAddressManager::AddressPolicy address_policy,
       AddressWithType fixed_address,

@@ -141,6 +141,10 @@ void AclManager::CreateLeConnection(AddressWithType address_with_type) {
   CallOn(pimpl_->le_impl_, &le_impl::create_le_connection, address_with_type, true);
 }
 
+void AclManager::SetLeSuggestedDefaultDataParameters(uint16_t octets, uint16_t time) {
+  CallOn(pimpl_->le_impl_, &le_impl::set_le_suggested_default_data_parameters, octets, time);
+}
+
 void AclManager::SetPrivacyPolicyForInitiatorAddress(
     LeAddressManager::AddressPolicy address_policy,
     AddressWithType fixed_address,
