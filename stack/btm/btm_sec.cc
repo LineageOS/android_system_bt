@@ -686,14 +686,12 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
  * Parameters:      bd_addr      - Address of the device to bond
  *                  pin_len      - length in bytes of the PIN Code
  *                  p_pin        - pointer to array with the PIN Code
- *                  trusted_mask - bitwise OR of trusted services
- *                                 (array of uint32_t)
  *
  *  Note: After 2.1 parameters are not used and preserved here not to change API
  ******************************************************************************/
 tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
                                       tBT_TRANSPORT transport, uint8_t pin_len,
-                                      uint8_t* p_pin, uint32_t trusted_mask[]) {
+                                      uint8_t* p_pin) {
   tBTM_SEC_DEV_REC* p_dev_rec;
   tBTM_STATUS status;
   uint8_t* p_features;
@@ -750,8 +748,6 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
 
   p_dev_rec->security_required = BTM_SEC_OUT_AUTHENTICATE;
   p_dev_rec->is_originator = true;
-  if (trusted_mask)
-    BTM_SEC_COPY_TRUSTED_DEVICE(trusted_mask, p_dev_rec->trusted_mask);
 
   if (transport == BT_TRANSPORT_LE) {
     btm_ble_init_pseudo_addr(p_dev_rec, bd_addr);
@@ -862,15 +858,12 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
  *                  transport    - doing SSP over BR/EDR or SMP over LE
  *                  pin_len      - length in bytes of the PIN Code
  *                  p_pin        - pointer to array with the PIN Code
- *                  trusted_mask - bitwise OR of trusted services
- *                                 (array of uint32_t)
  *
  *  Note: After 2.1 parameters are not used and preserved here not to change API
  ******************************************************************************/
 tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                         tBT_TRANSPORT transport, int device_type,
-                        uint8_t pin_len, uint8_t* p_pin,
-                        uint32_t trusted_mask[]) {
+                        uint8_t pin_len, uint8_t* p_pin) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::BTM_SecBond(bd_addr, addr_type, transport,
                                         device_type);
@@ -888,8 +881,7 @@ tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
        (dev_type & BT_DEVICE_TYPE_BREDR) == 0)) {
     return BTM_ILLEGAL_ACTION;
   }
-  return btm_sec_bond_by_transport(bd_addr, transport, pin_len, p_pin,
-                                   trusted_mask);
+  return btm_sec_bond_by_transport(bd_addr, transport, pin_len, p_pin);
 }
 
 /*******************************************************************************

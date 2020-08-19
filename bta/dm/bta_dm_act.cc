@@ -684,7 +684,7 @@ void bta_dm_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
   char* p_name;
 
   tBTM_STATUS status =
-      BTM_SecBond(bd_addr, addr_type, transport, device_type, 0, NULL, 0);
+      BTM_SecBond(bd_addr, addr_type, transport, device_type, 0, NULL);
 
   if (bta_dm_cb.p_sec_cback && (status != BTM_CMD_STARTED)) {
     memset(&sec_event, 0, sizeof(tBTA_DM_SEC));

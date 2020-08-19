@@ -1585,8 +1585,6 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
  *                  addr_type    - address type for LE transport
  *                  pin_len      - length in bytes of the PIN Code
  *                  p_pin        - pointer to array with the PIN Code
- *                  trusted_mask - bitwise OR of trusted services
- *                                 (array of uint32_t)
  *                  transport :  Physical transport to use for bonding
  *                               (BR/EDR or LE)
  *

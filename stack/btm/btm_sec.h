@@ -218,14 +218,12 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
  * Parameters:      bd_addr      - Address of the device to bond
  *                  pin_len      - length in bytes of the PIN Code
  *                  p_pin        - pointer to array with the PIN Code
- *                  trusted_mask - bitwise OR of trusted services
- *                                 (array of uint32_t)
  *
  *  Note: After 2.1 parameters are not used and preserved here not to change API
  ******************************************************************************/
 tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
                                       tBT_TRANSPORT transport, uint8_t pin_len,
-                                      uint8_t* p_pin, uint32_t trusted_mask[]);
+                                      uint8_t* p_pin);
 
 /*******************************************************************************
  *
@@ -239,15 +237,12 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
  *                  transport    - doing SSP over BR/EDR or SMP over LE
  *                  pin_len      - length in bytes of the PIN Code
  *                  p_pin        - pointer to array with the PIN Code
- *                  trusted_mask - bitwise OR of trusted services
- *                                 (array of uint32_t)
  *
  *  Note: After 2.1 parameters are not used and preserved here not to change API
  ******************************************************************************/
 tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                         tBT_TRANSPORT transport, int device_type,
-                        uint8_t pin_len, uint8_t* p_pin,
-                        uint32_t trusted_mask[]);
+                        uint8_t pin_len, uint8_t* p_pin);
 
 /*******************************************************************************
  *
