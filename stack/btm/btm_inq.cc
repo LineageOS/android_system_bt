@@ -372,8 +372,8 @@ tBTM_STATUS BTM_SetConnectability(uint16_t page_mode) {
   }
 
   uint8_t scan_mode = 0;
-  uint16_t window = 0;
-  uint16_t interval = 0;
+  uint16_t window = BTM_DEFAULT_CONN_WINDOW;
+  uint16_t interval = BTM_DEFAULT_CONN_INTERVAL;
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
 
   BTM_TRACE_API("BTM_SetConnectability");
@@ -394,26 +394,11 @@ tBTM_STATUS BTM_SetConnectability(uint16_t page_mode) {
   /* Make sure the controller is active */
   if (!controller_get_interface()->get_is_ready()) return (BTM_DEV_RESET);
 
-  /* If the window and/or interval is '0', set to default values */
-  if (!window) window = BTM_DEFAULT_CONN_WINDOW;
+  BTM_TRACE_API("BTM_SetConnectability: mode %d [NonConn-0, Conn-1]",
+                page_mode);
 
-  if (!interval) interval = BTM_DEFAULT_CONN_INTERVAL;
-
-  BTM_TRACE_API(
-      "BTM_SetConnectability: mode %d [NonConn-0, Conn-1], window 0x%04x, "
-      "interval 0x%04x",
-      page_mode, window, interval);
-
-  /*** Check for valid window and interval parameters ***/
   /*** Only check window and duration if mode is connectable ***/
   if (page_mode == BTM_CONNECTABLE) {
-    /* window must be less than or equal to interval */
-    if (window < HCI_MIN_PAGESCAN_WINDOW || window > HCI_MAX_PAGESCAN_WINDOW ||
-        interval < HCI_MIN_PAGESCAN_INTERVAL ||
-        interval > HCI_MAX_PAGESCAN_INTERVAL || window > interval) {
-      return (BTM_ILLEGAL_VALUE);
-    }
-
     scan_mode |= HCI_PAGE_SCAN_ENABLED;
   }
 
