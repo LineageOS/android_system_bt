@@ -342,3 +342,7 @@ void btm_acl_update_conn_addr(uint16_t conn_handle, const RawAddress& address);
  *
  ******************************************************************************/
 bool BTM_ReadPowerMode(const RawAddress& remote_bda, tBTM_PM_MODE* p_mode);
+
+void acl_create_classic_connection(const RawAddress& bd_addr,
+                                   bool there_are_high_priority_channels,
+                                   bool is_bonding);
