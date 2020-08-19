@@ -150,10 +150,9 @@ void SendRemoteNameRequest(const RawAddress& raw_address) {
  *                  BTM_WRONG_MODE if the device is not up.
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode, uint16_t window,
-                                   uint16_t interval) {
+tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_SetDiscoverability(inq_mode, window, interval);
+    return bluetooth::shim::BTM_SetDiscoverability(inq_mode, 0, 0);
   }
 
   uint8_t scan_mode = 0;
@@ -164,6 +163,8 @@ tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode, uint16_t window,
   LAP temp_lap[2];
   bool is_limited;
   bool cod_limited;
+  uint16_t window = BTM_DEFAULT_DISC_WINDOW;
+  uint16_t interval = BTM_DEFAULT_DISC_INTERVAL;
 
   BTM_TRACE_API("BTM_SetDiscoverability");
   if (controller_get_interface()->supports_ble()) {
@@ -182,26 +183,8 @@ tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode, uint16_t window,
   if (!controller_get_interface()->get_is_ready()) return (BTM_DEV_RESET);
 
   /* If the window and/or interval is '0', set to default values */
-  if (!window) window = BTM_DEFAULT_DISC_WINDOW;
-
-  if (!interval) interval = BTM_DEFAULT_DISC_INTERVAL;
-
-  BTM_TRACE_API(
-      "BTM_SetDiscoverability: mode %d [NonDisc-0, Lim-1, Gen-2], window "
-      "0x%04x, interval 0x%04x",
-      inq_mode, window, interval);
-
-  /*** Check for valid window and interval parameters ***/
-  /*** Only check window and duration if mode is connectable ***/
-  if (inq_mode != BTM_NON_DISCOVERABLE) {
-    /* window must be less than or equal to interval */
-    if (window < HCI_MIN_INQUIRYSCAN_WINDOW ||
-        window > HCI_MAX_INQUIRYSCAN_WINDOW ||
-        interval < HCI_MIN_INQUIRYSCAN_INTERVAL ||
-        interval > HCI_MAX_INQUIRYSCAN_INTERVAL || window > interval) {
-      return (BTM_ILLEGAL_VALUE);
-    }
-  }
+  BTM_TRACE_API("BTM_SetDiscoverability: mode %d [NonDisc-0, Lim-1, Gen-2]",
+                inq_mode);
 
   /* Set the IAC if needed */
   if (inq_mode != BTM_NON_DISCOVERABLE) {
@@ -326,33 +309,6 @@ tBTM_STATUS BTM_SetInquiryMode(uint8_t mode) {
 
 /*******************************************************************************
  *
- * Function         BTM_ReadDiscoverability
- *
- * Description      This function is called to read the current discoverability
- *                  mode of the device.
- *
- * Output Params:   p_window - current inquiry scan duration
- *                  p_interval - current inquiry scan interval
- *
- * Returns          BTM_NON_DISCOVERABLE, BTM_LIMITED_DISCOVERABLE, or
- *                  BTM_GENERAL_DISCOVERABLE
- *
- ******************************************************************************/
-uint16_t BTM_ReadDiscoverability(uint16_t* p_window, uint16_t* p_interval) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_ReadDiscoverability(p_window, p_interval);
-  }
-
-  BTM_TRACE_API("BTM_ReadDiscoverability");
-  if (p_window) *p_window = btm_cb.btm_inq_vars.inq_scan_window;
-
-  if (p_interval) *p_interval = btm_cb.btm_inq_vars.inq_scan_period;
-
-  return (btm_cb.btm_inq_vars.discoverable_mode);
-}
-
-/*******************************************************************************
- *
  * Function         BTM_SetConnectability
  *
  * Description      This function is called to set the device into or out of
@@ -365,13 +321,14 @@ uint16_t BTM_ReadDiscoverability(uint16_t* p_window, uint16_t* p_interval) {
  *                  BTM_WRONG_MODE if the device is not up.
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SetConnectability(uint16_t page_mode, uint16_t window,
-                                  uint16_t interval) {
+tBTM_STATUS BTM_SetConnectability(uint16_t page_mode) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_SetConnectability(page_mode, window, interval);
+    return bluetooth::shim::BTM_SetConnectability(page_mode, 0, 0);
   }
 
   uint8_t scan_mode = 0;
+  uint16_t window = BTM_DEFAULT_CONN_WINDOW;
+  uint16_t interval = BTM_DEFAULT_CONN_INTERVAL;
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
 
   BTM_TRACE_API("BTM_SetConnectability");
@@ -392,26 +349,11 @@ tBTM_STATUS BTM_SetConnectability(uint16_t page_mode, uint16_t window,
   /* Make sure the controller is active */
   if (!controller_get_interface()->get_is_ready()) return (BTM_DEV_RESET);
 
-  /* If the window and/or interval is '0', set to default values */
-  if (!window) window = BTM_DEFAULT_CONN_WINDOW;
+  BTM_TRACE_API("BTM_SetConnectability: mode %d [NonConn-0, Conn-1]",
+                page_mode);
 
-  if (!interval) interval = BTM_DEFAULT_CONN_INTERVAL;
-
-  BTM_TRACE_API(
-      "BTM_SetConnectability: mode %d [NonConn-0, Conn-1], window 0x%04x, "
-      "interval 0x%04x",
-      page_mode, window, interval);
-
-  /*** Check for valid window and interval parameters ***/
   /*** Only check window and duration if mode is connectable ***/
   if (page_mode == BTM_CONNECTABLE) {
-    /* window must be less than or equal to interval */
-    if (window < HCI_MIN_PAGESCAN_WINDOW || window > HCI_MAX_PAGESCAN_WINDOW ||
-        interval < HCI_MIN_PAGESCAN_INTERVAL ||
-        interval > HCI_MAX_PAGESCAN_INTERVAL || window > interval) {
-      return (BTM_ILLEGAL_VALUE);
-    }
-
     scan_mode |= HCI_PAGE_SCAN_ENABLED;
   }
 
@@ -430,31 +372,6 @@ tBTM_STATUS BTM_SetConnectability(uint16_t page_mode, uint16_t window,
   p_inq->connectable_mode &= (~BTM_CONNECTABLE_MASK);
   p_inq->connectable_mode |= page_mode;
   return (BTM_SUCCESS);
-}
-
-/*******************************************************************************
- *
- * Function         BTM_ReadConnectability
- *
- * Description      This function is called to read the current discoverability
- *                  mode of the device.
- * Output Params    p_window - current page scan duration
- *                  p_interval - current time between page scans
- *
- * Returns          BTM_NON_CONNECTABLE or BTM_CONNECTABLE
- *
- ******************************************************************************/
-uint16_t BTM_ReadConnectability(uint16_t* p_window, uint16_t* p_interval) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_ReadConnectability(p_window, p_interval);
-  }
-
-  BTM_TRACE_API("BTM_ReadConnectability");
-  if (p_window) *p_window = btm_cb.btm_inq_vars.page_scan_window;
-
-  if (p_interval) *p_interval = btm_cb.btm_inq_vars.page_scan_period;
-
-  return (btm_cb.btm_inq_vars.connectable_mode);
 }
 
 /*******************************************************************************
