@@ -59,8 +59,7 @@ static const tBTA_SYS_REG bta_av_reg = {bta_av_hdl_event, BTA_AvDisable};
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AvEnable(tBTA_SEC sec_mask, tBTA_AV_FEAT features,
-                  tBTA_AV_CBACK* p_cback) {
+void BTA_AvEnable(tBTA_AV_FEAT features, tBTA_AV_CBACK* p_cback) {
   tBTA_AV_API_ENABLE* p_buf =
       (tBTA_AV_API_ENABLE*)osi_malloc(sizeof(tBTA_AV_API_ENABLE));
 
@@ -70,7 +69,7 @@ void BTA_AvEnable(tBTA_SEC sec_mask, tBTA_AV_FEAT features,
   p_buf->hdr.event = BTA_AV_API_ENABLE_EVT;
   p_buf->p_cback = p_cback;
   p_buf->features = features;
-  p_buf->sec_mask = sec_mask;
+  p_buf->sec_mask = BTA_SEC_AUTHENTICATE;
 
   bta_sys_sendmsg(p_buf);
 }

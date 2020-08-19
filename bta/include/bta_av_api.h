@@ -423,8 +423,7 @@ typedef struct {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AvEnable(tBTA_SEC sec_mask, tBTA_AV_FEAT features,
-                  tBTA_AV_CBACK* p_cback);
+void BTA_AvEnable(tBTA_AV_FEAT features, tBTA_AV_CBACK* p_cback);
 
 /*******************************************************************************
  *
