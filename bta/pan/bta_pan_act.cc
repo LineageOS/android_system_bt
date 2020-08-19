@@ -299,12 +299,6 @@ static bool bta_pan_has_multiple_connections(uint8_t app_id) {
  ******************************************************************************/
 void bta_pan_enable(tBTA_PAN_DATA* p_data) {
   tPAN_REGISTER reg_data;
-  uint16_t initial_discoverability;
-  uint16_t initial_connectability;
-  uint16_t d_window;
-  uint16_t d_interval;
-  uint16_t c_window;
-  uint16_t c_interval;
 
   bta_pan_cb.p_cback = p_data->api_enable.p_cback;
 
@@ -316,17 +310,7 @@ void bta_pan_enable(tBTA_PAN_DATA* p_data) {
   reg_data.pan_mfilt_ind_cb = bta_pan_mfilt_ind_cback;
   reg_data.pan_tx_data_flow_cb = bta_pan_data_flow_cb;
 
-  /* read connectability and discoverability settings.
-  Pan profile changes the settings. We have to change it back to
-  be consistent with other bta subsystems */
-  initial_connectability = BTM_ReadConnectability(&c_window, &c_interval);
-  initial_discoverability = BTM_ReadDiscoverability(&d_window, &d_interval);
-
   PAN_Register(&reg_data);
-
-  /* set it back to original value */
-  BTM_SetDiscoverability(initial_discoverability, d_window, d_interval);
-  BTM_SetConnectability(initial_connectability, c_window, c_interval);
 
   bta_pan_cb.flow_mask = bta_pan_co_init(&bta_pan_cb.q_level);
   bta_pan_cb.p_cback(BTA_PAN_ENABLE_EVT, NULL);
