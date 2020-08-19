@@ -123,13 +123,6 @@ void l2c_link_hci_conn_req(const RawAddress& bd_addr) {
   }
 }
 
-void btm_acl_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
-                       uint8_t enc_mode) {
-  btm_sec_connected(bda, handle, status, enc_mode);
-  btm_acl_set_paging(false);
-  l2c_link_hci_conn_comp(status, handle, bda);
-}
-
 void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
                             const RawAddress& p_bda) {
   tL2C_CONN_INFO ci;

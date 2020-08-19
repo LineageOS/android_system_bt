@@ -2121,61 +2121,17 @@ uint8_t l2cu_get_num_hi_priority(void) {
  *
  * Function         l2cu_create_conn_after_switch
  *
- * Description      This function initiates an acl connection via HCI
- *                  If switch required to create connection it is already done.
- *
- * Returns          true if successful, false if get buffer fails.
+ * Description      This continues a connection creation possibly after
+ *                  a role switch.
  *
  ******************************************************************************/
-
 void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb) {
-  uint8_t allow_switch = HCI_CR_CONN_ALLOW_SWITCH;
-  tBTM_INQ_INFO* p_inq_info;
-  uint8_t page_scan_rep_mode;
-  uint8_t page_scan_mode;
-  uint16_t clock_offset;
-  uint16_t num_acl = BTM_GetNumAclLinks();
-  uint8_t no_hi_prio_chs = l2cu_get_num_hi_priority();
-  const controller_t* controller = controller_get_interface();
+  const bool there_are_high_priority_channels =
+      (l2cu_get_num_hi_priority() > 0);
 
-  bool disallow_switch = !acl_is_role_switch_allowed();
-
-  L2CAP_TRACE_DEBUG(
-      "l2cu_create_conn_after_switch :%d num_acl:%d no_hi: %d is_bonding:%d",
-      disallow_switch, num_acl, no_hi_prio_chs, p_lcb->is_bonding);
-  /* FW team says that we can participant in 4 piconets
-   * typically 3 piconet + 1 for scanning.
-   * We can enhance the code to count the number of piconets later. */
-  if (((!disallow_switch && (num_acl < 3)) ||
-       (p_lcb->is_bonding && (no_hi_prio_chs == 0))) &&
-      controller->supports_role_switch())
-    allow_switch = HCI_CR_CONN_ALLOW_SWITCH;
-  else
-    allow_switch = HCI_CR_CONN_NOT_ALLOW_SWITCH;
-
-  p_lcb->link_state = LST_CONNECTING;
-
-  /* Check with the BT manager if details about remote device are known */
-  p_inq_info = BTM_InqDbRead(p_lcb->remote_bd_addr);
-  if ((p_inq_info != NULL) &&
-      (p_inq_info->results.inq_result_type & BTM_INQ_RESULT_BR)) {
-    page_scan_rep_mode = p_inq_info->results.page_scan_rep_mode;
-    page_scan_mode = p_inq_info->results.page_scan_mode;
-    clock_offset = (uint16_t)(p_inq_info->results.clock_offset);
-  } else {
-    /* No info known. Use default settings */
-    page_scan_rep_mode = HCI_PAGE_SCAN_REP_MODE_R1;
-    page_scan_mode = HCI_MANDATARY_PAGE_SCAN_MODE;
-    clock_offset = BTM_GetClockOffset(p_lcb->remote_bd_addr);
-  }
-
-  btsnd_hcic_create_conn(
-      p_lcb->remote_bd_addr, (HCI_PKT_TYPES_MASK_DM1 | HCI_PKT_TYPES_MASK_DH1 |
-                              HCI_PKT_TYPES_MASK_DM3 | HCI_PKT_TYPES_MASK_DH3 |
-                              HCI_PKT_TYPES_MASK_DM5 | HCI_PKT_TYPES_MASK_DH5),
-      page_scan_rep_mode, page_scan_mode, clock_offset, allow_switch);
-
-  btm_acl_set_paging(true);
+  acl_create_classic_connection(p_lcb->remote_bd_addr,
+                                there_are_high_priority_channels,
+                                p_lcb->is_bonding);
 
   alarm_set_on_mloop(p_lcb->l2c_lcb_timer, L2CAP_LINK_CONNECT_TIMEOUT_MS,
                      l2c_lcb_timer_timeout, p_lcb);
