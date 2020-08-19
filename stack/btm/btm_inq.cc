@@ -369,22 +369,11 @@ tBTM_STATUS BTM_CancelPeriodicInquiry(void) {
     return bluetooth::shim::BTM_CancelPeriodicInquiry();
   }
 
-  tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
   tBTM_STATUS status = BTM_SUCCESS;
   BTM_TRACE_API("BTM_CancelPeriodicInquiry called");
 
   /*** Make sure the device is ready ***/
   if (!BTM_IsDeviceUp()) return (BTM_WRONG_MODE);
-
-  /* Only cancel if one is active */
-  if (btm_cb.btm_inq_vars.inq_active & BTM_PERIODIC_INQUIRY_ACTIVE) {
-    btm_cb.btm_inq_vars.inq_active = BTM_INQUIRY_INACTIVE;
-    btm_cb.btm_inq_vars.p_inq_results_cb = NULL;
-
-    btsnd_hcic_exit_per_inq();
-
-    p_inq->inq_counter++;
-  }
 
   return (status);
 }
@@ -505,7 +494,6 @@ uint16_t BTM_ReadConnectability(uint16_t* p_window, uint16_t* p_interval) {
  * Returns          BTM_INQUIRY_INACTIVE if inactive (0)
  *                  BTM_LIMITED_INQUIRY_ACTIVE if a limted inquiry is active
  *                  BTM_GENERAL_INQUIRY_ACTIVE if a general inquiry is active
- *                  BTM_PERIODIC_INQUIRY_ACTIVE if a periodic inquiry is active
  *
  ******************************************************************************/
 uint16_t BTM_IsInquiryActive(void) {
@@ -538,8 +526,7 @@ void BTM_CancelInquiry(void) {
 
   /* Only cancel if not in periodic mode, otherwise the caller should call
    * BTM_CancelPeriodicMode */
-  if ((p_inq->inq_active & BTM_INQUIRY_ACTIVE_MASK) != 0 &&
-      (!(p_inq->inq_active & BTM_PERIODIC_INQUIRY_ACTIVE))) {
+  if ((p_inq->inq_active & BTM_INQUIRY_ACTIVE_MASK) != 0) {
     p_inq->inq_active = BTM_INQUIRY_INACTIVE;
     p_inq->state = BTM_INQ_INACTIVE_STATE;
     p_inq->p_inq_results_cb = NULL; /* Do not notify caller anymore */
@@ -932,9 +919,7 @@ void btm_inq_stop_on_ssp(void) {
 #endif
   if (btm_cb.btm_inq_vars.no_inc_ssp) {
     if (btm_cb.btm_inq_vars.state == BTM_INQ_ACTIVE_STATE) {
-      if (btm_cb.btm_inq_vars.inq_active & BTM_PERIODIC_INQUIRY_ACTIVE) {
-        BTM_CancelPeriodicInquiry();
-      } else if (btm_cb.btm_inq_vars.inq_active & normal_active) {
+      if (btm_cb.btm_inq_vars.inq_active & normal_active) {
         /* can not call BTM_CancelInquiry() here. We need to report inquiry
          * complete evt */
         btsnd_hcic_inq_cancel();
@@ -1028,8 +1013,7 @@ bool btm_inq_find_bdaddr(const RawAddress& p_bda) {
   uint16_t xx;
 
   /* Don't bother searching, database doesn't exist or periodic mode */
-  if ((p_inq->inq_active & BTM_PERIODIC_INQUIRY_ACTIVE) || !p_db)
-    return (false);
+  if (!p_db) return (false);
 
   for (xx = 0; xx < p_inq->num_bd_entries; xx++, p_db++) {
     if (p_db->bd_addr == p_bda && p_db->inq_count == p_inq->inq_counter)
@@ -1155,19 +1139,14 @@ static void btm_initiate_inquiry() {
   lap = (p_inq->inq_active & BTM_LIMITED_INQUIRY_ACTIVE) ? &limited_inq_lap
                                                          : &general_inq_lap;
 
-  if (p_inq->inq_active & BTM_PERIODIC_INQUIRY_ACTIVE) {
-    btsnd_hcic_per_inq_mode(p_inq->per_max_delay, p_inq->per_min_delay, *lap,
-                            p_inqparms->duration, 0);
-  } else {
-    btm_clr_inq_result_flt();
+  btm_clr_inq_result_flt();
 
-    /* Allocate memory to hold bd_addrs responding */
-    p_inq->p_bd_db = (tINQ_BDADDR*)osi_calloc(BT_DEFAULT_BUFFER_SIZE);
-    p_inq->max_bd_entries =
-        (uint16_t)(BT_DEFAULT_BUFFER_SIZE / sizeof(tINQ_BDADDR));
+  /* Allocate memory to hold bd_addrs responding */
+  p_inq->p_bd_db = (tINQ_BDADDR*)osi_calloc(BT_DEFAULT_BUFFER_SIZE);
+  p_inq->max_bd_entries =
+      (uint16_t)(BT_DEFAULT_BUFFER_SIZE / sizeof(tINQ_BDADDR));
 
-    btsnd_hcic_inquiry(*lap, p_inqparms->duration, 0);
-  }
+  btsnd_hcic_inquiry(*lap, p_inqparms->duration, 0);
 }
 
 /*******************************************************************************
@@ -1428,8 +1407,7 @@ void btm_process_inq_complete(uint8_t status, uint8_t mode) {
 
     /* Notify caller that the inquiry has completed; (periodic inquiries do not
      * send completion events */
-    if (!(p_inq->inq_active & BTM_PERIODIC_INQUIRY_ACTIVE) &&
-        p_inq->inqparms.mode == 0) {
+    if (p_inq->inqparms.mode == 0) {
       btm_clear_all_pending_le_entry();
       p_inq->state = BTM_INQ_INACTIVE_STATE;
 

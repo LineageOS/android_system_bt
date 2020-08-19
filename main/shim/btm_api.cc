@@ -524,9 +524,6 @@ uint16_t bluetooth::shim::BTM_IsInquiryActive(void) {
     return BTM_LIMITED_INQUIRY_ACTIVE;
   } else if (Stack::GetInstance()->GetBtm()->IsGeneralInquiryActive()) {
     return BTM_GENERAL_INQUIRY_ACTIVE;
-  } else if (Stack::GetInstance()->GetBtm()->IsGeneralPeriodicInquiryActive() ||
-             Stack::GetInstance()->GetBtm()->IsLimitedPeriodicInquiryActive()) {
-    return BTM_PERIODIC_INQUIRY_ACTIVE;
   }
   return BTM_INQUIRY_INACTIVE;
 }

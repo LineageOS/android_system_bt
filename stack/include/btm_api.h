@@ -314,7 +314,6 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
  * Returns          BTM_INQUIRY_INACTIVE if inactive (0)
  *                  BTM_LIMITED_INQUIRY_ACTIVE if a limted inquiry is active
  *                  BTM_GENERAL_INQUIRY_ACTIVE if a general inquiry is active
- *                  BTM_PERIODIC_INQUIRY_ACTIVE if a periodic inquiry is active
  *
  ******************************************************************************/
 uint16_t BTM_IsInquiryActive(void);
