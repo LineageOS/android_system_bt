@@ -309,33 +309,6 @@ tBTM_STATUS BTM_SetInquiryMode(uint8_t mode) {
 
 /*******************************************************************************
  *
- * Function         BTM_ReadDiscoverability
- *
- * Description      This function is called to read the current discoverability
- *                  mode of the device.
- *
- * Output Params:   p_window - current inquiry scan duration
- *                  p_interval - current inquiry scan interval
- *
- * Returns          BTM_NON_DISCOVERABLE, BTM_LIMITED_DISCOVERABLE, or
- *                  BTM_GENERAL_DISCOVERABLE
- *
- ******************************************************************************/
-uint16_t BTM_ReadDiscoverability(uint16_t* p_window, uint16_t* p_interval) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_ReadDiscoverability(p_window, p_interval);
-  }
-
-  BTM_TRACE_API("BTM_ReadDiscoverability");
-  if (p_window) *p_window = btm_cb.btm_inq_vars.inq_scan_window;
-
-  if (p_interval) *p_interval = btm_cb.btm_inq_vars.inq_scan_period;
-
-  return (btm_cb.btm_inq_vars.discoverable_mode);
-}
-
-/*******************************************************************************
- *
  * Function         BTM_SetConnectability
  *
  * Description      This function is called to set the device into or out of

@@ -451,17 +451,6 @@ tBTM_STATUS bluetooth::shim::BTM_SetInquiryMode(uint8_t inquiry_mode) {
   return BTM_SUCCESS;
 }
 
-uint16_t bluetooth::shim::BTM_ReadDiscoverability(uint16_t* p_window,
-                                                  uint16_t* p_interval) {
-  DiscoverabilityState state =
-      Stack::GetInstance()->GetBtm()->GetClassicDiscoverabilityState();
-
-  if (p_interval) *p_interval = state.interval;
-  if (p_window) *p_window = state.window;
-
-  return state.mode;
-}
-
 tBTM_STATUS bluetooth::shim::BTM_SetConnectability(uint16_t page_mode,
                                                    uint16_t window,
                                                    uint16_t interval) {
