@@ -605,8 +605,7 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   btm_acl_update_inquiry_status(BTM_INQUIRY_STARTED);
 
   if (p_inq->inq_active & BTM_SSP_INQUIRY_ACTIVE) {
-    btm_process_inq_complete(BTM_NO_RESOURCES,
-                             (uint8_t)(p_inqparms->mode & BTM_BR_INQUIRY_MASK));
+    btm_process_inq_complete(BTM_NO_RESOURCES, BTM_GENERAL_INQUIRY);
     return BTM_CMD_STARTED;
   }
 
