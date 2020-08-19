@@ -417,8 +417,6 @@ typedef struct /* contains the parameters passed to the inquiry functions */
   uint8_t mode;      /* general or limited */
   uint8_t duration;  /* duration of the inquiry (1.28 sec increments) */
   uint8_t max_resps; /* maximum number of responses to return */
-  bool report_dup; /* report duplicated inquiry response with higher RSSI value
-                      */
   tBTM_INQ_FILT_COND filter_cond; /* filter value based on filter cond type */
 } tBTM_INQ_PARMS;
 
