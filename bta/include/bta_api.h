@@ -860,7 +860,7 @@ extern void BTA_DmSetDeviceName(char* p_name);
  * Returns          void
  *
  ******************************************************************************/
-extern void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode);
+extern bool BTA_DmSetVisibility(bt_scan_mode_t mode);
 
 /*******************************************************************************
  *
