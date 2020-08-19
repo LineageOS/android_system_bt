@@ -231,16 +231,12 @@ void BTA_DmConfirm(const RawAddress& bd_addr, bool accept) {
  *
  ******************************************************************************/
 void BTA_DmAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
-                     const LinkKey& link_key, tBTA_SERVICE_MASK trusted_mask,
-                     bool is_trusted, uint8_t key_type, tBTM_IO_CAP io_cap,
+                     const LinkKey& link_key, uint8_t key_type,
                      uint8_t pin_length) {
   std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg =
       std::make_unique<tBTA_DM_API_ADD_DEVICE>();
 
   msg->bd_addr = bd_addr;
-  msg->tm = trusted_mask;
-  msg->is_trusted = is_trusted;
-  msg->io_cap = io_cap;
   msg->link_key_known = true;
   msg->key_type = key_type;
   msg->link_key = link_key;
