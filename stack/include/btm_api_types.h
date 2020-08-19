@@ -634,8 +634,6 @@ typedef void(tBTM_ESCO_CBACK)(tBTM_ESCO_EVT event, tBTM_ESCO_EVT_DATA* p_data);
 */
 /* Nothing required */
 #define BTM_SEC_NONE 0x0000
-/* Inbound call requires authorization */
-#define BTM_SEC_IN_AUTHORIZE 0x0001
 /* Inbound call requires authentication */
 #define BTM_SEC_IN_AUTHENTICATE 0x0002
 /* Inbound call requires encryption */
