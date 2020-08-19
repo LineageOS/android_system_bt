@@ -4340,9 +4340,6 @@ static void btm_sec_pairing_timeout(UNUSED_ATTR void* data) {
       break;
 
     case BTM_PAIR_STATE_WAIT_LOCAL_IOCAPS:
-      if (btm_cb.pairing_flags & BTM_PAIR_FLAGS_WE_STARTED_DD)
-        auth_req |= BTM_AUTH_DD_BOND;
-
       btsnd_hcic_io_cap_req_reply(p_cb->pairing_bda, btm_cb.devcb.loc_io_caps,
                                   BTM_OOB_NONE, auth_req);
       btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
