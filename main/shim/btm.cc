@@ -452,12 +452,6 @@ bool Btm::StartPeriodicInquiry(uint8_t mode, uint8_t duration,
   return true;
 }
 
-void Btm::CancelPeriodicInquiry() {
-  limited_periodic_inquiry_active_ = false;
-  general_periodic_inquiry_active_ = false;
-  GetInquiry()->StopPeriodicInquiry();
-}
-
 bool Btm::IsGeneralPeriodicInquiryActive() const {
   return general_periodic_inquiry_active_;
 }

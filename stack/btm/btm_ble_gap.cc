@@ -389,9 +389,8 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
   uint32_t scan_window =
       !p_inq->scan_window ? BTM_BLE_GAP_DISC_SCAN_WIN : p_inq->scan_window;
 
-  BTM_TRACE_EVENT("%s : scan_type:%d, %d, %d", __func__,
-                  btm_cb.btm_inq_vars.scan_type, p_inq->scan_interval,
-                  p_inq->scan_window);
+  BTM_TRACE_EVENT("%s : scan_type:%d, %d, %d", __func__, p_inq->scan_type,
+                  p_inq->scan_interval, p_inq->scan_window);
 
   if (!controller_get_interface()->supports_ble()) return BTM_ILLEGAL_VALUE;
 
@@ -1385,12 +1384,6 @@ uint8_t btm_ble_is_discoverable(const RawAddress& bda,
       if ((btm_cb.btm_inq_vars.inq_active & BTM_BLE_GENERAL_INQUIRY) &&
           (flag & (BTM_BLE_LIMIT_DISC_FLAG | BTM_BLE_GEN_DISC_FLAG)) != 0) {
         BTM_TRACE_DEBUG("Find Generable Discoverable device");
-        rt |= BTM_BLE_INQ_RESULT;
-      }
-
-      else if (btm_cb.btm_inq_vars.inq_active & BTM_BLE_LIMITED_INQUIRY &&
-               (flag & BTM_BLE_LIMIT_DISC_FLAG) != 0) {
-        BTM_TRACE_DEBUG("Find limited discoverable device");
         rt |= BTM_BLE_INQ_RESULT;
       }
     }
