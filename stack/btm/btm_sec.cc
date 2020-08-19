@@ -94,8 +94,6 @@ tBTM_SEC_DEV_REC* btm_sec_find_dev_by_sec_state(uint8_t state);
 static bool btm_dev_authenticated(tBTM_SEC_DEV_REC* p_dev_rec);
 static bool btm_dev_encrypted(tBTM_SEC_DEV_REC* p_dev_rec);
 static bool btm_dev_authorized(tBTM_SEC_DEV_REC* p_dev_rec);
-static bool btm_serv_trusted(tBTM_SEC_DEV_REC* p_dev_rec,
-                             tBTM_SEC_SERV_REC* p_serv_rec);
 static uint16_t btm_sec_set_serv_level4_flags(uint16_t cur_security,
                                               bool is_originator);
 
@@ -182,24 +180,6 @@ static bool btm_dev_authorized(tBTM_SEC_DEV_REC* p_dev_rec) {
 static bool btm_dev_16_digit_authenticated(tBTM_SEC_DEV_REC* p_dev_rec) {
   // BTM_SEC_16_DIGIT_PIN_AUTHED is set if MITM or 16 digit pin is used
   if (p_dev_rec->sec_flags & BTM_SEC_16_DIGIT_PIN_AUTHED) {
-    return (true);
-  }
-  return (false);
-}
-
-/*******************************************************************************
- *
- * Function         btm_serv_trusted
- *
- * Description      check service is trusted
- *
- * Returns          bool    true or false
- *
- ******************************************************************************/
-static bool btm_serv_trusted(tBTM_SEC_DEV_REC* p_dev_rec,
-                             tBTM_SEC_SERV_REC* p_serv_rec) {
-  if (BTM_SEC_IS_SERVICE_TRUSTED(p_dev_rec->trusted_mask,
-                                 p_serv_rec->service_id)) {
     return (true);
   }
   return (false);
@@ -1689,11 +1669,7 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
              btm_dev_authenticated(p_dev_rec)) ||
             (((security_required & BTM_SEC_IN_FLAGS) ==
               (BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT)) &&
-             btm_dev_encrypted(p_dev_rec)) ||
-            (((security_required & BTM_SEC_IN_FLAGS) == BTM_SEC_IN_FLAGS) &&
-             btm_dev_encrypted(p_dev_rec) &&
-             (btm_dev_authorized(p_dev_rec) ||
-              btm_serv_trusted(p_dev_rec, p_serv_rec)))) {
+             btm_dev_encrypted(p_dev_rec))) {
           // Check for 16 digits (or MITM)
           if (((security_required & BTM_SEC_IN_MIN_16_DIGIT_PIN) == 0) ||
               (((security_required & BTM_SEC_IN_MIN_16_DIGIT_PIN) ==
