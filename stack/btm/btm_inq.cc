@@ -631,26 +631,23 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
                   p_inq->inq_active);
 
   tBTM_STATUS status = BTM_CMD_STARTED;
-  /* start LE inquiry here if requested */
-  if ((p_inq->inqparms.mode & BTM_BLE_INQUIRY_MASK)) {
-    if (!controller_get_interface()->supports_ble()) {
-      LOG(ERROR) << __func__ << ": trying to do LE scan on a non-LE adapter";
-      p_inq->inqparms.mode &= ~BTM_BLE_INQUIRY_MASK;
-      status = BTM_ILLEGAL_VALUE;
-    } else {
-      /* BLE for now does not support filter condition for inquiry */
-      status = btm_ble_start_inquiry(
-          (uint8_t)(p_inq->inqparms.mode & BTM_BLE_INQUIRY_MASK),
-          p_inq->inqparms.duration);
-      if (status != BTM_CMD_STARTED) {
-        LOG(ERROR) << __func__ << ": Error Starting LE Inquiry";
-        p_inq->inqparms.mode &= ~BTM_BLE_INQUIRY_MASK;
-      }
-    }
+  if (!controller_get_interface()->supports_ble()) {
+    LOG(ERROR) << __func__ << ": trying to do LE scan on a non-LE adapter";
     p_inq->inqparms.mode &= ~BTM_BLE_INQUIRY_MASK;
-
-    BTM_TRACE_DEBUG("BTM_StartInquiry: mode = %02x", p_inq->inqparms.mode);
+    status = BTM_ILLEGAL_VALUE;
+  } else {
+    /* BLE for now does not support filter condition for inquiry */
+    status = btm_ble_start_inquiry(
+        (uint8_t)(p_inq->inqparms.mode & BTM_BLE_INQUIRY_MASK),
+        p_inq->inqparms.duration);
+    if (status != BTM_CMD_STARTED) {
+      LOG(ERROR) << __func__ << ": Error Starting LE Inquiry";
+      p_inq->inqparms.mode &= ~BTM_BLE_INQUIRY_MASK;
+    }
   }
+  p_inq->inqparms.mode &= ~BTM_BLE_INQUIRY_MASK;
+
+  BTM_TRACE_DEBUG("BTM_StartInquiry: mode = %02x", p_inq->inqparms.mode);
 
   /* we're done with this routine if BR/EDR inquiry is not desired. */
   if ((p_inq->inqparms.mode & BTM_BR_INQUIRY_MASK) == BTM_INQUIRY_NONE) {
