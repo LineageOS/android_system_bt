@@ -304,6 +304,23 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     return ::grpc::Status::OK;
   }
 
+  ::grpc::Status FetchDisconnectEvents(
+      ::grpc::ServerContext* context,
+      const ::google::protobuf::Empty* request,
+      ::grpc::ServerWriter<DisconnectMsg>* writer) override {
+    security_module_->GetFacadeConfigurationApi()->SetDisconnectCallback(
+        common::Bind(&SecurityModuleFacadeService::DisconnectEventOccurred, common::Unretained(this)));
+    return disconnect_events_.RunLoop(context, writer);
+  }
+
+  void DisconnectEventOccurred(bluetooth::hci::AddressWithType peer) {
+    LOG_INFO("%s", peer.ToString().c_str());
+    DisconnectMsg msg;
+    msg.mutable_address()->mutable_address()->set_address(peer.ToString());
+    msg.mutable_address()->set_type(static_cast<facade::BluetoothAddressTypeEnum>(peer.GetAddressType()));
+    disconnect_events_.OnIncomingEvent(msg);
+  }
+
   void DisplayPairingPrompt(const bluetooth::hci::AddressWithType& peer, std::string name) {
     LOG_INFO("%s", peer.ToString().c_str());
     UiMsg display_yes_no;
@@ -412,6 +429,7 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
   ::bluetooth::grpc::GrpcEventQueue<SecurityHelperMsg> helper_events_{"Events that don't fit any other category"};
   ::bluetooth::grpc::GrpcEventQueue<EnforceSecurityPolicyMsg> enforce_security_policy_events_{
       "Enforce Security Policy Events"};
+  ::bluetooth::grpc::GrpcEventQueue<DisconnectMsg> disconnect_events_{"Disconnect events"};
   uint32_t unique_id{1};
   std::map<uint32_t, common::OnceCallback<void(bool)>> user_yes_no_callbacks_;
   std::map<uint32_t, common::OnceCallback<void(uint32_t)>> user_passkey_callbacks_;

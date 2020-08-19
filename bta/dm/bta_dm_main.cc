@@ -76,11 +76,7 @@ bool bta_dm_search_sm_execute(BT_HDR* p_msg) {
           bta_dm_discover(message);
           break;
         case BTA_DM_SDP_RESULT_EVT:
-          bta_dm_free_sdp_db(message);
-          break;
-        case BTA_DM_API_DI_DISCOVER_EVT:
-          bta_dm_search_set_state(BTA_DM_SEARCH_ACTIVE);
-          bta_dm_di_disc(message);
+          bta_dm_free_sdp_db();
           break;
         case BTA_DM_DISC_CLOSE_TOUT_EVT:
           bta_dm_close_gatt_conn(message);
@@ -96,8 +92,7 @@ bool bta_dm_search_sm_execute(BT_HDR* p_msg) {
           bta_dm_sdp_result(message);
           break;
         case BTA_DM_SEARCH_CMPL_EVT:
-          bta_dm_search_set_state(BTA_DM_SEARCH_IDLE);
-          bta_dm_search_cmpl(message);
+          bta_dm_search_cmpl();
           break;
         case BTA_DM_DISCOVERY_RESULT_EVT:
           bta_dm_search_result(message);
@@ -120,7 +115,7 @@ bool bta_dm_search_sm_execute(BT_HDR* p_msg) {
         case BTA_DM_SEARCH_CMPL_EVT:
         case BTA_DM_DISCOVERY_RESULT_EVT:
           bta_dm_search_set_state(BTA_DM_SEARCH_IDLE);
-          bta_dm_free_sdp_db(message);
+          bta_dm_free_sdp_db();
           bta_dm_search_cancel_notify();
           bta_dm_search_cancel_cmpl();
           break;
@@ -135,8 +130,7 @@ bool bta_dm_search_sm_execute(BT_HDR* p_msg) {
           bta_dm_sdp_result(message);
           break;
         case BTA_DM_SEARCH_CMPL_EVT:
-          bta_dm_search_set_state(BTA_DM_SEARCH_IDLE);
-          bta_dm_search_cmpl(message);
+          bta_dm_search_cmpl();
           break;
         case BTA_DM_DISCOVERY_RESULT_EVT:
           bta_dm_disc_result(message);

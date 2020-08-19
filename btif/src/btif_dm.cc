@@ -99,8 +99,6 @@ const Uuid UUID_HEARING_AID = Uuid::FromString("FDF0");
 #define COD_AV_PORTABLE_AUDIO 0x041C
 #define COD_AV_HIFI_AUDIO 0x0428
 
-#define BTIF_DM_DEFAULT_INQ_MAX_RESULTS 0
-#define BTIF_DM_DEFAULT_INQ_MAX_DURATION 10
 #define BTIF_DM_MAX_SDP_ATTEMPTS_AFTER_PAIRING 2
 
 #define NUM_TIMEOUT_RETRIES 5
@@ -1057,7 +1055,7 @@ static void btif_dm_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
         }
         bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDED);
 
-        btif_dm_get_remote_services(bd_addr);
+        btif_dm_get_remote_services(bd_addr, BT_TRANSPORT_UNKNOWN);
       }
     }
     // Do not call bond_state_changed_cb yet. Wait until remote service
@@ -1302,9 +1300,8 @@ static void btif_dm_search_devices_evt(tBTA_DM_SEARCH_EVT event,
  * Returns          void
  *
  ******************************************************************************/
-static void btif_dm_search_services_evt(uint16_t event, char* p_param) {
-  tBTA_DM_SEARCH* p_data = (tBTA_DM_SEARCH*)p_param;
-
+static void btif_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
+                                        tBTA_DM_SEARCH* p_data) {
   BTIF_TRACE_EVENT("%s:  event = %d", __func__, event);
   switch (event) {
     case BTA_DM_DISC_RES_EVT: {
@@ -1323,7 +1320,7 @@ static void btif_dm_search_services_evt(uint16_t event, char* p_param) {
           BTIF_TRACE_WARNING("%s: SDP failed after bonding re-attempting",
                              __func__);
           pairing_cb.sdp_attempts++;
-          btif_dm_get_remote_services(bd_addr);
+          btif_dm_get_remote_services(bd_addr, BT_TRANSPORT_UNKNOWN);
         } else {
           BTIF_TRACE_WARNING("%s: SDP triggered by someone failed when bonding",
                              __func__);
@@ -1438,49 +1435,6 @@ static void btif_dm_search_services_evt(uint16_t event, char* p_param) {
     } break;
 
     default: { ASSERTC(0, "unhandled search services event", event); } break;
-  }
-}
-
-/*******************************************************************************
- *
- * Function         btif_dm_remote_service_record_evt
- *
- * Description      Executes search service record event in btif context
- *
- * Returns          void
- *
- ******************************************************************************/
-static void btif_dm_remote_service_record_evt(uint16_t event, char* p_param) {
-  tBTA_DM_SEARCH* p_data = (tBTA_DM_SEARCH*)p_param;
-
-  BTIF_TRACE_EVENT("%s:  event = %d", __func__, event);
-  switch (event) {
-    case BTA_DM_DISC_RES_EVT: {
-      bt_service_record_t rec;
-      bt_property_t prop;
-
-      memset(&rec, 0, sizeof(bt_service_record_t));
-      RawAddress& bd_addr = p_data->disc_res.bd_addr;
-
-      BTIF_TRACE_DEBUG("%s:(result=0x%x, services 0x%x)", __func__,
-                       p_data->disc_res.result, p_data->disc_res.services);
-      prop.type = BT_PROPERTY_SERVICE_RECORD;
-      prop.val = (void*)&rec;
-      prop.len = sizeof(rec);
-
-      /* disc_res.result is overloaded with SCN. Cannot check result */
-      p_data->disc_res.services &= ~BTA_USER_SERVICE_MASK;
-      /* TODO: Get the UUID as well */
-      rec.channel = p_data->disc_res.result - 3;
-      /* TODO: Need to get the service name using p_raw_data */
-      rec.name[0] = 0;
-
-      invoke_remote_device_properties_cb(BT_STATUS_SUCCESS, bd_addr, 1, &prop);
-    } break;
-
-    default: {
-      ASSERTC(0, "unhandled remote service record event", event);
-    } break;
   }
 }
 
@@ -1823,36 +1777,6 @@ void bte_dm_evt(tBTA_DM_SEC_EVT event, tBTA_DM_SEC* p_data) {
 
 /*******************************************************************************
  *
- * Function         bte_dm_search_services_evt
- *
- * Description      Switches context from BTE to BTIF for DM search services
- *                  event
- *
- * Returns          void
- *
- ******************************************************************************/
-static void bte_dm_search_services_evt(tBTA_DM_SEARCH_EVT event,
-                                       tBTA_DM_SEARCH* p_data) {
-  btif_dm_search_services_evt(event, (char*)p_data);
-}
-
-/*******************************************************************************
- *
- * Function         bte_dm_remote_service_record_evt
- *
- * Description      Switches context from BTE to BTIF for DM search service
- *                  record event
- *
- * Returns          void
- *
- ******************************************************************************/
-static void bte_dm_remote_service_record_evt(tBTA_DM_SEARCH_EVT event,
-                                             tBTA_DM_SEARCH* p_data) {
-  btif_dm_remote_service_record_evt(event, (char*)p_data);
-}
-
-/*******************************************************************************
- *
  * Function         bta_energy_info_cb
  *
  * Description      Switches context from BTE to BTIF for DM energy info event
@@ -1910,9 +1834,6 @@ static void bte_scan_filt_param_cfg_evt(uint8_t ref_value, uint8_t avbl_space,
  *
  ******************************************************************************/
 void btif_dm_start_discovery(void) {
-  tBTA_DM_INQ inq_params;
-  tBTA_SERVICE_MASK services = 0;
-
   BTIF_TRACE_EVENT("%s", __func__);
 
   /* Cleanup anything remaining on index 0 */
@@ -1931,22 +1852,10 @@ void btif_dm_start_discovery(void) {
                              std::move(adv_filt_param),
                              base::Bind(&bte_scan_filt_param_cfg_evt, 0));
 
-  /* TODO: Do we need to handle multiple inquiries at the same time? */
-
-  /* Set inquiry params and call API */
-  inq_params.mode = BTA_DM_GENERAL_INQUIRY | BTA_BLE_GENERAL_INQUIRY;
-  inq_params.duration = BTIF_DM_DEFAULT_INQ_MAX_DURATION;
-
-  inq_params.max_resps = BTIF_DM_DEFAULT_INQ_MAX_RESULTS;
-  inq_params.report_dup = true;
-
-  inq_params.filter_type = BTA_DM_INQ_CLR;
-  /* TODO: Filter device by BDA needs to be implemented here */
-
   /* Will be enabled to true once inquiry busy level has been received */
   btif_dm_inquiry_in_progress = false;
   /* find nearby devices */
-  BTA_DmSearch(&inq_params, services, btif_dm_search_devices_evt);
+  BTA_DmSearch(btif_dm_search_devices_evt);
 }
 
 /*******************************************************************************
@@ -2234,47 +2143,16 @@ bt_status_t btif_dm_get_adapter_property(bt_property_t* prop) {
  *
  * Function         btif_dm_get_remote_services
  *
- * Description      Start SDP to get remote services
- *
- ******************************************************************************/
-void btif_dm_get_remote_services(const RawAddress remote_addr) {
-  BTIF_TRACE_EVENT("%s: bd_addr=%s", __func__, remote_addr.ToString().c_str());
-
-  BTA_DmDiscover(remote_addr, BTA_ALL_SERVICE_MASK, bte_dm_search_services_evt,
-                 BT_TRANSPORT_UNKNOWN);
-}
-
-/*******************************************************************************
- *
- * Function         btif_dm_get_remote_services_by_transport
- *
  * Description      Start SDP to get remote services by transport
  *
  * Returns          bt_status_t
  *
  ******************************************************************************/
-bt_status_t btif_dm_get_remote_services_by_transport(RawAddress* remote_addr,
-                                                     const int transport) {
+void btif_dm_get_remote_services(RawAddress remote_addr, const int transport) {
   BTIF_TRACE_EVENT("%s: transport=%d, remote_addr=%s", __func__, transport,
-                   remote_addr->ToString().c_str());
+                   remote_addr.ToString().c_str());
 
-  BTA_DmDiscover(*remote_addr, BTA_ALL_SERVICE_MASK, bte_dm_search_services_evt,
-                 transport);
-
-  return BT_STATUS_SUCCESS;
-}
-
-/*******************************************************************************
- *
- * Function         btif_dm_get_remote_service_record
- *
- * Description      Start SDP to get remote service record
- *
- ******************************************************************************/
-void btif_dm_get_remote_service_record(const RawAddress remote_addr,
-                                       const Uuid uuid) {
-  BTIF_TRACE_EVENT("%s: bd_addr=%s", __func__, remote_addr.ToString().c_str());
-  BTA_DmDiscoverUUID(remote_addr, uuid, bte_dm_remote_service_record_evt);
+  BTA_DmDiscover(remote_addr, btif_dm_search_services_evt, transport);
 }
 
 void btif_dm_enable_service(tBTA_SERVICE_ID service_id, bool enable) {
@@ -2593,7 +2471,7 @@ static void btif_dm_ble_auth_cmpl_evt(tBTA_DM_AUTH_CMPL* p_auth_cmpl) {
       state = BT_BOND_STATE_NONE;
     } else {
       btif_dm_save_ble_bonding_keys(bdaddr);
-      btif_dm_get_remote_services_by_transport(&bd_addr, BT_TRANSPORT_LE);
+      btif_dm_get_remote_services(bd_addr, BT_TRANSPORT_LE);
     }
   } else {
     /*Map the HCI fail reason  to  bt status  */

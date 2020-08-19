@@ -74,7 +74,9 @@ void Link::Disconnect() {
 }
 
 void Link::Encrypt() {
-  acl_connection_->SetConnectionEncryption(hci::Enable::ENABLED);
+  if (encryption_enabled_ == hci::EncryptionEnabled::OFF) {
+    acl_connection_->SetConnectionEncryption(hci::Enable::ENABLED);
+  }
 }
 
 void Link::Authenticate() {
@@ -294,32 +296,17 @@ void Link::OnRemoteExtendedFeatureReceived(bool ertm_supported, bool fcs_support
   send_pending_configuration_requests();
 }
 
-void Link::AddChannelPendingingAuthentication(PendingAuthenticateDynamicChannelConnection pending_channel) {
-  pending_channel_list_.push_back(std::move(pending_channel));
-}
-
 void Link::OnConnectionPacketTypeChanged(uint16_t packet_type) {
   LOG_DEBUG("UNIMPLEMENTED %s packet_type:%x", __func__, packet_type);
 }
 
 void Link::OnAuthenticationComplete() {
-  Encrypt();
+  link_manager_->OnAuthenticationComplete(GetDevice().GetAddress());
 }
 
 void Link::OnEncryptionChange(hci::EncryptionEnabled enabled) {
   encryption_enabled_ = enabled;
-  if (encryption_enabled_ == hci::EncryptionEnabled::OFF) {
-    LOG_DEBUG("Encryption has changed to disabled");
-    return;
-  }
-  LOG_DEBUG("Encryption has changed to enabled .. restarting channels:%zd", pending_channel_list_.size());
-
-  for (auto& channel : pending_channel_list_) {
-    local_cid_to_pending_dynamic_channel_connection_map_[channel.cid_] =
-        std::move(channel.pending_dynamic_channel_connection_);
-    signalling_manager_.SendConnectionRequest(channel.psm_, channel.cid_);
-  }
-  pending_channel_list_.clear();
+  link_manager_->OnEncryptionChange(GetDevice().GetAddress(), enabled);
 }
 
 void Link::OnChangeConnectionLinkKeyComplete() {

@@ -95,14 +95,6 @@ void LinkManager::ConnectDynamicChannelServices(
     }
     return;
   }
-  if (dynamic_channel_service_manager_->GetService(psm)->GetSecurityPolicy() !=
-          SecurityPolicy::_SDP_ONLY_NO_SECURITY_WHATSOEVER_PLAINTEXT_TRANSPORT_OK &&
-      !link->IsAuthenticated()) {
-    link->AddChannelPendingingAuthentication(
-        {psm, link->ReserveDynamicChannel(), std::move(pending_dynamic_channel_connection)});
-    link->Authenticate();
-    return;
-  }
   link->SendConnectionRequest(psm, link->ReserveDynamicChannel(), std::move(pending_dynamic_channel_connection));
 }
 
@@ -159,9 +151,16 @@ void LinkManager::handle_link_security_ensure_authenticated(hci::Address remote)
     LOG_WARN("Remote is disconnected");
     return;
   }
-  if (!link->IsAuthenticated()) {
-    link->Authenticate();
+  link->Authenticate();
+}
+
+void LinkManager::handle_link_security_ensure_encrypted(hci::Address remote) {
+  auto link = GetLink(remote);
+  if (link == nullptr) {
+    LOG_WARN("Remote is disconnected");
+    return;
   }
+  link->Encrypt();
 }
 
 /**
@@ -191,6 +190,10 @@ class LinkSecurityInterfaceImpl : public LinkSecurityInterface {
 
   void EnsureAuthenticated() override {
     handler_->CallOn(link_manager_, &LinkManager::handle_link_security_ensure_authenticated, remote_);
+  }
+
+  void EnsureEncrypted() override {
+    handler_->CallOn(link_manager_, &LinkManager::handle_link_security_ensure_encrypted, remote_);
   }
 
   os::Handler* handler_;
@@ -273,6 +276,22 @@ void LinkManager::OnDisconnect(hci::Address device, hci::ErrorCode status) {
         link_security_interface_listener_, &LinkSecurityInterfaceListener::OnLinkDisconnected, device);
   }
   links_.erase(device);
+}
+
+void LinkManager::OnAuthenticationComplete(hci::Address device) {
+  if (link_security_interface_listener_handler_ != nullptr) {
+    link_security_interface_listener_handler_->CallOn(
+        link_security_interface_listener_, &LinkSecurityInterfaceListener::OnAuthenticationComplete, device);
+  }
+}
+void LinkManager::OnEncryptionChange(hci::Address device, hci::EncryptionEnabled enabled) {
+  if (link_security_interface_listener_handler_ != nullptr) {
+    link_security_interface_listener_handler_->CallOn(
+        link_security_interface_listener_,
+        &LinkSecurityInterfaceListener::OnEncryptionChange,
+        device,
+        enabled == hci::EncryptionEnabled::ON);
+  }
 }
 
 }  // namespace internal

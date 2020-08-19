@@ -84,14 +84,11 @@ void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_DmSearch(tBTA_DM_INQ* p_dm_inq, tBTA_SERVICE_MASK services,
-                  tBTA_DM_SEARCH_CBACK* p_cback) {
+void BTA_DmSearch(tBTA_DM_SEARCH_CBACK* p_cback) {
   tBTA_DM_API_SEARCH* p_msg =
       (tBTA_DM_API_SEARCH*)osi_calloc(sizeof(tBTA_DM_API_SEARCH));
 
   p_msg->hdr.event = BTA_DM_API_SEARCH_EVT;
-  memcpy(&p_msg->inq_params, p_dm_inq, sizeof(tBTA_DM_INQ));
-  p_msg->services = services;
   p_msg->p_cback = p_cback;
 
   bta_sys_sendmsg(p_msg);
@@ -138,44 +135,15 @@ void BTA_DmSearchCancel(void) {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_DmDiscover(const RawAddress& bd_addr, tBTA_SERVICE_MASK services,
-                    tBTA_DM_SEARCH_CBACK* p_cback, tBT_TRANSPORT transport) {
+void BTA_DmDiscover(const RawAddress& bd_addr, tBTA_DM_SEARCH_CBACK* p_cback,
+                    tBT_TRANSPORT transport) {
   tBTA_DM_API_DISCOVER* p_msg =
       (tBTA_DM_API_DISCOVER*)osi_calloc(sizeof(tBTA_DM_API_DISCOVER));
 
   p_msg->hdr.event = BTA_DM_API_DISCOVER_EVT;
   p_msg->bd_addr = bd_addr;
-  p_msg->services = services;
   p_msg->transport = transport;
   p_msg->p_cback = p_cback;
-
-  bta_sys_sendmsg(p_msg);
-}
-
-/*******************************************************************************
- *
- * Function         BTA_DmDiscoverUUID
- *
- * Description      This function does service discovery for services of a
- *                  peer device
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_DmDiscoverUUID(const RawAddress& bd_addr, const Uuid& uuid,
-                        tBTA_DM_SEARCH_CBACK* p_cback) {
-  tBTA_DM_API_DISCOVER* p_msg =
-      (tBTA_DM_API_DISCOVER*)osi_malloc(sizeof(tBTA_DM_API_DISCOVER));
-
-  p_msg->hdr.event = BTA_DM_API_DISCOVER_EVT;
-  p_msg->bd_addr = bd_addr;
-  p_msg->services = BTA_USER_SERVICE_MASK;  // Not exposed at API level
-  p_msg->p_cback = p_cback;
-
-  p_msg->num_uuid = 0;
-  p_msg->p_uuid = NULL;
-  p_msg->uuid = uuid;
 
   bta_sys_sendmsg(p_msg);
 }

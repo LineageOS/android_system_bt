@@ -133,6 +133,7 @@ cc_test {
         "libprotobuf-cpp-lite",
     ],
     static_libs: [
+        "crypto_toolbox_for_tests",
         "libbtcore",
         "libbt-bta",
         "libbt-audio-hal-interface",

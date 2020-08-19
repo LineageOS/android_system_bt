@@ -65,6 +65,8 @@ class LinkManager : public hci::acl_manager::ConnectionCallbacks {
   void OnConnectSuccess(std::unique_ptr<hci::acl_manager::ClassicAclConnection> acl_connection) override;
   void OnConnectFail(hci::Address device, hci::ErrorCode reason) override;
   virtual void OnDisconnect(hci::Address device, hci::ErrorCode status);
+  void OnAuthenticationComplete(hci::Address device);
+  void OnEncryptionChange(hci::Address device, hci::EncryptionEnabled enabled);
 
   // FixedChannelManager methods
 
@@ -89,6 +91,7 @@ class LinkManager : public hci::acl_manager::ConnectionCallbacks {
   void handle_link_security_release(hci::Address remote);
   void handle_link_security_disconnect(hci::Address remote);
   void handle_link_security_ensure_authenticated(hci::Address remote);
+  void handle_link_security_ensure_encrypted(hci::Address remote);
 
   // Dependencies
   os::Handler* l2cap_handler_;

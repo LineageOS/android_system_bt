@@ -154,6 +154,12 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   void OnConnectionClosed(hci::Address address) override;
 
   /**
+   * When link encryption status change, we need to update the device record (temporary).
+   * @param encrypted
+   */
+  void OnEncryptionChange(hci::Address remote, bool encrypted) override;
+
+  /**
    * Pairing handler has finished or cancelled
    *
    * @param address address for pairing handler
@@ -167,6 +173,8 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   void OnPasskeyEntry(const bluetooth::hci::AddressWithType& address, uint32_t passkey) override;
 
   // Facade Configuration API functions
+  using FacadeDisconnectCallback = common::Callback<void(bluetooth::hci::AddressWithType)>;
+  void SetDisconnectCallback(FacadeDisconnectCallback callback);
   void SetIoCapability(hci::IoCapability io_capability);
   void SetAuthenticationRequirements(hci::AuthenticationRequirements authentication_requirements);
   void SetOobDataPresent(hci::OobDataPresent data_present);
@@ -241,6 +249,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   std::optional<hci::AddressWithType> remote_oob_data_address_;
   std::optional<crypto_toolbox::Octet16> remote_oob_data_le_sc_c_;
   std::optional<crypto_toolbox::Octet16> remote_oob_data_le_sc_r_;
+  std::optional<FacadeDisconnectCallback> facade_disconnect_callback_;
 
   std::unordered_map<
       hci::AddressWithType,
