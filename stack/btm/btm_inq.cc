@@ -376,31 +376,6 @@ tBTM_STATUS BTM_SetConnectability(uint16_t page_mode) {
 
 /*******************************************************************************
  *
- * Function         BTM_ReadConnectability
- *
- * Description      This function is called to read the current discoverability
- *                  mode of the device.
- * Output Params    p_window - current page scan duration
- *                  p_interval - current time between page scans
- *
- * Returns          BTM_NON_CONNECTABLE or BTM_CONNECTABLE
- *
- ******************************************************************************/
-uint16_t BTM_ReadConnectability(uint16_t* p_window, uint16_t* p_interval) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_ReadConnectability(p_window, p_interval);
-  }
-
-  BTM_TRACE_API("BTM_ReadConnectability");
-  if (p_window) *p_window = btm_cb.btm_inq_vars.page_scan_window;
-
-  if (p_interval) *p_interval = btm_cb.btm_inq_vars.page_scan_period;
-
-  return (btm_cb.btm_inq_vars.connectable_mode);
-}
-
-/*******************************************************************************
- *
  * Function         BTM_IsInquiryActive
  *
  * Description      This function returns a bit mask of the current inquiry

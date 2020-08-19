@@ -486,17 +486,6 @@ tBTM_STATUS bluetooth::shim::BTM_SetConnectability(uint16_t page_mode,
   return BTM_SUCCESS;
 }
 
-uint16_t bluetooth::shim::BTM_ReadConnectability(uint16_t* p_window,
-                                                 uint16_t* p_interval) {
-  ConnectabilityState state =
-      Stack::GetInstance()->GetBtm()->GetClassicConnectabilityState();
-
-  if (p_window) *p_window = state.window;
-  if (p_interval) *p_interval = state.interval;
-
-  return state.mode;
-}
-
 uint16_t bluetooth::shim::BTM_IsInquiryActive(void) {
   if (Stack::GetInstance()->GetBtm()->IsGeneralInquiryActive()) {
     return BTM_GENERAL_INQUIRY_ACTIVE;
