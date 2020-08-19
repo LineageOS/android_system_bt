@@ -661,7 +661,6 @@ typedef void(tBTM_ESCO_CBACK)(tBTM_ESCO_EVT event, tBTM_ESCO_EVT_DATA* p_data);
 
 /* Security Flags [bit mask] (BTM_GetSecurityFlags)
 */
-#define BTM_SEC_FLAG_AUTHORIZED 0x01
 #define BTM_SEC_FLAG_AUTHENTICATED 0x02
 #define BTM_SEC_FLAG_ENCRYPTED 0x04
 #define BTM_SEC_FLAG_LKEY_KNOWN 0x10
