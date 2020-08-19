@@ -1538,21 +1538,6 @@ void btm_inq_rmt_name_failed_cancelled(void) {
 
 /*******************************************************************************
  *
- * Function         btm_read_inq_tx_power_timeout
- *
- * Description      Callback when reading the inquiry tx power times out.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_read_inq_tx_power_timeout(UNUSED_ATTR void* data) {
-  tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_inq_tx_power_cmpl_cb;
-  btm_cb.devcb.p_inq_tx_power_cmpl_cb = NULL;
-  if (p_cb) (*p_cb)((void*)NULL);
-}
-
-/*******************************************************************************
- *
  * Function         btm_read_inq_tx_power_complete
  *
  * Description      read inquiry tx power level complete callback function.
