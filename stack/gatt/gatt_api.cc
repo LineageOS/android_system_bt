@@ -935,12 +935,13 @@ void GATT_SetIdleTimeout(const RawAddress& bd_addr, uint16_t idle_tout,
  *
  * Parameter        p_app_uuid128: Application UUID
  *                  p_cb_info: callback functions.
+ *                  eatt_support: indicate eatt support.
  *
  * Returns          0 for error, otherwise the index of the client registered
  *                  with GATT
  *
  ******************************************************************************/
-tGATT_IF GATT_Register(const Uuid& app_uuid128, tGATT_CBACK* p_cb_info) {
+tGATT_IF GATT_Register(const Uuid& app_uuid128, tGATT_CBACK* p_cb_info, bool eatt_support) {
   tGATT_REG* p_reg;
   uint8_t i_gatt_if = 0;
   tGATT_IF gatt_if = 0;
@@ -964,8 +965,8 @@ tGATT_IF GATT_Register(const Uuid& app_uuid128, tGATT_CBACK* p_cb_info) {
       gatt_if = p_reg->gatt_if = (tGATT_IF)i_gatt_if;
       p_reg->app_cb = *p_cb_info;
       p_reg->in_use = true;
-
-      LOG(INFO) << "allocated gatt_if=" << +gatt_if;
+      p_reg->eatt_support = eatt_support;
+      LOG(INFO) << "allocated gatt_if=" << +gatt_if << " eatt support " << int(eatt_support);
       return gatt_if;
     }
   }

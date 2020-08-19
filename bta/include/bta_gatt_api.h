@@ -387,7 +387,7 @@ using BtaAppRegisterCallback =
  * p_client_cb - pointer to the application callback function.
  **/
 extern void BTA_GATTC_AppRegister(tBTA_GATTC_CBACK* p_client_cb,
-                                  BtaAppRegisterCallback cb);
+                                  BtaAppRegisterCallback cb, bool eatt_support);
 
 /*******************************************************************************
  *
@@ -803,12 +803,13 @@ extern void BTA_GATTS_Disable(void);
  *
  * Parameters       p_app_uuid - applicaiton UUID
  *                  p_cback - pointer to the application callback function.
+ *                  eatt_support: indicate eatt support.
  *
  * Returns          None
  *
  ******************************************************************************/
 extern void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid,
-                                  tBTA_GATTS_CBACK* p_cback);
+                                  tBTA_GATTS_CBACK* p_cback, bool eatt_support);
 
 /*******************************************************************************
  *

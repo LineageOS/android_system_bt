@@ -319,7 +319,7 @@ extern bool bta_gattc_sm_execute(tBTA_GATTC_CLCB* p_clcb, uint16_t event,
 extern void bta_gattc_disable();
 extern void bta_gattc_register(const bluetooth::Uuid& app_uuid,
                                tBTA_GATTC_CBACK* p_data,
-                               BtaAppRegisterCallback cb);
+                               BtaAppRegisterCallback cb, bool eatt_support);
 extern void bta_gattc_process_api_open(tBTA_GATTC_DATA* p_msg);
 extern void bta_gattc_process_api_open_cancel(tBTA_GATTC_DATA* p_msg);
 extern void bta_gattc_deregister(tBTA_GATTC_RCB* p_clreg);

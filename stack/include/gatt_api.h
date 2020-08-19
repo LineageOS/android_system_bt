@@ -919,13 +919,14 @@ extern void GATT_SetIdleTimeout(const RawAddress& bd_addr, uint16_t idle_tout,
  *
  * Parameter        p_app_uuid128: Application UUID
  *                  p_cb_info: callback functions.
+ *                  eatt_support: set support for eatt
  *
  * Returns          0 for error, otherwise the index of the client registered
  *                  with GATT
  *
  ******************************************************************************/
 extern tGATT_IF GATT_Register(const bluetooth::Uuid& p_app_uuid128,
-                              tGATT_CBACK* p_cb_info);
+                              tGATT_CBACK* p_cb_info, bool eatt_support);
 
 /*******************************************************************************
  *

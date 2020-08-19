@@ -73,13 +73,13 @@ void BTA_GATTC_Disable(void) {
  * |cb| one time callback when registration is finished
  */
 void BTA_GATTC_AppRegister(tBTA_GATTC_CBACK* p_client_cb,
-                           BtaAppRegisterCallback cb) {
+                           BtaAppRegisterCallback cb, bool eatt_support) {
   if (!bta_sys_is_register(BTA_ID_GATTC))
     bta_sys_register(BTA_ID_GATTC, &bta_gattc_reg);
 
   do_in_main_thread(
       FROM_HERE, base::Bind(&bta_gattc_register, Uuid::GetRandom(), p_client_cb,
-                            std::move(cb)));
+                            std::move(cb), eatt_support));
 }
 
 static void app_deregister_impl(tGATT_IF client_if) {
