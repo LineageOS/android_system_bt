@@ -477,7 +477,7 @@ void BTA_AvDeregister(tBTA_AV_HNDL hndl);
  *
  ******************************************************************************/
 void BTA_AvOpen(const RawAddress& bd_addr, tBTA_AV_HNDL handle, bool use_rc,
-                tBTA_SEC sec_mask, uint16_t uuid);
+                uint16_t uuid);
 
 /*******************************************************************************
  *

@@ -271,7 +271,6 @@ static void bta_av_api_enable(tBTA_AV_DATA* p_data) {
   /* store parameters */
   bta_av_cb.p_cback = p_data->api_enable.p_cback;
   bta_av_cb.features = p_data->api_enable.features;
-  bta_av_cb.sec_mask = BTA_SEC_AUTHENTICATE;
 
   tBTA_AV_ENABLE enable;
   enable.features = bta_av_cb.features;
@@ -505,12 +504,11 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
   char* p_service_name;
   tBTA_UTL_COD cod;
 
-  if (bta_av_cb.disabling ||
-      (bta_av_cb.features == 0 && bta_av_cb.sec_mask == 0)) {
+  if (bta_av_cb.disabling || (bta_av_cb.features == 0)) {
     APPL_TRACE_WARNING(
-        "%s: AV instance (features=%#x, sec_mask=%#x, reg_audio=%#x) is not "
+        "%s: AV instance (features=%#x, reg_audio=%#x) is not "
         "ready for app_id %d",
-        __func__, bta_av_cb.features, bta_av_cb.sec_mask, bta_av_cb.reg_audio,
+        __func__, bta_av_cb.features, bta_av_cb.reg_audio,
         p_data->api_reg.app_id);
     tBTA_AV_API_REG* p_buf =
         (tBTA_AV_API_REG*)osi_malloc(sizeof(tBTA_AV_API_REG));
@@ -568,7 +566,7 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
       reg.ret_tout = BTA_AV_RET_TOUT;
       reg.sig_tout = BTA_AV_SIG_TOUT;
       reg.idle_tout = BTA_AV_IDLE_TOUT;
-      reg.sec_mask = bta_av_cb.sec_mask;
+      reg.sec_mask = BTA_SEC_AUTHENTICATE;
       reg.scb_index = p_scb->hdi;
 #if (BTA_AR_INCLUDED == TRUE)
       bta_ar_reg_avdt(&reg, bta_av_conn_cback, BTA_ID_AV);
@@ -581,11 +579,12 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
 #if (BTA_AR_INCLUDED == TRUE)
 #if (BTA_AV_WITH_AVCTP_AUTHORIZATION == TRUE)
         bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
-                        bta_av_cb.sec_mask, BTA_ID_AV);
+                        BTA_SEC_AUTHENTICATE, BTA_ID_AV);
 #else
-        bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
-                        (uint8_t)(bta_av_cb.sec_mask & (~BTM_SEC_IN_AUTHORIZE)),
-                        BTA_ID_AV);
+        bta_ar_reg_avct(
+            p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
+            (uint8_t)(BTA_SEC_AUTHENTICATE & (~BTM_SEC_IN_AUTHORIZE)),
+            BTA_ID_AV);
 #endif
 
         /* For the Audio Sink role we support additional TG to support
@@ -738,11 +737,11 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
 #if (BTA_AR_INCLUDED == TRUE)
 #if (BTA_AV_WITH_AVCTP_AUTHORIZATION == TRUE)
           bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
-                          bta_av_cb.sec_mask, BTA_ID_AV);
+                          BTA_SEC_AUTHENTICATE, BTA_ID_AV);
 #else
           bta_ar_reg_avct(
               p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
-              (uint8_t)(bta_av_cb.sec_mask & (~BTM_SEC_IN_AUTHORIZE)),
+              (uint8_t)(BTA_SEC_AUTHENTICATE & (~BTM_SEC_IN_AUTHORIZE)),
               BTA_ID_AV);
 #endif
 #endif
@@ -1452,7 +1451,6 @@ void bta_debug_av_dump(int fd) {
   dprintf(fd, "  SDP A2DP source handle: %d\n", bta_av_cb.sdp_a2dp_handle);
   dprintf(fd, "  SDP A2DP sink handle: %d\n", bta_av_cb.sdp_a2dp_snk_handle);
   dprintf(fd, "  Features: 0x%x\n", bta_av_cb.features);
-  dprintf(fd, "  Security mask: 0x%x\n", bta_av_cb.sec_mask);
   dprintf(fd, "  SDP handle: %d\n", bta_av_cb.handle);
   dprintf(fd, "  Disabling: %s\n", bta_av_cb.disabling ? "true" : "false");
   dprintf(fd, "  SCO occupied: %s\n",
@@ -1502,21 +1500,18 @@ void bta_debug_av_dump(int fd) {
             p_scb->q_info.open.bd_addr.ToString().c_str());
     dprintf(fd, "      Use AVRCP: %s\n",
             p_scb->q_info.open.use_rc ? "true" : "false");
-    dprintf(fd, "      Security mask: 0x%x\n", p_scb->q_info.open.sec_mask);
     dprintf(fd, "      Switch result: %d\n", p_scb->q_info.open.switch_res);
     dprintf(fd, "      Initiator UUID: 0x%x\n", p_scb->q_info.open.uuid);
     dprintf(fd, "    Saved API Open peer: %s\n",
             p_scb->open_api.bd_addr.ToString().c_str());
     dprintf(fd, "      Use AVRCP: %s\n",
             p_scb->open_api.use_rc ? "true" : "false");
-    dprintf(fd, "      Security mask: 0x%x\n", p_scb->open_api.sec_mask);
     dprintf(fd, "      Switch result: %d\n", p_scb->open_api.switch_res);
     dprintf(fd, "      Initiator UUID: 0x%x\n", p_scb->open_api.uuid);
     // TODO: Print p_scb->sep_info[], cfg, avrc_ct_timer, current_codec ?
     dprintf(fd, "    L2CAP Channel ID: %d\n", p_scb->l2c_cid);
     dprintf(fd, "    Stream MTU: %d\n", p_scb->stream_mtu);
     dprintf(fd, "    AVDTP version: 0x%x\n", p_scb->AvdtpVersion());
-    dprintf(fd, "    Security mask: 0x%x\n", p_scb->sec_mask);
     dprintf(fd, "    Media type: %d\n", p_scb->media_type);
     dprintf(fd, "    Congested: %s\n", p_scb->cong ? "true" : "false");
     dprintf(fd, "    Open status: %d\n", p_scb->open_status);

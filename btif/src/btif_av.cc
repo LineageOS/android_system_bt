@@ -1467,7 +1467,7 @@ bool BtifAvStateMachine::StateIdle::ProcessEvent(uint32_t event, void* p_data) {
       }
       btif_av_query_mandatory_codec_priority(peer_.PeerAddress());
       BTA_AvOpen(peer_.PeerAddress(), peer_.BtaHandle(), true,
-                 BTA_SEC_AUTHENTICATE, peer_.LocalUuidServiceClass());
+                 peer_.LocalUuidServiceClass());
       peer_.StateMachine().TransitionTo(BtifAvStateMachine::kStateOpening);
     } break;
     case BTIF_AV_AVRCP_OPEN_EVT:
