@@ -305,8 +305,6 @@ typedef struct {
   tL2C_CCB* p_last_ccb;  /* The last  channel in this queue */
 } tL2C_CCB_Q;
 
-#if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
-
 /* Round-Robin service for the same priority channels */
 #define L2CAP_NUM_CHNL_PRIORITY \
   3 /* Total number of priority group (high, medium, low)*/
@@ -327,8 +325,6 @@ typedef struct {
   uint8_t num_ccb;       /* number of channels in priority group */
   uint8_t quota;         /* burst transmission quota */
 } tL2C_RR_SERV;
-
-#endif /* (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE) */
 
 /* Define a link control block. There is one link control block between
  * this device and any other device (i.e. BD ADDR).
@@ -398,12 +394,10 @@ typedef struct t_l2c_linkcb {
   uint16_t min_ce_len;
   uint16_t max_ce_len;
 
-#if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
   /* each priority group is limited burst transmission */
   /* round robin service for the same priority channels */
   tL2C_RR_SERV rr_serv[L2CAP_NUM_CHNL_PRIORITY];
   uint8_t rr_pri; /* current serving priority group */
-#endif
 
 } tL2C_LCB;
 

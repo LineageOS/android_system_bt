@@ -1134,7 +1134,6 @@ void l2cu_enqueue_ccb(tL2C_CCB* p_ccb) {
     }
   }
 
-#if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
   /* Adding CCB into round robin service table of its LCB */
   if (p_ccb->p_lcb != NULL) {
     /* if this is the first channel in this priority group */
@@ -1150,7 +1149,6 @@ void l2cu_enqueue_ccb(tL2C_CCB* p_ccb) {
     /* increase number of channels in this group */
     p_ccb->p_lcb->rr_serv[p_ccb->ccb_priority].num_ccb++;
   }
-#endif
 }
 
 /******************************************************************************
@@ -1180,7 +1178,6 @@ void l2cu_dequeue_ccb(tL2C_CCB* p_ccb) {
     return;
   }
 
-#if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
   /* Removing CCB from round robin service table of its LCB */
   if (p_ccb->p_lcb != NULL) {
     /* decrease number of channels in this priority group */
@@ -1204,7 +1201,6 @@ void l2cu_dequeue_ccb(tL2C_CCB* p_ccb) {
       }
     }
   }
-#endif
 
   if (p_ccb == p_q->p_first_ccb) {
     /* We are removing the first in a queue */
@@ -1248,7 +1244,6 @@ void l2cu_change_pri_ccb(tL2C_CCB* p_ccb, tL2CAP_CHNL_PRIORITY priority) {
       p_ccb->ccb_priority = priority;
       l2cu_enqueue_ccb(p_ccb);
     }
-#if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
     else {
       /* If CCB is the only guy on the queue, no need to re-enqueue */
       /* update only round robin service data */
@@ -1264,7 +1259,6 @@ void l2cu_change_pri_ccb(tL2C_CCB* p_ccb, tL2CAP_CHNL_PRIORITY priority) {
           L2CAP_GET_PRIORITY_QUOTA(p_ccb->ccb_priority);
       p_ccb->p_lcb->rr_serv[p_ccb->ccb_priority].num_ccb = 1;
     }
-#endif
   }
 }
 
@@ -2921,8 +2915,6 @@ tL2C_CCB* l2cu_find_ccb_by_cid(tL2C_LCB* p_lcb, uint16_t local_cid) {
   return (p_ccb);
 }
 
-#if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
-
 /******************************************************************************
  *
  * Function         l2cu_get_next_channel_in_rr
@@ -3020,45 +3012,6 @@ static tL2C_CCB* l2cu_get_next_channel_in_rr(tL2C_LCB* p_lcb) {
   return p_serve_ccb;
 }
 
-#else  /* (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE) */
-
-/******************************************************************************
- *
- * Function         l2cu_get_next_channel
- *
- * Description      get the next channel to send on a link bassed on priority
- *                  scheduling.
- *
- * Returns          pointer to CCB or NULL
- *
- ******************************************************************************/
-static tL2C_CCB* l2cu_get_next_channel(tL2C_LCB* p_lcb) {
-  tL2C_CCB* p_ccb;
-
-  /* Get the first CCB with data to send.
-  */
-  for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; p_ccb = p_ccb->p_next_ccb) {
-    if (p_ccb->chnl_state != CST_OPEN) continue;
-
-    if (p_ccb->fcrb.wait_ack || p_ccb->fcrb.remote_busy) continue;
-
-    if (!fixed_queue_is_empty(p_ccb->fcrb.retrans_q)) return p_ccb;
-
-    if (fixed_queue_is_empty(p_ccb->xmit_hold_q)) continue;
-
-    /* If in eRTM mode, check for window closure */
-    if ((p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) &&
-        (l2c_fcr_is_flow_controlled(p_ccb)))
-      continue;
-
-    /* If here, we found someone */
-    return p_ccb;
-  }
-
-  return NULL;
-}
-#endif /* (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE) */
-
 void l2cu_tx_complete(tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
   if (p_cbi->cb != NULL) p_cbi->cb(p_cbi->local_cid, p_cbi->num_sdu);
 }
@@ -3127,12 +3080,8 @@ BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb,
     }
   }
 
-#if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
   /* get next serving channel in round-robin */
   p_ccb = l2cu_get_next_channel_in_rr(p_lcb);
-#else
-  p_ccb = l2cu_get_next_channel(p_lcb);
-#endif
 
   /* Return if no buffer */
   if (p_ccb == NULL) return (NULL);

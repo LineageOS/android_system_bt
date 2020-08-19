@@ -1356,14 +1356,12 @@ void l2c_enqueue_peer_data(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
 
   l2cu_check_channel_congestion(p_ccb);
 
-#if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
   /* if new packet is higher priority than serving ccb and it is not overrun */
   if ((p_ccb->p_lcb->rr_pri > p_ccb->ccb_priority) &&
       (p_ccb->p_lcb->rr_serv[p_ccb->ccb_priority].quota > 0)) {
     /* send out higher priority packet */
     p_ccb->p_lcb->rr_pri = p_ccb->ccb_priority;
   }
-#endif
 
   /* if we are doing a round robin scheduling, set the flag */
   if (p_ccb->p_lcb->link_xmit_quota == 0) l2cb.check_round_robin = true;
