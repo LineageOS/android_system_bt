@@ -1528,11 +1528,10 @@ void btm_inq_rmt_name_failed_cancelled(void) {
   BTM_TRACE_ERROR("btm_inq_rmt_name_failed_cancelled()  remname_active=%d",
                   btm_cb.btm_inq_vars.remname_active);
 
-  if (btm_cb.btm_inq_vars.remname_active)
+  if (btm_cb.btm_inq_vars.remname_active) {
     btm_process_remote_name(&btm_cb.btm_inq_vars.remname_bda, NULL, 0,
                             HCI_ERR_UNSPECIFIED);
-  else
-    btm_process_remote_name(NULL, NULL, 0, HCI_ERR_UNSPECIFIED);
+  }
 
   btm_sec_rmt_name_request_complete(NULL, NULL, HCI_ERR_UNSPECIFIED);
 }
