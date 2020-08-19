@@ -84,7 +84,6 @@ static void btm_sec_bond_cancel_complete(void);
 static void btm_send_link_key_notif(tBTM_SEC_DEV_REC* p_dev_rec);
 static bool btm_sec_check_prefetch_pin(tBTM_SEC_DEV_REC* p_dev_rec);
 
-static uint8_t btm_sec_start_authorization(tBTM_SEC_DEV_REC* p_dev_rec);
 bool btm_sec_are_all_trusted(uint32_t p_mask[]);
 
 static tBTM_STATUS btm_sec_send_hci_disconnect(tBTM_SEC_DEV_REC* p_dev_rec,
@@ -4649,22 +4648,6 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
     return (BTM_FAILED_ON_SECURITY);
   }
 
-  /* If connection is not authorized and authorization is required */
-  /* start authorization and return PENDING to the caller */
-  if (!(p_dev_rec->sec_flags & BTM_SEC_AUTHORIZED) && (false || false)) {
-    BTM_TRACE_EVENT(
-        "service id:%d, is trusted:%d", p_dev_rec->p_cur_service->service_id,
-        (BTM_SEC_IS_SERVICE_TRUSTED(p_dev_rec->trusted_mask,
-                                    p_dev_rec->p_cur_service->service_id)));
-    if ((!btm_sec_are_all_trusted(p_dev_rec->trusted_mask)) &&
-        (p_dev_rec->p_cur_service->service_id < BTM_SEC_MAX_SERVICES) &&
-        (!BTM_SEC_IS_SERVICE_TRUSTED(p_dev_rec->trusted_mask,
-                                     p_dev_rec->p_cur_service->service_id))) {
-      BTM_TRACE_EVENT("Security Manager: Start authorization");
-      return (btm_sec_start_authorization(p_dev_rec));
-    }
-  }
-
   /* All required  security procedures already established */
   p_dev_rec->security_required &=
       ~(BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_IN_AUTHENTICATE |
@@ -4720,59 +4703,6 @@ static void btm_sec_start_authentication(tBTM_SEC_DEV_REC* p_dev_rec) {
 static void btm_sec_start_encryption(tBTM_SEC_DEV_REC* p_dev_rec) {
   btsnd_hcic_set_conn_encrypt(p_dev_rec->hci_handle, true);
   p_dev_rec->sec_state = BTM_SEC_STATE_ENCRYPTING;
-}
-
-/*******************************************************************************
- *
- * Function         btm_sec_start_authorization
- *
- * Description      This function is called to start authorization
- *
- * Returns          true if started
- *
- ******************************************************************************/
-static uint8_t btm_sec_start_authorization(tBTM_SEC_DEV_REC* p_dev_rec) {
-  uint8_t result;
-  uint8_t service_id;
-
-  if ((p_dev_rec->sec_flags & BTM_SEC_NAME_KNOWN) ||
-      (p_dev_rec->hci_handle == HCI_INVALID_HANDLE)) {
-    if (!btm_cb.api.p_authorize_callback) return (BTM_MODE_UNSUPPORTED);
-
-    service_id =
-        p_dev_rec->p_cur_service ? p_dev_rec->p_cur_service->service_id : 0;
-
-    /* Send authorization request if not already sent during this service
-     * connection */
-    if (p_dev_rec->last_author_service_id == BTM_SEC_NO_LAST_SERVICE_ID ||
-        p_dev_rec->last_author_service_id != service_id) {
-      p_dev_rec->sec_state = BTM_SEC_STATE_AUTHORIZING;
-      result = (*btm_cb.api.p_authorize_callback)(service_id);
-    }
-
-    else /* Already authorized once for this L2CAP bringup */
-    {
-      BTM_TRACE_DEBUG(
-          "btm_sec_start_authorization: (Ignoring extra Authorization prompt "
-          "for service %d)",
-          service_id);
-      return (BTM_SUCCESS);
-    }
-
-    if (result == BTM_SUCCESS) {
-      p_dev_rec->sec_flags |= BTM_SEC_AUTHORIZED;
-
-      /* Save the currently authorized service in case we are asked again by
-       * another multiplexer layer */
-      if (!p_dev_rec->is_originator)
-        p_dev_rec->last_author_service_id = service_id;
-
-      p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
-    }
-    return (result);
-  }
-  btm_sec_start_get_name(p_dev_rec);
-  return (BTM_CMD_STARTED);
 }
 
 /*******************************************************************************
