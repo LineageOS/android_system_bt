@@ -1690,14 +1690,6 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
             (((security_required & BTM_SEC_IN_FLAGS) ==
               (BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT)) &&
              btm_dev_encrypted(p_dev_rec)) ||
-            (false && (btm_dev_authorized(p_dev_rec) ||
-                       btm_serv_trusted(p_dev_rec, p_serv_rec))) ||
-            (false && ((btm_dev_authorized(p_dev_rec) ||
-                        btm_serv_trusted(p_dev_rec, p_serv_rec)) &&
-                       btm_dev_authenticated(p_dev_rec))) ||
-            (false && ((btm_dev_authorized(p_dev_rec) ||
-                        btm_serv_trusted(p_dev_rec, p_serv_rec)) &&
-                       btm_dev_encrypted(p_dev_rec))) ||
             (((security_required & BTM_SEC_IN_FLAGS) == BTM_SEC_IN_FLAGS) &&
              btm_dev_encrypted(p_dev_rec) &&
              (btm_dev_authorized(p_dev_rec) ||
@@ -1977,14 +1969,6 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
             ((((security_required & BTM_SEC_IN_FLAGS) ==
                BTM_SEC_IN_AUTHENTICATE) &&
               btm_dev_authenticated(p_dev_rec))) ||
-            (false && (btm_dev_authorized(p_dev_rec) ||
-                       btm_serv_trusted(p_dev_rec, p_serv_rec))) ||
-            (false && ((btm_dev_authorized(p_dev_rec) ||
-                        btm_serv_trusted(p_dev_rec, p_serv_rec)) &&
-                       btm_dev_authenticated(p_dev_rec))) ||
-            (false && ((btm_dev_authorized(p_dev_rec) ||
-                        btm_serv_trusted(p_dev_rec, p_serv_rec)) &&
-                       btm_dev_encrypted(p_dev_rec))) ||
             ((((security_required & BTM_SEC_IN_FLAGS) ==
                (BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT)) &&
               btm_dev_encrypted(p_dev_rec)))) {
