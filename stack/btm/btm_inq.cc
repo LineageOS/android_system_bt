@@ -624,7 +624,6 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   p_inq->inqparms.duration = BTIF_DM_DEFAULT_INQ_MAX_DURATION;
 
   p_inq->inqparms.max_resps = BTIF_DM_DEFAULT_INQ_MAX_RESULTS;
-  p_inq->inqparms.report_dup = true;
 
   /* Initialize the inquiry variables */
   p_inq->state = BTM_INQ_ACTIVE_STATE;
@@ -1311,7 +1310,7 @@ void btm_process_inq_results(uint8_t* p, uint8_t hci_evt_len,
       i_rssi = (int8_t)rssi;
 
       /* If this new RSSI is higher than the last one */
-      if (p_inq->inqparms.report_dup && (rssi != 0) && p_i &&
+      if ((rssi != 0) && p_i &&
           (i_rssi > p_i->inq_info.results.rssi ||
            p_i->inq_info.results.rssi == 0
            /* BR/EDR inquiry information update */
