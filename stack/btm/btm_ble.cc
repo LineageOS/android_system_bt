@@ -269,8 +269,6 @@ void BTM_SecurityGrant(const RawAddress& bd_addr, uint8_t res) {
  *                  res     - result of the operation BTM_SUCCESS if success
  *                  key_len - length in bytes of the Passkey
  *                  p_passkey    - pointer to array with the passkey
- *                  trusted_mask - bitwise OR of trusted services (array of
- *                                 uint32_t)
  *
  ******************************************************************************/
 void BTM_BlePasskeyReply(const RawAddress& bd_addr, uint8_t res,

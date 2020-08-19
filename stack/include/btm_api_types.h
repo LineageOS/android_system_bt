@@ -751,22 +751,6 @@ typedef uint8_t tBTM_LINK_KEY_TYPE;
  * trusted services
  ******************************************************************************/
 
-/* MACRO to copy two trusted device bitmask */
-#define BTM_SEC_COPY_TRUSTED_DEVICE(p_src, p_dst)              \
-  {                                                            \
-    uint32_t trst;                                             \
-    for (trst = 0; trst < BTM_SEC_SERVICE_ARRAY_SIZE; trst++)  \
-      ((uint32_t*)(p_dst))[trst] = ((uint32_t*)(p_src))[trst]; \
-  }
-
-/* MACRO to clear two trusted device bitmask */
-#define BTM_SEC_CLR_TRUSTED_DEVICE(p_dst)                     \
-  {                                                           \
-    uint32_t trst;                                            \
-    for (trst = 0; trst < BTM_SEC_SERVICE_ARRAY_SIZE; trst++) \
-      ((uint32_t*)(p_dst))[trst] = 0;                         \
-  }
-
 #define BTM_SEC_TRUST_ALL 0xFFFFFFFF /* for each array element */
 
 /****************************************

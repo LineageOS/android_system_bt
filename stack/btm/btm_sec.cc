@@ -568,12 +568,10 @@ uint8_t BTM_SecClrServiceByPsm(uint16_t psm) {
  *                                 if success
  *                  pin_len      - length in bytes of the PIN Code
  *                  p_pin        - pointer to array with the PIN Code
- *                  trusted_mask - bitwise OR of trusted services
- *                                 (array of uint32_t)
  *
  ******************************************************************************/
 void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
-                      uint8_t* p_pin, uint32_t trusted_mask[]) {
+                      uint8_t* p_pin) {
   tBTM_SEC_DEV_REC* p_dev_rec;
 
   BTM_TRACE_API(
@@ -621,8 +619,6 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
     }
     return;
   }
-  if (trusted_mask)
-    BTM_SEC_COPY_TRUSTED_DEVICE(trusted_mask, p_dev_rec->trusted_mask);
   p_dev_rec->sec_flags |= BTM_SEC_LINK_KEY_AUTHED;
   p_dev_rec->pin_code_length = pin_len;
   if (pin_len >= 16) {
@@ -2765,9 +2761,6 @@ void btm_io_capabilities_rsp(uint8_t* p) {
 
     btm_sec_change_pairing_state(BTM_PAIR_STATE_INCOMING_SSP);
 
-    /* Make sure we reset the trusted mask to help against attacks */
-    BTM_SEC_CLR_TRUSTED_DEVICE(p_dev_rec->trusted_mask);
-
     /* work around for FW bug */
     btm_inq_stop_on_ssp();
   }
@@ -4296,8 +4289,6 @@ void btm_sec_pin_code_request(uint8_t* p_event) {
     btm_cb.pairing_bda = p_bda;
 
     btm_cb.pairing_flags = BTM_PAIR_FLAGS_PEER_STARTED_DD;
-    /* Make sure we reset the trusted mask to help against attacks */
-    BTM_SEC_CLR_TRUSTED_DEVICE(p_dev_rec->trusted_mask);
   }
 
   if (!p_cb->pairing_disabled && (p_cb->cfg.pin_type == HCI_PIN_TYPE_FIXED)) {
@@ -4528,8 +4519,6 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
         BTM_SEC_OUT_ENCRYPT | BTM_SEC_IN_ENCRYPT | BTM_SEC_FORCE_MASTER |
         BTM_SEC_ATTEMPT_MASTER | BTM_SEC_FORCE_SLAVE | BTM_SEC_ATTEMPT_SLAVE);
 
-  BTM_TRACE_EVENT("Security Manager: trusted:0x%04x%04x",
-                  p_dev_rec->trusted_mask[1], p_dev_rec->trusted_mask[0]);
   BTM_TRACE_EVENT("Security Manager: access granted");
 
   return (BTM_SUCCESS);
@@ -4728,24 +4717,6 @@ static void btm_send_link_key_notif(tBTM_SEC_DEV_REC* p_dev_rec) {
     (*btm_cb.api.p_link_key_callback)(
         p_dev_rec->bd_addr, p_dev_rec->dev_class, p_dev_rec->sec_bd_name,
         p_dev_rec->link_key, p_dev_rec->link_key_type);
-}
-
-/*******************************************************************************
- *
- * Function         BTM_ReadTrustedMask
- *
- * Description      Get trusted mask for the peer device
- *
- * Parameters:      bd_addr   - Address of the device
- *
- * Returns          NULL, if the device record is not found.
- *                  otherwise, the trusted mask
- *
- ******************************************************************************/
-uint32_t* BTM_ReadTrustedMask(const RawAddress& bd_addr) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
-  if (p_dev_rec != NULL) return (p_dev_rec->trusted_mask);
-  return NULL;
 }
 
 /*******************************************************************************
@@ -4963,7 +4934,7 @@ static bool btm_sec_check_prefetch_pin(tBTM_SEC_DEV_REC* p_dev_rec) {
     /* If we got a PIN, use that, else try to get one */
     if (btm_cb.pin_code_len) {
       BTM_PINCodeReply(p_dev_rec->bd_addr, BTM_SUCCESS, btm_cb.pin_code_len,
-                       btm_cb.pin_code, p_dev_rec->trusted_mask);
+                       btm_cb.pin_code);
     } else {
       /* pin was not supplied - pre-fetch pin code now */
       if (btm_cb.api.p_pin_callback &&

@@ -117,10 +117,6 @@ bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
     memset(p_dev_rec->feature_pages, 0, sizeof(p_dev_rec->feature_pages));
   }
 
-  uint32_t trusted_mask[BTM_SEC_SERVICE_ARRAY_SIZE];
-  memset(trusted_mask, 0, sizeof(trusted_mask));
-  BTM_SEC_COPY_TRUSTED_DEVICE(trusted_mask, p_dev_rec->trusted_mask);
-
   if (p_link_key) {
     VLOG(2) << __func__ << ": BDA: " << bd_addr;
     p_dev_rec->sec_flags |= BTM_SEC_LINK_KEY_KNOWN;

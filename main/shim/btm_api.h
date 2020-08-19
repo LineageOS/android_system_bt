@@ -1434,18 +1434,6 @@ bool BTM_GetSecurityFlagsByTransport(const RawAddress& bd_addr,
 
 /*******************************************************************************
  *
- * Function         BTM_ReadTrustedMask
- *
- * Description      Get trusted mask for the device
- *
- * Returns          NULL, if the device record is not found.
- *                  otherwise, the trusted mask
- *
- ******************************************************************************/
-uint32_t* BTM_ReadTrustedMask(const RawAddress& bd_addr);
-
-/*******************************************************************************
- *
  * Function         BTM_SetPinType
  *
  * Description      Set PIN type for the device.
@@ -1566,14 +1554,12 @@ tBTM_LINK_KEY_TYPE BTM_SecGetDeviceLinkKeyType(const RawAddress& bd_addr);
  *                                 success
  *                  pin_len      - length in bytes of the PIN Code
  *                  p_pin        - pointer to array with the PIN Code
- *                  trusted_mask - bitwise OR of trusted services
- *                                 (array of uint32_t)
  *
  * Returns          void
  *
  ******************************************************************************/
 void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
-                      uint8_t* p_pin, uint32_t trusted_mask[]);
+                      uint8_t* p_pin);
 
 /*******************************************************************************
  *

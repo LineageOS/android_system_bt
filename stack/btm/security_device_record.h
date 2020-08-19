@@ -361,8 +361,6 @@ typedef struct {
   tBTM_SEC_CALLBACK* p_callback;
   void* p_ref_data;
   uint32_t timestamp; /* Timestamp of the last connection   */
-  uint32_t trusted_mask[BTM_SEC_SERVICE_ARRAY_SIZE]; /* Bitwise OR of trusted
-                                                        services     */
   uint16_t hci_handle;     /* Handle to connection when exists   */
   uint16_t clock_offset;   /* Latest known clock offset          */
   RawAddress bd_addr;      /* BD_ADDR of the device              */

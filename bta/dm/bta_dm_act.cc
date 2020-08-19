@@ -728,20 +728,10 @@ void bta_dm_bond_cancel(const RawAddress& bd_addr) {
 
 /** Send the pin_reply to a request from BTM */
 void bta_dm_pin_reply(std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg) {
-  uint32_t trusted_mask[BTM_SEC_SERVICE_ARRAY_SIZE];
-
-  uint32_t* current_trusted_mask = BTM_ReadTrustedMask(msg->bd_addr);
-  if (current_trusted_mask) {
-    memcpy(trusted_mask, current_trusted_mask, sizeof(trusted_mask));
-  } else {
-    memset(trusted_mask, 0, sizeof(trusted_mask));
-  }
-
   if (msg->accept) {
-    BTM_PINCodeReply(msg->bd_addr, BTM_SUCCESS, msg->pin_len, msg->p_pin,
-                     trusted_mask);
+    BTM_PINCodeReply(msg->bd_addr, BTM_SUCCESS, msg->pin_len, msg->p_pin);
   } else {
-    BTM_PINCodeReply(msg->bd_addr, BTM_NOT_AUTHORIZED, 0, NULL, trusted_mask);
+    BTM_PINCodeReply(msg->bd_addr, BTM_NOT_AUTHORIZED, 0, NULL);
   }
 }
 

@@ -616,18 +616,6 @@ uint8_t BTM_GetNumScoLinks(void);
 
 /*******************************************************************************
  *
- * Function         BTM_ReadTrustedMask
- *
- * Description      Get trusted mask for the device
- *
- * Returns          NULL, if the device record is not found.
- *                  otherwise, the trusted mask
- *
- ******************************************************************************/
-uint32_t* BTM_ReadTrustedMask(const RawAddress& bd_addr);
-
-/*******************************************************************************
- *
  * Function         BTM_SecAddDevice
  *
  * Description      Add/modify device.  This function will be normally called

@@ -202,12 +202,10 @@ uint8_t BTM_SecClrServiceByPsm(uint16_t psm);
  *                                 if success
  *                  pin_len      - length in bytes of the PIN Code
  *                  p_pin        - pointer to array with the PIN Code
- *                  trusted_mask - bitwise OR of trusted services
- *                                 (array of uint32_t)
  *
  ******************************************************************************/
 void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
-                      uint8_t* p_pin, uint32_t trusted_mask[]);
+                      uint8_t* p_pin);
 
 /*******************************************************************************
  *
@@ -752,20 +750,6 @@ bool btm_sec_are_all_trusted(uint32_t p_mask[]);
  *
  ******************************************************************************/
 tBTM_SEC_SERV_REC* btm_sec_find_first_serv(bool is_originator, uint16_t psm);
-
-/*******************************************************************************
- *
- * Function         BTM_ReadTrustedMask
- *
- * Description      Get trusted mask for the peer device
- *
- * Parameters:      bd_addr   - Address of the device
- *
- * Returns          NULL, if the device record is not found.
- *                  otherwise, the trusted mask
- *
- ******************************************************************************/
-uint32_t* BTM_ReadTrustedMask(const RawAddress& bd_addr);
 
 bool is_sec_state_equal(void* data, void* context);
 
