@@ -49,6 +49,7 @@ void SecurityManagerChannel::Connect(hci::Address address) {
     return;
   }
   l2cap_security_interface_->InitiateConnectionForSecurity(address);
+  outgoing_pairing_remote_devices_.insert(address);
 }
 
 void SecurityManagerChannel::Release(hci::Address address) {
@@ -61,6 +62,7 @@ void SecurityManagerChannel::Release(hci::Address address) {
 }
 
 void SecurityManagerChannel::Disconnect(hci::Address address) {
+  outgoing_pairing_remote_devices_.erase(address);
   auto entry = link_map_.find(address);
   if (entry == link_map_.end()) {
     LOG_WARN("Unknown address '%s'", address.ToString().c_str());
@@ -87,8 +89,12 @@ void SecurityManagerChannel::OnHciEventReceived(hci::EventPacketView packet) {
 void SecurityManagerChannel::OnLinkConnected(std::unique_ptr<l2cap::classic::LinkSecurityInterface> link) {
   // Multiple links possible?
   link->Hold();
-  link->EnsureAuthenticated();
-  link_map_.emplace(link->GetRemoteAddress(), std::move(link));
+  auto remote = link->GetRemoteAddress();
+  if (outgoing_pairing_remote_devices_.count(remote) == 1) {
+    link->EnsureAuthenticated();
+    outgoing_pairing_remote_devices_.erase(remote);
+  }
+  link_map_.emplace(remote, std::move(link));
 }
 
 void SecurityManagerChannel::OnLinkDisconnected(hci::Address address) {
