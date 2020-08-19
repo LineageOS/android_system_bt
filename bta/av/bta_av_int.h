@@ -215,7 +215,6 @@ typedef struct {
   BT_HDR hdr;
   tBTA_AV_CBACK* p_cback;
   tBTA_AV_FEAT features;
-  tBTA_SEC sec_mask;
 } tBTA_AV_API_ENABLE;
 
 /* data type for BTA_AV_API_REGISTER_EVT */

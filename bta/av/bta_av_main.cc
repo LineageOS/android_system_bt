@@ -271,7 +271,7 @@ static void bta_av_api_enable(tBTA_AV_DATA* p_data) {
   /* store parameters */
   bta_av_cb.p_cback = p_data->api_enable.p_cback;
   bta_av_cb.features = p_data->api_enable.features;
-  bta_av_cb.sec_mask = p_data->api_enable.sec_mask;
+  bta_av_cb.sec_mask = BTA_SEC_AUTHENTICATE;
 
   tBTA_AV_ENABLE enable;
   enable.features = bta_av_cb.features;

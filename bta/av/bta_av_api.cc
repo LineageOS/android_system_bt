@@ -69,7 +69,6 @@ void BTA_AvEnable(tBTA_AV_FEAT features, tBTA_AV_CBACK* p_cback) {
   p_buf->hdr.event = BTA_AV_API_ENABLE_EVT;
   p_buf->p_cback = p_cback;
   p_buf->features = features;
-  p_buf->sec_mask = BTA_SEC_AUTHENTICATE;
 
   bta_sys_sendmsg(p_buf);
 }
