@@ -468,11 +468,6 @@ uint16_t bluetooth::shim::BTM_ReadDiscoverability(uint16_t* p_window,
   return state.mode;
 }
 
-tBTM_STATUS bluetooth::shim::BTM_CancelPeriodicInquiry(void) {
-  Stack::GetInstance()->GetBtm()->CancelPeriodicInquiry();
-  return BTM_SUCCESS;
-}
-
 tBTM_STATUS bluetooth::shim::BTM_SetConnectability(uint16_t page_mode,
                                                    uint16_t window,
                                                    uint16_t interval) {

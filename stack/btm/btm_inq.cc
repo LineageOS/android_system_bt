@@ -354,32 +354,6 @@ uint16_t BTM_ReadDiscoverability(uint16_t* p_window, uint16_t* p_interval) {
 
 /*******************************************************************************
  *
- * Function         BTM_CancelPeriodicInquiry
- *
- * Description      This function cancels a periodic inquiry
- *
- * Returns
- *                  BTM_NO_RESOURCES if could not allocate a message buffer
- *                  BTM_SUCCESS - if cancelling the periodic inquiry
- *                  BTM_WRONG_MODE if the device is not up.
- *
- ******************************************************************************/
-tBTM_STATUS BTM_CancelPeriodicInquiry(void) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_CancelPeriodicInquiry();
-  }
-
-  tBTM_STATUS status = BTM_SUCCESS;
-  BTM_TRACE_API("BTM_CancelPeriodicInquiry called");
-
-  /*** Make sure the device is ready ***/
-  if (!BTM_IsDeviceUp()) return (BTM_WRONG_MODE);
-
-  return (status);
-}
-
-/*******************************************************************************
- *
  * Function         BTM_SetConnectability
  *
  * Description      This function is called to set the device into or out of
