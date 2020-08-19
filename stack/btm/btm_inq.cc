@@ -600,7 +600,6 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   }
   p_inq->inqparms.mode &= ~BTM_BLE_INQUIRY_MASK;
 
-  const LAP* lap;
   tBTM_INQ_PARMS* p_inqparms = &p_inq->inqparms;
 
   btm_acl_update_inquiry_status(BTM_INQUIRY_STARTED);
@@ -611,8 +610,6 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
     return BTM_CMD_STARTED;
   }
 
-  lap = &general_inq_lap;
-
   btm_clr_inq_result_flt();
 
   /* Allocate memory to hold bd_addrs responding */
@@ -620,7 +617,7 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   p_inq->max_bd_entries =
       (uint16_t)(BT_DEFAULT_BUFFER_SIZE / sizeof(tINQ_BDADDR));
 
-  btsnd_hcic_inquiry(*lap, p_inqparms->duration, 0);
+  btsnd_hcic_inquiry(general_inq_lap, p_inqparms->duration, 0);
   return BTM_CMD_STARTED;
 }
 
