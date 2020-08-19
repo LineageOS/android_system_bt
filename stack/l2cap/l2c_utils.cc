@@ -2125,44 +2125,13 @@ uint8_t l2cu_get_num_hi_priority(void) {
  *                  a role switch.
  *
  ******************************************************************************/
-constexpr uint16_t kDefaultPacketTypes =
-    HCI_PKT_TYPES_MASK_DM1 | HCI_PKT_TYPES_MASK_DH1 | HCI_PKT_TYPES_MASK_DM3 |
-    HCI_PKT_TYPES_MASK_DH3 | HCI_PKT_TYPES_MASK_DM5 | HCI_PKT_TYPES_MASK_DH5;
-
 void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb) {
-  const bool controller_supports_role_switch =
-      controller_get_interface()->supports_role_switch();
   const bool there_are_high_priority_channels =
       (l2cu_get_num_hi_priority() > 0);
-  const bool acl_allows_role_switch = acl_is_role_switch_allowed();
 
-  /* FW team says that we can participant in 4 piconets
-   * typically 3 piconet + 1 for scanning.
-   * We can enhance the code to count the number of piconets later. */
-  uint8_t allow_role_switch = HCI_CR_CONN_NOT_ALLOW_SWITCH;
-  if (((acl_allows_role_switch && (BTM_GetNumAclLinks() < 3)) ||
-       (p_lcb->is_bonding && !there_are_high_priority_channels &&
-        controller_supports_role_switch)))
-    allow_role_switch = HCI_CR_CONN_ALLOW_SWITCH;
-
-  /* Check with the BT manager if details about remote device are known */
-  uint8_t page_scan_rep_mode{HCI_PAGE_SCAN_REP_MODE_R1};
-  uint8_t page_scan_mode{HCI_MANDATARY_PAGE_SCAN_MODE};
-  uint16_t clock_offset = BTM_GetClockOffset(p_lcb->remote_bd_addr);
-
-  tBTM_INQ_INFO* p_inq_info = BTM_InqDbRead(p_lcb->remote_bd_addr);
-  if (p_inq_info != nullptr &&
-      (p_inq_info->results.inq_result_type & BTM_INQ_RESULT_BR)) {
-    page_scan_rep_mode = p_inq_info->results.page_scan_rep_mode;
-    page_scan_mode = p_inq_info->results.page_scan_mode;
-    clock_offset = p_inq_info->results.clock_offset;
-  }
-
-  p_lcb->link_state = LST_CONNECTING;
-  btsnd_hcic_create_conn(p_lcb->remote_bd_addr, kDefaultPacketTypes,
-                         page_scan_rep_mode, page_scan_mode, clock_offset,
-                         allow_role_switch);
-  btm_acl_set_paging(true);
+  acl_create_classic_connection(p_lcb->remote_bd_addr,
+                                there_are_high_priority_channels,
+                                p_lcb->is_bonding);
 
   alarm_set_on_mloop(p_lcb->l2c_lcb_timer, L2CAP_LINK_CONNECT_TIMEOUT_MS,
                      l2c_lcb_timer_timeout, p_lcb);
