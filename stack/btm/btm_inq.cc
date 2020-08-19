@@ -631,10 +631,7 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
                   p_inq->inq_active);
 
   tBTM_STATUS status = BTM_CMD_STARTED;
-  if (!controller_get_interface()->supports_ble()) {
-    LOG(ERROR) << __func__ << ": trying to do LE scan on a non-LE adapter";
-    status = BTM_ILLEGAL_VALUE;
-  } else {
+  if (controller_get_interface()->supports_ble()) {
     /* BLE for now does not support filter condition for inquiry */
     status = btm_ble_start_inquiry(
         (uint8_t)(p_inq->inqparms.mode & BTM_BLE_INQUIRY_MASK),
