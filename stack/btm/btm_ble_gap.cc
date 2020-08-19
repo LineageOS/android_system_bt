@@ -1387,12 +1387,6 @@ uint8_t btm_ble_is_discoverable(const RawAddress& bda,
         BTM_TRACE_DEBUG("Find Generable Discoverable device");
         rt |= BTM_BLE_INQ_RESULT;
       }
-
-      else if (btm_cb.btm_inq_vars.inq_active & BTM_BLE_LIMITED_INQUIRY &&
-               (flag & BTM_BLE_LIMIT_DISC_FLAG) != 0) {
-        BTM_TRACE_DEBUG("Find limited discoverable device");
-        rt |= BTM_BLE_INQ_RESULT;
-      }
     }
   }
   return rt;

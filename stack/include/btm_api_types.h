@@ -104,8 +104,7 @@ typedef void(tBTM_VSC_CMPL_CB)(tBTM_VSC_CMPL* p1);
 /* high byte of inquiry mode for BLE inquiry mode */
 #define BTM_BLE_INQUIRY_NONE 0x00
 #define BTM_BLE_GENERAL_INQUIRY 0x10
-#define BTM_BLE_LIMITED_INQUIRY 0x20
-#define BTM_BLE_INQUIRY_MASK (BTM_BLE_GENERAL_INQUIRY | BTM_BLE_LIMITED_INQUIRY)
+#define BTM_BLE_INQUIRY_MASK (BTM_BLE_GENERAL_INQUIRY)
 
 /* BTM_IsInquiryActive return values (Bit Mask)
  * Note: These bit masks are associated with the inquiry modes (BTM_*_INQUIRY)
@@ -118,8 +117,6 @@ typedef void(tBTM_VSC_CMPL_CB)(tBTM_VSC_CMPL* p1);
 #define BTM_SSP_INQUIRY_ACTIVE 0x4
 /* a general inquiry is in progress */
 #define BTM_LE_GENERAL_INQUIRY_ACTIVE BTM_BLE_GENERAL_INQUIRY
-/* a limited inquiry is in progress */
-#define BTM_LE_LIMITED_INQUIRY_ACTIVE BTM_BLE_LIMITED_INQUIRY
 
 /* inquiry activity mask */
 /* BR/EDR inquiry activity mask */
@@ -127,8 +124,7 @@ typedef void(tBTM_VSC_CMPL_CB)(tBTM_VSC_CMPL* p1);
 /* LE scan activity mask */
 #define BTM_BLE_SCAN_ACTIVE_MASK 0xF0
 /* LE inquiry activity mask*/
-#define BTM_BLE_INQ_ACTIVE_MASK \
-  (BTM_LE_GENERAL_INQUIRY_ACTIVE | BTM_LE_LIMITED_INQUIRY_ACTIVE)
+#define BTM_BLE_INQ_ACTIVE_MASK (BTM_LE_GENERAL_INQUIRY_ACTIVE)
 /* inquiry activity mask */
 #define BTM_INQUIRY_ACTIVE_MASK \
   (BTM_BR_INQ_ACTIVE_MASK | BTM_BLE_INQ_ACTIVE_MASK)
