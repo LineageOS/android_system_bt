@@ -69,7 +69,6 @@ extern void btm_process_inq_results(uint8_t* p, uint8_t hci_evt_len,
                                     uint8_t inq_res_mode);
 extern void btm_process_inq_complete(uint8_t status, uint8_t mode);
 extern void btm_process_cancel_complete(uint8_t status, uint8_t mode);
-extern void btm_event_filter_complete(uint8_t* p);
 extern void btm_inq_stop_on_ssp(void);
 extern void btm_inq_clear_ssp(void);
 extern tINQ_DB_ENT* btm_inq_db_find(const RawAddress& p_bda);

@@ -165,7 +165,7 @@ void btm_api_process_inquiry_result_with_rssi(RawAddress raw_address,
 
   bool update = false;
   if (btm_inq_find_bdaddr(raw_address)) {
-    if (btm_cb.btm_inq_vars.inqparms.report_dup && p_i != nullptr &&
+    if (p_i != nullptr &&
         (rssi > p_i->inq_info.results.rssi || p_i->inq_info.results.rssi == 0 ||
          has_classic_device(p_i->inq_info.results.device_type))) {
       update = true;
@@ -291,7 +291,6 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   inqparms.duration = BTIF_DM_DEFAULT_INQ_MAX_DURATION;
 
   inqparms.max_resps = BTIF_DM_DEFAULT_INQ_MAX_RESULTS;
-  inqparms.report_dup = true;
 
   std::lock_guard<std::mutex> lock(btm_cb_mutex_);
 
