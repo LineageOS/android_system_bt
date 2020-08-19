@@ -242,7 +242,6 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   std::lock_guard<std::mutex> lock(btm_cb_mutex_);
 
   btm_cb.btm_inq_vars.inq_cmpl_info.num_resp = 0;
-  btm_cb.btm_inq_vars.scan_type = INQ_GENERAL;
 
   Stack::GetInstance()->GetBtm()->StartActiveScanning();
   if (inqparms.duration != 0) {
@@ -292,10 +291,6 @@ tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
                     (tBTM_INQUIRY_CMPL*)&btm_cb.btm_inq_vars.inq_cmpl_info);
                 btm_cb.btm_inq_vars.p_inq_cmpl_cb = nullptr;
               }
-            }
-            if (btm_cb.btm_inq_vars.inqparms.mode == BTM_INQUIRY_NONE &&
-                btm_cb.btm_inq_vars.scan_type == INQ_GENERAL) {
-              btm_cb.btm_inq_vars.scan_type = INQ_NONE;
             }
           })) {
     LOG_WARN("%s Unable to start inquiry", __func__);
@@ -395,7 +390,6 @@ tBTM_STATUS bluetooth::shim::BTM_BleObserve(bool start, uint8_t duration_sec,
             btm_cb.ble_ctr_cb.p_obs_cmpl_cb = nullptr;
 
             btm_cb.btm_inq_vars.inqparms.mode &= ~(BTM_BLE_INQUIRY_MASK);
-            btm_cb.btm_inq_vars.scan_type = INQ_NONE;
 
             btm_acl_update_inquiry_status(BTM_INQUIRY_COMPLETE);
 
@@ -558,10 +552,6 @@ void bluetooth::shim::BTM_CancelInquiry(void) {
           (tBTM_INQUIRY_CMPL*)&btm_cb.btm_inq_vars.inq_cmpl_info);
       btm_cb.btm_inq_vars.p_inq_cmpl_cb = nullptr;
     }
-  }
-  if (btm_cb.btm_inq_vars.inqparms.mode == BTM_INQUIRY_NONE &&
-      btm_cb.btm_inq_vars.scan_type == INQ_GENERAL) {
-    btm_cb.btm_inq_vars.scan_type = INQ_NONE;
   }
 }
 

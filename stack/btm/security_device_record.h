@@ -179,7 +179,6 @@ typedef struct {
   uint16_t inq_scan_period;
   uint16_t inq_scan_type;
   uint16_t page_scan_type; /* current page scan type */
-  tBTM_INQ_TYPE scan_type;
 
   RawAddress remname_bda; /* Name of bd addr for active remote name request */
 #define BTM_RMT_NAME_EXT 0x1 /* Initiated through API */

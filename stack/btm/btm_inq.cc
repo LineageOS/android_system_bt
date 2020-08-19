@@ -563,8 +563,6 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   if (p_inq->inq_active) {
     LOG(ERROR) << __func__ << ": BTM_BUSY";
     return (BTM_BUSY);
-  } else {
-    p_inq->scan_type = INQ_GENERAL;
   }
 
   /*** Make sure the device is ready ***/
@@ -1356,11 +1354,6 @@ void btm_process_inq_complete(uint8_t status, uint8_t mode) {
 
       if (p_inq_cb) (p_inq_cb)((tBTM_INQUIRY_CMPL*)&p_inq->inq_cmpl_info);
     }
-  }
-  if (p_inq->inqparms.mode == 0 &&
-      p_inq->scan_type == INQ_GENERAL)  // this inquiry is complete
-  {
-    p_inq->scan_type = INQ_NONE;
   }
 #if (BTM_INQ_DEBUG == TRUE)
   BTM_TRACE_DEBUG("inq_active:0x%x state:%d", btm_cb.btm_inq_vars.inq_active,
