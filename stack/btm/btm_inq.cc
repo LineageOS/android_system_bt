@@ -163,8 +163,8 @@ tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode) {
   LAP temp_lap[2];
   bool is_limited;
   bool cod_limited;
-  uint16_t window = 0;
-  uint16_t interval = 0;
+  uint16_t window = BTM_DEFAULT_DISC_WINDOW;
+  uint16_t interval = BTM_DEFAULT_DISC_INTERVAL;
 
   BTM_TRACE_API("BTM_SetDiscoverability");
   if (controller_get_interface()->supports_ble()) {
@@ -183,26 +183,8 @@ tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode) {
   if (!controller_get_interface()->get_is_ready()) return (BTM_DEV_RESET);
 
   /* If the window and/or interval is '0', set to default values */
-  if (!window) window = BTM_DEFAULT_DISC_WINDOW;
-
-  if (!interval) interval = BTM_DEFAULT_DISC_INTERVAL;
-
-  BTM_TRACE_API(
-      "BTM_SetDiscoverability: mode %d [NonDisc-0, Lim-1, Gen-2], window "
-      "0x%04x, interval 0x%04x",
-      inq_mode, window, interval);
-
-  /*** Check for valid window and interval parameters ***/
-  /*** Only check window and duration if mode is connectable ***/
-  if (inq_mode != BTM_NON_DISCOVERABLE) {
-    /* window must be less than or equal to interval */
-    if (window < HCI_MIN_INQUIRYSCAN_WINDOW ||
-        window > HCI_MAX_INQUIRYSCAN_WINDOW ||
-        interval < HCI_MIN_INQUIRYSCAN_INTERVAL ||
-        interval > HCI_MAX_INQUIRYSCAN_INTERVAL || window > interval) {
-      return (BTM_ILLEGAL_VALUE);
-    }
-  }
+  BTM_TRACE_API("BTM_SetDiscoverability: mode %d [NonDisc-0, Lim-1, Gen-2]",
+                inq_mode);
 
   /* Set the IAC if needed */
   if (inq_mode != BTM_NON_DISCOVERABLE) {
