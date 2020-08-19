@@ -629,9 +629,6 @@ void bta_dm_remove_device(const RawAddress& bd_addr) {
 void bta_dm_add_device(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg) {
   uint8_t* p_dc = NULL;
   LinkKey* p_lc = NULL;
-  uint32_t trusted_services_mask[BTM_SEC_SERVICE_ARRAY_SIZE];
-
-  memset(trusted_services_mask, 0, sizeof(trusted_services_mask));
 
   /* If not all zeros, the device class has been specified */
   if (msg->dc_known) p_dc = (uint8_t*)msg->dc;

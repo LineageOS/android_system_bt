@@ -4570,25 +4570,6 @@ static void btm_sec_start_encryption(tBTM_SEC_DEV_REC* p_dev_rec) {
 
 /*******************************************************************************
  *
- * Function         btm_sec_are_all_trusted
- *
- * Description      This function is called check if all services are trusted
- *
- * Returns          true if all are trusted, otherwise false
- *
- ******************************************************************************/
-bool btm_sec_are_all_trusted(uint32_t p_mask[]) {
-  uint32_t trusted_inx;
-  for (trusted_inx = 0; trusted_inx < BTM_SEC_SERVICE_ARRAY_SIZE;
-       trusted_inx++) {
-    if (p_mask[trusted_inx] != BTM_SEC_TRUST_ALL) return (false);
-  }
-
-  return (true);
-}
-
-/*******************************************************************************
- *
  * Function         btm_sec_find_first_serv
  *
  * Description      Look for the first record in the service database

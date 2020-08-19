@@ -692,12 +692,6 @@ typedef uint8_t tBTM_LINK_KEY_TYPE;
 #define BTM_SEC_PROTO_HID 6 /* HID      */
 #define BTM_SEC_PROTO_AVDT 7
 
-/* Determine the number of uint32_t's necessary for security services */
-#define BTM_SEC_ARRAY_BITS 32 /* Number of bits in each array element */
-#define BTM_SEC_SERVICE_ARRAY_SIZE                         \
-  (((uint32_t)BTM_SEC_MAX_SERVICES / BTM_SEC_ARRAY_BITS) + \
-   (((uint32_t)BTM_SEC_MAX_SERVICES % BTM_SEC_ARRAY_BITS) ? 1 : 0))
-
 /* Security service definitions (BTM_SetSecurityLevel)
  * Used for Authorization APIs
 */
@@ -750,8 +744,6 @@ typedef uint8_t tBTM_LINK_KEY_TYPE;
  * Security Services MACROS handle array of uint32_t bits for more than 32
  * trusted services
  ******************************************************************************/
-
-#define BTM_SEC_TRUST_ALL 0xFFFFFFFF /* for each array element */
 
 /****************************************
  *  Security Manager Callback Functions
