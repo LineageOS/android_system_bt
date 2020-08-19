@@ -269,6 +269,11 @@ static void btif_dm_send_bond_state_changed(RawAddress address, bt_bond_state_t 
   }
 
   invoke_bond_state_changed_cb(BT_STATUS_SUCCESS, address, bond_state);
+  if (bluetooth::shim::is_gd_shim_enabled()) {
+    // TODO(b/165394095): Clean up the callback path and find the uniform place
+    // to start service discovery
+    btif_dm_get_remote_services(address, BT_TRANSPORT_UNKNOWN);
+  }
 }
 
 void btif_dm_init(uid_set_t* set) {
