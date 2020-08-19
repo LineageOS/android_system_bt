@@ -61,11 +61,6 @@ static constexpr int kStandardInquiryResult = 0;
 static constexpr int kInquiryResultWithRssi = 1;
 static constexpr int kExtendedInquiryResult = 2;
 
-/* Inquiry filter types */
-static constexpr int kClearInquiryFilter = 0;
-static constexpr int kFilterOnDeviceClass = 1;
-static constexpr int kFilterOnAddress = 2;
-
 static constexpr uint8_t kPhyConnectionNone = 0x00;
 static constexpr uint8_t kPhyConnectionLe1M = 0x01;
 static constexpr uint8_t kPhyConnectionLe2M = 0x02;
@@ -121,12 +116,6 @@ class Btm {
   void OnInquiryResultWithRssi(bluetooth::hci::InquiryResultWithRssiView view);
   void OnExtendedInquiryResult(bluetooth::hci::ExtendedInquiryResultView view);
   void OnInquiryComplete(bluetooth::hci::ErrorCode status);
-
-  // Inquiry API
-  bool SetInquiryFilter(uint8_t mode, uint8_t type, tBTM_INQ_FILT_COND data);
-  void SetFilterInquiryOnAddress();
-  void SetFilterInquiryOnDevice();
-  void ClearInquiryFilter();
 
   void SetStandardInquiryResultMode();
   void SetInquiryWithRssiResultMode();
