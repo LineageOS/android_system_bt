@@ -117,7 +117,6 @@ const uint16_t BTM_EIR_UUID_LKUP_TBL[BTM_EIR_MAX_SERVICES] = {
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
-static void btm_initiate_inquiry();
 void btm_clr_inq_result_flt(void);
 
 static uint8_t btm_convert_uuid_to_eir_service(uint16_t uuid16);
@@ -601,7 +600,29 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   }
   p_inq->inqparms.mode &= ~BTM_BLE_INQUIRY_MASK;
 
-  btm_initiate_inquiry();
+  const LAP* lap;
+  tBTM_INQ_PARMS* p_inqparms = &p_inq->inqparms;
+
+  p_inq->state = BTM_INQ_ACTIVE_STATE;
+
+  btm_acl_update_inquiry_status(BTM_INQUIRY_STARTED);
+
+  if (p_inq->inq_active & BTM_SSP_INQUIRY_ACTIVE) {
+    btm_process_inq_complete(BTM_NO_RESOURCES,
+                             (uint8_t)(p_inqparms->mode & BTM_BR_INQUIRY_MASK));
+    return BTM_CMD_STARTED;
+  }
+
+  lap = &general_inq_lap;
+
+  btm_clr_inq_result_flt();
+
+  /* Allocate memory to hold bd_addrs responding */
+  p_inq->p_bd_db = (tINQ_BDADDR*)osi_calloc(BT_DEFAULT_BUFFER_SIZE);
+  p_inq->max_bd_entries =
+      (uint16_t)(BT_DEFAULT_BUFFER_SIZE / sizeof(tINQ_BDADDR));
+
+  btsnd_hcic_inquiry(*lap, p_inqparms->duration, 0);
   return BTM_CMD_STARTED;
 }
 
@@ -1063,60 +1084,6 @@ tINQ_DB_ENT* btm_inq_db_new(const RawAddress& p_bda) {
   p_old->in_use = true;
 
   return (p_old);
-}
-
-/*******************************************************************************
- *
- * Function         btm_initiate_inquiry
- *
- * Description      This function is called to start an inquiry or periodic
- *                  inquiry upon completion of the setting and/or clearing of
- *                  the inquiry filter.
- *
- * Inputs:          p_inq (btm_cb.btm_inq_vars) - pointer to saved inquiry
- *                                                information
- *                      mode - GENERAL or LIMITED inquiry
- *                      duration - length in 1.28 sec intervals
- *                                 (If '0', the inquiry is CANCELLED)
- *                      filter_cond_type - BTM_CLR_INQUIRY_FILTER,
- *                                         BTM_FILTER_COND_DEVICE_CLASS, or
- *                                         BTM_FILTER_COND_BD_ADDR
- *                      filter_cond - value for the filter
- *                                   (based on filter_cond_type)
- *
- * Returns          If an error occurs the initiator's callback is called with
- *                  the error status.
- *
- ******************************************************************************/
-static void btm_initiate_inquiry() {
-  const LAP* lap;
-  tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
-  tBTM_INQ_PARMS* p_inqparms = &p_inq->inqparms;
-
-  p_inq->state = BTM_INQ_ACTIVE_STATE;
-
-#if (BTM_INQ_DEBUG == TRUE)
-  BTM_TRACE_DEBUG("btm_initiate_inquiry: inq_active:0x%x state:%d",
-                  btm_cb.btm_inq_vars.inq_active, btm_cb.btm_inq_vars.state);
-#endif
-  btm_acl_update_inquiry_status(BTM_INQUIRY_STARTED);
-
-  if (p_inq->inq_active & BTM_SSP_INQUIRY_ACTIVE) {
-    btm_process_inq_complete(BTM_NO_RESOURCES,
-                             (uint8_t)(p_inqparms->mode & BTM_BR_INQUIRY_MASK));
-    return;
-  }
-
-  lap = &general_inq_lap;
-
-  btm_clr_inq_result_flt();
-
-  /* Allocate memory to hold bd_addrs responding */
-  p_inq->p_bd_db = (tINQ_BDADDR*)osi_calloc(BT_DEFAULT_BUFFER_SIZE);
-  p_inq->max_bd_entries =
-      (uint16_t)(BT_DEFAULT_BUFFER_SIZE / sizeof(tINQ_BDADDR));
-
-  btsnd_hcic_inquiry(*lap, p_inqparms->duration, 0);
 }
 
 /*******************************************************************************
