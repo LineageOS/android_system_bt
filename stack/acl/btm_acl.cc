@@ -2833,3 +2833,41 @@ void btm_acl_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
   btm_acl_set_paging(false);
   l2c_link_hci_conn_comp(status, handle, bda);
 }
+
+constexpr uint16_t kDefaultPacketTypes =
+    HCI_PKT_TYPES_MASK_DM1 | HCI_PKT_TYPES_MASK_DH1 | HCI_PKT_TYPES_MASK_DM3 |
+    HCI_PKT_TYPES_MASK_DH3 | HCI_PKT_TYPES_MASK_DM5 | HCI_PKT_TYPES_MASK_DH5;
+
+void acl_create_classic_connection(const RawAddress& bd_addr,
+                                   bool there_are_high_priority_channels,
+                                   bool is_bonding) {
+  const bool controller_supports_role_switch =
+      controller_get_interface()->supports_role_switch();
+  const bool acl_allows_role_switch = acl_is_role_switch_allowed();
+
+  /* FW team says that we can participant in 4 piconets
+   * typically 3 piconet + 1 for scanning.
+   * We can enhance the code to count the number of piconets later. */
+  uint8_t allow_role_switch = HCI_CR_CONN_NOT_ALLOW_SWITCH;
+  if (((acl_allows_role_switch && (BTM_GetNumAclLinks() < 3)) ||
+       (is_bonding && !there_are_high_priority_channels &&
+        controller_supports_role_switch)))
+    allow_role_switch = HCI_CR_CONN_ALLOW_SWITCH;
+
+  /* Check with the BT manager if details about remote device are known */
+  uint8_t page_scan_rep_mode{HCI_PAGE_SCAN_REP_MODE_R1};
+  uint8_t page_scan_mode{HCI_MANDATARY_PAGE_SCAN_MODE};
+  uint16_t clock_offset = BTM_GetClockOffset(bd_addr);
+
+  tBTM_INQ_INFO* p_inq_info = BTM_InqDbRead(bd_addr);
+  if (p_inq_info != nullptr &&
+      (p_inq_info->results.inq_result_type & BTM_INQ_RESULT_BR)) {
+    page_scan_rep_mode = p_inq_info->results.page_scan_rep_mode;
+    page_scan_mode = p_inq_info->results.page_scan_mode;
+    clock_offset = p_inq_info->results.clock_offset;
+  }
+
+  btsnd_hcic_create_conn(bd_addr, kDefaultPacketTypes, page_scan_rep_mode,
+                         page_scan_mode, clock_offset, allow_role_switch);
+  btm_acl_set_paging(true);
+}
