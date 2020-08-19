@@ -513,32 +513,11 @@ bool BTA_DmSetVisibility(bt_scan_mode_t mode) {
       return false;
   }
 
-  uint16_t window, interval;
-  uint16_t le_disc_mode = BTM_BleReadDiscoverability();
-  uint16_t le_conn_mode = BTM_BleReadConnectability();
-  uint16_t disc_mode = BTM_ReadDiscoverability(&window, &interval);
-  uint16_t conn_mode = BTM_ReadConnectability(&window, &interval);
+  BTM_SetDiscoverability(disc_mode_param, bta_dm_cb.inquiry_scan_window,
+                         bta_dm_cb.inquiry_scan_interval);
 
-  /* set modes for Discoverability and connectability if not ignore */
-  if (disc_mode_param != (BTA_DM_IGNORE | BTA_DM_LE_IGNORE)) {
-    if ((disc_mode_param & BTA_DM_LE_IGNORE) == BTA_DM_LE_IGNORE)
-      disc_mode_param = ((disc_mode_param & ~BTA_DM_LE_IGNORE) | le_disc_mode);
-    if ((disc_mode_param & BTA_DM_IGNORE) == BTA_DM_IGNORE)
-      disc_mode_param = ((disc_mode_param & ~BTA_DM_IGNORE) | disc_mode);
-
-    BTM_SetDiscoverability(disc_mode_param, bta_dm_cb.inquiry_scan_window,
-                           bta_dm_cb.inquiry_scan_interval);
-  }
-
-  if (conn_mode_param != (BTA_DM_IGNORE | BTA_DM_LE_IGNORE)) {
-    if ((conn_mode_param & BTA_DM_LE_IGNORE) == BTA_DM_LE_IGNORE)
-      conn_mode_param = ((conn_mode_param & ~BTA_DM_LE_IGNORE) | le_conn_mode);
-    if ((conn_mode_param & BTA_DM_IGNORE) == BTA_DM_IGNORE)
-      conn_mode_param = ((conn_mode_param & ~BTA_DM_IGNORE) | conn_mode);
-
-    BTM_SetConnectability(conn_mode_param, bta_dm_cb.page_scan_window,
-                          bta_dm_cb.page_scan_interval);
-  }
+  BTM_SetConnectability(conn_mode_param, bta_dm_cb.page_scan_window,
+                        bta_dm_cb.page_scan_interval);
   return true;
 }
 
