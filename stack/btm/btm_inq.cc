@@ -603,8 +603,6 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   const LAP* lap;
   tBTM_INQ_PARMS* p_inqparms = &p_inq->inqparms;
 
-  p_inq->state = BTM_INQ_ACTIVE_STATE;
-
   btm_acl_update_inquiry_status(BTM_INQUIRY_STARTED);
 
   if (p_inq->inq_active & BTM_SSP_INQUIRY_ACTIVE) {
