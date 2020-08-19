@@ -132,6 +132,7 @@ cc_library_static {
         "gatt/gatt_db.cc",
         "gatt/gatt_main.cc",
         "gatt/gatt_sr.cc",
+        "gatt/gatt_sr_hash.cc",
         "gatt/gatt_utils.cc",
         "hcic/hciblecmds.cc",
         "hcic/hcicmds.cc",
@@ -474,3 +475,29 @@ cc_test {
         misc_undefined: ["bounds"],
     },
 }
+
+// gatt sr hash test
+cc_test {
+    name: "net_test_stack_gatt_sr_hash_native",
+    defaults: ["fluoride_defaults"],
+    test_suites: ["device-tests"],
+    host_supported: true,
+    include_dirs: [
+        "system/bt",
+        "system/bt/stack/include",
+    ],
+    srcs: crypto_toolbox_srcs + [
+        "test/stack_gatt_sr_hash_test.cc",
+        "gatt/gatt_sr_hash.cc",
+    ],
+    shared_libs: [
+        "libcutils",
+        "libcrypto",
+    ],
+    static_libs: [
+        "liblog",
+        "libosi",
+        "libbt-common",
+    ],
+}
+

@@ -589,4 +589,8 @@ extern tGATT_STATUS gatts_read_attr_perm_check(tGATT_SVC_DB* p_db, bool is_long,
                                                uint8_t key_size);
 extern bluetooth::Uuid* gatts_get_service_uuid(tGATT_SVC_DB* p_db);
 
+/* gatt_sr_hash.cc */
+extern Octet16 gatts_calculate_database_hash(
+    std::list<tGATT_SRV_LIST_ELEM>* lst_ptr);
+
 #endif
