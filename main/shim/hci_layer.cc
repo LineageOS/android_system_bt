@@ -86,15 +86,23 @@ bool IsCommandStatusOpcode(bluetooth::hci::OpCode op_code) {
     case bluetooth::hci::OpCode::SWITCH_ROLE:
     case bluetooth::hci::OpCode::FLOW_SPECIFICATION:
     case bluetooth::hci::OpCode::REFRESH_ENCRYPTION_KEY:
+    case bluetooth::hci::OpCode::ENHANCED_FLUSH:
     case bluetooth::hci::OpCode::LE_CREATE_CONNECTION:
     case bluetooth::hci::OpCode::LE_CONNECTION_UPDATE:
     case bluetooth::hci::OpCode::LE_READ_REMOTE_FEATURES:
+    case bluetooth::hci::OpCode::LE_START_ENCRYPTION:
     case bluetooth::hci::OpCode::LE_READ_LOCAL_P_256_PUBLIC_KEY_COMMAND:
     case bluetooth::hci::OpCode::LE_GENERATE_DHKEY_COMMAND:
     case bluetooth::hci::OpCode::LE_SET_PHY:
     case bluetooth::hci::OpCode::LE_EXTENDED_CREATE_CONNECTION:
     case bluetooth::hci::OpCode::LE_PERIODIC_ADVERTISING_CREATE_SYNC:
-    case bluetooth::hci::OpCode::ENHANCED_FLUSH:
+    case bluetooth::hci::OpCode::LE_ACCEPT_CIS_REQUEST:
+    case bluetooth::hci::OpCode::LE_CREATE_BIG:
+    case bluetooth::hci::OpCode::LE_TERMINATE_BIG:
+    case bluetooth::hci::OpCode::LE_BIG_CREATE_SYNC:
+    case bluetooth::hci::OpCode::LE_REQUEST_PEER_SCA:
+    case bluetooth::hci::OpCode::LE_READ_REMOTE_TRANSMIT_POWER_LEVEL:
+
       return true;
     default:
       return false;
