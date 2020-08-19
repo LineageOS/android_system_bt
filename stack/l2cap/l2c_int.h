@@ -632,7 +632,7 @@ extern void l2cu_adjust_out_mps(tL2C_CCB* p_ccb);
 */
 extern void l2c_link_timeout(tL2C_LCB* p_lcb);
 extern void l2c_info_resp_timer_timeout(void* data);
-extern void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, tL2C_CCB* p_ccb,
+extern void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, uint16_t local_cid,
                                      BT_HDR* p_buf);
 extern void l2c_link_adjust_allocation(void);
 

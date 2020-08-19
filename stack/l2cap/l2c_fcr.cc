@@ -457,7 +457,7 @@ void l2c_fcr_send_S_frame(tL2C_CCB* p_ccb, uint16_t function_code,
     L2CAP_TRACE_EVENT("                  Buf Len: %u", p_buf->len);
   }
 
-  l2c_link_check_send_pkts(p_ccb->p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_ccb->p_lcb, 0, p_buf);
 
   p_ccb->fcrb.last_ack_sent = p_ccb->fcrb.next_seq_expected;
 
@@ -678,7 +678,7 @@ void l2c_fcr_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
   if ((!fixed_queue_is_empty(p_ccb->fcrb.retrans_q) ||
        !fixed_queue_is_empty(p_ccb->xmit_hold_q)) &&
       (!p_ccb->fcrb.wait_ack) && (!l2c_fcr_is_flow_controlled(p_ccb))) {
-    l2c_link_check_send_pkts(p_ccb->p_lcb, NULL, NULL);
+    l2c_link_check_send_pkts(p_ccb->p_lcb, 0, NULL);
   }
 }
 
@@ -1479,7 +1479,7 @@ static bool retransmit_i_frames(tL2C_CCB* p_ccb, uint8_t tx_seq) {
     }
   }
 
-  l2c_link_check_send_pkts(p_ccb->p_lcb, NULL, NULL);
+  l2c_link_check_send_pkts(p_ccb->p_lcb, 0, NULL);
 
   if (fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q)) {
     p_ccb->fcrb.num_tries++;

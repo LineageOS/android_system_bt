@@ -528,7 +528,7 @@ void l2c_link_timeout(tL2C_LCB* p_lcb) {
       }
     } else {
       /* Check in case we were flow controlled */
-      l2c_link_check_send_pkts(p_lcb, NULL, NULL);
+      l2c_link_check_send_pkts(p_lcb, 0, NULL);
     }
   }
 }
@@ -866,17 +866,17 @@ bool l2c_link_check_power_mode(tL2C_LCB* p_lcb) {
  * Returns          void
  *
  ******************************************************************************/
-void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, tL2C_CCB* p_ccb, BT_HDR* p_buf) {
+void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, uint16_t local_cid,
+                              BT_HDR* p_buf) {
   int xx;
   bool single_write = false;
 
   /* Save the channel ID for faster counting */
   if (p_buf) {
-    if (p_ccb != NULL) {
-      p_buf->event = p_ccb->local_cid;
+    p_buf->event = local_cid;
+    if (local_cid != 0) {
       single_write = true;
-    } else
-      p_buf->event = 0;
+    }
 
     p_buf->layer_specific = 0;
     list_append(p_lcb->link_xmit_data_q, p_buf);
@@ -1007,7 +1007,7 @@ void l2c_OnHciModeChangeSendPendingPackets(RawAddress remote) {
     /* Trigger L2C to start transmission of the pending packets. */
     BTM_TRACE_DEBUG(
         "btm mode change to active; check l2c_link for outgoing packets");
-    l2c_link_check_send_pkts(p_lcb, NULL, NULL);
+    l2c_link_check_send_pkts(p_lcb, 0, NULL);
   }
 }
 
@@ -1185,19 +1185,19 @@ void l2c_link_process_num_completed_pkts(uint8_t* p, uint8_t evt_len) {
       else
         p_lcb->sent_not_acked = 0;
 
-      l2c_link_check_send_pkts(p_lcb, NULL, NULL);
+      l2c_link_check_send_pkts(p_lcb, 0, NULL);
 
       /* If we were doing round-robin for low priority links, check 'em */
       if ((p_lcb->acl_priority == L2CAP_PRIORITY_HIGH) &&
           (l2cb.check_round_robin) &&
           (l2cb.round_robin_unacked < l2cb.round_robin_quota)) {
-        l2c_link_check_send_pkts(NULL, NULL, NULL);
+        l2c_link_check_send_pkts(NULL, 0, NULL);
       }
       if ((p_lcb->transport == BT_TRANSPORT_LE) &&
           (p_lcb->acl_priority == L2CAP_PRIORITY_HIGH) &&
           ((l2cb.ble_check_round_robin) &&
            (l2cb.ble_round_robin_unacked < l2cb.ble_round_robin_quota))) {
-        l2c_link_check_send_pkts(NULL, NULL, NULL);
+        l2c_link_check_send_pkts(NULL, 0, NULL);
       }
     }
 
@@ -1260,7 +1260,7 @@ void l2c_link_segments_xmitted(BT_HDR* p_msg) {
 
     p_lcb->partial_segment_being_sent = false;
 
-    l2c_link_check_send_pkts(p_lcb, NULL, NULL);
+    l2c_link_check_send_pkts(p_lcb, 0, NULL);
   } else
     osi_free(p_msg);
 }
