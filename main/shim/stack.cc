@@ -76,9 +76,11 @@ void Stack::StartEverything() {
   if (common::InitFlags::GdControllerEnabled()) {
     modules.add<hci::Controller>();
   }
+  if (common::InitFlags::GdAclEnabled()) {
+    modules.add<hci::AclManager>();
+  }
   if (common::InitFlags::GdCoreEnabled()) {
     modules.add<att::AttModule>();
-    modules.add<hci::AclManager>();
     modules.add<hci::LeAdvertisingManager>();
     modules.add<hci::LeScanningManager>();
     modules.add<l2cap::classic::L2capClassicModule>();
