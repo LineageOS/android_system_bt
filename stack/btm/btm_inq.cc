@@ -118,8 +118,7 @@ const uint16_t BTM_EIR_UUID_LKUP_TBL[BTM_EIR_MAX_SERVICES] = {
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
-static void btm_initiate_inquiry(tBTM_INQUIRY_VAR_ST* p_inq);
-static void btm_set_inq_event_filter();
+static void btm_initiate_inquiry();
 void btm_clr_inq_result_flt(void);
 
 static uint8_t btm_convert_uuid_to_eir_service(uint16_t uuid16);
@@ -665,10 +664,7 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   }
 
   p_inq->state = BTM_INQ_SET_FILT_STATE;
-
-  /* Before beginning the inquiry the current filter must be cleared, so
-   * initiate the command */
-  btm_set_inq_event_filter();
+  btm_initiate_inquiry();
   return BTM_CMD_STARTED;
 }
 
@@ -1139,43 +1135,6 @@ tINQ_DB_ENT* btm_inq_db_new(const RawAddress& p_bda) {
 
 /*******************************************************************************
  *
- * Function         btm_set_inq_event_filter
- *
- * Description      This function is called to set the inquiry event filter.
- *                  It is called by either internally, or by the external API
- *                  function (BTM_SetInqEventFilter).  It is used internally as
- *                  part of the inquiry processing.
- *
- * Input Params:
- *                  filter_cond_type - this is the type of inquiry filter to
- *                                     apply:
- *                          BTM_FILTER_COND_DEVICE_CLASS,
- *                          BTM_FILTER_COND_BD_ADDR, or
- *                          BTM_CLR_INQUIRY_FILTER
- *
- *                  p_filt_cond - this is either a BD_ADDR or DEV_CLASS
- *                                depending on the filter_cond_type
- *                                (See section 4.7.3 of Core Spec 1.0b).
- *
- * Returns          BTM_CMD_STARTED if successfully initiated
- *                  BTM_NO_RESOURCES if couldn't get a memory pool buffer
- *                  BTM_ILLEGAL_VALUE if a bad parameter was detected
- *
- ******************************************************************************/
-static void btm_set_inq_event_filter() {
-  tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
-
-#if (BTM_INQ_DEBUG == TRUE)
-  BTM_TRACE_DEBUG("btm_event_filter_complete: inq_active:0x%x state:%d",
-                  btm_cb.btm_inq_vars.inq_active, btm_cb.btm_inq_vars.state);
-#endif
-
-  p_inq->state = BTM_INQ_ACTIVE_STATE;
-  btm_initiate_inquiry(p_inq);
-}
-
-/*******************************************************************************
- *
  * Function         btm_initiate_inquiry
  *
  * Description      This function is called to start an inquiry or periodic
@@ -1199,9 +1158,12 @@ static void btm_set_inq_event_filter() {
  *                  the error status.
  *
  ******************************************************************************/
-static void btm_initiate_inquiry(tBTM_INQUIRY_VAR_ST* p_inq) {
+static void btm_initiate_inquiry() {
   const LAP* lap;
+  tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
   tBTM_INQ_PARMS* p_inqparms = &p_inq->inqparms;
+
+  p_inq->state = BTM_INQ_ACTIVE_STATE;
 
 #if (BTM_INQ_DEBUG == TRUE)
   BTM_TRACE_DEBUG("btm_initiate_inquiry: inq_active:0x%x state:%d",
