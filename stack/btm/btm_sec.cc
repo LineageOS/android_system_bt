@@ -456,10 +456,10 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
 #endif
 /* clear out the old setting, just in case it exists */
     {
-      p_srec->security_flags &= ~(
-          BTM_SEC_OUT_AUTHORIZE | BTM_SEC_OUT_ENCRYPT |
-          BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_MITM | BTM_SEC_FORCE_MASTER |
-          BTM_SEC_ATTEMPT_MASTER | BTM_SEC_FORCE_SLAVE | BTM_SEC_ATTEMPT_SLAVE);
+      p_srec->security_flags &=
+          ~(BTM_SEC_OUT_ENCRYPT | BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_MITM |
+            BTM_SEC_FORCE_MASTER | BTM_SEC_ATTEMPT_MASTER |
+            BTM_SEC_FORCE_SLAVE | BTM_SEC_ATTEMPT_SLAVE);
     }
 
     /* Parameter validation.  Originator should not set requirements for
@@ -495,8 +495,8 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
 
     /* Parameter validation.  Acceptor should not set requirements for outgoing
      * connections */
-    sec_level &= ~(BTM_SEC_OUT_AUTHORIZE | BTM_SEC_OUT_ENCRYPT |
-                   BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_MITM);
+    sec_level &=
+        ~(BTM_SEC_OUT_ENCRYPT | BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_MITM);
 
     if (btm_cb.security_mode == BTM_SEC_MODE_SP ||
         btm_cb.security_mode == BTM_SEC_MODE_SC) {
@@ -2009,9 +2009,7 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
       /* the security in BTM_SEC_IN_FLAGS is fullfilled so far, check the
        * requirements in */
       /* btm_sec_execute_procedure */
-      if ((is_originator &&
-           (p_serv_rec->security_flags & BTM_SEC_OUT_AUTHORIZE)) ||
-          (!is_originator && false)) {
+      if ((is_originator && false) || (!is_originator && false)) {
         BTM_TRACE_EVENT("%s: still need authorization", __func__);
         rc = BTM_CMD_STARTED;
       }
@@ -4654,8 +4652,7 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
   /* If connection is not authorized and authorization is required */
   /* start authorization and return PENDING to the caller */
   if (!(p_dev_rec->sec_flags & BTM_SEC_AUTHORIZED) &&
-      ((p_dev_rec->is_originator &&
-        (p_dev_rec->security_required & BTM_SEC_OUT_AUTHORIZE)) ||
+      ((p_dev_rec->is_originator && false) ||
        (!p_dev_rec->is_originator && false))) {
     BTM_TRACE_EVENT(
         "service id:%d, is trusted:%d", p_dev_rec->p_cur_service->service_id,
@@ -4672,10 +4669,9 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
 
   /* All required  security procedures already established */
   p_dev_rec->security_required &=
-      ~(BTM_SEC_OUT_AUTHORIZE | BTM_SEC_OUT_AUTHENTICATE |
-        BTM_SEC_IN_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT | BTM_SEC_IN_ENCRYPT |
-        BTM_SEC_FORCE_MASTER | BTM_SEC_ATTEMPT_MASTER | BTM_SEC_FORCE_SLAVE |
-        BTM_SEC_ATTEMPT_SLAVE);
+      ~(BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_IN_AUTHENTICATE |
+        BTM_SEC_OUT_ENCRYPT | BTM_SEC_IN_ENCRYPT | BTM_SEC_FORCE_MASTER |
+        BTM_SEC_ATTEMPT_MASTER | BTM_SEC_FORCE_SLAVE | BTM_SEC_ATTEMPT_SLAVE);
 
   BTM_TRACE_EVENT("Security Manager: trusted:0x%04x%04x",
                   p_dev_rec->trusted_mask[1], p_dev_rec->trusted_mask[0]);

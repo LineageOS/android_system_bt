@@ -638,8 +638,6 @@ typedef void(tBTM_ESCO_CBACK)(tBTM_ESCO_EVT event, tBTM_ESCO_EVT_DATA* p_data);
 #define BTM_SEC_IN_AUTHENTICATE 0x0002
 /* Inbound call requires encryption */
 #define BTM_SEC_IN_ENCRYPT 0x0004
-/* Outbound call requires authorization */
-#define BTM_SEC_OUT_AUTHORIZE 0x0008
 /* Outbound call requires authentication */
 #define BTM_SEC_OUT_AUTHENTICATE 0x0010
 /* Outbound call requires encryption */

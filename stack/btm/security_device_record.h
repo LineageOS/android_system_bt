@@ -279,8 +279,7 @@ extern void btm_sco_disc_chk_pend_for_modechange(uint16_t hci_handle);
  * Define structure for Security Service Record.
  * A record exists for each service registered with the Security Manager
  */
-#define BTM_SEC_OUT_FLAGS \
-  (BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT | BTM_SEC_OUT_AUTHORIZE)
+#define BTM_SEC_OUT_FLAGS (BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT)
 #define BTM_SEC_IN_FLAGS (BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT)
 
 #define BTM_SEC_OUT_LEVEL4_FLAGS                                       \
