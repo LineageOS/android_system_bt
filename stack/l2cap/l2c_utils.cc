@@ -39,6 +39,8 @@
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
 
+tL2C_CCB* l2cu_get_next_channel_in_rr(tL2C_LCB* p_lcb); // TODO Move
+
 /*******************************************************************************
  *
  * Function         l2cu_allocate_lcb
@@ -69,7 +71,11 @@ tL2C_LCB* l2cu_allocate_lcb(const RawAddress& p_bd_addr, bool is_bonding,
       p_lcb->info_resp_timer = alarm_new("l2c_lcb.info_resp_timer");
       p_lcb->idle_timeout = l2cb.idle_timeout;
       p_lcb->id = 1; /* spec does not allow '0' */
-      p_lcb->is_bonding = is_bonding;
+      if (is_bonding) {
+        p_lcb->SetBonding();
+      } else {
+        p_lcb->ResetBonding();
+      }
       p_lcb->transport = transport;
       p_lcb->tx_data_len =
           controller_get_interface()->get_ble_default_data_packet_length();
@@ -107,7 +113,11 @@ void l2cu_update_lcb_4_bonding(const RawAddress& p_bd_addr, bool is_bonding) {
   if (p_lcb) {
     VLOG(1) << __func__ << " BDA: " << p_bd_addr
             << " is_bonding: " << is_bonding;
-    p_lcb->is_bonding = is_bonding;
+    if (is_bonding) {
+      p_lcb->SetBonding();
+    } else {
+      p_lcb->ResetBonding();
+    }
   }
 }
 
@@ -125,7 +135,7 @@ void l2cu_release_lcb(tL2C_LCB* p_lcb) {
   tL2C_CCB* p_ccb;
 
   p_lcb->in_use = false;
-  p_lcb->is_bonding = false;
+  p_lcb->ResetBonding();
 
   /* Stop and free timers */
   alarm_free(p_lcb->l2c_lcb_timer);
@@ -153,9 +163,7 @@ void l2cu_release_lcb(tL2C_LCB* p_lcb) {
     }
   }
 
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
   l2cu_process_fixed_disc_cback(p_lcb);
-#endif
 
   /* Ensure no CCBs left on this LCB */
   for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb;
@@ -1034,12 +1042,8 @@ void l2cu_send_peer_info_rsp(tL2C_LCB* p_lcb, uint8_t remote_id,
 #if (L2CAP_CONFORMANCE_TESTING == TRUE)
       UINT32_TO_STREAM(p, l2cb.test_info_resp);
 #else
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
       UINT32_TO_STREAM(p,
                        L2CAP_EXTFEA_SUPPORTED_MASK | L2CAP_EXTFEA_FIXED_CHNLS);
-#else
-      UINT32_TO_STREAM(p, L2CAP_EXTFEA_SUPPORTED_MASK);
-#endif
 #endif
     }
   } else if (info_type == L2CAP_FIXED_CHANNELS_INFO_TYPE) {
@@ -1051,7 +1055,6 @@ void l2cu_send_peer_info_rsp(tL2C_LCB* p_lcb, uint8_t remote_id,
     if (L2CAP_EXTFEA_SUPPORTED_MASK & L2CAP_EXTFEA_UCD_RECEPTION)
       p[0] |= L2CAP_FIXED_CHNL_CNCTLESS_BIT;
 
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
     {
       int xx;
 
@@ -1066,7 +1069,6 @@ void l2cu_send_peer_info_rsp(tL2C_LCB* p_lcb, uint8_t remote_id,
               1 << ((xx + L2CAP_FIRST_FIXED_CHNL) % 8);
       }
     }
-#endif
   } else if (info_type == L2CAP_CONNLESS_MTU_INFO_TYPE) {
     UINT16_TO_STREAM(p, L2CAP_INFO_RESP_RESULT_SUCCESS);
     UINT16_TO_STREAM(p, L2CAP_MTU_SIZE);
@@ -1142,7 +1144,6 @@ void l2cu_enqueue_ccb(tL2C_CCB* p_ccb) {
     }
   }
 
-#if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
   /* Adding CCB into round robin service table of its LCB */
   if (p_ccb->p_lcb != NULL) {
     /* if this is the first channel in this priority group */
@@ -1158,7 +1159,6 @@ void l2cu_enqueue_ccb(tL2C_CCB* p_ccb) {
     /* increase number of channels in this group */
     p_ccb->p_lcb->rr_serv[p_ccb->ccb_priority].num_ccb++;
   }
-#endif
 }
 
 /******************************************************************************
@@ -1188,7 +1188,6 @@ void l2cu_dequeue_ccb(tL2C_CCB* p_ccb) {
     return;
   }
 
-#if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
   /* Removing CCB from round robin service table of its LCB */
   if (p_ccb->p_lcb != NULL) {
     /* decrease number of channels in this priority group */
@@ -1212,7 +1211,6 @@ void l2cu_dequeue_ccb(tL2C_CCB* p_ccb) {
       }
     }
   }
-#endif
 
   if (p_ccb == p_q->p_first_ccb) {
     /* We are removing the first in a queue */
@@ -1256,7 +1254,6 @@ void l2cu_change_pri_ccb(tL2C_CCB* p_ccb, tL2CAP_CHNL_PRIORITY priority) {
       p_ccb->ccb_priority = priority;
       l2cu_enqueue_ccb(p_ccb);
     }
-#if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
     else {
       /* If CCB is the only guy on the queue, no need to re-enqueue */
       /* update only round robin service data */
@@ -1272,7 +1269,6 @@ void l2cu_change_pri_ccb(tL2C_CCB* p_ccb, tL2CAP_CHNL_PRIORITY priority) {
           L2CAP_GET_PRIORITY_QUOTA(p_ccb->ccb_priority);
       p_ccb->p_lcb->rr_serv[p_ccb->ccb_priority].num_ccb = 1;
     }
-#endif
   }
 }
 
@@ -1441,7 +1437,7 @@ bool l2cu_start_post_bond_timer(uint16_t handle) {
 
   if (!p_lcb) return (true);
 
-  p_lcb->is_bonding = false;
+  p_lcb->ResetBonding();
 
   /* Only start timer if no control blocks allocated */
   if (p_lcb->ccb_queue.p_first_ccb != NULL) return (false);
@@ -2129,7 +2125,7 @@ void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb) {
 
   acl_create_classic_connection(p_lcb->remote_bd_addr,
                                 there_are_high_priority_channels,
-                                p_lcb->is_bonding);
+                                p_lcb->IsBonding());
 
   alarm_set_on_mloop(p_lcb->l2c_lcb_timer, L2CAP_LINK_CONNECT_TIMEOUT_MS,
                      l2c_lcb_timer_timeout, p_lcb);
@@ -2395,7 +2391,6 @@ void l2cu_adjust_out_mps(tL2C_CCB* p_ccb) {
  *
  ******************************************************************************/
 bool l2cu_initialize_fixed_ccb(tL2C_LCB* p_lcb, uint16_t fixed_cid) {
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
   tL2C_CCB* p_ccb;
 
   /* If we already have a CCB, then simply return */
@@ -2429,7 +2424,6 @@ bool l2cu_initialize_fixed_ccb(tL2C_LCB* p_lcb, uint16_t fixed_cid) {
   /* Set the default idle timeout value to use */
   p_ccb->fixed_chnl_idle_tout =
       l2cb.fixed_reg[fixed_cid - L2CAP_FIRST_FIXED_CHNL].default_idle_tout;
-#endif
   return (true);
 }
 
@@ -2450,7 +2444,6 @@ void l2cu_no_dynamic_ccbs(tL2C_LCB* p_lcb) {
   uint64_t timeout_ms = p_lcb->idle_timeout * 1000;
   bool start_timeout = true;
 
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
   int xx;
 
   for (xx = 0; xx < L2CAP_NUM_FIXED_CHNLS; xx++) {
@@ -2465,10 +2458,9 @@ void l2cu_no_dynamic_ccbs(tL2C_LCB* p_lcb) {
       timeout_ms = p_lcb->p_fixed_ccbs[xx]->fixed_chnl_idle_tout * 1000;
     }
   }
-#endif
 
   /* If the link is pairing, do not mess with the timeouts */
-  if (p_lcb->is_bonding) return;
+  if (p_lcb->IsBonding()) return;
 
   if (timeout_ms == 0) {
     L2CAP_TRACE_DEBUG(
@@ -2485,7 +2477,7 @@ void l2cu_no_dynamic_ccbs(tL2C_LCB* p_lcb) {
        * done) */
       p_lcb->link_state = LST_DISCONNECTING;
       start_timeout = false;
-    } else if (p_lcb->is_bonding) {
+    } else if (p_lcb->IsBonding()) {
       btsnd_hcic_disconnect(p_lcb->handle, HCI_ERR_PEER_USER);
       l2cu_process_fixed_disc_cback(p_lcb);
       p_lcb->link_state = LST_DISCONNECTING;
@@ -2505,7 +2497,6 @@ void l2cu_no_dynamic_ccbs(tL2C_LCB* p_lcb) {
   }
 }
 
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
 /*******************************************************************************
  *
  * Function         l2cu_process_fixed_chnl_resp
@@ -2558,7 +2549,6 @@ void l2cu_process_fixed_chnl_resp(tL2C_LCB* p_lcb) {
     }
   }
 }
-#endif
 
 /*******************************************************************************
  *
@@ -2571,7 +2561,6 @@ void l2cu_process_fixed_chnl_resp(tL2C_LCB* p_lcb) {
  *
  ******************************************************************************/
 void l2cu_process_fixed_disc_cback(tL2C_LCB* p_lcb) {
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
 
   /* Select peer channels mask to use depending on transport */
   uint8_t peer_channel_mask = p_lcb->peer_chnl_mask[0];
@@ -2596,7 +2585,6 @@ void l2cu_process_fixed_disc_cback(tL2C_LCB* p_lcb) {
           xx + L2CAP_FIRST_FIXED_CHNL, p_lcb->remote_bd_addr, false,
           p_lcb->disc_reason, p_lcb->transport);
   }
-#endif
 }
 
 /*******************************************************************************
@@ -2937,262 +2925,8 @@ tL2C_CCB* l2cu_find_ccb_by_cid(tL2C_LCB* p_lcb, uint16_t local_cid) {
   return (p_ccb);
 }
 
-#if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
-
-/******************************************************************************
- *
- * Function         l2cu_get_next_channel_in_rr
- *
- * Description      get the next channel to send on a link. It also adjusts the
- *                  CCB queue to do a basic priority and round-robin scheduling.
- *
- * Returns          pointer to CCB or NULL
- *
- ******************************************************************************/
-static tL2C_CCB* l2cu_get_next_channel_in_rr(tL2C_LCB* p_lcb) {
-  tL2C_CCB* p_serve_ccb = NULL;
-  tL2C_CCB* p_ccb;
-
-  int i, j;
-
-  /* scan all of priority until finding a channel to serve */
-  for (i = 0; (i < L2CAP_NUM_CHNL_PRIORITY) && (!p_serve_ccb); i++) {
-    /* scan all channel within serving priority group until finding a channel to
-     * serve */
-    for (j = 0; (j < p_lcb->rr_serv[p_lcb->rr_pri].num_ccb) && (!p_serve_ccb);
-         j++) {
-      /* scaning from next serving channel */
-      p_ccb = p_lcb->rr_serv[p_lcb->rr_pri].p_serve_ccb;
-
-      if (!p_ccb) {
-        L2CAP_TRACE_ERROR("p_serve_ccb is NULL, rr_pri=%d", p_lcb->rr_pri);
-        return NULL;
-      }
-
-      L2CAP_TRACE_DEBUG("RR scan pri=%d, lcid=0x%04x, q_cout=%d",
-                        p_ccb->ccb_priority, p_ccb->local_cid,
-                        fixed_queue_length(p_ccb->xmit_hold_q));
-
-      /* store the next serving channel */
-      /* this channel is the last channel of its priority group */
-      if ((p_ccb->p_next_ccb == NULL) ||
-          (p_ccb->p_next_ccb->ccb_priority != p_ccb->ccb_priority)) {
-        /* next serving channel is set to the first channel in the group */
-        p_lcb->rr_serv[p_lcb->rr_pri].p_serve_ccb =
-            p_lcb->rr_serv[p_lcb->rr_pri].p_first_ccb;
-      } else {
-        /* next serving channel is set to the next channel in the group */
-        p_lcb->rr_serv[p_lcb->rr_pri].p_serve_ccb = p_ccb->p_next_ccb;
-      }
-
-      if (p_ccb->chnl_state != CST_OPEN) continue;
-
-      if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE) {
-        L2CAP_TRACE_DEBUG("%s : Connection oriented channel", __func__);
-        if (fixed_queue_is_empty(p_ccb->xmit_hold_q)) continue;
-
-      } else {
-        /* eL2CAP option in use */
-        if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
-          if (p_ccb->fcrb.wait_ack || p_ccb->fcrb.remote_busy) continue;
-
-          if (fixed_queue_is_empty(p_ccb->fcrb.retrans_q)) {
-            if (fixed_queue_is_empty(p_ccb->xmit_hold_q)) continue;
-
-            /* If in eRTM mode, check for window closure */
-            if ((p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) &&
-                (l2c_fcr_is_flow_controlled(p_ccb)))
-              continue;
-          }
-        } else {
-          if (fixed_queue_is_empty(p_ccb->xmit_hold_q)) continue;
-        }
-      }
-
-      /* found a channel to serve */
-      p_serve_ccb = p_ccb;
-      /* decrease quota of its priority group */
-      p_lcb->rr_serv[p_lcb->rr_pri].quota--;
-    }
-
-    /* if there is no more quota of the priority group or no channel to have
-     * data to send */
-    if ((p_lcb->rr_serv[p_lcb->rr_pri].quota == 0) || (!p_serve_ccb)) {
-      /* serve next priority group */
-      p_lcb->rr_pri = (p_lcb->rr_pri + 1) % L2CAP_NUM_CHNL_PRIORITY;
-      /* initialize its quota */
-      p_lcb->rr_serv[p_lcb->rr_pri].quota =
-          L2CAP_GET_PRIORITY_QUOTA(p_lcb->rr_pri);
-    }
-  }
-
-  if (p_serve_ccb) {
-    L2CAP_TRACE_DEBUG("RR service pri=%d, quota=%d, lcid=0x%04x",
-                      p_serve_ccb->ccb_priority,
-                      p_lcb->rr_serv[p_serve_ccb->ccb_priority].quota,
-                      p_serve_ccb->local_cid);
-  }
-
-  return p_serve_ccb;
-}
-
-#else  /* (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE) */
-
-/******************************************************************************
- *
- * Function         l2cu_get_next_channel
- *
- * Description      get the next channel to send on a link bassed on priority
- *                  scheduling.
- *
- * Returns          pointer to CCB or NULL
- *
- ******************************************************************************/
-static tL2C_CCB* l2cu_get_next_channel(tL2C_LCB* p_lcb) {
-  tL2C_CCB* p_ccb;
-
-  /* Get the first CCB with data to send.
-  */
-  for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb; p_ccb = p_ccb->p_next_ccb) {
-    if (p_ccb->chnl_state != CST_OPEN) continue;
-
-    if (p_ccb->fcrb.wait_ack || p_ccb->fcrb.remote_busy) continue;
-
-    if (!fixed_queue_is_empty(p_ccb->fcrb.retrans_q)) return p_ccb;
-
-    if (fixed_queue_is_empty(p_ccb->xmit_hold_q)) continue;
-
-    /* If in eRTM mode, check for window closure */
-    if ((p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) &&
-        (l2c_fcr_is_flow_controlled(p_ccb)))
-      continue;
-
-    /* If here, we found someone */
-    return p_ccb;
-  }
-
-  return NULL;
-}
-#endif /* (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE) */
-
 void l2cu_tx_complete(tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
   if (p_cbi->cb != NULL) p_cbi->cb(p_cbi->local_cid, p_cbi->num_sdu);
-}
-
-/******************************************************************************
- *
- * Function         l2cu_get_next_buffer_to_send
- *
- * Description      get the next buffer to send on a link. It also adjusts the
- *                  CCB queue to do a basic priority and round-robin scheduling.
- *
- * Returns          pointer to buffer or NULL
- *
- ******************************************************************************/
-BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb,
-                                     tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
-  tL2C_CCB* p_ccb;
-  BT_HDR* p_buf;
-
-/* Highest priority are fixed channels */
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
-  int xx;
-
-  p_cbi->cb = NULL;
-
-  for (xx = 0; xx < L2CAP_NUM_FIXED_CHNLS; xx++) {
-    p_ccb = p_lcb->p_fixed_ccbs[xx];
-    if (p_ccb == NULL) continue;
-
-    /* eL2CAP option in use */
-    if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
-      if (p_ccb->fcrb.wait_ack || p_ccb->fcrb.remote_busy) continue;
-
-      /* No more checks needed if sending from the reatransmit queue */
-      if (fixed_queue_is_empty(p_ccb->fcrb.retrans_q)) {
-        if (fixed_queue_is_empty(p_ccb->xmit_hold_q)) continue;
-
-        /* If in eRTM mode, check for window closure */
-        if ((p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) &&
-            (l2c_fcr_is_flow_controlled(p_ccb)))
-          continue;
-      }
-
-      p_buf = l2c_fcr_get_next_xmit_sdu_seg(p_ccb, 0);
-      if (p_buf != NULL) {
-        l2cu_check_channel_congestion(p_ccb);
-        l2cu_set_acl_hci_header(p_buf, p_ccb);
-        return (p_buf);
-      }
-    } else {
-      if (!fixed_queue_is_empty(p_ccb->xmit_hold_q)) {
-        p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->xmit_hold_q);
-        if (NULL == p_buf) {
-          L2CAP_TRACE_ERROR("%s: No data to be sent", __func__);
-          return (NULL);
-        }
-
-        /* Prepare callback info for TX completion */
-        p_cbi->cb = l2cb.fixed_reg[xx].pL2CA_FixedTxComplete_Cb;
-        p_cbi->local_cid = p_ccb->local_cid;
-        p_cbi->num_sdu = 1;
-
-        l2cu_check_channel_congestion(p_ccb);
-        l2cu_set_acl_hci_header(p_buf, p_ccb);
-        return (p_buf);
-      }
-    }
-  }
-#endif
-
-#if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
-  /* get next serving channel in round-robin */
-  p_ccb = l2cu_get_next_channel_in_rr(p_lcb);
-#else
-  p_ccb = l2cu_get_next_channel(p_lcb);
-#endif
-
-  /* Return if no buffer */
-  if (p_ccb == NULL) return (NULL);
-
-  if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE) {
-    /* Check credits */
-    if (p_ccb->peer_conn_cfg.credits == 0) {
-      L2CAP_TRACE_DEBUG("%s No credits to send packets", __func__);
-      return NULL;
-    }
-
-    bool last_piece_of_sdu = false;
-    p_buf = l2c_lcc_get_next_xmit_sdu_seg(p_ccb, &last_piece_of_sdu);
-    p_ccb->peer_conn_cfg.credits--;
-
-    if (last_piece_of_sdu) {
-      // TODO: send callback up the stack. Investigate setting p_cbi->cb to
-      // notify after controller ack send.
-    }
-
-  } else {
-    if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
-      p_buf = l2c_fcr_get_next_xmit_sdu_seg(p_ccb, 0);
-      if (p_buf == NULL) return (NULL);
-    } else {
-      p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->xmit_hold_q);
-      if (NULL == p_buf) {
-        L2CAP_TRACE_ERROR("l2cu_get_buffer_to_send() #2: No data to be sent");
-        return (NULL);
-      }
-    }
-  }
-
-  if (p_ccb->p_rcb && p_ccb->p_rcb->api.pL2CA_TxComplete_Cb &&
-      (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_ERTM_MODE))
-    (*p_ccb->p_rcb->api.pL2CA_TxComplete_Cb)(p_ccb->local_cid, 1);
-
-  l2cu_check_channel_congestion(p_ccb);
-
-  l2cu_set_acl_hci_header(p_buf, p_ccb);
-
-  return (p_buf);
 }
 
 /******************************************************************************
@@ -3266,7 +3000,6 @@ static void send_congestion_status_to_all_clients(tL2C_CCB* p_ccb,
 
     if (status == false) l2cb.is_cong_cback_context = false;
   }
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
   else {
     for (uint8_t xx = 0; xx < L2CAP_NUM_FIXED_CHNLS; xx++) {
       if (p_ccb->p_lcb->p_fixed_ccbs[xx] == p_ccb) {
@@ -3277,7 +3010,6 @@ static void send_congestion_status_to_all_clients(tL2C_CCB* p_ccb,
       }
     }
   }
-#endif
 }
 
 /* check if any change in congestion status */
