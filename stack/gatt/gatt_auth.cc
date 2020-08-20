@@ -175,12 +175,7 @@ void gatt_enc_cmpl_cback(const RawAddress* bd_addr, tBT_TRANSPORT transport,
   bool status = false;
   if (result == BTM_SUCCESS) {
     if (gatt_get_sec_act(p_tcb) == GATT_SEC_ENCRYPT_MITM) {
-      uint8_t sec_flag = 0;
-      BTM_GetSecurityFlagsByTransport(*bd_addr, &sec_flag, transport);
-
-      if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED) {
-        status = true;
-      }
+      status = BTM_IsLinkKeyAuthed(*bd_addr, transport);
     } else {
       status = true;
     }
@@ -271,7 +266,6 @@ tGATT_SEC_ACTION gatt_get_sec_act(tGATT_TCB* p_tcb) {
  */
 tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB* p_clcb) {
   tGATT_SEC_ACTION act = GATT_SEC_OK;
-  uint8_t sec_flag;
   tGATT_TCB* p_tcb = p_clcb->p_tcb;
   tGATT_AUTH_REQ auth_req = p_clcb->auth_req;
   bool is_link_encrypted = false;
@@ -282,22 +276,17 @@ tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB* p_clcb) {
 
   if (auth_req == GATT_AUTH_REQ_NONE) return act;
 
-  BTM_GetSecurityFlagsByTransport(p_tcb->peer_bda, &sec_flag,
-                                  p_clcb->p_tcb->transport);
-
   btm_ble_link_sec_check(p_tcb->peer_bda, auth_req, &sec_act);
 
   /* if a encryption is pending, need to wait */
   if (sec_act == BTM_BLE_SEC_REQ_ACT_DISCARD && auth_req != GATT_AUTH_REQ_NONE)
     return GATT_SEC_ENC_PENDING;
 
-  if (sec_flag & (BTM_SEC_FLAG_ENCRYPTED | BTM_SEC_FLAG_LKEY_KNOWN)) {
-    if (sec_flag & BTM_SEC_FLAG_ENCRYPTED) is_link_encrypted = true;
-
-    is_link_key_known = true;
-
-    if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED) is_key_mitm = true;
-  }
+  is_link_key_known =
+      BTM_IsLinkKeyKnown(p_tcb->peer_bda, p_clcb->p_tcb->transport);
+  is_link_encrypted =
+      BTM_IsEncrypted(p_tcb->peer_bda, p_clcb->p_tcb->transport);
+  is_key_mitm = BTM_IsLinkKeyAuthed(p_tcb->peer_bda, p_clcb->p_tcb->transport);
 
   /* first check link key upgrade required or not */
   switch (auth_req) {
@@ -355,15 +344,16 @@ tGATT_SEC_ACTION gatt_determine_sec_act(tGATT_CLCB* p_clcb) {
  ******************************************************************************/
 tGATT_STATUS gatt_get_link_encrypt_status(tGATT_TCB& tcb) {
   tGATT_STATUS encrypt_status = GATT_NOT_ENCRYPTED;
-  uint8_t sec_flag = 0;
 
-  BTM_GetSecurityFlagsByTransport(tcb.peer_bda, &sec_flag, tcb.transport);
+  bool encrypted = BTM_IsEncrypted(tcb.peer_bda, tcb.transport);
+  bool link_key_known = BTM_IsLinkKeyKnown(tcb.peer_bda, tcb.transport);
+  bool link_key_authed = BTM_IsLinkKeyAuthed(tcb.peer_bda, tcb.transport);
 
-  if ((sec_flag & BTM_SEC_FLAG_ENCRYPTED) &&
-      (sec_flag & BTM_SEC_FLAG_LKEY_KNOWN)) {
+  if (encrypted && link_key_known) {
     encrypt_status = GATT_ENCRYPED_NO_MITM;
-    if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED)
+    if (link_key_authed) {
       encrypt_status = GATT_ENCRYPED_MITM;
+    }
   }
 
   VLOG(1) << StringPrintf("gatt_get_link_encrypt_status status=0x%x",
