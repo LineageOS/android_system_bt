@@ -198,6 +198,7 @@ void ClassicPairingHandler::OnReceive(hci::IoCapabilityResponseView packet) {
       GetRecord()->SetRequiresMitmProtection(false);
       break;
   }
+  has_gotten_io_cap_response_ = true;
 }
 
 void ClassicPairingHandler::OnReceive(hci::SimplePairingCompleteView packet) {
