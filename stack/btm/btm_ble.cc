@@ -956,26 +956,24 @@ tL2CAP_LE_RESULT_CODE btm_ble_start_sec_check(const RawAddress& bd_addr,
     (*p_callback)(&bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_MODE_UNSUPPORTED);
     return L2CAP_LE_RESULT_NO_PSM;
   }
-  uint8_t sec_flag = 0;
-  BTM_GetSecurityFlagsByTransport(bd_addr, &sec_flag, BT_TRANSPORT_LE);
+
+  bool is_encrypted = BTM_IsEncrypted(bd_addr, BT_TRANSPORT_LE);
+  bool is_link_key_authed = BTM_IsLinkKeyAuthed(bd_addr, BT_TRANSPORT_LE);
+  bool is_authenticated = BTM_IsAuthenticated(bd_addr, BT_TRANSPORT_LE);
 
   if (!is_originator) {
-    if ((p_serv_rec->security_flags & BTM_SEC_IN_ENCRYPT) &&
-        !(sec_flag & BTM_SEC_ENCRYPTED)) {
+    if ((p_serv_rec->security_flags & BTM_SEC_IN_ENCRYPT) && !is_encrypted) {
       BTM_TRACE_ERROR(
           "%s: L2CAP_LE_RESULT_INSUFFICIENT_ENCRYP. service "
-          "security_flags=0x%x, "
-          "sec_flag=0x%x",
-          __func__, p_serv_rec->security_flags, sec_flag);
+          "security_flags=0x%x, ",
+          __func__, p_serv_rec->security_flags);
       return L2CAP_LE_RESULT_INSUFFICIENT_ENCRYP;
     } else if ((p_serv_rec->security_flags & BTM_SEC_IN_AUTHENTICATE) &&
-               !(sec_flag &
-                 (BTM_SEC_LINK_KEY_AUTHED | BTM_SEC_AUTHENTICATED))) {
+               !(is_link_key_authed || is_authenticated)) {
       BTM_TRACE_ERROR(
           "%s: L2CAP_LE_RESULT_INSUFFICIENT_AUTHENTICATION. service "
-          "security_flags=0x%x, "
-          "sec_flag=0x%x",
-          __func__, p_serv_rec->security_flags, sec_flag);
+          "security_flags=0x%x, ",
+          __func__, p_serv_rec->security_flags);
       return L2CAP_LE_RESULT_INSUFFICIENT_AUTHENTICATION;
     }
     /* TODO: When security is required, then must check that the key size of our
