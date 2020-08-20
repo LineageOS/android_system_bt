@@ -76,7 +76,6 @@ static void bta_dm_remname_cback(void* p);
 static void bta_dm_find_services(const RawAddress& bd_addr);
 static void bta_dm_discover_next_device(void);
 static void bta_dm_sdp_callback(uint16_t sdp_status);
-static uint8_t bta_dm_authorize_cback(uint8_t service_id);
 static uint8_t bta_dm_pin_cback(const RawAddress& bd_addr, DEV_CLASS dev_class,
                                 BD_NAME bd_name, bool min_16_digit);
 static uint8_t bta_dm_new_link_key_cback(const RawAddress& bd_addr,
@@ -232,8 +231,7 @@ const uint32_t bta_service_id_to_btm_srv_id_lkup_tbl[BTA_MAX_SERVICE_ID] = {
 };
 
 /* bta security callback */
-const tBTM_APPL_INFO bta_security = {&bta_dm_authorize_cback,
-                                     &bta_dm_pin_cback,
+const tBTM_APPL_INFO bta_security = {&bta_dm_pin_cback,
                                      &bta_dm_new_link_key_cback,
                                      &bta_dm_authentication_complete_cback,
                                      &bta_dm_bond_cancel_complete_cback,
@@ -1766,39 +1764,6 @@ static void bta_dm_remname_cback(void* p) {
   p_msg->hdr.event = BTA_DM_REMT_NAME_EVT;
 
   bta_sys_sendmsg(p_msg);
-}
-
-/*******************************************************************************
- *
- * Function         bta_dm_authorize_cback
- *
- * Description      cback requesting authorization
- *
- * Returns          void
- *
- ******************************************************************************/
-static uint8_t bta_dm_authorize_cback(uint8_t service_id) {
-  uint8_t index = 1;
-  while (index < BTA_MAX_SERVICE_ID) {
-    /* get the BTA service id corresponding to BTM id */
-    if (bta_service_id_to_btm_srv_id_lkup_tbl[index] == service_id) {
-      break;
-    }
-    index++;
-  }
-
-  /* if supported service callback otherwise not authorized */
-  if (bta_dm_cb.p_sec_cback && (index < BTA_MAX_SERVICE_ID
-#if (BTA_JV_INCLUDED == TRUE)
-                                /* pass through JV service ID */
-                                || (service_id >= BTA_FIRST_JV_SERVICE_ID &&
-                                    service_id <= BTA_LAST_JV_SERVICE_ID)
-#endif
-                                    )) {
-    return BTM_CMD_STARTED;
-  } else {
-    return BTM_NOT_AUTHORIZED;
-  }
 }
 
 /*******************************************************************************

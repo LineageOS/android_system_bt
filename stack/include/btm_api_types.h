@@ -1126,7 +1126,6 @@ typedef void(tBTM_LE_KEY_CALLBACK)(uint8_t key_type,
  ***************************/
 /* Structure that applications use to register with BTM_SecRegister */
 typedef struct {
-  tBTM_AUTHORIZE_CALLBACK* p_authorize_callback;
   tBTM_PIN_CALLBACK* p_pin_callback;
   tBTM_LINK_KEY_CALLBACK* p_link_key_callback;
   tBTM_AUTH_COMPLETE_CALLBACK* p_auth_complete_callback;

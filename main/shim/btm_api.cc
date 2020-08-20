@@ -916,10 +916,6 @@ bool bluetooth::shim::BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info) {
   CHECK(p_cb_info != nullptr);
   LOG_DEBUG("%s Registering security application", __func__);
 
-  if (p_cb_info->p_authorize_callback == nullptr) {
-    LOG_INFO("UNIMPLEMENTED %s authorize_callback", __func__);
-  }
-
   if (p_cb_info->p_pin_callback == nullptr) {
     LOG_INFO("UNIMPLEMENTED %s pin_callback", __func__);
   }
