@@ -1357,7 +1357,6 @@ static bool do_sar_reassembly(tL2C_CCB* p_ccb, BT_HDR* p_buf,
   if (!packet_ok) {
     osi_free(p_buf);
   } else if (p_buf != NULL) {
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
     if (p_ccb->local_cid < L2CAP_BASE_APPL_CID &&
         (p_ccb->local_cid >= L2CAP_FIRST_FIXED_CHNL &&
          p_ccb->local_cid <= L2CAP_LAST_FIXED_CHNL)) {
@@ -1367,7 +1366,6 @@ static bool do_sar_reassembly(tL2C_CCB* p_ccb, BT_HDR* p_buf,
               .pL2CA_FixedData_Cb)(p_ccb->local_cid,
                                    p_ccb->p_lcb->remote_bd_addr, p_buf);
     } else
-#endif
       l2c_csm_execute(p_ccb, L2CEVT_L2CAP_DATA, p_buf);
   }
 
