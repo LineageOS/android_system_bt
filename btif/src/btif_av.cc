@@ -1467,7 +1467,7 @@ bool BtifAvStateMachine::StateIdle::ProcessEvent(uint32_t event, void* p_data) {
       }
       btif_av_query_mandatory_codec_priority(peer_.PeerAddress());
       BTA_AvOpen(peer_.PeerAddress(), peer_.BtaHandle(), true,
-                 BTA_SEC_AUTHENTICATE, peer_.LocalUuidServiceClass());
+                 peer_.LocalUuidServiceClass());
       peer_.StateMachine().TransitionTo(BtifAvStateMachine::kStateOpening);
     } break;
     case BTIF_AV_AVRCP_OPEN_EVT:
@@ -3151,10 +3151,6 @@ bt_status_t btif_av_source_execute_service(bool enable) {
                    (enable) ? "enable" : "disable");
 
   if (enable) {
-    // TODO: Removed BTA_SEC_AUTHORIZE since the Java/App does not
-    // handle this request in order to allow incoming connections to succeed.
-    // We need to put this back once support for this is added.
-
     // Added BTA_AV_FEAT_NO_SCO_SSPD - this ensures that the BTA does not
     // auto-suspend av streaming on AG events(SCO or Call). The suspend shall
     // be initiated by the app/audioflinger layers.
@@ -3170,7 +3166,7 @@ bt_status_t btif_av_source_execute_service(bool enable) {
 #if (AVRC_ADV_CTRL_INCLUDED == TRUE)
     features |= BTA_AV_FEAT_RCCT | BTA_AV_FEAT_ADV_CTRL | BTA_AV_FEAT_BROWSE;
 #endif
-    BTA_AvEnable(BTA_SEC_AUTHENTICATE, features, bta_av_source_callback);
+    BTA_AvEnable(features, bta_av_source_callback);
     btif_av_source.RegisterAllBtaHandles();
     return BT_STATUS_SUCCESS;
   }
@@ -3193,7 +3189,7 @@ bt_status_t btif_av_sink_execute_service(bool enable) {
                             BTA_AV_FEAT_METADATA | BTA_AV_FEAT_VENDOR |
                             BTA_AV_FEAT_ADV_CTRL | BTA_AV_FEAT_RCTG |
                             BTA_AV_FEAT_BROWSE | BTA_AV_FEAT_COVER_ARTWORK;
-    BTA_AvEnable(BTA_SEC_AUTHENTICATE, features, bta_av_sink_callback);
+    BTA_AvEnable(features, bta_av_sink_callback);
     btif_av_sink.RegisterAllBtaHandles();
     return BT_STATUS_SUCCESS;
   }

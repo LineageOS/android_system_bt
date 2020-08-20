@@ -34,12 +34,6 @@
 /*****************************************************************************
  *  Constants and data types
  ****************************************************************************/
-/* Set to TRUE if seperate authorization prompt desired for AVCTP besides A2DP
- * authorization */
-/* Typically FALSE when AVRCP is used in conjunction with A2DP */
-#ifndef BTA_AV_WITH_AVCTP_AUTHORIZATION
-#define BTA_AV_WITH_AVCTP_AUTHORIZATION FALSE
-#endif
 
 /* AV status values */
 #define BTA_AV_SUCCESS 0        /* successful operation */
@@ -423,8 +417,7 @@ typedef struct {
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AvEnable(tBTA_SEC sec_mask, tBTA_AV_FEAT features,
-                  tBTA_AV_CBACK* p_cback);
+void BTA_AvEnable(tBTA_AV_FEAT features, tBTA_AV_CBACK* p_cback);
 
 /*******************************************************************************
  *
@@ -478,7 +471,7 @@ void BTA_AvDeregister(tBTA_AV_HNDL hndl);
  *
  ******************************************************************************/
 void BTA_AvOpen(const RawAddress& bd_addr, tBTA_AV_HNDL handle, bool use_rc,
-                tBTA_SEC sec_mask, uint16_t uuid);
+                uint16_t uuid);
 
 /*******************************************************************************
  *
