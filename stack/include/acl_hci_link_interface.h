@@ -21,6 +21,7 @@
 
 // This header contains functions for HCIF-Acl Management to invoke
 //
+void btm_acl_connection_request(const RawAddress& bda, uint8_t* dc);
 void btm_acl_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
                        uint8_t enc_mode);
 void btm_acl_encrypt_change(uint16_t handle, uint8_t status,

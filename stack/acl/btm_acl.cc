@@ -2946,3 +2946,8 @@ void acl_create_classic_connection(const RawAddress& bd_addr,
                          page_scan_mode, clock_offset, allow_role_switch);
   btm_acl_set_paging(true);
 }
+
+void btm_acl_connection_request(const RawAddress& bda, uint8_t* dc) {
+  btm_sec_conn_req(bda, dc);
+  l2c_link_hci_conn_req(bda);
+}
