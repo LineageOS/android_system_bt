@@ -411,18 +411,6 @@ void BTA_JvDisable(void);
 
 /*******************************************************************************
  *
- * Function         BTA_JvIsEncrypted
- *
- * Description      This function checks if the link to peer device is encrypted
- *
- * Returns          true if encrypted.
- *                  false if not.
- *
- ******************************************************************************/
-bool BTA_JvIsEncrypted(const RawAddress& bd_addr);
-
-/*******************************************************************************
- *
  * Function         BTA_JvGetChannelId
  *
  * Description      This function reserves a SCN/PSM for applications running
