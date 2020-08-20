@@ -274,6 +274,10 @@ class LeAclManagerFacadeService : public LeAclManagerFacade::Service, public LeC
           supervision_timeout);
     }
 
+    void OnDataLengthChange(uint16_t tx_octets, uint16_t tx_time, uint16_t rx_octets, uint16_t rx_time) override {
+      LOG_DEBUG(
+          "tx_octets: 0x%hx, tx_time: 0x%hx, rx_octets 0x%hx, rx_time 0x%hx", tx_octets, tx_time, rx_octets, rx_time);
+    }
     void OnDisconnection(ErrorCode reason) override {
       std::unique_ptr<BasePacketBuilder> builder =
           DisconnectionCompleteBuilder::Create(ErrorCode::SUCCESS, handle_, reason);
