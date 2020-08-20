@@ -279,10 +279,8 @@ extern void btm_sco_disc_chk_pend_for_modechange(uint16_t hci_handle);
  * Define structure for Security Service Record.
  * A record exists for each service registered with the Security Manager
  */
-#define BTM_SEC_OUT_FLAGS \
-  (BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT | BTM_SEC_OUT_AUTHORIZE)
-#define BTM_SEC_IN_FLAGS \
-  (BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT | BTM_SEC_IN_AUTHORIZE)
+#define BTM_SEC_OUT_FLAGS (BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT)
+#define BTM_SEC_IN_FLAGS (BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT)
 
 #define BTM_SEC_OUT_LEVEL4_FLAGS                                       \
   (BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT | BTM_SEC_OUT_MITM | \
@@ -372,7 +370,7 @@ typedef struct {
   LinkKey link_key;        /* Device link key                    */
   uint8_t pin_code_length; /* Length of the pin_code used for paring */
 
-#define BTM_SEC_AUTHORIZED BTM_SEC_FLAG_AUTHORIZED       /* 0x01 */
+#define BTM_SEC_AUTHORIZED 0x01
 #define BTM_SEC_AUTHENTICATED BTM_SEC_FLAG_AUTHENTICATED /* 0x02 */
 #define BTM_SEC_ENCRYPTED BTM_SEC_FLAG_ENCRYPTED         /* 0x04 */
 #define BTM_SEC_NAME_KNOWN 0x08
