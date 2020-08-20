@@ -18,6 +18,7 @@
 #pragma once
 
 #include "bt_common.h"
+#include "types/raw_address.h"
 
 // This header contains functions for HCI-ACL to invoke
 
@@ -26,3 +27,7 @@ extern void l2c_rcv_acl_data(BT_HDR* p_msg);
 
 // Segments is sent to HCI-ACL
 extern void l2c_link_segments_xmitted(BT_HDR* p_msg);
+
+extern void l2c_link_hci_conn_req(const RawAddress& bd_addr);
+
+extern void l2cu_resubmit_pending_sec_req(const RawAddress* p_bda);

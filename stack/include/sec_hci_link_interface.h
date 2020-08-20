@@ -35,7 +35,6 @@ void btm_read_inq_tx_power_complete(uint8_t* p);
 void btm_read_local_oob_complete(uint8_t* p);
 void btm_rem_oob_req(uint8_t* p);
 void btm_sec_auth_complete(uint16_t handle, uint8_t status);
-void btm_sec_conn_req(const RawAddress& bda, uint8_t* dc);
 void btm_sec_disconnected(uint16_t handle, uint8_t reason);
 void btm_sec_encrypt_change(uint16_t handle, uint8_t status,
                             uint8_t encr_enable);

@@ -40,6 +40,7 @@
 #include "common/metrics.h"
 #include "device/include/controller.h"
 #include "device/include/interop.h"
+#include "include/l2cap_hci_link_interface.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
@@ -48,10 +49,11 @@
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/btm_api.h"
 #include "stack/include/btu.h"
 #include "stack/include/hcimsgs.h"
-#include "stack/include/l2cap_hci_link_interface.h"
+#include "stack/include/l2cap_acl_interface.h"
 #include "types/raw_address.h"
 
 struct StackAclBtmAcl {
