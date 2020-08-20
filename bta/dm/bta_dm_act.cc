@@ -631,8 +631,6 @@ void bta_dm_add_device(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg) {
   uint8_t* p_dc = NULL;
   LinkKey* p_lc = NULL;
   uint32_t trusted_services_mask[BTM_SEC_SERVICE_ARRAY_SIZE];
-  uint8_t index = 0;
-  uint8_t btm_mask_index = 0;
 
   memset(trusted_services_mask, 0, sizeof(trusted_services_mask));
 
@@ -641,24 +639,8 @@ void bta_dm_add_device(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg) {
 
   if (msg->link_key_known) p_lc = &msg->link_key;
 
-  if (msg->is_trusted) {
-    /* covert BTA service mask to BTM mask */
-    while (msg->tm && (index < BTA_MAX_SERVICE_ID)) {
-      if (msg->tm & (uint32_t)(1 << index)) {
-        btm_mask_index =
-            bta_service_id_to_btm_srv_id_lkup_tbl[index] / BTM_SEC_ARRAY_BITS;
-        trusted_services_mask[btm_mask_index] |=
-            (uint32_t)(1 << (bta_service_id_to_btm_srv_id_lkup_tbl[index] -
-                             (uint32_t)(btm_mask_index * 32)));
-
-        msg->tm &= (uint32_t)(~(1 << index));
-      }
-      index++;
-    }
-  }
-
   if (!BTM_SecAddDevice(msg->bd_addr, p_dc, msg->bd_name, msg->features,
-                        trusted_services_mask, p_lc, msg->key_type, msg->io_cap,
+                        trusted_services_mask, p_lc, msg->key_type,
                         msg->pin_length)) {
     LOG(ERROR) << "BTA_DM: Error adding device " << msg->bd_addr;
   }
