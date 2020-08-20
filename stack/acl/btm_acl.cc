@@ -40,6 +40,7 @@
 #include "common/metrics.h"
 #include "device/include/controller.h"
 #include "device/include/interop.h"
+#include "include/l2cap_hci_link_interface.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
@@ -48,10 +49,11 @@
 #include "stack/btm/btm_int_types.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/acl_hci_link_interface.h"
 #include "stack/include/btm_api.h"
 #include "stack/include/btu.h"
 #include "stack/include/hcimsgs.h"
-#include "stack/include/l2cap_hci_link_interface.h"
+#include "stack/include/l2cap_acl_interface.h"
 #include "types/raw_address.h"
 
 struct StackAclBtmAcl {
@@ -117,9 +119,8 @@ void btm_acl_init(void) {
   btm_cb.acl_cb_.acl_disc_reason = 0xff;
 
   btm_cb.acl_cb_.btm_acl_pkt_types_supported =
-      BTM_ACL_PKT_TYPES_MASK_DH1 + BTM_ACL_PKT_TYPES_MASK_DM1 +
-      BTM_ACL_PKT_TYPES_MASK_DH3 + BTM_ACL_PKT_TYPES_MASK_DM3 +
-      BTM_ACL_PKT_TYPES_MASK_DH5 + BTM_ACL_PKT_TYPES_MASK_DM5;
+      HCI_PKT_TYPES_MASK_DH1 + HCI_PKT_TYPES_MASK_DM1 + HCI_PKT_TYPES_MASK_DH3 +
+      HCI_PKT_TYPES_MASK_DM3 + HCI_PKT_TYPES_MASK_DH5 + HCI_PKT_TYPES_MASK_DM5;
 }
 
 void BTM_acl_after_controller_started() {
@@ -131,27 +132,27 @@ void BTM_acl_after_controller_started() {
 
   /* Create ACL supported packet types mask */
   btm_cb.acl_cb_.btm_acl_pkt_types_supported =
-      (BTM_ACL_PKT_TYPES_MASK_DH1 + BTM_ACL_PKT_TYPES_MASK_DM1);
+      (HCI_PKT_TYPES_MASK_DH1 + HCI_PKT_TYPES_MASK_DM1);
 
   if (controller->supports_3_slot_packets())
     btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
-        (BTM_ACL_PKT_TYPES_MASK_DH3 + BTM_ACL_PKT_TYPES_MASK_DM3);
+        (HCI_PKT_TYPES_MASK_DH3 + HCI_PKT_TYPES_MASK_DM3);
 
   if (controller->supports_5_slot_packets())
     btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
-        (BTM_ACL_PKT_TYPES_MASK_DH5 + BTM_ACL_PKT_TYPES_MASK_DM5);
+        (HCI_PKT_TYPES_MASK_DH5 + HCI_PKT_TYPES_MASK_DM5);
 
   /* Add in EDR related ACL types */
   if (!controller->supports_classic_2m_phy()) {
     btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
-        (BTM_ACL_PKT_TYPES_MASK_NO_2_DH1 + BTM_ACL_PKT_TYPES_MASK_NO_2_DH3 +
-         BTM_ACL_PKT_TYPES_MASK_NO_2_DH5);
+        (HCI_PKT_TYPES_MASK_NO_2_DH1 + HCI_PKT_TYPES_MASK_NO_2_DH3 +
+         HCI_PKT_TYPES_MASK_NO_2_DH5);
   }
 
   if (!controller->supports_classic_3m_phy()) {
     btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
-        (BTM_ACL_PKT_TYPES_MASK_NO_3_DH1 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH3 +
-         BTM_ACL_PKT_TYPES_MASK_NO_3_DH5);
+        (HCI_PKT_TYPES_MASK_NO_3_DH1 + HCI_PKT_TYPES_MASK_NO_3_DH3 +
+         HCI_PKT_TYPES_MASK_NO_3_DH5);
   }
 
   /* Check to see if 3 and 5 slot packets are available */
@@ -159,11 +160,11 @@ void BTM_acl_after_controller_started() {
       controller->supports_classic_3m_phy()) {
     if (!controller->supports_3_slot_edr_packets())
       btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
-          (BTM_ACL_PKT_TYPES_MASK_NO_2_DH3 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH3);
+          (HCI_PKT_TYPES_MASK_NO_2_DH3 + HCI_PKT_TYPES_MASK_NO_3_DH3);
 
     if (!controller->supports_5_slot_edr_packets())
       btm_cb.acl_cb_.btm_acl_pkt_types_supported |=
-          (BTM_ACL_PKT_TYPES_MASK_NO_2_DH5 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH5);
+          (HCI_PKT_TYPES_MASK_NO_2_DH5 + HCI_PKT_TYPES_MASK_NO_3_DH5);
   }
 
   BTM_TRACE_DEBUG("Local supported ACL packet types: 0x%04x",
@@ -322,9 +323,8 @@ void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data) {
  * Returns          void
  *
  ******************************************************************************/
-void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
-                     uint16_t hci_handle, uint8_t link_role,
-                     tBT_TRANSPORT transport) {
+void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
+                     uint8_t link_role, tBT_TRANSPORT transport) {
   tBTM_SEC_DEV_REC* p_dev_rec = NULL;
   tACL_CONN* p;
   uint8_t xx;
@@ -384,10 +384,6 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
 #if (BTM_PM_DEBUG == TRUE)
       BTM_TRACE_DEBUG("btm_pm_sm_alloc ind:%d st:%d", xx, p_db->state);
 #endif  // BTM_PM_DEBUG
-
-      if (dc) memcpy(p->remote_dc, dc, DEV_CLASS_LEN);
-
-      if (bdn) memcpy(p->remote_name, bdn, BTM_MAX_REM_BD_NAME_LEN);
 
       /* if BR/EDR do something more */
       if (transport == BT_TRANSPORT_BR_EDR) {
@@ -1716,29 +1712,29 @@ uint16_t BTM_GetMaxPacketSize(const RawAddress& addr) {
   }
 
   if (pkt_types) {
-    if (!(pkt_types & BTM_ACL_PKT_TYPES_MASK_NO_3_DH5))
+    if (!(pkt_types & HCI_PKT_TYPES_MASK_NO_3_DH5))
       pkt_size = HCI_EDR3_DH5_PACKET_SIZE;
-    else if (!(pkt_types & BTM_ACL_PKT_TYPES_MASK_NO_2_DH5))
+    else if (!(pkt_types & HCI_PKT_TYPES_MASK_NO_2_DH5))
       pkt_size = HCI_EDR2_DH5_PACKET_SIZE;
-    else if (!(pkt_types & BTM_ACL_PKT_TYPES_MASK_NO_3_DH3))
+    else if (!(pkt_types & HCI_PKT_TYPES_MASK_NO_3_DH3))
       pkt_size = HCI_EDR3_DH3_PACKET_SIZE;
-    else if (pkt_types & BTM_ACL_PKT_TYPES_MASK_DH5)
+    else if (pkt_types & HCI_PKT_TYPES_MASK_DH5)
       pkt_size = HCI_DH5_PACKET_SIZE;
-    else if (!(pkt_types & BTM_ACL_PKT_TYPES_MASK_NO_2_DH3))
+    else if (!(pkt_types & HCI_PKT_TYPES_MASK_NO_2_DH3))
       pkt_size = HCI_EDR2_DH3_PACKET_SIZE;
-    else if (pkt_types & BTM_ACL_PKT_TYPES_MASK_DM5)
+    else if (pkt_types & HCI_PKT_TYPES_MASK_DM5)
       pkt_size = HCI_DM5_PACKET_SIZE;
-    else if (pkt_types & BTM_ACL_PKT_TYPES_MASK_DH3)
+    else if (pkt_types & HCI_PKT_TYPES_MASK_DH3)
       pkt_size = HCI_DH3_PACKET_SIZE;
-    else if (pkt_types & BTM_ACL_PKT_TYPES_MASK_DM3)
+    else if (pkt_types & HCI_PKT_TYPES_MASK_DM3)
       pkt_size = HCI_DM3_PACKET_SIZE;
-    else if (!(pkt_types & BTM_ACL_PKT_TYPES_MASK_NO_3_DH1))
+    else if (!(pkt_types & HCI_PKT_TYPES_MASK_NO_3_DH1))
       pkt_size = HCI_EDR3_DH1_PACKET_SIZE;
-    else if (!(pkt_types & BTM_ACL_PKT_TYPES_MASK_NO_2_DH1))
+    else if (!(pkt_types & HCI_PKT_TYPES_MASK_NO_2_DH1))
       pkt_size = HCI_EDR2_DH1_PACKET_SIZE;
-    else if (pkt_types & BTM_ACL_PKT_TYPES_MASK_DH1)
+    else if (pkt_types & HCI_PKT_TYPES_MASK_DH1)
       pkt_size = HCI_DH1_PACKET_SIZE;
-    else if (pkt_types & BTM_ACL_PKT_TYPES_MASK_DM1)
+    else if (pkt_types & HCI_PKT_TYPES_MASK_DM1)
       pkt_size = HCI_DM1_PACKET_SIZE;
   }
 
@@ -2489,23 +2485,21 @@ void btm_acl_notif_conn_collision(const RawAddress& bda) {
 void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p, uint16_t* p_pkt_type) {
   /* 3 and 5 slot packets? */
   if (!HCI_3_SLOT_PACKETS_SUPPORTED(p->peer_lmp_feature_pages[0]))
-    *p_pkt_type &= ~(BTM_ACL_PKT_TYPES_MASK_DH3 + BTM_ACL_PKT_TYPES_MASK_DM3);
+    *p_pkt_type &= ~(HCI_PKT_TYPES_MASK_DH3 + HCI_PKT_TYPES_MASK_DM3);
 
   if (!HCI_5_SLOT_PACKETS_SUPPORTED(p->peer_lmp_feature_pages[0]))
-    *p_pkt_type &= ~(BTM_ACL_PKT_TYPES_MASK_DH5 + BTM_ACL_PKT_TYPES_MASK_DM5);
+    *p_pkt_type &= ~(HCI_PKT_TYPES_MASK_DH5 + HCI_PKT_TYPES_MASK_DM5);
 
   /* 2 and 3 MPS support? */
   if (!HCI_EDR_ACL_2MPS_SUPPORTED(p->peer_lmp_feature_pages[0]))
     /* Not supported. Add 'not_supported' mask for all 2MPS packet types */
-    *p_pkt_type |=
-        (BTM_ACL_PKT_TYPES_MASK_NO_2_DH1 + BTM_ACL_PKT_TYPES_MASK_NO_2_DH3 +
-         BTM_ACL_PKT_TYPES_MASK_NO_2_DH5);
+    *p_pkt_type |= (HCI_PKT_TYPES_MASK_NO_2_DH1 + HCI_PKT_TYPES_MASK_NO_2_DH3 +
+                    HCI_PKT_TYPES_MASK_NO_2_DH5);
 
   if (!HCI_EDR_ACL_3MPS_SUPPORTED(p->peer_lmp_feature_pages[0]))
     /* Not supported. Add 'not_supported' mask for all 3MPS packet types */
-    *p_pkt_type |=
-        (BTM_ACL_PKT_TYPES_MASK_NO_3_DH1 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH3 +
-         BTM_ACL_PKT_TYPES_MASK_NO_3_DH5);
+    *p_pkt_type |= (HCI_PKT_TYPES_MASK_NO_3_DH1 + HCI_PKT_TYPES_MASK_NO_3_DH3 +
+                    HCI_PKT_TYPES_MASK_NO_3_DH5);
 
   /* EDR 3 and 5 slot support? */
   if (HCI_EDR_ACL_2MPS_SUPPORTED(p->peer_lmp_feature_pages[0]) ||
@@ -2514,13 +2508,13 @@ void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p, uint16_t* p_pkt_type) {
       /* Not supported. Add 'not_supported' mask for all 3-slot EDR packet types
        */
       *p_pkt_type |=
-          (BTM_ACL_PKT_TYPES_MASK_NO_2_DH3 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH3);
+          (HCI_PKT_TYPES_MASK_NO_2_DH3 + HCI_PKT_TYPES_MASK_NO_3_DH3);
 
     if (!HCI_5_SLOT_EDR_ACL_SUPPORTED(p->peer_lmp_feature_pages[0]))
       /* Not supported. Add 'not_supported' mask for all 5-slot EDR packet types
        */
       *p_pkt_type |=
-          (BTM_ACL_PKT_TYPES_MASK_NO_2_DH5 + BTM_ACL_PKT_TYPES_MASK_NO_3_DH5);
+          (HCI_PKT_TYPES_MASK_NO_2_DH5 + HCI_PKT_TYPES_MASK_NO_3_DH5);
   }
 }
 
@@ -2948,4 +2942,17 @@ void acl_create_classic_connection(const RawAddress& bd_addr,
   btsnd_hcic_create_conn(bd_addr, kDefaultPacketTypes, page_scan_rep_mode,
                          page_scan_mode, clock_offset, allow_role_switch);
   btm_acl_set_paging(true);
+}
+
+void btm_acl_connection_request(const RawAddress& bda, uint8_t* dc) {
+  btm_sec_conn_req(bda, dc);
+  l2c_link_hci_conn_req(bda);
+}
+
+void acl_accept_connection_request(const RawAddress& bd_addr, uint8_t role) {
+  btsnd_hcic_accept_conn(bd_addr, role);
+}
+
+void acl_reject_connection_request(const RawAddress& bd_addr, uint8_t reason) {
+  btsnd_hcic_reject_conn(bd_addr, reason);
 }
