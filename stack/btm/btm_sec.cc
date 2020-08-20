@@ -84,8 +84,6 @@ static void btm_sec_bond_cancel_complete(void);
 static void btm_send_link_key_notif(tBTM_SEC_DEV_REC* p_dev_rec);
 static bool btm_sec_check_prefetch_pin(tBTM_SEC_DEV_REC* p_dev_rec);
 
-bool btm_sec_are_all_trusted(uint32_t p_mask[]);
-
 static tBTM_STATUS btm_sec_send_hci_disconnect(tBTM_SEC_DEV_REC* p_dev_rec,
                                                uint8_t reason,
                                                uint16_t conn_handle);
@@ -4924,28 +4922,6 @@ static bool btm_sec_check_prefetch_pin(tBTM_SEC_DEV_REC* p_dev_rec) {
   }
 
   return rv;
-}
-
-/*******************************************************************************
- *
- * Function         btm_sec_auth_payload_tout
- *
- * Description      Processes the HCI Autheniticated Payload Timeout Event
- *                  indicating that a packet containing a valid MIC on the
- *                  connection handle was not received within the programmed
- *                  timeout value. (Spec Default is 30 secs, but can be
- *                  changed via the BTM_SecSetAuthPayloadTimeout() function.
- *
- ******************************************************************************/
-void btm_sec_auth_payload_tout(uint8_t* p, uint16_t hci_evt_len) {
-  uint16_t handle;
-
-  STREAM_TO_UINT16(handle, p);
-  handle = HCID_GET_HANDLE(handle);
-
-  /* Will be exposed to upper layers in the future if/when determined necessary
-   */
-  BTM_TRACE_ERROR("%s on handle 0x%02x", __func__, handle);
 }
 
 /*******************************************************************************
