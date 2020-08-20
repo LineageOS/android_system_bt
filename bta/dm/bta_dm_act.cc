@@ -1887,35 +1887,30 @@ static uint8_t bta_dm_new_link_key_cback(const RawAddress& bd_addr,
 
   memset(&sec_event, 0, sizeof(tBTA_DM_SEC));
 
-  /* Not AMP Key type */
-  if (key_type != HCI_LKEY_TYPE_AMP_WIFI && key_type != HCI_LKEY_TYPE_AMP_UWB) {
-    event = BTA_DM_AUTH_CMPL_EVT;
-    p_auth_cmpl = &sec_event.auth_cmpl;
+  event = BTA_DM_AUTH_CMPL_EVT;
+  p_auth_cmpl = &sec_event.auth_cmpl;
 
-    p_auth_cmpl->bd_addr = bd_addr;
+  p_auth_cmpl->bd_addr = bd_addr;
 
-    memcpy(p_auth_cmpl->bd_name, bd_name, (BD_NAME_LEN - 1));
-    p_auth_cmpl->bd_name[BD_NAME_LEN - 1] = 0;
-    p_auth_cmpl->key_present = true;
-    p_auth_cmpl->key_type = key_type;
-    p_auth_cmpl->success = true;
-    p_auth_cmpl->key = key;
-    sec_event.auth_cmpl.fail_reason = HCI_SUCCESS;
+  memcpy(p_auth_cmpl->bd_name, bd_name, (BD_NAME_LEN - 1));
+  p_auth_cmpl->bd_name[BD_NAME_LEN - 1] = 0;
+  p_auth_cmpl->key_present = true;
+  p_auth_cmpl->key_type = key_type;
+  p_auth_cmpl->success = true;
+  p_auth_cmpl->key = key;
+  sec_event.auth_cmpl.fail_reason = HCI_SUCCESS;
 
-    // Report the BR link key based on the BR/EDR address and type
-    BTM_ReadDevInfo(bd_addr, &sec_event.auth_cmpl.dev_type,
-                    &sec_event.auth_cmpl.addr_type);
-    if (bta_dm_cb.p_sec_cback) bta_dm_cb.p_sec_cback(event, &sec_event);
+  // Report the BR link key based on the BR/EDR address and type
+  BTM_ReadDevInfo(bd_addr, &sec_event.auth_cmpl.dev_type,
+                  &sec_event.auth_cmpl.addr_type);
+  if (bta_dm_cb.p_sec_cback) bta_dm_cb.p_sec_cback(event, &sec_event);
 
-    // Setting remove_dev_pending flag to false, where it will avoid deleting
-    // the
-    // security device record when the ACL connection link goes down in case of
-    // reconnection.
-    if (bta_dm_cb.device_list.count)
-      bta_dm_reset_sec_dev_pending(p_auth_cmpl->bd_addr);
-  } else {
-    APPL_TRACE_WARNING("%s() Received AMP Key", __func__);
-  }
+  // Setting remove_dev_pending flag to false, where it will avoid deleting
+  // the
+  // security device record when the ACL connection link goes down in case of
+  // reconnection.
+  if (bta_dm_cb.device_list.count)
+    bta_dm_reset_sec_dev_pending(p_auth_cmpl->bd_addr);
 
   return BTM_CMD_STARTED;
 }
