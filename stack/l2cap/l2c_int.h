@@ -611,8 +611,6 @@ extern void l2cu_create_conn_br_edr(tL2C_LCB* p_lcb);
 extern bool l2cu_create_conn_le(tL2C_LCB* p_lcb);
 extern bool l2cu_create_conn_le(tL2C_LCB* p_lcb, uint8_t initiating_phys);
 extern void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb);
-extern BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb,
-                                            tL2C_TX_COMPLETE_CB_INFO* p_cbi);
 extern void l2cu_adjust_out_mps(tL2C_CCB* p_ccb);
 
 /* Functions provided by l2c_link.cc
