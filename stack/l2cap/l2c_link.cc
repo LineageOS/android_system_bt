@@ -1287,3 +1287,100 @@ void l2cble_update_sec_act(const RawAddress& bd_addr, uint16_t sec_act) {
   tL2C_LCB* lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_LE);
   lcb->sec_act = sec_act;
 }
+
+/******************************************************************************
+ *
+ * Function         l2cu_get_next_channel_in_rr
+ *
+ * Description      get the next channel to send on a link. It also adjusts the
+ *                  CCB queue to do a basic priority and round-robin scheduling.
+ *
+ * Returns          pointer to CCB or NULL
+ *
+ ******************************************************************************/
+tL2C_CCB* l2cu_get_next_channel_in_rr(tL2C_LCB* p_lcb) {
+  tL2C_CCB* p_serve_ccb = NULL;
+  tL2C_CCB* p_ccb;
+
+  int i, j;
+
+  /* scan all of priority until finding a channel to serve */
+  for (i = 0; (i < L2CAP_NUM_CHNL_PRIORITY) && (!p_serve_ccb); i++) {
+    /* scan all channel within serving priority group until finding a channel to
+     * serve */
+    for (j = 0; (j < p_lcb->rr_serv[p_lcb->rr_pri].num_ccb) && (!p_serve_ccb);
+         j++) {
+      /* scaning from next serving channel */
+      p_ccb = p_lcb->rr_serv[p_lcb->rr_pri].p_serve_ccb;
+
+      if (!p_ccb) {
+        L2CAP_TRACE_ERROR("p_serve_ccb is NULL, rr_pri=%d", p_lcb->rr_pri);
+        return NULL;
+      }
+
+      L2CAP_TRACE_DEBUG("RR scan pri=%d, lcid=0x%04x, q_cout=%d",
+                        p_ccb->ccb_priority, p_ccb->local_cid,
+                        fixed_queue_length(p_ccb->xmit_hold_q));
+
+      /* store the next serving channel */
+      /* this channel is the last channel of its priority group */
+      if ((p_ccb->p_next_ccb == NULL) ||
+          (p_ccb->p_next_ccb->ccb_priority != p_ccb->ccb_priority)) {
+        /* next serving channel is set to the first channel in the group */
+        p_lcb->rr_serv[p_lcb->rr_pri].p_serve_ccb =
+            p_lcb->rr_serv[p_lcb->rr_pri].p_first_ccb;
+      } else {
+        /* next serving channel is set to the next channel in the group */
+        p_lcb->rr_serv[p_lcb->rr_pri].p_serve_ccb = p_ccb->p_next_ccb;
+      }
+
+      if (p_ccb->chnl_state != CST_OPEN) continue;
+
+      if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE) {
+        L2CAP_TRACE_DEBUG("%s : Connection oriented channel", __func__);
+        if (fixed_queue_is_empty(p_ccb->xmit_hold_q)) continue;
+
+      } else {
+        /* eL2CAP option in use */
+        if (p_ccb->peer_cfg.fcr.mode != L2CAP_FCR_BASIC_MODE) {
+          if (p_ccb->fcrb.wait_ack || p_ccb->fcrb.remote_busy) continue;
+
+          if (fixed_queue_is_empty(p_ccb->fcrb.retrans_q)) {
+            if (fixed_queue_is_empty(p_ccb->xmit_hold_q)) continue;
+
+            /* If in eRTM mode, check for window closure */
+            if ((p_ccb->peer_cfg.fcr.mode == L2CAP_FCR_ERTM_MODE) &&
+                (l2c_fcr_is_flow_controlled(p_ccb)))
+              continue;
+          }
+        } else {
+          if (fixed_queue_is_empty(p_ccb->xmit_hold_q)) continue;
+        }
+      }
+
+      /* found a channel to serve */
+      p_serve_ccb = p_ccb;
+      /* decrease quota of its priority group */
+      p_lcb->rr_serv[p_lcb->rr_pri].quota--;
+    }
+
+    /* if there is no more quota of the priority group or no channel to have
+     * data to send */
+    if ((p_lcb->rr_serv[p_lcb->rr_pri].quota == 0) || (!p_serve_ccb)) {
+      /* serve next priority group */
+      p_lcb->rr_pri = (p_lcb->rr_pri + 1) % L2CAP_NUM_CHNL_PRIORITY;
+      /* initialize its quota */
+      p_lcb->rr_serv[p_lcb->rr_pri].quota =
+          L2CAP_GET_PRIORITY_QUOTA(p_lcb->rr_pri);
+    }
+  }
+
+  if (p_serve_ccb) {
+    L2CAP_TRACE_DEBUG("RR service pri=%d, quota=%d, lcid=0x%04x",
+                      p_serve_ccb->ccb_priority,
+                      p_lcb->rr_serv[p_serve_ccb->ccb_priority].quota,
+                      p_serve_ccb->local_cid);
+  }
+
+  return p_serve_ccb;
+}
