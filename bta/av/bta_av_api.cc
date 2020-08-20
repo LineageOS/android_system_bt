@@ -59,8 +59,7 @@ static const tBTA_SYS_REG bta_av_reg = {bta_av_hdl_event, BTA_AvDisable};
  * Returns          void
  *
  ******************************************************************************/
-void BTA_AvEnable(tBTA_SEC sec_mask, tBTA_AV_FEAT features,
-                  tBTA_AV_CBACK* p_cback) {
+void BTA_AvEnable(tBTA_AV_FEAT features, tBTA_AV_CBACK* p_cback) {
   tBTA_AV_API_ENABLE* p_buf =
       (tBTA_AV_API_ENABLE*)osi_malloc(sizeof(tBTA_AV_API_ENABLE));
 
@@ -70,7 +69,6 @@ void BTA_AvEnable(tBTA_SEC sec_mask, tBTA_AV_FEAT features,
   p_buf->hdr.event = BTA_AV_API_ENABLE_EVT;
   p_buf->p_cback = p_cback;
   p_buf->features = features;
-  p_buf->sec_mask = sec_mask;
 
   bta_sys_sendmsg(p_buf);
 }
@@ -155,10 +153,10 @@ void BTA_AvDeregister(tBTA_AV_HNDL hndl) {
  *
  ******************************************************************************/
 void BTA_AvOpen(const RawAddress& bd_addr, tBTA_AV_HNDL handle, bool use_rc,
-                tBTA_SEC sec_mask, uint16_t uuid) {
-  LOG_INFO("%s: peer %s bta_handle:0x%x use_rc=%s sec_mask=0x%x uuid=0x%x",
-           __func__, bd_addr.ToString().c_str(), handle,
-           (use_rc) ? "true" : "false", sec_mask, uuid);
+                uint16_t uuid) {
+  LOG_INFO("%s: peer %s bta_handle:0x%x use_rc=%s uuid=0x%x", __func__,
+           bd_addr.ToString().c_str(), handle, (use_rc) ? "true" : "false",
+           uuid);
 
   tBTA_AV_API_OPEN* p_buf =
       (tBTA_AV_API_OPEN*)osi_malloc(sizeof(tBTA_AV_API_OPEN));
@@ -167,7 +165,6 @@ void BTA_AvOpen(const RawAddress& bd_addr, tBTA_AV_HNDL handle, bool use_rc,
   p_buf->hdr.layer_specific = handle;
   p_buf->bd_addr = bd_addr;
   p_buf->use_rc = use_rc;
-  p_buf->sec_mask = sec_mask;
   p_buf->switch_res = BTA_AV_RS_NONE;
   p_buf->uuid = uuid;
 
