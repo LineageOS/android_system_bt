@@ -97,6 +97,8 @@ bool BTM_GetSecurityFlagsByTransport(const RawAddress& bd_addr,
                                      uint8_t* p_sec_flags,
                                      tBT_TRANSPORT transport);
 
+bool BTM_IsEncrypted(const RawAddress& bd_addr, tBT_TRANSPORT transport);
+
 /*******************************************************************************
  *
  * Function         BTM_SetPinType

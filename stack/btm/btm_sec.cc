@@ -275,6 +275,12 @@ bool BTM_GetSecurityFlags(const RawAddress& bd_addr, uint8_t* p_sec_flags) {
   return (false);
 }
 
+bool BTM_IsEncrypted(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+  uint8_t flags = 0;
+  BTM_GetSecurityFlagsByTransport(bd_addr, &flags, transport);
+  return (flags & BTM_SEC_FLAG_ENCRYPTED) != 0;
+}
+
 /*******************************************************************************
  *
  * Function         BTM_GetSecurityFlagsByTransport

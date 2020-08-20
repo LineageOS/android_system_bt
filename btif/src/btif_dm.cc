@@ -701,15 +701,12 @@ uint16_t btif_dm_get_connection_state(const RawAddress* bd_addr) {
   uint16_t rc = BTA_DmGetConnectionState(*bd_addr);
 
   if (rc != 0) {
-    uint8_t flags = 0;
-
-    BTM_GetSecurityFlagsByTransport(*bd_addr, &flags, BT_TRANSPORT_BR_EDR);
-    BTIF_TRACE_DEBUG("%s: security flags (BR/EDR)=0x%02x", __func__, flags);
-    if (flags & BTM_SEC_FLAG_ENCRYPTED) rc |= ENCRYPTED_BREDR;
-
-    BTM_GetSecurityFlagsByTransport(*bd_addr, &flags, BT_TRANSPORT_LE);
-    BTIF_TRACE_DEBUG("%s: security flags (LE)=0x%02x", __func__, flags);
-    if (flags & BTM_SEC_FLAG_ENCRYPTED) rc |= ENCRYPTED_LE;
+    if (BTM_IsEncrypted(*bd_addr, BT_TRANSPORT_BR_EDR)) {
+      rc |= ENCRYPTED_BREDR;
+    }
+    if (BTM_IsEncrypted(*bd_addr, BT_TRANSPORT_LE)) {
+      rc |= ENCRYPTED_LE;
+    }
   }
 
   return rc;
