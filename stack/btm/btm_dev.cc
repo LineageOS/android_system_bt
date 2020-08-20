@@ -267,7 +267,7 @@ tBTM_SEC_DEV_REC* btm_sec_alloc_dev(const RawAddress& bd_addr) {
 
 /*******************************************************************************
  *
- * Function         btm_dev_support_switch
+ * Function         btm_dev_support_role_switch
  *
  * Description      This function is called by the L2CAP to check if remote
  *                  device supports role switch
@@ -275,40 +275,50 @@ tBTM_SEC_DEV_REC* btm_sec_alloc_dev(const RawAddress& bd_addr) {
  * Parameters:      bd_addr       - Address of the peer device
  *
  * Returns          true if device is known and role switch is supported
+ *                  for the link.
  *
  ******************************************************************************/
-bool btm_dev_support_switch(const RawAddress& bd_addr) {
-  tBTM_SEC_DEV_REC* p_dev_rec;
-  uint8_t xx;
+bool btm_dev_support_role_switch(const RawAddress& bd_addr) {
+  if (BTM_IsScoActiveByBdaddr(bd_addr)) {
+    BTM_TRACE_DEBUG("%s Role switch is not allowed if a SCO is up", __func__);
+    return false;
+  }
+
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
+  if (p_dev_rec == nullptr) {
+    BTM_TRACE_DEBUG("%s Unknown address for role switch", __func__);
+    return false;
+  }
+
+  if (!controller_get_interface()->supports_master_slave_role_switch()) {
+    BTM_TRACE_DEBUG("%s Local controller does not support role switch",
+                    __func__);
+    return false;
+  }
+
+  if (HCI_SWITCH_SUPPORTED(p_dev_rec->feature_pages[0])) {
+    BTM_TRACE_DEBUG("%s Peer controller supports role switch", __func__);
+    return true;
+  }
+
+  /* If the feature field is all zero, we never received them */
   bool feature_empty = true;
-
-  /* Role switch is not allowed if a SCO is up */
-  if (BTM_IsScoActiveByBdaddr(bd_addr)) return (false);
-  p_dev_rec = btm_find_dev(bd_addr);
-  if (p_dev_rec &&
-      controller_get_interface()->supports_master_slave_role_switch()) {
-    if (HCI_SWITCH_SUPPORTED(p_dev_rec->feature_pages[0])) {
-      BTM_TRACE_DEBUG("btm_dev_support_switch return true (feature found)");
-      return (true);
-    }
-
-    /* If the feature field is all zero, we never received them */
-    for (xx = 0; xx < BD_FEATURES_LEN; xx++) {
-      if (p_dev_rec->feature_pages[0][xx] != 0x00) {
-        feature_empty = false; /* at least one is != 0 */
-        break;
-      }
-    }
-
-    /* If we don't know peer's capabilities, assume it supports Role-switch */
-    if (feature_empty) {
-      BTM_TRACE_DEBUG("btm_dev_support_switch return true (feature empty)");
-      return (true);
+  for (int xx = 0; xx < BD_FEATURES_LEN; xx++) {
+    if (p_dev_rec->feature_pages[0][xx] != 0x00) {
+      feature_empty = false; /* at least one is != 0 */
+      break;
     }
   }
 
-  BTM_TRACE_DEBUG("btm_dev_support_switch return false");
-  return (false);
+  if (feature_empty) {
+    BTM_TRACE_DEBUG(
+        "%s Unknown peer capabilities, assuming peer supports role switch",
+        __func__);
+    return true;
+  }
+
+  BTM_TRACE_DEBUG("%s Peer controller does not support role switch", __func__);
+  return false;
 }
 
 bool is_handle_equal(void* data, void* context) {

@@ -1001,11 +1001,8 @@ static void btu_hcif_connection_request_evt(uint8_t* p) {
   STREAM_TO_DEVCLASS(dc, p);
   STREAM_TO_UINT8(link_type, p);
 
-  /* Pass request to security manager to check connect filters before */
-  /* passing request to l2cap */
   if (link_type == HCI_LINK_TYPE_ACL) {
-    btm_sec_conn_req(bda, dc);
-    l2c_link_hci_conn_req(bda);
+    btm_acl_connection_request(bda, dc);
   } else {
     btm_sco_conn_req(bda, dc, link_type);
   }
