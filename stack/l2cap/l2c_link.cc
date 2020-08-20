@@ -72,20 +72,20 @@ void l2c_link_hci_conn_req(const RawAddress& bd_addr) {
 
       if (p_lcb_cur->in_use) {
         no_links = false;
-        p_lcb->link_role = HCI_ROLE_MASTER;
+        p_lcb->SetLinkRoleAsMaster();
         break;
       }
     }
 
     if (no_links) {
       if (!btm_dev_support_role_switch(bd_addr))
-        p_lcb->link_role = HCI_ROLE_SLAVE;
+        p_lcb->SetLinkRoleAsSlave();
       else
-        p_lcb->link_role = HCI_ROLE_MASTER;
+        p_lcb->SetLinkRoleAsMaster();
     }
 
     /* Tell the other side we accept the connection */
-    btsnd_hcic_accept_conn(bd_addr, p_lcb->link_role);
+    btsnd_hcic_accept_conn(bd_addr, p_lcb->LinkRole());
 
     p_lcb->link_state = LST_CONNECTING;
 
@@ -100,11 +100,11 @@ void l2c_link_hci_conn_req(const RawAddress& bd_addr) {
   if ((p_lcb->link_state == LST_CONNECTING) ||
       (p_lcb->link_state == LST_CONNECT_HOLDING)) {
     if (!btm_dev_support_role_switch(bd_addr))
-      p_lcb->link_role = HCI_ROLE_SLAVE;
+      p_lcb->SetLinkRoleAsSlave();
     else
-      p_lcb->link_role = HCI_ROLE_MASTER;
+      p_lcb->SetLinkRoleAsMaster();
 
-    btsnd_hcic_accept_conn(bd_addr, p_lcb->link_role);
+    btsnd_hcic_accept_conn(bd_addr, p_lcb->LinkRole());
 
     p_lcb->link_state = LST_CONNECTING;
   } else if (p_lcb->link_state == LST_DISCONNECTING) {
@@ -170,10 +170,10 @@ void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
     p_dev_info = btm_find_dev(p_bda);
     if (p_dev_info != NULL)
       btm_acl_created(ci.bd_addr, p_dev_info->dev_class,
-                      p_dev_info->sec_bd_name, handle, p_lcb->link_role,
+                      p_dev_info->sec_bd_name, handle, p_lcb->LinkRole(),
                       BT_TRANSPORT_BR_EDR);
     else
-      btm_acl_created(ci.bd_addr, NULL, NULL, handle, p_lcb->link_role,
+      btm_acl_created(ci.bd_addr, NULL, NULL, handle, p_lcb->LinkRole(),
                       BT_TRANSPORT_BR_EDR);
 
     BTM_SetLinkSuperTout(ci.bd_addr, acl_get_link_supervision_timeout());
@@ -344,7 +344,7 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
 
     /* Check for BLE and handle that differently */
     if (p_lcb->transport == BT_TRANSPORT_LE)
-      btm_ble_update_link_topology_mask(p_lcb->link_role, false);
+      btm_ble_update_link_topology_mask(p_lcb->LinkRole(), false);
     /* Link is disconnected. For all channels, send the event through */
     /* their FSMs. The CCBs should remove themselves from the LCB     */
     for (p_ccb = p_lcb->ccb_queue.p_first_ccb; p_ccb;) {
@@ -405,7 +405,7 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
                   "%d",
                   __func__, xx, p_lcb->remote_bd_addr.ToString().c_str(), p_lcb,
                   p_lcb->in_use, p_lcb->link_state, p_lcb->handle,
-                  p_lcb->link_role, p_lcb->IsBonding(), p_lcb->disc_reason,
+                  p_lcb->LinkRole(), p_lcb->IsBonding(), p_lcb->disc_reason,
                   p_lcb->transport);
             }
             CHECK(p_lcb->p_fixed_ccbs[xx] != NULL);
@@ -764,7 +764,11 @@ void l2c_link_role_changed(const RawAddress* bd_addr, uint8_t new_role,
     /* If here came form hci role change event */
     p_lcb = l2cu_find_lcb_by_bd_addr(*bd_addr, BT_TRANSPORT_BR_EDR);
     if (p_lcb) {
-      p_lcb->link_role = new_role;
+      if (new_role == HCI_ROLE_MASTER) {
+        p_lcb->SetLinkRoleAsMaster();
+      } else {
+        p_lcb->SetLinkRoleAsSlave();
+      }
 
       /* Reset high priority link if needed */
       if (hci_status == HCI_SUCCESS)

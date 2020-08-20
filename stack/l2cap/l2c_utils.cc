@@ -2052,7 +2052,7 @@ void l2cu_create_conn_br_edr(tL2C_LCB* p_lcb) {
        xx++, p_lcb_cur++) {
     if (p_lcb_cur == p_lcb) continue;
 
-    if ((p_lcb_cur->in_use) && (p_lcb_cur->link_role == HCI_ROLE_SLAVE)) {
+    if ((p_lcb_cur->in_use) && (p_lcb_cur->IsLinkRoleSlave())) {
       /* The LMP_switch_req shall be sent only if the ACL logical transport
       is in active mode, when encryption is disabled, and all synchronous
       logical transports on the same physical link are disabled." */
@@ -2071,7 +2071,7 @@ void l2cu_create_conn_br_edr(tL2C_LCB* p_lcb) {
         /* mark this lcb waiting for switch to be completed and
            start switch on the other one */
         p_lcb->link_state = LST_CONNECTING_WAIT_SWITCH;
-        p_lcb->link_role = HCI_ROLE_MASTER;
+        p_lcb->SetLinkRoleAsMaster();
 
         if (BTM_SwitchRole(p_lcb_cur->remote_bd_addr, HCI_ROLE_MASTER) ==
             BTM_CMD_STARTED) {
