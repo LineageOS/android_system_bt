@@ -85,7 +85,7 @@ void l2c_link_hci_conn_req(const RawAddress& bd_addr) {
     }
 
     /* Tell the other side we accept the connection */
-    btsnd_hcic_accept_conn(bd_addr, p_lcb->LinkRole());
+    acl_accept_connection_request(bd_addr, p_lcb->LinkRole());
 
     p_lcb->link_state = LST_CONNECTING;
 
@@ -104,16 +104,16 @@ void l2c_link_hci_conn_req(const RawAddress& bd_addr) {
     else
       p_lcb->SetLinkRoleAsMaster();
 
-    btsnd_hcic_accept_conn(bd_addr, p_lcb->LinkRole());
+    acl_accept_connection_request(bd_addr, p_lcb->LinkRole());
 
     p_lcb->link_state = LST_CONNECTING;
   } else if (p_lcb->link_state == LST_DISCONNECTING) {
-    btsnd_hcic_reject_conn(bd_addr, HCI_ERR_HOST_REJECT_DEVICE);
+    acl_reject_connection_request(bd_addr, HCI_ERR_HOST_REJECT_DEVICE);
   } else {
     L2CAP_TRACE_ERROR(
         "L2CAP got conn_req while connected (state:%d). Reject it",
         p_lcb->link_state);
-    btsnd_hcic_reject_conn(bd_addr, HCI_ERR_CONNECTION_EXISTS);
+    acl_reject_connection_request(bd_addr, HCI_ERR_CONNECTION_EXISTS);
   }
 }
 
