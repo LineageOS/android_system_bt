@@ -888,6 +888,9 @@ extern void btsnd_hcic_read_authenticated_payload_tout(uint16_t handle);
 extern void btsnd_hcic_write_authenticated_payload_tout(uint16_t handle,
                                                         uint16_t timeout);
 
+extern void btsnd_hcic_read_iso_tx_sync(
+    uint16_t iso_handle, base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
 struct EXT_CIS_CFG {
   uint8_t cis_id;
   uint16_t max_sdu_size_mtos;
@@ -928,7 +931,31 @@ extern void btsnd_hcic_create_cis(uint8_t num_cis,
 extern void btsnd_hcic_remove_cig(
     uint8_t cig_id, base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
+extern void btsnd_hcic_accept_cis_req(uint16_t conn_handle);
+
+extern void btsnd_hcic_rej_cis_req(
+    uint16_t conn_handle, uint8_t reason,
+    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
 extern void btsnd_hcic_req_peer_sca(uint16_t conn_handle);
+
+extern void btsnd_hcic_create_big(uint8_t big_handle, uint8_t adv_handle,
+                                  uint8_t num_bis, uint32_t sdu_itv,
+                                  uint16_t max_sdu_size, uint16_t max_trans_lat,
+                                  uint8_t rtn, uint8_t phy, uint8_t packing,
+                                  uint8_t framing, uint8_t enc,
+                                  std::array<uint8_t, 16> bcst_code);
+
+extern void btsnd_hcic_term_big(uint8_t big_handle, uint8_t reason);
+
+extern void btsnd_hcic_big_create_sync(uint8_t big_handle, uint16_t sync_handle,
+                                       uint8_t enc,
+                                       std::array<uint8_t, 16> bcst_code,
+                                       uint8_t mse, uint16_t big_sync_timeout,
+                                       std::vector<uint8_t> bis);
+
+extern void btsnd_hcic_big_term_sync(
+    uint8_t big_handle, base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
 extern void btsnd_hcic_setup_iso_data_path(
     uint16_t iso_handle, uint8_t data_path_dir, uint8_t data_path_id,
