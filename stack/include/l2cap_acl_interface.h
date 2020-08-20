@@ -21,13 +21,16 @@
 #include "types/raw_address.h"
 
 // This header contains functions for L2cap-ACL to invoke
-
+//
+uint16_t acl_read_cached_automatic_flush_timeout(const RawAddress& bd_addr);
 void acl_accept_connection_request(const RawAddress& bd_addr, uint8_t role);
 void acl_create_classic_connection(const RawAddress& bd_addr,
                                    bool there_are_high_priority_channels,
                                    bool is_bonding);
 void acl_reject_connection_request(const RawAddress& bd_addr, uint8_t reason);
 void acl_send_data_packet(BT_HDR* p_buf, uint16_t flags);
+void acl_write_automatic_flush_timeout(const RawAddress& bd_addr,
+                                       uint16_t flush_timeout);
 
 // ACL data received from HCI-ACL
 extern void l2c_rcv_acl_data(BT_HDR* p_msg);
