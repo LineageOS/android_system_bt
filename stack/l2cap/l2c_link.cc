@@ -24,21 +24,13 @@
  *
  ******************************************************************************/
 
-#include <base/logging.h>
+#include <cstdint>
 
-#include "bt_common.h"
-#include "bt_types.h"
-#include "btm_api.h"
-#include "btm_int.h"
-#include "device/include/controller.h"
-#include "hcimsgs.h"
-#include "l2c_api.h"
-#include "l2c_int.h"
-#include "l2cdefs.h"
-#include "log/log.h"
-#include "osi/include/osi.h"
+#include "gd/os/log.h"
 #include "stack/btm/btm_dev.h"
-#include "stack/include/acl_api.h"
+#include "stack/l2cap/l2c_int.h"
+#include "types/bt_transport.h"
+#include "types/raw_address.h"
 
 static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
                                    tL2C_TX_COMPLETE_CB_INFO* p_cbi);
