@@ -78,6 +78,8 @@ class Link : public l2cap::internal::ILink, public hci::acl_manager::LeConnectio
   void OnConnectionUpdate(uint16_t connection_interval, uint16_t connection_latency,
                           uint16_t supervision_timeout) override;
 
+  void OnDataLengthChange(uint16_t tx_octets, uint16_t tx_time, uint16_t rx_octets, uint16_t rx_time) override;
+
   virtual void Disconnect();
 
   // Handles connection parameter update request from remote
