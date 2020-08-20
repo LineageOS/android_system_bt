@@ -101,15 +101,8 @@ void BTA_JvDisable(void) {
  *
  ******************************************************************************/
 bool BTA_JvIsEncrypted(const RawAddress& bd_addr) {
-  bool is_encrypted = false;
-  uint8_t sec_flags, le_flags;
-
-  if (BTM_GetSecurityFlags(bd_addr, &sec_flags) &&
-      BTM_GetSecurityFlagsByTransport(bd_addr, &le_flags, BT_TRANSPORT_LE)) {
-    if (sec_flags & BTM_SEC_FLAG_ENCRYPTED || le_flags & BTM_SEC_FLAG_ENCRYPTED)
-      is_encrypted = true;
-  }
-  return is_encrypted;
+  return BTM_IsEncrypted(bd_addr, BT_TRANSPORT_BR_EDR) ||
+         BTM_IsEncrypted(bd_addr, BT_TRANSPORT_LE);
 }
 /*******************************************************************************
  *
