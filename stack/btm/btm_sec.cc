@@ -287,6 +287,12 @@ bool BTM_IsLinkKeyAuthed(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   return (flags & BTM_SEC_FLAG_LKEY_AUTHED) != 0;
 }
 
+bool BTM_IsLinkKeyKnown(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+  uint8_t flags = 0;
+  BTM_GetSecurityFlagsByTransport(bd_addr, &flags, transport);
+  return (flags & BTM_SEC_FLAG_LKEY_KNOWN) != 0;
+}
+
 /*******************************************************************************
  *
  * Function         BTM_GetSecurityFlagsByTransport

@@ -99,6 +99,7 @@ bool BTM_GetSecurityFlagsByTransport(const RawAddress& bd_addr,
 
 bool BTM_IsEncrypted(const RawAddress& bd_addr, tBT_TRANSPORT transport);
 bool BTM_IsLinkKeyAuthed(const RawAddress& bd_addr, tBT_TRANSPORT transport);
+bool BTM_IsLinkKeyKnown(const RawAddress& bd_addr, tBT_TRANSPORT transport);
 
 /*******************************************************************************
  *
