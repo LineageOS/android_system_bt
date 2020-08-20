@@ -933,9 +933,10 @@ typedef void(tBTM_MKEY_CALLBACK)(const RawAddress& bd_addr, uint8_t status,
  *              optional data passed in by BTM_SetEncryption
  *              tBTM_STATUS - result of the operation
 */
-typedef void(tBTM_SEC_CBACK)(const RawAddress* bd_addr, tBT_TRANSPORT trasnport,
-                             void* p_ref_data, tBTM_STATUS result);
-typedef tBTM_SEC_CBACK tBTM_SEC_CALLBACK;
+typedef void(tBTM_SEC_CALLBACK)(const RawAddress* bd_addr,
+                                tBT_TRANSPORT trasnport, void* p_ref_data,
+                                tBTM_STATUS result);
+typedef tBTM_SEC_CALLBACK tBTM_SEC_CALLBACK;
 
 /* Bond Cancel complete. Parameters are
  *              Result of the cancel operation

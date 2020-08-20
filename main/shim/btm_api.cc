@@ -971,7 +971,7 @@ void bluetooth::shim::SendRemoteNameRequest(const RawAddress& raw_address) {
 
 tBTM_STATUS bluetooth::shim::btm_sec_mx_access_request(
     const RawAddress& bd_addr, uint16_t psm, bool is_originator,
-    uint32_t mx_proto_id, uint32_t mx_chan_id, tBTM_SEC_CBACK* p_callback,
+    uint32_t mx_proto_id, uint32_t mx_chan_id, tBTM_SEC_CALLBACK* p_callback,
     void* p_ref_data) {
   // Security has already been fulfilled by the l2cap connection, so reply back
   // that everything is totally fine and legit and definitely not two kids in a
@@ -985,7 +985,7 @@ tBTM_STATUS bluetooth::shim::btm_sec_mx_access_request(
 
 tBTM_STATUS bluetooth::shim::BTM_SetEncryption(const RawAddress& bd_addr,
                                                tBT_TRANSPORT transport,
-                                               tBTM_SEC_CBACK* p_callback,
+                                               tBTM_SEC_CALLBACK* p_callback,
                                                void* p_ref_data,
                                                tBTM_BLE_SEC_ACT sec_act) {
   // When we just bond a device, encryption is already done
