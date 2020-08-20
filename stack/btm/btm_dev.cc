@@ -54,17 +54,13 @@
  *                  bd_name          - Name of the peer device. NULL if unknown.
  *                  features         - Remote device's features (up to 3 pages).
  *                                     NULL if not known
- *                  trusted_mask     - Bitwise OR of services that do not
- *                                     require authorization.
- *                                     (array of uint32_t)
  *                  link_key         - Connection link key. NULL if unknown.
  *
  * Returns          true if added OK, else false
  *
  ******************************************************************************/
 bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
-                      BD_NAME bd_name, uint8_t* features,
-                      uint32_t trusted_mask[], LinkKey* p_link_key,
+                      BD_NAME bd_name, uint8_t* features, LinkKey* p_link_key,
                       uint8_t key_type, uint8_t pin_length) {
   BTM_TRACE_API("%s: link key type:%x", __func__, key_type);
 
@@ -120,8 +116,6 @@ bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
   } else {
     memset(p_dev_rec->feature_pages, 0, sizeof(p_dev_rec->feature_pages));
   }
-
-  BTM_SEC_COPY_TRUSTED_DEVICE(trusted_mask, p_dev_rec->trusted_mask);
 
   if (p_link_key) {
     VLOG(2) << __func__ << ": BDA: " << bd_addr;

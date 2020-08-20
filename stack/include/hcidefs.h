@@ -1182,11 +1182,6 @@ constexpr uint8_t HCI_LE_STATES_INIT_MASTER_SLAVE_BIT = 41;
 #define HCI_LKEY_TYPE_UNAUTH_COMB_P_256 0x07
 #define HCI_LKEY_TYPE_AUTH_COMB_P_256 0x08
 
-/* Internal definitions - not used over HCI */
-#define HCI_LKEY_TYPE_AMP_WIFI 0x80
-#define HCI_LKEY_TYPE_AMP_UWB 0x81
-#define HCI_LKEY_TYPE_UNKNOWN 0xff
-
 /* Read Local Version HCI Version return values (Command Complete Event) */
 #define HCI_VERSION_1_0B 0x00
 #define HCI_VERSION_1_1 0x01
