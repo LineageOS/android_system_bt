@@ -179,7 +179,7 @@ void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
     BTM_SetLinkSuperTout(ci.bd_addr, acl_get_link_supervision_timeout());
 
     /* If dedicated bonding do not process any further */
-    if (p_lcb->is_bonding) {
+    if (p_lcb->IsBonding()) {
       if (l2cu_start_post_bond_timer(handle)) return;
     }
 
@@ -405,7 +405,7 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
                   "%d",
                   __func__, xx, p_lcb->remote_bd_addr.ToString().c_str(), p_lcb,
                   p_lcb->in_use, p_lcb->link_state, p_lcb->handle,
-                  p_lcb->link_role, p_lcb->is_bonding, p_lcb->disc_reason,
+                  p_lcb->link_role, p_lcb->IsBonding(), p_lcb->disc_reason,
                   p_lcb->transport);
             }
             CHECK(p_lcb->p_fixed_ccbs[xx] != NULL);
@@ -455,7 +455,7 @@ void l2c_link_timeout(tL2C_LCB* p_lcb) {
 
   L2CAP_TRACE_EVENT(
       "L2CAP - l2c_link_timeout() link state %d first CCB %p is_bonding:%d",
-      p_lcb->link_state, p_lcb->ccb_queue.p_first_ccb, p_lcb->is_bonding);
+      p_lcb->link_state, p_lcb->ccb_queue.p_first_ccb, p_lcb->IsBonding());
 
   /* If link was connecting or disconnecting, clear all channels and drop the
    * LCB */
@@ -504,7 +504,7 @@ void l2c_link_timeout(tL2C_LCB* p_lcb) {
       } else if (rc == BTM_BUSY) {
         /* BTM is still executing security process. Let lcb stay as connected */
         start_timeout = false;
-      } else if (p_lcb->is_bonding) {
+      } else if (p_lcb->IsBonding()) {
         btsnd_hcic_disconnect(p_lcb->handle, HCI_ERR_PEER_USER);
         l2cu_process_fixed_disc_cback(p_lcb);
         p_lcb->link_state = LST_DISCONNECTING;

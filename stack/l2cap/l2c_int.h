@@ -346,7 +346,12 @@ typedef struct t_l2c_linkcb {
   uint8_t id;
   uint8_t cur_echo_id;              /* Current id value for echo request */
   uint16_t idle_timeout;            /* Idle timeout */
-  bool is_bonding;                  /* True - link active only for bonding */
+ private:
+  bool is_bonding_{false};          /* True - link active only for bonding */
+ public:
+  bool IsBonding() const { return is_bonding_; }
+  void SetBonding() { is_bonding_ = true; }
+  void ResetBonding() { is_bonding_ = false; }
 
   uint16_t link_flush_tout; /* Flush timeout used */
 

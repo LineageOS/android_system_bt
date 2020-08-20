@@ -71,7 +71,11 @@ tL2C_LCB* l2cu_allocate_lcb(const RawAddress& p_bd_addr, bool is_bonding,
       p_lcb->info_resp_timer = alarm_new("l2c_lcb.info_resp_timer");
       p_lcb->idle_timeout = l2cb.idle_timeout;
       p_lcb->id = 1; /* spec does not allow '0' */
-      p_lcb->is_bonding = is_bonding;
+      if (is_bonding) {
+        p_lcb->SetBonding();
+      } else {
+        p_lcb->ResetBonding();
+      }
       p_lcb->transport = transport;
       p_lcb->tx_data_len =
           controller_get_interface()->get_ble_default_data_packet_length();
@@ -109,7 +113,11 @@ void l2cu_update_lcb_4_bonding(const RawAddress& p_bd_addr, bool is_bonding) {
   if (p_lcb) {
     VLOG(1) << __func__ << " BDA: " << p_bd_addr
             << " is_bonding: " << is_bonding;
-    p_lcb->is_bonding = is_bonding;
+    if (is_bonding) {
+      p_lcb->SetBonding();
+    } else {
+      p_lcb->ResetBonding();
+    }
   }
 }
 
@@ -127,7 +135,7 @@ void l2cu_release_lcb(tL2C_LCB* p_lcb) {
   tL2C_CCB* p_ccb;
 
   p_lcb->in_use = false;
-  p_lcb->is_bonding = false;
+  p_lcb->ResetBonding();
 
   /* Stop and free timers */
   alarm_free(p_lcb->l2c_lcb_timer);
@@ -1429,7 +1437,7 @@ bool l2cu_start_post_bond_timer(uint16_t handle) {
 
   if (!p_lcb) return (true);
 
-  p_lcb->is_bonding = false;
+  p_lcb->ResetBonding();
 
   /* Only start timer if no control blocks allocated */
   if (p_lcb->ccb_queue.p_first_ccb != NULL) return (false);
@@ -2117,7 +2125,7 @@ void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb) {
 
   acl_create_classic_connection(p_lcb->remote_bd_addr,
                                 there_are_high_priority_channels,
-                                p_lcb->is_bonding);
+                                p_lcb->IsBonding());
 
   alarm_set_on_mloop(p_lcb->l2c_lcb_timer, L2CAP_LINK_CONNECT_TIMEOUT_MS,
                      l2c_lcb_timer_timeout, p_lcb);
@@ -2452,7 +2460,7 @@ void l2cu_no_dynamic_ccbs(tL2C_LCB* p_lcb) {
   }
 
   /* If the link is pairing, do not mess with the timeouts */
-  if (p_lcb->is_bonding) return;
+  if (p_lcb->IsBonding()) return;
 
   if (timeout_ms == 0) {
     L2CAP_TRACE_DEBUG(
@@ -2469,7 +2477,7 @@ void l2cu_no_dynamic_ccbs(tL2C_LCB* p_lcb) {
        * done) */
       p_lcb->link_state = LST_DISCONNECTING;
       start_timeout = false;
-    } else if (p_lcb->is_bonding) {
+    } else if (p_lcb->IsBonding()) {
       btsnd_hcic_disconnect(p_lcb->handle, HCI_ERR_PEER_USER);
       l2cu_process_fixed_disc_cback(p_lcb);
       p_lcb->link_state = LST_DISCONNECTING;
