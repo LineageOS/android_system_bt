@@ -1146,7 +1146,6 @@ void l2cble_sec_comp(const RawAddress* bda, tBT_TRANSPORT transport,
   const RawAddress& p_bda = *bda;
   tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(p_bda, BT_TRANSPORT_LE);
   tL2CAP_SEC_DATA* p_buf = NULL;
-  uint8_t sec_flag;
   uint8_t sec_act;
 
   if (!p_lcb) {
@@ -1171,8 +1170,7 @@ void l2cble_sec_comp(const RawAddress* bda, tBT_TRANSPORT transport,
       (*(p_buf->p_callback))(p_bda, BT_TRANSPORT_LE, p_buf->p_ref_data, status);
     } else {
       if (sec_act == BTM_SEC_ENCRYPT_MITM) {
-        BTM_GetSecurityFlagsByTransport(p_bda, &sec_flag, transport);
-        if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED)
+        if (BTM_IsLinkKeyAuthed(p_bda, transport))
           (*(p_buf->p_callback))(p_bda, BT_TRANSPORT_LE, p_buf->p_ref_data,
                                  status);
         else {

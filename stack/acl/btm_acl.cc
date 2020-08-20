@@ -463,8 +463,8 @@ void btm_acl_removed(const RawAddress& bda, tBT_TRANSPORT transport) {
         }
       } else {
         BTM_TRACE_DEBUG("Bletooth link down");
-        p_dev_rec->sec_flags &= ~(BTM_SEC_AUTHORIZED | BTM_SEC_AUTHENTICATED |
-                                  BTM_SEC_ENCRYPTED | BTM_SEC_ROLE_SWITCHED);
+        p_dev_rec->sec_flags &= ~(BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED |
+                                  BTM_SEC_ROLE_SWITCHED);
       }
       BTM_TRACE_DEBUG("after update p_dev_rec->sec_flags=0x%x",
                       p_dev_rec->sec_flags);

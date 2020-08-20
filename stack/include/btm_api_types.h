@@ -692,12 +692,6 @@ typedef uint8_t tBTM_LINK_KEY_TYPE;
 #define BTM_SEC_PROTO_HID 6 /* HID      */
 #define BTM_SEC_PROTO_AVDT 7
 
-/* Determine the number of uint32_t's necessary for security services */
-#define BTM_SEC_ARRAY_BITS 32 /* Number of bits in each array element */
-#define BTM_SEC_SERVICE_ARRAY_SIZE                         \
-  (((uint32_t)BTM_SEC_MAX_SERVICES / BTM_SEC_ARRAY_BITS) + \
-   (((uint32_t)BTM_SEC_MAX_SERVICES % BTM_SEC_ARRAY_BITS) ? 1 : 0))
-
 /* Security service definitions (BTM_SetSecurityLevel)
  * Used for Authorization APIs
 */
@@ -750,32 +744,6 @@ typedef uint8_t tBTM_LINK_KEY_TYPE;
  * Security Services MACROS handle array of uint32_t bits for more than 32
  * trusted services
  ******************************************************************************/
-
-/* MACRO to check the security service bit mask in a bit stream (Returns true or
- * false) */
-#define BTM_SEC_IS_SERVICE_TRUSTED(p, service)                                 \
-  (((((uint32_t*)(p))[(((uint32_t)(service)) / BTM_SEC_ARRAY_BITS)]) &         \
-    (uint32_t)(((uint32_t)1 << (((uint32_t)(service)) % BTM_SEC_ARRAY_BITS)))) \
-       ? true                                                                  \
-       : false)
-
-/* MACRO to copy two trusted device bitmask */
-#define BTM_SEC_COPY_TRUSTED_DEVICE(p_src, p_dst)              \
-  {                                                            \
-    uint32_t trst;                                             \
-    for (trst = 0; trst < BTM_SEC_SERVICE_ARRAY_SIZE; trst++)  \
-      ((uint32_t*)(p_dst))[trst] = ((uint32_t*)(p_src))[trst]; \
-  }
-
-/* MACRO to clear two trusted device bitmask */
-#define BTM_SEC_CLR_TRUSTED_DEVICE(p_dst)                     \
-  {                                                           \
-    uint32_t trst;                                            \
-    for (trst = 0; trst < BTM_SEC_SERVICE_ARRAY_SIZE; trst++) \
-      ((uint32_t*)(p_dst))[trst] = 0;                         \
-  }
-
-#define BTM_SEC_TRUST_ALL 0xFFFFFFFF /* for each array element */
 
 /****************************************
  *  Security Manager Callback Functions
@@ -1158,7 +1126,6 @@ typedef void(tBTM_LE_KEY_CALLBACK)(uint8_t key_type,
  ***************************/
 /* Structure that applications use to register with BTM_SecRegister */
 typedef struct {
-  tBTM_AUTHORIZE_CALLBACK* p_authorize_callback;
   tBTM_PIN_CALLBACK* p_pin_callback;
   tBTM_LINK_KEY_CALLBACK* p_link_key_callback;
   tBTM_AUTH_COMPLETE_CALLBACK* p_auth_complete_callback;

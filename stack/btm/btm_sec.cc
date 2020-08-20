@@ -275,6 +275,30 @@ bool BTM_GetSecurityFlags(const RawAddress& bd_addr, uint8_t* p_sec_flags) {
   return (false);
 }
 
+bool BTM_IsEncrypted(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+  uint8_t flags = 0;
+  BTM_GetSecurityFlagsByTransport(bd_addr, &flags, transport);
+  return (flags & BTM_SEC_FLAG_ENCRYPTED) != 0;
+}
+
+bool BTM_IsLinkKeyAuthed(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+  uint8_t flags = 0;
+  BTM_GetSecurityFlagsByTransport(bd_addr, &flags, transport);
+  return (flags & BTM_SEC_FLAG_LKEY_AUTHED) != 0;
+}
+
+bool BTM_IsLinkKeyKnown(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+  uint8_t flags = 0;
+  BTM_GetSecurityFlagsByTransport(bd_addr, &flags, transport);
+  return (flags & BTM_SEC_FLAG_LKEY_KNOWN) != 0;
+}
+
+bool BTM_IsAuthenticated(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+  uint8_t flags = 0;
+  BTM_GetSecurityFlagsByTransport(bd_addr, &flags, transport);
+  return (flags & BTM_SEC_AUTHENTICATED) != 0;
+}
+
 /*******************************************************************************
  *
  * Function         BTM_GetSecurityFlagsByTransport
@@ -557,37 +581,6 @@ uint8_t BTM_SecClrServiceByPsm(uint16_t psm) {
 
 /*******************************************************************************
  *
- * Function         BTM_SecClrTempAuthService
- *
- * Description      Removes specified device record's temporary authorization
- *                  flag from the security database.
- *
- * Parameters       Device address to be cleared
- *
- * Returns          void.
- *
- ******************************************************************************/
-void BTM_SecClrTempAuthService(const RawAddress& bda) {
-  tBTM_SEC_DEV_REC* p_dev_rec;
-
-  p_dev_rec = btm_find_dev(bda);
-  if (p_dev_rec == NULL) {
-    BTM_TRACE_WARNING("BTM_SecClrTempAuthService() - no dev CB");
-    return;
-  }
-
-  /* Reset the temporary authorized flag so that next time (untrusted) service
-   * is accessed autorization will take place */
-  if (p_dev_rec->last_author_service_id != BTM_SEC_NO_LAST_SERVICE_ID &&
-      p_dev_rec->p_cur_service) {
-    VLOG(1) << __func__ << " clearing device: " << bda;
-
-    p_dev_rec->last_author_service_id = BTM_SEC_NO_LAST_SERVICE_ID;
-  }
-}
-
-/*******************************************************************************
- *
  * Function         BTM_PINCodeReply
  *
  * Description      This function is called after Security Manager submitted
@@ -599,12 +592,10 @@ void BTM_SecClrTempAuthService(const RawAddress& bda) {
  *                                 if success
  *                  pin_len      - length in bytes of the PIN Code
  *                  p_pin        - pointer to array with the PIN Code
- *                  trusted_mask - bitwise OR of trusted services
- *                                 (array of uint32_t)
  *
  ******************************************************************************/
 void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
-                      uint8_t* p_pin, uint32_t trusted_mask[]) {
+                      uint8_t* p_pin) {
   tBTM_SEC_DEV_REC* p_dev_rec;
 
   BTM_TRACE_API(
@@ -652,8 +643,6 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
     }
     return;
   }
-  if (trusted_mask)
-    BTM_SEC_COPY_TRUSTED_DEVICE(trusted_mask, p_dev_rec->trusted_mask);
   p_dev_rec->sec_flags |= BTM_SEC_LINK_KEY_AUTHED;
   p_dev_rec->pin_code_length = pin_len;
   if (pin_len >= 16) {
@@ -717,14 +706,12 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
  * Parameters:      bd_addr      - Address of the device to bond
  *                  pin_len      - length in bytes of the PIN Code
  *                  p_pin        - pointer to array with the PIN Code
- *                  trusted_mask - bitwise OR of trusted services
- *                                 (array of uint32_t)
  *
  *  Note: After 2.1 parameters are not used and preserved here not to change API
  ******************************************************************************/
 tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
                                       tBT_TRANSPORT transport, uint8_t pin_len,
-                                      uint8_t* p_pin, uint32_t trusted_mask[]) {
+                                      uint8_t* p_pin) {
   tBTM_SEC_DEV_REC* p_dev_rec;
   tBTM_STATUS status;
   uint8_t* p_features;
@@ -781,8 +768,6 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
 
   p_dev_rec->security_required = BTM_SEC_OUT_AUTHENTICATE;
   p_dev_rec->is_originator = true;
-  if (trusted_mask)
-    BTM_SEC_COPY_TRUSTED_DEVICE(trusted_mask, p_dev_rec->trusted_mask);
 
   if (transport == BT_TRANSPORT_LE) {
     btm_ble_init_pseudo_addr(p_dev_rec, bd_addr);
@@ -893,15 +878,12 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
  *                  transport    - doing SSP over BR/EDR or SMP over LE
  *                  pin_len      - length in bytes of the PIN Code
  *                  p_pin        - pointer to array with the PIN Code
- *                  trusted_mask - bitwise OR of trusted services
- *                                 (array of uint32_t)
  *
  *  Note: After 2.1 parameters are not used and preserved here not to change API
  ******************************************************************************/
 tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                         tBT_TRANSPORT transport, int device_type,
-                        uint8_t pin_len, uint8_t* p_pin,
-                        uint32_t trusted_mask[]) {
+                        uint8_t pin_len, uint8_t* p_pin) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::BTM_SecBond(bd_addr, addr_type, transport,
                                         device_type);
@@ -919,8 +901,7 @@ tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
        (dev_type & BT_DEVICE_TYPE_BREDR) == 0)) {
     return BTM_ILLEGAL_ACTION;
   }
-  return btm_sec_bond_by_transport(bd_addr, transport, pin_len, p_pin,
-                                   trusted_mask);
+  return btm_sec_bond_by_transport(bd_addr, transport, pin_len, p_pin);
 }
 
 /*******************************************************************************
@@ -1786,17 +1767,6 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
 
   p_dev_rec->p_callback = p_callback;
 
-  if (p_dev_rec->last_author_service_id == BTM_SEC_NO_LAST_SERVICE_ID ||
-      p_dev_rec->last_author_service_id !=
-          p_dev_rec->p_cur_service->service_id) {
-    /* Although authentication and encryption are per connection
-    ** authorization is per access request.  For example when serial connection
-    ** is up and authorized and client requests to read file (access to other
-    ** scn), we need to request user's permission again.
-    */
-    p_dev_rec->sec_flags &= ~BTM_SEC_AUTHORIZED;
-  }
-
   if (BTM_SEC_IS_SM4(p_dev_rec->sm4)) {
     if ((p_dev_rec->security_required & BTM_SEC_MODE4_LEVEL4) &&
         (p_dev_rec->link_key_type != BTM_LKEY_TYPE_AUTH_COMB_P_256)) {
@@ -2018,12 +1988,6 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
   p_dev_rec->is_originator = is_originator;
   p_dev_rec->p_callback = p_callback;
   p_dev_rec->p_ref_data = p_ref_data;
-
-  /* Although authentication and encryption are per connection */
-  /* authorization is per access request.  For example when serial connection */
-  /* is up and authorized and client requests to read file (access to other */
-  /* scn, we need to request user's permission again. */
-  p_dev_rec->sec_flags &= ~(BTM_SEC_AUTHORIZED);
 
   BTM_TRACE_EVENT(
       "%s() proto_id:%d chan_id:%d State:%d Flags:0x%x Required:0x%x Service "
@@ -2817,9 +2781,6 @@ void btm_io_capabilities_rsp(uint8_t* p) {
     btm_cb.pairing_bda = evt_data.bd_addr;
 
     btm_sec_change_pairing_state(BTM_PAIR_STATE_INCOMING_SSP);
-
-    /* Make sure we reset the trusted mask to help against attacks */
-    BTM_SEC_CLR_TRUSTED_DEVICE(p_dev_rec->trusted_mask);
 
     /* work around for FW bug */
     btm_inq_stop_on_ssp();
@@ -3833,9 +3794,9 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
   /* Initialize security flags.  We need to do that because some            */
   /* authorization complete could have come after the connection is dropped */
   /* and that would set wrong flag that link has been authorized already    */
-  p_dev_rec->sec_flags &= ~((BTM_SEC_AUTHORIZED | BTM_SEC_AUTHENTICATED |
-                             BTM_SEC_ENCRYPTED | BTM_SEC_ROLE_SWITCHED)
-                            << bit_shift);
+  p_dev_rec->sec_flags &=
+      ~((BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED | BTM_SEC_ROLE_SWITCHED)
+        << bit_shift);
 
   if (enc_mode != HCI_ENCRYPT_MODE_DISABLED)
     p_dev_rec->sec_flags |=
@@ -3986,8 +3947,8 @@ void btm_sec_disconnected(uint16_t handle, uint8_t reason) {
   } else {
     p_dev_rec->hci_handle = HCI_INVALID_HANDLE;
     p_dev_rec->sec_flags &=
-        ~(BTM_SEC_AUTHORIZED | BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED |
-          BTM_SEC_ROLE_SWITCHED | BTM_SEC_16_DIGIT_PIN_AUTHED);
+        ~(BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED | BTM_SEC_ROLE_SWITCHED |
+          BTM_SEC_16_DIGIT_PIN_AUTHED);
 
     // Remove temporary key.
     if (p_dev_rec->bond_type == BOND_TYPE_TEMPORARY)
@@ -4346,8 +4307,6 @@ void btm_sec_pin_code_request(uint8_t* p_event) {
     btm_cb.pairing_bda = p_bda;
 
     btm_cb.pairing_flags = BTM_PAIR_FLAGS_PEER_STARTED_DD;
-    /* Make sure we reset the trusted mask to help against attacks */
-    BTM_SEC_CLR_TRUSTED_DEVICE(p_dev_rec->trusted_mask);
   }
 
   if (!p_cb->pairing_disabled && (p_cb->cfg.pin_type == HCI_PIN_TYPE_FIXED)) {
@@ -4578,8 +4537,6 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
         BTM_SEC_OUT_ENCRYPT | BTM_SEC_IN_ENCRYPT | BTM_SEC_FORCE_MASTER |
         BTM_SEC_ATTEMPT_MASTER | BTM_SEC_FORCE_SLAVE | BTM_SEC_ATTEMPT_SLAVE);
 
-  BTM_TRACE_EVENT("Security Manager: trusted:0x%04x%04x",
-                  p_dev_rec->trusted_mask[1], p_dev_rec->trusted_mask[0]);
   BTM_TRACE_EVENT("Security Manager: access granted");
 
   return (BTM_SUCCESS);
@@ -4627,25 +4584,6 @@ static void btm_sec_start_authentication(tBTM_SEC_DEV_REC* p_dev_rec) {
 static void btm_sec_start_encryption(tBTM_SEC_DEV_REC* p_dev_rec) {
   btsnd_hcic_set_conn_encrypt(p_dev_rec->hci_handle, true);
   p_dev_rec->sec_state = BTM_SEC_STATE_ENCRYPTING;
-}
-
-/*******************************************************************************
- *
- * Function         btm_sec_are_all_trusted
- *
- * Description      This function is called check if all services are trusted
- *
- * Returns          true if all are trusted, otherwise false
- *
- ******************************************************************************/
-bool btm_sec_are_all_trusted(uint32_t p_mask[]) {
-  uint32_t trusted_inx;
-  for (trusted_inx = 0; trusted_inx < BTM_SEC_SERVICE_ARRAY_SIZE;
-       trusted_inx++) {
-    if (p_mask[trusted_inx] != BTM_SEC_TRUST_ALL) return (false);
-  }
-
-  return (true);
 }
 
 /*******************************************************************************
@@ -4778,24 +4716,6 @@ static void btm_send_link_key_notif(tBTM_SEC_DEV_REC* p_dev_rec) {
     (*btm_cb.api.p_link_key_callback)(
         p_dev_rec->bd_addr, p_dev_rec->dev_class, p_dev_rec->sec_bd_name,
         p_dev_rec->link_key, p_dev_rec->link_key_type);
-}
-
-/*******************************************************************************
- *
- * Function         BTM_ReadTrustedMask
- *
- * Description      Get trusted mask for the peer device
- *
- * Parameters:      bd_addr   - Address of the device
- *
- * Returns          NULL, if the device record is not found.
- *                  otherwise, the trusted mask
- *
- ******************************************************************************/
-uint32_t* BTM_ReadTrustedMask(const RawAddress& bd_addr) {
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
-  if (p_dev_rec != NULL) return (p_dev_rec->trusted_mask);
-  return NULL;
 }
 
 /*******************************************************************************
@@ -5013,7 +4933,7 @@ static bool btm_sec_check_prefetch_pin(tBTM_SEC_DEV_REC* p_dev_rec) {
     /* If we got a PIN, use that, else try to get one */
     if (btm_cb.pin_code_len) {
       BTM_PINCodeReply(p_dev_rec->bd_addr, BTM_SUCCESS, btm_cb.pin_code_len,
-                       btm_cb.pin_code, p_dev_rec->trusted_mask);
+                       btm_cb.pin_code);
     } else {
       /* pin was not supplied - pre-fetch pin code now */
       if (btm_cb.api.p_pin_callback &&
