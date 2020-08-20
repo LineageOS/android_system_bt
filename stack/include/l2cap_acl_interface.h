@@ -20,7 +20,13 @@
 #include "bt_common.h"
 #include "types/raw_address.h"
 
-// This header contains functions for HCI-ACL to invoke
+// This header contains functions for L2cap-ACL to invoke
+
+void acl_accept_connection_request(const RawAddress& bd_addr, uint8_t role);
+void acl_create_classic_connection(const RawAddress& bd_addr,
+                                   bool there_are_high_priority_channels,
+                                   bool is_bonding);
+void acl_reject_connection_request(const RawAddress& bd_addr, uint8_t reason);
 
 // ACL data received from HCI-ACL
 extern void l2c_rcv_acl_data(BT_HDR* p_msg);
