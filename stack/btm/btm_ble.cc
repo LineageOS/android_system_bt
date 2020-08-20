@@ -904,16 +904,8 @@ tBTM_SEC_ACTION btm_ble_determine_security_act(bool is_originator,
 
   if (ble_sec_act == BTM_BLE_SEC_REQ_ACT_NONE) return BTM_SEC_OK;
 
-  uint8_t sec_flag = 0;
-  BTM_GetSecurityFlagsByTransport(bdaddr, &sec_flag, BT_TRANSPORT_LE);
-
-  bool is_link_encrypted = false;
-  bool is_key_mitm = false;
-  if (sec_flag & (BTM_SEC_FLAG_ENCRYPTED | BTM_SEC_FLAG_LKEY_KNOWN)) {
-    if (sec_flag & BTM_SEC_FLAG_ENCRYPTED) is_link_encrypted = true;
-
-    if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED) is_key_mitm = true;
-  }
+  bool is_link_encrypted = BTM_IsEncrypted(bdaddr, BT_TRANSPORT_LE);
+  bool is_key_mitm = BTM_IsLinkKeyAuthed(bdaddr, BT_TRANSPORT_LE);
 
   if (auth_req & BTM_LE_AUTH_REQ_MITM) {
     if (!is_key_mitm) {
