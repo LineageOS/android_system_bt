@@ -19,14 +19,28 @@
 #include <unistd.h>
 
 #include <cerrno>
+#include <mutex>
+#include <string>
 
 #include "os/log.h"
 
 namespace bluetooth {
 namespace os {
 
+namespace {
+std::mutex parameter_mutex;
+std::string config_file_path;
+std::string snoop_log_file_path;
+}  // namespace
+
 // Write to $PWD/bt_stack.conf if $PWD can be found, otherwise, write to $HOME/bt_stack.conf
 std::string ParameterProvider::ConfigFilePath() {
+  {
+    std::lock_guard<std::mutex> lock(parameter_mutex);
+    if (!config_file_path.empty()) {
+      return config_file_path;
+    }
+  }
   char cwd[PATH_MAX] = {};
   if (getcwd(cwd, sizeof(cwd)) == nullptr) {
     LOG_ERROR("Failed to get current working directory due to \"%s\", returning default", strerror(errno));
@@ -35,13 +49,29 @@ std::string ParameterProvider::ConfigFilePath() {
   return std::string(cwd) + "/bt_config.conf";
 }
 
+void ParameterProvider::OverrideConfigFilePath(const std::string& path) {
+  std::lock_guard<std::mutex> lock(parameter_mutex);
+  config_file_path = path;
+}
+
 std::string ParameterProvider::SnoopLogFilePath() {
+  {
+    std::lock_guard<std::mutex> lock(parameter_mutex);
+    if (!snoop_log_file_path.empty()) {
+      return snoop_log_file_path;
+    }
+  }
   char cwd[PATH_MAX] = {};
   if (getcwd(cwd, sizeof(cwd)) == nullptr) {
     LOG_ERROR("Failed to get current working directory due to \"%s\", returning default", strerror(errno));
     return "bt_config.conf";
   }
   return std::string(cwd) + "/btsnoop_hci.log";
+}
+
+void ParameterProvider::OverrideSnoopLogFilePath(const std::string& path) {
+  std::lock_guard<std::mutex> lock(parameter_mutex);
+  snoop_log_file_path = path;
 }
 
 }  // namespace os
