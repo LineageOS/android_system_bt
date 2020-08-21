@@ -351,7 +351,7 @@ typedef struct t_l2c_linkcb {
   void SetLinkRoleAsMaster() { link_role_ = HCI_ROLE_MASTER; }
   void SetLinkRoleAsSlave() { link_role_ = HCI_ROLE_SLAVE; }
 
-  uint8_t id;
+  uint8_t signal_id;                /* Signalling channel id */
   uint8_t cur_echo_id;              /* Current id value for echo request */
   uint16_t idle_timeout;            /* Idle timeout */
  private:
@@ -361,7 +361,13 @@ typedef struct t_l2c_linkcb {
   void SetBonding() { is_bonding_ = true; }
   void ResetBonding() { is_bonding_ = false; }
 
-  uint16_t link_flush_tout; /* Flush timeout used */
+ private:
+  uint16_t link_flush_tout_{0}; /* Flush timeout used */
+ public:
+  uint16_t LinkFlushTimeout() const { return link_flush_tout_; }
+  void SetLinkFlushTimeout(uint16_t link_flush_tout) {
+    link_flush_tout_ = link_flush_tout;
+  }
 
   uint16_t link_xmit_quota; /* Num outstanding pkts allowed */
   uint16_t sent_not_acked;  /* Num packets sent but not acked */
@@ -369,7 +375,6 @@ typedef struct t_l2c_linkcb {
   bool partial_segment_being_sent; /* Set true when a partial segment */
                                    /* is being sent. */
   bool w4_info_rsp;                /* true when info request is active */
-  uint8_t info_rx_bits;            /* set 1 if received info type */
   uint32_t peer_ext_fea;           /* Peer's extended features mask */
   list_t* link_xmit_data_q;        /* Link transmit data buffer queue */
 
@@ -381,7 +386,13 @@ typedef struct t_l2c_linkcb {
   tL2CA_NOCP_CB* p_nocp_cb; /* Num Cmpl pkts callback */
 
   tL2C_CCB* p_fixed_ccbs[L2CAP_NUM_FIXED_CHNLS];
-  uint16_t disc_reason;
+
+ private:
+  uint16_t disc_reason_;
+
+ public:
+  uint16_t DisconnectReason() const { return disc_reason_; }
+  void SetDisconnectReason(uint16_t disc_reason) { disc_reason_ = disc_reason; }
 
   tBT_TRANSPORT transport;
   uint8_t initiating_phys;  // LE PHY used for connection initiation
@@ -441,12 +452,11 @@ typedef struct {
   alarm_t* receive_hold_timer; /* Timer entry for rcv hold */
 
   tL2C_LCB* p_cur_hcit_lcb;  /* Current HCI Transport buffer */
-  uint16_t num_links_active; /* Number of links active */
+  uint16_t num_used_lcbs;    /* Number of active link control blocks */
 
   uint16_t non_flushable_pbf; /* L2CAP_PKT_START_NON_FLUSHABLE if controller
                                  supports */
   /* Otherwise, L2CAP_PKT_START */
-  bool is_flush_active; /* true if an HCI_Enhanced_Flush has been sent */
 
 #if (L2CAP_CONFORMANCE_TESTING == TRUE)
   uint32_t test_info_resp; /* Conformance testing needs a dynamic response */

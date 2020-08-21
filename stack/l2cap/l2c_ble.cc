@@ -71,7 +71,7 @@ bool L2CA_CancelBleConnectReq(const RawAddress& rem_bda) {
   /* Do not remove lcb if an LE link is already up as a peripheral */
   if (p_lcb != NULL && !(p_lcb->IsLinkRoleSlave() &&
                          BTM_IsAclConnectionUp(rem_bda, BT_TRANSPORT_LE))) {
-    p_lcb->disc_reason = L2CAP_CONN_CANCEL;
+    p_lcb->SetDisconnectReason(L2CAP_CONN_CANCEL);
     l2cu_release_lcb(p_lcb);
   }
   return (true);
@@ -216,7 +216,7 @@ uint16_t L2CA_GetDisconnectReason(const RawAddress& remote_bda,
   uint16_t reason = 0;
 
   p_lcb = l2cu_find_lcb_by_bd_addr(remote_bda, transport);
-  if (p_lcb != NULL) reason = p_lcb->disc_reason;
+  if (p_lcb != NULL) reason = p_lcb->DisconnectReason();
 
   L2CAP_TRACE_DEBUG("L2CA_GetDisconnectReason=%d ", reason);
 
