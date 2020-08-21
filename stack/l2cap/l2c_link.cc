@@ -219,7 +219,7 @@ void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
       p_ccb = pn;
     }
 
-    p_lcb->disc_reason = status;
+    p_lcb->SetDisconnectReason(status);
     /* Release the LCB */
     if (p_lcb->ccb_queue.p_first_ccb == NULL)
       l2cu_release_lcb(p_lcb);
@@ -336,7 +336,7 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
       acl_set_disconnect_reason(reason);
     }
 
-    p_lcb->disc_reason = acl_get_disconnect_reason();
+    p_lcb->SetDisconnectReason(acl_get_disconnect_reason());
 
     /* Just in case app decides to try again in the callback context */
     p_lcb->link_state = LST_DISCONNECTING;
@@ -395,7 +395,7 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
               p_lcb->p_fixed_ccbs[xx] != p_lcb->p_pending_ccb) {
             (*l2cb.fixed_reg[xx].pL2CA_FixedConn_Cb)(
                 xx + L2CAP_FIRST_FIXED_CHNL, p_lcb->remote_bd_addr, false,
-                p_lcb->disc_reason, p_lcb->transport);
+                p_lcb->DisconnectReason(), p_lcb->transport);
             if (p_lcb->p_fixed_ccbs[xx] == NULL) {
               L2CAP_TRACE_ERROR(
                   "%s: unexpected p_fixed_ccbs[%d] is NULL remote_bd_addr = %s "
@@ -404,8 +404,8 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
                   "%d",
                   __func__, xx, p_lcb->remote_bd_addr.ToString().c_str(), p_lcb,
                   p_lcb->in_use, p_lcb->link_state, p_lcb->handle,
-                  p_lcb->LinkRole(), p_lcb->IsBonding(), p_lcb->disc_reason,
-                  p_lcb->transport);
+                  p_lcb->LinkRole(), p_lcb->IsBonding(),
+                  p_lcb->DisconnectReason(), p_lcb->transport);
             }
             CHECK(p_lcb->p_fixed_ccbs[xx] != NULL);
             l2cu_release_ccb(p_lcb->p_fixed_ccbs[xx]);

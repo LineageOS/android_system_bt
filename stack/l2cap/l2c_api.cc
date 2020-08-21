@@ -1446,7 +1446,7 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda,
 
   // Get a CCB and link the lcb to it
   if (!l2cu_initialize_fixed_ccb(p_lcb, fixed_cid)) {
-    p_lcb->disc_reason = L2CAP_CONN_NO_RESOURCES;
+    p_lcb->SetDisconnectReason(L2CAP_CONN_NO_RESOURCES);
     L2CAP_TRACE_WARNING("%s(0x%04x) - no CCB", __func__, fixed_cid);
     l2cu_release_lcb(p_lcb);
     return false;
@@ -1633,7 +1633,7 @@ bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
   p_ccb = p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL];
 
   p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL] = NULL;
-  p_lcb->disc_reason = HCI_ERR_CONN_CAUSE_LOCAL_HOST;
+  p_lcb->SetDisconnectReason(HCI_ERR_CONN_CAUSE_LOCAL_HOST);
 
   // Retain the link for a few more seconds after SMP pairing is done, since
   // the Android platform always does service discovery after pairing is

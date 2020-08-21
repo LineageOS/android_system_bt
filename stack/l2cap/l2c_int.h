@@ -381,7 +381,13 @@ typedef struct t_l2c_linkcb {
   tL2CA_NOCP_CB* p_nocp_cb; /* Num Cmpl pkts callback */
 
   tL2C_CCB* p_fixed_ccbs[L2CAP_NUM_FIXED_CHNLS];
-  uint16_t disc_reason;
+
+ private:
+  uint16_t disc_reason_;
+
+ public:
+  uint16_t DisconnectReason() const { return disc_reason_; }
+  void SetDisconnectReason(uint16_t disc_reason) { disc_reason_ = disc_reason; }
 
   tBT_TRANSPORT transport;
   uint8_t initiating_phys;  // LE PHY used for connection initiation

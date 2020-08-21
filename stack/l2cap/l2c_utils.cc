@@ -2539,7 +2539,7 @@ void l2cu_process_fixed_chnl_resp(tL2C_LCB* p_lcb) {
           channel_id, p_lcb->remote_bd_addr, true, 0, p_lcb->transport);
     } else {
       (*l2cb.fixed_reg[xx].pL2CA_FixedConn_Cb)(
-          channel_id, p_lcb->remote_bd_addr, false, p_lcb->disc_reason,
+          channel_id, p_lcb->remote_bd_addr, false, p_lcb->DisconnectReason(),
           p_lcb->transport);
 
       if (p_lcb->p_fixed_ccbs[xx]) {
@@ -2577,13 +2577,13 @@ void l2cu_process_fixed_disc_cback(tL2C_LCB* p_lcb) {
         l2cu_release_ccb(p_l2c_chnl_ctrl_block);
         (*l2cb.fixed_reg[xx].pL2CA_FixedConn_Cb)(
             xx + L2CAP_FIRST_FIXED_CHNL, p_lcb->remote_bd_addr, false,
-            p_lcb->disc_reason, p_lcb->transport);
+            p_lcb->DisconnectReason(), p_lcb->transport);
       }
     } else if ((peer_channel_mask & (1 << (xx + L2CAP_FIRST_FIXED_CHNL))) &&
                (l2cb.fixed_reg[xx].pL2CA_FixedConn_Cb != NULL))
       (*l2cb.fixed_reg[xx].pL2CA_FixedConn_Cb)(
           xx + L2CAP_FIRST_FIXED_CHNL, p_lcb->remote_bd_addr, false,
-          p_lcb->disc_reason, p_lcb->transport);
+          p_lcb->DisconnectReason(), p_lcb->transport);
   }
 }
 
