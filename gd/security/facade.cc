@@ -221,7 +221,8 @@ class SecurityModuleFacadeService : public SecurityModuleFacade::Service, public
     Address address = Address::kEmpty;
     hci::LeAddressManager::AddressPolicy address_policy =
         static_cast<hci::LeAddressManager::AddressPolicy>(request->address_policy());
-    if (address_policy == hci::LeAddressManager::AddressPolicy::USE_STATIC_ADDRESS) {
+    if (address_policy == hci::LeAddressManager::AddressPolicy::USE_STATIC_ADDRESS ||
+        address_policy == hci::LeAddressManager::AddressPolicy::USE_PUBLIC_ADDRESS) {
       ASSERT(Address::FromString(request->address_with_type().address().address(), address));
     }
     hci::AddressWithType address_with_type(address, static_cast<hci::AddressType>(request->address_with_type().type()));
