@@ -1858,6 +1858,7 @@ void btm_ble_process_adv_pkt_cont(uint16_t evt_type, uint8_t addr_type,
   if (!AdvertiseDataParser::IsValid(adv_data)) {
     DVLOG(1) << __func__ << "Dropping bad advertisement packet: "
              << base::HexEncode(adv_data.data(), adv_data.size());
+    cache.Clear(addr_type, bda);
     return;
   }
 
