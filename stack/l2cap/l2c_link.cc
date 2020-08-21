@@ -1011,6 +1011,10 @@ void l2c_OnHciModeChangeSendPendingPackets(RawAddress remote) {
  * Description      This function queues the buffer for HCI transmission
  *
  ******************************************************************************/
+constexpr uint16_t kDataPacketEventBrEdr = (BT_EVT_TO_LM_HCI_ACL);
+constexpr uint16_t kDataPacketEventBle =
+    (BT_EVT_TO_LM_HCI_ACL | LOCAL_BLE_CONTROLLER_ID);
+
 static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
                                    tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
   const uint16_t acl_packet_size_classic =
@@ -1034,11 +1038,10 @@ static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
 
     if (transport == BT_TRANSPORT_LE) {
       l2cb.controller_le_xmit_window--;
-      bte_main_hci_send(
-          p_buf, (uint16_t)(BT_EVT_TO_LM_HCI_ACL | LOCAL_BLE_CONTROLLER_ID));
+      bte_main_hci_send(p_buf, kDataPacketEventBle);
     } else {
       l2cb.controller_xmit_window--;
-      bte_main_hci_send(p_buf, BT_EVT_TO_LM_HCI_ACL);
+      bte_main_hci_send(p_buf, kDataPacketEventBrEdr);
     }
   } else {
     uint16_t xmit_window{0};
@@ -1084,10 +1087,9 @@ static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
 
     p_lcb->sent_not_acked += num_segs;
     if (transport == BT_TRANSPORT_LE) {
-      bte_main_hci_send(
-          p_buf, (uint16_t)(BT_EVT_TO_LM_HCI_ACL | LOCAL_BLE_CONTROLLER_ID));
+      bte_main_hci_send(p_buf, kDataPacketEventBle);
     } else {
-      bte_main_hci_send(p_buf, BT_EVT_TO_LM_HCI_ACL);
+      bte_main_hci_send(p_buf, kDataPacketEventBrEdr);
     }
   }
 
