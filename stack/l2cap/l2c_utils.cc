@@ -70,7 +70,7 @@ tL2C_LCB* l2cu_allocate_lcb(const RawAddress& p_bd_addr, bool is_bonding,
       p_lcb->l2c_lcb_timer = alarm_new("l2c_lcb.l2c_lcb_timer");
       p_lcb->info_resp_timer = alarm_new("l2c_lcb.info_resp_timer");
       p_lcb->idle_timeout = l2cb.idle_timeout;
-      p_lcb->id = 1; /* spec does not allow '0' */
+      p_lcb->signal_id = 1; /* spec does not allow '0' */
       if (is_bonding) {
         p_lcb->SetBonding();
       } else {
@@ -252,7 +252,7 @@ tL2C_LCB* l2cu_find_lcb_by_bd_addr(const RawAddress& p_bd_addr,
  *                            false if response code. (command not rejected)
  *
  ******************************************************************************/
-bool l2c_is_cmd_rejected(uint8_t cmd_code, uint8_t id, tL2C_LCB* p_lcb) {
+bool l2c_is_cmd_rejected(uint8_t cmd_code, uint8_t signal_id, tL2C_LCB* p_lcb) {
   switch (cmd_code) {
     case L2CAP_CMD_CONN_REQ:
     case L2CAP_CMD_CONFIG_REQ:
@@ -262,7 +262,7 @@ bool l2c_is_cmd_rejected(uint8_t cmd_code, uint8_t id, tL2C_LCB* p_lcb) {
     case L2CAP_CMD_AMP_CONN_REQ:
     case L2CAP_CMD_AMP_MOVE_REQ:
     case L2CAP_CMD_BLE_UPDATE_REQ:
-      l2cu_send_peer_cmd_reject(p_lcb, L2CAP_CMD_REJ_MTU_EXCEEDED, id,
+      l2cu_send_peer_cmd_reject(p_lcb, L2CAP_CMD_REJ_MTU_EXCEEDED, signal_id,
                                 L2CAP_DEFAULT_MTU, 0);
       L2CAP_TRACE_WARNING("Dumping first Command (%d)", cmd_code);
       return true;
@@ -282,7 +282,7 @@ bool l2c_is_cmd_rejected(uint8_t cmd_code, uint8_t id, tL2C_LCB* p_lcb) {
  *
  ******************************************************************************/
 BT_HDR* l2cu_build_header(tL2C_LCB* p_lcb, uint16_t len, uint8_t cmd,
-                          uint8_t id) {
+                          uint8_t signal_id) {
   BT_HDR* p_buf = (BT_HDR*)osi_malloc(L2CAP_CMD_BUF_SIZE);
   uint8_t* p;
 
@@ -310,7 +310,7 @@ BT_HDR* l2cu_build_header(tL2C_LCB* p_lcb, uint16_t len, uint8_t cmd,
 
   /* Put in L2CAP command header */
   UINT8_TO_STREAM(p, cmd);
-  UINT8_TO_STREAM(p, id);
+  UINT8_TO_STREAM(p, signal_id);
   UINT16_TO_STREAM(p, len);
 
   return (p_buf);
@@ -327,8 +327,8 @@ BT_HDR* l2cu_build_header(tL2C_LCB* p_lcb, uint16_t len, uint8_t cmd,
  *
  ******************************************************************************/
 void l2cu_adj_id(tL2C_LCB* p_lcb, uint8_t adj_mask) {
-  if ((adj_mask & L2CAP_ADJ_ZERO_ID) && !p_lcb->id) {
-    p_lcb->id++;
+  if ((adj_mask & L2CAP_ADJ_ZERO_ID) && !p_lcb->signal_id) {
+    p_lcb->signal_id++;
   }
 }
 
@@ -390,10 +390,10 @@ void l2cu_send_peer_connect_req(tL2C_CCB* p_ccb) {
   uint8_t* p;
 
   /* Create an identifier for this packet */
-  p_ccb->p_lcb->id++;
+  p_ccb->p_lcb->signal_id++;
   l2cu_adj_id(p_ccb->p_lcb, L2CAP_ADJ_ID);
 
-  p_ccb->local_id = p_ccb->p_lcb->id;
+  p_ccb->local_id = p_ccb->p_lcb->signal_id;
 
   p_buf = l2cu_build_header(p_ccb->p_lcb, L2CAP_CONN_REQ_LEN,
                             L2CAP_CMD_CONN_REQ, p_ccb->local_id);
@@ -502,10 +502,10 @@ void l2cu_send_peer_config_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
   uint8_t* p;
 
   /* Create an identifier for this packet */
-  p_ccb->p_lcb->id++;
+  p_ccb->p_lcb->signal_id++;
   l2cu_adj_id(p_ccb->p_lcb, L2CAP_ADJ_ID);
 
-  p_ccb->local_id = p_ccb->p_lcb->id;
+  p_ccb->local_id = p_ccb->p_lcb->signal_id;
 
   if (p_cfg->mtu_present)
     cfg_len += L2CAP_CFG_MTU_OPTION_LEN + L2CAP_CFG_OPTION_OVERHEAD;
@@ -814,10 +814,10 @@ void l2cu_send_peer_disc_req(tL2C_CCB* p_ccb) {
   }
 
   /* Create an identifier for this packet */
-  p_ccb->p_lcb->id++;
+  p_ccb->p_lcb->signal_id++;
   l2cu_adj_id(p_ccb->p_lcb, L2CAP_ADJ_ID);
 
-  p_ccb->local_id = p_ccb->p_lcb->id;
+  p_ccb->local_id = p_ccb->p_lcb->signal_id;
 
   p_buf = l2cu_build_header(p_ccb->p_lcb, L2CAP_DISC_REQ_LEN,
                             L2CAP_CMD_DISC_REQ, p_ccb->local_id);
@@ -891,19 +891,20 @@ void l2cu_send_peer_disc_rsp(tL2C_LCB* p_lcb, uint8_t remote_id,
  * Returns          void
  *
  ******************************************************************************/
-void l2cu_send_peer_echo_rsp(tL2C_LCB* p_lcb, uint8_t id, uint8_t* p_data,
-                             uint16_t data_len) {
+void l2cu_send_peer_echo_rsp(tL2C_LCB* p_lcb, uint8_t signal_id,
+                             uint8_t* p_data, uint16_t data_len) {
   BT_HDR* p_buf;
   uint8_t* p;
   uint16_t maxlen;
   /* Filter out duplicate IDs or if available buffers are low (intruder
    * checking) */
-  if (!id || id == p_lcb->cur_echo_id) {
+  if (!signal_id || signal_id == p_lcb->cur_echo_id) {
     /* Dump this request since it is illegal */
-    L2CAP_TRACE_WARNING("L2CAP ignoring duplicate echo request (%d)", id);
+    L2CAP_TRACE_WARNING("L2CAP ignoring duplicate echo request (%d)",
+                        signal_id);
     return;
   } else
-    p_lcb->cur_echo_id = id;
+    p_lcb->cur_echo_id = signal_id;
 
   uint16_t acl_data_size =
       controller_get_interface()->get_acl_data_size_classic();
@@ -920,7 +921,7 @@ void l2cu_send_peer_echo_rsp(tL2C_LCB* p_lcb, uint8_t id, uint8_t* p_data,
   if (data_len > maxlen) data_len = 0;
 
   p_buf = l2cu_build_header(p_lcb, (uint16_t)(L2CAP_ECHO_RSP_LEN + data_len),
-                            L2CAP_CMD_ECHO_RSP, id);
+                            L2CAP_CMD_ECHO_RSP, signal_id);
   if (p_buf == NULL) {
     L2CAP_TRACE_WARNING("L2CAP - no buffer for echo_rsp");
     return;
@@ -950,10 +951,10 @@ void l2cu_send_peer_info_req(tL2C_LCB* p_lcb, uint16_t info_type) {
   uint8_t* p;
 
   /* check for wrap and/or BRCM ID */
-  p_lcb->id++;
+  p_lcb->signal_id++;
   l2cu_adj_id(p_lcb, L2CAP_ADJ_ID);
 
-  p_buf = l2cu_build_header(p_lcb, 2, L2CAP_CMD_INFO_REQ, p_lcb->id);
+  p_buf = l2cu_build_header(p_lcb, 2, L2CAP_CMD_INFO_REQ, p_lcb->signal_id);
   if (p_buf == NULL) {
     L2CAP_TRACE_WARNING("L2CAP - no buffer for info_req");
     return;
@@ -2604,11 +2605,11 @@ void l2cu_send_peer_ble_par_req(tL2C_LCB* p_lcb, uint16_t min_int,
   uint8_t* p;
 
   /* Create an identifier for this packet */
-  p_lcb->id++;
+  p_lcb->signal_id++;
   l2cu_adj_id(p_lcb, L2CAP_ADJ_ID);
 
   p_buf = l2cu_build_header(p_lcb, L2CAP_CMD_BLE_UPD_REQ_LEN,
-                            L2CAP_CMD_BLE_UPDATE_REQ, p_lcb->id);
+                            L2CAP_CMD_BLE_UPDATE_REQ, p_lcb->signal_id);
   if (p_buf == NULL) {
     L2CAP_TRACE_WARNING("l2cu_send_peer_ble_par_req - no buffer");
     return;
@@ -2677,13 +2678,14 @@ void l2cu_send_peer_ble_credit_based_conn_req(tL2C_CCB* p_ccb) {
   p_lcb = p_ccb->p_lcb;
 
   /* Create an identifier for this packet */
-  p_ccb->p_lcb->id++;
+  p_ccb->p_lcb->signal_id++;
   l2cu_adj_id(p_ccb->p_lcb, L2CAP_ADJ_ID);
 
-  p_ccb->local_id = p_ccb->p_lcb->id;
+  p_ccb->local_id = p_ccb->p_lcb->signal_id;
 
-  p_buf = l2cu_build_header(p_lcb, L2CAP_CMD_BLE_CREDIT_BASED_CONN_REQ_LEN,
-                            L2CAP_CMD_BLE_CREDIT_BASED_CONN_REQ, p_lcb->id);
+  p_buf =
+      l2cu_build_header(p_lcb, L2CAP_CMD_BLE_CREDIT_BASED_CONN_REQ_LEN,
+                        L2CAP_CMD_BLE_CREDIT_BASED_CONN_REQ, p_lcb->signal_id);
   if (p_buf == NULL) {
     L2CAP_TRACE_WARNING("l2cu_send_peer_ble_credit_based_conn_req - no buffer");
     return;
@@ -2802,13 +2804,13 @@ void l2cu_send_peer_ble_flow_control_credit(tL2C_CCB* p_ccb,
   p_lcb = p_ccb->p_lcb;
 
   /* Create an identifier for this packet */
-  p_ccb->p_lcb->id++;
+  p_ccb->p_lcb->signal_id++;
   l2cu_adj_id(p_ccb->p_lcb, L2CAP_ADJ_ID);
 
-  p_ccb->local_id = p_ccb->p_lcb->id;
+  p_ccb->local_id = p_ccb->p_lcb->signal_id;
 
   p_buf = l2cu_build_header(p_lcb, L2CAP_CMD_BLE_FLOW_CTRL_CREDIT_LEN,
-                            L2CAP_CMD_BLE_FLOW_CTRL_CREDIT, p_lcb->id);
+                            L2CAP_CMD_BLE_FLOW_CTRL_CREDIT, p_lcb->signal_id);
   if (p_buf == NULL) {
     L2CAP_TRACE_WARNING("l2cu_send_peer_ble_credit_based_conn_req - no buffer");
     return;
@@ -2843,12 +2845,12 @@ void l2cu_send_peer_ble_credit_based_disconn_req(tL2C_CCB* p_ccb) {
   p_lcb = p_ccb->p_lcb;
 
   /* Create an identifier for this packet */
-  p_ccb->p_lcb->id++;
+  p_ccb->p_lcb->signal_id++;
   l2cu_adj_id(p_ccb->p_lcb, L2CAP_ADJ_ID);
 
-  p_ccb->local_id = p_ccb->p_lcb->id;
+  p_ccb->local_id = p_ccb->p_lcb->signal_id;
   p_buf = l2cu_build_header(p_lcb, L2CAP_DISC_REQ_LEN, L2CAP_CMD_DISC_REQ,
-                            p_lcb->id);
+                            p_lcb->signal_id);
   if (p_buf == NULL) {
     L2CAP_TRACE_WARNING(
         "l2cu_send_peer_ble_credit_based_disconn_req - no buffer");

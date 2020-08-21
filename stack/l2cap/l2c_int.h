@@ -351,7 +351,7 @@ typedef struct t_l2c_linkcb {
   void SetLinkRoleAsMaster() { link_role_ = HCI_ROLE_MASTER; }
   void SetLinkRoleAsSlave() { link_role_ = HCI_ROLE_SLAVE; }
 
-  uint8_t id;
+  uint8_t signal_id;                /* Signalling channel id */
   uint8_t cur_echo_id;              /* Current id value for echo request */
   uint16_t idle_timeout;            /* Idle timeout */
  private:
