@@ -85,7 +85,7 @@ tL2C_LCB* l2cu_allocate_lcb(const RawAddress& p_bd_addr, bool is_bonding,
         l2cb.num_ble_links_active++;
         l2c_ble_link_adjust_allocation();
       } else {
-        l2cb.num_links_active++;
+        l2cb.num_used_lcbs++;
         l2c_link_adjust_allocation();
       }
       p_lcb->link_xmit_data_q = list_new(NULL);
@@ -193,7 +193,7 @@ void l2cu_release_lcb(tL2C_LCB* p_lcb) {
 
     l2c_ble_link_adjust_allocation();
   } else {
-    if (l2cb.num_links_active >= 1) l2cb.num_links_active--;
+    if (l2cb.num_used_lcbs >= 1) l2cb.num_used_lcbs--;
 
     l2c_link_adjust_allocation();
   }

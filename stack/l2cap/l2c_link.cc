@@ -599,7 +599,7 @@ void l2c_link_adjust_allocation(void) {
       (l2cb.num_lm_ble_bufs == L2C_DEF_NUM_BLE_BUF_SHARED) ? true : false;
 
   /* If no links active, reset buffer quotas and controller buffers */
-  if (l2cb.num_links_active == 0) {
+  if (l2cb.num_used_lcbs == 0) {
     l2cb.controller_xmit_window = l2cb.num_lm_acl_bufs;
     l2cb.round_robin_quota = l2cb.round_robin_unacked = 0;
     return;

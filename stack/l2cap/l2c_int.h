@@ -447,7 +447,7 @@ typedef struct {
   alarm_t* receive_hold_timer; /* Timer entry for rcv hold */
 
   tL2C_LCB* p_cur_hcit_lcb;  /* Current HCI Transport buffer */
-  uint16_t num_links_active; /* Number of links active */
+  uint16_t num_used_lcbs;    /* Number of active link control blocks */
 
   uint16_t non_flushable_pbf; /* L2CAP_PKT_START_NON_FLUSHABLE if controller
                                  supports */
