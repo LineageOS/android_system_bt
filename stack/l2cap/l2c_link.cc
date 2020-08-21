@@ -1020,8 +1020,8 @@ static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
   const uint16_t link_xmit_quota = p_lcb->link_xmit_quota;
   const tBT_TRANSPORT transport = p_lcb->transport;
 
-  if ((p_buf->len <= acl_packet_size_classic &&
-       (transport == BT_TRANSPORT_BR_EDR)) ||
+  if (((transport == BT_TRANSPORT_BR_EDR) &&
+       (p_buf->len <= acl_packet_size_classic)) ||
       ((transport == BT_TRANSPORT_LE) && (p_buf->len <= acl_packet_size_ble))) {
     if (link_xmit_quota == 0) {
       if (transport == BT_TRANSPORT_LE)
