@@ -375,7 +375,6 @@ typedef struct t_l2c_linkcb {
   bool partial_segment_being_sent; /* Set true when a partial segment */
                                    /* is being sent. */
   bool w4_info_rsp;                /* true when info request is active */
-  uint8_t info_rx_bits;            /* set 1 if received info type */
   uint32_t peer_ext_fea;           /* Peer's extended features mask */
   list_t* link_xmit_data_q;        /* Link transmit data buffer queue */
 
