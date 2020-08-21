@@ -1803,12 +1803,8 @@ uint16_t L2CA_FlushChannel(uint16_t lcid, uint16_t num_to_flush) {
        * controller */
       if (controller->supports_non_flushable_pb() &&
           (BTM_GetNumScoLinks() == 0)) {
-        if (!l2cb.is_flush_active) {
-          l2cb.is_flush_active = true;
-
-          /* The only packet type defined - 0 - Automatically-Flushable Only */
-          btsnd_hcic_enhanced_flush(p_lcb->handle, 0);
-        }
+        /* The only packet type defined - 0 - Automatically-Flushable Only */
+        btsnd_hcic_enhanced_flush(p_lcb->handle, 0);
       }
     }
 
