@@ -224,8 +224,9 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   void InternalEnforceSecurityPolicy(
       hci::AddressWithType remote,
       l2cap::classic::SecurityPolicy policy,
-      l2cap::classic::SecurityEnforcementInterface::ResultCallback result_callback,
-      bool try_meet_requirements);
+      l2cap::classic::SecurityEnforcementInterface::ResultCallback result_callback);
+  void UpdateLinkSecurityCondition(hci::AddressWithType remote);
+  bool IsSecurityRequirementSatisfied(hci::AddressWithType remote, l2cap::classic::SecurityPolicy policy);
   void ConnectionIsReadyStartPairing(LeFixedChannelEntry* stored_channel);
   void WipeLePairingHandler();
 
@@ -251,10 +252,11 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   std::optional<crypto_toolbox::Octet16> remote_oob_data_le_sc_r_;
   std::optional<FacadeDisconnectCallback> facade_disconnect_callback_;
 
-  std::unordered_map<
-      hci::AddressWithType,
-      std::pair<l2cap::classic::SecurityPolicy, l2cap::classic::SecurityEnforcementInterface::ResultCallback>>
-      enforce_security_policy_callback_map_;
+  struct PendingSecurityEnforcementEntry {
+    l2cap::classic::SecurityPolicy policy_;
+    l2cap::classic::SecurityEnforcementInterface::ResultCallback callback_;
+  };
+  std::unordered_map<hci::AddressWithType, PendingSecurityEnforcementEntry> enforce_security_policy_callback_map_;
 
   struct {
     hci::AddressWithType address_;
