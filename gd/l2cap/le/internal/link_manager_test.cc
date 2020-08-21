@@ -23,6 +23,7 @@
 #include "common/testing/bind_test_util.h"
 #include "hci/acl_manager_mock.h"
 #include "hci/address.h"
+#include "hci/le_advertising_manager_mock.h"
 #include "l2cap/cid.h"
 #include "l2cap/internal/parameter_provider_mock.h"
 #include "l2cap/le/fixed_channel_manager.h"
@@ -42,6 +43,7 @@ namespace {
 
 using hci::testing::MockAclManager;
 using hci::testing::MockLeAclConnection;
+using hci::testing::MockLeAdvertisingManager;
 using l2cap::internal::testing::MockParameterProvider;
 using ::testing::_;  // Matcher to any value
 using ::testing::ByMove;
@@ -91,6 +93,7 @@ class L2capLeLinkManagerTest : public ::testing::Test {
 TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl) {
   MockFixedChannelServiceManagerImpl mock_le_fixed_channel_service_manager;
   MockAclManager mock_acl_manager;
+  MockLeAdvertisingManager mock_le_advertising_manager;
   hci::AddressWithType address_with_type({{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                                          hci::AddressType::RANDOM_DEVICE_ADDRESS);
 
@@ -99,8 +102,14 @@ TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl) {
   os::Handler* hci_callback_handler = nullptr;
   EXPECT_CALL(mock_acl_manager, RegisterLeCallbacks(_, _))
       .WillOnce(DoAll(SaveArg<0>(&hci_le_connection_callbacks), SaveArg<1>(&hci_callback_handler)));
-  LinkManager le_link_manager(l2cap_handler_, &mock_acl_manager, &mock_le_fixed_channel_service_manager, nullptr,
-                              mock_parameter_provider_);
+  EXPECT_CALL(mock_le_advertising_manager, RegisterSetTerminatedCallback(_));
+  LinkManager le_link_manager(
+      l2cap_handler_,
+      &mock_acl_manager,
+      &mock_le_advertising_manager,
+      &mock_le_fixed_channel_service_manager,
+      nullptr,
+      mock_parameter_provider_);
   EXPECT_EQ(hci_le_connection_callbacks, &le_link_manager);
   EXPECT_EQ(hci_callback_handler, l2cap_handler_);
 
@@ -190,6 +199,7 @@ TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl) {
 TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl_with_no_service) {
   MockFixedChannelServiceManagerImpl mock_le_fixed_channel_service_manager;
   MockAclManager mock_acl_manager;
+  MockLeAdvertisingManager mock_le_advertising_manager;
   hci::AddressWithType address_with_type({{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                                          hci::AddressType::PUBLIC_DEVICE_ADDRESS);
 
@@ -198,8 +208,14 @@ TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl_with_no
   os::Handler* hci_callback_handler = nullptr;
   EXPECT_CALL(mock_acl_manager, RegisterLeCallbacks(_, _))
       .WillOnce(DoAll(SaveArg<0>(&hci_le_connection_callbacks), SaveArg<1>(&hci_callback_handler)));
-  LinkManager le_link_manager(l2cap_handler_, &mock_acl_manager, &mock_le_fixed_channel_service_manager, nullptr,
-                              mock_parameter_provider_);
+  EXPECT_CALL(mock_le_advertising_manager, RegisterSetTerminatedCallback(_));
+  LinkManager le_link_manager(
+      l2cap_handler_,
+      &mock_acl_manager,
+      &mock_le_advertising_manager,
+      &mock_le_fixed_channel_service_manager,
+      nullptr,
+      mock_parameter_provider_);
   EXPECT_EQ(hci_le_connection_callbacks, &le_link_manager);
   EXPECT_EQ(hci_callback_handler, l2cap_handler_);
 
@@ -223,6 +239,7 @@ TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl_with_no
 TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl_with_hci_failure) {
   MockFixedChannelServiceManagerImpl mock_le_fixed_channel_service_manager;
   MockAclManager mock_acl_manager;
+  MockLeAdvertisingManager mock_le_advertising_manager;
   hci::AddressWithType address_with_type({{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                                          hci::AddressType::RANDOM_DEVICE_ADDRESS);
 
@@ -231,8 +248,14 @@ TEST_F(L2capLeLinkManagerTest, connect_fixed_channel_service_without_acl_with_hc
   os::Handler* hci_callback_handler = nullptr;
   EXPECT_CALL(mock_acl_manager, RegisterLeCallbacks(_, _))
       .WillOnce(DoAll(SaveArg<0>(&hci_le_connection_callbacks), SaveArg<1>(&hci_callback_handler)));
-  LinkManager le_link_manager(l2cap_handler_, &mock_acl_manager, &mock_le_fixed_channel_service_manager, nullptr,
-                              mock_parameter_provider_);
+  EXPECT_CALL(mock_le_advertising_manager, RegisterSetTerminatedCallback(_));
+  LinkManager le_link_manager(
+      l2cap_handler_,
+      &mock_acl_manager,
+      &mock_le_advertising_manager,
+      &mock_le_fixed_channel_service_manager,
+      nullptr,
+      mock_parameter_provider_);
   EXPECT_EQ(hci_le_connection_callbacks, &le_link_manager);
   EXPECT_EQ(hci_callback_handler, l2cap_handler_);
 
@@ -267,6 +290,7 @@ TEST_F(L2capLeLinkManagerTest, not_acquiring_channels_should_disconnect_acl_afte
       .WillRepeatedly(Return(kTestIdleDisconnectTimeoutShort));
   MockFixedChannelServiceManagerImpl mock_le_fixed_channel_service_manager;
   MockAclManager mock_acl_manager;
+  MockLeAdvertisingManager mock_le_advertising_manager;
   hci::AddressWithType address_with_type({{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                                          hci::AddressType::RANDOM_DEVICE_ADDRESS);
 
@@ -275,8 +299,14 @@ TEST_F(L2capLeLinkManagerTest, not_acquiring_channels_should_disconnect_acl_afte
   os::Handler* hci_callback_handler = nullptr;
   EXPECT_CALL(mock_acl_manager, RegisterLeCallbacks(_, _))
       .WillOnce(DoAll(SaveArg<0>(&hci_le_connection_callbacks), SaveArg<1>(&hci_callback_handler)));
-  LinkManager le_link_manager(l2cap_handler_, &mock_acl_manager, &mock_le_fixed_channel_service_manager, nullptr,
-                              mock_parameter_provider_);
+  EXPECT_CALL(mock_le_advertising_manager, RegisterSetTerminatedCallback(_));
+  LinkManager le_link_manager(
+      l2cap_handler_,
+      &mock_acl_manager,
+      &mock_le_advertising_manager,
+      &mock_le_fixed_channel_service_manager,
+      nullptr,
+      mock_parameter_provider_);
   EXPECT_EQ(hci_le_connection_callbacks, &le_link_manager);
   EXPECT_EQ(hci_callback_handler, l2cap_handler_);
 
@@ -352,6 +382,7 @@ TEST_F(L2capLeLinkManagerTest, acquiring_channels_should_not_disconnect_acl_afte
       .WillRepeatedly(Return(kTestIdleDisconnectTimeoutShort));
   MockFixedChannelServiceManagerImpl mock_le_fixed_channel_service_manager;
   MockAclManager mock_acl_manager;
+  MockLeAdvertisingManager mock_le_advertising_manager;
   hci::AddressWithType address_with_type({{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                                          hci::AddressType::RANDOM_DEVICE_ADDRESS);
 
@@ -360,8 +391,14 @@ TEST_F(L2capLeLinkManagerTest, acquiring_channels_should_not_disconnect_acl_afte
   os::Handler* hci_callback_handler = nullptr;
   EXPECT_CALL(mock_acl_manager, RegisterLeCallbacks(_, _))
       .WillOnce(DoAll(SaveArg<0>(&hci_le_connection_callbacks), SaveArg<1>(&hci_callback_handler)));
-  LinkManager le_link_manager(l2cap_handler_, &mock_acl_manager, &mock_le_fixed_channel_service_manager, nullptr,
-                              mock_parameter_provider_);
+  EXPECT_CALL(mock_le_advertising_manager, RegisterSetTerminatedCallback(_));
+  LinkManager le_link_manager(
+      l2cap_handler_,
+      &mock_acl_manager,
+      &mock_le_advertising_manager,
+      &mock_le_fixed_channel_service_manager,
+      nullptr,
+      mock_parameter_provider_);
   EXPECT_EQ(hci_le_connection_callbacks, &le_link_manager);
   EXPECT_EQ(hci_callback_handler, l2cap_handler_);
 
@@ -439,6 +476,7 @@ TEST_F(L2capLeLinkManagerTest, acquiring_and_releasing_channels_should_eventuall
       .WillRepeatedly(Return(kTestIdleDisconnectTimeoutShort));
   MockFixedChannelServiceManagerImpl mock_le_fixed_channel_service_manager;
   MockAclManager mock_acl_manager;
+  MockLeAdvertisingManager mock_le_advertising_manager;
   hci::AddressWithType address_with_type({{0x01, 0x02, 0x03, 0x04, 0x05, 0x06}},
                                          hci::AddressType::PUBLIC_IDENTITY_ADDRESS);
 
@@ -447,8 +485,14 @@ TEST_F(L2capLeLinkManagerTest, acquiring_and_releasing_channels_should_eventuall
   os::Handler* hci_callback_handler = nullptr;
   EXPECT_CALL(mock_acl_manager, RegisterLeCallbacks(_, _))
       .WillOnce(DoAll(SaveArg<0>(&hci_le_connection_callbacks), SaveArg<1>(&hci_callback_handler)));
-  LinkManager le_link_manager(l2cap_handler_, &mock_acl_manager, &mock_le_fixed_channel_service_manager, nullptr,
-                              mock_parameter_provider_);
+  EXPECT_CALL(mock_le_advertising_manager, RegisterSetTerminatedCallback(_));
+  LinkManager le_link_manager(
+      l2cap_handler_,
+      &mock_acl_manager,
+      &mock_le_advertising_manager,
+      &mock_le_fixed_channel_service_manager,
+      nullptr,
+      mock_parameter_provider_);
   EXPECT_EQ(hci_le_connection_callbacks, &le_link_manager);
   EXPECT_EQ(hci_callback_handler, l2cap_handler_);
 

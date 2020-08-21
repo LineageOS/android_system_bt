@@ -174,7 +174,6 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     auto peer_address_type = connection_complete.GetPeerAddressType();
     auto peer_resolvable_address = connection_complete.GetPeerResolvablePrivateAddress();
     AddressWithType remote_address(address, peer_address_type);
-    AddressWithType local_address = le_address_manager_->GetCurrentAddress();
     if (!peer_resolvable_address.IsEmpty()) {
       remote_address = AddressWithType(peer_resolvable_address, AddressType::RANDOM_DEVICE_ADDRESS);
     }
@@ -194,6 +193,17 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
                                                 common::Unretained(le_client_callbacks_), remote_address, status));
       return;
     }
+
+    auto role = connection_complete.GetRole();
+    AddressWithType local_address;
+    if (role == hci::Role::MASTER) {
+      local_address = le_address_manager_->GetCurrentAddress();
+    } else {
+      // when accepting connection, we must obtain the address from the advertiser.
+      // When we receive "set terminated event", we associate connection handle with advertiser address
+      local_address = AddressWithType{};
+    }
+
     uint16_t conn_interval = connection_complete.GetConnInterval();
     uint16_t conn_latency = connection_complete.GetConnLatency();
     uint16_t supervision_timeout = connection_complete.GetSupervisionTimeout();
@@ -208,7 +218,6 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
                                 std::forward_as_tuple(remote_address, queue->GetDownEnd(), handler_));
     auto& connection_proxy = check_and_get_le_connection(handle);
     round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::LE, handle, queue);
-    auto role = connection_complete.GetRole();
     auto do_disconnect =
         common::BindOnce(&DisconnectorForLe::handle_disconnect, common::Unretained(disconnector_), handle);
     std::unique_ptr<LeAclConnection> connection(new LeAclConnection(std::move(queue), le_acl_connection_interface_,
