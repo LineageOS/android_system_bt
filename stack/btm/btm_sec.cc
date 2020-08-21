@@ -468,9 +468,7 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
     /* clear out the old setting, just in case it exists */
     {
       p_srec->security_flags &=
-          ~(BTM_SEC_OUT_ENCRYPT | BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_MITM |
-            BTM_SEC_FORCE_CENTRAL | BTM_SEC_ATTEMPT_CENTRAL |
-            BTM_SEC_FORCE_PERIPHERAL | BTM_SEC_ATTEMPT_PERIPHERAL);
+          ~(BTM_SEC_OUT_ENCRYPT | BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_MITM);
     }
 
     /* Parameter validation.  Originator should not set requirements for
@@ -498,8 +496,6 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
     {
       p_srec->security_flags &=
           ~(BTM_SEC_IN_ENCRYPT | BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_MITM |
-            BTM_SEC_FORCE_CENTRAL | BTM_SEC_ATTEMPT_CENTRAL |
-            BTM_SEC_FORCE_PERIPHERAL | BTM_SEC_ATTEMPT_PERIPHERAL |
             BTM_SEC_IN_MIN_16_DIGIT_PIN);
     }
 
@@ -4303,10 +4299,9 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec) {
   }
 
   /* All required  security procedures already established */
-  p_dev_rec->security_required &= ~(
-      BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_IN_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT |
-      BTM_SEC_IN_ENCRYPT | BTM_SEC_FORCE_CENTRAL | BTM_SEC_ATTEMPT_CENTRAL |
-      BTM_SEC_FORCE_PERIPHERAL | BTM_SEC_ATTEMPT_PERIPHERAL);
+  p_dev_rec->security_required &=
+      ~(BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_IN_AUTHENTICATE |
+        BTM_SEC_OUT_ENCRYPT | BTM_SEC_IN_ENCRYPT);
 
   BTM_TRACE_EVENT("Security Manager: access granted");
 
