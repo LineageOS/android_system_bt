@@ -326,8 +326,8 @@ BT_HDR* l2cu_build_header(tL2C_LCB* p_lcb, uint16_t len, uint8_t cmd,
  * Returns          void
  *
  ******************************************************************************/
-void l2cu_adj_id(tL2C_LCB* p_lcb, uint8_t adj_mask) {
-  if ((adj_mask & L2CAP_ADJ_ZERO_ID) && !p_lcb->signal_id) {
+void l2cu_adj_id(tL2C_LCB* p_lcb) {
+  if (p_lcb->signal_id == 0) {
     p_lcb->signal_id++;
   }
 }
@@ -391,7 +391,7 @@ void l2cu_send_peer_connect_req(tL2C_CCB* p_ccb) {
 
   /* Create an identifier for this packet */
   p_ccb->p_lcb->signal_id++;
-  l2cu_adj_id(p_ccb->p_lcb, L2CAP_ADJ_ID);
+  l2cu_adj_id(p_ccb->p_lcb);
 
   p_ccb->local_id = p_ccb->p_lcb->signal_id;
 
@@ -503,7 +503,7 @@ void l2cu_send_peer_config_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
 
   /* Create an identifier for this packet */
   p_ccb->p_lcb->signal_id++;
-  l2cu_adj_id(p_ccb->p_lcb, L2CAP_ADJ_ID);
+  l2cu_adj_id(p_ccb->p_lcb);
 
   p_ccb->local_id = p_ccb->p_lcb->signal_id;
 
@@ -815,7 +815,7 @@ void l2cu_send_peer_disc_req(tL2C_CCB* p_ccb) {
 
   /* Create an identifier for this packet */
   p_ccb->p_lcb->signal_id++;
-  l2cu_adj_id(p_ccb->p_lcb, L2CAP_ADJ_ID);
+  l2cu_adj_id(p_ccb->p_lcb);
 
   p_ccb->local_id = p_ccb->p_lcb->signal_id;
 
@@ -950,9 +950,9 @@ void l2cu_send_peer_info_req(tL2C_LCB* p_lcb, uint16_t info_type) {
   BT_HDR* p_buf;
   uint8_t* p;
 
-  /* check for wrap and/or BRCM ID */
+  /* Create an identifier for this packet */
   p_lcb->signal_id++;
-  l2cu_adj_id(p_lcb, L2CAP_ADJ_ID);
+  l2cu_adj_id(p_lcb);
 
   p_buf = l2cu_build_header(p_lcb, 2, L2CAP_CMD_INFO_REQ, p_lcb->signal_id);
   if (p_buf == NULL) {
@@ -2606,7 +2606,7 @@ void l2cu_send_peer_ble_par_req(tL2C_LCB* p_lcb, uint16_t min_int,
 
   /* Create an identifier for this packet */
   p_lcb->signal_id++;
-  l2cu_adj_id(p_lcb, L2CAP_ADJ_ID);
+  l2cu_adj_id(p_lcb);
 
   p_buf = l2cu_build_header(p_lcb, L2CAP_CMD_BLE_UPD_REQ_LEN,
                             L2CAP_CMD_BLE_UPDATE_REQ, p_lcb->signal_id);
@@ -2679,7 +2679,7 @@ void l2cu_send_peer_ble_credit_based_conn_req(tL2C_CCB* p_ccb) {
 
   /* Create an identifier for this packet */
   p_ccb->p_lcb->signal_id++;
-  l2cu_adj_id(p_ccb->p_lcb, L2CAP_ADJ_ID);
+  l2cu_adj_id(p_ccb->p_lcb);
 
   p_ccb->local_id = p_ccb->p_lcb->signal_id;
 
@@ -2805,7 +2805,7 @@ void l2cu_send_peer_ble_flow_control_credit(tL2C_CCB* p_ccb,
 
   /* Create an identifier for this packet */
   p_ccb->p_lcb->signal_id++;
-  l2cu_adj_id(p_ccb->p_lcb, L2CAP_ADJ_ID);
+  l2cu_adj_id(p_ccb->p_lcb);
 
   p_ccb->local_id = p_ccb->p_lcb->signal_id;
 
@@ -2846,7 +2846,7 @@ void l2cu_send_peer_ble_credit_based_disconn_req(tL2C_CCB* p_ccb) {
 
   /* Create an identifier for this packet */
   p_ccb->p_lcb->signal_id++;
-  l2cu_adj_id(p_ccb->p_lcb, L2CAP_ADJ_ID);
+  l2cu_adj_id(p_ccb->p_lcb);
 
   p_ccb->local_id = p_ccb->p_lcb->signal_id;
   p_buf = l2cu_build_header(p_lcb, L2CAP_DISC_REQ_LEN, L2CAP_CMD_DISC_REQ,
