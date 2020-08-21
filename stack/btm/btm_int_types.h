@@ -35,6 +35,8 @@
   (BTM_SEC_LE_AUTHENTICATED | BTM_SEC_LE_ENCRYPTED | \
    BTM_SEC_LE_LINK_KEY_KNOWN | BTM_SEC_LE_LINK_KEY_AUTHED)
 
+#define BTM_MAX_SCN_ 31  // PORT_MAX_RFC_PORTS system/bt/stack/include/rfcdefs.h
+
 /*
  * Define device configuration structure
 */
@@ -208,6 +210,7 @@ typedef struct {
   tBTM_BT_QUALITY_REPORT_RECEIVER* p_bqr_report_receiver;
 
   tACL_CB acl_cb_;
+  uint8_t btm_scn[BTM_MAX_SCN_];
 } tBTM_CB;
 
 /* security action for L2CAP COC channels */
