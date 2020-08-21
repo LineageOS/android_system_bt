@@ -66,7 +66,7 @@ tL2C_LCB* l2cu_allocate_lcb(const RawAddress& p_bd_addr, bool is_bonding,
       p_lcb->in_use = true;
       p_lcb->link_state = LST_DISCONNECTED;
       p_lcb->handle = HCI_INVALID_HANDLE;
-      p_lcb->link_flush_tout = 0xFFFF;
+      p_lcb->SetLinkFlushTimeout(L2CAP_NO_AUTOMATIC_FLUSH);
       p_lcb->l2c_lcb_timer = alarm_new("l2c_lcb.l2c_lcb_timer");
       p_lcb->info_resp_timer = alarm_new("l2c_lcb.info_resp_timer");
       p_lcb->idle_timeout = l2cb.idle_timeout;
@@ -1959,8 +1959,8 @@ void l2cu_process_our_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
       p_ccb->our_cfg.flush_to = p_cfg->flush_to;
       p_lcb = p_ccb->p_lcb;
 
-      if (p_cfg->flush_to < p_lcb->link_flush_tout) {
-        p_lcb->link_flush_tout = p_cfg->flush_to;
+      if (p_cfg->flush_to < p_lcb->LinkFlushTimeout()) {
+        p_lcb->SetLinkFlushTimeout(p_cfg->flush_to);
 
         /* If the timeout is within range of HCI, set the flush timeout */
         if (p_cfg->flush_to <= ((HCI_MAX_AUTOMATIC_FLUSH_TIMEOUT * 5) / 8)) {

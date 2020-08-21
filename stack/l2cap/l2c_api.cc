@@ -1245,8 +1245,8 @@ bool L2CA_SetFlushTimeout(const RawAddress& bd_addr, uint16_t flush_tout) {
     p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_BR_EDR);
 
     if ((p_lcb) && (p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTED)) {
-      if (p_lcb->link_flush_tout != flush_tout) {
-        p_lcb->link_flush_tout = flush_tout;
+      if (p_lcb->LinkFlushTimeout() != flush_tout) {
+        p_lcb->SetLinkFlushTimeout(flush_tout);
 
         VLOG(1) << __func__ << " BDA: " << bd_addr << " " << flush_tout << "ms";
 
@@ -1262,8 +1262,8 @@ bool L2CA_SetFlushTimeout(const RawAddress& bd_addr, uint16_t flush_tout) {
 
     for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
       if ((p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTED)) {
-        if (p_lcb->link_flush_tout != flush_tout) {
-          p_lcb->link_flush_tout = flush_tout;
+        if (p_lcb->LinkFlushTimeout() != flush_tout) {
+          p_lcb->SetLinkFlushTimeout(flush_tout);
 
           VLOG(1) << __func__ << " BDA: " << p_lcb->remote_bd_addr << " "
                   << flush_tout << "ms";
