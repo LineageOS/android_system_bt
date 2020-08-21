@@ -34,6 +34,7 @@
 #define LOG_TAG "btm_acl"
 
 #include <cstdint>
+
 #include "bta/include/bta_dm_acl.h"
 #include "bta/sys/bta_sys.h"
 #include "btif/include/btif_acl.h"
@@ -381,9 +382,7 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
       tBTM_PM_MCB* p_db = &btm_cb.acl_cb_.pm_mode_db[xx]; /* per ACL link */
       memset(p_db, 0, sizeof(tBTM_PM_MCB));
       p_db->state = BTM_PM_ST_ACTIVE;
-#if (BTM_PM_DEBUG == TRUE)
-      BTM_TRACE_DEBUG("btm_pm_sm_alloc ind:%d st:%d", xx, p_db->state);
-#endif  // BTM_PM_DEBUG
+      LOG_VERBOSE("btm_pm_sm_alloc ind:%d st:%d", xx, p_db->state);
 
       if (dc) memcpy(p->remote_dc, dc, DEV_CLASS_LEN);
 
@@ -2676,10 +2675,7 @@ int btm_pm_find_acl_ind(const RawAddress& remote_bda) {
   for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p++) {
     if (p->in_use && p->remote_addr == remote_bda &&
         p->transport == BT_TRANSPORT_BR_EDR) {
-#if (BTM_PM_DEBUG == TRUE)
-      BTM_TRACE_DEBUG("btm_pm_find_acl_ind ind:%d, st:%d", xx,
-                      btm_cb.pm_mode_db[xx].state);
-#endif  // BTM_PM_DEBUG
+      LOG_VERBOSE("btm_pm_find_acl_ind ind:%d", xx);
       break;
     }
   }

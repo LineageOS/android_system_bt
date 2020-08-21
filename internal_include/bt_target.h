@@ -389,11 +389,6 @@
 #define BTM_MAX_PM_RECORDS 2
 #endif
 
-/* This is set to show debug trace messages for the power manager. */
-#ifndef BTM_PM_DEBUG
-#define BTM_PM_DEBUG FALSE
-#endif
-
 /* If the user does not respond to security process requests within this many
  * seconds, a negative response would be sent automatically.
  * 30 is LMP response timeout value */
