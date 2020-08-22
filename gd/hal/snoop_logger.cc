@@ -95,7 +95,6 @@ void delete_btsnoop_files(const std::string& log_path) {
 
 }  // namespace
 
-std::string SnoopLogger::user_file_path_ = "";
 const std::string SnoopLogger::kBtSnoopLogModeDisabled = "disabled";
 const std::string SnoopLogger::kBtSnoopLogModeFiltered = "filtered";
 const std::string SnoopLogger::kBtSnoopLogModeFull = "full";
@@ -169,10 +168,6 @@ void SnoopLogger::OpenNextSnoopLogFile() {
   if (!btsnoop_ostream_.flush()) {
     LOG_ERROR("Failed to flush, error: \"%s\"", strerror(errno));
   }
-}
-
-void SnoopLogger::SetFilePath(std::string filename) {
-  user_file_path_ = std::move(filename);
 }
 
 void SnoopLogger::Capture(const HciPacket& packet, Direction direction, PacketType type) {
@@ -288,17 +283,9 @@ std::string SnoopLogger::GetBtSnoopMode() {
   return btsnoop_mode;
 }
 
-std::string SnoopLogger::GetLogPath() {
-  // Allow user override through SetFilePath() API
-  auto log_path = os::ParameterProvider::SnoopLogFilePath();
-  if (!user_file_path_.empty()) {
-    log_path = user_file_path_;
-  }
-  return log_path;
-}
-
-const ModuleFactory SnoopLogger::Factory =
-    ModuleFactory([]() { return new SnoopLogger(GetLogPath(), GetMaxPacketsPerFile(), GetBtSnoopMode()); });
+const ModuleFactory SnoopLogger::Factory = ModuleFactory([]() {
+  return new SnoopLogger(os::ParameterProvider::SnoopLogFilePath(), GetMaxPacketsPerFile(), GetBtSnoopMode());
+});
 
 }  // namespace hal
 }  // namespace bluetooth

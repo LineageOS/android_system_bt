@@ -14,28 +14,32 @@
  * limitations under the License.
  */
 
-#include "stack_manager.h"
-
 #include <netinet/in.h>
 #include <sys/socket.h>
 #include <sys/types.h>
 #include <unistd.h>
+
 #include <csignal>
 #include <cstring>
 #include <memory>
 #include <string>
 #include <thread>
 
-#include <client/linux/handler/exception_handler.h>
+#include "stack_manager.h"
 
+// clang-format off
+#include <client/linux/handler/exception_handler.h>
 #include <backtrace/Backtrace.h>
 #include <backtrace/backtrace_constants.h>
+// clang-format on
 
 #include "common/init_flags.h"
 #include "facade/grpc_root_server.h"
 #include "hal/hci_hal_host_rootcanal.h"
 #include "hal/snoop_logger.h"
 #include "os/log.h"
+#include "os/parameter_provider.h"
+#include "os/system_properties.h"
 
 using ::bluetooth::ModuleList;
 using ::bluetooth::StackManager;
@@ -101,7 +105,7 @@ int main(int argc, const char** argv) {
   const std::string arg_rootcanal_port = "--rootcanal-port=";
   const std::string arg_signal_port = "--signal-port=";
   const std::string arg_btsnoop_path = "--btsnoop=";
-  std::string btsnoop_path;
+  const std::string arg_btconfig_path = "--btconfig=";
   for (int i = 1; i < argc; i++) {
     std::string arg = argv[i];
     if (arg.find(arg_grpc_root_server_port) == 0) {
@@ -117,8 +121,14 @@ int main(int argc, const char** argv) {
       HciHalHostRootcanalConfig::Get()->SetPort(std::stoi(port_number));
     }
     if (arg.find(arg_btsnoop_path) == 0) {
-      btsnoop_path = arg.substr(arg_btsnoop_path.size());
-      ::bluetooth::hal::SnoopLogger::SetFilePath(btsnoop_path);
+      auto btsnoop_path = arg.substr(arg_btsnoop_path.size());
+      ::bluetooth::os::ParameterProvider::OverrideSnoopLogFilePath(btsnoop_path);
+      CHECK(::bluetooth::os::SetSystemProperty(
+          ::bluetooth::hal::SnoopLogger::kBtSnoopLogModeProperty, ::bluetooth::hal::SnoopLogger::kBtSnoopLogModeFull));
+    }
+    if (arg.find(arg_btconfig_path) == 0) {
+      auto btconfig_path = arg.substr(arg_btconfig_path.size());
+      ::bluetooth::os::ParameterProvider::OverrideConfigFilePath(btconfig_path);
     }
     if (arg.find(arg_signal_port) == 0) {
       auto port_number = arg.substr(arg_signal_port.size());
