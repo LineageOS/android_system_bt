@@ -1060,7 +1060,7 @@ static void l2c_link_send_to_lower_br_edr(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
 
     p_lcb->sent_not_acked += num_segs;
   }
-  bte_main_hci_send(p_buf, kDataPacketEventBrEdr);
+  acl_send_data_packet(p_buf, kDataPacketEventBrEdr);
   L2CAP_TRACE_DEBUG(
       "TotalWin=%d,Hndl=0x%x,Quota=%d,Unack=%d,RRQuota=%d,RRUnack=%d",
       l2cb.controller_xmit_window, p_lcb->handle, p_lcb->link_xmit_quota,
@@ -1112,8 +1112,7 @@ static void l2c_link_send_to_lower_ble(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
 
     p_lcb->sent_not_acked += num_segs;
   }
-  bte_main_hci_send(p_buf, kDataPacketEventBle);
-
+  acl_send_data_packet(p_buf, kDataPacketEventBle);
   L2CAP_TRACE_DEBUG(
       "TotalWin=%d,Hndl=0x%x,Quota=%d,Unack=%d,RRQuota=%d,RRUnack=%d",
       l2cb.controller_le_xmit_window, p_lcb->handle, p_lcb->link_xmit_quota,
