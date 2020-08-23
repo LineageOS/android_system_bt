@@ -2883,3 +2883,7 @@ void acl_accept_connection_request(const RawAddress& bd_addr, uint8_t role) {
 void acl_reject_connection_request(const RawAddress& bd_addr, uint8_t reason) {
   btsnd_hcic_reject_conn(bd_addr, reason);
 }
+
+void acl_send_data_packet(BT_HDR* p_buf, uint16_t flags) {
+  bte_main_hci_send(p_buf, flags);
+}
