@@ -1013,8 +1013,6 @@ void l2c_OnHciModeChangeSendPendingPackets(RawAddress remote) {
  ******************************************************************************/
 static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
                                    tL2C_TX_COMPLETE_CB_INFO* p_cbi) {
-  uint16_t num_segs;
-  uint16_t xmit_window, acl_data_size;
   const controller_t* controller = controller_get_interface();
 
   if ((p_buf->len <= controller->get_acl_packet_size_classic() &&
@@ -1039,6 +1037,8 @@ static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
       bte_main_hci_send(p_buf, BT_EVT_TO_LM_HCI_ACL);
     }
   } else {
+    uint16_t xmit_window{0};
+    uint16_t acl_data_size{0};
     if (p_lcb->transport == BT_TRANSPORT_LE) {
       acl_data_size = controller->get_acl_data_size_ble();
       xmit_window = l2cb.controller_le_xmit_window;
@@ -1047,8 +1047,9 @@ static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
       acl_data_size = controller->get_acl_data_size_classic();
       xmit_window = l2cb.controller_xmit_window;
     }
-    num_segs = (p_buf->len - HCI_DATA_PREAMBLE_SIZE + acl_data_size - 1) /
-               acl_data_size;
+    uint16_t num_segs =
+        (p_buf->len - HCI_DATA_PREAMBLE_SIZE + acl_data_size - 1) /
+        acl_data_size;
 
     /* If doing round-robin, then only 1 segment each time */
     if (p_lcb->link_xmit_quota == 0) {
