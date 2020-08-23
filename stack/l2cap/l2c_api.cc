@@ -1206,9 +1206,10 @@ inline uint32_t ConvertMillisecondsToBasebandSlots(uint32_t milliseconds) {
   return ((milliseconds * 8) + 3) / 5;
 }
 
-bool L2CA_SetFlushTimeout(const RawAddress& bd_addr, uint16_t flush_tout) {
+bool L2CA_SetFlushTimeout(const RawAddress& bd_addr,
+                          uint16_t flush_timeout_in_ms) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_SetFlushTimeout(bd_addr, flush_tout);
+    return bluetooth::shim::L2CA_SetFlushTimeout(bd_addr, flush_timeout_in_ms);
   }
 
   tL2C_LCB* p_lcb;
@@ -1216,29 +1217,29 @@ bool L2CA_SetFlushTimeout(const RawAddress& bd_addr, uint16_t flush_tout) {
   uint32_t temp;
 
   /* no automatic flush (infinite timeout) */
-  if (flush_tout == 0x0000) {
-    hci_flush_to = flush_tout;
-    flush_tout = L2CAP_NO_AUTOMATIC_FLUSH;
+  if (flush_timeout_in_ms == 0x0000) {
+    hci_flush_to = flush_timeout_in_ms;
+    flush_timeout_in_ms = L2CAP_NO_AUTOMATIC_FLUSH;
   }
   /* no retransmission */
-  else if (flush_tout == L2CAP_NO_RETRANSMISSION) {
+  else if (flush_timeout_in_ms == L2CAP_NO_RETRANSMISSION) {
     /* not mandatory range for controller */
     /* Packet is flushed before getting any ACK/NACK */
     /* To do this, flush timeout should be 1 baseband slot */
-    hci_flush_to = flush_tout;
+    hci_flush_to = flush_timeout_in_ms;
   }
   /* no automatic flush (infinite timeout) */
-  else if (flush_tout == L2CAP_NO_AUTOMATIC_FLUSH) {
+  else if (flush_timeout_in_ms == L2CAP_NO_AUTOMATIC_FLUSH) {
     hci_flush_to = 0x0000;
   } else {
     /* convert L2CAP flush_to to 0.625 ms units, with round */
-    temp = ConvertMillisecondsToBasebandSlots(flush_tout);
+    temp = ConvertMillisecondsToBasebandSlots(flush_timeout_in_ms);
 
     /* if L2CAP flush_to within range of HCI, set HCI flush timeout */
     if (temp > HCI_MAX_AUTOMATIC_FLUSH_TIMEOUT) {
       L2CAP_TRACE_WARNING(
           "WARNING L2CA_SetFlushTimeout timeout(0x%x) is out of range",
-          flush_tout);
+          flush_timeout_in_ms);
       return false;
     } else {
       hci_flush_to = (uint16_t)temp;
@@ -1249,10 +1250,11 @@ bool L2CA_SetFlushTimeout(const RawAddress& bd_addr, uint16_t flush_tout) {
     p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_BR_EDR);
 
     if ((p_lcb) && (p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTED)) {
-      if (p_lcb->LinkFlushTimeout() != flush_tout) {
-        p_lcb->SetLinkFlushTimeout(flush_tout);
+      if (p_lcb->LinkFlushTimeout() != flush_timeout_in_ms) {
+        p_lcb->SetLinkFlushTimeout(flush_timeout_in_ms);
 
-        VLOG(1) << __func__ << " BDA: " << bd_addr << " " << flush_tout << "ms";
+        VLOG(1) << __func__ << " BDA: " << bd_addr << " " << flush_timeout_in_ms
+                << "ms";
 
         btsnd_hcic_write_auto_flush_tout(p_lcb->handle, hci_flush_to);
       }
@@ -1266,11 +1268,11 @@ bool L2CA_SetFlushTimeout(const RawAddress& bd_addr, uint16_t flush_tout) {
 
     for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
       if ((p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTED)) {
-        if (p_lcb->LinkFlushTimeout() != flush_tout) {
-          p_lcb->SetLinkFlushTimeout(flush_tout);
+        if (p_lcb->LinkFlushTimeout() != flush_timeout_in_ms) {
+          p_lcb->SetLinkFlushTimeout(flush_timeout_in_ms);
 
           VLOG(1) << __func__ << " BDA: " << p_lcb->remote_bd_addr << " "
-                  << flush_tout << "ms";
+                  << flush_timeout_in_ms << "ms";
 
           btsnd_hcic_write_auto_flush_tout(p_lcb->handle, hci_flush_to);
         }
