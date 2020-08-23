@@ -143,9 +143,6 @@ void l2cu_release_lcb(tL2C_LCB* p_lcb) {
   alarm_free(p_lcb->info_resp_timer);
   p_lcb->info_resp_timer = NULL;
 
-  /* Release any unfinished L2CAP packet on this link */
-  osi_free_and_reset((void**)&p_lcb->p_hcit_rcv_acl);
-
   if (p_lcb->transport == BT_TRANSPORT_BR_EDR) /* Release all SCO links */
     BTM_RemoveSco(p_lcb->remote_bd_addr);
 
