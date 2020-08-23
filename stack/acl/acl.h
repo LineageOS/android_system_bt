@@ -33,6 +33,15 @@ enum btm_acl_encrypt_state_t {
   BTM_ACL_ENCRYPT_STATE_ENCRYPT_ON = 3,
 };
 
+enum btm_acl_swkey_state_t {
+  BTM_ACL_SWKEY_STATE_IDLE = 0,
+  BTM_ACL_SWKEY_STATE_MODE_CHANGE = 1,
+  BTM_ACL_SWKEY_STATE_ENCRYPTION_OFF = 2,
+  BTM_ACL_SWKEY_STATE_SWITCHING = 3,
+  BTM_ACL_SWKEY_STATE_ENCRYPTION_ON = 4,
+  BTM_ACL_SWKEY_STATE_IN_PROGRESS = 5,
+};
+
 /* Structure returned with Role Switch information (in tBTM_CMPL_CB callback
  * function) in response to BTM_SwitchRole call.
  */
@@ -90,7 +99,51 @@ typedef struct {
   uint8_t lmp_version;
   uint8_t num_read_pages;
   uint8_t switch_role_failed_attempts;
-  uint8_t switch_role_state;
+
+ private:
+  uint8_t switch_role_state_;
+
+ public:
+  void reset_switch_role() { switch_role_state_ = BTM_ACL_SWKEY_STATE_IDLE; }
+  void set_switch_role_changing() {
+    switch_role_state_ = BTM_ACL_SWKEY_STATE_MODE_CHANGE;
+  }
+  void set_switch_role_encryption_off() {
+    switch_role_state_ = BTM_ACL_SWKEY_STATE_ENCRYPTION_OFF;
+  }
+  void set_switch_role_encryption_on() {
+    switch_role_state_ = BTM_ACL_SWKEY_STATE_ENCRYPTION_ON;
+  }
+  void set_switch_role_in_progress() {
+    switch_role_state_ = BTM_ACL_SWKEY_STATE_IN_PROGRESS;
+  }
+  void set_switch_role_switching() {
+    switch_role_state_ = BTM_ACL_SWKEY_STATE_SWITCHING;
+  }
+
+  bool is_switch_role_idle() const {
+    return switch_role_state_ != BTM_ACL_SWKEY_STATE_IDLE;
+  }
+  bool is_switch_role_encryption_off() const {
+    return switch_role_state_ == BTM_ACL_SWKEY_STATE_ENCRYPTION_OFF;
+  }
+  bool is_switch_role_encryption_on() const {
+    return switch_role_state_ == BTM_ACL_SWKEY_STATE_ENCRYPTION_ON;
+  }
+  bool is_switch_role_switching() const {
+    return switch_role_state_ == BTM_ACL_SWKEY_STATE_SWITCHING;
+  }
+  bool is_switch_role_in_progress() const {
+    return switch_role_state_ == BTM_ACL_SWKEY_STATE_IN_PROGRESS;
+  }
+  bool is_switch_role_mode_change() const {
+    return switch_role_state_ == BTM_ACL_SWKEY_STATE_MODE_CHANGE;
+  }
+  bool is_switch_role_switching_or_in_progress() const {
+    return is_switch_role_switching() || is_switch_role_in_progress();
+  }
+
+ public:
   uint8_t sca; /* Sleep clock accuracy */
 } tACL_CONN;
 
