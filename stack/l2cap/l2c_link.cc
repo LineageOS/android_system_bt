@@ -1093,7 +1093,6 @@ static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
     }
   }
 
-#if (L2CAP_HCI_FLOW_CONTROL_DEBUG == TRUE)
   if (transport == BT_TRANSPORT_LE) {
     L2CAP_TRACE_DEBUG(
         "TotalWin=%d,Hndl=0x%x,Quota=%d,Unack=%d,RRQuota=%d,RRUnack=%d",
@@ -1107,7 +1106,6 @@ static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
         p_lcb->sent_not_acked, l2cb.round_robin_quota,
         l2cb.round_robin_unacked);
   }
-#endif
 
   if (p_cbi) l2cu_tx_complete(p_cbi);
 }
@@ -1201,7 +1199,6 @@ void l2c_link_process_num_completed_pkts(uint8_t* p, uint8_t evt_len) {
       }
     }
 
-#if (L2CAP_HCI_FLOW_CONTROL_DEBUG == TRUE)
     if (p_lcb) {
       if (p_lcb->transport == BT_TRANSPORT_LE) {
         L2CAP_TRACE_DEBUG(
@@ -1221,7 +1218,6 @@ void l2c_link_process_num_completed_pkts(uint8_t* p, uint8_t evt_len) {
           l2cb.controller_xmit_window, l2cb.controller_le_xmit_window, handle,
           l2cb.ble_check_round_robin, l2cb.ble_round_robin_unacked);
     }
-#endif
   }
 }
 
