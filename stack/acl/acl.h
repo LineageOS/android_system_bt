@@ -22,8 +22,16 @@
 #include "stack/include/bt_types.h"
 #include "stack/include/btm_api_types.h"
 #include "stack/include/hcidefs.h"
+#include "stack/include/hcimsgs.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
+
+enum btm_acl_encrypt_state_t {
+  BTM_ACL_ENCRYPT_STATE_IDLE = 0,
+  BTM_ACL_ENCRYPT_STATE_ENCRYPT_OFF = 1,
+  BTM_ACL_ENCRYPT_STATE_TEMP_FUNC = 2,
+  BTM_ACL_ENCRYPT_STATE_ENCRYPT_ON = 3,
+};
 
 /* Structure returned with Role Switch information (in tBTM_CMPL_CB callback
  * function) in response to BTM_SwitchRole call.
@@ -54,7 +62,30 @@ typedef struct {
   uint8_t active_remote_addr_type;
   uint8_t conn_addr_type;
   uint8_t disconnect_reason;
-  uint8_t encrypt_state;
+
+ private:
+  btm_acl_encrypt_state_t encrypt_state_;
+
+ public:
+  void set_encryption_off() {
+    if (encrypt_state_ != BTM_ACL_ENCRYPT_STATE_ENCRYPT_OFF) {
+      btsnd_hcic_set_conn_encrypt(hci_handle, false);
+      encrypt_state_ = BTM_ACL_ENCRYPT_STATE_ENCRYPT_OFF;
+    }
+  }
+  void set_encryption_on() {
+    if (encrypt_state_ != BTM_ACL_ENCRYPT_STATE_ENCRYPT_ON) {
+      btsnd_hcic_set_conn_encrypt(hci_handle, true);
+      encrypt_state_ = BTM_ACL_ENCRYPT_STATE_ENCRYPT_ON;
+    }
+  }
+  void set_encryption_idle() { encrypt_state_ = BTM_ACL_ENCRYPT_STATE_IDLE; }
+
+  void set_encryption_switching() {
+    encrypt_state_ = BTM_ACL_ENCRYPT_STATE_TEMP_FUNC;
+  }
+
+ public:
   uint8_t link_role;
   uint8_t lmp_version;
   uint8_t num_read_pages;

@@ -81,11 +81,6 @@ StackAclBtmAcl internal_;
 
 #define BTM_MAX_SW_ROLE_FAILED_ATTEMPTS 3
 
-#define BTM_ACL_ENCRYPT_STATE_IDLE 0
-#define BTM_ACL_ENCRYPT_STATE_ENCRYPT_OFF 1
-#define BTM_ACL_ENCRYPT_STATE_TEMP_FUNC 2
-#define BTM_ACL_ENCRYPT_STATE_ENCRYPT_ON 3
-
 extern tBTM_CB btm_cb;
 
 static void btm_acl_chk_peer_pkt_type_support(tACL_CONN* p,
@@ -632,11 +627,7 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
         ((p_dev_rec->sec_flags & BTM_SEC_ENCRYPTED) != 0) &&
         !BTM_EPR_AVAILABLE(p)) {
       /* bypass turning off encryption if change link key is already doing it */
-      if (p->encrypt_state != BTM_ACL_ENCRYPT_STATE_ENCRYPT_OFF) {
-        btsnd_hcic_set_conn_encrypt(p->hci_handle, false);
-        p->encrypt_state = BTM_ACL_ENCRYPT_STATE_ENCRYPT_OFF;
-      }
-
+      p->set_encryption_off();
       p->switch_role_state = BTM_ACL_SWKEY_STATE_ENCRYPTION_OFF;
     } else {
       btsnd_hcic_switch_role(remote_bd_addr, new_role);
@@ -681,10 +672,10 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
     /* if encryption turn off failed we still will try to switch role */
     if (encr_enable) {
       p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
-      p->encrypt_state = BTM_ACL_ENCRYPT_STATE_IDLE;
+      p->set_encryption_idle();
     } else {
       p->switch_role_state = BTM_ACL_SWKEY_STATE_SWITCHING;
-      p->encrypt_state = BTM_ACL_ENCRYPT_STATE_TEMP_FUNC;
+      p->set_encryption_switching();
     }
 
     btsnd_hcic_switch_role(p->remote_addr, (uint8_t)!p->link_role);
@@ -695,7 +686,7 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
   /* Finished enabling Encryption after role switch */
   else if (p->switch_role_state == BTM_ACL_SWKEY_STATE_ENCRYPTION_ON) {
     p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
-    p->encrypt_state = BTM_ACL_ENCRYPT_STATE_IDLE;
+    p->set_encryption_idle();
     auto new_role = btm_cb.acl_cb_.switch_role_ref_data.role;
     auto hci_status = btm_cb.acl_cb_.switch_role_ref_data.hci_status;
     BTA_dm_report_role_change(
@@ -1520,8 +1511,7 @@ void StackAclBtmAcl::btm_acl_role_changed(uint8_t hci_status,
   /* if switching state is switching we need to turn encryption on */
   /* if idle, we did not change encryption */
   if (p_acl->switch_role_state == BTM_ACL_SWKEY_STATE_SWITCHING) {
-    btsnd_hcic_set_conn_encrypt(p_acl->hci_handle, true);
-    p_acl->encrypt_state = BTM_ACL_ENCRYPT_STATE_ENCRYPT_ON;
+    p_acl->set_encryption_on();
     p_acl->switch_role_state = BTM_ACL_SWKEY_STATE_ENCRYPTION_ON;
     return;
   }
@@ -1530,7 +1520,7 @@ void StackAclBtmAcl::btm_acl_role_changed(uint8_t hci_status,
   /* regardless of its result either success or failed. */
   if (p_acl->switch_role_state == BTM_ACL_SWKEY_STATE_IN_PROGRESS) {
     p_acl->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
-    p_acl->encrypt_state = BTM_ACL_ENCRYPT_STATE_IDLE;
+    p_acl->set_encryption_idle();
   }
 
   BTA_dm_report_role_change(bd_addr, new_role, hci_status);
@@ -2270,8 +2260,7 @@ void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec) {
     if (p_dev_rec != NULL &&
         ((p_dev_rec->sec_flags & BTM_SEC_ENCRYPTED) != 0) &&
         !BTM_EPR_AVAILABLE(p)) {
-      btsnd_hcic_set_conn_encrypt(p->hci_handle, false);
-      p->encrypt_state = BTM_ACL_ENCRYPT_STATE_ENCRYPT_OFF;
+      p->set_encryption_off();
       if (p->switch_role_state == BTM_ACL_SWKEY_STATE_MODE_CHANGE)
         p->switch_role_state = BTM_ACL_SWKEY_STATE_ENCRYPTION_OFF;
     } else /* Encryption not used or EPR supported, continue with switch
