@@ -1277,7 +1277,6 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p,
       break;
 
     case HCI_READ_INQ_TX_POWER_LEVEL:
-      btm_read_inq_tx_power_complete(p);
       break;
 
     /* BLE Commands sComplete*/
