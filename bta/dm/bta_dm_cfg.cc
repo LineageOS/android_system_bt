@@ -122,7 +122,6 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_CFG
         {BTA_ID_CG, BTA_ALL_APP_ID, 1},     /* cg resue ct spec table */
         {BTA_ID_DG, BTA_ALL_APP_ID, 2},     /* dg spec table */
         {BTA_ID_AV, BTA_ALL_APP_ID, 4},     /* av spec table */
-        {BTA_ID_AVK, BTA_ALL_APP_ID, 13},   /* avk spec table */
         {BTA_ID_FTC, BTA_ALL_APP_ID, 7},    /* ftc spec table */
         {BTA_ID_FTS, BTA_ALL_APP_ID, 8},    /* fts spec table */
         {BTA_ID_HD, BTA_ALL_APP_ID, 3},     /* hd spec table */
