@@ -1567,7 +1567,7 @@ uint16_t L2CA_SendFixedChnlData(uint16_t fixed_cid, const RawAddress& rem_bda,
   l2c_enqueue_peer_data(p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL],
                         p_buf);
 
-  l2c_link_check_send_pkts(p_lcb, NULL, NULL);
+  l2c_link_check_send_pkts(p_lcb, 0, NULL);
 
   // If there is no dynamic CCB on the link, restart the idle timer each time
   // something is sent
