@@ -276,7 +276,7 @@ class HearingAidImpl : public HearingAid {
               instance->gatt_if = client_id;
               initCb.Run();
             },
-            initCb));
+            initCb), false);
   }
 
   uint16_t UpdateBleConnParams(const RawAddress& address) {
