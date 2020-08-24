@@ -44,9 +44,5 @@ std::string ParameterProvider::SnoopLogFilePath() {
   return std::string(cwd) + "/btsnoop_hci.log";
 }
 
-bool ParameterProvider::SnoopLogAlwaysFlush() {
-  return true;
-}
-
 }  // namespace os
 }  // namespace bluetooth
