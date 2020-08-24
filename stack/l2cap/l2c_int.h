@@ -380,7 +380,6 @@ typedef struct t_l2c_linkcb {
 
   uint8_t peer_chnl_mask[L2CAP_FIXED_CHNL_ARRAY_SIZE];
 
-  BT_HDR* p_hcit_rcv_acl;   /* Current HCIT ACL buf being rcvd */
   uint16_t idle_timeout_sv; /* Save current Idle timeout */
   uint8_t acl_priority;     /* L2C_PRIORITY_NORMAL or L2C_PRIORITY_HIGH */
   tL2CA_NOCP_CB* p_nocp_cb; /* Num Cmpl pkts callback */
