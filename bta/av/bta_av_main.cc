@@ -589,7 +589,7 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
 
         bta_ar_reg_avrc(
             UUID_SERVCLASS_AV_REM_CTRL_TARGET, "AV Remote Control Target", NULL,
-            p_bta_av_cfg->avrc_tg_cat, BTA_ID_AV,
+            p_bta_av_cfg->avrc_tg_cat,
             (bta_av_cb.features & BTA_AV_FEAT_BROWSE), profile_version);
       }
 
@@ -726,12 +726,12 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
          */
         if (profile_initialized == UUID_SERVCLASS_AUDIO_SOURCE) {
           bta_ar_reg_avrc(UUID_SERVCLASS_AV_REMOTE_CONTROL, NULL, NULL,
-                          p_bta_av_cfg->avrc_ct_cat, BTA_ID_AV,
+                          p_bta_av_cfg->avrc_ct_cat,
                           (bta_av_cb.features & BTA_AV_FEAT_BROWSE),
                           AVRC_REV_1_3);
         } else if (profile_initialized == UUID_SERVCLASS_AUDIO_SINK) {
           bta_ar_reg_avrc(UUID_SERVCLASS_AV_REMOTE_CONTROL, NULL, NULL,
-                          p_bta_av_cfg->avrc_ct_cat, BTA_ID_AV,
+                          p_bta_av_cfg->avrc_ct_cat,
                           (bta_av_cb.features & BTA_AV_FEAT_BROWSE),
                           AVRC_REV_1_6);
         }

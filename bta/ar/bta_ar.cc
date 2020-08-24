@@ -190,12 +190,11 @@ void bta_ar_dereg_avct() {
  *****************************************************************************/
 void bta_ar_reg_avrc(uint16_t service_uuid, const char* service_name,
                      const char* provider_name, uint16_t categories,
-                     tBTA_SYS_ID sys_id, bool browse_supported,
-                     uint16_t profile_version) {
-  uint8_t mask = bta_ar_id(sys_id);
+                     bool browse_supported, uint16_t profile_version) {
+  uint8_t mask = BTA_AR_AV_MASK;
   uint8_t temp[8], *p;
 
-  if (!mask || !categories) return;
+  if (!categories) return;
 
   if (service_uuid == UUID_SERVCLASS_AV_REM_CTRL_TARGET) {
     if (bta_ar_cb.sdp_tg_handle == 0) {
