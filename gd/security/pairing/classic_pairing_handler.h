@@ -98,6 +98,8 @@ class ClassicPairingHandler : public PairingHandler {
   std::string device_name_;
   bool is_cancelled_ = false;
 
+  bool has_gotten_io_cap_response_ = false;
+
   hci::ErrorCode last_status_ = hci::ErrorCode::UNKNOWN_HCI_COMMAND;
   bool locally_initiated_ = false;
   uint32_t passkey_ = 0;
