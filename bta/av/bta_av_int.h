@@ -215,7 +215,6 @@ typedef struct {
   BT_HDR hdr;
   tBTA_AV_CBACK* p_cback;
   tBTA_AV_FEAT features;
-  tBTA_SEC sec_mask;
 } tBTA_AV_API_ENABLE;
 
 /* data type for BTA_AV_API_REGISTER_EVT */
@@ -239,7 +238,6 @@ typedef struct {
   BT_HDR hdr;
   RawAddress bd_addr;
   bool use_rc;
-  tBTA_SEC sec_mask;
   tBTA_AV_RS_RES switch_res;
   uint16_t uuid; /* uuid of initiator */
 } tBTA_AV_API_OPEN;
@@ -470,7 +468,6 @@ struct tBTA_AV_SCB final {
   alarm_t* avrc_ct_timer;                   /* delay timer for AVRC CT */
   uint16_t l2c_cid;                         /* L2CAP channel ID */
   uint16_t stream_mtu;                      /* MTU of stream */
-  tBTA_SEC sec_mask;          /* security mask */
   uint8_t media_type;         /* Media type: AVDT_MEDIA_TYPE_* */
   bool cong;                  /* true if AVDTP congested */
   tBTA_AV_STATUS open_status; /* open failure status */
