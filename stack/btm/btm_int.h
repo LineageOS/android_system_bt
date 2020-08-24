@@ -95,6 +95,8 @@ extern tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr,
 
 extern void btm_pm_reset(void);
 
+extern void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data);
+
 /* Internal functions provided by btm_sco.cc
  *******************************************
 */
