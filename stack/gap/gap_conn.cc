@@ -441,40 +441,6 @@ int GAP_GetRxQueueCnt(uint16_t handle, uint32_t* p_rx_queue_count) {
   return (rc);
 }
 
-/*******************************************************************************
- *
- * Function         GAP_ConnBTRead
- *
- * Description      Bluetooth-aware applications will call this function after
- *                  receiving GAP_EVT_RXDATA event.
- *
- * Parameters:      handle      - Handle of the connection returned in the Open
- *                  pp_buf      - pointer to address of buffer with data,
- *
- * Returns          BT_PASS             - data read
- *                  GAP_ERR_BAD_HANDLE  - invalid handle
- *                  GAP_NO_DATA_AVAIL   - no data available
- *
- ******************************************************************************/
-uint16_t GAP_ConnBTRead(uint16_t gap_handle, BT_HDR** pp_buf) {
-  tGAP_CCB* p_ccb = gap_find_ccb_by_handle(gap_handle);
-  BT_HDR* p_buf;
-
-  if (!p_ccb) return (GAP_ERR_BAD_HANDLE);
-
-  p_buf = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->rx_queue);
-
-  if (p_buf) {
-    *pp_buf = p_buf;
-
-    p_ccb->rx_queue_size -= p_buf->len;
-    return (BT_PASS);
-  } else {
-    *pp_buf = NULL;
-    return (GAP_NO_DATA_AVAIL);
-  }
-}
-
 /* Try to write the queued data to l2ca. Return true on success, or if queue is
  * congested. False if error occured when writing. */
 static bool gap_try_write_queued_data(tGAP_CCB* p_ccb) {
@@ -536,67 +502,6 @@ uint16_t GAP_ConnWriteData(uint16_t gap_handle, BT_HDR* msg) {
   if (!gap_try_write_queued_data(p_ccb)) return GAP_ERR_BAD_STATE;
 
   return (BT_PASS);
-}
-
-/*******************************************************************************
- *
- * Function         GAP_ConnReconfig
- *
- * Description      Applications can call this function to reconfigure the
- *                  connection.
- *
- * Parameters:      handle      - Handle of the connection
- *                  p_cfg       - Pointer to new configuration
- *
- * Returns          BT_PASS                 - config process started
- *                  GAP_ERR_BAD_HANDLE      - invalid handle
- *
- ******************************************************************************/
-uint16_t GAP_ConnReconfig(uint16_t gap_handle, tL2CAP_CFG_INFO* p_cfg) {
-  tGAP_CCB* p_ccb = gap_find_ccb_by_handle(gap_handle);
-
-  if (!p_ccb) return (GAP_ERR_BAD_HANDLE);
-
-  p_ccb->cfg = *p_cfg;
-
-  if (p_ccb->con_state == GAP_CCB_STATE_CONNECTED)
-    L2CA_ConfigReq(p_ccb->connection_id, p_cfg);
-
-  return (BT_PASS);
-}
-
-/*******************************************************************************
- *
- * Function         GAP_ConnSetIdleTimeout
- *
- * Description      Higher layers call this function to set the idle timeout for
- *                  a connection, or for all future connections. The "idle
- *                  timeout" is the amount of time that a connection can remain
- *                  up with no L2CAP channels on it. A timeout of zero means
- *                  that the connection will be torn down immediately when the
- *                  last channel is removed. A timeout of 0xFFFF means no
- *                  timeout. Values are in seconds.
- *
- * Parameters:      handle      - Handle of the connection
- *                  timeout     - in secs
- *                                0 = immediate disconnect when last channel is
- *                                    removed
- *                                0xFFFF = no idle timeout
- *
- * Returns          BT_PASS                 - config process started
- *                  GAP_ERR_BAD_HANDLE      - invalid handle
- *
- ******************************************************************************/
-uint16_t GAP_ConnSetIdleTimeout(uint16_t gap_handle, uint16_t timeout) {
-  tGAP_CCB* p_ccb;
-
-  p_ccb = gap_find_ccb_by_handle(gap_handle);
-  if (p_ccb == NULL) return (GAP_ERR_BAD_HANDLE);
-
-  if (L2CA_SetIdleTimeout(p_ccb->connection_id, timeout, false))
-    return (BT_PASS);
-  else
-    return (GAP_ERR_BAD_HANDLE);
 }
 
 /*******************************************************************************
