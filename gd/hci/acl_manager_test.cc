@@ -419,12 +419,6 @@ class AclManagerNoCallbacksTest : public ::testing::Test {
     std::list<std::shared_ptr<LeAclConnection>> le_connections_;
     std::unique_ptr<std::promise<void>> le_connection_promise_;
   } mock_le_connection_callbacks_;
-
-  class MockLeConnectionManagementCallbacks : public LeConnectionManagementCallbacks {
-   public:
-    MOCK_METHOD(void, OnConnectionUpdate, (uint16_t, uint16_t, uint16_t), (override));
-    MOCK_METHOD(void, OnDisconnection, (ErrorCode), (override));
-  };
 };
 
 class AclManagerTest : public AclManagerNoCallbacksTest {
@@ -634,6 +628,7 @@ class AclManagerWithLeConnectionTest : public AclManagerTest {
     MOCK_METHOD1(OnDisconnection, void(ErrorCode reason));
     MOCK_METHOD3(OnConnectionUpdate,
                  void(uint16_t connection_interval, uint16_t connection_latency, uint16_t supervision_timeout));
+    MOCK_METHOD4(OnDataLengthChange, void(uint16_t tx_octets, uint16_t tx_time, uint16_t rx_octets, uint16_t rx_time));
   } mock_le_connection_management_callbacks_;
 };
 

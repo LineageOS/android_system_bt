@@ -28,6 +28,7 @@ class LeConnectionManagementCallbacks {
   virtual ~LeConnectionManagementCallbacks() = default;
   virtual void OnConnectionUpdate(uint16_t connection_interval, uint16_t connection_latency,
                                   uint16_t supervision_timeout) = 0;
+  virtual void OnDataLengthChange(uint16_t tx_octets, uint16_t tx_time, uint16_t rx_octets, uint16_t rx_time) = 0;
   virtual void OnDisconnection(ErrorCode reason) = 0;
 };
 
