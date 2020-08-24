@@ -55,9 +55,6 @@ using bluetooth::Uuid;
  *
  ******************************************************************************/
 void PAN_Register(tPAN_REGISTER* p_register) {
-  BTM_SetDiscoverability(BTM_GENERAL_DISCOVERABLE, 0, 0);
-  BTM_SetConnectability(BTM_CONNECTABLE, 0, 0);
-
   pan_register_with_bnep();
 
   if (!p_register) return;
