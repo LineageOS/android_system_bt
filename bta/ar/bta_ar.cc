@@ -77,8 +77,6 @@ static void bta_ar_avdt_cback(uint8_t handle, const RawAddress& bd_addr,
   /* route the AVDT registration callback to av or avk */
   if (bta_ar_cb.p_av_conn_cback)
     (*bta_ar_cb.p_av_conn_cback)(handle, bd_addr, event, p_data, scb_index);
-  if (bta_ar_cb.p_avk_conn_cback)
-    (*bta_ar_cb.p_avk_conn_cback)(handle, bd_addr, event, p_data, scb_index);
 }
 
 /*******************************************************************************
@@ -148,14 +146,6 @@ void bta_ar_dereg_avdt(tBTA_SYS_ID sys_id) {
  ******************************************************************************/
 void bta_ar_avdt_conn(tBTA_SYS_ID sys_id, const RawAddress& bd_addr,
                       uint8_t scb_index) {
-  uint8_t event = BTA_AR_AVDT_CONN_EVT;
-  tAVDT_CTRL data;
-
-  if (sys_id == BTA_ID_AV) {
-    if (bta_ar_cb.p_avk_conn_cback) {
-      (*bta_ar_cb.p_avk_conn_cback)(0, bd_addr, event, &data, scb_index);
-    }
-  }
 }
 
 /*******************************************************************************
