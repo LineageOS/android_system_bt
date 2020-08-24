@@ -117,7 +117,6 @@ const uint16_t BTM_EIR_UUID_LKUP_TBL[BTM_EIR_MAX_SERVICES] = {
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
 /******************************************************************************/
-static void btm_initiate_inquiry();
 void btm_clr_inq_result_flt(void);
 
 static uint8_t btm_convert_uuid_to_eir_service(uint16_t uuid16);
@@ -354,43 +353,6 @@ uint16_t BTM_ReadDiscoverability(uint16_t* p_window, uint16_t* p_interval) {
 
 /*******************************************************************************
  *
- * Function         BTM_CancelPeriodicInquiry
- *
- * Description      This function cancels a periodic inquiry
- *
- * Returns
- *                  BTM_NO_RESOURCES if could not allocate a message buffer
- *                  BTM_SUCCESS - if cancelling the periodic inquiry
- *                  BTM_WRONG_MODE if the device is not up.
- *
- ******************************************************************************/
-tBTM_STATUS BTM_CancelPeriodicInquiry(void) {
-  if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::BTM_CancelPeriodicInquiry();
-  }
-
-  tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
-  tBTM_STATUS status = BTM_SUCCESS;
-  BTM_TRACE_API("BTM_CancelPeriodicInquiry called");
-
-  /*** Make sure the device is ready ***/
-  if (!BTM_IsDeviceUp()) return (BTM_WRONG_MODE);
-
-  /* Only cancel if one is active */
-  if (btm_cb.btm_inq_vars.inq_active & BTM_PERIODIC_INQUIRY_ACTIVE) {
-    btm_cb.btm_inq_vars.inq_active = BTM_INQUIRY_INACTIVE;
-    btm_cb.btm_inq_vars.p_inq_results_cb = NULL;
-
-    btsnd_hcic_exit_per_inq();
-
-    p_inq->inq_counter++;
-  }
-
-  return (status);
-}
-
-/*******************************************************************************
- *
  * Function         BTM_SetConnectability
  *
  * Description      This function is called to set the device into or out of
@@ -503,9 +465,7 @@ uint16_t BTM_ReadConnectability(uint16_t* p_window, uint16_t* p_interval) {
  *                  state
  *
  * Returns          BTM_INQUIRY_INACTIVE if inactive (0)
- *                  BTM_LIMITED_INQUIRY_ACTIVE if a limted inquiry is active
  *                  BTM_GENERAL_INQUIRY_ACTIVE if a general inquiry is active
- *                  BTM_PERIODIC_INQUIRY_ACTIVE if a periodic inquiry is active
  *
  ******************************************************************************/
 uint16_t BTM_IsInquiryActive(void) {
@@ -538,8 +498,7 @@ void BTM_CancelInquiry(void) {
 
   /* Only cancel if not in periodic mode, otherwise the caller should call
    * BTM_CancelPeriodicMode */
-  if ((p_inq->inq_active & BTM_INQUIRY_ACTIVE_MASK) != 0 &&
-      (!(p_inq->inq_active & BTM_PERIODIC_INQUIRY_ACTIVE))) {
+  if ((p_inq->inq_active & BTM_INQUIRY_ACTIVE_MASK) != 0) {
     p_inq->inq_active = BTM_INQUIRY_INACTIVE;
     p_inq->state = BTM_INQ_INACTIVE_STATE;
     p_inq->p_inq_results_cb = NULL; /* Do not notify caller anymore */
@@ -604,8 +563,6 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   if (p_inq->inq_active) {
     LOG(ERROR) << __func__ << ": BTM_BUSY";
     return (BTM_BUSY);
-  } else {
-    p_inq->scan_type = INQ_GENERAL;
   }
 
   /*** Make sure the device is ready ***/
@@ -630,34 +587,26 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   BTM_TRACE_DEBUG("BTM_StartInquiry: p_inq->inq_active = 0x%02x",
                   p_inq->inq_active);
 
-  tBTM_STATUS status = BTM_CMD_STARTED;
-  /* start LE inquiry here if requested */
-  if ((p_inq->inqparms.mode & BTM_BLE_INQUIRY_MASK)) {
-    if (!controller_get_interface()->supports_ble()) {
-      LOG(ERROR) << __func__ << ": trying to do LE scan on a non-LE adapter";
-      p_inq->inqparms.mode &= ~BTM_BLE_INQUIRY_MASK;
-      status = BTM_ILLEGAL_VALUE;
-    } else {
-      /* BLE for now does not support filter condition for inquiry */
-      status = btm_ble_start_inquiry(
-          (uint8_t)(p_inq->inqparms.mode & BTM_BLE_INQUIRY_MASK),
-          p_inq->inqparms.duration);
-      if (status != BTM_CMD_STARTED) {
-        LOG(ERROR) << __func__ << ": Error Starting LE Inquiry";
-        p_inq->inqparms.mode &= ~BTM_BLE_INQUIRY_MASK;
-      }
-    }
-    p_inq->inqparms.mode &= ~BTM_BLE_INQUIRY_MASK;
+  if (controller_get_interface()->supports_ble()) {
+    btm_ble_start_inquiry(BTM_BLE_GENERAL_INQUIRY, p_inq->inqparms.duration);
+  }
+  p_inq->inqparms.mode &= ~BTM_BLE_INQUIRY_MASK;
 
-    BTM_TRACE_DEBUG("BTM_StartInquiry: mode = %02x", p_inq->inqparms.mode);
+  btm_acl_update_inquiry_status(BTM_INQUIRY_STARTED);
+
+  if (p_inq->inq_active & BTM_SSP_INQUIRY_ACTIVE) {
+    btm_process_inq_complete(BTM_NO_RESOURCES, BTM_GENERAL_INQUIRY);
+    return BTM_CMD_STARTED;
   }
 
-  /* we're done with this routine if BR/EDR inquiry is not desired. */
-  if ((p_inq->inqparms.mode & BTM_BR_INQUIRY_MASK) == BTM_INQUIRY_NONE) {
-    return status;
-  }
+  btm_clr_inq_result_flt();
 
-  btm_initiate_inquiry();
+  /* Allocate memory to hold bd_addrs responding */
+  p_inq->p_bd_db = (tINQ_BDADDR*)osi_calloc(BT_DEFAULT_BUFFER_SIZE);
+  p_inq->max_bd_entries =
+      (uint16_t)(BT_DEFAULT_BUFFER_SIZE / sizeof(tINQ_BDADDR));
+
+  btsnd_hcic_inquiry(general_inq_lap, p_inq->inqparms.duration, 0);
   return BTM_CMD_STARTED;
 }
 
@@ -871,8 +820,7 @@ void btm_inq_db_reset(void) {
 
     /* If not a periodic inquiry, the complete callback must be called to notify
      * caller */
-    if (temp_inq_active == BTM_LIMITED_INQUIRY_ACTIVE ||
-        temp_inq_active == BTM_GENERAL_INQUIRY_ACTIVE) {
+    if (temp_inq_active == BTM_GENERAL_INQUIRY_ACTIVE) {
       if (p_inq->p_inq_cmpl_cb) {
         num_responses = 0;
         (*p_inq->p_inq_cmpl_cb)(&num_responses);
@@ -937,8 +885,7 @@ void btm_inq_db_init(void) {
  *
  ******************************************************************************/
 void btm_inq_stop_on_ssp(void) {
-  uint8_t normal_active =
-      (BTM_GENERAL_INQUIRY_ACTIVE | BTM_LIMITED_INQUIRY_ACTIVE);
+  uint8_t normal_active = (BTM_GENERAL_INQUIRY_ACTIVE);
 
 #if (BTM_INQ_DEBUG == TRUE)
   BTM_TRACE_DEBUG(
@@ -948,9 +895,7 @@ void btm_inq_stop_on_ssp(void) {
 #endif
   if (btm_cb.btm_inq_vars.no_inc_ssp) {
     if (btm_cb.btm_inq_vars.state == BTM_INQ_ACTIVE_STATE) {
-      if (btm_cb.btm_inq_vars.inq_active & BTM_PERIODIC_INQUIRY_ACTIVE) {
-        BTM_CancelPeriodicInquiry();
-      } else if (btm_cb.btm_inq_vars.inq_active & normal_active) {
+      if (btm_cb.btm_inq_vars.inq_active & normal_active) {
         /* can not call BTM_CancelInquiry() here. We need to report inquiry
          * complete evt */
         btsnd_hcic_inq_cancel();
@@ -1044,8 +989,7 @@ bool btm_inq_find_bdaddr(const RawAddress& p_bda) {
   uint16_t xx;
 
   /* Don't bother searching, database doesn't exist or periodic mode */
-  if ((p_inq->inq_active & BTM_PERIODIC_INQUIRY_ACTIVE) || !p_db)
-    return (false);
+  if (!p_db) return (false);
 
   for (xx = 0; xx < p_inq->num_bd_entries; xx++, p_db++) {
     if (p_db->bd_addr == p_bda && p_db->inq_count == p_inq->inq_counter)
@@ -1124,66 +1068,6 @@ tINQ_DB_ENT* btm_inq_db_new(const RawAddress& p_bda) {
   p_old->in_use = true;
 
   return (p_old);
-}
-
-/*******************************************************************************
- *
- * Function         btm_initiate_inquiry
- *
- * Description      This function is called to start an inquiry or periodic
- *                  inquiry upon completion of the setting and/or clearing of
- *                  the inquiry filter.
- *
- * Inputs:          p_inq (btm_cb.btm_inq_vars) - pointer to saved inquiry
- *                                                information
- *                      mode - GENERAL or LIMITED inquiry
- *                      duration - length in 1.28 sec intervals
- *                                 (If '0', the inquiry is CANCELLED)
- *                      filter_cond_type - BTM_CLR_INQUIRY_FILTER,
- *                                         BTM_FILTER_COND_DEVICE_CLASS, or
- *                                         BTM_FILTER_COND_BD_ADDR
- *                      filter_cond - value for the filter
- *                                   (based on filter_cond_type)
- *
- * Returns          If an error occurs the initiator's callback is called with
- *                  the error status.
- *
- ******************************************************************************/
-static void btm_initiate_inquiry() {
-  const LAP* lap;
-  tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
-  tBTM_INQ_PARMS* p_inqparms = &p_inq->inqparms;
-
-  p_inq->state = BTM_INQ_ACTIVE_STATE;
-
-#if (BTM_INQ_DEBUG == TRUE)
-  BTM_TRACE_DEBUG("btm_initiate_inquiry: inq_active:0x%x state:%d",
-                  btm_cb.btm_inq_vars.inq_active, btm_cb.btm_inq_vars.state);
-#endif
-  btm_acl_update_inquiry_status(BTM_INQUIRY_STARTED);
-
-  if (p_inq->inq_active & BTM_SSP_INQUIRY_ACTIVE) {
-    btm_process_inq_complete(BTM_NO_RESOURCES,
-                             (uint8_t)(p_inqparms->mode & BTM_BR_INQUIRY_MASK));
-    return;
-  }
-
-  lap = (p_inq->inq_active & BTM_LIMITED_INQUIRY_ACTIVE) ? &limited_inq_lap
-                                                         : &general_inq_lap;
-
-  if (p_inq->inq_active & BTM_PERIODIC_INQUIRY_ACTIVE) {
-    btsnd_hcic_per_inq_mode(p_inq->per_max_delay, p_inq->per_min_delay, *lap,
-                            p_inqparms->duration, 0);
-  } else {
-    btm_clr_inq_result_flt();
-
-    /* Allocate memory to hold bd_addrs responding */
-    p_inq->p_bd_db = (tINQ_BDADDR*)osi_calloc(BT_DEFAULT_BUFFER_SIZE);
-    p_inq->max_bd_entries =
-        (uint16_t)(BT_DEFAULT_BUFFER_SIZE / sizeof(tINQ_BDADDR));
-
-    btsnd_hcic_inquiry(*lap, p_inqparms->duration, 0);
-  }
 }
 
 /*******************************************************************************
@@ -1444,8 +1328,7 @@ void btm_process_inq_complete(uint8_t status, uint8_t mode) {
 
     /* Notify caller that the inquiry has completed; (periodic inquiries do not
      * send completion events */
-    if (!(p_inq->inq_active & BTM_PERIODIC_INQUIRY_ACTIVE) &&
-        p_inq->inqparms.mode == 0) {
+    if (p_inq->inqparms.mode == 0) {
       btm_clear_all_pending_le_entry();
       p_inq->state = BTM_INQ_INACTIVE_STATE;
 
@@ -1471,11 +1354,6 @@ void btm_process_inq_complete(uint8_t status, uint8_t mode) {
 
       if (p_inq_cb) (p_inq_cb)((tBTM_INQUIRY_CMPL*)&p_inq->inq_cmpl_info);
     }
-  }
-  if (p_inq->inqparms.mode == 0 &&
-      p_inq->scan_type == INQ_GENERAL)  // this inquiry is complete
-  {
-    p_inq->scan_type = INQ_NONE;
   }
 #if (BTM_INQ_DEBUG == TRUE)
   BTM_TRACE_DEBUG("inq_active:0x%x state:%d", btm_cb.btm_inq_vars.inq_active,
@@ -1650,65 +1528,14 @@ void btm_inq_rmt_name_failed_cancelled(void) {
   BTM_TRACE_ERROR("btm_inq_rmt_name_failed_cancelled()  remname_active=%d",
                   btm_cb.btm_inq_vars.remname_active);
 
-  if (btm_cb.btm_inq_vars.remname_active)
+  if (btm_cb.btm_inq_vars.remname_active) {
     btm_process_remote_name(&btm_cb.btm_inq_vars.remname_bda, NULL, 0,
                             HCI_ERR_UNSPECIFIED);
-  else
-    btm_process_remote_name(NULL, NULL, 0, HCI_ERR_UNSPECIFIED);
+  }
 
   btm_sec_rmt_name_request_complete(NULL, NULL, HCI_ERR_UNSPECIFIED);
 }
 
-/*******************************************************************************
- *
- * Function         btm_read_inq_tx_power_timeout
- *
- * Description      Callback when reading the inquiry tx power times out.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_read_inq_tx_power_timeout(UNUSED_ATTR void* data) {
-  tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_inq_tx_power_cmpl_cb;
-  btm_cb.devcb.p_inq_tx_power_cmpl_cb = NULL;
-  if (p_cb) (*p_cb)((void*)NULL);
-}
-
-/*******************************************************************************
- *
- * Function         btm_read_inq_tx_power_complete
- *
- * Description      read inquiry tx power level complete callback function.
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_read_inq_tx_power_complete(uint8_t* p) {
-  tBTM_CMPL_CB* p_cb = btm_cb.devcb.p_inq_tx_power_cmpl_cb;
-  tBTM_INQ_TXPWR_RESULT result;
-
-  BTM_TRACE_DEBUG("%s", __func__);
-  alarm_cancel(btm_cb.devcb.read_inq_tx_power_timer);
-  btm_cb.devcb.p_inq_tx_power_cmpl_cb = NULL;
-
-  /* If there was a registered callback, call it */
-  if (p_cb) {
-    STREAM_TO_UINT8(result.hci_status, p);
-
-    if (result.hci_status == HCI_SUCCESS) {
-      result.status = BTM_SUCCESS;
-
-      STREAM_TO_UINT8(result.tx_power, p);
-      BTM_TRACE_EVENT(
-          "BTM INQ TX POWER Complete: tx_power %d, hci status 0x%02x",
-          result.tx_power, result.hci_status);
-    } else {
-      result.status = BTM_ERR_PROCESSING;
-    }
-
-    (*p_cb)(&result);
-  }
-}
 /*******************************************************************************
  *
  * Function         BTM_WriteEIR

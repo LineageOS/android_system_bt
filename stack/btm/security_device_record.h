@@ -92,11 +92,6 @@ typedef struct {
   tBTM_CMPL_CB* p_link_qual_cmpl_cb; /* Callback function to be called when  */
                                      /* read link quality function completes */
 
-  alarm_t* read_inq_tx_power_timer;
-  tBTM_CMPL_CB*
-      p_inq_tx_power_cmpl_cb; /* Callback function to be called when  */
-                              /* read inq tx power function completes  */
-
   alarm_t* read_tx_power_timer;     /* Read tx power timer */
   tBTM_CMPL_CB* p_tx_power_cmpl_cb; /* Callback function to be called       */
 
@@ -179,7 +174,6 @@ typedef struct {
   uint16_t inq_scan_period;
   uint16_t inq_scan_type;
   uint16_t page_scan_type; /* current page scan type */
-  tBTM_INQ_TYPE scan_type;
 
   RawAddress remname_bda; /* Name of bd addr for active remote name request */
 #define BTM_RMT_NAME_EXT 0x1 /* Initiated through API */
