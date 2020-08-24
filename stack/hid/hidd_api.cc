@@ -28,7 +28,6 @@
 #include <string.h>
 
 #include "bt_types.h"
-#include "bta/include/bta_api.h"
 #include "btm_api.h"
 #include "btu.h"
 #include "hidd_api.h"
@@ -90,19 +89,6 @@ tHID_STATUS HID_DevRegister(tHID_DEV_HOST_CALLBACK* host_cback) {
   if (hd_cb.reg_flag) return HID_ERR_ALREADY_REGISTERED;
 
   if (host_cback == NULL) return HID_ERR_INVALID_PARAM;
-
-  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_HIDD_SEC_CTRL,
-                                  BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT,
-                                  HID_PSM_CONTROL)) {
-    HIDD_TRACE_ERROR("Security Registration 1 failed");
-    return (HID_ERR_NO_RESOURCES);
-  }
-
-  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_HIDD_INTR, BTM_SEC_NONE,
-                                  HID_PSM_INTERRUPT)) {
-    HIDD_TRACE_ERROR("Security Registration 5 failed");
-    return (HID_ERR_NO_RESOURCES);
-  }
 
   /* Register with L2CAP */
   st = hidd_conn_reg();
