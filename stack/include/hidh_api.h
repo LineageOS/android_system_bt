@@ -203,18 +203,7 @@ extern void HID_HostInit(void);
  *
  * Returns         tHID_STATUS
  ******************************************************************************/
-extern tHID_STATUS HID_HostSetSecurityLevel(const char serv_name[]);
-
-/*******************************************************************************
- *
- * Function         hid_known_hid_device
- *
- * Description      This function checks if this device is  of type HID Device
- *
- * Returns          true if device exists else false
- *
- ******************************************************************************/
-bool hid_known_hid_device(const RawAddress& bd_addr);
+extern tHID_STATUS HID_HostSetSecurityLevel();
 
 /*******************************************************************************
  *

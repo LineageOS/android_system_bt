@@ -75,7 +75,7 @@ void bta_hh_api_enable(tBTA_HH_DATA* p_data) {
 
   memset(&bta_hh_cb, 0, sizeof(tBTA_HH_CB));
 
-  HID_HostSetSecurityLevel("");
+  HID_HostSetSecurityLevel();
 
   /* Register with L2CAP */
   if (HID_HostRegister(bta_hh_cback) == HID_SUCCESS) {
@@ -414,7 +414,7 @@ void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
     if (!p_cb->incoming_conn) {
       tHID_STATUS ret;
       /* set security level */
-      HID_HostSetSecurityLevel("");
+      HID_HostSetSecurityLevel();
 
       /* open HID connection */
       ret = HID_HostOpenDev(p_cb->hid_handle);
