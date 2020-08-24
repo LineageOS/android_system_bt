@@ -118,6 +118,9 @@ class DualModeController : public Device {
   // 7.1.6
   void Disconnect(CommandPacketView args);
 
+  // 7.1.7
+  void CreateConnectionCancel(CommandPacketView args);
+
   // 7.1.8
   void AcceptConnectionRequest(CommandPacketView args);
 
@@ -492,6 +495,21 @@ class DualModeController : public Device {
 
   // 7.8.77
   void LeSetPrivacyMode(CommandPacketView args);
+
+  // 7.8.96 - 7.8.110
+  void LeReadIsoTxSync(CommandPacketView packet_view);
+  void LeSetCigParameters(CommandPacketView packet_view);
+  void LeCreateCis(CommandPacketView packet_view);
+  void LeRemoveCig(CommandPacketView packet_view);
+  void LeAcceptCisRequest(CommandPacketView packet_view);
+  void LeRejectCisRequest(CommandPacketView packet_view);
+  void LeCreateBig(CommandPacketView packet_view);
+  void LeTerminateBig(CommandPacketView packet_view);
+  void LeBigCreateSync(CommandPacketView packet_view);
+  void LeBigTerminateSync(CommandPacketView packet_view);
+  void LeRequestPeerSca(CommandPacketView packet_view);
+  void LeSetupIsoDataPath(CommandPacketView packet_view);
+  void LeRemoveIsoDataPath(CommandPacketView packet_view);
 
   // Vendor-specific Commands
 
