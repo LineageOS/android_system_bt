@@ -52,6 +52,7 @@ typedef struct {
   uint16_t pkt_types_mask;
   uint8_t active_remote_addr_type;
   uint8_t conn_addr_type;
+  uint8_t disconnect_reason;
   uint8_t encrypt_state;
   uint8_t link_role;
   uint8_t lmp_version;
