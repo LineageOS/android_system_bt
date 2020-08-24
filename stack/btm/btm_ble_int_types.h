@@ -256,7 +256,6 @@ typedef struct {
 
   bool enabled;
 
-#if (BLE_PRIVACY_SPT == TRUE)
   bool mixed_mode;                   /* privacy 1.2 mixed mode is on or not */
   tBTM_PRIVACY_MODE privacy_mode;    /* privacy mode */
   uint8_t resolving_list_avail_size; /* resolving list available size */
@@ -264,7 +263,6 @@ typedef struct {
   tBTM_BLE_RL_STATE suspended_rl_state;     /* Suspended resolving list state */
   uint8_t* irk_list_mask; /* IRK list availability mask, up to max entry bits */
   tBTM_BLE_RL_STATE rl_state; /* Resolving list state */
-#endif
 
   /* current BLE link state */
   tBTM_BLE_STATE_MASK cur_states; /* bit mask of tBTM_BLE_STATE */

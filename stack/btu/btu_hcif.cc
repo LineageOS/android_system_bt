@@ -414,11 +414,9 @@ void btu_hcif_process_event(UNUSED_ATTR uint8_t controller_id, BT_HDR* p_msg) {
         case HCI_BLE_LTK_REQ_EVT: /* received only at slave device */
           btu_ble_proc_ltk_req(p);
           break;
-#if (BLE_PRIVACY_SPT == TRUE)
         case HCI_BLE_ENHANCED_CONN_COMPLETE_EVT:
           btm_ble_conn_complete(p, hci_evt_len, true);
           break;
-#endif
 #if (BLE_LLT_INCLUDED == TRUE)
         case HCI_BLE_RC_PARAM_REQ_EVT:
           btu_ble_rc_param_req_evt(p);
@@ -538,7 +536,6 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, uint8_t* p_cmd,
       const RawAddress* bd_addr_p = nullptr;
       if (initiator_filter_policy == 0x00) {
         bd_addr_p = &bd_addr;
-#if (BLE_PRIVACY_SPT == TRUE)
         if (peer_address_type == BLE_ADDR_PUBLIC_ID ||
             peer_address_type == BLE_ADDR_RANDOM_ID) {
           // if identity address is not matched, this address is invalid
@@ -547,7 +544,6 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, uint8_t* p_cmd,
             bd_addr_p = nullptr;
           }
         }
-#endif
       }
       if (initiator_filter_policy == 0x00 ||
           (cmd_status != HCI_SUCCESS && !is_cmd_status)) {
@@ -574,10 +570,8 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, uint8_t* p_cmd,
       const RawAddress* bd_addr_p = nullptr;
       if (initiator_filter_policy == 0x00) {
         bd_addr_p = &bd_addr;
-#if (BLE_PRIVACY_SPT == TRUE)
         // if identity address is not matched, this should be a static address
         btm_identity_addr_to_random_pseudo(&bd_addr, &peer_addr_type, false);
-#endif
       }
       if (initiator_filter_policy == 0x00 ||
           (cmd_status != HCI_SUCCESS && !is_cmd_status)) {
@@ -620,7 +614,6 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, uint8_t* p_cmd,
       // When peer_addr_type is 0xFF, bd_addr should be ignored per BT spec
       if (peer_addr_type != BLE_ADDR_ANONYMOUS) {
         bd_addr_p = &bd_addr;
-#if (BLE_PRIVACY_SPT == TRUE)
         bool addr_is_rpa = peer_addr_type == BLE_ADDR_RANDOM &&
                            BTM_BLE_IS_RESOLVE_BDA(bd_addr);
         // Only try to match identity address for pseudo if address is not RPA
@@ -628,7 +621,6 @@ static void btu_hcif_log_command_metrics(uint16_t opcode, uint8_t* p_cmd,
           // if identity address is not matched, this should be a static address
           btm_identity_addr_to_random_pseudo(&bd_addr, &peer_addr_type, false);
         }
-#endif
       }
       bluetooth::common::LogLinkLayerConnectionEvent(
           bd_addr_p, bluetooth::common::kUnknownConnectionHandle,
@@ -1326,7 +1318,6 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p,
       btm_ble_test_command_complete(p);
       break;
 
-#if (BLE_PRIVACY_SPT == TRUE)
     case HCI_BLE_ADD_DEV_RESOLVING_LIST:
       btm_ble_add_resolving_list_entry_complete(p, evt_len);
       break;
@@ -1347,7 +1338,6 @@ static void btu_hcif_hdl_command_complete(uint16_t opcode, uint8_t* p,
     case HCI_BLE_SET_ADDR_RESOLUTION_ENABLE:
     case HCI_BLE_SET_RAND_PRIV_ADDR_TIMOUT:
       break;
-#endif
     default:
       if ((opcode & HCI_GRP_VENDOR_SPECIFIC) == HCI_GRP_VENDOR_SPECIFIC)
         btm_vsc_complete(p, opcode, evt_len, (tBTM_VSC_CMPL_CB*)p_cplt_cback);
