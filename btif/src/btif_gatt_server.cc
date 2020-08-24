@@ -271,7 +271,7 @@ static bt_status_t btif_gatts_register_app(const Uuid& bt_uuid) {
   CHECK_BTGATT_INIT();
 
   return do_in_jni_thread(
-      Bind(&BTA_GATTS_AppRegister, bt_uuid, &btapp_gatts_cback));
+      Bind(&BTA_GATTS_AppRegister, bt_uuid, &btapp_gatts_cback, false));
 }
 
 static bt_status_t btif_gatts_unregister_app(int server_if) {

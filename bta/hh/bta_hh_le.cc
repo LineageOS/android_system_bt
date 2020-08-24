@@ -184,7 +184,7 @@ void bta_hh_le_enable(void) {
                             /* signal BTA call back event */
                             (*bta_hh_cb.p_cback)(BTA_HH_ENABLE_EVT, &bta_hh);
                           }
-                        }));
+                        }), false);
 }
 
 /*******************************************************************************

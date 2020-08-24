@@ -78,7 +78,7 @@ void BTA_GATTS_Disable(void) {
  *
  ******************************************************************************/
 void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid,
-                           tBTA_GATTS_CBACK* p_cback) {
+                           tBTA_GATTS_CBACK* p_cback, bool eatt_support) {
   tBTA_GATTS_API_REG* p_buf =
       (tBTA_GATTS_API_REG*)osi_malloc(sizeof(tBTA_GATTS_API_REG));
 
@@ -89,6 +89,7 @@ void BTA_GATTS_AppRegister(const bluetooth::Uuid& app_uuid,
   p_buf->hdr.event = BTA_GATTS_API_REG_EVT;
   p_buf->app_uuid = app_uuid;
   p_buf->p_cback = p_cback;
+  p_buf->eatt_support = eatt_support;
 
   bta_sys_sendmsg(p_buf);
 }
