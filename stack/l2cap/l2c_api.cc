@@ -1226,17 +1226,14 @@ bool L2CA_SetFlushTimeout(const RawAddress& bd_addr,
   if (flush_timeout_in_ms == 0x0000) {
     flush_timeout_in_slots = flush_timeout_in_ms;
     flush_timeout_in_ms = L2CAP_NO_AUTOMATIC_FLUSH;
-  }
-  /* no retransmission */
-  else if (flush_timeout_in_ms == L2CAP_NO_RETRANSMISSION) {
+  } else if (flush_timeout_in_ms == L2CAP_NO_AUTOMATIC_FLUSH) {
+    flush_timeout_in_slots = 0x0000;
+  } else if (flush_timeout_in_ms == L2CAP_NO_RETRANSMISSION) {
+    /* no retransmission */
     /* not mandatory range for controller */
     /* Packet is flushed before getting any ACK/NACK */
     /* To do this, flush timeout should be 1 baseband slot */
     flush_timeout_in_slots = flush_timeout_in_ms;
-  }
-  /* no automatic flush (infinite timeout) */
-  else if (flush_timeout_in_ms == L2CAP_NO_AUTOMATIC_FLUSH) {
-    flush_timeout_in_slots = 0x0000;
   } else {
     flush_timeout_in_slots =
         ConvertMillisecondsToBasebandSlots(flush_timeout_in_ms);
