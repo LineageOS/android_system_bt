@@ -2491,17 +2491,6 @@ void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr,
 
     p_dev_rec->link_key_not_sent = false;
     btm_send_link_key_notif(p_dev_rec);
-
-    /* If its not us who perform authentication, we should tell stackserver */
-    /* that some authentication has been completed                          */
-    /* This is required when different entities receive link notification and
-     * auth complete */
-    if (!(p_dev_rec->security_required & BTM_SEC_OUT_AUTHENTICATE)) {
-      if (btm_cb.api.p_auth_complete_callback)
-        (*btm_cb.api.p_auth_complete_callback)(
-            p_dev_rec->bd_addr, p_dev_rec->dev_class, p_dev_rec->sec_bd_name,
-            HCI_SUCCESS);
-    }
   }
 
   /* If this is a bonding procedure can disconnect the link now */
@@ -3767,11 +3756,6 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
     else
       res = false;
 
-    if (btm_cb.api.p_auth_complete_callback)
-      (*btm_cb.api.p_auth_complete_callback)(
-          p_dev_rec->bd_addr, p_dev_rec->dev_class, p_dev_rec->sec_bd_name,
-          HCI_SUCCESS);
-
     btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
 
     if (res) {
@@ -4086,19 +4070,6 @@ void btm_sec_link_key_notification(const RawAddress& p_bda,
                     p_dev_rec->rmt_io_caps, p_dev_rec->sec_flags,
                     p_dev_rec->dev_class[1])
     return;
-  }
-
-  /* If its not us who perform authentication, we should tell stackserver */
-  /* that some authentication has been completed                          */
-  /* This is required when different entities receive link notification and auth
-   * complete */
-  if (!(p_dev_rec->security_required & BTM_SEC_OUT_AUTHENTICATE)
-      /* for derived key, always send authentication callback for BR channel */
-      || ltk_derived_lk) {
-    if (btm_cb.api.p_auth_complete_callback)
-      (*btm_cb.api.p_auth_complete_callback)(
-          p_dev_rec->bd_addr, p_dev_rec->dev_class, p_dev_rec->sec_bd_name,
-          HCI_SUCCESS);
   }
 
 /* We will save link key only if the user authorized it - BTE report link key in
