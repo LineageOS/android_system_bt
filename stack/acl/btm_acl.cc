@@ -1327,8 +1327,8 @@ uint16_t BTM_GetNumAclLinks(void) {
  ******************************************************************************/
 uint16_t btm_get_acl_disc_reason_code(void) {
   uint8_t res = btm_cb.acl_cb_.acl_disc_reason;
-  BTM_TRACE_DEBUG("btm_get_acl_disc_reason_code");
-  return (res);
+  LOG_WARN("%s This API should require an address for per ACL basis", __func__);
+  return res;
 }
 
 /*******************************************************************************
@@ -2849,6 +2849,17 @@ void acl_accept_connection_request(const RawAddress& bd_addr, uint8_t role) {
 
 void acl_reject_connection_request(const RawAddress& bd_addr, uint8_t reason) {
   btsnd_hcic_reject_conn(bd_addr, reason);
+}
+
+void acl_disconnect(const RawAddress& bd_addr, tBT_TRANSPORT transport,
+                    uint8_t reason) {
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, transport);
+  if (p_acl == nullptr) {
+    LOG_WARN("%s Acl disconnect request for unknown device", __func__);
+    return;
+  }
+  p_acl->disconnect_reason = reason;
+  btsnd_hcic_disconnect(p_acl->hci_handle, reason);
 }
 
 void acl_send_data_packet(BT_HDR* p_buf, uint16_t flags) {
