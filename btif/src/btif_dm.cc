@@ -147,11 +147,6 @@ typedef struct {
 
 } btif_dm_local_key_cb_t;
 
-typedef struct {
-  RawAddress bd_addr;
-  BD_NAME bd_name;
-} btif_dm_remote_name_t;
-
 /* this structure holds optional OOB data for remote device */
 typedef struct {
   RawAddress bdaddr; /* peer bdaddr */
@@ -230,7 +225,6 @@ static void btif_stats_add_bond_event(const RawAddress& bd_addr,
 /******************************************************************************
  *  Externs
  *****************************************************************************/
-extern bt_status_t btif_av_execute_service(bool b_enable);
 extern bt_status_t btif_av_sink_execute_service(bool b_enable);
 extern bt_status_t btif_hh_execute_service(bool b_enable);
 extern bt_status_t btif_hf_client_execute_service(bool b_enable);
@@ -452,23 +446,6 @@ bool check_cod(const RawAddress* remote_bdaddr, uint32_t cod) {
 
 bool check_cod_hid(const RawAddress* remote_bdaddr) {
   return (get_cod(remote_bdaddr) & COD_HID_MASK) == COD_HID_MAJOR;
-}
-
-bool check_hid_le(const RawAddress* remote_bdaddr) {
-  uint32_t remote_dev_type;
-  bt_property_t prop_name;
-
-  /* check if we already have it in our btif_storage cache */
-  BTIF_STORAGE_FILL_PROPERTY(&prop_name, BT_PROPERTY_TYPE_OF_DEVICE,
-                             sizeof(uint32_t), &remote_dev_type);
-  if (btif_storage_get_remote_device_property(
-          (RawAddress*)remote_bdaddr, &prop_name) == BT_STATUS_SUCCESS) {
-    if (remote_dev_type == BT_DEVICE_DEVTYPE_BLE) {
-      if (btif_config_exist(remote_bdaddr->ToString().c_str(), "HidAppId"))
-        return true;
-    }
-  }
-  return false;
 }
 
 /*****************************************************************************
