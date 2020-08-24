@@ -1212,6 +1212,14 @@ bool L2CA_SetFlushTimeout(const RawAddress& bd_addr,
     return bluetooth::shim::L2CA_SetFlushTimeout(bd_addr, flush_timeout_in_ms);
   }
 
+  if ((flush_timeout_in_ms != L2CAP_NO_AUTOMATIC_FLUSH) &&
+      (ConvertMillisecondsToBasebandSlots(flush_timeout_in_ms) >
+       HCI_MAX_AUTOMATIC_FLUSH_TIMEOUT)) {
+    LOG_WARN("%s Unable to set flush timeout larger then controller capability",
+             __func__);
+    return false;
+  }
+
   uint16_t flush_timeout_in_slots{0};
 
   /* no automatic flush (infinite timeout) */
@@ -1230,18 +1238,8 @@ bool L2CA_SetFlushTimeout(const RawAddress& bd_addr,
   else if (flush_timeout_in_ms == L2CAP_NO_AUTOMATIC_FLUSH) {
     flush_timeout_in_slots = 0x0000;
   } else {
-    /* convert L2CAP flush_to to 0.625 ms units, with round */
-    uint32_t temp = ConvertMillisecondsToBasebandSlots(flush_timeout_in_ms);
-
-    /* if L2CAP flush_to within range of HCI, set HCI flush timeout */
-    if (temp > HCI_MAX_AUTOMATIC_FLUSH_TIMEOUT) {
-      L2CAP_TRACE_WARNING(
-          "WARNING L2CA_SetFlushTimeout timeout(0x%x) is out of range",
-          flush_timeout_in_ms);
-      return false;
-    } else {
-      flush_timeout_in_slots = (uint16_t)temp;
-    }
+    flush_timeout_in_slots =
+        ConvertMillisecondsToBasebandSlots(flush_timeout_in_ms);
   }
 
   if (RawAddress::kAny != bd_addr) {
