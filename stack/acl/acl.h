@@ -39,8 +39,6 @@ typedef struct {
 typedef struct {
   BD_FEATURES peer_le_features;
   BD_FEATURES peer_lmp_feature_pages[HCI_EXT_FEATURES_PAGE_MAX + 1];
-  BD_NAME remote_name;
-  DEV_CLASS remote_dc;
   RawAddress active_remote_addr;
   RawAddress conn_addr;
   RawAddress remote_addr;
@@ -114,9 +112,8 @@ typedef struct {
   friend void BTM_default_block_role_switch();
   friend void BTM_default_unblock_role_switch();
   friend void acl_set_disconnect_reason(uint8_t acl_disc_reason);
-  friend void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
-                              uint16_t hci_handle, uint8_t link_role,
-                              tBT_TRANSPORT transport);
+  friend void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
+                              uint8_t link_role, tBT_TRANSPORT transport);
   friend void btm_acl_device_down(void);
   friend void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
                                      uint8_t encr_enable);

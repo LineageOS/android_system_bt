@@ -342,7 +342,15 @@ typedef struct t_l2c_linkcb {
   alarm_t* info_resp_timer; /* Timer entry for info resp timeout evt */
   RawAddress remote_bd_addr; /* The BD address of the remote */
 
-  uint8_t link_role; /* Master or slave */
+ private:
+  uint8_t link_role_{HCI_ROLE_MASTER}; /* Master or slave */
+ public:
+  uint8_t LinkRole() const { return link_role_; }
+  bool IsLinkRoleMaster() const { return link_role_ == HCI_ROLE_MASTER; }
+  bool IsLinkRoleSlave() const { return link_role_ == HCI_ROLE_SLAVE; }
+  void SetLinkRoleAsMaster() { link_role_ = HCI_ROLE_MASTER; }
+  void SetLinkRoleAsSlave() { link_role_ = HCI_ROLE_SLAVE; }
+
   uint8_t id;
   uint8_t cur_echo_id;              /* Current id value for echo request */
   uint16_t idle_timeout;            /* Idle timeout */

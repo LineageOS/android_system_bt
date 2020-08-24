@@ -78,9 +78,6 @@ extern bool btm_inq_find_bdaddr(const RawAddress& p_bda);
  *******************************************
 */
 extern void btm_acl_init(void);
-extern void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
-                            uint16_t hci_handle, uint8_t link_role,
-                            tBT_TRANSPORT transport);
 extern void btm_acl_removed(const RawAddress& bda, tBT_TRANSPORT transport);
 extern void btm_acl_device_down(void);
 extern void btm_acl_set_paging(bool value);
