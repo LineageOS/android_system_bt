@@ -1030,13 +1030,9 @@ static void l2c_link_send_to_lower_br_edr(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
     p_buf->layer_specific = 0;
 
     l2cb.controller_xmit_window--;
-    bte_main_hci_send(p_buf, kDataPacketEventBrEdr);
   } else {
-    uint16_t xmit_window{0};
-    uint16_t acl_data_size{0};
-    acl_data_size = acl_packet_size_classic;
-    xmit_window = l2cb.controller_xmit_window;
-
+    uint16_t xmit_window = l2cb.controller_xmit_window;
+    uint16_t acl_data_size = acl_packet_size_classic;
     uint16_t num_segs =
         (p_buf->len - HCI_DATA_PREAMBLE_SIZE + acl_data_size - 1) /
         acl_data_size;
@@ -1063,8 +1059,8 @@ static void l2c_link_send_to_lower_br_edr(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
     if (p_lcb->link_xmit_quota == 0) l2cb.round_robin_unacked += num_segs;
 
     p_lcb->sent_not_acked += num_segs;
-    bte_main_hci_send(p_buf, kDataPacketEventBrEdr);
   }
+  bte_main_hci_send(p_buf, kDataPacketEventBrEdr);
   L2CAP_TRACE_DEBUG(
       "TotalWin=%d,Hndl=0x%x,Quota=%d,Unack=%d,RRQuota=%d,RRUnack=%d",
       l2cb.controller_xmit_window, p_lcb->handle, p_lcb->link_xmit_quota,
@@ -1085,12 +1081,9 @@ static void l2c_link_send_to_lower_ble(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
     p_buf->layer_specific = 0;
 
     l2cb.controller_le_xmit_window--;
-    bte_main_hci_send(p_buf, kDataPacketEventBle);
   } else {
-    uint16_t xmit_window{0};
-    uint16_t acl_data_size{0};
-    acl_data_size = acl_packet_size_ble;
-    xmit_window = l2cb.controller_le_xmit_window;
+    uint16_t xmit_window = l2cb.controller_le_xmit_window;
+    uint16_t acl_data_size = acl_packet_size_ble;
 
     uint16_t num_segs =
         (p_buf->len - HCI_DATA_PREAMBLE_SIZE + acl_data_size - 1) /
@@ -1118,8 +1111,8 @@ static void l2c_link_send_to_lower_ble(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
     if (p_lcb->link_xmit_quota == 0) l2cb.ble_round_robin_unacked += num_segs;
 
     p_lcb->sent_not_acked += num_segs;
-    bte_main_hci_send(p_buf, kDataPacketEventBle);
   }
+  bte_main_hci_send(p_buf, kDataPacketEventBle);
 
   L2CAP_TRACE_DEBUG(
       "TotalWin=%d,Hndl=0x%x,Quota=%d,Unack=%d,RRQuota=%d,RRUnack=%d",
