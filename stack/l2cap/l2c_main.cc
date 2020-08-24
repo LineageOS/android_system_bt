@@ -325,7 +325,7 @@ static void process_l2cap_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
            * we will ignore it and let a higher protocol timeout take care of it
            */
           L2CAP_TRACE_WARNING("L2CAP - MTU rej Handle: %d MTU: %d",
-                              p_lcb->handle, rej_mtu);
+                              p_lcb->Handle(), rej_mtu);
         }
         if (rej_reason == L2CAP_CMD_REJ_INVALID_CID) {
           uint16_t lcid, rcid;
@@ -395,10 +395,10 @@ static void process_l2cap_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
 
         if (p_rcb->psm == BT_PSM_RFCOMM) {
           btsnoop_get_interface()->add_rfc_l2c_channel(
-              p_lcb->handle, p_ccb->local_cid, p_ccb->remote_cid);
+              p_lcb->Handle(), p_ccb->local_cid, p_ccb->remote_cid);
         } else if (p_rcb->log_packets) {
           btsnoop_get_interface()->whitelist_l2c_channel(
-              p_lcb->handle, p_ccb->local_cid, p_ccb->remote_cid);
+              p_lcb->Handle(), p_ccb->local_cid, p_ccb->remote_cid);
         }
 
         l2c_csm_execute(p_ccb, L2CEVT_L2CAP_CONNECT_REQ, &con_info);
@@ -435,10 +435,10 @@ static void process_l2cap_cmd(tL2C_LCB* p_lcb, uint8_t* p, uint16_t pkt_len) {
         tL2C_RCB* p_rcb = p_ccb->p_rcb;
         if (p_rcb->psm == BT_PSM_RFCOMM) {
           btsnoop_get_interface()->add_rfc_l2c_channel(
-              p_lcb->handle, p_ccb->local_cid, p_ccb->remote_cid);
+              p_lcb->Handle(), p_ccb->local_cid, p_ccb->remote_cid);
         } else if (p_rcb->log_packets) {
           btsnoop_get_interface()->whitelist_l2c_channel(
-              p_lcb->handle, p_ccb->local_cid, p_ccb->remote_cid);
+              p_lcb->Handle(), p_ccb->local_cid, p_ccb->remote_cid);
         }
 
         break;
