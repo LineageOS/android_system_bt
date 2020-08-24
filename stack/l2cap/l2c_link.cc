@@ -1018,45 +1018,25 @@ constexpr uint16_t kDataPacketEventBle =
 static void l2c_link_send_to_lower_br_edr(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
   const uint16_t acl_packet_size_classic =
       controller_get_interface()->get_acl_packet_size_classic();
-  const uint16_t acl_packet_size_ble =
-      controller_get_interface()->get_acl_packet_size_ble();
   const uint16_t link_xmit_quota = p_lcb->link_xmit_quota;
-  const tBT_TRANSPORT transport = p_lcb->transport;
-
   const bool is_bdr_and_fits_in_buffer =
-      (transport == BT_TRANSPORT_BR_EDR &&
-       (p_buf->len <= acl_packet_size_classic));
-  const bool is_ble_and_fits_in_buffer =
-      (transport == BT_TRANSPORT_LE && (p_buf->len <= acl_packet_size_ble));
+      (p_buf->len <= acl_packet_size_classic);
 
-  if (is_bdr_and_fits_in_buffer || is_ble_and_fits_in_buffer) {
+  if (is_bdr_and_fits_in_buffer) {
     if (link_xmit_quota == 0) {
-      if (transport == BT_TRANSPORT_LE)
-        l2cb.ble_round_robin_unacked++;
-      else
-        l2cb.round_robin_unacked++;
+      l2cb.round_robin_unacked++;
     }
     p_lcb->sent_not_acked++;
     p_buf->layer_specific = 0;
 
-    if (transport == BT_TRANSPORT_LE) {
-      l2cb.controller_le_xmit_window--;
-      bte_main_hci_send(p_buf, kDataPacketEventBle);
-    } else {
-      l2cb.controller_xmit_window--;
-      bte_main_hci_send(p_buf, kDataPacketEventBrEdr);
-    }
+    l2cb.controller_xmit_window--;
+    bte_main_hci_send(p_buf, kDataPacketEventBrEdr);
   } else {
     uint16_t xmit_window{0};
     uint16_t acl_data_size{0};
-    if (transport == BT_TRANSPORT_LE) {
-      acl_data_size = acl_packet_size_ble;
-      xmit_window = l2cb.controller_le_xmit_window;
+    acl_data_size = acl_packet_size_classic;
+    xmit_window = l2cb.controller_xmit_window;
 
-    } else {
-      acl_data_size = acl_packet_size_classic;
-      xmit_window = l2cb.controller_xmit_window;
-    }
     uint16_t num_segs =
         (p_buf->len - HCI_DATA_PREAMBLE_SIZE + acl_data_size - 1) /
         acl_data_size;
@@ -1079,79 +1059,39 @@ static void l2c_link_send_to_lower_br_edr(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
     }
 
     p_buf->layer_specific = num_segs;
-    if (transport == BT_TRANSPORT_LE) {
-      l2cb.controller_le_xmit_window -= num_segs;
-      if (p_lcb->link_xmit_quota == 0) l2cb.ble_round_robin_unacked += num_segs;
-    } else {
-      l2cb.controller_xmit_window -= num_segs;
-      if (p_lcb->link_xmit_quota == 0) l2cb.round_robin_unacked += num_segs;
-    }
+    l2cb.controller_xmit_window -= num_segs;
+    if (p_lcb->link_xmit_quota == 0) l2cb.round_robin_unacked += num_segs;
 
     p_lcb->sent_not_acked += num_segs;
-    if (transport == BT_TRANSPORT_LE) {
-      bte_main_hci_send(p_buf, kDataPacketEventBle);
-    } else {
-      bte_main_hci_send(p_buf, kDataPacketEventBrEdr);
-    }
+    bte_main_hci_send(p_buf, kDataPacketEventBrEdr);
   }
-
-  if (transport == BT_TRANSPORT_LE) {
-    L2CAP_TRACE_DEBUG(
-        "TotalWin=%d,Hndl=0x%x,Quota=%d,Unack=%d,RRQuota=%d,RRUnack=%d",
-        l2cb.controller_le_xmit_window, p_lcb->handle, p_lcb->link_xmit_quota,
-        p_lcb->sent_not_acked, l2cb.ble_round_robin_quota,
-        l2cb.ble_round_robin_unacked);
-  } else {
-    L2CAP_TRACE_DEBUG(
-        "TotalWin=%d,Hndl=0x%x,Quota=%d,Unack=%d,RRQuota=%d,RRUnack=%d",
-        l2cb.controller_xmit_window, p_lcb->handle, p_lcb->link_xmit_quota,
-        p_lcb->sent_not_acked, l2cb.round_robin_quota,
-        l2cb.round_robin_unacked);
-  }
+  L2CAP_TRACE_DEBUG(
+      "TotalWin=%d,Hndl=0x%x,Quota=%d,Unack=%d,RRQuota=%d,RRUnack=%d",
+      l2cb.controller_xmit_window, p_lcb->handle, p_lcb->link_xmit_quota,
+      p_lcb->sent_not_acked, l2cb.round_robin_quota, l2cb.round_robin_unacked);
 }
 
 static void l2c_link_send_to_lower_ble(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
-  const uint16_t acl_packet_size_classic =
-      controller_get_interface()->get_acl_packet_size_classic();
   const uint16_t acl_packet_size_ble =
       controller_get_interface()->get_acl_packet_size_ble();
   const uint16_t link_xmit_quota = p_lcb->link_xmit_quota;
-  const tBT_TRANSPORT transport = p_lcb->transport;
+  const bool is_ble_and_fits_in_buffer = (p_buf->len <= acl_packet_size_ble);
 
-  const bool is_bdr_and_fits_in_buffer =
-      (transport == BT_TRANSPORT_BR_EDR &&
-       (p_buf->len <= acl_packet_size_classic));
-  const bool is_ble_and_fits_in_buffer =
-      (transport == BT_TRANSPORT_LE && (p_buf->len <= acl_packet_size_ble));
-
-  if (is_bdr_and_fits_in_buffer || is_ble_and_fits_in_buffer) {
+  if (is_ble_and_fits_in_buffer) {
     if (link_xmit_quota == 0) {
-      if (transport == BT_TRANSPORT_LE)
-        l2cb.ble_round_robin_unacked++;
-      else
-        l2cb.round_robin_unacked++;
+      l2cb.ble_round_robin_unacked++;
     }
     p_lcb->sent_not_acked++;
     p_buf->layer_specific = 0;
 
-    if (transport == BT_TRANSPORT_LE) {
-      l2cb.controller_le_xmit_window--;
-      bte_main_hci_send(p_buf, kDataPacketEventBle);
-    } else {
-      l2cb.controller_xmit_window--;
-      bte_main_hci_send(p_buf, kDataPacketEventBrEdr);
-    }
+    l2cb.controller_le_xmit_window--;
+    bte_main_hci_send(p_buf, kDataPacketEventBle);
   } else {
     uint16_t xmit_window{0};
     uint16_t acl_data_size{0};
-    if (transport == BT_TRANSPORT_LE) {
-      acl_data_size = acl_packet_size_ble;
-      xmit_window = l2cb.controller_le_xmit_window;
+    acl_data_size = acl_packet_size_ble;
+    xmit_window = l2cb.controller_le_xmit_window;
 
-    } else {
-      acl_data_size = acl_packet_size_classic;
-      xmit_window = l2cb.controller_xmit_window;
-    }
     uint16_t num_segs =
         (p_buf->len - HCI_DATA_PREAMBLE_SIZE + acl_data_size - 1) /
         acl_data_size;
@@ -1174,35 +1114,18 @@ static void l2c_link_send_to_lower_ble(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
     }
 
     p_buf->layer_specific = num_segs;
-    if (transport == BT_TRANSPORT_LE) {
-      l2cb.controller_le_xmit_window -= num_segs;
-      if (p_lcb->link_xmit_quota == 0) l2cb.ble_round_robin_unacked += num_segs;
-    } else {
-      l2cb.controller_xmit_window -= num_segs;
-      if (p_lcb->link_xmit_quota == 0) l2cb.round_robin_unacked += num_segs;
-    }
+    l2cb.controller_le_xmit_window -= num_segs;
+    if (p_lcb->link_xmit_quota == 0) l2cb.ble_round_robin_unacked += num_segs;
 
     p_lcb->sent_not_acked += num_segs;
-    if (transport == BT_TRANSPORT_LE) {
-      bte_main_hci_send(p_buf, kDataPacketEventBle);
-    } else {
-      bte_main_hci_send(p_buf, kDataPacketEventBrEdr);
-    }
+    bte_main_hci_send(p_buf, kDataPacketEventBle);
   }
 
-  if (transport == BT_TRANSPORT_LE) {
-    L2CAP_TRACE_DEBUG(
-        "TotalWin=%d,Hndl=0x%x,Quota=%d,Unack=%d,RRQuota=%d,RRUnack=%d",
-        l2cb.controller_le_xmit_window, p_lcb->handle, p_lcb->link_xmit_quota,
-        p_lcb->sent_not_acked, l2cb.ble_round_robin_quota,
-        l2cb.ble_round_robin_unacked);
-  } else {
-    L2CAP_TRACE_DEBUG(
-        "TotalWin=%d,Hndl=0x%x,Quota=%d,Unack=%d,RRQuota=%d,RRUnack=%d",
-        l2cb.controller_xmit_window, p_lcb->handle, p_lcb->link_xmit_quota,
-        p_lcb->sent_not_acked, l2cb.round_robin_quota,
-        l2cb.round_robin_unacked);
-  }
+  L2CAP_TRACE_DEBUG(
+      "TotalWin=%d,Hndl=0x%x,Quota=%d,Unack=%d,RRQuota=%d,RRUnack=%d",
+      l2cb.controller_le_xmit_window, p_lcb->handle, p_lcb->link_xmit_quota,
+      p_lcb->sent_not_acked, l2cb.ble_round_robin_quota,
+      l2cb.ble_round_robin_unacked);
 }
 
 static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
