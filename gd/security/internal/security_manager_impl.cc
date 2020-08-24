@@ -338,10 +338,27 @@ void SecurityManagerImpl::OnEncryptionChange(hci::Address address, bool encrypte
 }
 
 void SecurityManagerImpl::OnHciLeEvent(hci::LeMetaEventView event) {
-  // hci::SubeventCode::LONG_TERM_KEY_REQUEST,
+  hci::SubeventCode code = event.GetSubeventCode();
+
+  if (code == hci::SubeventCode::LONG_TERM_KEY_REQUEST) {
+    hci::LeLongTermKeyRequestView le_long_term_key_request_view = hci::LeLongTermKeyRequestView::Create(event);
+    if (!le_long_term_key_request_view.IsValid()) {
+      LOG_ERROR("Invalid LeLongTermKeyRequestView packet received");
+      return;
+    }
+
+    if (le_long_term_key_request_view.GetConnectionHandle() == pending_le_pairing_.connection_handle_) {
+      pending_le_pairing_.handler_->OnHciLeEvent(event);
+      return;
+    }
+
+    LOG_INFO("Unhandled HCI LE security event, code %s", hci::SubeventCodeText(code).c_str());
+    return;
+  }
+
   // hci::SubeventCode::READ_LOCAL_P256_PUBLIC_KEY_COMPLETE,
   // hci::SubeventCode::GENERATE_DHKEY_COMPLETE,
-  LOG_ERROR("Unhandled HCI LE security event");
+  LOG_ERROR("Unhandled HCI LE security event, code %s", hci::SubeventCodeText(code).c_str());
 }
 
 void SecurityManagerImpl::OnPairingPromptAccepted(const bluetooth::hci::AddressWithType& address, bool confirmed) {
