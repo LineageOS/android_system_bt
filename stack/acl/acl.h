@@ -62,6 +62,7 @@ typedef struct {
   uint8_t num_read_pages;
   uint8_t switch_role_failed_attempts;
   uint8_t switch_role_state;
+  uint8_t sca; /* Sleep clock accuracy */
 } tACL_CONN;
 
 typedef uint8_t tBTM_PM_STATE;
@@ -120,6 +121,7 @@ typedef struct {
   friend void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
                                      uint8_t encr_enable);
   friend void btm_acl_init(void);
+  friend void btm_acl_process_sca_cmpl_pkt(uint8_t evt_len, uint8_t* p);
   friend void btm_acl_role_changed(uint8_t hci_status,
                                    const RawAddress& bd_addr, uint8_t new_role);
   friend void btm_acl_update_conn_addr(uint16_t conn_handle,
