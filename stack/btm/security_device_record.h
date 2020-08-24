@@ -361,8 +361,6 @@ typedef struct {
   tBTM_SEC_CALLBACK* p_callback;
   void* p_ref_data;
   uint32_t timestamp; /* Timestamp of the last connection   */
-  uint32_t trusted_mask[BTM_SEC_SERVICE_ARRAY_SIZE]; /* Bitwise OR of trusted
-                                                        services     */
   uint16_t hci_handle;     /* Handle to connection when exists   */
   uint16_t clock_offset;   /* Latest known clock offset          */
   RawAddress bd_addr;      /* BD_ADDR of the device              */
@@ -370,7 +368,6 @@ typedef struct {
   LinkKey link_key;        /* Device link key                    */
   uint8_t pin_code_length; /* Length of the pin_code used for paring */
 
-#define BTM_SEC_AUTHORIZED 0x01
 #define BTM_SEC_AUTHENTICATED BTM_SEC_FLAG_AUTHENTICATED /* 0x02 */
 #define BTM_SEC_ENCRYPTED BTM_SEC_FLAG_ENCRYPTED         /* 0x04 */
 #define BTM_SEC_NAME_KNOWN 0x08
@@ -466,8 +463,5 @@ typedef struct {
 #define BTM_SEC_DISC_PENDING 2   /* Disconnect is pending */
   uint8_t rs_disc_pending;
 #endif
-#define BTM_SEC_NO_LAST_SERVICE_ID 0
-  uint8_t last_author_service_id; /* ID of last serviced authorized: Reset after
-                                     each l2cap connection */
 
 } tBTM_SEC_DEV_REC;

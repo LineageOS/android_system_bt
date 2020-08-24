@@ -1499,8 +1499,6 @@ void l2cu_release_ccb(tL2C_CCB* p_ccb) {
     p_ccb->should_free_rcb = false;
   }
 
-  BTM_SecClrTempAuthService(p_lcb->remote_bd_addr);
-
   /* Free the timer */
   alarm_free(p_ccb->l2c_ccb_timer);
   p_ccb->l2c_ccb_timer = NULL;
