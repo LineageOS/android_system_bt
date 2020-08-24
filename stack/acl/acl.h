@@ -25,8 +25,6 @@
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
 
-#define BTM_MAX_SCN_ 31  // PORT_MAX_RFC_PORTS system/bt/stack/include/rfcdefs.h
-
 /* Structure returned with Role Switch information (in tBTM_CMPL_CB callback
  * function) in response to BTM_SwitchRole call.
  */
@@ -80,11 +78,9 @@ typedef struct {
  ****************************************************/
 typedef struct {
  private:
-  friend bool BTM_FreeSCN(uint8_t scn);
   friend bool BTM_IsBleConnection(uint16_t hci_handle);
   friend bool BTM_ReadPowerMode(const RawAddress& remote_bda,
                                 tBTM_PM_MODE* p_mode);
-  friend bool BTM_TryAllocateSCN(uint8_t scn);
   friend bool acl_is_role_switch_allowed();
   friend const RawAddress acl_address_from_handle(uint16_t hci_handle);
   friend int btm_pm_find_acl_ind(const RawAddress& remote_bda);
@@ -104,7 +100,6 @@ typedef struct {
   friend uint16_t acl_get_link_supervision_timeout();
   friend uint16_t acl_get_supported_packet_types();
   friend uint16_t btm_get_acl_disc_reason_code(void);
-  friend uint8_t BTM_AllocateSCN(void);
   friend uint8_t acl_get_disconnect_reason();
   friend uint8_t btm_handle_to_acl_index(uint16_t hci_handle);
   friend void BTM_SetDefaultLinkSuperTout(uint16_t timeout);
@@ -153,6 +148,5 @@ typedef struct {
   uint16_t btm_def_link_policy;
   uint16_t btm_def_link_super_tout;
   uint8_t acl_disc_reason;
-  uint8_t btm_scn[BTM_MAX_SCN_];
   uint8_t pm_pend_link;
 } tACL_CB;
