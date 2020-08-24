@@ -124,7 +124,7 @@ void bta_ar_avdt_conn(tBTA_SYS_ID sys_id, const RawAddress& bd_addr,
  ******************************************************************************/
 void bta_ar_reg_avct(uint16_t mtu, uint16_t mtu_br) {
   if (bta_ar_cb.avct_registered == 0) {
-    AVCT_Register(mtu, mtu_br, BTA_SEC_AUTHENTICATE);
+    AVCT_Register(mtu, mtu_br);
   }
   bta_ar_cb.avct_registered |= BTA_AR_AV_MASK;
 }
