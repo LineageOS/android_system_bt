@@ -75,7 +75,7 @@ void bta_hh_api_enable(tBTA_HH_DATA* p_data) {
 
   memset(&bta_hh_cb, 0, sizeof(tBTA_HH_CB));
 
-  HID_HostSetSecurityLevel("", p_data->api_enable.sec_mask);
+  HID_HostSetSecurityLevel("");
 
   /* Register with L2CAP */
   if (HID_HostRegister(bta_hh_cback) == HID_SUCCESS) {
@@ -184,7 +184,7 @@ static void bta_hh_sdp_cback(uint16_t result, uint16_t attr_mask,
   /* make sure sdp succeeded and hh has not been disabled */
   if ((result == SDP_SUCCESS) && (p_cb != NULL)) {
     /* security is required for the connection, add attr_mask bit*/
-    if (p_cb->sec_mask) attr_mask |= HID_SEC_REQUIRED;
+    attr_mask |= HID_SEC_REQUIRED;
 
 #if (BTA_HH_DEBUG == TRUE)
     APPL_TRACE_EVENT("%s: p_cb: %d result 0x%02x, attr_mask 0x%02x, handle %x",
@@ -312,7 +312,6 @@ void bta_hh_start_sdp(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
   tBTA_HH_STATUS status = BTA_HH_ERR_SDP;
   uint8_t hdl;
 
-  p_cb->sec_mask = p_data->api_conn.sec_mask;
   p_cb->mode = p_data->api_conn.mode;
   bta_hh_cb.p_cur = p_cb;
 
@@ -415,7 +414,7 @@ void bta_hh_sdp_cmpl(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
     if (!p_cb->incoming_conn) {
       tHID_STATUS ret;
       /* set security level */
-      HID_HostSetSecurityLevel("", p_cb->sec_mask);
+      HID_HostSetSecurityLevel("");
 
       /* open HID connection */
       ret = HID_HostOpenDev(p_cb->hid_handle);

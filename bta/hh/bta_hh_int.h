@@ -108,7 +108,6 @@ typedef struct {
 /* data type for BTA_HH_API_ENABLE_EVT */
 typedef struct {
   BT_HDR hdr;
-  uint8_t sec_mask;
   uint8_t service_name[BTA_SERVICE_NAME_LEN + 1];
   tBTA_HH_CBACK* p_cback;
 } tBTA_HH_API_ENABLE;
@@ -116,7 +115,6 @@ typedef struct {
 typedef struct {
   BT_HDR hdr;
   RawAddress bd_addr;
-  uint8_t sec_mask;
   tBTA_HH_PROTO_MODE mode;
 } tBTA_HH_API_CONN;
 
@@ -222,7 +220,6 @@ typedef struct {
   uint16_t w4_evt;                 /* W4_handshake event name */
   uint8_t index;                   /* index number referenced to handle index */
   uint8_t sub_class;               /* Cod sub class */
-  uint8_t sec_mask;                /* security mask */
   uint8_t app_id;                  /* application ID for this connection */
   uint8_t hid_handle;          /* device handle : low 4 bits for regular HID:
                                   HID_HOST_MAX_DEVICES can not exceed 15;

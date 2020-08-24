@@ -68,7 +68,6 @@ void BTA_HhEnable(tBTA_HH_CBACK* p_cback) {
 
   p_buf->hdr.event = BTA_HH_API_ENABLE_EVT;
   p_buf->p_cback = p_cback;
-  p_buf->sec_mask = BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT;
 
   bta_sys_sendmsg(p_buf);
 }
@@ -127,7 +126,6 @@ void BTA_HhOpen(const RawAddress& dev_bda) {
 
   p_buf->hdr.event = BTA_HH_API_OPEN_EVT;
   p_buf->hdr.layer_specific = BTA_HH_INVALID_HANDLE;
-  p_buf->sec_mask = BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT;
   p_buf->mode = mode;
   p_buf->bd_addr = dev_bda;
 

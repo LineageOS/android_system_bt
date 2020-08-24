@@ -1092,15 +1092,11 @@ void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb,
                       NULL, BTM_BLE_SEC_ENCRYPT);
   }
   /* unbonded device, report security error here */
-  else if (p_cb->sec_mask != BTA_SEC_NONE) {
+  else {
     p_cb->status = BTA_HH_ERR_AUTH_FAILED;
     bta_hh_clear_service_cache(p_cb);
     BTM_SetEncryption(p_cb->addr, BT_TRANSPORT_LE, bta_hh_le_encrypt_cback,
                       NULL, BTM_BLE_SEC_ENCRYPT_NO_MITM);
-  }
-  /* otherwise let it go through */
-  else {
-    bta_hh_sm_execute(p_cb, BTA_HH_ENC_CMPL_EVT, NULL);
   }
 }
 

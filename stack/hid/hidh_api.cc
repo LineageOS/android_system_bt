@@ -463,8 +463,11 @@ tHID_STATUS HID_HostCloseDev(uint8_t dev_handle) {
   return hidh_conn_disconnect(dev_handle);
 }
 
-tHID_STATUS HID_HostSetSecurityLevel(const char serv_name[], uint8_t sec_lvl) {
-  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_HIDH_SEC_CTRL, sec_lvl,
+tHID_STATUS HID_HostSetSecurityLevel(const char serv_name[]) {
+  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_HIDH_SEC_CTRL,
+                                  BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT |
+                                      BTM_SEC_OUT_AUTHENTICATE |
+                                      BTM_SEC_OUT_ENCRYPT,
                                   HID_PSM_CONTROL)) {
     HIDH_TRACE_ERROR("Security Registration 1 failed");
     return (HID_ERR_NO_RESOURCES);
