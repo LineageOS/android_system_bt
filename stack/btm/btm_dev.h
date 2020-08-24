@@ -14,23 +14,12 @@
  * limitations under the License.
  */
 
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "bt_common.h"
-#include "bt_types.h"
-#include "btm_api.h"
-#include "btm_int.h"
-#include "btu.h"
-#include "device/include/controller.h"
-#include "hcidefs.h"
-#include "hcimsgs.h"
-#include "l2c_api.h"
-#include "main/shim/btm_api.h"
-#include "main/shim/shim.h"
+#include "gd/os/log.h"
+#include "stack/btm/btm_ble_int.h"
+#include "stack/btm/security_device_record.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/hcimsgs.h"
+#include "types/raw_address.h"
 
 /*******************************************************************************
  *
