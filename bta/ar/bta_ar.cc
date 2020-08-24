@@ -173,10 +173,8 @@ void bta_ar_reg_avct(uint16_t mtu, uint16_t mtu_br) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_ar_dereg_avct(tBTA_SYS_ID sys_id) {
-  uint8_t mask = bta_ar_id(sys_id);
-
-  bta_ar_cb.avct_registered &= ~mask;
+void bta_ar_dereg_avct() {
+  bta_ar_cb.avct_registered &= ~BTA_AR_AV_MASK;
 
   if (bta_ar_cb.avct_registered == 0) AVCT_Deregister();
 }

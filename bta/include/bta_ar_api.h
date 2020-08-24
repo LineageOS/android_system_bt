@@ -109,7 +109,7 @@ extern void bta_ar_reg_avct(uint16_t mtu, uint16_t mtu_br);
  * Returns          void
  *
  ******************************************************************************/
-extern void bta_ar_dereg_avct(tBTA_SYS_ID sys_id);
+extern void bta_ar_dereg_avct();
 
 /******************************************************************************
  *
