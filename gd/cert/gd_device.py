@@ -168,6 +168,8 @@ class GdDeviceBase(ABC):
                                                      '%s_%s_backing_logs.txt' % (self.type_identifier, self.label))
         if "--btsnoop=" not in " ".join(cmd):
             cmd.append("--btsnoop=%s" % os.path.join(self.log_path_base, '%s_btsnoop_hci.log' % self.label))
+        if "--btconfig=" not in " ".join(cmd):
+            cmd.append("--btconfig=%s" % os.path.join(self.log_path_base, '%s_bt_config.conf' % self.label))
         self.cmd = cmd
         self.environment = os.environ.copy()
         if "cert" in self.label:
@@ -191,7 +193,7 @@ class GdDeviceBase(ABC):
             signal_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
             signal_socket.bind(("localhost", self.signal_port))
             signal_socket.listen(1)
-            signal_socket.settimeout(300) # 5 minute timeout for blocking socket operations
+            signal_socket.settimeout(300)  # 5 minute timeout for blocking socket operations
 
             # Start backing process
             logging.debug("Running %s" % " ".join(self.cmd))
