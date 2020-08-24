@@ -76,10 +76,6 @@ typedef struct {
   uint8_t user_app_id;
   uint8_t gn_app_id;
   uint8_t nap_app_id;
-  tBTA_SEC user_sec_mask; /* Security mask */
-  tBTA_SEC gn_sec_mask;   /* Security mask */
-  tBTA_SEC nap_sec_mask;  /* Security mask */
-
 } tBTA_PAN_API_SET_ROLE;
 
 /* data type for BTA_PAN_API_OPEN_EVT */

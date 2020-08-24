@@ -256,9 +256,8 @@ extern void PAN_Deregister(void);
  *                  PAN_FAILURE     - if the role is not valid
  *
  ******************************************************************************/
-extern tPAN_RESULT PAN_SetRole(uint8_t role, uint8_t* sec_mask,
-                               const char* p_user_name, const char* p_gn_name,
-                               const char* p_nap_name);
+extern tPAN_RESULT PAN_SetRole(uint8_t role, const char* p_user_name,
+                               const char* p_gn_name, const char* p_nap_name);
 
 /*******************************************************************************
  *
