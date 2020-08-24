@@ -5026,9 +5026,7 @@ void btm_sec_clear_ble_keys(tBTM_SEC_DEV_REC* p_dev_rec) {
   p_dev_rec->ble.key_type = BTM_LE_KEY_NONE;
   memset(&p_dev_rec->ble.keys, 0, sizeof(tBTM_SEC_BLE_KEYS));
 
-#if (BLE_PRIVACY_SPT == TRUE)
   btm_ble_resolving_list_remove_dev(p_dev_rec);
-#endif
 }
 
 /*******************************************************************************

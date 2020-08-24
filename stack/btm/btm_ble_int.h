@@ -137,7 +137,6 @@ extern void btm_gen_resolve_paddr_low(const RawAddress& address);
 extern uint64_t btm_get_next_private_addrress_interval_ms();
 
 /*  privacy function */
-#if (BLE_PRIVACY_SPT == TRUE)
 /* BLE address mapping with CS feature */
 extern bool btm_identity_addr_to_random_pseudo(RawAddress* bd_addr,
                                                uint8_t* p_addr_type,
@@ -157,7 +156,6 @@ extern void btm_ble_enable_resolving_list(uint8_t);
 extern bool btm_ble_disable_resolving_list(uint8_t rl_mask, bool to_resume);
 extern void btm_ble_enable_resolving_list_for_platform(uint8_t rl_mask);
 extern void btm_ble_resolving_list_init(uint8_t max_irk_list_sz);
-#endif
 
 extern void btm_ble_adv_init(void);
 extern void btm_ble_multi_adv_cleanup(void);
