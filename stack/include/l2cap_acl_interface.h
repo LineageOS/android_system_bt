@@ -27,6 +27,7 @@ void acl_create_classic_connection(const RawAddress& bd_addr,
                                    bool there_are_high_priority_channels,
                                    bool is_bonding);
 void acl_reject_connection_request(const RawAddress& bd_addr, uint8_t reason);
+void acl_send_data_packet(BT_HDR* p_buf, uint16_t flags);
 
 // ACL data received from HCI-ACL
 extern void l2c_rcv_acl_data(BT_HDR* p_msg);
