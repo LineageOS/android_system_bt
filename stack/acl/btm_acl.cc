@@ -650,9 +650,7 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
       btsnd_hcic_switch_role(remote_bd_addr, new_role);
       p->switch_role_state = BTM_ACL_SWKEY_STATE_IN_PROGRESS;
 
-#if (BTM_DISC_DURING_RS == TRUE)
       if (p_dev_rec) p_dev_rec->rs_disc_pending = BTM_SEC_RS_PENDING;
-#endif
     }
   }
 
@@ -698,10 +696,8 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
     }
 
     btsnd_hcic_switch_role(p->remote_addr, (uint8_t)!p->link_role);
-#if (BTM_DISC_DURING_RS == TRUE)
     p_dev_rec = btm_find_dev(p->remote_addr);
     if (p_dev_rec != NULL) p_dev_rec->rs_disc_pending = BTM_SEC_RS_PENDING;
-#endif
 
   }
   /* Finished enabling Encryption after role switch */
@@ -718,7 +714,6 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
         "%s: Role Switch Event: new_role 0x%02x, HCI Status 0x%02x, rs_st:%d",
         __func__, new_role, hci_status, p->switch_role_state);
 
-#if (BTM_DISC_DURING_RS == TRUE)
     /* If a disconnect is pending, issue it now that role switch has completed
      */
     p_dev_rec = btm_find_dev(p->remote_addr);
@@ -733,7 +728,6 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
           PTR_TO_UINT(p_dev_rec), p_dev_rec->rs_disc_pending);
       p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
     }
-#endif
   }
 }
 
@@ -1554,7 +1548,6 @@ void btm_acl_role_changed(uint8_t hci_status, const RawAddress& bd_addr,
       __func__, bd_addr.ToString().c_str(), p_switch_role->role,
       p_switch_role->hci_status, p_acl->switch_role_state);
 
-#if (BTM_DISC_DURING_RS == TRUE)
   /* If a disconnect is pending, issue it now that role switch has completed */
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
   if (p_dev_rec != nullptr) {
@@ -1567,7 +1560,6 @@ void btm_acl_role_changed(uint8_t hci_status, const RawAddress& bd_addr,
                     bd_addr.ToString().c_str(), p_dev_rec->rs_disc_pending);
     p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
   }
-#endif
 }
 
 /*******************************************************************************
@@ -2218,14 +2210,12 @@ tBTM_STATUS btm_remove_acl(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   tBTM_STATUS status = BTM_SUCCESS;
 
   BTM_TRACE_DEBUG("btm_remove_acl");
-#if (BTM_DISC_DURING_RS == TRUE)
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
 
   /* Role Switch is pending, postpone until completed */
   if (p_dev_rec && (p_dev_rec->rs_disc_pending == BTM_SEC_RS_PENDING)) {
     p_dev_rec->rs_disc_pending = BTM_SEC_DISC_PENDING;
   } else /* otherwise can disconnect right away */
-#endif
   {
     if (hci_handle != HCI_INVALID_HANDLE && p_dev_rec &&
         p_dev_rec->sec_state != BTM_SEC_STATE_DISCONNECTING) {
@@ -2286,9 +2276,7 @@ void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec) {
     {
       if (p->switch_role_state == BTM_ACL_SWKEY_STATE_MODE_CHANGE) {
         p->switch_role_state = BTM_ACL_SWKEY_STATE_IN_PROGRESS;
-#if (BTM_DISC_DURING_RS == TRUE)
         if (p_dev_rec) p_dev_rec->rs_disc_pending = BTM_SEC_RS_PENDING;
-#endif
         btsnd_hcic_switch_role(p->remote_addr, (uint8_t)!p->link_role);
       }
     }
