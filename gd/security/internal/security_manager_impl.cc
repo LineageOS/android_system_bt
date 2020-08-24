@@ -146,12 +146,10 @@ void SecurityManagerImpl::CancelBond(hci::AddressWithType device) {
 
 void SecurityManagerImpl::RemoveBond(hci::AddressWithType device) {
   CancelBond(device);
-  security_database_.Remove(device);
   security_manager_channel_->Disconnect(device.GetAddress());
-  // Signal disconnect
-  // Remove security record
-  // Signal Remove from database
-
+  security_database_.Remove(device);
+  security_manager_channel_->SendCommand(
+      hci::DeleteStoredLinkKeyBuilder::Create(device.GetAddress(), hci::DeleteStoredLinkKeyDeleteAllFlag::ALL));
   NotifyDeviceUnbonded(device);
 }
 
