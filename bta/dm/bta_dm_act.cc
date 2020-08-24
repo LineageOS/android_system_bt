@@ -410,8 +410,8 @@ void bta_dm_disable() {
   /* disable all active subsystems */
   bta_sys_disable();
 
-  BTM_SetDiscoverability(BTM_NON_DISCOVERABLE, 0, 0);
-  BTM_SetConnectability(BTM_NON_CONNECTABLE, 0, 0);
+  BTM_SetDiscoverability(BTM_NON_DISCOVERABLE);
+  BTM_SetConnectability(BTM_NON_CONNECTABLE);
 
   bta_dm_disable_pm();
   bta_dm_disable_search_and_disc();
@@ -513,8 +513,8 @@ bool BTA_DmSetVisibility(bt_scan_mode_t mode) {
       return false;
   }
 
-  BTM_SetDiscoverability(disc_mode_param, 0, 0);
-  BTM_SetConnectability(conn_mode_param, 0, 0);
+  BTM_SetDiscoverability(disc_mode_param);
+  BTM_SetConnectability(conn_mode_param);
   return true;
 }
 
