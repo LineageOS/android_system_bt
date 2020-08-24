@@ -43,9 +43,7 @@
 #include "stack/include/acl_api.h"
 #include "utl.h"
 
-#if (BTA_AR_INCLUDED == TRUE)
 #include "bta_ar_api.h"
-#endif
 
 /*****************************************************************************
  *  Constants
@@ -1475,11 +1473,9 @@ void bta_av_sig_chg(tBTA_AV_DATA* p_data) {
       }
     }
   }
-#if (BTA_AR_INCLUDED == TRUE)
   else if (event == BTA_AR_AVDT_CONN_EVT) {
     alarm_cancel(bta_av_cb.link_signalling_timer);
   }
-#endif
   else {
     /* disconnected. */
     APPL_TRACE_DEBUG("%s: bta_av_cb.conn_lcb=0x%x", __func__,
@@ -2272,9 +2268,7 @@ void bta_av_dereg_comp(tBTA_AV_DATA* p_data) {
 
     /* remove the A2DP SDP record, if no more audio stream is left */
     if (!p_cb->reg_audio) {
-#if (BTA_AR_INCLUDED == TRUE)
       bta_ar_dereg_avrc(UUID_SERVCLASS_AV_REMOTE_CONTROL, BTA_ID_AV);
-#endif
       if (p_cb->sdp_a2dp_handle) {
         bta_av_del_sdp_rec(&p_cb->sdp_a2dp_handle);
         p_cb->sdp_a2dp_handle = 0;
@@ -2297,14 +2291,12 @@ void bta_av_dereg_comp(tBTA_AV_DATA* p_data) {
                    p_cb->disabling);
   /* if no stream control block is active */
   if (p_cb->reg_audio == 0) {
-#if (BTA_AR_INCLUDED == TRUE)
     /* deregister from AVDT */
     bta_ar_dereg_avdt(BTA_ID_AV);
 
     /* deregister from AVCT */
     bta_ar_dereg_avrc(UUID_SERVCLASS_AV_REM_CTRL_TARGET, BTA_ID_AV);
     bta_ar_dereg_avct(BTA_ID_AV);
-#endif
 
     if (p_cb->disabling) {
       p_cb->disabling = false;

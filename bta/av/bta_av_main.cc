@@ -41,9 +41,7 @@
 #include "stack/include/acl_api.h"
 #include "utl.h"
 
-#if (BTA_AR_INCLUDED == TRUE)
 #include "bta_ar_api.h"
-#endif
 
 /*****************************************************************************
  * Constants and types
@@ -241,7 +239,6 @@ static void bta_av_api_enable(tBTA_AV_DATA* p_data) {
       bta_sys_remove_uuid(UUID_SERVCLASS_AUDIO_SINK);
     }
 #endif
-#if (BTA_AR_INCLUDED == TRUE)
     // deregister from AVDT
     bta_ar_dereg_avdt(BTA_ID_AV);
 
@@ -249,7 +246,6 @@ static void bta_av_api_enable(tBTA_AV_DATA* p_data) {
     bta_ar_dereg_avrc(UUID_SERVCLASS_AV_REMOTE_CONTROL, BTA_ID_AV);
     bta_ar_dereg_avrc(UUID_SERVCLASS_AV_REM_CTRL_TARGET, BTA_ID_AV);
     bta_ar_dereg_avct(BTA_ID_AV);
-#endif
   }
 
   /* initialize control block */
@@ -437,12 +433,8 @@ void bta_av_conn_cback(UNUSED_ATTR uint8_t handle, const RawAddress& bd_addr,
   uint16_t evt = 0;
   tBTA_AV_SCB* p_scb = NULL;
 
-#if (BTA_AR_INCLUDED == TRUE)
   if (event == BTA_AR_AVDT_CONN_EVT || event == AVDT_CONNECT_IND_EVT ||
       event == AVDT_DISCONNECT_IND_EVT)
-#else
-  if (event == AVDT_CONNECT_IND_EVT || event == AVDT_DISCONNECT_IND_EVT)
-#endif
   {
     evt = BTA_AV_SIG_CHG_EVT;
     if (event == AVDT_DISCONNECT_IND_EVT) {
@@ -568,15 +560,12 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
       reg.idle_tout = BTA_AV_IDLE_TOUT;
       reg.sec_mask = BTA_SEC_AUTHENTICATE;
       reg.scb_index = p_scb->hdi;
-#if (BTA_AR_INCLUDED == TRUE)
       bta_ar_reg_avdt(&reg, bta_av_conn_cback, BTA_ID_AV);
-#endif
       bta_sys_role_chg_register(&bta_av_sys_rs_cback);
 
       /* create remote control TG service if required */
       if (bta_av_cb.features & (BTA_AV_FEAT_RCTG)) {
 /* register with no authorization; let AVDTP use authorization instead */
-#if (BTA_AR_INCLUDED == TRUE)
         bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
                         BTA_ID_AV);
 
@@ -602,7 +591,6 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
             UUID_SERVCLASS_AV_REM_CTRL_TARGET, "AV Remote Control Target", NULL,
             p_bta_av_cfg->avrc_tg_cat, BTA_ID_AV,
             (bta_av_cb.features & BTA_AV_FEAT_BROWSE), profile_version);
-#endif
       }
 
       /* Set the Capturing service class bit */
@@ -727,13 +715,10 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
       if (bta_av_cb.features & (BTA_AV_FEAT_RCCT)) {
         /* if TG is not supported, we need to register to AVCT now */
         if ((bta_av_cb.features & (BTA_AV_FEAT_RCTG)) == 0) {
-#if (BTA_AR_INCLUDED == TRUE)
           bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
                           BTA_ID_AV);
-#endif
           bta_av_rc_create(&bta_av_cb, AVCT_ACP, 0, BTA_AV_NUM_LINKS + 1);
         }
-#if (BTA_AR_INCLUDED == TRUE)
         /* create an SDP record as AVRC CT. We create 1.3 for SOURCE
          * because we rely on feature bits being scanned by external
          * devices more than the profile version itself.
@@ -751,7 +736,6 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
                           (bta_av_cb.features & BTA_AV_FEAT_BROWSE),
                           AVRC_REV_1_6);
         }
-#endif
       }
     }
     bta_av_cb.reg_audio |= BTA_AV_HNDL_TO_MSK(p_scb->hdi);
