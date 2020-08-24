@@ -2034,9 +2034,7 @@ static uint8_t bta_dm_sp_cback(tBTM_SP_EVT event, tBTM_SP_EVT_DATA* p_data) {
       if (btm_local_io_caps != BTM_IO_CAP_NONE) {
         /* translate auth_req */
         btif_dm_set_oob_for_io_req(&p_data->io_req.oob_data);
-        btif_dm_proc_io_req(p_data->io_req.bd_addr, &p_data->io_req.io_cap,
-                            &p_data->io_req.oob_data, &p_data->io_req.auth_req,
-                            p_data->io_req.is_orig);
+        btif_dm_proc_io_req(&p_data->io_req.auth_req, p_data->io_req.is_orig);
       }
       APPL_TRACE_EVENT("io mitm: %d oob_data:%d", p_data->io_req.auth_req,
                        p_data->io_req.oob_data);
