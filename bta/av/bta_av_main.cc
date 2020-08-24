@@ -565,9 +565,9 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
 
       /* create remote control TG service if required */
       if (bta_av_cb.features & (BTA_AV_FEAT_RCTG)) {
-/* register with no authorization; let AVDTP use authorization instead */
-        bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
-                        BTA_ID_AV);
+        /* register with no authorization; let AVDTP use authorization instead
+         */
+        bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu);
 
         /* For the Audio Sink role we support additional TG to support
          * absolute volume.
@@ -715,8 +715,7 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
       if (bta_av_cb.features & (BTA_AV_FEAT_RCCT)) {
         /* if TG is not supported, we need to register to AVCT now */
         if ((bta_av_cb.features & (BTA_AV_FEAT_RCTG)) == 0) {
-          bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
-                          BTA_ID_AV);
+          bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu);
           bta_av_rc_create(&bta_av_cb, AVCT_ACP, 0, BTA_AV_NUM_LINKS + 1);
         }
         /* create an SDP record as AVRC CT. We create 1.3 for SOURCE
