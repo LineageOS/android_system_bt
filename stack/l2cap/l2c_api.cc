@@ -1189,13 +1189,10 @@ bool L2CA_SetTxPriority(uint16_t cid, tL2CAP_CHNL_PRIORITY priority) {
  *                          all ACL links.
  *                  FlushTimeout: flush time out in ms
  *                           0x0000 : No automatic flush
- *                           L2CAP_NO_RETRANSMISSION : No retransmission
- *                           0x0002 - 0xFFFE : flush time out, if
- *                                            (flush_tout * 8) + 3 / 5) <=
- *                                             HCI_MAX_AUTOMATIC_FLUSH_TIMEOUT
- *                                            (in 625us slot).
- *                                    Otherwise, return false.
- *                           L2CAP_NO_AUTOMATIC_FLUSH : No automatic flush
+ *                           0x0001 : No retransmission
+ *                           0x0002 - 0x0500 : flush time out in ms
+ *                           0xffff : DEPRECATED No automatic flush (0x0000)
+ *                           >0x0500 : Illegal value
  *
  * Returns          true if command succeeded, false if failed
  *
@@ -1207,33 +1204,35 @@ inline uint32_t ConvertMillisecondsToBasebandSlots(uint32_t milliseconds) {
 }
 
 bool L2CA_SetFlushTimeout(const RawAddress& bd_addr,
-                          uint16_t flush_timeout_in_ms) {
+                          const uint16_t flush_timeout_in_ms) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::L2CA_SetFlushTimeout(bd_addr, flush_timeout_in_ms);
   }
 
-  if ((flush_timeout_in_ms != L2CAP_NO_AUTOMATIC_FLUSH) &&
-      (ConvertMillisecondsToBasebandSlots(flush_timeout_in_ms) >
-       HCI_MAX_AUTOMATIC_FLUSH_TIMEOUT)) {
-    LOG_WARN("%s Unable to set flush timeout larger then controller capability",
-             __func__);
+  if (flush_timeout_in_ms == L2CAP_NO_AUTOMATIC_FLUSH) {
+    LOG_WARN(
+        "%s Parameter deprecated for no automatic flush; please use 0x0000",
+        __func__);
+  } else if (ConvertMillisecondsToBasebandSlots(flush_timeout_in_ms) >
+             HCI_MAX_AUTOMATIC_FLUSH_TIMEOUT) {
+    LOG_WARN(
+        "%s Unable to set flush timeout larger then controller capability:%dms",
+        __func__, flush_timeout_in_ms);
     return false;
   }
 
-  uint16_t flush_timeout_in_slots{0};
+  uint16_t flush_timeout_in_slots = 0;
 
   /* no automatic flush (infinite timeout) */
-  if (flush_timeout_in_ms == 0x0000) {
-    flush_timeout_in_slots = flush_timeout_in_ms;
-    flush_timeout_in_ms = L2CAP_NO_AUTOMATIC_FLUSH;
-  } else if (flush_timeout_in_ms == L2CAP_NO_AUTOMATIC_FLUSH) {
-    flush_timeout_in_slots = 0x0000;
+  if (flush_timeout_in_ms == 0x0000 ||
+      flush_timeout_in_ms == L2CAP_NO_AUTOMATIC_FLUSH) {
+    flush_timeout_in_slots = 0x0;
   } else if (flush_timeout_in_ms == L2CAP_NO_RETRANSMISSION) {
     /* no retransmission */
     /* not mandatory range for controller */
     /* Packet is flushed before getting any ACK/NACK */
     /* To do this, flush timeout should be 1 baseband slot */
-    flush_timeout_in_slots = flush_timeout_in_ms;
+    flush_timeout_in_slots = 0x0001;
   } else {
     flush_timeout_in_slots =
         ConvertMillisecondsToBasebandSlots(flush_timeout_in_ms);
@@ -1245,10 +1244,6 @@ bool L2CA_SetFlushTimeout(const RawAddress& bd_addr,
     if ((p_lcb) && (p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTED)) {
       if (p_lcb->LinkFlushTimeout() != flush_timeout_in_ms) {
         p_lcb->SetLinkFlushTimeout(flush_timeout_in_ms);
-
-        VLOG(1) << __func__ << " BDA: " << bd_addr << " " << flush_timeout_in_ms
-                << "ms";
-
         btsnd_hcic_write_auto_flush_tout(p_lcb->handle, flush_timeout_in_slots);
       }
     } else {
@@ -1262,10 +1257,6 @@ bool L2CA_SetFlushTimeout(const RawAddress& bd_addr,
       if ((p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTED)) {
         if (p_lcb->LinkFlushTimeout() != flush_timeout_in_ms) {
           p_lcb->SetLinkFlushTimeout(flush_timeout_in_ms);
-
-          VLOG(1) << __func__ << " BDA: " << p_lcb->remote_bd_addr << " "
-                  << flush_timeout_in_ms << "ms";
-
           btsnd_hcic_write_auto_flush_tout(p_lcb->handle,
                                            flush_timeout_in_slots);
         }
