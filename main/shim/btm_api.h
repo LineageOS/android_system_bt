@@ -1096,10 +1096,9 @@ tBTM_STATUS BTM_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
  * Description      This function is called to read a remote device's
  *                  supported features mask (features mask located at page 0)
  *
- *                  Note: The size of device features mask page is
- *                  BTM_FEATURE_BYTES_PER_PAGE bytes.
- *
  * Returns          pointer to the remote supported features mask
+ *                  The size of device features mask page is
+ *                  HCI_FEATURE_BYTES_PER_PAGE bytes.
  *
  ******************************************************************************/
 uint8_t* BTM_ReadRemoteFeatures(const RawAddress& addr);
