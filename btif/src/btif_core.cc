@@ -623,35 +623,11 @@ void btif_set_adapter_property(bt_property_t* property) {
 
     case BT_PROPERTY_ADAPTER_SCAN_MODE: {
       bt_scan_mode_t mode = *(bt_scan_mode_t*)property->val;
-      tBTA_DM_DISC disc_mode;
-      tBTA_DM_CONN conn_mode;
-
-      switch (mode) {
-        case BT_SCAN_MODE_NONE:
-          disc_mode = BTA_DM_NON_DISC;
-          conn_mode = BTA_DM_NON_CONN;
-          break;
-
-        case BT_SCAN_MODE_CONNECTABLE:
-          disc_mode = BTA_DM_NON_DISC;
-          conn_mode = BTA_DM_CONN;
-          break;
-
-        case BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE:
-          disc_mode = BTA_DM_GENERAL_DISC;
-          conn_mode = BTA_DM_CONN;
-          break;
-
-        default:
-          BTIF_TRACE_ERROR("invalid scan mode (0x%x)", mode);
-          return;
-      }
-
       BTIF_TRACE_EVENT("set property scan mode : %x", mode);
 
-      BTA_DmSetVisibility(disc_mode, conn_mode);
-
-      btif_core_storage_adapter_write(property);
+      if (BTA_DmSetVisibility(mode)) {
+        btif_core_storage_adapter_write(property);
+      }
     } break;
     case BT_PROPERTY_ADAPTER_DISCOVERY_TIMEOUT: {
       /* Nothing to do beside store the value in NV.  Java

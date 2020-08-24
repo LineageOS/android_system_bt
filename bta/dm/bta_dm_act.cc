@@ -489,34 +489,33 @@ void bta_dm_set_dev_name(const std::vector<uint8_t>& name) {
 }
 
 /** Sets discoverability, connectability and pairability */
-void bta_dm_set_visibility(tBTA_DM_DISC disc_mode_param,
-                           tBTA_DM_CONN conn_mode_param) {
-  uint16_t window, interval;
-  uint16_t le_disc_mode = BTM_BleReadDiscoverability();
-  uint16_t le_conn_mode = BTM_BleReadConnectability();
-  uint16_t disc_mode = BTM_ReadDiscoverability(&window, &interval);
-  uint16_t conn_mode = BTM_ReadConnectability(&window, &interval);
+bool BTA_DmSetVisibility(bt_scan_mode_t mode) {
+  tBTA_DM_DISC disc_mode_param;
+  tBTA_DM_CONN conn_mode_param;
 
-  /* set modes for Discoverability and connectability if not ignore */
-  if (disc_mode_param != (BTA_DM_IGNORE | BTA_DM_LE_IGNORE)) {
-    if ((disc_mode_param & BTA_DM_LE_IGNORE) == BTA_DM_LE_IGNORE)
-      disc_mode_param = ((disc_mode_param & ~BTA_DM_LE_IGNORE) | le_disc_mode);
-    if ((disc_mode_param & BTA_DM_IGNORE) == BTA_DM_IGNORE)
-      disc_mode_param = ((disc_mode_param & ~BTA_DM_IGNORE) | disc_mode);
+  switch (mode) {
+    case BT_SCAN_MODE_NONE:
+      disc_mode_param = BTA_DM_NON_DISC;
+      conn_mode_param = BTA_DM_NON_CONN;
+      break;
 
-    BTM_SetDiscoverability(disc_mode_param, bta_dm_cb.inquiry_scan_window,
-                           bta_dm_cb.inquiry_scan_interval);
+    case BT_SCAN_MODE_CONNECTABLE:
+      disc_mode_param = BTA_DM_NON_DISC;
+      conn_mode_param = BTA_DM_CONN;
+      break;
+
+    case BT_SCAN_MODE_CONNECTABLE_DISCOVERABLE:
+      disc_mode_param = BTA_DM_GENERAL_DISC;
+      conn_mode_param = BTA_DM_CONN;
+      break;
+
+    default:
+      return false;
   }
 
-  if (conn_mode_param != (BTA_DM_IGNORE | BTA_DM_LE_IGNORE)) {
-    if ((conn_mode_param & BTA_DM_LE_IGNORE) == BTA_DM_LE_IGNORE)
-      conn_mode_param = ((conn_mode_param & ~BTA_DM_LE_IGNORE) | le_conn_mode);
-    if ((conn_mode_param & BTA_DM_IGNORE) == BTA_DM_IGNORE)
-      conn_mode_param = ((conn_mode_param & ~BTA_DM_IGNORE) | conn_mode);
-
-    BTM_SetConnectability(conn_mode_param, bta_dm_cb.page_scan_window,
-                          bta_dm_cb.page_scan_interval);
-  }
+  BTM_SetDiscoverability(disc_mode_param, 0, 0);
+  BTM_SetConnectability(conn_mode_param, 0, 0);
+  return true;
 }
 
 static void bta_dm_process_remove_device_no_callback(
