@@ -28,6 +28,7 @@
 #include <string.h>
 
 #include "bt_types.h"
+#include "bta/include/bta_api.h"
 #include "btm_api.h"
 #include "btu.h"
 #include "hidd_api.h"
@@ -126,10 +127,11 @@ tHID_STATUS HID_DevDeregister(void) {
   return (HID_SUCCESS);
 }
 
-tHID_STATUS HID_DevSetSecurityLevel(uint8_t sec_lvl) {
+tHID_STATUS HID_DevSetSecurityLevel() {
   HIDD_TRACE_API("%s", __func__);
 
-  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_HIDD_SEC_CTRL, sec_lvl,
+  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_HIDD_SEC_CTRL,
+                                  BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT,
                                   HID_PSM_CONTROL)) {
     HIDD_TRACE_ERROR("Security Registration 1 failed");
     return (HID_ERR_NO_RESOURCES);

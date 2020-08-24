@@ -91,7 +91,7 @@ void bta_hd_api_enable(tBTA_HD_DATA* p_data) {
 
   memset(&bta_hd_cb, 0, sizeof(tBTA_HD_CB));
 
-  HID_DevSetSecurityLevel(BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT);
+  HID_DevSetSecurityLevel();
 
   /* store parameters */
   bta_hd_cb.p_cback = p_data->api_enable.p_cback;

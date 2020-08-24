@@ -99,7 +99,7 @@ extern tHID_STATUS HID_DevDeregister(void);
  * Returns          tHID_STATUS
  *
  ******************************************************************************/
-extern tHID_STATUS HID_DevSetSecurityLevel(uint8_t sec_lvl);
+extern tHID_STATUS HID_DevSetSecurityLevel();
 
 /*******************************************************************************
  *
