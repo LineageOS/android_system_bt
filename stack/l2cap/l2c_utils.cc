@@ -364,7 +364,7 @@ void l2cu_send_peer_cmd_reject(tL2C_LCB* p_lcb, uint16_t reason, uint8_t rem_id,
 
   if (param_len >= 4) UINT16_TO_STREAM(p, p2);
 
-  l2c_link_check_send_pkts(p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_lcb, 0, p_buf);
 }
 
 /*******************************************************************************
@@ -400,7 +400,7 @@ void l2cu_send_peer_connect_req(tL2C_CCB* p_ccb) {
   UINT16_TO_STREAM(p, p_ccb->p_rcb->real_psm);
   UINT16_TO_STREAM(p, p_ccb->local_cid);
 
-  l2c_link_check_send_pkts(p_ccb->p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_ccb->p_lcb, 0, p_buf);
 }
 
 /*******************************************************************************
@@ -441,7 +441,7 @@ void l2cu_send_peer_connect_rsp(tL2C_CCB* p_ccb, uint16_t result,
   UINT16_TO_STREAM(p, result);
   UINT16_TO_STREAM(p, status);
 
-  l2c_link_check_send_pkts(p_ccb->p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_ccb->p_lcb, 0, p_buf);
 }
 
 /*******************************************************************************
@@ -475,7 +475,7 @@ void l2cu_reject_connection(tL2C_LCB* p_lcb, uint16_t remote_cid,
   UINT16_TO_STREAM(p, result);
   UINT16_TO_STREAM(p, 0); /* Status of 0      */
 
-  l2c_link_check_send_pkts(p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_lcb, 0, p_buf);
 }
 
 /*******************************************************************************
@@ -576,7 +576,7 @@ void l2cu_send_peer_config_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
     UINT32_TO_STREAM(p, p_cfg->ext_flow_spec.flush_timeout);
   }
 
-  l2c_link_check_send_pkts(p_ccb->p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_ccb->p_lcb, 0, p_buf);
 }
 
 /*******************************************************************************
@@ -666,7 +666,7 @@ void l2cu_send_peer_config_rsp(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
     UINT32_TO_STREAM(p, p_cfg->ext_flow_spec.flush_timeout);
   }
 
-  l2c_link_check_send_pkts(p_ccb->p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_ccb->p_lcb, 0, p_buf);
 }
 
 /*******************************************************************************
@@ -783,7 +783,7 @@ void l2cu_send_peer_config_rej(tL2C_CCB* p_ccb, uint8_t* p_data,
   L2CAP_TRACE_DEBUG("L2CAP - cfg_rej pkt hci_len=%d, l2cap_len=%d", len,
                     (L2CAP_CMD_OVERHEAD + L2CAP_CONFIG_RSP_LEN + rej_len));
 
-  l2c_link_check_send_pkts(p_ccb->p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_ccb->p_lcb, 0, p_buf);
 }
 
 /*******************************************************************************
@@ -831,11 +831,11 @@ void l2cu_send_peer_disc_req(tL2C_CCB* p_ccb) {
     while ((p_buf2 = (BT_HDR*)fixed_queue_try_dequeue(p_ccb->xmit_hold_q)) !=
            NULL) {
       l2cu_set_acl_hci_header(p_buf2, p_ccb);
-      l2c_link_check_send_pkts(p_ccb->p_lcb, p_ccb, p_buf2);
+      l2c_link_check_send_pkts(p_ccb->p_lcb, p_ccb->local_cid, p_buf2);
     }
   }
 
-  l2c_link_check_send_pkts(p_ccb->p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_ccb->p_lcb, 0, p_buf);
 }
 
 /*******************************************************************************
@@ -870,7 +870,7 @@ void l2cu_send_peer_disc_rsp(tL2C_LCB* p_lcb, uint8_t remote_id,
   UINT16_TO_STREAM(p, local_cid);
   UINT16_TO_STREAM(p, remote_cid);
 
-  l2c_link_check_send_pkts(p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_lcb, 0, p_buf);
 }
 
 /*******************************************************************************
@@ -925,7 +925,7 @@ void l2cu_send_peer_echo_rsp(tL2C_LCB* p_lcb, uint8_t id, uint8_t* p_data,
     ARRAY_TO_STREAM(p, p_data, data_len);
   }
 
-  l2c_link_check_send_pkts(p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_lcb, 0, p_buf);
 }
 
 /*******************************************************************************
@@ -962,7 +962,7 @@ void l2cu_send_peer_info_req(tL2C_LCB* p_lcb, uint16_t info_type) {
   alarm_set_on_mloop(p_lcb->info_resp_timer, L2CAP_WAIT_INFO_RSP_TIMEOUT_MS,
                      l2c_info_resp_timer_timeout, p_lcb);
 
-  l2c_link_check_send_pkts(p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_lcb, 0, p_buf);
 }
 
 /*******************************************************************************
@@ -1075,7 +1075,7 @@ void l2cu_send_peer_info_rsp(tL2C_LCB* p_lcb, uint8_t remote_id,
         p, L2CAP_INFO_RESP_RESULT_NOT_SUPPORTED); /* 'not supported' */
   }
 
-  l2c_link_check_send_pkts(p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_lcb, 0, p_buf);
 }
 
 /******************************************************************************
@@ -2636,7 +2636,7 @@ void l2cu_send_peer_ble_par_req(tL2C_LCB* p_lcb, uint16_t min_int,
   UINT16_TO_STREAM(p, latency);
   UINT16_TO_STREAM(p, timeout);
 
-  l2c_link_check_send_pkts(p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_lcb, 0, p_buf);
 }
 
 /*******************************************************************************
@@ -2666,7 +2666,7 @@ void l2cu_send_peer_ble_par_rsp(tL2C_LCB* p_lcb, uint16_t reason,
 
   UINT16_TO_STREAM(p, reason);
 
-  l2c_link_check_send_pkts(p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_lcb, 0, p_buf);
 }
 
 /*******************************************************************************
@@ -2721,7 +2721,7 @@ void l2cu_send_peer_ble_credit_based_conn_req(tL2C_CCB* p_ccb) {
   UINT16_TO_STREAM(p, mps);
   UINT16_TO_STREAM(p, initial_credit);
 
-  l2c_link_check_send_pkts(p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_lcb, 0, p_buf);
 }
 
 /*******************************************************************************
@@ -2756,7 +2756,7 @@ void l2cu_reject_ble_connection(tL2C_LCB* p_lcb, uint8_t rem_id,
   UINT16_TO_STREAM(p, 0); /* initial credit */
   UINT16_TO_STREAM(p, result);
 
-  l2c_link_check_send_pkts(p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_lcb, 0, p_buf);
 }
 
 /*******************************************************************************
@@ -2793,7 +2793,7 @@ void l2cu_send_peer_ble_credit_based_conn_res(tL2C_CCB* p_ccb,
   UINT16_TO_STREAM(p, p_ccb->local_conn_cfg.credits); /* initial credit */
   UINT16_TO_STREAM(p, result);
 
-  l2c_link_check_send_pkts(p_ccb->p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_ccb->p_lcb, 0, p_buf);
 }
 
 /*******************************************************************************
@@ -2834,7 +2834,7 @@ void l2cu_send_peer_ble_flow_control_credit(tL2C_CCB* p_ccb,
   UINT16_TO_STREAM(p, p_ccb->local_cid);
   UINT16_TO_STREAM(p, credit_value);
 
-  l2c_link_check_send_pkts(p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_lcb, 0, p_buf);
 }
 
 /*******************************************************************************
@@ -2875,7 +2875,7 @@ void l2cu_send_peer_ble_credit_based_disconn_req(tL2C_CCB* p_ccb) {
   UINT16_TO_STREAM(p, p_ccb->remote_cid);
   UINT16_TO_STREAM(p, p_ccb->local_cid);
 
-  l2c_link_check_send_pkts(p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_lcb, 0, p_buf);
 }
 
 /*******************************************************************************
