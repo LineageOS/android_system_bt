@@ -123,6 +123,7 @@ class SecurityManagerChannel : public l2cap::classic::LinkSecurityInterfaceListe
   os::Handler* handler_{nullptr};
   l2cap::classic::SecurityInterface* l2cap_security_interface_{nullptr};
   std::unordered_map<hci::Address, std::unique_ptr<l2cap::classic::LinkSecurityInterface>> link_map_;
+  std::set<hci::Address> outgoing_pairing_remote_devices_;
 };
 
 }  // namespace channel
