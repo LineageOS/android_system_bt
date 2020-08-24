@@ -290,7 +290,7 @@ void LinkManager::OnEncryptionChange(hci::Address device, hci::EncryptionEnabled
         link_security_interface_listener_,
         &LinkSecurityInterfaceListener::OnEncryptionChange,
         device,
-        enabled == hci::EncryptionEnabled::ON);
+        enabled == hci::EncryptionEnabled::ON || enabled == hci::EncryptionEnabled::BR_EDR_AES_CCM);
   }
 }
 
