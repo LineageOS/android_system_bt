@@ -44,6 +44,7 @@ typedef struct {
   bool link_up_issued;
   tBT_TRANSPORT transport;
   uint16_t clock_offset;
+  uint16_t flush_timeout_in_ticks;
   uint16_t hci_handle;
   uint16_t link_policy;
   uint16_t link_super_tout;
