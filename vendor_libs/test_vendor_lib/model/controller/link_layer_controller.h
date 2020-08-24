@@ -171,6 +171,11 @@ class LinkLayerController {
   ErrorCode LeEnableEncryption(uint16_t handle, std::array<uint8_t, 8> rand,
                                uint16_t ediv, std::array<uint8_t, 16> ltk);
 
+  ErrorCode LeLongTermKeyRequestReply(uint16_t handle,
+                                      std::array<uint8_t, 16> ltk);
+
+  ErrorCode LeLongTermKeyRequestNegativeReply(uint16_t handle);
+
   ErrorCode SetLeAdvertisingEnable(uint8_t le_advertising_enable);
 
   void LeDisableAdvertisingSets();
@@ -199,7 +204,7 @@ class LinkLayerController {
   void SetLeFilterDuplicates(uint8_t le_scan_filter_duplicates) {
     le_scan_filter_duplicates_ = le_scan_filter_duplicates;
   }
-  void SetLeAddressType(uint8_t le_address_type) {
+  void SetLeAddressType(bluetooth::hci::OwnAddressType le_address_type) {
     le_address_type_ = le_address_type;
   }
   ErrorCode SetLeConnect(bool le_connect) {
@@ -369,7 +374,7 @@ class LinkLayerController {
   uint16_t le_scan_window_{};
   uint8_t le_scan_filter_policy_{};
   uint8_t le_scan_filter_duplicates_{};
-  uint8_t le_address_type_{};
+  bluetooth::hci::OwnAddressType le_address_type_{};
 
   bool le_connect_{false};
   uint16_t le_connection_interval_min_{};
