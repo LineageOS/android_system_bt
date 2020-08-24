@@ -166,6 +166,9 @@ void SnoopLogger::OpenNextSnoopLogFile() {
   if (!btsnoop_ostream_.write(reinterpret_cast<const char*>(&kBtSnoopFileHeader), sizeof(FileHeaderType))) {
     LOG_ALWAYS_FATAL("Unable to write file header to \"%s\", error: \"%s\"", file_path_.c_str(), strerror(errno));
   }
+  if (!btsnoop_ostream_.flush()) {
+    LOG_ERROR("Failed to flush, error: \"%s\"", strerror(errno));
+  }
 }
 
 void SnoopLogger::SetFilePath(std::string filename) {
@@ -219,10 +222,12 @@ void SnoopLogger::Capture(const HciPacket& packet, Direction direction, PacketTy
     if (!btsnoop_ostream_.write(reinterpret_cast<const char*>(packet.data()), packet.size())) {
       LOG_ERROR("Failed to write packet payload, error: \"%s\"", strerror(errno));
     }
-    if (os::ParameterProvider::SnoopLogAlwaysFlush()) {
-      if (!btsnoop_ostream_.flush()) {
-        LOG_ERROR("Failed to flush, error: \"%s\"", strerror(errno));
-      }
+    // std::ofstream::flush() pushes user data into kernel memory. The data will be written even if this process
+    // crashes. However, data will be lost if there is a kernel panic, which is out of scope of BT snoop log.
+    // NOTE: std::ofstream::write() followed by std::ofstream::flush() has similar effect as UNIX write(fd, data, len)
+    //       as write() syscall dumps data into kernel memory directly
+    if (!btsnoop_ostream_.flush()) {
+      LOG_ERROR("Failed to flush, error: \"%s\"", strerror(errno));
     }
   }
 }
