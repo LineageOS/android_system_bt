@@ -266,10 +266,6 @@ typedef struct {
   bool disable_pair_mode; /* disable pair mode or not */
   bool conn_paired_only;  /* allow connectable to paired device only or not */
   tBTA_DM_API_SEARCH search_msg;
-  uint16_t page_scan_interval;
-  uint16_t page_scan_window;
-  uint16_t inquiry_scan_interval;
-  uint16_t inquiry_scan_window;
 
   /* Storage for pin code request parameters */
   RawAddress pin_bd_addr;
