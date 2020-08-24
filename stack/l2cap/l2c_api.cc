@@ -1244,7 +1244,7 @@ bool L2CA_SetFlushTimeout(const RawAddress& bd_addr,
     if ((p_lcb) && (p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTED)) {
       if (p_lcb->LinkFlushTimeout() != flush_timeout_in_ms) {
         p_lcb->SetLinkFlushTimeout(flush_timeout_in_ms);
-        btsnd_hcic_write_auto_flush_tout(p_lcb->handle, flush_timeout_in_slots);
+        acl_write_automatic_flush_timeout(bd_addr, flush_timeout_in_slots);
       }
     } else {
       LOG(WARNING) << __func__ << " No lcb for bd_addr " << bd_addr;
@@ -1252,13 +1252,12 @@ bool L2CA_SetFlushTimeout(const RawAddress& bd_addr,
     }
   } else {
     tL2C_LCB* p_lcb = &l2cb.lcb_pool[0];
-
     for (int xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
       if ((p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTED)) {
         if (p_lcb->LinkFlushTimeout() != flush_timeout_in_ms) {
           p_lcb->SetLinkFlushTimeout(flush_timeout_in_ms);
-          btsnd_hcic_write_auto_flush_tout(p_lcb->handle,
-                                           flush_timeout_in_slots);
+          acl_write_automatic_flush_timeout(p_lcb->remote_bd_addr,
+                                            flush_timeout_in_slots);
         }
       }
     }
