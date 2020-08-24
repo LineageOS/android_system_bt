@@ -292,8 +292,7 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
     p_ccb->con_state = GAP_CCB_STATE_CONN_SETUP;
 
     /* mark security done flag, when security is not required */
-    if ((security & (BTM_SEC_OUT_AUTHORIZE | BTM_SEC_OUT_AUTHENTICATE |
-                     BTM_SEC_OUT_ENCRYPT)) == 0)
+    if ((security & (BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT)) == 0)
       p_ccb->con_flags |= GAP_CCB_FLAGS_SEC_DONE;
 
     /* Check if L2CAP started the connection process */
