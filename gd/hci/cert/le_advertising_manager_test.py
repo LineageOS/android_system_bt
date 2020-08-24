@@ -62,7 +62,7 @@ class LeAdvertisingManagerTest(GdBaseTestClass):
             scan_parameters.le_scan_interval = 40
             scan_parameters.le_scan_window = 20
             self.enqueue_hci_command(
-                hci_packets.LeSetExtendedScanParametersBuilder(hci_packets.AddressType.RANDOM_DEVICE_ADDRESS,
+                hci_packets.LeSetExtendedScanParametersBuilder(hci_packets.OwnAddressType.RANDOM_DEVICE_ADDRESS,
                                                                hci_packets.LeScanningFilterPolicy.ACCEPT_ALL, 1,
                                                                [scan_parameters]), True)
             self.enqueue_hci_command(

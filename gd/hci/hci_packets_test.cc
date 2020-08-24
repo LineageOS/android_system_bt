@@ -275,7 +275,7 @@ TEST(HciPacketsTest, testLeSetScanParameters) {
   ASSERT_EQ(LeScanType::ACTIVE, view.GetLeScanType());
   ASSERT_EQ(0x12, view.GetLeScanInterval());
   ASSERT_EQ(0x12, view.GetLeScanWindow());
-  ASSERT_EQ(AddressType::RANDOM_DEVICE_ADDRESS, view.GetOwnAddressType());
+  ASSERT_EQ(OwnAddressType::RANDOM_DEVICE_ADDRESS, view.GetOwnAddressType());
   ASSERT_EQ(LeScanningFilterPolicy::ACCEPT_ALL, view.GetScanningFilterPolicy());
 }
 
