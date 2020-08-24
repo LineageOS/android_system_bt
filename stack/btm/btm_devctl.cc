@@ -186,7 +186,6 @@ void BTM_reset_complete() {
   // setup the random number generator
   std::srand(std::time(nullptr));
 
-#if (BLE_PRIVACY_SPT == TRUE)
   /* Set up the BLE privacy settings */
   if (controller->supports_ble() && controller->supports_ble_privacy() &&
       controller->get_ble_resolving_list_max_size() > 0) {
@@ -195,7 +194,6 @@ void BTM_reset_complete() {
     btsnd_hcic_ble_set_rand_priv_addr_timeout(
         btm_get_next_private_addrress_interval_ms() / 1000);
   }
-#endif
 
   if (controller->supports_ble()) {
     btm_ble_white_list_init(controller->get_ble_white_list_size());
