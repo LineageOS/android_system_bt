@@ -203,9 +203,7 @@ typedef struct {
   tL2CAP_APPL_INFO api;
 } tL2C_RCB;
 
-#ifndef L2CAP_CBB_DEFAULT_DATA_RATE_BUFF_QUOTA
 #define L2CAP_CBB_DEFAULT_DATA_RATE_BUFF_QUOTA 100
-#endif
 
 typedef void(tL2CAP_SEC_CBACK)(const RawAddress& bd_addr,
                                tBT_TRANSPORT trasnport, void* p_ref_data,
