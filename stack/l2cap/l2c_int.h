@@ -289,9 +289,7 @@ typedef struct t_l2c_ccb {
 
   bool is_flushable; /* true if channel is flushable */
 
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
   uint16_t fixed_chnl_idle_tout; /* Idle timeout to use for the fixed channel */
-#endif
   uint16_t tx_data_len;
 
   /* Number of LE frames that the remote can send to us (credit count in
@@ -306,8 +304,6 @@ typedef struct {
   tL2C_CCB* p_first_ccb; /* The first channel in this queue */
   tL2C_CCB* p_last_ccb;  /* The last  channel in this queue */
 } tL2C_CCB_Q;
-
-#if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
 
 /* Round-Robin service for the same priority channels */
 #define L2CAP_NUM_CHNL_PRIORITY \
@@ -330,8 +326,6 @@ typedef struct {
   uint8_t quota;         /* burst transmission quota */
 } tL2C_RR_SERV;
 
-#endif /* (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE) */
-
 /* Define a link control block. There is one link control block between
  * this device and any other device (i.e. BD ADDR).
 */
@@ -352,7 +346,12 @@ typedef struct t_l2c_linkcb {
   uint8_t id;
   uint8_t cur_echo_id;              /* Current id value for echo request */
   uint16_t idle_timeout;            /* Idle timeout */
-  bool is_bonding;                  /* True - link active only for bonding */
+ private:
+  bool is_bonding_{false};          /* True - link active only for bonding */
+ public:
+  bool IsBonding() const { return is_bonding_; }
+  void SetBonding() { is_bonding_ = true; }
+  void ResetBonding() { is_bonding_ = false; }
 
   uint16_t link_flush_tout; /* Flush timeout used */
 
@@ -373,10 +372,8 @@ typedef struct t_l2c_linkcb {
   uint8_t acl_priority;     /* L2C_PRIORITY_NORMAL or L2C_PRIORITY_HIGH */
   tL2CA_NOCP_CB* p_nocp_cb; /* Num Cmpl pkts callback */
 
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
   tL2C_CCB* p_fixed_ccbs[L2CAP_NUM_FIXED_CHNLS];
   uint16_t disc_reason;
-#endif
 
   tBT_TRANSPORT transport;
   uint8_t initiating_phys;  // LE PHY used for connection initiation
@@ -402,12 +399,10 @@ typedef struct t_l2c_linkcb {
   uint16_t min_ce_len;
   uint16_t max_ce_len;
 
-#if (L2CAP_ROUND_ROBIN_CHANNEL_SERVICE == TRUE)
   /* each priority group is limited burst transmission */
   /* round robin service for the same priority channels */
   tL2C_RR_SERV rr_serv[L2CAP_NUM_CHNL_PRIORITY];
   uint8_t rr_pri; /* current serving priority group */
-#endif
 
 } tL2C_LCB;
 
@@ -449,10 +444,8 @@ typedef struct {
   uint32_t test_info_resp; /* Conformance testing needs a dynamic response */
 #endif
 
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
   tL2CAP_FIXED_CHNL_REG
       fixed_reg[L2CAP_NUM_FIXED_CHNLS]; /* Reg info for fixed channels */
-#endif
 
   uint16_t num_ble_links_active; /* Number of LE links active */
   uint16_t controller_le_xmit_window; /* Total ACL window for all links */
@@ -623,8 +616,6 @@ extern void l2cu_create_conn_br_edr(tL2C_LCB* p_lcb);
 extern bool l2cu_create_conn_le(tL2C_LCB* p_lcb);
 extern bool l2cu_create_conn_le(tL2C_LCB* p_lcb, uint8_t initiating_phys);
 extern void l2cu_create_conn_after_switch(tL2C_LCB* p_lcb);
-extern BT_HDR* l2cu_get_next_buffer_to_send(tL2C_LCB* p_lcb,
-                                            tL2C_TX_COMPLETE_CB_INFO* p_cbi);
 extern void l2cu_adjust_out_mps(tL2C_CCB* p_ccb);
 
 /* Functions provided by l2c_link.cc
