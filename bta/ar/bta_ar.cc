@@ -32,24 +32,6 @@ tBTA_AR_CB bta_ar_cb;
 
 /*******************************************************************************
  *
- * Function         bta_ar_id
- *
- * Description      This function maps sys_id to ar id mask.
- *
- * Returns          void
- *
- ******************************************************************************/
-static uint8_t bta_ar_id(tBTA_SYS_ID sys_id) {
-  uint8_t mask = 0;
-  if (sys_id == BTA_ID_AV) {
-    mask = BTA_AR_AV_MASK;
-  }
-
-  return mask;
-}
-
-/*******************************************************************************
- *
  * Function         bta_ar_init
  *
  * Description      This function is called to register to AVDTP.
@@ -238,12 +220,10 @@ void bta_ar_reg_avrc(uint16_t service_uuid, const char* service_name,
  * Returns          void
  *
  *****************************************************************************/
-void bta_ar_dereg_avrc(uint16_t service_uuid, tBTA_SYS_ID sys_id) {
-  uint8_t mask = bta_ar_id(sys_id);
+void bta_ar_dereg_avrc(uint16_t service_uuid) {
+  uint8_t mask = BTA_AR_AV_MASK;
   uint16_t categories = 0;
   uint8_t temp[8], *p;
-
-  if (!mask) return;
 
   if (service_uuid == UUID_SERVCLASS_AV_REM_CTRL_TARGET) {
     if (bta_ar_cb.sdp_tg_handle && mask == bta_ar_cb.tg_registered) {

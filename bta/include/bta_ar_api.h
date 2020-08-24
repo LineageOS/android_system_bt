@@ -134,6 +134,6 @@ extern void bta_ar_reg_avrc(uint16_t service_uuid, const char* p_service_name,
  * Returns          void
  *
  *****************************************************************************/
-extern void bta_ar_dereg_avrc(uint16_t service_uuid, tBTA_SYS_ID sys_id);
+extern void bta_ar_dereg_avrc(uint16_t service_uuid);
 
 #endif /* BTA_AR_API_H */

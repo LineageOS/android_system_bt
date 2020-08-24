@@ -243,8 +243,8 @@ static void bta_av_api_enable(tBTA_AV_DATA* p_data) {
     bta_ar_dereg_avdt(BTA_ID_AV);
 
     // deregister from AVCT
-    bta_ar_dereg_avrc(UUID_SERVCLASS_AV_REMOTE_CONTROL, BTA_ID_AV);
-    bta_ar_dereg_avrc(UUID_SERVCLASS_AV_REM_CTRL_TARGET, BTA_ID_AV);
+    bta_ar_dereg_avrc(UUID_SERVCLASS_AV_REMOTE_CONTROL);
+    bta_ar_dereg_avrc(UUID_SERVCLASS_AV_REM_CTRL_TARGET);
     bta_ar_dereg_avct();
   }
 

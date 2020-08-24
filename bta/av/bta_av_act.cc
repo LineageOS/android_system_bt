@@ -2268,7 +2268,7 @@ void bta_av_dereg_comp(tBTA_AV_DATA* p_data) {
 
     /* remove the A2DP SDP record, if no more audio stream is left */
     if (!p_cb->reg_audio) {
-      bta_ar_dereg_avrc(UUID_SERVCLASS_AV_REMOTE_CONTROL, BTA_ID_AV);
+      bta_ar_dereg_avrc(UUID_SERVCLASS_AV_REMOTE_CONTROL);
       if (p_cb->sdp_a2dp_handle) {
         bta_av_del_sdp_rec(&p_cb->sdp_a2dp_handle);
         p_cb->sdp_a2dp_handle = 0;
@@ -2295,7 +2295,7 @@ void bta_av_dereg_comp(tBTA_AV_DATA* p_data) {
     bta_ar_dereg_avdt(BTA_ID_AV);
 
     /* deregister from AVCT */
-    bta_ar_dereg_avrc(UUID_SERVCLASS_AV_REM_CTRL_TARGET, BTA_ID_AV);
+    bta_ar_dereg_avrc(UUID_SERVCLASS_AV_REM_CTRL_TARGET);
     bta_ar_dereg_avct();
 
     if (p_cb->disabling) {
