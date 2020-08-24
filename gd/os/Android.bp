@@ -22,6 +22,14 @@ filegroup {
 }
 
 filegroup {
+    name: "BluetoothOsTestSources_host",
+    srcs: [
+        "host/system_properties_test.cc",
+    ],
+}
+
+
+filegroup {
     name: "BluetoothOsSources_linux_generic",
     srcs: [
         "linux_generic/alarm.cc",
