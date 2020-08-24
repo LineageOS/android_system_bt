@@ -17,6 +17,7 @@
 
 #include <memory>
 
+#include "hci/address_with_type.h"
 #include "hci/hci_packets.h"
 #include "module.h"
 
@@ -78,6 +79,9 @@ class LeAdvertisingManager : public bluetooth::Module {
       const common::Callback<void(ErrorCode, uint8_t, uint8_t)>& set_terminated_callback, os::Handler* handler);
 
   void RemoveAdvertiser(AdvertiserId id);
+
+  virtual void RegisterSetTerminatedCallback(
+      common::ContextualCallback<void(ErrorCode, uint16_t, hci::AddressWithType)> set_terminated_callback);
 
   static const ModuleFactory Factory;
 
