@@ -1202,6 +1202,10 @@ bool L2CA_SetTxPriority(uint16_t cid, tL2CAP_CHNL_PRIORITY priority) {
  * NOTE             This flush timeout applies to all logical channels active on
  *                  the ACL link.
  ******************************************************************************/
+inline uint32_t ConvertMillisecondsToBasebandSlots(uint32_t milliseconds) {
+  return ((milliseconds * 8) + 3) / 5;
+}
+
 bool L2CA_SetFlushTimeout(const RawAddress& bd_addr, uint16_t flush_tout) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::L2CA_SetFlushTimeout(bd_addr, flush_tout);
@@ -1228,7 +1232,7 @@ bool L2CA_SetFlushTimeout(const RawAddress& bd_addr, uint16_t flush_tout) {
     hci_flush_to = 0x0000;
   } else {
     /* convert L2CAP flush_to to 0.625 ms units, with round */
-    temp = (((uint32_t)flush_tout * 8) + 3) / 5;
+    temp = ConvertMillisecondsToBasebandSlots(flush_tout);
 
     /* if L2CAP flush_to within range of HCI, set HCI flush timeout */
     if (temp > HCI_MAX_AUTOMATIC_FLUSH_TIMEOUT) {
