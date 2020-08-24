@@ -71,7 +71,7 @@ extern void bta_ar_reg_avdt(AvdtpRcb* p_reg, tAVDT_CTRL_CBACK* p_cback);
  * Returns          void
  *
  ******************************************************************************/
-extern void bta_ar_dereg_avdt(tBTA_SYS_ID sys_id);
+extern void bta_ar_dereg_avdt();
 
 /*******************************************************************************
  *

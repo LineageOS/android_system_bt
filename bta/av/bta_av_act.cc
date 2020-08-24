@@ -2292,7 +2292,7 @@ void bta_av_dereg_comp(tBTA_AV_DATA* p_data) {
   /* if no stream control block is active */
   if (p_cb->reg_audio == 0) {
     /* deregister from AVDT */
-    bta_ar_dereg_avdt(BTA_ID_AV);
+    bta_ar_dereg_avdt();
 
     /* deregister from AVCT */
     bta_ar_dereg_avrc(UUID_SERVCLASS_AV_REM_CTRL_TARGET);

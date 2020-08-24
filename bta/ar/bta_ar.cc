@@ -90,14 +90,9 @@ void bta_ar_reg_avdt(AvdtpRcb* p_reg, tAVDT_CTRL_CBACK* p_cback) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_ar_dereg_avdt(tBTA_SYS_ID sys_id) {
-  uint8_t mask = 0;
-
-  if (sys_id == BTA_ID_AV) {
-    bta_ar_cb.p_av_conn_cback = NULL;
-    mask = BTA_AR_AV_MASK;
-  }
-  bta_ar_cb.avdt_registered &= ~mask;
+void bta_ar_dereg_avdt() {
+  bta_ar_cb.p_av_conn_cback = NULL;
+  bta_ar_cb.avdt_registered &= ~BTA_AR_AV_MASK;
 
   if (bta_ar_cb.avdt_registered == 0) AVDT_Deregister();
 }
