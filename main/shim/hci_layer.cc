@@ -19,12 +19,10 @@
 #include "hci/hci_layer.h"
 
 #include <base/bind.h>
-#include <frameworks/base/core/proto/android/bluetooth/hci/enums.pb.h>
 
 #include <algorithm>
 #include <cstdint>
 
-#include "btcore/include/module.h"
 #include "hci/hci_packets.h"
 #include "hci/include/packet_fragmenter.h"
 #include "main/shim/hci_layer.h"
@@ -202,7 +200,7 @@ std::unique_ptr<bluetooth::packet::RawBuilder> MakeUniquePacket(
 BT_HDR* WrapPacketAndCopy(
     uint16_t event,
     bluetooth::hci::PacketView<bluetooth::hci::kLittleEndian>* data) {
-  size_t packet_size = data->size() + BT_HDR_SIZE;
+  size_t packet_size = data->size() + kBtHdrSize;
   BT_HDR* packet = reinterpret_cast<BT_HDR*>(osi_malloc(packet_size));
   packet->offset = 0;
   packet->len = data->size();
@@ -228,25 +226,39 @@ static void set_data_cb(
 void OnTransmitPacketCommandComplete(command_complete_cb complete_callback,
                                      void* context,
                                      bluetooth::hci::CommandCompleteView view) {
+  LOG_DEBUG("Received cmd complete for %s",
+            bluetooth::hci::OpCodeText(view.GetCommandOpCode()).c_str());
   std::vector<const uint8_t> data(view.begin(), view.end());
-
-  BT_HDR* response = static_cast<BT_HDR*>(osi_calloc(data.size() + kBtHdrSize));
-  std::copy(data.begin(), data.end(), response->data);
-  response->len = data.size();
-
+  BT_HDR* response = WrapPacketAndCopy(MSG_HC_TO_STACK_HCI_EVT, &view);
   complete_callback(response, context);
 }
 
+class OsiObject {
+ public:
+  OsiObject(void* ptr) : ptr_(ptr) {}
+  ~OsiObject() {
+    if (ptr_ != nullptr) {
+      osi_free(ptr_);
+    }
+  }
+  void* Release() {
+    void* ptr = ptr_;
+    ptr_ = nullptr;
+    return ptr;
+  }
+
+ private:
+  void* ptr_;
+};
+
 void OnTransmitPacketStatus(command_status_cb status_callback, void* context,
+                            std::unique_ptr<OsiObject> command,
                             bluetooth::hci::CommandStatusView view) {
-  std::vector<const uint8_t> data(view.begin(), view.end());
-
-  BT_HDR* response = static_cast<BT_HDR*>(osi_calloc(data.size() + kBtHdrSize));
-  std::copy(data.begin(), data.end(), response->data);
-  response->len = data.size();
-
+  LOG_DEBUG("Received cmd status %s for %s",
+            bluetooth::hci::ErrorCodeText(view.GetStatus()).c_str(),
+            bluetooth::hci::OpCodeText(view.GetCommandOpCode()).c_str());
   uint8_t status = static_cast<uint8_t>(view.GetStatus());
-  status_callback(status, response, context);
+  status_callback(status, static_cast<BT_HDR*>(command->Release()), context);
 }
 
 using bluetooth::common::BindOnce;
@@ -276,15 +288,17 @@ static void transmit_command(BT_HDR* command,
   LOG_INFO("Sending command %s", bluetooth::hci::OpCodeText(op_code).c_str());
 
   if (IsCommandStatusOpcode(op_code)) {
+    auto command_unique = std::make_unique<OsiObject>(command);
     bluetooth::shim::GetHciLayer()->EnqueueCommand(
-        std::move(packet),
-        bluetooth::shim::GetGdShimHandler()->BindOnce(
-            OnTransmitPacketStatus, status_callback, context));
+        std::move(packet), bluetooth::shim::GetGdShimHandler()->BindOnce(
+                               OnTransmitPacketStatus, status_callback, context,
+                               std::move(command_unique)));
   } else {
     bluetooth::shim::GetHciLayer()->EnqueueCommand(
         std::move(packet),
         bluetooth::shim::GetGdShimHandler()->BindOnce(
             OnTransmitPacketCommandComplete, complete_callback, context));
+    osi_free(command);
   }
 }
 
