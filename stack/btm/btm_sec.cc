@@ -2731,7 +2731,7 @@ void btm_io_capabilities_req(const RawAddress& p) {
    * loc_io_caps is initialized with the default value */
   evt_data.io_cap = btm_cb.devcb.loc_io_caps;
   evt_data.oob_data = BTM_OOB_NONE;
-  evt_data.auth_req = BTM_DEFAULT_AUTH_REQ;
+  evt_data.auth_req = BTM_AUTH_SP_NO;
 
   BTM_TRACE_EVENT("%s: State: %s", __func__,
                   btm_pair_state_descr(btm_cb.pairing_state));
@@ -2766,7 +2766,7 @@ void btm_io_capabilities_req(const RawAddress& p) {
 
       if (btm_cb.pairing_flags & BTM_PAIR_FLAGS_PEER_STARTED_DD) {
         /* acceptor in dedicated bonding */
-        evt_data.auth_req = BTM_DEFAULT_DD_AUTH_REQ;
+        evt_data.auth_req = BTM_AUTH_AP_YES;
       }
       break;
 
@@ -2774,7 +2774,7 @@ void btm_io_capabilities_req(const RawAddress& p) {
     initiated by local device */
     case BTM_PAIR_STATE_WAIT_PIN_REQ:
       if (evt_data.bd_addr == btm_cb.pairing_bda) {
-        evt_data.auth_req = BTM_DEFAULT_DD_AUTH_REQ;
+        evt_data.auth_req = BTM_AUTH_AP_YES;
       } else {
         err_code = HCI_ERR_HOST_BUSY_PAIRING;
       }

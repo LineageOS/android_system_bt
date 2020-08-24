@@ -424,19 +424,6 @@
 #define BTM_LOCAL_IO_CAPS_BLE BTM_IO_CAP_KBDISP
 #endif
 
-/* The default MITM Protection Requirement (for Simple Pairing)
- * Possible values are BTM_AUTH_SP_YES or BTM_AUTH_SP_NO */
-#ifndef BTM_DEFAULT_AUTH_REQ
-#define BTM_DEFAULT_AUTH_REQ BTM_AUTH_SP_NO
-#endif
-
-/* The default MITM Protection Requirement for dedicated bonding using Simple
- * Pairing
- * Possible values are BTM_AUTH_AP_YES or BTM_AUTH_AP_NO */
-#ifndef BTM_DEFAULT_DD_AUTH_REQ
-#define BTM_DEFAULT_DD_AUTH_REQ BTM_AUTH_AP_YES
-#endif
-
 /* TRUE to include Sniff Subrating */
 #ifndef BTM_SSR_INCLUDED
 #define BTM_SSR_INCLUDED TRUE
