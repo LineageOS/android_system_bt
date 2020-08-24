@@ -91,6 +91,19 @@ tHID_STATUS HID_DevRegister(tHID_DEV_HOST_CALLBACK* host_cback) {
 
   if (host_cback == NULL) return HID_ERR_INVALID_PARAM;
 
+  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_HIDD_SEC_CTRL,
+                                  BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT,
+                                  HID_PSM_CONTROL)) {
+    HIDD_TRACE_ERROR("Security Registration 1 failed");
+    return (HID_ERR_NO_RESOURCES);
+  }
+
+  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_HIDD_INTR, BTM_SEC_NONE,
+                                  HID_PSM_INTERRUPT)) {
+    HIDD_TRACE_ERROR("Security Registration 5 failed");
+    return (HID_ERR_NO_RESOURCES);
+  }
+
   /* Register with L2CAP */
   st = hidd_conn_reg();
   if (st != HID_SUCCESS) return st;
@@ -123,25 +136,6 @@ tHID_STATUS HID_DevDeregister(void) {
   hidd_conn_dereg();
 
   hd_cb.reg_flag = FALSE;
-
-  return (HID_SUCCESS);
-}
-
-tHID_STATUS HID_DevSetSecurityLevel() {
-  HIDD_TRACE_API("%s", __func__);
-
-  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_HIDD_SEC_CTRL,
-                                  BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT,
-                                  HID_PSM_CONTROL)) {
-    HIDD_TRACE_ERROR("Security Registration 1 failed");
-    return (HID_ERR_NO_RESOURCES);
-  }
-
-  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_HIDD_INTR, BTM_SEC_NONE,
-                                  HID_PSM_INTERRUPT)) {
-    HIDD_TRACE_ERROR("Security Registration 5 failed");
-    return (HID_ERR_NO_RESOURCES);
-  }
 
   return (HID_SUCCESS);
 }
