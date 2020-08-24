@@ -26,8 +26,11 @@
 
 #include <cstdint>
 
+#include "device/include/controller.h"
 #include "gd/os/log.h"
+#include "osi/include/osi.h"
 #include "stack/btm/btm_dev.h"
+#include "stack/include/bt_types.h"
 #include "stack/l2cap/l2c_int.h"
 #include "types/bt_transport.h"
 #include "types/raw_address.h"
