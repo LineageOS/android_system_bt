@@ -56,7 +56,6 @@ using bluetooth::Uuid;
 #define BTM_INQ_DEBUG FALSE
 #endif
 
-#define BTIF_DM_DEFAULT_INQ_MAX_RESULTS 0
 #define BTIF_DM_DEFAULT_INQ_MAX_DURATION 10
 
 /******************************************************************************/
@@ -568,8 +567,6 @@ void BTM_CancelInquiry(void) {
  *                             seperately
  *                      duration - length in 1.28 sec intervals (If '0', the
  *                                 inquiry is CANCELLED)
- *                      max_resps - maximum amount of devices to search for
- *                                  before ending the inquiry
  *                      filter_cond_type - BTM_CLR_INQUIRY_FILTER,
  *                                         BTM_FILTER_COND_DEVICE_CLASS, or
  *                                         BTM_FILTER_COND_BD_ADDR
@@ -622,8 +619,6 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
   p_inq->inqparms = {};
   p_inq->inqparms.mode = BTM_GENERAL_INQUIRY | BTM_BLE_GENERAL_INQUIRY;
   p_inq->inqparms.duration = BTIF_DM_DEFAULT_INQ_MAX_DURATION;
-
-  p_inq->inqparms.max_resps = BTIF_DM_DEFAULT_INQ_MAX_RESULTS;
 
   /* Initialize the inquiry variables */
   p_inq->state = BTM_INQ_ACTIVE_STATE;
@@ -1144,8 +1139,6 @@ tINQ_DB_ENT* btm_inq_db_new(const RawAddress& p_bda) {
  *                      mode - GENERAL or LIMITED inquiry
  *                      duration - length in 1.28 sec intervals
  *                                 (If '0', the inquiry is CANCELLED)
- *                      max_resps - maximum amount of devices to search for
- *                                  before ending the inquiry
  *                      filter_cond_type - BTM_CLR_INQUIRY_FILTER,
  *                                         BTM_FILTER_COND_DEVICE_CLASS, or
  *                                         BTM_FILTER_COND_BD_ADDR
@@ -1175,18 +1168,12 @@ static void btm_initiate_inquiry() {
     return;
   }
 
-  /* Make sure the number of responses doesn't overflow the database
-   * configuration */
-  p_inqparms->max_resps = (uint8_t)((p_inqparms->max_resps <= BTM_INQ_DB_SIZE)
-                                        ? p_inqparms->max_resps
-                                        : BTM_INQ_DB_SIZE);
-
   lap = (p_inq->inq_active & BTM_LIMITED_INQUIRY_ACTIVE) ? &limited_inq_lap
                                                          : &general_inq_lap;
 
   if (p_inq->inq_active & BTM_PERIODIC_INQUIRY_ACTIVE) {
     btsnd_hcic_per_inq_mode(p_inq->per_max_delay, p_inq->per_min_delay, *lap,
-                            p_inqparms->duration, p_inqparms->max_resps);
+                            p_inqparms->duration, 0);
   } else {
     btm_clr_inq_result_flt();
 
@@ -1285,22 +1272,6 @@ void btm_process_inq_results(uint8_t* p, uint8_t hci_evt_len,
     }
 
     p_i = btm_inq_db_find(bda);
-    /* Only process the num_resp is smaller than max_resps.
-       If results are queued to BTU task while canceling inquiry,
-       or when more than one result is in this response, > max_resp
-       responses could be processed which can confuse some apps
-    */
-    if (p_inq->inqparms.max_resps &&
-        p_inq->inq_cmpl_info.num_resp >= p_inq->inqparms.max_resps
-        /* new device response */
-        &&
-        (p_i == NULL ||
-         /* exisiting device with BR/EDR info */
-         (p_i &&
-          (p_i->inq_info.results.device_type & BT_DEVICE_TYPE_BREDR) != 0))) {
-      /* BTM_TRACE_WARNING("INQ RES: Extra Response Received...ignoring"); */
-      return;
-    }
 
     /* Check if this address has already been processed for this inquiry */
     if (btm_inq_find_bdaddr(bda)) {
@@ -1380,23 +1351,6 @@ void btm_process_inq_results(uint8_t* p, uint8_t hci_evt_len,
         p_cur->device_type |= BT_DEVICE_TYPE_BREDR;
       p_i->inq_count = p_inq->inq_counter; /* Mark entry for current inquiry */
 
-      /* If the number of responses found and not unlimited, issue a cancel
-       * inquiry */
-      if (!(p_inq->inq_active & BTM_PERIODIC_INQUIRY_ACTIVE) &&
-          p_inq->inqparms.max_resps &&
-          p_inq->inq_cmpl_info.num_resp == p_inq->inqparms.max_resps &&
-          /* BLE scanning is active and received adv */
-          ((((p_inq->inqparms.mode & BTM_BLE_INQUIRY_MASK) != 0) &&
-            p_cur->device_type == BT_DEVICE_TYPE_DUMO && p_i->scan_rsp) ||
-           (p_inq->inqparms.mode & BTM_BLE_INQUIRY_MASK) == 0)) {
-        /*                BTM_TRACE_DEBUG("BTMINQ: Found devices, cancelling
-         * inquiry..."); */
-        btsnd_hcic_inq_cancel();
-
-        if ((p_inq->inqparms.mode & BTM_BLE_INQUIRY_MASK) != 0)
-          btm_ble_stop_inquiry();
-        btm_acl_update_inquiry_status(BTM_INQUIRY_COMPLETE);
-      }
       /* Initialize flag to false. This flag is set/used by application */
       p_i->inq_info.appl_knows_rem_name = false;
     }
