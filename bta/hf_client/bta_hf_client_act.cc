@@ -99,7 +99,6 @@ void bta_hf_client_start_open(tBTA_HF_CLIENT_DATA* p_data) {
   /* store parameters */
   if (p_data) {
     client_cb->peer_addr = p_data->api_open.bd_addr;
-    client_cb->cli_sec_mask = p_data->api_open.sec_mask;
   }
 
   /* Check if RFCOMM has any incoming connection to avoid collision. */
