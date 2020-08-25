@@ -27,6 +27,7 @@
 #include "btcore/include/module.h"
 #include "bte.h"
 #include "btif/include/btif_common.h"
+#include "btm_iso_api.h"
 #include "common/message_loop_thread.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_int.h"
@@ -39,6 +40,7 @@
 #include <base/threading/thread.h>
 
 using bluetooth::common::MessageLoopThread;
+using bluetooth::hci::IsoManager;
 
 /* Define BTU storage area */
 uint8_t btu_trace_level = HCI_INITIAL_TRACE_LEVEL;
@@ -72,7 +74,7 @@ void btu_hci_msg_process(BT_HDR* p_msg) {
       break;
 
     case BT_EVT_TO_BTU_HCI_ISO:
-      // TODO: implement handler
+      IsoManager::GetInstance()->HandleIsoData(p_msg);
       osi_free(p_msg);
       break;
 

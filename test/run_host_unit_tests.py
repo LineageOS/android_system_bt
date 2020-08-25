@@ -26,6 +26,7 @@ HOST_TESTS = [
     'net_test_avrcp',
     'net_test_btcore',
     'net_test_types',
+    'net_test_btm_iso',
     'net_test_btpackets',
 ]
 
