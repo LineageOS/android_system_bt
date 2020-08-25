@@ -186,7 +186,7 @@ void bta_hf_client_start_server() {
       UUID_SERVCLASS_HF_HANDSFREE, bta_hf_client_cb_arr.scn, true,
       BTA_HF_CLIENT_MTU, RawAddress::kAny, &(bta_hf_client_cb_arr.serv_handle),
       bta_hf_client_mgmt_cback, BTM_SEC_SERVICE_HF_HANDSFREE,
-      bta_hf_client_cb_arr.serv_sec_mask);
+      BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT);
 
   APPL_TRACE_DEBUG("%s: started rfcomm server with handle %d", __func__,
                    bta_hf_client_cb_arr.serv_handle);
