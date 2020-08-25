@@ -29,6 +29,7 @@
 #include "bt_target.h"
 #include "bt_types.h"
 #include "bt_utils.h"
+#include "bta/include/bta_api.h"
 #include "btm_api.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
@@ -174,10 +175,9 @@ static BT_HDR* avct_lcb_msg_asmbl(tAVCT_LCB* p_lcb, BT_HDR* p_buf) {
 void avct_lcb_chnl_open(tAVCT_LCB* p_lcb, UNUSED_ATTR tAVCT_LCB_EVT* p_data) {
   uint16_t result = AVCT_RESULT_FAIL;
 
-  BTM_SetOutService(p_lcb->peer_addr, BTM_SEC_SERVICE_AVCTP, 0);
-  /* call l2cap connect req */
   p_lcb->ch_state = AVCT_CH_CONN;
-  p_lcb->ch_lcid = L2CA_ConnectReq(AVCT_PSM, p_lcb->peer_addr);
+  p_lcb->ch_lcid =
+      L2CA_ConnectReq2(AVCT_PSM, p_lcb->peer_addr, BTA_SEC_AUTHENTICATE);
   if (p_lcb->ch_lcid == 0) {
     /* if connect req failed, send ourselves close event */
     tAVCT_LCB_EVT avct_lcb_evt;
