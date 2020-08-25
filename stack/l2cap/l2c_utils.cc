@@ -1965,7 +1965,8 @@ void l2cu_process_our_cfg_req(tL2C_CCB* p_ccb, tL2CAP_CFG_INFO* p_cfg) {
         if (p_cfg->flush_to <= ((HCI_MAX_AUTOMATIC_FLUSH_TIMEOUT * 5) / 8)) {
           /* Convert flush timeout to 0.625 ms units, with round */
           hci_flush_to = ((p_cfg->flush_to * 8) + 3) / 5;
-          btsnd_hcic_write_auto_flush_tout(p_lcb->handle, hci_flush_to);
+          acl_write_automatic_flush_timeout(p_lcb->remote_bd_addr,
+                                            hci_flush_to);
         }
       }
     }
