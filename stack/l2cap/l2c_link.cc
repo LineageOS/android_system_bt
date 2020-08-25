@@ -1015,10 +1015,6 @@ void l2c_OnHciModeChangeSendPendingPackets(RawAddress remote) {
  * Description      This function queues the buffer for HCI transmission
  *
  ******************************************************************************/
-constexpr uint16_t kDataPacketEventBrEdr = (BT_EVT_TO_LM_HCI_ACL);
-constexpr uint16_t kDataPacketEventBle =
-    (BT_EVT_TO_LM_HCI_ACL | LOCAL_BLE_CONTROLLER_ID);
-
 static void l2c_link_send_to_lower_br_edr(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
   const uint16_t acl_packet_size_classic =
       controller_get_interface()->get_acl_packet_size_classic();
@@ -1060,7 +1056,7 @@ static void l2c_link_send_to_lower_br_edr(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
     l2cb.controller_xmit_window -= num_segs;
     if (p_lcb->link_xmit_quota == 0) l2cb.round_robin_unacked += num_segs;
   }
-  acl_send_data_packet(p_buf, kDataPacketEventBrEdr);
+  acl_send_data_packet_br_edr(p_lcb->remote_bd_addr, p_buf);
   L2CAP_TRACE_DEBUG(
       "TotalWin=%d,Hndl=0x%x,Quota=%d,Unack=%d,RRQuota=%d,RRUnack=%d",
       l2cb.controller_xmit_window, p_lcb->Handle(), p_lcb->link_xmit_quota,
@@ -1107,7 +1103,7 @@ static void l2c_link_send_to_lower_ble(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
     l2cb.controller_le_xmit_window -= num_segs;
     if (p_lcb->link_xmit_quota == 0) l2cb.ble_round_robin_unacked += num_segs;
   }
-  acl_send_data_packet(p_buf, kDataPacketEventBle);
+  acl_send_data_packet_ble(p_lcb->remote_bd_addr, p_buf);
   L2CAP_TRACE_DEBUG(
       "TotalWin=%d,Hndl=0x%x,Quota=%d,Unack=%d,RRQuota=%d,RRUnack=%d",
       l2cb.controller_le_xmit_window, p_lcb->Handle(), p_lcb->link_xmit_quota,
