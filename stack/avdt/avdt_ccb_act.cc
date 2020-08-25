@@ -940,10 +940,6 @@ void avdt_ccb_chk_timer(AvdtpCcb* p_ccb, UNUSED_ATTR tAVDT_CCB_EVT* p_data) {
 void avdt_ccb_set_conn(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data) {
   /* save callback */
   p_ccb->p_conn_cback = p_data->connect.p_cback;
-
-  /* set security level */
-  BTM_SetSecurityLevel(true, "", BTM_SEC_SERVICE_AVDTP,
-                       BTM_SEC_OUT_AUTHENTICATE, AVDT_PSM, 0, 0);
 }
 
 /*******************************************************************************
