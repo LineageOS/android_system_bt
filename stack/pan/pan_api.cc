@@ -344,7 +344,6 @@ tPAN_RESULT PAN_Connect(const RawAddress& rem_bda, uint8_t src_role,
     PAN_TRACE_ERROR("PAN Connection failed because of no resources");
     return PAN_NO_RESOURCES;
   }
-  BTM_SetOutService(rem_bda, BTM_SEC_SERVICE_BNEP_PANU, mx_chan_id);
 
   VLOG(0) << __func__ << " for BD Addr: " << rem_bda;
   if (pcb->con_state == PAN_STATE_IDLE) {
@@ -362,8 +361,9 @@ tPAN_RESULT PAN_Connect(const RawAddress& rem_bda, uint8_t src_role,
   pcb->src_uuid = src_uuid;
   pcb->dst_uuid = dst_uuid;
 
-  tBNEP_RESULT ret = BNEP_Connect(rem_bda, Uuid::From16Bit(src_uuid),
-                                  Uuid::From16Bit(dst_uuid), &(pcb->handle));
+  tBNEP_RESULT ret =
+      BNEP_Connect(rem_bda, Uuid::From16Bit(src_uuid),
+                   Uuid::From16Bit(dst_uuid), &(pcb->handle), mx_chan_id);
   if (ret != BNEP_SUCCESS) {
     pan_release_pcb(pcb);
     return ret;
