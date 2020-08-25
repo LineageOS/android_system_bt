@@ -2866,10 +2866,6 @@ constexpr uint16_t kDataPacketEventBrEdr = (BT_EVT_TO_LM_HCI_ACL);
 constexpr uint16_t kDataPacketEventBle =
     (BT_EVT_TO_LM_HCI_ACL | LOCAL_BLE_CONTROLLER_ID);
 
-void acl_send_data_packet(BT_HDR* p_buf, uint16_t flags) {
-  bte_main_hci_send(p_buf, flags);
-}
-
 void acl_send_data_packet_br_edr([[maybe_unused]] const RawAddress& bd_addr,
                                  BT_HDR* p_buf) {
   bte_main_hci_send(p_buf, kDataPacketEventBrEdr);
