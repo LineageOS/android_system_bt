@@ -109,7 +109,6 @@ typedef struct {
   BT_HDR hdr;
   RawAddress bd_addr;
   uint16_t* handle;
-  tBTA_SEC sec_mask;
 } tBTA_HF_CLIENT_API_OPEN;
 
 /* data type for BTA_HF_CLIENT_DISC_RESULT_EVT */
@@ -167,7 +166,6 @@ typedef struct {
   RawAddress peer_addr;         /* peer bd address */
   tSDP_DISCOVERY_DB* p_disc_db; /* pointer to discovery database */
   uint16_t conn_handle;         /* RFCOMM handle of connected service */
-  tBTA_SEC cli_sec_mask;        /* client security mask */
   tBTA_HF_CLIENT_PEER_FEAT peer_features; /* peer device features */
   tBTA_HF_CLIENT_CHLD_FEAT chld_features; /* call handling features */
   uint16_t peer_version;                  /* profile version of peer device */

@@ -317,8 +317,7 @@ void BTA_HfClientDisable(void);
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HfClientOpen(const RawAddress& bd_addr, tBTA_SEC sec_mask,
-                      uint16_t* p_handle);
+void BTA_HfClientOpen(const RawAddress& bd_addr, uint16_t* p_handle);
 
 /*******************************************************************************
  *
