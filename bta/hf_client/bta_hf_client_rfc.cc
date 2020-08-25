@@ -244,7 +244,7 @@ void bta_hf_client_rfc_do_open(tBTA_HF_CLIENT_DATA* p_data) {
           UUID_SERVCLASS_HF_HANDSFREE, client_cb->peer_scn, false,
           BTA_HF_CLIENT_MTU, client_cb->peer_addr, &(client_cb->conn_handle),
           bta_hf_client_mgmt_cback, BTM_SEC_SERVICE_HF_HANDSFREE,
-          client_cb->cli_sec_mask) == PORT_SUCCESS) {
+          BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT) == PORT_SUCCESS) {
     bta_hf_client_setup_port(client_cb->conn_handle);
     APPL_TRACE_DEBUG("bta_hf_client_rfc_do_open : conn_handle = %d",
                      client_cb->conn_handle);
