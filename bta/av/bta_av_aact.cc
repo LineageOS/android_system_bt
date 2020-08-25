@@ -47,9 +47,7 @@
 #include "osi/include/properties.h"
 #include "stack/include/acl_api.h"
 #include "utl.h"
-#if (BTA_AR_INCLUDED == TRUE)
 #include "bta_ar_api.h"
-#endif
 
 /*****************************************************************************
  *  Constants
@@ -1263,9 +1261,7 @@ void bta_av_str_opened(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data) {
         }
       }
     }
-#if (BTA_AR_INCLUDED == TRUE)
     bta_ar_avdt_conn(BTA_ID_AV, open.bd_addr, p_scb->hdi);
-#endif
     if (p_scb->seps[p_scb->sep_idx].tsep == AVDT_TSEP_SRC) {
       open.starting = false;
       open.sep = AVDT_TSEP_SNK;
