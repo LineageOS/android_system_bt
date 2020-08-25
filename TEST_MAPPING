@@ -70,6 +70,10 @@
       "host" : true
     },
     {
+      "name" : "net_test_btm_iso",
+      "host" : true
+    },
+    {
       "name" : "net_test_btpackets",
       "host" : true
     },
