@@ -83,6 +83,9 @@ void Link::OnConnectionUpdate(uint16_t connection_interval, uint16_t connection_
   }
 }
 
+void Link::OnDataLengthChange(uint16_t tx_octets, uint16_t tx_time, uint16_t rx_octets, uint16_t rx_time) {
+  LOG_DEBUG("tx_octets %hx tx_time %hx rx_octets %hx rx_time %hx", tx_octets, tx_time, rx_octets, rx_time);
+}
 void Link::Disconnect() {
   acl_connection_->Disconnect(hci::DisconnectReason::REMOTE_USER_TERMINATED_CONNECTION);
 }

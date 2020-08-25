@@ -87,6 +87,9 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       case SubeventCode::PHY_UPDATE_COMPLETE:
         LOG_INFO("PHY_UPDATE_COMPLETE");
         break;
+      case SubeventCode::DATA_LENGTH_CHANGE:
+        on_data_length_change(event_packet);
+        break;
       default:
         LOG_ALWAYS_FATAL("Unhandled event code %s", SubeventCodeText(code).c_str());
     }
@@ -244,6 +247,25 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
         handler_->BindOnce(&LeAddressManager::OnCommandComplete, common::Unretained(le_address_manager_)));
   }
 
+  void on_data_length_change(LeMetaEventView view) {
+    auto data_length_view = LeDataLengthChangeView::Create(view);
+    if (!data_length_view.IsValid()) {
+      LOG_ERROR("Invalid packet");
+      return;
+    }
+    auto handle = data_length_view.GetConnectionHandle();
+    auto connection_iterator = le_acl_connections_.find(handle);
+    if (connection_iterator == le_acl_connections_.end()) {
+      LOG_WARN("Can't find connection %hd", handle);
+      return;
+    }
+    connection_iterator->second.le_connection_management_callbacks_->OnDataLengthChange(
+        data_length_view.GetMaxTxOctets(),
+        data_length_view.GetMaxTxTime(),
+        data_length_view.GetMaxRxOctets(),
+        data_length_view.GetMaxRxTime());
+  }
+
   void add_device_to_connect_list(AddressWithType address_with_type) {
     AddressType address_type = address_with_type.GetAddressType();
     if (!address_manager_registered) {
@@ -359,6 +381,12 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
   void cancel_connect(AddressWithType address_with_type) {
     // the connection will be canceled by LeAddressManager.OnPause()
     remove_device_from_connect_list(address_with_type);
+  }
+
+  void set_le_suggested_default_data_parameters(uint16_t length, uint16_t time) {
+    auto packet = LeWriteSuggestedDefaultDataLengthBuilder::Create(length, time);
+    le_acl_connection_interface_->EnqueueCommand(
+        std::move(packet), handler_->BindOnce([](CommandCompleteView complete) {}));
   }
 
   void remove_device_from_connect_list(AddressWithType address_with_type) {
