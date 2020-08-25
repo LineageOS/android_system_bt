@@ -49,10 +49,10 @@
  * Returns          BTA_SUCCESS if OK, BTA_FAILURE otherwise.
  *
  ******************************************************************************/
-tBTA_STATUS BTA_HfClientEnable(tBTA_HF_CLIENT_CBACK* p_cback, tBTA_SEC sec_mask,
+tBTA_STATUS BTA_HfClientEnable(tBTA_HF_CLIENT_CBACK* p_cback,
                                tBTA_HF_CLIENT_FEAT features,
                                const char* p_service_name) {
-  return bta_hf_client_api_enable(p_cback, sec_mask, features, p_service_name);
+  return bta_hf_client_api_enable(p_cback, features, p_service_name);
 }
 
 /*******************************************************************************

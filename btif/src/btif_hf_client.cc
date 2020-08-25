@@ -1052,8 +1052,8 @@ bt_status_t btif_hf_client_execute_service(bool b_enable) {
     /* Enable and register with BTA-HFClient */
     BTIF_TRACE_EVENT("%s: support codec negotiation %d ", __func__,
                      features);
-    BTA_HfClientEnable(bta_hf_client_evt, BTIF_HF_CLIENT_SECURITY,
-                       features, BTIF_HF_CLIENT_SERVICE_NAME);
+    BTA_HfClientEnable(bta_hf_client_evt, features,
+                       BTIF_HF_CLIENT_SERVICE_NAME);
   } else {
     BTA_HfClientDisable();
   }
