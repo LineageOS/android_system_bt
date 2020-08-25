@@ -328,20 +328,15 @@ void bta_pan_enable(tBTA_PAN_DATA* p_data) {
 void bta_pan_set_role(tBTA_PAN_DATA* p_data) {
   tPAN_RESULT status;
   tBTA_PAN bta_pan;
-  uint8_t sec[3];
 
   bta_pan_cb.app_id[0] = p_data->api_set_role.user_app_id;
   bta_pan_cb.app_id[1] = p_data->api_set_role.gn_app_id;
   bta_pan_cb.app_id[2] = p_data->api_set_role.nap_app_id;
 
-  sec[0] = p_data->api_set_role.user_sec_mask;
-  sec[1] = p_data->api_set_role.gn_sec_mask;
-  sec[2] = p_data->api_set_role.nap_sec_mask;
-
   /* set security correctly in api and here */
-  status = PAN_SetRole(
-      p_data->api_set_role.role, sec, p_data->api_set_role.user_name,
-      p_data->api_set_role.gn_name, p_data->api_set_role.nap_name);
+  status =
+      PAN_SetRole(p_data->api_set_role.role, p_data->api_set_role.user_name,
+                  p_data->api_set_role.gn_name, p_data->api_set_role.nap_name);
 
   bta_pan.set_role.role = p_data->api_set_role.role;
   if (status == PAN_SUCCESS) {
@@ -364,7 +359,7 @@ void bta_pan_set_role(tBTA_PAN_DATA* p_data) {
   }
   /* if status is not success clear everything */
   else {
-    PAN_SetRole(0, 0, NULL, NULL, NULL);
+    PAN_SetRole(0, NULL, NULL, NULL);
     bta_sys_remove_uuid(UUID_SERVCLASS_NAP);
     bta_sys_remove_uuid(UUID_SERVCLASS_GN);
     bta_sys_remove_uuid(UUID_SERVCLASS_PANU);
@@ -390,7 +385,7 @@ void bta_pan_disable(void) {
   uint8_t i;
 
   /* close all connections */
-  PAN_SetRole(0, NULL, NULL, NULL, NULL);
+  PAN_SetRole(0, NULL, NULL, NULL);
 
 #if (BTA_EIR_CANNED_UUID_LIST != TRUE)
   bta_sys_remove_uuid(UUID_SERVCLASS_NAP);

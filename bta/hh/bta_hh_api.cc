@@ -68,7 +68,6 @@ void BTA_HhEnable(tBTA_HH_CBACK* p_cback) {
 
   p_buf->hdr.event = BTA_HH_API_ENABLE_EVT;
   p_buf->p_cback = p_cback;
-  p_buf->sec_mask = BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT;
 
   bta_sys_sendmsg(p_buf);
 }
@@ -127,7 +126,6 @@ void BTA_HhOpen(const RawAddress& dev_bda) {
 
   p_buf->hdr.event = BTA_HH_API_OPEN_EVT;
   p_buf->hdr.layer_specific = BTA_HH_INVALID_HANDLE;
-  p_buf->sec_mask = BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT;
   p_buf->mode = mode;
   p_buf->bd_addr = dev_bda;
 
@@ -372,46 +370,5 @@ void BTA_HhRemoveDev(uint8_t dev_handle) {
 /******************************************************************************/
 /*                          Utility Function */
 /******************************************************************************/
-
-/*******************************************************************************
- *
- * Function         BTA_HhParseBootRpt
- *
- * Description      This utility function parse a boot mode report.
- *                  For keyboard report, report data will carry the keycode max
- *                  up to 6 key press in one report. Application need to convert
- *                  the keycode into keypress character according to keyboard
- *                  language.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_HhParseBootRpt(tBTA_HH_BOOT_RPT* p_data, uint8_t* p_report,
-                        uint16_t report_len) {
-  p_data->dev_type = BTA_HH_DEVT_UNKNOWN;
-
-  if (p_report) {
-    /* first byte is report ID */
-    switch (p_report[0]) {
-      case BTA_HH_KEYBD_RPT_ID: /* key board report ID */
-        p_data->dev_type = p_report[0];
-        bta_hh_parse_keybd_rpt(p_data, p_report + 1,
-                               (uint16_t)(report_len - 1));
-        break;
-
-      case BTA_HH_MOUSE_RPT_ID: /* mouse report ID */
-        p_data->dev_type = p_report[0];
-        bta_hh_parse_mice_rpt(p_data, p_report + 1, (uint16_t)(report_len - 1));
-        break;
-
-      default:
-        APPL_TRACE_DEBUG("Unknown boot report: %d", p_report[0]);
-        ;
-        break;
-    }
-  }
-
-  return;
-}
 
 #endif /* BTA_HH_INCLUDED */

@@ -62,22 +62,6 @@ extern uint8_t bta_pan_co_init(uint8_t* q_level);
 
 /*******************************************************************************
  *
- * Function         bta_pan_co_open
- *
- * Description      This function is executed by PAN when a connection
- *                  is opened.  The phone can use this function to set
- *                  up data paths or perform any required initialization.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-extern void bta_pan_co_open(uint16_t handle, uint8_t app_id,
-                            tBTA_PAN_ROLE local_role, tBTA_PAN_ROLE peer_role,
-                            const RawAddress& peer_addr);
-
-/*******************************************************************************
- *
  * Function         bta_pan_co_close
  *
  * Description      This function is called by PAN when a connection to a
@@ -118,24 +102,6 @@ extern void bta_pan_co_tx_path(uint16_t handle, uint8_t app_id);
  *
  ******************************************************************************/
 extern void bta_pan_co_rx_path(uint16_t handle, uint8_t app_id);
-
-/*******************************************************************************
- *
- * Function         bta_pan_co_tx_write
- *
- * Description      This function is called by PAN to send data to the phone
- *                  when the TX path is configured to use a push interface.
- *                  The implementation of this function must copy the data to
- *                  the phone's memory.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-extern void bta_pan_co_tx_write(uint16_t handle, uint8_t app_id,
-                                const RawAddress& src, const RawAddress& dst,
-                                uint16_t protocol, uint8_t* p_data,
-                                uint16_t len, bool ext, bool forward);
 
 /*******************************************************************************
  *
