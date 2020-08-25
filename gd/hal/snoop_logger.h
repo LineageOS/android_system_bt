@@ -57,9 +57,6 @@ class SnoopLogger : public ::bluetooth::Module {
     uint32_t datalink_type;
   } __attribute__((__packed__));
 
-  // Set File Path before module is started to ensure all packets are written to the right file
-  static void SetFilePath(std::string filename);
-
   // Returns the maximum number of packets per file
   // Changes to this value is only effective after restarting Bluetooth
   static size_t GetMaxPacketsPerFile();
@@ -67,9 +64,6 @@ class SnoopLogger : public ::bluetooth::Module {
   // Get snoop logger mode based on current system setup
   // Changes to this values is only effective after restarting Bluetooth
   static std::string GetBtSnoopMode();
-
-  // Get snoop log path based on current system configuration
-  static std::string GetLogPath();
 
   // Has to be defined from 1 to 4 per btsnoop format
   enum PacketType {
@@ -98,7 +92,6 @@ class SnoopLogger : public ::bluetooth::Module {
   void OpenNextSnoopLogFile();
 
  private:
-  static std::string user_file_path_;
   std::string file_path_;
   std::ofstream btsnoop_ostream_;
   bool is_enabled_ = false;
