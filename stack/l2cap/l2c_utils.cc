@@ -65,7 +65,7 @@ tL2C_LCB* l2cu_allocate_lcb(const RawAddress& p_bd_addr, bool is_bonding,
 
       p_lcb->in_use = true;
       p_lcb->link_state = LST_DISCONNECTED;
-      p_lcb->handle = HCI_INVALID_HANDLE;
+      p_lcb->InvalidateHandle();
       p_lcb->SetLinkFlushTimeout(L2CAP_NO_AUTOMATIC_FLUSH);
       p_lcb->l2c_lcb_timer = alarm_new("l2c_lcb.l2c_lcb_timer");
       p_lcb->info_resp_timer = alarm_new("l2c_lcb.info_resp_timer");
@@ -290,10 +290,10 @@ BT_HDR* l2cu_build_header(tL2C_LCB* p_lcb, uint16_t len, uint8_t cmd,
 
   /* Put in HCI header - handle + pkt boundary */
   if (p_lcb->transport == BT_TRANSPORT_LE) {
-    UINT16_TO_STREAM(p, (p_lcb->handle | (L2CAP_PKT_START_NON_FLUSHABLE
-                                          << L2CAP_PKT_TYPE_SHIFT)));
+    UINT16_TO_STREAM(p, (p_lcb->Handle() | (L2CAP_PKT_START_NON_FLUSHABLE
+                                            << L2CAP_PKT_TYPE_SHIFT)));
   } else {
-    UINT16_TO_STREAM(p, p_lcb->handle | l2cb.non_flushable_pbf);
+    UINT16_TO_STREAM(p, p_lcb->Handle() | l2cb.non_flushable_pbf);
   }
 
   UINT16_TO_STREAM(p, len + L2CAP_PKT_OVERHEAD + L2CAP_CMD_OVERHEAD);
@@ -710,12 +710,12 @@ void l2cu_send_peer_config_rej(tL2C_CCB* p_ccb, uint8_t* p_data,
 
 /* Put in HCI header - handle + pkt boundary */
   if (controller->supports_non_flushable_pb()) {
-    UINT16_TO_STREAM(p, (p_ccb->p_lcb->handle | (L2CAP_PKT_START_NON_FLUSHABLE
-                                                 << L2CAP_PKT_TYPE_SHIFT)));
+    UINT16_TO_STREAM(p, (p_ccb->p_lcb->Handle() | (L2CAP_PKT_START_NON_FLUSHABLE
+                                                   << L2CAP_PKT_TYPE_SHIFT)));
   } else
   {
-    UINT16_TO_STREAM(
-        p, (p_ccb->p_lcb->handle | (L2CAP_PKT_START << L2CAP_PKT_TYPE_SHIFT)));
+    UINT16_TO_STREAM(p, (p_ccb->p_lcb->Handle() |
+                         (L2CAP_PKT_START << L2CAP_PKT_TYPE_SHIFT)));
   }
 
   /* Remember the HCI header length position, and save space for it */
@@ -1482,7 +1482,7 @@ void l2cu_release_ccb(tL2C_CCB* p_ccb) {
   if (!p_ccb->in_use) return;
 
   btsnoop_get_interface()->clear_l2cap_whitelist(
-      p_lcb->handle, p_ccb->local_cid, p_ccb->remote_cid);
+      p_lcb->Handle(), p_ccb->local_cid, p_ccb->remote_cid);
 
   if (p_rcb && (p_rcb->psm != p_rcb->real_psm)) {
     BTM_SecClrServiceByPsm(p_rcb->psm);
@@ -2010,8 +2010,8 @@ void l2cu_device_reset(void) {
   tL2C_LCB* p_lcb = &l2cb.lcb_pool[0];
 
   for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
-    if ((p_lcb->in_use) && (p_lcb->handle != HCI_INVALID_HANDLE)) {
-      l2c_link_hci_disc_comp(p_lcb->handle, (uint8_t)-1);
+    if ((p_lcb->in_use) && (p_lcb->Handle() != HCI_INVALID_HANDLE)) {
+      l2c_link_hci_disc_comp(p_lcb->Handle(), (uint8_t)-1);
     }
   }
 }
@@ -2230,7 +2230,7 @@ bool l2cu_set_acl_priority(const RawAddress& bd_addr, uint8_t priority,
       vs_param = (priority == L2CAP_PRIORITY_HIGH) ? HCI_BRCM_ACL_PRIORITY_HIGH
                                                    : HCI_BRCM_ACL_PRIORITY_LOW;
 
-      UINT16_TO_STREAM(pp, p_lcb->handle);
+      UINT16_TO_STREAM(pp, p_lcb->Handle());
       UINT8_TO_STREAM(pp, vs_param);
 
       BTM_VendorSpecificCommand(HCI_BRCM_SET_ACL_PRIORITY,
@@ -2459,7 +2459,7 @@ void l2cu_no_dynamic_ccbs(tL2C_LCB* p_lcb) {
     L2CAP_TRACE_DEBUG(
         "l2cu_no_dynamic_ccbs() IDLE timer 0, disconnecting link");
 
-    rc = btm_sec_disconnect(p_lcb->handle, HCI_ERR_PEER_USER);
+    rc = btm_sec_disconnect(p_lcb->Handle(), HCI_ERR_PEER_USER);
     if (rc == BTM_CMD_STARTED) {
       l2cu_process_fixed_disc_cback(p_lcb);
       p_lcb->link_state = LST_DISCONNECTING;
@@ -2878,7 +2878,7 @@ tL2C_LCB* l2cu_find_lcb_by_handle(uint16_t handle) {
   tL2C_LCB* p_lcb = &l2cb.lcb_pool[0];
 
   for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
-    if ((p_lcb->in_use) && (p_lcb->handle == handle)) {
+    if ((p_lcb->in_use) && (p_lcb->Handle() == handle)) {
       return (p_lcb);
     }
   }
@@ -2941,8 +2941,8 @@ void l2cu_set_acl_hci_header(BT_HDR* p_buf, tL2C_CCB* p_ccb) {
   p = (uint8_t*)(p_buf + 1) + p_buf->offset - HCI_DATA_PREAMBLE_SIZE;
 
   if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE) {
-    UINT16_TO_STREAM(p, p_ccb->p_lcb->handle | (L2CAP_PKT_START_NON_FLUSHABLE
-                                                << L2CAP_PKT_TYPE_SHIFT));
+    UINT16_TO_STREAM(p, p_ccb->p_lcb->Handle() | (L2CAP_PKT_START_NON_FLUSHABLE
+                                                  << L2CAP_PKT_TYPE_SHIFT));
 
     uint16_t acl_data_size =
         controller_get_interface()->get_acl_data_size_ble();
@@ -2958,10 +2958,10 @@ void l2cu_set_acl_hci_header(BT_HDR* p_buf, tL2C_CCB* p_ccb) {
          (p_ccb->is_flushable)) ||
         ((p_buf->layer_specific & L2CAP_FLUSHABLE_MASK) ==
          L2CAP_FLUSHABLE_PKT)) {
-      UINT16_TO_STREAM(
-          p, p_ccb->p_lcb->handle | (L2CAP_PKT_START << L2CAP_PKT_TYPE_SHIFT));
+      UINT16_TO_STREAM(p, p_ccb->p_lcb->Handle() |
+                              (L2CAP_PKT_START << L2CAP_PKT_TYPE_SHIFT));
     } else {
-      UINT16_TO_STREAM(p, p_ccb->p_lcb->handle | l2cb.non_flushable_pbf);
+      UINT16_TO_STREAM(p, p_ccb->p_lcb->Handle() | l2cb.non_flushable_pbf);
     }
 
     uint16_t acl_data_size =
