@@ -197,8 +197,6 @@ struct tBTA_AG_SCB {
   tBTA_SERVICE_MASK reg_services;       /* services specified in register API */
   tBTA_SERVICE_MASK open_services;      /* services specified in open API */
   uint16_t conn_handle;                 /* RFCOMM handle of connected service */
-  tBTA_SEC serv_sec_mask;               /* server security mask */
-  tBTA_SEC cli_sec_mask;                /* client security mask */
   tBTA_AG_FEAT features;                /* features registered by application */
   tBTA_AG_PEER_FEAT peer_features;      /* peer device features */
   uint16_t peer_sdp_features;           /* peer device SDP features */
