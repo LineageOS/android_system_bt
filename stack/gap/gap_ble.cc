@@ -537,21 +537,6 @@ bool GAP_BleReadPeerDevName(const RawAddress& peer_bda,
 
 /*******************************************************************************
  *
- * Function         GAP_BleReadPeerAddressResolutionCap
- *
- * Description      Start a process to read peer address resolution capability
- *
- * Returns          true if request accepted
- *
- ******************************************************************************/
-bool GAP_BleReadPeerAddressResolutionCap(const RawAddress& peer_bda,
-                                         tGAP_BLE_CMPL_CBACK* p_cback) {
-  return accept_client_operation(peer_bda, GATT_UUID_GAP_CENTRAL_ADDR_RESOL,
-                                 p_cback);
-}
-
-/*******************************************************************************
- *
  * Function         GAP_BleCancelReadPeerDevName
  *
  * Description      Cancel reading a peripheral's device name.
