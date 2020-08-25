@@ -1316,7 +1316,6 @@ bool L2CA_GetPeerFeatures(const RawAddress& bd_addr, uint32_t* p_ext_feat,
   return true;
 }
 
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
 /*******************************************************************************
  *
  *  Function        L2CA_RegisterFixedChannel
@@ -1699,8 +1698,6 @@ bool L2CA_SetFixedChannelTout(const RawAddress& rem_bda, uint16_t fixed_cid,
 
   return true;
 }
-
-#endif /* #if (L2CAP_NUM_FIXED_CHNLS > 0) */
 
 /*******************************************************************************
  *
