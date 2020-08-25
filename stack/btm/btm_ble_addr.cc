@@ -222,7 +222,6 @@ tBTM_SEC_DEV_REC* btm_ble_resolve_random_addr(const RawAddress& random_bda) {
 /** Find the security record whose LE identity address is matching */
 tBTM_SEC_DEV_REC* btm_find_dev_by_identity_addr(const RawAddress& bd_addr,
                                                 uint8_t addr_type) {
-#if (BLE_PRIVACY_SPT == TRUE)
   list_node_t* end = list_end(btm_cb.sec_dev_rec);
   for (list_node_t* node = list_begin(btm_cb.sec_dev_rec); node != end;
        node = list_next(node)) {
@@ -239,7 +238,6 @@ tBTM_SEC_DEV_REC* btm_find_dev_by_identity_addr(const RawAddress& bd_addr,
       return p_dev_rec;
     }
   }
-#endif
 
   return NULL;
 }
@@ -254,7 +252,6 @@ tBTM_SEC_DEV_REC* btm_find_dev_by_identity_addr(const RawAddress& bd_addr,
  ******************************************************************************/
 bool btm_identity_addr_to_random_pseudo(RawAddress* bd_addr,
                                         uint8_t* p_addr_type, bool refresh) {
-#if (BLE_PRIVACY_SPT == TRUE)
   tBTM_SEC_DEV_REC* p_dev_rec =
       btm_find_dev_by_identity_addr(*bd_addr, *p_addr_type);
 
@@ -273,7 +270,6 @@ bool btm_identity_addr_to_random_pseudo(RawAddress* bd_addr,
     *p_addr_type = p_dev_rec->ble.ble_addr_type;
     return true;
   }
-#endif
   return false;
 }
 
@@ -287,7 +283,6 @@ bool btm_identity_addr_to_random_pseudo(RawAddress* bd_addr,
  ******************************************************************************/
 bool btm_random_pseudo_to_identity_addr(RawAddress* random_pseudo,
                                         uint8_t* p_identity_addr_type) {
-#if (BLE_PRIVACY_SPT == TRUE)
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(*random_pseudo);
 
   if (p_dev_rec != NULL) {
@@ -299,7 +294,6 @@ bool btm_random_pseudo_to_identity_addr(RawAddress* random_pseudo,
       return true;
     }
   }
-#endif
   return false;
 }
 
@@ -315,7 +309,6 @@ bool btm_random_pseudo_to_identity_addr(RawAddress* random_pseudo,
 void btm_ble_refresh_peer_resolvable_private_addr(const RawAddress& pseudo_bda,
                                                   const RawAddress& rpa,
                                                   uint8_t rra_type) {
-#if (BLE_PRIVACY_SPT == TRUE)
   /* update security record here, in adv event or connection complete process */
   tBTM_SEC_DEV_REC* p_sec_rec = btm_find_dev(pseudo_bda);
   if (p_sec_rec != NULL) {
@@ -344,6 +337,5 @@ void btm_ble_refresh_peer_resolvable_private_addr(const RawAddress& pseudo_bda,
       BTM_TRACE_ERROR("%s Unknown device to refresh remote device", __func__);
     }
   }
-#endif
 }
 
