@@ -76,10 +76,6 @@ typedef struct {
   uint8_t user_app_id;
   uint8_t gn_app_id;
   uint8_t nap_app_id;
-  tBTA_SEC user_sec_mask; /* Security mask */
-  tBTA_SEC gn_sec_mask;   /* Security mask */
-  tBTA_SEC nap_sec_mask;  /* Security mask */
-
 } tBTA_PAN_API_SET_ROLE;
 
 /* data type for BTA_PAN_API_OPEN_EVT */
@@ -173,13 +169,11 @@ extern void bta_pan_disable(void);
 extern void bta_pan_set_role(tBTA_PAN_DATA* p_data);
 extern void bta_pan_open(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data);
 extern void bta_pan_api_close(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data);
-extern void bta_pan_set_shutdown(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data);
 extern void bta_pan_rx_path(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data);
 extern void bta_pan_tx_path(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data);
 extern void bta_pan_tx_flow(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data);
 extern void bta_pan_conn_open(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data);
 extern void bta_pan_conn_close(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data);
-extern void bta_pan_writebuf(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data);
 extern void bta_pan_write_buf(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data);
 extern void bta_pan_free_buf(tBTA_PAN_SCB* p_scb, tBTA_PAN_DATA* p_data);
 

@@ -59,51 +59,6 @@ uint8_t bta_pan_co_init(uint8_t* q_level) {
   return (BTA_PAN_RX_PUSH_BUF | BTA_PAN_RX_PUSH | BTA_PAN_TX_PULL);
 }
 
-/******************************************************************************
- *
- * Function         bta_pan_co_open
- *
- * Description
- *
- *
- *
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_pan_co_open(uint16_t handle, uint8_t app_id, tBTA_PAN_ROLE local_role,
-                     tBTA_PAN_ROLE peer_role, const RawAddress& peer_addr) {
-  BTIF_TRACE_API(
-      "bta_pan_co_open:app_id:%d, local_role:%d, peer_role:%d, "
-      "handle:%d",
-      app_id, local_role, peer_role, handle);
-  btpan_conn_t* conn = btpan_find_conn_addr(peer_addr);
-  if (conn == NULL)
-    conn = btpan_new_conn(handle, peer_addr, local_role, peer_role);
-  if (conn) {
-    BTIF_TRACE_DEBUG(
-        "bta_pan_co_open:tap_fd:%d, open_count:%d, "
-        "conn->handle:%d should = handle:%d, local_role:%d, remote_role:%d",
-        btpan_cb.tap_fd, btpan_cb.open_count, conn->handle, handle,
-        conn->local_role, conn->remote_role);
-    // refresh the role & bt address
-
-    btpan_cb.open_count++;
-    conn->handle = handle;
-    // conn->peer = peer_addr;
-    if (btpan_cb.tap_fd < 0) {
-      btpan_cb.tap_fd = btpan_tap_open();
-      if (btpan_cb.tap_fd >= 0) create_tap_read_thread(btpan_cb.tap_fd);
-    }
-    if (btpan_cb.tap_fd >= 0) {
-      btpan_cb.flow = 1;
-      conn->state = PAN_STATE_OPEN;
-      bta_pan_ci_rx_ready(handle);
-    }
-  }
-}
-
 /*******************************************************************************
  *
  * Function         bta_pan_co_close
@@ -208,29 +163,6 @@ void bta_pan_co_tx_path(uint16_t handle, uint8_t app_id) {
 void bta_pan_co_rx_path(UNUSED_ATTR uint16_t handle,
                         UNUSED_ATTR uint8_t app_id) {
   BTIF_TRACE_API("bta_pan_co_rx_path not used");
-}
-
-/*******************************************************************************
- *
- * Function         bta_pan_co_tx_write
- *
- * Description      This function is called by PAN to send data to the phone
- *                  when the TX path is configured to use a push interface.
- *                  The implementation of this function must copy the data to
- *                  the phone's memory.
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_pan_co_tx_write(UNUSED_ATTR uint16_t handle,
-                         UNUSED_ATTR uint8_t app_id,
-                         UNUSED_ATTR const RawAddress& src,
-                         UNUSED_ATTR const RawAddress& dst,
-                         UNUSED_ATTR uint16_t protocol,
-                         UNUSED_ATTR uint8_t* p_data, UNUSED_ATTR uint16_t len,
-                         UNUSED_ATTR bool ext, UNUSED_ATTR bool forward) {
-  BTIF_TRACE_API("bta_pan_co_tx_write not used");
 }
 
 /*******************************************************************************
