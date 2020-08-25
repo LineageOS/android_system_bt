@@ -63,6 +63,5 @@ typedef struct hid_conn {
 #define HID_NOSEC_CHN 2
 
 #define HIDD_SEC_CHN 3
-#define HIDD_NOSEC_CHN 4
 
 #endif

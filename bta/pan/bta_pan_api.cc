@@ -113,7 +113,6 @@ void BTA_PanSetRole(tBTA_PAN_ROLE role, tBTA_PAN_ROLE_INFO* p_user_info,
       strlcpy(p_buf->user_name, p_user_info->p_srv_name, BTA_SERVICE_NAME_LEN);
 
     p_buf->user_app_id = p_user_info->app_id;
-    p_buf->user_sec_mask = PAN_SECURITY;
   }
 
   if (role & BTA_PAN_ROLE_NAP) {
@@ -121,7 +120,6 @@ void BTA_PanSetRole(tBTA_PAN_ROLE role, tBTA_PAN_ROLE_INFO* p_user_info,
       strlcpy(p_buf->nap_name, p_nap_info->p_srv_name, BTA_SERVICE_NAME_LEN);
 
     p_buf->nap_app_id = p_nap_info->app_id;
-    p_buf->nap_sec_mask = PAN_SECURITY;
   }
 
   bta_sys_sendmsg(p_buf);

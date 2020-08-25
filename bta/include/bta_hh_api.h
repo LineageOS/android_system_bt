@@ -488,25 +488,4 @@ extern void BTA_HhAddDev(const RawAddress& bda, tBTA_HH_ATTR_MASK attr_mask,
  ******************************************************************************/
 extern void BTA_HhRemoveDev(uint8_t dev_handle);
 
-/*******************************************************************************
- *
- *              Parsing Utility Functions
- *
- ******************************************************************************/
-/*******************************************************************************
- *
- * Function         BTA_HhParseBootRpt
- *
- * Description      This utility function parse a boot mode report.
- *
- * Returns          void
- *
- ******************************************************************************/
-extern void BTA_HhParseBootRpt(tBTA_HH_BOOT_RPT* p_data, uint8_t* p_report,
-                               uint16_t report_len);
-
-/* test commands */
-extern void bta_hh_le_hid_read_rpt_clt_cfg(const RawAddress& bd_addr,
-                                           uint8_t rpt_id);
-
 #endif /* BTA_HH_API_H */
