@@ -2393,7 +2393,7 @@ static void bta_dm_rm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
     }
   }
 
-  if ((BTA_ID_AV == id) || (BTA_ID_AVK == id)) {
+  if (BTA_ID_AV == id) {
     if (status == BTA_SYS_CONN_BUSY) {
       if (p_dev) p_dev->info |= BTA_DM_DI_AV_ACTIVE;
       /* AV calls bta_sys_conn_open with the A2DP stream count as app_id */
