@@ -145,6 +145,12 @@ class PairingHandlerLe {
                                             }));
   }
 
+  void SendHciLeLongTermKeyReply(const InitialInformations& i, uint16_t conn_handle, const Octet16& ltk) {
+    i.le_security_interface->EnqueueCommand(
+        hci::LeLongTermKeyRequestReplyBuilder::Create(conn_handle, ltk),
+        i.l2cap_handler->BindOnce([](hci::CommandCompleteView) {}));
+  }
+
   std::variant<PairingFailure, EncryptionChangeView, EncryptionKeyRefreshCompleteView> WaitEncryptionChanged() {
     PairingEvent e = WaitForEvent();
     if (e.type != PairingEvent::HCI_EVENT) return PairingFailure("Was expecting HCI event but received something else");
@@ -168,6 +174,31 @@ class PairingHandlerLe {
     }
 
     return PairingFailure("Was expecting Encryption Change or Key Refresh Complete but received something else");
+  }
+
+  std::variant<PairingFailure, hci::LeLongTermKeyRequestView> WaitLeLongTermKeyRequest() {
+    PairingEvent e = WaitForEvent();
+    if (e.type != PairingEvent::HCI_EVENT) return PairingFailure("Was expecting HCI event but received something else");
+
+    if (!e.hci_event->IsValid()) return PairingFailure("Received invalid HCI event");
+
+    if (e.hci_event->GetEventCode() != hci::EventCode::LE_META_EVENT) return PairingFailure("Was expecting LE event");
+
+    hci::LeMetaEventView le_event = hci::LeMetaEventView::Create(*e.hci_event);
+    if (!le_event.IsValid()) {
+      return PairingFailure("Invalid LE Event received");
+    }
+
+    if (le_event.GetSubeventCode() != hci::SubeventCode::LONG_TERM_KEY_REQUEST) {
+      return PairingFailure("Was expecting Long Term Key Request");
+    }
+
+    hci::LeLongTermKeyRequestView ltk_req_packet = hci::LeLongTermKeyRequestView::Create(le_event);
+    if (!ltk_req_packet.IsValid()) {
+      return PairingFailure("Invalid LE Long Term Key Request received");
+    }
+
+    return ltk_req_packet;
   }
 
   inline bool IAmMaster(const InitialInformations& i) {
@@ -255,6 +286,15 @@ class PairingHandlerLe {
     {
       std::unique_lock<std::mutex> lock(queue_guard);
       queue.push(PairingEvent(ui_action, ui_value));
+    }
+    pairing_thread_blocker_.notify_one();
+  }
+
+  /* HCI LE event received from remote device */
+  void OnHciLeEvent(hci::LeMetaEventView hci_event) {
+    {
+      std::unique_lock<std::mutex> lock(queue_guard);
+      queue.push(PairingEvent(std::move(hci_event)));
     }
     pairing_thread_blocker_.notify_one();
   }
