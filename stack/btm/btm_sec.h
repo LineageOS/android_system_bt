@@ -113,22 +113,6 @@ bool BTM_IsAuthenticated(const RawAddress& bd_addr, tBT_TRANSPORT transport);
  ******************************************************************************/
 void BTM_SetPinType(uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len);
 
-/*******************************************************************************
- *
- * Function         BTM_SetPairableMode
- *
- * Description      Enable or disable pairing
- *
- * Parameters       allow_pairing - (true or false) whether or not the device
- *                      allows pairing.
- *                  connect_only_paired - (true or false) whether or not to
- *                      only allow paired devices to connect.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_SetPairableMode(bool allow_pairing, bool connect_only_paired);
-
 #define BTM_NO_AVAIL_SEC_SERVICES ((uint16_t)0xffff)
 
 /*******************************************************************************
@@ -734,17 +718,6 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec);
 
 /*******************************************************************************
  *
- * Function         btm_sec_are_all_trusted
- *
- * Description      This function is called check if all services are trusted
- *
- * Returns          true if all are trusted, otherwise false
- *
- ******************************************************************************/
-bool btm_sec_are_all_trusted(uint32_t p_mask[]);
-
-/*******************************************************************************
- *
  * Function         btm_sec_find_first_serv
  *
  * Description      Look for the first record in the service database
@@ -781,19 +754,6 @@ tBTM_SEC_DEV_REC* btm_sec_find_dev_by_sec_state(uint8_t state);
  ******************************************************************************/
 void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec, uint8_t res,
                                  bool is_le_transport);
-
-/*******************************************************************************
- *
- * Function         btm_sec_auth_payload_tout
- *
- * Description      Processes the HCI Autheniticated Payload Timeout Event
- *                  indicating that a packet containing a valid MIC on the
- *                  connection handle was not received within the programmed
- *                  timeout value. (Spec Default is 30 secs, but can be
- *                  changed via the BTM_SecSetAuthPayloadTimeout() function.
- *
- ******************************************************************************/
-void btm_sec_auth_payload_tout(uint8_t* p, uint16_t hci_evt_len);
 
 /*******************************************************************************
  *
