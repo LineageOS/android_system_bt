@@ -44,13 +44,11 @@
 
 #define LOG_TAG "bt_btif_hfc"
 
-#include <stdlib.h>
 #include <string.h>
 
 #include <hardware/bluetooth.h>
 #include <hardware/bt_hf_client.h>
 
-#include "bt_utils.h"
 #include "bta_hf_client_api.h"
 #include "btif_common.h"
 #include "btif_profile_queue.h"
@@ -64,10 +62,6 @@
 
 #ifndef BTIF_HF_CLIENT_SERVICE_NAME
 #define BTIF_HF_CLIENT_SERVICE_NAME ("Handsfree")
-#endif
-
-#ifndef BTIF_HF_CLIENT_SECURITY
-#define BTIF_HF_CLIENT_SECURITY (BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)
 #endif
 
 #ifndef BTIF_HF_CLIENT_FEATURES
@@ -314,7 +308,7 @@ static bt_status_t connect_int(RawAddress* bd_addr, uint16_t uuid) {
    * The handle is valid until we have called BTA_HfClientClose or the LL
    * has notified us of channel close due to remote closing, error etc.
    */
-  BTA_HfClientOpen(cb->peer_bda, BTIF_HF_CLIENT_SECURITY, &cb->handle);
+  BTA_HfClientOpen(cb->peer_bda, &cb->handle);
 
   return BT_STATUS_SUCCESS;
 }
