@@ -345,3 +345,6 @@ bool BTM_ReadPowerMode(const RawAddress& remote_bda, tBTM_PM_MODE* p_mode);
 
 void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
                      uint8_t link_role, tBT_TRANSPORT transport);
+
+void acl_disconnect(const RawAddress& bd_addr, tBT_TRANSPORT transport,
+                    uint8_t reason);
