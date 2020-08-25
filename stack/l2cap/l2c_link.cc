@@ -1028,14 +1028,11 @@ static void l2c_link_send_to_lower_br_edr(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
     }
     p_lcb->sent_not_acked++;
     p_buf->layer_specific = 0;
-
     l2cb.controller_xmit_window--;
   } else {
-    uint16_t xmit_window = l2cb.controller_xmit_window;
-    uint16_t acl_data_size = acl_packet_size_classic;
     uint16_t num_segs =
-        (p_buf->len - HCI_DATA_PREAMBLE_SIZE + acl_data_size - 1) /
-        acl_data_size;
+        (p_buf->len - HCI_DATA_PREAMBLE_SIZE + acl_packet_size_classic - 1) /
+        acl_packet_size_classic;
 
     /* If doing round-robin, then only 1 segment each time */
     if (p_lcb->link_xmit_quota == 0) {
@@ -1043,8 +1040,8 @@ static void l2c_link_send_to_lower_br_edr(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
       p_lcb->partial_segment_being_sent = true;
     } else {
       /* Multi-segment packet. Make sure it can fit */
-      if (num_segs > xmit_window) {
-        num_segs = xmit_window;
+      if (num_segs > l2cb.controller_xmit_window) {
+        num_segs = l2cb.controller_xmit_window;
         p_lcb->partial_segment_being_sent = true;
       }
 
@@ -1054,11 +1051,10 @@ static void l2c_link_send_to_lower_br_edr(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
       }
     }
 
+    p_lcb->sent_not_acked += num_segs;
     p_buf->layer_specific = num_segs;
     l2cb.controller_xmit_window -= num_segs;
     if (p_lcb->link_xmit_quota == 0) l2cb.round_robin_unacked += num_segs;
-
-    p_lcb->sent_not_acked += num_segs;
   }
   acl_send_data_packet(p_buf, kDataPacketEventBrEdr);
   L2CAP_TRACE_DEBUG(
@@ -1079,15 +1075,11 @@ static void l2c_link_send_to_lower_ble(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
     }
     p_lcb->sent_not_acked++;
     p_buf->layer_specific = 0;
-
     l2cb.controller_le_xmit_window--;
   } else {
-    uint16_t xmit_window = l2cb.controller_le_xmit_window;
-    uint16_t acl_data_size = acl_packet_size_ble;
-
     uint16_t num_segs =
-        (p_buf->len - HCI_DATA_PREAMBLE_SIZE + acl_data_size - 1) /
-        acl_data_size;
+        (p_buf->len - HCI_DATA_PREAMBLE_SIZE + acl_packet_size_ble - 1) /
+        acl_packet_size_ble;
 
     /* If doing round-robin, then only 1 segment each time */
     if (p_lcb->link_xmit_quota == 0) {
@@ -1095,8 +1087,8 @@ static void l2c_link_send_to_lower_ble(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
       p_lcb->partial_segment_being_sent = true;
     } else {
       /* Multi-segment packet. Make sure it can fit */
-      if (num_segs > xmit_window) {
-        num_segs = xmit_window;
+      if (num_segs > l2cb.controller_le_xmit_window) {
+        num_segs = l2cb.controller_le_xmit_window;
         p_lcb->partial_segment_being_sent = true;
       }
 
@@ -1106,11 +1098,10 @@ static void l2c_link_send_to_lower_ble(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
       }
     }
 
+    p_lcb->sent_not_acked += num_segs;
     p_buf->layer_specific = num_segs;
     l2cb.controller_le_xmit_window -= num_segs;
     if (p_lcb->link_xmit_quota == 0) l2cb.ble_round_robin_unacked += num_segs;
-
-    p_lcb->sent_not_acked += num_segs;
   }
   acl_send_data_packet(p_buf, kDataPacketEventBle);
   L2CAP_TRACE_DEBUG(
