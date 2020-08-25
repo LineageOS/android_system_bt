@@ -464,27 +464,15 @@ tHID_STATUS HID_HostCloseDev(uint8_t dev_handle) {
 }
 
 tHID_STATUS HID_HostSetSecurityLevel(const char serv_name[], uint8_t sec_lvl) {
-  if (!BTM_SetSecurityLevel(false, serv_name, BTM_SEC_SERVICE_HIDH_SEC_CTRL,
-                            sec_lvl, HID_PSM_CONTROL, 0, 0)) {
+  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_HIDH_SEC_CTRL, sec_lvl,
+                                  HID_PSM_CONTROL)) {
     HIDH_TRACE_ERROR("Security Registration 1 failed");
     return (HID_ERR_NO_RESOURCES);
   }
 
-  if (!BTM_SetSecurityLevel(true, serv_name, BTM_SEC_SERVICE_HIDH_SEC_CTRL,
-                            sec_lvl, HID_PSM_CONTROL, 0, 0)) {
-    HIDH_TRACE_ERROR("Security Registration 2 failed");
-    return (HID_ERR_NO_RESOURCES);
-  }
-
-  if (!BTM_SetSecurityLevel(true, serv_name, BTM_SEC_SERVICE_HIDH_INTR,
-                            BTM_SEC_NONE, HID_PSM_INTERRUPT, 0, 0)) {
+  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_HIDH_INTR, BTM_SEC_NONE,
+                                  HID_PSM_INTERRUPT)) {
     HIDH_TRACE_ERROR("Security Registration 5 failed");
-    return (HID_ERR_NO_RESOURCES);
-  }
-
-  if (!BTM_SetSecurityLevel(false, serv_name, BTM_SEC_SERVICE_HIDH_INTR,
-                            BTM_SEC_NONE, HID_PSM_INTERRUPT, 0, 0)) {
-    HIDH_TRACE_ERROR("Security Registration 6 failed");
     return (HID_ERR_NO_RESOURCES);
   }
 
