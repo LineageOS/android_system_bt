@@ -427,6 +427,12 @@ class DualModeController : public Device {
   // 7.8.24
   void LeStartEncryption(CommandPacketView args);
 
+  // 7.8.25
+  void LeLongTermKeyRequestReply(CommandPacketView args);
+
+  // 7.8.26
+  void LeLongTermKeyRequestNegativeReply(CommandPacketView args);
+
   // 7.8.27
   void LeReadSupportedStates(CommandPacketView args);
 
