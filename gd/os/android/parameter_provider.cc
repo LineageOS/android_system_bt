@@ -16,16 +16,47 @@
 
 #include "os/parameter_provider.h"
 
+#include <mutex>
+#include <string>
+
 namespace bluetooth {
 namespace os {
 
+namespace {
+std::mutex parameter_mutex;
+std::string config_file_path;
+std::string snoop_log_file_path;
+}  // namespace
+
 // On Android we always write a single default location
 std::string ParameterProvider::ConfigFilePath() {
+  {
+    std::lock_guard<std::mutex> lock(parameter_mutex);
+    if (!config_file_path.empty()) {
+      return config_file_path;
+    }
+  }
   return "/data/misc/bluedroid/bt_config.conf";
 }
 
+void ParameterProvider::OverrideConfigFilePath(const std::string& path) {
+  std::lock_guard<std::mutex> lock(parameter_mutex);
+  config_file_path = path;
+}
+
 std::string ParameterProvider::SnoopLogFilePath() {
+  {
+    std::lock_guard<std::mutex> lock(parameter_mutex);
+    if (!snoop_log_file_path.empty()) {
+      return snoop_log_file_path;
+    }
+  }
   return "/data/misc/bluetooth/logs/btsnoop_hci.log";
+}
+
+void ParameterProvider::OverrideSnoopLogFilePath(const std::string& path) {
+  std::lock_guard<std::mutex> lock(parameter_mutex);
+  snoop_log_file_path = path;
 }
 
 }  // namespace os
