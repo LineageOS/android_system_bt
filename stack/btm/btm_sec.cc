@@ -3594,9 +3594,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
               btm_sec_change_pairing_state(BTM_PAIR_STATE_IDLE);
             }
           }
-#if (BTM_DISC_DURING_RS == TRUE)
           p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
-#endif
           return;
         } else {
           l2cu_update_lcb_4_bonding(p_dev_rec->bd_addr, true);
@@ -3609,9 +3607,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
 
   p_dev_rec->device_type |= BT_DEVICE_TYPE_BREDR;
 
-#if (BTM_DISC_DURING_RS == TRUE)
   p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
-#endif
 
   p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
 
@@ -3870,11 +3866,9 @@ void btm_sec_disconnected(uint16_t handle, uint8_t reason) {
 
   p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
 
-#if (BTM_DISC_DURING_RS == TRUE)
   LOG_INFO("%s clearing pending flag handle:%d reason:%d", __func__, handle,
            reason);
   p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
-#endif
 
   /* clear unused flags */
   p_dev_rec->sm4 &= BTM_SM4_TRUE;
