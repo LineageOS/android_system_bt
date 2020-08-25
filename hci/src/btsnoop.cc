@@ -315,7 +315,7 @@ static void whitelist_rfc_dlci(uint16_t local_cid, uint8_t dlci) {
   std::lock_guard lock(filter_list_mutex);
 
   tL2C_CCB* p_ccb = l2cu_find_ccb_by_cid(nullptr, local_cid);
-  filter_list[p_ccb->p_lcb->handle].addRfcDlci(dlci);
+  filter_list[p_ccb->p_lcb->Handle()].addRfcDlci(dlci);
 }
 
 static void add_rfc_l2c_channel(uint16_t conn_handle, uint16_t local_cid,

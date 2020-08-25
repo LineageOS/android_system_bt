@@ -154,13 +154,13 @@ void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
     L2CAP_TRACE_ERROR("L2CAP got conn_comp in bad state: %d  status: 0x%d",
                       p_lcb->link_state, status);
 
-    if (status != HCI_SUCCESS) l2c_link_hci_disc_comp(p_lcb->handle, status);
+    if (status != HCI_SUCCESS) l2c_link_hci_disc_comp(p_lcb->Handle(), status);
 
     return;
   }
 
   /* Save the handle */
-  p_lcb->handle = handle;
+  p_lcb->SetHandle(handle);
 
   if (ci.status == HCI_SUCCESS) {
     /* Connected OK. Change state to connected */
@@ -207,7 +207,7 @@ void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
   else if ((ci.status == HCI_ERR_MAX_NUM_OF_CONNECTIONS) &&
            l2cu_lcb_disconnecting()) {
     p_lcb->link_state = LST_CONNECT_HOLDING;
-    p_lcb->handle = HCI_INVALID_HANDLE;
+    p_lcb->InvalidateHandle();
   } else {
     /* Just in case app decides to try again in the callback context */
     p_lcb->link_state = LST_DISCONNECTING;
@@ -406,7 +406,7 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
                   "link_role = %d is_bonding = %d disc_reason = %d transport = "
                   "%d",
                   __func__, xx, p_lcb->remote_bd_addr.ToString().c_str(), p_lcb,
-                  p_lcb->in_use, p_lcb->link_state, p_lcb->handle,
+                  p_lcb->in_use, p_lcb->link_state, p_lcb->Handle(),
                   p_lcb->LinkRole(), p_lcb->IsBonding(),
                   p_lcb->DisconnectReason(), p_lcb->transport);
             }
@@ -488,7 +488,7 @@ void l2c_link_timeout(tL2C_LCB* p_lcb) {
       uint64_t timeout_ms;
       bool start_timeout = true;
 
-      rc = btm_sec_disconnect(p_lcb->handle, HCI_ERR_PEER_USER);
+      rc = btm_sec_disconnect(p_lcb->Handle(), HCI_ERR_PEER_USER);
 
       if (rc == BTM_CMD_STORED) {
         /* Security Manager will take care of disconnecting, state will be
@@ -842,7 +842,7 @@ bool l2c_link_check_power_mode(tL2C_LCB* p_lcb) {
     /* check power mode */
     if (BTM_ReadPowerMode(p_lcb->remote_bd_addr, &mode)) {
       if (mode == BTM_PM_STS_PENDING) {
-        L2CAP_TRACE_DEBUG("LCB(0x%x) is in PM pending state", p_lcb->handle);
+        L2CAP_TRACE_DEBUG("LCB(0x%x) is in PM pending state", p_lcb->Handle());
 
         return true;
       }
@@ -1063,7 +1063,7 @@ static void l2c_link_send_to_lower_br_edr(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
   acl_send_data_packet(p_buf, kDataPacketEventBrEdr);
   L2CAP_TRACE_DEBUG(
       "TotalWin=%d,Hndl=0x%x,Quota=%d,Unack=%d,RRQuota=%d,RRUnack=%d",
-      l2cb.controller_xmit_window, p_lcb->handle, p_lcb->link_xmit_quota,
+      l2cb.controller_xmit_window, p_lcb->Handle(), p_lcb->link_xmit_quota,
       p_lcb->sent_not_acked, l2cb.round_robin_quota, l2cb.round_robin_unacked);
 }
 
@@ -1110,7 +1110,7 @@ static void l2c_link_send_to_lower_ble(tL2C_LCB* p_lcb, BT_HDR* p_buf) {
   acl_send_data_packet(p_buf, kDataPacketEventBle);
   L2CAP_TRACE_DEBUG(
       "TotalWin=%d,Hndl=0x%x,Quota=%d,Unack=%d,RRQuota=%d,RRUnack=%d",
-      l2cb.controller_le_xmit_window, p_lcb->handle, p_lcb->link_xmit_quota,
+      l2cb.controller_le_xmit_window, p_lcb->Handle(), p_lcb->link_xmit_quota,
       p_lcb->sent_not_acked, l2cb.ble_round_robin_quota,
       l2cb.ble_round_robin_unacked);
 }
@@ -1218,13 +1218,13 @@ void l2c_link_process_num_completed_pkts(uint8_t* p, uint8_t evt_len) {
       if (p_lcb->transport == BT_TRANSPORT_LE) {
         L2CAP_TRACE_DEBUG(
             "TotalWin=%d,LinkUnack(0x%x)=%d,RRCheck=%d,RRUnack=%d",
-            l2cb.controller_le_xmit_window, p_lcb->handle,
+            l2cb.controller_le_xmit_window, p_lcb->Handle(),
             p_lcb->sent_not_acked, l2cb.ble_check_round_robin,
             l2cb.ble_round_robin_unacked);
       } else {
         L2CAP_TRACE_DEBUG(
             "TotalWin=%d,LinkUnack(0x%x)=%d,RRCheck=%d,RRUnack=%d",
-            l2cb.controller_xmit_window, p_lcb->handle, p_lcb->sent_not_acked,
+            l2cb.controller_xmit_window, p_lcb->Handle(), p_lcb->sent_not_acked,
             l2cb.check_round_robin, l2cb.round_robin_unacked);
       }
     } else {
