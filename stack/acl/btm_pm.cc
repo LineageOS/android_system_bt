@@ -76,19 +76,6 @@ const uint8_t
 
 static const char* mode_to_string(const tBTM_PM_MODE mode);
 
-#if (BTM_PM_DEBUG == TRUE)
-const char* btm_pm_state_str[] = {"pm_active_state", "pm_hold_state",
-                                  "pm_sniff_state", "pm_park_state",
-                                  "pm_pend_state"};
-
-const char* btm_pm_event_str[] = {"pm_set_mode_event", "pm_hci_sts_event",
-                                  "pm_mod_chg_event", "pm_update_event"};
-
-const char* btm_pm_action_str[] = {"pm_set_mode_action", "pm_update_db_action",
-                                   "pm_mod_chg_action", "pm_hci_sts_action",
-                                   "pm_update_action"};
-#endif  // BTM_PM_DEBUG
-
 /*****************************************************************************/
 /*                     P U B L I C  F U N C T I O N S                        */
 /*****************************************************************************/
@@ -144,39 +131,35 @@ tBTM_STATUS BTM_PmRegister(uint8_t mask, uint8_t* p_pm_id,
  ******************************************************************************/
 tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
                              const tBTM_PM_PWR_MD* p_mode) {
-  int acl_ind;
-  tBTM_PM_MCB* p_cb = nullptr; /* per ACL link */
-  tBTM_PM_MODE mode;
-  int temp_pm_id;
-
   if (pm_id >= BTM_MAX_PM_RECORDS) {
     pm_id = BTM_PM_SET_ONLY_ID;
   }
 
   if (!p_mode) {
-    LOG(ERROR) << __func__ << ": pm_id " << unsigned(pm_id)
-               << " p_mode is null for " << remote_bda;
+    LOG_ERROR("pm_id: %u, p_mode is null for %s", unsigned(pm_id),
+              remote_bda.ToString().c_str());
     return BTM_ILLEGAL_VALUE;
   }
 
-  VLOG(2) << __func__ << " pm_id " << pm_id << " BDA: " << remote_bda
-          << " mode:" << std::to_string(p_mode->mode);
-
   /* take out the force bit */
-  mode = p_mode->mode & ~BTM_PM_MD_FORCE;
+  tBTM_PM_MODE mode = p_mode->mode & ~BTM_PM_MD_FORCE;
 
-  acl_ind = btm_pm_find_acl_ind(remote_bda);
-  if (acl_ind == MAX_L2CAP_LINKS) return (BTM_UNKNOWN_ADDR);
+  int acl_ind = btm_pm_find_acl_ind(remote_bda);
+  if (acl_ind == MAX_L2CAP_LINKS) {
+    LOG_ERROR("addr %s is unknown", remote_bda.ToString().c_str());
+    return (BTM_UNKNOWN_ADDR);
+  }
 
-  p_cb = &(btm_cb.acl_cb_.pm_mode_db[acl_ind]);
+  // per ACL link
+  tBTM_PM_MCB* p_cb = &(btm_cb.acl_cb_.pm_mode_db[acl_ind]);
 
   if (mode != BTM_PM_MD_ACTIVE) {
     const controller_t* controller = controller_get_interface();
     if ((mode == BTM_PM_MD_HOLD && !controller->supports_hold_mode()) ||
         (mode == BTM_PM_MD_SNIFF && !controller->supports_sniff_mode()) ||
         (mode == BTM_PM_MD_PARK && !controller->supports_park_mode())) {
-      LOG(ERROR) << __func__ << ": pm_id " << unsigned(pm_id) << " mode "
-                 << unsigned(mode) << " is not supported for " << remote_bda;
+      LOG_ERROR("pm_id %u mode %u is not supported for %s", pm_id, mode,
+                remote_bda.ToString().c_str());
       return BTM_MODE_UNSUPPORTED;
     }
   }
@@ -189,14 +172,13 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
          (p_mode->min <= p_cb->interval)) ||
         ((p_mode->mode & BTM_PM_MD_FORCE) == 0 &&
          (p_mode->max >= p_cb->interval))) {
-      VLOG(1) << __func__ << " already in requested mode "
-              << std::to_string(p_mode->mode) << ", interval " << p_cb->interval
-              << " max " << p_mode->max << " min " << p_mode->min;
+      LOG_DEBUG("already in requested mode %d, interval: %d, max: %d, min: %d",
+                p_mode->mode, p_cb->interval, p_mode->max, p_mode->min);
       return BTM_SUCCESS;
     }
   }
 
-  temp_pm_id = pm_id;
+  int temp_pm_id = pm_id;
   if (pm_id == BTM_PM_SET_ONLY_ID) {
     temp_pm_id = BTM_MAX_PM_RECORDS;
   }
@@ -206,31 +188,30 @@ tBTM_STATUS BTM_SetPowerMode(uint8_t pm_id, const RawAddress& remote_bda,
        (btm_cb.pm_reg_db[pm_id].mask & BTM_PM_REG_SET)) ||
       ((pm_id == BTM_PM_SET_ONLY_ID) &&
        (btm_cb.acl_cb_.pm_pend_link != MAX_L2CAP_LINKS))) {
-#if (BTM_PM_DEBUG == TRUE)
-    BTM_TRACE_DEBUG("BTM_SetPowerMode: Saving cmd acl_ind %d temp_pm_id %d",
-                    acl_ind, temp_pm_id);
-#endif  // BTM_PM_DEBUG
+    LOG_VERBOSE("saving cmd acl_ind %d temp_pm_id %d", acl_ind, temp_pm_id);
     /* Make sure mask is set to BTM_PM_REG_SET */
     btm_cb.pm_reg_db[temp_pm_id].mask |= BTM_PM_REG_SET;
     *(&p_cb->req_mode[temp_pm_id]) = *p_mode;
     p_cb->chg_ind = true;
   }
 
-#if (BTM_PM_DEBUG == TRUE)
-  BTM_TRACE_DEBUG("btm_pm state:0x%x, pm_pend_link: %d", p_cb->state,
-                  btm_cb.acl_cb_.pm_pend_link);
-#endif  // BTM_PM_DEBUG
   /* if mode == hold or pending, return */
   if ((p_cb->state == BTM_PM_STS_HOLD) || (p_cb->state == BTM_PM_STS_PENDING) ||
       (btm_cb.acl_cb_.pm_pend_link != MAX_L2CAP_LINKS)) {
+    LOG_DEBUG("storing pm setup, state: %d, pm_pending_link: %d", p_cb->state,
+              btm_cb.acl_cb_.pm_pend_link);
     /* command pending */
     if (acl_ind != btm_cb.acl_cb_.pm_pend_link) {
       /* set the stored mask */
       p_cb->state |= BTM_PM_STORED_MASK;
-      BTM_TRACE_DEBUG("%s: btm_pm state stored:%d", __func__, acl_ind);
+      LOG_DEBUG("btm_pm state stored: %d", acl_ind);
     }
     return BTM_CMD_STORED;
   }
+
+  LOG_DEBUG("pm_id: %d, bda: %s, mode: %d, state: %d, pending_link: %d", pm_id,
+            remote_bda.ToString().c_str(), p_mode->mode, p_cb->state,
+            btm_cb.acl_cb_.pm_pend_link);
 
   return internal_.btm_pm_snd_md_req(pm_id, acl_ind, p_mode);
 }
@@ -260,7 +241,10 @@ bool BTM_ReadPowerMode(const RawAddress& remote_bda, tBTM_PM_MODE* p_mode) {
     return false;
   }
   int acl_ind = btm_pm_find_acl_ind(remote_bda);
-  if (acl_ind == MAX_L2CAP_LINKS) return false;
+  if (acl_ind == MAX_L2CAP_LINKS) {
+    LOG_WARN("unknown bda: %s", remote_bda.ToString().c_str());
+    return false;
+  }
 
   *p_mode = btm_cb.acl_cb_.pm_mode_db[acl_ind].state;
   return true;
@@ -291,7 +275,10 @@ tBTM_STATUS btm_read_power_mode_state(const RawAddress& remote_bda,
                                       tBTM_PM_STATE* pmState) {
   int acl_ind = btm_pm_find_acl_ind(remote_bda);
 
-  if (acl_ind == MAX_L2CAP_LINKS) return (BTM_UNKNOWN_ADDR);
+  if (acl_ind == MAX_L2CAP_LINKS) {
+    LOG_WARN("unknown bda: %s", remote_bda.ToString().c_str());
+    return BTM_UNKNOWN_ADDR;
+  }
 
   *pmState = btm_cb.acl_cb_.pm_mode_db[acl_ind].state;
   return BTM_SUCCESS;
@@ -330,6 +317,7 @@ tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat,
                               max_lat, min_rmt_to, min_loc_to);
     return BTM_SUCCESS;
   }
+  LOG_DEBUG("pm_mode_db state: %d", btm_cb.acl_cb_.pm_mode_db[acl_ind].state);
   p_cb = &btm_cb.acl_cb_.pm_mode_db[acl_ind];
   p_cb->max_lat = max_lat;
   p_cb->min_rmt_to = min_rmt_to;
@@ -371,6 +359,7 @@ void btm_pm_reset(void) {
   }
   /* no command pending */
   btm_cb.acl_cb_.pm_pend_link = MAX_L2CAP_LINKS;
+  LOG_DEBUG("reset pm");
 }
 
 /*******************************************************************************
@@ -520,9 +509,7 @@ tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
   mode = btm_pm_get_set_mode(pm_id, p_cb, p_mode, &md_res);
   md_res.mode = mode;
 
-#if (BTM_PM_DEBUG == TRUE)
-  BTM_TRACE_DEBUG("btm_pm_snd_md_req link_ind:%d, mode: %d", link_ind, mode);
-#endif  // BTM_PM_DEBUG
+  LOG_DEBUG("link_ind: %d, mode: %d", link_ind, mode);
 
   if (p_cb->state == mode) {
     /* already in the resulting mode */
@@ -554,13 +541,10 @@ tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
   /* send the appropriate HCI command */
   btm_cb.pm_pend_id = pm_id;
 
-#if (BTM_PM_DEBUG == TRUE)
-  BTM_TRACE_DEBUG("btm_pm_snd_md_req state:0x%x, link_ind: %d", p_cb->state,
-                  link_ind);
-#endif  // BTM_PM_DEBUG
+  LOG_DEBUG("switching from %s(0x%x) to %s(0x%x), link_ind: %d",
+            mode_to_string(p_cb->state), p_cb->state,
+            mode_to_string(md_res.mode), md_res.mode, link_ind);
 
-  BTM_TRACE_DEBUG("%s switching from %s to %s.", __func__,
-                  mode_to_string(p_cb->state), mode_to_string(md_res.mode));
   switch (md_res.mode) {
     case BTM_PM_MD_ACTIVE:
       switch (p_cb->state) {
@@ -603,10 +587,8 @@ tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
   }
 
   if (btm_cb.acl_cb_.pm_pend_link == MAX_L2CAP_LINKS) {
-/* the command was not sent */
-#if (BTM_PM_DEBUG == TRUE)
-    BTM_TRACE_DEBUG("pm_pend_link: %d", btm_cb.acl_cb_.pm_pend_link);
-#endif  // BTM_PM_DEBUG
+    /* the command was not sent */
+    LOG_ERROR("pm_pending_link maxed out");
     return (BTM_NO_RESOURCES);
   }
 
@@ -626,21 +608,18 @@ tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
  *
  ******************************************************************************/
 void btm_pm_proc_cmd_status(uint8_t status) {
-  tBTM_PM_MCB* p_cb;
+  if (btm_cb.acl_cb_.pm_pend_link >= MAX_L2CAP_LINKS) {
+    LOG_ERROR("pending_link: %d", btm_cb.acl_cb_.pm_pend_link);
+    return;
+  }
+
+  tBTM_PM_MCB* p_cb = &btm_cb.acl_cb_.pm_mode_db[btm_cb.acl_cb_.pm_pend_link];
   tBTM_PM_STATUS pm_status;
-
-  if (btm_cb.acl_cb_.pm_pend_link >= MAX_L2CAP_LINKS) return;
-
-  p_cb = &btm_cb.acl_cb_.pm_mode_db[btm_cb.acl_cb_.pm_pend_link];
-
   if (status == HCI_SUCCESS) {
     p_cb->state = BTM_PM_ST_PENDING;
     pm_status = BTM_PM_STS_PENDING;
-#if (BTM_PM_DEBUG == TRUE)
-    BTM_TRACE_DEBUG("btm_pm_proc_cmd_status new state:0x%x", p_cb->state);
-#endif   // BTM_PM_DEBUG
-  } else /* the command was not successfull. Stay in the same state */
-  {
+  } else {
+    // the command was not successful. Stay in the same state
     pm_status = BTM_PM_STS_ERROR;
   }
 
@@ -652,12 +631,9 @@ void btm_pm_proc_cmd_status(uint8_t status) {
     (*btm_cb.pm_reg_db[btm_cb.pm_pend_id].cback)(bd_addr, pm_status, 0, status);
   }
 
-/* no pending cmd now */
-#if (BTM_PM_DEBUG == TRUE)
-  BTM_TRACE_DEBUG(
-      "btm_pm_proc_cmd_status state:0x%x, pm_pend_link: %d(new: %d)",
-      p_cb->state, btm_cb.acl_cb_.pm_pend_link, MAX_L2CAP_LINKS);
-#endif  // BTM_PM_DEBUG
+  /* no pending cmd now */
+  LOG_DEBUG("state: %d, pend_link: %d", p_cb->state,
+            btm_cb.acl_cb_.pm_pend_link);
   btm_cb.acl_cb_.pm_pend_link = MAX_L2CAP_LINKS;
 
   /*******************************************************************************
@@ -717,8 +693,8 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
   p_cb->state = mode;
   p_cb->interval = interval;
 
-  BTM_TRACE_DEBUG("%s switched from %s to %s.", __func__,
-                  mode_to_string(old_state), mode_to_string(p_cb->state));
+  LOG_DEBUG("switched from [%s] to [%s].", mode_to_string(old_state),
+            mode_to_string(p_cb->state));
 
   if ((p_cb->state == BTM_PM_ST_ACTIVE) || (p_cb->state == BTM_PM_ST_SNIFF)) {
     l2c_OnHciModeChangeSendPendingPackets(bd_addr);
@@ -734,16 +710,12 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
 
   /* new request has been made. - post a message to BTU task */
   if (old_state & BTM_PM_STORED_MASK) {
-#if (BTM_PM_DEBUG == TRUE)
-    BTM_TRACE_DEBUG("btm_pm_proc_mode_change: Sending stored req:%d", xx);
-#endif  // BTM_PM_DEBUG
+    LOG_VERBOSE("Sending stored req: %d", xx);
     internal_.btm_pm_snd_md_req(BTM_PM_SET_ONLY_ID, xx, NULL);
   } else {
     for (zz = 0; zz < MAX_L2CAP_LINKS; zz++) {
       if (btm_cb.acl_cb_.pm_mode_db[zz].chg_ind) {
-#if (BTM_PM_DEBUG == TRUE)
-        BTM_TRACE_DEBUG("btm_pm_proc_mode_change: Sending PM req :%d", zz);
-#endif  // BTM_PM_DEBUG
+        LOG_VERBOSE("Sending PM req :%d", zz);
         internal_.btm_pm_snd_md_req(BTM_PM_SET_ONLY_ID, zz, NULL);
         break;
       }
