@@ -38,6 +38,9 @@
 #include "rfcdefs.h"
 #include "sdp_api.h"
 
+#include "btm_sec.h"
+#include "stack/include/btm_api_types.h"
+
 #define error(fmt, ...) \
   LOG_ERROR("## ERROR : %s: " fmt "##", __func__, ##__VA_ARGS__)
 
@@ -69,6 +72,21 @@ static const char* result_code_strings[] = {"Success",
                                             "Page timeout",
                                             "Invalid SCN",
                                             "Unknown result code"};
+
+int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn,
+                                        bool is_server, uint16_t mtu,
+                                        const RawAddress& bd_addr,
+                                        uint16_t* p_handle,
+                                        tPORT_CALLBACK* p_mgmt_cb,
+                                        uint8_t service_id, uint16_t sec_mask) {
+  if (!BTM_SetSecurityLevel(!is_server, "", service_id, sec_mask, BT_PSM_RFCOMM,
+                            BTM_SEC_PROTO_RFCOMM, scn)) {
+    return PORT_NO_RESOURCES;
+  }
+
+  return RFCOMM_CreateConnection(uuid, scn, is_server, mtu, bd_addr, p_handle,
+                                 p_mgmt_cb);
+}
 
 /*******************************************************************************
  *

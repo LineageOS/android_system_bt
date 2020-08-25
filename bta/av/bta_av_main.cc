@@ -578,7 +578,7 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
 /* register with no authorization; let AVDTP use authorization instead */
 #if (BTA_AR_INCLUDED == TRUE)
         bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
-                        BTA_SEC_AUTHENTICATE, BTA_ID_AV);
+                        BTA_ID_AV);
 
         /* For the Audio Sink role we support additional TG to support
          * absolute volume.
@@ -729,7 +729,7 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
         if ((bta_av_cb.features & (BTA_AV_FEAT_RCTG)) == 0) {
 #if (BTA_AR_INCLUDED == TRUE)
           bta_ar_reg_avct(p_bta_av_cfg->avrc_mtu, p_bta_av_cfg->avrc_br_mtu,
-                          BTA_SEC_AUTHENTICATE, BTA_ID_AV);
+                          BTA_ID_AV);
 #endif
           bta_av_rc_create(&bta_av_cb, AVCT_ACP, 0, BTA_AV_NUM_LINKS + 1);
         }
