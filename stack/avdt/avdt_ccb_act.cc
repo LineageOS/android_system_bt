@@ -943,7 +943,7 @@ void avdt_ccb_set_conn(AvdtpCcb* p_ccb, tAVDT_CCB_EVT* p_data) {
 
   /* set security level */
   BTM_SetSecurityLevel(true, "", BTM_SEC_SERVICE_AVDTP,
-                       p_data->connect.sec_mask, AVDT_PSM, 0, 0);
+                       BTM_SEC_OUT_AUTHENTICATE, AVDT_PSM, 0, 0);
 }
 
 /*******************************************************************************

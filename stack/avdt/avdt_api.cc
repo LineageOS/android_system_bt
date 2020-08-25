@@ -979,13 +979,13 @@ uint16_t AVDT_WriteReq(uint8_t handle, BT_HDR* p_pkt, uint32_t time_stamp,
  *
  ******************************************************************************/
 uint16_t AVDT_ConnectReq(const RawAddress& bd_addr, uint8_t channel_index,
-                         uint8_t sec_mask, tAVDT_CTRL_CBACK* p_cback) {
+                         tAVDT_CTRL_CBACK* p_cback) {
   AvdtpCcb* p_ccb = NULL;
   uint16_t result = AVDT_SUCCESS;
   tAVDT_CCB_EVT evt;
 
-  AVDT_TRACE_WARNING("%s: address=%s channel_index=%d sec_mask=0x%x", __func__,
-                     bd_addr.ToString().c_str(), channel_index, sec_mask);
+  AVDT_TRACE_WARNING("%s: address=%s channel_index=%d", __func__,
+                     bd_addr.ToString().c_str(), channel_index);
 
   /* find channel control block for this bd addr; if none, allocate one */
   p_ccb = avdt_ccb_by_bd(bd_addr);
@@ -1005,7 +1005,6 @@ uint16_t AVDT_ConnectReq(const RawAddress& bd_addr, uint8_t channel_index,
   if (result == AVDT_SUCCESS) {
     /* send event to ccb */
     evt.connect.p_cback = p_cback;
-    evt.connect.sec_mask = sec_mask;
     avdt_ccb_event(p_ccb, AVDT_CCB_API_CONNECT_REQ_EVT, &evt);
   }
 
