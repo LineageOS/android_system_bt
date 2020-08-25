@@ -1092,15 +1092,11 @@ void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb,
                       NULL, BTM_BLE_SEC_ENCRYPT);
   }
   /* unbonded device, report security error here */
-  else if (p_cb->sec_mask != BTA_SEC_NONE) {
+  else {
     p_cb->status = BTA_HH_ERR_AUTH_FAILED;
     bta_hh_clear_service_cache(p_cb);
     BTM_SetEncryption(p_cb->addr, BT_TRANSPORT_LE, bta_hh_le_encrypt_cback,
                       NULL, BTM_BLE_SEC_ENCRYPT_NO_MITM);
-  }
-  /* otherwise let it go through */
-  else {
-    bta_hh_sm_execute(p_cb, BTA_HH_ENC_CMPL_EVT, NULL);
   }
 }
 
@@ -2085,54 +2081,6 @@ static void bta_hh_gattc_callback(tBTA_GATTC_EVT event, tBTA_GATTC* p_data) {
     default:
       break;
   }
-}
-
-static void read_report_descriptor_ccc_cb(uint16_t conn_id, tGATT_STATUS status,
-                                          uint16_t handle, uint16_t len,
-                                          uint8_t* value, void* data) {
-  tBTA_HH_LE_RPT* p_rpt = (tBTA_HH_LE_RPT*)data;
-  uint8_t* pp = value;
-  STREAM_TO_UINT16(p_rpt->client_cfg_value, pp);
-
-  APPL_TRACE_DEBUG("Read Client Configuration: 0x%04x",
-                   p_rpt->client_cfg_value);
-}
-
-/*******************************************************************************
- *
- * Function         bta_hh_le_hid_read_rpt_clt_cfg
- *
- * Description      a test command to read report descriptor client
- *                  configuration
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_hh_le_hid_read_rpt_clt_cfg(const RawAddress& bd_addr, uint8_t rpt_id) {
-  tBTA_HH_DEV_CB* p_cb = NULL;
-  tBTA_HH_LE_RPT* p_rpt;
-  uint8_t index = BTA_HH_IDX_INVALID;
-
-  index = bta_hh_find_cb(bd_addr);
-  if (index == BTA_HH_IDX_INVALID) {
-    APPL_TRACE_ERROR("%s: unknown device", __func__);
-    return;
-  }
-
-  p_cb = &bta_hh_cb.kdev[index];
-
-  p_rpt = bta_hh_le_find_rpt_by_idtype(p_cb->hid_srvc.report, p_cb->mode,
-                                       BTA_HH_RPTT_INPUT, rpt_id);
-
-  if (p_rpt == NULL) {
-    APPL_TRACE_ERROR("%s: no matching report", __func__);
-    return;
-  }
-
-  bta_hh_le_read_char_descriptor(p_cb, p_rpt->char_inst_id,
-                                 GATT_UUID_CHAR_CLIENT_CONFIG,
-                                 read_report_descriptor_ccc_cb, p_rpt);
-  return;
 }
 
 /*******************************************************************************

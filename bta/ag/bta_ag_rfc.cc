@@ -261,7 +261,7 @@ void bta_ag_start_servers(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK services) {
           bta_ag_uuid[i], bta_ag_cb.profile[i].scn, true, BTA_AG_MTU,
           RawAddress::kAny, &(p_scb->serv_handle[i]),
           bta_ag_mgmt_cback_tbl[management_callback_index], bta_ag_sec_id[i],
-          p_scb->serv_sec_mask);
+          BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT);
       if (status == PORT_SUCCESS) {
         bta_ag_setup_port(p_scb, p_scb->serv_handle[i]);
       } else {
@@ -335,7 +335,8 @@ void bta_ag_rfc_do_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
       bta_ag_uuid[p_scb->conn_service], p_scb->peer_scn, false, BTA_AG_MTU,
       p_scb->peer_addr, &(p_scb->conn_handle),
       bta_ag_mgmt_cback_tbl[management_callback_index],
-      bta_ag_sec_id[p_scb->conn_service], p_scb->cli_sec_mask);
+      bta_ag_sec_id[p_scb->conn_service],
+      BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT);
   APPL_TRACE_DEBUG(
       "%s: p_scb=0x%08x, conn_handle=%d, mgmt_cback_index=%d,"
       " status=%d",
