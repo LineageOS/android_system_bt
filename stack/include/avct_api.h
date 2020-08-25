@@ -136,7 +136,7 @@ typedef struct {
  * Returns          void
  *
  ******************************************************************************/
-extern void AVCT_Register(uint16_t mtu, uint16_t mtu_br, uint8_t sec_mask);
+extern void AVCT_Register(uint16_t mtu, uint16_t mtu_br);
 
 /*******************************************************************************
  *

@@ -92,17 +92,6 @@ extern tHID_STATUS HID_DevDeregister(void);
 
 /*******************************************************************************
  *
- * Function         HID_DevSetSecurityLevel
- *
- * Description      Sets security level for HID device connections
- *
- * Returns          tHID_STATUS
- *
- ******************************************************************************/
-extern tHID_STATUS HID_DevSetSecurityLevel(uint8_t sec_lvl);
-
-/*******************************************************************************
- *
  * Function         HID_DevAddRecord
  *
  * Description      Creates SDP record for HID device

@@ -42,6 +42,7 @@
 #include "hidd_api.h"
 #include "hidd_int.h"
 
+#include "bta/include/bta_api.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
 
@@ -757,6 +758,19 @@ tHID_STATUS hidd_conn_reg(void) {
   hd_cb.l2cap_intr_cfg.mtu = HID_DEV_MTU_SIZE;
   hd_cb.l2cap_intr_cfg.flush_to_present = TRUE;
   hd_cb.l2cap_intr_cfg.flush_to = HID_DEV_FLUSH_TO;
+
+  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_HIDD_SEC_CTRL,
+                                  BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT,
+                                  HID_PSM_CONTROL)) {
+    HIDD_TRACE_ERROR("Security Registration 1 failed");
+    return (HID_ERR_NO_RESOURCES);
+  }
+
+  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_HIDD_INTR, BTM_SEC_NONE,
+                                  HID_PSM_INTERRUPT)) {
+    HIDD_TRACE_ERROR("Security Registration 5 failed");
+    return (HID_ERR_NO_RESOURCES);
+  }
 
   if (!L2CA_Register(HID_PSM_CONTROL, (tL2CAP_APPL_INFO*)&dev_reg_info,
                      false /* enable_snoop */, nullptr, hd_cb.l2cap_cfg.mtu)) {
