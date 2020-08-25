@@ -17,6 +17,7 @@
 
 #include "hci/address_with_type.h"
 
+#include "gd/packet/raw_builder.h"
 #include "stack/include/bt_types.h"
 
 namespace bluetooth {
@@ -64,4 +65,14 @@ inline hci::AddressWithType ToAddressWithType(const RawAddress& legacy_address,
 
   return hci::AddressWithType{address, type};
 }
+
+inline std::unique_ptr<bluetooth::packet::RawBuilder> MakeUniquePacket(
+    const uint8_t* data, size_t len) {
+  bluetooth::packet::RawBuilder builder;
+  std::vector<uint8_t> bytes(data, data + len);
+  auto payload = std::make_unique<bluetooth::packet::RawBuilder>();
+  payload->AddOctets(bytes);
+  return payload;
+}
+
 }  // namespace bluetooth
