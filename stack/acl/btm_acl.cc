@@ -277,6 +277,41 @@ bool btm_ble_get_acl_remote_addr(tBTM_SEC_DEV_REC* p_dev_rec,
   return st;
 }
 #endif
+
+void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data) {
+  uint16_t handle;
+  uint8_t acl_idx;
+  uint8_t sca;
+  uint8_t status;
+  tACL_CONN* p;
+
+  STREAM_TO_UINT8(status, data);
+
+  if (status != HCI_SUCCESS) {
+    BTM_TRACE_DEBUG("%s, Peer SCA Command complete failed 0x%02x\n", __func__,
+                    status);
+    return;
+  }
+
+  STREAM_TO_UINT16(handle, data);
+  STREAM_TO_UINT8(sca, data);
+
+  acl_idx = btm_handle_to_acl_index(handle);
+  if (acl_idx >= MAX_L2CAP_LINKS) {
+    BTM_TRACE_DEBUG(
+        "%s, Peer SCA Command complete: failed to find handle 0x%04x\n",
+        __func__, handle);
+    return;
+  }
+
+  p = &btm_cb.acl_cb_.acl_db[acl_idx];
+  p->sca = sca;
+
+  BTM_TRACE_DEBUG(
+      "%s, Peer SCA Command complete: handle: 0x%04x, sca: 0x%02x\n", __func__,
+      handle, sca);
+}
+
 /*******************************************************************************
  *
  * Function         btm_acl_created
@@ -317,6 +352,7 @@ void btm_acl_created(const RawAddress& bda, DEV_CLASS dc, BD_NAME bdn,
       p->link_role = link_role;
       p->link_up_issued = false;
       p->remote_addr = bda;
+      p->sca = 0xFF;
       btm_set_link_policy(p, btm_cb.acl_cb_.btm_def_link_policy);
 
       p->transport = transport;
@@ -1341,6 +1377,48 @@ uint16_t BTM_GetHCIConnHandle(const RawAddress& remote_bda,
 
   /* If here, no BD Addr found */
   return HCI_INVALID_HANDLE;
+}
+
+/*******************************************************************************
+ *
+ * Function         BTM_RequestPeerSCA
+ *
+ * Description      This function is called to request sleep clock accuracy
+ *                  from peer device
+ *
+ ******************************************************************************/
+void BTM_RequestPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
+  tACL_CONN* p;
+  BTM_TRACE_DEBUG("BTM_RequestPeerSCA");
+  p = internal_.btm_bda_to_acl(remote_bda, transport);
+  if (p == (tACL_CONN*)NULL) {
+    BTM_TRACE_DEBUG("BTM_RequestPeerSCA: no connection");
+    return;
+  }
+
+  btsnd_hcic_req_peer_sca(p->hci_handle);
+}
+
+/*******************************************************************************
+ *
+ * Function         BTM_GetPeerSCA
+ *
+ * Description      This function is called to get peer sleep clock accuracy
+ *
+ * Returns          SCA or 0xFF if SCA was never previously requested, request
+ *                  is not supported by peer device or ACL does not exist
+ *
+ ******************************************************************************/
+uint8_t BTM_GetPeerSCA(const RawAddress& remote_bda, tBT_TRANSPORT transport) {
+  tACL_CONN* p;
+  BTM_TRACE_DEBUG("BTM_GetPeerSCA");
+  p = internal_.btm_bda_to_acl(remote_bda, transport);
+  if (p != (tACL_CONN*)NULL) {
+    return (p->sca);
+  }
+
+  /* If here, no BD Addr found */
+  return (0xFF);
 }
 
 /*******************************************************************************
