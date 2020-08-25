@@ -2339,7 +2339,7 @@ void btm_sec_rmt_name_request_complete(const RawAddress* p_bd_addr,
     old_sec_state = p_dev_rec->sec_state;
     if (status == HCI_SUCCESS) {
       strlcpy((char*)p_dev_rec->sec_bd_name, (char*)p_bd_name,
-              BTM_MAX_REM_BD_NAME_LEN);
+              BTM_MAX_REM_BD_NAME_LEN + 1);
       p_dev_rec->sec_flags |= BTM_SEC_NAME_KNOWN;
       BTM_TRACE_EVENT("setting BTM_SEC_NAME_KNOWN sec_flags:0x%x",
                       p_dev_rec->sec_flags);
@@ -2837,7 +2837,7 @@ void btm_proc_sp_req_evt(tBTM_SP_EVT event, uint8_t* p) {
     memcpy(evt_data.cfm_req.dev_class, p_dev_rec->dev_class, DEV_CLASS_LEN);
 
     strlcpy((char*)evt_data.cfm_req.bd_name, (char*)p_dev_rec->sec_bd_name,
-            BTM_MAX_REM_BD_NAME_LEN);
+            BTM_MAX_REM_BD_NAME_LEN + 1);
 
     switch (event) {
       case BTM_SP_CFM_REQ_EVT:
@@ -3034,7 +3034,7 @@ void btm_rem_oob_req(uint8_t* p) {
     evt_data.bd_addr = p_dev_rec->bd_addr;
     memcpy(evt_data.dev_class, p_dev_rec->dev_class, DEV_CLASS_LEN);
     strlcpy((char*)evt_data.bd_name, (char*)p_dev_rec->sec_bd_name,
-            BTM_MAX_REM_BD_NAME_LEN);
+            BTM_MAX_REM_BD_NAME_LEN + 1);
 
     btm_sec_change_pairing_state(BTM_PAIR_STATE_WAIT_LOCAL_OOB_RSP);
     if ((*btm_cb.api.p_sp_callback)(BTM_SP_RMT_OOB_EVT,
