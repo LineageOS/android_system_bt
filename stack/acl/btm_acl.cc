@@ -2493,6 +2493,14 @@ bool acl_peer_supports_ble_connection_parameters_request(
   return HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl->peer_le_features);
 }
 
+bool acl_peer_supports_sniff_subrating(const RawAddress& remote_bda) {
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(remote_bda, BT_TRANSPORT_LE);
+  if (p_acl == nullptr) {
+    return false;
+  }
+  return HCI_SNIFF_SUB_RATE_SUPPORTED(p_acl->peer_le_features);
+}
+
 /*******************************************************************************
  *
  * Function         BTM_ReadConnectionAddr
