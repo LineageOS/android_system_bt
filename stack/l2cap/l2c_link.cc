@@ -1024,9 +1024,13 @@ static void l2c_link_send_to_lower(tL2C_LCB* p_lcb, BT_HDR* p_buf,
   const uint16_t link_xmit_quota = p_lcb->link_xmit_quota;
   const tBT_TRANSPORT transport = p_lcb->transport;
 
-  if (((transport == BT_TRANSPORT_BR_EDR) &&
-       (p_buf->len <= acl_packet_size_classic)) ||
-      ((transport == BT_TRANSPORT_LE) && (p_buf->len <= acl_packet_size_ble))) {
+  const bool is_bdr_and_fits_in_buffer =
+      (transport == BT_TRANSPORT_BR_EDR &&
+       (p_buf->len <= acl_packet_size_classic));
+  const bool is_ble_and_fits_in_buffer =
+      (transport == BT_TRANSPORT_LE && (p_buf->len <= acl_packet_size_ble));
+
+  if (is_bdr_and_fits_in_buffer || is_ble_and_fits_in_buffer) {
     if (link_xmit_quota == 0) {
       if (transport == BT_TRANSPORT_LE)
         l2cb.ble_round_robin_unacked++;
