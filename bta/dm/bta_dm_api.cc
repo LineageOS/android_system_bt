@@ -58,8 +58,8 @@ void BTA_EnableTestMode(void) {
 
 /** This function sets the Bluetooth name of local device */
 void BTA_DmSetDeviceName(char* p_name) {
-  std::vector<uint8_t> name(BD_NAME_LEN);
-  strlcpy((char*)name.data(), p_name, BD_NAME_LEN);
+  std::vector<uint8_t> name(BD_NAME_LEN + 1);
+  strlcpy((char*)name.data(), p_name, BD_NAME_LEN + 1);
 
   do_in_main_thread(FROM_HERE, base::Bind(bta_dm_set_dev_name, name));
 }
