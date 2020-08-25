@@ -71,16 +71,6 @@
 #define FORWARD_FAILURE (-1)
 #define FORWARD_CONGEST (-2)
 
-#if (PAN_NAP_DISABLED == TRUE && PANU_DISABLED == TRUE)
-#define BTPAN_LOCAL_ROLE BTPAN_ROLE_NONE
-#elif PAN_NAP_DISABLED == TRUE
-#define BTPAN_LOCAL_ROLE BTPAN_ROLE_PANU
-#elif PANU_DISABLED == TRUE
-#define BTPAN_LOCAL_ROLE BTPAN_ROLE_PANNAP
-#else
-#define BTPAN_LOCAL_ROLE (BTPAN_ROLE_PANU | BTPAN_ROLE_PANNAP)
-#endif
-
 #define asrt(s)                                                          \
   do {                                                                   \
     if (!(s))                                                            \
@@ -138,7 +128,15 @@ void btif_pan_init() {
       btpan_cleanup_conn(&btpan_cb.conns[i]);
     BTA_PanEnable(bta_pan_callback);
     btpan_cb.enabled = 1;
-    btpan_enable(BTPAN_LOCAL_ROLE);
+
+    int role = BTPAN_ROLE_NONE;
+#if PAN_NAP_DISABLED == FALSE
+    role |= BTPAN_ROLE_PANNAP;
+#endif
+#if PANU_DISABLED == FALSE
+    role |= BTPAN_ROLE_PANU;
+#endif
+    btpan_enable(role);
   }
 }
 
