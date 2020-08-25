@@ -720,7 +720,7 @@ void SecurityManagerImpl::InternalEnforceSecurityPolicy(
   switch (policy) {
     case l2cap::classic::SecurityPolicy::BEST:
     case l2cap::classic::SecurityPolicy::AUTHENTICATED_ENCRYPTED_TRANSPORT:
-      if (!record->IsPaired()) {
+      if (!record->IsPaired() || record->IsTemporary()) {
         need_to_pair = true;
       } else if (record->IsAuthenticated()) {
         // if paired with MITM, only encryption is missing, so we just need to wait for encryption change callback
