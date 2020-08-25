@@ -366,7 +366,6 @@ typedef struct {
 /* data type for AVDT_CCB_API_CONNECT_REQ_EVT */
 typedef struct {
   tAVDT_CTRL_CBACK* p_cback;
-  uint8_t sec_mask;
 } tAVDT_CCB_API_CONNECT;
 
 /* data type for AVDT_CCB_API_DISCONNECT_REQ_EVT */
