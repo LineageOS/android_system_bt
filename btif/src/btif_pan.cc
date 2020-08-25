@@ -110,7 +110,7 @@ static void bta_pan_callback(tBTA_PAN_EVT event, tBTA_PAN* p_data);
 static void btu_exec_tap_fd_read(const int fd);
 
 static btpan_interface_t pan_if = {
-    sizeof(pan_if), btpan_jni_init,   btpan_enable,     btpan_get_local_role,
+    sizeof(pan_if), btpan_jni_init,   nullptr,          btpan_get_local_role,
     btpan_connect,  btpan_disconnect, btpan_jni_cleanup};
 
 const btpan_interface_t* btif_pan_get_interface() { return &pan_if; }
