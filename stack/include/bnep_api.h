@@ -249,7 +249,7 @@ extern void BNEP_Deregister(void);
 extern tBNEP_RESULT BNEP_Connect(const RawAddress& p_rem_bda,
                                  const bluetooth::Uuid& src_uuid,
                                  const bluetooth::Uuid& dst_uuid,
-                                 uint16_t* p_handle);
+                                 uint16_t* p_handle, uint32_t mx_chan_id);
 
 /*******************************************************************************
  *
