@@ -240,7 +240,7 @@ static void bta_av_api_enable(tBTA_AV_DATA* p_data) {
     }
 #endif
     // deregister from AVDT
-    bta_ar_dereg_avdt(BTA_ID_AV);
+    bta_ar_dereg_avdt();
 
     // deregister from AVCT
     bta_ar_dereg_avrc(UUID_SERVCLASS_AV_REMOTE_CONTROL);
@@ -560,7 +560,7 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
       reg.idle_tout = BTA_AV_IDLE_TOUT;
       reg.sec_mask = BTA_SEC_AUTHENTICATE;
       reg.scb_index = p_scb->hdi;
-      bta_ar_reg_avdt(&reg, bta_av_conn_cback, BTA_ID_AV);
+      bta_ar_reg_avdt(&reg, bta_av_conn_cback);
       bta_sys_role_chg_register(&bta_av_sys_rs_cback);
 
       /* create remote control TG service if required */
