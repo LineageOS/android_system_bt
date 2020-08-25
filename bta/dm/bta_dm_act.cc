@@ -2155,11 +2155,10 @@ void BTA_dm_report_role_change(const RawAddress bd_addr, uint8_t new_role,
 }
 
 static tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
-                                                tBT_TRANSPORT transport,
-                                                uint16_t handle) {
+                                                tBT_TRANSPORT transport) {
   for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
     auto device = &bta_dm_cb.device_list.peer_device[i];
-    if (device->peer_bdaddr == bd_addr && device->conn_handle == handle) {
+    if (device->peer_bdaddr == bd_addr && device->transport == transport) {
       return device;
     }
   }
@@ -2169,7 +2168,6 @@ static tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
         &bta_dm_cb.device_list.peer_device[bta_dm_cb.device_list.count];
     device->peer_bdaddr = bd_addr;
     bta_dm_cb.device_list.count++;
-    device->conn_handle = handle;
     if (transport == BT_TRANSPORT_LE) {
       bta_dm_cb.device_list.le_count++;
     }
@@ -2178,9 +2176,8 @@ static tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
   return nullptr;
 }
 
-static void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport,
-                          uint16_t handle) {
-  auto device = allocate_device_for(bd_addr, transport, handle);
+static void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
+  auto device = allocate_device_for(bd_addr, transport);
   if (device == nullptr) {
     APPL_TRACE_ERROR("%s max active connection reached, no resources",
                      __func__);
@@ -2206,10 +2203,8 @@ static void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport,
   bta_dm_adjust_roles(true);
 }
 
-void BTA_dm_acl_up(const RawAddress bd_addr, tBT_TRANSPORT transport,
-                   uint16_t handle) {
-  do_in_main_thread(FROM_HERE,
-                    base::Bind(bta_dm_acl_up, bd_addr, transport, handle));
+void BTA_dm_acl_up(const RawAddress bd_addr, tBT_TRANSPORT transport) {
+  do_in_main_thread(FROM_HERE, base::Bind(bta_dm_acl_up, bd_addr, transport));
 }
 
 static void bta_dm_acl_down(const RawAddress& bd_addr,

@@ -1173,8 +1173,7 @@ void StackAclBtmAcl::btm_establish_continue(tACL_CONN* p_acl_cb) {
   }
   p_acl_cb->link_up_issued = true;
 
-  BTA_dm_acl_up(p_acl_cb->remote_addr, p_acl_cb->transport,
-                p_acl_cb->hci_handle);
+  BTA_dm_acl_up(p_acl_cb->remote_addr, p_acl_cb->transport);
 }
 
 void btm_establish_continue_from_address(const RawAddress& bda,

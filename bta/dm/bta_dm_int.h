@@ -192,7 +192,6 @@ typedef struct {
   tBTA_DM_PM_ACTION pm_mode_attempted;
   tBTA_DM_PM_ACTION pm_mode_failed;
   bool remove_dev_pending;
-  uint16_t conn_handle;
   tBT_TRANSPORT transport;
 } tBTA_DM_PEER_DEVICE;
 
