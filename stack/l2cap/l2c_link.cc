@@ -219,7 +219,7 @@ void l2c_link_hci_conn_comp(uint8_t status, uint16_t handle,
       p_ccb = pn;
     }
 
-    p_lcb->disc_reason = status;
+    p_lcb->SetDisconnectReason(status);
     /* Release the LCB */
     if (p_lcb->ccb_queue.p_first_ccb == NULL)
       l2cu_release_lcb(p_lcb);
@@ -336,7 +336,7 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
       acl_set_disconnect_reason(reason);
     }
 
-    p_lcb->disc_reason = acl_get_disconnect_reason();
+    p_lcb->SetDisconnectReason(acl_get_disconnect_reason());
 
     /* Just in case app decides to try again in the callback context */
     p_lcb->link_state = LST_DISCONNECTING;
@@ -395,7 +395,7 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
               p_lcb->p_fixed_ccbs[xx] != p_lcb->p_pending_ccb) {
             (*l2cb.fixed_reg[xx].pL2CA_FixedConn_Cb)(
                 xx + L2CAP_FIRST_FIXED_CHNL, p_lcb->remote_bd_addr, false,
-                p_lcb->disc_reason, p_lcb->transport);
+                p_lcb->DisconnectReason(), p_lcb->transport);
             if (p_lcb->p_fixed_ccbs[xx] == NULL) {
               L2CAP_TRACE_ERROR(
                   "%s: unexpected p_fixed_ccbs[%d] is NULL remote_bd_addr = %s "
@@ -404,8 +404,8 @@ bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason) {
                   "%d",
                   __func__, xx, p_lcb->remote_bd_addr.ToString().c_str(), p_lcb,
                   p_lcb->in_use, p_lcb->link_state, p_lcb->handle,
-                  p_lcb->LinkRole(), p_lcb->IsBonding(), p_lcb->disc_reason,
-                  p_lcb->transport);
+                  p_lcb->LinkRole(), p_lcb->IsBonding(),
+                  p_lcb->DisconnectReason(), p_lcb->transport);
             }
             CHECK(p_lcb->p_fixed_ccbs[xx] != NULL);
             l2cu_release_ccb(p_lcb->p_fixed_ccbs[xx]);
@@ -599,7 +599,7 @@ void l2c_link_adjust_allocation(void) {
       (l2cb.num_lm_ble_bufs == L2C_DEF_NUM_BLE_BUF_SHARED) ? true : false;
 
   /* If no links active, reset buffer quotas and controller buffers */
-  if (l2cb.num_links_active == 0) {
+  if (l2cb.num_used_lcbs == 0) {
     l2cb.controller_xmit_window = l2cb.num_lm_acl_bufs;
     l2cb.round_robin_quota = l2cb.round_robin_unacked = 0;
     return;
@@ -754,14 +754,11 @@ void l2c_link_init() {
  ******************************************************************************/
 void l2c_link_role_changed(const RawAddress* bd_addr, uint8_t new_role,
                            uint8_t hci_status) {
-  tL2C_LCB* p_lcb;
-  int xx;
-
   /* Make sure not called from HCI Command Status (bd_addr and new_role are
    * invalid) */
-  if (bd_addr) {
+  if (bd_addr != nullptr) {
     /* If here came form hci role change event */
-    p_lcb = l2cu_find_lcb_by_bd_addr(*bd_addr, BT_TRANSPORT_BR_EDR);
+    tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(*bd_addr, BT_TRANSPORT_BR_EDR);
     if (p_lcb) {
       if (new_role == HCI_ROLE_MASTER) {
         p_lcb->SetLinkRoleAsMaster();
@@ -776,7 +773,8 @@ void l2c_link_role_changed(const RawAddress* bd_addr, uint8_t new_role,
   }
 
   /* Check if any LCB was waiting for switch to be completed */
-  for (xx = 0, p_lcb = &l2cb.lcb_pool[0]; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
+  tL2C_LCB* p_lcb = &l2cb.lcb_pool[0];
+  for (uint8_t xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
     if ((p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTING_WAIT_SWITCH)) {
       l2cu_create_conn_after_switch(p_lcb);
     }
