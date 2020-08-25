@@ -32,7 +32,6 @@
  *             L O C A L    F U N C T I O N     P R O T O T Y P E S            *
  ******************************************************************************/
 tBTM_SEC_SERV_REC* btm_sec_find_first_serv(bool is_originator, uint16_t psm);
-bool btm_sec_are_all_trusted(uint32_t p_mask[]);
 
 tBTM_SEC_DEV_REC* btm_sec_find_dev_by_sec_state(uint8_t state);
 
@@ -98,6 +97,11 @@ bool BTM_GetSecurityFlagsByTransport(const RawAddress& bd_addr,
                                      uint8_t* p_sec_flags,
                                      tBT_TRANSPORT transport);
 
+bool BTM_IsEncrypted(const RawAddress& bd_addr, tBT_TRANSPORT transport);
+bool BTM_IsLinkKeyAuthed(const RawAddress& bd_addr, tBT_TRANSPORT transport);
+bool BTM_IsLinkKeyKnown(const RawAddress& bd_addr, tBT_TRANSPORT transport);
+bool BTM_IsAuthenticated(const RawAddress& bd_addr, tBT_TRANSPORT transport);
+
 /*******************************************************************************
  *
  * Function         BTM_SetPinType
@@ -108,22 +112,6 @@ bool BTM_GetSecurityFlagsByTransport(const RawAddress& bd_addr,
  *
  ******************************************************************************/
 void BTM_SetPinType(uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len);
-
-/*******************************************************************************
- *
- * Function         BTM_SetPairableMode
- *
- * Description      Enable or disable pairing
- *
- * Parameters       allow_pairing - (true or false) whether or not the device
- *                      allows pairing.
- *                  connect_only_paired - (true or false) whether or not to
- *                      only allow paired devices to connect.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_SetPairableMode(bool allow_pairing, bool connect_only_paired);
 
 #define BTM_NO_AVAIL_SEC_SERVICES ((uint16_t)0xffff)
 
@@ -191,20 +179,6 @@ uint8_t BTM_SecClrServiceByPsm(uint16_t psm);
 
 /*******************************************************************************
  *
- * Function         BTM_SecClrTempAuthService
- *
- * Description      Removes specified device record's temporary authorization
- *                  flag from the security database.
- *
- * Parameters       Device address to be cleared
- *
- * Returns          void.
- *
- ******************************************************************************/
-void BTM_SecClrTempAuthService(const RawAddress& bda);
-
-/*******************************************************************************
- *
  * Function         BTM_PINCodeReply
  *
  * Description      This function is called after Security Manager submitted
@@ -216,12 +190,10 @@ void BTM_SecClrTempAuthService(const RawAddress& bda);
  *                                 if success
  *                  pin_len      - length in bytes of the PIN Code
  *                  p_pin        - pointer to array with the PIN Code
- *                  trusted_mask - bitwise OR of trusted services
- *                                 (array of uint32_t)
  *
  ******************************************************************************/
 void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
-                      uint8_t* p_pin, uint32_t trusted_mask[]);
+                      uint8_t* p_pin);
 
 /*******************************************************************************
  *
@@ -232,14 +204,12 @@ void BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res, uint8_t pin_len,
  * Parameters:      bd_addr      - Address of the device to bond
  *                  pin_len      - length in bytes of the PIN Code
  *                  p_pin        - pointer to array with the PIN Code
- *                  trusted_mask - bitwise OR of trusted services
- *                                 (array of uint32_t)
  *
  *  Note: After 2.1 parameters are not used and preserved here not to change API
  ******************************************************************************/
 tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
                                       tBT_TRANSPORT transport, uint8_t pin_len,
-                                      uint8_t* p_pin, uint32_t trusted_mask[]);
+                                      uint8_t* p_pin);
 
 /*******************************************************************************
  *
@@ -253,15 +223,12 @@ tBTM_STATUS btm_sec_bond_by_transport(const RawAddress& bd_addr,
  *                  transport    - doing SSP over BR/EDR or SMP over LE
  *                  pin_len      - length in bytes of the PIN Code
  *                  p_pin        - pointer to array with the PIN Code
- *                  trusted_mask - bitwise OR of trusted services
- *                                 (array of uint32_t)
  *
  *  Note: After 2.1 parameters are not used and preserved here not to change API
  ******************************************************************************/
 tBTM_STATUS BTM_SecBond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
                         tBT_TRANSPORT transport, int device_type,
-                        uint8_t pin_len, uint8_t* p_pin,
-                        uint32_t trusted_mask[]);
+                        uint8_t pin_len, uint8_t* p_pin);
 
 /*******************************************************************************
  *
@@ -321,7 +288,7 @@ tBTM_LINK_KEY_TYPE BTM_SecGetDeviceLinkKeyType(const RawAddress& bd_addr);
  ******************************************************************************/
 tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr,
                               tBT_TRANSPORT transport,
-                              tBTM_SEC_CBACK* p_callback, void* p_ref_data,
+                              tBTM_SEC_CALLBACK* p_callback, void* p_ref_data,
                               tBTM_BLE_SEC_ACT sec_act);
 
 bool BTM_SecIsSecurityPending(const RawAddress& bd_addr);
@@ -751,17 +718,6 @@ tBTM_STATUS btm_sec_execute_procedure(tBTM_SEC_DEV_REC* p_dev_rec);
 
 /*******************************************************************************
  *
- * Function         btm_sec_are_all_trusted
- *
- * Description      This function is called check if all services are trusted
- *
- * Returns          true if all are trusted, otherwise false
- *
- ******************************************************************************/
-bool btm_sec_are_all_trusted(uint32_t p_mask[]);
-
-/*******************************************************************************
- *
  * Function         btm_sec_find_first_serv
  *
  * Description      Look for the first record in the service database
@@ -771,20 +727,6 @@ bool btm_sec_are_all_trusted(uint32_t p_mask[]);
  *
  ******************************************************************************/
 tBTM_SEC_SERV_REC* btm_sec_find_first_serv(bool is_originator, uint16_t psm);
-
-/*******************************************************************************
- *
- * Function         BTM_ReadTrustedMask
- *
- * Description      Get trusted mask for the peer device
- *
- * Parameters:      bd_addr   - Address of the device
- *
- * Returns          NULL, if the device record is not found.
- *                  otherwise, the trusted mask
- *
- ******************************************************************************/
-uint32_t* BTM_ReadTrustedMask(const RawAddress& bd_addr);
 
 bool is_sec_state_equal(void* data, void* context);
 
@@ -812,19 +754,6 @@ tBTM_SEC_DEV_REC* btm_sec_find_dev_by_sec_state(uint8_t state);
  ******************************************************************************/
 void btm_sec_dev_rec_cback_event(tBTM_SEC_DEV_REC* p_dev_rec, uint8_t res,
                                  bool is_le_transport);
-
-/*******************************************************************************
- *
- * Function         btm_sec_auth_payload_tout
- *
- * Description      Processes the HCI Autheniticated Payload Timeout Event
- *                  indicating that a packet containing a valid MIC on the
- *                  connection handle was not received within the programmed
- *                  timeout value. (Spec Default is 30 secs, but can be
- *                  changed via the BTM_SecSetAuthPayloadTimeout() function.
- *
- ******************************************************************************/
-void btm_sec_auth_payload_tout(uint8_t* p, uint16_t hci_evt_len);
 
 /*******************************************************************************
  *

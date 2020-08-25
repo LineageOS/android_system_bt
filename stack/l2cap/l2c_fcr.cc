@@ -457,7 +457,7 @@ void l2c_fcr_send_S_frame(tL2C_CCB* p_ccb, uint16_t function_code,
     L2CAP_TRACE_EVENT("                  Buf Len: %u", p_buf->len);
   }
 
-  l2c_link_check_send_pkts(p_ccb->p_lcb, NULL, p_buf);
+  l2c_link_check_send_pkts(p_ccb->p_lcb, 0, p_buf);
 
   p_ccb->fcrb.last_ack_sent = p_ccb->fcrb.next_seq_expected;
 
@@ -678,7 +678,7 @@ void l2c_fcr_proc_pdu(tL2C_CCB* p_ccb, BT_HDR* p_buf) {
   if ((!fixed_queue_is_empty(p_ccb->fcrb.retrans_q) ||
        !fixed_queue_is_empty(p_ccb->xmit_hold_q)) &&
       (!p_ccb->fcrb.wait_ack) && (!l2c_fcr_is_flow_controlled(p_ccb))) {
-    l2c_link_check_send_pkts(p_ccb->p_lcb, NULL, NULL);
+    l2c_link_check_send_pkts(p_ccb->p_lcb, 0, NULL);
   }
 }
 
@@ -1357,7 +1357,6 @@ static bool do_sar_reassembly(tL2C_CCB* p_ccb, BT_HDR* p_buf,
   if (!packet_ok) {
     osi_free(p_buf);
   } else if (p_buf != NULL) {
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
     if (p_ccb->local_cid < L2CAP_BASE_APPL_CID &&
         (p_ccb->local_cid >= L2CAP_FIRST_FIXED_CHNL &&
          p_ccb->local_cid <= L2CAP_LAST_FIXED_CHNL)) {
@@ -1367,7 +1366,6 @@ static bool do_sar_reassembly(tL2C_CCB* p_ccb, BT_HDR* p_buf,
               .pL2CA_FixedData_Cb)(p_ccb->local_cid,
                                    p_ccb->p_lcb->remote_bd_addr, p_buf);
     } else
-#endif
       l2c_csm_execute(p_ccb, L2CEVT_L2CAP_DATA, p_buf);
   }
 
@@ -1479,7 +1477,7 @@ static bool retransmit_i_frames(tL2C_CCB* p_ccb, uint8_t tx_seq) {
     }
   }
 
-  l2c_link_check_send_pkts(p_ccb->p_lcb, NULL, NULL);
+  l2c_link_check_send_pkts(p_ccb->p_lcb, 0, NULL);
 
   if (fixed_queue_length(p_ccb->fcrb.waiting_for_ack_q)) {
     p_ccb->fcrb.num_tries++;

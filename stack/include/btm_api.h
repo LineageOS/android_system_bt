@@ -249,24 +249,7 @@ tBTM_STATUS BTM_EnableTestMode(void);
  *                  BTM_WRONG_MODE if the device is not up.
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode, uint16_t window,
-                                   uint16_t interval);
-
-/*******************************************************************************
- *
- * Function         BTM_ReadDiscoverability
- *
- * Description      This function is called to read the current discoverability
- *                  mode of the device.
- *
- * Output Params:   p_window - current inquiry scan duration
- *                  p_interval - current inquiry scan interval
- *
- * Returns          BTM_NON_DISCOVERABLE, BTM_LIMITED_DISCOVERABLE, or
- *                  BTM_GENERAL_DISCOVERABLE
- *
- ******************************************************************************/
-uint16_t BTM_ReadDiscoverability(uint16_t* p_window, uint16_t* p_interval);
+tBTM_STATUS BTM_SetDiscoverability(uint16_t inq_mode);
 
 /*******************************************************************************
  *
@@ -278,8 +261,6 @@ uint16_t BTM_ReadDiscoverability(uint16_t* p_window, uint16_t* p_interval);
  *                      mode - GENERAL or LIMITED inquiry
  *                      duration - length in 1.28 sec intervals (If '0', the
  *                                 inquiry is CANCELLED)
- *                      max_resps - maximum amount of devices to search for
- *                                  before ending the inquiry
  *                      filter_cond_type - BTM_CLR_INQUIRY_FILTER,
  *                                         BTM_FILTER_COND_DEVICE_CLASS, or
  *                                         BTM_FILTER_COND_BD_ADDR
@@ -314,9 +295,7 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
  * Description      Return a bit mask of the current inquiry state
  *
  * Returns          BTM_INQUIRY_INACTIVE if inactive (0)
- *                  BTM_LIMITED_INQUIRY_ACTIVE if a limted inquiry is active
  *                  BTM_GENERAL_INQUIRY_ACTIVE if a general inquiry is active
- *                  BTM_PERIODIC_INQUIRY_ACTIVE if a periodic inquiry is active
  *
  ******************************************************************************/
 uint16_t BTM_IsInquiryActive(void);
@@ -332,20 +311,6 @@ void BTM_CancelInquiry(void);
 
 /*******************************************************************************
  *
- * Function         BTM_CancelPeriodicInquiry
- *
- * Description      This function cancels a periodic inquiry
- *
- * Returns
- *                  BTM_NO_RESOURCES if could not allocate a message buffer
- *                  BTM_SUCCESS - if cancelling the periodic inquiry
- *                  BTM_WRONG_MODE if the device is not up.
- *
- ******************************************************************************/
-tBTM_STATUS BTM_CancelPeriodicInquiry(void);
-
-/*******************************************************************************
- *
  * Function         BTM_SetConnectability
  *
  * Description      This function is called to set the device into or out of
@@ -358,22 +323,7 @@ tBTM_STATUS BTM_CancelPeriodicInquiry(void);
  *                  BTM_WRONG_MODE if the device is not up.
  *
  ******************************************************************************/
-tBTM_STATUS BTM_SetConnectability(uint16_t page_mode, uint16_t window,
-                                  uint16_t interval);
-
-/*******************************************************************************
- *
- * Function         BTM_ReadConnectability
- *
- * Description      This function is called to read the current discoverability
- *                  mode of the device.
- * Output Params    p_window - current page scan duration
- *                  p_interval - current time between page scans
- *
- * Returns          BTM_NON_CONNECTABLE or BTM_CONNECTABLE
- *
- ******************************************************************************/
-uint16_t BTM_ReadConnectability(uint16_t* p_window, uint16_t* p_interval);
+tBTM_STATUS BTM_SetConnectability(uint16_t page_mode);
 
 /*******************************************************************************
  *
@@ -464,10 +414,9 @@ tBTM_STATUS BTM_ReadRemoteVersion(const RawAddress& addr, uint8_t* lmp_version,
  * Description      This function is called to read a remote device's
  *                  supported features mask (features mask located at page 0)
  *
- *                  Note: The size of device features mask page is
- *                  BTM_FEATURE_BYTES_PER_PAGE bytes.
- *
  * Returns          pointer to the remote supported features mask
+ *                  The size of device features mask page is
+ *                  HCI_FEATURE_BYTES_PER_PAGE bytes.
  *
  ******************************************************************************/
 uint8_t* BTM_ReadRemoteFeatures(const RawAddress& addr);
@@ -667,18 +616,6 @@ uint8_t BTM_GetNumScoLinks(void);
 
 /*******************************************************************************
  *
- * Function         BTM_ReadTrustedMask
- *
- * Description      Get trusted mask for the device
- *
- * Returns          NULL, if the device record is not found.
- *                  otherwise, the trusted mask
- *
- ******************************************************************************/
-uint32_t* BTM_ReadTrustedMask(const RawAddress& bd_addr);
-
-/*******************************************************************************
- *
  * Function         BTM_SecAddDevice
  *
  * Description      Add/modify device.  This function will be normally called
@@ -691,8 +628,7 @@ uint32_t* BTM_ReadTrustedMask(const RawAddress& bd_addr);
  *
  ******************************************************************************/
 bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
-                      BD_NAME bd_name, uint8_t* features,
-                      uint32_t trusted_mask[], LinkKey* link_key,
+                      BD_NAME bd_name, uint8_t* features, LinkKey* link_key,
                       uint8_t key_type, uint8_t pin_length);
 
 /** Free resources associated with the device associated with |bd_addr| address.
@@ -803,6 +739,30 @@ tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat,
  *
  ******************************************************************************/
 uint16_t BTM_GetHCIConnHandle(const RawAddress& remote_bda,
+                              tBT_TRANSPORT transport);
+
+/*******************************************************************************
+ *
+ * Function         BTM_RequestPeerSCA
+ *
+ * Description      This function is called to request sleep clock accuracy
+ *                  from peer device
+ *
+ ******************************************************************************/
+extern void BTM_RequestPeerSCA(const RawAddress& remote_bda,
+                               tBT_TRANSPORT transport);
+
+/*******************************************************************************
+ *
+ * Function         BTM_GetPeerSCA
+ *
+ * Description      This function is called to get peer sleep clock accuracy
+ *
+ * Returns          SCA or 0xFF if SCA was never previously requested, request
+ *                  is not supported by peer device or ACL does not exist
+ *
+ ******************************************************************************/
+extern uint8_t BTM_GetPeerSCA(const RawAddress& remote_bda,
                               tBT_TRANSPORT transport);
 
 /*******************************************************************************

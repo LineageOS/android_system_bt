@@ -24,6 +24,7 @@
 #include "stack/acl/acl.h"
 #include "stack/btm/btm_ble_int_types.h"
 #include "stack/btm/security_device_record.h"
+#include "stack/include/btm_ble_api_types.h"
 
 #define BTM_SEC_IS_SM4(sm) ((bool)(BTM_SM4_TRUE == ((sm)&BTM_SM4_TRUE)))
 #define BTM_SEC_IS_SM4_LEGACY(sm) ((bool)(BTM_SM4_KNOWN == ((sm)&BTM_SM4_TRUE)))
@@ -33,6 +34,8 @@
 #define BTM_SEC_LE_MASK                              \
   (BTM_SEC_LE_AUTHENTICATED | BTM_SEC_LE_ENCRYPTED | \
    BTM_SEC_LE_LINK_KEY_KNOWN | BTM_SEC_LE_LINK_KEY_AUTHED)
+
+#define BTM_MAX_SCN_ 31  // PORT_MAX_RFC_PORTS system/bt/stack/include/rfcdefs.h
 
 /*
  * Define device configuration structure
@@ -207,6 +210,7 @@ typedef struct {
   tBTM_BT_QUALITY_REPORT_RECEIVER* p_bqr_report_receiver;
 
   tACL_CB acl_cb_;
+  uint8_t btm_scn[BTM_MAX_SCN_];
 } tBTM_CB;
 
 /* security action for L2CAP COC channels */

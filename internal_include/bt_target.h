@@ -389,11 +389,6 @@
 #define BTM_MAX_PM_RECORDS 2
 #endif
 
-/* This is set to show debug trace messages for the power manager. */
-#ifndef BTM_PM_DEBUG
-#define BTM_PM_DEBUG FALSE
-#endif
-
 /* If the user does not respond to security process requests within this many
  * seconds, a negative response would be sent automatically.
  * 30 is LMP response timeout value */
@@ -422,19 +417,6 @@
 
 #ifndef BTM_LOCAL_IO_CAPS_BLE
 #define BTM_LOCAL_IO_CAPS_BLE BTM_IO_CAP_KBDISP
-#endif
-
-/* The default MITM Protection Requirement (for Simple Pairing)
- * Possible values are BTM_AUTH_SP_YES or BTM_AUTH_SP_NO */
-#ifndef BTM_DEFAULT_AUTH_REQ
-#define BTM_DEFAULT_AUTH_REQ BTM_AUTH_SP_NO
-#endif
-
-/* The default MITM Protection Requirement for dedicated bonding using Simple
- * Pairing
- * Possible values are BTM_AUTH_AP_YES or BTM_AUTH_AP_NO */
-#ifndef BTM_DEFAULT_DD_AUTH_REQ
-#define BTM_DEFAULT_DD_AUTH_REQ BTM_AUTH_AP_YES
 #endif
 
 /* TRUE to include Sniff Subrating */

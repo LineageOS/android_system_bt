@@ -30,5 +30,8 @@ std::optional<std::string> GetSystemProperty(const std::string& property);
 // Replace existing value if property already exists
 bool SetSystemProperty(const std::string& property, const std::string& value);
 
+// Clear system properties for host only
+void ClearSystemPropertiesForHost();
+
 }  // namespace os
 }  // namespace bluetooth

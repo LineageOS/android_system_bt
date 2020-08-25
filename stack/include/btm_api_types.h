@@ -99,14 +99,12 @@ typedef void(tBTM_VSC_CMPL_CB)(tBTM_VSC_CMPL* p1);
  */
 #define BTM_INQUIRY_NONE 0
 #define BTM_GENERAL_INQUIRY 0x01
-#define BTM_LIMITED_INQUIRY 0x02
-#define BTM_BR_INQUIRY_MASK (BTM_GENERAL_INQUIRY | BTM_LIMITED_INQUIRY)
+#define BTM_BR_INQUIRY_MASK (BTM_GENERAL_INQUIRY)
 
 /* high byte of inquiry mode for BLE inquiry mode */
 #define BTM_BLE_INQUIRY_NONE 0x00
 #define BTM_BLE_GENERAL_INQUIRY 0x10
-#define BTM_BLE_LIMITED_INQUIRY 0x20
-#define BTM_BLE_INQUIRY_MASK (BTM_BLE_GENERAL_INQUIRY | BTM_BLE_LIMITED_INQUIRY)
+#define BTM_BLE_INQUIRY_MASK (BTM_BLE_GENERAL_INQUIRY)
 
 /* BTM_IsInquiryActive return values (Bit Mask)
  * Note: These bit masks are associated with the inquiry modes (BTM_*_INQUIRY)
@@ -115,27 +113,18 @@ typedef void(tBTM_VSC_CMPL_CB)(tBTM_VSC_CMPL* p1);
 #define BTM_INQUIRY_INACTIVE 0x0
 /* a general inquiry is in progress */
 #define BTM_GENERAL_INQUIRY_ACTIVE BTM_GENERAL_INQUIRY
-/* a limited inquiry is in progress */
-#define BTM_LIMITED_INQUIRY_ACTIVE BTM_LIMITED_INQUIRY
-/* a periodic inquiry is active */
-#define BTM_PERIODIC_INQUIRY_ACTIVE 0x8
 /* SSP is active, so inquiry is disallowed (work around for FW bug) */
 #define BTM_SSP_INQUIRY_ACTIVE 0x4
 /* a general inquiry is in progress */
 #define BTM_LE_GENERAL_INQUIRY_ACTIVE BTM_BLE_GENERAL_INQUIRY
-/* a limited inquiry is in progress */
-#define BTM_LE_LIMITED_INQUIRY_ACTIVE BTM_BLE_LIMITED_INQUIRY
 
 /* inquiry activity mask */
 /* BR/EDR inquiry activity mask */
-#define BTM_BR_INQ_ACTIVE_MASK                               \
-  (BTM_GENERAL_INQUIRY_ACTIVE | BTM_LIMITED_INQUIRY_ACTIVE | \
-   BTM_PERIODIC_INQUIRY_ACTIVE)
+#define BTM_BR_INQ_ACTIVE_MASK (BTM_GENERAL_INQUIRY_ACTIVE)
 /* LE scan activity mask */
 #define BTM_BLE_SCAN_ACTIVE_MASK 0xF0
 /* LE inquiry activity mask*/
-#define BTM_BLE_INQ_ACTIVE_MASK \
-  (BTM_LE_GENERAL_INQUIRY_ACTIVE | BTM_LE_LIMITED_INQUIRY_ACTIVE)
+#define BTM_BLE_INQ_ACTIVE_MASK (BTM_LE_GENERAL_INQUIRY_ACTIVE)
 /* inquiry activity mask */
 #define BTM_INQUIRY_ACTIVE_MASK \
   (BTM_BR_INQ_ACTIVE_MASK | BTM_BLE_INQ_ACTIVE_MASK)
@@ -416,8 +405,6 @@ typedef struct /* contains the parameters passed to the inquiry functions */
 {
   uint8_t mode;      /* general or limited */
   uint8_t duration;  /* duration of the inquiry (1.28 sec increments) */
-  uint8_t max_resps; /* maximum number of responses to return */
-  tBTM_INQ_FILT_COND filter_cond; /* filter value based on filter cond type */
 } tBTM_INQ_PARMS;
 
 #define BTM_INQ_RESULT_BR 0x01
@@ -647,14 +634,10 @@ typedef void(tBTM_ESCO_CBACK)(tBTM_ESCO_EVT event, tBTM_ESCO_EVT_DATA* p_data);
 */
 /* Nothing required */
 #define BTM_SEC_NONE 0x0000
-/* Inbound call requires authorization */
-#define BTM_SEC_IN_AUTHORIZE 0x0001
 /* Inbound call requires authentication */
 #define BTM_SEC_IN_AUTHENTICATE 0x0002
 /* Inbound call requires encryption */
 #define BTM_SEC_IN_ENCRYPT 0x0004
-/* Outbound call requires authorization */
-#define BTM_SEC_OUT_AUTHORIZE 0x0008
 /* Outbound call requires authentication */
 #define BTM_SEC_OUT_AUTHENTICATE 0x0010
 /* Outbound call requires encryption */
@@ -678,7 +661,6 @@ typedef void(tBTM_ESCO_CBACK)(tBTM_ESCO_EVT event, tBTM_ESCO_EVT_DATA* p_data);
 
 /* Security Flags [bit mask] (BTM_GetSecurityFlags)
 */
-#define BTM_SEC_FLAG_AUTHORIZED 0x01
 #define BTM_SEC_FLAG_AUTHENTICATED 0x02
 #define BTM_SEC_FLAG_ENCRYPTED 0x04
 #define BTM_SEC_FLAG_LKEY_KNOWN 0x10
@@ -709,12 +691,6 @@ typedef uint8_t tBTM_LINK_KEY_TYPE;
 #define BTM_SEC_PROTO_BNEP 5
 #define BTM_SEC_PROTO_HID 6 /* HID      */
 #define BTM_SEC_PROTO_AVDT 7
-
-/* Determine the number of uint32_t's necessary for security services */
-#define BTM_SEC_ARRAY_BITS 32 /* Number of bits in each array element */
-#define BTM_SEC_SERVICE_ARRAY_SIZE                         \
-  (((uint32_t)BTM_SEC_MAX_SERVICES / BTM_SEC_ARRAY_BITS) + \
-   (((uint32_t)BTM_SEC_MAX_SERVICES % BTM_SEC_ARRAY_BITS) ? 1 : 0))
 
 /* Security service definitions (BTM_SetSecurityLevel)
  * Used for Authorization APIs
@@ -768,32 +744,6 @@ typedef uint8_t tBTM_LINK_KEY_TYPE;
  * Security Services MACROS handle array of uint32_t bits for more than 32
  * trusted services
  ******************************************************************************/
-
-/* MACRO to check the security service bit mask in a bit stream (Returns true or
- * false) */
-#define BTM_SEC_IS_SERVICE_TRUSTED(p, service)                                 \
-  (((((uint32_t*)(p))[(((uint32_t)(service)) / BTM_SEC_ARRAY_BITS)]) &         \
-    (uint32_t)(((uint32_t)1 << (((uint32_t)(service)) % BTM_SEC_ARRAY_BITS)))) \
-       ? true                                                                  \
-       : false)
-
-/* MACRO to copy two trusted device bitmask */
-#define BTM_SEC_COPY_TRUSTED_DEVICE(p_src, p_dst)              \
-  {                                                            \
-    uint32_t trst;                                             \
-    for (trst = 0; trst < BTM_SEC_SERVICE_ARRAY_SIZE; trst++)  \
-      ((uint32_t*)(p_dst))[trst] = ((uint32_t*)(p_src))[trst]; \
-  }
-
-/* MACRO to clear two trusted device bitmask */
-#define BTM_SEC_CLR_TRUSTED_DEVICE(p_dst)                     \
-  {                                                           \
-    uint32_t trst;                                            \
-    for (trst = 0; trst < BTM_SEC_SERVICE_ARRAY_SIZE; trst++) \
-      ((uint32_t*)(p_dst))[trst] = 0;                         \
-  }
-
-#define BTM_SEC_TRUST_ALL 0xFFFFFFFF /* for each array element */
 
 /****************************************
  *  Security Manager Callback Functions
@@ -983,9 +933,10 @@ typedef void(tBTM_MKEY_CALLBACK)(const RawAddress& bd_addr, uint8_t status,
  *              optional data passed in by BTM_SetEncryption
  *              tBTM_STATUS - result of the operation
 */
-typedef void(tBTM_SEC_CBACK)(const RawAddress* bd_addr, tBT_TRANSPORT trasnport,
-                             void* p_ref_data, tBTM_STATUS result);
-typedef tBTM_SEC_CBACK tBTM_SEC_CALLBACK;
+typedef void(tBTM_SEC_CALLBACK)(const RawAddress* bd_addr,
+                                tBT_TRANSPORT trasnport, void* p_ref_data,
+                                tBTM_STATUS result);
+typedef tBTM_SEC_CALLBACK tBTM_SEC_CALLBACK;
 
 /* Bond Cancel complete. Parameters are
  *              Result of the cancel operation
@@ -1177,7 +1128,6 @@ typedef void(tBTM_LE_KEY_CALLBACK)(uint8_t key_type,
  ***************************/
 /* Structure that applications use to register with BTM_SecRegister */
 typedef struct {
-  tBTM_AUTHORIZE_CALLBACK* p_authorize_callback;
   tBTM_PIN_CALLBACK* p_pin_callback;
   tBTM_LINK_KEY_CALLBACK* p_link_key_callback;
   tBTM_AUTH_COMPLETE_CALLBACK* p_auth_complete_callback;

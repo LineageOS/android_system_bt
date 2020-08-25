@@ -105,7 +105,7 @@ bool BTM_SecAddBleDevice(const RawAddress& bd_addr, BD_NAME bd_name,
   if (bd_name && bd_name[0]) {
     p_dev_rec->sec_flags |= BTM_SEC_NAME_KNOWN;
     strlcpy((char*)p_dev_rec->sec_bd_name, (char*)bd_name,
-            BTM_MAX_REM_BD_NAME_LEN);
+            BTM_MAX_REM_BD_NAME_LEN + 1);
   }
   p_dev_rec->device_type |= dev_type;
   p_dev_rec->ble.ble_addr_type = addr_type;
@@ -161,10 +161,8 @@ bool BTM_SecAddBleKey(const RawAddress& bd_addr, tBTM_LE_KEY_VALUE* p_le_key,
 
   btm_sec_save_le_key(bd_addr, key_type, p_le_key, false);
 
-#if (BLE_PRIVACY_SPT == TRUE)
   if (key_type == BTM_LE_KEY_PID || key_type == BTM_LE_KEY_LID)
     btm_ble_resolving_list_load_dev(p_dev_rec);
-#endif
 
   return (true);
 }
@@ -269,8 +267,6 @@ void BTM_SecurityGrant(const RawAddress& bd_addr, uint8_t res) {
  *                  res     - result of the operation BTM_SUCCESS if success
  *                  key_len - length in bytes of the Passkey
  *                  p_passkey    - pointer to array with the passkey
- *                  trusted_mask - bitwise OR of trusted services (array of
- *                                 uint32_t)
  *
  ******************************************************************************/
 void BTM_BlePasskeyReply(const RawAddress& bd_addr, uint8_t res,
@@ -906,16 +902,8 @@ tBTM_SEC_ACTION btm_ble_determine_security_act(bool is_originator,
 
   if (ble_sec_act == BTM_BLE_SEC_REQ_ACT_NONE) return BTM_SEC_OK;
 
-  uint8_t sec_flag = 0;
-  BTM_GetSecurityFlagsByTransport(bdaddr, &sec_flag, BT_TRANSPORT_LE);
-
-  bool is_link_encrypted = false;
-  bool is_key_mitm = false;
-  if (sec_flag & (BTM_SEC_FLAG_ENCRYPTED | BTM_SEC_FLAG_LKEY_KNOWN)) {
-    if (sec_flag & BTM_SEC_FLAG_ENCRYPTED) is_link_encrypted = true;
-
-    if (sec_flag & BTM_SEC_FLAG_LKEY_AUTHED) is_key_mitm = true;
-  }
+  bool is_link_encrypted = BTM_IsEncrypted(bdaddr, BT_TRANSPORT_LE);
+  bool is_key_mitm = BTM_IsLinkKeyAuthed(bdaddr, BT_TRANSPORT_LE);
 
   if (auth_req & BTM_LE_AUTH_REQ_MITM) {
     if (!is_key_mitm) {
@@ -966,26 +954,24 @@ tL2CAP_LE_RESULT_CODE btm_ble_start_sec_check(const RawAddress& bd_addr,
     (*p_callback)(&bd_addr, BT_TRANSPORT_LE, p_ref_data, BTM_MODE_UNSUPPORTED);
     return L2CAP_LE_RESULT_NO_PSM;
   }
-  uint8_t sec_flag = 0;
-  BTM_GetSecurityFlagsByTransport(bd_addr, &sec_flag, BT_TRANSPORT_LE);
+
+  bool is_encrypted = BTM_IsEncrypted(bd_addr, BT_TRANSPORT_LE);
+  bool is_link_key_authed = BTM_IsLinkKeyAuthed(bd_addr, BT_TRANSPORT_LE);
+  bool is_authenticated = BTM_IsAuthenticated(bd_addr, BT_TRANSPORT_LE);
 
   if (!is_originator) {
-    if ((p_serv_rec->security_flags & BTM_SEC_IN_ENCRYPT) &&
-        !(sec_flag & BTM_SEC_ENCRYPTED)) {
+    if ((p_serv_rec->security_flags & BTM_SEC_IN_ENCRYPT) && !is_encrypted) {
       BTM_TRACE_ERROR(
           "%s: L2CAP_LE_RESULT_INSUFFICIENT_ENCRYP. service "
-          "security_flags=0x%x, "
-          "sec_flag=0x%x",
-          __func__, p_serv_rec->security_flags, sec_flag);
+          "security_flags=0x%x, ",
+          __func__, p_serv_rec->security_flags);
       return L2CAP_LE_RESULT_INSUFFICIENT_ENCRYP;
     } else if ((p_serv_rec->security_flags & BTM_SEC_IN_AUTHENTICATE) &&
-               !(sec_flag &
-                 (BTM_SEC_LINK_KEY_AUTHED | BTM_SEC_AUTHENTICATED))) {
+               !(is_link_key_authed || is_authenticated)) {
       BTM_TRACE_ERROR(
           "%s: L2CAP_LE_RESULT_INSUFFICIENT_AUTHENTICATION. service "
-          "security_flags=0x%x, "
-          "sec_flag=0x%x",
-          __func__, p_serv_rec->security_flags, sec_flag);
+          "security_flags=0x%x, ",
+          __func__, p_serv_rec->security_flags);
       return L2CAP_LE_RESULT_INSUFFICIENT_AUTHENTICATION;
     }
     /* TODO: When security is required, then must check that the key size of our
@@ -1779,12 +1765,10 @@ void btm_ble_connected(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
   p_dev_rec->role_master = false;
   if (role == HCI_ROLE_MASTER) p_dev_rec->role_master = true;
 
-#if (BLE_PRIVACY_SPT == TRUE)
   if (!addr_matched) p_dev_rec->ble.active_addr_type = BTM_BLE_ADDR_PSEUDO;
 
   if (p_dev_rec->ble.ble_addr_type == BLE_ADDR_RANDOM && !addr_matched)
     p_dev_rec->ble.cur_rand_addr = bda;
-#endif
 
   p_cb->inq_var.directed_conn = BTM_BLE_CONNECT_EVT;
 
@@ -1903,10 +1887,8 @@ uint8_t btm_proc_smp_cback(tSMP_EVT event, const RawAddress& bd_addr,
 
           if (res == BTM_SUCCESS) {
             p_dev_rec->sec_state = BTM_SEC_STATE_IDLE;
-#if (BLE_PRIVACY_SPT == TRUE)
             /* add all bonded device into resolving list if IRK is available*/
             btm_ble_resolving_list_load_dev(p_dev_rec);
-#endif
           }
 
           btm_sec_dev_rec_cback_event(p_dev_rec, res, true);
@@ -2080,12 +2062,10 @@ static void btm_ble_reset_id_impl(const Octet16& rand1, const Octet16& rand2) {
 
   btm_notify_new_key(BTM_BLE_KEY_TYPE_ID);
 
-#if (BLE_PRIVACY_SPT == TRUE)
   /* if privacy is enabled, new RPA should be calculated */
   if (btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE) {
     btm_gen_resolvable_private_addr(base::Bind(&btm_gen_resolve_paddr_low));
   }
-#endif
 
   /* proceed generate ER */
   btm_cb.devcb.ble_encryption_key_value = rand2;

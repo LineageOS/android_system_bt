@@ -276,7 +276,7 @@ class HearingAidImpl : public HearingAid {
               instance->gatt_if = client_id;
               initCb.Run();
             },
-            initCb));
+            initCb), false);
   }
 
   uint16_t UpdateBleConnParams(const RawAddress& address) {
@@ -407,20 +407,16 @@ class HearingAidImpl : public HearingAid {
     }
 
     /* verify bond */
-    uint8_t sec_flag = 0;
-    BTM_GetSecurityFlagsByTransport(address, &sec_flag, BT_TRANSPORT_LE);
-
-    if (sec_flag & BTM_SEC_FLAG_ENCRYPTED) {
+    if (BTM_IsEncrypted(address, BT_TRANSPORT_LE)) {
       /* if link has been encrypted */
       OnEncryptionComplete(address, true);
       return;
     }
 
-    if (sec_flag & BTM_SEC_FLAG_LKEY_KNOWN) {
+    if (BTM_IsLinkKeyKnown(address, BT_TRANSPORT_LE)) {
       /* if bonded and link not encrypted */
-      sec_flag = BTM_BLE_SEC_ENCRYPT;
       BTM_SetEncryption(address, BT_TRANSPORT_LE, encryption_callback, nullptr,
-                        sec_flag);
+                        BTM_BLE_SEC_ENCRYPT);
       return;
     }
 

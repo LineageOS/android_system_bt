@@ -1189,92 +1189,80 @@ bool L2CA_SetTxPriority(uint16_t cid, tL2CAP_CHNL_PRIORITY priority) {
  *                          all ACL links.
  *                  FlushTimeout: flush time out in ms
  *                           0x0000 : No automatic flush
- *                           L2CAP_NO_RETRANSMISSION : No retransmission
- *                           0x0002 - 0xFFFE : flush time out, if
- *                                            (flush_tout * 8) + 3 / 5) <=
- *                                             HCI_MAX_AUTOMATIC_FLUSH_TIMEOUT
- *                                            (in 625us slot).
- *                                    Otherwise, return false.
- *                           L2CAP_NO_AUTOMATIC_FLUSH : No automatic flush
+ *                           0x0001 : No retransmission
+ *                           0x0002 - 0x0500 : flush time out in ms
+ *                           0xffff : DEPRECATED No automatic flush (0x0000)
+ *                           >0x0500 : Illegal value
  *
  * Returns          true if command succeeded, false if failed
  *
  * NOTE             This flush timeout applies to all logical channels active on
  *                  the ACL link.
  ******************************************************************************/
-bool L2CA_SetFlushTimeout(const RawAddress& bd_addr, uint16_t flush_tout) {
+inline uint32_t ConvertMillisecondsToBasebandSlots(uint32_t milliseconds) {
+  return ((milliseconds * 8) + 3) / 5;
+}
+
+bool L2CA_SetFlushTimeout(const RawAddress& bd_addr,
+                          const uint16_t flush_timeout_in_ms) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
-    return bluetooth::shim::L2CA_SetFlushTimeout(bd_addr, flush_tout);
+    return bluetooth::shim::L2CA_SetFlushTimeout(bd_addr, flush_timeout_in_ms);
   }
 
-  tL2C_LCB* p_lcb;
-  uint16_t hci_flush_to;
-  uint32_t temp;
+  if (flush_timeout_in_ms == L2CAP_NO_AUTOMATIC_FLUSH) {
+    LOG_WARN(
+        "%s Parameter deprecated for no automatic flush; please use 0x0000",
+        __func__);
+  } else if (ConvertMillisecondsToBasebandSlots(flush_timeout_in_ms) >
+             HCI_MAX_AUTOMATIC_FLUSH_TIMEOUT) {
+    LOG_WARN(
+        "%s Unable to set flush timeout larger then controller capability:%dms",
+        __func__, flush_timeout_in_ms);
+    return false;
+  }
+
+  uint16_t flush_timeout_in_slots = 0;
 
   /* no automatic flush (infinite timeout) */
-  if (flush_tout == 0x0000) {
-    hci_flush_to = flush_tout;
-    flush_tout = L2CAP_NO_AUTOMATIC_FLUSH;
-  }
-  /* no retransmission */
-  else if (flush_tout == L2CAP_NO_RETRANSMISSION) {
+  if (flush_timeout_in_ms == 0x0000 ||
+      flush_timeout_in_ms == L2CAP_NO_AUTOMATIC_FLUSH) {
+    flush_timeout_in_slots = 0x0;
+  } else if (flush_timeout_in_ms == L2CAP_NO_RETRANSMISSION) {
+    /* no retransmission */
     /* not mandatory range for controller */
     /* Packet is flushed before getting any ACK/NACK */
     /* To do this, flush timeout should be 1 baseband slot */
-    hci_flush_to = flush_tout;
-  }
-  /* no automatic flush (infinite timeout) */
-  else if (flush_tout == L2CAP_NO_AUTOMATIC_FLUSH) {
-    hci_flush_to = 0x0000;
+    flush_timeout_in_slots = 0x0001;
   } else {
-    /* convert L2CAP flush_to to 0.625 ms units, with round */
-    temp = (((uint32_t)flush_tout * 8) + 3) / 5;
-
-    /* if L2CAP flush_to within range of HCI, set HCI flush timeout */
-    if (temp > HCI_MAX_AUTOMATIC_FLUSH_TIMEOUT) {
-      L2CAP_TRACE_WARNING(
-          "WARNING L2CA_SetFlushTimeout timeout(0x%x) is out of range",
-          flush_tout);
-      return false;
-    } else {
-      hci_flush_to = (uint16_t)temp;
-    }
+    flush_timeout_in_slots =
+        ConvertMillisecondsToBasebandSlots(flush_timeout_in_ms);
   }
 
   if (RawAddress::kAny != bd_addr) {
-    p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_BR_EDR);
+    tL2C_LCB* p_lcb = l2cu_find_lcb_by_bd_addr(bd_addr, BT_TRANSPORT_BR_EDR);
 
     if ((p_lcb) && (p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTED)) {
-      if (p_lcb->link_flush_tout != flush_tout) {
-        p_lcb->link_flush_tout = flush_tout;
-
-        VLOG(1) << __func__ << " BDA: " << bd_addr << " " << flush_tout << "ms";
-
-        btsnd_hcic_write_auto_flush_tout(p_lcb->handle, hci_flush_to);
+      if (p_lcb->LinkFlushTimeout() != flush_timeout_in_ms) {
+        p_lcb->SetLinkFlushTimeout(flush_timeout_in_ms);
+        acl_write_automatic_flush_timeout(bd_addr, flush_timeout_in_slots);
       }
     } else {
       LOG(WARNING) << __func__ << " No lcb for bd_addr " << bd_addr;
-      return (false);
+      return false;
     }
   } else {
-    int xx;
-    p_lcb = &l2cb.lcb_pool[0];
-
-    for (xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
+    tL2C_LCB* p_lcb = &l2cb.lcb_pool[0];
+    for (int xx = 0; xx < MAX_L2CAP_LINKS; xx++, p_lcb++) {
       if ((p_lcb->in_use) && (p_lcb->link_state == LST_CONNECTED)) {
-        if (p_lcb->link_flush_tout != flush_tout) {
-          p_lcb->link_flush_tout = flush_tout;
-
-          VLOG(1) << __func__ << " BDA: " << p_lcb->remote_bd_addr << " "
-                  << flush_tout << "ms";
-
-          btsnd_hcic_write_auto_flush_tout(p_lcb->handle, hci_flush_to);
+        if (p_lcb->LinkFlushTimeout() != flush_timeout_in_ms) {
+          p_lcb->SetLinkFlushTimeout(flush_timeout_in_ms);
+          acl_write_automatic_flush_timeout(p_lcb->remote_bd_addr,
+                                            flush_timeout_in_slots);
         }
       }
     }
   }
-
-  return (true);
+  return true;
 }
 
 /*******************************************************************************
@@ -1316,7 +1304,6 @@ bool L2CA_GetPeerFeatures(const RawAddress& bd_addr, uint32_t* p_ext_feat,
   return true;
 }
 
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
 /*******************************************************************************
  *
  *  Function        L2CA_RegisterFixedChannel
@@ -1447,7 +1434,7 @@ bool L2CA_ConnectFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda,
 
   // Get a CCB and link the lcb to it
   if (!l2cu_initialize_fixed_ccb(p_lcb, fixed_cid)) {
-    p_lcb->disc_reason = L2CAP_CONN_NO_RESOURCES;
+    p_lcb->SetDisconnectReason(L2CAP_CONN_NO_RESOURCES);
     L2CAP_TRACE_WARNING("%s(0x%04x) - no CCB", __func__, fixed_cid);
     l2cu_release_lcb(p_lcb);
     return false;
@@ -1567,7 +1554,7 @@ uint16_t L2CA_SendFixedChnlData(uint16_t fixed_cid, const RawAddress& rem_bda,
   l2c_enqueue_peer_data(p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL],
                         p_buf);
 
-  l2c_link_check_send_pkts(p_lcb, NULL, NULL);
+  l2c_link_check_send_pkts(p_lcb, 0, NULL);
 
   // If there is no dynamic CCB on the link, restart the idle timer each time
   // something is sent
@@ -1634,7 +1621,7 @@ bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda) {
   p_ccb = p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL];
 
   p_lcb->p_fixed_ccbs[fixed_cid - L2CAP_FIRST_FIXED_CHNL] = NULL;
-  p_lcb->disc_reason = HCI_ERR_CONN_CAUSE_LOCAL_HOST;
+  p_lcb->SetDisconnectReason(HCI_ERR_CONN_CAUSE_LOCAL_HOST);
 
   // Retain the link for a few more seconds after SMP pairing is done, since
   // the Android platform always does service discovery after pairing is
@@ -1699,8 +1686,6 @@ bool L2CA_SetFixedChannelTout(const RawAddress& rem_bda, uint16_t fixed_cid,
 
   return true;
 }
-
-#endif /* #if (L2CAP_NUM_FIXED_CHNLS > 0) */
 
 /*******************************************************************************
  *
@@ -1806,12 +1791,8 @@ uint16_t L2CA_FlushChannel(uint16_t lcid, uint16_t num_to_flush) {
        * controller */
       if (controller->supports_non_flushable_pb() &&
           (BTM_GetNumScoLinks() == 0)) {
-        if (!l2cb.is_flush_active) {
-          l2cb.is_flush_active = true;
-
-          /* The only packet type defined - 0 - Automatically-Flushable Only */
-          btsnd_hcic_enhanced_flush(p_lcb->handle, 0);
-        }
+        /* The only packet type defined - 0 - Automatically-Flushable Only */
+        btsnd_hcic_enhanced_flush(p_lcb->Handle(), 0);
       }
     }
 

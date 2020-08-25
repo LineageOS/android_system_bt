@@ -194,6 +194,7 @@ typedef struct {
   tGATT_IF gatt_if; /* one based */
   bool in_use;
   uint8_t listening; /* if adv for all has been enabled */
+  bool eatt_support;
 } tGATT_REG;
 
 struct tGATT_CLCB;
@@ -588,5 +589,9 @@ extern tGATT_STATUS gatts_read_attr_perm_check(tGATT_SVC_DB* p_db, bool is_long,
                                                tGATT_SEC_FLAG sec_flag,
                                                uint8_t key_size);
 extern bluetooth::Uuid* gatts_get_service_uuid(tGATT_SVC_DB* p_db);
+
+/* gatt_sr_hash.cc */
+extern Octet16 gatts_calculate_database_hash(
+    std::list<tGATT_SRV_LIST_ELEM>* lst_ptr);
 
 #endif

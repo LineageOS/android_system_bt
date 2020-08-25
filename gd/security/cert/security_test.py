@@ -40,6 +40,22 @@ class SecurityTest(GdBaseTestClass):
         different (unique) combinations of io capabilities, authentication requirements, and oob data.
     """
 
+    _io_capabilities_name_lookup = {
+        IoCapabilities.DISPLAY_ONLY: "DISPLAY_ONLY",
+        IoCapabilities.DISPLAY_YES_NO_IO_CAP: "DISPLAY_YES_NO_IO_CAP",
+        #IoCapabilities.KEYBOARD_ONLY:"KEYBOARD_ONLY",
+        IoCapabilities.NO_INPUT_NO_OUTPUT: "NO_INPUT_NO_OUTPUT",
+    }
+
+    _auth_reqs_name_lookup = {
+        AuthenticationRequirements.NO_BONDING: "NO_BONDING",
+        AuthenticationRequirements.NO_BONDING_MITM_PROTECTION: "NO_BONDING_MITM_PROTECTION",
+        AuthenticationRequirements.DEDICATED_BONDING: "DEDICATED_BONDING",
+        AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION: "DEDICATED_BONDING_MITM_PROTECTION",
+        AuthenticationRequirements.GENERAL_BONDING: "GENERAL_BONDING",
+        AuthenticationRequirements.GENERAL_BONDING_MITM_PROTECTION: "GENERAL_BONDING_MITM_PROTECTION",
+    }
+
     # Possible IO Capabilities
     io_capabilities = (
         IoCapabilities.DISPLAY_ONLY,
@@ -66,6 +82,10 @@ class SecurityTest(GdBaseTestClass):
         #"P256_PRESENT",
         #"P192_AND_256_PRESENT"
     )
+
+    mitm_auth_reqs = (AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION,
+                      AuthenticationRequirements.GENERAL_BONDING_MITM_PROTECTION,
+                      AuthenticationRequirements.NO_BONDING_MITM_PROTECTION)
 
     def setup_class(self):
         super().setup_class(dut_module='SECURITY', cert_module='L2CAP')
@@ -127,13 +147,13 @@ class SecurityTest(GdBaseTestClass):
         pass
 
     # no_input_no_output + no_input_no_output is JustWorks no confirmation
-    def test_dut_initiated_no_input_no_output_no_input_no_output_twice_same_acl(self):
+    def test_dut_initiated_no_input_no_output_no_input_no_output_twice_bond_and_enforce(self):
         # Arrange
         self.dut_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
-        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING)
         self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
         self.cert_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
-        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING)
         self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
 
         # Act and Assert
@@ -149,28 +169,18 @@ class SecurityTest(GdBaseTestClass):
 
         self.dut_security.enforce_security_policy(self.cert.address,
                                                   common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS,
-                                                  ClassicSecurityPolicy.AUTHENTICATED_ENCRYPTED_TRANSPORT)
+                                                  ClassicSecurityPolicy.ENCRYPTED_TRANSPORT)
 
-        self._verify_ssp_numeric_comparison(
-            initiator=self.dut_security,
-            responder=self.cert_security,
-            init_ui_response=True,
-            resp_ui_response=True,
-            expected_init_ui_event=None,
-            expected_resp_ui_event=None,
-            expected_init_bond_event=BondMsgType.DEVICE_BONDED,
-            expected_resp_bond_event=None)
-
-        self.dut_security.wait_for_enforce_security_event(expected_enforce_security_event=False)
+        # TODO: We verify enforcement when we make sure EncryptionChange is received on DUT
 
     # no_input_no_output + no_input_no_output is JustWorks no confirmation
     def test_dut_initiated_no_input_no_output_no_input_no_output_twice_with_remove_bond(self):
         # Arrange
         self.dut_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
-        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.dut_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING)
         self.dut_security.set_oob_data(OobDataPresent.NOT_PRESENT)
         self.cert_security.set_io_capabilities(IoCapabilities.NO_INPUT_NO_OUTPUT)
-        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING_MITM_PROTECTION)
+        self.cert_security.set_authentication_requirements(AuthenticationRequirements.DEDICATED_BONDING)
         self.cert_security.set_oob_data(OobDataPresent.NOT_PRESENT)
 
         # Act and Assert
@@ -186,8 +196,8 @@ class SecurityTest(GdBaseTestClass):
 
         self.dut_security.remove_bond(self.cert.address, common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
 
-        # Give time for ACL to disconnect
-        time.sleep(1)
+        self.dut_security.wait_for_disconnect_event()
+        self.cert_security.wait_for_disconnect_event()
 
         # Act and Assert
         self._run_ssp_numeric_comparison(
@@ -205,26 +215,29 @@ class SecurityTest(GdBaseTestClass):
             self.io_capabilities) * len(self.auth_reqs) * len(self.oob_present)
         logging.info("Loading %d test combinations" % test_count)
         i = 0
-        for init_io_capability in self.io_capabilities:
-            for init_auth_reqs in self.auth_reqs:
-                for init_oob_present in self.oob_present:
-                    for resp_io_capability in self.io_capabilities:
+        for dut_io_capability in self.io_capabilities:
+            for dut_auth_reqs in self.auth_reqs:
+                for dut_oob_present in self.oob_present:
+                    for cert_io_capability in self.io_capabilities:
                         for cert_auth_reqs in self.auth_reqs:
                             for cert_oob_present in self.oob_present:
                                 i = i + 1
                                 logging.info("")
                                 logging.info("===================================================")
                                 logging.info("Running test %d of %d" % (i, test_count))
-                                logging.info("DUT Test Config: %d ; %d ; %d " % (init_io_capability, init_auth_reqs,
-                                                                                 init_oob_present))
-                                logging.info("CERT Test Config: %d ; %d ; %d " % (resp_io_capability, cert_auth_reqs,
-                                                                                  cert_oob_present))
+                                logging.info("DUT Test Config: %s ; %s ; %s " % (self._io_capabilities_name_lookup.get(
+                                    dut_io_capability, "ERROR"), self._auth_reqs_name_lookup.get(
+                                        dut_auth_reqs, "ERROR"), dut_oob_present))
+                                logging.info(
+                                    "CERT Test Config: %s ; %s ; %s " %
+                                    (self._io_capabilities_name_lookup.get(cert_io_capability, "ERROR"),
+                                     self._auth_reqs_name_lookup.get(cert_auth_reqs, "ERROR"), cert_oob_present))
                                 logging.info("===================================================")
                                 logging.info("")
-                                self.dut_security.set_io_capabilities(init_io_capability)
-                                self.dut_security.set_authentication_requirements(init_auth_reqs)
-                                self.dut_security.set_oob_data(init_oob_present)
-                                self.cert_security.set_io_capabilities(resp_io_capability)
+                                self.dut_security.set_io_capabilities(dut_io_capability)
+                                self.dut_security.set_authentication_requirements(dut_auth_reqs)
+                                self.dut_security.set_oob_data(dut_oob_present)
+                                self.cert_security.set_io_capabilities(cert_io_capability)
                                 self.cert_security.set_authentication_requirements(cert_auth_reqs)
                                 self.cert_security.set_oob_data(cert_oob_present)
                                 init_ui_response = True
@@ -233,31 +246,45 @@ class SecurityTest(GdBaseTestClass):
                                 expected_resp_ui_event = None  # None is auto accept
                                 expected_init_bond_event = BondMsgType.DEVICE_BONDED
                                 expected_resp_bond_event = None
-                                if init_io_capability == IoCapabilities.DISPLAY_ONLY:
-                                    if resp_io_capability == IoCapabilities.DISPLAY_YES_NO_IO_CAP:
+                                if dut_io_capability == IoCapabilities.DISPLAY_ONLY:
+                                    if cert_io_capability == IoCapabilities.DISPLAY_YES_NO_IO_CAP:
                                         expected_resp_ui_event = UiMsgType.DISPLAY_YES_NO_WITH_VALUE
-                                    elif resp_io_capability == IoCapabilities.KEYBOARD_ONLY:
+                                        if dut_auth_reqs in self.mitm_auth_reqs or cert_auth_reqs in self.mitm_auth_reqs:
+                                            expected_init_bond_event = BondMsgType.DEVICE_BOND_FAILED
+                                    elif cert_io_capability == IoCapabilities.KEYBOARD_ONLY:
                                         expected_resp_ui_event = UiMsgType.DISPLAY_PASSKEY_ENTRY
-                                elif init_io_capability == IoCapabilities.DISPLAY_YES_NO_IO_CAP:
+                                    elif cert_io_capability == IoCapabilities.DISPLAY_ONLY:
+                                        if dut_auth_reqs in self.mitm_auth_reqs or cert_auth_reqs in self.mitm_auth_reqs:
+                                            expected_init_bond_event = BondMsgType.DEVICE_BOND_FAILED
+                                    elif cert_io_capability == IoCapabilities.NO_INPUT_NO_OUTPUT:
+                                        if dut_auth_reqs in self.mitm_auth_reqs or cert_auth_reqs in self.mitm_auth_reqs:
+                                            expected_init_bond_event = BondMsgType.DEVICE_BOND_FAILED
+                                elif dut_io_capability == IoCapabilities.DISPLAY_YES_NO_IO_CAP:
                                     expected_init_ui_event = UiMsgType.DISPLAY_YES_NO_WITH_VALUE
-                                    if resp_io_capability == IoCapabilities.DISPLAY_YES_NO_IO_CAP:
+                                    if cert_io_capability == IoCapabilities.DISPLAY_YES_NO_IO_CAP:
                                         expected_resp_ui_event = UiMsgType.DISPLAY_YES_NO_WITH_VALUE
-                                    elif resp_io_capability == IoCapabilities.KEYBOARD_ONLY:
+                                    elif cert_io_capability == IoCapabilities.KEYBOARD_ONLY:
                                         expected_init_ui_event = UiMsgType.DISPLAY_PASSKEY
                                         expected_resp_ui_event = UiMsgType.DISPLAY_PASSKEY_ENTRY
-                                    elif resp_io_capability == IoCapabilities.NO_INPUT_NO_OUTPUT:
+                                    elif cert_io_capability == IoCapabilities.NO_INPUT_NO_OUTPUT:
                                         expected_init_ui_event = UiMsgType.DISPLAY_YES_NO  # No value
-                                elif init_io_capability == IoCapabilities.KEYBOARD_ONLY:
+                                elif dut_io_capability == IoCapabilities.KEYBOARD_ONLY:
                                     expected_init_ui_event = UiMsgType.DISPLAY_PASSKEY_ENTRY
-                                    if resp_io_capability == IoCapabilities.DISPLAY_ONLY:
+                                    if cert_io_capability == IoCapabilities.DISPLAY_ONLY:
                                         expected_resp_ui_event = UiMsgType.DISPLAY_PASSKEY
-                                    elif resp_io_capability == IoCapabilities.DISPLAY_YES_NO_IO_CAP:
+                                    elif cert_io_capability == IoCapabilities.DISPLAY_YES_NO_IO_CAP:
                                         expected_resp_ui_event = UiMsgType.DISPLAY_PASSKEY_ENTRY
-                                    elif resp_io_capability == IoCapabilities.KEYBOARD_ONLY:
+                                    elif cert_io_capability == IoCapabilities.KEYBOARD_ONLY:
                                         expected_resp_ui_event = UiMsgType.DISPLAY_PASSKEY_ENTRY
-                                elif init_io_capability == IoCapabilities.NO_INPUT_NO_OUTPUT:
-                                    if resp_io_capability == IoCapabilities.DISPLAY_YES_NO_IO_CAP:
+                                    elif cert_io_capability == IoCapabilities.NO_INPUT_NO_OUTPUT:
+                                        if dut_auth_reqs in self.mitm_auth_reqs or cert_auth_reqs in self.mitm_auth_reqs:
+                                            expected_init_bond_event = BondMsgType.DEVICE_BOND_FAILED
+                                elif dut_io_capability == IoCapabilities.NO_INPUT_NO_OUTPUT:
+                                    if cert_io_capability == IoCapabilities.DISPLAY_YES_NO_IO_CAP:
                                         expected_resp_ui_event = UiMsgType.DISPLAY_YES_NO  # No value
+
+                                    if dut_auth_reqs in self.mitm_auth_reqs or cert_auth_reqs in self.mitm_auth_reqs:
+                                        expected_init_bond_event = BondMsgType.DEVICE_BOND_FAILED
 
                                 self._run_ssp_numeric_comparison(
                                     initiator=self.dut_security,
@@ -273,6 +300,9 @@ class SecurityTest(GdBaseTestClass):
                                                               common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
                                 self.cert_security.remove_bond(self.dut_security.get_address(),
                                                                common.BluetoothAddressTypeEnum.PUBLIC_DEVICE_ADDRESS)
+
+                                self.dut_security.wait_for_bond_event(BondMsgType.DEVICE_UNBONDED)
+                                self.cert_security.wait_for_bond_event(BondMsgType.DEVICE_UNBONDED)
 
                                 self.dut_security.wait_for_disconnect_event()
                                 self.cert_security.wait_for_disconnect_event()

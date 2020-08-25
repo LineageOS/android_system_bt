@@ -147,11 +147,6 @@ typedef struct {
 
 } btif_dm_local_key_cb_t;
 
-typedef struct {
-  RawAddress bd_addr;
-  BD_NAME bd_name;
-} btif_dm_remote_name_t;
-
 /* this structure holds optional OOB data for remote device */
 typedef struct {
   RawAddress bdaddr; /* peer bdaddr */
@@ -230,7 +225,6 @@ static void btif_stats_add_bond_event(const RawAddress& bd_addr,
 /******************************************************************************
  *  Externs
  *****************************************************************************/
-extern bt_status_t btif_av_execute_service(bool b_enable);
 extern bt_status_t btif_av_sink_execute_service(bool b_enable);
 extern bt_status_t btif_hh_execute_service(bool b_enable);
 extern bt_status_t btif_hf_client_execute_service(bool b_enable);
@@ -452,23 +446,6 @@ bool check_cod(const RawAddress* remote_bdaddr, uint32_t cod) {
 
 bool check_cod_hid(const RawAddress* remote_bdaddr) {
   return (get_cod(remote_bdaddr) & COD_HID_MASK) == COD_HID_MAJOR;
-}
-
-bool check_hid_le(const RawAddress* remote_bdaddr) {
-  uint32_t remote_dev_type;
-  bt_property_t prop_name;
-
-  /* check if we already have it in our btif_storage cache */
-  BTIF_STORAGE_FILL_PROPERTY(&prop_name, BT_PROPERTY_TYPE_OF_DEVICE,
-                             sizeof(uint32_t), &remote_dev_type);
-  if (btif_storage_get_remote_device_property(
-          (RawAddress*)remote_bdaddr, &prop_name) == BT_STATUS_SUCCESS) {
-    if (remote_dev_type == BT_DEVICE_DEVTYPE_BLE) {
-      if (btif_config_exist(remote_bdaddr->ToString().c_str(), "HidAppId"))
-        return true;
-    }
-  }
-  return false;
 }
 
 /*****************************************************************************
@@ -724,15 +701,12 @@ uint16_t btif_dm_get_connection_state(const RawAddress* bd_addr) {
   uint16_t rc = BTA_DmGetConnectionState(*bd_addr);
 
   if (rc != 0) {
-    uint8_t flags = 0;
-
-    BTM_GetSecurityFlagsByTransport(*bd_addr, &flags, BT_TRANSPORT_BR_EDR);
-    BTIF_TRACE_DEBUG("%s: security flags (BR/EDR)=0x%02x", __func__, flags);
-    if (flags & BTM_SEC_FLAG_ENCRYPTED) rc |= ENCRYPTED_BREDR;
-
-    BTM_GetSecurityFlagsByTransport(*bd_addr, &flags, BT_TRANSPORT_LE);
-    BTIF_TRACE_DEBUG("%s: security flags (LE)=0x%02x", __func__, flags);
-    if (flags & BTM_SEC_FLAG_ENCRYPTED) rc |= ENCRYPTED_LE;
+    if (BTM_IsEncrypted(*bd_addr, BT_TRANSPORT_BR_EDR)) {
+      rc |= ENCRYPTED_BREDR;
+    }
+    if (BTM_IsEncrypted(*bd_addr, BT_TRANSPORT_LE)) {
+      rc |= ENCRYPTED_LE;
+    }
   }
 
   return rc;
@@ -769,6 +743,7 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
 
   const RawAddress& bd_addr = p_pin_req->bd_addr;
   memcpy(bd_name.name, p_pin_req->bd_name, BD_NAME_LEN);
+  bd_name.name[BD_NAME_LEN] = '\0';
 
   if (pairing_cb.state == BT_BOND_STATE_BONDING &&
       bd_addr != pairing_cb.bd_addr) {
@@ -931,6 +906,7 @@ static void btif_dm_ssp_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
 
   RawAddress bd_addr = p_ssp_key_notif->bd_addr;
   memcpy(bd_name.name, p_ssp_key_notif->bd_name, BD_NAME_LEN);
+  bd_name.name[BD_NAME_LEN] = '\0';
 
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
   pairing_cb.is_ssp = true;
@@ -2175,10 +2151,7 @@ void btif_dm_enable_service(tBTA_SERVICE_ID service_id, bool enable) {
   return;
 }
 
-void btif_dm_proc_io_req(UNUSED_ATTR const RawAddress& bd_addr,
-                         UNUSED_ATTR tBTM_IO_CAP* p_io_cap,
-                         UNUSED_ATTR tBTM_OOB_DATA* p_oob_data,
-                         tBTM_AUTH_REQ* p_auth_req, bool is_orig) {
+void btif_dm_proc_io_req(tBTM_AUTH_REQ* p_auth_req, bool is_orig) {
   uint8_t yes_no_bit = BTA_AUTH_SP_YES & *p_auth_req;
   /* if local initiated:
   **      1. set DD + MITM
@@ -2427,6 +2400,7 @@ static void btif_dm_ble_key_notif_evt(tBTA_DM_SP_KEY_NOTIF* p_ssp_key_notif) {
                                        (tBT_DEVICE_TYPE)dev_type);
   bd_addr = p_ssp_key_notif->bd_addr;
   memcpy(bd_name.name, p_ssp_key_notif->bd_name, BD_NAME_LEN);
+  bd_name.name[BD_NAME_LEN] = '\0';
 
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
   pairing_cb.is_ssp = false;
@@ -2591,7 +2565,8 @@ void btif_dm_save_ble_bonding_keys(RawAddress& bd_addr) {
   }
 
   if (pairing_cb.ble.is_lidk_key_rcvd) {
-    btif_storage_add_ble_bonding_key(&bd_addr, NULL, BTIF_DM_LE_KEY_LID, 0);
+    uint8_t empty[] = {};
+    btif_storage_add_ble_bonding_key(&bd_addr, empty, BTIF_DM_LE_KEY_LID, 0);
   }
 }
 
@@ -2632,6 +2607,7 @@ void btif_dm_ble_sec_req_evt(tBTA_DM_BLE_SEC_REQ* p_ble_req, bool is_consent) {
 
   RawAddress bd_addr = p_ble_req->bd_addr;
   memcpy(bd_name.name, p_ble_req->bd_name, BD_NAME_LEN);
+  bd_name.name[BD_NAME_LEN] = '\0';
 
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
 
@@ -2669,6 +2645,7 @@ static void btif_dm_ble_passkey_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
 
   RawAddress bd_addr = p_pin_req->bd_addr;
   memcpy(bd_name.name, p_pin_req->bd_name, BD_NAME_LEN);
+  bd_name.name[BD_NAME_LEN] = '\0';
 
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
   pairing_cb.is_le_only = true;
@@ -2689,6 +2666,7 @@ static void btif_dm_ble_key_nc_req_evt(tBTA_DM_SP_KEY_NOTIF* p_notif_req) {
 
   bt_bdname_t bd_name;
   memcpy(bd_name.name, p_notif_req->bd_name, BD_NAME_LEN);
+  bd_name.name[BD_NAME_LEN] = '\0';
 
   bond_state_changed(BT_STATUS_SUCCESS, bd_addr, BT_BOND_STATE_BONDING);
   pairing_cb.is_ssp = false;

@@ -402,7 +402,7 @@ void gap_attr_db_init(void) {
   Uuid app_uuid = Uuid::From128BitBE(tmp);
   gatt_attr.fill({});
 
-  gatt_if = GATT_Register(app_uuid, &gap_cback);
+  gatt_if = GATT_Register(app_uuid, &gap_cback, false);
 
   GATT_StartIf(gatt_if);
 
@@ -533,21 +533,6 @@ bool GAP_BleReadPeerPrefConnParams(const RawAddress& peer_bda) {
 bool GAP_BleReadPeerDevName(const RawAddress& peer_bda,
                             tGAP_BLE_CMPL_CBACK* p_cback) {
   return accept_client_operation(peer_bda, GATT_UUID_GAP_DEVICE_NAME, p_cback);
-}
-
-/*******************************************************************************
- *
- * Function         GAP_BleReadPeerAddressResolutionCap
- *
- * Description      Start a process to read peer address resolution capability
- *
- * Returns          true if request accepted
- *
- ******************************************************************************/
-bool GAP_BleReadPeerAddressResolutionCap(const RawAddress& peer_bda,
-                                         tGAP_BLE_CMPL_CBACK* p_cback) {
-  return accept_client_operation(peer_bda, GATT_UUID_GAP_CENTRAL_ADDR_RESOL,
-                                 p_cback);
 }
 
 /*******************************************************************************

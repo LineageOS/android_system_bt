@@ -334,32 +334,6 @@ void Btm::OnInquiryComplete(bluetooth::hci::ErrorCode status) {
   active_inquiry_mode_ = kInquiryModeOff;
 }
 
-bool Btm::SetInquiryFilter(uint8_t mode, uint8_t type,
-                           tBTM_INQ_FILT_COND data) {
-  switch (mode) {
-    case kInquiryModeOff:
-      break;
-    case kLimitedInquiryMode:
-      LOG_WARN("UNIMPLEMENTED %s", __func__);
-      break;
-    case kGeneralInquiryMode:
-      LOG_WARN("UNIMPLEMENTED %s", __func__);
-      break;
-    default:
-      LOG_WARN("%s Unknown inquiry mode:%d", __func__, mode);
-      return false;
-  }
-  return true;
-}
-
-void Btm::SetFilterInquiryOnAddress() {
-  LOG_WARN("UNIMPLEMENTED %s", __func__);
-}
-
-void Btm::SetFilterInquiryOnDevice() { LOG_WARN("UNIMPLEMENTED %s", __func__); }
-
-void Btm::ClearInquiryFilter() { LOG_WARN("UNIMPLEMENTED %s", __func__); }
-
 void Btm::SetStandardInquiryResultMode() {
   GetInquiry()->SetStandardInquiryResultMode();
 }
@@ -476,12 +450,6 @@ bool Btm::StartPeriodicInquiry(uint8_t mode, uint8_t duration,
       return false;
   }
   return true;
-}
-
-void Btm::CancelPeriodicInquiry() {
-  limited_periodic_inquiry_active_ = false;
-  general_periodic_inquiry_active_ = false;
-  GetInquiry()->StopPeriodicInquiry();
 }
 
 bool Btm::IsGeneralPeriodicInquiryActive() const {

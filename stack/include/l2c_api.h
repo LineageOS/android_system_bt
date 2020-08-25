@@ -747,7 +747,6 @@ typedef struct {
       pL2CA_FixedTxComplete_Cb; /* fixed channel tx complete callback */
 } tL2CAP_FIXED_CHNL_REG;
 
-#if (L2CAP_NUM_FIXED_CHNLS > 0)
 /*******************************************************************************
  *
  *  Function        L2CA_RegisterFixedChannel
@@ -832,8 +831,6 @@ extern bool L2CA_RemoveFixedChnl(uint16_t fixed_cid, const RawAddress& rem_bda);
  ******************************************************************************/
 extern bool L2CA_SetFixedChannelTout(const RawAddress& rem_bda,
                                      uint16_t fixed_cid, uint16_t idle_tout);
-
-#endif /* (L2CAP_NUM_FIXED_CHNLS > 0) */
 
 /*******************************************************************************
  *

@@ -46,7 +46,7 @@ void LinkLayerController::SendLeLinkLayerPacket(
   std::shared_ptr<model::packets::LinkLayerPacketBuilder> shared_packet =
       std::move(packet);
   ScheduleTask(milliseconds(50), [this, shared_packet]() {
-    send_to_remote_(std::move(shared_packet), Phy::Type::LOW_ENERGY);
+    send_to_remote_(shared_packet, Phy::Type::LOW_ENERGY);
   });
 }
 
@@ -55,7 +55,7 @@ void LinkLayerController::SendLinkLayerPacket(
   std::shared_ptr<model::packets::LinkLayerPacketBuilder> shared_packet =
       std::move(packet);
   ScheduleTask(milliseconds(50), [this, shared_packet]() {
-    send_to_remote_(std::move(shared_packet), Phy::Type::BR_EDR);
+    send_to_remote_(shared_packet, Phy::Type::BR_EDR);
   });
 }
 
@@ -853,16 +853,31 @@ void LinkLayerController::IncomingLeAdvertisementPacket(
           "CreatePendingLeConnection failed for connection to %s (type %hhx)",
           incoming.GetSourceAddress().ToString().c_str(), address_type);
     }
+    Address own_address;
+    auto own_address_type =
+        static_cast<bluetooth::hci::OwnAddressType>(le_address_type_);
+    switch (own_address_type) {
+      case bluetooth::hci::OwnAddressType::PUBLIC_DEVICE_ADDRESS:
+        own_address = properties_.GetAddress();
+        break;
+      case bluetooth::hci::OwnAddressType::RANDOM_DEVICE_ADDRESS:
+        own_address = properties_.GetLeAddress();
+        break;
+      default:
+        LOG_ALWAYS_FATAL(
+            "Unhandled connection address type %s",
+            bluetooth::hci::OwnAddressTypeText(own_address_type).c_str());
+    }
     LOG_INFO("Connecting to %s (type %hhx) own_address %s (type %hhx)",
              incoming.GetSourceAddress().ToString().c_str(), address_type,
-             properties_.GetLeAddress().ToString().c_str(), le_address_type_);
+             own_address.ToString().c_str(), le_address_type_);
     le_connect_ = false;
     le_scan_enable_ = bluetooth::hci::OpCode::NONE;
 
     auto to_send = model::packets::LeConnectBuilder::Create(
-        properties_.GetLeAddress(), incoming.GetSourceAddress(),
-        le_connection_interval_min_, le_connection_interval_max_,
-        le_connection_latency_, le_connection_supervision_timeout_,
+        own_address, incoming.GetSourceAddress(), le_connection_interval_min_,
+        le_connection_interval_max_, le_connection_latency_,
+        le_connection_supervision_timeout_,
         static_cast<uint8_t>(le_address_type_));
 
     SendLeLinkLayerPacket(std::move(to_send));
@@ -959,7 +974,6 @@ void LinkLayerController::IncomingLeEncryptConnection(
     model::packets::LinkLayerPacketView incoming) {
   LOG_INFO();
 
-  // TODO: Check keys
   Address peer = incoming.GetSourceAddress();
   uint16_t handle = connections_.GetHandleOnlyAddress(peer);
   if (handle == acl::kReservedHandle) {
@@ -968,22 +982,13 @@ void LinkLayerController::IncomingLeEncryptConnection(
              peer.ToString().c_str());
     return;
   }
-  ErrorCode status = ErrorCode::SUCCESS;
   auto le_encrypt = model::packets::LeEncryptConnectionView::Create(incoming);
   ASSERT(le_encrypt.IsValid());
 
-  if (connections_.IsEncrypted(handle)) {
-    send_event_(bluetooth::hci::EncryptionKeyRefreshCompleteBuilder::Create(
-        status, handle));
-  } else {
-    connections_.Encrypt(handle);
-    send_event_(bluetooth::hci::EncryptionChangeBuilder::Create(
-        status, handle, bluetooth::hci::EncryptionEnabled::ON));
-  }
-  SendLeLinkLayerPacket(
-      model::packets::LeEncryptConnectionResponseBuilder::Create(
-          connections_.GetOwnAddress(handle).GetAddress(), peer,
-          le_encrypt.GetRand(), le_encrypt.GetEdiv(), le_encrypt.GetLtk()));
+  // TODO: Save keys to check
+
+  send_event_(bluetooth::hci::LeLongTermKeyRequestBuilder::Create(
+      handle, le_encrypt.GetRand(), le_encrypt.GetEdiv()));
 }
 
 void LinkLayerController::IncomingLeEncryptConnectionResponse(
@@ -999,6 +1004,14 @@ void LinkLayerController::IncomingLeEncryptConnectionResponse(
     return;
   }
   ErrorCode status = ErrorCode::SUCCESS;
+  auto response =
+      model::packets::LeEncryptConnectionResponseView::Create(incoming);
+  ASSERT(response.IsValid());
+
+  // Zero LTK is a rejection
+  if (response.GetLtk() == std::array<uint8_t, 16>()) {
+    status = ErrorCode::AUTHENTICATION_FAILURE;
+  }
 
   if (connections_.IsEncrypted(handle)) {
     send_event_(bluetooth::hci::EncryptionKeyRefreshCompleteBuilder::Create(
@@ -1941,6 +1954,67 @@ void LinkLayerController::LeSetPrivacyMode(uint8_t address_type, Address addr,
   LOG_INFO("mode = %d ", mode);
 }
 
+void LinkLayerController::LeReadIsoTxSync(uint16_t handle) {}
+
+void LinkLayerController::LeSetCigParameters(
+    uint8_t cig_id, uint32_t sdu_interval_m_to_s, uint32_t sdu_interval_s_to_m,
+    bluetooth::hci::ClockAccuracy clock_accuracy,
+    bluetooth::hci::Packing packing, bluetooth::hci::Enable framing,
+    uint16_t max_transport_latency_m_to_s,
+    uint16_t max_transport_latency_s_to_m,
+    std::vector<bluetooth::hci::CisParametersConfig> cis_config) {}
+
+ErrorCode LinkLayerController::LeCreateCis(
+    std::vector<bluetooth::hci::CreateCisConfig> cis_config) {
+  return ErrorCode::SUCCESS;
+}
+
+void LinkLayerController::LeRemoveCig(uint8_t cig_id) {}
+
+ErrorCode LinkLayerController::LeAcceptCisRequest(uint16_t handle) {
+  return ErrorCode::SUCCESS;
+}
+
+void LinkLayerController::LeRejectCisRequest(uint16_t handle,
+                                             ErrorCode reason) {}
+
+ErrorCode LinkLayerController::LeCreateBig(
+    uint8_t big_handle, uint8_t advertising_handle, uint8_t num_bis,
+    uint32_t sdu_interval, uint16_t max_sdu, uint16_t max_transport_latency,
+    uint8_t rtn, bluetooth::hci::SecondaryPhyType phy,
+    bluetooth::hci::Packing packing, bluetooth::hci::Enable framing,
+    bluetooth::hci::Enable encryption, std::vector<uint16_t> broadcast_code) {
+  return ErrorCode::SUCCESS;
+}
+
+ErrorCode LinkLayerController::LeTerminateBig(uint8_t big_handle,
+                                              ErrorCode reason) {
+  return ErrorCode::SUCCESS;
+}
+
+ErrorCode LinkLayerController::LeBigCreateSync(
+    uint8_t big_handle, uint16_t sync_handle, bluetooth::hci::Enable encryption,
+    std::vector<uint16_t> broadcast_code, uint8_t mse,
+    uint16_t big_syunc_timeout, std::vector<uint8_t> bis) {
+  return ErrorCode::SUCCESS;
+}
+
+void LinkLayerController::LeBigTerminateSync(uint8_t big_handle) {}
+
+ErrorCode LinkLayerController::LeRequestPeerSca(uint16_t request_handle) {
+  return ErrorCode::SUCCESS;
+}
+
+void LinkLayerController::LeSetupIsoDataPath(
+    uint16_t connection_handle,
+    bluetooth::hci::DataPathDirection data_path_direction, uint8_t data_path_id,
+    uint64_t codec_id, uint32_t controller_Delay,
+    std::vector<uint8_t> codec_configuration) {}
+
+void LinkLayerController::LeRemoveIsoDataPath(
+    uint16_t connection_handle,
+    bluetooth::hci::DataPathDirection data_path_direction) {}
+
 void LinkLayerController::HandleLeEnableEncryption(
     uint16_t handle, std::array<uint8_t, 8> rand, uint16_t ediv,
     std::array<uint8_t, 16> ltk) {
@@ -1966,6 +2040,46 @@ ErrorCode LinkLayerController::LeEnableEncryption(uint16_t handle,
   ScheduleTask(milliseconds(5), [this, handle, rand, ediv, ltk]() {
     HandleLeEnableEncryption(handle, rand, ediv, ltk);
   });
+  return ErrorCode::SUCCESS;
+}
+
+ErrorCode LinkLayerController::LeLongTermKeyRequestReply(
+    uint16_t handle, std::array<uint8_t, 16> ltk) {
+  if (!connections_.HasHandle(handle)) {
+    LOG_INFO("Unknown handle %04x", handle);
+    return ErrorCode::UNKNOWN_CONNECTION;
+  }
+
+  // TODO: Check keys
+  if (connections_.IsEncrypted(handle)) {
+    send_event_(bluetooth::hci::EncryptionKeyRefreshCompleteBuilder::Create(
+        ErrorCode::SUCCESS, handle));
+  } else {
+    connections_.Encrypt(handle);
+    send_event_(bluetooth::hci::EncryptionChangeBuilder::Create(
+        ErrorCode::SUCCESS, handle, bluetooth::hci::EncryptionEnabled::ON));
+  }
+  SendLeLinkLayerPacket(
+      model::packets::LeEncryptConnectionResponseBuilder::Create(
+          connections_.GetOwnAddress(handle).GetAddress(),
+          connections_.GetAddress(handle).GetAddress(),
+          std::array<uint8_t, 8>(), uint16_t(), ltk));
+
+  return ErrorCode::SUCCESS;
+}
+
+ErrorCode LinkLayerController::LeLongTermKeyRequestNegativeReply(
+    uint16_t handle) {
+  if (!connections_.HasHandle(handle)) {
+    LOG_INFO("Unknown handle %04x", handle);
+    return ErrorCode::UNKNOWN_CONNECTION;
+  }
+
+  SendLeLinkLayerPacket(
+      model::packets::LeEncryptConnectionResponseBuilder::Create(
+          connections_.GetOwnAddress(handle).GetAddress(),
+          connections_.GetAddress(handle).GetAddress(),
+          std::array<uint8_t, 8>(), uint16_t(), std::array<uint8_t, 16>()));
   return ErrorCode::SUCCESS;
 }
 

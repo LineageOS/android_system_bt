@@ -44,9 +44,6 @@ const int num_adv_instances = 16;
  * whole stack. They will be removed, or changed into mocks one by one in the
  * future, as the refactoring progresses */
 bool BTM_BleLocalPrivacyEnabled() { return true; }
-uint16_t BTM_ReadDiscoverability(uint16_t* p_window, uint16_t* p_interval) {
-  return true;
-}
 void btm_acl_update_conn_addr(uint16_t conn_handle, const RawAddress& address) {
 }
 void btm_gen_resolvable_private_addr(

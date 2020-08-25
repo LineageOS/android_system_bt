@@ -2527,11 +2527,18 @@ enum LeScanningFilterPolicy : 8 {
   CONNECT_LIST_AND_INITIATORS_IDENTITY = 0x03,
 }
 
+enum OwnAddressType : 8 {
+  PUBLIC_DEVICE_ADDRESS = 0x00,
+  RANDOM_DEVICE_ADDRESS = 0x01,
+  RESOLVABLE_OR_PUBLIC_ADDRESS = 0x02,
+  RESOLVABLE_OR_RANDOM_ADDRESS = 0x03,
+}
+
 packet LeSetScanParameters : LeScanningCommand (op_code = LE_SET_SCAN_PARAMETERS) {
   le_scan_type : LeScanType,
   le_scan_interval : 16, // 0x0004-0x4000 Default 0x10 (10ms)
   le_scan_window : 16, // Default 0x10 (10ms)
-  own_address_type : AddressType,
+  own_address_type : OwnAddressType,
   scanning_filter_policy : LeScanningFilterPolicy,
 }
 
@@ -2551,13 +2558,6 @@ packet LeSetScanEnableComplete : CommandComplete (command_op_code = LE_SET_SCAN_
 enum InitiatorFilterPolicy : 8 {
   USE_PEER_ADDRESS = 0x00,
   USE_CONNECT_LIST = 0x01,
-}
-
-enum OwnAddressType : 8 {
-  PUBLIC_DEVICE_ADDRESS = 0x00,
-  RANDOM_DEVICE_ADDRESS = 0x01,
-  RESOLVABLE_OR_PUBLIC_ADDRESS = 0x02,
-  RESOLVABLE_OR_RANDOM_ADDRESS = 0x03,
 }
 
 packet LeCreateConnection : LeConnectionManagementCommand (op_code = LE_CREATE_CONNECTION) {
@@ -3153,7 +3153,7 @@ struct PhyScanParameters {
 }
 
 packet LeSetExtendedScanParameters : LeScanningCommand (op_code = LE_SET_EXTENDED_SCAN_PARAMETERS) {
-  own_address_type : AddressType,
+  own_address_type : OwnAddressType,
   scanning_filter_policy : LeScanningFilterPolicy,
   scanning_phys : 8,
   parameters : PhyScanParameters[],
@@ -3818,7 +3818,7 @@ packet LeExtendedScanParams : LeScanningCommand (op_code = LE_EXTENDED_SCAN_PARA
   le_scan_type : LeScanType,
   le_scan_interval : 32, // 0x0004-0x4000 Default 0x10 (10ms)
   le_scan_window : 32, // Default 0x10 (10ms)
-  own_address_type : AddressType,
+  own_address_type : OwnAddressType,
   scanning_filter_policy : LeScanningFilterPolicy,
 }
 
@@ -4284,10 +4284,9 @@ packet LeReadRemoteFeaturesComplete : LeMetaEvent (subevent_code = READ_REMOTE_F
 }
 
 packet LeLongTermKeyRequest : LeMetaEvent (subevent_code = LONG_TERM_KEY_REQUEST) {
-  status : ErrorCode,
   connection_handle : 12,
   _reserved_ : 4,
-  random_number : 64,
+  random_number : 8[8],
   encrypted_diversifier : 16,
 }
 

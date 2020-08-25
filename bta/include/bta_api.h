@@ -140,9 +140,6 @@ typedef uint32_t tBTA_SERVICE_MASK;
 
 /* Security Setting Mask */
 #define BTA_SEC_NONE BTM_SEC_NONE /* No security. */
-#define BTA_SEC_AUTHORIZE                                               \
-  (BTM_SEC_IN_AUTHORIZE) /* Authorization required (only needed for out \
-                            going connection )*/
 #define BTA_SEC_AUTHENTICATE \
   (BTM_SEC_IN_AUTHENTICATE | \
    BTM_SEC_OUT_AUTHENTICATE) /* Authentication required. */
@@ -861,7 +858,7 @@ extern void BTA_DmSetDeviceName(char* p_name);
  * Returns          void
  *
  ******************************************************************************/
-extern void BTA_DmSetVisibility(tBTA_DM_DISC disc_mode, tBTA_DM_CONN conn_mode);
+extern bool BTA_DmSetVisibility(bt_scan_mode_t mode);
 
 /*******************************************************************************
  *

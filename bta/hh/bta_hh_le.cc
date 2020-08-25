@@ -184,7 +184,7 @@ void bta_hh_le_enable(void) {
                             /* signal BTA call back event */
                             (*bta_hh_cb.p_cback)(BTA_HH_ENABLE_EVT, &bta_hh);
                           }
-                        }));
+                        }), false);
 }
 
 /*******************************************************************************
@@ -1074,36 +1074,29 @@ void bta_hh_clear_service_cache(tBTA_HH_DEV_CB* p_cb) {
  ******************************************************************************/
 void bta_hh_start_security(tBTA_HH_DEV_CB* p_cb,
                            UNUSED_ATTR tBTA_HH_DATA* p_buf) {
-  uint8_t sec_flag = 0;
-
   if (BTM_SecIsSecurityPending(p_cb->addr)) {
     /* if security collision happened, wait for encryption done */
     p_cb->security_pending = true;
     return;
   }
 
-  /* verify bond */
-  BTM_GetSecurityFlagsByTransport(p_cb->addr, &sec_flag, BT_TRANSPORT_LE);
-
   /* if link has been encrypted */
-  if (sec_flag & BTM_SEC_FLAG_ENCRYPTED) {
+  if (BTM_IsEncrypted(p_cb->addr, BT_TRANSPORT_LE)) {
     p_cb->status = BTA_HH_OK;
     bta_hh_sm_execute(p_cb, BTA_HH_ENC_CMPL_EVT, NULL);
   }
   /* if bonded and link not encrypted */
-  else if (sec_flag & BTM_SEC_FLAG_LKEY_KNOWN) {
-    sec_flag = BTM_BLE_SEC_ENCRYPT;
+  else if (BTM_IsLinkKeyKnown(p_cb->addr, BT_TRANSPORT_LE)) {
     p_cb->status = BTA_HH_ERR_AUTH_FAILED;
     BTM_SetEncryption(p_cb->addr, BT_TRANSPORT_LE, bta_hh_le_encrypt_cback,
-                      NULL, sec_flag);
+                      NULL, BTM_BLE_SEC_ENCRYPT);
   }
   /* unbonded device, report security error here */
   else if (p_cb->sec_mask != BTA_SEC_NONE) {
-    sec_flag = BTM_BLE_SEC_ENCRYPT_NO_MITM;
     p_cb->status = BTA_HH_ERR_AUTH_FAILED;
     bta_hh_clear_service_cache(p_cb);
     BTM_SetEncryption(p_cb->addr, BT_TRANSPORT_LE, bta_hh_le_encrypt_cback,
-                      NULL, sec_flag);
+                      NULL, BTM_BLE_SEC_ENCRYPT_NO_MITM);
   }
   /* otherwise let it go through */
   else {
@@ -1969,19 +1962,14 @@ void bta_hh_le_get_dscp_act(tBTA_HH_DEV_CB* p_cb) {
  *
  ******************************************************************************/
 static void bta_hh_le_add_dev_bg_conn(tBTA_HH_DEV_CB* p_cb, bool check_bond) {
-  uint8_t sec_flag = 0;
   bool to_add = true;
 
   if (check_bond) {
     /* start reconnection if remote is a bonded device */
-    /* verify bond */
-    BTM_GetSecurityFlagsByTransport(p_cb->addr, &sec_flag, BT_TRANSPORT_LE);
-
-    if ((sec_flag & BTM_SEC_FLAG_LKEY_KNOWN) == 0) to_add = false;
+    if (!BTM_IsLinkKeyKnown(p_cb->addr, BT_TRANSPORT_LE)) to_add = false;
   }
 
-  if (/*p_cb->dscp_info.flag & BTA_HH_LE_NORMAL_CONN &&*/
-      !p_cb->in_bg_conn && to_add) {
+  if (!p_cb->in_bg_conn && to_add) {
     /* add device into BG connection to accept remote initiated connection */
     BTA_GATTC_Open(bta_hh_cb.gatt_if, p_cb->addr, false, BT_TRANSPORT_LE,
                    false);

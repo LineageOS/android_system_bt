@@ -16,15 +16,36 @@
 
 #include "os/system_properties.h"
 
+#include <mutex>
+#include <string>
+#include <unordered_map>
+
 namespace bluetooth {
 namespace os {
 
+namespace {
+std::mutex properties_mutex;
+std::unordered_map<std::string, std::string> properties;
+}  // namespace
+
 std::optional<std::string> GetSystemProperty(const std::string& property) {
-  return std::nullopt;
+  std::lock_guard<std::mutex> lock(properties_mutex);
+  auto iter = properties.find(property);
+  if (iter == properties.end()) {
+    return std::nullopt;
+  }
+  return iter->second;
 }
 
 bool SetSystemProperty(const std::string& property, const std::string& value) {
-  return false;
+  std::lock_guard<std::mutex> lock(properties_mutex);
+  properties.insert_or_assign(property, value);
+  return true;
+}
+
+void ClearSystemPropertiesForHost() {
+  std::lock_guard<std::mutex> lock(properties_mutex);
+  properties.clear();
 }
 
 }  // namespace os

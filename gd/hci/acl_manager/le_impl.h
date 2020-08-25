@@ -87,6 +87,9 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
       case SubeventCode::PHY_UPDATE_COMPLETE:
         LOG_INFO("PHY_UPDATE_COMPLETE");
         break;
+      case SubeventCode::DATA_LENGTH_CHANGE:
+        on_data_length_change(event_packet);
+        break;
       default:
         LOG_ALWAYS_FATAL("Unhandled event code %s", SubeventCodeText(code).c_str());
     }
@@ -171,7 +174,6 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     auto peer_address_type = connection_complete.GetPeerAddressType();
     auto peer_resolvable_address = connection_complete.GetPeerResolvablePrivateAddress();
     AddressWithType remote_address(address, peer_address_type);
-    AddressWithType local_address = le_address_manager_->GetCurrentAddress();
     if (!peer_resolvable_address.IsEmpty()) {
       remote_address = AddressWithType(peer_resolvable_address, AddressType::RANDOM_DEVICE_ADDRESS);
     }
@@ -191,6 +193,17 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
                                                 common::Unretained(le_client_callbacks_), remote_address, status));
       return;
     }
+
+    auto role = connection_complete.GetRole();
+    AddressWithType local_address;
+    if (role == hci::Role::MASTER) {
+      local_address = le_address_manager_->GetCurrentAddress();
+    } else {
+      // when accepting connection, we must obtain the address from the advertiser.
+      // When we receive "set terminated event", we associate connection handle with advertiser address
+      local_address = AddressWithType{};
+    }
+
     uint16_t conn_interval = connection_complete.GetConnInterval();
     uint16_t conn_latency = connection_complete.GetConnLatency();
     uint16_t supervision_timeout = connection_complete.GetSupervisionTimeout();
@@ -205,7 +218,6 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
                                 std::forward_as_tuple(remote_address, queue->GetDownEnd(), handler_));
     auto& connection_proxy = check_and_get_le_connection(handle);
     round_robin_scheduler_->Register(RoundRobinScheduler::ConnectionType::LE, handle, queue);
-    auto role = connection_complete.GetRole();
     auto do_disconnect =
         common::BindOnce(&DisconnectorForLe::handle_disconnect, common::Unretained(disconnector_), handle);
     std::unique_ptr<LeAclConnection> connection(new LeAclConnection(std::move(queue), le_acl_connection_interface_,
@@ -242,6 +254,25 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
     hci_layer_->EnqueueCommand(
         std::move(command_packet),
         handler_->BindOnce(&LeAddressManager::OnCommandComplete, common::Unretained(le_address_manager_)));
+  }
+
+  void on_data_length_change(LeMetaEventView view) {
+    auto data_length_view = LeDataLengthChangeView::Create(view);
+    if (!data_length_view.IsValid()) {
+      LOG_ERROR("Invalid packet");
+      return;
+    }
+    auto handle = data_length_view.GetConnectionHandle();
+    auto connection_iterator = le_acl_connections_.find(handle);
+    if (connection_iterator == le_acl_connections_.end()) {
+      LOG_WARN("Can't find connection %hd", handle);
+      return;
+    }
+    connection_iterator->second.le_connection_management_callbacks_->OnDataLengthChange(
+        data_length_view.GetMaxTxOctets(),
+        data_length_view.GetMaxTxTime(),
+        data_length_view.GetMaxRxOctets(),
+        data_length_view.GetMaxRxTime());
   }
 
   void add_device_to_connect_list(AddressWithType address_with_type) {
@@ -359,6 +390,12 @@ struct le_impl : public bluetooth::hci::LeAddressManagerCallback {
   void cancel_connect(AddressWithType address_with_type) {
     // the connection will be canceled by LeAddressManager.OnPause()
     remove_device_from_connect_list(address_with_type);
+  }
+
+  void set_le_suggested_default_data_parameters(uint16_t length, uint16_t time) {
+    auto packet = LeWriteSuggestedDefaultDataLengthBuilder::Create(length, time);
+    le_acl_connection_interface_->EnqueueCommand(
+        std::move(packet), handler_->BindOnce([](CommandCompleteView complete) {}));
   }
 
   void remove_device_from_connect_list(AddressWithType address_with_type) {

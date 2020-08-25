@@ -14,23 +14,12 @@
  * limitations under the License.
  */
 
-#include <stddef.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
-
-#include "bt_common.h"
-#include "bt_types.h"
-#include "btm_api.h"
-#include "btm_int.h"
-#include "btu.h"
-#include "device/include/controller.h"
-#include "hcidefs.h"
-#include "hcimsgs.h"
-#include "l2c_api.h"
-#include "main/shim/btm_api.h"
-#include "main/shim/shim.h"
+#include "gd/os/log.h"
+#include "stack/btm/btm_ble_int.h"
+#include "stack/btm/security_device_record.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/hcimsgs.h"
+#include "types/raw_address.h"
 
 /*******************************************************************************
  *
@@ -45,17 +34,13 @@
  *                  bd_name          - Name of the peer device. NULL if unknown.
  *                  features         - Remote device's features (up to 3 pages).
  *                                     NULL if not known
- *                  trusted_mask     - Bitwise OR of services that do not
- *                                     require authorization.
- *                                     (array of uint32_t)
  *                  link_key         - Connection link key. NULL if unknown.
  *
  * Returns          true if added OK, else false
  *
  ******************************************************************************/
 bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
-                      BD_NAME bd_name, uint8_t* features,
-                      uint32_t trusted_mask[], LinkKey* p_link_key,
+                      BD_NAME bd_name, uint8_t* features, LinkKey* p_link_key,
                       uint8_t key_type, uint8_t pin_length);
 void wipe_secrets_and_remove(tBTM_SEC_DEV_REC* p_dev_rec);
 
@@ -107,7 +92,7 @@ tBTM_SEC_DEV_REC* btm_sec_alloc_dev(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
- * Function         btm_dev_support_switch
+ * Function         btm_dev_support_role_switch
  *
  * Description      This function is called by the L2CAP to check if remote
  *                  device supports role switch
@@ -117,7 +102,7 @@ tBTM_SEC_DEV_REC* btm_sec_alloc_dev(const RawAddress& bd_addr);
  * Returns          true if device is known and role switch is supported
  *
  ******************************************************************************/
-bool btm_dev_support_switch(const RawAddress& bd_addr);
+bool btm_dev_support_role_switch(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *

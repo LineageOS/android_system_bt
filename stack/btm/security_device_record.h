@@ -92,11 +92,6 @@ typedef struct {
   tBTM_CMPL_CB* p_link_qual_cmpl_cb; /* Callback function to be called when  */
                                      /* read link quality function completes */
 
-  alarm_t* read_inq_tx_power_timer;
-  tBTM_CMPL_CB*
-      p_inq_tx_power_cmpl_cb; /* Callback function to be called when  */
-                              /* read inq tx power function completes  */
-
   alarm_t* read_tx_power_timer;     /* Read tx power timer */
   tBTM_CMPL_CB* p_tx_power_cmpl_cb; /* Callback function to be called       */
 
@@ -179,7 +174,6 @@ typedef struct {
   uint16_t inq_scan_period;
   uint16_t inq_scan_type;
   uint16_t page_scan_type; /* current page scan type */
-  tBTM_INQ_TYPE scan_type;
 
   RawAddress remname_bda; /* Name of bd addr for active remote name request */
 #define BTM_RMT_NAME_EXT 0x1 /* Initiated through API */
@@ -285,10 +279,8 @@ extern void btm_sco_disc_chk_pend_for_modechange(uint16_t hci_handle);
  * Define structure for Security Service Record.
  * A record exists for each service registered with the Security Manager
  */
-#define BTM_SEC_OUT_FLAGS \
-  (BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT | BTM_SEC_OUT_AUTHORIZE)
-#define BTM_SEC_IN_FLAGS \
-  (BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT | BTM_SEC_IN_AUTHORIZE)
+#define BTM_SEC_OUT_FLAGS (BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT)
+#define BTM_SEC_IN_FLAGS (BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT)
 
 #define BTM_SEC_OUT_LEVEL4_FLAGS                                       \
   (BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT | BTM_SEC_OUT_MITM | \
@@ -344,10 +336,8 @@ typedef struct {
 #define BTM_RESOLVING_LIST_BIT 0x02
   uint8_t in_controller_list; /* in controller resolving list or not */
   uint8_t resolving_list_index;
-#if (BLE_PRIVACY_SPT == TRUE)
   RawAddress cur_rand_addr; /* current random address */
   uint8_t active_addr_type;
-#endif
 #define BTM_BLE_ADDR_PSEUDO 0 /* address index device record */
 #define BTM_BLE_ADDR_RRA 1    /* cur_rand_addr */
 #define BTM_BLE_ADDR_STATIC 2 /* static_addr  */
@@ -369,8 +359,6 @@ typedef struct {
   tBTM_SEC_CALLBACK* p_callback;
   void* p_ref_data;
   uint32_t timestamp; /* Timestamp of the last connection   */
-  uint32_t trusted_mask[BTM_SEC_SERVICE_ARRAY_SIZE]; /* Bitwise OR of trusted
-                                                        services     */
   uint16_t hci_handle;     /* Handle to connection when exists   */
   uint16_t clock_offset;   /* Latest known clock offset          */
   RawAddress bd_addr;      /* BD_ADDR of the device              */
@@ -378,7 +366,6 @@ typedef struct {
   LinkKey link_key;        /* Device link key                    */
   uint8_t pin_code_length; /* Length of the pin_code used for paring */
 
-#define BTM_SEC_AUTHORIZED BTM_SEC_FLAG_AUTHORIZED       /* 0x01 */
 #define BTM_SEC_AUTHENTICATED BTM_SEC_FLAG_AUTHENTICATED /* 0x02 */
 #define BTM_SEC_ENCRYPTED BTM_SEC_FLAG_ENCRYPTED         /* 0x04 */
 #define BTM_SEC_NAME_KNOWN 0x08
@@ -468,14 +455,9 @@ typedef struct {
   tBTM_SEC_BLE ble;
   tBTM_LE_CONN_PRAMS conn_params;
 
-#if (BTM_DISC_DURING_RS == TRUE)
 #define BTM_SEC_RS_NOT_PENDING 0 /* Role Switch not in progress */
 #define BTM_SEC_RS_PENDING 1     /* Role Switch in progress */
 #define BTM_SEC_DISC_PENDING 2   /* Disconnect is pending */
   uint8_t rs_disc_pending;
-#endif
-#define BTM_SEC_NO_LAST_SERVICE_ID 0
-  uint8_t last_author_service_id; /* ID of last serviced authorized: Reset after
-                                     each l2cap connection */
 
 } tBTM_SEC_DEV_REC;
