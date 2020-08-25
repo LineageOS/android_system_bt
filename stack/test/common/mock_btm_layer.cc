@@ -40,6 +40,12 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
       p_ref_data);
 }
 
+bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
+                          uint8_t service_id, uint16_t sec_level, uint16_t psm,
+                          uint32_t mx_proto_id, uint32_t mx_chan_id) {
+  return true;
+}
+
 uint16_t BTM_GetMaxPacketSize(const RawAddress& addr) {
   return RFCOMM_DEFAULT_MTU;
 }

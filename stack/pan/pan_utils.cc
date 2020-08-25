@@ -126,30 +126,24 @@ uint32_t pan_register_with_sdp(uint16_t uuid, uint8_t sec_mask,
                      array);
 
     /* Register with Security Manager for the specific security level */
-    if ((!BTM_SetSecurityLevel(true, p_name, BTM_SEC_SERVICE_BNEP_NAP, sec_mask,
-                               BT_PSM_BNEP, 0, 0)) ||
-        (!BTM_SetSecurityLevel(false, p_name, BTM_SEC_SERVICE_BNEP_NAP,
-                               sec_mask, BT_PSM_BNEP, 0, 0))) {
+    if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_BNEP_NAP, sec_mask,
+                                    BT_PSM_BNEP)) {
       PAN_TRACE_ERROR("PAN Security Registration failed for PANU");
     }
   }
 #endif
 #if (PAN_SUPPORTS_ROLE_GN == TRUE)
   if (uuid == UUID_SERVCLASS_GN) {
-    if ((!BTM_SetSecurityLevel(true, p_name, BTM_SEC_SERVICE_BNEP_GN, sec_mask,
-                               BT_PSM_BNEP, 0, 0)) ||
-        (!BTM_SetSecurityLevel(false, p_name, BTM_SEC_SERVICE_BNEP_GN, sec_mask,
-                               BT_PSM_BNEP, 0, 0))) {
+    if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_BNEP_GN, sec_mask,
+                                    BT_PSM_BNEP)) {
       PAN_TRACE_ERROR("PAN Security Registration failed for GN");
     }
   }
 #endif
 #if (PAN_SUPPORTS_ROLE_PANU == TRUE)
   if (uuid == UUID_SERVCLASS_PANU) {
-    if ((!BTM_SetSecurityLevel(true, p_name, BTM_SEC_SERVICE_BNEP_PANU,
-                               sec_mask, BT_PSM_BNEP, 0, 0)) ||
-        (!BTM_SetSecurityLevel(false, p_name, BTM_SEC_SERVICE_BNEP_PANU,
-                               sec_mask, BT_PSM_BNEP, 0, 0))) {
+    if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_BNEP_PANU, sec_mask,
+                                    BT_PSM_BNEP)) {
       PAN_TRACE_ERROR("PAN Security Registration failed for PANU");
     }
   }

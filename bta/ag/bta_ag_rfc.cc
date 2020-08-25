@@ -248,9 +248,6 @@ void bta_ag_start_servers(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK services) {
   for (int i = 0; i < BTA_AG_NUM_IDX && services != 0; i++, services >>= 1) {
     /* if service is set in mask */
     if (services & 1) {
-      BTM_SetSecurityLevel(false, "", bta_ag_sec_id[i], p_scb->serv_sec_mask,
-                           BT_PSM_RFCOMM, BTM_SEC_PROTO_RFCOMM,
-                           bta_ag_cb.profile[i].scn);
       int management_callback_index = bta_ag_scb_to_idx(p_scb) - 1;
       CHECK_GE(management_callback_index, 0)
           << "invalid callback index, services=" << loghex(services)
@@ -260,16 +257,18 @@ void bta_ag_start_servers(tBTA_AG_SCB* p_scb, tBTA_SERVICE_MASK services) {
                                 sizeof(bta_ag_mgmt_cback_tbl[0])))
           << "callback index out of bound, services=" << loghex(services)
           << ", bd_addr" << p_scb->peer_addr;
-      int status = RFCOMM_CreateConnection(
+      int status = RFCOMM_CreateConnectionWithSecurity(
           bta_ag_uuid[i], bta_ag_cb.profile[i].scn, true, BTA_AG_MTU,
           RawAddress::kAny, &(p_scb->serv_handle[i]),
-          bta_ag_mgmt_cback_tbl[management_callback_index]);
+          bta_ag_mgmt_cback_tbl[management_callback_index], bta_ag_sec_id[i],
+          p_scb->serv_sec_mask);
       if (status == PORT_SUCCESS) {
         bta_ag_setup_port(p_scb, p_scb->serv_handle[i]);
       } else {
         /* TODO: CR#137125 to handle to error properly */
-        LOG(ERROR) << __func__ << ": RFCOMM_CreateConnection ERROR " << status
-                   << ", p_scb=" << p_scb << ", services=" << loghex(services)
+        LOG(ERROR) << __func__ << ": RFCOMM_CreateConnectionWithSecurity ERROR "
+                   << status << ", p_scb=" << p_scb
+                   << ", services=" << loghex(services)
                    << ", mgmt_cback_index=" << management_callback_index;
       }
       APPL_TRACE_DEBUG("%s: p_scb=0x%08x, services=0x%04x, mgmt_cback_index=%d",
@@ -331,15 +330,12 @@ bool bta_ag_is_server_closed(tBTA_AG_SCB* p_scb) {
  *
  ******************************************************************************/
 void bta_ag_rfc_do_open(tBTA_AG_SCB* p_scb, const tBTA_AG_DATA& data) {
-  BTM_SetSecurityLevel(true, "", bta_ag_sec_id[p_scb->conn_service],
-                       p_scb->cli_sec_mask, BT_PSM_RFCOMM, BTM_SEC_PROTO_RFCOMM,
-                       p_scb->peer_scn);
-
   int management_callback_index = bta_ag_scb_to_idx(p_scb) - 1;
-  int status = RFCOMM_CreateConnection(
+  int status = RFCOMM_CreateConnectionWithSecurity(
       bta_ag_uuid[p_scb->conn_service], p_scb->peer_scn, false, BTA_AG_MTU,
       p_scb->peer_addr, &(p_scb->conn_handle),
-      bta_ag_mgmt_cback_tbl[management_callback_index]);
+      bta_ag_mgmt_cback_tbl[management_callback_index],
+      bta_ag_sec_id[p_scb->conn_service], p_scb->cli_sec_mask);
   APPL_TRACE_DEBUG(
       "%s: p_scb=0x%08x, conn_handle=%d, mgmt_cback_index=%d,"
       " status=%d",
