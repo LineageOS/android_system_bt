@@ -34,6 +34,7 @@
 #include "l2c_api.h"
 #include "l2cdefs.h"
 #include "osi/include/osi.h"
+#include "stack/btm/btm_sec.h"
 
 AvdtpScb* AvdtpAdaptationLayer::LookupAvdtpScb(
     const AvdtpTransportChannel& tc) {
@@ -549,6 +550,8 @@ void avdt_ad_open_req(uint8_t type, AvdtpCcb* p_ccb, AvdtpScb* p_scb,
   /* else we're inititator, start the L2CAP connection */
   else {
     p_tbl->state = AVDT_AD_ST_CONN;
+
+    BTM_SetOutService(p_ccb->peer_addr, BTM_SEC_SERVICE_AVDTP, type);
 
     /* call l2cap connect req */
     lcid = L2CA_ConnectReq(AVDT_PSM, p_ccb->peer_addr);
