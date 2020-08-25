@@ -232,7 +232,6 @@ tACL_CONN* StackAclBtmAcl::acl_get_connection_from_handle(uint16_t hci_handle) {
   return &btm_cb.acl_cb_.acl_db[index];
 }
 
-#if (BLE_PRIVACY_SPT == TRUE)
 /*******************************************************************************
  *
  * Function         btm_ble_get_acl_remote_addr
@@ -278,7 +277,6 @@ bool btm_ble_get_acl_remote_addr(tBTM_SEC_DEV_REC* p_dev_rec,
 
   return st;
 }
-#endif
 
 void btm_acl_process_sca_cmpl_pkt(uint8_t len, uint8_t* data) {
   uint16_t handle;
@@ -357,15 +355,9 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
       btm_set_link_policy(p, btm_cb.acl_cb_.btm_def_link_policy);
 
       p->transport = transport;
-#if (BLE_PRIVACY_SPT == TRUE)
       if (transport == BT_TRANSPORT_LE)
         btm_ble_refresh_local_resolvable_private_addr(
             bda, btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr);
-#else
-      p->conn_addr_type = BLE_ADDR_PUBLIC;
-      p->conn_addr = *controller_get_interface()->get_address();
-
-#endif
       p->switch_role_failed_attempts = 0;
       p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
 
@@ -422,10 +414,8 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
 
       /* If here, features are not known yet */
       if (p_dev_rec && transport == BT_TRANSPORT_LE) {
-#if (BLE_PRIVACY_SPT == TRUE)
         btm_ble_get_acl_remote_addr(p_dev_rec, p->active_remote_addr,
                                     &p->active_remote_addr_type);
-#endif
 
         if (controller_get_interface()
                 ->supports_ble_peripheral_initiated_feature_exchange() ||
@@ -2605,7 +2595,6 @@ int btm_pm_find_acl_ind(const RawAddress& remote_bda) {
  ******************************************************************************/
 void btm_ble_refresh_local_resolvable_private_addr(
     const RawAddress& pseudo_addr, const RawAddress& local_rpa) {
-#if (BLE_PRIVACY_SPT == TRUE)
   tACL_CONN* p = internal_.btm_bda_to_acl(pseudo_addr, BT_TRANSPORT_LE);
 
   if (p != NULL) {
@@ -2620,7 +2609,6 @@ void btm_ble_refresh_local_resolvable_private_addr(
       p->conn_addr = *controller_get_interface()->get_address();
     }
   }
-#endif
 }
 
 /*******************************************************************************
@@ -2706,7 +2694,6 @@ bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
                                                          p_addr_type);
   }
   bool st = true;
-#if (BLE_PRIVACY_SPT == TRUE)
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(pseudo_addr, BT_TRANSPORT_LE);
 
   if (p_acl == NULL) {
@@ -2718,14 +2705,6 @@ bool BTM_ReadRemoteConnectionAddr(const RawAddress& pseudo_addr,
 
   conn_addr = p_acl->active_remote_addr;
   *p_addr_type = p_acl->active_remote_addr_type;
-#else
-  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(pseudo_addr);
-
-  conn_addr = pseudo_addr;
-  if (p_dev_rec != NULL) {
-    *p_addr_type = p_dev_rec->ble.ble_addr_type;
-  }
-#endif
   return st;
 }
 

@@ -413,10 +413,8 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
                              ? BTM_BLE_SCAN_MODE_ACTI
                              : p_inq->scan_type;
 /* assume observe always not using white list */
-#if (defined BLE_PRIVACY_SPT && BLE_PRIVACY_SPT == TRUE)
       /* enable resolving list */
       btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_SCAN);
-#endif
 
       btm_send_hci_set_scan_params(
           p_inq->scan_type, (uint16_t)scan_interval, (uint16_t)scan_window,
@@ -509,12 +507,10 @@ static void btm_ble_vendor_capability_vsc_cmpl_cback(
 
   if (btm_cb.cmn_ble_vsc_cb.max_filter > 0) btm_ble_adv_filter_init();
 
-#if (BLE_PRIVACY_SPT == TRUE)
   /* VS capability included and non-4.2 device */
   if (btm_cb.cmn_ble_vsc_cb.max_irk_list_sz > 0 &&
       controller_get_interface()->get_ble_resolving_list_max_size() == 0)
     btm_ble_resolving_list_init(btm_cb.cmn_ble_vsc_cb.max_irk_list_sz);
-#endif /* (BLE_PRIVACY_SPT == TRUE) */
 
   if (btm_cb.cmn_ble_vsc_cb.tot_scan_results_strg > 0) btm_ble_batchscan_init();
 
@@ -583,7 +579,6 @@ extern void BTM_BleReadControllerFeatures(
  *
  ******************************************************************************/
 bool BTM_BleConfigPrivacy(bool privacy_mode) {
-#if (BLE_PRIVACY_SPT == TRUE)
   tBTM_BLE_CB* p_cb = &btm_cb.ble_ctr_cb;
 
   BTM_TRACE_EVENT("%s", __func__);
@@ -618,9 +613,6 @@ bool BTM_BleConfigPrivacy(bool privacy_mode) {
   GAP_BleAttrDBUpdate(GATT_UUID_GAP_CENTRAL_ADDR_RESOL, &gap_ble_attr_value);
 
   return true;
-#else
-  return false;
-#endif
 }
 
 /*******************************************************************************
@@ -652,17 +644,12 @@ extern uint8_t BTM_BleMaxMultiAdvInstanceCount(void) {
  *
  ******************************************************************************/
 bool BTM_BleLocalPrivacyEnabled(void) {
-#if (BLE_PRIVACY_SPT == TRUE)
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::BTM_BleLocalPrivacyEnabled();
   }
   return (btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE);
-#else
-  return false;
-#endif
 }
 
-#if (BLE_PRIVACY_SPT == TRUE)
 static bool is_resolving_list_bit_set(void* data, void* context) {
   tBTM_SEC_DEV_REC* p_dev_rec = static_cast<tBTM_SEC_DEV_REC*>(data);
 
@@ -671,7 +658,6 @@ static bool is_resolving_list_bit_set(void* data, void* context) {
 
   return true;
 }
-#endif
 
 /*******************************************************************************
  *
@@ -686,9 +672,7 @@ static uint8_t btm_set_conn_mode_adv_init_addr(
     tBTM_BLE_INQ_CB* p_cb, RawAddress& p_peer_addr_ptr,
     tBLE_ADDR_TYPE* p_peer_addr_type, tBLE_ADDR_TYPE* p_own_addr_type) {
   uint8_t evt_type;
-#if (BLE_PRIVACY_SPT == TRUE)
   tBTM_SEC_DEV_REC* p_dev_rec;
-#endif
 
   evt_type =
       (p_cb->connectable_mode == BTM_BLE_NON_CONNECTABLE)
@@ -700,7 +684,6 @@ static uint8_t btm_set_conn_mode_adv_init_addr(
 
     if (p_cb->directed_conn == BTM_BLE_CONNECT_DIR_EVT ||
         p_cb->directed_conn == BTM_BLE_CONNECT_LO_DUTY_DIR_EVT) {
-#if (BLE_PRIVACY_SPT == TRUE)
       /* for privacy 1.2, convert peer address as static, own address set as ID
        * addr */
       if (btm_cb.ble_ctr_cb.privacy_mode == BTM_PRIVACY_1_2 ||
@@ -719,7 +702,6 @@ static uint8_t btm_set_conn_mode_adv_init_addr(
           btm_ble_disable_resolving_list(BTM_BLE_RL_ADV, true);
         }
       }
-#endif
       /* direct adv mode does not have privacy, if privacy is not enabled  */
       *p_peer_addr_type = p_cb->direct_bda.type;
       p_peer_addr_ptr = p_cb->direct_bda.bda;
@@ -728,7 +710,6 @@ static uint8_t btm_set_conn_mode_adv_init_addr(
   }
 
 /* undirect adv mode or non-connectable mode*/
-#if (BLE_PRIVACY_SPT == TRUE)
   /* when privacy 1.2 privacy only mode is used, or mixed mode */
   if ((btm_cb.ble_ctr_cb.privacy_mode == BTM_PRIVACY_1_2 &&
        p_cb->afp != AP_SCAN_CONN_ALL) ||
@@ -755,7 +736,6 @@ static uint8_t btm_set_conn_mode_adv_init_addr(
   else if (btm_cb.ble_ctr_cb.privacy_mode != BTM_PRIVACY_NONE) {
     *p_own_addr_type = BLE_ADDR_RANDOM;
   }
-#endif
 
   /* if no privacy,do not set any peer address,*/
   /* local address type go by global privacy setting */
@@ -1027,9 +1007,7 @@ tBTM_STATUS btm_ble_set_discoverability(uint16_t combined_mode) {
     alarm_set_on_mloop(p_cb->fast_adv_timer, BTM_BLE_GAP_FAST_ADV_TIMEOUT_MS,
                        btm_ble_fast_adv_timer_timeout, NULL);
   } else {
-#if (BLE_PRIVACY_SPT == TRUE)
     btm_ble_disable_resolving_list(BTM_BLE_RL_ADV, true);
-#endif
   }
 
   /* set up stop advertising timer */
@@ -1114,9 +1092,7 @@ tBTM_STATUS btm_ble_set_connectability(uint16_t combined_mode) {
     alarm_set_on_mloop(p_cb->fast_adv_timer, BTM_BLE_GAP_FAST_ADV_TIMEOUT_MS,
                        btm_ble_fast_adv_timer_timeout, NULL);
   } else {
-#if (BLE_PRIVACY_SPT == TRUE)
     btm_ble_disable_resolving_list(BTM_BLE_RL_ADV, true);
-#endif
   }
   return status;
 }
@@ -1189,10 +1165,8 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t mode, uint8_t duration) {
         BTM_BLE_SCAN_MODE_ACTI, BTM_BLE_LOW_LATENCY_SCAN_INT,
         BTM_BLE_LOW_LATENCY_SCAN_WIN,
         btm_cb.ble_ctr_cb.addr_mgnt_cb.own_addr_type, SP_ADV_ALL);
-#if (BLE_PRIVACY_SPT == TRUE)
     /* enable IRK list */
     btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_SCAN);
-#endif
     p_ble_cb->inq_var.scan_type = BTM_BLE_SCAN_MODE_ACTI;
     p_ble_cb->inq_var.scan_duplicate_filter = BTM_BLE_DUPLICATE_DISABLE;
     status = btm_ble_start_scan();
@@ -1632,7 +1606,6 @@ void btm_clear_all_pending_le_entry(void) {
 }
 
 void btm_ble_process_adv_addr(RawAddress& bda, uint8_t* addr_type) {
-#if (BLE_PRIVACY_SPT == TRUE)
   /* map address to security record */
   bool match = btm_identity_addr_to_random_pseudo(&bda, addr_type, false);
 
@@ -1653,7 +1626,6 @@ void btm_ble_process_adv_addr(RawAddress& bda, uint8_t* addr_type) {
       }
     }
   }
-#endif
 }
 
 /**
@@ -2103,14 +2075,12 @@ tBTM_STATUS btm_ble_start_adv(void) {
   if (!btm_ble_adv_states_operation(btm_ble_topology_check, p_cb->evt_type))
     return BTM_WRONG_MODE;
 
-#if (BLE_PRIVACY_SPT == TRUE)
   /* To relax resolving list,  always have resolving list enabled, unless
    * directed adv */
   if (p_cb->evt_type != BTM_BLE_CONNECT_LO_DUTY_DIR_EVT &&
       p_cb->evt_type != BTM_BLE_CONNECT_DIR_EVT)
     /* enable resolving list is desired */
     btm_ble_enable_resolving_list_for_platform(BTM_BLE_RL_ADV);
-#endif
 
   btsnd_hcic_ble_set_adv_enable(BTM_BLE_ADV_ENABLE);
   p_cb->adv_mode = BTM_BLE_ADV_ENABLE;
