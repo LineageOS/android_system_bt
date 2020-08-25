@@ -199,6 +199,10 @@ void ClassicPairingHandler::OnReceive(hci::IoCapabilityResponseView packet) {
       break;
   }
   has_gotten_io_cap_response_ = true;
+  if (user_confirmation_request_) {
+    this->OnReceive(*user_confirmation_request_);
+    user_confirmation_request_ = std::nullopt;
+  }
 }
 
 void ClassicPairingHandler::OnReceive(hci::SimplePairingCompleteView packet) {
@@ -268,7 +272,13 @@ void ClassicPairingHandler::OnReceive(hci::KeypressNotificationView packet) {
  *
  * The table is on pg 2133 of the Core v5.1 spec.
  */
+
 void ClassicPairingHandler::OnReceive(hci::UserConfirmationRequestView packet) {
+  // Ensure we have io cap response otherwise checks will be wrong if it comes late
+  if (!has_gotten_io_cap_response_) {
+    user_confirmation_request_ = std::make_optional<hci::UserConfirmationRequestView>(packet);
+    return;
+  }
   ASSERT(packet.IsValid());
   LOG_INFO("Received: %s", hci::EventCodeText(packet.GetEventCode()).c_str());
   ASSERT_LOG(GetRecord()->GetPseudoAddress()->GetAddress() == packet.GetBdAddr(), "Address mismatch");
