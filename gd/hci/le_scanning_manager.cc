@@ -239,7 +239,7 @@ struct LeScanningManager::impl : public bluetooth::hci::LeAddressManagerCallback
 
   uint32_t interval_ms_{1000};
   uint16_t window_ms_{1000};
-  AddressType own_address_type_{AddressType::PUBLIC_DEVICE_ADDRESS};
+  OwnAddressType own_address_type_{OwnAddressType::PUBLIC_DEVICE_ADDRESS};
   LeScanningFilterPolicy filter_policy_{LeScanningFilterPolicy::ACCEPT_ALL};
 
   static void check_status(CommandCompleteView view) {
