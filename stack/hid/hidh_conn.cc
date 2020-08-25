@@ -106,7 +106,7 @@ tHID_STATUS hidh_conn_reg(void) {
   }
   if (!L2CA_Register2(HID_PSM_INTERRUPT, (tL2CAP_APPL_INFO*)&hst_reg_info,
                       false /* enable_snoop */, nullptr, hh_cb.l2cap_cfg.mtu,
-                      BTM_SEC_NONE)) {
+                      BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
     L2CA_Deregister(HID_PSM_CONTROL);
     HIDH_TRACE_ERROR("HID-Host Interrupt Registration failed");
     return (HID_ERR_L2CAP_FAILED);
@@ -492,8 +492,9 @@ static void hidh_l2cif_config_ind(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
                                                     CLOSE_EVT: Connection
                                                     Attempt was made but failed
                                                     */
-      p_hcon->intr_cid = L2CA_ConnectReq2(
-          HID_PSM_INTERRUPT, hh_cb.devices[dhandle].addr, BTM_SEC_NONE);
+      p_hcon->intr_cid =
+          L2CA_ConnectReq2(HID_PSM_INTERRUPT, hh_cb.devices[dhandle].addr,
+                           BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT);
       if (p_hcon->intr_cid == 0) {
         HIDH_TRACE_WARNING("HID-Host INTR Originate failed");
         reason = HID_L2CAP_REQ_FAIL;
@@ -572,8 +573,9 @@ static void hidh_l2cif_config_cfm(uint16_t l2cap_cid, tL2CAP_CFG_INFO* p_cfg) {
                                                     CLOSE_EVT: Connection
                                                     Attempt was made but failed
                                                     */
-      p_hcon->intr_cid = L2CA_ConnectReq2(
-          HID_PSM_INTERRUPT, hh_cb.devices[dhandle].addr, BTM_SEC_NONE);
+      p_hcon->intr_cid =
+          L2CA_ConnectReq2(HID_PSM_INTERRUPT, hh_cb.devices[dhandle].addr,
+                           BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT);
       if (p_hcon->intr_cid == 0) {
         HIDH_TRACE_WARNING("HID-Host INTR Originate failed");
         reason = HID_L2CAP_REQ_FAIL;

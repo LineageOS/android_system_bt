@@ -365,8 +365,9 @@ static void hidd_l2cif_config_ind(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
     if ((p_hcon->conn_flags & HID_CONN_FLAGS_IS_ORIG) &&
         (p_hcon->conn_flags & HID_CONN_FLAGS_MY_CTRL_CFG_DONE)) {
       p_hcon->disc_reason = HID_L2CAP_CONN_FAIL;
-      if ((p_hcon->intr_cid = L2CA_ConnectReq2(
-               HID_PSM_INTERRUPT, hd_cb.device.addr, BTM_SEC_NONE)) == 0) {
+      if ((p_hcon->intr_cid =
+               L2CA_ConnectReq2(HID_PSM_INTERRUPT, hd_cb.device.addr,
+                                BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) == 0) {
         hidd_conn_disconnect();
         p_hcon->conn_state = HID_CONN_STATE_UNUSED;
 
@@ -448,8 +449,9 @@ static void hidd_l2cif_config_cfm(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
     if ((p_hcon->conn_flags & HID_CONN_FLAGS_IS_ORIG) &&
         (p_hcon->conn_flags & HID_CONN_FLAGS_HIS_CTRL_CFG_DONE)) {
       p_hcon->disc_reason = HID_L2CAP_CONN_FAIL;
-      if ((p_hcon->intr_cid = L2CA_ConnectReq2(
-               HID_PSM_INTERRUPT, hd_cb.device.addr, BTM_SEC_NONE)) == 0) {
+      if ((p_hcon->intr_cid =
+               L2CA_ConnectReq2(HID_PSM_INTERRUPT, hd_cb.device.addr,
+                                BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) == 0) {
         hidd_conn_disconnect();
         p_hcon->conn_state = HID_CONN_STATE_UNUSED;
 
@@ -768,7 +770,8 @@ tHID_STATUS hidd_conn_reg(void) {
 
   if (!L2CA_Register2(HID_PSM_INTERRUPT, (tL2CAP_APPL_INFO*)&dev_reg_info,
                       false /* enable_snoop */, nullptr,
-                      hd_cb.l2cap_intr_cfg.mtu, BTM_SEC_NONE)) {
+                      hd_cb.l2cap_intr_cfg.mtu,
+                      BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
     L2CA_Deregister(HID_PSM_CONTROL);
     HIDD_TRACE_ERROR("HID Interrupt (device) registration failed");
     return (HID_ERR_L2CAP_FAILED);
