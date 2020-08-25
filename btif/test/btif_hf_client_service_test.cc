@@ -9,7 +9,7 @@ static tBTA_HF_CLIENT_FEAT gFeatures;
 
 uint8_t btif_trace_level = BT_TRACE_LEVEL_WARNING;
 void LogMsg(uint32_t trace_set_mask, const char* fmt_str, ...) {}
-tBTA_STATUS BTA_HfClientEnable(tBTA_HF_CLIENT_CBACK* p_cback, tBTA_SEC sec_mask,
+tBTA_STATUS BTA_HfClientEnable(tBTA_HF_CLIENT_CBACK* p_cback,
                                tBTA_HF_CLIENT_FEAT features,
                                const char* p_service_name) {
   gFeatures = features;
