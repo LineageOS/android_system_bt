@@ -181,6 +181,11 @@ typedef void(tPORT_CALLBACK)(uint32_t code, uint16_t port_handle);
  * (scn * 2 + 1) dlci.
  *
  ******************************************************************************/
+extern int RFCOMM_CreateConnectionWithSecurity(
+    uint16_t uuid, uint8_t scn, bool is_server, uint16_t mtu,
+    const RawAddress& bd_addr, uint16_t* p_handle, tPORT_CALLBACK* p_mgmt_cb,
+    uint8_t service_id, uint16_t sec_mask);
+
 extern int RFCOMM_CreateConnection(uint16_t uuid, uint8_t scn, bool is_server,
                                    uint16_t mtu, const RawAddress& bd_addr,
                                    uint16_t* p_handle,
