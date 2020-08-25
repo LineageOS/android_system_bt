@@ -70,27 +70,15 @@ static void bta_ar_avdt_cback(uint8_t handle, const RawAddress& bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-void bta_ar_reg_avdt(AvdtpRcb* p_reg, tAVDT_CTRL_CBACK* p_cback,
-                     tBTA_SYS_ID sys_id) {
-  uint8_t mask = 0;
-
-  if (sys_id == BTA_ID_AV) {
-    bta_ar_cb.p_av_conn_cback = p_cback;
-    mask = BTA_AR_AV_MASK;
+void bta_ar_reg_avdt(AvdtpRcb* p_reg, tAVDT_CTRL_CBACK* p_cback) {
+  bta_ar_cb.p_av_conn_cback = p_cback;
+  if (bta_ar_cb.avdt_registered == 0) {
+    AVDT_Register(p_reg, bta_ar_avdt_cback);
   } else {
-    APPL_TRACE_ERROR("%s: the registration is from wrong sys_id:%d", __func__,
-                     sys_id);
+    APPL_TRACE_WARNING("%s: doesn't register again (registered:%d)", __func__,
+                       bta_ar_cb.avdt_registered);
   }
-
-  if (mask) {
-    if (bta_ar_cb.avdt_registered == 0) {
-      AVDT_Register(p_reg, bta_ar_avdt_cback);
-    } else {
-      APPL_TRACE_WARNING("%s: sys_id:%d doesn't register again (registered:%d)",
-                         __func__, sys_id, bta_ar_cb.avdt_registered);
-    }
-    bta_ar_cb.avdt_registered |= mask;
-  }
+  bta_ar_cb.avdt_registered |= BTA_AR_AV_MASK;
 }
 
 /*******************************************************************************
@@ -102,14 +90,9 @@ void bta_ar_reg_avdt(AvdtpRcb* p_reg, tAVDT_CTRL_CBACK* p_cback,
  * Returns          void
  *
  ******************************************************************************/
-void bta_ar_dereg_avdt(tBTA_SYS_ID sys_id) {
-  uint8_t mask = 0;
-
-  if (sys_id == BTA_ID_AV) {
-    bta_ar_cb.p_av_conn_cback = NULL;
-    mask = BTA_AR_AV_MASK;
-  }
-  bta_ar_cb.avdt_registered &= ~mask;
+void bta_ar_dereg_avdt() {
+  bta_ar_cb.p_av_conn_cback = NULL;
+  bta_ar_cb.avdt_registered &= ~BTA_AR_AV_MASK;
 
   if (bta_ar_cb.avdt_registered == 0) AVDT_Deregister();
 }
@@ -141,7 +124,7 @@ void bta_ar_avdt_conn(tBTA_SYS_ID sys_id, const RawAddress& bd_addr,
  ******************************************************************************/
 void bta_ar_reg_avct(uint16_t mtu, uint16_t mtu_br) {
   if (bta_ar_cb.avct_registered == 0) {
-    AVCT_Register(mtu, mtu_br, BTA_SEC_AUTHENTICATE);
+    AVCT_Register(mtu, mtu_br);
   }
   bta_ar_cb.avct_registered |= BTA_AR_AV_MASK;
 }
