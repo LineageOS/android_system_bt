@@ -126,24 +126,6 @@ tHID_STATUS HID_DevDeregister(void) {
   return (HID_SUCCESS);
 }
 
-tHID_STATUS HID_DevSetSecurityLevel(uint8_t sec_lvl) {
-  HIDD_TRACE_API("%s", __func__);
-
-  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_HIDD_SEC_CTRL, sec_lvl,
-                                  HID_PSM_CONTROL)) {
-    HIDD_TRACE_ERROR("Security Registration 1 failed");
-    return (HID_ERR_NO_RESOURCES);
-  }
-
-  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_HIDD_INTR, BTM_SEC_NONE,
-                                  HID_PSM_INTERRUPT)) {
-    HIDD_TRACE_ERROR("Security Registration 5 failed");
-    return (HID_ERR_NO_RESOURCES);
-  }
-
-  return (HID_SUCCESS);
-}
-
 /*******************************************************************************
  *
  * Function         HID_DevAddRecord
