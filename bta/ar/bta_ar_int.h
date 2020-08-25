@@ -33,7 +33,6 @@
 /* data associated with BTA_AR */
 typedef struct {
   tAVDT_CTRL_CBACK* p_av_conn_cback;  /* av connection callback function */
-  tAVDT_CTRL_CBACK* p_avk_conn_cback; /* avk connection callback function */
   uint8_t avdt_registered;
   uint8_t avct_registered;
   uint32_t sdp_tg_handle;

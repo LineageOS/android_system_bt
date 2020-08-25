@@ -575,9 +575,7 @@ bool bta_jv_check_psm(uint16_t psm) {
 
         case AVCT_PSM: /* 0x17 */
         case AVDT_PSM: /* 0x19 */
-          if ((!bta_sys_is_register(BTA_ID_AV)) &&
-              (!bta_sys_is_register(BTA_ID_AVK)))
-            ret = true;
+          if (!bta_sys_is_register(BTA_ID_AV)) ret = true;
           break;
 
         default:
