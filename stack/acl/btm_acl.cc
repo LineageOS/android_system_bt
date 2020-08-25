@@ -2865,3 +2865,30 @@ void acl_disconnect(const RawAddress& bd_addr, tBT_TRANSPORT transport,
 void acl_send_data_packet(BT_HDR* p_buf, uint16_t flags) {
   bte_main_hci_send(p_buf, flags);
 }
+
+void acl_write_automatic_flush_timeout(const RawAddress& bd_addr,
+                                       uint16_t flush_timeout_in_ticks) {
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
+  if (p_acl == nullptr) {
+    LOG_ERROR("%s Unknown peer ACL", __func__);
+    return;
+  }
+  if (p_acl->flush_timeout_in_ticks == flush_timeout_in_ticks) {
+    LOG_INFO(
+        "%s Ignoring since cached value is same as requested flush_timeout:%hd",
+        __func__, flush_timeout_in_ticks);
+    return;
+  }
+  flush_timeout_in_ticks &= HCI_MAX_AUTOMATIC_FLUSH_TIMEOUT;
+  p_acl->flush_timeout_in_ticks = flush_timeout_in_ticks;
+  btsnd_hcic_write_auto_flush_tout(p_acl->hci_handle, flush_timeout_in_ticks);
+}
+
+uint16_t acl_read_cached_automatic_flush_timeout(const RawAddress& bd_addr) {
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
+  if (p_acl == nullptr) {
+    LOG_ERROR("%s Unknown peer ACL", __func__);
+    return HCI_DEFAULT_AUTOMATIC_FLUSH_TIMEOUT;
+  }
+  return p_acl->flush_timeout_in_ticks;
+}
