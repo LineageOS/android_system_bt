@@ -1039,7 +1039,7 @@ tBTM_LINK_KEY_TYPE BTM_SecGetDeviceLinkKeyType(const RawAddress& bd_addr) {
  ******************************************************************************/
 tBTM_STATUS BTM_SetEncryption(const RawAddress& bd_addr,
                               tBT_TRANSPORT transport,
-                              tBTM_SEC_CBACK* p_callback, void* p_ref_data,
+                              tBTM_SEC_CALLBACK* p_callback, void* p_ref_data,
                               tBTM_BLE_SEC_ACT sec_act) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::BTM_SetEncryption(bd_addr, transport, p_callback,
@@ -3778,8 +3778,7 @@ void btm_sec_connected(const RawAddress& bda, uint16_t handle, uint8_t status,
   btm_set_packet_types_from_address(bda, BT_TRANSPORT_BR_EDR,
                                     acl_get_supported_packet_types());
 
-  btm_acl_created(bda, p_dev_rec->dev_class, p_dev_rec->sec_bd_name, handle,
-                  HCI_ROLE_SLAVE, BT_TRANSPORT_BR_EDR);
+  btm_acl_created(bda, handle, HCI_ROLE_SLAVE, BT_TRANSPORT_BR_EDR);
 
   /* Initialize security flags.  We need to do that because some            */
   /* authorization complete could have come after the connection is dropped */
