@@ -32,26 +32,6 @@ tBTA_AR_CB bta_ar_cb;
 
 /*******************************************************************************
  *
- * Function         bta_ar_id
- *
- * Description      This function maps sys_id to ar id mask.
- *
- * Returns          void
- *
- ******************************************************************************/
-static uint8_t bta_ar_id(tBTA_SYS_ID sys_id) {
-  uint8_t mask = 0;
-  if (sys_id == BTA_ID_AV) {
-    mask = BTA_AR_AV_MASK;
-  } else if (sys_id == BTA_ID_AVK) {
-    mask = BTA_AR_AVK_MASK;
-  }
-
-  return mask;
-}
-
-/*******************************************************************************
- *
  * Function         bta_ar_init
  *
  * Description      This function is called to register to AVDTP.
@@ -79,8 +59,6 @@ static void bta_ar_avdt_cback(uint8_t handle, const RawAddress& bd_addr,
   /* route the AVDT registration callback to av or avk */
   if (bta_ar_cb.p_av_conn_cback)
     (*bta_ar_cb.p_av_conn_cback)(handle, bd_addr, event, p_data, scb_index);
-  if (bta_ar_cb.p_avk_conn_cback)
-    (*bta_ar_cb.p_avk_conn_cback)(handle, bd_addr, event, p_data, scb_index);
 }
 
 /*******************************************************************************
@@ -99,9 +77,6 @@ void bta_ar_reg_avdt(AvdtpRcb* p_reg, tAVDT_CTRL_CBACK* p_cback,
   if (sys_id == BTA_ID_AV) {
     bta_ar_cb.p_av_conn_cback = p_cback;
     mask = BTA_AR_AV_MASK;
-  } else if (sys_id == BTA_ID_AVK) {
-    bta_ar_cb.p_avk_conn_cback = p_cback;
-    mask = BTA_AR_AVK_MASK;
   } else {
     APPL_TRACE_ERROR("%s: the registration is from wrong sys_id:%d", __func__,
                      sys_id);
@@ -133,9 +108,6 @@ void bta_ar_dereg_avdt(tBTA_SYS_ID sys_id) {
   if (sys_id == BTA_ID_AV) {
     bta_ar_cb.p_av_conn_cback = NULL;
     mask = BTA_AR_AV_MASK;
-  } else if (sys_id == BTA_ID_AVK) {
-    bta_ar_cb.p_avk_conn_cback = NULL;
-    mask = BTA_AR_AVK_MASK;
   }
   bta_ar_cb.avdt_registered &= ~mask;
 
@@ -156,18 +128,6 @@ void bta_ar_dereg_avdt(tBTA_SYS_ID sys_id) {
  ******************************************************************************/
 void bta_ar_avdt_conn(tBTA_SYS_ID sys_id, const RawAddress& bd_addr,
                       uint8_t scb_index) {
-  uint8_t event = BTA_AR_AVDT_CONN_EVT;
-  tAVDT_CTRL data;
-
-  if (sys_id == BTA_ID_AV) {
-    if (bta_ar_cb.p_avk_conn_cback) {
-      (*bta_ar_cb.p_avk_conn_cback)(0, bd_addr, event, &data, scb_index);
-    }
-  } else if (sys_id == BTA_ID_AVK) {
-    if (bta_ar_cb.p_av_conn_cback) {
-      (*bta_ar_cb.p_av_conn_cback)(0, bd_addr, event, &data, scb_index);
-    }
-  }
 }
 
 /*******************************************************************************
@@ -179,15 +139,11 @@ void bta_ar_avdt_conn(tBTA_SYS_ID sys_id, const RawAddress& bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-void bta_ar_reg_avct(uint16_t mtu, uint16_t mtu_br, tBTA_SYS_ID sys_id) {
-  uint8_t mask = bta_ar_id(sys_id);
-
-  if (mask) {
-    if (bta_ar_cb.avct_registered == 0) {
-      AVCT_Register(mtu, mtu_br, BTA_SEC_AUTHENTICATE);
-    }
-    bta_ar_cb.avct_registered |= mask;
+void bta_ar_reg_avct(uint16_t mtu, uint16_t mtu_br) {
+  if (bta_ar_cb.avct_registered == 0) {
+    AVCT_Register(mtu, mtu_br, BTA_SEC_AUTHENTICATE);
   }
+  bta_ar_cb.avct_registered |= BTA_AR_AV_MASK;
 }
 
 /*******************************************************************************
@@ -199,10 +155,8 @@ void bta_ar_reg_avct(uint16_t mtu, uint16_t mtu_br, tBTA_SYS_ID sys_id) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_ar_dereg_avct(tBTA_SYS_ID sys_id) {
-  uint8_t mask = bta_ar_id(sys_id);
-
-  bta_ar_cb.avct_registered &= ~mask;
+void bta_ar_dereg_avct() {
+  bta_ar_cb.avct_registered &= ~BTA_AR_AV_MASK;
 
   if (bta_ar_cb.avct_registered == 0) AVCT_Deregister();
 }
@@ -218,12 +172,11 @@ void bta_ar_dereg_avct(tBTA_SYS_ID sys_id) {
  *****************************************************************************/
 void bta_ar_reg_avrc(uint16_t service_uuid, const char* service_name,
                      const char* provider_name, uint16_t categories,
-                     tBTA_SYS_ID sys_id, bool browse_supported,
-                     uint16_t profile_version) {
-  uint8_t mask = bta_ar_id(sys_id);
+                     bool browse_supported, uint16_t profile_version) {
+  uint8_t mask = BTA_AR_AV_MASK;
   uint8_t temp[8], *p;
 
-  if (!mask || !categories) return;
+  if (!categories) return;
 
   if (service_uuid == UUID_SERVCLASS_AV_REM_CTRL_TARGET) {
     if (bta_ar_cb.sdp_tg_handle == 0) {
@@ -267,12 +220,10 @@ void bta_ar_reg_avrc(uint16_t service_uuid, const char* service_name,
  * Returns          void
  *
  *****************************************************************************/
-void bta_ar_dereg_avrc(uint16_t service_uuid, tBTA_SYS_ID sys_id) {
-  uint8_t mask = bta_ar_id(sys_id);
+void bta_ar_dereg_avrc(uint16_t service_uuid) {
+  uint8_t mask = BTA_AR_AV_MASK;
   uint16_t categories = 0;
   uint8_t temp[8], *p;
-
-  if (!mask) return;
 
   if (service_uuid == UUID_SERVCLASS_AV_REM_CTRL_TARGET) {
     if (bta_ar_cb.sdp_tg_handle && mask == bta_ar_cb.tg_registered) {
