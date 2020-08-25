@@ -2180,9 +2180,6 @@ static tBTA_DM_PEER_DEVICE* allocate_device_for(const RawAddress& bd_addr,
 
 static void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                           uint16_t handle) {
-  tBTA_DM_SEC conn;
-  memset(&conn, 0, sizeof(tBTA_DM_SEC));
-
   auto device = allocate_device_for(bd_addr, transport, handle);
   if (device == nullptr) {
     APPL_TRACE_ERROR("%s max active connection reached, no resources",
@@ -2191,24 +2188,21 @@ static void bta_dm_acl_up(const RawAddress& bd_addr, tBT_TRANSPORT transport,
   }
   device->conn_state = BTA_DM_CONNECTED;
   device->pref_role = BTA_ANY_ROLE;
-  conn.link_up.bd_addr = bd_addr;
   device->info = BTA_DM_DI_NONE;
   device->transport = transport;
 
-  const controller_t* controller = controller_get_interface();
-  uint8_t* p;
-  if (controller->supports_sniff_subrating() &&
-      ((NULL != (p = BTM_ReadRemoteFeatures(bd_addr))) &&
-       HCI_SNIFF_SUB_RATE_SUPPORTED(p))) {
-    /* both local and remote devices support SSR */
+  if (controller_get_interface()->supports_sniff_subrating() &&
+      acl_peer_supports_sniff_subrating(bd_addr)) {
     device->info = BTA_DM_DI_USE_SSR;
   }
-  APPL_TRACE_WARNING("%s info: 0x%x", __func__, device->info);
 
   if (bta_dm_cb.p_sec_cback) {
+    tBTA_DM_SEC conn;
+    memset(&conn, 0, sizeof(tBTA_DM_SEC));
+    conn.link_up.bd_addr = bd_addr;
+
     bta_dm_cb.p_sec_cback(BTA_DM_LINK_UP_EVT, &conn);
   }
-
   bta_dm_adjust_roles(true);
 }
 
@@ -2222,9 +2216,6 @@ static void bta_dm_acl_down(const RawAddress& bd_addr,
                             tBT_TRANSPORT transport) {
   bool issue_unpair_cb = false;
   bool remove_device = false;
-
-  tBTA_DM_SEC conn;
-  memset(&conn, 0, sizeof(tBTA_DM_SEC));
 
   for (uint8_t i = 0; i < bta_dm_cb.device_list.count; i++) {
     auto device = &bta_dm_cb.device_list.peer_device[i];
@@ -2291,8 +2282,11 @@ static void bta_dm_acl_down(const RawAddress& bd_addr,
     bta_dm_process_remove_device_no_callback(bd_addr);
   }
 
-  conn.link_down.bd_addr = bd_addr;
   if (bta_dm_cb.p_sec_cback) {
+    tBTA_DM_SEC conn;
+    memset(&conn, 0, sizeof(tBTA_DM_SEC));
+    conn.link_down.bd_addr = bd_addr;
+
     bta_dm_cb.p_sec_cback(BTA_DM_LINK_DOWN_EVT, &conn);
     if (issue_unpair_cb) bta_dm_cb.p_sec_cback(BTA_DM_DEV_UNPAIRED_EVT, &conn);
   }
