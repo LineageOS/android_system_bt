@@ -412,6 +412,8 @@ class GdAndroidDevice(GdDeviceBase):
         self.push_or_die(os.path.join(get_gd_root(), "target", "libbluetooth_gd.so"), "system/lib64")
         self.push_or_die(os.path.join(get_gd_root(), "target", "libgrpc++_unsecure.so"), "system/lib64")
         self.adb.shell("rm /data/misc/bluetooth/logs/btsnoop_hci.log")
+        self.adb.shell("rm /data/misc/bluedroid/bt_config.conf")
+        self.adb.shell("rm /data/misc/bluedroid/bt_config.bak")
         self.ensure_no_output(self.adb.shell("svc bluetooth disable"))
 
         # Start logcat logging
@@ -457,6 +459,10 @@ class GdAndroidDevice(GdDeviceBase):
         self.cleanup_port_forwarding()
         self.adb.pull("/data/misc/bluetooth/logs/btsnoop_hci.log %s" % os.path.join(self.log_path_base,
                                                                                     "%s_btsnoop_hci.log" % self.label))
+        self.adb.pull("/data/misc/bluedroid/bt_config.conf %s" % os.path.join(self.log_path_base,
+                                                                              "%s_bt_config.conf" % self.label))
+        self.adb.pull(
+            "/data/misc/bluedroid/bt_config.bak %s" % os.path.join(self.log_path_base, "%s_bt_config.bak" % self.label))
 
     def cleanup_port_forwarding(self):
         self.adb.remove_tcp_forward(self.grpc_port)

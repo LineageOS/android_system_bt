@@ -22,7 +22,8 @@
                         "/system/bin/bluetooth_stack_with_facade",
                         "--grpc-port=$(grpc_port)",
                         "--root-server-port=$(grpc_root_server_port)",
-                        "--btsnoop=data/misc/bluetooth/logs/btsnoop_hci.log",
+                        "--btsnoop=/data/misc/bluetooth/logs/btsnoop_hci.log",
+                        "--btconfig=/data/misc/bluedroid/bt_config.conf",
                         "--signal-port=$(signal_port)"
                     ]
                 },
@@ -42,7 +43,8 @@
                         "/system/bin/bluetooth_stack_with_facade",
                         "--grpc-port=$(grpc_port)",
                         "--root-server-port=$(grpc_root_server_port)",
-                        "--btsnoop=data/misc/bluetooth/logs/btsnoop_hci.log",
+                        "--btsnoop=/data/misc/bluetooth/logs/btsnoop_hci.log",
+                        "--btconfig=/data/misc/bluedroid/bt_config.conf",
                         "--signal-port=$(signal_port)"
                     ]
                 }
