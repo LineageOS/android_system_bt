@@ -1,0 +1,15 @@
+cc_fuzz {
+    name: "g722_enc_fuzzer",
+    srcs: [
+        "g722_enc_fuzzer.cc",
+    ],
+    host_supported: false,
+    static_libs: [
+        "libg722codec",
+    ],
+    fuzz_config: {
+        cc: [
+            "hsz@google.com",
+        ],
+    },
+}
