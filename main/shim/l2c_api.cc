@@ -379,15 +379,6 @@ bool bluetooth::shim::L2CA_ConnectFixedChnl(uint16_t cid,
   return bluetooth::shim::L2CA_ConnectFixedChnl(cid, rem_bda);
 }
 
-static std::unique_ptr<bluetooth::packet::RawBuilder> MakeUniquePacket(
-    const uint8_t* data, size_t len) {
-  bluetooth::packet::RawBuilder builder;
-  std::vector<uint8_t> bytes(data, data + len);
-  auto payload = std::make_unique<bluetooth::packet::RawBuilder>();
-  payload->AddOctets(bytes);
-  return payload;
-}
-
 uint16_t bluetooth::shim::L2CA_SendFixedChnlData(uint16_t cid,
                                                  const RawAddress& rem_bda,
                                                  BT_HDR* p_buf) {
