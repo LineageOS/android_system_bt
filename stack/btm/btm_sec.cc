@@ -1389,44 +1389,6 @@ bool BTM_PeerSupportsSecureConnections(const RawAddress& bd_addr) {
   return (p_dev_rec->remote_supports_secure_connections);
 }
 
-/*******************************************************************************
- *
- * Function         BTM_SetOutService
- *
- * Description      This function is called to set the service for
- *                  outgoing connections.
- *
- *                  If the profile/application calls BTM_SetSecurityLevel
- *                  before initiating a connection, this function does not
- *                  need to be called.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_SetOutService(const RawAddress& bd_addr, uint8_t service_id,
-                       uint32_t mx_chan_id) {
-  tBTM_SEC_DEV_REC* p_dev_rec;
-  tBTM_SEC_SERV_REC* p_serv_rec = &btm_cb.sec_serv_rec[0];
-
-  btm_cb.p_out_serv = p_serv_rec;
-  p_dev_rec = btm_find_dev(bd_addr);
-
-  for (int i = 0; i < BTM_SEC_MAX_SERVICE_RECORDS; i++, p_serv_rec++) {
-    if ((p_serv_rec->security_flags & BTM_SEC_IN_USE) &&
-        (p_serv_rec->service_id == service_id) &&
-        (p_serv_rec->orig_mx_chan_id == mx_chan_id)) {
-      BTM_TRACE_API(
-          "BTM_SetOutService p_out_serv id %d, psm 0x%04x, proto_id %d, "
-          "chan_id %d",
-          p_serv_rec->service_id, p_serv_rec->psm, p_serv_rec->mx_proto_id,
-          p_serv_rec->orig_mx_chan_id);
-      btm_cb.p_out_serv = p_serv_rec;
-      if (p_dev_rec) p_dev_rec->p_cur_service = p_serv_rec;
-      break;
-    }
-  }
-}
-
 /************************************************************************
  *              I N T E R N A L     F U N C T I O N S
  ************************************************************************/
