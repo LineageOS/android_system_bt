@@ -441,51 +441,40 @@ void btm_acl_update_conn_addr(uint16_t conn_handle, const RawAddress& address) {
  *
  ******************************************************************************/
 void btm_acl_removed(const RawAddress& bda, tBT_TRANSPORT transport) {
-  tBTM_SEC_DEV_REC* p_dev_rec = NULL;
-  BTM_TRACE_DEBUG("btm_acl_removed");
-  tACL_CONN* p = internal_.btm_bda_to_acl(bda, transport);
-  if (p != (tACL_CONN*)NULL) {
-    p->in_use = false;
-
-    /* Only notify if link up has had a chance to be issued */
-    if (p->link_up_issued) {
-      p->link_up_issued = false;
-      BTA_dm_acl_down(bda, transport);
-    }
-
-    BTM_TRACE_DEBUG(
-        "acl hci_handle=%d transport=%d connectable_mode=0x%0x link_role=%d",
-        p->hci_handle, p->transport, btm_cb.ble_ctr_cb.inq_var.connectable_mode,
-        p->link_role);
-
-    p_dev_rec = btm_find_dev(bda);
-    if (p_dev_rec) {
-      BTM_TRACE_DEBUG("before update p_dev_rec->sec_flags=0x%x",
-                      p_dev_rec->sec_flags);
-      if (p->transport == BT_TRANSPORT_LE) {
-        BTM_TRACE_DEBUG("LE link down");
-        p_dev_rec->sec_flags &= ~(BTM_SEC_LE_ENCRYPTED | BTM_SEC_ROLE_SWITCHED);
-        if ((p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_KNOWN) == 0) {
-          BTM_TRACE_DEBUG("Not Bonded");
-          p_dev_rec->sec_flags &=
-              ~(BTM_SEC_LE_LINK_KEY_AUTHED | BTM_SEC_LE_AUTHENTICATED);
-        } else {
-          BTM_TRACE_DEBUG("Bonded");
-        }
-      } else {
-        BTM_TRACE_DEBUG("Bletooth link down");
-        p_dev_rec->sec_flags &= ~(BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED |
-                                  BTM_SEC_ROLE_SWITCHED);
-      }
-      BTM_TRACE_DEBUG("after update p_dev_rec->sec_flags=0x%x",
-                      p_dev_rec->sec_flags);
-    } else {
-      BTM_TRACE_ERROR("Device not found");
-    }
-
-    /* Clear the ACL connection data */
-    memset(p, 0, sizeof(tACL_CONN));
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bda, transport);
+  if (p_acl == nullptr) {
+    LOG_WARN("%s Tried to remove acl that does not exist", __func__);
+    return;
   }
+  p_acl->in_use = false;
+
+  /* Only notify if link up has had a chance to be issued */
+  if (p_acl->link_up_issued) {
+    p_acl->link_up_issued = false;
+    BTA_dm_acl_down(bda, transport);
+  }
+
+  LOG_DEBUG(
+      "%s acl hci_handle=%d transport=%d connectable_mode=0x%0x link_role=%d",
+      __func__, p_acl->hci_handle, p_acl->transport,
+      btm_cb.ble_ctr_cb.inq_var.connectable_mode, p_acl->link_role);
+
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bda);
+  if (p_dev_rec == nullptr) {
+    LOG_WARN("%s Device security record not found", __func__);
+  } else {
+    if (p_acl->transport == BT_TRANSPORT_LE) {
+      p_dev_rec->sec_flags &= ~(BTM_SEC_LE_ENCRYPTED | BTM_SEC_ROLE_SWITCHED);
+      if ((p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_KNOWN) == 0) {
+        p_dev_rec->sec_flags &=
+            ~(BTM_SEC_LE_LINK_KEY_AUTHED | BTM_SEC_LE_AUTHENTICATED);
+      }
+    } else {
+      p_dev_rec->sec_flags &=
+          ~(BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED | BTM_SEC_ROLE_SWITCHED);
+    }
+  }
+  memset(p_acl, 0, sizeof(tACL_CONN));
 }
 
 /*******************************************************************************
