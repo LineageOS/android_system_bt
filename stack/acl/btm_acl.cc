@@ -1173,8 +1173,7 @@ void StackAclBtmAcl::btm_establish_continue(tACL_CONN* p_acl_cb) {
   }
   p_acl_cb->link_up_issued = true;
 
-  BTA_dm_acl_up(p_acl_cb->remote_addr, p_acl_cb->transport,
-                p_acl_cb->hci_handle);
+  BTA_dm_acl_up(p_acl_cb->remote_addr, p_acl_cb->transport);
 }
 
 void btm_establish_continue_from_address(const RawAddress& bda,
@@ -2491,6 +2490,14 @@ bool acl_peer_supports_ble_connection_parameters_request(
     return false;
   }
   return HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl->peer_le_features);
+}
+
+bool acl_peer_supports_sniff_subrating(const RawAddress& remote_bda) {
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(remote_bda, BT_TRANSPORT_LE);
+  if (p_acl == nullptr) {
+    return false;
+  }
+  return HCI_SNIFF_SUB_RATE_SUPPORTED(p_acl->peer_le_features);
 }
 
 /*******************************************************************************
