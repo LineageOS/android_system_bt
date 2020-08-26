@@ -826,8 +826,6 @@ tHID_STATUS hidd_conn_initiate(void) {
 
   p_dev->conn.conn_flags = HID_CONN_FLAGS_IS_ORIG;
 
-  BTM_SetOutService(p_dev->addr, BTM_SEC_SERVICE_HIDD_SEC_CTRL, HIDD_SEC_CHN);
-
   /* Check if L2CAP started the connection process */
   if ((p_dev->conn.ctrl_cid =
            L2CA_ConnectReq2(HID_PSM_CONTROL, p_dev->addr,
