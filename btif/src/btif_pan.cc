@@ -71,16 +71,6 @@
 #define FORWARD_FAILURE (-1)
 #define FORWARD_CONGEST (-2)
 
-#if (PAN_NAP_DISABLED == TRUE && PANU_DISABLED == TRUE)
-#define BTPAN_LOCAL_ROLE BTPAN_ROLE_NONE
-#elif PAN_NAP_DISABLED == TRUE
-#define BTPAN_LOCAL_ROLE BTPAN_ROLE_PANU
-#elif PANU_DISABLED == TRUE
-#define BTPAN_LOCAL_ROLE BTPAN_ROLE_PANNAP
-#else
-#define BTPAN_LOCAL_ROLE (BTPAN_ROLE_PANU | BTPAN_ROLE_PANNAP)
-#endif
-
 #define asrt(s)                                                          \
   do {                                                                   \
     if (!(s))                                                            \
@@ -110,7 +100,7 @@ static void bta_pan_callback(tBTA_PAN_EVT event, tBTA_PAN* p_data);
 static void btu_exec_tap_fd_read(const int fd);
 
 static btpan_interface_t pan_if = {
-    sizeof(pan_if), btpan_jni_init,   btpan_enable,     btpan_get_local_role,
+    sizeof(pan_if), btpan_jni_init,   nullptr,          btpan_get_local_role,
     btpan_connect,  btpan_disconnect, btpan_jni_cleanup};
 
 const btpan_interface_t* btif_pan_get_interface() { return &pan_if; }
@@ -138,7 +128,15 @@ void btif_pan_init() {
       btpan_cleanup_conn(&btpan_cb.conns[i]);
     BTA_PanEnable(bta_pan_callback);
     btpan_cb.enabled = 1;
-    btpan_enable(BTPAN_LOCAL_ROLE);
+
+    int role = BTPAN_ROLE_NONE;
+#if PAN_NAP_DISABLED == FALSE
+    role |= BTPAN_ROLE_PANNAP;
+#endif
+#if PANU_DISABLED == FALSE
+    role |= BTPAN_ROLE_PANU;
+#endif
+    btpan_enable(role);
   }
 }
 
