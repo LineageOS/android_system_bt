@@ -304,7 +304,6 @@ tBTM_STATUS btm_read_power_mode_state(const RawAddress& remote_bda,
  ******************************************************************************/
 tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat,
                              uint16_t min_rmt_to, uint16_t min_loc_to) {
-#if (BTM_SSR_INCLUDED == TRUE)
   int acl_ind;
   tBTM_PM_MCB* p_cb;
 
@@ -323,9 +322,6 @@ tBTM_STATUS BTM_SetSsrParams(const RawAddress& remote_bda, uint16_t max_lat,
   p_cb->min_rmt_to = min_rmt_to;
   p_cb->min_loc_to = min_loc_to;
   return BTM_CMD_STORED;
-#else
-  return BTM_ILLEGAL_ACTION;
-#endif  // BTM_SSR_INCLUDED
 }
 
 /*******************************************************************************
@@ -527,14 +523,12 @@ tBTM_STATUS StackAclBtmPm::btm_pm_snd_md_req(uint8_t pm_id, int link_ind,
 
   if (p_cb->chg_ind) /* needs to wake first */
     md_res.mode = BTM_PM_MD_ACTIVE;
-#if (BTM_SSR_INCLUDED == TRUE)
   else if (BTM_PM_MD_SNIFF == md_res.mode && p_cb->max_lat) {
     btsnd_hcic_sniff_sub_rate(btm_cb.acl_cb_.acl_db[link_ind].hci_handle,
                               p_cb->max_lat, p_cb->min_rmt_to,
                               p_cb->min_loc_to);
     p_cb->max_lat = 0;
   }
-#endif  // BTM_SSR_INCLUDED
   /* Default is failure */
   btm_cb.acl_cb_.pm_pend_link = MAX_L2CAP_LINKS;
 
@@ -745,7 +739,6 @@ void btm_pm_proc_mode_change(uint8_t hci_status, uint16_t hci_handle,
  * Returns          none.
  *
  ******************************************************************************/
-#if (BTM_SSR_INCLUDED == TRUE)
 void btm_pm_proc_ssr_evt(uint8_t* p, UNUSED_ATTR uint16_t evt_len) {
   uint8_t status;
   uint16_t handle;
@@ -784,7 +777,6 @@ void btm_pm_proc_ssr_evt(uint8_t* p, UNUSED_ATTR uint16_t evt_len) {
     }
   }
 }
-#endif  // BTM_SSR_INCLUDED
 
 /*******************************************************************************
  *
