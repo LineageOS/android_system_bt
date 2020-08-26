@@ -125,34 +125,6 @@ uint32_t pan_register_with_sdp(uint16_t uuid, const char* p_name,
     UINT32_TO_BE_STREAM(p, NetAccessRate);
     SDP_AddAttribute(sdp_handle, ATTR_ID_MAX_NET_ACCESS_RATE, UINT_DESC_TYPE, 4,
                      array);
-
-    /* Register with Security Manager for the specific security level */
-    if (!BTM_SimpleSetSecurityLevel(
-            BTM_SEC_SERVICE_BNEP_NAP,
-            BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT |
-                BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT,
-            BT_PSM_BNEP)) {
-      PAN_TRACE_ERROR("PAN Security Registration failed for PANU");
-    }
-  }
-#endif
-#if (PAN_SUPPORTS_ROLE_GN == TRUE)
-  if (uuid == UUID_SERVCLASS_GN) {
-    if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_BNEP_GN, BTM_SEC_NONE,
-                                    BT_PSM_BNEP)) {
-      PAN_TRACE_ERROR("PAN Security Registration failed for GN");
-    }
-  }
-#endif
-#if (PAN_SUPPORTS_ROLE_PANU == TRUE)
-  if (uuid == UUID_SERVCLASS_PANU) {
-    if (!BTM_SimpleSetSecurityLevel(
-            BTM_SEC_SERVICE_BNEP_PANU,
-            BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT |
-                BTM_SEC_OUT_AUTHENTICATE | BTM_SEC_OUT_ENCRYPT,
-            BT_PSM_BNEP)) {
-      PAN_TRACE_ERROR("PAN Security Registration failed for PANU");
-    }
   }
 #endif
 
