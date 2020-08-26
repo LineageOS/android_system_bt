@@ -64,8 +64,9 @@ void AVCT_Register(uint16_t mtu, UNUSED_ATTR uint16_t mtu_br) {
   avct_cb.mtu = mtu;
 
   /* register PSM with L2CAP */
-  L2CA_Register(AVCT_PSM, (tL2CAP_APPL_INFO*)&avct_l2c_appl,
-                true /* enable_snoop */, nullptr, avct_cb.mtu);
+  L2CA_Register2(AVCT_PSM, (tL2CAP_APPL_INFO*)&avct_l2c_appl,
+                 true /* enable_snoop */, nullptr, avct_cb.mtu,
+                 BTA_SEC_AUTHENTICATE);
 
   BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_AVCTP, BTA_SEC_AUTHENTICATE,
                              AVCT_PSM);
@@ -82,8 +83,9 @@ void AVCT_Register(uint16_t mtu, UNUSED_ATTR uint16_t mtu_br) {
   if (mtu_br < AVCT_MIN_BROWSE_MTU) mtu_br = AVCT_MIN_BROWSE_MTU;
   avct_cb.mtu_br = mtu_br;
 
-  L2CA_Register(AVCT_BR_PSM, (tL2CAP_APPL_INFO*)&avct_l2c_br_appl,
-                true /*enable_snoop*/, &ertm_info, avct_cb.mtu_br);
+  L2CA_Register2(AVCT_BR_PSM, (tL2CAP_APPL_INFO*)&avct_l2c_br_appl,
+                 true /*enable_snoop*/, &ertm_info, avct_cb.mtu_br,
+                 BTA_SEC_AUTHENTICATE);
 
   /* AVCTP browsing channel uses the same security service as AVCTP control
    * channel */
