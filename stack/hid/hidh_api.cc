@@ -462,22 +462,3 @@ tHID_STATUS HID_HostCloseDev(uint8_t dev_handle) {
   hh_cb.devices[dev_handle].conn_tries = HID_HOST_MAX_CONN_RETRY + 1;
   return hidh_conn_disconnect(dev_handle);
 }
-
-tHID_STATUS HID_HostSetSecurityLevel() {
-  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_HIDH_SEC_CTRL,
-                                  BTM_SEC_IN_AUTHENTICATE | BTM_SEC_IN_ENCRYPT |
-                                      BTM_SEC_OUT_AUTHENTICATE |
-                                      BTM_SEC_OUT_ENCRYPT,
-                                  HID_PSM_CONTROL)) {
-    HIDH_TRACE_ERROR("Security Registration 1 failed");
-    return (HID_ERR_NO_RESOURCES);
-  }
-
-  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_HIDH_INTR, BTM_SEC_NONE,
-                                  HID_PSM_INTERRUPT)) {
-    HIDH_TRACE_ERROR("Security Registration 5 failed");
-    return (HID_ERR_NO_RESOURCES);
-  }
-
-  return (HID_SUCCESS);
-}
