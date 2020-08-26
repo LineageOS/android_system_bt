@@ -35,6 +35,10 @@ class InitFlags final {
     return gd_core_enabled;
   }
 
+  static bool GattRobustCachingEnabled() {
+    return gatt_robust_caching_enabled;
+  }
+
   static void SetAllForTesting();
 
  private:
@@ -42,6 +46,7 @@ class InitFlags final {
   static bool gd_hci_enabled;
   static bool gd_controller_enabled;
   static bool gd_core_enabled;
+  static bool gatt_robust_caching_enabled;
 };
 
 }  // namespace common

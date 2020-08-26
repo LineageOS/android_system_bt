@@ -39,8 +39,32 @@ TEST(InitFlagsTest, test_load_garbage) {
   ASSERT_EQ(false, InitFlags::GdCoreEnabled());
 }
 
-TEST(InitFlagsTest, test_load_good_case) {
+TEST(InitFlagsTest, test_load_core) {
   const char* input[] = {"INIT_gd_core", nullptr};
   InitFlags::Load(input);
   ASSERT_EQ(true, InitFlags::GdCoreEnabled());
+  ASSERT_EQ(true, InitFlags::GdControllerEnabled());
+  ASSERT_EQ(true, InitFlags::GdHciEnabled());
+}
+
+TEST(InitFlagsTest, test_load_controller) {
+  const char* input[] = {"INIT_gd_controller", nullptr};
+  InitFlags::Load(input);
+  ASSERT_EQ(false, InitFlags::GdCoreEnabled());
+  ASSERT_EQ(true, InitFlags::GdControllerEnabled());
+  ASSERT_EQ(true, InitFlags::GdHciEnabled());
+}
+
+TEST(InitFlagsTest, test_load_hci) {
+  const char* input[] = {"INIT_gd_hci", nullptr};
+  InitFlags::Load(input);
+  ASSERT_EQ(false, InitFlags::GdCoreEnabled());
+  ASSERT_EQ(false, InitFlags::GdControllerEnabled());
+  ASSERT_EQ(true, InitFlags::GdHciEnabled());
+}
+
+TEST(InitFlagsTest, test_load_gatt_robust_caching) {
+  const char* input[] = {"INIT_gatt_robust_caching", nullptr};
+  InitFlags::Load(input);
+  ASSERT_EQ(true, InitFlags::GattRobustCachingEnabled());
 }
