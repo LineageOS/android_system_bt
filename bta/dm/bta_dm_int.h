@@ -188,10 +188,13 @@ typedef struct {
   bool in_use;
   tBTA_DM_DEV_INFO info;
   tBTA_DM_ENCRYPT_CBACK* p_encrypt_cback;
+#if (BTM_SSR_INCLUDED == TRUE)
   tBTM_PM_STATUS prev_low; /* previous low power mode used */
+#endif
   tBTA_DM_PM_ACTION pm_mode_attempted;
   tBTA_DM_PM_ACTION pm_mode_failed;
   bool remove_dev_pending;
+  uint16_t conn_handle;
   tBT_TRANSPORT transport;
 } tBTA_DM_PEER_DEVICE;
 
@@ -373,7 +376,9 @@ typedef struct {
 
 typedef struct {
   uint8_t allow_mask; /* mask of sniff/hold/park modes to allow */
+#if (BTM_SSR_INCLUDED == TRUE)
   uint8_t ssr; /* set SSR on conn open/unpark */
+#endif
   tBTA_DM_PM_ACTN actn_tbl[BTA_DM_PM_NUM_EVTS][2];
 
 } tBTA_DM_PM_SPEC;
@@ -395,7 +400,9 @@ extern const uint16_t bta_service_id_to_uuid_lkup_tbl[];
 extern const tBTA_DM_PM_CFG* p_bta_dm_pm_cfg;
 extern const tBTA_DM_PM_SPEC* p_bta_dm_pm_spec;
 extern const tBTM_PM_PWR_MD* p_bta_dm_pm_md;
+#if (BTM_SSR_INCLUDED == TRUE)
 extern tBTA_DM_SSR_SPEC* p_bta_dm_ssr_spec;
+#endif
 
 /* update dynamic BRCM Aware EIR data */
 extern const tBTA_DM_EIR_CONF bta_dm_eir_cfg;

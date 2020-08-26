@@ -51,11 +51,14 @@ static void bta_dm_pm_btm_cback(const RawAddress& bd_addr,
 static bool bta_dm_pm_park(const RawAddress& peer_addr);
 static void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index);
 static bool bta_dm_pm_is_sco_active();
+#if (BTM_SSR_INCLUDED == TRUE)
 static int bta_dm_get_sco_index();
+#endif
 static void bta_dm_pm_hid_check(bool bScoActive);
 static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER* p_timer,
                                           uint8_t timer_idx);
 
+#if (BTM_SSR_INCLUDED == TRUE)
 #if (BTA_HH_INCLUDED == TRUE)
 #include "../hh/bta_hh_int.h"
 /* BTA_DM_PM_SSR1 will be dedicated for HH SSR setting entry, no other profile
@@ -63,6 +66,7 @@ static void bta_dm_pm_stop_timer_by_index(tBTA_PM_TIMER* p_timer,
 #define BTA_DM_PM_SSR_HH BTA_DM_PM_SSR1
 #endif
 static void bta_dm_pm_ssr(const RawAddress& peer_addr, int ssr);
+#endif
 
 tBTA_DM_CONNECTED_SRVCS bta_dm_conn_srvcs;
 static std::recursive_mutex pm_timer_schedule_mutex;
@@ -353,6 +357,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
   bta_dm_pm_stop_timer_by_srvc_id(peer_addr, id);
 /*p_dev = bta_dm_find_peer_device(peer_addr);*/
 
+#if (BTM_SSR_INCLUDED == TRUE)
   /* set SSR parameters on SYS CONN OPEN */
   int index = BTA_DM_PM_SSR0;
   if ((BTA_SYS_CONN_OPEN == status) && p_dev &&
@@ -366,12 +371,15 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
       index = p_bta_dm_pm_spec[p_bta_dm_pm_cfg[i].spec_idx].ssr;
     }
   }
+#endif
 
   /* if no action for the event */
   if (p_bta_dm_pm_spec[p_bta_dm_pm_cfg[i].spec_idx]
           .actn_tbl[status][0]
           .power_mode == BTA_DM_PM_NO_ACTION) {
+#if (BTM_SSR_INCLUDED == TRUE)
     if (BTA_DM_PM_SSR0 == index) /* and do not need to set SSR, return. */
+#endif
       return;
   }
 
@@ -439,6 +447,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
     p_dev->pm_mode_failed = 0;
   }
 
+#if (BTM_SSR_INCLUDED == TRUE)
   if (p_bta_dm_ssr_spec[index].max_lat
 #if (BTA_HH_INCLUDED == TRUE)
       || index == BTA_DM_PM_SSR_HH
@@ -461,6 +470,7 @@ static void bta_dm_pm_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
       }
     }
   }
+#endif
 
   bta_dm_pm_set_mode(peer_addr, BTA_DM_PM_NO_ACTION, pm_req);
 
@@ -692,6 +702,7 @@ static void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
   tBTM_STATUS status;
 
   BTM_ReadPowerMode(p_peer_dev->peer_bdaddr, &mode);
+#if (BTM_SSR_INCLUDED == TRUE)
   uint8_t* p_rem_feat = BTM_ReadRemoteFeatures(p_peer_dev->peer_bdaddr);
   APPL_TRACE_DEBUG("bta_dm_pm_sniff cur:%d, idx:%d, info:x%x", mode, index,
                    p_peer_dev->info);
@@ -709,6 +720,12 @@ static void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
       return;
     }
   }
+#else
+  APPL_TRACE_DEBUG("bta_dm_pm_sniff cur:%d, idx:%d", mode, index);
+  if (mode == BTM_PM_MD_SNIFF) {
+    return;
+  }
+#endif
   /* if the current mode is not sniff, issue the sniff command.
    * If sniff, but SSR is not used in this link, still issue the command */
   memcpy(&pwr_md, &p_bta_dm_pm_md[index], sizeof(tBTM_PM_PWR_MD));
@@ -740,6 +757,7 @@ static void bta_dm_pm_sniff(tBTA_DM_PEER_DEVICE* p_peer_dev, uint8_t index) {
  * Returns          void
  *
  ******************************************************************************/
+#if (BTM_SSR_INCLUDED == TRUE)
 static void bta_dm_pm_ssr(const RawAddress& peer_addr, int ssr) {
   int current_ssr_index;
   int ssr_index = ssr;
@@ -802,6 +820,7 @@ static void bta_dm_pm_ssr(const RawAddress& peer_addr, int ssr) {
                      p_spec->min_loc_to);
   }
 }
+#endif
 /*******************************************************************************
  *
  * Function         bta_dm_pm_active
@@ -898,11 +917,13 @@ void bta_dm_pm_btm_status(const RawAddress& bd_addr, tBTM_PM_STATUS status,
           bta_dm_pm_set_mode(bd_addr, BTA_DM_PM_NO_ACTION, BTA_DM_PM_RESTART);
         }
       } else {
+#if (BTM_SSR_INCLUDED == TRUE)
         if (p_dev->prev_low) {
           /* need to send the SSR paramaters to controller again */
           bta_dm_pm_ssr(p_dev->peer_bdaddr, BTA_DM_PM_SSR0);
         }
         p_dev->prev_low = BTM_PM_STS_ACTIVE;
+#endif
         /* link to active mode, need to restart the timer for next low power
          * mode if needed */
         bta_dm_pm_stop_timer(bd_addr);
@@ -910,6 +931,7 @@ void bta_dm_pm_btm_status(const RawAddress& bd_addr, tBTM_PM_STATUS status,
       }
       break;
 
+#if (BTM_SSR_INCLUDED == TRUE)
     case BTM_PM_STS_PARK:
     case BTM_PM_STS_HOLD:
       /* save the previous low power mode - for SSR.
@@ -924,6 +946,7 @@ void bta_dm_pm_btm_status(const RawAddress& bd_addr, tBTM_PM_STATUS status,
       else
         p_dev->info &= ~BTA_DM_DI_USE_SSR;
       break;
+#endif
     case BTM_PM_STS_SNIFF:
       if (hci_status == 0) {
         /* Stop PM timer now if already active for
@@ -1005,6 +1028,7 @@ static bool bta_dm_pm_is_sco_active() {
   return bScoActive;
 }
 
+#if (BTM_SSR_INCLUDED == TRUE)
 /*******************************************************************************
  *
  * Function        bta_dm_get_sco_index
@@ -1024,6 +1048,7 @@ static int bta_dm_get_sco_index() {
   }
   return -1;
 }
+#endif
 
 /*******************************************************************************
  *

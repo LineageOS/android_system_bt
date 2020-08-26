@@ -308,7 +308,7 @@ void BTA_GetEirService(uint8_t* p_eir, size_t eir_len,
  * Returns          0 if the device is NOT connected.
  *
  ******************************************************************************/
-bool BTA_DmGetConnectionState(const RawAddress& bd_addr) {
+uint16_t BTA_DmGetConnectionState(const RawAddress& bd_addr) {
   tBTA_DM_PEER_DEVICE* p_dev = bta_dm_find_peer_device(bd_addr);
   return (p_dev && p_dev->conn_state == BTA_DM_CONNECTED);
 }
