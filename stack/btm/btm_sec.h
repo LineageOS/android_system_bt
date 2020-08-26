@@ -384,23 +384,6 @@ bool BTM_PeerSupportsSecureConnections(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
- * Function         BTM_SetOutService
- *
- * Description      This function is called to set the service for
- *                  outgoing connections.
- *
- *                  If the profile/application calls BTM_SetSecurityLevel
- *                  before initiating a connection, this function does not
- *                  need to be called.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_SetOutService(const RawAddress& bd_addr, uint8_t service_id,
-                       uint32_t mx_chan_id);
-
-/*******************************************************************************
- *
  * Function         btm_sec_l2cap_access_req
  *
  * Description      This function is called by the L2CAP to grant permission to

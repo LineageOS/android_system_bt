@@ -43,6 +43,7 @@
 #include "bnep_int.h"
 #include "bt_utils.h"
 
+#include "bta/include/bta_api.h"
 #include "device/include/controller.h"
 #include "osi/include/osi.h"
 
@@ -94,8 +95,9 @@ tBNEP_RESULT bnep_register_with_l2cap(void) {
   bnep_cb.reg_info.pL2CA_CongestionStatus_Cb = bnep_congestion_ind;
 
   /* Now, register with L2CAP */
-  if (!L2CA_Register(BT_PSM_BNEP, &bnep_cb.reg_info, false /* enable_snoop */,
-                     nullptr, bnep_cb.l2cap_my_cfg.mtu)) {
+  if (!L2CA_Register2(BT_PSM_BNEP, &bnep_cb.reg_info, false /* enable_snoop */,
+                      nullptr, bnep_cb.l2cap_my_cfg.mtu,
+                      BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
     BNEP_TRACE_ERROR("BNEP - Registration failed");
     return BNEP_SECURITY_FAIL;
   }
