@@ -70,11 +70,9 @@ typedef struct {
 typedef struct {
   BT_HDR hdr;                               /* Event header */
   char user_name[BTA_SERVICE_NAME_LEN + 1]; /* Service name */
-  char gn_name[BTA_SERVICE_NAME_LEN + 1];   /* Service name */
   char nap_name[BTA_SERVICE_NAME_LEN + 1];  /* Service name */
   tBTA_PAN_ROLE role;
   uint8_t user_app_id;
-  uint8_t gn_app_id;
   uint8_t nap_app_id;
 } tBTA_PAN_API_SET_ROLE;
 

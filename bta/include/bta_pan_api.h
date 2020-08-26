@@ -48,7 +48,6 @@ typedef uint8_t tBTA_PAN_EVT;
 
 /* pan roles */
 #define BTA_PAN_ROLE_PANU PAN_ROLE_CLIENT
-#define BTA_PAN_ROLE_GN PAN_ROLE_GN_SERVER
 #define BTA_PAN_ROLE_NAP PAN_ROLE_NAP_SERVER
 
 typedef uint8_t tBTA_PAN_ROLE;
