@@ -1463,19 +1463,6 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
 
 /*******************************************************************************
  *
- * Function         BTM_SetOutService
- *
- * Description      This function is called to set the service for
- *                  outgoing connection.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTM_SetOutService(const RawAddress& bd_addr, uint8_t service_id,
-                       uint32_t mx_chan_id);
-
-/*******************************************************************************
- *
  * Function         BTM_SecClrService
  *
  * Description      Removes specified service record(s) from the security
