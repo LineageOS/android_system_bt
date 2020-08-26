@@ -336,6 +336,32 @@ class PairingHandlerLe {
 
   std::optional<PairingEvent> WaitUiPasskey() {
     PairingEvent e = WaitForEvent();
+
+    // It's possible to receive PAIRING_CONFIRM from remote device while waiting for the passkey.
+    // Store it until it's needed.
+    if (e.type == PairingEvent::L2CAP) {
+      auto l2cap_packet = e.l2cap_packet.value();
+      if (!l2cap_packet.IsValid()) {
+        LOG_WARN("Malformed L2CAP packet received!");
+        return std::nullopt;
+      }
+
+      const auto& received_code = l2cap_packet.GetCode();
+      if (received_code != Code::PAIRING_CONFIRM) {
+        LOG_WARN("Was waiting for passkey, received bad packet instead!");
+        return std::nullopt;
+      }
+
+      auto pkt = PairingConfirmView::Create(l2cap_packet);
+      if (!pkt.IsValid()) {
+        LOG_WARN("Malformed PAIRING_CONFIRM packet");
+        return std::nullopt;
+      }
+
+      cached_pariring_confirm_view = std::make_unique<PairingConfirmView>(pkt);
+      e = WaitForEvent();
+    }
+
     if (e.type == PairingEvent::UI & e.ui_action == PairingEvent::PASSKEY) {
       return e;
     } else {
@@ -455,7 +481,12 @@ class PairingHandlerLe {
     return WaitPacket<Code::PAIRING_RESPONSE>();
   }
 
-  auto WaitPairingConfirm() {
+  std::variant<bluetooth::security::PairingConfirmView, bluetooth::security::PairingFailure> WaitPairingConfirm() {
+    if (cached_pariring_confirm_view) {
+      PairingConfirmView pkt = *cached_pariring_confirm_view;
+      cached_pariring_confirm_view.release();
+      return pkt;
+    }
     return WaitPacket<Code::PAIRING_CONFIRM>();
   }
 
@@ -507,6 +538,9 @@ class PairingHandlerLe {
   std::queue<PairingEvent> queue;
 
   std::thread thread_;
+
+  // holds pairing_confirm, if received out of order
+  std::unique_ptr<PairingConfirmView> cached_pariring_confirm_view;
 };
 }  // namespace security
 }  // namespace bluetooth
