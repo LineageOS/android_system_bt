@@ -1040,10 +1040,10 @@ extern void BTA_GetEirService(uint8_t* p_eir, size_t eir_len,
  *
  * Description      Returns whether the remote device is currently connected.
  *
- * Returns          0 if the device is NOT connected.
+ * Returns          true if the device is NOT connected, false otherwise.
  *
  ******************************************************************************/
-extern uint16_t BTA_DmGetConnectionState(const RawAddress& bd_addr);
+extern bool BTA_DmGetConnectionState(const RawAddress& bd_addr);
 
 /*******************************************************************************
  *
