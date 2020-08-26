@@ -184,8 +184,6 @@ void pan_conn_ind_cb(uint16_t handle, const RawAddress& p_bda,
   /* Requested destination role is */
   if (local_uuid16 == UUID_SERVCLASS_PANU)
     req_role = PAN_ROLE_CLIENT;
-  else if (local_uuid16 == UUID_SERVCLASS_GN)
-    req_role = PAN_ROLE_GN_SERVER;
   else
     req_role = PAN_ROLE_NAP_SERVER;
 
@@ -333,15 +331,11 @@ void pan_connect_state_cb(uint16_t handle,
   /* Requested destination role is */
   if (pcb->src_uuid == UUID_SERVCLASS_PANU)
     pan_cb.active_role = PAN_ROLE_CLIENT;
-  else if (pcb->src_uuid == UUID_SERVCLASS_GN)
-    pan_cb.active_role = PAN_ROLE_GN_SERVER;
   else
     pan_cb.active_role = PAN_ROLE_NAP_SERVER;
 
   if (pcb->dst_uuid == UUID_SERVCLASS_PANU)
     peer_role = PAN_ROLE_CLIENT;
-  else if (pcb->dst_uuid == UUID_SERVCLASS_GN)
-    peer_role = PAN_ROLE_GN_SERVER;
   else
     peer_role = PAN_ROLE_NAP_SERVER;
 
