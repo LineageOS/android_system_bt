@@ -117,12 +117,11 @@ void gatt_init(void) {
   L2CA_RegisterFixedChannel(L2CAP_ATT_CID, &fixed_reg);
 
   /* Now, register with L2CAP for ATT PSM over BR/EDR */
-  if (!L2CA_Register(BT_PSM_ATT, (tL2CAP_APPL_INFO*)&dyn_info,
-                     false /* enable_snoop */, nullptr, gatt_cb.def_mtu_size)) {
+  if (!L2CA_Register2(BT_PSM_ATT, (tL2CAP_APPL_INFO*)&dyn_info,
+                      false /* enable_snoop */, nullptr, gatt_cb.def_mtu_size,
+                      BTM_SEC_NONE)) {
     LOG(ERROR) << "ATT Dynamic Registration failed";
   }
-
-  BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_ATT, BTM_SEC_NONE, BT_PSM_ATT);
 
   gatt_cb.hdl_cfg.gatt_start_hdl = GATT_GATT_START_HANDLE;
   gatt_cb.hdl_cfg.gap_start_hdl = GATT_GAP_START_HANDLE;
@@ -191,7 +190,7 @@ bool gatt_connect(const RawAddress& rem_bda, tGATT_TCB* p_tcb,
     gatt_set_ch_state(p_tcb, GATT_CH_CONN);
 
   if (transport != BT_TRANSPORT_LE) {
-    p_tcb->att_lcid = L2CA_ConnectReq(BT_PSM_ATT, rem_bda);
+    p_tcb->att_lcid = L2CA_ConnectReq2(BT_PSM_ATT, rem_bda, BTM_SEC_NONE);
     return p_tcb->att_lcid != 0;
   }
 
