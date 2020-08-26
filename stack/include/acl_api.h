@@ -348,3 +348,5 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
 
 void acl_disconnect(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                     uint8_t reason);
+
+bool acl_peer_supports_sniff_subrating(const RawAddress& remote_bda);
