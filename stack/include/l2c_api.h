@@ -296,6 +296,11 @@ void l2c_free();
  *  External Function Declarations
  ****************************************************************************/
 
+// Also does security for you
+uint16_t L2CA_Register2(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
+                        bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
+                        uint16_t required_mtu, uint16_t sec_level);
+
 /*******************************************************************************
  *
  * Function         L2CA_Register
