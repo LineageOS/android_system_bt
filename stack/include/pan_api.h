@@ -246,7 +246,6 @@ extern void PAN_Deregister(void);
  *                                      GN and NAP in order
  *
  *                  p_user_name - Service name for PANU role
- *                  p_gn_name   - Service name for GN role
  *                  p_nap_name  - Service name for NAP role
  *                                  Can be NULL if user wants it to be default
  *
@@ -255,7 +254,7 @@ extern void PAN_Deregister(void);
  *
  ******************************************************************************/
 extern tPAN_RESULT PAN_SetRole(uint8_t role, const char* p_user_name,
-                               const char* p_gn_name, const char* p_nap_name);
+                               const char* p_nap_name);
 
 /*******************************************************************************
  *

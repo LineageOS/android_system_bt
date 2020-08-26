@@ -93,7 +93,7 @@ void PAN_Deregister(void) {
   pan_cb.pan_pfilt_ind_cb = NULL;
   pan_cb.pan_mfilt_ind_cb = NULL;
 
-  PAN_SetRole(PAN_ROLE_INACTIVE, NULL, NULL, NULL);
+  PAN_SetRole(PAN_ROLE_INACTIVE, NULL, NULL);
   BNEP_Deregister();
 
   return;
@@ -111,7 +111,6 @@ void PAN_Deregister(void) {
  *                                      PAN_ROLE_CLIENT is for PANU role
  *                                      PAN_ROLE_NAP_SERVER is for NAP role
  *                  p_user_name - Service name for PANU role
- *                  p_gn_name   - Service name for GN role
  *                  p_nap_name  - Service name for NAP role
  *                                      Can be NULL if user wants the default
  *
@@ -120,7 +119,7 @@ void PAN_Deregister(void) {
  *
  ******************************************************************************/
 tPAN_RESULT PAN_SetRole(uint8_t role, const char* p_user_name,
-                        const char* p_gn_name, const char* p_nap_name) {
+                        const char* p_nap_name) {
   /* Check if it is a shutdown request */
   if (role == PAN_ROLE_INACTIVE) {
     pan_close_all_connections();
