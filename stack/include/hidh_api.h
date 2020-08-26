@@ -196,16 +196,6 @@ extern tHID_STATUS HID_HostCloseDev(uint8_t dev_handle);
 extern void HID_HostInit(void);
 
 /*******************************************************************************
- * Function        HID_HostSetSecurityLevel
- *
- * Description     This function sets the security level for the devices which
- *                 are marked by application as requiring security
- *
- * Returns         tHID_STATUS
- ******************************************************************************/
-extern tHID_STATUS HID_HostSetSecurityLevel();
-
-/*******************************************************************************
  *
  * Function         HID_HostSetTraceLevel
  *

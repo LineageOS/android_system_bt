@@ -277,7 +277,6 @@ class AvdtpRcb {
         ret_tout(0),
         sig_tout(0),
         idle_tout(0),
-        sec_mask(0),
         scb_index(0) {}
   AvdtpRcb& operator=(const AvdtpRcb&) = default;
 
@@ -286,7 +285,6 @@ class AvdtpRcb {
     ret_tout = 0;
     sig_tout = 0;
     idle_tout = 0;
-    sec_mask = 0;
     scb_index = 0;
   }
 
@@ -294,7 +292,6 @@ class AvdtpRcb {
   uint8_t ret_tout;  /* AVDTP signaling retransmission timeout */
   uint8_t sig_tout;  /* AVDTP signaling message timeout */
   uint8_t idle_tout; /* AVDTP idle signaling channel timeout */
-  uint8_t sec_mask;  /* Security mask for BTM_SetSecurityLevel() */
   uint8_t scb_index; /* The Stream Control Block index */
 };
 
