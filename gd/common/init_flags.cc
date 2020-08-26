@@ -34,6 +34,9 @@ bool InitFlags::gd_controller_enabled = false;
 const std::string kGdCoreFlag = "INIT_gd_core";
 bool InitFlags::gd_core_enabled = false;
 
+const std::string kGattRobustCachingFlag = "INIT_gatt_robust_caching";
+bool InitFlags::gatt_robust_caching_enabled = false;
+
 void InitFlags::Load(const char** flags) {
   SetAll(false);
   while (flags != nullptr && *flags != nullptr) {
@@ -43,6 +46,8 @@ void InitFlags::Load(const char** flags) {
       gd_hci_enabled = true;
     } else if (kGdControllerFlag == *flags) {
       gd_controller_enabled = true;
+    } else if (kGattRobustCachingFlag == *flags) {
+      gatt_robust_caching_enabled = true;
     }
     flags++;
   }
@@ -65,6 +70,7 @@ void InitFlags::SetAll(bool value) {
   gd_core_enabled = value;
   gd_controller_enabled = value;
   gd_hci_enabled = value;
+  gatt_robust_caching_enabled = value;
 }
 
 void InitFlags::SetAllForTesting() {
