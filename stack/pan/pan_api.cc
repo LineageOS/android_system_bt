@@ -109,7 +109,6 @@ void PAN_Deregister(void) {
  *
  * Parameters:      role        - is bit map of roles to be active
  *                                      PAN_ROLE_CLIENT is for PANU role
- *                                      PAN_ROLE_GN_SERVER is for GN role
  *                                      PAN_ROLE_NAP_SERVER is for NAP role
  *                  p_user_name - Service name for PANU role
  *                  p_gn_name   - Service name for GN role
@@ -132,8 +131,7 @@ tPAN_RESULT PAN_SetRole(uint8_t role, const char* p_user_name,
   const char* p_desc;
 
   /* If the role is not a valid combination reject it */
-  if ((!(role &
-         (PAN_ROLE_CLIENT | PAN_ROLE_GN_SERVER | PAN_ROLE_NAP_SERVER))) &&
+  if ((!(role & (PAN_ROLE_CLIENT | PAN_ROLE_NAP_SERVER))) &&
       role != PAN_ROLE_INACTIVE) {
     PAN_TRACE_ERROR("PAN role %d is invalid", role);
     return PAN_FAILURE;
@@ -170,32 +168,6 @@ tPAN_RESULT PAN_SetRole(uint8_t role, const char* p_user_name,
       SDP_DeleteRecord(pan_cb.pan_nap_sdp_handle);
       pan_cb.pan_nap_sdp_handle = 0;
       bta_sys_remove_uuid(UUID_SERVCLASS_NAP);
-    }
-  }
-#endif
-
-#if (PAN_SUPPORTS_ROLE_GN == TRUE)
-  if (role & PAN_ROLE_GN_SERVER) {
-    /* Check the service name */
-    if ((p_gn_name == NULL) || (*p_gn_name == 0))
-      p_gn_name = PAN_GN_DEFAULT_SERVICE_NAME;
-
-    /* Registering for GN service with SDP */
-    p_desc = PAN_GN_DEFAULT_DESCRIPTION;
-
-    if (pan_cb.pan_gn_sdp_handle != 0)
-      SDP_DeleteRecord(pan_cb.pan_gn_sdp_handle);
-
-    pan_cb.pan_gn_sdp_handle =
-        pan_register_with_sdp(UUID_SERVCLASS_GN, p_gn_name, p_desc);
-    bta_sys_add_uuid(UUID_SERVCLASS_GN);
-  }
-  /* If the GN role is already active and now being cleared delete the record */
-  else if (pan_cb.role & PAN_ROLE_GN_SERVER) {
-    if (pan_cb.pan_gn_sdp_handle != 0) {
-      SDP_DeleteRecord(pan_cb.pan_gn_sdp_handle);
-      pan_cb.pan_gn_sdp_handle = 0;
-      bta_sys_remove_uuid(UUID_SERVCLASS_GN);
     }
   }
 #endif
@@ -242,7 +214,6 @@ tPAN_RESULT PAN_SetRole(uint8_t role, const char* p_user_name,
  *                  src_role    - Role of the local device for the connection
  *                  dst_role    - Role of the remote device for the connection
  *                                      PAN_ROLE_CLIENT is for PANU role
- *                                      PAN_ROLE_GN_SERVER is for GN role
  *                                      PAN_ROLE_NAP_SERVER is for NAP role
  *                  *handle     - Pointer for returning Handle to the connection
  *
@@ -272,10 +243,8 @@ tPAN_RESULT PAN_Connect(const RawAddress& rem_bda, uint8_t src_role,
   }
 
   /* Validate the parameters before proceeding */
-  if ((src_role != PAN_ROLE_CLIENT && src_role != PAN_ROLE_GN_SERVER &&
-       src_role != PAN_ROLE_NAP_SERVER) ||
-      (dst_role != PAN_ROLE_CLIENT && dst_role != PAN_ROLE_GN_SERVER &&
-       dst_role != PAN_ROLE_NAP_SERVER)) {
+  if ((src_role != PAN_ROLE_CLIENT && src_role != PAN_ROLE_NAP_SERVER) ||
+      (dst_role != PAN_ROLE_CLIENT && dst_role != PAN_ROLE_NAP_SERVER)) {
     PAN_TRACE_ERROR("Either source %d or destination role %d is invalid",
                     src_role, dst_role);
     return PAN_FAILURE;
@@ -302,8 +271,6 @@ tPAN_RESULT PAN_Connect(const RawAddress& rem_bda, uint8_t src_role,
     src_uuid = UUID_SERVCLASS_PANU;
     if (dst_role == PAN_ROLE_CLIENT) {
       dst_uuid = UUID_SERVCLASS_PANU;
-    } else if (dst_role == PAN_ROLE_GN_SERVER) {
-      dst_uuid = UUID_SERVCLASS_GN;
     } else {
       dst_uuid = UUID_SERVCLASS_NAP;
     }
@@ -317,11 +284,7 @@ tPAN_RESULT PAN_Connect(const RawAddress& rem_bda, uint8_t src_role,
     }
 
     dst_uuid = UUID_SERVCLASS_PANU;
-    if (src_role == PAN_ROLE_GN_SERVER) {
-      src_uuid = UUID_SERVCLASS_GN;
-    } else {
-      src_uuid = UUID_SERVCLASS_NAP;
-    }
+    src_uuid = UUID_SERVCLASS_NAP;
     mx_chan_id = src_uuid;
   }
   /* The role combination is not valid */

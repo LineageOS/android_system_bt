@@ -975,11 +975,6 @@
 #define PAN_SUPPORTS_ROLE_PANU TRUE
 #endif
 
-/* This will enable the GN role */
-#ifndef PAN_SUPPORTS_ROLE_GN
-#define PAN_SUPPORTS_ROLE_GN TRUE
-#endif
-
 /* This will enable the NAP role */
 #ifndef PAN_SUPPORTS_ROLE_NAP
 #define PAN_SUPPORTS_ROLE_NAP TRUE
@@ -1000,11 +995,6 @@
 #define PAN_NAP_DEFAULT_SERVICE_NAME "Network Access Point Service"
 #endif
 
-/* Default service name for GN role */
-#ifndef PAN_GN_DEFAULT_SERVICE_NAME
-#define PAN_GN_DEFAULT_SERVICE_NAME "Group Network Service"
-#endif
-
 /* Default service name for PANU role */
 #ifndef PAN_PANU_DEFAULT_SERVICE_NAME
 #define PAN_PANU_DEFAULT_SERVICE_NAME "PAN User Service"
@@ -1013,11 +1003,6 @@
 /* Default description for NAP role service */
 #ifndef PAN_NAP_DEFAULT_DESCRIPTION
 #define PAN_NAP_DEFAULT_DESCRIPTION "NAP"
-#endif
-
-/* Default description for GN role service */
-#ifndef PAN_GN_DEFAULT_DESCRIPTION
-#define PAN_GN_DEFAULT_DESCRIPTION "GN"
 #endif
 
 /* Default description for PANU role service */

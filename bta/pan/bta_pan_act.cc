@@ -114,8 +114,6 @@ static void bta_pan_conn_state_cback(uint16_t handle, const RawAddress& bd_addr,
 
     if (src_role == PAN_ROLE_CLIENT)
       p_scb->app_id = bta_pan_cb.app_id[0];
-    else if (src_role == PAN_ROLE_GN_SERVER)
-      p_scb->app_id = bta_pan_cb.app_id[1];
     else if (src_role == PAN_ROLE_NAP_SERVER)
       p_scb->app_id = bta_pan_cb.app_id[2];
   } else if ((state != PAN_SUCCESS) && !is_role_change) {
@@ -344,11 +342,6 @@ void bta_pan_set_role(tBTA_PAN_DATA* p_data) {
       bta_sys_add_uuid(UUID_SERVCLASS_NAP);
     else
       bta_sys_remove_uuid(UUID_SERVCLASS_NAP);
-
-    if (p_data->api_set_role.role & PAN_ROLE_GN_SERVER)
-      bta_sys_add_uuid(UUID_SERVCLASS_GN);
-    else
-      bta_sys_remove_uuid(UUID_SERVCLASS_GN);
 
     if (p_data->api_set_role.role & PAN_ROLE_CLIENT)
       bta_sys_add_uuid(UUID_SERVCLASS_PANU);
