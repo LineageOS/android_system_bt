@@ -551,10 +551,9 @@ void avdt_ad_open_req(uint8_t type, AvdtpCcb* p_ccb, AvdtpScb* p_scb,
   else {
     p_tbl->state = AVDT_AD_ST_CONN;
 
-    BTM_SetOutService(p_ccb->peer_addr, BTM_SEC_SERVICE_AVDTP, type);
-
     /* call l2cap connect req */
-    lcid = L2CA_ConnectReq(AVDT_PSM, p_ccb->peer_addr);
+    lcid =
+        L2CA_ConnectReq2(AVDT_PSM, p_ccb->peer_addr, BTM_SEC_OUT_AUTHENTICATE);
     if (lcid != 0) {
       /* if connect req ok, store tcid in lcid table  */
       avdtp_cb.ad.lcid_tbl[lcid - L2CAP_BASE_APPL_CID] =
