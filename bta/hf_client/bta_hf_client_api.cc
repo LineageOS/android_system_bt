@@ -49,10 +49,10 @@
  * Returns          BTA_SUCCESS if OK, BTA_FAILURE otherwise.
  *
  ******************************************************************************/
-tBTA_STATUS BTA_HfClientEnable(tBTA_HF_CLIENT_CBACK* p_cback, tBTA_SEC sec_mask,
+tBTA_STATUS BTA_HfClientEnable(tBTA_HF_CLIENT_CBACK* p_cback,
                                tBTA_HF_CLIENT_FEAT features,
                                const char* p_service_name) {
-  return bta_hf_client_api_enable(p_cback, sec_mask, features, p_service_name);
+  return bta_hf_client_api_enable(p_cback, features, p_service_name);
 }
 
 /*******************************************************************************
@@ -76,8 +76,7 @@ void BTA_HfClientDisable(void) { bta_hf_client_api_disable(); }
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HfClientOpen(const RawAddress& bd_addr, tBTA_SEC sec_mask,
-                      uint16_t* p_handle) {
+void BTA_HfClientOpen(const RawAddress& bd_addr, uint16_t* p_handle) {
   APPL_TRACE_DEBUG("%s", __func__);
   tBTA_HF_CLIENT_API_OPEN* p_buf =
       (tBTA_HF_CLIENT_API_OPEN*)osi_malloc(sizeof(tBTA_HF_CLIENT_API_OPEN));
@@ -90,7 +89,6 @@ void BTA_HfClientOpen(const RawAddress& bd_addr, tBTA_SEC sec_mask,
   p_buf->hdr.event = BTA_HF_CLIENT_API_OPEN_EVT;
   p_buf->hdr.layer_specific = *p_handle;
   p_buf->bd_addr = bd_addr;
-  p_buf->sec_mask = sec_mask;
 
   bta_sys_sendmsg(p_buf);
 }

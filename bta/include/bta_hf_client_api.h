@@ -287,7 +287,7 @@ typedef void(tBTA_HF_CLIENT_CBACK)(tBTA_HF_CLIENT_EVT event,
  * Returns          BTA_SUCCESS if OK, BTA_FAILURE otherwise.
  *
  ******************************************************************************/
-tBTA_STATUS BTA_HfClientEnable(tBTA_HF_CLIENT_CBACK* p_cback, tBTA_SEC sec_mask,
+tBTA_STATUS BTA_HfClientEnable(tBTA_HF_CLIENT_CBACK* p_cback,
                                tBTA_HF_CLIENT_FEAT features,
                                const char* p_service_name);
 
@@ -317,8 +317,7 @@ void BTA_HfClientDisable(void);
  * Returns          void
  *
  ******************************************************************************/
-void BTA_HfClientOpen(const RawAddress& bd_addr, tBTA_SEC sec_mask,
-                      uint16_t* p_handle);
+void BTA_HfClientOpen(const RawAddress& bd_addr, uint16_t* p_handle);
 
 /*******************************************************************************
  *

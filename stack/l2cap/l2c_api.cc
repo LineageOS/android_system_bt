@@ -26,23 +26,18 @@
 
 #include <base/logging.h>
 #include <base/strings/stringprintf.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdint>
+#include <string>
 
-#include "bt_common.h"
-#include "bt_types.h"
-#include "btm_api.h"
-#include "btu.h"
-#include "device/include/controller.h"
-#include "hcidefs.h"
-#include "hcimsgs.h"
-#include "l2c_int.h"
-#include "l2cdefs.h"
+#include "device/include/controller.h"  // TODO Remove
 #include "main/shim/l2c_api.h"
 #include "main/shim/shim.h"
-#include "osi/include/allocator.h"
 #include "osi/include/log.h"
+#include "stack/include/l2c_api.h"
+#include "stack/l2cap/l2c_int.h"
+
+void btsnd_hcic_enhanced_flush(uint16_t handle,
+                               uint8_t packet_type);  // TODO Remove
 
 using base::StringPrintf;
 
