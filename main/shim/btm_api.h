@@ -1443,8 +1443,6 @@ bool BTM_GetSecurityFlagsByTransport(const RawAddress& bd_addr,
  ******************************************************************************/
 void BTM_SetPinType(uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len);
 
-bool BTM_SimpleSetSecurityLevel(uint8_t service_id, uint16_t sec_level,
-                                uint16_t psm);
 /*******************************************************************************
  *
  * Function         BTM_SetSecurityLevel
