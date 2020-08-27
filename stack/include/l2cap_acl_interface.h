@@ -22,7 +22,6 @@
 
 // This header contains functions for L2cap-ACL to invoke
 //
-uint16_t acl_read_cached_automatic_flush_timeout(const RawAddress& bd_addr);
 void acl_accept_connection_request(const RawAddress& bd_addr, uint8_t role);
 void acl_create_classic_connection(const RawAddress& bd_addr,
                                    bool there_are_high_priority_channels,

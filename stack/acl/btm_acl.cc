@@ -2868,11 +2868,3 @@ void acl_write_automatic_flush_timeout(const RawAddress& bd_addr,
   btsnd_hcic_write_auto_flush_tout(p_acl->hci_handle, flush_timeout_in_ticks);
 }
 
-uint16_t acl_read_cached_automatic_flush_timeout(const RawAddress& bd_addr) {
-  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
-  if (p_acl == nullptr) {
-    LOG_ERROR("%s Unknown peer ACL", __func__);
-    return HCI_DEFAULT_AUTOMATIC_FLUSH_TIMEOUT;
-  }
-  return p_acl->flush_timeout_in_ticks;
-}
