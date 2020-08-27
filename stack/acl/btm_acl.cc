@@ -506,29 +506,19 @@ void btm_acl_update_inquiry_status(uint8_t status) {
   BTIF_dm_report_inquiry_status_change(status);
 }
 
-/*******************************************************************************
- *
- * Function         BTM_GetRole
- *
- * Description      This function is called to get the role of the local device
- *                  for the ACL connection with the specified remote device
- *
- * Returns          BTM_SUCCESS if connection exists.
- *                  BTM_UNKNOWN_ADDR if no active link with bd addr specified
- *
- ******************************************************************************/
 tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
-  tACL_CONN* p;
-  BTM_TRACE_DEBUG("BTM_GetRole");
-  p = internal_.btm_bda_to_acl(remote_bd_addr, BT_TRANSPORT_BR_EDR);
-  if (p == NULL) {
-    *p_role = HCI_ROLE_UNKNOWN;
-    return (BTM_UNKNOWN_ADDR);
+  if (p_role == nullptr) {
+    return BTM_ILLEGAL_VALUE;
   }
+  *p_role = HCI_ROLE_UNKNOWN;
 
-  /* Get the current role */
-  *p_role = p->link_role;
-  return (BTM_SUCCESS);
+  tACL_CONN* p_acl =
+      internal_.btm_bda_to_acl(remote_bd_addr, BT_TRANSPORT_BR_EDR);
+  if (p_acl == nullptr) {
+    return BTM_UNKNOWN_ADDR;
+  }
+  *p_role = p_acl->link_role;
+  return BTM_SUCCESS;
 }
 
 /*******************************************************************************
