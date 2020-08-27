@@ -758,9 +758,43 @@ typedef uint8_t tBLE_ADDR_TYPE;
 #define BLE_ADDR_TYPE_ID_BIT 0x02
 
 #ifdef __cplusplus
+constexpr uint8_t kBleAddressPublicDevice = BLE_ADDR_PUBLIC;
+constexpr uint8_t kBleAddressRandomDevice = BLE_ADDR_RANDOM;
+constexpr uint8_t kBleAddressIdentityBit = BLE_ADDR_TYPE_ID_BIT;
+constexpr uint8_t kBleAddressPublicIdentity =
+    kBleAddressIdentityBit | kBleAddressPublicDevice;
+constexpr uint8_t kBleAddressRandomIdentity =
+    kBleAddressIdentityBit | kBleAddressRandomDevice;
+
+constexpr uint8_t kResolvableAddressMask = 0xc0;
+constexpr uint8_t kResolvableAddressMsb = 0x40;
+
 struct tBLE_BD_ADDR {
   tBLE_ADDR_TYPE type;
   RawAddress bda;
+  bool AddressEquals(const RawAddress& other) const { return other == bda; }
+  bool IsPublicDeviceType() const { return type == kBleAddressPublicDevice; }
+  bool IsRandomDeviceType() const { return type == kBleAddressRandomDevice; }
+  bool IsPublicIdentityType() const {
+    return type == kBleAddressPublicIdentity;
+  }
+  bool lsRandomIdentityType() const {
+    return type == kBleAddressRandomIdentity;
+  }
+  bool IsAddressResolvable() const {
+    return ((bda.address)[0] & kResolvableAddressMask) == kResolvableAddressMsb;
+  }
+  bool IsPublic() const { return type & 0x01; }
+  bool IsResolvablePrivateAddress() const {
+    return IsAddressResolvable() && IsRandomDeviceType();
+  }
+  bool IsIdentityType() const {
+    return IsPublicIdentityType() || lsRandomIdentityType();
+  }
+  bool TypeWithoutIdentityEquals(const tBLE_ADDR_TYPE other) const {
+    return (other & ~kBleAddressIdentityBit) ==
+           (type & ~kBleAddressIdentityBit);
+  }
 };
 #endif
 
