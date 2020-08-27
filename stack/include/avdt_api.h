@@ -277,7 +277,6 @@ class AvdtpRcb {
         ret_tout(0),
         sig_tout(0),
         idle_tout(0),
-        sec_mask(0),
         scb_index(0) {}
   AvdtpRcb& operator=(const AvdtpRcb&) = default;
 
@@ -286,7 +285,6 @@ class AvdtpRcb {
     ret_tout = 0;
     sig_tout = 0;
     idle_tout = 0;
-    sec_mask = 0;
     scb_index = 0;
   }
 
@@ -294,7 +292,6 @@ class AvdtpRcb {
   uint8_t ret_tout;  /* AVDTP signaling retransmission timeout */
   uint8_t sig_tout;  /* AVDTP signaling message timeout */
   uint8_t idle_tout; /* AVDTP idle signaling channel timeout */
-  uint8_t sec_mask;  /* Security mask for BTM_SetSecurityLevel() */
   uint8_t scb_index; /* The Stream Control Block index */
 };
 
@@ -900,7 +897,7 @@ extern uint16_t AVDT_WriteReqOpt(uint8_t handle, BT_HDR* p_pkt,
  *
  ******************************************************************************/
 extern uint16_t AVDT_ConnectReq(const RawAddress& bd_addr,
-                                uint8_t channel_index, uint8_t sec_mask,
+                                uint8_t channel_index,
                                 tAVDT_CTRL_CBACK* p_cback);
 
 /*******************************************************************************

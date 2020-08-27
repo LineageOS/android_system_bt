@@ -17,7 +17,9 @@
 
 #include "hci/address_with_type.h"
 
+#include "gd/packet/raw_builder.h"
 #include "stack/include/bt_types.h"
+#include "stack/include/hci_error_code.h"
 
 namespace bluetooth {
 
@@ -64,4 +66,97 @@ inline hci::AddressWithType ToAddressWithType(const RawAddress& legacy_address,
 
   return hci::AddressWithType{address, type};
 }
+
+inline std::unique_ptr<bluetooth::packet::RawBuilder> MakeUniquePacket(
+    const uint8_t* data, size_t len) {
+  bluetooth::packet::RawBuilder builder;
+  std::vector<uint8_t> bytes(data, data + len);
+  auto payload = std::make_unique<bluetooth::packet::RawBuilder>();
+  payload->AddOctets(bytes);
+  return payload;
+}
+
+inline uint8_t ToLegacyHciErrorCode(hci::ErrorCode reason) {
+  switch (reason) {
+    case hci::ErrorCode::SUCCESS:
+      return HCI_SUCCESS;
+    case hci::ErrorCode::UNKNOWN_HCI_COMMAND:
+      return HCI_ERR_ILLEGAL_COMMAND;
+    case hci::ErrorCode::UNKNOWN_CONNECTION:
+      return HCI_ERR_NO_CONNECTION;
+    case hci::ErrorCode::HARDWARE_FAILURE:
+      return HCI_ERR_HW_FAILURE;
+    case hci::ErrorCode::PAGE_TIMEOUT:
+      return HCI_ERR_PAGE_TIMEOUT;
+    case hci::ErrorCode::AUTHENTICATION_FAILURE:
+      return HCI_ERR_AUTH_FAILURE;
+    case hci::ErrorCode::PIN_OR_KEY_MISSING:
+      return HCI_ERR_KEY_MISSING;
+    case hci::ErrorCode::MEMORY_CAPACITY_EXCEEDED:
+      return HCI_ERR_MEMORY_FULL;
+    case hci::ErrorCode::CONNECTION_TIMEOUT:
+      return HCI_ERR_CONNECTION_TOUT;
+    case hci::ErrorCode::CONNECTION_LIMIT_EXCEEDED:
+      return HCI_ERR_MAX_NUM_OF_CONNECTIONS;
+    case hci::ErrorCode::SYNCHRONOUS_CONNECTION_LIMIT_EXCEEDED:
+      return HCI_ERR_MAX_NUM_OF_SCOS;
+    case hci::ErrorCode::CONNECTION_ALREADY_EXISTS:
+      return HCI_ERR_CONNECTION_EXISTS;
+    case hci::ErrorCode::COMMAND_DISALLOWED:
+      return HCI_ERR_COMMAND_DISALLOWED;
+    case hci::ErrorCode::CONNECTION_REJECTED_LIMITED_RESOURCES:
+      return HCI_ERR_HOST_REJECT_RESOURCES;
+    case hci::ErrorCode::CONNECTION_REJECTED_SECURITY_REASONS:
+      return HCI_ERR_HOST_REJECT_SECURITY;
+    case hci::ErrorCode::CONNECTION_REJECTED_UNACCEPTABLE_BD_ADDR:
+      return HCI_ERR_HOST_REJECT_DEVICE;
+    case hci::ErrorCode::CONNECTION_ACCEPT_TIMEOUT:
+      return HCI_ERR_HOST_TIMEOUT;
+    case hci::ErrorCode::UNSUPORTED_FEATURE_OR_PARAMETER_VALUE:
+      return static_cast<uint8_t>(
+          hci::ErrorCode::UNSUPORTED_FEATURE_OR_PARAMETER_VALUE);
+    case hci::ErrorCode::INVALID_HCI_COMMAND_PARAMETERS:
+      return HCI_ERR_ILLEGAL_PARAMETER_FMT;
+    case hci::ErrorCode::REMOTE_USER_TERMINATED_CONNECTION:
+      return HCI_ERR_PEER_USER;
+    case hci::ErrorCode::REMOTE_DEVICE_TERMINATED_CONNECTION_LOW_RESOURCES:
+      return static_cast<uint8_t>(
+          hci::ErrorCode::REMOTE_DEVICE_TERMINATED_CONNECTION_LOW_RESOURCES);
+    case hci::ErrorCode::REMOTE_DEVICE_TERMINATED_CONNECTION_POWER_OFF:
+      return static_cast<uint8_t>(
+          hci::ErrorCode::REMOTE_DEVICE_TERMINATED_CONNECTION_POWER_OFF);
+    case hci::ErrorCode::CONNECTION_TERMINATED_BY_LOCAL_HOST:
+      return HCI_ERR_CONN_CAUSE_LOCAL_HOST;
+    case hci::ErrorCode::REPEATED_ATTEMPTS:
+      return HCI_ERR_REPEATED_ATTEMPTS;
+    case hci::ErrorCode::PAIRING_NOT_ALLOWED:
+      return HCI_ERR_PAIRING_NOT_ALLOWED;
+    case hci::ErrorCode::UNKNOWN_LMP_PDU:
+      return static_cast<uint8_t>(hci::ErrorCode::UNKNOWN_LMP_PDU);
+    case hci::ErrorCode::UNSUPPORTED_REMOTE_OR_LMP_FEATURE:
+      return HCI_ERR_UNSUPPORTED_REM_FEATURE;
+    case hci::ErrorCode::SCO_OFFSET_REJECTED:
+      return static_cast<uint8_t>(hci::ErrorCode::SCO_OFFSET_REJECTED);
+    case hci::ErrorCode::SCO_INTERVAL_REJECTED:
+      return static_cast<uint8_t>(hci::ErrorCode::SCO_INTERVAL_REJECTED);
+    case hci::ErrorCode::SCO_AIR_MODE_REJECTED:
+      return static_cast<uint8_t>(hci::ErrorCode::SCO_AIR_MODE_REJECTED);
+    case hci::ErrorCode::INVALID_LMP_OR_LL_PARAMETERS:
+      return static_cast<uint8_t>(hci::ErrorCode::INVALID_LMP_OR_LL_PARAMETERS);
+    case hci::ErrorCode::UNSPECIFIED_ERROR:
+      return HCI_ERR_UNSPECIFIED;
+    case hci::ErrorCode::UNSUPPORTED_LMP_OR_LL_PARAMETER:
+      return static_cast<uint8_t>(
+          hci::ErrorCode::UNSUPPORTED_LMP_OR_LL_PARAMETER);
+    case hci::ErrorCode::ROLE_CHANGE_NOT_ALLOWED:
+      return static_cast<uint8_t>(hci::ErrorCode::ROLE_CHANGE_NOT_ALLOWED);
+    case hci::ErrorCode::LINK_LAYER_COLLISION:
+      return HCI_ERR_LMP_ERR_TRANS_COLLISION;
+    case hci::ErrorCode::ENCRYPTION_MODE_NOT_ACCEPTABLE:
+      return HCI_ERR_ENCRY_MODE_NOT_ACCEPTABLE;
+    case hci::ErrorCode::CONTROLLER_BUSY:
+      return static_cast<uint8_t>(hci::ErrorCode::CONTROLLER_BUSY);
+  }
+}
+
 }  // namespace bluetooth

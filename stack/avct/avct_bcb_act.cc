@@ -31,6 +31,7 @@
 #include "avct_int.h"
 #include "bt_target.h"
 #include "bt_utils.h"
+#include "bta/include/bta_api.h"
 #include "btm_api.h"
 #include "osi/include/osi.h"
 #include "stack/btm/btm_sec.h"
@@ -104,8 +105,6 @@ void avct_bcb_chnl_open(tAVCT_BCB* p_bcb, UNUSED_ATTR tAVCT_LCB_EVT* p_data) {
   tAVCT_LCB* p_lcb = avct_lcb_by_bcb(p_bcb);
   tL2CAP_ERTM_INFO ertm_info;
 
-  BTM_SetOutService(p_lcb->peer_addr, BTM_SEC_SERVICE_AVCTP_BROWSE, 0);
-
   /* Set the FCR options: Browsing channel mandates ERTM */
   ertm_info.preferred_mode = L2CAP_FCR_ERTM_MODE;
   ertm_info.allowed_modes = L2CAP_FCR_CHAN_OPT_ERTM;
@@ -116,8 +115,8 @@ void avct_bcb_chnl_open(tAVCT_BCB* p_bcb, UNUSED_ATTR tAVCT_LCB_EVT* p_data) {
 
   /* call l2cap connect req */
   p_bcb->ch_state = AVCT_CH_CONN;
-  p_bcb->ch_lcid =
-      L2CA_ErtmConnectReq(AVCT_BR_PSM, p_lcb->peer_addr, &ertm_info);
+  p_bcb->ch_lcid = L2CA_ErtmConnectReq2(AVCT_BR_PSM, p_lcb->peer_addr,
+                                        &ertm_info, BTA_SEC_AUTHENTICATE);
   if (p_bcb->ch_lcid == 0) {
     /* if connect req failed, send ourselves close event */
     tAVCT_LCB_EVT avct_lcb_evt;

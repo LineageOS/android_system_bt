@@ -29,6 +29,7 @@
 #include <cstdint>
 #include <string>
 
+#include "btm_sec.h"
 #include "device/include/controller.h"  // TODO Remove
 #include "main/shim/l2c_api.h"
 #include "main/shim/shim.h"
@@ -40,6 +41,15 @@ void btsnd_hcic_enhanced_flush(uint16_t handle,
                                uint8_t packet_type);  // TODO Remove
 
 using base::StringPrintf;
+
+uint16_t L2CA_Register2(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
+                        bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info,
+                        uint16_t required_mtu, uint16_t sec_level) {
+  auto ret =
+      L2CA_Register(psm, p_cb_info, enable_snoop, p_ertm_info, required_mtu);
+  BTM_SetSecurityLevel(false, "", 0, sec_level, psm, 0, 0);
+  return ret;
+}
 
 /*******************************************************************************
  *
@@ -282,6 +292,12 @@ void L2CA_FreeLePSM(uint16_t psm) {
   l2cb.le_dyn_psm_assigned[psm - LE_DYNAMIC_PSM_START] = false;
 }
 
+uint16_t L2CA_ConnectReq2(uint16_t psm, const RawAddress& p_bd_addr,
+                          uint16_t sec_level) {
+  BTM_SetSecurityLevel(true, "", 0, sec_level, psm, 0, 0);
+  return L2CA_ConnectReq(psm, p_bd_addr);
+}
+
 /*******************************************************************************
  *
  * Function         L2CA_ConnectReq
@@ -301,6 +317,13 @@ uint16_t L2CA_ConnectReq(uint16_t psm, const RawAddress& p_bd_addr) {
   }
 
   return L2CA_ErtmConnectReq(psm, p_bd_addr, nullptr);
+}
+
+uint16_t L2CA_ErtmConnectReq2(uint16_t psm, const RawAddress& p_bd_addr,
+                              tL2CAP_ERTM_INFO* p_ertm_info,
+                              uint16_t sec_level) {
+  BTM_SetSecurityLevel(true, "", 0, sec_level, psm, 0, 0);
+  return L2CA_ErtmConnectReq(psm, p_bd_addr, p_ertm_info);
 }
 
 /*******************************************************************************

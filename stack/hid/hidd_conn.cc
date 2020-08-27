@@ -366,7 +366,8 @@ static void hidd_l2cif_config_ind(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
         (p_hcon->conn_flags & HID_CONN_FLAGS_MY_CTRL_CFG_DONE)) {
       p_hcon->disc_reason = HID_L2CAP_CONN_FAIL;
       if ((p_hcon->intr_cid =
-               L2CA_ConnectReq(HID_PSM_INTERRUPT, hd_cb.device.addr)) == 0) {
+               L2CA_ConnectReq2(HID_PSM_INTERRUPT, hd_cb.device.addr,
+                                BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) == 0) {
         hidd_conn_disconnect();
         p_hcon->conn_state = HID_CONN_STATE_UNUSED;
 
@@ -449,7 +450,8 @@ static void hidd_l2cif_config_cfm(uint16_t cid, tL2CAP_CFG_INFO* p_cfg) {
         (p_hcon->conn_flags & HID_CONN_FLAGS_HIS_CTRL_CFG_DONE)) {
       p_hcon->disc_reason = HID_L2CAP_CONN_FAIL;
       if ((p_hcon->intr_cid =
-               L2CA_ConnectReq(HID_PSM_INTERRUPT, hd_cb.device.addr)) == 0) {
+               L2CA_ConnectReq2(HID_PSM_INTERRUPT, hd_cb.device.addr,
+                                BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) == 0) {
         hidd_conn_disconnect();
         p_hcon->conn_state = HID_CONN_STATE_UNUSED;
 
@@ -759,28 +761,17 @@ tHID_STATUS hidd_conn_reg(void) {
   hd_cb.l2cap_intr_cfg.flush_to_present = TRUE;
   hd_cb.l2cap_intr_cfg.flush_to = HID_DEV_FLUSH_TO;
 
-  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_HIDD_SEC_CTRL,
-                                  BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT,
-                                  HID_PSM_CONTROL)) {
-    HIDD_TRACE_ERROR("Security Registration 1 failed");
-    return (HID_ERR_NO_RESOURCES);
-  }
-
-  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_HIDD_INTR, BTM_SEC_NONE,
-                                  HID_PSM_INTERRUPT)) {
-    HIDD_TRACE_ERROR("Security Registration 5 failed");
-    return (HID_ERR_NO_RESOURCES);
-  }
-
-  if (!L2CA_Register(HID_PSM_CONTROL, (tL2CAP_APPL_INFO*)&dev_reg_info,
-                     false /* enable_snoop */, nullptr, hd_cb.l2cap_cfg.mtu)) {
+  if (!L2CA_Register2(HID_PSM_CONTROL, (tL2CAP_APPL_INFO*)&dev_reg_info,
+                      false /* enable_snoop */, nullptr, hd_cb.l2cap_cfg.mtu,
+                      BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
     HIDD_TRACE_ERROR("HID Control (device) registration failed");
     return (HID_ERR_L2CAP_FAILED);
   }
 
-  if (!L2CA_Register(HID_PSM_INTERRUPT, (tL2CAP_APPL_INFO*)&dev_reg_info,
-                     false /* enable_snoop */, nullptr,
-                     hd_cb.l2cap_intr_cfg.mtu)) {
+  if (!L2CA_Register2(HID_PSM_INTERRUPT, (tL2CAP_APPL_INFO*)&dev_reg_info,
+                      false /* enable_snoop */, nullptr,
+                      hd_cb.l2cap_intr_cfg.mtu,
+                      BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
     L2CA_Deregister(HID_PSM_CONTROL);
     HIDD_TRACE_ERROR("HID Interrupt (device) registration failed");
     return (HID_ERR_L2CAP_FAILED);
@@ -835,11 +826,10 @@ tHID_STATUS hidd_conn_initiate(void) {
 
   p_dev->conn.conn_flags = HID_CONN_FLAGS_IS_ORIG;
 
-  BTM_SetOutService(p_dev->addr, BTM_SEC_SERVICE_HIDD_SEC_CTRL, HIDD_SEC_CHN);
-
   /* Check if L2CAP started the connection process */
-  if ((p_dev->conn.ctrl_cid = L2CA_ConnectReq(HID_PSM_CONTROL, p_dev->addr)) ==
-      0) {
+  if ((p_dev->conn.ctrl_cid =
+           L2CA_ConnectReq2(HID_PSM_CONTROL, p_dev->addr,
+                            BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) == 0) {
     HIDD_TRACE_WARNING("%s: could not start L2CAP connection", __func__);
     hd_cb.callback(hd_cb.device.addr, HID_DHOST_EVT_CLOSE, HID_ERR_L2CAP_FAILED,
                    NULL);

@@ -45,7 +45,6 @@
 
 /* Bit map for PAN roles */
 #define PAN_ROLE_CLIENT 0x01     /* PANU role */
-#define PAN_ROLE_GN_SERVER 0x02  /* GN role */
 #define PAN_ROLE_NAP_SERVER 0x04 /* NAP role */
 
 /* Bitmap to indicate the usage of the Data */
@@ -240,7 +239,6 @@ extern void PAN_Deregister(void);
  *
  * Parameters:      role        - is bit map of roles to be active
  *                                      PAN_ROLE_CLIENT is for PANU role
- *                                      PAN_ROLE_GN_SERVER is for GN role
  *                                      PAN_ROLE_NAP_SERVER is for NAP role
  *                  sec_mask    - Security mask for different roles
  *                                      It is array of uint8_t. The bytes
@@ -248,7 +246,6 @@ extern void PAN_Deregister(void);
  *                                      GN and NAP in order
  *
  *                  p_user_name - Service name for PANU role
- *                  p_gn_name   - Service name for GN role
  *                  p_nap_name  - Service name for NAP role
  *                                  Can be NULL if user wants it to be default
  *
@@ -257,7 +254,7 @@ extern void PAN_Deregister(void);
  *
  ******************************************************************************/
 extern tPAN_RESULT PAN_SetRole(uint8_t role, const char* p_user_name,
-                               const char* p_gn_name, const char* p_nap_name);
+                               const char* p_nap_name);
 
 /*******************************************************************************
  *
@@ -270,7 +267,6 @@ extern tPAN_RESULT PAN_SetRole(uint8_t role, const char* p_user_name,
  *                  src_role    - Role of the local device for the connection
  *                  dst_role    - Role of the remote device for the connection
  *                                      PAN_ROLE_CLIENT is for PANU role
- *                                      PAN_ROLE_GN_SERVER is for GN role
  *                                      PAN_ROLE_NAP_SERVER is for NAP role
  *                  *handle     - Pointer for returning Handle to the connection
  *
