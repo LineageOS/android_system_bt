@@ -25,30 +25,25 @@
 
 #define LOG_TAG "bt_btm_ble"
 
-#include "bt_target.h"
+#include <cstdint>
 
-#include <base/bind.h>
-#include <string.h>
-
-#include "bt_types.h"
-#include "bt_utils.h"
-#include "btm_ble_api.h"
-#include "btm_int.h"
-#include "btu.h"
 #include "device/include/controller.h"
-#include "gap_api.h"
-#include "gatt_api.h"
-#include "hcimsgs.h"
-#include "log/log.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/shim.h"
-#include "osi/include/log.h"
-#include "osi/include/osi.h"
 #include "stack/btm/btm_dev.h"
-#include "stack/btm/btm_sec.h"
+#include "stack/btm/btm_int_types.h"
+#include "stack/btm/security_device_record.h"
 #include "stack/crypto_toolbox/crypto_toolbox.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/bt_types.h"
+#include "stack/include/btm_api.h"
+#include "stack/include/btu.h"
+#include "stack/include/gatt_api.h"
 #include "stack/include/l2cap_security_interface.h"
+#include "stack/include/smp_api.h"
+#include "types/raw_address.h"
+
+extern tBTM_CB btm_cb;
 
 extern void gatt_notify_phy_updated(uint8_t status, uint16_t handle,
                                     uint8_t tx_phy, uint8_t rx_phy);
