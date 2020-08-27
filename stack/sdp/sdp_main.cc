@@ -82,13 +82,6 @@ void sdp_init(void) {
   sdp_cb.max_attr_list_size = SDP_MTU_SIZE - 16;
   sdp_cb.max_recs_per_search = SDP_MAX_DISC_SERVER_RECS;
 
-  /* Register with Security Manager for the specific security level */
-  if (!BTM_SimpleSetSecurityLevel(BTM_SEC_SERVICE_SDP_SERVER, BTM_SEC_NONE,
-                                  SDP_PSM)) {
-    SDP_TRACE_ERROR("Security Registration for sdp failed");
-    return;
-  }
-
 #if defined(SDP_INITIAL_TRACE_LEVEL)
   sdp_cb.trace_level = SDP_INITIAL_TRACE_LEVEL;
 #else
@@ -503,7 +496,7 @@ tCONN_CB* sdp_conn_originate(const RawAddress& p_bd_addr) {
    */
   p_ccb->con_state = SDP_STATE_CONN_SETUP;
 
-  cid = L2CA_ConnectReq(SDP_PSM, p_bd_addr);
+  cid = L2CA_ConnectReq2(SDP_PSM, p_bd_addr, BTM_SEC_NONE);
 
   /* Check if L2CAP started the connection process */
   if (cid == 0) {
