@@ -28,46 +28,30 @@
 #define LOG_TAG "bt_btu_hcif"
 
 #include <base/bind.h>
-#include <base/callback.h>
 #include <base/location.h>
-#include <base/logging.h>
-#include <base/threading/thread.h>
-#include <frameworks/base/core/proto/android/bluetooth/enums.pb.h>
-#include <frameworks/base/core/proto/android/bluetooth/hci/enums.pb.h>
-#include <log/log.h>
-#include <statslog.h>
-#include <stdio.h>
-#include <stdlib.h>
-#include <string.h>
+#include <cstdint>
 
-#include "bt_common.h"
-#include "bt_types.h"
-#include "bt_utils.h"
-#include "bta/sys/bta_sys.h"
-#include "btif_config.h"
-#include "btm_api.h"
-#include "btm_int.h"
-#include "btm_iso_api.h"
-#include "btu.h"
+#include "btif/include/btif_config.h"
 #include "common/metrics.h"
 #include "device/include/controller.h"
-#include "hci_evt_length.h"
-#include "hci_layer.h"
-#include "hcimsgs.h"
 #include "osi/include/log.h"
-#include "osi/include/osi.h"
-#include "stack/include/acl_api.h"
+#include "stack/btm/btm_ble_int.h"
+#include "stack/btm/btm_int.h"
 #include "stack/include/acl_hci_link_interface.h"
+#include "stack/include/btm_iso_api.h"
+#include "stack/include/btu.h"
+#include "stack/include/hci_evt_length.h"
+#include "stack/include/hcidefs.h"
 #include "stack/include/l2cap_hci_link_interface.h"
 #include "stack/include/sec_hci_link_interface.h"
 
 using base::Location;
 using bluetooth::hci::IsoManager;
 
-extern void btm_process_cancel_complete(uint8_t status, uint8_t mode);
-extern void btm_process_inq_results2(uint8_t* p, uint8_t inq_res_mode);
-extern void btm_ble_test_command_complete(uint8_t* p);
-extern void smp_cancel_start_encryption_attempt();
+bool l2c_link_hci_disc_comp(uint16_t handle, uint8_t reason);  // TODO remove
+bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x);              // TODO remove
+void BTA_sys_signal_hw_error();                                // TODO remove
+void smp_cancel_start_encryption_attempt();                    // TODO remove
 
 /******************************************************************************/
 /*            L O C A L    F U N C T I O N     P R O T O T Y P E S            */
