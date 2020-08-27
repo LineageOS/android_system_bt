@@ -1178,24 +1178,6 @@ void bta_jv_l2cap_write(uint32_t handle, uint32_t req_id, BT_HDR* msg,
   p_cb->p_cback(BTA_JV_L2CAP_WRITE_EVT, &bta_jv, user_id);
 }
 
-/* Write data to an L2CAP connection using Fixed channels */
-void bta_jv_l2cap_write_fixed(uint16_t channel, const RawAddress& addr,
-                              uint32_t req_id, BT_HDR* msg, uint32_t user_id,
-                              tBTA_JV_L2CAP_CBACK* p_cback) {
-  tBTA_JV_L2CAP_WRITE_FIXED evt_data;
-  evt_data.status = BTA_JV_FAILURE;
-  evt_data.channel = channel;
-  evt_data.addr = addr;
-  evt_data.req_id = req_id;
-  evt_data.len = 0;
-
-  L2CA_SendFixedChnlData(channel, addr, msg);
-
-  tBTA_JV bta_jv;
-  bta_jv.l2c_write_fixed = evt_data;
-  p_cback(BTA_JV_L2CAP_WRITE_FIXED_EVT, &bta_jv, user_id);
-}
-
 /*******************************************************************************
  *
  * Function     bta_jv_port_data_co_cback
@@ -2129,10 +2111,4 @@ void bta_jv_l2cap_stop_server_le(uint16_t local_chan) {
       if (p_cback) p_cback(BTA_JV_L2CAP_CLOSE_EVT, &evt, l2cap_socket_id);
     }
   }
-}
-
-/* close a fixed channel connection. calls no callbacks. idempotent */
-extern void bta_jv_l2cap_close_fixed(uint32_t handle) {
-  struct fc_client* t = fcclient_find_by_id(handle);
-  if (t) fcclient_free(t);
 }
