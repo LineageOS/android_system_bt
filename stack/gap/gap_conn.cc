@@ -244,8 +244,8 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
 
   /* Register the PSM with L2CAP */
   if (transport == BT_TRANSPORT_BR_EDR) {
-    p_ccb->psm = L2CA_Register(psm, &conn.reg_info, false /* enable_snoop */,
-                               &p_ccb->ertm_info, L2CAP_MTU_SIZE);
+    p_ccb->psm = L2CA_Register2(psm, &conn.reg_info, false /* enable_snoop */,
+                                &p_ccb->ertm_info, L2CAP_MTU_SIZE, security);
     if (p_ccb->psm == 0) {
       LOG(ERROR) << StringPrintf("%s: Failure registering PSM 0x%04x", __func__,
                                  psm);
@@ -255,21 +255,14 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
   }
 
   if (transport == BT_TRANSPORT_LE) {
-    p_ccb->psm = L2CA_RegisterLECoc(psm, (tL2CAP_APPL_INFO*)&conn.reg_info);
+    p_ccb->psm =
+        L2CA_RegisterLECoc(psm, (tL2CAP_APPL_INFO*)&conn.reg_info, security);
     if (p_ccb->psm == 0) {
       LOG(ERROR) << StringPrintf("%s: Failure registering PSM 0x%04x", __func__,
                                  psm);
       gap_release_ccb(p_ccb);
       return (GAP_INVALID_HANDLE);
     }
-  }
-
-  /* Register with Security Manager for the specific security level */
-  if (!BTM_SetSecurityLevel((uint8_t)!is_server, p_serv_name, p_ccb->service_id,
-                            security, p_ccb->psm, 0, 0)) {
-    LOG(ERROR) << "GAP_CONN - Security Error";
-    gap_release_ccb(p_ccb);
-    return (GAP_INVALID_HANDLE);
   }
 
   /* optional FCR channel modes */
@@ -297,7 +290,8 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
 
     /* Check if L2CAP started the connection process */
     if (p_rem_bda && (transport == BT_TRANSPORT_BR_EDR)) {
-      cid = L2CA_ErtmConnectReq(p_ccb->psm, *p_rem_bda, &p_ccb->ertm_info);
+      cid = L2CA_ErtmConnectReq2(p_ccb->psm, *p_rem_bda, &p_ccb->ertm_info,
+                                 security);
       if (cid != 0) {
         p_ccb->connection_id = cid;
         return (p_ccb->gap_handle);
@@ -305,7 +299,8 @@ uint16_t GAP_ConnOpen(const char* p_serv_name, uint8_t service_id,
     }
 
     if (p_rem_bda && (transport == BT_TRANSPORT_LE)) {
-      cid = L2CA_ConnectLECocReq(p_ccb->psm, *p_rem_bda, &p_ccb->local_coc_cfg);
+      cid = L2CA_ConnectLECocReq(p_ccb->psm, *p_rem_bda, &p_ccb->local_coc_cfg,
+                                 security);
       if (cid != 0) {
         p_ccb->connection_id = cid;
         return (p_ccb->gap_handle);

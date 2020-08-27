@@ -450,11 +450,13 @@ uint16_t L2CA_ErtmConnectReq(uint16_t psm, const RawAddress& p_bd_addr,
  *                  and L2CA_DeregisterLECoc()
  *
  ******************************************************************************/
-uint16_t L2CA_RegisterLECoc(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info) {
+uint16_t L2CA_RegisterLECoc(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
+                            uint16_t sec_level) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::L2CA_RegisterLECoc(psm, p_cb_info);
   }
 
+  BTM_SetSecurityLevel(false, "", 0, sec_level, psm, 0, 0);
   L2CAP_TRACE_API("%s called for LE PSM: 0x%04x", __func__, psm);
 
   /* Verify that the required callback info has been filled in
@@ -568,10 +570,12 @@ void L2CA_DeregisterLECoc(uint16_t psm) {
  *
  ******************************************************************************/
 uint16_t L2CA_ConnectLECocReq(uint16_t psm, const RawAddress& p_bd_addr,
-                              tL2CAP_LE_CFG_INFO* p_cfg) {
+                              tL2CAP_LE_CFG_INFO* p_cfg, uint16_t sec_level) {
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::L2CA_ConnectLECocReq(psm, p_bd_addr, p_cfg);
   }
+
+  BTM_SetSecurityLevel(true, "", 0, sec_level, psm, 0, 0);
 
   VLOG(1) << __func__ << " BDA: " << p_bd_addr
           << StringPrintf(" PSM: 0x%04x", psm);
