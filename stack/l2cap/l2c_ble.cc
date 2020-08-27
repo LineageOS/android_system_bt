@@ -26,7 +26,6 @@
 #include <base/strings/stringprintf.h>
 #include "bt_target.h"
 #include "bta_hearing_aid_api.h"
-#include "btm_int.h"
 #include "device/include/controller.h"
 #include "hcimsgs.h"
 #include "l2c_api.h"
