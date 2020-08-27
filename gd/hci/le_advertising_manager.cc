@@ -324,11 +324,16 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
           module_handler_->BindOnce(impl::check_status<LeSetExtendedAdvertisingParametersCompleteView>));
     }
 
-    advertising_sets_[id].current_address = le_address_manager_->GetAnotherAddress();
-    le_advertising_interface_->EnqueueCommand(
-        hci::LeSetExtendedAdvertisingRandomAddressBuilder::Create(
-            id, advertising_sets_[id].current_address.GetAddress()),
-        module_handler_->BindOnce(impl::check_status<LeSetExtendedAdvertisingRandomAddressCompleteView>));
+    if (config.own_address_type == OwnAddressType::RANDOM_DEVICE_ADDRESS) {
+      advertising_sets_[id].current_address = le_address_manager_->GetAnotherAddress();
+      le_advertising_interface_->EnqueueCommand(
+          hci::LeSetExtendedAdvertisingRandomAddressBuilder::Create(
+              id, advertising_sets_[id].current_address.GetAddress()),
+          module_handler_->BindOnce(impl::check_status<LeSetExtendedAdvertisingRandomAddressCompleteView>));
+    } else {
+      advertising_sets_[id].current_address =
+          AddressWithType(controller_->GetMacAddress(), AddressType::PUBLIC_DEVICE_ADDRESS);
+    }
     if (!config.scan_response.empty()) {
       le_advertising_interface_->EnqueueCommand(
           hci::LeSetExtendedAdvertisingScanResponseBuilder::Create(id, config.operation, config.fragment_preference,
@@ -461,7 +466,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
   }
 
   common::Callback<void(Address, AddressType)> scan_callback_;
-  common::ContextualCallback<void(ErrorCode, uint16_t, hci::AddressWithType)> set_terminated_callback_;
+  common::ContextualCallback<void(ErrorCode, uint16_t, hci::AddressWithType)> set_terminated_callback_{};
   os::Handler* registered_handler_{nullptr};
   Module* module_;
   os::Handler* module_handler_;
