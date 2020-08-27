@@ -91,10 +91,6 @@ static void gap_disconnect_ind(uint16_t l2cap_cid, bool ack_needed);
 static void gap_data_ind(uint16_t l2cap_cid, BT_HDR* p_msg);
 static void gap_congestion_ind(uint16_t lcid, bool is_congested);
 static void gap_tx_complete_ind(uint16_t l2cap_cid, uint16_t sdu_sent);
-static void gap_credits_received_cb(uint16_t l2cap_cid,
-                                    uint16_t credits_received,
-                                    uint16_t credit_count);
-
 static tGAP_CCB* gap_find_ccb_by_cid(uint16_t cid);
 static tGAP_CCB* gap_find_ccb_by_handle(uint16_t handle);
 static tGAP_CCB* gap_allocate_ccb(void);
@@ -122,7 +118,7 @@ void gap_conn_init(void) {
   conn.reg_info.pL2CA_DataInd_Cb = gap_data_ind;
   conn.reg_info.pL2CA_CongestionStatus_Cb = gap_congestion_ind;
   conn.reg_info.pL2CA_TxComplete_Cb = gap_tx_complete_ind;
-  conn.reg_info.pL2CA_CreditsReceived_Cb = gap_credits_received_cb;
+  conn.reg_info.pL2CA_CreditsReceived_Cb = NULL;
 }
 
 /*******************************************************************************
@@ -586,16 +582,6 @@ void gap_tx_complete_ind(uint16_t l2cap_cid, uint16_t sdu_sent) {
     DVLOG(1) << StringPrintf("%s: GAP_EVT_TX_EMPTY", __func__);
     p_ccb->p_callback(p_ccb->gap_handle, GAP_EVT_TX_EMPTY, nullptr);
   }
-}
-
-void gap_credits_received_cb(uint16_t l2cap_cid, uint16_t credits_received,
-                             uint16_t credit_count) {
-  tGAP_CCB* p_ccb = gap_find_ccb_by_cid(l2cap_cid);
-  if (!p_ccb) return;
-
-  tGAP_CB_DATA data{.coc_credits = {.credits_received = credits_received,
-                                    .credit_count = credit_count}};
-  p_ccb->p_callback(p_ccb->gap_handle, GAP_EVT_LE_COC_CREDITS, &data);
 }
 
 /*******************************************************************************
