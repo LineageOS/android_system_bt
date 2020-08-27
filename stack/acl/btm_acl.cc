@@ -549,12 +549,6 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
  *
  ******************************************************************************/
 tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
-  tACL_CONN* p;
-  tBTM_SEC_DEV_REC* p_dev_rec = NULL;
-  bool is_sco_active;
-  tBTM_STATUS status;
-  tBTM_PM_MODE pwr_mode;
-  tBTM_PM_PWR_MD settings;
 
   LOG_INFO("%s: peer %s new_role=0x%x", __func__,
            remote_bd_addr.ToString().c_str(), new_role);
@@ -563,22 +557,21 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
   if (!controller_get_interface()->supports_master_slave_role_switch())
     return (BTM_MODE_UNSUPPORTED);
 
-  p = internal_.btm_bda_to_acl(remote_bd_addr, BT_TRANSPORT_BR_EDR);
-  if (p == NULL) return (BTM_UNKNOWN_ADDR);
+  tACL_CONN* p_acl =
+      internal_.btm_bda_to_acl(remote_bd_addr, BT_TRANSPORT_BR_EDR);
+  if (p_acl == NULL) return (BTM_UNKNOWN_ADDR);
 
   /* Finished if already in desired role */
-  if (p->link_role == new_role) return (BTM_SUCCESS);
+  if (p_acl->link_role == new_role) return (BTM_SUCCESS);
 
   if (interop_match_addr(INTEROP_DISABLE_ROLE_SWITCH, &remote_bd_addr))
     return BTM_DEV_BLACKLISTED;
 
   /* Check if there is any SCO Active on this BD Address */
-  is_sco_active = BTM_IsScoActiveByBdaddr(remote_bd_addr);
-
-  if (is_sco_active) return (BTM_NO_RESOURCES);
+  if (BTM_IsScoActiveByBdaddr(remote_bd_addr)) return (BTM_NO_RESOURCES);
 
   /* Ignore role switch request if the previous request was not completed */
-  if (!p->is_switch_role_idle()) {
+  if (!p_acl->is_switch_role_idle()) {
     LOG_DEBUG("%s switch role in progress", __func__);
     return BTM_BUSY;
   }
@@ -589,31 +582,34 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
     return BTM_DEV_BLACKLISTED;
   }
 
-  if (!BTM_ReadPowerMode(p->remote_addr, &pwr_mode)) {
+  tBTM_PM_MODE pwr_mode;
+  if (!BTM_ReadPowerMode(p_acl->remote_addr, &pwr_mode)) {
     return BTM_UNKNOWN_ADDR;
   };
 
   /* Wake up the link if in sniff or park before attempting switch */
   if (pwr_mode == BTM_PM_MD_PARK || pwr_mode == BTM_PM_MD_SNIFF) {
+    tBTM_PM_PWR_MD settings;
     memset((void*)&settings, 0, sizeof(settings));
     settings.mode = BTM_PM_MD_ACTIVE;
-    status = BTM_SetPowerMode(BTM_PM_SET_ONLY_ID, p->remote_addr, &settings);
+    tBTM_STATUS status =
+        BTM_SetPowerMode(BTM_PM_SET_ONLY_ID, p_acl->remote_addr, &settings);
     if (status != BTM_CMD_STARTED) return (BTM_WRONG_MODE);
 
-    p->set_switch_role_changing();
+    p_acl->set_switch_role_changing();
   }
   /* some devices do not support switch while encryption is on */
   else {
-    p_dev_rec = btm_find_dev(remote_bd_addr);
+    tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(remote_bd_addr);
     if ((p_dev_rec != NULL) &&
         ((p_dev_rec->sec_flags & BTM_SEC_ENCRYPTED) != 0) &&
-        !BTM_EPR_AVAILABLE(p)) {
+        !BTM_EPR_AVAILABLE(p_acl)) {
       /* bypass turning off encryption if change link key is already doing it */
-      p->set_encryption_off();
-      p->set_switch_role_encryption_off();
+      p_acl->set_encryption_off();
+      p_acl->set_switch_role_encryption_off();
     } else {
       btsnd_hcic_switch_role(remote_bd_addr, new_role);
-      p->set_switch_role_in_progress();
+      p_acl->set_switch_role_in_progress();
       if (p_dev_rec) p_dev_rec->rs_disc_pending = BTM_SEC_RS_PENDING;
     }
   }
