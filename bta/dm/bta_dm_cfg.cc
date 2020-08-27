@@ -149,7 +149,9 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_CFG
 tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
     /* AG : 0 */
     {(BTA_DM_PM_SNIFF | BTA_DM_PM_PARK), /* allow park & sniff */
+#if (BTM_SSR_INCLUDED == TRUE)
      (BTA_DM_PM_SSR2), /* the SSR entry */
+#endif
      {
          {{BTA_DM_PM_SNIFF_A2DP_IDX, 7000},
           {BTA_DM_PM_NO_ACTION, 0}}, /* conn open sniff  */
@@ -169,7 +171,9 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
 
     /* CT, CG : 1 */
     {(BTA_DM_PM_SNIFF | BTA_DM_PM_PARK), /* allow park & sniff */
+#if (BTM_SSR_INCLUDED == TRUE)
      (BTA_DM_PM_SSR2), /* the SSR entry */
+#endif
      {
          {{BTA_DM_PM_PARK, 5000},
           {BTA_DM_PM_NO_ACTION, 0}}, /* conn open  park */
@@ -188,7 +192,9 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
 
     /* DG, PBC : 2 */
     {(BTA_DM_PM_ACTIVE), /* no power saving mode allowed */
+#if (BTM_SSR_INCLUDED == TRUE)
      (BTA_DM_PM_SSR2), /* the SSR entry */
+#endif
      {
          {{BTA_DM_PM_SNIFF, 5000},
           {BTA_DM_PM_NO_ACTION, 0}}, /* conn open active */
@@ -205,7 +211,9 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
 
     /* HD : 3 */
     {(BTA_DM_PM_SNIFF | BTA_DM_PM_PARK), /* allow park & sniff */
+#if (BTM_SSR_INCLUDED == TRUE)
      (BTA_DM_PM_SSR3), /* the SSR entry */
+#endif
      {
          {{BTA_DM_PM_SNIFF_HD_ACTIVE_IDX, 5000},
           {BTA_DM_PM_NO_ACTION, 0}}, /* conn open sniff */
@@ -224,7 +232,9 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
 
     /* AV : 4 */
     {(BTA_DM_PM_SNIFF), /* allow sniff */
+#if (BTM_SSR_INCLUDED == TRUE)
      (BTA_DM_PM_SSR2), /* the SSR entry */
+#endif
      {
          {{BTA_DM_PM_SNIFF_A2DP_IDX, 7000},
           {BTA_DM_PM_NO_ACTION, 0}}, /* conn open  sniff */
@@ -242,7 +252,9 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
 
     /* HH for joysticks and gamepad : 5 */
     {(BTA_DM_PM_SNIFF | BTA_DM_PM_PARK), /* allow park & sniff */
+#if (BTM_SSR_INCLUDED == TRUE)
      (BTA_DM_PM_SSR1), /* the SSR entry */
+#endif
      {
          {{BTA_DM_PM_SNIFF6, BTA_DM_PM_HH_OPEN_DELAY},
           {BTA_DM_PM_NO_ACTION, 0}}, /* conn open  sniff */
@@ -262,7 +274,9 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
 
     /* HH : 6 */
     {(BTA_DM_PM_SNIFF | BTA_DM_PM_PARK), /* allow park & sniff */
+#if (BTM_SSR_INCLUDED == TRUE)
      (BTA_DM_PM_SSR1), /* the SSR entry */
+#endif
      {
          {{BTA_DM_PM_SNIFF_HH_OPEN_IDX, BTA_DM_PM_HH_OPEN_DELAY},
           {BTA_DM_PM_NO_ACTION, 0}}, /* conn open  sniff */
@@ -282,7 +296,9 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
 
     /* FTC, OPC, JV : 7 */
     {(BTA_DM_PM_SNIFF), /* allow sniff */
+#if (BTM_SSR_INCLUDED == TRUE)
      (BTA_DM_PM_SSR2), /* the SSR entry */
+#endif
      {
          {{BTA_DM_PM_ACTIVE, 0},
           {BTA_DM_PM_NO_ACTION, 0}}, /* conn open  active */
@@ -300,7 +316,9 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
 
     /* FTS, PBS, OPS, MSE, BTA_JV_PM_ID_1 : 8 */
     {(BTA_DM_PM_SNIFF), /* allow sniff */
+#if (BTM_SSR_INCLUDED == TRUE)
      (BTA_DM_PM_SSR2), /* the SSR entry */
+#endif
      {
          {{BTA_DM_PM_ACTIVE, 0},
           {BTA_DM_PM_NO_ACTION, 0}}, /* conn open  active */
@@ -318,7 +336,9 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
 
     /* HL : 9 */
     {(BTA_DM_PM_SNIFF), /* allow sniff */
+#if (BTM_SSR_INCLUDED == TRUE)
      (BTA_DM_PM_SSR2), /* the SSR entry */
+#endif
      {
          {{BTA_DM_PM_SNIFF_A2DP_IDX, 5000},
           {BTA_DM_PM_NO_ACTION, 0}}, /* conn open sniff  */
@@ -337,7 +357,9 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
 
     /* PANU : 10 */
     {(BTA_DM_PM_SNIFF), /* allow sniff */
+#if (BTM_SSR_INCLUDED == TRUE)
      (BTA_DM_PM_SSR2), /* the SSR entry */
+#endif
      {
          {{BTA_DM_PM_ACTIVE, 0},
           {BTA_DM_PM_NO_ACTION, 0}}, /* conn open  active */
@@ -355,7 +377,9 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
 
     /* NAP : 11 */
     {(BTA_DM_PM_SNIFF), /* allow sniff */
+#if (BTM_SSR_INCLUDED == TRUE)
      (BTA_DM_PM_SSR2), /* the SSR entry */
+#endif
      {
          {{BTA_DM_PM_ACTIVE, 0},
           {BTA_DM_PM_NO_ACTION, 0}}, /* conn open  active */
@@ -374,7 +398,9 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
 
     /* HS : 12 */
     {(BTA_DM_PM_SNIFF | BTA_DM_PM_PARK), /* allow park & sniff */
+#if (BTM_SSR_INCLUDED == TRUE)
      (BTA_DM_PM_SSR2), /* the SSR entry */
+#endif
      {
          {{BTA_DM_PM_SNIFF, 7000},
           {BTA_DM_PM_NO_ACTION, 0}}, /* conn open sniff  */
@@ -393,7 +419,9 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
 
     /* AVK : 13 */
     {(BTA_DM_PM_SNIFF), /* allow sniff */
+#if (BTM_SSR_INCLUDED == TRUE)
      (BTA_DM_PM_SSR2), /* the SSR entry */
+#endif
      {
          {{BTA_DM_PM_SNIFF, 3000},
           {BTA_DM_PM_NO_ACTION, 0}}, /* conn open  sniff */
@@ -411,7 +439,9 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
     /* GATTC : 14 */
     ,
     {(BTA_DM_PM_SNIFF | BTA_DM_PM_PARK), /* allow park & sniff */
+#if (BTM_SSR_INCLUDED == TRUE)
      (BTA_DM_PM_SSR2), /* the SSR entry */
+#endif
      {
          {{BTA_DM_PM_SNIFF_A2DP_IDX, 10000},
           {BTA_DM_PM_NO_ACTION, 0}}, /* conn open  active */
@@ -429,7 +459,9 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTA_DM_PM_SPEC bta_dm_pm_spec[BTA_DM_NUM_PM_SPEC] = {
     /* GATTS : 15 */
     ,
     {(BTA_DM_PM_SNIFF | BTA_DM_PM_PARK), /* allow park & sniff */
+#if (BTM_SSR_INCLUDED == TRUE)
      (BTA_DM_PM_SSR2), /* the SSR entry */
+#endif
      {
          {{BTA_DM_PM_NO_PREF, 0},
           {BTA_DM_PM_NO_ACTION, 0}}, /* conn open  active */
@@ -537,6 +569,7 @@ tBTA_DM_PM_TYPE_QUALIFIER tBTM_PM_PWR_MD bta_dm_pm_md[] = {
 /* the smaller of the SSR max latency wins.
  * the entries in this table must be from highest latency (biggest interval) to
  * lowest latency */
+#if (BTM_SSR_INCLUDED == TRUE)
 tBTA_DM_SSR_SPEC bta_dm_ssr_spec[] = {
     /*max_lat, min_rmt_to, min_loc_to*/
     {0, 0, 0}, /* BTA_DM_PM_SSR0 - do not use SSR */
@@ -550,6 +583,7 @@ tBTA_DM_SSR_SPEC bta_dm_ssr_spec[] = {
 };
 
 tBTA_DM_SSR_SPEC* p_bta_dm_ssr_spec = &bta_dm_ssr_spec[0];
+#endif
 
 const tBTA_DM_PM_CFG* p_bta_dm_pm_cfg = &bta_dm_pm_cfg[0];
 const tBTA_DM_PM_SPEC* p_bta_dm_pm_spec = &bta_dm_pm_spec[0];
