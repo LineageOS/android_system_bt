@@ -352,12 +352,6 @@ void BTM_SetPinType(uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len) {
 
 #define BTM_NO_AVAIL_SEC_SERVICES ((uint16_t)0xffff)
 
-bool BTM_SimpleSetSecurityLevel(uint8_t service_id, uint16_t sec_level,
-                                uint16_t psm) {
-  return BTM_SetSecurityLevel(true, "", service_id, sec_level, psm, 0, 0) &&
-         BTM_SetSecurityLevel(false, "", service_id, sec_level, psm, 0, 0);
-}
-
 /*******************************************************************************
  *
  * Function         BTM_SetSecurityLevel
