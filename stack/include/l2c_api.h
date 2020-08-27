@@ -229,15 +229,6 @@ typedef void(tL2CA_ECHO_DATA_CB)(const RawAddress&, uint16_t, uint8_t*);
  */
 typedef void(tL2CA_CONGESTION_STATUS_CB)(uint16_t, bool);
 
-/* Callback prototype for number of packets completed events.
- * This callback notifies the application when Number of Completed Packets
- * event has been received.
- * This callback is originally designed for 3DG devices.
- * The parameter is:
- *          peer BD_ADDR
- */
-typedef void(tL2CA_NOCP_CB)(const RawAddress&);
-
 /* Transmit complete callback protype. This callback is optional. If
  * set, L2CAP will call it when packets are sent or flushed. If the
  * count is 0xFFFF, it means all packets are sent for that CID (eRTM
@@ -246,15 +237,6 @@ typedef void(tL2CA_NOCP_CB)(const RawAddress&);
  *              Number of SDUs sent or dropped
  */
 typedef void(tL2CA_TX_COMPLETE_CB)(uint16_t, uint16_t);
-
-/* Callback for receiving credits from the remote device.
- * |credit_received| parameter represents number of credits received in "LE Flow
- * Control Credit" packet from the remote. |credit_count| parameter represents
- * the total available credits, including |credit_received|.
- */
-typedef void(tL2CA_CREDITS_RECEIVED_CB)(uint16_t local_cid,
-                                        uint16_t credits_received,
-                                        uint16_t credit_count);
 
 /* Define the structure that applications use to register with
  * L2CAP. This structure includes callback functions. All functions
