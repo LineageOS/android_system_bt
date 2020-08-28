@@ -528,20 +528,6 @@ void BTA_JvL2capStartServer(int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
 
 /*******************************************************************************
  *
- * Function         BTA_JvL2capStopServerLE
- *
- * Description      This function stops the LE L2CAP server. If the server has
- *                  an active connection, it would be closed.
- *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
- *
- ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capStopServerLE(uint16_t local_chan,
-                                       uint32_t l2cap_socket_id);
-
-/*******************************************************************************
- *
  * Function         BTA_JvL2capStopServer
  *
  * Description      This function stops the L2CAP server. If the server has
