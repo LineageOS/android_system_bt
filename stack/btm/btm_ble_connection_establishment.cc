@@ -140,7 +140,7 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
       if (match_rec) {
         LOG(INFO) << __func__ << ": matched and resolved random address";
         match = true;
-        match_rec->ble.active_addr_type = BTM_BLE_ADDR_RRA;
+        match_rec->ble.active_addr_type = tBTM_SEC_BLE::BTM_BLE_ADDR_RRA;
         match_rec->ble.cur_rand_addr = bda;
         if (!btm_ble_init_pseudo_addr(match_rec, bda)) {
           /* assign the original address to be the current report address */
@@ -176,8 +176,8 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
       btm_ble_refresh_local_resolvable_private_addr(bda, local_rpa);
 
       if (peer_addr_type & BLE_ADDR_TYPE_ID_BIT)
-        btm_ble_refresh_peer_resolvable_private_addr(bda, peer_rpa,
-                                                     BLE_ADDR_RANDOM);
+        btm_ble_refresh_peer_resolvable_private_addr(
+            bda, peer_rpa, tBTM_SEC_BLE::BTM_BLE_ADDR_RRA);
     }
   } else {
     // Log for non HCI success case

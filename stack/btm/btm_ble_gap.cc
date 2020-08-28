@@ -1614,7 +1614,7 @@ void btm_ble_process_adv_addr(RawAddress& bda, uint8_t* addr_type) {
   if (!match && BTM_BLE_IS_RESOLVE_BDA(bda)) {
     tBTM_SEC_DEV_REC* match_rec = btm_ble_resolve_random_addr(bda);
     if (match_rec) {
-      match_rec->ble.active_addr_type = BTM_BLE_ADDR_RRA;
+      match_rec->ble.active_addr_type = tBTM_SEC_BLE::BTM_BLE_ADDR_RRA;
       match_rec->ble.cur_rand_addr = bda;
 
       if (btm_ble_init_pseudo_addr(match_rec, bda)) {
