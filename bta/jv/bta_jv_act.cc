@@ -2131,31 +2131,6 @@ void bta_jv_l2cap_stop_server_le(uint16_t local_chan) {
   }
 }
 
-/** starts an LE L2CAP server */
-void bta_jv_l2cap_start_server_le(uint16_t local_chan,
-                                  tBTA_JV_L2CAP_CBACK* p_cback,
-                                  uint32_t l2cap_socket_id) {
-  tBTA_JV_L2CAP_START evt_data;
-  evt_data.handle = GAP_INVALID_HANDLE;
-  evt_data.status = BTA_JV_FAILURE;
-
-  struct fc_client* t = fcclient_alloc(local_chan, true, NULL);
-  if (!t) goto out;
-
-  t->p_cback = p_cback;
-  t->l2cap_socket_id = l2cap_socket_id;
-
-  // if we got here, we're registered...
-  evt_data.status = BTA_JV_SUCCESS;
-  evt_data.handle = t->id;
-  evt_data.sec_id = t->sec_id;
-
-out:
-  tBTA_JV bta_jv;
-  bta_jv.l2c_start = evt_data;
-  p_cback(BTA_JV_L2CAP_START_EVT, &bta_jv, l2cap_socket_id);
-}
-
 /* close a fixed channel connection. calls no callbacks. idempotent */
 extern void bta_jv_l2cap_close_fixed(uint32_t handle) {
   struct fc_client* t = fcclient_find_by_id(handle);
