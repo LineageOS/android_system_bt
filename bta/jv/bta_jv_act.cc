@@ -2105,52 +2105,6 @@ static void fcchan_data_cbk(uint16_t chan, const RawAddress& bd_addr,
   if (sock_cback) sock_cback(BTA_JV_L2CAP_DATA_IND_EVT, &evt_data, sock_id);
 }
 
-/** makes an le l2cap client connection */
-void bta_jv_l2cap_connect_le(uint16_t remote_chan,
-                             const RawAddress& peer_bd_addr,
-                             tBTA_JV_L2CAP_CBACK* p_cback,
-                             uint32_t l2cap_socket_id) {
-  tBTA_JV evt;
-  uint32_t id;
-  char call_init_f = true;
-  struct fc_client* t;
-
-  evt.l2c_cl_init.handle = GAP_INVALID_HANDLE;
-  evt.l2c_cl_init.status = BTA_JV_FAILURE;
-
-  t = fcclient_alloc(remote_chan, false, NULL);
-  if (!t) {
-    p_cback(BTA_JV_L2CAP_CL_INIT_EVT, &evt, l2cap_socket_id);
-    return;
-  }
-
-  t->p_cback = p_cback;
-  t->l2cap_socket_id = l2cap_socket_id;
-  t->remote_addr = peer_bd_addr;
-  id = t->id;
-  t->init_called = false;
-
-  if (L2CA_ConnectFixedChnl(t->chan, t->remote_addr)) {
-    evt.l2c_cl_init.status = BTA_JV_SUCCESS;
-    evt.l2c_cl_init.handle = id;
-  }
-
-  // it could have been deleted/moved from under us, so re-find it */
-  t = fcclient_find_by_id(id);
-  if (t) {
-    if (evt.l2c_cl_init.status == BTA_JV_SUCCESS) {
-      call_init_f = !t->init_called;
-    } else {
-      fcclient_free(t);
-      t = NULL;
-    }
-  }
-  if (call_init_f) p_cback(BTA_JV_L2CAP_CL_INIT_EVT, &evt, l2cap_socket_id);
-  if (t) {
-    t->init_called = true;
-  }
-}
-
 /* stops an LE L2CAP server */
 void bta_jv_l2cap_stop_server_le(uint16_t local_chan) {
   struct fc_client* fcclient;
