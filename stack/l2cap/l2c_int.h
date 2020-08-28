@@ -483,11 +483,6 @@ typedef struct {
 
   tL2CA_ECHO_DATA_CB* p_echo_data_cb; /* Echo data callback */
 
-#if (L2CAP_HIGH_PRI_CHAN_QUOTA_IS_CONFIGURABLE == TRUE)
-  uint16_t high_pri_min_xmit_quota; /* Minimum number of ACL credit for high
-                                       priority link */
-#endif /* (L2CAP_HIGH_PRI_CHAN_QUOTA_IS_CONFIGURABLE == TRUE) */
-
   uint16_t dyn_psm;
 
   uint16_t le_dyn_psm; /* Next LE dynamic PSM value to try to assign */
@@ -524,11 +519,7 @@ typedef struct {
 
 /* Number of ACL buffers to use for high priority channel
 */
-#if (L2CAP_HIGH_PRI_CHAN_QUOTA_IS_CONFIGURABLE == FALSE)
 #define L2CAP_HIGH_PRI_MIN_XMIT_QUOTA_A (L2CAP_HIGH_PRI_MIN_XMIT_QUOTA)
-#else
-#define L2CAP_HIGH_PRI_MIN_XMIT_QUOTA_A (l2cb.high_pri_min_xmit_quota)
-#endif
 
 /* L2CAP global data
  ***********************************
