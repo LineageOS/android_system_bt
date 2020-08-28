@@ -59,7 +59,7 @@ typedef struct l2cap_socket {
   int app_uid;                // The UID of the app who requested this socket
   int handle;                 // handle from lower layers
   unsigned security;          // security flags
-  int channel;                // channel (fixed_chan) or PSM (!fixed_chan)
+  int channel;                // PSM
   int our_fd;                 // fd from our side
   int app_fd;                 // fd from app's side
 
@@ -656,11 +656,6 @@ static void btsock_l2cap_cbk(tBTA_JV_EVT event, tBTA_JV* p_data,
 
     case BTA_JV_L2CAP_WRITE_EVT:
       DVLOG(2) << "BTA_JV_L2CAP_WRITE_EVT: id: " << l2cap_socket_id;
-      on_l2cap_write_done(p_data->l2c_write.len, l2cap_socket_id);
-      break;
-
-    case BTA_JV_L2CAP_WRITE_FIXED_EVT:
-      DVLOG(2) << "BTA_JV_L2CAP_WRITE_FIXED_EVT: id: " << l2cap_socket_id;
       on_l2cap_write_done(p_data->l2c_write.len, l2cap_socket_id);
       break;
 
