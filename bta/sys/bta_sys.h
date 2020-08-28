@@ -84,18 +84,6 @@ typedef void(tBTA_SYS_DISABLE)(void);
 #define BTA_ID_SDP 33           /* SDP Client */
 #define BTA_ID_BLUETOOTH_MAX 34 /* last BT profile */
 
-/* GENERIC */
-#define BTA_ID_PRM 38
-#define BTA_ID_SYSTEM 39  /* platform-specific */
-#define BTA_ID_SWRAP 40   /* Insight script wrapper */
-#define BTA_ID_MIP 41     /* Multicase Individual Polling */
-#define BTA_ID_RT 42      /* Audio Routing module: This module is always on. */
-#define BTA_ID_CLOSURE 43 /* Generic C++ closure  */
-
-/* JV */
-#define BTA_ID_JV1 44 /* JV1 */
-#define BTA_ID_JV2 45 /* JV2 */
-
 #define BTA_ID_MAX (44 + BTA_DM_NUM_JV_ID)
 
 typedef uint8_t tBTA_SYS_ID;
@@ -112,13 +100,6 @@ typedef uint8_t tBTA_SYS_ID;
 #define BTA_SYS_ROLE_CHANGE 0x14  /* role change */
 
 typedef uint8_t tBTA_SYS_CONN_STATUS;
-
-/* Bitmask of sys features */
-#define BTA_SYS_FEAT_PCM2 0x0001
-#define BTA_SYS_FEAT_PCM2_MASTER 0x0002
-
-/* tBTA_PREF_ROLES */
-typedef uint8_t tBTA_SYS_PREF_ROLES;
 
 /* conn callback for role / low power manager*/
 typedef void(tBTA_SYS_CONN_CBACK)(tBTA_SYS_CONN_STATUS status, uint8_t id,
@@ -138,8 +119,6 @@ typedef struct {
   tBTA_SYS_EVT_HDLR* evt_hdlr;
   tBTA_SYS_DISABLE* disable;
 } tBTA_SYS_REG;
-
-typedef void (*tBTA_SYS_REGISTER)(uint8_t id, const tBTA_SYS_REG* p_reg);
 
 /*****************************************************************************
  *  Global data
@@ -174,7 +153,6 @@ extern void bta_sys_disable();
 extern void bta_sys_rm_register(tBTA_SYS_CONN_CBACK* p_cback);
 extern void bta_sys_pm_register(tBTA_SYS_CONN_CBACK* p_cback);
 
-extern void bta_sys_policy_register(tBTA_SYS_CONN_CBACK* p_cback);
 extern void bta_sys_sco_register(tBTA_SYS_CONN_CBACK* p_cback);
 
 extern void bta_sys_conn_open(uint8_t id, uint8_t app_id,
