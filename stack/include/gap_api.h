@@ -43,7 +43,6 @@
 #define GAP_EVT_CONN_CONGESTED 0x0103
 #define GAP_EVT_CONN_UNCONGESTED 0x0104
 #define GAP_EVT_TX_EMPTY 0x0105
-#define GAP_EVT_LE_COC_CREDITS 0x0106
 
 /* Values for 'chan_mode_mask' field */
 /* GAP_ConnOpen() - optional channels to negotiate */
