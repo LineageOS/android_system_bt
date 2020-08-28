@@ -390,9 +390,7 @@ typedef struct t_l2c_linkcb {
 
   uint8_t peer_chnl_mask[L2CAP_FIXED_CHNL_ARRAY_SIZE];
 
-  uint16_t idle_timeout_sv; /* Save current Idle timeout */
   uint8_t acl_priority;     /* L2C_PRIORITY_NORMAL or L2C_PRIORITY_HIGH */
-  tL2CA_NOCP_CB* p_nocp_cb; /* Num Cmpl pkts callback */
 
   tL2C_CCB* p_fixed_ccbs[L2CAP_NUM_FIXED_CHNLS];
 
