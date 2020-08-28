@@ -837,11 +837,6 @@ static void btsock_l2cap_server_listen(l2cap_socket* sock) {
            << ", channel: " << sock->channel
            << ", is_le_coc: " << sock->is_le_coc;
 
-  if (sock->fixed_chan) {
-    BTA_JvL2capStartServerLE(sock->channel, btsock_l2cap_cbk, sock->id);
-    return;
-  }
-
   int connection_type =
       sock->is_le_coc ? BTA_JV_CONN_TYPE_L2CAP_LE : BTA_JV_CONN_TYPE_L2CAP;
 
