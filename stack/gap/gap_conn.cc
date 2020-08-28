@@ -118,7 +118,6 @@ void gap_conn_init(void) {
   conn.reg_info.pL2CA_DataInd_Cb = gap_data_ind;
   conn.reg_info.pL2CA_CongestionStatus_Cb = gap_congestion_ind;
   conn.reg_info.pL2CA_TxComplete_Cb = gap_tx_complete_ind;
-  conn.reg_info.pL2CA_CreditsReceived_Cb = NULL;
 }
 
 /*******************************************************************************
