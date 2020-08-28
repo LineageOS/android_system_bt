@@ -1150,13 +1150,6 @@ void l2c_link_process_num_completed_pkts(uint8_t* p, uint8_t evt_len) {
 
     p_lcb = l2cu_find_lcb_by_handle(handle);
 
-    /* Callback for number of completed packet event    */
-    /* Originally designed for [3DSG]                   */
-    if ((p_lcb != NULL) && (p_lcb->p_nocp_cb)) {
-      L2CAP_TRACE_DEBUG("L2CAP - calling NoCP callback");
-      (*p_lcb->p_nocp_cb)(p_lcb->remote_bd_addr);
-    }
-
     if (p_lcb) {
       if (p_lcb && (p_lcb->transport == BT_TRANSPORT_LE))
         l2cb.controller_le_xmit_window += num_sent;
