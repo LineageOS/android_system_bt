@@ -64,25 +64,15 @@ struct StackAclBtmAcl {
   void btm_establish_continue(tACL_CONN* p_acl_cb);
   void btm_read_remote_features(uint16_t handle);
   void btm_set_default_link_policy(uint16_t settings);
+  void btm_acl_role_changed(uint8_t hci_status, const RawAddress& bd_addr,
+                            uint8_t new_role);
 };
 
 namespace {
 StackAclBtmAcl internal_;
 }
 
-#define BTM_ACL_SWKEY_STATE_IDLE 0
-#define BTM_ACL_SWKEY_STATE_MODE_CHANGE 1
-#define BTM_ACL_SWKEY_STATE_ENCRYPTION_OFF 2
-#define BTM_ACL_SWKEY_STATE_SWITCHING 3
-#define BTM_ACL_SWKEY_STATE_ENCRYPTION_ON 4
-#define BTM_ACL_SWKEY_STATE_IN_PROGRESS 5
-
 #define BTM_MAX_SW_ROLE_FAILED_ATTEMPTS 3
-
-#define BTM_ACL_ENCRYPT_STATE_IDLE 0
-#define BTM_ACL_ENCRYPT_STATE_ENCRYPT_OFF 1
-#define BTM_ACL_ENCRYPT_STATE_TEMP_FUNC 2
-#define BTM_ACL_ENCRYPT_STATE_ENCRYPT_ON 3
 
 extern tBTM_CB btm_cb;
 
@@ -359,7 +349,7 @@ void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
         btm_ble_refresh_local_resolvable_private_addr(
             bda, btm_cb.ble_ctr_cb.addr_mgnt_cb.private_addr);
       p->switch_role_failed_attempts = 0;
-      p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
+      p->reset_switch_role();
 
       /*******************************************************************************
        *
@@ -451,51 +441,40 @@ void btm_acl_update_conn_addr(uint16_t conn_handle, const RawAddress& address) {
  *
  ******************************************************************************/
 void btm_acl_removed(const RawAddress& bda, tBT_TRANSPORT transport) {
-  tBTM_SEC_DEV_REC* p_dev_rec = NULL;
-  BTM_TRACE_DEBUG("btm_acl_removed");
-  tACL_CONN* p = internal_.btm_bda_to_acl(bda, transport);
-  if (p != (tACL_CONN*)NULL) {
-    p->in_use = false;
-
-    /* Only notify if link up has had a chance to be issued */
-    if (p->link_up_issued) {
-      p->link_up_issued = false;
-      BTA_dm_acl_down(bda, transport);
-    }
-
-    BTM_TRACE_DEBUG(
-        "acl hci_handle=%d transport=%d connectable_mode=0x%0x link_role=%d",
-        p->hci_handle, p->transport, btm_cb.ble_ctr_cb.inq_var.connectable_mode,
-        p->link_role);
-
-    p_dev_rec = btm_find_dev(bda);
-    if (p_dev_rec) {
-      BTM_TRACE_DEBUG("before update p_dev_rec->sec_flags=0x%x",
-                      p_dev_rec->sec_flags);
-      if (p->transport == BT_TRANSPORT_LE) {
-        BTM_TRACE_DEBUG("LE link down");
-        p_dev_rec->sec_flags &= ~(BTM_SEC_LE_ENCRYPTED | BTM_SEC_ROLE_SWITCHED);
-        if ((p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_KNOWN) == 0) {
-          BTM_TRACE_DEBUG("Not Bonded");
-          p_dev_rec->sec_flags &=
-              ~(BTM_SEC_LE_LINK_KEY_AUTHED | BTM_SEC_LE_AUTHENTICATED);
-        } else {
-          BTM_TRACE_DEBUG("Bonded");
-        }
-      } else {
-        BTM_TRACE_DEBUG("Bletooth link down");
-        p_dev_rec->sec_flags &= ~(BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED |
-                                  BTM_SEC_ROLE_SWITCHED);
-      }
-      BTM_TRACE_DEBUG("after update p_dev_rec->sec_flags=0x%x",
-                      p_dev_rec->sec_flags);
-    } else {
-      BTM_TRACE_ERROR("Device not found");
-    }
-
-    /* Clear the ACL connection data */
-    memset(p, 0, sizeof(tACL_CONN));
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bda, transport);
+  if (p_acl == nullptr) {
+    LOG_WARN("%s Tried to remove acl that does not exist", __func__);
+    return;
   }
+  p_acl->in_use = false;
+
+  /* Only notify if link up has had a chance to be issued */
+  if (p_acl->link_up_issued) {
+    p_acl->link_up_issued = false;
+    BTA_dm_acl_down(bda, transport);
+  }
+
+  LOG_DEBUG(
+      "%s acl hci_handle=%d transport=%d connectable_mode=0x%0x link_role=%d",
+      __func__, p_acl->hci_handle, p_acl->transport,
+      btm_cb.ble_ctr_cb.inq_var.connectable_mode, p_acl->link_role);
+
+  tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bda);
+  if (p_dev_rec == nullptr) {
+    LOG_WARN("%s Device security record not found", __func__);
+  } else {
+    if (p_acl->transport == BT_TRANSPORT_LE) {
+      p_dev_rec->sec_flags &= ~(BTM_SEC_LE_ENCRYPTED | BTM_SEC_ROLE_SWITCHED);
+      if ((p_dev_rec->sec_flags & BTM_SEC_LE_LINK_KEY_KNOWN) == 0) {
+        p_dev_rec->sec_flags &=
+            ~(BTM_SEC_LE_LINK_KEY_AUTHED | BTM_SEC_LE_AUTHENTICATED);
+      }
+    } else {
+      p_dev_rec->sec_flags &=
+          ~(BTM_SEC_AUTHENTICATED | BTM_SEC_ENCRYPTED | BTM_SEC_ROLE_SWITCHED);
+    }
+  }
+  memset(p_acl, 0, sizeof(tACL_CONN));
 }
 
 /*******************************************************************************
@@ -527,29 +506,19 @@ void btm_acl_update_inquiry_status(uint8_t status) {
   BTIF_dm_report_inquiry_status_change(status);
 }
 
-/*******************************************************************************
- *
- * Function         BTM_GetRole
- *
- * Description      This function is called to get the role of the local device
- *                  for the ACL connection with the specified remote device
- *
- * Returns          BTM_SUCCESS if connection exists.
- *                  BTM_UNKNOWN_ADDR if no active link with bd addr specified
- *
- ******************************************************************************/
 tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
-  tACL_CONN* p;
-  BTM_TRACE_DEBUG("BTM_GetRole");
-  p = internal_.btm_bda_to_acl(remote_bd_addr, BT_TRANSPORT_BR_EDR);
-  if (p == NULL) {
-    *p_role = HCI_ROLE_UNKNOWN;
-    return (BTM_UNKNOWN_ADDR);
+  if (p_role == nullptr) {
+    return BTM_ILLEGAL_VALUE;
   }
+  *p_role = HCI_ROLE_UNKNOWN;
 
-  /* Get the current role */
-  *p_role = p->link_role;
-  return (BTM_SUCCESS);
+  tACL_CONN* p_acl =
+      internal_.btm_bda_to_acl(remote_bd_addr, BT_TRANSPORT_BR_EDR);
+  if (p_acl == nullptr) {
+    return BTM_UNKNOWN_ADDR;
+  }
+  *p_role = p_acl->link_role;
+  return BTM_SUCCESS;
 }
 
 /*******************************************************************************
@@ -570,12 +539,6 @@ tBTM_STATUS BTM_GetRole(const RawAddress& remote_bd_addr, uint8_t* p_role) {
  *
  ******************************************************************************/
 tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
-  tACL_CONN* p;
-  tBTM_SEC_DEV_REC* p_dev_rec = NULL;
-  bool is_sco_active;
-  tBTM_STATUS status;
-  tBTM_PM_MODE pwr_mode;
-  tBTM_PM_PWR_MD settings;
 
   LOG_INFO("%s: peer %s new_role=0x%x", __func__,
            remote_bd_addr.ToString().c_str(), new_role);
@@ -584,24 +547,23 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
   if (!controller_get_interface()->supports_master_slave_role_switch())
     return (BTM_MODE_UNSUPPORTED);
 
-  p = internal_.btm_bda_to_acl(remote_bd_addr, BT_TRANSPORT_BR_EDR);
-  if (p == NULL) return (BTM_UNKNOWN_ADDR);
+  tACL_CONN* p_acl =
+      internal_.btm_bda_to_acl(remote_bd_addr, BT_TRANSPORT_BR_EDR);
+  if (p_acl == NULL) return (BTM_UNKNOWN_ADDR);
 
   /* Finished if already in desired role */
-  if (p->link_role == new_role) return (BTM_SUCCESS);
+  if (p_acl->link_role == new_role) return (BTM_SUCCESS);
 
   if (interop_match_addr(INTEROP_DISABLE_ROLE_SWITCH, &remote_bd_addr))
     return BTM_DEV_BLACKLISTED;
 
   /* Check if there is any SCO Active on this BD Address */
-  is_sco_active = BTM_IsScoActiveByBdaddr(remote_bd_addr);
-
-  if (is_sco_active) return (BTM_NO_RESOURCES);
+  if (BTM_IsScoActiveByBdaddr(remote_bd_addr)) return (BTM_NO_RESOURCES);
 
   /* Ignore role switch request if the previous request was not completed */
-  if (p->switch_role_state != BTM_ACL_SWKEY_STATE_IDLE) {
-    BTM_TRACE_DEBUG("BTM_SwitchRole busy: %d", p->switch_role_state);
-    return (BTM_BUSY);
+  if (!p_acl->is_switch_role_idle()) {
+    LOG_DEBUG("%s switch role in progress", __func__);
+    return BTM_BUSY;
   }
 
   if (interop_match_addr(INTEROP_DYNAMIC_ROLE_SWITCH, &remote_bd_addr)) {
@@ -610,36 +572,34 @@ tBTM_STATUS BTM_SwitchRole(const RawAddress& remote_bd_addr, uint8_t new_role) {
     return BTM_DEV_BLACKLISTED;
   }
 
-  if (!BTM_ReadPowerMode(p->remote_addr, &pwr_mode)) {
+  tBTM_PM_MODE pwr_mode;
+  if (!BTM_ReadPowerMode(p_acl->remote_addr, &pwr_mode)) {
     return BTM_UNKNOWN_ADDR;
   };
 
   /* Wake up the link if in sniff or park before attempting switch */
   if (pwr_mode == BTM_PM_MD_PARK || pwr_mode == BTM_PM_MD_SNIFF) {
+    tBTM_PM_PWR_MD settings;
     memset((void*)&settings, 0, sizeof(settings));
     settings.mode = BTM_PM_MD_ACTIVE;
-    status = BTM_SetPowerMode(BTM_PM_SET_ONLY_ID, p->remote_addr, &settings);
+    tBTM_STATUS status =
+        BTM_SetPowerMode(BTM_PM_SET_ONLY_ID, p_acl->remote_addr, &settings);
     if (status != BTM_CMD_STARTED) return (BTM_WRONG_MODE);
 
-    p->switch_role_state = BTM_ACL_SWKEY_STATE_MODE_CHANGE;
+    p_acl->set_switch_role_changing();
   }
   /* some devices do not support switch while encryption is on */
   else {
-    p_dev_rec = btm_find_dev(remote_bd_addr);
+    tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(remote_bd_addr);
     if ((p_dev_rec != NULL) &&
         ((p_dev_rec->sec_flags & BTM_SEC_ENCRYPTED) != 0) &&
-        !BTM_EPR_AVAILABLE(p)) {
+        !BTM_EPR_AVAILABLE(p_acl)) {
       /* bypass turning off encryption if change link key is already doing it */
-      if (p->encrypt_state != BTM_ACL_ENCRYPT_STATE_ENCRYPT_OFF) {
-        btsnd_hcic_set_conn_encrypt(p->hci_handle, false);
-        p->encrypt_state = BTM_ACL_ENCRYPT_STATE_ENCRYPT_OFF;
-      }
-
-      p->switch_role_state = BTM_ACL_SWKEY_STATE_ENCRYPTION_OFF;
+      p_acl->set_encryption_off();
+      p_acl->set_switch_role_encryption_off();
     } else {
       btsnd_hcic_switch_role(remote_bd_addr, new_role);
-      p->switch_role_state = BTM_ACL_SWKEY_STATE_IN_PROGRESS;
-
+      p_acl->set_switch_role_in_progress();
       if (p_dev_rec) p_dev_rec->rs_disc_pending = BTM_SEC_RS_PENDING;
     }
   }
@@ -675,14 +635,14 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
     return;
 
   /* Process Role Switch if active */
-  if (p->switch_role_state == BTM_ACL_SWKEY_STATE_ENCRYPTION_OFF) {
+  if (p->is_switch_role_encryption_off()) {
     /* if encryption turn off failed we still will try to switch role */
     if (encr_enable) {
-      p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
-      p->encrypt_state = BTM_ACL_ENCRYPT_STATE_IDLE;
+      p->set_encryption_idle();
+      p->reset_switch_role();
     } else {
-      p->switch_role_state = BTM_ACL_SWKEY_STATE_SWITCHING;
-      p->encrypt_state = BTM_ACL_ENCRYPT_STATE_TEMP_FUNC;
+      p->set_encryption_switching();
+      p->set_switch_role_switching();
     }
 
     btsnd_hcic_switch_role(p->remote_addr, (uint8_t)!p->link_role);
@@ -691,18 +651,17 @@ void btm_acl_encrypt_change(uint16_t handle, uint8_t status,
 
   }
   /* Finished enabling Encryption after role switch */
-  else if (p->switch_role_state == BTM_ACL_SWKEY_STATE_ENCRYPTION_ON) {
-    p->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
-    p->encrypt_state = BTM_ACL_ENCRYPT_STATE_IDLE;
+  else if (p->is_switch_role_encryption_on()) {
+    p->reset_switch_role();
+    p->set_encryption_idle();
     auto new_role = btm_cb.acl_cb_.switch_role_ref_data.role;
     auto hci_status = btm_cb.acl_cb_.switch_role_ref_data.hci_status;
     BTA_dm_report_role_change(
         btm_cb.acl_cb_.switch_role_ref_data.remote_bd_addr, new_role,
         hci_status);
 
-    BTM_TRACE_DEBUG(
-        "%s: Role Switch Event: new_role 0x%02x, HCI Status 0x%02x, rs_st:%d",
-        __func__, new_role, hci_status, p->switch_role_state);
+    BTM_TRACE_DEBUG("%s: Role Switch Event: new_role 0x%02x, HCI Status 0x%02x",
+                    __func__, new_role, hci_status);
 
     /* If a disconnect is pending, issue it now that role switch has completed
      */
@@ -1173,8 +1132,7 @@ void StackAclBtmAcl::btm_establish_continue(tACL_CONN* p_acl_cb) {
   }
   p_acl_cb->link_up_issued = true;
 
-  BTA_dm_acl_up(p_acl_cb->remote_addr, p_acl_cb->transport,
-                p_acl_cb->hci_handle);
+  BTA_dm_acl_up(p_acl_cb->remote_addr, p_acl_cb->transport);
 }
 
 void btm_establish_continue_from_address(const RawAddress& bda,
@@ -1456,8 +1414,7 @@ void btm_blacklist_role_change_device(const RawAddress& bd_addr,
        p_dev_rec->dev_class[2]) &
       0xffffff;
   if ((hci_status != HCI_SUCCESS) &&
-      ((p->switch_role_state == BTM_ACL_SWKEY_STATE_SWITCHING) ||
-       (p->switch_role_state == BTM_ACL_SWKEY_STATE_IN_PROGRESS)) &&
+      (p->is_switch_role_switching_or_in_progress()) &&
       ((cod & cod_audio_device) == cod_audio_device) &&
       (!interop_match_addr(INTEROP_DYNAMIC_ROLE_SWITCH, &bd_addr))) {
     p->switch_role_failed_attempts++;
@@ -1483,8 +1440,9 @@ void btm_blacklist_role_change_device(const RawAddress& bd_addr,
  * Returns          void
  *
  ******************************************************************************/
-void btm_acl_role_changed(uint8_t hci_status, const RawAddress& bd_addr,
-                          uint8_t new_role) {
+void StackAclBtmAcl::btm_acl_role_changed(uint8_t hci_status,
+                                          const RawAddress& bd_addr,
+                                          uint8_t new_role) {
   tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
   if (p_acl == nullptr) {
     BTM_TRACE_WARNING("%s: Unsolicited role change for unknown ACL", __func__);
@@ -1517,26 +1475,23 @@ void btm_acl_role_changed(uint8_t hci_status, const RawAddress& bd_addr,
 
   /* if switching state is switching we need to turn encryption on */
   /* if idle, we did not change encryption */
-  if (p_acl->switch_role_state == BTM_ACL_SWKEY_STATE_SWITCHING) {
-    btsnd_hcic_set_conn_encrypt(p_acl->hci_handle, true);
-    p_acl->encrypt_state = BTM_ACL_ENCRYPT_STATE_ENCRYPT_ON;
-    p_acl->switch_role_state = BTM_ACL_SWKEY_STATE_ENCRYPTION_ON;
+  if (p_acl->is_switch_role_switching()) {
+    p_acl->set_encryption_on();
+    p_acl->set_switch_role_encryption_on();
     return;
   }
 
   /* Set the switch_role_state to IDLE since the reply received from HCI */
   /* regardless of its result either success or failed. */
-  if (p_acl->switch_role_state == BTM_ACL_SWKEY_STATE_IN_PROGRESS) {
-    p_acl->switch_role_state = BTM_ACL_SWKEY_STATE_IDLE;
-    p_acl->encrypt_state = BTM_ACL_ENCRYPT_STATE_IDLE;
+  if (p_acl->is_switch_role_in_progress()) {
+    p_acl->set_encryption_idle();
+    p_acl->reset_switch_role();
   }
 
   BTA_dm_report_role_change(bd_addr, new_role, hci_status);
   BTM_TRACE_DEBUG(
-      "%s: peer %s Role Switch Event: new_role 0x%02x, HCI Status 0x%02x, "
-      "rs_st:%d",
-      __func__, bd_addr.ToString().c_str(), p_switch_role->role,
-      p_switch_role->hci_status, p_acl->switch_role_state);
+      "%s: peer %s Role Switch Event: new_role 0x%02x, HCI Status 0x%02x, ",
+      __func__, bd_addr.ToString().c_str(), new_role, hci_status);
 
   /* If a disconnect is pending, issue it now that role switch has completed */
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
@@ -1550,6 +1505,17 @@ void btm_acl_role_changed(uint8_t hci_status, const RawAddress& bd_addr,
                     bd_addr.ToString().c_str(), p_dev_rec->rs_disc_pending);
     p_dev_rec->rs_disc_pending = BTM_SEC_RS_NOT_PENDING; /* reset flag */
   }
+}
+
+void btm_acl_role_changed(uint8_t hci_status, const RawAddress& bd_addr,
+                          uint8_t new_role) {
+  if (hci_status == HCI_SUCCESS) {
+    l2c_link_role_changed(&bd_addr, new_role, hci_status);
+  } else {
+    l2c_link_role_changed(nullptr, HCI_ROLE_UNKNOWN,
+                          HCI_ERR_COMMAND_DISALLOWED);
+  }
+  internal_.btm_acl_role_changed(hci_status, bd_addr, new_role);
 }
 
 /*******************************************************************************
@@ -2250,22 +2216,22 @@ void btm_cont_rswitch(tACL_CONN* p, tBTM_SEC_DEV_REC* p_dev_rec) {
   BTM_TRACE_DEBUG("btm_cont_rswitch");
   /* Check to see if encryption needs to be turned off if pending
      change of link key or role switch */
-  if (p->switch_role_state == BTM_ACL_SWKEY_STATE_MODE_CHANGE) {
+  if (p->is_switch_role_mode_change()) {
     /* Must turn off Encryption first if necessary */
     /* Some devices do not support switch or change of link key while encryption
      * is on */
     if (p_dev_rec != NULL &&
         ((p_dev_rec->sec_flags & BTM_SEC_ENCRYPTED) != 0) &&
         !BTM_EPR_AVAILABLE(p)) {
-      btsnd_hcic_set_conn_encrypt(p->hci_handle, false);
-      p->encrypt_state = BTM_ACL_ENCRYPT_STATE_ENCRYPT_OFF;
-      if (p->switch_role_state == BTM_ACL_SWKEY_STATE_MODE_CHANGE)
-        p->switch_role_state = BTM_ACL_SWKEY_STATE_ENCRYPTION_OFF;
+      p->set_encryption_off();
+      if (p->is_switch_role_mode_change()) {
+        p->set_switch_role_encryption_off();
+      }
     } else /* Encryption not used or EPR supported, continue with switch
               and/or change of link key */
     {
-      if (p->switch_role_state == BTM_ACL_SWKEY_STATE_MODE_CHANGE) {
-        p->switch_role_state = BTM_ACL_SWKEY_STATE_IN_PROGRESS;
+      if (p->is_switch_role_mode_change()) {
+        p->set_switch_role_in_progress();
         if (p_dev_rec) p_dev_rec->rs_disc_pending = BTM_SEC_RS_PENDING;
         btsnd_hcic_switch_role(p->remote_addr, (uint8_t)!p->link_role);
       }
@@ -2493,6 +2459,14 @@ bool acl_peer_supports_ble_connection_parameters_request(
   return HCI_LE_CONN_PARAM_REQ_SUPPORTED(p_acl->peer_le_features);
 }
 
+bool acl_peer_supports_sniff_subrating(const RawAddress& remote_bda) {
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(remote_bda, BT_TRANSPORT_LE);
+  if (p_acl == nullptr) {
+    return false;
+  }
+  return HCI_SNIFF_SUB_RATE_SUPPORTED(p_acl->peer_le_features);
+}
+
 /*******************************************************************************
  *
  * Function         BTM_ReadConnectionAddr
@@ -2669,7 +2643,7 @@ bool acl_is_switch_role_idle(const RawAddress& bd_addr,
   if (p_acl == nullptr) {
     return false;
   }
-  return p_acl->switch_role_state == BTM_ACL_SWKEY_STATE_IDLE;
+  return p_acl->is_switch_role_idle();
 }
 
 /*******************************************************************************
@@ -2894,11 +2868,3 @@ void acl_write_automatic_flush_timeout(const RawAddress& bd_addr,
   btsnd_hcic_write_auto_flush_tout(p_acl->hci_handle, flush_timeout_in_ticks);
 }
 
-uint16_t acl_read_cached_automatic_flush_timeout(const RawAddress& bd_addr) {
-  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bd_addr, BT_TRANSPORT_BR_EDR);
-  if (p_acl == nullptr) {
-    LOG_ERROR("%s Unknown peer ACL", __func__);
-    return HCI_DEFAULT_AUTOMATIC_FLUSH_TIMEOUT;
-  }
-  return p_acl->flush_timeout_in_ticks;
-}

@@ -209,21 +209,6 @@ tBTM_STATUS BTM_ReadTxPower(const RawAddress& remote_bda,
  ******************************************************************************/
 uint16_t BTM_GetNumAclLinks(void);
 
-/*******************************************************************************
- *
- * Function         btm_acl_role_changed
- *
- * Description      This function is called whan a link's master/slave role
- *                  change event or command status event (with error) is
- *                  received. It updates the link control block, and calls the
- *                  registered callback with status and role (if registered).
- *
- * Returns          void
- *
- ******************************************************************************/
-void btm_acl_role_changed(uint8_t hci_status, const RawAddress& bd_addr,
-                          uint8_t new_role);
-
 void btm_set_packet_types_from_address(const RawAddress& bda,
                                        tBT_TRANSPORT transport,
                                        uint16_t pkt_types);
@@ -346,5 +331,9 @@ bool BTM_ReadPowerMode(const RawAddress& remote_bda, tBTM_PM_MODE* p_mode);
 void btm_acl_created(const RawAddress& bda, uint16_t hci_handle,
                      uint8_t link_role, tBT_TRANSPORT transport);
 
+void btm_acl_removed(const RawAddress& bda, tBT_TRANSPORT transport);
+
 void acl_disconnect(const RawAddress& bd_addr, tBT_TRANSPORT transport,
                     uint8_t reason);
+
+bool acl_peer_supports_sniff_subrating(const RawAddress& remote_bda);

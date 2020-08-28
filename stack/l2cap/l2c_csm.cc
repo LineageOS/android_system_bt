@@ -26,10 +26,8 @@
 
 #include "bt_common.h"
 #include "bt_target.h"
-#include "btm_int.h"
 #include "common/time_util.h"
 #include "hcidefs.h"
-#include "hcimsgs.h"
 #include "l2c_int.h"
 #include "l2cdefs.h"
 #include "stack/btm/btm_sec.h"
