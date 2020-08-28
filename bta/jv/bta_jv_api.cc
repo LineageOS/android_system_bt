@@ -211,27 +211,6 @@ tBTA_JV_STATUS BTA_JvDeleteRecord(uint32_t handle) {
 
 /*******************************************************************************
  *
- * Function         BTA_JvL2capConnectLE
- *
- * Description      Initiate an LE connection as a L2CAP client to the given BD
- *                  Address.
- *                  When the connection is initiated or failed to initiate,
- *                  tBTA_JV_L2CAP_CBACK is called with BTA_JV_L2CAP_CL_INIT_EVT
- *                  When the connection is established or failed,
- *                  tBTA_JV_L2CAP_CBACK is called with BTA_JV_L2CAP_OPEN_EVT
- *
- ******************************************************************************/
-void BTA_JvL2capConnectLE(uint16_t remote_chan, const RawAddress& peer_bd_addr,
-                          tBTA_JV_L2CAP_CBACK* p_cback,
-                          uint32_t l2cap_socket_id) {
-  VLOG(2) << __func__;
-  CHECK(p_cback);
-  do_in_main_thread(FROM_HERE, Bind(&bta_jv_l2cap_connect_le, remote_chan,
-                                    peer_bd_addr, p_cback, l2cap_socket_id));
-}
-
-/*******************************************************************************
- *
  * Function         BTA_JvL2capConnect
  *
  * Description      Initiate a connection as a L2CAP client to the given BD
