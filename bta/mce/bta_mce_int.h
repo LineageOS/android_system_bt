@@ -78,7 +78,6 @@ extern tBTA_MCE_CB bta_mce_cb;
 /* config struct */
 extern tBTA_MCE_CFG* p_bta_mce_cfg;
 
-extern void bta_mce_enable(tBTA_MCE_MSG* p_data);
 extern void bta_mce_get_remote_mas_instances(tBTA_MCE_MSG* p_data);
 
 #endif /* BTA_MCE_INT_H */

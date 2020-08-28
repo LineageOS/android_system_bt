@@ -114,23 +114,6 @@ static void bta_mce_search_cback(uint16_t result, void* user_data) {
 
 /*******************************************************************************
  *
- * Function     bta_mce_enable
- *
- * Description  Initializes the MCE I/F
- *
- * Returns      void
- *
- ******************************************************************************/
-void bta_mce_enable(tBTA_MCE_MSG* p_data) {
-  tBTA_MCE_STATUS status = BTA_MCE_SUCCESS;
-  bta_mce_cb.p_dm_cback = p_data->enable.p_cback;
-  tBTA_MCE bta_mce;
-  bta_mce.status = status;
-  bta_mce_cb.p_dm_cback(BTA_MCE_ENABLE_EVT, &bta_mce, NULL);
-}
-
-/*******************************************************************************
- *
  * Function     bta_mce_get_remote_mas_instances
  *
  * Description  Discovers MAS instances on remote device
