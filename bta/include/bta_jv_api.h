@@ -142,8 +142,6 @@ typedef uint8_t tBTA_JV_CONN_STATE;
   21 /* L2CAP connection congestion status changed */
 #define BTA_JV_L2CAP_READ_EVT 22  /* the result for BTA_JvL2capRead */
 #define BTA_JV_L2CAP_WRITE_EVT 24 /* the result for BTA_JvL2capWrite*/
-#define BTA_JV_L2CAP_WRITE_FIXED_EVT \
-  25 /* the result for BTA_JvL2capWriteFixed */
 
 /* events received by tBTA_JV_RFCOMM_CBACK */
 #define BTA_JV_RFCOMM_OPEN_EVT                                                \
@@ -246,16 +244,6 @@ typedef struct {
   uint16_t len;          /* The length of the data written. */
   bool cong;             /* congestion status */
 } tBTA_JV_L2CAP_WRITE;
-
-/* data associated with BTA_JV_L2CAP_WRITE_FIXED_EVT */
-typedef struct {
-  tBTA_JV_STATUS status; /* Whether the operation succeeded or failed. */
-  uint16_t channel;      /* The connection channel */
-  RawAddress addr;       /* The peer address */
-  uint32_t req_id;       /* The req_id in the associated BTA_JvL2capWrite() */
-  uint16_t len;          /* The length of the data written. */
-  bool cong;             /* congestion status */
-} tBTA_JV_L2CAP_WRITE_FIXED;
 
 /* data associated with BTA_JV_RFCOMM_OPEN_EVT */
 typedef struct {
@@ -360,7 +348,6 @@ typedef union {
                                                 BTA_JV_RFCOMM_DATA_IND_EVT */
   tBTA_JV_LE_DATA_IND le_data_ind;           /* BTA_JV_L2CAP_LE_DATA_IND_EVT */
   tBTA_JV_L2CAP_LE_OPEN l2c_le_open;         /* BTA_JV_L2CAP_OPEN_EVT */
-  tBTA_JV_L2CAP_WRITE_FIXED l2c_write_fixed; /* BTA_JV_L2CAP_WRITE_FIXED_EVT */
 } tBTA_JV;
 
 /* JAVA DM Interface callback */
