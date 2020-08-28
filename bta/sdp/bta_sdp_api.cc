@@ -31,12 +31,11 @@
 #include "bta_sys.h"
 #include "port_api.h"
 #include "sdp_api.h"
+#include "stack/include/btu.h"
 
 /*****************************************************************************
  *  Constants
  ****************************************************************************/
-
-static const tBTA_SYS_REG bta_sdp_reg = {bta_sdp_sm_execute, NULL};
 
 /*******************************************************************************
  *
@@ -56,18 +55,15 @@ tBTA_SDP_STATUS BTA_SdpEnable(tBTA_SDP_DM_CBACK* p_cback) {
   tBTA_SDP_STATUS status = BTA_SDP_FAILURE;
 
   APPL_TRACE_API(__func__);
-  if (p_cback && !bta_sys_is_register(BTA_ID_SDP)) {
+  if (p_cback) {
     memset(&bta_sdp_cb, 0, sizeof(tBTA_SDP_CB));
-
-    /* register with BTA system manager */
-    bta_sys_register(BTA_ID_SDP, &bta_sdp_reg);
 
     if (p_cback) {
       tBTA_SDP_API_ENABLE* p_buf =
           (tBTA_SDP_API_ENABLE*)osi_malloc(sizeof(tBTA_SDP_API_ENABLE));
       p_buf->hdr.event = BTA_SDP_API_ENABLE_EVT;
       p_buf->p_cback = p_cback;
-      bta_sys_sendmsg(p_buf);
+      do_in_main_thread(FROM_HERE, base::Bind(bta_sdp_enable, p_buf));
       status = BTA_SDP_SUCCESS;
     }
   }
@@ -98,7 +94,7 @@ tBTA_SDP_STATUS BTA_SdpSearch(const RawAddress& bd_addr,
   p_msg->bd_addr = bd_addr;
   p_msg->uuid = uuid;
 
-  bta_sys_sendmsg(p_msg);
+  do_in_main_thread(FROM_HERE, base::Bind(bta_sdp_search, p_msg));
 
   return BTA_SDP_SUCCESS;
 }
@@ -124,7 +120,7 @@ tBTA_SDP_STATUS BTA_SdpCreateRecordByUser(void* user_data) {
   p_msg->hdr.event = BTA_SDP_API_CREATE_RECORD_USER_EVT;
   p_msg->user_data = user_data;
 
-  bta_sys_sendmsg(p_msg);
+  do_in_main_thread(FROM_HERE, base::Bind(bta_sdp_create_record, p_msg));
 
   return BTA_SDP_SUCCESS;
 }
@@ -150,7 +146,7 @@ tBTA_SDP_STATUS BTA_SdpRemoveRecordByUser(void* user_data) {
   p_msg->hdr.event = BTA_SDP_API_REMOVE_RECORD_USER_EVT;
   p_msg->user_data = user_data;
 
-  bta_sys_sendmsg(p_msg);
+  do_in_main_thread(FROM_HERE, base::Bind(bta_sdp_remove_record, p_msg));
 
   return BTA_SDP_SUCCESS;
 }

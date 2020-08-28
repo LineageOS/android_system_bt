@@ -92,9 +92,9 @@ extern tBTA_SDP_CFG* p_bta_sdp_cfg;
 
 extern bool bta_sdp_sm_execute(BT_HDR* p_msg);
 
-extern void bta_sdp_enable(tBTA_SDP_MSG* p_data);
-extern void bta_sdp_search(tBTA_SDP_MSG* p_data);
-extern void bta_sdp_create_record(tBTA_SDP_MSG* p_data);
-extern void bta_sdp_remove_record(tBTA_SDP_MSG* p_data);
+extern void bta_sdp_enable(tBTA_SDP_API_ENABLE* p_data);
+extern void bta_sdp_search(tBTA_SDP_API_SEARCH* p_data);
+extern void bta_sdp_create_record(tBTA_SDP_API_RECORD_USER* p_data);
+extern void bta_sdp_remove_record(tBTA_SDP_API_RECORD_USER* p_data);
 
 #endif /* BTA_SDP_INT_H */
