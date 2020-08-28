@@ -184,9 +184,6 @@ extern void bta_jv_rfcomm_write(uint32_t handle, uint32_t req_id,
 extern void bta_jv_set_pm_profile(uint32_t handle, tBTA_JV_PM_ID app_id,
                                   tBTA_JV_CONN_STATE init_st);
 
-extern void bta_jv_l2cap_start_server_le(uint16_t local_chan,
-                                         tBTA_JV_L2CAP_CBACK* p_cback,
-                                         uint32_t l2cap_socket_id);
 extern void bta_jv_l2cap_stop_server_le(uint16_t local_chan);
 extern void bta_jv_l2cap_write_fixed(uint16_t channel, const RawAddress& addr,
                                      uint32_t req_id, BT_HDR* msg,
