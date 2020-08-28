@@ -871,19 +871,9 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
                                                   int channel, int* sock_fd,
                                                   int flags, char listen,
                                                   int app_uid) {
-  int fixed_chan = 1;
-  bool is_le_coc = false;
+  bool is_le_coc = (flags & BTSOCK_FLAG_LE_COC) != 0;
 
   if (!sock_fd) return BT_STATUS_PARM_INVALID;
-
-  if (channel < 0) {
-    // We need to auto assign a PSM
-    fixed_chan = 0;
-  } else {
-    is_le_coc = (flags & BTSOCK_FLAG_LE_COC) != 0;
-    fixed_chan = (channel & L2CAP_MASK_FIXED_CHANNEL) != 0;
-    channel &= ~L2CAP_MASK_FIXED_CHANNEL;
-  }
 
   if (!is_inited()) return BT_STATUS_NOT_READY;
 
@@ -895,7 +885,6 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
     return BT_STATUS_NOMEM;
   }
 
-  sock->fixed_chan = fixed_chan;
   sock->channel = channel;
   sock->app_uid = app_uid;
   sock->is_le_coc = is_le_coc;
@@ -905,9 +894,6 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
   if (listen) {
     btsock_l2cap_server_listen(sock);
   } else {
-    if (fixed_chan) {
-      BTA_JvL2capConnectLE(channel, sock->addr, btsock_l2cap_cbk, sock->id);
-    } else {
       int connection_type =
           sock->is_le_coc ? BTA_JV_CONN_TYPE_L2CAP_LE : BTA_JV_CONN_TYPE_L2CAP;
 
@@ -923,7 +909,6 @@ static bt_status_t btsock_l2cap_listen_or_connect(const char* name,
       BTA_JvL2capConnect(
           connection_type, sock->security, 0, std::move(ertm_info), channel,
           sock->rx_mtu, std::move(cfg), sock->addr, btsock_l2cap_cbk, sock->id);
-    }
   }
 
   *sock_fd = sock->app_fd;
