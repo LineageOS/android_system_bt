@@ -520,19 +520,6 @@ tBTA_JV_STATUS BTA_JvL2capClose(uint32_t handle);
 
 /*******************************************************************************
  *
- * Function         BTA_JvL2capCloseLE
- *
- * Description      This function closes an L2CAP client connection for Fixed
- *                  Channels Function is idempotent and no callbacks are called!
- *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
- *
- ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capCloseLE(uint32_t handle);
-
-/*******************************************************************************
- *
  * Function         BTA_JvL2capStartServer
  *
  * Description      This function starts an L2CAP server and listens for an
@@ -623,20 +610,6 @@ tBTA_JV_STATUS BTA_JvL2capReady(uint32_t handle, uint32_t* p_data_size);
  ******************************************************************************/
 tBTA_JV_STATUS BTA_JvL2capWrite(uint32_t handle, uint32_t req_id, BT_HDR* msg,
                                 uint32_t user_id);
-
-/*******************************************************************************
- *
- * Function         BTA_JvL2capWriteFixed
- *
- * Description      This function writes data to an L2CAP connection
- *                  When the operation is complete, tBTA_JV_L2CAP_CBACK is
- *                  called with BTA_JV_L2CAP_WRITE_FIXED_EVT. Works for
- *                  fixed-channel connections
- *
- ******************************************************************************/
-void BTA_JvL2capWriteFixed(uint16_t channel, const RawAddress& addr,
-                           uint32_t req_id, tBTA_JV_L2CAP_CBACK* p_cback,
-                           BT_HDR* msg, uint32_t user_id);
 
 /*******************************************************************************
  *
