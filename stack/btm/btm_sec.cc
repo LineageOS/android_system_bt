@@ -3391,12 +3391,8 @@ void btm_sec_encrypt_change(uint16_t handle, uint8_t status,
         /* BR/EDR is encrypted with LK that can be used to derive LE LTK */
         p_dev_rec->new_encryption_key_is_p256 = false;
 
-        if (p_dev_rec->no_smp_on_br) {
-          BTM_TRACE_DEBUG("%s NO SM over BR/EDR", __func__);
-        } else {
-          BTM_TRACE_DEBUG("%s start SM over BR/EDR", __func__);
-          SMP_BR_PairWith(p_dev_rec->bd_addr);
-        }
+        BTM_TRACE_DEBUG("%s start SM over BR/EDR", __func__);
+        SMP_BR_PairWith(p_dev_rec->bd_addr);
       }
     } else {
       // BR/EDR is successfully encrypted. Correct LK type if needed

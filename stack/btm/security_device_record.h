@@ -447,9 +447,6 @@ typedef struct {
                                    ** Link encrypted with such LK can be used
                                    ** for SM over BR/EDR.
                                    */
-  bool no_smp_on_br;        /* if set to true then SMP on BR/EDR doesn't */
-                            /* work, i.e. link keys crosspairing */
-                            /* SC BR/EDR->SC LE doesn't happen */
   tBTM_BOND_TYPE bond_type; /* peering bond type */
 
   tBTM_SEC_BLE ble;
