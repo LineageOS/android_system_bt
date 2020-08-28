@@ -89,22 +89,6 @@ typedef struct {
 
 /*******************************************************************************
  *
- * Function         BTA_MceEnable
- *
- * Description      Enable the MCE I/F service. When the enable
- *                  operation is complete the callback function will be
- *                  called with a BTA_MCE_ENABLE_EVT. This function must
- *                  be called before other functions in the MCE API are
- *                  called.
- *
- * Returns          BTA_MCE_SUCCESS if successful.
- *                  BTA_MCE_FAIL if internal failure.
- *
- ******************************************************************************/
-extern tBTA_MCE_STATUS BTA_MceEnable(tBTA_MCE_DM_CBACK* p_cback);
-
-/*******************************************************************************
- *
  * Function         BTA_MceGetRemoteMasInstances
  *
  * Description      This function performs service discovery for the MAS service
