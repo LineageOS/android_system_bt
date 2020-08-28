@@ -554,23 +554,6 @@ void BTA_JvL2capStartServer(int conn_type, tBTA_SEC sec_mask, tBTA_JV_ROLE role,
 
 /*******************************************************************************
  *
- * Function         BTA_JvL2capStartServerLE
- *
- * Description      This function starts an LE L2CAP server and listens for an
- *                  L2CAP connection from a remote Bluetooth device on a fixed
- *                  channel over an LE link.  When the server
- *                  is started successfully, tBTA_JV_L2CAP_CBACK is called with
- *                  BTA_JV_L2CAP_START_EVT.  When the connection is established,
- *                  tBTA_JV_L2CAP_CBACK is called with BTA_JV_L2CAP_OPEN_EVT.
- *
- * Returns          void
- *
- ******************************************************************************/
-void BTA_JvL2capStartServerLE(uint16_t local_chan, tBTA_JV_L2CAP_CBACK* p_cback,
-                              uint32_t l2cap_socket_id);
-
-/*******************************************************************************
- *
  * Function         BTA_JvL2capStopServerLE
  *
  * Description      This function stops the LE L2CAP server. If the server has
