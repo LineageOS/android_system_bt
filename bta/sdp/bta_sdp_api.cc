@@ -93,16 +93,7 @@ tBTA_SDP_STATUS BTA_SdpSearch(const RawAddress& bd_addr,
  *
  ******************************************************************************/
 tBTA_SDP_STATUS BTA_SdpCreateRecordByUser(void* user_data) {
-  tBTA_SDP_API_RECORD_USER* p_msg =
-      (tBTA_SDP_API_RECORD_USER*)osi_malloc(sizeof(tBTA_SDP_API_RECORD_USER));
-
-  APPL_TRACE_API("%s", __func__);
-
-  p_msg->hdr.event = BTA_SDP_API_CREATE_RECORD_USER_EVT;
-  p_msg->user_data = user_data;
-
-  do_in_main_thread(FROM_HERE, base::Bind(bta_sdp_create_record, p_msg));
-
+  do_in_main_thread(FROM_HERE, base::Bind(bta_sdp_create_record, user_data));
   return BTA_SDP_SUCCESS;
 }
 
@@ -119,15 +110,6 @@ tBTA_SDP_STATUS BTA_SdpCreateRecordByUser(void* user_data) {
  *
  ******************************************************************************/
 tBTA_SDP_STATUS BTA_SdpRemoveRecordByUser(void* user_data) {
-  tBTA_SDP_API_RECORD_USER* p_msg =
-      (tBTA_SDP_API_RECORD_USER*)osi_malloc(sizeof(tBTA_SDP_API_RECORD_USER));
-
-  APPL_TRACE_API("%s", __func__);
-
-  p_msg->hdr.event = BTA_SDP_API_REMOVE_RECORD_USER_EVT;
-  p_msg->user_data = user_data;
-
-  do_in_main_thread(FROM_HERE, base::Bind(bta_sdp_remove_record, p_msg));
-
+  do_in_main_thread(FROM_HERE, base::Bind(bta_sdp_remove_record, user_data));
   return BTA_SDP_SUCCESS;
 }

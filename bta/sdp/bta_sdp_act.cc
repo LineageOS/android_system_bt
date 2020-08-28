@@ -481,11 +481,9 @@ void bta_sdp_search(const RawAddress bd_addr, const bluetooth::Uuid uuid) {
  * Returns      void
  *
  ******************************************************************************/
-void bta_sdp_create_record(tBTA_SDP_API_RECORD_USER* p_data) {
+void bta_sdp_create_record(void* user_data) {
   if (bta_sdp_cb.p_dm_cback)
-    bta_sdp_cb.p_dm_cback(BTA_SDP_CREATE_RECORD_USER_EVT, NULL,
-                          p_data->user_data);
-  osi_free(p_data);
+    bta_sdp_cb.p_dm_cback(BTA_SDP_CREATE_RECORD_USER_EVT, NULL, user_data);
 }
 
 /*******************************************************************************
@@ -497,9 +495,7 @@ void bta_sdp_create_record(tBTA_SDP_API_RECORD_USER* p_data) {
  * Returns      void
  *
  ******************************************************************************/
-void bta_sdp_remove_record(tBTA_SDP_API_RECORD_USER* p_data) {
+void bta_sdp_remove_record(void* user_data) {
   if (bta_sdp_cb.p_dm_cback)
-    bta_sdp_cb.p_dm_cback(BTA_SDP_REMOVE_RECORD_USER_EVT, NULL,
-                          p_data->user_data);
-  osi_free(p_data);
+    bta_sdp_cb.p_dm_cback(BTA_SDP_REMOVE_RECORD_USER_EVT, NULL, user_data);
 }
