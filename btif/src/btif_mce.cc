@@ -43,21 +43,13 @@
  *  Static variables
  *****************************************************************************/
 
-static btmce_callbacks_t* bt_mce_callbacks = NULL;
-
 static bt_status_t init(btmce_callbacks_t* callbacks) {
   BTIF_TRACE_EVENT("%s", __func__);
-
-  bt_mce_callbacks = callbacks;
-
   btif_enable_service(BTA_MAP_SERVICE_ID);
-
   return BT_STATUS_SUCCESS;
 }
 
 static bt_status_t get_remote_mas_instances(RawAddress* bd_addr) {
-  VLOG(2) << __func__ << ": remote_addr=" << bd_addr;
-
   return BT_STATUS_SUCCESS;
 }
 
