@@ -328,7 +328,7 @@ static void bta_sdp_search_cback(uint16_t result, void* user_data) {
   int count = 0;
   APPL_TRACE_DEBUG("%s() -  res: 0x%x", __func__, result);
 
-  bta_sdp_cb.sdp_active = BTA_SDP_ACTIVE_NONE;
+  bta_sdp_cb.sdp_active = false;
 
   if (bta_sdp_cb.p_dm_cback == NULL) return;
 
@@ -423,7 +423,7 @@ void bta_sdp_search(const RawAddress bd_addr, const bluetooth::Uuid uuid) {
 
   APPL_TRACE_DEBUG("%s in, sdp_active:%d", __func__, bta_sdp_cb.sdp_active);
 
-  if (bta_sdp_cb.sdp_active != BTA_SDP_ACTIVE_NONE) {
+  if (bta_sdp_cb.sdp_active) {
     /* SDP is still in progress */
     status = BTA_SDP_BUSY;
     if (bta_sdp_cb.p_dm_cback) {
@@ -439,7 +439,7 @@ void bta_sdp_search(const RawAddress bd_addr, const bluetooth::Uuid uuid) {
     return;
   }
 
-  bta_sdp_cb.sdp_active = BTA_SDP_ACTIVE_YES;
+  bta_sdp_cb.sdp_active = true;
   bta_sdp_cb.remote_addr = bd_addr;
 
   /* initialize the search for the uuid */
@@ -453,7 +453,7 @@ void bta_sdp_search(const RawAddress bd_addr, const bluetooth::Uuid uuid) {
   if (!SDP_ServiceSearchAttributeRequest2(bd_addr, p_bta_sdp_cfg->p_sdp_db,
                                           bta_sdp_search_cback,
                                           (void*)bta_sdp_search_uuid)) {
-    bta_sdp_cb.sdp_active = BTA_SDP_ACTIVE_NONE;
+    bta_sdp_cb.sdp_active = false;
 
     /* failed to start SDP. report the failure right away */
     if (bta_sdp_cb.p_dm_cback) {

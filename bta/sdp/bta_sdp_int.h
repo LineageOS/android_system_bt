@@ -35,14 +35,9 @@
  *  Constants
  ****************************************************************************/
 
-enum {
-  BTA_SDP_ACTIVE_NONE = 0,
-  BTA_SDP_ACTIVE_YES /* waiting for SDP result */
-};
-
 /* SDP control block */
 typedef struct {
-  uint8_t sdp_active; /* see BTA_SDP_SDP_ACT_* */
+  bool sdp_active;
   RawAddress remote_addr;
   tBTA_SDP_DM_CBACK* p_dm_cback;
 } tBTA_SDP_CB;
