@@ -76,17 +76,7 @@ tBTA_SDP_STATUS BTA_SdpEnable(tBTA_SDP_DM_CBACK* p_cback) {
  ******************************************************************************/
 tBTA_SDP_STATUS BTA_SdpSearch(const RawAddress& bd_addr,
                               const bluetooth::Uuid& uuid) {
-  tBTA_SDP_API_SEARCH* p_msg =
-      (tBTA_SDP_API_SEARCH*)osi_malloc(sizeof(tBTA_SDP_API_SEARCH));
-
-  APPL_TRACE_API("%s", __func__);
-
-  p_msg->hdr.event = BTA_SDP_API_SEARCH_EVT;
-  p_msg->bd_addr = bd_addr;
-  p_msg->uuid = uuid;
-
-  do_in_main_thread(FROM_HERE, base::Bind(bta_sdp_search, p_msg));
-
+  do_in_main_thread(FROM_HERE, base::Bind(bta_sdp_search, bd_addr, uuid));
   return BTA_SDP_SUCCESS;
 }
 
