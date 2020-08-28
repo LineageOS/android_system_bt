@@ -37,31 +37,3 @@
 /*****************************************************************************
  *  Constants
  ****************************************************************************/
-
-/*******************************************************************************
- *
- * Function         BTA_MceGetRemoteMasInstances
- *
- * Description      This function performs service discovery for the MAS service
- *                  by the given peer device. When the operation is completed
- *                  the tBTA_MCE_DM_CBACK callback function will be  called with
- *                  a BTA_MCE_MAS_DISCOVERY_COMP_EVT.
- *
- * Returns          BTA_MCE_SUCCESS, if the request is being processed.
- *                  BTA_MCE_FAILURE, otherwise.
- *
- ******************************************************************************/
-tBTA_MCE_STATUS BTA_MceGetRemoteMasInstances(const RawAddress& bd_addr) {
-  tBTA_MCE_API_GET_REMOTE_MAS_INSTANCES* p_msg =
-      (tBTA_MCE_API_GET_REMOTE_MAS_INSTANCES*)osi_malloc(
-          sizeof(tBTA_MCE_API_GET_REMOTE_MAS_INSTANCES));
-
-  APPL_TRACE_API("%s", __func__);
-
-  p_msg->hdr.event = BTA_MCE_API_GET_REMOTE_MAS_INSTANCES_EVT;
-  p_msg->bd_addr = bd_addr;
-
-  bta_sys_sendmsg(p_msg);
-
-  return BTA_MCE_SUCCESS;
-}

@@ -87,19 +87,4 @@ typedef struct {
  *  External Function Declarations
  ****************************************************************************/
 
-/*******************************************************************************
- *
- * Function         BTA_MceGetRemoteMasInstances
- *
- * Description      This function performs service discovery for the MAS service
- *                  by the given peer device. When the operation is completed
- *                  the tBTA_MCE_DM_CBACK callback function will be  called with
- *                  a BTA_MCE_MAS_DISCOVERY_COMP_EVT.
- *
- * Returns          BTA_MCE_SUCCESS, if the request is being processed.
- *                  BTA_MCE_FAILURE, otherwise.
- *
- ******************************************************************************/
-extern tBTA_MCE_STATUS BTA_MceGetRemoteMasInstances(const RawAddress& bd_addr);
-
 #endif /* BTA_MCE_API_H */

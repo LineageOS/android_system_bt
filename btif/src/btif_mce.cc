@@ -59,8 +59,6 @@ static bt_status_t init(btmce_callbacks_t* callbacks) {
 static bt_status_t get_remote_mas_instances(RawAddress* bd_addr) {
   VLOG(2) << __func__ << ": remote_addr=" << bd_addr;
 
-  BTA_MceGetRemoteMasInstances(*bd_addr);
-
   return BT_STATUS_SUCCESS;
 }
 
