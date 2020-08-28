@@ -910,16 +910,11 @@ void GATT_SetIdleTimeout(const RawAddress& bd_addr, uint16_t idle_tout,
 
   tGATT_TCB* p_tcb = gatt_find_tcb_by_addr(bd_addr, transport);
   if (p_tcb != NULL) {
-    if (p_tcb->att_lcid == L2CAP_ATT_CID) {
-      status = L2CA_SetFixedChannelTout(bd_addr, L2CAP_ATT_CID, idle_tout);
+    status = L2CA_SetFixedChannelTout(bd_addr, L2CAP_ATT_CID, idle_tout);
 
-      if (idle_tout == GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP)
-        L2CA_SetIdleTimeoutByBdAddr(p_tcb->peer_bda,
-                                    GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP,
-                                    BT_TRANSPORT_LE);
-    } else {
-      status = L2CA_SetIdleTimeout(p_tcb->att_lcid, idle_tout, false);
-    }
+    if (idle_tout == GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP)
+      L2CA_SetIdleTimeoutByBdAddr(
+          p_tcb->peer_bda, GATT_LINK_IDLE_TIMEOUT_WHEN_NO_APP, BT_TRANSPORT_LE);
   }
 
   VLOG(1) << __func__ << " idle_tout=" << idle_tout << ", status=" << +status
