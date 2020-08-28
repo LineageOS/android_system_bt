@@ -51,14 +51,12 @@ enum {
   BTA_HH_MAINT_DEV_ACT,
   BTA_HH_OPEN_CMPL_ACT,
   BTA_HH_OPEN_FAILURE,
-#if (BTA_HH_LE_INCLUDED == TRUE)
   BTA_HH_GATT_CLOSE,
   BTA_HH_LE_OPEN_FAIL,
   BTA_HH_GATT_OPEN,
   BTA_HH_START_SEC,
   BTA_HH_SEC_CMPL,
   BTA_HH_GATT_ENC_CMPL,
-#endif
   BTA_HH_NUM_ACTIONS
 };
 
@@ -69,16 +67,13 @@ typedef void (*tBTA_HH_ACTION)(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data);
 
 /* action functions */
 const tBTA_HH_ACTION bta_hh_action[] = {
-    bta_hh_api_disc_act, bta_hh_open_act, bta_hh_close_act, bta_hh_data_act,
-    bta_hh_ctrl_dat_act, bta_hh_handsk_act, bta_hh_start_sdp, bta_hh_sdp_cmpl,
-    bta_hh_write_dev_act, bta_hh_get_dscp_act, bta_hh_maint_dev_act,
-    bta_hh_open_cmpl_act, bta_hh_open_failure
-#if (BTA_HH_LE_INCLUDED == TRUE)
-    ,
-    bta_hh_gatt_close, bta_hh_le_open_fail, bta_hh_gatt_open,
-    bta_hh_start_security, bta_hh_security_cmpl, bta_hh_le_notify_enc_cmpl
-#endif
-};
+    bta_hh_api_disc_act,      bta_hh_open_act,       bta_hh_close_act,
+    bta_hh_data_act,          bta_hh_ctrl_dat_act,   bta_hh_handsk_act,
+    bta_hh_start_sdp,         bta_hh_sdp_cmpl,       bta_hh_write_dev_act,
+    bta_hh_get_dscp_act,      bta_hh_maint_dev_act,  bta_hh_open_cmpl_act,
+    bta_hh_open_failure,      bta_hh_gatt_close,     bta_hh_le_open_fail,
+    bta_hh_gatt_open,         bta_hh_start_security, bta_hh_security_cmpl,
+    bta_hh_le_notify_enc_cmpl};
 
 /* state table information */
 #define BTA_HH_ACTION 0     /* position of action */
@@ -100,7 +95,6 @@ const uint8_t bta_hh_st_idle[][BTA_HH_NUM_COLS] = {
     /* BTA_HH_API_GET_DSCP_EVT  */ {BTA_HH_IGNORE, BTA_HH_IDLE_ST},
     /* BTA_HH_API_MAINT_DEV_EVT */ {BTA_HH_MAINT_DEV_ACT, BTA_HH_IDLE_ST},
     /* BTA_HH_OPEN_CMPL_EVT        */ {BTA_HH_OPEN_CMPL_ACT, BTA_HH_CONN_ST}
-#if (BTA_HH_LE_INCLUDED == TRUE)
     /* BTA_HH_GATT_CLOSE_EVT    */,
     {BTA_HH_IGNORE, BTA_HH_IDLE_ST}
     /* BTA_HH_GATT_OPEN_EVT    */,
@@ -111,8 +105,6 @@ const uint8_t bta_hh_st_idle[][BTA_HH_NUM_COLS] = {
     {BTA_HH_IGNORE, BTA_HH_IDLE_ST}
     /* BTA_HH_GATT_ENC_CMPL_EVT */,
     {BTA_HH_IGNORE, BTA_HH_IDLE_ST}
-#endif
-
 };
 
 const uint8_t bta_hh_st_w4_conn[][BTA_HH_NUM_COLS] = {
@@ -129,7 +121,6 @@ const uint8_t bta_hh_st_w4_conn[][BTA_HH_NUM_COLS] = {
     /* BTA_HH_API_GET_DSCP_EVT  */ {BTA_HH_IGNORE, BTA_HH_W4_CONN_ST},
     /* BTA_HH_API_MAINT_DEV_EVT */ {BTA_HH_MAINT_DEV_ACT, BTA_HH_IDLE_ST},
     /* BTA_HH_OPEN_CMPL_EVT     */ {BTA_HH_OPEN_CMPL_ACT, BTA_HH_CONN_ST}
-#if (BTA_HH_LE_INCLUDED == TRUE)
     /* BTA_HH_GATT_CLOSE_EVT    */,
     {BTA_HH_LE_OPEN_FAIL, BTA_HH_IDLE_ST}
     /* BTA_HH_GATT_OPEN_EVT    */,
@@ -140,7 +131,6 @@ const uint8_t bta_hh_st_w4_conn[][BTA_HH_NUM_COLS] = {
     {BTA_HH_IGNORE, BTA_HH_W4_CONN_ST}
     /* BTA_HH_GATT_ENC_CMPL_EVT */,
     {BTA_HH_IGNORE, BTA_HH_W4_CONN_ST}
-#endif
 };
 
 const uint8_t bta_hh_st_connected[][BTA_HH_NUM_COLS] = {
@@ -157,7 +147,6 @@ const uint8_t bta_hh_st_connected[][BTA_HH_NUM_COLS] = {
     /* BTA_HH_API_GET_DSCP_EVT  */ {BTA_HH_GET_DSCP_ACT, BTA_HH_CONN_ST},
     /* BTA_HH_API_MAINT_DEV_EVT */ {BTA_HH_MAINT_DEV_ACT, BTA_HH_CONN_ST},
     /* BTA_HH_OPEN_CMPL_EVT        */ {BTA_HH_IGNORE, BTA_HH_CONN_ST}
-#if (BTA_HH_LE_INCLUDED == TRUE)
     /* BTA_HH_GATT_CLOSE_EVT    */,
     {BTA_HH_GATT_CLOSE, BTA_HH_IDLE_ST}
     /* BTA_HH_GATT_OPEN_EVT    */,
@@ -168,9 +157,8 @@ const uint8_t bta_hh_st_connected[][BTA_HH_NUM_COLS] = {
     {BTA_HH_IGNORE, BTA_HH_CONN_ST}
     /* BTA_HH_GATT_ENC_CMPL_EVT */,
     {BTA_HH_IGNORE, BTA_HH_CONN_ST}
-#endif
 };
-#if (BTA_HH_LE_INCLUDED == TRUE)
+
 const uint8_t bta_hh_st_w4_sec[][BTA_HH_NUM_COLS] = {
     /* Event                          Action                 Next state */
     /* BTA_HH_API_OPEN_EVT      */ {BTA_HH_IGNORE, BTA_HH_W4_SEC},
@@ -190,19 +178,13 @@ const uint8_t bta_hh_st_w4_sec[][BTA_HH_NUM_COLS] = {
     /* BTA_HH_START_ENC_EVT    */ {BTA_HH_IGNORE, BTA_HH_W4_SEC},
     /* BTA_HH_ENC_CMPL_EVT     */ {BTA_HH_SEC_CMPL, BTA_HH_W4_CONN_ST},
     /* BTA_HH_GATT_ENC_CMPL_EVT */ {BTA_HH_GATT_ENC_CMPL, BTA_HH_W4_SEC}};
-#endif
 
 /* type for state table */
 typedef const uint8_t (*tBTA_HH_ST_TBL)[BTA_HH_NUM_COLS];
 
 /* state table */
 const tBTA_HH_ST_TBL bta_hh_st_tbl[] = {bta_hh_st_idle, bta_hh_st_w4_conn,
-                                        bta_hh_st_connected
-#if (BTA_HH_LE_INCLUDED == TRUE)
-                                        ,
-                                        bta_hh_st_w4_sec
-#endif
-};
+                                        bta_hh_st_connected, bta_hh_st_w4_sec};
 
 /*****************************************************************************
  * Global data
@@ -465,7 +447,6 @@ static const char* bta_hh_evt_code(tBTA_HH_INT_EVT evt_code) {
       return "BTA_HH_API_GET_DSCP_EVT";
     case BTA_HH_OPEN_CMPL_EVT:
       return "BTA_HH_OPEN_CMPL_EVT";
-#if (BTA_HH_LE_INCLUDED == TRUE)
     case BTA_HH_GATT_CLOSE_EVT:
       return "BTA_HH_GATT_CLOSE_EVT";
     case BTA_HH_GATT_OPEN_EVT:
@@ -474,7 +455,6 @@ static const char* bta_hh_evt_code(tBTA_HH_INT_EVT evt_code) {
       return "BTA_HH_START_ENC_EVT";
     case BTA_HH_ENC_CMPL_EVT:
       return "BTA_HH_ENC_CMPL_EVT";
-#endif
     default:
       return "unknown HID Host event code";
   }
@@ -499,10 +479,8 @@ static const char* bta_hh_state_code(tBTA_HH_STATE state_code) {
       return "BTA_HH_W4_CONN_ST";
     case BTA_HH_CONN_ST:
       return "BTA_HH_CONN_ST";
-#if (BTA_HH_LE_INCLUDED == TRUE)
     case BTA_HH_W4_SEC:
       return "BTA_HH_W4_SEC";
-#endif
     default:
       return "unknown HID Host state";
   }
