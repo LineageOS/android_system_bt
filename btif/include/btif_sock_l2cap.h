@@ -9,8 +9,6 @@
 
 #include <hardware/bluetooth.h>
 
-#define L2CAP_MASK_FIXED_CHANNEL 0x10000
-
 bt_status_t btsock_l2cap_init(int handle, uid_set_t* set);
 bt_status_t btsock_l2cap_cleanup();
 bt_status_t btsock_l2cap_listen(const char* name, int channel, int* sock_fd,
