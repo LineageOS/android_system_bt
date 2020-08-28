@@ -309,25 +309,6 @@ tBTA_JV_STATUS BTA_JvL2capStopServer(uint16_t local_psm,
 
 /*******************************************************************************
  *
- * Function         BTA_JvL2capStopServerLE
- *
- * Description      This function stops the LE L2CAP server. If the server has
- *                  an active connection, it would be closed.
- *
- * Returns          BTA_JV_SUCCESS, if the request is being processed.
- *                  BTA_JV_FAILURE, otherwise.
- *
- ******************************************************************************/
-tBTA_JV_STATUS BTA_JvL2capStopServerLE(uint16_t local_chan,
-                                       uint32_t l2cap_socket_id) {
-  VLOG(2) << __func__;
-
-  do_in_main_thread(FROM_HERE, Bind(&bta_jv_l2cap_stop_server_le, local_chan));
-  return BTA_JV_SUCCESS;
-}
-
-/*******************************************************************************
- *
  * Function         BTA_JvL2capRead
  *
  * Description      This function reads data from an L2CAP connection
