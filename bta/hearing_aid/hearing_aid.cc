@@ -1357,14 +1357,6 @@ class HearingAidImpl : public HearingAid {
       case GAP_EVT_CONN_UNCONGESTED:
         DVLOG(2) << "GAP_EVT_CONN_UNCONGESTED";
         break;
-
-      case GAP_EVT_LE_COC_CREDITS: {
-        auto& tmp = data->coc_credits;
-        DVLOG(2) << "GAP_EVT_LE_COC_CREDITS, for device: "
-                 << hearingDevice->address << " added" << tmp.credits_received
-                 << " credit_count: " << tmp.credit_count;
-        break;
-      }
     }
   }
 
