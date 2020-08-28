@@ -49,12 +49,6 @@ enum {
   BTA_SDP_ACTIVE_YES /* waiting for SDP result */
 };
 
-/* data type for BTA_SDP_API_ENABLE_EVT */
-typedef struct {
-  BT_HDR hdr;
-  tBTA_SDP_DM_CBACK* p_cback;
-} tBTA_SDP_API_ENABLE;
-
 /* data type for BTA_SDP_API_SEARCH_EVT */
 typedef struct {
   BT_HDR hdr;
@@ -72,7 +66,6 @@ typedef struct {
 typedef union {
   /* GKI event buffer header */
   BT_HDR hdr;
-  tBTA_SDP_API_ENABLE enable;
   tBTA_SDP_API_SEARCH get_search;
   tBTA_SDP_API_RECORD_USER record;
 } tBTA_SDP_MSG;
@@ -92,7 +85,7 @@ extern tBTA_SDP_CFG* p_bta_sdp_cfg;
 
 extern bool bta_sdp_sm_execute(BT_HDR* p_msg);
 
-extern void bta_sdp_enable(tBTA_SDP_API_ENABLE* p_data);
+extern void bta_sdp_enable(tBTA_SDP_DM_CBACK* p_cback);
 extern void bta_sdp_search(tBTA_SDP_API_SEARCH* p_data);
 extern void bta_sdp_create_record(tBTA_SDP_API_RECORD_USER* p_data);
 extern void bta_sdp_remove_record(tBTA_SDP_API_RECORD_USER* p_data);

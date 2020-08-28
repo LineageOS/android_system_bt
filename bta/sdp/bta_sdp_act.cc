@@ -400,14 +400,13 @@ static void bta_sdp_search_cback(uint16_t result, void* user_data) {
  * Returns      void
  *
  ******************************************************************************/
-void bta_sdp_enable(tBTA_SDP_API_ENABLE* p_data) {
+void bta_sdp_enable(tBTA_SDP_DM_CBACK* p_cback) {
   APPL_TRACE_DEBUG("%s in, sdp_active:%d", __func__, bta_sdp_cb.sdp_active);
   tBTA_SDP_STATUS status = BTA_SDP_SUCCESS;
-  bta_sdp_cb.p_dm_cback = p_data->p_cback;
+  bta_sdp_cb.p_dm_cback = p_cback;
   tBTA_SDP bta_sdp;
   bta_sdp.status = status;
   bta_sdp_cb.p_dm_cback(BTA_SDP_ENABLE_EVT, &bta_sdp, NULL);
-  osi_free(p_data);
 }
 
 /*******************************************************************************

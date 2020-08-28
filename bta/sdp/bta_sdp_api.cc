@@ -52,22 +52,13 @@
  *
  ******************************************************************************/
 tBTA_SDP_STATUS BTA_SdpEnable(tBTA_SDP_DM_CBACK* p_cback) {
-  tBTA_SDP_STATUS status = BTA_SDP_FAILURE;
-
-  APPL_TRACE_API(__func__);
-  if (p_cback) {
-    memset(&bta_sdp_cb, 0, sizeof(tBTA_SDP_CB));
-
-    if (p_cback) {
-      tBTA_SDP_API_ENABLE* p_buf =
-          (tBTA_SDP_API_ENABLE*)osi_malloc(sizeof(tBTA_SDP_API_ENABLE));
-      p_buf->hdr.event = BTA_SDP_API_ENABLE_EVT;
-      p_buf->p_cback = p_cback;
-      do_in_main_thread(FROM_HERE, base::Bind(bta_sdp_enable, p_buf));
-      status = BTA_SDP_SUCCESS;
-    }
+  if (!p_cback) {
+    return BTA_SDP_FAILURE;
   }
-  return status;
+
+  memset(&bta_sdp_cb, 0, sizeof(tBTA_SDP_CB));
+  do_in_main_thread(FROM_HERE, base::Bind(bta_sdp_enable, p_cback));
+  return BTA_SDP_SUCCESS;
 }
 
 /*******************************************************************************
