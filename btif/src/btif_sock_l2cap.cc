@@ -67,7 +67,6 @@ typedef struct l2cap_socket {
   struct packet* first_packet;  // fist packet to be delivered to app
   struct packet* last_packet;   // last packet to be delivered to app
 
-  unsigned fixed_chan : 1;        // fixed channel (or psm?)
   unsigned server : 1;            // is a server? (or connecting?)
   unsigned connected : 1;         // is connected?
   unsigned outgoing_congest : 1;  // should we hold?
@@ -244,31 +243,18 @@ static void btsock_l2cap_free_l(l2cap_socket* sock) {
     }
     if ((sock->channel >= 0) && (sock->server)) {
       BTA_JvFreeChannel(sock->channel, BTA_JV_CONN_TYPE_L2CAP_LE);
-      if (!sock->fixed_chan) {
-        VLOG(2) << __func__ << ": stopping L2CAP LE COC server channel "
-                << sock->channel;
-        BTA_JvL2capStopServer(sock->channel, sock->id);
-      }
+      VLOG(2) << __func__ << ": stopping L2CAP LE COC server channel "
+              << sock->channel;
+      BTA_JvL2capStopServer(sock->channel, sock->id);
     }
   } else {
     // Only call if we are non server connections
     if ((sock->handle >= 0) && (!sock->server)) {
-      if (sock->fixed_chan)
-        BTA_JvL2capCloseLE(sock->handle);
-      else
-        BTA_JvL2capClose(sock->handle);
+      BTA_JvL2capClose(sock->handle);
     }
     if ((sock->channel >= 0) && (sock->server)) {
-      if (sock->fixed_chan)
-        BTA_JvFreeChannel(sock->channel, BTA_JV_CONN_TYPE_L2CAP_LE);
-      else
-        BTA_JvFreeChannel(sock->channel, BTA_JV_CONN_TYPE_L2CAP);
-
-      if (!sock->fixed_chan) {
-        DVLOG(2) << __func__ << ": stopping L2CAP server channel "
-                 << sock->channel;
-        BTA_JvL2capStopServer(sock->channel, sock->id);
-      }
+      BTA_JvFreeChannel(sock->channel, BTA_JV_CONN_TYPE_L2CAP);
+      BTA_JvL2capStopServer(sock->channel, sock->id);
     }
   }
 
@@ -453,7 +439,6 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
       btsock_l2cap_alloc_l(sock->name, &p_open->rem_bda, false, 0);
   accept_rs->connected = true;
   accept_rs->security = sock->security;
-  accept_rs->fixed_chan = sock->fixed_chan;
   accept_rs->channel = sock->channel;
   accept_rs->handle = sock->handle;
   accept_rs->app_uid = sock->app_uid;
@@ -493,84 +478,8 @@ static void on_srv_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
   btsock_l2cap_server_listen(sock);
 }
 
-static void on_srv_l2cap_le_connect_l(tBTA_JV_L2CAP_LE_OPEN* p_open,
-                                      l2cap_socket* sock) {
-  // std::mutex locked by caller
-  l2cap_socket* accept_rs =
-      btsock_l2cap_alloc_l(sock->name, &p_open->rem_bda, false, 0);
-  if (!accept_rs) return;
-
-  // swap IDs
-  uint32_t new_listen_id = accept_rs->id;
-  accept_rs->id = sock->id;
-  sock->id = new_listen_id;
-
-  accept_rs->handle = p_open->handle;
-  accept_rs->connected = true;
-  accept_rs->security = sock->security;
-  accept_rs->fixed_chan = sock->fixed_chan;
-  accept_rs->channel = sock->channel;
-  accept_rs->app_uid = sock->app_uid;
-  accept_rs->tx_mtu = sock->tx_mtu = p_open->tx_mtu;
-
-  // if we do not set a callback, this socket will be dropped */
-  *(p_open->p_p_cback) = (void*)btsock_l2cap_cbk;
-  *(p_open->p_user_data) = UINT_TO_PTR(accept_rs->id);
-
-  bluetooth::common::LogSocketConnectionState(
-      accept_rs->addr, accept_rs->id,
-      accept_rs->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
-      android::bluetooth::SOCKET_CONNECTION_STATE_CONNECTED, 0, 0,
-      accept_rs->app_uid, accept_rs->channel,
-      accept_rs->server ? android::bluetooth::SOCKET_ROLE_LISTEN
-                        : android::bluetooth::SOCKET_ROLE_CONNECTION);
-
-  // start monitor the socket
-  btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP,
-                       SOCK_THREAD_FD_EXCEPTION, sock->id);
-  btsock_thread_add_fd(pth, accept_rs->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD,
-                       accept_rs->id);
-  DVLOG(2) << "sending connect signal & app fd: " << accept_rs->app_fd
-           << " to app server to accept() the connection";
-  DVLOG(2) << "server fd: << " << sock->our_fd << ", scn:" << sock->channel;
-  send_app_connect_signal(sock->our_fd, &accept_rs->addr, sock->channel, 0,
-                          accept_rs->app_fd, sock->rx_mtu, p_open->tx_mtu);
-  accept_rs->app_fd = -1;  // the fd is closed after sent to app
-}
-
 static void on_cl_l2cap_psm_connect_l(tBTA_JV_L2CAP_OPEN* p_open,
                                       l2cap_socket* sock) {
-  sock->addr = p_open->rem_bda;
-  sock->tx_mtu = p_open->tx_mtu;
-
-  if (!send_app_psm_or_chan_l(sock)) {
-    LOG(ERROR) << "send_app_psm_or_chan_l failed";
-    return;
-  }
-
-  if (!send_app_connect_signal(sock->our_fd, &sock->addr, sock->channel, 0, -1,
-                               sock->rx_mtu, p_open->tx_mtu)) {
-    LOG(ERROR) << "send_app_connect_signal failed";
-    return;
-  }
-
-  bluetooth::common::LogSocketConnectionState(
-      sock->addr, sock->id, sock->is_le_coc ? BTSOCK_L2CAP_LE : BTSOCK_L2CAP,
-      android::bluetooth::SOCKET_CONNECTION_STATE_CONNECTED, 0, 0,
-      sock->app_uid, sock->channel,
-      sock->server ? android::bluetooth::SOCKET_ROLE_LISTEN
-                   : android::bluetooth::SOCKET_ROLE_CONNECTION);
-
-  // start monitoring the socketpair to get call back when app writing data
-  DVLOG(2) << " connect signal sent, slot id: " << sock->id
-           << ", chan: " << sock->channel << ", server: " << sock->server;
-  btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_RD,
-                       sock->id);
-  sock->connected = true;
-}
-
-static void on_cl_l2cap_le_connect_l(tBTA_JV_L2CAP_LE_OPEN* p_open,
-                                     l2cap_socket* sock) {
   sock->addr = p_open->rem_bda;
   sock->tx_mtu = p_open->tx_mtu;
 
@@ -613,13 +522,7 @@ static void on_l2cap_connect(tBTA_JV* p_data, uint32_t id) {
   }
 
   sock->tx_mtu = le_open->tx_mtu;
-  if (sock->fixed_chan && le_open->status == BTA_JV_SUCCESS) {
-    if (!sock->server) {
-      on_cl_l2cap_le_connect_l(le_open, sock);
-    } else {
-      on_srv_l2cap_le_connect_l(le_open, sock);
-    }
-  } else if (!sock->fixed_chan && psm_open->status == BTA_JV_SUCCESS) {
+  if (psm_open->status == BTA_JV_SUCCESS) {
     if (!sock->server) {
       on_cl_l2cap_psm_connect_l(psm_open, sock);
     } else {
@@ -644,12 +547,9 @@ static void on_l2cap_close(tBTA_JV_L2CAP_CLOSE* p_close, uint32_t id) {
       sock->server ? android::bluetooth::SOCKET_ROLE_LISTEN
                    : android::bluetooth::SOCKET_ROLE_CONNECTION);
 
-  DVLOG(2) << __func__ << ": slot id: " << sock->id << ", fd: " << sock->our_fd
-           << (sock->fixed_chan ? ", fixed_chan:" : ", PSM: ") << sock->channel
-           << ", server:" << sock->server;
   // TODO: This does not seem to be called...
   // I'm not sure if this will be called for non-server sockets?
-  if (!sock->fixed_chan && (sock->server)) {
+  if (sock->server) {
     BTA_JvFreeChannel(sock->channel, BTA_JV_CONN_TYPE_L2CAP);
   }
   btsock_l2cap_free_l(sock);
@@ -700,40 +600,21 @@ static void on_l2cap_data_ind(tBTA_JV* evt, uint32_t id) {
 
   app_uid = sock->app_uid;
 
-  if (sock->fixed_chan) { /* we do these differently */
+  uint32_t count;
 
-    tBTA_JV_LE_DATA_IND* p_le_data_ind = &evt->le_data_ind;
-    BT_HDR* p_buf = p_le_data_ind->p_buf;
-    uint8_t* data = (uint8_t*)(p_buf + 1) + p_buf->offset;
-
-    if (packet_put_tail_l(sock, data, p_buf->len)) {
-      bytes_read = p_buf->len;
-      btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_WR,
-                           sock->id);
-    } else {  // connection must be dropped
-      DVLOG(2) << __func__
-               << ": unable to push data to socket - closing  fixed channel";
-      BTA_JvL2capCloseLE(sock->handle);
-      btsock_l2cap_free_l(sock);
-    }
-
-  } else {
-    uint32_t count;
-
-    if (BTA_JvL2capReady(sock->handle, &count) == BTA_JV_SUCCESS) {
-      std::vector<uint8_t> buffer(count);
-      if (BTA_JvL2capRead(sock->handle, sock->id, buffer.data(), count) ==
-          BTA_JV_SUCCESS) {
-        if (packet_put_tail_l(sock, buffer.data(), count)) {
-          bytes_read = count;
-          btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP,
-                               SOCK_THREAD_FD_WR, sock->id);
-        } else {  // connection must be dropped
-          DVLOG(2) << __func__
-                   << ": unable to push data to socket - closing channel";
-          BTA_JvL2capClose(sock->handle);
-          btsock_l2cap_free_l(sock);
-        }
+  if (BTA_JvL2capReady(sock->handle, &count) == BTA_JV_SUCCESS) {
+    std::vector<uint8_t> buffer(count);
+    if (BTA_JvL2capRead(sock->handle, sock->id, buffer.data(), count) ==
+        BTA_JV_SUCCESS) {
+      if (packet_put_tail_l(sock, buffer.data(), count)) {
+        bytes_read = count;
+        btsock_thread_add_fd(pth, sock->our_fd, BTSOCK_L2CAP, SOCK_THREAD_FD_WR,
+                             sock->id);
+      } else {  // connection must be dropped
+        DVLOG(2) << __func__
+                 << ": unable to push data to socket - closing channel";
+        BTA_JvL2capClose(sock->handle);
+        btsock_l2cap_free_l(sock);
       }
     }
   }
@@ -833,10 +714,6 @@ void on_l2cap_psm_assigned(int id, int psm) {
 }
 
 static void btsock_l2cap_server_listen(l2cap_socket* sock) {
-  DVLOG(2) << __func__ << ": fixed_chan: " << sock->fixed_chan
-           << ", channel: " << sock->channel
-           << ", is_le_coc: " << sock->is_le_coc;
-
   int connection_type =
       sock->is_le_coc ? BTA_JV_CONN_TYPE_L2CAP_LE : BTA_JV_CONN_TYPE_L2CAP;
 
@@ -1017,14 +894,8 @@ void btsock_l2cap_signaled(int fd, int flags, uint32_t user_id) {
         buffer->len = count;
         DVLOG(2) << __func__ << ": bytes received from socket: " << count;
 
-        if (sock->fixed_chan) {
-          // will take care of freeing buffer
-          BTA_JvL2capWriteFixed(sock->channel, sock->addr, PTR_TO_UINT(buffer),
-                                btsock_l2cap_cbk, buffer, user_id);
-        } else {
-          // will take care of freeing buffer
-          BTA_JvL2capWrite(sock->handle, PTR_TO_UINT(buffer), buffer, user_id);
-        }
+        // will take care of freeing buffer
+        BTA_JvL2capWrite(sock->handle, PTR_TO_UINT(buffer), buffer, user_id);
       }
     } else
       drop_it = true;
