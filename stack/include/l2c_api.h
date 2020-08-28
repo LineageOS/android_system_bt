@@ -271,7 +271,6 @@ typedef struct {
   tL2CA_DATA_IND_CB* pL2CA_DataInd_Cb;
   tL2CA_CONGESTION_STATUS_CB* pL2CA_CongestionStatus_Cb;
   tL2CA_TX_COMPLETE_CB* pL2CA_TxComplete_Cb;
-  tL2CA_CREDITS_RECEIVED_CB* pL2CA_CreditsReceived_Cb;
 } tL2CAP_APPL_INFO;
 
 /* Define the structure that applications use to create or accept
