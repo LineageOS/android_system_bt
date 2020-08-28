@@ -36,7 +36,6 @@
 
 #include "bt_types.h"
 #include "bta_api.h"
-#include "bta_mce_api.h"
 #include "btif_common.h"
 #include "btif_util.h"
 
