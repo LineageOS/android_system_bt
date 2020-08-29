@@ -305,7 +305,7 @@ extern void bta_hd_connect_act(tBTA_HD_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-extern void bta_hd_disconnect_act(UNUSED_ATTR tBTA_HD_DATA* p_data) {
+extern void bta_hd_disconnect_act() {
   tHID_STATUS ret;
   tBTA_HD cback_data;
 

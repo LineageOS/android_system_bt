@@ -155,7 +155,7 @@ extern void bta_hd_register_act(tBTA_HD_DATA* p_data);
 extern void bta_hd_unregister_act();
 extern void bta_hd_unregister2_act(tBTA_HD_DATA* p_data);
 extern void bta_hd_connect_act(tBTA_HD_DATA* p_data);
-extern void bta_hd_disconnect_act(tBTA_HD_DATA* p_data);
+extern void bta_hd_disconnect_act();
 extern void bta_hd_add_device_act(tBTA_HD_DATA* p_data);
 extern void bta_hd_remove_device_act(tBTA_HD_DATA* p_data);
 extern void bta_hd_send_report_act(tBTA_HD_DATA* p_data);

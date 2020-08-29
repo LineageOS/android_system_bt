@@ -84,7 +84,7 @@ static void bta_hd_better_state_machine(uint16_t event, tBTA_HD_DATA* p_data) {
           bta_hd_connect_act(p_data);
           break;
         case BTA_HD_API_DISCONNECT_EVT:
-          bta_hd_disconnect_act(p_data);
+          bta_hd_disconnect_act();
           break;
         case BTA_HD_API_ADD_DEVICE_EVT:
           bta_hd_add_device_act(p_data);
@@ -108,10 +108,10 @@ static void bta_hd_better_state_machine(uint16_t event, tBTA_HD_DATA* p_data) {
       switch (event) {
         case BTA_HD_API_UNREGISTER_APP_EVT:
           set_state(BTA_HD_TRANSIENT_TO_INIT_ST);
-          bta_hd_disconnect_act(p_data);
+          bta_hd_disconnect_act();
           break;
         case BTA_HD_API_DISCONNECT_EVT:
-          bta_hd_disconnect_act(p_data);
+          bta_hd_disconnect_act();
           break;
         case BTA_HD_API_ADD_DEVICE_EVT:
           bta_hd_add_device_act(p_data);
