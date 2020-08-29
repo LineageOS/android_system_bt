@@ -423,7 +423,7 @@ tBTA_JV_STATUS BTA_JvRfcommConnect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
   if (!p_cback) return BTA_JV_FAILURE; /* Nothing to do */
 
   do_in_main_thread(FROM_HERE,
-                    Bind(&bta_jv_rfcomm_connect, sec_mask, role, remote_scn,
+                    Bind(&bta_jv_rfcomm_connect, sec_mask, remote_scn,
                          peer_bd_addr, p_cback, rfcomm_slot_id));
   return BTA_JV_SUCCESS;
 }
@@ -484,7 +484,7 @@ tBTA_JV_STATUS BTA_JvRfcommStartServer(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
   }
 
   do_in_main_thread(FROM_HERE,
-                    Bind(&bta_jv_rfcomm_start_server, sec_mask, role, local_scn,
+                    Bind(&bta_jv_rfcomm_start_server, sec_mask, local_scn,
                          max_session, p_cback, rfcomm_slot_id));
   return BTA_JV_SUCCESS;
 }
