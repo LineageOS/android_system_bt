@@ -152,7 +152,7 @@ extern void bta_hd_api_enable(tBTA_HD_DATA* p_data);
 extern void bta_hd_api_disable(void);
 
 extern void bta_hd_register_act(tBTA_HD_DATA* p_data);
-extern void bta_hd_unregister_act(tBTA_HD_DATA* p_data);
+extern void bta_hd_unregister_act();
 extern void bta_hd_unregister2_act(tBTA_HD_DATA* p_data);
 extern void bta_hd_connect_act(tBTA_HD_DATA* p_data);
 extern void bta_hd_disconnect_act(tBTA_HD_DATA* p_data);
