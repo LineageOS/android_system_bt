@@ -1263,8 +1263,8 @@ static void bta_jv_port_event_cl_cback(uint32_t code, uint16_t port_handle) {
 }
 
 /* Client initiates an RFCOMM connection */
-void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
-                           uint8_t remote_scn, const RawAddress& peer_bd_addr,
+void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
+                           const RawAddress& peer_bd_addr,
                            tBTA_JV_RFCOMM_CBACK* p_cback,
                            uint32_t rfcomm_slot_id) {
   uint16_t handle = 0;
@@ -1567,8 +1567,8 @@ static tBTA_JV_PCB* bta_jv_add_rfc_port(tBTA_JV_RFC_CB* p_cb,
 }
 
 /* waits for an RFCOMM client to connect */
-void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, tBTA_JV_ROLE role,
-                                uint8_t local_scn, uint8_t max_session,
+void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, uint8_t local_scn,
+                                uint8_t max_session,
                                 tBTA_JV_RFCOMM_CBACK* p_cback,
                                 uint32_t rfcomm_slot_id) {
   uint16_t handle = 0;
