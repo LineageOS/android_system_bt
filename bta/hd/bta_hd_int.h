@@ -160,7 +160,7 @@ extern void bta_hd_add_device_act(tBTA_HD_DATA* p_data);
 extern void bta_hd_remove_device_act(tBTA_HD_DATA* p_data);
 extern void bta_hd_send_report_act(tBTA_HD_DATA* p_data);
 extern void bta_hd_report_error_act(tBTA_HD_DATA* p_data);
-extern void bta_hd_vc_unplug_act(tBTA_HD_DATA* p_data);
+extern void bta_hd_vc_unplug_act();
 
 extern void bta_hd_open_act(tBTA_HD_DATA* p_data);
 extern void bta_hd_close_act(tBTA_HD_DATA* p_data);

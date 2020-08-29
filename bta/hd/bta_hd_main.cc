@@ -126,7 +126,7 @@ static void bta_hd_better_state_machine(uint16_t event, tBTA_HD_DATA* p_data) {
           bta_hd_report_error_act(p_data);
           break;
         case BTA_HD_API_VC_UNPLUG_EVT:
-          bta_hd_vc_unplug_act(p_data);
+          bta_hd_vc_unplug_act();
           break;
         case BTA_HD_INT_CLOSE_EVT:
           set_state(BTA_HD_IDLE_ST);

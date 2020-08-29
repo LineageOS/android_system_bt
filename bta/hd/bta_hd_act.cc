@@ -417,7 +417,7 @@ extern void bta_hd_report_error_act(tBTA_HD_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-extern void bta_hd_vc_unplug_act(UNUSED_ATTR tBTA_HD_DATA* p_data) {
+extern void bta_hd_vc_unplug_act() {
   tHID_STATUS ret;
 
   APPL_TRACE_API("%s", __func__);
