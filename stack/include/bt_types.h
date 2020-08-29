@@ -753,13 +753,6 @@ typedef struct {
 #define BLE_ADDR_RANDOM_ID 0x03
 #define BLE_ADDR_ANONYMOUS 0xFF
 typedef uint8_t tBLE_ADDR_TYPE;
-#define BLE_ADDR_TYPE_MASK (BLE_ADDR_RANDOM | BLE_ADDR_PUBLIC)
-
-#define PHY_LE_1M_MASK 1
-#define PHY_LE_2M_MASK 2
-#define PHY_LE_CODED_MASK 4
-
-#define BLE_ADDR_IS_STATIC(x) (((x)[0] & 0xC0) == 0xC0)
 
 #ifdef __cplusplus
 struct tBLE_BD_ADDR {
