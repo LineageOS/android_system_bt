@@ -46,176 +46,6 @@ enum {
 };
 typedef uint8_t tBTA_HD_STATE;
 
-/* state machine actions */
-enum {
-  BTA_HD_REGISTER_ACT,
-  BTA_HD_UNREGISTER_ACT,
-  BTA_HD_UNREGISTER2_ACT,
-  BTA_HD_CONNECT_ACT,
-  BTA_HD_DISCONNECT_ACT,
-  BTA_HD_ADD_DEVICE_ACT,
-  BTA_HD_REMOVE_DEVICE_ACT,
-  BTA_HD_SEND_REPORT_ACT,
-  BTA_HD_REPORT_ERROR_ACT,
-  BTA_HD_VC_UNPLUG_ACT,
-
-  BTA_HD_OPEN_ACT,
-  BTA_HD_CLOSE_ACT,
-  BTA_HD_INTR_DATA_ACT,
-  BTA_HD_GET_REPORT_ACT,
-  BTA_HD_SET_REPORT_ACT,
-  BTA_HD_SET_PROTOCOL_ACT,
-  BTA_HD_VC_UNPLUG_DONE_ACT,
-  BTA_HD_SUSPEND_ACT,
-  BTA_HD_EXIT_SUSPEND_ACT,
-
-  BTA_HD_NUM_ACTIONS
-};
-
-#define BTA_HD_IGNORE BTA_HD_NUM_ACTIONS
-
-typedef void (*tBTA_HD_ACTION)(tBTA_HD_DATA* p_data);
-
-/* action functions */
-const tBTA_HD_ACTION bta_hd_action[] = {
-    bta_hd_register_act,       bta_hd_unregister_act,  bta_hd_unregister2_act,
-    bta_hd_connect_act,        bta_hd_disconnect_act,  bta_hd_add_device_act,
-    bta_hd_remove_device_act,  bta_hd_send_report_act, bta_hd_report_error_act,
-    bta_hd_vc_unplug_act,
-
-    bta_hd_open_act,           bta_hd_close_act,       bta_hd_intr_data_act,
-    bta_hd_get_report_act,     bta_hd_set_report_act,  bta_hd_set_protocol_act,
-    bta_hd_vc_unplug_done_act, bta_hd_suspend_act,     bta_hd_exit_suspend_act,
-};
-
-/* state table information */
-#define BTA_HD_ACTION 0     /* position of action */
-#define BTA_HD_NEXT_STATE 1 /* position of next state */
-#define BTA_HD_NUM_COLS 2   /* number of columns */
-
-const uint8_t bta_hd_st_init[][BTA_HD_NUM_COLS] = {
-    /* Event                               Action                     Next state
-       */
-    /* BTA_HD_API_REGISTER_APP_EVT   */ {BTA_HD_REGISTER_ACT, BTA_HD_IDLE_ST},
-    /* BTA_HD_API_UNREGISTER_APP_EVT */ {BTA_HD_IGNORE, BTA_HD_INIT_ST},
-    /* BTA_HD_API_CONNECT_EVT        */ {BTA_HD_IGNORE, BTA_HD_INIT_ST},
-    /* BTA_HD_API_DISCONNECT_EVT     */ {BTA_HD_IGNORE, BTA_HD_INIT_ST},
-    /* BTA_HD_API_ADD_DEVICE_EVT     */ {BTA_HD_ADD_DEVICE_ACT, BTA_HD_INIT_ST},
-    /* BTA_HD_API_REMOVE_DEVICE_EVT  */ {BTA_HD_REMOVE_DEVICE_ACT, BTA_HD_INIT_ST},
-    /* BTA_HD_API_SEND_REPORT_EVT    */ {BTA_HD_IGNORE, BTA_HD_INIT_ST},
-    /* BTA_HD_API_REPORT_ERROR_EVT   */ {BTA_HD_IGNORE, BTA_HD_INIT_ST},
-    /* BTA_HD_API_VC_UNPLUG_EVT      */ {BTA_HD_IGNORE, BTA_HD_INIT_ST},
-    /* BTA_HD_INT_OPEN_EVT           */ {BTA_HD_IGNORE, BTA_HD_INIT_ST},
-    /* BTA_HD_INT_CLOSE_EVT          */ {BTA_HD_IGNORE, BTA_HD_INIT_ST},
-    /* BTA_HD_INT_INTR_DATA_EVT      */ {BTA_HD_IGNORE, BTA_HD_INIT_ST},
-    /* BTA_HD_INT_GET_REPORT_EVT     */ {BTA_HD_IGNORE, BTA_HD_INIT_ST},
-    /* BTA_HD_INT_SET_REPORT_EVT     */ {BTA_HD_IGNORE, BTA_HD_INIT_ST},
-    /* BTA_HD_INT_SET_PROTOCOL_EVT   */ {BTA_HD_IGNORE, BTA_HD_INIT_ST},
-    /* BTA_HD_INT_VC_UNPLUG_EVT      */ {BTA_HD_IGNORE, BTA_HD_INIT_ST},
-    /* BTA_HD_INT_SUSPEND_EVT        */ {BTA_HD_IGNORE, BTA_HD_INIT_ST},
-    /* BTA_HD_INT_EXIT_SUSPEND_EVT   */ {BTA_HD_IGNORE, BTA_HD_INIT_ST},
-};
-
-const uint8_t bta_hd_st_idle[][BTA_HD_NUM_COLS] = {
-    /* Event                               Action                     Next state
-       */
-    /* BTA_HD_API_REGISTER_APP_EVT   */ {BTA_HD_IGNORE, BTA_HD_IDLE_ST},
-    /* BTA_HD_API_UNREGISTER_APP_EVT */ {BTA_HD_UNREGISTER_ACT, BTA_HD_INIT_ST},
-    /* BTA_HD_API_CONNECT_EVT        */ {BTA_HD_CONNECT_ACT, BTA_HD_IDLE_ST},
-    /* BTA_HD_API_DISCONNECT_EVT     */ {BTA_HD_DISCONNECT_ACT, BTA_HD_IDLE_ST},
-    /* BTA_HD_API_ADD_DEVICE_EVT     */ {BTA_HD_ADD_DEVICE_ACT, BTA_HD_IDLE_ST},
-    /* BTA_HD_API_REMOVE_DEVICE_EVT  */ {BTA_HD_REMOVE_DEVICE_ACT, BTA_HD_IDLE_ST},
-    /* BTA_HD_API_SEND_REPORT_EVT    */ {BTA_HD_SEND_REPORT_ACT, BTA_HD_IDLE_ST},
-    /* BTA_HD_API_REPORT_ERROR_EVT   */ {BTA_HD_IGNORE, BTA_HD_IDLE_ST},
-    /* BTA_HD_API_VC_UNPLUG_EVT      */ {BTA_HD_IGNORE, BTA_HD_IDLE_ST},
-    /* BTA_HD_INT_OPEN_EVT           */ {BTA_HD_OPEN_ACT, BTA_HD_CONN_ST},
-    /* BTA_HD_INT_CLOSE_EVT          */ {BTA_HD_CLOSE_ACT, BTA_HD_IDLE_ST},
-    /* BTA_HD_INT_INTR_DATA_EVT      */ {BTA_HD_IGNORE, BTA_HD_IDLE_ST},
-    /* BTA_HD_INT_GET_REPORT_EVT     */ {BTA_HD_IGNORE, BTA_HD_IDLE_ST},
-    /* BTA_HD_INT_SET_REPORT_EVT     */ {BTA_HD_IGNORE, BTA_HD_IDLE_ST},
-    /* BTA_HD_INT_SET_PROTOCOL_EVT   */ {BTA_HD_IGNORE, BTA_HD_IDLE_ST},
-    /* BTA_HD_INT_VC_UNPLUG_EVT      */ {BTA_HD_IGNORE, BTA_HD_IDLE_ST},
-    /* BTA_HD_INT_SUSPEND_EVT        */ {BTA_HD_IGNORE, BTA_HD_IDLE_ST},
-    /* BTA_HD_INT_EXIT_SUSPEND_EVT   */ {BTA_HD_IGNORE, BTA_HD_IDLE_ST},
-};
-
-const uint8_t bta_hd_st_conn[][BTA_HD_NUM_COLS] = {
-    /* Event                               Action Next state */
-    /* BTA_HD_API_REGISTER_APP_EVT   */ {BTA_HD_IGNORE, BTA_HD_CONN_ST},
-    /* BTA_HD_API_UNREGISTER_APP_EVT */ {BTA_HD_DISCONNECT_ACT,
-                                         BTA_HD_TRANSIENT_TO_INIT_ST},
-    /* BTA_HD_API_CONNECT_EVT        */ {BTA_HD_IGNORE, BTA_HD_CONN_ST},
-    /* BTA_HD_API_DISCONNECT_EVT     */ {BTA_HD_DISCONNECT_ACT, BTA_HD_CONN_ST},
-    /* BTA_HD_API_ADD_DEVICE_EVT     */ {BTA_HD_ADD_DEVICE_ACT, BTA_HD_CONN_ST},
-    /* BTA_HD_API_REMOVE_DEVICE_EVT  */ {BTA_HD_REMOVE_DEVICE_ACT,
-                                         BTA_HD_CONN_ST},
-    /* BTA_HD_API_SEND_REPORT_EVT    */ {BTA_HD_SEND_REPORT_ACT,
-                                         BTA_HD_CONN_ST},
-    /* BTA_HD_API_REPORT_ERROR_EVT   */ {BTA_HD_REPORT_ERROR_ACT,
-                                         BTA_HD_CONN_ST},
-    /* BTA_HD_API_VC_UNPLUG_EVT      */ {BTA_HD_VC_UNPLUG_ACT, BTA_HD_CONN_ST},
-    /* BTA_HD_INT_OPEN_EVT           */ {BTA_HD_IGNORE, BTA_HD_CONN_ST},
-    /* BTA_HD_INT_CLOSE_EVT          */ {BTA_HD_CLOSE_ACT, BTA_HD_IDLE_ST},
-    /* BTA_HD_INT_INTR_DATA_EVT      */ {BTA_HD_INTR_DATA_ACT, BTA_HD_CONN_ST},
-    /* BTA_HD_INT_GET_REPORT_EVT     */ {BTA_HD_GET_REPORT_ACT, BTA_HD_CONN_ST},
-    /* BTA_HD_INT_SET_REPORT_EVT     */ {BTA_HD_SET_REPORT_ACT, BTA_HD_CONN_ST},
-    /* BTA_HD_INT_SET_PROTOCOL_EVT   */ {BTA_HD_SET_PROTOCOL_ACT,
-                                         BTA_HD_CONN_ST},
-    /* BTA_HD_INT_VC_UNPLUG_EVT      */ {BTA_HD_VC_UNPLUG_DONE_ACT,
-                                         BTA_HD_IDLE_ST},
-    /* BTA_HD_INT_SUSPEND_EVT        */ {BTA_HD_SUSPEND_ACT, BTA_HD_CONN_ST},
-    /* BTA_HD_INT_EXIT_SUSPEND_EVT   */ {BTA_HD_EXIT_SUSPEND_ACT,
-                                         BTA_HD_CONN_ST},
-};
-
-const uint8_t bta_hd_st_transient_to_init[][BTA_HD_NUM_COLS] = {
-    /* Event                               Action Next state */
-    /* BTA_HD_API_REGISTER_APP_EVT   */ {BTA_HD_IGNORE,
-                                         BTA_HD_TRANSIENT_TO_INIT_ST},
-    /* BTA_HD_API_UNREGISTER_APP_EVT */ {BTA_HD_IGNORE,
-                                         BTA_HD_TRANSIENT_TO_INIT_ST},
-    /* BTA_HD_API_CONNECT_EVT        */ {BTA_HD_IGNORE,
-                                         BTA_HD_TRANSIENT_TO_INIT_ST},
-    /* BTA_HD_API_DISCONNECT_EVT     */ {BTA_HD_IGNORE,
-                                         BTA_HD_TRANSIENT_TO_INIT_ST},
-    /* BTA_HD_API_ADD_DEVICE_EVT     */ {BTA_HD_IGNORE,
-                                         BTA_HD_TRANSIENT_TO_INIT_ST},
-    /* BTA_HD_API_REMOVE_DEVICE_EVT  */ {BTA_HD_IGNORE,
-                                         BTA_HD_TRANSIENT_TO_INIT_ST},
-    /* BTA_HD_API_SEND_REPORT_EVT    */ {BTA_HD_IGNORE,
-                                         BTA_HD_TRANSIENT_TO_INIT_ST},
-    /* BTA_HD_API_REPORT_ERROR_EVT   */ {BTA_HD_IGNORE,
-                                         BTA_HD_TRANSIENT_TO_INIT_ST},
-    /* BTA_HD_API_VC_UNPLUG_EVT      */ {BTA_HD_IGNORE,
-                                         BTA_HD_TRANSIENT_TO_INIT_ST},
-    /* BTA_HD_INT_OPEN_EVT           */ {BTA_HD_IGNORE,
-                                         BTA_HD_TRANSIENT_TO_INIT_ST},
-    /* BTA_HD_INT_CLOSE_EVT          */ {BTA_HD_UNREGISTER2_ACT,
-                                         BTA_HD_INIT_ST},
-    /* BTA_HD_INT_INTR_DATA_EVT      */ {BTA_HD_IGNORE,
-                                         BTA_HD_TRANSIENT_TO_INIT_ST},
-    /* BTA_HD_INT_GET_REPORT_EVT     */ {BTA_HD_IGNORE,
-                                         BTA_HD_TRANSIENT_TO_INIT_ST},
-    /* BTA_HD_INT_SET_REPORT_EVT     */ {BTA_HD_IGNORE,
-                                         BTA_HD_TRANSIENT_TO_INIT_ST},
-    /* BTA_HD_INT_SET_PROTOCOL_EVT   */ {BTA_HD_IGNORE,
-                                         BTA_HD_TRANSIENT_TO_INIT_ST},
-    /* BTA_HD_INT_VC_UNPLUG_EVT      */ {BTA_HD_UNREGISTER2_ACT,
-                                         BTA_HD_INIT_ST},
-    /* BTA_HD_INT_SUSPEND_EVT        */ {BTA_HD_IGNORE,
-                                         BTA_HD_TRANSIENT_TO_INIT_ST},
-    /* BTA_HD_INT_EXIT_SUSPEND_EVT   */ {BTA_HD_IGNORE,
-                                         BTA_HD_TRANSIENT_TO_INIT_ST},
-};
-
-/* type for state table */
-typedef const uint8_t (*tBTA_HD_ST_TBL)[BTA_HD_NUM_COLS];
-
-/* state table */
-const tBTA_HD_ST_TBL bta_hd_st_tbl[] = {bta_hd_st_init, bta_hd_st_idle,
-                                        bta_hd_st_conn,
-                                        bta_hd_st_transient_to_init};
-
 /*****************************************************************************
  * Global data
  ****************************************************************************/
@@ -223,6 +53,123 @@ tBTA_HD_CB bta_hd_cb;
 
 static const char* bta_hd_evt_code(tBTA_HD_INT_EVT evt_code);
 static const char* bta_hd_state_code(tBTA_HD_STATE state_code);
+
+static tBTA_HD_STATE get_state() { return bta_hd_cb.state; }
+
+static void set_state(tBTA_HD_STATE state) { bta_hd_cb.state = state; }
+
+static void bta_hd_better_state_machine(uint16_t event, tBTA_HD_DATA* p_data) {
+  switch (get_state()) {
+    case BTA_HD_INIT_ST:
+      switch (event) {
+        case BTA_HD_API_REGISTER_APP_EVT:
+          set_state(BTA_HD_IDLE_ST);
+          bta_hd_register_act(p_data);
+          break;
+        case BTA_HD_API_ADD_DEVICE_EVT:
+          bta_hd_add_device_act(p_data);
+          break;
+        case BTA_HD_API_REMOVE_DEVICE_EVT:
+          bta_hd_remove_device_act(p_data);
+          break;
+      }
+      break;
+    case BTA_HD_IDLE_ST:
+      switch (event) {
+        case BTA_HD_API_UNREGISTER_APP_EVT:
+          set_state(BTA_HD_INIT_ST);
+          bta_hd_unregister_act(p_data);
+          break;
+        case BTA_HD_API_CONNECT_EVT:
+          bta_hd_connect_act(p_data);
+          break;
+        case BTA_HD_API_DISCONNECT_EVT:
+          bta_hd_disconnect_act(p_data);
+          break;
+        case BTA_HD_API_ADD_DEVICE_EVT:
+          bta_hd_add_device_act(p_data);
+          break;
+        case BTA_HD_API_REMOVE_DEVICE_EVT:
+          bta_hd_remove_device_act(p_data);
+          break;
+        case BTA_HD_API_SEND_REPORT_EVT:
+          bta_hd_send_report_act(p_data);
+          break;
+        case BTA_HD_INT_OPEN_EVT:
+          set_state(BTA_HD_CONN_ST);
+          bta_hd_open_act(p_data);
+          break;
+        case BTA_HD_INT_CLOSE_EVT:
+          bta_hd_close_act(p_data);
+          break;
+      }
+      break;
+    case BTA_HD_CONN_ST:
+      switch (event) {
+        case BTA_HD_API_UNREGISTER_APP_EVT:
+          set_state(BTA_HD_TRANSIENT_TO_INIT_ST);
+          bta_hd_disconnect_act(p_data);
+          break;
+        case BTA_HD_API_DISCONNECT_EVT:
+          bta_hd_disconnect_act(p_data);
+          break;
+        case BTA_HD_API_ADD_DEVICE_EVT:
+          bta_hd_add_device_act(p_data);
+          break;
+        case BTA_HD_API_REMOVE_DEVICE_EVT:
+          bta_hd_remove_device_act(p_data);
+          break;
+        case BTA_HD_API_SEND_REPORT_EVT:
+          bta_hd_send_report_act(p_data);
+          break;
+        case BTA_HD_API_REPORT_ERROR_EVT:
+          bta_hd_report_error_act(p_data);
+          break;
+        case BTA_HD_API_VC_UNPLUG_EVT:
+          bta_hd_vc_unplug_act(p_data);
+          break;
+        case BTA_HD_INT_CLOSE_EVT:
+          set_state(BTA_HD_IDLE_ST);
+          bta_hd_close_act(p_data);
+          break;
+        case BTA_HD_INT_INTR_DATA_EVT:
+          bta_hd_intr_data_act(p_data);
+          break;
+        case BTA_HD_INT_GET_REPORT_EVT:
+          bta_hd_get_report_act(p_data);
+          break;
+        case BTA_HD_INT_SET_REPORT_EVT:
+          bta_hd_set_report_act(p_data);
+          break;
+        case BTA_HD_INT_SET_PROTOCOL_EVT:
+          bta_hd_set_protocol_act(p_data);
+          break;
+        case BTA_HD_INT_VC_UNPLUG_EVT:
+          set_state(BTA_HD_IDLE_ST);
+          bta_hd_vc_unplug_done_act(p_data);
+          break;
+        case BTA_HD_INT_SUSPEND_EVT:
+          bta_hd_suspend_act(p_data);
+          break;
+        case BTA_HD_INT_EXIT_SUSPEND_EVT:
+          bta_hd_exit_suspend_act(p_data);
+          break;
+      }
+      break;
+    case BTA_HD_TRANSIENT_TO_INIT_ST:
+      switch (event) {
+        case BTA_HD_INT_CLOSE_EVT:
+          set_state(BTA_HD_INIT_ST);
+          bta_hd_unregister2_act(p_data);
+          break;
+        case BTA_HD_INT_VC_UNPLUG_EVT:
+          set_state(BTA_HD_INIT_ST);
+          bta_hd_unregister2_act(p_data);
+          break;
+      }
+      break;
+  }
+}
 
 /*******************************************************************************
  *
@@ -234,29 +181,14 @@ static const char* bta_hd_state_code(tBTA_HD_STATE state_code);
  *
  ******************************************************************************/
 void bta_hd_sm_execute(uint16_t event, tBTA_HD_DATA* p_data) {
-  tBTA_HD_ST_TBL state_table;
   tBTA_HD_STATE prev_state;
-  uint8_t action;
-  tBTA_HD cback_data;
 
   APPL_TRACE_EVENT("%s: state=%s (%d) event=%s (%d)", __func__,
                    bta_hd_state_code(bta_hd_cb.state), bta_hd_cb.state,
                    bta_hd_evt_code(event), event);
 
   prev_state = bta_hd_cb.state;
-
-  memset(&cback_data, 0, sizeof(tBTA_HD));
-
-  state_table = bta_hd_st_tbl[bta_hd_cb.state];
-
-  event &= 0xff;
-
-  action = state_table[event][BTA_HD_ACTION];
-  if (action < BTA_HD_IGNORE) {
-    (*bta_hd_action[action])(p_data);
-  }
-
-  bta_hd_cb.state = state_table[event][BTA_HD_NEXT_STATE];
+  bta_hd_better_state_machine(event, p_data);
 
   if (bta_hd_cb.state != prev_state) {
     APPL_TRACE_EVENT("%s: [new] state=%s (%d)", __func__,
