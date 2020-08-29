@@ -754,6 +754,9 @@ typedef struct {
 #define BLE_ADDR_ANONYMOUS 0xFF
 typedef uint8_t tBLE_ADDR_TYPE;
 
+/* BLE ADDR type ID bit */
+#define BLE_ADDR_TYPE_ID_BIT 0x02
+
 #ifdef __cplusplus
 struct tBLE_BD_ADDR {
   tBLE_ADDR_TYPE type;
