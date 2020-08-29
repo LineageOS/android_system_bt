@@ -554,23 +554,6 @@ bool L2CA_GetRemoteCid(uint16_t lcid, uint16_t* rcid);
 
 /*******************************************************************************
  *
- * Function         L2CA_SetIdleTimeout
- *
- * Description      Higher layers call this function to set the idle timeout for
- *                  a connection, or for all future connections. The "idle
- *                  timeout" is the amount of time that a connection can remain
- *                  up with no L2CAP channels on it. A timeout of zero means
- *                  that the connection will be torn down immediately when the
- *                  last channel is removed. A timeout of 0xFFFF means no
- *                  timeout. Values are in seconds.
- *
- * Returns          true if command succeeded, false if failed
- *
- ******************************************************************************/
-extern bool L2CA_SetIdleTimeout(uint16_t cid, uint16_t timeout, bool is_global);
-
-/*******************************************************************************
- *
  * Function         L2CA_SetIdleTimeoutByBdAddr
  *
  * Description      Higher layers call this function to set the idle timeout for
