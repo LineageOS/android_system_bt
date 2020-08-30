@@ -414,7 +414,6 @@ void btm_consolidate_dev(tBTM_SEC_DEV_REC* p_target_rec) {
 
       p_target_rec->new_encryption_key_is_p256 =
           temp_rec.new_encryption_key_is_p256;
-      p_target_rec->no_smp_on_br = temp_rec.no_smp_on_br;
       p_target_rec->bond_type = temp_rec.bond_type;
 
       /* remove the combined record */

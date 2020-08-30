@@ -81,17 +81,16 @@ void avct_l2c_br_congestion_ind_cback(uint16_t lcid, bool is_congested);
 void avct_l2c_br_data_ind_cback(uint16_t lcid, BT_HDR* p_buf);
 
 /* L2CAP callback function structure */
-const tL2CAP_APPL_INFO avct_l2c_br_appl = {
-    avct_l2c_br_connect_ind_cback,
-    avct_l2c_br_connect_cfm_cback,
-    avct_l2c_br_config_ind_cback,
-    avct_l2c_br_config_cfm_cback,
-    avct_l2c_br_disconnect_ind_cback,
-    avct_l2c_br_disconnect_cfm_cback,
-    avct_l2c_br_data_ind_cback,
-    avct_l2c_br_congestion_ind_cback,
-    NULL, /* tL2CA_TX_COMPLETE_CB */
-    NULL /* tL2CA_CREDITS_RECEIVED_CB */};
+const tL2CAP_APPL_INFO avct_l2c_br_appl = {avct_l2c_br_connect_ind_cback,
+                                           avct_l2c_br_connect_cfm_cback,
+                                           avct_l2c_br_config_ind_cback,
+                                           avct_l2c_br_config_cfm_cback,
+                                           avct_l2c_br_disconnect_ind_cback,
+                                           avct_l2c_br_disconnect_cfm_cback,
+                                           avct_l2c_br_data_ind_cback,
+                                           avct_l2c_br_congestion_ind_cback,
+                                           NULL,
+                                           /* tL2CA_TX_COMPLETE_CB */};
 
 /* Browsing channel eL2CAP default options */
 const tL2CAP_FCR_OPTS avct_l2c_br_fcr_opts_def = {

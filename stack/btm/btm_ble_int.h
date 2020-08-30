@@ -37,9 +37,6 @@
 
 extern bool ble_evt_type_is_connectable(uint16_t evt_type);
 extern void btm_ble_refresh_raddr_timer_timeout(void* data);
-extern void btm_ble_process_adv_pkt(uint8_t len, uint8_t* p);
-extern void btm_ble_process_phy_update_pkt(uint8_t len, uint8_t* p);
-extern void btm_ble_process_ext_adv_pkt(uint8_t len, uint8_t* p);
 extern tBTM_STATUS btm_ble_read_remote_name(const RawAddress& remote_bda,
                                             tBTM_CMPL_CB* p_cb);
 extern bool btm_ble_cancel_remote_name(const RawAddress& remote_bda);
@@ -61,13 +58,10 @@ extern void btm_ble_init(void);
 extern void btm_ble_connected(const RawAddress& bda, uint16_t handle,
                               uint8_t enc_mode, uint8_t role,
                               tBLE_ADDR_TYPE addr_type, bool addr_matched);
-extern void btm_ble_read_remote_features_complete(uint8_t* p);
 extern void btm_ble_write_adv_enable_complete(uint8_t* p);
-extern void btm_ble_conn_complete(uint8_t* p, uint16_t evt_len, bool enhanced);
 extern tBTM_BLE_CONN_ST btm_ble_get_conn_st(void);
 extern tBTM_STATUS btm_ble_start_adv(void);
 extern tBTM_STATUS btm_ble_stop_adv(void);
-extern void btm_le_on_advertising_set_terminated(uint8_t* p, uint16_t length);
 extern tBTM_STATUS btm_ble_start_scan(void);
 extern void btm_ble_create_ll_conn_complete(uint8_t status);
 

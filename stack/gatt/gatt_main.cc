@@ -81,8 +81,7 @@ static const tL2CAP_APPL_INFO dyn_info = {gatt_l2cif_connect_ind_cback,
                                           gatt_l2cif_disconnect_cfm_cback,
                                           gatt_l2cif_data_ind_cback,
                                           gatt_l2cif_congest_cback,
-                                          NULL,
-                                          NULL /* tL2CA_CREDITS_RECEIVED_CB */};
+                                          NULL};
 
 tGATT_CB gatt_cb;
 
