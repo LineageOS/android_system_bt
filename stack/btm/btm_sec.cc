@@ -59,10 +59,7 @@ extern void bta_dm_remove_device(const RawAddress& bd_addr);
 tBTM_SEC_SERV_REC* btm_sec_find_first_serv(bool is_originator, uint16_t psm);
 static tBTM_SEC_SERV_REC* btm_sec_find_next_serv(tBTM_SEC_SERV_REC* p_cur);
 static tBTM_SEC_SERV_REC* btm_sec_find_mx_serv(uint8_t is_originator,
-                                               uint16_t psm,
-                                               uint32_t mx_proto_id,
                                                uint32_t mx_chan_id);
-
 static bool btm_sec_start_get_name(tBTM_SEC_DEV_REC* p_dev_rec);
 static void btm_sec_start_authentication(tBTM_SEC_DEV_REC* p_dev_rec);
 static void btm_sec_start_encryption(tBTM_SEC_DEV_REC* p_dev_rec);
@@ -507,16 +504,16 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
 }
 
 struct RfcommSecurityRecord {
-  uint32_t scn;
+  uint32_t service_id;
   bool need_mitm;
   bool need_16_digit_pin;
 };
 static std::unordered_map<uint32_t, RfcommSecurityRecord>
     legacy_stack_rfcomm_security_records;
 
-void BTM_SetRfcommSecurity(uint32_t scn, bool need_mitm,
+void BTM_SetRfcommSecurity(uint32_t service_id, uint32_t scn, bool need_mitm,
                            bool need_16_digit_pin) {
-  legacy_stack_rfcomm_security_records[scn] = {scn, need_mitm,
+  legacy_stack_rfcomm_security_records[scn] = {service_id, need_mitm,
                                                need_16_digit_pin};
 }
 
@@ -539,6 +536,12 @@ void BTM_SetRfcommSecurity(uint32_t scn, bool need_mitm,
  *
  ******************************************************************************/
 uint8_t BTM_SecClrService(uint8_t service_id) {
+  for (auto& entry : legacy_stack_rfcomm_security_records) {
+    if (entry.second.service_id == service_id) {
+      legacy_stack_rfcomm_security_records.erase(entry.first);
+    }
+  }
+
   tBTM_SEC_SERV_REC* p_srec = &btm_cb.sec_serv_rec[0];
   uint8_t num_freed = 0;
   int i;
@@ -1792,7 +1795,6 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
                                       tBTM_SEC_CALLBACK* p_callback,
                                       void* p_ref_data) {
   tBTM_SEC_DEV_REC* p_dev_rec;
-  tBTM_SEC_SERV_REC* p_serv_rec;
   tBTM_STATUS rc;
   uint16_t security_required;
   bool transport = false; /* should check PSM range in LE connection oriented
@@ -1803,17 +1805,9 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
         p_callback, p_ref_data);
   }
 
-  BTM_TRACE_DEBUG("%s() is_originator: %d", __func__, is_originator);
-  /* Find or get oldest record */
-  p_dev_rec = btm_find_or_alloc_dev(bd_addr);
-
-  /* Find the service record for the PSM */
-  p_serv_rec = btm_sec_find_mx_serv(is_originator, BT_PSM_RFCOMM,
-                                    BTM_SEC_PROTO_RFCOMM, mx_chan_id);
-
   /* If there is no application registered with this PSM do not allow connection
    */
-  if (!p_serv_rec) {
+  if (legacy_stack_rfcomm_security_records.count(mx_chan_id) == 0) {
     if (p_callback)
       (*p_callback)(&bd_addr, transport, p_ref_data, BTM_MODE_UNSUPPORTED);
 
@@ -1822,7 +1816,33 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
     return BTM_NO_RESOURCES;
   }
 
-  security_required = p_serv_rec->security_flags;
+  auto requirement = legacy_stack_rfcomm_security_records[mx_chan_id];
+
+  uint16_t sec_mask = BTM_SEC_OUT_ENCRYPT | BTM_SEC_OUT_AUTHENTICATE |
+                      BTM_SEC_IN_ENCRYPT | BTM_SEC_IN_AUTHENTICATE;
+  if (requirement.need_mitm) sec_mask |= BTM_SEC_OUT_MITM | BTM_SEC_IN_MITM;
+  if (requirement.need_16_digit_pin) sec_mask |= BTM_SEC_IN_MIN_16_DIGIT_PIN;
+  // Setting the legacy one is required for p_cur_serv for pairing
+  if (!BTM_SetSecurityLevel(is_originator, "", requirement.service_id, sec_mask,
+                            BT_PSM_RFCOMM, BTM_SEC_PROTO_RFCOMM, mx_chan_id)) {
+    return BTM_NO_RESOURCES;
+  }
+
+  BTM_TRACE_DEBUG("%s() is_originator: %d", __func__, is_originator);
+  /* Find or get oldest record */
+  p_dev_rec = btm_find_or_alloc_dev(bd_addr);
+
+  if (is_originator) {
+    security_required = BTM_SEC_OUT_ENCRYPT | BTM_SEC_OUT_AUTHENTICATE;
+    if (requirement.need_mitm) security_required |= BTM_SEC_OUT_MITM;
+    if (requirement.need_16_digit_pin)
+      security_required |= BTM_SEC_IN_MIN_16_DIGIT_PIN;
+  } else {
+    security_required = BTM_SEC_IN_ENCRYPT | BTM_SEC_IN_AUTHENTICATE;
+    if (requirement.need_mitm) security_required |= BTM_SEC_IN_MITM;
+    if (requirement.need_16_digit_pin)
+      security_required |= BTM_SEC_IN_MIN_16_DIGIT_PIN;
+  }
 
   /* there are some devices (moto phone) which connects to several services at
    * the same time */
@@ -1919,7 +1939,7 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
     }
   }
 
-  p_dev_rec->p_cur_service = p_serv_rec;
+  p_dev_rec->p_cur_service = btm_sec_find_mx_serv(is_originator, mx_chan_id);
   p_dev_rec->security_required = security_required;
 
   if (btm_cb.security_mode == BTM_SEC_MODE_SP ||
@@ -1948,12 +1968,6 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
   p_dev_rec->is_originator = is_originator;
   p_dev_rec->p_callback = p_callback;
   p_dev_rec->p_ref_data = p_ref_data;
-
-  BTM_TRACE_EVENT(
-      "%s() chan_id:%d State:%d Flags:0x%x Required:0x%x Service "
-      "ID:%d",
-      __func__, mx_chan_id, p_dev_rec->sec_state, p_dev_rec->sec_flags,
-      p_dev_rec->security_required, p_dev_rec->p_cur_service->service_id);
 
   rc = btm_sec_execute_procedure(p_dev_rec);
   if (rc != BTM_CMD_STARTED) {
@@ -4569,16 +4583,14 @@ static tBTM_SEC_SERV_REC* btm_sec_find_next_serv(tBTM_SEC_SERV_REC* p_cur) {
  *
  ******************************************************************************/
 static tBTM_SEC_SERV_REC* btm_sec_find_mx_serv(uint8_t is_originator,
-                                               uint16_t psm,
-                                               uint32_t mx_proto_id,
                                                uint32_t mx_chan_id) {
   tBTM_SEC_SERV_REC* p_out_serv = btm_cb.p_out_serv;
   tBTM_SEC_SERV_REC* p_serv_rec = &btm_cb.sec_serv_rec[0];
   int i;
 
   BTM_TRACE_DEBUG("%s()", __func__);
-  if (is_originator && p_out_serv && p_out_serv->psm == psm &&
-      p_out_serv->mx_proto_id == mx_proto_id &&
+  if (is_originator && p_out_serv && p_out_serv->psm == BT_PSM_RFCOMM &&
+      p_out_serv->mx_proto_id == BTM_SEC_PROTO_RFCOMM &&
       p_out_serv->orig_mx_chan_id == mx_chan_id) {
     /* If this is outgoing connection and the parameters match p_out_serv,
      * use it as the current service */
@@ -4588,7 +4600,8 @@ static tBTM_SEC_SERV_REC* btm_sec_find_mx_serv(uint8_t is_originator,
   /* otherwise, the old way */
   for (i = 0; i < BTM_SEC_MAX_SERVICE_RECORDS; i++, p_serv_rec++) {
     if ((p_serv_rec->security_flags & BTM_SEC_IN_USE) &&
-        (p_serv_rec->psm == psm) && (p_serv_rec->mx_proto_id == mx_proto_id) &&
+        (p_serv_rec->psm == BT_PSM_RFCOMM) &&
+        (p_serv_rec->mx_proto_id == BTM_SEC_PROTO_RFCOMM) &&
         ((is_originator && (p_serv_rec->orig_mx_chan_id == mx_chan_id)) ||
          (!is_originator && (p_serv_rec->term_mx_chan_id == mx_chan_id)))) {
       return (p_serv_rec);
@@ -4596,7 +4609,6 @@ static tBTM_SEC_SERV_REC* btm_sec_find_mx_serv(uint8_t is_originator,
   }
   return (NULL);
 }
-
 /*******************************************************************************
  *
  * Function         btm_sec_collision_timeout

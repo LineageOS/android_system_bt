@@ -45,6 +45,9 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
   return true;
 }
 
+void BTM_SetRfcommSecurity(uint32_t service_id, uint32_t scn, bool need_mitm,
+                           bool need_16_digit_pin) {}
+
 uint16_t BTM_GetMaxPacketSize(const RawAddress& addr) {
   return RFCOMM_DEFAULT_MTU;
 }
