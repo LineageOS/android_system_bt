@@ -528,7 +528,6 @@ static void bta_av_api_register(tBTA_AV_DATA* p_data) {
     avdtp_stream_config.p_avdt_ctrl_cback = &bta_av_proc_stream_evt;
 
     /* set up the audio stream control block */
-    p_scb->p_act_tbl = (const tBTA_AV_ACT*)bta_av_a2dp_action;
     p_scb->p_cos = &bta_av_a2dp_cos;
     p_scb->media_type = AVDT_MEDIA_TYPE_AUDIO;
     avdtp_stream_config.cfg.psc_mask = AVDT_PSC_TRANS;

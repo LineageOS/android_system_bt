@@ -41,432 +41,378 @@ enum {
   BTA_AV_CLOSING_SST
 };
 
-/* state machine action enumeration list */
-enum {
-  BTA_AV_DO_DISC,
-  BTA_AV_CLEANUP,
-  BTA_AV_FREE_SDB,
-  BTA_AV_CONFIG_IND,
-  BTA_AV_DISCONNECT_REQ,
-  BTA_AV_SECURITY_REQ,
-  BTA_AV_SECURITY_RSP,
-  BTA_AV_SETCONFIG_RSP,
-  BTA_AV_ST_RC_TIMER,
-  BTA_AV_STR_OPENED,
-  BTA_AV_SECURITY_IND,
-  BTA_AV_SECURITY_CFM,
-  BTA_AV_DO_CLOSE,
-  BTA_AV_CONNECT_REQ,
-  BTA_AV_SDP_FAILED,
-  BTA_AV_DISC_RESULTS,
-  BTA_AV_DISC_RES_AS_ACP,
-  BTA_AV_OPEN_FAILED,
-  BTA_AV_GETCAP_RESULTS,
-  BTA_AV_SETCONFIG_REJ,
-  BTA_AV_DISCOVER_REQ,
-  BTA_AV_CONN_FAILED,
-  BTA_AV_DO_START,
-  BTA_AV_STR_STOPPED,
-  BTA_AV_RECONFIG,
-  BTA_AV_DATA_PATH,
-  BTA_AV_START_OK,
-  BTA_AV_START_FAILED,
-  BTA_AV_STR_CLOSED,
-  BTA_AV_CLR_CONG,
-  BTA_AV_SUSPEND_CFM,
-  BTA_AV_RCFG_STR_OK,
-  BTA_AV_RCFG_FAILED,
-  BTA_AV_RCFG_CONNECT,
-  BTA_AV_RCFG_DISCNTD,
-  BTA_AV_SUSPEND_CONT,
-  BTA_AV_RCFG_CFM,
-  BTA_AV_RCFG_OPEN,
-  BTA_AV_SECURITY_REJ,
-  BTA_AV_OPEN_RC,
-  BTA_AV_CHK_2ND_START,
-  BTA_AV_SAVE_CAPS,
-  BTA_AV_SET_USE_RC,
-  BTA_AV_CCO_CLOSE,
-  BTA_AV_SWITCH_ROLE,
-  BTA_AV_ROLE_RES,
-  BTA_AV_DELAY_CO,
-  BTA_AV_OPEN_AT_INC,
-  BTA_AV_OFFLOAD_REQ,
-  BTA_AV_OFFLOAD_RSP,
-  BTA_AV_NUM_SACTIONS
-};
-
-#define BTA_AV_SIGNORE BTA_AV_NUM_SACTIONS
-
-/* state table information */
-/* #define BTA_AV_SACTION_COL           0       position of actions */
-#define BTA_AV_SACTIONS 2    /* number of actions */
-#define BTA_AV_SNEXT_STATE 2 /* position of next state */
-#define BTA_AV_NUM_COLS 3    /* number of columns in state tables */
-
-/* state table for init state */
-static const uint8_t bta_av_sst_init[][BTA_AV_NUM_COLS] = {
-    /* Event                     Action 1               Action 2 Next state */
-    /* API_OPEN_EVT */ {BTA_AV_DO_DISC, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* API_CLOSE_EVT */ {BTA_AV_CLEANUP, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* AP_START_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* AP_STOP_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* API_RECONFIG_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* API_PROTECT_REQ_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* API_PROTECT_RSP_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* API_RC_OPEN_EVT  */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* SRC_DATA_READY_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* CI_SETCONFIG_OK_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* CI_SETCONFIG_FAIL_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* SDP_DISC_OK_EVT */ {BTA_AV_FREE_SDB, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* SDP_DISC_FAIL_EVT */ {BTA_AV_FREE_SDB, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* STR_DISC_OK_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* STR_DISC_FAIL_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* STR_GETCAP_OK_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* STR_GETCAP_FAIL_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* STR_OPEN_OK_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* STR_OPEN_FAIL_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* STR_START_OK_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* STR_START_FAIL_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* STR_CLOSE_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* STR_CONFIG_IND_EVT */
-    {BTA_AV_CONFIG_IND, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* STR_SECURITY_IND_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* STR_SECURITY_CFM_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* STR_WRITE_CFM_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* STR_SUSPEND_CFM_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* STR_RECONFIG_CFM_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* AVRC_TIMER_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* AVDT_CONNECT_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* AVDT_DISCONNECT_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* ROLE_CHANGE_EVT*/ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* AVDT_DELAY_RPT_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* ACP_CONNECT_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* API_OFFLOAD_START_EVT */
-    {BTA_AV_OFFLOAD_REQ, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* API_OFFLOAD_START_RSP_EVT */
-    {BTA_AV_OFFLOAD_RSP, BTA_AV_SIGNORE, BTA_AV_INIT_SST}};
-
-/* state table for incoming state */
-static const uint8_t bta_av_sst_incoming[][BTA_AV_NUM_COLS] = {
-    /* Event                     Action 1               Action 2 Next state */
-    /* API_OPEN_EVT */ {BTA_AV_OPEN_AT_INC, BTA_AV_SIGNORE,
-                        BTA_AV_INCOMING_SST},
-    /* API_CLOSE_EVT */
-    {BTA_AV_CCO_CLOSE, BTA_AV_DISCONNECT_REQ, BTA_AV_CLOSING_SST},
-    /* AP_START_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* AP_STOP_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* API_RECONFIG_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* API_PROTECT_REQ_EVT */
-    {BTA_AV_SECURITY_REQ, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* API_PROTECT_RSP_EVT */
-    {BTA_AV_SECURITY_RSP, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* API_RC_OPEN_EVT  */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* SRC_DATA_READY_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* CI_SETCONFIG_OK_EVT */
-    {BTA_AV_SETCONFIG_RSP, BTA_AV_ST_RC_TIMER, BTA_AV_INCOMING_SST},
-    /* CI_SETCONFIG_FAIL_EVT */
-    {BTA_AV_SETCONFIG_REJ, BTA_AV_CLEANUP, BTA_AV_INIT_SST},
-    /* SDP_DISC_OK_EVT */
-    {BTA_AV_FREE_SDB, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* SDP_DISC_FAIL_EVT */
-    {BTA_AV_FREE_SDB, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* STR_DISC_OK_EVT */
-    {BTA_AV_DISC_RES_AS_ACP, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* STR_DISC_FAIL_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* STR_GETCAP_OK_EVT */
-    {BTA_AV_SAVE_CAPS, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* STR_GETCAP_FAIL_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* STR_OPEN_OK_EVT */ {BTA_AV_STR_OPENED, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* STR_OPEN_FAIL_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* STR_START_OK_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* STR_START_FAIL_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* STR_CLOSE_EVT */ {BTA_AV_CCO_CLOSE, BTA_AV_CLEANUP, BTA_AV_INIT_SST},
-    /* STR_CONFIG_IND_EVT */
-    {BTA_AV_CONFIG_IND, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* STR_SECURITY_IND_EVT */
-    {BTA_AV_SECURITY_IND, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* STR_SECURITY_CFM_EVT */
-    {BTA_AV_SECURITY_CFM, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* STR_WRITE_CFM_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* STR_SUSPEND_CFM_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* STR_RECONFIG_CFM_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* AVRC_TIMER_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* AVDT_CONNECT_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* AVDT_DISCONNECT_EVT */
-    {BTA_AV_CCO_CLOSE, BTA_AV_DISCONNECT_REQ, BTA_AV_CLOSING_SST},
-    /* ROLE_CHANGE_EVT*/ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* AVDT_DELAY_RPT_EVT */
-    {BTA_AV_DELAY_CO, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* ACP_CONNECT_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* API_OFFLOAD_START_EVT */
-    {BTA_AV_OFFLOAD_REQ, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* API_OFFLOAD_START_RSP_EVT */
-    {BTA_AV_OFFLOAD_RSP, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST}};
-
-/* state table for opening state */
-static const uint8_t bta_av_sst_opening[][BTA_AV_NUM_COLS] = {
-    /* Event                     Action 1               Action 2 Next state */
-    /* API_OPEN_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* API_CLOSE_EVT */ {BTA_AV_DO_CLOSE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* AP_START_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* AP_STOP_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* API_RECONFIG_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* API_PROTECT_REQ_EVT */
-    {BTA_AV_SECURITY_REQ, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* API_PROTECT_RSP_EVT */
-    {BTA_AV_SECURITY_RSP, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* API_RC_OPEN_EVT  */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* SRC_DATA_READY_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* CI_SETCONFIG_OK_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* CI_SETCONFIG_FAIL_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* SDP_DISC_OK_EVT */
-    {BTA_AV_CONNECT_REQ, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* SDP_DISC_FAIL_EVT */
-    {BTA_AV_CONNECT_REQ, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* STR_DISC_OK_EVT */
-    {BTA_AV_DISC_RESULTS, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* STR_DISC_FAIL_EVT */
-    {BTA_AV_OPEN_FAILED, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* STR_GETCAP_OK_EVT */
-    {BTA_AV_GETCAP_RESULTS, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* STR_GETCAP_FAIL_EVT */
-    {BTA_AV_OPEN_FAILED, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* STR_OPEN_OK_EVT */
-    {BTA_AV_ST_RC_TIMER, BTA_AV_STR_OPENED, BTA_AV_OPEN_SST},
-    /* STR_OPEN_FAIL_EVT */
-    {BTA_AV_OPEN_FAILED, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* STR_START_OK_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* STR_START_FAIL_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* STR_CLOSE_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* STR_CONFIG_IND_EVT */
-    {BTA_AV_CONFIG_IND, BTA_AV_SIGNORE, BTA_AV_INCOMING_SST},
-    /* STR_SECURITY_IND_EVT */
-    {BTA_AV_SECURITY_IND, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* STR_SECURITY_CFM_EVT */
-    {BTA_AV_SECURITY_CFM, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* STR_WRITE_CFM_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* STR_SUSPEND_CFM_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* STR_RECONFIG_CFM_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* AVRC_TIMER_EVT */
-    {BTA_AV_SWITCH_ROLE, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* AVDT_CONNECT_EVT */
-    {BTA_AV_DISCOVER_REQ, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* AVDT_DISCONNECT_EVT */
-    {BTA_AV_CONN_FAILED, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* ROLE_CHANGE_EVT*/ {BTA_AV_ROLE_RES, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* AVDT_DELAY_RPT_EVT */
-    {BTA_AV_DELAY_CO, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* ACP_CONNECT_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* API_OFFLOAD_START_EVT */
-    {BTA_AV_OFFLOAD_REQ, BTA_AV_SIGNORE, BTA_AV_OPENING_SST},
-    /* API_OFFLOAD_START_RSP_EVT */
-    {BTA_AV_OFFLOAD_RSP, BTA_AV_SIGNORE, BTA_AV_OPENING_SST}};
-
-/* state table for open state */
-static const uint8_t bta_av_sst_open[][BTA_AV_NUM_COLS] = {
-    /* Event                     Action 1               Action 2 Next state */
-    /* API_OPEN_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* API_CLOSE_EVT */ {BTA_AV_DO_CLOSE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* AP_START_EVT */ {BTA_AV_DO_START, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* AP_STOP_EVT */ {BTA_AV_STR_STOPPED, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* API_RECONFIG_EVT */ {BTA_AV_RECONFIG, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* API_PROTECT_REQ_EVT */
-    {BTA_AV_SECURITY_REQ, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* API_PROTECT_RSP_EVT */
-    {BTA_AV_SECURITY_RSP, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* API_RC_OPEN_EVT  */ {BTA_AV_SET_USE_RC, BTA_AV_OPEN_RC, BTA_AV_OPEN_SST},
-    /* SRC_DATA_READY_EVT */
-    {BTA_AV_DATA_PATH, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* CI_SETCONFIG_OK_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* CI_SETCONFIG_FAIL_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* SDP_DISC_OK_EVT */ {BTA_AV_FREE_SDB, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* SDP_DISC_FAIL_EVT */ {BTA_AV_FREE_SDB, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* STR_DISC_OK_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* STR_DISC_FAIL_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* STR_GETCAP_OK_EVT */ {BTA_AV_SAVE_CAPS, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* STR_GETCAP_FAIL_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* STR_OPEN_OK_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* STR_OPEN_FAIL_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* STR_START_OK_EVT */ {BTA_AV_START_OK, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* STR_START_FAIL_EVT */
-    {BTA_AV_START_FAILED, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* STR_CLOSE_EVT */ {BTA_AV_STR_CLOSED, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* STR_CONFIG_IND_EVT */
-    {BTA_AV_SETCONFIG_REJ, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* STR_SECURITY_IND_EVT */
-    {BTA_AV_SECURITY_IND, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* STR_SECURITY_CFM_EVT */
-    {BTA_AV_SECURITY_CFM, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* STR_WRITE_CFM_EVT */
-    {BTA_AV_CLR_CONG, BTA_AV_DATA_PATH, BTA_AV_OPEN_SST},
-    /* STR_SUSPEND_CFM_EVT */
-    {BTA_AV_SUSPEND_CFM, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* STR_RECONFIG_CFM_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* AVRC_TIMER_EVT */
-    {BTA_AV_OPEN_RC, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* AVDT_CONNECT_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* AVDT_DISCONNECT_EVT */
-    {BTA_AV_STR_CLOSED, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* ROLE_CHANGE_EVT*/ {BTA_AV_ROLE_RES, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* AVDT_DELAY_RPT_EVT */ {BTA_AV_DELAY_CO, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* ACP_CONNECT_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* API_OFFLOAD_START_EVT */
-    {BTA_AV_OFFLOAD_REQ, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* API_OFFLOAD_START_RSP_EVT */
-    {BTA_AV_OFFLOAD_RSP, BTA_AV_SIGNORE, BTA_AV_OPEN_SST}};
-
-/* state table for reconfig state */
-static const uint8_t bta_av_sst_rcfg[][BTA_AV_NUM_COLS] = {
-    /* Event                     Action 1               Action 2 Next state */
-    /* API_OPEN_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* API_CLOSE_EVT */
-    {BTA_AV_DISCONNECT_REQ, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* AP_START_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* AP_STOP_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* API_RECONFIG_EVT */ {BTA_AV_RECONFIG, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* API_PROTECT_REQ_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* API_PROTECT_RSP_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* API_RC_OPEN_EVT  */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* SRC_DATA_READY_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* CI_SETCONFIG_OK_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* CI_SETCONFIG_FAIL_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* SDP_DISC_OK_EVT */ {BTA_AV_FREE_SDB, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* SDP_DISC_FAIL_EVT */ {BTA_AV_FREE_SDB, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* STR_DISC_OK_EVT */
-    {BTA_AV_DISC_RESULTS, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* STR_DISC_FAIL_EVT */
-    {BTA_AV_STR_CLOSED, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* STR_GETCAP_OK_EVT */
-    {BTA_AV_GETCAP_RESULTS, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* STR_GETCAP_FAIL_EVT */
-    {BTA_AV_STR_CLOSED, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* STR_OPEN_OK_EVT */ {BTA_AV_RCFG_STR_OK, BTA_AV_SIGNORE, BTA_AV_OPEN_SST},
-    /* STR_OPEN_FAIL_EVT */
-    {BTA_AV_RCFG_FAILED, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* STR_START_OK_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* STR_START_FAIL_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* STR_CLOSE_EVT */ {BTA_AV_RCFG_CONNECT, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* STR_CONFIG_IND_EVT */
-    {BTA_AV_SETCONFIG_REJ, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* STR_SECURITY_IND_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* STR_SECURITY_CFM_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* STR_WRITE_CFM_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* STR_SUSPEND_CFM_EVT */
-    {BTA_AV_SUSPEND_CFM, BTA_AV_SUSPEND_CONT, BTA_AV_RCFG_SST},
-    /* STR_RECONFIG_CFM_EVT */
-    {BTA_AV_RCFG_CFM, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* AVRC_TIMER_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* AVDT_CONNECT_EVT */ {BTA_AV_RCFG_OPEN, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* AVDT_DISCONNECT_EVT */
-    {BTA_AV_RCFG_DISCNTD, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* ROLE_CHANGE_EVT*/ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* AVDT_DELAY_RPT_EVT */ {BTA_AV_DELAY_CO, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* ACP_CONNECT_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* API_OFFLOAD_START_EVT */
-    {BTA_AV_OFFLOAD_REQ, BTA_AV_SIGNORE, BTA_AV_RCFG_SST},
-    /* API_OFFLOAD_START_RSP_EVT */
-    {BTA_AV_OFFLOAD_RSP, BTA_AV_SIGNORE, BTA_AV_RCFG_SST}};
-
-/* state table for closing state */
-static const uint8_t bta_av_sst_closing[][BTA_AV_NUM_COLS] = {
-    /* Event                     Action 1               Action 2 Next state */
-    /* API_OPEN_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* API_CLOSE_EVT */
-    {BTA_AV_DISCONNECT_REQ, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* AP_START_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* AP_STOP_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* API_RECONFIG_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* API_PROTECT_REQ_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* API_PROTECT_RSP_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* API_RC_OPEN_EVT  */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* SRC_DATA_READY_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* CI_SETCONFIG_OK_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* CI_SETCONFIG_FAIL_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* SDP_DISC_OK_EVT */ {BTA_AV_SDP_FAILED, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* SDP_DISC_FAIL_EVT */
-    {BTA_AV_SDP_FAILED, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* STR_DISC_OK_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* STR_DISC_FAIL_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* STR_GETCAP_OK_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* STR_GETCAP_FAIL_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* STR_OPEN_OK_EVT */ {BTA_AV_DO_CLOSE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* STR_OPEN_FAIL_EVT */
-    {BTA_AV_DISCONNECT_REQ, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* STR_START_OK_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* STR_START_FAIL_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* STR_CLOSE_EVT */
-    {BTA_AV_DISCONNECT_REQ, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* STR_CONFIG_IND_EVT */
-    {BTA_AV_SETCONFIG_REJ, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* STR_SECURITY_IND_EVT */
-    {BTA_AV_SECURITY_REJ, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* STR_SECURITY_CFM_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* STR_WRITE_CFM_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* STR_SUSPEND_CFM_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* STR_RECONFIG_CFM_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* AVRC_TIMER_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* AVDT_CONNECT_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* AVDT_DISCONNECT_EVT */
-    {BTA_AV_STR_CLOSED, BTA_AV_SIGNORE, BTA_AV_INIT_SST},
-    /* ROLE_CHANGE_EVT*/ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* AVDT_DELAY_RPT_EVT */
-    {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* ACP_CONNECT_EVT */ {BTA_AV_SIGNORE, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* API_OFFLOAD_START_EVT */
-    {BTA_AV_OFFLOAD_REQ, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST},
-    /* API_OFFLOAD_START_RSP_EVT */
-    {BTA_AV_OFFLOAD_RSP, BTA_AV_SIGNORE, BTA_AV_CLOSING_SST}};
-
-/* type for state table */
-typedef const uint8_t (*tBTA_AV_SST_TBL)[BTA_AV_NUM_COLS];
-
-/* state table */
-static const tBTA_AV_SST_TBL bta_av_sst_tbl[] = {
-    bta_av_sst_init, bta_av_sst_incoming, bta_av_sst_opening,
-    bta_av_sst_open, bta_av_sst_rcfg,     bta_av_sst_closing};
-
+static void bta_av_better_stream_state_machine(tBTA_AV_SCB* p_scb,
+                                               uint16_t event,
+                                               tBTA_AV_DATA* p_data) {
+  switch (p_scb->state) {
+    case BTA_AV_INIT_SST:
+      switch (event) {
+        case BTA_AV_API_OPEN_EVT:
+          p_scb->state = BTA_AV_OPENING_SST;
+          bta_av_do_disc_a2dp(p_scb, p_data);
+          break;
+        case BTA_AV_API_CLOSE_EVT:
+          bta_av_cleanup(p_scb, p_data);
+          break;
+        case BTA_AV_SDP_DISC_OK_EVT:
+          bta_av_free_sdb(p_scb, p_data);
+          break;
+        case BTA_AV_SDP_DISC_FAIL_EVT:
+          bta_av_free_sdb(p_scb, p_data);
+          break;
+        case BTA_AV_STR_CONFIG_IND_EVT:
+          p_scb->state = BTA_AV_INCOMING_SST;
+          bta_av_config_ind(p_scb, p_data);
+          break;
+        case BTA_AV_ACP_CONNECT_EVT:
+          p_scb->state = BTA_AV_INCOMING_SST;
+          break;
+        case BTA_AV_API_OFFLOAD_START_EVT:
+          bta_av_offload_req(p_scb, p_data);
+          break;
+        case BTA_AV_API_OFFLOAD_START_RSP_EVT:
+          bta_av_offload_rsp(p_scb, p_data);
+          break;
+      }
+      break;
+    case BTA_AV_INCOMING_SST:
+      switch (event) {
+        case BTA_AV_API_OPEN_EVT:
+          bta_av_open_at_inc(p_scb, p_data);
+          break;
+        case BTA_AV_API_CLOSE_EVT:
+          p_scb->state = BTA_AV_CLOSING_SST;
+          bta_av_cco_close(p_scb, p_data);
+          bta_av_disconnect_req(p_scb, p_data);
+          break;
+        case BTA_AV_API_PROTECT_REQ_EVT:
+          bta_av_security_req(p_scb, p_data);
+          break;
+        case BTA_AV_API_PROTECT_RSP_EVT:
+          bta_av_security_rsp(p_scb, p_data);
+          break;
+        case BTA_AV_CI_SETCONFIG_OK_EVT:
+          bta_av_setconfig_rsp(p_scb, p_data);
+          bta_av_st_rc_timer(p_scb, p_data);
+          break;
+        case BTA_AV_CI_SETCONFIG_FAIL_EVT:
+          p_scb->state = BTA_AV_INIT_SST;
+          bta_av_setconfig_rej(p_scb, p_data);
+          bta_av_cleanup(p_scb, p_data);
+          break;
+        case BTA_AV_SDP_DISC_OK_EVT:
+          bta_av_free_sdb(p_scb, p_data);
+          break;
+        case BTA_AV_SDP_DISC_FAIL_EVT:
+          bta_av_free_sdb(p_scb, p_data);
+          break;
+        case BTA_AV_STR_DISC_OK_EVT:
+          bta_av_disc_res_as_acp(p_scb, p_data);
+          break;
+        case BTA_AV_STR_GETCAP_OK_EVT:
+          bta_av_save_caps(p_scb, p_data);
+          break;
+        case BTA_AV_STR_OPEN_OK_EVT:
+          p_scb->state = BTA_AV_OPEN_SST;
+          bta_av_str_opened(p_scb, p_data);
+          break;
+        case BTA_AV_STR_CLOSE_EVT:
+          p_scb->state = BTA_AV_INIT_SST;
+          bta_av_cco_close(p_scb, p_data);
+          bta_av_cleanup(p_scb, p_data);
+          break;
+        case BTA_AV_STR_CONFIG_IND_EVT:
+          bta_av_config_ind(p_scb, p_data);
+          break;
+        case BTA_AV_STR_SECURITY_IND_EVT:
+          bta_av_security_ind(p_scb, p_data);
+          break;
+        case BTA_AV_STR_SECURITY_CFM_EVT:
+          bta_av_security_cfm(p_scb, p_data);
+          break;
+        case BTA_AV_AVDT_DISCONNECT_EVT:
+          p_scb->state = BTA_AV_CLOSING_SST;
+          bta_av_cco_close(p_scb, p_data);
+          bta_av_disconnect_req(p_scb, p_data);
+          break;
+        case BTA_AV_AVDT_DELAY_RPT_EVT:
+          bta_av_delay_co(p_scb, p_data);
+          break;
+        case BTA_AV_API_OFFLOAD_START_EVT:
+          bta_av_offload_req(p_scb, p_data);
+          break;
+        case BTA_AV_API_OFFLOAD_START_RSP_EVT:
+          bta_av_offload_rsp(p_scb, p_data);
+          break;
+      }
+      break;
+    case BTA_AV_OPENING_SST:
+      switch (event) {
+        case BTA_AV_API_CLOSE_EVT:
+          p_scb->state = BTA_AV_CLOSING_SST;
+          bta_av_do_close(p_scb, p_data);
+          break;
+        case BTA_AV_API_PROTECT_REQ_EVT:
+          bta_av_security_req(p_scb, p_data);
+          break;
+        case BTA_AV_API_PROTECT_RSP_EVT:
+          bta_av_security_rsp(p_scb, p_data);
+          break;
+        case BTA_AV_SDP_DISC_OK_EVT:
+          bta_av_connect_req(p_scb, p_data);
+          break;
+        case BTA_AV_SDP_DISC_FAIL_EVT:
+          bta_av_connect_req(p_scb, p_data);
+          break;
+        case BTA_AV_STR_DISC_OK_EVT:
+          bta_av_disc_results(p_scb, p_data);
+          break;
+        case BTA_AV_STR_DISC_FAIL_EVT:
+          p_scb->state = BTA_AV_CLOSING_SST;
+          bta_av_open_failed(p_scb, p_data);
+          break;
+        case BTA_AV_STR_GETCAP_OK_EVT:
+          bta_av_getcap_results(p_scb, p_data);
+          break;
+        case BTA_AV_STR_GETCAP_FAIL_EVT:
+          p_scb->state = BTA_AV_CLOSING_SST;
+          bta_av_open_failed(p_scb, p_data);
+          break;
+        case BTA_AV_STR_OPEN_OK_EVT:
+          p_scb->state = BTA_AV_OPEN_SST;
+          bta_av_st_rc_timer(p_scb, p_data);
+          bta_av_str_opened(p_scb, p_data);
+          break;
+        case BTA_AV_STR_OPEN_FAIL_EVT:
+          p_scb->state = BTA_AV_CLOSING_SST;
+          bta_av_open_failed(p_scb, p_data);
+          break;
+        case BTA_AV_STR_CONFIG_IND_EVT:
+          p_scb->state = BTA_AV_INCOMING_SST;
+          bta_av_config_ind(p_scb, p_data);
+          break;
+        case BTA_AV_STR_SECURITY_IND_EVT:
+          bta_av_security_ind(p_scb, p_data);
+          break;
+        case BTA_AV_STR_SECURITY_CFM_EVT:
+          bta_av_security_cfm(p_scb, p_data);
+          break;
+        case BTA_AV_AVRC_TIMER_EVT:
+          bta_av_switch_role(p_scb, p_data);
+          break;
+        case BTA_AV_AVDT_CONNECT_EVT:
+          bta_av_discover_req(p_scb, p_data);
+          break;
+        case BTA_AV_AVDT_DISCONNECT_EVT:
+          p_scb->state = BTA_AV_INIT_SST;
+          bta_av_conn_failed(p_scb, p_data);
+          break;
+        case BTA_AV_ROLE_CHANGE_EVT:
+          bta_av_role_res(p_scb, p_data);
+          break;
+        case BTA_AV_AVDT_DELAY_RPT_EVT:
+          bta_av_delay_co(p_scb, p_data);
+          break;
+        case BTA_AV_API_OFFLOAD_START_EVT:
+          bta_av_offload_req(p_scb, p_data);
+          break;
+        case BTA_AV_API_OFFLOAD_START_RSP_EVT:
+          bta_av_offload_rsp(p_scb, p_data);
+          break;
+      }
+      break;
+    case BTA_AV_OPEN_SST:
+      switch (event) {
+        case BTA_AV_API_CLOSE_EVT:
+          p_scb->state = BTA_AV_CLOSING_SST;
+          bta_av_do_close(p_scb, p_data);
+          break;
+        case BTA_AV_AP_START_EVT:
+          bta_av_do_start(p_scb, p_data);
+          break;
+        case BTA_AV_AP_STOP_EVT:
+          bta_av_str_stopped(p_scb, p_data);
+          break;
+        case BTA_AV_API_RECONFIG_EVT:
+          p_scb->state = BTA_AV_RCFG_SST;
+          bta_av_reconfig(p_scb, p_data);
+          break;
+        case BTA_AV_API_PROTECT_REQ_EVT:
+          bta_av_security_req(p_scb, p_data);
+          break;
+        case BTA_AV_API_PROTECT_RSP_EVT:
+          bta_av_security_rsp(p_scb, p_data);
+          break;
+        case BTA_AV_API_RC_OPEN_EVT:
+          bta_av_set_use_rc(p_scb, p_data);
+          break;
+        case BTA_AV_SRC_DATA_READY_EVT:
+          bta_av_data_path(p_scb, p_data);
+          break;
+        case BTA_AV_SDP_DISC_OK_EVT:
+          bta_av_free_sdb(p_scb, p_data);
+          break;
+        case BTA_AV_SDP_DISC_FAIL_EVT:
+          bta_av_free_sdb(p_scb, p_data);
+          break;
+        case BTA_AV_STR_GETCAP_OK_EVT:
+          bta_av_save_caps(p_scb, p_data);
+          break;
+        case BTA_AV_STR_START_OK_EVT:
+          bta_av_start_ok(p_scb, p_data);
+          break;
+        case BTA_AV_STR_START_FAIL_EVT:
+          bta_av_start_failed(p_scb, p_data);
+          break;
+        case BTA_AV_STR_CLOSE_EVT:
+          p_scb->state = BTA_AV_INIT_SST;
+          bta_av_str_closed(p_scb, p_data);
+          break;
+        case BTA_AV_STR_CONFIG_IND_EVT:
+          bta_av_setconfig_rej(p_scb, p_data);
+          break;
+        case BTA_AV_STR_SECURITY_IND_EVT:
+          bta_av_security_ind(p_scb, p_data);
+          break;
+        case BTA_AV_STR_SECURITY_CFM_EVT:
+          bta_av_security_cfm(p_scb, p_data);
+          break;
+        case BTA_AV_STR_WRITE_CFM_EVT:
+          bta_av_clr_cong(p_scb, p_data);
+          bta_av_data_path(p_scb, p_data);
+          break;
+        case BTA_AV_STR_SUSPEND_CFM_EVT:
+          bta_av_suspend_cfm(p_scb, p_data);
+          break;
+        case BTA_AV_AVRC_TIMER_EVT:
+          bta_av_open_rc(p_scb, p_data);
+          break;
+        case BTA_AV_AVDT_DISCONNECT_EVT:
+          p_scb->state = BTA_AV_INIT_SST;
+          bta_av_str_closed(p_scb, p_data);
+          break;
+        case BTA_AV_ROLE_CHANGE_EVT:
+          bta_av_role_res(p_scb, p_data);
+          break;
+        case BTA_AV_AVDT_DELAY_RPT_EVT:
+          bta_av_delay_co(p_scb, p_data);
+          break;
+        case BTA_AV_API_OFFLOAD_START_EVT:
+          bta_av_offload_req(p_scb, p_data);
+          break;
+        case BTA_AV_API_OFFLOAD_START_RSP_EVT:
+          bta_av_offload_rsp(p_scb, p_data);
+          break;
+      }
+      break;
+    case BTA_AV_RCFG_SST:
+      switch (event) {
+        case BTA_AV_API_CLOSE_EVT:
+          p_scb->state = BTA_AV_CLOSING_SST;
+          bta_av_disconnect_req(p_scb, p_data);
+          break;
+        case BTA_AV_API_RECONFIG_EVT:
+          bta_av_reconfig(p_scb, p_data);
+          break;
+        case BTA_AV_SDP_DISC_OK_EVT:
+          bta_av_free_sdb(p_scb, p_data);
+          break;
+        case BTA_AV_SDP_DISC_FAIL_EVT:
+          bta_av_free_sdb(p_scb, p_data);
+          break;
+        case BTA_AV_STR_DISC_OK_EVT:
+          bta_av_disc_results(p_scb, p_data);
+          break;
+        case BTA_AV_STR_DISC_FAIL_EVT:
+          p_scb->state = BTA_AV_INIT_SST;
+          bta_av_str_closed(p_scb, p_data);
+          break;
+        case BTA_AV_STR_GETCAP_OK_EVT:
+          bta_av_getcap_results(p_scb, p_data);
+          break;
+        case BTA_AV_STR_GETCAP_FAIL_EVT:
+          p_scb->state = BTA_AV_INIT_SST;
+          bta_av_str_closed(p_scb, p_data);
+          break;
+        case BTA_AV_STR_OPEN_OK_EVT:
+          p_scb->state = BTA_AV_OPEN_SST;
+          bta_av_rcfg_str_ok(p_scb, p_data);
+          break;
+        case BTA_AV_STR_OPEN_FAIL_EVT:
+          bta_av_rcfg_failed(p_scb, p_data);
+          break;
+        case BTA_AV_STR_CLOSE_EVT:
+          bta_av_rcfg_connect(p_scb, p_data);
+          break;
+        case BTA_AV_STR_CONFIG_IND_EVT:
+          bta_av_setconfig_rej(p_scb, p_data);
+          break;
+        case BTA_AV_STR_SUSPEND_CFM_EVT:
+          bta_av_suspend_cfm(p_scb, p_data);
+          bta_av_suspend_cont(p_scb, p_data);
+          break;
+        case BTA_AV_STR_RECONFIG_CFM_EVT:
+          bta_av_rcfg_cfm(p_scb, p_data);
+          break;
+        case BTA_AV_AVDT_CONNECT_EVT:
+          bta_av_rcfg_open(p_scb, p_data);
+          break;
+        case BTA_AV_AVDT_DISCONNECT_EVT:
+          bta_av_rcfg_discntd(p_scb, p_data);
+          break;
+        case BTA_AV_AVDT_DELAY_RPT_EVT:
+          bta_av_delay_co(p_scb, p_data);
+          break;
+        case BTA_AV_API_OFFLOAD_START_EVT:
+          bta_av_offload_req(p_scb, p_data);
+          break;
+        case BTA_AV_API_OFFLOAD_START_RSP_EVT:
+          bta_av_offload_rsp(p_scb, p_data);
+          break;
+      }
+      break;
+    case BTA_AV_CLOSING_SST:
+      switch (event) {
+        case BTA_AV_API_CLOSE_EVT:
+          bta_av_disconnect_req(p_scb, p_data);
+          break;
+        case BTA_AV_SDP_DISC_OK_EVT:
+          p_scb->state = BTA_AV_INIT_SST;
+          bta_av_sdp_failed(p_scb, p_data);
+          break;
+        case BTA_AV_SDP_DISC_FAIL_EVT:
+          p_scb->state = BTA_AV_INIT_SST;
+          bta_av_sdp_failed(p_scb, p_data);
+          break;
+        case BTA_AV_STR_OPEN_OK_EVT:
+          bta_av_do_close(p_scb, p_data);
+          break;
+        case BTA_AV_STR_OPEN_FAIL_EVT:
+          bta_av_disconnect_req(p_scb, p_data);
+          break;
+        case BTA_AV_STR_CLOSE_EVT:
+          bta_av_disconnect_req(p_scb, p_data);
+          break;
+        case BTA_AV_STR_CONFIG_IND_EVT:
+          bta_av_setconfig_rej(p_scb, p_data);
+          break;
+        case BTA_AV_STR_SECURITY_IND_EVT:
+          bta_av_security_rej(p_scb, p_data);
+          break;
+        case BTA_AV_AVDT_DISCONNECT_EVT:
+          p_scb->state = BTA_AV_INIT_SST;
+          bta_av_str_closed(p_scb, p_data);
+          break;
+        case BTA_AV_API_OFFLOAD_START_EVT:
+          bta_av_offload_req(p_scb, p_data);
+          break;
+        case BTA_AV_API_OFFLOAD_START_RSP_EVT:
+          bta_av_offload_rsp(p_scb, p_data);
+          break;
+      }
+      break;
+  }
+}
 
 /*******************************************************************************
  *
@@ -486,41 +432,7 @@ void bta_av_ssm_execute(tBTA_AV_SCB* p_scb, uint16_t event,
     return;
   }
 
-  /* look up the state table for the current state */
-  tBTA_AV_SST_TBL state_table = bta_av_sst_tbl[p_scb->state];
-
-  /* set next state */
-  auto new_state =
-      state_table[event - BTA_AV_FIRST_SSM_EVT][BTA_AV_SNEXT_STATE];
-  if (p_scb->state != new_state) {
-    APPL_TRACE_WARNING(
-        "%s: peer %s AV event(0x%x)=0x%x(%s) state=%d(%s) -> %d(%s) p_scb=%p",
-        __func__, p_scb->PeerAddress().ToString().c_str(), p_scb->hndl, event,
-        bta_av_evt_code(event), p_scb->state, bta_av_sst_code(p_scb->state),
-        new_state, bta_av_sst_code(new_state), p_scb);
-  } else {
-    APPL_TRACE_VERBOSE(
-        "%s: peer %s AV event(0x%x)=0x%x(%s) state=%d(%s) p_scb=%p", __func__,
-        p_scb->PeerAddress().ToString().c_str(), p_scb->hndl, event,
-        bta_av_evt_code(event), p_scb->state, bta_av_sst_code(p_scb->state),
-        p_scb);
-  }
-  event -= BTA_AV_FIRST_SSM_EVT;
-  p_scb->state = state_table[event][BTA_AV_SNEXT_STATE];
-
-  APPL_TRACE_VERBOSE("%s: peer %s AV next state=%d(%s) p_scb=%p(0x%x)",
-                     __func__, p_scb->PeerAddress().ToString().c_str(),
-                     p_scb->state, bta_av_sst_code(p_scb->state), p_scb,
-                     p_scb->hndl);
-
-  /* execute action functions */
-  for (int i = 0; i < BTA_AV_SACTIONS; i++) {
-    uint8_t action = state_table[event][i];
-    if (action != BTA_AV_SIGNORE) {
-      (*p_scb->p_act_tbl[action])(p_scb, p_data);
-    } else
-      break;
-  }
+  bta_av_better_stream_state_machine(p_scb, event, p_data);
 }
 
 /*******************************************************************************

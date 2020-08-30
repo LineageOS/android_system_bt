@@ -150,7 +150,6 @@ const tBTA_AV_CFG bta_av_cfg = {
                                  for company id */
     bta_av_meta_caps_evt_ids, /* the the metadata Get Capabilities
                                  response for event id */
-    NULL,                     /* the action function table for audio stream */
     BTA_AV_RC_CT_NAME,        /* Default AVRCP controller name */
     BTA_AV_RC_TG_NAME         /* Default AVRCP target name */
 };
@@ -176,7 +175,6 @@ const tBTA_AV_CFG bta_avk_cfg = {
                                   for company id */
     bta_avk_meta_caps_evt_ids, /* the the metadata Get Capabilities
                                   response for event id */
-    NULL,                      /* the action function table for audio stream */
     {0},                       /* Default AVRCP controller name */
     {0},                       /* Default AVRCP target name */
 };
@@ -202,7 +200,6 @@ const tBTA_AV_CFG bta_av_cfg_compatibility = {
     bta_av_meta_caps_evt_ids_avrcp13, /* the the metadata Get Capabilities
                                          response for event id, compatible
                                          with AVRCP1.3 */
-    NULL,              /* the action function table for audio stream */
     BTA_AV_RC_CT_NAME, /* Default AVRCP controller name */
     BTA_AV_RC_TG_NAME  /* Default AVRCP target name */
 };
