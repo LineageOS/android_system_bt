@@ -91,80 +91,6 @@
 /* state machine states */
 enum { BTA_AV_INIT_ST, BTA_AV_OPEN_ST };
 
-/* state machine action enumeration list */
-enum {
-  BTA_AV_DISABLE,
-  BTA_AV_RC_OPENED,
-  BTA_AV_RC_REMOTE_CMD,
-  BTA_AV_RC_VENDOR_CMD,
-  BTA_AV_RC_VENDOR_RSP,
-  BTA_AV_RC_FREE_RSP,
-  BTA_AV_RC_FREE_BROWSE_MSG,
-  BTA_AV_RC_META_RSP,
-  BTA_AV_RC_MSG,
-  BTA_AV_RC_CLOSE,
-  BTA_AV_RC_BROWSE_CLOSE,
-  BTA_AV_NUM_ACTIONS
-};
-
-#define BTA_AV_IGNORE BTA_AV_NUM_ACTIONS
-
-/* type for action functions */
-typedef void (*tBTA_AV_ACTION)(tBTA_AV_CB* p_cb, tBTA_AV_DATA* p_data);
-
-/* action functions */
-const tBTA_AV_ACTION bta_av_action[] = {
-    bta_av_disable,
-    bta_av_rc_opened,
-    bta_av_rc_remote_cmd,
-    bta_av_rc_vendor_cmd,
-    bta_av_rc_vendor_rsp,
-    bta_av_rc_free_rsp,
-    bta_av_rc_free_browse_msg,
-    bta_av_rc_meta_rsp,
-    bta_av_rc_msg,
-    bta_av_rc_close,
-};
-
-/* state table information */
-#define BTA_AV_ACTION_COL 0 /* position of actions */
-#define BTA_AV_NEXT_STATE 1 /* position of next state */
-#define BTA_AV_NUM_COLS 2   /* number of columns in state tables */
-
-/* state table for init state */
-static const uint8_t bta_av_st_init[][BTA_AV_NUM_COLS] = {
-    /* Event                     Action 1                   Next state */
-    /* API_DISABLE_EVT */ {BTA_AV_DISABLE, BTA_AV_INIT_ST},
-    /* API_REMOTE_CMD_EVT */ {BTA_AV_IGNORE, BTA_AV_INIT_ST},
-    /* API_VENDOR_CMD_EVT */ {BTA_AV_IGNORE, BTA_AV_INIT_ST},
-    /* API_VENDOR_RSP_EVT */ {BTA_AV_IGNORE, BTA_AV_INIT_ST},
-    /* API_META_RSP_EVT */ {BTA_AV_RC_FREE_RSP, BTA_AV_INIT_ST},
-    /* API_RC_CLOSE_EVT */ {BTA_AV_IGNORE, BTA_AV_INIT_ST},
-    /* AVRC_OPEN_EVT */ {BTA_AV_RC_OPENED, BTA_AV_OPEN_ST},
-    /* AVRC_MSG_EVT */ {BTA_AV_RC_FREE_BROWSE_MSG, BTA_AV_INIT_ST},
-    /* AVRC_NONE_EVT */ {BTA_AV_IGNORE, BTA_AV_INIT_ST},
-};
-
-/* state table for open state */
-static const uint8_t bta_av_st_open[][BTA_AV_NUM_COLS] = {
-    /* Event                     Action 1                   Next state */
-    /* API_DISABLE_EVT */ {BTA_AV_DISABLE, BTA_AV_INIT_ST},
-    /* API_REMOTE_CMD_EVT */ {BTA_AV_RC_REMOTE_CMD, BTA_AV_OPEN_ST},
-    /* API_VENDOR_CMD_EVT */ {BTA_AV_RC_VENDOR_CMD, BTA_AV_OPEN_ST},
-    /* API_VENDOR_RSP_EVT */ {BTA_AV_RC_VENDOR_RSP, BTA_AV_OPEN_ST},
-    /* API_META_RSP_EVT */ {BTA_AV_RC_META_RSP, BTA_AV_OPEN_ST},
-    /* API_RC_CLOSE_EVT */ {BTA_AV_RC_CLOSE, BTA_AV_OPEN_ST},
-    /* AVRC_OPEN_EVT */ {BTA_AV_RC_OPENED, BTA_AV_OPEN_ST},
-    /* AVRC_MSG_EVT */ {BTA_AV_RC_MSG, BTA_AV_OPEN_ST},
-    /* AVRC_NONE_EVT */ {BTA_AV_IGNORE, BTA_AV_INIT_ST},
-};
-
-/* type for state table */
-typedef const uint8_t (*tBTA_AV_ST_TBL)[BTA_AV_NUM_COLS];
-
-/* state table */
-static const tBTA_AV_ST_TBL bta_av_st_tbl[] = {bta_av_st_init, bta_av_st_open};
-
 typedef void (*tBTA_AV_NSM_ACT)(tBTA_AV_DATA* p_data);
 static void bta_av_api_enable(tBTA_AV_DATA* p_data);
 static void bta_av_api_register(tBTA_AV_DATA* p_data);
@@ -1170,40 +1096,66 @@ void bta_av_dup_audio_buf(tBTA_AV_SCB* p_scb, BT_HDR* p_buf) {
   }
 }
 
-/*******************************************************************************
- *
- * Function         bta_av_sm_execute
- *
- * Description      State machine event handling function for AV
- *
- *
- * Returns          void
- *
- ******************************************************************************/
-void bta_av_sm_execute(tBTA_AV_CB* p_cb, uint16_t event, tBTA_AV_DATA* p_data) {
-  tBTA_AV_ST_TBL state_table;
-  uint8_t action;
+static void bta_av_better_state_machine(tBTA_AV_CB* p_cb, uint16_t event,
+                                        tBTA_AV_DATA* p_data) {
+  switch (p_cb->state) {
+    case BTA_AV_INIT_ST:
+      switch (event) {
+        case BTA_AV_API_DISABLE_EVT:
+          bta_av_disable(p_cb, p_data);
+          break;
+        case BTA_AV_API_META_RSP_EVT:
+          bta_av_rc_free_rsp(p_cb, p_data);
+          break;
+        case BTA_AV_AVRC_OPEN_EVT:
+          p_cb->state = BTA_AV_OPEN_ST;
+          bta_av_rc_opened(p_cb, p_data);
+          break;
+        case BTA_AV_AVRC_MSG_EVT:
+          bta_av_rc_free_browse_msg(p_cb, p_data);
+          break;
+      }
+      break;
+    case BTA_AV_OPEN_ST:
+      switch (event) {
+        case BTA_AV_API_DISABLE_EVT:
+          p_cb->state = BTA_AV_INIT_ST;
+          bta_av_disable(p_cb, p_data);
+          break;
+        case BTA_AV_API_REMOTE_CMD_EVT:
+          bta_av_rc_remote_cmd(p_cb, p_data);
+          break;
+        case BTA_AV_API_VENDOR_CMD_EVT:
+          bta_av_rc_vendor_cmd(p_cb, p_data);
+          break;
+        case BTA_AV_API_VENDOR_RSP_EVT:
+          bta_av_rc_vendor_rsp(p_cb, p_data);
+          break;
+        case BTA_AV_API_META_RSP_EVT:
+          bta_av_rc_meta_rsp(p_cb, p_data);
+          break;
+        case BTA_AV_API_RC_CLOSE_EVT:
+          bta_av_rc_close(p_cb, p_data);
+          break;
+        case BTA_AV_AVRC_OPEN_EVT:
+          bta_av_rc_opened(p_cb, p_data);
+          break;
+        case BTA_AV_AVRC_MSG_EVT:
+          bta_av_rc_msg(p_cb, p_data);
+          break;
+        case BTA_AV_AVRC_NONE_EVT:
+          p_cb->state = BTA_AV_INIT_ST;
+          break;
+      }
+      break;
+  }
+}
 
+void bta_av_sm_execute(tBTA_AV_CB* p_cb, uint16_t event, tBTA_AV_DATA* p_data) {
   APPL_TRACE_EVENT("%s: AV event=0x%x(%s) state=%d(%s)", __func__, event,
                    bta_av_evt_code(event), p_cb->state,
                    bta_av_st_code(p_cb->state));
-
-  /* look up the state table for the current state */
-  state_table = bta_av_st_tbl[p_cb->state];
-
-  event &= 0x00FF;
-
-  /* set next state */
-  p_cb->state = state_table[event][BTA_AV_NEXT_STATE];
-  APPL_TRACE_EVENT("%s: next state=%d event offset:%d", __func__, p_cb->state,
-                   event);
-
-  /* execute action functions */
-  action = state_table[event][BTA_AV_ACTION_COL];
-  if (action != BTA_AV_IGNORE) {
-    APPL_TRACE_EVENT("%s: action executed %d", __func__, action);
-    (*bta_av_action[action])(p_cb, p_data);
-  }
+  bta_av_better_state_machine(p_cb, event, p_data);
 }
 
 /*******************************************************************************
