@@ -103,26 +103,6 @@ static void bta_av_sco_chg_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
 static void bta_av_sys_rs_cback(tBTA_SYS_CONN_STATUS status, uint8_t id,
                                 uint8_t app_id, const RawAddress& peer_addr);
 
-/* action functions */
-const tBTA_AV_NSM_ACT bta_av_nsm_act[] = {
-    bta_av_api_enable,       /* BTA_AV_API_ENABLE_EVT */
-    bta_av_api_register,     /* BTA_AV_API_REGISTER_EVT */
-    bta_av_api_deregister,   /* BTA_AV_API_DEREGISTER_EVT */
-    bta_av_api_disconnect,   /* BTA_AV_API_DISCONNECT_EVT */
-    bta_av_ci_data,          /* BTA_AV_CI_SRC_DATA_READY_EVT */
-    bta_av_sig_chg,          /* BTA_AV_SIG_CHG_EVT */
-    bta_av_signalling_timer, /* BTA_AV_SIGNALLING_TIMER_EVT */
-    bta_av_rc_disc_done,     /* BTA_AV_SDP_AVRC_DISC_EVT */
-    bta_av_rc_closed,        /* BTA_AV_AVRC_CLOSE_EVT */
-    bta_av_rc_browse_opened, /* BTA_AV_AVRC_BROWSE_OPEN_EVT */
-    bta_av_rc_browse_closed, /* BTA_AV_AVRC_BROWSE_CLOSE_EVT */
-    bta_av_conn_chg,         /* BTA_AV_CONN_CHG_EVT */
-    bta_av_dereg_comp,       /* BTA_AV_DEREG_COMP_EVT */
-    bta_av_rpc_conn, /* BTA_AV_AVDT_RPT_CONN_EVT */
-    bta_av_api_to_ssm, /* BTA_AV_API_START_EVT */
-    bta_av_api_to_ssm, /* BTA_AV_API_STOP_EVT */
-};
-
 /*****************************************************************************
  * Global data
  ****************************************************************************/
@@ -1096,6 +1076,60 @@ void bta_av_dup_audio_buf(tBTA_AV_SCB* p_scb, BT_HDR* p_buf) {
   }
 }
 
+static void bta_av_non_state_machine_event(uint16_t event,
+                                           tBTA_AV_DATA* p_data) {
+  switch (event) {
+    case BTA_AV_API_ENABLE_EVT:
+      bta_av_api_enable(p_data);
+      break;
+    case BTA_AV_API_REGISTER_EVT:
+      bta_av_api_register(p_data);
+      break;
+    case BTA_AV_API_DEREGISTER_EVT:
+      bta_av_api_deregister(p_data);
+      break;
+    case BTA_AV_API_DISCONNECT_EVT:
+      bta_av_api_disconnect(p_data);
+      break;
+    case BTA_AV_CI_SRC_DATA_READY_EVT:
+      bta_av_ci_data(p_data);
+      break;
+    case BTA_AV_SIG_CHG_EVT:
+      bta_av_sig_chg(p_data);
+      break;
+    case BTA_AV_SIGNALLING_TIMER_EVT:
+      bta_av_signalling_timer(p_data);
+      break;
+    case BTA_AV_SDP_AVRC_DISC_EVT:
+      bta_av_rc_disc_done(p_data);
+      break;
+    case BTA_AV_AVRC_CLOSE_EVT:
+      bta_av_rc_closed(p_data);
+      break;
+    case BTA_AV_AVRC_BROWSE_OPEN_EVT:
+      bta_av_rc_browse_opened(p_data);
+      break;
+    case BTA_AV_AVRC_BROWSE_CLOSE_EVT:
+      bta_av_rc_browse_closed(p_data);
+      break;
+    case BTA_AV_CONN_CHG_EVT:
+      bta_av_conn_chg(p_data);
+      break;
+    case BTA_AV_DEREG_COMP_EVT:
+      bta_av_dereg_comp(p_data);
+      break;
+    case BTA_AV_AVDT_RPT_CONN_EVT:
+      bta_av_rpc_conn(p_data);
+      break;
+    case BTA_AV_API_START_EVT:
+      bta_av_api_to_ssm(p_data);
+      break;
+    case BTA_AV_API_STOP_EVT:
+      bta_av_api_to_ssm(p_data);
+      break;
+  }
+}
+
 static void bta_av_better_state_machine(tBTA_AV_CB* p_cb, uint16_t event,
                                         tBTA_AV_DATA* p_data) {
   switch (p_cb->state) {
@@ -1175,9 +1209,7 @@ bool bta_av_hdl_event(BT_HDR* p_msg) {
   if (p_msg->event >= BTA_AV_FIRST_NSM_EVT) {
     APPL_TRACE_VERBOSE("%s: AV nsm event=0x%x(%s)", __func__, p_msg->event,
                        bta_av_evt_code(p_msg->event));
-    /* non state machine events */
-    (*bta_av_nsm_act[p_msg->event - BTA_AV_FIRST_NSM_EVT])(
-        (tBTA_AV_DATA*)p_msg);
+    bta_av_non_state_machine_event(p_msg->event, (tBTA_AV_DATA*)p_msg);
   } else if (p_msg->event >= BTA_AV_FIRST_SM_EVT &&
              p_msg->event <= BTA_AV_LAST_SM_EVT) {
     APPL_TRACE_VERBOSE("%s: AV sm event=0x%x(%s)", __func__, p_msg->event,
