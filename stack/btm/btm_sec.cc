@@ -506,6 +506,20 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
   return (record_allocated);
 }
 
+struct RfcommSecurityRecord {
+  uint32_t scn;
+  bool need_mitm;
+  bool need_16_digit_pin;
+};
+static std::unordered_map<uint32_t, RfcommSecurityRecord>
+    legacy_stack_rfcomm_security_records;
+
+void BTM_SetRfcommSecurity(uint32_t scn, bool need_mitm,
+                           bool need_16_digit_pin) {
+  legacy_stack_rfcomm_security_records[scn] = {scn, need_mitm,
+                                               need_16_digit_pin};
+}
+
 /*******************************************************************************
  *
  * Function         BTM_SecClrService
