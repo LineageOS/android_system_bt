@@ -224,8 +224,7 @@ bool acl_ble_is_role_master(const RawAddress& bda);
 bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x);
 
 bool acl_refresh_remote_address(const tBTM_SEC_DEV_REC* p_dev_rec,
-                                const RawAddress& remote_bda,
-                                tBT_TRANSPORT transport, uint8_t rra_type,
+                                const RawAddress& remote_bda, uint8_t rra_type,
                                 const RawAddress& rpa);
 
 void btm_establish_continue_from_address(const RawAddress& remote_bda,
