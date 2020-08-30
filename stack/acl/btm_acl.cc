@@ -2424,10 +2424,11 @@ bool BTM_BLE_IS_RESOLVE_BDA(const RawAddress& x) {
 }
 
 bool acl_refresh_remote_address(const tBTM_SEC_DEV_REC* p_sec_rec,
-                                const RawAddress& bda, tBT_TRANSPORT transport,
-                                uint8_t rra_type, const RawAddress& rpa) {
-  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bda, transport);
+                                const RawAddress& bda, uint8_t rra_type,
+                                const RawAddress& rpa) {
+  tACL_CONN* p_acl = internal_.btm_bda_to_acl(bda, BT_TRANSPORT_LE);
   if (p_acl == nullptr) {
+    LOG_WARN("%s Unable to refresh remote address", __func__);
     return false;
   }
 
