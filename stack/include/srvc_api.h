@@ -44,8 +44,6 @@ typedef uint8_t tDIS_STATUS;
 #define DIS_ATTR_PNP_ID_BIT 0x0100
 typedef uint16_t tDIS_ATTR_MASK;
 
-#define DIS_ATTR_ALL_MASK 0xffff
-
 typedef tDIS_ATTR_MASK tDIS_ATTR_BIT;
 
 typedef struct {
