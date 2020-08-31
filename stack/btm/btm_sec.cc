@@ -1660,26 +1660,6 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
     }
   }
 
-  /* if the originator is using dynamic PSM in legacy mode, do not start any
-   * security process now
-   * The layer above L2CAP needs to carry out the security requirement after
-   * L2CAP connect
-   * response is received */
-  if (is_originator &&
-      ((btm_cb.security_mode == BTM_SEC_MODE_SERVICE) ||
-       !BTM_SEC_IS_SM4(p_dev_rec->sm4)) &&
-      (psm >= 0x1001)) {
-    BTM_TRACE_EVENT(
-        "dynamic PSM:0x%x in legacy mode - postponed for upper layer", psm);
-    /* restore the old settings */
-    p_dev_rec->security_required = old_security_required;
-    p_dev_rec->is_originator = old_is_originator;
-
-    (*p_callback)(&bd_addr, transport, p_ref_data, BTM_SUCCESS);
-
-    return (BTM_SUCCESS);
-  }
-
   if (chk_acp_auth_done) {
     BTM_TRACE_DEBUG(
         "(SM4 to SM4) btm_sec_l2cap_access_req rspd. authenticated: x%x, enc: "
