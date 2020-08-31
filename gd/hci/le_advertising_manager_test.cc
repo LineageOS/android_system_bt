@@ -458,8 +458,9 @@ TEST_F(LeExtendedAdvertisingManagerTest, create_advertiser_test) {
                                                               set_terminated_callback, client_handler_);
   ASSERT_NE(LeAdvertisingManager::kInvalidId, id);
   std::vector<OpCode> adv_opcodes = {
-      OpCode::LE_SET_EXTENDED_ADVERTISING_PARAMETERS,    OpCode::LE_SET_EXTENDED_ADVERTISING_RANDOM_ADDRESS,
-      OpCode::LE_SET_EXTENDED_ADVERTISING_SCAN_RESPONSE, OpCode::LE_SET_EXTENDED_ADVERTISING_DATA,
+      OpCode::LE_SET_EXTENDED_ADVERTISING_PARAMETERS,
+      OpCode::LE_SET_EXTENDED_ADVERTISING_SCAN_RESPONSE,
+      OpCode::LE_SET_EXTENDED_ADVERTISING_DATA,
       OpCode::LE_SET_EXTENDED_ADVERTISING_ENABLE,
   };
   auto result = last_command_future.wait_for(std::chrono::duration(std::chrono::milliseconds(100)));
