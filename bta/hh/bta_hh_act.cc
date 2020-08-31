@@ -93,11 +93,9 @@ void bta_hh_api_enable(tBTA_HH_DATA* p_data) {
       bta_hh_cb.cb_index[xx] = BTA_HH_IDX_INVALID;
   }
 
-#if (BTA_HH_LE_INCLUDED == TRUE)
   if (status == BTA_HH_OK) {
     bta_hh_le_enable();
   } else
-#endif
   {
     /* signal BTA call back event */
     tBTA_HH bta_hh;
@@ -151,10 +149,8 @@ void bta_hh_api_disable(void) {
  *
  ******************************************************************************/
 void bta_hh_disc_cmpl(void) {
-#if (BTA_HH_LE_INCLUDED == TRUE)
   HID_HostDeregister();
   bta_hh_le_deregister();
-#else
   tBTA_HH_STATUS status = BTA_HH_OK;
 
   /* Deregister with lower layer */
@@ -313,12 +309,10 @@ void bta_hh_start_sdp(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
   p_cb->mode = p_data->api_conn.mode;
   bta_hh_cb.p_cur = p_cb;
 
-#if (BTA_HH_LE_INCLUDED == TRUE)
   if (bta_hh_is_le_device(p_cb, p_data->api_conn.bd_addr)) {
     bta_hh_le_open_conn(p_cb, p_data->api_conn.bd_addr);
     return;
   }
-#endif
 
   /* if previously virtually cabled device, skip SDP */
   if (p_cb->app_id) {
@@ -484,11 +478,9 @@ void bta_hh_api_disc_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
   tBTA_HH_CBDATA disc_dat;
   tHID_STATUS status;
 
-#if (BTA_HH_LE_INCLUDED == TRUE)
   if (p_cb->is_le_device)
     bta_hh_le_api_disc_act(p_cb);
   else
-#endif
   {
     /* found an active connection */
     disc_dat.handle =
@@ -532,22 +524,18 @@ void bta_hh_open_cmpl_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
   bta_hh_co_open(p_cb->hid_handle, p_cb->sub_class, p_cb->attr_mask,
                  p_cb->app_id);
 
-#if (BTA_HH_LE_INCLUDED == TRUE)
   conn.status = p_cb->status;
   conn.le_hid = p_cb->is_le_device;
   conn.scps_supported = p_cb->scps_supported;
 
   if (!p_cb->is_le_device)
-#endif
   {
     /* inform role manager */
     bta_sys_conn_open(BTA_ID_HH, p_cb->app_id, p_cb->addr);
   }
   /* set protocol mode when not default report mode */
   if (p_cb->mode != BTA_HH_PROTO_RPT_MODE
-#if (BTA_HH_LE_INCLUDED == TRUE)
       && !p_cb->is_le_device
-#endif
       ) {
     if ((HID_HostWriteDev(dev_handle, HID_TRANS_SET_PROTOCOL,
                           HID_PAR_PROTOCOL_BOOT_MODE, 0, 0, NULL)) !=
@@ -909,11 +897,9 @@ void bta_hh_close_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
  ******************************************************************************/
 void bta_hh_get_dscp_act(tBTA_HH_DEV_CB* p_cb,
                          UNUSED_ATTR tBTA_HH_DATA* p_data) {
-#if (BTA_HH_LE_INCLUDED == TRUE)
   if (p_cb->is_le_device) {
     bta_hh_le_get_dscp_act(p_cb);
   } else
-#endif
     (*bta_hh_cb.p_cback)(BTA_HH_GET_DSCP_EVT, (tBTA_HH*)&p_cb->dscp_info);
 }
 
@@ -940,31 +926,22 @@ void bta_hh_maint_dev_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
       dev_info.bda = p_dev_info->bda;
       /* initialize callback data */
       if (p_cb->hid_handle == BTA_HH_INVALID_HANDLE) {
-#if (BTA_HH_LE_INCLUDED == TRUE)
         if (bta_hh_is_le_device(p_cb, p_data->api_conn.bd_addr)) {
           dev_info.handle = bta_hh_le_add_device(p_cb, p_dev_info);
           if (dev_info.handle != BTA_HH_INVALID_HANDLE)
             dev_info.status = BTA_HH_OK;
         } else
-#endif
 
             if (HID_HostAddDev(p_dev_info->bda, p_dev_info->attr_mask,
                                &dev_handle) == HID_SUCCESS) {
           dev_info.handle = dev_handle;
           dev_info.status = BTA_HH_OK;
 
-#if (BTA_HH_LE_INCLUDED == TRUE)
           /* update DI information */
           bta_hh_update_di_info(p_cb, p_dev_info->dscp_info.vendor_id,
                                 p_dev_info->dscp_info.product_id,
                                 p_dev_info->dscp_info.version,
                                 p_dev_info->dscp_info.flag);
-#else
-          bta_hh_update_di_info(p_cb, p_dev_info->dscp_info.vendor_id,
-                                p_dev_info->dscp_info.product_id,
-                                p_dev_info->dscp_info.version, 0);
-
-#endif
           /* add to BTA device list */
           bta_hh_add_device_to_list(
               p_cb, dev_handle, p_dev_info->attr_mask,
@@ -988,13 +965,11 @@ void bta_hh_maint_dev_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
       dev_info.handle = (uint8_t)p_dev_info->hdr.layer_specific;
       dev_info.bda = p_cb->addr;
 
-#if (BTA_HH_LE_INCLUDED == TRUE)
       if (p_cb->is_le_device) {
         bta_hh_le_remove_dev_bg_conn(p_cb);
         bta_hh_sm_execute(p_cb, BTA_HH_API_CLOSE_EVT, NULL);
         bta_hh_clean_up_kdev(p_cb);
       } else
-#endif
       {
         if (HID_HostRemoveDev(dev_info.handle) == HID_SUCCESS) {
           dev_info.status = BTA_HH_OK;
@@ -1026,11 +1001,9 @@ void bta_hh_write_dev_act(tBTA_HH_DEV_CB* p_cb, tBTA_HH_DATA* p_data) {
   uint16_t event = (p_data->api_sndcmd.t_type - BTA_HH_FST_BTE_TRANS_EVT) +
                    BTA_HH_FST_TRANS_CB_EVT;
 
-#if (BTA_HH_LE_INCLUDED == TRUE)
   if (p_cb->is_le_device)
     bta_hh_le_write_dev_act(p_cb, p_data);
   else
-#endif
   {
 
     cbdata.handle = p_cb->hid_handle;
@@ -1247,4 +1220,3 @@ static const char* bta_hh_hid_event_name(uint16_t event) {
   }
 }
 #endif
-#endif /* BTA_HH_INCLUDED */

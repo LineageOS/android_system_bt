@@ -37,11 +37,9 @@
 
 const char* dev_path = "/dev/uhid";
 
-#if (BTA_HH_LE_INCLUDED == TRUE)
 #include "btif_config.h"
 #define BTA_HH_NV_LOAD_MAX 16
 static tBTA_HH_RPT_CACHE_ENTRY sReportCache[BTA_HH_NV_LOAD_MAX];
-#endif
 #define GET_RPT_RSP_OFFSET 9
 #define THREAD_NORMAL_PRIORITY 0
 #define BT_HH_THREAD "bt_hh_thread"
@@ -614,7 +612,6 @@ void bta_hh_co_get_rpt_rsp(uint8_t dev_handle, uint8_t status, uint8_t* p_rpt,
   }
 }
 
-#if (BTA_HH_LE_INCLUDED == TRUE)
 /*******************************************************************************
  *
  * Function         bta_hh_le_co_rpt_info
@@ -709,5 +706,3 @@ void bta_hh_le_co_reset_rpt_cache(const RawAddress& remote_bda,
 
   BTIF_TRACE_DEBUG("%s() - Reset cache for bda %s", __func__, bdstr);
 }
-
-#endif  // (BTA_HH_LE_INCLUDED == TRUE)

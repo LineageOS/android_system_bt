@@ -219,7 +219,7 @@ void bta_hd_register_act(tBTA_HD_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-void bta_hd_unregister_act(UNUSED_ATTR tBTA_HD_DATA* p_data) {
+void bta_hd_unregister_act() {
   tBTA_HD_STATUS status = BTA_HD_OK;
 
   APPL_TRACE_API("%s", __func__);
@@ -255,7 +255,7 @@ void bta_hd_unregister2_act(tBTA_HD_DATA* p_data) {
   bta_hd_close_act(p_data);
 
   // then unregister
-  bta_hd_unregister_act(p_data);
+  bta_hd_unregister_act();
 
   if (bta_hd_cb.disable_w4_close) {
     bta_hd_api_disable();
@@ -305,7 +305,7 @@ extern void bta_hd_connect_act(tBTA_HD_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-extern void bta_hd_disconnect_act(UNUSED_ATTR tBTA_HD_DATA* p_data) {
+extern void bta_hd_disconnect_act() {
   tHID_STATUS ret;
   tBTA_HD cback_data;
 
@@ -417,7 +417,7 @@ extern void bta_hd_report_error_act(tBTA_HD_DATA* p_data) {
  * Returns          void
  *
  ******************************************************************************/
-extern void bta_hd_vc_unplug_act(UNUSED_ATTR tBTA_HD_DATA* p_data) {
+extern void bta_hd_vc_unplug_act() {
   tHID_STATUS ret;
 
   APPL_TRACE_API("%s", __func__);
