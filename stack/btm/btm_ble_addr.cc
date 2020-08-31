@@ -273,6 +273,12 @@ bool btm_identity_addr_to_random_pseudo(RawAddress* bd_addr,
   return false;
 }
 
+bool btm_identity_addr_to_random_pseudo_from_address_with_type(
+    tBLE_BD_ADDR* address_with_type, bool refresh) {
+  return btm_identity_addr_to_random_pseudo(
+      &(address_with_type->bda), &(address_with_type->type), refresh);
+}
+
 /*******************************************************************************
  *
  * Function         btm_random_pseudo_to_identity_addr

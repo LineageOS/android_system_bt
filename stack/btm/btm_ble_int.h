@@ -139,6 +139,8 @@ extern uint64_t btm_get_next_private_addrress_interval_ms();
 extern bool btm_identity_addr_to_random_pseudo(RawAddress* bd_addr,
                                                uint8_t* p_addr_type,
                                                bool refresh);
+extern bool btm_identity_addr_to_random_pseudo_from_address_with_type(
+    tBLE_BD_ADDR* address_with_type, bool refresh);
 extern bool btm_random_pseudo_to_identity_addr(RawAddress* random_pseudo,
                                                uint8_t* p_identity_addr_type);
 extern void btm_ble_refresh_peer_resolvable_private_addr(
