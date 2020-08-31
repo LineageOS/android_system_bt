@@ -456,7 +456,6 @@ typedef union {
 // TODO: This should be renamed and changed to a proper class
 struct tBTA_AV_SCB final {
  public:
-  const tBTA_AV_ACT* p_act_tbl; /* the action table for stream state machine */
   const tBTA_AV_CO_FUNCTS* p_cos; /* the associated callout functions */
   bool sdp_discovery_started; /* variable to determine whether SDP is started */
   tBTA_AV_SEP seps[BTAV_A2DP_CODEC_INDEX_MAX];
@@ -657,7 +656,6 @@ extern const tBTA_AV_CFG bta_av_cfg_compatibility;
 extern uint16_t* p_bta_av_rc_id;
 extern uint16_t* p_bta_av_rc_id_ac;
 
-extern const tBTA_AV_SACT bta_av_a2dp_action[];
 extern const tBTA_AV_CO_FUNCTS bta_av_a2dp_cos;
 extern void bta_av_sink_data_cback(uint8_t handle, BT_HDR* p_pkt,
                                    uint32_t time_stamp, uint8_t m_pt);
@@ -781,5 +779,6 @@ extern void bta_av_open_at_inc(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data);
 extern void bta_av_offload_req(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data);
 extern void bta_av_offload_rsp(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data);
 extern void bta_av_vendor_offload_stop(void);
+extern void bta_av_st_rc_timer(tBTA_AV_SCB* p_scb, tBTA_AV_DATA* p_data);
 
 #endif /* BTA_AV_INT_H */

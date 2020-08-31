@@ -39,9 +39,7 @@
 #include "stack/include/btu.h"
 #include "utl.h"
 
-#if (BTA_HH_LE_INCLUDED == TRUE)
 #include "bta_hh_int.h"
-#endif
 
 using base::StringPrintf;
 using bluetooth::Uuid;
@@ -139,13 +137,9 @@ void bta_gattc_disable() {
     bta_gattc_cb.state = BTA_GATTC_STATE_DISABLING;
 /* don't deregister HH GATT IF */
 /* HH GATT IF will be deregistered by bta_hh_le_deregister when disable HH */
-#if (BTA_HH_LE_INCLUDED == TRUE)
     if (!bta_hh_le_is_hh_gatt_if(bta_gattc_cb.cl_rcb[i].client_if)) {
-#endif
       bta_gattc_deregister(&bta_gattc_cb.cl_rcb[i]);
-#if (BTA_HH_LE_INCLUDED == TRUE)
     }
-#endif
   }
 
   /* no registered apps, indicate disable completed */
@@ -1070,7 +1064,6 @@ static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, const RawAddress& bda) {
 
   if (p_clcb == NULL) return;
 
-#if (BTA_HH_LE_INCLUDED == TRUE)
   /* filter this event just for BTA HH LE GATT client,
    * In the future, if we want to enable encryption complete event
    * for all GATT clients, we can remove this code
@@ -1078,7 +1071,6 @@ static void bta_gattc_enc_cmpl_cback(tGATT_IF gattc_if, const RawAddress& bda) {
   if (!bta_hh_le_is_hh_gatt_if(gattc_if)) {
     return;
   }
-#endif
 
   VLOG(1) << __func__ << ": cif:" << +gattc_if;
 
