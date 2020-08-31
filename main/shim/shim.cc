@@ -54,6 +54,10 @@ EXPORT_SYMBOL extern const module_t gd_shim_module = {
     .clean_up = kUnusedModuleApi,
     .dependencies = {kUnusedModuleDependencies}};
 
+bool bluetooth::shim::is_gd_acl_enabled() {
+  return bluetooth::common::InitFlags::GdAclEnabled();
+}
+
 bool bluetooth::shim::is_gd_hci_enabled() {
   return bluetooth::common::InitFlags::GdHciEnabled();
 }
