@@ -394,7 +394,6 @@ typedef struct {
       p_meta_co_ids; /* the metadata Get Capabilities response for company id */
   const uint8_t* p_meta_evt_ids; /* the the metadata Get Capabilities response
                                     for event id */
-  const tBTA_AV_ACT* p_act_tbl;  /* action function table for audio stream */
   char avrc_controller_name[BTA_SERVICE_NAME_LEN]; /* Default AVRCP controller
                                                       name */
   char avrc_target_name[BTA_SERVICE_NAME_LEN]; /* Default AVRCP target name*/

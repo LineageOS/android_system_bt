@@ -22,8 +22,6 @@
 #include "bta_hh_int.h"
 #include "osi/include/osi.h"
 
-#if (BTA_HH_LE_INCLUDED == TRUE)
-
 #include <string.h>
 
 #include <base/bind.h>
@@ -2127,5 +2125,3 @@ static void bta_hh_process_cache_rpt(tBTA_HH_DEV_CB* p_cb,
     }
   }
 }
-
-#endif
