@@ -167,10 +167,11 @@ constexpr uint8_t BTM_BLE_WL_INIT = 1;
 typedef uint8_t tBTM_BLE_RL_STATE;
 
 /* BLE connection state */
-#define BLE_CONN_IDLE 0
-#define BLE_CONNECTING 2
-#define BLE_CONN_CANCEL 3
-typedef uint8_t tBTM_BLE_CONN_ST;
+typedef enum : uint8_t {
+  BLE_CONN_IDLE = 0,
+  BLE_CONNECTING = 2,
+  BLE_CONN_CANCEL = 3,
+} tBTM_BLE_CONN_ST;
 
 typedef struct { void* p_param; } tBTM_BLE_CONN_REQ;
 

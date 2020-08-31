@@ -113,8 +113,6 @@ bool BTM_IsAuthenticated(const RawAddress& bd_addr, tBT_TRANSPORT transport);
  ******************************************************************************/
 void BTM_SetPinType(uint8_t pin_type, PIN_CODE pin_code, uint8_t pin_code_len);
 
-#define BTM_NO_AVAIL_SEC_SERVICES ((uint16_t)0xffff)
-
 /*******************************************************************************
  *
  * Function         BTM_SetSecurityLevel
