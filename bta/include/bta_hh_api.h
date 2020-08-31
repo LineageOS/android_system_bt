@@ -21,9 +21,7 @@
 #include "bta_api.h"
 #include "hidh_api.h"
 
-#if (BTA_HH_LE_INCLUDED == TRUE)
 #include "gatt_api.h"
-#endif
 
 /*****************************************************************************
  *  Constants and Type Definitions
@@ -77,7 +75,6 @@ typedef uint16_t tBTA_HH_EVT;
 #define BTA_HH_IDX_INVALID 0xff
 #define BTA_HH_MAX_KNOWN HID_HOST_MAX_DEVICES
 
-#if (BTA_HH_LE_INCLUDED == TRUE)
 /* GATT_MAX_PHY_CHANNEL can not exceed 14 for the design of BTA HH */
 #if GATT_MAX_PHY_CHANNEL > 14
 #define BTA_HH_LE_MAX_KNOWN 14
@@ -86,9 +83,6 @@ typedef uint16_t tBTA_HH_EVT;
 #endif
 
 #define BTA_HH_MAX_DEVICE (HID_HOST_MAX_DEVICES + BTA_HH_LE_MAX_KNOWN)
-#else
-#define BTA_HH_MAX_DEVICE HID_HOST_MAX_DEVICES
-#endif
 /* invalid device handle */
 #define BTA_HH_INVALID_HANDLE 0xff
 
@@ -190,12 +184,10 @@ typedef struct {
   uint16_t
       ssr_min_tout;  /* SSR min timeout, BTA_HH_SSR_PARAM_INVALID if unknown */
   uint8_t ctry_code; /*Country Code.*/
-#if (BTA_HH_LE_INCLUDED == TRUE)
 #define BTA_HH_LE_REMOTE_WAKE 0x01
 #define BTA_HH_LE_NORMAL_CONN 0x02
 
   uint8_t flag;
-#endif
   tBTA_HH_DEV_DESCR descriptor;
 } tBTA_HH_DEV_DSCP_INFO;
 
@@ -204,10 +196,8 @@ typedef struct {
   RawAddress bda;        /* HID device bd address    */
   tBTA_HH_STATUS status; /* operation status         */
   uint8_t handle;        /* device handle            */
-#if (BTA_HH_LE_INCLUDED == TRUE)
   bool le_hid;         /* is LE devices? */
   bool scps_supported; /* scan parameter service supported */
-#endif
 
 } tBTA_HH_CONN;
 
