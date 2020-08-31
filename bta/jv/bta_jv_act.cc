@@ -117,6 +117,7 @@ static void bta_jv_free_sec_id(uint8_t* p_sec_id) {
   uint8_t sec_id = *p_sec_id;
   *p_sec_id = 0;
   if (sec_id >= BTA_JV_FIRST_SERVICE_ID && sec_id <= BTA_JV_LAST_SERVICE_ID) {
+    BTM_SecClrService(sec_id);
     bta_jv_cb.sec_id[sec_id - BTA_JV_FIRST_SERVICE_ID] = 0;
   }
 }
@@ -293,14 +294,12 @@ static tBTA_JV_STATUS bta_jv_free_rfc_cb(tBTA_JV_RFC_CB* p_cb,
     if (p_cb->curr_sess == 0) {
       RFCOMM_ClearSecurityRecord(p_cb->scn);
       p_cb->scn = 0;
-      bta_jv_free_sec_id(&p_cb->sec_id);
       p_cb->p_cback = NULL;
       p_cb->handle = 0;
       p_cb->curr_sess = -1;
     }
     if (remove_server) {
       RFCOMM_ClearSecurityRecord(p_cb->scn);
-      bta_jv_free_sec_id(&p_cb->sec_id);
     }
   }
   return status;
@@ -1272,22 +1271,13 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
   uint32_t event_mask = BTA_JV_RFC_EV_MASK;
   tPORT_STATE port_state;
 
-  uint8_t sec_id = bta_jv_alloc_sec_id();
-
   tBTA_JV_RFCOMM_CL_INIT evt_data;
   memset(&evt_data, 0, sizeof(evt_data));
-  evt_data.sec_id = sec_id;
   evt_data.status = BTA_JV_SUCCESS;
-  if (0 == sec_id) {
-    evt_data.status = BTA_JV_FAILURE;
-    LOG(ERROR) << __func__ << ": sec_id=" << +sec_id
-               << " is zero, remote_scn:" << +remote_scn;
-  }
-
   if (evt_data.status == BTA_JV_SUCCESS &&
       RFCOMM_CreateConnectionWithSecurity(
           UUID_SERVCLASS_SERIAL_PORT, remote_scn, false, BTA_JV_DEF_RFC_MTU,
-          peer_bd_addr, &handle, bta_jv_port_mgmt_cl_cback, sec_id,
+          peer_bd_addr, &handle, bta_jv_port_mgmt_cl_cback,
           sec_mask) != PORT_SUCCESS) {
     LOG(ERROR) << __func__ << ": RFCOMM_CreateConnection failed";
     evt_data.status = BTA_JV_FAILURE;
@@ -1297,7 +1287,6 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
     tBTA_JV_RFC_CB* p_cb = bta_jv_alloc_rfc_cb(handle, &p_pcb);
     if (p_cb) {
       p_cb->p_cback = p_cback;
-      p_cb->sec_id = sec_id;
       p_cb->scn = 0;
       p_pcb->state = BTA_JV_ST_CL_OPENING;
       p_pcb->rfcomm_slot_id = rfcomm_slot_id;
@@ -1323,7 +1312,6 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
   bta_jv.rfc_cl_init = evt_data;
   p_cback(BTA_JV_RFCOMM_CL_INIT_EVT, &bta_jv, rfcomm_slot_id);
   if (bta_jv.rfc_cl_init.status == BTA_JV_FAILURE) {
-    if (sec_id) bta_jv_free_sec_id(&sec_id);
     RFCOMM_ClearSecurityRecord(remote_scn);
     if (handle) RFCOMM_RemoveConnection(handle);
   }
@@ -1366,8 +1354,6 @@ void bta_jv_rfcomm_close(uint32_t handle, uint32_t rfcomm_slot_id) {
 
   if (!find_rfc_pcb(rfcomm_slot_id, &p_cb, &p_pcb)) return;
   bta_jv_free_rfc_cb(p_cb, p_pcb);
-  VLOG(2) << __func__ << ": sec id in use=" << get_sec_id_used()
-          << ", rfc_cb in use=" << get_rfc_cb_used();
 }
 
 /*******************************************************************************
@@ -1576,28 +1562,17 @@ void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, uint8_t local_scn,
   uint16_t handle = 0;
   uint32_t event_mask = BTA_JV_RFC_EV_MASK;
   tPORT_STATE port_state;
-  uint8_t sec_id = 0;
   tBTA_JV_RFC_CB* p_cb = NULL;
   tBTA_JV_PCB* p_pcb;
   tBTA_JV_RFCOMM_START evt_data;
 
   memset(&evt_data, 0, sizeof(evt_data));
   evt_data.status = BTA_JV_FAILURE;
-  VLOG(2) << __func__ << ": sec id in use=" << get_sec_id_used()
-          << ", rfc_cb in use=" << get_rfc_cb_used();
 
   do {
-    sec_id = bta_jv_alloc_sec_id();
-
-    if (0 == sec_id) {
-      LOG(ERROR) << __func__ << ": run out of sec_id";
-      break;
-    }
-
     if (RFCOMM_CreateConnectionWithSecurity(
-            sec_id, local_scn, true, BTA_JV_DEF_RFC_MTU, RawAddress::kAny,
-            &handle, bta_jv_port_mgmt_sr_cback, sec_id,
-            sec_mask) != PORT_SUCCESS) {
+            0, local_scn, true, BTA_JV_DEF_RFC_MTU, RawAddress::kAny, &handle,
+            bta_jv_port_mgmt_sr_cback, sec_mask) != PORT_SUCCESS) {
       LOG(ERROR) << __func__ << ": RFCOMM_CreateConnection failed";
       break;
     }
@@ -1610,13 +1585,11 @@ void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, uint8_t local_scn,
 
     p_cb->max_sess = max_session;
     p_cb->p_cback = p_cback;
-    p_cb->sec_id = sec_id;
     p_cb->scn = local_scn;
     p_pcb->state = BTA_JV_ST_SR_LISTEN;
     p_pcb->rfcomm_slot_id = rfcomm_slot_id;
     evt_data.status = BTA_JV_SUCCESS;
     evt_data.handle = p_cb->handle;
-    evt_data.sec_id = sec_id;
     evt_data.use_co = true;
 
     PORT_ClearKeepHandleFlag(handle);
@@ -1635,7 +1608,6 @@ void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, uint8_t local_scn,
   if (bta_jv.rfc_start.status == BTA_JV_SUCCESS) {
     PORT_SetDataCOCallback(handle, bta_jv_port_data_co_cback);
   } else {
-    if (sec_id) bta_jv_free_sec_id(&sec_id);
     RFCOMM_ClearSecurityRecord(local_scn);
     if (handle) RFCOMM_RemoveConnection(handle);
   }
@@ -1656,8 +1628,6 @@ void bta_jv_rfcomm_stop_server(uint32_t handle, uint32_t rfcomm_slot_id) {
   VLOG(2) << __func__ << ": p_pcb=" << p_pcb
           << ", p_pcb->port_handle=" << p_pcb->port_handle;
   bta_jv_free_rfc_cb(p_cb, p_pcb);
-  VLOG(2) << __func__ << ": sec id in use=" << get_sec_id_used()
-          << ", rfc_cb in use=" << get_rfc_cb_used();
 }
 
 /* write data to an RFCOMM connection */

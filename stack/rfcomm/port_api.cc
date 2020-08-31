@@ -78,14 +78,16 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn,
                                         const RawAddress& bd_addr,
                                         uint16_t* p_handle,
                                         tPORT_CALLBACK* p_mgmt_cb,
-                                        uint8_t service_id, uint16_t sec_mask) {
+                                        uint16_t sec_mask) {
   rfcomm_security_records[scn] = sec_mask;
 
   return RFCOMM_CreateConnection(uuid, scn, is_server, mtu, bd_addr, p_handle,
                                  p_mgmt_cb);
 }
 
-extern void RFCOMM_ClearSecurityRecord(uint32_t scn) {}
+extern void RFCOMM_ClearSecurityRecord(uint32_t scn) {
+  rfcomm_security_records.erase(scn);
+}
 
 /*******************************************************************************
  *
