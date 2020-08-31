@@ -466,12 +466,15 @@ void btm_ble_clear_resolving_list(void) {
  *
  * Parameters       entry index.
  *
- * Returns          status
+ * Returns          true if command successfully sent, false otherwise
  *
  ******************************************************************************/
-tBTM_STATUS btm_ble_read_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_rec) {
-  if (!(p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT))
-    return BTM_WRONG_MODE;
+bool btm_ble_read_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_rec) {
+  if (!(p_dev_rec->ble.in_controller_list & BTM_RESOLVING_LIST_BIT)) {
+    LOG_INFO("%s Unable to read resolving list entry as resolving bit not set",
+             __func__);
+    return false;
+  }
 
   if (controller_get_interface()->supports_ble_privacy()) {
     btsnd_hcic_ble_read_resolvable_addr_peer(p_dev_rec->ble.identity_addr_type,
@@ -490,7 +493,7 @@ tBTM_STATUS btm_ble_read_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_rec) {
   btm_ble_enq_resolving_list_pending(p_dev_rec->bd_addr,
                                      BTM_BLE_META_READ_IRK_ENTRY);
 
-  return BTM_CMD_STARTED;
+  return true;
 }
 
 /*******************************************************************************
