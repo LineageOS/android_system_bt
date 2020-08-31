@@ -77,8 +77,6 @@
 
 static void bta_av_offload_codec_builder(tBTA_AV_SCB* p_scb,
                                          tBT_A2DP_OFFLOAD* p_a2dp_offload);
-static void bta_av_st_rc_timer(tBTA_AV_SCB* p_scb,
-                               UNUSED_ATTR tBTA_AV_DATA* p_data);
 
 /* state machine states */
 enum {
@@ -103,60 +101,6 @@ const tBTA_AV_CO_FUNCTS bta_av_a2dp_cos = {bta_av_co_audio_init,
                                            bta_av_co_audio_delay,
                                            bta_av_co_audio_update_mtu,
                                            bta_av_co_content_protect_is_active};
-
-/* ssm action functions for audio stream */
-const tBTA_AV_SACT bta_av_a2dp_action[] = {
-    bta_av_do_disc_a2dp,    /* BTA_AV_DO_DISC  */
-    bta_av_cleanup,         /* BTA_AV_CLEANUP */
-    bta_av_free_sdb,        /* BTA_AV_FREE_SDB */
-    bta_av_config_ind,      /* BTA_AV_CONFIG_IND */
-    bta_av_disconnect_req,  /* BTA_AV_DISCONNECT_REQ */
-    bta_av_security_req,    /* BTA_AV_SECURITY_REQ */
-    bta_av_security_rsp,    /* BTA_AV_SECURITY_RSP */
-    bta_av_setconfig_rsp,   /* BTA_AV_SETCONFIG_RSP */
-    bta_av_st_rc_timer,     /* BTA_AV_ST_RC_TIMER */
-    bta_av_str_opened,      /* BTA_AV_STR_OPENED */
-    bta_av_security_ind,    /* BTA_AV_SECURITY_IND */
-    bta_av_security_cfm,    /* BTA_AV_SECURITY_CFM */
-    bta_av_do_close,        /* BTA_AV_DO_CLOSE */
-    bta_av_connect_req,     /* BTA_AV_CONNECT_REQ */
-    bta_av_sdp_failed,      /* BTA_AV_SDP_FAILED */
-    bta_av_disc_results,    /* BTA_AV_DISC_RESULTS */
-    bta_av_disc_res_as_acp, /* BTA_AV_DISC_RES_AS_ACP */
-    bta_av_open_failed,     /* BTA_AV_OPEN_FAILED */
-    bta_av_getcap_results,  /* BTA_AV_GETCAP_RESULTS */
-    bta_av_setconfig_rej,   /* BTA_AV_SETCONFIG_REJ */
-    bta_av_discover_req,    /* BTA_AV_DISCOVER_REQ */
-    bta_av_conn_failed,     /* BTA_AV_CONN_FAILED */
-    bta_av_do_start,        /* BTA_AV_DO_START */
-    bta_av_str_stopped,     /* BTA_AV_STR_STOPPED */
-    bta_av_reconfig,        /* BTA_AV_RECONFIG */
-    bta_av_data_path,       /* BTA_AV_DATA_PATH */
-    bta_av_start_ok,        /* BTA_AV_START_OK */
-    bta_av_start_failed,    /* BTA_AV_START_FAILED */
-    bta_av_str_closed,      /* BTA_AV_STR_CLOSED */
-    bta_av_clr_cong,        /* BTA_AV_CLR_CONG */
-    bta_av_suspend_cfm,     /* BTA_AV_SUSPEND_CFM */
-    bta_av_rcfg_str_ok,     /* BTA_AV_RCFG_STR_OK */
-    bta_av_rcfg_failed,     /* BTA_AV_RCFG_FAILED */
-    bta_av_rcfg_connect,    /* BTA_AV_RCFG_CONNECT */
-    bta_av_rcfg_discntd,    /* BTA_AV_RCFG_DISCNTD */
-    bta_av_suspend_cont,    /* BTA_AV_SUSPEND_CONT */
-    bta_av_rcfg_cfm,        /* BTA_AV_RCFG_CFM */
-    bta_av_rcfg_open,       /* BTA_AV_RCFG_OPEN */
-    bta_av_security_rej,    /* BTA_AV_SECURITY_REJ */
-    bta_av_open_rc,         /* BTA_AV_OPEN_RC */
-    bta_av_chk_2nd_start,   /* BTA_AV_CHK_2ND_START */
-    bta_av_save_caps,       /* BTA_AV_SAVE_CAPS */
-    bta_av_set_use_rc,      /* BTA_AV_SET_USE_RC */
-    bta_av_cco_close,       /* BTA_AV_CCO_CLOSE */
-    bta_av_switch_role,     /* BTA_AV_SWITCH_ROLE */
-    bta_av_role_res,        /* BTA_AV_ROLE_RES */
-    bta_av_delay_co,        /* BTA_AV_DELAY_CO */
-    bta_av_open_at_inc,     /* BTA_AV_OPEN_AT_INC */
-    bta_av_offload_req,     /* BTA_AV_OFFLOAD_REQ */
-    bta_av_offload_rsp,     /* BTA_AV_OFFLOAD_RSP */
-    NULL};
 
 /* these tables translate AVDT events to SSM events */
 static const uint16_t bta_av_stream_evt_ok[] = {
@@ -314,8 +258,7 @@ static void notify_start_failed(tBTA_AV_SCB* p_scb) {
  * Returns          void
  *
  ******************************************************************************/
-static void bta_av_st_rc_timer(tBTA_AV_SCB* p_scb,
-                               UNUSED_ATTR tBTA_AV_DATA* p_data) {
+void bta_av_st_rc_timer(tBTA_AV_SCB* p_scb, UNUSED_ATTR tBTA_AV_DATA* p_data) {
   APPL_TRACE_DEBUG("%s: rc_handle:%d, use_rc: %d", __func__, p_scb->rc_handle,
                    p_scb->use_rc);
   /* for outgoing RC connection as INT/CT */

@@ -29,9 +29,7 @@
 #include "bta_sys.h"
 #include "utl.h"
 
-#if (BTA_HH_LE_INCLUDED == TRUE)
 #include "bta_gatt_api.h"
-#endif
 
 /* can be moved to bta_api.h */
 #define BTA_HH_MAX_RPT_CHARS 8
@@ -50,13 +48,11 @@ enum {
   BTA_HH_API_GET_DSCP_EVT,
   BTA_HH_API_MAINT_DEV_EVT,
   BTA_HH_OPEN_CMPL_EVT,
-#if (BTA_HH_LE_INCLUDED == TRUE)
   BTA_HH_GATT_CLOSE_EVT,
   BTA_HH_GATT_OPEN_EVT,
   BTA_HH_START_ENC_EVT,
   BTA_HH_ENC_CMPL_EVT,
   BTA_HH_GATT_ENC_CMPL_EVT,
-#endif
 
   /* not handled by execute state machine */
   BTA_HH_API_ENABLE_EVT,
@@ -80,14 +76,10 @@ enum {
   BTA_HH_NULL_ST,
   BTA_HH_IDLE_ST,
   BTA_HH_W4_CONN_ST,
-  BTA_HH_CONN_ST
-#if (BTA_HH_LE_INCLUDED == TRUE)
-  ,
-  BTA_HH_W4_SEC
-#endif
-  ,
+  BTA_HH_CONN_ST,
+  BTA_HH_W4_SEC,
   BTA_HH_INVALID_ST /* Used to check invalid states before executing SM function
-                       */
+                     */
 
 };
 typedef uint8_t tBTA_HH_STATE;
@@ -98,9 +90,7 @@ typedef struct {
   uint8_t t_type;
   uint8_t param;
   uint8_t rpt_id;
-#if (BTA_HH_LE_INCLUDED == TRUE)
   uint8_t srvc_id;
-#endif
   uint16_t data;
   BT_HDR* p_data;
 } tBTA_HH_CMD_DATA;
@@ -136,7 +126,6 @@ typedef struct {
   tBTA_HH_DEV_DSCP_INFO dscp_info;
 } tBTA_HH_MAINT_DEV;
 
-#if (BTA_HH_LE_INCLUDED == TRUE)
 typedef struct {
   BT_HDR hdr;
   uint16_t conn_id;
@@ -150,7 +139,7 @@ typedef struct {
   uint16_t scan_int;
   uint16_t scan_win;
 } tBTA_HH_SCPP_UPDATE;
-#endif
+
 /* union of all event data types */
 typedef union {
   BT_HDR hdr;
@@ -160,15 +149,12 @@ typedef union {
   tBTA_HH_CBACK_DATA hid_cback;
   tBTA_HH_STATUS status;
   tBTA_HH_MAINT_DEV api_maintdev;
-#if (BTA_HH_LE_INCLUDED == TRUE)
   tBTA_HH_LE_CLOSE le_close;
   tBTA_GATTC_OPEN le_open;
   tBTA_HH_SCPP_UPDATE le_scpp_update;
   tBTA_GATTC_ENC_CMPL_CB le_enc_cmpl;
-#endif
 } tBTA_HH_DATA;
 
-#if (BTA_HH_LE_INCLUDED == TRUE)
 typedef struct {
   uint8_t index;
   bool in_use;
@@ -210,7 +196,6 @@ typedef struct {
 /* check to see if th edevice handle is a LE device handle */
 #define BTA_HH_IS_LE_DEV_HDL(x) ((x)&0xf0)
 #define BTA_HH_IS_LE_DEV_HDL_VALID(x) (((x) >> 4) <= BTA_HH_LE_MAX_KNOWN)
-#endif
 
 /* device control block */
 typedef struct {
@@ -233,7 +218,6 @@ typedef struct {
   tBTA_HH_PROTO_MODE mode; /* protocol mode */
   tBTA_HH_STATE state;     /* CB state */
 
-#if (BTA_HH_LE_INCLUDED == TRUE)
 #define BTA_HH_LE_DISC_NONE 0x00
 #define BTA_HH_LE_DISC_HIDS 0x01
 #define BTA_HH_LE_DISC_DIS 0x02
@@ -254,7 +238,6 @@ typedef struct {
 #define BTA_HH_LE_SCPS_NOTIFY_SPT 0x01
 #define BTA_HH_LE_SCPS_NOTIFY_ENB 0x02
   uint8_t scps_notify; /* scan refresh supported/notification enabled */
-#endif
 
   bool security_pending;
 } tBTA_HH_DEV_CB;
@@ -280,11 +263,9 @@ typedef struct {
                                                  block idx, used in sdp */
   uint8_t cb_index[BTA_HH_MAX_KNOWN];     /* maintain a CB index
                                         map to dev handle */
-#if (BTA_HH_LE_INCLUDED == TRUE)
   uint8_t le_cb_index[BTA_HH_LE_MAX_KNOWN]; /* maintain a CB index map to LE dev
                                              handle */
   tGATT_IF gatt_if;
-#endif
   tBTA_HH_CBACK* p_cback; /* Application callbacks */
   tSDP_DISCOVERY_DB* p_disc_db;
   uint8_t trace_level; /* tracing level */
