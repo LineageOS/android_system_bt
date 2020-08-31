@@ -25,6 +25,9 @@
 namespace bluetooth {
 namespace common {
 
+const std::string kGdSecurityFlag = "INIT_gd_security";
+bool InitFlags::gd_security_enabled = false;
+
 const std::string kGdAclFlag = "INIT_gd_acl";
 bool InitFlags::gd_acl_enabled = false;
 
@@ -45,6 +48,8 @@ void InitFlags::Load(const char** flags) {
   while (flags != nullptr && *flags != nullptr) {
     if (kGdCoreFlag == *flags) {
       gd_core_enabled = true;
+    } else if (kGdSecurityFlag == *flags) {
+      gd_security_enabled = true;
     } else if (kGdAclFlag == *flags) {
       gd_acl_enabled = true;
     } else if (kGdHciFlag == *flags) {
@@ -57,7 +62,10 @@ void InitFlags::Load(const char** flags) {
     flags++;
   }
 
-  if (gd_core_enabled && !gd_acl_enabled) {
+  if (gd_core_enabled && !gd_security_enabled) {
+    gd_security_enabled = true;
+  }
+  if (gd_security_enabled && !gd_acl_enabled) {
     gd_acl_enabled = true;
   }
   if (gd_acl_enabled && !gd_controller_enabled) {
@@ -68,7 +76,9 @@ void InitFlags::Load(const char** flags) {
   }
 
   LOG_INFO(
-      "Flags loaded: gd_acl_enabled: %s, gd_hci_enabled: %s, gd_controller_enabled: %s, gd_core_enabled: %s",
+      "Flags loaded: gd_security_enabled: %s, gd_acl_enabled: %s, gd_hci_enabled: %s, gd_controller_enabled: %s, "
+      "gd_core_enabled: %s",
+      gd_security_enabled ? "true" : "false",
       gd_acl_enabled ? "true" : "false",
       gd_hci_enabled ? "true" : "false",
       gd_controller_enabled ? "true" : "false",
@@ -78,6 +88,7 @@ void InitFlags::Load(const char** flags) {
 void InitFlags::SetAll(bool value) {
   gd_core_enabled = value;
   gd_acl_enabled = value;
+  gd_security_enabled = value;
   gd_controller_enabled = value;
   gd_hci_enabled = value;
   gatt_robust_caching_enabled = value;
