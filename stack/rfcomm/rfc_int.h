@@ -35,10 +35,6 @@
 */
 #define RFCOMM_SUCCESS 0
 #define RFCOMM_ERROR 1
-#define RFCOMM_LOW_RESOURCES 2
-#define RFCOMM_TRY_LATER 3
-
-#define RFCOMM_USER_ERR 111
 #define RFCOMM_SECURITY_ERR 112
 
 /*
@@ -63,8 +59,6 @@ extern void RFCOMM_ParameterNegotiationRequest(tRFC_MCB* p_mcb, uint8_t dlci,
 extern void RFCOMM_ParameterNegotiationResponse(tRFC_MCB* p_mcb, uint8_t dlci,
                                                 uint16_t mtu, uint8_t cl,
                                                 uint8_t k);
-
-extern void RFCOMM_TestReq(uint8_t* p_data, uint16_t len);
 
 extern void RFCOMM_FlowReq(tRFC_MCB* p_mcb, uint8_t dlci, bool state);
 
@@ -189,12 +183,6 @@ typedef struct {
 #define RFC_MX_EVENT_CONF_IND 12
 #define RFC_MX_EVENT_QOS_VIOLATION_IND 13
 #define RFC_MX_EVENT_DISC_IND 14
-#define RFC_MX_EVENT_TEST_CMD 15
-#define RFC_MX_EVENT_TEST_RSP 16
-#define RFC_MX_EVENT_FCON_CMD 17
-#define RFC_MX_EVENT_FCOFF_CMD 18
-#define RFC_MX_EVENT_NSC 19
-#define RFC_MX_EVENT_NSC_RSP 20
 
 /*
  * Port events
@@ -249,15 +237,6 @@ extern std::unordered_map<uint32_t /* scn */, uint16_t /* sec_mask */>
 /* Timer running on the multiplexor channel after last DLCI is released */
 #define RFC_MCB_RELEASE_INACT_TIMER 2 /* in seconds */
 
-/*
- * Define RFCOMM frame processing errors
-*/
-#define RFCOMM_ERR_BAD_SABME 1
-#define RFCOMM_ERR_BAD_UA 2
-#define RFCOMM_ERR_BAD_DM 3
-#define RFCOMM_ERR_BAD_DISC 4
-#define RFCOMM_ERR_BAD_UIH 5
-
 #ifdef RFCOMM_PRECALC_FCS
 
 #define RFCOMM_SABME_FCS(p_data, cr, dlci) rfc_sabme_fcs[cr][dlci]
@@ -310,7 +289,6 @@ extern void rfc_timer_stop(tRFC_MCB* p_rfc_mcb);
 extern void rfc_port_timer_start(tPORT* p_port, uint16_t tout);
 extern void rfc_port_timer_stop(tPORT* p_port);
 
-bool rfc_check_uih_fcs(uint8_t dlci, uint8_t received_fcs);
 bool rfc_check_fcs(uint16_t len, uint8_t* p, uint8_t received_fcs);
 tRFC_MCB* rfc_find_lcid_mcb(uint16_t lcid);
 extern void rfc_save_lcid_mcb(tRFC_MCB* p_rfc_mcb, uint16_t lcid);
@@ -368,8 +346,6 @@ extern void PORT_ParNegInd(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu,
                            uint8_t cl, uint8_t k);
 extern void PORT_ParNegCnf(tRFC_MCB* p_mcb, uint8_t dlci, uint16_t mtu,
                            uint8_t cl, uint8_t k);
-
-extern void PORT_TestCnf(tRFC_MCB* p_mcb, uint8_t* p_data, uint16_t len);
 
 extern void PORT_FlowInd(tRFC_MCB* p_mcb, uint8_t dlci, bool fc);
 
