@@ -1720,54 +1720,42 @@ uint8_t btm_ble_br_keys_req(tBTM_SEC_DEV_REC* p_dev_rec,
  ******************************************************************************/
 void btm_ble_connected(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
                        uint8_t role, tBLE_ADDR_TYPE addr_type,
-                       UNUSED_ATTR bool addr_matched) {
+                       bool addr_matched) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bda);
-  tBTM_BLE_CB* p_cb = &btm_cb.ble_ctr_cb;
-
-  BTM_TRACE_EVENT("btm_ble_connected");
-
-  /* Commenting out trace due to obf/compilation problems.
-  */
-  if (p_dev_rec) {
+  if (!p_dev_rec) {
+    VLOG(1) << __func__ << " Security Manager: handle:" << handle
+            << " enc_mode:" << loghex(enc_mode) << "  bda: " << bda
+            << " p_dev_rec:" << p_dev_rec;
+    /* There is no device record for new connection.  Allocate one */
+    p_dev_rec = btm_sec_alloc_dev(bda);
+    if (p_dev_rec == nullptr) {
+      LOG_WARN("%s Unable to create ble connection", __func__);
+      return;
+    }
+  } else /* Update the timestamp for this device */
+  {
     VLOG(1) << __func__ << " Security Manager: handle:" << handle
             << " enc_mode:" << loghex(enc_mode) << "  bda: " << bda
             << " RName: " << p_dev_rec->sec_bd_name
             << " p_dev_rec:" << p_dev_rec;
 
     BTM_TRACE_DEBUG("btm_ble_connected sec_flags=0x%x", p_dev_rec->sec_flags);
-  } else {
-    VLOG(1) << __func__ << " Security Manager: handle:" << handle
-            << " enc_mode:" << loghex(enc_mode) << "  bda: " << bda
-            << " p_dev_rec:" << p_dev_rec;
-  }
-
-  if (!p_dev_rec) {
-    /* There is no device record for new connection.  Allocate one */
-    p_dev_rec = btm_sec_alloc_dev(bda);
-    if (p_dev_rec == NULL) return;
-  } else /* Update the timestamp for this device */
-  {
     p_dev_rec->timestamp = btm_cb.dev_rec_count++;
   }
 
-  /* update device information */
-  p_dev_rec->device_type |= BT_DEVICE_TYPE_BLE;
-  p_dev_rec->ble_hci_handle = handle;
   p_dev_rec->ble.ble_addr_type = addr_type;
-  /* update pseudo address */
   p_dev_rec->ble.pseudo_addr = bda;
+  p_dev_rec->ble_hci_handle = handle;
+  p_dev_rec->device_type |= BT_DEVICE_TYPE_BLE;
+  p_dev_rec->role_master = (role == HCI_ROLE_MASTER) ? true : false;
 
-  p_dev_rec->role_master = false;
-  if (role == HCI_ROLE_MASTER) p_dev_rec->role_master = true;
-
-  if (!addr_matched) p_dev_rec->ble.active_addr_type = BTM_BLE_ADDR_PSEUDO;
-
-  if (p_dev_rec->ble.ble_addr_type == BLE_ADDR_RANDOM && !addr_matched)
+  if (!addr_matched) {
+    p_dev_rec->ble.active_addr_type = BTM_BLE_ADDR_PSEUDO;
+  }
+  if (!addr_matched && p_dev_rec->ble.ble_addr_type == BLE_ADDR_RANDOM) {
     p_dev_rec->ble.cur_rand_addr = bda;
-
-  p_cb->inq_var.directed_conn = BTM_BLE_CONNECT_EVT;
-
-  return;
+  }
+  btm_cb.ble_ctr_cb.inq_var.directed_conn = BTM_BLE_CONNECT_EVT;
 }
 
 /*****************************************************************************
