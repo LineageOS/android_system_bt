@@ -30,14 +30,13 @@ void btm_sec_abort_access_req(const RawAddress& bd_addr) {
   btm_security_internal_interface->AbortAccessRequest(bd_addr);
 }
 
-tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
-                                      bool is_originator, uint32_t mx_proto_id,
-                                      uint32_t mx_chan_id,
+tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
+                                      bool is_originator, uint32_t mx_chan_id,
                                       tBTM_SEC_CALLBACK* p_callback,
                                       void* p_ref_data) {
   return btm_security_internal_interface->MultiplexingProtocolAccessRequest(
-      bd_addr, psm, is_originator, mx_proto_id, mx_chan_id, p_callback,
-      p_ref_data);
+      bd_addr, BT_PSM_RFCOMM, is_originator, BTM_SEC_PROTO_RFCOMM, mx_chan_id,
+      p_callback, p_ref_data);
 }
 
 bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,

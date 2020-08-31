@@ -1786,9 +1786,8 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
  * Returns          BTM_CMD_STARTED
  *
  ******************************************************************************/
-tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
-                                      bool is_originator, uint32_t mx_proto_id,
-                                      uint32_t mx_chan_id,
+tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
+                                      bool is_originator, uint32_t mx_chan_id,
                                       tBTM_SEC_CALLBACK* p_callback,
                                       void* p_ref_data) {
   tBTM_SEC_DEV_REC* p_dev_rec;
@@ -1799,8 +1798,8 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
                              L2CAP connection */
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::btm_sec_mx_access_request(
-        bd_addr, psm, is_originator, mx_proto_id, mx_chan_id, p_callback,
-        p_ref_data);
+        bd_addr, BT_PSM_RFCOMM, is_originator, BTM_SEC_PROTO_RFCOMM, mx_chan_id,
+        p_callback, p_ref_data);
   }
 
   BTM_TRACE_DEBUG("%s() is_originator: %d", __func__, is_originator);
@@ -1808,8 +1807,8 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
   p_dev_rec = btm_find_or_alloc_dev(bd_addr);
 
   /* Find the service record for the PSM */
-  p_serv_rec =
-      btm_sec_find_mx_serv(is_originator, psm, mx_proto_id, mx_chan_id);
+  p_serv_rec = btm_sec_find_mx_serv(is_originator, BT_PSM_RFCOMM,
+                                    BTM_SEC_PROTO_RFCOMM, mx_chan_id);
 
   /* If there is no application registered with this PSM do not allow connection
    */
@@ -1817,9 +1816,8 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
     if (p_callback)
       (*p_callback)(&bd_addr, transport, p_ref_data, BTM_MODE_UNSUPPORTED);
 
-    BTM_TRACE_ERROR(
-        "Security Manager: MX service not found PSM:%d Proto:%d SCN:%d", psm,
-        mx_proto_id, mx_chan_id);
+    BTM_TRACE_ERROR("Security Manager: MX service not found SCN:%d",
+                    mx_chan_id);
     return BTM_NO_RESOURCES;
   }
 
@@ -1830,9 +1828,8 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
   /* we will process one after another */
   if ((p_dev_rec->p_callback) ||
       (btm_cb.pairing_state != BTM_PAIR_STATE_IDLE)) {
-    BTM_TRACE_EVENT("%s() service PSM:%d Proto:%d SCN:%d delayed  state: %s",
-                    __func__, psm, mx_proto_id, mx_chan_id,
-                    btm_pair_state_descr(btm_cb.pairing_state));
+    BTM_TRACE_EVENT("%s() service SCN:%d delayed  state: %s", __func__,
+                    mx_chan_id, btm_pair_state_descr(btm_cb.pairing_state));
 
     rc = BTM_CMD_STARTED;
 
@@ -1884,8 +1881,9 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
     }
     if (rc == BTM_CMD_STARTED) {
       BTM_TRACE_EVENT("%s: call btm_sec_queue_mx_request", __func__);
-      btm_sec_queue_mx_request(bd_addr, psm, is_originator, mx_proto_id,
-                               mx_chan_id, p_callback, p_ref_data);
+      btm_sec_queue_mx_request(bd_addr, BT_PSM_RFCOMM, is_originator,
+                               BTM_SEC_PROTO_RFCOMM, mx_chan_id, p_callback,
+                               p_ref_data);
     } else /* rc == BTM_SUCCESS */
     {
       /* access granted */
@@ -1951,11 +1949,10 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
   p_dev_rec->p_ref_data = p_ref_data;
 
   BTM_TRACE_EVENT(
-      "%s() proto_id:%d chan_id:%d State:%d Flags:0x%x Required:0x%x Service "
+      "%s() chan_id:%d State:%d Flags:0x%x Required:0x%x Service "
       "ID:%d",
-      __func__, mx_proto_id, mx_chan_id, p_dev_rec->sec_state,
-      p_dev_rec->sec_flags, p_dev_rec->security_required,
-      p_dev_rec->p_cur_service->service_id);
+      __func__, mx_chan_id, p_dev_rec->sec_state, p_dev_rec->sec_flags,
+      p_dev_rec->security_required, p_dev_rec->p_cur_service->service_id);
 
   rc = btm_sec_execute_procedure(p_dev_rec);
   if (rc != BTM_CMD_STARTED) {
@@ -2138,8 +2135,7 @@ void btm_sec_check_pending_reqs(void) {
               "%s PSM:0x%04x Is_Orig:%u mx_proto_id:%u mx_chan_id:%u", __func__,
               p_e->psm, p_e->is_orig, p_e->mx_proto_id, p_e->mx_chan_id);
 
-          btm_sec_mx_access_request(p_e->bd_addr, p_e->psm, p_e->is_orig,
-                                    p_e->mx_proto_id, p_e->mx_chan_id,
+          btm_sec_mx_access_request(p_e->bd_addr, p_e->is_orig, p_e->mx_chan_id,
                                     p_e->p_callback, p_e->p_ref_data);
         } else {
           BTM_SetEncryption(p_e->bd_addr, p_e->transport, p_e->p_callback,
