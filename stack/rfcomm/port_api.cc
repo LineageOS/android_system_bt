@@ -79,8 +79,7 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn,
                                         uint16_t* p_handle,
                                         tPORT_CALLBACK* p_mgmt_cb,
                                         uint8_t service_id, uint16_t sec_mask) {
-  BTM_SetRfcommSecurity(service_id, scn,
-                        sec_mask & (BTM_SEC_OUT_MITM | BTM_SEC_IN_MITM),
+  BTM_SetRfcommSecurity(scn, sec_mask & (BTM_SEC_OUT_MITM | BTM_SEC_IN_MITM),
                         sec_mask & BTM_SEC_IN_MIN_16_DIGIT_PIN);
 
   return RFCOMM_CreateConnection(uuid, scn, is_server, mtu, bd_addr, p_handle,

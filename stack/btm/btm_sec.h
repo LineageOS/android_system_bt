@@ -138,8 +138,9 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
                           uint32_t mx_proto_id, uint32_t mx_chan_id);
 
 // Set the rfcomm security requirement
-void BTM_SetRfcommSecurity(uint32_t service_id, uint32_t scn, bool need_mitm,
+void BTM_SetRfcommSecurity(uint32_t scn, bool need_mitm,
                            bool need_16_digit_pin);
+void BTM_ClearRfcommSecurity(uint32_t scn);
 
 /*******************************************************************************
  *

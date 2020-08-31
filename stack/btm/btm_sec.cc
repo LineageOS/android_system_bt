@@ -502,17 +502,19 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
 }
 
 struct RfcommSecurityRecord {
-  uint32_t service_id;
   bool need_mitm;
   bool need_16_digit_pin;
 };
 static std::unordered_map<uint32_t, RfcommSecurityRecord>
     legacy_stack_rfcomm_security_records;
 
-void BTM_SetRfcommSecurity(uint32_t service_id, uint32_t scn, bool need_mitm,
+void BTM_SetRfcommSecurity(uint32_t scn, bool need_mitm,
                            bool need_16_digit_pin) {
-  legacy_stack_rfcomm_security_records[scn] = {service_id, need_mitm,
-                                               need_16_digit_pin};
+  legacy_stack_rfcomm_security_records[scn] = {need_mitm, need_16_digit_pin};
+}
+
+void BTM_ClearRfcommSecurity(uint32_t scn) {
+  legacy_stack_rfcomm_security_records.erase(scn);
 }
 
 /*******************************************************************************
@@ -534,12 +536,6 @@ void BTM_SetRfcommSecurity(uint32_t service_id, uint32_t scn, bool need_mitm,
  *
  ******************************************************************************/
 uint8_t BTM_SecClrService(uint8_t service_id) {
-  for (auto& entry : legacy_stack_rfcomm_security_records) {
-    if (entry.second.service_id == service_id) {
-      legacy_stack_rfcomm_security_records.erase(entry.first);
-    }
-  }
-
   tBTM_SEC_SERV_REC* p_srec = &btm_cb.sec_serv_rec[0];
   uint8_t num_freed = 0;
   int i;
@@ -2167,6 +2163,8 @@ void btm_sec_dev_reset(void) {
     /* add mx service to use no security */
     BTM_SetSecurityLevel(false, "RFC_MUX", BTM_SEC_SERVICE_RFC_MUX,
                          BTM_SEC_NONE, BT_PSM_RFCOMM, BTM_SEC_PROTO_RFCOMM, 0);
+    BTM_SetSecurityLevel(true, "RFC_MUX", BTM_SEC_SERVICE_RFC_MUX, BTM_SEC_NONE,
+                         BT_PSM_RFCOMM, BTM_SEC_PROTO_RFCOMM, 0);
   } else {
     btm_cb.security_mode = BTM_SEC_MODE_SERVICE;
   }
