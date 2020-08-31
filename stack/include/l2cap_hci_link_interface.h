@@ -36,6 +36,10 @@ extern void l2cble_conn_comp(uint16_t handle, uint8_t role,
                              uint16_t conn_interval, uint16_t conn_latency,
                              uint16_t conn_timeout);
 
+extern void l2cble_conn_comp_from_address_with_type(
+    uint16_t handle, uint8_t role, const tBLE_BD_ADDR& address_with_type,
+    uint16_t conn_interval, uint16_t conn_latency, uint16_t conn_timeout);
+
 extern void l2cble_process_conn_update_evt(uint16_t handle, uint8_t status,
                                            uint16_t interval, uint16_t latency,
                                            uint16_t timeout);
