@@ -2691,6 +2691,14 @@ uint8_t acl_link_role(const RawAddress& bd_addr, tBT_TRANSPORT transport) {
   return p_acl->link_role;
 }
 
+uint8_t acl_link_role_from_handle(uint16_t handle) {
+  tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
+  if (p_acl == nullptr) {
+    return HCI_ROLE_UNKNOWN;
+  }
+  return p_acl->link_role;
+}
+
 bool acl_is_transport_le_from_handle(uint16_t handle) {
   tACL_CONN* p_acl = internal_.acl_get_connection_from_handle(handle);
   if (p_acl == nullptr) {
