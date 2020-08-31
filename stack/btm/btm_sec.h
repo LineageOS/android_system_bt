@@ -137,11 +137,6 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
                           uint8_t service_id, uint16_t sec_level, uint16_t psm,
                           uint32_t mx_proto_id, uint32_t mx_chan_id);
 
-// Set the rfcomm security requirement
-void BTM_SetRfcommSecurity(uint32_t scn, bool need_mitm,
-                           bool need_16_digit_pin);
-void BTM_ClearRfcommSecurity(uint32_t scn);
-
 /*******************************************************************************
  *
  * Function         BTM_SecClrService
@@ -430,7 +425,8 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
  *
  ******************************************************************************/
 tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
-                                      bool is_originator, uint32_t mx_chan_id,
+                                      bool is_originator,
+                                      uint16_t security_requirement,
                                       tBTM_SEC_CALLBACK* p_callback,
                                       void* p_ref_data);
 

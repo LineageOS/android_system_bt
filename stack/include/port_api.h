@@ -186,6 +186,8 @@ extern int RFCOMM_CreateConnectionWithSecurity(
     const RawAddress& bd_addr, uint16_t* p_handle, tPORT_CALLBACK* p_mgmt_cb,
     uint8_t service_id, uint16_t sec_mask);
 
+extern void RFCOMM_ClearSecurityRecord(uint32_t scn);
+
 extern int RFCOMM_CreateConnection(uint16_t uuid, uint8_t scn, bool is_server,
                                    uint16_t mtu, const RawAddress& bd_addr,
                                    uint16_t* p_handle,

@@ -117,7 +117,6 @@ static void bta_jv_free_sec_id(uint8_t* p_sec_id) {
   uint8_t sec_id = *p_sec_id;
   *p_sec_id = 0;
   if (sec_id >= BTA_JV_FIRST_SERVICE_ID && sec_id <= BTA_JV_LAST_SERVICE_ID) {
-    BTM_SecClrService(sec_id);
     bta_jv_cb.sec_id[sec_id - BTA_JV_FIRST_SERVICE_ID] = 0;
   }
 }
@@ -292,6 +291,7 @@ static tBTA_JV_STATUS bta_jv_free_rfc_cb(tBTA_JV_RFC_CB* p_cb,
     p_pcb->handle = 0;
     p_cb->curr_sess--;
     if (p_cb->curr_sess == 0) {
+      RFCOMM_ClearSecurityRecord(p_cb->scn);
       p_cb->scn = 0;
       bta_jv_free_sec_id(&p_cb->sec_id);
       p_cb->p_cback = NULL;
@@ -299,6 +299,7 @@ static tBTA_JV_STATUS bta_jv_free_rfc_cb(tBTA_JV_RFC_CB* p_cb,
       p_cb->curr_sess = -1;
     }
     if (remove_server) {
+      RFCOMM_ClearSecurityRecord(p_cb->scn);
       bta_jv_free_sec_id(&p_cb->sec_id);
     }
   }
@@ -1323,6 +1324,7 @@ void bta_jv_rfcomm_connect(tBTA_SEC sec_mask, uint8_t remote_scn,
   p_cback(BTA_JV_RFCOMM_CL_INIT_EVT, &bta_jv, rfcomm_slot_id);
   if (bta_jv.rfc_cl_init.status == BTA_JV_FAILURE) {
     if (sec_id) bta_jv_free_sec_id(&sec_id);
+    RFCOMM_ClearSecurityRecord(remote_scn);
     if (handle) RFCOMM_RemoveConnection(handle);
   }
 }
@@ -1634,6 +1636,7 @@ void bta_jv_rfcomm_start_server(tBTA_SEC sec_mask, uint8_t local_scn,
     PORT_SetDataCOCallback(handle, bta_jv_port_data_co_cback);
   } else {
     if (sec_id) bta_jv_free_sec_id(&sec_id);
+    RFCOMM_ClearSecurityRecord(local_scn);
     if (handle) RFCOMM_RemoveConnection(handle);
   }
 }

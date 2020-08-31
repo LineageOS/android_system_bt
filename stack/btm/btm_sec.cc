@@ -501,22 +501,6 @@ bool BTM_SetSecurityLevel(bool is_originator, const char* p_name,
   return (record_allocated);
 }
 
-struct RfcommSecurityRecord {
-  bool need_mitm;
-  bool need_16_digit_pin;
-};
-static std::unordered_map<uint32_t, RfcommSecurityRecord>
-    legacy_stack_rfcomm_security_records;
-
-void BTM_SetRfcommSecurity(uint32_t scn, bool need_mitm,
-                           bool need_16_digit_pin) {
-  legacy_stack_rfcomm_security_records[scn] = {need_mitm, need_16_digit_pin};
-}
-
-void BTM_ClearRfcommSecurity(uint32_t scn) {
-  legacy_stack_rfcomm_security_records.erase(scn);
-}
-
 /*******************************************************************************
  *
  * Function         BTM_SecClrService
@@ -1784,56 +1768,30 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
  *
  ******************************************************************************/
 tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
-                                      bool is_originator, uint32_t mx_chan_id,
+                                      bool is_originator,
+                                      uint16_t security_required,
                                       tBTM_SEC_CALLBACK* p_callback,
                                       void* p_ref_data) {
   tBTM_SEC_DEV_REC* p_dev_rec;
   tBTM_STATUS rc;
-  uint16_t security_required;
   bool transport = false; /* should check PSM range in LE connection oriented
                              L2CAP connection */
   if (bluetooth::shim::is_gd_shim_enabled()) {
     return bluetooth::shim::btm_sec_mx_access_request(
-        bd_addr, BT_PSM_RFCOMM, is_originator, BTM_SEC_PROTO_RFCOMM, mx_chan_id,
-        p_callback, p_ref_data);
+        bd_addr, is_originator, security_required, p_callback, p_ref_data);
   }
-
-  /* If there is no application registered with this PSM do not allow connection
-   */
-  if (legacy_stack_rfcomm_security_records.count(mx_chan_id) == 0) {
-    if (p_callback)
-      (*p_callback)(&bd_addr, transport, p_ref_data, BTM_MODE_UNSUPPORTED);
-
-    BTM_TRACE_ERROR("Security Manager: MX service not found SCN:%d",
-                    mx_chan_id);
-    return BTM_NO_RESOURCES;
-  }
-
-  auto requirement = legacy_stack_rfcomm_security_records[mx_chan_id];
 
   BTM_TRACE_DEBUG("%s() is_originator: %d", __func__, is_originator);
   /* Find or get oldest record */
   p_dev_rec = btm_find_or_alloc_dev(bd_addr);
-
-  if (is_originator) {
-    security_required = BTM_SEC_OUT_ENCRYPT | BTM_SEC_OUT_AUTHENTICATE;
-    if (requirement.need_mitm) security_required |= BTM_SEC_OUT_MITM;
-    if (requirement.need_16_digit_pin)
-      security_required |= BTM_SEC_IN_MIN_16_DIGIT_PIN;
-  } else {
-    security_required = BTM_SEC_IN_ENCRYPT | BTM_SEC_IN_AUTHENTICATE;
-    if (requirement.need_mitm) security_required |= BTM_SEC_IN_MITM;
-    if (requirement.need_16_digit_pin)
-      security_required |= BTM_SEC_IN_MIN_16_DIGIT_PIN;
-  }
 
   /* there are some devices (moto phone) which connects to several services at
    * the same time */
   /* we will process one after another */
   if ((p_dev_rec->p_callback) ||
       (btm_cb.pairing_state != BTM_PAIR_STATE_IDLE)) {
-    BTM_TRACE_EVENT("%s() service SCN:%d delayed  state: %s", __func__,
-                    mx_chan_id, btm_pair_state_descr(btm_cb.pairing_state));
+    BTM_TRACE_EVENT("%s() delayed  state: %s", __func__,
+                    btm_pair_state_descr(btm_cb.pairing_state));
 
     rc = BTM_CMD_STARTED;
 
@@ -1886,8 +1844,8 @@ tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
     if (rc == BTM_CMD_STARTED) {
       BTM_TRACE_EVENT("%s: call btm_sec_queue_mx_request", __func__);
       btm_sec_queue_mx_request(bd_addr, BT_PSM_RFCOMM, is_originator,
-                               BTM_SEC_PROTO_RFCOMM, mx_chan_id, p_callback,
-                               p_ref_data);
+                               BTM_SEC_PROTO_RFCOMM, security_required,
+                               p_callback, p_ref_data);
     } else /* rc == BTM_SUCCESS */
     {
       /* access granted */
@@ -2129,11 +2087,11 @@ void btm_sec_check_pending_reqs(void) {
       /* Check that the ACL is still up before starting security procedures */
       if (BTM_IsAclConnectionUp(p_e->bd_addr, p_e->transport)) {
         if (p_e->psm != 0) {
-          BTM_TRACE_EVENT(
-              "%s PSM:0x%04x Is_Orig:%u mx_proto_id:%u mx_chan_id:%u", __func__,
-              p_e->psm, p_e->is_orig, p_e->mx_proto_id, p_e->mx_chan_id);
+          BTM_TRACE_EVENT("%s PSM:0x%04x Is_Orig:%u", __func__, p_e->psm,
+                          p_e->is_orig);
 
-          btm_sec_mx_access_request(p_e->bd_addr, p_e->is_orig, p_e->mx_chan_id,
+          btm_sec_mx_access_request(p_e->bd_addr, p_e->is_orig,
+                                    p_e->rfcomm_security_requirement,
                                     p_e->p_callback, p_e->p_ref_data);
         } else {
           BTM_SetEncryption(p_e->bd_addr, p_e->transport, p_e->p_callback,
@@ -4764,8 +4722,6 @@ static bool btm_sec_queue_mx_request(const RawAddress& bd_addr, uint16_t psm,
   p_e->is_orig = is_orig;
   p_e->p_callback = p_callback;
   p_e->p_ref_data = p_ref_data;
-  p_e->mx_proto_id = mx_proto_id;
-  p_e->mx_chan_id = mx_chan_id;
   p_e->transport = BT_TRANSPORT_BR_EDR;
   p_e->sec_act = 0;
   p_e->bd_addr = bd_addr;

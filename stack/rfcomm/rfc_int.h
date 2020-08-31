@@ -28,6 +28,8 @@
 #include "l2c_api.h"
 #include "port_int.h"
 
+#include <unordered_map>
+
 /*
  * Define RFCOMM result codes
 */
@@ -237,6 +239,9 @@ typedef struct {
 } tRFC_CB;
 
 extern tRFC_CB rfc_cb;
+
+extern std::unordered_map<uint32_t /* scn */, uint16_t /* sec_mask */>
+    rfcomm_security_records;
 
 /* Timer running on the multiplexor channel while no DLCI connection is open */
 #define RFC_MCB_INIT_INACT_TIMER 60 /* in seconds */
