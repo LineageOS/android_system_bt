@@ -1758,6 +1758,13 @@ void btm_ble_connected(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
   btm_cb.ble_ctr_cb.inq_var.directed_conn = BTM_BLE_CONNECT_EVT;
 }
 
+void btm_ble_connected_from_address_with_type(
+    const tBLE_BD_ADDR& address_with_type, uint16_t handle, uint8_t enc_mode,
+    uint8_t role, bool addr_matched) {
+  btm_ble_connected(address_with_type.bda, handle, enc_mode, role,
+                    address_with_type.type, addr_matched);
+}
+
 /*****************************************************************************
  *  Function        btm_proc_smp_cback
  *
