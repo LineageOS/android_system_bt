@@ -1986,9 +1986,9 @@ tBTM_STATUS BTM_BleGetEnergyInfo(tBTM_BLE_ENERGY_INFO_CBACK* p_ener_cback);
  */
 void SendRemoteNameRequest(const RawAddress& raw_address);
 
-tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr, uint16_t psm,
-                                      bool is_originator, uint32_t mx_proto_id,
-                                      uint32_t mx_chan_id,
+tBTM_STATUS btm_sec_mx_access_request(const RawAddress& bd_addr,
+                                      bool is_originator,
+                                      uint16_t security_requirement,
                                       tBTM_SEC_CALLBACK* p_callback,
                                       void* p_ref_data);
 

@@ -78,14 +78,15 @@ int RFCOMM_CreateConnectionWithSecurity(uint16_t uuid, uint8_t scn,
                                         const RawAddress& bd_addr,
                                         uint16_t* p_handle,
                                         tPORT_CALLBACK* p_mgmt_cb,
-                                        uint8_t service_id, uint16_t sec_mask) {
-  if (!BTM_SetSecurityLevel(!is_server, "", service_id, sec_mask, BT_PSM_RFCOMM,
-                            BTM_SEC_PROTO_RFCOMM, scn)) {
-    return PORT_NO_RESOURCES;
-  }
+                                        uint16_t sec_mask) {
+  rfcomm_security_records[scn] = sec_mask;
 
   return RFCOMM_CreateConnection(uuid, scn, is_server, mtu, bd_addr, p_handle,
                                  p_mgmt_cb);
+}
+
+extern void RFCOMM_ClearSecurityRecord(uint32_t scn) {
+  rfcomm_security_records.erase(scn);
 }
 
 /*******************************************************************************
@@ -1109,6 +1110,7 @@ int PORT_WriteData(uint16_t handle, const char* p_data, uint16_t max_len,
  ******************************************************************************/
 void RFCOMM_Init(void) {
   memset(&rfc_cb, 0, sizeof(tRFC_CB)); /* Init RFCOMM control block */
+  rfcomm_security_records = {};
 
   rfc_cb.rfc.last_mux = MAX_BD_CONNECTIONS;
 
