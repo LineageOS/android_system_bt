@@ -58,6 +58,10 @@ extern void btm_ble_init(void);
 extern void btm_ble_connected(const RawAddress& bda, uint16_t handle,
                               uint8_t enc_mode, uint8_t role,
                               tBLE_ADDR_TYPE addr_type, bool addr_matched);
+extern void btm_ble_connected_from_address_with_type(
+    const tBLE_BD_ADDR& address_with_type, uint16_t handle, uint8_t enc_mode,
+    uint8_t role, bool addr_matched);
+
 extern void btm_ble_write_adv_enable_complete(uint8_t* p);
 extern tBTM_BLE_CONN_ST btm_ble_get_conn_st(void);
 extern tBTM_STATUS btm_ble_start_adv(void);
@@ -135,6 +139,8 @@ extern uint64_t btm_get_next_private_addrress_interval_ms();
 extern bool btm_identity_addr_to_random_pseudo(RawAddress* bd_addr,
                                                uint8_t* p_addr_type,
                                                bool refresh);
+extern bool btm_identity_addr_to_random_pseudo_from_address_with_type(
+    tBLE_BD_ADDR* address_with_type, bool refresh);
 extern bool btm_random_pseudo_to_identity_addr(RawAddress* random_pseudo,
                                                uint8_t* p_identity_addr_type);
 extern void btm_ble_refresh_peer_resolvable_private_addr(

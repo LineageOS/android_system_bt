@@ -328,7 +328,7 @@ static void bta_sdp_search_cback(uint16_t result, void* user_data) {
   int count = 0;
   APPL_TRACE_DEBUG("%s() -  res: 0x%x", __func__, result);
 
-  bta_sdp_cb.sdp_active = BTA_SDP_ACTIVE_NONE;
+  bta_sdp_cb.sdp_active = false;
 
   if (bta_sdp_cb.p_dm_cback == NULL) return;
 
@@ -400,10 +400,10 @@ static void bta_sdp_search_cback(uint16_t result, void* user_data) {
  * Returns      void
  *
  ******************************************************************************/
-void bta_sdp_enable(tBTA_SDP_MSG* p_data) {
+void bta_sdp_enable(tBTA_SDP_DM_CBACK* p_cback) {
   APPL_TRACE_DEBUG("%s in, sdp_active:%d", __func__, bta_sdp_cb.sdp_active);
   tBTA_SDP_STATUS status = BTA_SDP_SUCCESS;
-  bta_sdp_cb.p_dm_cback = p_data->enable.p_cback;
+  bta_sdp_cb.p_dm_cback = p_cback;
   tBTA_SDP bta_sdp;
   bta_sdp.status = status;
   bta_sdp_cb.p_dm_cback(BTA_SDP_ENABLE_EVT, &bta_sdp, NULL);
@@ -418,24 +418,19 @@ void bta_sdp_enable(tBTA_SDP_MSG* p_data) {
  * Returns      void
  *
  ******************************************************************************/
-void bta_sdp_search(tBTA_SDP_MSG* p_data) {
-  if (p_data == NULL) {
-    APPL_TRACE_DEBUG("SDP control block handle is null");
-    return;
-  }
+void bta_sdp_search(const RawAddress bd_addr, const bluetooth::Uuid uuid) {
   tBTA_SDP_STATUS status = BTA_SDP_FAILURE;
 
   APPL_TRACE_DEBUG("%s in, sdp_active:%d", __func__, bta_sdp_cb.sdp_active);
 
-  const Uuid& uuid = p_data->get_search.uuid;
-  if (bta_sdp_cb.sdp_active != BTA_SDP_ACTIVE_NONE) {
+  if (bta_sdp_cb.sdp_active) {
     /* SDP is still in progress */
     status = BTA_SDP_BUSY;
     if (bta_sdp_cb.p_dm_cback) {
       tBTA_SDP_SEARCH_COMP result;
       memset(&result, 0, sizeof(result));
       result.uuid = uuid;
-      result.remote_addr = p_data->get_search.bd_addr;
+      result.remote_addr = bd_addr;
       result.status = status;
       tBTA_SDP bta_sdp;
       bta_sdp.sdp_search_comp = result;
@@ -444,8 +439,8 @@ void bta_sdp_search(tBTA_SDP_MSG* p_data) {
     return;
   }
 
-  bta_sdp_cb.sdp_active = BTA_SDP_ACTIVE_YES;
-  bta_sdp_cb.remote_addr = p_data->get_search.bd_addr;
+  bta_sdp_cb.sdp_active = true;
+  bta_sdp_cb.remote_addr = bd_addr;
 
   /* initialize the search for the uuid */
   APPL_TRACE_DEBUG("%s init discovery with UUID: %s", __func__,
@@ -455,17 +450,17 @@ void bta_sdp_search(tBTA_SDP_MSG* p_data) {
 
   Uuid* bta_sdp_search_uuid = (Uuid*)osi_malloc(sizeof(Uuid));
   *bta_sdp_search_uuid = uuid;
-  if (!SDP_ServiceSearchAttributeRequest2(
-          p_data->get_search.bd_addr, p_bta_sdp_cfg->p_sdp_db,
-          bta_sdp_search_cback, (void*)bta_sdp_search_uuid)) {
-    bta_sdp_cb.sdp_active = BTA_SDP_ACTIVE_NONE;
+  if (!SDP_ServiceSearchAttributeRequest2(bd_addr, p_bta_sdp_cfg->p_sdp_db,
+                                          bta_sdp_search_cback,
+                                          (void*)bta_sdp_search_uuid)) {
+    bta_sdp_cb.sdp_active = false;
 
     /* failed to start SDP. report the failure right away */
     if (bta_sdp_cb.p_dm_cback) {
       tBTA_SDP_SEARCH_COMP result;
       memset(&result, 0, sizeof(result));
       result.uuid = uuid;
-      result.remote_addr = p_data->get_search.bd_addr;
+      result.remote_addr = bd_addr;
       result.status = status;
       tBTA_SDP bta_sdp;
       bta_sdp.sdp_search_comp = result;
@@ -486,11 +481,9 @@ void bta_sdp_search(tBTA_SDP_MSG* p_data) {
  * Returns      void
  *
  ******************************************************************************/
-void bta_sdp_create_record(tBTA_SDP_MSG* p_data) {
-  APPL_TRACE_DEBUG("%s() event: %d", __func__, p_data->record.hdr.event);
+void bta_sdp_create_record(void* user_data) {
   if (bta_sdp_cb.p_dm_cback)
-    bta_sdp_cb.p_dm_cback(BTA_SDP_CREATE_RECORD_USER_EVT, NULL,
-                          p_data->record.user_data);
+    bta_sdp_cb.p_dm_cback(BTA_SDP_CREATE_RECORD_USER_EVT, NULL, user_data);
 }
 
 /*******************************************************************************
@@ -502,9 +495,7 @@ void bta_sdp_create_record(tBTA_SDP_MSG* p_data) {
  * Returns      void
  *
  ******************************************************************************/
-void bta_sdp_remove_record(tBTA_SDP_MSG* p_data) {
-  APPL_TRACE_DEBUG("%s() event: %d", __func__, p_data->record.hdr.event);
+void bta_sdp_remove_record(void* user_data) {
   if (bta_sdp_cb.p_dm_cback)
-    bta_sdp_cb.p_dm_cback(BTA_SDP_REMOVE_RECORD_USER_EVT, NULL,
-                          p_data->record.user_data);
+    bta_sdp_cb.p_dm_cback(BTA_SDP_REMOVE_RECORD_USER_EVT, NULL, user_data);
 }
