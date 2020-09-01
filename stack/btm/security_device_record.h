@@ -329,8 +329,8 @@ typedef struct {
   RawAddress pseudo_addr; /* LE pseudo address of the device if different from
                           device address  */
   tBLE_ADDR_TYPE ble_addr_type; /* LE device type: public or random address */
-  tBLE_ADDR_TYPE identity_addr_type; /* identity address type */
-  RawAddress identity_addr;          /* identity address */
+
+  tBLE_BD_ADDR identity_address_with_type;
 
 #define BTM_WHITE_LIST_BIT 0x01
 #define BTM_RESOLVING_LIST_BIT 0x02
