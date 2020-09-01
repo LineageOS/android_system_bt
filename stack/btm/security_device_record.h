@@ -355,7 +355,7 @@ typedef uint8_t tBTM_BOND_TYPE;
  * A record exists for each device authenticated with this device
  */
 typedef struct {
-  tBTM_SEC_SERV_REC* p_cur_service;
+  uint32_t required_security_flags_for_pairing;
   tBTM_SEC_CALLBACK* p_callback;
   void* p_ref_data;
   uint32_t timestamp; /* Timestamp of the last connection   */

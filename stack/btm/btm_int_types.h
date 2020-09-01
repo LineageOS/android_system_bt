@@ -109,8 +109,7 @@ typedef struct {
   bool is_orig;
   tBTM_SEC_CALLBACK* p_callback;
   void* p_ref_data;
-  uint32_t mx_proto_id;
-  uint32_t mx_chan_id;
+  uint16_t rfcomm_security_requirement;
   tBT_TRANSPORT transport;
   tBTM_BLE_SEC_ACT sec_act;
 } tBTM_SEC_QUEUE_ENTRY;
