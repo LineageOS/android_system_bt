@@ -38,6 +38,7 @@
 #include "sdp_api.h"
 #include "stack/btm/btm_sec.h"
 #include "stack/include/btu.h"
+#include "stack/include/port_api.h"
 #include "utl.h"
 
 using bluetooth::Uuid;
@@ -273,7 +274,7 @@ void bta_ag_del_records(tBTA_AG_SCB* p_scb) {
         bta_ag_cb.profile[i].sdp_handle = 0;
       }
       BTM_FreeSCN(bta_ag_cb.profile[i].scn);
-      BTM_SecClrService(bta_ag_sec_id[i]);
+      RFCOMM_ClearSecurityRecord(bta_ag_cb.profile[i].scn);
       bta_sys_remove_uuid(bta_ag_uuid[i]);
     }
   }
