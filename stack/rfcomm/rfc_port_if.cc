@@ -35,6 +35,7 @@
 #include "rfcdefs.h"
 
 tRFC_CB rfc_cb;
+std::unordered_map<uint32_t, uint16_t> rfcomm_security_records;
 
 /*******************************************************************************
  *
