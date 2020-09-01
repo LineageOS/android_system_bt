@@ -815,8 +815,8 @@ static void btif_dm_pin_req_evt(tBTA_DM_PIN_REQ* p_pin_req) {
  ******************************************************************************/
 static void btif_dm_ssp_cfm_req_evt(tBTA_DM_SP_CFM_REQ* p_ssp_cfm_req) {
   bt_bdname_t bd_name;
-  uint32_t cod;
   bool is_incoming = !(pairing_cb.state == BT_BOND_STATE_BONDING);
+  uint32_t cod;
   int dev_type;
 
   BTIF_TRACE_DEBUG("%s", __func__);
