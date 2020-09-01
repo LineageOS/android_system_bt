@@ -122,7 +122,7 @@ typedef struct {
   }
 
   bool is_switch_role_idle() const {
-    return switch_role_state_ != BTM_ACL_SWKEY_STATE_IDLE;
+    return switch_role_state_ == BTM_ACL_SWKEY_STATE_IDLE;
   }
   bool is_switch_role_encryption_off() const {
     return switch_role_state_ == BTM_ACL_SWKEY_STATE_ENCRYPTION_OFF;
