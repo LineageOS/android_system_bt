@@ -1133,6 +1133,26 @@ bool bluetooth::shim::BTM_SecDeleteDevice(const RawAddress& bd_addr) {
   return Stack::GetInstance()->GetBtm()->RemoveBond(bd_addr);
 }
 
+void bluetooth::shim::BTM_ConfirmReqReply(tBTM_STATUS res,
+                                          const RawAddress& bd_addr) {
+  // Send for both Classic and LE until we can determine the type
+  bool accept = res == BTM_SUCCESS;
+  hci::AddressWithType address = ToAddressWithType(bd_addr, 0);
+  hci::AddressWithType address2 = ToAddressWithType(bd_addr, 1);
+  auto security_manager =
+      bluetooth::shim::GetSecurityModule()->GetSecurityManager();
+  if (ShimUi::GetInstance()->waiting_for_pairing_prompt_) {
+    LOG(INFO) << "interpreting confirmation as pairing accept " << address;
+    security_manager->OnPairingPromptAccepted(address, accept);
+    security_manager->OnPairingPromptAccepted(address2, accept);
+    ShimUi::GetInstance()->waiting_for_pairing_prompt_ = false;
+  } else {
+    LOG(INFO) << "interpreting confirmation as yes/no confirmation " << address;
+    security_manager->OnConfirmYesNo(address, accept);
+    security_manager->OnConfirmYesNo(address2, accept);
+  }
+}
+
 uint16_t bluetooth::shim::BTM_GetHCIConnHandle(const RawAddress& remote_bda,
                                                tBT_TRANSPORT transport) {
   return Stack::GetInstance()->GetBtm()->GetAclHandle(remote_bda, transport);
