@@ -337,10 +337,13 @@ typedef struct {
   uint8_t in_controller_list; /* in controller resolving list or not */
   uint8_t resolving_list_index;
   RawAddress cur_rand_addr; /* current random address */
-  uint8_t active_addr_type;
-#define BTM_BLE_ADDR_PSEUDO 0 /* address index device record */
-#define BTM_BLE_ADDR_RRA 1    /* cur_rand_addr */
-#define BTM_BLE_ADDR_STATIC 2 /* static_addr  */
+
+  typedef enum : uint8_t {
+    BTM_BLE_ADDR_PSEUDO = 0,
+    BTM_BLE_ADDR_RRA = 1,
+    BTM_BLE_ADDR_STATIC = 2,
+  } tADDRESS_TYPE;
+  tADDRESS_TYPE active_addr_type;
 
   tBTM_LE_KEY_TYPE key_type; /* bit mask of valid key types in record */
   tBTM_SEC_BLE_KEYS keys;    /* LE device security info in slave rode */
