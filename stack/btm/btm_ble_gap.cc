@@ -2340,7 +2340,7 @@ void btm_ble_update_mode_operation(uint8_t link_role, const RawAddress* bd_addr,
      due to resource limitation, start next direct connection or background
      connection
      now in order */
-  if (btm_ble_get_conn_st() == BLE_CONN_IDLE &&
+  if (btm_cb.ble_ctr_cb.is_connection_state_idle() &&
       status != HCI_ERR_HOST_REJECT_RESOURCES &&
       status != HCI_ERR_MAX_NUM_OF_CONNECTIONS) {
     btm_ble_resume_bg_conn();
