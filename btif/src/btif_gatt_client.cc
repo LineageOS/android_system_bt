@@ -251,7 +251,7 @@ void btif_gattc_open_impl(int client_if, RawAddress address, bool is_direct,
                           int transport_p, bool opportunistic,
                           int initiating_phys) {
   // Ensure device is in inquiry database
-  int addr_type = 0;
+  tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
   int device_type = 0;
   tBT_TRANSPORT transport = (tBT_TRANSPORT)BT_TRANSPORT_LE;
 

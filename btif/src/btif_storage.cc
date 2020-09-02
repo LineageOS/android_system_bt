@@ -488,7 +488,7 @@ static bt_status_t btif_in_fetch_bonded_devices(
 }
 
 static void btif_read_le_key(const uint8_t key_type, const size_t key_len,
-                             RawAddress bd_addr, const uint8_t addr_type,
+                             RawAddress bd_addr, const tBLE_ADDR_TYPE addr_type,
                              const bool add_key, bool* device_added,
                              bool* key_found) {
   CHECK(device_added);
@@ -1238,7 +1238,7 @@ static bt_status_t btif_in_fetch_bonded_ble_device(
     const std::string& remote_bd_addr, int add,
     btif_bonded_devices_t* p_bonded_devices) {
   int device_type;
-  int addr_type;
+  tBLE_ADDR_TYPE addr_type;
   bool device_added = false;
   bool key_found = false;
 
@@ -1289,7 +1289,7 @@ static bt_status_t btif_in_fetch_bonded_ble_device(
 }
 
 bt_status_t btif_storage_set_remote_addr_type(const RawAddress* remote_bd_addr,
-                                              uint8_t addr_type) {
+                                              tBLE_ADDR_TYPE addr_type) {
   int ret = btif_config_set_int(remote_bd_addr->ToString(), "AddrType",
                                 (int)addr_type);
   return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
@@ -1310,9 +1310,10 @@ bool btif_has_ble_keys(const std::string& bdstr) {
  *
  ******************************************************************************/
 bt_status_t btif_storage_get_remote_addr_type(const RawAddress* remote_bd_addr,
-                                              int* addr_type) {
-  int ret =
-      btif_config_get_int(remote_bd_addr->ToString(), "AddrType", addr_type);
+                                              tBLE_ADDR_TYPE* addr_type) {
+  int val;
+  int ret = btif_config_get_int(remote_bd_addr->ToString(), "AddrType", &val);
+  *addr_type = static_cast<tBLE_ADDR_TYPE>(val);
   return ret ? BT_STATUS_SUCCESS : BT_STATUS_FAIL;
 }
 /*******************************************************************************
