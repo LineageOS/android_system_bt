@@ -1750,7 +1750,7 @@ void btm_ble_connected(const RawAddress& bda, uint16_t handle, uint8_t enc_mode,
   p_dev_rec->role_master = (role == HCI_ROLE_MASTER) ? true : false;
 
   if (!addr_matched) {
-    p_dev_rec->ble.active_addr_type = BTM_BLE_ADDR_PSEUDO;
+    p_dev_rec->ble.active_addr_type = tBTM_SEC_BLE::BTM_BLE_ADDR_PSEUDO;
   }
   if (!addr_matched && p_dev_rec->ble.ble_addr_type == BLE_ADDR_RANDOM) {
     p_dev_rec->ble.cur_rand_addr = bda;
