@@ -318,7 +318,7 @@ typedef struct {
   Octet16 csrk; /* storage for local CSRK */
   uint16_t ediv;
   BT_OCTET8 enc_rand;
-  uint8_t addr_type;
+  tBLE_ADDR_TYPE addr_type;
   RawAddress local_bda;
   bool is_pair_cancel;
   bool discard_sec_req;
