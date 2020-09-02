@@ -22,10 +22,10 @@
  *
  ******************************************************************************/
 
-#include "bt_target.h"
-
 #include <string.h>
+
 #include "bt_common.h"
+#include "bt_target.h"
 #include "bt_utils.h"
 #include "gatt_int.h"
 #include "l2c_api.h"
@@ -213,6 +213,8 @@ void gatt_act_write(tGATT_CLCB* p_clcb, uint8_t sec_act) {
   CHECK(p_clcb->p_attr_buf);
   tGATT_VALUE& attr = *((tGATT_VALUE*)p_clcb->p_attr_buf);
 
+  uint16_t payload_size = gatt_tcb_get_payload_size_tx(tcb, p_clcb->cid);
+
   switch (p_clcb->op_subtype) {
     case GATT_WRITE_NO_RSP: {
       p_clcb->s_handle = attr.handle;
@@ -231,7 +233,7 @@ void gatt_act_write(tGATT_CLCB* p_clcb, uint8_t sec_act) {
     }
 
     case GATT_WRITE: {
-      if (attr.len <= (tcb.payload_size - GATT_HDR_SIZE)) {
+      if (attr.len <= (payload_size - GATT_HDR_SIZE)) {
         p_clcb->s_handle = attr.handle;
 
         uint8_t rt = gatt_send_write_msg(tcb, p_clcb, GATT_REQ_WRITE,
@@ -332,9 +334,10 @@ void gatt_send_prepare_write(tGATT_TCB& tcb, tGATT_CLCB* p_clcb) {
   VLOG(1) << __func__ << StringPrintf(" type=0x%x", type);
   uint16_t to_send = p_attr->len - p_attr->offset;
 
-  if (to_send > (tcb.payload_size -
+  uint16_t payload_size = gatt_tcb_get_payload_size_tx(tcb, p_clcb->cid);
+  if (to_send > (payload_size -
                  GATT_WRITE_LONG_HDR_SIZE)) /* 2 = uint16_t offset bytes  */
-    to_send = tcb.payload_size - GATT_WRITE_LONG_HDR_SIZE;
+    to_send = payload_size - GATT_WRITE_LONG_HDR_SIZE;
 
   p_clcb->s_handle = p_attr->handle;
 
@@ -716,8 +719,8 @@ void gatt_process_read_by_type_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
   }
 
   STREAM_TO_UINT8(value_len, p);
-
-  if ((value_len > (tcb.payload_size - 2)) || (value_len > (len - 1))) {
+  uint16_t payload_size = gatt_tcb_get_payload_size_rx(tcb, p_clcb->cid);
+  if ((value_len > (payload_size - 2)) || (value_len > (len - 1))) {
     /* this is an error case that server's response containing a value length
        which is larger than MTU-2
        or value_len > message total length -1 */
@@ -725,7 +728,7 @@ void gatt_process_read_by_type_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
                << StringPrintf(
                       ": Discard response op_code=%d "
                       "vale_len=%d > (MTU-2=%d or msg_len-1=%d)",
-                      op_code, value_len, (tcb.payload_size - 2), (len - 1));
+                      op_code, value_len, (payload_size - 2), (len - 1));
     gatt_end_operation(p_clcb, GATT_ERROR, NULL);
     return;
   }
@@ -814,7 +817,7 @@ void gatt_process_read_by_type_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
              p_clcb->op_subtype == GATT_READ_BY_TYPE) {
       p_clcb->counter = len - 2;
       p_clcb->s_handle = handle;
-      if (p_clcb->counter == (p_clcb->p_tcb->payload_size - 4)) {
+      if (p_clcb->counter == (payload_size - 4)) {
         p_clcb->op_subtype = GATT_READ_BY_HANDLE;
         if (!p_clcb->p_attr_buf)
           p_clcb->p_attr_buf = (uint8_t*)osi_malloc(GATT_MAX_ATTR_LEN);
@@ -907,6 +910,8 @@ void gatt_process_read_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
   uint16_t offset = p_clcb->counter;
   uint8_t* p = p_data;
 
+  uint16_t payload_size = gatt_tcb_get_payload_size_rx(tcb, p_clcb->cid);
+
   if (p_clcb->operation == GATTC_OPTYPE_READ) {
     if (p_clcb->op_subtype != GATT_READ_BY_HANDLE) {
       p_clcb->counter = len;
@@ -927,12 +932,12 @@ void gatt_process_read_rsp(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
 
         /* full packet for read or read blob rsp */
         bool packet_is_full;
-        if (tcb.payload_size == p_clcb->read_req_current_mtu) {
-          packet_is_full = (len == (tcb.payload_size - 1));
+        if (payload_size == p_clcb->read_req_current_mtu) {
+          packet_is_full = (len == (payload_size - 1));
         } else {
           packet_is_full = (len == (p_clcb->read_req_current_mtu - 1) ||
-                            len == (tcb.payload_size - 1));
-          p_clcb->read_req_current_mtu = tcb.payload_size;
+                            len == (payload_size - 1));
+          p_clcb->read_req_current_mtu = payload_size;
         }
 
         /* send next request if needed  */
@@ -1038,14 +1043,24 @@ uint8_t gatt_cmd_to_rsp_code(uint8_t cmd_code) {
 
 /** Find next command in queue and sent to server */
 bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb) {
-  while (!tcb.cl_cmd_q.empty()) {
-    tGATT_CMD_Q& cmd = tcb.cl_cmd_q.front();
-    if (!cmd.to_send || cmd.p_cmd == NULL) return false;
+  std::queue<tGATT_CMD_Q>* cl_cmd_q;
 
-    tGATT_STATUS att_ret = attp_send_msg_to_l2cap(tcb, cmd.p_cmd);
+  while (!tcb.cl_cmd_q.empty()) {
+    if (!tcb.cl_cmd_q.empty()) {
+      cl_cmd_q = &tcb.cl_cmd_q;
+    }
+
+    tGATT_CMD_Q& cmd = cl_cmd_q->front();
+    if (!cmd.to_send || cmd.p_cmd == NULL) {
+      return false;
+    }
+
+    tGATT_STATUS att_ret;
+    att_ret = attp_send_msg_to_l2cap(tcb, cmd.cid, cmd.p_cmd);
+
     if (att_ret != GATT_SUCCESS && att_ret != GATT_CONGESTED) {
       LOG(ERROR) << __func__ << ": L2CAP sent error";
-      tcb.cl_cmd_q.pop();
+      cl_cmd_q->pop();
       continue;
     }
 
@@ -1055,7 +1070,7 @@ bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb) {
     if (cmd.op_code == GATT_CMD_WRITE || cmd.op_code == GATT_SIGN_CMD_WRITE) {
       /* dequeue the request if is write command or sign write */
       uint8_t rsp_code;
-      tGATT_CLCB* p_clcb = gatt_cmd_dequeue(tcb, &rsp_code);
+      tGATT_CLCB* p_clcb = gatt_cmd_dequeue(tcb, cmd.cid, &rsp_code);
 
       /* send command complete callback here */
       gatt_end_operation(p_clcb, att_ret, NULL);
@@ -1074,13 +1089,18 @@ bool gatt_cl_send_next_cmd_inq(tGATT_TCB& tcb) {
 }
 
 /** This function is called to handle the server response to client */
-void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint8_t op_code,
-                                   uint16_t len, uint8_t* p_data) {
+void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint16_t cid,
+                                   uint8_t op_code, uint16_t len,
+                                   uint8_t* p_data) {
+  VLOG(1) << __func__ << " opcode: " << loghex(op_code);
+
+  uint16_t payload_size = gatt_tcb_get_payload_size_rx(tcb, cid);
+
   if (op_code == GATT_HANDLE_VALUE_IND || op_code == GATT_HANDLE_VALUE_NOTIF) {
-    if (len >= tcb.payload_size) {
+    if (len >= payload_size) {
       LOG(ERROR) << StringPrintf(
           "%s: invalid indicate pkt size: %d, PDU size: %d", __func__, len + 1,
-          tcb.payload_size);
+          payload_size);
       return;
     }
 
@@ -1089,7 +1109,7 @@ void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint8_t op_code,
   }
 
   uint8_t cmd_code = 0;
-  tGATT_CLCB* p_clcb = gatt_cmd_dequeue(tcb, &cmd_code);
+  tGATT_CLCB* p_clcb = gatt_cmd_dequeue(tcb, cid, &cmd_code);
   uint8_t rsp_code = gatt_cmd_to_rsp_code(cmd_code);
   if (!p_clcb || (rsp_code != op_code && op_code != GATT_RSP_ERROR)) {
     LOG(WARNING) << StringPrintf(
@@ -1104,16 +1124,16 @@ void gatt_client_handle_server_rsp(tGATT_TCB& tcb, uint8_t op_code,
     return;
   }
 
-  alarm_cancel(p_clcb->gatt_rsp_timer_ent);
+  gatt_stop_rsp_timer(p_clcb);
   p_clcb->retry_count = 0;
 
   /* the size of the message may not be bigger than the local max PDU size*/
   /* The message has to be smaller than the agreed MTU, len does not count
    * op_code */
-  if (len >= tcb.payload_size) {
+  if (len >= payload_size) {
     LOG(ERROR) << StringPrintf(
         "%s: invalid response pkt size: %d, PDU size: %d", __func__, len + 1,
-        tcb.payload_size);
+        payload_size);
     gatt_end_operation(p_clcb, GATT_ERROR, NULL);
   } else {
     switch (op_code) {
