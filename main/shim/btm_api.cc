@@ -285,6 +285,40 @@ class ShimUi : public bluetooth::security::UI {
     waiting_for_pairing_prompt_ = false;
     bt_bdname_t legacy_name{0};
     memcpy(legacy_name.name, name.data(), name.length());
+
+    if (bta_callbacks_->p_sp_callback) {
+      // Call sp_cback for IO_REQ
+      tBTM_SP_IO_REQ io_req_evt_data;
+      io_req_evt_data.bd_addr = bluetooth::ToRawAddress(address.GetAddress());
+      // Local IO Caps (Phone is always DisplayYesNo)
+      io_req_evt_data.io_cap = BTM_IO_CAP_IO;
+      io_req_evt_data.auth_req = BTM_AUTH_AP_YES;
+      io_req_evt_data.oob_data = BTM_OOB_NONE;
+      (*bta_callbacks_->p_sp_callback)(BTM_SP_IO_REQ_EVT,
+                                       (tBTM_SP_EVT_DATA*)&io_req_evt_data);
+
+      // Call sp_cback for IO_RSP
+      tBTM_SP_IO_RSP io_rsp_evt_data;
+      io_rsp_evt_data.bd_addr = bluetooth::ToRawAddress(address.GetAddress());
+      // TODO(optedoblivion): Get remote IO Cap to set here
+      io_rsp_evt_data.io_cap = BTM_IO_CAP_IO;
+      io_rsp_evt_data.auth_req = BTM_AUTH_AP_YES;
+      io_rsp_evt_data.oob_data = BTM_OOB_NONE;
+      (*bta_callbacks_->p_sp_callback)(BTM_SP_IO_RSP_EVT,
+                                       (tBTM_SP_EVT_DATA*)&io_rsp_evt_data);
+
+      // Call sp_cback for USER_CONFIRMATION
+      tBTM_SP_EVT_DATA user_cfm_req_evt_data;
+      user_cfm_req_evt_data.cfm_req.bd_addr =
+          bluetooth::ToRawAddress(address.GetAddress());
+      user_cfm_req_evt_data.cfm_req.num_val = numeric_value;
+      // If we pop a dialog then it isn't just_works
+      user_cfm_req_evt_data.cfm_req.just_works = false;
+      // TODO(optedoblivion): BTA needs a callback for when just works auto
+      // accepted (i.e. =true)
+      (*bta_callbacks_->p_sp_callback)(BTM_SP_CFM_REQ_EVT,
+                                       &user_cfm_req_evt_data);
+    }
   }
 
   void DisplayYesNoDialog(const bluetooth::hci::AddressWithType& address,
@@ -297,15 +331,13 @@ class ShimUi : public bluetooth::security::UI {
   void DisplayEnterPasskeyDialog(const bluetooth::hci::AddressWithType& address,
                                  std::string name) {
     waiting_for_pairing_prompt_ = false;
-    bt_bdname_t legacy_name{0};
-    memcpy(legacy_name.name, name.data(), name.length());
+    LOG_WARN("UNIMPLEMENTED, Passkey not supported in GD");
   }
 
   void DisplayPasskey(const bluetooth::hci::AddressWithType& address,
                       std::string name, uint32_t passkey) {
     waiting_for_pairing_prompt_ = false;
-    bt_bdname_t legacy_name{0};
-    memcpy(legacy_name.name, name.data(), name.length());
+    LOG_WARN("UNIMPLEMENTED, Passkey not supported in GD");
   }
 
   bool waiting_for_pairing_prompt_ = false;
@@ -356,11 +388,8 @@ class ShimBondListener : public bluetooth::security::ISecurityManagerListener {
   }
 
   void OnDeviceBonded(bluetooth::hci::AddressWithType device) override {
-    if (bta_callbacks_->p_sp_callback) {
-      // SP_CBACK (what events?)
-      // link key notification
-      // auth complete
-    }
+    // Call sp_cback for LINK_KEY_NOTIFICATION
+    // Call AUTHENTICATION_COMPLETE callback
   }
 
   void OnDeviceUnbonded(bluetooth::hci::AddressWithType device) override {
