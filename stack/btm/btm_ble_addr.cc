@@ -254,23 +254,24 @@ bool btm_identity_addr_to_random_pseudo(RawAddress* bd_addr,
                                         uint8_t* p_addr_type, bool refresh) {
   tBTM_SEC_DEV_REC* p_dev_rec =
       btm_find_dev_by_identity_addr(*bd_addr, *p_addr_type);
-
-  BTM_TRACE_EVENT("%s", __func__);
-  /* evt reported on static address, map static address to random pseudo */
-  if (p_dev_rec != NULL) {
-    /* if RPA offloading is supported, or 4.2 controller, do RPA refresh */
-    if (refresh &&
-        controller_get_interface()->get_ble_resolving_list_max_size() != 0)
-      btm_ble_read_resolving_list_entry(p_dev_rec);
-
-    /* assign the original address to be the current report address */
-    if (!btm_ble_init_pseudo_addr(p_dev_rec, *bd_addr))
-      *bd_addr = p_dev_rec->ble.pseudo_addr;
-
-    *p_addr_type = p_dev_rec->ble.ble_addr_type;
-    return true;
+  if (p_dev_rec == nullptr) {
+    return false;
   }
-  return false;
+
+  /* evt reported on static address, map static address to random pseudo */
+  /* if RPA offloading is supported, or 4.2 controller, do RPA refresh */
+  if (refresh &&
+      controller_get_interface()->get_ble_resolving_list_max_size() != 0) {
+    btm_ble_read_resolving_list_entry(p_dev_rec);
+  }
+
+  /* assign the original address to be the current report address */
+  if (!btm_ble_init_pseudo_addr(p_dev_rec, *bd_addr)) {
+    *bd_addr = p_dev_rec->ble.pseudo_addr;
+  }
+
+  *p_addr_type = p_dev_rec->ble.ble_addr_type;
+  return true;
 }
 
 bool btm_identity_addr_to_random_pseudo_from_address_with_type(
