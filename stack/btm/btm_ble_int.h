@@ -115,12 +115,9 @@ extern void btm_ble_white_list_init(uint8_t white_list_size);
 /* background connection function */
 extern bool btm_ble_suspend_bg_conn(void);
 extern bool btm_ble_resume_bg_conn(void);
-extern bool btm_ble_start_auto_conn();
-extern bool btm_ble_stop_auto_conn();
 extern void btm_ble_update_mode_operation(uint8_t link_role,
                                           const RawAddress* bda,
                                           uint8_t status);
-extern bool btm_execute_wl_dev_operation(void);
 extern void btm_ble_update_link_topology_mask(uint8_t role, bool increase);
 extern void btm_ble_bgconn_cancel_if_disconnected(const RawAddress& bd_addr);
 
