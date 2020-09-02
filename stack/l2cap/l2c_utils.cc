@@ -2705,7 +2705,7 @@ void l2cu_send_peer_ble_credit_based_conn_req(tL2C_CCB* p_ccb) {
 
 /*******************************************************************************
  *
- * Function         l2cu_reject_ble_connection
+ * Function         l2cu_reject_ble_coc_connection
  *
  * Description      Build and send an L2CAP "Credit based connection res"
  *                  message to the peer. This function is called for non-success
@@ -2714,15 +2714,15 @@ void l2cu_send_peer_ble_credit_based_conn_req(tL2C_CCB* p_ccb) {
  * Returns          void
  *
  ******************************************************************************/
-void l2cu_reject_ble_connection(tL2C_LCB* p_lcb, uint8_t rem_id,
-                                uint16_t result) {
+void l2cu_reject_ble_coc_connection(tL2C_LCB* p_lcb, uint8_t rem_id,
+                                    uint16_t result) {
   BT_HDR* p_buf;
   uint8_t* p;
 
   p_buf = l2cu_build_header(p_lcb, L2CAP_CMD_BLE_CREDIT_BASED_CONN_RES_LEN,
                             L2CAP_CMD_BLE_CREDIT_BASED_CONN_RES, rem_id);
   if (p_buf == NULL) {
-    L2CAP_TRACE_WARNING("l2cu_reject_ble_connection - no buffer");
+    L2CAP_TRACE_WARNING("l2cu_reject_ble_coc_connection - no buffer");
     return;
   }
 
@@ -2736,6 +2736,22 @@ void l2cu_reject_ble_connection(tL2C_LCB* p_lcb, uint8_t rem_id,
   UINT16_TO_STREAM(p, result);
 
   l2c_link_check_send_pkts(p_lcb, 0, p_buf);
+}
+
+/*******************************************************************************
+ *
+ * Function         l2cu_reject_ble_connection
+ *
+ * Description      Build and send an L2CAP "Credit based connection res"
+ *                  message to the peer. This function is called for non-success
+ *                  cases.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void l2cu_reject_ble_connection(tL2C_CCB* p_ccb, uint8_t rem_id,
+                                uint16_t result) {
+  l2cu_reject_ble_coc_connection(p_ccb->p_lcb, rem_id, result);
 }
 
 /*******************************************************************************

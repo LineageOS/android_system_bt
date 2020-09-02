@@ -94,7 +94,7 @@ static bool gatt_sign_data(tGATT_CLCB* p_clcb) {
  * Returns
  *
  ******************************************************************************/
-void gatt_verify_signature(tGATT_TCB& tcb, BT_HDR* p_buf) {
+void gatt_verify_signature(tGATT_TCB& tcb, uint16_t cid, BT_HDR* p_buf) {
   uint16_t cmd_len;
   uint8_t op_code;
   uint8_t *p, *p_orig = (uint8_t*)(p_buf + 1) + p_buf->offset;
@@ -116,7 +116,7 @@ void gatt_verify_signature(tGATT_TCB& tcb, BT_HDR* p_buf) {
   }
 
   STREAM_TO_UINT8(op_code, p_orig);
-  gatt_server_handle_client_req(tcb, op_code, (uint16_t)(p_buf->len - 1),
+  gatt_server_handle_client_req(tcb, cid, op_code, (uint16_t)(p_buf->len - 1),
                                 p_orig);
 }
 /*******************************************************************************
