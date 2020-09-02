@@ -143,7 +143,8 @@ extern bool btm_identity_addr_to_random_pseudo_from_address_with_type(
 extern bool btm_random_pseudo_to_identity_addr(RawAddress* random_pseudo,
                                                uint8_t* p_identity_addr_type);
 extern void btm_ble_refresh_peer_resolvable_private_addr(
-    const RawAddress& pseudo_bda, const RawAddress& rra, uint8_t rra_type);
+    const RawAddress& pseudo_bda, const RawAddress& rra,
+    tBTM_SEC_BLE::tADDRESS_TYPE type);
 extern void btm_ble_read_resolving_list_entry_complete(uint8_t* p,
                                                        uint16_t evt_len);
 extern void btm_ble_remove_resolving_list_entry_complete(uint8_t* p,

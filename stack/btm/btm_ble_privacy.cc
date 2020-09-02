@@ -336,7 +336,9 @@ void btm_ble_remove_resolving_list_entry_complete(uint8_t* p,
  *
  ******************************************************************************/
 void btm_ble_read_resolving_list_entry_complete(uint8_t* p, uint16_t evt_len) {
-  uint8_t status, rra_type = BTM_BLE_ADDR_PSEUDO;
+  uint8_t status;
+  tBTM_SEC_BLE::tADDRESS_TYPE rra_type =
+      tBTM_SEC_BLE::tADDRESS_TYPE::BTM_BLE_ADDR_PSEUDO;
   RawAddress rra, pseudo_bda;
 
   STREAM_TO_UINT8(status, p);
