@@ -22,16 +22,19 @@
  *
  ******************************************************************************/
 
-#include <base/logging.h>
+#include <base/bind.h>
+#include <cstdint>
 #include <unordered_map>
 
-#include "bt_types.h"
-#include "btm_int.h"
-#include "btu.h"
 #include "device/include/controller.h"
-#include "hcimsgs.h"
 #include "stack/btm/btm_dev.h"
-#include "stack/include/acl_api.h"
+#include "stack/btm/btm_int_types.h"
+#include "stack/btm/security_device_record.h"
+#include "stack/include/bt_types.h"
+#include "stack/include/hcimsgs.h"
+#include "types/raw_address.h"
+
+extern tBTM_CB btm_cb;
 
 extern void btm_send_hci_create_connection(
     uint16_t scan_int, uint16_t scan_win, uint8_t init_filter_policy,
