@@ -401,13 +401,18 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
                                      tBTM_SEC_CALLBACK* p_callback,
                                      void* p_ref_data);
 
+// Allow enforcing security by specific requirement (from shim layer).
+tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(
+    const RawAddress& bd_addr, uint16_t security_required, uint16_t handle,
+    bool is_originator, tBTM_SEC_CALLBACK* p_callback, void* p_ref_data);
+
 /*******************************************************************************
  *
  * Function         btm_sec_mx_access_request
  *
- * Description      This function is called by all Multiplexing Protocols during
- *                  establishing connection to or from peer device to grant
- *                  permission to establish application connection.
+ * Description      This function is called by all Multiplexing Protocols
+ *during establishing connection to or from peer device to grant permission
+ *to establish application connection.
  *
  * Parameters:      bd_addr       - Address of the peer device
  *                  psm           - L2CAP PSM
@@ -416,10 +421,9 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
  *                  mx_proto_id   - protocol ID of the multiplexer
  *                  mx_chan_id    - multiplexer channel to reach application
  *                  p_callback    - Pointer to callback function called if
- *                                  this function returns PENDING after required
- *                                  procedures are completed
- *                  p_ref_data    - Pointer to any reference data needed by the
- *                                  the callback function.
+ *                                  this function returns PENDING after
+ *required procedures are completed p_ref_data    - Pointer to any reference
+ *data needed by the the callback function.
  *
  * Returns          BTM_CMD_STARTED
  *
