@@ -28,6 +28,7 @@
 #include "bta_ag_int.h"
 #include "bta_api.h"
 #include "bta_sys.h"
+#include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "utl.h"
 
@@ -554,6 +555,9 @@ static void bta_ag_better_state_machine(tBTA_AG_SCB* p_scb, uint16_t event,
         case BTA_AG_DISC_ACP_RES_EVT:
           bta_ag_free_db(p_scb, data);
           break;
+        default:
+          LOG_ERROR("unknown event %d at state %d", event, p_scb->state);
+          break;
       }
       break;
     case BTA_AG_OPENING_ST:
@@ -598,6 +602,9 @@ static void bta_ag_better_state_machine(tBTA_AG_SCB* p_scb, uint16_t event,
           p_scb->state = BTA_AG_INIT_ST;
           bta_ag_handle_collision(p_scb, data);
           break;
+        default:
+          LOG_ERROR("unknown event %d at state %d", event, p_scb->state);
+          break;
       }
       break;
     case BTA_AG_OPEN_ST:
@@ -635,9 +642,11 @@ static void bta_ag_better_state_machine(tBTA_AG_SCB* p_scb, uint16_t event,
           break;
         case BTA_AG_SCO_OPEN_EVT:
           bta_ag_sco_conn_open(p_scb, data);
+          bta_ag_post_sco_open(p_scb, data);
           break;
         case BTA_AG_SCO_CLOSE_EVT:
           bta_ag_sco_conn_close(p_scb, data);
+          bta_ag_post_sco_close(p_scb, data);
           break;
         case BTA_AG_DISC_ACP_RES_EVT:
           bta_ag_disc_acp_res(p_scb, data);
@@ -648,6 +657,9 @@ static void bta_ag_better_state_machine(tBTA_AG_SCB* p_scb, uint16_t event,
         case BTA_AG_SVC_TIMEOUT_EVT:
           p_scb->state = BTA_AG_CLOSING_ST;
           bta_ag_start_close(p_scb, data);
+          break;
+        default:
+          LOG_ERROR("unknown event %d at state %d", event, p_scb->state);
           break;
       }
       break;
@@ -677,6 +689,9 @@ static void bta_ag_better_state_machine(tBTA_AG_SCB* p_scb, uint16_t event,
           p_scb->state = BTA_AG_INIT_ST;
           bta_ag_free_db(p_scb, data);
           break;
+        default:
+          LOG_ERROR("unknown event %d at state %d", event, p_scb->state);
+          break;
       }
       break;
   }
@@ -703,12 +718,6 @@ void bta_ag_sm_execute(tBTA_AG_SCB* p_scb, uint16_t event,
       __func__, bta_ag_scb_to_idx(p_scb), p_scb->peer_addr.ToString().c_str(),
       bta_ag_state_str(p_scb->state), p_scb->state, bta_ag_evt_str(event),
       event, bta_ag_res_str(data.api_result.result), data.api_result.result);
-
-  event &= 0x00FF;
-  if (event >= (BTA_AG_MAX_EVT & 0x00FF)) {
-    APPL_TRACE_ERROR("%s: event out of range, ignored", __func__);
-    return;
-  }
 
   bta_ag_better_state_machine(p_scb, event, data);
 
