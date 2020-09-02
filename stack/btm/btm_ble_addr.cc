@@ -316,22 +316,19 @@ void btm_ble_refresh_peer_resolvable_private_addr(const RawAddress& pseudo_bda,
                                                   const RawAddress& rpa,
                                                   uint8_t rra_type) {
   tBTM_SEC_DEV_REC* p_sec_rec = btm_find_dev(pseudo_bda);
-  if (p_sec_rec != NULL) {
-    p_sec_rec->ble.cur_rand_addr = rpa;
-
-    /* unknown, if dummy address, set to static */
-    if (rra_type == BTM_BLE_ADDR_PSEUDO)
-      p_sec_rec->ble.active_addr_type =
-          rpa.IsEmpty() ? BTM_BLE_ADDR_STATIC : BTM_BLE_ADDR_RRA;
-    else
-      p_sec_rec->ble.active_addr_type = rra_type;
-  } else {
-    BTM_TRACE_ERROR("No matching known device in record");
+  if (p_sec_rec == nullptr) {
+    LOG_WARN("%s No matching known device in record", __func__);
     return;
   }
 
-  BTM_TRACE_DEBUG("%s: active_addr_type: %d ", __func__,
-                  p_sec_rec->ble.active_addr_type);
+  p_sec_rec->ble.cur_rand_addr = rpa;
+
+  if (rra_type == BTM_BLE_ADDR_PSEUDO) {
+    p_sec_rec->ble.active_addr_type =
+        rpa.IsEmpty() ? BTM_BLE_ADDR_STATIC : BTM_BLE_ADDR_RRA;
+  } else {
+    p_sec_rec->ble.active_addr_type = rra_type;
+  }
 
   /* connection refresh remote address */
   if (!acl_refresh_remote_address(p_sec_rec, p_sec_rec->bd_addr, rra_type,
