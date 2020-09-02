@@ -254,8 +254,8 @@ bool btm_ble_get_acl_remote_addr(tBTM_SEC_DEV_REC* p_dev_rec,
       break;
 
     case tBTM_SEC_BLE::BTM_BLE_ADDR_STATIC:
-      conn_addr = p_dev_rec->ble.identity_addr;
-      *p_addr_type = p_dev_rec->ble.identity_addr_type;
+      conn_addr = p_dev_rec->ble.identity_address_with_type.bda;
+      *p_addr_type = p_dev_rec->ble.identity_address_with_type.type;
       break;
 
     default:
@@ -2435,8 +2435,9 @@ bool acl_refresh_remote_address(const tBTM_SEC_DEV_REC* p_sec_rec,
   if (rra_type == tBTM_SEC_BLE::BTM_BLE_ADDR_PSEUDO) {
     /* use identity address, resolvable_private_addr is empty */
     if (rpa.IsEmpty()) {
-      p_acl->active_remote_addr_type = p_sec_rec->ble.identity_addr_type;
-      p_acl->active_remote_addr = p_sec_rec->ble.identity_addr;
+      p_acl->active_remote_addr_type =
+          p_sec_rec->ble.identity_address_with_type.type;
+      p_acl->active_remote_addr = p_sec_rec->ble.identity_address_with_type.bda;
     } else {
       p_acl->active_remote_addr_type = BLE_ADDR_RANDOM;
       p_acl->active_remote_addr = rpa;
