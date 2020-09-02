@@ -122,8 +122,7 @@ extern void btm_read_local_name_complete(uint8_t* p, uint16_t evt_len);
 extern void btm_ble_create_conn_cancel_complete(uint8_t* p);
 extern bool btm_ble_addr_resolvable(const RawAddress& rpa,
                                     tBTM_SEC_DEV_REC* p_dev_rec);
-extern tBTM_STATUS btm_ble_read_resolving_list_entry(
-    tBTM_SEC_DEV_REC* p_dev_rec);
+extern bool btm_ble_read_resolving_list_entry(tBTM_SEC_DEV_REC* p_dev_rec);
 extern bool btm_ble_resolving_list_load_dev(tBTM_SEC_DEV_REC* p_dev_rec);
 extern void btm_ble_resolving_list_remove_dev(tBTM_SEC_DEV_REC* p_dev_rec);
 
