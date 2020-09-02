@@ -67,6 +67,31 @@ inline hci::AddressWithType ToAddressWithType(const RawAddress& legacy_address,
   return hci::AddressWithType{address, type};
 }
 
+inline tBLE_BD_ADDR ToLegacyAddressWithType(
+    const hci::AddressWithType& address_with_type) {
+  tBLE_BD_ADDR legacy_address_with_type;
+  legacy_address_with_type.bda = ToRawAddress(address_with_type.GetAddress());
+
+  if (address_with_type.GetAddressType() ==
+      hci::AddressType::PUBLIC_DEVICE_ADDRESS) {
+    legacy_address_with_type.type = BLE_ADDR_PUBLIC;
+  } else if (address_with_type.GetAddressType() ==
+             hci::AddressType::RANDOM_DEVICE_ADDRESS) {
+    legacy_address_with_type.type = BLE_ADDR_RANDOM;
+  } else if (address_with_type.GetAddressType() ==
+             hci::AddressType::PUBLIC_IDENTITY_ADDRESS) {
+    legacy_address_with_type.type = BLE_ADDR_PUBLIC_ID;
+  } else if (address_with_type.GetAddressType() ==
+             hci::AddressType::RANDOM_IDENTITY_ADDRESS) {
+    legacy_address_with_type.type = BLE_ADDR_RANDOM_ID;
+  } else {
+    LOG_ALWAYS_FATAL("%s Bad address type %02x", __func__,
+                     static_cast<uint8_t>(address_with_type.GetAddressType()));
+    legacy_address_with_type.type = BLE_ADDR_PUBLIC;
+  }
+  return legacy_address_with_type;
+}
+
 inline std::unique_ptr<bluetooth::packet::RawBuilder> MakeUniquePacket(
     const uint8_t* data, size_t len) {
   bluetooth::packet::RawBuilder builder;
