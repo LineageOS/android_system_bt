@@ -1178,8 +1178,10 @@ void btm_sec_save_le_key(const RawAddress& bd_addr, tBTM_LE_KEY_TYPE key_type,
 
       case BTM_LE_KEY_PID:
         p_rec->ble.keys.irk = p_keys->pid_key.irk;
-        p_rec->ble.identity_addr = p_keys->pid_key.identity_addr;
-        p_rec->ble.identity_addr_type = p_keys->pid_key.identity_addr_type;
+        p_rec->ble.identity_address_with_type.bda =
+            p_keys->pid_key.identity_addr;
+        p_rec->ble.identity_address_with_type.type =
+            p_keys->pid_key.identity_addr_type;
         p_rec->ble.key_type |= BTM_LE_KEY_PID;
         BTM_TRACE_DEBUG(
             "%s: BTM_LE_KEY_PID key_type=0x%x save peer IRK, change bd_addr=%s "
