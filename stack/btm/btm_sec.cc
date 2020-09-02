@@ -57,7 +57,7 @@ extern void bta_dm_remove_device(const RawAddress& bd_addr);
  *             L O C A L    F U N C T I O N     P R O T O T Y P E S            *
  ******************************************************************************/
 tBTM_SEC_SERV_REC* btm_sec_find_first_serv(bool is_originator, uint16_t psm);
-static tBTM_SEC_SERV_REC* btm_sec_find_next_serv(tBTM_SEC_SERV_REC* p_cur);
+
 static bool btm_sec_start_get_name(tBTM_SEC_DEV_REC* p_dev_rec);
 static void btm_sec_start_authentication(tBTM_SEC_DEV_REC* p_dev_rec);
 static void btm_sec_start_encryption(tBTM_SEC_DEV_REC* p_dev_rec);
@@ -1453,73 +1453,20 @@ static void btm_sec_check_upgrade(tBTM_SEC_DEV_REC* p_dev_rec,
   }
 }
 
-/*******************************************************************************
- *
- * Function         btm_sec_l2cap_access_req
- *
- * Description      This function is called by the L2CAP to grant permission to
- *                  establish L2CAP connection to or from the peer device.
- *
- * Parameters:      bd_addr       - Address of the peer device
- *                  psm           - L2CAP PSM
- *                  is_originator - true if protocol above L2CAP originates
- *                                  connection
- *                  p_callback    - Pointer to callback function called if
- *                                  this function returns PENDING after required
- *                                  procedures are complete. MUST NOT BE NULL.
- *
- * Returns          tBTM_STATUS
- *
- ******************************************************************************/
-tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
-                                     uint16_t handle, bool is_originator,
-                                     tBTM_SEC_CALLBACK* p_callback,
-                                     void* p_ref_data) {
+tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(
+    const RawAddress& bd_addr, uint16_t security_required, uint16_t handle,
+    bool is_originator, tBTM_SEC_CALLBACK* p_callback, void* p_ref_data) {
   tBTM_SEC_DEV_REC* p_dev_rec;
-  tBTM_SEC_SERV_REC* p_serv_rec;
-  uint16_t security_required;
-  uint16_t old_security_required;
-  bool old_is_originator;
   tBTM_STATUS rc = BTM_SUCCESS;
   bool chk_acp_auth_done = false;
   constexpr tBT_TRANSPORT transport =
       BT_TRANSPORT_BR_EDR; /* should check PSM range in LE connection oriented
-                              L2CAP connection */
-
-  BTM_TRACE_DEBUG("%s() is_originator:%d, 0x%x, psm=0x%04x", __func__,
-                  is_originator, p_ref_data, psm);
+                          L2CAP connection */
 
   /* Find or get oldest record */
   p_dev_rec = btm_find_or_alloc_dev(bd_addr);
 
   p_dev_rec->hci_handle = handle;
-
-  /* Find the service record for the PSM */
-  p_serv_rec = btm_sec_find_first_serv(is_originator, psm);
-
-  /* If there is no application registered with this PSM do not allow connection
-   */
-  if (!p_serv_rec) {
-    BTM_TRACE_WARNING("%s() PSM: %d no application registerd", __func__, psm);
-    (*p_callback)(&bd_addr, transport, p_ref_data, BTM_MODE_UNSUPPORTED);
-    return (BTM_MODE_UNSUPPORTED);
-  }
-
-  /* Services level0 by default have no security */
-  if (psm == BT_PSM_SDP) {
-    (*p_callback)(&bd_addr, transport, p_ref_data, BTM_SUCCESS_NO_SECURITY);
-    return (BTM_SUCCESS);
-  }
-  if (btm_cb.security_mode == BTM_SEC_MODE_SC) {
-    security_required = btm_sec_set_serv_level4_flags(
-        p_serv_rec->security_flags, is_originator);
-  } else {
-    security_required = p_serv_rec->security_flags;
-  }
-
-  BTM_TRACE_DEBUG(
-      "%s: security_required 0x%04x, is_originator 0x%02x, psm  0x%04x",
-      __func__, security_required, is_originator, psm);
 
   if ((!is_originator) && (security_required & BTM_SEC_MODE4_LEVEL4)) {
     bool local_supports_sc =
@@ -1545,9 +1492,6 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
   /* we will process one after another */
   if ((p_dev_rec->p_callback) ||
       (btm_cb.pairing_state != BTM_PAIR_STATE_IDLE)) {
-    BTM_TRACE_EVENT("%s() - busy - PSM:%d delayed  state: %s mode:%d, sm4:0x%x",
-                    __func__, psm, btm_pair_state_descr(btm_cb.pairing_state),
-                    btm_cb.security_mode, p_dev_rec->sm4);
     BTM_TRACE_EVENT("security_flags:x%x, sec_flags:x%x", security_required,
                     p_dev_rec->sec_flags);
     rc = BTM_CMD_STARTED;
@@ -1635,50 +1579,9 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
       p_dev_rec->sm4, p_dev_rec->sec_flags, security_required,
       chk_acp_auth_done);
 
-  old_security_required = p_dev_rec->security_required;
-  old_is_originator = p_dev_rec->is_originator;
   p_dev_rec->security_required = security_required;
   p_dev_rec->p_ref_data = p_ref_data;
   p_dev_rec->is_originator = is_originator;
-
-/* If there are multiple service records used through the same PSM */
-/* leave security decision for the multiplexor on the top */
-  if ((btm_sec_find_next_serv(p_serv_rec)) != NULL) {
-    BTM_TRACE_DEBUG("no next_serv sm4:0x%x, chk:%d", p_dev_rec->sm4,
-                    chk_acp_auth_done);
-    if (!BTM_SEC_IS_SM4(p_dev_rec->sm4)) {
-      BTM_TRACE_EVENT(
-          "Security Manager: l2cap_access_req PSM:%d postponed for multiplexer",
-          psm);
-      /* pre-Lisbon: restore the old settings */
-      p_dev_rec->security_required = old_security_required;
-      p_dev_rec->is_originator = old_is_originator;
-
-      (*p_callback)(&bd_addr, transport, p_ref_data, BTM_SUCCESS);
-
-      return (BTM_SUCCESS);
-    }
-  }
-
-  /* if the originator is using dynamic PSM in legacy mode, do not start any
-   * security process now
-   * The layer above L2CAP needs to carry out the security requirement after
-   * L2CAP connect
-   * response is received */
-  if (is_originator &&
-      ((btm_cb.security_mode == BTM_SEC_MODE_SERVICE) ||
-       !BTM_SEC_IS_SM4(p_dev_rec->sm4)) &&
-      (psm >= 0x1001)) {
-    BTM_TRACE_EVENT(
-        "dynamic PSM:0x%x in legacy mode - postponed for upper layer", psm);
-    /* restore the old settings */
-    p_dev_rec->security_required = old_security_required;
-    p_dev_rec->is_originator = old_is_originator;
-
-    (*p_callback)(&bd_addr, transport, p_ref_data, BTM_SUCCESS);
-
-    return (BTM_SUCCESS);
-  }
 
   if (chk_acp_auth_done) {
     BTM_TRACE_DEBUG(
@@ -1729,10 +1632,6 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
     }
   }
 
-  BTM_TRACE_EVENT("%s() PSM:%d Handle:%d State:%d Flags: 0x%x Required: 0x%x",
-                  __func__, psm, handle, p_dev_rec->sec_state,
-                  p_dev_rec->sec_flags, p_dev_rec->security_required);
-
   rc = btm_sec_execute_procedure(p_dev_rec);
   if (rc != BTM_CMD_STARTED) {
     BTM_TRACE_DEBUG("%s: p_dev_rec=%p, clearing callback. old p_callback=%p",
@@ -1742,6 +1641,65 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
   }
 
   return (rc);
+}
+
+/*******************************************************************************
+ *
+ * Function         btm_sec_l2cap_access_req
+ *
+ * Description      This function is called by the L2CAP to grant permission to
+ *                  establish L2CAP connection to or from the peer device.
+ *
+ * Parameters:      bd_addr       - Address of the peer device
+ *                  psm           - L2CAP PSM
+ *                  is_originator - true if protocol above L2CAP originates
+ *                                  connection
+ *                  p_callback    - Pointer to callback function called if
+ *                                  this function returns PENDING after required
+ *                                  procedures are complete. MUST NOT BE NULL.
+ *
+ * Returns          tBTM_STATUS
+ *
+ ******************************************************************************/
+tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
+                                     uint16_t handle, bool is_originator,
+                                     tBTM_SEC_CALLBACK* p_callback,
+                                     void* p_ref_data) {
+  constexpr tBT_TRANSPORT transport =
+      BT_TRANSPORT_BR_EDR; /* should check PSM range in LE connection oriented
+                              L2CAP connection */
+
+  BTM_TRACE_DEBUG("%s() is_originator:%d, 0x%x, psm=0x%04x", __func__,
+                  is_originator, p_ref_data, psm);
+
+  /* Find the service record for the PSM */
+  tBTM_SEC_SERV_REC* p_serv_rec = btm_sec_find_first_serv(is_originator, psm);
+
+  /* If there is no application registered with this PSM do not allow connection
+   */
+  if (!p_serv_rec) {
+    BTM_TRACE_WARNING("%s() PSM: %d no application registerd", __func__, psm);
+    (*p_callback)(&bd_addr, transport, p_ref_data, BTM_MODE_UNSUPPORTED);
+    return (BTM_MODE_UNSUPPORTED);
+  }
+
+  /* Services level0 by default have no security */
+  if (psm == BT_PSM_SDP) {
+    (*p_callback)(&bd_addr, transport, p_ref_data, BTM_SUCCESS_NO_SECURITY);
+    return (BTM_SUCCESS);
+  }
+
+  uint16_t security_required;
+  if (btm_cb.security_mode == BTM_SEC_MODE_SC) {
+    security_required = btm_sec_set_serv_level4_flags(
+        p_serv_rec->security_flags, is_originator);
+  } else {
+    security_required = p_serv_rec->security_flags;
+  }
+
+  return btm_sec_l2cap_access_req_by_requirement(bd_addr, security_required,
+                                                 handle, is_originator,
+                                                 p_callback, p_ref_data);
 }
 
 /*******************************************************************************
@@ -4477,31 +4435,6 @@ tBTM_SEC_SERV_REC* btm_sec_find_first_serv(bool is_originator, uint16_t psm) {
     if ((p_serv_rec->security_flags & BTM_SEC_IN_USE) &&
         (p_serv_rec->psm == psm))
       return (p_serv_rec);
-  }
-  return (NULL);
-}
-
-/*******************************************************************************
- *
- * Function         btm_sec_find_next_serv
- *
- * Description      Look for the next record in the service database
- *                  with specified PSM
- *
- * Returns          Pointer to the record or NULL
- *
- ******************************************************************************/
-static tBTM_SEC_SERV_REC* btm_sec_find_next_serv(tBTM_SEC_SERV_REC* p_cur) {
-  tBTM_SEC_SERV_REC* p_serv_rec = &btm_cb.sec_serv_rec[0];
-  int i;
-
-  for (i = 0; i < BTM_SEC_MAX_SERVICE_RECORDS; i++, p_serv_rec++) {
-    if ((p_serv_rec->security_flags & BTM_SEC_IN_USE) &&
-        (p_serv_rec->psm == p_cur->psm)) {
-      if (p_cur != p_serv_rec) {
-        return (p_serv_rec);
-      }
-    }
   }
   return (NULL);
 }
