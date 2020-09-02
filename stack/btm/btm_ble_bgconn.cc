@@ -43,7 +43,9 @@ extern void btm_send_hci_create_connection(
     uint16_t conn_timeout, uint16_t min_ce_len, uint16_t max_ce_len,
     uint8_t phy);
 extern void btm_ble_create_conn_cancel();
-void wl_remove_complete(uint8_t* p_data, uint16_t /* evt_len */);
+
+static bool btm_ble_stop_auto_conn();
+static void wl_remove_complete(uint8_t* p_data, uint16_t /* evt_len */);
 
 // Unfortunately (for now?) we have to maintain a copy of the device whitelist
 // on the host to determine if a device is pending to be connected or not. This
@@ -203,7 +205,7 @@ bool BTM_BackgroundConnectAddressKnown(const RawAddress& address) {
  *
  * Description      This function load the device into controller white list
  ******************************************************************************/
-bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
+static bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
 
   if (p_dev_rec != NULL && p_dev_rec->device_type & BT_DEVICE_TYPE_BLE) {
@@ -250,14 +252,14 @@ bool btm_add_dev_to_controller(bool to_add, const RawAddress& bd_addr) {
 }
 
 /** White list add complete */
-void wl_add_complete(uint8_t* p_data, uint16_t /* evt_len */) {
+static void wl_add_complete(uint8_t* p_data, uint16_t /* evt_len */) {
   uint8_t status;
   STREAM_TO_UINT8(status, p_data);
   VLOG(2) << __func__ << ": status=" << loghex(status);
 }
 
 /** White list element remove complete */
-void wl_remove_complete(uint8_t* p_data, uint16_t /* evt_len */) {
+static void wl_remove_complete(uint8_t* p_data, uint16_t /* evt_len */) {
   uint8_t status;
   STREAM_TO_UINT8(status, p_data);
   VLOG(2) << __func__ << ": status=" << loghex(status);
@@ -270,7 +272,7 @@ void wl_remove_complete(uint8_t* p_data, uint16_t /* evt_len */) {
  * Description      execute the pending whitelist device operation (loading or
  *                                                                  removing)
  ******************************************************************************/
-bool btm_execute_wl_dev_operation(void) {
+static bool btm_execute_wl_dev_operation(void) {
   // handle removals first to avoid filling up controller's white list
   for (auto map_it = background_connections.begin();
        map_it != background_connections.end();) {
@@ -352,7 +354,7 @@ void BTM_SetLeConnectionModeToSlow() {
 }
 
 /** This function is to start auto connection procedure */
-bool btm_ble_start_auto_conn() {
+static bool btm_ble_start_auto_conn() {
   tBTM_BLE_CB* p_cb = &btm_cb.ble_ctr_cb;
 
   BTM_TRACE_EVENT("%s", __func__);
@@ -409,7 +411,7 @@ bool btm_ble_start_auto_conn() {
 }
 
 /** This function is to stop auto connection procedure */
-bool btm_ble_stop_auto_conn() {
+static bool btm_ble_stop_auto_conn() {
   BTM_TRACE_EVENT("%s", __func__);
 
   if (!btm_cb.ble_ctr_cb.is_connection_state_connecting()) {
