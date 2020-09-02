@@ -96,6 +96,10 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
         hci_layer_->GetLeAdvertisingInterface(module_handler_->BindOn(this, &LeAdvertisingManager::impl::handle_event));
     num_instances_ = controller_->GetLeNumberOfSupportedAdverisingSets();
     enabled_sets_ = std::vector<EnabledSet>(num_instances_);
+    for (size_t i = 0; i < enabled_sets_.size(); i++) {
+      enabled_sets_[i].advertising_handle_ = kInvalidHandle;
+    }
+
     if (controller_->IsSupported(hci::OpCode::LE_SET_EXTENDED_ADVERTISING_PARAMETERS)) {
       advertising_api_type_ = AdvertisingApiType::LE_5_0;
     } else if (controller_->IsSupported(hci::OpCode::LE_MULTI_ADVT)) {
@@ -386,7 +390,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
     }
 
     std::unique_lock lock(id_mutex_);
-    enabled_sets_[advertising_set].advertising_handle_ = -1;
+    enabled_sets_[advertising_set].advertising_handle_ = kInvalidHandle;
   }
 
   void OnPause() override {
@@ -401,7 +405,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
         case (AdvertisingApiType::ANDROID_HCI): {
           for (size_t i = 0; i < enabled_sets_.size(); i++) {
             uint8_t id = enabled_sets_[i].advertising_handle_;
-            if (id != -1) {
+            if (id != kInvalidHandle) {
               le_advertising_interface_->EnqueueCommand(
                   hci::LeMultiAdvtSetEnableBuilder::Create(Enable::DISABLED, id),
                   module_handler_->BindOnce(impl::check_status<LeMultiAdvtCompleteView>));
@@ -412,7 +416,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
           std::vector<EnabledSet> enabled_sets = {};
           for (size_t i = 0; i < enabled_sets_.size(); i++) {
             EnabledSet curr_set = enabled_sets_[i];
-            if (enabled_sets_[i].advertising_handle_ != -1) {
+            if (enabled_sets_[i].advertising_handle_ != kInvalidHandle) {
               enabled_sets.push_back(enabled_sets_[i]);
             }
           }
@@ -439,7 +443,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
         case (AdvertisingApiType::ANDROID_HCI): {
           for (size_t i = 0; i < enabled_sets_.size(); i++) {
             uint8_t id = enabled_sets_[i].advertising_handle_;
-            if (id != -1) {
+            if (id != kInvalidHandle) {
               le_advertising_interface_->EnqueueCommand(
                   hci::LeMultiAdvtSetEnableBuilder::Create(Enable::ENABLED, id),
                   module_handler_->BindOnce(impl::check_status<LeMultiAdvtCompleteView>));
@@ -450,7 +454,7 @@ struct LeAdvertisingManager::impl : public bluetooth::hci::LeAddressManagerCallb
           std::vector<EnabledSet> enabled_sets = {};
           for (size_t i = 0; i < enabled_sets_.size(); i++) {
             EnabledSet curr_set = enabled_sets_[i];
-            if (enabled_sets_[i].advertising_handle_ != -1) {
+            if (enabled_sets_[i].advertising_handle_ != kInvalidHandle) {
               enabled_sets.push_back(enabled_sets_[i]);
             }
           }
