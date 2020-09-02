@@ -105,6 +105,9 @@ void Stack::StartEverything() {
     btm_ = new Btm(stack_handler_,
                    stack_manager_.GetInstance<neighbor::InquiryModule>());
   }
+  if (common::InitFlags::GdAclEnabled()) {
+    acl_ = new legacy::Acl(stack_handler_);
+  }
   is_running_ = true;
   if (!common::InitFlags::GdCoreEnabled()) {
     bluetooth::shim::hci_on_reset_complete();
@@ -132,6 +135,9 @@ void Stack::Stop() {
   ASSERT_LOG(is_running_, "%s Gd stack not running", __func__);
   is_running_ = false;
 
+  delete acl_;
+  acl_ = nullptr;
+
   delete btm_;
   btm_ = nullptr;
 
@@ -158,6 +164,12 @@ StackManager* Stack::GetStackManager() {
   std::lock_guard<std::recursive_mutex> lock(mutex_);
   ASSERT(is_running_);
   return &stack_manager_;
+}
+
+legacy::Acl* Stack::GetAcl() {
+  std::lock_guard<std::recursive_mutex> lock(mutex_);
+  ASSERT(is_running_);
+  return acl_;
 }
 
 Btm* Stack::GetBtm() {
