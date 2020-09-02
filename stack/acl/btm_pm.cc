@@ -798,8 +798,8 @@ bool btm_pm_device_in_active_or_sniff_mode(void) {
   }
 
   /* Check BLE states */
-  if (btm_ble_get_conn_st() != BLE_CONN_IDLE) {
-    BTM_TRACE_DEBUG("%s - BLE state: %x", __func__, btm_ble_get_conn_st());
+  if (!btm_cb.ble_ctr_cb.is_connection_state_idle()) {
+    BTM_TRACE_DEBUG("%s - BLE state is not idle", __func__);
     return true;
   }
 
