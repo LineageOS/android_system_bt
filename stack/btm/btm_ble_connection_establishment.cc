@@ -90,16 +90,53 @@ void btm_ble_create_ll_conn_complete(uint8_t status) {
   }
 }
 
+static bool maybe_resolve_address(RawAddress bda, tBLE_ADDR_TYPE bda_type) {
+  bool match = false;
+  tBLE_ADDR_TYPE peer_addr_type = bda_type;
+  bool addr_is_rpa =
+      (peer_addr_type == BLE_ADDR_RANDOM && BTM_BLE_IS_RESOLVE_BDA(bda));
+
+  /* We must translate whatever address we received into the "pseudo" address.
+   * i.e. if we bonded with device that was using RPA for first connection,
+   * "pseudo" address is equal to this RPA. If it later decides to use Public
+   * address, or Random Static Address, we convert it into the "pseudo"
+   * address here. */
+  if (!addr_is_rpa || peer_addr_type & BLE_ADDR_TYPE_ID_BIT) {
+    match = btm_identity_addr_to_random_pseudo(&bda, &bda_type, true);
+  }
+
+  /* possiblly receive connection complete with resolvable random while
+     the device has been paired */
+  if (!match && addr_is_rpa) {
+    tBTM_SEC_DEV_REC* match_rec = btm_ble_resolve_random_addr(bda);
+    if (match_rec) {
+      LOG(INFO) << __func__ << ": matched and resolved random address";
+      match = true;
+      match_rec->ble.active_addr_type = tBTM_SEC_BLE::BTM_BLE_ADDR_RRA;
+      match_rec->ble.cur_rand_addr = bda;
+      if (!btm_ble_init_pseudo_addr(match_rec, bda)) {
+        /* assign the original address to be the current report address */
+        bda = match_rec->ble.pseudo_addr;
+        bda_type = match_rec->ble.ble_addr_type;
+      } else {
+        bda = match_rec->bd_addr;
+      }
+    } else {
+      LOG(INFO) << __func__ << ": unable to match and resolve random address";
+    }
+  }
+  return match;
+}
+
 /** LE connection complete. */
 void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
                            bool enhanced) {
-  uint8_t peer_addr_type;
   RawAddress local_rpa, peer_rpa;
-  uint8_t role, status, bda_type;
+  uint8_t role, status;
+  tBLE_ADDR_TYPE bda_type;
   uint16_t handle;
   RawAddress bda;
   uint16_t conn_interval, conn_latency, conn_timeout;
-  bool match = false;
 
   STREAM_TO_UINT8(status, p);
   STREAM_TO_UINT16(handle, p);
@@ -120,39 +157,9 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
                : android::bluetooth::hci::BLE_EVT_CONN_COMPLETE_EVT;
 
   if (status == HCI_SUCCESS) {
-    peer_addr_type = bda_type;
-    bool addr_is_rpa =
-        (peer_addr_type == BLE_ADDR_RANDOM && BTM_BLE_IS_RESOLVE_BDA(bda));
+    tBLE_ADDR_TYPE peer_addr_type = bda_type;
+    bool match = maybe_resolve_address(bda, bda_type);
 
-    /* We must translate whatever address we received into the "pseudo" address.
-     * i.e. if we bonded with device that was using RPA for first connection,
-     * "pseudo" address is equal to this RPA. If it later decides to use Public
-     * address, or Random Static Address, we convert it into the "pseudo"
-     * address here. */
-    if (!addr_is_rpa || peer_addr_type & BLE_ADDR_TYPE_ID_BIT) {
-      match = btm_identity_addr_to_random_pseudo(&bda, &bda_type, true);
-    }
-
-    /* possiblly receive connection complete with resolvable random while
-       the device has been paired */
-    if (!match && addr_is_rpa) {
-      tBTM_SEC_DEV_REC* match_rec = btm_ble_resolve_random_addr(bda);
-      if (match_rec) {
-        LOG(INFO) << __func__ << ": matched and resolved random address";
-        match = true;
-        match_rec->ble.active_addr_type = tBTM_SEC_BLE::BTM_BLE_ADDR_RRA;
-        match_rec->ble.cur_rand_addr = bda;
-        if (!btm_ble_init_pseudo_addr(match_rec, bda)) {
-          /* assign the original address to be the current report address */
-          bda = match_rec->ble.pseudo_addr;
-          bda_type = match_rec->ble.ble_addr_type;
-        } else {
-          bda = match_rec->bd_addr;
-        }
-      } else {
-        LOG(INFO) << __func__ << ": unable to match and resolve random address";
-      }
-    }
     // Log for the HCI success case after resolving Bluetooth address
     bluetooth::common::LogLinkLayerConnectionEvent(
         &bda, handle, android::bluetooth::DIRECTION_UNKNOWN,
@@ -179,6 +186,10 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
         btm_ble_refresh_peer_resolvable_private_addr(
             bda, peer_rpa, tBTM_SEC_BLE::BTM_BLE_ADDR_RRA);
     }
+    btm_ble_update_mode_operation(role, &bda, status);
+
+    if (role == HCI_ROLE_SLAVE)
+      btm_ble_advertiser_notify_terminated_legacy(status, handle);
   } else {
     // Log for non HCI success case
     bluetooth::common::LogLinkLayerConnectionEvent(
@@ -196,12 +207,8 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
       btm_cb.ble_ctr_cb.inq_var.adv_mode = BTM_BLE_ADV_DISABLE;
       btm_ble_disable_resolving_list(BTM_BLE_RL_ADV, true);
     }
+    btm_ble_update_mode_operation(role, &bda, status);
   }
-
-  btm_ble_update_mode_operation(role, &bda, status);
-
-  if (role == HCI_ROLE_SLAVE)
-    btm_ble_advertiser_notify_terminated_legacy(status, handle);
 }
 
 void btm_ble_create_conn_cancel() {
