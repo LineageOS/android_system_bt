@@ -25,35 +25,31 @@
 #define LOG_TAG "bt_btm_ble"
 
 #include <base/bind.h>
-#include <base/callback.h>
 #include <base/strings/string_number_conversions.h>
-#include <stddef.h>
-#include <stdio.h>
-#include <string.h>
+#include <cstdint>
 #include <list>
+#include <memory>
 #include <vector>
 
-#include "bt_types.h"
-#include "bt_utils.h"
-#include "btm_ble_api.h"
-#include "btm_int.h"
-#include "btu.h"
-#include "device/include/controller.h"
-#include "gap_api.h"
-#include "hcimsgs.h"
-#include "osi/include/osi.h"
-
-#include "advertise_data_parser.h"
-#include "btm_ble_int.h"
-#include "gatt_int.h"
-#include "gattdefs.h"
-#include "osi/include/log.h"
 #include "common/time_util.h"
-
+#include "device/include/controller.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/shim.h"
+#include "osi/include/log.h"
+#include "stack/btm/btm_ble_int.h"
+#include "stack/btm/btm_ble_int_types.h"
 #include "stack/btm/btm_dev.h"
+#include "stack/btm/btm_int_types.h"
+#include "stack/gatt/gatt_int.h"
 #include "stack/include/acl_api.h"
+#include "stack/include/advertise_data_parser.h"
+#include "stack/include/bt_types.h"
+#include "stack/include/btm_api_types.h"
+#include "stack/include/gap_api.h"
+#include "stack/include/hcimsgs.h"
+#include "types/raw_address.h"
+
+extern tBTM_CB btm_cb;
 
 #define BTM_EXT_BLE_RMT_NAME_TIMEOUT_MS (30 * 1000)
 #define MIN_ADV_LENGTH 2
