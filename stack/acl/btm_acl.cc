@@ -42,6 +42,7 @@
 #include "device/include/controller.h"
 #include "device/include/interop.h"
 #include "include/l2cap_hci_link_interface.h"
+#include "main/shim/acl_api.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
@@ -2791,6 +2792,10 @@ constexpr uint16_t kDefaultPacketTypes =
 void acl_create_classic_connection(const RawAddress& bd_addr,
                                    bool there_are_high_priority_channels,
                                    bool is_bonding) {
+  if (bluetooth::shim::is_gd_acl_enabled()) {
+    bluetooth::shim::ACL_CreateClassicConnection(bd_addr);
+  }
+
   const bool controller_supports_role_switch =
       controller_get_interface()->supports_role_switch();
   const bool acl_allows_role_switch = acl_is_role_switch_allowed();
