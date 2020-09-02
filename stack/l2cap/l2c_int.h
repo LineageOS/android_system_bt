@@ -589,8 +589,10 @@ extern void l2cu_send_peer_ble_par_req(tL2C_LCB* p_lcb, uint16_t min_int,
                                        uint16_t timeout);
 extern void l2cu_send_peer_ble_par_rsp(tL2C_LCB* p_lcb, uint16_t reason,
                                        uint8_t rem_id);
-extern void l2cu_reject_ble_connection(tL2C_LCB* p_lcb, uint8_t rem_id,
+extern void l2cu_reject_ble_connection(tL2C_CCB* p_ccb, uint8_t rem_id,
                                        uint16_t result);
+extern void l2cu_reject_ble_coc_connection(tL2C_LCB* p_lcb, uint8_t rem_id,
+                                           uint16_t result);
 extern void l2cu_send_peer_ble_credit_based_conn_res(tL2C_CCB* p_ccb,
                                                      uint16_t result);
 extern void l2cu_send_peer_ble_credit_based_conn_req(tL2C_CCB* p_ccb);

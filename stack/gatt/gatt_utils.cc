@@ -537,6 +537,19 @@ void gatt_start_rsp_timer(tGATT_CLCB* p_clcb) {
 
 /*******************************************************************************
  *
+ * Function         gatt_stop_rsp_timer
+ *
+ * Description      Stops a GATT response timer.
+ *
+ * Returns          void
+ *
+ ******************************************************************************/
+void gatt_stop_rsp_timer(tGATT_CLCB* p_clcb) {
+  alarm_cancel(p_clcb->gatt_rsp_timer_ent);
+}
+
+/*******************************************************************************
+ *
  * Function         gatt_start_conf_timer
  *
  * Description      Start a wait_for_confirmation timer.
@@ -585,7 +598,7 @@ void gatt_rsp_timeout(void* data) {
       p_clcb->retry_count < GATT_REQ_RETRY_LIMIT) {
     uint8_t rsp_code;
     LOG(WARNING) << __func__ << " retry discovery primary service";
-    if (p_clcb != gatt_cmd_dequeue(*p_clcb->p_tcb, &rsp_code)) {
+    if (p_clcb != gatt_cmd_dequeue(*p_clcb->p_tcb, p_clcb->cid, &rsp_code)) {
       LOG(ERROR) << __func__ << " command queue out of sync, disconnect";
     } else {
       p_clcb->retry_count++;
@@ -732,7 +745,7 @@ void gatt_sr_send_req_callback(uint16_t conn_id, uint32_t trans_id,
  * Returns          void
  *
  ******************************************************************************/
-tGATT_STATUS gatt_send_error_rsp(tGATT_TCB& tcb, uint8_t err_code,
+tGATT_STATUS gatt_send_error_rsp(tGATT_TCB& tcb, uint16_t cid, uint8_t err_code,
                                  uint8_t op_code, uint16_t handle, bool deq) {
   tGATT_STATUS status;
   BT_HDR* p_buf;
@@ -744,7 +757,7 @@ tGATT_STATUS gatt_send_error_rsp(tGATT_TCB& tcb, uint8_t err_code,
 
   p_buf = attp_build_sr_msg(tcb, GATT_RSP_ERROR, &msg);
   if (p_buf != NULL) {
-    status = attp_send_sr_msg(tcb, p_buf);
+    status = attp_send_sr_msg(tcb, cid, p_buf);
   } else
     status = GATT_INSUF_RESOURCE;
 
@@ -891,6 +904,19 @@ bool gatt_is_clcb_allocated(uint16_t conn_id) {
 
 /*******************************************************************************
  *
+ * Function         gatt_tcb_is_cid_busy
+ *
+ * Description      The function check if channel with given cid is busy
+ *
+ * Returns          True when busy
+ *
+ ******************************************************************************/
+
+bool gatt_tcb_is_cid_busy(tGATT_TCB& tcb, uint16_t cid) {
+  return !tcb.cl_cmd_q.empty();
+}
+/*******************************************************************************
+ *
  * Function         gatt_clcb_alloc
  *
  * Description      The function allocates a GATT  connection link control block
@@ -915,11 +941,93 @@ tGATT_CLCB* gatt_clcb_alloc(uint16_t conn_id) {
       p_clcb->conn_id = conn_id;
       p_clcb->p_reg = p_reg;
       p_clcb->p_tcb = p_tcb;
+      p_clcb->cid = gatt_tcb_get_att_cid(*p_tcb);
       break;
     }
   }
 
   return p_clcb;
+}
+
+/*******************************************************************************
+ *
+ * Function         gatt_tcb_get_cid_available_for_indication
+ *
+ * Description      This function checks if indication can be send
+ *
+ * Returns         None
+ *
+ ******************************************************************************/
+bool gatt_tcb_get_cid_available_for_indication(tGATT_TCB* p_tcb,
+                                               bool eatt_support,
+                                               uint16_t** indicated_handle_p,
+                                               uint16_t* cid_p) {
+  if (GATT_HANDLE_IS_VALID(p_tcb->indicate_handle)) {
+    return false;
+  }
+
+  *indicated_handle_p = &p_tcb->indicate_handle;
+  *cid_p = p_tcb->att_lcid;
+  return true;
+}
+
+/*******************************************************************************
+ *
+ * Function         gatt_tcb_find_indicate_handle
+ *
+ * Description      This function checks if indication can be send
+ *
+ * Returns          true when indication handle found, false otherwise
+ *
+ ******************************************************************************/
+bool gatt_tcb_find_indicate_handle(tGATT_TCB& tcb, uint16_t cid,
+                                   uint16_t* indicated_handle_p) {
+  if (cid == tcb.att_lcid) {
+    *indicated_handle_p = tcb.indicate_handle;
+    tcb.indicate_handle = 0;
+    return true;
+  }
+
+  return false;
+}
+
+/*******************************************************************************
+ *
+ * Function         gatt_tcb_get_att_cid
+ *
+ * Description      This function gets cid for the GATT operation
+ *
+ * Returns          Available CID
+ *
+ ******************************************************************************/
+
+uint16_t gatt_tcb_get_att_cid(tGATT_TCB& tcb) { return tcb.att_lcid; }
+
+/*******************************************************************************
+ *
+ * Function         gatt_tcb_get_payload_size_tx
+ *
+ * Description      This function gets payload size for the GATT operation
+ *
+ * Returns          Payload size for sending data
+ *
+ ******************************************************************************/
+uint16_t gatt_tcb_get_payload_size_tx(tGATT_TCB& tcb, uint16_t cid) {
+  return tcb.payload_size;
+}
+
+/*******************************************************************************
+ *
+ * Function         gatt_tcb_get_payload_size_rx
+ *
+ * Description      This function gets payload size for the GATT operation
+ *
+ * Returns          Payload size for receiving data
+ *
+ ******************************************************************************/
+
+uint16_t gatt_tcb_get_payload_size_rx(tGATT_TCB& tcb, uint16_t cid) {
+  return tcb.payload_size;
 }
 
 /*******************************************************************************
@@ -988,6 +1096,12 @@ void gatt_sr_copy_prep_cnt_to_cback_cnt(tGATT_TCB& tcb) {
   }
 }
 
+/* Get outstanding server command pointer by the transaction id */
+tGATT_SR_CMD* gatt_sr_get_cmd_by_trans_id(tGATT_TCB* p_tcb, uint32_t trans_id) {
+  if (p_tcb->sr_cmd.trans_id == trans_id) return &p_tcb->sr_cmd;
+
+  return nullptr;
+}
 /*******************************************************************************
  *
  * Function         gatt_sr_is_cback_cnt_zero
@@ -1033,9 +1147,11 @@ bool gatt_sr_is_prep_cnt_zero(tGATT_TCB& tcb) {
  * Returns         None
  *
  ******************************************************************************/
-void gatt_sr_reset_cback_cnt(tGATT_TCB& tcb) {
+void gatt_sr_reset_cback_cnt(tGATT_TCB& tcb, uint16_t cid) {
   for (uint8_t i = 0; i < GATT_MAX_APPS; i++) {
-    tcb.sr_cmd.cback_cnt[i] = 0;
+    if (cid == tcb.att_lcid) {
+      tcb.sr_cmd.cback_cnt[i] = 0;
+    }
   }
 }
 
@@ -1054,6 +1170,10 @@ void gatt_sr_reset_prep_cnt(tGATT_TCB& tcb) {
   }
 }
 
+/* Get pointer to server command on given cid */
+tGATT_SR_CMD* gatt_sr_get_cmd_by_cid(tGATT_TCB& tcb, uint16_t cid) {
+  return &tcb.sr_cmd;
+}
 /*******************************************************************************
  *
  * Function         gatt_sr_update_cback_cnt
@@ -1063,18 +1183,19 @@ void gatt_sr_reset_prep_cnt(tGATT_TCB& tcb) {
  * Returns           None
  *
  ******************************************************************************/
-void gatt_sr_update_cback_cnt(tGATT_TCB& tcb, tGATT_IF gatt_if, bool is_inc,
-                              bool is_reset_first) {
+void gatt_sr_update_cback_cnt(tGATT_TCB& tcb, uint16_t cid, tGATT_IF gatt_if,
+                              bool is_inc, bool is_reset_first) {
   uint8_t idx = ((uint8_t)gatt_if) - 1;
+  tGATT_SR_CMD* sr_cmd_p = &tcb.sr_cmd;
 
   if (is_reset_first) {
-    gatt_sr_reset_cback_cnt(tcb);
+    gatt_sr_reset_cback_cnt(tcb, cid);
   }
   if (is_inc) {
-    tcb.sr_cmd.cback_cnt[idx]++;
+    sr_cmd_p->cback_cnt[idx]++;
   } else {
-    if (tcb.sr_cmd.cback_cnt[idx]) {
-      tcb.sr_cmd.cback_cnt[idx]--;
+    if (sr_cmd_p->cback_cnt[idx]) {
+      sr_cmd_p->cback_cnt[idx]--;
     }
   }
 }
@@ -1134,23 +1255,22 @@ void gatt_cmd_enq(tGATT_TCB& tcb, tGATT_CLCB* p_clcb, bool to_send,
   cmd.op_code = op_code;
   cmd.p_cmd = p_buf;
   cmd.p_clcb = p_clcb;
-
-  if (!to_send) {
-    // TODO: WTF why do we clear the queue here ?!
-    tcb.cl_cmd_q = std::queue<tGATT_CMD_Q>();
-  }
+  cmd.cid = p_clcb->cid;
 
   tcb.cl_cmd_q.push(cmd);
 }
 
 /** dequeue the command in the client CCB command queue */
-tGATT_CLCB* gatt_cmd_dequeue(tGATT_TCB& tcb, uint8_t* p_op_code) {
-  if (tcb.cl_cmd_q.empty()) return nullptr;
+tGATT_CLCB* gatt_cmd_dequeue(tGATT_TCB& tcb, uint16_t cid, uint8_t* p_op_code) {
+  std::queue<tGATT_CMD_Q>* cl_cmd_q_p = &tcb.cl_cmd_q;
 
-  tGATT_CMD_Q cmd = tcb.cl_cmd_q.front();
+  if (cl_cmd_q_p->empty()) return nullptr;
+
+  tGATT_CMD_Q cmd = cl_cmd_q_p->front();
   tGATT_CLCB* p_clcb = cmd.p_clcb;
   *p_op_code = cmd.op_code;
-  tcb.cl_cmd_q.pop();
+  p_clcb->cid = cid;
+  cl_cmd_q_p->pop();
 
   return p_clcb;
 }
@@ -1227,7 +1347,7 @@ void gatt_end_operation(tGATT_CLCB* p_clcb, tGATT_STATUS status, void* p_data) {
 
   operation = p_clcb->operation;
   conn_id = p_clcb->conn_id;
-  alarm_cancel(p_clcb->gatt_rsp_timer_ent);
+  gatt_stop_rsp_timer(p_clcb);
 
   gatt_clcb_dealloc(p_clcb);
 
@@ -1255,7 +1375,7 @@ void gatt_cleanup_upon_disc(const RawAddress& bda, uint16_t reason,
     tGATT_CLCB* p_clcb = &gatt_cb.clcb[i];
     if (!p_clcb->in_use || p_clcb->p_tcb != p_tcb) continue;
 
-    alarm_cancel(p_clcb->gatt_rsp_timer_ent);
+    gatt_stop_rsp_timer(p_clcb);
     VLOG(1) << "found p_clcb conn_id=" << +p_clcb->conn_id;
     if (p_clcb->operation == GATTC_OPTYPE_NONE) {
       gatt_clcb_dealloc(p_clcb);

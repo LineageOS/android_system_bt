@@ -244,7 +244,7 @@ static void l2c_csm_closed(tL2C_CCB* p_ccb, uint16_t event, void* p_data) {
           case L2CAP_LE_RESULT_INSUFFICIENT_AUTHENTICATION:
           case L2CAP_LE_RESULT_INSUFFICIENT_ENCRYP_KEY_SIZE:
           case L2CAP_LE_RESULT_INSUFFICIENT_ENCRYP:
-            l2cu_reject_ble_connection(p_ccb->p_lcb, p_ccb->remote_id, result);
+            l2cu_reject_ble_connection(p_ccb, p_ccb->remote_id, result);
             l2cu_release_ccb(p_ccb);
             break;
             // TODO: Handle the other return codes
@@ -452,7 +452,7 @@ static void l2c_csm_term_w4_sec_comp(tL2C_CCB* p_ccb, uint16_t event,
       } else {
         if (p_ccb->p_lcb->transport == BT_TRANSPORT_LE)
           l2cu_reject_ble_connection(
-              p_ccb->p_lcb, p_ccb->remote_id,
+              p_ccb, p_ccb->remote_id,
               L2CAP_LE_RESULT_INSUFFICIENT_AUTHENTICATION);
         else
           l2cu_send_peer_connect_rsp(p_ccb, L2CAP_CONN_SECURITY_BLOCK, 0);
