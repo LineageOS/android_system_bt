@@ -1454,8 +1454,8 @@ static void btm_sec_check_upgrade(tBTM_SEC_DEV_REC* p_dev_rec,
 }
 
 tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(
-    const RawAddress& bd_addr, uint16_t security_required, uint16_t handle,
-    bool is_originator, tBTM_SEC_CALLBACK* p_callback, void* p_ref_data) {
+    const RawAddress& bd_addr, uint16_t security_required, bool is_originator,
+    tBTM_SEC_CALLBACK* p_callback, void* p_ref_data) {
   tBTM_SEC_DEV_REC* p_dev_rec;
   tBTM_STATUS rc = BTM_SUCCESS;
   bool chk_acp_auth_done = false;
@@ -1466,7 +1466,7 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(
   /* Find or get oldest record */
   p_dev_rec = btm_find_or_alloc_dev(bd_addr);
 
-  p_dev_rec->hci_handle = handle;
+  p_dev_rec->hci_handle = BTM_GetHCIConnHandle(bd_addr, BT_TRANSPORT_BR_EDR);
 
   if ((!is_originator) && (security_required & BTM_SEC_MODE4_LEVEL4)) {
     bool local_supports_sc =
@@ -1662,7 +1662,7 @@ tBTM_STATUS btm_sec_l2cap_access_req_by_requirement(
  *
  ******************************************************************************/
 tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
-                                     uint16_t handle, bool is_originator,
+                                     bool is_originator,
                                      tBTM_SEC_CALLBACK* p_callback,
                                      void* p_ref_data) {
   constexpr tBT_TRANSPORT transport =
@@ -1697,9 +1697,8 @@ tBTM_STATUS btm_sec_l2cap_access_req(const RawAddress& bd_addr, uint16_t psm,
     security_required = p_serv_rec->security_flags;
   }
 
-  return btm_sec_l2cap_access_req_by_requirement(bd_addr, security_required,
-                                                 handle, is_originator,
-                                                 p_callback, p_ref_data);
+  return btm_sec_l2cap_access_req_by_requirement(
+      bd_addr, security_required, is_originator, p_callback, p_ref_data);
 }
 
 /*******************************************************************************
