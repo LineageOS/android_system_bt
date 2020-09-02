@@ -159,7 +159,7 @@ void btm_update_scanner_filter_policy(tBTM_BLE_SFP scan_policy) {
  *
  ******************************************************************************/
 void btm_ble_bgconn_cancel_if_disconnected(const RawAddress& bd_addr) {
-  if (btm_ble_get_conn_st() != BLE_CONNECTING) return;
+  if (!btm_cb.ble_ctr_cb.is_connection_state_connecting()) return;
 
   auto map_it = background_connections.find(bd_addr);
   if (map_it != background_connections.end()) {
@@ -370,7 +370,7 @@ bool btm_ble_start_auto_conn() {
     return false;
   }
 
-  if (btm_ble_get_conn_st() != BLE_CONN_IDLE ||
+  if (!btm_cb.ble_ctr_cb.is_connection_state_idle() ||
       !background_connections_pending()) {
     return false;
   }
@@ -407,9 +407,8 @@ bool btm_ble_start_auto_conn() {
 bool btm_ble_stop_auto_conn() {
   BTM_TRACE_EVENT("%s", __func__);
 
-  if (btm_ble_get_conn_st() != BLE_CONNECTING) {
-    BTM_TRACE_DEBUG("conn_st = %d, not in auto conn state, cannot stop",
-                    btm_ble_get_conn_st());
+  if (!btm_cb.ble_ctr_cb.is_connection_state_connecting()) {
+    BTM_TRACE_DEBUG("%s not in auto conn state, cannot stop", __func__);
     return false;
   }
 

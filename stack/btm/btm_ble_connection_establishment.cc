@@ -31,21 +31,6 @@
 extern void btm_ble_advertiser_notify_terminated_legacy(
     uint8_t status, uint16_t connection_handle);
 
-/** This function get BLE connection state */
-tBTM_BLE_CONN_ST btm_ble_get_conn_st(void) {
-  return btm_cb.ble_ctr_cb.conn_state;
-}
-
-/** This function set BLE connection state */
-void btm_ble_set_conn_st(tBTM_BLE_CONN_ST new_st) {
-  btm_cb.ble_ctr_cb.conn_state = new_st;
-
-  if (new_st == BLE_CONNECTING)
-    btm_ble_set_topology_mask(BTM_BLE_STATE_INIT_BIT);
-  else
-    btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
-}
-
 void btm_send_hci_create_connection(
     uint16_t scan_int, uint16_t scan_win, uint8_t init_filter_policy,
     uint8_t addr_type_peer, const RawAddress& bda_peer, uint8_t addr_type_own,
@@ -83,7 +68,8 @@ void btm_send_hci_create_connection(
                                   conn_timeout, min_ce_len, max_ce_len);
   }
 
-  btm_ble_set_conn_st(BLE_CONNECTING);
+  btm_cb.ble_ctr_cb.set_connection_state_connecting();
+  btm_ble_set_topology_mask(BTM_BLE_STATE_INIT_BIT);
 }
 
 /** LE connection complete. */
@@ -94,10 +80,12 @@ void btm_ble_create_ll_conn_complete(uint8_t status) {
                << loghex(status);
 
   if (status == HCI_ERR_COMMAND_DISALLOWED) {
-    btm_ble_set_conn_st(BLE_CONNECTING);
+    btm_cb.ble_ctr_cb.set_connection_state_connecting();
+    btm_ble_set_topology_mask(BTM_BLE_STATE_INIT_BIT);
     LOG(ERROR) << "LE Create Connection - command disallowed";
   } else {
-    btm_ble_set_conn_st(BLE_CONN_IDLE);
+    btm_cb.ble_ctr_cb.set_connection_state_idle();
+    btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
     btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, NULL, status);
   }
 }
@@ -173,7 +161,8 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
         android::bluetooth::hci::STATUS_UNKNOWN);
 
     if (role == HCI_ROLE_MASTER) {
-      btm_ble_set_conn_st(BLE_CONN_IDLE);
+      btm_cb.ble_ctr_cb.set_connection_state_idle();
+      btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
     }
 
     connection_manager::on_connection_complete(bda);
@@ -200,7 +189,8 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
 
     role = HCI_ROLE_UNKNOWN;
     if (status != HCI_ERR_ADVERTISING_TIMEOUT) {
-      btm_ble_set_conn_st(BLE_CONN_IDLE);
+      btm_cb.ble_ctr_cb.set_connection_state_idle();
+      btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
       btm_ble_disable_resolving_list(BTM_BLE_RL_INIT, true);
     } else {
       btm_cb.ble_ctr_cb.inq_var.adv_mode = BTM_BLE_ADV_DISABLE;
@@ -216,7 +206,8 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
 
 void btm_ble_create_conn_cancel() {
   btsnd_hcic_ble_create_conn_cancel();
-  btm_ble_set_conn_st(BLE_CONN_CANCEL);
+  btm_cb.ble_ctr_cb.set_connection_state_cancelled();
+  btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
 }
 
 void btm_ble_create_conn_cancel_complete(uint8_t* p) {
@@ -238,8 +229,9 @@ void btm_ble_create_conn_cancel_complete(uint8_t* p) {
     /* This is a sign that logic around keeping connection state is broken */
     LOG(ERROR)
         << "Attempt to cancel LE connection, when no connection is pending.";
-    if (btm_ble_get_conn_st() == BLE_CONN_CANCEL) {
-      btm_ble_set_conn_st(BLE_CONN_IDLE);
+    if (btm_cb.ble_ctr_cb.is_connection_state_cancelled()) {
+      btm_cb.ble_ctr_cb.set_connection_state_idle();
+      btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
       btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, nullptr, status);
     }
   }
