@@ -402,6 +402,12 @@ typedef struct t_l2c_linkcb {
   void SetDisconnectReason(uint16_t disc_reason) { disc_reason_ = disc_reason; }
 
   tBT_TRANSPORT transport;
+  bool is_transport_br_edr() const { return transport == BT_TRANSPORT_BR_EDR; }
+  bool is_transport_ble() const { return transport == BT_TRANSPORT_LE; }
+  bool is_transport_valid() const {
+    return is_transport_ble() || is_transport_br_edr();
+  }
+
   uint8_t initiating_phys;  // LE PHY used for connection initiation
   tBLE_ADDR_TYPE ble_addr_type;
   uint16_t tx_data_len; /* tx data length used in data length extension */
