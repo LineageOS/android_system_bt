@@ -968,6 +968,65 @@ extern void btsnd_hcic_remove_iso_data_path(
     uint16_t iso_handle, uint8_t data_path_dir,
     base::OnceCallback<void(uint8_t*, uint16_t)> cb);
 
+#define HCIC_PARAM_SIZE_PERIODIC_ADVERTISING_CREATE_SYNC 14
+#define HCIC_PARAM_SIZE_PERIODIC_ADVERTISING_CREATE_SYNC_CANCEL 0
+#define HCIC_PARAM_SIZE_PERIODIC_ADVERTISING_TERMINATE_SYNC 2
+#define HCIC_PARAM_SIZE_ADD_DEVICE_TO_PERIODIC_ADVERTISER_LIST 8
+#define HCIC_PARAM_SIZE_REMOVE_DEVICE_FROM_PERIODIC_ADVERTISER_LIST 8
+#define HCIC_PARAM_SIZE_CLEAR_PERIODIC_ADVERTISER_LIST 0
+#define HCIC_PARAM_SIZE_READ_PERIODIC_ADVERTISER_LIST_SIZE 0
+#define HCIC_PARAM_SIZE_SET_PERIODIC_ADVERTISING_RECEIVE_ENABLE 3
+#define HCIC_PARAM_SIZE_PERIODIC_ADVERTISING_SYNC_TRANSFER 6
+#define HCIC_PARAM_SIZE_PERIODIC_ADVERTISING_SET_INFO_TRANSFER 6
+#define HCIC_PARAM_SIZE_SET_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMS 8
+#define HCIC_PARAM_SIZE_SET_DEFAULT_PERIODIC_ADVERTISING_SYNC_TRANSFER_PARAMS 8
+
+extern void btsnd_hcic_ble_periodic_advertising_create_sync(
+    uint8_t options, uint8_t adv_sid, uint8_t adv_addr_type,
+    const RawAddress& adv_addr, uint16_t skip_num, uint16_t sync_timeout,
+    uint8_t sync_cte_type);
+
+extern void btsnd_hcic_ble_periodic_advertising_create_sync_cancel(
+    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
+extern void btsnd_hcic_ble_periodic_advertising_terminate_sync(
+    uint16_t sync_handle, base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
+extern void btsnd_hci_ble_add_device_to_periodic_advertiser_list(
+    uint8_t adv_addr_type, const RawAddress& adv_addr, uint8_t adv_sid,
+    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
+extern void btsnd_hci_ble_remove_device_from_periodic_advertiser_list(
+    uint8_t adv_addr_type, const RawAddress& adv_addr, uint8_t adv_sid,
+    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
+extern void btsnd_hci_ble_clear_periodic_advertiser_list(
+    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
+extern void btsnd_hci_ble_read_periodic_advertiser_list_size(
+    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
+extern void btsnd_hcic_ble_set_periodic_advertising_receive_enable(
+    uint16_t sync_handle, bool enable,
+    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
+extern void btsnd_hcic_ble_periodic_advertising_sync_transfer(
+    uint16_t conn_handle, uint16_t service_data, uint16_t sync_handle,
+    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
+extern void btsnd_hcic_ble_periodic_advertising_set_info_transfer(
+    uint16_t conn_handle, uint16_t service_data, uint8_t adv_handle,
+    base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
+extern void btsnd_hcic_ble_set_periodic_advertising_sync_transfer_params(
+    uint16_t conn_handle, uint8_t mode, uint16_t skip, uint16_t sync_timeout,
+    uint8_t cte_type, base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
+extern void
+btsnd_hcic_ble_set_default_periodic_advertising_sync_transfer_params(
+    uint16_t conn_handle, uint8_t mode, uint16_t skip, uint16_t sync_timeout,
+    uint8_t cte_type, base::OnceCallback<void(uint8_t*, uint16_t)> cb);
+
 #define HCIC_PARAM_SIZE_WRITE_AUTHENT_PAYLOAD_TOUT 4
 
 #define HCI__WRITE_AUTHENT_PAYLOAD_TOUT_HANDLE_OFF 0
