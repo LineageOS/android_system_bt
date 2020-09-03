@@ -392,7 +392,7 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
 
   if (start) {
     /* shared inquiry database, do not allow observe if any inquiry is active */
-    if (BTM_BLE_IS_OBS_ACTIVE(btm_cb.ble_ctr_cb.scan_activity)) {
+    if (btm_cb.ble_ctr_cb.is_ble_observe_active()) {
       BTM_TRACE_ERROR("%s Observe Already Active", __func__);
       return status;
     }
@@ -402,7 +402,7 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
     status = BTM_CMD_STARTED;
 
     /* scan is not started */
-    if (!BTM_BLE_IS_SCAN_ACTIVE(btm_cb.ble_ctr_cb.scan_activity)) {
+    if (!btm_cb.ble_ctr_cb.is_ble_scan_active()) {
       /* allow config of scan type */
       cache.ClearAll();
       p_inq->scan_type = (p_inq->scan_type == BTM_BLE_SCAN_MODE_NONE)
@@ -421,7 +421,7 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
     }
 
     if (status == BTM_CMD_STARTED) {
-      btm_cb.ble_ctr_cb.scan_activity |= BTM_LE_OBSERVE_ACTIVE;
+      btm_cb.ble_ctr_cb.set_ble_observe_active();
       if (duration != 0) {
         /* start observer timer */
         uint64_t duration_ms = duration * 1000;
@@ -429,7 +429,7 @@ tBTM_STATUS BTM_BleObserve(bool start, uint8_t duration,
                            btm_ble_observer_timer_timeout, NULL);
       }
     }
-  } else if (BTM_BLE_IS_OBS_ACTIVE(btm_cb.ble_ctr_cb.scan_activity)) {
+  } else if (btm_cb.ble_ctr_cb.is_ble_observe_active()) {
     status = BTM_CMD_STARTED;
     btm_ble_stop_observe();
   } else {
@@ -1150,12 +1150,12 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t duration) {
 
   /* if selective connection is active, or inquiry is already active, reject it
    */
-  if (BTM_BLE_IS_INQ_ACTIVE(p_ble_cb->scan_activity)) {
+  if (p_ble_cb->is_ble_inquiry_active()) {
     BTM_TRACE_ERROR("LE Inquiry is active, can not start inquiry");
     return (BTM_BUSY);
   }
 
-  if (!BTM_BLE_IS_SCAN_ACTIVE(p_ble_cb->scan_activity)) {
+  if (!p_ble_cb->is_ble_scan_active()) {
     cache.ClearAll();
     btm_send_hci_set_scan_params(
         BTM_BLE_SCAN_MODE_ACTI, BTM_BLE_LOW_LATENCY_SCAN_INT,
@@ -1181,7 +1181,7 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t duration) {
 
   if (status == BTM_CMD_STARTED) {
     p_inq->inq_active |= BTM_BLE_GENERAL_INQUIRY;
-    p_ble_cb->scan_activity |= BTM_BLE_GENERAL_INQUIRY;
+    p_ble_cb->set_ble_inquiry_active();
 
     BTM_TRACE_DEBUG("btm_ble_start_inquiry inq_active = 0x%02x",
                     p_inq->inq_active);
@@ -1342,8 +1342,7 @@ uint8_t btm_ble_is_discoverable(const RawAddress& bda,
   uint8_t data_len;
 
   /* for observer, always "discoverable */
-  if (BTM_BLE_IS_OBS_ACTIVE(btm_cb.ble_ctr_cb.scan_activity))
-    rt |= BTM_BLE_OBS_RESULT;
+  if (btm_cb.ble_ctr_cb.is_ble_observe_active()) rt |= BTM_BLE_OBS_RESULT;
 
   if (!adv_data.empty()) {
     const uint8_t* p_flag = AdvertiseDataParser::GetFieldByType(
@@ -1638,7 +1637,7 @@ void btm_ble_process_ext_adv_pkt(uint8_t data_len, uint8_t* data) {
   uint16_t event_type, periodic_adv_int, direct_address_type;
 
   /* Only process the results if the inquiry is still active */
-  if (!BTM_BLE_IS_SCAN_ACTIVE(btm_cb.ble_ctr_cb.scan_activity)) return;
+  if (!btm_cb.ble_ctr_cb.is_ble_scan_active()) return;
 
   /* Extract the number of reports in this event. */
   STREAM_TO_UINT8(num_reports, p);
@@ -1700,7 +1699,7 @@ void btm_ble_process_adv_pkt(uint8_t data_len, uint8_t* data) {
   int8_t rssi;
 
   /* Only process the results if the inquiry is still active */
-  if (!BTM_BLE_IS_SCAN_ACTIVE(btm_cb.ble_ctr_cb.scan_activity)) return;
+  if (!btm_cb.ble_ctr_cb.is_ble_scan_active()) return;
 
   /* Extract the number of reports in this event. */
   STREAM_TO_UINT8(num_reports, p);
@@ -1839,7 +1838,7 @@ void btm_ble_process_adv_pkt_cont(uint16_t evt_type, uint8_t addr_type,
                 /* scan repsonse to be updated */
                 (!p_i->scan_rsp))) {
       update = true;
-    } else if (BTM_BLE_IS_OBS_ACTIVE(btm_cb.ble_ctr_cb.scan_activity)) {
+    } else if (btm_cb.ble_ctr_cb.is_ble_observe_active()) {
       update = false;
     } else {
       /* if yes, skip it */
@@ -1970,13 +1969,14 @@ void btm_ble_stop_inquiry(void) {
 
   alarm_cancel(p_ble_cb->inq_var.inquiry_timer);
 
-  p_ble_cb->scan_activity &= ~BTM_BLE_INQUIRY_MASK;
+  p_ble_cb->reset_ble_inquiry();
 
   /* If no more scan activity, stop LE scan now */
-  if (!BTM_BLE_IS_SCAN_ACTIVE(p_ble_cb->scan_activity))
+  if (!p_ble_cb->is_ble_scan_active()) {
     btm_ble_stop_scan();
-  else if ((p_ble_cb->inq_var.scan_interval != BTM_BLE_LOW_LATENCY_SCAN_INT) ||
-           (p_ble_cb->inq_var.scan_window != BTM_BLE_LOW_LATENCY_SCAN_WIN)) {
+  } else if ((p_ble_cb->inq_var.scan_interval !=
+              BTM_BLE_LOW_LATENCY_SCAN_INT) ||
+             (p_ble_cb->inq_var.scan_window != BTM_BLE_LOW_LATENCY_SCAN_WIN)) {
     BTM_TRACE_DEBUG("%s: setting default params for ongoing observe", __func__);
     btm_ble_stop_scan();
     btm_ble_start_scan();
@@ -2005,12 +2005,14 @@ static void btm_ble_stop_observe(void) {
 
   alarm_cancel(p_ble_cb->observer_timer);
 
-  p_ble_cb->scan_activity &= ~BTM_LE_OBSERVE_ACTIVE;
+  p_ble_cb->reset_ble_observe();
 
   p_ble_cb->p_obs_results_cb = NULL;
   p_ble_cb->p_obs_cmpl_cb = NULL;
 
-  if (!BTM_BLE_IS_SCAN_ACTIVE(p_ble_cb->scan_activity)) btm_ble_stop_scan();
+  if (!p_ble_cb->is_ble_scan_active()) {
+    btm_ble_stop_scan();
+  }
 
   if (p_obs_cb) (p_obs_cb)(&btm_cb.btm_inq_vars.inq_cmpl_info);
 }
