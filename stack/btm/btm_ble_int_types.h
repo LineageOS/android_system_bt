@@ -166,13 +166,6 @@ constexpr uint8_t BTM_BLE_WL_INIT = 1;
 #define BTM_BLE_RL_ADV 4
 typedef uint8_t tBTM_BLE_RL_STATE;
 
-/* BLE connection state */
-typedef enum : uint8_t {
-  BLE_CONN_IDLE = 0,
-  BLE_CONNECTING = 2,
-  BLE_CONN_CANCEL = 3,
-} tBTM_BLE_CONN_ST;
-
 typedef struct { void* p_param; } tBTM_BLE_CONN_REQ;
 
 /* LE state request */
@@ -247,7 +240,24 @@ typedef struct {
   /* white list information */
   uint8_t wl_state;
 
-  tBTM_BLE_CONN_ST conn_state;
+ private:
+  enum : uint8_t { /* BLE connection state */
+                   BLE_CONN_IDLE = 0,
+                   BLE_CONNECTING = 2,
+                   BLE_CONN_CANCEL = 3,
+  } conn_state_{BLE_CONN_IDLE};
+
+ public:
+  bool is_connection_state_idle() const { return conn_state_ == BLE_CONN_IDLE; }
+  bool is_connection_state_connecting() const {
+    return conn_state_ == BLE_CONNECTING;
+  }
+  bool is_connection_state_cancelled() const {
+    return conn_state_ == BLE_CONN_CANCEL;
+  }
+  void set_connection_state_idle() { conn_state_ = BLE_CONN_IDLE; }
+  void set_connection_state_connecting() { conn_state_ = BLE_CONNECTING; }
+  void set_connection_state_cancelled() { conn_state_ = BLE_CONN_CANCEL; }
 
   /* random address management control block */
   tBTM_LE_RANDOM_CB addr_mgnt_cb;

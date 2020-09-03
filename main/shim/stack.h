@@ -18,6 +18,7 @@
 
 #include <mutex>
 
+#include "main/shim/acl.h"
 #include "main/shim/btm.h"
 
 #include "gd/module.h"
@@ -47,6 +48,7 @@ class Stack {
   bool IsRunning();
 
   StackManager* GetStackManager();
+  legacy::Acl* GetAcl();
   Btm* GetBtm();
   os::Handler* GetHandler();
 
@@ -58,6 +60,7 @@ class Stack {
   bool is_running_ = false;
   os::Thread* stack_thread_ = nullptr;
   os::Handler* stack_handler_ = nullptr;
+  legacy::Acl* acl_ = nullptr;
   Btm* btm_ = nullptr;
 
   void Start(ModuleList* modules);

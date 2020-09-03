@@ -24,6 +24,8 @@
 #include "device/include/controller.h"
 #include "gd/common/callback.h"
 #include "gd/neighbor/name.h"
+#include "gd/security/security_module.h"
+#include "gd/security/ui.h"
 #include "main/shim/btm.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/controller.h"
@@ -229,6 +231,197 @@ void btm_api_process_extended_inquiry_result(RawAddress raw_address,
                                            eir_len);
   }
 }
+
+class ShimUi : public bluetooth::security::UI {
+ public:
+  static ShimUi* GetInstance() {
+    static ShimUi instance;
+    return &instance;
+  }
+
+  ShimUi(const ShimUi&) = delete;
+  ShimUi& operator=(const ShimUi&) = delete;
+
+  void SetBtaCallbacks(const tBTM_APPL_INFO* bta_callbacks) {
+    bta_callbacks_ = bta_callbacks;
+    if (bta_callbacks->p_pin_callback == nullptr) {
+      LOG_INFO("UNIMPLEMENTED %s pin_callback", __func__);
+    }
+
+    if (bta_callbacks->p_link_key_callback == nullptr) {
+      LOG_INFO("UNIMPLEMENTED %s link_key_callback", __func__);
+    }
+
+    if (bta_callbacks->p_auth_complete_callback == nullptr) {
+      LOG_INFO("UNIMPLEMENTED %s auth_complete_callback", __func__);
+    }
+
+    if (bta_callbacks->p_bond_cancel_cmpl_callback == nullptr) {
+      LOG_INFO("UNIMPLEMENTED %s bond_cancel_complete_callback", __func__);
+    }
+
+    if (bta_callbacks->p_le_callback == nullptr) {
+      LOG_INFO("UNIMPLEMENTED %s le_callback", __func__);
+    }
+
+    if (bta_callbacks->p_le_key_callback == nullptr) {
+      LOG_INFO("UNIMPLEMENTED %s le_key_callback", __func__);
+    }
+  }
+
+  void DisplayPairingPrompt(const bluetooth::hci::AddressWithType& address,
+                            std::string name) {
+    waiting_for_pairing_prompt_ = true;
+    bt_bdname_t legacy_name{0};
+    memcpy(legacy_name.name, name.data(), name.length());
+  }
+
+  void Cancel(const bluetooth::hci::AddressWithType& address) {
+    LOG(WARNING) << " ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ " << __func__;
+  }
+
+  void DisplayConfirmValue(const bluetooth::hci::AddressWithType& address,
+                           std::string name, uint32_t numeric_value) {
+    waiting_for_pairing_prompt_ = false;
+    bt_bdname_t legacy_name{0};
+    memcpy(legacy_name.name, name.data(), name.length());
+
+    if (bta_callbacks_->p_sp_callback) {
+      // Call sp_cback for IO_REQ
+      tBTM_SP_IO_REQ io_req_evt_data;
+      io_req_evt_data.bd_addr = bluetooth::ToRawAddress(address.GetAddress());
+      // Local IO Caps (Phone is always DisplayYesNo)
+      io_req_evt_data.io_cap = BTM_IO_CAP_IO;
+      io_req_evt_data.auth_req = BTM_AUTH_AP_YES;
+      io_req_evt_data.oob_data = BTM_OOB_NONE;
+      (*bta_callbacks_->p_sp_callback)(BTM_SP_IO_REQ_EVT,
+                                       (tBTM_SP_EVT_DATA*)&io_req_evt_data);
+
+      // Call sp_cback for IO_RSP
+      tBTM_SP_IO_RSP io_rsp_evt_data;
+      io_rsp_evt_data.bd_addr = bluetooth::ToRawAddress(address.GetAddress());
+      // TODO(optedoblivion): Get remote IO Cap to set here
+      io_rsp_evt_data.io_cap = BTM_IO_CAP_IO;
+      io_rsp_evt_data.auth_req = BTM_AUTH_AP_YES;
+      io_rsp_evt_data.oob_data = BTM_OOB_NONE;
+      (*bta_callbacks_->p_sp_callback)(BTM_SP_IO_RSP_EVT,
+                                       (tBTM_SP_EVT_DATA*)&io_rsp_evt_data);
+
+      // Call sp_cback for USER_CONFIRMATION
+      tBTM_SP_EVT_DATA user_cfm_req_evt_data;
+      user_cfm_req_evt_data.cfm_req.bd_addr =
+          bluetooth::ToRawAddress(address.GetAddress());
+      user_cfm_req_evt_data.cfm_req.num_val = numeric_value;
+      // If we pop a dialog then it isn't just_works
+      user_cfm_req_evt_data.cfm_req.just_works = false;
+      // TODO(optedoblivion): BTA needs a callback for when just works auto
+      // accepted (i.e. =true)
+      (*bta_callbacks_->p_sp_callback)(BTM_SP_CFM_REQ_EVT,
+                                       &user_cfm_req_evt_data);
+    }
+  }
+
+  void DisplayYesNoDialog(const bluetooth::hci::AddressWithType& address,
+                          std::string name) {
+    waiting_for_pairing_prompt_ = false;
+    bt_bdname_t legacy_name{0};
+    memcpy(legacy_name.name, name.data(), name.length());
+  }
+
+  void DisplayEnterPasskeyDialog(const bluetooth::hci::AddressWithType& address,
+                                 std::string name) {
+    waiting_for_pairing_prompt_ = false;
+    LOG_WARN("UNIMPLEMENTED, Passkey not supported in GD");
+  }
+
+  void DisplayPasskey(const bluetooth::hci::AddressWithType& address,
+                      std::string name, uint32_t passkey) {
+    waiting_for_pairing_prompt_ = false;
+    LOG_WARN("UNIMPLEMENTED, Passkey not supported in GD");
+  }
+
+  bool waiting_for_pairing_prompt_ = false;
+
+ private:
+  ShimUi() : bta_callbacks_(nullptr) {}
+  ~ShimUi() {}
+  const tBTM_APPL_INFO* bta_callbacks_;
+};
+
+ShimUi* shim_ui_ = nullptr;
+
+class ShimBondListener : public bluetooth::security::ISecurityManagerListener {
+ public:
+  static ShimBondListener* GetInstance() {
+    static ShimBondListener instance;
+    return &instance;
+  }
+
+  ShimBondListener(const ShimBondListener&) = delete;
+  ShimBondListener& operator=(const ShimBondListener&) = delete;
+
+  void SetBtaCallbacks(const tBTM_APPL_INFO* bta_callbacks) {
+    bta_callbacks_ = bta_callbacks;
+    if (bta_callbacks->p_pin_callback == nullptr) {
+      LOG_INFO("UNIMPLEMENTED %s pin_callback", __func__);
+    }
+
+    if (bta_callbacks->p_link_key_callback == nullptr) {
+      LOG_INFO("UNIMPLEMENTED %s link_key_callback", __func__);
+    }
+
+    if (bta_callbacks->p_auth_complete_callback == nullptr) {
+      LOG_INFO("UNIMPLEMENTED %s auth_complete_callback", __func__);
+    }
+
+    if (bta_callbacks->p_bond_cancel_cmpl_callback == nullptr) {
+      LOG_INFO("UNIMPLEMENTED %s bond_cancel_complete_callback", __func__);
+    }
+
+    if (bta_callbacks->p_le_callback == nullptr) {
+      LOG_INFO("UNIMPLEMENTED %s le_callback", __func__);
+    }
+
+    if (bta_callbacks->p_le_key_callback == nullptr) {
+      LOG_INFO("UNIMPLEMENTED %s le_key_callback", __func__);
+    }
+  }
+
+  void OnDeviceBonded(bluetooth::hci::AddressWithType device) override {
+    // Call sp_cback for LINK_KEY_NOTIFICATION
+    // Call AUTHENTICATION_COMPLETE callback
+  }
+
+  void OnDeviceUnbonded(bluetooth::hci::AddressWithType device) override {
+    if (bta_callbacks_->p_sp_callback) {
+      // SP_CBACK (what events?)
+      // link key notification
+      // auth complete
+    }
+  }
+
+  void OnDeviceBondFailed(bluetooth::hci::AddressWithType device) override {
+    if (bta_callbacks_->p_sp_callback) {
+      // SP_CBACK (what events?)
+      // link key notification
+      // auth complete
+    }
+  }
+
+  void OnEncryptionStateChanged(
+      bluetooth::hci::EncryptionChangeView encryption_change_view) override {
+    if (bta_callbacks_->p_sp_callback) {
+      // SP_CBACK (what events?)
+      // link key notification
+      // auth complete
+    }
+  }
+
+ private:
+  ShimBondListener() : bta_callbacks_(nullptr) {}
+  ~ShimBondListener() {}
+  const tBTM_APPL_INFO* bta_callbacks_;
+};
 
 tBTM_STATUS bluetooth::shim::BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
                                               tBTM_CMPL_CB* p_cmpl_cb) {
@@ -912,33 +1105,47 @@ tBTM_STATUS bluetooth::shim::BTM_SecBond(const RawAddress& bd_addr,
                                                     transport, device_type);
 }
 
-bool bluetooth::shim::BTM_SecRegister(const tBTM_APPL_INFO* p_cb_info) {
-  CHECK(p_cb_info != nullptr);
+bool bluetooth::shim::BTM_SecRegister(const tBTM_APPL_INFO* bta_callbacks) {
+  CHECK(bta_callbacks != nullptr);
   LOG_DEBUG("%s Registering security application", __func__);
 
-  if (p_cb_info->p_pin_callback == nullptr) {
+  if (bta_callbacks->p_pin_callback == nullptr) {
     LOG_INFO("UNIMPLEMENTED %s pin_callback", __func__);
   }
 
-  if (p_cb_info->p_link_key_callback == nullptr) {
+  if (bta_callbacks->p_link_key_callback == nullptr) {
     LOG_INFO("UNIMPLEMENTED %s link_key_callback", __func__);
   }
 
-  if (p_cb_info->p_auth_complete_callback == nullptr) {
+  if (bta_callbacks->p_auth_complete_callback == nullptr) {
     LOG_INFO("UNIMPLEMENTED %s auth_complete_callback", __func__);
   }
 
-  if (p_cb_info->p_bond_cancel_cmpl_callback == nullptr) {
+  if (bta_callbacks->p_bond_cancel_cmpl_callback == nullptr) {
     LOG_INFO("UNIMPLEMENTED %s bond_cancel_complete_callback", __func__);
   }
 
-  if (p_cb_info->p_le_callback == nullptr) {
+  if (bta_callbacks->p_le_callback == nullptr) {
     LOG_INFO("UNIMPLEMENTED %s le_callback", __func__);
   }
 
-  if (p_cb_info->p_le_key_callback == nullptr) {
+  if (bta_callbacks->p_le_key_callback == nullptr) {
     LOG_INFO("UNIMPLEMENTED %s le_key_callback", __func__);
   }
+
+  ShimBondListener::GetInstance()->SetBtaCallbacks(bta_callbacks);
+
+  bluetooth::shim::GetSecurityModule()
+      ->GetSecurityManager()
+      ->RegisterCallbackListener(ShimBondListener::GetInstance(),
+                                 bluetooth::shim::GetGdShimHandler());
+
+  ShimUi::GetInstance()->SetBtaCallbacks(bta_callbacks);
+
+  bluetooth::shim::GetSecurityModule()
+      ->GetSecurityManager()
+      ->SetUserInterfaceHandler(ShimUi::GetInstance(),
+                                bluetooth::shim::GetGdShimHandler());
 
   return true;
 }
@@ -953,6 +1160,26 @@ tBTM_STATUS bluetooth::shim::BTM_SecBondCancel(const RawAddress& bd_addr) {
 
 bool bluetooth::shim::BTM_SecDeleteDevice(const RawAddress& bd_addr) {
   return Stack::GetInstance()->GetBtm()->RemoveBond(bd_addr);
+}
+
+void bluetooth::shim::BTM_ConfirmReqReply(tBTM_STATUS res,
+                                          const RawAddress& bd_addr) {
+  // Send for both Classic and LE until we can determine the type
+  bool accept = res == BTM_SUCCESS;
+  hci::AddressWithType address = ToAddressWithType(bd_addr, 0);
+  hci::AddressWithType address2 = ToAddressWithType(bd_addr, 1);
+  auto security_manager =
+      bluetooth::shim::GetSecurityModule()->GetSecurityManager();
+  if (ShimUi::GetInstance()->waiting_for_pairing_prompt_) {
+    LOG(INFO) << "interpreting confirmation as pairing accept " << address;
+    security_manager->OnPairingPromptAccepted(address, accept);
+    security_manager->OnPairingPromptAccepted(address2, accept);
+    ShimUi::GetInstance()->waiting_for_pairing_prompt_ = false;
+  } else {
+    LOG(INFO) << "interpreting confirmation as yes/no confirmation " << address;
+    security_manager->OnConfirmYesNo(address, accept);
+    security_manager->OnConfirmYesNo(address2, accept);
+  }
 }
 
 uint16_t bluetooth::shim::BTM_GetHCIConnHandle(const RawAddress& remote_bda,

@@ -543,7 +543,7 @@ static void gatt_le_data_ind(uint16_t chan, const RawAddress& bd_addr,
       LOG(WARNING) << "ATT - Ignored L2CAP data while in state: "
                    << +gatt_get_ch_state(p_tcb);
     } else
-      gatt_data_process(*p_tcb, p_buf);
+      gatt_data_process(*p_tcb, L2CAP_ATT_CID, p_buf);
   }
 
   osi_free(p_buf);
@@ -773,7 +773,7 @@ static void gatt_l2cif_data_ind_cback(uint16_t lcid, BT_HDR* p_buf) {
   tGATT_TCB* p_tcb = gatt_find_tcb_by_cid(lcid);
   if (p_tcb && gatt_get_ch_state(p_tcb) == GATT_CH_OPEN) {
     /* process the data */
-    gatt_data_process(*p_tcb, p_buf);
+    gatt_data_process(*p_tcb, lcid, p_buf);
   }
 
   osi_free(p_buf);
@@ -838,7 +838,7 @@ static void gatt_send_conn_cback(tGATT_TCB* p_tcb) {
  * Returns          void
  *
  ******************************************************************************/
-void gatt_data_process(tGATT_TCB& tcb, BT_HDR* p_buf) {
+void gatt_data_process(tGATT_TCB& tcb, uint16_t cid, BT_HDR* p_buf) {
   uint8_t* p = (uint8_t*)(p_buf + 1) + p_buf->offset;
   uint8_t op_code, pseudo_op_code;
 
@@ -858,18 +858,18 @@ void gatt_data_process(tGATT_TCB& tcb, BT_HDR* p_buf) {
      */
     LOG(ERROR) << __func__
                << ": ATT - Rcvd L2CAP data, unknown cmd: " << loghex(op_code);
-    gatt_send_error_rsp(tcb, GATT_REQ_NOT_SUPPORTED, op_code, 0, false);
+    gatt_send_error_rsp(tcb, cid, GATT_REQ_NOT_SUPPORTED, op_code, 0, false);
     return;
   }
 
   if (op_code == GATT_SIGN_CMD_WRITE) {
-    gatt_verify_signature(tcb, p_buf);
+    gatt_verify_signature(tcb, cid, p_buf);
   } else {
     /* message from client */
     if ((op_code % 2) == 0)
-      gatt_server_handle_client_req(tcb, op_code, msg_len, p);
+      gatt_server_handle_client_req(tcb, cid, op_code, msg_len, p);
     else
-      gatt_client_handle_server_rsp(tcb, op_code, msg_len, p);
+      gatt_client_handle_server_rsp(tcb, cid, op_code, msg_len, p);
   }
 }
 

@@ -23,8 +23,6 @@
 #include "stack/include/hcidefs.h"
 #include "stack/include/l2cap_hci_link_interface.h"
 
-void btm_ble_set_conn_st(tBTM_BLE_CONN_ST new_st);  // TODO link internally
-
 void btm_ble_advertiser_notify_terminated_legacy(uint8_t status,
                                                  uint16_t connection_handle);
 
@@ -61,8 +59,8 @@ void acl_ble_enhanced_connection_complete(
                                                 local_rpa);
 
   if (peer_addr_type & BLE_ADDR_TYPE_ID_BIT)
-    btm_ble_refresh_peer_resolvable_private_addr(address_with_type.bda,
-                                                 peer_rpa, BLE_ADDR_RANDOM);
+    btm_ble_refresh_peer_resolvable_private_addr(
+        address_with_type.bda, peer_rpa, tBTM_SEC_BLE::BTM_BLE_ADDR_RRA);
   btm_ble_update_mode_operation(role, &address_with_type.bda, HCI_SUCCESS);
 
   if (role == HCI_ROLE_SLAVE)
@@ -72,7 +70,8 @@ void acl_ble_enhanced_connection_complete(
 void acl_ble_connection_fail(const tBLE_BD_ADDR& address_with_type,
                              uint16_t handle, bool enhanced, uint8_t status) {
   if (status != HCI_ERR_ADVERTISING_TIMEOUT) {
-    btm_ble_set_conn_st(BLE_CONN_IDLE);
+    btm_cb.ble_ctr_cb.set_connection_state_idle();
+    btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
     btm_ble_disable_resolving_list(BTM_BLE_RL_INIT, true);
   } else {
     btm_cb.ble_ctr_cb.inq_var.adv_mode = BTM_BLE_ADV_DISABLE;

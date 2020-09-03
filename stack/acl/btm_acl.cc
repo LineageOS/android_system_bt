@@ -42,6 +42,7 @@
 #include "device/include/controller.h"
 #include "device/include/interop.h"
 #include "include/l2cap_hci_link_interface.h"
+#include "main/shim/acl_api.h"
 #include "main/shim/btm_api.h"
 #include "main/shim/shim.h"
 #include "osi/include/log.h"
@@ -243,19 +244,19 @@ bool btm_ble_get_acl_remote_addr(tBTM_SEC_DEV_REC* p_dev_rec,
   }
 
   switch (p_dev_rec->ble.active_addr_type) {
-    case BTM_BLE_ADDR_PSEUDO:
+    case tBTM_SEC_BLE::BTM_BLE_ADDR_PSEUDO:
       conn_addr = p_dev_rec->bd_addr;
       *p_addr_type = p_dev_rec->ble.ble_addr_type;
       break;
 
-    case BTM_BLE_ADDR_RRA:
+    case tBTM_SEC_BLE::BTM_BLE_ADDR_RRA:
       conn_addr = p_dev_rec->ble.cur_rand_addr;
       *p_addr_type = BLE_ADDR_RANDOM;
       break;
 
-    case BTM_BLE_ADDR_STATIC:
-      conn_addr = p_dev_rec->ble.identity_addr;
-      *p_addr_type = p_dev_rec->ble.identity_addr_type;
+    case tBTM_SEC_BLE::BTM_BLE_ADDR_STATIC:
+      conn_addr = p_dev_rec->ble.identity_address_with_type.bda;
+      *p_addr_type = p_dev_rec->ble.identity_address_with_type.type;
       break;
 
     default:
@@ -2432,11 +2433,12 @@ bool acl_refresh_remote_address(const tBTM_SEC_DEV_REC* p_sec_rec,
     return false;
   }
 
-  if (rra_type == BTM_BLE_ADDR_PSEUDO) {
+  if (rra_type == tBTM_SEC_BLE::BTM_BLE_ADDR_PSEUDO) {
     /* use identity address, resolvable_private_addr is empty */
     if (rpa.IsEmpty()) {
-      p_acl->active_remote_addr_type = p_sec_rec->ble.identity_addr_type;
-      p_acl->active_remote_addr = p_sec_rec->ble.identity_addr;
+      p_acl->active_remote_addr_type =
+          p_sec_rec->ble.identity_address_with_type.type;
+      p_acl->active_remote_addr = p_sec_rec->ble.identity_address_with_type.bda;
     } else {
       p_acl->active_remote_addr_type = BLE_ADDR_RANDOM;
       p_acl->active_remote_addr = rpa;
@@ -2790,6 +2792,10 @@ constexpr uint16_t kDefaultPacketTypes =
 void acl_create_classic_connection(const RawAddress& bd_addr,
                                    bool there_are_high_priority_channels,
                                    bool is_bonding) {
+  if (bluetooth::shim::is_gd_acl_enabled()) {
+    bluetooth::shim::ACL_CreateClassicConnection(bd_addr);
+  }
+
   const bool controller_supports_role_switch =
       controller_get_interface()->supports_role_switch();
   const bool acl_allows_role_switch = acl_is_role_switch_allowed();

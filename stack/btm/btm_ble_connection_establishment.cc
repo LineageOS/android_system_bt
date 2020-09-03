@@ -31,21 +31,6 @@
 extern void btm_ble_advertiser_notify_terminated_legacy(
     uint8_t status, uint16_t connection_handle);
 
-/** This function get BLE connection state */
-tBTM_BLE_CONN_ST btm_ble_get_conn_st(void) {
-  return btm_cb.ble_ctr_cb.conn_state;
-}
-
-/** This function set BLE connection state */
-void btm_ble_set_conn_st(tBTM_BLE_CONN_ST new_st) {
-  btm_cb.ble_ctr_cb.conn_state = new_st;
-
-  if (new_st == BLE_CONNECTING)
-    btm_ble_set_topology_mask(BTM_BLE_STATE_INIT_BIT);
-  else
-    btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
-}
-
 void btm_send_hci_create_connection(
     uint16_t scan_int, uint16_t scan_win, uint8_t init_filter_policy,
     uint8_t addr_type_peer, const RawAddress& bda_peer, uint8_t addr_type_own,
@@ -83,7 +68,8 @@ void btm_send_hci_create_connection(
                                   conn_timeout, min_ce_len, max_ce_len);
   }
 
-  btm_ble_set_conn_st(BLE_CONNECTING);
+  btm_cb.ble_ctr_cb.set_connection_state_connecting();
+  btm_ble_set_topology_mask(BTM_BLE_STATE_INIT_BIT);
 }
 
 /** LE connection complete. */
@@ -94,24 +80,63 @@ void btm_ble_create_ll_conn_complete(uint8_t status) {
                << loghex(status);
 
   if (status == HCI_ERR_COMMAND_DISALLOWED) {
-    btm_ble_set_conn_st(BLE_CONNECTING);
+    btm_cb.ble_ctr_cb.set_connection_state_connecting();
+    btm_ble_set_topology_mask(BTM_BLE_STATE_INIT_BIT);
     LOG(ERROR) << "LE Create Connection - command disallowed";
   } else {
-    btm_ble_set_conn_st(BLE_CONN_IDLE);
+    btm_cb.ble_ctr_cb.set_connection_state_idle();
+    btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
     btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, NULL, status);
   }
+}
+
+static bool maybe_resolve_address(RawAddress bda, tBLE_ADDR_TYPE bda_type) {
+  bool match = false;
+  tBLE_ADDR_TYPE peer_addr_type = bda_type;
+  bool addr_is_rpa =
+      (peer_addr_type == BLE_ADDR_RANDOM && BTM_BLE_IS_RESOLVE_BDA(bda));
+
+  /* We must translate whatever address we received into the "pseudo" address.
+   * i.e. if we bonded with device that was using RPA for first connection,
+   * "pseudo" address is equal to this RPA. If it later decides to use Public
+   * address, or Random Static Address, we convert it into the "pseudo"
+   * address here. */
+  if (!addr_is_rpa || peer_addr_type & BLE_ADDR_TYPE_ID_BIT) {
+    match = btm_identity_addr_to_random_pseudo(&bda, &bda_type, true);
+  }
+
+  /* possiblly receive connection complete with resolvable random while
+     the device has been paired */
+  if (!match && addr_is_rpa) {
+    tBTM_SEC_DEV_REC* match_rec = btm_ble_resolve_random_addr(bda);
+    if (match_rec) {
+      LOG(INFO) << __func__ << ": matched and resolved random address";
+      match = true;
+      match_rec->ble.active_addr_type = tBTM_SEC_BLE::BTM_BLE_ADDR_RRA;
+      match_rec->ble.cur_rand_addr = bda;
+      if (!btm_ble_init_pseudo_addr(match_rec, bda)) {
+        /* assign the original address to be the current report address */
+        bda = match_rec->ble.pseudo_addr;
+        bda_type = match_rec->ble.ble_addr_type;
+      } else {
+        bda = match_rec->bd_addr;
+      }
+    } else {
+      LOG(INFO) << __func__ << ": unable to match and resolve random address";
+    }
+  }
+  return match;
 }
 
 /** LE connection complete. */
 void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
                            bool enhanced) {
-  uint8_t peer_addr_type;
   RawAddress local_rpa, peer_rpa;
-  uint8_t role, status, bda_type;
+  uint8_t role, status;
+  tBLE_ADDR_TYPE bda_type;
   uint16_t handle;
   RawAddress bda;
   uint16_t conn_interval, conn_latency, conn_timeout;
-  bool match = false;
 
   STREAM_TO_UINT8(status, p);
   STREAM_TO_UINT16(handle, p);
@@ -132,39 +157,9 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
                : android::bluetooth::hci::BLE_EVT_CONN_COMPLETE_EVT;
 
   if (status == HCI_SUCCESS) {
-    peer_addr_type = bda_type;
-    bool addr_is_rpa =
-        (peer_addr_type == BLE_ADDR_RANDOM && BTM_BLE_IS_RESOLVE_BDA(bda));
+    tBLE_ADDR_TYPE peer_addr_type = bda_type;
+    bool match = maybe_resolve_address(bda, bda_type);
 
-    /* We must translate whatever address we received into the "pseudo" address.
-     * i.e. if we bonded with device that was using RPA for first connection,
-     * "pseudo" address is equal to this RPA. If it later decides to use Public
-     * address, or Random Static Address, we convert it into the "pseudo"
-     * address here. */
-    if (!addr_is_rpa || peer_addr_type & BLE_ADDR_TYPE_ID_BIT) {
-      match = btm_identity_addr_to_random_pseudo(&bda, &bda_type, true);
-    }
-
-    /* possiblly receive connection complete with resolvable random while
-       the device has been paired */
-    if (!match && addr_is_rpa) {
-      tBTM_SEC_DEV_REC* match_rec = btm_ble_resolve_random_addr(bda);
-      if (match_rec) {
-        LOG(INFO) << __func__ << ": matched and resolved random address";
-        match = true;
-        match_rec->ble.active_addr_type = BTM_BLE_ADDR_RRA;
-        match_rec->ble.cur_rand_addr = bda;
-        if (!btm_ble_init_pseudo_addr(match_rec, bda)) {
-          /* assign the original address to be the current report address */
-          bda = match_rec->ble.pseudo_addr;
-          bda_type = match_rec->ble.ble_addr_type;
-        } else {
-          bda = match_rec->bd_addr;
-        }
-      } else {
-        LOG(INFO) << __func__ << ": unable to match and resolve random address";
-      }
-    }
     // Log for the HCI success case after resolving Bluetooth address
     bluetooth::common::LogLinkLayerConnectionEvent(
         &bda, handle, android::bluetooth::DIRECTION_UNKNOWN,
@@ -173,7 +168,8 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
         android::bluetooth::hci::STATUS_UNKNOWN);
 
     if (role == HCI_ROLE_MASTER) {
-      btm_ble_set_conn_st(BLE_CONN_IDLE);
+      btm_cb.ble_ctr_cb.set_connection_state_idle();
+      btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
     }
 
     connection_manager::on_connection_complete(bda);
@@ -187,9 +183,13 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
       btm_ble_refresh_local_resolvable_private_addr(bda, local_rpa);
 
       if (peer_addr_type & BLE_ADDR_TYPE_ID_BIT)
-        btm_ble_refresh_peer_resolvable_private_addr(bda, peer_rpa,
-                                                     BLE_ADDR_RANDOM);
+        btm_ble_refresh_peer_resolvable_private_addr(
+            bda, peer_rpa, tBTM_SEC_BLE::BTM_BLE_ADDR_RRA);
     }
+    btm_ble_update_mode_operation(role, &bda, status);
+
+    if (role == HCI_ROLE_SLAVE)
+      btm_ble_advertiser_notify_terminated_legacy(status, handle);
   } else {
     // Log for non HCI success case
     bluetooth::common::LogLinkLayerConnectionEvent(
@@ -200,23 +200,21 @@ void btm_ble_conn_complete(uint8_t* p, UNUSED_ATTR uint16_t evt_len,
 
     role = HCI_ROLE_UNKNOWN;
     if (status != HCI_ERR_ADVERTISING_TIMEOUT) {
-      btm_ble_set_conn_st(BLE_CONN_IDLE);
+      btm_cb.ble_ctr_cb.set_connection_state_idle();
+      btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
       btm_ble_disable_resolving_list(BTM_BLE_RL_INIT, true);
     } else {
       btm_cb.ble_ctr_cb.inq_var.adv_mode = BTM_BLE_ADV_DISABLE;
       btm_ble_disable_resolving_list(BTM_BLE_RL_ADV, true);
     }
+    btm_ble_update_mode_operation(role, &bda, status);
   }
-
-  btm_ble_update_mode_operation(role, &bda, status);
-
-  if (role == HCI_ROLE_SLAVE)
-    btm_ble_advertiser_notify_terminated_legacy(status, handle);
 }
 
 void btm_ble_create_conn_cancel() {
   btsnd_hcic_ble_create_conn_cancel();
-  btm_ble_set_conn_st(BLE_CONN_CANCEL);
+  btm_cb.ble_ctr_cb.set_connection_state_cancelled();
+  btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
 }
 
 void btm_ble_create_conn_cancel_complete(uint8_t* p) {
@@ -238,8 +236,9 @@ void btm_ble_create_conn_cancel_complete(uint8_t* p) {
     /* This is a sign that logic around keeping connection state is broken */
     LOG(ERROR)
         << "Attempt to cancel LE connection, when no connection is pending.";
-    if (btm_ble_get_conn_st() == BLE_CONN_CANCEL) {
-      btm_ble_set_conn_st(BLE_CONN_IDLE);
+    if (btm_cb.ble_ctr_cb.is_connection_state_cancelled()) {
+      btm_cb.ble_ctr_cb.set_connection_state_idle();
+      btm_ble_clear_topology_mask(BTM_BLE_STATE_INIT_BIT);
       btm_ble_update_mode_operation(HCI_ROLE_UNKNOWN, nullptr, status);
     }
   }
