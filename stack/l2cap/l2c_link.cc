@@ -833,7 +833,7 @@ static bool l2c_link_check_power_mode(tL2C_LCB* p_lcb) {
   }
 
   /* if we have packets to send */
-  if (need_to_active) {
+  if (need_to_active && !p_lcb->is_transport_ble()) {
     /* check power mode */
     tBTM_PM_MODE mode;
     if (BTM_ReadPowerMode(p_lcb->remote_bd_addr, &mode)) {
