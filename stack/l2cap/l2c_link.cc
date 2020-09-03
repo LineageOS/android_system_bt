@@ -912,7 +912,7 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, uint16_t local_cid,
 
       if ((!p_lcb->in_use) || (p_lcb->partial_segment_being_sent) ||
           (p_lcb->link_state != LST_CONNECTED) ||
-          (p_lcb->link_xmit_quota != 0) || (L2C_LINK_CHECK_POWER_MODE(p_lcb)))
+          (p_lcb->link_xmit_quota != 0) || (l2c_link_check_power_mode(p_lcb)))
         continue;
 
       /* See if we can send anything from the Link Queue */
@@ -949,7 +949,7 @@ void l2c_link_check_send_pkts(tL2C_LCB* p_lcb, uint16_t local_cid,
     /* If a partial segment is being sent, can't send anything else */
     if ((p_lcb->partial_segment_being_sent) ||
         (p_lcb->link_state != LST_CONNECTED) ||
-        (L2C_LINK_CHECK_POWER_MODE(p_lcb)))
+        (l2c_link_check_power_mode(p_lcb)))
       return;
 
     /* See if we can send anything from the link queue */
