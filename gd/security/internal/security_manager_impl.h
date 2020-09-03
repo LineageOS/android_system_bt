@@ -24,6 +24,7 @@
 #include "l2cap/classic/security_enforcement_interface.h"
 #include "l2cap/le/l2cap_le_module.h"
 #include "l2cap/le/security_enforcement_interface.h"
+#include "neighbor/name_db.h"
 #include "os/handler.h"
 #include "security/channel/security_manager_channel.h"
 #include "security/initial_informations.h"
@@ -57,7 +58,8 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
       channel::SecurityManagerChannel* security_manager_channel,
       hci::HciLayer* hci_layer,
       hci::AclManager* acl_manager,
-      storage::StorageModule* storage_module);
+      storage::StorageModule* storage_module,
+      neighbor::NameDbModule* name_db_module);
 
   ~SecurityManagerImpl() {
     /* L2CAP layer doesn't guarantee to send the registered OnCloseCallback during shutdown. Cleanup the remaining
@@ -239,6 +241,7 @@ class SecurityManagerImpl : public channel::ISecurityManagerChannelListener, pub
   storage::StorageModule* storage_module_ __attribute__((unused));
   record::SecurityRecordStorage security_record_storage_;
   record::SecurityRecordDatabase security_database_;
+  neighbor::NameDbModule* name_db_module_;
   std::unordered_map<hci::Address, std::shared_ptr<pairing::PairingHandler>> pairing_handler_map_;
   hci::IoCapability local_io_capability_ = kDefaultIoCapability;
   hci::AuthenticationRequirements local_authentication_requirements_ = kDefaultAuthenticationRequirements;
