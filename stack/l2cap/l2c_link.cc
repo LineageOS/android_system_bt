@@ -814,7 +814,7 @@ void l2c_pin_code_request(const RawAddress& bd_addr) {
  *                  false if nothing to send or not in park mode
  *
  ******************************************************************************/
-bool l2c_link_check_power_mode(tL2C_LCB* p_lcb) {
+static bool l2c_link_check_power_mode(tL2C_LCB* p_lcb) {
   tBTM_PM_MODE mode;
   tL2C_CCB* p_ccb;
   bool need_to_active = false;
