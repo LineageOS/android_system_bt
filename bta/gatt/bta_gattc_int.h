@@ -134,7 +134,7 @@ typedef struct {
 
 typedef struct {
   BT_HDR hdr;
-  uint16_t handle;
+  uint16_t cid;
 } tBTA_GATTC_API_CONFIRM;
 
 typedef tGATT_CL_COMPLETE tBTA_GATTC_CMPL;

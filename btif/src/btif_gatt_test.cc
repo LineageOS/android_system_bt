@@ -88,7 +88,7 @@ static void btif_test_command_complete_cback(uint16_t conn_id, tGATTC_OPTYPE op,
       break;
 
     case GATTC_OPTYPE_INDICATION:
-      GATTC_SendHandleValueConfirm(conn_id, p_data->handle);
+      GATTC_SendHandleValueConfirm(conn_id, p_data->cid);
       break;
 
     default:

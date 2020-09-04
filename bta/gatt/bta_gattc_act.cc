@@ -824,11 +824,11 @@ void bta_gattc_execute(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
 
 /** send handle value confirmation */
 void bta_gattc_confirm(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
-  uint16_t handle = p_data->api_confirm.handle;
+  uint16_t cid = p_data->api_confirm.cid;
 
   if (GATTC_SendHandleValueConfirm(p_data->api_confirm.hdr.layer_specific,
-                                   handle) != GATT_SUCCESS) {
-    LOG(ERROR) << __func__ << ": to handle=" << loghex(handle) << " failed";
+                                   cid) != GATT_SUCCESS) {
+    LOG(ERROR) << __func__ << ": to cid=" << loghex(cid) << " failed";
   } else {
     /* if over BR_EDR, inform PM for mode change */
     if (p_clcb->transport == BT_TRANSPORT_BR_EDR) {
@@ -1154,7 +1154,7 @@ bool bta_gattc_process_srvc_chg_ind(uint16_t conn_id, tBTA_GATTC_RCB* p_clrcb,
       }
     }
     /* send confirmation here if this is an indication, it should always be */
-    GATTC_SendHandleValueConfirm(conn_id, att_value->handle);
+    GATTC_SendHandleValueConfirm(conn_id, p_notify->cid);
 
     /* if connection available, refresh cache by doing discovery now */
     if (p_clcb) bta_gattc_sm_execute(p_clcb, BTA_GATTC_INT_DISCOVER_EVT, NULL);
@@ -1205,7 +1205,7 @@ void bta_gattc_process_indicate(uint16_t conn_id, tGATTC_OPTYPE op,
   if (!GATT_GetConnectionInfor(conn_id, &gatt_if, remote_bda, &transport)) {
     LOG(ERROR) << __func__ << ": indication/notif for unknown app";
     if (op == GATTC_OPTYPE_INDICATION)
-      GATTC_SendHandleValueConfirm(conn_id, handle);
+      GATTC_SendHandleValueConfirm(conn_id, p_data->cid);
     return;
   }
 
@@ -1213,7 +1213,7 @@ void bta_gattc_process_indicate(uint16_t conn_id, tGATTC_OPTYPE op,
   if (p_clrcb == NULL) {
     LOG(ERROR) << __func__ << ": indication/notif for unregistered app";
     if (op == GATTC_OPTYPE_INDICATION)
-      GATTC_SendHandleValueConfirm(conn_id, handle);
+      GATTC_SendHandleValueConfirm(conn_id, p_data->cid);
     return;
   }
 
@@ -1221,13 +1221,14 @@ void bta_gattc_process_indicate(uint16_t conn_id, tGATTC_OPTYPE op,
   if (p_srcb == NULL) {
     LOG(ERROR) << __func__ << ": indication/notif for unknown device, ignore";
     if (op == GATTC_OPTYPE_INDICATION)
-      GATTC_SendHandleValueConfirm(conn_id, handle);
+      GATTC_SendHandleValueConfirm(conn_id, p_data->cid);
     return;
   }
 
   tBTA_GATTC_CLCB* p_clcb = bta_gattc_find_clcb_by_conn_id(conn_id);
 
   notify.handle = handle;
+  notify.cid = p_data->cid;
 
   /* if service change indication/notification, don't forward to application */
   if (bta_gattc_process_srvc_chg_ind(conn_id, p_clrcb, p_srcb, p_clcb, &notify,
@@ -1257,7 +1258,7 @@ void bta_gattc_process_indicate(uint16_t conn_id, tGATTC_OPTYPE op,
   /* no one intersted and need ack? */
   else if (op == GATTC_OPTYPE_INDICATION) {
     VLOG(1) << __func__ << " no one interested, ack now";
-    GATTC_SendHandleValueConfirm(conn_id, handle);
+    GATTC_SendHandleValueConfirm(conn_id, p_data->cid);
   }
 }
 
