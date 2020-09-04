@@ -50,14 +50,16 @@ struct StoredAttribute {
       bluetooth::Uuid uuid;
     } included_service;
 
-    /* characteristic deifnition */
+    /* characteristic definition */
     struct {
       uint8_t properties;
       uint16_t value_handle;
       bluetooth::Uuid uuid;
     } characteristic;
 
-    /* for descriptor definition we don't store value*/
+    /* for descriptor we store value only for
+     * «Characteristic Extended Properties» */
+    uint16_t characteristic_extended_properties;
   } value;
 };
 
@@ -92,6 +94,8 @@ struct Characteristic {
 struct Descriptor {
   uint16_t handle;
   bluetooth::Uuid uuid;
+  /* set and used for «Characteristic Extended Properties» only */
+  uint16_t characteristic_extended_properties;
 };
 
 class DatabaseBuilder;
