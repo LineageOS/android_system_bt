@@ -324,6 +324,17 @@ typedef struct {
   uint8_t quota;         /* burst transmission quota */
 } tL2C_RR_SERV;
 
+typedef enum : uint8_t {
+  /* disable update connection parameters */
+  L2C_BLE_CONN_UPDATE_DISABLE = (1u << 0),
+  /* new connection parameter to be set */
+  L2C_BLE_NEW_CONN_PARAM = (1u << 1),
+  /* waiting for connection update finished */
+  L2C_BLE_UPDATE_PENDING = (1u << 2),
+  /* not using default connection parameters */
+  L2C_BLE_NOT_DEFAULT_PARAM = (1u << 3),
+} tCONN_UPDATE_MASK;
+
 /* Define a link control block. There is one link control block between
  * this device and any other device (i.e. BD ADDR).
 */
@@ -414,14 +425,7 @@ typedef struct t_l2c_linkcb {
   fixed_queue_t* le_sec_pending_q; /* LE coc channels waiting for security check
                                       completion */
   uint8_t sec_act;
-#define L2C_BLE_CONN_UPDATE_DISABLE \
-  0x1                              /* disable update connection parameters */
-#define L2C_BLE_NEW_CONN_PARAM 0x2 /* new connection parameter to be set */
-#define L2C_BLE_UPDATE_PENDING                  \
-  0x4 /* waiting for connection update finished \
-         */
-#define L2C_BLE_NOT_DEFAULT_PARAM \
-  0x8 /* not using default connection parameters */
+
   uint8_t conn_update_mask;
 
   uint16_t min_interval; /* parameters as requested by peripheral */
