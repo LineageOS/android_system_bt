@@ -50,6 +50,17 @@ class DatabaseBuilder {
    */
   std::pair<uint16_t, uint16_t> NextDescriptorRangeToExplore();
 
+  /* Return vector of "Characteristic Extended Properties" descriptors that must
+   * be read as part of service discovery process */
+  std::vector<uint16_t> DescriptorHandlesToRead() {
+    return descriptor_handles_to_read;
+  }
+
+  /* Assign value to descriptors from |DescriptorHandlesToRead()|. Values must
+   * be in same order. Returns |true| if all goes well, |false| if there is
+   * problem mapping values to descriptors. */
+  bool SetValueOfDescriptors(const std::vector<uint16_t>& values);
+
   /* Returns true, if GATT discovery is in progress, false if discovery was not
    * started, or is already finished.
    */
@@ -78,6 +89,10 @@ class DatabaseBuilder {
   /* sorted, unique set of start_handle, end_handle pair of all services that
    * have not yet been discovered */
   std::set<std::pair<uint16_t, uint16_t>> services_to_discover;
+
+  /* handles of "Characteristic Extended Properties" descriptors that must be
+   * read as part of service discovery process */
+  std::vector<uint16_t> descriptor_handles_to_read;
 };
 
 }  // namespace gatt
