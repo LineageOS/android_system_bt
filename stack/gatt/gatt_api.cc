@@ -866,14 +866,14 @@ tGATT_STATUS GATTC_ExecuteWrite(uint16_t conn_id, bool is_execute) {
  *                  as response to a handle value notification from server.
  *
  * Parameters       conn_id: connection identifier.
- *                  handle: the handle of the attribute confirmation.
+ *                  cid: channel id.
  *
  * Returns          GATT_SUCCESS if command started successfully.
  *
  ******************************************************************************/
-tGATT_STATUS GATTC_SendHandleValueConfirm(uint16_t conn_id, uint16_t handle) {
+tGATT_STATUS GATTC_SendHandleValueConfirm(uint16_t conn_id, uint16_t cid) {
   VLOG(1) << __func__ << " conn_id=" << loghex(conn_id)
-          << ", handle=" << loghex(handle);
+          << ", cid=" << loghex(cid);
 
   tGATT_TCB* p_tcb = gatt_get_tcb_by_idx(GATT_GET_TCB_IDX(conn_id));
   if (!p_tcb) {
@@ -887,14 +887,12 @@ tGATT_STATUS GATTC_SendHandleValueConfirm(uint16_t conn_id, uint16_t handle) {
     return GATT_SUCCESS;
   }
 
+  /*TODO Introduce timer per CID */
   alarm_cancel(p_tcb->ind_ack_timer);
 
   VLOG(1) << "notif_count= " << p_tcb->ind_count;
   /* send confirmation now */
-  tGATT_CL_MSG gatt_cl_msg;
-  gatt_cl_msg.handle = handle;
-  tGATT_STATUS ret =
-      attp_send_cl_msg(*p_tcb, nullptr, GATT_HANDLE_VALUE_CONF, &gatt_cl_msg);
+  tGATT_STATUS ret = attp_send_cl_confirmation_msg(*p_tcb, cid);
 
   p_tcb->ind_count = 0;
 
