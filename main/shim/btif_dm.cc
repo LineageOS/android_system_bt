@@ -152,8 +152,8 @@ void BTIF_RegisterBondStateChangeListener(
 void BTIF_DM_ssp_reply(const RawAddress bd_addr, uint8_t addr_type, bt_ssp_variant_t variant, uint8_t accept) {
   // TODO: GD expects to receive correct address type.
   // pass addr_type once it's properly set in btif layer
-  hci::AddressWithType address = ToAddressWithType(bd_addr, 0);
-  hci::AddressWithType address2 = ToAddressWithType(bd_addr, 1);
+  hci::AddressWithType address = ToAddressWithType(bd_addr, BLE_ADDR_PUBLIC);
+  hci::AddressWithType address2 = ToAddressWithType(bd_addr, BLE_ADDR_RANDOM);
   auto security_manager = bluetooth::shim::GetSecurityModule()->GetSecurityManager();
 
   if (variant == BT_SSP_VARIANT_PASSKEY_CONFIRMATION) {
@@ -182,8 +182,8 @@ void BTIF_DM_ssp_reply(const RawAddress bd_addr, uint8_t addr_type, bt_ssp_varia
 void BTIF_DM_pin_reply(const RawAddress bd_addr, uint8_t addr_type, uint8_t accept, uint8_t pin_len, bt_pin_code_t pin_code) {
   // TODO: GD expects to receive correct address type.
   // pass addr_type once it's properly set in btif layer
-  hci::AddressWithType address = ToAddressWithType(bd_addr, 0);
-  hci::AddressWithType address2 = ToAddressWithType(bd_addr, 1);
+  hci::AddressWithType address = ToAddressWithType(bd_addr, BLE_ADDR_PUBLIC);
+  hci::AddressWithType address2 = ToAddressWithType(bd_addr, BLE_ADDR_RANDOM);
   auto security_manager = bluetooth::shim::GetSecurityModule()->GetSecurityManager();
 
   if (!accept) {
