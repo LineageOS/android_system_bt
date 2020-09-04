@@ -58,7 +58,7 @@ using BtmRemoteDeviceName = tBTM_REMOTE_DEV_NAME;
 extern void btm_process_cancel_complete(uint8_t status, uint8_t mode);
 extern void btm_process_inq_complete(uint8_t status, uint8_t result_type);
 extern void btm_ble_process_adv_addr(RawAddress& raw_address,
-                                     uint8_t* address_type);
+                                     tBLE_ADDR_TYPE* address_type);
 extern void btm_ble_process_adv_pkt_cont(
     uint16_t event_type, uint8_t address_type, const RawAddress& raw_address,
     uint8_t primary_phy, uint8_t secondary_phy, uint8_t advertising_sid,
@@ -153,7 +153,8 @@ static void store_le_address_type(RawAddress address, tBLE_ADDR_TYPE type) {
 void Btm::ScanningCallbacks::on_advertisements(
     std::vector<std::shared_ptr<hci::LeReport>> reports) {
   for (auto le_report : reports) {
-    uint8_t address_type = static_cast<uint8_t>(le_report->address_type_);
+    tBLE_ADDR_TYPE address_type =
+        static_cast<tBLE_ADDR_TYPE>(le_report->address_type_);
     uint16_t extended_event_type = 0;
     uint8_t* report_data = nullptr;
     size_t report_len = 0;
