@@ -156,6 +156,7 @@ typedef union {
   bluetooth::Uuid uuid;        /* service declaration */
   tGATT_CHAR_DECL char_decl;   /* characteristic declaration */
   tGATT_INCL_SRVC incl_handle; /* included service */
+  uint16_t char_ext_prop;      /* Characteristic Extended Properties */
 } tGATT_ATTR_VALUE;
 
 /* Attribute UUID type
@@ -594,6 +595,7 @@ extern uint16_t gatts_add_included_service(tGATT_SVC_DB& db, uint16_t s_handle,
                                            const bluetooth::Uuid& service);
 extern uint16_t gatts_add_characteristic(tGATT_SVC_DB& db, tGATT_PERM perm,
                                          tGATT_CHAR_PROP property,
+                                         uint16_t extended_properties,
                                          const bluetooth::Uuid& char_uuid);
 extern uint16_t gatts_add_char_descr(tGATT_SVC_DB& db, tGATT_PERM perm,
                                      const bluetooth::Uuid& dscp_uuid);
