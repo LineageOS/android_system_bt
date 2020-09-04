@@ -33,6 +33,8 @@ const Uuid PRIMARY_SERVICE = Uuid::From16Bit(GATT_UUID_PRI_SERVICE);
 const Uuid SECONDARY_SERVICE = Uuid::From16Bit(GATT_UUID_SEC_SERVICE);
 const Uuid INCLUDE = Uuid::From16Bit(GATT_UUID_INCLUDE_SERVICE);
 const Uuid CHARACTERISTIC = Uuid::From16Bit(GATT_UUID_CHAR_DECLARE);
+const Uuid CHARACTERISTIC_EXTENDED_PROPERTIES =
+    Uuid::From16Bit(GATT_UUID_CHAR_EXT_PROP);
 
 Uuid SERVICE_1_UUID = Uuid::FromString("1800");
 Uuid SERVICE_2_UUID = Uuid::FromString("1801");
@@ -49,6 +51,10 @@ TEST(GattDatabaseTest, serialize_deserialize_binary_test) {
   builder.AddIncludedService(0x0002, SERVICE_2_UUID, 0x0010, 0x001f);
   builder.AddCharacteristic(0x0003, 0x0004, SERVICE_1_CHAR_1_UUID, 0x02);
   builder.AddDescriptor(0x0005, SERVICE_1_CHAR_1_DESC_1_UUID);
+  builder.AddDescriptor(0x0006, CHARACTERISTIC_EXTENDED_PROPERTIES);
+
+  // Set value of only «Characteristic Extended Properties» descriptor
+  builder.SetValueOfDescriptors({0x0001});
 
   Database db = builder.Build();
   std::vector<StoredAttribute> serialized = db.Serialize();
@@ -82,6 +88,11 @@ TEST(GattDatabaseTest, serialize_deserialize_binary_test) {
   // Descriptor
   EXPECT_EQ(serialized[4].handle, 0x0005);
   EXPECT_EQ(serialized[4].type, SERVICE_1_CHAR_1_DESC_1_UUID);
+
+  // Characteristic Extended Properties Descriptor
+  EXPECT_EQ(serialized[5].handle, 0x0006);
+  EXPECT_EQ(serialized[5].type, CHARACTERISTIC_EXTENDED_PROPERTIES);
+  EXPECT_EQ(serialized[5].value.characteristic_extended_properties, 0x0001);
 }
 
 /* This test makes sure that Service represented in StoredAttribute have proper
@@ -148,8 +159,8 @@ TEST(GattCacheTest, stored_attribute_to_binary_included_service_test) {
   EXPECT_EQ(memcmp(binary_form, &attr, len), 0);
 }
 
-/* This test makes sure that Characteristic represented in StoredAttribute have
- * proper binary format. */
+/* This test makes sure that «Characteristic Extended Properties» descriptor
+ * represented in StoredAttribute have proper binary format. */
 TEST(GattCacheTest, stored_attribute_to_binary_characteristic_test) {
   StoredAttribute attr;
 
@@ -239,5 +250,33 @@ TEST(GattDatabaseTest, hash_test) {
   std::reverse(hash.begin(), hash.end());
 
   EXPECT_EQ(hash, expected_hash);
+}
+
+/* This test makes sure that Descriptor represented in StoredAttribute have
+ * proper binary format. */
+TEST(GattCacheTest,
+     stored_attribute_to_binary_characteristic_extended_properties_test) {
+  StoredAttribute attr;
+
+  /* make sure padding at end of union is cleared */
+  memset(&attr, 0, sizeof(attr));
+
+  attr = {.handle = 0x0003,
+          .type = Uuid::FromString("2900"),
+          .value = {.characteristic_extended_properties = 0x0001}};
+
+  constexpr size_t len = sizeof(StoredAttribute);
+  // clang-format off
+  uint8_t binary_form[len] = {
+      /*handle */ 0x03, 0x00,
+      /* type */ 0x00, 0x00, 0x29, 0x00, 0x00, 0x00, 0x10, 0x00, 0x80, 0x00, 0x00, 0x80, 0x5F, 0x9B, 0x34, 0xFB,
+      /* characteristic extended properties */ 0x01, 0x00,
+      /* clear padding    */ 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00,
+                             0x00, 0x00, 0x00, 0x00};
+  // clang-format on
+
+  // useful for debugging:
+  // LOG(ERROR) << " " << base::HexEncode(&attr, len);
+  EXPECT_EQ(memcmp(binary_form, &attr, len), 0);
 }
 }  // namespace gatt
