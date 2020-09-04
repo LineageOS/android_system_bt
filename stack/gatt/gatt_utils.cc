@@ -571,8 +571,9 @@ void gatt_start_conf_timer(tGATT_TCB* p_tcb) {
  * Returns          void
  *
  ******************************************************************************/
-void gatt_start_ind_ack_timer(tGATT_TCB& tcb) {
+void gatt_start_ind_ack_timer(tGATT_TCB& tcb, uint16_t cid) {
   /* start notification cache timer */
+  /* TODO: set timer per CID */
   alarm_set_on_mloop(tcb.ind_ack_timer, GATT_WAIT_FOR_RSP_TIMEOUT_MS,
                      gatt_ind_ack_timeout, &tcb);
 }
@@ -664,7 +665,10 @@ void gatt_ind_ack_timeout(void* data) {
 
   LOG(WARNING) << __func__ << ": send ack now";
   p_tcb->ind_count = 0;
-  attp_send_cl_msg(*p_tcb, nullptr, GATT_HANDLE_VALUE_CONF, NULL);
+  /*TODO: For now ATT used only, but we need to have timeout per CID
+   * and use it here corretly.
+   */
+  attp_send_cl_confirmation_msg(*p_tcb, L2CAP_ATT_CID);
 }
 /*******************************************************************************
  *

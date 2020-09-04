@@ -471,6 +471,7 @@ typedef union {
   tGATT_VALUE att_value;
   uint16_t mtu;
   uint16_t handle;
+  uint16_t cid;
 } tGATT_CL_COMPLETE;
 
 /* GATT client operation type, used in client callback function
