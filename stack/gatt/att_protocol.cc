@@ -442,6 +442,35 @@ tGATT_STATUS attp_cl_send_cmd(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
 
 /*******************************************************************************
  *
+ * Function         attp_send_cl_confirmation_msg
+ *
+ * Description      This function sends the client confirmation
+ *                  message to server.
+ *
+ * Parameter        p_tcb: pointer to the connection control block.
+ *                  cid: channel id
+ *
+ * Returns          GATT_SUCCESS if successfully sent; otherwise error code.
+ *
+ *
+ ******************************************************************************/
+tGATT_STATUS attp_send_cl_confirmation_msg(tGATT_TCB& tcb, uint16_t cid) {
+  BT_HDR* p_cmd = NULL;
+  p_cmd = attp_build_opcode_cmd(GATT_HANDLE_VALUE_CONF);
+
+  if (p_cmd == NULL) return GATT_NO_RESOURCES;
+
+  /* no pending request or value confirmation */
+  tGATT_STATUS att_ret = attp_send_msg_to_l2cap(tcb, cid, p_cmd);
+  if (att_ret != GATT_CONGESTED && att_ret != GATT_SUCCESS) {
+    return GATT_INTERNAL_ERROR;
+  }
+
+  return att_ret;
+}
+
+/*******************************************************************************
+ *
  * Function         attp_send_cl_msg
  *
  * Description      This function sends the client request or confirmation
@@ -460,6 +489,12 @@ tGATT_STATUS attp_send_cl_msg(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
                               uint8_t op_code, tGATT_CL_MSG* p_msg) {
   BT_HDR* p_cmd = NULL;
   uint16_t offset = 0, handle;
+
+  if (!p_clcb) {
+    LOG(ERROR) << "Missing p_clcb" << +op_code;
+    return GATT_ILLEGAL_PARAMETER;
+  }
+
   uint16_t payload_size = gatt_tcb_get_payload_size_tx(tcb, p_clcb->cid);
 
   switch (op_code) {
@@ -492,10 +527,6 @@ tGATT_STATUS attp_send_cl_msg(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
       if (!GATT_HANDLE_IS_VALID(handle)) return GATT_ILLEGAL_PARAMETER;
 
       p_cmd = attp_build_handle_cmd(op_code, handle, offset);
-      break;
-
-    case GATT_HANDLE_VALUE_CONF:
-      p_cmd = attp_build_opcode_cmd(op_code);
       break;
 
     case GATT_REQ_PREPARE_WRITE:
