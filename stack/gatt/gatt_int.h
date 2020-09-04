@@ -439,6 +439,7 @@ extern bool gatt_profile_get_eatt_support(
     base::OnceCallback<void(const RawAddress&, bool)> cb);
 
 /* Functions provided by att_protocol.cc */
+extern tGATT_STATUS attp_send_cl_confirmation_msg(tGATT_TCB& tcb, uint16_t cid);
 extern tGATT_STATUS attp_send_cl_msg(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
                                      uint8_t op_code, tGATT_CL_MSG* p_msg);
 extern BT_HDR* attp_build_sr_msg(tGATT_TCB& tcb, uint8_t op_code,
@@ -466,7 +467,7 @@ extern void gatt_start_conf_timer(tGATT_TCB* p_tcb);
 extern void gatt_rsp_timeout(void* data);
 extern void gatt_indication_confirmation_timeout(void* data);
 extern void gatt_ind_ack_timeout(void* data);
-extern void gatt_start_ind_ack_timer(tGATT_TCB& tcb);
+extern void gatt_start_ind_ack_timer(tGATT_TCB& tcb, uint16_t cid);
 extern tGATT_STATUS gatt_send_error_rsp(tGATT_TCB& tcb, uint16_t cid,
                                         uint8_t err_code, uint8_t op_code,
                                         uint16_t handle, bool deq);
