@@ -965,14 +965,6 @@ void bta_gattc_op_cmpl(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
   }
 }
 
-/** operation completed */
-void bta_gattc_ignore_op_cmpl(UNUSED_ATTR tBTA_GATTC_CLCB* p_clcb,
-                              tBTA_GATTC_DATA* p_data) {
-  /* receive op complete when discovery is started, ignore the response,
-      and wait for discovery finish and resent */
-  VLOG(1) << __func__ << ": op = " << +p_data->hdr.layer_specific;
-}
-
 /** start a search in the local server cache */
 void bta_gattc_search(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data) {
   tGATT_STATUS status = GATT_INTERNAL_ERROR;
