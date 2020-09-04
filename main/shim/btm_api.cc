@@ -24,6 +24,7 @@
 #include "device/include/controller.h"
 #include "gd/common/callback.h"
 #include "gd/neighbor/name.h"
+#include "gd/os/log.h"
 #include "gd/security/security_module.h"
 #include "gd/security/ui.h"
 #include "main/shim/btm.h"
@@ -232,6 +233,11 @@ void btm_api_process_extended_inquiry_result(RawAddress raw_address,
   }
 }
 
+namespace {
+std::unordered_map<bluetooth::hci::AddressWithType, bt_bdname_t>
+    address_name_map_;
+}
+
 class ShimUi : public bluetooth::security::UI {
  public:
   static ShimUi* GetInstance() {
@@ -274,18 +280,15 @@ class ShimUi : public bluetooth::security::UI {
     waiting_for_pairing_prompt_ = true;
     bt_bdname_t legacy_name{0};
     memcpy(legacy_name.name, name.data(), name.length());
+    // TODO(optedoblivion): Handle callback to BTA for BLE
   }
 
   void Cancel(const bluetooth::hci::AddressWithType& address) {
     LOG(WARNING) << " ■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■■ " << __func__;
   }
 
-  void DisplayConfirmValue(const bluetooth::hci::AddressWithType& address,
-                           std::string name, uint32_t numeric_value) {
-    waiting_for_pairing_prompt_ = false;
-    bt_bdname_t legacy_name{0};
-    memcpy(legacy_name.name, name.data(), name.length());
-
+  void HandleConfirm(const bluetooth::hci::AddressWithType& address,
+                     bt_bdname_t legacy_name, uint32_t numeric_value) {
     if (bta_callbacks_->p_sp_callback) {
       // Call sp_cback for IO_REQ
       tBTM_SP_IO_REQ io_req_evt_data;
@@ -302,6 +305,7 @@ class ShimUi : public bluetooth::security::UI {
       io_rsp_evt_data.bd_addr = bluetooth::ToRawAddress(address.GetAddress());
       // TODO(optedoblivion): Get remote IO Cap to set here
       io_rsp_evt_data.io_cap = BTM_IO_CAP_IO;
+      // TODO(optedoblivion): Get remote AUTH REQ to set here
       io_rsp_evt_data.auth_req = BTM_AUTH_AP_YES;
       io_rsp_evt_data.oob_data = BTM_OOB_NONE;
       (*bta_callbacks_->p_sp_callback)(BTM_SP_IO_RSP_EVT,
@@ -314,6 +318,11 @@ class ShimUi : public bluetooth::security::UI {
       user_cfm_req_evt_data.cfm_req.num_val = numeric_value;
       // If we pop a dialog then it isn't just_works
       user_cfm_req_evt_data.cfm_req.just_works = false;
+
+      address_name_map_.emplace(address, legacy_name);
+      memcpy((char*)user_cfm_req_evt_data.cfm_req.bd_name, legacy_name.name,
+             BD_NAME_LEN);
+
       // TODO(optedoblivion): BTA needs a callback for when just works auto
       // accepted (i.e. =true)
       (*bta_callbacks_->p_sp_callback)(BTM_SP_CFM_REQ_EVT,
@@ -321,11 +330,20 @@ class ShimUi : public bluetooth::security::UI {
     }
   }
 
+  void DisplayConfirmValue(const bluetooth::hci::AddressWithType& address,
+                           std::string name, uint32_t numeric_value) {
+    waiting_for_pairing_prompt_ = false;
+    bt_bdname_t legacy_name{0};
+    memcpy(legacy_name.name, name.data(), name.length());
+    HandleConfirm(address, legacy_name, numeric_value);
+  }
+
   void DisplayYesNoDialog(const bluetooth::hci::AddressWithType& address,
                           std::string name) {
     waiting_for_pairing_prompt_ = false;
     bt_bdname_t legacy_name{0};
     memcpy(legacy_name.name, name.data(), name.length());
+    HandleConfirm(address, legacy_name, 0);
   }
 
   void DisplayEnterPasskeyDialog(const bluetooth::hci::AddressWithType& address,
@@ -390,31 +408,54 @@ class ShimBondListener : public bluetooth::security::ISecurityManagerListener {
   void OnDeviceBonded(bluetooth::hci::AddressWithType device) override {
     // Call sp_cback for LINK_KEY_NOTIFICATION
     // Call AUTHENTICATION_COMPLETE callback
+    if (device.GetAddressType() ==
+        bluetooth::hci::AddressType::PUBLIC_DEVICE_ADDRESS) {
+      auto it = address_name_map_.find(device);
+      bt_bdname_t tmp_name;
+      if (it != address_name_map_.end()) {
+        tmp_name = it->second;
+      }
+      BD_NAME name;
+      memcpy((char*)name, tmp_name.name, BD_NAME_LEN);
+
+      if (*bta_callbacks_->p_link_key_callback) {
+        LinkKey key;  // Never want to send the key to the stack
+        (*bta_callbacks_->p_link_key_callback)(
+            bluetooth::ToRawAddress(device.GetAddress()), 0, name, key,
+            BTM_LKEY_TYPE_COMBINATION);
+      }
+      if (*bta_callbacks_->p_auth_complete_callback) {
+        (*bta_callbacks_->p_auth_complete_callback)(
+            bluetooth::ToRawAddress(device.GetAddress()), 0, name, BTM_SUCCESS);
+      }
+    }
   }
 
   void OnDeviceUnbonded(bluetooth::hci::AddressWithType device) override {
-    if (bta_callbacks_->p_sp_callback) {
-      // SP_CBACK (what events?)
-      // link key notification
-      // auth complete
+    if (bta_callbacks_->p_bond_cancel_cmpl_callback) {
+      (*bta_callbacks_->p_bond_cancel_cmpl_callback)(BTM_SUCCESS);
     }
   }
 
   void OnDeviceBondFailed(bluetooth::hci::AddressWithType device) override {
-    if (bta_callbacks_->p_sp_callback) {
-      // SP_CBACK (what events?)
-      // link key notification
-      // auth complete
+    auto it = address_name_map_.find(device);
+    bt_bdname_t tmp_name;
+    if (it != address_name_map_.end()) {
+      tmp_name = it->second;
+    }
+    BD_NAME name;
+    memcpy((char*)name, tmp_name.name, BD_NAME_LEN);
+
+    if (bta_callbacks_->p_auth_complete_callback) {
+      (*bta_callbacks_->p_auth_complete_callback)(
+          bluetooth::ToRawAddress(device.GetAddress()), 0, name,
+          BTM_NOT_AUTHORIZED);
     }
   }
 
   void OnEncryptionStateChanged(
       bluetooth::hci::EncryptionChangeView encryption_change_view) override {
-    if (bta_callbacks_->p_sp_callback) {
-      // SP_CBACK (what events?)
-      // link key notification
-      // auth complete
-    }
+    // TODO(optedoblivion): Find BTA callback for this to call
   }
 
  private:
@@ -1158,6 +1199,14 @@ tBTM_STATUS bluetooth::shim::BTM_SecBondCancel(const RawAddress& bd_addr) {
   }
 }
 
+bool bluetooth::shim::BTM_SecAddDevice(const RawAddress& bd_addr,
+                                       DEV_CLASS dev_class, BD_NAME bd_name,
+                                       uint8_t* features, LinkKey* link_key,
+                                       uint8_t key_type, uint8_t pin_length) {
+  // Check if GD has a security record for the device
+  return BTM_SUCCESS;
+}
+
 bool bluetooth::shim::BTM_SecDeleteDevice(const RawAddress& bd_addr) {
   return Stack::GetInstance()->GetBtm()->RemoveBond(bd_addr);
 }
@@ -1220,5 +1269,47 @@ tBTM_STATUS bluetooth::shim::BTM_SetEncryption(const RawAddress& bd_addr,
 
   // TODO(hsz): Re-encrypt the link after first bonded
 
+  return BTM_SUCCESS;
+}
+
+void bluetooth::shim::BTM_SecClearSecurityFlags(const RawAddress& bd_addr) {
+  // TODO(optedoblivion): Call RemoveBond on device address
+}
+
+char* bluetooth::shim::BTM_SecReadDevName(const RawAddress& address) {
+  char name[] = "TODO: See if this is needed";
+  char* n = name;
+  return n;
+}
+
+bool bluetooth::shim::BTM_SecAddRmtNameNotifyCallback(
+    tBTM_RMT_NAME_CALLBACK* p_callback) {
+  // TODO(optedoblivion): keep track of callback
+  LOG_WARN("Unimplemented");
+  return true;
+}
+
+bool bluetooth::shim::BTM_SecDeleteRmtNameNotifyCallback(
+    tBTM_RMT_NAME_CALLBACK* p_callback) {
+  // TODO(optedoblivion): stop keeping track of callback
+  LOG_WARN("Unimplemented");
+  return true;
+}
+
+void bluetooth::shim::BTM_PINCodeReply(const RawAddress& bd_addr, uint8_t res,
+                                       uint8_t pin_len, uint8_t* p_pin) {
+  ASSERT_LOG(!bluetooth::shim::is_gd_shim_enabled(), "Unreachable code path");
+}
+
+void bluetooth::shim::BTM_RemoteOobDataReply(tBTM_STATUS res,
+                                             const RawAddress& bd_addr,
+                                             const Octet16& c,
+                                             const Octet16& r) {
+  ASSERT_LOG(!bluetooth::shim::is_gd_shim_enabled(), "Unreachable code path");
+}
+
+tBTM_STATUS bluetooth::shim::BTM_SetDeviceClass(DEV_CLASS dev_class) {
+  // TODO(optedoblivion): see if we need this, I don't think we do
+  LOG_WARN("Unimplemented");
   return BTM_SUCCESS;
 }
