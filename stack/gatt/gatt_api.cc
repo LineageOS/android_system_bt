@@ -106,12 +106,16 @@ static uint16_t compute_service_size(btgatt_db_element_t* service, int count) {
     if (el->type == BTGATT_DB_PRIMARY_SERVICE ||
         el->type == BTGATT_DB_SECONDARY_SERVICE ||
         el->type == BTGATT_DB_DESCRIPTOR ||
-        el->type == BTGATT_DB_INCLUDED_SERVICE)
+        el->type == BTGATT_DB_INCLUDED_SERVICE) {
       db_size += 1;
-    else if (el->type == BTGATT_DB_CHARACTERISTIC)
+    } else if (el->type == BTGATT_DB_CHARACTERISTIC) {
       db_size += 2;
-    else
+
+      // if present, Characteristic Extended Properties takes one handle
+      if (el->properties & GATT_CHAR_PROP_BIT_EXT_PROP) db_size++;
+    } else {
       LOG(ERROR) << __func__ << ": Unknown element type: " << el->type;
+    }
 
   return db_size;
 }
@@ -235,8 +239,9 @@ uint16_t GATTS_AddService(tGATT_IF gatt_if, btgatt_db_element_t* service,
         return GATT_INTERNAL_ERROR;
       }
 
-      el->attribute_handle = gatts_add_characteristic(
-          list.svc_db, el->permissions, el->properties, uuid);
+      el->attribute_handle =
+          gatts_add_characteristic(list.svc_db, el->permissions, el->properties,
+                                   el->extended_properties, uuid);
     } else if (el->type == BTGATT_DB_DESCRIPTOR) {
       if (is_gatt_attr_type(uuid)) {
         LOG(ERROR) << __func__

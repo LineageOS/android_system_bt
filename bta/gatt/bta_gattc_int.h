@@ -214,6 +214,10 @@ typedef struct {
 
   gatt::DatabaseBuilder pending_discovery;
 
+  /* used only during service discovery, when reading Extended Characteristic
+   * Properties */
+  bool read_multiple_not_supported;
+
   uint8_t srvc_hdl_chg; /* service handle change indication pending */
   uint16_t attr_index;  /* cahce NV saving/loading attribute index */
 
@@ -363,8 +367,8 @@ extern void bta_gattc_read_multi(tBTA_GATTC_CLCB* p_clcb,
 extern void bta_gattc_ci_open(tBTA_GATTC_CLCB* p_clcb, tBTA_GATTC_DATA* p_data);
 extern void bta_gattc_ci_close(tBTA_GATTC_CLCB* p_clcb,
                                tBTA_GATTC_DATA* p_data);
-extern void bta_gattc_ignore_op_cmpl(tBTA_GATTC_CLCB* p_clcb,
-                                     tBTA_GATTC_DATA* p_data);
+extern void bta_gattc_op_cmpl_during_discovery(tBTA_GATTC_CLCB* p_clcb,
+                                               tBTA_GATTC_DATA* p_data);
 extern void bta_gattc_restart_discover(tBTA_GATTC_CLCB* p_clcb,
                                        tBTA_GATTC_DATA* p_msg);
 extern void bta_gattc_init_bk_conn(tBTA_GATTC_API_OPEN* p_data,
