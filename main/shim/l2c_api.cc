@@ -275,7 +275,7 @@ struct LeFixedChannelHelper {
 
     (freg_.pL2CA_FixedConn_Cb)(cid_, address, true, 0, BT_TRANSPORT_LE);
     bluetooth::shim::Btm::StoreAddressType(
-        address, static_cast<uint8_t>(device.GetAddressType()));
+        address, static_cast<tBLE_ADDR_TYPE>(device.GetAddressType()));
   }
 
   void on_incoming_data(bluetooth::hci::AddressWithType remote) {
