@@ -48,7 +48,7 @@ extern void btm_send_hci_set_scan_params(uint8_t scan_type, uint16_t scan_int,
                                          uint16_t scan_win,
                                          uint8_t addr_type_own,
                                          uint8_t scan_filter_policy);
-extern tBTM_STATUS btm_ble_start_inquiry(uint8_t mode, uint8_t duration);
+extern tBTM_STATUS btm_ble_start_inquiry(uint8_t duration);
 extern void btm_ble_stop_scan(void);
 extern void btm_clear_all_pending_le_entry(void);
 
