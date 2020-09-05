@@ -505,7 +505,7 @@ tBTM_STATUS BTM_StartInquiry(tBTM_INQ_RESULTS_CB* p_results_cb,
                   p_inq->inq_active);
 
   if (controller_get_interface()->supports_ble()) {
-    btm_ble_start_inquiry(BTM_BLE_GENERAL_INQUIRY, p_inq->inqparms.duration);
+    btm_ble_start_inquiry(p_inq->inqparms.duration);
   }
   p_inq->inqparms.mode &= ~BTM_BLE_INQUIRY_MASK;
 
