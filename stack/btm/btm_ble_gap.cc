@@ -1140,13 +1140,13 @@ void btm_send_hci_set_scan_params(uint8_t scan_type, uint16_t scan_int,
  *                  BTM_BUSY - if an inquiry is already active
  *
  ******************************************************************************/
-tBTM_STATUS btm_ble_start_inquiry(uint8_t mode, uint8_t duration) {
+tBTM_STATUS btm_ble_start_inquiry(uint8_t duration) {
   tBTM_STATUS status = BTM_CMD_STARTED;
   tBTM_BLE_CB* p_ble_cb = &btm_cb.ble_ctr_cb;
   tBTM_INQUIRY_VAR_ST* p_inq = &btm_cb.btm_inq_vars;
 
-  BTM_TRACE_DEBUG("btm_ble_start_inquiry: mode = %02x inq_active = 0x%02x",
-                  mode, btm_cb.btm_inq_vars.inq_active);
+  BTM_TRACE_DEBUG("btm_ble_start_inquiry: inq_active = 0x%02x",
+                  btm_cb.btm_inq_vars.inq_active);
 
   /* if selective connection is active, or inquiry is already active, reject it
    */
@@ -1180,8 +1180,8 @@ tBTM_STATUS btm_ble_start_inquiry(uint8_t mode, uint8_t duration) {
   }
 
   if (status == BTM_CMD_STARTED) {
-    p_inq->inq_active |= mode;
-    p_ble_cb->scan_activity |= mode;
+    p_inq->inq_active |= BTM_BLE_GENERAL_INQUIRY;
+    p_ble_cb->scan_activity |= BTM_BLE_GENERAL_INQUIRY;
 
     BTM_TRACE_DEBUG("btm_ble_start_inquiry inq_active = 0x%02x",
                     p_inq->inq_active);
