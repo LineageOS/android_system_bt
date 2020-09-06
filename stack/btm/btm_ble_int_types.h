@@ -220,8 +220,31 @@ typedef uint8_t tBTM_PRIVACY_MODE;
 
 /* Define BLE Device Management control structure
 */
+constexpr uint8_t kBTM_BLE_INQUIRY_ACTIVE = 0x10;
+constexpr uint8_t kBTM_BLE_OBSERVE_ACTIVE = 0x80;
+
 typedef struct {
   uint8_t scan_activity; /* LE scan activity mask */
+ private:
+  uint8_t scan_activity_; /* LE scan activity mask */
+
+ public:
+  bool is_ble_inquiry_active() const {
+    return (scan_activity_ & kBTM_BLE_INQUIRY_ACTIVE);
+  }
+  bool is_ble_observe_active() const {
+    return (scan_activity_ & kBTM_BLE_OBSERVE_ACTIVE);
+  }
+
+  void set_ble_inquiry_active() { scan_activity_ |= kBTM_BLE_INQUIRY_ACTIVE; }
+  void set_ble_observe_active() { scan_activity_ |= kBTM_BLE_OBSERVE_ACTIVE; }
+
+  void reset_ble_inquiry() { scan_activity_ &= ~kBTM_BLE_INQUIRY_ACTIVE; }
+  void reset_ble_observe() { scan_activity_ &= ~kBTM_BLE_OBSERVE_ACTIVE; }
+
+  bool is_ble_scan_active() const {
+    return (is_ble_inquiry_active() || is_ble_observe_active());
+  }
 
   /*****************************************************
   **      BLE Inquiry
