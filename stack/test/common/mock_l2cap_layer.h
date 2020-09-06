@@ -26,7 +26,7 @@ namespace l2cap {
 
 class L2capInterface {
  public:
-  virtual uint16_t Register(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
+  virtual uint16_t Register(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                             bool enable_snoop,
                             tL2CAP_ERTM_INFO* p_ertm_info) = 0;
   virtual uint16_t ConnectRequest(uint16_t psm, const RawAddress& bd_addr) = 0;
@@ -44,7 +44,7 @@ class L2capInterface {
 class MockL2capInterface : public L2capInterface {
  public:
   MOCK_METHOD4(Register,
-               uint16_t(uint16_t psm, tL2CAP_APPL_INFO* p_cb_info,
+               uint16_t(uint16_t psm, const tL2CAP_APPL_INFO& p_cb_info,
                         bool enable_snoop, tL2CAP_ERTM_INFO* p_ertm_info));
   MOCK_METHOD2(ConnectRequest,
                uint16_t(uint16_t psm, const RawAddress& bd_addr));
