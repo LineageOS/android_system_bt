@@ -224,7 +224,6 @@ constexpr uint8_t kBTM_BLE_INQUIRY_ACTIVE = 0x10;
 constexpr uint8_t kBTM_BLE_OBSERVE_ACTIVE = 0x80;
 
 typedef struct {
-  uint8_t scan_activity; /* LE scan activity mask */
  private:
   uint8_t scan_activity_; /* LE scan activity mask */
 
