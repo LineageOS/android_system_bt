@@ -165,6 +165,7 @@ typedef struct {
   uint16_t len;
   uint8_t value[GATT_MAX_ATTR_LEN];
   bool is_notify;
+  uint16_t cid;
 } tBTA_GATTC_NOTIFY;
 
 typedef struct {
@@ -643,12 +644,12 @@ void BTA_GATTC_WriteCharDescr(uint16_t conn_id, uint16_t handle,
  * Description      This function is called to send handle value confirmation.
  *
  * Parameters       conn_id - connection ID.
- *                  handle - characteristic handle to confirm.
+ *                  cid - channel id
  *
  * Returns          None
  *
  ******************************************************************************/
-extern void BTA_GATTC_SendIndConfirm(uint16_t conn_id, uint16_t handle);
+extern void BTA_GATTC_SendIndConfirm(uint16_t conn_id, uint16_t cid);
 
 /*******************************************************************************
  *

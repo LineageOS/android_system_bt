@@ -66,7 +66,7 @@ void gatts_init_service_db(tGATT_SVC_DB& db, const Uuid& service_uuid,
   Uuid uuid =
       Uuid::From16Bit(is_pri ? GATT_UUID_PRI_SERVICE : GATT_UUID_SEC_SERVICE);
   tGATT_ATTR& attr = allocate_attr_in_db(db, uuid, GATT_PERM_READ);
-  attr.p_value.reset((tGATT_ATTR_VALUE*)(new Uuid));
+  attr.p_value.reset(new tGATT_ATTR_VALUE);
   attr.p_value->uuid = service_uuid;
 }
 
@@ -231,7 +231,15 @@ static tGATT_STATUS read_attr_value(tGATT_ATTR& attr16, uint16_t offset,
     return GATT_SUCCESS;
   }
 
-  /* characteristic description or characteristic value (again) */
+  if (uuid16 == GATT_UUID_CHAR_EXT_PROP) {
+    uint16_t char_ext_prop = attr16.p_value->char_ext_prop;
+    *p_len = 2;
+    UINT16_TO_STREAM(p, char_ext_prop);
+    *p_data = p;
+    return GATT_SUCCESS;
+  }
+
+  /* characteristic descriptor or characteristic value (again) */
   return GATT_PENDING;
 }
 
@@ -342,7 +350,7 @@ uint16_t gatts_add_included_service(tGATT_SVC_DB& db, uint16_t s_handle,
 
   tGATT_ATTR& attr = allocate_attr_in_db(db, uuid, GATT_PERM_READ);
 
-  attr.p_value.reset((tGATT_ATTR_VALUE*)(new tGATT_INCL_SRVC));
+  attr.p_value.reset(new tGATT_ATTR_VALUE);
   attr.p_value->incl_handle.s_handle = s_handle;
   attr.p_value->incl_handle.e_handle = e_handle;
   attr.p_value->incl_handle.service_type = service;
@@ -360,6 +368,7 @@ uint16_t gatts_add_included_service(tGATT_SVC_DB& db, uint16_t s_handle,
  * Parameter        db: database.
  *                  perm: permission (authentication and key size requirements)
  *                  property: property of the characteristic.
+ *                  extended_properties: characteristic extended properties.
  *                  p_char: characteristic value information.
  *
  * Returns          Status of te operation.
@@ -367,6 +376,7 @@ uint16_t gatts_add_included_service(tGATT_SVC_DB& db, uint16_t s_handle,
  ******************************************************************************/
 uint16_t gatts_add_characteristic(tGATT_SVC_DB& db, tGATT_PERM perm,
                                   tGATT_CHAR_PROP property,
+                                  uint16_t extended_properties,
                                   const Uuid& char_uuid) {
   Uuid uuid = Uuid::From16Bit(GATT_UUID_CHAR_DECLARE);
 
@@ -376,10 +386,20 @@ uint16_t gatts_add_characteristic(tGATT_SVC_DB& db, tGATT_PERM perm,
   tGATT_ATTR& char_decl = allocate_attr_in_db(db, uuid, GATT_PERM_READ);
   tGATT_ATTR& char_val = allocate_attr_in_db(db, char_uuid, perm);
 
-  char_decl.p_value.reset((tGATT_ATTR_VALUE*)(new tGATT_CHAR_DECL));
+  char_decl.p_value.reset(new tGATT_ATTR_VALUE);
   char_decl.p_value->char_decl.property = property;
   char_decl.p_value->char_decl.char_val_handle = char_val.handle;
   char_val.gatt_type = BTGATT_DB_CHARACTERISTIC;
+
+  if (property & GATT_CHAR_PROP_BIT_EXT_PROP) {
+    Uuid char_ext_prop_uuid = Uuid::From16Bit(GATT_UUID_CHAR_EXT_PROP);
+    tGATT_ATTR& char_ext_prop =
+        allocate_attr_in_db(db, char_ext_prop_uuid, GATT_PERM_READ);
+    char_ext_prop.p_value.reset(new tGATT_ATTR_VALUE);
+    char_ext_prop.p_value->char_ext_prop = extended_properties;
+    char_ext_prop.gatt_type = BTGATT_DB_DESCRIPTOR;
+  }
+
   return char_val.handle;
 }
 

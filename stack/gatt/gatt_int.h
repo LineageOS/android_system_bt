@@ -156,6 +156,7 @@ typedef union {
   bluetooth::Uuid uuid;        /* service declaration */
   tGATT_CHAR_DECL char_decl;   /* characteristic declaration */
   tGATT_INCL_SRVC incl_handle; /* included service */
+  uint16_t char_ext_prop;      /* Characteristic Extended Properties */
 } tGATT_ATTR_VALUE;
 
 /* Attribute UUID type
@@ -438,6 +439,7 @@ extern bool gatt_profile_get_eatt_support(
     base::OnceCallback<void(const RawAddress&, bool)> cb);
 
 /* Functions provided by att_protocol.cc */
+extern tGATT_STATUS attp_send_cl_confirmation_msg(tGATT_TCB& tcb, uint16_t cid);
 extern tGATT_STATUS attp_send_cl_msg(tGATT_TCB& tcb, tGATT_CLCB* p_clcb,
                                      uint8_t op_code, tGATT_CL_MSG* p_msg);
 extern BT_HDR* attp_build_sr_msg(tGATT_TCB& tcb, uint8_t op_code,
@@ -465,7 +467,7 @@ extern void gatt_start_conf_timer(tGATT_TCB* p_tcb);
 extern void gatt_rsp_timeout(void* data);
 extern void gatt_indication_confirmation_timeout(void* data);
 extern void gatt_ind_ack_timeout(void* data);
-extern void gatt_start_ind_ack_timer(tGATT_TCB& tcb);
+extern void gatt_start_ind_ack_timer(tGATT_TCB& tcb, uint16_t cid);
 extern tGATT_STATUS gatt_send_error_rsp(tGATT_TCB& tcb, uint16_t cid,
                                         uint8_t err_code, uint8_t op_code,
                                         uint16_t handle, bool deq);
@@ -594,6 +596,7 @@ extern uint16_t gatts_add_included_service(tGATT_SVC_DB& db, uint16_t s_handle,
                                            const bluetooth::Uuid& service);
 extern uint16_t gatts_add_characteristic(tGATT_SVC_DB& db, tGATT_PERM perm,
                                          tGATT_CHAR_PROP property,
+                                         uint16_t extended_properties,
                                          const bluetooth::Uuid& char_uuid);
 extern uint16_t gatts_add_char_descr(tGATT_SVC_DB& db, tGATT_PERM perm,
                                      const bluetooth::Uuid& dscp_uuid);
