@@ -595,7 +595,7 @@ tBTM_STATUS bluetooth::shim::BTM_BleObserve(bool start, uint8_t duration_sec,
 
     std::lock_guard<std::mutex> lock(btm_cb_mutex_);
 
-    if (btm_cb.ble_ctr_cb.scan_activity & BTM_LE_OBSERVE_ACTIVE) {
+    if (btm_cb.ble_ctr_cb.is_ble_observe_active()) {
       LOG_WARN("%s Observing already active", __func__);
       return BTM_WRONG_MODE;
     }
@@ -603,7 +603,7 @@ tBTM_STATUS bluetooth::shim::BTM_BleObserve(bool start, uint8_t duration_sec,
     btm_cb.ble_ctr_cb.p_obs_results_cb = p_results_cb;
     btm_cb.ble_ctr_cb.p_obs_cmpl_cb = p_cmpl_cb;
     Stack::GetInstance()->GetBtm()->StartObserving();
-    btm_cb.ble_ctr_cb.scan_activity |= BTM_LE_OBSERVE_ACTIVE;
+    btm_cb.ble_ctr_cb.set_ble_observe_active();
 
     if (duration_sec != 0) {
       Stack::GetInstance()->GetBtm()->SetObservingTimer(
@@ -614,7 +614,7 @@ tBTM_STATUS bluetooth::shim::BTM_BleObserve(bool start, uint8_t duration_sec,
             Stack::GetInstance()->GetBtm()->StopObserving();
 
             std::lock_guard<std::mutex> lock(btm_cb_mutex_);
-            btm_cb.ble_ctr_cb.scan_activity &= ~BTM_LE_OBSERVE_ACTIVE;
+            btm_cb.ble_ctr_cb.reset_ble_observe();
 
             if (btm_cb.ble_ctr_cb.p_obs_cmpl_cb) {
               (btm_cb.ble_ctr_cb.p_obs_cmpl_cb)(
@@ -648,12 +648,12 @@ tBTM_STATUS bluetooth::shim::BTM_BleObserve(bool start, uint8_t duration_sec,
   } else {
     std::lock_guard<std::mutex> lock(btm_cb_mutex_);
 
-    if (!(btm_cb.ble_ctr_cb.scan_activity & BTM_LE_OBSERVE_ACTIVE)) {
+    if (!btm_cb.ble_ctr_cb.is_ble_observe_active()) {
       LOG_WARN("%s Observing already inactive", __func__);
     }
     Stack::GetInstance()->GetBtm()->CancelObservingTimer();
     Stack::GetInstance()->GetBtm()->StopObserving();
-    btm_cb.ble_ctr_cb.scan_activity &= ~BTM_LE_OBSERVE_ACTIVE;
+    btm_cb.ble_ctr_cb.reset_ble_observe();
     Stack::GetInstance()->GetBtm()->StopObserving();
     if (btm_cb.ble_ctr_cb.p_obs_cmpl_cb) {
       (btm_cb.ble_ctr_cb.p_obs_cmpl_cb)(&btm_cb.btm_inq_vars.inq_cmpl_info);
@@ -737,7 +737,7 @@ void bluetooth::shim::BTM_CancelInquiry(void) {
   Stack::GetInstance()->GetBtm()->CancelScanningTimer();
   Stack::GetInstance()->GetBtm()->StopActiveScanning();
 
-  btm_cb.ble_ctr_cb.scan_activity &= ~BTM_BLE_INQUIRY_MASK;
+  btm_cb.ble_ctr_cb.reset_ble_inquiry();
 
   btm_cb.btm_inq_vars.inqparms.mode &=
       ~(btm_cb.btm_inq_vars.inqparms.mode & BTM_BLE_INQUIRY_MASK);

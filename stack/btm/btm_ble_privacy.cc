@@ -535,7 +535,7 @@ bool btm_ble_suspend_resolving_list_activity(void) {
     BleAdvertisingManager::Get()->Suspend();
   }
 
-  if (BTM_BLE_IS_SCAN_ACTIVE(p_ble_cb->scan_activity)) {
+  if (p_ble_cb->is_ble_scan_active()) {
     btm_ble_stop_scan();
     p_ble_cb->suspended_rl_state |= BTM_BLE_RL_SCAN;
   }
