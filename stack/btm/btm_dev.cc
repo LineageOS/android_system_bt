@@ -86,7 +86,7 @@ bool BTM_SecAddDevice(const RawAddress& bd_addr, DEV_CLASS dev_class,
      * bond state for an existing device here? This logic should be verified
      * as part of a larger refactor.
      */
-    p_dev_rec->bond_type = BOND_TYPE_UNKNOWN;
+    p_dev_rec->bond_type = tBTM_SEC_DEV_REC::BOND_TYPE_UNKNOWN;
   }
 
   if (dev_class) memcpy(p_dev_rec->dev_class, dev_class, DEV_CLASS_LEN);
@@ -527,7 +527,7 @@ tBTM_SEC_DEV_REC* btm_sec_allocate_dev_rec(void) {
 
   // Initialize defaults
   p_dev_rec->sec_flags = BTM_SEC_IN_USE;
-  p_dev_rec->bond_type = BOND_TYPE_UNKNOWN;
+  p_dev_rec->bond_type = tBTM_SEC_DEV_REC::BOND_TYPE_UNKNOWN;
   p_dev_rec->timestamp = btm_cb.dev_rec_count++;
   p_dev_rec->rmt_io_caps = BTM_IO_CAP_UNKNOWN;
 
@@ -544,10 +544,11 @@ tBTM_SEC_DEV_REC* btm_sec_allocate_dev_rec(void) {
  * Returns          The device bond type if known, otherwise BOND_TYPE_UNKNOWN
  *
  ******************************************************************************/
-tBTM_BOND_TYPE btm_get_bond_type_dev(const RawAddress& bd_addr) {
+tBTM_SEC_DEV_REC::tBTM_BOND_TYPE btm_get_bond_type_dev(
+    const RawAddress& bd_addr) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
 
-  if (p_dev_rec == NULL) return BOND_TYPE_UNKNOWN;
+  if (p_dev_rec == NULL) return tBTM_SEC_DEV_REC::BOND_TYPE_UNKNOWN;
 
   return p_dev_rec->bond_type;
 }
@@ -563,7 +564,7 @@ tBTM_BOND_TYPE btm_get_bond_type_dev(const RawAddress& bd_addr) {
  *
  ******************************************************************************/
 bool btm_set_bond_type_dev(const RawAddress& bd_addr,
-                           tBTM_BOND_TYPE bond_type) {
+                           tBTM_SEC_DEV_REC::tBTM_BOND_TYPE bond_type) {
   tBTM_SEC_DEV_REC* p_dev_rec = btm_find_dev(bd_addr);
 
   if (p_dev_rec == NULL) return false;

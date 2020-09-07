@@ -110,13 +110,6 @@ typedef struct {
   tBTM_SEC_BLE_KEYS keys;    /* LE device security info in slave rode */
 } tBTM_SEC_BLE;
 
-/* Peering bond type */
-typedef enum : uint8_t {
-  BOND_TYPE_UNKNOWN = 0,
-  BOND_TYPE_PERSISTENT = 1,
-  BOND_TYPE_TEMPORARY = 2
-} tBTM_BOND_TYPE;
-
 enum : uint16_t {
   BTM_SEC_AUTHENTICATED = 0x0002,
   BTM_SEC_ENCRYPTED = 0x0004,
@@ -145,6 +138,13 @@ enum : uint16_t {
  * A record exists for each device authenticated with this device
  */
 typedef struct {
+  /* Peering bond type */
+  typedef enum : uint8_t {
+    BOND_TYPE_UNKNOWN = 0,
+    BOND_TYPE_PERSISTENT = 1,
+    BOND_TYPE_TEMPORARY = 2
+  } tBTM_BOND_TYPE;
+
   uint32_t required_security_flags_for_pairing;
   tBTM_SEC_CALLBACK* p_callback;
   void* p_ref_data;
