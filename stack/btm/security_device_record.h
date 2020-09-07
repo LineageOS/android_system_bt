@@ -82,9 +82,6 @@ typedef struct {
 
   RawAddress read_tx_pwr_addr; /* read TX power target address     */
 
-#define BTM_LE_SUPPORT_STATE_SIZE 8
-  uint8_t le_supported_states[BTM_LE_SUPPORT_STATE_SIZE];
-
   tBTM_BLE_LOCAL_ID_KEYS id_keys;   /* local BLE ID keys */
   Octet16 ble_encryption_key_value; /* BLE encryption key */
 
