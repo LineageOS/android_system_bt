@@ -185,6 +185,29 @@ static bool event_already_registered_in_hci_layer(
   }
 }
 
+static bool event_already_registered_in_le_advertising_manager(
+    bluetooth::hci::EventCode event_code) {
+  switch (event_code) {
+    case bluetooth::hci::EventCode::CONNECTION_PACKET_TYPE_CHANGED:
+    case bluetooth::hci::EventCode::ROLE_CHANGE:
+    case bluetooth::hci::EventCode::CONNECTION_COMPLETE:
+    case bluetooth::hci::EventCode::CONNECTION_REQUEST:
+    case bluetooth::hci::EventCode::AUTHENTICATION_COMPLETE:
+    case bluetooth::hci::EventCode::READ_CLOCK_OFFSET_COMPLETE:
+    case bluetooth::hci::EventCode::MODE_CHANGE:
+    case bluetooth::hci::EventCode::QOS_SETUP_COMPLETE:
+    case bluetooth::hci::EventCode::FLOW_SPECIFICATION_COMPLETE:
+    case bluetooth::hci::EventCode::FLUSH_OCCURRED:
+    case bluetooth::hci::EventCode::READ_REMOTE_SUPPORTED_FEATURES_COMPLETE:
+    case bluetooth::hci::EventCode::READ_REMOTE_EXTENDED_FEATURES_COMPLETE:
+    case bluetooth::hci::EventCode::READ_REMOTE_VERSION_INFORMATION_COMPLETE:
+    case bluetooth::hci::EventCode::LINK_SUPERVISION_TIMEOUT_CHANGED:
+      return bluetooth::shim::is_gd_advertising_enabled();
+    default:
+      return false;
+  }
+}
+
 std::unique_ptr<bluetooth::packet::RawBuilder> MakeUniquePacket(
     const uint8_t* data, size_t len) {
   bluetooth::packet::RawBuilder builder;
@@ -412,14 +435,23 @@ void bluetooth::shim::hci_on_reset_complete() {
     auto event_code = static_cast<bluetooth::hci::EventCode>(event_code_raw);
     if (event_already_registered_in_hci_layer(event_code)) {
       continue;
+    } else if (event_already_registered_in_le_advertising_manager(event_code)) {
+      continue;
     }
     auto handler = bluetooth::shim::GetGdShimHandler();
     bluetooth::shim::GetHciLayer()->RegisterEventHandler(
         event_code, handler->Bind(event_callback));
   }
+
   hci_queue_end = bluetooth::shim::GetHciLayer()->GetAclQueueEnd();
-  hci_queue_end->RegisterDequeue(bluetooth::shim::GetGdShimHandler(),
-                                 bluetooth::common::Bind(acl_data_callback));
+
+  // if gd advertising enabled, hci_queue_end will be register in
+  // AclManager::impl::Start
+  if (!bluetooth::shim::is_gd_advertising_enabled()) {
+    hci_queue_end->RegisterDequeue(bluetooth::shim::GetGdShimHandler(),
+                                   bluetooth::common::Bind(acl_data_callback));
+  }
+
   pending_data =
       new bluetooth::os::EnqueueBuffer<bluetooth::hci::AclPacketBuilder>(
           hci_queue_end);
@@ -432,13 +464,18 @@ void bluetooth::shim::hci_on_shutting_down() {
     pending_data = nullptr;
   }
   if (hci_queue_end != nullptr) {
-    hci_queue_end->UnregisterDequeue();
+    if (!bluetooth::shim::is_gd_advertising_enabled()) {
+      hci_queue_end->UnregisterDequeue();
+    }
     for (uint8_t event_code_raw = 0; event_code_raw < 0xFF; event_code_raw++) {
       if (!is_valid_event_code(event_code_raw)) {
         continue;
       }
       auto event_code = static_cast<bluetooth::hci::EventCode>(event_code_raw);
       if (event_already_registered_in_hci_layer(event_code)) {
+        continue;
+      } else if (event_already_registered_in_le_advertising_manager(
+                     event_code)) {
         continue;
       }
       bluetooth::shim::GetHciLayer()->UnregisterEventHandler(event_code);
