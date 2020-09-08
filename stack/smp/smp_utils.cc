@@ -1393,7 +1393,7 @@ void smp_collect_peer_io_capabilities(uint8_t* iocap, tSMP_CB* p_cb) {
  *
  ******************************************************************************/
 void smp_collect_local_ble_address(uint8_t* le_addr, tSMP_CB* p_cb) {
-  tBLE_ADDR_TYPE addr_type = 0;
+  tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
   RawAddress bda;
   uint8_t* p = le_addr;
 
@@ -1415,7 +1415,7 @@ void smp_collect_local_ble_address(uint8_t* le_addr, tSMP_CB* p_cb) {
  *
  ******************************************************************************/
 void smp_collect_peer_ble_address(uint8_t* le_addr, tSMP_CB* p_cb) {
-  tBLE_ADDR_TYPE addr_type = 0;
+  tBLE_ADDR_TYPE addr_type = BLE_ADDR_PUBLIC;
   RawAddress bda;
   uint8_t* p = le_addr;
 
