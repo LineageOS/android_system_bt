@@ -276,10 +276,10 @@ bt_status_t btif_storage_get_ble_local_key(uint8_t key_type,
                                            Octet16* key_value);
 
 bt_status_t btif_storage_get_remote_addr_type(const RawAddress* remote_bd_addr,
-                                              int* addr_type);
+                                              tBLE_ADDR_TYPE* addr_type);
 
 bt_status_t btif_storage_set_remote_addr_type(const RawAddress* remote_bd_addr,
-                                              uint8_t addr_type);
+                                              tBLE_ADDR_TYPE addr_type);
 
 /*******************************************************************************
  * Function         btif_storage_load_hidd
