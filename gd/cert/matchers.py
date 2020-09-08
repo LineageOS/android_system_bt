@@ -592,13 +592,13 @@ class L2capMatchers(object):
 class SecurityMatchers(object):
 
     @staticmethod
-    def UiMsg(type):
-        return lambda event: True if event.message_type == type else False
+    def UiMsg(type, address=None):
+        return lambda event: True if event.message_type == type and (address == None or address == event.peer) else False
 
     @staticmethod
-    def BondMsg(type):
-        return lambda event: True if event.message_type == type else False
+    def BondMsg(type, address=None):
+        return lambda event: True if event.message_type == type and (address == None or address == event.peer) else False
 
     @staticmethod
-    def HelperMsg(type):
-        return lambda event: True if event.message_type == type else False
+    def HelperMsg(type, address=None):
+        return lambda event: True if event.message_type == type and (address == None or address == event.peer) else False
