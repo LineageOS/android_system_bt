@@ -103,8 +103,8 @@ void l2c_rcv_acl_data(BT_HDR* p_msg) {
 
     if ((p_msg->layer_specific != 0) || (rcv_cid != L2CAP_SIGNALLING_CID) ||
         (cmd_code != L2CAP_CMD_INFO_REQ && cmd_code != L2CAP_CMD_CONN_REQ)) {
-      bool qcom_debug_log =
-          (handle == 3804 && cmd_code == 10 && p_msg->layer_specific == 0);
+      bool qcom_debug_log = (handle == 3804 && ((rcv_cid & 0xff) == 0xff) &&
+                             p_msg->layer_specific == 0);
 
       if (!qcom_debug_log) {
         L2CAP_TRACE_ERROR(
