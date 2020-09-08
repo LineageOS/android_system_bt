@@ -1277,9 +1277,8 @@ void bluetooth::shim::BTM_SecClearSecurityFlags(const RawAddress& bd_addr) {
 }
 
 char* bluetooth::shim::BTM_SecReadDevName(const RawAddress& address) {
-  char name[] = "TODO: See if this is needed";
-  char* n = name;
-  return n;
+  static char name[] = "TODO: See if this is needed";
+  return name;
 }
 
 bool bluetooth::shim::BTM_SecAddRmtNameNotifyCallback(
