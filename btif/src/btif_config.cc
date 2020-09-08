@@ -140,13 +140,15 @@ bool btif_get_device_type(const RawAddress& bda, int* p_device_type) {
   return true;
 }
 
-bool btif_get_address_type(const RawAddress& bda, int* p_addr_type) {
+bool btif_get_address_type(const RawAddress& bda, tBLE_ADDR_TYPE* p_addr_type) {
   if (p_addr_type == NULL) return false;
 
   std::string addrstr = bda.ToString();
   const char* bd_addr_str = addrstr.c_str();
 
-  if (!btif_config_get_int(bd_addr_str, "AddrType", p_addr_type)) return false;
+  int val = 0;
+  if (!btif_config_get_int(bd_addr_str, "AddrType", &val)) return false;
+  *p_addr_type = static_cast<tBLE_ADDR_TYPE>(val);
 
   LOG_DEBUG("%s: Device [%s] address type %d", __func__, bd_addr_str,
             *p_addr_type);
