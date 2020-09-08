@@ -82,9 +82,11 @@ void Stack::StartEverything() {
   if (common::InitFlags::GdSecurityEnabled()) {
     modules.add<security::SecurityModule>();
   }
+  if (common::InitFlags::GdAdvertisingEnabled()) {
+    modules.add<hci::LeAdvertisingManager>();
+  }
   if (common::InitFlags::GdCoreEnabled()) {
     modules.add<att::AttModule>();
-    modules.add<hci::LeAdvertisingManager>();
     modules.add<hci::LeScanningManager>();
     modules.add<l2cap::classic::L2capClassicModule>();
     modules.add<l2cap::le::L2capLeModule>();
