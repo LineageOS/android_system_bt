@@ -20,6 +20,7 @@
 
 #include <mutex>
 
+#include "common/metric_id_allocator.h"
 #include "common/time_util.h"
 #include "device/include/controller.h"
 #include "gd/common/callback.h"
@@ -35,6 +36,8 @@
 #include "main/shim/stack.h"
 #include "stack/btm/btm_int_types.h"
 #include "types/raw_address.h"
+
+using bluetooth::common::MetricIdAllocator;
 
 #define BTIF_DM_DEFAULT_INQ_MAX_RESULTS 0
 #define BTIF_DM_DEFAULT_INQ_MAX_DURATION 10
@@ -429,12 +432,21 @@ class ShimBondListener : public bluetooth::security::ISecurityManagerListener {
             bluetooth::ToRawAddress(device.GetAddress()), 0, name, BTM_SUCCESS);
       }
     }
+    MetricIdAllocator::GetInstance().AllocateId(
+        bluetooth::ToRawAddress(device.GetAddress()));
+    if (!MetricIdAllocator::GetInstance().SaveDevice(
+            bluetooth::ToRawAddress(device.GetAddress()))) {
+      LOG(FATAL) << __func__ << ": Fail to save metric id for device "
+                 << bluetooth::ToRawAddress(device.GetAddress());
+    }
   }
 
   void OnDeviceUnbonded(bluetooth::hci::AddressWithType device) override {
     if (bta_callbacks_->p_bond_cancel_cmpl_callback) {
       (*bta_callbacks_->p_bond_cancel_cmpl_callback)(BTM_SUCCESS);
     }
+    MetricIdAllocator::GetInstance().ForgetDevice(
+        bluetooth::ToRawAddress(device.GetAddress()));
   }
 
   void OnDeviceBondFailed(bluetooth::hci::AddressWithType device) override {
