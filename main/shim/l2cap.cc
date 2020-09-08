@@ -43,17 +43,14 @@ bool bluetooth::shim::legacy::PsmManager::IsPsmRegistered(uint16_t psm) const {
 }
 
 bool bluetooth::shim::legacy::PsmManager::HasClient(uint16_t psm) const {
-  return IsPsmRegistered(psm) && psm_to_callback_map_.at(psm) != nullptr;
+  return IsPsmRegistered(psm) &&
+         psm_to_callback_map_.find(psm) != psm_to_callback_map_.end();
 }
 
 void bluetooth::shim::legacy::PsmManager::RegisterPsm(
-    uint16_t psm, const tL2CAP_APPL_INFO* callbacks) {
+    uint16_t psm, const tL2CAP_APPL_INFO& callbacks) {
   CHECK(!HasClient(psm));
-  psm_to_callback_map_[psm] = callbacks;
-}
-
-void bluetooth::shim::legacy::PsmManager::RegisterPsm(uint16_t psm) {
-  RegisterPsm(psm, nullptr);
+  psm_to_callback_map_.try_emplace(psm, tL2CAP_APPL_INFO(callbacks));
 }
 
 void bluetooth::shim::legacy::PsmManager::UnregisterPsm(uint16_t psm) {
@@ -61,7 +58,7 @@ void bluetooth::shim::legacy::PsmManager::UnregisterPsm(uint16_t psm) {
   psm_to_callback_map_.erase(psm);
 }
 
-const tL2CAP_APPL_INFO* bluetooth::shim::legacy::PsmManager::Callbacks(
+const tL2CAP_APPL_INFO bluetooth::shim::legacy::PsmManager::Callbacks(
     uint16_t psm) {
   CHECK(HasClient(psm));
   return psm_to_callback_map_[psm];
@@ -164,7 +161,7 @@ uint16_t bluetooth::shim::legacy::L2cap::GetNextDynamicClassicPsm() {
 }
 
 uint16_t bluetooth::shim::legacy::L2cap::RegisterService(
-    uint16_t psm, const tL2CAP_APPL_INFO* callbacks, bool enable_snoop,
+    uint16_t psm, const tL2CAP_APPL_INFO& callbacks, bool enable_snoop,
     tL2CAP_ERTM_INFO* p_ertm_info, uint16_t required_mtu) {
   if (Classic().IsPsmRegistered(psm)) {
     LOG_WARN("Service is already registered psm:%hd", psm);
@@ -269,7 +266,7 @@ void bluetooth::shim::legacy::L2cap::OnLocalInitiatedConnectionCreated(
     }
     do_in_main_thread(
         FROM_HERE,
-        base::Bind(classic_.Callbacks(psm)->pL2CA_ConnectCfm_Cb, cid,
+        base::Bind(classic_.Callbacks(psm).pL2CA_ConnectCfm_Cb, cid,
                    connected ? (kConnectionSuccess) : (kConnectionFail)));
 
   } else {
@@ -300,7 +297,7 @@ void bluetooth::shim::legacy::L2cap::OnRemoteInitiatedConnectionCreated(
   SetDownstreamCallbacks(cid);
   do_in_main_thread(
       FROM_HERE,
-      base::Bind(classic_.Callbacks(CidToPsm(cid))->pL2CA_ConnectInd_Cb,
+      base::Bind(classic_.Callbacks(CidToPsm(cid)).pL2CA_ConnectInd_Cb,
                  raw_address, cid, psm, kUnusedId));
 }
 
@@ -326,7 +323,7 @@ void bluetooth::shim::legacy::L2cap::SetDownstreamCallbacks(uint16_t cid) {
         bt_hdr->len = data.size();
         do_in_main_thread(
             FROM_HERE,
-            base::Bind(classic_.Callbacks(CidToPsm(cid))->pL2CA_DataInd_Cb, cid,
+            base::Bind(classic_.Callbacks(CidToPsm(cid)).pL2CA_DataInd_Cb, cid,
                        base::Unretained(bt_hdr)));
       });
 
@@ -342,15 +339,15 @@ void bluetooth::shim::legacy::L2cap::SetDownstreamCallbacks(uint16_t cid) {
           do_in_main_thread(
               FROM_HERE,
               base::Bind(
-                  classic_.Callbacks(CidToPsm(cid))->pL2CA_DisconnectCfm_Cb,
-                  cid, kUnusedResult));
+                  classic_.Callbacks(CidToPsm(cid)).pL2CA_DisconnectCfm_Cb, cid,
+                  kUnusedResult));
 
         } else {
           do_in_main_thread(
               FROM_HERE,
               base::Bind(
-                  classic_.Callbacks(CidToPsm(cid))->pL2CA_DisconnectInd_Cb,
-                  cid, kDisconnectResponseRequired));
+                  classic_.Callbacks(CidToPsm(cid)).pL2CA_DisconnectInd_Cb, cid,
+                  kDisconnectResponseRequired));
         }
         cid_to_psm_map_.erase(cid);
         cid_to_remote_cid_map_.erase(cid);
@@ -388,11 +385,11 @@ bool bluetooth::shim::legacy::L2cap::ConfigRequest(
     LOG(INFO) << __func__ << "Rcvd config request";
     do_in_main_thread(
         FROM_HERE,
-        base::Bind(classic_.Callbacks(CidToPsm(cid))->pL2CA_ConfigInd_Cb, cid,
+        base::Bind(classic_.Callbacks(CidToPsm(cid)).pL2CA_ConfigInd_Cb, cid,
                    base::Unretained(&cfg_info)));
     do_in_main_thread(
         FROM_HERE,
-        base::Bind(classic_.Callbacks(CidToPsm(cid))->pL2CA_ConfigCfm_Cb, cid,
+        base::Bind(classic_.Callbacks(CidToPsm(cid)).pL2CA_ConfigCfm_Cb, cid,
                    base::Unretained(&cfg_info)));
   });
   return true;

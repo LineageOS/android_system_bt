@@ -759,16 +759,15 @@ tHID_STATUS hidd_conn_reg(void) {
   hd_cb.l2cap_intr_cfg.flush_to_present = TRUE;
   hd_cb.l2cap_intr_cfg.flush_to = HID_DEV_FLUSH_TO;
 
-  if (!L2CA_Register2(HID_PSM_CONTROL, (tL2CAP_APPL_INFO*)&dev_reg_info,
-                      false /* enable_snoop */, nullptr, hd_cb.l2cap_cfg.mtu,
+  if (!L2CA_Register2(HID_PSM_CONTROL, dev_reg_info, false /* enable_snoop */,
+                      nullptr, hd_cb.l2cap_cfg.mtu,
                       BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
     HIDD_TRACE_ERROR("HID Control (device) registration failed");
     return (HID_ERR_L2CAP_FAILED);
   }
 
-  if (!L2CA_Register2(HID_PSM_INTERRUPT, (tL2CAP_APPL_INFO*)&dev_reg_info,
-                      false /* enable_snoop */, nullptr,
-                      hd_cb.l2cap_intr_cfg.mtu,
+  if (!L2CA_Register2(HID_PSM_INTERRUPT, dev_reg_info, false /* enable_snoop */,
+                      nullptr, hd_cb.l2cap_intr_cfg.mtu,
                       BTA_SEC_AUTHENTICATE | BTA_SEC_ENCRYPT)) {
     L2CA_Deregister(HID_PSM_CONTROL);
     HIDD_TRACE_ERROR("HID Interrupt (device) registration failed");

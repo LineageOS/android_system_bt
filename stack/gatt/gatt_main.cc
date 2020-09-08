@@ -116,9 +116,8 @@ void gatt_init(void) {
   L2CA_RegisterFixedChannel(L2CAP_ATT_CID, &fixed_reg);
 
   /* Now, register with L2CAP for ATT PSM over BR/EDR */
-  if (!L2CA_Register2(BT_PSM_ATT, (tL2CAP_APPL_INFO*)&dyn_info,
-                      false /* enable_snoop */, nullptr, gatt_cb.def_mtu_size,
-                      BTM_SEC_NONE)) {
+  if (!L2CA_Register2(BT_PSM_ATT, dyn_info, false /* enable_snoop */, nullptr,
+                      gatt_cb.def_mtu_size, BTM_SEC_NONE)) {
     LOG(ERROR) << "ATT Dynamic Registration failed";
   }
 
