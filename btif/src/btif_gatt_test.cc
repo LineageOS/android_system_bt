@@ -194,7 +194,7 @@ bt_status_t btif_gattc_test_command_impl(int command,
 
       if (params->u1 == BT_DEVICE_TYPE_BLE)
         BTM_SecAddBleDevice(*params->bda1, NULL, BT_DEVICE_TYPE_BLE,
-                            params->u2);
+                            static_cast<tBLE_ADDR_TYPE>(params->u2));
 
       if (!GATT_Connect(test_cb.gatt_if, *params->bda1, true, BT_TRANSPORT_LE,
                         false)) {

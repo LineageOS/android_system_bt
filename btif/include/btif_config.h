@@ -71,7 +71,8 @@ bool btif_config_clear(void);
 
 // TODO(zachoverflow): Eww...we need to move these out. These are peer specific,
 // not config general.
-bool btif_get_address_type(const RawAddress& bd_addr, int* p_addr_type);
+bool btif_get_address_type(const RawAddress& bd_addr,
+                           tBLE_ADDR_TYPE* p_addr_type);
 bool btif_get_device_type(const RawAddress& bd_addr, int* p_device_type);
 
 void btif_debug_config_dump(int fd);
