@@ -1181,7 +1181,7 @@ static bool gatts_proc_ind_ack(tGATT_TCB& tcb, uint16_t ack_handle) {
 void gatts_process_value_conf(tGATT_TCB& tcb, uint16_t cid, uint8_t op_code) {
   uint16_t handle;
 
-  if (gatt_tcb_find_indicate_handle(tcb, cid, &handle)) {
+  if (!gatt_tcb_find_indicate_handle(tcb, cid, &handle)) {
     LOG(ERROR) << "unexpected handle value confirmation";
     return;
   }
