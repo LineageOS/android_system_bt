@@ -48,6 +48,8 @@
 #include "device/include/interop.h"
 #include "gap_api.h" /* For GAP_BleReadPeerPrefConnParams */
 #include "l2c_api.h"
+#include "main/shim/btm_api.h"
+#include "main/shim/shim.h"
 #include "osi/include/log.h"
 #include "osi/include/osi.h"
 #include "sdp_api.h"
@@ -350,7 +352,11 @@ void BTA_dm_on_hw_on() {
   memset(&bta_dm_di_cb, 0, sizeof(tBTA_DM_DI_CB));
 
   memcpy(dev_class, p_bta_dm_cfg->dev_class, sizeof(dev_class));
-  BTM_SetDeviceClass(dev_class);
+  if (bluetooth::shim::is_gd_security_enabled()) {
+    bluetooth::shim::BTM_SetDeviceClass(dev_class);
+  } else {
+    BTM_SetDeviceClass(dev_class);
+  }
 
   /* load BLE local information: ID keys, ER if available */
   Octet16 er;
@@ -365,7 +371,12 @@ void BTA_dm_on_hw_on() {
   }
   bta_dm_search_cb.conn_id = GATT_INVALID_CONN_ID;
 
-  BTM_SecRegister(&bta_security);
+  if (bluetooth::shim::is_gd_security_enabled()) {
+    bluetooth::shim::BTM_SecRegister(&bta_security);
+  } else {
+    BTM_SecRegister(&bta_security);
+  }
+
   BTM_SetDefaultLinkSuperTout(p_bta_dm_cfg->link_timeout);
   BTM_WritePageTimeout(p_bta_dm_cfg->page_timeout);
 
@@ -521,7 +532,11 @@ static void bta_dm_process_remove_device_no_callback(
   /* need to remove all pending background connection before unpair */
   BTA_GATTC_CancelOpen(0, bd_addr, false);
 
-  BTM_SecDeleteDevice(bd_addr);
+  if (bluetooth::shim::is_gd_security_enabled()) {
+    bluetooth::shim::BTM_SecDeleteDevice(bd_addr);
+  } else {
+    BTM_SecDeleteDevice(bd_addr);
+  }
 
   /* remove all cached GATT information */
   BTA_GATTC_Refresh(bd_addr);
@@ -633,9 +648,17 @@ void bta_dm_add_device(std::unique_ptr<tBTA_DM_API_ADD_DEVICE> msg) {
 
   if (msg->link_key_known) p_lc = &msg->link_key;
 
-  if (!BTM_SecAddDevice(msg->bd_addr, p_dc, msg->bd_name, msg->features, p_lc,
-                        msg->key_type, msg->pin_length)) {
-    LOG(ERROR) << "BTA_DM: Error adding device " << msg->bd_addr;
+  if (bluetooth::shim::is_gd_security_enabled()) {
+    bluetooth::shim::BTM_SecAddDevice(msg->bd_addr, p_dc, msg->bd_name,
+                                      msg->features, p_lc, msg->key_type,
+                                      msg->pin_length);
+  } else {
+    auto add_result =
+        BTM_SecAddDevice(msg->bd_addr, p_dc, msg->bd_name, msg->features, p_lc,
+                         msg->key_type, msg->pin_length);
+    if (!add_result) {
+      LOG(ERROR) << "BTA_DM: Error adding device " << msg->bd_addr;
+    }
   }
 }
 
@@ -679,12 +702,17 @@ void bta_dm_bond(const RawAddress& bd_addr, tBLE_ADDR_TYPE addr_type,
   char* p_name;
 
   tBTM_STATUS status =
-      BTM_SecBond(bd_addr, addr_type, transport, device_type, 0, NULL);
+      (bluetooth::shim::is_gd_security_enabled())
+          ? bluetooth::shim::BTM_SecBond(bd_addr, addr_type, transport,
+                                         device_type)
+          : BTM_SecBond(bd_addr, addr_type, transport, device_type, 0, NULL);
 
   if (bta_dm_cb.p_sec_cback && (status != BTM_CMD_STARTED)) {
     memset(&sec_event, 0, sizeof(tBTA_DM_SEC));
     sec_event.auth_cmpl.bd_addr = bd_addr;
-    p_name = BTM_SecReadDevName(bd_addr);
+    p_name = (bluetooth::shim::is_gd_security_enabled())
+                 ? bluetooth::shim::BTM_SecReadDevName(bd_addr)
+                 : BTM_SecReadDevName(bd_addr);
     if (p_name != NULL) {
       memcpy(sec_event.auth_cmpl.bd_name, p_name, BD_NAME_LEN);
       sec_event.auth_cmpl.bd_name[BD_NAME_LEN] = 0;
@@ -711,7 +739,10 @@ void bta_dm_bond_cancel(const RawAddress& bd_addr) {
   tBTA_DM_SEC sec_event;
 
   APPL_TRACE_EVENT(" bta_dm_bond_cancel ");
-  status = BTM_SecBondCancel(bd_addr);
+
+  status = (bluetooth::shim::is_gd_security_enabled())
+               ? bluetooth::shim::BTM_SecBondCancel(bd_addr)
+               : BTM_SecBondCancel(bd_addr);
 
   if (bta_dm_cb.p_sec_cback &&
       (status != BTM_CMD_STARTED && status != BTM_SUCCESS)) {
@@ -724,21 +755,42 @@ void bta_dm_bond_cancel(const RawAddress& bd_addr) {
 /** Send the pin_reply to a request from BTM */
 void bta_dm_pin_reply(std::unique_ptr<tBTA_DM_API_PIN_REPLY> msg) {
   if (msg->accept) {
-    BTM_PINCodeReply(msg->bd_addr, BTM_SUCCESS, msg->pin_len, msg->p_pin);
+    if (bluetooth::shim::is_gd_security_enabled()) {
+      bluetooth::shim::BTM_PINCodeReply(msg->bd_addr, BTM_SUCCESS, msg->pin_len,
+                                        msg->p_pin);
+    } else {
+      BTM_PINCodeReply(msg->bd_addr, BTM_SUCCESS, msg->pin_len, msg->p_pin);
+    }
   } else {
-    BTM_PINCodeReply(msg->bd_addr, BTM_NOT_AUTHORIZED, 0, NULL);
+    if (bluetooth::shim::is_gd_security_enabled()) {
+      bluetooth::shim::BTM_PINCodeReply(msg->bd_addr, BTM_NOT_AUTHORIZED, 0,
+                                        NULL);
+    } else {
+      BTM_PINCodeReply(msg->bd_addr, BTM_NOT_AUTHORIZED, 0, NULL);
+    }
   }
 }
 
 /** Send the user confirm request reply in response to a request from BTM */
 void bta_dm_confirm(const RawAddress& bd_addr, bool accept) {
-  BTM_ConfirmReqReply(accept ? BTM_SUCCESS : BTM_NOT_AUTHORIZED, bd_addr);
+  if (bluetooth::shim::is_gd_security_enabled()) {
+    bluetooth::shim::BTM_ConfirmReqReply(
+        accept ? BTM_SUCCESS : BTM_NOT_AUTHORIZED, bd_addr);
+  } else {
+    BTM_ConfirmReqReply(accept ? BTM_SUCCESS : BTM_NOT_AUTHORIZED, bd_addr);
+  }
 }
 
 /** respond to the OOB data request for the remote device from BTM */
 void bta_dm_ci_rmt_oob_act(std::unique_ptr<tBTA_DM_CI_RMT_OOB> msg) {
-  BTM_RemoteOobDataReply(msg->accept ? BTM_SUCCESS : BTM_NOT_AUTHORIZED,
-                         msg->bd_addr, msg->c, msg->r);
+  if (bluetooth::shim::is_gd_security_enabled()) {
+    bluetooth::shim::BTM_RemoteOobDataReply(
+        msg->accept ? BTM_SUCCESS : BTM_NOT_AUTHORIZED, msg->bd_addr, msg->c,
+        msg->r);
+  } else {
+    BTM_RemoteOobDataReply(msg->accept ? BTM_SUCCESS : BTM_NOT_AUTHORIZED,
+                           msg->bd_addr, msg->c, msg->r);
+  }
 }
 
 /*******************************************************************************
@@ -866,8 +918,12 @@ static bool bta_dm_read_remote_device_name(const RawAddress& bd_addr,
   bta_dm_search_cb.peer_bdaddr = bd_addr;
   bta_dm_search_cb.peer_name[0] = 0;
 
-  btm_status = BTM_ReadRemoteDeviceName(bta_dm_search_cb.peer_bdaddr,
-                                        bta_dm_remname_cback, transport);
+  btm_status =
+      (bluetooth::shim::is_gd_security_enabled())
+          ? bluetooth::shim::BTM_ReadRemoteDeviceName(
+                bta_dm_search_cb.peer_bdaddr, bta_dm_remname_cback, transport)
+          : BTM_ReadRemoteDeviceName(bta_dm_search_cb.peer_bdaddr,
+                                     bta_dm_remname_cback, transport);
 
   if (btm_status == BTM_CMD_STARTED) {
     APPL_TRACE_DEBUG("%s: BTM_ReadRemoteDeviceName is started", __func__);
@@ -879,7 +935,13 @@ static bool bta_dm_read_remote_device_name(const RawAddress& bd_addr,
     /* Remote name discovery is on going now so BTM cannot notify through
      * "bta_dm_remname_cback" */
     /* adding callback to get notified that current reading remore name done */
-    BTM_SecAddRmtNameNotifyCallback(&bta_dm_service_search_remname_cback);
+
+    if (bluetooth::shim::is_gd_security_enabled()) {
+      bluetooth::shim::BTM_SecAddRmtNameNotifyCallback(
+          &bta_dm_service_search_remname_cback);
+    } else {
+      BTM_SecAddRmtNameNotifyCallback(&bta_dm_service_search_remname_cback);
+    }
 
     return (true);
   } else {
@@ -1090,7 +1152,13 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
       /* callbacks */
       /* start next bd_addr if necessary */
 
-      BTM_SecDeleteRmtNameNotifyCallback(&bta_dm_service_search_remname_cback);
+      if (bluetooth::shim::is_gd_security_enabled()) {
+        bluetooth::shim::BTM_SecDeleteRmtNameNotifyCallback(
+            &bta_dm_service_search_remname_cback);
+      } else {
+        BTM_SecDeleteRmtNameNotifyCallback(
+            &bta_dm_service_search_remname_cback);
+      }
 
       p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
       p_msg->hdr.event = BTA_DM_DISCOVERY_RESULT_EVT;
@@ -1152,7 +1220,12 @@ void bta_dm_sdp_result(tBTA_DM_MSG* p_data) {
     if (bta_dm_search_cb.p_sdp_db)
       osi_free_and_reset((void**)&bta_dm_search_cb.p_sdp_db);
 
-    BTM_SecDeleteRmtNameNotifyCallback(&bta_dm_service_search_remname_cback);
+    if (bluetooth::shim::is_gd_security_enabled()) {
+      bluetooth::shim::BTM_SecDeleteRmtNameNotifyCallback(
+          &bta_dm_service_search_remname_cback);
+    } else {
+      BTM_SecDeleteRmtNameNotifyCallback(&bta_dm_service_search_remname_cback);
+    }
 
     p_msg = (tBTA_DM_MSG*)osi_malloc(sizeof(tBTA_DM_MSG));
     p_msg->hdr.event = BTA_DM_DISCOVERY_RESULT_EVT;
@@ -1749,7 +1822,12 @@ static void bta_dm_remname_cback(void* p) {
   strlcpy((char*)bta_dm_search_cb.peer_name,
           (char*)p_remote_name->remote_bd_name, BD_NAME_LEN + 1);
 
-  BTM_SecDeleteRmtNameNotifyCallback(&bta_dm_service_search_remname_cback);
+  if (bluetooth::shim::is_gd_security_enabled()) {
+    bluetooth::shim::BTM_SecDeleteRmtNameNotifyCallback(
+        &bta_dm_service_search_remname_cback);
+  } else {
+    BTM_SecDeleteRmtNameNotifyCallback(&bta_dm_service_search_remname_cback);
+  }
 
   if (bta_dm_search_cb.transport == BT_TRANSPORT_LE) {
     GAP_BleReadPeerPrefConnParams(bta_dm_search_cb.peer_bdaddr);
@@ -2218,9 +2296,10 @@ static void bta_dm_acl_down(const RawAddress& bd_addr,
       continue;
 
     if (device->conn_state == BTA_DM_UNPAIRING) {
-      if (BTM_SecDeleteDevice(device->peer_bdaddr)) {
-        issue_unpair_cb = true;
-      }
+      issue_unpair_cb =
+          (bluetooth::shim::is_gd_security_enabled())
+              ? bluetooth::shim::BTM_SecDeleteDevice(device->peer_bdaddr)
+              : BTM_SecDeleteDevice(device->peer_bdaddr);
 
       /* remove all cached GATT information */
       BTA_GATTC_Refresh(bd_addr);
@@ -2457,7 +2536,11 @@ static void bta_dm_remove_sec_dev_entry(const RawAddress& remote_bd_addr) {
     APPL_TRACE_DEBUG(
         "%s ACL is not down. Schedule for  Dev Removal when ACL closes",
         __func__);
-    BTM_SecClearSecurityFlags(remote_bd_addr);
+    if (bluetooth::shim::is_gd_security_enabled()) {
+      bluetooth::shim::BTM_SecClearSecurityFlags(remote_bd_addr);
+    } else {
+      BTM_SecClearSecurityFlags(remote_bd_addr);
+    }
     for (int i = 0; i < bta_dm_cb.device_list.count; i++) {
       if (bta_dm_cb.device_list.peer_device[i].peer_bdaddr == remote_bd_addr) {
         bta_dm_cb.device_list.peer_device[i].remove_dev_pending = TRUE;
@@ -2535,7 +2618,10 @@ static char* bta_dm_get_remname(void) {
 
   /* If the name isn't already stored, try retrieving from BTM */
   if (*p_name == '\0') {
-    p_temp = BTM_SecReadDevName(bta_dm_search_cb.peer_bdaddr);
+    p_temp =
+        (bluetooth::shim::is_gd_security_enabled())
+            ? bluetooth::shim::BTM_SecReadDevName(bta_dm_search_cb.peer_bdaddr)
+            : BTM_SecReadDevName(bta_dm_search_cb.peer_bdaddr);
     if (p_temp != NULL) p_name = p_temp;
   }
 
@@ -3117,7 +3203,9 @@ static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
 
     case BTM_LE_SEC_REQUEST_EVT:
       sec_event.ble_req.bd_addr = bda;
-      p_name = BTM_SecReadDevName(bda);
+      p_name = (bluetooth::shim::is_gd_security_enabled())
+                   ? bluetooth::shim::BTM_SecReadDevName(bda)
+                   : BTM_SecReadDevName(bda);
       if (p_name != NULL)
         strlcpy((char*)sec_event.ble_req.bd_name, p_name, BD_NAME_LEN + 1);
       else
@@ -3127,7 +3215,9 @@ static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
 
     case BTM_LE_KEY_NOTIF_EVT:
       sec_event.key_notif.bd_addr = bda;
-      p_name = BTM_SecReadDevName(bda);
+      p_name = (bluetooth::shim::is_gd_security_enabled())
+                   ? bluetooth::shim::BTM_SecReadDevName(bda)
+                   : BTM_SecReadDevName(bda);
       if (p_name != NULL)
         strlcpy((char*)sec_event.key_notif.bd_name, p_name, BD_NAME_LEN + 1);
       else
@@ -3170,7 +3260,9 @@ static uint8_t bta_dm_ble_smp_cback(tBTM_LE_EVT event, const RawAddress& bda,
       sec_event.auth_cmpl.bd_addr = bda;
       BTM_ReadDevInfo(bda, &sec_event.auth_cmpl.dev_type,
                       &sec_event.auth_cmpl.addr_type);
-      p_name = BTM_SecReadDevName(bda);
+      p_name = (bluetooth::shim::is_gd_security_enabled())
+                   ? bluetooth::shim::BTM_SecReadDevName(bda)
+                   : BTM_SecReadDevName(bda);
       if (p_name != NULL)
         strlcpy((char*)sec_event.auth_cmpl.bd_name, p_name, (BD_NAME_LEN + 1));
       else
