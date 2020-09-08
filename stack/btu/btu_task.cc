@@ -42,6 +42,8 @@
 using bluetooth::common::MessageLoopThread;
 using bluetooth::hci::IsoManager;
 
+void btm_route_sco_data(BT_HDR* p_msg);
+
 /* Define BTU storage area */
 uint8_t btu_trace_level = HCI_INITIAL_TRACE_LEVEL;
 
