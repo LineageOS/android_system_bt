@@ -145,54 +145,6 @@ typedef struct {
 enum { INQ_NONE, INQ_GENERAL };
 typedef uint8_t tBTM_INQ_TYPE;
 
-typedef struct {
-  tBTM_CMPL_CB* p_remname_cmpl_cb;
-
-#define BTM_EXT_RMT_NAME_TIMEOUT_MS (40 * 1000) /* 40 seconds */
-
-  alarm_t* remote_name_timer;
-
-  uint16_t discoverable_mode;
-  uint16_t connectable_mode;
-  uint16_t page_scan_window;
-  uint16_t page_scan_period;
-  uint16_t inq_scan_window;
-  uint16_t inq_scan_period;
-  uint16_t inq_scan_type;
-  uint16_t page_scan_type; /* current page scan type */
-
-  RawAddress remname_bda; /* Name of bd addr for active remote name request */
-#define BTM_RMT_NAME_EXT 0x1 /* Initiated through API */
-  bool remname_active; /* State of a remote name request by external API */
-
-  tBTM_CMPL_CB* p_inq_cmpl_cb;
-  tBTM_INQ_RESULTS_CB* p_inq_results_cb;
-  uint32_t inq_counter; /* Counter incremented each time an inquiry completes */
-  /* Used for determining whether or not duplicate devices */
-  /* have responded to the same inquiry */
-  tINQ_BDADDR* p_bd_db;    /* Pointer to memory that holds bdaddrs */
-  uint16_t num_bd_entries; /* Number of entries in database */
-  uint16_t max_bd_entries; /* Maximum number of entries that can be stored */
-  tINQ_DB_ENT inq_db[BTM_INQ_DB_SIZE];
-  tBTM_INQ_PARMS inqparms; /* Contains the parameters for the current inquiry */
-  tBTM_INQUIRY_CMPL
-      inq_cmpl_info; /* Status and number of responses from the last inquiry */
-
-  uint16_t per_min_delay; /* Current periodic minimum delay */
-  uint16_t per_max_delay; /* Current periodic maximum delay */
-  /* inquiry that has been cancelled*/
-  uint8_t inqfilt_type; /* Contains the inquiry filter type (BD ADDR, COD, or
-                           Clear) */
-
-#define BTM_INQ_INACTIVE_STATE 0
-#define BTM_INQ_ACTIVE_STATE \
-  3 /* Actual inquiry or periodic inquiry is in progress */
-
-  uint8_t state;      /* Current state that the inquiry process is in */
-  uint8_t inq_active; /* Bit Mask indicating type of inquiry is active */
-  bool no_inc_ssp;    /* true, to stop inquiry on incoming SSP */
-} tBTM_INQUIRY_VAR_ST;
-
 /* The MSB of the clock offset field indicates whether the offset is valid. */
 #define BTM_CLOCK_OFFSET_VALID 0x8000
 
